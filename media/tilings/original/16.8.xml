@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>16.8</Name>
+	<T1>0,2.960433870103417</T1>
+	<T2>1.48021693505171,1.48021693505171</T2>
+	<Feature type="polygon">
+		<Point>0.1989123673796581,1</Point>
+		<Point>0.5664544973505217,0.8477590650225735</Point>
+		<Point>0.8477590650225735,0.5664544973505214</Point>
+		<Point>1,0.198912367379658</Point>
+		<Point>1.281304567672052,0.4802169350517104</Point>
+		<Point>0.9137624377011893,0.6324578700291367</Point>
+		<Point>0.6324578700291368,0.9137624377011888</Point>
+		<Point>0.4802169350517105,1.281304567672052</Point>
+		<Placement>1,0,0,0,1,0</Placement>
+		<Placement>0,-1,0,1,0,0</Placement>
+	</Feature>
+	<Feature type="regular" sides="16">
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Feature type="regular" sides="8">
+		<Placement>0.4802169350517094,0,0,0,0.4802169350517094,1.480216935051709</Placement>
+	</Feature>
+	<Desc>A tiling constructing by random exploration with the tiling design tool that complements Taprats.  I'm not sure if this tiling occurs in Islamic art, but I wouldn't be surprised.</Desc>
+	<Auth>Craig S. Kaplan</Auth>
+</Tiling>

@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>Samad Complex</Name>
+	<Fill>-4,8,-10,8</Fill>
+	<T1>0.7457469897635574,1.38437631238628</T1>
+	<T2>1.552989934765233,0</T2>
+	<Feature type="regular" sides="6">
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Feature type="regular" sides="4">
+		<Placement>0.5699999999999996,0,-1.57,0,0.5699999999999996,-3.816391647148976e-17</Placement>
+		<Placement>0.4936344801571297,-0.2849999999999998,-0.4999999999999999,0.2849999999999998,0.4936344801571297,0.8899999999999997</Placement>
+	</Feature>
+	<Desc>This uses overlapping features</Desc>
+	<Auth>David A Casper</Auth>
+</Tiling>

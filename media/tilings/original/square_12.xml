@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>square_12</Name>
+	<Fill>-4,4,-5,5</Fill>
+	<T1>0,1.999999999999999</T1>
+	<T2>2,0</T2>
+	<Feature type="regular" sides="12">
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Feature type="polygon">
+		<Point>0.2679491924311229,1</Point>
+		<Point>0.7320508075688773,0.7320508075688772</Point>
+		<Point>1,0.2679491924311195</Point>
+		<Point>1.267949192431122,0.7320508075688748</Point>
+		<Point>1.732050807568878,1</Point>
+		<Point>1.267949192431123,1.267949192431121</Point>
+		<Point>1,1.732050807568876</Point>
+		<Point>0.7320508075688775,1.267949192431122</Point>
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Desc>A dodecagonal alternative to 3.12^2, 12-gons placed in a square arrangement with 4-star fillers.</Desc>
+	<Auth>Craig S. Kaplan</Auth>
+</Tiling>

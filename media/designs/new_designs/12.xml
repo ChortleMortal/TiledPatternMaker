@@ -1,0 +1,121 @@
+<?xml version="1.0"?>
+<vector id="1">
+	<design>
+		<scale>1</scale>
+		<size>
+			<width>1500</width>
+			<height>1100</height>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+	</design>
+	<style.Interlace id="2" serialization="custom">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<theta__delta>0</theta__delta>
+			<top__delta>0</top__delta>
+			<width__delta>0</width__delta>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<boundary id="3">
+				<pts id="4">
+					<Point id="5">
+						<x>-9.9</x>
+						<y>9.9</y>
+					</Point>
+					<Point id="6">
+						<x>9.9</x>
+						<y>9.9</y>
+					</Point>
+					<Point id="7">
+						<x>9.9</x>
+						<y>-5.093247588424438</y>
+					</Point>
+					<Point id="8">
+						<x>-9.9</x>
+						<y>-5.093247588424438</y>
+					</Point>
+				</pts>
+			</boundary>
+			<prototype id="9" serialization="custom">
+				<app.Prototype>
+					<string>12</string>
+					<entry>
+						<tile.Feature id="10">
+							<regular>true</regular>
+							<points id="11">
+								<Point id="12">
+									<x>0.9999999999999999</x>
+									<y>0.2679491924311226</y>
+								</Point>
+								<Point id="13">
+									<x>0.7320508075688773</x>
+									<y>0.7320508075688773</y>
+								</Point>
+								<Point id="14">
+									<x>0.2679491924311229</x>
+									<y>0.9999999999999998</y>
+								</Point>
+								<Point id="15">
+									<x>-0.2679491924311225</x>
+									<y>0.9999999999999999</y>
+								</Point>
+								<Point id="16">
+									<x>-0.7320508075688772</x>
+									<y>0.7320508075688773</y>
+								</Point>
+								<Point id="17">
+									<x>-0.9999999999999998</x>
+									<y>0.267949192431123</y>
+								</Point>
+								<Point id="18">
+									<x>-1</x>
+									<y>-0.2679491924311223</y>
+								</Point>
+								<Point id="19">
+									<x>-0.7320508075688776</x>
+									<y>-0.7320508075688769</y>
+								</Point>
+								<Point id="20">
+									<x>-0.2679491924311235</x>
+									<y>-0.9999999999999997</y>
+								</Point>
+								<Point id="21">
+									<x>0.2679491924311222</x>
+									<y>-1</y>
+								</Point>
+								<Point id="22">
+									<x>0.7320508075688771</x>
+									<y>-0.7320508075688774</y>
+								</Point>
+								<Point id="23">
+									<x>0.9999999999999997</x>
+									<y>-0.2679491924311235</y>
+								</Point>
+							</points>
+						</tile.Feature>
+						<app.Star id="24">
+							<n>12</n>
+							<d>4</d>
+							<s>1</s>
+							<r>0</r>
+						</app.Star>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color>#ff1496d2</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.05</width>
+		</style.Thick>
+		<style.Interlace>
+			<gap>0</gap>
+			<shadow>0.05</shadow>
+			<includeTipVerts>false</includeTipVerts>
+		</style.Interlace>
+	</style.Interlace>
+</vector>

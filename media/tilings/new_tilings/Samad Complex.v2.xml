@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>Samad Complex.v2</Name>
+	<Fill>-4,4,-4,4</Fill>
+	<T1>1.993333333333334,0.0133333333333336</T1>
+	<T2>-0.0266666666666664,3.466666666666667</T2>
+	<Feature type="regular" sides="6">
+		<Placement>1,0,-1.013333333333334,0,1,1.726666666666667</Placement>
+	</Feature>
+	<Feature type="regular" sides="6">
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Desc>Description</Desc>
+	<Auth>Author</Auth>
+</Tiling>

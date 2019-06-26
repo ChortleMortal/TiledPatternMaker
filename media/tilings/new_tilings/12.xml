@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>12</Name>
+	<Fill>-4,4,-5,5</Fill>
+	<T1>9e-16,2</T1>
+	<T2>2,0</T2>
+	<Feature type="regular" sides="12">
+		<BkgdColors>#55aa7f,#aaaa00</BkgdColors>
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Desc>Simple arrangement of dodecahedrons</Desc>
+	<Auth>David A Casper</Auth>
+</Tiling>

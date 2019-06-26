@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>csk_5</Name>
+	<T1>0,2.351141009169893</T1>
+	<T2>3.618033988749896,1.175570504584946</T2>
+	<Feature type="regular" sides="5">
+		<Placement>1,0,0,0,1,0</Placement>
+		<Placement>0.8090169943749477,-0.5877852522924732,2,0.5877852522924732,0.8090169943749477,0</Placement>
+	</Feature>
+	<Feature type="polygon">
+		<Point>-0.3819660112501048,1.175570504584946</Point>
+		<Point>1,0.7265425280053609</Point>
+		<Point>2.381966011250106,1.175570504584946</Point>
+		<Point>1,1.624598481164532</Point>
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Desc>A tiling by pentagons and rhombs derived from the example in figure 1.5.11 of Grunbaum and Shephard.</Desc>
+	<Auth>Craig S. Kaplan</Auth>
+</Tiling>

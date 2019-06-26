@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>dac-4</Name>
+	<T1>2,0</T1>
+	<T2>1,1.732051</T2>
+	<Feature type="regular" sides="4">
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Desc>Squares</Desc>
+	<Auth>David A. Casper</Auth>
+</Tiling>

@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>DAC8.v4</Name>
+	<Fill>-5,5,-4,4</Fill>
+	<T1>2,0</T1>
+	<T2>0,2</T2>
+	<Feature type="regular" sides="8">
+		<BkgdColors>#aaa59b,#b17b40</BkgdColors>
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Desc>Trying to pack hexagons - now rotated 22.5 degrees and now separation increased
+v3 So now here the octagons overlap (taprats would not allow) but the stars touch
+v4. back out rotation</Desc>
+	<Auth>David Java</Auth>
+</Tiling>

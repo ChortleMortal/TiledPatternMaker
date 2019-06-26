@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>10</Name>
+	<Fill>-6,6,-4,4</Fill>
+	<T1>2,0</T1>
+	<T2>0.6180339887498949,1.902113032590307</T2>
+	<Feature type="regular" sides="10">
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Feature type="polygon">
+		<Point>1,0.3249196962329063</Point>
+		<Point>1.381966011250105,0.8506508083520401</Point>
+		<Point>2,1.051462224238268</Point>
+		<Point>1.618033988749895,1.577193336357401</Point>
+		<Point>1.23606797749979,1.051462224238268</Point>
+		<Point>0.6180339887498947,0.8506508083520403</Point>
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Desc>A tiling by regular decagons and hexagonal fillers that gives rise to one of the most famous of all Islamic patterns.</Desc>
+	<Auth>Craig S. Kaplan</Auth>
+</Tiling>

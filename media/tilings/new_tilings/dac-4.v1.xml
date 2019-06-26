@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>dac-4.v1</Name>
+	<T1>2,0</T1>
+	<T2>0,2</T2>
+	<Feature type="regular" sides="4">
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Desc>The regular tiling by hexagons.</Desc>
+	<Auth>Craig S. Kaplan</Auth>
+</Tiling>

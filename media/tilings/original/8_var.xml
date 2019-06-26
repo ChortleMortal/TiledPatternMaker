@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>8_var</Name>
+	<Fill>-5,5,-5,7</Fill>
+	<T1>0.8284271247461903,1.999999999999999</T1>
+	<T2>1.999999999999997,-0.8284271247461841</T2>
+	<Feature type="regular" sides="8">
+		<Placement>1,0,-2.629310344827586,0,1,-0.1508620689655178</Placement>
+	</Feature>
+	<Feature type="polygon">
+		<Point>-2.215096782454491,0.8491379310344823</Point>
+		<Point>-1.629310344827586,0.2633514934075772</Point>
+		<Point>-1.629310344827585,-0.5650756313386074</Point>
+		<Point>-1.043523907200681,0.02071080628829514</Point>
+		<Point>-0.215096782454494,0.02071080628829469</Point>
+		<Point>-0.800883220081397,0.606497243915198</Point>
+		<Point>-0.800883220081397,1.434924368661386</Point>
+		<Point>-1.386669657708301,0.8491379310344823</Point>
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Desc>An alternative octagonal tiling from the world of star polygons.</Desc>
+	<Auth>Craig S. Kaplan</Auth>
+</Tiling>

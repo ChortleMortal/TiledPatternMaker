@@ -1,0 +1,300 @@
+/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
+ *
+ *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
+ *
+ *  This file is part of TiledPatternMaker
+ *
+ *  TiledPatternMaker is based on the Java application taprats, which is:
+ *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
+ *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
+ *
+ *  TiledPatternMaker is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  TiledPatternMaker is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include "tapp/Prototype.h"
+#include "geometry/Transform.h"
+#include "geometry/FillRegion.h"
+#include "base/canvas.h"
+#include "base/utilities.h"
+#include "base/tpmsplash.h"
+
+int Prototype::refs = 0;
+
+////////////////////////////////////////////////////////////////////////////
+//
+// Prototype.java
+//
+// The complete information needed to build a pattern: the tiling and
+// a mapping from features to figures.  Prototype knows how to turn
+// this information into a finished design, returned as a Map.
+
+Prototype::Prototype(TilingPtr t)
+{
+    Q_ASSERT(t);
+    tiling = t;
+    protoMap = make_shared<Map>();
+    createProtoMap();
+    refs++;
+}
+
+Prototype::~Prototype()
+{
+    refs--;
+#ifdef EXPLICIT_DESTRUCTOR
+    qDebug() << "Prototype destructor";
+    QMap<FeaturePtr, FigurePtr>::iterator it;
+#if 1
+    for (it = figures.begin(); it!= figures.end(); it++)
+    {
+        FigurePtr f = it.value();
+        f.reset();
+        FeaturePtr f2 = it.key();
+        f2.reset();
+    }
+#endif
+    figures.clear();
+#endif
+}
+
+void Prototype::setTiling(TilingPtr t)
+{
+    tiling = t;
+    createProtoMap();
+}
+
+void Prototype::addElement(DesignElementPtr element )
+{
+    designElements.push_front(element);
+    createProtoMap();
+}
+
+QString Prototype::getInfo() const
+{
+    return QString("features&figures=%1 tiling=%2").arg(designElements.size()).arg(tiling->getName());
+}
+
+DesignElementPtr Prototype::getDesignElement(FeaturePtr feature )
+{
+    for (int i=0; i < designElements.size(); i++)
+    {
+        if (designElements[i]->getFeature() == feature)
+            return designElements[i];
+    }
+
+    qWarning() << "DESIGN ELEMENT NOT FOUND";
+    return nullptr;
+}
+
+DesignElementPtr Prototype::getDesignElement(int index)
+{
+    if (index < designElements.size())
+    {
+        return designElements[index];
+    }
+    return nullptr;
+}
+
+Transform Prototype::getTransform(int index)
+{
+    if (index < locations.size())
+    {
+        return locations[index];
+    }
+    Transform t;
+    return t;
+}
+
+FeaturePtr  Prototype::getFeature(FigurePtr figure )
+{
+    for (int i=0; i < designElements.size(); i++)
+    {
+        if (designElements[i]->getFigure() == figure)
+            return designElements[i]->getFeature();
+    }
+    FeaturePtr f;
+    qWarning() << "FEATURE IS NULL";
+    return f;
+}
+
+FigurePtr Prototype::getFigure(FeaturePtr feature )
+{
+    for (int i=0; i < designElements.size(); i++)
+    {
+        if (designElements[i]->getFeature() == feature)
+            return designElements[i]->getFigure();
+    }
+    FigurePtr f;
+    qWarning() << "FIGURE IS NULL";
+    return f;
+}
+
+QList<FeaturePtr> Prototype::getFeatures()
+{
+    QList<FeaturePtr> ql;
+    for (int i=0; i < designElements.size(); i++)
+    {
+        ql.append(designElements[i]->getFeature());
+    }
+    return ql;
+}
+
+void Prototype::walk()
+{
+    qDebug() << "num design elements=" << designElements.size();
+    qDebug() << "num locations      =" << locations.size();
+
+    qDebug() << "start Prototype walk.... num figures=" << designElements.size();
+    for (auto it = designElements.begin(); it != designElements.end(); it++)
+    {
+        DesignElementPtr dep = *it;
+        FeaturePtr feature = dep->getFeature();
+        FigurePtr  figure  = dep->getFigure();
+        qDebug().noquote() << "figure:" << figure->getFigureDesc() << " feature:" << feature->toString();
+    }
+    qDebug() << "....end Prototype walk";
+}
+
+// this is where the locations for the replicated styles are put
+// each figure point is placed with a relative transform from the tiling when the map is constructed
+void Prototype::receive(GeoGraphics *gg, int h, int v )
+{
+    Q_UNUSED(gg);
+    //qDebug() << "fill qxy Prototype::receive:"  << h << v;
+    Transform T = Transform::translate((tiling->getTrans1() * static_cast<qreal>(h) ) + (tiling->getTrans2() * static_cast<qreal>(v) ) );
+    locations << T;
+}
+
+void Prototype::resetProtoMap()
+{
+    locations.clear();
+    protoMap->wipeout();
+}
+
+MapPtr Prototype::getProtoMap()
+{
+    if (locations.isEmpty() || protoMap->isEmpty())
+    {
+        createProtoMap();
+    }
+    return protoMap;
+}
+
+MapPtr Prototype::createProtoMap()
+{
+#ifdef TPMSPLASH
+    TPMSplash * sp = TPMSplash::getInstance();
+    QString astring = QString("Constructing prototype map for tiling: %1").arg(tiling->getName());
+    sp->display(astring);
+#endif
+
+    resetProtoMap();
+
+    qDebug() << "PROTOTYPE::CONSTRUCT MAP" << Utils::addr(this);
+
+    static bool debug     = false;
+    static bool verifyMap = false;
+    static bool verbose   = false;
+    static bool detailed  = false;
+    static bool doDump    = false;
+    static bool force     = false;
+
+    // Use FillRegion to get a list of translations for this tiling.
+    fill(nullptr, tiling->getFillData());
+
+    qDebug() << "locations=" << locations.size();
+
+    Canvas * canvas = Canvas::getInstance();
+    canvas->dump(force);
+
+    //walk();
+
+
+    // Now, for each different feature, build a submap corresponding
+    // to all translations of that feature.
+    for (auto it = designElements.begin(); it != designElements.end(); it++)
+    {
+        DesignElementPtr dep = *it;
+        FeaturePtr feature = dep->getFeature();
+        FigurePtr figure   = dep->getFigure();
+        qDebug().noquote() << figure->getFigureDesc();
+
+        MapPtr figmap  = figure->getFigureMap();
+        canvas->dump(force);
+        if (verifyMap) figmap->verify("figmap1",verbose,detailed,doDump);
+
+        QVector<Transform> subT;
+
+        for(auto it2 = tiling->getPlacedFeatures().begin(); it2 != tiling->getPlacedFeatures().end(); it2++)
+        {
+            PlacedFeaturePtr pf = *it2;
+            FeaturePtr       f  = pf->getFeature();
+            if( f->equals(feature))
+            {
+                Transform t = pf->getTransform();
+                subT.push_back(t);
+            }
+        }
+
+        if (verifyMap) figmap->verify("figmap2",verbose,detailed,doDump);
+
+        // Within a single translational unit, assemble the different
+        // transformed figures corresponding to the given feature into
+        // a map.
+        MapPtr transmap = make_shared<Map>();
+        canvas->dump(force);
+        if (debug) qDebug() << "merge1s";
+        transmap->mergeSimpleMany( figmap, subT);
+        if (debug) qDebug() << "merge1e";
+        canvas->dump(force);
+        if (verifyMap) transmap->verify("transmap",verbose,detailed,doDump);
+
+
+        // Now put all the translations together into a single map for
+        // this feature.
+        MapPtr featuremap = make_shared<Map>();
+        canvas->dump(force);
+        if (debug) qDebug() << "merge2s";
+        featuremap->mergeSimpleMany(transmap, locations);
+        if (debug) qDebug() << "merge2e";
+        canvas->dump(force);
+        //if (verifyMap) featuremap->verify("featuremap",verbose,detailed,doDump);
+
+        // And do a slow merge to add this map to the finished design.
+        if (debug) qDebug() << "merge3s";
+        protoMap->mergeMap(featuremap);
+        if (debug) qDebug() << "merge3e";
+        canvas->dump(force);
+        if (verifyMap) protoMap->verify("ret MAP 2",verbose,detailed,doDump);
+        if (verbose) qDebug() << "Constructed SUB map (ret): vertices=" << protoMap->getVertices()->count() << "edges=" << protoMap->getEdges()->count();
+        protoMap->analyzeVertices();
+    }
+
+    qDebug() << "Constructed complete map (ret): vertices=" << protoMap->getVertices()->count() << "edges=" << protoMap->getEdges()->count();
+
+    canvas->dump(true);
+
+#ifdef TPMSPLASH
+    sp->hide();
+#endif
+
+    return protoMap;
+}
+
+#if 0
+    bool equals(PrototypePtr other )
+    {
+        return tiling == other->tiling && figures == other->figures;
+    }
+#endif
+

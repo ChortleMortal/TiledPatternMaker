@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>4.6.12</Name>
+	<T1>0,2.535898384862246</T1>
+	<T2>2.196152422706632,1.267949192431122</T2>
+	<Feature type="regular" sides="6">
+		<Placement>0.4641016151377543,0,0.7320508075688772,0,0.4641016151377543,1.267949192431122</Placement>
+		<Placement>0.2320508075688775,0.4019237886466846,1.464101615137755,-0.4019237886466846,0.2320508075688775,0</Placement>
+	</Feature>
+	<Feature type="regular" sides="4">
+		<Placement>0.1339745962155613,0.2320508075688772,1.098076211353316,-0.2320508075688772,0.1339745962155613,0.6339745962155612</Placement>
+		<Placement>0.2679491924311227,0,0,0,0.2679491924311227,1.267949192431123</Placement>
+		<Placement>-0.1339745962155612,0.232050807568877,1.098076211353315,-0.232050807568877,-0.1339745962155612,-0.6339745962155618</Placement>
+	</Feature>
+	<Feature type="regular" sides="12">
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Desc>Another of the semiregular, or Archimedean tilings, 4.6.12 is sometimes encountered as an Islamic design as is, without any further embellishment.</Desc>
+	<Auth>Craig S. Kaplan</Auth>
+</Tiling>

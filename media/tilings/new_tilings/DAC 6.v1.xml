@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>DAC 6.v1</Name>
+	<Fill>-4,4,-4,4</Fill>
+	<T1>2,-2</T1>
+	<T2>2,2</T2>
+	<Feature type="regular" sides="6">
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Feature type="regular" sides="6">
+		<Placement>1,1.665334536937734e-16,0.9999999999999991,-1.665334536937734e-16,1,-1.732050807568877</Placement>
+	</Feature>
+	<Feature type="regular" sides="6">
+		<Placement>0.9999999999999998,-1.110223024625157e-16,1,1.110223024625157e-16,0.9999999999999998,1.732050807568877</Placement>
+	</Feature>
+	<Feature type="regular" sides="6">
+		<Placement>0.9999999999999998,5.551115123125778e-17,1.999999999999999,-5.551115123125778e-17,0.9999999999999998,-4.440892098500626e-16</Placement>
+	</Feature>
+	<Desc>grid of 6 pointed stars</Desc>
+	<Auth>David Casper</Auth>
+</Tiling>

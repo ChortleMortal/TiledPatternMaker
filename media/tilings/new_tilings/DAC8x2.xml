@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>DAC8x2</Name>
+	<Fill>-2,2,-2,2</Fill>
+	<T1>4,0</T1>
+	<T2>0,4</T2>
+	<Feature type="regular" sides="8">
+		<Placement>2,0,0,0,2,0</Placement>
+	</Feature>
+	<Desc>Trying to pack hexagons</Desc>
+	<Auth>David Java</Auth>
+</Tiling>

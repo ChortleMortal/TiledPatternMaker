@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>3.12^2</Name>
+	<Fill>-7,7,-6,6</Fill>
+	<T1>0,2</T1>
+	<T2>1.732050807568877,1</T2>
+	<Feature type="regular" sides="12">
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Feature type="regular" sides="3">
+		<Placement>0.07735026918962594,-0.1339745962155616,1.154700538379251,0.1339745962155616,0.07735026918962594,0</Placement>
+		<Placement>0.1547005383792515,0,0.5773502691896257,0,0.1547005383792515,1</Placement>
+	</Feature>
+	<Desc>The Archimedean tiling by dodecagons and triangles. Very common in the construction of Islamic designs.</Desc>
+	<Auth>Craig S. Kaplan</Auth>
+</Tiling>

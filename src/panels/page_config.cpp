@@ -1,0 +1,204 @@
+/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
+ *
+ *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
+ *
+ *  This file is part of TiledPatternMaker
+ *
+ *  TiledPatternMaker is based on the Java application taprats, which is:
+ *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
+ *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
+ *
+ *  TiledPatternMaker is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  TiledPatternMaker is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include "page_config.h"
+
+
+page_config:: page_config(ControlPanel *panel)  : panel_page(panel,"Configuration")
+{
+    le_rootTile   = new QLineEdit();
+    le_newTile    = new QLineEdit();
+    le_rootDesign = new QLineEdit();
+    le_newDesign  = new QLineEdit();
+    le_newDesign->setMinimumWidth(501);
+    le_rootImage  = new QLineEdit();
+    le_examples  = new QLineEdit();
+
+    rootDesignBtn = new QPushButton("Root Design Dir");
+    newDesignBtn  = new QPushButton("New Design Dir");
+    rootTileBtn   = new QPushButton("Root Tile Dir");
+    newTileBtn    = new QPushButton("New Tile Dir");
+    examplesBtn   = new QPushButton("Examples Dir");
+    rootImageBtn  = new QPushButton("Image Dir");
+    QPushButton *reconfigurePathsBtn = new QPushButton("Reset Paths");
+
+
+    QGridLayout *configGrid = new QGridLayout();
+
+    configGrid->addWidget(rootDesignBtn,0,0);
+    configGrid->addWidget(le_rootDesign,0,1);
+
+    configGrid->addWidget(newDesignBtn,1,0);
+    configGrid->addWidget(le_newDesign,1,1);
+
+    configGrid->addWidget(rootTileBtn,2,0);
+    configGrid->addWidget(le_rootTile,2,1);
+
+    configGrid->addWidget(newTileBtn,3,0);
+    configGrid->addWidget(le_newTile,3,1);
+
+    configGrid->addWidget(examplesBtn,4,0);
+    configGrid->addWidget(le_examples,4,1);
+
+    configGrid->addWidget(rootImageBtn,5,0);
+    configGrid->addWidget(le_rootImage,5,1);
+
+    configGrid->addWidget(reconfigurePathsBtn,6,0);
+
+    vbox->addLayout(configGrid);
+
+    updatePaths();
+
+    connect(rootImageBtn,   SIGNAL(clicked()),                  this,   SLOT(selectRootImageDir()));
+    connect(rootTileBtn,    SIGNAL(clicked()),                  this,   SLOT(selectRootTileDir()));
+    connect(newTileBtn,     SIGNAL(clicked()),                  this,   SLOT(selectNewTileDir()));
+    connect(rootDesignBtn,  SIGNAL(clicked()),                  this,   SLOT(selectRootDesignDir()));
+    connect(newDesignBtn,   SIGNAL(clicked()),                  this,   SLOT(selectNewDesignDir()));
+    connect(examplesBtn,    SIGNAL(clicked()),                  this,   SLOT(selectExamplesDir()));
+    connect(reconfigurePathsBtn, SIGNAL(clicked()),             this,   SLOT(slot_reconfigurePaths()));
+
+    connect(le_rootDesign, &QLineEdit::textChanged,   this, &page_config::rootDesignChanged);
+    connect(le_newDesign,  &QLineEdit::textChanged,   this, &page_config::newDesignChanged);
+    connect(le_rootTile,   &QLineEdit::textChanged,   this, &page_config::rootTileChanged);
+    connect(le_newTile,    &QLineEdit::textChanged,   this, &page_config::newTtileChanged);
+    connect(le_rootImage,  &QLineEdit::textChanged,   this, &page_config::rootImageChanged);
+    connect(le_examples,  &QLineEdit::textChanged,    this, &page_config::examplesChanged);
+}
+
+void  page_config::onEnter()
+{
+}
+
+void  page_config::refreshPage()
+{
+
+}
+
+void page_config::selectRootTileDir()
+{
+    QString old = config->rootTileDir;
+    QString dir = QFileDialog::getExistingDirectory(this, tr("Select Tiling Directory"),
+                   old, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+
+    le_rootTile->setText(dir);
+    config->rootTileDir = dir;
+}
+
+void page_config::selectNewTileDir()
+{
+    QString old = config->newTileDir;
+    QString dir = QFileDialog::getExistingDirectory(this, tr("Select Tiling Directory"),
+                   old, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+
+    le_newTile->setText(dir);
+    config->newTileDir = dir;
+}
+
+void page_config::selectRootDesignDir()
+{
+    QString old = config->rootDesignDir;
+    QString dir = QFileDialog::getExistingDirectory(this, tr("Select XML Directory"),
+                   old, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+
+    le_rootDesign->setText(dir);
+    config->rootDesignDir = dir;
+}
+
+void page_config::selectNewDesignDir()
+{
+    QString old = config->newDesignDir;
+    QString dir = QFileDialog::getExistingDirectory(this, tr("Select XML Directory"),
+                   old, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+
+    le_newDesign->setText(dir);
+    config->newDesignDir = dir;
+}
+
+void page_config::selectRootImageDir()
+{
+    QString old = config->rootImageDir;
+    QString dir = QFileDialog::getExistingDirectory(this, tr("Select Image Directory"),
+                   old, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+
+    le_rootImage->setText(dir);
+    config->rootImageDir = dir;
+}
+
+void page_config::selectExamplesDir()
+{
+    QString old = config->examplesDir;
+    QString dir = QFileDialog::getExistingDirectory(this, tr("Select Examples Directory"),
+                                                    old, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+
+    le_examples->setText(dir);
+    config->examplesDir = dir;
+}
+
+void page_config::rootDesignChanged(QString txt)
+{
+    config->rootDesignDir= txt;
+}
+
+void page_config::newDesignChanged(QString txt)
+{
+    config->newDesignDir = txt;
+}
+
+void page_config::rootTileChanged(QString txt)
+{
+    config->rootTileDir = txt;
+}
+
+void page_config::newTtileChanged(QString txt)
+{
+    config->newTileDir = txt;
+}
+
+void page_config::rootImageChanged(QString txt)
+{
+    config->rootImageDir = txt;
+}
+
+void page_config::examplesChanged(QString txt)
+{
+    config->examplesDir = txt;
+}
+
+void page_config::slot_reconfigurePaths()
+{
+    config->reconfigurePaths();
+    updatePaths();
+}
+
+void page_config::updatePaths()
+{
+    // basic config
+    le_rootDesign->setText(config->rootDesignDir);
+    le_newDesign->setText(config->newDesignDir);
+    le_rootTile->setText(config->rootTileDir);
+    le_newTile->setText(config->newTileDir);
+    le_rootImage->setText(config->rootImageDir);
+    le_examples->setText(config->examplesDir);
+    update();
+}

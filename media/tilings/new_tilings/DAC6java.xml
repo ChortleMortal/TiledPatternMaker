@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>DAC6java</Name>
+	<Fill>-4,4,-4,4</Fill>
+	<T1>1,1.732050807568877</T1>
+	<T2>2,-5.551115123125783e-16</T2>
+	<Feature type="regular" sides="6">
+		<Placement>1,0,-0.02123480932506361,0,1,-0.0212348093250645</Placement>
+	</Feature>
+	<Desc>Trying to pack hexagons</Desc>
+	<Auth>David Java</Auth>
+</Tiling>

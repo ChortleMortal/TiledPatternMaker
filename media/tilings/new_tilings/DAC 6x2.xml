@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>DAC 6x2</Name>
+	<Fill>-4,4,-4,4</Fill>
+	<T1>2,0</T1>
+	<T2>1,1.732050807568877</T2>
+	<Feature type="regular" sides="6">
+		<Placement>1,0,0,0,1,0</Placement>
+		<Placement>1,0,1.01,0,1,-0.02000000000000046</Placement>
+	</Feature>
+	<Desc>showing overlapping tiles</Desc>
+	<Auth>Casper</Auth>
+</Tiling>

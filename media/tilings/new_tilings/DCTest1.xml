@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>DCTest1</Name>
+	<Fill>-3,5,-5,5</Fill>
+	<T1>-0.01000000000000068,2.01</T1>
+	<T2>1.99,0.009999999999999787</T2>
+	<Feature type="polygon">
+		<Point>-1.009999999999999,-2.99</Point>
+		<Point>0.9599999999999989,-2.98</Point>
+		<Point>0.9599999999999993,-0.9800000000000009</Point>
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Desc>This is a test of feature/figure orientation</Desc>
+	<Auth>David Casper</Auth>
+</Tiling>

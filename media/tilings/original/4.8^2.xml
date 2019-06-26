@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>4.8^2</Name>
+	<Fill>-4,4,-5,5</Fill>
+	<T1>0,1.999999999999999</T1>
+	<T2>2,0</T2>
+	<Feature type="regular" sides="4">
+		<Placement>0.2928932188134518,-0.2928932188134519,1,0.2928932188134519,0.2928932188134518,1</Placement>
+	</Feature>
+	<Feature type="regular" sides="8">
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Desc>The classic Archimedean tiling by octagons and squares. Extremely important in Islamic design as the source of the Seal of Solomon, the [8/3]2 star.</Desc>
+	<Auth>Craig S. Kaplan</Auth>
+</Tiling>

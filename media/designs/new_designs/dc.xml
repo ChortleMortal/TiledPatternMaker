@@ -1,0 +1,146 @@
+<?xml version="1.0"?>
+<vector id="1">
+	<design>
+		<scale>1</scale>
+		<size>
+			<width>1500</width>
+			<height>1100</height>
+		</size>
+		<background>
+			<color>#ff000000</color>
+		</background>
+	</design>
+	<style.Thick id="2" serialization="custom">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<theta__delta>0</theta__delta>
+			<top__delta>0</top__delta>
+			<width__delta>0</width__delta>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<boundary id="3">
+				<pts id="4">
+					<Point id="5">
+						<x>-10</x>
+						<y>-10</y>
+					</Point>
+					<Point id="6">
+						<x>-10</x>
+						<y>10</y>
+					</Point>
+					<Point id="7">
+						<x>10</x>
+						<y>10</y>
+					</Point>
+					<Point id="8">
+						<x>10</x>
+						<y>-10</y>
+					</Point>
+				</pts>
+			</boundary>
+			<prototype id="9" serialization="custom">
+				<app.Prototype>
+					<string>4^4</string>
+					<entry>
+						<tile.Feature id="10">
+							<regular>true</regular>
+							<points id="11">
+								<Point id="12">
+									<x>1</x>
+									<y>1</y>
+								</Point>
+								<Point id="13">
+									<x>-0.9999999999999998</x>
+									<y>1</y>
+								</Point>
+								<Point id="14">
+									<x>-1</x>
+									<y>-0.9999999999999998</y>
+								</Point>
+								<Point id="15">
+									<x>0.9999999999999997</x>
+									<y>-1</y>
+								</Point>
+							</points>
+						</tile.Feature>
+						<app.Infer id="16" type="FIG_TYPE_INFER">
+							<map id="17">
+								<vertices id="18">
+									<Vertex id="19">
+										<pos id="20">
+											<x>-1</x>
+											<y>-1.110223024625157e-16</y>
+										</pos>
+										<edges2>
+											<edge id="21">
+												<map reference="17" />
+												<v1 id="22">
+													<pos id="23">
+														<x>0</x>
+														<y>-0.9999999999999998</y>
+													</pos>
+													<edges2>
+														<edge id="24">
+															<map reference="17" />
+															<v1 id="25">
+																<pos id="26">
+																	<x>0.9999999999999997</x>
+																	<y>-2.220446049250313e-16</y>
+																</pos>
+																<edges2>
+																	<edge id="27">
+																		<map reference="17" />
+																		<v1 id="28">
+																			<pos id="29">
+																				<x>-2.220446049250313e-16</x>
+																				<y>0.9999999999999998</y>
+																			</pos>
+																			<edges2>
+																				<edge reference="27" />
+																				<edge id="30">
+																					<map reference="17" />
+																					<v1 reference="28" />
+																					<v2 reference="19" />
+																				</edge>
+																			</edges2>
+																		</v1>
+																		<v2 reference="25" />
+																	</edge>
+																	<edge reference="24" />
+																</edges2>
+															</v1>
+															<v2 reference="22" />
+														</edge>
+														<edge reference="21" />
+													</edges2>
+												</v1>
+												<v2 reference="19" />
+											</edge>
+											<edge reference="30" />
+										</edges2>
+									</Vertex>
+									<Vertex reference="22" />
+									<Vertex reference="28" />
+									<Vertex reference="25" />
+								</vertices>
+								<edges id="31">
+									<Edge reference="30" />
+									<Edge reference="21" />
+									<Edge reference="24" />
+									<Edge reference="27" />
+								</edges>
+							</map>
+						</app.Infer>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color>#ff1496d2</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.05</width>
+		</style.Thick>
+	</style.Thick>
+</vector>

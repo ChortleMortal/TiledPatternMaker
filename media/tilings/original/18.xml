@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>18</Name>
+	<T1>0.3472963553338614,1.969615506024418</T1>
+	<T2>1.87938524157182,0.6840402866513363</T2>
+	<Feature type="polygon">
+		<Point>-0.6527036446661408,0.7778619134302066</Point>
+		<Point>-0.3472963553338607,0.9541888941386714</Point>
+		<Point>0,1.015426611885745</Point>
+		<Point>-0.3054072893322792,1.191753592594211</Point>
+		<Point>-0.5320888862379569,1.461902200081545</Point>
+		<Point>-0.5320888862379574,1.109248238664615</Point>
+		<Placement>1,0,0,0,1,0</Placement>
+		<Placement>0.5,-0.8660254037844398,1.879385241571818,0.8660254037844398,0.5,0.6840402866513395</Placement>
+	</Feature>
+	<Feature type="regular" sides="18">
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Desc>A simple modification of the 3.12^2 tiling yields this variant with 18-gons and 3-star fillers.  Also found in figure 2.5.4(m) of Grunbaum and Shephard. </Desc>
+	<Auth>Craig S. Kaplan</Auth>
+</Tiling>

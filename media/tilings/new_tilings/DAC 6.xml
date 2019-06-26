@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>DAC 6</Name>
+	<T1>2,-2</T1>
+	<T2>2,2</T2>
+	<Feature type="regular" sides="6">
+		<Placement>1,0,2,0,1,0</Placement>
+	</Feature>
+	<Feature type="regular" sides="6">
+		<Placement>1,0,2,0,1,2</Placement>
+	</Feature>
+	<Feature type="regular" sides="6">
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Feature type="regular" sides="6">
+		<Placement>1,0,2,0,1,-2</Placement>
+	</Feature>
+	<Desc>grid of 6 pointed stars</Desc>
+	<Auth>David Casper</Auth>
+</Tiling>

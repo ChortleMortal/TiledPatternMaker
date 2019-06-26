@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>9.12</Name>
+	<T1>1.503579757746139,2.604276533648415</T1>
+	<T2>3.007159515492277,0</T2>
+	<Feature type="polygon">
+		<Point>1,0.2679491924311221</Point>
+		<Point>1,-0.267949192431124</Point>
+		<Point>1.503579757746138,-0.08466115003254471</Point>
+		<Point>2.007159515492278,-0.2679491924311226</Point>
+		<Point>2.007159515492278,0.2679491924311223</Point>
+		<Point>1.503579757746139,0.0846611500325426</Point>
+		<Placement>-0.5,-0.866025403784437,0,0.866025403784437,-0.5,0</Placement>
+		<Placement>1,0,0,0,1,0</Placement>
+		<Placement>0.5,-0.8660254037844374,0,0.8660254037844374,0.5,0</Placement>
+	</Feature>
+	<Feature type="regular" sides="9">
+		<Placement>0.7250000612042714,-0.1278370718056015,1.503579757746139,0.1278370718056015,0.7250000612042714,0.8680921778828049</Placement>
+		<Placement>0.7250000612042713,0.1278370718056016,0,-0.1278370718056016,0.7250000612042713,1.73618435576561</Placement>
+	</Feature>
+	<Feature type="regular" sides="12">
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Desc>A tiling by nonagons, dodecagons and hexagonal fillers derived by examination of an Islamic pattern from Abas and Salman.</Desc>
+	<Auth>Craig S. Kaplan</Auth>
+</Tiling>

@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>8 Ring</Name>
+	<Fill>-2,2,-2,2</Fill>
+	<T1>0,4.828427124746193</T1>
+	<T2>4.828427124746193,0</T2>
+	<Feature type="polygon">
+		<Point>1,0.4142135623730951</Point>
+		<Point>1,-0.4142135623730958</Point>
+		<Point>0.4142135623730971,-1</Point>
+		<Point>1,-1.585786437626907</Point>
+		<Point>1,-2.414213562373098</Point>
+		<Point>1.828427124746192,-2.414213562373097</Point>
+		<Point>2.414213562373096,-3</Point>
+		<Point>3,-2.414213562373097</Point>
+		<Point>3.828427124746192,-2.414213562373097</Point>
+		<Point>3.828427124746193,-1.585786437626906</Point>
+		<Point>4.414213562373098,-1</Point>
+		<Point>3.828427124746193,-0.4142135623730959</Point>
+		<Point>3.828427124746193,0.4142135623730943</Point>
+		<Point>3,0.4142135623730943</Point>
+		<Point>2.414213562373096,1</Point>
+		<Point>1.828427124746191,0.4142135623730955</Point>
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Feature type="regular" sides="4">
+		<Placement>0.4142135623730951,0,0,0,0.4142135623730951,1.414213562373095</Placement>
+	</Feature>
+	<Feature type="regular" sides="8">
+		<Placement>1,0,0,0,1,-2</Placement>
+		<Placement>1,0,1.414213562373095,0,1,1.414213562373095</Placement>
+		<Placement>1,0,0,0,1,0</Placement>
+		<Placement>1,0,3.414213562373097,0,1,1.414213562373095</Placement>
+	</Feature>
+	<Desc>Eight friends around a table.</Desc>
+	<Auth>Pierre Baillargeon</Auth>
+</Tiling>

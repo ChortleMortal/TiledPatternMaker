@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>8.12</Name>
+	<T1>0,3.29377314878827</T1>
+	<T2>1.646886574394136,1.646886574394135</T2>
+	<Feature type="regular" sides="8">
+		<Placement>0,-0.6468865743941347,0,0.6468865743941347,0,1.646886574394135</Placement>
+	</Feature>
+	<Feature type="polygon">
+		<Point>0.2679491924311229,1</Point>
+		<Point>0.7320508075688773,0.7320508075688772</Point>
+		<Point>1,0.2679491924311226</Point>
+		<Point>1.378937381963013,0.6468865743941334</Point>
+		<Point>0.9148357668252576,0.9148357668252568</Point>
+		<Point>0.6468865743941348,1.378937381963012</Point>
+		<Placement>0,1,0,-1,0,0</Placement>
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Feature type="regular" sides="12">
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Desc>A tiling by octagons, dodecagons and hexagonal fillers derived by examination of an Islamic pattern from Bougoin.</Desc>
+	<Auth>Craig S. Kaplan</Auth>
+</Tiling>

@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>DAC6javaGood</Name>
+	<T1>1,1.733333</T1>
+	<T2>2,0</T2>
+	<Feature type="regular" sides="6">
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Desc>Trying to pack hexagons</Desc>
+	<Auth>David Java</Auth>
+</Tiling>

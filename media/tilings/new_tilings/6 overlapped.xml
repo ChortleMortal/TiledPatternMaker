@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>6 overlapped</Name>
+	<Fill>-5,4,-9,8</Fill>
+	<T1>0.7957469897635567,1.44437631238628</T1>
+	<T2>1.592989934765233,0.02999999999999936</T2>
+	<Feature type="regular" sides="6">
+		<BkgdColors>#c59c0c,#a35807</BkgdColors>
+		<Placement>1,0,0,0,1,-0.04999999999999982</Placement>
+		<Placement>1,0,1.592989934765233,0,1,-0.02000000000000046</Placement>
+		<Placement>1,0,0.7957469897635567,0,1,1.39437631238628</Placement>
+	</Feature>
+	<Desc>This uses overlapping features</Desc>
+	<Auth>David A Casper</Auth>
+</Tiling>

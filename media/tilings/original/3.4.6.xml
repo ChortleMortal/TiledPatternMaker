@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>3.4.6</Name>
+	<T1>1.577350269189626,2.732050807568876</T1>
+	<T2>3.154700538379251,0</T2>
+	<Feature type="regular" sides="4">
+		<Placement>0.5,0.288675134594813,0.7886751345948131,-0.288675134594813,0.5,1.366025403784438</Placement>
+		<Placement>0.5,-0.2886751345948128,-0.7886751345948125,0.2886751345948128,0.5,1.366025403784439</Placement>
+		<Placement>0,0.5773502691896263,1.577350269189626,-0.5773502691896263,0,0</Placement>
+	</Feature>
+	<Feature type="regular" sides="6">
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Feature type="regular" sides="3">
+		<Placement>-0.2886751345948132,0.1666666666666669,1.577350269189626,-0.1666666666666669,-0.2886751345948132,-0.9106836025229609</Placement>
+		<Placement>0,0.3333333333333335,1.577350269189626,-0.3333333333333335,0,0.9106836025229585</Placement>
+	</Feature>
+	<Desc>Inferred from the study of old manuscript of Al-Alzhared.</Desc>
+	<Auth>Pierre Baillargeon</Auth>
+</Tiling>
