@@ -64,6 +64,7 @@ Configuration::Configuration()
     newTileDir          = s.value("newTileDir3","").toString();
     rootDesignDir       = s.value("rootDesignDir3","").toString();
     newDesignDir        = s.value("newDesignDir3","").toString();
+    templateDir         = s.value("templateDir","").toString();
     image0              = s.value("imageDir0","").toString();
     image1              = s.value("imageDir1","").toString();
     compareDir0         = s.value("compareDir0","").toString();
@@ -72,7 +73,7 @@ Configuration::Configuration()
     designFilter        = s.value("designFilter","").toString();
     tileFilter          = s.value("tileFilter","").toString();
 
-    firstBirthday       = s.value("firstBirthday3",false).toBool();
+    firstBirthday       = s.value("firstBirthday4",false).toBool();
     autoLoadStyles      = s.value("autoLoadStyles",false).toBool();
     autoLoadTiling      = s.value("autoLoadTiling",false).toBool();
     autoLoadDesigns     = s.value("autoLoadDesigns",false).toBool();
@@ -151,6 +152,7 @@ void Configuration::save()
     s.setValue("newTileDir3",newTileDir);
     s.setValue("rootDesignDir3",rootDesignDir);
     s.setValue("newDesignDir3",newDesignDir);
+    s.setValue("templateDir",templateDir);
     s.setValue("imageDir0",image0);
     s.setValue("imageDir1",image1);
     s.setValue("compareDir0",compareDir0);
@@ -270,5 +272,5 @@ void Configuration::reconfigurePaths()
 
     firstBirthday = true;
     QSettings s;
-    s.setValue("firstBirthday3",firstBirthday);
+    s.setValue("firstBirthday4",firstBirthday);
 }
