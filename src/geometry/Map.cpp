@@ -1147,13 +1147,13 @@ void Map::combineLinearEdges(EdgePtr a, EdgePtr b,VertexPtr common)
         }
     }
     // need to change the neighbours for modified vertex
-    QVector<EdgePtr> qvep = modifiedVp->getNeighbours();
+    QVector<EdgePtr> & qvep = modifiedVp->getNeighbours();
     for (auto it = qvep.begin(); it != qvep.end(); it++)
     {
         EdgePtr ep = *it;
         if (ep == b)
         {
-            *it = a;  //replace
+            *it = a;  //replace in vertex
         }
     }
     // can now remove b
