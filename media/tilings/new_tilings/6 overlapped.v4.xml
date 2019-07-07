@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>6 overlapped.v4</Name>
+	<Fill>-5,8,-9,9</Fill>
+	<T1>0.7457469897635574,1.38437631238628</T1>
+	<T2>1.552989934765233,0</T2>
+	<Feature type="regular" sides="6">
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Desc>This uses overlapping features</Desc>
+	<Auth>David A Casper</Auth>
+</Tiling>
