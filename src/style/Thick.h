@@ -37,7 +37,7 @@ class Thick : public Colored
 {
 public:
     Thick(PrototypePtr proto, PolyPtr bounds );
-    Thick(const Style *  other);
+    Thick(const Style & other);
     ~Thick() override;
 
     virtual eStyleType getStyleType() const  override { return STYLE_THICK; }
@@ -59,7 +59,6 @@ protected:
     bool       draw_outline;
 
 private:
-    QVector<QPointF> dpts2; // Internal representations of the rendering.
 };
 #endif
 

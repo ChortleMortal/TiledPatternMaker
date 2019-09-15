@@ -25,8 +25,9 @@
 #include "FeatureButton.h"
 #include "viewers/GeoGraphics.h"
 #include "panels/panel_page.h"
-#include "viewers/designelementview.h"
+#include "viewers/placeddesignelementview.h"
 #include "base/utilities.h"
+#include "geometry/Transform.h"
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -66,7 +67,7 @@ FeatureButton::~FeatureButton()
 void FeatureButton::construct(DesignElementPtr dep, int index)
 {
 
-    this->dep = dep;
+    this->designElement = dep;
     if (dep)
         qDebug() << "FeatureButton dep=" << Utils::addr(dep.get())  << "fig=" << Utils::addr(dep->getFigure().get());
     else
@@ -87,29 +88,29 @@ QSizeF FeatureButton::getMinimumSize()
 void FeatureButton::setSize(QSize d )
 {
     setFixedSize(d);
-    transform = resetViewport(dep, frameRect());
+    transform = resetViewport(designElement, frameRect());
 }
 
 void FeatureButton::setSize( int w, int h )
 {
     setFixedSize(w,h);
-    transform = resetViewport(dep,frameRect());
+    transform = resetViewport(designElement,frameRect());
 }
 
 DesignElementPtr FeatureButton::getDesignElement()
 {
-    return dep;
+    return designElement;
 }
 
 void FeatureButton::setDesignElement(DesignElementPtr delp )
 {
-    if (delp == dep)
+    if (delp == designElement)
     {
         return;
     }
-    dep = delp;
-    if (dep)
-        qDebug() << "FeatureButton dep=" << Utils::addr(dep.get())  << "fig=" << Utils::addr(dep->getFigure().get());
+    designElement = delp;
+    if (designElement)
+        qDebug() << "FeatureButton dep=" << Utils::addr(designElement.get())  << "fig=" << Utils::addr(designElement->getFigure().get());
     else
         qDebug() << "FeatureButton dep=0";
     designElementChanged();
@@ -117,11 +118,11 @@ void FeatureButton::setDesignElement(DesignElementPtr delp )
 
 void FeatureButton::designElementChanged()
 {
-    transform = resetViewport(dep,frameRect());
+    transform = resetViewport(designElement,frameRect());
     update();
 }
 
-Transform FeatureButton::resetViewport(DesignElementPtr dep, QRect frameRect)
+QTransform FeatureButton::resetViewport(DesignElementPtr dep, QRect frameRect)
 {
     //qDebug() << "reset viewport" << index;
 
@@ -132,7 +133,7 @@ Transform FeatureButton::resetViewport(DesignElementPtr dep, QRect frameRect)
     // DesignElement changes and recompute the viewport from
     // the paint function when the flag is set.
 
-    Transform t;
+    QTransform t;
 
     if(!dep)
         return t;
@@ -248,7 +249,7 @@ Transform FeatureButton::resetViewport(DesignElementPtr dep, QRect frameRect)
     return t;
 }
 
-Transform FeatureButton::centerInside(QRectF first, QRectF other)
+QTransform FeatureButton::centerInside(QRectF first, QRectF other)
 {
 /*
  * A useful routine when doing things like printing to
@@ -260,15 +261,20 @@ Transform FeatureButton::centerInside(QRectF first, QRectF other)
 
     double scale = std::min(xscale, yscale);
 
-    Transform Ts = Transform::scale(scale, scale);
+    QTransform Ts = QTransform().scale(scale, scale);
 
     QPointF my_center   = first.center();
     QPointF your_center = other.center();
 
-    return Transform::translate(your_center).compose(Ts).compose(Transform::translate( my_center *( -1.0)));
+    // TODO xform
+    QTransform your = QTransform::fromTranslate(your_center.x(),your_center.y());
+    QTransform my   = QTransform::fromTranslate(-my_center.x(),-my_center.y());
+    QTransform res  = my   * Ts * your;
+    qDebug() << "res" << Transform::toInfoString(res);
+    return my * Ts * your;
 }
 
-Transform FeatureButton::lookAt(QRectF rect, QRect frameRect)
+QTransform FeatureButton::lookAt(QRectF rect, QRect frameRect)
 {
     // Leave some breathing room around the rectangle to look at.
     // Having the region of interest bleed right to edge of the
@@ -281,7 +287,7 @@ Transform FeatureButton::lookAt(QRectF rect, QRect frameRect)
     QPointF center   = rect.center();
     QRectF paintRect = QRectF(center.x()-(d.width()/2), center.y()-(d.height()/2), d.width(), d.height());
 
-    Transform t;
+    QTransform t;
     if ( d.width() > 0 && d.height() > 0 )
     {
         t = centerInside(paintRect,frameRect);
@@ -301,7 +307,7 @@ void FeatureButton::setSelected( bool selected )
 
 void FeatureButton::paintEvent(QPaintEvent * event)
 {
-    if (!dep)
+    if (!designElement)
     {
         QFrame::paintEvent(event);
         return;
@@ -312,13 +318,12 @@ void FeatureButton::paintEvent(QPaintEvent * event)
 
     painter.setRenderHint(QPainter::Antialiasing ,true);
     painter.setRenderHint(QPainter::SmoothPixmapTransform,true);
-    painter.setPen(QPen(Qt::black,3));
 
     //qDebug().noquote() << "paint btn:" << index << transform.toString();
     GeoGraphics gg(&painter, transform);
-    Transform t;  // unity
-    PlacedDesignElementPtr pdep = make_shared<PlacedDesignElement>(dep,t);
-    PlacedDesignElementView::drawPlacedDesignElement(&gg, pdep,  QColor(Qt::black), feature_interior, feature_border);
+    QTransform t;  // unity
+    PlacedDesignElementPtr pdep = make_shared<PlacedDesignElement>(designElement,t);
+    PlacedDesignElementView::drawPlacedDesignElement(&gg, pdep, QPen(Qt::black,3), QBrush(feature_interior), QPen(feature_border,3));
 
 #if 0
     QString tempLabel;

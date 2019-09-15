@@ -73,6 +73,9 @@ class Border;
 class ShapeFactory;
 class FeatureButton;
 
+class Face;
+class FaceSet;
+
 typedef shared_ptr<Style>           StylePtr;
 typedef shared_ptr<Tiling>          TilingPtr;
 typedef shared_ptr<GeoLayer>        GeoLayerPtr;
@@ -103,6 +106,8 @@ typedef shared_ptr<Border>          BorderPtr;
 typedef shared_ptr<ShapeFactory>    ShapeFPtr;
 typedef shared_ptr<FigureView>      FigureViewPtr;
 typedef shared_ptr<FeatureButton>   FeatureBtnPtr;
+typedef shared_ptr<Face>            FacePtr;
+typedef shared_ptr<FaceSet>         FaceSetPtr;
 
 typedef weak_ptr<Style>           WeakStylePtr;
 typedef weak_ptr<Tiling>          WeakTilingPtr;

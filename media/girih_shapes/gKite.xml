@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<Poly name="gHexagon">
+	<Line>
+		<Point id="1">2.618033988749895,0.8506508083520394</Point>
+		<Point id="2">2.236067977499789,0.3249196962329056</Point>
+	</Line>
+	<Line>
+		<Point reference="2" />
+		<Point id="3">2.236067977499789,-0.3249196962329066</Point>
+	</Line>
+	<Line>
+		<Point reference="3" />
+		<Point id="4">2.618033988749894,-0.8506508083520405</Point>
+	</Line>
+	<Line>
+		<Point reference="4" />
+		<Point id="5">3,-0.3249196962329066</Point>
+	</Line>
+	<Line>
+		<Point reference="5" />
+		<Point id="6">3,0.3249196962329055</Point>
+	</Line>
+	<Line>
+		<Point reference="6" />
+		<Point reference="1" />
+	</Line>
+	<tx>-1.837121675317323</tx>
+	<ty>-2.508998293163873</ty>
+	<scale>1.000000000000001</scale>
+	<rot>0.9424777960769379</rot>
+</Poly>

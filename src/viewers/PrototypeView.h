@@ -62,7 +62,7 @@ protected:
     QPointF             t1;
     QPointF             t2;
 
-    QVector<QLineF>     lines;
+    EdgePoly            edges;
 
     PrototypePtr        pp;
 };

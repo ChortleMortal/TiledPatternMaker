@@ -45,41 +45,41 @@
 #include <QPolygonF>
 #include "base/shared.h"
 #include "base/colorset.h"
+#include "geometry/Edge.h"
+#include "geometry/edgepoly.h"
 
 class Feature
 {
 public:
     Feature();
-    Feature( int n );           // Create an n-sided regular polygon with a vertex at (1,0).
-    Feature(QPolygonF & pgon ); // Create a Feature explicitly from a polygon.
-    Feature(PolyPtr pgon );     // Create a Feature explicitly from a polygon.
+    Feature(int n);           // Create an n-sided regular polygon with a vertex at (1,0).
+    Feature(EdgePoly epoly);
     Feature(const FeaturePtr other );
+    ~Feature() { epoly.clear(); }
 
     void reset();
 
     void setRegular(bool regular) {this->regular = regular;}
+    bool isRegular() {return regular;}
 
-    bool equals(const FeaturePtr other ) const;
+    bool equals(const FeaturePtr other);
+
+    EdgePoly  & getEdgePoly()      { return epoly;}             // must be ref so can change
+    QPolygonF   getPolygon()       { return epoly.getPoly(); }
+    QPolygonF   getPoints()        { return epoly.getPoly(); }
+    int         numPoints()        { return epoly.size(); }
+    QPointF     getCenter();
+    ColorSet &  getBkgdColors()    { return bkgdColors; }
 
     QString toString() const;
 
-    bool isRegular() {return regular;}
-
-    QPolygonF & getPolygon()    { return points; }
-    QPolygonF   getPoints() const  { return points; }
-    int         numPoints()     { return points.size(); }
-    QPointF     getCenter();
-
-    QVector<QLineF> getEdges();
-
-    QRectF boundingRect() { return points.boundingRect(); }
-
-    ColorSet &       getBkgdColors() { return bkgdColors; }
-
 private:
     bool             regular;
-    QPolygonF        points;
+    EdgePoly         epoly;
     ColorSet         bkgdColors;    // backgrounds
+
+    QMap<VertexPtr,int>   vertex_ids;
+    int refId;
 };
 
 #endif

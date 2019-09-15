@@ -26,7 +26,7 @@
 #define PAGE_POSITION_H
 
 #include "panel_page.h"
-#include "sliderset.h"
+#include "layout_sliderset.h"
 
 class page_position : public panel_page
 {
@@ -52,7 +52,6 @@ private slots:
     void    set_off(qreal);
     void    set_start(int);
 
-    void    slot_set_bounds(qreal);
     void    slot_set_deltas(qreal);
     void    slot_clear_deltas();
 
@@ -83,20 +82,9 @@ private:
     QDoubleSpinBox * xOff;
     QDoubleSpinBox * yOff;
 
-    DoubleSpinSet * bleft;
-    DoubleSpinSet * btop;
-    DoubleSpinSet * bwidth;
-    DoubleSpinSet * btheta;
-
     DoubleSpinSet * dleft;
     DoubleSpinSet * dtop;
     DoubleSpinSet * dwidth;
-    DoubleSpinSet * dtheta;
-
-    DoubleSpinSet * aleft;
-    DoubleSpinSet * atop;
-    DoubleSpinSet * awidth;
-    DoubleSpinSet * atheta;
 
     QLabel   * transLabel;
     QLabel   * layerDesc;

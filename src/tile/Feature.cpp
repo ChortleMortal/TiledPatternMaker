@@ -40,12 +40,16 @@
 
 #include "tile/Feature.h"
 #include "geometry/Point.h"
-#include "base/shared.h"
-#include "base/utilities.h"
-#include <QColor>
+#include "geometry/Edge.h"
 
 Feature::Feature()
 {
+    regular = false;
+}
+
+Feature::Feature(EdgePoly ep)
+{
+    epoly = ep;
     regular = false;
 }
 
@@ -54,44 +58,40 @@ Feature::Feature( int n )
 {
     regular = true;
 
-    for( int idx = 0; idx < n; ++idx )
+    int idx = 0;
+    qreal angle = (M_PI / static_cast<qreal>(n)) * static_cast<qreal>(2 * idx + 1);
+    qreal sc = 1.0 / qCos( M_PI / static_cast<qreal>(n) );
+
+    VertexPtr v  = make_shared<Vertex>(QPointF(sc * qCos(angle), sc * qSin(angle)));
+    VertexPtr v1 = v;
+    for( int idx = 1; idx < n; ++idx )
     {
-        qreal angle = (M_PI / static_cast<qreal>(n)) * static_cast<qreal>(2 * idx + 1);
-        qreal sc = 1.0 / qCos( M_PI / static_cast<qreal>(n) );
-        points << QPointF(sc * qCos( angle ), sc * qSin( angle ) );
+        qreal angle2 = (M_PI / static_cast<qreal>(n)) * static_cast<qreal>(2 * idx + 1);
+        VertexPtr v2 = make_shared<Vertex>(QPointF(sc * qCos(angle2), sc * qSin(angle2)));
+        epoly.push_back(make_shared<Edge>(v1,v2));
+        v1 = v2;
     }
-}
+    epoly.push_back(make_shared<Edge>(v1,v));
 
-// Create a Feature2 explicitly from a polygon.
-Feature::Feature(QPolygonF &pgon )
-{
-    regular = false;
-    points  = pgon;
-}
-
-Feature::Feature(PolyPtr pgon )
-{
-    regular = false;
-    points  = *pgon;
 }
 
 Feature::Feature(const FeaturePtr other )
 {
     regular = other->regular;
-    points  = other->points;
+    epoly   = other->epoly;
 }
 
 void Feature::reset()
 {
-    points.clear();
+    epoly.clear();
     bkgdColors.clear();
 }
 
-bool Feature::equals(FeaturePtr other ) const
+bool Feature::equals(const FeaturePtr other)
 {
-    if ( other->regular != regular )
+    if (regular != other->regular)
         return false;
-    if (other->points != points)
+    if (!epoly.equals(other->epoly))
         return false;
     return true;
 }
@@ -101,21 +101,17 @@ QString Feature::toString() const
     QString text;
     QTextStream str(&text);
     str << "{ ";
-    for ( int i = 0; i < points.size(); ++i )
+    for (int i = 0; i < epoly.size(); ++i )
     {
-        str << i+1 << ":"  << points[i].x() << " " << points[i].y() << " , ";
+        str << i+1 << ":"  << epoly[i]->getV1()->getPosition().x() << " " << epoly[i]->getV1()->getPosition().y() << " , ";
     }
     str << "}";
     return text;
 }
 
-QVector<QLineF> Feature::getEdges()
-{
-    QVector<QLineF> qvlf = Utils::polyToLines(points);
-    return qvlf;
-}
-
 QPointF Feature::getCenter()
 {
-    return Point::center(points);
+    return Point::center(epoly);
 }
+
+

@@ -237,7 +237,6 @@ void  page_figure_maker::whiteClicked(bool state)
         config->figureViewBkgdColor = QColor(Qt::white);
     else
         config->figureViewBkgdColor = QColor(Qt::black);
-    emit sig_updateDesignInfo();
     emit sig_viewWS();
 }
 

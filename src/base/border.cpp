@@ -1,4 +1,3 @@
-#include "base/border.h"
 /* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
  *
  *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
@@ -23,13 +22,24 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "base/canvas.h"
+#include "base/border.h"
 #include "base/shapefactory.h"
+
+////////////////////////////////////////////////
+///
+/// Border
+///
+////////////////////////////////////////////////
 
 Border::Border()
 {
-    type = -1;  // undefined
+    type = BORDER_NONE;  // undefined
     setZValue(BORDER_ZLEVEL);
+    sp = make_shared<ShapeFactory>(2.0);
+    sp->setParentItem(this);
+
+    view = View::getInstance();
+    connect(view, &View::sig_resize, this, &Border::construct);
 }
 
 Border::~Border()
@@ -37,47 +47,71 @@ Border::~Border()
     //qDebug() << "Border destructor";
 }
 
-void Border::clear()
+void Border::reconnectChildren()
 {
+    if (sp)
+    {
+        sp->setParentItem(this);
+    }
 }
 
-void Border::addBorder0(QPen pen, QSizeF size)
-{
-    type  = 0;
-    pen0  = pen;
-    size1 = size;
+////////////////////////////////////////////////
+///
+/// Border0
+///
+////////////////////////////////////////////////
 
-    sp = make_shared<ShapeFactory>(2.0);
-    addToGroup(sp.get());
+BorderPlain::BorderPlain(qreal width, QColor color)
+{
+    type         = BORDER_PLAIN;
+    this->width  = width;
+    this->color  = color;
+
+    construct();
+}
+
+void BorderPlain::construct()
+{
+    sp->reset();
+    size = view->sceneRect().size();
+
+    QPen pen(color,width);
 
     QPolygonF poly;
     poly << QPointF(0,0) << QPointF(size.width(),0) << QPointF(size.width(),size.height()) << QPointF(0,size.height());
     sp->addPolygon(pen,QBrush(Qt::NoBrush),poly);
 }
 
-void Border::getBorder0(QPen & pen, QSizeF & size)
+void BorderPlain::get(qreal & width, QColor & color)
 {
-    pen =  pen0;
-    size = size1;
+    width = this->width;
+    color = this->color;
 }
 
+////////////////////////////////////////////////
+///
+/// Border0
+/// An outer border with alternating tiles
+///
+////////////////////////////////////////////////
 
-// An outer border with alternating tiles
-void Border::addBorder1(QColor color1, QColor color2, QSizeF size)
+BorderTwoColor::BorderTwoColor(QColor color1, QColor color2, qreal width)
 {
-    type    = 1;
-    border1 = color1;
-    border2 = color2;
-    size1   = size;
+    type         = BORDER_TWO_COLOR;
+    color        = color1;
+    this->color2 = color2;
+    this->width  = width;
 
-    sp = make_shared<ShapeFactory>(2.0);
-    addToGroup(sp.get());
+    construct();
+}
 
-    qreal width   = size.width();
-    qreal height  = size.height();
+void BorderTwoColor::construct()
+{
+    sp->reset();
+    size = view->sceneRect().size();
 
-    border1 = color1;
-    border2 = color2;
+    qreal w   = size.width();
+    qreal h  = size.height();
 
     qreal x = 0.0;
     qreal y = 0.0;
@@ -85,14 +119,13 @@ void Border::addBorder1(QColor color1, QColor color2, QSizeF size)
     qreal bw, bh;
     QPen pen(Qt::green,1);
 
-
     // top
-    while (x < width)
+    while (x < w)
     {
-        bh = THICKNESS1;
-        if (x + LENGTH1 > width)
+        bh = width;
+        if (x + LENGTH1 > w)
         {
-            bw = width-x;
+            bw = w-x;
         }
         else
         {
@@ -106,15 +139,15 @@ void Border::addBorder1(QColor color1, QColor color2, QSizeF size)
     }
 
     //right
-    y = THICKNESS1;
-    x = width - THICKNESS1;
-    while (y < height)
+    y = width;
+    x = w - width;
+    while (y < h)
     {
 
-        bw = THICKNESS1;
-        if (y + LENGTH1 > height)
+        bw = width;
+        if (y + LENGTH1 > h)
         {
-            bh = height-y;
+            bh = h-y;
         }
         else
         {
@@ -128,11 +161,11 @@ void Border::addBorder1(QColor color1, QColor color2, QSizeF size)
     }
 
     // bottom
-    y = height - THICKNESS1;
-    x = width - THICKNESS1 - LENGTH1 - 1;
+    y = h - width;
+    x = w - width - LENGTH1 - 1;
     while (x >= 0.0)
     {
-        bh = THICKNESS1;
+        bh = width;
         bw = LENGTH1;
         QRectF rect(x,y,bw,bh);
         QPolygonF poly;
@@ -151,19 +184,19 @@ void Border::addBorder1(QColor color1, QColor color2, QSizeF size)
 
     // left
     x = 0.0;
-    y = height - THICKNESS1 - LENGTH1 -1;
+    y = h - width - LENGTH1 -1;
     while (y >= 0.0)
     {
-        bw = THICKNESS1;
+        bw = width;
         bh = LENGTH1;
         QRectF rect(x,y,bw,bh);
         QPolygonF poly;
         poly << rect.topLeft() << rect.topRight() << rect.bottomRight() << rect.bottomLeft();
         sp->addPolygon(nextBorderPen(), nextBorderBrush(), poly);
-        if (y - LENGTH1 < THICKNESS1)
+        if (y - LENGTH1 < width)
         {
-            bh = y - THICKNESS1;
-            QRectF rect(0.0,THICKNESS1,bw,bh);
+            bh = y - width;
+            QRectF rect(0.0,width,bw,bh);
             QPolygonF poly;
             poly << rect.topLeft() << rect.topRight() << rect.bottomRight() << rect.bottomLeft();
             sp->addPolygon(nextBorderPen(), nextBorderBrush(), poly);
@@ -172,28 +205,66 @@ void Border::addBorder1(QColor color1, QColor color2, QSizeF size)
     }
 }
 
-void Border::getBorder1(QColor & color1, QColor & color2, QSizeF & size)
+void BorderTwoColor::get(QColor & color1, QColor & color2, qreal & width)
 {
-    color1 = border1;
-    color2 = border2;
-    size   = size1;
+    color1 = color;
+    color2 = this->color2;
+    width  = this->width;
 }
 
-void Border::addBorder2(QColor color1, qreal diameter, int rows, int cols)
+QBrush BorderTwoColor::nextBorderBrush()
 {
-    type      = 2;
-    border1   = color1;
-    diameter2 = diameter;
-    rows2     = rows;
-    cols2     = cols;
+    static int i = 0;
+    if (i==0)
+    {
+        i = 1;
+        return QBrush(color);
+    }
+    else
+    {
+        i = 0;
+        return QBrush(color2);
+    }
+}
 
-    sp = make_shared<ShapeFactory>(2.0);
-    addToGroup(sp.get());
+QPen BorderTwoColor::nextBorderPen()
+{
+    static int i = 0;
+    if (i==0)
+    {
+        i = 1;
+        return QPen(color,1);
+    }
+    else
+    {
+        i = 0;
+        return QPen(color2,1);
+    }
+}
 
-    qreal side  = diameter * qTan(M_PI/8.0);
+////////////////////////////////////////////////
+///
+/// Border2
+///
+////////////////////////////////////////////////
+
+BorderBlocks::BorderBlocks(QColor color, qreal diameter, int rows, int cols)
+{
+    type        = BORDER_BLOCKS;
+    this->color = color;
+    this->width = diameter;
+    this->rows  = rows;
+    this->cols  = cols;
+
+    construct();
+}
+
+void BorderBlocks::construct()
+{
+    qreal side  = width * qTan(M_PI/8.0);
     qreal piece = sqrt(side*side*0.5);
 
-    QBrush brush(color1);
+    QBrush brush(color);
     QPen   pen(QColor(TileBlack),1.0);
 
 
@@ -215,7 +286,7 @@ void Border::addBorder2(QColor color1, qreal diameter, int rows, int cols)
 
     // bottom row
     start.setX(0.0);
-    start.setY(fabs(piece + (diameter*rows)) + 0.5);
+    start.setY(fabs(piece + (width * rows)) + 0.5);
     for (int i=0; i < cols; i++)
     {
 
@@ -232,41 +303,10 @@ void Border::addBorder2(QColor color1, qreal diameter, int rows, int cols)
     }
 }
 
-void Border::getBorder2(QColor & color1, qreal & diameter, int & rows, int & cols)
+void BorderBlocks::get(QColor & color, qreal & diameter, int & rows, int & cols)
 {
-    color1      = border1;
-    diameter    = diameter2;
-    rows        = rows2;
-    cols        = cols2;
-}
-
-QBrush Border::nextBorderBrush()
-{
-    static int i = 0;
-    if (i==0)
-    {
-        i = 1;
-        return QBrush(border1);
-    }
-    else
-    {
-        i = 0;
-        return QBrush(border2);
-    }
-}
-
-QPen Border::nextBorderPen()
-{
-    static int i = 0;
-    if (i==0)
-    {
-        i = 1;
-        return QPen(border1,1);
-    }
-    else
-    {
-        i = 0;
-        return QPen(border2,1);
-    }
-
+    color       = this->color;
+    diameter    = this->width;
+    rows        = this->rows;
+    cols        = this->cols;
 }

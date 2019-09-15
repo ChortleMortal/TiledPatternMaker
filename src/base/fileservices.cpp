@@ -342,6 +342,7 @@ QString FileServices::getVersion(QString name)
 
 bool FileServices::reformatXML(QString filename)
 {
+    qDebug() << "reformatting"  << filename;
     Q_ASSERT(filename.contains(".xml"));
 
     xml_document doc;
@@ -357,6 +358,7 @@ bool FileServices::reformatXML(QString filename)
        qWarning().noquote() << "Failed to reformat:" << filename;
        return false;
     }
+    qDebug() << "reformat OK";
     return true;
 }
 
@@ -517,4 +519,24 @@ QStringList FileServices::getTemplates()
         files.push_back(label);
     }
     return files;
+}
+
+QStringList FileServices::getPolys()
+{
+    QStringList names;
+
+    // saved templates
+    Configuration * config = Configuration::getInstance();
+    QString path = config->rootMediaDir + "girih_shapes";
+    QDirIterator it(path, QStringList() << "*.xml", QDir::Files, QDirIterator::Subdirectories);
+    while (it.hasNext())
+    {
+        it.next();
+        names << it.fileName();
+    }
+
+    names.replaceInStrings(".xml","");
+
+    names.sort(Qt::CaseInsensitive);
+    return names;
 }

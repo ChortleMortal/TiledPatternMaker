@@ -28,8 +28,9 @@
 #include <QWidget>
 #include <QLabel>
 #include <QMouseEvent>
+#include "base/misc.h"
 
-class TransparentWidget : public QLabel
+class TransparentWidget : public AQLabel
 {
 public:
     TransparentWidget();

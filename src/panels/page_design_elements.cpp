@@ -26,7 +26,7 @@
 #include "base/patterns.h"
 #include "base/tiledpatternmaker.h"
 #include "style/Style.h"
-#include "viewers/designelementview.h"
+#include "viewers/placeddesignelementview.h"
 #include "viewers/PrototypeView.h"
 
 using std::string;
@@ -133,6 +133,7 @@ void  page_design_elements::onEnter()
 
     delTable->resizeColumnsToContents();
     adjustTableSize(delTable);
+    updateGeometry();
 }
 
 PrototypePtr page_design_elements::findPrototype()

@@ -1,5 +1,6 @@
 #include "makers/mapeditorselection.h"
 #include "geometry/Point.h"
+#include "geometry/Transform.h"
 #include "makers/mapselection.h"
 #include "base/utilities.h"
 #include "tapp/Figure.h"
@@ -43,7 +44,10 @@ void  MapEditorSelection::buildEditorDB()
 
     if (inputMode == ME_INPUT_FIGURE)
     {
-        QPolygonF & p = figp->getExtBoundary();
+        QPolygonF p    = figp->getExtBoundary();
+        QPointF center = feap->getCenter();
+        QTransform t   = QTransform::fromTranslate(center.x(),center.y());
+        p              = t.map(p);
 
         // add points from ext boundary
         for (auto it = p.begin(); it != p.end(); it++)
@@ -133,11 +137,12 @@ void  MapEditorSelection::buildEditorDB()
 
         if (pts.size())
         {
-            QVector<QLineF> edges = feap->getEdges();
+            EdgePoly edges = feap->getEdgePoly();
             for (auto it = edges.begin(); it != edges.end(); it++)
             {
+                EdgePtr edge = *it;
                 // add lines from feature edges
-                QLineF line = *it;
+                QLineF line = edge->getLine();
                 lineInfo li(LINE_FIXED,line,"feature line");
                 lines.push_back(li);
 
@@ -310,7 +315,7 @@ SelectionSet  MapEditorSelection::findSelectionsUsingDB(const QPointF & spt)
             continue;
 
         QPointF    apt = pi._pt;
-        QPointF      a = viewT.apply(apt);
+        QPointF      a = viewT.map(apt);
         if (Point::isNear(spt,a))
         {
             if (debugSelection) qDebug() << "FOUND point" << apt << pi._desc;
@@ -332,7 +337,7 @@ SelectionSet  MapEditorSelection::findSelectionsUsingDB(const QPointF & spt)
             continue;
 
         QLineF     line  = linfo._line;
-        QLineF wline     = viewT.apply(line);
+        QLineF wline     = viewT.map(line);
         if (Point::dist2ToLine(spt, wline.p1(), wline.p2()) < 49.0)
         {
             if (debugSelection) qDebug() << "FOUND line" << line << linfo._desc;
@@ -350,11 +355,11 @@ SelectionSet  MapEditorSelection::findSelectionsUsingDB(const QPointF & spt)
     if (figp && figp->hasExtCircleBoundary())
     {
         qreal bscale    = figp->getExtBoundaryScale();
-        qreal scale     = viewT.scalex() * bscale;
+        qreal scale     = Transform::scalex(viewT) * bscale;
         qreal radius    = 1.0 * scale;
         QPointF center  = QPointF(0.0,0.0);
         QPointF scenter = mapToScene(center);
-        scenter         = viewT.apply(scenter);
+        scenter         = viewT.map(scenter);
 
         QPointF a;
         QPointF b;
@@ -367,7 +372,7 @@ SelectionSet  MapEditorSelection::findSelectionsUsingDB(const QPointF & spt)
             // there should be only one point
             if (Point::isNear(a,spt))
             {
-                QPointF aa = viewTinv.apply(a);
+                QPointF aa = viewTinv.map(a);
                 if (debugSelection) qDebug() << "FOUND point on circle" << aa;
                 set.push_back(make_shared<MapSelection>(c,aa));
             }
@@ -376,13 +381,13 @@ SelectionSet  MapEditorSelection::findSelectionsUsingDB(const QPointF & spt)
         {
             if (Point::isNear(spt,a))
             {
-                QPointF aa = viewTinv.apply(a);
+                QPointF aa = viewTinv.map(a);
                 if (debugSelection) qDebug() << "FOUND 2-pt circle intersect a" << aa;
                 set.push_back(make_shared<MapSelection>(c, aa));
             }
             if (Point::isNear(spt,b))
             {
-                QPointF bb = viewTinv.apply(b);
+                QPointF bb = viewTinv.map(b);
                 if (debugSelection) qDebug() << "FOUND 2-pt circle intersect b" << bb;
                 set.push_back(make_shared<MapSelection>(c, bb));
             }
@@ -463,7 +468,7 @@ MapSelectionPtr MapEditorSelection::findVertex(QPointF spt , VertexPtr exclude)
             continue;
         }
         QPointF pt   = mapToScene(vp->getPosition());
-        QPointF a    = viewT.apply(pt);
+        QPointF a    = viewT.map(pt);
         //QPointF sa   = worldToScreen(a);
         if (Point::isNear(spt,a))
         {
@@ -489,8 +494,8 @@ SelectionSet MapEditorSelection::findEdges(QPointF spt, QVector<EdgePtr> exclude
         {
             continue;
         }
-        QPointF a = viewT.apply(e->getV1()->getPosition());
-        QPointF b = viewT.apply(e->getV2()->getPosition());
+        QPointF a = viewT.map(e->getV1()->getPosition());
+        QPointF b = viewT.map(e->getV2()->getPosition());
 
         if (Point::distToLine(spt, a , b) < 7.0)
         {
@@ -522,13 +527,16 @@ bool MapEditorSelection::insideBoundary(QPointF wpt)
         }
     }
 
-    QPolygonF & boundary = figp->getExtBoundary();
+    QPolygonF boundary = figp->getExtBoundary();
     if (boundary.size())
     {
+        QPointF center = feap->getCenter();
+        QTransform t   = QTransform::fromTranslate(center.x(),center.y());
+        boundary       = t.map(boundary);
         b_area = Utils::calcArea(boundary);
     }
 
-    QPolygonF & feature = feap->getPolygon();
+    QPolygonF feature = feap->getPolygon();
     if (feature.size())
     {
         f_area = Utils::calcArea(feature);
@@ -560,8 +568,8 @@ MapSelectionPtr MapEditorSelection::findConstructionCircle(const QPointF & spt)
     for (auto it = constructionCircles.begin(); it != constructionCircles.end(); it++)
     {
         CirclePtr   c2 = *it;
-        QPointF center = viewT.apply(c2->centre);
-        qreal radius   = viewT.scalex() * c2->radius;
+        QPointF center = viewT.map(c2->centre);
+        qreal radius   = Transform::scalex(viewT) * c2->radius;
         QGraphicsEllipseItem gcircle(center.x()-radius,center.y()-radius, radius * 2.0, radius * 2.0);
         if (gcircle.contains(spt))
         {
@@ -588,7 +596,7 @@ MapSelectionPtr MapEditorSelection::findConstructionCircle(const QPointF & spt)
     for (int i=0; i < selected.size(); i++)
     {
         CirclePtr c4   = selected[i];
-        QPointF center = viewT.apply(c4->centre);
+        QPointF center = viewT.map(c4->centre);
         c4->tmpDist2   = Point::dist2(spt,center);
         if (c4->tmpDist2 < closestDist)
         {

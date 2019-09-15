@@ -46,6 +46,7 @@ class  ColorGroup
 {
 public:
     ColorGroup();
+    ColorGroup(const ColorGroup & other);
 
     void          addColorSet(ColorSet & cset);
     void          setColorSet(int idx, ColorSet & cset);
@@ -73,6 +74,7 @@ class ColorSet
 {
 public:
     ColorSet();
+    ColorSet(const ColorSet & other);
 
     void            setColor(QColor color, bool hide=false);
     void            setColor(TPColor color);
@@ -81,7 +83,7 @@ public:
     void            setColor(int idx, TPColor tpcolor);
 
     void            setColors(QVector<TPColor> &cset);
-    void            setColors(ColorSet & cset);
+    void            setColors(const ColorSet &cset);
 
     void            removeColor(int idx);
 
@@ -96,8 +98,8 @@ public:
     void            resize(int num) { colorset.resize(num); }
 
     void            hide(bool hide) { hidden = hide; }
-    bool            isHidden() { return hidden;
-    }
+    bool            isHidden() { return hidden; }
+
     AQHBoxLayout *  createLayout();
     AQWidget     *  createWidget();
 

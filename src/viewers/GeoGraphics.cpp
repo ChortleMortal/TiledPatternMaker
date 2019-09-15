@@ -40,94 +40,91 @@
 // bunch of primitives in some pushed graphics state.
 
 #include "viewers/GeoGraphics.h"
+#include "geometry/Transform.h"
+#include "geometry/Point.h"
+#include "geometry/Edge.h"
+#include "geometry/Vertex.h"
 
-
-GeoGraphics::GeoGraphics(QPainter * painter, Transform & transform)
+GeoGraphics::GeoGraphics(QPainter * painter, QTransform & transform) : transform(transform)
 {
     this->painter   = painter;
-    this->transform = transform;
 }
 
-void GeoGraphics::drawLine( qreal x1, qreal y1, qreal x2, qreal y2 )
+
+void GeoGraphics::drawLine( qreal x1, qreal y1, qreal x2, qreal y2, QPen pen )
 {
-    qreal v1x = transform.applyX( x1, y1 );
-    qreal v1y = transform.applyY( x1, y1 );
-    qreal v2x = transform.applyX( x2, y2 );
-    qreal v2y = transform.applyY( x2, y2 );
-
-    QPointF a(v1x,v1y);
-    QPointF b(v2x,v2y);
-    painter->drawLine(a,b); // DAC - taprats uses int not qreal - why???
-    //qDebug() << "GeoGraphics::drawLine" << a << b;
-}
-
-void GeoGraphics::drawLine( QPointF v1, QPointF v2 )
-{
-    drawLine( v1.x(), v1.y(), v2.x(), v2.y());
-}
-
-void GeoGraphics::drawLine( QLineF line)
-{
-    drawLine(line.p1(),line.p2());
-}
-
-void GeoGraphics::drawLineS( QPointF v1, QPointF v2)
-{
-    painter->drawLine(v1,v2);
-}
-
-// Draw a thick like as a rectangle.
-
-void GeoGraphics::drawThickLine(QLineF line, qreal width)
-{
-    drawThickLine(line.p1(),line.p2(),width);
-}
-
-void GeoGraphics::drawThickLine(qreal x1, qreal y1, qreal x2, qreal y2, qreal width)
-{
-    drawThickLine( QPointF( x1, y1 ), QPointF( x2, y2 ), width);
-}
-
-void GeoGraphics::drawThickLine(QPointF v1, QPointF v2, qreal width )
-{
-    qreal widthF = transform.distFromZero(width);
-
-    painter->save();
-
+#if 0
     QPen pen = painter->pen();
-    //pen.setColor(_color);
-    pen.setWidthF(widthF);
-    //pen.setJoinStyle(Qt::MiterJoin);
-    pen.setJoinStyle(Qt::RoundJoin);
+    pen.setJoinStyle(Qt::MiterJoin);
     pen.setCapStyle(Qt::RoundCap);
     painter->setPen(pen);
-    drawLine( v1, v2 );
+#endif
+    QPointF a = transform.map(QPointF(x1, y1));
+    QPointF b = transform.map(QPointF(x2, y2));
 
-    painter->restore();
+    painter->setPen(pen);
+    painter->drawLine(a,b); // DAC - taprats uses int not qreal - why???
+    //qDebug() << "GeoGraphics::drawLine2" << a << b << Transform::toInfoString(transform);
 }
 
-void GeoGraphics::drawRect(QRectF rect, bool filled)
+void GeoGraphics::drawLine( QPointF v1, QPointF v2, QPen pen)
 {
-    drawRect(rect.topLeft(), rect.width(), rect.height(), filled);
+    drawLine( v1.x(), v1.y(), v2.x(), v2.y(), pen);
 }
 
-void GeoGraphics::drawRect(QPointF topleft, qreal width, qreal height, bool filled)
+
+// Draw a thick like as a rectangle.
+void GeoGraphics::drawThickLine(qreal x1, qreal y1, qreal x2, qreal y2, qreal width, QPen pen)
 {
+    drawThickLine( QPointF( x1, y1 ), QPointF( x2, y2 ), width, pen);
+}
+
+void GeoGraphics::drawThickLine(QPointF v1, QPointF v2, qreal width, QPen pen)
+{
+    qreal widthF = Transform::distFromZero(transform,width);
+
+    pen.setWidthF(widthF);
+    pen.setJoinStyle(Qt::RoundJoin);
+    pen.setCapStyle(Qt::RoundCap);
+
+    drawLine(v1, v2, pen);
+}
+
+void GeoGraphics::drawRect(QRectF rect, QPen pen, QBrush brush)
+{
+#if 0
+    drawRect(rect.topLeft(), rect.width(), rect.height(), brush);
+#else
+    //QBrush br = painter->brush();   // save
+    painter->setPen(pen);
+    painter->setBrush(brush);
+    painter->drawRect(rect);
+    //painter->setBrush(br);
+#endif
+}
+
+void GeoGraphics::drawRect(QPointF topleft, qreal width, qreal height, QPen pen, QBrush brush)
+{
+#if 0
     qreal x = topleft.x();
     qreal y = topleft.y();
 
     QPolygonF pts;
     pts << topleft << QPointF( x + width, y ) << QPointF( x + width, y + height ) << QPointF( x, y + height );
 
-    drawPolygon( pts, filled );
+    drawPolygon(pts, brush);
+#else
+    QRectF rect(topleft.x(),topleft.y(),width,height);
+    drawRect(rect,pen,brush);
+#endif
 }
 
-void GeoGraphics::drawPolygon(const QVector<QPointF> & pts, bool filled )
+void GeoGraphics::drawPolygon(const QVector<QPointF> & pts, QPen pen, QBrush brush)
 {
-    drawPolygon( pts, 0, pts.size(), filled );
+    drawPolygon(pts, 0, pts.size(), pen, brush);
 }
 
-void GeoGraphics::drawPolygon(const QVector<QPointF> &pts, int start, int end, bool filled )
+void GeoGraphics::drawPolygon(const QVector<QPointF> &pts, int start, int end, QPen pen, QBrush brush)
 {
     int len = end - start;
     QPolygonF poly;
@@ -135,38 +132,45 @@ void GeoGraphics::drawPolygon(const QVector<QPointF> &pts, int start, int end, b
     {
         poly << pts[start + i];
     }
-    drawPolygon(poly,filled);
+    drawPolygon(poly,pen, brush);
 }
 
-void GeoGraphics::drawPolygon(const QPolygonF & pgon, bool filled )
+void GeoGraphics::drawPolygon(const QPolygonF & pgon, QPen pen, QBrush brush)
 {
-    QPolygonF p;
-    int len = pgon.size();
-    for( int i = 0; i < len; ++i )
-    {
-        QPointF v = pgon.at( i );
-        qreal x = v.x();
-        qreal y = v.y();
-
-        p << QPointF(transform.applyX(x,y),transform.applyY(x,y));
-    }
-
-    //qDebug() << "GeoGraphics::drawPolygon" << p;
-
-    if( filled )
+    QPolygonF p = transform.map(pgon);
+#if 0
+    painter->setBrush(brush);
+    if (brush.style() != Qt::NoBrush)
     {
         QPainterPath pp;
         pp.addPolygon(p);
-        painter->fillPath(pp,_color);
+        painter->fillPath(pp,brush);
     }
     else
     {
-        //painter->setPen(QPen(_color,3));
         painter->drawPolygon(p);
     }
+#else
+    if (brush.style() != Qt::NoBrush)
+    {
+        // only fill
+        //qDebug() << "fill:" << brush.color();
+        painter->setPen(Qt::NoPen);
+        painter->setBrush(brush);
+    }
+    else
+    {
+        // don't fill
+        //qDebug() << "dont fill:" << _color;
+        painter->setPen(pen);
+        painter->setBrush(Qt::NoBrush);
+    }
+
+    painter->drawPolygon(p);
+#endif
 }
 
-void GeoGraphics::drawArrow( QPointF from, QPointF to, qreal length, qreal half_width, bool filled )
+void GeoGraphics::drawArrow(QPointF from, QPointF to, qreal length, qreal half_width, QPen pen, QBrush brush )
 {
     QPointF dir = to - from;
     Point::normalizeD(dir);
@@ -175,41 +179,86 @@ void GeoGraphics::drawArrow( QPointF from, QPointF to, qreal length, qreal half_
     dir  *= length;
     QPolygonF poly;
     poly << to <<  (to - dir + perp) << (to - dir - perp)  << to ;
-    drawPolygon( poly, filled );
+    drawPolygon( poly, pen, brush );
 }
 
 
 // DAC - this issue here is whether it is being passed an origin or a center
-void GeoGraphics::drawCircle( QPointF origin, qreal radius, bool filled )
+void GeoGraphics::drawCircle( QPointF origin, int diameter, QPen pen, QBrush brush)
 {
-    QPointF rad  = transform.apply(QPointF( radius, 0.0 ));
-    QPointF orig = transform.apply(QPointF( 0.0, 0.0 ));
-    qreal true_radius = Point::dist(rad,orig);
+    QPointF new_origin = transform.map(origin);
+    painter->setBrush(brush);
+    painter->setPen(pen);
+    painter->drawEllipse(new_origin, diameter, diameter);
+}
 
-    QPointF new_origin = transform.apply( origin );
-    //QPointF new_topleft = new_origin - QPointF(true_radius,true_radius);
+QTransform GeoGraphics::getTransform()
+{
+    return transform;
+}
 
-    qreal r2 = (int)( true_radius * 2.0 );
+void GeoGraphics::push(QTransform T )
+{
+    pushed.push(transform);
+    transform = T;
+}
 
-    if( filled )
+void GeoGraphics::pushAndCompose( QTransform T )
+{
+    push(T * transform);
+}
+
+QTransform GeoGraphics::pop()
+{
+    QTransform it = transform;
+    transform = pushed.pop();
+    return it;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///
+/////////////////////////////////////////////////////////////////////////////
+
+
+void GeoGraphics::drawLine(QLineF line, QPen pen)
+{
+    drawLine(line.p1(),line.p2(),pen);
+}
+
+void GeoGraphics::drawLineDirect( QPointF v1, QPointF v2, QPen pen)
+{
+    painter->setPen(pen);
+    painter->drawLine(v1,v2);
+}
+
+void GeoGraphics::drawThickLine(QLineF line, qreal width, QPen pen)
+{
+    drawThickLine(line.p1(),line.p2(),width, pen);
+}
+
+void GeoGraphics::drawEdge(EdgePtr e, QPen pen)
+{
+    if (e->getType() == EDGE_LINE)
     {
-        QPainterPath pp;
-        //pp.addEllipse(new_topleft + QPointF(r2,r2), r2, r2 );
-        // DAC methinks use new_origin
-        pp.addEllipse(new_origin, r2, r2 );
-        painter->fillPath(pp,QBrush(Qt::red));
+        drawLine(e->getLine(), pen);
     }
-    else
+    else if (e->getType() == EDGE_CURVE)
     {
-        //painter->drawEllipse(new_topleft + QPointF(r2,r2), r2, r2);
-        painter->drawEllipse(new_origin, r2, r2);
+        drawChord(e->getV1()->getPosition(),e->getV2()->getPosition(),e->getArcCenter(),pen, QBrush(),e->isConvex());
     }
 }
 
-// DAC - this issue here is whether it is being passed an origin or a center
-void GeoGraphics::drawCircle( QPointF origin, qreal radius )
+void GeoGraphics::drawThickEdge(EdgePtr e, qreal width, QPen pen)
 {
-    drawCircle( origin, radius, false );
+    if (e->getType() == EDGE_LINE)
+    {
+        drawThickLine(e->getV1()->getPosition(),e->getV2()->getPosition(),width, pen);
+    }
+    else if (e->getType() == EDGE_CURVE)
+    {
+        drawThickChord(e->getV1()->getPosition(),e->getV2()->getPosition(),e->getArcCenter(),pen, QBrush(),e->isConvex(), width);
+    }
 }
 
 void GeoGraphics::drawText(QPointF pos, QString txt)
@@ -222,40 +271,108 @@ void GeoGraphics::drawText(QPointF pos, QString txt)
     painter->restore();
 }
 
-QColor GeoGraphics::getColor()
+void GeoGraphics::drawChord(QPointF V1, QPointF V2, QPointF ArcCenter, QPen pen, QBrush brush, bool Convex)
 {
-    return _color;
+#if 0
+    QPen pen = painter->pen();
+    pen.setJoinStyle(Qt::MiterJoin);
+    pen.setCapStyle(Qt::RoundCap);
+    painter->setPen(pen);
+#endif
+    //qDebug() << "draw Chord" << Transform::toInfoString(transform);
+
+    V1 = transform.map(V1);
+    V2 = transform.map(V2);
+    ArcCenter = transform.map(ArcCenter);
+
+    arcData ad = Edge::calcArcData(V1,V2,ArcCenter,Convex);
+
+    int start = qRound(ad.start * 16.0);
+    int span  = qRound(ad.span  * 16.0);
+
+    if (brush.style() != Qt::NoBrush)
+    {
+        QPen pen = painter->pen();
+        QBrush br = painter->brush();
+        painter->setPen(Qt::transparent);   // prevents edges from being painted
+        painter->setBrush(brush);
+        painter->drawChord(ad.rect, start, span);
+        painter->setBrush(br);
+        painter->setPen(pen);
+    }
+    painter->setPen(pen);
+    painter->drawArc(ad.rect, start, span);
 }
 
-void GeoGraphics::setColor( QColor c )
+void GeoGraphics::drawPie(QPointF V1, QPointF V2, QPointF ArcCenter, QPen pen, QBrush brush, bool Convex)
 {
-    _color = c;
-    QPen apen = painter->pen();
-    apen.setColor(c);
-    painter->setPen(apen);
+#if 0
+    QPen pen = painter->pen();
+    pen.setJoinStyle(Qt::MiterJoin);
+    pen.setCapStyle(Qt::RoundCap);
+    painter->setPen(pen);
+#endif
+    //qDebug() << "draw Chord" << Transform::toInfoString(transform);
+
+    V1 = transform.map(V1);
+    V2 = transform.map(V2);
+    ArcCenter = transform.map(ArcCenter);
+
+    arcData ad = Edge::calcArcData(V1,V2,ArcCenter,Convex);
+
+    int start = qRound(ad.start * 16.0);
+    int span  = qRound(ad.span  * 16.0);
+
+    if (brush.style() != Qt::NoBrush)
+    {
+        QPen pen = painter->pen();
+        QBrush br = painter->brush();
+        painter->setPen(Qt::transparent);   // prevents edges from being painted
+        painter->setBrush(brush);
+        painter->drawPie(ad.rect, start, span);
+        painter->setBrush(br);
+        painter->setPen(pen);
+    }
+    painter->setPen(pen);
+    painter->drawArc(ad.rect, start, span);
 }
 
-Transform GeoGraphics::getTransform()
-{
-    return transform;
-}
 
-void GeoGraphics::push(Transform T )
+void GeoGraphics::drawThickChord(QPointF V1, QPointF V2, QPointF ArcCenter, QPen pen, QBrush brush, bool Convex, qreal width)
 {
-    pushed.push(transform);
-    transform = T;
-    //qDebug().noquote() << "GeoLayer pushed Transform:\n" << transform.toString();
-}
+    qreal widthF = Transform::distFromZero(transform,width);
 
-void GeoGraphics::pushAndCompose( Transform T )
-{
-    push(transform.compose( T ) );
-}
+    painter->save();
 
-Transform GeoGraphics::pop()
-{
-    Transform it = transform;
-    transform = pushed.pop();
-    return it;
-}
+    pen.setWidthF(widthF);
+    //pen.setJoinStyle(Qt::MiterJoin);
+    pen.setJoinStyle(Qt::RoundJoin);
+    pen.setCapStyle(Qt::RoundCap);
+    painter->setPen(pen);
 
+    //qDebug() << "draw Chord" << Transform::toInfoString(transform);
+
+    V1 = transform.map(V1);
+    V2 = transform.map(V2);
+    ArcCenter = transform.map(ArcCenter);
+
+    arcData ad = Edge::calcArcData(V1,V2,ArcCenter,Convex);
+
+    int start = qRound(ad.start * 16.0);
+    int span  = qRound(ad.span  * 16.0);
+
+    if (brush.style() != Qt::NoBrush)
+    {
+        QPen apen = painter->pen();
+        QBrush br = painter->brush();
+        painter->setPen(Qt::transparent);   // prevents inner stright edge of chord being painted
+        painter->setBrush(brush);
+        painter->drawChord(ad.rect, start, span);
+        painter->setBrush(br);
+        painter->setPen(apen);
+    }
+    painter->setPen(pen);
+    painter->drawArc(ad.rect, start, span);
+
+    painter->restore();
+}

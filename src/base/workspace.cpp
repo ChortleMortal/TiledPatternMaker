@@ -30,7 +30,7 @@
 #include "base/fileservices.h"
 #include "base/tilingmanager.h"
 #include "base/utilities.h"
-#include "makers/TilingDesigner.h"
+#include "makers/tilingmaker.h"
 
 Workspace * Workspace::mpThis = nullptr;
 
@@ -55,7 +55,12 @@ void Workspace::releaseInstance()
 
 Workspace::Workspace()
 {
+}
+
+void Workspace::init()
+{
     config = Configuration::getInstance();
+    canvas = Canvas::getInstance();
 }
 
 Workspace::~Workspace()
@@ -200,10 +205,7 @@ bool Workspace::saveDesignXML(QString name, QString & savedName, bool forceOverw
 
     qDebug() << "Saving XML to:"  << filename;
 
-    StyledDesign & sd = (config->designViewer == DV_LOADED_STYLE)
-            ? getLoadedStyles()
-            : getWsStyles();
-
+    StyledDesign & sd = (config->designViewer == DV_LOADED_STYLE) ? getLoadedStyles() : getWsStyles();
 
     XmlWriter writer(sd);
     bool rv = writer.writeXML(filename);

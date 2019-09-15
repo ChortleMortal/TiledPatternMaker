@@ -28,7 +28,7 @@
 #include "makers/mapselection.h"
 #include "tile/PlacedFeature.h"
 #include "base/layer.h"
-#include "geometry/Point.h"
+
 
 enum eMapEdInput
 {
@@ -87,9 +87,8 @@ protected:
 
     MapPtr             map;     // derived
 
-
-    Transform         viewT;
-    Transform         viewTinv; // inverted
+    QTransform        viewT;
+    QTransform        viewTinv; // inverted
 
     qreal             selectionWidth;
 };

@@ -75,6 +75,7 @@ void page_designs::onEnter()
 
     designTable->resizeColumnsToContents();
     adjustTableSize(designTable);
+    updateGeometry();
 }
 
 void page_designs::refreshPage()

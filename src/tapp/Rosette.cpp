@@ -38,6 +38,7 @@
 #include "tapp/Star.h"
 #include "geometry/Point.h"
 #include "geometry/Intersect.h"
+#include "geometry/Transform.h"
 #include "base/shapefactory.h"
 #include "base/misc.h"
 #include "base/canvas.h"
@@ -88,9 +89,9 @@ void Rosette::setN(int n)
 
 MapPtr Rosette::buildUnit()
 {
-    qDebug().noquote() << "Rosette::buildUnit"  << n << q << s << "Tr:" << Tr.toString();
+    qDebug().noquote() << "Rosette::buildUnit"  << n << q << s << "Tr:" << Transform::toInfoString(Tr);
 
-    buildBoundary();
+    buildExtBoundary();
 
     debugMap = make_shared<Map>();
 
@@ -180,8 +181,8 @@ MapPtr Rosette::buildUnit()
         int s_clamp   = qMin( s, (n-1) / 2 );
         for( int idx = 1; idx <= s_clamp; ++idx )
         {
-            Tr.applyD(key_r_point);
-            Tr.applyD(key_r_end);
+            key_r_point = Tr.map(key_r_point);
+            key_r_end = Tr.map(key_r_end);
 
             debugMap->insertDebugMark(key_r_point,QString("key_r_point_%1").arg(idx),0.1);
             debugMap->insertDebugMark(key_r_end,QString("key_r_end_%1").arg(idx),0.1);
@@ -203,11 +204,11 @@ MapPtr Rosette::buildUnit()
     }
     else
     {
-        qreal rot = -Tr.rotation();
-        Transform Tr2 = Transform::rotate(rot);
+        qreal rot = -Transform::rotation(Tr);
+        QTransform Tr2 = QTransform().rotateRadians(rot);
 
-        Tr2.applyD(key_r_point);
-        Tr2.applyD(key_r_end);
+        key_r_point = Tr2.map(key_r_point);
+        key_r_end   = Tr2.map(key_r_end);
 
         debugMap->insertDebugMark(key_r_point,QString("key_r_point_%1").arg(s-1),0.1);
         debugMap->insertDebugMark(key_r_end,QString("key_r_end_%1").arg(s-1),0.1);
@@ -249,8 +250,8 @@ MapPtr Rosette::buildUnit()
     debugMap->rotate(rotate);
 
     // scale
-    unitMap->scale(figureScale);
-    debugMap->scale(figureScale);
+    unitMap->scale(getFigureScale());
+    debugMap->scale(getFigureScale());
 
     unitMap->verify("rosette unitMap", false,true);
     return unitMap;

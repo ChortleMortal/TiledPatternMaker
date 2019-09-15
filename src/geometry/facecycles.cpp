@@ -20,6 +20,7 @@ FaceSet FaceCycles::getFaceSet(MapPtr map)
     }
 
     findAllCycles();
+    qDebug() << "num cycles =" << cycles.size();
 
     for (auto it = cycles.begin(); it != cycles.end(); it++)
     {
@@ -31,8 +32,10 @@ FaceSet FaceCycles::getFaceSet(MapPtr map)
             VertexPtr v = map->getVertex(index);
             face->push_back(v);
         }
+        face->sortForComparion();
         set.push_back(face);
     }
+    qDebug() << "num faces =" << set.size();
 
     return set;
 }

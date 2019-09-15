@@ -29,13 +29,11 @@
 #include "geometry/Map.h"
 #include "geometry/Point.h"
 #include "geometry/Intersect.h"
+#include "geometry/Transform.h"
 #include "tapp/Figure.h"
 
 MapEditorView::MapEditorView() : Layer("MapEditorView")
 {
-    Bounds b(-10.0,10.0,20.0);
-    setBounds(b);
-
     hideConstructionLines = false;
     hideMap               = false;
     hidePoints            = false;
@@ -63,19 +61,18 @@ void MapEditorView::paint(QPainter *painter, const QStyleOptionGraphicsItem *opt
     painter->setRenderHint(QPainter::Antialiasing ,true);
     painter->setRenderHint(QPainter::SmoothPixmapTransform,true);
 
-    Transform t;
+    QTransform t;
     if (feap)
     {
-        QPolygonF & feature = feap->getPolygon();
-        QRectF rect         = feature.boundingRect();
-        QPointF center      = rect.center();
-        t                   = Transform::translate(-center);
+        QPointF center = feap->getCenter();
+        t              = QTransform::fromTranslate(-center.x(),-center.y());
     }
-    TransformPtr t0 = getLayerTransform();
-    Transform t1    = Transform::scale(8.0);
-    viewT           = t0->compose(t1.compose(t));
-    qDebug().noquote() << "Paint transform:" << viewT.toString();
-    viewTinv        = viewT.invert();
+    QTransform t0 = getLayerTransform();
+    QTransform t1 = QTransform::fromScale(8.0,8.0);  // TODO xform
+    viewT         = t * t1;
+    viewT         = viewT * t0;
+    viewTinv      = viewT.inverted();
+    qDebug() << "MapEditorView::paint"  << Transform::toInfoString(viewT);
 
     draw(painter);
     //qDebug() << "MapEditorView::paint - end";
@@ -92,7 +89,7 @@ void MapEditorView::drawMap(QPainter * painter)
         EdgePtr edge = *e;
         QPointF v1 = edge->getV1()->getPosition();
         QPointF v2 = edge->getV2()->getPosition();
-        painter->drawLine(viewT.apply(v1),viewT.apply(v2));
+        painter->drawLine(viewT.map(v1),viewT.map(v2));
     }
 }
 
@@ -101,33 +98,36 @@ void MapEditorView::drawFeature(QPainter * painter)
     QPolygonF pts = feap->getPoints();
 
     painter->setPen(QPen(Qt::magenta,1));
-    painter->drawPolygon(viewT.apply(pts)); // not filled
+    painter->drawPolygon(viewT.map(pts)); // not filled
 
 }
 
 void MapEditorView::drawBoundaries(QPainter *painter)
 {
     Q_ASSERT(figp);
-    figp->buildBoundary();
+    figp->buildExtBoundary();
 
     QPolygonF & figure   = figp->getRadialFigBoundary();
-    QPolygonF & extBound = figp->getExtBoundary();
+    QPolygonF extBound   = figp->getExtBoundary();
     bool hasCircle       = figp->hasExtCircleBoundary();
     qreal  boundaryScale = figp->getExtBoundaryScale();
 
     // show boundaries
-    painter->setPen(QPen(QColor(255,127,0),1));   // orange
-    painter->drawPolygon(viewT.apply(figure));
+    painter->setPen(QPen(QColor(255,127,0),3));   // orange
+    painter->drawPolygon(viewT.map(figure));
 
     painter->setPen(QPen(Qt::yellow,1));
     if (!hasCircle )
     {
-        painter->drawPolygon(viewT.apply(extBound));
+        QPointF center = feap->getCenter();
+        QTransform t   = QTransform::fromTranslate(center.x(), center.y());
+        extBound       = t.map(extBound);
+        painter->drawPolygon(viewT.map(extBound));
     }
     else
     {
-        qreal scale = viewT.scalex();
-        painter->drawEllipse(viewT.apply(QPointF(0,0)),boundaryScale*scale,boundaryScale*scale);
+        qreal scale = Transform::scalex(viewT);
+        painter->drawEllipse(viewT.map(QPointF(0,0)),boundaryScale*scale,boundaryScale*scale);
     }
 }
 
@@ -181,7 +181,7 @@ void MapEditorView::drawPoints(QPainter * painter,  QVector<pointInfo> & points)
             painter->setBrush(Qt::darkYellow);
             break;
         }
-        QPointF pos = viewT.apply(pi._pt);
+        QPointF pos = viewT.map(pi._pt);
         painter->drawEllipse(pos, radius, radius);
     }
 }
@@ -195,7 +195,7 @@ void MapEditorView::drawConstructionLines(QPainter * painter)
     {
         QLineF line = *it;
         painter->setPen(QPen(Qt::white,constructionLineWidth));
-        painter->drawLine(viewT.apply(line));
+        painter->drawLine(viewT.map(line));
     }
 }
 
@@ -207,9 +207,9 @@ void MapEditorView::drawConstructionCircles(QPainter * painter)
     for (auto it = constructionCircles.begin(); it != constructionCircles.end(); it++)
     {
         CirclePtr c = *it;
-        QPointF pt = viewT.apply(c->centre);
+        QPointF pt = viewT.map(c->centre);
         painter->setPen(QPen(Qt::white,constructionLineWidth));
-        painter->drawEllipse(pt, viewT.scalex() * c->radius, viewT.scalex() * c->radius);
+        painter->drawEllipse(pt, Transform::scalex(viewT) * c->radius, Transform::scalex(viewT)  * c->radius);
 
         if (!hidePoints)
         {

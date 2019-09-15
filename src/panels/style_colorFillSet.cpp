@@ -304,7 +304,7 @@ void StyleColorFillSet::slot_colorVisibilityChanged(int row)
 
     displayColors(colorSet);
 
-    qDebug() << "slot_colorVisibilityChanged: done";;
+    qDebug() << "slot_colorVisibilityChanged: done";
 }
 
 void StyleColorFillSet::slot_click(int row, int col)

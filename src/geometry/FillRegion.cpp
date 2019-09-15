@@ -64,9 +64,10 @@ void FillRegion::fill(GeoGraphics *gg, FillData fd)
         break;
 
     case REPEAT_PACK:
-        for (int h = -1; h <= 1; h++)
+      //for (int h = -1; h <= 1; h++)
+        for (int h = 0; h <= 1; h++)
         {
-            for (int v = -1; v <= 1; v++)
+            for (int v = 0; v <= 1; v++)
             {
                 receive(gg,h,v);
             }

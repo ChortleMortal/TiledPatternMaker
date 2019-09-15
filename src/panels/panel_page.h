@@ -69,22 +69,21 @@ public:
     QString addr(const void * address);
     QString addr(void * address);
 
+    static void    adjustTableSize(QTableWidget *table);
+    static void    adjustTableWidth(QTableWidget *table);
+    static void    adjustTableHeight(QTableWidget *table);
+
+    static int     getTableWidth(QTableWidget *table);
+    static int     getTableHeight(QTableWidget * table);
+
 signals:
     void    sig_render();
     void	sig_attachMe(QString title);
     void    sig_viewWS();
-    void    sig_updateDesignInfo();
 
 public slots:
 
 protected:
-    void    adjustTableSize(QTableWidget *table);
-    void    adjustTableWidth(QTableWidget *table);
-    void    adjustTableHeight(QTableWidget *table);
-
-    int     getTableWidth(QTableWidget *table);
-    int     getTableHeight(QTableWidget * table);
-
     QVBoxLayout *		vbox;
     QString				pageName;
 

@@ -63,9 +63,9 @@ void TilingView::paint(QPainter *painter, const QStyleOptionGraphicsItem *option
 
     painter->setRenderHint(QPainter::Antialiasing ,true);
     painter->setRenderHint(QPainter::SmoothPixmapTransform,true);
-    painter->setPen(QPen(Qt::black,3));
+    layerPen = QPen(Qt::black,3);
 
-    Transform tr = *getLayerTransform();
+    QTransform tr = getLayerTransform();
     GeoGraphics gg(painter,tr);
     draw(&gg);  // DAC - draw goes to receive which goes to draw placed feature
                 // DAC - receive is really 'draw one tile'
@@ -82,42 +82,38 @@ void TilingView::draw(GeoGraphics *g2d )
 // unit at that location.
 void TilingView::receive(GeoGraphics * gg, int h, int v )
 {
-    //qDebug() << "fill xy TilingViewer::receive:"  << a1 << a2;
-    QPointF t1 = tiling->getTrans1();
-    QPointF t2 = tiling->getTrans2();
-
-    Transform T = Transform::translate((t1 *(qreal)h ) + ( t2 * (qreal)v));
+    //qDebug() << "fill TilingView::receive:"  << h << v;
+    QPointF   pt = (tiling->getTrans1() * static_cast<qreal>(h)) + (tiling->getTrans2() * static_cast<qreal>(v));
+    QTransform T = QTransform::fromTranslate(pt.x(),pt.y());
 
     gg->pushAndCompose(T);
 
-    QList<PlacedFeaturePtr>::iterator it;
-    for( it = tiling->getPlacedFeatures().begin(); it != tiling->getPlacedFeatures().end(); it++)
+    for (auto it = tiling->getPlacedFeatures().begin(); it != tiling->getPlacedFeatures().end(); it++)
     {
         PlacedFeaturePtr pf = *it;
-        drawPlacedFeature(gg, pf, false);
+        drawPlacedFeature(gg, pf);
     }
 
     gg->pop();
 }
 
-void TilingView::drawPlacedFeature(GeoGraphics * g2d, PlacedFeaturePtr pf, bool draw_circle)
+void TilingView::drawPlacedFeature(GeoGraphics * g2d, PlacedFeaturePtr pf)
 {
-    Transform tr = pf->getTransform();
-    //qDebug().noquote() << "PlacedFeat:" << pf->getFeature().get() <<  "transform:" << tr.toString();
-    g2d->pushAndCompose(tr);
+    //qDebug().noquote() << "PlacedFeat:" << pf->getFeature().get() <<  "transform:" << Transform::toInfoString(t);
 
     FeaturePtr f  = pf->getFeature();
-    QPolygonF pts = f->getPoints();
+    EdgePoly ep   = pf->getPlacedEdgePoly();
 
-    g2d->setColor(Qt::black);
-    g2d->drawPolygon(pts, false );
-
-    if( draw_circle )
+    for (auto it = ep.begin(); it != ep.end(); it++)
     {
-        g2d->setColor(Qt::blue);
-        qreal radius = g2d->getTransform().distFromInvertedZero( 6.0 );
-        g2d->drawCircle(Point::center(pts), radius);
+        EdgePtr edge = *it;
+        if (edge->getType() == EDGE_LINE)
+        {
+            g2d->drawLine(edge->getLine(),layerPen);
+        }
+        else if (edge->getType() == EDGE_CURVE)
+        {
+            g2d->drawChord(edge->getV1()->getPosition(),edge->getV2()->getPosition(),edge->getArcCenter(),layerPen,QBrush(),edge->isConvex());
+        }
     }
-
-    g2d->pop();
 }

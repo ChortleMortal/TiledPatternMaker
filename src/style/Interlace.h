@@ -58,7 +58,7 @@ class Interlace : public Thick
 {
 public:
     Interlace(PrototypePtr proto, PolyPtr bounds);
-    Interlace(const Style *  other );
+    Interlace(const Style & other);
     virtual ~Interlace() override;
 
     void resetStyleRepresentation() override;

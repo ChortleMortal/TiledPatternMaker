@@ -49,7 +49,7 @@ RadialFigure::RadialFigure(const Figure & fig, int n, qreal rotate)
 
     dn      = qreal(n);
     don     = 1.0 / dn;
-    Tr      = Transform::rotate( 2.0 * M_PI * don );
+    Tr      = QTransform().rotateRadians(2.0 * M_PI * don);
     setFigType(FIG_TYPE_RADIAL);
 
     unitMap = make_shared<Map>();
@@ -62,7 +62,7 @@ RadialFigure::RadialFigure( int n, qreal rotate) : Figure()
 
     dn      = qreal(n);
     don     = 1.0 / dn;
-    Tr      = Transform::rotate( 2.0 * M_PI * don );
+    Tr      = QTransform().rotateRadians(2.0 * M_PI * don);
     setFigType(FIG_TYPE_RADIAL);
 
     unitMap = make_shared<Map>();
@@ -113,12 +113,13 @@ void RadialFigure::buildMaps()
 
     figureMap->wipeout();
 
-    QVector<Transform> transforms;
-    Transform base = Tr;
+    QVector<QTransform> transforms;
+    QTransform base = Tr;
     for( int idx = 0; idx < n; ++idx )
     {
         transforms.push_back(base);
-        base = base.compose(Tr);
+        //base = base.compose(Tr);
+        base = Tr * base;   // TODO xformo rder
     }
 
     unitMap->verify("RadialFigure::getMap-unit",false);
@@ -135,20 +136,21 @@ MapPtr  RadialFigure::replicateUnit()
 {
     qDebug() << "RadialFigure::replicateUnit";
     // DAC replicate the radial using N (not number of feature sides)
-    Transform T = Tr;       // rotaional transform
+    QTransform T = Tr;       // rotaional transform
     MapPtr map = make_shared<Map>();
     for( int idx = 0; idx < getN(); ++idx )
     {
         for(auto e = unitMap->getEdges()->begin(); e != unitMap->getEdges()->end(); e++)
         {
             EdgePtr edge = *e;
-            QPointF v1 = T.apply( edge->getV1()->getPosition() );
-            QPointF v2 = T.apply( edge->getV2()->getPosition() );
+            QPointF v1 = T.map( edge->getV1()->getPosition() );
+            QPointF v2 = T.map( edge->getV2()->getPosition() );
             VertexPtr vp1 = map->insertVertex(v1);
             VertexPtr vp2 = map->insertVertex(v2);
             map->insertEdge(vp1,vp2);
         }
-        T.composeD(Tr);
+        //T.composeD(Tr);
+        T *= Tr;    // TODO xform order
     }
     map->verify("Replicated Unit Map",true,true,true);
     return map;
@@ -159,7 +161,7 @@ void RadialFigure::setN(int n)
     this->n = n;
     dn      = qreal(n);
     don     = 1.0 / dn;
-    Tr      = Transform::rotate( 2.0 * M_PI * don );
+    Tr      = QTransform().rotateRadians( 2.0 * M_PI * don );
 }
 
 int RadialFigure::getN()
@@ -172,14 +174,15 @@ void RadialFigure::setR( qreal rotate)
     r = rotate;
 }
 
-void RadialFigure::buildBoundary()
+void RadialFigure::buildExtBoundary()
 {
-    Figure::buildBoundary();
+    Figure::buildExtBoundary();
 
     QTransform figureTransform;
-    figureTransform.scale(figureScale,figureScale);
+    qreal scale = getFigureScale();
+    figureTransform.scale(scale,scale);
     Feature f(getN());
-    radialFigBoundary = f.getPoints();
-    radialFigBoundary = figureTransform.map(radialFigBoundary);
+    QPolygonF p = f.getPoints();
+    setRadialFigBoundary(figureTransform.map(p));
     //qDebug() << "Fig boundary:" << figBoundary;
 }

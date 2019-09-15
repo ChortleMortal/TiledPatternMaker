@@ -43,6 +43,8 @@ signals:
     void    sig_loadXML(QString);
     void    sig_loadDesign(eDesign id);
     void    sig_buildDesign(eDesign id);
+    void    sig_viewStyles();
+    void    sig_viewWS();
 
 public slots:
    void     slot_newTile();
@@ -75,7 +77,7 @@ private slots:
     void    rebaseTiling();
     void    renameTiling();
     void    deleteTiling();
-    void    whereTilingUsed();
+    void    slot_whereTilingUsed();
 
     void    loadTilingsCombo();
     void    loadXMLCombo();
@@ -88,6 +90,9 @@ protected:
     void    setupUI();
     void    refreshPanel();
     void    makeConnections();
+    int     whereTilingUsed(QString name, QStringList & results);
+    void    putNewTilingNameIntoDesign(QStringList & designs, QString newName);
+    bool    putNewTilingNameIntoTiling(QString filename, QString newName);
 
 private:
     LoaderListWidget * tileList;

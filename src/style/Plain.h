@@ -42,7 +42,7 @@ class Plain : public Colored
 {
 public:
     Plain(PrototypePtr proto, PolyPtr bounds);
-    Plain(const Style *  other );
+    Plain(const Style & other);
     virtual ~Plain() override;
 
     virtual eStyleType getStyleType() const override { return STYLE_PLAIN; }
@@ -55,7 +55,7 @@ public:
     void draw(GeoGraphics * gg) override;
 
 protected:
-    QVector<QPointF> pts2;
+private:
 };
 #endif
 

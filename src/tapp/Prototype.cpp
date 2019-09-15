@@ -23,7 +23,6 @@
  */
 
 #include "tapp/Prototype.h"
-#include "geometry/Transform.h"
 #include "geometry/FillRegion.h"
 #include "base/canvas.h"
 #include "base/utilities.h"
@@ -44,7 +43,6 @@ Prototype::Prototype(TilingPtr t)
     Q_ASSERT(t);
     tiling = t;
     protoMap = make_shared<Map>();
-    createProtoMap();
     refs++;
 }
 
@@ -70,13 +68,11 @@ Prototype::~Prototype()
 void Prototype::setTiling(TilingPtr t)
 {
     tiling = t;
-    createProtoMap();
 }
 
 void Prototype::addElement(DesignElementPtr element )
 {
     designElements.push_front(element);
-    createProtoMap();
 }
 
 QString Prototype::getInfo() const
@@ -105,13 +101,13 @@ DesignElementPtr Prototype::getDesignElement(int index)
     return nullptr;
 }
 
-Transform Prototype::getTransform(int index)
+QTransform Prototype::getTransform(int index)
 {
     if (index < locations.size())
     {
         return locations[index];
     }
-    Transform t;
+    QTransform t;
     return t;
 }
 
@@ -152,6 +148,10 @@ QList<FeaturePtr> Prototype::getFeatures()
 void Prototype::walk()
 {
     qDebug() << "num design elements=" << designElements.size();
+    if (designElements.size() == 0)
+    {
+        qWarning() << "There are no design elements in the prototype";
+    }
     qDebug() << "num locations      =" << locations.size();
 
     qDebug() << "start Prototype walk.... num figures=" << designElements.size();
@@ -171,7 +171,8 @@ void Prototype::receive(GeoGraphics *gg, int h, int v )
 {
     Q_UNUSED(gg);
     //qDebug() << "fill qxy Prototype::receive:"  << h << v;
-    Transform T = Transform::translate((tiling->getTrans1() * static_cast<qreal>(h) ) + (tiling->getTrans2() * static_cast<qreal>(v) ) );
+    QPointF pt   = (tiling->getTrans1() * static_cast<qreal>(h)) + (tiling->getTrans2() * static_cast<qreal>(v));
+    QTransform T = QTransform::fromTranslate(pt.x(),pt.y());
     locations << T;
 }
 
@@ -201,88 +202,72 @@ MapPtr Prototype::createProtoMap()
     resetProtoMap();
 
     qDebug() << "PROTOTYPE::CONSTRUCT MAP" << Utils::addr(this);
-
-    static bool debug     = false;
+#if 1
+    static bool verifyMap = true;
+    static bool verbose   = true;
+    static bool detailed  = true;
+    static bool doDump    = true;
+#else
     static bool verifyMap = false;
     static bool verbose   = false;
     static bool detailed  = false;
     static bool doDump    = false;
-    static bool force     = false;
+#endif
 
     // Use FillRegion to get a list of translations for this tiling.
     fill(nullptr, tiling->getFillData());
-
     qDebug() << "locations=" << locations.size();
 
-    Canvas * canvas = Canvas::getInstance();
-    canvas->dump(force);
-
-    //walk();
-
+    walk();
 
     // Now, for each different feature, build a submap corresponding
     // to all translations of that feature.
+    qDebug() << "designElements count=" << designElements.size();
     for (auto it = designElements.begin(); it != designElements.end(); it++)
     {
         DesignElementPtr dep = *it;
-        FeaturePtr feature = dep->getFeature();
-        FigurePtr figure   = dep->getFigure();
-        qDebug().noquote() << figure->getFigureDesc();
+        qDebug().noquote() << "design element:" << dep->toString();
 
-        MapPtr figmap  = figure->getFigureMap();
-        canvas->dump(force);
+        FeaturePtr feature   = dep->getFeature();
+        FigurePtr figure     = dep->getFigure();
+        MapPtr figmap        = figure->getFigureMap();
+
+        qDebug().noquote() << figure->getFigureDesc();
         if (verifyMap) figmap->verify("figmap1",verbose,detailed,doDump);
 
-        QVector<Transform> subT;
-
-        for(auto it2 = tiling->getPlacedFeatures().begin(); it2 != tiling->getPlacedFeatures().end(); it2++)
+        QVector<QTransform> subT;
+        for (auto it2 = tiling->getPlacedFeatures().begin(); it2 != tiling->getPlacedFeatures().end(); it2++)
         {
             PlacedFeaturePtr pf = *it2;
             FeaturePtr       f  = pf->getFeature();
-            if( f->equals(feature))
+            if (f == feature)
             {
-                Transform t = pf->getTransform();
+                QTransform t = pf->getTransform();
                 subT.push_back(t);
             }
         }
-
-        if (verifyMap) figmap->verify("figmap2",verbose,detailed,doDump);
+        qDebug() << "subT count=" << subT.size();
 
         // Within a single translational unit, assemble the different
-        // transformed figures corresponding to the given feature into
-        // a map.
+        // transformed figures corresponding to the given feature into a map.
         MapPtr transmap = make_shared<Map>();
-        canvas->dump(force);
-        if (debug) qDebug() << "merge1s";
-        transmap->mergeSimpleMany( figmap, subT);
-        if (debug) qDebug() << "merge1e";
-        canvas->dump(force);
+        transmap->mergeSimpleMany(figmap, subT);
         if (verifyMap) transmap->verify("transmap",verbose,detailed,doDump);
 
-
-        // Now put all the translations together into a single map for
-        // this feature.
+        // Now put all the translations together into a single map for this feature.
         MapPtr featuremap = make_shared<Map>();
-        canvas->dump(force);
-        if (debug) qDebug() << "merge2s";
         featuremap->mergeSimpleMany(transmap, locations);
-        if (debug) qDebug() << "merge2e";
-        canvas->dump(force);
-        //if (verifyMap) featuremap->verify("featuremap",verbose,detailed,doDump);
+        if (verifyMap) featuremap->verify("featuremap",verbose,detailed,doDump);
 
         // And do a slow merge to add this map to the finished design.
-        if (debug) qDebug() << "merge3s";
         protoMap->mergeMap(featuremap);
-        if (debug) qDebug() << "merge3e";
-        canvas->dump(force);
         if (verifyMap) protoMap->verify("ret MAP 2",verbose,detailed,doDump);
+
         if (verbose) qDebug() << "Constructed SUB map (ret): vertices=" << protoMap->getVertices()->count() << "edges=" << protoMap->getEdges()->count();
         protoMap->analyzeVertices();
     }
 
     qDebug() << "Constructed complete map (ret): vertices=" << protoMap->getVertices()->count() << "edges=" << protoMap->getEdges()->count();
-
-    canvas->dump(true);
 
 #ifdef TPMSPLASH
     sp->hide();
@@ -290,11 +275,3 @@ MapPtr Prototype::createProtoMap()
 
     return protoMap;
 }
-
-#if 0
-    bool equals(PrototypePtr other )
-    {
-        return tiling == other->tiling && figures == other->figures;
-    }
-#endif
-

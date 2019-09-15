@@ -39,11 +39,10 @@ class CanvasSettings
 {
 public:
     CanvasSettings();
+    CanvasSettings(const CanvasSettings & other);
     ~CanvasSettings();
 
     void            init();
-
-    void            set(CanvasSettings & other);
 
     bool            isDifferent(CanvasSettings & other);
 

@@ -25,10 +25,10 @@
 #include "base/canvas.h"
 #include "base/cycler.h"
 #include "base/view.h"
-#include "geometry/Transform.h"
 #include "panels/panel.h"
 #include "viewers/workspaceviewer.h"
 #include "makers/mapeditor.h"
+#include "makers/tilingmaker.h"
 
 View * View::mpThis = nullptr;
 
@@ -55,27 +55,13 @@ View::View() : QGraphicsView()
     dragging = false;
     setMouseTracking(true);
 
-    config  = Configuration::getInstance();
-    canvas  = Canvas::getInstance();
-
     setFrameStyle(0);
-    //setAlignment(Qt::AlignLeft | Qt::AlignTop);
-    //setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    //setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     QSettings s;
     move(s.value("viewPos").toPoint());
 
-    WorkspaceViewer * vw = WorkspaceViewer::getInstance();
-    connect(vw, &WorkspaceViewer::sig_title, this, &View::setWindowTitle);
 
     expectedResize = false;
-    setScene(canvas);
-    matchSizeToCanvas();
-
-    connect(canvas, &Canvas::sceneRectChanged, this, &View::slot_sceneRectChanged);
-
-    show();
 }
 
 View::~View()
@@ -87,6 +73,15 @@ View::~View()
     }
 }
 
+void View::init()
+{
+    config  = Configuration::getInstance();
+    canvas  = Canvas::getInstance();
+
+    WorkspaceViewer * vw = WorkspaceViewer::getInstance();
+    connect(vw, &WorkspaceViewer::sig_title, this, &View::setWindowTitle, Qt::QueuedConnection);
+}
+
 void View::slot_sceneRectChanged(const QRectF &rect)
 {
     qDebug() << "Canvas rect:"  << rect;
@@ -95,7 +90,7 @@ void View::slot_sceneRectChanged(const QRectF &rect)
 
 void View::matchSizeToCanvas()
 {
-    qDebug() << "View::matchSizeToCanvas:" << canvas->width() << canvas->height();
+    qDebug() << "View::matchSizeToCanvas:" << canvas->scene->width() << canvas->scene->height();
     QRectF crect = sceneRect();
     QRect  vrect = crect.toAlignedRect();
     expectedResize = true;
@@ -109,7 +104,12 @@ void View::resizeEvent(QResizeEvent *event)
 
     QGraphicsView::resizeEvent(event);
 
-    if (expectedResize)
+    if (config->viewerType == VIEW_TILIING_MAKER)
+    {
+        TilingMaker * td = TilingMaker::getInstance();
+        td->viewRectChanged();
+    }
+    else if (expectedResize)
     {
         expectedResize = false;
     }
@@ -135,14 +135,14 @@ void View::resizeEvent(QResizeEvent *event)
                 layer->forceUpdateLayer();
             }
         }
-        else if (config->viewerType == VIEW_MAP_EDITOR)
+        if (config->viewerType == VIEW_MAP_EDITOR)
         {
             MapEditor * me = MapEditor::getInstance();
             me->forceUpdateLayer();
         }
     }
+    emit sig_resize();
 }
-
 
 #ifdef DEBUG_PAINT
 
@@ -150,10 +150,9 @@ void View::paintEvent(QPaintEvent *event)
 {
     qDebug() << "++++START PAINT";
     canvas->dumpGraphicsInfo();
-    QList<QGraphicsItem*> qgl = items();
-    Transform t1(transform());
-    Transform t2(viewportTransform());
-    qDebug() << "view: items=" << qgl.size() << "sceneRect" << sceneRect() << "transform" << t1.toString() << "view transform" << t2.toString();
+    QTransform t1 = transform();
+    QTransform t2 = viewportTransform();
+    qDebug() << "view: items=" << items().size() << "sceneRect" << sceneRect() << "transform" << t1 << "view transform" << t2;
 
     QGraphicsView::paintEvent(event);
 
@@ -190,10 +189,11 @@ void View::mouseDoubleClickEvent(QMouseEvent * event)
 
 void View::mouseMoveEvent(QMouseEvent *event)
 {
+    QPointF spt  = event->localPos();
     if (dragging)
-        emit sig_mouseDragged(event->localPos());
+        emit sig_mouseDragged(spt);
     else
-        emit sig_mouseMoved(event->localPos());
+        emit sig_mouseMoved(spt);
 }
 
 void View::mouseReleaseEvent(QMouseEvent *event)

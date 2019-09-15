@@ -45,15 +45,14 @@
 // order would be randomly based on an address in memory, so instead I have
 // created an array of the feature and figure pointers
 
-class Prototype : public QObject, public FillRegion
+class Prototype : public FillRegion
 {
-    Q_OBJECT
-
 public:
     Prototype(TilingPtr t);
     virtual ~Prototype();
 
     MapPtr getProtoMap();
+    MapPtr getExistingProtoMap() { return protoMap; }
     MapPtr createProtoMap();
     void   resetProtoMap();
 
@@ -70,10 +69,10 @@ public:
     FigurePtr         getFigure(FeaturePtr feature );
     DesignElementPtr  getDesignElement(FeaturePtr feature);
     DesignElementPtr  getDesignElement(int index);
-    Transform         getTransform(int index);
+    QTransform        getTransform(int index);
 
     QVector<DesignElementPtr> &  getDesignElements() { return designElements; }
-    QVector<Transform>        &  getLocations()      { return locations; }
+    QVector<QTransform>       &  getLocations()      { return locations; }
 
     void receive(GeoGraphics *gg, int h, int v );
 
@@ -86,7 +85,7 @@ private:
 
     TilingPtr                   tiling;
     QVector<DesignElementPtr>   designElements;
-    QVector<Transform>          locations;
+    QVector<QTransform>         locations;
     MapPtr                      protoMap;
 };
 #endif

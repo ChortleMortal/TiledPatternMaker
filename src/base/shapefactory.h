@@ -40,6 +40,8 @@ public:
     ShapeFactory(qreal diameter, QPointF loc = QPointF());
     ~ShapeFactory();
 
+    void reset() { polyforms.clear(); }
+
     // points
     void getHexPackingPoints(QPolygonF &pf);
     void getOctGridPoints(QPolygonF &pf);

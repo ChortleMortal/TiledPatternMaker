@@ -46,8 +46,7 @@
 #define INFER_H
 
 #include <QtCore>
-#include "geometry/Transform.h"
-#include "geometry/Point.h"
+
 #include "geometry/Map.h"
 #include "tile/Tiling.h"
 #include "base/tile.h"
@@ -56,10 +55,10 @@
 class placed_points
 {
 public:
-    placed_points( FeaturePtr feature, Transform T, QPolygonF mids );
+    placed_points( FeaturePtr feature, QTransform T, QPolygonF mids );
 
     FeaturePtr     feature;
-    Transform       T;
+    QTransform     T;
 
     // The transformed midpoints of the feature's edges.
     // Since the tilings are edge to edge, a tile edge can
@@ -74,11 +73,11 @@ public:
 class adjacency_info
 {
 public:
-    adjacency_info( FeaturePtr feature, int edge, Transform T, qreal tolerance );
+    adjacency_info( FeaturePtr feature, int edge, QTransform T, qreal tolerance );
 
     FeaturePtr  feature;
     int         edge;
-    Transform   T;
+    QTransform   T;
     qreal tolerance;
 
 };
@@ -186,7 +185,7 @@ private:
     // The next two routines create placed_points instances for all
     // the tiles in the nine translational units generated above.
     int add(int t1, int t2, int count);
-    int add2(Transform T, FeaturePtr feature, int count);
+    int add2(QTransform T, FeaturePtr feature, int count);
 
     // Choose an appropriate transform of the feature to infer, i.e.
     // one that is surrounded by other features.  That means that we
@@ -225,13 +224,10 @@ private:
     static QList<edges_length_info *> buildIntersectEdgesLengthInfos(
             int side, QPointF sideHalf, bool isLeftHalf, qreal requiredRotation, QPolygonF points, QPolygonF midPoints );
 
-
     // Progressive intersect inferring.
     static QList<intersection_info *> buildIntersectionInfos(
         int side, QPointF sideHalf, bool isLeftHalf, qreal requiredRotation,
         QPolygonF points, QPolygonF midPoints );
-
-
 
     // Rosette inferring.
     static QPolygonF buildRosetteBranchPoints( qreal q, int s, qreal r,

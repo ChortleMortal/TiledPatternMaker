@@ -309,7 +309,7 @@ void StyleColorFillGroup::slot_colorSetVisibilityChanged(int row)
 
     display(colorGroup);
 
-    qDebug() << "slot_colorVisibilityChanged: done";;
+    qDebug() << "slot_colorVisibilityChanged: done";
 }
 
 void StyleColorFillGroup::slot_click(int row, int col)

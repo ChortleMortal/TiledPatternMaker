@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<Poly name="gBowtie">
+	<Line>
+		<Point id="1">0.9999999999999998,0.3249196962329062</Point>
+		<Point id="2">0.9999999999999998,-0.3249196962329064</Point>
+	</Line>
+	<Line>
+		<Point reference="2" />
+		<Point id="3">1.618033988749895,-0.1241082803466793</Point>
+	</Line>
+	<Line>
+		<Point reference="3" />
+		<Point id="4">2.236067977499789,-0.3249196962329066</Point>
+	</Line>
+	<Line>
+		<Point reference="4" />
+		<Point id="5">2.236067977499789,0.3249196962329056</Point>
+	</Line>
+	<Line>
+		<Point reference="5" />
+		<Point id="6">1.618033988749895,0.1241082803466786</Point>
+	</Line>
+	<Line>
+		<Point reference="6" />
+		<Point reference="1" />
+	</Line>
+	<tx>-0.6615511707323745</tx>
+	<ty>-0.8909643044139757</ty>
+	<scale>0.9999999999999993</scale>
+	<rot>0.3141592653589794</rot>
+</Poly>

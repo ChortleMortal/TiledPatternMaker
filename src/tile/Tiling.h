@@ -38,10 +38,10 @@
 #define TILING
 
 #include <QtCore>
-#include "tile/PlacedFeature.h"
 #include "base/shared.h"
-#include "tilemaker.h"
-#include "base/pugixml.hpp"
+#include "tile/tilingloader.h"
+#include "tile/PlacedFeature.h"
+#include "tile/backgroundimage.h"
 
 class FeatureGroup : public  QList<QPair<FeaturePtr,QList<PlacedFeaturePtr>>>
 {
@@ -54,7 +54,7 @@ public:
 // (Of course, more complex tiling exists with rotations and mirrors.)
 // (They are not supported.)
 
-class Tiling : protected TileMaker
+class Tiling
 {
 public:
     Tiling();
@@ -62,10 +62,6 @@ public:
     Tiling(Tiling * other);
     ~Tiling();
 
-    TilingPtr   readTiling(QString file);
-    TilingPtr   readTiling(QTextStream & st);
-    TilingPtr   readTilingXML(QString file);
-    TilingPtr   readTilingXML(pugi::xml_node & tiling_node);
 
     bool        writeTilingXML();
     void        writeTilingXML(QTextStream & out);     // also called when writing styles
@@ -81,7 +77,7 @@ public:
     // Feature management.
     // Added features are embedded into a PlacedFeature.
     void        add(const PlacedFeaturePtr pf );
-    void        add(FeaturePtr f, Transform & T );
+    void        add(FeaturePtr f, QTransform T );
     void        remove(PlacedFeaturePtr pf);
 
     PlacedFeaturePtr          getPlacedFeature(int idx) { return placed_features[idx]; }
@@ -100,14 +96,11 @@ public:
     FillData    getFillData() { return fillData;}
     void        setFillData(FillData & fdata) {fillData.set(fdata);}
 
-    void        dump() const;
+    BackgroundImage & getBackground() { return bkgd; }
+
+    QString dump() const;
 
 protected:
-    QString     toString() { return name; }
-
-    QString     readQuotedString(QTextStream &str);
-    QPointF     getPoint(QString txt);
-    Transform   getTransform(QString txt);
 
 private:
     FillData fillData;
@@ -120,6 +113,9 @@ private:
     QString	name;
     QString	desc;
     QString author;
+
+    BackgroundImage bkgd;
+
 };
 
 #endif

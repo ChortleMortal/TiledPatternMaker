@@ -1,0 +1,149 @@
+#include <QTransform>
+#include <QPainter>
+#include "geometry/edgepoly.h"
+#include "base/utilities.h"
+#include "viewers/GeoGraphics.h"
+
+EdgePoly::EdgePoly()
+{
+
+}
+
+EdgePoly::EdgePoly(QPolygonF & poly)
+{
+    init(poly);
+}
+
+EdgePoly::EdgePoly(PolyPtr pp)
+{
+    QPolygonF & p = *pp.get();
+    init(p);
+}
+
+void EdgePoly::init(QPolygonF & poly)
+{
+    Q_ASSERT(!poly.isClosed());
+
+    VertexPtr v  = make_shared<Vertex>(poly[0]);
+    VertexPtr v1 = v;
+    for (int i=1; i < poly.size(); i++)
+    {
+        VertexPtr v2 = make_shared<Vertex>(poly[i]);
+        push_back(make_shared<Edge>(v1,v2));
+        v1 = v2;
+    }
+    push_back(make_shared<Edge>(v1,v));
+}
+
+void EdgePoly::mapD(QTransform T)
+{
+    EdgePoly newp;
+    for (auto it = begin(); it != end(); it++)
+    {
+        EdgePtr e = *it;
+        VertexPtr v1 = e->getV1();
+        VertexPtr v2 = e->getV2();
+        v1->setPosition(T.map(v1->getPosition()));
+        v2->setPosition(T.map(v2->getPosition()));
+        if (e->getType() == EDGE_CURVE)
+        {
+            QPointF p3 = e->getArcCenter();
+            v2->setPosition(T.map(p3));
+        }
+    }
+}
+
+EdgePoly EdgePoly::map(QTransform T)
+{
+    EdgePoly newp;
+    for (auto it = begin(); it != end(); it++)
+    {
+        EdgePtr e = *it;
+        EdgePtr e2;
+        VertexPtr v1 = make_shared<Vertex>(T.map(e->getV1()->getPosition()));
+        VertexPtr v2 = make_shared<Vertex>(T.map(e->getV2()->getPosition()));
+        if (e->getType() == EDGE_CURVE)
+        {
+            QPointF p3 = T.map(e->getArcCenter());
+            e2 = make_shared<Edge>(v1,v2,p3, e->isConvex());
+        }
+        else
+        {
+            e2 = make_shared<Edge>(v1,v2);
+        }
+        newp.push_back(e2);
+    }
+
+    return newp;
+}
+
+bool EdgePoly::equals(const EdgePoly & other)
+{
+    if (size() != other.size())
+        return false;
+
+    for (int i=0; i < size(); i++)
+    {
+        EdgePtr edge  = at(i);
+        EdgePtr oedge = other.at(i);
+        if (!edge->equals(oedge))
+            return false;
+    }
+    return true;
+}
+
+bool EdgePoly::isClockwise()
+{
+    QPolygonF poly = getPoly();
+    return Utils::isClockwise(poly);
+}
+
+QPolygonF EdgePoly::getPoly()
+{
+    QPolygonF poly;
+    for (auto it = begin(); it != end(); it++)
+    {
+        EdgePtr e = *it;
+        QPointF pt = e->getV1()->getPosition();
+        poly << pt;
+    }
+    return poly;
+}
+
+void EdgePoly::paint(QPainter * painter, QTransform T)
+{
+    for(auto e = begin(); e != end(); e++)
+    {
+        EdgePtr edge = *e;
+
+        QPointF p1 = T.map(edge->getV1()->getPosition());
+        QPointF p2 = T.map(edge->getV2()->getPosition());
+
+        if (edge->getType() == EDGE_LINE)
+        {
+            painter->drawLine(p1,p2);
+        }
+        else if (edge->getType() == EDGE_CURVE)
+        {
+            QPointF ArcCenter = T.map(edge->getArcCenter());
+            arcData ad = edge->calcArcData(p1,p2,ArcCenter,edge->isConvex());
+            painter->drawArc(ad.rect, qRound(ad.start * 16.0),qRound(ad.span * 16.0));
+        }
+    }
+}
+
+void EdgePoly::draw(GeoGraphics * gg, QPen pen)
+{
+    for (auto it = begin(); it != end(); it++)
+    {
+        EdgePtr edge = *it;
+        if (edge->getType() == EDGE_LINE)
+        {
+            gg->drawLine(edge->getLine(),pen);
+        }
+        else if (edge->getType() == EDGE_CURVE)
+        {
+            gg->drawChord(edge->getV1()->getPosition(),edge->getV2()->getPosition(),edge->getArcCenter(),pen,QBrush(),edge->isConvex());
+        }
+    }
+}

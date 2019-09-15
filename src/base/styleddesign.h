@@ -49,8 +49,8 @@ public:
 
     QVector<PrototypePtr> getPrototypes();
 
-    CanvasSettings & getCanvasSettings();
-    void             setCanvasSettings(CanvasSettings settings);
+    CanvasSettings   getCanvasSettings();
+    void             setupCanvas(CanvasSettings settings);
 
     StylePtr    getFirstStyle();
 

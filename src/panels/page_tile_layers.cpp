@@ -81,15 +81,9 @@ void page_tileLayers::onEnter()
         tileTable->setCellWidget(row,TILE_COL_LAYER_VISIBILITY,cb);
         cb->setChecked(layer->isVisible());
 
-        // tile bounds anmd delta
-        Bounds b = layer->getBounds();
-        Bounds d = layer->getDeltas();
-
-        char buf[132];
-        memset(buf,0,sizeof(buf));
-        sprintf(buf,"bounds(%.2f %.2f %.2f) deltas(%.2f %.2f %.2f)",b.left,b.top,b.width,d.left,d.top,d.width);
-        QString s(buf);
-        twi = new QTableWidgetItem(s);
+        // tile bounds and delta
+        Xform xf = layer->getDeltas();
+        twi = new QTableWidgetItem(xf.toInfoString());
         tileTable->setItem(row,TILE_COL_BOUNDS,twi);
 
         connect(cb, SIGNAL(toggled(bool)), &tileVisMapper, SLOT(map()),Qt::UniqueConnection);
@@ -120,7 +114,7 @@ void page_tileLayers::onEnter()
 
     tileTable->resizeColumnsToContents();
     adjustTableSize(tileTable);
-
+    updateGeometry();
 }
 
 void page_tileLayers::slot_tileVisibilityChanged(int row)
@@ -161,16 +155,14 @@ void page_tileLayers::slot_alignChanged(int row)
     QVariant tmp = twi->data(Qt::UserRole);
     Layer * layer = tmp.value<Layer *>();
 
-    Bounds b = layer->getBounds();
-    Bounds d = layer->getDeltas();
+    Xform xf =  layer->getDeltas();
 
     // apply settings to
     twi = tileTable->item(row,TILE_COL_DESIGN_NUMBER);
     tmp = twi->data(Qt::UserRole);
     layer = tmp.value<Layer *>();
 
-    layer->setBounds(b);
-    layer->setDeltas(d);
+    layer->setDeltas(xf);
 
     layer->forceUpdateLayer();
 

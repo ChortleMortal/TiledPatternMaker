@@ -55,7 +55,7 @@ public:
     void    receive(GeoGraphics *gg, int h, int v ) override;
 
 protected:
-    void drawPlacedFeature(GeoGraphics * g2d, PlacedFeaturePtr pf, bool draw_circle);
+    void drawPlacedFeature(GeoGraphics * g2d, PlacedFeaturePtr pf);
 
 private:
     TilingPtr           tiling;

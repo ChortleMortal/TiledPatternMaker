@@ -119,13 +119,6 @@ void Design::destoryPatterns()
     }
 }
 
-QString Design::makeXMLTitle()
-{
-    // FIXME - this is often wrong and is not using loadedFilename
-    QString  astring =  "using : " + config->lastLoadedXML;
-    return astring;
-}
-
 void Design::repeat()
 {
     switch(_design)

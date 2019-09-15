@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>Flat 3x3</Name>
+	<Fill>-4,4,-5,5</Fill>
+	<T1>1.732050807568876,-2.999999999999999</T1>
+	<T2>3.464101615137753,0</T2>
+	<Feature type="regular" sides="3">
+		<Placement>0.8660254037844387,0.4999999999999999,0,-0.4999999999999999,0.8660254037844387,0</Placement>
+		<Placement>-0.8660254037844387,-0.4999999999999999,1.732050807568875,0.4999999999999999,-0.8660254037844387,-0.9999999999999998</Placement>
+	</Feature>
+	<Desc>Packed triangles</Desc>
+	<Auth>David A. Casper</Auth>
+</Tiling>

@@ -33,22 +33,34 @@
 // make up a translational unit.
 
 #include "tile/PlacedFeature.h"
+#include "geometry/Transform.h"
+#include "base/configuration.h"
+#include "tile/featurewriter.h"
+#include "tile/featurereader.h"
+#include "base/utilities.h"
+#include "base/fileservices.h"
 
+//#include <QColor>
+
+using namespace pugi;
+using std::string;
 
 PlacedFeature::PlacedFeature()
 {
 } // default
 
-PlacedFeature::PlacedFeature(FeaturePtr feature, Transform T )
+PlacedFeature::PlacedFeature(FeaturePtr feature, QTransform T )
 {
     this->feature = feature;
     this->T       = T;
+    qDebug() << "setTransform1=" << Transform::toInfoString(T);
 }
 
 PlacedFeature::PlacedFeature(PlacedFeaturePtr other)
 {
     feature = other->feature;
     T       = other->T;
+    qDebug() << "setTransform2=" << Transform::toInfoString(T);
 }
 
 void PlacedFeature::setFeature(FeaturePtr feature)
@@ -62,13 +74,123 @@ FeaturePtr PlacedFeature::getFeature()
     return feature;
 }
 
-Transform PlacedFeature::getTransform()
+QTransform PlacedFeature::getTransform()
 {
     return T;
 }
 
-void PlacedFeature::setTransform(Transform T )
+void PlacedFeature::setTransform(QTransform T)
 {
     this->T = T;
+    qDebug() << "setTransform3=" << Transform::toInfoString(T);
 }
 
+bool PlacedFeature::saveAsGirihShape(QString name)
+{
+    Configuration * config = Configuration::getInstance();
+    QString root     = config->rootMediaDir;
+    QString filename = root + "girih_shapes" + "/" + name + ".xml";
+
+    QFile data(filename);
+    if (data.open(QFile::WriteOnly))
+    {
+        qDebug() << "Writing:"  << data.fileName();
+        QTextStream str(&data);
+        str.setRealNumberPrecision(16);
+        saveGirihShape(str,name);
+        data.close();
+
+        if (FileServices::reformatXML(filename))
+        {
+            girihShapeName = name;
+            return true;
+        }
+    }
+    qWarning() << "Could not write tile file:"  << filename;
+
+    return false;
+}
+
+void PlacedFeature::saveGirihShape(QTextStream & ts, QString name)
+{
+
+    ts << "<?xml version=\"1.0\"?>" << endl;
+
+    QString str = QString("<Poly name=\"%1\">").arg(name);
+    ts << str << endl;
+
+    FeatureWriter fw;
+    fw.setEdgePoly(ts,feature->getEdgePoly());
+    fw.setTransform(ts,T);
+    ts << "</Poly>" << endl;
+}
+
+bool PlacedFeature::loadFromGirihShape(QString name)
+{
+    Configuration * config = Configuration::getInstance();
+    QString root     = config->rootMediaDir;
+    QString filename = root + "girih_shapes" + "/" + name + ".xml";
+
+    xml_document doc;
+    xml_parse_result result = doc.load_file(filename.toStdString().c_str());
+    if (result == false)
+    {
+        qWarning("Badly constructed XML file");
+        return false;
+    }
+
+    xml_node tiling_node = doc.first_child();
+    QString node_name = tiling_node.name();
+    if (node_name != "Poly")
+    {
+        qWarning() << "Unexpected node name = "  << node_name;
+        return false;
+    }
+
+    xml_node n = tiling_node.first_child();
+    string nname = n.name();
+    if (nname == "Point")
+    {
+        // load old format (no longer used)
+        loadGirihShapeOld(tiling_node);
+    }
+    else
+    {
+        loadGirihShape(tiling_node);
+    }
+    girihShapeName = name;
+
+    EdgePoly & epoly = feature->getEdgePoly();
+    if (epoly.isClockwise())
+    {
+        Utils::reverseOrder(epoly);
+        Q_ASSERT(!epoly.isClockwise());
+    }
+    return true;
+}
+
+void PlacedFeature::loadGirihShape(xml_node & poly_node)
+{
+    FeatureReader fr;
+    EdgePoly ep = fr.getEdgePoly(poly_node);
+    feature     = make_shared<Feature>(ep);
+    T           = fr.getTransform(poly_node);
+}
+
+void PlacedFeature::loadGirihShapeOld(xml_node & poly_node)
+{
+    QPolygonF poly;
+    for (xml_node n = poly_node.first_child(); n; n = n.next_sibling())
+    {
+        QString str = n.child_value();
+        QStringList qsl;
+        qsl = str.split(',');
+        qreal a = qsl[0].toDouble();
+        qreal b = qsl[1].toDouble();
+        QPointF pt(a,b);
+        poly << pt;
+    }
+
+    EdgePoly epoly(poly);
+    feature = make_shared<Feature>(epoly);
+}

@@ -91,8 +91,6 @@ static QString sFigType[] =
 
 class Figure
 {
-    friend class FigureView;
-
 public:
     Figure();
     Figure(const Figure & other);
@@ -104,7 +102,7 @@ public:
     virtual void    buildMaps() = 0;
 
     virtual void    resetMaps();
-    virtual void    buildBoundary();
+    virtual void    buildExtBoundary();
 
     QPolygonF       getPoints() { return points; }
     int             size() { return points.size(); }
@@ -116,7 +114,9 @@ public:
 
     virtual void    setFigureScale(qreal scale)   { figureScale = scale; }
     virtual qreal   getFigureScale()              { return figureScale; }
-    QPolygonF &     getRadialFigBoundary()        { return radialFigBoundary; }
+
+    void            setRadialFigBoundary(QPolygonF p) { radialFigBoundary = p; }
+    QPolygonF &     getRadialFigBoundary()            { return radialFigBoundary; }
 
     void            setExtBoundarySides(int sides);
     void            setExtBoundaryScale(qreal scale) { extBoundaryScale = scale; }
@@ -134,8 +134,9 @@ public:
 protected:
     MapPtr      figureMap;
     MapPtr      debugMap;
-
     QPolygonF   points;
+
+private:
     qreal       figureScale;
     QPolygonF   radialFigBoundary;        // currently only set for radial figures
 
@@ -144,7 +145,6 @@ protected:
     QPolygonF   extBoundary;
     bool        hasCircleBoundary;
 
-private:
     eFigType    figType;
 };
 

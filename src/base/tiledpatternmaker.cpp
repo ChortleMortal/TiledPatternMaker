@@ -26,15 +26,15 @@
 #include "base/designs.h"
 #include "base/canvas.h"
 #include "base/cycler.h"
-#include "base/misc.h"
+#include "base/transparentwidget.h"
 #include "viewers/workspaceviewer.h"
 #include "style/Style.h"
 #include "panels/panel.h"
 #include "panels/splitscreen.h"
 #include "base/styleddesign.h"
 #include "makers/mapeditor.h"
-
-QThread * TiledPatternMaker::protoThread = nullptr;
+#include "makers/tilingmaker.h"
+#include "base/tilingmanager.h"
 
 TiledPatternMaker::TiledPatternMaker() : QObject()
 {
@@ -45,16 +45,26 @@ TiledPatternMaker::TiledPatternMaker() : QObject()
 
 void TiledPatternMaker::startEverything()
 {
-    // instantiate everything;
+    // instantiate everything
     config = Configuration::getInstance();
     bool oldPanelLock = config->lockView;
-    config->lockView = true;    // save
+    config->lockView = true;    // disables view switching during init
 
-    canvas = Canvas::getInstance();
-    view   = View::getInstance();
-
+    canvas    = Canvas::getInstance();
+    view      = View::getInstance();
     workspace = Workspace::getInstance();
-    workspace->setCanvas(canvas);
+
+    WorkspaceViewer * viewer = WorkspaceViewer::getInstance();
+
+    // connect singleton classes
+    canvas->init();
+    view->init();
+    workspace->init();
+    viewer->init();
+
+    TilingManager::getInstance();
+    MapEditor::getInstance();
+    TilingMaker::getInstance();
 
     config->availableDesigns.insert(DESIGN_5,make_shared<Design5>(DESIGN_5,"Pattern 1 (created)"));
     config->availableDesigns.insert(DESIGN_6,make_shared<Design6>(DESIGN_6,"Pattern 2 (re-ceated)"));
@@ -77,16 +87,10 @@ void TiledPatternMaker::startEverything()
     qRegisterMetaType<MapPtr>("MapPtr");
     qRegisterMetaType<PolyPtr>("PolyPtr");
 
-    WorkspaceViewer * dv = WorkspaceViewer::getInstance();
-    connect(this, &TiledPatternMaker::sig_viewWS,           dv, &WorkspaceViewer::slot_viewWorkspace);
-    connect(this, &TiledPatternMaker::sig_updateDesignInfo, dv, &WorkspaceViewer::slot_updateDesignInfo);
+    connect(this, &TiledPatternMaker::sig_viewWS,         viewer, &WorkspaceViewer::slot_viewWorkspace);
 
     connect(canvas, &Canvas::sig_forceUpdateStyles,       this, &TiledPatternMaker::slot_forceUpdateStyles);
     connect(canvas, &Canvas::sig_raiseMenu,               this, &TiledPatternMaker::slot_raiseMenu);
-
-    // proto thrread
-    protoThread = new QThread();
-    protoThread->start();
 
     // create cycler
     cycler        = new Cycler(this);
@@ -126,12 +130,13 @@ void TiledPatternMaker::startEverything()
 TiledPatternMaker::~TiledPatternMaker()
 {
     View::releaseInstance();
-    Canvas::releaseInstance();      // saves configuration
+    Canvas::releaseInstance();
     workspace->releaseInstance();
-    config->releaseInstance();
     controlPanel->closePages();
     controlPanel->close();
     delete controlPanel;
+    config->save();
+    config->releaseInstance();      // performed last
 }
 
 void TiledPatternMaker::slot_loadDesign(eDesign design)
@@ -162,7 +167,6 @@ void TiledPatternMaker::slot_buildDesign(eDesign design)
 
     config->lastLoadedDesignId = design;
 
-    emit sig_updateDesignInfo();
     emit sig_viewWS();
     emit sig_loadedDesign(design);
 }
@@ -187,7 +191,6 @@ void TiledPatternMaker::slot_loadXML(QString name)
     bool rv = workspace->loadDesignXML(name);
     if (rv)
     {
-        emit sig_updateDesignInfo();
         emit sig_viewWS();
         emit sig_readyNext();
         emit sig_loadedXML(name);
@@ -215,7 +218,6 @@ void TiledPatternMaker::slot_loadTiling(QString name)
     if (workspace->loadTiling(name))
     {
         config->lastLoadedTileName = name;
-        emit sig_updateDesignInfo();
         emit sig_viewWS();
         emit sig_readyNext();
         emit sig_loadedTiling(name);
@@ -391,6 +393,21 @@ void TiledPatternMaker::SplatCompareResult(QPixmap & pixmap, QString title)
     l->show();
 }
 
+void TiledPatternMaker::SplatCompareResultTransparent(QPixmap &pixmap, QString title)
+{
+    TransparentWidget * l = new TransparentWidget;
+    l->resize(pixmap.size());
+    l->setPixmap(pixmap);
+    l->setWindowTitle(title);
+
+    connect(l,  &TransparentWidget::sig_takeNext,     this,   &TiledPatternMaker::sig_takeNext, Qt::UniqueConnection);
+    connect(l,  &TransparentWidget::sig_cyclerQuit,   cycler, &Cycler::slot_stopCycle,Qt::UniqueConnection);
+    connect(l,  &TransparentWidget::sig_view_images,  cycler, &Cycler::slot_view_images,Qt::UniqueConnection);
+
+    l->show();
+}
+
+
 void TiledPatternMaker::slot_compareImages(QString fileLeft, QString fileRight)
 {
     bool autoMode   = config->autoCycle;
@@ -399,8 +416,8 @@ void TiledPatternMaker::slot_compareImages(QString fileLeft, QString fileRight)
     if (fileRight.isEmpty())
     {
         QPixmap  pm = makeTextPixmap("No matching image found for:",fileLeft);
-        qDebug() << "different" << fileLeft;
-        if (!autoMode)
+        qDebug() << "different (no match)" << fileLeft;
+        if (!autoMode || stopIfDiff)
             SplatCompareResult(pm,"No matching image found");
         else
             emit sig_takeNext();
@@ -457,7 +474,10 @@ void TiledPatternMaker::slot_compareImages(QString fileLeft, QString fileRight)
     QPixmap pixmap;
     pixmap.convertFromImage(result);
 
-    SplatCompareResult(pixmap, QString("Image Differences (%1) (%2").arg(fileLeft).arg(fileRight));
+    if (config->transparentCompare)
+        SplatCompareResultTransparent(pixmap, QString("Image Differences (%1) (%2").arg(fileLeft).arg(fileRight));
+    else
+        SplatCompareResult(pixmap, QString("Image Differences (%1) (%2").arg(fileLeft).arg(fileRight));
 }
 
 QPixmap TiledPatternMaker::makeTextPixmap(QString txt,QString txt2,QString txt3)

@@ -27,7 +27,6 @@
 
 #include <QGraphicsItem>
 #include <QPainter>
-#include "viewers/GeoGraphics.h"
 #include <QtWidgets>
 
 class MarkX : public QGraphicsItem

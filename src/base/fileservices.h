@@ -58,6 +58,7 @@ public:
     static QMap<QString,QString> getDirFiles(QString path);
 
     static QStringList getTemplates();
+    static QStringList getPolys();
 
 private:
     static QString     getTileNameFromDesignFile(QString designFile);

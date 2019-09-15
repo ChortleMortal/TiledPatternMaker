@@ -26,6 +26,7 @@
 #include "base/utilities.h"
 #include "tapp/Rosette.h"
 #include "tapp/ExplicitFigure.h"
+#include "geometry/Transform.h"
 
 int DesignElement::refs = 0;
 
@@ -94,7 +95,7 @@ void DesignElement::setFigure(FigurePtr afigure )
 
 QString DesignElement::toString()
 {
-    return QString("feature=%1 figure=%2").arg(Utils::addr(feature.get())).arg(Utils::addr(figure.get()));
+    return QString("this=%1 feature=%2 figure=%3").arg(Utils::addr(this)).arg(Utils::addr(feature.get())).arg(Utils::addr(figure.get()));
 }
 
 /////////////////////////////////////////////////////////
@@ -106,14 +107,14 @@ PlacedDesignElement::PlacedDesignElement()
 {
 }
 
-PlacedDesignElement::PlacedDesignElement(DesignElementPtr del, Transform T)
+PlacedDesignElement::PlacedDesignElement(DesignElementPtr del, QTransform T)
 {
     feature = del->getFeature();
     figure  = del->getFigure();
     trans   = T;
 }
 
-PlacedDesignElement::PlacedDesignElement(FigurePtr figp, FeaturePtr featp, Transform T)
+PlacedDesignElement::PlacedDesignElement(FeaturePtr featp, FigurePtr figp, QTransform T)
 {
     feature = featp;
     figure  = figp;
@@ -122,5 +123,5 @@ PlacedDesignElement::PlacedDesignElement(FigurePtr figp, FeaturePtr featp, Trans
 
 QString PlacedDesignElement::toString()
 {
-    return QString("feature=%1 figure=%2 T=%3").arg(Utils::addr(feature.get())).arg(Utils::addr(figure.get())).arg(trans.toString());
+    return QString("feature=%1 figure=%2 T=%3").arg(Utils::addr(feature.get())).arg(Utils::addr(figure.get())).arg(Transform::toInfoString(trans));
 }

@@ -1,4 +1,4 @@
-﻿/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
+/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
  *
  *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
  *
@@ -25,17 +25,17 @@
 #ifndef CANVAS_H
 #define CANVAS_H
 
-#include <QtCore>
-#include <QtWidgets>
 #include "base/shared.h"
 #include "base/cycler.h"
 #include "base/canvasSettings.h"
+#include "base/scene.h"
 
 class Configuration;
 class Design;
 class Workspace;
 class Layer;
 class CanvasSettings;
+class WorkspaceViewer;
 
 enum eMode
 {
@@ -53,7 +53,7 @@ enum eMode
 
 class TiledPatternMaker;
 
-class Canvas : public QGraphicsScene
+class Canvas : public QObject
 {
     Q_OBJECT
 
@@ -61,14 +61,14 @@ public:
     static Canvas * getInstance();
     static void     releaseInstance();
 
+    void    init();
     void    update();
+    void    invalidate();
+
+    Scene * swapScenes();
 
     void    addDesign(Design * design);
 
-    void    addLayer(Layer * t);
-    void    removeLayer(Layer *t);
-
-    [[noreturn]]void    clear() { qFatal("Do not call this"); }
     void    clearCanvas();
 
     void    procKeyEvent(QKeyEvent * k);    // from view
@@ -88,17 +88,15 @@ public:
     eMode   getMode() { return _mode2; }
     QString getModeStr();
 
-    CanvasSettings   getCanvasSettings() { return settings; }
-    void             writeCanvasSettings(CanvasSettings & info);
-    void             writeBorderSettings(CanvasSettings & info);
+    void           setCanvasSettings(CanvasSettings info);
+    CanvasSettings getCanvasSettings() { return settings; }
 
     void    setMaxStep(int max);
     void    stopTimer();
 
-protected:
-    void drawForeground(QPainter *painter, const QRectF &rect) Q_DECL_OVERRIDE;
-    void drawBackground(QPainter *painter, const QRectF &rect) Q_DECL_OVERRIDE;
+    Scene  * scene;
 
+protected:
     void reposition(qreal, qreal);
     void offset2(qreal, qreal);
     void origin(int, int);
@@ -164,25 +162,26 @@ private slots:
 
 private:
     Canvas();
-    ~Canvas() override;
+    virtual ~Canvas();
 
     static Canvas * mpThis;
     Configuration * config;
     QTimer        * timer;
     Workspace     * workspace;
-    BorderPtr       border;
+    WorkspaceViewer * viewer;
 
     CanvasSettings  settings;
 
     int             maxStep;
     int             stepsTaken;
-
     int             selectedLayer;
-    QPen            gridPen;
+
     bool            dragging;
-    bool            paintBackground;
 
     eMode          _mode2;
+
+    Scene * sceneA;
+    Scene * sceneB;
 };
 
 #endif // CANVAS_H

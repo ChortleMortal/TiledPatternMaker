@@ -54,4 +54,5 @@ MapPtr ExplicitFigure::getFigureMap()
 
 void ExplicitFigure::buildMaps()
 {
+    qWarning() << "ExplicitFigure::buildMaps - does nothing";
 }

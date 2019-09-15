@@ -36,26 +36,42 @@
 #define PLACED
 
 #include "tile/Feature.h"
-#include "geometry/Transform.h"
 #include "base/shared.h"
+#include "base/pugixml.hpp"
 
 class PlacedFeature
 {
 public:
     // Creation.
     PlacedFeature();
-    PlacedFeature(FeaturePtr feature, Transform T );
+    PlacedFeature(FeaturePtr feature, QTransform T );
     PlacedFeature(PlacedFeaturePtr other);
     ~PlacedFeature() {}
 
     // Data.
-    void             setTransform(Transform T);
+    void             setTransform(QTransform T);
     void             setFeature(FeaturePtr feature);
     FeaturePtr       getFeature();
-    Transform        getTransform();
+    QTransform       getTransform();
+    EdgePoly         getFeatureEdgePoly(){ return getFeature()->getEdgePoly(); }
+    QPolygonF        getFeaturePolygon() { return getFeature()->getPolygon(); }
+    EdgePoly         getPlacedEdgePoly() { return getFeature()->getEdgePoly().map(getTransform()); }
+    QPolygonF        getPlacedPolygon()  { return getTransform().map(getFeature()->getPolygon()); }
+
+    bool saveAsGirihShape(QString name);
+    bool loadFromGirihShape(QString name);
+
+    bool isGirihShape() { return !girihShapeName.isEmpty(); }
+    QString getGirishShapeName() { return girihShapeName; }
+
+protected:
+    void saveGirihShape(QTextStream & out, QString name);
+    void loadGirihShape(pugi::xml_node & poly_node);
+    void loadGirihShapeOld(pugi::xml_node & poly_node);
 
 private:
+    QString      girihShapeName;
     FeaturePtr   feature;
-    Transform    T;
+    QTransform   T;
 };
 #endif

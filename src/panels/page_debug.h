@@ -27,6 +27,8 @@
 
 #include "panel_page.h"
 
+class DoubleSpinSet;
+
 class page_debug : public panel_page
 {
     Q_OBJECT
@@ -52,8 +54,10 @@ private slots:
     void    slot_verifyMapsClicked(bool enb);
     void    slot_autoCycleClicked(bool enb);
     void    slot_stopIfDiffClicked(bool enb);
+    void    slot_gridModelClicked(bool enb);
     void    slot_cycleModeChanged(int row);
     void    slot_cycleIntervalChanged(int value);
+    void    slot_gridWidthChanged(qreal value);
     void    selectDir0();
     void    selectDir1();
     void    swapDirs();
@@ -63,11 +67,14 @@ private slots:
     void    slot_selectImage1();
     void    slot_viewImage1();
     void    slot_compareImages();
+    void    slot_transparentClicked(bool checked);
 
 protected:
     void  ViewImage(QString file);
 
 private:
+    QComboBox   * cycleCombo;
+
     QLineEdit   * comp0;
     QLineEdit   * comp1;
 
@@ -78,6 +85,10 @@ private:
     QPushButton * selectImage1;
     QPushButton * viewImage1;
     QPushButton * compareImage;
+
+    QCheckBox   * transparent;
+    QCheckBox   * cbGridModel;
+    DoubleSpinSet * gridWidth;
 };
 
 #endif

@@ -31,6 +31,7 @@
 #include "tapp/ExtendedRosette.h"
 #include "makers/FeatureButton.h"
 #include "base/utilities.h"
+#include "geometry/Transform.h"
 
 FigureView::FigureView(DesignElementPtr dep) : Layer("FigureView")
 {
@@ -38,16 +39,15 @@ FigureView::FigureView(DesignElementPtr dep) : Layer("FigureView")
 
     _dep    = dep;
     _fig    = dep->getFigure();     // for now just a single figure
-    _fig->buildBoundary();
+    _feat   = dep->getFeature();
+    _fig->buildExtBoundary();
 
-    qDebug() << "FigureView dep=" << Utils::addr(_dep.get()) << "fig=" << Utils::addr(_fig.get());
-
-    canvas  = Canvas::getInstance();
+    qDebug() << "FigureView  this=" << Utils::addr(this) << "dep=" << Utils::addr(_dep.get()) << "fig=" << Utils::addr(_fig.get());
 }
 
-QRectF FigureView::boundingRect() const
+FigureView::~FigureView()
 {
-    return canvas->getCanvasSettings().getRectF();
+    qDebug() << "FigureView destructor";
 }
 
 void FigureView::receive(GeoGraphics * gg,int h, int v )
@@ -70,51 +70,57 @@ void FigureView::paint(QPainter *painter, const QStyleOptionGraphicsItem *option
     Q_UNUSED(option);
     Q_UNUSED(widget);
 
-    if (_fig == nullptr) return;
+    if (!_fig) return;
 
     painter->setRenderHint(QPainter::Antialiasing ,true);
     painter->setRenderHint(QPainter::SmoothPixmapTransform,true);
-    painter->setPen(_pen);
 
-    FeaturePtr f        = _dep->getFeature();
-    QPolygonF & feature = f->getPolygon();
-    QRectF rect         = feature.boundingRect();
-    QPointF center      = rect.center();
+    QPointF center  = _feat->getCenter();
+    QTransform t    = QTransform::fromTranslate(-center.x(),-center.y());
+    QTransform t0   = getLayerTransform();
+    QTransform t1   = QTransform::fromScale(8.0,8.0);
+    _T = t * t1 * t0;
+    qDebug().noquote() << "FigureView::" << Transform::toInfoString(_T);
 
-    Transform t     = Transform::translate(-center);
-    TransformPtr t0 = getLayerTransform();
-    Transform t1    = Transform::scale(8.0);
-    _T = t0->compose(t1.compose(t));
+    // paint boundaries
+    painter->setPen(QPen(Qt::magenta,2.0));
+    paintFeatureBoundary(painter);
 
-    if (_fig->isRadial())
-    {
-        paintRadialFigure(painter);
-    }
-    else
-    {
-        paintExplicitFigure(painter);
-    }
+    painter->setPen(QPen(Qt::red,1.0));
+    paintRadialFigureBoundary(painter);
 
-    paintBoundaries(painter);
+    painter->setPen(QPen(Qt::yellow,3.0));
+    paintExtendedBoundary(painter);
 
     Configuration * config = Configuration::getInstance();
     if (config->boundingRects)
     {
         painter->setPen(QPen(Qt::green,1.0));
         QRectF rect = boundingRect();
-        painter->drawRect(_T.apply(rect));
+        painter->drawRect(_T.mapRect(rect));
+    }
+
+    // paint figure
+    if (_fig->isRadial())
+    {
+        paintRadialFigureMap(painter, QPen(Qt::green, 2.0));
+    }
+    else
+    {
+        paintExplicitFigureMap(painter, QPen(Qt::green, 2.0));
     }
 }
 
-void FigureView::paintExplicitFigure(QPainter *painter)
+void FigureView::paintExplicitFigureMap(QPainter *painter, QPen pen)
 {
     qDebug() << "paintExplicitFigure" << _fig->getFigureDesc();
 
     MapPtr map = _fig->getFigureMap();
-    paintMap(painter,map);
+    map->verify( "paintExplicitFigure", false,true);
+    paintMap(painter,map,pen);
 }
 
-void FigureView::paintRadialFigure(QPainter *painter)
+void FigureView::paintRadialFigureMap(QPainter *painter, QPen pen)
 {
     qDebug() << "paintRadialFigure" << _fig->getFigureDesc();
 
@@ -126,61 +132,74 @@ void FigureView::paintRadialFigure(QPainter *painter)
     {
         map = rp->getFigureMap();
     }
-    painter->setPen(QPen(Qt::green,1.0));
-    paintMap(painter,map);
+
+    paintMap(painter,map,pen);
 
     MapPtr dmap = rp->getDebugMap();
     if (dmap)
     {
-        painter->setPen(QPen(Qt::red,1.0));
-        paintMap(painter,dmap);
+        paintMap(painter,dmap,QPen(Qt::white,1.0));
     }
 }
 
-void FigureView::paintBoundaries(QPainter *painter)
+void FigureView::paintFeatureBoundary(QPainter *painter)
 {
     // draw feature
-    FeaturePtr f = _dep->getFeature();
-    QPolygonF & feature = f->getPolygon();
-    painter->setPen(QPen(Qt::magenta,3.0));
-    painter->drawPolygon(_T.apply(feature));
+    EdgePoly  ep = _feat->getEdgePoly();
+    ep.paint(painter,_T);
+}
 
-    if (!_fig)
-    {
-        return;
-    }
-
+void FigureView::paintRadialFigureBoundary(QPainter *painter)
+{
     // show boundaries
-    QPolygonF p1        = _fig->radialFigBoundary;
-    painter->setPen(QPen(Qt::red,1.0));
-    painter->drawPolygon(_T.apply(p1));
+    QPolygonF p1        = _fig->getRadialFigBoundary();
+    painter->drawPolygon(_T.map(p1));
+}
 
-    QPolygonF p2        = _fig->extBoundary;
-    bool drawCircle     = _fig->hasCircleBoundary;
+void FigureView::paintExtendedBoundary(QPainter *painter)
+{
+    QPolygonF p2        = _fig->getExtBoundary();
+    bool drawCircle     = _fig->hasExtCircleBoundary();
     qreal boundaryScale = _fig->getExtBoundaryScale();
-    painter->setPen(QPen(Qt::yellow,1.0));
+
+    QPointF center      = _feat->getCenter();
+    QTransform ft       = QTransform::fromTranslate(center.x(), center.y());
+    p2                  = ft.map(p2);
+
     if (!drawCircle)
     {
-        painter->drawPolygon(_T.apply(p2));
+        painter->drawPolygon(_T.map(p2));
     }
     else
     {
-        qreal scale = _T.scalex();
-        painter->drawEllipse(_T.apply(QPointF(0,0)),boundaryScale*scale,boundaryScale*scale);
+        qreal scale = Transform::scalex(_T);
+        painter->drawEllipse(_T.map(QPointF(0,0)),boundaryScale*scale,boundaryScale*scale);
     }
 }
 
-void FigureView::paintMap(QPainter * painter, MapPtr map)
+void FigureView::paintMap(QPainter * painter, MapPtr map, QPen pen)
 {
     //map->verify("figure", true, true, true);
-    qDebug() << _T.toString();
+
+    painter->setPen(pen);
 
     for(auto e = map->getEdges()->begin(); e != map->getEdges()->end(); e++)
     {
         EdgePtr edge = *e;
-        QPointF p1 = edge->getV1()->getPosition();
-        QPointF p2 = edge->getV2()->getPosition();
-        painter->drawLine(_T.apply(p1), _T.apply(p2));
+
+        QPointF p1 = _T.map(edge->getV1()->getPosition());
+        QPointF p2 = _T.map(edge->getV2()->getPosition());
+
+        if (edge->getType() == EDGE_LINE)
+        {
+            painter->drawLine(p1,p2);
+        }
+        else if (edge->getType() == EDGE_CURVE)
+        {
+            QPointF ArcCenter = _T.map(edge->getArcCenter());
+            arcData ad = edge->calcArcData(p1,p2,ArcCenter,edge->isConvex());
+            painter->drawArc(ad.rect, qRound(ad.start * 16.0),qRound(ad.span*16.0));
+        }
     }
 
     if (map->texts.count())
@@ -188,8 +207,10 @@ void FigureView::paintMap(QPainter * painter, MapPtr map)
         for (auto t = map->texts.begin(); t != map->texts.end(); t++)
         {
             sText stxt = *t;
-            QPointF pt = _T.apply(stxt.pt);
+            QPointF pt = _T.map(stxt.pt);
             painter->drawText(QPointF(pt.x()+7,pt.y()+13),stxt.txt);
         }
     }
 }
+
+

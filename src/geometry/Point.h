@@ -33,23 +33,18 @@
 #include <QPointF>
 #include <QPolygonF>
 
+class EdgePoly;
 
 class Point
 {
 public:
     static qreal TOLERANCE;
     static qreal TOLERANCE2;
-    static qreal TRUNC;
 
-    // Three common Point so we can save even more on object creation.
     static QPointF ORIGIN;
-    static QPointF UNIT_X;
-    static QPointF UNIT_Y;
 
     // Equality.
-    static bool equals(QPointF &pt,  QPointF & other );
     static bool isNear(const QPointF &pt,  const QPointF &other );
-    static int  compareTo(QPointF & pt, QPointF & other );
 
     // Useful maths on QPointFs.
     static qreal mag2(QPointF & pt);
@@ -58,12 +53,11 @@ public:
     static qreal dist( QPointF pt, QPointF other );
 
     static QLineF extendLine(QLineF line, qreal scale);
-    static QLineF clipLine(QLineF line,QRectF bounds);
-    static QLineF clipLine(QLineF line,QPolygonF bounds);
-    static bool   intersectLine(QLineF line, QRectF bounds);
-    static bool   intersectPoly(QLineF line, QPolygonF bounds);
-    static QPointF intersectCircle(qreal radius, QLineF line);
 
+    static QLineF clipLine(QLineF line,QPolygonF bounds);
+
+    static bool   intersectPoly(QLineF line, QPolygonF bounds);
+ 
     static QPointF normalize(QPointF & pt);
     static void normalizeD(QPointF & pt);
 
@@ -82,10 +76,8 @@ public:
 
     // Returns a point which is on a line between the two points at fraction t
     static QPointF convexSum(QPointF pt, QPointF other, double t );
-    static void convexSumD( QPointF & pt, QPointF & other, double t );
-
+   
     static qreal cross(QPointF & pt, QPointF & other );
-    static int orientation(QPointF p1, QPointF p2, QPointF p3);
 
     // Get the section of arc swept out between the edges this ==> from
     // and this ==> to.
@@ -94,12 +86,11 @@ public:
     static qreal distToLine(QPointF pt, QLineF line);
     static qreal distToLine(QPointF pt, QPointF p, QPointF q );
     static qreal dist2ToLine(QPointF pt,  QPointF p, QPointF q );
-    static qreal parameterizationOnLine(QPointF pt, QPointF p, QPointF q);
 
-    static QPointF center(QPolygonF & pts );
+
+    static QPointF center(QPolygonF & pts);
+    static QPointF center(EdgePoly & epoly);
     static QPolygonF recenter( QPolygonF pts, QPointF center );
-    static QString toString(QPolygonF poly);
-
 };
 #endif
 

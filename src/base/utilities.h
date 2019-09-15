@@ -28,7 +28,6 @@
 #include <QtCore>
 #include "base/layer.h"
 #include "geometry/circle.h"
-#include "viewers/GeoGraphics.h"
 
 
 class Utils
@@ -49,8 +48,9 @@ public:
     static QPointF circleTouchPt(CirclePtr c0, CirclePtr c1);
     static int circleCircleIntersectionPoints(CirclePtr c1, CirclePtr c2, QPointF & p1, QPointF & p2);
 
-    static void drawRect(QPainter * painter, QRectF rect, QColor color);
-    static void drawRect(GeoGraphics * painter, QRectF rect, QColor color);
+    static QLineF  normalVectorP1(QLineF line);
+    static QLineF  normalVectorP2(QLineF line);
+    static QPointF getClosestPoint(QLineF line, QPointF p);
 
     static QVector<QLineF> rectToLines(QRectF & box);
     static QVector<QLineF> polyToLines(QPolygonF & poly);
@@ -60,6 +60,12 @@ public:
     static bool            canSnapTo(QPointF to, QPointF from, int precision = 2);
     static QPointF         snapTo(QPointF pt, QLineF trackLine);
     static qreal           calcArea(QPolygonF & poly);
+
+    static bool            isClockwise(QPolygonF & poly);
+    static bool            isClockwiseKaplan(QPolygonF &  poly);
+
+    static void reverseOrder(QPolygonF & poly);
+    static void reverseOrder(EdgePoly & ep);
 
 private:
     static int      findLineCircleLineIntersections(qreal cx, qreal cy, qreal radius, QPointF point1, QPointF point2, QPointF & intersection1, QPointF & intersection2);

@@ -59,7 +59,9 @@ static QString sFaceState[]
     E2STR(FACE_UNDONE),
     E2STR(FACE_PROCESSING),
     E2STR(FACE_DONE_BLACK),
-    E2STR(FACE_DONE_WHITE)
+    E2STR(FACE_DONE_WHITE),
+    E2STR(FACE_DONE),
+    E2STR(FACE_REMOVE)
 };
 
 ////////////////////////////////////////
@@ -85,7 +87,13 @@ void Faces::clearFaces()
     allFaces.clear();
 }
 
-void Faces::buildFaces(constMapPtr map)
+////////////////////////////////////////////////////
+///
+/// Build Faces
+///
+////////////////////////////////////////////////////
+
+void Faces::buildFacesOriginal(constMapPtr map)
 {
     map->verify("buildFaces",false,true);
 
@@ -106,89 +114,7 @@ void Faces::buildFaces(constMapPtr map)
     qDebug() << "buildFaces:: num=" << allFaces.size();
 }
 
-void Faces::handleVertex(VertexPtr vert, EdgePtr edge)
-{
-    FacePtr face = extractFace(vert, edge);
-    //qDebug() << "Face" << Utils::addr(face.get()) << "sides=" << face->size();
-
-    if( face->size() == 0)
-    {
-        return;
-    }
-
-#ifdef DELETE_CLOCKWISE
-    if (!isClockwise(face))
-    {
-        // This algorithm doesn't distinguish between clockwise and
-        // counterclockwise.  So every map will produce one extraneous
-        // face, namely the countour that surrounds the whole map.
-        // By the nature of extractFace, the surrounding polygon will
-        // be the only clockwise polygon in the set.  So check for
-        // clockwise and throw it away.
-        allFaces.push_back(face);
-    }
-    else
-    {
-        qDebug() << "dumping clockwise face";
-    }
-#else
-    faces.push_back(face);
-#endif
-
-    for( int v = 0; v < face->size(); ++v )
-    {
-        VertexPtr from = face->at(v);
-        VertexPtr to   = face->at((v+1) % face->size());
-        EdgePtr conn   = from->getNeighbour(to);
-
-        if (!conn)
-        {
-            qWarning("no face to insert in map");
-            continue;
-        }
-        if( conn->getV1() == from )
-        {
-            v1.insert(conn, face);
-        }
-        else
-        {
-            Q_ASSERT(conn->getV2() == from);
-            v2.insert(conn, face);
-        }
-    }
-}
-
-// Walk from a vertex along an edge, always taking the current edge's neighbour at every vertex.
-// The set of vertices encountered determines a face.
-FacePtr Faces::extractFace(VertexPtr from, EdgePtr edge)
-{
-    FacePtr ret = make_shared<Face>();
-    VertexPtr cur = from;
-    EdgePtr  ecur = edge;
-
-    while( true )
-    {
-        ret->push_back(cur);
-        VertexPtr n = ecur->getOther( cur->getPosition() );
-
-        if( n->numNeighbours() < 2 )
-        {
-            return ret;
-        }
-
-        QVector<EdgePtr> ba = n->getBeforeAndAfter( ecur );
-
-        cur = n;
-        ecur = ba[0];
-
-        if (cur == from)
-        {
-            return ret;
-        }
-    }
-}
-
-void Faces::extractFacesNew23(MapPtr map)
+void Faces::buildFacesNew23(MapPtr map)
 {
     map->cleanse();
 
@@ -273,46 +199,51 @@ void Faces::extractFacesNew23(MapPtr map)
         }
     }
 
-   //debugFaceSet("algorithm 23");
+   //dumpFaceGroup("algorithm 23");
    std::sort(faceGroup.begin(), faceGroup.end(), FaceSet::sortByArea);    // largest first
-   //debugFaceSet("algorithm 23 post sort");
+   //dumpFaceGroup("algorithm 23 post sort");
 }
 
-void  Faces::assignColorsNew3(ColorGroup & colorGroup)
+////////////////////////////////////////////////////
+///
+/// Assign Colors
+///
+////////////////////////////////////////////////////
+
+// The main interface to this file.  Given a map and two
+// empty vectors, this function fills the vectors with arrays
+// of points corresponding to a two-colouring of the faces of the map.
+
+void Faces::assignColorsOriginal()
 {
-   sortFaceSetsByPosition();
+    whiteFaces.clear();
+    blackFaces.clear();
 
-   // assign the color group to the sorted group
-   colorGroup.resetIndex();
-   for (auto it = faceGroup.begin(); it != faceGroup.end(); it++)
-   {
-       FaceSetPtr fsp = *it;
-       fsp->colorSet  = colorGroup.getNextColorSet();
-   }
-}
+    // recurse through faces to assign colours
+    // this now deals with non-contiguous figures
+    FaceSet facesToDo = allFaces;      // copy
+    int facesToProcess;
+    int facesLeft;
+    do
+    {
+        facesToProcess = facesToDo.size();
+        qDebug() << "facesToProcess=" << facesToProcess;
+        assignColorsToFaces(facesToDo); // Propagate colours using a DFS (Depth First Search).
+        addFaceResults(facesToDo);
+        facesLeft = facesToDo.size();
+        qDebug() << "facesLeft=" << facesLeft;
+    } while ((facesLeft != 0) &&  (facesLeft < facesToProcess));
 
-void Faces::assignColorsNew2(ColorSet & colorSet)
- {
-   // assign the color set to the sorted group
-   colorSet.resetIndex();
-   for (auto it = faceGroup.begin(); it != faceGroup.end(); it++)
-   {
-       FaceSetPtr fsp = *it;
-       fsp->tpcolor     = colorSet.getNextColor();
-   }
-
-   //debugFaceSet("algorithm 2 post sort");
+    qDebug() << "done: facesLeft =" << facesLeft << "facesProcessed =" << facesToProcess;
+    qDebug() << "done: white count =" << whiteFaces.size() << "black count =" << blackFaces.size();
 }
 
 // DAC Notes
 // An edge can only be in two faces
 // A vertex can be in multiple faces
 
-void Faces::extractFacesNew1(MapPtr map)
+void Faces::assignColorsNew1()
 {
-    // First, build all the faces.
-    buildFaces(map);
-
     //debugListFaces("BEFORE ASSIGN");
 
     eFaceState newState = FACE_DONE_WHITE;     // seed
@@ -362,47 +293,54 @@ void Faces::extractFacesNew1(MapPtr map)
     blackFaces.sortByPositon();
 }
 
-// The main interface to this file.  Given a map and two
-// empty vectors, this function fills the vectors with arrays
-// of points corresponding to a two-colouring of the faces of the map.
 
-void Faces::extractFaces(MapPtr map)
+void Faces::assignColorsNew2(ColorSet & colorSet)
+ {
+   // assign the color set to the sorted group
+   colorSet.resetIndex();
+   for (auto it = faceGroup.begin(); it != faceGroup.end(); it++)
+   {
+       FaceSetPtr fsp = *it;
+       fsp->tpcolor     = colorSet.getNextColor();
+   }
+
+   //dumpFaceGroup("algorithm 2 post sort");
+}
+
+void  Faces::assignColorsNew3(ColorGroup & colorGroup)
 {
-    // First, build all the faces.
-    buildFaces(map);
+   sortFaceSetsByPosition();
 
-    // recurse through faces to assign colours
-    // this now deals with non-contiguous figures
-    FaceSet facesToDo = allFaces;      // copy
-    int facesToProcess;
-    int facesLeft;
-    do
-    {
-        facesToProcess = facesToDo.size();
-        qDebug() << "facesToProcess=" << facesToProcess;
-        assignColorsToFaces(facesToDo); // Propagate colours using a DFS (Depth First Search).
-        addFaceResults(facesToDo);
-        facesLeft = facesToDo.size();
-        qDebug() << "facesLeft=" << facesLeft;
-    } while ((facesLeft != 0) &&  (facesLeft < facesToProcess));
-
-    qDebug() << "done: facesLeft=" << facesLeft << "facesProcessed=" << facesToProcess;
+   // assign the color group to the sorted group
+   colorGroup.resetIndex();
+   for (auto it = faceGroup.begin(); it != faceGroup.end(); it++)
+   {
+       FaceSetPtr fsp = *it;
+       fsp->colorSet  = colorGroup.getNextColorSet();
+   }
 }
 
 // Propagate colours using a DFS (Depth First Search).
 void Faces::assignColorsToFaces(FaceSet & fset)
 {
-    //debugListFaces("BEFORE ASSIGN");
-    //debugDumpMap(v1,"v1");
-    //debugDumpMap(v2,"v2");
+#define DEBUG_FACES     1
+#define DEBUG_EDGE_MAP  2
+#define DEBUG_ASSIGN    4
+
+    static int debug = 0; //DEBUG_FACES | DEBUG_EDGE_MAP | DEBUG_ASSIGN;
 
     if (fset.size() == 0)
     {
         qWarning() << "no faces to assign";
         return;
     }
+
+    if (debug & DEBUG_FACES)dumpAllFaces("allfaces BEFORE ASSIGN");
+    if (debug & DEBUG_EDGE_MAP) dumpEdgeFaceMap(v1,"v1");
+    if (debug & DEBUG_EDGE_MAP) dumpEdgeFaceMap(v2,"v2");
+
     QStack<FacePtr> st;
-    FacePtr face = fset.at( 0 );
+    FacePtr face = fset.at(0);
     face->state = FACE_PROCESSING;
     st.push(face );
 
@@ -412,7 +350,7 @@ void Faces::assignColorsToFaces(FaceSet & fset)
     {
         face = st.pop();
         pops++;
-        //qDebug().noquote() << "Popped face:" << Utils::addr(face.get()) << sFaceState[face->state];
+        if (debug & DEBUG_ASSIGN) qDebug().noquote() << "Popped face:" << Utils::addr(face.get()) << sFaceState[face->state];
 
         eColor color = C_WHITE;     // seed
 
@@ -421,15 +359,15 @@ void Faces::assignColorsToFaces(FaceSet & fset)
             FacePtr nfi = getTwin(face, idx);
             if (!nfi)
             {
-                //qDebug().noquote() << "    no twin:"  << idx;
+                if (debug & DEBUG_ASSIGN) qDebug().noquote() << "    no twin:"  << idx;
                 continue;
             }
-            //qDebug().noquote() << "  Twin face:" << idx << Utils::addr(nfi.get()) << sFaceState[nfi->state];
+            if (debug & DEBUG_ASSIGN) qDebug().noquote() << "  Twin face:" << idx << Utils::addr(nfi.get()) << sFaceState[nfi->state];
             switch( nfi->state )
             {
             case FACE_UNDONE:
                 nfi->state = FACE_PROCESSING;
-                //qDebug().noquote() << "    Pushing:" << idx << Utils::addr(nfi.get()) << sFaceState[nfi->state];
+                if (debug & DEBUG_ASSIGN) qDebug().noquote() << "    Pushing:" << idx << Utils::addr(nfi.get()) << sFaceState[nfi->state];
                 st.push( nfi );
                 pushes++;
                 break;
@@ -467,12 +405,92 @@ void Faces::assignColorsToFaces(FaceSet & fset)
             face->state = FACE_DONE_BLACK;
         }
 
-        //qDebug().noquote() << " Popped now:" << Utils::addr(face.get()) << sFaceState[face->state];
+        if (debug & DEBUG_ASSIGN) qDebug().noquote() << " Popped now:" << Utils::addr(face.get()) << sFaceState[face->state];
     }
 
     qDebug() << "Pushes=" << pushes << "Pops=" << pops;
 
-    //debugListFaces("AFTER ASSIGN");
+    if (debug) dumpAllFaces("allfaces AFTER ASSIGN");
+}
+
+void Faces::handleVertex(VertexPtr vert, EdgePtr edge)
+{
+    FacePtr face = extractFace(vert, edge);
+    //qDebug() << "Face" << Utils::addr(face.get()) << "sides=" << face->size();
+
+    if( face->size() == 0)
+    {
+        return;
+    }
+
+#ifdef DELETE_CLOCKWISE
+    if (isClockwise(face))
+    {
+        // This algorithm doesn't distinguish between clockwise and
+        // counterclockwise.  So every map will produce one extraneous
+        // face, namely the countour that surrounds the whole map.
+        // By the nature of extractFace, the surrounding polygon will
+        // be the only clockwise polygon in the set.  So check for
+        // clockwise and throw it away.
+        qDebug() << "dumping clockwise face";
+        return;
+    }
+#endif
+
+    face->sortForComparion();
+    allFaces.push_back(face);
+
+    for( int v = 0; v < face->size(); ++v )
+    {
+        VertexPtr from = face->at(v);
+        VertexPtr to   = face->at((v+1) % face->size());
+        EdgePtr conn   = from->getNeighbour(to);
+
+        if (!conn)
+        {
+            qWarning("no face to insert in map");
+            continue;
+        }
+        if( conn->getV1() == from )
+        {
+            v1.insert(conn, face);
+        }
+        else
+        {
+            Q_ASSERT(conn->getV2() == from);
+            v2.insert(conn, face);
+        }
+    }
+}
+
+// Walk from a vertex along an edge, always taking the current edge's neighbour at every vertex.
+// The set of vertices encountered determines a face.
+FacePtr Faces::extractFace(VertexPtr from, EdgePtr edge)
+{
+    FacePtr ret   = make_shared<Face>();
+
+    VertexPtr cur = from;
+    EdgePtr  ecur = edge;
+
+    while( true )
+    {
+        ret->push_back(cur);
+        VertexPtr n = ecur->getOtherV(cur->getPosition());
+
+        if( n->numNeighbours() < 2 )
+        {
+            return ret;
+        }
+
+        BeforeAndAfter ba = n->getBeforeAndAfter(ecur);
+        ecur = ba.before;
+
+        cur = n;
+        if (cur == from)
+        {
+            return ret;
+        }
+    }
 }
 
 void Faces::addFaceResults(FaceSet & fset)
@@ -734,7 +752,7 @@ void Faces::removeDuplicates()
 {
     FaceSet qvfp;
 
-    qDebug() << "Facaes::Remove duplicates - start count="  << allFaces.size();
+    qDebug() << "Faces::Remove duplicates - start count="  << allFaces.size();
     for (auto it = allFaces.begin(); it != allFaces.end(); it++)
     {
         FacePtr fp = *it;
@@ -771,23 +789,7 @@ void Faces::removeDuplicates()
 ///
 ////////////////////////////////////////
 
-void Faces::debugPaintFaces(QVector<PolyPtr> & color)
-{
-    for (auto it = allFaces.begin(); it != allFaces.end(); it++)
-    {
-        FacePtr fi = *it;
-        QPolygonF poly;
-        for( int v = 0; v < fi->size(); ++v )
-        {
-            poly << fi->at(v)->getPosition();
-        }
-        PolyPtr pts = make_shared<QPolygonF>(poly);
-        color.push_back(pts);
-    }
-}
-
-
-void Faces::debugFaceSet(QString title)
+void Faces::dumpFaceGroup(QString title)
 {
     qDebug().noquote() << "=============== FACE SET" << title << "=================================";
     for (int i=0; i < faceGroup.size(); i++)
@@ -798,18 +800,18 @@ void Faces::debugFaceSet(QString title)
     qDebug().noquote() << "===============END" << title << "=============================";
 }
 
-void Faces::debugListFaces(QString title)
+void Faces::dumpAllFaces(QString title)
 {
     qDebug().noquote() << "=============== FACES" << title << "=================================";
     for (int i=0; i < allFaces.size(); i++)
     {
         FacePtr fip = allFaces[i];
-        qDebug().noquote() << Utils::addr(fip.get()) << "state=" << sFaceState[fip->state] << "sides=" << fip->size() << "area=" << fip->getArea() << i;
+        qDebug().noquote() << i << Utils::addr(fip.get()) << "state=" << sFaceState[fip->state] << "sides=" << fip->size() << "area=" << fip->getArea()  << fip->dump();
     }
     qDebug().noquote() << "===============END" << title << "=============================";
 }
 
-void Faces::debugDumpMap(QMap<EdgePtr,FacePtr> & dmap, QString title)
+void Faces::dumpEdgeFaceMap(QMap<EdgePtr,FacePtr> & dmap, QString title)
 {
     qDebug().noquote() << "=============== MAP" << title << "=================================";
     for (auto it = dmap.constBegin(); it != dmap.constEnd(); it++)
@@ -830,6 +832,7 @@ void  Faces::purifyMap(MapPtr map)
 
 void Faces::purifyFaces()
 {
+    qWarning() << "Faces::purifyFaces - currently does nothing useful";
     int count = 0;
 
     for (int i=0; i < allFaces.size(); i++)
@@ -916,10 +919,18 @@ bool Face::equals(FacePtr other)
     return getSorted() == other->getSorted();
 }
 
+QVector<VertexPtr> & Face::getSorted()
+{
+    Q_ASSERT(sortedShadow.size() != 0);
+    return sortedShadow;
+}
+
 QPointF Face::center()
 {
     if (_center .isNull())
-        _center = getPolygon()->boundingRect().center();
+    {
+        _center = Point::center(*getPolygon());
+    }
     return _center;
 }
 
@@ -948,11 +959,6 @@ void Face::sortForComparion()
     }
 }
 
-bool Face::containsCrossovers()
-{
-    return true;
-}
-
 bool  Face::containsCrossover()
 {
     QVector<VertexPtr> qvec;
@@ -973,6 +979,22 @@ bool  Face::containsCrossover()
         }
     }
     return false;
+}
+
+QString Face::dump()
+{
+    QString astring;
+    QDebug  deb(&astring);
+
+    QVector<VertexPtr> & vertices = *this;
+    for (auto it = vertices.begin(); it != vertices.end(); it++)
+    {
+        VertexPtr v = *it;
+        QPointF pt = v->getPosition();
+        deb << "[" << Utils::addr(v.get()) << pt << "]";
+    }
+    astring.remove("QPointF");
+    return astring;
 }
 
 ////////////////////////////////////////
@@ -1003,9 +1025,9 @@ void FaceSet::sortByPositon()
     faces = newSet;
 }
 
-#if 1
 void FaceSet::sortByPositon(FacePtr fp)
 {
+#if 1
     // sort by y-axis then x-axis
     QPointF pt = fp->center();
     for (auto it = newSet.begin(); it != newSet.end(); it++)
@@ -1042,10 +1064,8 @@ void FaceSet::sortByPositon(FacePtr fp)
         }
     }
     newSet.push_back(fp);
-}
+
 #else
-void FaceSet::sortByPositon(FacePtr fp)
-{
     // sort by x-axis then y-axis
     QPointF pt = fp->center();
     for (auto it = newSet.begin(); it != newSet.end(); it++)
@@ -1082,8 +1102,8 @@ void FaceSet::sortByPositon(FacePtr fp)
         }
     }
     newSet.push_back(fp);
-}
 #endif
+}
 
 void FaceGroup::select(int idx)
 {

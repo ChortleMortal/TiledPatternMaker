@@ -26,7 +26,7 @@
 #define PAGE_CONTROL_H
 
 #include "base/configuration.h"
-#include "panels/sliderset.h"
+#include "panels/layout_sliderset.h"
 #include "panels/panel_page.h"
 
 class page_control : public panel_page
@@ -48,6 +48,8 @@ signals:
 public slots:
     void    slot_selectViewer(int id, int id2);
     void    slot_loadedXML(QString name);
+    void    slot_setSyle();
+    void    slot_setWS();
 
 private slots:
     void    slot_saveAsXML();
@@ -56,14 +58,12 @@ private slots:
     void    slot_protoViewer_pressed(int id);
     void    slot_protoFeatureViewer_pressed(int id);
     void    slot_tilingViewer_pressed(int id);
-    void    slot_tilingDesignerViewer_pressed(int id);
+    void    slot_tilingMakerViewer_pressed(int id);
     void    slot_figureViewer_pressed(int id);
     void    slot_delViewer_pressed(int id);
     void    slot_mapEdView_pressed(int id);
     void    slot_showXMLName(QString name);
     void    slot_wsStatusBox(bool on);
-    void    slot_set1();
-    void    slot_set2();
     void    designNotesChanged();
 
 protected:
@@ -89,9 +89,12 @@ private:
     QCheckBox   *cbTilingView;
     QCheckBox   *cbFigureView;
     QCheckBox   *cbDELView;
-    QCheckBox   *cbTilingDesignerView;
+    QCheckBox   *cbTilingMakerrView;
     QCheckBox   *cbFigMapView;
     QCheckBox   *cbFaceSetView;
+
+    QPushButton * setStyle;
+    QPushButton * setWS;
 
     QRadioButton *radioLoadedStyleView;
     QRadioButton *radioWsStyleView;
@@ -140,7 +143,7 @@ private:
     QButtonGroup            protoGroup;
     QButtonGroup            protoFeatureGroup;
     QButtonGroup            tilingGroup;
-    QButtonGroup            tilingDesignerGroup;
+    QButtonGroup            tilingMakerGroup;
     QButtonGroup            figureGroup;
     QButtonGroup            delGroup;
     QButtonGroup            mapEdGroup;

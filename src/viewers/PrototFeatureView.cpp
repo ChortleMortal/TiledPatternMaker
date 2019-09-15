@@ -25,7 +25,7 @@
 #include "base/configuration.h"
 #include "base/canvas.h"
 #include "viewers/ProtoFeatureView.h"
-#include "viewers/designelementview.h"
+#include "viewers/placeddesignelementview.h"
 #include "geometry/Point.h"
 
 ProtoFeatureView::ProtoFeatureView(PrototypePtr proto) : Layer("ProtoFeatureView")
@@ -50,10 +50,10 @@ ProtoFeatureView::ProtoFeatureView(PrototypePtr proto) : Layer("ProtoFeatureView
     {
         PlacedFeaturePtr pf = *i;
         FeaturePtr feature  = pf->getFeature();
-        Transform T         = pf->getTransform();
+        QTransform T        = pf->getTransform();
         FigurePtr fig       = proto->getFigure(feature );
 
-        PlacedDesignElement rpf(fig,feature,T);
+        PlacedDesignElement rpf(feature,fig,T);
         rpfs.push_back(rpf);
     }
     forceRedraw();
@@ -73,16 +73,15 @@ void ProtoFeatureView::paint(QPainter *painter, const QStyleOptionGraphicsItem *
 
     painter->setRenderHint(QPainter::Antialiasing ,true);
     painter->setRenderHint(QPainter::SmoothPixmapTransform,true);
-    painter->setPen(QPen(Qt::black,3));
 
-    Transform tr = *getLayerTransform();
+    QTransform tr = getLayerTransform();
     GeoGraphics gg(painter,tr);
     draw(&gg);
 }
 
 void ProtoFeatureView::draw( GeoGraphics * gg )
 {
-    gg->setColor(QColor(20,150,210));
+    //gg->setColor(QColor(20,150,210));
     fill(gg, pp->getTiling()->getFillData());
 }
 
@@ -92,12 +91,15 @@ void ProtoFeatureView::receive(GeoGraphics *gg, int h, int v )
     {
         PlacedDesignElement & rpf = rpfs[i];
 
-        Transform T0 = rpf.getTransform();
-        Transform T  = Transform::translate((t1 * static_cast<qreal>(h)) + (t2 * static_cast<qreal>(v))) ;
-        T.composeD(T0);
+        QTransform T0 = rpf.getTransform();
+        QPointF pt    = (t1 * static_cast<qreal>(h)) + (t2 * static_cast<qreal>(v));
+        QTransform T  = QTransform::fromTranslate(pt.x(),pt.y());
+        //T.composeD(T0);
+        T = T0 * T;
+        //qDebug() << "T" << Transform::toInfoString(T);
 
-        PlacedDesignElementPtr pdep = make_shared<PlacedDesignElement>( rpf.getFigure(), rpf.getFeature(), T);
-        PlacedDesignElementView::drawPlacedDesignElement(gg, pdep,QColor(Qt::green), feature_interior, feature_border);
+        PlacedDesignElementPtr pdep = make_shared<PlacedDesignElement>(rpf.getFeature(), rpf.getFigure(), T);
+        PlacedDesignElementView::drawPlacedDesignElement(gg, pdep,QPen(Qt::green,3), QBrush(feature_interior), QPen(feature_border,3));
     }
 }
 

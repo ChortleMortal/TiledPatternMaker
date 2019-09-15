@@ -58,8 +58,7 @@ bool Design5::build()
     info.setSizeF(size);
     info.setBackgroundColor(QColor(TileBlue));
 
-    BorderPtr bp = make_shared<Border>();
-    bp->addBorder1(QColor(TileGreen),QColor(TileWhite),size);
+    BorderPtr bp = make_shared<BorderTwoColor>(QColor(TileGreen),QColor(TileWhite),20.0);
     info.setBorder(bp);
 
     qreal d = 150.0;                // diameter
@@ -100,8 +99,7 @@ bool Design6::build()
     info.setSizeF(size);
     info.setBackgroundColor((QColor(TileWhite)));
 
-    BorderPtr bp = make_shared<Border>();
-    bp->addBorder1(QColor(TileGreen),QColor(TileWhite),size);
+    BorderPtr bp = make_shared<BorderTwoColor>(QColor(TileGreen),QColor(TileWhite),20.0);
     info.setBorder(bp);
 
     qreal d = 150.0;                // diameter
@@ -156,8 +154,7 @@ bool Design7::build()
     info.setSizeF(size);
     info.setBackgroundColor((QColor(TileGreen)));
 
-    BorderPtr bp = make_shared<Border>();
-    bp->addBorder2(QColor(TileWhite),diameter,rows,cols);
+    BorderPtr bp = make_shared<BorderBlocks>(QColor(TileWhite),diameter,rows,cols);
     info.setBorder(bp);
 
     info.setStartTile(QPointF(diameter/2.0,diameter/2.0 + piece));
@@ -196,7 +193,7 @@ bool Design8::build()
 
     // patern
     int gridWidth = 41;
-    config->fgdGridStep = gridWidth;
+    config->fgdGridStepScreen = gridWidth;
     qreal diameter = 20.0 * qreal(gridWidth);
 
     // positioning
@@ -247,7 +244,7 @@ bool Design9::build()
 
     // patern
     int gridWidth = 21;
-    config->fgdGridStep = gridWidth;
+    config->fgdGridStepScreen = gridWidth;
     qreal diameter = 20.0 * qreal(gridWidth);
 
     // positioning
@@ -294,7 +291,7 @@ bool DesignHuPacked::build()
 
     // patern
     int gridWidth = 21;
-    config->fgdGridStep = gridWidth;
+    config->fgdGridStepScreen = gridWidth;
     qreal diameter = 20.0 * qreal(gridWidth);
     info.setDiameter(diameter);
 
@@ -352,7 +349,7 @@ bool DesignHuInsert::build()
 
     // patern
     int gridWidth = 21;
-    config->fgdGridStep = gridWidth;
+    config->fgdGridStepScreen = gridWidth;
     qreal diameter = 20.0 * qreal(gridWidth);
 
     // positioning
@@ -402,7 +399,7 @@ bool Design11::build()
 
     // patern
     int gridWidth = 41;
-    config->fgdGridStep = gridWidth;
+    config->fgdGridStepScreen = gridWidth;
     qreal diameter = 20.0 * qreal(gridWidth);
 
     // positioning
@@ -449,8 +446,7 @@ bool Design12::build()
     info.setSizeF(size);
     info.setBackgroundColor((TileBlack));
 
-    BorderPtr bp = make_shared<Border>();
-    bp->addBorder1(QColor(Qt::green),QColor(Qt::red),size);
+    BorderPtr bp = make_shared<BorderTwoColor>(QColor(Qt::green),QColor(Qt::red),20.0);
     info.setBorder(bp);
 
     qreal diameter = 400.0;
@@ -776,8 +772,7 @@ bool DesignKumiko1::build()
     info.setSizeF(size);
     info.setBackgroundColor((QColor(0x58, 0x39, 0x3e)));
 
-    BorderPtr bp = make_shared<Border>();
-    bp->addBorder1(QColor(0xa2,0x79,0x67),QColor(0xa2,0x79,0x67),size);
+    BorderPtr bp = make_shared<BorderTwoColor>(QColor(0xa2,0x79,0x67),QColor(0xa2,0x79,0x67),20);
     info.setBorder(bp);
 
     qreal diameter = 200.0;
@@ -824,8 +819,7 @@ void DesignKumiko2::init()
 
     info.setBackgroundColor((QColor(0x58, 0x39, 0x3e)));
 
-    BorderPtr bp = make_shared<Border>();
-    bp->addBorder1(QColor(0xa2,0x79,0x67),QColor(0xa2,0x79,0x67),size);
+    BorderPtr bp = make_shared<BorderTwoColor>(QColor(0xa2,0x79,0x67),QColor(0xa2,0x79,0x67),20.0);
     info.setBorder(bp);
 
     xSeparation = 200.0/100.0;
@@ -861,8 +855,7 @@ bool DesignKumiko2::build()
     //pat->setTilePosition(row,col);
     patterns.push_back(pat);
 
-    BorderPtr bp = make_shared<Border>();
-    bp->addBorder1(QColor(0xa2,0x79,0x67),QColor(0xa2,0x79,0x67),info.getSizeF());
+    BorderPtr bp = make_shared<BorderTwoColor>(QColor(0xa2,0x79,0x67),QColor(0xa2,0x79,0x67),20.0);
     info.setBorder(bp);
 
     info.setBackgroundColor((QColor(0x58, 0x39, 0x3e)));

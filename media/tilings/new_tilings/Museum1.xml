@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>Museum1</Name>
+	<Fill>-4,4,-4,4</Fill>
+	<T1>8,0</T1>
+	<T2>0,-8</T2>
+	<Feature type="girih" name="key1">
+		<Placement>1,0,0,0,1,0</Placement>
+		<Placement>-1,-1.224646799147353e-16,0,1.224646799147353e-16,-1,0</Placement>
+		<Placement>6.123233995736766e-17,-1,4,1,6.123233995736766e-17,-4</Placement>
+		<Placement>-1.608122649676637e-16,1,0,-1,-1.608122649676637e-16,0</Placement>
+		<Placement>-1,-1.224646799147353e-16,4,1.224646799147353e-16,-1,4</Placement>
+		<Placement>-1.608122649676637e-16,1,-4,-1,-1.608122649676637e-16,4</Placement>
+		<Placement>6.123233995736766e-17,-1,0,1,6.123233995736766e-17,0</Placement>
+		<Placement>1,0,-4,0,1,-4</Placement>
+	</Feature>
+	<Desc>Test of background</Desc>
+	<Auth>David Casper</Auth>
+	<BackgroundImage name="IMG_1539.JPG">
+		<Scale>0.3</Scale>
+		<Rot>0</Rot>
+		<X>0</X>
+		<Y>0</Y>
+		<Perspective>1.252018489582403,0.04238682390640681,1.667122368722783e-05,0.148316036458223,1.253175663319853,9.744291586251675e-05,-1027.875076908958,-326.0345350737152,0.9640374821735455</Perspective>
+	</BackgroundImage>
+</Tiling>

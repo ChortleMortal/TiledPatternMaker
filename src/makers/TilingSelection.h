@@ -34,6 +34,9 @@
 
 #include <QPointF>
 #include <QLineF>
+#include <QString>
+#include "tile/Feature.h"
+#include "tile/PlacedFeature.h"
 #include "base/shared.h"
 
 enum eSelection
@@ -42,28 +45,49 @@ enum eSelection
     INTERIOR      = 1,
     EDGE          = 2,
     VERTEX        = 3,
-    MID_POINT     = 4
+    MID_POINT     = 4,
+    ARC_POINT     = 5
 };
 
-class TilingDesignerView;
+#define Enum2Str(e)  {QString(#e)}
+
+static QString strTiliingSelection[] =
+{
+    Enum2Str(NOTHING),
+    Enum2Str(INTERIOR),
+    Enum2Str(EDGE),
+    Enum2Str(VERTEX),
+    Enum2Str(MID_POINT),
+    Enum2Str(ARC_POINT)
+};
+
+class TilingMakerView;
 
 class TilingSelection
 {
 public:
     TilingSelection(eSelection type, PlacedFeaturePtr pfp);
     TilingSelection(eSelection type, PlacedFeaturePtr pfp, QPointF pt);
-    TilingSelection(eSelection type, PlacedFeaturePtr pfp, QLineF  line);
+    TilingSelection(eSelection type, PlacedFeaturePtr pfp, EdgePtr edge);
+    TilingSelection(eSelection type, PlacedFeaturePtr pfp, EdgePtr edge, QPointF pt);
 
-    PlacedFeaturePtr getFeature() { return pfp; }
-    QLineF           getLine()    { return line; }
-    QPointF          getPoint()   { return pt; }
-
-    eSelection type;
+    PlacedFeaturePtr getPlacedFeature() { return pfp; }
+    QTransform       getTransform()     { return pfp->getTransform(); }
+    FeaturePtr       getFeature()       { return pfp->getFeature(); }
+    QPolygonF        getModelPolygon()  { return pfp->getFeaturePolygon(); }
+    QPolygonF        getPlacedPolygon() { return pfp->getPlacedPolygon(); }
+    EdgePtr          getModelEdge()     { return edge; }
+    QLineF           getModelLine()     { return edge->getLine(); }
+    QLineF           getPlacedLine()    { return pfp->getTransform().map(edge->getLine()); }
+    QPointF          getModelPoint()    { return pt; }
+    QPointF          getPlacedPoint()   { return pfp->getTransform().map(pt); }
+    eSelection       getType()          { return type; }
 
 private:
     PlacedFeaturePtr pfp;
     QPointF          pt;
-    QLineF           line;
+    EdgePtr          edge;
+    eSelection       type;
 };
 
 typedef shared_ptr<TilingSelection> TilingSelectionPtr;

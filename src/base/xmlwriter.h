@@ -33,6 +33,7 @@
 #include <string>
 #include "base/shared.h"
 #include "base/styleddesign.h"
+#include "geometry/xform.h"
 
 using std::string;
 using namespace pugi;
@@ -58,6 +59,7 @@ protected:
     void processDesign(QTextStream & ts);
     void procScale(QTextStream &ts,qreal scale);
     void procSize(QTextStream &ts,QSizeF size);
+    void procWidth(QTextStream &ts,qreal width);
     void procBackground(QTextStream &ts, QColor color);
     void procBorder(QTextStream &ts, BorderPtr border);
     void procColor(QTextStream & ts, QColor color);
@@ -75,7 +77,7 @@ protected:
     bool processTileColors(QTextStream &ts, StylePtr s);
 
     // styles
-    void    procesToolkitGeoLayer(QTextStream &ts, Bounds  &b);
+    void    procesToolkitGeoLayer(QTextStream &ts, Xform &xf);
     void    processsStyleThick(QTextStream &ts, bool draw_outline, qreal width);
     void    processsStyleInterlace(QTextStream &ts, qreal gap, qreal shadow, bool includeSVerts);
     void    processsStyleFilled(QTextStream &ts, bool draw_inside, bool draw_outside, int algorithm);
@@ -100,7 +102,7 @@ protected:
 
     void    setBoundary(QTextStream & ts, PolyPtr p);
     void    setPrototype(QTextStream & ts, PrototypePtr pp);
-    void    setPolygon(QTextStream & ts,PolyPtr pp);
+    void    setPolygon(QTextStream & ts,PolyPtr pp);    // deprecated
 
     void    setVertex(QTextStream & ts, VertexPtr v, QString name = "Vertex");
     void    setEdges(QTextStream & ts, QVector<EdgePtr> &qvec);
@@ -186,12 +188,6 @@ private:
     MapPtr                  _currentMap;
 
     int refId;
-    int vOrigCnt;
-    int vRefrCnt;
-    int eOrigCnt;
-    int eRefrCnt;
-    int nOrigCnt;
-    int nRefrCnt;
 };
 
 #endif

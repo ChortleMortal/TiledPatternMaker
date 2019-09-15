@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<Tiling version="2">
+	<Name>First Curved.v2</Name>
+	<Fill>-4,4,-4,4</Fill>
+	<T1>2,-2</T1>
+	<T2>4,0</T2>
+	<Feature type="edgepoly">
+		<Curve convex="t">
+			<Point id="1">1,1</Point>
+			<Point id="2">-0.9999999999999998,1</Point>
+			<Center id="3">1.110223024625157e-16,-0.9999999999999998</Center>
+		</Curve>
+		<Curve convex="f">
+			<Point reference="2" />
+			<Point id="4">-1,-0.9999999999999998</Point>
+			<Center id="5">-3,5.551115123125783e-16</Center>
+		</Curve>
+		<Curve convex="t">
+			<Point reference="4" />
+			<Point id="6">0.9999999999999997,-1</Point>
+			<Center id="7">2.220446049250313e-16,1</Center>
+		</Curve>
+		<Curve convex="f">
+			<Point reference="6" />
+			<Point reference="1" />
+			<Center id="8">3,-5.551115123125783e-16</Center>
+		</Curve>
+		<Placement>1,0,0,0,1,0</Placement>
+		<Placement>1,0,2,0,1,-4e-16</Placement>
+	</Feature>
+	<Desc>Curved squares</Desc>
+	<Auth>David A. Casper</Auth>
+</Tiling>

@@ -48,22 +48,22 @@ ColoredEditor::ColoredEditor(Colored * c, QTableWidget * table)
     colored = c;
     this->table = table;
 
+    QColor color = colored->getColor();
+    qreal  opacity = color.alphaF();
+    qDebug() << "color=" << color << "opacity=" << opacity;
+
     table->clear();
     table->setColumnCount(3);
     table->setRowCount(3);
     table->setColumnWidth(1,301);
     table->horizontalHeader()->setVisible(false);
     table->verticalHeader()->setVisible(false);
-
-    QTableWidgetItem * item;
-
     rows     = 0;
 
-    item = new QTableWidgetItem("Color");
+    QTableWidgetItem * item = new QTableWidgetItem("Color");
     table->setItem(rows,0,item);
 
     color_label = new QLabel("      ");
-    QColor color = colored->getColor();
     QString colcode = color.name(QColor::HexArgb);
     qDebug().noquote() << "Editor: color=" << colcode;
     color_label->setStyleSheet("QLabel { background-color :"+colcode+" ;}");
@@ -77,7 +77,6 @@ ColoredEditor::ColoredEditor(Colored * c, QTableWidget * table)
     item = new QTableWidgetItem("Transparency");
     table->setItem(rows,0,item);
 
-    qreal opacity = color.alphaF();
     transparency = new DoubleSliderSet("", opacity, 0.0, 1.0, 100);
     QWidget * widget = new QWidget();
     widget->setContentsMargins(0,0,0,0);
@@ -397,8 +396,7 @@ void FilledEditor::slot_viewFaces()
         return;
     }
     Layer * l = layers[0];
-    Bounds b = l->getBounds();
-    Bounds d = l->getDeltas();
+    Xform xf = l->getDeltas();
 
     if (!selected)
     {
@@ -419,8 +417,7 @@ void FilledEditor::slot_viewFaces()
     for (auto it = layers.begin(); it != layers.end(); it++)
     {
         Layer * l2 = *it;
-        l2->setBounds(b);
-        l2->setDeltas(d);
+        l2->setDeltas(xf);
     }
     emit sig_update();
 }

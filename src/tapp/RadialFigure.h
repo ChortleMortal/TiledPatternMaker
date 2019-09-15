@@ -39,7 +39,6 @@
 #define RADIAL_FIGURE_H
 
 #include "tapp/Figure.h"
-#include "geometry/Transform.h"
 
 class RadialFigure : public Figure
 {
@@ -60,10 +59,10 @@ public:
 
     qreal   get_dn()  { return dn; }
     qreal   get_don() { return don; }
-    Transform getTransform() {return Tr;}
+    QTransform getTransform() {return Tr;}
 
     virtual MapPtr   buildUnit() = 0;
-    virtual void     buildBoundary() override;
+    virtual void     buildExtBoundary() override;
     virtual MapPtr   useBuiltMap() const { return figureMap; }
     virtual QString  getFigureDesc() override { return "Radial Figure"; }
 
@@ -79,7 +78,7 @@ protected:
     int           n;
     qreal         dn;
     qreal         don;
-    Transform     Tr;
+    QTransform    Tr;
     qreal         r;  // rotate
 
     MapPtr        unitMap;

@@ -29,7 +29,7 @@
 #include "base/tilingmanager.h"
 #include "base/fileservices.h"
 #include "base/tiledpatternmaker.h"
-#include "panels/sliderset.h"
+#include "panels/layout_sliderset.h"
 #include "base/shared.h"
 #include "tile/Tiling.h"
 
@@ -56,12 +56,12 @@ page_debug:: page_debug(ControlPanel *panel)  : panel_page(panel,"Debug Tools")
     QCheckBox   * cbStopIfDiff          = new QCheckBox("Stop if Diff");
 
     SpinSet     * spCycleInterval       = new SpinSet("Cycle Interval",0,0,9);
-    QComboBox   * cycleCombo            = new QComboBox();
+    cycleCombo                          = new QComboBox();
     QPushButton * cycleBtn              = new QPushButton("Cycle");
 
-    //btnCopyLog->setFixedWidth(121);
-    //btnVerTileNames->setFixedWidth(121);
-    //reformatDesXMLBtn->setFixedWidth(121);
+    cbGridModel                         = new QCheckBox("Grid Model");
+    gridWidth                           = new DoubleSpinSet("GridWidth",1.0,0.0001,900);
+    gridWidth->setDecimals(8);
 
     QGridLayout * grid1 = new QGridLayout();
     grid1->setHorizontalSpacing(51);
@@ -72,9 +72,11 @@ page_debug:: page_debug(ControlPanel *panel)  : panel_page(panel,"Debug Tools")
     row++;
     grid1->addWidget(reformatDesXMLBtn,     row,0);
     grid1->addWidget(reprocessDesXMLBtn,    row,1);
+    grid1->addWidget(cbGridModel,           row,2);
     row++;
     grid1->addWidget(reformatTileXMLBtn,    row,0);
     grid1->addWidget(reprocessTileXMLBtn,   row,1);
+    grid1->addLayout(gridWidth,             row,2);
     row++;
 
     QHBoxLayout * hbox00 = new QHBoxLayout;
@@ -122,18 +124,19 @@ page_debug:: page_debug(ControlPanel *panel)  : panel_page(panel,"Debug Tools")
     selectImage1    = new QPushButton("Select");
     viewImage1      = new QPushButton("View");
     compareImage    = new QPushButton("Compare Images");
-    compareImage->setFixedWidth(151);
+    transparent     = new QCheckBox("Transparent");
 
     QGridLayout * imageGrid = new QGridLayout();
-    imageGrid->addWidget(selectImage0,3,0);
-    imageGrid->addWidget(imageName0,3,1);
+    imageGrid->addWidget(imageName0,3,0);
+    imageGrid->addWidget(selectImage0,3,1);
     imageGrid->addWidget(viewImage0,3,2);
 
-    imageGrid->addWidget(selectImage1,4,0);
-    imageGrid->addWidget(imageName1,4,1);
+    imageGrid->addWidget(imageName1,4,0);
+    imageGrid->addWidget(selectImage1,4,1);
     imageGrid->addWidget(viewImage1,4,2);
 
     imageGrid->addWidget(compareImage,5,1);
+    imageGrid->addWidget(transparent,5,2);
 
     QGroupBox * imageGroup = new QGroupBox("Images");
     imageGroup->setLayout(imageGrid);
@@ -142,9 +145,11 @@ page_debug:: page_debug(ControlPanel *panel)  : panel_page(panel,"Debug Tools")
     cbAutoCycle->setChecked(config->autoCycle);
     cbStopIfDiff->setChecked(config->stopIfDiff);
     spCycleInterval->setValue(config->cycleInterval);
-    cycleCombo->setCurrentIndex(static_cast<int>(config->cycleMode));
+    int index = cycleCombo->findData(config->cycleMode);
+    cycleCombo->setCurrentIndex(index);
     comp0->setText(config->compareDir0);
     comp1->setText(config->compareDir1);
+    transparent->setChecked(config->transparentCompare);
 
     connect(btnCopyLog,             &QPushButton::clicked,     this,   &page_debug::slot_copyLog);
     connect(btnVerTileNames,        &QPushButton::clicked,     this,   &page_debug::slot_verifyTilingNames);
@@ -155,11 +160,14 @@ page_debug:: page_debug(ControlPanel *panel)  : panel_page(panel,"Debug Tools")
     connect(cbVerifyMaps,           &QCheckBox::clicked,       this,   &page_debug::slot_verifyMapsClicked);
     connect(cbAutoCycle,            &QCheckBox::clicked,       this,   &page_debug::slot_autoCycleClicked);
     connect(cbStopIfDiff,           &QCheckBox::clicked,       this,   &page_debug::slot_stopIfDiffClicked);
+    connect(cbGridModel,            &QCheckBox::clicked,       this,   &page_debug::slot_gridModelClicked);
+    connect(transparent,            &QCheckBox::clicked,       this,   &page_debug::slot_transparentClicked);
     connect(spCycleInterval,        &SpinSet::valueChanged,    this,   &page_debug::slot_cycleIntervalChanged);
     connect(cycleCombo,             SIGNAL(currentIndexChanged(int)), this, SLOT(slot_cycleModeChanged(int)));
     connect(compareDir0Btn,         &QPushButton::clicked,     this,  &page_debug::selectDir0);
     connect(compareDir1Btn,         &QPushButton::clicked,     this,  &page_debug::selectDir1);
     connect(swapBtn,                &QPushButton::clicked,     this,  &page_debug::swapDirs);
+    connect(gridWidth,              &DoubleSpinSet::valueChanged, this,&page_debug::slot_gridWidthChanged);
 
     connect(selectImage0,           SIGNAL(clicked()),         this,   SLOT(slot_selectImage0()));
     connect(viewImage0,             SIGNAL(clicked()),         this,   SLOT(slot_viewImage0()));
@@ -181,6 +189,17 @@ void  page_debug::onEnter()
 {
     imageName0->setText(config->image0);
     imageName1->setText(config->image1);
+    cbGridModel->setChecked(config->fgdGridModel);
+    if (config->fgdGridModel)
+    {
+        gridWidth->setLabel("Model Units:");
+        gridWidth->setValue(config->fgdGridStepModel);
+    }
+    else
+    {
+        gridWidth->setLabel("Screen Units:");
+        gridWidth->setValue(config->fgdGridStepScreen);
+    }
 }
 
 void  page_debug::refreshPage()
@@ -404,7 +423,9 @@ void page_debug::slot_cycleIntervalChanged(int value)
 
 void page_debug::slot_cycleModeChanged(int row)
 {
-    config->cycleMode = static_cast<eCycleMode>(row);
+    Q_UNUSED(row);
+    int mode  = cycleCombo->currentData().toInt();
+    config->cycleMode = static_cast<eCycleMode>(mode);
 }
 
 void page_debug::selectDir0()
@@ -449,7 +470,7 @@ void page_debug::slot_selectImage0()
         QFileInfo info(file);
         config->image0 = info.absoluteFilePath();
         imageName0->setText(config->image0);
-        slot_viewImage0();
+        //slot_viewImage0();
     }
 }
 
@@ -470,7 +491,7 @@ void page_debug::slot_selectImage1()
         QFileInfo info(file);
         config->image1 = info.absoluteFilePath();
         imageName1->setText(config->image1);
-        slot_viewImage1();
+        //slot_viewImage1();
     }
 }
 
@@ -498,4 +519,38 @@ void page_debug::ViewImage(QString file)
 void page_debug::slot_compareImages()
 {
     emit sig_compareImageFiles(imageName0->text(),imageName1->text());
+}
+
+void page_debug::slot_transparentClicked(bool checked)
+{
+    config->transparentCompare = checked;
+}
+
+void page_debug::slot_gridModelClicked(bool enb)
+{
+    config->fgdGridModel = enb;
+    if (enb)
+    {
+        gridWidth->setLabel("Model Units:");
+        gridWidth->setValue(config->fgdGridStepModel);
+    }
+    else
+    {
+        gridWidth->setLabel("Screen Units:");
+        gridWidth->setValue(config->fgdGridStepScreen);
+    }
+    canvas->update();
+}
+
+void page_debug::slot_gridWidthChanged(qreal value)
+{
+    if (config->fgdGridModel)
+    {
+        config->fgdGridStepModel = value;
+    }
+    else
+    {
+        config->fgdGridStepScreen = static_cast<int>(value);
+    }
+    canvas->update();
 }

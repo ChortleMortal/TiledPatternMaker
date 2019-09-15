@@ -41,7 +41,7 @@ Plain::Plain(PrototypePtr proto, PolyPtr  bounds ) : Colored(proto,bounds)
 {
 }
 
-Plain::Plain(const Style *other ) : Colored(other)
+Plain::Plain(const Style & other ) : Colored(other)
 {
 }
 
@@ -57,27 +57,17 @@ Plain::~Plain()
 
 void Plain::resetStyleRepresentation()
 {
-    pts2.erase(pts2.begin(),pts2.end());
+    resetStyleMap();
 }
 
 void Plain::createStyleRepresentation()
 {
-    if (pts2.size())
+    if (getReadOnlyMap())
     {
         return;
     }
 
     setupStyleMap();
-
-    for (auto e = getReadOnlyMap()->getEdges()->begin(); e != getReadOnlyMap()->getEdges()->end(); e++)
-    {
-        EdgePtr edge = *e;
-        QPointF v1 = edge->getV1()->getPosition();
-        QPointF v2 = edge->getV2()->getPosition();
-
-        pts2 << v1;
-        pts2 << v2;
-    }
 }
 
 void Plain::draw(GeoGraphics *gg)
@@ -89,15 +79,15 @@ void Plain::draw(GeoGraphics *gg)
         return;
     }
 
-    if( pts2.size() != 0 )
+    gg->pushAndCompose(getLayerTransform());
+    QPen pen(colors.getNextColor().color);
+
+    for (auto e = getReadOnlyMap()->getEdges()->begin(); e != getReadOnlyMap()->getEdges()->end(); e++)
     {
-        gg->pushAndCompose(*getLayerTransform());
-        gg->setColor(colors.getNextColor().color);
-        for( int idx = 0; idx < pts2.size(); idx += 2 )
-        {
-            gg->drawLine( pts2[idx], pts2[idx+1]);
-        }
-        gg->pop();
-    }
+        EdgePtr edge = *e;
+        gg->drawEdge(edge,pen);
+     }
+
+     gg->pop();
 }
 

@@ -30,13 +30,13 @@
 // Probably not used in the applet at all.
 
 #include "TilingSelection.h"
-#include "viewers/TilingDesignerView.h"
+#include "viewers/tilingmakerview.h"
 
 TilingSelection::TilingSelection(eSelection type, PlacedFeaturePtr pfp)
 {
     this->type = type;
     this->pfp  = pfp;
-    pt = pfp->getTransform().apply(pfp->getFeature()->getCenter());
+    pt = pfp->getTransform().map(pfp->getFeature()->getCenter());
 }
 
 TilingSelection::TilingSelection(eSelection type, PlacedFeaturePtr pfp, QPointF pt)
@@ -46,10 +46,18 @@ TilingSelection::TilingSelection(eSelection type, PlacedFeaturePtr pfp, QPointF 
     this->pt   = pt;
 }
 
-TilingSelection::TilingSelection(eSelection type, PlacedFeaturePtr pfp, QLineF  line)
+TilingSelection::TilingSelection(eSelection type, PlacedFeaturePtr pfp, EdgePtr edge)
 {
     this->type = type;
     this->pfp  = pfp;
-    this->line = line;
-    pt = line.center();
+    this->edge = edge;
+    pt = edge->getLine().center();
+}
+
+TilingSelection::TilingSelection(eSelection type, PlacedFeaturePtr pfp, EdgePtr edge, QPointF pt)
+{
+    this->type = type;
+    this->pfp  = pfp;
+    this->edge = edge;
+    this->pt   = pt;
 }

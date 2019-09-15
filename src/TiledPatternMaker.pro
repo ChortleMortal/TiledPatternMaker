@@ -48,6 +48,7 @@ SOURCES += \
     base/patterns.cpp \
     base/pugixml.cpp \
     base/qtapplog.cpp \
+    base/scene.cpp \
     base/shapefactory.cpp \
     base/shapes.cpp \
     base/shortcuts.cpp \
@@ -73,22 +74,33 @@ SOURCES += \
     geometry/Vertex.cpp \
     geometry/bounds.cpp \
     geometry/circle.cpp \
+    geometry/edgepoly.cpp \
     geometry/facecycles.cpp \
+    geometry/xform.cpp \
     makers/FeatureButton.cpp \
     makers/FeatureLauncher.cpp \
-    makers/TilingDesigner.cpp \
     makers/TilingSelection.cpp \
     makers/explicit_figure_editors.cpp \
     makers/figure_editors.cpp \
     makers/figure_maker.cpp \
+    makers/mapeditor.cpp \
+    makers/mapeditorselection.cpp \
+    makers/mapeditorstash.cpp \
     makers/mapmouseactions.cpp \
+    makers/mapselection.cpp \
     makers/master_figure_editor.cpp \
+    makers/tilingmaker.cpp \
     makers/tilingmouseactions.cpp \
     panels/dlg_colorSet.cpp \
+    panels/dlg_feature_edit.cpp \
+    panels/dlg_listnameselect.cpp \
     panels/dlg_listselect.cpp \
     panels/dlg_name.cpp \
     panels/dlg_rebase.cpp \
     panels/dlg_rename.cpp \
+    panels/dlg_trim.cpp \
+    panels/layout_sliderset.cpp \
+    panels/layout_transform.cpp \
     panels/page_canvasSettings.cpp \
     panels/page_config.cpp \
     panels/page_control.cpp \
@@ -110,7 +122,7 @@ SOURCES += \
     panels/panel_misc.cpp \
     panels/panel_page.cpp \
     panels/panel_pagesWidget.cpp \
-    panels/sliderset.cpp \
+    panels/splitscreen.cpp \
     panels/style_colorFillGroup.cpp \
     panels/style_colorFillSet.cpp \
     panels/style_editors.cpp \
@@ -140,25 +152,23 @@ SOURCES += \
     tile/Feature.cpp \
     tile/PlacedFeature.cpp \
     tile/Tiling.cpp \
-    tile/tilemaker.cpp \
-    viewers/FeatureViewPaint.cpp \
+    tile/backgroundimage.cpp \
+    tile/featurereader.cpp \
+    tile/featurewriter.cpp \
+    tile/girihshapes.cpp \
+    tile/tilingloader.cpp \
     viewers/GeoGraphics.cpp \
     viewers/MapEditorView.cpp \
     viewers/PrototFeatureView.cpp \
     viewers/PrototypeView.cpp \
-    viewers/TilingDesignerView.cpp \
     viewers/TilingView.cpp \
-    viewers/designelementview.cpp \
     viewers/facesetview.cpp \
     viewers/figureview.cpp \
     viewers/itemviewer.cpp \
+    viewers/placeddesignelementview.cpp \
     viewers/shapeviewer.cpp \
-    viewers/workspaceviewer.cpp \
-    panels/splitscreen.cpp \
-    makers/mapeditorselection.cpp \
-    makers/mapeditorstash.cpp \
-    makers/mapeditor.cpp \
-    makers/mapselection.cpp
+    viewers/tilingmakerview.cpp \
+    viewers/workspaceviewer.cpp
 
 HEADERS += \
     base/border.h \
@@ -176,6 +186,7 @@ HEADERS += \
     base/pugiconfig.hpp \
     base/pugixml.hpp \
     base/qtapplog.h \
+    base/scene.h \
     base/shapefactory.h \
     base/shapes.h \
     base/shared.h \
@@ -200,24 +211,34 @@ HEADERS += \
     geometry/Point.h \
     geometry/Transform.h \
     geometry/Vertex.h \
-    geometry/bounds.h \
     geometry/circle.h \
+    geometry/edgepoly.h \
     geometry/facecycles.h \
+    geometry/xform.h \
     makers/FeatureButton.h \
     makers/FeatureLauncher.h \
-    makers/TilingDesigner.h \
     makers/TilingSelection.h \
     makers/explicit_figure_editors.h \
     makers/figure_editors.h \
     makers/figure_maker.h \
+    makers/mapeditor.h \
+    makers/mapeditorselection.h \
+    makers/mapeditorstash.h \
     makers/mapmouseactions.h \
+    makers/mapselection.h \
     makers/master_figure_editor.h \
+    makers/tilingmaker.h \
     makers/tilingmouseactions.h \
     panels/dlg_colorSet.h \
+    panels/dlg_feature_edit.h \
+    panels/dlg_listnameselect.h \
     panels/dlg_listselect.h \
     panels/dlg_name.h \
     panels/dlg_rebase.h \
     panels/dlg_rename.h \
+    panels/dlg_trim.h \
+    panels/layout_sliderset.h \
+    panels/layout_transform.h \
     panels/page_canvasSettings.h \
     panels/page_config.h \
     panels/page_control.h \
@@ -239,7 +260,7 @@ HEADERS += \
     panels/panel_misc.h \
     panels/panel_page.h \
     panels/panel_pagesWidget.h \
-    panels/sliderset.h \
+    panels/splitscreen.h \
     panels/style_colorFillGroup.h \
     panels/style_colorFillSet.h \
     panels/style_editors.h \
@@ -269,45 +290,27 @@ HEADERS += \
     tile/Feature.h \
     tile/PlacedFeature.h \
     tile/Tiling.h \
-    tile/tilemaker.h \
-    viewers/FeatureViewPaint.h \
+    tile/backgroundimage.h \
+    tile/featurereader.h \
+    tile/featurewriter.h \
+    tile/girihshapes.h \
+    tile/tilingloader.h \
     viewers/GeoGraphics.h \
     viewers/MapEditorView.h \
     viewers/ProtoFeatureView.h \
     viewers/PrototypeView.h \
-    viewers/TilingDesignerView.h \
     viewers/TilingView.h \
-    viewers/designelementview.h \
     viewers/facesetview.h \
     viewers/figureview.h \
     viewers/itemviewer.h \
+    viewers/placeddesignelementview.h \
     viewers/shapeviewer.h \
-    viewers/workspaceviewer.h \
-    panels/splitscreen.h \
-    makers/mapeditorselection.h \
-    makers/mapeditorstash.h \
-    makers/mapeditor.h \
-    makers/mapselection.h
+    viewers/tilingmakerview.h \
+    viewers/workspaceviewer.h
 
 FORMS +=
 
-DISTFILES += \
-    ../etc/docs/BrougImplemented.md \
-    ../etc/docs/ViewersAndMakers.xlsx \
-    ../etc/docs/colors.md \
-    ../etc/docs/design_notes.md \
-    ../etc/docs/sample.md \
-    ../etc/docs/taprats_notes.md \
-    ../etc/docs/taprats_readme.txt \
-    ../etc/models/Components.qmodel \
-    ../etc/models/Designs.qmodel \
-    ../etc/models/Style.qmodel \
-    ../etc/models/Viewers.qmodel \
-    ../etc/models/designeditor.qmodel \
-    ../etc/models/figure_editors.qmodel \
-    ../etc/models/figures.qmodel \
-    ../etc/models/shapes.qmodel \
-    ../etc/models/styles.qmodel
+DISTFILES +=
 
 RESOURCES += \
     tpm.qrc

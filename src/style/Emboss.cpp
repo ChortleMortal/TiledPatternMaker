@@ -45,22 +45,22 @@
 
 // Creation.
 
-Emboss::Emboss(PrototypePtr proto, PolyPtr bounds ) : Outline(proto,bounds)
+Emboss::Emboss(PrototypePtr proto, PolyPtr bounds) : Outline(proto,bounds)
 {
     setAngle(M_PI * 0.25 );
 }
 
-Emboss::Emboss(const Style *other ) : Outline(other)
+Emboss::Emboss(const Style & other) : Outline(other)
 {
-    const Emboss * emb = dynamic_cast<const Emboss*>(other);
-    if (emb)
+    try
     {
-        angle   = emb->angle;
-        light_x = emb->light_x;
-        light_y = emb->light_y;
-        greys   = emb->greys;
+        const Emboss & emb = dynamic_cast<const Emboss&>(other);
+        angle   = emb.angle;
+        light_x = emb.light_x;
+        light_y = emb.light_y;
+        greys   = emb.greys;
     }
-    else
+    catch(std::bad_cast exp)
     {
         setAngle(M_PI * 0.25 );
         setGreys();
@@ -83,20 +83,21 @@ void Emboss::draw(GeoGraphics * gg)
         return;
     }
 
-    if (pts3.size() != 0)
+    if (pts4.size() != 0)
     {
-        gg->pushAndCompose(*getLayerTransform());
-        for( int idx = 0; idx < pts3.size(); idx++)
+        gg->pushAndCompose(getLayerTransform());
+        for( int idx = 0; idx < pts4.size(); idx++)
         {
-            QPolygonF poly = pts3[idx];
-            drawTrap(gg, poly[1], poly[2], poly[3], poly[4] );
-            drawTrap(gg, poly[4], poly[5], poly[0], poly[1] );
+            BelowAndAboveEdge bae = pts4[idx];
+            QPolygonF poly        = bae.getPoly();
+            drawTrap(gg, bae.v2.v, bae.v2.above, bae.v1.below, bae.v1.v);
+            drawTrap(gg, bae.v1.v, bae.v1.above, bae.v2.below, bae.v2.v);
 
             if ( draw_outline )
             {
-                gg->setColor(Qt::black);
-                gg->drawPolygon(poly, false );
-                gg->drawLine(poly[1], poly[4] );
+                QPen pen(Qt::black);
+                gg->drawPolygon(poly,pen,QBrush());
+                gg->drawLine(bae.v2.v, bae.v1.v,pen);
             }
         }
         gg->pop();
@@ -114,13 +115,12 @@ void Emboss::drawTrap(GeoGraphics * gg, QPointF a, QPointF b, QPointF c, QPointF
     qreal dd = 0.5 * ( N.x() * light_x + N.y() * light_y + 1.0 );
 
     // Quantize to sixteen grey values.
-    int bb = (int)( 16.0 * dd );
-    gg->setColor( greys[ bb ] );
+    int bb = static_cast<int>(16.0 * dd);
+    QColor color = greys[bb];
 
     QPolygonF trap_pts;
     trap_pts << a << b << c << d;
-    gg->drawPolygon( trap_pts,true);
-
+    gg->drawPolygon(trap_pts,QPen(color),QBrush(color));
 }
 
 // Data.

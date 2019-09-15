@@ -28,9 +28,6 @@
 #include <QtCore>
 #include <QColor>
 #include "design.h"
-#include "geometry/bounds.h"
-#include "geometry/Transform.h"
-#include "geometry/Faces.h"
 #include "base/cycler.h"
 
 #define NUM_DESIGNS 30
@@ -47,6 +44,7 @@
 enum eViewType
 {
     VIEW_DESIGN,
+    VIEW_START = VIEW_DESIGN,
     VIEW_PROTO,
     VIEW_PROTO_FEATURE,
     VIEW_DEL,
@@ -202,6 +200,13 @@ enum ePushTarget
     TARGET_MAX = TARGET_WS_STYLES
 };
 
+enum eCSSelect  // canvas settings
+{
+    CS_STYLE,
+    CS_WS,
+    CS_CANVAS
+};
+
 class Configuration
 {
 public:
@@ -230,10 +235,11 @@ public:
     eMapEditorView        mapEditorView;
 
     ePushTarget           pushTarget;
-
+    eCSSelect             canvasSettings;
     eCycleMode            cycleMode;
     int                   cycleInterval;
 
+    QString rootMediaDir;
     QString rootTileDir;
     QString newTileDir;
     QString rootDesignDir;
@@ -266,9 +272,10 @@ public:
 
     bool    designFilterCheck;
     bool    tileFilterCheck;
-    bool    all_features_chk;
+    bool    showAllFeatures;
     bool    lockView;
     bool    screenIsSplit;
+    bool    transparentCompare;
 
     QString designFilter;
     QString tileFilter;
@@ -283,19 +290,20 @@ public:
     bool    boundingRects;
     bool    hideCircles;
 
-    int     fgdGridStep;
+    bool    fgdGridModel;       // true= model, false = screen
+    int     fgdGridStepScreen;
+    qreal   fgdGridStepModel;
 
     bool    updatePanel;
 
     bool    debugReplicate;
     bool    debugMapEnable;
 
-    Bounds  viewDeltas;
-
     FaceSet * faceSet;
     FacePtr   selectedFace;                     // used by FaceSetView;
+
     Feature * selectedDesignElementFeature;     // set by menu
-    QColor  figureViewBkgdColor;                // used by some menus
+    QColor    figureViewBkgdColor;                // used by some menus
 
     QMap<eDesign,DesignPtr>  availableDesigns;
 

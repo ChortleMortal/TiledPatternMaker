@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>Museum2</Name>
+	<Fill>-4,4,-4,4</Fill>
+	<T1>0,0</T1>
+	<T2>0,0</T2>
+	<Feature type="polygon">
+		<Point>0,1.5</Point>
+		<Point>-0.5,2</Point>
+		<Point>-1,2</Point>
+		<Point>-1,4</Point>
+		<Point>0,4</Point>
+		<Point>0,3</Point>
+		<Point>1,3</Point>
+		<Point>1,3.5</Point>
+		<Point>1.5,4</Point>
+		<Point>2,3.5</Point>
+		<Point>2,3</Point>
+		<Point>2.5,3</Point>
+		<Point>3,2.5</Point>
+		<Point>2.5,2</Point>
+		<Point>0.5,2</Point>
+		<Placement>1,0,-5.48,0,1,-5.000000000000005</Placement>
+		<Placement>-1.608122649676637e-16,1,-6.490000000000002,-1,-1.608122649676637e-16,2</Placement>
+		<Placement>-1,0,0.5,0,-1,2.99</Placement>
+		<Placement>6.123233995736766e-17,-1,1.5,1,6.123233995736766e-17,-4.000000000000003</Placement>
+	</Feature>
+	<Desc>The key girih shape contracted</Desc>
+	<Auth>David A. Casper</Auth>
+</Tiling>

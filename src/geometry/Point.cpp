@@ -23,36 +23,23 @@
  */
 
 #include "geometry/Point.h"
+#include "geometry/edgepoly.h"
 #include "geometry/Loose.h"
+#include "base/shared.h"
 
 // Point in a geometrical map.
 
 qreal Point::TOLERANCE = 1.0E-7;
 qreal Point::TOLERANCE2 = TOLERANCE * TOLERANCE;
-qreal Point::TRUNC = 1.0E7;
 
 QPointF Point::ORIGIN = QPointF(0.0,0.0);
-QPointF Point::UNIT_X = QPointF(1.0,0.0);
-QPointF Point::UNIT_Y = QPointF(0.0,1.0);
 
 
 // Equality.
 
-bool Point::equals(QPointF &pt,  QPointF & other )
-{
-    return (dist2(pt,other) < TOLERANCE2);
-    // return (x == v2.x) && (y == v2.y);
-}
-
 bool Point::isNear(const QPointF &pt,  const QPointF & other )
 {
     return (dist2(pt,other) < 49.0);
-}
-
-int Point::compareTo(QPointF & pt, QPointF & other )
-{
-    double diff = mag2(pt) - mag2(other);
-    return diff < -TOLERANCE2 ? -1 : diff >  TOLERANCE2 ?  1 : 0;
 }
 
 // Useful maths on QPointFs.
@@ -117,101 +104,6 @@ bool Point::intersectPoly(QLineF line, QPolygonF bounds)
     }
 
     return false;
-}
-
-QPointF Point::intersectCircle(qreal r, QLineF line)
-{
-#if 0
-    qreal theta = qAtan2(line.y2() - line.y1(), line.x2() - line.x1());
-    QPointF pt;
-    pt.setX(line.x1() + (radius * cos(theta)) );
-    pt.setY(line.y1() + (radius * sin(theta)) );
-    return pt;
-    return pt;
-#endif
-
-
-    //function interceptOnCircle(p1,p2,c,r){
-    //p1 is the first line point
-    //p2 is the second line point
-    QPointF p1 = line.p1();
-    QPointF p2 = line.p2();
-    //c is the circle's center
-    QPointF c(0.0,0.0);
-    //r is the circle's radius
-
-    QPointF p3(p1.x() - c.x(), p1.y() - c.y()); //shifted line points
-    QPointF p4(p2.x() - c.x(), p2.y() - c.y());
-
-    qreal m = (p4.y() - p3.y()) / (p4.x() - p3.x()); //slope of the line
-    qreal b = p3.y() - m * p3.x(); //y-intercept of line
-
-    qreal underRadical = qPow((qPow(r,2)*(qPow(m,2)+1)),2) -qPow(b,2); //the value under the square root sign
-
-    if (underRadical < 0)
-    {
-        //line completely missed
-        return QPointF();
-    }
-    else
-    {
-        qreal t1 = (-2*m*b+2*qSqrt(underRadical))/(2 * qPow(m,2) + 2); //one of the intercept x's
-        qreal t2 = (-2*m*b-2*qSqrt(underRadical))/(2 * qPow(m,2) + 2); //other intercept's x
-        QPointF i1(t1,m*t1+b); //intercept point 1
-        QPointF i2(t2,m*t2+b); //intercept point 2
-        return i1;
-    }
- }
-
-bool Point::intersectLine(QLineF line, QRectF bounds)
-{
-    QPointF tl = bounds.topLeft();
-    QPointF tr = bounds.topRight();
-    QPointF bl = bounds.bottomLeft();
-    QPointF br = bounds.bottomRight();
-    QLineF   l = QLineF(tl,bl);
-    QLineF   t = QLineF(tl,tr);
-    QLineF   r = QLineF(tr,br);
-    QLineF   b = QLineF(bl,br);
-
-    QPointF clipped;
-
-    if (line.intersect(l,&clipped) == QLineF::BoundedIntersection)
-        return true;
-    if (line.intersect(t,&clipped) == QLineF::BoundedIntersection)
-        return true;
-    if (line.intersect(r,&clipped) == QLineF::BoundedIntersection)
-        return true;
-    if (line.intersect(b,&clipped) == QLineF::BoundedIntersection)
-        return true;
-
-    return false;
-}
-
-
-QLineF Point::clipLine(QLineF line,QRectF bounds)
-{
-    QPointF tl = bounds.topLeft();
-    QPointF tr = bounds.topRight();
-    QPointF bl = bounds.bottomLeft();
-    QPointF br = bounds.bottomRight();
-    QLineF   l = QLineF(tl,bl);
-    QLineF   t = QLineF(tl,tr);
-    QLineF   r = QLineF(tr,br);
-    QLineF   b = QLineF(bl,br);
-
-    QPointF clipped;
-
-    if (line.intersect(l,&clipped) == QLineF::BoundedIntersection)
-        line.setP2(clipped);
-    if (line.intersect(t,&clipped) == QLineF::BoundedIntersection)
-        line.setP2(clipped);
-    if (line.intersect(r,&clipped) == QLineF::BoundedIntersection)
-        line.setP2(clipped);
-    if (line.intersect(b,&clipped) == QLineF::BoundedIntersection)
-        line.setP2(clipped);
-
-    return line;
 }
 
 QLineF Point::clipLine(QLineF line,QPolygonF bounds)
@@ -296,31 +188,10 @@ QPointF Point::convexSum(QPointF pt, QPointF other, double t )
     return QPointF( (mt * pt.x()) + (t * other.x()), (mt * pt.y()) + (t * other.y()) );
 }
 
-void Point::convexSumD( QPointF & pt, QPointF & other, double t )
-{
-    double mt = 1.0 - t;
-    pt.setX( mt * pt.x() + t * other.x());
-    pt.setY( mt * pt.y() + t * other.y());
-}
 
 qreal Point::cross(QPointF & pt, QPointF & other )
 {
     return (pt.x() * other.y()) - (pt.y() * other.x());
-}
-
-//To find orientation of ordered triplet (p1, p2, p3).
-// The function returns following values
-// 0 --> p, q and r are colinear
-// 1 --> Clockwise
-// 2 --> Counterclockwise
-int Point::orientation(QPointF p1, QPointF p2, QPointF p3)
-{
-    qreal val = (p2.y() - p1.y()) * (p3.x() - p2.x()) -
-                (p2.x() - p1.x()) * (p3.y() - p2.y());
-
-    if (val == 0.0) return 0;  // colinear
-
-    return (val > 0) ? 1: 2; // clock or counterclock wise
 }
 
 // Get the section of arc swept out between the edges this ==> from
@@ -371,16 +242,6 @@ qreal Point::dist2ToLine(QPointF pt,  QPointF p, QPointF q )
     }
 }
 
-qreal Point::parameterizationOnLine(QPointF pt, QPointF p, QPointF q)
-{
-    QPointF qmp = q -p ;
-    QPointF a   = pt - p;
-    qreal res1  =  QPointF::dotProduct(a,qmp)/QPointF::dotProduct(qmp,qmp);
-    qreal res2  =   dot(a, qmp ) / dot(qmp, qmp );
-    qDebug() << res1 << res2;
-    return  dot(a, qmp ) / dot(qmp, qmp );
-}
-
 QPointF Point::center(QPolygonF & pts )
 {
     QPointF cent;
@@ -393,7 +254,20 @@ QPointF Point::center(QPolygonF & pts )
             count++;
         }
     }
-    cent *= ( 1.0 / (qreal)count );
+
+    cent = cent / static_cast<qreal>(count);
+    return cent;
+}
+
+QPointF Point::center(EdgePoly & epoly)
+{
+    QPointF accum;
+    int count = epoly.size();
+    for( int i = 0; i < count; ++i )
+    {
+        accum += epoly[i]->getV1()->getPosition();
+    }
+    QPointF cent = accum / static_cast<qreal>(count);
     return cent;
 }
 
@@ -417,12 +291,3 @@ QPolygonF Point::recenter( QPolygonF pts, QPointF center )
     return new_pts;
 }
 
-QString Point::toString(QPolygonF  poly)
-{
-    QString astring;
-    QDebug  deb(&astring);
-
-    deb << poly;
-
-    return astring;
-}

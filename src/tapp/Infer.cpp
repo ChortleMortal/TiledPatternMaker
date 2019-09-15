@@ -45,6 +45,7 @@
 #include "tapp/Infer.h"
 #include "tapp/Prototype.h"
 #include "geometry/Loose.h"
+#include "geometry/Point.h"
 #include "geometry/Intersect.h"
 #include "tapp/Star.h"
 #include <algorithm>
@@ -53,7 +54,7 @@ using std::max;
 using std::min;
 
 // Transformed mid-points of a feature.
-placed_points::placed_points( FeaturePtr feature, Transform T, QPolygonF mids )
+placed_points::placed_points(FeaturePtr feature, QTransform T, QPolygonF mids )
 {
     this->feature = feature;
     this->mids    = mids;
@@ -62,7 +63,7 @@ placed_points::placed_points( FeaturePtr feature, Transform T, QPolygonF mids )
 
 
 // Information about what feature and edge on that feature is adjacent to a given edge on a given feature.
-adjacency_info::adjacency_info( FeaturePtr feature, int edge, Transform T, qreal tolerance )
+adjacency_info::adjacency_info( FeaturePtr feature, int edge, QTransform T, qreal tolerance )
 {
     this->feature   = feature;
     this->edge      = edge;
@@ -208,22 +209,23 @@ Infer::Infer( PrototypePtr proto )
 
 int Infer::add(int t1, int t2, int count)
 {
-    Transform T = Transform::translate((tiling->getTrans1() * t1 ) + (tiling->getTrans2() * t2 ));
+    QPointF pt   = (tiling->getTrans1() * static_cast<qreal>(t1)) + (tiling->getTrans2() * static_cast<qreal>(t2));
+    QTransform T = QTransform::fromTranslate(pt.x(),pt.y());
 
     QList<PlacedFeaturePtr> & pflist = tiling->getPlacedFeatures();
     for(auto it = pflist.begin(); it != pflist.end(); it++)
     {
         PlacedFeaturePtr pf = *it;
-        Transform Tf        = pf->getTransform();
+        QTransform Tf       = pf->getTransform();
         FeaturePtr feature  = pf->getFeature();
-        count = add2(T.compose(Tf), feature, count);
+        count = add2(Tf * T, feature, count);
     }
     return count;
 }
 
-int Infer::add2(Transform T, FeaturePtr feature, int count)
+int Infer::add2(QTransform T, FeaturePtr feature, int count)
 {
-    QPolygonF fpts = T.apply(feature->getPolygon());
+    QPolygonF fpts = T.map(feature->getPolygon());
 
     QPolygonF mids;
     int sz = feature->numPoints();
@@ -348,7 +350,7 @@ QVector<contact *> Infer::buildContacts( placed_points * pp, QVector<adjacency_i
 {
     QVector<contact*> ret;
 
-    QPolygonF fpts = pp->T.apply( pp->feature->getPolygon() );
+    QPolygonF fpts = pp->T.map( pp->feature->getPolygon() );
 
     // Get the transformed map for each adjacent feature.  I'm surprised
     // at how fast this ends up being!
@@ -417,9 +419,8 @@ QVector<contact *> Infer::buildContacts( placed_points * pp, QVector<adjacency_i
                 for (auto it = qvep.begin(); it != qvep.end(); it++)
                 {
                     EdgePtr edge    = *it;
-                    VertexPtr overt = edge->getOther( v->getPosition() );
-                    QPointF opos    = overt->getPosition();
-                    ret.push_back(new contact( pos, opos ));
+                    QPointF opos    = edge->getOtherP(v);
+                    ret.push_back(new contact(pos, opos));
                 }
             }
         }
@@ -565,7 +566,7 @@ MapPtr Infer::inferStar( FeaturePtr feature, qreal d, int s )
         map->mergeMap( buildStarHalfBranch( d, s, side_frac, -1.0, mid_points ));
     }
 
-    map->transformMap( pmain->T.invert() );
+    map->transformMap( pmain->T.inverted() );
 
     return map;
 }
@@ -576,11 +577,11 @@ QPointF Infer::buildGirihHalfBranch(int side, bool leftBranch, qreal requiredRot
 {
     int side_count = points.size();
     int next = (side + 1) % side_count;
-    Transform rot = Transform::rotateAroundPoint(
+    QTransform rot = Transform::rotateAroundPoint(
                 midPoints[side],
                 leftBranch ? -requiredRotation : requiredRotation );
 
-    QPointF halfBranch = rot.apply( points[ leftBranch ? side : next ] );
+    QPointF halfBranch = rot.map( points[ leftBranch ? side : next ] );
     halfBranch -= midPoints[side];
     halfBranch *= 32;
     halfBranch += midPoints[side];
@@ -687,7 +688,7 @@ MapPtr Infer::inferGirih( FeaturePtr feature, int starSides, qreal starSkip )
     QPolygonF points;
     for ( int i = 0; i < pmain->mids.size(); ++i )
     {
-        points <<  pmain->T.apply( pmain->feature->getPoints()[i] );
+        points <<  pmain->T.map( pmain->feature->getPoints()[i] );
     }
 
     MapPtr map = make_shared<Map>();
@@ -699,7 +700,7 @@ MapPtr Infer::inferGirih( FeaturePtr feature, int starSides, qreal starSkip )
         map->mergeMap(branchMap);     // merge even if empty (null) map
     }
 
-    map->transformMap( pmain->T.invert() );
+    map->transformMap( pmain->T.inverted() );
 
     return map;
 }
@@ -789,7 +790,7 @@ MapPtr Infer::inferIntersect( FeaturePtr feature, int starSides, qreal starSkip,
     QPolygonF points;
     for ( int i = 0; i < pmain->mids.size(); ++i )
     {
-        points << pmain->T.apply( pmain->feature->getPoints()[i] );
+        points << pmain->T.map( pmain->feature->getPoints()[i] );
     }
 
     // Accumulate all edge intersections and their length.
@@ -873,7 +874,7 @@ MapPtr Infer::inferIntersect( FeaturePtr feature, int starSides, qreal starSkip,
         }
     }
 
-    map->transformMap( pmain->T.invert() );
+    map->transformMap( pmain->T.inverted() );
 
     return map;
 }
@@ -949,7 +950,7 @@ MapPtr Infer::inferIntersectProgressive( FeaturePtr feature, int starSides, qrea
     QPolygonF points;
     for ( int i = 0; i < pmain->mids.size(); ++i )
     {
-        points << pmain->T.apply( pmain->feature->getPoints()[i] );
+        points << pmain->T.map( pmain->feature->getPoints()[i] );
     }
 
     MapPtr map = make_shared<Map>();
@@ -988,7 +989,7 @@ MapPtr Infer::inferIntersectProgressive( FeaturePtr feature, int starSides, qrea
         }
     }
 
-    map->transformMap( pmain->T.invert() );
+    map->transformMap( pmain->T.inverted() );
 
     return map;
 }
@@ -1028,7 +1029,7 @@ MapPtr Infer::inferHourglass( FeaturePtr feature, qreal d, int s )
         map->mergeMap( buildStarHalfBranch( hour_d_neg, 1, side_frac, -1.0, mid_points ));
     }
 
-    map->transformMap( pmain->T.invert() );
+    map->transformMap( pmain->T.inverted() );
 
     return map;
 }
@@ -1181,7 +1182,7 @@ MapPtr Infer::inferRosette( FeaturePtr feature, qreal q, int s, qreal r )
     placed_points * pmain = placed[ cur ];
     QPolygonF mid_points = pmain->mids;
     //qDebug() << "mid" << mid_points;
-    QPolygonF corner_points = pmain->T.apply( feature->getPolygon() );
+    QPolygonF corner_points = pmain->T.map( feature->getPolygon() );
     //qDebug() << "corner" << corner_points;
 
     MapPtr map = make_shared<Map>();
@@ -1197,7 +1198,7 @@ MapPtr Infer::inferRosette( FeaturePtr feature, qreal q, int s, qreal r )
         //map->verify("two",true);
     }
 
-    map->transformMap( pmain->T.invert() );
+    map->transformMap( pmain->T.inverted() );
     //map->verify("three",true);
     return map;
 }
@@ -1225,7 +1226,7 @@ MapPtr Infer::infer( FeaturePtr feature )
     // Get the index of a good transform for this feature.
     int cur               = findPrimaryFeature( feature );
     placed_points * pmain = placed[ cur ];
-    QPolygonF fpts        = pmain->T.apply( pmain->feature->getPolygon() );
+    QPolygonF fpts        = pmain->T.map( pmain->feature->getPolygon() );
 
     QVector<adjacency_info *>  adjs = getAdjacencies( pmain, cur );
     QVector<contact *> cons         = buildContacts( pmain, adjs );
@@ -1476,7 +1477,7 @@ MapPtr Infer::infer( FeaturePtr feature )
         }
     }
 
-    ret->transformMap( pmain->T.invert() );
+    ret->transformMap( pmain->T.inverted() );
     ret->verify("infer",false,true);
     return ret;
 }
@@ -1512,17 +1513,21 @@ MapPtr Infer::inferFeature(FeaturePtr feature)
 {
     MapPtr map = make_shared<Map>();
 
-    QPolygonF poly = feature->getPoints();
-    if (!poly.isClosed())
-    {
-        poly << poly[0];
-    }
+    EdgePoly epoly = feature->getEdgePoly();
 
-    for (int i=0; i < poly.count()-1; i++)
+    for (auto it = epoly.begin(); it != epoly.end(); it++)
     {
-        VertexPtr v1 = map->insertVertex(poly[i]);
-        VertexPtr v2 = map->insertVertex(poly[i+1]);
-        map->insertEdge(v1,v2);
+        // this makes new eges and vertices since they can get altered in the map
+        EdgePtr edge = *it;
+        VertexPtr v1 = map->insertVertex(edge->getV1()->getPosition());
+        VertexPtr v2 = map->insertVertex(edge->getV2()->getPosition());
+        EdgePtr newEdge = map->insertEdge(v1,v2);
+        if (edge->getType() == EDGE_CURVE)
+        {
+            bool convex = edge->isConvex();
+            QPointF ac  = edge->getArcCenter();
+            newEdge->setArcCenter(ac,convex);
+        }
     }
     map->verify("Feature-figure",true,true,true);
 

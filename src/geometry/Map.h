@@ -57,8 +57,6 @@ struct sText
     QString txt;
 };
 
-class Transform;
-
 class Map
 {
     #define MAP_EDGECOUNT_MAX 16
@@ -115,10 +113,10 @@ public:
     void scale(qreal s);
     void rotate(qreal r);
     void translate(qreal x, qreal y);
-    void transformMap(Transform T);
+    void transformMap(QTransform T);
 
     // Transform a single vertex.
-    void transformVertex(Vertex v, Transform T);
+    void transformVertex(Vertex v, QTransform T);
 
     // Merge two maps.  The bread and butter of the Map class.  This is a
     // complicated computational geometry algorithm with a long and
@@ -146,7 +144,7 @@ public:
     // Since transforming a map requires a slow cloning, we can save lots
     // of time and memory by transforming and merging simultaneously.
     // Here, we transform vertices as they are put into the current map.
-    void mergeSimpleMany(MapPtr other, const QVector<Transform> & transforms);
+    void mergeSimpleMany(MapPtr other, const QVector<QTransform> & transforms);
 
     // These methods fix maps.  It may be better not to make maps that need
     // to be fixed in the first place, but these routines come around afterwards
@@ -219,10 +217,10 @@ protected:
 
     // Applying a motion made up only of uniform scales and translations,
     // Angles don't change.  So we can just transform each vertex.
-    void applyTrivialRigidMotion( Transform T );
+    void applyTrivialRigidMotion(QTransform T);
 
     // In the general case, the vertices and edges must be re-sorted.
-    void applyGeneralRigidMotion( Transform T );
+    void applyGeneralRigidMotion(QTransform T );
 
     // combine two edges which are in a straight line with common vertex
     void combineLinearEdges(EdgePtr a, EdgePtr b,VertexPtr common);

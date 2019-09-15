@@ -34,28 +34,26 @@ class FigureView : public Layer
 {
 public:
     FigureView(DesignElementPtr dep);
+    virtual ~FigureView() override;
 
-    void setPen(QPen pen) { _pen = pen; }
-
-    virtual QRectF boundingRect() const Q_DECL_OVERRIDE;
     virtual void   paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) Q_DECL_OVERRIDE;
     virtual void   receive(GeoGraphics * gg, int h, int v );
     virtual void   draw( GeoGraphics * gg );
 
 protected:
-    void paintExplicitFigure(QPainter *painter);
-    void paintRadialFigure(QPainter *painter);
-    void paintBoundaries(QPainter *painter);
+    void paintExplicitFigureMap(QPainter *painter, QPen pen);
+    void paintRadialFigureMap(QPainter *painter, QPen pen);
+    void paintFeatureBoundary(QPainter *painter);
+    void paintRadialFigureBoundary(QPainter *painter);
+    void paintExtendedBoundary(QPainter *painter);
 
 private:
-    void paintMap(QPainter * painter, MapPtr map);
+    void paintMap(QPainter * painter, MapPtr map, QPen pen);
 
     DesignElementPtr _dep;
     FigurePtr        _fig;
-    QPen             _pen;
-    Transform        _T;
-
-    Canvas * canvas;
+    FeaturePtr       _feat;
+    QTransform       _T;
 };
 
 #endif // FIGUREVIEW_H

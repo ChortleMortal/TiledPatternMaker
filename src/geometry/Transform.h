@@ -35,91 +35,39 @@
 
 #include <QtCore>
 #include <QPolygonF>
-#include <QHash>
 #include <QTransform>
 #include <QMatrix>
-
-#define M11 a
-#define M21 b
-#define M31 c
-#define M12 d
-#define M22 e
-#define M32 f
-
 
 class Transform
 {
 public:
     Transform();
-    Transform( qreal a, qreal b, qreal c, qreal d, qreal e, qreal f );
-    Transform( qreal ds[] );
+    Transform(qreal a, qreal b, qreal c, qreal d, qreal e, qreal f);
     Transform(QTransform qt);
 
-    Transform clone() const;
+    QVector<qreal>  get();
+    QTransform      getQTransform();
+    QMatrix         getQMatrix();
 
-    void assign( Transform other );
+    static QTransform rotateAroundPoint(QPointF pt, qreal t);
 
-    void get( qreal * ds );
+    static qreal   distFromZero(QTransform t, qreal v);
+    static qreal   distFromInvertedZero(QTransform t, qreal v) ;
 
-    static Transform scale( qreal r );
-    static Transform scale( qreal xs, qreal ys );
-    static Transform translate( qreal x, qreal y );
-    static Transform translate( QPointF pt );
-    static Transform rotate( qreal t );
-    static Transform rotateAroundPoint( QPointF pt, qreal t );
-    static Transform reflectThroughLine( QPointF p, QPointF q );
+    static qreal   scalex(QTransform T)     { return sqrt(T.m11() * T.m11() + T.m12() * T.m12()); }
+    static qreal   scaley(QTransform T)     { return sqrt(T.m21() * T.m21() + T.m22() * T.m22()); }
+    static qreal   rotation(QTransform T)   { return atan2(T.m12(), T.m11()); }
+    static qreal   transx(QTransform T)     { return T.m31(); }
+    static qreal   transy(QTransform T)     { return T.m32(); }
+    static QPointF trans(QTransform T)      { return QPointF(transx(T),transy(T)); }
 
-    QTransform getQTransform();
-    QMatrix    getQMatrix();
-
-    Transform compose(const Transform & other );
-    void      composeD( Transform & other );
-
-    static Transform compose(qreal scale, qreal rotate, QPointF translate);
-    static void decompose(Transform t, qreal & scale, qreal & rotate, QPointF & translate);
-
-    qreal       applyX( qreal x, qreal y ) const;
-    qreal       applyY( qreal x, qreal y ) const;
-
-    QPointF     apply(QPointF v) const;
-    QPointF     apply(qreal x, qreal y) const;
-    QRectF      apply(QRectF & vs );
-    QLineF      apply(QLineF & line);
-    QPolygonF   apply(QPolygonF & vs);
-
-    void        applyD(QPointF & v);
-    void        applyD(QPolygonF & vs);
-
-    Transform   invert() const;
-    void        invertD();
-
-    static Transform matchLineSegment( QPointF p, QPointF q );
-    static Transform matchTwoSegments( QPointF p1, QPointF q1, QPointF p2, QPointF q2 );
-
-    qreal distFromZero( qreal v ) const;
-    qreal distFromInvertedZero( qreal v ) const;
-
-    bool flips();
-
-    QString toString();
-
-    bool equals(const Transform & other );
-    int hashCode();
-
-    qreal scalex() const  { return sqrt(M11 * M11 + M12 * M12); }
-    qreal scaley()   { return sqrt(M21 * M21 + M22 * M22); }
-    qreal rotation() { return atan2(M12, M11);}
-    qreal transx()   { return M31;}
-    qreal transy()   { return M32;}
-    QPointF trans()  { return QPointF(transx(),transy()); }
+    static QString toString(QTransform t);
+    static QString toInfoString(QTransform t);
 
 private:
     qreal a, b, c;
     qreal d, e, f;
-
 };
-
-typedef std::shared_ptr<Transform> TransformPtr;
 
 #endif
 

@@ -46,8 +46,8 @@
 class Emboss : public Outline
 {
 public:
-    Emboss(PrototypePtr proto, PolyPtr bounds );
-    Emboss(const Style *  other );
+    Emboss(PrototypePtr proto, PolyPtr bounds);
+    Emboss(const Style &  other);
     virtual ~Emboss() override;
 
     virtual eStyleType getStyleType() const override { return STYLE_EMBOSSED; }

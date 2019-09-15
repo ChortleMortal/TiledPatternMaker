@@ -25,17 +25,13 @@
 #include "style/TileColors.h"
 
 TileColors::TileColors(PrototypePtr proto, PolyPtr bounds ) : Style(proto,bounds)
-{
-}
+{}
 
-TileColors::TileColors(const Style *  other ) : Style(other)
-{
-}
-
+TileColors::TileColors(const Style & other) : Style(other)
+{}
 
 TileColors::~TileColors()
-{
-}
+{}
 
 void TileColors::createStyleRepresentation()
 {
@@ -48,7 +44,7 @@ void TileColors::createStyleRepresentation()
 
     PrototypePtr pp                  = getPrototype();
     TilingPtr    tp                  = pp->getTiling();
-    QVector<Transform> & locations   = pp->getLocations();
+    QVector<QTransform> & locations  = pp->getLocations();
     QList<PlacedFeaturePtr> & qlfp   = tp->getPlacedFeatures();
     qDebug() << "num placed features=" << qlfp.size();
     qDebug() << "num locs=" << locations.size();
@@ -58,25 +54,19 @@ void TileColors::createStyleRepresentation()
         PlacedFeaturePtr fp = *it;
         FeaturePtr        f = fp->getFeature();
         QPolygonF poly      = f->getPoints();
-        Transform T         = fp->getTransform();
-        //qDebug().noquote() << "poly num pts=" << poly.size();
-        //qDebug().noquote() << "T" << T.toString();
+        QTransform T        = fp->getTransform();
 
         ColorSet & bkgdColors = f->getBkgdColors();
         for (auto e = locations.begin(); e != locations.end(); e++)
         {
-            Transform T2  = *e;
-            //qDebug() << "T2" << T2.toString();
-            T2.composeD(T);
-            QMatrix matrix = T2.getQMatrix();
-
-            QPolygonF p2 = matrix.map(poly);
+            QTransform T2  = *e;
+            QTransform T3  = T * T2;
+            QPolygonF  p2  = T3.map(poly);
 
             bkgdPolyColor bpc;
             bpc.poly   = p2;
             bpc.color  = bkgdColors.getNextColor().color;
             polys << bpc;
-
         }
     }
 }
@@ -105,14 +95,12 @@ void TileColors::draw(GeoGraphics * gg)
         return;
     }
 
-    gg->pushAndCompose(*getLayerTransform());
+    gg->pushAndCompose(getLayerTransform());
 
     for (auto it = polys.begin(); it != polys.end(); it++)
     {
         bkgdPolyColor bpc = *it;
-        gg->setColor(bpc.color);
-        gg->drawPolygon(bpc.poly,true);
+        gg->drawPolygon(bpc.poly,QPen(bpc.color),QBrush(bpc.color));
     }
     gg->pop();
-
 }

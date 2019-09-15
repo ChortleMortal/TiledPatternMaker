@@ -24,6 +24,7 @@
 
 #include "base/canvas.h"
 #include "base/border.h"
+#include "base/scene.h"
 #include "base/configuration.h"
 #include "base/patterns.h"
 #include "base/shortcuts.h"
@@ -74,34 +75,18 @@ void Canvas::releaseInstance()
 
 Canvas::Canvas()
 {
-    config    = Configuration::getInstance();
-    workspace = Workspace::getInstance();
-
     // some defaults
     selectedLayer   = 0;
     maxStep         = 0;
     stepsTaken      = 0;
-
     dragging        = false;
-    paintBackground = true;
+    scene           = nullptr;
 
-    gridPen.setColor(QColor(Qt::red));
-    gridPen.setWidth(1.0);
-
-    WorkspaceViewer * viewer = WorkspaceViewer::getInstance();
-    viewer->setCanvas(this);
-
-    connect(this,  &Canvas::sig_viewWS,       viewer,  &WorkspaceViewer::slot_viewWorkspace);
-
-    setSceneRect(0,0,800,1000);      // default (sizeSet = false)
-    qDebug() << "canvas" << width() << height();
+    setMode(MODE_DEFAULT);
 
     // create timer before build
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &Canvas::slot_nextStep);
-
-
-    setMode(MODE_DEFAULT);
 
     qRegisterMetaType<eCycleMode>();
 }
@@ -109,77 +94,100 @@ Canvas::Canvas()
 Canvas::~Canvas()
 {
     clearCanvas();
-    config->save();
+}
+
+void Canvas::init()
+{
+    config    = Configuration::getInstance();
+    workspace = Workspace::getInstance();
+    viewer    = WorkspaceViewer::getInstance();
+
+    connect(this, &Canvas::sig_viewWS, viewer,  &WorkspaceViewer::slot_viewWorkspace);
+}
+
+Scene * Canvas::swapScenes()
+{
+    if (!scene)
+    {
+
+        View * view = View::getInstance();
+        sceneA = new Scene(view);
+        sceneB = new Scene(view);
+        scene = sceneA;
+    }
+
+    scene = (scene == sceneA) ? sceneB : sceneA;
+
+    return scene;
 }
 
 void Canvas::update()
 {
-    invalidate();
+    if (scene)
+        scene->invalidate();
 }
 
-void Canvas::writeCanvasSettings(CanvasSettings &info)
+void Canvas::invalidate()
 {
-    settings = info;    // local copy
-    qDebug() << "info color" << info.getBackgroundColor() << settings.getBackgroundColor();
-
-    qDebug() << "Canvas::writeDesignInfo bcolor= " << info.getBackgroundColor().name()  << "size=" << info.getRectF();
-    setBackgroundBrush(QBrush(info.getBackgroundColor()));
-    setSceneRect(info.getRectF());
+    if (scene)
+        scene->invalidate();
 }
 
-void Canvas::writeBorderSettings(CanvasSettings &info)
+void Canvas::setCanvasSettings(CanvasSettings cset)
 {
-    BorderPtr b = info.getBorder();
-    if (b)
+    scene->setBackgroundBrush(QBrush(cset.getBackgroundColor()));
+
+    setSceneRect(cset.getRectF());
+
+    BorderPtr bp = cset.getBorder();
+    if (bp)
     {
-        addItem(b.get());
+        // when border cleared from scene, its children become disconnected
+        // this reconnects them by re-parenting
+        bp->reconnectChildren();
+        // adds to the scene
+        scene->addItem(bp.get());
     }
+
+    settings = cset;     // makes local copy
 }
 
 void Canvas::addDesign(Design * d)
 {
-    int before = items().size();
+    int before = scene->items().size();
     QVector<PatternPtr>&  pats = d->getPatterns();
     for (int i=0; i < pats.count(); i++)
     {
-        addItem(pats[i].get());
+        scene->addItem(pats[i].get());
     }
-    qDebug() << "Canvas::addDesign before=" << before << "after="  << items().size();
+    qDebug() << "Canvas::addDesign before=" << before << "after="  << scene->items().size();
 
     invalidate();
 
     dump(true);
 }
 
-void  Canvas::addLayer(Layer * layer)
-{
-    addItem(layer);
-}
-
-void Canvas::removeLayer(Layer * layer)
-{
-    removeItem(layer);
-}
-
 void Canvas::clearCanvas()
 {
+    if (!scene)
+    {
+        return;
+    }
+
     // removes from scene but does not delete
-    QList<QGraphicsItem*> ql = items();
+    QList<QGraphicsItem*> ql = scene->items();
     for (int i=0; i < ql.count(); i++)
     {
         QGraphicsItem * g = ql[i];
-        removeItem(g);
+        scene->removeItem(g);
     }
-
-    //invalidate();
 }
 
 void Canvas::drainTheSwamp()
 {
     dump(true);
     clearCanvas();
-    WorkspaceViewer * wsv = WorkspaceViewer::getInstance();
-    wsv->clear();
+    viewer->clear();
     workspace->slot_clearWorkspace();
     emit sig_unload();
     dump(true);
@@ -187,20 +195,20 @@ void Canvas::drainTheSwamp()
 
 void Canvas::setSceneRect(const QRectF & rect)
 {
-    QRectF old =  QGraphicsScene::sceneRect();
+    QRectF old =  scene->sceneRect();
     if (rect != old)
     {
-        QGraphicsScene::setSceneRect(rect);
+        scene->setSceneRect(rect);
     }
 }
 
 void Canvas::setSceneRect(qreal x, qreal y, qreal w, qreal h)
 {
-    QRectF old  =  QGraphicsScene::sceneRect();
+    QRectF old  =  scene->sceneRect();
     QRectF rect(x,y,w,h);
     if (rect != old)
     {
-        QGraphicsScene::setSceneRect(x,y,w,h);
+        scene->setSceneRect(x,y,w,h);
     }
 }
 
@@ -459,7 +467,7 @@ void Canvas::slot_png(QString file, int row, int col)
     QImage image(name);
     QGraphicsPixmapItem * item = new QGraphicsPixmapItem(QPixmap::fromImage(image));
     item->setPos(col * 300, row* 200);
-    addItem(item);
+    scene->addItem(item);
 
     View * view = View::getInstance();
     view->show();
@@ -530,49 +538,23 @@ void Canvas::deltaMoveH(int delta)
 
 void Canvas::dump(bool force)
 {
+    if (scene)
+    {
+        qDebug() << "Scene Items:" << scene->items().size();
+        QList<QGraphicsItem*> ql = scene->items();
+        for (int i=0; i < ql.count(); i++)
+        {
+            QGraphicsItem * g = ql[i];
+            qDebug() << g;
+        }
+    }
     if (force)
-        qDebug() << "*** Designs:" << Design::refs << "Patterns:" << Pattern::refs << "Layers:" << Layer::refs << "Scene Items:" << items().size() << "Styles:" << Style::refs << "Maps:" << Map::refs << "Protos:" << Prototype::refs << "DELs:" << DesignElement::refs << "Figures:" << Figure::refs << "Edges:" << Edge::refs << "Vertices:"  << Vertex::refs;
+        qDebug() << "*** Designs:" << Design::refs << "Patterns:" << Pattern::refs << "Layers:" << Layer::refs  << "Styles:" << Style::refs << "Maps:" << Map::refs << "Protos:" << Prototype::refs << "DELs:" << DesignElement::refs << "Figures:" << Figure::refs << "Edges:" << Edge::refs << "Vertices:"  << Vertex::refs;
 }
 
 void Canvas::dumpGraphicsInfo()
 {
-    qDebug() << "Scene: items=" << items().size() << "bounding=" << itemsBoundingRect() << "sceneRect" << sceneRect();
-}
-
-void Canvas::drawBackground(QPainter *painter, const QRectF &rect)
-{
-    if (paintBackground)
-    {
-        QGraphicsScene::drawBackground(painter,rect);
-    }
-}
-
-void Canvas::drawForeground(QPainter *painter, const QRectF & r)
-{
-    Configuration * config = Configuration::getInstance();
-    if (!config->sceneGrid) return;
-
-    painter->setPen(gridPen);
-
-    // draw a grid
-    int height = static_cast<int>(r.height());
-    int width  = static_cast<int>(r.width());
-
-    // draw horizontal lines
-    int h=0;
-    while (h < height)
-    {
-        painter->drawLine(QPoint(0,h),QPoint(width,h));
-        h += config->fgdGridStep;
-    }
-
-    // draw vertical lines
-    int v=0;
-    while (v < width)
-    {
-        painter->drawLine(QPoint(v,0),QPoint(v,height));
-        v += config->fgdGridStep;
-    }
+    qDebug() << "Scene: items=" << scene->items().size() << "bounding=" << scene->itemsBoundingRect() << "sceneRect" << scene->sceneRect();
 }
 
 void Canvas::setMode(eMode mode)
@@ -590,22 +572,33 @@ void Canvas::procKeyEvent(QKeyEvent *k)
 {
     int key = k->key();
 
+    int  multiplier = 1;
+    if ((k->modifiers() & (Qt::SHIFT | Qt::CTRL)) == (Qt::SHIFT | Qt::CTRL))
+        multiplier = 50;
+    else if ((k->modifiers() & Qt::SHIFT) == Qt::SHIFT)
+        multiplier = 10;
+
     ProcKey(k);
 
-    if (getMode() == MODE_TRANSFORM)
+    switch (key)
     {
-        switch (key)
-        {
-        case Qt::Key_Up:    deltaMoveV(1);  emit sig_deltaMoveV(1);  break;
-        case Qt::Key_Down:  deltaMoveV(-1); emit sig_deltaMoveV(-1); break;
-        case Qt::Key_Left:  deltaMoveH(-1); emit sig_deltaMoveH(-1); break;
-        case Qt::Key_Right: deltaMoveH(1);  emit sig_deltaMoveH(1);  break;
-        case '.':           deltaScale(-1); emit sig_deltaScale(-1); break; // scale down
-        case ',':           deltaScale(1);  emit sig_deltaScale(1); break;  // scale up
-        case '-':           deltaRotate(-1,true); emit sig_deltaRotate(-1); break; // rotate left
-        case '=':           deltaRotate(1,true);  emit sig_deltaRotate(1); break;  // rotate right
-        default: break;
-        }
+    case Qt::Key_Up:    deltaMoveV(1 * multiplier);  emit sig_deltaMoveV(-1 * multiplier); break;
+    case Qt::Key_Down:  deltaMoveV(-1 * multiplier); emit sig_deltaMoveV(1 * multiplier);  break;
+    case Qt::Key_Left:  deltaMoveH(-1 * multiplier); emit sig_deltaMoveH(1 * multiplier);  break;
+    case Qt::Key_Right: deltaMoveH(1 * multiplier);  emit sig_deltaMoveH(-1 * multiplier); break;
+
+    case '.':           deltaScale(-1 * multiplier); emit sig_deltaScale(1 * multiplier); break; // scale down
+    case '>':           deltaScale(-1 * multiplier); emit sig_deltaScale(1 * multiplier); break; // scale down
+
+    case ',':           deltaScale(1 * multiplier);  emit sig_deltaScale(-1 * multiplier); break;  // scale up
+    case '<':           deltaScale(1 * multiplier);  emit sig_deltaScale(-1 * multiplier); break;  // scale up
+
+    case '-':           deltaRotate(-1 * multiplier,true); emit sig_deltaRotate(-1 * multiplier); break; // rotate left
+    case '_':           deltaRotate(-1 * multiplier,true); emit sig_deltaRotate(-1 * multiplier); break; // rotate left
+    case '=':           deltaRotate(1 * multiplier,true);  emit sig_deltaRotate(1 * multiplier); break;  // rotate right
+    case '+':           deltaRotate(1 * multiplier,true);  emit sig_deltaRotate(1 * multiplier); break;  // rotate right
+
+    default: break;
     }
 }
 
@@ -793,10 +786,10 @@ void Canvas::duplicate()
     QPixmap pixmap(view->size());
     pixmap.fill((Qt::transparent));
 
-    paintBackground = false;
+    scene->paintBackground = false;
     QPainter painter(&pixmap);
-    render(&painter);
-    paintBackground = true;
+    scene->render(&painter);
+    scene->paintBackground = true;
 
     TransparentWidget * tw = new TransparentWidget();
     tw->resize(view->size());

@@ -29,25 +29,38 @@
 #include <QtWidgets>
 #include "base/design.h"
 #include "base/layer.h"
+#include "base/configuration.h"
+#include "geometry/bounds.h"
 
 class Canvas;
-class Configuration;
-class Design;
 class DesignElement;
 class PlacedDesignElementView;
 class FigureView;
 class ProtoView;
 class ProtoFeatureView;
 class Tiling;
-class TilingDesigner;
+class TilingMaker;
 class TilingView;
-class Transform;
 class Workspace;
 class Transformer;
 class MapEditor;
 class StyledDesign;
 class FaceSetView;
 class FaceSet;
+
+struct SizeAndBounds
+{
+    eViewType   viewType;
+    Bounds      viewBounds;
+    QSizeF      viewSize;
+};
+
+struct ViewTransform
+{
+    eViewType   viewType;
+    qreal       scale;
+    QPointF     translate;
+};
 
 class WorkspaceViewer : public QObject
 {
@@ -57,14 +70,18 @@ public:
     static WorkspaceViewer *getInstance();
     virtual ~WorkspaceViewer() {}
 
-    void   setCanvas(Canvas * canvas);
+    void   init();
     void   clear();
 
     QVector<Layer*> getActiveLayers();
 
+    QTransform  getViewTransform(eViewType e);
+    static QTransform  calculateViewTransform(SizeAndBounds &sab);
+
+    static SizeAndBounds viewDimensions[];
+
 public slots:
     void slot_viewWorkspace();
-    void slot_updateDesignInfo();
     void slot_update();
 
 signals:
@@ -72,8 +89,10 @@ signals:
 
 protected:
    WorkspaceViewer();
-   void viewWorkspace();
 
+   void                updateDesignInfo();
+
+   void                viewWorkspace();
    void                viewStyledDesign(StyledDesign &  sd);
    ProtoView         * viewProto(StylePtr style);
    ProtoView         * viewProto(PrototypePtr proto);
@@ -81,11 +100,13 @@ protected:
    ProtoFeatureView  * viewProtoFeature(PrototypePtr proto);
    TilingView        * viewTiling(StylePtr style);
    TilingView        * viewTiling(TilingPtr tiling);
-   TilingDesigner    * viewTilingDesigner();
+   TilingMaker       * viewTilingMaker();
    MapEditor         * viewFigMapEditor(QPointF center);
    FigureView        * viewFigure(DesignElementPtr dep, QPointF center);
    PlacedDesignElementView * viewPlacedDesignElement(PlacedDesignElementPtr pde);
    FaceSetView       * viewFaceSet(FaceSet *set);
+
+   void                setTitle(TilingPtr tp);
 
 private:
     static WorkspaceViewer * mpThis;
@@ -96,6 +117,9 @@ private:
 
     QVector<Layer*>     mViewers;
     QVector<Layer*>     mStyles;    // don't delete - just clear
+    QVector<DesignPtr>  mDesigns;
+
+    QVector<QTransform> viewTransforms;
 };
 
 #endif // DESIGNVIEWER_H

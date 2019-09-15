@@ -25,7 +25,7 @@
 #ifndef FILLED_H
 #define FILLED_H
 
-#include "style/Colored.h"
+#include "style/Style.h"
 #include "base/colorset.h"
 #include "geometry/Faces.h"
 
@@ -47,7 +47,7 @@ class Filled : public Style, public Faces
 
 public:
     Filled(PrototypePtr proto, PolyPtr bounds, int algorithm);
-    Filled(const Style *  other );
+    Filled(const Style & other);
     virtual ~Filled() override;
 
     virtual eStyleType getStyleType() const override { return STYLE_FILLED; }

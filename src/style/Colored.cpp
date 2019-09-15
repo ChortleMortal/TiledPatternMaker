@@ -38,14 +38,14 @@ Colored::Colored(PrototypePtr proto, PolyPtr bounds ) : Style(proto,bounds)
     colors.setColor(QColor( 20, 150, 210 ));
 }
 
-Colored::Colored(const Style *  other ) : Style(other)
+Colored::Colored(const Style & other ) : Style(other)
 {
-    const Colored * otherColored = dynamic_cast<const Colored*>(other);
-    if (otherColored)
+    try
     {
-        colors =  otherColored->colors;
+        const Colored & otherColored = dynamic_cast<const Colored&>(other);
+        colors.setColors(otherColored.colors);
     }
-    else
+    catch(std::bad_cast exp)
     {
         colors.setColor(QColor( 20, 150, 210 ));
     }

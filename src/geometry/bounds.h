@@ -7,8 +7,8 @@ class Bounds
 {
 public:
     Bounds();
+    Bounds(const Bounds & other);
     Bounds(qreal left, qreal top, qreal width);
-    Bounds(qreal left, qreal top, qreal width, qreal theta);
 
     Bounds   operator+(const Bounds & other);
 
@@ -17,7 +17,6 @@ public:
     qreal left;
     qreal top;
     qreal width;
-    qreal theta;
 };
 
 #endif // BOUNDS_H

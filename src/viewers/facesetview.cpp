@@ -22,9 +22,9 @@ void FaceSetView::paint(QPainter *painter, const QStyleOptionGraphicsItem *optio
 
     painter->setRenderHint(QPainter::Antialiasing ,true);
     painter->setRenderHint(QPainter::SmoothPixmapTransform,true);
-    painter->setPen(QPen(Qt::black,3));
+    layerPen = QPen(Qt::black,3);
 
-    Transform tr = *getLayerTransform();
+    QTransform tr = getLayerTransform();
     GeoGraphics gg(painter,tr);
     draw(&gg);
 }
@@ -32,12 +32,12 @@ void FaceSetView::paint(QPainter *painter, const QStyleOptionGraphicsItem *optio
 
 void  FaceSetView::draw(GeoGraphics * gg )
 {
-    gg->setColor(Qt::green);
+    layerPen.setColor(Qt::green);
     for (auto it = fset->begin(); it != fset->end(); it++)
     {
         FacePtr fp = *it;
         PolyPtr pp = fp->getPolygon();
-        gg->drawPolygon(*pp,false);
+        gg->drawPolygon(*pp,layerPen,QBrush());
     }
 
     Configuration * config = Configuration::getInstance();
@@ -45,7 +45,7 @@ void  FaceSetView::draw(GeoGraphics * gg )
     if (selectedFace)
     {
         PolyPtr pp = selectedFace->getPolygon();
-        gg->setColor(Qt::red);
-        gg->drawPolygon(*pp,false);
+        layerPen.setColor(Qt::red);
+        gg->drawPolygon(*pp,layerPen,QBrush());
     }
 }

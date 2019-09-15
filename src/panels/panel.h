@@ -45,9 +45,11 @@ public:
     ~ControlPanel() override;
 
     void	closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
+    void    resizeEvent(QResizeEvent *event) Q_DECL_OVERRIDE;
     void    populatePages();
     void    floatPages();
     void    closePages();
+    void    setStatus(QString txt) { status->setText(txt); }
 
     TiledPatternMaker * getMaker() { return maker; }
 
@@ -55,6 +57,7 @@ signals:
     void    sig_viewWS();
     void    sig_regenerateStyles();
     void    sig_selectViewer(int id, int id2);
+    void    sig_panelResized();
 
 public slots:
     void    slot_selectWidget(int index);
@@ -95,6 +98,7 @@ private:
     PanelListWidget      *  mpPanelPageList;
     PanelPagesWidget     *  panelPagesWidget;
     panel_page           *  currentPage;
+    QLabel               *  status;
 
     QCheckBox    * cbUpdate;
     QCheckBox    * cbLockView;

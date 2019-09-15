@@ -50,20 +50,19 @@ Figure::Figure()
     hasCircleBoundary = true;
 
     figureMap = make_shared<Map>();
-    debugMap = make_shared<Map>();
 }
 
 Figure::Figure(const Figure & other)
 {
     refs++;
 
-    figType        = FIG_TYPE_UNDEFINED;
+    figType           = FIG_TYPE_UNDEFINED;
 
     extBoundarySides  = other.extBoundarySides;
     extBoundaryScale  = other.extBoundaryScale;
     figureScale       = other.figureScale;
 
-    radialFigBoundary       = other.radialFigBoundary;
+    radialFigBoundary = other.radialFigBoundary;
     extBoundary       = other.extBoundary;
     hasCircleBoundary = other.hasCircleBoundary;
 
@@ -115,7 +114,7 @@ void Figure::setExtBoundarySides(int sides)
     hasCircleBoundary = (sides < 3) ? true : false;
 }
 
-void Figure::buildBoundary()
+void Figure::buildExtBoundary()
 {
     QTransform qTrans;
     qTrans.scale(extBoundaryScale,extBoundaryScale);

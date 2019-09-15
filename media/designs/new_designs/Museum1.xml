@@ -1,0 +1,313 @@
+<?xml version="1.0"?>
+<vector id="1" version="2">
+	<design>
+		<scale>1</scale>
+		<size>
+			<width>1500</width>
+			<height>1100</height>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+	</design>
+	<style.Thick id="2" serialization="custom">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>0</width__delta>
+			<theta__delta>0</theta__delta>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<boundary id="3">
+				<pts id="4">
+					<Point id="5">
+						<x>-10</x>
+						<y>-10</y>
+					</Point>
+					<Point id="6">
+						<x>-10</x>
+						<y>10</y>
+					</Point>
+					<Point id="7">
+						<x>10</x>
+						<y>10</y>
+					</Point>
+					<Point id="8">
+						<x>10</x>
+						<y>-10</y>
+					</Point>
+				</pts>
+			</boundary>
+			<prototype id="9" serialization="custom">
+				<app.Prototype>
+					<string>Museum1</string>
+					<entry>
+						<tile.Feature id="10">
+							<regular>false</regular>
+							<edges id="11">
+								<Line>
+									<Point id="1">0,1.5</Point>
+									<Point id="2">0.5,2</Point>
+								</Line>
+								<Line>
+									<Point reference="2" />
+									<Point id="3">3.5,2</Point>
+								</Line>
+								<Line>
+									<Point reference="3" />
+									<Point id="4">4,2.5</Point>
+								</Line>
+								<Line>
+									<Point reference="4" />
+									<Point id="5">3.5,3</Point>
+								</Line>
+								<Line>
+									<Point reference="5" />
+									<Point id="6">3,3</Point>
+								</Line>
+								<Line>
+									<Point reference="6" />
+									<Point id="7">3,3.5</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">2.5,4</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">2,3.5</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point id="10">2,3</Point>
+								</Line>
+								<Line>
+									<Point reference="10" />
+									<Point id="11">0,3</Point>
+								</Line>
+								<Line>
+									<Point reference="11" />
+									<Point id="12">0,4</Point>
+								</Line>
+								<Line>
+									<Point reference="12" />
+									<Point id="13">-1,4</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point id="14">-1,2</Point>
+								</Line>
+								<Line>
+									<Point reference="14" />
+									<Point id="15">-0.5,2</Point>
+								</Line>
+								<Line>
+									<Point reference="15" />
+									<Point reference="1" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="12" type="FIG_TYPE_FEATURE">
+							<map id="13">
+								<vertices id="14">
+									<Vertex id="15">
+										<pos>-1,2</pos>
+										<edges2>
+											<edge id="16">
+												<map reference="13" />
+												<v1 reference="15" />
+												<v2 id="17">
+													<pos>-0.5,2</pos>
+													<edges2>
+														<edge id="18">
+															<map reference="13" />
+															<v1 reference="17" />
+															<v2 id="19">
+																<pos>0,1.5</pos>
+																<edges2>
+																	<edge id="20">
+																		<map reference="13" />
+																		<v1 reference="19" />
+																		<v2 id="21">
+																			<pos>0.5,2</pos>
+																			<edges2>
+																				<edge id="22">
+																					<map reference="13" />
+																					<v1 reference="21" />
+																					<v2 id="23">
+																						<pos>3.5,2</pos>
+																						<edges2>
+																							<edge id="24">
+																								<map reference="13" />
+																								<v1 reference="23" />
+																								<v2 id="25">
+																									<pos>4,2.5</pos>
+																									<edges2>
+																										<edge id="26">
+																											<map reference="13" />
+																											<v1 reference="25" />
+																											<v2 id="27">
+																												<pos>3.5,3</pos>
+																												<edges2>
+																													<edge reference="26" />
+																													<edge id="28">
+																														<map reference="13" />
+																														<v1 reference="27" />
+																														<v2 id="29">
+																															<pos>3,3</pos>
+																															<edges2>
+																																<edge reference="28" />
+																																<edge id="30">
+																																	<map reference="13" />
+																																	<v1 reference="29" />
+																																	<v2 id="31">
+																																		<pos>3,3.5</pos>
+																																		<edges2>
+																																			<edge reference="30" />
+																																			<edge id="32">
+																																				<map reference="13" />
+																																				<v1 reference="31" />
+																																				<v2 id="33">
+																																					<pos>2.5,4</pos>
+																																					<edges2>
+																																						<edge reference="32" />
+																																						<edge id="34">
+																																							<map reference="13" />
+																																							<v1 reference="33" />
+																																							<v2 id="35">
+																																								<pos>2,3.5</pos>
+																																								<edges2>
+																																									<edge id="36">
+																																										<map reference="13" />
+																																										<v1 reference="35" />
+																																										<v2 id="37">
+																																											<pos>2,3</pos>
+																																											<edges2>
+																																												<edge reference="36" />
+																																												<edge id="38">
+																																													<map reference="13" />
+																																													<v1 reference="37" />
+																																													<v2 id="39">
+																																														<pos>0,3</pos>
+																																														<edges2>
+																																															<edge reference="38" />
+																																															<edge id="40">
+																																																<map reference="13" />
+																																																<v1 reference="39" />
+																																																<v2 id="41">
+																																																	<pos>0,4</pos>
+																																																	<edges2>
+																																																		<edge reference="40" />
+																																																		<edge id="42">
+																																																			<map reference="13" />
+																																																			<v1 reference="41" />
+																																																			<v2 id="43">
+																																																				<pos>-1,4</pos>
+																																																				<edges2>
+																																																					<edge id="44">
+																																																						<map reference="13" />
+																																																						<v1 reference="43" />
+																																																						<v2 reference="15" />
+																																																					</edge>
+																																																					<edge reference="42" />
+																																																				</edges2>
+																																																			</v2>
+																																																		</edge>
+																																																	</edges2>
+																																																</v2>
+																																															</edge>
+																																														</edges2>
+																																													</v2>
+																																												</edge>
+																																											</edges2>
+																																										</v2>
+																																									</edge>
+																																									<edge reference="34" />
+																																								</edges2>
+																																							</v2>
+																																						</edge>
+																																					</edges2>
+																																				</v2>
+																																			</edge>
+																																		</edges2>
+																																	</v2>
+																																</edge>
+																															</edges2>
+																														</v2>
+																													</edge>
+																												</edges2>
+																											</v2>
+																										</edge>
+																										<edge reference="24" />
+																									</edges2>
+																								</v2>
+																							</edge>
+																							<edge reference="22" />
+																						</edges2>
+																					</v2>
+																				</edge>
+																				<edge reference="20" />
+																			</edges2>
+																		</v2>
+																	</edge>
+																	<edge reference="18" />
+																</edges2>
+															</v2>
+														</edge>
+														<edge reference="16" />
+													</edges2>
+												</v2>
+											</edge>
+											<edge reference="44" />
+										</edges2>
+									</Vertex>
+									<Vertex reference="43" />
+									<Vertex reference="17" />
+									<Vertex reference="19" />
+									<Vertex reference="39" />
+									<Vertex reference="41" />
+									<Vertex reference="21" />
+									<Vertex reference="37" />
+									<Vertex reference="35" />
+									<Vertex reference="33" />
+									<Vertex reference="29" />
+									<Vertex reference="31" />
+									<Vertex reference="23" />
+									<Vertex reference="27" />
+									<Vertex reference="25" />
+								</vertices>
+								<edges id="45">
+									<Edge reference="42" />
+									<Edge reference="44" />
+									<Edge reference="16" />
+									<Edge reference="18" />
+									<Edge reference="20" />
+									<Edge reference="38" />
+									<Edge reference="40" />
+									<Edge reference="22" />
+									<Edge reference="34" />
+									<Edge reference="36" />
+									<Edge reference="32" />
+									<Edge reference="28" />
+									<Edge reference="30" />
+									<Edge reference="24" />
+									<Edge reference="26" />
+								</edges>
+							</map>
+							<boundarySides>4</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+						</app.ExplicitFeature>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color>#ff000000</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.03</width>
+		</style.Thick>
+	</style.Thick>
+</vector>

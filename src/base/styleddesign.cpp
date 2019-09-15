@@ -63,12 +63,12 @@ void StyledDesign::setNotes(QString notes)
      designNotes = notes;
 }
 
-CanvasSettings & StyledDesign::getCanvasSettings()
+CanvasSettings StyledDesign::getCanvasSettings()
 {
     return canvasSettings;
 }
 
-void StyledDesign::setCanvasSettings(CanvasSettings settings)
+void StyledDesign::setupCanvas(CanvasSettings settings)
 {
     canvasSettings = settings;
 }

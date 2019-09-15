@@ -111,6 +111,12 @@ void ControlPanel::closeEvent(QCloseEvent *event)
     qApp->quit();
 }
 
+void ControlPanel::resizeEvent(QResizeEvent *event)
+{
+    QWidget::resizeEvent(event);
+    emit sig_panelResized();
+}
+
 void ControlPanel::closePages()
 {
     for (auto it= mAttachedPages.begin(); it != mAttachedPages.end(); it++)
@@ -202,6 +208,8 @@ void ControlPanel::setupGUI()
     mainBox->addStretch();
     mainBox->setAlignment(panelPagesWidget,Qt::AlignTop);
 
+    status = new QLabel();
+    status->setAlignment(Qt::AlignHCenter);
 
     // panel box - top level
     QVBoxLayout * panelBox = new QVBoxLayout;
@@ -210,6 +218,7 @@ void ControlPanel::setupGUI()
     panelBox->addLayout(hlayout);
     panelBox->addLayout(hbox);
     panelBox->addLayout(mainBox);
+    panelBox->addWidget(status);
 
     // this puts it all together
     this->setLayout(panelBox);
@@ -238,6 +247,8 @@ void ControlPanel::populatePages()
     // qDebug() << "populateDevice";
     panel_page * wp;
 
+    mpPanelPageList->addSeparator();
+
     wp = new page_control(this);
     mAttachedPages.push_back(wp);
     panelPagesWidget->addWidget(wp);
@@ -250,6 +261,7 @@ void ControlPanel::populatePages()
     mAttachedPages.push_back(wp);
     panelPagesWidget->addWidget(wp);
     mpPanelPageList->addItem(wp->getName());
+    page_loaders * wp_lod = dynamic_cast<page_loaders*>(wp);
 
     mpPanelPageList->addSeparator();
 
@@ -348,7 +360,10 @@ void ControlPanel::populatePages()
     connect(wp_med, &page_map_editor::sig_stylesReplaceProto,wp_fm,  &page_figure_maker::slot_replaceInStyle);
     connect(wp_med, &page_map_editor::sig_stylesAddProto,    wp_fm,  &page_figure_maker::slot_addToStyle);
 
-     connect(wp_cnt, &page_control::sig_mapEdSelection,      wp_med,  &page_map_editor::slot_reload);
+     connect(wp_cnt, &page_control::sig_mapEdSelection,      wp_med, &page_map_editor::slot_reload);
+
+     connect(wp_lod, &page_loaders::sig_viewStyles,          wp_cnt, &page_control::slot_setSyle);
+     connect(wp_lod, &page_loaders::sig_viewWS,              wp_cnt, &page_control::slot_setWS);
 }
 
 void ControlPanel::floatPages()

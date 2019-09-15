@@ -24,7 +24,7 @@
 
 #include "tilingmanager.h"
 #include "tile/Tiling.h"
-#include "tile/tilemaker.h"
+#include "tile/tilingloader.h"
 #include "geometry/Point.h"
 #include "base/shared.h"
 #include "base/fileservices.h"
@@ -54,8 +54,8 @@ TilingPtr TilingManager::loadTiling(QString name)
         return tp;
     }
 
-    Tiling t;
-    tp = t.readTilingXML(filename);
+    TilingLoader tm;
+    tp = tm.readTilingXML(filename);
     if (tp)
     {
         qDebug().noquote() << "Loaded tiling:" << filename << tp->getName();

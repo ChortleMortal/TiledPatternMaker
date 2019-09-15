@@ -41,7 +41,6 @@
 
 #include "geometry/Map.h"
 #include "geometry/Loose.h"
-#include "geometry/Transform.h"
 #include "geometry/Intersect.h"
 #include "base/canvas.h"
 #include "base/configuration.h"
@@ -135,7 +134,7 @@ void Map::removeVertex(VertexPtr v)
         EdgePtr edge = *it;
         if (edge)
         {
-            edge->getOther(v->getPosition())->removeEdge(edge);
+            edge->getOtherV(v)->removeEdge(edge);
             edges.removeOne(edge);
         }
     }
@@ -357,7 +356,6 @@ EdgePtr Map::insertEdge(VertexPtr v1, VertexPtr v2, bool debug)
 // this new vertex.  You'll want to make sure this vertex isn't
 // a duplicate of one already in the map.  That would just
 // make life unpleasant.
-// casper: modified to detect point on more than one edge
 void Map::splitEdgesByVertex(VertexPtr vert)
 {
     QPointF vp = vert->getPosition();
@@ -409,9 +407,8 @@ void Map::splitEdgesByVertex(VertexPtr vert)
             vert->insertEdge( e);
             vert->insertEdge( nedge );
 
-            // taprats: That's it.
-            // casper: continue
-            //return;
+            //verify("splitEdgesByVertex",false,true);
+            return;
         }
     }
     //verify("splitEdgesByVertex",false,true);
@@ -539,32 +536,32 @@ void Map::insertDebugPolygon(QPolygonF & poly)
 
 // Applying a motion made up only of uniform scales and translations,
 // Angles don't change.  So we can just transform each vertex.
-void Map::applyTrivialRigidMotion( Transform T )
+void Map::applyTrivialRigidMotion(QTransform T)
 {
     for (auto e = vertices.begin(); e != vertices.end(); e++)
     {
         VertexPtr vert = *e;
-        vert->pos = T.apply( vert->getPosition() );
+        vert->pos = T.map(vert->getPosition());
     }
 }
 
 void Map::scale( qreal s )
 {
-    applyTrivialRigidMotion( Transform::scale( s ) );
+    applyTrivialRigidMotion(QTransform().scale(s,s));
 }
 
 void Map::rotate( qreal r )
 {
-    applyTrivialRigidMotion( Transform::rotate(r));
+    applyTrivialRigidMotion(QTransform().rotateRadians(r));
 }
 
-void Map::translate(qreal x, qreal y )
+void Map::translate(qreal x, qreal y)
 {
-    applyTrivialRigidMotion( Transform::translate( x, y ) );
+    applyTrivialRigidMotion(QTransform::fromTranslate(x,y));
 }
 
 // In the general case, the vertices and edges must be re-sorted.
-void Map::applyGeneralRigidMotion( Transform T )
+void Map::applyGeneralRigidMotion(QTransform T)
 {
     // Transform all the vertices.
     for (auto e = vertices.begin(); e != vertices.end(); e++)
@@ -578,9 +575,9 @@ void Map::applyGeneralRigidMotion( Transform T )
     sortEdges();
 }
 
-void Map::transformMap( Transform T )
+void Map::transformMap(QTransform T)
 {
-    applyGeneralRigidMotion( T );
+    applyGeneralRigidMotion(T);
 }
 
 #if 0
@@ -865,7 +862,6 @@ void Map::mergeMap(MapPtr other /*, bool consume */)
     for(auto it = oedges->begin(); it != oedges->end(); it++)
     {
         EdgePtr edge = *it;
-
         VertexPtr v1 = edge->getV1()->copy;
         VertexPtr v2 = edge->getV2()->copy;
         if (v1->pos == v2->pos)
@@ -874,7 +870,17 @@ void Map::mergeMap(MapPtr other /*, bool consume */)
             continue;
         }
 
-        EdgePtr ne = make_shared<Edge>(v1,v2);
+        EdgePtr ne;
+        if (edge->getType() == EDGE_LINE)
+        {
+            ne = make_shared<Edge>(v1,v2);
+        }
+        else if (edge->getType() == EDGE_CURVE)
+        {
+            QPointF pt   = edge->getArcCenter();  // TODO FIXME need to transform this point
+            bool  convex = edge->isConvex();
+            ne           = make_shared<Edge>(v1, v2,pt,convex);
+        }
 
         // Rather than using insertEdge_Simple, we tack all new edges
         // to the end of the edge list...
@@ -949,39 +955,46 @@ public synchronized void mergeSimple( Map other )
 // Since transforming a map requires a slow cloning, we can save lots
 // of time and memory by transforming and merging simultaneously.
 // Here, we transform vertices as they are put into the current map.
-void Map::mergeSimpleMany(MapPtr other, const QVector<Transform> &transforms)
+void Map::mergeSimpleMany(MapPtr other, const QVector<QTransform> &transforms)
 {
     for (auto e = transforms.begin(); e != transforms.end(); e++)
     {
-        Transform T = *e;
+        QTransform T = *e;
         //qDebug() << T->toString();
         for (auto v = other->getVertices()->begin(); v != other->getVertices()->end(); v++)
         {
             VertexPtr vert = *v;
-            vert->copy = getVertex_Simple(T.apply(vert->getPosition()));
+            vert->copy = getVertex_Simple(T.map(vert->getPosition()));
             //qDebug() << vert->copy->getPosition();
         }
 
 
         for (auto ed = other->getEdges()->begin(); ed != other->getEdges()->end(); ed++)
         {
-            EdgePtr edge = *ed;
+            EdgePtr nedge;
 
+            EdgePtr edge = *ed;
             VertexPtr v1 = edge->getV1()->copy;
-            if (!v1)
-                qDebug() << "woops1";
             VertexPtr v2 = edge->getV2()->copy;
-            if (!v2)
-                qDebug() << "woops2";
-            EdgePtr nedge = make_shared<Edge>(v1, v2);
-            v1->insertEdge( nedge);
-            v2->insertEdge( nedge);
-            edges.push_back( nedge );
+
+            if (edge->getType() == EDGE_LINE)
+            {
+                nedge = make_shared<Edge>(v1, v2);
+            }
+            else if (edge->getType() == EDGE_CURVE)
+            {
+                QPointF pt   = T.map(edge->getArcCenter());
+                bool  convex = edge->isConvex();
+                nedge = make_shared<Edge>(v1, v2,pt,convex);
+            }
+            v1->insertEdge(nedge);
+            v2->insertEdge(nedge);
+            edges.push_back(nedge);
         }
     }
 
-    verify("merge simple-many",false,true,false);
     sortEdges();
+    cleanNeighbours();
     cleanCopy();
 }
 
@@ -1213,7 +1226,6 @@ void Map::deDuplicateEdges(QVector<EdgePtr> & vec)
     vec = avec;
 
     // examining the positions edges of associated with the vertex
-    int dupCount = 0;
     QVector<EdgePtr> duplicateEdges;
     for (auto it = vec.begin(); it != vec.end(); it++)
     {
@@ -1225,11 +1237,6 @@ void Map::deDuplicateEdges(QVector<EdgePtr> & vec)
             EdgePtr e2 = *it2;
             if (e->sameAs(e2))
             {
-                if (dupCount == 0)
-                {
-                    qWarning() << "first duplicate in design";
-                }
-                qWarning() << "duplicate edge detected"  << ++dupCount;
                 duplicateEdges.push_back(e2);
             }
         }
@@ -1321,7 +1328,7 @@ void Map::dumpEdges(bool full) const
     for( int idx = 0; idx < edges.size(); ++idx )
     {
         EdgePtr edge = edges.at(idx);
-        qDebug() <<  "edge" << idx << "from" << vertices.indexOf(edge->getV1()) << "to"  << vertices.indexOf(edge->getV2());
+        qDebug() << ((edge->getType() == EDGE_LINE) ? "Line" : "Curve") << "edge" << idx << "from" << vertices.indexOf(edge->getV1()) << "to"  << vertices.indexOf(edge->getV2());
     }
 }
 
@@ -1346,13 +1353,19 @@ bool Map::verify(QString mapname, bool verbose, bool detailed, bool doDump) cons
 
     if (vertices.size() == 0 && edges.size() == 0)
     {
-        qDebug() << "empty map";
+        qWarning("empty map");
         return true;
     }
 
     if (edges.size() == 0)
     {
         qWarning("No edges");
+        good = false;
+    }
+
+    if (vertices.size() == 0)
+    {
+        qWarning("No vertices");
         good = false;
     }
 
@@ -1378,7 +1391,7 @@ bool Map::verify(QString mapname, bool verbose, bool detailed, bool doDump) cons
         for (auto e = edges.begin(); e != edges.end(); e++)
         {
             EdgePtr edge = * e;
-            if (verbose) qDebug() <<  "verifying edge: from" << vertices.indexOf(edge->getV1()) << "to"  << vertices.indexOf(edge->getV2());
+            if (verbose) qDebug() <<  "verifying edge (" << edges.indexOf(edge) << ") : from" << vertices.indexOf(edge->getV1()) << "to"  << vertices.indexOf(edge->getV2());
 
             if (edge->getV1()->pos == edge->getV2()->pos)
             {
@@ -1496,11 +1509,11 @@ bool Map::verify(QString mapname, bool verbose, bool detailed, bool doDump) cons
 
         if (!good)
         {
-            badness() << mapname << "did NOT verify!";
+            badness() << mapname << "did NOT verify!"  << "(Edges:" << edges.size() << "Vertices:" << vertices.size() << ")";
         }
         else
         {
-            qDebug() << "verify OK";
+            qDebug() << mapname << "verify OK" << "(Edges:" << edges.size() << "Vertices:" << vertices.size() << ")";
         }
     }
 
@@ -1618,7 +1631,7 @@ QRectF Map::calcBoundingRect()
 
 void Map::cleanNeighbours()
 {
-    qDebug() << "Map::cleanNeighbours edges=" << edges.size()  << "vertices=" << vertices.size();
+    qDebug() << "BEGIN Map::cleanNeighbours edges=" << edges.size()  << "vertices=" << vertices.size();
 
     for (auto it = vertices.begin(); it != vertices.end(); it++)
     {
@@ -1627,7 +1640,7 @@ void Map::cleanNeighbours()
         QVector<EdgePtr> & edgeVec = v->getEdges();
         deDuplicateEdges(edgeVec);
     }
-    qDebug() << "Map::cleanNeighbours edges=" << edges.size()  << "vertices=" << vertices.size();
+    qDebug() << "END Map::cleanNeighbours edges=" << edges.size()  << "vertices=" << vertices.size();
 }
 
 void Map::removeDanglingVertices()

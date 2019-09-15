@@ -61,7 +61,7 @@ void Star::setS( int s )
 
 MapPtr Star::buildUnit()
 {
-    buildBoundary();
+    buildExtBoundary();
 
     unitMap = make_shared<Map>();
 
@@ -133,7 +133,7 @@ MapPtr Star::buildUnit()
 
     if( clamp_s == di )
     {
-        QPointF midr = Tr.apply( top_prev->getPosition() );
+        QPointF midr = Tr.map( top_prev->getPosition() );
         VertexPtr v4 = unitMap->insertVertex(midr);
 
         if( d_is_int )
@@ -167,8 +167,8 @@ MapPtr Star::buildUnit()
     debugMap->rotate(rotate);
 
     // scale
-    unitMap->scale(figureScale);
-    debugMap->scale(figureScale);
+    unitMap->scale(getFigureScale());
+    debugMap->scale(getFigureScale());
 
     return unitMap;
 }

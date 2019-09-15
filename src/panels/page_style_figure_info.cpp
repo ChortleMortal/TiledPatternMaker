@@ -57,6 +57,7 @@ void  page_style_figure_info::onEnter()
 
     figureTable->resizeColumnsToContents();
     adjustTableSize(figureTable);
+    updateGeometry();
 }
 
 void  page_style_figure_info::refreshPage()

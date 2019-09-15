@@ -23,7 +23,7 @@
  */
 
 #include "panels/page_map_editor.h"
-#include "panels/sliderset.h"
+#include "panels/layout_sliderset.h"
 #include "panels/dlg_listselect.h"
 #include "panels/dlg_name.h"
 #include "base/canvas.h"
@@ -122,10 +122,10 @@ page_map_editor:: page_map_editor(ControlPanel *panel)  : panel_page(panel,"Map 
     pbSortEdges->setText("Sort Edges");
     pbRemoveFloatingVerts->setText("Remove\nFloating Vertices");
     pbRemoveZombieEdges->setText("Remove\nZombie Edges");
-    pbRestoreConstructs->setText("Restore\nConstruction Lines");
+    pbRestoreConstructs->setText("Restore\nConstruct Lines");
     pbUndoConstructs->setText("Undo\nConstruct Lines");
-    pbRedoConstructs->setText("Redo\nConstruction Lines");
-    pbClearConstructs->setText("Clear\nConstruction Lines");
+    pbRedoConstructs->setText("Redo\nConstruct Lines");
+    pbClearConstructs->setText("Clear\nConstruct Lines");
     pbSaveTemplate->setText("Save Template");
     pbLoadTemplate->setText("Load Template");
     pbClearMap->setText("Clear Map");
@@ -206,19 +206,22 @@ page_map_editor:: page_map_editor(ControlPanel *panel)  : panel_page(panel,"Map 
     mapGrid->addWidget(pbVerifyMap,row,0);
     mapGrid->addWidget(pbMakeExplicit,row,1);
     mapGrid->addWidget(pbClearMap,row,2);
-    mapGrid->addWidget(pbCleanseMap,row,3);
 
     row++;
     mapGrid->addWidget(pbDivideEdges,row,0);
     mapGrid->addWidget(pbJoinEdges,row,1);
     mapGrid->addWidget(pbCleanNeighbours,row,2);
-    mapGrid->addWidget(pbRemoveFloatingVerts,row,3);
 
     row++;
     mapGrid->addWidget(pbSortNeigbours,row,0);
     mapGrid->addWidget(pbSortVertices,row,1);
     mapGrid->addWidget(pbSortEdges,row,2);
-    mapGrid->addWidget(pbRemoveZombieEdges,row,3);
+
+
+    row++;
+    mapGrid->addWidget(pbCleanseMap,row,0);
+    mapGrid->addWidget(pbRemoveFloatingVerts,row,1);
+    mapGrid->addWidget(pbRemoveZombieEdges,row,2);
 
     QGroupBox * mapBox  = new QGroupBox("Map");
     mapBox->setLayout(mapGrid);
@@ -239,22 +242,22 @@ page_map_editor:: page_map_editor(ControlPanel *panel)  : panel_page(panel,"Map 
     templateBox->setLayout(templateGrid);
 
     // Edit Box
-    QGridLayout * editGrid = new QGridLayout;
+    QVBoxLayout * editBox = new QVBoxLayout;
 
-    row = 0;
-    editGrid->addWidget(modeNone,row,0);
-    editGrid->addWidget(modeDrawLine,row,1);
-    editGrid->addWidget(modeConstruction,row,2);
-    editGrid->addWidget(modeDelLine,row,3);
+    editBox->addWidget(modeNone);
+    editBox->addWidget(modeDrawLine);
+    editBox->addWidget(modeConstruction);
+    editBox->addWidget(modeDelLine);
 
-    row++;
-    editGrid->addWidget(modeSplitLine,row,0);
-    editGrid->addWidget(modeExtendLine,row,1);
-    editGrid->addWidget(modeConstrCicle,row,2);
-    editGrid->addLayout(radiusSpin,row,3);
+    editBox->addWidget(modeSplitLine);
+    editBox->addWidget(modeExtendLine);
+    editBox->addWidget(modeConstrCicle);
+    editBox->addLayout(radiusSpin);
 
-    QGroupBox * editBox = new QGroupBox("Edit");
-    editBox->setLayout(editGrid);
+    editBox->addStretch();
+
+    QGroupBox * editGBox = new QGroupBox("Edit");
+    editGBox->setLayout(editBox);
 
     // Push Box
     QHBoxLayout * pushLayout = new QHBoxLayout;
@@ -271,13 +274,13 @@ page_map_editor:: page_map_editor(ControlPanel *panel)  : panel_page(panel,"Map 
     // arranging the boxes
     QGridLayout * boxLayout = new QGridLayout();
 
-    boxLayout->addWidget(mapBox,0,0);
-    boxLayout->addWidget(templateBox,1,0);
-    boxLayout->addWidget(editBox,2,0);
+    boxLayout->addWidget(editGBox,0,0,2,1);
+    boxLayout->addWidget(mapBox,0,1);
+    boxLayout->addWidget(templateBox,1,1);
 
-    boxLayout->addWidget(viewBox,0,1,3,1);
+    boxLayout->addWidget(viewBox,0,2,2,1);
 
-    boxLayout->addWidget(pushBox,3,0,1,2);
+    boxLayout->addWidget(pushBox,2,0,1,2);
 
     // putting it together
     vbox->addWidget(editorStatusBox);
@@ -676,7 +679,6 @@ void page_map_editor::slot_mapEdView_pressed(int id)
     reload();
     if (config->viewerType == VIEW_MAP_EDITOR)
     {
-        emit sig_updateDesignInfo();
         emit sig_viewWS();
     }
 }

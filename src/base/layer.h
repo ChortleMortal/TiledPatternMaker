@@ -1,4 +1,4 @@
-﻿/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
+/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
  *
  *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
  *
@@ -26,12 +26,14 @@
 #define DACPATS_LAYER_H
 
 #include <QGraphicsItemGroup>
-#include "geometry/bounds.h"
-#include "geometry/Transform.h"
+#include <QPen>
+#include "geometry/xform.h"
 #include "base/shared.h"
 
 class Design;
 class Canvas;
+class WorkspaceViewer;
+class Configuration;
 
 #define TRANS   painter->translate(getLoc())
 #define UNTRANS painter->translate(-getLoc());
@@ -45,32 +47,28 @@ class Layer : public QObject, public QGraphicsItemGroup
 
 public:
     Layer(QString name);
-    Layer(const Layer & layer);
+    Layer(const Layer & other);
     ~Layer()  { refs--; }
 
     void    addToGroup(QGraphicsItem *item);
     void    removeFromGroup(QGraphicsItem *item);
 
-    void    forceUpdateLayer();
-
-    void    setBounds(Bounds & bounds) { this->bounds = bounds; }
-    void    setDeltas(Bounds & deltas) { this->deltas = deltas; }
     void    setRotateCenter (QPointF pt);
+    QPointF getRotateCenter() const;
 
-    Bounds  getBounds() { return bounds; }
-    Bounds  getDeltas() { return deltas; }
-    Bounds  getAdjustedBounds();
+    void    setDeltas(Xform & xf);
+    Xform   getDeltas();
 
-    QPointF getRotateCenter() const  { return rotateCenter; }
-
+    void    forceUpdateLayer();
     void    forceRedraw() ;
 
     QPointF screenToWorld(QPointF pt) ;
-    QPointF screenToWorld(int x, int y) ;
-    QPointF worldToScreen(QPointF pt);
+    QPointF screenToWorld(int x, int y);
 
-    TransformPtr getLayerTransform();
-    QPolygonF    getBoundary();
+    QPointF worldToScreen(QPointF pt);
+    QLineF  worldToScreen(QLineF line);
+
+    QTransform  getLayerTransform();
 
     QString getName() { return name; }
 
@@ -83,22 +81,19 @@ public slots:
     void slot_scale(int amount);
 
 protected:
-    void computeLayerTransform();
-
-    TransformPtr layerTransform;
-
-    QPointF _loc;
-    qreal   rotateAngle;
+    QTransform baseT;
+    QTransform layerT;
+    QTransform invT;
+    QPen       layerPen;
 
 private:
-    Canvas * canvas;
+    void computeLayerTransform();
 
-    TransformPtr inverse;
+    Canvas          * canvas;
+    WorkspaceViewer * wsViewer;
+    Configuration   * config;
 
-    Bounds  bounds;
-    Bounds  deltas;
-
-    QPointF rotateCenter;
+    Xform           layerXform;
 
     QString name;
 };

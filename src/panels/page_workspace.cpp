@@ -226,7 +226,7 @@ void page_workspace::populateStyles(QTreeWidgetItem * parent, StyledDesign & des
         populateMap(item,s->getReadOnlyMap());
         populatePrototype(item,s->getPrototype());
 
-        QTreeWidgetItem * item2 = new QTreeWidgetItem;;
+        QTreeWidgetItem * item2 = new QTreeWidgetItem;
         item2->setText(0,"Boundary");
         PolyPtr pp = s->getBoundary();
         QString astring;
@@ -301,7 +301,7 @@ void page_workspace::populatePrototype(QTreeWidgetItem *parent, PrototypePtr pp)
 {
     TilingPtr tiling                 = pp->getTiling();
     QVector<DesignElementPtr> & dels = pp->getDesignElements();
-    QVector<Transform> & tforms      = pp->getLocations();
+    QVector<QTransform> & tforms     = pp->getLocations();
 
     // summary
     QTreeWidgetItem * pitem = new QTreeWidgetItem;
@@ -340,10 +340,10 @@ void page_workspace::populatePrototype(QTreeWidgetItem *parent, PrototypePtr pp)
     pitem->addChild(item2);
     for (auto it = tforms.begin(); it != tforms.end(); it++)
     {
-        Transform tr = *it;
-        QTreeWidgetItem * item = new QTreeWidgetItem;;
+        QTransform tr = *it;
+        QTreeWidgetItem * item = new QTreeWidgetItem;
         item->setText(0,"Transform");
-        item->setText(2,tr.toString());
+        item->setText(2,Transform::toInfoString(tr));
         item2->addChild(item);
     }
 }
@@ -465,13 +465,13 @@ void page_workspace::populateTiling(QTreeWidgetItem * parent, TilingPtr tp)
     for (it = qlpf.begin(); it != qlpf.end(); it++)
     {
         PlacedFeaturePtr pfp = *it;
-        Transform tr         = pfp->getTransform();
+        QTransform tr        = pfp->getTransform();
         FeaturePtr fp        = pfp->getFeature();
 
         QTreeWidgetItem * item = new QTreeWidgetItem;
         item->setText(0,"Placed Feature");
         item->setText(1,addr(pfp.get()));
-        item->setText(2,tr.toString());
+        item->setText(2,Transform::toInfoString(tr));
         parent->addChild(item);
 
         QTreeWidgetItem * item2 = new QTreeWidgetItem;

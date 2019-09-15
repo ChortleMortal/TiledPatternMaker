@@ -41,6 +41,7 @@
 #include "tapp/Star.h"
 #include "tapp/ExtendedStar.h"
 #include "tapp/ExplicitFigure.h"
+#include "tile/featurereader.h"
 
 #undef  DEBUG_REFERENCES
 
@@ -148,8 +149,8 @@ void XmlLoader::processVector(xml_node & node)
             processDesignNotes(n);
         else if (str == "Tiling")
         {
-            _tiling = make_shared<Tiling>();
-            _tiling = _tiling->readTilingXML(n);
+            TilingLoader tm;
+            _tiling = tm.readTilingXML(n);
         }
         else if (str == "design")
             processDesign(n);
@@ -174,12 +175,12 @@ void XmlLoader::processVector(xml_node & node)
     }
     qDebug() << "end vector";
 
-    CanvasSettings & info = _styledDesign.getCanvasSettings();
-    info.init();
+    CanvasSettings info;
     info.setScale(_scale);
     info.setBackgroundColor(_background);
     info.setSizeF(QSizeF(_width,_height));
     info.setBorder(_border);
+    _styledDesign.setupCanvas(info);
 
 }
 
@@ -210,7 +211,7 @@ void XmlLoader::processThick(xml_node & node)
     qreal   width        = 0.0;
     PrototypePtr proto;
     PolyPtr poly;
-    Bounds  b;
+    Xform   xf;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
@@ -218,7 +219,7 @@ void XmlLoader::processThick(xml_node & node)
         qDebug() << str.c_str();
 
         if (str == "toolkit.GeoLayer")
-            procesToolkitGeoLayer(n,b);
+            procesToolkitGeoLayer(n,xf);
         else if (str == "style.Style")
             processStyleStyle(n,proto,poly);
         else if (str == "style.Colored")
@@ -231,7 +232,7 @@ void XmlLoader::processThick(xml_node & node)
 
     qDebug() << "Constructing Thick from prototype and poly";
     Thick * thick = new Thick(proto,poly);
-    thick->setDeltas(b);
+    thick->setDeltas(xf);
     thick->setColor(color);
     thick->setDrawOutline(draw_outline);
     thick->setLineWidth(width);
@@ -252,7 +253,7 @@ void XmlLoader::processInterlace(xml_node & node)
     qreal   width           = 0.0;
     qreal   gap             = 0.0;
     qreal   shadow          = 0.0;
-    Bounds  b;
+    Xform   xf;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
@@ -260,7 +261,7 @@ void XmlLoader::processInterlace(xml_node & node)
         qDebug() << str.c_str();
 
         if (str == "toolkit.GeoLayer")
-            procesToolkitGeoLayer(n,b);
+            procesToolkitGeoLayer(n,xf);
         else if (str == "style.Style")
             processStyleStyle(n,proto,poly);
         else if (str == "style.Colored")
@@ -275,7 +276,7 @@ void XmlLoader::processInterlace(xml_node & node)
 
     qDebug() << "Constructing Interlace (DAC) from prototype and poly";
     Interlace * interlace = new Interlace(proto,poly);
-    interlace->setDeltas(b);
+    interlace->setDeltas(xf);
     interlace->setColor(color);
     interlace->setDrawOutline(draw_outline);
     interlace->setLineWidth(width);
@@ -295,7 +296,7 @@ void XmlLoader::processOutline(xml_node & node)
     qreal   width        = 0.0;
     PrototypePtr proto;
     PolyPtr poly;
-    Bounds  b;
+    Xform   xf;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
@@ -303,7 +304,7 @@ void XmlLoader::processOutline(xml_node & node)
         qDebug() << str.c_str();
 
         if (str == "toolkit.GeoLayer")
-            procesToolkitGeoLayer(n,b);
+            procesToolkitGeoLayer(n,xf);
         else if (str == "style.Style")
             processStyleStyle(n,proto,poly);
         else if (str == "style.Colored")
@@ -316,7 +317,7 @@ void XmlLoader::processOutline(xml_node & node)
 
     qDebug() << "Constructing Outline from prototype and poly";
     Outline * outline = new Outline(proto,poly);
-    outline->setDeltas(b);
+    outline->setDeltas(xf);
     outline->setColor(color);
     outline->setDrawOutline(draw_outline);
     outline->setLineWidth(width);
@@ -343,7 +344,7 @@ void XmlLoader::processFilled(xml_node & node)
     PrototypePtr proto;
     PolyPtr poly;
 
-    Bounds  b;
+    Xform xf;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
@@ -352,7 +353,7 @@ void XmlLoader::processFilled(xml_node & node)
 
         if (str == "toolkit.GeoLayer")
         {
-            procesToolkitGeoLayer(n,b);
+            procesToolkitGeoLayer(n,xf);
         }
         else if (str == "style.Style")
         {
@@ -389,7 +390,7 @@ void XmlLoader::processFilled(xml_node & node)
     }
 
     Filled * filled = new Filled(proto,poly,algorithm);
-    filled->setDeltas(b);
+    filled->setDeltas(xf);
 
     if (oldFormat)
     {
@@ -454,7 +455,7 @@ void XmlLoader::processPlain(xml_node & node)
     QColor  color;
     PrototypePtr proto;
     PolyPtr poly;
-    Bounds  b;
+    Xform   xf;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
@@ -462,7 +463,7 @@ void XmlLoader::processPlain(xml_node & node)
         qDebug() << str.c_str();
 
         if (str == "toolkit.GeoLayer")
-            procesToolkitGeoLayer(n,b);
+            procesToolkitGeoLayer(n,xf);
         else if (str == "style.Style")
             processStyleStyle(n,proto,poly);
         else if (str == "style.Colored")
@@ -472,7 +473,7 @@ void XmlLoader::processPlain(xml_node & node)
     }
 
     Plain * plain = new Plain(proto,poly);
-    plain->setDeltas(b);
+    plain->setDeltas(xf);
     plain->setColor(color);
     qDebug().noquote() << "XmlServices created Style (Plain)" << plain->getInfo();
     _styledDesign.addStyle(StylePtr(plain));
@@ -485,7 +486,7 @@ void XmlLoader::processSketch(xml_node & node)
     QColor  color;
     PrototypePtr proto;
     PolyPtr poly;
-    Bounds  b;
+    Xform   xf;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
@@ -493,7 +494,7 @@ void XmlLoader::processSketch(xml_node & node)
         qDebug() << str.c_str();
 
         if (str == "toolkit.GeoLayer")
-            procesToolkitGeoLayer(n,b);
+            procesToolkitGeoLayer(n,xf);
         else if (str == "style.Style")
             processStyleStyle(n,proto,poly);
         else if (str == "style.Colored")
@@ -503,7 +504,7 @@ void XmlLoader::processSketch(xml_node & node)
     }
 
     Sketch * sketch = new Sketch(proto,poly);
-    sketch->setDeltas(b);
+    sketch->setDeltas(xf);
     sketch->setColor(color);
     qDebug().noquote() << "XmlServices created Style (Sketch)" << sketch->getInfo();
     _styledDesign.addStyle(StylePtr(sketch));
@@ -519,7 +520,7 @@ void XmlLoader::processEmboss(xml_node & node)
     qreal   angle        = 0.0;
     PrototypePtr proto;
     PolyPtr poly;
-    Bounds  b;
+    Xform   xf;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
@@ -527,7 +528,7 @@ void XmlLoader::processEmboss(xml_node & node)
         qDebug() << str.c_str();
 
         if (str == "toolkit.GeoLayer")
-            procesToolkitGeoLayer(n,b);
+            procesToolkitGeoLayer(n,xf);
         else if (str == "style.Style")
             processStyleStyle(n,proto,poly);
         else if (str == "style.Colored")
@@ -542,7 +543,7 @@ void XmlLoader::processEmboss(xml_node & node)
 
     qDebug() << "Constructing Emboss from prototype and poly";
     Emboss * emboss = new Emboss(proto,poly);
-    emboss->setDeltas(b);
+    emboss->setDeltas(xf);
     emboss->setColor(color);
     emboss->setDrawOutline(draw_outline);
     emboss->setLineWidth(width);
@@ -558,7 +559,7 @@ void XmlLoader::processTileColors(xml_node & node)
 {
     PrototypePtr proto;
     PolyPtr poly;
-    Bounds  b;
+    Xform   xf;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
@@ -566,7 +567,7 @@ void XmlLoader::processTileColors(xml_node & node)
         qDebug() << str.c_str();
 
         if (str == "toolkit.GeoLayer")
-            procesToolkitGeoLayer(n,b);
+            procesToolkitGeoLayer(n,xf);
         else if (str == "style.Style")
             processStyleStyle(n,proto,poly);
         else
@@ -575,7 +576,7 @@ void XmlLoader::processTileColors(xml_node & node)
 
     qDebug() << "Constructing TileColors from prototype and poly";
     TileColors * tc  = new TileColors(proto,poly);
-    tc->setDeltas(b);
+    tc->setDeltas(xf);
 
     qDebug().noquote() << "XmlServices created Style(TileColors)" << tc->getInfo();
     _styledDesign.addStyle(StylePtr(tc));
@@ -583,25 +584,37 @@ void XmlLoader::processTileColors(xml_node & node)
     qDebug() << "end emboss";
 }
 
-void XmlLoader::procesToolkitGeoLayer(xml_node & node, Bounds & b)
+void XmlLoader::procesToolkitGeoLayer(xml_node & node, Xform & xf)
 {
     QString val;
 
     xml_node n = node.child("left__delta");
-    val     = n.child_value();
-    b.left  = val.toDouble();
+    if (n)
+    {
+        val           = n.child_value();
+        xf.translateX = val.toDouble();
+    }
 
-    n       = node.child("theta__delta");
-    val     = n.child_value();
-    b.theta = val.toDouble();
+    n = node.child("top__delta");
+    if (n)
+    {
+        val           = n.child_value();
+        xf.translateY = val.toDouble();
+    }
 
-    n       = node.child("top__delta");
-    val     = n.child_value();
-    b.top   = val.toDouble();
+    n = node.child("width__delta");
+    if (n)
+    {
+        val          = n.child_value();
+        xf.scale     = val.toDouble() + 1.0;     //used as scale
+    }
 
-    n       = node.child("width__delta");
-    val     = n.child_value();
-    b.width = val.toDouble();
+    n = node.child("theta__delta");
+    if (n)
+    {
+        val          = n.child_value();
+        xf.rotation  = val.toDouble();
+    }
 }
 
 void XmlLoader::processStyleStyle(xml_node & node, PrototypePtr & proto, PolyPtr & poly)
@@ -682,6 +695,12 @@ QColor XmlLoader::processColor(xml_node & n)
     return color;
 }
 
+qreal XmlLoader::procWidth(xml_node & node)
+{
+    QString str = node.child_value();
+    return str.toDouble();
+}
+
 void XmlLoader::processsStyleThick(xml_node & node, bool & draw_outline, qreal & width)
 {
     QString str  = node.child_value("draw__outline");
@@ -753,6 +772,15 @@ PolyPtr XmlLoader::getPolygon(xml_node & node)
     return poly;
 }
 
+QPointF XmlLoader::getPos(xml_node & node)
+{
+    QString txt = node.child_value();
+    QStringList qsl;
+    qsl = txt.split(',');
+    qreal x = qsl[0].toDouble();
+    qreal y = qsl[1].toDouble();
+    return QPointF(x,y);
+}
 
 PrototypePtr XmlLoader::getPrototype(xml_node & node)
 {
@@ -762,10 +790,10 @@ PrototypePtr XmlLoader::getPrototype(xml_node & node)
         return getProtoReferencedPtr(node);
     }
 
-    xml_node proto = node.child("app.Prototype");
-    qDebug() << proto.name();
+    xml_node protonode = node.child("app.Prototype");
+    qDebug() << protonode.name();
 
-    QString tilingName = proto.child_value("string");
+    QString tilingName = protonode.child_value("string");
     qDebug() << "string=" << tilingName;
 
     if (_tiling && _tiling->getName() == tilingName)
@@ -779,18 +807,19 @@ PrototypePtr XmlLoader::getPrototype(xml_node & node)
         _tiling = tm->loadTiling(tilingName);
         if (!_tiling)
         {
-            fail("Tling not laoded: ",tilingName);
+            fail("Tiling not loaded: ",tilingName);
         }
     }
 
+    //qDebug().noquote() << _tiling->dump();
     qDebug() << "Creating new prototype";
 
-    PrototypePtr p = make_shared<Prototype>(_tiling);
-    setProtoReference(node,p);
+    PrototypePtr proto = make_shared<Prototype>(_tiling);
+    setProtoReference(node,proto);
     canvas->dump(true);
 
     xml_node entry;
-    for (entry = proto.child("entry"); entry; entry = entry.next_sibling("entry"))
+    for (entry = protonode.child("entry"); entry; entry = entry.next_sibling("entry"))
     {
         bool dc_found = false;
 
@@ -877,24 +906,26 @@ PrototypePtr XmlLoader::getPrototype(xml_node & node)
             // if the found feature is identical to the one in the known tiling
             // then use that
             // DAC 27MAY17 - imprtant that this code not removed or Design View will fail
-            QList<PlacedFeaturePtr>::const_iterator it;
-            for( it = _tiling->getPlacedFeatures().begin(); it != _tiling->getPlacedFeatures().end(); it++)
+            for (auto it = _tiling->getPlacedFeatures().begin(); it != _tiling->getPlacedFeatures().end(); it++)
             {
                 PlacedFeaturePtr pf = *it;
-                if (pf->getFeature()->equals(feature))
+                FeaturePtr       fp = pf->getFeature();
+                if (fp->equals(feature))
                 {
-                    feature = pf->getFeature();
+                    feature = fp;
                 }
             }
             qDebug() << "adding to Proto" << figure->getFigureDesc();
             DesignElementPtr  dep = make_shared<DesignElement>(feature, figure);
-            p->addElement(dep);
+            proto->addElement(dep);
+            qDebug() << "design element:" << dep->toString();
         }
         //p->walk();
     }
 
+    proto->createProtoMap();
     qDebug() << "Proto created";
-    return p;
+    return proto;
 }
 
 FeaturePtr XmlLoader::getFeature(xml_node & node)
@@ -910,13 +941,28 @@ FeaturePtr XmlLoader::getFeature(xml_node & node)
     bool regular = (str == "true");
 
     xml_node poly = node.child("points");
+    FeaturePtr f;
+    if (poly)
+    {
+        PolyPtr b    = getPolygon(poly);
+        EdgePoly ep(b);
 
-    PolyPtr b = getPolygon(poly);
+        f = make_shared<Feature>(ep);
+        setFeatureReference(node,f);
+        f->setRegular(regular);
+        return f;
+    }
+    poly = node.child("edges");
+    if (poly)
+    {
+        FeatureReader fr;
+        EdgePoly ep = fr.getEdgePoly(poly);
 
-    FeaturePtr f = make_shared<Feature>(b);
-    setFeatureReference(node,f);
-    f->setRegular(regular);
-
+        f = make_shared<Feature>(ep);
+        setFeatureReference(node,f);
+        f->setRegular(regular);
+        return f;
+    }
     return f;
 }
 
@@ -1253,14 +1299,22 @@ VertexPtr XmlLoader::getVertex(xml_node & node)
 
    // pos
    xml_node pos = node.child("pos");
-   QString str;
-   str = pos.child_value("x");
-   qreal x = str.toDouble();
-   str = pos.child_value("y");
-   qreal y = str.toDouble();
-
+   QPointF pt;
+   if (_version < 2)
+   {
+        QString str;
+        str = pos.child_value("x");
+        qreal x = str.toDouble();
+        str = pos.child_value("y");
+        qreal y = str.toDouble();
+        pt = QPointF(x,y);
+   }
+   else
+   {
+       pt = getPos(pos);
+   }
    vOrigCnt++;
-   VertexPtr v = make_shared<Vertex>(QPointF(x,y));
+   VertexPtr v = make_shared<Vertex>(pt);
    setVertexReference(node,v);
 
    // edges = neighbour
@@ -1268,14 +1322,23 @@ VertexPtr XmlLoader::getVertex(xml_node & node)
    if (edges2)
    {
        xml_node e;
-       for (e = edges2.child("edge"); e; e= e.next_sibling("edge"))
+       for (e = edges2.first_child(); e; e= e.next_sibling())
        {
-            EdgePtr ep = getEdge(e);
-            v->insertEdgeSimple(ep);
+           QString name = e.name();
+           EdgePtr ep;
+           if (name == "edge")
+           {
+                ep = getEdge(e);
+           }
+           else if (name == "curve")
+           {
+               ep = getCurve(e);
+           }
+           v->insertEdgeSimple(ep);
        }
    }
    else
-       qWarning("edges not found");
+       qWarning("edges2 not found");
 
    return v;
 }
@@ -1306,6 +1369,43 @@ EdgePtr XmlLoader::getEdge(xml_node & node)
     edge->setV1(v1);
     edge->setV2(v2);
     //qDebug() << "created Edge" << Utils::addr(edge.get()) << Utils::addr(v1.get()) << Utils::addr(v2.get());
+
+    return edge;
+}
+
+EdgePtr XmlLoader::getCurve(xml_node & node)
+{
+    //qDebug() << node.name();
+
+    if (hasReference(node))
+    {
+        eRefrCnt++;
+        return getEdgeReferencedPtr(node);
+    }
+
+    eOrigCnt++;
+    EdgePtr edge = make_shared<Edge>();
+    setEdgeReference(node,edge);        // early for recursion
+    //qDebug() << "created Edge" << Utils::addr(edge.get());
+
+    MapPtr map = getMap(node);
+
+    xml_node v1node = node.child("v1");
+    VertexPtr v1 = getVertex(v1node);
+
+    xml_node v2node = node.child("v2");
+    VertexPtr v2 = getVertex(v2node);
+
+    xml_node pnode = node.child("pos");
+    QPointF p = getPos(pnode);
+
+    xml_attribute attr = node.attribute("convex");
+    QString val = attr.value();
+    bool convex = (val == "t") ? true : false;
+
+    edge->setV1(v1);
+    edge->setV2(v2);
+    edge->setArcCenter(p,convex);
 
     return edge;
 }
@@ -1347,30 +1447,39 @@ void XmlLoader::procBorder(xml_node & node)
     xml_attribute atype = node.attribute("type");
     if (!atype)  return;
 
-    _border = make_shared<Border>();
-
-    int type = atype.as_int();
+    eBorderType type = static_cast<eBorderType>(atype.as_int());
     switch (type)
     {
-    case 0:
-        procBorder0(node);
+    case BORDER_PLAIN:
+        procBorderPlain(node);
         break;
-    case 1:
-        procBorder1(node);
+    case BORDER_TWO_COLOR:
+        procBorderTwoColor(node);
         break;
-    case 2:
-        procBorder2(node);
+    case BORDER_BLOCKS:
+        procBorderBlocks(node);
+        break;
+    case BORDER_NONE:
         break;
     }
 }
 
-void XmlLoader::procBorder0(xml_node & node)
+void XmlLoader::procBorderPlain(xml_node & node)
 {
-    Q_UNUSED(node);  // FIXME border0
-    //void addBorder0(QPen pen, QRectF rect);
+    xml_node cnode = node.child("color");
+    QColor col1 = processColor(cnode);
+
+    qreal bwidth;
+    xml_node wnode = node.child("width");
+    if (wnode)
+        bwidth = procWidth(wnode);
+    else
+        bwidth = 20.0; // default
+
+    _border = make_shared<BorderPlain>(bwidth, col1);
 }
 
-void XmlLoader::procBorder1(xml_node & node)
+void XmlLoader::procBorderTwoColor(xml_node & node)
 {
     xml_node cnode = node.child("color");
     QColor col1 = processColor(cnode);
@@ -1378,14 +1487,17 @@ void XmlLoader::procBorder1(xml_node & node)
     cnode = cnode.next_sibling("color");
     QColor col2 = processColor(cnode);
 
-    xml_node snode = node.child("size");
-    int width,height;
-    procSize(snode,width,height);
+    qreal bwidth;
+    xml_node wnode = node.child("width");
+    if (wnode)
+        bwidth = procWidth(wnode);
+    else
+        bwidth = 20.0; // default
 
-    _border->addBorder1(col1, col2, QSizeF(width,height));
+    _border = make_shared<BorderTwoColor>(col1, col2, bwidth);
 }
 
-void XmlLoader::procBorder2(xml_node & node)
+void XmlLoader::procBorderBlocks(xml_node & node)
 {
     Q_UNUSED(node);  // FIXME border2
     //void addBorder2(QColor color, qreal diameter, int rows, int cols);

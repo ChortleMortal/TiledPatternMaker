@@ -44,54 +44,60 @@
 
 #include <QtCore>
 #include <QPainter>
-#include "geometry/Transform.h"
-#include "geometry/Point.h"
+#include "base/shared.h"
 
 class GeoGraphics
 {
 public:
-    GeoGraphics(QPainter * painter, Transform & transform);
+    GeoGraphics(QPainter * painter, QTransform  & transform);
 
     // Drawing functions.
-    void drawLine( qreal x1, qreal y1, qreal x2, qreal y2);
-    void drawLine( QPointF v1, QPointF v2);
-    void drawLine( QLineF line);
-    void drawLineS( QPointF v1, QPointF v2);
+    void drawEdge(EdgePtr e, QPen pen);                         // no brush
+    void drawThickEdge(EdgePtr e, qreal width,  QPen pen);      // no brush
+
+    void drawLine( qreal x1, qreal y1, qreal x2, qreal y2, QPen pen);
+    void drawLine( QPointF v1, QPointF v2, QPen pen);
+    void drawLine( QLineF line, QPen pen);
+    void drawLineDirect( QPointF v1, QPointF v2, QPen pen);
+
+    void drawChord(QPointF V1, QPointF V2, QPointF ArcCenter, QPen pen, QBrush brush, bool Convex);
+    void drawPie(QPointF V1, QPointF V2, QPointF ArcCenter, QPen pen, QBrush brush, bool Convex);
 
     // Draw a thick like as a rectangle.
-    void drawThickLine(qreal x1, qreal y1, qreal x2, qreal y2, qreal width);
-    void drawThickLine(QPointF v1, QPointF v2, qreal width);
-    void drawThickLine(QLineF line, qreal width);
+    void drawThickLine(qreal x1, qreal y1, qreal x2, qreal y2, qreal width, QPen pen);
+    void drawThickLine(QPointF v1, QPointF v2, qreal width, QPen pen);
+    void drawThickLine(QLineF line, qreal width, QPen pen);
 
-    void drawRect( QPointF topleft, qreal width, qreal height, bool filled);
-    void drawRect( QRectF, bool filled);
+    void drawThickChord(QPointF V1, QPointF V2, QPointF ArcCenter, QPen pen, QBrush brush, bool Convex, qreal width);
 
-    void drawPolygon(const QVector<QPointF> & pts, bool filled );
-    void drawPolygon(const QVector<QPointF> & pts, int start, int end, bool filled );
-    void drawPolygon(const QPolygonF & pgon, bool filled);
 
-    void drawArrow( QPointF from, QPointF to, qreal length, qreal half_width, bool filled );
+    void drawRect( QPointF topleft, qreal width, qreal height, QPen pen, QBrush brush);
+    void drawRect( QRectF, QPen pen, QBrush brush);
 
-    void drawCircle( QPointF origin, qreal radius, bool filled );
-    void drawCircle( QPointF origin, qreal radius );
+    void drawPolygon(const QVector<QPointF> & pts, QPen pen, QBrush brush);
+    void drawPolygon(const QVector<QPointF> & pts, int start, int end, QPen pen, QBrush brush);
+    void drawPolygon(const QPolygonF & pgon, QPen pen, QBrush brush);
 
-    void drawText(QPointF pos, QString txt);
+    void drawArrow( QPointF from, QPointF to, qreal length, qreal half_width, QPen pen, QBrush brush);
 
-    QColor getColor();
-    void setColor( QColor c );
+    void drawCircle(QPointF origin, int diameter, QPen pen, QBrush brush);
+
+    void drawText(QPointF pos, QString txt);    // no pen
+
+    void   save()    { painter->save(); }
+    void   restore() { painter->restore(); }
 
     // Transform functions.
-    Transform getTransform();
-    void push(Transform T );
-    void pushAndCompose(Transform T );
-    Transform pop();
+    QTransform  getTransform();
+    void        push(QTransform T );
+    void        pushAndCompose(QTransform T );
+    QTransform  pop();
 
 private:
-    QPainter        * painter;
-    Transform         transform;
-    QStack<Transform> pushed;
-    QColor            _color;
 
+    QPainter        * painter;
+    QTransform      &  transform;   // reference to layer transform which can change
+    QStack<QTransform> pushed;
 };
 #endif
 

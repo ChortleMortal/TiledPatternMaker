@@ -29,7 +29,7 @@
 #include "base/shapefactory.h"
 #include "base/configuration.h"
 #include "base/shared.h"
-#include "tile/tilemaker.h"
+#include "tile/tilingloader.h"
 
 enum eDirection
 {
@@ -72,91 +72,6 @@ protected:
 
 };
 
-class Pattern0 : public Pattern
-{
-public:
-    Pattern0(qreal diameter, QBrush brush);
-    void build() override;
-    bool doStep(int Index) Q_DECL_OVERRIDE;
-
-protected:
-    void circles3x3grid(qreal diameter, QPen pen);
-    void circles3x3x3grid(qreal diameter, QPen pen);
-    void triangles3x3grid(QPen pen);
-
-private:
-    Layer * layer1;
-    Layer * layer2;
-};
-
-class Pattern1 : public Pattern
-{
-public:
-    Pattern1( qreal diameter, QBrush brush);
-    void build() override;
-
-protected:
-    void triangleInTriangle(class ShapeFactory *circle, QPolygonF &p, QPen & pen);
-
-};
-
-class Pattern2 : public Pattern
-{
-#define BIG 850.0
-public:
-    Pattern2( qreal diameter, QBrush brush);
-
-    void build() override;
-    bool doStep(int Index) Q_DECL_OVERRIDE;
-
-protected:
-    void fadeFromBlackToPoint(int start, int duration);
-    void drawArcToCircles(int start, int duration);
-    void drawRadialLine(int start,int duration);
-    void undrawRadial(int start,int duration);
-
-    void expandCircles(int start,int duration);
-    void contractCircles(int start, int duration);
-    void rotateCircles();
-    void restoreRotation(int start, int duration);
-    void positionCircles(qreal xpos, qreal ypos);
-    void rotateAll();
-    void restoreAllRotation(int start, int duration);
-
-private:
-    Layer * layer1;
-    Layer * layer3;
-    Polyline2 * pLine;
-    qreal     a;
-    qreal     b;
-    qreal     cStart;
-    Circle2 * firstCircle;
-    QVector<ShapeFactory *>  shapes;
-};
-
-class Pattern3 : public Pattern
-{
-public:
-    Pattern3(qreal Diameter);
-    void build() override;
-    bool doStep(int Index) Q_DECL_OVERRIDE;
-private:
-    Layer * layer1;
-    Layer * layer2;
-    Layer * layer3;
-};
-
-class Pattern4 : public Pattern
-{
-public:
-    Pattern4(qreal Diameter);
-    void build() override;
-    bool doStep(int Index) Q_DECL_OVERRIDE;
-private:
-    Layer * layer1;
-    Layer * layer2;
-    Layer * layer3;
-};
 
 class Pattern5: public Pattern
 {
@@ -308,43 +223,6 @@ public:
     void build();
 };
 
-
-class PatternRosette : public Pattern
-{
-public:
-    PatternRosette(qreal Diameter, QBrush Brush);
-    void build() override;
-};
-
-class PatternStar : public Pattern
-{
-public:
-    PatternStar(qreal Diameter, QBrush Brush);
-    void build() override;
-};
-
-
-class Pattern19 : public Pattern
-{
-public:
-    Pattern19(qreal Diameter, QBrush Brush);
-    void build() override;
-};
-
-
-class Pattern20 : public Pattern
-{
-public:
-    Pattern20(qreal Diameter, QBrush Brush);
-    void build() override;
-};
-
-class Pattern21 : public Pattern
-{
-public:
-    Pattern21(qreal Diameter, QBrush Brush);
-    void build() override;
-};
 
 class PatternKumiko1 : public Pattern
 {

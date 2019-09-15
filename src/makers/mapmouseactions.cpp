@@ -46,7 +46,7 @@ MoveVertex::MoveVertex(MapEditor * me, VertexPtr vp, QPointF spt ) : MapMouseAct
 
 void MoveVertex::updateDragging(QPointF spt)
 {
-    QPointF w    = me->viewTinv.apply(spt);
+    QPointF w    = me->viewTinv.map(spt);
     if (!me->insideBoundary(w))
     {
         qDebug() << "outside boundary";
@@ -94,11 +94,11 @@ void MoveVertex::endDragging( QPointF spt)
     else if (sel2)
     {
         QLineF line =  sel2->getLine();
-        line =  me->viewT.apply(line);
+        line =  me->viewT.map(line);
         if (Point::distToLine(spt, line) < 7.0)
         {
             QPointF pt = Utils::snapTo(spt,line);
-            _vp->setPosition(me->viewTinv.apply(pt));
+            _vp->setPosition(me->viewTinv.map(pt));
             qDebug() << "SNAPTO edge";
             edited = true;
         }
@@ -120,13 +120,13 @@ void MoveVertex::endDragging( QPointF spt)
             if (endsel)
             {
                 qDebug() << "end is on line"  << sMapSelection[endsel->getType()];
-                _vp->setPosition(endsel->getPointNear(endsel,me->viewTinv.apply(spt)));
+                _vp->setPosition(endsel->getPointNear(endsel,me->viewTinv.map(spt)));
                 edited = true;
             }
             else
             {
                 qDebug() << "no end selection - point is point";
-                _vp->setPosition(me->viewTinv.apply(spt));
+                _vp->setPosition(me->viewTinv.map(spt));
                 edited = false;
             }
         }
@@ -155,7 +155,7 @@ void MoveVertex::draw(QPainter* painter)
     qreal radius = 5.0;
     painter->setPen(QPen(Qt::blue,1));
     painter->setBrush(Qt::blue);
-    painter->drawEllipse(me->viewT.apply(_vp->getPosition()), radius, radius);
+    painter->drawEllipse(me->viewT.map(_vp->getPosition()), radius, radius);
 }
 
 /////////
@@ -172,7 +172,7 @@ MoveEdge::MoveEdge(MapEditor * me, EdgePtr edge, QPointF spt ) : MapMouseAction(
 
 void MoveEdge::updateDragging(QPointF spt)
 {
-    QPointF delta  = me->viewTinv.apply(spt)  - me->viewTinv.apply(last_drag);
+    QPointF delta  = me->viewTinv.map(spt)  - me->viewTinv.map(last_drag);
 
     QPointF a = _edge->getV1()->getPosition();
     QPointF b = _edge->getV2()->getPosition();
@@ -222,12 +222,12 @@ DrawLine::DrawLine(MapEditor * me, SelectionSet & set, QPointF spt) : MapMouseAc
         sel = me->findALine(set);
         if (sel)
         {
-            start = new QPointF(sel->getPointNear(sel,me->viewTinv.apply(spt)));
+            start = new QPointF(sel->getPointNear(sel,me->viewTinv.map(spt)));
             qDebug() << "start is on line"  << sMapSelection[sel->getType()] << *start;
         }
         else
         {
-            start = new QPointF(me->viewTinv.apply(spt));
+            start = new QPointF(me->viewTinv.map(spt));
             qDebug() << "no start selection - point is point" << *start;
         }
     }
@@ -246,7 +246,7 @@ void DrawLine::updateDragging(QPointF spt)
         delete end;
     }
 
-    end = new QPointF(me->viewTinv.apply(spt));
+    end = new QPointF(me->viewTinv.map(spt));
 
     QLineF newline(*start,*end);
 
@@ -280,12 +280,12 @@ void DrawLine::endDragging( QPointF spt)
         endsel = me->findALine(endset);
         if (endsel)
         {
-            end = new QPointF(endsel->getPointNear(endsel,me->viewTinv.apply(spt)));
+            end = new QPointF(endsel->getPointNear(endsel,me->viewTinv.map(spt)));
             qDebug() << "end is on line"  << sMapSelection[endsel->getType()] << *end;
         }
         else
         {
-            end = new QPointF(me->viewTinv.apply(spt));
+            end = new QPointF(me->viewTinv.map(spt));
             qDebug() << "no end selection - point is point" << *end;
         }
     }
@@ -320,19 +320,19 @@ void DrawLine::draw(QPainter * painter)
     for (auto it = intersectPoints.begin(); it !=intersectPoints.end(); it++)
     {
         QPointF pt = *it;
-        painter->drawEllipse(me->viewT.apply(pt),radius, radius);
+        painter->drawEllipse(me->viewT.map(pt),radius, radius);
     }
     if (start)
     {
-        painter->drawEllipse(me->viewT.apply(*start), radius, radius);
+        painter->drawEllipse(me->viewT.map(*start), radius, radius);
     }
     if (end)
     {
-        painter->drawEllipse(me->viewT.apply(*end), radius, radius);
+        painter->drawEllipse(me->viewT.map(*end), radius, radius);
     }
     if (start && end)
     {
-        painter->drawLine(me->viewT.apply(*start), me->viewT.apply(*end));
+        painter->drawLine(me->viewT.map(*start), me->viewT.map(*end));
     }
 }
 
@@ -363,12 +363,12 @@ void ConstructionLine::endDragging( QPointF spt)
         endsel = me->findALine(endset);
         if (endsel)
         {
-            end = new QPointF(endsel->getPointNear(endsel,me->viewTinv.apply(spt)));
+            end = new QPointF(endsel->getPointNear(endsel,me->viewTinv.map(spt)));
             qDebug() << "end is on line"  << sMapSelection[endsel->getType()] << *end;
         }
         else
         {
-            end = new QPointF(me->viewTinv.apply(spt));
+            end = new QPointF(me->viewTinv.map(spt));
             qDebug() << "no end selection - point is point" << *end;
         }
     }
@@ -418,7 +418,7 @@ ExtendLine::~ExtendLine()
 
 void ExtendLine::updateDragging(QPointF spt)
 {
-    QPointF wpt = me->viewTinv.apply(spt);
+    QPointF wpt = me->viewTinv.map(spt);
     if (!me->insideBoundary(wpt))
     {
         qDebug() << "Extend line - cancelled";
@@ -429,7 +429,7 @@ void ExtendLine::updateDragging(QPointF spt)
     }
 
     qreal delta = Point::dist(startDrag,spt);
-    delta = delta / me->viewT.scalex();
+    delta = delta / Transform::scalex(me->viewT);
     qreal len   = startLine.length();
     qreal len2  = len + delta;
     currentLine = startLine;
@@ -452,7 +452,7 @@ void ExtendLine::updateDragging(QPointF spt)
 
 void ExtendLine::endDragging( QPointF spt)
 {
-    QPointF wpt = me->viewTinv.apply(spt);
+    QPointF wpt = me->viewTinv.map(spt);
     if (!me->insideBoundary(wpt))
     {
         qDebug() << "Extend line - cancelled";
@@ -462,13 +462,13 @@ void ExtendLine::endDragging( QPointF spt)
     }
 
     qreal delta = Point::dist(startDrag,spt);
-    delta = delta / me->viewT.scalex();
+    delta = delta / Transform::scalex(me->viewT);
     qreal len   = startLine.length();
     qreal len2  = len + delta;
     currentLine = startLine;
     currentLine.setLength(len2);
 
-    QPointF currentP2 = me->viewT.apply(currentLine.p2());
+    QPointF currentP2 = me->viewT.map(currentLine.p2());
 
     SelectionSet endset = me->findSelectionsUsingDB(currentP2);
 
@@ -484,7 +484,7 @@ void ExtendLine::endDragging( QPointF spt)
         endsel = me->findALine(endset);
         if (endsel)
         {
-            currentLine.setP2(endsel->getPointNear(endsel,me->viewTinv.apply(currentP2)));
+            currentLine.setP2(endsel->getPointNear(endsel,me->viewTinv.map(currentP2)));
             qDebug() << "end is on line"  << sMapSelection[endsel->getType()] << end;
         }
         else
@@ -517,7 +517,7 @@ void ExtendLine::endDragging( QPointF spt)
 void ExtendLine::draw(QPainter * painter)
 {
     painter->setPen(QPen(Qt::yellow,3));
-    painter->drawLine(me->viewT.apply(currentLine));
+    painter->drawLine(me->viewT.map(currentLine));
 
     painter->setPen(QPen(Qt::yellow,3));
     painter->setBrush(Qt::yellow);
@@ -525,7 +525,7 @@ void ExtendLine::draw(QPainter * painter)
     for (auto it = intersectPoints.begin(); it != intersectPoints.end(); it++)
     {
         QPointF pt = *it;
-        painter->drawEllipse(me->viewT.apply(pt),radius, radius);
+        painter->drawEllipse(me->viewT.map(pt),radius, radius);
     }
 }
 
@@ -555,26 +555,26 @@ MoveConstructionCircle::MoveConstructionCircle(MapEditor * me, CirclePtr circle,
     origCircle    = circle;
     currentCircle = *origCircle;
 
-    last_drag    = me->viewTinv.apply(spt);
+    last_drag    = me->viewTinv.map(spt);
 }
 
 void MoveConstructionCircle::updateDragging(QPointF spt)
 {
-    QPointF w     = me->viewTinv.apply(spt);
+    QPointF w     = me->viewTinv.map(spt);
     QPointF delta = w - last_drag;
     currentCircle.centre += delta;
     last_drag = w;
 
-    QPointF sCenter = me->viewT.apply(currentCircle.centre);
+    QPointF sCenter = me->viewT.map(currentCircle.centre);
     me->currentSelections = me->findSelectionsUsingDB(sCenter);
 }
 
 void MoveConstructionCircle::endDragging( QPointF spt)
 {
-    QPointF w     = me->viewTinv.apply(spt);
+    QPointF w     = me->viewTinv.map(spt);
     QPointF delta = w - last_drag;
     currentCircle.centre += delta;
-    QPointF new_center = me->viewT.apply(currentCircle.centre);
+    QPointF new_center = me->viewT.map(currentCircle.centre);
 
     SelectionSet endset    = me->findSelectionsUsingDB(new_center);
     MapSelectionPtr endsel = me->findAPoint(endset);
@@ -592,9 +592,9 @@ void MoveConstructionCircle::endDragging( QPointF spt)
 
 void MoveConstructionCircle::draw(QPainter * painter)
 {
-    QPointF center = me->viewT.apply(currentCircle.centre);
+    QPointF center = me->viewT.map(currentCircle.centre);
     painter->setPen(QPen(Qt::blue,3));
-    painter->drawEllipse(center, me->viewT.scalex() * currentCircle.radius, me->viewT.scalex() * currentCircle.radius);
+    painter->drawEllipse(center, Transform::scalex(me->viewT) * currentCircle.radius, Transform::scalex(me->viewT) * currentCircle.radius);
 
     painter->setPen(QPen(Qt::blue,1));
     qreal len = 9.0;

@@ -171,6 +171,7 @@ void page_loaders::loadXML()
         return;
     }
     emit sig_loadXML(selectedXMLName);
+    emit sig_viewStyles();
     if (config->viewerType == VIEW_DESIGN || config->viewerType == VIEW_TILING)
     {
         emit panel->sig_selectViewer(VIEW_DESIGN,DV_LOADED_STYLE);
@@ -310,6 +311,7 @@ void page_loaders::loadTiling()
 {
     QString name = selectedTilingName;
     emit sig_loadTiling(name);
+    emit sig_viewWS();
     if (config->viewerType != VIEW_TILIING_MAKER)
     {
         emit panel->sig_selectViewer(VIEW_TILING, TV_WORKSPACE);
@@ -409,7 +411,7 @@ void page_loaders::tileRightClick(QPoint pos)
     myMenu.addAction("Rename",  this, SLOT(renameTiling()));
     myMenu.addAction("Rebase",  this, SLOT(rebaseTiling()));
     myMenu.addAction("Delete",  this, SLOT(deleteTiling()));
-    myMenu.addAction("WhereUsed", this, SLOT(whereTilingUsed()));
+    myMenu.addAction("WhereUsed", this, SLOT(slot_whereTilingUsed()));
 
     myMenu.exec(tileList->mapToGlobal(pos));
 }
@@ -719,6 +721,11 @@ void page_loaders::rebaseTiling()
 {
     QString name = selectedTilingName;
 
+    // find where used
+    QStringList used;
+    int found = whereTilingUsed(name,used);
+
+    // validate file to rebase exists
     QString oldPath = FileServices::getTilingFile(name);
     if (oldPath.isEmpty())
     {
@@ -737,6 +744,7 @@ void page_loaders::rebaseTiling()
         return;
     }
 
+    // select new version
     DlgRebase dlg(this);
 
     QStringList parts = name.split('.');
@@ -760,6 +768,7 @@ void page_loaders::rebaseTiling()
 
     // specify new name
     QString new_ver = dlg.newVersion->text();
+    new_ver         = new_ver.trimmed();
     QString newName;
     if (new_ver.isEmpty())
         newName = nameRoot;
@@ -767,7 +776,7 @@ void page_loaders::rebaseTiling()
         newName = nameRoot + "." + new_ver;
 
     // this is the new file
-    QString newPath = config->newDesignDir + "/" + newName + ".xml";
+    QString newPath = config->newTileDir + "/" + newName + ".xml";
 
     // purge other versions
     old_ver = old_ver.remove('v');
@@ -786,8 +795,8 @@ void page_loaders::rebaseTiling()
         if (i==0)
             aname = nameRoot;
         else
-            newName = nameRoot + ".v" + QString::number(i);
-        QString path = FileServices::getTilingFile(newName);
+            aname = nameRoot + ".v" + QString::number(i);
+        QString path = FileServices::getTilingFile(aname);
         if (!path.isEmpty())
         {
             QFile::remove(path);
@@ -796,7 +805,7 @@ void page_loaders::rebaseTiling()
 
     // rename to new file
     QFile afile(oldPath);
-    bool rv = afile.copy(newPath);
+    bool rv = afile.rename(newPath);
     if (!rv)
     {
         QMessageBox box;
@@ -806,8 +815,14 @@ void page_loaders::rebaseTiling()
         return;
     }
 
-    // delete old
-    afile.remove();
+    // fix the name in the tiling file
+    rv = putNewTilingNameIntoTiling(newPath,newName);
+
+    // fixup tiling name in designs
+    if (found)
+    {
+        putNewTilingNameIntoDesign(used, newName);
+    }
 
     slot_newTile();
 }
@@ -816,6 +831,11 @@ void page_loaders::renameTiling()
 {
     QString name = selectedTilingName;
 
+    // find where used
+    QStringList used;
+    int found = whereTilingUsed(name,used);
+
+    // select new name
     bool fixupName = false;
     if (config->lastLoadedTileName == name)
         fixupName = true;
@@ -832,6 +852,8 @@ void page_loaders::renameTiling()
         return;
     }
     Q_ASSERT(retval == QDialog::Accepted);
+
+    // validate new name
     QString newName = dlg.newEdit->text();
     if (name == newName)
     {
@@ -844,15 +866,15 @@ void page_loaders::renameTiling()
 
     Q_ASSERT(!newName.contains(".xml"));
 
-    bool rv = false;
-
+    // validate old file exists
     QString oldPath = FileServices::getTilingFile(name);
     if (oldPath.isEmpty())
     {
         return;
     }
 
-    if (!QFile::exists(oldPath))
+    QFile theFile(oldPath);
+    if (!theFile.exists())
     {
         QMessageBox box;
         box.setIcon(QMessageBox::Critical);
@@ -864,45 +886,25 @@ void page_loaders::renameTiling()
     QString newPath = oldPath;
     newPath.replace(name,newName);
 
-    // fix name in file and save to new name
-    xml_document doc;
-    xml_parse_result result = doc.load_file(oldPath.toStdString().c_str());
-    if (result == false)
+    // rename the the file
+    bool rv = theFile.rename(newPath);
+    if (!rv)
     {
-        qWarning() << result.description();
-        rv = false;
+        QMessageBox box;
+        box.setIcon(QMessageBox::Critical);
+        box.setText("Could not rename file");
+        box.exec();
+        return;
     }
-    else
+    theFile.close();        // sp ot can be opened again;
+
+    // fix the name in the tiling file
+    rv = putNewTilingNameIntoTiling(newPath,newName);
+
+    // fixup tiling name in  XML design files
+    if (found)
     {
-        xml_node node1 = doc.child("Tiling");
-        if (node1)
-        {
-            xml_node node2 =  node1.child("Name");
-            if (node2)
-            {
-                std::string  namestr = newName.toStdString();
-
-                node1.remove_child(node2);
-
-                qDebug() << "old name =" << node2.child_value() << " new name = " << namestr.c_str();
-                xml_node node3 = node1.prepend_child("Name");
-                node3.append_child(pugi::node_pcdata).set_value(namestr.c_str());
-
-                rv = doc.save_file(newPath.toStdString().c_str());
-                if (!rv)
-                    qWarning() << "Failed to re-write modified tiling";
-            }
-            else
-            {
-                qWarning() << "Filed to change <Name> content in tiling";
-                rv = false;
-            }
-        }
-        else
-        {
-            qWarning() << "Filed to change <Tiling> content in tiling";
-            rv = false;
-        }
+        putNewTilingNameIntoDesign(used, newName);
     }
 
     // report status
@@ -932,9 +934,25 @@ void page_loaders::deleteTiling()
 {
     QString name = selectedTilingName;
 
+    QString msg;
+    QStringList used;
+    int count = whereTilingUsed(name,used);
+    if (count)
+    {
+        msg = "<pre>";
+        msg += "This tiling is used in:<br>";
+        for (int i=0; i < used.size(); i++)
+        {
+            msg += used[i];
+            msg += "<br>";
+        }
+        msg += "</pre>";
+    }
+    msg += QString("Delete file: %1.  Are you sure?").arg(name);
+
     QMessageBox box;
     box.setIcon(QMessageBox::Question);
-    box.setText(QString("Delete file: %1.  Are you sure?").arg(name));
+    box.setText(msg);
     box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
     box.setDefaultButton(QMessageBox::No);
     if (box.exec() == QMessageBox::No)
@@ -971,26 +989,20 @@ void page_loaders::deleteTiling()
     box2.exec();
 }
 
-void  page_loaders::whereTilingUsed()
+void  page_loaders::slot_whereTilingUsed()
 {
     QString name = selectedTilingName;
-
-    QStringList designs = FileServices::getDesignFiles();
-
-    int found = 0;
+    QStringList used;
+    int found = whereTilingUsed(name,used);
 
     QString results = "<pre>";
-
-    for (int i=0; i < designs.size(); i++)
+    if (found)
     {
-        QString designFile = designs[i];
-        bool rv = FileServices::usesTilingInDesign(designFile,name);
-        if (rv)
+        for (int i=0; i < used.size(); i++)
         {
-            qDebug() <<  name << " found in "  << designFile;
+            QString designFile = used[i];
             results += designFile;
             results += "<br>";
-            found++;
         }
     }
     if (found == 0)
@@ -1003,4 +1015,132 @@ void  page_loaders::whereTilingUsed()
     box.setWindowTitle(QString("Where tiling %1 is used ").arg(name));
     box.setText(results);
     box.exec();
+}
+
+
+int page_loaders::whereTilingUsed(QString name, QStringList & results)
+{
+    QStringList designs = FileServices::getDesignFiles();
+
+    int found = 0;
+    for (int i=0; i < designs.size(); i++)
+    {
+        QString designFile = designs[i];
+        bool rv = FileServices::usesTilingInDesign(designFile,name);
+        if (rv)
+        {
+            qDebug() <<  name << " found in "  << designFile;
+            results  << designFile;
+            found++;
+        }
+    }
+    return found;
+}
+
+void page_loaders::putNewTilingNameIntoDesign(QStringList & designs, QString newName)
+{
+    for (auto it = designs.begin(); it != designs.end(); it++)
+    {
+        QString filename = *it;
+
+        // load file
+        xml_document doc;
+        xml_parse_result result = doc.load_file(filename.toStdString().c_str());
+        if (result == false)
+        {
+            qWarning().noquote() << result.description();
+            continue;
+        }
+
+        // edit
+        xml_node node1 = doc.child("vector");
+        if (!node1) continue;
+        xml_node node2;
+        for (node2 = node1.first_child(); node2; node2 = node2.next_sibling())
+        {
+            QString str = node2.name();
+            if (str == "style.Thick")
+                break;
+            else if (str == "style.Filled")
+                break;
+            else if (str == "style.Interlace")
+                break;
+            else if (str == "style.Outline")
+                break;
+            else if (str == "style.Plain")
+                break;
+            else if (str == "style.Sketch")
+                break;
+            else if (str == "style.Emboss")
+                break;
+            else if (str == "style.TileColors")
+                break;
+        }
+        if (!node2) continue;
+        xml_node node3 =  node2.child("style.Style");
+        if (!node3) continue;
+        xml_node node4 =  node3.child("prototype");
+        if (!node4) continue;
+        xml_node node5 =  node4.child("app.Prototype");
+        if (!node5) continue;
+        xml_node node6 = node5.child("string");
+        if (!node6) continue;
+
+        std::string  namestr = newName.toStdString();
+        node5.remove_child(node6);
+        qDebug() << "old name =" << node6.child_value() << " new name = " << namestr.c_str();
+        xml_node node7 = node5.prepend_child("string");
+        node7.append_child(pugi::node_pcdata).set_value(namestr.c_str());
+
+        // save file
+        bool rv = doc.save_file(filename.toStdString().c_str());
+        if (!rv)
+        {
+            qWarning().noquote() << "Failed to reformat:" << filename;
+        }
+    }
+}
+
+bool  page_loaders::putNewTilingNameIntoTiling(QString filename, QString newName)
+{
+    // fix name in file and save to new name
+    bool rv = false;
+    xml_document doc;
+    xml_parse_result result = doc.load_file(filename.toStdString().c_str());  // load file
+    if (result == false)
+    {
+        qWarning() << result.description();
+        return false;
+    }
+
+    xml_node node1 = doc.child("Tiling");
+    if (node1)
+    {
+        xml_node node2 =  node1.child("Name");
+        if (node2)
+        {
+            std::string  namestr = newName.toStdString();
+
+            node1.remove_child(node2);
+
+            qDebug() << "old name =" << node2.child_value() << " new name = " << namestr.c_str();
+            xml_node node3 = node1.prepend_child("Name");
+            node3.append_child(pugi::node_pcdata).set_value(namestr.c_str());
+
+            rv = doc.save_file(filename.toStdString().c_str());  // save file
+            if (!rv)
+                qWarning() << "Failed to re-write modified tiling";
+        }
+        else
+        {
+            qWarning() << "Filed to change <Name> content in tiling";
+            rv = false;
+        }
+    }
+    else
+    {
+        qWarning() << "Filed to change <Tiling> content in tiling";
+        rv = false;
+    }
+    return rv;
 }

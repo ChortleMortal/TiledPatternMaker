@@ -41,8 +41,6 @@ public:
 
     void forceUpdateStyles();
 
-    static QThread * protoThread;
-
 signals:
     void sig_start();
     void sig_newXML();
@@ -52,7 +50,6 @@ signals:
     void sig_readyNext();
     void sig_takeNext();
     void sig_viewWS();
-    void sig_updateDesignInfo();
 
 public slots:
     void startEverything();
@@ -85,6 +82,7 @@ protected:
     void resetProtos(StyledDesign & sd);
     void init();
     void SplatCompareResult(QPixmap & pixmap, QString title);
+    void SplatCompareResultTransparent(QPixmap & pixmap, QString title);
     QPixmap makeTextPixmap(QString txt,QString txt2=QString(),QString txt3=QString());
 
 private:

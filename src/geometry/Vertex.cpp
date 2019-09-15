@@ -76,14 +76,14 @@ void Vertex::setInterlaceInfo(interlaceInfo * info)
 // it has been hard to discern how it was really meant to work
 // for the corener case of when a vertex has 0, 1, or 2, neighbours
 // so this code, while ugly, is a slavish attempt to emulate the original
-QVector<EdgePtr> Vertex::getBeforeAndAfter(EdgePtr edge )
+BeforeAndAfter Vertex::getBeforeAndAfter(EdgePtr edge )
 {
     if (numEdges() < 2)
     {
         qDebug() << "getBeforeAndAfter - edge=" << Utils::addr(edge.get()) << "count=" << numEdges();
     }
 
-    QVector<EdgePtr> ret;
+    BeforeAndAfter ret;
 
     neighbours.push_back(neighbours[0]);      // temp addition
     neighbours.push_back(neighbours[1]);      // temp addition
@@ -92,7 +92,8 @@ QVector<EdgePtr> Vertex::getBeforeAndAfter(EdgePtr edge )
     {
         if (neighbours[i] == edge)
         {
-            ret = { neighbours[i-1], neighbours[i+1]};
+            ret.before = neighbours[i-1];
+            ret.after  = neighbours[i+1];
             neighbours.removeLast();     //back out addition
             neighbours.removeLast();     //back out addition
             return ret;
@@ -117,7 +118,7 @@ EdgePtr Vertex::getNeighbour(const VertexPtr other)
     for (auto it = neighbours.begin(); it != neighbours.end(); it++)
     {
         EdgePtr edge = *it;
-        VertexPtr vp = edge->getOther(pos);
+        VertexPtr vp = edge->getOtherV(pos);
         if (vp == other)
         {
             return edge;
@@ -226,9 +227,9 @@ void Vertex::removeEdge(EdgePtr edge )
 // Fortunately, the rigid motions we'll apply in Islamic design
 // won't contain flips.  So we're okay for now.
 // casper: don't need to recalc angle
-void Vertex::applyRigidMotion(Transform T)
+void Vertex::applyRigidMotion(QTransform T)
 {
-    pos = T.apply(pos);
+    pos = T.map(pos);
 }
 
 
@@ -243,7 +244,7 @@ void Vertex::swapEdge(VertexPtr other, EdgePtr nedge)
     for (auto it = neighbours.begin(); it != neighbours.end(); it++)
     {
         EdgePtr edge = *it;
-        VertexPtr vp = edge->getOther(pos);
+        VertexPtr vp = edge->getOtherV(pos);
         if (vp == other)
         {
             *it = nedge;        // this replaces edge
@@ -254,7 +255,7 @@ void Vertex::swapEdge(VertexPtr other, EdgePtr nedge)
 
 qreal Vertex::getAngle(EdgePtr edge)
 {
-    VertexPtr other = edge->getOther(pos);
+    VertexPtr other = edge->getOtherV(pos);
     QPointF pd  = other->getPosition() - pos;
     Point::normalizeD(pd);
     qreal angle = qAtan2(pd.x(), pd.y());

@@ -53,23 +53,22 @@ Interlace::Interlace(PrototypePtr proto, PolyPtr bounds ) : Thick(proto,bounds)
     includeTipVertices = false;
 }
 
-Interlace::Interlace(const Style *other ) : Thick(other)
+Interlace::Interlace(const Style & other) : Thick(other)
 {
-    const Interlace * intl = dynamic_cast<const Interlace *>(other);
-    if (intl)
+    try
     {
-        gap     = intl->gap;
-        shadow  = intl->shadow;
-        includeTipVertices = intl->includeTipVertices;
+        const Interlace & intl = dynamic_cast<const Interlace &>(other);
+        gap     = intl.gap;
+        shadow  = intl.shadow;
+        includeTipVertices = intl.includeTipVertices;
     }
-    else
+    catch(std::bad_cast exp)
     {
         gap     = 0.0;
         shadow  = 0.05;
         includeTipVertices = false;
     }
 }
-
 
 Interlace:: ~Interlace()
 {
@@ -133,8 +132,9 @@ void Interlace::draw(GeoGraphics * gg)
 
     if( pts.size() != 0 )
     {
-        gg->pushAndCompose(*getLayerTransform());
-        gg->setColor(colors.getNextColor().color);
+        gg->pushAndCompose(getLayerTransform());
+        QColor color = colors.getNextColor().color;
+        QPen pen(color);
         for( int idx = 0; idx < pts.size(); idx += 6 )
         {
             QPolygonF poly;
@@ -142,7 +142,7 @@ void Interlace::draw(GeoGraphics * gg)
             {
                 poly << pts[idx + i];
             }
-            gg->drawPolygon(poly, true );
+            gg->drawPolygon(poly,pen,QBrush(color));
         }
 
         if ( shadow > 0.0 && shadows.size() != 0 )
@@ -152,7 +152,8 @@ void Interlace::draw(GeoGraphics * gg)
             color.getHsvF(&h,&s,&b);
             QColor c;
             c.setHsvF(h, s * 0.9, b * 0.8 );
-            gg->setColor(c);
+            QPen pen(c);
+            QBrush brush(c);
 
             for( int idx = 0; idx < pts.size(); idx += 6 )
             {
@@ -164,7 +165,7 @@ void Interlace::draw(GeoGraphics * gg)
                     shadowPts1 <<  pts[ idx + 2 ];
                     shadowPts1 <<  pts[ idx + 0 ];
                     shadowPts1 << (pts[ idx + 0 ] + getShadowVector( idx + 0, idx + 5 ) );
-                    gg->drawPolygon(shadowPts1,true);
+                    gg->drawPolygon(shadowPts1,pen,brush);
                 }
                 if ( shadows[idx / 3 + 1] )
                 {
@@ -173,18 +174,18 @@ void Interlace::draw(GeoGraphics * gg)
                     shadowPts2 <<  pts[ idx + 3 ];
                     shadowPts2 <<  pts[ idx + 5 ];
                     shadowPts2 << (pts[ idx + 5 ] + getShadowVector( idx + 5, idx + 0 ) );
-                    gg->drawPolygon(shadowPts2,true);
+                    gg->drawPolygon(shadowPts2,pen,brush);
                 }
             }
         }
 
         if ( draw_outline )
         {
-            gg->setColor(Qt::black);
+            QPen pen(Qt::black);
             for( int idx = 0; idx < pts.size(); idx += 6 )
             {
-                gg->drawLine( pts[ idx + 2 ], pts[ idx + 3 ] );
-                gg->drawLine( pts[ idx + 5 ], pts[ idx ] );
+                gg->drawLine( pts[ idx + 2 ], pts[ idx + 3 ], pen);
+                gg->drawLine( pts[ idx + 5 ], pts[ idx ], pen);
             }
         }
         gg->pop();
@@ -284,10 +285,10 @@ void Interlace::getPoints(
     else if( nn == 2 )
     {
         // bend
-        QVector<QPointF> jps = Outline::getPoints( edge, from, to, width );
-        below = jps[ 0 ];
+        BelowAndAbove jps = Outline::getPoints( edge, from, to, width );
+        below = jps.below;
         cen = pto;
-        above = jps[ 1 ];
+        above = jps.above;
     }
     else
     {
@@ -311,7 +312,7 @@ void Interlace::getPoints(
 
             int nidx = (edge_idx + 2) % nn;
 
-            QPointF op = ns[ nidx ]->getOther( to->getPosition() )->getPosition();
+            QPointF op = ns[nidx]->getOtherP(to);
 
             below = Outline::getJoinPoint( pto, pfrom, op, width );
 
@@ -337,9 +338,9 @@ void Interlace::getPoints(
             // now does a reasonable job on well-behaved maps
             // and doesn't dump core on badly-behaved ones.
 
-            QVector<EdgePtr> ba = to->getBeforeAndAfter( edge );
-            QPointF before_pt = ba[0]->getOther( to->getPosition() )->getPosition();
-            QPointF after_pt  = ba[1]->getOther( to->getPosition() )->getPosition();
+            BeforeAndAfter ba = to->getBeforeAndAfter(edge);
+            QPointF before_pt = ba.before->getOtherP(to);
+            QPointF after_pt  = ba.after->getOtherP(to);
 
             below = Outline::getJoinPoint(pto, pfrom, after_pt, width );
             above = Outline::getJoinPoint(pto, before_pt, pfrom, width );
@@ -406,8 +407,8 @@ void Interlace::propagate(VertexPtr vertex, EdgePtr edge, bool edge_under_at_ver
 
     if( nn == 2)
     {
-        QVector<EdgePtr>  ba = vertex->getBeforeAndAfter( edge );
-        EdgePtr oe = ba[0];
+        BeforeAndAfter  ba  = vertex->getBeforeAndAfter(edge);
+        EdgePtr oe          = ba.before;
         interlaceInfo * oei = oe->getInterlaceInfo();
 
         if( !oei->visited )

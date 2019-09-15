@@ -27,13 +27,6 @@
 
 #include "panel_page.h"
 
-enum eDISelect
-{
-    DIS_STYLE,
-    DIS_WS,
-    DIS_CANVAS
-};
-
 class page_canvasSettings : public panel_page
 {
     Q_OBJECT
@@ -47,14 +40,17 @@ public:
 signals:
 
 private slots:
-    void setInfo(bool);
-    void pickColor();
-    void push();
-    void slot_callNewlyEnter(int);
+    void setInfo();
+    void pickBorderColor();
+    void pickBorderColor2();
+    void pickBackgroundColor();
+    void settingsSelectionChanged(int);
+    void borderChanged(int row);
 
 protected:
     void display();
     void setFromForm();
+    void setBorderFromForm();
 
 private:
     void removeChildren(QTreeWidgetItem * parent);
@@ -63,8 +59,7 @@ private:
 
     QButtonGroup   bgroup;
 
-    ClickableLabel * clabel;
-
+    ClickableLabel * bkgdColorPatch;
     QLineEdit * sizeEditW;
     QLineEdit * sizeEditH;
     QLineEdit * startEditX;
@@ -72,10 +67,18 @@ private:
     QLineEdit * diamEdit;
     QLineEdit * scaleEdit;
     QLineEdit * bkColorEdit;
-    QLineEdit * borderEdit;
+
+    QComboBox   borderType;
+
+
+    QLineEdit * borderWidth;
+    QLabel    * borderColorLabel[2];
+    QLineEdit * borderColor[2];
+    ClickableLabel * borderColorPatch[2];
 
     QLabel  * line1;
     QLabel  * line2;
+
 };
 
 #endif

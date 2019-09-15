@@ -28,7 +28,7 @@
 #include <QtWidgets>
 #include "base/shared.h"
 #include "figure_editors.h"
-#include "panels/sliderset.h"
+#include "panels/layout_sliderset.h"
 
 class FigureMaker;
 

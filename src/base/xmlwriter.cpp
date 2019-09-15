@@ -43,8 +43,9 @@
 #include "tapp/ExtendedRosette.h"
 #include "tapp/RosetteConnectFigure.h"
 #include "tapp/ExplicitFigure.h"
+#include "tile/featurewriter.h"
 
-const int currentXMLVersion = 1;
+const int currentXMLVersion = 2;
 
 XmlWriter::XmlWriter(StyledDesign & styledDesign) : design(styledDesign)
 {
@@ -110,12 +111,6 @@ bool XmlWriter::generateDesignNotes(QTextStream & ts)
 bool XmlWriter::generateVector(QTextStream & ts)
 {
     refId    = 0;
-    vOrigCnt = 0;
-    vRefrCnt = 0;
-    eOrigCnt = 0;
-    eRefrCnt = 0;
-    nOrigCnt = 0;
-    nRefrCnt = 0;
     qDebug() << "XML Writer - start generation";
 
     qDebug() << "version=" << currentXMLVersion;
@@ -127,7 +122,7 @@ bool XmlWriter::generateVector(QTextStream & ts)
 
     ts << "</vector>" << endl;
 
-    qDebug() << "XML Writer - end gneration";
+    qDebug() << "XML Writer - end generation";
 
     return true;
 }
@@ -214,7 +209,7 @@ bool XmlWriter::processVector(QTextStream &ts)
 
 void XmlWriter::processDesign(QTextStream &ts)
 {
-    CanvasSettings & info  = design.getCanvasSettings();
+    CanvasSettings info= design.getCanvasSettings();
     qreal scale        = info.getScale();
     QColor back        = info.getBackgroundColor();
     QSizeF size        = info.getSizeF();
@@ -233,6 +228,11 @@ void XmlWriter::processDesign(QTextStream &ts)
 void XmlWriter::procScale(QTextStream &ts,qreal scale)
 {
     ts << "<scale>" << scale << "</scale>" << endl;
+}
+
+void XmlWriter::procWidth(QTextStream &ts,qreal width)
+{
+    ts << "<width>" << width << "</width>" << endl;
 }
 
 void XmlWriter::procSize(QTextStream &ts,QSizeF size)
@@ -270,27 +270,42 @@ void XmlWriter::procBorder(QTextStream &ts,BorderPtr border)
         return;
     }
 
-    int type = border->getType();
+    eBorderType type = border->getType();
     QString txt = QString("<border type=\"%1\">").arg(type);
     ts << txt << endl;
 
-    if (type == 0)
+    if (type == BORDER_PLAIN)
     {
-
+        BorderPlain * b0 = dynamic_cast<BorderPlain*>(border.get());
+        Q_ASSERT(b0);
+        QColor color;
+        qreal  width;
+        b0->get(width, color);
+        procColor(ts,color);
+        procWidth(ts,width);
     }
-    else if (type == 1)
+    else if (type == BORDER_TWO_COLOR)
     {
+        BorderTwoColor * b1 = dynamic_cast<BorderTwoColor*>(border.get());
+        Q_ASSERT(b1);
         QColor color1,color2;
-        QSizeF size;
-        border->getBorder1(color1,color2,size);
+        qreal  width;
+        b1->get(color1,color2,width);
         procColor(ts,color1);
         procColor(ts,color2);
-        procSize(ts,size);
+        procWidth(ts,width);
     }
-    else if (type == 2)
+    else if (type == BORDER_BLOCKS)
     {
-
-
+        BorderBlocks * b2 = dynamic_cast<BorderBlocks*>(border.get());
+        Q_ASSERT(b2);
+        QColor color;
+        qreal  diameter;
+        int    rows;
+        int    cols;
+        b2->get(color,diameter,rows,cols);
+        procColor(ts,color);
+        procWidth(ts,diameter);
     }
 
     ts << "</border>" << endl;
@@ -309,13 +324,13 @@ bool XmlWriter::processThick(QTextStream &ts, StylePtr s)
     qreal   width           = th->getLineWidth();
     PrototypePtr proto      = th->getPrototype();
     PolyPtr poly            = th->getBoundary();
-    Bounds b                = th->getDeltas();
+    Xform   xf              = th->getDeltas();
 
     QString str;
 
     str = "toolkit.GeoLayer";
     ts << "<" << str << ">" << endl;
-    procesToolkitGeoLayer(ts,b);
+    procesToolkitGeoLayer(ts,xf);
     ts << "</" << str << ">" << endl;
 
     str = "style.Style";
@@ -353,13 +368,13 @@ bool XmlWriter::processInterlace(QTextStream & ts, StylePtr s)
     qreal   shadow       = il->getShadow();
     PrototypePtr proto   = il->getPrototype();
     PolyPtr poly         = il->getBoundary();       // DAC - is this right
-    Bounds b             = il->getDeltas();
+    Xform   xf           = il->getDeltas();
 
     QString str;
 
     str = "toolkit.GeoLayer";
     ts << "<" << str << ">" << endl;
-    procesToolkitGeoLayer(ts,b);
+    procesToolkitGeoLayer(ts,xf);
     ts << "</" << str << ">" << endl;
 
     str = "style.Style";
@@ -399,13 +414,13 @@ bool XmlWriter::processOutline(QTextStream &ts, StylePtr s)
     qreal   width        = ol->getLineWidth();
     PrototypePtr proto   = ol->getPrototype();
     PolyPtr poly         = ol->getBoundary();
-    Bounds b             = ol->getDeltas();
+    Xform   xf           = ol->getDeltas();
 
     QString str;
 
     str = "toolkit.GeoLayer";
     ts << "<" << str << ">" << endl;
-    procesToolkitGeoLayer(ts,b);
+    procesToolkitGeoLayer(ts,xf);
     ts << "</" << str << ">" << endl;
 
     str = "style.Style";
@@ -446,13 +461,13 @@ bool XmlWriter::processFilled(QTextStream &ts, StylePtr s)
 
     PrototypePtr proto      = fl->getPrototype();
     PolyPtr poly            = fl->getBoundary();
-    Bounds b                = fl->getDeltas();
+    Xform   xf              = fl->getDeltas();
 
     QString str;
 
     str = "toolkit.GeoLayer";
     ts << "<" << str << ">" << endl;
-    procesToolkitGeoLayer(ts,b);
+    procesToolkitGeoLayer(ts,xf);
     ts << "</" << str << ">" << endl;
 
     str = "style.Style";
@@ -504,13 +519,13 @@ bool XmlWriter::processPlain(QTextStream &ts, StylePtr s)
     QColor  color       = pl->getColor();
     PrototypePtr proto  = pl->getPrototype();
     PolyPtr poly        = pl->getBoundary();
-    Bounds b            = pl->getDeltas();
+    Xform   xf          = pl->getDeltas();
 
     QString str;
 
     str = "toolkit.GeoLayer";
     ts << "<" << str << ">" << endl;
-    procesToolkitGeoLayer(ts,b);
+    procesToolkitGeoLayer(ts,xf);
     ts << "</" << str << ">" << endl;
 
     str = "style.Style";
@@ -538,13 +553,13 @@ bool XmlWriter::processSketch(QTextStream &ts, StylePtr s)
     QColor  color       = sk->getColor();
     PrototypePtr proto  = sk->getPrototype();
     PolyPtr poly        = sk->getBoundary();
-    Bounds b            = sk->getDeltas();
+    Xform   xf          = sk->getDeltas();
 
     QString str;
 
     str = "toolkit.GeoLayer";
     ts << "<" << str << ">" << endl;
-    procesToolkitGeoLayer(ts,b);
+    procesToolkitGeoLayer(ts,xf);
     ts << "</" << str << ">" << endl;
 
     str = "style.Style";
@@ -574,13 +589,13 @@ bool XmlWriter::processEmboss(QTextStream &ts, StylePtr s)
     qreal   angle        = em->getAngle();
     PrototypePtr proto   = em->getPrototype();
     PolyPtr poly         = em->getBoundary();
-    Bounds b             = em->getDeltas();
+    Xform   xf           = em->getDeltas();
 
     QString str;
 
     str = "toolkit.GeoLayer";
     ts << "<" << str << ">" << endl;
-    procesToolkitGeoLayer(ts,b);
+    procesToolkitGeoLayer(ts,xf);
     ts << "</" << str << ">" << endl;
 
     str = "style.Style";
@@ -617,13 +632,13 @@ bool XmlWriter::processTileColors(QTextStream &ts, StylePtr s)
 
     PrototypePtr proto  = tc->getPrototype();
     PolyPtr poly        = tc->getBoundary();
-    Bounds b            = tc->getDeltas();
+    Xform   xf          = tc->getDeltas();
 
     QString str;
 
     str = "toolkit.GeoLayer";
     ts << "<" << str << ">" << endl;
-    procesToolkitGeoLayer(ts,b);
+    procesToolkitGeoLayer(ts,xf);
     ts << "</" << str << ">" << endl;
 
     str = "style.Style";
@@ -634,12 +649,12 @@ bool XmlWriter::processTileColors(QTextStream &ts, StylePtr s)
     return true;
 }
 
-void XmlWriter::procesToolkitGeoLayer(QTextStream & ts, Bounds & b)
+void XmlWriter::procesToolkitGeoLayer(QTextStream & ts, Xform & xf)
 {
-    ts << "<left__delta>"  << b.left   << "</left__delta>"  << endl;
-    ts << "<theta__delta>" << b.theta  << "</theta__delta>" << endl;
-    ts << "<top__delta>"   << b.top    << "</top__delta>"   << endl;
-    ts << "<width__delta>" << b.width  << "</width__delta>" << endl;
+    ts << "<left__delta>"  << xf.translateX     << "</left__delta>"  << endl;
+    ts << "<top__delta>"   << xf.translateY     << "</top__delta>"   << endl;
+    ts << "<width__delta>" << (xf.scale - 1.0)  << "</width__delta>" << endl;
+    ts << "<theta__delta>" << xf.rotation       << "</theta__delta>" << endl;
 }
 
 void XmlWriter::processStyleStyle(QTextStream & ts, PrototypePtr & proto, PolyPtr & poly)
@@ -736,7 +751,6 @@ void XmlWriter::setPolygon(QTextStream & ts, PolyPtr pp)
         ts << "</Point>" << endl;
     }
 }
-
 
 void XmlWriter::setPrototype(QTextStream & ts, PrototypePtr pp)
 {
@@ -885,10 +899,14 @@ void XmlWriter::setFeature(QTextStream & ts,FeaturePtr fp)
         ts << "<regular>false</regular>" << endl;
     }
 
-    ts << "<points" << nextId() << ">" << endl;
-    PolyPtr pp = make_shared<QPolygonF>(fp->getPolygon());
-    setPolygon(ts,pp);
-    ts << "</points>" << endl;
+    ts << "<edges" << nextId() << ">" << endl;
+
+    EdgePoly & ep  = fp->getEdgePoly();
+
+    FeatureWriter fw;
+    fw.setEdgePoly(ts,ep);
+
+    ts << "</edges>" << endl;
 
     ts << "</" << str << ">" << endl;
 
@@ -1145,8 +1163,7 @@ void XmlWriter::setMap(QTextStream &ts, MapPtr map)
 void XmlWriter::setVertices(QTextStream & ts, const QVector<VertexPtr> * vertices)
 {
     ts << "<vertices" << nextId() <<  ">" << endl;
-    QVector<VertexPtr>::const_iterator it;
-    for (it = vertices->begin(); it != vertices->end(); it++)
+    for (auto it = vertices->begin(); it != vertices->end(); it++)
     {
         VertexPtr v = *it;
         setVertex(ts,v);
@@ -1157,8 +1174,7 @@ void XmlWriter::setVertices(QTextStream & ts, const QVector<VertexPtr> * vertice
 void XmlWriter::setEdges(QTextStream & ts, const QVector<EdgePtr> * edges )
 {
     ts << "<edges" << nextId() <<  ">" << endl;
-    QVector<EdgePtr>::const_iterator it;
-    for (it = edges->begin(); it != edges->end(); it++)
+    for (auto it = edges->begin(); it != edges->end(); it++)
     {
         EdgePtr e = *it;
         setEdge(ts,e,true);
@@ -1220,13 +1236,28 @@ void XmlWriter::setEdges(QTextStream & ts, QVector<EdgePtr> & qvec)
         return;
     }
 
+
+    bool curved = (e->getType() == EDGE_CURVE);
+
     qsid = nextId();
     qDebug() << "new edge ref=" << getRef();
     setEdgeReference(getRef(),e);
     if (capitalE)
+    {
         ts << "<Edge" << qsid << ">" << endl;
+    }
     else
-        ts << "<edge" << qsid << ">" << endl;
+    {
+        if (curved)
+        {
+            QString str = QString("<curve %1 convex=\"%2\">").arg(qsid).arg(e->isConvex() ? "t" : "f");
+            ts << str << endl;
+        }
+        else
+        {
+            ts << "<edge" << qsid << ">" << endl;
+        }
+    }
 
     // map
     setMap(ts,_currentMap);
@@ -1239,10 +1270,27 @@ void XmlWriter::setEdges(QTextStream & ts, QVector<EdgePtr> & qvec)
     VertexPtr v2 = e->getV2();
     setVertex(ts,v2,"v2");
 
+    if (curved)
+    {
+        QPointF p = e->getArcCenter();
+        setPos(ts,p);
+    }
+
     if (capitalE)
+    {
         ts << "</Edge>" << endl;
+    }
     else
-        ts << "</edge>" << endl;
+    {
+        if (curved)
+        {
+            ts << "</curve>" << endl;
+        }
+        else
+        {
+            ts << "</edge>" << endl;
+        }
+    }
 }
 
 //////////////////////////////////////////////////////////////
@@ -1502,8 +1550,8 @@ QString  XmlWriter::nextId()
 
 void XmlWriter::setTransform(QTextStream & ts,Transform T)
 {
-    qreal vals[6];
-    T.get(vals);
+    QVector<qreal> vals = T.get();
+    Q_ASSERT (vals.size() >= 6);
     ts << "<Tr" << nextId() << ">" << endl;
     ts << "<a>" << vals[0] << "</a>" << endl;
     ts << "<b>" << vals[1] << "</b>" << endl;
@@ -1516,9 +1564,8 @@ void XmlWriter::setTransform(QTextStream & ts,Transform T)
 
 void XmlWriter::setPos(QTextStream & ts,QPointF qpf)
 {
-    ts << "<pos" << nextId() << ">" << endl;
-    ts << "<x>" << qpf.x() << "</x>" << endl;
-    ts << "<y>" << qpf.y() << "</y>" << endl;
+    ts << "<pos>";
+    ts << QString::number(qpf.x(),'g',16) << "," << QString::number(qpf.y(),'g',16);
     ts << "</pos>" << endl;
 }
 

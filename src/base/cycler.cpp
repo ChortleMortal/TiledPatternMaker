@@ -115,6 +115,7 @@ void Cycler::slot_stopCycle()
     cycleMode = CYCLE_NONE;
     if (oldMode != CYCLE_NONE)
         sig_finished();
+    busy = false;
 }
 
 void Cycler::slot_nextCycle()

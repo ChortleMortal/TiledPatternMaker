@@ -25,49 +25,94 @@
 #ifndef BORDER_H
 #define BORDER_H
 
-#include "base/tile.h"
-#include "base/shared.h"
 #include <QtCore>
 #include <QtWidgets>
+#include "base/view.h"
+#include "base/tile.h"
+#include "base/shared.h"
 
 #define LENGTH1        60.0
-#define THICKNESS1     20.0
 #define BORDER_ZLEVEL  10.0
 
-class Border : public QGraphicsItemGroup
+enum eBorderType
 {
+    BORDER_NONE,
+    BORDER_PLAIN,
+    BORDER_TWO_COLOR,
+    BORDER_BLOCKS
+};
+
+class Border : public QObject, public QGraphicsItemGroup
+{
+    Q_OBJECT
+
 public:
+    void    reconnectChildren();
+
+    eBorderType getType()  { return type; }
+
+    void    setWidth(qreal width) { this->width = width; construct(); }
+    void    setColor(QColor color){ this->color = color; construct(); }
+
+    qreal   getWidth() { return width; }
+    QColor  getColor() { return color; }
+
+protected:
     Border();
     ~Border();
 
-    void clear();
+    virtual void  construct() = 0;
 
-    void addBorder0(QPen pen, QSizeF size);
-    void addBorder1(QColor color1, QColor color2, QSizeF size);
-    void addBorder2(QColor color1, qreal diameter, int rows, int cols);
+    eBorderType type;
+    QSizeF      size;
+    QColor      color;
+    qreal       width;
+    ShapeFPtr   sp;
+    View      * view;
+};
 
-    int  getType() { return type; }
-    void getBorder0(QPen & pen, QSizeF & size);
-    void getBorder1(QColor & color1, QColor & color2, QSizeF & size);
-    void getBorder2(QColor & color1, qreal & diameter, int & rows, int & cols);
+class BorderPlain : public Border
+{
+public:
+    BorderPlain(qreal width, QColor color);
+    void get(qreal & width, QColor & color);
 
 protected:
+    void construct();
+};
 
+class BorderTwoColor : public Border
+{
+public:
+    BorderTwoColor(QColor color1, QColor color2, qreal width);
+
+    void    get(QColor & color1, QColor & color2, qreal & width);
+    QColor  getColor2() { return color2; }
+
+    void    setColor2(QColor color) { color2 = color;  construct(); }
+
+protected:
+    void    construct();
     QPen    nextBorderPen();
     QBrush  nextBorderBrush();
 
 private:
-    ShapeFPtr   sp;
+    QColor      color2;
+};
 
-    int         type;
-    QColor      border1;
-    QColor      border2;
-    QSizeF      size1;
-    QPen        pen0;
-    QRectF      rect0;
-    qreal       diameter2;
-    int         rows2;
-    int         cols2;
+class BorderBlocks : public Border
+{
+public:
+    BorderBlocks(QColor color, qreal diameter, int rows, int cols);
+
+    void    get(QColor & color1, qreal & diameter, int & rows, int & cols);
+
+protected:
+    void    construct();
+
+private:
+    int         rows;
+    int         cols;
 };
 
 #endif // BORDER_H

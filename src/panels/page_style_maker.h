@@ -39,7 +39,8 @@ class page_style_maker : public panel_page
         STYLE_COL_DATA       = STYLE_COL_TILING,
         STYLE_COL_STYLE      = 2,
         STYLE_COL_PROTO_EDIT = 3,
-        STYLE_COL_ADDR       = 4
+        STYLE_COL_ADDR       = 4,
+        STYLE_COL_TRANS      = 5
     };
 
 public:

@@ -27,16 +27,21 @@
 #include "tapp/Prototype.h"
 #include "style/Sketch.h"
 #include "base/canvas.h"
+#include "base/border.h"
+#include "base/tiledpatternmaker.h"
 
 using std::string;
 
 page_canvasSettings::page_canvasSettings(ControlPanel *panel)  : panel_page(panel,"Canvas Settings")
 {
+    QLabel * label            = new QLabel("Source");
     QRadioButton *radioStyle  = new QRadioButton("Style");
     QRadioButton *radioWS     = new QRadioButton("Workspace");
     QRadioButton *radioCanvas = new QRadioButton("Canvas");
 
     QHBoxLayout * hbox = new QHBoxLayout();
+    hbox->addStretch();
+    hbox->addWidget(label);
     hbox->addStretch();
     hbox ->addWidget(radioStyle);
     hbox->addStretch();
@@ -47,70 +52,86 @@ page_canvasSettings::page_canvasSettings(ControlPanel *panel)  : panel_page(pane
 
     vbox->addLayout(hbox);
 
-    CanvasSettings  di = canvas->getCanvasSettings();
-
     QGridLayout * grid = new QGridLayout();
-    QLabel * label;
     int row = 0;
 
-    QSizeF  sz = di.getSizeF();
-    label = new QLabel("size");
-    sizeEditW = new QLineEdit();
-    sizeEditW->setText(QString::number(sz.width()));
-    sizeEditH = new QLineEdit();
-    sizeEditH->setText(QString::number(sz.height()));
+    // size
+    label = new QLabel("width");
     grid->addWidget(label,row,0);
+    sizeEditW = new QLineEdit();
     grid->addWidget(sizeEditW,row,1);
-    grid->addWidget(sizeEditH,row,2);
     row++;
 
-    QPointF  pt = di.getStartTile();
-    label = new QLabel("startTile");
-    startEditX = new QLineEdit();
-    startEditX->setText(QString::number(pt.x()));
-    startEditY = new QLineEdit();
-    startEditY->setText( QString::number(pt.y()));
+    label = new QLabel("height");
     grid->addWidget(label,row,0);
+    sizeEditH = new QLineEdit();
+    grid->addWidget(sizeEditH,row,1);
+    row++;
+
+    label = new QLabel("startTile");
+    grid->addWidget(label,row,0);
+    startEditX = new QLineEdit();
     grid->addWidget(startEditX,row,1);
+    startEditY = new QLineEdit();
     grid->addWidget(startEditY,row,2);
     row++;
 
-    qreal d  = di.getDiameter();
     label = new QLabel("diameter");
-    diamEdit = new QLineEdit();
-    diamEdit->setText(QString::number(d));
     grid->addWidget(label,row,0);
+    diamEdit = new QLineEdit();
     grid->addWidget(diamEdit,row,1);
     row++;
 
-    qreal sc = di.getScale();
     label = new QLabel("scale");
-    scaleEdit = new QLineEdit();
-    scaleEdit->setText(QString::number(sc));
     grid->addWidget(label,row,0);
+    scaleEdit = new QLineEdit();
     grid->addWidget(scaleEdit,row,1);
     row++;
 
-    QColor qc = di.getBackgroundColor();
+    // background color
     label = new QLabel("bkgdColor");
-    bkColorEdit = new QLineEdit();
-    bkColorEdit->setText(qc.name(QColor::HexArgb));
-    clabel   = new ClickableLabel;
-    label->setMinimumWidth(50);
-    QVariant variant = qc;
-    QString colcode  = variant.toString();
-    clabel->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black; }");
     grid->addWidget(label,row,0);
+    bkColorEdit = new QLineEdit();
     grid->addWidget(bkColorEdit,row,1);
-    grid->addWidget(clabel,row,2);
+    bkgdColorPatch   = new ClickableLabel;
+    bkgdColorPatch->setMinimumWidth(50);
+    grid->addWidget(bkgdColorPatch,row,2);
     row++;
 
-    label = new QLabel("border");
-    borderEdit = new QLineEdit();
-    borderEdit->setReadOnly(true);
-    borderEdit->setText(addr(di.getBorder().get()));
+    // border
+    label = new QLabel("Border");
     grid->addWidget(label,row,0);
-    grid->addWidget(borderEdit,row,1);
+
+    borderType.addItem("No border",BORDER_NONE);
+    borderType.addItem("Solid border",BORDER_PLAIN);
+    borderType.addItem("Two color border",BORDER_TWO_COLOR);
+    borderType.addItem("Shaped border",BORDER_BLOCKS);
+    grid->addWidget(&borderType,row,1);
+
+    row++;
+
+    label = new QLabel("Border Width");
+    grid->addWidget(label,row,0);
+    borderWidth = new QLineEdit();
+    grid->addWidget(borderWidth,row,1);
+    row++;
+
+    borderColorLabel[0] = new QLabel("Border Color");
+    grid->addWidget(borderColorLabel[0],row,0);
+    borderColor[0] = new QLineEdit();
+    grid->addWidget(borderColor[0],row,1);
+    borderColorPatch[0] = new ClickableLabel;
+    borderColorPatch[0]->setMinimumWidth(50);
+    grid->addWidget(borderColorPatch[0],row,2);
+    row++;
+
+    borderColorLabel[1] = new QLabel("Border Color 2");
+    grid->addWidget(borderColorLabel[1],row,0);
+    borderColor[1] = new QLineEdit();
+    grid->addWidget(borderColor[1],row,1);
+    borderColorPatch[1] = new ClickableLabel;
+    borderColorPatch[1]->setMinimumWidth(50);
+    grid->addWidget(borderColorPatch[1],row,2);
     row++;
 
     hbox = new QHBoxLayout();
@@ -120,22 +141,12 @@ page_canvasSettings::page_canvasSettings(ControlPanel *panel)  : panel_page(pane
     AQWidget * widget = new AQWidget();
     widget->setLayout(hbox);
 
-    QPushButton * setInfoBtn = new QPushButton("Set Source");
+    QPushButton * setInfoBtn = new QPushButton("Write Source");
     setInfoBtn->setMaximumWidth(131);
-
-    QPushButton * refreshBtn = new QPushButton("Refresh");
-    refreshBtn->setMaximumWidth(131);
-
-    QPushButton * pushBtn = new QPushButton("Push Canvas");
-    pushBtn->setMaximumWidth(131);
 
     hbox = new QHBoxLayout();
     hbox->addStretch();
     hbox ->addWidget(setInfoBtn);
-    hbox->addStretch();
-    hbox ->addWidget(refreshBtn);
-    hbox->addStretch();
-    hbox ->addWidget(pushBtn);
     hbox->addStretch();
 
     line1 = new QLabel;
@@ -148,48 +159,56 @@ page_canvasSettings::page_canvasSettings(ControlPanel *panel)  : panel_page(pane
     vbox->addStretch(1);
     adjustSize();
 
-    bgroup.addButton(radioStyle, DIS_STYLE);
-    bgroup.addButton(radioWS,    DIS_WS);
-    bgroup.addButton(radioCanvas,DIS_CANVAS);
-    bgroup.button(DIS_CANVAS)->setChecked(true);
+    bgroup.addButton(radioStyle, CS_STYLE);
+    bgroup.addButton(radioWS,    CS_WS);
+    bgroup.addButton(radioCanvas,CS_CANVAS);
+    bgroup.button(config->canvasSettings)->setChecked(true);
 
-    connect(setInfoBtn, &QPushButton::clicked,    this, &page_canvasSettings::setInfo);
-    connect(refreshBtn, &QPushButton::clicked,    this, &page_canvasSettings::onEnter);
-    connect(pushBtn,    &QPushButton::clicked,    this, &page_canvasSettings::push);
-    connect(clabel,     &ClickableLabel::clicked, this, &page_canvasSettings::pickColor);
-    connect(&bgroup,    SIGNAL(buttonClicked(int)), this, SLOT(slot_callNewlyEnter(int)));
+    connect(setInfoBtn,      &QPushButton::clicked,            this, &page_canvasSettings::setInfo);
+    connect(bkgdColorPatch,  &ClickableLabel::clicked,         this, &page_canvasSettings::pickBackgroundColor);
+    connect(borderColorPatch[0],&ClickableLabel::clicked,      this, &page_canvasSettings::pickBorderColor);
+    connect(borderColorPatch[1],&ClickableLabel::clicked,      this, &page_canvasSettings::pickBorderColor2);
+    connect(&borderType,     SIGNAL(currentIndexChanged(int)), this, SLOT(borderChanged(int)));
+    connect(&bgroup,         SIGNAL(buttonClicked(int)),       this, SLOT(settingsSelectionChanged(int)));
+
+    connect(maker,  &TiledPatternMaker::sig_loadedTiling,      this, &page_canvasSettings::onEnter);
+    connect(maker,  &TiledPatternMaker::sig_loadedXML,         this, &page_canvasSettings::onEnter);
+    connect(maker,  &TiledPatternMaker::sig_loadedDesign,      this, &page_canvasSettings::onEnter);
 }
 
 void  page_canvasSettings::refreshPage()
 {
     View * view = View::getInstance();
-    QRect vr = view->contentsRect();
-
-    QRectF qr = canvas->sceneRect();
-
-    QString str1 = QString("View   = %1 %2 %3 %4").arg(vr.x()).arg(vr.y()).arg(vr.width()).arg(vr.height());
-    QString str2 = QString("Canvas = %1 %2 %3 %4").arg(qr.x()).arg(qr.y()).arg(qr.width()).arg(qr.height());
+    QRect  vr = view->contentsRect();
+    QString str1 = QString("<pre>View   = %1 %2 %3 %4</pre>").arg(vr.x()).arg(vr.y()).arg(vr.width()).arg(vr.height());
     line1->setText(str1);
-    line2->setText(str2);
+
+    if (canvas->scene)
+    {
+        QRectF qr = canvas->scene->sceneRect();
+        QString str2 = QString("<pre>Canvas = %1 %2 %3 %4</pre>").arg(qr.x()).arg(qr.y()).arg(qr.width()).arg(qr.height());
+        line2->setText(str2);
+    }
 }
 
-void page_canvasSettings::slot_callNewlyEnter(int idx)
+void page_canvasSettings::settingsSelectionChanged(int idx)
 {
     Q_UNUSED(idx);
+    config->canvasSettings = static_cast<eCSSelect>(idx);
     onEnter();
 }
 
 void page_canvasSettings::onEnter()
 {
-    switch (bgroup.checkedId())
+    switch (config->canvasSettings)
     {
-    case DIS_STYLE:
+    case CS_STYLE:
         cSettings = workspace->getLoadedStyles().getCanvasSettings();
         break;
-    case DIS_WS:
+    case CS_WS:
         cSettings = workspace->getWsStyles().getCanvasSettings();
         break;
-    case DIS_CANVAS:
+    case CS_CANVAS:
         cSettings = canvas->getCanvasSettings();
         break;
     }
@@ -217,32 +236,89 @@ void page_canvasSettings::display()
 
     QVariant variant = qc;
     QString colcode  = variant.toString();
-    clabel->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+    bkgdColorPatch->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
 
-    borderEdit->setText(addr(cSettings.getBorder().get()));
+    BorderPtr bp = cSettings.getBorder();
+    if (bp)
+    {
+        // common
+        int index = borderType.findData(bp->getType());
+        borderType.blockSignals(true);
+        borderType.setCurrentIndex(index);
+        borderType.blockSignals(false);
+
+        qreal w = bp->getWidth();
+        borderWidth->setText(QString::number(w));
+        borderWidth->show();
+
+        borderColorLabel[0]->show();
+
+        qc = bp->getColor();
+        borderColor[0]->setText(qc.name(QColor::HexArgb));
+        borderColor[0]->show();
+
+        variant = qc;
+        colcode  = variant.toString();
+        borderColorPatch[0]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+        borderColorPatch[0]->show();
+
+        if (bp->getType() == BORDER_TWO_COLOR)
+        {
+            borderColorLabel[1]->show();
+
+            BorderTwoColor * bp2 = dynamic_cast<BorderTwoColor*>(bp.get());
+            qc = bp2->getColor2();
+            borderColor[1]->setText(qc.name(QColor::HexArgb));
+            borderColor[1]->show();
+
+            variant = qc;
+            colcode  = variant.toString();
+            borderColorPatch[1]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+            borderColorPatch[1]->show();
+        }
+        else
+        {
+            borderColorLabel[1]->hide();
+            borderColor[1]->hide();
+            borderColorPatch[1]->hide();
+        }
+    }
+    else
+    {
+        int index = borderType.findData(BORDER_NONE);
+        borderType.blockSignals(true);
+        borderType.setCurrentIndex(index);
+        borderType.blockSignals(false);
+
+        borderColorLabel[0]->hide();
+        borderColor[0]->hide();
+        borderColorPatch[0]->hide();
+
+        borderColorLabel[1]->hide();
+        borderColor[1]->hide();
+        borderColorPatch[1]->hide();
+    }
 }
 
-void page_canvasSettings::push()
-{
-    canvas->writeCanvasSettings(cSettings);
-    canvas->invalidate();
-}
-
-void page_canvasSettings::setInfo(bool)
+void page_canvasSettings::setInfo()
 {
     setFromForm();
+
     switch (bgroup.checkedId())
     {
-    case DIS_STYLE:
-        workspace->getLoadedStyles().setCanvasSettings(cSettings);
+    case CS_STYLE:
+        workspace->getLoadedStyles().setupCanvas(cSettings);
         break;
-    case DIS_WS:
-        workspace->getWsStyles().setCanvasSettings(cSettings);
+    case CS_WS:
+        workspace->getWsStyles().setupCanvas(cSettings);
         break;
-    case DIS_CANVAS:
-        canvas->writeCanvasSettings(cSettings);
+    case CS_CANVAS:
+        canvas->setCanvasSettings(cSettings);
         break;
     }
+
+    emit sig_viewWS();
+    onEnter();
 }
 
 void page_canvasSettings::setFromForm()
@@ -278,15 +354,49 @@ void page_canvasSettings::setFromForm()
 
     QColor color;
     color.setNamedColor(bkColorEdit->text());
-    if (ok)
+    if (color.isValid())
     {
         cSettings.setBackgroundColor(color);
     }
 
+    setBorderFromForm();
+
     sig_viewWS();
 }
 
-void page_canvasSettings::pickColor()
+void page_canvasSettings::setBorderFromForm()
+{
+    bool ok;
+    QColor color;
+
+    BorderPtr bp = cSettings.getBorder();
+    if (bp)
+    {
+        qreal width = borderWidth->text().toDouble(&ok);
+        if (ok)
+        {
+            bp->setWidth(width);
+        }
+
+        color.setNamedColor(borderColor[0]->text());
+        if (color.isValid())
+        {
+            bp->setColor(color);
+        }
+
+        BorderTwoColor * bp2 = dynamic_cast<BorderTwoColor*>(bp.get());
+        if (bp2)
+        {
+            color.setNamedColor(borderColor[1]->text());
+            if (color.isValid())
+            {
+                bp2->setColor2(color);
+            }
+        }
+    }
+}
+
+void page_canvasSettings::pickBackgroundColor()
 {
     QColor color = cSettings.getBackgroundColor();
 
@@ -302,6 +412,81 @@ void page_canvasSettings::pickColor()
 
         QVariant variant = color;
         QString colcode  = variant.toString();
-        clabel->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+        bkgdColorPatch->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
     }
+}
+
+void page_canvasSettings::pickBorderColor()
+{
+    BorderPtr bp = cSettings.getBorder();
+    if (!bp) return;
+    QColor color = bp->getColor();
+
+    AQColorDialog dlg(color,this);
+    dlg.setCurrentColor(color);
+    int rv = dlg.exec();
+    if (rv != QDialog::Accepted) return;
+
+    color = dlg.selectedColor();
+    if (color.isValid())
+    {
+        borderColor[0]->setText(color.name(QColor::HexArgb));
+
+        QVariant variant = color;
+        QString colcode  = variant.toString();
+        borderColorPatch[0]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+    }
+}
+
+void page_canvasSettings::pickBorderColor2()
+{
+    BorderPtr bp = cSettings.getBorder();
+    if (!bp) return;
+
+    BorderTwoColor * bp2 = dynamic_cast<BorderTwoColor*>(bp.get());
+    if (!bp2) return;
+
+    QColor color = bp2->getColor2();
+
+    AQColorDialog dlg(color,this);
+    dlg.setCurrentColor(color);
+    int rv = dlg.exec();
+    if (rv != QDialog::Accepted) return;
+
+    color = dlg.selectedColor();
+    if (color.isValid())
+    {
+        borderColor[1]->setText(color.name(QColor::HexArgb));
+
+        QVariant variant = color;
+        QString colcode  = variant.toString();
+        borderColorPatch[1]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+    }
+}
+
+void page_canvasSettings::borderChanged(int row)
+{
+    Q_UNUSED(row);
+
+    eBorderType type = static_cast<eBorderType>(borderType.currentData().toInt());
+
+    BorderPtr bp;
+    switch(type)
+    {
+    case BORDER_NONE:
+        break;
+    case BORDER_PLAIN:
+        bp = make_shared<BorderPlain>(20,Qt::blue);
+        break;
+    case BORDER_TWO_COLOR:
+        bp = make_shared<BorderTwoColor>(QColor(0xa2,0x79,0x67),QColor(TileWhite),20);
+        break;
+    case BORDER_BLOCKS:
+        bp = make_shared<BorderBlocks>(QColor(0xa2,0x79,0x67),150,11,6);
+        break;
+    }
+
+    cSettings.setBorder(bp);
+
+    setInfo();
 }

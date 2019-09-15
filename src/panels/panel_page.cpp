@@ -54,7 +54,6 @@ panel_page::panel_page(ControlPanel * panel,  QString name) : QWidget()
 
     connect(this,   &panel_page::sig_render,                maker,  &TiledPatternMaker::slot_render);
     connect(this,   &panel_page::sig_viewWS,                viewer, &WorkspaceViewer::slot_viewWorkspace);
-    connect(this,   &panel_page::sig_updateDesignInfo,      viewer, &WorkspaceViewer::slot_updateDesignInfo);
     connect(this,   &panel_page::sig_attachMe,              panel,  &ControlPanel::slot_attachWidget,       Qt::QueuedConnection);
 }
 
@@ -132,7 +131,6 @@ void panel_page::adjustTableSize(QTableWidget *table)
     QSize size(w,h);
     table->setMaximumSize(size);
     table->setMinimumSize(size);
-    updateGeometry();
 }
 
 void panel_page::adjustTableWidth(QTableWidget *table)
@@ -140,7 +138,6 @@ void panel_page::adjustTableWidth(QTableWidget *table)
     int w = getTableWidth(table);
     table->setMaximumWidth(w);
     table->setMinimumWidth(w);
-    updateGeometry();
 }
 
 void panel_page::adjustTableHeight(QTableWidget *table)
@@ -148,7 +145,6 @@ void panel_page::adjustTableHeight(QTableWidget *table)
     int h = getTableHeight(table);
     table->setMaximumHeight(h);
     table->setMinimumHeight(h);
-    updateGeometry();
 }
 
 QString panel_page::addr(void * address)

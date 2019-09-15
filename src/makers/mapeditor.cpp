@@ -28,7 +28,7 @@
 #include "base/shortcuts.h"
 #include "tapp/DesignElement.h"
 #include "tapp/Prototype.h"
-#include "viewers/designelementview.h"
+#include "viewers/placeddesignelementview.h"
 #include "style/Style.h"
 
 MapEditor * MapEditor::mpThis = nullptr;
@@ -49,7 +49,7 @@ MapEditor * MapEditor::getInstance()
 
 MapEditor::MapEditor() : MapEditorSelection(), stash(this)
 {
-    qDebug() << "TilingDesigner::TilingDesigner";
+    qDebug() << "MapEditor::MapEditor";
 
     canvas = Canvas::getInstance();
     config = Configuration::getInstance();
@@ -143,20 +143,20 @@ void MapEditor::draw(QPainter *painter )
         {
             QLineF l1 = sel->getLine();
             painter->setPen(QPen(Qt::red,selectionWidth));
-            painter->drawLine(viewT.apply(l1));
+            painter->drawLine(viewT.map(l1));
         }
         else if (type == MAP_LINE  && !hideConstructionLines)
         {
             QLineF l1 = sel->getLine();
             painter->setPen(QPen(Qt::red,selectionWidth));
-            painter->drawLine(viewT.apply(l1));
+            painter->drawLine(viewT.map(l1));
         }
         else if ((type == MAP_VERTEX || type == MAP_POINT) && !hidePoints)
         {
             qreal radius = 8.0;
             painter->setPen(QPen(Qt::blue,selectionWidth));
             painter->setBrush(Qt::red);
-            painter->drawEllipse(viewT.apply(sel->getPoint()), radius, radius);
+            painter->drawEllipse(viewT.map(sel->getPoint()), radius, radius);
         }
         else if (type == MAP_CIRCLE)
         {
@@ -165,10 +165,10 @@ void MapEditor::draw(QPainter *painter )
             {
                 qreal radius   = c->radius;
                 QPointF center = c->centre;
-                radius = viewT.scalex() * radius;
+                radius = Transform::scalex(viewT) * radius;
                 painter->setPen(QPen(Qt::red,selectionWidth));
                 painter->setBrush(QBrush());
-                painter->drawEllipse(viewT.apply(center), radius, radius);
+                painter->drawEllipse(viewT.map(center), radius, radius);
 
                 if (sel->hasCircleIntersect())
                 {
@@ -176,7 +176,7 @@ void MapEditor::draw(QPainter *painter )
                     radius = 8.0;
                     painter->setPen(QPen(Qt::red,selectionWidth));
                     painter->setBrush(QBrush());
-                    painter->drawEllipse(viewT.apply(pt), radius, radius);
+                    painter->drawEllipse(viewT.map(pt), radius, radius);
                 }
             }
         }
@@ -330,7 +330,7 @@ void MapEditor::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
             }
             else
             {
-                center = viewTinv.apply(spt);
+                center = viewTinv.map(spt);
             }
             constructionCircles.push_back(make_shared<Circle>(center, newCircleRadius));
             saveStash();

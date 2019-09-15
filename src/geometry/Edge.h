@@ -33,27 +33,59 @@
 
 #include <QtCore>
 #include "base/shared.h"
+#include "geometry/Vertex.h"
 
 class Map;
 class interlaceInfo;
+
+enum eEdgeType
+{
+    EDGE_NULL,
+    EDGE_POINT,     // an incomplete edge
+    EDGE_LINE,
+    EDGE_CURVE,
+};
+
+struct arcData
+{
+    QRectF  rect;
+    qreal   start;
+    qreal   span;
+};
+
 
 class Edge
 {
 public:
     Edge();
+    Edge(VertexPtr V1);
     Edge(VertexPtr V1, VertexPtr V2 );
+    Edge(VertexPtr V1, VertexPtr V2, QPointF arcCenter, bool convex);
     ~Edge();
 
     VertexPtr getV1();
     VertexPtr getV2();
-    VertexPtr getOther(QPointF pos) const;
+    VertexPtr getOtherV(VertexPtr vert) const;
+    VertexPtr getOtherV(QPointF pos) const;
+    QPointF   getOtherP(VertexPtr vert) const;
+    QPointF   getOtherP(QPointF pos) const;
     QLineF    getLine();
-    QPointF   getMidPoint() { return getLine().pointAt(0.50); }
+    QPointF   getMidPoint()  { return getLine().pointAt(0.50); }
+    eEdgeType getType()      { return type; }
 
-    void setV1(VertexPtr v) {v1 = v;}
-    void setV2(VertexPtr v) {v2 = v;}
+    QPointF   getArcCenter() { return arcCenter; }
+    bool      isConvex()     { return convex; }
+
+    void resetCurve();
+    void setV1(VertexPtr v)  { v1 = v;}
+    void setV2(VertexPtr v)  { v2 = v;  if (type == EDGE_POINT) type = EDGE_LINE; }
+    void setArcCenter(QPointF ac, bool convex);
+
+    QPointF  calcDefaultArcCenter(bool convex);
+    static arcData  calcArcData(QPointF V1, QPointF V2, QPointF ArcCenter, bool Convex);
 
     bool sameAs(EdgePtr other);
+    bool equals(EdgePtr other);
 
     interlaceInfo * getInterlaceInfo();
     void setInterlaceInfo(interlaceInfo * info);
@@ -67,8 +99,13 @@ public:
     int  getTmpIndex()      { return tmpIndex; }
 
 protected:
+    eEdgeType       type;
     VertexPtr       v1;
     VertexPtr       v2;
+
+    QPointF         arcCenter;   // inside or outside the polygon
+    bool            convex;
+
     interlaceInfo * interlaceData;
     int tmpIndex;
 };

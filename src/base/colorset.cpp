@@ -26,8 +26,14 @@
 
 ColorSet::ColorSet()
 {
-    pos = colorset.begin();
+    pos = (QVector<TPColor>::iterator)1234; // dummy
     hidden = false;
+}
+
+ColorSet::ColorSet(const ColorSet & other)
+{
+    setColors(other);
+    hidden = other.hidden;
 }
 
 void ColorSet::clear()
@@ -80,7 +86,7 @@ void ColorSet::setColors(QVector<TPColor> &cset)
     pos = colorset.begin();
 }
 
-void  ColorSet::setColors(ColorSet & cset)
+void  ColorSet::setColors(const ColorSet & cset)
 {
     clear();
     colorset = cset.colorset;
@@ -100,6 +106,8 @@ TPColor ColorSet::getNextColor()
         colorset.push_back(TPColor(Qt::yellow,false));
         pos = colorset.begin();
     }
+    Q_ASSERT(pos != ((QVector<TPColor>::iterator)1234));
+
     TPColor color = *pos;
     if (++pos == colorset.end())
     {
@@ -157,6 +165,12 @@ AQHBoxLayout * ColorSet::createLayout()
 
 ColorGroup::ColorGroup()
 {
+    pos = colorgroup.begin();
+}
+
+ColorGroup::ColorGroup(const ColorGroup & other)
+{
+    colorgroup = other.colorgroup;
     pos = colorgroup.begin();
 }
 

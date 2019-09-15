@@ -73,9 +73,9 @@ MapPtr RosetteConnectFigure::buildUnit()
     qDebug() << "RosetteConnectFigure::buildUnit";
 
     // save
-    qreal scale = figureScale;
+    qreal scale = getFigureScale();
     qreal rot   = r;
-    figureScale = 1.0;
+    setFigureScale(1.0);
     r           = 0.0;
 
     // build Rosette
@@ -83,7 +83,7 @@ MapPtr RosetteConnectFigure::buildUnit()
     //unitMap->dump();
 
     // restore
-    figureScale = scale;
+    setFigureScale(scale);
     r           = rot;
 
     // extend Rosette
@@ -97,7 +97,7 @@ MapPtr RosetteConnectFigure::buildUnit()
 
     rotateHalf(unitMap);  // DAC methinks not needed
 
-    unitMap->transformMap( Transform::rotate( M_PI * don ) );
+    unitMap->transformMap(QTransform().rotateRadians(M_PI * don));
 
     scaleToUnit(unitMap);
 

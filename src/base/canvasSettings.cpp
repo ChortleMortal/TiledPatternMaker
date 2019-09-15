@@ -25,12 +25,24 @@
 #include "base/canvasSettings.h"
 #include "base/border.h"
 #include "base/configuration.h"
+#include "base/utilities.h"
 #include "geometry/Loose.h"
 
 CanvasSettings::CanvasSettings()
 {
     init();
 }
+
+CanvasSettings::CanvasSettings(const CanvasSettings & other)
+{
+    _bkgdColor = other._bkgdColor;
+    _sceneSize = other._sceneSize;
+    _scale     = other._scale;
+    _border    = other._border;
+    _diameter  = other._diameter;
+    _startTile = other._startTile;
+}
+
 
 CanvasSettings::~CanvasSettings()
 {
@@ -71,19 +83,9 @@ bool CanvasSettings::isDifferent(CanvasSettings & other)
     return false;
 }
 
-void CanvasSettings::set(CanvasSettings & other)
-{
-    _sceneSize  = other.getSizeF();
-    _bkgdColor  = other.getBackgroundColor();
-    _scale      = other.getScale();
-    _border     = other.getBorder();
-    _diameter   = other.getDiameter();
-    _startTile  = other.getStartTile();
-}
-
 void CanvasSettings::setBorder(BorderPtr border)
 {
-    qDebug() << "DesignIn::setBorder" << (void*)border.get();
+    qDebug() << "CanvasSettings::setBorder" << Utils::addr(border.get());
     _border = border;
 }
 

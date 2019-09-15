@@ -40,12 +40,12 @@ TransparentWidget::TransparentWidget()
     // also
     setAttribute(Qt::WA_DeleteOnClose);
 
-    grabMouse();
+    //grabMouse();
 }
 
 TransparentWidget::~TransparentWidget()
 {
-    releaseMouse();
+    //releaseMouse();
 }
 
 void TransparentWidget::mousePressEvent(QMouseEvent *event)

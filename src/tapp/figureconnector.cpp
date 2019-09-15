@@ -81,8 +81,8 @@ void FigureConnector::connectFigure(MapPtr unitMap)
     for (auto it = qvep.begin(); it != qvep.end(); it++)
     {
         EdgePtr edge = *it;
-        VertexPtr ov = edge->getOther(pos);
-        if( ov->getPosition().y() < 0.0 )
+        VertexPtr ov = edge->getOtherV(pos);
+        if (ov->getPosition().y() < 0.0)
         {
             below_tip = ov;
             break;
@@ -119,8 +119,8 @@ void FigureConnector::connectFigure(MapPtr unitMap)
     // Now add the extended edge and its mirror image by first
     // intersecting against rotated versions.
 
-    QPointF neg_start = rp->getTransform().apply( tip_pos );
-    QPointF neg_end   = rp->getTransform().apply(QPointF(endpoint.x(), -endpoint.y()));
+    QPointF neg_start = rp->getTransform().map( tip_pos );
+    QPointF neg_end   = rp->getTransform().map(QPointF(endpoint.x(), -endpoint.y()));
 
     VertexPtr last_top    = tip;
     VertexPtr last_bottom = tip;
@@ -143,8 +143,8 @@ void FigureConnector::connectFigure(MapPtr unitMap)
         dmap->insertDebugLine(ep);
         last_bottom = iv;
 
-        neg_start = rp->getTransform().apply( neg_start );
-        neg_end   = rp->getTransform().apply( neg_end );
+        neg_start = rp->getTransform().map( neg_start );
+        neg_end   = rp->getTransform().map( neg_end );
     }
 
     VertexPtr iv = unitMap->insertVertex( endpoint);
@@ -180,7 +180,7 @@ qreal FigureConnector::computeScale(MapPtr cunit)
             for (auto it = qvep.begin(); it != qvep.end(); it++)
             {
                 EdgePtr edge = *it;
-                VertexPtr ov = edge->getOther(pos);
+                VertexPtr ov = edge->getOtherV(pos);
                 if( ov->getPosition().y() < 0.0 )
                 {
                     QPointF bpos = ov->getPosition();
@@ -190,8 +190,8 @@ qreal FigureConnector::computeScale(MapPtr cunit)
                     QPointF seg_end = tip_pos + tmp;
                     QPointF neg_seg(seg_end.x(), -seg_end.y());
 
-                    QPointF ra = rp->getTransform().apply( tip_pos );
-                    QPointF rb = rp->getTransform().apply( neg_seg );
+                    QPointF ra = rp->getTransform().map( tip_pos );
+                    QPointF rb = rp->getTransform().map( neg_seg );
 
                     QPointF isect = Intersect::getIntersection( tip_pos, seg_end, ra, rb );
                     if( isect.isNull() )
@@ -235,7 +235,7 @@ void FigureConnector::rotateHalf( MapPtr cunit )
 
     QMap<VertexPtr,VertexPtr> movers;
 
-    Transform Tp = Transform::rotate(-2.0 * M_PI * rp->get_don());
+    QTransform Tp = QTransform().rotateRadians(-2.0 * M_PI * rp->get_don());
 
     for (auto e = cunit->getVertices()->begin(); e != cunit->getVertices()->end(); e++)
     {
@@ -252,7 +252,7 @@ void FigureConnector::rotateHalf( MapPtr cunit )
     for (auto e2 = keys.begin(); e2 != keys.end(); e2++)
     {
         VertexPtr vert = *e2;
-        VertexPtr nvert = cunit->insertVertex(Tp.apply(vert->getPosition()));
+        VertexPtr nvert = cunit->insertVertex(Tp.map(vert->getPosition()));
         movers.insert( vert, nvert );   // DAC - this should replace
     }
 

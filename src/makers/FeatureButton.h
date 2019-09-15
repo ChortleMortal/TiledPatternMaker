@@ -52,8 +52,8 @@ class FeatureButton : public QFrame
 
 public:
     FeatureButton(int index);
-    FeatureButton(DesignElementPtr dep, int index );
-    ~FeatureButton();
+    FeatureButton(DesignElementPtr designElement, int index );
+    ~FeatureButton() override;
 
     QSizeF getMinimumSize();
     int    getIndex() { return index; }
@@ -62,30 +62,30 @@ public:
     void setSize( int w, int h );
 
     DesignElementPtr getDesignElement();
-    void setDesignElement(DesignElementPtr delp);
-    void designElementChanged();
+    void             setDesignElement(DesignElementPtr delp);
+    void             designElementChanged();
 
-    static Transform resetViewport(DesignElementPtr dep, QRect frameRect);
+    static QTransform resetViewport(DesignElementPtr designElement, QRect frameRect);
 
     void setSelected(bool selected);
 
     void paintEvent(QPaintEvent *event) Q_DECL_OVERRIDE;
 
 protected:
-    void    construct(DesignElementPtr dep, int index);
-    static Transform lookAt(QRectF rect, QRect frameRect);
-    static Transform centerInside(QRectF first, QRectF other);
+    void    construct(DesignElementPtr designElement, int index);
+    static QTransform lookAt(QRectF rect, QRect frameRect);
+    static QTransform centerInside(QRectF first, QRectF other);
 
 private:
-    DesignElementPtr 	dep;
+    DesignElementPtr designElement;
 
-    bool		selected;
-    int         index;
+    bool    selected;
+    int     index;
 
     static QColor feature_interior;
     static QColor feature_border;
 
-    Transform   transform;
+    QTransform   transform;
 };
 
 #endif

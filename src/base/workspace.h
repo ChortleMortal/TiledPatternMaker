@@ -38,7 +38,7 @@ public:
     static Workspace * getInstance();
     static void        releaseInstance();
 
-    void        setCanvas(Canvas * canvas) { this->canvas = canvas; }
+    void        init();
 
     // designs
     void        addDesign(DesignPtr d);

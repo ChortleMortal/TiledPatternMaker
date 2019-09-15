@@ -49,7 +49,7 @@ ProtoView::ProtoView(PrototypePtr proto) : Layer("ProtoView")
     Q_ASSERT(proto);
 
     pp = proto;
-    //proto->walk();
+    proto->walk();
 
     TilingPtr tiling = proto->getTiling();
     Q_ASSERT(tiling);
@@ -58,12 +58,13 @@ ProtoView::ProtoView(PrototypePtr proto) : Layer("ProtoView")
     t1 = tiling->getTrans1();
     t2 = tiling->getTrans2();
 
+    edges.clear();
     for(auto i = tiling->getPlacedFeatures().begin(); i != tiling->getPlacedFeatures().end(); i++)
     {
         PlacedFeaturePtr pf = *i;
         FeaturePtr feature  = pf->getFeature();
-        Transform T         = pf->getTransform();
-
+        QTransform T        = pf->getTransform();
+        qDebug() << "proto T" << Transform::toInfoString(T);
         FigurePtr fig       = proto->getFigure(feature );
         if (!fig)
         {
@@ -71,15 +72,14 @@ ProtoView::ProtoView(PrototypePtr proto) : Layer("ProtoView")
             continue;
         }
         MapPtr map = fig->getFigureMap();
+        EdgePoly ep;
         for(auto e = map->getEdges()->begin(); e != map->getEdges()->end(); e++)
         {
             EdgePtr edge = *e;
-
-            QPointF v1 = T.apply( edge->getV1()->getPosition() );
-            QPointF v2 = T.apply( edge->getV2()->getPosition() );
-
-            lines.push_back(QLineF(v1,v2));
+            ep.push_back(edge);
         }
+        EdgePoly ep2 = ep.map(T);
+        edges.append(ep2);
     }
     //qDebug() << "num lines = " << lines.size();
     forceRedraw();
@@ -95,40 +95,37 @@ void ProtoView::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
 {
     Q_UNUSED(option);
     Q_UNUSED(widget);
-    qDebug() << "PrototypeView::paint";
 
-    int line_width = 3;
     painter->setRenderHint(QPainter::Antialiasing ,true);
     painter->setRenderHint(QPainter::SmoothPixmapTransform,true);
-    painter->setPen(QPen(Qt::black,line_width));
+    layerPen = QPen(Qt::black,3);
 
-    Transform tr = *getLayerTransform();
+    QTransform tr = getLayerTransform();
+    qDebug() << "PrototypeView::paint"  << Transform::toInfoString(tr);
     GeoGraphics gg(painter,tr);
     draw(&gg);
 }
 
 void ProtoView::draw( GeoGraphics * gg )
 {
-    gg->setColor(QColor(20,150,210));
+    //gg->setColor(QColor(20,150,210));
     fill(gg, pp->getTiling()->getFillData());
 }
 
 void ProtoView::receive(GeoGraphics *gg, int h, int v )
 {
-    Transform T  = Transform::translate((t1 * static_cast<qreal>(h)) + (t2 * static_cast<qreal>(v))) ;
+    QPointF t3  = (t1 * static_cast<qreal>(h)) + (t2 * static_cast<qreal>(v)) ;
+    QTransform T  = QTransform::fromTranslate(t3.x(), t3.y()) ;
+    qDebug() << "receive T" << Transform::toInfoString(T);
 
     if (h==0 && v==0)
-        gg->setColor(Qt::yellow);
+        layerPen.setColor(Qt::yellow);
     else
-        gg->setColor(QColor(20,150,210));
+        layerPen.setColor(QColor(20,150,210));
 
-    gg->pushAndCompose( T );
+    gg->pushAndCompose(T);
 
-    for( int idx = 0; idx < lines.size(); ++idx )
-    {
-        QLineF ls = lines.at(idx);
-        gg->drawLine(ls);
-    }
+    edges.draw(gg, layerPen);
 
     gg->pop();
 }

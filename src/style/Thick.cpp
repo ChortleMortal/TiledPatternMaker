@@ -48,15 +48,15 @@ Thick::Thick(PrototypePtr proto, PolyPtr bounds ):
     draw_outline = false;           // DAC added
 }
 
-Thick::Thick(const Style *other ) : Colored(other)
+Thick::Thick(const Style &other ) : Colored(other)
 {
-    const Thick * thick  = dynamic_cast<const Thick*>(other);
-    if (thick)
+    try
     {
-        width        = thick->width;
-        draw_outline = thick->draw_outline;
+        const Thick & thick  = dynamic_cast<const Thick &>(other);
+        width        = thick.width;
+        draw_outline = thick.draw_outline;
     }
-    else
+    catch(std::bad_cast exp)
     {
         width = 0.05;
         draw_outline = false;           // DAC added
@@ -79,31 +79,16 @@ void Thick::setLineWidth(qreal width )
 
 void Thick::resetStyleRepresentation()
 {
-    dpts2.clear();
-}
+    resetStyleMap();}
 
 void Thick::createStyleRepresentation()
 {
-    if (dpts2.size() )
+    if (getReadOnlyMap())
     {
         return;
     }
 
     setupStyleMap();
-
-    qDebug().noquote() << getReadOnlyMap()->getInfo();
-
-    resetStyleRepresentation();
-    for (auto e = getReadOnlyMap()->getEdges()->begin(); e != getReadOnlyMap()->getEdges()->end(); e++)
-    {
-        EdgePtr edge = *e;
-        QPointF v1 = edge->getV1()->getPosition();
-        QPointF v2 = edge->getV2()->getPosition();
-
-        dpts2 << v1;
-        dpts2 << v2;
-    }
-    //qDebug() << "Thick::dpts2" << dpts2.count();
 }
 
 
@@ -119,26 +104,25 @@ void Thick::draw(GeoGraphics * gg )
     // Note: we multiply the width by two because all other styles using
     //       the width actully widen the drawing in both perpendicular
     //       directions by that width.
-    if( dpts2.size() != 0 )
-    {
-        gg->pushAndCompose(*getLayerTransform());
+        gg->pushAndCompose(getLayerTransform());
 
         if ( draw_outline )
         {
-            gg->setColor(Qt::black);
-            for( int idx = 0; idx < dpts2.size(); idx += 2 )
+            QPen pen(Qt::black);
+            for (auto e = getReadOnlyMap()->getEdges()->begin(); e != getReadOnlyMap()->getEdges()->end(); e++)
             {
-                gg->drawThickLine(dpts2[idx], dpts2[idx+1],width * 2 + 0.05);
+                EdgePtr edge = *e;
+                gg->drawThickEdge(edge,width * 2 + 0.05, pen);
             }
         }
 
-        gg->setColor(colors.getNextColor().color);
-        for( int idx = 0; idx < dpts2.size(); idx += 2 )
+        QPen pen(colors.getNextColor().color);
+        for (auto e = getReadOnlyMap()->getEdges()->begin(); e != getReadOnlyMap()->getEdges()->end(); e++)
         {
-            gg->drawThickLine(dpts2[idx], dpts2[idx+1], width * 2);
+            EdgePtr edge = *e;
+            gg->drawThickEdge(edge, width * 2, pen);
         }
 
         gg->pop();
-    }
 }
 

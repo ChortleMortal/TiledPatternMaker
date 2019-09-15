@@ -41,14 +41,14 @@ Style::Style(PrototypePtr proto, PolyPtr bounds ) : Layer("Style")
     refs++;
 }
 
-Style::Style(const Style *  other ) : Layer("Style")
+Style::Style(const Style &other) : Layer("Style")
 {
-    prototype = other->prototype;
-    boundary  = other->boundary;
+    prototype = other.prototype;
+    boundary  = other.boundary;
 
-    if (other->styleMap != nullptr)
+    if (other.styleMap != nullptr)
     {
-        styleMap = other->styleMap;
+        styleMap = other.styleMap;
     }
 
     refs++;
@@ -109,7 +109,7 @@ void Style::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWi
     painter->setRenderHint(QPainter::Antialiasing ,true);
     painter->setRenderHint(QPainter::SmoothPixmapTransform,true);
 
-    Transform tr;   // identity
+    QTransform tr;   // identity
     GeoGraphics gg(painter,tr);
 
     draw(&gg);

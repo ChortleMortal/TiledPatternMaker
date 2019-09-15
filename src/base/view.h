@@ -44,6 +44,7 @@ public:
     static View * getInstance();
     static void  releaseInstance();
 
+    void init();
     void matchSizeToCanvas();
 
 public slots:
@@ -56,6 +57,7 @@ signals:
     void sig_mouseReleased(QPointF pos);
     void sig_mouseMoved(QPointF pos);
     void keyEvent(QKeyEvent * k);
+    void sig_resize();
 
 protected:
     void keyPressEvent( QKeyEvent *k ) Q_DECL_OVERRIDE;

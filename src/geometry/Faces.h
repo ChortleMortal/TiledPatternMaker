@@ -35,9 +35,6 @@ class Face;
 class FaceSet;
 class FaceGroup;
 
-typedef shared_ptr<Face>    FacePtr;
-typedef shared_ptr<FaceSet> FaceSetPtr;
-
 enum eFaceState
 {
     FACE_UNDONE,
@@ -48,6 +45,11 @@ enum eFaceState
     FACE_REMOVE
 };
 
+/////////////////////////////////////////////////
+///
+///  Face
+///
+/////////////////////////////////////////////////
 
 class Face : public QVector<VertexPtr>
 {
@@ -63,17 +65,18 @@ public:
     bool      overlaps(FacePtr other);
     PolyPtr   subtracted(FacePtr other);
 
-    QVector<VertexPtr> & getSorted() { return sortedShadow; }
-    void      sortForComparion();
     bool      equals(FacePtr other);
+    void      sortForComparion();
+    QVector<VertexPtr> & getSorted();
 
     bool      isClosed() { return first() == last(); }
-    bool      containsCrossovers();
     bool      containsCrossover();
 
     QPointF   center();
 
     eFaceState  state;
+
+    QString dump();
 
 protected:
 
@@ -84,12 +87,18 @@ private:
     QVector<VertexPtr>  sortedShadow;
 };
 
+/////////////////////////////////////////////////
+///
+///  FaceSet
+///
+/////////////////////////////////////////////////
+
 class FaceSet : public QVector<FacePtr>
 {
 public:
     FaceSet() { selected = false;}
     qreal            area;
-    TPColor          tpcolor;		// algo 0/1/2
+    TPColor          tpcolor;   // algo 0/1/2
     ColorSet         colorSet;	// algo3
     int              sides;     // all members of the group have same number of vertices
     bool             selected;  // volatile
@@ -105,6 +114,11 @@ protected:
     void sortByPositon(FacePtr fp);
 };
 
+/////////////////////////////////////////////////
+///
+///  Face Group
+///
+/////////////////////////////////////////////////
 
 class FaceGroup : public QVector<FaceSetPtr>
 {
@@ -114,6 +128,12 @@ public:
     void deselect(int idx);
     void deselect();
 };
+
+/////////////////////////////////////////////////
+///
+///  Faces
+///
+/////////////////////////////////////////////////
 
 class Faces
 {
@@ -126,10 +146,11 @@ class Faces
 public:
     Faces();
 
-    void        extractFaces(MapPtr map);
-    void        extractFacesNew1(MapPtr map);
-    void        extractFacesNew23(MapPtr map);
+    void        buildFacesOriginal(constMapPtr map);
+    void        buildFacesNew23(MapPtr map);
 
+    void        assignColorsOriginal();
+    void        assignColorsNew1();
     void        assignColorsNew2(ColorSet & colorSet);
     void        assignColorsNew3(ColorGroup & colorGroup);
 
@@ -140,7 +161,6 @@ public:
 
 protected:
     void        clearFaces();
-    void        buildFaces(constMapPtr map);
     void        handleVertex(VertexPtr vert, EdgePtr edge);
 
     FacePtr     extractFace(VertexPtr from, EdgePtr edge);
@@ -149,10 +169,9 @@ protected:
     void        assignColorsToFaces(FaceSet & fset);
     void        addFaceResults(FaceSet & fst);
 
-    void        debugPaintFaces(QVector<PolyPtr> & color);
-    void        debugListFaces(QString title);
-    void        debugFaceSet(QString title);
-    void        debugDumpMap(QMap<EdgePtr,FacePtr> & dmap, QString title);
+    void        dumpAllFaces(QString title);
+    void        dumpFaceGroup(QString title);
+    void        dumpEdgeFaceMap(QMap<EdgePtr,FacePtr> & dmap, QString title);
 
     void        sortFaceSetsByPosition();
     void        removeLargest();
@@ -173,7 +192,6 @@ private:
     qreal   determinant(QPointF vec1, QPointF vec2);
     bool    edgeIntersection(QPointF a, QPointF b, QPointF c, QPointF d);
     bool    isOverlapped(FacePtr a, FacePtr b);
-
 };
 
 #endif

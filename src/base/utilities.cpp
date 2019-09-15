@@ -26,6 +26,7 @@
 #include "base/misc.h"
 #include "geometry/Loose.h"
 #include "geometry/Point.h"
+#include "geometry/edgepoly.h"
 #include <QPainter>
 
 QString Utils::addr(void * address)
@@ -52,7 +53,6 @@ void Utils::identify(Layer * layer, QPolygonF * poly)
 
 int Utils::circleLineIntersectionPoints(const QGraphicsItem & circle, qreal radius, const QLineF & line, QPointF & aa, QPointF & bb)
 {
-
     int points = 0;
 
     //float x0 = (circle.mapToScene(circle.shape().controlPointRect().center())).x();
@@ -274,11 +274,11 @@ bool Utils::pointOnCircle(QPointF pt, CirclePtr c)
 
 bool circCollide(QGraphicsItem * item, QList<QGraphicsItem *> items)
 {
-    QPointF c1 = item->boundingRect().center();
+    QPointF c1 = item->boundingRect().center();                                             // ok
     foreach (QGraphicsItem * t, items)
     {
-        qreal distance = QLineF(c1, t->boundingRect().center()).length();
-        qreal radii    = (item->boundingRect().width() + t->boundingRect().width()) / 2;
+        qreal distance = QLineF(c1, t->boundingRect().center()).length();                   // ok
+        qreal radii    = (item->boundingRect().width() + t->boundingRect().width()) / 2;    // ok
         if ( distance <= radii )
             return true;
     }
@@ -415,22 +415,6 @@ QPointF Utils::circleTouchPt(CirclePtr c0, CirclePtr c1)
     return pt;
 }
 
-void Utils::drawRect(QPainter * painter, QRectF rect, QColor color)
-{
-    painter->setPen(color);
-    painter->drawRect(rect);
-    painter->drawLine(rect.left(),rect.top(),rect.right(),rect.bottom());
-    painter->drawLine(rect.topRight(),rect.bottomLeft());
-}
-
-void Utils::drawRect(GeoGraphics * gg, QRectF rect, QColor color)
-{
-    gg->setColor(color);
-    gg->drawRect(rect,false);
-    gg->drawLine(rect.left(),rect.top(),rect.right(),rect.bottom());
-    gg->drawLine(rect.topRight(),rect.bottomLeft());
-}
-
 QVector<QLineF> Utils::rectToLines(QRectF &box)
 {
     QVector<QLineF> res;
@@ -474,11 +458,13 @@ bool Utils::pointOnLine(QLineF l, QPointF p)
 bool Utils::pointAtEndOfLine(QLineF l, QPointF p)
 {
     QPointF pt = l.p1();
-    if (Point::equals(pt,p))
+    if (pt == p)
         return true;
+
     pt = l.p2();
-    if (Point::equals(pt,p))
+    if (pt == p)
         return true;
+
     return false;
 }
 
@@ -582,4 +568,129 @@ QPointF Utils::rotatePoint(QPointF fp, QPointF pt, qreal a)
     qreal xRot = (x * qCos(a)) + (y * qSin(a));
     qreal yRot = (y * qCos(a)) - (x * qSin(a));
     return QPointF(fp.x()+xRot,fp.y()+yRot);
+}
+
+
+QLineF Utils::normalVectorP1(QLineF line)
+{
+    return QLineF(line.p1(), line.p1() + QPointF(line.dy(), -line.dx()));
+}
+
+QLineF Utils::normalVectorP2(QLineF line)
+{
+    return QLineF(line.p2(), line.p2() - QPointF(line.dy(), -line.dx()));
+
+}
+
+QPointF Utils::getClosestPoint(QLineF line, QPointF p)
+{
+    QPointF a = line.p1();
+    QPointF b = line.p2();
+    double APx = p.x() - a.x();
+    double APy = p.y() - a.y();
+    double ABx = b.x() - a.x();
+    double ABy = b.y() - a.y();
+    double magAB2  = ABx*ABx + ABy*ABy;
+    double ABdotAP = ABx*APx + ABy*APy;
+    double t       = ABdotAP / magAB2;
+
+    double xret;
+    double yret;
+
+    if ( t < 0)
+    {
+        xret = a.x();
+        yret = a.y();
+    }
+    else if (t > 1)
+    {
+        xret = b.x();
+        yret = b.y();
+    }
+    else
+    {
+        xret = a.x() + ABx*t;
+        yret = a.y() + ABy*t;
+    }
+    return QPointF(xret,yret);
+}
+
+bool Utils::isClockwise(QPolygonF & poly)
+{
+    Q_ASSERT(!poly.isClosed());
+
+    double sum = 0.0;
+    for (int i = 0; i < poly.count(); i++)
+    {
+        QPointF v1 = poly[i];
+        QPointF v2 = poly[(i + 1) % poly.count()];
+        sum += (v2.x() - v1.x()) * (v2.y() + v1.y());
+    }
+
+    return sum < 0.0;
+}
+
+bool Utils::isClockwiseKaplan(QPolygonF & poly)
+{
+    // Is a polygon (given here as a vector of Vertex instances) clockwise?
+    // We can answer that question by finding a spot on the polygon where
+    // we can distinguish inside from outside and looking at the edges
+    // at that spot.  In this case, we look at the vertex with the
+    // maximum X value.  Whether the polygon is clockwise depends on whether
+    // the edge leaving that vertex is to the left or right of the edge
+    // entering the vertex.  Left-or-right is computed using the sign of the cross product.
+
+    int sz = poly.size();
+
+    // First, find the vertex with the greatest X coordinate.
+
+    int imax = 0;
+    qreal xmax = poly[0].x();
+
+    for( int idx = 1; idx < sz; ++idx )
+    {
+        qreal x = poly[idx].x();
+        if( x > xmax )
+        {
+            imax = idx;
+            xmax = x;
+        }
+    }
+
+    QPointF pmax  = poly[imax];
+    QPointF pnext = poly[(imax+1) % sz];
+    QPointF pprev = poly[(imax+sz-1) %sz];
+
+    QPointF dprev = pmax -  pprev;
+    QPointF dnext = pnext - pmax;
+
+    return Point::cross(dprev, dnext ) <= 0.0;
+}
+
+
+void Utils::reverseOrder(QPolygonF & poly)
+{
+    qDebug() << "reverse order: polygon";
+    QPolygonF ret;
+    for (int i = poly.size()-1; i >= 0; i--)
+    {
+        ret << poly[i];
+    }
+    poly = ret;
+}
+
+void Utils::reverseOrder(EdgePoly & ep)
+{
+    qDebug() << "reverse order: edge poly";
+    EdgePoly ret;
+    for (int i = ep.size()-1; i >= 0; i--)
+    {
+        EdgePtr edge = ep[i];
+        VertexPtr v1 = edge->getV1();
+        VertexPtr v2 = edge->getV2();
+        edge->setV1(v2);
+        edge->setV2(v1);
+        ret << edge;
+    }
+    ep = ret;
 }

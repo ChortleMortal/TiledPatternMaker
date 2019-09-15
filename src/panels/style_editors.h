@@ -25,7 +25,7 @@
 #ifndef STYLED_EDITORS_H
 #define STYLED_EDITORS_H
 
-#include "panels/sliderset.h"
+#include "panels/layout_sliderset.h"
 #include "panels/panel_misc.h"
 #include "style/Colored.h"
 #include "style/Plain.h"

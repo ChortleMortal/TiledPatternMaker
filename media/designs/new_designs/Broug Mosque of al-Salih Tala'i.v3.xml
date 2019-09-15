@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<vector id="1">
+<vector id="1" version="1">
 	<design>
 		<scale>1</scale>
 		<size>
@@ -12,10 +12,10 @@
 	</design>
 	<style.Thick id="2" serialization="custom">
 		<toolkit.GeoLayer>
-			<left__delta>-14.28882369366198</left__delta>
+			<left__delta>125.711176306338</left__delta>
+			<top__delta>161.9335284296501</top__delta>
+			<width__delta>-0.1823526126761335</width__delta>
 			<theta__delta>0</theta__delta>
-			<top__delta>11.93352842965008</top__delta>
-			<width__delta>24.77764738732403</width__delta>
 		</toolkit.GeoLayer>
 		<style.Style>
 			<boundary id="3">

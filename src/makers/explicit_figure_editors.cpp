@@ -77,7 +77,7 @@ void ExplicitEditor::updateGeometry()
     explicitFig->setExtBoundaryScale(bScale);
     explicitFig->setFigureScale(figScale);
 
-    explicitFig->buildBoundary();
+    explicitFig->buildExtBoundary();
 
     emit sig_figure_changed();
 }
@@ -555,11 +555,14 @@ void ExplicitFeatureEditor::resetWithFigure(FigurePtr figure)
         return;
     }
 
-
     featFig = std::dynamic_pointer_cast<ExplicitFigure>(figure);
     if (!featFig)
     {
         featFig = make_shared<ExplicitFigure>(*figure.get(), FIG_TYPE_FEATURE);
+    }
+    else
+    {
+        featFig->setFigType(FIG_TYPE_FEATURE);
     }
 
     updateLimits();

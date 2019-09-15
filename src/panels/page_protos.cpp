@@ -126,8 +126,8 @@ void  page_protos::refreshPage()
         item = new QTableWidgetItem(astring);
         protoTable->setItem(row,PROTO_COL_FIGURE,item);
 
-        Transform t = proto->getTransform(index);
-        item = new QTableWidgetItem(t.toString());
+        QTransform t = proto->getTransform(index);
+        item = new QTableWidgetItem(Transform::toInfoString(t));
         protoTable->setItem(row,PROTO_COL_TRANSFORM,item);
 
         // next design element
@@ -136,6 +136,7 @@ void  page_protos::refreshPage()
 
     protoTable->resizeColumnsToContents();
     adjustTableSize(protoTable);
+    updateGeometry();
 }
 
 void page_protos::display(int id)

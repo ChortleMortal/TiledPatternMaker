@@ -24,7 +24,9 @@
 
 #include "style/Outline.h"
 #include "geometry/Point.h"
+#include "base/view.h"
 #include <QPainter>
+
 ////////////////////////////////////////////////////////////////////////////
 //
 // Outline.java
@@ -43,7 +45,7 @@ Outline::Outline(PrototypePtr proto, PolyPtr bounds ) : Thick (proto,bounds)
 {
 }
 
-Outline::Outline(const Style *other ) : Thick(other)
+Outline::Outline(const Style &other ) : Thick(other)
 {
 }
 
@@ -59,12 +61,12 @@ Outline::~Outline()
 
 void Outline::resetStyleRepresentation()
 {
-    pts3.erase(pts3.begin(),pts3.end());
+    pts4.clear();
 }
 
 void Outline::createStyleRepresentation()
 {
-    if (pts3.size())
+    if (pts4.size())
     {
         return;
     }
@@ -77,13 +79,24 @@ void Outline::createStyleRepresentation()
         VertexPtr v1 = edge->getV1();
         VertexPtr v2 = edge->getV2();
 
-        QVector<QPointF> top   = getPoints(edge, v1, v2, width );
-        QVector<QPointF> fromp = getPoints(edge, v2, v1, width );
+        BelowAndAbove top   = getPoints(edge, v1, v2, width );
+        BelowAndAbove fromp = getPoints(edge, v2, v1, width );
 
-        QPolygonF poly;
-        poly <<  top[0] << v2->getPosition() << top[1] << fromp[0] << v1->getPosition() << fromp[1];
+        BelowAndAboveEdge bae;
+        bae.type     = edge->getType();
+        bae.v2.below = top.below;
+        bae.v2.v     = v2->getPosition();
+        bae.v2.above = top.above;
+        bae.v1.below = fromp.below;
+        bae.v1.v     = v1->getPosition();
+        bae.v1.above = fromp.above;
+        if (bae.type == EDGE_CURVE)
+        {
+            bae.convex     = edge->isConvex();
+            bae.arcCenter = edge->getArcCenter();
+        }
 
-        pts3 << poly;
+        pts4 << bae;
     }
 }
 
@@ -94,19 +107,65 @@ void Outline::draw(GeoGraphics *gg)
         return;
     }
 
-    if( pts3.size() != 0)
+    if( pts4.size() != 0)
     {
-        gg->pushAndCompose(*getLayerTransform());
-        for( int idx = 0; idx < pts3.size(); idx++)
+        gg->pushAndCompose(getLayerTransform());
+        for( int idx = 0; idx < pts4.size(); idx++)
         {
-            QPolygonF  poly = pts3[idx];
-            gg->setColor(colors.getNextColor().color);
-            gg->drawPolygon(poly,true);
-            if ( draw_outline )
+            BelowAndAboveEdge bae = pts4[idx];
+
+            if (bae.type == EDGE_LINE)
             {
+                QPolygonF  poly = bae.getPoly();
+                QColor color = colors.getNextColor().color;
+                gg->drawPolygon(poly,QPen(color),QBrush(color));
+                QPen pen(Qt::black);
+                if ( draw_outline )
+                {
+                    gg->drawLine( bae.v2.above, bae.v1.below, pen);
+                    gg->drawLine( bae.v1.above, bae.v2.below, pen);
+                }
+            }
+            else if (bae.type == EDGE_CURVE)
+            {
+
+                QPointF center = bae.arcCenter;
+                bool    convex = bae.convex;
+#if 0
+                gg->setColor(Qt::red);
+                gg->drawLine(bae.v1.below, bae.v2.above);  // inside
+                gg->setColor(Qt::blue);
+                gg->drawLine(bae.v1.above, bae.v2.below );  // outside
                 gg->setColor(Qt::black);
-                gg->drawLine( poly[2], poly[3] );
-                gg->drawLine( poly[5], poly[0] );
+                gg->drawLine(bae.v1.v, bae.v2.v);  // outside
+#endif
+                QPolygonF  poly = bae.getPoly();
+                QColor color = colors.getNextColor().color;
+                QPen pen(color);
+                //gg->drawPolygon(poly,false);
+
+                if (convex)
+                {
+                    gg->drawPie(bae.v1.above, bae.v2.below, center, pen, QBrush(color), convex);
+
+                    View * view = View::getInstance();
+                    QGraphicsScene * scene = view->scene();
+                    QBrush br = scene->backgroundBrush();
+                    gg->drawPie(bae.v1.below, bae.v2.above, center, pen, br, convex);
+                }
+                //gg->drawPolygon(poly,false);
+#if 1
+                if ( draw_outline )
+                {
+                    //gg->drawLine( bae.v2.above, bae.v1.below );
+                    //gg->drawLine( bae.v1.above, bae.v2.below );
+                    QPen pen(Qt::black);
+                    //gg->setColor(Qt::red);
+                    gg->drawChord(bae.v1.below, bae.v2.above, center, pen, QBrush(), convex);  // inside
+                    //gg->setColor(Qt::blue);
+                    gg->drawChord(bae.v1.above, bae.v2.below, center, pen, QBrush(), convex);  // outside
+                }
+#endif
             }
         }
         gg->pop();
@@ -130,13 +189,12 @@ QPointF  Outline::getJoinPoint(QPointF joint, QPointF a, QPointF b, qreal width 
         return QPointF(0,0);
     }
 
-
     QPointF d1 = joint - a;
     Point::normalizeD(d1);
     QPointF d2 = joint - b;
     Point::normalizeD(d2);
 
-    qreal l = width / qSin( th );
+    qreal l   = width / qSin(th);
     qreal isx = joint.x() - (d1.x() + d2.x()) * l;
     qreal isy = joint.y() - (d1.y() + d2.y()) * l;
     return QPointF( isx, isy );
@@ -147,12 +205,12 @@ QPointF  Outline::getJoinPoint(QPointF joint, QPointF a, QPointF b, qreal width 
 // to draw at the edge's 'to' vertex.  Call this twice to get the
 // complete outline of the hexagon to draw for this edge.
 
-QVector<QPointF> Outline::getPoints(EdgePtr edge, VertexPtr from, VertexPtr to, qreal width )
+BelowAndAbove Outline::getPoints(EdgePtr edge, VertexPtr from, VertexPtr to, qreal width )
 {
     QPointF pfrom = from->getPosition();
-    QPointF pto = to->getPosition();
+    QPointF pto   = to->getPosition();
 
-    QPointF dir = pto - pfrom;
+    QPointF dir   = pto - pfrom;
     Point::normalizeD(dir);
     QPointF perp = Point::perp(dir);
 
@@ -168,13 +226,11 @@ QVector<QPointF> Outline::getPoints(EdgePtr edge, VertexPtr from, VertexPtr to, 
     }
     else if( nn == 2 )
     {
-        QVector<EdgePtr> ba = to->getBeforeAndAfter( edge );
-        VertexPtr ov = ba[0]->getOther( to->getPosition() );
-        QPointF pov = ov->getPosition();
+        BeforeAndAfter ba = to->getBeforeAndAfter(edge);
+        QPointF       pov = ba.before->getOtherP(to);
+        QPointF        jp = getJoinPoint(pto, pfrom, pov, width);
 
-        QPointF jp = getJoinPoint( pto, pfrom, pov, width );
-
-        if (jp == QPointF(0,0))
+        if (jp.isNull())
         {
             below = pto - (perp * width);
             above = pto + (perp * width);
@@ -187,26 +243,34 @@ QVector<QPointF> Outline::getPoints(EdgePtr edge, VertexPtr from, VertexPtr to, 
     }
     else
     {
-        QVector<EdgePtr> ba = to->getBeforeAndAfter( edge );
-        QPointF before_pt = ba[0]->getOther( to->getPosition() )->getPosition();
-        QPointF after_pt  = ba[1]->getOther( to->getPosition() )->getPosition();
+        BeforeAndAfter ba = to->getBeforeAndAfter( edge );
+        QPointF before_pt = ba.before->getOtherP(to);
+        QPointF after_pt  = ba.after->getOtherP(to);
 
         below = getJoinPoint( pto, pfrom, after_pt, width );
-        if ( below == QPointF(0,0))
+        if (below.isNull())
         {
             below = pto - (perp * width);
         }
         above = getJoinPoint( pto, before_pt, pfrom, width );
-        if ( above == QPointF(0,0 ))
+        if (above.isNull())
         {
             above = pto + (perp * width);
         }
     }
 
-    QVector<QPointF> ret;
-    ret.push_back(below);
-    ret.push_back(above);
+    BelowAndAbove ret;
+    ret.below = below;
+    ret.above = above;
     return ret;
+}
+
+
+QPolygonF BelowAndAboveEdge::getPoly()
+{
+    QPolygonF p;
+    p << v2.below << v2.v << v2.above << v1.below << v1.v << v1.above;
+    return p;
 }
 
 

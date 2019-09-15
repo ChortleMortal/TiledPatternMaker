@@ -35,10 +35,15 @@
 
 #include <QtCore>
 #include <list>
-#include "geometry/Transform.h"
 #include "base/shared.h"
 
 using std::list;
+
+struct BeforeAndAfter
+{
+    EdgePtr before;
+    EdgePtr after;
+};
 
 class interlaceInfo;
 
@@ -61,10 +66,8 @@ public:
     int numEdges()       { return neighbours.size(); }
     int numNeighbours()  { return neighbours.size(); }
 
-    QVector<EdgePtr> getBeforeAndAfter(EdgePtr edge);
-
+    BeforeAndAfter   getBeforeAndAfter(EdgePtr edge);
     EdgePtr          getNeighbour(const VertexPtr other);
-
     QVector<EdgePtr> & getNeighbours();
     QVector<EdgePtr> & getEdges();
 
@@ -80,7 +83,7 @@ public:
 	void swapEdge(VertexPtr other, EdgePtr nedge);
     void sortEdgesByAngle();
 
-    void applyRigidMotion(Transform T);
+    void applyRigidMotion(QTransform T);
 
     static int refs;
 

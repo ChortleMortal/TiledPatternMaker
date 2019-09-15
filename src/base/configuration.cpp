@@ -58,6 +58,7 @@ Configuration::Configuration()
 
     lastLoadedTileName  = s.value("lastLoadedTileName","").toString();
     lastLoadedXML       = s.value("lastLoadedXML","").toString();
+    rootMediaDir        = s.value("rootMediaDir","").toString();
     rootTileDir         = s.value("rootTileDir3","").toString();
     rootImageDir        = s.value("rootImageDir","").toString();
     examplesDir         = s.value("examplesDir","").toString();
@@ -73,7 +74,7 @@ Configuration::Configuration()
     designFilter        = s.value("designFilter","").toString();
     tileFilter          = s.value("tileFilter","").toString();
 
-    firstBirthday       = s.value("firstBirthday4",false).toBool();
+    firstBirthday       = s.value("firstBirthday5",false).toBool();
     autoLoadStyles      = s.value("autoLoadStyles",false).toBool();
     autoLoadTiling      = s.value("autoLoadTiling",false).toBool();
     autoLoadDesigns     = s.value("autoLoadDesigns",false).toBool();
@@ -84,9 +85,10 @@ Configuration::Configuration()
     wsStatusBox         = s.value("wsStatusBox",true).toBool();
     designFilterCheck   = s.value("designFilterCheck",false).toBool();
     tileFilterCheck     = s.value("tileFilterCheck",false).toBool();
-    all_features_chk    = s.value("tiling_feature_chk",false).toBool();
+    showAllFeatures     = s.value("tiling_feature_chk",false).toBool();
     lockView            = s.value("lockView",false).toBool();
     screenIsSplit       = s.value("screenIsSplit",false).toBool();
+    transparentCompare  = s.value("transparentCompare",false).toBool();
 
     viewerType          = static_cast<eViewType>(s.value("viewerType",VIEW_DESIGN).toUInt());
     designViewer        = static_cast<eDesignViewer>(s.value("designViewer",DV_LOADED_STYLE).toUInt());
@@ -97,9 +99,14 @@ Configuration::Configuration()
     figureViewer        = static_cast<eFigureViewer>(s.value("figureViewer3",FV_STYLE).toUInt());
     delViewer           = static_cast<eDELViewer>(s.value("delViewer",DEL_STYLES).toUInt());
     mapEditorView       = static_cast<eMapEditorView>(s.value("mapEditorView",ME_FIGURE_MAP).toUInt());
+    canvasSettings      = static_cast<eCSSelect>(s.value("canvasSettings",CS_STYLE).toUInt());
 
     pushTarget          = static_cast<ePushTarget>(s.value("pushTarget",TARGET_LOADED_STYLES).toUInt());
     repeatMode          = static_cast<eRepeatType>(s.value("repeat",REPEAT_DEFINED).toUInt());
+
+    fgdGridModel        = s.value("fgdGridModel",false).toBool();
+    fgdGridStepScreen         = s.value("fgdGridStep",100).toInt();
+    fgdGridStepModel    = s.value("fgdGridStepModel2",1.0).toDouble();
 
     // ensures indices are in range
     if (viewerType > VIEW_MAX)        viewerType      = VIEW_MAX;
@@ -119,8 +126,6 @@ Configuration::Configuration()
     sceneGrid       = false;
     boundingRects   = false;
     hideCircles     = false;
-
-    fgdGridStep     = 100;
 
     updatePanel     = true;
 
@@ -146,6 +151,7 @@ void Configuration::save()
     s.setValue("cycleInterval",cycleInterval);
     s.setValue("lastLoadedTileName",lastLoadedTileName);
     s.setValue("lastLoadedXML",lastLoadedXML);
+    s.setValue("rootMediaDir",rootMediaDir);
     s.setValue("rootTileDir3",rootTileDir);
     s.setValue("rootImageDir",rootImageDir);
     s.setValue("examplesDir",examplesDir);
@@ -177,14 +183,19 @@ void Configuration::save()
     s.setValue("autoCycle",autoCycle);
     s.setValue("stopIfDiff",stopIfDiff);
     s.setValue("autoClear",autoClear);
+    s.setValue("fgdGridModel",fgdGridModel);
+    s.setValue("fgdGridStep",fgdGridStepScreen);
+    s.setValue("fgdGridStepModel2",fgdGridStepModel);
     s.setValue("designFilterCheck",designFilterCheck);
     s.setValue("tileFilterCheck",tileFilterCheck);
     s.setValue("designFilter",designFilter);
     s.setValue("tileFilter",tileFilter);
-    s.setValue("tiling_feature_chk",all_features_chk);
+    s.setValue("tiling_feature_chk",showAllFeatures);
     s.setValue("lockView",lockView);
     s.setValue("screenIsSplit",screenIsSplit);
+    s.setValue("transparentCompare",transparentCompare);
     s.setValue("pushTarget",pushTarget);
+    s.setValue("canvasSettings",canvasSettings);
 }
 
 
@@ -258,10 +269,11 @@ QString Configuration::getImageRoot()
 
 void Configuration::reconfigurePaths()
 {
-    qDebug() << "reconfiguurepaths()";
+    qDebug() << "reconfigurePaths()";
 
     QString root = getMediaRoot();
 
+    rootMediaDir  = root + "/";
     rootTileDir   = root + "/tilings/";
     newTileDir    = root + "/tilings/new_tilings/";
     rootDesignDir = root + "/designs/";
@@ -272,5 +284,5 @@ void Configuration::reconfigurePaths()
 
     firstBirthday = true;
     QSettings s;
-    s.setValue("firstBirthday4",firstBirthday);
+    s.setValue("firstBirthday5",firstBirthday);
 }

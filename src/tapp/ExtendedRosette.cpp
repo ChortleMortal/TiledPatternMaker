@@ -64,7 +64,7 @@ void ExtendedRosette::extendMap()
 {
     qDebug() << "ExtendedRosette::extendMap";
 
-    qreal radius = extBoundaryScale;
+    qreal radius = getExtBoundaryScale();
     QGraphicsEllipseItem circle(-radius,-radius,radius * 2.0, radius * 2.0);
 
     // extend the lines to exteneded boundary and clip
@@ -83,7 +83,7 @@ void ExtendedRosette::extendMap()
         QLineF l1 = QLineF(v2->getPosition(),v1->getPosition());
 
         bool extend = false;
-        if (!Point::intersectPoly(l1,radialFigBoundary))
+        if (!Point::intersectPoly(l1,getRadialFigBoundary()))
         {
             // point doesn't touch the figure boundary
             if (extendFreeVertices)
@@ -102,14 +102,14 @@ void ExtendedRosette::extendMap()
 
         if (extend)
         {
-            if (!hasCircleBoundary)
+            if (!hasExtCircleBoundary())
             {
                 // dont extend lines which already touch boundary
-                if (!Point::intersectPoly(l1,extBoundary))
+                if (!Point::intersectPoly(l1,getExtBoundary()))
                 {
                     // extend lines
                     QLineF l2  = Point::extendLine(l1,10.0);      // extends
-                    l2         = Point::clipLine(l2,extBoundary); // clips
+                    l2         = Point::clipLine(l2,getExtBoundary()); // clips
                     QPointF pt = l2.p2();                         // outer
                     // test if this new point is already a vertex
                     VertexPtr newv;
@@ -171,7 +171,7 @@ void ExtendedRosette::connectOuterVertices(MapPtr map)
 {
     // conenct verices on boundary
     //qDebug() << "Boundary=" << extBoundary;
-    QVector<QLineF> blines = Utils::polyToLines(extBoundary);
+    QVector<QLineF> blines = Utils::polyToLines(getExtBoundary());
 
     QVector<VertexPtr> edgeVerts;
 

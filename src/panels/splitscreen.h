@@ -3,16 +3,24 @@
 
 #include <QtWidgets>
 
+class ControlPanel;
+class View;
+
 class SplitScreen : public QFrame
 {
 public:
     SplitScreen(QWidget *parent = nullptr);
-    void addWidgets(QWidget * w1, QWidget * w2);
+    void addWidgets(ControlPanel * panel, View * view);
+
+public slots:
+    void slot_panelResized();
 
 protected:
 
 private:
-    QGridLayout * grid;
+    QGridLayout  * grid;
+    ControlPanel * cp;
+    View         * vw;
 };
 
 #endif // SPLITSCREEN_H

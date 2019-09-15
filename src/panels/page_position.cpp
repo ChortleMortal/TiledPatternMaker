@@ -138,24 +138,9 @@ void page_position::createStylesWidget()
 
     layerDesc = new QLabel;
 
-    bleft  = new DoubleSpinSet("Boundary left",0,-1000.0,1000.0);
-    btop   = new DoubleSpinSet("Boundary top",0,-1000.0,1000.0);
-    bwidth = new DoubleSpinSet("Boundary width",0,-1000.0,1000.0);
-    btheta = new DoubleSpinSet("Boundary theta",0,-1000.0,1000.0);
-
-    dleft  = new DoubleSpinSet("Delta left",0,-1000.0,1000.0);
-    dtop   = new DoubleSpinSet("Delta top",0,-1000.0,1000.0);
-    dwidth = new DoubleSpinSet("Delta width",0,-1000.0,1000.0);
-    dtheta = new DoubleSpinSet("Delta theta",0,-1000.0,1000.0);
-
-    aleft  = new DoubleSpinSet("Adjusted left",0,-1000.0,1000.0);
-    atop   = new DoubleSpinSet("Adjusted top",0,-1000.0,1000.0);
-    awidth = new DoubleSpinSet("Adjusted width",0,-1000.0,1000.0);
-    atheta = new DoubleSpinSet("Adjusted theta",0,-1000.0,1000.0);
-    aleft->setReadOnly(true);
-    atop->setReadOnly(true);
-    awidth->setReadOnly(true);
-    atheta->setReadOnly(true);
+    dleft  = new DoubleSpinSet("Delta X",0,-1000.0,1000.0);
+    dtop   = new DoubleSpinSet("Delta Y",0,-1000.0,1000.0);
+    dwidth = new DoubleSpinSet("Delta Scale",0,-1000.0,1000.0);
 
     QPushButton * clearD = new QPushButton("Clear deltas");
 
@@ -167,24 +152,13 @@ void page_position::createStylesWidget()
     grid->addWidget(clearD,row,2);
 
     row++;
-    grid->addLayout(bleft,row,0);
     grid->addLayout(dleft,row,1);
-    grid->addLayout(aleft,row,2);
 
     row++;
-    grid->addLayout(btop,row,0);
     grid->addLayout(dtop,row,1);
-    grid->addLayout(atop,row,2);
 
     row++;
-    grid->addLayout(bwidth,row,0);
     grid->addLayout(dwidth,row,1);
-    grid->addLayout(awidth,row,2);
-
-    row++;
-    grid->addLayout(btheta,row,0);
-    grid->addLayout(dtheta,row,1);
-    grid->addLayout(atheta,row,2);
 
     vbox->addLayout(grid);
 
@@ -193,15 +167,9 @@ void page_position::createStylesWidget()
 
     connect(clearD,         &QPushButton::clicked,             this,    &page_position::slot_clear_deltas);
 
-    connect(bleft,          SIGNAL(valueChanged(qreal)),       this,    SLOT(slot_set_bounds(qreal)));
-    connect(btop,           SIGNAL(valueChanged(qreal)),       this,    SLOT(slot_set_bounds(qreal)));
-    connect(bwidth,         SIGNAL(valueChanged(qreal)),       this,    SLOT(slot_set_bounds(qreal)));
-    connect(btheta,         SIGNAL(valueChanged(qreal)),       this,    SLOT(slot_set_bounds(qreal)));
-
     connect(dleft,          SIGNAL(valueChanged(qreal)),       this,    SLOT(slot_set_deltas(qreal)));
     connect(dtop,           SIGNAL(valueChanged(qreal)),       this,    SLOT(slot_set_deltas(qreal)));
     connect(dwidth,         SIGNAL(valueChanged(qreal)),       this,    SLOT(slot_set_deltas(qreal)));
-    connect(dtheta,         SIGNAL(valueChanged(qreal)),       this,    SLOT(slot_set_deltas(qreal)));
 }
 
 void  page_position::onEnter()
@@ -258,31 +226,13 @@ void page_position::updateStylesWidget()
     layer = views[sel];
     layerDesc->setText(layer->getName());
 
-    qreal degrees;
+    Xform xf = layer->getDeltas();
+    dleft->setValue(xf.translateX);
+    dtop->setValue(xf.translateY);
+    dwidth->setValue(xf.scale);
 
-    Bounds b = layer->getBounds();
-    degrees = qRadiansToDegrees(b.theta);
-    bleft->setValue(b.left);
-    btop->setValue(b.top);
-    bwidth->setValue(b.width);
-    btheta->setValue(degrees);
-
-    b = layer->getDeltas();
-    degrees = qRadiansToDegrees(b.theta);
-    dleft->setValue(b.left);
-    dtop->setValue(b.top);
-    dwidth->setValue(b.width);
-    dtheta->setValue(degrees);
-
-    b = layer->getAdjustedBounds();
-    degrees = qRadiansToDegrees(b.theta);
-    aleft->setValue(b.left);
-    atop->setValue(b.top);
-    awidth->setValue(b.width);
-    atheta->setValue(degrees);
-
-    TransformPtr t = layer->getLayerTransform();
-    transLabel->setText(t->toString());
+    QTransform t = layer->getLayerTransform();
+    transLabel->setText(Transform::toInfoString(t));
 }
 
 void page_position::setScale(int radius)
@@ -334,29 +284,16 @@ void page_position::leaveEvent(QEvent * event)
     QWidget::leaveEvent(event);
 }
 
-void page_position::slot_set_bounds(qreal)
-{
-    QVector<Layer*> views = viewer->getActiveLayers();
-    if (views.size() == 0)
-        return;
-    Layer * layer = views.first();
-
-    qreal theta = qDegreesToRadians(btheta->value());
-    Bounds b(bleft->value(), btop->value(), bwidth->value(), theta);
-    layer->setBounds(b);
-    layer->forceUpdateLayer();
-}
-
 void page_position::slot_set_deltas(qreal)
 {
     QVector<Layer*> views = viewer->getActiveLayers();
     if (views.size() == 0)
         return;
-    Layer * layer = views.first();
+    int sel = indexBox->value();
+    Layer * layer = views[sel];
 
-    qreal theta = qDegreesToRadians(dtheta->value());
-    Bounds b(dleft->value(), dtop->value(), dwidth->value(), theta);
-    layer->setDeltas(b);
+    Xform xf = Xform(dwidth->value(), 0.0, dleft->value(), dtop->value());
+    layer->setDeltas(xf);
     layer->forceUpdateLayer();
 }
 
@@ -365,10 +302,12 @@ void page_position::slot_clear_deltas()
     QVector<Layer*> views = viewer->getActiveLayers();
     if (views.size() == 0)
         return;
-    Layer * layer = views.first();
-    Bounds b;
-    layer->setDeltas(b);
+    int sel = indexBox->value();
+    Layer * layer = views[sel];
+    Xform xf;
+    layer->setDeltas(xf);
     layer->forceUpdateLayer();
+    onEnter();
 }
 
 void page_position::slot_select(int)

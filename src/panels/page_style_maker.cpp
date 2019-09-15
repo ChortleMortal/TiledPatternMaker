@@ -1,4 +1,4 @@
-﻿/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
+/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
  *
  *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
  *
@@ -46,12 +46,12 @@ page_style_maker:: page_style_maker(ControlPanel *panel)  : panel_page(panel,"St
     styleParms = nullptr;
 
     styleTable = new QTableWidget(this);
-    styleTable->setColumnCount(5);
+    styleTable->setColumnCount(6);
     styleTable->setSelectionMode(QAbstractItemView::SingleSelection);
     styleTable->setSelectionBehavior(QAbstractItemView::SelectRows);
 
     QStringList qslH;
-    qslH << "" << "Tiling" << "Style" << "Set WS" << "Addr";
+    qslH << "" << "Tiling" << "Style" << "Set WS" << "Addr" << "Transform";
     styleTable->setHorizontalHeaderLabels(qslH);
     styleTable->verticalHeader()->setVisible(false);
 
@@ -102,6 +102,22 @@ page_style_maker:: page_style_maker(ControlPanel *panel)  : panel_page(panel,"St
 
 void  page_style_maker::refreshPage()
 {
+    int row = 0;
+    StyledDesign & sd = (config->designViewer == DV_LOADED_STYLE) ? workspace->getLoadedStyles() : workspace->getWsStyles();
+    const StyleSet & sset = sd.getStyleSet();
+    for (auto it = sset.begin(); it != sset.end(); it++)
+    {
+        StylePtr style = *it;
+        QTableWidgetItem * item = styleTable->item(row,STYLE_COL_TRANS);
+        if (item)
+        {
+            Xform xf = style->getDeltas();
+            item->setText(xf.toInfoString());
+        }
+        row++;
+    }
+    styleTable->resizeColumnToContents(STYLE_COL_TRANS);
+    adjustTableSize(styleTable);
 }
 
 void  page_style_maker::onEnter()
@@ -147,11 +163,14 @@ void  page_style_maker::reEnter()
         item->setData(Qt::UserRole,QVariant::fromValue(style));     // tiling name also stores Style address
         styleTable->setItem(row,STYLE_COL_TILING,item);
 
+        QPushButton * pb = new QPushButton("Set WS Proto && Tiling");
+        styleTable->setCellWidget(row,STYLE_COL_PROTO_EDIT,pb);
+
         item = new QTableWidgetItem(addr(style.get()));
         styleTable->setItem(row,STYLE_COL_ADDR,item);
 
-        QPushButton * pb = new QPushButton("Set WS Proto && Tiling");
-        styleTable->setCellWidget(row,STYLE_COL_PROTO_EDIT,pb);
+        item = new QTableWidgetItem("Xform");
+        styleTable->setItem(row,STYLE_COL_TRANS,item);
 
         QString stylename = style->getStyleDesc();
         int index = qcb->findText(stylename);
@@ -172,6 +191,7 @@ void  page_style_maker::reEnter()
 
     styleTable->resizeColumnsToContents();
     adjustTableSize(styleTable);
+    updateGeometry();
 
     styleTable->selectRow(0);
     styleTable->setFocus();
@@ -262,58 +282,33 @@ void page_style_maker::slot_styleChanged(int row)
     eStyleType esc  = static_cast<eStyleType>(qcb->currentData().toUInt());
 
     StylePtr oldStylePtr = getStyleRow(row);
-
-    Style * oldStyle     = oldStylePtr.get();
-    StylePtr newStyle;
+    Style & oldStyle     = *oldStylePtr.get();
+    Style * newStyle     = nullptr;
     switch (esc)
     {
     case STYLE_PLAIN:
-    {
-        Plain * plain = new Plain(oldStyle);
-        newStyle = shared_ptr<Style>(plain);
-    }
+        newStyle = new Plain(oldStyle);
         break;
     case STYLE_THICK:
-    {
-        Thick * thick = new Thick(oldStyle);
-        newStyle = shared_ptr<Style>(thick);
-    }
+        newStyle = new Thick(oldStyle);
         break;
     case STYLE_OUTLINED:
-    {
-        Outline * outline = new Outline(oldStyle);
-        newStyle = shared_ptr<Style>(outline);
-    }
+        newStyle = new Outline(oldStyle);
         break;
     case STYLE_INTERLACED:
-    {
-        Interlace * interlace = new Interlace(oldStyle);
-        newStyle = shared_ptr<Style>(interlace);
-    }
+        newStyle = new Interlace(oldStyle);
         break;
     case STYLE_EMBOSSED:
-    {
-        Emboss * emboss = new Emboss(oldStyle);
-        newStyle = shared_ptr<Style>(emboss);
-    }
+        newStyle = new Emboss(oldStyle);
         break;
     case STYLE_SKETCHED:
-    {
-        Sketch * sketch = new Sketch(oldStyle);
-        newStyle =  shared_ptr<Style>(sketch);
-    }
+        newStyle = new Sketch(oldStyle);
         break;
     case STYLE_FILLED:
-    {
-        Filled * filled = new Filled(oldStyle);
-        newStyle = shared_ptr<Style>(filled);
-    }
+        newStyle = new Filled(oldStyle);
         break;
     case STYLE_TILECOLORS:
-    {
-        TileColors * tc = new TileColors(oldStyle);
-        newStyle = shared_ptr<Style>(tc);
-    }
+        newStyle= new TileColors(oldStyle);
         break;
     default:
         Q_ASSERT(false);
@@ -322,11 +317,11 @@ void page_style_maker::slot_styleChanged(int row)
 
     if (config->designViewer == DV_LOADED_STYLE)
     {
-        workspace->getLoadedStyles().replaceStyle(oldStylePtr,newStyle);
+        workspace->getLoadedStyles().replaceStyle(oldStylePtr,StylePtr(newStyle));
     }
     else
     {
-        workspace->getWsStyles().replaceStyle(oldStylePtr,newStyle);
+        workspace->getWsStyles().replaceStyle(oldStylePtr,StylePtr(newStyle));
     }
     emit sig_viewWS();
     reEnter();
@@ -468,19 +463,18 @@ void  page_style_maker::slot_analyzeStyleMap()
 
 StylePtr page_style_maker::copyStyle(const StylePtr style)
 {
-    Style * s = style.get();
-    Style * newStyle = nullptr;
-    eStyleType esp = style->getStyleType();
-    switch (esp)
+    Style & s = *style.get();
+    Style *  newStyle = nullptr;
+    switch (style->getStyleType())
     {
     case STYLE_FILLED:
-        newStyle = new Filled(s);
+        newStyle =  new Filled(s);
         break;
     case STYLE_EMBOSSED:
-        newStyle = new Emboss(s);
+        newStyle =  new Emboss(s);
         break;
     case STYLE_INTERLACED:
-        newStyle = new  Interlace(s);
+        newStyle = new Interlace(s);
         break;
     case STYLE_OUTLINED:
         newStyle = new Outline(s);

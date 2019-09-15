@@ -164,6 +164,7 @@ void page_tileColorMaker::onEnter()
         row++;
     }
     adjustTableSize(table);
+    updateGeometry();
 }
 
 TilingPtr page_tileColorMaker::getSourceTiling()

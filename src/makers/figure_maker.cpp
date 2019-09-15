@@ -90,7 +90,7 @@ void FigureMaker::setNewTiling(TilingPtr tiling)
 {
     this->tiling = tiling;
 
-    designPrototype = createPrototype(); //make a new prototype
+    designPrototype = createPrototypeFromLauncherButtons(); //make a new prototype
 
     masterEdit->reset();
 
@@ -126,7 +126,7 @@ void FigureMaker::setNewStyle(StylePtr style)
 // called from page_figure_editor when tiling has changed
 void FigureMaker::setTilingChanged()
 {
-    designPrototype = createPrototype();
+    designPrototype = createPrototypeFromLauncherButtons();
 
     masterEdit->reset();
 
@@ -203,7 +203,7 @@ QPolygonF FigureMaker::boundingRect()
 StylePtr  FigureMaker::createDefaultStyleFromPrototype()
 {
     PrototypePtr pp = getPrototype();
-    populateProtoWithDELs(pp);
+    populateProtoWithDELsFromLauncherButtons(pp);
     //Plain * st      = new Plain(getPrototype(),make_shared<QPolygonF>(dummyBoundary));
     //Interlace * st  = new Interlace(getPrototype(),make_shared<QPolygonF>(boundingRect()));
     StylePtr thick    = make_shared<Thick>(pp,make_shared<QPolygonF>(boundingRect()));
@@ -226,7 +226,7 @@ StylePtr  FigureMaker::createDefaultStyleFromPrototype()
 
 PrototypePtr FigureMaker::makePrototype()
 {
-    designPrototype = createPrototype();
+    designPrototype = createPrototypeFromLauncherButtons();
     return designPrototype;
 }
 
@@ -234,12 +234,12 @@ PrototypePtr FigureMaker::getPrototype()
 {
     if (!designPrototype)
     {
-        designPrototype = createPrototype();
+        designPrototype = createPrototypeFromLauncherButtons();
     }
     return designPrototype;
 }
 
-PrototypePtr FigureMaker::createPrototype()
+PrototypePtr FigureMaker::createPrototypeFromLauncherButtons()
 {
     // this is the taprats way
     qDebug() << "FigureMaker::createPrototype()";
@@ -247,12 +247,13 @@ PrototypePtr FigureMaker::createPrototype()
     if (tiling)
     {
         proto = make_shared<Prototype>(tiling);
-        populateProtoWithDELs(proto);
+        populateProtoWithDELsFromLauncherButtons(proto);
+        proto->createProtoMap();
     }
     return proto;
 }
 
-void FigureMaker::populateProtoWithDELs(PrototypePtr proto)
+void FigureMaker::populateProtoWithDELsFromLauncherButtons(PrototypePtr proto)
 {
     proto->getDesignElements().clear();
     for(auto it = launcher->buttons.begin(); it != launcher->buttons.end(); it++)

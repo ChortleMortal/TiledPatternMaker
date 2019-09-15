@@ -58,8 +58,8 @@ class Style : public Layer
 
 public:
     // Creation.
-    Style(PrototypePtr proto,PolyPtr bounds );
-    Style(const Style *other );
+    Style(PrototypePtr proto,PolyPtr bounds);
+    Style(const Style  & other);
 
     ~Style();
 
@@ -90,7 +90,7 @@ public:
 
 protected:
     void   setupStyleMap();  // copies shared pointer from prototype
-
+    void   resetStyleMap() { styleMap.reset(); }
     PrototypePtr  prototype; // The input geometry to be rendered
     PolyPtr       boundary;
 

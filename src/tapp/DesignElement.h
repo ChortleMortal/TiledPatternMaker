@@ -66,15 +66,15 @@ class PlacedDesignElement : public DesignElement
 {
 public:
     PlacedDesignElement();
-    PlacedDesignElement(DesignElementPtr del, Transform T);
-    PlacedDesignElement(FigurePtr figp, FeaturePtr featp, Transform T);
+    PlacedDesignElement(DesignElementPtr del, QTransform T);
+    PlacedDesignElement(FeaturePtr featp, FigurePtr figp, QTransform T);
 
-    Transform   getTransform() { return trans; }
+    QTransform   getTransform() { return trans; }
 
     QString toString();
 
 protected:
-    Transform           trans;
+    QTransform  trans;
 };
 #endif
 

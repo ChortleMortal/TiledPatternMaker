@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<Poly name="museum1-mirror">
+	<Point>0,-1.5</Point>
+	<Point>-0.5,-2</Point>
+	<Point>-1,-2</Point>
+	<Point>-1,-4</Point>
+	<Point>0,-4</Point>
+	<Point>0,-3</Point>
+	<Point>2,-3</Point>
+	<Point>2,-3.5</Point>
+	<Point>2.5,-4</Point>
+	<Point>3,-3.5</Point>
+	<Point>3,-3</Point>
+	<Point>3.5,-3</Point>
+	<Point>4,-2.5</Point>
+	<Point>3.5,-2</Point>
+	<Point>0.5,-2</Point>
+</Poly>

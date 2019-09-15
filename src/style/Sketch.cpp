@@ -53,7 +53,7 @@ Sketch::Sketch(PrototypePtr proto, PolyPtr bounds ) : Plain(proto,bounds)
     qsrand(279401L);
 }
 
-Sketch::Sketch(const Style *other ) : Plain(other)
+Sketch::Sketch(const Style & other ) : Plain(other)
 {
     qsrand(279401L);
 }
@@ -74,30 +74,39 @@ void Sketch::draw(GeoGraphics * gg)
         return;
     }
 
-    if( pts2.size() != 0)
+    gg->pushAndCompose(getLayerTransform());
+    QPen pen(colors.getNextColor().color);
+
+    qreal jitter = Transform::distFromInvertedZero(gg->getTransform(),5.0);
+    qreal halfjit = jitter / 2.0;
+    for (auto e = getReadOnlyMap()->getEdges()->begin(); e != getReadOnlyMap()->getEdges()->end(); e++)
     {
-        gg->pushAndCompose(*getLayerTransform());
-        gg->setColor(colors.getNextColor().color);
+        EdgePtr edge = *e;
 
-        qreal jitter = gg->getTransform().distFromInvertedZero( 5.0 );
-        qreal halfjit = jitter / 2.0;
-        for( int idx = 0; idx < pts2.size(); idx += 2)
+        QPointF a = edge->getV1()->getPosition() - QPointF(halfjit,halfjit);
+        QPointF b = edge->getV2()->getPosition() - QPointF(halfjit,halfjit);
+
+        for( int c = 0; c < 8; ++c )
         {
-            QPointF a = pts2[ idx ] - QPointF(halfjit,halfjit);
-            QPointF b = pts2[ idx + 1 ] - QPointF(halfjit,halfjit);
-
-            for( int c = 0; c < 8; ++c )
+            volatile qreal r1 = (qrand()/RAND_MAX) * jitter;
+            volatile qreal r2 = (qrand()/RAND_MAX) * jitter;
+            volatile qreal r3 = (qrand()/RAND_MAX) * jitter;
+            volatile qreal r4 = (qrand()/RAND_MAX) * jitter;
+            VertexPtr v1 = make_shared<Vertex>(a + QPointF(r1,r2));
+            VertexPtr v2 = make_shared<Vertex>(b + QPointF(r3,r4));
+            EdgePtr edge2;
+            if (edge->getType() == EDGE_LINE)
             {
-                volatile qreal r1 = (qrand()/RAND_MAX) * jitter;
-                volatile qreal r2 = (qrand()/RAND_MAX) * jitter;
-                volatile qreal r3 = (qrand()/RAND_MAX) * jitter;
-                volatile qreal r4 = (qrand()/RAND_MAX) * jitter;
-
-                gg->drawLine(a + QPointF(r1,r2), b + QPointF(r3,r4));
+                edge2 = make_shared<Edge>(v1,v2);
             }
+            else if (edge->getType() == EDGE_CURVE)
+            {
+                edge2 = make_shared<Edge>(v1,v2, edge->getArcCenter(), edge->isConvex());
+            }
+            gg->drawEdge(edge2,pen);
         }
-        gg->pop();
     }
+    gg->pop();
 }
 
 

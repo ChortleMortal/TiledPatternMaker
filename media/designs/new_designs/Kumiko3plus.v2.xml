@@ -1,29 +1,26 @@
 <?xml version="1.0"?>
-<vector id="1">
+<vector id="1" version="1">
 	<design>
 		<scale>1</scale>
 		<size>
-			<width>1395</width>
-			<height>1000</height>
+			<width>1385</width>
+			<height>948</height>
 		</size>
 		<background>
 			<color>#ff58393e</color>
 		</background>
-		<border type="1">
+		<border type="2">
 			<color>#ffa27967</color>
 			<color>#ffa27967</color>
-			<size>
-				<width>1395</width>
-				<height>1000</height>
-			</size>
+			<width>20</width>
 		</border>
 	</design>
 	<style.Thick id="2" serialization="custom">
 		<toolkit.GeoLayer>
-			<left__delta>0</left__delta>
-			<theta__delta>0</theta__delta>
-			<top__delta>0</top__delta>
+			<left__delta>16</left__delta>
+			<top__delta>-11</top__delta>
 			<width__delta>0</width__delta>
+			<theta__delta>0</theta__delta>
 		</toolkit.GeoLayer>
 		<style.Style>
 			<boundary id="3">
@@ -355,6 +352,9 @@
 									<Edge reference="42" />
 								</edges>
 							</map>
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
 						</app.ExplicitFigure>
 					</entry>
 				</app.Prototype>

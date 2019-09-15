@@ -34,6 +34,7 @@
 #include <string>
 #include "base/shared.h"
 #include "base/styleddesign.h"
+#include "geometry/xform.h"
 
 using std::string;
 using namespace pugi;
@@ -70,9 +71,10 @@ protected:
     void procSize(xml_node & node, int &width, int &height);
     QColor procBackground(xml_node & node);
     void procBorder(xml_node & node);
+    qreal procWidth(xml_node & node);
 
     // styles
-    void    procesToolkitGeoLayer(xml_node & node, Bounds & b);
+    void    procesToolkitGeoLayer(xml_node & node, Xform & xf);
     void    processColorSet(xml_node & node, QColor & color);
     void    processColorSet(xml_node & node, ColorSet & colorSet);
     void    processColorGroup(xml_node & node, ColorGroup & colorGroup);
@@ -97,9 +99,11 @@ protected:
     PolyPtr         getPolygon(xml_node & node);
     VertexPtr       getVertex(xml_node & node);
     EdgePtr         getEdge(xml_node & node);
+    EdgePtr         getCurve(xml_node & node);
     MapPtr          getMap(xml_node & node);
     PrototypePtr    getPrototype(xml_node & node);
     PolyPtr         getBoundary(xml_node & node);
+    QPointF         getPos(xml_node & node);
 
     // references
     bool   hasReference(xml_node & node);
@@ -135,9 +139,9 @@ protected:
 
 private:
     QColor  processColor(xml_node & n);
-    void    procBorder0(xml_node & n);
-    void    procBorder1(xml_node & n);
-    void    procBorder2(xml_node & n);
+    void    procBorderPlain(xml_node & n);
+    void    procBorderTwoColor(xml_node & n);
+    void    procBorderBlocks(xml_node & n);
     [[noreturn]] void fail(QString a, QString b);
 
     QMap<int,PrototypePtr>  proto_ids;

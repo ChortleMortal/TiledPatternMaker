@@ -120,8 +120,6 @@ protected:
     void    LocHexagon(PatternPtr t);
     void    LocOctagonFilled(PatternPtr t);
 
-    QString makeXMLTitle();
-
     QString title;
 
     int             rows;

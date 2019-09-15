@@ -76,8 +76,8 @@ public slots:
 private slots:
 
 protected:
-     PrototypePtr createPrototype();
-     void         populateProtoWithDELs(PrototypePtr proto);
+     PrototypePtr createPrototypeFromLauncherButtons();
+     void         populateProtoWithDELsFromLauncherButtons(PrototypePtr proto);
      QPolygonF    boundingRect();
 
 private:

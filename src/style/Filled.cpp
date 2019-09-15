@@ -48,18 +48,18 @@ Filled::Filled(PrototypePtr proto, PolyPtr bounds, int algorithm ) : Style(proto
     this->algorithm       = algorithm;
 }
 
-Filled::Filled(const Style *other ) : Style(other)
+Filled::Filled(const Style  &other) : Style(other)
 {
-    const Filled * filled = dynamic_cast<const Filled*>(other);
-    if (filled)
+    try
     {
-        draw_inside_blacks    = filled->draw_inside_blacks;
-        draw_outside_whites   = filled->draw_outside_whites;
-        whiteColorSet         = filled->whiteColorSet;
-        blackColorSet         = filled->blackColorSet;
-        algorithm             = filled->algorithm;
+        const Filled & filled = dynamic_cast<const Filled&>(other);
+        draw_inside_blacks    = filled.draw_inside_blacks;
+        draw_outside_whites   = filled.draw_outside_whites;
+        whiteColorSet         = filled.whiteColorSet;
+        blackColorSet         = filled.blackColorSet;
+        algorithm             = filled.algorithm;
     }
-    else
+    catch(std::bad_cast exp)
     {
         draw_inside_blacks    = true;
         draw_outside_whites   = true;
@@ -98,7 +98,7 @@ void Filled::createStyleRepresentation()
 {
     if (! whiteFaces.isEmpty() || !blackFaces.isEmpty() || !allFaces.isEmpty() || !faceGroup.isEmpty())
     {
-        return;
+        return;     // already created
     }
 
     setupStyleMap();
@@ -108,42 +108,47 @@ void Filled::createStyleRepresentation()
     MapPtr map = getMap();
     purifyMap(map);
 
-    if (algorithm == 3)
+    switch (algorithm)
     {
-        if (faceGroup.size() == 0)
+    case 0:
+        if (blackFaces.size() == 0 && whiteFaces.size() == 0)
         {
-            extractFacesNew23(map);
-            assignColorsNew3(colorGroup );
+            buildFacesOriginal(map);
+            //purifyFaces();
+            //removeDuplicates();
+            assignColorsOriginal();
+            qDebug() << "black=" << blackFaces.size() <<  "white=" << whiteFaces.size();
         }
-    }
-    else if (algorithm == 2)
-    {
+        break;
+
+    case 1:
+        if (blackFaces.size() == 0 && whiteFaces.size() == 0)
+        {
+            buildFacesOriginal(map);
+            purifyFaces();
+            assignColorsNew1();
+            qDebug() << "black=" << blackFaces.size() <<  "white=" << whiteFaces.size();
+        }
+        break;
+
+    case 2:
         if (faceGroup.size() == 0)
         {
-            extractFacesNew23(map);
+            buildFacesNew23(map);
+            purifyFaces();
             assignColorsNew2(whiteColorSet);
         }
-    }
-    else if (algorithm == 1)
-    {
-        if (blackFaces.size() == 0 && whiteFaces.size() == 0)
-        {
-            extractFacesNew1(map);
-            qDebug() << "black=" << blackFaces.size() <<  "white=" << whiteFaces.size();
-        }
-    }
-    else
-    {
-        Q_ASSERT(algorithm == 0);
-        if (blackFaces.size() == 0 && whiteFaces.size() == 0)
-        {
-            extractFaces(map);
-            qDebug() << "black=" << blackFaces.size() <<  "white=" << whiteFaces.size();
-        }
-    }
+        break;
 
-    purifyFaces();
-
+    case 3:
+        if (faceGroup.size() == 0)
+        {
+            buildFacesNew23(map);
+            purifyFaces();
+            assignColorsNew3(colorGroup );
+        }
+        break;
+    }
 }
 
 void Filled::draw(GeoGraphics * gg)
@@ -154,20 +159,20 @@ void Filled::draw(GeoGraphics * gg)
     }
 
     qDebug() << "Filled::draw()  algorithm=" << algorithm;
+
     switch (algorithm)
     {
-    case 3:
-        drawNew3(gg);
-        break;
-    case 2:
-        drawNew2(gg);
-        break;
     case 1:
     case 0:
         drawOriginal(gg);
         break;
-    default:
-        Q_ASSERT(false);
+
+    case 2:
+        drawNew2(gg);
+        break;
+
+    case 3:
+        drawNew3(gg);
         break;
     }
 }
@@ -177,7 +182,7 @@ void Filled::drawOriginal(GeoGraphics * gg)
     if( whiteFaces.size() != 0 || blackFaces.size() != 0 )
     {
         qDebug()  << "black=" << blackFaces.size() << "white=" << whiteFaces.size();
-        gg->pushAndCompose(*getLayerTransform());
+        gg->pushAndCompose(getLayerTransform());
 
         if (draw_outside_whites)
         {
@@ -185,9 +190,7 @@ void Filled::drawOriginal(GeoGraphics * gg)
             for(int i=0; i < whiteFaces.size(); i++ )
             {
                 FacePtr fp = whiteFaces[i];
-                gg->setColor(color);
-                gg->drawPolygon(*fp->getPolygon(),true);
-
+                gg->drawPolygon(*fp->getPolygon(),QPen(color),QBrush(color));
                 color = whiteColorSet.getNextColor().color;
             }
         }
@@ -198,8 +201,7 @@ void Filled::drawOriginal(GeoGraphics * gg)
             for(int i=0; i < blackFaces.size(); i++)
             {
                 FacePtr fp = blackFaces[i];
-                gg->setColor(color);
-                gg->drawPolygon(*fp->getPolygon(),true);
+                gg->drawPolygon(*fp->getPolygon(),QPen(color),QBrush(color));
 
                 color = blackColorSet.getNextColor().color;
             }
@@ -210,7 +212,7 @@ void Filled::drawOriginal(GeoGraphics * gg)
 
 void Filled::drawNew2(GeoGraphics *gg)
 {
-    gg->pushAndCompose(*getLayerTransform());
+    gg->pushAndCompose(getLayerTransform());
 
     // not selected
     for (auto it = faceGroup.begin(); it != faceGroup.end(); it++)
@@ -225,8 +227,7 @@ void Filled::drawNew2(GeoGraphics *gg)
         for (auto it2 = fsp->begin(); it2 != fsp->end(); it2++)
         {
             FacePtr fp = *it2;
-            gg->setColor(tpcolor.color);
-            gg->drawPolygon(*fp->getPolygon(),true);
+            gg->drawPolygon(*fp->getPolygon(),QPen(tpcolor.color),QBrush(tpcolor.color));
         }
     }
 
@@ -242,8 +243,7 @@ void Filled::drawNew2(GeoGraphics *gg)
         for (auto it2 = fsp->begin(); it2 != fsp->end(); it2++)
         {
             FacePtr fp = *it2;
-            gg->setColor(Qt::red);
-            gg->drawPolygon(*fp->getPolygon(),false);
+            gg->drawPolygon(*fp->getPolygon(),QPen(Qt::red),QBrush(Qt::red));
         }
     }
 
@@ -252,7 +252,7 @@ void Filled::drawNew2(GeoGraphics *gg)
 
 void Filled::drawNew3(GeoGraphics *gg)
 {
-    gg->pushAndCompose(*getLayerTransform());
+    gg->pushAndCompose(getLayerTransform());
 
     // not selected
     for (auto it = faceGroup.begin(); it != faceGroup.end(); it++)
@@ -274,8 +274,7 @@ void Filled::drawNew3(GeoGraphics *gg)
         {
             TPColor tpcolor = cset.getNextColor();
             FacePtr fp = *it2;
-            gg->setColor(tpcolor.color);
-            gg->drawPolygon(*fp->getPolygon(),true);
+            gg->drawPolygon(*fp->getPolygon(),QPen(tpcolor.color),QBrush(tpcolor.color));
         }
     }
 
@@ -291,8 +290,7 @@ void Filled::drawNew3(GeoGraphics *gg)
         for (auto it2 = fsp->begin(); it2 != fsp->end(); it2++)
         {
             FacePtr fp = *it2;
-            gg->setColor(Qt::red);
-            gg->drawPolygon(*fp->getPolygon(),false);
+            gg->drawPolygon(*fp->getPolygon(),QPen(Qt::red),QBrush(Qt::red));
         }
     }
 
