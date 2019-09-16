@@ -78,7 +78,7 @@ public:
 
     void resetCurve();
     void setV1(VertexPtr v)  { v1 = v;}
-    void setV2(VertexPtr v)  { v2 = v;  if (type == EDGE_POINT) type = EDGE_LINE; }
+    void setV2(VertexPtr v)  { v2 = v;  if ((type == EDGE_NULL) || (type == EDGE_POINT)) type = EDGE_LINE; }
     void setArcCenter(QPointF ac, bool convex);
 
     QPointF  calcDefaultArcCenter(bool convex);
