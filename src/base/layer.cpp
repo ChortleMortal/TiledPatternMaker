@@ -94,10 +94,10 @@ QTransform Layer::getLayerTransform()
 void Layer::computeLayerTransform()
 {
     baseT             = wsViewer->getViewTransform(config->viewerType);
-    layerT            = layerXform.computeTransform() * baseT;
+    layerT            = baseT * layerXform.computeTransform();
     invT              = layerT.inverted();
 
-    //qDebug().noquote() << "baseT :" << name << Transform::toInfoString(baseT);
+    qDebug().noquote() << "baseT :" << name << Transform::toInfoString(baseT);
     //qDebug().noquote() << "XForm :" << name << Transform::toInfoString(layerXform.getTransform());
     qDebug().noquote() << "layerT:" << name << Transform::toInfoString(layerT);
 }

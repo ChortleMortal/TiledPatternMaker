@@ -62,7 +62,6 @@ public:
     Tiling(Tiling * other);
     ~Tiling();
 
-
     bool        writeTilingXML();
     void        writeTilingXML(QTextStream & out);     // also called when writing styles
 
@@ -101,6 +100,17 @@ public:
     QString dump() const;
 
 protected:
+    void    setEdgePoly(QTextStream & ts, EdgePoly & epoly);
+    void    setVertex(QTextStream & ts,VertexPtr v, QString name);
+    void    setPoint(QTextStream & ts, QPointF pt, QString name);
+
+    bool    hasReference(VertexPtr map);
+    QString getVertexReference(VertexPtr ptr);
+    void    setVertexReference(int id, VertexPtr ptr);
+
+    QString  id(int id);
+    QString nextId();
+    int     getRef()  { return refId; }
 
 private:
     FillData fillData;
@@ -115,6 +125,9 @@ private:
     QString author;
 
     BackgroundImage bkgd;
+
+    QMap<VertexPtr,int>   vertex_ids;
+    int refId;
 
 };
 

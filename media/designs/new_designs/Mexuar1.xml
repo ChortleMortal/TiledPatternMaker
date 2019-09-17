@@ -47,56 +47,12 @@
 							<regular>false</regular>
 							<edges id="11">
 								<Line>
-									<Point id="1">-1,2</Point>
-									<Point id="2">-1,-0.5</Point>
-								</Line>
-								<Line>
-									<Point reference="2" />
-									<Point id="3">-1.5,-1</Point>
-								</Line>
-								<Line>
-									<Point reference="3" />
-									<Point id="4">-1,-1.5</Point>
-								</Line>
-								<Line>
-									<Point reference="4" />
-									<Point id="5">-1,-2</Point>
-								</Line>
-								<Line>
-									<Point reference="5" />
-									<Point id="6">0,-2</Point>
-								</Line>
-								<Line>
-									<Point reference="6" />
-									<Point id="7">0,0</Point>
-								</Line>
-								<Line>
-									<Point reference="7" />
-									<Point id="8">1,0</Point>
-								</Line>
-								<Line>
-									<Point reference="8" />
-									<Point id="9">1,-0.5</Point>
-								</Line>
-								<Line>
-									<Point reference="9" />
-									<Point id="10">1.5,-1</Point>
-								</Line>
-								<Line>
-									<Point reference="10" />
-									<Point id="11">2,-0.5</Point>
-								</Line>
-								<Line>
-									<Point reference="11" />
-									<Point id="12">2,0</Point>
-								</Line>
-								<Line>
-									<Point reference="12" />
-									<Point id="13">2.5,0</Point>
+									<Point id="12">-1,2</Point>
+									<Point id="13">0,2</Point>
 								</Line>
 								<Line>
 									<Point reference="13" />
-									<Point id="14">3,0.5</Point>
+									<Point id="14">0,1</Point>
 								</Line>
 								<Line>
 									<Point reference="14" />
@@ -104,233 +60,277 @@
 								</Line>
 								<Line>
 									<Point reference="15" />
-									<Point id="16">0,1</Point>
+									<Point id="16">3,0.5</Point>
 								</Line>
 								<Line>
 									<Point reference="16" />
-									<Point id="17">0,2</Point>
+									<Point id="17">2.5,0</Point>
 								</Line>
 								<Line>
 									<Point reference="17" />
-									<Point reference="1" />
+									<Point id="18">2,0</Point>
+								</Line>
+								<Line>
+									<Point reference="18" />
+									<Point id="19">2,-0.5</Point>
+								</Line>
+								<Line>
+									<Point reference="19" />
+									<Point id="20">1.5,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="20" />
+									<Point id="21">1,-0.5</Point>
+								</Line>
+								<Line>
+									<Point reference="21" />
+									<Point id="22">1,0</Point>
+								</Line>
+								<Line>
+									<Point reference="22" />
+									<Point id="23">0,0</Point>
+								</Line>
+								<Line>
+									<Point reference="23" />
+									<Point id="24">0,-2</Point>
+								</Line>
+								<Line>
+									<Point reference="24" />
+									<Point id="25">-1,-2</Point>
+								</Line>
+								<Line>
+									<Point reference="25" />
+									<Point id="26">-1,-1.5</Point>
+								</Line>
+								<Line>
+									<Point reference="26" />
+									<Point id="27">-1.5,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="27" />
+									<Point id="28">-1,-0.5</Point>
+								</Line>
+								<Line>
+									<Point reference="28" />
+									<Point reference="12" />
 								</Line>
 							</edges>
 						</tile.Feature>
-						<app.ExplicitFeature id="12" type="FIG_TYPE_FEATURE">
-							<map id="13">
-								<vertices id="14">
-									<Vertex id="15">
+						<app.ExplicitFigure id="29" type="FIG_TYPE_EXPLICIT">
+							<map id="30">
+								<vertices id="31">
+									<Vertex id="32">
 										<pos>-1.5,-1</pos>
 										<edges2>
-											<edge id="16">
-												<map reference="13" />
-												<v1 reference="15" />
-												<v2 id="17">
+											<edge id="33">
+												<map reference="30" />
+												<v1 id="34">
 													<pos>-1,-1.5</pos>
 													<edges2>
-														<edge id="18">
-															<map reference="13" />
-															<v1 reference="17" />
-															<v2 id="19">
+														<edge id="35">
+															<map reference="30" />
+															<v1 id="36">
 																<pos>-1,-2</pos>
 																<edges2>
-																	<edge id="20">
-																		<map reference="13" />
-																		<v1 reference="19" />
-																		<v2 id="21">
+																	<edge id="37">
+																		<map reference="30" />
+																		<v1 id="38">
 																			<pos>0,-2</pos>
 																			<edges2>
-																				<edge id="22">
-																					<map reference="13" />
-																					<v1 reference="21" />
-																					<v2 id="23">
+																				<edge id="39">
+																					<map reference="30" />
+																					<v1 id="40">
 																						<pos>0,0</pos>
 																						<edges2>
-																							<edge reference="22" />
-																							<edge id="24">
-																								<map reference="13" />
-																								<v1 reference="23" />
-																								<v2 id="25">
+																							<edge reference="39" />
+																							<edge id="41">
+																								<map reference="30" />
+																								<v1 id="42">
 																									<pos>1,0</pos>
 																									<edges2>
-																										<edge id="26">
-																											<map reference="13" />
-																											<v1 reference="25" />
-																											<v2 id="27">
+																										<edge id="43">
+																											<map reference="30" />
+																											<v1 id="44">
 																												<pos>1,-0.5</pos>
 																												<edges2>
-																													<edge id="28">
-																														<map reference="13" />
-																														<v1 reference="27" />
-																														<v2 id="29">
+																													<edge id="45">
+																														<map reference="30" />
+																														<v1 id="46">
 																															<pos>1.5,-1</pos>
 																															<edges2>
-																																<edge id="30">
-																																	<map reference="13" />
-																																	<v1 reference="29" />
-																																	<v2 id="31">
+																																<edge id="47">
+																																	<map reference="30" />
+																																	<v1 id="48">
 																																		<pos>2,-0.5</pos>
 																																		<edges2>
-																																			<edge id="32">
-																																				<map reference="13" />
-																																				<v1 reference="31" />
-																																				<v2 id="33">
+																																			<edge id="49">
+																																				<map reference="30" />
+																																				<v1 id="50">
 																																					<pos>2,0</pos>
 																																					<edges2>
-																																						<edge reference="32" />
-																																						<edge id="34">
-																																							<map reference="13" />
-																																							<v1 reference="33" />
-																																							<v2 id="35">
+																																						<edge reference="49" />
+																																						<edge id="51">
+																																							<map reference="30" />
+																																							<v1 id="52">
 																																								<pos>2.5,0</pos>
 																																								<edges2>
-																																									<edge id="36">
-																																										<map reference="13" />
-																																										<v1 reference="35" />
-																																										<v2 id="37">
+																																									<edge id="53">
+																																										<map reference="30" />
+																																										<v1 id="54">
 																																											<pos>3,0.5</pos>
 																																											<edges2>
-																																												<edge id="38">
-																																													<map reference="13" />
-																																													<v1 reference="37" />
-																																													<v2 id="39">
+																																												<edge id="55">
+																																													<map reference="30" />
+																																													<v1 id="56">
 																																														<pos>2.5,1</pos>
 																																														<edges2>
-																																															<edge reference="38" />
-																																															<edge id="40">
-																																																<map reference="13" />
-																																																<v1 reference="39" />
-																																																<v2 id="41">
+																																															<edge reference="55" />
+																																															<edge id="57">
+																																																<map reference="30" />
+																																																<v1 id="58">
 																																																	<pos>0,1</pos>
 																																																	<edges2>
-																																																		<edge reference="40" />
-																																																		<edge id="42">
-																																																			<map reference="13" />
-																																																			<v1 reference="41" />
-																																																			<v2 id="43">
+																																																		<edge reference="57" />
+																																																		<edge id="59">
+																																																			<map reference="30" />
+																																																			<v1 id="60">
 																																																				<pos>0,2</pos>
 																																																				<edges2>
-																																																					<edge reference="42" />
-																																																					<edge id="44">
-																																																						<map reference="13" />
-																																																						<v1 reference="43" />
-																																																						<v2 id="45">
+																																																					<edge reference="59" />
+																																																					<edge id="61">
+																																																						<map reference="30" />
+																																																						<v1 id="62">
 																																																							<pos>-1,2</pos>
 																																																							<edges2>
-																																																								<edge id="46">
-																																																									<map reference="13" />
-																																																									<v1 reference="45" />
-																																																									<v2 id="47">
+																																																								<edge id="63">
+																																																									<map reference="30" />
+																																																									<v1 id="64">
 																																																										<pos>-1,-0.5</pos>
 																																																										<edges2>
-																																																											<edge reference="46" />
-																																																											<edge id="48">
-																																																												<map reference="13" />
-																																																												<v1 reference="47" />
-																																																												<v2 reference="15" />
+																																																											<edge reference="63" />
+																																																											<edge id="65">
+																																																												<map reference="30" />
+																																																												<v1 reference="32" />
+																																																												<v2 reference="64" />
 																																																											</edge>
 																																																										</edges2>
-																																																									</v2>
+																																																									</v1>
+																																																									<v2 reference="62" />
 																																																								</edge>
-																																																								<edge reference="44" />
+																																																								<edge reference="61" />
 																																																							</edges2>
-																																																						</v2>
+																																																						</v1>
+																																																						<v2 reference="60" />
 																																																					</edge>
 																																																				</edges2>
-																																																			</v2>
+																																																			</v1>
+																																																			<v2 reference="58" />
 																																																		</edge>
 																																																	</edges2>
-																																																</v2>
+																																																</v1>
+																																																<v2 reference="56" />
 																																															</edge>
 																																														</edges2>
-																																													</v2>
+																																													</v1>
+																																													<v2 reference="54" />
 																																												</edge>
-																																												<edge reference="36" />
+																																												<edge reference="53" />
 																																											</edges2>
-																																										</v2>
+																																										</v1>
+																																										<v2 reference="52" />
 																																									</edge>
-																																									<edge reference="34" />
+																																									<edge reference="51" />
 																																								</edges2>
-																																							</v2>
+																																							</v1>
+																																							<v2 reference="50" />
 																																						</edge>
 																																					</edges2>
-																																				</v2>
+																																				</v1>
+																																				<v2 reference="48" />
 																																			</edge>
-																																			<edge reference="30" />
+																																			<edge reference="47" />
 																																		</edges2>
-																																	</v2>
+																																	</v1>
+																																	<v2 reference="46" />
 																																</edge>
-																																<edge reference="28" />
+																																<edge reference="45" />
 																															</edges2>
-																														</v2>
+																														</v1>
+																														<v2 reference="44" />
 																													</edge>
-																													<edge reference="26" />
+																													<edge reference="43" />
 																												</edges2>
-																											</v2>
+																											</v1>
+																											<v2 reference="42" />
 																										</edge>
-																										<edge reference="24" />
+																										<edge reference="41" />
 																									</edges2>
-																								</v2>
+																								</v1>
+																								<v2 reference="40" />
 																							</edge>
 																						</edges2>
-																					</v2>
+																					</v1>
+																					<v2 reference="38" />
 																				</edge>
-																				<edge reference="20" />
+																				<edge reference="37" />
 																			</edges2>
-																		</v2>
+																		</v1>
+																		<v2 reference="36" />
 																	</edge>
-																	<edge reference="18" />
+																	<edge reference="35" />
 																</edges2>
-															</v2>
+															</v1>
+															<v2 reference="34" />
 														</edge>
-														<edge reference="16" />
+														<edge reference="33" />
 													</edges2>
-												</v2>
+												</v1>
+												<v2 reference="32" />
 											</edge>
-											<edge reference="48" />
+											<edge reference="65" />
 										</edges2>
 									</Vertex>
-									<Vertex reference="19" />
-									<Vertex reference="17" />
-									<Vertex reference="47" />
-									<Vertex reference="45" />
-									<Vertex reference="21" />
-									<Vertex reference="23" />
-									<Vertex reference="41" />
-									<Vertex reference="43" />
-									<Vertex reference="27" />
-									<Vertex reference="25" />
-									<Vertex reference="29" />
-									<Vertex reference="31" />
-									<Vertex reference="33" />
-									<Vertex reference="35" />
-									<Vertex reference="39" />
-									<Vertex reference="37" />
+									<Vertex reference="64" />
+									<Vertex reference="36" />
+									<Vertex reference="34" />
+									<Vertex reference="62" />
+									<Vertex reference="38" />
+									<Vertex reference="40" />
+									<Vertex reference="58" />
+									<Vertex reference="60" />
+									<Vertex reference="44" />
+									<Vertex reference="42" />
+									<Vertex reference="46" />
+									<Vertex reference="48" />
+									<Vertex reference="50" />
+									<Vertex reference="52" />
+									<Vertex reference="56" />
+									<Vertex reference="54" />
 								</vertices>
-								<edges id="49">
-									<Edge reference="48" />
-									<Edge reference="16" />
-									<Edge reference="46" />
-									<Edge reference="18" />
-									<Edge reference="20" />
-									<Edge reference="44" />
-									<Edge reference="22" />
-									<Edge reference="24" />
-									<Edge reference="40" />
-									<Edge reference="42" />
-									<Edge reference="26" />
-									<Edge reference="28" />
-									<Edge reference="30" />
-									<Edge reference="32" />
-									<Edge reference="34" />
-									<Edge reference="36" />
-									<Edge reference="38" />
+								<edges id="66">
+									<Edge reference="33" />
+									<Edge reference="65" />
+									<Edge reference="63" />
+									<Edge reference="61" />
+									<Edge reference="37" />
+									<Edge reference="35" />
+									<Edge reference="59" />
+									<Edge reference="57" />
+									<Edge reference="41" />
+									<Edge reference="39" />
+									<Edge reference="45" />
+									<Edge reference="43" />
+									<Edge reference="47" />
+									<Edge reference="51" />
+									<Edge reference="49" />
+									<Edge reference="55" />
+									<Edge reference="53" />
 								</edges>
 							</map>
 							<boundarySides>4</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
-						</app.ExplicitFeature>
+						</app.ExplicitFigure>
 					</entry>
 				</app.Prototype>
 			</prototype>

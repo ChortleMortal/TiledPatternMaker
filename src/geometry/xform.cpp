@@ -41,9 +41,9 @@ QTransform Xform::getTransform()
     QTransform ts   = QTransform::fromScale(scale,scale);
     QTransform tt   = QTransform().fromTranslate(translateX,translateY);
 
-    //qDebug().noquote() << "tr:" << Transform::toInfoString(tr);
-    //qDebug().noquote() << "ts:" << Transform::toInfoString(ts);
-    //qDebug().noquote() << "tt:" << Transform::toInfoString(tt);
+    qDebug().noquote() << "tr:" << Transform::toInfoString(tr);
+    qDebug().noquote() << "ts:" << Transform::toInfoString(ts);
+    qDebug().noquote() << "tt:" << Transform::toInfoString(tt);
 
     return tr * ts * tt;
 }
@@ -58,11 +58,11 @@ QTransform Xform::computeTransform()
     }
     QTransform tr   = rotateAroundPoint();
     QTransform ts   = QTransform::fromScale(scale,scale);
-    QTransform tt   = QTransform().fromTranslate(-translateX,-translateY);
+    QTransform tt   = QTransform().fromTranslate(translateX,translateY);
 
-    //qDebug().noquote() << "tr:" << Transform::toInfoString(tr);
-    //qDebug().noquote() << "ts:" << Transform::toInfoString(ts);
-    //qDebug().noquote() << "tt:" << Transform::toInfoString(tt);
+    qDebug().noquote() << "tr:" << Transform::toInfoString(tr);
+    qDebug().noquote() << "ts:" << Transform::toInfoString(ts);
+    qDebug().noquote() << "tt:" << Transform::toInfoString(tt);
 
     return tr * ts * tt;
 }

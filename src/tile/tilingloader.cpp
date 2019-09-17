@@ -221,7 +221,6 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
     }
     setTranslations(ptt1,ptt2);
 
-   FeatureReader fr;
    for (xml_node feature = tiling_node.child("Feature"); feature; feature = feature.next_sibling("Feature"))
    {
        xml_attribute fatt = feature.attribute("type");

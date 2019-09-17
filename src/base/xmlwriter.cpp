@@ -43,7 +43,6 @@
 #include "tapp/ExtendedRosette.h"
 #include "tapp/RosetteConnectFigure.h"
 #include "tapp/ExplicitFigure.h"
-#include "tile/featurewriter.h"
 
 const int currentXMLVersion = 2;
 
@@ -902,9 +901,7 @@ void XmlWriter::setFeature(QTextStream & ts,FeaturePtr fp)
     ts << "<edges" << nextId() << ">" << endl;
 
     EdgePoly & ep  = fp->getEdgePoly();
-
-    FeatureWriter fw;
-    fw.setEdgePoly(ts,ep);
+    setEdgePoly(ts,ep);
 
     ts << "</edges>" << endl;
 
@@ -1180,6 +1177,62 @@ void XmlWriter::setEdges(QTextStream & ts, const QVector<EdgePtr> * edges )
         setEdge(ts,e,true);
     }
     ts << "</edges>" << endl;
+}
+
+void XmlWriter::setEdgePoly(QTextStream & ts, EdgePoly & epoly)
+{
+    for (auto it = epoly.begin(); it != epoly.end(); it++)
+    {
+        EdgePtr ep = *it;
+        VertexPtr v1 = ep->getV1();
+        VertexPtr v2 = ep->getV2();
+        if (ep->getType() == EDGE_LINE)
+        {
+            ts << "<Line>" << endl;
+            VertexPtr v1 = ep->getV1();
+            VertexPtr v2 = ep->getV2();
+            setVertexEP(ts,v1,"Point");
+            setVertexEP(ts,v2,"Point");
+            ts << "</Line>" << endl;
+        }
+        else if (ep->getType() == EDGE_CURVE)
+        {
+            QString str = QString("<Curve convex=\"%1\">").arg(ep->isConvex() ? "t" : "f");
+            ts << str << endl;
+            QPointF p3 = ep->getArcCenter();
+            setVertexEP(ts,v1,"Point");
+            setVertexEP(ts,v2,"Point");
+            setPoint(ts,p3,"Center");
+            ts << "</Curve>" << endl;
+        }
+    }
+}
+
+void XmlWriter::setVertexEP(QTextStream & ts,VertexPtr v, QString name)
+{
+    QString qsid;
+    if (hasReference(v))
+    {
+        qsid = getVertexReference(v);
+        ts << "<" << name << qsid << "/>" << endl;
+        return;
+    }
+
+    qsid = nextId();
+    setVertexReference(getRef(),v);
+
+    QPointF pt = v->getPosition();
+
+    ts << "<" << name << qsid << ">";
+    ts << QString::number(pt.x(),'g',16) << "," << QString::number(pt.y(),'g',16);
+    ts << "</" << name << ">" << endl;
+}
+
+void XmlWriter::setPoint(QTextStream & ts, QPointF pt, QString name)
+{
+    ts << "<" << name << ">";
+    ts << QString::number(pt.x(),'g',16) << "," << QString::number(pt.y(),'g',16);
+    ts << "</" << name << ">" << endl;
 }
 
 void XmlWriter::setVertex(QTextStream & ts,VertexPtr v, QString name)

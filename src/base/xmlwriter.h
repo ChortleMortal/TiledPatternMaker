@@ -104,12 +104,15 @@ protected:
     void    setPrototype(QTextStream & ts, PrototypePtr pp);
     void    setPolygon(QTextStream & ts,PolyPtr pp);    // deprecated
 
+    void    setEdgePoly(QTextStream & ts, EdgePoly & epoly);
+    void    setVertexEP(QTextStream & ts,VertexPtr v, QString name);
     void    setVertex(QTextStream & ts, VertexPtr v, QString name = "Vertex");
     void    setEdges(QTextStream & ts, QVector<EdgePtr> &qvec);
     void    setEdge(QTextStream & ts, EdgePtr e, bool capitalE = false);
 
     void    setTransform(QTextStream & ts,Transform T);
     void    setPos(QTextStream & ts, QPointF qpf);
+    void    setPoint(QTextStream & ts, QPointF pt, QString name);
 
     // references
     bool   hasReference(PolyPtr pp);

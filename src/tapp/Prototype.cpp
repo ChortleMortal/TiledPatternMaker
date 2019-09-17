@@ -169,7 +169,7 @@ void Prototype::walk()
 // each figure point is placed with a relative transform from the tiling when the map is constructed
 void Prototype::receive(GeoGraphics *gg, int h, int v )
 {
-    Q_UNUSED(gg);
+    Q_UNUSED(gg)
     //qDebug() << "fill qxy Prototype::receive:"  << h << v;
     QPointF pt   = (tiling->getTrans1() * static_cast<qreal>(h)) + (tiling->getTrans2() * static_cast<qreal>(v));
     QTransform T = QTransform::fromTranslate(pt.x(),pt.y());
@@ -246,7 +246,12 @@ MapPtr Prototype::createProtoMap()
                 subT.push_back(t);
             }
         }
-        qDebug() << "subT count=" << subT.size();
+
+        int sz = subT.size();
+        if (sz)
+            qDebug() << "subT count =" << sz;
+        else
+            qWarning() << "subT count = 0";
 
         // Within a single translational unit, assemble the different
         // transformed figures corresponding to the given feature into a map.
