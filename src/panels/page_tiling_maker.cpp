@@ -185,14 +185,14 @@ AQWidget * page_tiling_maker::createTilingTable()
     // tile info table
     tileInfoTable = new QTableWidget();
     tileInfoTable->setSortingEnabled(false);
-    tileInfoTable->setColumnCount(9);
+    tileInfoTable->setColumnCount(10);
     tileInfoTable->setSelectionMode(QAbstractItemView::SingleSelection);
     tileInfoTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     tileInfoTable->setContextMenuPolicy(Qt::CustomContextMenu);
     tileInfoTable->setStyleSheet("selection-color : white; selection-background-color : green");
     tileInfoTable->setMaximumHeight(600);
     QStringList qslh;
-    qslh << "index" << "sides" << "scale" << "rot" << "X" << "Y" << "reg" << "feat" << "loc";
+    qslh << "index" << "sides" << "scale" << "rot" << "X" << "Y" << "reg" << "CW" << "feat" << "loc";
     tileInfoTable->setHorizontalHeaderLabels(qslh);
     tileInfoTable->verticalHeader()->setVisible(false);
     tileInfoTable->setColumnWidth(0,10);
@@ -696,6 +696,8 @@ void page_tiling_maker::refreshMenu()
         displayPlacedFeatureInTable(pfp,row++,label);
     }
 
+    connect(tileInfoTable, SIGNAL(cellClicked(int,int)),  this, SLOT(slot_cellSelected(int,int)),Qt::UniqueConnection);
+
     tileInfoTable->resizeColumnToContents(2);
     tileInfoTable->resizeColumnToContents(3);
     tileInfoTable->resizeColumnToContents(4);
@@ -703,6 +705,7 @@ void page_tiling_maker::refreshMenu()
     tileInfoTable->resizeColumnToContents(6);
     tileInfoTable->resizeColumnToContents(7);
     tileInfoTable->resizeColumnToContents(8);
+    tileInfoTable->resizeColumnToContents(9);
     adjustTableSize(tileInfoTable);
     updateGeometry();
 
@@ -779,13 +782,16 @@ void page_tiling_maker::displayPlacedFeatureInTable(PlacedFeaturePtr pf, int row
     twi = new QTableWidgetItem(regular);
     tileInfoTable->setItem(row,TI_REGULAR,twi);
 
+    QString cw = feature->isClockwise() ? "Y" : "N";
+    twi = new QTableWidgetItem(cw);
+    tileInfoTable->setItem(row,TI_CW,twi);
+
     twi = new QTableWidgetItem(addr(feature.get()));
     tileInfoTable->setItem(row,TI_FEAT_ADDR,twi);
 
     twi = new QTableWidgetItem(from);
     tileInfoTable->setItem(row,TI_LOCATION,twi);
 
-    connect(tileInfoTable, SIGNAL(cellClicked(int,int)),  this, SLOT(slot_cellSelected(int,int)));
 }
 
 PlacedFeaturePtr page_tiling_maker::getFeatureRow(int row)

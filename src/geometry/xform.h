@@ -7,7 +7,7 @@ class Xform
 {
 public:
     Xform();
-    Xform( qreal scale, qreal rotation, qreal translateX, qreal translateY);
+    Xform( qreal scale, qreal rotationRadians, qreal translateX, qreal translateY);
     Xform(const Xform  & other);
 
     void       setTransform(QTransform t);
@@ -18,7 +18,7 @@ public:
     QString    toInfoString();
 
     qreal   scale;
-    qreal   rotation;     // radians
+    qreal   rotationRadians;     // radians
     qreal   translateX;
     qreal   translateY;
     QPointF rotateCenter;

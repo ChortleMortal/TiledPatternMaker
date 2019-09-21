@@ -55,16 +55,19 @@ ControlPanel::ControlPanel(TiledPatternMaker * parent) : QWidget()
     setWindowFlag(Qt::WindowMinimizeButtonHint,true);
 #endif
 
+    QString title;
 #ifdef QT_DEBUG
-    setWindowTitle(QString("Control Panel - Debug"));
+    title = "Control Panel - Debug - ";
 #else
-    setWindowTitle(QString("Control Panel - Release"));
+    title = "Control Panel - Release - ";
 #endif
+    config    = Configuration::getInstance();
+    title    += config->rootMediaDir;
+    setWindowTitle(title);
 
     QSettings s;
     move(s.value("panelPos").toPoint());
 
-    config    = Configuration::getInstance();
     canvas    = Canvas::getInstance();
 
     setupGUI();

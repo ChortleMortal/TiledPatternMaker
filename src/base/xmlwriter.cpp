@@ -44,7 +44,7 @@
 #include "tapp/RosetteConnectFigure.h"
 #include "tapp/ExplicitFigure.h"
 
-const int currentXMLVersion = 2;
+const int currentXMLVersion = 3;
 
 XmlWriter::XmlWriter(StyledDesign & styledDesign) : design(styledDesign)
 {
@@ -650,10 +650,10 @@ bool XmlWriter::processTileColors(QTextStream &ts, StylePtr s)
 
 void XmlWriter::procesToolkitGeoLayer(QTextStream & ts, Xform & xf)
 {
-    ts << "<left__delta>"  << xf.translateX     << "</left__delta>"  << endl;
-    ts << "<top__delta>"   << xf.translateY     << "</top__delta>"   << endl;
-    ts << "<width__delta>" << (xf.scale - 1.0)  << "</width__delta>" << endl;
-    ts << "<theta__delta>" << xf.rotation       << "</theta__delta>" << endl;
+    ts << "<left__delta>"  << xf.translateX      << "</left__delta>"  << endl;
+    ts << "<top__delta>"   << xf.translateY      << "</top__delta>"   << endl;
+    ts << "<width__delta>" << xf.scale           << "</width__delta>" << endl;
+    ts << "<theta__delta>" << xf.rotationRadians << "</theta__delta>" << endl;
 }
 
 void XmlWriter::processStyleStyle(QTextStream & ts, PrototypePtr & proto, PolyPtr & poly)
@@ -1599,20 +1599,6 @@ QString  XmlWriter::id(int id)
 QString  XmlWriter::nextId()
 {
     return id(++refId);
-}
-
-void XmlWriter::setTransform(QTextStream & ts,Transform T)
-{
-    QVector<qreal> vals = T.get();
-    Q_ASSERT (vals.size() >= 6);
-    ts << "<Tr" << nextId() << ">" << endl;
-    ts << "<a>" << vals[0] << "</a>" << endl;
-    ts << "<b>" << vals[1] << "</b>" << endl;
-    ts << "<c>" << vals[2] << "</c>" << endl;
-    ts << "<d>" << vals[3] << "</d>" << endl;
-    ts << "<e>" << vals[4] << "</e>" << endl;
-    ts << "<f>" << vals[5] << "</f>" << endl;
-    ts << "</Tr>" << endl;
 }
 
 void XmlWriter::setPos(QTextStream & ts,QPointF qpf)

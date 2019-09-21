@@ -582,10 +582,10 @@ void Canvas::procKeyEvent(QKeyEvent *k)
 
     switch (key)
     {
-    case Qt::Key_Up:    deltaMoveV(1 * multiplier);  emit sig_deltaMoveV(-1 * multiplier); break;
-    case Qt::Key_Down:  deltaMoveV(-1 * multiplier); emit sig_deltaMoveV(1 * multiplier);  break;
-    case Qt::Key_Left:  deltaMoveH(-1 * multiplier); emit sig_deltaMoveH(1 * multiplier);  break;
-    case Qt::Key_Right: deltaMoveH(1 * multiplier);  emit sig_deltaMoveH(-1 * multiplier); break;
+    case Qt::Key_Up:    deltaMoveV(1 * multiplier);  emit sig_deltaMoveV(1 * multiplier);   break;
+    case Qt::Key_Down:  deltaMoveV(-1 * multiplier); emit sig_deltaMoveV(-1 * multiplier);  break;
+    case Qt::Key_Left:  deltaMoveH(-1 * multiplier); emit sig_deltaMoveH(-1 * multiplier);  break;
+    case Qt::Key_Right: deltaMoveH(1 * multiplier);  emit sig_deltaMoveH(1 * multiplier);   break;
 
     case '.':           deltaScale(-1 * multiplier); emit sig_deltaScale(1 * multiplier); break; // scale down
     case '>':           deltaScale(-1 * multiplier); emit sig_deltaScale(1 * multiplier); break; // scale down

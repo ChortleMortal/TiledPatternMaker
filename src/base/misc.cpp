@@ -105,5 +105,11 @@ void AQLabel::keyPressEvent( QKeyEvent *k )
     {
         emit sig_view_images(); // all three are now visible
     }
+    else if (key == 'L')
+    {
+        qWarning() << "FILE LOGGED (needs attention)";
+        emit sig_takeNext();
+        close();
+    }
 }
 

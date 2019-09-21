@@ -59,8 +59,9 @@ public:
 
     void reset();
 
-    void setRegular(bool regular) {this->regular = regular;}
-    bool isRegular() {return regular;}
+    void setRegular(bool regular) { this->regular = regular; }
+    bool isRegular() { return regular; }
+    bool isClockwise() { return  epoly.isClockwise(); }
 
     bool equals(const FeaturePtr other);
 

@@ -175,7 +175,7 @@ void Layer::slot_rotate(int amount)
 {
     if (canvas->getMode() != MODE_TRANSFORM) return;
 
-    layerXform.rotation += qDegreesToRadians(static_cast<qreal>(amount));
+    layerXform.rotationRadians += qDegreesToRadians(static_cast<qreal>(amount));
 
     forceUpdateLayer();
 }

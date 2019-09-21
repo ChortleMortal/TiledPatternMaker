@@ -28,18 +28,25 @@
 #include "panel_page.h"
 #include "layout_sliderset.h"
 
+enum ppCols
+{
+    PP_LEFT,
+    PP_TOP,
+    PP_SCALE,
+    PP_ROT,
+    PP_LAYER_T,
+    PP_CLEAR
+};
+
 class page_position : public panel_page
 {
     Q_OBJECT
 
 public:
-    page_position(ControlPanel * panel);
+    page_position(ControlPanel * cpanel);
 
     void refreshPage() override;
     void onEnter() override;
-
-    virtual void enterEvent(QEvent * event) Q_DECL_OVERRIDE;
-    virtual void leaveEvent(QEvent * event) Q_DECL_OVERRIDE;
 
 signals:
     void sig_separationAbs(qreal x, qreal y);
@@ -52,23 +59,20 @@ private slots:
     void    set_off(qreal);
     void    set_start(int);
 
-    void    slot_set_deltas(qreal);
-    void    slot_clear_deltas();
-
-    void    slot_select(int);
+    void    slot_set_deltas(int row);
+    void    slot_clear_deltas(int row);
 
 protected:
-    void        createDesignWidget();
-    void        createStylesWidget();
+    void    createDesignWidget();
+    void    createLayerTable();
 
-    void        updateDesignWidget();
-    void        updateStylesWidget();
-
-    bool        myBlockUpdates;     // don't ask
+    void    updateDesignWidget();
+    void    updateLayerTable();
+    void    addLayerToTable(Layer * layer, int row);
 
 private:
-    QWidget     * designWidget;
-    QWidget     * stylesWidget;
+    QWidget      * designWidget;
+    QTableWidget * layerTable;
 
     SliderSet   * xSliderSet;
     SliderSet   * ySliderSet;
@@ -82,13 +86,11 @@ private:
     QDoubleSpinBox * xOff;
     QDoubleSpinBox * yOff;
 
-    DoubleSpinSet * dleft;
-    DoubleSpinSet * dtop;
-    DoubleSpinSet * dwidth;
-
-    QLabel   * transLabel;
-    QLabel   * layerDesc;
-    QSpinBox * indexBox;
+    QSignalMapper  leftMapper;
+    QSignalMapper  topMapper;
+    QSignalMapper  widthMapper;
+    QSignalMapper  rotMapper;
+    QSignalMapper  clearMapper;
 };
 
 #endif

@@ -1692,29 +1692,25 @@ void Map::removeNullEdges()
 
 void Map::cleanse()
 {
-    QElapsedTimer qet;
-    qet.start();
-
     qDebug() << "Map::cleanse - start";
     verify("cleanse-start",false,true);
-    qDebug() << "removeDanglingVertices" << qet.elapsed();
+    qDebug() << "removeDanglingVertices";
     removeDanglingVertices();
-    qDebug() << "removeNullEdges" << qet.elapsed();
+    qDebug() << "removeNullEdges";
     removeNullEdges();
 #if 0
-    qDebug() << "divideIntersectingEdges" << qet.elapsed();
+    qDebug() << "divideIntersectingEdges";
     divideIntersectingEdges();
 #endif
-    qDebug() << "joinColinearEdges" << qet.elapsed();
+    qDebug() << "joinColinearEdges";
     joinColinearEdges();
-    qDebug() << "cleanNeighbours" << qet.elapsed();
+    qDebug() << "cleanNeighbours";
     cleanNeighbours();
-    qDebug() << "sortAllNeighboursByAngle" << qet.elapsed();
+    qDebug() << "sortAllNeighboursByAngle";
     sortAllNeighboursByAngle();
-    qDebug() << "sortVertices" << qet.elapsed();
     sortVertices();
-    qDebug() << "sortEdges" << qet.elapsed();
+    qDebug() << "sortEdges";
     sortEdges();
     verify("cleanse-end",false,true);
-    qDebug() << "Map::cleanse - end" << qet.elapsed();
+    qDebug() << "Map::cleanse - end";
 }

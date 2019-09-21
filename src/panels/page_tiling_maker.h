@@ -39,6 +39,7 @@ enum epageTi
     TI_X,
     TI_Y,
     TI_REGULAR,
+    TI_CW,
     TI_FEAT_ADDR,
     TI_LOCATION
 };

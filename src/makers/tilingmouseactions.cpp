@@ -407,11 +407,6 @@ void CreatePolygon::addVertex(QPointF wpt)
         Q_ASSERT(last->getType() == EDGE_POINT);
         last->setV2(vnew);
 
-        if (wAccum.isClockwise())
-        {
-            Utils::reverseOrder(wAccum);    // should be anti-clockwise
-        }
-
         QTransform t;
         tm->addToAllPlacedFeatures(make_shared<PlacedFeature>(make_shared<Feature>(wAccum), t));
         tm->setMouseMode(NO_MOUSE_MODE);

@@ -79,7 +79,7 @@ protected:
 
     QString     readQuotedString(QTextStream &str);
     QPointF     getPoint(QString txt);
-    Transform   getTransform(QString txt);
+    QTransform  getAffineTransform(QString txt);
     QTransform  getQTransform(QString txt);
 
 private:

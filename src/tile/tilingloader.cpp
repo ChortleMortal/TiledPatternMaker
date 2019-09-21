@@ -119,8 +119,10 @@ TilingPtr TilingLoader::readTiling(QTextStream & st)
             st >> d;
             st >> e;
             st >> f;
-            Transform t = Transform(a, b, c, d, e, f);
-            addPlacement(t.getQTransform());
+            QTransform t(a,d,
+                         b,e,
+                         c,f);
+            addPlacement(t);
         }
         endFeature();
     }
@@ -275,8 +277,8 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
        for (xml_node plnode = feature.child("Placement"); plnode; plnode = plnode.next_sibling("Placement"))
        {
            string txt    = plnode.child_value();
-           Transform   T = getTransform(txt.c_str());
-           addPlacement(T.getQTransform());
+           QTransform  T = getAffineTransform(txt.c_str());
+           addPlacement(T);
        }
 
        xml_node bcolor = feature.child("BkgdColors");
@@ -398,7 +400,7 @@ void TilingLoader::setFillData(FillData fd)
 
 void TilingLoader::beginPolygonFeature( int n )
 {
-    Q_UNUSED(n);
+    Q_UNUSED(n)
     b_pts.clear();
 }
 
@@ -497,7 +499,7 @@ QPointF TilingLoader::getPoint(QString txt)
     return QPointF(a,b);
 }
 
-Transform TilingLoader::getTransform(QString txt)
+QTransform TilingLoader::getAffineTransform(QString txt)
 {
     QStringList qsl;
     qsl = txt.split(',');
@@ -507,7 +509,9 @@ Transform TilingLoader::getTransform(QString txt)
     qreal d = qsl[3].toDouble();
     qreal e = qsl[4].toDouble();
     qreal f = qsl[5].toDouble();
-    return Transform(a,b,c,d,e,f);
+    return QTransform(a,d,
+                      b,e,
+                      c,f);
 }
 
 

@@ -587,33 +587,48 @@ void XmlLoader::processTileColors(xml_node & node)
 void XmlLoader::procesToolkitGeoLayer(xml_node & node, Xform & xf)
 {
     QString val;
-
+    qreal   fval;
     xml_node n = node.child("left__delta");
     if (n)
     {
         val           = n.child_value();
-        xf.translateX = val.toDouble();
+        fval          = val.toDouble();
+        if (!Loose::zero(fval) && _version < 3)
+        {
+            fval *= -75.0;
+        }
+        xf.translateX = fval;
     }
 
     n = node.child("top__delta");
     if (n)
     {
         val           = n.child_value();
-        xf.translateY = val.toDouble();
+        fval          = val.toDouble();
+        if (!Loose::zero(fval) && _version < 3)
+        {
+            fval *= -75.0;
+        }
+        xf.translateY = fval;
     }
 
     n = node.child("width__delta");
     if (n)
     {
         val          = n.child_value();
-        xf.scale     = val.toDouble() + 1.0;     //used as scale
+        fval         = val.toDouble();
+        xf.scale     = fval;
+        if (_version < 3)
+        {
+            xf.scale = 1.0;     //used as scale
+        }
     }
 
     n = node.child("theta__delta");
     if (n)
     {
         val          = n.child_value();
-        xf.rotation  = val.toDouble();
+        xf.rotationRadians  = val.toDouble();
     }
 }
 

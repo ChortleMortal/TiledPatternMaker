@@ -1,4 +1,4 @@
-/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
+/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusianf and Islamic art
  *
  *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
  *
@@ -32,16 +32,17 @@ using std::string;
 
 #define SPACING 50
 
-page_position:: page_position(ControlPanel *panel)  : panel_page(panel,"Position")
+page_position:: page_position(ControlPanel * cpanel)  : panel_page(cpanel,"Position")
 {
     createDesignWidget();
     vbox->addWidget(designWidget);
 
-    createStylesWidget();
-    vbox->addWidget(stylesWidget);
+    createLayerTable();
+    vbox->addWidget(layerTable);
 
-    myBlockUpdates = false;
     setMouseTracking(true);
+
+    onEnter();
 }
 
 void page_position::createDesignWidget()
@@ -127,49 +128,31 @@ void page_position::createDesignWidget()
     connect(this,               &page_position::sig_originAbs,      canvas,  &Canvas::slot_originAbs);
 }
 
-void page_position::createStylesWidget()
+void page_position::createLayerTable()
 {
-    stylesWidget       = new QWidget;
-    QVBoxLayout * vbox = new QVBoxLayout;
-    stylesWidget->setLayout(vbox);
+    layerTable = new QTableWidget();
+    layerTable->setSortingEnabled(false);
+    layerTable->setColumnCount(6);
+    layerTable->setSelectionMode(QAbstractItemView::SingleSelection);
+    layerTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    layerTable->setColumnWidth(PP_CLEAR,50);
+    layerTable->verticalHeader()->setVisible(false);
 
-    indexBox  = new QSpinBox;
-    connect(indexBox,SIGNAL(valueChanged(int)),this, SLOT(slot_select(int)));
 
-    layerDesc = new QLabel;
+    QStringList qslh;
+    qslh << "Top-left (X)" << "Top (Y)" << "Scale" << "Rot" << "Layer Transform" << "Clear";
+    layerTable->setHorizontalHeaderLabels(qslh);
 
-    dleft  = new DoubleSpinSet("Delta X",0,-1000.0,1000.0);
-    dtop   = new DoubleSpinSet("Delta Y",0,-1000.0,1000.0);
-    dwidth = new DoubleSpinSet("Delta Scale",0,-1000.0,1000.0);
+    connect(&leftMapper,  SIGNAL(mapped(int)), this, SLOT(slot_set_deltas(int)));
+    connect(&topMapper,   SIGNAL(mapped(int)), this, SLOT(slot_set_deltas(int)));
+    connect(&widthMapper, SIGNAL(mapped(int)), this, SLOT(slot_set_deltas(int)));
+    connect(&rotMapper,   SIGNAL(mapped(int)), this, SLOT(slot_set_deltas(int)));
+    connect(&clearMapper, SIGNAL(mapped(int)), this, SLOT(slot_clear_deltas(int)));
 
-    QPushButton * clearD = new QPushButton("Clear deltas");
-
-    QGridLayout * grid = new QGridLayout;
-    int row = 0;
-
-    grid->addWidget(indexBox,row,0);
-    grid->addWidget(layerDesc,row,1);
-    grid->addWidget(clearD,row,2);
-
-    row++;
-    grid->addLayout(dleft,row,1);
-
-    row++;
-    grid->addLayout(dtop,row,1);
-
-    row++;
-    grid->addLayout(dwidth,row,1);
-
-    vbox->addLayout(grid);
-
-    transLabel = new QLabel("transform");
-    vbox->addWidget(transLabel);
-
-    connect(clearD,         &QPushButton::clicked,             this,    &page_position::slot_clear_deltas);
-
-    connect(dleft,          SIGNAL(valueChanged(qreal)),       this,    SLOT(slot_set_deltas(qreal)));
-    connect(dtop,           SIGNAL(valueChanged(qreal)),       this,    SLOT(slot_set_deltas(qreal)));
-    connect(dwidth,         SIGNAL(valueChanged(qreal)),       this,    SLOT(slot_set_deltas(qreal)));
+    connect(canvas, &Canvas::sig_deltaScale,    this, &page_position::onEnter);
+    connect(canvas, &Canvas::sig_deltaRotate,   this, &page_position::onEnter);
+    connect(canvas, &Canvas::sig_deltaMoveV,    this, &page_position::onEnter);
+    connect(canvas, &Canvas::sig_deltaMoveH,    this, &page_position::onEnter);
 }
 
 void  page_position::onEnter()
@@ -184,14 +167,39 @@ void  page_position::onEnter()
         designWidget->hide();
     }
 
-    updateStylesWidget();
+   updateLayerTable();
 }
 
 void  page_position::refreshPage()
 {
-    if (myBlockUpdates)
+    static bool first = true;
+
+    QVector<Layer*> views = viewer->getActiveLayers();
+
+    if (first && views.size())
+    {
+        // horrendous kludge
+        onEnter();
+        onEnter();
+        first = false;
         return;
-    onEnter();
+    }
+
+    int row = 0;
+    for (auto layer : views)
+    {
+        QTransform t = layer->getLayerTransform();
+        QTableWidgetItem * item = layerTable->item(row,PP_LAYER_T);
+        if (item)
+        {
+            item->setText(Transform::toInfoString(t));
+
+        }
+        row++;
+    }
+    layerTable->resizeColumnToContents(PP_LAYER_T);
+    adjustTableSize(layerTable);
+    updateGeometry();
 }
 
 void page_position::updateDesignWidget()
@@ -199,40 +207,94 @@ void page_position::updateDesignWidget()
     QVector<DesignPtr> & designs = workspace->getDesigns();
     DesignPtr d = designs[0];
 
-    scaleSliderSet->setValue(d->getDesignInfo().getDiameter()/2.0);
+    scaleSliderSet->setValue(static_cast<int>(d->getDesignInfo().getDiameter()/2.0));
 
     xOff->setValue(d->getXoffset2());
     yOff->setValue(d->getYoffset2());
     xSep->setValue(d->getXseparation());
     ySep->setValue(d->getYseparation());
-    QPointF pt = d->getDesignInfo().getStartTile();
-    xStart->setValue((int)pt.x());
-    yStart->setValue((int)pt.y());
+    QPoint pt = d->getDesignInfo().getStartTile().toPoint();
+    xStart->setValue(pt.x());
+    yStart->setValue(pt.y());
 }
 
-void page_position::updateStylesWidget()
+void page_position::updateLayerTable()
 {
-    Layer * layer = nullptr;
+    layerTable->clearContents();
     QVector<Layer*> views = viewer->getActiveLayers();
     int num = views.size();
-    if (views.size() == 0)
+    layerTable->setRowCount(num);
+    if (num == 0)return;
+
+    int row = 0;
+    for (auto layer : views)
     {
-        return;
+        addLayerToTable(layer,row);
+        row++;
     }
 
-    indexBox->setRange(0,num-1);
-    int sel = indexBox->value();
+    layerTable->resizeColumnToContents(PP_LEFT);
+    layerTable->resizeColumnToContents(PP_TOP);
+    layerTable->resizeColumnToContents(PP_SCALE);
+    layerTable->resizeColumnToContents(PP_ROT);
+    layerTable->resizeColumnToContents(PP_LAYER_T);
+    adjustTableSize(layerTable);
+    updateGeometry();
+}
 
-    layer = views[sel];
-    layerDesc->setText(layer->getName());
+void page_position::addLayerToTable(Layer * layer, int row)
+{
+    //layerDesc->setText(layer->getName());
 
     Xform xf = layer->getDeltas();
+
+    QDoubleSpinBox * dleft  = new QDoubleSpinBox();
+    QDoubleSpinBox * dtop   = new QDoubleSpinBox();
+    QDoubleSpinBox * dwidth = new QDoubleSpinBox();
+    QDoubleSpinBox * drot   = new QDoubleSpinBox();
+
+    dleft->setRange(-1000.0,1000.0);
+    dtop->setRange(-1000.0,1000.0);
+    dwidth->setRange(-1000.0,1000.0);
+    drot->setRange(-360.0,360.0);
+
+    dleft->setDecimals(16);
+    dtop->setDecimals(16);
+    dwidth->setDecimals(16);
+    drot->setDecimals(16);
+
     dleft->setValue(xf.translateX);
     dtop->setValue(xf.translateY);
     dwidth->setValue(xf.scale);
+    drot->setValue(qRadiansToDegrees(xf.rotationRadians));
+
+    dwidth->setSingleStep(0.01);
+
+    layerTable->setCellWidget(row,PP_LEFT,dleft);
+    QObject::connect(dleft, SIGNAL(valueChanged(qreal)), &leftMapper, SLOT(map()));
+    leftMapper.setMapping(dleft,row);
+
+    layerTable->setCellWidget(row,PP_TOP,dtop);
+    QObject::connect(dtop, SIGNAL(valueChanged(qreal)), &topMapper, SLOT(map()));
+    topMapper.setMapping(dtop,row);
+
+    layerTable->setCellWidget(row,PP_SCALE,dwidth);
+    QObject::connect(dwidth, SIGNAL(valueChanged(qreal)), &widthMapper, SLOT(map()));
+    widthMapper.setMapping(dwidth,row);
+
+    layerTable->setCellWidget(row,PP_ROT,drot);
+    QObject::connect(drot, SIGNAL(valueChanged(qreal)), &rotMapper, SLOT(map()));
+    rotMapper.setMapping(drot,row);
 
     QTransform t = layer->getLayerTransform();
-    transLabel->setText(Transform::toInfoString(t));
+    QTableWidgetItem * item = new QTableWidgetItem(Transform::toInfoString(t));
+    layerTable->setItem(row,PP_LAYER_T,item);
+
+    QPushButton * clearD = new QPushButton("Clear");
+    layerTable->setCellWidget(row,PP_CLEAR,clearD);
+    QObject::connect(clearD, SIGNAL(clicked(bool)), &clearMapper, SLOT(map()));
+    clearMapper.setMapping(clearD,row);
+    clearD->setFixedWidth(48);
 }
 
 void page_position::setScale(int radius)
@@ -268,49 +330,50 @@ void page_position::set_start(int)
     emit sig_originAbs(xstart,ystart);
 }
 
-void page_position::enterEvent(QEvent * event)
+void page_position::slot_set_deltas(int row)
 {
-    Q_UNUSED(event);
-    qDebug() << "enter";
-    myBlockUpdates = true;
-    QWidget::enterEvent(event);
-}
-
-void page_position::leaveEvent(QEvent * event)
-{
-    Q_UNUSED(event);
-    qDebug() << "exit";
-    myBlockUpdates = false;
-    QWidget::leaveEvent(event);
-}
-
-void page_position::slot_set_deltas(qreal)
-{
+    qDebug() << "page_position::slot_set_deltas row =" << row;
     QVector<Layer*> views = viewer->getActiveLayers();
-    if (views.size() == 0)
-        return;
-    int sel = indexBox->value();
-    Layer * layer = views[sel];
 
-    Xform xf = Xform(dwidth->value(), 0.0, dleft->value(), dtop->value());
+    if (row > (views.size() -1))
+    {
+        qDebug() << "invalid row =" << row  << "size = " << views.size();
+        return;
+    }
+
+    Layer * layer = views[row];
+
+    QWidget * w           = layerTable->cellWidget(row,PP_LEFT);
+    QDoubleSpinBox * spin = dynamic_cast<QDoubleSpinBox*>(w);
+    Q_ASSERT(spin);
+    qreal dleft = spin->value();
+
+    w    = layerTable->cellWidget(row,PP_TOP);
+    spin = dynamic_cast<QDoubleSpinBox*>(w);
+    Q_ASSERT(spin);
+    qreal dtop = spin->value();
+
+    w    = layerTable->cellWidget(row,PP_SCALE);
+    spin = dynamic_cast<QDoubleSpinBox*>(w);
+    Q_ASSERT(spin);
+    qreal dwidth = spin->value();
+
+    w    = layerTable->cellWidget(row,PP_ROT);
+    spin = dynamic_cast<QDoubleSpinBox*>(w);
+    Q_ASSERT(spin);
+    qreal drot = spin->value();
+
+    Xform xf = Xform(dwidth,qDegreesToRadians(drot), dleft, dtop);
     layer->setDeltas(xf);
     layer->forceUpdateLayer();
 }
 
-void page_position::slot_clear_deltas()
+void page_position::slot_clear_deltas(int row)
 {
     QVector<Layer*> views = viewer->getActiveLayers();
-    if (views.size() == 0)
-        return;
-    int sel = indexBox->value();
-    Layer * layer = views[sel];
+    Layer * layer = views[row];
     Xform xf;
     layer->setDeltas(xf);
     layer->forceUpdateLayer();
-    onEnter();
-}
-
-void page_position::slot_select(int)
-{
     onEnter();
 }

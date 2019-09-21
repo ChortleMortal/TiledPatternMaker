@@ -155,7 +155,6 @@ SOURCES += \
     tile/backgroundimage.cpp \
     tile/featurereader.cpp \
     tile/featurewriter.cpp \
-    tile/girihshapes.cpp \
     tile/tilingloader.cpp \
     viewers/GeoGraphics.cpp \
     viewers/MapEditorView.cpp \
@@ -293,7 +292,6 @@ HEADERS += \
     tile/backgroundimage.h \
     tile/featurereader.h \
     tile/featurewriter.h \
-    tile/girihshapes.h \
     tile/tilingloader.h \
     viewers/GeoGraphics.h \
     viewers/MapEditorView.h \
@@ -310,7 +308,25 @@ HEADERS += \
 
 FORMS +=
 
-DISTFILES +=
+DISTFILES += \
+    ../etc/docs/BrougImplemented.md \
+    ../etc/docs/ViewersAndMakers.xlsx \
+    ../etc/docs/bugs.md \
+    ../etc/docs/design_notes.md \
+    ../etc/docs/makers.md \
+    ../etc/docs/mod_dates.txt \
+    ../etc/docs/sample.md \
+    ../etc/docs/taprats_notes.md \
+    ../etc/docs/taprats_readme.txt \
+    ../etc/models/Components.qmodel \
+    ../etc/models/Designs.qmodel \
+    ../etc/models/Style.qmodel \
+    ../etc/models/Viewers.qmodel \
+    ../etc/models/designeditor.qmodel \
+    ../etc/models/figure_editors.qmodel \
+    ../etc/models/figures.qmodel \
+    ../etc/models/shapes.qmodel \
+    ../etc/models/styles.qmodel
 
 RESOURCES += \
     tpm.qrc

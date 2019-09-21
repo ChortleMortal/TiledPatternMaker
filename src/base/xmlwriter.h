@@ -110,7 +110,6 @@ protected:
     void    setEdges(QTextStream & ts, QVector<EdgePtr> &qvec);
     void    setEdge(QTextStream & ts, EdgePtr e, bool capitalE = false);
 
-    void    setTransform(QTextStream & ts,Transform T);
     void    setPos(QTextStream & ts, QPointF qpf);
     void    setPoint(QTextStream & ts, QPointF pt, QString name);
 

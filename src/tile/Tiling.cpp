@@ -332,10 +332,14 @@ void Tiling::writeTilingXML(QTextStream & out )
         {
             PlacedFeaturePtr & pf = *it;
             QTransform t = pf->getTransform();
-            Transform  T = Transform(t);
-
-            QVector<qreal> ds = T.get();
-            Q_ASSERT(ds.size() >=6);
+            QVector<qreal> ds;
+            ds << t.m11();
+            ds << t.m21();
+            ds << t.dx();
+            ds << t.m12();
+            ds << t.m22();
+            ds << t.dy();
+            Q_ASSERT(ds.size() == 6);
             out << "<Placement>";
             for (int j=0; j<5; j++)
             {

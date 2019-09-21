@@ -33,22 +33,11 @@
 #ifndef TRANSFORM_H
 #define TRANSFORM_H
 
-#include <QtCore>
-#include <QPolygonF>
 #include <QTransform>
-#include <QMatrix>
 
 class Transform
 {
 public:
-    Transform();
-    Transform(qreal a, qreal b, qreal c, qreal d, qreal e, qreal f);
-    Transform(QTransform qt);
-
-    QVector<qreal>  get();
-    QTransform      getQTransform();
-    QMatrix         getQMatrix();
-
     static QTransform rotateAroundPoint(QPointF pt, qreal t);
 
     static qreal   distFromZero(QTransform t, qreal v);
@@ -62,11 +51,7 @@ public:
     static QPointF trans(QTransform T)      { return QPointF(transx(T),transy(T)); }
 
     static QString toString(QTransform t);
-    static QString toInfoString(QTransform t);
-
-private:
-    qreal a, b, c;
-    qreal d, e, f;
+    static QString toInfoString(QTransform t, int decimals = 6);
 };
 
 #endif

@@ -73,7 +73,7 @@ QTransform  FeatureReader::getTransform(xml_node & node)
     if (n)
     {
         val          = n.child_value();
-        xf.rotation  = val.toDouble();
+        xf.rotationRadians  = val.toDouble();
     }
 
     return xf.getTransform();

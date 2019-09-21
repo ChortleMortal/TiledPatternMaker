@@ -32,55 +32,7 @@
 
 
 #include "geometry/Transform.h"
-
-Transform::Transform()
-{
-    a = 1.0; b=0; c=0; d=0; e=1.0; f=0;
-}
-
-Transform::Transform( qreal a, qreal b, qreal c, qreal d, qreal e, qreal f )
-{
-    this->a = a; this->b = b; this->c = c;
-    this->d = d; this->e = e; this->f = f;
-}
-
-Transform::Transform(QTransform t)
-{
-    QMatrix qt = t.toAffine();
-
-    a = qt.m11();
-    b = qt.m21();
-    c = qt.dx();
-    d = qt.m12();
-    e = qt.m22();
-    f = qt.dy();
-}
-
-QVector<qreal> Transform::get()
-{
-    QVector<qreal> ds;
-    ds << a;
-    ds << b;
-    ds << c;
-    ds << d;
-    ds << e;
-    ds << f;
-    return ds;
-}
-
-QTransform Transform::getQTransform()
-{
-    QMatrix qm = getQMatrix();
-    return QTransform(qm);
-}
-
-QMatrix Transform::getQMatrix()
-{
-    QMatrix m(a,d,
-              b,e,
-              c,f);
-    return m;
-}
+#include <QtCore>
 
 QTransform Transform::rotateAroundPoint( QPointF pt, qreal t )
 {
@@ -107,10 +59,10 @@ QString Transform::toString(QTransform t)
     return s;
 }
 
-QString Transform::toInfoString(QTransform t)
+QString Transform::toInfoString(QTransform t, int decimals)
 {
-    QString s =  "scale=" + QString::number(scalex(t)) + " rot=" + QString::number(rotation(t)) + " (" + QString::number(qRadiansToDegrees(rotation(t))) + ")"
-              + " trans=" + QString::number(transx(t)) + " " + QString::number(transy(t));
+    QString s =  "scale=" + QString::number(scalex(t),'f',decimals) + " rot=" + QString::number(qRadiansToDegrees(rotation(t)),'f',decimals)
+              + " trans=" + QString::number(transx(t),'f',decimals) + " " + QString::number(transy(t),'f',decimals);
     return s;
 }
 

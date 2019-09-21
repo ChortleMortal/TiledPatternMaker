@@ -160,17 +160,6 @@ bool PlacedFeature::loadFromGirihShape(QString name)
     }
     girihShapeName = name;
 
-    EdgePoly & epoly = feature->getEdgePoly();
-    if (epoly.isClockwise())
-    {
-#if 0
-        qWarning() << "CLOCKWISE epoly being reversed";
-        Utils::reverseOrder(epoly);
-        Q_ASSERT(!epoly.isClockwise());
-#else
-        qWarning() << "CLOCKWISE epoly";
-#endif
-    }
     return true;
 }
 

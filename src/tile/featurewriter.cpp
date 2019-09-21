@@ -44,7 +44,7 @@ void FeatureWriter::setTransform(QTextStream & ts, QTransform T)
     ts << "<tx>"    << xf.translateX    << "</tx>"    << endl;
     ts << "<ty>"    << xf.translateY    << "</ty>"    << endl;
     ts << "<scale>" << xf.scale         << "</scale>" << endl;
-    ts << "<rot>"   << xf.rotation      << "</rot>"   << endl;
+    ts << "<rot>"   << xf.rotationRadians      << "</rot>"   << endl;
 }
 
 void FeatureWriter::setVertex(QTextStream & ts,VertexPtr v, QString name)
