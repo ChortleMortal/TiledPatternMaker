@@ -41,7 +41,7 @@ Style::Style(PrototypePtr proto, PolyPtr bounds ) : Layer("Style")
     refs++;
 }
 
-Style::Style(const Style &other) : Layer("Style")
+Style::Style(const Style &other) : Layer(other)
 {
     prototype = other.prototype;
     boundary  = other.boundary;

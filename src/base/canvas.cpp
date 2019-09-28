@@ -23,12 +23,13 @@
  */
 
 #include "base/canvas.h"
+#include "base/cycler.h"
 #include "base/border.h"
 #include "base/scene.h"
 #include "base/configuration.h"
-#include "base/patterns.h"
 #include "base/shortcuts.h"
 #include "base/transparentwidget.h"
+#include "designs/patterns.h"
 #include "panels/panel.h"
 #include "style/Style.h"
 #include "viewers/workspaceviewer.h"
@@ -42,15 +43,15 @@
 #endif
 
 static QString sCanvasMode[]  = {
-    E2STR(MODE_NONE),
-    E2STR(MODE_LAYER),
-    E2STR(MODE_ZLEVEL),
-    E2STR(MODE_STEP),
-    E2STR(MODE_SEPARATION),
-    E2STR(MODE_ORIGIN),
-    E2STR(MODE_OFFSET),     // row/col offsets
-    E2STR(MODE_TRANSFORM),
-    E2STR(MODE_CYCLE)
+    E2STR(KBD_MODE_TRANSFORM),
+    E2STR(KBD_MODE_LAYER),
+    E2STR(KBD_MODE_ZLEVEL),
+    E2STR(KBD_MODE_STEP),
+    E2STR(KBD_MODE_SEPARATION),
+    E2STR(KBD_MODE_ORIGIN),
+    E2STR(KBD_MODE_OFFSET)  ,
+    E2STR(KBD_MODE_BKGD),
+    E2STR(KBD_MODE_DATA)
 };
 
 Canvas * Canvas::mpThis = nullptr;
@@ -82,7 +83,7 @@ Canvas::Canvas()
     dragging        = false;
     scene           = nullptr;
 
-    setMode(MODE_DEFAULT);
+    setKbdMode(KBD_MODE_DEFAULT);
 
     // create timer before build
     timer = new QTimer(this);
@@ -288,12 +289,12 @@ void Canvas::slot_setStep(int astep)
     step(0);
 }
 
-void Canvas::selectLayer(int layer)
+void Canvas::designLayerSelect(int layer)
 {
     selectedLayer = layer;
 }
 
-void Canvas::zPlus()
+void Canvas::designLayerZPlus()
 {
     QVector<DesignPtr> & designs = workspace->getDesigns();
     for (int i=0; i < designs.count(); i++)
@@ -306,7 +307,7 @@ void Canvas::zPlus()
     }
 }
 
-void Canvas::zMinus()
+void Canvas::designLayerZMinus()
 {
     QVector<DesignPtr> & designs = workspace->getDesigns();
     for (int i=0; i < designs.count(); i++)
@@ -319,7 +320,7 @@ void Canvas::zMinus()
     }
 }
 
-void Canvas::showLayer()
+void Canvas::designLayerShow()
 {
     QVector<DesignPtr> & designs = workspace->getDesigns();
     qDebug() << "slot_showLayer() designs=" << designs.count();
@@ -333,7 +334,7 @@ void Canvas::showLayer()
     }
 }
 
-void Canvas::hideLayer()
+void Canvas::designLayerHide()
 {
     QVector<DesignPtr> & designs = workspace->getDesigns();
     qDebug() << "slot_hideLayer() designs=" << designs.count();
@@ -347,7 +348,7 @@ void Canvas::hideLayer()
     }
 }
 
-void Canvas::reposition(qreal x, qreal y)
+void Canvas::designReposition(qreal x, qreal y)
 {
     QVector<DesignPtr> & designs = workspace->getDesigns();
     for (int i=0; i < designs.count(); i++)
@@ -366,7 +367,7 @@ void Canvas::reposition(qreal x, qreal y)
     invalidate();
 }
 
-void Canvas::offset2(qreal x, qreal y)
+void Canvas::designOffset(qreal x, qreal y)
 {
     QVector<DesignPtr> & designs = workspace->getDesigns();
     for (int i=0; i < designs.count(); i++)
@@ -378,10 +379,10 @@ void Canvas::offset2(qreal x, qreal y)
             d->setYoffset2(d->getYoffset2() + y);
         }
     }
-    reposition(0,0);
+    designReposition(0,0);
 }
 
-void Canvas::origin(int x, int y)
+void Canvas::designOrigin(int x, int y)
 {
     QVector<DesignPtr> & designs = workspace->getDesigns();
     for (int i=0; i < designs.count(); i++)
@@ -395,10 +396,10 @@ void Canvas::origin(int x, int y)
             d->getDesignInfo().setStartTile(pt);
         }
     }
-    reposition(0,0);
+    designReposition(0,0);
 }
 
-void Canvas::slot_repositionAbs(qreal x, qreal y)
+void Canvas::slot_designReposition(qreal x, qreal y)
 {
     QVector<DesignPtr> & designs = workspace->getDesigns();
     qDebug() << "slot_repositionAbs";
@@ -418,7 +419,7 @@ void Canvas::slot_repositionAbs(qreal x, qreal y)
     invalidate();   // scene
 }
 
-void Canvas::slot_offsetAbs2(qreal x, qreal y)
+void Canvas::slot_designOffset(qreal x, qreal y)
 {
     QVector<DesignPtr> & designs = workspace->getDesigns();
     for (int i=0; i < designs.count(); i++)
@@ -430,10 +431,10 @@ void Canvas::slot_offsetAbs2(qreal x, qreal y)
             d->setYoffset2(y);
         }
     }
-    reposition(0,0);
+    designReposition(0,0);
 }
 
-void Canvas::slot_originAbs(int x, int y)
+void Canvas::slot_designOrigin(int x, int y)
 {
     QVector<DesignPtr> & designs = workspace->getDesigns();
     qDebug() << "slot_originAbs" << x << y;
@@ -446,10 +447,10 @@ void Canvas::slot_originAbs(int x, int y)
             d->getDesignInfo().setStartTile(pt);
         }
     }
-    reposition(0,0);
+    designReposition(0,0);
 }
 
-void Canvas::slot_toggleDesignVisibility(int design)
+void Canvas::slot_designToggleVisibility(int design)
 {
     QVector<DesignPtr> & designs = workspace->getDesigns();
     if (design < designs.count())
@@ -473,30 +474,31 @@ void Canvas::slot_png(QString file, int row, int col)
     view->show();
 }
 
-void Canvas::deltaScale(int delta)
+void Canvas::designScale(int delta)
 {
     QVector<DesignPtr> & designs = workspace->getDesigns();
-    for (int i=0; i < designs.count(); i++)
+    if (designs.size())
     {
-        DesignPtr d = designs[i];
+        for (int i=0; i < designs.count(); i++)
+        {
+            DesignPtr d = designs[i];
 
-        QSizeF sz =  d->getDesignInfo().getSizeF();
-        qDebug() << "design: size=" << sz;
-        if (delta > 0)
-            sz *= 1.1;
-        else
-            sz *= 0.9;
-        d->getDesignInfo().setSizeF(sz);
+            QSizeF sz =  d->getDesignInfo().getSizeF();
+            qDebug() << "design: size=" << sz;
+            if (delta > 0)
+                sz *= 1.1;
+            else
+                sz *= 0.9;
+            d->getDesignInfo().setSizeF(sz);
+        }
+        invalidate();
     }
-    emit sig_forceUpdateStyles();
-    invalidate();
 }
 
-
-void Canvas::deltaRotate(int delta, bool cw)
+void Canvas::designRotate(int delta, bool cw)
 {
-    Q_UNUSED(delta);
-    Q_UNUSED(cw);
+    Q_UNUSED(delta)
+    Q_UNUSED(cw)
 #if 0
     QVector<DesignPtr> & designs = workspace->getDesigns();
     for (int i=0; i < designs.count(); i++)
@@ -508,32 +510,36 @@ void Canvas::deltaRotate(int delta, bool cw)
 #endif
 }
 
-void Canvas::deltaMoveV(int delta)
+void Canvas::designMoveY(int delta)
 {
     QVector<DesignPtr> & designs = workspace->getDesigns();
-    for (int i=0; i < designs.count(); i++)
+    if (designs.size())
     {
-        DesignPtr d = designs[i];
-        qreal top = d->getYoffset2();
-        top -= delta;
-        d->setYoffset2(top);
+        for (int i=0; i < designs.count(); i++)
+        {
+            DesignPtr d = designs[i];
+            qreal top = d->getYoffset2();
+            top -= delta;
+            d->setYoffset2(top);
+        }
+        invalidate();
     }
-    emit sig_forceUpdateStyles();
-    invalidate();
 }
 
-void Canvas::deltaMoveH(int delta)
+void Canvas::designMoveX(int delta)
 {
     QVector<DesignPtr> & designs = workspace->getDesigns();
-    for (int i=0; i < designs.count(); i++)
+    if (designs.size())
     {
-        DesignPtr d = designs[i];
-        qreal left = d->getXoffset2();
-        left -= delta;
-        d->setXoffset2(left);
+        for (int i=0; i < designs.count(); i++)
+        {
+            DesignPtr d = designs[i];
+            qreal left = d->getXoffset2();
+            left -= delta;
+            d->setXoffset2(left);
+        }
+        invalidate();
     }
-    emit sig_forceUpdateStyles();
-    invalidate();
 }
 
 void Canvas::dump(bool force)
@@ -557,107 +563,114 @@ void Canvas::dumpGraphicsInfo()
     qDebug() << "Scene: items=" << scene->items().size() << "bounding=" << scene->itemsBoundingRect() << "sceneRect" << scene->sceneRect();
 }
 
-void Canvas::setMode(eMode mode)
+void Canvas::setKbdMode(eKbdMode mode)
 {
-    _mode2 = mode;
+    kbdMode = mode;
     qDebug().noquote() << sCanvasMode[mode];
 }
 
-QString Canvas::getModeStr()
+QString Canvas::getKbdModeStr()
 {
-    return sCanvasMode[_mode2];
+    return sCanvasMode[kbdMode];
+}
+
+void Canvas::slot_procKeyEvent(QKeyEvent *k)
+{
+    if (config->viewerType == VIEW_TILIING_MAKER || config->viewerType == VIEW_MAP_EDITOR)
+    {
+        return;
+    }
+
+    procKeyEvent(k);
 }
 
 void Canvas::procKeyEvent(QKeyEvent *k)
 {
-    int key = k->key();
-
-    int  multiplier = 1;
+    int  delta = 1;
     if ((k->modifiers() & (Qt::SHIFT | Qt::CTRL)) == (Qt::SHIFT | Qt::CTRL))
-        multiplier = 50;
+        delta = 50;
     else if ((k->modifiers() & Qt::SHIFT) == Qt::SHIFT)
-        multiplier = 10;
+        delta = 10;
 
-    ProcKey(k);
+    bool isALT = ((k->modifiers() & ALT_MODIFIER) == ALT_MODIFIER);
 
-    switch (key)
+    if (!ProcNavKey(k->key(),delta,isALT))
     {
-    case Qt::Key_Up:    deltaMoveV(1 * multiplier);  emit sig_deltaMoveV(1 * multiplier);   break;
-    case Qt::Key_Down:  deltaMoveV(-1 * multiplier); emit sig_deltaMoveV(-1 * multiplier);  break;
-    case Qt::Key_Left:  deltaMoveH(-1 * multiplier); emit sig_deltaMoveH(-1 * multiplier);  break;
-    case Qt::Key_Right: deltaMoveH(1 * multiplier);  emit sig_deltaMoveH(1 * multiplier);   break;
-
-    case '.':           deltaScale(-1 * multiplier); emit sig_deltaScale(1 * multiplier); break; // scale down
-    case '>':           deltaScale(-1 * multiplier); emit sig_deltaScale(1 * multiplier); break; // scale down
-
-    case ',':           deltaScale(1 * multiplier);  emit sig_deltaScale(-1 * multiplier); break;  // scale up
-    case '<':           deltaScale(1 * multiplier);  emit sig_deltaScale(-1 * multiplier); break;  // scale up
-
-    case '-':           deltaRotate(-1 * multiplier,true); emit sig_deltaRotate(-1 * multiplier); break; // rotate left
-    case '_':           deltaRotate(-1 * multiplier,true); emit sig_deltaRotate(-1 * multiplier); break; // rotate left
-    case '=':           deltaRotate(1 * multiplier,true);  emit sig_deltaRotate(1 * multiplier); break;  // rotate right
-    case '+':           deltaRotate(1 * multiplier,true);  emit sig_deltaRotate(1 * multiplier); break;  // rotate right
-
-    default: break;
+        ProcKey(k,isALT);
     }
 }
 
-void Canvas::ProcKey(QKeyEvent *k)
+bool Canvas::ProcNavKey(int key, int delta, bool isALT)
+{
+    switch (key)
+    {
+    case Qt::Key_Up:    ProcKeyUp(delta,isALT);     return true;
+    case Qt::Key_Down:  ProcKeyDown(delta,isALT);   return true;
+    case Qt::Key_Left:  ProcKeyLeft(delta, isALT);  return true;
+    case Qt::Key_Right: ProcKeyRight(delta, isALT); return true;
+
+    case '.':           designScale(-delta); emit sig_deltaScale(delta); return true; // scale down
+    case '>':           designScale(-delta); emit sig_deltaScale(delta); return true; // scale down
+
+    case ',':           designScale( delta); emit sig_deltaScale(-delta); return true;  // scale up
+    case '<':           designScale( delta); emit sig_deltaScale(-delta); return true;  // scale up
+
+    case '-':           designRotate(-delta,true); emit sig_deltaRotate(-delta); return true; // rotate left
+    case '_':           designRotate(-delta,true); emit sig_deltaRotate(-delta); return true; // rotate left
+    case '=':           designRotate( delta,true); emit sig_deltaRotate( delta); return true; // rotate right
+    case '+':           designRotate( delta,true); emit sig_deltaRotate( delta); return true; // rotate right
+
+    default: return false;
+    }
+}
+
+void Canvas::ProcKey(QKeyEvent *k, bool isALT)
 {
     static int val = 0;
 
     int key = k->key();
     switch (key)
     {
-    case 'A':  setMode(MODE_ORIGIN); break;
-    case 'B':  setMode(MODE_OFFSET); break;
-    case 'C':  emit sig_startCycle();  break;
+    case 'A':  setKbdMode(KBD_MODE_ORIGIN); break;
+    case 'B':  setKbdMode(KBD_MODE_OFFSET); break;
+    case 'C':  emit sig_cyclerStart();  break;
     case 'D':  duplicate(); break;
     case 'F':  config->debugReplicate = !config->debugReplicate; emit sig_viewWS(); break;
     case 'G':  config->sceneGrid = !config->sceneGrid; invalidate(); break;
     case 'H':  config->hideCircles = !config->hideCircles; invalidate(); break;
-    case 'I':  showLayer(); break;  // I=in
+    case 'I':  designLayerShow(); break;  // I=in
     case 'K':  config->debugMapEnable = !config->debugMapEnable; emit sig_figure_changed(); emit sig_viewWS(); break;
-    case 'L':  setMode(MODE_LAYER); break;
+    case 'L':  setKbdMode(KBD_MODE_LAYER); break;
     case 'M':  emit sig_raiseMenu(); break;
-    case 'O':  hideLayer(); break; // o=out
+    case 'O':  designLayerHide(); break; // o=out
     case 'P':  saveImage(); break;
-    case 'Q':  if (getMode() == MODE_CYCLE) { emit sig_cyclerQuit(); setMode(MODE_DEFAULT); }
-               else                         { QApplication::quit(); }
-               break;
-    case 'R':  if ((k->modifiers() & ALT_MODIFIER) == ALT_MODIFIER) { emit slot_startTimer(); setMode(MODE_DEFAULT); } break;
-    case 'S':  if ((k->modifiers() & ALT_MODIFIER) == ALT_MODIFIER) { emit stopTimer(); setMode(MODE_STEP); }
-               else { setMode(MODE_SEPARATION); }
-               break;
+    case 'Q':  if (Cycler::getInstance()->getMode() != CYCLE_NONE) { emit sig_cyclerQuit(); }
+        else                         { QApplication::quit(); }
+        break;
+    case 'R':  if (isALT) { emit slot_startTimer(); setKbdMode(KBD_MODE_DEFAULT); } break;
+    case 'S':  if (isALT) { emit stopTimer(); setKbdMode(KBD_MODE_STEP); }
+        else { setKbdMode(KBD_MODE_SEPARATION); }
+        break;
     case 'T': config->boundingRects = !config->boundingRects;  invalidate(); break;
     case 'X': config->circleX = !config->circleX; emit sig_viewWS(); invalidate(); break;
-    case 'Z': setMode(MODE_ZLEVEL); break;
-    case Qt::Key_Up:    ProcKeyUp(k); break;
-    case Qt::Key_Down:  ProcKeyDown(k); break;
-    case Qt::Key_Left:  ProcKeyLeft(k); break;
-    case Qt::Key_Right: ProcKeyRight(k); break;
-    case Qt::Key_Return:
-        if (getMode() == MODE_STEP)
-        {
-            slot_setStep(val);
-        }
-        val = 0;    // always
+    case 'Z': setKbdMode(KBD_MODE_ZLEVEL); break;
+
+    case Qt::Key_Return: if (getKbdMode() == KBD_MODE_STEP) slot_setStep(val); val = 0; break; // always val=0
+    case Qt::Key_Escape: setKbdMode(KBD_MODE_DEFAULT); break;
+    case Qt::Key_F1:
+    {
+        QMessageBox  * box = new QMessageBox();
+        box->setWindowTitle("Shortcuts");
+        box->setText(Shortcuts::getCanvasShortcuts());
+        box->setModal(false);
+        box->show();
+    }
         break;
-   case Qt::Key_Escape: setMode(MODE_NONE); break;
-   case Qt::Key_F1:
-        {
-            QMessageBox  * box = new QMessageBox();
-            box->setWindowTitle("Shortcuts");
-            box->setText(Shortcuts::getCanvasShortcuts());
-            box->setModal(false);
-            box->show();
-        }
-        break;
-    case Qt::Key_F2: setMode(MODE_TRANSFORM); break;
+    case Qt::Key_F2: setKbdMode(KBD_MODE_TRANSFORM); break;
     case Qt::Key_F3: break;
     case Qt::Key_F4: dump(true); break;
     case Qt::Key_F5: drainTheSwamp(); break;
-    case Qt::Key_Space: if (getMode() == MODE_CYCLE) emit sig_cyclerKey(key); break;
+    case Qt::Key_Space: if (Cycler::getInstance()->getMode() != CYCLE_NONE) emit sig_cyclerKey(key); break;
     case '0':
     case '1':
     case '2':
@@ -669,113 +682,160 @@ void Canvas::ProcKey(QKeyEvent *k)
     case '8':
     case '9':
         // keys 0-9
-        if (getMode() == MODE_LAYER)
+        if (getKbdMode() == KBD_MODE_LAYER)
         {
-            emit selectLayer(key-'0');
+            emit designLayerSelect(key-'0');
         }
-        else if (getMode() == MODE_STEP)
+        else if (getKbdMode() == KBD_MODE_STEP)
         {
             val *= 10;
             val += (key - '0');
         }
         else
         {
-            emit slot_toggleDesignVisibility(key-'0');
+            emit slot_designToggleVisibility(key-'0');
         }
         break;
     }
 }
 
-void Canvas::ProcKeyUp(QKeyEvent *k)
+void Canvas::ProcKeyUp(int delta, bool isALT)
 {
     // up arrow
-    switch (getMode())
+    switch (getKbdMode())
     {
-    case MODE_ZLEVEL:
-        emit zPlus();
+    case KBD_MODE_ZLEVEL:
+        designLayerZPlus();
         break;
-    case MODE_STEP:
-        emit step(1);
+    case KBD_MODE_STEP:
+        step(1);
         break;
-    case MODE_SEPARATION:
-        reposition(0,-1);
+    case KBD_MODE_SEPARATION:
+        designReposition(0,-1);
         break;
-    case MODE_OFFSET:
-        offset2(0,-1);
+    case KBD_MODE_OFFSET:
+        designOffset(0,-1);
         break;
-    case MODE_ORIGIN:
-        if ((k->modifiers() & ALT_MODIFIER) == ALT_MODIFIER)
-            origin(0,-100);
+    case KBD_MODE_ORIGIN:
+        if (isALT)
+            designOrigin(0,-100);
         else
-            origin(0,-1);
+            designOrigin(0,-1);
         break;
-    default:
+    case KBD_MODE_TRANSFORM:
+        designMoveY(delta);           // applies deltas to designs
+        emit sig_deltaMoveY(-delta);   // goes to Layer::slot_moveY  page_position::onEnter  tilingMaker:slot_moveY (for background)
+        break;
+    case KBD_MODE_LAYER:
+        break;
+    case KBD_MODE_BKGD:
+    case KBD_MODE_DATA:
+        emit sig_deltaMoveY(-delta);   // goes to Layer::slot_moveY  page_position::onEnter  tilingMaker:slot_moveY (for background)
         break;
     }
 }
 
-void Canvas::ProcKeyDown(QKeyEvent *k)
+void Canvas::ProcKeyDown(int delta, bool isALT)
 {
     // down arrrow
-    switch (getMode())
+    switch (getKbdMode())
     {
-        case MODE_ZLEVEL:
-            emit zMinus();
-            break;
-        case MODE_STEP:
-            emit step(-1);
-            break;
-        case MODE_SEPARATION:
-            reposition(0,1);
-            break;
-        case MODE_OFFSET:
-            offset2(0,1);
-            break;
-        case MODE_ORIGIN:
-            if ((k->modifiers() & ALT_MODIFIER) == ALT_MODIFIER)
-                origin(0,100);
-            else
-                origin(0,1);
-            break;
-        default:
-            break;
+    case KBD_MODE_ZLEVEL:
+        designLayerZMinus();
+        break;
+    case KBD_MODE_STEP:
+        step(-1);
+        break;
+    case KBD_MODE_SEPARATION:
+        designReposition(0,1);
+        break;
+    case KBD_MODE_OFFSET:
+        designOffset(0,1);
+        break;
+    case KBD_MODE_ORIGIN:
+        if (isALT)
+            designOrigin(0,100);
+        else
+            designOrigin(0,1);
+        break;
+    case KBD_MODE_TRANSFORM:
+        designMoveY(-delta);
+        emit sig_deltaMoveY(delta);
+        break;
+    case KBD_MODE_LAYER:
+        break;
+    case KBD_MODE_BKGD:
+    case KBD_MODE_DATA:
+        emit sig_deltaMoveY(delta);
+        break;
     }
 }
 
-void Canvas::ProcKeyLeft(QKeyEvent *k)
+void Canvas::ProcKeyLeft(int delta, bool isALT)
 {
-    if (getMode() == MODE_SEPARATION)
-        reposition(-1,0);
-    else if (getMode() == MODE_OFFSET)
-        offset2(-1,0);
-    else if (getMode() == MODE_ORIGIN)
+    switch (getKbdMode())
     {
-        if ((k->modifiers() & ALT_MODIFIER) == ALT_MODIFIER)
-            origin(-100,0);
+    case KBD_MODE_SEPARATION:
+        designReposition(-1,0);
+        break;
+    case KBD_MODE_OFFSET:
+        designOffset(-1,0);
+        break;
+    case KBD_MODE_ORIGIN:
+        if (isALT)
+            designOrigin(-100,0);
         else
-            origin(-1,0);
+            designOrigin(-1,0);
+        break;
+    case KBD_MODE_TRANSFORM:
+    case KBD_MODE_ZLEVEL:
+    case KBD_MODE_STEP:
+        designMoveX(-delta);
+        emit sig_deltaMoveX(-delta);
+        break;
+    case KBD_MODE_LAYER:
+        break;
+    case KBD_MODE_BKGD:
+    case KBD_MODE_DATA:
+        emit sig_deltaMoveX(-delta);
+        break;
     }
 }
 
-void Canvas::ProcKeyRight(QKeyEvent *k)
+void Canvas::ProcKeyRight(int delta, bool isALT)
 {
-    if (getMode() == MODE_SEPARATION)
-        reposition(1,0);
-    else if (getMode() == MODE_OFFSET)
-        offset2(1,0);
-    else if (getMode() == MODE_ORIGIN)
+    switch (getKbdMode())
     {
-        if ((k->modifiers() & ALT_MODIFIER) == ALT_MODIFIER)
-            origin(100,0);
+    case KBD_MODE_SEPARATION:
+        designReposition(1,0);
+        break;
+    case KBD_MODE_OFFSET:
+        designOffset(1,0);
+        break;
+    case KBD_MODE_ORIGIN:
+        if (isALT)
+            designOrigin(100,0);
         else
-            origin(1,0);
+            designOrigin(1,0);
+        break;
+    case KBD_MODE_TRANSFORM:
+    case KBD_MODE_ZLEVEL:
+    case KBD_MODE_STEP:
+        designMoveX( delta);
+        emit sig_deltaMoveX( delta);
+        break;
+    case KBD_MODE_LAYER:
+        break;
+    case KBD_MODE_BKGD:
+    case KBD_MODE_DATA:
+        emit sig_deltaMoveX( delta);
+        break;
     }
 }
 
 void Canvas::slot_cycler_finished()
 {
     qDebug() << "cycler finished";
-    setMode(MODE_DEFAULT);
     emit sig_viewWS();
 }
 

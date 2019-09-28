@@ -54,7 +54,7 @@ public:
     void    removeFromGroup(QGraphicsItem *item);
 
     void    setRotateCenter (QPointF pt);
-    QPointF getRotateCenter() const;
+    QPointF getRotateCenter();
 
     void    setDeltas(Xform & xf);
     Xform   getDeltas();

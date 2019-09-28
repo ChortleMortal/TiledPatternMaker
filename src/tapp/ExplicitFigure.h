@@ -52,7 +52,13 @@ public:
 
     virtual QString getFigureDesc()  override { return "ExplicitFigure"; }
 
-private:
+    qreal   skip;
+    int     sides;
+    qreal   d;
+    qreal   q;
+    qreal   r;
+    int     s;
+    bool    progressive;
 };
 
 #endif

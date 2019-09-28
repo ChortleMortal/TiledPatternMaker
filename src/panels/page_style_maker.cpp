@@ -22,11 +22,11 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "page_style_maker.h"
-#include "base/patterns.h"
+#include "panels/page_style_maker.h"
 #include "base/canvas.h"
 #include "base/configuration.h"
 #include "base/tiledpatternmaker.h"
+#include "designs/patterns.h"
 #include "style/Colored.h"
 #include "style/Thick.h"
 #include "style/Filled.h"
@@ -41,7 +41,7 @@ using std::string;
 Q_DECLARE_METATYPE(StylePtr)
 Q_DECLARE_SMART_POINTER_METATYPE(std::shared_ptr)
 
-page_style_maker:: page_style_maker(ControlPanel *panel)  : panel_page(panel,"Style Maker")
+page_style_maker:: page_style_maker(ControlPanel * apanel)  : panel_page(apanel,"Style Maker")
 {
     styleParms = nullptr;
 
@@ -500,13 +500,13 @@ StylePtr page_style_maker::copyStyle(const StylePtr style)
 
 void  page_style_maker::slot_loadedXML(QString name)
 {
-    Q_UNUSED(name);
+    Q_UNUSED(name)
     reEnter();
 }
 
 void page_style_maker::slot_loadedTiling (QString name)
 {
-    Q_UNUSED(name);
+    Q_UNUSED(name)
     reEnter();
 }
 

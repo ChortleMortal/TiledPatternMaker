@@ -22,10 +22,10 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "shapes.h"
-#include "shapefactory.h"
-#include "patterns.h"
-#include "configuration.h"
+#include "designs/shapes.h"
+#include "designs/shapefactory.h"
+#include "designs/patterns.h"
+#include "base/configuration.h"
 #include "base/canvas.h"
 #include <QDebug>
 

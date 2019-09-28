@@ -39,18 +39,13 @@ SOURCES += \
     base/colorset.cpp \
     base/configuration.cpp \
     base/cycler.cpp \
-    base/design.cpp \
-    base/designs.cpp \
     base/fileservices.cpp \
     base/layer.cpp \
     base/main.cpp \
     base/misc.cpp \
-    base/patterns.cpp \
     base/pugixml.cpp \
     base/qtapplog.cpp \
     base/scene.cpp \
-    base/shapefactory.cpp \
-    base/shapes.cpp \
     base/shortcuts.cpp \
     base/styleddesign.cpp \
     base/tile.cpp \
@@ -63,6 +58,11 @@ SOURCES += \
     base/workspace.cpp \
     base/xmlloader.cpp \
     base/xmlwriter.cpp \
+    designs/design.cpp \
+    designs/designs.cpp \
+    designs/patterns.cpp \
+    designs/shapefactory.cpp \
+    designs/shapes.cpp \
     geometry/Edge.cpp \
     geometry/Faces.cpp \
     geometry/FillRegion.cpp \
@@ -176,18 +176,13 @@ HEADERS += \
     base/colorset.h \
     base/configuration.h \
     base/cycler.h \
-    base/design.h \
-    base/designs.h \
     base/fileservices.h \
     base/layer.h \
     base/misc.h \
-    base/patterns.h \
     base/pugiconfig.hpp \
     base/pugixml.hpp \
     base/qtapplog.h \
     base/scene.h \
-    base/shapefactory.h \
-    base/shapes.h \
     base/shared.h \
     base/shortcuts.h \
     base/styleddesign.h \
@@ -201,6 +196,11 @@ HEADERS += \
     base/workspace.h \
     base/xmlloader.h \
     base/xmlwriter.h \
+    designs/design.h \
+    designs/designs.h \
+    designs/patterns.h \
+    designs/shapefactory.h \
+    designs/shapes.h \
     geometry/Edge.h \
     geometry/Faces.h \
     geometry/FillRegion.h \

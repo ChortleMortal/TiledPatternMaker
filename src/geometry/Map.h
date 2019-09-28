@@ -45,7 +45,7 @@
 
 #include <QtCore>
 #include "base/shared.h"
-#include "base/shapes.h"
+#include "designs/shapes.h"
 #include "geometry/Edge.h"
 #include "geometry/Vertex.h"
 

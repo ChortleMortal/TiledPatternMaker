@@ -66,7 +66,7 @@ void MovePolygon::updateDragging(QPointF spt)
 
         MouseAction::updateDragging(spt);
 
-        emit tm->hasChanged();
+        emit tm->sig_refreshMenu();
     }
     else
         qDebug() << "move: no selection";
@@ -93,9 +93,9 @@ void CopyMovePolygon::endDragging(QPointF spt )
     {
         tm->removeFeature(selection);
         selection.reset();
+        emit tm->sig_buildMenu();
     }
     MouseAction::endDragging(spt);
-    emit tm->hasChanged();
 }
 
 /////////
@@ -180,7 +180,7 @@ bool JoinEdge::snapTo(QPointF spt)
 
     snapped = true;
 
-    emit tm->hasChanged();
+    emit tm->sig_refreshMenu();
 
     return true;
 }
@@ -197,7 +197,7 @@ void JoinEdge::updateDragging(QPointF spt)
         PlacedFeaturePtr pf = selection->getPlacedFeature();
         QTransform T        = selection->getTransform() * QTransform::fromTranslate(diff.x(), diff.y());
         pf->setTransform(T);
-        emit tm->hasChanged();
+        emit tm->sig_refreshMenu();
     }
     MouseAction::updateDragging(spt);
 }
@@ -281,7 +281,7 @@ bool JoinPoint::snapTo(QPointF spt)
     pf->setTransform(t * T2);
 
     snapped = true;
-    emit tm->hasChanged();
+    emit tm->sig_refreshMenu();
 
     return true;
 }
@@ -308,6 +308,8 @@ void CopyJoinEdge::endDragging(QPointF spt)
     {
         tm->removeFeature(selection);
         selection.reset();
+        tm->sig_buildMenu();
+
     }
     JoinEdge::endDragging(spt);
 }
@@ -334,9 +336,9 @@ void CopyJoinMidPoint::endDragging(QPointF spt)
     {
         tm->removeFeature(selection);
         selection.reset();
+        emit tm->sig_buildMenu();
     }
     JoinMidPoint::endDragging(spt);
-    emit tm->hasChanged();
 }
 
 /////////
@@ -361,9 +363,9 @@ void CopyJoinPoint::endDragging(QPointF spt)
     {
         tm->removeFeature(selection);
         selection.reset();
+        emit tm->sig_buildMenu();
     }
     JoinPoint::endDragging(spt);
-    emit tm->hasChanged();
 }
 
 /////////
@@ -410,6 +412,7 @@ void CreatePolygon::addVertex(QPointF wpt)
         QTransform t;
         tm->addToAllPlacedFeatures(make_shared<PlacedFeature>(make_shared<Feature>(wAccum), t));
         tm->setMouseMode(NO_MOUSE_MODE);
+        tm->sig_buildMenu();
         return;
     }
 
@@ -452,8 +455,6 @@ void CreatePolygon::endDragging(QPointF spt )
         addVertex(wpt);
     }
     MouseAction::endDragging(spt);
-
-    emit tm->hasChanged();
 }
 
 void CreatePolygon::draw(GeoGraphics * g2d)
@@ -783,6 +784,7 @@ void EditFeature::updateDragging(QPointF spt)
     v->setPosition(wpt);
 
     MouseAction::updateDragging(tm->screenToWorld(spt));
+    emit tm->sig_refreshMenu();
 }
 
 void EditFeature::endDragging(QPointF spt )
@@ -795,6 +797,7 @@ void EditFeature::endDragging(QPointF spt )
     v->setPosition(wpt);
 
     MouseAction::endDragging(spt);
+    emit tm->sig_refreshMenu();
 }
 
 /////////
@@ -849,6 +852,7 @@ void EditEdge::updateDragging(QPointF spt)
     }
 
     MouseAction::updateDragging(tm->screenToWorld(spt));
+    emit tm->sig_refreshMenu();
 }
 
 void EditEdge::endDragging(QPointF spt )

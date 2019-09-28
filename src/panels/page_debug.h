@@ -34,15 +34,19 @@ class page_debug : public panel_page
     Q_OBJECT
 
 public:
-    page_debug(ControlPanel * panel);
+    page_debug(ControlPanel * cpanel);
 
     void refreshPage() override;
     void onEnter() override;
+    void onExit() override;
 
 signals:
     void    sig_cycle();
     void    sig_compareImageFiles(QString,QString);
     void    sig_view_image(QString file);
+
+public slots:
+    void    slot_compareResult(QString result);
 
 private slots:
     void    slot_copyLog();
@@ -68,6 +72,7 @@ private slots:
     void    slot_viewImage1();
     void    slot_compareImages();
     void    slot_transparentClicked(bool checked);
+    void    slot_startCycle();
 
 protected:
     void  ViewImage(QString file);
@@ -80,6 +85,7 @@ private:
 
     QLineEdit   * imageName0;
     QLineEdit   * imageName1;
+    QLineEdit   * imageCompareResult;
     QPushButton * selectImage0;
     QPushButton * viewImage0;
     QPushButton * selectImage1;

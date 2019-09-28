@@ -242,6 +242,7 @@ bool Tiling::writeTilingXML()
     {
         qDebug() << "Writing:"  << data.fileName();
         QTextStream str(&data);
+        str.setRealNumberPrecision(16);
         writeTilingXML(str);
         data.close();
 
@@ -265,9 +266,10 @@ bool Tiling::writeTilingXML()
 
 }
 
-void Tiling::writeTilingXML(QTextStream & out )
+void Tiling::writeTilingXML(QTextStream & out)
 {
     refId    = 0;
+    vertex_ids.clear();
 
     // Regroup features by their translation so that we write each feature only once.
     FeatureGroup fgroup = regroupFeatures();
@@ -279,11 +281,21 @@ void Tiling::writeTilingXML(QTextStream & out )
     // fill paratmeters not part of original taprats
     int minX,minY,maxX,maxY;
     fillData.get(minX,maxX,minY,maxY);
-    out << "<Fill>" << QString::number(minX) << "," << QString::number(maxX) << ","
-                    << QString::number(minY) << "," << QString::number(maxY) << "</Fill>" << endl;
+    out << "<Fill>" << minX << "," << maxX << ","
+                    << minY << "," << maxY << "</Fill>" << endl;
 
-    out << "<T1>" <<  QString::number(t1.x(),'g',16) << "," << QString::number(t1.y(),'g',16) << "</T1>" << endl;
-    out << "<T2>" <<  QString::number(t2.x(),'g',16) << "," << QString::number(t2.y(),'g',16) << "</T2>" << endl;
+    out << "<T1>" <<  t1.x() << "," << t1.y() << "</T1>" << endl;
+    out << "<T2>" <<  t2.x() << "," << t2.y() << "</T2>" << endl;
+
+    // tiling maker view settings
+    out << "<View>"  << endl;
+    out << "<Scale>" << viewXform.getScale()          << "</Scale>" << endl;
+    out << "<Rot>"   << viewXform.getRotateRadians()  << "</Rot>" << endl;
+    out << "<X>"     << viewXform.getTranslateX()     << "</X>" << endl;
+    out << "<Y>"     << viewXform.getTranslateY()     << "</Y>" << endl;
+    setPoint(out,viewXform.getRotateCenter(),"Center");
+    out << "</View>" << endl;
+
 
     //structure is feature then placements. so feature is not duplicated. I dont know if this adds any value
     for (auto it = fgroup.begin(); it != fgroup.end(); it++)
@@ -343,9 +355,9 @@ void Tiling::writeTilingXML(QTextStream & out )
             out << "<Placement>";
             for (int j=0; j<5; j++)
             {
-                out << QString::number(ds[j],'g',16) << ",";
+                out << ds[j] << ",";
             }
-            out << QString::number(ds[5],'g',16);
+            out << ds[5];
             out << "</Placement>" << endl;
         }
 
@@ -360,21 +372,10 @@ void Tiling::writeTilingXML(QTextStream & out )
         QString astring = QString("<BackgroundImage name=\"%1\">").arg(bkgd.bkgdName);
         out << astring << endl;
 
-        out << "<Scale>";
-        out << QString::number(bkgd.scale,'g',16);
-        out << "</Scale>" << endl;
-
-        out << "<Rot>";
-        out << QString::number(bkgd.rot,'g',16);
-        out << "</Rot>" << endl;
-
-        out << "<X>";
-        out << QString::number(bkgd.x,'g',16);
-        out << "</X>" << endl;
-
-        out << "<Y>";
-        out << QString::number(bkgd.y,'g',16);
-        out << "</Y>" << endl;
+        out << "<Scale>" << bkgd.scale << "</Scale>" << endl;
+        out << "<Rot>"   << bkgd.rot   << "</Rot>"  << endl;
+        out << "<X>"     << bkgd.x     << "</X>" << endl;
+        out << "<Y>"     << bkgd.y     << "</Y>" << endl;
 
         if (!bkgd.perspective.isIdentity())
         {
@@ -434,14 +435,14 @@ void Tiling::setVertex(QTextStream & ts,VertexPtr v, QString name)
     QPointF pt = v->getPosition();
 
     ts << "<" << name << qsid << ">";
-    ts << QString::number(pt.x(),'g',16) << "," << QString::number(pt.y(),'g',16);
+    ts << pt.x() << "," << pt.y();
     ts << "</" << name << ">" << endl;
 }
 
 void Tiling::setPoint(QTextStream & ts, QPointF pt, QString name)
 {
     ts << "<" << name << ">";
-    ts << QString::number(pt.x(),'g',16) << "," << QString::number(pt.y(),'g',16);
+    ts << pt.x() << "," << pt.y();
     ts << "</" << name << ">" << endl;
 }
 
@@ -468,7 +469,6 @@ void Tiling::setVertexReference(int id, VertexPtr ptr)
 {
     vertex_ids[ptr] = id;
 }
-
 
 bool Tiling::hasReference(VertexPtr v)
 {

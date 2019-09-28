@@ -9,7 +9,9 @@ public:
     Xform();
     Xform( qreal scale, qreal rotationRadians, qreal translateX, qreal translateY);
     Xform(const Xform  & other);
+    Xform(QTransform t);
 
+    void       init();
     void       setTransform(QTransform t);
 
     QTransform computeTransform();
@@ -17,14 +19,29 @@ public:
     QPointF    getTranslate() { return QPointF(translateX,translateY); }
     QString    toInfoString();
 
+    qreal      getScale();
+    qreal      getRotateRadians();
+    qreal      getTranslateX();
+    qreal      getTranslateY();
+    QPointF    getRotateCenter();
+
+    void       setScale(qreal s);
+    void       setRotateRadians(qreal rr);
+    void       setTranslateX(qreal x);
+    void       setTranslateY(qreal y);
+    void       setRotateCenter(QPointF pt);
+
+
+protected:
+    QTransform rotateAroundPoint();
+
+private:
     qreal   scale;
     qreal   rotationRadians;     // radians
     qreal   translateX;
     qreal   translateY;
     QPointF rotateCenter;
 
-protected:
-    QTransform rotateAroundPoint();
 };
 
 #endif // XFORM_H

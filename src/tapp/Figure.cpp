@@ -91,7 +91,6 @@ bool Figure::isExplicit()
     case FIG_TYPE_INFER:
     case FIG_TYPE_EXPLICIT_ROSETTE:
     case FIG_TYPE_HOURGLASS:
-    case FIG_TYPE_INTERSECT_PROGRESSIVE:
     case FIG_TYPE_INTERSECT:
     case FIG_TYPE_GIRIH:
     case FIG_TYPE_EXPLICIT_STAR:

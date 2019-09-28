@@ -193,7 +193,7 @@ bool Workspace::saveDesignXML(QString name, QString & savedName, bool forceOverw
                 filename = config->newDesignDir + "/" + name + ".xml";
             }
             // save drops thru
-            Q_UNUSED(save);
+            Q_UNUSED(save)
         }
         else
         {

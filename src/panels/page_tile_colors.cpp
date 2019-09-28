@@ -22,12 +22,12 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "page_tile_colors.h"
-#include "base/patterns.h"
+#include "panels/page_tile_colors.h"
+#include "panels/dlg_colorSet.h"
 #include "base/canvas.h"
 #include "base/tiledpatternmaker.h"
+#include "designs/patterns.h"
 #include "tile/Tiling.h"
-#include "panels/dlg_colorSet.h"
 
 page_tileColorMaker:: page_tileColorMaker(ControlPanel *panel)  : panel_page(panel,"Tile Color Maker")
 {

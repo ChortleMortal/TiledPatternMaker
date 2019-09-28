@@ -23,8 +23,8 @@
  */
 
 #include "page_design_elements.h"
-#include "base/patterns.h"
 #include "base/tiledpatternmaker.h"
+#include "designs/patterns.h"
 #include "style/Style.h"
 #include "viewers/placeddesignelementview.h"
 #include "viewers/PrototypeView.h"

@@ -24,11 +24,11 @@
 
 #include "base/canvas.h"
 #include "base/misc.h"
-#include "base/patterns.h"
 #include "base/tpmsplash.h"
 #include "base/view.h"
 #include "base/utilities.h"
 #include "base/workspace.h"
+#include "designs/patterns.h"
 #include "makers/tilingmaker.h"
 #include "makers/mapeditor.h"
 #include "viewers/placeddesignelementview.h"

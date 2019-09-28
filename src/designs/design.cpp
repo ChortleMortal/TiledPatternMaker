@@ -22,13 +22,13 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "base/canvas.h"
 #include "base/border.h"
-#include "base/configuration.h"
-#include "base/design.h"
-#include "base/patterns.h"
-#include "base/workspace.h"
+#include "base/canvas.h"
 #include "base/canvasSettings.h"
+#include "base/configuration.h"
+#include "base/workspace.h"
+#include "designs/design.h"
+#include "designs/patterns.h"
 
 #define Enum2Str(e)  {QString(#e)}
 

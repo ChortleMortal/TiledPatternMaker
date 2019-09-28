@@ -33,7 +33,7 @@ class page_loaders : public panel_page
     Q_OBJECT
 
 public:
-    explicit page_loaders(ControlPanel * panel);
+    explicit page_loaders(ControlPanel * apanel);
 
     void refreshPage() override;
     void onEnter() override;

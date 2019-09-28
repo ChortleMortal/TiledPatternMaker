@@ -22,8 +22,8 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "page_position.h"
-#include "base/patterns.h"
+#include "panels/page_position.h"
+#include "designs/patterns.h"
 #include "base/canvas.h"
 #include "viewers/workspaceviewer.h"
 #include "makers/mapeditor.h"
@@ -123,9 +123,9 @@ void page_position::createDesignWidget()
     connect(xStart,             SIGNAL(valueChanged(int)),         this,    SLOT(set_start(int)));
     connect(yStart,             SIGNAL(valueChanged(int)),         this,    SLOT(set_start(int)));
 
-    connect(this,               &page_position::sig_separationAbs,  canvas,  &Canvas::slot_repositionAbs);
-    connect(this,               &page_position::sig_offsetAbs,      canvas,  &Canvas::slot_offsetAbs2);
-    connect(this,               &page_position::sig_originAbs,      canvas,  &Canvas::slot_originAbs);
+    connect(this,               &page_position::sig_separationAbs,  canvas,  &Canvas::slot_designReposition);
+    connect(this,               &page_position::sig_offsetAbs,      canvas,  &Canvas::slot_designOffset);
+    connect(this,               &page_position::sig_originAbs,      canvas,  &Canvas::slot_designOrigin);
 }
 
 void page_position::createLayerTable()
@@ -151,8 +151,8 @@ void page_position::createLayerTable()
 
     connect(canvas, &Canvas::sig_deltaScale,    this, &page_position::onEnter);
     connect(canvas, &Canvas::sig_deltaRotate,   this, &page_position::onEnter);
-    connect(canvas, &Canvas::sig_deltaMoveV,    this, &page_position::onEnter);
-    connect(canvas, &Canvas::sig_deltaMoveH,    this, &page_position::onEnter);
+    connect(canvas, &Canvas::sig_deltaMoveY,    this, &page_position::onEnter);
+    connect(canvas, &Canvas::sig_deltaMoveX,    this, &page_position::onEnter);
 }
 
 void  page_position::onEnter()
@@ -263,10 +263,10 @@ void page_position::addLayerToTable(Layer * layer, int row)
     dwidth->setDecimals(16);
     drot->setDecimals(16);
 
-    dleft->setValue(xf.translateX);
-    dtop->setValue(xf.translateY);
-    dwidth->setValue(xf.scale);
-    drot->setValue(qRadiansToDegrees(xf.rotationRadians));
+    dleft->setValue(xf.getTranslateX());
+    dtop->setValue(xf.getTranslateY());
+    dwidth->setValue(xf.getScale());
+    drot->setValue(qRadiansToDegrees(xf.getRotateRadians()));
 
     dwidth->setSingleStep(0.01);
 

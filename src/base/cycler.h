@@ -63,8 +63,9 @@ class Cycler : public QObject
     Q_OBJECT
 
 public:
-    Cycler(TiledPatternMaker *maker);
-    ~Cycler();
+    static Cycler * getInstance();
+
+    eCycleMode getMode() { return cycleMode; }
 
 signals:
     void sig_clearCanvas();
@@ -84,9 +85,8 @@ public slots:
    void slot_psuedoKey(int key);
    void slot_readyNext();
    void slot_view_images();
-
-private slots:
    void slot_nextCycle();
+
 
 protected:
     void startCycleTimer();
@@ -97,6 +97,11 @@ protected:
     void nextCyclePng();
 
 private:
+    Cycler();
+    ~Cycler();
+
+    static Cycler * mpThis;
+
     Configuration * config;
     Canvas        * canvas;
 

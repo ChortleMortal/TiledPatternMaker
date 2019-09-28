@@ -51,29 +51,29 @@ QTransform  FeatureReader::getTransform(xml_node & node)
     xml_node n = node.child("tx");
     if (n)
     {
-        val           = n.child_value();
-        xf.translateX = val.toDouble();
+        val = n.child_value();
+        xf.setTranslateX(val.toDouble());
     }
 
     n = node.child("ty");
     if (n)
     {
-        val           = n.child_value();
-        xf.translateY = val.toDouble();
+        val = n.child_value();
+        xf.setTranslateY(val.toDouble());
     }
 
     n = node.child("scale");
     if (n)
     {
-        val          = n.child_value();
-        xf.scale     = val.toDouble();
+        val = n.child_value();
+        xf.setScale(val.toDouble());
     }
 
     n = node.child("rot");
     if (n)
     {
-        val          = n.child_value();
-        xf.rotationRadians  = val.toDouble();
+        val = n.child_value();
+        xf.setRotateRadians(val.toDouble());
     }
 
     return xf.getTransform();

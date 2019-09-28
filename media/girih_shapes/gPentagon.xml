@@ -1,27 +1,7 @@
 <?xml version="1.0"?>
-<Poly name="gPentagon">
-	<Line>
-		<Point id="1">0.9999999999999999,0.7265425280053608</Point>
-		<Point id="2">-0.381966011250105,1.175570504584946</Point>
-	</Line>
-	<Line>
-		<Point reference="2" />
-		<Point id="3">-1.23606797749979,1.51374669217366e-16</Point>
-	</Line>
-	<Line>
-		<Point reference="3" />
-		<Point id="4">-0.3819660112501053,-1.175570504584946</Point>
-	</Line>
-	<Line>
-		<Point reference="4" />
-		<Point id="5">0.9999999999999998,-0.7265425280053611</Point>
-	</Line>
-	<Line>
-		<Point reference="5" />
-		<Point reference="1" />
-	</Line>
+<Poly name="gPentagon" type="regular" sides="5">
 	<tx>-0.8623625866186018</tx>
 	<ty>1.170938798230525</ty>
-	<scale>0.4472135954999578</scale>
-	<rot>-0.3141592653589794</rot>
+	<scale>0.4472135954999575</scale>
+	<rot>-1.570796326794896</rot>
 </Poly>

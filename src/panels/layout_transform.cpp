@@ -9,13 +9,13 @@ LayoutTransform::LayoutTransform()
     Y       = new DoubleSpinSet("Y",0.0,-9000,9000);
 
     scale->setDecimals(8);
-    scale->setSingleStep(0.1);
+    scale->setSingleStep(0.01);
     rot->setDecimals(8);
     rot->setSingleStep(1.0);
     X->setDecimals(8);
-    X->setSingleStep(10.0);
+    X->setSingleStep(1.0);
     Y->setDecimals(8);
-    Y->setSingleStep(10.0);
+    Y->setSingleStep(1.0);
 
     addLayout(scale);
     addSpacing(9);

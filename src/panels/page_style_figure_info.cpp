@@ -22,12 +22,12 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "page_style_figure_info.h"
-#include "base/patterns.h"
+#include "panels/page_style_figure_info.h"
 #include "base/shared.h"
+#include "base/tiledpatternmaker.h"
+#include "designs/patterns.h"
 #include "tapp/Prototype.h"
 #include "style/Style.h"
-#include "base/tiledpatternmaker.h"
 
 using std::string;
 

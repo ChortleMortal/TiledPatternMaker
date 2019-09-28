@@ -37,8 +37,8 @@ Layer::Layer(QString name) : QObject(), QGraphicsItemGroup()
 
     connect(canvas, &Canvas::sig_deltaScale,    this, &Layer::slot_scale);
     connect(canvas, &Canvas::sig_deltaRotate,   this, &Layer::slot_rotate);
-    connect(canvas, &Canvas::sig_deltaMoveV,    this, &Layer::slot_moveY);
-    connect(canvas, &Canvas::sig_deltaMoveH,    this, &Layer::slot_moveX);
+    connect(canvas, &Canvas::sig_deltaMoveY,    this, &Layer::slot_moveY);
+    connect(canvas, &Canvas::sig_deltaMoveX,    this, &Layer::slot_moveX);
 
     this->name = name;
 
@@ -52,7 +52,11 @@ Layer::Layer(const Layer & other) : QObject(), QGraphicsItemGroup()
     setVisible(other.isVisible());
 
     layerXform    = other.layerXform;
-    name         = other.name;
+    name          = other.name;
+    baseT         = other.baseT;
+    layerT        = other.layerT;
+    invT          = other.invT;
+    layerPen      = other.layerPen;
 
     refs++;
 }
@@ -105,12 +109,12 @@ void Layer::computeLayerTransform()
 void Layer::setRotateCenter (QPointF pt)
 {
     //qDebug() << "setRotateCenter=" << pt;
-    layerXform.rotateCenter = pt;
+    layerXform.setRotateCenter(pt);
 }
 
-QPointF Layer::getRotateCenter() const
+QPointF Layer::getRotateCenter()
 {
-    return layerXform.rotateCenter;
+    return layerXform.getRotateCenter();
 }
 
 void Layer::setDeltas(Xform & xf)
@@ -155,36 +159,36 @@ QLineF Layer::worldToScreen(QLineF line)
 
 void Layer::slot_moveX(int amount)
 {
-    if (canvas->getMode() != MODE_TRANSFORM) return;
+    if (canvas->getKbdMode() != KBD_MODE_TRANSFORM) return;
 
-    layerXform.translateX += amount;
+    layerXform.setTranslateX(layerXform.getTranslateX() + amount);
 
     forceUpdateLayer();
 }
 
 void Layer::slot_moveY(int amount)
 {
-    if (canvas->getMode() != MODE_TRANSFORM) return;
+    if (canvas->getKbdMode() != KBD_MODE_TRANSFORM) return;
 
-    layerXform.translateY += -amount;
+    layerXform.setTranslateY(layerXform.getTranslateY() + amount);
 
     forceUpdateLayer();
 }
 
 void Layer::slot_rotate(int amount)
 {
-    if (canvas->getMode() != MODE_TRANSFORM) return;
+    if (canvas->getKbdMode() != KBD_MODE_TRANSFORM) return;
 
-    layerXform.rotationRadians += qDegreesToRadians(static_cast<qreal>(amount));
+    layerXform.setRotateRadians(layerXform.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
 
     forceUpdateLayer();
 }
 
 void Layer::slot_scale(int amount)
 {
-    if (canvas->getMode() != MODE_TRANSFORM) return;
+    if (canvas->getKbdMode() != KBD_MODE_TRANSFORM) return;
 
-    layerXform.scale += static_cast<qreal>(amount)/100.0;
+    layerXform.setScale(layerXform.getScale() + static_cast<qreal>(amount)/100.0);
 
     forceUpdateLayer();
 }

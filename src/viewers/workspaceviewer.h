@@ -27,9 +27,9 @@
 
 #include <QtCore>
 #include <QtWidgets>
-#include "base/design.h"
 #include "base/layer.h"
 #include "base/configuration.h"
+#include "designs/design.h"
 #include "geometry/bounds.h"
 
 class Canvas;

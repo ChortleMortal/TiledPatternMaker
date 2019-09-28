@@ -26,7 +26,7 @@
 #define TILE_PATTERNS_H
 
 #include "base/tile.h"
-#include "base/shapefactory.h"
+#include "designs/shapefactory.h"
 #include "base/configuration.h"
 #include "base/shared.h"
 #include "tile/tilingloader.h"

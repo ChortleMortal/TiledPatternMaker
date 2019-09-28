@@ -37,17 +37,15 @@ class ExplicitEditor : public  FigureEditor
     Q_OBJECT
 
 public:
-    ExplicitEditor(FigureMaker * ed, QString name);
+    ExplicitEditor(FigureMaker * ed, QString aname);
 
     FigurePtr getFigure() override;
 
-    void resetWithFigure(FigurePtr figure) override;
+    virtual void resetWithFigure(FigurePtr figure) override;
+    virtual void updateGeometry() override;
+    virtual void updateLimits() override;
 
-    void updateGeometry() override;
-    void updateLimits() override;
-
-private:
-
+protected:
     ExplicitPtr   explicitFig;
 };
 
@@ -69,7 +67,7 @@ private:
 class ExplicitGirihEditor : public FigureEditor
 {
 public:
-    ExplicitGirihEditor(FigureMaker * ed, QString name);
+    ExplicitGirihEditor(FigureMaker * ed, QString aname);
 
     FigurePtr  getFigure() override;
     void resetWithFigure(FigurePtr figure) override;
@@ -105,7 +103,7 @@ private:
     SliderSet        * s;
 
 public:
-    ExplicitHourglassEditor(FigureMaker * ed, QString name);
+    ExplicitHourglassEditor(FigureMaker * ed, QString aname);
 
     FigurePtr getFigure() override;
     void resetWithFigure(FigurePtr figure) override;
@@ -134,7 +132,7 @@ class ExplicitInferEditor : public  FigureEditor
     Q_OBJECT
 
 public:
-    ExplicitInferEditor(FigureMaker * ed, QString name);
+    ExplicitInferEditor(FigureMaker * ed, QString aname);
 
     FigurePtr getFigure() override;
 
@@ -166,7 +164,7 @@ class ExplicitIntersectEditor : public FigureEditor
     Q_OBJECT
 
 public:
-    ExplicitIntersectEditor(FigureMaker * ed, QString name);
+    ExplicitIntersectEditor(FigureMaker * ed, QString aname);
 
     FigurePtr getFigure() override;
     void resetWithFigure(FigurePtr figure) override;
@@ -175,7 +173,7 @@ private:
     void updateGeometry() override;
     void updateLimits() override;
 
-    ExplicitPtr              intersectFig;
+    ExplicitPtr              fig;
     SliderSet              * side;
     DoubleSliderSet        * skip;
     SliderSet              * s;
@@ -201,7 +199,7 @@ class ExplicitRosetteEditor : public RosetteEditor
     Q_OBJECT
 
 public:
-    ExplicitRosetteEditor(FigureMaker * ed, QString name);
+    ExplicitRosetteEditor(FigureMaker * ed, QString aname);
 
     FigurePtr getFigure() override;
 
@@ -227,7 +225,7 @@ class ExplicitStarEditor : public StarEditor
     Q_OBJECT
 
 public:
-    ExplicitStarEditor(FigureMaker * editor, QString name);
+    ExplicitStarEditor(FigureMaker * ed, QString aname);
 
     FigurePtr getFigure() override;
 
@@ -253,7 +251,7 @@ class ExplicitFeatureEditor : public FigureEditor
     Q_OBJECT
 
 public:
-    ExplicitFeatureEditor(FigureMaker * ed, QString name);
+    ExplicitFeatureEditor(FigureMaker * ed, QString aname);
 
     FigurePtr getFigure() override;
     void resetWithFigure(FigurePtr figure) override;

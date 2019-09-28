@@ -189,7 +189,6 @@ void MasterFigureEditor::MasterResetWithFigure(FigurePtr figure, FeatureBtnPtr b
         selectCurrentEditor(explicit_hourglass_edit);
         explicit_hourglass_edit->resetWithFigure(figure);
         break;
-    case FIG_TYPE_INTERSECT_PROGRESSIVE:
     case FIG_TYPE_INTERSECT:
         selectCurrentEditor(explicit_intersect_edit);
         explicit_intersect_edit->resetWithFigure(figure);
@@ -325,7 +324,6 @@ FigureEditor * MasterFigureEditor::getEditor(eFigType type)
         return explicit_rosette_edit;
     case FIG_TYPE_HOURGLASS:
         return explicit_hourglass_edit;
-    case FIG_TYPE_INTERSECT_PROGRESSIVE:
     case FIG_TYPE_INTERSECT:
         return explicit_intersect_edit;
     case FIG_TYPE_GIRIH:

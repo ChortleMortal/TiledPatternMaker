@@ -27,7 +27,7 @@
 
 #include <QtCore>
 #include <QColor>
-#include "design.h"
+#include "designs/design.h"
 #include "base/cycler.h"
 
 #define NUM_DESIGNS 30

@@ -41,10 +41,10 @@ void FeatureWriter::setTransform(QTextStream & ts, QTransform T)
     Xform xf;
     xf.setTransform(T);
 
-    ts << "<tx>"    << xf.translateX    << "</tx>"    << endl;
-    ts << "<ty>"    << xf.translateY    << "</ty>"    << endl;
-    ts << "<scale>" << xf.scale         << "</scale>" << endl;
-    ts << "<rot>"   << xf.rotationRadians      << "</rot>"   << endl;
+    ts << "<tx>"    << xf.getTranslateX()    << "</tx>"    << endl;
+    ts << "<ty>"    << xf.getTranslateY()    << "</ty>"    << endl;
+    ts << "<scale>" << xf.getScale()         << "</scale>" << endl;
+    ts << "<rot>"   << xf.getRotateRadians() << "</rot>"   << endl;
 }
 
 void FeatureWriter::setVertex(QTextStream & ts,VertexPtr v, QString name)
@@ -63,14 +63,14 @@ void FeatureWriter::setVertex(QTextStream & ts,VertexPtr v, QString name)
     QPointF pt = v->getPosition();
 
     ts << "<" << name << qsid << ">";
-    ts << QString::number(pt.x(),'g',16) << "," << QString::number(pt.y(),'g',16);
+    ts << pt.x() << "," << pt.y();
     ts << "</" << name << ">" << endl;
 }
 
 void FeatureWriter::setPoint(QTextStream & ts, QPointF pt, QString name)
 {
     ts << "<" << name << ">";
-    ts << QString::number(pt.x(),'g',16) << "," << QString::number(pt.y(),'g',16);
+    ts << pt.x() << "," << pt.y();
     ts << "</" << name << ">" << endl;
 }
 

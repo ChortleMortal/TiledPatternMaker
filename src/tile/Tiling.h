@@ -42,6 +42,7 @@
 #include "tile/tilingloader.h"
 #include "tile/PlacedFeature.h"
 #include "tile/backgroundimage.h"
+#include "geometry/xform.h"
 
 class FeatureGroup : public  QList<QPair<FeaturePtr,QList<PlacedFeaturePtr>>>
 {
@@ -82,8 +83,7 @@ public:
     PlacedFeaturePtr          getPlacedFeature(int idx) { return placed_features[idx]; }
     QList<PlacedFeaturePtr> & getPlacedFeatures()       { return placed_features; }
     int                       countPlacedFeatures() const { return placed_features.size(); }
-
-    QList<FeaturePtr> getUniqueFeatures();    // unique features
+    QList<FeaturePtr>         getUniqueFeatures();    // unique features
 
     void        setTrans1(QPointF pt) { t1=pt; }
     void        setTrans2(QPointF pt) { t2=pt; }
@@ -97,7 +97,10 @@ public:
 
     BackgroundImage & getBackground() { return bkgd; }
 
-    QString dump() const;
+    void        setViewTransform(Xform xf) { viewXform = xf; }
+    Xform       getViewTransform() { return viewXform; }
+
+    QString     dump() const;
 
 protected:
     void    setEdgePoly(QTextStream & ts, EdgePoly & epoly);
@@ -126,6 +129,7 @@ private:
 
     BackgroundImage bkgd;
 
+    Xform           viewXform;
     QMap<VertexPtr,int>   vertex_ids;
     int refId;
 

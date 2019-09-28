@@ -145,6 +145,17 @@ QList<FeaturePtr> Prototype::getFeatures()
     return ql;
 }
 
+void Prototype::setFeaturesReversed(QList<FeaturePtr> features)
+{
+    for (int i=0; i < designElements.size(); i++)
+    {
+        if (i < features.size())
+        {
+            designElements[i]->setFeature(features[features.size() - (i+1)]);
+        }
+    }
+}
+
 void Prototype::walk()
 {
     qDebug() << "num design elements=" << designElements.size();

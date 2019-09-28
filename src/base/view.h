@@ -56,7 +56,7 @@ signals:
     void sig_mouseDragged(QPointF pos);
     void sig_mouseReleased(QPointF pos);
     void sig_mouseMoved(QPointF pos);
-    void keyEvent(QKeyEvent * k);
+    void sig_procKeyEvent(QKeyEvent * k);
     void sig_resize();
 
 protected:

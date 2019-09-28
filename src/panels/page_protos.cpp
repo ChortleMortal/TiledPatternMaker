@@ -22,8 +22,8 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "page_protos.h"
-#include "base/patterns.h"
+#include "panels/page_protos.h"
+#include "designs/patterns.h"
 #include "style/Colored.h"
 #include "style/Thick.h"
 #include "style/Filled.h"

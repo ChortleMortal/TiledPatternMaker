@@ -63,7 +63,6 @@ public:
 
     bool verifyTiling();
     void removeFeature(PlacedFeaturePtr pf);
-    void procKey(QKeyEvent *k);
     bool accumHasPoint(QPointF wpt);
 
     // Internal tiling creation.
@@ -89,8 +88,15 @@ public:
     void        setCurrentFeature(PlacedFeaturePtr pfp) { currentFeature = pfp; }
     void        toggleInclusion(TilingSelectionPtr sel);
 
+    // global modifications to features
+    void allDeltaX(int delta);
+    void allDeltaY(int delta);
+    void allDeltaScale(int delta);
+    void allDeltaRotate(int delta);
+
 signals:
-    void hasChanged();
+    void sig_buildMenu();
+    void sig_refreshMenu();
     void sig_current_feature(int fIndex);
 
 public slots:
@@ -102,10 +108,12 @@ public slots:
     void excludeAll();
     void clearTranslation();
     void hide(bool state);
-    void slot_showOverlaps(bool checked);
     void setFeatureEditPoint(QPointF pt);
     void setConvexEdge(bool convex);
+    void slot_showOverlaps(bool checked);
+    void slot_xformMode_changed(int row);
 
+    void slot_procKeyEvent(QKeyEvent *k);
     void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn);
     void slot_mouseDragged(QPointF spt);
     void slot_mouseReleased(QPointF spt);
@@ -121,6 +129,8 @@ protected:
     void setupDesigner(TilingPtr tiling);
     void addInTiling(PlacedFeaturePtr pf);
     void removeFromInTiling(PlacedFeaturePtr pf);
+
+    void drawTiling(GeoGraphics * g2d);
 
     void createFillCopies();
 

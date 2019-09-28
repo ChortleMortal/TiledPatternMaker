@@ -40,7 +40,7 @@
 #include "panels/page_control.h"
 #include "panels/page_loaders.h"
 #include "panels/page_map_editor.h"
-#include "base/design.h"
+#include "designs/design.h"
 #include "base/canvas.h"
 #include "base/tiledpatternmaker.h"
 #include "viewers/workspaceviewer.h"
@@ -491,7 +491,7 @@ void ControlPanel::slot_poll()
 
     QMutexLocker ml(&mUpdateMutex);
 
-    QString astring = canvas->getModeStr() + " : " + sViewerType[config->viewerType] + "  ";
+    QString astring = canvas->getKbdModeStr() + " : " + sViewerType[config->viewerType] + "  ";
     switch (config->viewerType)
     {
     case VIEW_DESIGN:

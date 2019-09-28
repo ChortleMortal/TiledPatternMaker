@@ -22,8 +22,8 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "page_tile_layers.h"
-#include "base/patterns.h"
+#include "panels/page_tile_layers.h"
+#include "designs/patterns.h"
 #include "base/canvas.h"
 #include "viewers/workspaceviewer.h"
 

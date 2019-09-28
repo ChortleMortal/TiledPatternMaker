@@ -39,6 +39,13 @@ QTransform Transform::rotateAroundPoint( QPointF pt, qreal t )
     return (QTransform::fromTranslate(-pt.x(),-pt.y()) * (QTransform().rotateRadians(t) * QTransform().translate(pt.x(), pt.y())));
 }
 
+QTransform Transform::rotate(qreal t)
+{
+    // qCos( t ), -qSin( t ), 0,
+    // qSin( t ), qCos( t ), 0 );
+    return QTransform(qCos(t),qSin(t),-qSin(t),qCos(t),0.0,0.0);
+}
+
 qreal Transform::distFromInvertedZero(QTransform t, qreal v)
 {
     return distFromZero(t.inverted(),v);

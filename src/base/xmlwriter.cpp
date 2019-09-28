@@ -650,10 +650,10 @@ bool XmlWriter::processTileColors(QTextStream &ts, StylePtr s)
 
 void XmlWriter::procesToolkitGeoLayer(QTextStream & ts, Xform & xf)
 {
-    ts << "<left__delta>"  << xf.translateX      << "</left__delta>"  << endl;
-    ts << "<top__delta>"   << xf.translateY      << "</top__delta>"   << endl;
-    ts << "<width__delta>" << xf.scale           << "</width__delta>" << endl;
-    ts << "<theta__delta>" << xf.rotationRadians << "</theta__delta>" << endl;
+    ts << "<left__delta>"  << xf.getTranslateX()      << "</left__delta>"  << endl;
+    ts << "<top__delta>"   << xf.getTranslateY()      << "</top__delta>"   << endl;
+    ts << "<width__delta>" << xf.getScale()           << "</width__delta>" << endl;
+    ts << "<theta__delta>" << xf.getRotateRadians()   << "</theta__delta>" << endl;
 }
 
 void XmlWriter::processStyleStyle(QTextStream & ts, PrototypePtr & proto, PolyPtr & poly)
@@ -840,11 +840,6 @@ void XmlWriter::setPrototype(QTextStream & ts, PrototypePtr pp)
             setExplicitFigure(ts,name,figure);
             break;
 
-        case FIG_TYPE_INTERSECT_PROGRESSIVE:
-            name = "app.ExplicitIntersectProg";
-            setExplicitFigure(ts,name,figure);
-            break;
-
         case FIG_TYPE_INTERSECT:
             name = "app.ExplicitIntersect";
             setExplicitFigure(ts,name,figure);
@@ -942,6 +937,36 @@ void XmlWriter::setExplicitFigure(QTextStream & ts,QString name, FigurePtr fp)
 
     _currentMap = ep->getFigureMap();
     setMap(ts,_currentMap);
+
+    switch(ep->getFigType())
+    {
+    case FIG_TYPE_GIRIH:
+        ts << "<sides>" << ep->sides << "</sides>" << endl;
+        ts << "<skip>"  << ep->skip  << "</skip>"  << endl;
+        break;
+
+    case FIG_TYPE_EXPLICIT_STAR:
+    case FIG_TYPE_HOURGLASS:
+        ts << "<s>" << ep->s << "</s>" << endl;
+        ts << "<d>" << ep->d << "</d>"  << endl;
+        break;
+
+    case FIG_TYPE_EXPLICIT_ROSETTE:
+        ts << "<s>" << ep->s << "</s>" << endl;
+        ts << "<q>" << ep->q << "</q>"  << endl;
+        ts << "<r>" << ep->r << "</r>"  << endl;
+        break;
+
+    case FIG_TYPE_INTERSECT:
+        ts << "<s>" << ep->s << "</s>" << endl;
+        ts << "<sides>" << ep->sides << "</sides>" << endl;
+        ts << "<skip>"  << ep->skip  << "</skip>"  << endl;
+        ts << "<progressive>" << ((ep->progressive) ? "t" : "f") << "</progressive>" << endl;
+        break;
+
+    default:
+        break;
+    }
 
     setFigureCommon(ts,fp);
 
@@ -1224,14 +1249,14 @@ void XmlWriter::setVertexEP(QTextStream & ts,VertexPtr v, QString name)
     QPointF pt = v->getPosition();
 
     ts << "<" << name << qsid << ">";
-    ts << QString::number(pt.x(),'g',16) << "," << QString::number(pt.y(),'g',16);
+    ts << pt.x() << "," << pt.y();
     ts << "</" << name << ">" << endl;
 }
 
 void XmlWriter::setPoint(QTextStream & ts, QPointF pt, QString name)
 {
     ts << "<" << name << ">";
-    ts << QString::number(pt.x(),'g',16) << "," << QString::number(pt.y(),'g',16);
+    ts << pt.x() << "," << pt.y();
     ts << "</" << name << ">" << endl;
 }
 
@@ -1604,7 +1629,7 @@ QString  XmlWriter::nextId()
 void XmlWriter::setPos(QTextStream & ts,QPointF qpf)
 {
     ts << "<pos>";
-    ts << QString::number(qpf.x(),'g',16) << "," << QString::number(qpf.y(),'g',16);
+    ts << qpf.x() << "," << qpf.y();
     ts << "</pos>" << endl;
 }
 

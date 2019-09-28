@@ -45,7 +45,7 @@ TilingMakerView::TilingMakerView() : Layer("TilingMakerView")
     in_tiling_color     = QColor(255,217,217,230);  // pink
     overlapping_color   = QColor(205,102, 25,127);  // ochre
     touching_color      = QColor( 25,102,205,127);  // blue
-    under_mouse_color   = QColor(127,255,127,154);  // green
+    under_mouse_color   = QColor(127,255,127,127);  // green
     drag_color          = QColor(206,179,102,230);
     construction_color  = Qt::darkGreen;
 
@@ -74,31 +74,7 @@ void TilingMakerView::paint(QPainter *painter, const QStyleOptionGraphicsItem *o
     draw(&gg);
 }
 
-void TilingMakerView::drawTiling( GeoGraphics * g2d )
-{
-    determineOverlapsAndTouching();
 
-    for(auto it = allPlacedFeatures.begin(); it != allPlacedFeatures.end(); it++ )
-    {
-        PlacedFeaturePtr pf = *it;
-        if(overlapping.contains(pf))
-        {
-            drawFeature(g2d, pf, true, overlapping_color);
-        }
-        else if (touching.contains(pf))
-        {
-            drawFeature(g2d, pf, true, touching_color);
-        }
-        else if (in_tiling.contains(pf))
-        {
-            drawFeature(g2d, pf, true, in_tiling_color);
-        }
-        else
-        {
-            drawFeature(g2d, pf, true, normal_color);
-        }
-    }
-}
 
 void TilingMakerView::drawTranslationVectors(GeoGraphics * g2d, QPointF t1_start, QPointF t1_end, QPointF t2_start, QPointF t2_end)
 {
@@ -159,7 +135,7 @@ void TilingMakerView::drawFeature(GeoGraphics * g2d, PlacedFeaturePtr pf, bool d
     {
         QPointF center = Point::center(pts);
         layerPen.setColor(Qt::red);
-        g2d->drawCircle(center,10,layerPen, QBrush());
+        g2d->drawCircle(center,6,layerPen, QBrush());
     }
 }
 

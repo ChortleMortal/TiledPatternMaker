@@ -30,10 +30,11 @@
 #include "base/fileservices.h"
 #include "base/tiledpatternmaker.h"
 #include "panels/layout_sliderset.h"
+#include "panels/panel.h"
 #include "base/shared.h"
 #include "tile/Tiling.h"
 
-page_debug:: page_debug(ControlPanel *panel)  : panel_page(panel,"Debug Tools")
+page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,"Debug Tools")
 {
     QPushButton * btnCopyLog            = new QPushButton("Copy Log");
     QPushButton * btnVerTileNames       = new QPushButton("Verify Tile Names");
@@ -119,6 +120,7 @@ page_debug:: page_debug(ControlPanel *panel)  : panel_page(panel,"Debug Tools")
     imageName0      = new QLineEdit();
     imageName0->setMinimumWidth(461);
     imageName1      = new QLineEdit();
+    imageCompareResult = new QLineEdit();
     selectImage0    = new QPushButton("Select");
     viewImage0      = new QPushButton("View");
     selectImage1    = new QPushButton("Select");
@@ -126,16 +128,19 @@ page_debug:: page_debug(ControlPanel *panel)  : panel_page(panel,"Debug Tools")
     compareImage    = new QPushButton("Compare Images");
     transparent     = new QCheckBox("Transparent");
 
+    imageCompareResult->setReadOnly(true);
+
     QGridLayout * imageGrid = new QGridLayout();
-    imageGrid->addWidget(imageName0,3,0);
-    imageGrid->addWidget(selectImage0,3,1);
+    imageGrid->addWidget(selectImage0,3,0);
+    imageGrid->addWidget(imageName0,3,1);
     imageGrid->addWidget(viewImage0,3,2);
 
-    imageGrid->addWidget(imageName1,4,0);
-    imageGrid->addWidget(selectImage1,4,1);
+    imageGrid->addWidget(selectImage1,4,0);
+    imageGrid->addWidget(imageName1,4,1);
     imageGrid->addWidget(viewImage1,4,2);
 
-    imageGrid->addWidget(compareImage,5,1);
+    imageGrid->addWidget(compareImage,5,0);
+    imageGrid->addWidget(imageCompareResult,5,1);
     imageGrid->addWidget(transparent,5,2);
 
     QGroupBox * imageGroup = new QGroupBox("Images");
@@ -168,6 +173,7 @@ page_debug:: page_debug(ControlPanel *panel)  : panel_page(panel,"Debug Tools")
     connect(compareDir1Btn,         &QPushButton::clicked,     this,  &page_debug::selectDir1);
     connect(swapBtn,                &QPushButton::clicked,     this,  &page_debug::swapDirs);
     connect(gridWidth,              &DoubleSpinSet::valueChanged, this,&page_debug::slot_gridWidthChanged);
+    connect(maker,          &TiledPatternMaker::sig_compareResult,this, &page_debug::slot_compareResult);
 
     connect(selectImage0,           SIGNAL(clicked()),         this,   SLOT(slot_selectImage0()));
     connect(viewImage0,             SIGNAL(clicked()),         this,   SLOT(slot_viewImage0()));
@@ -175,7 +181,8 @@ page_debug:: page_debug(ControlPanel *panel)  : panel_page(panel,"Debug Tools")
     connect(viewImage1,             SIGNAL(clicked()),         this,   SLOT(slot_viewImage1()));
     connect(compareImage,           &QPushButton::clicked,     this,   &page_debug::slot_compareImages);
 
-    connect(cycleBtn,               &QPushButton::clicked,     canvas, &Canvas::sig_startCycle);
+    connect(cycleBtn,               &QPushButton::clicked,      canvas, &Canvas::sig_cyclerStart);
+    connect(cycleBtn,               &QPushButton::clicked,      this,  &page_debug::slot_startCycle);
     connect(this,           &page_debug::sig_view_image,        maker, &TiledPatternMaker::slot_view_image);
     connect(this,           &page_debug::sig_compareImageFiles, maker, &TiledPatternMaker::slot_compareImages);
 
@@ -189,6 +196,8 @@ void  page_debug::onEnter()
 {
     imageName0->setText(config->image0);
     imageName1->setText(config->image1);
+    imageCompareResult->setText("");
+
     cbGridModel->setChecked(config->fgdGridModel);
     if (config->fgdGridModel)
     {
@@ -199,7 +208,13 @@ void  page_debug::onEnter()
     {
         gridWidth->setLabel("Screen Units:");
         gridWidth->setValue(config->fgdGridStepScreen);
-    }
+    }    
+    panel->setStatus("");
+}
+
+void page_debug::onExit()
+{
+    panel->setStatus("");
 }
 
 void  page_debug::refreshPage()
@@ -423,7 +438,7 @@ void page_debug::slot_cycleIntervalChanged(int value)
 
 void page_debug::slot_cycleModeChanged(int row)
 {
-    Q_UNUSED(row);
+    Q_UNUSED(row)
     int mode  = cycleCombo->currentData().toInt();
     config->cycleMode = static_cast<eCycleMode>(mode);
 }
@@ -462,6 +477,8 @@ void page_debug::swapDirs()
 
 void page_debug::slot_selectImage0()
 {
+    imageCompareResult->setText("");
+
     QString old = config->image0;
     QString file = QFileDialog::getOpenFileName(this,"Select image file",old, tr("Image Files (*.png *.jpg *.bmp)"));
 
@@ -478,11 +495,14 @@ void page_debug::slot_viewImage0()
 {
     qDebug() << "slot_viewImage0";
     QString file = imageName0->text();
+    config->image0 = file;
     ViewImage(file);
 }
 
 void page_debug::slot_selectImage1()
 {
+    imageCompareResult->setText("");
+
     QString old = config->image1;
     QString file = QFileDialog::getOpenFileName(this,"Select image file",old, tr("Image Files (*.png *.jpg *.bmp)"));
 
@@ -499,11 +519,14 @@ void page_debug::slot_viewImage1()
 {
     qDebug() << "slot_viewImage1";
     QString file = imageName1->text();
+    config->image1 = file;
     ViewImage(file);
 }
 
 void page_debug::ViewImage(QString file)
 {
+    imageCompareResult->setText("");
+
     QPixmap pixmap(file);
     if (pixmap.isNull())
     {
@@ -513,11 +536,13 @@ void page_debug::ViewImage(QString file)
         return;
     }
 
+
     emit sig_view_image(file);
 }
 
 void page_debug::slot_compareImages()
 {
+    imageCompareResult->setText("");
     emit sig_compareImageFiles(imageName0->text(),imageName1->text());
 }
 
@@ -554,3 +579,17 @@ void page_debug::slot_gridWidthChanged(qreal value)
     }
     canvas->update();
 }
+
+void page_debug::slot_compareResult(QString result)
+{
+    imageCompareResult->setText(result);
+}
+
+void page_debug::slot_startCycle()
+{
+    if (config->cycleMode == CYCLE_COMPARE_IMAGES)
+    {
+        panel->setStatus("L=log  V=view Q=quit Spacebar=next");
+    }
+}
+

@@ -26,7 +26,7 @@
 #define SHAPES_H
 
 #include <QtWidgets>
-#include "layer.h"
+#include "base/layer.h"
 
 #define DEGREES_360     (360 * 16)
 

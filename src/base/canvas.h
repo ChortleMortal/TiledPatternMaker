@@ -37,18 +37,18 @@ class Layer;
 class CanvasSettings;
 class WorkspaceViewer;
 
-enum eMode
+enum eKbdMode
 {
-    MODE_NONE,
-    MODE_LAYER,
-    MODE_DEFAULT = MODE_LAYER,
-    MODE_ZLEVEL,
-    MODE_STEP,
-    MODE_SEPARATION,
-    MODE_ORIGIN,
-    MODE_OFFSET,     // row/col offsets
-    MODE_TRANSFORM,
-    MODE_CYCLE
+    KBD_MODE_TRANSFORM,
+    KBD_MODE_LAYER,
+    KBD_MODE_ZLEVEL,
+    KBD_MODE_STEP,
+    KBD_MODE_SEPARATION,
+    KBD_MODE_ORIGIN,
+    KBD_MODE_OFFSET,     // row/col offsets
+    KBD_MODE_BKGD,
+    KBD_MODE_DATA,
+    KBD_MODE_DEFAULT = KBD_MODE_TRANSFORM
 };
 
 class TiledPatternMaker;
@@ -71,9 +71,6 @@ public:
 
     void    clearCanvas();
 
-    void    procKeyEvent(QKeyEvent * k);    // from view
-    void    ProcKey(QKeyEvent *k);
-
     void    duplicate();
 
     void    setSceneRect(const QRectF & rect);
@@ -84,9 +81,10 @@ public:
 
     void    saveImage();
 
-    void    setMode(eMode mode);
-    eMode   getMode() { return _mode2; }
-    QString getModeStr();
+    void     procKeyEvent(QKeyEvent * k);    // not from View
+    void     setKbdMode(eKbdMode mode);
+    eKbdMode getKbdMode() { return kbdMode; }
+    QString  getKbdModeStr();
 
     void           setCanvasSettings(CanvasSettings info);
     CanvasSettings getCanvasSettings() { return settings; }
@@ -96,27 +94,6 @@ public:
 
     Scene  * scene;
 
-protected:
-    void reposition(qreal, qreal);
-    void offset2(qreal, qreal);
-    void origin(int, int);
-    void selectLayer(int);
-    void zPlus();
-    void zMinus();
-    void showLayer();
-    void hideLayer();
-    void deltaScale(int delta);
-    void deltaRotate(int delta, bool cw);
-    void deltaMoveV(int delta);
-    void deltaMoveH(int delta);
-
-    bool step(int delta);       // from keyboard
-
-    void ProcKeyLeft(QKeyEvent *k);
-    void ProcKeyRight(QKeyEvent *k);
-    void ProcKeyDown(QKeyEvent *k);
-    void ProcKeyUp(QKeyEvent *k);
-
 signals:
     void sig_viewWS();
     void sig_figure_changed();
@@ -124,64 +101,84 @@ signals:
 
     void sig_clearWorkspace();
 
-    void sig_separation(int,int);
-    void sig_offset(int,int);
-    void sig_origin(int,int);
-    void sig_startCycle();
-
     void sig_deltaRotate(int amount);
-    void sig_deltaMoveV(int amount);
-    void sig_deltaMoveH(int amount);
+    void sig_deltaMoveY(int amount);
+    void sig_deltaMoveX(int amount);
     void sig_deltaScale(int amount);
 
+    void sig_cyclerStart();
     void sig_cyclerQuit();
     void sig_cyclerKey(int key);
 
     void sig_forceUpdateStyles();
     void sig_raiseMenu();
 
-
 public slots:
-    void drainTheSwamp();   // for debug
+    void slot_procKeyEvent(QKeyEvent * k);    // from view
 
-    void slot_repositionAbs(qreal, qreal);
-    void slot_offsetAbs2(qreal, qreal);
-    void slot_originAbs(int, int);
+    void slot_designReposition(qreal, qreal);
+    void slot_designOffset(qreal, qreal);
+    void slot_designOrigin(int, int);
+    void slot_designToggleVisibility(int design);
 
-    void slot_setStep(int step);
     void slot_startTimer();
+    void slot_setStep(int step);
 
-    void slot_toggleDesignVisibility(int design);
     void slot_png(QString file, int row, int col);
+    void saveBMP(QString name);
 
     void slot_cycler_finished();
-    void saveBMP(QString name);
+
+    void drainTheSwamp();   // for debug
 
 private slots:
     void slot_nextStep();   // from timer
+
+protected:
+    void ProcKey(QKeyEvent *k, bool isALT);
+    bool ProcNavKey(int key, int multiplier, bool isALT);
+    void ProcKeyLeft( int delta, bool isALT);
+    void ProcKeyRight(int delta, bool isALT);
+    void ProcKeyDown( int delta, bool isALT);
+    void ProcKeyUp(   int delta, bool isALT);
+
+    void designReposition(qreal, qreal);
+    void designOffset(qreal, qreal);
+    void designOrigin(int, int);
+    void designLayerSelect(int);
+    void designLayerZPlus();
+    void designLayerZMinus();
+    void designLayerShow();
+    void designLayerHide();
+
+    void designScale(int delta);
+    void designRotate(int delta, bool cw);
+    void designMoveY(int delta);
+    void designMoveX(int delta);
+
+    bool step(int delta);       // from keyboard
 
 private:
     Canvas();
     virtual ~Canvas();
 
-    static Canvas * mpThis;
-    Configuration * config;
-    QTimer        * timer;
-    Workspace     * workspace;
+    static Canvas   * mpThis;
+    Configuration   * config;
+    QTimer          * timer;
+    Workspace       * workspace;
     WorkspaceViewer * viewer;
+    Scene           * sceneA;
+    Scene           * sceneB;
 
     CanvasSettings  settings;
 
-    int             maxStep;
-    int             stepsTaken;
-    int             selectedLayer;
+    int maxStep;
+    int stepsTaken;
+    int selectedLayer;
 
-    bool            dragging;
+    bool dragging;
 
-    eMode          _mode2;
-
-    Scene * sceneA;
-    Scene * sceneB;
+    eKbdMode kbdMode;
 };
 
 #endif // CANVAS_H

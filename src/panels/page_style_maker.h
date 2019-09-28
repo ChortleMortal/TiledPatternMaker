@@ -44,7 +44,7 @@ class page_style_maker : public panel_page
     };
 
 public:
-    page_style_maker(ControlPanel *panel);
+    page_style_maker(ControlPanel * apanel);
 
     void onEnter() override;
     void refreshPage() override;

@@ -27,20 +27,20 @@
 #include "base/configuration.h"
 #include "base/utilities.h"
 #include "base/misc.h"
-#include "base/patterns.h"
-#include "base/shapefactory.h"
+#include "base/tilingmanager.h"
 #include "base/workspace.h"
 #include "base/tiledpatternmaker.h"
+#include "designs/shapefactory.h"
+#include "designs/patterns.h"
 #include "tapp/Rosette.h"
 #include "tapp/RosetteConnectFigure.h"
 #include "tapp/Star.h"
 #include "tapp/Infer.h"
+#include "tapp/ExplicitFigure.h"
 #include "style/Thick.h"
 #include "style/Interlace.h"
-#include "tapp/ExplicitFigure.h"
 #include "viewers/figureview.h"
 #include "viewers/placeddesignelementview.h"
-#include "base/tilingmanager.h"
 
 int Pattern::refs = 0;
 
@@ -53,8 +53,8 @@ Pattern::Pattern(qreal Diameter, QBrush Brush, int Row, int Col)
 {
     diameter = Diameter;
     radius   = Diameter/2.0;
-    Q_UNUSED(Row);
-    Q_UNUSED(Col);
+    Q_UNUSED(Row)
+    Q_UNUSED(Col)
 
     qreal penWidth  = 7.0;
     linePen.setWidthF(penWidth);
@@ -1310,7 +1310,7 @@ void PatternIncompleteA::build()
     QLineF line3(p->at(1),p->at(3));
     points = Utils::circleLineIntersectionPoints(i,radius,line3,c,d);
 
-    Q_UNUSED(points);
+    Q_UNUSED(points)
 
     QPointF left(-radius,0);
     QPointF right(radius,0);
@@ -1533,7 +1533,7 @@ void PatternKumiko1::build()
     layer4->addToGroup(s4);
 
     Polygon2 * p1 = s4->addStretchedExternalHexagon(woodPen, nobrush,90.0);
-    Q_UNUSED(p1);
+    Q_UNUSED(p1)
 
     s5 = new ShapeFactory(diameter);
     Layer * layer5 = addLayer(5);
@@ -1608,7 +1608,7 @@ void PatternKumiko2::build()
 
     s4 = new ShapeFactory(diameter);
     Polygon2 * p1 = s4->addStretchedExternalHexagon(woodPen, nobrush,90.0);
-    Q_UNUSED(p1);
+    Q_UNUSED(p1)
 
     s5 = new ShapeFactory(diameter);
     Polygon2 * p2 = s5->addStretchedExternalHexagon(woodPen, nobrush,90.0);
@@ -1636,17 +1636,13 @@ void PatternKumiko2::build()
     TilingPtr t       = tm->loadTiling(tileName);
     if (!t)
     {
-        TilingLoader * tm = new TilingLoader();
-        tm->beginTiling(tileName);
-        tm->setFillData(fd);
-        tm->setTranslations(trans1,trans2);
-        tm->beginRegularFeature( 4 );
-        tm->addPlacement(QTransform());
-        tm->endFeature();
-        tm->b_setDescription("Kumiko2 translation vectors");
-        tm->b_setAuthor("David A. Casper");
-
-        t = tm->endTiling();
+        t = make_shared<Tiling>(tileName, trans1, trans2);
+        t->setFillData(fd);
+        FeaturePtr fp = make_shared<Feature>(4);
+        PlacedFeaturePtr pfp = make_shared<PlacedFeature>(fp,QTransform());
+        t->add(pfp);
+        t->setDescription("Kumiko2 translation vectors");
+        t->setAuthor("David A. Casper");
 
         workspace->setTiling(t);
         workspace->saveTiling(tileName,t);

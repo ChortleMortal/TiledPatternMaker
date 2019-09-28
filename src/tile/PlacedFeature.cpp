@@ -113,14 +113,21 @@ bool PlacedFeature::saveAsGirihShape(QString name)
 
 void PlacedFeature::saveGirihShape(QTextStream & ts, QString name)
 {
+    FeatureWriter fw;
 
     ts << "<?xml version=\"1.0\"?>" << endl;
 
-    QString str = QString("<Poly name=\"%1\">").arg(name);
-    ts << str << endl;
-
-    FeatureWriter fw;
-    fw.setEdgePoly(ts,feature->getEdgePoly());
+    if (feature->isRegular())
+    {
+        QString str = QString("<Poly name=\"%1\" type=\"regular\" sides=\"%2\">").arg(name).arg(feature->numPoints());
+        ts << str << endl;
+    }
+    else
+    {
+        QString str = QString("<Poly name=\"%1\">").arg(name);
+        ts << str << endl;
+        fw.setEdgePoly(ts,feature->getEdgePoly());
+    }
     fw.setTransform(ts,T);
     ts << "</Poly>" << endl;
 }
@@ -147,16 +154,33 @@ bool PlacedFeature::loadFromGirihShape(QString name)
         return false;
     }
 
-    xml_node n = tiling_node.first_child();
-    string nname = n.name();
-    if (nname == "Point")
+    xml_attribute attr = tiling_node.attribute("type");
+    if (attr)
     {
-        // load old format (no longer used)
-        loadGirihShapeOld(tiling_node);
+        QString str = attr.value();
+        if (str == "regular")
+        {
+            xml_attribute attr2 = tiling_node.attribute("sides");
+            Q_ASSERT(attr2);
+            QString val = attr2.value();
+            int sides = val.toInt();
+            loadGirihShape(sides,tiling_node);
+        }
     }
     else
     {
-        loadGirihShape(tiling_node);
+        xml_node n = tiling_node.first_child();
+        string nname = n.name();
+        if (nname == "Point")
+        {
+            // load old format (no longer used)
+            loadGirihShapeOld(tiling_node);
+        }
+        else
+        {
+            Q_ASSERT(nname == "Line");
+            loadGirihShape(tiling_node);
+        }
     }
     girihShapeName = name;
 
@@ -168,6 +192,13 @@ void PlacedFeature::loadGirihShape(xml_node & poly_node)
     FeatureReader fr;
     EdgePoly ep = fr.getEdgePoly(poly_node);
     feature     = make_shared<Feature>(ep);
+    T           = fr.getTransform(poly_node);
+}
+
+void PlacedFeature::loadGirihShape(int sides, pugi::xml_node & poly_node)
+{
+    FeatureReader fr;
+    feature     = make_shared<Feature>(sides);
     T           = fr.getTransform(poly_node);
 }
 

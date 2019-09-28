@@ -103,8 +103,7 @@ public:
     int              sides;     // all members of the group have same number of vertices
     bool             selected;  // volatile
 
-    // largest first
-    static bool sortByArea( const FaceSetPtr& d1, const FaceSetPtr& d2 ) { return d1->area > d2->area; }
+    static bool sort(const FaceSetPtr& d1, const FaceSetPtr& d2) { return (d1->area * d1->sides) > (d2->area * d2->sides); }
 
     void sortByPositon();
 

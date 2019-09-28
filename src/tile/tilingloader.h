@@ -27,6 +27,7 @@
 
 #include <QtCore>
 #include "geometry/Transform.h"
+#include "geometry/xform.h"
 #include "tile/PlacedFeature.h"
 #include "base/pugixml.hpp"
 
@@ -57,51 +58,18 @@ public:
     TilingPtr   readTilingXML(QString file);
     TilingPtr   readTilingXML(pugi::xml_node & tiling_node);
 
-    void        beginTiling( QString name );
-    TilingPtr   endTiling();
-
-    void        setFillData(FillData fd);
-    void        setTranslations( QPointF t1, QPointF t2 );
-    void        beginRegularFeature(int n);
-    void        addPlacement(QTransform T );
-    void        endFeature() {}
-    void        b_setDescription( QString t );
-    void        b_setAuthor( QString t );
-
 protected:
-    void        beginPolygonFeature( int n );
-    void        addPoint( QPointF pt );
-    void        commitPolygonFeature();
-    void        commitEdgePolyFeature(EdgePoly & ep);
-    void        commitGirihShapeFeature(QString name);
-    void        getFill(QString txt);
-    void        addColors(QVector<TPColor> &colors);
-
-    QString     readQuotedString(QTextStream &str);
+    QString     readQuotedString(QTextStream & str);
     QPointF     getPoint(QString txt);
     QTransform  getAffineTransform(QString txt);
     QTransform  getQTransform(QString txt);
 
+    Xform       getXform(pugi::xml_node & node);
+    FillData    getFill(QString txt);
+
 private:
     int            version;
-    QString        b_name;
-    QString        b_desc;
-    QString        b_author;
-    QPointF        b_t1;
-    QPointF        b_t2;
-    QVector<PlacedFeaturePtr> b_pfs;
-    FeaturePtr     b_f;
-    QPolygonF      b_pts;
-
-    QVector<QColor> b_colors;
-    FillData       b_fillData;
-
-    QString        b_bkName;
-    qreal          b_bkScale;
-    qreal          b_bkRot;
-    qreal          b_bkX;
-    qreal          b_bkY;
-    QTransform     b_bkgdAdjust;
+    TilingPtr      tiling;
 };
 
 #endif

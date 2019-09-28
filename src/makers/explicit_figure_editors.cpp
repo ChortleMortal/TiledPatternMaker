@@ -30,7 +30,7 @@
 #include "tapp/ExplicitFigure.h"
 #include "FeatureButton.h"
 
-ExplicitEditor::ExplicitEditor(FigureMaker * ed, QString name) : FigureEditor(ed, name)
+ExplicitEditor::ExplicitEditor(FigureMaker * ed, QString aname) : FigureEditor(ed, aname)
 {
 }
 
@@ -97,21 +97,16 @@ void ExplicitEditor::updateGeometry()
 // centre of every edge of the feature.
 
 
-ExplicitGirihEditor::ExplicitGirihEditor(FigureMaker * ed, QString name) : FigureEditor (ed, name)
+ExplicitGirihEditor::ExplicitGirihEditor(FigureMaker * ed, QString aname) : FigureEditor (ed, aname)
 {
     side = new SliderSet("ExplicitGirihEditor Star Sides", 10, 3, 24);
     skip = new DoubleSliderSet("ExplicitGirihEditor Skip D", 3.0, 1.0, 12.0, 100);
 
-    QPushButton * intersectBtn = new QPushButton("Make Girih");
-    intersectBtn->setMaximumWidth(101);
-
     addLayout(side);
     addLayout(skip);
-    vbox->addWidget(intersectBtn,0,Qt::AlignHCenter);
 
     connect(skip, &DoubleSliderSet::valueChanged, this, &ExplicitGirihEditor::updateGeometry);
     connect(side, &SliderSet::valueChanged,       this, &ExplicitGirihEditor::updateGeometry);
-    connect(intersectBtn, &QPushButton::clicked,  this, &ExplicitGirihEditor::updateGeometry);
 }
 
 FigurePtr  ExplicitGirihEditor::getFigure()
@@ -128,7 +123,19 @@ void  ExplicitGirihEditor::resetWithFigure(FigurePtr figure)
     }
 
     girihFig = std::dynamic_pointer_cast<ExplicitFigure>(figure);
-    if (!girihFig)
+    if (girihFig)
+    {
+        if (girihFig->getFigType() == FIG_TYPE_GIRIH)
+        {
+            side->setValue(girihFig->sides);
+            skip->setValue(girihFig->skip);
+        }
+        else
+        {
+            girihFig->setFigType(FIG_TYPE_GIRIH);
+        }
+    }
+    else
     {
         girihFig = make_shared<ExplicitFigure>(*figure.get(),FIG_TYPE_GIRIH);
     }
@@ -147,6 +154,9 @@ void  ExplicitGirihEditor::updateGeometry()
 
     MapPtr map = editor->createExplicitGirihMap(side_val, skip_val);
     girihFig->setExplicitMap(map);
+    girihFig->sides = side_val;
+    girihFig->skip  =  skip_val;
+
     emit sig_figure_changed();
 }
 
@@ -164,23 +174,17 @@ void  ExplicitGirihEditor::updateGeometry()
 // the explicit map directly by hand, beginning with a vertex in the
 // centre of every edge of the feature.
 
-ExplicitHourglassEditor::ExplicitHourglassEditor(FigureMaker * ed, QString name) : FigureEditor(ed, name)
+ExplicitHourglassEditor::ExplicitHourglassEditor(FigureMaker * ed, QString aname) : FigureEditor(ed, aname)
 {
     // Hourglass panel.
     d = new DoubleSliderSet("ExplicitHourglassEditor D", 2.0, 1.0, 12.0, 100);
     s = new SliderSet("ExplicitHourglassEditor SH", 1, 1, 12);
 
-
-    QPushButton * hourglassBtn = new QPushButton("Make Hourglass");
-    hourglassBtn->setMaximumWidth(101);
-
     addLayout(d);
     addLayout(s);
-    vbox->addWidget(hourglassBtn,0,Qt::AlignHCenter);
 
     connect(d, &DoubleSliderSet::valueChanged, this, &ExplicitHourglassEditor::updateGeometry);
     connect(s, &SliderSet::valueChanged,       this, &ExplicitHourglassEditor::updateGeometry);
-    connect(hourglassBtn,&QPushButton::clicked,this, &ExplicitHourglassEditor::updateGeometry);
 }
 
 
@@ -198,7 +202,19 @@ void ExplicitHourglassEditor::resetWithFigure(FigurePtr figure)
     }
 
     hourglassFig = std::dynamic_pointer_cast<ExplicitFigure>(figure);
-    if (!hourglassFig)
+    if (hourglassFig)
+    {
+        if (hourglassFig->getFigType() == FIG_TYPE_HOURGLASS)
+        {
+            d->setValue(hourglassFig->d);
+            s->setValue(hourglassFig->s);
+        }
+        else
+        {
+            hourglassFig->setFigType(FIG_TYPE_HOURGLASS);
+        }
+    }
+    else
     {
         hourglassFig = make_shared<ExplicitFigure>(*figure.get(),FIG_TYPE_HOURGLASS);
     }
@@ -236,6 +252,9 @@ void ExplicitHourglassEditor::updateGeometry()
 
     MapPtr map = editor->createExplicitHourglassMap(dval, sval);
     hourglassFig->setExplicitMap(map);
+    hourglassFig->d = dval;
+    hourglassFig->s = sval;
+
     emit sig_figure_changed();
 }
 
@@ -253,14 +272,8 @@ void ExplicitHourglassEditor::updateGeometry()
 // the explicit map directly by hand, beginning with a vertex in the
 // centre of every edge of the feature.
 
-ExplicitInferEditor::ExplicitInferEditor(FigureMaker * ed, QString name) : FigureEditor(ed, name)
+ExplicitInferEditor::ExplicitInferEditor(FigureMaker * ed, QString aname) : FigureEditor(ed, aname)
 {
-    QPushButton * inferBtn = new QPushButton("Make Infer");
-    inferBtn->setMaximumWidth(101);
-
-    vbox->addWidget(inferBtn,0,Qt::AlignHCenter);
-
-    connect(inferBtn, &QPushButton::clicked, this, &ExplicitInferEditor::updateGeometry);
 }
 
 FigurePtr ExplicitInferEditor::getFigure()
@@ -279,7 +292,14 @@ void ExplicitInferEditor::resetWithFigure(FigurePtr figure)
     qDebug() << "ExplicitInferEditor::resetWithFigure" << figure.get() << "  " << figure->getFigTypeString();
 
     explicitFig = std::dynamic_pointer_cast<ExplicitFigure>(figure);
-    if (!explicitFig)
+    if (explicitFig)
+    {
+        if (explicitFig->getFigType() != FIG_TYPE_INFER)
+        {
+            explicitFig->setFigType(FIG_TYPE_INFER);
+        }
+    }
+    else
     {
         explicitFig = make_shared<ExplicitFigure>(*figure.get(),FIG_TYPE_INFER);
     }
@@ -313,47 +333,56 @@ void ExplicitInferEditor::updateGeometry()
 // the explicit map directly by hand, beginning with a vertex in the
 // centre of every edge of the feature.
 
-ExplicitIntersectEditor::ExplicitIntersectEditor(FigureMaker * ed, QString name) : FigureEditor(ed, name)
+ExplicitIntersectEditor::ExplicitIntersectEditor(FigureMaker * ed, QString aname) : FigureEditor(ed, aname)
 {
     side = new SliderSet("ExplicitIntersectEditor Star Sides", 10, 3, 24);
     skip = new DoubleSliderSet("ExplicitIntersectEditor D", 3, 0, 12, 100);
     s    = new SliderSet("ExplicitIntersectEditor S", 1, 1, 12);
     progressive_box = new QCheckBox("Progressive");
-    QPushButton * intersectBtn = new QPushButton("Make Intersect");
-    intersectBtn->setMaximumWidth(101);
 
     addLayout(side);
     addLayout(skip);
     addLayout(s);
     addWidget(progressive_box);
-    vbox->addWidget(intersectBtn,0,Qt::AlignHCenter);
 
     connect(skip, &DoubleSliderSet::valueChanged, this, &ExplicitIntersectEditor::updateGeometry);
     connect(side, &SliderSet::valueChanged,       this, &ExplicitIntersectEditor::updateGeometry);
     connect(s,    &SliderSet::valueChanged,       this, &ExplicitIntersectEditor::updateGeometry);
     connect(progressive_box, &QCheckBox::stateChanged, this, &ExplicitIntersectEditor::updateGeometry);
-    connect(intersectBtn,    &QPushButton::clicked,    this, &ExplicitIntersectEditor::updateGeometry);
 }
 
 FigurePtr ExplicitIntersectEditor::getFigure()
 {
-    return intersectFig;
+    return fig;
 }
 
 void ExplicitIntersectEditor::resetWithFigure(FigurePtr figure)
 {
     if (!figure)
     {
-        intersectFig.reset();
+        fig.reset();
         return;
     }
 
-    intersectFig = std::dynamic_pointer_cast<ExplicitFigure>(figure);
-    if (!intersectFig)
+    fig = std::dynamic_pointer_cast<ExplicitFigure>(figure);
+    if (fig)
     {
-        bool progressive = progressive_box->isChecked();
-        eFigType fill    = (progressive) ? FIG_TYPE_INTERSECT_PROGRESSIVE :  FIG_TYPE_INTERSECT;
-        intersectFig     = make_shared<ExplicitFigure>(*figure.get(),fill);
+        if (fig->getFigType() == FIG_TYPE_INTERSECT)
+        {
+            side->setValue(fig->sides);
+            skip->setValue(fig->skip);
+            s->setValue(fig->s);
+            progressive_box->setChecked(fig->progressive);
+
+        }
+        else
+        {
+            fig->setFigType(FIG_TYPE_INTERSECT);
+        }
+    }
+    else
+    {
+        fig = make_shared<ExplicitFigure>(*figure.get(),FIG_TYPE_INTERSECT);
     }
 
     updateLimits();
@@ -369,11 +398,13 @@ void ExplicitIntersectEditor::updateGeometry()
     qreal skip_val      = skip->value();
     int sval            =  s->value();
     bool progressive    = progressive_box->isChecked();
-    eFigType fill       = (progressive) ? FIG_TYPE_INTERSECT_PROGRESSIVE :  FIG_TYPE_INTERSECT;
     MapPtr map          = editor->createExplicitIntersectMap(side_val, skip_val, sval, progressive);
 
-    intersectFig->setFigType(fill);
-    intersectFig->setExplicitMap(map);
+    fig->setExplicitMap(map);
+    fig->sides = side_val;
+    fig->skip  = skip_val;
+    fig->s     = sval;
+    fig->progressive = progressive;
     emit sig_figure_changed();
 }
 
@@ -394,18 +425,13 @@ void ExplicitIntersectEditor::updateGeometry()
 // casper - interesting but somewhat inscrutable comment
 // this implementation inherits the rosette editor
 
-ExplicitRosetteEditor::ExplicitRosetteEditor(FigureMaker * ed, QString name) : RosetteEditor(ed, name)
+ExplicitRosetteEditor::ExplicitRosetteEditor(FigureMaker * ed, QString aname) : RosetteEditor(ed, aname)
 {
     r = new DoubleSliderSet("RosetteEditor r", 0.5, 0.0, 1.0, 100 );
 
-    QPushButton * rosetteBtn = new QPushButton("Make Rosette");
-    rosetteBtn->setMaximumWidth(101);
-
     addLayout(r);
-    vbox->addWidget(rosetteBtn,0,Qt::AlignHCenter);
 
     connect(r, &DoubleSliderSet::valueChanged, this, &ExplicitRosetteEditor::updateGeometry);
-    connect(rosetteBtn, &QPushButton::clicked, this, &ExplicitRosetteEditor::updateGeometry);
 }
 
 FigurePtr ExplicitRosetteEditor::getFigure()
@@ -422,7 +448,20 @@ void ExplicitRosetteEditor::resetWithFigure(FigurePtr figure)
     }
 
     expRoseFig = std::dynamic_pointer_cast<ExplicitFigure>(figure);
-    if (!expRoseFig)
+    if (expRoseFig)
+    {
+        if (expRoseFig->getFigType() == FIG_TYPE_EXPLICIT_ROSETTE)
+        {
+            r->setValue(expRoseFig->r);
+            q->setValue(expRoseFig->q);
+            s->setValue(expRoseFig->s);
+        }
+        else
+        {
+            expRoseFig->setFigType(FIG_TYPE_EXPLICIT_ROSETTE);
+        }
+    }
+    else
     {
         expRoseFig = make_shared<ExplicitFigure>(*figure.get(),FIG_TYPE_EXPLICIT_ROSETTE);
     }
@@ -450,11 +489,14 @@ void ExplicitRosetteEditor::updateLimits()
 void ExplicitRosetteEditor::updateGeometry()
 {
     qreal qval = q->value();
-    int sval   = s->value();
+    int   sval = s->value();
     qreal rval = r->value();
 
     MapPtr map = editor->createExplicitRosetteMap(qval, sval, rval);
     expRoseFig->setExplicitMap(map);
+    expRoseFig->q = qval;
+    expRoseFig->s = sval;
+    expRoseFig->r = rval;
     emit sig_figure_changed();
 }
 
@@ -465,14 +507,8 @@ void ExplicitRosetteEditor::updateGeometry()
 // The controls for editing a Star.  Glue code, just like RosetteEditor.
 // caser pthis implementation inherits the rosette editor
 
-ExplicitStarEditor::ExplicitStarEditor(FigureMaker * editor, QString name) : StarEditor(editor, name)
+ExplicitStarEditor::ExplicitStarEditor(FigureMaker * ed, QString aname) : StarEditor(ed, aname)
 {
-    QPushButton * starBtn = new QPushButton("Make Star");
-    starBtn->setMaximumWidth(101);
-
-    vbox->addWidget(starBtn,0,Qt::AlignHCenter);
-
-    connect(starBtn, &QPushButton::clicked, this, &ExplicitStarEditor::updateGeometry);
 }
 
 FigurePtr ExplicitStarEditor::getFigure()
@@ -489,7 +525,19 @@ void ExplicitStarEditor::resetWithFigure(FigurePtr figure)
     }
 
     starFig = std::dynamic_pointer_cast<ExplicitFigure>(figure);
-    if (!starFig)
+    if (starFig)
+    {
+        if (starFig->getFigType() == FIG_TYPE_EXPLICIT_STAR)
+        {
+            d->setValue(starFig->d);
+            s->setValue(starFig->s);
+        }
+        else
+        {
+            starFig->setFigType(FIG_TYPE_EXPLICIT_STAR);
+        }
+    }
+    else
     {
         starFig    = make_shared<ExplicitFigure>(*figure.get(), FIG_TYPE_EXPLICIT_STAR);
     }
@@ -527,19 +575,15 @@ void ExplicitStarEditor::updateGeometry()
 
     MapPtr map = editor->createExplicitStarMap(dval, sval);
     starFig->setExplicitMap(map);
+    starFig->s = sval;
+    starFig->d = dval;
     emit sig_figure_changed();
 }
 
 //  Make a figure from a feature
 
-ExplicitFeatureEditor::ExplicitFeatureEditor(FigureMaker * ed, QString name) : FigureEditor(ed, name)
+ExplicitFeatureEditor::ExplicitFeatureEditor(FigureMaker * ed, QString aname) : FigureEditor(ed, aname)
 {
-    QPushButton * fBtn = new QPushButton("Make Explicit Feature");
-    fBtn->setMaximumWidth(101);
-
-    vbox->addWidget(fBtn,0,Qt::AlignHCenter);
-
-    connect(fBtn, &QPushButton::clicked, this, &ExplicitFeatureEditor::updateGeometry);
 }
 
 FigurePtr ExplicitFeatureEditor::getFigure()

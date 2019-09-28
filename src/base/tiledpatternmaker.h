@@ -50,6 +50,7 @@ signals:
     void sig_readyNext();
     void sig_takeNext();
     void sig_viewWS();
+    void sig_compareResult(QString);
 
 public slots:
     void startEverything();

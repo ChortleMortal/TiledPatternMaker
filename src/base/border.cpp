@@ -23,7 +23,7 @@
  */
 
 #include "base/border.h"
-#include "base/shapefactory.h"
+#include "designs/shapefactory.h"
 
 ////////////////////////////////////////////////
 ///

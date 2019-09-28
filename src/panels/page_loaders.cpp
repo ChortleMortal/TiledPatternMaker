@@ -32,7 +32,7 @@
 
 using namespace pugi;
 
-page_loaders::page_loaders(ControlPanel * panel) : panel_page(panel,"Loaders")
+page_loaders::page_loaders(ControlPanel * apanel) : panel_page(apanel,"Loaders")
 {
     selectedDesign = NO_DESIGN;
 
@@ -311,12 +311,15 @@ void page_loaders::loadTiling()
 {
     QString name = selectedTilingName;
     emit sig_loadTiling(name);
-    emit sig_viewWS();
-    if (config->viewerType != VIEW_TILIING_MAKER)
+
+    if (!config->lockView)
     {
-        emit panel->sig_selectViewer(VIEW_TILING, TV_WORKSPACE);
+        if (config->viewerType != VIEW_TILIING_MAKER)
+        {
+            emit panel->sig_selectViewer(VIEW_TILING, TV_WORKSPACE);
+        }
+        emit sig_viewWS();
     }
-    emit sig_viewWS();
 }
 
 void page_loaders::loadShapes()
@@ -330,7 +333,7 @@ void page_loaders::loadShapes()
 
 void page_loaders::designSelected(QListWidgetItem * item, QListWidgetItem* oldItem)
 {
-    Q_UNUSED(oldItem);
+    Q_UNUSED(oldItem)
     qDebug() << "page_loaders::designSelected";
     selectedDesign = static_cast<eDesign>(item->data(Qt::UserRole).toInt());
     emit sig_loadDesign(selectedDesign);
@@ -338,7 +341,7 @@ void page_loaders::designSelected(QListWidgetItem * item, QListWidgetItem* oldIt
 
 void page_loaders::tilingSelected(QListWidgetItem *item, QListWidgetItem *oldItem)
 {
-    Q_UNUSED(oldItem);
+    Q_UNUSED(oldItem)
 
     selectedTilingName = item->text();
     loadTiling();
@@ -346,7 +349,7 @@ void page_loaders::tilingSelected(QListWidgetItem *item, QListWidgetItem *oldIte
 
 void page_loaders::xmlSelected(QListWidgetItem *item, QListWidgetItem *oldItem)
 {
-    Q_UNUSED(oldItem);
+    Q_UNUSED(oldItem)
     selectedXMLName = item->text();
 }
 
@@ -385,7 +388,7 @@ void page_loaders::slot_itemEnteredToolTip(QListWidgetItem * item)
 
 void page_loaders::desRightClick(QPoint pos)
 {
-    Q_UNUSED(pos);
+    Q_UNUSED(pos)
 }
 
 void page_loaders::xmlRightClick(QPoint pos)

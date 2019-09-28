@@ -42,6 +42,12 @@
 #include "base/layer.h"
 #include "base/configuration.h"
 
+enum eTileMakerXform
+{
+    XF_VIEW   = 0,
+    XF_BKGD   = 1,
+    XF_TILING = 2
+};
 
 class TilingMakerView : public Layer
 {
@@ -54,7 +60,6 @@ public:
 
     virtual void    draw( GeoGraphics * gg) = 0;
 
-    void drawTiling(GeoGraphics * g2d);
     void drawFeature(GeoGraphics * g2d, PlacedFeaturePtr pf, bool draw_c, QColor icol );
     void drawTranslationVectors(GeoGraphics * g2d, QPointF t1_start, QPointF t1_end, QPointF t2_start, QPointF t2_end);
     void drawAccum(GeoGraphics * g2d);
@@ -84,10 +89,13 @@ public:
 protected:
     void determineOverlapsAndTouching();
 
+    eTileMakerXform             xformMode;
+
     eMouseMode  mouse_mode;     // set by tiling designer menu
 
     QVector<PlacedFeaturePtr> allPlacedFeatures;
     QVector<PlacedFeaturePtr> in_tiling;    // DAC was hash
+
     EdgePoly                  wAccum;       // world points
     QVector<Measurement>      wMeasurements;
 
@@ -106,7 +114,6 @@ protected:
 
     Configuration   * config;
 
-private:
     QVector<PlacedFeaturePtr> overlapping;  // calculated DAC was hash
     QVector<PlacedFeaturePtr> touching;     // calculated
 };

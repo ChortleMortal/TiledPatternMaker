@@ -25,7 +25,7 @@
 #ifndef SHAPEFACTORY_H
 #define SHAPEFACTORY_H
 
-#include "base/shapes.h"
+#include "designs/shapes.h"
 #include "viewers/shapeviewer.h"
 
 #include <QGraphicsItem>

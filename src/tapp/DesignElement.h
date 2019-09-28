@@ -51,6 +51,7 @@ public:
     FeaturePtr getFeature();
     FigurePtr  getFigure();
     void       setFigure(FigurePtr afigure);
+    void       setFeature(FeaturePtr afeature);
 
     QString toString();
 

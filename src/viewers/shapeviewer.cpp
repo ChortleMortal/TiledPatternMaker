@@ -24,7 +24,7 @@
 
 #include "viewers/shapeviewer.h"
 #include "base/configuration.h"
-#include "base/shapes.h"
+#include "designs/shapes.h"
 
 ShapeViewer::ShapeViewer()
 {
@@ -37,8 +37,8 @@ void ShapeViewer::paint(QPainter *painter,
                    const QStyleOptionGraphicsItem *option,
                    QWidget *widget)
 {
-    Q_UNUSED(option);
-    Q_UNUSED(widget);
+    Q_UNUSED(option)
+    Q_UNUSED(widget)
 
     TRANS;
     if (javaCoords)

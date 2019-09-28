@@ -30,7 +30,19 @@
 #include "viewers/workspaceviewer.h"
 #include "base/fileservices.h"
 
-Cycler::Cycler(TiledPatternMaker * maker) : QObject()
+Cycler * Cycler::mpThis = nullptr;
+
+Cycler * Cycler::getInstance()
+{
+    if (mpThis == nullptr)
+    {
+        mpThis = new Cycler();
+    }
+    return mpThis;
+}
+
+
+Cycler::Cycler() : QObject()
 {
     busy   = false;
     cycleMode   = CYCLE_NONE;
@@ -39,21 +51,8 @@ Cycler::Cycler(TiledPatternMaker * maker) : QObject()
     canvas         = Canvas::getInstance();
     Workspace * ws = Workspace::getInstance();
 
-    connect(maker,   &TiledPatternMaker::sig_readyNext,  this,  &Cycler::slot_readyNext);
-    connect(maker,   &TiledPatternMaker::sig_takeNext,   this,  &Cycler::slot_nextCycle);
-
-    connect(&timer,  &QTimer::timeout,                   this,  &Cycler::slot_nextCycle);
-
-    connect(this,    &Cycler::sig_clearCanvas,    ws,     &Workspace::slot_clearCanvas);
-    connect(this,    &Cycler::sig_loadXML,        maker,  &TiledPatternMaker::slot_loadXML);
-    connect(this,    &Cycler::sig_loadTiling,     maker,  &TiledPatternMaker::slot_loadTiling);
-    connect(this,    &Cycler::sig_loadAndSave,    maker,  &TiledPatternMaker::slot_loadAndSaveXML);
-    connect(this,    &Cycler::sig_saveAsBMP,      maker,  &TiledPatternMaker::slot_saveAsBMP);
-    connect(this,    &Cycler::sig_saveTilingAsBMP,maker,  &TiledPatternMaker::slot_saveTilingAsBMP);
-    connect(this,    &Cycler::sig_finished,       maker,  &TiledPatternMaker::slot_cyclerFinished);
-    connect(this,    &Cycler::sig_compare,        maker,  &TiledPatternMaker::slot_compareImages);
-    connect(this,    &Cycler::sig_viewImage,      maker,  &TiledPatternMaker::slot_view_image);
-    connect(this,    &Cycler::sig_png,            canvas, &Canvas::slot_png);
+    connect(this,   &Cycler::sig_clearCanvas, ws,   &Workspace::slot_clearCanvas);
+    connect(&timer, &QTimer::timeout,         this, &Cycler::slot_nextCycle);
 }
 
 Cycler::~Cycler()
@@ -64,8 +63,6 @@ Cycler::~Cycler()
 
 void Cycler::slot_startCycle()
 {
-    canvas->setMode(MODE_CYCLE);
-
     cycleMode = config->cycleMode;
 
     qDebug() << "slot_cycle" << sCycleMode[cycleMode];

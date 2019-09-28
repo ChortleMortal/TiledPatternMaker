@@ -597,7 +597,7 @@ void XmlLoader::procesToolkitGeoLayer(xml_node & node, Xform & xf)
         {
             fval *= -75.0;
         }
-        xf.translateX = fval;
+        xf.setTranslateX(fval);
     }
 
     n = node.child("top__delta");
@@ -609,7 +609,7 @@ void XmlLoader::procesToolkitGeoLayer(xml_node & node, Xform & xf)
         {
             fval *= -75.0;
         }
-        xf.translateY = fval;
+        xf.setTranslateY(fval);
     }
 
     n = node.child("width__delta");
@@ -617,10 +617,10 @@ void XmlLoader::procesToolkitGeoLayer(xml_node & node, Xform & xf)
     {
         val          = n.child_value();
         fval         = val.toDouble();
-        xf.scale     = fval;
+        xf.setScale(fval);
         if (_version < 3)
         {
-            xf.scale = 1.0;     //used as scale
+            xf.setScale(1.0);     //used as scale
         }
     }
 
@@ -628,7 +628,8 @@ void XmlLoader::procesToolkitGeoLayer(xml_node & node, Xform & xf)
     if (n)
     {
         val          = n.child_value();
-        xf.rotationRadians  = val.toDouble();
+        fval         = val.toDouble();
+        xf.setRotateRadians(fval);
     }
 }
 
@@ -910,6 +911,41 @@ PrototypePtr XmlLoader::getPrototype(xml_node & node)
             dc_found = true;
             canvas->dump(true);
         }
+        else if (name == "app.ExplicitGirih")
+        {
+            qDebug() << "adding ExplicitGirih";
+            figure = getExplicitFigure(xmlfigure,FIG_TYPE_GIRIH);
+            dc_found = true;
+            canvas->dump(true);
+        }
+        else if (name == "app.ExplicitStar")
+        {
+            qDebug() << "adding ExplicitStar";
+            figure = getExplicitFigure(xmlfigure,FIG_TYPE_EXPLICIT_STAR);
+            dc_found = true;
+            canvas->dump(true);
+        }
+        else if (name == "app.ExplicitRosette")
+        {
+            qDebug() << "adding ExplicitRosette";
+            figure = getExplicitFigure(xmlfigure,FIG_TYPE_EXPLICIT_ROSETTE);
+            dc_found = true;
+            canvas->dump(true);
+        }
+        else if (name == "app.ExplicitHourglass")
+        {
+            qDebug() << "adding ExplicitHourglass";
+            figure = getExplicitFigure(xmlfigure,FIG_TYPE_HOURGLASS);
+            dc_found = true;
+            canvas->dump(true);
+        }
+        else if (name == "app.ExplicitIntersect")
+        {
+            qDebug() << "adding ExplicitIntersect";
+            figure = getExplicitFigure(xmlfigure,FIG_TYPE_INTERSECT);
+            dc_found = true;
+            canvas->dump(true);
+        }
         else
         {
             fail("Figure not found:", name);
@@ -1008,21 +1044,95 @@ void XmlLoader::getFigureCommon(xml_node & node, FigurePtr fig)
 
 ExplicitPtr XmlLoader::getExplicitFigure(xml_node & node, eFigType figType)
 {
+    ExplicitPtr ep;
     if (hasReference(node))
     {
-        ExplicitPtr f = getExplicitReferencedPtr(node);
-        return f;
+        ep = getExplicitReferencedPtr(node);
+        return ep;
     }
 
     MapPtr map = getMap(node);
     map->verify("XML Explicit figure",false,true);
+    ep = make_shared<ExplicitFigure>(map,figType);
 
-    ExplicitPtr figure = make_shared<ExplicitFigure>(map,figType);
-    setExplicitReference(node,figure);
+    if (figType == FIG_TYPE_GIRIH)
+    {
+        QString str;
+        str = node.child_value("sides");
+        int sides = str.toInt();
 
-    getFigureCommon(node, figure);
+        str = node.child_value("skip");
+        qreal skip  = str.toDouble();
 
-    return(figure);
+        ep->sides = sides;
+        ep->skip  = skip;
+    }
+    else if (figType == FIG_TYPE_EXPLICIT_STAR)
+    {
+        QString str;
+        str = node.child_value("s");
+        int s = str.toInt();
+
+        str = node.child_value("d");
+        qreal d  = str.toDouble();
+
+        ep->s = s;
+        ep->d = d;
+    }
+    else if (figType == FIG_TYPE_EXPLICIT_ROSETTE)
+    {
+        QString str;
+        str = node.child_value("s");
+        int s = str.toInt();
+
+        str = node.child_value("q");
+        qreal q  = str.toDouble();
+
+        str = node.child_value("r");
+        qreal r  = str.toDouble();
+
+        ep->s = s;
+        ep->q = q;
+        ep->r = r;
+    }
+    else if (figType == FIG_TYPE_HOURGLASS)
+    {
+        QString str;
+        str = node.child_value("s");
+        int s = str.toInt();
+
+        str = node.child_value("d");
+        qreal d  = str.toDouble();
+
+        ep->s = s;
+        ep->d = d;
+    }
+    else if (figType == FIG_TYPE_INTERSECT)
+    {
+        QString str;
+        str = node.child_value("s");
+        int s = str.toInt();
+
+        str = node.child_value("sides");
+        int sides = str.toInt();
+
+        str = node.child_value("skip");
+        qreal skip  = str.toDouble();
+
+        str = node.child_value("progressive");
+        bool prog = (str == "t");
+
+        ep->s     = s;
+        ep->sides = sides;
+        ep->skip  = skip;
+        ep->progressive = prog;
+    }
+
+    setExplicitReference(node,ep);
+
+    getFigureCommon(node,ep);
+
+    return(ep);
 }
 
 StarPtr XmlLoader::getStarFigure(xml_node & node)
@@ -1514,7 +1624,7 @@ void XmlLoader::procBorderTwoColor(xml_node & node)
 
 void XmlLoader::procBorderBlocks(xml_node & node)
 {
-    Q_UNUSED(node);  // FIXME border2
+    Q_UNUSED(node)  // FIXME border2
     //void addBorder2(QColor color, qreal diameter, int rows, int cols);
 }
 

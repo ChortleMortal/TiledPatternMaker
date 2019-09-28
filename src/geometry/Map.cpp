@@ -44,7 +44,7 @@
 #include "geometry/Intersect.h"
 #include "base/canvas.h"
 #include "base/configuration.h"
-#include "base/shapefactory.h"
+#include "designs/shapefactory.h"
 #include "base/utilities.h"
 #include <QtAlgorithms>
 

@@ -51,17 +51,18 @@ public:
     Prototype(TilingPtr t);
     virtual ~Prototype();
 
-    MapPtr getProtoMap();
-    MapPtr getExistingProtoMap() { return protoMap; }
-    MapPtr createProtoMap();
-    void   resetProtoMap();
+    MapPtr  getProtoMap();
+    MapPtr  getExistingProtoMap() { return protoMap; }
+    MapPtr  createProtoMap();
+    void    resetProtoMap();
 
-    void setTiling(TilingPtr t);
-    void addElement(DesignElementPtr element);
+    void    setTiling(TilingPtr t);
+    void    addElement(DesignElementPtr element);
+    void    setFeaturesReversed(QList<FeaturePtr> features);
 
     QString getInfo() const;
 
-    void  walk();
+    void    walk();
 
     TilingPtr         getTiling()   { return tiling; }
     QList<FeaturePtr> getFeatures();

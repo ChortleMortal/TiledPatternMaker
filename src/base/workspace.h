@@ -25,9 +25,9 @@
 #ifndef WORKSPACE_H
 #define WORKSPACE_H
 
-#include "base/design.h"
 #include "base/shared.h"
 #include "base/styleddesign.h"
+#include "designs/design.h"
 #include "tapp/DesignElement.h"
 
 class Workspace : public QObject

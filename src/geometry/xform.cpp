@@ -27,6 +27,20 @@ Xform::Xform(const Xform  & other)
     rotationRadians = other.rotationRadians;
 }
 
+Xform::Xform(QTransform t)
+{
+    setTransform(t);
+}
+
+void Xform::init()
+{
+    scale = 1.0;
+    translateX = 0.0;
+    translateY = 0.0;
+    rotationRadians = 0.0;
+    rotateCenter = QPointF();
+}
+
 void Xform::setTransform(QTransform t)
 {
     scale      = Transform::scalex(t);
@@ -54,7 +68,7 @@ QTransform Xform::computeTransform()
     Scene * scene   = canvas->scene;
     if (scene)
     {
-        rotateCenter    = canvas->scene->sceneRect().center();
+        rotateCenter    = scene->sceneRect().center();
     }
     QTransform tr   = rotateAroundPoint();
     QTransform ts   = QTransform::fromScale(scale,scale);
@@ -82,3 +96,52 @@ QString Xform::toInfoString()
     return s;
 }
 
+qreal Xform::getScale()
+{
+    return scale;
+}
+
+qreal Xform::getRotateRadians()
+{
+    return rotationRadians;
+}
+
+qreal Xform::getTranslateX()
+{
+    return translateX;
+}
+
+qreal Xform::getTranslateY()
+{
+    return translateY;
+}
+
+QPointF Xform::getRotateCenter()
+{
+    return rotateCenter;
+}
+
+void Xform::setScale(qreal s)
+{
+    scale = s;
+}
+
+void Xform::setRotateRadians(qreal rr)
+{
+    rotationRadians = rr;
+}
+
+void Xform::setTranslateX(qreal x)
+{
+    translateX = x;
+}
+
+void Xform::setTranslateY(qreal y)
+{
+    translateY = y;
+}
+
+void Xform::setRotateCenter(QPointF pt)
+{
+    rotateCenter = pt;
+}

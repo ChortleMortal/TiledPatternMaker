@@ -22,8 +22,8 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "shapes.h"
-#include "base/shapefactory.h"
+#include "designs/shapes.h"
+#include "designs//shapefactory.h"
 
 
 Polyform::Polyform(QPen Pen, QBrush Brush) : QPolygonF()

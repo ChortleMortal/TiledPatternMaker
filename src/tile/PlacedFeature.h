@@ -67,6 +67,7 @@ public:
 protected:
     void saveGirihShape(QTextStream & out, QString name);
     void loadGirihShape(pugi::xml_node & poly_node);
+    void loadGirihShape(int sides, pugi::xml_node & poly_node);
     void loadGirihShapeOld(pugi::xml_node & poly_node);
 
 private:

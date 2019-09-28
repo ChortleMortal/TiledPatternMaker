@@ -24,9 +24,9 @@
 
 #include "base/border.h"
 #include "base/canvas.h"
-#include "base/designs.h"
-#include "base/patterns.h"
 #include "base/workspace.h"
+#include "designs/designs.h"
+#include "designs/patterns.h"
 
 /////////////////////////////////////////////////////////////////////////////
 //

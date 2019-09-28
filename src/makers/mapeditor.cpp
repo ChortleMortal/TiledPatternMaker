@@ -59,7 +59,7 @@ MapEditor::MapEditor() : MapEditorSelection(), stash(this)
     connect(view, &View::sig_mouseDragged,  this, &MapEditor::slot_mouseDragged);
     connect(view, &View::sig_mouseReleased, this, &MapEditor::slot_mouseReleased);
     connect(view, &View::sig_mouseMoved,    this, &MapEditor::slot_mouseMoved);
-    connect(view, &View::keyEvent,          this, &MapEditor::procKeyEvent);
+    connect(view, &View::sig_procKeyEvent,  this, &MapEditor::slot_procKeyEvent);
 
     map_mouse_mode  = MAP_MODE_NONE;
     inputMode       = ME_INPUT_UNDEFINED;
@@ -525,11 +525,12 @@ bool MapEditor::initStashFrom(QString name)
 ///
 //////////////////////////////////////////////////////////////////
 
-void MapEditor::procKeyEvent(QKeyEvent * k)
+void MapEditor::slot_procKeyEvent(QKeyEvent * k)
 {
     if (config->viewerType != VIEW_MAP_EDITOR)
         return;
 
+    bool consumed = true;
     int key = k->key();
     switch (key)
     {
@@ -548,14 +549,17 @@ void MapEditor::procKeyEvent(QKeyEvent * k)
             }
 
         // modes
-        case Qt::Key_Escape: setMouseMode(MAP_MODE_NONE); canvas->procKeyEvent(k); break;
+        case Qt::Key_Escape: setMouseMode(MAP_MODE_NONE); consumed = false; break;
         case Qt::Key_F3:     setMouseMode(MAP_MODE_DRAW_LINE); break;
         case Qt::Key_F4:     setMouseMode(MAP_MODE_CONSTRUCTION_LINES); break;
         case Qt::Key_F5:     setMouseMode(MAP_MODE_DELETE); break;
         case Qt::Key_F6:     setMouseMode(MAP_MODE_SPLIT_LINE); break;
         case Qt::Key_F7:     setMouseMode(MAP_MODE_EXTEND_LINE); break;
         case Qt::Key_F9:     setMouseMode(MAP_MODE_CONSTRUCTION_CIRCLES); break;
-        default: canvas->procKeyEvent(k); break;
+        default: consumed = false; break;
    }
+
+    if (!consumed)
+        canvas->procKeyEvent(k);
 }
 

@@ -23,18 +23,18 @@
  */
 
 #include "base/tiledpatternmaker.h"
-#include "base/designs.h"
 #include "base/canvas.h"
 #include "base/cycler.h"
+#include "base/styleddesign.h"
+#include "base/tilingmanager.h"
 #include "base/transparentwidget.h"
-#include "viewers/workspaceviewer.h"
+#include "designs/designs.h"
 #include "style/Style.h"
 #include "panels/panel.h"
 #include "panels/splitscreen.h"
-#include "base/styleddesign.h"
 #include "makers/mapeditor.h"
 #include "makers/tilingmaker.h"
-#include "base/tilingmanager.h"
+#include "viewers/workspaceviewer.h"
 
 TiledPatternMaker::TiledPatternMaker() : QObject()
 {
@@ -93,9 +93,23 @@ void TiledPatternMaker::startEverything()
     connect(canvas, &Canvas::sig_raiseMenu,               this, &TiledPatternMaker::slot_raiseMenu);
 
     // create cycler
-    cycler        = new Cycler(this);
+    cycler        = Cycler::getInstance();
 
-    connect(canvas,   &Canvas::sig_startCycle,   cycler,  &Cycler::slot_startCycle);
+    connect(this,   &TiledPatternMaker::sig_readyNext,  cycler,  &Cycler::slot_readyNext);
+    connect(this,   &TiledPatternMaker::sig_takeNext,   cycler,  &Cycler::slot_nextCycle);
+
+    connect(cycler,    &Cycler::sig_loadXML,        this,  &TiledPatternMaker::slot_loadXML);
+    connect(cycler,    &Cycler::sig_loadTiling,     this,  &TiledPatternMaker::slot_loadTiling);
+    connect(cycler,    &Cycler::sig_loadAndSave,    this,  &TiledPatternMaker::slot_loadAndSaveXML);
+    connect(cycler,    &Cycler::sig_saveAsBMP,      this,  &TiledPatternMaker::slot_saveAsBMP);
+    connect(cycler,    &Cycler::sig_saveTilingAsBMP,this,  &TiledPatternMaker::slot_saveTilingAsBMP);
+    connect(cycler,    &Cycler::sig_finished,       this,  &TiledPatternMaker::slot_cyclerFinished);
+    connect(cycler,    &Cycler::sig_compare,        this,  &TiledPatternMaker::slot_compareImages);
+    connect(cycler,    &Cycler::sig_viewImage,      this,  &TiledPatternMaker::slot_view_image);
+    connect(cycler,    &Cycler::sig_png,            canvas, &Canvas::slot_png);
+
+
+    connect(canvas,   &Canvas::sig_cyclerStart,   cycler,  &Cycler::slot_startCycle);
     connect(canvas,   &Canvas::sig_cyclerKey,    cycler,  &Cycler::slot_psuedoKey);
     connect(canvas,   &Canvas::sig_cyclerQuit,   cycler,  &Cycler::slot_stopCycle);
 
@@ -415,10 +429,12 @@ void TiledPatternMaker::slot_compareImages(QString fileLeft, QString fileRight)
 
     if (fileRight.isEmpty())
     {
-        QPixmap  pm = makeTextPixmap("No matching image found for:",fileLeft);
         qDebug() << "different (no match)" << fileLeft;
+        QString str = "No matching image found ";
+        emit sig_compareResult(str);
+        QPixmap  pm = makeTextPixmap(str,fileLeft);
         if (!autoMode || stopIfDiff)
-            SplatCompareResult(pm,"No matching image found");
+            SplatCompareResult(pm,str);
         else
             emit sig_takeNext();
         return;
@@ -429,16 +445,21 @@ void TiledPatternMaker::slot_compareImages(QString fileLeft, QString fileRight)
     if (left == right)
     {
         qDebug() << "same     " << fileLeft;
-        QPixmap  pm = makeTextPixmap("Images are the same:",fileLeft,fileRight);
+        QString str = "Images are the same ";
+        emit sig_compareResult(str);
+        QPixmap  pm = makeTextPixmap(str,fileLeft,fileRight);
         if (!autoMode)
-            SplatCompareResult(pm,"Images are the same");
+            SplatCompareResult(pm,str);
         else
             emit sig_takeNext();
         return;
     }
 
+
     // files are different
     qDebug() << "different" << fileLeft;
+    QString str = "Images are different";
+    emit sig_compareResult(str);
     if (autoMode & !stopIfDiff)
     {
         emit sig_takeNext();
@@ -450,8 +471,10 @@ void TiledPatternMaker::slot_compareImages(QString fileLeft, QString fileRight)
     {
         QString str1 = QString("%1 = %2x%3").arg(fileLeft).arg(left.width()).arg(left.height());
         QString str2 = QString("%1 = %2x%3").arg(fileRight).arg(right.width()).arg(right.height());
-        QPixmap  pm = makeTextPixmap("Images different sizez:",str1,str2);
-        SplatCompareResult(pm,"Images are different sizes");
+        QPixmap  pm = makeTextPixmap("Images different sizes:",str1,str2);
+        QString str = "Images are different sizes";
+        emit sig_compareResult(str);
+        SplatCompareResult(pm,str);
         return;
     }
 

@@ -22,8 +22,8 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "configuration.h"
-#include "design.h"
+#include "base/configuration.h"
+#include "designs/design.h"
 #include <cstddef>
 
 Configuration * Configuration::mpThis = nullptr;

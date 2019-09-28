@@ -79,7 +79,9 @@ void View::init()
     canvas  = Canvas::getInstance();
 
     WorkspaceViewer * vw = WorkspaceViewer::getInstance();
-    connect(vw, &WorkspaceViewer::sig_title, this, &View::setWindowTitle, Qt::QueuedConnection);
+
+    connect(vw,   &WorkspaceViewer::sig_title, this,   &View::setWindowTitle, Qt::QueuedConnection);
+    connect(this, &View::sig_procKeyEvent,     canvas, &Canvas::slot_procKeyEvent);
 }
 
 void View::slot_sceneRectChanged(const QRectF &rect)
@@ -162,16 +164,7 @@ void View::paintEvent(QPaintEvent *event)
 
 void View::keyPressEvent( QKeyEvent *k )
 {
-    switch (config->viewerType)
-    {
-    case VIEW_TILIING_MAKER:
-    case VIEW_MAP_EDITOR:
-        emit keyEvent(k);
-        break;
-    default:
-        canvas->procKeyEvent(k);
-        break;
-    }
+    emit sig_procKeyEvent(k);
 }
 
 void View::mousePressEvent(QMouseEvent *event)

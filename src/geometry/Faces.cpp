@@ -200,7 +200,7 @@ void Faces::buildFacesNew23(MapPtr map)
     }
 
    //dumpFaceGroup("algorithm 23");
-   std::sort(faceGroup.begin(), faceGroup.end(), FaceSet::sortByArea);    // largest first
+   std::sort(faceGroup.begin(), faceGroup.end(), FaceSet::sort);    // largest first
    //dumpFaceGroup("algorithm 23 post sort");
 }
 

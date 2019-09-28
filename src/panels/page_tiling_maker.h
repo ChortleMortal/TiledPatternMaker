@@ -57,18 +57,22 @@ public:
     void onEnter() override;
     void onExit() override;
 
+    void buildMenu();
+    void refreshMenuData();
+
 signals:
     void sig_tilingChanged();
     void sig_loadTiling(QString name);
 
 public slots:
-    void currentFeature(int index);
+    void slot_currentFeature(int index);
     void slot_loadedXML(QString name);
     void slot_loadedTiling (QString name);
+    void slot_buildMenu();
+    void slot_refreshMenu();
 
 private slots:
-    void refreshMenu();
-    void slot_updateTiling();
+    void slot_replaceTilingInStyles();
     void slot_saveTiling();
     void slot_sidesChanged(int row);
     void slot_transformChanged(int row);
@@ -83,7 +87,7 @@ private slots:
     void slot_swapTrans();
     void slot_remove_clicked();
     void slot_setModes(int mode);
-    void set_reps();
+    void slot_set_reps();
     void slot_hideTable(bool checked);
     void slot_reloadTiling();
     void slot_loadBackground();
@@ -98,7 +102,6 @@ private slots:
     void slot_importPoly();
     void slot_addGirihShape();
 
-    void slot_kbdXform(bool checked);
     void slot_moveX(int amount);
     void slot_moveY(int amount);
     void slot_rotate(int amount);
@@ -113,7 +116,8 @@ protected:
     void       createTopGrid();
 
     void clear();
-    void displayPlacedFeatureInTable(PlacedFeaturePtr pf, int row, QString from);
+    void buildTableEntry(PlacedFeaturePtr pf, int row, QString inclusion);
+    void refreshTableEntry(PlacedFeaturePtr pf, int row, QString inclusion);
     void updateFeaturePointInfo(PlacedFeaturePtr pfp);
 
     void useBackground(TilingPtr tiling);
@@ -177,7 +181,6 @@ private:
     QCheckBox     * hideTiling;
     QCheckBox     * perspectiveBkgd;
     QCheckBox     * transformBkgd;
-    QCheckBox     * kbdXform;
 
     QGroupBox     * bkgdGroup;
 };

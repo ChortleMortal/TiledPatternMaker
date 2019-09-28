@@ -60,7 +60,6 @@ public:
     void            updateStatus();
 
     eMapMouseMode   getMouseMode();
-    void            procKeyEvent(QKeyEvent *k);
 
     bool            loadCurrentStash();
     bool            loadNamedStash(QString file, bool animate);
@@ -82,6 +81,7 @@ signals:
 public slots:
     void setMouseMode(eMapMouseMode inputMode);
 
+    void slot_procKeyEvent(QKeyEvent *k);
     void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn);
     void slot_mouseDragged(QPointF spt);
     void slot_mouseReleased(QPointF spt);

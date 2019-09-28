@@ -87,10 +87,16 @@ FigurePtr DesignElement::getFigure()
     return figure;
 }
 
-void DesignElement::setFigure(FigurePtr afigure )
+void DesignElement::setFigure(FigurePtr afigure)
 {
-    qDebug() << "old=" << figure.get() << "new=" << afigure.get();
+    qDebug() << "oldfig =" << figure.get() << "newfig =" << afigure.get();
     figure = afigure;
+}
+
+void DesignElement::setFeature(FeaturePtr afeature)
+{
+    qDebug() << "oldfeat=" << feature.get() << "newfeat=" << afeature.get();
+    feature = afeature;
 }
 
 QString DesignElement::toString()
