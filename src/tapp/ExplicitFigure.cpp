@@ -29,6 +29,7 @@ ExplicitFigure::ExplicitFigure(MapPtr map, eFigType figType)
 {
     figureMap = map;
     setFigType(figType);
+    init();
 }
 
 ExplicitFigure::ExplicitFigure(const Figure &fig, MapPtr map, eFigType figType)
@@ -36,16 +37,29 @@ ExplicitFigure::ExplicitFigure(const Figure &fig, MapPtr map, eFigType figType)
 {
     figureMap = map;
     setFigType(figType);
+    init();
 }
 
 ExplicitFigure::ExplicitFigure(const Figure & fig, eFigType figType)
     : Figure(fig)
 {
     setFigType(figType);
+    init();
 }
 
 ExplicitFigure::~ExplicitFigure()
 {}
+
+void ExplicitFigure::init()
+{
+    sides = 10;          // girih + intersect + rosette + star
+    skip  = 3.0;         // girih
+    d     = 2.0;         // hourglass + intersect + star
+    s     = 1;           // hourglass + intersect + star
+    q     = 0.0;         // rosette
+    r_flexPt    = 0.5;   // rosette
+    progressive = false; // intersect
+}
 
 MapPtr ExplicitFigure::getFigureMap()
 {

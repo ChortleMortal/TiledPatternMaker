@@ -138,16 +138,16 @@ void Emboss::setAngle(qreal angle )
     //redraw();
 }
 
-void Emboss::setColor( QColor color )
+void Emboss::setColorSet(ColorSet & cset)
 {
-    Outline::setColor( color );
+    Outline::setColorSet(cset);
     setGreys();
 }
 
 void Emboss::setGreys()
 {
     qreal h,s,b;
-    getColor().getHsvF(&h,&s,&b);
+    getColorSet().getFirstColor().color.getHsvF(&h,&s,&b);
 
     greys.erase(greys.begin(),greys.end());
 
@@ -161,4 +161,5 @@ void Emboss::setGreys()
         greys << c;
     }
 }
+
 

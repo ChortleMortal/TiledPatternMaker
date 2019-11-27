@@ -48,6 +48,7 @@
 #include "designs/shapes.h"
 #include "geometry/Edge.h"
 #include "geometry/Vertex.h"
+#include "geometry/neighbours.h"
 
 using std::make_shared;
 
@@ -65,9 +66,11 @@ class Map
     friend class XmlWriter;
 
 public:
-    Map();
+    Map(QString Name);
+    Map(MapPtr map);     // duplictes the contents
     ~Map();
 
+    QString mname;
     static int refs;
 
     void wipeout();     // reclaim memory
@@ -78,8 +81,9 @@ public:
     int numEdges() const;
     int numVertices() const;
 
-    const QVector<VertexPtr> * getVertices() const { return  &vertices;}
-    const QVector<EdgePtr>   * getEdges()    const { return  &edges;}
+    const QVector<VertexPtr>  & getVertices() const { return vertices; }
+    const QVector<EdgePtr>    & getEdges()    const { return edges; }
+    NeighbourMap              & getNeighbourMap()   { return neighbourMap; }
 
     QString getInfo() const;
     bool    isEmpty();
@@ -87,22 +91,18 @@ public:
     // Remove stuff from the map.
     void removeEdge(EdgePtr e);
     void removeVertex(VertexPtr v);
-    void removeVertexSimple(VertexPtr v) { vertices.removeOne(v); }
+    void removeVertexSimple(VertexPtr v) { vertices.removeOne(v); neighbourMap.removeVertex(v); }
 
-    void    duplicate(MapPtr ret);     // duplictes the contents
     MapPtr  recreate();                // makes a new map with similar content
 
     // Insert the edge connecting two vertices, including updating
     // the neighbour lists for the vertices.
-    EdgePtr insertEdge( VertexPtr  v1, VertexPtr v2, bool debug = false);
+    EdgePtr insertEdge(VertexPtr  v1, VertexPtr v2, bool debug = false);
+    EdgePtr insertCurvedEdge(VertexPtr  v1, VertexPtr v2, QPointF center, bool isConvex, bool debug = false);
     void    splitEdge(EdgePtr e);
 
     // The publically-accessible version.
     VertexPtr insertVertex(QPointF pt);
-
-    // Make map from DAC structures
-    void insertPolygon(Polyform  * poly);
-    void insertPolyline(Polyform * poly);
 
     void insertDebugMark(QPointF m, QString txt, qreal size = 0.05 );
     void insertDebugLine(EdgePtr edge);
@@ -134,37 +134,32 @@ public:
     //void mergeMap(MapPtr other, bool consume );
     void mergeMap(MapPtr other);
 
-    // A simpler merge routine that assumes that the two maps
-    // don't interact except at vertices, so edges don't need to
-    // be checked for intersections.
-    void mergeSimple( Map other );
-
     // It's often the case that we want to merge a transformed copy of
     // a map into another map, or even a collection of transformed copies.
     // Since transforming a map requires a slow cloning, we can save lots
     // of time and memory by transforming and merging simultaneously.
     // Here, we transform vertices as they are put into the current map.
-    void mergeSimpleMany(MapPtr other, const QVector<QTransform> & transforms);
+    void mergeSimpleMany(constMapPtr other, const QVector<QTransform> & transforms);
 
     // These methods fix maps.  It may be better not to make maps that need
     // to be fixed in the first place, but these routines come around afterwards
     // and clean things up
 
     void cleanse();                 // does all of the fucntions below
-    void removeNullEdges();
+    void removeBadEdges();
     void removeDanglingVertices();
+    void removeBadEdgesFromNeighboursMap();
     void divideIntersectingEdges(); // if two edges cross, make a new vertex and have four edges
     void joinColinearEdges();       // if two lines are straight but have a vertex, then combine lines and delete vertex
     void cleanNeighbours();
     void sortAllNeighboursByAngle();
     void sortVertices();
     void sortEdges();
+    void dumpMap(bool full=true);
 
     // Print a text version of the map.
     QString summary();
-    void dump(bool full=true) const;
-    void dumpVertices(bool full=true) const;
-    void dumpEdges(bool full=true) const;
+
     QString verticesToString();
     QString vptrsToString();
 
@@ -178,19 +173,24 @@ public:
     //
     // It would probably be better to make this function provide the error
     // messages through a return value or exception, but whatever.
-    bool verify(QString mapname, bool verbose, bool detailed = false, bool doDump = false) const;
+    bool verifyMap(QString mapname, bool force = false);
 
     // shape factory
     void addShapeFactory(ShapeFactory * sf);
 
     // edge counts as per A.J. Lee
-    bool analyzeVertices() const;     // returns true if changed
-    void calcVertexEdgeCounts() const;
+    bool analyzeVertices();     // returns true if changed
+    void calcVertexEdgeCounts();
     void removeVerticesWithEdgeCount(int edgeCount);
 
     VertexPtr getVertex(int index)  { return vertices[index]; }
 
 protected:
+
+    // Make map from DAC structures
+    void insertPolygon(Polyform  * poly);
+    void insertPolyline(Polyform * poly);
+
     // Get a Map Vertex given that we're asserting the vertex
     // doesn't lie on an edge in the map.
     VertexPtr getVertex_Simple( QPointF pt );
@@ -213,7 +213,7 @@ protected:
     // current map.  We can do this in linear time with a simple merge
     // algorithm.  Note that we want to coalesce identical vertices to
     // eliminate duplicates.
-    void mergeVertices(QVector<VertexPtr> & your_verts );
+    void mergeVertices(MapPtr other);
 
     // Applying a motion made up only of uniform scales and translations,
     // Angles don't change.  So we can just transform each vertex.
@@ -234,13 +234,24 @@ protected:
     bool joinOneColinearEdge();
     void deDuplicateEdges(QVector<EdgePtr> & vec);
     void deDuplicateVertices(QVector<VertexPtr> & vec);
+    void fixNeighbours();
+
+    void dumpVertices(bool full);
+    void dumpEdges(bool full);
+    void setTmpIndices() const;
 
     void cleanCopy();
 
+    bool verifyVertices();
+    bool verifyEdges();
+    bool verifyNeighbours();
 
 private:
-    QVector<VertexPtr> 	vertices;
+    QVector<VertexPtr>  vertices;
     QVector<EdgePtr>    edges;
+    NeighbourMap        neighbourMap;
+
+    Configuration     * config;
 };
 
 #endif

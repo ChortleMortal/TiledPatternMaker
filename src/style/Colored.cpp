@@ -35,7 +35,7 @@
 
 Colored::Colored(PrototypePtr proto, PolyPtr bounds ) : Style(proto,bounds)
 {
-    colors.setColor(QColor( 20, 150, 210 ));
+    colors.addColor(QColor( 20, 150, 210 ));
 }
 
 Colored::Colored(const Style & other ) : Style(other)
@@ -47,7 +47,7 @@ Colored::Colored(const Style & other ) : Style(other)
     }
     catch(std::bad_cast exp)
     {
-        colors.setColor(QColor( 20, 150, 210 ));
+        colors.addColor(QColor( 20, 150, 210 ));
     }
 }
 
@@ -60,10 +60,7 @@ Colored::~Colored()
 
 void Colored::setColor(QColor color)
 {
-    colors.setColor(color);
-}
-
-QColor Colored::getColor()
-{
-    return  colors.getNextColor().color;  // if there is a single color, it just returns that
+    qWarning() << "Is this right (setColor)";
+    colors.clear();
+    colors.addColor(color);
 }

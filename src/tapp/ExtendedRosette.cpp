@@ -28,12 +28,12 @@
 #include "base/utilities.h"
 
 ExtendedRosette::ExtendedRosette(const Figure & fig,
-                int n, qreal q, int s, qreal k,
+                int nsides, qreal q, int s, qreal k,
                 qreal r,
                 bool  extendPeripheralVertices,
                 bool  extendFreeVertices,
                 bool  connectBoundaryVertices)
-    : Rosette(fig, n,q,s,k,r)
+    : Rosette(fig, nsides,q,s,k,r)
 {
     setFigType(FIG_TYPE_EXTENDED_ROSETTE);
     this->extendPeripheralVertices  = extendPeripheralVertices;
@@ -41,9 +41,9 @@ ExtendedRosette::ExtendedRosette(const Figure & fig,
     this->connectBoundaryVertices   = connectBoundaryVertices;
 }
 
-ExtendedRosette::ExtendedRosette(int n, qreal q, int s, qreal k, qreal r,
+ExtendedRosette::ExtendedRosette(int nsides, qreal q, int s, qreal k, qreal r,
                                  bool extendPeripheralVertices, bool extendFreeVertices, bool connectBoundaryVertices)
-    : Rosette(n,q,s,k,r)
+    : Rosette(nsides,q,s,k,r)
 {
     setFigType(FIG_TYPE_EXTENDED_ROSETTE);
     this->extendPeripheralVertices  = extendPeripheralVertices;
@@ -74,7 +74,7 @@ void ExtendedRosette::extendMap()
     QVector<QPointF>   extendPoints;
     QVector<VertexPtr> extendVertices;
 
-    QVector<EdgePtr> ledges = *figureMap->getEdges();    // local copy of vector
+    QVector<EdgePtr> ledges = figureMap->getEdges();    // local copy of vector
     for(auto e = ledges.begin(); e != ledges.end(); e++)
     {
         EdgePtr edge = *e;
@@ -159,7 +159,7 @@ void ExtendedRosette::extendMap()
             }
         }
     }
-    figureMap->verify("Extended figure - after",false,true,false);
+    figureMap->verifyMap("Extended figure - after");
 
     if (connectBoundaryVertices)
     {
@@ -175,12 +175,13 @@ void ExtendedRosette::connectOuterVertices(MapPtr map)
 
     QVector<VertexPtr> edgeVerts;
 
-    const QVector<VertexPtr> * verts = map->getVertices();
-    for (auto it = verts->begin(); it != verts->end(); it++)
+    NeighbourMap & nmap = map->getNeighbourMap();
+
+    for (auto v : map->getVertices())
     {
-        VertexPtr v = *it;
         //qDebug() << "num neigbours=" << v->numNeighbours();
-        if (v->numNeighbours() < 2)
+        NeighboursPtr np = nmap.getNeighbours(v);
+        if (np->numNeighbours() < 2)
         {
             bool doInsert = false;
             for (int i=0; i < blines.size(); i++)
@@ -247,6 +248,6 @@ void ExtendedRosette::connectOuterVertices(MapPtr map)
             v2.reset();
         }
     }
-    map->verify("Extended figure - after2",false,true,false);
+    map->verifyMap("Extended figure - after2");
 }
 

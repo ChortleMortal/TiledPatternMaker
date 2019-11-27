@@ -76,6 +76,7 @@ SOURCES += \
     geometry/circle.cpp \
     geometry/edgepoly.cpp \
     geometry/facecycles.cpp \
+    geometry/neighbours.cpp \
     geometry/xform.cpp \
     makers/FeatureButton.cpp \
     makers/FeatureLauncher.cpp \
@@ -93,6 +94,7 @@ SOURCES += \
     makers/tilingmouseactions.cpp \
     panels/dlg_colorSet.cpp \
     panels/dlg_feature_edit.cpp \
+    panels/dlg_line_edit.cpp \
     panels/dlg_listnameselect.cpp \
     panels/dlg_listselect.cpp \
     panels/dlg_name.cpp \
@@ -109,9 +111,11 @@ SOURCES += \
     panels/page_designs.cpp \
     panels/page_figure_maker.cpp \
     panels/page_loaders.cpp \
+    panels/page_log.cpp \
     panels/page_map_editor.cpp \
     panels/page_position.cpp \
     panels/page_protos.cpp \
+    panels/page_save.cpp \
     panels/page_style_figure_info.cpp \
     panels/page_style_maker.cpp \
     panels/page_tile_colors.cpp \
@@ -213,6 +217,7 @@ HEADERS += \
     geometry/circle.h \
     geometry/edgepoly.h \
     geometry/facecycles.h \
+    geometry/neighbours.h \
     geometry/xform.h \
     makers/FeatureButton.h \
     makers/FeatureLauncher.h \
@@ -230,6 +235,7 @@ HEADERS += \
     makers/tilingmouseactions.h \
     panels/dlg_colorSet.h \
     panels/dlg_feature_edit.h \
+    panels/dlg_line_edit.h \
     panels/dlg_listnameselect.h \
     panels/dlg_listselect.h \
     panels/dlg_name.h \
@@ -246,9 +252,11 @@ HEADERS += \
     panels/page_designs.h \
     panels/page_figure_maker.h \
     panels/page_loaders.h \
+    panels/page_log.h \
     panels/page_map_editor.h \
     panels/page_position.h \
     panels/page_protos.h \
+    panels/page_save.h \
     panels/page_style_figure_info.h \
     panels/page_style_maker.h \
     panels/page_tile_colors.h \
@@ -267,6 +275,7 @@ HEADERS += \
     style/Emboss.h \
     style/Filled.h \
     style/Interlace.h \
+    style/InterlaceInfo.h \
     style/Outline.h \
     style/Plain.h \
     style/Sketch.h \

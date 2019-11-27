@@ -51,13 +51,12 @@ QRectF MapEditorView::boundingRect() const
 
 void MapEditorView::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-    Q_UNUSED(option);
-    Q_UNUSED(widget);
+    Q_UNUSED(option)
+    Q_UNUSED(widget)
 
     if (!map)
         return;
 
-    //qDebug() << "MapEditorView::paint map=" << makerMap.get();
     painter->setRenderHint(QPainter::Antialiasing ,true);
     painter->setRenderHint(QPainter::SmoothPixmapTransform,true);
 
@@ -72,10 +71,10 @@ void MapEditorView::paint(QPainter *painter, const QStyleOptionGraphicsItem *opt
     viewT         = t * t1;
     viewT         = viewT * t0;
     viewTinv      = viewT.inverted();
-    qDebug() << "MapEditorView::paint"  << Transform::toInfoString(viewT);
+
+    qDebug() << "MapEditorView::paint viewT="  << Transform::toInfoString(viewT);
 
     draw(painter);
-    //qDebug() << "MapEditorView::paint - end";
 }
 
 void MapEditorView::drawMap(QPainter * painter)
@@ -84,9 +83,8 @@ void MapEditorView::drawMap(QPainter * painter)
         return;
 
     painter->setPen(QPen(Qt::green,mapLineWidth ));
-    for (auto e = map->getEdges()->begin(); e != map->getEdges()->end(); e++)
+    for (auto edge : map->getEdges())
     {
-        EdgePtr edge = *e;
         QPointF v1 = edge->getV1()->getPosition();
         QPointF v2 = edge->getV2()->getPosition();
         painter->drawLine(viewT.map(v1),viewT.map(v2));

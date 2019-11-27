@@ -64,7 +64,7 @@
 								</Point>
 							</points>
 						</tile.Feature>
-						<app.ExplicitFeature id="16" type="FIG_TYPE_FEATURE">
+						<app.ExplicitFigure id="16" type="FIG_TYPE_EXPLICIT">
 							<map id="17">
 								<vertices id="18">
 									<Vertex id="19">
@@ -877,7 +877,7 @@
 									<Edge reference="83" />
 								</edges>
 							</map>
-						</app.ExplicitFeature>
+						</app.ExplicitFigure>
 					</entry>
 				</app.Prototype>
 			</prototype>

@@ -47,27 +47,27 @@ public:
     void setNewStyle(StylePtr style);
     void setTilingChanged();
 
-    void setActiveFeature(FeatureBtnPtr fb);
-    FeaturePtr getActiveFeature();
+    void        setActiveFeature(FeatureBtnPtr fb);
+    FeaturePtr  getActiveFeature();
+    bool        duplicateActiveFeature();
 
     PrototypePtr getPrototype();
     PrototypePtr makePrototype();
 
     StylePtr  createDefaultStyleFromPrototype();
 
-    MapPtr createExplicitGirihMap( int starSides, qreal starSkip );
-    MapPtr createExplicitHourglassMap( qreal d, int s );
+    MapPtr createExplicitGirihMap(int starSides, qreal starSkip);
+    MapPtr createExplicitHourglassMap(qreal d, int s);
     MapPtr createExplicitInferredMap();
-    MapPtr createExplicitIntersectMap( int starSides, qreal starSkip, int s, bool progressive );
-    MapPtr createExplicitRosetteMap(qreal q, int s, qreal r );
-    MapPtr createExplicitStarMap( qreal d, int s );
+    MapPtr createExplicitIntersectMap(int starSides, qreal starSkip, int s, bool progressive);
+    MapPtr createExplicitRosetteMap(qreal q, int s, qreal r);
+    MapPtr createExplicitStarMap(qreal d, int s);
     MapPtr createExplicitFeatureMap();
 
     bool   verify();
 
 signals:
     void sig_viewWS();
-    void sig_render();
 
 public slots:
     void slot_figureChanged();

@@ -177,9 +177,10 @@ void StyleColorFillGroup::slot_edit()
     ColorSet & colorSet = colorGroup.getColorSet(row);
 
     DlgColorSet dlg(colorSet);
-    dlg.exec();
 
-    emit sig_colorsChanged();
+    connect(&dlg, &DlgColorSet::sig_colorsChanged, this, &StyleColorFillGroup::sig_colorsChanged);
+
+    dlg.exec();
 
     display(colorGroup);
 }
@@ -188,7 +189,7 @@ void StyleColorFillGroup::slot_edit()
 void StyleColorFillGroup::add()
 {
     ColorSet set;
-    set.setColor(Qt::black);
+    set.addColor(Qt::black);
     colorGroup.addColorSet(set);
 
     emit sig_colorsChanged();

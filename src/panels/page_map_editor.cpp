@@ -43,7 +43,7 @@ static QString sMapEdMode[] =
     E2STR(ME_INPUT_STYLE)
 };
 
-page_map_editor:: page_map_editor(ControlPanel *panel)  : panel_page(panel,"Map Editor")
+page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Map Editor")
 {
     me = MapEditor::getInstance();
 
@@ -54,10 +54,10 @@ page_map_editor:: page_map_editor(ControlPanel *panel)  : panel_page(panel,"Map 
     QRadioButton * mapEdFigure = new QRadioButton("Figure");
 
     // map editor group
-    mapEdViewGroup.addButton(mapEdStyle,ME_STYLE_MAP);
-    mapEdViewGroup.addButton(mapEdProto,ME_PROTO_MAP);
-    mapEdViewGroup.addButton(mapEdFigure,ME_FIGURE_MAP);
-    mapEdViewGroup.button(config->mapEditorView)->setChecked(true);
+    mapEdModeGroup.addButton(mapEdStyle,MAP_MODE_STYLE);
+    mapEdModeGroup.addButton(mapEdProto,MAP_MODE_PROTO);
+    mapEdModeGroup.addButton(mapEdFigure,MAP_MODE_FIGURE);
+    mapEdModeGroup.button(config->mapEditorMode)->setChecked(true);
 
     line0 = new QLabel;
     line1 = new QLabel;
@@ -85,6 +85,8 @@ page_map_editor:: page_map_editor(ControlPanel *panel)  : panel_page(panel,"Map 
     QToolButton * pbSortNeigbours = new QToolButton();
     QToolButton * pbSortVertices = new QToolButton();
     QToolButton * pbSortEdges = new QToolButton();
+    QToolButton * pbDumpMap = new QToolButton();
+
     QToolButton * pbRestoreConstructs= new QToolButton();
     QToolButton * pbUndoConstructs= new QToolButton();
     QToolButton * pbRedoConstructs= new QToolButton();
@@ -111,6 +113,7 @@ page_map_editor:: page_map_editor(ControlPanel *panel)  : panel_page(panel,"Map 
     pbSaveTemplate->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     pbLoadTemplate->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     pbClearMap->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    pbDumpMap->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     pbMakeExplicit->setText("Make Explicit");
     pbVerifyMap->setText("Verify Map");
@@ -130,6 +133,7 @@ page_map_editor:: page_map_editor(ControlPanel *panel)  : panel_page(panel,"Map 
     pbLoadTemplate->setText("Load Template");
     pbClearMap->setText("Clear Map");
     pbCleanseMap->setText("Cleanse Map");
+    pbDumpMap->setText("Dump Map");
 
     pbUndoConstructs->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     pbRedoConstructs->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
@@ -223,6 +227,9 @@ page_map_editor:: page_map_editor(ControlPanel *panel)  : panel_page(panel,"Map 
     mapGrid->addWidget(pbRemoveFloatingVerts,row,1);
     mapGrid->addWidget(pbRemoveZombieEdges,row,2);
 
+    row++;
+    mapGrid->addWidget(pbDumpMap,row,0);
+
     QGroupBox * mapBox  = new QGroupBox("Map");
     mapBox->setLayout(mapGrid);
 
@@ -292,36 +299,38 @@ page_map_editor:: page_map_editor(ControlPanel *panel)  : panel_page(panel,"Map 
     connect(maker,  &TiledPatternMaker::sig_loadedXML,      this,   &page_map_editor::slot_loadedXML);
     connect(canvas, &Canvas::sig_unload,                    this,   &page_map_editor::slot_unload);
 
-    connect(pbMakeExplicit,         &QToolButton::clicked,  this,   &page_map_editor::slot_convertToExplicit);
     connect(pbVerifyMap,            &QToolButton::clicked,  this,   &page_map_editor::slot_verify);
+    connect(pbMakeExplicit,         &QToolButton::clicked,  this,   &page_map_editor::slot_convertToExplicit);
+    connect(pbClearMap,             &QToolButton::clicked,  this,   &page_map_editor::slot_clearMap);
     connect(pbDivideEdges,          &QToolButton::clicked,  this,   &page_map_editor::slot_divideIntersectingEdges);
     connect(pbJoinEdges,            &QToolButton::clicked,  this,   &page_map_editor::slot_joinColinearEdges);
     connect(pbCleanNeighbours,      &QToolButton::clicked,  this,   &page_map_editor::slot_cleanNeighbours);
     connect(pbSortNeigbours,        &QToolButton::clicked,  this,   &page_map_editor::slot_sortAllNeighboursByAngle);
     connect(pbSortVertices,         &QToolButton::clicked,  this,   &page_map_editor::slot_sortVertices);
     connect(pbSortEdges,            &QToolButton::clicked,  this,   &page_map_editor::slot_sortEdges);
+    connect(pbCleanseMap,           &QToolButton::clicked,  this,   &page_map_editor::slot_cleanseMap);
     connect(pbRemoveFloatingVerts,  &QToolButton::clicked,  this,   &page_map_editor::slot_removeUnconnectedVertices);
     connect(pbRemoveZombieEdges,    &QToolButton::clicked,  this,   &page_map_editor::slot_removeZombieEdges);
+    connect(pbDumpMap,              &QToolButton::clicked,  this,   &page_map_editor::slot_dumpMap);
+
     connect(pbRestoreConstructs,    &QToolButton::clicked,  this,   &page_map_editor::slot_popstash);
     connect(pbUndoConstructs,       &QToolButton::clicked,  this,   &page_map_editor::slot_undoConstructionLines);
     connect(pbRedoConstructs,       &QToolButton::clicked,  this,   &page_map_editor::slot_redoConstructionLines);
     connect(pbClearConstructs,      &QToolButton::clicked,  this,   &page_map_editor::slot_clearConstructionLines);
-    connect(pbCleanseMap,    &QToolButton::clicked,  this,   &page_map_editor::slot_cleanseMap);
     connect(pbSaveTemplate,         &QToolButton::clicked,  this,   &page_map_editor::slot_saveTemplate);
     connect(pbLoadTemplate,         &QToolButton::clicked,  this,   &page_map_editor::slot_loadTemplate);
-    connect(pbClearMap,             &QToolButton::clicked,  this,   &page_map_editor::slot_clearMap);
 
     connect(hideConsChk,    &QCheckBox::clicked,  this,   &page_map_editor::slot_hideCons);
     connect(hideMapChk,     &QCheckBox::clicked,  this,   &page_map_editor::slot_hideMap);
     connect(hidePtsChk,     &QCheckBox::clicked,  this,   &page_map_editor::slot_hidePoints);
     connect(hideMidPtsChk,  &QCheckBox::clicked,  this,   &page_map_editor::slot_hideMidPoints);
 
-    connect(&mapEdViewGroup,    SIGNAL(buttonClicked(int)), this,   SLOT(slot_mapEdView_pressed(int)));
+    connect(&mapEdModeGroup,    SIGNAL(buttonClicked(int)), this,   SLOT(slot_mapEdMode_pressed(int)));
     connect(&targetGroup,       SIGNAL(buttonClicked(int)), this,   SLOT(slot_target_selected(int)));
     connect(&modeGroup,         SIGNAL(buttonClicked(int)), this,   SLOT(slot_setModes(int)));
     connect(pbReplaceInStyle,   &QToolButton::clicked,      this,   &page_map_editor::sig_stylesReplaceProto);
     connect(pbAddToStyle,       &QToolButton::clicked,      this,   &page_map_editor::sig_stylesAddProto);
-    connect(pbRender,           &QToolButton::clicked,      maker,  &TiledPatternMaker::slot_render);
+    connect(pbRender,           &QToolButton::clicked,      this,   &page_map_editor::slot_render);
 
     connect(radiusSpin,     &DoubleSpinSet::valueChanged, this, &page_map_editor::slot_radiusChanged);
     connect(lineWidthSpin,  &DoubleSpinSet::valueChanged, this, &page_map_editor::slot_lineWidthChanged);
@@ -333,15 +342,17 @@ page_map_editor:: page_map_editor(ControlPanel *panel)  : panel_page(panel,"Map 
 
 void  page_map_editor::onEnter()
 {
-    mapEdViewGroup.blockSignals(true);
-    mapEdViewGroup.button(config->mapEditorView)->setChecked(true);
-    mapEdViewGroup.blockSignals(false);
+    mapEdModeGroup.blockSignals(true);
+    mapEdModeGroup.button(config->mapEditorMode)->setChecked(true);
+    mapEdModeGroup.blockSignals(false);
 
     reload();
+
     modeGroup.button(me->getMouseMode())->setChecked(true);
     targetGroup.button(config->pushTarget)->setChecked(true);
 
     me->buildEditorDB();
+    emit sig_viewWS();
 }
 
 void  page_map_editor::reload()
@@ -350,64 +361,69 @@ void  page_map_editor::reload()
 
     targetGroup.button(config->pushTarget)->setChecked(true);
 
-    if (config->mapEditorView == ME_FIGURE_MAP)
+    if (config->mapEditorMode == MAP_MODE_FIGURE)
     {
+        // this is set by the figure editor
         DesignElementPtr dep  = workspace->getWSDesignElement();
         if (dep)
         {
-            DesignElementPtr dep2 = me->getDesignElement();
-            if (dep != dep2)
-            {
-                me->setDesignElement(dep);
-                emit sig_viewWS();
-            }
+            me->setDesignElement(dep);
         }
         else
         {
             me->unload();
         }
     }
-    else if (config->mapEditorView == ME_PROTO_MAP)
+    else if (config->mapEditorMode == MAP_MODE_PROTO)
     {
-        PrototypePtr pp  = workspace->getWSPrototype();
+        PrototypePtr pp;
+        if (config->mapEditorView == MED_STYLE)
+        {
+            StyledDesign & sd     = workspace->getLoadedStyles();
+            const StyleSet & sset = sd.getStyleSet();
+            if (sset.size())
+            {
+                StylePtr sp  = sset.first();
+                pp = sp->getPrototype();
+            }
+        }
+        else
+        {
+            pp = workspace->getWSPrototype();
+        }
         if (pp)
         {
-            PrototypePtr pp2 = me->getPrototype();
-            if (pp != pp2)
-            {
-                me->setPrototype(pp);
-                emit sig_viewWS();
-            }
+            me->setPrototype(pp);
         }
         else
         {
             me->unload();
         }
     }
-    else if (config->mapEditorView == ME_STYLE_MAP)
+    else if (config->mapEditorMode == MAP_MODE_STYLE)
     {
-        StyledDesign & sd = (config->designViewer == DV_LOADED_STYLE) ? workspace->getLoadedStyles() : workspace->getWsStyles();
+        StyledDesign & sd = (config->mapEditorView == MED_STYLE) ? workspace->getLoadedStyles() : workspace->getWsStyles();
         const StyleSet & sset = sd.getStyleSet();
         if (sset.size())
         {
             StylePtr sp  = sset.first();
-            StylePtr sp2 = me->getStyle();
-            if (sp != sp2)
-            {
-                me->setStyle(sp);
-                emit sig_viewWS();
-            }
+            me->setStyle(sp);
         }
         else
         {
             me->unload();
         }
+    }
+
+    if (config->viewerType == VIEW_MAP_EDITOR)
+    {
+        emit sig_viewWS();
     }
 }
 
 void page_map_editor::slot_ws_dele_changed()
 {
-    if (config->mapEditorView == ME_FIGURE_MAP)
+    if (config->mapEditorMode == MAP_MODE_FIGURE)
     {
         DesignElementPtr dep = workspace->getWSDesignElement();
         me->setDesignElement(dep);
@@ -558,7 +574,7 @@ void page_map_editor::slot_loadedXML(QString name)
 
 void page_map_editor::slot_loadedTiling (QString name)
 {
-    Q_UNUSED(name);
+    Q_UNUSED(name)
     reload();
 }
 
@@ -593,7 +609,7 @@ void page_map_editor::slot_verify()
     config->verifyMaps = true;
 
     MapPtr map = me->getMap();
-    map->verify("page_figure_editor::verify",false,true);
+    map->verifyMap("page_figure_editor::verify");
 
     config->verifyMaps = oldConf;
 }
@@ -629,7 +645,7 @@ void page_map_editor::slot_removeUnconnectedVertices()
 void page_map_editor::slot_removeZombieEdges()
 {
     MapPtr map = me->getMap();
-    map->removeNullEdges();
+    map->removeBadEdges();
     emit sig_viewWS();
 }
 
@@ -673,14 +689,10 @@ void page_map_editor::slot_setModes(int mode)
     me->setMouseMode(mm);
 }
 
-void page_map_editor::slot_mapEdView_pressed(int id)
+void page_map_editor::slot_mapEdMode_pressed(int id)
 {
-    config->mapEditorView = eMapEditorView(id);
+    config->mapEditorMode = eMapEditorMode(id);
     reload();
-    if (config->viewerType == VIEW_MAP_EDITOR)
-    {
-        emit sig_viewWS();
-    }
 }
 
 void page_map_editor::slot_hideCons(bool hide)
@@ -783,6 +795,13 @@ void page_map_editor::slot_clearMap()
     me->forceRedraw();
 }
 
+void page_map_editor::slot_dumpMap()
+{
+    MapPtr m = me->getMap();
+    m->dumpMap(true);
+}
+
+
 void page_map_editor::slot_cleanseMap()
 {
     MapPtr m = me->getMap();
@@ -855,4 +874,12 @@ void page_map_editor::slot_loadTemplate()
 
     QFileInfo fi(name);
     lastNamedTemplate = fi.baseName();
+}
+
+void page_map_editor::slot_render()
+{
+    if (config->pushTarget == TARGET_LOADED_STYLES)
+        emit sig_render(RENDER_LOADED);
+    else
+        emit sig_render(RENDER_WS);
 }

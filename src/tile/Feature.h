@@ -80,7 +80,6 @@ private:
     ColorSet         bkgdColors;    // backgrounds
 
     QMap<VertexPtr,int>   vertex_ids;
-    int refId;
 };
 
 #endif

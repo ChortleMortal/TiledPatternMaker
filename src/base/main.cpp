@@ -48,6 +48,7 @@ int main(int argc, char *argv[])
     qDebug().noquote() << "============Release Build:" << cd.toString() << ct.toString();
 #endif
     qDebug().noquote() << "App path:" << qApp->applicationDirPath();
+    qDebug().noquote() << "Log:"  << qtAppLog::currentLogName;
 
 #ifdef __linux__
     qDebug().noquote() << "Font:" << QApplication::font().toString();

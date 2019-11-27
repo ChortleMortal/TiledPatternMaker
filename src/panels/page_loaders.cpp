@@ -32,7 +32,7 @@
 
 using namespace pugi;
 
-page_loaders::page_loaders(ControlPanel * apanel) : panel_page(apanel,"Loaders")
+page_loaders::page_loaders(ControlPanel * apanel) : panel_page(apanel,"Load")
 {
     selectedDesign = NO_DESIGN;
 

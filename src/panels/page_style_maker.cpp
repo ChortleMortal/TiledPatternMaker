@@ -258,6 +258,7 @@ void page_style_maker::setupStyleParms(StylePtr style, QTableWidget * table)
     case STYLE_STYLE:
         break;
     }
+    styleTable->resizeColumnsToContents();
     adjustTableSize(table);
     updateGeometry();
 }
@@ -454,10 +455,13 @@ void  page_style_maker::slot_analyzeStyleMap()
 
     StylePtr style = getStyleRow(row);
     //style->setStyleMap();
-    bool rv = style->getReadOnlyMap()->analyzeVertices();
-    if (rv)
+    MapPtr map = style->getMap();
+    if (map)
     {
-        emit sig_viewWS();
+        if (map->analyzeVertices())
+        {
+            emit sig_viewWS();
+        }
     }
 }
 

@@ -36,15 +36,15 @@
 #include "tapp/StarConnectFigure.h"
 #include "geometry/Loose.h"
 
-StarConnectFigure::StarConnectFigure(int n, qreal d, int s, qreal r)
-    : Star(n,d,s,r), FigureConnector(this)
+StarConnectFigure::StarConnectFigure(int nsides, qreal d, int s, qreal r)
+    : Star(nsides,d,s,r), FigureConnector(this)
 {
     setFigureScale(computeConnectScale());
     setFigType(FIG_TYPE_CONNECT_STAR);
 }
 
-StarConnectFigure::StarConnectFigure(const Figure & fig, int n, qreal d, int s, qreal r)
-    : Star(fig, n,d,s,r), FigureConnector(this)
+StarConnectFigure::StarConnectFigure(const Figure & fig, int nsides, qreal d, int s, qreal r)
+    : Star(fig, nsides,d,s,r), FigureConnector(this)
 {
     setFigureScale(computeConnectScale());
     setFigType(FIG_TYPE_CONNECT_STAR);
@@ -57,10 +57,10 @@ qreal StarConnectFigure::computeConnectScale()
     // to compute a scale factor.
 
     setFigureScale(1.0);
-    qreal rot = r;      //save
-    r = 0.0;
+    qreal rot = getFigureRotate();      //save
+    setFigureRotate(0.0);
     MapPtr cunit = Star::buildUnit();
-    r = rot;            // restore
+    setFigureRotate(rot);            // restore
     qreal sc = computeScale(cunit);
 
     resetMaps();        // so unit can build
@@ -74,9 +74,9 @@ MapPtr StarConnectFigure::buildUnit()
 
     // save
     qreal scale = getFigureScale();
-    qreal rot   = r;
+    qreal rot   = getFigureRotate();
     setFigureScale(1.0);
-    r           = 0.0;
+    setFigureRotate(0.0);
 
     // build Rosette
     unitMap = Star::buildUnit();
@@ -84,7 +84,7 @@ MapPtr StarConnectFigure::buildUnit()
 
     // restore
     setFigureScale(scale);
-    r           = rot;
+    setFigureRotate(rot);
 
     // extend Rosette
     connectFigure(unitMap);
@@ -102,7 +102,7 @@ MapPtr StarConnectFigure::buildUnit()
 
     scaleToUnit(unitMap);
 
-    unitMap->verify("StarConnectFigure",true,true,true);
+    unitMap->verifyMap("StarConnectFigure");
 
     return unitMap;
 }

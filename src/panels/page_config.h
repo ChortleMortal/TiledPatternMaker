@@ -32,7 +32,7 @@ class page_config : public panel_page
     Q_OBJECT
 
 public:
-    page_config(ControlPanel * panel);
+    page_config(ControlPanel * cpanel);
 
     void refreshPage() override;
     void onEnter() override;
@@ -55,6 +55,9 @@ private slots:
     void    examplesChanged(QString txt);
 
     void    slot_reconfigurePaths();
+    void    slot_verifyMapsClicked(bool enb);
+    void    slot_verifyDumpClicked(bool enb);
+    void    slot_verifyVerboseClicked(bool enb);
 
 protected:
     void  updatePaths();

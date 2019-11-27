@@ -52,13 +52,17 @@ public:
 
     virtual QString getFigureDesc()  override { return "ExplicitFigure"; }
 
-    qreal   skip;
-    int     sides;
-    qreal   d;
-    qreal   q;
-    qreal   r;
-    int     s;
-    bool    progressive;
+    // a miscellany (hodge-podge)
+    int     sides;          // girih + intersect + rosette + star
+    qreal   skip;           // girih
+    qreal   d;              // hourglass + intersect + star
+    int     s;              // hourglass + intersect + star
+    qreal   q;              // rosette
+    qreal   r_flexPt;       // rosette
+    bool    progressive;    // intersect
+
+protected:
+    void    init();
 };
 
 #endif

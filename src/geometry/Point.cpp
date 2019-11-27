@@ -285,7 +285,7 @@ QPolygonF Point::recenter( QPolygonF pts, QPointF center )
     {
         if ( !pts[i].isNull() )
         {
-            new_pts[i] = (pts[i] - center);
+            new_pts[i] = pts[i] - center;
         }
     }
     return new_pts;

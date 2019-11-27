@@ -63,10 +63,9 @@ MasterFigureEditor::MasterFigureEditor(FigureMaker * ed)
     ex_rosette_edit        = new ExtendedRosetteEditor(ed,"ex_rosette_edit");
 
     // Panel containing the editors.
-    mfw                   = new MasterFigureWidget();
+    mfw = new MasterFigureWidget();
 
-    QHBoxLayout * hbox = new QHBoxLayout();
-    choiceCombo2       = new QComboBox();
+    choiceCombo2 = new QComboBox();
     choiceCombo2->setFixedWidth(221);
 
     addChoice( FIG_TYPE_STAR, "Star");
@@ -87,6 +86,7 @@ MasterFigureEditor::MasterFigureEditor(FigureMaker * ed)
     addChoice( FIG_TYPE_INTERSECT, "Intersect Explicit");
     addChoice( FIG_TYPE_FEATURE, "Feature Explicit");
 
+    QHBoxLayout * hbox = new QHBoxLayout();
     hbox->addStretch();
     hbox->addWidget(choiceCombo2);
     hbox->addStretch();
@@ -347,6 +347,7 @@ MasterFigureWidget::MasterFigureWidget()
 
 MasterFigureWidget::MasterFigureWidget(FigureEditor * fe)
 {
+    setFixedWidth(600);
     AQVBoxLayout * aLayout = new AQVBoxLayout();
     aLayout->addWidget(fe);
     setLayout(aLayout);

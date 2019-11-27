@@ -165,19 +165,32 @@ static QString sTilingMakerView[] =
 
 enum eMapEditorView
 {
-    ME_STYLE_MAP,
-    ME_PROTO_MAP,
-    ME_FIGURE_MAP,
-    ME_MAX = ME_FIGURE_MAP
+    MED_STYLE,
+    MED_WS,
+    MED_MAX = MED_WS
 };
 
 static QString sMapEditorView[] =
 {
-    E2STR(ME_STYLE_MAP),
-    E2STR(ME_PROTO_MAP),
-    E2STR(ME_FIGURE_MAP)
+    E2STR(ME_STYLE),
+    E2STR(ME_WS),
 };
 
+
+enum eMapEditorMode
+{
+    MAP_MODE_STYLE,
+    MAP_MODE_PROTO,
+    MAP_MODE_FIGURE,
+    MAP_MODE_MAX = MAP_MODE_FIGURE
+};
+
+static QString sMapEditorMode[] =
+{
+    E2STR(MAP_MODE_STYLE),
+    E2STR(MAP_MODE_PROTO),
+    E2STR(MAP_MODE_FIGURE)
+};
 
 enum eRepeatType
 {
@@ -207,6 +220,12 @@ enum eCSSelect  // canvas settings
     CS_CANVAS
 };
 
+enum eRender
+{
+    RENDER_LOADED,
+    RENDER_WS
+};
+
 class Configuration
 {
 public:
@@ -233,6 +252,7 @@ public:
     eFigureViewer         figureViewer;
     eDELViewer            delViewer;
     eMapEditorView        mapEditorView;
+    eMapEditorMode        mapEditorMode;
 
     ePushTarget           pushTarget;
     eCSSelect             canvasSettings;
@@ -267,15 +287,25 @@ public:
     bool    autoLoadDesigns;
     bool    autoCycle;
     bool    stopIfDiff;
-    bool    verifyMaps;
+    bool    logToStderr;
+    bool    logToDisk;
+    bool    logToPanel;
     bool    wsStatusBox;
+
+    bool    verifyMaps;
+    bool    verifyDump;     // TODO
+    bool    verifyVerbose;  // TODO
 
     bool    designFilterCheck;
     bool    tileFilterCheck;
     bool    showAllFeatures;
     bool    lockView;
     bool    screenIsSplit;
-    bool    transparentCompare;
+
+    bool    compare_transparent;
+    bool    compare_differences;
+    bool    compare_ping_pong;
+    bool    compare_side_by_side;
 
     QString designFilter;
     QString tileFilter;
@@ -287,7 +317,6 @@ public:
 
     bool    circleX;
     bool    sceneGrid;
-    bool    boundingRects;
     bool    hideCircles;
 
     bool    fgdGridModel;       // true= model, false = screen

@@ -110,8 +110,15 @@ void View::resizeEvent(QResizeEvent *event)
     {
         TilingMaker * td = TilingMaker::getInstance();
         td->viewRectChanged();
+
     }
-    else if (expectedResize)
+    else if (config->viewerType == VIEW_MAP_EDITOR)
+    {
+        MapEditor * me = MapEditor::getInstance();
+        me->viewRectChanged();
+    }
+
+    if (expectedResize)
     {
         expectedResize = false;
     }

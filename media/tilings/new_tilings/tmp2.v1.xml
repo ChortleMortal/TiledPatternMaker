@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<Tiling version="2">
+	<Name>tmp2.v1</Name>
+	<Fill>-4,4,-4,4</Fill>
+	<T1>-6.661338147750939e-16,-2</T1>
+	<T2>2.000000000000002,-5.551115123125783e-16</T2>
+	<View>
+		<Scale>1</Scale>
+		<Rot>0</Rot>
+		<X>0</X>
+		<Y>0</Y>
+		<Center>500,500</Center>
+	</View>
+	<Feature type="regular" sides="6">
+		<Placement>1,0,0.2000000000000002,0,1,0.04000000000000004</Placement>
+	</Feature>
+	<Desc>Description</Desc>
+	<Auth>Author</Auth>
+</Tiling>

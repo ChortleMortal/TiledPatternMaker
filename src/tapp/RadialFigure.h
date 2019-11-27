@@ -43,7 +43,7 @@
 class RadialFigure : public Figure
 {
 public:
-    virtual ~RadialFigure() {}
+    virtual ~RadialFigure() override {}
 
     virtual void buildMaps() override;
     virtual void resetMaps() override;
@@ -53,9 +53,6 @@ public:
 
     virtual void    setN(int n);
     int     getN();
-
-    void    setR( qreal r );
-    qreal   getR()    { return r;}
 
     qreal   get_dn()  { return dn; }
     qreal   get_don() { return don; }
@@ -72,14 +69,13 @@ public:
     static QPointF getArc( qreal frac );
 
 protected:
-    RadialFigure( int n, qreal rotate);
+    RadialFigure(int n, qreal rotate);
     RadialFigure(const Figure & fig, int n, qreal rotate);
 
     int           n;
     qreal         dn;
     qreal         don;
     QTransform    Tr;
-    qreal         r;  // rotate
 
     MapPtr        unitMap;
 };

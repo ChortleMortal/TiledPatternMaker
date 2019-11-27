@@ -1623,12 +1623,11 @@ void PatternKumiko2::build()
 #endif
 
     // Make a map of the shape factory design and create a style from it
-    MapPtr map = make_shared<Map>();
+    MapPtr map = make_shared<Map>("PatternKumiko2 map");
     map->addShapeFactory(s2);
     map->addShapeFactory(s3);
     map->addShapeFactory(s4);
     map->addShapeFactory(s5);
-    //map->dumpVertices(false);
 
     // make an explicit figure and position it
     QString tileName  = "Kumiko2";

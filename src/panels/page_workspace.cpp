@@ -29,7 +29,7 @@
 
 using std::string;
 
-page_workspace::page_workspace(ControlPanel *panel)  : panel_page(panel,"Workspace Info")
+page_workspace::page_workspace(ControlPanel * cpanel)  : panel_page(cpanel,"Workspace Info")
 {
     ws = workspace;
 
@@ -103,31 +103,31 @@ void page_workspace::populateTree(bool expandAll)
         slot_itemClicked(loadedStyle,0);
 
     // working style
-    workingStyle = new QTreeWidgetItem();
-    workingStyle->setText(0,"++ workingStyle");
-    workingStyle->setText(1,ws->getLoadedStyles().getName());
+    workspaceStyle = new QTreeWidgetItem();
+    workspaceStyle->setText(0,"++ workspaceStyle");
+    workspaceStyle->setText(1,ws->getLoadedStyles().getName());
     size = ws->getWsStyles().getStyleSet().size();
-    workingStyle->setText(2,QString("Num Styles = %1").arg(size));
-    tree->addTopLevelItem(workingStyle);
+    workspaceStyle->setText(2,QString("Num Styles = %1").arg(size));
+    tree->addTopLevelItem(workspaceStyle);
     if (expandAll)
-        slot_itemClicked(workingStyle,0);
+        slot_itemClicked(workspaceStyle,0);
 
-    workingPrototype = new QTreeWidgetItem;
-    workingPrototype->setText(0,"++ workingPrototype");
-    workingPrototype->setText(1,addr(ws->getWSPrototype().get()));
-    tree->addTopLevelItem(workingPrototype);
+    workspacePrototype = new QTreeWidgetItem;
+    workspacePrototype->setText(0,"++ workspacePrototype");
+    workspacePrototype->setText(1,addr(ws->getWSPrototype().get()));
+    tree->addTopLevelItem(workspacePrototype);
     if (expandAll)
-        slot_itemClicked(workingPrototype,0);
+        slot_itemClicked(workspacePrototype,0);
 
-    workingTiling= new QTreeWidgetItem;
-    workingTiling->setText(0,"++ workingTiling");
-    workingTiling->setText(1,addr(ws->getTiling().get()));
-    tree->addTopLevelItem(workingTiling);
+    workspaceTiling= new QTreeWidgetItem;
+    workspaceTiling->setText(0,"++ workspaceTiling");
+    workspaceTiling->setText(1,addr(ws->getTiling().get()));
+    tree->addTopLevelItem(workspaceTiling);
     if (expandAll)
-        slot_itemClicked(workingTiling,0);
+        slot_itemClicked(workspaceTiling,0);
 
     workingFigure = new QTreeWidgetItem;
-    workingFigure->setText(0,"++ workingFigure");
+    workingFigure->setText(0,"++ workspaceFigure");
     QString str;
     DesignElementPtr dep = ws->getWSDesignElement();
     if (dep)
@@ -148,7 +148,7 @@ void page_workspace::populateTree(bool expandAll)
 
 void page_workspace::slot_itemClicked(QTreeWidgetItem * item, int col)
 {
-    Q_UNUSED(col);
+    Q_UNUSED(col)
 
     if (item == loadedStyle)
     {
@@ -156,28 +156,28 @@ void page_workspace::slot_itemClicked(QTreeWidgetItem * item, int col)
         populateStyles(loadedStyle,workspace->getLoadedStyles());
         tree->expandItem(loadedStyle);
     }
-    else if (item == workingStyle)
+    else if (item == workspaceStyle)
     {
-        removeChildren(workingStyle);
-        populateStyles(workingStyle,workspace->getWsStyles());
-        tree->expandItem(workingStyle);
+        removeChildren(workspaceStyle);
+        populateStyles(workspaceStyle,workspace->getWsStyles());
+        tree->expandItem(workspaceStyle);
     }
-    else if (item == workingPrototype)
+    else if (item == workspacePrototype)
     {
         if (ws->getWSPrototype())
         {
-            removeChildren(workingPrototype);
-            populatePrototype(workingPrototype,ws->getWSPrototype());
-            tree->expandItem(workingPrototype);
+            removeChildren(workspacePrototype);
+            populatePrototype(workspacePrototype,ws->getWSPrototype());
+            tree->expandItem(workspacePrototype);
         }
     }
-    else if (item == workingTiling)
+    else if (item == workspaceTiling)
     {
         if (ws->getTiling())
         {
-            removeChildren(workingTiling);
-            populateTiling(workingTiling,ws->getTiling());
-            tree->expandItem(workingTiling);
+            removeChildren(workspaceTiling);
+            populateTiling(workspaceTiling,ws->getTiling());
+            tree->expandItem(workspaceTiling);
         }
     }
     else
@@ -223,7 +223,7 @@ void page_workspace::populateStyles(QTreeWidgetItem * parent, StyledDesign & des
         item->setText(2,s->getStyleDesc());
         parent->addChild(item);
 
-        populateMap(item,s->getReadOnlyMap());
+        populateMap(item,s->getMap());
         populatePrototype(item,s->getPrototype());
 
         QTreeWidgetItem * item2 = new QTreeWidgetItem;
@@ -241,7 +241,7 @@ void page_workspace::populateStyles(QTreeWidgetItem * parent, StyledDesign & des
     }
 }
 
-void page_workspace::populateMap(QTreeWidgetItem *parent, constMapPtr mp)
+void page_workspace::populateMap(QTreeWidgetItem *parent, MapPtr mp)
 {
     //mp->dump();
 
@@ -252,8 +252,14 @@ void page_workspace::populateMap(QTreeWidgetItem *parent, constMapPtr mp)
     item->setText(1,addr((mp.get())));
     parent->addChild(item);
 
-    const QVector<VertexPtr> * vertices = mp->getVertices();
-    const QVector<EdgePtr>   * edges    = mp->getEdges();
+    if (!mp)
+    {
+        item->setText(2,"EMPTY Map");
+        return;
+    }
+
+    const QVector<VertexPtr> & vertices = mp->getVertices();
+    const QVector<EdgePtr>   & edges    = mp->getEdges();
 
     QTreeWidgetItem * item2;
     item2 = new QTreeWidgetItem;
@@ -261,9 +267,11 @@ void page_workspace::populateMap(QTreeWidgetItem *parent, constMapPtr mp)
     item2->setText(1,QString("count=%1").arg(mp->numVertices()));
     item->addChild(item2);
 
+    NeighbourMap & nmap = mp->getNeighbourMap();
+
     for (int i=0; i< mp->numVertices(); i++)
     {
-        VertexPtr v = vertices->at(i);
+        VertexPtr v = vertices.at(i);
         QPointF pos = v->getPosition();
         QTreeWidgetItem * item3 = new QTreeWidgetItem;
         item3->setText(0,QString("(%1) %2").arg(i).arg(addr(v.get())));
@@ -271,13 +279,13 @@ void page_workspace::populateMap(QTreeWidgetItem *parent, constMapPtr mp)
         item3->setText(2,QString::number(pos.y()));
         item2->addChild(item3);
 
-        QVector<EdgePtr> qvep = v->getNeighbours();
-        for (auto it=qvep.begin(); it != qvep.end(); it++)
+        NeighboursPtr np        = nmap.getNeighbours(v);
+        QVector<EdgePtr> & qvep = np->getNeighbours();
+        for (auto edge : qvep)
         {
-            EdgePtr edge = *it;
             QTreeWidgetItem * item4 = new QTreeWidgetItem;
             item4->setText(0,"edge");
-            item4->setText(1,QString::number(edges->indexOf(edge)));
+            item4->setText(1,QString::number(edges.indexOf(edge)));
             item3->addChild(item4);
         }
     }
@@ -289,10 +297,10 @@ void page_workspace::populateMap(QTreeWidgetItem *parent, constMapPtr mp)
 
     for (int i=0; i< mp->numEdges(); i++)
     {
-        EdgePtr e = edges->at(i);
+        EdgePtr e = edges.at(i);
         QTreeWidgetItem * item3 = new QTreeWidgetItem;
         item3->setText(0,QString("(%1) %2").arg(i).arg(addr(e.get())));
-        item3->setText(1, QString("from %1 to %2").arg(vertices->indexOf(e->getV1())).arg(vertices->indexOf(e->getV2())));
+        item3->setText(1, QString("from %1 to %2").arg(vertices.indexOf(e->getV1())).arg(vertices.indexOf(e->getV2())));
         item2->addChild(item3);
     }
 }
@@ -333,9 +341,9 @@ void page_workspace::populatePrototype(QTreeWidgetItem *parent, PrototypePtr pp)
         populateDEL(item,de);
     }
 
-    // transforms
+    // locations
     QTreeWidgetItem * item2 = new QTreeWidgetItem();
-    item2->setText(0,"Transforms");
+    item2->setText(0,"Locations");
     item2->setText(2,QString("Num transforms = %1").arg(tforms.count()));
     pitem->addChild(item2);
     for (auto it = tforms.begin(); it != tforms.end(); it++)
@@ -528,6 +536,10 @@ void  page_workspace::dumpWalkTree(QTextStream & ts,  QTreeWidgetItem * item )
 
 void page_workspace::removeChildren(QTreeWidgetItem * parent)
 {
-    foreach(auto i, parent->takeChildren()) // delete all children first
-        delete i;
+    // delete all children
+    QList<QTreeWidgetItem*> list = parent->takeChildren();
+    for (auto item : list)
+    {
+        delete item;
+    }
 }

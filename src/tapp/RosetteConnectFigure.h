@@ -43,8 +43,8 @@
 class RosetteConnectFigure : public Rosette, FigureConnector
 {
 public:
-    RosetteConnectFigure( int n, qreal q, int s, qreal k=0.0, qreal r=0.0);
-    RosetteConnectFigure(const Figure & fig, int n, qreal q, int s, qreal k=0.0, qreal r=0.0);
+    RosetteConnectFigure( int n, qreal q, int s, qreal k=0.0, qreal figureRotate=0.0);
+    RosetteConnectFigure(const Figure & fig, int n, qreal q, int s, qreal k=0.0, qreal figureRotate=0.0);
 
     MapPtr buildUnit() override;
 

@@ -303,7 +303,7 @@ void page_position::setScale(int radius)
     if (designs.size() == 0) return;
     DesignPtr d = designs[0];
     d->getDesignInfo().setDiameter(radius * 2.0);
-    emit sig_render();
+    // DAC TODO - design scale (was sig_render)
 }
 
 void page_position::set_sep(qreal)

@@ -23,6 +23,7 @@
  */
 
 #include "base/configuration.h"
+#include "base/qtapplog.h"
 #include "designs/design.h"
 #include <cstddef>
 
@@ -82,13 +83,21 @@ Configuration::Configuration()
     stopIfDiff          = s.value("stopIfDiff",true).toBool();
     autoClear           = s.value("autoClear",true).toBool();
     verifyMaps          = s.value("verifyMaps",false).toBool();
+    verifyDump          = s.value("verifyDump",false).toBool();
+    verifyVerbose       = s.value("verifyVerbose",false).toBool();
+    logToStderr         = s.value("logToStderr",true).toBool();
+    logToDisk           = s.value("logToDisk",true).toBool();
+    logToPanel          = s.value("logToPanel",true).toBool();
     wsStatusBox         = s.value("wsStatusBox",true).toBool();
     designFilterCheck   = s.value("designFilterCheck",false).toBool();
     tileFilterCheck     = s.value("tileFilterCheck",false).toBool();
     showAllFeatures     = s.value("tiling_feature_chk",false).toBool();
     lockView            = s.value("lockView",false).toBool();
     screenIsSplit       = s.value("screenIsSplit",false).toBool();
-    transparentCompare  = s.value("transparentCompare",false).toBool();
+    compare_transparent = s.value("compare_transparent",false).toBool();
+    compare_differences = s.value("compare_differences",true).toBool();
+    compare_ping_pong   = s.value("compare_ping_pong",false).toBool();
+    compare_side_by_side= s.value("compare_side_by_side",false).toBool();
 
     viewerType          = static_cast<eViewType>(s.value("viewerType",VIEW_DESIGN).toUInt());
     designViewer        = static_cast<eDesignViewer>(s.value("designViewer",DV_LOADED_STYLE).toUInt());
@@ -98,18 +107,19 @@ Configuration::Configuration()
     tilingMakerViewer   = static_cast<eTilingMakerView>(s.value("makerSource4",TD_STYLE).toUInt());
     figureViewer        = static_cast<eFigureViewer>(s.value("figureViewer3",FV_STYLE).toUInt());
     delViewer           = static_cast<eDELViewer>(s.value("delViewer",DEL_STYLES).toUInt());
-    mapEditorView       = static_cast<eMapEditorView>(s.value("mapEditorView",ME_FIGURE_MAP).toUInt());
+    mapEditorView       = static_cast<eMapEditorView>(s.value("mapEditorView",MED_STYLE).toUInt());
+    mapEditorMode       = static_cast<eMapEditorMode>(s.value("mapEditorMode",MAP_MODE_FIGURE).toUInt());
     canvasSettings      = static_cast<eCSSelect>(s.value("canvasSettings",CS_STYLE).toUInt());
 
     pushTarget          = static_cast<ePushTarget>(s.value("pushTarget",TARGET_LOADED_STYLES).toUInt());
     repeatMode          = static_cast<eRepeatType>(s.value("repeat",REPEAT_DEFINED).toUInt());
 
     fgdGridModel        = s.value("fgdGridModel",false).toBool();
-    fgdGridStepScreen         = s.value("fgdGridStep",100).toInt();
+    fgdGridStepScreen   = s.value("fgdGridStep",100).toInt();
     fgdGridStepModel    = s.value("fgdGridStepModel2",1.0).toDouble();
 
     // ensures indices are in range
-    if (viewerType > VIEW_MAX)        viewerType      = VIEW_MAX;
+    if (viewerType > VIEW_MAX)          viewerType      = VIEW_MAX;
     if (designViewer > DV_MAX)          designViewer    = DV_MAX;
     if (protoViewer > PV_MAX)           protoViewer     = PV_MAX;
     if (protoFeatureViewer > PVF_MAX)   protoFeatureViewer = PVF_MAX;
@@ -117,14 +127,14 @@ Configuration::Configuration()
     if (tilingMakerViewer > TD_MAX)     tilingMakerViewer = TD_MAX;
     if (figureViewer > FV_MAX)          figureViewer    = FV_MAX;
     if (delViewer > DEL_MAX)            delViewer       = DEL_MAX;
-    if (mapEditorView > ME_MAX)         mapEditorView   = ME_MAX;
+    if (mapEditorView > MED_MAX)        mapEditorView   = MED_MAX;
+    if (mapEditorMode > MAP_MODE_MAX)   mapEditorMode   = MAP_MODE_MAX;
     if (repeatMode > REPEAT_MAX)        repeatMode      = REPEAT_MAX;
     if (pushTarget > TARGET_MAX)        pushTarget      = TARGET_MAX;
 
     // defaults (volatile)
     circleX         = false;
     sceneGrid       = false;
-    boundingRects   = false;
     hideCircles     = false;
 
     updatePanel     = true;
@@ -136,6 +146,11 @@ Configuration::Configuration()
 
     selectedDesignElementFeature = nullptr;
     faceSet = nullptr;
+
+    qtAppLog * log = qtAppLog::getInstance();
+    log->logToStdErr(logToStderr);
+    log->logToDisk(logToDisk);
+    log->logToPanel(logToPanel);
 
     if (!firstBirthday)
     {
@@ -172,11 +187,17 @@ void Configuration::save()
     s.setValue("figureViewer3",figureViewer);
     s.setValue("delViewer",delViewer);
     s.setValue("mapEditorView",mapEditorView);
+    s.setValue("mapEditorMode",mapEditorMode);
     s.setValue("repeat",repeatMode);
     s.setValue("makerSource4",tilingMakerViewer);
     s.setValue("panelName", panelName);
     s.setValue("autoLoadStyles",autoLoadStyles);
     s.setValue("verifyMaps",verifyMaps);
+    s.setValue("verifyDump",verifyDump);
+    s.setValue("verifyVerbose",verifyVerbose);
+    s.setValue("logToStderr",logToStderr);
+    s.setValue("logToDisk",logToDisk);
+    s.setValue("logToPanel",logToPanel);
     s.setValue("wsStatusBox",wsStatusBox);
     s.setValue("autoLoadTiling",autoLoadTiling);
     s.setValue("autoLoadDesigns",autoLoadDesigns);
@@ -193,7 +214,10 @@ void Configuration::save()
     s.setValue("tiling_feature_chk",showAllFeatures);
     s.setValue("lockView",lockView);
     s.setValue("screenIsSplit",screenIsSplit);
-    s.setValue("transparentCompare",transparentCompare);
+    s.setValue("compare_transparent",compare_transparent);
+    s.setValue("compare_differences",compare_differences);
+    s.setValue("compare_ping_pong",compare_ping_pong);
+    s.setValue("compare_side_by_side",compare_side_by_side);
     s.setValue("pushTarget",pushTarget);
     s.setValue("canvasSettings",canvasSettings);
 }

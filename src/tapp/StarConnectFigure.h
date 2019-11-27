@@ -43,8 +43,8 @@
 class StarConnectFigure : public Star, FigureConnector
 {
 public:
-    StarConnectFigure(int n, qreal d, int s, qreal r= 0.0);
-    StarConnectFigure(const Figure & fig, int n, qreal d, int s, qreal r= 0.0);
+    StarConnectFigure(int n, qreal d, int s, qreal figureRotate= 0.0);
+    StarConnectFigure(const Figure & fig, int n, qreal d, int s, qreal figureRotate= 0.0);
 
     MapPtr buildUnit() override;
 

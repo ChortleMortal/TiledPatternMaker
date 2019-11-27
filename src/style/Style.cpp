@@ -71,11 +71,12 @@ void Style::setPrototype(PrototypePtr pp)
     setupStyleMap();
 }
 
-void Style::setupStyleMap()
+MapPtr Style::setupStyleMap()
 {
     Q_ASSERT(prototype);
     styleMap = prototype->getProtoMap();
     qDebug() << "Style::setupStyleMap proto=" << Utils::addr(prototype.get()) << "map="  << Utils::addr(styleMap.get());
+    return styleMap;
 }
 
 // Retrieve a name describing this style and map.

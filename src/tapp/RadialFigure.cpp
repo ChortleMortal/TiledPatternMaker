@@ -45,27 +45,27 @@ RadialFigure::RadialFigure(const Figure & fig, int n, qreal rotate)
     : Figure(fig)
 {
     this->n = n;
-    r       = rotate;
+    setFigureRotate(rotate);
 
     dn      = qreal(n);
     don     = 1.0 / dn;
     Tr      = QTransform().rotateRadians(2.0 * M_PI * don);
     setFigType(FIG_TYPE_RADIAL);
 
-    unitMap = make_shared<Map>();
+    unitMap = make_shared<Map>("radial unit map1");
 }
 
-RadialFigure::RadialFigure( int n, qreal rotate) : Figure()
+RadialFigure::RadialFigure(int n, qreal rotate) : Figure()
 {
     this->n = n;
-    r       = rotate;
+    setFigureRotate(rotate);
 
     dn      = qreal(n);
     don     = 1.0 / dn;
     Tr      = QTransform().rotateRadians(2.0 * M_PI * don);
     setFigType(FIG_TYPE_RADIAL);
 
-    unitMap = make_shared<Map>();
+    unitMap = make_shared<Map>("raidal unit map2");
 }
 
 void RadialFigure::resetMaps()
@@ -102,7 +102,8 @@ void RadialFigure::buildMaps()
     if (config->debugReplicate)
     {
         // for debug don't replicate
-        unitMap->duplicate(figureMap);    // contents are now the same
+        figureMap = unitMap;    // contents are now the same
+        return;
     }
 
 #if 0
@@ -122,11 +123,11 @@ void RadialFigure::buildMaps()
         base = Tr * base;   // TODO xformo rder
     }
 
-    unitMap->verify("RadialFigure::getMap-unit",false);
+    unitMap->verifyMap("RadialFigure::getMap-unit");
 
     figureMap->mergeSimpleMany(unitMap, transforms);
 
-    figureMap->verify("RadialFigure::getMap-newret",false);
+    figureMap->verifyMap("RadialFigure::getMap-newret");
 
     //ret->dump();
 #endif
@@ -137,12 +138,11 @@ MapPtr  RadialFigure::replicateUnit()
     qDebug() << "RadialFigure::replicateUnit";
     // DAC replicate the radial using N (not number of feature sides)
     QTransform T = Tr;       // rotaional transform
-    MapPtr map = make_shared<Map>();
+    MapPtr map = make_shared<Map>("radial replicated unit map");
     for( int idx = 0; idx < getN(); ++idx )
     {
-        for(auto e = unitMap->getEdges()->begin(); e != unitMap->getEdges()->end(); e++)
+        for (auto edge : unitMap->getEdges())
         {
-            EdgePtr edge = *e;
             QPointF v1 = T.map( edge->getV1()->getPosition() );
             QPointF v2 = T.map( edge->getV2()->getPosition() );
             VertexPtr vp1 = map->insertVertex(v1);
@@ -152,7 +152,7 @@ MapPtr  RadialFigure::replicateUnit()
         //T.composeD(Tr);
         T *= Tr;    // TODO xform order
     }
-    map->verify("Replicated Unit Map",true,true,true);
+    map->verifyMap("Replicated Unit Map");
     return map;
 }
 
@@ -167,11 +167,6 @@ void RadialFigure::setN(int n)
 int RadialFigure::getN()
 {
     return n;
-}
-
-void RadialFigure::setR( qreal rotate)
-{
-    r = rotate;
 }
 
 void RadialFigure::buildExtBoundary()

@@ -359,7 +359,7 @@ QVector<contact *> Infer::buildContacts( placed_points * pp, QVector<adjacency_i
     {
         if (adjs[ idx ] == nullptr)
         {
-            amaps.push_back(make_shared<Map>());
+            amaps.push_back(make_shared<Map>("infer amaps 1"));
         }
         else
         {
@@ -372,7 +372,7 @@ QVector<contact *> Infer::buildContacts( placed_points * pp, QVector<adjacency_i
             }
             else
             {
-                amaps.push_back(make_shared<Map>());    // DAC bugfix
+                amaps.push_back(make_shared<Map>("infer amaps 2"));    // DAC bugfix
             }
         }
     }
@@ -405,8 +405,9 @@ QVector<contact *> Infer::buildContacts( placed_points * pp, QVector<adjacency_i
         MapPtr map = amaps[idx2];
         adjacency_info  * adj = adjs[idx2];
 
-        const QVector<VertexPtr> * vertices = map->getVertices();
-        foreach (VertexPtr v, *vertices)
+        NeighbourMap & nmap = map->getNeighbourMap();
+
+        for (auto v : map->getVertices())
         {
             QPointF pos = v->getPosition();
             qreal dist2 = Point::dist2ToLine(pos, a, b );
@@ -415,10 +416,10 @@ QVector<contact *> Infer::buildContacts( placed_points * pp, QVector<adjacency_i
                   &&  ! Loose::Near( pos, b, adj->tolerance ) )
             {
                 // This vertex lies on the edge.  Add all its edges to the contact list.
-                QVector<EdgePtr> & qvep = v->getEdges();
-                for (auto it = qvep.begin(); it != qvep.end(); it++)
+                NeighboursPtr np        = nmap.getNeighbours(v);
+                QVector<EdgePtr> & qvep = np->getNeighbours();
+                for (auto edge : qvep)
                 {
-                    EdgePtr edge    = *it;
                     QPointF opos    = edge->getOtherP(v);
                     ret.push_back(new contact(pos, opos));
                 }
@@ -499,7 +500,7 @@ QPolygonF  Infer::buildStarBranchPoints( qreal d, int s, qreal side_frac, qreal 
 
 MapPtr Infer::buildStarHalfBranch( qreal d, int s, qreal side_frac, qreal sign, QPolygonF mid_points )
 {
-    MapPtr map = make_shared<Map>();
+    MapPtr map = make_shared<Map>("star half branch map");
     QPolygonF points = buildStarBranchPoints( d, s, side_frac, sign, mid_points );
 
     VertexPtr vt   = map->insertVertex( points[0] );
@@ -555,7 +556,7 @@ MapPtr Infer::inferStar( FeaturePtr feature, qreal d, int s )
     placed_points * pmain = placed[ cur ];
     QPolygonF mid_points  = pmain->mids;
 
-    MapPtr map = make_shared<Map>();
+    MapPtr map = make_shared<Map>("infer star map");
 
     int side_count = mid_points.size();
     for ( int side = 0; side < side_count; ++side )
@@ -646,7 +647,7 @@ intersection_info Infer::FindClosestIntersection(int side, QPointF sideHalf, boo
 
 MapPtr Infer::buildGirihBranch(int side, qreal requiredRotation, QPolygonF points, QPolygonF midPoints )
 {
-    MapPtr map = make_shared<Map>();
+    MapPtr map = make_shared<Map>("buildGirihBranch map");
 
     // Mid-point of this side is always included in the map.
     VertexPtr midVertex  = map->insertVertex( midPoints[side] );
@@ -691,7 +692,7 @@ MapPtr Infer::inferGirih( FeaturePtr feature, int starSides, qreal starSkip )
         points <<  pmain->T.map( pmain->feature->getPoints()[i] );
     }
 
-    MapPtr map = make_shared<Map>();
+    MapPtr map = make_shared<Map>("inferGirih map");
 
     int side_count = mid_points.size();
     for ( int side = 0; side < side_count; ++side )
@@ -823,13 +824,13 @@ MapPtr Infer::inferIntersect( FeaturePtr feature, int starSides, qreal starSkip,
     }
     infos = sortMap.values();
 
-    MapPtr map = make_shared<Map>();
+    MapPtr map = make_shared<Map>("inferIntersect map");
 
     // Record the starting point of each edge. As we grow the edge,
     // when we want more than one intersection (s > 1), we will update
     // these starting points.
     QPointF ** froms;
-    froms = new QPointF*[side_count];
+    froms = new QPointF*[static_cast<unsigned int>(side_count)];
     for (int i=0; i<side_count; i++)
     {
         froms[i] = new QPointF[2];
@@ -884,7 +885,7 @@ QList<intersection_info*> Infer::buildIntersectionInfos(
     int side, QPointF sideHalf, bool isLeftHalf, qreal requiredRotation,
     QPolygonF points, QPolygonF midPoints )
 {
-    Q_UNUSED(isLeftHalf);
+    Q_UNUSED(isLeftHalf)
     QList<intersection_info*> infos;
 
     QPointF sideMidPoint = midPoints[side];
@@ -953,7 +954,7 @@ MapPtr Infer::inferIntersectProgressive( FeaturePtr feature, int starSides, qrea
         points << pmain->T.map( pmain->feature->getPoints()[i] );
     }
 
-    MapPtr map = make_shared<Map>();
+    MapPtr map = make_shared<Map>("inferIntersectProgressive map");
 
     int side_count = mid_points.size();
     for ( int side = 0; side < side_count; ++side )
@@ -1003,7 +1004,7 @@ MapPtr Infer::inferHourglass( FeaturePtr feature, qreal d, int s )
     placed_points * pmain = placed[ cur ];
     QPolygonF mid_points = pmain->mids;
 
-    MapPtr map = make_shared<Map>();
+    MapPtr map = make_shared<Map>("inferHourglass map");
 
     int side_count = mid_points.size();
 
@@ -1036,12 +1037,12 @@ MapPtr Infer::inferHourglass( FeaturePtr feature, qreal d, int s )
 
 // Rosette inferring.
 
-QPolygonF Infer::buildRosetteBranchPoints( qreal q, int s, qreal r,
-                                                 qreal side_frac, qreal sign,
-                                                 QPolygonF mid_points,
-                                                 QPolygonF corner_points )
+QPolygonF Infer::buildRosetteBranchPoints(qreal q, int s, qreal r,
+                                          qreal side_frac, qreal sign,
+                                          QPolygonF mid_points,
+                                          QPolygonF corner_points )
 {
-    Q_UNUSED(s);    // DAC
+    Q_UNUSED(s)    // DAC
     int side_count = mid_points.size();
     qreal circle_frac = 1.0 / static_cast<qreal>(side_count);
 
@@ -1074,16 +1075,13 @@ QPolygonF Infer::buildRosetteBranchPoints( qreal q, int s, qreal r,
     bisector += up_outer;
 
     QPointF e = Intersect::getIntersection( up_outer, bisector, tip, rtip );
-    if ( e.isNull() )
+    if (e.isNull())
         e = Point::convexSum(up_outer, QPointF(0,0), 0.5 );
     QPointF ad = Intersect::getIntersection( up_outer, bisector, tip, QPointF(0,0) );
-    if ( ad.isNull())
+    if (ad.isNull())
         ad = QPointF(0,0);
-    QPointF qe = q_clamp >= 0
-            ? Point::convexSum(e, up_outer, q )
-            : Point::convexSum(e, ad, -q );
-
-    QPointF f = up_outer * r;
+    QPointF qe = q_clamp >= 0  ? Point::convexSum(e, up_outer, q ) : Point::convexSum(e, ad, -q );
+    QPointF f  = up_outer * r;
 
     QPolygonF points(3);
     points[TIP_POINT] = tip;
@@ -1093,13 +1091,13 @@ QPolygonF Infer::buildRosetteBranchPoints( qreal q, int s, qreal r,
     return Point::recenter( points, center *  -1.0);
 }
 
-QPolygonF Infer::buildRosetteIntersections( qreal q, int s, qreal r,
-                                                  qreal side_frac, qreal sign,
-                                                  QPolygonF mid_points,
-                                                  QPolygonF corner_points,
-                                                  QPolygonF points )
+QPolygonF Infer::buildRosetteIntersections(qreal q, int s, qreal r,
+                                           qreal side_frac, qreal sign,
+                                           QPolygonF mid_points,
+                                           QPolygonF corner_points,
+                                           QPolygonF points )
 {
-    int side_count = mid_points.size();
+    int side_count    = mid_points.size();
     qreal circle_frac = 1.0 / static_cast<qreal>(side_count);
 
     QPolygonF intersections;
@@ -1111,11 +1109,10 @@ QPolygonF Infer::buildRosetteIntersections( qreal q, int s, qreal r,
         for ( int is = 1; is <= s + 1 && intersections.size() < s; ++is )
         {
             QPolygonF other_points = buildRosetteBranchPoints( q, s, r, side_frac + sign * circle_frac * is, other_sign * sign, mid_points, corner_points );
-            QPointF other_qe_f = other_points[F_POINT] - other_points[QE_POINT];
-            QPointF meet_f = Intersect::getIntersection(
-                        points[QE_POINT], points[QE_POINT] + ( qe_f * 10.0),
-                        other_points[QE_POINT], other_points[QE_POINT] + other_qe_f * 10.0 );
-            if ( meet_f.isNull())
+            QPointF other_qe_f     = other_points[F_POINT] - other_points[QE_POINT];
+            QPointF meet_f         = Intersect::getIntersection(points[QE_POINT], points[QE_POINT] + ( qe_f * 10.0),
+                                     other_points[QE_POINT], other_points[QE_POINT] + other_qe_f * 10.0 );
+            if (meet_f.isNull())
                 continue;
             intersections << meet_f;
         }
@@ -1125,7 +1122,7 @@ QPolygonF Infer::buildRosetteIntersections( qreal q, int s, qreal r,
     for (int i=0; i < intersections.size(); i++)
     {
         sortMap.insert(Point::mag2(intersections[i]),intersections[i]);
-    };
+    }
     QList<QPointF> sorted = sortMap.values();
     QPolygonF ret;
     for (int i=0; i < sorted.size(); i++)
@@ -1136,70 +1133,60 @@ QPolygonF Infer::buildRosetteIntersections( qreal q, int s, qreal r,
 }
 
 
-MapPtr Infer::buildRosetteHalfBranch( qreal q, int s, qreal r,
-                                           qreal side_frac, qreal sign,
-                                           QPolygonF mid_points,
-                                           QPolygonF corner_points )
+MapPtr Infer::buildRosetteHalfBranch(qreal q, int s, qreal r,
+                                     qreal side_frac, qreal sign,
+                                     QPolygonF mid_points,
+                                     QPolygonF corner_points )
 {
-    //qDebug() << "Infer::buildRosetteHalfBranch";
-    QPolygonF points        = buildRosetteBranchPoints(  q, s, r, side_frac, sign, mid_points, corner_points );
-    //qDebug() << "points=" << points.size();
-    //qDebug() << points;
+    QPolygonF points        = buildRosetteBranchPoints( q, s, r, side_frac, sign, mid_points, corner_points);
+    QPolygonF intersections = buildRosetteIntersections(q, s, r, side_frac, sign, mid_points, corner_points, points);
 
-    QPolygonF intersections = buildRosetteIntersections( q, s, r, side_frac, sign, mid_points, corner_points, points );
-    //qDebug() << "intersections=" << intersections.size();
-
-    MapPtr from = make_shared<Map>();
+    MapPtr from = make_shared<Map>("infer buildRosetteHalfBranch map");
 
     VertexPtr prev;
-    for( int idx = 0; idx < points.size() - 1; ++idx )      // DAC why -1 ?
+    for(int idx = 0; idx < points.size() - 1; ++idx)      // DAC why -1 ?
     {
-        VertexPtr next = from->insertVertex( points[ idx ] );
+        VertexPtr next = from->insertVertex(points[idx]);
         if ( prev )
         {
-            from->insertEdge( prev, next );
-            //from->verify("from",true,true,true);
+            from->insertEdge(prev, next);
         }
         prev = next;
     }
 
-    for ( int is = 0; is < s && is < intersections.size(); ++is )
+    for (int is = 0; is < s && is < intersections.size(); ++is)
     {
-        VertexPtr next = from->insertVertex( intersections[is] );
+        VertexPtr next = from->insertVertex(intersections[is]);
         if ( prev )
+        {
             from->insertEdge( prev, next );
+        }
         prev = next;
     }
 
-    //from->verify("half",true,true,true);
     return from;
 }
 
-MapPtr Infer::inferRosette( FeaturePtr feature, qreal q, int s, qreal r )
+MapPtr Infer::inferRosette(FeaturePtr feature, qreal q, int s, qreal r)
 {
     // Get the index of a good transform for this feature.
-    int cur = findPrimaryFeature( feature );
-    placed_points * pmain = placed[ cur ];
-    QPolygonF mid_points = pmain->mids;
-    //qDebug() << "mid" << mid_points;
-    QPolygonF corner_points = pmain->T.map( feature->getPolygon() );
-    //qDebug() << "corner" << corner_points;
+    int cur                 = findPrimaryFeature(feature);
+    placed_points * pmain   = placed[cur];
+    QPolygonF mid_points    = pmain->mids;
+    QPolygonF corner_points = pmain->T.map(feature->getPolygon());
 
-    MapPtr map = make_shared<Map>();
+    MapPtr map = make_shared<Map>("inferRosette map");
 
     int side_count = mid_points.size();
     for ( int side = 0; side < side_count; ++side )
     {
         qreal side_frac = static_cast<qreal>(side) / static_cast<qreal>(side_count);
-
-        map->mergeMap( buildRosetteHalfBranch( q, s, r, side_frac,  1.0, mid_points, corner_points ));
-        //map->verify("one",true);
-        map->mergeMap( buildRosetteHalfBranch( q, s, r, side_frac, -1.0, mid_points, corner_points ));
-        //map->verify("two",true);
+        map->mergeMap(buildRosetteHalfBranch(q, s, r, side_frac,  1.0, mid_points, corner_points));
+        map->mergeMap(buildRosetteHalfBranch(q, s, r, side_frac, -1.0, mid_points, corner_points));
     }
 
-    map->transformMap( pmain->T.inverted() );
-    //map->verify("three",true);
+    map->transformMap(pmain->T.inverted());
+
     return map;
 }
 
@@ -1395,7 +1382,7 @@ MapPtr Infer::infer( FeaturePtr feature )
     // Using the stored intersections in the contacts,
     // build a  inferred map.
 
-    MapPtr ret = make_shared<Map>();
+    MapPtr ret = make_shared<Map>("infer map");
 
     for( int idx = 0; idx < cons.size(); ++idx )
     {
@@ -1404,7 +1391,7 @@ MapPtr Infer::infer( FeaturePtr feature )
         {
             if ( con->colinear == COLINEAR_MASTER )
             {
-                MapPtr tmap = make_shared<Map>();
+                MapPtr tmap = make_shared<Map>("infer map 2");
                 VertexPtr v1 = tmap->insertVertex( con->position );
                 VertexPtr v2 = tmap->insertVertex( cons.at( con->isect_idx)->position );
                 tmap->insertEdge( v1, v2 );
@@ -1413,7 +1400,7 @@ MapPtr Infer::infer( FeaturePtr feature )
         }
         else
         {
-            MapPtr tmap = make_shared<Map>();
+            MapPtr tmap = make_shared<Map>("infer map 3");
             VertexPtr v1 = tmap->insertVertex( con->position );
             VertexPtr v2 = tmap->insertVertex( con->isect );
             tmap->insertEdge( v1, v2 );
@@ -1447,7 +1434,7 @@ MapPtr Infer::infer( FeaturePtr feature )
                 }
 
                 // Two unmatched edges.  match them up.
-                MapPtr t = make_shared<Map>();
+                MapPtr t = make_shared<Map>("infer map 4");
 
                 QPointF tmp  = con->position - con->other;
                 tmp = Point::normalize(tmp);
@@ -1478,7 +1465,7 @@ MapPtr Infer::infer( FeaturePtr feature )
     }
 
     ret->transformMap( pmain->T.inverted() );
-    ret->verify("infer",false,true);
+    ret->verifyMap("infer");
     return ret;
 }
 
@@ -1511,7 +1498,7 @@ int Infer::lexCompareDistances( int kind1, qreal dist1, int kind2, qreal dist2 )
 
 MapPtr Infer::inferFeature(FeaturePtr feature)
 {
-    MapPtr map = make_shared<Map>();
+    MapPtr map = make_shared<Map>("inferFeature map");
 
     EdgePoly epoly = feature->getEdgePoly();
 
@@ -1529,7 +1516,7 @@ MapPtr Infer::inferFeature(FeaturePtr feature)
             newEdge->setArcCenter(ac,convex);
         }
     }
-    map->verify("Feature-figure",true,true,true);
+    map->verifyMap("infer feature-figure");
 
     return map;
 }

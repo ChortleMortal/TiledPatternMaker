@@ -36,7 +36,6 @@
 
 page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,"Debug Tools")
 {
-    QPushButton * btnCopyLog            = new QPushButton("Copy Log");
     QPushButton * btnVerTileNames       = new QPushButton("Verify Tile Names");
     QPushButton * reformatDesXMLBtn     = new QPushButton("Reformat All Design XML");
     QPushButton * reformatTileXMLBtn    = new QPushButton("Reformat All Tiling XML");
@@ -48,11 +47,8 @@ page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,"Debug Tools
     QPushButton * swapBtn               = new QPushButton("Swap");
 
     comp0                               = new QLineEdit();
-    comp0->setReadOnly(true);
     comp1                               = new QLineEdit();
-    comp1->setReadOnly(true);
 
-    QCheckBox   * cbVerifyMaps          = new QCheckBox("Verify Maps");
     QCheckBox   * cbAutoCycle           = new QCheckBox("AutoCycle");
     QCheckBox   * cbStopIfDiff          = new QCheckBox("Stop if Diff");
 
@@ -64,12 +60,18 @@ page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,"Debug Tools
     gridWidth                           = new DoubleSpinSet("GridWidth",1.0,0.0001,900);
     gridWidth->setDecimals(8);
 
+    QPushButton * pbClearCanvas         = new QPushButton("Clear Canvas");
+    QPushButton * pbRenderLoaded        = new QPushButton("Render Loaded");
+    QPushButton * pbRenderWS            = new QPushButton("Render Workspace");
+    QPushButton * pbDrainAll            = new QPushButton("Drain The Swamp");
+    QPushButton * pbClearWS         =    new QPushButton("Clear WS");
+
     QGridLayout * grid1 = new QGridLayout();
     grid1->setHorizontalSpacing(51);
     int row = 0;
-    grid1->addWidget(btnCopyLog,            row,0);
-    grid1->addWidget(btnVerTileNames,       row,1);
-    grid1->addWidget(cbVerifyMaps,          row,2);
+    grid1->addWidget(btnVerTileNames,       row,0);
+    grid1->addWidget(pbClearCanvas,         row,1);
+    grid1->addWidget(pbDrainAll,            row,2);
     row++;
     grid1->addWidget(reformatDesXMLBtn,     row,0);
     grid1->addWidget(reprocessDesXMLBtn,    row,1);
@@ -77,8 +79,15 @@ page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,"Debug Tools
     row++;
     grid1->addWidget(reformatTileXMLBtn,    row,0);
     grid1->addWidget(reprocessTileXMLBtn,   row,1);
-    grid1->addLayout(gridWidth,             row,2);
+    grid1->addLayout(gridWidth,             row,2,Qt::AlignLeft);
     row++;
+    grid1->addWidget(pbRenderLoaded,    row,0);
+    grid1->addWidget(pbRenderWS,        row,1);
+    grid1->addWidget(pbClearWS,         row,2);
+    row++;
+
+    QGroupBox * debugGroup = new QGroupBox("Debug");
+    debugGroup->setLayout(grid1);
 
     QHBoxLayout * hbox00 = new QHBoxLayout;
     hbox00->addLayout(spCycleInterval);
@@ -127,6 +136,9 @@ page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,"Debug Tools
     viewImage1      = new QPushButton("View");
     compareImage    = new QPushButton("Compare Images");
     transparent     = new QCheckBox("Transparent");
+    differences     = new QCheckBox("Differences");
+    ping_pong       = new QCheckBox("Ping-pong");
+    side_by_side    = new QCheckBox("Side-by-side");
 
     imageCompareResult->setReadOnly(true);
 
@@ -141,12 +153,18 @@ page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,"Debug Tools
 
     imageGrid->addWidget(compareImage,5,0);
     imageGrid->addWidget(imageCompareResult,5,1);
-    imageGrid->addWidget(transparent,5,2);
+
+    QHBoxLayout * hbox = new QHBoxLayout;
+    hbox->addWidget(transparent);
+    hbox->addWidget(differences);
+    hbox->addWidget(ping_pong);
+    hbox->addWidget(side_by_side);
+    imageGrid->addLayout(hbox,6,1);
 
     QGroupBox * imageGroup = new QGroupBox("Images");
     imageGroup->setLayout(imageGrid);
 
-    cbVerifyMaps->setChecked(config->verifyMaps);
+
     cbAutoCycle->setChecked(config->autoCycle);
     cbStopIfDiff->setChecked(config->stopIfDiff);
     spCycleInterval->setValue(config->cycleInterval);
@@ -154,19 +172,30 @@ page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,"Debug Tools
     cycleCombo->setCurrentIndex(index);
     comp0->setText(config->compareDir0);
     comp1->setText(config->compareDir1);
-    transparent->setChecked(config->transparentCompare);
+    transparent->setChecked(config->compare_transparent);
+    differences->setChecked(config->compare_differences);
+    ping_pong->setChecked(config->compare_ping_pong);
+    side_by_side->setChecked(config->compare_side_by_side);
 
-    connect(btnCopyLog,             &QPushButton::clicked,     this,   &page_debug::slot_copyLog);
     connect(btnVerTileNames,        &QPushButton::clicked,     this,   &page_debug::slot_verifyTilingNames);
     connect(reformatDesXMLBtn,      &QPushButton::clicked,     this,   &page_debug::slot_reformatDesignXML);
     connect(reformatTileXMLBtn,     &QPushButton::clicked,     this,   &page_debug::slot_reformatTilingXML);
     connect(reprocessDesXMLBtn,     &QPushButton::clicked,     this,   &page_debug::slot_reprocessDesignXML);
     connect(reprocessTileXMLBtn,    &QPushButton::clicked,     this,   &page_debug::slot_reprocessTilingXML);
-    connect(cbVerifyMaps,           &QCheckBox::clicked,       this,   &page_debug::slot_verifyMapsClicked);
+    connect(pbClearCanvas,          &QPushButton::clicked,     workspace,  &Workspace::slot_clearCanvas);
+    connect(pbRenderLoaded,         &QPushButton::clicked,     maker,      &TiledPatternMaker::slot_renderLoaded);
+    connect(pbRenderWS,             &QPushButton::clicked,     maker,      &TiledPatternMaker::slot_renderWS);
+    connect(pbDrainAll,             &QPushButton::clicked,     canvas,     &Canvas::drainTheSwamp);
+    connect(pbClearWS,              &QPushButton::clicked,     workspace,  &Workspace::slot_clearWorkspace);
+
+
     connect(cbAutoCycle,            &QCheckBox::clicked,       this,   &page_debug::slot_autoCycleClicked);
-    connect(cbStopIfDiff,           &QCheckBox::clicked,       this,   &page_debug::slot_stopIfDiffClicked);
     connect(cbGridModel,            &QCheckBox::clicked,       this,   &page_debug::slot_gridModelClicked);
+    connect(cbStopIfDiff,           &QCheckBox::clicked,       this,   &page_debug::slot_stopIfDiffClicked);
     connect(transparent,            &QCheckBox::clicked,       this,   &page_debug::slot_transparentClicked);
+    connect(differences,            &QCheckBox::clicked,       this,   &page_debug::slot_differencesClicked);
+    connect(ping_pong,              &QCheckBox::clicked,       this,   &page_debug::slot_ping_pongClicked);
+    connect(side_by_side,           &QCheckBox::clicked,       this,   &page_debug::slot_side_by_sideClicked);
     connect(spCycleInterval,        &SpinSet::valueChanged,    this,   &page_debug::slot_cycleIntervalChanged);
     connect(cycleCombo,             SIGNAL(currentIndexChanged(int)), this, SLOT(slot_cycleModeChanged(int)));
     connect(compareDir0Btn,         &QPushButton::clicked,     this,  &page_debug::selectDir0);
@@ -174,6 +203,7 @@ page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,"Debug Tools
     connect(swapBtn,                &QPushButton::clicked,     this,  &page_debug::swapDirs);
     connect(gridWidth,              &DoubleSpinSet::valueChanged, this,&page_debug::slot_gridWidthChanged);
     connect(maker,          &TiledPatternMaker::sig_compareResult,this, &page_debug::slot_compareResult);
+
 
     connect(selectImage0,           SIGNAL(clicked()),         this,   SLOT(slot_selectImage0()));
     connect(viewImage0,             SIGNAL(clicked()),         this,   SLOT(slot_viewImage0()));
@@ -184,9 +214,9 @@ page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,"Debug Tools
     connect(cycleBtn,               &QPushButton::clicked,      canvas, &Canvas::sig_cyclerStart);
     connect(cycleBtn,               &QPushButton::clicked,      this,  &page_debug::slot_startCycle);
     connect(this,           &page_debug::sig_view_image,        maker, &TiledPatternMaker::slot_view_image);
-    connect(this,           &page_debug::sig_compareImageFiles, maker, &TiledPatternMaker::slot_compareImages);
+    connect(this,           &page_debug::sig_compareImageFiles, maker, &TiledPatternMaker::slot_compareImagesReplace, Qt::QueuedConnection);
 
-    vbox->addLayout(grid1);
+    vbox->addWidget(debugGroup);
     vbox->addWidget(cycleGroup);
     vbox->addWidget(imageGroup);
     vbox->addStretch();
@@ -219,32 +249,6 @@ void page_debug::onExit()
 
 void  page_debug::refreshPage()
 {
-}
-
-void page_debug::slot_copyLog()
-{
-    QString name = config->currentlyLoadedXML;
-    Q_ASSERT(!name.contains(".xml"));
-
-    DlgName dlg(this);
-    dlg.setWindowTitle("Copy Logfile");
-    dlg.newEdit->setText(name);
-    int retval = dlg.exec();
-    if (retval == QDialog::Rejected)
-    {
-        qDebug() << "Canceled";
-        return;
-    }
-    Q_ASSERT(retval == QDialog::Accepted);
-    QString newName = dlg.newEdit->text();
-
-    qtAppLog * log = qtAppLog::getInstance();
-    log->copyLog(newName);
-}
-
-void  page_debug::slot_verifyMapsClicked(bool enb)
-{
-    config->verifyMaps = enb;
 }
 
 void  page_debug::slot_autoCycleClicked(bool enb)
@@ -445,24 +449,40 @@ void page_debug::slot_cycleModeChanged(int row)
 
 void page_debug::selectDir0()
 {
-    QString dir = QFileDialog::getExistingDirectory(this, tr("Open Directory"),
-                                                 config->compareDir0,
+    QStringList qsl = config->compareDir0.split("/");
+    int n = qsl.size();
+    QString dir;
+    for (int i=0; i < n-1; i++)
+    {
+        dir += qsl[i];
+        dir += "/";
+    }
+
+    QString fdir = QFileDialog::getExistingDirectory(this, tr("Open Directory"), dir,
                                                  QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-    if (dir.isEmpty())
+    if (fdir.isEmpty())
             return;
-    config->compareDir0 = dir;
-    comp0->setText(dir);
+    config->compareDir0 = fdir;
+    comp0->setText(fdir);
 }
 
 void page_debug::selectDir1()
 {
-    QString dir = QFileDialog::getExistingDirectory(this, tr("Open Directory"),
-                                                 config->compareDir0,
+    QStringList qsl = config->compareDir1.split("/");
+    int n = qsl.size();
+    QString dir;
+    for (int i=0; i < n-1; i++)
+    {
+        dir += qsl[i];
+        dir += "/";
+    }
+
+    QString fdir = QFileDialog::getExistingDirectory(this, tr("Open Directory"), dir,
                                                  QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-    if (dir.isEmpty())
+    if (fdir.isEmpty())
             return;
-    config->compareDir1 = dir;
-    comp1->setText(dir);
+    config->compareDir1 = fdir;
+    comp1->setText(fdir);
 }
 
 void page_debug::swapDirs()
@@ -479,7 +499,7 @@ void page_debug::slot_selectImage0()
 {
     imageCompareResult->setText("");
 
-    QString old = config->image0;
+    QString old = imageName0->text();
     QString file = QFileDialog::getOpenFileName(this,"Select image file",old, tr("Image Files (*.png *.jpg *.bmp)"));
 
     if (!file.isNull())
@@ -548,7 +568,22 @@ void page_debug::slot_compareImages()
 
 void page_debug::slot_transparentClicked(bool checked)
 {
-    config->transparentCompare = checked;
+    config->compare_transparent = checked;
+}
+
+void page_debug::slot_differencesClicked(bool checked)
+{
+    config->compare_differences = checked;
+}
+
+void page_debug::slot_ping_pongClicked(bool checked)
+{
+    config->compare_ping_pong = checked;
+}
+
+void page_debug::slot_side_by_sideClicked(bool checked)
+{
+    config->compare_side_by_side = checked;
 }
 
 void page_debug::slot_gridModelClicked(bool enb)
@@ -593,3 +628,12 @@ void page_debug::slot_startCycle()
     }
 }
 
+void page_debug::slot_setImage0(QString name)
+{
+    imageName0->setText(name);
+}
+
+void page_debug::slot_setImage1(QString name)
+{
+    imageName1->setText(name);
+}

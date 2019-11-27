@@ -55,9 +55,10 @@ public:
 
 signals:
     void    sig_viewWS();
-    void    sig_regenerateStyles();
+    void    sig_render(eRender type);
     void    sig_selectViewer(int id, int id2);
     void    sig_panelResized();
+    void    sig_reload();
 
 public slots:
     void    slot_selectWidget(int index);
@@ -66,7 +67,7 @@ public slots:
     void    slot_poll();
 
 private slots:
-    void    repeatClhanged(int mode);
+    void    repeatChanged(int mode);
     void    slot_logEvent();
     void    slot_exit();
     void    autoClearClicked(bool enb);

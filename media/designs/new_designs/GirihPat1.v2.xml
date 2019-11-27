@@ -478,7 +478,7 @@
 			</prototype>
 		</style.Style>
 		<style.Colored>
-			<color>#ff1496d2</color>
+			<color>#ff00aaff</color>
 		</style.Colored>
 		<style.Thick>
 			<draw__outline>true</draw__outline>
@@ -505,23 +505,23 @@
 			<color hide="f">#ffffff00</color>
 		</ColorBlacks>
 		<ColorWhites>
-			<color hide="t">#ffc2bcb0</color>
-			<color hide="t">#ffc2bcb0</color>
 			<color hide="f">#ff34554a</color>
 			<color hide="f">#ffc59c0c</color>
-			<color hide="t">#ffc2bcb0</color>
 			<color hide="f">#ffc59c0c</color>
+			<color hide="t">#ffffaa00</color>
+			<color hide="t">#ffffaa00</color>
+			<color hide="f">#ffa35807</color>
 			<color hide="f">#ff34554a</color>
-			<color hide="t">#ffc2bcb0</color>
-			<color hide="t">#ffc2bcb0</color>
-			<color hide="f">#ff34554a</color>
-			<color hide="t">#ffc2bcb0</color>
-			<color hide="t">#ffc2bcb0</color>
-			<color hide="t">#ffc2bcb0</color>
-			<color hide="t">#ffc2bcb0</color>
-			<color hide="t">#ffc2bcb0</color>
-			<color hide="t">#ffc2bcb0</color>
-			<color hide="t">#ffc2bcb0</color>
+			<color hide="t">#ffff0000</color>
+			<color hide="t">#ffff0000</color>
+			<color hide="t">#ffff0000</color>
+			<color hide="f">#ffa35807</color>
+			<color hide="t">#ffff0000</color>
+			<color hide="t">#ffff0000</color>
+			<color hide="t">#ffff0000</color>
+			<color hide="t">#ffff0000</color>
+			<color hide="t">#ffff0000</color>
+			<color hide="t">#ffff0000</color>
 		</ColorWhites>
 		<ColorGroup>
 			<Group hideSet="f">

@@ -48,38 +48,218 @@
 #include "base/utilities.h"
 #include <QtAlgorithms>
 
-#define  LINK_END_TO_START
-
 int Map::refs;
 
-Map::Map()
+Map::Map(QString Name) : neighbourMap(this)
 {
     refs++;
+    mname = Name;
+
+    config = Configuration::getInstance();
+}
+
+Map::Map(MapPtr map) : neighbourMap(this)
+{
+    mname        = "copy of "  + map->mname;
+    vertices     = map->vertices;
+    edges        = map->edges;
+    neighbourMap = map->neighbourMap;
+
+    config = Configuration::getInstance();
 }
 
 Map::~Map()
 {
+    qDebug() << "deleting map" << mname;
     refs--;
-    //qDebug() << "DELETING MAP";
     wipeout();
 }
 
 void Map::wipeout()
 {
     // better to remove edges before removing vertices
-    foreach (EdgePtr e, edges)
+#if 0
+    for (auto e : edges)
     {
         removeEdge(e);
     }
 
-    foreach (VertexPtr v, vertices)
+    for (auto v : vertices)
     {
         removeVertex(v);
     }
+#endif
     edges.clear();          // unnecessary from destructor but not elsewhere
-    vertices.clear();       // unneccesary from destructor but not elsewhere
+    vertices.clear();      // unneccesary from destructor but not elsewhere
+    neighbourMap.clear();
     texts.clear();
 }
+
+// The publically-accessible version.
+VertexPtr Map::insertVertex(QPointF  pt)
+{
+    return getVertex_Complex( pt);
+}
+
+// The "correct" version of inserting a vertex.  Make sure the
+// map stays consistent.
+VertexPtr Map::getVertex_Complex(QPointF pt)
+{
+    VertexPtr vert = getVertex_Simple(pt);
+    splitEdgesByVertex(vert);
+    return vert;
+}
+
+// Get a Map Vertex given that we're asserting the vertex
+// doesn't lie on an edge in the map.
+VertexPtr Map::getVertex_Simple(QPointF pt)
+{
+    for( int idx = 0; idx < vertices.size(); ++idx )
+    {
+        VertexPtr  v = vertices.at(idx);
+        QPointF  cur = v->getPosition();
+        int cmp = lexComparePoints( pt, cur );
+        if( cmp == 0 )
+        {
+            return v;
+        }
+        else if( cmp < 0 )
+        {
+            VertexPtr vert = make_shared<Vertex>(pt);
+            vertices.insert(idx, vert);
+            neighbourMap.insertVertex(vert);
+            return vert;
+        }
+    }
+
+    VertexPtr vert = make_shared<Vertex>(pt);
+    vertices.push_back(vert);
+    neighbourMap.insertVertex(vert);
+    return vert;
+}
+
+// Split any edge (there is at most one) that intersects
+// this new vertex.  You'll want to make sure this vertex isn't
+// a duplicate of one already in the map.  That would just
+// make life unpleasant.
+void Map::splitEdgesByVertex(VertexPtr vert)
+{
+    QPointF vp = vert->getPosition();
+    qreal    x = vp.x();
+
+    for (auto e : edges)
+    {
+        qreal xm = e->getMinX();
+
+        if( lexCompareEdges( xm, x ) > 0 )
+        {
+            // The edges are sorted by xmin, and this xmin exceeds
+            // the x value of the vertex.  No more interactions.
+            return;
+        }
+
+        VertexPtr v1 = e->getV1();
+        VertexPtr v2 = e->getV2();
+
+        if( Loose::zero(Point::distToLine(vp, v1->getPosition(), v2->getPosition() ) ) )
+        {
+            if ( Loose::zero( Point::dist(vp, v1->getPosition())) ||
+                Loose::zero( Point::dist(vp ,v2->getPosition()) ) )
+            {
+                // Don't split if too near endpoints.
+                continue;
+            }
+
+            // Create the new edge instance.
+            EdgePtr nedge = make_shared<Edge>(vert, v2);
+
+            // We don't need to fix up v1 -- it can still point
+            // to the same edge.
+
+            // Fix up v2.
+            neighbourMap.replaceNeighbour(v2,e,nedge);
+
+            // Fix up the edge object -- it now points to the
+            // intervening edge.
+            e->setV2(vert);
+
+            // Insert the new edge.
+            insertEdge_Simple(nedge);
+
+            // Update the adjacencies for the splitting vertex
+            neighbourMap.insertNeighbour(vert,e);
+            neighbourMap.insertNeighbour(vert,nedge);
+
+            //verify("splitEdgesByVertex",false,true);
+            return;
+        }
+    }
+    //verify("splitEdgesByVertex",false,true);
+}
+
+// Insert the edge connecting two vertices, including updating
+// the neighbour lists for the vertices.
+EdgePtr Map::insertEdge(VertexPtr v1, VertexPtr v2, bool debug)
+{
+    Q_ASSERT(vertices.contains(v1));
+    Q_ASSERT(vertices.contains(v2));
+
+    EdgePtr e = make_shared<Edge>(v1, v2);
+    insertEdge_Simple(e);
+
+    neighbourMap.insertNeighbour(v1,e);
+    neighbourMap.insertNeighbour(v2,e);
+
+    if (debug)
+    {
+        insertDebugMark(v1->getPosition(),QString());
+        insertDebugMark(v2->getPosition(),QString());
+    }
+
+    return e;
+}
+
+
+EdgePtr Map::insertCurvedEdge(VertexPtr v1, VertexPtr v2, QPointF center, bool isConvex,bool debug)
+{
+    Q_ASSERT(vertices.contains(v1));
+    Q_ASSERT(vertices.contains(v2));
+
+    EdgePtr e = make_shared<Edge>(v1, v2,center, isConvex);
+    insertEdge_Simple(e);
+
+    neighbourMap.insertNeighbour(v1,e);
+    neighbourMap.insertNeighbour(v2,e);
+
+    if (debug)
+    {
+        insertDebugMark(v1->getPosition(),QString());
+        insertDebugMark(v2->getPosition(),QString());
+    }
+
+    return e;
+}
+// Insert an edge given that we know the edge doesn't interact
+// with other edges or vertices other than its endpoints.
+void Map::insertEdge_Simple(EdgePtr edge)
+{
+    qreal xm = edge->getMinX();
+
+    for( int idx = 0; idx < edges.size(); ++idx )
+    {
+        EdgePtr e = edges.at( idx ) ;
+        qreal xmcur = e->getMinX();
+
+        if( lexCompareEdges( xm, xmcur ) < 0 )
+        {
+            edges.insert(idx,edge );
+            return;
+        }
+    }
+
+    edges.push_back(edge);
+}
+
 
 // Some obvious getters.
 
@@ -105,64 +285,67 @@ int Map::numEdges() const
 
 // Remove stuff from the map.
 
-void Map::removeEdge( EdgePtr e )   // called by wipeout
+void Map::removeEdge(EdgePtr e)   // called by wipeout
 {
+    qDebug() << "removing edge" << e->getTmpEdgeIndex();
+
     VertexPtr v1  = e->getV1();
-    VertexPtr v2  = e->getV2();
-
-    v1->removeEdge(e);
-    v2->removeEdge(e);
-    edges.removeAll(e);
-
-    if (v1->numNeighbours() == 0)
+    if (v1)
     {
-        vertices.removeAll(v1);
-    }
-
-    if (v2->numNeighbours() == 0)
-    {
-        vertices.removeAll(v2);
-    }
-}
-
-void Map::removeVertex(VertexPtr v)
- {
-    //qDebug() << v->getPosition() << (void*)v->edges2.get();
-    QVector<EdgePtr> & qvep = v->getEdges();
-    for (auto it = qvep.begin(); it != qvep.end(); it++)
-    {
-        EdgePtr edge = *it;
-        if (edge)
+        neighbourMap.removeNeighbour(v1,e);
+        if (neighbourMap.numNeighbours(v1) == 0)
         {
-            edge->getOtherV(v)->removeEdge(edge);
-            edges.removeOne(edge);
+            vertices.removeAll(v1);
+            neighbourMap.removeVertex(v1);
         }
     }
-    vertices.removeOne(v);
+
+    VertexPtr v2  = e->getV2();
+    if (v2 && v2 != v1)
+    {
+        neighbourMap.removeNeighbour(v2,e);
+        if (neighbourMap.numNeighbours(v2) == 0)
+        {
+            vertices.removeAll(v2);
+            neighbourMap.removeVertex(v2);
+        }
+    }
+
+    edges.removeAll(e);
  }
 
-void Map::duplicate(MapPtr ret)
+void Map::removeVertex(VertexPtr v)
 {
-    this->vertices = ret->vertices;
-    this->edges    = ret->edges;
-}
+    qDebug() << "removing vertex" << v->getTmpVertexIndex();
+
+    QVector<EdgePtr> removeList;
+    for (auto edge : edges)
+    {
+        if (edge->contains(v))
+        {
+            removeList.push_back(edge);
+        }
+    }
+    for (auto edge : removeList)
+    {
+        removeEdge(edge);
+    }
+    vertices.removeAll(v);
+ }
 
 MapPtr Map::recreate()
 {
-    MapPtr ret = make_shared<Map>();
+    MapPtr ret = make_shared<Map>("recreated map");
 
-    for(auto e = vertices.begin(); e != vertices.end(); e++)
+    for(auto vert : vertices)
     {
-        VertexPtr vert = *e;
-        VertexPtr nv = make_shared<Vertex>( vert->getPosition());
-
-        vert->copy = nv;
+        VertexPtr nv = make_shared<Vertex>(vert->getPosition());
+        vert->copy   = nv;
         ret->vertices.push_back(nv);
     }
 
-    for(auto it = edges.begin(); it != edges.end(); it++ )
+    for(auto edge : edges)
     {
-        EdgePtr edge = *it;
         EdgePtr ne = make_shared<Edge>(edge->getV1()->copy, edge->getV2()->copy);
 
         ret->edges.push_back(ne);
@@ -173,8 +356,8 @@ MapPtr Map::recreate()
         // max expected degree of the vertices in the maps we'll be
         // dealing with is 6.
 
-        ne->getV1()->insertEdge(ne);
-        ne->getV2()->insertEdge(ne);
+        ret->neighbourMap.insertNeighbour(edge->getV1()->copy,ne);
+        ret->neighbourMap.insertNeighbour(edge->getV2()->copy,ne);
     }
 
     cleanCopy();
@@ -260,6 +443,8 @@ bool Map::vertexLessThan(VertexPtr a, VertexPtr b )
 
 void Map::sortVertices()
 {
+    qDebug() << "sortVertices";
+
     qSort( vertices.begin(),vertices.end(),vertexLessThan);
 }
 
@@ -275,159 +460,17 @@ bool Map::edgeLessThan( EdgePtr  a,  EdgePtr  b )
 
 void Map::sortEdges()
 {
+    qDebug() << "sortEdges";
+
     qSort( edges.begin(), edges.end(), edgeLessThan );
 }
 
 
 void Map::sortAllNeighboursByAngle()
 {
-    for (auto it = vertices.begin(); it != vertices.end(); it++)
-    {
-        VertexPtr vp = *it;
-        vp->sortEdgesByAngle();
-    }
-}
+    qDebug() << "sortAllNeighboursByAngle";
 
-// Get a Map Vertex given that we're asserting the vertex
-// doesn't lie on an edge in the map.
-VertexPtr Map::getVertex_Simple( QPointF pt )
-{
-    for( int idx = 0; idx < vertices.size(); ++idx )
-    {
-        VertexPtr  v = vertices.at( idx );
-        QPointF cur = v->getPosition();
-        int cmp = lexComparePoints( pt, cur );
-
-        if( cmp == 0 )
-        {
-            return v;
-        }
-        else if( cmp < 0 )
-        {
-            VertexPtr vert = make_shared<Vertex>(pt);
-            vertices.insert( idx, vert );
-            return vert;
-        }
-    }
-
-    VertexPtr vert = make_shared<Vertex>(pt);
-    vertices.push_back(vert );
-    return vert;
-}
-
-// Insert an edge given that we know the edge doesn't interact
-// with other edges or vertices other than its endpoints.
-void Map::insertEdge_Simple(EdgePtr edge )
-{
-    qreal xm = edge->getMinX();
-
-    for( int idx = 0; idx < edges.size(); ++idx )
-    {
-        EdgePtr e = edges.at( idx ) ;
-        qreal xmcur = e->getMinX();
-
-        if( lexCompareEdges( xm, xmcur ) < 0 )
-        {
-            edges.insert(idx,edge );
-            return;
-        }
-    }
-
-    edges.push_back(edge);
-}
-
-// Insert the edge connecting two vertices, including updating
-// the neighbour lists for the vertices.
-EdgePtr Map::insertEdge(VertexPtr v1, VertexPtr v2, bool debug)
-{
-    EdgePtr e = make_shared<Edge>(v1, v2 );
-    insertEdge_Simple( e );
-    v1->insertEdge( e );
-    v2->insertEdge( e );
-    if (debug)
-    {
-        insertDebugMark(v1->getPosition(),QString());
-        insertDebugMark(v2->getPosition(),QString());
-    }
-    return e;
-}
-
-// Split any edge (there is at most one) that intersects
-// this new vertex.  You'll want to make sure this vertex isn't
-// a duplicate of one already in the map.  That would just
-// make life unpleasant.
-void Map::splitEdgesByVertex(VertexPtr vert)
-{
-    QPointF vp = vert->getPosition();
-    qreal x = vp.x();
-
-    for( int idx = 0; idx < edges.size(); ++idx )
-    {
-        EdgePtr e = edges.at( idx );
-        qreal xm = e->getMinX();
-
-        if( lexCompareEdges( xm, x ) > 0 )
-        {
-            // The edges are sorted by xmin, and this xmin exceeds
-            // the x value of the vertex.  No more interactions.
-            return;
-        }
-
-        VertexPtr v1 = e->getV1();
-        VertexPtr v2 = e->getV2();
-
-        if( Loose::zero(Point::distToLine(vp, v1->getPosition(), v2->getPosition() ) ) )
-        {
-            if ( Loose::zero( Point::dist(vp, v1->getPosition())) ||
-                 Loose::zero( Point::dist(vp ,v2->getPosition()) ) )
-            {
-                // Don't split if too near endpoints.
-                continue;
-            }
-
-            // Create the new edge instance.
-            EdgePtr nedge = make_shared<Edge>(vert, v2);
-
-            // We don't need to fix up v1 -- it can still point
-            // to the same edge.
-
-            // Fix up v2.
-            v2->swapEdge( v1, nedge);
-
-            // Fix up the edge object -- it now points to the
-            // intervening edge.
-            e->setV2(vert);
-
-            // Insert the new edge.
-            edges.remove( idx );
-            insertEdge_Simple( nedge );
-            insertEdge_Simple( e );
-
-            // Update the adjacencies for the splitting vertex
-            vert->insertEdge( e);
-            vert->insertEdge( nedge );
-
-            //verify("splitEdgesByVertex",false,true);
-            return;
-        }
-    }
-    //verify("splitEdgesByVertex",false,true);
-}
-
-
-// The "correct" version of inserting a vertex.  Make sure the
-// map stays consistent.
-VertexPtr Map::getVertex_Complex(QPointF pt)
-{
-    VertexPtr vert = getVertex_Simple( pt );
-    splitEdgesByVertex( vert);
-    return vert;
-}
-
-// The publically-accessible version.
-VertexPtr Map::insertVertex( QPointF  pt)
-{
-    return getVertex_Complex( pt);
+    neighbourMap.sortByAngle();
 }
 
 void Map::insertPolygon(Polyform  * poly)
@@ -460,7 +503,6 @@ void Map::insertPolyline(Polyform * poly)
 
 void Map::insertDebugMark(QPointF m, QString txt, qreal size)
 {
-    Configuration * config = Configuration::getInstance();
     if (!config->debugMapEnable)
         return;
 
@@ -493,7 +535,6 @@ void Map::insertDebugLine(QLineF l1)
 
 void Map::insertDebugLine(EdgePtr edge)
 {
-    Configuration * config = Configuration::getInstance();
     if (!config->debugMapEnable)
         return;
     insertEdge(edge->getV1(),edge->getV2(),true);
@@ -501,7 +542,6 @@ void Map::insertDebugLine(EdgePtr edge)
 
 void Map::insertDebugLine(QPointF p1, QPointF p2)
 {
-    Configuration * config = Configuration::getInstance();
     if (!config->debugMapEnable)
         return;
 
@@ -512,7 +552,6 @@ void Map::insertDebugLine(QPointF p1, QPointF p2)
 
 void Map::insertDebugPolygon(QPolygonF & poly)
 {
-    Configuration * config = Configuration::getInstance();
     if (!config->debugMapEnable)
         return;
 
@@ -640,82 +679,77 @@ public synchronized void transformVertex( Vertex v, Transform T )
 // current map.  We can do this in linear time with a simple merge
 // algorithm.  Note that we want to coalesce identical vertices to
 // eliminate duplicates.
-void Map::mergeVertices( QVector<VertexPtr> & your_verts )
+void Map::mergeVertices(MapPtr other)
 {
-    int a = 0;
-    int b = 0;
-    int c = 0;
-    int d = 0;
-    int e = 0;
-    QVector<VertexPtr> my_verts = vertices;
-
-    int my_size = my_verts.size();
-    int your_size = your_verts.size();
+    QVector<VertexPtr> & your_verts = other->vertices;          // reference
+  //NeighbourMap & your_neighbours  = other->getNeighbourMap(); // referemce
+    QVector<VertexPtr> my_verts     = vertices;                 // local copy
+    NeighbourMap my_neighbours      = neighbourMap;             // local copy
+    int my_size                     = my_verts.size();
+    int your_size                   = your_verts.size();
 
     vertices.clear();
 
-    int my_i = 0;
+    int my_i   = 0;
     int your_i = 0;
 
     while( true )
     {
-        if( my_i == my_size )
+        if (my_i == my_size)
         {
             if( your_i == your_size )
             {
                 // done!
-                //qDebug() << "a-e" << a << b << c << d << e;
                 return;
             }
             else
             {
-                VertexPtr your_v = your_verts.at( your_i );
-                VertexPtr nv = make_shared<Vertex>(your_v->getPosition());
-                vertices.push_back( nv );
-                your_v->copy = nv;
+                VertexPtr your_v = your_verts.at(your_i);
+                vertices.push_back(your_v);
+                neighbourMap.insertVertex(your_v);
+                your_v->copy = your_v;
                 ++your_i;
-                a++;
             }
         }
         else
         {
             if( your_i == your_size )
             {
-                vertices.push_back( my_verts.at( my_i ) );
+                VertexPtr vp = my_verts.at(my_i);
+                vertices.push_back(vp);
+                neighbourMap.insertVertex(vp);
                 ++my_i;
-                b++;
             }
             else
             {
                 // Darn -- have to actually merge.
-                VertexPtr my_v = my_verts.at( my_i );
-                VertexPtr your_v = your_verts.at( your_i );
-                int cmp = lexComparePoints( my_v->getPosition(), your_v->getPosition() );
+                VertexPtr my_v   = my_verts.at(my_i);
+                VertexPtr your_v = your_verts.at(your_i);
+                int cmp = lexComparePoints(my_v->getPosition(), your_v->getPosition());
 
-                if( cmp < 0 )
+                if (cmp < 0)
                 {
                     // my_v goes first.
-                    vertices.push_back( my_v );
+                    vertices.push_back(my_v);
+                    neighbourMap.insertVertex(my_v);
                     ++my_i;
-                    c++;
                 }
-                else if( cmp == 0 )
+                else if (cmp == 0)
                 {
                     // It's a toss up.
-                    vertices.push_back( my_v );
+                    vertices.push_back(my_v);
+                    neighbourMap.insertVertex(my_v);
                     your_v->copy = my_v;
                     ++my_i;
                     ++your_i;
-                    d++;
                 }
-                else if( cmp > 0 )
+                else if (cmp > 0)
                 {
                     // your_v goes first.
-                    VertexPtr nv = make_shared<Vertex>(your_v->getPosition());
-                    vertices.push_back(nv);
-                    your_v->copy = nv;
+                    vertices.push_back(your_v);
+                    neighbourMap.insertVertex(your_v);
+                    your_v->copy = your_v;
                     ++your_i;
-                    e++;
                 }
             }
         }
@@ -735,24 +769,26 @@ void Map::mergeVertices( QVector<VertexPtr> & your_verts )
 // this merge code in all its glory would be too much work.  Since
 // I have to use all my own code, I'm going to resort to a simplified
 // (and slower) version of the algorithm.
-void Map::mergeMap(MapPtr other /*, bool consume */)
+
+
+void Map::mergeMap(MapPtr other)
 {
-    static bool verifyMap   = false;
-    static bool traceMerge  = false;
+    const bool debug   = false;
+    const bool trace   = false;
 
-    bool good_at_start      = true;
+    bool good_at_start = true;
 
-    if (traceMerge) qDebug() << "** mergeMap start";
-    if (verifyMap)
+    if (trace) qDebug() << "** mergeMap start";
+    if (debug)
     {
-        if (traceMerge) qDebug() << "** mergeMap verify";
+        if (trace) qDebug() << "** mergeMap verify";
         //Sanity checks to use when debugging.
-        good_at_start = verify("merge map",true,true);
+        good_at_start = verifyMap("start merge map");
         if( !good_at_start )
         {
             badness( "Bad at start.");
         }
-        if ( !other->verify("other map",false))
+        if ( !other->verifyMap("other map"))
         {
             badness("Other bad at start.");
         }
@@ -781,28 +817,15 @@ void Map::mergeMap(MapPtr other /*, bool consume */)
 
     // Step 0 -- setup.
     // Create a vector to hold the intersections.
-/*
-    if( !consume )
-    {
-        // Copy the other map so we don't destroy it.
-        other = other->clone();
-        if ( !other->verify("other clone",false))
-        {
-            qCritical("Other clone bad at start.");
-        }
-    }
-*/
     QVector<QPointF> intersections;
 
-    if (traceMerge) qDebug() << "Step 1";
     // 1. Check all intersections between edges from this map
     //    and from the other map.  Record the positions of the
     //    intersections.
-    const QVector<EdgePtr> * oedges = other->getEdges();
-    for(auto it = oedges->begin(); it != oedges->end(); it++)
+    if (trace) qDebug() << "Step 1";
+    const QVector<EdgePtr> & oedges = other->getEdges();
+    for ( auto edge : oedges)
     {
-        EdgePtr edge = *it;
-
         // To check all intersections of this edge with edges in
         // the current map, we can use the optimization that
         // edges are stored in sorted order by min x.  So at the
@@ -834,94 +857,67 @@ void Map::mergeMap(MapPtr other /*, bool consume */)
             }
         }
     }
-    if (verifyMap) verify("merge map - step 1",true,true);
+    if (debug) verifyMap("merge map - step 1");
 
-    if (traceMerge) qDebug() << "Step 2";
     // 2. For each intersection position, get the vertex in both
     //    maps, forcing edges to split where the intersections will
     //    occur.
     //
-
+    if (trace) qDebug() << "Step 2";
     for(auto it2 = intersections.begin(); it2 != intersections.end(); it2++)
     {
         QPointF p = *it2;
         getVertex_Complex(p);
         other->getVertex_Complex(p);
     }
-    if (verifyMap) verify("merge map - step 2",true,true);
+    if (debug) verifyMap("merge map - step 2");
 
-    if (traceMerge) qDebug() << "Step 3";
     // 3. Merge the vertices.
-    mergeVertices( other->vertices );
-    if (verifyMap) verify("merge map - step 3",true,true);
+    if (trace) qDebug() << "Step 3";
+    mergeVertices(other);       // don't verify here - only vertices are merged
 
-    if (traceMerge) qDebug() << "Step 4";
     // 4. Add the edges in the trivial way, since now there will
     //    be no intersections.
-
-    for(auto it = oedges->begin(); it != oedges->end(); it++)
+    if (trace) qDebug() << "Step 4";
+    for (auto edge : oedges)
     {
-        EdgePtr edge = *it;
         VertexPtr v1 = edge->getV1()->copy;
         VertexPtr v2 = edge->getV2()->copy;
-        if (v1->pos == v2->pos)
-        {
-            qWarning("v1==v2");
-            continue;
-        }
 
-        EdgePtr ne;
         if (edge->getType() == EDGE_LINE)
         {
-            ne = make_shared<Edge>(v1,v2);
+            insertEdge(v1,v2);
         }
-        else if (edge->getType() == EDGE_CURVE)
+        else
         {
-            QPointF pt   = edge->getArcCenter();  // TODO FIXME need to transform this point
-            bool  convex = edge->isConvex();
-            ne           = make_shared<Edge>(v1, v2,pt,convex);
+            insertCurvedEdge(v1,v2,edge->getArcCenter(),edge->isConvex());
         }
-
-        // Rather than using insertEdge_Simple, we tack all new edges
-        // to the end of the edge list...
-        edges.push_back( ne );
-
-        v1->insertEdge( ne );
-        v2->insertEdge( ne );
     }
-    if (verifyMap) verify("merge map-step 4",true,true);
+    setTmpIndices();
+    if (debug) verifyMap("merge map-step 4");
 
     // ... and then sort everything together for speed.
-
-    if (traceMerge) qDebug() << "Step 5";
+    if (trace) qDebug() << "Step 5";
     sortEdges();
-    if (verifyMap) verify("merge map-step 5",true,true);
+    if (debug) verifyMap("merge map-step 5");
 
+    if (trace) qDebug() << "Step 6";
     cleanNeighbours();
-
-    if (traceMerge) qDebug() << "Step 6";
     cleanCopy();
-    if (verifyMap) verify("merge map-step 6",true,true);
+    if (debug) verifyMap("merge map-step 6");
 
     // I guess that's it!
-    bool good_at_end = verify("merge map", false, true);
-
+    bool good_at_end = verifyMap("end merge map");
     if(!good_at_end)
     {
         badness("bad merge" );
     }
-    else if (verifyMap)
+    else if (debug)
     {
         qDebug() << "good merge";
     }
-    if (traceMerge) qDebug() << "** mergeMap end";
+    if (trace) qDebug() << "** mergeMap end";
 }
-
-/*
-void Map::mergeMap(MapPtr other )
-{
-    mergeMap( other, false );
-}*/
 
 #if 0
 // A simpler merge routine that assumes that the two maps
@@ -955,40 +951,37 @@ public synchronized void mergeSimple( Map other )
 // Since transforming a map requires a slow cloning, we can save lots
 // of time and memory by transforming and merging simultaneously.
 // Here, we transform vertices as they are put into the current map.
-void Map::mergeSimpleMany(MapPtr other, const QVector<QTransform> &transforms)
+void Map::mergeSimpleMany(constMapPtr other, const QVector<QTransform> &transforms)
 {
-    for (auto e = transforms.begin(); e != transforms.end(); e++)
+    for (auto T : transforms)
     {
-        QTransform T = *e;
-        //qDebug() << T->toString();
-        for (auto v = other->getVertices()->begin(); v != other->getVertices()->end(); v++)
+        for (auto overt :  other->getVertices())
         {
-            VertexPtr vert = *v;
-            vert->copy = getVertex_Simple(T.map(vert->getPosition()));
-            //qDebug() << vert->copy->getPosition();
+            // this makes vertex and inserts it in neighbours table
+            overt->copy = getVertex_Simple(T.map(overt->getPosition()));
         }
 
-
-        for (auto ed = other->getEdges()->begin(); ed != other->getEdges()->end(); ed++)
+        for (auto oedge : other->getEdges())
         {
             EdgePtr nedge;
 
-            EdgePtr edge = *ed;
-            VertexPtr v1 = edge->getV1()->copy;
-            VertexPtr v2 = edge->getV2()->copy;
+            VertexPtr ov1 = oedge->getV1()->copy;
+            VertexPtr ov2 = oedge->getV2()->copy;
 
-            if (edge->getType() == EDGE_LINE)
+            if (oedge->getType() == EDGE_LINE)
             {
-                nedge = make_shared<Edge>(v1, v2);
+                nedge = make_shared<Edge>(ov1, ov2);
             }
-            else if (edge->getType() == EDGE_CURVE)
+            else if (oedge->getType() == EDGE_CURVE)
             {
-                QPointF pt   = T.map(edge->getArcCenter());
-                bool  convex = edge->isConvex();
-                nedge = make_shared<Edge>(v1, v2,pt,convex);
+                QPointF pt   = T.map(oedge->getArcCenter());
+                bool  convex = oedge->isConvex();
+                nedge = make_shared<Edge>(ov1, ov2,pt,convex);
             }
-            v1->insertEdge(nedge);
-            v2->insertEdge(nedge);
+
+            neighbourMap.insertNeighbour(ov1,nedge);
+            neighbourMap.insertNeighbour(ov2,nedge);
+
             edges.push_back(nedge);
         }
     }
@@ -996,12 +989,13 @@ void Map::mergeSimpleMany(MapPtr other, const QVector<QTransform> &transforms)
     sortEdges();
     cleanNeighbours();
     cleanCopy();
+    setTmpIndices();
 }
 
 
 void Map::divideIntersectingEdges()
 {
-    verify("deIntersectEdges- start",false,true);
+    qDebug() << "divideIntersectingEdges";
 
     QVector<QPointF> intersects;
     for(auto it = edges.begin(); it != edges.end(); it++)
@@ -1055,42 +1049,47 @@ void Map::divideIntersectingEdges()
         getVertex_Complex(pt);
     }
 
+#if 0
     sortVertices();
     sortEdges();
     cleanNeighbours();
-    verify("deIntersectEdges",false,true);
+#endif
 }
 
 void Map::joinColinearEdges()
 {
+    qDebug() << "joinColinearEdges";
+
     bool changed = false;
     do
     {
         changed = joinOneColinearEdge();
+        //verifyMap("joinColinearEdges",false,true);
     } while (changed);
 
+#if 0
     sortVertices();
     sortEdges();
     cleanNeighbours();
-    verify("joinColinearEdges",false,true);
+    setTmpIndices();
+#endif
 }
 
 bool Map::joinOneColinearEdge()
 {
-    for (auto it = vertices.begin(); it != vertices.end(); it++)
+    for (auto vp : vertices)
     {
-        VertexPtr vp = *it;
-        int count = vp->numNeighbours();
+        int count = neighbourMap.numNeighbours(vp);
         if (count == 2)
         {
-            QVector<EdgePtr> qvep = vp->getEdges();
-            QLineF a = qvep[0]->getLine();
-            QLineF b = qvep[1]->getLine();
+            NeighboursPtr np = neighbourMap.getNeighbours(vp);
+            QLineF a = np->getEdge(0)->getLine();
+            QLineF b = np->getEdge(1)->getLine();
             qreal angle = a.angle(b);
             if (Loose::zero(angle) || Loose::equals(angle,180.0))
             {
                 // need to remove one edge, extend the other, and remove vertex
-                combineLinearEdges(qvep[0],qvep[1],vp);
+                combineLinearEdges(np->getEdge(0),np->getEdge(1),vp);
                 return true;
             }
         }
@@ -1126,65 +1125,65 @@ bool Map::joinOneColinearEdge()
 
 void Map::combineLinearEdges(EdgePtr a, EdgePtr b,VertexPtr common)
 {
+    VertexPtr newV1 = a->getOtherV(common);
+    VertexPtr newV2 = b->getOtherV(common);
+
+    insertEdge(newV1,newV2);
+    removeEdge(a);
+    removeEdge(b);
+
+#if 0
+    VertexPtr av1 = a->getV1();
+    VertexPtr av2 = a->getV2();
+    VertexPtr bv1 = b->getV1();
+    VertexPtr bv2 = b->getV2();
     VertexPtr modifiedVp;
 
     // let's keep a, and remove b
-
-    if (a->getV1() == common)
+    if (av1 == common)
     {
-        if (b->getV1() == common)
+        if (bv1 == common)
         {
-            a->setV1(b->getV2());
-            modifiedVp = b->getV2();
+            modifiedVp = bv2;
         }
         else
         {
-            Q_ASSERT(b->getV2() == common);
-            a->setV1(b->getV1());
-            modifiedVp = b->getV1();
+            Q_ASSERT(bv2 == common);
+            modifiedVp = bv1;
         }
+        a->setV1(modifiedVp);
     }
     else
     {
-        Q_ASSERT(a->getV2() == common);
-        if (b->getV1() == common)
+        Q_ASSERT(av2 == common);
+        if (bv1 == common)
         {
-            a->setV2(b->getV2());
-            modifiedVp = b->getV2();
+            modifiedVp = bv2;
         }
         else
         {
-            Q_ASSERT(b->getV2() == common);
-            a->setV2(b->getV1());
-            modifiedVp = b->getV1();
+            Q_ASSERT(bv2 == common);
+            modifiedVp = bv1;
         }
+        a->setV2(modifiedVp);
     }
+
     // need to change the neighbours for modified vertex
-    QVector<EdgePtr> & qvep = modifiedVp->getNeighbours();
-    for (auto it = qvep.begin(); it != qvep.end(); it++)
-    {
-        EdgePtr ep = *it;
-        if (ep == b)
-        {
-            *it = a;  //replace in vertex
-        }
-    }
-    // can now remove b
-    edges.removeOne(b);
-    // can now remove vertex
-    vertices.removeOne(common);
+    removeEdge(b);
+    //neighbourMap.replaceNeighbour(modifiedVp,b,a);
+#endif
 }
 
 void Map::splitEdge(EdgePtr e)
 {
-    verify("split edge start",false,true);
+    verifyMap("split edge start");
 
     VertexPtr oldV1 = e->getV1();
     VertexPtr oldV2 = e->getV2();
 
     // remove existing
     removeEdge(e);
-    verify("split edge mid",false,true);
+    verifyMap("split edge mid");
 
     // insert new
 
@@ -1194,7 +1193,56 @@ void Map::splitEdge(EdgePtr e)
     EdgePtr e1 = insertEdge(oldV1,v);
     EdgePtr e2 = insertEdge(v,oldV2);
 
-    verify("split edge end",false,true);
+    verifyMap("split edge end");
+}
+
+void Map::fixNeighbours()
+{
+    qDebug() << "fixNeighbours";
+
+    int index = 200;
+    for (auto e : edges)
+    {
+        VertexPtr v1 = e->getV1();
+        if (!vertices.contains(v1))
+        {
+            vertices.push_back(v1);
+            v1->setTmpVertexIndex(index++);
+        }
+
+        VertexPtr v2 = e->getV2();
+        if (!vertices.contains(v2))
+        {
+            vertices.push_back(v1);
+            v2->setTmpVertexIndex(index++);
+        }
+
+        NeighboursPtr np = neighbourMap.getNeighbours(v1);
+        if (!np)
+        {
+            neighbourMap.insertNeighbour(v1,e);
+        }
+        else
+        {
+            if (!np->contains(e))
+            {
+                np->insertEdge(e);
+            }
+        }
+
+        np = neighbourMap.getNeighbours(v2);
+        if (!np)
+        {
+            neighbourMap.insertNeighbour(v2,e);
+        }
+        else
+        {
+            if (!np->contains(e))
+            {
+                np->insertEdge(e);
+            }
+        }
+    }
 }
 
 void Map::deDuplicateVertices(QVector<VertexPtr> & vec)
@@ -1256,37 +1304,44 @@ QString Map::summary()
     return str;
 }
 
-void Map::dump(bool full) const
+void Map::dumpMap(bool full)
 {
     qDebug() << "vertices =" << vertices.size() << "edges = " << edges.size();
-    if (true)
+
+    if (full)
     {
-        for( int idx = 0; idx < vertices.size(); ++idx )
-        {
-            VertexPtr v = vertices.at(idx);
-            v->setTmpIndex(idx);
-        }
-        for( int idx = 0; idx < edges.size(); ++idx )
-        {
-            EdgePtr edge = edges.at(idx);
-            edge->setTmpIndex(idx);
-        }
         qDebug() << "=== start map" << Utils::addr(this);
         dumpVertices(full);
         dumpEdges(full);
+        neighbourMap.dump();
         qDebug() << "=== end  map" << Utils::addr(this);
     }
 }
 
-void Map::dumpVertices(bool full) const
+void Map::setTmpIndices() const
 {
-    for( int idx = 0; idx < vertices.size(); ++idx )
+    for (int idx = 0; idx < vertices.size(); ++idx)
     {
         VertexPtr v = vertices.at(idx);
-        qDebug() <<  "vertex"  << idx << "at" << v->getPosition();
+        v->setTmpVertexIndex(idx);
+    }
+
+    for(int idx = 0; idx < edges.size(); ++idx)
+    {
+        EdgePtr edge = edges.at(idx);
+        edge->setTmpEdgeIndex(idx);
+    }
+}
+
+void Map::dumpVertices(bool full)
+{
+    for (auto vp : vertices)
+    {
+        qDebug() <<  "vertex: "  << vp->getTmpVertexIndex() << "at" << vp->getPosition();
         if (full)
         {
-            v->dumpNeighbours();
+            NeighboursPtr np = neighbourMap.getNeighbours(vp);
+            np->dumpNeighbours();
         }
     }
 }
@@ -1296,9 +1351,8 @@ QString Map::verticesToString()
     QString astring;
     QDebug  deb(&astring);
 
-    for (auto it = vertices.begin(); it != vertices.end(); it++)
+    for (auto v : vertices)
     {
-        VertexPtr v = *it;
         QPointF pt = v->getPosition();
         deb << pt;
     }
@@ -1311,20 +1365,17 @@ QString Map::vptrsToString()
     QString astring;
     QDebug  deb(&astring);
 
-    for (auto it = vertices.begin(); it != vertices.end(); it++)
+    for (auto v : vertices)
     {
-        VertexPtr v = *it;
         deb << Utils::addr(v.get());
     }
     astring.remove("QPointF");
     return astring;
 }
 
-
-
-void Map::dumpEdges(bool full) const
+void Map::dumpEdges(bool full)
 {
-    Q_UNUSED(full);
+    Q_UNUSED(full)
     for( int idx = 0; idx < edges.size(); ++idx )
     {
         EdgePtr edge = edges.at(idx);
@@ -1338,18 +1389,16 @@ void Map::dumpEdges(bool full) const
 // It would probably be better to make this function provide the error
 // messages through a return value or exception, but whatever.
 
-bool Map::verify(QString mapname, bool verbose, bool detailed, bool doDump) const
+bool Map::verifyMap(QString mapname, bool force)
 {
-    Configuration * config = Configuration::getInstance();
-    if (!config->verifyMaps)
+    if (!config->verifyMaps && !force)
     {
         return true;
     }
 
     bool good = true;
 
-    Canvas::getInstance()->dump(true);
-    qDebug().noquote() << "Verifying:" << mapname << "Edges:" << edges.size() << "Vertices:" << vertices.size() ;
+    qDebug().noquote() << "$$$$ Verifying:" << mapname << "[" << mname << "]" << "Edges:" << edges.size() << "Vertices:" << vertices.size() << "Neighbours:" << neighbourMap.size() << "Neighbouring edges:" << neighbourMap.countNeighbouringEdges();
 
     if (vertices.size() == 0 && edges.size() == 0)
     {
@@ -1369,155 +1418,222 @@ bool Map::verify(QString mapname, bool verbose, bool detailed, bool doDump) cons
         good = false;
     }
 
-    if (doDump)
+    if (neighbourMap.size() == 0)
     {
-        dump(true);
+        qWarning("No neigbours");
+        good = false;
     }
 
-    if (detailed)
+    setTmpIndices();
+
+    if (config->verifyDump)
     {
-        // Make sure there are no trivial edges.
+        dumpMap(true);
+    }
 
-        for( int idx = 0; idx < edges.size(); ++idx )
+    if (!verifyVertices())
+        good = false;
+
+    if (!verifyEdges())
+        good = false;
+
+    if (!verifyNeighbours())
+        good = false;
+
+    if (!good)
+    {
+        badness().noquote() << mapname << "[" << mname << "]" << "did NOT verify!"  << "(Edges:" << edges.size() << "Vertices:" << vertices.size() << "Neighbours:" << neighbourMap.size() << "Neighbouring edges:" << neighbourMap.countNeighbouringEdges() << ")";
+    }
+    else
+    {
+        qDebug().noquote() << mapname << "[" << mname << "]" << "verify OK" <<  "(Edges:" << edges.size() << "Vertices:" << vertices.size() << "Neighbours:" << neighbourMap.size() << "Neighbouring edges:" << neighbourMap.countNeighbouringEdges() << ")";
+    }
+
+    qDebug() << "$$$$ Verify end";
+    return good;
+}
+
+bool Map::verifyVertices()
+{
+    bool rv = true;
+
+    for (auto v : vertices)
+    {
+        NeighboursPtr np = neighbourMap.getNeighbours(v);
+        if (!neighbourMap.contains(v))
         {
-            EdgePtr e = edges.at( idx );
-            if (e->getV1() == e->getV2())
-            {
-                qWarning() << "Trivial edge " << idx ;
-                good = false;
-            }
+            qWarning() << "vertex" << v->getTmpVertexIndex() << "not found in neighbour map";
+            rv = false;
+        }
+        else if (np->numNeighbours() == 0)
+        {
+            qWarning() << "vertex" << v->getTmpVertexIndex() << "is disconnected - has no neighbours";
+            rv = false;
+        }
+    }
+
+    // Make sure the vertices are in sorted order.
+    for( int idx = 1; idx < vertices.size(); ++idx )
+    {
+        VertexPtr v1 = vertices.at( idx - 1 );
+        VertexPtr v2 = vertices.at( idx );
+
+        int cmp = lexComparePoints( v1->getPosition(), v2->getPosition() );
+
+        if( cmp == 0 )
+        {
+            qWarning() << "Duplicate vertices.";
+            rv = false;
+        }
+        else if( cmp > 0 )
+        {
+            qInfo() << "Sortedness check failed for vertices.";
+            rv = false;
+        }
+    }
+
+    return rv;
+}
+
+bool Map::verifyEdges()
+{
+    bool rv = true;
+
+    for (auto edge: edges)
+    {
+        VertexPtr v1 = edge->getV1();
+        VertexPtr v2 = edge->getV2();
+
+        if (v1 == v2)
+        {
+            qWarning() << "Trivial edge " << edge->getTmpEdgeIndex() << "v1==v2" << v1->getTmpVertexIndex();
+            rv = false;
         }
 
-        for (auto e = edges.begin(); e != edges.end(); e++)
+        if (edge->getType() != EDGE_CURVE)
         {
-            EdgePtr edge = * e;
-            if (verbose) qDebug() <<  "verifying edge (" << edges.indexOf(edge) << ") : from" << vertices.indexOf(edge->getV1()) << "to"  << vertices.indexOf(edge->getV2());
-
-            if (edge->getV1()->pos == edge->getV2()->pos)
-            {
-                qWarning() << "edge" << edges.indexOf( edge ) << "not really an edge";
-                good = false;
-            }
-
-            // Make sure that for every edge, the edge's endpoints
-            // are know vertices in the map.
-            if( !vertices.contains( edge->getV1()))
-            {
-                qWarning() << "edge" << edges.indexOf( edge ) << "V1 not in vertex list.";
-                good = false;
-            }
-            if( !vertices.contains( edge->getV2() ) )
-            {
-                qWarning() << "edge" << edges.indexOf( edge ) << "V2 not in vertex list.";
-                good = false;
-            }
-
-            // Make sure that the edge's endpoints know about the
-            // edge, and that the edge is the only connection between
-            // the two endpoints.
-            EdgePtr ed = edge->getV1()->getNeighbour( edge->getV2());
-            if(!ed)
-            {
-                qWarning() << "edge" << edges.indexOf( edge ) << "not found in vertex v1 neighbours for vertex" <<  vertices.indexOf(edge->getV1());
-                good = false;
-            }
-            else if( !(ed == edge ) )
-            {
-                qWarning() << "edge" << edges.indexOf( edge ) << "not matched in vertex v1 neighbours for vertex" << vertices.indexOf(edge->getV1());
-                good = false;
-            }
-
-            ed = edge->getV2()->getNeighbour(edge->getV1());
-            if (!ed)
-            {
-                qWarning() << "edge" << edges.indexOf( edge ) << "not found   in vertex v2 neighbours for vertex" <<  vertices.indexOf(edge->getV2());
-                good = false;
-            }
-            else if( !( ed == edge ) )
-            {
-                qWarning() << "edge" << edges.indexOf( edge ) << "not found   in vertex v2 neighbours for vertex" <<  vertices.indexOf(edge->getV2());
-                good = false;
-            }
-        }
-
-        // Make sure the edges are in sorted order.
-        for( int idx = 1; idx < edges.size(); ++idx )
-        {
-            EdgePtr e1 = edges.at( idx - 1 );
-            EdgePtr e2 = edges.at( idx );
-
-            double e1x = e1->getMinX();
-            double e2x = e2->getMinX();
-
-            if( e1x > (e2x + Loose::TOL) )
-            {
-                qInfo() << "Sortedness check failed for edges.";
-                //good = false;
-            }
-        }
-
-        // Make sure the vertices are in sorted order.
-        for( int idx = 1; idx < vertices.size(); ++idx )
-        {
-            VertexPtr v1 = vertices.at( idx - 1 );
-            VertexPtr v2 = vertices.at( idx );
-
-            int cmp = lexComparePoints( v1->getPosition(), v2->getPosition() );
-
-            if( cmp == 0 )
-            {
-                qWarning() << "Duplicate vertices.";
-                good = false;
-            }
-            else if( cmp > 0 )
-            {
-                qInfo() << "Sortedness check failed for vertices.";
-                good = false;
-            }
-        }
-
-        // Make sure the vertices each have a neighbour and all neigours are good
-        for (auto it = vertices.begin(); it != vertices.end(); it++)
-        {
-            VertexPtr vp = *it;
-            if (vp->numNeighbours() == 0)
-            {
-                qWarning() << "Vertex at position" << vp->getPosition() << "has no neigbours, is floating in space";
-                good = false;
-            }
-            QVector<EdgePtr> qvep = vp->getNeighbours();
-            for (auto it = qvep.begin(); it != qvep.end(); it++)
-            {
-                EdgePtr edge = *it;
-                if (!edge)
-                {
-                    qWarning("Bad neighbour: no edge");
-                    good = false;
-                }
-                else if (!edge->getV1())
-                {
-                    qWarning("Bad neighbour edge: no V1");
-                    good = false;
-                }
-                else if (!edge->getV2())
-                {
-                    qWarning("Bad neighbour edge: no V2");
-                    good = false;
-                }
-            }
-        }
-
-        if (!good)
-        {
-            badness() << mapname << "did NOT verify!"  << "(Edges:" << edges.size() << "Vertices:" << vertices.size() << ")";
+            if (config->verifyVerbose) qDebug() <<  "verifying edge (" << edge->getTmpEdgeIndex() << ") : from" << v1->getTmpVertexIndex() << "to"  << v2->getTmpVertexIndex();
         }
         else
         {
-            qDebug() << mapname << "verify OK" << "(Edges:" << edges.size() << "Vertices:" << vertices.size() << ")";
+            if (config->verifyVerbose) qDebug() <<  "verifying CURVED edge (" << edge->getTmpEdgeIndex() << ") : from" << v1->getTmpVertexIndex() << "to"  << v2->getTmpVertexIndex();
+        }
+
+        if (v1->pos == v2->pos)
+        {
+            qWarning() << "edge" << edge->getTmpEdgeIndex() << "not really an edge";
+            rv = false;
+        }
+
+        // Make sure that for every edge, the edge's endpoints
+        // are know vertices in the map.
+        if (!vertices.contains(v1))
+        {
+            qWarning() << "edge" << edge->getTmpEdgeIndex() << "V1 not in vertex list.";
+            rv = false;
+        }
+        if (!vertices.contains(v2))
+        {
+            qWarning() << "edge" << edge->getTmpEdgeIndex() << "V2 not in vertex list.";
+            rv = false;
+        }
+
+        // Make sure that the edge's endpoints know about the
+        // edge, and that the edge is the only connection between
+        // the two endpoints.
+        //qDebug() << "   V1";
+        NeighboursPtr np = neighbourMap.getNeighbours(v1);
+        EdgePtr ed       = np->getNeighbour(v2);
+        if (!ed)
+        {
+            qWarning() << "edge" << edge->getTmpEdgeIndex() << "not found in vertex v1 neighbours for vertex" <<  v1->getTmpVertexIndex();
+            rv = false;
+        }
+        else if (ed != edge )
+        {
+            qWarning() << "edge" << edge->getTmpEdgeIndex() << "not matched in vertex v1 neighbours for vertex" << v1->getTmpVertexIndex();
+            if (ed->sameAs(edge))
+            {
+                qWarning("woops:  edge same as other edge");
+            }
+            rv = false;
+        }
+
+        //qDebug() << "   V2";
+        np = neighbourMap.getNeighbours(v2);
+        ed = np->getNeighbour(v1);
+        if (!ed)
+        {
+            qWarning() << "edge" << edge->getTmpEdgeIndex() << "not found in vertex v2 neighbours for vertex" <<  v2->getTmpVertexIndex();
+            rv = false;
+        }
+        else if (ed != edge)
+        {
+            qWarning() << "edge" << edge->getTmpEdgeIndex() << "not found in vertex v2 neighbours for vertex" <<  v2->getTmpVertexIndex();
+            rv = false;
         }
     }
 
-    return good;
+    // Make sure the edges are in sorted order.
+    for( int idx = 1; idx < edges.size(); ++idx )
+    {
+        EdgePtr e1 = edges.at( idx - 1 );
+        EdgePtr e2 = edges.at( idx );
+
+        double e1x = e1->getMinX();
+        double e2x = e2->getMinX();
+
+        if( e1x > (e2x + Loose::TOL) )
+        {
+            qInfo() << "Sortedness check failed for edges.";
+            //good = false;
+        }
+    }
+    return rv;
+}
+bool Map::verifyNeighbours()
+{
+    bool rv = true;
+
+    if (!neighbourMap.verify())
+    {
+        rv = false;
+    }
+
+    // Make sure the vertices each have a neighbour and all neigours are good
+    for (auto vp : vertices)
+    {
+        NeighboursPtr np = neighbourMap.getNeighbours(vp);
+        if (np->numNeighbours() == 0)
+        {
+            qWarning() << "Vertex" << vp->getTmpVertexIndex() << "at position" << vp->getPosition() << "has no neigbours, is floating in space";
+            rv = false;
+        }
+        for (auto edge : np->getNeighbours())
+        {
+            if (!edge)
+            {
+                qWarning("Bad neighbour: no edge");
+                rv = false;
+            }
+            else if (!edge->getV1())
+            {
+                qWarning("Bad neighbour edge: no V1");
+                rv = false;
+            }
+            else if (!edge->getV2())
+            {
+                qWarning("Bad neighbour edge: no V2");
+                rv = false;
+            }
+            if (!edges.contains(edge))
+            {
+                qWarning() << "Unknown edge" << edge->getTmpEdgeIndex() <<  "in neigbours list";
+                rv = false;
+            }
+        }
+    }
+    return rv;
 }
 
 void Map::addShapeFactory(ShapeFactory * sf)
@@ -1540,7 +1656,7 @@ void Map::addShapeFactory(ShapeFactory * sf)
     }
 }
 
-bool Map::analyzeVertices() const
+bool Map::analyzeVertices()
 {
     calcVertexEdgeCounts();
 
@@ -1557,7 +1673,7 @@ bool Map::analyzeVertices() const
 #endif
 }
 
-void Map::calcVertexEdgeCounts() const
+void Map::calcVertexEdgeCounts()
 {
     // calc
     int vEdgeCounts[MAP_EDGECOUNT_MAX]; // for analysis, indexed by number of edges per vertex
@@ -1567,10 +1683,10 @@ void Map::calcVertexEdgeCounts() const
         vEdgeCounts[i] = 0;
     }
 
-    for (auto it = vertices.begin(); it != vertices.end(); it++)
+    for (auto v : vertices)
     {
-        VertexPtr v = *it;
-        int count = v->numEdges();
+        NeighboursPtr np = neighbourMap.getNeighbours(v);
+        int count = np->numEdges();
         if (count <= MAP_EDGECOUNT_MAX)
         {
             vEdgeCounts[count]++;
@@ -1600,18 +1716,18 @@ void Map::calcVertexEdgeCounts() const
 void Map::removeVerticesWithEdgeCount(int edgeCount)
 {
     QVector<VertexPtr> verts;
-    for (auto it = vertices.begin(); it != vertices.end(); it++)
+    for (auto v : vertices)
     {
-        VertexPtr v = *it;
-        if( edgeCount == v->numEdges())
+        NeighboursPtr np = neighbourMap.getNeighbours(v);
+
+        if (edgeCount == np->numEdges())
         {
             verts.push_back(v);
         }
     }
 
-    for (auto it = verts.begin(); it != verts.end(); it++)
+    for (auto v : verts)
     {
-        VertexPtr v = *it;
         removeVertex(v);
     }
 }
@@ -1621,9 +1737,8 @@ QRectF Map::calcBoundingRect()
    QPolygonF poly;
 
     QVector<VertexPtr> verts;
-    for (auto it = vertices.begin(); it != vertices.end(); it++)
+    for (auto v : vertices)
     {
-        VertexPtr v = *it;
         poly << v->getPosition();
     }
     return poly.boundingRect();
@@ -1631,86 +1746,142 @@ QRectF Map::calcBoundingRect()
 
 void Map::cleanNeighbours()
 {
-    qDebug() << "BEGIN Map::cleanNeighbours edges=" << edges.size()  << "vertices=" << vertices.size();
+    qDebug() << "cleanNeighbours BEGIN edges=" << edges.size()  << "vertices=" << vertices.size();
 
-    for (auto it = vertices.begin(); it != vertices.end(); it++)
+    for (auto v :  vertices)
     {
         // examining a vertex
-        VertexPtr v = *it;
-        QVector<EdgePtr> & edgeVec = v->getEdges();
+        NeighboursPtr np = neighbourMap.getNeighbours(v);
+        QVector<EdgePtr> & edgeVec = np->getNeighbours();
         deDuplicateEdges(edgeVec);
     }
-    qDebug() << "END Map::cleanNeighbours edges=" << edges.size()  << "vertices=" << vertices.size();
+    qDebug() << "cleanNeighbours END   edges=" << edges.size()  << "vertices=" << vertices.size();
 }
 
 void Map::removeDanglingVertices()
 {
+    qDebug() << "removeDanglingVertices";
+
     QVector<VertexPtr> baddies;
 
-    for (auto it = vertices.begin(); it != vertices.end(); it++)
+    for (auto v : vertices)
     {
         // examining a vertex
-        VertexPtr v = *it;
-        if (v->numNeighbours() == 0)
+        NeighboursPtr np = neighbourMap.getNeighbours(v);
+        if (np->numNeighbours() == 0)
         {
-            qDebug() << "removing unconnected vertex)";
             baddies.push_back(v);
         }
     }
-    for (auto it = baddies.begin(); it != baddies.end(); it++)
+
+    for (auto v : baddies)
     {
-        VertexPtr v = *it;
         removeVertex(v);
     }
 }
 
-void Map::removeNullEdges()
+void Map::removeBadEdges()
 {
+    qDebug() << "removeBadEdges";
+
     QVector<EdgePtr> baddies;
 
-    for (auto it = edges.begin(); it != edges.end(); it++)
+    for (auto e : edges)
     {
         // examining a vertex
-        EdgePtr e = *it;
         if (e->getV1() == e->getV2())
         {
-            qDebug() << "removing null edge (1)";
+            qDebug() << "removing null edge (1)" << e->getTmpEdgeIndex();
             baddies.push_back(e);
         }
         else if (e->getV1()->pos == e->getV2()->pos)
         {
-            qDebug() << "removing null edge (2)";
+            qDebug() << "removing null edge (2)" << e->getTmpEdgeIndex();
+            baddies.push_back(e);
+        }
+        if (!e->getV1())
+        {
+            qDebug() << "not really an edge (3)" << e->getTmpEdgeIndex();
+            baddies.push_back(e);
+        }
+        if (!e->getV2())
+        {
+            qDebug() << "not really an edge (4)" << e->getTmpEdgeIndex();
             baddies.push_back(e);
         }
     }
-    for (auto it = baddies.begin(); it != baddies.end(); it++)
+
+    for (auto e : baddies)
     {
-        EdgePtr e = *it;
         removeEdge(e);
+    }
+}
+
+void Map::removeBadEdgesFromNeighboursMap()
+{
+    qDebug() << "removeBadEdgesFromNeighboursMap";
+
+    for (auto vp : vertices)
+    {
+        NeighboursPtr np = neighbourMap.getNeighbours(vp);
+        QVector<EdgePtr> baddies;
+        for (auto edge : np->getNeighbours())
+        {
+            if (!edges.contains(edge))
+            {
+                baddies.push_back(edge);
+            }
+        }
+        for (auto edge : baddies)
+        {
+            np->removeEdge(edge);
+        }
     }
 }
 
 void Map::cleanse()
 {
+    const bool debug = false;
+
     qDebug() << "Map::cleanse - start";
-    verify("cleanse-start",false,true);
-    qDebug() << "removeDanglingVertices";
+    verifyMap("cleanse-start");
+
+    removeBadEdges();
+    if (debug) verifyMap("Map:removeBadEdges");
+
+    fixNeighbours();
+    if (debug) verifyMap("Map:fixNeighbours");
+
     removeDanglingVertices();
-    qDebug() << "removeNullEdges";
-    removeNullEdges();
+    if (debug) verifyMap("Map:removeDanglingVertices");
+
+    removeBadEdgesFromNeighboursMap();
+    if (debug) verifyMap("Map:removeBadEdgesFromNeighboursMap");
+
 #if 0
-    qDebug() << "divideIntersectingEdges";
     divideIntersectingEdges();
+    if (debug) verifyMap("Map:divideIntersectingEdges");
 #endif
-    qDebug() << "joinColinearEdges";
+
+#if 0
     joinColinearEdges();
-    qDebug() << "cleanNeighbours";
+    if (debug) verifyMap("Map:joinColinearEdges");
+#endif
+
     cleanNeighbours();
-    qDebug() << "sortAllNeighboursByAngle";
+    if (debug) verifyMap("Map:cleanNeighbours");
+
+    neighbourMap.cleanse();
+    if (debug) verifyMap("NeighbourMap::cleanse");
+
     sortAllNeighboursByAngle();
+    if (debug) verifyMap("Map:sortAllNeighboursByAngle");
+
     sortVertices();
-    qDebug() << "sortEdges";
+    if (debug) verifyMap("Map:sortVertices");
+
     sortEdges();
-    verify("cleanse-end",false,true);
+
+    verifyMap("cleanse-end");
     qDebug() << "Map::cleanse - end";
 }

@@ -39,47 +39,32 @@ FigurePtr ExplicitEditor::getFigure()
     return explicitFig;
 }
 
-void ExplicitEditor::resetWithFigure(FigurePtr figure)
+void ExplicitEditor::resetWithFigure(FigurePtr fig)
 {
-    if (!figure)
+    if (!fig)
     {
         explicitFig.reset();
         return;
     }
 
-    qDebug() << "ExplicitEditor::resetWithFigure" << figure.get() << "  " << figure->getFigTypeString();
+    qDebug() << "ExplicitEditor::resetWithFigure" << fig.get() << "  " << fig->getFigTypeString();
 
-    explicitFig = std::dynamic_pointer_cast<ExplicitFigure>(figure);
+    explicitFig = std::dynamic_pointer_cast<ExplicitFigure>(fig);
     if (!explicitFig)
     {
-        MapPtr map = figure->getFigureMap();
-        explicitFig = make_shared<ExplicitFigure>(*figure.get(),map,FIG_TYPE_EXPLICIT);
+        MapPtr map = fig->getFigureMap();
+        explicitFig = make_shared<ExplicitFigure>(*fig.get(),map,FIG_TYPE_EXPLICIT);
     }
     else
     {
         explicitFig->setFigType(FIG_TYPE_EXPLICIT);
     }
 
+    Q_ASSERT(explicitFig);
+    FigureEditor::resetWithFigure(explicitFig);
+
     updateLimits();
     updateGeometry();
-}
-
-void ExplicitEditor::updateLimits()
-{}
-
-void ExplicitEditor::updateGeometry()
-{
-    int  bSides             = boundarySides->value();
-    qreal bScale            = boundaryScale->value();
-    qreal figScale          = figureScale->value();
-
-    explicitFig->setExtBoundarySides(bSides);
-    explicitFig->setExtBoundaryScale(bScale);
-    explicitFig->setFigureScale(figScale);
-
-    explicitFig->buildExtBoundary();
-
-    emit sig_figure_changed();
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -114,48 +99,59 @@ FigurePtr  ExplicitGirihEditor::getFigure()
     return girihFig;
 }
 
-void  ExplicitGirihEditor::resetWithFigure(FigurePtr figure)
+void  ExplicitGirihEditor::resetWithFigure(FigurePtr fig)
 {
-    if (!figure)
+    if (!fig)
     {
         girihFig.reset();
         return;
     }
 
-    girihFig = std::dynamic_pointer_cast<ExplicitFigure>(figure);
-    if (girihFig)
+    girihFig = std::dynamic_pointer_cast<ExplicitFigure>(fig);
+    if (!girihFig)
     {
-        if (girihFig->getFigType() == FIG_TYPE_GIRIH)
-        {
-            side->setValue(girihFig->sides);
-            skip->setValue(girihFig->skip);
-        }
-        else
-        {
-            girihFig->setFigType(FIG_TYPE_GIRIH);
-        }
+        girihFig = make_shared<ExplicitFigure>(*fig.get(),FIG_TYPE_GIRIH);
     }
     else
     {
-        girihFig = make_shared<ExplicitFigure>(*figure.get(),FIG_TYPE_GIRIH);
+        girihFig->setFigType(FIG_TYPE_GIRIH);
     }
+
+    Q_ASSERT(girihFig);
+    FigureEditor::resetWithFigure(girihFig);
 
     updateLimits();
     updateGeometry();
 }
 
 void ExplicitGirihEditor::updateLimits()
-{}
+{
+    if (!girihFig)
+        return;
+
+    int sideval   = girihFig->sides;
+    qreal skipval = girihFig->skip;
+
+    blockSignals(true);
+    side->setValue(sideval);
+    skip->setValue(skipval);
+    blockSignals(false);
+
+    FigureEditor::updateLimits();
+}
 
 void  ExplicitGirihEditor::updateGeometry()
 {
     int side_val   = side->value();
     qreal skip_val = skip->value();
 
-    MapPtr map = editor->createExplicitGirihMap(side_val, skip_val);
-    girihFig->setExplicitMap(map);
     girihFig->sides = side_val;
-    girihFig->skip  =  skip_val;
+    girihFig->skip  = skip_val;
+
+    FigureEditor::updateGeometry();
+
+    MapPtr map = figmaker->createExplicitGirihMap(side_val, skip_val);
+    girihFig->setExplicitMap(map);
 
     emit sig_figure_changed();
 }
@@ -193,31 +189,25 @@ FigurePtr ExplicitHourglassEditor::getFigure()
     return hourglassFig;
 }
 
-void ExplicitHourglassEditor::resetWithFigure(FigurePtr figure)
+void ExplicitHourglassEditor::resetWithFigure(FigurePtr fig)
 {
-    if (!figure)
+    if (!fig)
     {
         hourglassFig.reset();
         return;
     }
 
-    hourglassFig = std::dynamic_pointer_cast<ExplicitFigure>(figure);
-    if (hourglassFig)
-    {
-        if (hourglassFig->getFigType() == FIG_TYPE_HOURGLASS)
-        {
-            d->setValue(hourglassFig->d);
-            s->setValue(hourglassFig->s);
-        }
-        else
-        {
-            hourglassFig->setFigType(FIG_TYPE_HOURGLASS);
-        }
-    }
-    else
+    hourglassFig = std::dynamic_pointer_cast<ExplicitFigure>(fig);
+    if (!hourglassFig)
     {
         hourglassFig = make_shared<ExplicitFigure>(*figure.get(),FIG_TYPE_HOURGLASS);
     }
+    else
+    {
+        hourglassFig->setFigType(FIG_TYPE_HOURGLASS);
+    }
+
+    FigureEditor::resetWithFigure(hourglassFig);
 
     updateLimits();
     updateGeometry();
@@ -225,7 +215,7 @@ void ExplicitHourglassEditor::resetWithFigure(FigurePtr figure)
 
 void ExplicitHourglassEditor::updateLimits()
 {
-    FeaturePtr feature = editor->getActiveFeature();
+    FeaturePtr feature = figmaker->getActiveFeature();
     if (feature)
     {
         int n = feature->numPoints();
@@ -240,9 +230,20 @@ void ExplicitHourglassEditor::updateLimits()
         qreal scur = s->value();
         qreal ss   = floor(std::min( smax, std::max(smin, scur)));
 
+        blockSignals(true);
         d->setValues(dd, dmin, dmax);
         s->setValues(static_cast<int>(ss), static_cast<int>(smin), n);
+        blockSignals(false);
     }
+    else
+    {
+        blockSignals(true);
+        d->setValue(hourglassFig->d);
+        s->setValue(hourglassFig->s);
+        blockSignals(false);
+    }
+
+    FigureEditor::updateLimits();
 }
 
 void ExplicitHourglassEditor::updateGeometry()
@@ -250,10 +251,13 @@ void ExplicitHourglassEditor::updateGeometry()
     qreal dval = d->value();
     int sval   = s->value();
 
-    MapPtr map = editor->createExplicitHourglassMap(dval, sval);
-    hourglassFig->setExplicitMap(map);
     hourglassFig->d = dval;
     hourglassFig->s = sval;
+
+    FigureEditor::updateGeometry();
+
+    MapPtr map = figmaker->createExplicitHourglassMap(dval, sval);
+    hourglassFig->setExplicitMap(map);
 
     emit sig_figure_changed();
 }
@@ -281,41 +285,40 @@ FigurePtr ExplicitInferEditor::getFigure()
     return explicitFig;
 }
 
-void ExplicitInferEditor::resetWithFigure(FigurePtr figure)
+void ExplicitInferEditor::resetWithFigure(FigurePtr fig)
 {
-    if (!figure)
+    if (!fig)
     {
         explicitFig.reset();
         return;
     }
 
-    qDebug() << "ExplicitInferEditor::resetWithFigure" << figure.get() << "  " << figure->getFigTypeString();
+    qDebug() << "ExplicitInferEditor::resetWithFigure" << fig.get() << "  " << fig->getFigTypeString();
 
-    explicitFig = std::dynamic_pointer_cast<ExplicitFigure>(figure);
-    if (explicitFig)
+    explicitFig = std::dynamic_pointer_cast<ExplicitFigure>(fig);
+    if (!explicitFig)
     {
-        if (explicitFig->getFigType() != FIG_TYPE_INFER)
-        {
-            explicitFig->setFigType(FIG_TYPE_INFER);
-        }
+        explicitFig = make_shared<ExplicitFigure>(*fig.get(),FIG_TYPE_INFER);
     }
+
     else
     {
-        explicitFig = make_shared<ExplicitFigure>(*figure.get(),FIG_TYPE_INFER);
+        explicitFig->setFigType(FIG_TYPE_INFER);
     }
+
+    FigureEditor::resetWithFigure(explicitFig);
 
     updateLimits();
     updateGeometry();
 }
 
-void ExplicitInferEditor::updateLimits()
-{
-}
-
 void ExplicitInferEditor::updateGeometry()
 {
-    MapPtr map  = editor->createExplicitInferredMap();
+    FigureEditor::updateLimits();
+
+    MapPtr map  = figmaker->createExplicitInferredMap();
     explicitFig->setExplicitMap(map);
+
     emit sig_figure_changed();
 }
 
@@ -353,58 +356,60 @@ ExplicitIntersectEditor::ExplicitIntersectEditor(FigureMaker * ed, QString aname
 
 FigurePtr ExplicitIntersectEditor::getFigure()
 {
-    return fig;
+    return intersect;
 }
 
-void ExplicitIntersectEditor::resetWithFigure(FigurePtr figure)
+void ExplicitIntersectEditor::resetWithFigure(FigurePtr fig)
 {
-    if (!figure)
+    if (!fig)
     {
-        fig.reset();
+        intersect.reset();
         return;
     }
 
-    fig = std::dynamic_pointer_cast<ExplicitFigure>(figure);
-    if (fig)
+    intersect = std::dynamic_pointer_cast<ExplicitFigure>(fig);
+    if (!intersect)
     {
-        if (fig->getFigType() == FIG_TYPE_INTERSECT)
-        {
-            side->setValue(fig->sides);
-            skip->setValue(fig->skip);
-            s->setValue(fig->s);
-            progressive_box->setChecked(fig->progressive);
-
-        }
-        else
-        {
-            fig->setFigType(FIG_TYPE_INTERSECT);
-        }
+        intersect = make_shared<ExplicitFigure>(*fig.get(),FIG_TYPE_INTERSECT);
     }
     else
     {
-        fig = make_shared<ExplicitFigure>(*figure.get(),FIG_TYPE_INTERSECT);
+        intersect->setFigType(FIG_TYPE_INTERSECT);
     }
+
+    FigureEditor::resetWithFigure(intersect);
 
     updateLimits();
     updateGeometry();
 }
 
 void ExplicitIntersectEditor::updateLimits()
-{}
+{
+    blockSignals(true);
+    side->setValue(intersect->sides);
+    skip->setValue(intersect->skip);
+    s->setValue(intersect->s);
+    progressive_box->setChecked(intersect->progressive);
+    blockSignals(false);
+
+    FigureEditor::updateLimits();
+}
 
 void ExplicitIntersectEditor::updateGeometry()
 {
     int side_val        = side->value();
     qreal skip_val      = skip->value();
-    int sval            =  s->value();
+    int sval            = s->value();
     bool progressive    = progressive_box->isChecked();
-    MapPtr map          = editor->createExplicitIntersectMap(side_val, skip_val, sval, progressive);
 
-    fig->setExplicitMap(map);
-    fig->sides = side_val;
-    fig->skip  = skip_val;
-    fig->s     = sval;
-    fig->progressive = progressive;
+    intersect->sides = side_val;
+    intersect->skip  = skip_val;
+    intersect->s     = sval;
+    intersect->progressive = progressive;
+
+    MapPtr map          = figmaker->createExplicitIntersectMap(side_val, skip_val, sval, progressive);
+    intersect->setExplicitMap(map);
+
     emit sig_figure_changed();
 }
 
@@ -425,13 +430,19 @@ void ExplicitIntersectEditor::updateGeometry()
 // casper - interesting but somewhat inscrutable comment
 // this implementation inherits the rosette editor
 
-ExplicitRosetteEditor::ExplicitRosetteEditor(FigureMaker * ed, QString aname) : RosetteEditor(ed, aname)
+ExplicitRosetteEditor::ExplicitRosetteEditor(FigureMaker * ed, QString aname) : FigureEditor(ed, aname)
 {
-    r = new DoubleSliderSet("RosetteEditor r", 0.5, 0.0, 1.0, 100 );
+    q_slider = new DoubleSliderSet("ExplicitRosetteEditor Q (Tip Angle)", 0.0, -3.0, 3.0, 100 );
+    s_slider = new SliderSet("ExplicitRosetteEditor S (Sides Intersections)", 1, 1, 5);
+    r_slider = new DoubleSliderSet("ExplicitRosetteEditor R (Flex Point)", 0.5, 0.0, 1.0, 100 );
 
-    addLayout(r);
+    addLayout(q_slider);
+    addLayout(s_slider);
+    addLayout(r_slider);
 
-    connect(r, &DoubleSliderSet::valueChanged, this, &ExplicitRosetteEditor::updateGeometry);
+    connect(q_slider, &DoubleSliderSet::valueChanged, this, &ExplicitRosetteEditor::updateGeometry);
+    connect(s_slider, &SliderSet::valueChanged,       this, &ExplicitRosetteEditor::updateGeometry);
+    connect(r_slider, &DoubleSliderSet::valueChanged, this, &ExplicitRosetteEditor::updateGeometry);
 }
 
 FigurePtr ExplicitRosetteEditor::getFigure()
@@ -439,32 +450,25 @@ FigurePtr ExplicitRosetteEditor::getFigure()
     return expRoseFig;
 }
 
-void ExplicitRosetteEditor::resetWithFigure(FigurePtr figure)
+void ExplicitRosetteEditor::resetWithFigure(FigurePtr fig)
 {
-    if (!figure)
+    if (!fig)
     {
         expRoseFig.reset();
         return;
     }
 
-    expRoseFig = std::dynamic_pointer_cast<ExplicitFigure>(figure);
-    if (expRoseFig)
+    expRoseFig = std::dynamic_pointer_cast<ExplicitFigure>(fig);
+    if (!expRoseFig)
     {
-        if (expRoseFig->getFigType() == FIG_TYPE_EXPLICIT_ROSETTE)
-        {
-            r->setValue(expRoseFig->r);
-            q->setValue(expRoseFig->q);
-            s->setValue(expRoseFig->s);
-        }
-        else
-        {
-            expRoseFig->setFigType(FIG_TYPE_EXPLICIT_ROSETTE);
-        }
+        expRoseFig = make_shared<ExplicitFigure>(*fig.get(),FIG_TYPE_EXPLICIT_ROSETTE);
     }
     else
     {
-        expRoseFig = make_shared<ExplicitFigure>(*figure.get(),FIG_TYPE_EXPLICIT_ROSETTE);
+        expRoseFig->setFigType(FIG_TYPE_EXPLICIT_ROSETTE);
     }
+
+    FigureEditor::resetWithFigure(expRoseFig);
 
     updateLimits();
     updateGeometry();
@@ -472,31 +476,61 @@ void ExplicitRosetteEditor::resetWithFigure(FigurePtr figure)
 
 void ExplicitRosetteEditor::updateLimits()
 {
-    FeaturePtr feature = editor->getActiveFeature();
-    if (feature)
+    blockSignals(true);
+
+    if (expRoseFig)
     {
-        int n = feature->numPoints();
+        FeaturePtr feature = figmaker->getActiveFeature();
+        if (feature)
+        {
+            int n = feature->numPoints();
+            qreal smin = 1.0;
+            qreal smax = ceil( 0.5 * static_cast<qreal>(n));
+            qreal scur = s_slider->value();
+            qreal ss   = floor(std::min(smax, std::max(smin, scur)));
+            s_slider->setValues(static_cast<int>(ss), static_cast<int>(smin), static_cast<int>(smax));
+        }
+        else
+        {
+            int ss = expRoseFig->s;
+            s_slider->setValues(ss, 1.0, 5);
+        }
 
-        qreal smin = 1.0;
-        qreal smax = ceil( 0.5 * static_cast<qreal>(n));
-        qreal scur = s->value();
-        qreal ss   = floor(std::min(smax, std::max(smin, scur)));
+        double qq = expRoseFig->q;
+        qreal  rp = expRoseFig->r_flexPt;
 
-        s->setValues(static_cast<int>(ss), static_cast<int>(smin), static_cast<int>(smax));
+        blockSignals(true);
+        q_slider->setValues(qq, -3.0, 3.0);       // DAC was -1.0, 1.0
+        r_slider->setValues(rp,0.0,1.0);
+        blockSignals(false);
     }
+    else
+    {
+        r_slider->setValue(expRoseFig->r_flexPt);
+        q_slider->setValue(expRoseFig->q);
+        s_slider->setValue(expRoseFig->s);
+    }
+
+    blockSignals(false);
+
+    FigureEditor::updateLimits();
 }
 
 void ExplicitRosetteEditor::updateGeometry()
 {
-    qreal qval = q->value();
-    int   sval = s->value();
-    qreal rval = r->value();
+    qreal qval = q_slider->value();
+    int   sval = s_slider->value();
+    qreal rval = r_slider->value();
 
-    MapPtr map = editor->createExplicitRosetteMap(qval, sval, rval);
-    expRoseFig->setExplicitMap(map);
     expRoseFig->q = qval;
     expRoseFig->s = sval;
-    expRoseFig->r = rval;
+    expRoseFig->r_flexPt = rval;
+
+    FigureEditor::updateGeometry();
+
+    MapPtr map = figmaker->createExplicitRosetteMap(qval, sval, rval);
+    expRoseFig->setExplicitMap(map);
+
     emit sig_figure_changed();
 }
 
@@ -507,40 +541,42 @@ void ExplicitRosetteEditor::updateGeometry()
 // The controls for editing a Star.  Glue code, just like RosetteEditor.
 // caser pthis implementation inherits the rosette editor
 
-ExplicitStarEditor::ExplicitStarEditor(FigureMaker * ed, QString aname) : StarEditor(ed, aname)
+ExplicitStarEditor::ExplicitStarEditor(FigureMaker * ed, QString aname) : FigureEditor(ed, aname)
 {
+    d_slider = new DoubleSliderSet("ExplicitStarEditor D", 0.0, 0.0, 1.0, 100);
+    s_slider = new SliderSet("ExplicitStarEditor S", 0.0, 0.0, 1.0);
+
+    addLayout(d_slider);
+    addLayout(s_slider);
+
+    connect(d_slider, &DoubleSliderSet::valueChanged, this, &ExplicitStarEditor::updateGeometry);
+    connect(s_slider, &SliderSet::valueChanged,       this, &ExplicitStarEditor::updateGeometry);
 }
 
 FigurePtr ExplicitStarEditor::getFigure()
 {
-    return starFig;
+    return expStarFig;
 }
 
-void ExplicitStarEditor::resetWithFigure(FigurePtr figure)
+void ExplicitStarEditor::resetWithFigure(FigurePtr fig)
 {
-    if (!figure)
+    if (!fig)
     {
-        starFig.reset();
+        expStarFig.reset();
         return;
     }
 
-    starFig = std::dynamic_pointer_cast<ExplicitFigure>(figure);
-    if (starFig)
+    expStarFig = std::dynamic_pointer_cast<ExplicitFigure>(fig);
+    if (!expStarFig)
     {
-        if (starFig->getFigType() == FIG_TYPE_EXPLICIT_STAR)
-        {
-            d->setValue(starFig->d);
-            s->setValue(starFig->s);
-        }
-        else
-        {
-            starFig->setFigType(FIG_TYPE_EXPLICIT_STAR);
-        }
+        expStarFig  = make_shared<ExplicitFigure>(*fig.get(), FIG_TYPE_EXPLICIT_STAR);
     }
     else
     {
-        starFig    = make_shared<ExplicitFigure>(*figure.get(), FIG_TYPE_EXPLICIT_STAR);
+        expStarFig->setFigType(FIG_TYPE_EXPLICIT_STAR);
     }
+
+    FigureEditor::resetWithFigure(expStarFig);
 
     updateLimits();
     updateGeometry();
@@ -548,35 +584,50 @@ void ExplicitStarEditor::resetWithFigure(FigurePtr figure)
 
 void ExplicitStarEditor::updateLimits()
 {
-    FeaturePtr feature = editor->getActiveFeature();
+    FeaturePtr feature = figmaker->getActiveFeature();
     if (feature)
     {
         int n = feature->numPoints();
 
         qreal dmin = 1.0;
         qreal dmax = 0.5 * static_cast<qreal>(n);
-        qreal dcur = d->value();
+        qreal dcur = d_slider->value();
         qreal dd   = std::min(dmax - 0.5, std::max(dmin, dcur));
 
         qreal smin = 1.0;
         qreal smax = ceil( 0.5 * static_cast<qreal>(n));
-        qreal scur = s->value();
+        qreal scur = s_slider->value();
         qreal ss   = floor(std::min(smax, std::max(smin, scur)));
 
-        d->setValues(dd, dmin, dmax);
-        s->setValues(static_cast<int>(ss), static_cast<int>(smin), static_cast<int>(smax));
+        blockSignals(true);
+        d_slider->setValues(dd, dmin, dmax);
+        s_slider->setValues(static_cast<int>(ss), static_cast<int>(smin), static_cast<int>(smax));
+        blockSignals(false);
     }
+    else
+    {
+        blockSignals(true);
+        d_slider->setValue(expStarFig->d);
+        s_slider->setValue(expStarFig->s);
+        blockSignals(false);
+    }
+
+    FigureEditor::updateLimits();
 }
 
 void ExplicitStarEditor::updateGeometry()
 {
-    qreal dval = d->value();
-    int sval   = s->value();
+    qreal dval = d_slider->value();
+    int sval   = s_slider->value();
 
-    MapPtr map = editor->createExplicitStarMap(dval, sval);
-    starFig->setExplicitMap(map);
-    starFig->s = sval;
-    starFig->d = dval;
+    expStarFig->d = dval;
+    expStarFig->s = sval;
+
+    FigureEditor::updateGeometry();
+
+    MapPtr map = figmaker->createExplicitStarMap(dval, sval);
+    expStarFig->setExplicitMap(map);
+
     emit sig_figure_changed();
 }
 
@@ -591,18 +642,19 @@ FigurePtr ExplicitFeatureEditor::getFigure()
     return featFig;
 }
 
-void ExplicitFeatureEditor::resetWithFigure(FigurePtr figure)
+void ExplicitFeatureEditor::resetWithFigure(FigurePtr fig)
 {
-    if (!figure)
+    if (!fig)
     {
         featFig.reset();
         return;
     }
 
-    featFig = std::dynamic_pointer_cast<ExplicitFigure>(figure);
+    featFig = std::dynamic_pointer_cast<ExplicitFigure>(fig);
     if (!featFig)
     {
-        featFig = make_shared<ExplicitFigure>(*figure.get(), FIG_TYPE_FEATURE);
+        MapPtr map = fig->getFigureMap();
+        featFig = make_shared<ExplicitFigure>(map, FIG_TYPE_FEATURE);
     }
     else
     {
@@ -613,11 +665,10 @@ void ExplicitFeatureEditor::resetWithFigure(FigurePtr figure)
     updateGeometry();
 }
 
-void ExplicitFeatureEditor::updateLimits()
-{}
-
 void ExplicitFeatureEditor::updateGeometry()
 {
-    MapPtr map = editor->createExplicitFeatureMap();
+    FigureEditor::updateGeometry();
+
+    MapPtr map = figmaker->createExplicitFeatureMap();
     featFig->setExplicitMap(map);
 }

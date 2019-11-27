@@ -134,10 +134,6 @@ FeatureBtnPtr  FeatureLauncher::launchFromStyle(StylePtr style)
     {
         DesignElementPtr delp = *it;
         FeaturePtr fp = delp->getFeature();
-        if (fs.contains(fp))
-        {
-            continue;
-        }
         fs.push_back(fp);
 
         FeatureBtnPtr fb = make_shared<FeatureButton>(delp,idx++);

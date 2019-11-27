@@ -93,21 +93,20 @@ void Faces::clearFaces()
 ///
 ////////////////////////////////////////////////////
 
-void Faces::buildFacesOriginal(constMapPtr map)
+void Faces::buildFacesOriginal(MapPtr map)
 {
-    map->verify("buildFaces",false,true);
+    map->verifyMap("buildFaces");
 
     clearFaces();
-    for(auto e = map->getEdges()->begin(); e != map->getEdges()->end(); e++)
+    for (auto edge : map->getEdges())
     {
-        EdgePtr edge = *e;
         if( !v1.contains(edge) )
         {
-            handleVertex(edge->getV1(), edge);
+            handleVertex(map, edge->getV1(), edge);
         }
         if( !v2.contains(edge) )
         {
-            handleVertex(edge->getV2(), edge);
+            handleVertex(map, edge->getV2(), edge);
         }
     }
 
@@ -120,16 +119,15 @@ void Faces::buildFacesNew23(MapPtr map)
 
     // First, build all the faces.
 #if 1
-    qDebug() << "Faces::extractFacesNew23 processing" << map->getEdges()->size() << "edges";
+    qDebug() << "Faces::extractFacesNew23 processing" << map->getEdges().size() << "edges";
     FacePtr face;
     //int i = 0;
-    for(auto e = map->getEdges()->begin(); e != map->getEdges()->end(); e++)
+    for (auto edge : map->getEdges())
     {
         //qDebug() << "processing" << ++i << "out of"  << sz;
-        EdgePtr edge = *e;
         if( !v1.contains(edge) )
         {
-            face = extractFace(edge->getV1(),edge);
+            face = extractFace(map,edge->getV1(),edge);
             v1.insert(edge,face);
             if (!isClockwise(face))
             {
@@ -139,7 +137,7 @@ void Faces::buildFacesNew23(MapPtr map)
         }
         if( !v2.contains(edge) )
         {
-           face = extractFace(edge->getV2(),edge);
+           face = extractFace(map,edge->getV2(),edge);
            v2.insert(edge,face);
            if (!isClockwise(face))
            {
@@ -214,7 +212,7 @@ void Faces::buildFacesNew23(MapPtr map)
 // empty vectors, this function fills the vectors with arrays
 // of points corresponding to a two-colouring of the faces of the map.
 
-void Faces::assignColorsOriginal()
+void Faces::assignColorsOriginal(MapPtr map)
 {
     whiteFaces.clear();
     blackFaces.clear();
@@ -228,7 +226,7 @@ void Faces::assignColorsOriginal()
     {
         facesToProcess = facesToDo.size();
         qDebug() << "facesToProcess=" << facesToProcess;
-        assignColorsToFaces(facesToDo); // Propagate colours using a DFS (Depth First Search).
+        assignColorsToFaces(map,facesToDo); // Propagate colours using a DFS (Depth First Search).
         addFaceResults(facesToDo);
         facesLeft = facesToDo.size();
         qDebug() << "facesLeft=" << facesLeft;
@@ -321,7 +319,7 @@ void  Faces::assignColorsNew3(ColorGroup & colorGroup)
 }
 
 // Propagate colours using a DFS (Depth First Search).
-void Faces::assignColorsToFaces(FaceSet & fset)
+void Faces::assignColorsToFaces(MapPtr map, FaceSet & fset)
 {
 #define DEBUG_FACES     1
 #define DEBUG_EDGE_MAP  2
@@ -356,7 +354,7 @@ void Faces::assignColorsToFaces(FaceSet & fset)
 
         for( int idx = 0; idx < face->size(); ++idx )
         {
-            FacePtr nfi = getTwin(face, idx);
+            FacePtr nfi = getTwin(map, face, idx);
             if (!nfi)
             {
                 if (debug & DEBUG_ASSIGN) qDebug().noquote() << "    no twin:"  << idx;
@@ -413,9 +411,9 @@ void Faces::assignColorsToFaces(FaceSet & fset)
     if (debug) dumpAllFaces("allfaces AFTER ASSIGN");
 }
 
-void Faces::handleVertex(VertexPtr vert, EdgePtr edge)
+void Faces::handleVertex(MapPtr map, VertexPtr vert, EdgePtr edge)
 {
-    FacePtr face = extractFace(vert, edge);
+    FacePtr face = extractFace(map, vert, edge);
     //qDebug() << "Face" << Utils::addr(face.get()) << "sides=" << face->size();
 
     if( face->size() == 0)
@@ -440,11 +438,15 @@ void Faces::handleVertex(VertexPtr vert, EdgePtr edge)
     face->sortForComparion();
     allFaces.push_back(face);
 
+    NeighbourMap & nmap = map->getNeighbourMap();
+
     for( int v = 0; v < face->size(); ++v )
     {
         VertexPtr from = face->at(v);
         VertexPtr to   = face->at((v+1) % face->size());
-        EdgePtr conn   = from->getNeighbour(to);
+
+        NeighboursPtr np = nmap.getNeighbours(from);
+        EdgePtr conn     = np->getNeighbour(to);
 
         if (!conn)
         {
@@ -465,24 +467,27 @@ void Faces::handleVertex(VertexPtr vert, EdgePtr edge)
 
 // Walk from a vertex along an edge, always taking the current edge's neighbour at every vertex.
 // The set of vertices encountered determines a face.
-FacePtr Faces::extractFace(VertexPtr from, EdgePtr edge)
+FacePtr Faces::extractFace(MapPtr map, VertexPtr from, EdgePtr edge)
 {
     FacePtr ret   = make_shared<Face>();
 
     VertexPtr cur = from;
     EdgePtr  ecur = edge;
 
+    NeighbourMap & nmap = map->getNeighbourMap();
+
     while( true )
     {
         ret->push_back(cur);
         VertexPtr n = ecur->getOtherV(cur->getPosition());
 
-        if( n->numNeighbours() < 2 )
+        NeighboursPtr np = nmap.getNeighbours(n);
+        if (np->numNeighbours() < 2)
         {
             return ret;
         }
 
-        BeforeAndAfter ba = n->getBeforeAndAfter(ecur);
+        BeforeAndAfter ba = np->getBeforeAndAfter(ecur);
         ecur = ba.before;
 
         cur = n;
@@ -518,11 +523,14 @@ void Faces::addFaceResults(FaceSet & fset)
 
 // Find the face_info that lies across the given edge.
 // Used to propagate the search to adjacent faces, giving them opposite colours.
-FacePtr Faces::getTwin(FacePtr fi, int idx)
+FacePtr Faces::getTwin(MapPtr map, FacePtr fi, int idx)
 {
     const VertexPtr from = fi->at(idx);
     const VertexPtr to   = fi->at((idx+1) % fi->size());
-    EdgePtr conn         = from->getNeighbour(to);
+
+    NeighbourMap & nmap = map->getNeighbourMap();
+    NeighboursPtr np    = nmap.getNeighbours(from);
+    EdgePtr conn     = np->getNeighbour(to);
     if (!conn)
     {
         return FacePtr();

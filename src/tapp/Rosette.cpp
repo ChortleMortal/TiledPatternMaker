@@ -44,8 +44,8 @@
 #include "base/canvas.h"
 #include "tile/Feature.h"
 
-Rosette::Rosette(const Figure & fig,  int n, qreal q, int s, qreal k, qreal r)
-    : RadialFigure(fig, n, r)
+Rosette::Rosette(const Figure & fig,  int nsides, qreal q, int s, qreal k, qreal r)
+    : RadialFigure(fig, nsides, r)
 {
     this->q = q;
     //this->s = qMin( s, (n-1) / 2 ); // DAC remove limiting here - is done in buildUnit
@@ -55,7 +55,7 @@ Rosette::Rosette(const Figure & fig,  int n, qreal q, int s, qreal k, qreal r)
     count = 0;
 }
 
-Rosette::Rosette(int n, qreal q, int s, qreal k, qreal r) : RadialFigure(n, r)
+Rosette::Rosette(int nsides, qreal q, int s, qreal k, qreal r) : RadialFigure(nsides, r)
 {
     this->q = q;
     //this->s = qMin( s, (n-1) / 2 ); // DAC remove limiting here - is done in buildUnit
@@ -81,9 +81,9 @@ void Rosette::setS( int s )
     this->s = s;
 }
 
-void Rosette::setN(int n)
+void Rosette::setN(int nn)
 {
-    RadialFigure::setN(n);
+    RadialFigure::setN(nn);
     //this->s = qMin( s, (n-1) / 2 );  // DAC remove limiting here - is done in buildUnit
 }
 
@@ -93,7 +93,7 @@ MapPtr Rosette::buildUnit()
 
     buildExtBoundary();
 
-    debugMap = make_shared<Map>();
+    debugMap = make_shared<Map>("rosette debug map");
 
     QPointF center(0.0,0.0);
     QPointF tip(1.0, 0.0 );         // The point to build from
@@ -170,7 +170,7 @@ MapPtr Rosette::buildUnit()
     debugMap->insertDebugLine(key_r_point,key_r_end);
 
     // create new map and points to put into it
-    unitMap = make_shared<Map>();
+    unitMap = make_shared<Map>("rosette unit map");
     points.erase(points.begin(),points.end());
 
     // fill the map
@@ -245,7 +245,7 @@ MapPtr Rosette::buildUnit()
     //unitMap->verify("Rosette::buildUnit",false);
 
     // rotate
-    qreal rotate = qDegreesToRadians(r);
+    qreal rotate = qDegreesToRadians(getFigureRotate());
     unitMap->rotate(rotate);
     debugMap->rotate(rotate);
 
@@ -253,6 +253,6 @@ MapPtr Rosette::buildUnit()
     unitMap->scale(getFigureScale());
     debugMap->scale(getFigureScale());
 
-    unitMap->verify("rosette unitMap", false,true);
+    unitMap->verifyMap("rosette unitMap");
     return unitMap;
 }

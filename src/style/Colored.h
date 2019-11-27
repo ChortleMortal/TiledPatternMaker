@@ -37,7 +37,7 @@ class Colored : public Style
 {
 public:
     void   setColor(QColor color);
-    QColor getColor();
+    void   setColorSet(ColorSet & cset) { colors = cset; }
 
     ColorSet & getColorSet() { return colors; }
 

@@ -132,6 +132,7 @@ void DlgColorSet::add()
     {
         colorSet.addColor(newColor);
         displayTable();
+        emit sig_colorsChanged();
     }
 }
 
@@ -153,6 +154,7 @@ void DlgColorSet::modify()
         tpcolor.color = color;
         colorSet.setColor(currentRow, tpcolor);
         displayTable();
+        emit sig_colorsChanged();
     }
 }
 
@@ -164,6 +166,7 @@ void DlgColorSet::del()
 
     colorSet.removeColor(currentRow);
     displayTable();
+    emit sig_colorsChanged();
 }
 
 void DlgColorSet::slot_ok()
@@ -185,6 +188,7 @@ void DlgColorSet::up()
 
     currentRow--;
     displayTable();
+    emit sig_colorsChanged();
 }
 
 void DlgColorSet::down()
@@ -201,6 +205,7 @@ void DlgColorSet::down()
 
     currentRow++;
     displayTable();
+    emit sig_colorsChanged();
 }
 
 void DlgColorSet::slot_colorVisibilityChanged(int row)
@@ -213,4 +218,5 @@ void DlgColorSet::slot_colorVisibilityChanged(int row)
     colorSet.setColor(row, tpcolor);
 
     displayTable();
+    emit sig_colorsChanged();
 }

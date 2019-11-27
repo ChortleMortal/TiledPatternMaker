@@ -158,10 +158,8 @@ QTransform FeatureButton::resetViewport(DesignElementPtr dep, QRect frameRect)
     double ymax = -999.0;
 
     // This is a cheesy way to string together two streams of points.
-    const QVector<VertexPtr> * e = map->getVertices();
-    for (auto it = e->begin(); it != e->end(); it++)
+    for (auto vert : map->getVertices())
     {
-        VertexPtr vert = *it;
         QPointF p = vert->getPosition();
 
         // proc
@@ -191,10 +189,8 @@ QTransform FeatureButton::resetViewport(DesignElementPtr dep, QRect frameRect)
     map = fig->getDebugMap();
     if (map)
     {
-        e = map->getVertices();
-        for (auto it = e->begin(); it != e->end(); it++)
+        for (auto vert : map->getVertices())
         {
-            VertexPtr vert = *it;
             QPointF p = vert->getPosition();
 
             // proc

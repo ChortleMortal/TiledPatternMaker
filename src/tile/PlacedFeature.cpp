@@ -178,7 +178,6 @@ bool PlacedFeature::loadFromGirihShape(QString name)
         }
         else
         {
-            Q_ASSERT(nname == "Line");
             loadGirihShape(tiling_node);
         }
     }

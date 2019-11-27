@@ -75,7 +75,7 @@ protected:
 
     // styles
     void    procesToolkitGeoLayer(xml_node & node, Xform & xf);
-    void    processColorSet(xml_node & node, QColor & color);
+    //void    processColorSet(xml_node & node, QColor & color);
     void    processColorSet(xml_node & node, ColorSet & colorSet);
     void    processColorGroup(xml_node & node, ColorGroup & colorGroup);
     void    processsStyleThick(xml_node & node, bool & draw_outline, qreal & width);
@@ -147,7 +147,6 @@ private:
     QMap<int,PrototypePtr>  proto_ids;
     QMap<int,VertexPtr>     vertex_ids;
     QMap<int,EdgePtr>       edge_ids;
-    QMap<int,NeighbourPtr>  neighbour_ids;
     QMap<int,PolyPtr>       poly_ids;
     QMap<int,FeaturePtr>    feature_ids;
     QMap<int,FigurePtr>     figure_ids;
@@ -160,6 +159,8 @@ private:
     QMap<int,MapPtr>        map_ids;
 
     StyledDesign &          _styledDesign;
+
+    MapPtr                  _currentMap;
 
     TilingPtr               _tiling;
     QString                 _fileName;

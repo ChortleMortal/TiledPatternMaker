@@ -23,6 +23,7 @@
  */
 
 #include "style/Interlace.h"
+#include "geometry/Map.h"
 #include "geometry/Point.h"
 #include "style/Outline.h"
 #include <QPainter>
@@ -84,43 +85,43 @@ void Interlace::resetStyleRepresentation()
 {
     Thick::resetStyleRepresentation();
     pts.erase(pts.begin(),pts.end());
-    shadows.erase(shadows.begin(),shadows.end());
 }
 
 void Interlace::createStyleRepresentation()
 {
-    if ( pts.size() || shadows.size())
+    if (pts.size())
     {
         return;
     }
 
     setupStyleMap();
 
-    assignInterlacing(getReadOnlyMap());
+    assignInterlacing();
 
     // Given the interlacing assignment created above, we can
     // use the beefy getPoints routine to extract the graphics
     // of the interlacing.
 
-    pts.resize(getReadOnlyMap()->numEdges() * 6 );
-    shadows.resize(getReadOnlyMap()->numEdges() * 2);
+    MapPtr map = getMap();
+    qDebug().noquote() << map->summary();
+
+    pts.resize(map->numEdges());
     int index = 0;
 
-    for(auto e = getReadOnlyMap()->getEdges()->begin(); e != getReadOnlyMap()->getEdges()->end(); e++)
+    for (auto edge  : map->getEdges())
     {
-        EdgePtr edge = *e;
         VertexPtr v1 = edge->getV1();
         VertexPtr v2 = edge->getV2();
 
-        getPoints( edge, v1, v2, width, gap, pts, index * 6,     shadows, index * 2 );
-        getPoints( edge, v2, v1, width, gap, pts, index * 6 + 3, shadows, index * 2 + 1 );
+        segment * seg = &pts[index];
+        getPoints(map, edge, v1, v2, &seg->A);
+        getPoints(map, edge, v2, v1, &seg->B);
 
         index += 1;
     }
 
-    finalizeMap(getReadOnlyMap());
     qDebug() << "interlace pts="  << index;
-    getReadOnlyMap()->verify("interlace",false,true);
+    map->verifyMap("interlace");
 }
 
 void Interlace::draw(GeoGraphics * gg)
@@ -130,66 +131,66 @@ void Interlace::draw(GeoGraphics * gg)
         return;
     }
 
-    if( pts.size() != 0 )
+    if (pts.size() == 0)
     {
-        gg->pushAndCompose(getLayerTransform());
-        QColor color = colors.getNextColor().color;
-        QPen pen(color);
-        for( int idx = 0; idx < pts.size(); idx += 6 )
-        {
-            QPolygonF poly;
-            for (int i=0; i< 6; i++)
-            {
-                poly << pts[idx + i];
-            }
-            gg->drawPolygon(poly,pen,QBrush(color));
-        }
-
-        if ( shadow > 0.0 && shadows.size() != 0 )
-        {
-            qreal h,s,b;
-            QColor color = colors.getNextColor().color;
-            color.getHsvF(&h,&s,&b);
-            QColor c;
-            c.setHsvF(h, s * 0.9, b * 0.8 );
-            QPen pen(c);
-            QBrush brush(c);
-
-            for( int idx = 0; idx < pts.size(); idx += 6 )
-            {
-                //qDebug() << "idx=" << idx;
-                if ( shadows[idx / 3] )
-                {
-                    QPolygonF shadowPts1;
-                    shadowPts1 << (pts[ idx + 2 ] + getShadowVector( idx + 2, idx + 3 ) );
-                    shadowPts1 <<  pts[ idx + 2 ];
-                    shadowPts1 <<  pts[ idx + 0 ];
-                    shadowPts1 << (pts[ idx + 0 ] + getShadowVector( idx + 0, idx + 5 ) );
-                    gg->drawPolygon(shadowPts1,pen,brush);
-                }
-                if ( shadows[idx / 3 + 1] )
-                {
-                    QPolygonF shadowPts2;
-                    shadowPts2 << (pts[ idx + 3 ] + getShadowVector( idx + 3, idx + 2 ) );
-                    shadowPts2 <<  pts[ idx + 3 ];
-                    shadowPts2 <<  pts[ idx + 5 ];
-                    shadowPts2 << (pts[ idx + 5 ] + getShadowVector( idx + 5, idx + 0 ) );
-                    gg->drawPolygon(shadowPts2,pen,brush);
-                }
-            }
-        }
-
-        if ( draw_outline )
-        {
-            QPen pen(Qt::black);
-            for( int idx = 0; idx < pts.size(); idx += 6 )
-            {
-                gg->drawLine( pts[ idx + 2 ], pts[ idx + 3 ], pen);
-                gg->drawLine( pts[ idx + 5 ], pts[ idx ], pen);
-            }
-        }
-        gg->pop();
+        return;
     }
+
+    gg->pushAndCompose(getLayerTransform());
+
+    QColor color = colors.getFirstColor().color;
+    QPen pen(color);
+    QBrush brush(color);
+
+    for(int idx = 0; idx < pts.size(); idx++)
+    {
+        QPolygonF poly = pts[idx].toPoly();
+        gg->drawPolygon(poly,pen,brush);
+    }
+
+    if ( shadow > 0.0)
+    {
+        qreal h,s,b;
+        color.getHsvF(&h,&s,&b);
+        QColor c;
+        c.setHsvF(h, s * 0.9, b * 0.8 );
+        QPen pen(c);
+        QBrush brush(c);
+
+        for (auto seg : pts)
+        {
+            if (seg.A.shadow)
+            {
+                QPolygonF shadowPts1;
+                shadowPts1 << (seg.A.above + getShadowVector(seg.A.above, seg.B.below));
+                shadowPts1 <<  seg.A.above;
+                shadowPts1 <<  seg.A.below;
+                shadowPts1 << (seg.A.below + getShadowVector(seg.A.below, seg.B.above));
+                gg->drawPolygon(shadowPts1,pen,brush);
+            }
+            if (seg.B.shadow)
+            {
+                QPolygonF shadowPts2;
+                shadowPts2 << (seg.B.below + getShadowVector(seg.B.below, seg.A.above));
+                shadowPts2 <<  seg.B.below;
+                shadowPts2 <<  seg.B.above;
+                shadowPts2 << (seg.B.above + getShadowVector(seg.B.above, seg.A.below));
+                gg->drawPolygon(shadowPts2,pen,brush);
+            }
+        }
+    }
+
+    if ( draw_outline )
+    {
+        QPen pen(Qt::black);
+        for(auto seg : pts)
+        {
+            gg->drawLine(seg.A.above, seg.B.below, pen);
+            gg->drawLine(seg.B.above, seg.A.below, pen);
+        }
+    }
+    gg->pop();
+
 }
 
 qreal Interlace::getGap()
@@ -223,9 +224,9 @@ void Interlace::setIncludeTipVertices(bool include)
 
 // Private magic to make it all happen.
 
-QPointF Interlace::getShadowVector( int fromIndex, int toIndex )
+QPointF Interlace::getShadowVector(QPointF from, QPointF to)
 {
-    QPointF dir = pts[ toIndex ] - pts[ fromIndex ];
+    QPointF dir = to - from;
     qreal magnitude = Point::mag(dir);
     if ( shadow < magnitude )
     {
@@ -240,55 +241,44 @@ qreal Interlace::capGap( QPointF p, QPointF base, qreal gap )
     return (gap < max_gap) ? gap : max_gap;
 }
 
-void Interlace::getPoints(
-        EdgePtr   edge,
-        VertexPtr from,
-        VertexPtr to,
-        qreal     width,
-        qreal     gap,
-        QVector<QPointF> & pts,
-        int ptsIndex,
-        QVector<bool> & shadows,
-        int shadowsIndex )
+void Interlace::getPoints(MapPtr map, EdgePtr  edge, VertexPtr from, VertexPtr to, piece * p)
 {
-    bool from_under = (edge->getV1() == from ) == edge->getInterlaceInfo()->start_under;  // methinks ugly code
+    bool from_under = (edge->getV1() == from ) == edge->getInterlaceInfo().start_under;  // methinks ugly code
 
     QPointF pfrom = from->getPosition();
     QPointF pto   = to->getPosition();
 
     // Four cases:
-    //     - cap
+    //  - cap
     //  - bend
     //  - interlace over
     //  - interlace under
 
-    QPointF below;
-    QPointF cen;
-    QPointF above;
-
-    int nn = to->numNeighbours();
+    NeighbourMap & nmap = getMap()->getNeighbourMap();
+    NeighboursPtr np    = nmap.getNeighbours(to);
+    int nn           = np->numNeighbours();
 
     if( nn == 1 )
     {
         // cap
         QPointF dir = pto - pfrom;
         Point::normalizeD(dir);
-        dir *=width;
+        dir *= width;
         QPointF perp = Point::perp(dir);
 
-        below = pto - perp;
-        below += dir;
-        cen = pto +dir;
-        above = pto + perp ;
-        above += dir ;
+        p->below  = pto - perp;
+        p->below += dir;
+        p->cen    = pto + dir;
+        p->above  = pto + perp;
+        p->above += dir;
     }
     else if( nn == 2 )
     {
         // bend
-        BelowAndAbove jps = Outline::getPoints( edge, from, to, width );
-        below = jps.below;
-        cen = pto;
-        above = jps.above;
+        BelowAndAbove jps = Outline::getPoints(map, edge, from, to, width);
+        p->below = jps.below;
+        p->cen   = pto;
+        p->above = jps.above;
     }
     else
     {
@@ -296,14 +286,13 @@ void Interlace::getPoints(
         {
             // interlace over
             QVector<EdgePtr> ns;
-            int index = 0;
+            int index    = 0;
             int edge_idx = -1;
 
-            QVector<EdgePtr> edges = to->getNeighbours();
-            for (auto it = edges.begin(); it != edges.end(); it++)
+            for (auto nedge : np->getNeighbours())
             {
-                ns << *it;
-                if (*it == edge)
+                ns << nedge;
+                if (nedge == edge)
                 {
                     edge_idx = index;
                 }
@@ -314,20 +303,18 @@ void Interlace::getPoints(
 
             QPointF op = ns[nidx]->getOtherP(to);
 
-            below = Outline::getJoinPoint( pto, pfrom, op, width );
-
-            if( below.isNull() )
+            p->below = Outline::getJoinPoint( pto, pfrom, op, width );
+            if (p-> below.isNull() )
             {
                 QPointF perp = pto - pfrom;
                 Point::perpD(perp);
                 Point::normalizeD(perp);
                 perp *= width;
-                below = pto - perp ;
+                p->below = pto - perp ;
             }
 
-            cen = pto;
-
-            above = Point::convexSum(below, pto, 2.0 );
+            p->cen = pto;
+            p->above = Point::convexSum(p->below, pto, 2.0);
         }
         else
         {
@@ -338,36 +325,34 @@ void Interlace::getPoints(
             // now does a reasonable job on well-behaved maps
             // and doesn't dump core on badly-behaved ones.
 
-            BeforeAndAfter ba = to->getBeforeAndAfter(edge);
+            BeforeAndAfter ba = np->getBeforeAndAfter(edge);
             QPointF before_pt = ba.before->getOtherP(to);
             QPointF after_pt  = ba.after->getOtherP(to);
 
-            below = Outline::getJoinPoint(pto, pfrom, after_pt, width );
-            above = Outline::getJoinPoint(pto, before_pt, pfrom, width );
-            cen   = Outline::getJoinPoint(pto, before_pt, after_pt, width );
+            p->below = Outline::getJoinPoint(pto, pfrom,     after_pt, width );
+            p->above = Outline::getJoinPoint(pto, before_pt, pfrom,    width );
+            p->cen   = Outline::getJoinPoint(pto, before_pt, after_pt, width );
 
             QPointF dir = pto - pfrom ;
             Point::normalizeD(dir);
+            QPointF perp = Point::perp(dir);
+            perp        *= width;
 
-            if( below.isNull())
+            if (p->below.isNull())
             {
-                QPointF perp = Point::perp(dir);
-                perp *= width;
-                below = pto - perp;
+                p->below = pto - perp;
             }
-            if( above.isNull())
+            if (p->above.isNull())
             {
-                QPointF perp = Point::perp(dir);
-                perp *= width;
-                above = pto + perp;
+                p->above = pto + perp;
             }
-            if( cen.isNull())
+            if (p->cen.isNull())
             {
                 QPointF ab = after_pt - before_pt ;
                 Point::normalizeD(ab);
                 Point::perpD(ab);
                 ab *= width;
-                cen = pto - ab ;
+                p->cen = pto - ab ;
             }
 
             // FIXMECSK -- The gap size isn't consistent since
@@ -377,18 +362,74 @@ void Interlace::getPoints(
 
             if ( gap > 0.0 )
             {
-                below -= ( dir * capGap( below, pfrom, gap ) ) ;
-                above -= ( dir * capGap( above, pfrom, gap ) ) ;
-                cen   -= ( dir *  capGap( cen,   pfrom, gap ) ) ;
+                p->below -= (dir * capGap(p->below, pfrom, gap));
+                p->above -= (dir * capGap(p->above, pfrom, gap));
+                p->cen   -= (dir * capGap(p->cen,   pfrom, gap));
             }
 
-            shadows[ shadowsIndex ] = true;
+            p->shadow = true;
         }
     }
+}
 
-    pts[ ptsIndex ] = below;
-    pts[ ptsIndex + 1 ] = cen;
-    pts[ ptsIndex + 2 ] = above;
+void Interlace::initializeMap()
+{
+    MapPtr map = getMap();
+    for (auto edge : map->getEdges())
+    {
+        edge->initInterlaceInfo();
+    }
+
+    for (auto vert : map->getVertices())
+    {
+        vert->initInterlaceInfo();
+    }
+}
+
+void Interlace::assignInterlacing()
+{
+    initializeMap();
+
+    // Stack of edge to be processed.
+    todo.clear();
+
+    MapPtr map = getMap();
+    for(auto edge : map->getEdges())
+    {
+        interlaceInfo & ei = edge->getInterlaceInfo();
+        if (!ei.visited )
+        {
+            ei.start_under = true;
+            todo.push(edge);
+            buildFrom();
+            qDebug().noquote() << map->summary();
+        }
+    }
+}
+
+// Propagate the over-under relation from an edge to its incident
+// vertices.
+void Interlace::buildFrom()
+{
+    qDebug() << "buildFrom";
+
+    while (!todo.empty())
+    {
+        EdgePtr edge = todo.pop();
+        interlaceInfo & ei = edge->getInterlaceInfo();
+
+        VertexPtr v1 = edge->getV1();
+        VertexPtr v2 = edge->getV2();
+
+        if (!v1->getInterlaceInfo().visited)
+        {
+            propagate(v1, edge, ei.start_under);
+        }
+        if (!v2->getInterlaceInfo().visited)
+        {
+            propagate(v2, edge, !ei.start_under);
+        }
+    }
 }
 
 // Propagate the over-under relationship from a vertices to its
@@ -398,57 +439,59 @@ void Interlace::getPoints(
 // The whole trick is to manage how neighbours receive modifications
 // of edge_under_at_vert.
 
-void Interlace::propagate(VertexPtr vertex, EdgePtr edge, bool edge_under_at_vert, QStack<EdgePtr> & todo )
+void Interlace::propagate(VertexPtr vertex, EdgePtr edge, bool edge_under_at_vert)
 {
-    interlaceInfo  * vi = vertex->getInterlaceInfo();
-    vi->visited = true;
+    interlaceInfo  & vi = vertex->getInterlaceInfo();
+    vi.visited = true;
 
-    int nn = vertex->numNeighbours();
+    NeighbourMap & nmap = getMap()->getNeighbourMap();
+    NeighboursPtr np    = nmap.getNeighbours(vertex);
+    int nn              = np->numNeighbours();
 
     if( nn == 2)
     {
-        BeforeAndAfter  ba  = vertex->getBeforeAndAfter(edge);
+        BeforeAndAfter  ba  = np->getBeforeAndAfter(edge);
         EdgePtr oe          = ba.before;
-        interlaceInfo * oei = oe->getInterlaceInfo();
+        interlaceInfo & oei = oe->getInterlaceInfo();
 
-        if( !oei->visited )
+        if( !oei.visited )
         {
             // With a bend, we don't want to change the underness
             // of the edge we're propagating to.
             if( oe->getV1() == vertex)
             {
                 // The new edge starts at the current vertex.
-                oei->start_under = !edge_under_at_vert;
+                oei.start_under = !edge_under_at_vert;
             }
             else
             {
                 // The new edge ends at the current vertex.
-                oei->start_under = edge_under_at_vert;
+                oei.start_under = edge_under_at_vert;
             }
-            oei->visited = true;
+            oei.visited = true;
             todo.push( oe );
         }
     }
     else if (nn == 1 && includeTipVertices)
     {
-        EdgePtr oe = vertex->getNeighbours().at(0);
-        interlaceInfo * oei = oe->getInterlaceInfo();
+        EdgePtr oe = np->getEdge(0);
+        interlaceInfo & oei = oe->getInterlaceInfo();
 
-        if( !oei->visited )
+        if( !oei.visited )
         {
             // With a bend, we don't want to change the underness
             // of the edge we're propagating to.
             if( oe->getV1() == vertex)
             {
                 // The new edge starts at the current vertex.
-                oei->start_under = !edge_under_at_vert;
+                oei.start_under = !edge_under_at_vert;
             }
             else
             {
                 // The new edge ends at the current vertex.
-                oei->start_under = edge_under_at_vert;
+                oei.start_under = edge_under_at_vert;
             }
-            oei->visited = true;
+            oei.visited = true;
             todo.push( oe );
         }
     }
@@ -459,11 +502,10 @@ void Interlace::propagate(VertexPtr vertex, EdgePtr edge, bool edge_under_at_ver
         int index = 0;
         int edge_idx = -1;
 
-        QVector<EdgePtr> edges = vertex->getNeighbours();
-        for (auto it = edges.begin(); it != edges.end(); it++)
+        for (auto edge2 : np->getNeighbours())
         {
-            ns << *it;
-            if (*it == edge)
+            ns << edge2;
+            if (edge2 == edge)
             {
                 edge_idx = index;
             }
@@ -475,22 +517,22 @@ void Interlace::propagate(VertexPtr vertex, EdgePtr edge, bool edge_under_at_ver
         for( int idx = 1; idx < nn; ++idx )
         {
             int cur = (edge_idx + idx) % nn;
-            EdgePtr oe = ns[ cur ];
+            EdgePtr oe = ns[cur];
             Q_ASSERT(oe);
-            interlaceInfo * oei = oe->getInterlaceInfo();
 
-            if( !oei->visited )
+            interlaceInfo & oei = oe->getInterlaceInfo();
+            if (!oei.visited)
             {
                 if( oe->getV1() == vertex)
                 {
-                    oei->start_under = !cur_under;
+                    oei.start_under = !cur_under;
                 }
                 else
                 {
-                    oei->start_under = cur_under;
+                    oei.start_under = cur_under;
                 }
-                oei->visited = true;
-                todo.push( oe );
+                oei.visited = true;
+                todo.push(oe);
             }
 
             cur_under = !cur_under;
@@ -498,81 +540,9 @@ void Interlace::propagate(VertexPtr vertex, EdgePtr edge, bool edge_under_at_ver
     }
 }
 
-// Propagate the over-under relation from an edge to its incident
-// vertices.
-
-void Interlace::buildFrom(QStack<EdgePtr> &todo )
+QPolygonF segment::toPoly()
 {
-    while ( !todo.empty() )
-    {
-        EdgePtr edge = todo.pop();
-        interlaceInfo * ei = edge->getInterlaceInfo();
-
-        VertexPtr v1 = edge->getV1();
-        VertexPtr v2 = edge->getV2();
-
-        if( !v1->getInterlaceInfo()->visited)
-        {
-            propagate( v1, edge, ei->start_under, todo );
-        }
-        if( !v2->getInterlaceInfo()->visited)
-        {
-            propagate( v2, edge, !ei->start_under, todo );
-        }
-    }
+    QPolygonF p;
+    p <<  A.below <<  A.cen <<  A.above <<  B.below <<  B.cen <<  B.above;
+    return p;
 }
-
-void Interlace::initializeMap( constMapPtr map )
-{
-    for(auto e = map->getEdges()->begin(); e != map->getEdges()->end(); e++)
-    {
-        EdgePtr edge = *e;
-        interlaceInfo * ei = new interlaceInfo();
-        edge->setInterlaceInfo(ei);
-    }
-
-    for (auto v = map->getVertices()->begin(); v != map->getVertices()->end(); v++)
-    {
-        VertexPtr vert = *v;
-        interlaceInfo * vi = new interlaceInfo();
-        vert->setInterlaceInfo(vi);
-    }
-}
-
-void Interlace::finalizeMap(constMapPtr map )
-{
-    for(auto e = map->getEdges()->begin(); e != map->getEdges()->end(); e++)
-    {
-        EdgePtr edge = *e;
-        edge->setInterlaceInfo(nullptr);
-    }
-
-    for (auto v = map->getVertices()->begin(); v != map->getVertices()->end(); v++)
-    {
-        VertexPtr vert = *v;
-        vert->setInterlaceInfo(nullptr);
-    }
-}
-
-
-void Interlace::assignInterlacing(constMapPtr map )
-{
-    initializeMap( map );
-
-    // Stack of edge to be processed.
-    QStack<EdgePtr> todo;
-
-    for(auto e = map->getEdges()->begin(); e != map->getEdges()->end(); e++)
-    {
-        EdgePtr edge = *e;
-        interlaceInfo * ei = edge->getInterlaceInfo();
-        if( !ei->visited )
-        {
-            ei->start_under = true;
-            todo.push( edge );
-            buildFrom( todo );
-        }
-    }
-}
-
-

@@ -41,24 +41,25 @@ class page_tileColorMaker : public panel_page
 
 public:
 
-    page_tileColorMaker(ControlPanel * panel);
+    page_tileColorMaker(ControlPanel * cpanel);
 
-    void onEnter() override;
-    void refreshPage() override;
+    void    onEnter() override;
+    void    refreshPage() override;
 
 signals:
-    void sig_tilingChanged();
+    void    sig_tilingChanged();
 
 public slots:
-    void     slot_loadedXML(QString name);
-    void     slot_loadedTiling (QString name);
+    void    slot_loadedXML(QString name);
+    void    slot_loadedTiling (QString name);
+    void    slot_colors_changed();
 
 private slots:
-    void slot_sourceSelect(int id);
-    void slot_edit();
+    void    slot_sourceSelect(int id);
+    void    slot_edit();
 
 protected:
-    void createSourceSelect();
+    void    createSourceSelect();
 
     TilingPtr getSourceTiling();
 
@@ -67,16 +68,15 @@ private:
 
     QList<FeaturePtr> qlfp;
 
-    QRadioButton *radioLoadedStyleTileView;
-    QLabel       *labXmlTileView;
-    QRadioButton *radioWSTileView;
-    QLabel       *labTileMakerView;
-    QButtonGroup  tilingGroup3;
+    QRadioButton * radioLoadedStyleTileView;
+    QLabel       * labXmlTileView;
+    QRadioButton * radioWSTileView;
+    QLabel       * labTileMakerView;
+    QButtonGroup   tilingGroup3;
 
-    QLabel       *selectedTiling;
+    QLabel       * selectedTiling;
 
     QWidget      * makerSourceBox;
-
 };
 
 #endif

@@ -9,7 +9,7 @@
 		<Rot>0</Rot>
 		<X>-1</X>
 		<Y>18</Y>
-		<Center>750,550</Center>
+		<Center>500,500</Center>
 	</View>
 	<Feature type="regular" sides="10">
 		<Placement>0.8337996633336217,0,0.5821317989349832,0,0.8337996633336217,-1.863856771519247</Placement>
@@ -66,7 +66,7 @@
 			<Point reference="12" />
 			<Point reference="7" />
 		</Line>
-		<Placement>0.8337996633336207,0,-0.7778129632033131,0,0.8337996633336207,-0.883666480571386</Placement>
+		<Placement>0.8337996633336223,0,-0.7669843961470371,0,0.8337996633336223,-0.8836664805713836</Placement>
 	</Feature>
 	<Desc>Based on photo from Liu and Stodart</Desc>
 	<Auth>David A Casper</Auth>

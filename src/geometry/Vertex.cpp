@@ -34,8 +34,8 @@
 #include "geometry/Edge.h"
 #include "geometry/Point.h"
 #include "style/Interlace.h"
-#include "base/utilities.h"
-#include <iterator>
+
+//#include <iterator>
 
 int Vertex::refs = 0;
 
@@ -43,8 +43,7 @@ Vertex::Vertex( QPointF pos )
 {
     refs++;
     this->pos       = pos;
-    interlaceData   = nullptr;
-    tmpIndex        = -1;
+    tmpVertexIndex  = -1;
 }
 
 Vertex::~Vertex()
@@ -52,173 +51,6 @@ Vertex::~Vertex()
     refs--;
     //qDebug() << "Vertex destructor";
     copy.reset();
-    neighbours.clear();
-    if (interlaceData)
-    {
-       delete interlaceData;
-    }
-}
-
-interlaceInfo * Vertex::getInterlaceInfo()
-{
-    return interlaceData;
-}
-
-void Vertex::setInterlaceInfo(interlaceInfo * info)
-{
-    if (interlaceData)
-        delete interlaceData;
-    interlaceData = info;
-}
-
-
-// though the original taprats version of this method seemed deceptively simple
-// it has been hard to discern how it was really meant to work
-// for the corener case of when a vertex has 0, 1, or 2, neighbours
-// so this code, while ugly, is a slavish attempt to emulate the original
-BeforeAndAfter Vertex::getBeforeAndAfter(EdgePtr edge )
-{
-    if (numEdges() < 2)
-    {
-        qDebug() << "getBeforeAndAfter - edge=" << Utils::addr(edge.get()) << "count=" << numEdges();
-    }
-
-    BeforeAndAfter ret;
-
-    neighbours.push_back(neighbours[0]);      // temp addition
-    neighbours.push_back(neighbours[1]);      // temp addition
-
-    for (int i=1; i < (neighbours.size()-1); i++)
-    {
-        if (neighbours[i] == edge)
-        {
-            ret.before = neighbours[i-1];
-            ret.after  = neighbours[i+1];
-            neighbours.removeLast();     //back out addition
-            neighbours.removeLast();     //back out addition
-            return ret;
-        }
-    }
-    qCritical("getBeforeAndAfter - should not reach here");
-    return ret;
-}
-
-QVector<EdgePtr> & Vertex::getNeighbours()
-{
-    return neighbours;
-}
-
-QVector<EdgePtr> & Vertex::getEdges()
-{
-    return neighbours;
-}
-
-EdgePtr Vertex::getNeighbour(const VertexPtr other)
-{
-    for (auto it = neighbours.begin(); it != neighbours.end(); it++)
-    {
-        EdgePtr edge = *it;
-        VertexPtr vp = edge->getOtherV(pos);
-        if (vp == other)
-        {
-            return edge;
-        }
-        else if (!vp)
-        {
-            qWarning() << "MISSING VERTEX in getNeighbour";
-        }
-    }
-
-    qWarning("getNeighbour - no neighbouring edge");
-    EdgePtr e;
-    return e;
-}
-
-bool Vertex::connectsTo( VertexPtr other)
-{
-    return (getNeighbour(other) != nullptr);
-}
-
-bool Vertex::isNear(VertexPtr other)
-{
-    return Point::isNear(pos,other->pos);
-}
-
-/*
- * Insert the edge into the vertex's neighbour list.  Edges
- * are stored in sorted order by angle (though the starting point
- * isn't important).  So traverse the list until there's a spot
- * where the arc swept by consecutive edges contains the new edge.
- */
-
-void Vertex::insertEdge(EdgePtr edge)
-{
-    insertNeighbour(edge);
-}
-
-
-void Vertex::insertNeighbour(EdgePtr e)
-{
-    //qDebug() << "insert neighbour: vertex=" << Utils::addr(this) << "edge=" << Utils::addr(e.get());
-    if(neighbours.size() == 0)
-    {
-        neighbours.push_back(e);
-        return;
-    }
-
-    qreal a = getAngle(e);
-
-    for (int i=0; i < neighbours.size(); i++)
-    {
-        EdgePtr ep = neighbours[i];
-        qreal b = getAngle(ep);
-        if (a > b)
-        {
-            neighbours.insert(i,e);
-            return;
-        }
-    }
-
-    neighbours.push_back(e);
-}
-
-void Vertex::sortEdgesByAngle()
-{
-    if (numEdges() < 2)
-    {
-        return;     // returns for 0 or 1
-    }
-
-    QVector<EdgePtr> vec;
-
-    for (int i=0; i < neighbours.size(); i++)
-    {
-        EdgePtr e = neighbours[i];
-        qreal   a = getAngle(e);
-        bool found = false;
-        for (int j = 0; j < vec.size(); j ++)
-        {
-            EdgePtr evec = vec[j];
-            qreal b = getAngle(evec);
-            if (a > b)
-            {
-                vec.insert(j,e);
-                found = true;
-                break;
-            }
-        }
-        if (!found)
-        {
-            vec.push_back(e);
-        }
-    }
-    neighbours = vec;    // overwrites
-}
-
-//Removing is always easier than adding.  Just splice the edge out of the list.
-void Vertex::removeEdge(EdgePtr edge )
-{
-    neighbours.removeAll(edge);
 }
 
 // Apply a transform.  Recalculate all the angles.  The order
@@ -232,27 +64,6 @@ void Vertex::applyRigidMotion(QTransform T)
     pos = T.map(pos);
 }
 
-
-// When an edge is split in the map, this vertex's adjacency list
-// needs to be updated -- some neighbour will now have a new
-// edge instance to represent the new half of an edge that was
-// created.  Do a hacky rewrite here.
-// casper - another hacky rewrite on top of the other
-// TODO - maybe resort now?
-void Vertex::swapEdge(VertexPtr other, EdgePtr nedge)
-{
-    for (auto it = neighbours.begin(); it != neighbours.end(); it++)
-    {
-        EdgePtr edge = *it;
-        VertexPtr vp = edge->getOtherV(pos);
-        if (vp == other)
-        {
-            *it = nedge;        // this replaces edge
-            break;
-        }
-    }
-}
-
 qreal Vertex::getAngle(EdgePtr edge)
 {
     VertexPtr other = edge->getOtherV(pos);
@@ -263,19 +74,4 @@ qreal Vertex::getAngle(EdgePtr edge)
 }
 
 
-QString Vertex::dumpNeighbours()
-{
-    QString astring;
-    QDebug  deb(&astring);
-    for (auto it=neighbours.begin(); it!= neighbours.end(); it++)
-    {
-        EdgePtr ep = *it;
-        deb << "edge: " << Utils::addr(ep.get());
-#if 1
-        QPointF v1 = ep->getV1()->getPosition();
-        QPointF v2 = ep->getV2()->getPosition();
-        deb << " " << v1 << " " << v2 << endl;
-#endif
-    }
-    return astring;
-}
+

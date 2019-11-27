@@ -55,7 +55,7 @@ public:
 
     qreal   getAngle();
     void    setAngle(qreal angle );
-    void    setColor( QColor color );
+    void    setColorSet(ColorSet & cset);
 
    void     draw(class GeoGraphics * gg) override;
 

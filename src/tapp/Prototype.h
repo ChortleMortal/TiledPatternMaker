@@ -82,8 +82,6 @@ public:
 protected:
 
 private:
-    void   resetProtoMap2();
-
     TilingPtr                   tiling;
     QVector<DesignElementPtr>   designElements;
     QVector<QTransform>         locations;

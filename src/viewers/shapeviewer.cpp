@@ -79,13 +79,6 @@ void ShapeViewer::paint(QPainter *painter,
                     painter->drawLine(center, p->at(i));
                 }
             }
-
-            if (config->boundingRects)
-            {
-                painter->setPen(QPen(Qt::green,1.0));
-                QRectF rect = p->boundingRect();
-                painter->drawRect(rect);
-            }
         }
         else if (p->polytype == POLYLINE2)
         {
@@ -147,12 +140,6 @@ void ShapeViewer::paint(QPainter *painter,
                 painter->drawLine(0.0,- p->radius, 0.0, p->radius);
             }
 
-        }
-        if (config->boundingRects)
-        {
-            painter->setPen(QPen(Qt::green,1.0));
-            QRectF rect = p->boundingRect();
-            painter->drawRect(rect);
         }
     }
 

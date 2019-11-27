@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<Poly name="conv1">
+	<Curve convex="f">
+		<Point id="1">0,1.5</Point>
+		<Point id="2">0.5,2</Point>
+		<Center id="3">0.75,1.25</Center>
+	</Curve>
+	<Line>
+		<Point reference="2" />
+		<Point id="4">3.5,2</Point>
+	</Line>
+	<Curve convex="t">
+		<Point reference="4" />
+		<Point id="5">4,2.5</Point>
+		<Center id="6">3.25,2.75</Center>
+	</Curve>
+	<Line>
+		<Point reference="5" />
+		<Point id="7">3.5,3</Point>
+	</Line>
+	<Line>
+		<Point reference="7" />
+		<Point id="8">3,3</Point>
+	</Line>
+	<Line>
+		<Point reference="8" />
+		<Point id="9">3,3.5</Point>
+	</Line>
+	<Line>
+		<Point reference="9" />
+		<Point id="10">2.5,4</Point>
+	</Line>
+	<Line>
+		<Point reference="10" />
+		<Point id="11">2,3.5</Point>
+	</Line>
+	<Line>
+		<Point reference="11" />
+		<Point id="12">2,3</Point>
+	</Line>
+	<Line>
+		<Point reference="12" />
+		<Point id="13">0,3</Point>
+	</Line>
+	<Line>
+		<Point reference="13" />
+		<Point id="14">0,4</Point>
+	</Line>
+	<Line>
+		<Point reference="14" />
+		<Point id="15">-1,4</Point>
+	</Line>
+	<Line>
+		<Point reference="15" />
+		<Point id="16">-1,2</Point>
+	</Line>
+	<Line>
+		<Point reference="16" />
+		<Point id="17">-0.5,2</Point>
+	</Line>
+	<Line>
+		<Point reference="17" />
+		<Point reference="1" />
+	</Line>
+</Poly>

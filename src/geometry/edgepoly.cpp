@@ -110,6 +110,29 @@ QPolygonF EdgePoly::getPoly()
     return poly;
 }
 
+qreal EdgePoly::getAngle(int edge)
+{
+    // calculate the inner product
+    QVector<EdgePtr> & edges = *this;
+    if (edge >= edges.size())
+        return 0.0;
+
+    EdgePtr e = edges[edge];
+    QPointF p1 = e->getV1()->getPosition();
+    QPointF p2 = e->getV2()->getPosition();
+    e = edges[++edge % edges.size()];
+    QPointF p3 = e->getV2()->getPosition();
+
+    qreal dx21 = p2.x()-p1.x();
+    qreal dx31 = p3.x()-p1.x();
+    qreal dy21 = p2.y()-p1.y();
+    qreal dy31 = p3.y()-p1.y();
+    qreal m12 = sqrt( dx21*dx21 + dy21*dy21 );
+    qreal m13 = sqrt( dx31*dx31 + dy31*dy31 );
+    qreal theta = acos( (dx21*dx31 + dy21*dy31) / (m12 * m13) );
+    return qRadiansToDegrees(theta);
+}
+
 void EdgePoly::paint(QPainter * painter, QTransform T)
 {
     for(auto e = begin(); e != end(); e++)

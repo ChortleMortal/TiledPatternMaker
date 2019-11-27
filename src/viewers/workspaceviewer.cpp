@@ -83,6 +83,7 @@ void WorkspaceViewer::init()
 
 void WorkspaceViewer::clear()
 {
+    qDebug() << "WorkspaceViewer::clear";
     qDeleteAll(mViewers);
     mViewers.clear();
     mStyles.clear();
@@ -317,9 +318,11 @@ void WorkspaceViewer::viewWorkspace()
         scene->addItem(viewer);    // this does it
     }
 
+    qDebug() << "mStyles count =" << mStyles.size();
     for (auto it= mStyles.begin(); it != mStyles.end(); it++)
     {
         Layer * viewer = *it;
+        qDebug() << "layer" << Utils::addr(viewer)  << viewer->getName();
         scene->addItem(viewer);    // this does it
     }
 
@@ -619,11 +622,12 @@ QTransform WorkspaceViewer::calculateViewTransform(SizeAndBounds & sab)
 
     qDebug().noquote() << sViewerType[e] << Transform::toInfoString(full);
 
+#if 0
     ViewTransform vt;
     vt.viewType  = e;
     vt.scale     = Transform::scalex(full);
     vt.translate = Transform::trans(full);
-
+#endif
     return full;
 /*
     Results:

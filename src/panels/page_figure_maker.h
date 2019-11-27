@@ -33,10 +33,11 @@ class page_figure_maker : public panel_page
     Q_OBJECT
 
 public:
-    page_figure_maker(ControlPanel * panel);
+    page_figure_maker(ControlPanel * cpanel);
 
     void	refreshPage(void) override;
     void    onEnter() override;
+    void    onExit() override;
 
 public slots:
     void    slot_tilingChanged();
@@ -44,15 +45,16 @@ public slots:
     void    slot_loadedTiling (QString name);
     void    slot_replaceInStyle();
     void    slot_addToStyle();
-
+    void    slot_render();
  private slots:
     void    slot_unload();
     void    slot_source_selected(int id);
     void    slot_target_selected(int id);
     void    whiteClicked(bool state);
+    void    slot_duplicateCurrent();
 
 protected:
-    void    reload();
+    void    reload(bool force = false);
 
     FigureMaker  * figureMaker;
 

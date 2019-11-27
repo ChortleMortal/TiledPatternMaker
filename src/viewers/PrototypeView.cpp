@@ -73,9 +73,8 @@ ProtoView::ProtoView(PrototypePtr proto) : Layer("ProtoView")
         }
         MapPtr map = fig->getFigureMap();
         EdgePoly ep;
-        for(auto e = map->getEdges()->begin(); e != map->getEdges()->end(); e++)
+        for(auto edge : map->getEdges())
         {
-            EdgePtr edge = *e;
             ep.push_back(edge);
         }
         EdgePoly ep2 = ep.map(T);
@@ -93,8 +92,8 @@ QRectF ProtoView::boundingRect() const
 
 void ProtoView::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-    Q_UNUSED(option);
-    Q_UNUSED(widget);
+    Q_UNUSED(option)
+    Q_UNUSED(widget)
 
     painter->setRenderHint(QPainter::Antialiasing ,true);
     painter->setRenderHint(QPainter::SmoothPixmapTransform,true);

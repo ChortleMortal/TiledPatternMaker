@@ -33,13 +33,13 @@ class ExtendedRosette : public Rosette
 public:
     ExtendedRosette(const Figure & fig,
                     int n, qreal q, int s, qreal k = 0.0,
-                    qreal r = 0,
+                    qreal figureRotate = 0,
                     bool  extendPeripheralVertices = false,
                     bool  extendFreeVertices       = true,
                     bool  connectBoundaryVertices  = false);
 
     ExtendedRosette(int n, qreal q, int s, qreal k = 0.0,
-                    qreal r = 0,
+                    qreal figureRotate = 0,
                     bool  extendPeripheralVertices = false,
                     bool  extendFreeVertices       = true,
                     bool  connectBoundaryVertices  = false);

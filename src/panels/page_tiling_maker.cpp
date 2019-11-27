@@ -207,7 +207,7 @@ AQWidget * page_tiling_maker::createTilingTable()
     tileInfoTable->setHorizontalHeaderLabels(qslh);
     tileInfoTable->verticalHeader()->setVisible(false);
     tileInfoTable->setColumnWidth(0,10);
-    tileInfoTable->setColumnWidth(1,10);
+    tileInfoTable->setColumnWidth(1,15);
 
     QHeaderView * qhv = tileInfoTable->horizontalHeader();
 
@@ -496,7 +496,7 @@ void page_tiling_maker::slot_setModes(int mode)
         txt = "Toggle the inclusion of polygons in the tiling by clicking on them with the mouse.";
         break;
     case DRAW_POLY_MODE:
-        txt = "Select a series of vertices counter-clockwise to draw a free-form polygon. (Click on vertices).";
+        txt = "Select a series of vertices clockwise to draw a free-form polygon. (Click on vertices).";
         break;
     case TRANSLATION_VECTOR_MODE:
         txt = "Select the two translation vectors used to tile the plane, using the mouse. (Drag with the mouse).";
@@ -569,11 +569,6 @@ void  page_tiling_maker::refreshPage()
     }
     radioWSTileView->setText(txt);
 
-    tilingGroup3.button(config->tilingMakerViewer)->setChecked(true);
-    mouseModeBtnGroup->button(tilingMaker->getMouseMode())->setChecked(true);
-
-    sides->setValue(tilingMaker->getPolygonSides());
-
 #ifdef DEBUG_MOUSE_POS
     QPointF a = designer->sMousePos;
     QPointF b = designer->screenToWorld(a);
@@ -597,6 +592,8 @@ void  page_tiling_maker::refreshPage()
     layerDeltas.setScale(xf.scale);
     layerDeltas.setRot(xf.rotation);
 #endif
+
+    mouseModeBtnGroup->button(tilingMaker->getMouseMode())->setChecked(true);
 }
 
 void  page_tiling_maker::onExit()
@@ -606,6 +603,11 @@ void  page_tiling_maker::onExit()
 
 void  page_tiling_maker::onEnter()
 {
+    tilingGroup3.button(config->tilingMakerViewer)->setChecked(true);
+    mouseModeBtnGroup->button(tilingMaker->getMouseMode())->setChecked(true);
+
+    sides->setValue(tilingMaker->getPolygonSides());
+
     emit sig_viewWS();
 
     clear();
@@ -679,6 +681,8 @@ void page_tiling_maker::buildMenu()
 
     connect(tileInfoTable, SIGNAL(cellClicked(int,int)),  this, SLOT(slot_cellSelected(int,int)),Qt::UniqueConnection);
 
+    tileInfoTable->resizeColumnToContents(0);
+    tileInfoTable->resizeColumnToContents(1);
     tileInfoTable->resizeColumnToContents(2);
     tileInfoTable->resizeColumnToContents(3);
     tileInfoTable->resizeColumnToContents(4);
@@ -746,7 +750,6 @@ void page_tiling_maker::refreshMenuData()
         QString inclusion = (tilingMaker->getInTiling().contains(pfp)) ? "included" : "excluded";
         refreshTableEntry(pfp,row++,inclusion);
     }
-
 
     row = tileInfoTable->currentRow();
     if (row >= 0)
@@ -1489,13 +1492,14 @@ void page_tiling_maker::slot_addGirihShape()
 
 void page_tiling_maker::slot_moveX(int amount)
 {
-    qDebug() << "page_tiling_maker::slot_moveX" << amount;
     if (canvas->getKbdMode() == KBD_MODE_BKGD)
     {
+        qDebug() << "page_tiling_maker::slot_moveX - background" << amount;
         bkgdLayout.bumpX(amount);
     }
     else if (canvas->getKbdMode() == KBD_MODE_DATA)
     {
+        qDebug() << "page_tiling_maker::slot_moveX - data" << amount;
         tilingMaker->allDeltaX(amount);
     }
 }

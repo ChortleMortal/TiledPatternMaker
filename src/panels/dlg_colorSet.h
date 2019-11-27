@@ -43,7 +43,7 @@ protected:
     QTableWidget  * table;
 
 signals:
-    //void sig_colorsChanged();
+    void sig_colorsChanged();
 
 private slots:
     void add();

@@ -52,23 +52,23 @@ FigureView::~FigureView()
 
 void FigureView::receive(GeoGraphics * gg,int h, int v )
 {
-    Q_UNUSED(gg);
-    Q_UNUSED(h);
-    Q_UNUSED(v);
+    Q_UNUSED(gg)
+    Q_UNUSED(h)
+    Q_UNUSED(v)
     qFatal("receive: not implemented");
 }
 
 void FigureView::draw( GeoGraphics * gg )
 {
-    Q_UNUSED(gg);
+    Q_UNUSED(gg)
     qFatal("draw: not implemented");
 }
 
 void FigureView::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
     qDebug() << "FigureView::paint";
-    Q_UNUSED(option);
-    Q_UNUSED(widget);
+    Q_UNUSED(option)
+    Q_UNUSED(widget)
 
     if (!_fig) return;
 
@@ -92,14 +92,6 @@ void FigureView::paint(QPainter *painter, const QStyleOptionGraphicsItem *option
     painter->setPen(QPen(Qt::yellow,3.0));
     paintExtendedBoundary(painter);
 
-    Configuration * config = Configuration::getInstance();
-    if (config->boundingRects)
-    {
-        painter->setPen(QPen(Qt::green,1.0));
-        QRectF rect = boundingRect();
-        painter->drawRect(_T.mapRect(rect));
-    }
-
     // paint figure
     if (_fig->isRadial())
     {
@@ -116,7 +108,7 @@ void FigureView::paintExplicitFigureMap(QPainter *painter, QPen pen)
     qDebug() << "paintExplicitFigure" << _fig->getFigureDesc();
 
     MapPtr map = _fig->getFigureMap();
-    map->verify( "paintExplicitFigure", false,true);
+    //map->verifyMap( "paintExplicitFigure");
     paintMap(painter,map,pen);
 }
 
@@ -183,10 +175,8 @@ void FigureView::paintMap(QPainter * painter, MapPtr map, QPen pen)
 
     painter->setPen(pen);
 
-    for(auto e = map->getEdges()->begin(); e != map->getEdges()->end(); e++)
+    for (auto edge : map->getEdges())
     {
-        EdgePtr edge = *e;
-
         QPointF p1 = _T.map(edge->getV1()->getPosition());
         QPointF p2 = _T.map(edge->getV2()->getPosition());
 

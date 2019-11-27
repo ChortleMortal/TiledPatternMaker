@@ -33,7 +33,7 @@ class page_map_editor : public panel_page
     Q_OBJECT
 
 public:
-    page_map_editor(ControlPanel * panel);
+    page_map_editor(ControlPanel * cpanel);
 
     void refreshPage() override;
     void onEnter() override;
@@ -66,9 +66,10 @@ private slots:
     void slot_redoConstructionLines();
     void slot_clearConstructionLines();
     void slot_clearMap();
+    void slot_dumpMap();
     void slot_cleanseMap();
     void slot_setModes(int mode);
-    void slot_mapEdView_pressed(int id);
+    void slot_mapEdMode_pressed(int id);
     void slot_saveTemplate();
     void slot_loadTemplate();
     void slot_hideCons(bool hide);
@@ -76,6 +77,7 @@ private slots:
     void slot_hidePoints(bool hide);
     void slot_hideMidPoints(bool hide);
     void slot_debugChk(bool on);
+    void slot_render();
 
     void slot_radiusChanged(qreal r);
     void slot_lineWidthChanged(qreal r);
@@ -99,7 +101,7 @@ private:
     QLabel * line5;
     QTextEdit * line6;
 
-    QButtonGroup    mapEdViewGroup;
+    QButtonGroup    mapEdModeGroup;
     QButtonGroup    targetGroup;
     QButtonGroup    modeGroup;
 

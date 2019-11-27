@@ -36,8 +36,7 @@ int Edge::refs = 0;
 Edge::Edge()
 {
     refs++;
-    interlaceData = nullptr;
-    tmpIndex      = -1;
+    tmpEdgeIndex      = -1;
     type          = EDGE_NULL;
 }
 
@@ -46,8 +45,7 @@ Edge::Edge(VertexPtr v1)
     refs++;
     this->v1      = v1;
     this->v2      = v1; // same
-    interlaceData = nullptr;
-    tmpIndex      = -1;
+    tmpEdgeIndex      = -1;
     type          = EDGE_POINT;
 }
 
@@ -58,8 +56,7 @@ Edge::Edge(VertexPtr v1, VertexPtr v2 )
     this->v1      = v1;
     this->v2      = v2;
 
-    interlaceData = nullptr;
-    tmpIndex      = -1;
+    tmpEdgeIndex      = -1;
 }
 
 Edge::Edge(VertexPtr v1, VertexPtr v2, QPointF arcCenter, bool convex)
@@ -70,15 +67,12 @@ Edge::Edge(VertexPtr v1, VertexPtr v2, QPointF arcCenter, bool convex)
     this->v2         = v2;
     setArcCenter(arcCenter,convex);
 
-    interlaceData    = nullptr;
-    tmpIndex         = -1;
+    tmpEdgeIndex         = -1;
 }
 
 Edge::~Edge()
 {
     refs--;
-    if (interlaceData)
-        delete interlaceData;
     //qDebug() << "Edge destructor";
     //v1.reset();
     //v2.reset();
@@ -190,59 +184,63 @@ QLineF Edge::getLine()
     return QLineF(v1->getPosition(), v2->getPosition());
 }
 
-
 // Helpers.
 
 VertexPtr Edge::getOtherV(VertexPtr vert) const
 {
-    if (vert  == v1)
+    if (vert == v1)
         return v2;
     else
+    {
+        Q_ASSERT (vert == v2);
         return v1;
+    }
 }
 
 VertexPtr Edge::getOtherV(QPointF pos) const
 {
-    if (pos  == v1->getPosition())
+    if (pos == v1->getPosition())
         return v2;
     else
+    {
+        Q_ASSERT (pos == v2->getPosition());
         return v1;
+    }
 }
 
 QPointF Edge::getOtherP(VertexPtr vert) const
 {
-    if (vert  == v1)
+    if (vert == v1)
         return v2->getPosition();
     else
+    {
+        Q_ASSERT (vert == v2);
         return v1->getPosition();
+    }
 }
 
 QPointF Edge::getOtherP(QPointF pos) const
 {
-    if (pos  == v1->getPosition())
+    if (pos == v1->getPosition())
         return v2->getPosition();
     else
+    {
+        Q_ASSERT (pos == v2->getPosition());
         return v1->getPosition();
+    }
+}
+
+bool Edge::contains(VertexPtr v)
+{
+    if ((v == v1) || (v == v2))
+        return true;
+    return false;
 }
 
 // Used to sort the edges in the map.
 qreal Edge:: getMinX()
 {
-    return qMin( v1->getPosition().x(), v2->getPosition().x() );
-}
-
-interlaceInfo * Edge::getInterlaceInfo()
-{
-    return interlaceData;
-}
-
-void Edge::setInterlaceInfo(interlaceInfo * info )
-{
-    if (interlaceData)
-    {
-        delete interlaceData;
-    }
-    interlaceData = info;
+    return qMin(v1->getPosition().x(), v2->getPosition().x());
 }
 
 QPointF Edge::calcDefaultArcCenter(bool convex)

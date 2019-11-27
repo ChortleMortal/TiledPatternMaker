@@ -48,7 +48,7 @@ class MapEditor : public MapEditorSelection
 public:
     static MapEditor * getInstance();
 
-    void             setDesignElement(DesignElementPtr dep);
+    void             setDesignElement(DesignElementPtr delpptr);
     void             setPrototype(PrototypePtr prop);
     void             setStyle(StylePtr styp);
     DesignElementPtr getDesignElement() { return delp; }
@@ -57,6 +57,7 @@ public:
     SelectionSet     getCurrentSelections() { return currentSelections; }
 
     void            draw(QPainter * painter) override;
+    void            viewRectChanged();
     void            updateStatus();
 
     eMapMouseMode   getMouseMode();
@@ -107,6 +108,8 @@ private:
 
     // Mouse mode, triggered by the toolbar.
     eMapMouseMode     map_mouse_mode;
+
+    QPointF         deltaTrans;
 
     Canvas          * canvas;
     Configuration   * config;

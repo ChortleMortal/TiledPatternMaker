@@ -21,6 +21,7 @@ public:
     bool isClockwise();    // should be anti-clockwise
 
     QPolygonF  getPoly();
+    qreal      getAngle(int edge);
 
     void    paint(QPainter *painter, QTransform T);
     void    draw(GeoGraphics * gg, QPen pen);

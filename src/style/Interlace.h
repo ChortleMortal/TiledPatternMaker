@@ -26,6 +26,7 @@
 #define INTERLACE_H
 
 #include "style/Thick.h"
+#include "style/InterlaceInfo.h"
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -46,13 +47,25 @@
 // just a pain when crossing edges don't cross in a perfect X.  I
 // might get this wrong.
 
-class interlaceInfo
+class piece
 {
 public:
-    interlaceInfo() {visited = false; start_under = false;}
-    bool visited;
-    bool start_under;
+    piece() { shadow = false; }
+    QPointF below;
+    QPointF cen;
+    QPointF above;
+    bool    shadow;
 };
+
+class segment
+{
+public:
+    QPolygonF toPoly();
+
+    piece A;
+    piece B;
+};
+
 
 class Interlace : public Thick
 {
@@ -81,12 +94,11 @@ protected:
 
 private:
     // Private magic to make it all happen.
-    QPointF getShadowVector( int fromIndex, int toIndex );
+    QPointF getShadowVector(QPointF from, QPointF to);
 
-    qreal capGap( QPointF p, QPointF base, qreal gap );
+    qreal capGap(QPointF p, QPointF base, qreal gap);
 
-    void getPoints(EdgePtr edge, VertexPtr from, VertexPtr to, qreal width, qreal gap,
-            QVector<QPointF> & pts, int ptsIndex, QVector<bool> & shadows, int shadowsIndex );
+    void getPoints(MapPtr map, EdgePtr edge, VertexPtr from, VertexPtr to, piece *p);
 
     // Propagate the over-under relationship from a vertices to its
     // adjacent edges.  The relationship is encapsulated in the
@@ -94,13 +106,12 @@ private:
     // edge passed in is in the under state at this vertex.
     // The whole trick is to manage how neighbours receive modifications
     // of edge_under_at_vert.
-    void propagate(VertexPtr vertex, EdgePtr edge, bool edge_under_at_vert, QStack<EdgePtr> &todo );
+    void propagate(VertexPtr vertex, EdgePtr edge, bool edge_under_at_vert);
 
     // Propagate the over-under relation from an edge to its incident vertices.
-    void buildFrom(QStack<EdgePtr> &todo );
-    void initializeMap(constMapPtr map );
-    void finalizeMap(constMapPtr map );
-    void assignInterlacing(constMapPtr map );
+    void assignInterlacing();
+    void initializeMap();
+    void buildFrom();
 
     // Parameters of the rendering.
     qreal  gap;
@@ -108,8 +119,8 @@ private:
     bool   includeTipVertices;
 
     // Internal representations of the rendering.
-    QVector<QPointF>    pts;
-    QVector<bool>       shadows;
+    QVector<segment>    pts;
+    QStack<EdgePtr>     todo;
 };
 #endif
 

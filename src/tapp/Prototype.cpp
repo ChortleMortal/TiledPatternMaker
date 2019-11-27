@@ -42,7 +42,7 @@ Prototype::Prototype(TilingPtr t)
 {
     Q_ASSERT(t);
     tiling = t;
-    protoMap = make_shared<Map>();
+    protoMap = make_shared<Map>("proto map");
     refs++;
 }
 
@@ -190,7 +190,10 @@ void Prototype::receive(GeoGraphics *gg, int h, int v )
 void Prototype::resetProtoMap()
 {
     locations.clear();
-    protoMap->wipeout();
+    if (protoMap)
+    {
+        protoMap->wipeout();
+    }
 }
 
 MapPtr Prototype::getProtoMap()
@@ -213,17 +216,8 @@ MapPtr Prototype::createProtoMap()
     resetProtoMap();
 
     qDebug() << "PROTOTYPE::CONSTRUCT MAP" << Utils::addr(this);
-#if 1
-    static bool verifyMap = true;
-    static bool verbose   = true;
-    static bool detailed  = true;
-    static bool doDump    = true;
-#else
-    static bool verifyMap = false;
-    static bool verbose   = false;
-    static bool detailed  = false;
-    static bool doDump    = false;
-#endif
+
+    const bool debug = false;
 
     // Use FillRegion to get a list of translations for this tiling.
     fill(nullptr, tiling->getFillData());
@@ -234,9 +228,9 @@ MapPtr Prototype::createProtoMap()
     // Now, for each different feature, build a submap corresponding
     // to all translations of that feature.
     qDebug() << "designElements count=" << designElements.size();
-    for (auto it = designElements.begin(); it != designElements.end(); it++)
+
+    for (auto dep : designElements)
     {
-        DesignElementPtr dep = *it;
         qDebug().noquote() << "design element:" << dep->toString();
 
         FeaturePtr feature   = dep->getFeature();
@@ -244,7 +238,7 @@ MapPtr Prototype::createProtoMap()
         MapPtr figmap        = figure->getFigureMap();
 
         qDebug().noquote() << figure->getFigureDesc();
-        if (verifyMap) figmap->verify("figmap1",verbose,detailed,doDump);
+        if (debug) figmap->verifyMap("figmap1");
 
         QVector<QTransform> subT;
         for (auto it2 = tiling->getPlacedFeatures().begin(); it2 != tiling->getPlacedFeatures().end(); it2++)
@@ -266,24 +260,25 @@ MapPtr Prototype::createProtoMap()
 
         // Within a single translational unit, assemble the different
         // transformed figures corresponding to the given feature into a map.
-        MapPtr transmap = make_shared<Map>();
+        MapPtr transmap = make_shared<Map>("proto transmap");
         transmap->mergeSimpleMany(figmap, subT);
-        if (verifyMap) transmap->verify("transmap",verbose,detailed,doDump);
+        if (debug) transmap->verifyMap("transmap");
 
         // Now put all the translations together into a single map for this feature.
-        MapPtr featuremap = make_shared<Map>();
+        MapPtr featuremap = make_shared<Map>("proto featuremap");
         featuremap->mergeSimpleMany(transmap, locations);
-        if (verifyMap) featuremap->verify("featuremap",verbose,detailed,doDump);
+        if (debug) featuremap->verifyMap("featuremap");
 
         // And do a slow merge to add this map to the finished design.
+        if (debug) protoMap->verifyMap("protoMap before Merge:");
         protoMap->mergeMap(featuremap);
-        if (verifyMap) protoMap->verify("ret MAP 2",verbose,detailed,doDump);
+        if (debug) protoMap->verifyMap("protoMap after Merge:");
 
-        if (verbose) qDebug() << "Constructed SUB map (ret): vertices=" << protoMap->getVertices()->count() << "edges=" << protoMap->getEdges()->count();
+        if (debug) qDebug() << "Constructed SUB map (ret): vertices=" << protoMap->numVertices()<< "edges=" << protoMap->numEdges();
         protoMap->analyzeVertices();
     }
 
-    qDebug() << "Constructed complete map (ret): vertices=" << protoMap->getVertices()->count() << "edges=" << protoMap->getEdges()->count();
+    qDebug() << "Constructed complete map (ret): vertices=" << protoMap->numVertices() << "edges=" << protoMap->numEdges();
 
 #ifdef TPMSPLASH
     sp->hide();

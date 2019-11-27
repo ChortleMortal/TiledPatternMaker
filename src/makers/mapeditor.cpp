@@ -29,13 +29,12 @@
 #include "tapp/DesignElement.h"
 #include "tapp/Prototype.h"
 #include "viewers/placeddesignelementview.h"
+#include "viewers/workspaceviewer.h"
 #include "style/Style.h"
 
 MapEditor * MapEditor::mpThis = nullptr;
 
-static bool debugMouse = true;
-
-
+const bool debugMouse = false;
 
 MapEditor * MapEditor::getInstance()
 {
@@ -45,7 +44,6 @@ MapEditor * MapEditor::getInstance()
     }
     return mpThis;
 }
-
 
 MapEditor::MapEditor() : MapEditorSelection(), stash(this)
 {
@@ -70,49 +68,50 @@ MapEditor::~MapEditor()
 {
 }
 
-void MapEditor::setDesignElement(DesignElementPtr delp)
+void MapEditor::setDesignElement(DesignElementPtr delpptr)
 {
     inputMode = ME_INPUT_FIGURE;
-    this->delp = delp;
+    delp = delpptr;
 
     figp = delp->getFigure();
     feap = delp->getFeature();
     map  = figp->getFigureMap();
 
+    buildEditorDB();
+
     if (config->viewerType == VIEW_MAP_EDITOR)
     {
-        buildEditorDB();
+        forceRedraw();
     }
-    forceRedraw();
 }
 
-void  MapEditor::setPrototype(PrototypePtr prop)
+void  MapEditor::setPrototype(PrototypePtr proptr)
 {
     inputMode = ME_INPUT_PROTO;
-    this->prop = prop;
+    prop = proptr;
 
     map = prop->getProtoMap();
 
+    buildEditorDB();
     if (config->viewerType == VIEW_MAP_EDITOR)
     {
-        buildEditorDB();
+        forceRedraw();
     }
-    forceRedraw();
 }
 
-void MapEditor::setStyle(StylePtr styp)
+void MapEditor::setStyle(StylePtr styptr)
 {
     inputMode = ME_INPUT_STYLE;
-    this->styp = styp;
+    styp = styptr;
 
-    this->prop = styp->getPrototype();
+    prop = styp->getPrototype();
     map = prop->getProtoMap();
 
+    buildEditorDB();
     if (config->viewerType == VIEW_MAP_EDITOR)
     {
-        buildEditorDB();
+        forceRedraw();
     }
-    forceRedraw();
 }
 
 void MapEditor::draw(QPainter *painter )
@@ -188,6 +187,24 @@ void MapEditor::draw(QPainter *painter )
     }
 }
 
+void MapEditor::viewRectChanged()
+{
+    QRect rect = view->rect();
+    QPointF pt = view->sceneRect().center();
+    setRotateCenter(pt);
+
+    qDebug() << "Map editor rect=" << rect;
+    int height = rect.height();
+    int width  = rect.width();
+    SizeAndBounds sab = WorkspaceViewer::viewDimensions[VIEW_MAP_EDITOR];
+    sab.viewSize = QSize(width,height);
+    QTransform t0 = WorkspaceViewer::calculateViewTransform(sab);
+    //qDebug().noquote() << Transform::toInfoString(layerT) << "-" << Transform::toInfoString(t0);
+
+    deltaTrans = Transform::trans(t0) - Transform::trans(baseT);
+    qDebug() << "deltaTrans=" << deltaTrans;
+}
+
 void MapEditor::setMouseMode(eMapMouseMode mode)
 {
     map_mouse_mode = mode;
@@ -237,7 +254,8 @@ void MapEditor::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
     if (config->viewerType != VIEW_MAP_EDITOR)
         return;
 
-    mousePos = spt;
+    spt -= deltaTrans;
+    setMousePos(spt);
 
     if (debugMouse)
     {
@@ -278,7 +296,7 @@ void MapEditor::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
             if (sel->getType() == MAP_EDGE)
             {
                 map->removeEdge(sel->getEdge());
-                map->verify("delete edge",false,true);
+                map->verifyMap("delete edge");
                 break;
             }
             else if (sel->getType() == MAP_LINE && sel->isConstructionLine())
@@ -300,16 +318,19 @@ void MapEditor::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
         break;
 
     case MAP_MODE_SPLIT_LINE:
-        set = findEdges(spt, QVector<EdgePtr>());
+    {
+        QVector<EdgePtr> qvep;
+        set = findEdges(spt, qvep);
         for (auto it = set.begin(); it != set.end(); it++)
         {
             auto sel = *it;
             map->splitEdge(sel->getEdge());
-            map->verify("split edge",false,true);
+            map->verifyMap("split edge");
         }
         buildEditorDB();
         forceRedraw();
         setMouseMode(MAP_MODE_NONE);
+    }
         break;
 
     case MAP_MODE_EXTEND_LINE:
@@ -380,6 +401,7 @@ void MapEditor::slot_mouseDragged(QPointF spt)
     if (config->viewerType != VIEW_MAP_EDITOR)
         return;
 
+    spt -= deltaTrans;
     setMousePos(spt);
 
     if (debugMouse) qDebug().noquote() << "drag" << mousePos << screenToWorld(mousePos)  << sMapMouseMode[map_mouse_mode];
@@ -399,6 +421,7 @@ void MapEditor::slot_mouseReleased(QPointF spt)
     if (config->viewerType != VIEW_MAP_EDITOR)
         return;
 
+    spt -= deltaTrans;
     setMousePos(spt);
 
     if (debugMouse) qDebug() << "release" << mousePos << screenToWorld(mousePos);
@@ -415,6 +438,8 @@ void MapEditor::slot_mouseMoved(QPointF spt)
     if (config->viewerType != VIEW_MAP_EDITOR)
         return;
 
+    qDebug() << "mousemove: deltaTrans=" << deltaTrans;
+    spt -= deltaTrans;
     setMousePos(spt);
 
     if (debugMouse) qDebug() << "move" << mousePos;

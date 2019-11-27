@@ -34,23 +34,23 @@
 //
 /////////////////////////////////////////////////////////////////////////////
 
-Design5::Design5(eDesign design, QString title) : Design(design,title) {}
-Design6::Design6(eDesign design, QString title) : Design(design,title) {}
-Design7::Design7(eDesign design, QString title) : Design(design,title) {}
-Design8::Design8(eDesign design, QString title) : Design(design,title) {}
-Design9::Design9(eDesign design, QString title) : Design(design,title) {}
-DesignHuPacked::DesignHuPacked(eDesign design, QString title) : Design(design,title) {}
-DesignHuInsert::DesignHuInsert(eDesign design, QString title) : Design(design,title) {}
-Design11::Design11(eDesign design, QString title) : Design(design,title) {}
-Design12::Design12(eDesign design, QString title) : Design(design,title) {}
-Design13::Design13(eDesign design, QString title) : Design(design,title) {}
-Design14::Design14(eDesign design, QString title) : Design(design,title) {}
-Design16::Design16(eDesign design, QString title) : Design(design,title) {}
-Design17::Design17(eDesign design, QString title) : Design(design,title) {}
-Design18::Design18(eDesign design, QString title) : Design(design,title) {}
-Design19::Design19(eDesign design, QString title) : Design(design,title) {}
-DesignKumiko1::DesignKumiko1(eDesign design, QString title) : Design(design,title) {}
-DesignKumiko2::DesignKumiko2(eDesign design, QString title) : Design(design,title) {}
+Design5::Design5(eDesign design, QString atitle) : Design(design,atitle) {}
+Design6::Design6(eDesign design, QString atitle) : Design(design,atitle) {}
+Design7::Design7(eDesign design, QString atitle) : Design(design,atitle) {}
+Design8::Design8(eDesign design, QString atitle) : Design(design,atitle) {}
+Design9::Design9(eDesign design, QString atitle) : Design(design,atitle) {}
+DesignHuPacked::DesignHuPacked(eDesign design, QString atitle) : Design(design,atitle) {}
+DesignHuInsert::DesignHuInsert(eDesign design, QString atitle) : Design(design,atitle) {}
+Design11::Design11(eDesign design, QString atitle) : Design(design,atitle) {}
+Design12::Design12(eDesign design, QString atitle) : Design(design,atitle) {}
+Design13::Design13(eDesign design, QString atitle) : Design(design,atitle) {}
+Design14::Design14(eDesign design, QString atitle) : Design(design,atitle) {}
+Design16::Design16(eDesign design, QString atitle) : Design(design,atitle) {}
+Design17::Design17(eDesign design, QString atitle) : Design(design,atitle) {}
+Design18::Design18(eDesign design, QString atitle) : Design(design,atitle) {}
+Design19::Design19(eDesign design, QString atitle) : Design(design,atitle) {}
+DesignKumiko1::DesignKumiko1(eDesign design, QString atitle) : Design(design,atitle) {}
+DesignKumiko2::DesignKumiko2(eDesign design, QString atitle) : Design(design,atitle) {}
 
 bool Design5::build()
 {

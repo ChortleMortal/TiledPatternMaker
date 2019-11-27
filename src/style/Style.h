@@ -61,14 +61,13 @@ public:
     Style(PrototypePtr proto,PolyPtr bounds);
     Style(const Style  & other);
 
-    ~Style();
+    ~Style() override;
 
     // Geometry data.
     PrototypePtr getPrototype() const {return prototype;}
     void         setPrototype(PrototypePtr pp);
     PolyPtr      getBoundary() const {return boundary;}
 
-    constMapPtr  getReadOnlyMap()  { return styleMap; }
     MapPtr       getMap()          { return styleMap; }
 
     // Retrieve a name describing this style and map.
@@ -89,8 +88,9 @@ public:
     static int refs;
 
 protected:
-    void   setupStyleMap();  // copies shared pointer from prototype
+    MapPtr setupStyleMap();  // copies shared pointer from prototype
     void   resetStyleMap() { styleMap.reset(); }
+
     PrototypePtr  prototype; // The input geometry to be rendered
     PolyPtr       boundary;
 

@@ -44,7 +44,9 @@
 #include "tapp/RosetteConnectFigure.h"
 #include "tapp/ExplicitFigure.h"
 
-const int currentXMLVersion = 3;
+//const int currentXMLVersion = 3;
+//const int currentXMLVersion = 3;  // 05OCT19 use ColorSets in Colored
+const int currentXMLVersion = 5;    // 25OCT19 revised way of defining maps
 
 XmlWriter::XmlWriter(StyledDesign & styledDesign) : design(styledDesign)
 {
@@ -318,7 +320,7 @@ bool XmlWriter::processThick(QTextStream &ts, StylePtr s)
         fail("Style error","dynamic cast of Thick");
     }
 
-    QColor  color           = th->getColor();
+    ColorSet & cset         = th->getColorSet();
     bool    draw_outline    = th->getDrawOutline();
     qreal   width           = th->getLineWidth();
     PrototypePtr proto      = th->getPrototype();
@@ -339,7 +341,7 @@ bool XmlWriter::processThick(QTextStream &ts, StylePtr s)
 
     str = "style.Colored";
     ts << "<" << str << ">" << endl;
-    procColor(ts,color);
+    procColorSet(ts,cset);
     ts << "</" << str << ">" << endl;
 
     str = "style.Thick";
@@ -359,7 +361,7 @@ bool XmlWriter::processInterlace(QTextStream & ts, StylePtr s)
         fail("Style error","dynamic cast of Interlace");
     }
 
-    QColor  color        = il->getColor();
+    ColorSet & cset      = il->getColorSet();
     bool    draw_outline = il->getDrawOutline();
     bool    includeTipVerts= il->getIncludeTipVertices();
     qreal   width        = il->getLineWidth();
@@ -383,7 +385,7 @@ bool XmlWriter::processInterlace(QTextStream & ts, StylePtr s)
 
     str = "style.Colored";
     ts << "<" << str << ">" << endl;
-    procColor(ts,color);
+    procColorSet(ts,cset);
     ts << "</" << str << ">" << endl;
 
     str = "style.Thick";
@@ -408,7 +410,7 @@ bool XmlWriter::processOutline(QTextStream &ts, StylePtr s)
         fail("Style error","dynamic cast of Interlace");
     }
 
-    QColor  color        = ol->getColor();
+    ColorSet & cset      = ol->getColorSet();
     bool    draw_outline = ol->getDrawOutline();
     qreal   width        = ol->getLineWidth();
     PrototypePtr proto   = ol->getPrototype();
@@ -429,7 +431,7 @@ bool XmlWriter::processOutline(QTextStream &ts, StylePtr s)
 
     str = "style.Colored";
     ts << "<" << str << ">" << endl;
-    procColor(ts,color);
+    procColorSet(ts,cset);
     ts << "</" << str << ">" << endl;
 
     str = "style.Thick";
@@ -515,7 +517,7 @@ bool XmlWriter::processPlain(QTextStream &ts, StylePtr s)
         fail("Style error","dynamic cast of Plain");
     }
 
-    QColor  color       = pl->getColor();
+    ColorSet & cset     = pl->getColorSet();
     PrototypePtr proto  = pl->getPrototype();
     PolyPtr poly        = pl->getBoundary();
     Xform   xf          = pl->getDeltas();
@@ -534,7 +536,7 @@ bool XmlWriter::processPlain(QTextStream &ts, StylePtr s)
 
     str = "style.Colored";
     ts << "<" << str << ">" << endl;
-    procColor(ts,color);
+    procColorSet(ts,cset);
     ts << "</" << str << ">" << endl;
 
     qDebug() << "end plain";
@@ -549,7 +551,7 @@ bool XmlWriter::processSketch(QTextStream &ts, StylePtr s)
         fail("Style error","dynamic cast of Sketch");
     }
 
-    QColor  color       = sk->getColor();
+    ColorSet & cset     = sk->getColorSet();
     PrototypePtr proto  = sk->getPrototype();
     PolyPtr poly        = sk->getBoundary();
     Xform   xf          = sk->getDeltas();
@@ -568,7 +570,7 @@ bool XmlWriter::processSketch(QTextStream &ts, StylePtr s)
 
     str = "style.Colored";
     ts << "<" << str << ">" << endl;
-    procColor(ts,color);
+    procColorSet(ts,cset);
     ts << "</" << str << ">" << endl;
 
     return true;
@@ -582,7 +584,7 @@ bool XmlWriter::processEmboss(QTextStream &ts, StylePtr s)
         fail("Style error","dynamic cast of Emboss");
     }
 
-    QColor  color        = em->getColor();
+    ColorSet & cset      = em->getColorSet();
     bool    draw_outline = em->getDrawOutline();
     qreal   width        = em->getLineWidth();
     qreal   angle        = em->getAngle();
@@ -604,7 +606,7 @@ bool XmlWriter::processEmboss(QTextStream &ts, StylePtr s)
 
     str = "style.Colored";
     ts << "<" << str << ">" << endl;
-    procColor(ts,color);
+    procColorSet(ts,cset);
     ts << "</" << str << ">" << endl;
 
     str = "style.Thick";
@@ -906,13 +908,15 @@ void XmlWriter::setFeature(QTextStream & ts,FeaturePtr fp)
 
 void XmlWriter::setFigureCommon(QTextStream & ts, FigurePtr fp)
 {
-    int       bs = fp->getExtBoundarySides();
-    qreal    bsc = fp->getExtBoundaryScale();
-    qreal    fsc = fp->getFigureScale();
+    int    bs = fp->getExtBoundarySides();
+    qreal bsc = fp->getExtBoundaryScale();
+    qreal fsc = fp->getFigureScale();
+    qreal   r = fp->getFigureRotate();
 
-    ts << "<boundarySides>" << bs << "</boundarySides>" << endl;
+    ts << "<boundarySides>" << bs  <<"</boundarySides>"  << endl;
     ts << "<boundaryScale>" << bsc << "</boundaryScale>" << endl;
-    ts << "<figureScale>" << fsc << "</figureScale>" << endl;
+    ts << "<figureScale>"   << fsc << "</figureScale>"   << endl;
+    ts << "<r>"             << r   << "</r>"             << endl;
 }
 
 void XmlWriter::setExplicitFigure(QTextStream & ts,QString name, FigurePtr fp)
@@ -954,7 +958,7 @@ void XmlWriter::setExplicitFigure(QTextStream & ts,QString name, FigurePtr fp)
     case FIG_TYPE_EXPLICIT_ROSETTE:
         ts << "<s>" << ep->s << "</s>" << endl;
         ts << "<q>" << ep->q << "</q>"  << endl;
-        ts << "<r>" << ep->r << "</r>"  << endl;
+        ts << "<rFlexPt>" << ep->r_flexPt << "</rFlexPt>"  << endl;
         break;
 
     case FIG_TYPE_INTERSECT:
@@ -996,12 +1000,10 @@ void XmlWriter::setStarFigure(QTextStream & ts,QString name, FigurePtr fp)
     int        n = sp->getN();
     qreal      d = sp->getD();
     int        s = sp->getS();
-    qreal      r = sp->getR();
 
     ts << "<n>" << n << "</n>" << endl;
     ts << "<d>" << d << "</d>" << endl;
     ts << "<s>" << s << "</s>" << endl;
-    ts << "<r>" << r << "</r>" << endl;
 
     setFigureCommon(ts, fp);
 
@@ -1030,7 +1032,6 @@ void XmlWriter::setExtendedStarFigure(QTextStream & ts,QString name, FigurePtr f
     int        n = sp->getN();
     qreal      d = sp->getD();
     int        s = sp->getS();
-    qreal      r = sp->getR();
     QString  ext_t     = (sp->getExtendPeripheralVertices())    ? "\"t\"" : "\"f\"";
     QString  ext_not_t = (sp->getExtendFreeVertices()) ? "\"t\"" : "\"f\"";
 
@@ -1038,7 +1039,6 @@ void XmlWriter::setExtendedStarFigure(QTextStream & ts,QString name, FigurePtr f
     ts << "<n>" << n << "</n>" << endl;
     ts << "<d>" << d << "</d>" << endl;
     ts << "<s>" << s << "</s>" << endl;
-    ts << "<r>" << r << "</r>" << endl;
 
     setFigureCommon(ts, fp);
 
@@ -1068,12 +1068,10 @@ void XmlWriter::setRosetteFigure(QTextStream & ts,QString name, FigurePtr fp, bo
     int n       = rp->getN();
     int s       = rp->getS();
     qreal q     = rp->getQ();
-    qreal r     = rp->getR();
 
     ts << "<n>" << n << "</n>" << endl;
     ts << "<q>" << q << "</q>" << endl;
     ts << "<s>" << s << "</s>" << endl;
-    ts << "<r>" << r << "</r>" << endl;
 
     setFigureCommon(ts,fp);
 
@@ -1106,7 +1104,6 @@ void XmlWriter::setExtendedRosetteFigure(QTextStream & ts,QString name, FigurePt
     qreal      q = rp->getQ();
     qreal      k = rp->getK();
     int        s = rp->getS();
-    qreal      r = rp->getR();
     QString  ext_t     = (rp->getExtendPeripheralVertices())    ? "\"t\"" : "\"f\"";
     QString  ext_not_t = (rp->getExtendFreeVertices()) ? "\"t\"" : "\"f\"";
     QString  con_bnd_v = (rp->getConnectBoundaryVertices()) ? "\"t\"" : "\"f\"";
@@ -1116,7 +1113,6 @@ void XmlWriter::setExtendedRosetteFigure(QTextStream & ts,QString name, FigurePt
     ts << "<q>" << q << "</q>" << endl;
     ts << "<k>" << k << "</k>" << endl;
     ts << "<s>" << s << "</s>" << endl;
-    ts << "<r>" << r << "</r>" << endl;
 
     setFigureCommon(ts,fp);
 
@@ -1158,7 +1154,36 @@ void XmlWriter::setRosetteConnectFigure(QTextStream & ts,QString name, FigurePtr
 
 void XmlWriter::setMap(QTextStream &ts, MapPtr map)
 {
+    qDebug().noquote() << map->summary();
+    bool verify = _currentMap->verifyMap("XMLWriter");
+    if (!verify)
+    {
+        QMessageBox box;
+        box.setIcon(QMessageBox::Warning);
+        box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        box.setText("XML Writer: Map verify failed/n/nProceed to cleanse ?");
+        int ret = box.exec();
+        switch (ret)
+        {
+        case QMessageBox::Yes :
+            map->cleanse();     // always write a good map
+            verify = _currentMap->verifyMap("XMLWriter: pst cleanse");
+            break;
+        case QMessageBox::No :
+            verify = true;
+            break;
+        }
+        if (!verify)
+        {
+            QMessageBox box;
+            box.setIcon(QMessageBox::Warning);
+            box.setText("XML Writer: Map verify failed after cleanse");
+            box.exec();
+        }
+    }
+
     QString qsid;
+
     if (hasReference(map))
     {
         qsid = getMapReference(map);
@@ -1171,37 +1196,78 @@ void XmlWriter::setMap(QTextStream &ts, MapPtr map)
     ts << "<map" << qsid << ">" << endl;
 
     // vertices
-    const QVector<VertexPtr> * vertices = map->getVertices();
+    const QVector<VertexPtr> & vertices = map->getVertices();
     setVertices(ts,vertices);
 
     // Edges
-    const QVector<EdgePtr> * edges = map->getEdges();
+    const QVector<EdgePtr> & edges = map->getEdges();
     setEdges(ts,edges);
+
+    // Neighbours
+    NeighbourMap & nmap = map->getNeighbourMap();
+    setNeighbours(ts,nmap);
 
     ts << "</map>" << endl;
 }
 
 
-void XmlWriter::setVertices(QTextStream & ts, const QVector<VertexPtr> * vertices)
+void XmlWriter::setVertices(QTextStream & ts, const QVector<VertexPtr> & vertices)
 {
     ts << "<vertices" << nextId() <<  ">" << endl;
-    for (auto it = vertices->begin(); it != vertices->end(); it++)
+    for (auto v : vertices)
     {
-        VertexPtr v = *it;
         setVertex(ts,v);
     }
     ts << "</vertices>" << endl;
 }
 
-void XmlWriter::setEdges(QTextStream & ts, const QVector<EdgePtr> * edges )
+void XmlWriter::setEdges(QTextStream & ts, const QVector<EdgePtr> & edges)
 {
     ts << "<edges" << nextId() <<  ">" << endl;
-    for (auto it = edges->begin(); it != edges->end(); it++)
+    for (auto edge : edges)
     {
-        EdgePtr e = *it;
-        setEdge(ts,e,true);
+        setEdge(ts,edge);
     }
     ts << "</edges>" << endl;
+}
+
+void XmlWriter::setNeighbours(QTextStream & ts, NeighbourMap & nmap)
+{
+    ts << "<neighbours>" << endl;
+    QMapIterator<VertexPtr,NeighboursPtr> i(nmap.get());
+    while (i.hasNext())
+    {
+        i.next();
+        VertexPtr v = i.key();
+        NeighboursPtr np = i.value();
+        setNeighbour(ts,v,np);
+    }
+    ts << "</neighbours>" << endl;
+}
+
+void XmlWriter::setNeighbour(QTextStream & ts, VertexPtr v, NeighboursPtr np)
+{
+    qDebug() << "setting neighbours for vertex" << v->getTmpVertexIndex();
+
+    QString qsid;
+    Q_ASSERT(hasReference(v));
+    qsid = getVertexReference(v);
+    ts << "<neighbourset" << qsid << ">";
+    QVector<EdgePtr> & nbs = np->getNeighbours();
+    QVector<EdgePtr>::iterator it = nbs.begin();
+    while (it != nbs.end())
+    {
+        EdgePtr e = *it;
+        qDebug() << "inserting edge" << e->getTmpEdgeIndex();
+        Q_ASSERT(hasReference(e));
+        int id =  edge_ids.value(e);
+        ts << id;
+        if (++it != nbs.end())
+        {
+            ts << ",";
+        }
+    }
+    ts << "</neighbourset>" << endl;
 }
 
 void XmlWriter::setEdgePoly(QTextStream & ts, EdgePoly & epoly)
@@ -1260,7 +1326,7 @@ void XmlWriter::setPoint(QTextStream & ts, QPointF pt, QString name)
     ts << "</" << name << ">" << endl;
 }
 
-void XmlWriter::setVertex(QTextStream & ts,VertexPtr v, QString name)
+void XmlWriter::setVertex(QTextStream & ts, VertexPtr v, QString name)
 {
     QString qsid;
     if (hasReference(v))
@@ -1274,19 +1340,17 @@ void XmlWriter::setVertex(QTextStream & ts,VertexPtr v, QString name)
     setVertexReference(getRef(),v);
     ts << "<" << name << qsid << ">" << endl;
 
+    qDebug() << "vertex" << v->getTmpVertexIndex() << "id" << refId;
+
     // pos
     setPos(ts,v->getPosition());
-
-    // edges
-    QVector<EdgePtr> & edges = v->getNeighbours();
-    setEdges(ts,edges);
 
     ts << "</" << name << ">" << endl;
 }
 
 void XmlWriter::setEdges(QTextStream & ts, QVector<EdgePtr> & qvec)
 {
-    ts << "<edges2>" << endl;
+    ts << "<edges>" << endl;
 
     for (auto it = qvec.begin(); it != qvec.end(); it++)
     {
@@ -1295,23 +1359,18 @@ void XmlWriter::setEdges(QTextStream & ts, QVector<EdgePtr> & qvec)
         setEdge(ts,e);      // called from setNeighbour first time
     }
 
-    ts << "</edges2>" << endl;
+    ts << "</edges>" << endl;
  }
 
 
- void XmlWriter::setEdge(QTextStream & ts, EdgePtr e, bool capitalE)
+void XmlWriter::setEdge(QTextStream & ts, EdgePtr e)
 {
-    qDebug() << "edge" << e.get();
+    qDebug() << "Edge" << e.get();
     QString qsid;
     if (hasReference(e))
     {
         qsid = getEdgeReference(e);
-
-        if (capitalE)
-            ts << "<Edge" << qsid << "/>" << endl;
-        else
-            ts << "<edge" << qsid << "/>" << endl;
-        return;
+        ts << "<Edge" << qsid << "/>" << endl;
     }
 
 
@@ -1320,25 +1379,18 @@ void XmlWriter::setEdges(QTextStream & ts, QVector<EdgePtr> & qvec)
     qsid = nextId();
     qDebug() << "new edge ref=" << getRef();
     setEdgeReference(getRef(),e);
-    if (capitalE)
+
+    qDebug() << "edge" << e->getTmpEdgeIndex() << "id" << refId;
+
+    if (curved)
     {
-        ts << "<Edge" << qsid << ">" << endl;
+        QString str = QString("<curve %1 convex=\"%2\">").arg(qsid).arg(e->isConvex() ? "t" : "f");
+        ts << str << endl;
     }
     else
     {
-        if (curved)
-        {
-            QString str = QString("<curve %1 convex=\"%2\">").arg(qsid).arg(e->isConvex() ? "t" : "f");
-            ts << str << endl;
-        }
-        else
-        {
-            ts << "<edge" << qsid << ">" << endl;
-        }
+        ts << "<Edge" << qsid << ">" << endl;
     }
-
-    // map
-    setMap(ts,_currentMap);
 
     // v1
     VertexPtr v1 = e->getV1();
@@ -1354,20 +1406,14 @@ void XmlWriter::setEdges(QTextStream & ts, QVector<EdgePtr> & qvec)
         setPos(ts,p);
     }
 
-    if (capitalE)
+
+    if (curved)
     {
-        ts << "</Edge>" << endl;
+        ts << "</curve>" << endl;
     }
     else
     {
-        if (curved)
-        {
-            ts << "</curve>" << endl;
-        }
-        else
-        {
-            ts << "</edge>" << endl;
-        }
+        ts << "</Edge>" << endl;
     }
 }
 
@@ -1408,11 +1454,6 @@ bool XmlWriter::hasReference(MapPtr map)
 bool XmlWriter::hasReference(VertexPtr v)
 {
     return vertex_ids.contains(v);
-}
-
-bool XmlWriter::hasReference(NeighbourPtr n)
-{
-    return neighbour_ids.contains(n);
 }
 
 bool XmlWriter::hasReference(RosettePtr n)
@@ -1478,11 +1519,6 @@ void XmlWriter::setMapReference(int id, MapPtr ptr)
 void XmlWriter::setVertexReference(int id, VertexPtr ptr)
 {
     vertex_ids[ptr] = id;
-}
-
-void XmlWriter::setNeighbourReference(int id, NeighbourPtr ptr)
-{
-    neighbour_ids[ptr] = id;
 }
 
 void XmlWriter::setRosetteReference(int id, RosettePtr ptr)
@@ -1560,13 +1596,6 @@ QString XmlWriter::getMapReference(MapPtr ptr)
 QString XmlWriter::getVertexReference(VertexPtr ptr)
 {
     int id =  vertex_ids.value(ptr);
-    QString qs = QString(" reference=\"%1\"").arg(id);
-    return qs;
-}
-
-QString XmlWriter::getNeighbourReference(NeighbourPtr ptr)
-{
-    int id =  neighbour_ids.value(ptr);
     QString qs = QString(" reference=\"%1\"").arg(id);
     return qs;
 }

@@ -145,10 +145,10 @@ class Faces
 public:
     Faces();
 
-    void        buildFacesOriginal(constMapPtr map);
+    void        buildFacesOriginal(MapPtr map);
     void        buildFacesNew23(MapPtr map);
 
-    void        assignColorsOriginal();
+    void        assignColorsOriginal(MapPtr map);
     void        assignColorsNew1();
     void        assignColorsNew2(ColorSet & colorSet);
     void        assignColorsNew3(ColorGroup & colorGroup);
@@ -160,12 +160,12 @@ public:
 
 protected:
     void        clearFaces();
-    void        handleVertex(VertexPtr vert, EdgePtr edge);
+    void        handleVertex(MapPtr map, VertexPtr vert, EdgePtr edge);
 
-    FacePtr     extractFace(VertexPtr from, EdgePtr edge);
-    FacePtr     getTwin(FacePtr fi, int idx);
+    FacePtr     extractFace(MapPtr map, VertexPtr from, EdgePtr edge);
+    FacePtr     getTwin(MapPtr map, FacePtr fi, int idx);
     bool        isClockwise(FacePtr face);
-    void        assignColorsToFaces(FaceSet & fset);
+    void        assignColorsToFaces(MapPtr map, FaceSet & fset);
     void        addFaceResults(FaceSet & fst);
 
     void        dumpAllFaces(QString title);

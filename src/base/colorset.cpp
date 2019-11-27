@@ -26,7 +26,7 @@
 
 ColorSet::ColorSet()
 {
-    pos = (QVector<TPColor>::iterator)1234; // dummy
+    pos = QVector<TPColor>::iterator(1234); // dummy
     hidden = false;
 }
 
@@ -42,25 +42,11 @@ void ColorSet::clear()
     pos = colorset.begin();
 }
 
-void ColorSet::setColor(QColor color, bool hide)
-{
-    clear();
-    addColor(color,hide);
-}
-
-void ColorSet::setColor(TPColor tpcolor)
-{
-    clear();
-    colorset.push_back(tpcolor);
-    pos = colorset.begin();
-}
-
 void ColorSet::setColor(int idx, QColor color, bool hide)
 {
     colorset.replace(idx,TPColor(color,hide));
     pos = colorset.begin();
 }
-
 
 void ColorSet::setColor(int idx, TPColor tpcolor)
 {
@@ -68,10 +54,15 @@ void ColorSet::setColor(int idx, TPColor tpcolor)
     pos = colorset.begin();
 }
 
-
 void ColorSet::addColor(QColor color, bool hidden)
 {
     colorset.push_back(TPColor(color,hidden));
+    pos = colorset.begin();
+}
+
+void ColorSet::addColor(TPColor color)
+{
+    colorset.push_back(color);
     pos = colorset.begin();
 }
 
@@ -93,6 +84,16 @@ void  ColorSet::setColors(const ColorSet & cset)
     pos = colorset.begin();
 }
 
+void ColorSet::setOpacity(qreal val)
+{
+    for (auto tpcolor : colorset)
+    {
+        QColor c = tpcolor.color;
+        c.setAlpha(int(val));
+        tpcolor.color = c;
+    }
+}
+
 TPColor ColorSet::getFirstColor()
 {
     pos = colorset.begin();
@@ -106,7 +107,7 @@ TPColor ColorSet::getNextColor()
         colorset.push_back(TPColor(Qt::yellow,false));
         pos = colorset.begin();
     }
-    Q_ASSERT(pos != ((QVector<TPColor>::iterator)1234));
+    Q_ASSERT(pos != (QVector<TPColor>::iterator(1234)));
 
     TPColor color = *pos;
     if (++pos == colorset.end())

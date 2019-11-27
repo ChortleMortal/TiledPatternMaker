@@ -34,9 +34,10 @@
 #include <QtCore>
 #include "base/shared.h"
 #include "geometry/Vertex.h"
+#include "style/InterlaceInfo.h"
 
 class Map;
-class interlaceInfo;
+
 
 enum eEdgeType
 {
@@ -84,19 +85,20 @@ public:
     QPointF  calcDefaultArcCenter(bool convex);
     static arcData  calcArcData(QPointF V1, QPointF V2, QPointF ArcCenter, bool Convex);
 
+    bool contains(VertexPtr v);
     bool sameAs(EdgePtr other);
     bool equals(EdgePtr other);
 
-    interlaceInfo * getInterlaceInfo();
-    void setInterlaceInfo(interlaceInfo * info);
+    interlaceInfo & getInterlaceInfo() {  return interlaceData; }
+    void            initInterlaceInfo() { interlaceData.init(); }
 
     // Used to sort the edges in the map.
     qreal getMinX();
 
     static int refs;
 
-    void setTmpIndex(int i) { tmpIndex = i; }
-    int  getTmpIndex()      { return tmpIndex; }
+    void setTmpEdgeIndex(int i) { tmpEdgeIndex = i; }
+    int  getTmpEdgeIndex()      { return tmpEdgeIndex; }
 
 protected:
     eEdgeType       type;
@@ -106,8 +108,8 @@ protected:
     QPointF         arcCenter;   // inside or outside the polygon
     bool            convex;
 
-    interlaceInfo * interlaceData;
-    int tmpIndex;
+    interlaceInfo   interlaceData;
+    int             tmpEdgeIndex;
 };
 
 #endif

@@ -62,7 +62,7 @@ void Plain::resetStyleRepresentation()
 
 void Plain::createStyleRepresentation()
 {
-    if (getReadOnlyMap())
+    if (getMap())
     {
         return;
     }
@@ -79,15 +79,20 @@ void Plain::draw(GeoGraphics *gg)
         return;
     }
 
+    MapPtr map = getMap();
+    if (!map)
+    {
+        return;
+    }
+
     gg->pushAndCompose(getLayerTransform());
     QPen pen(colors.getNextColor().color);
 
-    for (auto e = getReadOnlyMap()->getEdges()->begin(); e != getReadOnlyMap()->getEdges()->end(); e++)
+    for (auto edge : map->getEdges())
     {
-        EdgePtr edge = *e;
         gg->drawEdge(edge,pen);
-     }
+    }
 
-     gg->pop();
+    gg->pop();
 }
 

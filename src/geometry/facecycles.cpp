@@ -12,11 +12,11 @@ FaceSet FaceCycles::getFaceSet(MapPtr map)
 
     FaceSet set;
 
-    int sz = map->getVertices()->size();
-    for( int idx = 0; idx < sz; ++idx )
+    int sz = map->getVertices().size();
+    for (int idx = 0; idx < sz; ++idx )
     {
-        VertexPtr v = map->getVertices()->at(idx);
-        v->setTmpIndex(idx);
+        VertexPtr v = map->getVertices().at(idx);
+        v->setTmpVertexIndex(idx);
     }
 
     findAllCycles();
@@ -44,12 +44,11 @@ void FaceCycles::findAllCycles()
 {
     qDebug() << "FaceCycles::findAllCycles()";
     int count = 1;
-    for(auto it = map->getEdges()->begin(); it != map->getEdges()->end(); it++)
+    for (auto edge : map->getEdges())
     {
-        EdgePtr edge = *it;
-        findNewCycles( vector<int>(1,edge->getV1()->getTmpIndex()));
+        findNewCycles( vector<int>(1,edge->getV1()->getTmpVertexIndex()));
         qDebug() << "processed edgeV1=" << count;
-        findNewCycles( vector<int>(1,edge->getV2()->getTmpIndex()));
+        findNewCycles( vector<int>(1,edge->getV2()->getTmpVertexIndex()));
         qDebug() << "processed edgeV2=" << count;
     }
     qDebug() << "FaceCycles::findAllCycles() - COMPLETE";
@@ -83,11 +82,10 @@ void FaceCycles::findNewCycles(vector<int> sub_path)
     int next_node;
 
     // visit each edge and each node of each edge
-    for(auto it = map->getEdges()->begin(); it != map->getEdges()->end(); it++)
+    for (auto edge : map->getEdges())
     {
-        EdgePtr edge = *it;
-        int node1 = edge->getV1()->getTmpIndex();
-        int node2 = edge->getV2()->getTmpIndex();
+        int node1 = edge->getV1()->getTmpVertexIndex();
+        int node2 = edge->getV2()->getTmpVertexIndex();
         if( node1 == start_node || node2 == start_node)
         {
             if(node1 == start_node)

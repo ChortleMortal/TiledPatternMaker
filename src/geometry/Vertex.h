@@ -36,16 +36,9 @@
 #include <QtCore>
 #include <list>
 #include "base/shared.h"
+#include "style/InterlaceInfo.h"
 
 using std::list;
-
-struct BeforeAndAfter
-{
-    EdgePtr before;
-    EdgePtr after;
-};
-
-class interlaceInfo;
 
 class Vertex
 {
@@ -60,47 +53,24 @@ public:
     QPointF getPosition() const {return pos;}
     void    setPosition(QPointF pt) {pos = pt;}
 
-    interlaceInfo * getInterlaceInfo();
-    void setInterlaceInfo(interlaceInfo * info);
-
-    int numEdges()       { return neighbours.size(); }
-    int numNeighbours()  { return neighbours.size(); }
-
-    BeforeAndAfter   getBeforeAndAfter(EdgePtr edge);
-    EdgePtr          getNeighbour(const VertexPtr other);
-    QVector<EdgePtr> & getNeighbours();
-    QVector<EdgePtr> & getEdges();
+    interlaceInfo & getInterlaceInfo() {  return interlaceData; }
+    void            initInterlaceInfo() { interlaceData.init(); }
 
     qreal getAngle(EdgePtr edge);
 
-    bool connectsTo(VertexPtr other);
-    bool isNear(VertexPtr other);
-
-    void insertNeighbour(EdgePtr np);
-    void insertEdge(EdgePtr edge);
-    void insertEdgeSimple(EdgePtr edge) { neighbours.push_back(edge); }
-    void removeEdge(EdgePtr edge );
-	void swapEdge(VertexPtr other, EdgePtr nedge);
-    void sortEdgesByAngle();
 
     void applyRigidMotion(QTransform T);
 
     static int refs;
 
-    QString dumpNeighbours();
-    void setTmpIndex(int i) { tmpIndex = i; }
-    int  getTmpIndex()      { return tmpIndex; }
+    void    setTmpVertexIndex(int i) { tmpVertexIndex = i; }
+    int     getTmpVertexIndex()      { return tmpVertexIndex; }
 
 private:
     QPointF       pos;
     VertexPtr     copy; 	// Used when cloning the map.
-    interlaceInfo * interlaceData;
-    int             tmpIndex;
-
-    // DAC: OMG  in taprats this was a forward linked list of neigbour classes
-    // IMHO this added complexity but no value and is replaced by a vector of edges
-    // This vector needs to be sorted by angle
-    QVector<EdgePtr>  neighbours;
+    interlaceInfo interlaceData;
+    int           tmpVertexIndex;
 };
 
 #endif

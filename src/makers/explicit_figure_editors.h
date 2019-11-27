@@ -41,9 +41,7 @@ public:
 
     FigurePtr getFigure() override;
 
-    virtual void resetWithFigure(FigurePtr figure) override;
-    virtual void updateGeometry() override;
-    virtual void updateLimits() override;
+    virtual void resetWithFigure(FigurePtr fig) override;
 
 protected:
     ExplicitPtr   explicitFig;
@@ -70,7 +68,7 @@ public:
     ExplicitGirihEditor(FigureMaker * ed, QString aname);
 
     FigurePtr  getFigure() override;
-    void resetWithFigure(FigurePtr figure) override;
+    void resetWithFigure(FigurePtr fig) override;
 
 private:
     void updateGeometry() override;
@@ -106,7 +104,7 @@ public:
     ExplicitHourglassEditor(FigureMaker * ed, QString aname);
 
     FigurePtr getFigure() override;
-    void resetWithFigure(FigurePtr figure) override;
+    void resetWithFigure(FigurePtr fig) override;
 
 private:
     void updateLimits() override;
@@ -136,11 +134,10 @@ public:
 
     FigurePtr getFigure() override;
 
-    void resetWithFigure(FigurePtr figure) override;
+    void resetWithFigure(FigurePtr fig) override;
 
 private:
     void updateGeometry() override;
-    void updateLimits() override;
 
     ExplicitPtr   explicitFig;
 };
@@ -167,13 +164,14 @@ public:
     ExplicitIntersectEditor(FigureMaker * ed, QString aname);
 
     FigurePtr getFigure() override;
-    void resetWithFigure(FigurePtr figure) override;
+    void resetWithFigure(FigurePtr fig) override;
 
 private:
     void updateGeometry() override;
     void updateLimits() override;
 
-    ExplicitPtr              fig;
+    ExplicitPtr              intersect;
+
     SliderSet              * side;
     DoubleSliderSet        * skip;
     SliderSet              * s;
@@ -194,7 +192,7 @@ private:
 // the explicit map directly by hand, beginning with a vertex in the
 // centre of every edge of the feature.
 
-class ExplicitRosetteEditor : public RosetteEditor
+class ExplicitRosetteEditor : public FigureEditor
 {
     Q_OBJECT
 
@@ -203,13 +201,15 @@ public:
 
     FigurePtr getFigure() override;
 
-    void resetWithFigure(FigurePtr figure) override;
+    void resetWithFigure(FigurePtr fig) override;
 
 private:
     void updateLimits() override;
     void updateGeometry() override;
 
-    DoubleSliderSet	*	r;
+    DoubleSliderSet	*	q_slider;
+    SliderSet       *   s_slider;
+    DoubleSliderSet	*	r_slider;
 
     ExplicitPtr expRoseFig;
 };
@@ -220,7 +220,7 @@ private:
 //
 // The controls for editing a Star.  Glue code, just like RosetteEditor.
 
-class ExplicitStarEditor : public StarEditor
+class ExplicitStarEditor : public FigureEditor
 {
     Q_OBJECT
 
@@ -229,14 +229,17 @@ public:
 
     FigurePtr getFigure() override;
 
-    void resetWithFigure(FigurePtr figure) override;
+    void resetWithFigure(FigurePtr fig) override;
 
 protected:
     void updateGeometry() override;
     void updateLimits() override;
 
 private:
-    ExplicitPtr starFig;
+    ExplicitPtr     expStarFig;
+
+    SliderSet       * s_slider;
+    DoubleSliderSet * d_slider;
 };
 
 
@@ -254,11 +257,10 @@ public:
     ExplicitFeatureEditor(FigureMaker * ed, QString aname);
 
     FigurePtr getFigure() override;
-    void resetWithFigure(FigurePtr figure) override;
+    void resetWithFigure(FigurePtr fig) override;
 
 private:
     void updateGeometry() override;
-    void updateLimits() override;
 
     ExplicitPtr featFig;
 };

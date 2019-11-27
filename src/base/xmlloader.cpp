@@ -206,7 +206,7 @@ void XmlLoader::processDesign(xml_node & node)
 
 void XmlLoader::processThick(xml_node & node)
 {
-    QColor  color;
+    ColorSet  colorset;
     bool    draw_outline = false;
     qreal   width        = 0.0;
     PrototypePtr proto;
@@ -223,7 +223,7 @@ void XmlLoader::processThick(xml_node & node)
         else if (str == "style.Style")
             processStyleStyle(n,proto,poly);
         else if (str == "style.Colored")
-            processColorSet(n,color);
+            processColorSet(n,colorset);
         else if (str == "style.Thick")
             processsStyleThick(n,draw_outline,width);
         else
@@ -233,7 +233,7 @@ void XmlLoader::processThick(xml_node & node)
     qDebug() << "Constructing Thick from prototype and poly";
     Thick * thick = new Thick(proto,poly);
     thick->setDeltas(xf);
-    thick->setColor(color);
+    thick->setColorSet(colorset);
     thick->setDrawOutline(draw_outline);
     thick->setLineWidth(width);
 
@@ -245,7 +245,7 @@ void XmlLoader::processThick(xml_node & node)
 
 void XmlLoader::processInterlace(xml_node & node)
 {
-    QColor  color;
+    ColorSet  colorset;
     PrototypePtr proto;
     PolyPtr poly;
     bool    draw_outline    = false;
@@ -265,7 +265,7 @@ void XmlLoader::processInterlace(xml_node & node)
         else if (str == "style.Style")
             processStyleStyle(n,proto,poly);
         else if (str == "style.Colored")
-            processColorSet(n,color);
+            processColorSet(n,colorset);
         else if (str == "style.Thick")
             processsStyleThick(n,draw_outline,width);
         else if (str == "style.Interlace")
@@ -277,7 +277,7 @@ void XmlLoader::processInterlace(xml_node & node)
     qDebug() << "Constructing Interlace (DAC) from prototype and poly";
     Interlace * interlace = new Interlace(proto,poly);
     interlace->setDeltas(xf);
-    interlace->setColor(color);
+    interlace->setColorSet(colorset);
     interlace->setDrawOutline(draw_outline);
     interlace->setLineWidth(width);
     interlace->setGap(gap);
@@ -291,7 +291,7 @@ void XmlLoader::processInterlace(xml_node & node)
 
 void XmlLoader::processOutline(xml_node & node)
 {
-    QColor  color;
+    ColorSet  colorset;
     bool    draw_outline = false;
     qreal   width        = 0.0;
     PrototypePtr proto;
@@ -308,7 +308,7 @@ void XmlLoader::processOutline(xml_node & node)
         else if (str == "style.Style")
             processStyleStyle(n,proto,poly);
         else if (str == "style.Colored")
-            processColorSet(n,color);
+            processColorSet(n,colorset);
         else if (str == "style.Thick")
             processsStyleThick(n,draw_outline,width);
         else
@@ -318,7 +318,7 @@ void XmlLoader::processOutline(xml_node & node)
     qDebug() << "Constructing Outline from prototype and poly";
     Outline * outline = new Outline(proto,poly);
     outline->setDeltas(xf);
-    outline->setColor(color);
+    outline->setColorSet(colorset);
     outline->setDrawOutline(draw_outline);
     outline->setLineWidth(width);
 
@@ -396,13 +396,13 @@ void XmlLoader::processFilled(xml_node & node)
     {
         // old - redundant way of dealing with colors
         ColorSet & csetW = filled->getWhiteColorSet();
-        csetW.setColor(colorSet.getColor(0));
+        csetW.addColor(colorSet.getColor(0));
 
         ColorSet & csetB = filled->getBlackColorSet();
         if (colorSet.size() >= 2)
-            csetB.setColor(colorSet.getColor(1));
+            csetB.addColor(colorSet.getColor(1));
         else
-            csetB.setColor(colorSet.getColor(0));
+            csetB.addColor(colorSet.getColor(0));
     }
     else
     {
@@ -435,7 +435,7 @@ void XmlLoader::processFilled(xml_node & node)
         {
             // last resort
             ColorSet cs;
-            cs.setColor(Qt::black);
+            cs.addColor(Qt::black);
             cgroup.addColorSet(cs);
         }
 #endif
@@ -452,7 +452,7 @@ void XmlLoader::processFilled(xml_node & node)
 
 void XmlLoader::processPlain(xml_node & node)
 {
-    QColor  color;
+    ColorSet  colorset;
     PrototypePtr proto;
     PolyPtr poly;
     Xform   xf;
@@ -467,14 +467,14 @@ void XmlLoader::processPlain(xml_node & node)
         else if (str == "style.Style")
             processStyleStyle(n,proto,poly);
         else if (str == "style.Colored")
-            processColorSet(n,color);
+            processColorSet(n,colorset);
         else
             fail("Unexpected", str.c_str());
     }
 
     Plain * plain = new Plain(proto,poly);
     plain->setDeltas(xf);
-    plain->setColor(color);
+    plain->setColorSet(colorset);
     qDebug().noquote() << "XmlServices created Style (Plain)" << plain->getInfo();
     _styledDesign.addStyle(StylePtr(plain));
 
@@ -483,7 +483,7 @@ void XmlLoader::processPlain(xml_node & node)
 
 void XmlLoader::processSketch(xml_node & node)
 {
-    QColor  color;
+    ColorSet  colorset;
     PrototypePtr proto;
     PolyPtr poly;
     Xform   xf;
@@ -498,14 +498,14 @@ void XmlLoader::processSketch(xml_node & node)
         else if (str == "style.Style")
             processStyleStyle(n,proto,poly);
         else if (str == "style.Colored")
-            processColorSet(n,color);
+            processColorSet(n,colorset);
         else
             fail("Unexpected", str.c_str());
     }
 
     Sketch * sketch = new Sketch(proto,poly);
     sketch->setDeltas(xf);
-    sketch->setColor(color);
+    sketch->setColorSet(colorset);
     qDebug().noquote() << "XmlServices created Style (Sketch)" << sketch->getInfo();
     _styledDesign.addStyle(StylePtr(sketch));
 
@@ -514,7 +514,7 @@ void XmlLoader::processSketch(xml_node & node)
 
 void XmlLoader::processEmboss(xml_node & node)
 {
-    QColor  color;
+    ColorSet  colorset;
     bool    draw_outline = false;
     qreal   width        = 0.0;
     qreal   angle        = 0.0;
@@ -532,7 +532,7 @@ void XmlLoader::processEmboss(xml_node & node)
         else if (str == "style.Style")
             processStyleStyle(n,proto,poly);
         else if (str == "style.Colored")
-            processColorSet(n,color);
+            processColorSet(n,colorset);
         else if (str == "style.Thick")
             processsStyleThick(n,draw_outline,width);
         else if (str == "style.Emboss")
@@ -544,7 +544,7 @@ void XmlLoader::processEmboss(xml_node & node)
     qDebug() << "Constructing Emboss from prototype and poly";
     Emboss * emboss = new Emboss(proto,poly);
     emboss->setDeltas(xf);
-    emboss->setColor(color);
+    emboss->setColorSet(colorset);
     emboss->setDrawOutline(draw_outline);
     emboss->setLineWidth(width);
     emboss->setAngle(angle);
@@ -647,12 +647,13 @@ void XmlLoader::processStyleStyle(xml_node & node, PrototypePtr & proto, PolyPtr
     qDebug().noquote() << proto->getInfo();
 }
 
+#if 0
 void XmlLoader::processColorSet(xml_node & node, QColor & color)
 {
     xml_node n   = node.child("color");
     color        = processColor(n);
 }
-
+#endif
 void XmlLoader::processColorSet(xml_node & node, ColorSet &colorSet)
 {
     bool hide = false;
@@ -1051,9 +1052,11 @@ ExplicitPtr XmlLoader::getExplicitFigure(xml_node & node, eFigType figType)
         return ep;
     }
 
-    MapPtr map = getMap(node);
-    map->verify("XML Explicit figure",false,true);
-    ep = make_shared<ExplicitFigure>(map,figType);
+    qDebug() << "getExplicitFigure";
+
+    _currentMap = getMap(node);
+
+    ep = make_shared<ExplicitFigure>(_currentMap,figType);
 
     if (figType == FIG_TYPE_GIRIH)
     {
@@ -1093,7 +1096,7 @@ ExplicitPtr XmlLoader::getExplicitFigure(xml_node & node, eFigType figType)
 
         ep->s = s;
         ep->q = q;
-        ep->r = r;
+        ep->setFigureRotate(r);
     }
     else if (figType == FIG_TYPE_HOURGLASS)
     {
@@ -1143,10 +1146,9 @@ StarPtr XmlLoader::getStarFigure(xml_node & node)
         return f;
     }
 
-    static int count = 0;
-    MapPtr map = getMap(node);
-    qDebug() << "XML Input - verifying Map" << count++;
-    map->verify("XML Star figure",false);
+    qDebug() << "getStarFigure";
+
+    _currentMap = getMap(node);
 
     QString str;
     str = node.child_value("n");
@@ -1179,10 +1181,9 @@ ExtStarPtr  XmlLoader::getExtendedStarFigure(xml_node & node)
         return f;
     }
 
-    static int count = 0;
-    MapPtr map = getMap(node);
-    qDebug() << "XML Input - verifying Map" << count++;
-    map->verify("XML Star figure",false);
+    qDebug() << "getExtendedStarFigure";
+
+    _currentMap = getMap(node);
 
     bool extendPeripherals   = false;   // default
     bool extendFreeVertices  = true;    // default
@@ -1264,10 +1265,9 @@ ExtRosettePtr  XmlLoader::getExtendedRosetteFigure(xml_node & node)
         return f;
     }
 
-    static int count = 0;
-    MapPtr map = getMap(node);
-    qDebug() << "XML Input - verifying Map" << count++;
-    map->verify("XML Extended Rosette figure",false);
+    qDebug() << "getExtendedRosetteFigure";
+
+    _currentMap = getMap(node);
 
     bool extendPeripherals       = false;     // default
     bool extendFreeVertices      = true;    // default
@@ -1359,7 +1359,7 @@ RosetteConnectPtr XmlLoader::getRosetteConnectFigure(xml_node & node)
                                                 rp->getQ(),
                                                 rp->getS(),
                                                 rp->getK(),
-                                                rp->getR());
+                                                rp->getFigureRotate());
         setRosetteConnectReference(node,rcp);
         qDebug() << rcp->getFigureDesc();
     }
@@ -1373,99 +1373,161 @@ RosetteConnectPtr XmlLoader::getRosetteConnectFigure(xml_node & node)
 MapPtr XmlLoader::getMap(xml_node &node)
 {
     //qDebug() << node.name();
-    MapPtr map;
     //qDebug() << "use count=" << map.use_count();
     xml_node xmlmap = node.child("map");
 
     if (hasReference(xmlmap))
     {
-        map =  getMapReferencedPtr(xmlmap);
-        return map;
+        _currentMap =  getMapReferencedPtr(xmlmap);
+        return _currentMap;
     }
     else
     {
-        map = make_shared<Map>();
+        _currentMap = make_shared<Map>("currentMap");
         //qDebug() << "use count=" << map.use_count();
-        setMapReference(xmlmap,map);
+        setMapReference(xmlmap,_currentMap);
     }
 
     // vertices
     xml_node vertices = xmlmap.child("vertices");
-    xml_node vertex;
-    for (vertex = vertices.child("Vertex"); vertex; vertex = vertex.next_sibling("Vertex"))
+    for (xml_node vertex = vertices.child("Vertex"); vertex; vertex = vertex.next_sibling("Vertex"))
     {
         VertexPtr v = getVertex(vertex);
-        map->vertices.push_back(v);
+        _currentMap->vertices.push_back(v);
     }
 
-    // Edges
-    xml_node edges = xmlmap.child("edges");
-    xml_node edge;
-    for (edge = edges.child("Edge"); edge; edge = edge.next_sibling("Edge"))
+    if (_version < 5)
     {
-        EdgePtr e = getEdge(edge);
-        map->edges.push_back(e);
+        // Edges
+        xml_node edges = xmlmap.child("edges");
+        for (xml_node edge = edges.child("Edge"); edge; edge = edge.next_sibling("Edge"))
+        {
+            EdgePtr e = getEdge(edge);
+            _currentMap->edges.push_back(e);
+        }
+    }
+    else
+    {
+        // Edges
+        xml_node edges = xmlmap.child("edges");
+        for (xml_node e = edges.first_child(); e; e= e.next_sibling())
+        {
+            QString name = e.name();
+            if (name == "Edge")
+            {
+                EdgePtr ep = getEdge(e);
+                _currentMap->edges.push_back(ep);
+            }
+            else if (name == "curve")
+            {
+                EdgePtr ep = getCurve(e);
+                _currentMap->edges.push_back(ep);
+            }
+        }
+
+        // Neighbours
+        NeighbourMap & nmap = _currentMap->getNeighbourMap();
+        QMap<VertexPtr,NeighboursPtr> & qnmap = nmap.get();
+        xml_node neighbours = xmlmap.child("neighbours");
+        for (xml_node set = neighbours.child("neighbourset"); set; set = set.next_sibling("neighbourset"))
+        {
+            VertexPtr v = getVertexReferencedPtr(set);
+            NeighboursPtr n = make_shared<Neighbours>(v);
+            QString nbs = set.child_value();
+            QStringList nbslst = nbs.split(",");
+            for (auto str : nbslst)
+            {
+                int id = str.toInt();
+                EdgePtr e = EdgePtr(edge_ids[id]);
+                Q_ASSERT(e);
+                n->insertEdgeSimple(e);
+            }
+            qnmap[v] = n;
+        }
     }
 
-    // sort neigbours
-    map->sortAllNeighboursByAngle();
+    if (!_currentMap->verifyMap("XML Loader"))
+    {
+        _currentMap->cleanse();
+        if (!_currentMap->verifyMap("XML Loader - cleanse"))
+        {
+            QMessageBox box;
+            box.setIcon(QMessageBox::Warning);
+            box.setText("XML Loader: map verify failed after cleanse");
+            box.exec();
+        }
+    }
 
-    return map;
+    return _currentMap;
 }
 
 
 VertexPtr XmlLoader::getVertex(xml_node & node)
 {
-   if (hasReference(node))
-   {
-       vRefrCnt++;
-       return getVertexReferencedPtr(node);
-   }
+    if (hasReference(node))
+    {
+        vRefrCnt++;
+        return getVertexReferencedPtr(node);
+    }
 
-   // pos
-   xml_node pos = node.child("pos");
-   QPointF pt;
-   if (_version < 2)
-   {
+    // pos
+    xml_node pos = node.child("pos");
+    QPointF pt;
+    if (_version < 2)
+    {
         QString str;
         str = pos.child_value("x");
         qreal x = str.toDouble();
         str = pos.child_value("y");
         qreal y = str.toDouble();
         pt = QPointF(x,y);
-   }
-   else
-   {
-       pt = getPos(pos);
-   }
-   vOrigCnt++;
-   VertexPtr v = make_shared<Vertex>(pt);
-   setVertexReference(node,v);
+    }
+    else
+    {
+        pt = getPos(pos);
+    }
+    vOrigCnt++;
+    VertexPtr v = make_shared<Vertex>(pt);
+    setVertexReference(node,v);
 
-   // edges = neighbour
-   xml_node edges2 = node.child("edges2");
-   if (edges2)
-   {
-       xml_node e;
-       for (e = edges2.first_child(); e; e= e.next_sibling())
-       {
-           QString name = e.name();
-           EdgePtr ep;
-           if (name == "edge")
-           {
-                ep = getEdge(e);
-           }
-           else if (name == "curve")
-           {
-               ep = getCurve(e);
-           }
-           v->insertEdgeSimple(ep);
-       }
-   }
-   else
-       qWarning("edges2 not found");
+    if (_version >= 5)
+    {
+        return v;
+    }
 
-   return v;
+    // the old way
+    NeighbourMap & nmap = _currentMap->getNeighbourMap();
+    nmap.insertVertex(v);
+
+    NeighboursPtr np = nmap.getNeighbours(v);
+
+    // edges = neighbour
+    xml_node edges2 = node.child("edges2");
+    if (edges2)
+    {
+        xml_node e;
+        for (e = edges2.first_child(); e; e= e.next_sibling())
+        {
+            QString name = e.name();
+            if (name == "edge")
+            {
+                EdgePtr ep = getEdge(e);
+                np->insertEdgeSimple(ep);
+            }
+            else if (name == "curve")
+            {
+                EdgePtr ep = getCurve(e);
+                np->insertEdgeSimple(ep);
+            }
+        }
+    }
+    else
+    {
+        qWarning("edges2 not found");
+    }
+
+
+    return v;
 }
 
 EdgePtr XmlLoader::getEdge(xml_node & node)
@@ -1483,7 +1545,10 @@ EdgePtr XmlLoader::getEdge(xml_node & node)
     setEdgeReference(node,edge);        // early for recursion
     //qDebug() << "created Edge" << Utils::addr(edge.get());
 
-    MapPtr map = getMap(node);
+    if (_version < 5)
+    {
+        _currentMap = getMap(node);
+    }
 
     xml_node v1node = node.child("v1");
     VertexPtr v1 = getVertex(v1node);
@@ -1491,9 +1556,15 @@ EdgePtr XmlLoader::getEdge(xml_node & node)
     xml_node v2node = node.child("v2");
     VertexPtr v2 = getVertex(v2node);
 
+#if 0
+    Neighbours nbs = _currentMap->getNeighbours()[v1];
+    nbs.setVertex(v2);
+    nbs = _currentMap->getNeighbours()[v2];
+    nbs.setVertex(v1);
+#endif
     edge->setV1(v1);
     edge->setV2(v2);
-    //qDebug() << "created Edge" << Utils::addr(edge.get()) << Utils::addr(v1.get()) << Utils::addr(v2.get());
+    qDebug() << "Edge" << Utils::addr(edge.get()) << "added" << v1->getPosition() << v2->getPosition();
 
     return edge;
 }
@@ -1513,11 +1584,16 @@ EdgePtr XmlLoader::getCurve(xml_node & node)
     setEdgeReference(node,edge);        // early for recursion
     //qDebug() << "created Edge" << Utils::addr(edge.get());
 
-    MapPtr map = getMap(node);
+    if (_version < 5)
+    {
+        _currentMap = getMap(node);
+    }
 
+    Neighbours n1;
     xml_node v1node = node.child("v1");
     VertexPtr v1 = getVertex(v1node);
 
+    Neighbours n2;
     xml_node v2node = node.child("v2");
     VertexPtr v2 = getVertex(v2node);
 
@@ -1697,7 +1773,10 @@ VertexPtr XmlLoader::getVertexReferencedPtr(xml_node & node)
         qDebug() << "using reference" << id;
 #endif
         retval = VertexPtr(vertex_ids[id]);
-        //if (retval == NULL) qCritical() << "reference:" << id << "- NOT FOUND";
+        if (!retval)
+        {
+            qCritical() << "reference id:" << id << "- NOT FOUND";
+        }
     }
     return retval;
 }

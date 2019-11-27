@@ -23,12 +23,12 @@ void MapMouseAction::updateDragging(QPointF spt)
 
 void MapMouseAction::draw(QPainter *painter)
 {
-    Q_UNUSED(painter);
+    Q_UNUSED(painter)
 }
 
 void MapMouseAction::endDragging(QPointF spt)
 {
-    Q_UNUSED(spt);
+    Q_UNUSED(spt)
     me->forceRedraw();
 }
 
@@ -38,7 +38,7 @@ void MapMouseAction::endDragging(QPointF spt)
 ///
 /////////
 
-MoveVertex::MoveVertex(MapEditor * me, VertexPtr vp, QPointF spt ) : MapMouseAction(me,spt)
+MoveVertex::MoveVertex(MapEditor * maped, VertexPtr vp, QPointF spt ) : MapMouseAction(maped,spt)
 {
     desc = "MoveVertex";
     _vp  = vp;
@@ -64,30 +64,30 @@ void MoveVertex::endDragging( QPointF spt)
 
     // if new vertex is over an old vertex, delete this vertex, and
     // replace old vertex in edges
-
-    MapSelectionPtr sel  = me->findVertex(spt,_vp);
-    SelectionSet    set  = me->findEdges(spt,_vp->getEdges());
+    NeighbourMap & nmap  = map->getNeighbourMap();
+    NeighboursPtr     np = nmap.getNeighbours(_vp);
+    MapSelectionPtr  sel = me->findVertex(spt,_vp);
+    SelectionSet     set = me->findEdges(spt,np->getNeighbours());
     MapSelectionPtr sel2 = me->findAnEdge(set);
     if (sel)
     {
         VertexPtr existing = sel->getVertex();
-        QVector<EdgePtr> eps = _vp->getEdges();
-        for (auto it = eps.begin(); it != eps.end(); it++)
+        for (auto ep : np->getNeighbours())
         {
-            EdgePtr ep = *it;
             Q_ASSERT(map->contains(ep));
             if (ep->getV1() == _vp)
             {
-                ep->setV1(existing);     // substitute
+                ep->setV1(existing);    // substitute
             }
             else
             {
                 Q_ASSERT(ep->getV2() == _vp);
-                ep->setV2(existing);     // substitue
+                ep->setV2(existing);    // substitue
             }
-            existing->insertEdge(ep);    // connect
+            NeighboursPtr np2 = nmap.getNeighbours(existing);
+            np2->insertEdge(ep);        // connect
         }
-        map->removeVertexSimple(_vp);    // delete
+        map->removeVertexSimple(_vp);   // delete
         qDebug() << "SNAPTO vertex";
         edited = true;
     }
@@ -143,7 +143,7 @@ void MoveVertex::endDragging( QPointF spt)
         map->joinColinearEdges();
         map->divideIntersectingEdges();
 
-        map->verify("modifed fig map",false,true);
+        map->verifyMap("modifed fig map");
     }
 
     MapMouseAction::endDragging(spt);
@@ -164,7 +164,7 @@ void MoveVertex::draw(QPainter* painter)
 ///
 /////////
 
-MoveEdge::MoveEdge(MapEditor * me, EdgePtr edge, QPointF spt ) : MapMouseAction(me,spt)
+MoveEdge::MoveEdge(MapEditor * maped, EdgePtr edge, QPointF spt ) : MapMouseAction(maped,spt)
 {
     desc  = "MoveEdge";
     _edge = edge;
@@ -205,7 +205,7 @@ void MoveEdge::endDragging(QPointF spt)
 ///
 /////////
 
-DrawLine::DrawLine(MapEditor * me, SelectionSet & set, QPointF spt) : MapMouseAction(me,spt)
+DrawLine::DrawLine(MapEditor * maped, SelectionSet & set, QPointF spt) : MapMouseAction(maped,spt)
 {
     start = nullptr;
     end   = nullptr;
@@ -342,8 +342,8 @@ void DrawLine::draw(QPainter * painter)
 ///
 /////////
 
-ConstructionLine::ConstructionLine(MapEditor * me, SelectionSet & set, QPointF spt)
-    : DrawLine(me, set, spt)
+ConstructionLine::ConstructionLine(MapEditor * maped, SelectionSet & set, QPointF spt)
+    : DrawLine(maped, set, spt)
 {
     desc = "ConstructionLine";
 }
@@ -389,7 +389,7 @@ void ConstructionLine::endDragging( QPointF spt)
 ///
 /////////
 
-ExtendLine::ExtendLine(MapEditor * me, SelectionSet & set, QPointF spt) : MapMouseAction(me,spt)
+ExtendLine::ExtendLine(MapEditor * maped, SelectionSet & set, QPointF spt) : MapMouseAction(maped,spt)
 {
     desc = "ExtendLine";
 
@@ -548,8 +548,8 @@ void ExtendLine::flipDirection()
     }
 }
 
-MoveConstructionCircle::MoveConstructionCircle(MapEditor * me, CirclePtr circle, QPointF spt)
-    : MapMouseAction(me,spt)
+MoveConstructionCircle::MoveConstructionCircle(MapEditor * maped, CirclePtr circle, QPointF spt)
+    : MapMouseAction(maped,spt)
 {
     desc = "MoveConstructionCircle";
     origCircle    = circle;

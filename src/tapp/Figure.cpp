@@ -42,14 +42,14 @@ int Figure::refs = 0;
 Figure::Figure()
 {
     refs++;
-    figType    = FIG_TYPE_UNDEFINED;
-
+    figType           = FIG_TYPE_UNDEFINED;
     extBoundarySides  = 1;  // defaults to a circle
     extBoundaryScale  = 1.0;
     figureScale       = 1.0;
+    figureRotate      = 0.0;
     hasCircleBoundary = true;
 
-    figureMap = make_shared<Map>();
+    figureMap = make_shared<Map>("figureMap");
 }
 
 Figure::Figure(const Figure & other)
@@ -61,6 +61,7 @@ Figure::Figure(const Figure & other)
     extBoundarySides  = other.extBoundarySides;
     extBoundaryScale  = other.extBoundaryScale;
     figureScale       = other.figureScale;
+    figureRotate      = other.figureRotate;
 
     radialFigBoundary = other.radialFigBoundary;
     extBoundary       = other.extBoundary;
@@ -122,12 +123,22 @@ void Figure::buildExtBoundary()
         Feature f2(extBoundarySides);
         extBoundary = f2.getPoints();
         extBoundary = qTrans.map(extBoundary);
-        qDebug() << "Ext boundary:" << extBoundary;
+        //qDebug() << "Ext boundary:" << extBoundary;
         hasCircleBoundary = false;
     }
     else
     {
-        qDebug() << "circular boundary";
+        //qDebug() << "circular boundary";
         hasCircleBoundary = true;
+    }
+}
+
+void Figure::annotate()
+{
+    MapPtr map = getFigureMap();
+
+    for (auto edge : map->getEdges())
+    {
+        qDebug() << "todo";
     }
 }

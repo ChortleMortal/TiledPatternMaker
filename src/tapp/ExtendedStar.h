@@ -33,13 +33,13 @@ class ExtendedStar : public Star
 
 public:
     ExtendedStar(int n, qreal d, int s,
-                 qreal r = 0.0,
+                 qreal figureRotate = 0.0,
                  bool  extendPeripherals  = false,
                  bool  extendFreeVertices = true);
 
     ExtendedStar(const Figure &fig,
                  int n, qreal d, int s,
-                 qreal r = 0.0,
+                 qreal figureRotate = 0.0,
                  bool  extendPeripherals  = false,
                  bool  extendFreeVertices = true);
     virtual ~ExtendedStar() override {}

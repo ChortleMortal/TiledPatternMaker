@@ -26,40 +26,48 @@
 #define QTAPPLOG_H
 
 #include <QtCore>
-#include <string>
-
-using std::string;
+#include <QTextDocument>
+#include <QTextEdit>
 
 class qtAppLog
 {
 public:
     static qtAppLog  * getInstance();
     static void        releaseInstance();
-    static void		   crashMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg);
 
-    void logDebugMessages(bool enable);
+    static QTextEdit * getTextEditor() { return ted; }
+
+    static void crashMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg);
+
+    void logToStdErr(bool enable) { _logToStderr = enable; }
+    void logToDisk(bool enable)   { _logToDisk   = enable; }
+    void logToPanel(bool enable)  { _logToPanel  = enable; }
     void copyLog(QString name);
+    void saveLog(QString name);
+
+    static QString currentLogName;
 
 protected:
     qtAppLog();
     ~qtAppLog();
 
-    void rotate();
-    void log(QtMsgType type, QString & msg);
+    void log(QString & msg);
 
 private:
-    static qtAppLog * mpThis;
-    static QMutex	* pLogLock;
+    static qtAppLog  * mpThis;
+    static QMutex	 * pLogLock;
+    static QTextEdit * ted;
+
+    static bool	_logToStderr;
+    static bool _logToDisk;
+    static bool _logToPanel;
+    static bool	_active;
 
     QString path;
-    QString oldLogName;
-    QString currentLogName;
 
     QElapsedTimer elapseTimer;
 
     QFile	mCurrentFile;
-    bool	mbLogDebugMessages;
-    bool	active;
 };
 
-#endif // QTAPPLOG_H
+#endif

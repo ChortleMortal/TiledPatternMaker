@@ -36,15 +36,15 @@
 #include "tapp/RosetteConnectFigure.h"
 #include "geometry/Loose.h"
 
-RosetteConnectFigure::RosetteConnectFigure(int n, qreal q, int s, qreal k, qreal r)
-    : Rosette(n,q,s,k,r), FigureConnector(this)
+RosetteConnectFigure::RosetteConnectFigure(int nn, qreal q, int s, qreal k, qreal r)
+    : Rosette(nn,q,s,k,r), FigureConnector(this)
 {
     setFigureScale(computeConnectScale());
     setFigType(FIG_TYPE_CONNECT_ROSETTE);
 }
 
-RosetteConnectFigure::RosetteConnectFigure(const Figure & fig, int n, qreal q, int s, qreal k, qreal r)
-    : Rosette(fig, n,q,s,k,r), FigureConnector(this)
+RosetteConnectFigure::RosetteConnectFigure(const Figure & fig, int nn, qreal q, int s, qreal k, qreal r)
+    : Rosette(fig, nn,q,s,k,r), FigureConnector(this)
 {
     setFigureScale(computeConnectScale());
     setFigType(FIG_TYPE_CONNECT_ROSETTE);
@@ -56,10 +56,10 @@ qreal RosetteConnectFigure::computeConnectScale()
     // to compute a scale factor.
 
     setFigureScale(1.0);
-    qreal rot = r;      //save
-    r = 0.0;
+    qreal rot = getFigureRotate();      //save
+    setFigureRotate(0.0);
     MapPtr cunit = Rosette::buildUnit();
-    r = rot;            // restore
+    setFigureRotate(rot);            // restore
     qreal sc = computeScale(cunit);
 
     resetMaps();   // so unit can build
@@ -74,9 +74,9 @@ MapPtr RosetteConnectFigure::buildUnit()
 
     // save
     qreal scale = getFigureScale();
-    qreal rot   = r;
+    qreal rot   = getFigureRotate();
     setFigureScale(1.0);
-    r           = 0.0;
+    setFigureRotate(0.0);
 
     // build Rosette
     unitMap = Rosette::buildUnit();
@@ -84,7 +84,7 @@ MapPtr RosetteConnectFigure::buildUnit()
 
     // restore
     setFigureScale(scale);
-    r           = rot;
+    setFigureRotate(rot);
 
     // extend Rosette
     connectFigure(unitMap);
@@ -101,7 +101,7 @@ MapPtr RosetteConnectFigure::buildUnit()
 
     scaleToUnit(unitMap);
 
-    unitMap->verify("RosetteConnectFigure",true,true,true);
+    unitMap->verifyMap("RosetteConnectFigure");
 
     return unitMap;
 }

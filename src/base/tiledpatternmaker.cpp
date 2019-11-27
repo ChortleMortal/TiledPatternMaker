@@ -93,7 +93,11 @@ void TiledPatternMaker::startEverything()
     connect(canvas, &Canvas::sig_raiseMenu,               this, &TiledPatternMaker::slot_raiseMenu);
 
     // create cycler
-    cycler        = Cycler::getInstance();
+    cyclerWindow = nullptr;
+    cycler = Cycler::getInstance();
+    QThread * thread = new QThread();
+    cycler->moveToThread(thread);
+    thread->start();
 
     connect(this,   &TiledPatternMaker::sig_readyNext,  cycler,  &Cycler::slot_readyNext);
     connect(this,   &TiledPatternMaker::sig_takeNext,   cycler,  &Cycler::slot_nextCycle);
@@ -266,27 +270,49 @@ void TiledPatternMaker::slot_forceUpdateStyles()
     forceUpdateStyles();
 }
 
-void TiledPatternMaker::slot_render()
+void TiledPatternMaker::slot_render(eRender type)
 {
-    StyledDesign & sd  = (config->designViewer == DV_LOADED_STYLE) ? workspace->getLoadedStyles() : workspace->getWsStyles();
+    if (type == RENDER_LOADED)
+    {
+        slot_renderLoaded();
+    }
+    else
+    {
+        Q_ASSERT(type == RENDER_WS);
+        slot_renderWS();
+    }
+}
+
+void TiledPatternMaker::slot_renderWS()
+{
+    StyledDesign & sd  = workspace->getWsStyles();
     resetProtos(sd);
     resetStyles(sd);
+
+    PrototypePtr pp = workspace->getWSPrototype();
+    if (pp)
+    {
+        pp->resetProtoMap();
+    }
+
     emit sig_viewWS();
 }
 
-void TiledPatternMaker::slot_render_styles()
+void TiledPatternMaker::slot_renderLoaded()
 {
-    StyledDesign & sd  = (config->designViewer == DV_LOADED_STYLE) ? workspace->getLoadedStyles() : workspace->getWsStyles();
+    StyledDesign & sd  = workspace->getLoadedStyles();
+    resetProtos(sd);
     resetStyles(sd);
+
+    PrototypePtr pp = workspace->getWSPrototype();
+    if (pp)
+    {
+        pp->resetProtoMap();
+    }
+
     emit sig_viewWS();
 }
 
-void TiledPatternMaker::slot_render_protos()
-{
-    StyledDesign & sd  = (config->designViewer == DV_LOADED_STYLE) ? workspace->getLoadedStyles() : workspace->getWsStyles();
-    resetProtos(sd);
-    emit sig_viewWS();
-}
 
 void TiledPatternMaker::resetProtos(StyledDesign & sd)
 {
@@ -353,11 +379,11 @@ void TiledPatternMaker::slot_splitScreen()
         s.setValue("viewPos",view->pos());
         s.setValue("panelPos", controlPanel->pos());
 
+        QScreen * sc = qApp->screenAt(controlPanel->pos());
         splitter->addWidgets(controlPanel,view);
 
-        QPoint pos = QCursor::pos();
-        int screen = qApp->desktop()->screenNumber(pos);
-        QRect  rec = qApp->desktop()->screen(screen)->geometry();
+
+        QRect  rec = sc->geometry();
 
         splitter->setFixedSize(rec.width(),rec.height());
         splitter->setMinimumSize(rec.width(),rec.height());
@@ -407,6 +433,24 @@ void TiledPatternMaker::SplatCompareResult(QPixmap & pixmap, QString title)
     l->show();
 }
 
+void TiledPatternMaker::SplatShowImage(QImage & image, QString title)
+{
+    cyclerWindow = new AQLabel;
+
+    QPixmap pixmap;
+    pixmap.convertFromImage(image);
+
+    cyclerWindow->resize(pixmap.size());
+    cyclerWindow->setPixmap(pixmap);
+    cyclerWindow->setWindowTitle(title);
+
+    connect(cyclerWindow,  &AQLabel::sig_takeNext,     this,   &TiledPatternMaker::sig_takeNext, Qt::UniqueConnection);
+    connect(cyclerWindow,  &AQLabel::sig_cyclerQuit,   cycler, &Cycler::slot_stopCycle,Qt::UniqueConnection);
+    connect(cyclerWindow,  &AQLabel::sig_view_images,  cycler, &Cycler::slot_view_images,Qt::UniqueConnection);
+
+    cyclerWindow->show();
+}
+
 void TiledPatternMaker::SplatCompareResultTransparent(QPixmap &pixmap, QString title)
 {
     TransparentWidget * l = new TransparentWidget;
@@ -421,11 +465,29 @@ void TiledPatternMaker::SplatCompareResultTransparent(QPixmap &pixmap, QString t
     l->show();
 }
 
+void TiledPatternMaker::slot_compareImagesReplace(QString fileLeft, QString fileRight)
+{
+    if (cyclerWindow)
+    {
+        delete cyclerWindow;
+    }
+    slot_compareImages(fileLeft,fileRight);
+}
+
 
 void TiledPatternMaker::slot_compareImages(QString fileLeft, QString fileRight)
 {
-    bool autoMode   = config->autoCycle;
-    bool stopIfDiff = config->stopIfDiff;
+    static bool showFirst   = false;
+
+    bool autoMode     = config->autoCycle;
+    bool stopIfDiff   = config->stopIfDiff;
+    bool differences  = config->compare_differences;
+    bool pingpong     = config->compare_ping_pong;
+
+    emit sig_image0(fileLeft);
+    emit sig_image1(fileRight);
+
+    QCoreApplication::processEvents();
 
     if (fileRight.isEmpty())
     {
@@ -434,14 +496,19 @@ void TiledPatternMaker::slot_compareImages(QString fileLeft, QString fileRight)
         emit sig_compareResult(str);
         QPixmap  pm = makeTextPixmap(str,fileLeft);
         if (!autoMode || stopIfDiff)
+        {
             SplatCompareResult(pm,str);
+        }
         else
+        {
             emit sig_takeNext();
+        }
         return;
     }
 
     QImage left(fileLeft);
     QImage right(fileRight);
+
     if (left == right)
     {
         qDebug() << "same     " << fileLeft;
@@ -449,58 +516,84 @@ void TiledPatternMaker::slot_compareImages(QString fileLeft, QString fileRight)
         emit sig_compareResult(str);
         QPixmap  pm = makeTextPixmap(str,fileLeft,fileRight);
         if (!autoMode)
+        {
             SplatCompareResult(pm,str);
+        }
         else
+        {
             emit sig_takeNext();
+        }
         return;
     }
 
-
     // files are different
+
     qDebug() << "different" << fileLeft;
     QString str = "Images are different";
     emit sig_compareResult(str);
-    if (autoMode & !stopIfDiff)
+
+    if (autoMode && !stopIfDiff)
     {
         emit sig_takeNext();
         return;
     }
 
-    // display differences
-    if (left.size() != right.size())
+    if  (differences)
     {
-        QString str1 = QString("%1 = %2x%3").arg(fileLeft).arg(left.width()).arg(left.height());
-        QString str2 = QString("%1 = %2x%3").arg(fileRight).arg(right.width()).arg(right.height());
-        QPixmap  pm = makeTextPixmap("Images different sizes:",str1,str2);
-        QString str = "Images are different sizes";
-        emit sig_compareResult(str);
-        SplatCompareResult(pm,str);
-        return;
-    }
-
-    QImage result(left.size(),left.format());
-
-    int w = left.width();
-    int h = left.height();
-
-    for(int i=0; i<h; i++)
-    {
-        QRgb *rgbLeft   = reinterpret_cast<QRgb*>(left.scanLine(i));
-        QRgb *rgbRigth  = reinterpret_cast<QRgb*>(right.scanLine(i));
-        QRgb *rgbResult = reinterpret_cast<QRgb*>(result.scanLine(i));
-        for( int j=0; j<w; j++)
+        // display differences
+        if (left.size() != right.size())
         {
-            rgbResult[j] = rgbLeft[j]-rgbRigth[j];
+            QString str1 = QString("%1 = %2x%3").arg(fileLeft).arg(left.width()).arg(left.height());
+            QString str2 = QString("%1 = %2x%3").arg(fileRight).arg(right.width()).arg(right.height());
+            QPixmap  pm = makeTextPixmap("Images different sizes:",str1,str2);
+            QString str = "Images are different sizes";
+            emit sig_compareResult(str);
+            SplatCompareResult(pm,str);
+            return;
+        }
+
+        QImage result(left.size(),left.format());
+
+        int w = left.width();
+        int h = left.height();
+
+        for(int i=0; i<h; i++)
+        {
+            QRgb *rgbLeft   = reinterpret_cast<QRgb*>(left.scanLine(i));
+            QRgb *rgbRigth  = reinterpret_cast<QRgb*>(right.scanLine(i));
+            QRgb *rgbResult = reinterpret_cast<QRgb*>(result.scanLine(i));
+            for( int j=0; j<w; j++)
+            {
+                rgbResult[j] = rgbLeft[j]-rgbRigth[j];
+            }
+        }
+
+        QPixmap pixmap;
+        pixmap.convertFromImage(result);
+
+        if (config->compare_transparent)
+        {
+            SplatCompareResultTransparent(pixmap, QString("Image Differences (%1) (%2").arg(fileLeft).arg(fileRight));
+        }
+        else
+        {
+            SplatCompareResult(pixmap, QString("Image Differences (%1) (%2").arg(fileLeft).arg(fileRight));
         }
     }
 
-    QPixmap pixmap;
-    pixmap.convertFromImage(result);
-
-    if (config->transparentCompare)
-        SplatCompareResultTransparent(pixmap, QString("Image Differences (%1) (%2").arg(fileLeft).arg(fileRight));
-    else
-        SplatCompareResult(pixmap, QString("Image Differences (%1) (%2").arg(fileLeft).arg(fileRight));
+    if (pingpong)
+    {
+        QPixmap pixmap;
+        showFirst = !showFirst;
+        if (showFirst)
+        {
+            SplatShowImage(left,fileLeft);
+        }
+        else
+        {
+            SplatShowImage(right,fileRight);
+        }
+    }
 }
 
 QPixmap TiledPatternMaker::makeTextPixmap(QString txt,QString txt2,QString txt3)

@@ -1,169 +1,9 @@
 #include "panels/dlg_feature_edit.h"
-#include "tile/Feature.h"
 #include "panels/panel_page.h"
 #include "panels/layout_sliderset.h"
+#include "panels/dlg_line_edit.h"
+#include "tile/Feature.h"
 #include "base/utilities.h"
-
-DlgLineEdit::DlgLineEdit(EdgePoly & epoly, int row, int col) : QLineEdit(),
-  _poly(epoly)
-{
-    canvas = Canvas::getInstance();
-
-    setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(this, &DlgLineEdit::customContextMenuRequested, this, &DlgLineEdit::slot_menu);
-    connect(this, &DlgLineEdit::editingFinished,  this, &DlgLineEdit::slot_editingFinished);
-    this->row = row;
-    this->col = col;
-
-    _orig = _poly[row]->getV1()->getPosition();
-}
-
-void DlgLineEdit::slot_menu(QPointF spt)
-{
-   qDebug() << "menu spt=" << spt;
-   QMenu menu(this);
-   menu.addAction("Round down",this, SLOT(slot_down()));
-   menu.addAction("Nearest",this, SLOT(slot_nearest()));
-   menu.addAction("Round Up",this, SLOT(slot_up()));
-   menu.addAction("Undo",this, SLOT(slot_undo()));
-   menu.exec(mapToGlobal(spt.toPoint()));
-}
-
-void DlgLineEdit::focusInEvent(QFocusEvent * event)
-{
-    Q_UNUSED(event)
-    emit currentPoint(_poly[row]->getV1()->getPosition());
-}
-
-void  DlgLineEdit::slot_down()
-{
-    VertexPtr vp = _poly[row]->getV1();
-    QPointF pos  = vp->getPosition();
-    if (col == 0)
-    {
-        qreal val = pos.x();
-        int down  = qFloor(val);
-        pos.setX(static_cast<qreal>(down));
-        setText(QString::number(pos.x(),'g',16));
-    }
-    else
-    {
-        qreal val = pos.y();
-        int down   = qFloor(val);
-        pos.setY(static_cast<qreal>(down));
-        setText(QString::number(pos.y(),'g',16));
-    }
-    vp->setPosition(pos);
-    emit currentPoint(pos);
-    canvas->update();
-}
-
-void  DlgLineEdit::slot_nearest()
-{
-    VertexPtr vp = _poly[row]->getV1();
-    QPointF pos  = vp->getPosition();
-    if (col == 0)
-    {
-        qreal val     = pos.x();
-        qreal nearest = qFabs(val);
-        pos.setX(nearest);
-        setText(QString::number(pos.x(),'g',16));
-    }
-    else
-    {
-        qreal val     = pos.y();
-        qreal nearest = qFabs(val);
-        pos.setY(nearest);
-        setText(QString::number(pos.y(),'g',16));
-    }
-    vp->setPosition(pos);
-    emit currentPoint(pos);
-    canvas->update();
-}
-
-void  DlgLineEdit::slot_up()
-{
-    VertexPtr vp = _poly[row]->getV1();
-    QPointF pos  = vp->getPosition();
-    if (col == 0)
-    {
-        qreal val = pos.x();
-        int up    = qCeil(val);
-        pos.setX(static_cast<qreal>(up));
-        setText(QString::number(pos.x(),'g',16));
-    }
-    else
-    {
-        qreal val = pos.y();
-        int up    = qCeil(val);
-        pos.setY(static_cast<qreal>(up));
-        setText(QString::number(pos.y(),'g',16));
-    }
-    vp->setPosition(pos);
-    emit currentPoint(pos);
-    canvas->update();
-}
-
-void DlgLineEdit::slot_undo()
-{
-    VertexPtr vp = _poly[row]->getV1();
-    QPointF pos  = vp->getPosition();
-    if (col == 0)
-    {
-        pos.setX(_orig.x());
-        setText(QString::number(pos.x(),'g',16));
-    }
-    else
-    {
-        pos.setY(_orig.y());
-        setText(QString::number(pos.y(),'g',16));
-
-    }
-    vp->setPosition(pos);
-    emit currentPoint(pos);
-    canvas->update();
-}
-
-void DlgLineEdit::slot_editingFinished()
-{
-    VertexPtr vp = _poly[row]->getV1();
-    QPointF pos  = vp->getPosition();
-    bool ok;
-    qreal val = text().toDouble(&ok);
-    if (ok)
-    {
-        if (col == 0)
-        {
-            pos.setX(val);
-        }
-        else
-        {
-            pos.setY(val);
-        }
-        vp->setPosition(pos);
-        emit currentPoint(pos);
-        canvas->update();
-    }
-    else
-    {
-        slot_undo();
-    }
-}
-
-void DlgLineEdit::slot_update()
-{
-    VertexPtr vp = _poly[row]->getV1();
-    QPointF pos  = vp->getPosition();
-    if (col == 0)
-    {
-        setText(QString::number(pos.x(),'g',16));
-    }
-    else
-    {
-        setText(QString::number(pos.y(),'g',16));
-    }
-}
-
 
 /////////////////////////////////////////////////////////////////
 ///
@@ -193,9 +33,9 @@ DlgFeatureEdit::DlgFeatureEdit(EdgePoly & epoly, QTransform t, QWidget *parent) 
 
     // table
     table.setRowCount(epoly.size());
-    table.setColumnCount(6);
+    table.setColumnCount(7);
     QStringList qslH;
-    qslH << "p1-x" << "p1-y" << "p2-x" << "p2-y" << "arc center" << "convex" ;
+    qslH << "p1-x" << "p1-y" << "p2-x" << "p2-y" << "angle" << "arc center" << "convex" ;
     table.setHorizontalHeaderLabels(qslH);
     table.verticalHeader()->setVisible(true);
     table.horizontalHeader()->setVisible(true);
@@ -203,6 +43,7 @@ DlgFeatureEdit::DlgFeatureEdit(EdgePoly & epoly, QTransform t, QWidget *parent) 
     table.setColumnWidth(1,151);
     table.setColumnWidth(2,151);
     table.setColumnWidth(3,151);
+    table.setColumnWidth(4,151);
     table.setContextMenuPolicy(Qt::CustomContextMenu);
     table.setSelectionMode(QAbstractItemView::SingleSelection);
 
@@ -234,11 +75,7 @@ DlgFeatureEdit::~DlgFeatureEdit()
 
 void DlgFeatureEdit::display()
 {
-    QPolygonF poly = epoly.getPoly();
-
-    QString str1 = (Utils::isClockwise(poly)) ? "IS clockwise" : "NOT clockwise";
-    //QString str2 = (Utils::isClockwiseKaplan(poly)) ? "IS clockwise" : "NOT clockwise";
-    //label->setText(QString("%1  %2").arg(str1).arg(str2));
+    QString str1 = (epoly.isClockwise()) ? "Clockwise: YES" : "Clockwise: NO";
     label->setText(str1);
 
     table.clearContents();
@@ -274,6 +111,11 @@ void DlgFeatureEdit::display()
         le2->setReadOnly(true);
         table.setCellWidget(row,col,le2);
 
+        col++;
+        QString str = QString::number(epoly.getAngle(row),'g',16);
+        QTableWidgetItem * item  = new QTableWidgetItem(str);
+        table.setItem(row,col,item);
+
         if (edge->getType() == EDGE_CURVE)
         {
             QPointF arcC = edge->getArcCenter();
@@ -281,7 +123,7 @@ void DlgFeatureEdit::display()
 
             col++;
             QString str = QString("%1 , %2").arg(QString::number(arcC.x(),'g',16)).arg(QString::number(arcC.y(),'g',16));
-            QTableWidgetItem * item = new QTableWidgetItem(str);
+            item = new QTableWidgetItem(str);
             table.setItem(row,col,item);
 
             col++;

@@ -36,10 +36,10 @@
 // of one kind of figure.  A complex hierarchy of FigureEditors gets built
 // up to become the changeable controls for editing figures in FigureMaker.
 
-FigureEditor::FigureEditor(FigureMaker * editor, QString name)
+FigureEditor::FigureEditor(FigureMaker * fm, QString figname)
 {
-    this->editor = editor;
-    this->name   = name;
+    figmaker = fm;
+    name     = figname;
 
     vbox = new AQVBoxLayout();
     setLayout(vbox);
@@ -47,6 +47,7 @@ FigureEditor::FigureEditor(FigureMaker * editor, QString name)
     boundarySides = new SliderSet("Boundary sides", 4, 1, 64);
     boundaryScale = new DoubleSliderSet("Boundary Scale", 1.0, 0.1, 4.0, 100 );
     figureScale   = new DoubleSliderSet("Figure Scale", 1.0, 0.1, 4.0, 100 );
+    figureRotate  = new DoubleSliderSet("Figure Rotation",0.0, -360.0, 360.0, 1);
 
     boundaryScale->setPrecision(8);
     figureScale->setPrecision(8);
@@ -54,35 +55,72 @@ FigureEditor::FigureEditor(FigureMaker * editor, QString name)
     addLayout(boundarySides);
     addLayout(boundaryScale);
     addLayout(figureScale);
+    addLayout(figureRotate);
 
-    connect(this,          &FigureEditor::sig_figure_changed, editor, &FigureMaker::slot_figureChanged, Qt::QueuedConnection);
-    connect(boundaryScale, &DoubleSliderSet::valueChanged, this, &FigureEditor::updateGeometry, Qt::QueuedConnection);
-    connect(figureScale,   &DoubleSliderSet::valueChanged, this, &FigureEditor::updateGeometry, Qt::QueuedConnection);
-    connect(boundarySides, &SliderSet::valueChanged,       this, &FigureEditor::updateGeometry, Qt::QueuedConnection);
+    connect(this,          &FigureEditor::sig_figure_changed, figmaker, &FigureMaker::slot_figureChanged, Qt::QueuedConnection);
+
+    connect(boundaryScale, &DoubleSliderSet::valueChanged, this, &FigureEditor::updateGeometry);
+    connect(boundarySides, &SliderSet::valueChanged,       this, &FigureEditor::updateGeometry);
+    connect(figureScale,   &DoubleSliderSet::valueChanged, this, &FigureEditor::updateGeometry);
+    connect(figureRotate,  &DoubleSliderSet::valueChanged, this, &FigureEditor::updateGeometry);
 }
 
-RadialEditor::RadialEditor(FigureMaker * editor, QString name) : FigureEditor(editor,name)
+void FigureEditor::resetWithFigure(FigurePtr fig)
 {
-    radial_r = new DoubleSliderSet("Radial Rotation",0.0, -360.0, 360.0, 1);
-    n = new SliderSet("Radial Points N", 8, 3, 64);
-
-    addLayout(radial_r);
-    addLayout(n);
-
-    connect(radial_r, &DoubleSliderSet::valueChanged, this, &RadialEditor::updateGeometry, Qt::QueuedConnection);
-    connect(n, &SliderSet::valueChanged,       this, &RadialEditor::updateGeometry, Qt::QueuedConnection);
+    figure = fig;
 }
 
-StarEditor::StarEditor(FigureMaker * editor, QString name) : RadialEditor(editor,name)
+void FigureEditor::updateLimits()
 {
-    d = new DoubleSliderSet("Star Editor Hops D", 3.0, 1.0, 10.0, 100 );
-    s = new SliderSet("Star Editor Intersects S", 2, 1, 5);
+    if (!figure)
+        return;
 
-    addLayout(d);
-    addLayout(s);
+    int    bs = figure->getExtBoundarySides();
+    qreal  sc = figure->getExtBoundaryScale();
+    qreal  fs = figure->getFigureScale();
+    double rr = figure->getFigureRotate();
 
-    connect(d, &DoubleSliderSet::valueChanged, this, &StarEditor::updateGeometry, Qt::QueuedConnection);
-    connect(s, &SliderSet::valueChanged,       this, &StarEditor::updateGeometry, Qt::QueuedConnection);
+    blockSignals(true);
+    boundarySides->setValues(bs, 1, 64);
+    boundaryScale->setValues(sc, 0.1, 4.0);
+    figureScale->setValues(fs, 0.1, 4.0);
+    figureRotate->setValues(rr,-360.0,360.0);
+    blockSignals(false);
+}
+
+void FigureEditor::updateGeometry()
+{
+    if (!figure)
+        return;
+
+    int sides     = boundarySides->value();
+    qreal bscale  = boundaryScale->value();
+    qreal fscale  = figureScale->value();
+    qreal  rot    = figureRotate->value();
+
+    blockSignals(true);
+    figure->setExtBoundarySides(sides);
+    figure->setExtBoundaryScale(bscale);
+    figure->setFigureScale(fscale);
+    figure->setFigureRotate(rot);
+    blockSignals(false);
+
+    emit sig_figure_changed();
+}
+
+StarEditor::StarEditor(FigureMaker * fm, QString figname) : FigureEditor(fm,figname)
+{
+    n_slider = new SliderSet("Radial Points N", 8, 3, 64);
+    d_slider = new DoubleSliderSet("Star Editor Hops D", 3.0, 1.0, 10.0, 100 );
+    s_slider = new SliderSet("Star Editor Intersects S", 2, 1, 5);
+
+    addLayout(n_slider);
+    addLayout(d_slider);
+    addLayout(s_slider);
+
+    connect(n_slider, &SliderSet::valueChanged,       this, &StarEditor::updateGeometry);
+    connect(d_slider, &DoubleSliderSet::valueChanged, this, &StarEditor::updateGeometry);
+    connect(s_slider, &SliderSet::valueChanged,       this, &StarEditor::updateGeometry);
 }
 
 FigurePtr StarEditor::getFigure()
@@ -90,28 +128,28 @@ FigurePtr StarEditor::getFigure()
     return star;
 }
 
-void StarEditor::resetWithFigure( FigurePtr figure )
+void StarEditor::resetWithFigure(FigurePtr fig)
 {
-    if (!figure)
+    if (!fig)
     {
         star.reset();
         return;
     }
 
-    if (figure->getFigType() == FIG_TYPE_STAR)
+    star = std::dynamic_pointer_cast<Star>(fig);
+    if (!star)
     {
-        star = std::dynamic_pointer_cast<Star>(figure);
-    }
-    else
-    {
-        int n=6;  // default
-        RadialPtr rp = std::dynamic_pointer_cast<RadialFigure>(figure);
+        int n = 6;  // default
+        RadialPtr rp = std::dynamic_pointer_cast<RadialFigure>(fig);
         if (rp)
         {
             n = rp->getN();
         }
-        star = make_shared<Star>(*figure.get(), n, n <=6 ? n / 3.0 : 3.0, 2 );
+        star = make_shared<Star>(*fig.get(), n, n <=6 ? n / 3.0 : 3.0, 2 );
     }
+
+    Q_ASSERT(star);
+    FigureEditor::resetWithFigure(star);
 
     updateLimits();
     updateGeometry();
@@ -121,23 +159,17 @@ void StarEditor::updateLimits()
 {
     if (star)
     {
-        int    bs = star->getExtBoundarySides();
-        qreal  sc = star->getExtBoundaryScale();
-        qreal  fs = star->getFigureScale();
+        FigureEditor::updateLimits();
+
         int    nn = star->getN();
         qreal  dd = star->getD();
         int    ss = star->getS();
-        double rr = star->getR();
 
         //double dmax = 0.5 * (double)nn;
         blockSignals(true);
-        boundarySides->setValues(bs, 1, 64);
-        boundaryScale->setValues(sc, 0.1, 4.0);
-        figureScale->setValues(fs, 0.1, 4.0);
-        n->setValues(nn,3,64);
-        d->setValues( dd, 1.0, qreal(nn*2));
-        s->setValues( ss, 1.0, nn * 2);
-        radial_r->setValues(rr,-360.0,360.0);
+        n_slider->setValues(nn,3,64);
+        d_slider->setValues( dd, 1.0, qreal(nn*2));
+        s_slider->setValues( ss, 1.0, nn * 2);
         blockSignals(false);
     }
 }
@@ -146,22 +178,16 @@ void StarEditor::updateGeometry()
 {
     if (star)
     {
-        int sides     = boundarySides->value();
-        qreal bscale  = boundaryScale->value();
-        qreal fscale  = figureScale->value();
-        int nval      = n->value();
-        qreal dval    = d->value();
-        int sval      = s->value();
-        qreal  rot    = radial_r->value();
+        FigureEditor::updateGeometry();
+
+        int nval      = n_slider->value();
+        qreal dval    = d_slider->value();
+        int sval      = s_slider->value();
 
         blockSignals(true);
-        star->setExtBoundarySides(sides);
-        star->setExtBoundaryScale(bscale);
-        star->setFigureScale(fscale);
         star->setN(nval);
         star->setD(dval);
         star->setS(sval);
-        star->setR(rot);
         star->resetMaps();
         blockSignals(false);
 
@@ -169,8 +195,105 @@ void StarEditor::updateGeometry()
     }
 }
 
+// The controls for editing a Star.  Glue code, just like RosetteEditor.
+// DAC - Actually the comment above is not true
+
+RosetteEditor::RosetteEditor(FigureMaker * fm, QString figname) : FigureEditor(fm,figname)
+{
+    n_slider = new SliderSet("Radial Points N", 8, 3, 64);
+    q_slider = new DoubleSliderSet("RosetteEditor Q (Tip Angle)", 0.0, -3.0, 3.0, 100 );
+    k_slider = new DoubleSliderSet("RosetteEditor K (Neck Angle)", 0.0, -3.0, 3.0, 1000 );
+    k_slider->setPrecision(4);
+    s_slider = new SliderSet("RosetteEditor S (Sides Intersections)", 1, 1, 5);
+
+    addLayout(n_slider);
+    addLayout(q_slider);
+    addLayout(k_slider);
+    addLayout(s_slider);
+
+    connect(n_slider, &SliderSet::valueChanged,       this, &RosetteEditor::updateGeometry, Qt::QueuedConnection);
+    connect(q_slider, &DoubleSliderSet::valueChanged, this, &RosetteEditor::updateGeometry, Qt::QueuedConnection);
+    connect(k_slider, &DoubleSliderSet::valueChanged, this, &RosetteEditor::updateGeometry, Qt::QueuedConnection);
+    connect(s_slider, &SliderSet::valueChanged,       this, &RosetteEditor::updateGeometry, Qt::QueuedConnection);
+}
+
+FigurePtr RosetteEditor::getFigure()
+{
+    return rosette;
+}
+
+void RosetteEditor::resetWithFigure(FigurePtr fig)
+{
+
+    if (!fig)
+    {
+        rosette.reset();
+        return;
+    }
+
+    rosette = std::dynamic_pointer_cast<Rosette>(fig);
+    if (!rosette)
+    {
+        int n=6;  // default
+        RadialPtr rp = std::dynamic_pointer_cast<RadialFigure>(fig);
+        if (rp)
+        {
+            n = rp->getN();
+        }
+        rosette = make_shared<Rosette>(*fig.get(), n, 0.0, 3);
+    }
+
+    Q_ASSERT(rosette);
+    FigureEditor::resetWithFigure(rosette);
+    updateLimits();
+    updateGeometry();
+}
+
+void RosetteEditor::updateLimits()
+{
+    if( rosette)
+    {
+        FigureEditor::updateLimits();
+
+        int    nn = rosette->getN();
+        double qq = rosette->getQ();
+        double kk = rosette->getK();
+        int    ss = rosette->getS();
+
+        blockSignals(true);
+        n_slider->setValues(nn,3,64);
+        q_slider->setValues(qq, -3.0, 3.0);       // DAC was -1.0, 1.0
+        s_slider->setValues(ss, 1.0, 5);
+        k_slider->setValues(kk,-3.0, 3.0);
+        blockSignals(false);
+    }
+}
+
+void RosetteEditor::updateGeometry()
+{
+    if(rosette)
+    {
+        FigureEditor::updateGeometry();
+
+        qreal  qval = q_slider->value();
+        qreal  kval = k_slider->value();
+        int    sval = s_slider->value();
+        int    nval = n_slider->value();
+
+        blockSignals(true);
+        rosette->setN(nval);
+        rosette->setQ(qval);
+        rosette->setS(sval);
+        rosette->setK(kval);
+        rosette->resetMaps();
+        blockSignals(false);
+
+        emit sig_figure_changed();
+    }
+}
+
 // ConnectStarEditor
-ConnectStarEditor::ConnectStarEditor(FigureMaker *  editor, QString name) : StarEditor(editor,name)
+ConnectStarEditor::ConnectStarEditor(FigureMaker * fm, QString figname) : StarEditor(fm,figname)
 {
     defaultBtn = new QPushButton("Calc Scale");
     defaultBtn->setFixedWidth(131);
@@ -185,93 +308,33 @@ FigurePtr ConnectStarEditor::getFigure()
     return starConnect;
 }
 
-void ConnectStarEditor::resetWithFigure(FigurePtr figure)
+void ConnectStarEditor::resetWithFigure(FigurePtr fig)
 {
-    if (!figure)
+    if (!fig)
     {
         starConnect.reset();
         return;
     }
 
-    starConnect = std::dynamic_pointer_cast<StarConnectFigure>(figure);
+    starConnect = std::dynamic_pointer_cast<StarConnectFigure>(fig);
     if (!starConnect)
     {
         int n=6;  // default
-        RadialPtr rp = std::dynamic_pointer_cast<RadialFigure>(figure);
+        RadialPtr rp = std::dynamic_pointer_cast<RadialFigure>(fig);
         if (rp)
         {
             n = rp->getN();
         }
-        starConnect = make_shared<StarConnectFigure>(*figure.get(),n, n <= 6 ? n / 3.0 : 3.0, 2);
+        starConnect = make_shared<StarConnectFigure>(*fig.get(),n, n <= 6 ? n / 3.0 : 3.0, 2);
     }
+
+    Q_ASSERT(starConnect);
+    StarEditor::resetWithFigure(starConnect);
 
     starConnect->setFigureScale(starConnect->computeConnectScale());
 
     updateLimits();
     updateGeometry();
-}
-
-void ConnectStarEditor::updateLimits()
-{
-    if (starConnect)
-    {
-        int bsides   = starConnect->getExtBoundarySides();
-        qreal bscale = starConnect->getExtBoundaryScale();
-        qreal fscale = starConnect->getFigureScale();
-
-        int nn   = starConnect->getN();
-        qreal dd = starConnect->getD();
-        int ss   = starConnect->getS();
-        qreal rr = starConnect->getR();
-
-        blockSignals(true);
-
-        // these dont call set geometry
-        boundarySides->setValues(bsides, 1, 64);
-        boundaryScale->setValues(bscale, 0.1, 4.0);
-        figureScale->setValues(fscale, 0.1, 4.0);
-
-        // these do
-        n->setValues(nn, 3,64);
-        d->setValues(dd, 1.0, qreal(nn*2));
-        s->setValues(ss, 1.0, nn * 2);
-        radial_r->setValues(rr,-360.0,360.0);
-
-        blockSignals(false);
-    }
-}
-
-void ConnectStarEditor::updateGeometry()
-{
-    if (starConnect)
-    {
-
-        int nval        = n->value();
-        qreal dval      = d->value();
-        int sval        = s->value();
-        qreal rval      = radial_r->value();
-
-        int  bSides     = boundarySides->value();
-        qreal bScale    = boundaryScale->value();
-        qreal figScale  = figureScale->value();
-
-        blockSignals(true);
-
-        // these dont call set geometry
-        starConnect->setExtBoundarySides(bSides);
-        starConnect->setExtBoundaryScale(bScale);
-        starConnect->setFigureScale(figScale);
-
-        // these do
-        starConnect->setN(nval);
-        starConnect->setD(dval);
-        starConnect->setS(sval);
-        starConnect->setR(rval);
-        starConnect->resetMaps();
-        blockSignals(false);
-
-        emit sig_figure_changed();
-    }
 }
 
 void ConnectStarEditor::calcScale()
@@ -281,8 +344,64 @@ void ConnectStarEditor::calcScale()
     updateGeometry();
 }
 
+// ConnectRosetteEditor
+
+ConnectRosetteEditor::ConnectRosetteEditor(FigureMaker * fm, QString figname) : RosetteEditor(fm,figname)
+{
+    defaultBtn = new QPushButton("Calc Scale");
+    defaultBtn->setFixedWidth(131);
+
+    addWidget(defaultBtn);
+
+    QObject::connect(defaultBtn, &QPushButton::clicked,  this, &ConnectRosetteEditor::calcScale);
+}
+
+FigurePtr ConnectRosetteEditor::getFigure()
+{
+    return rosetteConnect;
+}
+
+void ConnectRosetteEditor::resetWithFigure(FigurePtr fig)
+{
+    if (!fig)
+    {
+        rosetteConnect.reset();
+        return;
+    }
+
+    rosetteConnect = std::dynamic_pointer_cast<RosetteConnectFigure>(fig);
+    if (!rosetteConnect)
+    {
+        int n = 6;  // default
+        RadialPtr rp = std::dynamic_pointer_cast<RadialFigure>(fig);
+        if (rp)
+        {
+            n = rp->getN();
+        }
+        rosetteConnect = make_shared<RosetteConnectFigure>(* fig.get(), n, 0.0, 3);
+    }
+
+    Q_ASSERT(rosetteConnect);
+    RosetteEditor::resetWithFigure(rosetteConnect);
+
+    rosetteConnect->setFigureScale(rosetteConnect->computeConnectScale());
+
+    updateLimits();
+    updateGeometry();
+}
+
+void ConnectRosetteEditor::calcScale()
+{
+    if (rosetteConnect)
+    {
+        qreal scale = rosetteConnect->computeConnectScale();
+        figureScale->setValue(scale);
+        updateGeometry();
+    }
+}
+
 // ExtendedStarEditor
-ExtendedStarEditor::ExtendedStarEditor(FigureMaker *  editor, QString name) : StarEditor(editor,name)
+ExtendedStarEditor::ExtendedStarEditor(FigureMaker * fm, QString figname) : StarEditor(fm,figname)
 {
     extendBox1 = new QCheckBox("Extend Peripheral Vertices");
     extendBox2 = new QCheckBox("Extend Free Vertices");
@@ -299,62 +418,46 @@ FigurePtr ExtendedStarEditor::getFigure()
     return extended;
 }
 
-void ExtendedStarEditor::resetWithFigure(FigurePtr figure)
+void ExtendedStarEditor::resetWithFigure(FigurePtr fig)
 {
-    if (!figure)
+    if (!fig)
     {
         extended.reset();
         return;
     }
 
-    extended = std::dynamic_pointer_cast<ExtendedStar>(figure);
+    extended = std::dynamic_pointer_cast<ExtendedStar>(fig);
     if (!extended)
     {
-        int n=6;  // default
-        RadialPtr rp = std::dynamic_pointer_cast<RadialFigure>(figure);
+        int  n = 6;  // default
+        RadialPtr rp = std::dynamic_pointer_cast<RadialFigure>(fig);
         if (rp)
         {
             n = rp->getN();
         }
-        extended = make_shared<ExtendedStar>(*figure.get(), n, n <= 6 ? n / 3.0 : 3.0, 2);
+        extended = make_shared<ExtendedStar>(*fig.get(), n, n <= 6 ? n / 3.0 : 3.0, 2);
     }
+
+    Q_ASSERT(extended);
+    StarEditor::resetWithFigure(extended);
 
     updateLimits();
     updateGeometry();
 }
 
-
 void ExtendedStarEditor::updateLimits()
 {
     if (extended)
     {
-        int bsides   = extended->getExtBoundarySides();
-        qreal bscale = extended->getExtBoundaryScale();
-        qreal fscale = extended->getFigureScale();
         bool ext_t   = extended->getExtendPeripheralVertices();
         bool ext_nt  = extended->getExtendFreeVertices();
 
-        int nn   = extended->getN();
-        qreal dd = extended->getD();
-        int ss   = extended->getS();
-        qreal rr = extended->getR();
-
         blockSignals(true);
-
-        // these dont call set geometry
-        boundarySides->setValues(bsides, 1, 64);
-        boundaryScale->setValues(bscale, 0.1, 4.0);
-        figureScale->setValues(fscale, 0.1, 4.0);
         extendBox1->setChecked(ext_t);
         extendBox2->setChecked(ext_nt);
-
-        // these do
-        n->setValues(nn, 3,64);
-        d->setValues(dd, 1.0, qreal(nn*2));
-        s->setValues(ss, 1.0, nn * 2);
-        radial_r->setValues(rr,-360.0,360.0);
-
         blockSignals(false);
+
+        StarEditor::updateLimits();
     }
 }
 
@@ -362,259 +465,23 @@ void ExtendedStarEditor::updateGeometry()
 {
     if (extended)
     {
-        int nval        = n->value();
-        qreal dval      = d->value();
-        int sval        = s->value();
-        qreal rval      = radial_r->value();
-
-        int  bSides     = boundarySides->value();
-        qreal bScale    = boundaryScale->value();
-        qreal figScale  = figureScale->value();
         bool extendPeripheralVertices = extendBox1->isChecked();
         bool extendFreeVertices       = extendBox2->isChecked();
 
         blockSignals(true);
-
-        // these dont call set geometry
-        extended->setExtBoundarySides(bSides);
-        extended->setExtBoundaryScale(bScale);
-        extended->setFigureScale(figScale);
         extended->setExtendPeripheralVertices(extendPeripheralVertices);
         extended->setExtendFreeVertices(extendFreeVertices);
-
-        // these do
-        extended->setN(nval);
-        extended->setD(dval);
-        extended->setS(sval);
-        extended->setR(rval);
-        extended->resetMaps();
         blockSignals(false);
+
+        StarEditor::updateGeometry();
 
         emit sig_figure_changed();
     }
 }
-
-
-// The controls for editing a Star.  Glue code, just like RosetteEditor.
-// DAC - Actually the comment above is not true
-
-RosetteEditor::RosetteEditor(FigureMaker * editor, QString name) : RadialEditor(editor,name)
-{
-    q = new DoubleSliderSet("RosetteEditor Q (Tip Angle)", 0.0, -3.0, 3.0, 100 );
-    k = new DoubleSliderSet("RosetteEditor K (Neck Angle)", 0.0, -3.0, 3.0, 1000 );
-    k->setPrecision(4);
-    s = new SliderSet("RosetteEditor S (Sides Intersects", 1, 1, 5);
-
-    addLayout(q);
-    addLayout(k);
-    addLayout(s);
-
-    connect(q, &DoubleSliderSet::valueChanged, this, &RosetteEditor::updateGeometry, Qt::QueuedConnection);
-    connect(k, &DoubleSliderSet::valueChanged, this, &RosetteEditor::updateGeometry, Qt::QueuedConnection);
-    connect(s, &SliderSet::valueChanged, this, &RosetteEditor::updateGeometry, Qt::QueuedConnection);
-}
-
-FigurePtr RosetteEditor::getFigure()
-{
-    return rosette;
-}
-
-void RosetteEditor::resetWithFigure( FigurePtr figure )
-{
-    if (!figure)
-    {
-        rosette.reset();
-        return;
-    }
-
-    if (figure->getFigType() == FIG_TYPE_ROSETTE)
-    {
-        rosette = std::dynamic_pointer_cast<Rosette>(figure);
-    }
-    else
-    {
-        int n=6;  // default
-        RadialPtr rp = std::dynamic_pointer_cast<RadialFigure>(figure);
-        if (rp)
-        {
-            n = rp->getN();
-        }
-        rosette = make_shared<Rosette>(*figure.get(), n, 0.0, 3);
-    }
-
-    updateLimits();
-    updateGeometry();
-}
-
-void RosetteEditor::updateLimits()
-{
-    if( rosette)
-    {
-        int    bs = rosette->getExtBoundarySides();
-        qreal  sc = rosette->getExtBoundaryScale();
-        qreal  fs = rosette->getFigureScale();
-        int    nn = rosette->getN();
-        double qq = rosette->getQ();
-        double kk = rosette->getK();
-        double rr = rosette->getR();
-        int    ss = rosette->getS();
-
-        blockSignals(true);
-        boundarySides->setValues(bs, 1, 64);
-        boundaryScale->setValues(sc, 0.1, 4.0);
-        figureScale->setValues(fs, 0.1, 4.0);
-        n->setValues(nn,3,64);
-        q->setValues(qq, -3.0, 3.0);       // DAC was -1.0, 1.0
-        s->setValues(ss, 1.0, 5);
-        k->setValues(kk,-3.0, 3.0);
-        radial_r->setValues(rr,-360.0,360.0);
-        blockSignals(false);
-    }
-}
-
-void RosetteEditor::updateGeometry()
-{
-    if(rosette)
-    {
-        int sides     = boundarySides->value();
-        qreal bscale  = boundaryScale->value();
-        qreal fscale  = figureScale->value();
-        qreal  qval = q->value();
-        qreal  kval = k->value();
-        int    sval = s->value();
-        int    nval = n->value();
-        qreal  rot  = radial_r->value();
-
-        blockSignals(true);
-        rosette->setExtBoundarySides(sides);
-        rosette->setExtBoundaryScale(bscale);
-        rosette->setFigureScale(fscale);
-        rosette->setN(nval);
-        rosette->setQ(qval);
-        rosette->setS(sval);
-        rosette->setK(kval);
-        rosette->setR(rot);
-        rosette->resetMaps();
-        blockSignals(false);
-
-        emit sig_figure_changed();
-    }
-}
-
-// ConnectRosetteEditor
-
-ConnectRosetteEditor::ConnectRosetteEditor(FigureMaker *  editor, QString name) : RosetteEditor(editor,name)
-{
-    defaultBtn = new QPushButton("Calc Scale");
-    defaultBtn->setFixedWidth(131);
-
-    addWidget(defaultBtn);
-
-    QObject::connect(defaultBtn, &QPushButton::clicked,  this, &ConnectRosetteEditor::calcScale);
-}
-
-FigurePtr ConnectRosetteEditor::getFigure()
-{
-    return rosetteConnect;
-}
-
-void ConnectRosetteEditor::resetWithFigure(FigurePtr figure)
-{
-    if (!figure)
-    {
-        rosetteConnect.reset();
-        return;
-    }
-
-    rosetteConnect = std::dynamic_pointer_cast<RosetteConnectFigure>(figure);
-    if (!rosetteConnect)
-    {
-        int n=6;  // default
-        RadialPtr rp = std::dynamic_pointer_cast<RadialFigure>(figure);
-        if (rp)
-        {
-            n = rp->getN();
-        }
-        rosetteConnect = make_shared<RosetteConnectFigure>(* figure.get(), n, 0.0, 3);
-    }
-
-    rosetteConnect->setFigureScale(rosetteConnect->computeConnectScale());
-
-    updateLimits();
-    updateGeometry();
-}
-
-void ConnectRosetteEditor::updateLimits()
-{
-    if (rosetteConnect)
-    {
-        int    bs = rosetteConnect->getExtBoundarySides();
-        qreal  sc = rosetteConnect->getExtBoundaryScale();
-        qreal  fs = rosetteConnect->getFigureScale();
-        int    nn = rosetteConnect->getN();
-        double qq = rosetteConnect->getQ();
-        double kk = rosetteConnect->getK();
-        double rr = rosetteConnect->getR();
-        int    ss = rosetteConnect->getS();
-
-        blockSignals(true);
-        boundarySides->setValues(bs, 1, 64);
-        boundaryScale->setValues(sc, 0.1, 4.0);
-        figureScale->setValues(fs, 0.1, 4.0);
-        n->setValues(nn,3,64);
-        q->setValues(qq, -3.0, 3.0);       // DAC was -1.0, 1.0
-        s->setValues(ss, 1.0, 5);
-        k->setValues(kk,-3.0, 3.0);
-        radial_r->setValues(rr,-360.0,360.0);
-        blockSignals(false);
-    }
-}
-
-
-void ConnectRosetteEditor::updateGeometry()
-{
-   if (rosetteConnect)
-   {
-       int sides     = boundarySides->value();
-       qreal bscale  = boundaryScale->value();
-       qreal fscale  = figureScale->value();
-       qreal  qval = q->value();
-       qreal  kval = k->value();
-       int    sval = s->value();
-       int    nval = n->value();
-       qreal  rot  = radial_r->value();
-
-       blockSignals(true);
-       rosetteConnect->setExtBoundarySides(sides);
-       rosetteConnect->setExtBoundaryScale(bscale);
-       rosetteConnect->setFigureScale(fscale);
-       rosetteConnect->setN(nval);
-       rosetteConnect->setQ(qval);
-       rosetteConnect->setS(sval);
-       rosetteConnect->setK(kval);
-       rosetteConnect->setR(rot);
-       rosetteConnect->resetMaps();
-       blockSignals(false);
-
-       emit sig_figure_changed();
-    }
-    emit sig_figure_changed();
-}
-
-void ConnectRosetteEditor::calcScale()
-{
-    if (rosetteConnect)
-    {
-        qreal scale = rosetteConnect->computeConnectScale();
-        figureScale->setValue(scale);
-        updateGeometry();
-    }
-}
-
 
 // ExtendedRosetteEditor
 
-ExtendedRosetteEditor::ExtendedRosetteEditor(FigureMaker *  editor, QString name) : RosetteEditor(editor,name)
+ExtendedRosetteEditor::ExtendedRosetteEditor(FigureMaker * fm, QString figname) : RosetteEditor(fm,figname)
 {
     extendPeriphBox    = new QCheckBox("Extend PeripheralVertices");
     extendFreeBox      = new QCheckBox("Extend Free Vertices");
@@ -634,25 +501,28 @@ FigurePtr ExtendedRosetteEditor::getFigure()
     return extended;
 }
 
-void ExtendedRosetteEditor::resetWithFigure(FigurePtr figure)
+void ExtendedRosetteEditor::resetWithFigure(FigurePtr fig)
 {
-    if (!figure)
+    if (!fig)
     {
         extended.reset();
         return;
     }
 
-    extended = std::dynamic_pointer_cast<ExtendedRosette>(figure);
+    extended = std::dynamic_pointer_cast<ExtendedRosette>(fig);
     if (!extended)
     {
         int n=6;  // default
-        RadialPtr rp = std::dynamic_pointer_cast<RadialFigure>(figure);
+        RadialPtr rp = std::dynamic_pointer_cast<RadialFigure>(fig);
         if (rp)
         {
             n = rp->getN();
         }
-        extended = make_shared<ExtendedRosette>(*figure.get(), n, 0.0, 3);
+        extended = make_shared<ExtendedRosette>(*fig.get(), n, 0.0, 3);
     }
+
+    Q_ASSERT(extended);
+    RosetteEditor::resetWithFigure(extended);
 
     updateLimits();
     updateGeometry();
@@ -663,33 +533,17 @@ void ExtendedRosetteEditor::updateLimits()
 {
     if (extended)
     {
-        int bsides   = extended->getExtBoundarySides();
-        qreal bscale = extended->getExtBoundaryScale();
-        qreal fscale = extended->getFigureScale();
         bool ext_t   = extended->getExtendPeripheralVertices();
         bool ext_nt  = extended->getExtendFreeVertices();
         bool con_bd  = extended->getConnectBoundaryVertices();
 
-        int nn   = extended->getN();
-        qreal qq = extended->getQ();
-        int ss   = extended->getS();
-        qreal kk = extended->getK();
-        qreal rr = extended->getR();
-
-        // these dont call set geometry
-        boundarySides->setValues(bsides, 1, 64);
-        boundaryScale->setValues(bscale, 0.1, 4.0);
-        figureScale->setValues(fscale, 0.1, 4.0);
+        blockSignals(true);
         extendPeriphBox->setChecked(ext_t);
         extendFreeBox->setChecked(ext_nt);
         connectBoundaryBox->setChecked(con_bd);
+        blockSignals(false);
 
-        // these do
-        n->setValues(nn,3,64);
-        q->setValues(qq, -3.0, 3.0);
-        s->setValues(ss, 1, 5);
-        k->setValues(kk,-3.0,3.0);
-        radial_r->setValues(rr,-360.0,360.0);
+        RosetteEditor::updateLimits();
     }
 }
 
@@ -697,34 +551,18 @@ void ExtendedRosetteEditor::updateGeometry()
 {
     if (extended)
     {
-        int nval                = n->value();
-        qreal qval              = q->value();
-        qreal kval              = k->value();
-        qreal rot               = radial_r->value();
-        int sval                = s->value();
-
-        int  bSides             = boundarySides->value();
-        qreal bScale            = boundaryScale->value();
-        qreal figScale          = figureScale->value();
         bool extendPeripherals  = extendPeriphBox->isChecked();
         bool extendFreeVertices = extendFreeBox->isChecked();
         bool connectBoundary    = connectBoundaryBox->isChecked();
 
-        // these don't call set geometry
-        extended->setExtBoundarySides(bSides);
-        extended->setExtBoundaryScale(bScale);
-        extended->setFigureScale(figScale);
+        blockSignals(true);
         extended->setExtendPeripheralVertices(extendPeripherals);
         extended->setExtendFreeVertices(extendFreeVertices);
         extended->setConnectBoundaryVertices(connectBoundary);
+        blockSignals(false);
 
-        // these do
-        extended->setN(nval);
-        extended->setQ(qval);
-        extended->setS(sval);
-        extended->setK(kval);
-        extended->setR(rot);
-        extended->resetMaps();
+        RosetteEditor::updateGeometry();
+
         emit sig_figure_changed();
     }
 }

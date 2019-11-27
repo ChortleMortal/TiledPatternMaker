@@ -43,8 +43,8 @@ class Rosette : public RadialFigure
 {
 public:
     // n = points, q = tip angle, s=sides intersections
-    Rosette(const Figure & fig,  int n, qreal q, int s, qreal k=0.0, qreal r=0.0);
-    Rosette( int n, qreal q, int s, qreal k=0.0, qreal r=0.0);
+    Rosette(const Figure & fig,  int n, qreal q, int s, qreal k=0.0, qreal figureRotate=0.0);
+    Rosette( int n, qreal q, int s, qreal k=0.0, qreal figureRotate=0.0);
 
     virtual MapPtr   buildUnit() override;
 

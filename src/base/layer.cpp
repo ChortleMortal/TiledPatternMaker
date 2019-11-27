@@ -48,7 +48,8 @@ Layer::Layer(QString name) : QObject(), QGraphicsItemGroup()
 Layer::Layer(const Layer & other) : QObject(), QGraphicsItemGroup()
 {
     canvas  = Canvas::getInstance();
-
+    wsViewer = WorkspaceViewer::getInstance();
+    config   = Configuration::getInstance();
     setVisible(other.isVisible());
 
     layerXform    = other.layerXform;
@@ -57,6 +58,11 @@ Layer::Layer(const Layer & other) : QObject(), QGraphicsItemGroup()
     layerT        = other.layerT;
     invT          = other.invT;
     layerPen      = other.layerPen;
+
+    connect(canvas, &Canvas::sig_deltaScale,    this, &Layer::slot_scale,  Qt::UniqueConnection);
+    connect(canvas, &Canvas::sig_deltaRotate,   this, &Layer::slot_rotate, Qt::UniqueConnection);
+    connect(canvas, &Canvas::sig_deltaMoveY,    this, &Layer::slot_moveY,  Qt::UniqueConnection);
+    connect(canvas, &Canvas::sig_deltaMoveX,    this, &Layer::slot_moveX,  Qt::UniqueConnection);
 
     refs++;
 }

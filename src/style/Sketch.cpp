@@ -74,15 +74,19 @@ void Sketch::draw(GeoGraphics * gg)
         return;
     }
 
+    MapPtr map = getMap();
+    if (!map)
+    {
+        return;
+    }
+
     gg->pushAndCompose(getLayerTransform());
     QPen pen(colors.getNextColor().color);
 
     qreal jitter = Transform::distFromInvertedZero(gg->getTransform(),5.0);
     qreal halfjit = jitter / 2.0;
-    for (auto e = getReadOnlyMap()->getEdges()->begin(); e != getReadOnlyMap()->getEdges()->end(); e++)
+    for (auto edge : map->getEdges())
     {
-        EdgePtr edge = *e;
-
         QPointF a = edge->getV1()->getPosition() - QPointF(halfjit,halfjit);
         QPointF b = edge->getV2()->getPosition() - QPointF(halfjit,halfjit);
 

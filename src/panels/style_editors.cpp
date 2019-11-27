@@ -48,9 +48,9 @@ ColoredEditor::ColoredEditor(Colored * c, QTableWidget * table)
     colored = c;
     this->table = table;
 
-    QColor color = colored->getColor();
-    qreal  opacity = color.alphaF();
-    qDebug() << "color=" << color << "opacity=" << opacity;
+    TPColor tpcolor = colored->getColorSet().getFirstColor();
+    qreal  opacity  = tpcolor.color.alphaF();
+    qDebug() << "color=" << tpcolor.color << "opacity=" << opacity;
 
     table->clear();
     table->setColumnCount(3);
@@ -63,11 +63,8 @@ ColoredEditor::ColoredEditor(Colored * c, QTableWidget * table)
     QTableWidgetItem * item = new QTableWidgetItem("Color");
     table->setItem(rows,0,item);
 
-    color_label = new QLabel("      ");
-    QString colcode = color.name(QColor::HexArgb);
-    qDebug().noquote() << "Editor: color=" << colcode;
-    color_label->setStyleSheet("QLabel { background-color :"+colcode+" ;}");
-    table->setCellWidget(rows,1,color_label);
+    colorwidget = colored->getColorSet().createWidget();
+    table->setCellWidget(rows,1,colorwidget);
 
     color_button = new QPushButton("Select Color");
     table->setCellWidget(rows,2,color_button);
@@ -93,29 +90,30 @@ ColoredEditor::ColoredEditor(Colored * c, QTableWidget * table)
 
 void ColoredEditor::slot_transparencyChanged(qreal val)
 {
-    QColor col = colored->getColor();
-    col.setAlphaF(val);
-    colored->setColor(col);
+    ColorSet & cset = colored->getColorSet();
+    cset.setOpacity(val);
+
+    colorwidget = cset.createWidget();
+    table->setCellWidget(rows,1,colorwidget);
+
+    emit sig_colorsChanged();
     emit sig_viewWS();
-    QVariant variant= col;
-    QString colcode = variant.toString();
-    color_label->setStyleSheet("QLabel { background-color :"+colcode+" ;}");
 }
 
 void ColoredEditor::slot_pickColor()
 {
-    AQColorDialog dlg(colored->getColor());
-    dlg.open(this,SLOT(slot_colorChanged(QColor)));
+    DlgColorSet dlg(colored->getColorSet());
+
+    connect(&dlg, &DlgColorSet::sig_colorsChanged, this, &ColoredEditor::slot_colorsChanged);
+
     dlg.exec();
 }
 
-void ColoredEditor::slot_colorChanged(QColor color)
+void ColoredEditor::slot_colorsChanged()
 {
-    qDebug() << "color=" << color;
-    colored->setColor(color);
-    QVariant variant= color;
-    QString colcode = variant.toString();
-    color_label->setStyleSheet("QLabel { background-color :"+colcode+" ;}");
+    colorwidget = colored->getColorSet().createWidget();
+    table->setCellWidget(rows,1,colorwidget);
+    emit sig_colorsChanged();
     emit sig_viewWS();
 }
 
@@ -262,7 +260,7 @@ void FilledEditor::displayParms01()
     int row = 1;
 
     // whites
-    outside_checkbox = new QCheckBox("Draw Inside (Whites)");   // is truth but does not match code
+    outside_checkbox = new QCheckBox("Inside (Whites)");   // is truth but does not match code
     outside_checkbox->setStyleSheet("padding-left:3px;");
     outside_checkbox->setChecked(filled->getDrawOutsideWhites());
     table->setCellWidget(row,0,outside_checkbox);
@@ -277,7 +275,7 @@ void FilledEditor::displayParms01()
     row++;
 
     // blacks
-    inside_checkbox = new QCheckBox("Draw Outside (Blacks)");   // is truth but does not match code
+    inside_checkbox = new QCheckBox("Outside (Blacks)");   // is truth but does not match code
     inside_checkbox->setStyleSheet("padding-left:3px;");
     inside_checkbox->setChecked(filled->getDrawInsideBlacks());
     table->setCellWidget(row,0,inside_checkbox);
@@ -345,18 +343,22 @@ void FilledEditor::slot_editB()
     ColorSet & colorSet = filled->getBlackColorSet();
 
     DlgColorSet dlg(colorSet);
+
+    connect(&dlg, &DlgColorSet::sig_colorsChanged, this, &FilledEditor::slot_colorsChanged);
+
     dlg.exec();
 
-    slot_colorsChanged();
     displayParms();
 }
 
 void FilledEditor::slot_editW()
 {
     DlgColorSet dlg(filled->getWhiteColorSet());
+
+    connect(&dlg, &DlgColorSet::sig_colorsChanged, this, &FilledEditor::slot_colorsChanged);
+
     dlg.exec();
 
-    slot_colorsChanged();
     displayParms();
 }
 
@@ -536,7 +538,7 @@ void InterlaceEditor::slot_shadowChanged(qreal shadow)
 
 void InterlaceEditor::slot_includeTipVerticesChanged(int state)
 {
-    Q_UNUSED(state);
+    Q_UNUSED(state)
     interlace->setIncludeTipVertices(tipVert_checkbox->isChecked());
     emit sig_viewWS();
 }

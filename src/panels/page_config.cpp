@@ -25,7 +25,7 @@
 #include "page_config.h"
 
 
-page_config:: page_config(ControlPanel *panel)  : panel_page(panel,"Configuration")
+page_config:: page_config(ControlPanel * cpanel)  : panel_page(cpanel,"Configuration")
 {
     le_rootTile   = new QLineEdit();
     le_newTile    = new QLineEdit();
@@ -42,7 +42,6 @@ page_config:: page_config(ControlPanel *panel)  : panel_page(panel,"Configuratio
     examplesBtn   = new QPushButton("Examples Dir");
     rootImageBtn  = new QPushButton("Image Dir");
     QPushButton *reconfigurePathsBtn = new QPushButton("Reset Paths");
-
 
     QGridLayout *configGrid = new QGridLayout();
 
@@ -84,6 +83,30 @@ page_config:: page_config(ControlPanel *panel)  : panel_page(panel,"Configuratio
     connect(le_newTile,    &QLineEdit::textChanged,   this, &page_config::newTtileChanged);
     connect(le_rootImage,  &QLineEdit::textChanged,   this, &page_config::rootImageChanged);
     connect(le_examples,  &QLineEdit::textChanged,    this, &page_config::examplesChanged);
+
+    QCheckBox   * cbVerifyMaps          = new QCheckBox("Verify Maps");
+    QCheckBox   * cbVerifyDump          = new QCheckBox("Dump Map");
+    QCheckBox   * cbVerifyVerbose       = new QCheckBox("Verbose");
+
+    vbox->addSpacing(9);
+    vbox->addWidget(cbVerifyMaps);
+
+    QHBoxLayout * hbox = new QHBoxLayout();
+    hbox->addSpacing(15);
+    hbox->addWidget(cbVerifyDump);
+    vbox->addLayout(hbox);
+
+    hbox = new QHBoxLayout();
+    hbox->addSpacing(15);
+    hbox->addWidget(cbVerifyVerbose);
+    vbox->addLayout(hbox);
+
+    cbVerifyMaps->setChecked(config->verifyMaps);
+    cbVerifyDump->setChecked(config->verifyDump);
+    cbVerifyMaps->setChecked(config->verifyMaps);
+
+    connect(cbVerifyMaps,   &QCheckBox::clicked,    this,   &page_config::slot_verifyMapsClicked);
+
 }
 
 void  page_config::onEnter()
@@ -201,4 +224,19 @@ void page_config::updatePaths()
     le_rootImage->setText(config->rootImageDir);
     le_examples->setText(config->examplesDir);
     update();
+}
+
+void  page_config::slot_verifyMapsClicked(bool enb)
+{
+    config->verifyMaps = enb;
+}
+
+void  page_config::slot_verifyDumpClicked(bool enb)
+{
+    config->verifyDump = enb;
+}
+
+void  page_config::slot_verifyVerboseClicked(bool enb)
+{
+    config->verifyVerbose = enb;
 }

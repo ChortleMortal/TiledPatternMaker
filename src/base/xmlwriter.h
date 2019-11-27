@@ -97,8 +97,9 @@ protected:
     void    setRosetteConnectFigure(QTextStream & ts,QString name, FigurePtr fp);
 
     void    setMap(QTextStream & ts, MapPtr map);
-    void    setVertices(QTextStream & ts, const QVector<VertexPtr> *vertices);
-    void    setEdges(QTextStream & ts, const QVector<EdgePtr> * edges );
+    void    setVertices(QTextStream & ts, const QVector<VertexPtr> & vertices);
+    void    setEdges(QTextStream & ts, const QVector<EdgePtr> & edges );
+    void    setNeighbours(QTextStream & ts, NeighbourMap &nmap );
 
     void    setBoundary(QTextStream & ts, PolyPtr p);
     void    setPrototype(QTextStream & ts, PrototypePtr pp);
@@ -108,7 +109,8 @@ protected:
     void    setVertexEP(QTextStream & ts,VertexPtr v, QString name);
     void    setVertex(QTextStream & ts, VertexPtr v, QString name = "Vertex");
     void    setEdges(QTextStream & ts, QVector<EdgePtr> &qvec);
-    void    setEdge(QTextStream & ts, EdgePtr e, bool capitalE = false);
+    void    setEdge(QTextStream & ts, EdgePtr e);
+    void    setNeighbour(QTextStream & ts, VertexPtr v, NeighboursPtr np);
 
     void    setPos(QTextStream & ts, QPointF qpf);
     void    setPoint(QTextStream & ts, QPointF pt, QString name);
@@ -127,7 +129,6 @@ protected:
     bool   hasReference(MapPtr map);
     bool   hasReference(VertexPtr map);
     bool   hasReference(EdgePtr map);
-    bool   hasReference(NeighbourPtr map);
 
     void   setProtoReference(int id, PrototypePtr ptr);
     void   setPolyReference(int id, PolyPtr ptr);
@@ -137,7 +138,6 @@ protected:
     void   setMapReference(int id, MapPtr ptr);
     void   setVertexReference(int id, VertexPtr ptr);
     void   setEdgeReference(int id, EdgePtr ptr);
-    void   setNeighbourReference(int id, NeighbourPtr ptr);
     void   setStarReference(int id, StarPtr ptr);
     void   setExtendedStarReference(int id, ExtStarPtr ptr);
     void   setExtendedRosetteReference(int id, ExtRosettePtr ptr);
@@ -152,7 +152,6 @@ protected:
     QString getMapReference(MapPtr ptr);
     QString getVertexReference(VertexPtr ptr);
     QString getEdgeReference(EdgePtr ptr);
-    QString getNeighbourReference(NeighbourPtr ptr);
     QString getStarReference(StarPtr ptr);
     QString getExtendedStarReference(ExtStarPtr ptr);
     QString getExtendedRosetteReference(ExtRosettePtr ptr);
@@ -175,7 +174,6 @@ private:
     QMap<MapPtr,int>        map_ids;
     QMap<VertexPtr,int>     vertex_ids;
     QMap<EdgePtr,int>       edge_ids;
-    QMap<NeighbourPtr,int>  neighbour_ids;
     QMap<ExplicitPtr,int>   explicit_ids;
     QMap<StarPtr,int>       star_ids;
     QMap<ExtStarPtr,int>    extended_star_ids;

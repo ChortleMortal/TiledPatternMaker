@@ -29,18 +29,18 @@
 #include "base/utilities.h"
 
 ExtendedStar::ExtendedStar(const Figure & fig,
-                           int n, qreal d, int s, qreal r,
+                           int nn, qreal d, int s, qreal r,
                            bool extendPeripherals, bool extendFreeVertices)
-    : Star(fig, n, d, s, r)
+    : Star(fig, nn, d, s, r)
 {
     setFigType(FIG_TYPE_EXTENDED_STAR);
     this->extendPeripheralVertices  = extendPeripherals;
     this->extendFreeVertices        = extendFreeVertices;
 }
 
-ExtendedStar::ExtendedStar(int n, qreal d, int s, qreal r,
+ExtendedStar::ExtendedStar(int nn, qreal d, int s, qreal r,
                            bool extendPeripherals, bool extendFreeVertices)
-    : Star(n,d,s,r)
+    : Star(nn,d,s,r)
 {
     setFigType(FIG_TYPE_EXTENDED_STAR);
     this->extendPeripheralVertices  = extendPeripherals;
@@ -67,10 +67,9 @@ void ExtendedStar::extendMap()
     // extendLine and clipLine both assume that p1 is closest to the center
     // and p0 is closest to the edge
 
-    QVector<EdgePtr> ledges = *figureMap->getEdges();    // local copy of vector
-    for(auto e = ledges.begin(); e != ledges.end(); e++)
+    QVector<EdgePtr> ledges = figureMap->getEdges();    // local copy of vector
+    for (auto edge : ledges)
     {
-        EdgePtr edge = *e;
         VertexPtr v1 = edge->getV1();   // outer
         VertexPtr v2 = edge->getV2();   // inner
         QLineF l1 = QLineF(v2->getPosition(),v1->getPosition());
@@ -132,5 +131,5 @@ void ExtendedStar::extendMap()
             }
         }
     }
-    figureMap->verify("Extended figure - after",false,true,false);
+    figureMap->verifyMap("Extended figure - after");
 }

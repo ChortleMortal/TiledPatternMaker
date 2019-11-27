@@ -38,22 +38,19 @@
 #include "viewers/TilingView.h"
 #include "viewers/workspaceviewer.h"
 
-page_control::page_control(ControlPanel * panel) : panel_page(panel,"View Control")
+page_control::page_control(ControlPanel * cpanel) : panel_page(cpanel,"View")
 {
     // gui setup has to be here for this page since it receives signals
     createWorkspaceMakers();
     createWorkspaceViewers();
     createWorkspaceStatus();
-    createConfigGrid();
 
     QVBoxLayout * vbox2 = new QVBoxLayout();        // shouldbe 597x668
     vbox2->addWidget(workspaceMakersBox);
     vbox2->addSpacing(7);
-    vbox2->addWidget(workspaceStatusBox);
-    vbox2->addSpacing(7);
     vbox2->addWidget(workspaceViewersBox);
-    vbox2->addSpacing(13);
-    vbox2->addLayout(configGrid);
+    vbox2->addSpacing(7);
+    vbox2->addWidget(workspaceStatusBox);
 
     vbox->addLayout(vbox2);
     vbox->addStretch();
@@ -65,42 +62,24 @@ page_control::page_control(ControlPanel * panel) : panel_page(panel,"View Contro
 
 void  page_control::createWorkspaceMakers()
 {
-    QPushButton * pbClearCanvas     = new QPushButton("Clear Canvas");
-    QPushButton * pbRenderAll       = new QPushButton("Render All");
-    QPushButton * pbRenderStyles    = new QPushButton("Render Styles");
-    QPushButton * pbRenderProtos    = new QPushButton("Render Prototypes");
-    QPushButton * pbDrainAll        = new QPushButton("Drain The Swamp");
     QPushButton * pbViewWorkspace   = new QPushButton("View Workspace");
-    QPushButton * pbClearWS         = new QPushButton("Clear WS");
-    QPushButton * btnPrimary        = new QPushButton("Primary Screen");
     QPushButton * btnSplit          = new QPushButton("Split Screen");
+    QPushButton * btnPrimary        = new QPushButton("Primary Screen");
+
 
     QGridLayout * grid1 = new QGridLayout();
-    grid1->addWidget(pbRenderAll,       0,0);
-    grid1->addWidget(pbRenderStyles,    0,1);
-    grid1->addWidget(pbRenderProtos,    0,2);
+    grid1->addWidget(pbViewWorkspace,   0,0);
+    grid1->addWidget(btnSplit,          0,1);
+    grid1->addWidget(btnPrimary,        0,2);
 
-    grid1->addWidget(pbClearWS,         1,0);
-    grid1->addWidget(pbDrainAll,        1,1);
-    grid1->addWidget(btnPrimary,        1,2);
-
-    grid1->addWidget(pbClearCanvas,     2,0);
-    grid1->addWidget(pbViewWorkspace,   2,1);
-    grid1->addWidget(btnSplit,          2,2);
-
-    workspaceMakersBox = new QGroupBox("Workspace Makers");
+    workspaceMakersBox = new QGroupBox("View Control");
     workspaceMakersBox->setLayout(grid1);
 
     // workspace buttons
-    connect(pbClearCanvas,  &QPushButton::clicked,      workspace,  &Workspace::slot_clearCanvas);
-    connect(pbRenderAll,    &QPushButton::clicked,      maker,      &TiledPatternMaker::slot_render);
-    connect(pbRenderStyles, &QPushButton::clicked,      maker,      &TiledPatternMaker::slot_render_styles);
-    connect(pbRenderProtos, &QPushButton::clicked,      maker,      &TiledPatternMaker::slot_render_protos);
+
     connect(pbViewWorkspace,&QPushButton::clicked,      viewer,     &WorkspaceViewer::slot_viewWorkspace);
-    connect(pbClearWS,      &QPushButton::clicked,      workspace,  &Workspace::slot_clearWorkspace);
     connect(btnPrimary,     &QPushButton::clicked,      maker,      &TiledPatternMaker::slot_bringToPrimaryScreen);
     connect(btnSplit,       &QPushButton::clicked,      maker,      &TiledPatternMaker::slot_splitScreen);
-    connect(pbDrainAll,     &QPushButton::clicked,      canvas,     &Canvas::drainTheSwamp);
 
 }
 
@@ -120,7 +99,7 @@ void  page_control::createWorkspaceViewers()
     cbFigMapView         = new QCheckBox("Map Editor");
     cbFigureView         = new QCheckBox("Figure Maker");
     cbTilingView         = new QCheckBox("Tiling");
-    cbTilingMakerrView = new QCheckBox("Tiling Maker");
+    cbTilingMakerView    = new QCheckBox("Tiling Maker");
     cbFaceSetView        = new QCheckBox("FaceSet");
 
     radioLoadedStyleView = new QRadioButton("Style");
@@ -146,8 +125,7 @@ void  page_control::createWorkspaceViewers()
     radioTileDesSourceWS    = new QRadioButton("Workspace");
 
     mapEdStyle  = new QRadioButton("Style");
-    mapEdProto  = new QRadioButton("Proto");
-    mapEdFigure = new QRadioButton("Figure");
+    mapEdWS     = new QRadioButton("Workspace");
 
     QGridLayout * grid2 = new QGridLayout();
     int row = 0;
@@ -184,8 +162,7 @@ void  page_control::createWorkspaceViewers()
 
     grid2->addWidget(cbFigMapView,row,0);
     grid2->addWidget(mapEdStyle,row,1);
-    grid2->addWidget(mapEdProto,row,2);
-    grid2->addWidget(mapEdFigure,row,3);
+    grid2->addWidget(mapEdWS,row,2);
     row++;
 
     grid2->addWidget(cbFigureView,row,0);
@@ -193,7 +170,7 @@ void  page_control::createWorkspaceViewers()
     grid2->addWidget(radioFigureWS,row,2);
     row++;
 
-    grid2->addWidget(cbTilingMakerrView,row,0);
+    grid2->addWidget(cbTilingMakerView,row,0);
     grid2->addWidget(radioTileDesSourceStyle,row,1);
     grid2->addWidget(radioTileDesSourceWS,row,2);
     row++;
@@ -209,7 +186,7 @@ void  page_control::createWorkspaceViewers()
     viewerGroup.addButton(cbTilingView,VIEW_TILING);
     viewerGroup.addButton(cbFigureView,VIEW_FIGURE_MAKER);
     viewerGroup.addButton(cbDELView,VIEW_DEL);
-    viewerGroup.addButton(cbTilingMakerrView,VIEW_TILIING_MAKER);
+    viewerGroup.addButton(cbTilingMakerView,VIEW_TILIING_MAKER);
     viewerGroup.addButton(cbFigMapView,VIEW_MAP_EDITOR);
     viewerGroup.addButton(cbFaceSetView,VIEW_FACE_SET);
     viewerGroup.button(config->viewerType)->setChecked(true);
@@ -251,9 +228,8 @@ void  page_control::createWorkspaceViewers()
     delGroup.button(config->delViewer)->setChecked(true);
 
     // map editor group
-    mapEdGroup.addButton(mapEdStyle,ME_STYLE_MAP);
-    mapEdGroup.addButton(mapEdProto,ME_PROTO_MAP);
-    mapEdGroup.addButton(mapEdFigure,ME_FIGURE_MAP);
+    mapEdGroup.addButton(mapEdStyle,MED_STYLE);
+    mapEdGroup.addButton(mapEdWS,MED_WS);
     mapEdGroup.button(config->mapEditorView)->setChecked(true);
 
     connect(setStyle, &QPushButton::clicked, this, &page_control::slot_setSyle);
@@ -340,21 +316,7 @@ void page_control::slot_wsStatusBox(bool on)
     }
 }
 
-void page_control::createConfigGrid()
-{
-    leSaveXmlName   = new QLineEdit();
-    saveXml         = new QPushButton("Save XML");
-    designNotes     = new QTextEdit("Design Notes");
-    designNotes->setMaximumHeight(101);
-    QLabel * label  = new QLabel("Design");
 
-    configGrid = new QGridLayout();
-    configGrid->addWidget(label,0,0);
-    configGrid->addWidget(leSaveXmlName,0,1);
-    configGrid->addWidget(saveXml,0,2);
-
-    configGrid->addWidget(designNotes,1,0,1,3);
-}
 
 void page_control::makeConnections()
 {
@@ -372,14 +334,6 @@ void page_control::makeConnections()
     connect(&tilingMakerGroup,SIGNAL(buttonClicked(int)), this,     SLOT(slot_tilingMakerViewer_pressed(int)));
     connect(&delGroup,      SIGNAL(buttonClicked(int)),      this,     SLOT(slot_delViewer_pressed(int)));
     connect(&mapEdGroup,    SIGNAL(buttonClicked(int)),      this,     SLOT(slot_mapEdView_pressed(int)));
-
-    // slot handlers
-    connect(saveXml,        SIGNAL(clicked()),                  this,   SLOT(slot_saveAsXML()));
-    connect(this,           &page_control::sig_saveXML,         maker,  &TiledPatternMaker::slot_saveXML);
-
-    connect(designNotes,    &QTextEdit::textChanged,            this,   &page_control::designNotesChanged);
-
-    connect(maker,  &TiledPatternMaker::sig_loadedXML,      this,   &page_control::slot_loadedXML);
 }
 
 void page_control::refreshPage()
@@ -389,9 +343,6 @@ void page_control::refreshPage()
 
 void page_control::onEnter()
 {
-    leSaveXmlName->setText(config->currentlyLoadedXML);
-    designNotes->setText(workspace->getLoadedStyles().getNotes());
-
     blockSignals(true);
     viewerGroup.button(config->viewerType)->setChecked(true);
     designGroup.button(config->designViewer)->setChecked(true);
@@ -407,10 +358,9 @@ void page_control::onEnter()
 
 void page_control::slot_loadedXML(QString name)
 {
-    Q_UNUSED(name);
+    Q_UNUSED(name)
     onEnter();
 }
-
 
 void page_control::updateWsStatus()
 {
@@ -525,12 +475,7 @@ void page_control::updateWsStatus()
     }
 }
 
-void page_control::slot_saveAsXML()
-{
-    QString name = leSaveXmlName->text();
-    Q_ASSERT(!name.contains(".xml"));
-    emit sig_saveXML(name);
-}
+
 
 void  page_control::slot_Viewer_pressed(int id)
 {
@@ -611,16 +556,7 @@ void  page_control::slot_mapEdView_pressed(int id)
     }
 }
 
-void page_control::slot_showXMLName(QString name)
-{
-    leSaveXmlName->setText(name);
-}
 
-void page_control::designNotesChanged()
-{
-    workspace->getLoadedStyles().setNotes(designNotes->toPlainText());
-    workspace->getWsStyles().setNotes(designNotes->toPlainText());
-}
 
 void  page_control::slot_selectViewer(int id, int id2)
 {
@@ -669,7 +605,7 @@ void  page_control::selectView(int id, int id2)
         break;
     case VIEW_FACE_SET:
         break;
-    };
+    }
 }
 
 void page_control::slot_setSyle()
@@ -681,6 +617,7 @@ void page_control::slot_setSyle()
     selectView(VIEW_FIGURE_MAKER,FV_STYLE);
     selectView(VIEW_TILING,TV_STYLE);
     selectView(VIEW_TILIING_MAKER,TD_STYLE);
+    selectView(VIEW_MAP_EDITOR,MED_STYLE);
 }
 
 void page_control::slot_setWS()
@@ -692,4 +629,5 @@ void page_control::slot_setWS()
     selectView(VIEW_FIGURE_MAKER,FV_WS);
     selectView(VIEW_TILING,TV_WORKSPACE);
     selectView(VIEW_TILIING_MAKER,TD_WORKSPACE);
+    selectView(VIEW_MAP_EDITOR,MED_WS);
 }

@@ -112,6 +112,8 @@ public:
 
     virtual void    setFigureScale(qreal scale)   { figureScale = scale; }
     virtual qreal   getFigureScale()              { return figureScale; }
+    void            setFigureRotate(qreal rot)    { figureRotate = rot; }
+    qreal           getFigureRotate()             { return figureRotate; }
 
     void            setRadialFigBoundary(QPolygonF p) { radialFigBoundary = p; }
     QPolygonF &     getRadialFigBoundary()            { return radialFigBoundary; }
@@ -127,6 +129,8 @@ public:
     bool            isExplicit();
     bool            isRadial();
 
+    void            annotate();
+
     static int refs;
 
 protected:
@@ -135,6 +139,7 @@ protected:
     QPolygonF   points;
 
 private:
+    qreal       figureRotate;
     qreal       figureScale;
     QPolygonF   radialFigBoundary;        // currently only set for radial figures
 

@@ -23,7 +23,7 @@
  */
 
 #ifndef PAGE_DEBUG_H
-#define page_debug_H
+#define PAGE_DEBUG_H
 
 #include "panel_page.h"
 
@@ -47,15 +47,16 @@ signals:
 
 public slots:
     void    slot_compareResult(QString result);
+    void    slot_setImage0(QString name);
+    void    slot_setImage1(QString name);
 
 private slots:
-    void    slot_copyLog();
     void    slot_verifyTilingNames();
     void    slot_reformatDesignXML();
     void    slot_reformatTilingXML();
     void    slot_reprocessDesignXML();
     void    slot_reprocessTilingXML();
-    void    slot_verifyMapsClicked(bool enb);
+
     void    slot_autoCycleClicked(bool enb);
     void    slot_stopIfDiffClicked(bool enb);
     void    slot_gridModelClicked(bool enb);
@@ -66,13 +67,16 @@ private slots:
     void    selectDir1();
     void    swapDirs();
 
+    void    slot_startCycle();
     void    slot_selectImage0();
     void    slot_viewImage0();
     void    slot_selectImage1();
     void    slot_viewImage1();
     void    slot_compareImages();
     void    slot_transparentClicked(bool checked);
-    void    slot_startCycle();
+    void    slot_differencesClicked(bool checked);
+    void    slot_ping_pongClicked(bool checked);
+    void    slot_side_by_sideClicked(bool checked);
 
 protected:
     void  ViewImage(QString file);
@@ -93,6 +97,10 @@ private:
     QPushButton * compareImage;
 
     QCheckBox   * transparent;
+    QCheckBox   * differences;
+    QCheckBox   * ping_pong;
+    QCheckBox   * side_by_side;
+
     QCheckBox   * cbGridModel;
     DoubleSpinSet * gridWidth;
 };

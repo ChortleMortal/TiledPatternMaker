@@ -21,22 +21,20 @@ void  MapEditorSelection::buildEditorDB()
     if (map)
     {
         // add points from map vertices
-        for (auto it = map->getVertices()->begin(); it != map->getVertices()->end(); it++)
+        for (auto vert : map->getVertices())
         {
-            VertexPtr vp = *it;
-            pointInfo pi(PT_VERTEX,vp,"vertex");
+            pointInfo pi(PT_VERTEX,vert,"vertex");
             points.push_back(pi);
         }
 
-        for (auto it = map->getEdges()->begin(); it != map->getEdges()->end(); it++)
+        for (auto edge : map->getEdges())
         {
             // add lines from map edges
-            EdgePtr e = *it;
-            lineInfo li(LINE_EDGE,e,"edge");
+            lineInfo li(LINE_EDGE,edge,"edge");
             lines.push_back(li);
 
             // add points from map edges mid-points
-            QPointF midPt = e->getLine().pointAt(0.5);
+            QPointF midPt = edge->getLine().pointAt(0.5);
             pointInfo pi(PT_VERTEX_MID,midPt,"mid-point edge");
             points.push_back(pi);
         }
@@ -450,9 +448,6 @@ MapSelectionPtr MapEditorSelection::findAnEdge(SelectionSet &set)
     return msp;
 }
 
-
-
-
 MapSelectionPtr MapEditorSelection::findVertex(QPointF spt , VertexPtr exclude)
 {
     MapSelectionPtr sel;
@@ -460,9 +455,8 @@ MapSelectionPtr MapEditorSelection::findVertex(QPointF spt , VertexPtr exclude)
     if (inputMode == ME_INPUT_UNDEFINED)
         return sel;
 
-    for (auto it = map->getVertices()->begin(); it != map->getVertices()->end(); it++)
+    for (auto vp : map->getVertices())
     {
-        VertexPtr vp = *it;
         if (vp == exclude)
         {
             continue;
@@ -480,16 +474,15 @@ MapSelectionPtr MapEditorSelection::findVertex(QPointF spt , VertexPtr exclude)
     return sel;
 }
 
-SelectionSet MapEditorSelection::findEdges(QPointF spt, QVector<EdgePtr> excludes)
+SelectionSet MapEditorSelection::findEdges(QPointF spt, QVector<EdgePtr> & excludes)
 {
     SelectionSet set;
 
     if (inputMode == ME_INPUT_UNDEFINED)
         return set;
 
-    for (auto it = map->getEdges()->begin(); it != map->getEdges()->end(); it++)
+    for (auto e : map->getEdges())
     {
-        EdgePtr e = *it;
         if (excludes.contains(e))
         {
             continue;

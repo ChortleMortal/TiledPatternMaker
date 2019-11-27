@@ -101,11 +101,9 @@ void Filled::createStyleRepresentation()
         return;     // already created
     }
 
-    setupStyleMap();
+    MapPtr map = setupStyleMap();
+    map->verifyMap("Filled");
 
-    getReadOnlyMap()->verify("Filled",false,true);
-
-    MapPtr map = getMap();
     purifyMap(map);
 
     switch (algorithm)
@@ -116,7 +114,7 @@ void Filled::createStyleRepresentation()
             buildFacesOriginal(map);
             //purifyFaces();
             //removeDuplicates();
-            assignColorsOriginal();
+            assignColorsOriginal(map);
             qDebug() << "black=" << blackFaces.size() <<  "white=" << whiteFaces.size();
         }
         break;

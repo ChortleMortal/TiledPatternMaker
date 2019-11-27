@@ -54,8 +54,8 @@ QRectF PlacedDesignElementView::boundingRect() const
 
 void PlacedDesignElementView::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-    Q_UNUSED(option);
-    Q_UNUSED(widget);
+    Q_UNUSED(option)
+    Q_UNUSED(widget)
     qDebug() << "PlacedDesignElementView::paint:" << pde->toString();
 
     if(!pde->getFeature())
@@ -104,10 +104,10 @@ void PlacedDesignElementView::drawPlacedDesignElement(GeoGraphics * gg, PlacedDe
         gg->pop();
         return;
     }
+
     MapPtr map = fig->getFigureMap();
-    for(auto e = map->getEdges()->begin(); e != map->getEdges()->end(); e++)
+    for(auto edge :  map->getEdges())
     {
-        EdgePtr edge = *e;
         if (edge->getType() == EDGE_LINE)
         {
             gg->drawLine(edge->getLine(),pen);

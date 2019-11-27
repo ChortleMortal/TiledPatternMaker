@@ -77,7 +77,7 @@ public:
     static int     getTableHeight(QTableWidget * table);
 
 signals:
-    void    sig_render();
+    void    sig_render(eRender type);
     void	sig_attachMe(QString title);
     void    sig_viewWS();
 

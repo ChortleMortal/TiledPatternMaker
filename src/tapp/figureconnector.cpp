@@ -44,9 +44,8 @@ void FigureConnector::connectFigure(MapPtr unitMap)
     QPointF tip_pos(1.0,0.0);
 
     // Find the tip, i.e. the vertex at (1,0)
-    for (auto e = unitMap->getVertices()->begin(); e != unitMap->getVertices()->end(); e++)
+    for (auto vert : unitMap->getVertices())
     {
-        VertexPtr vert = *e;
         QPointF pos = vert->getPosition();
         qDebug() << "test" << pos << tip_pos;
         if( Loose::equals( pos, tip_pos ) )
@@ -77,10 +76,13 @@ void FigureConnector::connectFigure(MapPtr unitMap)
     VertexPtr below_tip;
 
     QPointF pos = tip->getPosition();
-    QVector<EdgePtr> & qvep = tip->getEdges();
-    for (auto it = qvep.begin(); it != qvep.end(); it++)
+
+    NeighbourMap & nmap     = unitMap->getNeighbourMap();
+    NeighboursPtr np        = nmap.getNeighbours(tip);
+    QVector<EdgePtr> & qvep = np->getNeighbours();
+
+    for (auto edge : qvep)
     {
-        EdgePtr edge = *it;
         VertexPtr ov = edge->getOtherV(pos);
         if (ov->getPosition().y() < 0.0)
         {
@@ -156,9 +158,9 @@ void FigureConnector::connectFigure(MapPtr unitMap)
     }
 
     // rotate the unit
-    unitMap->rotate(rp->getR());
+    unitMap->rotate(rp->getFigureRotate());
 
-    unitMap->verify("RosetteConnectFigure",false);
+    unitMap->verifyMap("RosetteConnectFigure");
 }
 
 qreal FigureConnector::computeScale(MapPtr cunit)
@@ -170,16 +172,16 @@ qreal FigureConnector::computeScale(MapPtr cunit)
     QPointF tip_pos( 1.0, 0.0 );
 
     // Find the tip, i.e. the vertex at (1,0)
-    for (auto e = cunit->getVertices()->begin(); e != cunit->getVertices()->end(); e++)
+    NeighbourMap & nmap     = cunit->getNeighbourMap();
+    for (auto vert : cunit->getVertices())
     {
-        VertexPtr vert = *e;
         QPointF pos = vert->getPosition();
         if( Loose::equals( pos, tip_pos ))
         {
-            QVector<EdgePtr> & qvep = vert->getEdges();
-            for (auto it = qvep.begin(); it != qvep.end(); it++)
+            NeighboursPtr np        = nmap.getNeighbours(vert);
+            QVector<EdgePtr> & qvep = np->getNeighbours();
+            for (auto edge : qvep)
             {
-                EdgePtr edge = *it;
                 VertexPtr ov = edge->getOtherV(pos);
                 if( ov->getPosition().y() < 0.0 )
                 {
@@ -237,9 +239,8 @@ void FigureConnector::rotateHalf( MapPtr cunit )
 
     QTransform Tp = QTransform().rotateRadians(-2.0 * M_PI * rp->get_don());
 
-    for (auto e = cunit->getVertices()->begin(); e != cunit->getVertices()->end(); e++)
+    for (auto vert : cunit->getVertices())
     {
-        VertexPtr vert = *e;
         if( (vert->getPosition().y() + Loose::TOL) > 0.0 )
         {
             movers.insert( vert, vert );
@@ -260,9 +261,8 @@ void FigureConnector::rotateHalf( MapPtr cunit )
 
     QVector<EdgePtr> eadds;
 
-    for (auto e3 = cunit->getEdges()->begin(); e3 != cunit->getEdges()->end(); e3++)
+    for (auto edge : cunit->getEdges())
     {
-        EdgePtr edge = *e3;
         if (   movers.contains(edge->getV1())
             && movers.contains(edge->getV2()))
         {
@@ -291,7 +291,7 @@ void FigureConnector::rotateHalf( MapPtr cunit )
 
     //dumpM("three",movers);
 
-    cunit->verify("rotateHalf end",true,false);
+    cunit->verifyMap("rotateHalf end");
 }
 
 void FigureConnector::scaleToUnit(MapPtr cunit )
@@ -299,9 +299,8 @@ void FigureConnector::scaleToUnit(MapPtr cunit )
     VertexPtr vmax = nullptr;
     qreal xmax = 0.0;
 
-    for (auto e = cunit->getVertices()->begin(); e != cunit->getVertices()->end(); e++)
+    for (auto vert : cunit->getVertices())
     {
-        VertexPtr vert = *e;
         if( vmax == nullptr )
         {
             vmax = vert;

@@ -34,14 +34,14 @@
 #include "geometry/Intersect.h"
 #include "tile/Feature.h"
 
-Star::Star( int n, qreal d, int s, qreal r ) : RadialFigure(n, r)
+Star::Star( int nsides, qreal d, int s, qreal r ) : RadialFigure(nsides, r)
 {
     this->d = d;
     this->s = s;
     setFigType(FIG_TYPE_STAR);
 }
 
-Star::Star(const Figure & fig,  int n, qreal d, int s, qreal r ) : RadialFigure(fig, n, r)
+Star::Star(const Figure & fig,  int nsides, qreal d, int s, qreal r ) : RadialFigure(fig, nsides, r)
 {
     this->d = d;
     this->s = s;
@@ -63,7 +63,7 @@ MapPtr Star::buildUnit()
 {
     buildExtBoundary();
 
-    unitMap = make_shared<Map>();
+    unitMap = make_shared<Map>("star unit map");
 
     const bool debug = true;
 
@@ -71,7 +71,7 @@ MapPtr Star::buildUnit()
     // d = angle (each integer is the next point around the star)
     qDebug() << "Star::buildUnit"  << n << d << s;
 
-    debugMap = make_shared<Map>();
+    debugMap = make_shared<Map>("star debug map");
 
     qreal clamp_d = qMax( 1.0, qMin( d, 0.5 * dn - 0.01 ) );    // range limits d
 
@@ -162,7 +162,7 @@ MapPtr Star::buildUnit()
     //unitMap->verify("Star::buildUnit",false);
 
     // rotate
-    qreal rotate = qDegreesToRadians(r);
+    qreal rotate = qDegreesToRadians(getFigureRotate());
     unitMap->rotate(rotate);
     debugMap->rotate(rotate);
 

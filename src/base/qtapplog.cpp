@@ -25,6 +25,7 @@
 #include "qtapplog.h"
 #include <QtCore>
 #include <QMessageBox>
+#include <QTextCursor>
 
 #ifdef WIN32
 #include <stdio.h>
@@ -32,12 +33,19 @@
 #include <Windows.h>
 #endif
 
-#define MAX_LOG_SIZE (50 * 1024 * 1024)
-#define MAX_LOG_EXAMINE_COUNT	1000
 #undef  MEASURE_ELAPSED
 
-qtAppLog * qtAppLog::mpThis   = nullptr;
-QMutex   * qtAppLog::pLogLock = nullptr;
+qtAppLog  * qtAppLog::mpThis   = nullptr;
+QMutex    * qtAppLog::pLogLock = nullptr;
+QTextEdit * qtAppLog::ted      = nullptr;
+
+QString qtAppLog::currentLogName;
+
+bool qtAppLog::_logToStderr = true;
+bool qtAppLog::_logToDisk = true;
+bool qtAppLog::_logToPanel  = true;
+bool qtAppLog::_active    = false;
+
 
 qtAppLog * qtAppLog::getInstance()
 {
@@ -60,11 +68,14 @@ void qtAppLog::releaseInstance()
 
 qtAppLog::qtAppLog()
 {
-    mbLogDebugMessages = true;
-    active = false;
+    ted = new QTextEdit();
 
 #ifdef WIN32
-    path = "C:/logs/";
+    QString root = qApp->applicationDirPath();
+    QStringList rootpath = root.split("/");
+    QString path = rootpath[0];
+    path += "/logs/";
+
     QDir adir(path);
     if (!adir.exists())
     {
@@ -76,18 +87,14 @@ qtAppLog::qtAppLog()
             return;
         }
     }
-    qDebug().noquote() << "log  :"  << adir.canonicalPath();
 
     if (QLibraryInfo::isDebugBuild())
     {
-        currentLogName = "C:/logs/patternLogD.txt";
-        oldLogName     = "C:/logs/patternLogD-old.txt";
+        currentLogName = path + "patternLogD.txt";
     }
     else
     {
-        currentLogName = "C:/logs/patternLogR.txt";
-        oldLogName     = "C:/logs/patternLogRb-old.txt";
-
+        currentLogName = path + "patternLogR.txt";
     }
 #else
     path = "./logs/";
@@ -111,9 +118,9 @@ qtAppLog::qtAppLog()
 
     mCurrentFile.setFileName(currentLogName);
 
-    active = mCurrentFile.open(QIODevice::ReadWrite | QIODevice::Truncate |  QIODevice::Text);
+    _active = mCurrentFile.open(QIODevice::ReadWrite | QIODevice::Truncate |  QIODevice::Text);
 
-    if (!active)
+    if (!_active)
     {
         QMessageBox box;
         box.setText(QString("Failed to open logfile: %1").arg(currentLogName));
@@ -124,7 +131,7 @@ qtAppLog::qtAppLog()
 #ifdef MEASURE_ELAPSED
     elapseTimer.start();
 #endif
-    //rotate();
+
 }
 
 qtAppLog::~qtAppLog()
@@ -136,43 +143,8 @@ qtAppLog::~qtAppLog()
     }
 }
 
-void qtAppLog::rotate()
+void qtAppLog::log(QString & msg)
 {
-    qint64 size = mCurrentFile.size();
-    if (size > MAX_LOG_SIZE)
-    {
-        // max size exceeded
-        mCurrentFile.close();
-
-        if (QFile::exists(oldLogName))
-        {
-            // delete old log backup
-            QFile::remove(oldLogName);
-        }
-        // rename current to backup
-        mCurrentFile.rename(oldLogName);
-
-        // open new log file
-        mCurrentFile.setFileName(currentLogName);
-        mCurrentFile.open(QIODevice::Append | QIODevice::Text);
-    }
-}
-
-void qtAppLog::log(QtMsgType type, QString & msg)
-{
-#if 0
-static int count = 0;
-#endif
-    if (!active)
-    {
-        return;
-    }
-
-    if (type == QtDebugMsg && !mbLogDebugMessages)
-    {
-        return;
-    }
-
     QTextStream str(&mCurrentFile);
 #ifdef MEASURE_ELAPSED
     //QDateTime tm = QDateTime::currentDateTime();
@@ -184,59 +156,71 @@ static int count = 0;
 #else
     str << msg;
 #endif
-#if 0
-    if (++count >= MAX_LOG_EXAMINE_COUNT)
-    {
-        count = 0;
-        rotate();
-    }
-#endif
 }
 
 void qtAppLog::crashMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
+    static int line = 1;
+
+    if (!_logToStderr && _logToPanel && _logToDisk)
+    {
+        return;
+    }
+
     pLogLock->lock();
 
-#if 0
-    Q_UNUSED(context);
-    QString msg3 = QString("%1\n").arg(msg);
-#else
     QString msg2;
     switch (type)
     {
     case QtDebugMsg:
-        msg2 = QString("Debug: %1").arg(msg);
+        ted->setTextColor(Qt::black);
+        msg2 = QString("Debug   : %1").arg(msg);
         break;
     case QtInfoMsg:
-        msg2 = QString("Info: %1").arg(msg);
+        ted->setTextColor(Qt::black);
+        msg2 = QString("Info    : %1").arg(msg);
         break;
     case QtWarningMsg:
-        msg2 = QString("Warning: %1").arg(msg);
+        ted->setTextColor(Qt::red);
+        msg2 = QString("Warning : %1").arg(msg);
         break;
     case QtCriticalMsg:
+        ted->setTextColor(Qt::red);
         msg2 = QString("Critical: %1").arg(msg);
         break;
     case QtFatalMsg:
-        msg2 = QString("Fatal: %1").arg(msg);
+        ted->setTextColor(Qt::red);
+        msg2 = QString("Fatal   : %1").arg(msg);
         break;
     }
+
 #if 0
-    QString msg3 = msg2 + QString(" (%1:%2, %3)\n").arg(context.file).arg(context.line).arg(context.function);
+    msg2 += QString(" (%1:%2, %3)\n").arg(context.file).arg(context.line).arg(context.function);
 #else
-    Q_UNUSED(context);
-    QString msg3 = msg2 + QString("\n");
-#endif
-#endif
-    QByteArray localMsg = msg3.toLocal8Bit();
-#ifdef WIN32
-    OutputDebugStringA(localMsg.constData());
-#else
-    fprintf(stderr,"%s",localMsg.constData());
+    Q_UNUSED(context)
+    msg2 += "\n";
 #endif
 
-    if (mpThis != nullptr)
+    if (_logToPanel)
     {
-        mpThis->log(type,msg3);
+        QString number = QString("%1  ").arg(line++, 5, 10, QChar('0'));
+        ted->insertPlainText(number);
+        ted->insertPlainText(msg2);
+    }
+
+    if (_logToStderr)
+    {
+        QByteArray localMsg = msg2.toLocal8Bit();
+#ifdef WIN32
+        OutputDebugStringA(localMsg.constData());
+#else
+        fprintf(stderr,"%s",localMsg.constData());
+#endif
+    }
+
+    if (_active && _logToDisk)
+    {
+        mpThis->log(msg2);
     }
 
     pLogLock->unlock();
@@ -253,12 +237,6 @@ void qtAppLog::crashMessageOutput(QtMsgType type, const QMessageLogContext &cont
 #endif
 }
 
-void qtAppLog::logDebugMessages(bool enable)
-{
-    mbLogDebugMessages = enable;
-}
-
-
 void qtAppLog::copyLog(QString name)
 {
     QString to = path + name;
@@ -269,4 +247,25 @@ void qtAppLog::copyLog(QString name)
     }
 
     QFile::copy(currentLogName,to);
+}
+
+void qtAppLog::saveLog(QString name)
+{
+    QString to = path + name;
+
+    if (QFile::exists(to))
+    {
+        QFile::remove(to);
+    }
+
+    //QFile::copy(currentLogName,to);
+
+    QString log  = ted->toPlainText();
+    QFile file(to);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+             return;
+
+    QTextStream out(&file);
+    out << log << "\n";
+    file.close();
 }

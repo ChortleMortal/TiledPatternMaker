@@ -55,12 +55,14 @@ struct SizeAndBounds
     QSizeF      viewSize;
 };
 
+#if 0
 struct ViewTransform
 {
     eViewType   viewType;
     qreal       scale;
     QPointF     translate;
 };
+#endif
 
 class WorkspaceViewer : public QObject
 {

@@ -33,8 +33,8 @@ class Star : public RadialFigure
 {
 public:
     // n = points, d = sides hops, s = sides intersections
-    Star( int n, qreal d, int s, qreal r= 0.0);
-    Star( const Figure & fig, int n, qreal d, int s, qreal r= 0.0);
+    Star( int n, qreal d, int s, qreal figureRotate= 0.0);
+    Star( const Figure & fig, int n, qreal d, int s, qreal figureRotate= 0.0);
 
     virtual MapPtr buildUnit() override;
 

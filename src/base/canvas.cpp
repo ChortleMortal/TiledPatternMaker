@@ -196,6 +196,8 @@ void Canvas::drainTheSwamp()
 
 void Canvas::setSceneRect(const QRectF & rect)
 {
+    if (!scene) return;
+
     QRectF old =  scene->sceneRect();
     if (rect != old)
     {
@@ -205,6 +207,8 @@ void Canvas::setSceneRect(const QRectF & rect)
 
 void Canvas::setSceneRect(qreal x, qreal y, qreal w, qreal h)
 {
+    if (!scene) return;
+
     QRectF old  =  scene->sceneRect();
     QRectF rect(x,y,w,h);
     if (rect != old)
@@ -635,7 +639,7 @@ void Canvas::ProcKey(QKeyEvent *k, bool isALT)
     case 'B':  setKbdMode(KBD_MODE_OFFSET); break;
     case 'C':  emit sig_cyclerStart();  break;
     case 'D':  duplicate(); break;
-    case 'F':  config->debugReplicate = !config->debugReplicate; emit sig_viewWS(); break;
+    case 'F':  config->debugReplicate = !config->debugReplicate; emit sig_figure_changed(); break;
     case 'G':  config->sceneGrid = !config->sceneGrid; invalidate(); break;
     case 'H':  config->hideCircles = !config->hideCircles; invalidate(); break;
     case 'I':  designLayerShow(); break;  // I=in
@@ -645,13 +649,12 @@ void Canvas::ProcKey(QKeyEvent *k, bool isALT)
     case 'O':  designLayerHide(); break; // o=out
     case 'P':  saveImage(); break;
     case 'Q':  if (Cycler::getInstance()->getMode() != CYCLE_NONE) { emit sig_cyclerQuit(); }
-        else                         { QApplication::quit(); }
-        break;
+               else { QApplication::quit(); }
+               break;
     case 'R':  if (isALT) { emit slot_startTimer(); setKbdMode(KBD_MODE_DEFAULT); } break;
     case 'S':  if (isALT) { emit stopTimer(); setKbdMode(KBD_MODE_STEP); }
-        else { setKbdMode(KBD_MODE_SEPARATION); }
-        break;
-    case 'T': config->boundingRects = !config->boundingRects;  invalidate(); break;
+                else { setKbdMode(KBD_MODE_SEPARATION); }
+                break;
     case 'X': config->circleX = !config->circleX; emit sig_viewWS(); invalidate(); break;
     case 'Z': setKbdMode(KBD_MODE_ZLEVEL); break;
 

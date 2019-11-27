@@ -34,7 +34,7 @@ class page_control : public panel_page
     Q_OBJECT
 
 public:
-    page_control(ControlPanel * panel);
+    page_control(ControlPanel * cpanel);
 
     void refreshPage() override;
     void onEnter() override;
@@ -42,7 +42,6 @@ public:
 signals:
     void    sig_regenerate();
     void    sig_loadTiling(QString);
-    void    sig_saveXML(QString);
     void    sig_mapEdSelection();
 
 public slots:
@@ -52,7 +51,6 @@ public slots:
     void    slot_setWS();
 
 private slots:
-    void    slot_saveAsXML();
     void    slot_Viewer_pressed(int id);
     void    slot_designViewer_pressed(int id);
     void    slot_protoViewer_pressed(int id);
@@ -62,17 +60,13 @@ private slots:
     void    slot_figureViewer_pressed(int id);
     void    slot_delViewer_pressed(int id);
     void    slot_mapEdView_pressed(int id);
-    void    slot_showXMLName(QString name);
     void    slot_wsStatusBox(bool on);
-    void    designNotesChanged();
 
 protected:
     void  selectView(int id, int id2);
     void  createWorkspaceMakers();
     void  createWorkspaceViewers();
     void  createWorkspaceStatus();
-    void  createConfigGrid();
-
     void  refreshPanel();
     void  makeConnections();
     void  updateWsStatus();
@@ -81,15 +75,13 @@ private:
     QGroupBox   *workspaceViewersBox;
     QGroupBox   *workspaceMakersBox;
     QGroupBox   *workspaceStatusBox;
-    QGridLayout *configGrid;
-
     QCheckBox   *cbDesignView;
     QCheckBox   *cbProtoView;
     QCheckBox   *cbProtoFeatureView;
     QCheckBox   *cbTilingView;
     QCheckBox   *cbFigureView;
     QCheckBox   *cbDELView;
-    QCheckBox   *cbTilingMakerrView;
+    QCheckBox   *cbTilingMakerView;
     QCheckBox   *cbFigMapView;
     QCheckBox   *cbFaceSetView;
 
@@ -119,13 +111,7 @@ private:
     QRadioButton *radioTileDesSourceWS;
 
     QRadioButton *mapEdStyle;
-    QRadioButton *mapEdProto;
-    QRadioButton *mapEdFigure;
-
-    QTextEdit   *designNotes;
-
-    QLineEdit   *leSaveXmlName;
-    QPushButton *saveXml;
+    QRadioButton *mapEdWS;
 
     QLabel  *  lab_activeDesigns;
     QLabel  *  lab_LoadedStylename;
@@ -150,8 +136,6 @@ private:
 
     QGridLayout * statusBox;
     QVBoxLayout * dummyStatusBox;
-
-
 };
 
 #endif

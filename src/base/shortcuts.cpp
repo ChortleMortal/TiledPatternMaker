@@ -20,12 +20,12 @@ QString Shortcuts::getCanvasShortcuts()
     N   <br>\
     O   Layer Out (hide) <br>\
     P   Print (actually save image) <br>\
-    Q   Quit app <br>\
-ALT-R   Run (start tinmer and mode layer) <br>\
+    Q   Quit app (or quit cycler)<br>\
+    R   <br>\
+ALT-R   Run (start timer and mode layer) <br>\
     S   MODE_SEPARATION  up/down/left/right <br>\
 ALT-S   MODE_STEP  up/down  0-9 <br>\
-    T   Display bounding rects (toggle) <br>\
-ALT-T   Toggle Scene<br>\
+    T   <br>\
     U   <br>\
     V   <br>\
     W   <br>\
@@ -37,7 +37,7 @@ ALT-T   Toggle Scene<br>\
     1   Toggle Design 0 visibility <br>\
     2   Toggle Design 2 visibility <br>\
     3   Toggle Design 3 visibility <br>\
-    ESC MODE_NONE<br>\
+    ESC MODE_DEFAULT<br>\
     F1  Help (show this)<br>\
     F2  MODE_TRANSFORM up/down/left/right/,/./-/= <br>\
     F3  <br>\
@@ -78,9 +78,9 @@ Actions:<br>\
     A  Add Polygon<br>\
           Adds a regular polygon with N sides, where N is a number selected using the keyboard.<br>\
     C  Copy Polygon<br>\
-          Copies the polygon under the mouse.  It can now be dragged<br>\
+          Copies the selected (clicked) polygon.  It can now be dragged<br>\
     D  Delete Polygon<br>\
-         Deletes the polygon under the mouse<br>\
+         Deletes the selected (clicked) polygon<br>\
     E  Exclude All Polygons<br>\
           Excludes all polygons from the tiling<br>\
     F  Fill Using Translation Vectors<br>\
@@ -111,14 +111,14 @@ Modes:<br>\
     F5 : Delete selected<br>\
     F6 : Split Edge in middle<br>\
     F7 : Extend Line<br>\
-            F  Flip Line Extension<br>\
-    F8 : Project Line<br>\
+    F8 : <br>\
     F9 : Draw Consctruction Circles<br>\
             Right-click = create<br>\
             Left-click and drag = move<br>\
             Shift/Left-click = resize<br>\
 <br>\
 Actions:<br>\
+    F  Flip Line Extension<br>\
     M  Raise Menu<br>\
     Q  Quit - Exit the application<br>\
  </pre>\

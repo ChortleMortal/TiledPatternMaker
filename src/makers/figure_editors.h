@@ -40,10 +40,10 @@ class FigureEditor : public AQWidget
     Q_OBJECT
 
 public:
-    FigureEditor(FigureMaker *  editor, QString name);
+    FigureEditor(FigureMaker * fm, QString figname);
 
-    virtual FigurePtr getFigure() = 0;
-    virtual void resetWithFigure(FigurePtr figure) = 0;
+    virtual FigurePtr getFigure()  { return figure; }
+    virtual void      resetWithFigure(FigurePtr fig);
 
     void    addLayout(QBoxLayout * layout) { vbox->addLayout(layout);}
     void    addWidget(QWidget    * widget) { vbox->addWidget(widget);}
@@ -52,85 +52,87 @@ signals:
     void sig_figure_changed();
 
 public slots:
-    virtual void updateGeometry() = 0;
+    virtual void updateGeometry();
 
 protected:
-    virtual void updateLimits() = 0;
+    virtual void updateLimits();
 
-    FigureMaker	* editor;
+    FigurePtr       figure;
+    QString         name;
+
+    FigureMaker	    * figmaker;
     AQVBoxLayout    * vbox;
 
     DoubleSliderSet	* figureScale;
     DoubleSliderSet	* boundaryScale;
     SliderSet       * boundarySides;
-
-    QString         name;
+    DoubleSliderSet * figureRotate;
 };
 
-class RadialEditor : public FigureEditor
+class StarEditor : public FigureEditor
 {
     Q_OBJECT
 
 public:
-    RadialEditor(FigureMaker * editor, QString name);
-
-    virtual FigurePtr getFigure() = 0;
-    virtual void resetWithFigure( FigurePtr figure ) = 0;
-
-public slots:
-    virtual void updateGeometry() = 0;
-
-protected:
-    virtual void updateLimits()   = 0;
-
-    SliderSet       *   n;
-    DoubleSliderSet *   radial_r;
-
-private:
-};
-
-class StarEditor : public RadialEditor
-{
-    Q_OBJECT
-
-public:
-    StarEditor(FigureMaker * editor, QString name);
+    StarEditor(FigureMaker * fm, QString figname);
 
     virtual FigurePtr getFigure();
-    virtual void      resetWithFigure(FigurePtr figure);
+    virtual void      resetWithFigure(FigurePtr fig);
 
 public slots:
     virtual void updateGeometry();
 
 protected:
-    void    setStar(StarPtr star) { this->star = star; }
-
     virtual void updateLimits();
 
-    DoubleSliderSet	*	d;
-    SliderSet		*	s;
+    SliderSet       *   n_slider;
+    DoubleSliderSet	*	d_slider;
+    SliderSet		*	s_slider;
 
 private:
     StarPtr			star;
 };
 
 
+class RosetteEditor : public FigureEditor
+{
+    Q_OBJECT
+
+public:
+    RosetteEditor(FigureMaker * fm, QString figname);
+
+    virtual FigurePtr getFigure();
+    virtual void      resetWithFigure(FigurePtr fig);
+
+public slots:
+    virtual void updateGeometry();
+
+protected:
+    virtual void updateLimits();
+
+    SliderSet       *   n_slider;
+    DoubleSliderSet	*	q_slider;
+    DoubleSliderSet	*	k_slider;
+    SliderSet       *   s_slider;
+
+private:
+    RosettePtr rosette;
+};
+
 class ConnectStarEditor : public StarEditor
 {
     Q_OBJECT
 
 public:
-    ConnectStarEditor(FigureMaker * editor, QString name );
+    ConnectStarEditor(FigureMaker * fm, QString figname);
 
     FigurePtr getFigure();
-    void      resetWithFigure( FigurePtr figure );
+    virtual void resetWithFigure(FigurePtr fig );
 
 public slots:
-    void updateGeometry();
 
 protected:
     void calcScale();
-    void updateLimits();
 
     QPushButton     *   defaultBtn;
 
@@ -138,21 +140,40 @@ private:
     StarConnectPtr starConnect;
 };
 
+class ConnectRosetteEditor : public RosetteEditor
+{
+    Q_OBJECT
+
+public:
+    ConnectRosetteEditor(FigureMaker * fm, QString figname);
+
+    FigurePtr getFigure();
+    virtual void  resetWithFigure(FigurePtr fig);
+
+protected:
+    void    calcScale();
+
+    QPushButton * defaultBtn;
+
+private:
+    RosetteConnectPtr rosetteConnect;
+};
+
 class ExtendedStarEditor : public StarEditor
 {
     Q_OBJECT
 
 public:
-    ExtendedStarEditor(FigureMaker * editor, QString name );
+    ExtendedStarEditor(FigureMaker * fm, QString figname);
 
     FigurePtr getFigure();
-    void resetWithFigure( FigurePtr figure );
+    virtual void resetWithFigure(FigurePtr fig);
 
 public slots:
-    void updateGeometry();
+    virtual void updateGeometry();
 
 protected:
-    void updateLimits();
+    virtual void updateLimits();
 
 private:
     ExtStarPtr      extended;
@@ -162,61 +183,15 @@ private:
 
 };
 
-class RosetteEditor : public RadialEditor
-{
-    Q_OBJECT
-
-public:
-    RosetteEditor(FigureMaker * editor, QString name);
-
-    virtual FigurePtr getFigure();
-    virtual void resetWithFigure(FigurePtr figure);
-
-public slots:
-    virtual void updateGeometry();
-
-protected:
-    virtual void updateLimits();
-
-    DoubleSliderSet	*	q;
-    DoubleSliderSet	*	k;
-    SliderSet       *   s;
-
-private:
-    RosettePtr rosette;
-};
-
-class ConnectRosetteEditor : public RosetteEditor
-{
-    Q_OBJECT
-
-public:
-    ConnectRosetteEditor(FigureMaker * editor, QString name);
-
-    FigurePtr getFigure();
-    void      resetWithFigure( FigurePtr figure );
-
-protected:
-    void    updateGeometry();
-    void    calcScale();
-
-    QPushButton * defaultBtn;
-
-private:
-    void updateLimits();
-
-    RosetteConnectPtr rosetteConnect;
-};
-
 class ExtendedRosetteEditor : public RosetteEditor
 {
     Q_OBJECT
 
 public:
-    ExtendedRosetteEditor(FigureMaker * editor, QString name);
+    ExtendedRosetteEditor(FigureMaker * fm, QString figname);
 
     FigurePtr getFigure();
-    void resetWithFigure( FigurePtr figure );
+    virtual void resetWithFigure(FigurePtr fig);
 
 public slots:
     void updateGeometry();

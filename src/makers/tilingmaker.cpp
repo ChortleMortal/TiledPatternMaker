@@ -41,7 +41,7 @@
 
 TilingMaker * TilingMaker::mpThis = nullptr;
 
-static bool debugMouse = false;
+const bool debugMouse = false;
 
 static QString strMouseMode[] =
 {
@@ -1270,7 +1270,6 @@ void TilingMaker::slot_procKeyEvent(QKeyEvent * k)
     {
         // actions
         case 'A': addRegularPolygon(); break;
-        case 'B': addRegularPolygon(); break;
         case 'C': addFeatureSelectionPointer(findFeatureUnderMouse()); break;
         case 'D': deleteFeature(findFeatureUnderMouse()); break;
         case 'E': excludeAll(); break;

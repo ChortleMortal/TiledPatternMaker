@@ -36,7 +36,7 @@
 // Thick.java
 //
 // A style that has a thickness and can have its outline drawn.
-
+//
 ////////////////////////////////////////////////////////////////////////////
 //
 // Creation.
@@ -79,11 +79,12 @@ void Thick::setLineWidth(qreal width )
 
 void Thick::resetStyleRepresentation()
 {
-    resetStyleMap();}
+    resetStyleMap();
+}
 
 void Thick::createStyleRepresentation()
 {
-    if (getReadOnlyMap())
+    if (getMap())
     {
         return;
     }
@@ -101,28 +102,34 @@ void Thick::draw(GeoGraphics * gg )
         return;
     }
 
+    MapPtr map = getMap();
+    if (!map)
+    {
+        qDebug() << "Thick::draw EMPTY Map";
+        return;
+    }
+
     // Note: we multiply the width by two because all other styles using
     //       the width actully widen the drawing in both perpendicular
     //       directions by that width.
-        gg->pushAndCompose(getLayerTransform());
 
-        if ( draw_outline )
+    gg->pushAndCompose(getLayerTransform());
+
+    if ( draw_outline )
+    {
+        QPen pen(Qt::black);
+        for (auto edge : map->getEdges())
         {
-            QPen pen(Qt::black);
-            for (auto e = getReadOnlyMap()->getEdges()->begin(); e != getReadOnlyMap()->getEdges()->end(); e++)
-            {
-                EdgePtr edge = *e;
-                gg->drawThickEdge(edge,width * 2 + 0.05, pen);
-            }
+            gg->drawThickEdge(edge,width * 2 + 0.05, pen);
         }
+    }
 
-        QPen pen(colors.getNextColor().color);
-        for (auto e = getReadOnlyMap()->getEdges()->begin(); e != getReadOnlyMap()->getEdges()->end(); e++)
-        {
-            EdgePtr edge = *e;
-            gg->drawThickEdge(edge, width * 2, pen);
-        }
+    QPen pen(colors.getNextColor().color);
+    for (auto edge : map->getEdges())
+    {
+        gg->drawThickEdge(edge, width * 2, pen);
+    }
 
-        gg->pop();
+    gg->pop();
 }
 

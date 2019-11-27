@@ -29,7 +29,7 @@
 #include "designs/patterns.h"
 #include "tile/Tiling.h"
 
-page_tileColorMaker:: page_tileColorMaker(ControlPanel *panel)  : panel_page(panel,"Tile Color Maker")
+page_tileColorMaker:: page_tileColorMaker(ControlPanel * cpanel)  : panel_page(cpanel,"Tile Color Maker")
 {
     createSourceSelect();
 
@@ -191,21 +191,30 @@ void page_tileColorMaker::slot_edit()
     FeaturePtr fp = qlfp[row];
     ColorSet & colorSet = fp->getBkgdColors();
     DlgColorSet dlg(colorSet,this);
-    dlg.exec();
 
-    emit sig_render();
+    connect(&dlg, &DlgColorSet::sig_colorsChanged, this, &page_tileColorMaker::slot_colors_changed);
+
+    dlg.exec();
 
     onEnter();
 }
 
+void  page_tileColorMaker::slot_colors_changed()
+{
+    if (config->tilingMakerViewer == TD_STYLE)
+        emit sig_render(RENDER_LOADED);
+    else
+        emit sig_render(RENDER_WS);
+}
+
 void  page_tileColorMaker::slot_loadedXML(QString name)
 {
-    Q_UNUSED(name);
+    Q_UNUSED(name)
     onEnter();
 }
 
 void page_tileColorMaker::slot_loadedTiling (QString name)
 {
-    Q_UNUSED(name);
+    Q_UNUSED(name)
     onEnter();
 }

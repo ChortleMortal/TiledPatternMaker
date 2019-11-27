@@ -66,7 +66,7 @@ public:
     ColoredEditor(Colored * c, QTableWidget * table);
 
 public slots:
-    void slot_colorChanged(QColor color);
+    void slot_colorsChanged();
 
 private slots:
     void slot_transparencyChanged(qreal val);
@@ -80,10 +80,8 @@ private:
 
     Colored         * colored;
     QTableWidget    * table;
-    QLabel          * color_label;
-    QLabel          * color_label2;
+    AQWidget        * colorwidget;
     QPushButton     * color_button;
-    QPushButton     * color_button2;
     DoubleSliderSet * transparency;
 };
 

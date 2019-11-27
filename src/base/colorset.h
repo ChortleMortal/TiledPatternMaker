@@ -76,14 +76,15 @@ public:
     ColorSet();
     ColorSet(const ColorSet & other);
 
-    void            setColor(QColor color, bool hide=false);
-    void            setColor(TPColor color);
     void            addColor(QColor color, bool hide=false);
+    void            addColor(TPColor color);
     void            setColor(int idx, QColor color, bool hide=false);
     void            setColor(int idx, TPColor tpcolor);
 
     void            setColors(QVector<TPColor> &cset);
     void            setColors(const ColorSet &cset);
+
+    void            setOpacity(qreal val);
 
     void            removeColor(int idx);
 

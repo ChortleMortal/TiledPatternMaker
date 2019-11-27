@@ -32,7 +32,7 @@ class page_workspace : public panel_page
     Q_OBJECT
 
 public:
-    page_workspace(ControlPanel *panel);
+    page_workspace(ControlPanel * cpanel);
 
     void refreshPage() override;
     void onEnter() override;
@@ -47,7 +47,7 @@ private slots:
 
 protected:
     void populateStyles(QTreeWidgetItem * parent, StyledDesign &design);
-    void populateMap(QTreeWidgetItem *parent, constMapPtr mp);
+    void populateMap(QTreeWidgetItem *parent, MapPtr mp);
     void populatePrototype(QTreeWidgetItem * parent, PrototypePtr pp);
     void populateTiling(QTreeWidgetItem * parent, TilingPtr tp);
     void populateDEL(QTreeWidgetItem * parent, DesignElementPtr de);
@@ -65,9 +65,9 @@ private:
     Workspace   * ws;
 
     QTreeWidgetItem * loadedStyle;
-    QTreeWidgetItem * workingStyle;
-    QTreeWidgetItem * workingPrototype;
-    QTreeWidgetItem * workingTiling;
+    QTreeWidgetItem * workspaceStyle;
+    QTreeWidgetItem * workspacePrototype;
+    QTreeWidgetItem * workspaceTiling;
     QTreeWidgetItem * workingFigure;
 };
 

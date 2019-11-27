@@ -71,16 +71,15 @@ void Outline::createStyleRepresentation()
         return;
     }
 
-    setupStyleMap();
+    MapPtr map = setupStyleMap();
 
-    for (auto e = getReadOnlyMap()->getEdges()->begin(); e != getReadOnlyMap()->getEdges()->end(); e++)
+    for (auto edge : map->getEdges())
     {
-        EdgePtr edge = *e;
         VertexPtr v1 = edge->getV1();
         VertexPtr v2 = edge->getV2();
 
-        BelowAndAbove top   = getPoints(edge, v1, v2, width );
-        BelowAndAbove fromp = getPoints(edge, v2, v1, width );
+        BelowAndAbove top   = getPoints(map, edge, v1, v2, width);
+        BelowAndAbove fromp = getPoints(map, edge, v2, v1, width);
 
         BelowAndAboveEdge bae;
         bae.type     = edge->getType();
@@ -180,7 +179,7 @@ void Outline::draw(GeoGraphics *gg)
 // The join point on the other side of the joint can be computed by
 // reflecting the point returned by this function through the joint.
 
-QPointF  Outline::getJoinPoint(QPointF joint, QPointF a, QPointF b, qreal width )
+QPointF  Outline::getJoinPoint(QPointF joint, QPointF a, QPointF b, qreal qwidth )
 {
     qreal th = Point::sweep(joint, a, b );
 
@@ -194,7 +193,7 @@ QPointF  Outline::getJoinPoint(QPointF joint, QPointF a, QPointF b, qreal width 
     QPointF d2 = joint - b;
     Point::normalizeD(d2);
 
-    qreal l   = width / qSin(th);
+    qreal l   = qwidth / qSin(th);
     qreal isx = joint.x() - (d1.x() + d2.x()) * l;
     qreal isy = joint.y() - (d1.y() + d2.y()) * l;
     return QPointF( isx, isy );
@@ -205,7 +204,7 @@ QPointF  Outline::getJoinPoint(QPointF joint, QPointF a, QPointF b, qreal width 
 // to draw at the edge's 'to' vertex.  Call this twice to get the
 // complete outline of the hexagon to draw for this edge.
 
-BelowAndAbove Outline::getPoints(EdgePtr edge, VertexPtr from, VertexPtr to, qreal width )
+BelowAndAbove Outline::getPoints(MapPtr map, EdgePtr edge, VertexPtr from, VertexPtr to, qreal qwidth )
 {
     QPointF pfrom = from->getPosition();
     QPointF pto   = to->getPosition();
@@ -214,54 +213,52 @@ BelowAndAbove Outline::getPoints(EdgePtr edge, VertexPtr from, VertexPtr to, qre
     Point::normalizeD(dir);
     QPointF perp = Point::perp(dir);
 
-    int nn = to->numNeighbours();
+    NeighbourMap & nmap = map->getNeighbourMap();
+    NeighboursPtr np    = nmap.getNeighbours(to);
+    int nn              = np->numNeighbours();
 
-    QPointF above;
-    QPointF below;
+    BelowAndAbove ret;
 
     if( nn == 1 )
     {
-        below = pto - (perp * width);
-        above = pto + (perp * width);
+        ret.below = pto - (perp * qwidth);
+        ret.above = pto + (perp * qwidth);
     }
     else if( nn == 2 )
     {
-        BeforeAndAfter ba = to->getBeforeAndAfter(edge);
+        BeforeAndAfter ba = np->getBeforeAndAfter(edge);
         QPointF       pov = ba.before->getOtherP(to);
-        QPointF        jp = getJoinPoint(pto, pfrom, pov, width);
+        QPointF        jp = getJoinPoint(pto, pfrom, pov, qwidth);
 
         if (jp.isNull())
         {
-            below = pto - (perp * width);
-            above = pto + (perp * width);
+            ret.below = pto - (perp * qwidth);
+            ret.above = pto + (perp * qwidth);
         }
         else
         {
-            below = jp;
-            above = Point::convexSum(jp, pto, 2.0 );
+            ret.below = jp;
+            ret.above = Point::convexSum(jp, pto, 2.0 );
         }
     }
     else
     {
-        BeforeAndAfter ba = to->getBeforeAndAfter( edge );
+        BeforeAndAfter ba = np->getBeforeAndAfter(edge);
         QPointF before_pt = ba.before->getOtherP(to);
         QPointF after_pt  = ba.after->getOtherP(to);
 
-        below = getJoinPoint( pto, pfrom, after_pt, width );
-        if (below.isNull())
+        ret.below = getJoinPoint( pto, pfrom, after_pt, qwidth );
+        if (ret.below.isNull())
         {
-            below = pto - (perp * width);
+            ret.below = pto - (perp * qwidth);
         }
-        above = getJoinPoint( pto, before_pt, pfrom, width );
-        if (above.isNull())
+        ret.above = getJoinPoint( pto, before_pt, pfrom, qwidth );
+        if (ret.above.isNull())
         {
-            above = pto + (perp * width);
+            ret.above = pto + (perp * qwidth);
         }
     }
 
-    BelowAndAbove ret;
-    ret.below = below;
-    ret.above = above;
     return ret;
 }
 

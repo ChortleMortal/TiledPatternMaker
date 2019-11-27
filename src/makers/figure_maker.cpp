@@ -54,7 +54,6 @@ FigureMaker::FigureMaker(TiledPatternMaker * maker)
 
     setObjectName("FigureMaker");
     connect(this,     &FigureMaker::sig_viewWS,            viewer, &WorkspaceViewer::slot_viewWorkspace);
-    connect(this,     &FigureMaker::sig_render,            maker,  &TiledPatternMaker::slot_render);
     connect(launcher, &FeatureLauncher::sig_launcherButton, this,   &FigureMaker::slot_launcherButton);
     connect(canvas,   &Canvas::sig_figure_changed,          this,   &FigureMaker::slot_launcherButton);
 }
@@ -177,6 +176,52 @@ FeaturePtr FigureMaker::getActiveFeature()
     }
     return dep->getFeature();
 }
+
+
+bool FigureMaker::duplicateActiveFeature()
+{
+    FeaturePtr fp = getActiveFeature();
+    if (!fp) return false;
+
+    // create new feature
+    FeaturePtr fp2;
+    if (fp->isRegular())
+    {
+        fp2 = make_shared<Feature>(fp->numPoints());
+    }
+    else
+    {
+        EdgePoly ep = fp->getEdgePoly();
+        fp2= make_shared<Feature>(ep);
+    }
+
+    Workspace * workspace = Workspace::getInstance();
+
+    if (!tiling) return false;
+    QList<PlacedFeaturePtr> & pfps = tiling->getPlacedFeatures();
+    PrototypePtr pp = workspace->getWSPrototype();
+
+    for (auto pfp : pfps)
+    {
+        if (pfp->getFeature() == fp)
+        {
+            PlacedFeaturePtr pfp2 = make_shared<PlacedFeature>(fp2,pfp->getTransform());
+            // put placed feature in the tiling
+            tiling->add(pfp2);
+            if (pp)
+            {
+                DesignElementPtr dep = make_shared<DesignElement>(fp2);
+                // put design element in the prototype
+                pp->addElement(dep);
+            }
+        }
+    }
+
+    pp->resetProtoMap();
+
+    return true;
+}
+
 
 QPolygonF FigureMaker::boundingRect()
 {

@@ -55,7 +55,7 @@ DesignElement::DesignElement( FeaturePtr feature )
     }
     else
     {
-        figure = make_shared<ExplicitFigure>(make_shared<Map>(),FIG_TYPE_EXPLICIT);
+        figure = make_shared<ExplicitFigure>(make_shared<Map>("FIG_TYPE_EXPLICIT map"),FIG_TYPE_EXPLICIT);
     }
     refs++;
 }

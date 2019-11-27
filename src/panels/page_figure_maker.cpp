@@ -29,12 +29,13 @@
 #include "style/Style.h"
 #include "panels/panel.h"
 
-page_figure_maker::page_figure_maker(ControlPanel *panel) : panel_page(panel,"Figure Maker")
+page_figure_maker::page_figure_maker(ControlPanel * cpanel) : panel_page(cpanel,"Figure Maker")
 {
     // top line
     radioLoadedStyleTileView = new QRadioButton("Style Tiling");
     radioWSTileView          = new QRadioButton("Workspace Tiling");
     whiteBackground          = new QCheckBox("White background");
+    QPushButton * pbDup      = new QPushButton("Duplicate Current");
 
     tilingGroup.addButton(radioLoadedStyleTileView,FV_STYLE);
     tilingGroup.addButton(radioWSTileView,FV_WS);
@@ -45,6 +46,8 @@ page_figure_maker::page_figure_maker(ControlPanel *panel) : panel_page(panel,"Fi
     hbox->addWidget(radioWSTileView);
     hbox->addStretch();
     hbox->addWidget(whiteBackground);
+    hbox->addStretch();
+    hbox->addWidget(pbDup);
 
     // middle
     figureMaker = new FigureMaker(maker);
@@ -79,7 +82,8 @@ page_figure_maker::page_figure_maker(ControlPanel *panel) : panel_page(panel,"Fi
     connect(&targetGroup,       SIGNAL(buttonClicked(int)),         this,  SLOT(slot_target_selected(int)));
     connect(pbReplaceInStyle,   &QPushButton::clicked,              this,  &page_figure_maker::slot_replaceInStyle);
     connect(pbAddToStyle,       &QPushButton::clicked,              this,  &page_figure_maker::slot_addToStyle);
-    connect(pbRender,           &QPushButton::clicked,              this,  &page_figure_maker::sig_render);
+    connect(pbRender,           &QPushButton::clicked,              this,  &page_figure_maker::slot_render);
+    connect(pbDup,              &QPushButton::clicked,              this,  &page_figure_maker::slot_duplicateCurrent);
     connect(whiteBackground,    &QCheckBox::clicked,                this,  &page_figure_maker::whiteClicked);
 
     connect(maker,  &TiledPatternMaker::sig_loadedTiling,   this,   &page_figure_maker::slot_loadedTiling);
@@ -100,7 +104,7 @@ void page_figure_maker::slot_unload()
     loadedTiling.reset();
 }
 
-void page_figure_maker::reload()
+void page_figure_maker::reload(bool force)
 {
     if (config->figureViewer == FV_STYLE)
     {
@@ -109,8 +113,9 @@ void page_figure_maker::reload()
         StylePtr sp = sd.getFirstStyle();
         if (sp)
         {
-            if (sp != loadedStyle)
+            if (sp != loadedStyle || force)
             {
+
                 loadedStyle = sp;
                 figureMaker->setNewStyle(loadedStyle);
             }
@@ -123,7 +128,7 @@ void page_figure_maker::reload()
 
         if (tp && tp->countPlacedFeatures())
         {
-            if (tp != loadedTiling)
+            if (tp != loadedTiling || force)
             {
                 loadedTiling = tp;
                 figureMaker->setNewTiling(loadedTiling);
@@ -136,7 +141,14 @@ void page_figure_maker::reload()
 
 void page_figure_maker::onEnter()
 {
+    QString txt("green = figure  |  magenta = feature boundary  |  red = radial figure boundary  |  yellow = extended boundary");
+    panel->setStatus(txt);
     reload();
+}
+
+void page_figure_maker::onExit()
+{
+    panel->setStatus("");
 }
 
 void page_figure_maker::refreshPage(void)
@@ -151,11 +163,6 @@ void page_figure_maker::refreshPage(void)
 
 void page_figure_maker::slot_tilingChanged()
 {
-    if (config->viewerType != VIEW_FIGURE_MAKER)
-    {
-        return;
-    }
-
     if (figureMaker)
     {
         qDebug() << "++tiling changed";
@@ -197,7 +204,10 @@ void page_figure_maker::slot_replaceInStyle()
     info.setSizeF(QSizeF(1500.0,1100.0));
     info.setBorder(nullptr);
 
-    emit sig_render();
+    if (config->pushTarget == TARGET_WS_STYLES)
+        emit sig_render(RENDER_WS);
+    else
+        emit sig_render(RENDER_LOADED);
 }
 
 void page_figure_maker::slot_addToStyle()
@@ -216,7 +226,18 @@ void page_figure_maker::slot_addToStyle()
     info.setSizeF(QSizeF(1500.0,1100.0));
     info.setBorder(nullptr);
 
-    emit sig_render();
+    if (config->pushTarget == TARGET_WS_STYLES)
+        emit sig_render(RENDER_WS);
+    else
+        emit sig_render(RENDER_LOADED);
+}
+
+void page_figure_maker::slot_render()
+{
+    if (config->pushTarget == TARGET_WS_STYLES)
+        emit sig_render(RENDER_WS);
+    else
+        emit sig_render(RENDER_LOADED);
 }
 
 void page_figure_maker::slot_source_selected(int id)
@@ -240,22 +261,28 @@ void  page_figure_maker::whiteClicked(bool state)
     emit sig_viewWS();
 }
 
+void page_figure_maker::slot_duplicateCurrent()
+{
+    if (figureMaker->duplicateActiveFeature())
+    {
+    reload(true);
+        if (config->pushTarget == TARGET_WS_STYLES)
+            emit sig_render(RENDER_WS);
+        else
+            emit sig_render(RENDER_LOADED);
+    }
+}
+
 void  page_figure_maker::slot_loadedXML(QString name)
 {
-    Q_UNUSED(name);
+    Q_UNUSED(name)
 
-    if (config->viewerType == VIEW_FIGURE_MAKER)
-    {
-        reload();
-    }
+    reload();
 }
 
 void page_figure_maker::slot_loadedTiling (QString name)
 {
-    Q_UNUSED(name);
+    Q_UNUSED(name)
 
-    if (config->viewerType == VIEW_FIGURE_MAKER)
-    {
-        reload();
-    }
+    reload();
 }
