@@ -1,0 +1,1 @@
+To download the version 1.3 Windows 10 build for x64 click on <a href="https://github.com/ChortleMortal/TiledPatternMaker/releases/latest/download/TiledPatternMakerInstaller.exe">Windows 10 x64 Version 1.3</a>
