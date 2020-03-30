@@ -93,11 +93,12 @@ void TiledPatternMaker::startEverything()
     connect(canvas, &Canvas::sig_raiseMenu,               this, &TiledPatternMaker::slot_raiseMenu);
 
     // create cycler
+    QThread * thread = new QThread();
+    thread->start();
+
     cyclerWindow = nullptr;
     cycler = Cycler::getInstance();
-    QThread * thread = new QThread();
-    cycler->moveToThread(thread);
-    thread->start();
+    cycler->init(thread);
 
     connect(this,   &TiledPatternMaker::sig_readyNext,  cycler,  &Cycler::slot_readyNext);
     connect(this,   &TiledPatternMaker::sig_takeNext,   cycler,  &Cycler::slot_nextCycle);
@@ -113,7 +114,7 @@ void TiledPatternMaker::startEverything()
     connect(cycler,    &Cycler::sig_png,            canvas, &Canvas::slot_png);
 
 
-    connect(canvas,   &Canvas::sig_cyclerStart,   cycler,  &Cycler::slot_startCycle);
+    connect(canvas,   &Canvas::sig_cyclerStart,  cycler,  &Cycler::slot_startCycle, Qt::QueuedConnection);
     connect(canvas,   &Canvas::sig_cyclerKey,    cycler,  &Cycler::slot_psuedoKey);
     connect(canvas,   &Canvas::sig_cyclerQuit,   cycler,  &Cycler::slot_stopCycle);
 

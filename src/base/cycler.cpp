@@ -44,15 +44,24 @@ Cycler * Cycler::getInstance()
 
 Cycler::Cycler() : QObject()
 {
-    busy   = false;
+    busy        = false;
     cycleMode   = CYCLE_NONE;
 
     config         = Configuration::getInstance();
     canvas         = Canvas::getInstance();
-    Workspace * ws = Workspace::getInstance();
+}
 
+void Cycler::init(QThread * thread)
+{
+    moveToThread(thread);
+
+    QTimer * timer = new QTimer();
+
+    Workspace * ws = Workspace::getInstance();
     connect(this,   &Cycler::sig_clearCanvas, ws,   &Workspace::slot_clearCanvas);
-    connect(&timer, &QTimer::timeout,         this, &Cycler::slot_nextCycle);
+    connect(timer,  &QTimer::timeout,         this, &Cycler::slot_nextCycle);
+
+    timer->start(1000);
 }
 
 Cycler::~Cycler()
@@ -68,8 +77,6 @@ void Cycler::slot_startCycle()
     qDebug() << "slot_cycle" << sCycleMode[cycleMode];
 
     cyclePause = false;
-
-    timer.stop();
 
     switch(cycleMode)
     {
@@ -100,7 +107,6 @@ void Cycler::startCycleTimer()
 {
     slot_readyNext();   // kick off
     slot_nextCycle();
-    timer.start(1000);
 }
 
 
@@ -108,7 +114,6 @@ void Cycler::slot_stopCycle()
 {
     eCycleMode oldMode = cycleMode;
     qDebug() << "slot_stopCycle";
-    timer.stop();
     cycleMode = CYCLE_NONE;
     if (oldMode != CYCLE_NONE)
         sig_finished();
@@ -117,7 +122,10 @@ void Cycler::slot_stopCycle()
 
 void Cycler::slot_nextCycle()
 {
-    //qDebug() << "tick";
+    if (cycleMode == CYCLE_NONE)
+    {
+        return;
+    }
 
     if (cyclePause || busy)
     {
@@ -210,6 +218,7 @@ void Cycler::slot_nextCycle()
 
         }
         break;
+
     case CYCLE_ORIGINAL_PNGS:
     case CYCLE_NONE:
         break;

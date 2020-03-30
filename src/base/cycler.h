@@ -65,6 +65,8 @@ class Cycler : public QObject
 public:
     static Cycler * getInstance();
 
+    void    init(QThread * thread);
+
     eCycleMode getMode() { return cycleMode; }
 
 signals:
@@ -106,7 +108,6 @@ private:
     Canvas        * canvas;
 
     bool            cyclePause;
-    QTimer          timer;
 
     bool            busy;
 
