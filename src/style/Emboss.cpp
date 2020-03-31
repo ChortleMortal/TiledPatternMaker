@@ -85,7 +85,6 @@ void Emboss::draw(GeoGraphics * gg)
 
     if (pts4.size() != 0)
     {
-        gg->pushAndCompose(getLayerTransform());
         for( int idx = 0; idx < pts4.size(); idx++)
         {
             BelowAndAboveEdge bae = pts4[idx];
@@ -100,7 +99,6 @@ void Emboss::draw(GeoGraphics * gg)
                 gg->drawLine(bae.v2.v, bae.v1.v,pen);
             }
         }
-        gg->pop();
     }
 }
 

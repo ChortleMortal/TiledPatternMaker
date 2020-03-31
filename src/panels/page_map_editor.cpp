@@ -181,7 +181,7 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     animateChk                  = new QCheckBox("Animate Load");
 
     DoubleSpinSet * lineWidthSpin = new DoubleSpinSet("Line Width",3.0,1.0,10.0);
-    DoubleSpinSet * consWidthSpin = new DoubleSpinSet("Cons Widtth",1.0,1.0,10.0);
+    DoubleSpinSet * consWidthSpin = new DoubleSpinSet("Cons Width",1.0,1.0,10.0);
     DoubleSpinSet * radiusSpin    =new DoubleSpinSet("Radius",0.25,0.0,2.0);
     radiusSpin->setPrecision(8);
     radiusSpin->setSingleStep(0.05);

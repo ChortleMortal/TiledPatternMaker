@@ -53,8 +53,8 @@ public:
     QPointF getPosition() const {return pos;}
     void    setPosition(QPointF pt) {pos = pt;}
 
-    interlaceInfo & getInterlaceInfo() {  return interlaceData; }
-    void            initInterlaceInfo() { interlaceData.init(); }
+    InterlaceInfo & getInterlaceInfo() {  return interlaceData; }
+    void            initInterlaceInfo() { interlaceData.initInterlace(); }
 
     qreal getAngle(EdgePtr edge);
 
@@ -69,7 +69,7 @@ public:
 private:
     QPointF       pos;
     VertexPtr     copy; 	// Used when cloning the map.
-    interlaceInfo interlaceData;
+    InterlaceInfo interlaceData;
     int           tmpVertexIndex;
 };
 

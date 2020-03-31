@@ -41,12 +41,21 @@
 TilingMakerView::TilingMakerView() : Layer("TilingMakerView")
 {
     config              = Configuration::getInstance();
+#if 0
     normal_color        = QColor(217,217,255,230);  // pale lilac
     in_tiling_color     = QColor(255,217,217,230);  // pink
     overlapping_color   = QColor(205,102, 25,127);  // ochre
     touching_color      = QColor( 25,102,205,127);  // blue
     under_mouse_color   = QColor(127,255,127,127);  // green
     drag_color          = QColor(206,179,102,230);
+#else
+    normal_color        = QColor(217,217,255,127);  // pale lilac
+    in_tiling_color     = QColor(255,217,217,127);  // pink
+    overlapping_color   = QColor(205,102, 25,127);  // ochre
+    touching_color      = QColor( 25,102,205,127);  // blue
+    under_mouse_color   = QColor(127,255,127,127);  // green
+    drag_color          = QColor(206,179,102,127);
+#endif
     construction_color  = Qt::darkGreen;
 
     _hide               = false;
@@ -72,6 +81,15 @@ void TilingMakerView::paint(QPainter *painter, const QStyleOptionGraphicsItem *o
     QTransform tr = getLayerTransform();
     GeoGraphics gg(painter,tr);
     draw(&gg);
+
+    if (config->showCenter)
+    {
+        QPointF pt = getCenter();
+        qDebug() << "style layer center=" << pt;
+        painter->setPen(QPen(Qt::green,3));
+        painter->setBrush(QBrush(Qt::green));
+        painter->drawEllipse(pt,13,13);
+    }
 }
 
 
@@ -357,9 +375,18 @@ TilingSelectionPtr TilingMakerView::findSelection(QPointF spt)
         return sel;
     else if ( (sel = findEdge(spt)) )
         return sel;
-    else if ( (sel = findFeature(spt)) )
-        return sel;
-
+    else
+    {
+        TilingSelectionPtr sel2 = findFeature(spt);
+        if (sel2)
+        {
+            sel = findCenter(sel2->getPlacedFeature(),spt);
+            if (sel)
+                return sel;
+            else
+                sel = sel2;
+        }
+    }
     return sel;
 }
 
@@ -388,7 +415,26 @@ QPointF TilingMakerView::findSelectionPointOrPoint(QPointF spt)
         return screenToWorld(spt);
     }
 
-    return sel->getPlacedPoint();       // TDO - is this right or Model Point
+    return sel->getPlacedPoint();       // TODO - is this right or Model Point
+}
+
+
+TilingSelectionPtr TilingMakerView::findCenter(PlacedFeaturePtr pf, QPointF spt)
+{
+    QTransform T    = pf->getTransform();
+    EdgePoly  epoly = pf->getFeatureEdgePoly();
+
+    QPointF apt = Point::center(epoly);
+    QPointF mpt = T.map(apt);
+    QPointF wpt = worldToScreen(mpt);
+
+    if (Point::dist2(spt,wpt) < 49.0)
+    {
+        return make_shared<TilingSelection>(FEAT_CENTER, pf, apt);
+    }
+
+    TilingSelectionPtr sel;
+    return sel;
 }
 
 QRectF TilingMakerView::boundingRect() const

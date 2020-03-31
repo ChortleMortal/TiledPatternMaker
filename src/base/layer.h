@@ -53,11 +53,11 @@ public:
     void    addToGroup(QGraphicsItem *item);
     void    removeFromGroup(QGraphicsItem *item);
 
-    void    setRotateCenter (QPointF pt);
-    QPointF getRotateCenter();
+    void    setCenter (QPointF pt);
+    QPointF getCenter();
 
-    void    setDeltas(Xform & xf);
-    Xform   getDeltas();
+    void    setLayerXform(Xform & xf);
+    Xform   getLayerXform();
 
     void    forceUpdateLayer();
     void    forceRedraw() ;
@@ -79,21 +79,23 @@ public slots:
     void slot_moveY(int amount);
     void slot_rotate(int amount);
     void slot_scale(int amount);
+    virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn);
 
 protected:
     QTransform baseT;
+    QTransform layerXT;
     QTransform layerT;
     QTransform invT;
     QPen       layerPen;
+    Xform      layerXform;
+
+    Configuration   * config;
 
 private:
     void computeLayerTransform();
 
     Canvas          * canvas;
     WorkspaceViewer * wsViewer;
-    Configuration   * config;
-
-    Xform           layerXform;
 
     QString name;
 };

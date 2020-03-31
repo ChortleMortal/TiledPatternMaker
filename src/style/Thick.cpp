@@ -113,8 +113,6 @@ void Thick::draw(GeoGraphics * gg )
     //       the width actully widen the drawing in both perpendicular
     //       directions by that width.
 
-    gg->pushAndCompose(getLayerTransform());
-
     if ( draw_outline )
     {
         QPen pen(Qt::black);
@@ -129,7 +127,5 @@ void Thick::draw(GeoGraphics * gg )
     {
         gg->drawThickEdge(edge, width * 2, pen);
     }
-
-    gg->pop();
 }
 

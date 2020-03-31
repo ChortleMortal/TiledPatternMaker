@@ -86,6 +86,7 @@ void MarkX::paint(QPainter *painter,
 AQLabel::AQLabel() : QLabel()
 {
     setAttribute(Qt::WA_DeleteOnClose);
+    connect(this, &AQLabel::sig_close, this, &AQLabel::close, Qt::QueuedConnection);
 }
 
 void AQLabel::keyPressEvent( QKeyEvent *k )
@@ -94,7 +95,7 @@ void AQLabel::keyPressEvent( QKeyEvent *k )
     if (key == Qt::Key_Space)
     {
         emit sig_takeNext();
-        close();
+        emit sig_close();       // foces take before close
     }
     else if (key == 'Q')
     {

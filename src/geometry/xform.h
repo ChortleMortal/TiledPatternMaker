@@ -13,35 +13,38 @@ public:
 
     void       init();
     void       setTransform(QTransform t);
+    void       addTransform(QTransform t);
 
-    QTransform computeTransform();
+    QTransform computeTransform(QTransform baseTransform);
     QTransform getTransform();
     QPointF    getTranslate() { return QPointF(translateX,translateY); }
     QString    toInfoString();
 
     qreal      getScale();
     qreal      getRotateRadians();
+    qreal      getRotateDegrees();
     qreal      getTranslateX();
     qreal      getTranslateY();
-    QPointF    getRotateCenter();
+    QPointF    getCenter();
 
     void       setScale(qreal s);
     void       setRotateRadians(qreal rr);
     void       setTranslateX(qreal x);
     void       setTranslateY(qreal y);
-    void       setRotateCenter(QPointF pt);
+    void       setCenter(QPointF pt);
 
+    bool    hasCenter;
 
 protected:
-    QTransform rotateAroundPoint();
+    QTransform rotateAroundPoint(QPointF pt);
+    QTransform scaleAroundPoint(QPointF pt);
 
 private:
     qreal   scale;
     qreal   rotationRadians;     // radians
     qreal   translateX;
     qreal   translateY;
-    QPointF rotateCenter;
-
+    QPointF center;             // model units
 };
 
 #endif // XFORM_H

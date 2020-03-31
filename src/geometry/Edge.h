@@ -77,6 +77,9 @@ public:
     QPointF   getArcCenter() { return arcCenter; }
     bool      isConvex()     { return convex; }
 
+    bool      isColinearAndTouching(EdgePtr e);
+    qreal     getAngle();
+
     void resetCurve();
     void setV1(VertexPtr v)  { v1 = v;}
     void setV2(VertexPtr v)  { v2 = v;  if ((type == EDGE_NULL) || (type == EDGE_POINT)) type = EDGE_LINE; }
@@ -89,8 +92,8 @@ public:
     bool sameAs(EdgePtr other);
     bool equals(EdgePtr other);
 
-    interlaceInfo & getInterlaceInfo() {  return interlaceData; }
-    void            initInterlaceInfo() { interlaceData.init(); }
+    InterlaceInfo & getInterlaceInfo() {  return interlaceData; }
+    void            initInterlaceInfo() { interlaceData.initInterlace(); }
 
     // Used to sort the edges in the map.
     qreal getMinX();
@@ -108,7 +111,7 @@ protected:
     QPointF         arcCenter;   // inside or outside the polygon
     bool            convex;
 
-    interlaceInfo   interlaceData;
+    InterlaceInfo   interlaceData;
     int             tmpEdgeIndex;
 };
 

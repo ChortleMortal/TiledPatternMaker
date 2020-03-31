@@ -106,7 +106,7 @@ void Design::init()
         destoryPatterns();
     }
 
-    info.init();
+    info.init2();
 
     //qDebug().noquote() << "Desgin::init" << sDesign2[_design];
 }

@@ -10,7 +10,7 @@ class LayoutTransform : public QHBoxLayout
     Q_OBJECT
 
 public:
-    LayoutTransform();
+    LayoutTransform(QString name);
 
     void setScale(qreal val) { scale->setValue(val); }
     void setRot(qreal val)   { rot->setValue(val); }
@@ -26,6 +26,7 @@ public:
     qreal getRot()   { return rot->value(); }
     qreal getX()     { return X->value(); }
     qreal getY()     { return Y->value(); }
+    QString getName(){ return name;}
 
     void       setTransform(QTransform T);
 
@@ -39,6 +40,7 @@ protected:
     DoubleSpinSet * rot;
     DoubleSpinSet * X;
     DoubleSpinSet * Y;
+    QString         name;
 };
 
 #endif // LAYOUT_TRANSFORM_H

@@ -38,6 +38,7 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel, "Log")
     QCheckBox   * cbLogToStderr         = new QCheckBox("Log To stderr");
     QCheckBox   * cbLogToDisk           = new QCheckBox("Log To Disk");
     QCheckBox   * cbLogToPanel          = new QCheckBox("Log To Panel");
+    QCheckBox   * cbLogNumberLines      = new QCheckBox("Number Lines");
 
     hbox->addWidget(btnCopyLog);
     hbox->addSpacing(43);
@@ -45,21 +46,25 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel, "Log")
     hbox->addWidget(cbLogToStderr);
     hbox->addWidget(cbLogToPanel);
     hbox->addStretch();
+    hbox->addWidget(cbLogNumberLines);
+    hbox->addStretch();
 
     vbox->addLayout(hbox);
 
     cbLogToStderr->setChecked(config->logToStderr);
     cbLogToDisk->setChecked(config->logToDisk);
     cbLogToPanel->setChecked(config->logToPanel);
+    cbLogNumberLines->setChecked(config->logNumberLines);
 
-    connect(cbLogToStderr,  &QCheckBox::clicked,    this,   &page_log::slot_logToStdErr);
-    connect(cbLogToDisk,    &QCheckBox::clicked,    this,   &page_log::slot_logToDisk);
-    connect(cbLogToPanel,   &QCheckBox::clicked,    this,   &page_log::slot_logToPanel);
-    connect(btnCopyLog,     &QPushButton::clicked,  this,   &page_log::slot_copyLog);
+    connect(cbLogToStderr,    &QCheckBox::clicked,    this,   &page_log::slot_logToStdErr);
+    connect(cbLogToDisk,      &QCheckBox::clicked,    this,   &page_log::slot_logToDisk);
+    connect(cbLogToPanel,     &QCheckBox::clicked,    this,   &page_log::slot_logToPanel);
+    connect(cbLogNumberLines, &QCheckBox::clicked,    this,   &page_log::slot_numberLines);
+    connect(btnCopyLog,       &QPushButton::clicked,  this,   &page_log::slot_copyLog);
 
     ed = qtAppLog::getTextEditor();     // linkage to qtAppLog
     ed->setMinimumWidth(800);
-    ed->setMinimumHeight(600);
+    ed->setMinimumHeight(750);
     ed->setLineWrapMode(QTextEdit::NoWrap);
     ed->setReadOnly(true);
 
@@ -137,10 +142,8 @@ void page_log::slot_copyLog()
         file = file + ".txt";
     }
 
-    QString newName = QFileInfo(file).fileName();
     qtAppLog * log = qtAppLog::getInstance();
-    //log->copyLog(newName);
-    log->saveLog(newName);
+    log->saveLog(file);
 }
 
 void page_log::slot_logToStdErr(bool enable)
@@ -155,15 +158,28 @@ void page_log::slot_logToDisk(bool enable)
     qtAppLog * log = qtAppLog::getInstance();
     log->logToDisk(enable);
     config->logToDisk = enable;
-
 }
 
 void page_log::slot_logToPanel(bool enable)
 {
+    if (!enable)
+    {
+        qDebug() << "Log to Panel: OFF";
+    }
     qtAppLog * log = qtAppLog::getInstance();
     log->logToPanel(enable);
     config->logToPanel = enable;
+    if (enable)
+    {
+        qDebug() << "Log to Panel: ON";
+    }
+}
 
+void page_log::slot_numberLines(bool enable)
+{
+    qtAppLog * log = qtAppLog::getInstance();
+    log->logLines(enable);
+    config->logNumberLines = enable;
 }
 
 AQScrollBar::AQScrollBar(page_log * plog)

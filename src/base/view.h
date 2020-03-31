@@ -35,6 +35,8 @@
 class Canvas;
 class Cycler;
 class ControlPanel;
+class MapEditor;
+class TilingMaker;
 
 class View : public QGraphicsView
 {
@@ -56,7 +58,6 @@ signals:
     void sig_mouseDragged(QPointF pos);
     void sig_mouseReleased(QPointF pos);
     void sig_mouseMoved(QPointF pos);
-    void sig_procKeyEvent(QKeyEvent * k);
     void sig_resize();
 
 protected:
@@ -77,6 +78,8 @@ private:
     static View    * mpThis;
     Canvas         * canvas;
     Configuration  * config;
+    TilingMaker    * tmaker;
+    MapEditor      * maped;
 
     bool   dragging;
     bool   expectedResize;

@@ -29,6 +29,7 @@
 //
 #include "geometry/Edge.h"
 #include "geometry/Map.h"
+#include "geometry/Loose.h"
 #include "style/Interlace.h"
 
 int Edge::refs = 0;
@@ -262,4 +263,27 @@ QPointF Edge::calcDefaultArcCenter(bool convex)
     return pt;
 }
 
+bool Edge::isColinearAndTouching(EdgePtr e)
+{
+    static bool debug = false;
+    if (debug) qDebug() << "testing"  << getTmpEdgeIndex() << "and" << e->getTmpEdgeIndex();
 
+    if ((e->contains(v1)) || (e->contains(v2)))
+    {
+        qreal angle = getLine().angle(e->getLine());
+        if (debug) qDebug() << "    angle=" << angle;
+        if ((qAbs(angle) < 1e-5) || (qAbs(angle-180.0) < 1e-5))
+        {
+            if (debug) qDebug() << "    colinear";
+            return true;
+        }
+    }
+    else if (debug) qDebug() << "    not touching";
+
+    return false;
+}
+
+qreal Edge::getAngle()
+{
+    return qAtan2(v1->getPosition().x() - v2->getPosition().x(),v1->getPosition().y()-v2->getPosition().y());
+}

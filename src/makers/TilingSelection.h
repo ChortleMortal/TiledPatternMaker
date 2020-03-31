@@ -46,7 +46,8 @@ enum eSelection
     EDGE          = 2,
     VERTEX        = 3,
     MID_POINT     = 4,
-    ARC_POINT     = 5
+    ARC_POINT     = 5,
+    FEAT_CENTER   = 6
 };
 
 #define Enum2Str(e)  {QString(#e)}
@@ -58,7 +59,8 @@ static QString strTiliingSelection[] =
     Enum2Str(EDGE),
     Enum2Str(VERTEX),
     Enum2Str(MID_POINT),
-    Enum2Str(ARC_POINT)
+    Enum2Str(ARC_POINT),
+    Enum2Str(FEAT_CENTER)
 };
 
 class TilingMakerView;

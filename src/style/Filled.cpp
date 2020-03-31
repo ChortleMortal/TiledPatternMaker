@@ -180,7 +180,6 @@ void Filled::drawOriginal(GeoGraphics * gg)
     if( whiteFaces.size() != 0 || blackFaces.size() != 0 )
     {
         qDebug()  << "black=" << blackFaces.size() << "white=" << whiteFaces.size();
-        gg->pushAndCompose(getLayerTransform());
 
         if (draw_outside_whites)
         {
@@ -204,14 +203,11 @@ void Filled::drawOriginal(GeoGraphics * gg)
                 color = blackColorSet.getNextColor().color;
             }
         }
-        gg->pop();
     }
 }
 
 void Filled::drawNew2(GeoGraphics *gg)
 {
-    gg->pushAndCompose(getLayerTransform());
-
     // not selected
     for (auto it = faceGroup.begin(); it != faceGroup.end(); it++)
     {
@@ -244,14 +240,10 @@ void Filled::drawNew2(GeoGraphics *gg)
             gg->drawPolygon(*fp->getPolygon(),QPen(Qt::red),QBrush(Qt::red));
         }
     }
-
-    gg->pop();
 }
 
 void Filled::drawNew3(GeoGraphics *gg)
 {
-    gg->pushAndCompose(getLayerTransform());
-
     // not selected
     for (auto it = faceGroup.begin(); it != faceGroup.end(); it++)
     {
@@ -291,6 +283,4 @@ void Filled::drawNew3(GeoGraphics *gg)
             gg->drawPolygon(*fp->getPolygon(),QPen(Qt::red),QBrush(Qt::red));
         }
     }
-
-    gg->pop();
 }

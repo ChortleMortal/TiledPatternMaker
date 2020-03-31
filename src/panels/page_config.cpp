@@ -23,7 +23,8 @@
  */
 
 #include "page_config.h"
-
+#include "panels/layout_sliderset.h"
+#include "base/canvas.h"
 
 page_config:: page_config(ControlPanel * cpanel)  : panel_page(cpanel,"Configuration")
 {
@@ -45,25 +46,32 @@ page_config:: page_config(ControlPanel * cpanel)  : panel_page(cpanel,"Configura
 
     QGridLayout *configGrid = new QGridLayout();
 
-    configGrid->addWidget(rootDesignBtn,0,0);
-    configGrid->addWidget(le_rootDesign,0,1);
+    int row = 0;
+    configGrid->addWidget(rootDesignBtn,row,0);
+    configGrid->addWidget(le_rootDesign,row,1);
 
-    configGrid->addWidget(newDesignBtn,1,0);
-    configGrid->addWidget(le_newDesign,1,1);
+    row++;
+    configGrid->addWidget(newDesignBtn,row,0);
+    configGrid->addWidget(le_newDesign,row,1);
 
-    configGrid->addWidget(rootTileBtn,2,0);
-    configGrid->addWidget(le_rootTile,2,1);
+    row++;
+    configGrid->addWidget(rootTileBtn,row,0);
+    configGrid->addWidget(le_rootTile,row,1);
 
-    configGrid->addWidget(newTileBtn,3,0);
-    configGrid->addWidget(le_newTile,3,1);
+    row++;
+    configGrid->addWidget(newTileBtn,row,0);
+    configGrid->addWidget(le_newTile,row,1);
 
-    configGrid->addWidget(examplesBtn,4,0);
-    configGrid->addWidget(le_examples,4,1);
+    row++;
+    configGrid->addWidget(examplesBtn,row,0);
+    configGrid->addWidget(le_examples,row,1);
 
-    configGrid->addWidget(rootImageBtn,5,0);
-    configGrid->addWidget(le_rootImage,5,1);
+    row++;
+    configGrid->addWidget(rootImageBtn,row,0);
+    configGrid->addWidget(le_rootImage,row,1);
 
-    configGrid->addWidget(reconfigurePathsBtn,6,0);
+    row++;
+    configGrid->addWidget(reconfigurePathsBtn,row,0);
 
     vbox->addLayout(configGrid);
 
@@ -82,16 +90,54 @@ page_config:: page_config(ControlPanel * cpanel)  : panel_page(cpanel,"Configura
     connect(le_rootTile,   &QLineEdit::textChanged,   this, &page_config::rootTileChanged);
     connect(le_newTile,    &QLineEdit::textChanged,   this, &page_config::newTtileChanged);
     connect(le_rootImage,  &QLineEdit::textChanged,   this, &page_config::rootImageChanged);
-    connect(le_examples,  &QLineEdit::textChanged,    this, &page_config::examplesChanged);
+    connect(le_examples,   &QLineEdit::textChanged,   this, &page_config::examplesChanged);
+
+    QCheckBox    * hideBackImage       = new QCheckBox("Hide background image");
+
+    QLabel       * gridLabel           = new QLabel("Grid:");
+    QRadioButton * gridScreen          = new QRadioButton("Screen");
+    QRadioButton * gridModel           = new QRadioButton("Model");
+    gridSpacing                        = new DoubleSpinSet("Spacing",1.0,0.0001,900);
+    gridSpacing->setDecimals(8);
+    QCheckBox    * showCenterChk       = new QCheckBox("Show Center");
+    QCheckBox    * gridCentered        = new QCheckBox("Centered");
+    SpinSet      * gridWidth           = new SpinSet("Width",config->gridWidth,1,9);
+
+    showCenterChk->setChecked(config->showCenter);
+    gridCentered->setChecked(config->gridCenter);
+
+    // map editor group
+    gridModelGroup.addButton(gridScreen,GRID_SCREEN);
+    gridModelGroup.addButton(gridModel,GRID_MODEL);
+    gridModelGroup.button(config->gridModel)->setChecked(true);
+
+    connect(&gridModelGroup,    SIGNAL(buttonClicked(int)),   this,  SLOT(slot_gridModel_pressed(int)));
+    connect(gridSpacing,        &DoubleSpinSet::valueChanged, this, &page_config::slot_gridSpacingChanged);
+    connect(gridWidth,          &SpinSet::valueChanged,       this, &page_config::slot_gridWidthChanged);
+    connect(showCenterChk,      &QCheckBox::stateChanged,     this, &page_config::slot_showCenterChanged);
+    connect(hideBackImage,      &QCheckBox::stateChanged,     this, &page_config::slot_hideBackChanged);
+    connect(gridCentered,       &QCheckBox::stateChanged,     this, &page_config::slot_centeredChanged);
+
+    QHBoxLayout * hbox = new QHBoxLayout;
+    hbox->addWidget(gridLabel);
+    hbox->addWidget(gridScreen);
+    hbox->addWidget(gridModel);
+    hbox->addLayout(gridSpacing);
+    hbox->addWidget(gridCentered);
+    hbox->addLayout(gridWidth);
+    hbox->addWidget(showCenterChk);
+    hbox->addStretch();
 
     QCheckBox   * cbVerifyMaps          = new QCheckBox("Verify Maps");
     QCheckBox   * cbVerifyDump          = new QCheckBox("Dump Map");
     QCheckBox   * cbVerifyVerbose       = new QCheckBox("Verbose");
 
     vbox->addSpacing(9);
+    vbox->addWidget(hideBackImage);
+    vbox->addLayout(hbox);
     vbox->addWidget(cbVerifyMaps);
 
-    QHBoxLayout * hbox = new QHBoxLayout();
+    hbox = new QHBoxLayout();
     hbox->addSpacing(15);
     hbox->addWidget(cbVerifyDump);
     vbox->addLayout(hbox);
@@ -111,6 +157,20 @@ page_config:: page_config(ControlPanel * cpanel)  : panel_page(cpanel,"Configura
 
 void  page_config::onEnter()
 {
+    gridModelGroup.button(config->gridModel)->setChecked(true);
+    switch (config->gridModel)
+    {
+    case GRID_MODEL:
+        gridSpacing->setLabel("Model Units:");
+        gridSpacing->setValue(config->gridStepModel);
+        gridSpacing->setSingleStep(0.01);
+        break;
+    case GRID_SCREEN:
+        gridSpacing->setLabel("Screen Units:");
+        gridSpacing->setValue(config->gridStepScreen);
+        gridSpacing->setSingleStep(1.0);
+        break;
+    }
 }
 
 void  page_config::refreshPage()
@@ -239,4 +299,49 @@ void  page_config::slot_verifyDumpClicked(bool enb)
 void  page_config::slot_verifyVerboseClicked(bool enb)
 {
     config->verifyVerbose = enb;
+}
+
+void page_config::slot_gridSpacingChanged(qreal value)
+{
+    switch(config->gridModel)
+    {
+    case GRID_MODEL:
+        config->gridStepModel = value;
+        break;
+    case GRID_SCREEN:
+        config->gridStepScreen = static_cast<int>(value);
+        break;
+    }
+    canvas->update();
+}
+
+void page_config::slot_gridWidthChanged(int value)
+{
+    config->gridWidth = value;
+    canvas->update();
+}
+
+void page_config::slot_gridModel_pressed(int id)
+{
+    config->gridModel = eGridModel(id);
+    canvas->update();
+    onEnter();
+}
+
+void page_config::slot_showCenterChanged(int id)
+{
+    config->showCenter = (id == Qt::Checked);
+    canvas->update();
+}
+
+void page_config::slot_hideBackChanged(int id)
+{
+    config->hideBackgroundImage = (id == Qt::Checked);
+    canvas->update();
+}
+
+void page_config::slot_centeredChanged(int id)
+{
+    config->gridCenter = (id == Qt::Checked);
+    canvas->update();
 }

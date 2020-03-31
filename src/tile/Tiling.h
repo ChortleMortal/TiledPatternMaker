@@ -95,10 +95,8 @@ public:
     FillData    getFillData() { return fillData;}
     void        setFillData(FillData & fdata) {fillData.set(fdata);}
 
-    BackgroundImage & getBackground() { return bkgd; }
-
-    void        setViewTransform(Xform xf) { viewXform = xf; }
-    Xform       getViewTransform() { return viewXform; }
+    void        setBackground(BkgdImgPtr bip) { bkgd = bip; }
+    BkgdImgPtr  getBackground() { return bkgd; }
 
     QString     dump() const;
 
@@ -116,23 +114,21 @@ protected:
     int     getRef()  { return refId; }
 
 private:
-    FillData fillData;
+    FillData    fillData;
 
-    QPointF	t1;
-    QPointF	t2;
+    QPointF     t1;
+    QPointF     t2;
 
     QList<PlacedFeaturePtr>	placed_features;
 
-    QString	name;
-    QString	desc;
-    QString author;
+    QString     name;
+    QString     desc;
+    QString     author;
 
-    BackgroundImage bkgd;
+    BkgdImgPtr  bkgd;
 
-    Xform           viewXform;
     QMap<VertexPtr,int>   vertex_ids;
-    int refId;
-
+    int         refId;
 };
 
 #endif

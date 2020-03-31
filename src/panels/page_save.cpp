@@ -39,7 +39,7 @@ page_save::page_save(ControlPanel * cpanel)  : panel_page(cpanel, "Save")
 void page_save::createConfigGrid()
 {
     leSaveXmlName   = new QLineEdit();
-    saveXml         = new QPushButton("Save XML");
+    saveXml         = new QPushButton("Save Design");
     designNotes     = new QTextEdit("Design Notes");
     designNotes->setFixedSize(601,201);
     QLabel * label  = new QLabel("Design");

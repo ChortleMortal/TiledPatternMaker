@@ -47,9 +47,10 @@
 
 #include <QtCore>
 
-#include "geometry/Map.h"
 #include "tile/Tiling.h"
 #include "base/tile.h"
+
+class Map;
 
 // Transformed mid-points of a feature.
 class placed_points

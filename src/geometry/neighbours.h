@@ -48,6 +48,7 @@ public:
     BeforeAndAfter   getBeforeAndAfter(EdgePtr edge);
     EdgePtr          getNeighbour(const VertexPtr other);
     EdgePtr          getEdge(int index) { return list[index]; }
+    EdgePtr          getFirstNonvisitedNeighbour(EdgePtr home);
     QVector<EdgePtr> & getNeighbours();
 
 private:
@@ -62,6 +63,7 @@ class NeighbourMap
 {
     friend class XmlWriter;
     friend class XmlLoader;
+    friend class Map;
 
 public:
     NeighbourMap(Map * parentMap);

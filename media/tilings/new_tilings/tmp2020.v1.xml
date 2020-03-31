@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<Tiling version="2">
+	<Name>tmp2020.v1</Name>
+	<Fill>-4,4,-4,4</Fill>
+	<T1>-2.040000000000001,3.639999999999999</T1>
+	<T2>4.173333333333335,-0.02666666666666639</T2>
+	<Feature type="regular" sides="6" rotation="30">
+		<Placement>1.911322504046947,0,-0.0129800567985812,0,1.911322504046947,-0.8485698118209788</Placement>
+	</Feature>
+	<Desc>Description</Desc>
+	<Auth>Author</Auth>
+	<BackgroundImage name="epc_014.jpg">
+		<Scale>0.66</Scale>
+		<Rot>0</Rot>
+		<X>773</X>
+		<Y>1563</Y>
+	</BackgroundImage>
+</Tiling>

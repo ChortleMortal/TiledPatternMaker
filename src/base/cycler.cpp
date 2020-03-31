@@ -47,8 +47,8 @@ Cycler::Cycler() : QObject()
     busy        = false;
     cycleMode   = CYCLE_NONE;
 
-    config         = Configuration::getInstance();
-    canvas         = Canvas::getInstance();
+    config      = Configuration::getInstance();
+    canvas      = Canvas::getInstance();
 }
 
 void Cycler::init(QThread * thread)
@@ -59,7 +59,7 @@ void Cycler::init(QThread * thread)
 
     Workspace * ws = Workspace::getInstance();
     connect(this,   &Cycler::sig_clearCanvas, ws,   &Workspace::slot_clearCanvas);
-    connect(timer,  &QTimer::timeout,         this, &Cycler::slot_nextCycle);
+    connect(timer,  &QTimer::timeout,         this, &Cycler::slot_timeout);
 
     timer->start(1000);
 }
@@ -77,38 +77,29 @@ void Cycler::slot_startCycle()
     qDebug() << "slot_cycle" << sCycleMode[cycleMode];
 
     cyclePause = false;
+    busy       = false;
 
     switch(cycleMode)
     {
     case CYCLE_STYLES:
     case CYCLE_SAVE_STYLE_BMPS:
         startCycleStyles();
-        startCycleTimer();
         break;
     case CYCLE_TILINGS:
     case CYCLE_SAVE_TILING_BMPS:
         startCycleTilings();
-        startCycleTimer();
         break;
     case CYCLE_ORIGINAL_PNGS:
         startCycleOriginalDesignPngs();
         break;
     case CYCLE_COMPARE_IMAGES:
         startCycleCompareImages();
-        slot_nextCycle();
         break;
     case CYCLE_NONE:
         qWarning() << "CYCLE_NONE sent to start";
         break;
     }
 }
-
-void Cycler::startCycleTimer()
-{
-    slot_readyNext();   // kick off
-    slot_nextCycle();
-}
-
 
 void Cycler::slot_stopCycle()
 {
@@ -120,7 +111,13 @@ void Cycler::slot_stopCycle()
     busy = false;
 }
 
-void Cycler::slot_nextCycle()
+void Cycler::slot_ready()
+{
+    busy = false;
+    slot_timeout(); //force immediate
+}
+
+void Cycler::slot_timeout()
 {
     if (cycleMode == CYCLE_NONE)
     {
@@ -210,6 +207,7 @@ void Cycler::slot_nextCycle()
         }
         else
         {
+            busy = true;
             QString name   = map_it.key();
             QString file1  = map_it.value();
             map_it++;
@@ -224,12 +222,6 @@ void Cycler::slot_nextCycle()
         break;
     }
 }
-
-void Cycler::slot_readyNext()
-{
-    busy = false;
-}
-
 
 void Cycler::slot_psuedoKey(int key )
 {

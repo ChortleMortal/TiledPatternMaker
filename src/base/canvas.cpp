@@ -42,18 +42,6 @@
 #define ALT_MODIFIER Qt::AltModifier
 #endif
 
-static QString sCanvasMode[]  = {
-    E2STR(KBD_MODE_TRANSFORM),
-    E2STR(KBD_MODE_LAYER),
-    E2STR(KBD_MODE_ZLEVEL),
-    E2STR(KBD_MODE_STEP),
-    E2STR(KBD_MODE_SEPARATION),
-    E2STR(KBD_MODE_ORIGIN),
-    E2STR(KBD_MODE_OFFSET)  ,
-    E2STR(KBD_MODE_BKGD),
-    E2STR(KBD_MODE_DATA)
-};
-
 Canvas * Canvas::mpThis = nullptr;
 
 Canvas * Canvas::getInstance()
@@ -83,6 +71,7 @@ Canvas::Canvas()
     dragging        = false;
     scene           = nullptr;
 
+    config    = Configuration::getInstance();
     setKbdMode(KBD_MODE_DEFAULT);
 
     // create timer before build
@@ -99,11 +88,10 @@ Canvas::~Canvas()
 
 void Canvas::init()
 {
-    config    = Configuration::getInstance();
     workspace = Workspace::getInstance();
     viewer    = WorkspaceViewer::getInstance();
 
-    connect(this, &Canvas::sig_viewWS, viewer,  &WorkspaceViewer::slot_viewWorkspace);
+    connect(this, &Canvas::sig_viewWS,    viewer,  &WorkspaceViewer::slot_viewWorkspace);
 }
 
 Scene * Canvas::swapScenes()
@@ -134,7 +122,7 @@ void Canvas::invalidate()
         scene->invalidate();
 }
 
-void Canvas::setCanvasSettings(CanvasSettings cset)
+void Canvas::useCanvasSettings(CanvasSettings & cset)
 {
     scene->setBackgroundBrush(QBrush(cset.getBackgroundColor()));
 
@@ -148,6 +136,13 @@ void Canvas::setCanvasSettings(CanvasSettings cset)
         bp->reconnectChildren();
         // adds to the scene
         scene->addItem(bp.get());
+    }
+
+    if (config->circleX)
+    {
+        MarkX * item = new MarkX(cset.getCenter(), QPen(Qt::blue,5), QString("center"));
+        item->setHuge();
+        scene->addItem(item);
     }
 
     settings = cset;     // makes local copy
@@ -569,26 +564,17 @@ void Canvas::dumpGraphicsInfo()
 
 void Canvas::setKbdMode(eKbdMode mode)
 {
-    kbdMode = mode;
-    qDebug().noquote() << sCanvasMode[mode];
+    config->kbdMode = mode;
+    qDebug().noquote() << Configuration::sCanvasMode[mode];
+    emit sig_kbdMode(mode);
 }
 
 QString Canvas::getKbdModeStr()
 {
-    return sCanvasMode[kbdMode];
+    return Configuration::sCanvasMode[config->kbdMode];
 }
 
-void Canvas::slot_procKeyEvent(QKeyEvent *k)
-{
-    if (config->viewerType == VIEW_TILIING_MAKER || config->viewerType == VIEW_MAP_EDITOR)
-    {
-        return;
-    }
-
-    procKeyEvent(k);
-}
-
-void Canvas::procKeyEvent(QKeyEvent *k)
+bool Canvas::procKeyEvent(QKeyEvent *k)
 {
     int  delta = 1;
     if ((k->modifiers() & (Qt::SHIFT | Qt::CTRL)) == (Qt::SHIFT | Qt::CTRL))
@@ -598,10 +584,14 @@ void Canvas::procKeyEvent(QKeyEvent *k)
 
     bool isALT = ((k->modifiers() & ALT_MODIFIER) == ALT_MODIFIER);
 
-    if (!ProcNavKey(k->key(),delta,isALT))
+    bool rv = ProcNavKey(k->key(),delta,isALT);
+    if (rv)
     {
-        ProcKey(k,isALT);
+        return true;
     }
+
+    rv =  ProcKey(k,isALT);
+    return rv;
 }
 
 bool Canvas::ProcNavKey(int key, int delta, bool isALT)
@@ -628,7 +618,7 @@ bool Canvas::ProcNavKey(int key, int delta, bool isALT)
     }
 }
 
-void Canvas::ProcKey(QKeyEvent *k, bool isALT)
+bool Canvas::ProcKey(QKeyEvent *k, bool isALT)
 {
     static int val = 0;
 
@@ -655,10 +645,14 @@ void Canvas::ProcKey(QKeyEvent *k, bool isALT)
     case 'S':  if (isALT) { emit stopTimer(); setKbdMode(KBD_MODE_STEP); }
                 else { setKbdMode(KBD_MODE_SEPARATION); }
                 break;
-    case 'X': config->circleX = !config->circleX; emit sig_viewWS(); invalidate(); break;
-    case 'Z': setKbdMode(KBD_MODE_ZLEVEL); break;
+    case 'T':  setKbdMode(KBD_MODE_XFORM_MODEL);break;
+    case 'U':  setKbdMode(KBD_MODE_XFORM_BKGD); break;
+    case 'V':  setKbdMode(KBD_MODE_XFORM_VIEW); break;
+    case 'W':  setKbdMode(KBD_MODE_XFORM_OBJECT);break;
+    case 'X':  config->circleX = !config->circleX; emit sig_viewWS(); invalidate(); break;
+    case 'Z':  setKbdMode(KBD_MODE_ZLEVEL); break;
 
-    case Qt::Key_Return: if (getKbdMode() == KBD_MODE_STEP) slot_setStep(val); val = 0; break; // always val=0
+    case Qt::Key_Return: if (config->kbdMode == KBD_MODE_STEP) slot_setStep(val); val = 0; break; // always val=0
     case Qt::Key_Escape: setKbdMode(KBD_MODE_DEFAULT); break;
     case Qt::Key_F1:
     {
@@ -669,7 +663,7 @@ void Canvas::ProcKey(QKeyEvent *k, bool isALT)
         box->show();
     }
         break;
-    case Qt::Key_F2: setKbdMode(KBD_MODE_TRANSFORM); break;
+    case Qt::Key_F2: setKbdMode(KBD_MODE_XFORM_VIEW); break;
     case Qt::Key_F3: break;
     case Qt::Key_F4: dump(true); break;
     case Qt::Key_F5: drainTheSwamp(); break;
@@ -685,11 +679,11 @@ void Canvas::ProcKey(QKeyEvent *k, bool isALT)
     case '8':
     case '9':
         // keys 0-9
-        if (getKbdMode() == KBD_MODE_LAYER)
+        if (config->kbdMode == KBD_MODE_LAYER)
         {
             emit designLayerSelect(key-'0');
         }
-        else if (getKbdMode() == KBD_MODE_STEP)
+        else if (config->kbdMode == KBD_MODE_STEP)
         {
             val *= 10;
             val += (key - '0');
@@ -699,13 +693,16 @@ void Canvas::ProcKey(QKeyEvent *k, bool isALT)
             emit slot_designToggleVisibility(key-'0');
         }
         break;
+    default:
+        return false;
     }
+    return true;
 }
 
 void Canvas::ProcKeyUp(int delta, bool isALT)
 {
     // up arrow
-    switch (getKbdMode())
+    switch (config->kbdMode)
     {
     case KBD_MODE_ZLEVEL:
         designLayerZPlus();
@@ -725,14 +722,13 @@ void Canvas::ProcKeyUp(int delta, bool isALT)
         else
             designOrigin(0,-1);
         break;
-    case KBD_MODE_TRANSFORM:
-        designMoveY(delta);           // applies deltas to designs
-        emit sig_deltaMoveY(-delta);   // goes to Layer::slot_moveY  page_position::onEnter  tilingMaker:slot_moveY (for background)
-        break;
     case KBD_MODE_LAYER:
         break;
-    case KBD_MODE_BKGD:
-    case KBD_MODE_DATA:
+    case KBD_MODE_XFORM_VIEW:
+    case KBD_MODE_XFORM_BKGD:
+    case KBD_MODE_XFORM_MODEL:
+    case KBD_MODE_XFORM_OBJECT:
+        designMoveY(delta);           // applies deltas to designs
         emit sig_deltaMoveY(-delta);   // goes to Layer::slot_moveY  page_position::onEnter  tilingMaker:slot_moveY (for background)
         break;
     }
@@ -741,7 +737,7 @@ void Canvas::ProcKeyUp(int delta, bool isALT)
 void Canvas::ProcKeyDown(int delta, bool isALT)
 {
     // down arrrow
-    switch (getKbdMode())
+    switch (config->kbdMode)
     {
     case KBD_MODE_ZLEVEL:
         designLayerZMinus();
@@ -761,14 +757,13 @@ void Canvas::ProcKeyDown(int delta, bool isALT)
         else
             designOrigin(0,1);
         break;
-    case KBD_MODE_TRANSFORM:
-        designMoveY(-delta);
-        emit sig_deltaMoveY(delta);
-        break;
     case KBD_MODE_LAYER:
         break;
-    case KBD_MODE_BKGD:
-    case KBD_MODE_DATA:
+    case KBD_MODE_XFORM_VIEW:
+    case KBD_MODE_XFORM_BKGD:
+    case KBD_MODE_XFORM_MODEL:
+    case KBD_MODE_XFORM_OBJECT:
+        designMoveY(-delta);
         emit sig_deltaMoveY(delta);
         break;
     }
@@ -776,7 +771,7 @@ void Canvas::ProcKeyDown(int delta, bool isALT)
 
 void Canvas::ProcKeyLeft(int delta, bool isALT)
 {
-    switch (getKbdMode())
+    switch (config->kbdMode)
     {
     case KBD_MODE_SEPARATION:
         designReposition(-1,0);
@@ -790,16 +785,15 @@ void Canvas::ProcKeyLeft(int delta, bool isALT)
         else
             designOrigin(-1,0);
         break;
-    case KBD_MODE_TRANSFORM:
     case KBD_MODE_ZLEVEL:
     case KBD_MODE_STEP:
-        designMoveX(-delta);
-        emit sig_deltaMoveX(-delta);
-        break;
     case KBD_MODE_LAYER:
         break;
-    case KBD_MODE_BKGD:
-    case KBD_MODE_DATA:
+    case KBD_MODE_XFORM_VIEW:
+    case KBD_MODE_XFORM_BKGD:
+    case KBD_MODE_XFORM_MODEL:
+    case KBD_MODE_XFORM_OBJECT:
+        designMoveX(-delta);
         emit sig_deltaMoveX(-delta);
         break;
     }
@@ -807,7 +801,7 @@ void Canvas::ProcKeyLeft(int delta, bool isALT)
 
 void Canvas::ProcKeyRight(int delta, bool isALT)
 {
-    switch (getKbdMode())
+    switch (config->kbdMode)
     {
     case KBD_MODE_SEPARATION:
         designReposition(1,0);
@@ -821,16 +815,15 @@ void Canvas::ProcKeyRight(int delta, bool isALT)
         else
             designOrigin(1,0);
         break;
-    case KBD_MODE_TRANSFORM:
     case KBD_MODE_ZLEVEL:
     case KBD_MODE_STEP:
-        designMoveX( delta);
-        emit sig_deltaMoveX( delta);
-        break;
     case KBD_MODE_LAYER:
         break;
-    case KBD_MODE_BKGD:
-    case KBD_MODE_DATA:
+    case KBD_MODE_XFORM_VIEW:
+    case KBD_MODE_XFORM_BKGD:
+    case KBD_MODE_XFORM_MODEL:
+    case KBD_MODE_XFORM_OBJECT:
+        designMoveX( delta);
         emit sig_deltaMoveX( delta);
         break;
     }

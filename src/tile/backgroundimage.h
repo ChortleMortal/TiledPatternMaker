@@ -4,19 +4,15 @@
 #include <QtCore>
 #include <QTransform>
 #include <QGraphicsPixmapItem>
+#include "base/layer.h"
 
-class Configuration;
-class Canvas;
-
-class BackgroundImage : public QGraphicsPixmapItem
+class  BackgroundImage : public Layer
 {
 public:
     BackgroundImage();
     ~BackgroundImage() override;
 
     virtual void  paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) Q_DECL_OVERRIDE;
-
-    void reset();
 
     bool    loadAndCopy(QString filename);  // loads from new file
     bool    loadImageUsingName();           // loads from existing file
@@ -29,28 +25,30 @@ public:
 
     bool    saveAdjusted(QString newName);
 
+    Xform      getXform() { return xform;}
+    void       setXform (Xform & xf) { xform = xf; }
     QTransform getTransform();
     void       setTransform(QTransform t);
 
+    bool    isLoaded() { return _loaded; }
+
     // public data
     QString    bkgdName;
-    qreal      scale;
-    qreal      rot;
-    qreal      x;
-    qreal      y;
     QTransform perspective;
+    bool       bTransformBkgd;
+    bool       bShowBkgd;
+    bool       bAdjustPerspective;
 
 protected:
     void       correctPerspective(QPointF topLeft, QPointF topRight, QPointF botRight, QPointF botLeft);
 
 private:
-    Configuration * config;
-    Canvas        * canvas;
+    Xform       xform;
+    QPixmap     pixmap;
+    QImage      bkgdImage;
+    QImage      adjustedImage;
 
-    QImage          bkgdImage;
-    QImage          adjustedImage;
-
-    bool            _transformBkgd;
+    bool        _loaded;
 };
 
 #endif // BACKGROUNDIMAGE_H

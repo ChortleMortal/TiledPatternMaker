@@ -22,43 +22,62 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef PAGE_TILE_LAYERS_H
-#define PAGE_TILE_LAYERS_H
+#ifndef PAGE_LAYERS_H
+#define PAGE_LAYERS_H
 
 #include "panel_page.h"
 
-class page_tileLayers : public panel_page
+class page_layers : public panel_page
 {
     Q_OBJECT
 
-    enum eTileCol
+    enum eLayerRow
     {
-        TILE_COL_DESIGN_NUMBER    = 0,
-        TILE_COL_LAYER_VISIBILITY = 1,
-        TILE_COL_BOUNDS           = 2,
-        TILE_COL_Z                = 3,
-        TILE_COL_ALIGN            = 4
+        LAYER_NAME,
+        LAYER_VISIBILITY,
+        LAYER_Z,
+        LAYER_ALIGN,
+        LAYER_DELTA_SCALE,
+        LAYER_DELTA_ROT,
+        LAYER_DELTA_X,
+        LAYER_DELTA_Y,
+        LAYER_CENTER,
+        LAYER_SCALE,
+        LAYER_ROT,
+        LAYER_X,
+        LAYER_Y,
+        LAYER_CLEAR,
+        NUM_LAYER_ROWS
     };
 
 public:
-
-    page_tileLayers(ControlPanel * panel);
+    page_layers(ControlPanel * cpanel);
 
     void onEnter() override;
     void refreshPage() override;
 
 private slots:
-    void slot_tileVisibilityChanged(int row);
-    void slot_zChanged(int row);
-    void slot_alignChanged(int row);
+    void slot_visibilityChanged(int col);
+    void slot_zChanged(int col);
+    void slot_alignPressed(int col);
+    void slot_set_deltas(int col);
+    void slot_clear_deltas(int col);
 
 protected:
+    void populateLayers();
+    void populateLayer(Layer * layer, int col);
 
 private:
-    QTableWidget * tileTable;
-    QSignalMapper  tileVisMapper;
+    QTableWidget * layerTable;
+
+    QSignalMapper  visibilityMapper;
     QSignalMapper  zMapper;
     QSignalMapper  alignMapper;
+    QSignalMapper  leftMapper;
+    QSignalMapper  topMapper;
+    QSignalMapper  widthMapper;
+    QSignalMapper  rotMapper;
+    QSignalMapper  clearMapper;
 };
 
 #endif

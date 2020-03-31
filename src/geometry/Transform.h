@@ -41,6 +41,7 @@ class Transform
 public:
     static QTransform rotateAroundPoint(QPointF pt, qreal t);
     static QTransform rotate(qreal t);
+    static QTransform scaleAroundPoint(QPointF pt, qreal t);
 
     static qreal   distFromZero(QTransform t, qreal v);
     static qreal   distFromInvertedZero(QTransform t, qreal v) ;

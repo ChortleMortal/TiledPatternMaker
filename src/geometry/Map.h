@@ -67,7 +67,7 @@ class Map
 
 public:
     Map(QString Name);
-    Map(MapPtr map);     // duplictes the contents
+    Map(const Map & map);     // duplictes the contents
     ~Map();
 
     QString mname;
@@ -94,10 +94,12 @@ public:
     void removeVertexSimple(VertexPtr v) { vertices.removeOne(v); neighbourMap.removeVertex(v); }
 
     MapPtr  recreate();                // makes a new map with similar content
+    MapPtr  compress();                // join all straight lines
 
     // Insert the edge connecting two vertices, including updating
     // the neighbour lists for the vertices.
     EdgePtr insertEdge(VertexPtr  v1, VertexPtr v2, bool debug = false);
+    void    insertEdge(EdgePtr e, bool debug = false);
     EdgePtr insertCurvedEdge(VertexPtr  v1, VertexPtr v2, QPointF center, bool isConvex, bool debug = false);
     void    splitEdge(EdgePtr e);
 
@@ -185,6 +187,8 @@ public:
 
     VertexPtr getVertex(int index)  { return vertices[index]; }
 
+    void setTmpIndices() const;
+
 protected:
 
     // Make map from DAC structures
@@ -232,13 +236,15 @@ protected:
     static bool vertexLessThan( VertexPtr  a, VertexPtr b );
 
     bool joinOneColinearEdge();
+    bool joinOneColinearEdgeIgnoringIntersects();
+    void joinEdges(EdgePtr e1, EdgePtr e2);
+
     void deDuplicateEdges(QVector<EdgePtr> & vec);
     void deDuplicateVertices(QVector<VertexPtr> & vec);
     void fixNeighbours();
 
     void dumpVertices(bool full);
     void dumpEdges(bool full);
-    void setTmpIndices() const;
 
     void cleanCopy();
 

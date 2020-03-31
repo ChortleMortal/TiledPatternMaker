@@ -5,8 +5,8 @@
 #include <QtWidgets>
 
 class View;
-
 class WorkspaceViewer;
+class Configuration;
 
 class Scene : public QGraphicsScene
 {
@@ -28,10 +28,16 @@ protected:
     void drawForeground(QPainter *painter, const QRectF &rect) Q_DECL_OVERRIDE;
     void drawBackground(QPainter *painter, const QRectF &rect) Q_DECL_OVERRIDE;
 
-private:
-     WorkspaceViewer * viewer;
+    void drawGridModelUnits(QPainter *painter, const QRectF & r);
+    void drawGridSceneUnits(QPainter *painter, const QRectF & r);
+    void drawGridModelUnitsCentered(QPainter *painter, QRectF & r);
+    void drawGridSceneUnitsCentered(QPainter *painter, QRectF & r);
 
-     QPen gridPen;
+private:
+ 	WorkspaceViewer * viewer;
+    Configuration * config;
+
+    QPen gridPen;
 };
 
 #endif // SCENE_H

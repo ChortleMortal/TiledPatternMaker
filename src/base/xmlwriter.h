@@ -57,11 +57,11 @@ protected:
     bool generateDesignNotes(QTextStream & ts);
 
     void processDesign(QTextStream & ts);
-    void procScale(QTextStream &ts,qreal scale);
     void procSize(QTextStream &ts,QSizeF size);
     void procWidth(QTextStream &ts,qreal width);
     void procBackground(QTextStream &ts, QColor color);
     void procBorder(QTextStream &ts, BorderPtr border);
+
     void procColor(QTextStream & ts, QColor color);
     void procColor(QTextStream & ts, TPColor tpcolor);
     void procColorSet(QTextStream &ts, ColorSet & colorSet);

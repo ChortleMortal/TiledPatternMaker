@@ -53,7 +53,6 @@ XmlLoader::XmlLoader(StyledDesign & styledDesign) : _styledDesign(styledDesign)
     _background = QColor(Qt::white);
     _width      = 1500;
     _height     = 1100;
-    _scale      = 1.0;
     _version    = 0;
     _border     = nullptr;
     canvas      = Canvas::getInstance();
@@ -176,11 +175,10 @@ void XmlLoader::processVector(xml_node & node)
     qDebug() << "end vector";
 
     CanvasSettings info;
-    info.setScale(_scale);
     info.setBackgroundColor(_background);
     info.setSizeF(QSizeF(_width,_height));
     info.setBorder(_border);
-    _styledDesign.setupCanvas(info);
+    _styledDesign.setCanvasSettings(info);
 
 }
 
@@ -190,13 +188,12 @@ void XmlLoader::processDesign(xml_node & node)
     {
         string str = n.name();
         qDebug() << str.c_str();
-
         if (str == "scale")
-            procScale(n);
+            continue;       // scale deprecated 30DEC19
         else if (str == "size")
             procSize(n, _width, _height);
         else if (str == "background")
-            _background = procBackground(n);
+            _background = procBackgroundColor(n);
         else if (str == "border")
             procBorder(n);
         else
@@ -232,7 +229,7 @@ void XmlLoader::processThick(xml_node & node)
 
     qDebug() << "Constructing Thick from prototype and poly";
     Thick * thick = new Thick(proto,poly);
-    thick->setDeltas(xf);
+    thick->setLayerXform(xf);
     thick->setColorSet(colorset);
     thick->setDrawOutline(draw_outline);
     thick->setLineWidth(width);
@@ -276,7 +273,7 @@ void XmlLoader::processInterlace(xml_node & node)
 
     qDebug() << "Constructing Interlace (DAC) from prototype and poly";
     Interlace * interlace = new Interlace(proto,poly);
-    interlace->setDeltas(xf);
+    interlace->setLayerXform(xf);
     interlace->setColorSet(colorset);
     interlace->setDrawOutline(draw_outline);
     interlace->setLineWidth(width);
@@ -317,7 +314,7 @@ void XmlLoader::processOutline(xml_node & node)
 
     qDebug() << "Constructing Outline from prototype and poly";
     Outline * outline = new Outline(proto,poly);
-    outline->setDeltas(xf);
+    outline->setLayerXform(xf);
     outline->setColorSet(colorset);
     outline->setDrawOutline(draw_outline);
     outline->setLineWidth(width);
@@ -390,7 +387,7 @@ void XmlLoader::processFilled(xml_node & node)
     }
 
     Filled * filled = new Filled(proto,poly,algorithm);
-    filled->setDeltas(xf);
+    filled->setLayerXform(xf);
 
     if (oldFormat)
     {
@@ -473,7 +470,7 @@ void XmlLoader::processPlain(xml_node & node)
     }
 
     Plain * plain = new Plain(proto,poly);
-    plain->setDeltas(xf);
+    plain->setLayerXform(xf);
     plain->setColorSet(colorset);
     qDebug().noquote() << "XmlServices created Style (Plain)" << plain->getInfo();
     _styledDesign.addStyle(StylePtr(plain));
@@ -504,7 +501,7 @@ void XmlLoader::processSketch(xml_node & node)
     }
 
     Sketch * sketch = new Sketch(proto,poly);
-    sketch->setDeltas(xf);
+    sketch->setLayerXform(xf);
     sketch->setColorSet(colorset);
     qDebug().noquote() << "XmlServices created Style (Sketch)" << sketch->getInfo();
     _styledDesign.addStyle(StylePtr(sketch));
@@ -543,7 +540,7 @@ void XmlLoader::processEmboss(xml_node & node)
 
     qDebug() << "Constructing Emboss from prototype and poly";
     Emboss * emboss = new Emboss(proto,poly);
-    emboss->setDeltas(xf);
+    emboss->setLayerXform(xf);
     emboss->setColorSet(colorset);
     emboss->setDrawOutline(draw_outline);
     emboss->setLineWidth(width);
@@ -576,7 +573,7 @@ void XmlLoader::processTileColors(xml_node & node)
 
     qDebug() << "Constructing TileColors from prototype and poly";
     TileColors * tc  = new TileColors(proto,poly);
-    tc->setDeltas(xf);
+    tc->setLayerXform(xf);
 
     qDebug().noquote() << "XmlServices created Style(TileColors)" << tc->getInfo();
     _styledDesign.addStyle(StylePtr(tc));
@@ -630,6 +627,16 @@ void XmlLoader::procesToolkitGeoLayer(xml_node & node, Xform & xf)
         val          = n.child_value();
         fval         = val.toDouble();
         xf.setRotateRadians(fval);
+    }
+
+    n = node.child("center");
+    if (n)
+    {
+        val          = n.child_value();
+        QStringList qsl = val.split(",");
+        qreal x = qsl[0].toDouble();
+        qreal y = qsl[1].toDouble();
+        xf.setCenter(QPointF(x,y));
     }
 }
 
@@ -907,7 +914,7 @@ PrototypePtr XmlLoader::getPrototype(xml_node & node)
         }
         else if (name == "app.ExplicitFeature")
         {
-            qDebug() << "adding Infer";
+            qDebug() << "adding Explicit Feature";
             figure = getExplicitFigure(xmlfigure,FIG_TYPE_FEATURE);
             dc_found = true;
             canvas->dump(true);
@@ -992,6 +999,17 @@ FeaturePtr XmlLoader::getFeature(xml_node & node)
     str = node.child_value("regular");
     bool regular = (str == "true");
 
+    qreal rotation = 0.0;
+    if (regular)
+    {
+        xml_node r = node.child("rotation");
+        if (r)
+        {
+            str = r.child_value();
+            rotation = str.toDouble();
+        }
+    }
+
     xml_node poly = node.child("points");
     FeaturePtr f;
     if (poly)
@@ -999,7 +1017,7 @@ FeaturePtr XmlLoader::getFeature(xml_node & node)
         PolyPtr b    = getPolygon(poly);
         EdgePoly ep(b);
 
-        f = make_shared<Feature>(ep);
+        f = make_shared<Feature>(ep,rotation);
         setFeatureReference(node,f);
         f->setRegular(regular);
         return f;
@@ -1010,7 +1028,7 @@ FeaturePtr XmlLoader::getFeature(xml_node & node)
         FeatureReader fr;
         EdgePoly ep = fr.getEdgePoly(poly);
 
-        f = make_shared<Feature>(ep);
+        f = make_shared<Feature>(ep,rotation);
         setFeatureReference(node,f);
         f->setRegular(regular);
         return f;
@@ -1611,12 +1629,6 @@ EdgePtr XmlLoader::getCurve(xml_node & node)
     return edge;
 }
 
-void XmlLoader::procScale(xml_node & node)
-{
-    QString val = node.child_value();
-    _scale = val.toDouble();
-}
-
 void XmlLoader::procSize(xml_node & node, int & width, int & height)
 {
     QString val;
@@ -1634,13 +1646,29 @@ void XmlLoader::procSize(xml_node & node, int & width, int & height)
     }
 }
 
-QColor XmlLoader::procBackground(xml_node & node)
+QColor XmlLoader::procBackgroundColor(xml_node & node)
 {
     xml_node n   = node.child("color");
     if (n)
         return processColor(n);
     else
         return _background;     // default;
+}
+
+QTransform XmlLoader::getQTransform(QString txt)
+{
+    QStringList qsl;
+    qsl = txt.split(',');
+    qreal m11 = qsl[0].toDouble();
+    qreal m12 = qsl[1].toDouble();
+    qreal m13 = qsl[2].toDouble();
+    qreal m21 = qsl[3].toDouble();
+    qreal m22 = qsl[4].toDouble();
+    qreal m23 = qsl[5].toDouble();
+    qreal m31 = qsl[6].toDouble();
+    qreal m32 = qsl[7].toDouble();
+    qreal m33 = qsl[8].toDouble();
+    return QTransform(m11,m12,m13,m21,m22,m23,m31,m32,m33);
 }
 
 void XmlLoader::procBorder(xml_node & node)

@@ -33,7 +33,8 @@
 enum epageTi
 {
     TI_INDEX,
-    TI_SIDES,
+    TI_FEAT_SIDES,
+    TI_FEAT_ROT,
     TI_SCALE,
     TI_ROT,
     TI_X,
@@ -43,8 +44,6 @@ enum epageTi
     TI_FEAT_ADDR,
     TI_LOCATION
 };
-
-#undef LAYER_XFORM_INFO
 
 class page_tiling_maker : public panel_page
 {
@@ -63,6 +62,7 @@ public:
 signals:
     void sig_tilingChanged();
     void sig_loadTiling(QString name);
+    void sig_setTiling();
 
 public slots:
     void slot_currentFeature(int index);
@@ -74,8 +74,9 @@ public slots:
 private slots:
     void slot_replaceTilingInStyles();
     void slot_saveTiling();
-    void slot_sidesChanged(int row);
-    void slot_transformChanged(int row);
+    void slot_sidesChanged(int col);
+    void slot_f_rotChanged(int col);
+    void slot_transformChanged(int col);
     void slot_t1t2Changed(double val);
     void slot_nameChanged();
     void slot_authorChanged();
@@ -90,11 +91,6 @@ private slots:
     void slot_set_reps();
     void slot_hideTable(bool checked);
     void slot_reloadTiling();
-    void slot_loadBackground();
-    void slot_bkgdImageChanged();
-    void slot_bkgdTransformChanged();
-    void slot_adjustBackground();
-    void slot_saveAdjustedBackground();
     void slot_menu(QPointF spt);
     void slot_menu_edit_feature();
     void slot_menu_includePlaced();
@@ -110,25 +106,30 @@ private slots:
     void tableHeaderClicked(int index);
     void slot_trim(qreal valX, qreal valY);
 
+    void slot_loadBackground();
+    void slot_adjustBackground();
+    void slot_saveAdjustedBackground();
+    void slot_setBkgdXform();
+    void slot_setBkgd();
+
 protected:
     AQWidget * createTiliingMakerControls();
     AQWidget * createTilingTable();
     void       createTopGrid();
+    void       createBackgroundGroup();
 
     void clear();
-    void buildTableEntry(PlacedFeaturePtr pf, int row, QString inclusion);
-    void refreshTableEntry(PlacedFeaturePtr pf, int row, QString inclusion);
+    void buildTableEntry(PlacedFeaturePtr pf, int col, QString inclusion);
+    void refreshTableEntry(PlacedFeaturePtr pf, int col, QString inclusion);
     void updateFeaturePointInfo(PlacedFeaturePtr pfp);
 
-    void useBackground(TilingPtr tiling);
+    void displayBackgroundStatus(TilingPtr tiling);
 
-    PlacedFeaturePtr getFeatureRow(int row);
-    TilingPtr        getSourceTiling();
+    PlacedFeaturePtr getFeatureColumn(int col);
+    StyledDesign &   getSourceDesign();
 
 private:
     TilingMaker * tilingMaker;
-
-    TilingPtr       lastTiling;
 
     bool    hideTable;
 
@@ -163,24 +164,23 @@ private:
     SpinSet    * yRepMin;
     SpinSet    * yRepMax;
 
-    QSignalMapper  sidesMapper;
+    QSignalMapper  f_sidesMapper;
+    QSignalMapper  f_rotMapper;
     QSignalMapper  scaleMapper;
     QSignalMapper  rotMapper;
     QSignalMapper  xMapper;
     QSignalMapper  yMapper;
 
     QSpinBox      * sides;
+    QDoubleSpinBox* featRot;
     QComboBox     * girihShapes;
 
     LayoutTransform bkgdLayout;
-#ifdef LAYER_XFORM_INFO
-    LayoutTransform layerXform;
-    LayoutTransform layerDeltas;
-#endif
-    QCheckBox     * showBkgd;
-    QCheckBox     * hideTiling;
-    QCheckBox     * perspectiveBkgd;
-    QCheckBox     * transformBkgd;
+
+    QCheckBox     * chk_showBkgd;
+    QCheckBox     * chk_hideTiling;
+    QCheckBox     * chk_adjustBkgd;
+    QCheckBox     * chk_xformBkgd;
 
     QGroupBox     * bkgdGroup;
 };

@@ -190,14 +190,14 @@ void PlacedFeature::loadGirihShape(xml_node & poly_node)
 {
     FeatureReader fr;
     EdgePoly ep = fr.getEdgePoly(poly_node);
-    feature     = make_shared<Feature>(ep);
+    feature     = make_shared<Feature>(ep,0);
     T           = fr.getTransform(poly_node);
 }
 
 void PlacedFeature::loadGirihShape(int sides, pugi::xml_node & poly_node)
 {
     FeatureReader fr;
-    feature     = make_shared<Feature>(sides);
+    feature     = make_shared<Feature>(sides,0);
     T           = fr.getTransform(poly_node);
 }
 
@@ -216,5 +216,5 @@ void PlacedFeature::loadGirihShapeOld(xml_node & poly_node)
     }
 
     EdgePoly epoly(poly);
-    feature = make_shared<Feature>(epoly);
+    feature = make_shared<Feature>(epoly,0);
 }

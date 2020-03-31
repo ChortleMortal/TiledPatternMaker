@@ -47,6 +47,7 @@ Tiling::Tiling()
     name   = "The Unnamed";
     author = "Author";
     desc   = "Description";
+    bkgd   = make_shared<BackgroundImage>();
 }
 
 Tiling::Tiling(QString name, QPointF t1, QPointF t2)
@@ -64,6 +65,7 @@ Tiling::Tiling(QString name, QPointF t1, QPointF t2)
     }
     author = "Author";
     desc   = "Description";
+    bkgd   = make_shared<BackgroundImage>();
 }
 
 Tiling::Tiling(Tiling * other)
@@ -287,16 +289,6 @@ void Tiling::writeTilingXML(QTextStream & out)
     out << "<T1>" <<  t1.x() << "," << t1.y() << "</T1>" << endl;
     out << "<T2>" <<  t2.x() << "," << t2.y() << "</T2>" << endl;
 
-    // tiling maker view settings
-    out << "<View>"  << endl;
-    out << "<Scale>" << viewXform.getScale()          << "</Scale>" << endl;
-    out << "<Rot>"   << viewXform.getRotateRadians()  << "</Rot>" << endl;
-    out << "<X>"     << viewXform.getTranslateX()     << "</X>" << endl;
-    out << "<Y>"     << viewXform.getTranslateY()     << "</Y>" << endl;
-    setPoint(out,viewXform.getRotateCenter(),"Center");
-    out << "</View>" << endl;
-
-
     //structure is feature then placements. so feature is not duplicated. I dont know if this adds any value
     for (auto it = fgroup.begin(); it != fgroup.end(); it++)
     {
@@ -312,7 +304,7 @@ void Tiling::writeTilingXML(QTextStream & out)
         }
         else if (f->isRegular())
         {
-            out << "<Feature type=\"regular\" sides=\"" << f->numPoints() << "\">" << endl;
+            out << "<Feature type=\"regular\" sides=\"" << f->numPoints() << "\"  rotation=\"" << f->getRotation() << "\">" << endl;
         }
         else
         {
@@ -367,20 +359,21 @@ void Tiling::writeTilingXML(QTextStream & out)
     out << "<Desc>" << desc << "</Desc>" << endl;
     out << "<Auth>" << author << "</Auth>" << endl;
 
-    if (!bkgd.bkgdName.isEmpty())
+    if (!bkgd->bkgdName.isEmpty())
     {
-        QString astring = QString("<BackgroundImage name=\"%1\">").arg(bkgd.bkgdName);
+        QString astring = QString("<BackgroundImage name=\"%1\">").arg(bkgd->bkgdName);
         out << astring << endl;
 
-        out << "<Scale>" << bkgd.scale << "</Scale>" << endl;
-        out << "<Rot>"   << bkgd.rot   << "</Rot>"  << endl;
-        out << "<X>"     << bkgd.x     << "</X>" << endl;
-        out << "<Y>"     << bkgd.y     << "</Y>" << endl;
+        Xform xform = bkgd->getXform();
+        out << "<Scale>" << xform.getScale()           << "</Scale>" << endl;
+        out << "<Rot>"   << xform.getRotateRadians()   << "</Rot>"  << endl;
+        out << "<X>"     << xform.getTranslateX()      << "</X>" << endl;
+        out << "<Y>"     << xform.getTranslateY()      << "</Y>" << endl;
 
-        if (!bkgd.perspective.isIdentity())
+        if (!bkgd->perspective.isIdentity())
         {
             out << "<Perspective>";
-            out << Transform::toString(bkgd.perspective);
+            out << Transform::toString(bkgd->perspective);
             out << "</Perspective>" << endl;
         }
 

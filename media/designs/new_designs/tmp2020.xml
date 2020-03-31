@@ -1,0 +1,126 @@
+<?xml version="1.0"?>
+<vector id="1" version="5">
+	<design>
+		<size>
+			<width>1500</width>
+			<height>1100</height>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+	</design>
+	<style.Interlace id="2" serialization="custom">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>-0.02666666666666551,-0.8400000000000016</center>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<boundary id="3">
+				<pts id="4">
+					<Point id="5">
+						<x>-10</x>
+						<y>-10</y>
+					</Point>
+					<Point id="6">
+						<x>-10</x>
+						<y>10</y>
+					</Point>
+					<Point id="7">
+						<x>10</x>
+						<y>10</y>
+					</Point>
+					<Point id="8">
+						<x>10</x>
+						<y>-10</y>
+					</Point>
+				</pts>
+			</boundary>
+			<prototype id="9" serialization="custom">
+				<app.Prototype>
+					<string>tmp2020.v1</string>
+					<entry>
+						<tile.Feature id="10">
+							<regular>true</regular>
+							<rotation>30</rotation>
+							<edges id="11">
+								<Line>
+									<Point id="12">0.577350269189626,0.9999999999999998</Point>
+									<Point id="13">-0.5773502691896255,1</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point id="14">-1.154700538379251,4.996003610813204e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="14" />
+									<Point id="15">-0.5773502691896263,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="15" />
+									<Point id="16">0.5773502691896254,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="16" />
+									<Point id="17">1.154700538379251,-6.661338147750939e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="17" />
+									<Point reference="12" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.Rosette id="18">
+							<n>6</n>
+							<q>0</q>
+							<s>3</s>
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.Rosette>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ffffffff</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.09</width>
+		</style.Thick>
+		<style.Interlace>
+			<gap>0</gap>
+			<shadow>0</shadow>
+			<includeTipVerts>false</includeTipVerts>
+		</style.Interlace>
+	</style.Interlace>
+	<style.Interlace id="19" serialization="custom">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>-0.02666666666666551,-0.8400000000000016</center>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<boundary reference="3" />
+			<prototype reference="9" />
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff1496d2</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.17</width>
+		</style.Thick>
+		<style.Interlace>
+			<gap>0</gap>
+			<shadow>0</shadow>
+			<includeTipVerts>false</includeTipVerts>
+		</style.Interlace>
+	</style.Interlace>
+</vector>

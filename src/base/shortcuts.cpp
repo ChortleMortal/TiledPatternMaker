@@ -25,10 +25,10 @@ QString Shortcuts::getCanvasShortcuts()
 ALT-R   Run (start timer and mode layer) <br>\
     S   MODE_SEPARATION  up/down/left/right <br>\
 ALT-S   MODE_STEP  up/down  0-9 <br>\
-    T   <br>\
-    U   <br>\
-    V   <br>\
-    W   <br>\
+    T   Xfrom mode MODEL DATA<br>\
+    U   Xform mode BKGD<br>\
+    V   Xform mode VIEW<br>\
+    W   Xform mode OBJECT DATA<br>\
     X   Show Center/Show circle (X toggle) <br>\
     Y   <br>\
     Z   MODE_ZLEVEL   up/down <br>\
@@ -91,7 +91,7 @@ Actions:<br>\
           Removes all polygons that are not included in the tiling<br>\
     Q  Quit<br>\
           Exit the application<br>\
-    V  Clear Translation Vectors<br>\
+    X  Clear Translation Vectors<br>\
           Clears the translation vectors used to tile the plane<br>\
  </pre>\
 ";

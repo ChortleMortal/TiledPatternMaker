@@ -108,7 +108,6 @@ void Outline::draw(GeoGraphics *gg)
 
     if( pts4.size() != 0)
     {
-        gg->pushAndCompose(getLayerTransform());
         for( int idx = 0; idx < pts4.size(); idx++)
         {
             BelowAndAboveEdge bae = pts4[idx];
@@ -167,7 +166,6 @@ void Outline::draw(GeoGraphics *gg)
 #endif
             }
         }
-        gg->pop();
     }
 }
 

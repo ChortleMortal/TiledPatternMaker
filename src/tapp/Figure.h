@@ -129,11 +129,12 @@ public:
     bool            isExplicit();
     bool            isRadial();
 
-    void            annotate();
-
     static int refs;
 
 protected:
+    void            annotateEdges();
+    void            drawAnnotation(QPainter *painter, QTransform T);
+
     MapPtr      figureMap;
     MapPtr      debugMap;
     QPolygonF   points;

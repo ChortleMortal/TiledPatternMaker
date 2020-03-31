@@ -112,7 +112,8 @@ void ColoredEditor::slot_pickColor()
 void ColoredEditor::slot_colorsChanged()
 {
     colorwidget = colored->getColorSet().createWidget();
-    table->setCellWidget(rows,1,colorwidget);
+    table->setCellWidget(0,1,colorwidget);
+    colored->resetStyleRepresentation();
     emit sig_colorsChanged();
     emit sig_viewWS();
 }
@@ -398,7 +399,7 @@ void FilledEditor::slot_viewFaces()
         return;
     }
     Layer * l = layers[0];
-    Xform xf = l->getDeltas();
+    Xform xf = l->getLayerXform();
 
     if (!selected)
     {
@@ -419,7 +420,7 @@ void FilledEditor::slot_viewFaces()
     for (auto it = layers.begin(); it != layers.end(); it++)
     {
         Layer * l2 = *it;
-        l2->setDeltas(xf);
+        l2->setLayerXform(xf);
     }
     emit sig_update();
 }

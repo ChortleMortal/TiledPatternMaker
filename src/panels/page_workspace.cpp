@@ -57,6 +57,7 @@ page_workspace::page_workspace(ControlPanel * cpanel)  : panel_page(cpanel,"Work
     tree->setColumnCount(3);
     tree->setHeaderHidden(true);
     tree->setMinimumWidth(601);
+    tree->setMinimumHeight(750);
 
     AQVBoxLayout * box = new AQVBoxLayout();
     box->setSizeConstraint(QLayout::SetFixedSize);
@@ -362,7 +363,7 @@ void page_workspace::populateDEL(QTreeWidgetItem * parent, DesignElementPtr de)
     QTreeWidgetItem * item = new QTreeWidgetItem;
     item->setText(0,"Feature");
     item->setText(1, addr(feature.get()));
-    item->setText(2, QString("Num points = %1").arg(feature->numPoints()));
+    item->setText(2, QString("Num points = %1 Rot = %2").arg(feature->numPoints()).arg(feature->getRotation()));
     parent->addChild(item);
 
     FigurePtr figure = de->getFigure();
@@ -485,7 +486,7 @@ void page_workspace::populateTiling(QTreeWidgetItem * parent, TilingPtr tp)
         QTreeWidgetItem * item2 = new QTreeWidgetItem;
         item2->setText(0,"Feature");
         item2->setText(1, addr(fp.get()));
-        item2->setText(2, QString("Num points = %1").arg(fp->numPoints()));
+        item2->setText(2, QString("Num points = %1 Rot = %2").arg(fp->numPoints()).arg(fp->getRotation()));
         item->addChild(item2);
     }
 }

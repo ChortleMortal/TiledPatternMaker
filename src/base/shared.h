@@ -71,9 +71,12 @@ class Pattern;
 class Border;
 class ShapeFactory;
 class FeatureButton;
+class BackgroundImage;
 
 class Face;
 class FaceSet;
+class Thread;
+
 
 typedef shared_ptr<Style>           StylePtr;
 typedef shared_ptr<Tiling>          TilingPtr;
@@ -106,6 +109,8 @@ typedef shared_ptr<FigureView>      FigureViewPtr;
 typedef shared_ptr<FeatureButton>   FeatureBtnPtr;
 typedef shared_ptr<Face>            FacePtr;
 typedef shared_ptr<FaceSet>         FaceSetPtr;
+typedef shared_ptr<Thread>          ThreadPtr;
+typedef shared_ptr<BackgroundImage> BkgdImgPtr;
 
 typedef weak_ptr<Style>           WeakStylePtr;
 typedef weak_ptr<Tiling>          WeakTilingPtr;

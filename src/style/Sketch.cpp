@@ -80,7 +80,6 @@ void Sketch::draw(GeoGraphics * gg)
         return;
     }
 
-    gg->pushAndCompose(getLayerTransform());
     QPen pen(colors.getNextColor().color);
 
     qreal jitter = Transform::distFromInvertedZero(gg->getTransform(),5.0);
@@ -110,7 +109,6 @@ void Sketch::draw(GeoGraphics * gg)
             gg->drawEdge(edge2,pen);
         }
     }
-    gg->pop();
 }
 
 

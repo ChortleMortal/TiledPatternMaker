@@ -56,6 +56,8 @@ public:
     virtual void    onEnter()     = 0;
     virtual void    onExit() {}
 
+    void            leaveEvent(QEvent *event) Q_DECL_OVERRIDE;
+    void            enterEvent(QEvent *event) Q_DECL_OVERRIDE;
     virtual void	closeEvent(QCloseEvent * event) Q_DECL_OVERRIDE;
 
     void    setNewlySelected(bool state) { newlySelected = state; }
@@ -84,6 +86,9 @@ signals:
 public slots:
 
 protected:
+    virtual void    mouseEnter() { refresh = false; }
+    virtual void    mouseLeave() { refresh = true; }
+
     QVBoxLayout *		vbox;
     QString				pageName;
 
@@ -93,6 +98,8 @@ protected:
     Workspace         * workspace;
     TiledPatternMaker * maker;
     WorkspaceViewer   * viewer;
+
+    bool    refresh;
 
 private:
     bool                newlySelected;

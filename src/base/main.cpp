@@ -35,6 +35,7 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
     QApplication::setStyle("Fusion");
+    QCoreApplication::setApplicationName("Tiled Pattern Maker");
 
     qtAppLog::getInstance();
     qInstallMessageHandler(&qtAppLog::crashMessageOutput);
@@ -43,12 +44,12 @@ int main(int argc, char *argv[])
     QTime ct = QTime::currentTime();
 
 #ifdef QT_DEBUG
-    qDebug().noquote() << "=========== Debug Build:" << cd.toString() << ct.toString();
+    qInfo().noquote() << "=========== Debug Build:" << cd.toString() << ct.toString();
 #else
-    qDebug().noquote() << "============Release Build:" << cd.toString() << ct.toString();
+    qInfo().noquote() << "============Release Build:" << cd.toString() << ct.toString();
 #endif
-    qDebug().noquote() << "App path:" << qApp->applicationDirPath();
-    qDebug().noquote() << "Log:"  << qtAppLog::currentLogName;
+    qInfo().noquote() << "App path:" << qApp->applicationDirPath();
+    qInfo().noquote() << "Log:"  << qtAppLog::currentLogName;
 
 #ifdef __linux__
     qDebug().noquote() << "Font:" << QApplication::font().toString();
@@ -56,7 +57,7 @@ int main(int argc, char *argv[])
     afont.setPointSize(8);
     QApplication::setFont(afont);
 #endif
-    qDebug().noquote() << "Font:" << QApplication::font().toString();
+    qInfo().noquote() << "Font:" << QApplication::font().toString();
 
     QCoreApplication::setOrganizationName("DAC");
     QCoreApplication::setApplicationName("TiledPatternMaker");
@@ -126,7 +127,7 @@ int main(int argc, char *argv[])
 
     int rv =  app.exec();
 
-    qDebug() << "Exiting...";
+    qInfo() << "Exiting...";
 
     delete maker;
 

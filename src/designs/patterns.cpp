@@ -1637,7 +1637,7 @@ void PatternKumiko2::build()
     {
         t = make_shared<Tiling>(tileName, trans1, trans2);
         t->setFillData(fd);
-        FeaturePtr fp = make_shared<Feature>(4);
+        FeaturePtr fp = make_shared<Feature>(4,0.0);
         PlacedFeaturePtr pfp = make_shared<PlacedFeature>(fp,QTransform());
         t->add(pfp);
         t->setDescription("Kumiko2 translation vectors");

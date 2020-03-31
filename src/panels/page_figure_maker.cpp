@@ -28,6 +28,7 @@
 #include "makers/figure_maker.h"
 #include "style/Style.h"
 #include "panels/panel.h"
+#include "viewers/workspaceviewer.h"
 
 page_figure_maker::page_figure_maker(ControlPanel * cpanel) : panel_page(cpanel,"Figure Maker")
 {
@@ -128,11 +129,8 @@ void page_figure_maker::reload(bool force)
 
         if (tp && tp->countPlacedFeatures())
         {
-            if (tp != loadedTiling || force)
-            {
                 loadedTiling = tp;
                 figureMaker->setNewTiling(loadedTiling);
-            }
         }
     }
 
@@ -141,14 +139,17 @@ void page_figure_maker::reload(bool force)
 
 void page_figure_maker::onEnter()
 {
-    QString txt("green = figure  |  magenta = feature boundary  |  red = radial figure boundary  |  yellow = extended boundary");
-    panel->setStatus(txt);
+    QString txt("<body style=\"background-color=#000000\"><font color=green>figure</font>  |  <font color=magenta>feature boundary</font>  |  <font color=red>radial figure boundary</font>  |  <font color=yellow>extended boundary</font></body>");
+    QLabel * l = panel->getStatus();
+    l->setStyleSheet("QLabel { background-color : black; }");
+    l->setMinimumHeight(21);
+    l->setText(txt);
     reload();
 }
 
 void page_figure_maker::onExit()
 {
-    panel->setStatus("");
+    panel->getStatus()->setText("");
 }
 
 void page_figure_maker::refreshPage(void)
@@ -172,7 +173,7 @@ void page_figure_maker::slot_tilingChanged()
 
 void page_figure_maker::slot_replaceInStyle()
 {
-    qDebug() << "page_figure_editor::slot_replaceInStyle()";
+    qDebug() << "page_figure_maker::slot_replaceInStyle()";
 
     PrototypePtr pp = figureMaker->getPrototype();
     StyledDesign & sd = (config->pushTarget == TARGET_WS_STYLES) ? workspace->getWsStyles() : workspace->getLoadedStyles();
@@ -197,13 +198,6 @@ void page_figure_maker::slot_replaceInStyle()
         return;
     }
 
-    CanvasSettings info = canvas->getCanvasSettings();
-    info.init();
-    info.setScale(1.0);
-    info.setBackgroundColor(Qt::white);
-    info.setSizeF(QSizeF(1500.0,1100.0));
-    info.setBorder(nullptr);
-
     if (config->pushTarget == TARGET_WS_STYLES)
         emit sig_render(RENDER_WS);
     else
@@ -212,19 +206,21 @@ void page_figure_maker::slot_replaceInStyle()
 
 void page_figure_maker::slot_addToStyle()
 {
-    qDebug() << "page_figure_editor::slot_replaceInStyle()";
+    qDebug() << "page_figure_maker::slot_addToStyle()";
 
     StylePtr sp =  figureMaker->createDefaultStyleFromPrototype();
 
     StyledDesign & sd = (config->pushTarget == TARGET_WS_STYLES) ? workspace->getWsStyles() : workspace->getLoadedStyles();
-    sd.addStyle(sp);
 
-    CanvasSettings info = canvas->getCanvasSettings();
-    info.init();
-    info.setScale(1.0);
-    info.setBackgroundColor(Qt::white);
-    info.setSizeF(QSizeF(1500.0,1100.0));
-    info.setBorder(nullptr);
+    if (!sd.hasContent())
+    {
+        ViewDefinition * viewDef = &WorkspaceViewer::viewDimensions[VIEW_DESIGN];
+        CanvasSettings cs;
+        cs.set(viewDef);
+        sd.setCanvasSettings(cs);
+    }
+
+    sd.addStyle(sp);
 
     if (config->pushTarget == TARGET_WS_STYLES)
         emit sig_render(RENDER_WS);

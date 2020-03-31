@@ -99,7 +99,7 @@ TilingPtr TilingLoader::readTiling(QTextStream & st)
 
         if (reg)
         {
-            bf = make_shared<Feature>(num_sides);
+            bf = make_shared<Feature>(num_sides,0);
         }
         else
         {
@@ -111,7 +111,7 @@ TilingPtr TilingLoader::readTiling(QTextStream & st)
                 pts << QPointF(x1, y1);
             }
             EdgePoly ep(pts);
-            bf = make_shared<Feature>(ep);
+            bf = make_shared<Feature>(ep,0);
         }
 
         for( int jdx = 0; jdx < num_xforms; ++jdx )
@@ -230,53 +230,54 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
         tiling->setFillData(fd);
     }
 
-    xml_node view = tiling_node.child("View");
-    if (view)
+    for (xml_node feature = tiling_node.child("Feature"); feature; feature = feature.next_sibling("Feature"))
     {
-        Xform xf = getXform(view);
-        tiling->setViewTransform(xf);
-    }
+        FeaturePtr bf;
 
+        xml_attribute fatt = feature.attribute("type");
+        if (!fatt)
+        {
+            qWarning("missing type attribute");
+            continue;
+        }
+        QString strtype = fatt.as_string();
 
-   for (xml_node feature = tiling_node.child("Feature"); feature; feature = feature.next_sibling("Feature"))
-    {
-       FeaturePtr bf;
+        if (strtype == "girih")
+        {
+            xml_attribute nameattr = feature.attribute("name");
+            if (!nameattr)
+            {
+                qWarning("missing name attribute for girih shape");
+                continue;
+            }
+            QString name = nameattr.value();
+            PlacedFeaturePtr pfp = make_shared<PlacedFeature>();
+            pfp->loadFromGirihShape(name);
+            bf = pfp->getFeature();
+        }
+        else if (strtype == "regular")
+        {
+            int sides      = 0;
+            qreal rotation = 0.0;
 
-       xml_attribute fatt = feature.attribute("type");
-       if (!fatt)
-       {
-           qWarning("missing type attribute");
-           continue;
-       }
-       QString strtype = fatt.as_string();
-
-       int sides = 0;
-       if (strtype == "girih")
-       {
-           xml_attribute nameattr = feature.attribute("name");
-           if (!nameattr)
-           {
-               qWarning("missing name attribute for girih shape");
-               continue;
-           }
-           QString name = nameattr.value();
-           PlacedFeaturePtr pfp = make_shared<PlacedFeature>();
-           pfp->loadFromGirihShape(name);
-           bf = pfp->getFeature();
-       }
-       else if (strtype == "regular")
-       {
-           xml_attribute sidesatt = feature.attribute("sides");
-           if (!sidesatt)
-           {
+            xml_attribute sidesatt = feature.attribute("sides");
+            if (!sidesatt)
+            {
                 qWarning("missing sides attribute");
                 continue;
-           }
-           sides = sidesatt.as_int();
-           bf = make_shared<Feature>(sides);
-       }
-       else if (strtype == "polygon")
-       {
+            }
+            sides = sidesatt.as_int();
+
+            xml_attribute rotatt = feature.attribute("rotation");
+            if (rotatt)
+            {
+                rotation = rotatt.as_double();
+            }
+            bf = make_shared<Feature>(sides,rotation);
+
+        }
+        else if (strtype == "polygon")
+        {
             QPolygonF pts;
             for (xml_node pnode = feature.child("Point"); pnode; pnode = pnode.next_sibling("Point"))
             {
@@ -285,88 +286,109 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
                 pts << pt;
             }
             EdgePoly ep(pts);
-            bf = make_shared<Feature>(ep);
-       }
-       else if (strtype == "edgepoly")
-       {
-           FeatureReader fr;
-           EdgePoly ep = fr.getEdgePoly(feature);
-           bf = make_shared<Feature>(ep);
-       }
-
-       for (xml_node plnode = feature.child("Placement"); plnode; plnode = plnode.next_sibling("Placement"))
-       {
-           string txt    = plnode.child_value();
-           QTransform  T = getAffineTransform(txt.c_str());
-           PlacedFeaturePtr pfp = make_shared<PlacedFeature>(bf,T);
-           tiling->add(pfp);
-       }
-
-       xml_node bcolor = feature.child("BkgdColors");
-       if (bcolor)
-       {
-           QVector<TPColor> tpcolors;
-           QString txt = bcolor.child_value();
-           QStringList txtList = txt.split(',');
-           for (auto it = txtList.begin(); it != txtList.end(); it++)
-           {
-               QString acolor = *it;
-               tpcolors.push_back(TPColor(acolor,false));
-           }
-           ColorSet & bkgds = bf->getBkgdColors();
-           bkgds.setColors(tpcolors);
+            bf = make_shared<Feature>(ep,0);
         }
-   }
+        else if (strtype == "edgepoly")
+        {
+            FeatureReader fr;
+            EdgePoly ep = fr.getEdgePoly(feature);
+            bf = make_shared<Feature>(ep,0);
+        }
 
-   xml_node bkImage = tiling_node.child("BackgroundImage");
-   if (bkImage)
-   {
-       xml_attribute attr = bkImage.attribute("name");
-       if (attr)
-       {
-           BackgroundImage & bi = tiling->getBackground();
+        for (xml_node plnode = feature.child("Placement"); plnode; plnode = plnode.next_sibling("Placement"))
+        {
+            string txt    = plnode.child_value();
+            QTransform  T = getAffineTransform(txt.c_str());
+            PlacedFeaturePtr pfp = make_shared<PlacedFeature>(bf,T);
+            tiling->add(pfp);
+        }
 
-           bi.bkgdName = attr.value();
+        xml_node bcolor = feature.child("BkgdColors");
+        if (bcolor)
+        {
+            QVector<TPColor> tpcolors;
+            QString txt = bcolor.child_value();
+            QStringList txtList = txt.split(',');
+            for (auto it = txtList.begin(); it != txtList.end(); it++)
+            {
+                QString acolor = *it;
+                tpcolors.push_back(TPColor(acolor,false));
 
-           xml_node n = bkImage.child("Scale");
-           if (n)
-           {
-                QString str = n.child_value();
-                bi.scale = str.toDouble();
-           }
-
-           n = bkImage.child("Rot");
-           if (n)
-           {
-                QString str = n.child_value();
-                bi.rot = str.toDouble();
-           }
-
-           n = bkImage.child("X");
-           if (n)
-           {
-                QString str= n.child_value();
-                bi.x = str.toDouble();
-           }
-
-           n = bkImage.child("Y");
-           if (n)
-           {
-                QString str = n.child_value();
-                bi.y = str.toDouble();
-           }
-
-           n= bkImage.child("Perspective");
-           if (n)
-           {
-               QString str = n.child_value();
-               bi.perspective = getQTransform(str);
-           }
+            }
+            ColorSet & bkgds = bf->getBkgdColors();
+            bkgds.setColors(tpcolors);
         }
     }
 
-   // tiling->dump();
-   return tiling;
+    xml_node bkImage = tiling_node.child("BackgroundImage");
+    if (bkImage)
+    {
+        xml_attribute attr = bkImage.attribute("name");
+        if (attr)
+        {
+            BkgdImgPtr bi = tiling->getBackground();
+            Xform xf = bi->getXform();
+
+            bi->bkgdName  = attr.value();
+
+            xml_node n = bkImage.child("Scale");
+            if (n)
+            {
+                QString str = n.child_value();
+                xf.setScale(str.toDouble());
+            }
+
+            n = bkImage.child("Rot");
+            if (n)
+            {
+                QString str = n.child_value();
+                xf.setRotateRadians(str.toDouble());
+            }
+
+            n = bkImage.child("X");
+            if (n)
+            {
+                QString str= n.child_value();
+                xf.setTranslateX(str.toDouble());
+            }
+
+            n = bkImage.child("Y");
+            if (n)
+            {
+                QString str = n.child_value();
+                xf.setTranslateY(str.toDouble());
+            }
+
+            bi->setXform(xf);
+
+            n= bkImage.child("Perspective");
+            if (n)
+            {
+                QString str = n.child_value();
+                bi->perspective = getQTransform(str);
+            }
+
+            // load
+            if (bi->loadImageUsingName())
+            {
+                bool adjPerspective = false;
+                bool xform          = false;
+                if (!bi->perspective.isIdentity())
+                {
+                    bi->adjustBackground();
+                    adjPerspective = true;
+                }
+                if (!bi->getTransform().isIdentity())
+                {
+                    xform = true;
+                }
+                bi->bkgdImageChanged(true,adjPerspective,xform);
+            }
+        }
+    }
+
+    // tiling->dump();
+    return tiling;
 }
 
 Xform  TilingLoader::getXform(xml_node & node)
@@ -387,7 +409,7 @@ Xform  TilingLoader::getXform(xml_node & node)
     xf.setTranslateY(str.toDouble());
 
     str = node.child_value("Center");
-    xf.setRotateCenter(getPoint(str));
+    xf.setCenter(getPoint(str));
 
     return  xf;
 }

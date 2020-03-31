@@ -27,8 +27,6 @@
 
 #include "panel_page.h"
 
-class DoubleSpinSet;
-
 class page_debug : public panel_page
 {
     Q_OBJECT
@@ -59,10 +57,8 @@ private slots:
 
     void    slot_autoCycleClicked(bool enb);
     void    slot_stopIfDiffClicked(bool enb);
-    void    slot_gridModelClicked(bool enb);
     void    slot_cycleModeChanged(int row);
     void    slot_cycleIntervalChanged(int value);
-    void    slot_gridWidthChanged(qreal value);
     void    selectDir0();
     void    selectDir1();
     void    swapDirs();
@@ -100,9 +96,6 @@ private:
     QCheckBox   * differences;
     QCheckBox   * ping_pong;
     QCheckBox   * side_by_side;
-
-    QCheckBox   * cbGridModel;
-    DoubleSpinSet * gridWidth;
 };
 
 #endif

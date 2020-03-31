@@ -29,26 +29,33 @@
 #include "base/canvas.h"
 #include "base/border.h"
 #include "base/tiledpatternmaker.h"
+#include "base/utilities.h"
+#include "makers/tilingmaker.h"
+#include "panels/panel.h"
+#include "viewers/workspaceviewer.h"
 
 using std::string;
 
-page_canvasSettings::page_canvasSettings(ControlPanel *panel)  : panel_page(panel,"Canvas Settings")
+page_canvasSettings::page_canvasSettings(ControlPanel * apanel)  : panel_page(apanel,"Canvas Settings"), bkgdLayout("Bkgd Xform")
 {
     QLabel * label            = new QLabel("Source");
     QRadioButton *radioStyle  = new QRadioButton("Style");
     QRadioButton *radioWS     = new QRadioButton("Workspace");
     QRadioButton *radioCanvas = new QRadioButton("Canvas");
 
+    QPushButton * pbRefresh = new QPushButton("Refresh");
+
     QHBoxLayout * hbox = new QHBoxLayout();
-    hbox->addStretch();
     hbox->addWidget(label);
-    hbox->addStretch();
+    hbox->addStretch(1);
     hbox ->addWidget(radioStyle);
-    hbox->addStretch();
+    hbox->addStretch(1);
     hbox ->addWidget(radioWS);
-    hbox->addStretch();
+    hbox->addStretch(1);
     hbox ->addWidget(radioCanvas);
-    hbox->addStretch();
+    hbox->addStretch(2);
+    hbox->addWidget(pbRefresh);
+    hbox->addStretch(20);
 
     vbox->addLayout(hbox);
 
@@ -74,28 +81,6 @@ page_canvasSettings::page_canvasSettings(ControlPanel *panel)  : panel_page(pane
     grid->addWidget(startEditX,row,1);
     startEditY = new QLineEdit();
     grid->addWidget(startEditY,row,2);
-    row++;
-
-    label = new QLabel("diameter");
-    grid->addWidget(label,row,0);
-    diamEdit = new QLineEdit();
-    grid->addWidget(diamEdit,row,1);
-    row++;
-
-    label = new QLabel("scale");
-    grid->addWidget(label,row,0);
-    scaleEdit = new QLineEdit();
-    grid->addWidget(scaleEdit,row,1);
-    row++;
-
-    // background color
-    label = new QLabel("bkgdColor");
-    grid->addWidget(label,row,0);
-    bkColorEdit = new QLineEdit();
-    grid->addWidget(bkColorEdit,row,1);
-    bkgdColorPatch   = new ClickableLabel;
-    bkgdColorPatch->setMinimumWidth(50);
-    grid->addWidget(bkgdColorPatch,row,2);
     row++;
 
     // border
@@ -133,6 +118,60 @@ page_canvasSettings::page_canvasSettings(ControlPanel *panel)  : panel_page(pane
     borderColorPatch[1]->setMinimumWidth(50);
     grid->addWidget(borderColorPatch[1],row,2);
     row++;
+
+    //
+    // backgrounds
+    //
+
+    QPushButton * adjustBtn       = new QPushButton("Adjust perspective");
+    QPushButton * saveAdjustedBtn = new QPushButton("Save Adjusted");
+
+    chk_showBkgd    = new QCheckBox("Show Background");
+    chk_adjustBkgd  = new QCheckBox("Perspective");
+    chk_xformBkgd   = new QCheckBox("Xform");
+
+    // background color
+    label = new QLabel("Background Color");
+    bkColorEdit = new QLineEdit();
+    bkgdColorPatch   = new ClickableLabel;
+    bkgdColorPatch->setMinimumWidth(50);
+
+    grid->addWidget(label,row,0);
+    grid->addWidget(bkColorEdit,row,1);
+    grid->addWidget(bkgdColorPatch,row,2);
+    row++;
+
+    // background image
+    label = new QLabel("Background Image");
+    QPushButton * imageBtn = new QPushButton("Select");
+    imageEdit = new QLineEdit();
+
+    grid->addWidget(label,row,0);
+    grid->addWidget(imageBtn,row,1);
+    grid->addWidget(imageEdit,row,2);
+    row++;
+
+    grid->addLayout(&bkgdLayout,row,0,1,4);
+    grid->addWidget(adjustBtn,row,4);
+    row++;
+
+    grid->addWidget(chk_showBkgd,row,0);
+    grid->addWidget(chk_adjustBkgd,row,1);
+    grid->addWidget(chk_xformBkgd,row,2);
+    grid->addWidget(saveAdjustedBtn,row,4);
+
+    WorkspaceViewer * wviewer  = WorkspaceViewer::getInstance();
+
+    connect(imageBtn,       &QPushButton::clicked,            this,    &page_canvasSettings::slot_loadBackground);
+    connect(adjustBtn,      &QPushButton::clicked,            this,    &page_canvasSettings::slot_adjustBackground);
+    connect(saveAdjustedBtn,&QPushButton::clicked,            this,    &page_canvasSettings::slot_saveAdjustedBackground);
+    connect(pbRefresh,      &QPushButton::clicked,            this,    &page_canvasSettings::display);
+    connect(wviewer,        &WorkspaceViewer::sig_viewUpdated,this,    &page_canvasSettings::display);
+
+    connect(&bkgdLayout,    &LayoutTransform::xformChanged,   this,    &page_canvasSettings::slot_setBkgdXform);
+    connect(chk_showBkgd,   &QAbstractButton::clicked,        this,    &page_canvasSettings::slot_setBkgd);
+    connect(chk_adjustBkgd, &QAbstractButton::clicked,        this,    &page_canvasSettings::slot_setBkgd);
+    connect(chk_xformBkgd,  &QAbstractButton::clicked,        this,    &page_canvasSettings::slot_setBkgd);
 
     hbox = new QHBoxLayout();
     hbox->addLayout(grid);
@@ -174,6 +213,11 @@ page_canvasSettings::page_canvasSettings(ControlPanel *panel)  : panel_page(pane
     connect(maker,  &TiledPatternMaker::sig_loadedTiling,      this, &page_canvasSettings::onEnter);
     connect(maker,  &TiledPatternMaker::sig_loadedXML,         this, &page_canvasSettings::onEnter);
     connect(maker,  &TiledPatternMaker::sig_loadedDesign,      this, &page_canvasSettings::onEnter);
+
+    connect(canvas, &Canvas::sig_deltaScale,    this, &page_canvasSettings::slot_scale);
+    connect(canvas, &Canvas::sig_deltaRotate,   this, &page_canvasSettings::slot_rotate);
+    connect(canvas, &Canvas::sig_deltaMoveY,    this, &page_canvasSettings::slot_moveY);
+    connect(canvas, &Canvas::sig_deltaMoveX,    this, &page_canvasSettings::slot_moveX);
 }
 
 void  page_canvasSettings::refreshPage()
@@ -185,15 +229,20 @@ void  page_canvasSettings::refreshPage()
 
     if (canvas->scene)
     {
+#if 0
         QRectF qr = canvas->scene->sceneRect();
         QString str2 = QString("<pre>Canvas = %1 %2 %3 %4</pre>").arg(qr.x()).arg(qr.y()).arg(qr.width()).arg(qr.height());
+#else
+        CanvasSettings cs = canvas->getCanvasSettings();
+        QString str2 = QString("<pre>Canvas = %1 %2</pre>").arg(cs.getBackgroundColor().name()).arg(Utils::addr(cs.getBkgdImage().get()));
         line2->setText(str2);
+#endif
     }
 }
 
 void page_canvasSettings::settingsSelectionChanged(int idx)
 {
-    Q_UNUSED(idx);
+    Q_UNUSED(idx)
     config->canvasSettings = static_cast<eCSSelect>(idx);
     onEnter();
 }
@@ -212,11 +261,17 @@ void page_canvasSettings::onEnter()
         cSettings = canvas->getCanvasSettings();
         break;
     }
+
     display();
 }
 
 void page_canvasSettings::display()
 {
+    if (panel->getCurrentPage() != dynamic_cast<panel_page*>(this))
+    {
+        return;
+    }
+
     QSizeF  sz = cSettings.getSizeF();
     sizeEditW->setText(QString::number(sz.width()));
     sizeEditH->setText(QString::number(sz.height()));
@@ -224,12 +279,6 @@ void page_canvasSettings::display()
     QPointF  pt = cSettings.getStartTile();
     startEditX->setText(QString::number(pt.x()));
     startEditY->setText( QString::number(pt.y()));
-
-    qreal d  = cSettings.getDiameter();
-    diamEdit->setText(QString::number(d));
-
-    qreal sc = cSettings.getScale();
-    scaleEdit->setText(QString::number(sc));
 
     QColor qc = cSettings.getBackgroundColor();
     bkColorEdit->setText(qc.name(QColor::HexArgb));
@@ -298,22 +347,27 @@ void page_canvasSettings::display()
         borderColor[1]->hide();
         borderColorPatch[1]->hide();
     }
+
+    // display background
+    displayBackgroundStatus();
 }
 
 void page_canvasSettings::setInfo()
 {
+    qDebug() << "page_canvasSettings::setInfo()";
+
     setFromForm();
 
     switch (bgroup.checkedId())
     {
     case CS_STYLE:
-        workspace->getLoadedStyles().setupCanvas(cSettings);
+        workspace->getLoadedStyles().setCanvasSettings(cSettings);
         break;
     case CS_WS:
-        workspace->getWsStyles().setupCanvas(cSettings);
+        workspace->getWsStyles().setCanvasSettings(cSettings);
         break;
     case CS_CANVAS:
-        canvas->setCanvasSettings(cSettings);
+        canvas->useCanvasSettings(cSettings);
         break;
     }
 
@@ -338,18 +392,6 @@ void page_canvasSettings::setFromForm()
     {
         QPointF apoint(X,Y);
         cSettings.setStartTile(apoint);
-    }
-
-    qreal d = diamEdit->text().toDouble(&ok);
-    if (ok)
-    {
-        cSettings.setDiameter(d);
-    }
-
-    qreal s = scaleEdit->text().toDouble(&ok);
-    if (ok)
-    {
-        cSettings.setScale(s);
     }
 
     QColor color;
@@ -466,7 +508,7 @@ void page_canvasSettings::pickBorderColor2()
 
 void page_canvasSettings::borderChanged(int row)
 {
-    Q_UNUSED(row);
+    Q_UNUSED(row)
 
     eBorderType type = static_cast<eBorderType>(borderType.currentData().toInt());
 
@@ -489,4 +531,187 @@ void page_canvasSettings::borderChanged(int row)
     cSettings.setBorder(bp);
 
     setInfo();
+}
+
+void page_canvasSettings::displayBackgroundStatus()
+{
+    BkgdImgPtr bi = cSettings.getBkgdImage();
+    if (bi)
+    {
+        Xform xf = bi->getXform();
+        bkgdLayout.setX(xf.getTranslateX());
+        bkgdLayout.setY(xf.getTranslateY());
+        bkgdLayout.setScale(xf.getScale());
+        bkgdLayout.setRot(xf.getRotateDegrees());
+
+        chk_showBkgd->setChecked(bi->bShowBkgd);
+        chk_xformBkgd->setChecked(bi->bTransformBkgd);
+        chk_adjustBkgd->setChecked(bi->bAdjustPerspective);
+
+        imageEdit->setText(bi->bkgdName);
+    }
+}
+
+void page_canvasSettings::slot_loadBackground()
+{
+    QString bkgdDir = config->rootMediaDir + "bkgd_photos/";
+    QString filename = QFileDialog::getOpenFileName(nullptr,"Select image file",bkgdDir, "Image Files (*.png *.jpg *.bmp *.heic)");
+    if (filename.isEmpty()) return;
+
+    // load
+    BkgdImgPtr bi = make_shared<BackgroundImage>();
+    if (bi)
+    {
+        if ( bi->loadAndCopy(filename))
+        {
+            cSettings.setBkgdImage(bi);
+            bi->bkgdImageChanged(true,false,true);
+
+            displayBackgroundStatus();
+        }
+    }
+}
+
+void page_canvasSettings::slot_setBkgd()
+{
+    BkgdImgPtr bi = cSettings.getBkgdImage();
+    if (bi)
+    {
+        Xform xf = bi->getXform();
+        xf.setTransform(bkgdLayout.getQTransform());
+        bi->setXform(xf);
+        bi->bkgdImageChanged(chk_showBkgd->isChecked(),
+                         chk_adjustBkgd->isChecked(),
+                         chk_xformBkgd->isChecked());
+        emit sig_viewWS();
+    }
+}
+
+void page_canvasSettings::slot_setBkgdXform()
+{
+    BkgdImgPtr bi = cSettings.getBkgdImage();
+    if (bi)
+    {
+        Xform xf = bi->getXform();
+        xf.setTransform(bkgdLayout.getQTransform());
+        bi->setXform(xf);
+        bi->bkgdTransformChanged(chk_xformBkgd->isChecked());
+    }
+}
+
+void page_canvasSettings::slot_adjustBackground()
+{
+#if 0
+    if (tilingMaker->getMouseMode() != BKGD_SKEW_MODE)
+        return;
+
+    EdgePoly & waccum = tilingMaker->getAccumW();
+    if (waccum.size() != 4)
+        return;
+
+    TilingPtr tiling = tilingMaker->getTiling();
+    if (!tiling) return;
+
+
+    BkgdImgPtr bi = tiling->getBackground();
+    bi->adjustBackground(
+        tilingMaker->worldToScreen(waccum[0]->getV1()->getPosition()),
+        tilingMaker->worldToScreen(waccum[1]->getV1()->getPosition()),
+        tilingMaker->worldToScreen(waccum[2]->getV1()->getPosition()),
+        tilingMaker->worldToScreen(waccum[3]->getV1()->getPosition()));
+
+
+    displayBackgroundStatus(tiling);
+    tilingMaker->setMouseMode(NO_MOUSE_MODE);
+
+    if (config->viewerType == VIEW_TILING_MAKER)
+    {
+        emit sig_viewWS();
+    }
+#else
+    QMessageBox box;
+    box.setIcon(QMessageBox::Information);
+    box.setText("Not Implemented");
+    box.exec();
+#endif
+}
+
+void page_canvasSettings::slot_saveAdjustedBackground()
+{
+#if 0
+    TilingPtr tiling = tilingMaker->getTiling();
+    if (!tiling) return;
+
+    BkgdImgPtr bi   = tiling->getBackground();
+    QString oldname = bi->bkgdName;
+
+    DlgName dlg;
+    dlg.newEdit->setText(oldname);
+    int retval = dlg.exec();
+    if (retval == QDialog::Rejected)
+    {
+        qDebug() << "Canceled";
+        return;
+    }
+
+    Q_ASSERT(retval == QDialog::Accepted);
+    QString newName = dlg.newEdit->text();
+
+    // save
+    bool rv = bi->saveAdjusted(newName);
+
+    QMessageBox box;
+    if (rv)
+    {
+        box.setIcon(QMessageBox::Information);
+        box.setText("OK");
+    }
+    else
+    {
+        box.setIcon(QMessageBox::Warning);
+        box.setText("FAILED");
+    }
+    box.exec();
+#else
+    QMessageBox box;
+    box.setIcon(QMessageBox::Information);
+    box.setText("Not Implemented");
+    box.exec();
+#endif
+}
+
+void page_canvasSettings::slot_moveX(int amount)
+{
+    if (panel->getCurrentPage() == dynamic_cast<panel_page*>(this) && config->kbdMode == KBD_MODE_XFORM_BKGD)
+    {
+        qDebug() << "page_canvasSettings::slot_moveX - background" << amount;
+        bkgdLayout.bumpX(amount);
+    }
+}
+
+void page_canvasSettings::slot_moveY(int amount)
+{
+    if (panel->getCurrentPage() == dynamic_cast<panel_page*>(this) && config->kbdMode == KBD_MODE_XFORM_BKGD)
+    {
+        qDebug() << "page_canvasSettings::slot_moveY" << amount;
+        bkgdLayout.bumpY(amount);
+    }
+}
+
+void page_canvasSettings::slot_rotate(int amount)
+{
+    if (panel->getCurrentPage() == dynamic_cast<panel_page*>(this) && config->kbdMode == KBD_MODE_XFORM_BKGD)
+    {
+        qDebug() << "page_canvasSettings::slot_rotate" << amount;
+        bkgdLayout.bumpRot(amount);
+    }
+}
+
+void page_canvasSettings::slot_scale(int amount)
+{
+    if (panel->getCurrentPage() == dynamic_cast<panel_page*>(this) && config->kbdMode == KBD_MODE_XFORM_BKGD)
+    {
+        qDebug() << "page_canvasSettings::slot_scale" << amount;
+        bkgdLayout.bumpScale(-amount);
+    }
 }

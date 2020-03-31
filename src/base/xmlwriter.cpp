@@ -211,24 +211,16 @@ bool XmlWriter::processVector(QTextStream &ts)
 void XmlWriter::processDesign(QTextStream &ts)
 {
     CanvasSettings info= design.getCanvasSettings();
-    qreal scale        = info.getScale();
-    QColor back        = info.getBackgroundColor();
+    QColor bkgdColor   = info.getBackgroundColor();
     QSizeF size        = info.getSizeF();
     BorderPtr border   = info.getBorder();
+    BkgdImgPtr bip     = info.getBkgdImage();
 
     ts << "<design>" << endl;
-
-    procScale(ts,scale);
     procSize(ts,size);
-    procBackground(ts,back);
+    procBackground(ts,bkgdColor);
     procBorder(ts,border);
-
     ts << "</design>" << endl;
-}
-
-void XmlWriter::procScale(QTextStream &ts,qreal scale)
-{
-    ts << "<scale>" << scale << "</scale>" << endl;
 }
 
 void XmlWriter::procWidth(QTextStream &ts,qreal width)
@@ -325,7 +317,7 @@ bool XmlWriter::processThick(QTextStream &ts, StylePtr s)
     qreal   width           = th->getLineWidth();
     PrototypePtr proto      = th->getPrototype();
     PolyPtr poly            = th->getBoundary();
-    Xform   xf              = th->getDeltas();
+    Xform   xf              = th->getLayerXform();
 
     QString str;
 
@@ -369,7 +361,7 @@ bool XmlWriter::processInterlace(QTextStream & ts, StylePtr s)
     qreal   shadow       = il->getShadow();
     PrototypePtr proto   = il->getPrototype();
     PolyPtr poly         = il->getBoundary();       // DAC - is this right
-    Xform   xf           = il->getDeltas();
+    Xform   xf           = il->getLayerXform();
 
     QString str;
 
@@ -415,7 +407,7 @@ bool XmlWriter::processOutline(QTextStream &ts, StylePtr s)
     qreal   width        = ol->getLineWidth();
     PrototypePtr proto   = ol->getPrototype();
     PolyPtr poly         = ol->getBoundary();
-    Xform   xf           = ol->getDeltas();
+    Xform   xf           = ol->getLayerXform();
 
     QString str;
 
@@ -462,7 +454,7 @@ bool XmlWriter::processFilled(QTextStream &ts, StylePtr s)
 
     PrototypePtr proto      = fl->getPrototype();
     PolyPtr poly            = fl->getBoundary();
-    Xform   xf              = fl->getDeltas();
+    Xform   xf              = fl->getLayerXform();
 
     QString str;
 
@@ -520,7 +512,7 @@ bool XmlWriter::processPlain(QTextStream &ts, StylePtr s)
     ColorSet & cset     = pl->getColorSet();
     PrototypePtr proto  = pl->getPrototype();
     PolyPtr poly        = pl->getBoundary();
-    Xform   xf          = pl->getDeltas();
+    Xform   xf          = pl->getLayerXform();
 
     QString str;
 
@@ -554,7 +546,7 @@ bool XmlWriter::processSketch(QTextStream &ts, StylePtr s)
     ColorSet & cset     = sk->getColorSet();
     PrototypePtr proto  = sk->getPrototype();
     PolyPtr poly        = sk->getBoundary();
-    Xform   xf          = sk->getDeltas();
+    Xform   xf          = sk->getLayerXform();
 
     QString str;
 
@@ -590,7 +582,7 @@ bool XmlWriter::processEmboss(QTextStream &ts, StylePtr s)
     qreal   angle        = em->getAngle();
     PrototypePtr proto   = em->getPrototype();
     PolyPtr poly         = em->getBoundary();
-    Xform   xf           = em->getDeltas();
+    Xform   xf           = em->getLayerXform();
 
     QString str;
 
@@ -633,7 +625,7 @@ bool XmlWriter::processTileColors(QTextStream &ts, StylePtr s)
 
     PrototypePtr proto  = tc->getPrototype();
     PolyPtr poly        = tc->getBoundary();
-    Xform   xf          = tc->getDeltas();
+    Xform   xf          = tc->getLayerXform();
 
     QString str;
 
@@ -656,6 +648,8 @@ void XmlWriter::procesToolkitGeoLayer(QTextStream & ts, Xform & xf)
     ts << "<top__delta>"   << xf.getTranslateY()      << "</top__delta>"   << endl;
     ts << "<width__delta>" << xf.getScale()           << "</width__delta>" << endl;
     ts << "<theta__delta>" << xf.getRotateRadians()   << "</theta__delta>" << endl;
+    QPointF pt = xf.getCenter();
+    ts << "<center>" << pt.x() << "," << pt.y()       << "</center>"        << endl;
 }
 
 void XmlWriter::processStyleStyle(QTextStream & ts, PrototypePtr & proto, PolyPtr & poly)
@@ -889,6 +883,7 @@ void XmlWriter::setFeature(QTextStream & ts,FeaturePtr fp)
     if (fp->isRegular())
     {
         ts << "<regular>true</regular>" << endl;
+        ts << "<rotation>" << fp->getRotation() << "</rotation>" << endl;
     }
     else
     {

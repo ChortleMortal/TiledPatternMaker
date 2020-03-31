@@ -51,16 +51,15 @@ FeatureLauncher::FeatureLauncher()
     //setGeometry(QRect(0,0,300,300));
 }
 
-FeatureBtnPtr  FeatureLauncher::launchFromTiling( TilingPtr tiling, PrototypePtr proto)
+FeatureBtnPtr  FeatureLauncher::launchFromPrototype(PrototypePtr proto)
 {
+    if (!proto)
+    {
+        FeatureBtnPtr fbp;
+        return fbp;
+    }
 
-    //FIXME FIXME use proto
-
-
-    if (tiling && (this->tiling == tiling))
-        return buttons[0];
-
-    this->tiling = tiling;
+    tiling = proto->getTiling();
 
     buttons.clear();
 

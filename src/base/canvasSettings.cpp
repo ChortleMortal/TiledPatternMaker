@@ -27,34 +27,47 @@
 #include "base/configuration.h"
 #include "base/utilities.h"
 #include "geometry/Loose.h"
+#include "viewers/workspaceviewer.h"
 
 CanvasSettings::CanvasSettings()
 {
-    init();
 }
 
 CanvasSettings::CanvasSettings(const CanvasSettings & other)
 {
     _bkgdColor = other._bkgdColor;
+    _bkgdImage = other._bkgdImage;
     _sceneSize = other._sceneSize;
-    _scale     = other._scale;
     _border    = other._border;
-    _diameter  = other._diameter;
     _startTile = other._startTile;
 }
-
 
 CanvasSettings::~CanvasSettings()
 {
 }
 
-void CanvasSettings::init()
+void CanvasSettings::init2()
 {
-    _sceneSize  = QSizeF(1500.0,1100.0);
-    _startTile  = QPointF(0.0,0.0);
+    _sceneSize  = QSize(1500.0,1100.0);
     _bkgdColor  = QColor(Qt::black);
-    _scale      = 1.0;
-    _diameter   = 400;
+    _startTile  = QPointF(0.0,0.0);
+
+    Configuration * config = Configuration::getInstance();
+    if (config->autoClear)
+    {
+        if (_border)
+        {
+            _border.reset();
+        }
+    }
+    _bkgdImage.reset();
+}
+
+void CanvasSettings::set(ViewDefinition * viewDef)
+{
+    _sceneSize  = viewDef->viewSize;
+    _bkgdColor  = viewDef->viewBkgdColor;
+    _startTile  = viewDef->viewStartTile;
 
    Configuration * config = Configuration::getInstance();
    if (config->autoClear)
@@ -64,23 +77,7 @@ void CanvasSettings::init()
            _border.reset();
        }
    }
-}
-
-bool CanvasSettings::isDifferent(CanvasSettings & other)
-{
-    if (_sceneSize != other.getSizeF())
-        return true;
-    if (_bkgdColor != other.getBackgroundColor())
-        return true;
-    if (!Loose::equals(_scale,other.getScale()))
-        return true;
-    if (_border != other.getBorder())
-        return true;
-    if (!Loose::equals(_diameter,other.getDiameter()))
-        return true;
-    if (_startTile != other.getStartTile())
-        return true;
-    return false;
+   _bkgdImage.reset();
 }
 
 void CanvasSettings::setBorder(BorderPtr border)
@@ -111,6 +108,15 @@ QColor CanvasSettings::getBackgroundColor()
 
 void  CanvasSettings::setBackgroundColor(QColor color)
 {
-    qDebug() << "DesignInfo::setBackgroundColor()"  << color.name();
+    qDebug() << "CanvasSettings::setBackgroundColor()"  << color.name();
     _bkgdColor = color;
+}
+
+void CanvasSettings::dump()
+{
+    qInfo() << "CanvasSettings" << _bkgdColor;
+    if (_bkgdImage)
+    {
+        qInfo()  << "Background name=" << _bkgdImage->bkgdName;
+    }
 }

@@ -69,7 +69,7 @@ void FigureMaker::slot_figureChanged()
     FigurePtr fp = masterEdit->getFigureFromEditor();
     if (!fp)
     {
-        qDebug() << "FigureMaker::slot_figureChanged figure is null - returning";
+        qWarning() << "FigureMaker::slot_figureChanged figure is null - returning";
         return;
     }
     masterEdit->setMasterFigure(fp);
@@ -93,7 +93,7 @@ void FigureMaker::setNewTiling(TilingPtr tiling)
 
     masterEdit->reset();
 
-    FeatureBtnPtr btn = launcher->launchFromTiling(tiling, designPrototype);
+    FeatureBtnPtr btn = launcher->launchFromPrototype(designPrototype);
     launcher->setCurrentButton(btn);
 
     Workspace * workspace = Workspace::getInstance();
@@ -129,7 +129,7 @@ void FigureMaker::setTilingChanged()
 
     masterEdit->reset();
 
-    FeatureBtnPtr btn = launcher->launchFromTiling(tiling, designPrototype);
+    FeatureBtnPtr btn = launcher->launchFromPrototype(designPrototype);
     launcher->setCurrentButton(btn);
 
     Workspace * workspace = Workspace::getInstance();
@@ -187,12 +187,11 @@ bool FigureMaker::duplicateActiveFeature()
     FeaturePtr fp2;
     if (fp->isRegular())
     {
-        fp2 = make_shared<Feature>(fp->numPoints());
+        fp2 = make_shared<Feature>(fp->numPoints(),fp->getRotation());
     }
     else
     {
-        EdgePoly ep = fp->getEdgePoly();
-        fp2= make_shared<Feature>(ep);
+        fp2= make_shared<Feature>(fp->getEdgePoly(),fp->getRotation());
     }
 
     Workspace * workspace = Workspace::getInstance();

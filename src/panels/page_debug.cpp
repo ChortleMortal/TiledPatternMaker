@@ -56,9 +56,7 @@ page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,"Debug Tools
     cycleCombo                          = new QComboBox();
     QPushButton * cycleBtn              = new QPushButton("Cycle");
 
-    cbGridModel                         = new QCheckBox("Grid Model");
-    gridWidth                           = new DoubleSpinSet("GridWidth",1.0,0.0001,900);
-    gridWidth->setDecimals(8);
+
 
     QPushButton * pbClearCanvas         = new QPushButton("Clear Canvas");
     QPushButton * pbRenderLoaded        = new QPushButton("Render Loaded");
@@ -75,11 +73,9 @@ page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,"Debug Tools
     row++;
     grid1->addWidget(reformatDesXMLBtn,     row,0);
     grid1->addWidget(reprocessDesXMLBtn,    row,1);
-    grid1->addWidget(cbGridModel,           row,2);
     row++;
     grid1->addWidget(reformatTileXMLBtn,    row,0);
     grid1->addWidget(reprocessTileXMLBtn,   row,1);
-    grid1->addLayout(gridWidth,             row,2,Qt::AlignLeft);
     row++;
     grid1->addWidget(pbRenderLoaded,    row,0);
     grid1->addWidget(pbRenderWS,        row,1);
@@ -136,7 +132,7 @@ page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,"Debug Tools
     viewImage1      = new QPushButton("View");
     compareImage    = new QPushButton("Compare Images");
     transparent     = new QCheckBox("Transparent");
-    differences     = new QCheckBox("Differences");
+    differences     = new QCheckBox("Display Differences");
     ping_pong       = new QCheckBox("Ping-pong");
     side_by_side    = new QCheckBox("Side-by-side");
 
@@ -173,7 +169,7 @@ page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,"Debug Tools
     comp0->setText(config->compareDir0);
     comp1->setText(config->compareDir1);
     transparent->setChecked(config->compare_transparent);
-    differences->setChecked(config->compare_differences);
+    differences->setChecked(config->display_differences);
     ping_pong->setChecked(config->compare_ping_pong);
     side_by_side->setChecked(config->compare_side_by_side);
 
@@ -188,9 +184,7 @@ page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,"Debug Tools
     connect(pbDrainAll,             &QPushButton::clicked,     canvas,     &Canvas::drainTheSwamp);
     connect(pbClearWS,              &QPushButton::clicked,     workspace,  &Workspace::slot_clearWorkspace);
 
-
     connect(cbAutoCycle,            &QCheckBox::clicked,       this,   &page_debug::slot_autoCycleClicked);
-    connect(cbGridModel,            &QCheckBox::clicked,       this,   &page_debug::slot_gridModelClicked);
     connect(cbStopIfDiff,           &QCheckBox::clicked,       this,   &page_debug::slot_stopIfDiffClicked);
     connect(transparent,            &QCheckBox::clicked,       this,   &page_debug::slot_transparentClicked);
     connect(differences,            &QCheckBox::clicked,       this,   &page_debug::slot_differencesClicked);
@@ -201,9 +195,7 @@ page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,"Debug Tools
     connect(compareDir0Btn,         &QPushButton::clicked,     this,  &page_debug::selectDir0);
     connect(compareDir1Btn,         &QPushButton::clicked,     this,  &page_debug::selectDir1);
     connect(swapBtn,                &QPushButton::clicked,     this,  &page_debug::swapDirs);
-    connect(gridWidth,              &DoubleSpinSet::valueChanged, this,&page_debug::slot_gridWidthChanged);
     connect(maker,          &TiledPatternMaker::sig_compareResult,this, &page_debug::slot_compareResult);
-
 
     connect(selectImage0,           SIGNAL(clicked()),         this,   SLOT(slot_selectImage0()));
     connect(viewImage0,             SIGNAL(clicked()),         this,   SLOT(slot_viewImage0()));
@@ -227,24 +219,12 @@ void  page_debug::onEnter()
     imageName0->setText(config->image0);
     imageName1->setText(config->image1);
     imageCompareResult->setText("");
-
-    cbGridModel->setChecked(config->fgdGridModel);
-    if (config->fgdGridModel)
-    {
-        gridWidth->setLabel("Model Units:");
-        gridWidth->setValue(config->fgdGridStepModel);
-    }
-    else
-    {
-        gridWidth->setLabel("Screen Units:");
-        gridWidth->setValue(config->fgdGridStepScreen);
-    }    
-    panel->setStatus("");
+    panel->getStatus()->setText("");
 }
 
 void page_debug::onExit()
 {
-    panel->setStatus("");
+    panel->getStatus()->setText("");
 }
 
 void  page_debug::refreshPage()
@@ -573,7 +553,7 @@ void page_debug::slot_transparentClicked(bool checked)
 
 void page_debug::slot_differencesClicked(bool checked)
 {
-    config->compare_differences = checked;
+    config->display_differences = checked;
 }
 
 void page_debug::slot_ping_pongClicked(bool checked)
@@ -586,35 +566,6 @@ void page_debug::slot_side_by_sideClicked(bool checked)
     config->compare_side_by_side = checked;
 }
 
-void page_debug::slot_gridModelClicked(bool enb)
-{
-    config->fgdGridModel = enb;
-    if (enb)
-    {
-        gridWidth->setLabel("Model Units:");
-        gridWidth->setValue(config->fgdGridStepModel);
-    }
-    else
-    {
-        gridWidth->setLabel("Screen Units:");
-        gridWidth->setValue(config->fgdGridStepScreen);
-    }
-    canvas->update();
-}
-
-void page_debug::slot_gridWidthChanged(qreal value)
-{
-    if (config->fgdGridModel)
-    {
-        config->fgdGridStepModel = value;
-    }
-    else
-    {
-        config->fgdGridStepScreen = static_cast<int>(value);
-    }
-    canvas->update();
-}
-
 void page_debug::slot_compareResult(QString result)
 {
     imageCompareResult->setText(result);
@@ -624,7 +575,7 @@ void page_debug::slot_startCycle()
 {
     if (config->cycleMode == CYCLE_COMPARE_IMAGES)
     {
-        panel->setStatus("L=log  V=view Q=quit Spacebar=next");
+        panel->getStatus()->setText("L=log  V=view Q=quit Spacebar=next");
     }
 }
 

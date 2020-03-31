@@ -77,11 +77,12 @@ void View::init()
 {
     config  = Configuration::getInstance();
     canvas  = Canvas::getInstance();
+    maped   = MapEditor::getInstance();
+    tmaker  = TilingMaker::getInstance();
 
     WorkspaceViewer * vw = WorkspaceViewer::getInstance();
 
     connect(vw,   &WorkspaceViewer::sig_title, this,   &View::setWindowTitle, Qt::QueuedConnection);
-    connect(this, &View::sig_procKeyEvent,     canvas, &Canvas::slot_procKeyEvent);
 }
 
 void View::slot_sceneRectChanged(const QRectF &rect)
@@ -106,7 +107,7 @@ void View::resizeEvent(QResizeEvent *event)
 
     QGraphicsView::resizeEvent(event);
 
-    if (config->viewerType == VIEW_TILIING_MAKER)
+    if (config->viewerType == VIEW_TILING_MAKER)
     {
         TilingMaker * td = TilingMaker::getInstance();
         td->viewRectChanged();
@@ -171,7 +172,18 @@ void View::paintEvent(QPaintEvent *event)
 
 void View::keyPressEvent( QKeyEvent *k )
 {
-    emit sig_procKeyEvent(k);
+    if (tmaker->procKeyEvent(k))
+    {
+        return;
+    }
+    else if (maped->procKeyEvent(k))
+    {
+        return;
+    }
+    else
+    {
+        canvas->procKeyEvent(k);
+    }
 }
 
 void View::mousePressEvent(QMouseEvent *event)

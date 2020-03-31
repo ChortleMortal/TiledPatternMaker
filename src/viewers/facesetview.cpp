@@ -17,8 +17,8 @@ QRectF FaceSetView::boundingRect() const
 void FaceSetView::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
     qDebug() << "FaceSetView::paint";
-    Q_UNUSED(option);
-    Q_UNUSED(widget);
+    Q_UNUSED(option)
+    Q_UNUSED(widget)
 
     painter->setRenderHint(QPainter::Antialiasing ,true);
     painter->setRenderHint(QPainter::SmoothPixmapTransform,true);
@@ -27,6 +27,15 @@ void FaceSetView::paint(QPainter *painter, const QStyleOptionGraphicsItem *optio
     QTransform tr = getLayerTransform();
     GeoGraphics gg(painter,tr);
     draw(&gg);
+
+    if (config->showCenter)
+    {
+        QPointF pt = getCenter();
+        qDebug() << "style layer center=" << pt;
+        painter->setPen(QPen(Qt::green,3));
+        painter->setBrush(QBrush(Qt::green));
+        painter->drawEllipse(pt,13,13);
+    }
 }
 
 

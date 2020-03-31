@@ -1,0 +1,103 @@
+<?xml version="1.0"?>
+<vector id="1" version="5">
+	<designNotes>?tude Pratique de la D?coration Polygonale Arabe
+figure fills tiling</designNotes>
+	<design>
+		<scale>1</scale>
+		<size>
+			<width>1500</width>
+			<height>1100</height>
+		</size>
+		<background>
+			<color>#ff000000</color>
+		</background>
+	</design>
+	<style.Interlace id="2" serialization="custom">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<boundary id="3">
+				<pts id="4">
+					<Point id="5">
+						<x>-10</x>
+						<y>-10</y>
+					</Point>
+					<Point id="6">
+						<x>-10</x>
+						<y>10</y>
+					</Point>
+					<Point id="7">
+						<x>10</x>
+						<y>10</y>
+					</Point>
+					<Point id="8">
+						<x>10</x>
+						<y>-10</y>
+					</Point>
+				</pts>
+			</boundary>
+			<prototype id="9" serialization="custom">
+				<app.Prototype>
+					<string>6 Motif</string>
+					<entry>
+						<tile.Feature id="10">
+							<regular>true</regular>
+							<rotation>90</rotation>
+							<edges id="11">
+								<Line>
+									<Point id="12">-0.5773502691896256,1</Point>
+									<Point id="13">-1.154700538379251,7.070501591499379e-17</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point id="14">-0.5773502691896261,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="14" />
+									<Point id="15">0.5773502691896254,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="15" />
+									<Point id="16">1.154700538379251,-2.121150477449814e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="16" />
+									<Point id="17">0.5773502691896263,0.9999999999999997</Point>
+								</Line>
+								<Line>
+									<Point reference="17" />
+									<Point reference="12" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.Rosette id="18">
+							<n>6</n>
+							<q>0</q>
+							<s>3</s>
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1.155</figureScale>
+							<r>0</r>
+						</app.Rosette>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff1496d2</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>true</draw__outline>
+			<width>0.11</width>
+		</style.Thick>
+		<style.Interlace>
+			<gap>0.04</gap>
+			<shadow>0.05</shadow>
+			<includeTipVerts>false</includeTipVerts>
+		</style.Interlace>
+	</style.Interlace>
+</vector>

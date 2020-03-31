@@ -77,7 +77,7 @@ void page_loaders::setupUI()
 
     pbLoadShapes = new QPushButton("Load Shape Factories");
     pbLoadTiling = new QPushButton("Load Tiling");
-    pbLoadXML    = new QPushButton("Load XML Design");
+    pbLoadXML    = new QPushButton("Load Design");
 
     tilingFilter = new QLineEdit();
     designFilter = new QLineEdit();
@@ -183,8 +183,14 @@ void page_loaders::slot_loadedXML(QString name)
     qDebug() << "page_loaders:: loaded XML:" << name;
 
     xmlList->blockSignals(true);
-    xmlList->selectItemByName(name);
-    selectedXMLName = name;
+    if (xmlList->selectItemByName(name))
+    {
+        selectedXMLName = name;
+    }
+    else
+    {
+        selectedXMLName.clear();
+    }
     xmlList->blockSignals(false);
 
     // update the tiling too
@@ -196,9 +202,16 @@ void page_loaders::slot_loadedTiling(QString name)
 {
     qDebug() << "page_loaders:: loaded Tiling:" << name;
     tileList->blockSignals(true);
-    tileList->selectItemByName(name);
-    selectedTilingName = name;
-    config->lastLoadedTileName = name;
+    if (tileList->selectItemByName(name))
+    {
+        selectedTilingName = name;
+        config->lastLoadedTileName = name;
+    }
+    else
+    {
+        selectedTilingName.clear();
+        config->lastLoadedTileName.clear();
+    }
     tileList->blockSignals(false);
 }
 
@@ -215,7 +228,18 @@ void page_loaders::slot_loadedDesign(eDesign design)
 }
 
 void page_loaders::onEnter()
-{}
+{
+    QListWidgetItem * item;
+
+    item = tileList->currentItem();
+    tileList->scrollToItem(item);
+
+    item = xmlList->currentItem();
+    xmlList->scrollToItem(item);
+
+    item = designList->currentItem();
+    designList->scrollToItem(item);
+}
 
 void page_loaders::refreshPage()
 {}
@@ -264,7 +288,10 @@ void page_loaders::loadXMLCombo()
     xmlList->blockSignals(true);
     xmlList->addItemList(list);
     xmlList->blockSignals(false);
-    xmlList->selectItemByName(config->lastLoadedXML);
+    if (!xmlList->selectItemByName(config->lastLoadedXML))
+    {
+        config->lastLoadedXML.clear();
+    }
 }
 
 void page_loaders::loadTilingsCombo()
@@ -302,24 +329,31 @@ void page_loaders::loadTilingsCombo()
             tileList->item(row)->setForeground(Qt::gray);
         }
     }
-    tileList->selectItemByName(config->lastLoadedTileName);
-    selectedTilingName = config->lastLoadedTileName;
+    if (tileList->selectItemByName(config->lastLoadedTileName))
+    {
+        selectedTilingName = config->lastLoadedTileName;
+    }
+    else
+    {
+        selectedTilingName.clear();
+        config->lastLoadedTileName.clear();
+    }
     tileList->blockSignals(false);
 }
 
 void page_loaders::loadTiling()
 {
-    QString name = selectedTilingName;
-    emit sig_loadTiling(name);
-
     if (!config->lockView)
     {
-        if (config->viewerType != VIEW_TILIING_MAKER)
+        if (config->viewerType != VIEW_TILING_MAKER)
         {
             emit panel->sig_selectViewer(VIEW_TILING, TV_WORKSPACE);
         }
         emit sig_viewWS();
     }
+
+    QString name = selectedTilingName;
+    emit sig_loadTiling(name);
 }
 
 void page_loaders::loadShapes()

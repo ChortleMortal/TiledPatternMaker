@@ -39,19 +39,19 @@ int DesignElement::refs = 0;
 // tile library and will be used to determine where to place copies of the
 // Figure, which is designed by the user.
 
-DesignElement::DesignElement( FeaturePtr feature, FigurePtr figure )
+DesignElement::DesignElement(FeaturePtr feature, FigurePtr figure)
 {
     this->feature = feature;
     this->figure = figure;
     refs++;
 }
 
-DesignElement::DesignElement( FeaturePtr feature )
+DesignElement::DesignElement(FeaturePtr feature)
 {
     this->feature = feature;
     if( feature->isRegular() && (feature->numPoints() >= 4) )  // DAC was > 4
     {
-        figure = make_shared<Rosette>(feature->numPoints(), 0.0, 3 );
+        figure = make_shared<Rosette>(feature->numPoints(), 0.0, 3, 0, feature->getRotation() );
     }
     else
     {

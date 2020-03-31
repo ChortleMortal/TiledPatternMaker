@@ -57,18 +57,27 @@ QRectF TilingView::boundingRect() const
 
 void TilingView::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-    Q_UNUSED(option);
-    Q_UNUSED(widget);
+    Q_UNUSED(option)
+    Q_UNUSED(widget)
     qDebug() << "TilingView::paint";
 
     painter->setRenderHint(QPainter::Antialiasing ,true);
     painter->setRenderHint(QPainter::SmoothPixmapTransform,true);
-    layerPen = QPen(Qt::black,3);
+    layerPen = QPen(Qt::red,3);
 
     QTransform tr = getLayerTransform();
     GeoGraphics gg(painter,tr);
     draw(&gg);  // DAC - draw goes to receive which goes to draw placed feature
                 // DAC - receive is really 'draw one tile'
+
+    if (Layer::config->showCenter)
+    {
+        QPointF pt = getCenter();
+        qDebug() << "style layer center=" << pt;
+        painter->setPen(QPen(Qt::green,3));
+        painter->setBrush(QBrush(Qt::green));
+        painter->drawEllipse(pt,13,13);
+    }
 }
 
 void TilingView::draw(GeoGraphics *g2d )

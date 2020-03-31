@@ -40,8 +40,8 @@ PlacedDesignElementView::PlacedDesignElementView(PlacedDesignElementPtr pde) : L
     qDebug() << "DesignElementView::constructor";
     Q_ASSERT(pde);
 
-    feature_interior = QColor(240, 240, 255);
-    feature_border   = QColor(140, 140, 160);
+    feature_interior = QColor(255, 217, 217, 127);
+    feature_border   = QColor(140, 140, 140);
 
     this->pde = pde;
 }
@@ -72,7 +72,16 @@ void PlacedDesignElementView::paint(QPainter *painter, const QStyleOptionGraphic
 
     // We could keep the figure's map cached until the figure changes.
     // On the other hand, it's really fast enough already.
-    drawPlacedDesignElement(&gg, pde, QPen(Qt::green,3), QBrush(feature_interior), QPen(feature_border,3));
+    drawPlacedDesignElement(&gg, pde, QPen(Qt::blue,3), QBrush(feature_interior), QPen(feature_border,3));
+
+    if (config->showCenter)
+    {
+        QPointF pt = getCenter();
+        qDebug() << "style layer center=" << pt;
+        painter->setPen(QPen(Qt::green,3));
+        painter->setBrush(QBrush(Qt::green));
+        painter->drawEllipse(pt,13,13);
+    }
 }
 
 void PlacedDesignElementView::drawPlacedDesignElement(GeoGraphics * gg, PlacedDesignElementPtr pde, QPen linePen, QBrush interiorBrush, QPen borderPen)

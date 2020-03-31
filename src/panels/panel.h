@@ -49,9 +49,10 @@ public:
     void    populatePages();
     void    floatPages();
     void    closePages();
-    void    setStatus(QString txt) { status->setText(txt); }
 
+    QLabel  * getStatus()          { return status; }
     TiledPatternMaker * getMaker() { return maker; }
+    panel_page * getCurrentPage()  { return currentPage; }
 
 signals:
     void    sig_viewWS();
@@ -76,7 +77,8 @@ private slots:
     void    autoLoadDesignsClicked(bool enb);
     void    slot_raise();
     void    updateClicked(bool enb);
-    void    lockViewClicked(bool enb);
+    void    slot_xformModeChanged(int row);
+    void    slot_kbdMode(eKbdMode mode);
 
 protected:
     void    delegateView();
@@ -102,7 +104,6 @@ private:
     QLabel               *  status;
 
     QCheckBox    * cbUpdate;
-    QCheckBox    * cbLockView;
     QLabel       * statusLabel;
     QRadioButton * radioDefined;
     QRadioButton * radioPack;
@@ -111,6 +112,8 @@ private:
     QCheckBox    * cbAutoLoadStyles;
     QCheckBox    * cbAutoLoadTiling;
     QCheckBox    * cbAutoLoadDesigns;
+    QComboBox    * xformModeCombo;
+
     QButtonGroup   repeatRadioGroup;
 };
 

@@ -48,12 +48,15 @@ signals:
     void sig_loadedXML(QString name);
     void sig_loadedTiling(QString name);
     void sig_loadedDesign(eDesign design);
-    void sig_readyNext();
-    void sig_takeNext();
+    void sig_ready();
     void sig_viewWS();
     void sig_compareResult(QString);
     void sig_image0(QString name);
     void sig_image1(QString name);
+
+    void sig_prepXML();
+    void sig_prepTiling();
+    void sig_prepDesign();
 
 public slots:
     void startEverything();
@@ -62,9 +65,11 @@ public slots:
     void slot_buildDesign(eDesign design);
 
     void slot_loadXML(QString name);
+    void slot_loadXMLSimple(QString name);
     void slot_saveXML(QString name);
     void slot_loadAndSaveXML(QString name);
     void slot_loadTiling(QString name);
+    void slot_loadTilingSimple(QString name);
     void slot_saveAsBMP(QString name);
     void slot_saveTilingAsBMP(QString name);
 

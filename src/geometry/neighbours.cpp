@@ -96,7 +96,7 @@ bool Neighbours::isNear(VertexPtr other)
 void Neighbours::insertEdgeSimple(EdgePtr edge)
 {
     list.push_back(edge);
-    qDebug() << "vertex:" << v->getPosition() << "adding edge" << Utils::addr(edge.get());
+    //qDebug() << "vertex:" << v->getPosition() << "adding edge" << Utils::addr(edge.get());
 }
 
 /*
@@ -229,6 +229,26 @@ void Neighbours::swapEdge2(EdgePtr old_edge, EdgePtr new_edge)
             return;
         }
     }
+}
+
+EdgePtr Neighbours::getFirstNonvisitedNeighbour(EdgePtr home)
+{
+    QVector<qreal> angles;
+    qreal hangle = home->getAngle();
+    angles.push_back(hangle);
+    EdgePtr ep;
+    for (auto edge : list)
+    {
+        if (edge->getInterlaceInfo().visited)
+        {
+            continue;
+        }
+        angles.push_back(edge->getAngle());
+        if (!ep)
+            ep = edge;
+    }
+    //qDebug() << "Angles:" << angles;
+    return ep;
 }
 
 bool Neighbours::verify()

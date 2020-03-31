@@ -75,6 +75,15 @@ void MapEditorView::paint(QPainter *painter, const QStyleOptionGraphicsItem *opt
     qDebug() << "MapEditorView::paint viewT="  << Transform::toInfoString(viewT);
 
     draw(painter);
+
+    if (config->showCenter)
+    {
+        QPointF pt = getCenter();
+        qDebug() << "style layer center=" << pt;
+        painter->setPen(QPen(Qt::green,3));
+        painter->setBrush(QBrush(Qt::green));
+        painter->drawEllipse(pt,13,13);
+    }
 }
 
 void MapEditorView::drawMap(QPainter * painter)

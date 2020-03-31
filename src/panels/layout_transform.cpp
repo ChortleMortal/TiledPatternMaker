@@ -1,8 +1,9 @@
 #include "layout_transform.h"
 #include "geometry/Transform.h"
 
-LayoutTransform::LayoutTransform()
+LayoutTransform::LayoutTransform(QString name)
 {
+    QLabel * label = new QLabel(name);
     scale   = new DoubleSpinSet("Scale",1.0,0.001,999);
     rot     = new DoubleSpinSet("Rot",0.0,-360.0,360.0);
     X       = new DoubleSpinSet("X",0.0,-9000,9000);
@@ -17,6 +18,8 @@ LayoutTransform::LayoutTransform()
     Y->setDecimals(8);
     Y->setSingleStep(1.0);
 
+    addWidget(label);
+    addSpacing(5);
     addLayout(scale);
     addSpacing(9);
     addLayout(rot);

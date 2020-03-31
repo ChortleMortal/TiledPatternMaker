@@ -70,6 +70,8 @@ public:
 
     MapPtr       getMap()          { return styleMap; }
 
+    TilingPtr    getTiling();
+
     // Retrieve a name describing this style and map.
     QString getDescription() const;
     QString getInfo() const;
@@ -91,11 +93,15 @@ protected:
     MapPtr setupStyleMap();  // copies shared pointer from prototype
     void   resetStyleMap() { styleMap.reset(); }
 
+    void   annotateEdges(MapPtr map);
+    void   drawAnnotation(QPainter *painter, QTransform T);
+
     PrototypePtr  prototype; // The input geometry to be rendered
     PolyPtr       boundary;
 
 private:
     MapPtr        styleMap;
+    MapPtr        debugMap;
 
 };
 #endif

@@ -52,12 +52,9 @@ MapEditor::MapEditor() : MapEditorSelection(), stash(this)
     canvas = Canvas::getInstance();
     config = Configuration::getInstance();
     view   = View::getInstance();
-
-    connect(view, &View::sig_mousePressed,  this, &MapEditor::slot_mousePressed);
     connect(view, &View::sig_mouseDragged,  this, &MapEditor::slot_mouseDragged);
     connect(view, &View::sig_mouseReleased, this, &MapEditor::slot_mouseReleased);
     connect(view, &View::sig_mouseMoved,    this, &MapEditor::slot_mouseMoved);
-    connect(view, &View::sig_procKeyEvent,  this, &MapEditor::slot_procKeyEvent);
 
     map_mouse_mode  = MAP_MODE_NONE;
     inputMode       = ME_INPUT_UNDEFINED;
@@ -191,14 +188,14 @@ void MapEditor::viewRectChanged()
 {
     QRect rect = view->rect();
     QPointF pt = view->sceneRect().center();
-    setRotateCenter(pt);
+    setCenter(pt);
 
     qDebug() << "Map editor rect=" << rect;
     int height = rect.height();
     int width  = rect.width();
-    SizeAndBounds sab = WorkspaceViewer::viewDimensions[VIEW_MAP_EDITOR];
-    sab.viewSize = QSize(width,height);
-    QTransform t0 = WorkspaceViewer::calculateViewTransform(sab);
+    ViewDefinition viewDef = WorkspaceViewer::viewDimensions[VIEW_MAP_EDITOR];
+    viewDef.viewSize = QSize(width,height);
+    QTransform t0 = WorkspaceViewer::calculateViewTransform(viewDef);
     //qDebug().noquote() << Transform::toInfoString(layerT) << "-" << Transform::toInfoString(t0);
 
     deltaTrans = Transform::trans(t0) - Transform::trans(baseT);
@@ -550,41 +547,43 @@ bool MapEditor::initStashFrom(QString name)
 ///
 //////////////////////////////////////////////////////////////////
 
-void MapEditor::slot_procKeyEvent(QKeyEvent * k)
+bool MapEditor::procKeyEvent(QKeyEvent * k)
 {
     if (config->viewerType != VIEW_MAP_EDITOR)
-        return;
+    {
+        return false;
+    }
 
-    bool consumed = true;
     int key = k->key();
+
     switch (key)
     {
-        // actions
-        case 'F': flipLineExtension(); break;
-        case 'M': emit canvas->sig_raiseMenu(); break;
-        case 'Q': QApplication::quit(); break;
-        case Qt::Key_F1:
-            {
-                QMessageBox  * box = new QMessageBox();
-                box->setWindowTitle("Map Editor Shortcuts");
-                box->setText(Shortcuts::getMapEditorShortcuts());
-                box->setModal(false);
-                box->show();
-                break;
-            }
+    // actions
+    case 'F': flipLineExtension(); break;
+    case 'M': emit canvas->sig_raiseMenu(); break;
+    case 'Q': QApplication::quit(); break;
+    case Qt::Key_F1:
+    {
+        QMessageBox  * box = new QMessageBox();
+        box->setWindowTitle("Map Editor Shortcuts");
+        box->setText(Shortcuts::getMapEditorShortcuts());
+        box->setModal(false);
+        box->show();
+        break;
+    }
 
-        // modes
-        case Qt::Key_Escape: setMouseMode(MAP_MODE_NONE); consumed = false; break;
-        case Qt::Key_F3:     setMouseMode(MAP_MODE_DRAW_LINE); break;
-        case Qt::Key_F4:     setMouseMode(MAP_MODE_CONSTRUCTION_LINES); break;
-        case Qt::Key_F5:     setMouseMode(MAP_MODE_DELETE); break;
-        case Qt::Key_F6:     setMouseMode(MAP_MODE_SPLIT_LINE); break;
-        case Qt::Key_F7:     setMouseMode(MAP_MODE_EXTEND_LINE); break;
-        case Qt::Key_F9:     setMouseMode(MAP_MODE_CONSTRUCTION_CIRCLES); break;
-        default: consumed = false; break;
-   }
+    // modes
+    case Qt::Key_Escape: setMouseMode(MAP_MODE_NONE);  return false; // propagate
+    case Qt::Key_F3:     setMouseMode(MAP_MODE_DRAW_LINE); break;
+    case Qt::Key_F4:     setMouseMode(MAP_MODE_CONSTRUCTION_LINES); break;
+    case Qt::Key_F5:     setMouseMode(MAP_MODE_DELETE); break;
+    case Qt::Key_F6:     setMouseMode(MAP_MODE_SPLIT_LINE); break;
+    case Qt::Key_F7:     setMouseMode(MAP_MODE_EXTEND_LINE); break;
+    case Qt::Key_F9:     setMouseMode(MAP_MODE_CONSTRUCTION_CIRCLES); break;
 
-    if (!consumed)
-        canvas->procKeyEvent(k);
+    default: return false;
+    }
+
+    return true;
 }
 

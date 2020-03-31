@@ -31,7 +31,7 @@ void StyledDesign::clear()
     styleSet.clear(); // can now delete these since scene uses a copy
     name.clear();
     designNotes.clear();
-    canvasSettings.init();
+    canvasSettings.init2();
 }
 
 void  StyledDesign::addStyle(StylePtr style)
@@ -68,38 +68,49 @@ CanvasSettings StyledDesign::getCanvasSettings()
     return canvasSettings;
 }
 
-void StyledDesign::setupCanvas(CanvasSettings settings)
+void StyledDesign::setCanvasSettings(CanvasSettings settings)
 {
     canvasSettings = settings;
 }
 
 StylePtr  StyledDesign::getFirstStyle()
 {
-    StylePtr sp;
-    if (styleSet.size())
+    if (!styleSet.isEmpty())
     {
-        sp =styleSet[0];
+        return styleSet.first();
     }
+    StylePtr sp;
     return sp;
 }
 
-// TODO - thid assumes a single tiling
+//  This assumes a single tiling
 TilingPtr StyledDesign::getTiling()
 {
     TilingPtr tp;
-    if (styleSet.size())
+    StylePtr sp = getFirstStyle();
+    if (sp)
     {
-        StylePtr sp = styleSet[0];
-        if (sp)
+        PrototypePtr pp = sp->getPrototype();
+        if (pp)
         {
-            PrototypePtr pp = sp->getPrototype();
-            if (pp)
-            {
-                tp = pp->getTiling();
-            }
+            tp = pp->getTiling();
         }
     }
     return tp;
+}
+
+// This assumes all styles have the same prototype
+void  StyledDesign::setTiling(TilingPtr tp)
+{
+    StylePtr sp = getFirstStyle();
+    if (sp)
+    {
+        PrototypePtr pp = sp->getPrototype();
+        if (pp)
+        {
+            pp->setTiling(tp);
+        }
+    }
 }
 
 QString StyledDesign::getName()

@@ -95,12 +95,9 @@ void TileColors::draw(GeoGraphics * gg)
         return;
     }
 
-    gg->pushAndCompose(getLayerTransform());
-
     for (auto it = polys.begin(); it != polys.end(); it++)
     {
         bkgdPolyColor bpc = *it;
         gg->drawPolygon(bpc.poly,QPen(bpc.color),QBrush(bpc.color));
     }
-    gg->pop();
 }

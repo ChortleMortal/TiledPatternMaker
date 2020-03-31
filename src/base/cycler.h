@@ -85,13 +85,12 @@ public slots:
    void slot_startCycle();
    void slot_stopCycle();
    void slot_psuedoKey(int key);
-   void slot_readyNext();
+   void slot_ready();
    void slot_view_images();
-   void slot_nextCycle();
+   void slot_timeout();
 
 
 protected:
-    void startCycleTimer();
     void startCycleStyles();
     void startCycleTilings();
     void startCycleOriginalDesignPngs();

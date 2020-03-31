@@ -48,21 +48,14 @@ class StyledDesign;
 class FaceSetView;
 class FaceSet;
 
-struct SizeAndBounds
+struct ViewDefinition
 {
     eViewType   viewType;
     Bounds      viewBounds;
     QSizeF      viewSize;
+    QColor      viewBkgdColor;
+    QPointF     viewStartTile;
 };
-
-#if 0
-struct ViewTransform
-{
-    eViewType   viewType;
-    qreal       scale;
-    QPointF     translate;
-};
-#endif
 
 class WorkspaceViewer : public QObject
 {
@@ -75,12 +68,12 @@ public:
     void   init();
     void   clear();
 
-    QVector<Layer*> getActiveLayers();
+    QVector<Layer*>    getActiveLayers();
 
-    QTransform  getViewTransform(eViewType e);
-    static QTransform  calculateViewTransform(SizeAndBounds &sab);
+    QTransform         getViewTransform(eViewType e);
+    static QTransform  calculateViewTransform(ViewDefinition &sab);
 
-    static SizeAndBounds viewDimensions[];
+    static ViewDefinition viewDimensions[];
 
 public slots:
     void slot_viewWorkspace();
@@ -88,11 +81,14 @@ public slots:
 
 signals:
     void sig_title(QString);
+    void sig_viewUpdated();
 
 protected:
    WorkspaceViewer();
 
-   void                updateDesignInfo();
+   void                generateCanvasSettings(CanvasSettings &cs);
+   void                setupBackgroundImage(CanvasSettings & cs, PrototypePtr pp);
+   void                setupBackgroundImage(CanvasSettings & cs, TilingPtr tp);
 
    void                viewWorkspace();
    void                viewStyledDesign(StyledDesign &  sd);

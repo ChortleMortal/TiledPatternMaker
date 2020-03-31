@@ -25,13 +25,18 @@
 #ifndef INTERLACE_INFO_H
 #define INTERLACE_INFO_H
 
-class interlaceInfo
+#include "base/shared.h"
+
+class InterlaceInfo
 {
 public:
-    interlaceInfo() { init(); }
-    void init() { visited = false; start_under = false; }
-    bool visited;
-    bool start_under;
+    InterlaceInfo();
+    void initInterlace();
+    void initThread();
+
+    bool        visited;
+    bool        start_under;
+    ThreadPtr   thread;
 };
 
 #endif

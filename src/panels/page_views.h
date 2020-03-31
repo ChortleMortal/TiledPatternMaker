@@ -22,19 +22,19 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef PAGE_CONTROL_H
-#define PAGE_CONTROL_H
+#ifndef PAGE_VIEWS_H
+#define PAGE_VIEWS_H
 
 #include "base/configuration.h"
 #include "panels/layout_sliderset.h"
 #include "panels/panel_page.h"
 
-class page_control : public panel_page
+class page_views : public panel_page
 {
     Q_OBJECT
 
 public:
-    page_control(ControlPanel * cpanel);
+    page_views(ControlPanel * cpanel);
 
     void refreshPage() override;
     void onEnter() override;
@@ -61,10 +61,12 @@ private slots:
     void    slot_delViewer_pressed(int id);
     void    slot_mapEdView_pressed(int id);
     void    slot_wsStatusBox(bool on);
+    void    slot_lockViewClicked(bool enb);
+
 
 protected:
     void  selectView(int id, int id2);
-    void  createWorkspaceMakers();
+    void  createViewControl();
     void  createWorkspaceViewers();
     void  createWorkspaceStatus();
     void  refreshPanel();
@@ -75,6 +77,7 @@ private:
     QGroupBox   *workspaceViewersBox;
     QGroupBox   *workspaceMakersBox;
     QGroupBox   *workspaceStatusBox;
+    QCheckBox   *cbLockView;
     QCheckBox   *cbDesignView;
     QCheckBox   *cbProtoView;
     QCheckBox   *cbProtoFeatureView;

@@ -79,7 +79,7 @@ void MovePolygon::updateDragging(QPointF spt)
 /////////
 
 CopyMovePolygon::CopyMovePolygon(TilingMaker * tilingMaker, TilingSelectionPtr sel, QPointF spt )
-    : MovePolygon(tilingMaker,tilingMaker->addFeatureSelectionPointer(sel),spt)
+    : MovePolygon(tilingMaker, sel = tilingMaker->addFeatureSelectionPointer(sel),spt)
 {
     initial_transform = sel->getTransform();
     desc = "CopyMovePolygon";
@@ -410,7 +410,7 @@ void CreatePolygon::addVertex(QPointF wpt)
         last->setV2(vnew);
 
         QTransform t;
-        tm->addToAllPlacedFeatures(make_shared<PlacedFeature>(make_shared<Feature>(wAccum), t));
+        tm->addToAllPlacedFeatures(make_shared<PlacedFeature>(make_shared<Feature>(wAccum,0), t));
         tm->setMouseMode(NO_MOUSE_MODE);
         tm->sig_buildMenu();
         return;

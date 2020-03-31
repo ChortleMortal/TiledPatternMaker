@@ -37,6 +37,8 @@ public:
     StyledDesign() {}
     ~StyledDesign() {}
 
+    bool        hasContent() { return (styleSet.size() > 0); }
+
     // loaded styles
     void        addStyle(StylePtr style);   // adds at front
     void        replaceStyle(StylePtr oldStyle, StylePtr newStyle);
@@ -50,7 +52,7 @@ public:
     QVector<PrototypePtr> getPrototypes();
 
     CanvasSettings   getCanvasSettings();
-    void             setupCanvas(CanvasSettings settings);
+    void             setCanvasSettings(CanvasSettings settings);
 
     StylePtr    getFirstStyle();
 
@@ -61,6 +63,7 @@ public:
     QString     getNotes();
 
     TilingPtr   getTiling();
+    void        setTiling(TilingPtr tp);    // use carefully
 
 private:
     StyleSet            styleSet;

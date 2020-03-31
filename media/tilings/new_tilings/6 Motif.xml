@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<Tiling version="2">
+	<Name>6 Motif</Name>
+	<Fill>-4,4,-4,4</Fill>
+	<T1>-1.554312234475219e-15,-4.522542386119727</T1>
+	<T2>3.916636596071574,-2.261271193059865</T2>
+	<View>
+		<Scale>1</Scale>
+		<Rot>0</Rot>
+		<X>-18</X>
+		<Y>-6</Y>
+		<Center>500,500</Center>
+	</View>
+	<Feature type="regular" sides="6" rotation="90">
+		<Placement>2.261271193059864,0,0.9533738384364401,0,2.261271193059864,0.1791811996049537</Placement>
+	</Feature>
+	<Desc>Description</Desc>
+	<Auth>Author</Auth>
+	<BackgroundImage name="epc_014.jpg">
+		<Scale>1</Scale>
+		<Rot>0</Rot>
+		<X>314</X>
+		<Y>177</Y>
+	</BackgroundImage>
+</Tiling>

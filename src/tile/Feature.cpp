@@ -41,24 +41,28 @@
 #include "tile/Feature.h"
 #include "geometry/Point.h"
 #include "geometry/Edge.h"
+#include "geometry/Loose.h"
 
 Feature::Feature()
 {
-    regular = false;
+    regular  = false;
+    rotation = 0.0;
 }
 
-Feature::Feature(EdgePoly ep)
+Feature::Feature(EdgePoly ep, qreal rotate)
 {
-    epoly = ep;
-    regular = false;
+    epoly    = ep;
+    regular  = false;
+    rotation = rotate;
 }
 
 // Create an n-sided regular polygon with a vertex at (1,0).
-Feature::Feature( int n )
+Feature::Feature(int n, qreal rotate)
 {
-    regular = true;
+    regular  = true;
+    rotation = rotate;
 
-    int idx = 0;
+    int idx  = 0;
     qreal angle = (M_PI / static_cast<qreal>(n)) * static_cast<qreal>(2 * idx + 1);
     qreal sc = 1.0 / qCos( M_PI / static_cast<qreal>(n) );
 
@@ -73,18 +77,24 @@ Feature::Feature( int n )
     }
     epoly.push_back(make_shared<Edge>(v1,v));
 
+    if (!Loose::zero(rotate))
+    {
+        epoly.rotate(rotate);
+    }
 }
 
 Feature::Feature(const FeaturePtr other )
 {
-    regular = other->regular;
-    epoly   = other->epoly;
+    regular  = other->regular;
+    epoly    = other->epoly;
+    rotation = other->rotation;
 }
 
 void Feature::reset()
 {
     epoly.clear();
     bkgdColors.clear();
+    rotation = 0;
 }
 
 bool Feature::equals(const FeaturePtr other)
@@ -92,6 +102,8 @@ bool Feature::equals(const FeaturePtr other)
     if (regular != other->regular)
         return false;
     if (!epoly.equals(other->epoly))
+        return false;
+    if (!Loose::equals(rotation, other->rotation))
         return false;
     return true;
 }

@@ -42,8 +42,9 @@ QTextEdit * qtAppLog::ted      = nullptr;
 QString qtAppLog::currentLogName;
 
 bool qtAppLog::_logToStderr = true;
-bool qtAppLog::_logToDisk = true;
+bool qtAppLog::_logToDisk   = true;
 bool qtAppLog::_logToPanel  = true;
+bool qtAppLog::_logLines    = true;
 bool qtAppLog::_active    = false;
 
 
@@ -97,7 +98,7 @@ qtAppLog::qtAppLog()
         currentLogName = path + "patternLogR.txt";
     }
 #else
-    path = "./logs/";
+    QString path = "./logs/";
     QDir adir(path);
     if (!adir.exists())
     {
@@ -113,7 +114,6 @@ qtAppLog::qtAppLog()
     qDebug().noquote() << "log  :"  << adir.canonicalPath();
 
     currentLogName = "./logs/patternLog.txt";
-    oldLogName     = "./logs/patternLog-old.txt";
 #endif
 
     mCurrentFile.setFileName(currentLogName);
@@ -177,19 +177,19 @@ void qtAppLog::crashMessageOutput(QtMsgType type, const QMessageLogContext &cont
         msg2 = QString("Debug   : %1").arg(msg);
         break;
     case QtInfoMsg:
-        ted->setTextColor(Qt::black);
+        ted->setTextColor(Qt::darkGreen);
         msg2 = QString("Info    : %1").arg(msg);
         break;
     case QtWarningMsg:
-        ted->setTextColor(Qt::red);
+        ted->setTextColor(Qt::darkRed);
         msg2 = QString("Warning : %1").arg(msg);
         break;
     case QtCriticalMsg:
-        ted->setTextColor(Qt::red);
+        ted->setTextColor(Qt::darkRed);
         msg2 = QString("Critical: %1").arg(msg);
         break;
     case QtFatalMsg:
-        ted->setTextColor(Qt::red);
+        ted->setTextColor(Qt::darkRed);
         msg2 = QString("Fatal   : %1").arg(msg);
         break;
     }
@@ -203,8 +203,12 @@ void qtAppLog::crashMessageOutput(QtMsgType type, const QMessageLogContext &cont
 
     if (_logToPanel)
     {
-        QString number = QString("%1  ").arg(line++, 5, 10, QChar('0'));
-        ted->insertPlainText(number);
+        if (_logLines)
+        {
+            QString number = QString("%1  ").arg(line, 5, 10, QChar('0'));
+            ted->insertPlainText(number);
+        }
+        line++;
         ted->insertPlainText(msg2);
     }
 
@@ -237,22 +241,8 @@ void qtAppLog::crashMessageOutput(QtMsgType type, const QMessageLogContext &cont
 #endif
 }
 
-void qtAppLog::copyLog(QString name)
+void qtAppLog::saveLog(QString to)
 {
-    QString to = path + name;
-
-    if (QFile::exists(to))
-    {
-        QFile::remove(to);
-    }
-
-    QFile::copy(currentLogName,to);
-}
-
-void qtAppLog::saveLog(QString name)
-{
-    QString to = path + name;
-
     if (QFile::exists(to))
     {
         QFile::remove(to);

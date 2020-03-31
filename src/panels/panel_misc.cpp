@@ -196,7 +196,7 @@ void LoaderListWidget::addItemList(QStringList list)
     }
 }
 
-QListWidgetItem * LoaderListWidget::selectItemByName(QString name)
+bool LoaderListWidget::selectItemByName(QString name)
 {
     Q_ASSERT(!name.contains(".xml"));
 
@@ -207,15 +207,15 @@ QListWidgetItem * LoaderListWidget::selectItemByName(QString name)
         {
             qDebug() << "selected" << name;
             setCurrentItem(qitem);
-            return qitem;
+            return true;
         }
     }
 
     // not found
-    return nullptr;
+    return false;
 }
 
-QListWidgetItem * LoaderListWidget::selectItemByValue(QVariant val)
+bool LoaderListWidget::selectItemByValue(QVariant val)
 {
     for (int i=0; i < count(); i++)
     {
@@ -224,12 +224,12 @@ QListWidgetItem * LoaderListWidget::selectItemByValue(QVariant val)
         {
             qDebug() << "selected" << val;
             setCurrentItem(qitem);
-            return qitem;
+            return true;
         }
     }
 
     // not found
-    return nullptr;
+    return false;
 }
 
 void LoaderListWidget::mousePressEvent(QMouseEvent *event)

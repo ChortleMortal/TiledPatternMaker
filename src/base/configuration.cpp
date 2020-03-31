@@ -27,6 +27,20 @@
 #include "designs/design.h"
 #include <cstddef>
 
+const QString Configuration::sCanvasMode[]  = {
+    E2STR(KBD_MODE_XFORM_VIEW),
+    E2STR(KBD_MODE_XFORM_BKGD),
+    E2STR(KBD_MODE_XFORM_MODEL),
+    E2STR(KBD_MODE_XFORM_OBJECT),
+    E2STR(KBD_MODE_LAYER),
+    E2STR(KBD_MODE_ZLEVEL),
+    E2STR(KBD_MODE_STEP),
+    E2STR(KBD_MODE_SEPARATION),
+    E2STR(KBD_MODE_ORIGIN),
+    E2STR(KBD_MODE_OFFSET),
+    E2STR(KBD_MODE_CENTER)
+};
+
 Configuration * Configuration::mpThis = nullptr;
 
 Configuration * Configuration::getInstance()
@@ -56,6 +70,7 @@ Configuration::Configuration()
     cycleMode           = static_cast<eCycleMode>(s.value("cycleMode",0).toInt());
     cycleMode           = static_cast<eCycleMode>(s.value("cycleMode",0).toInt());
     cycleInterval       = s.value("cycleInterval",4).toInt();
+    gridWidth           = s.value("gridWidth",3).toInt();
 
     lastLoadedTileName  = s.value("lastLoadedTileName","").toString();
     lastLoadedXML       = s.value("lastLoadedXML","").toString();
@@ -88,6 +103,7 @@ Configuration::Configuration()
     logToStderr         = s.value("logToStderr",true).toBool();
     logToDisk           = s.value("logToDisk",true).toBool();
     logToPanel          = s.value("logToPanel",true).toBool();
+    logNumberLines      = s.value("logNumberLines",true).toBool();
     wsStatusBox         = s.value("wsStatusBox",true).toBool();
     designFilterCheck   = s.value("designFilterCheck",false).toBool();
     tileFilterCheck     = s.value("tileFilterCheck",false).toBool();
@@ -95,9 +111,12 @@ Configuration::Configuration()
     lockView            = s.value("lockView",false).toBool();
     screenIsSplit       = s.value("screenIsSplit",false).toBool();
     compare_transparent = s.value("compare_transparent",false).toBool();
-    compare_differences = s.value("compare_differences",true).toBool();
+    display_differences = s.value("compare_differences",true).toBool();
     compare_ping_pong   = s.value("compare_ping_pong",false).toBool();
     compare_side_by_side= s.value("compare_side_by_side",false).toBool();
+    showCenter          = s.value("showCenter",false).toBool();
+    gridCenter          = s.value("gridCenter",false).toBool();
+    hideBackgroundImage = s.value("hideBackgroundImage",false).toBool();
 
     viewerType          = static_cast<eViewType>(s.value("viewerType",VIEW_DESIGN).toUInt());
     designViewer        = static_cast<eDesignViewer>(s.value("designViewer",DV_LOADED_STYLE).toUInt());
@@ -110,13 +129,12 @@ Configuration::Configuration()
     mapEditorView       = static_cast<eMapEditorView>(s.value("mapEditorView",MED_STYLE).toUInt());
     mapEditorMode       = static_cast<eMapEditorMode>(s.value("mapEditorMode",MAP_MODE_FIGURE).toUInt());
     canvasSettings      = static_cast<eCSSelect>(s.value("canvasSettings",CS_STYLE).toUInt());
-
     pushTarget          = static_cast<ePushTarget>(s.value("pushTarget",TARGET_LOADED_STYLES).toUInt());
     repeatMode          = static_cast<eRepeatType>(s.value("repeat",REPEAT_DEFINED).toUInt());
+    gridModel           = static_cast<eGridModel>(s.value("gridModel2",GRID_SCREEN).toUInt());
 
-    fgdGridModel        = s.value("fgdGridModel",false).toBool();
-    fgdGridStepScreen   = s.value("fgdGridStep",100).toInt();
-    fgdGridStepModel    = s.value("fgdGridStepModel2",1.0).toDouble();
+    gridStepScreen   = s.value("fgdGridStep",100).toInt();
+    gridStepModel    = s.value("fgdGridStepModel2",1.0).toDouble();
 
     // ensures indices are in range
     if (viewerType > VIEW_MAX)          viewerType      = VIEW_MAX;
@@ -136,11 +154,10 @@ Configuration::Configuration()
     circleX         = false;
     sceneGrid       = false;
     hideCircles     = false;
-
     updatePanel     = true;
 
     figureViewBkgdColor = QColor(Qt::black);
-
+    kbdMode         = KBD_MODE_XFORM_VIEW;
     debugReplicate  = false;
     debugMapEnable  = false;
 
@@ -151,6 +168,7 @@ Configuration::Configuration()
     log->logToStdErr(logToStderr);
     log->logToDisk(logToDisk);
     log->logToPanel(logToPanel);
+    log->logLines(logNumberLines);
 
     if (!firstBirthday)
     {
@@ -163,6 +181,7 @@ void Configuration::save()
     QSettings s;
     s.setValue("design2",lastLoadedDesignId);
     s.setValue("cycleMode",cycleMode);
+    s.setValue("gridWidth",gridWidth);
     s.setValue("cycleInterval",cycleInterval);
     s.setValue("lastLoadedTileName",lastLoadedTileName);
     s.setValue("lastLoadedXML",lastLoadedXML);
@@ -198,15 +217,16 @@ void Configuration::save()
     s.setValue("logToStderr",logToStderr);
     s.setValue("logToDisk",logToDisk);
     s.setValue("logToPanel",logToPanel);
+    s.setValue("logNumberLines",logNumberLines);
     s.setValue("wsStatusBox",wsStatusBox);
     s.setValue("autoLoadTiling",autoLoadTiling);
     s.setValue("autoLoadDesigns",autoLoadDesigns);
     s.setValue("autoCycle",autoCycle);
     s.setValue("stopIfDiff",stopIfDiff);
     s.setValue("autoClear",autoClear);
-    s.setValue("fgdGridModel",fgdGridModel);
-    s.setValue("fgdGridStep",fgdGridStepScreen);
-    s.setValue("fgdGridStepModel2",fgdGridStepModel);
+    s.setValue("gridModel2",gridModel);
+    s.setValue("fgdGridStep",gridStepScreen);
+    s.setValue("fgdGridStepModel2",gridStepModel);
     s.setValue("designFilterCheck",designFilterCheck);
     s.setValue("tileFilterCheck",tileFilterCheck);
     s.setValue("designFilter",designFilter);
@@ -215,11 +235,14 @@ void Configuration::save()
     s.setValue("lockView",lockView);
     s.setValue("screenIsSplit",screenIsSplit);
     s.setValue("compare_transparent",compare_transparent);
-    s.setValue("compare_differences",compare_differences);
+    s.setValue("compare_differences",display_differences);
     s.setValue("compare_ping_pong",compare_ping_pong);
     s.setValue("compare_side_by_side",compare_side_by_side);
     s.setValue("pushTarget",pushTarget);
     s.setValue("canvasSettings",canvasSettings);
+    s.setValue("showCenter",showCenter);
+    s.setValue("gridCenter",gridCenter);
+    s.setValue("hideBackgroundImage",hideBackgroundImage);
 }
 
 

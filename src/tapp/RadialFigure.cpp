@@ -113,9 +113,11 @@ void RadialFigure::buildMaps()
     //qDebug().noquote()  << "Tr=" << Tr.toString();
 
     figureMap->wipeout();
+    debugMap->wipeout();
 
+    qreal rotateR = qDegreesToRadians(getFigureRotate());
     QVector<QTransform> transforms;
-    QTransform base = Tr;
+    QTransform base = QTransform().rotateRadians((2.0 * M_PI * don) + rotateR);
     for( int idx = 0; idx < n; ++idx )
     {
         transforms.push_back(base);
@@ -129,7 +131,16 @@ void RadialFigure::buildMaps()
 
     figureMap->verifyMap("RadialFigure::getMap-newret");
 
-    //ret->dump();
+    figureMap->dumpMap(false);
+
+#if 0
+    figureMap = figureMap->compress();
+    figureMap->dumpMap(false);
+#endif
+
+    figureMap->setTmpIndices();
+    annotateEdges();
+    //figureMap->dumpMap(false);
 #endif
 }
 
@@ -176,7 +187,7 @@ void RadialFigure::buildExtBoundary()
     QTransform figureTransform;
     qreal scale = getFigureScale();
     figureTransform.scale(scale,scale);
-    Feature f(getN());
+    Feature f(getN(),0);
     QPolygonF p = f.getPoints();
     setRadialFigBoundary(figureTransform.map(p));
     //qDebug() << "Fig boundary:" << figBoundary;

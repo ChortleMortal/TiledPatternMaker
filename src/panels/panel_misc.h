@@ -100,8 +100,8 @@ public:
     LoaderListWidget(QWidget *parent = nullptr);
 
     void addItemList(QStringList list);
-    QListWidgetItem * selectItemByName(QString name);
-    QListWidgetItem * selectItemByValue(QVariant val);
+    bool selectItemByName(QString name);
+    bool selectItemByValue(QVariant val);
 
 
 private:

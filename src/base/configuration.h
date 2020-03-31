@@ -50,7 +50,7 @@ enum eViewType
     VIEW_DEL,
     VIEW_FIGURE_MAKER,
     VIEW_TILING,
-    VIEW_TILIING_MAKER,
+    VIEW_TILING_MAKER,
     VIEW_MAP_EDITOR,
     VIEW_FACE_SET,
     VIEW_MAX = VIEW_FACE_SET
@@ -64,7 +64,7 @@ static QString sViewerType[]
     E2STR(VIEW_DEL),
     E2STR(VIEW_FIGURE_MAKER),
     E2STR(VIEW_TILING),
-    E2STR(VIEW_TILIING_MAKER),
+    E2STR(VIEW_TILING_MAKER),
     E2STR(VIEW_MAP_EDITOR),
     E2STR(VIEW_FACE_SET)
 };
@@ -226,6 +226,29 @@ enum eRender
     RENDER_WS
 };
 
+enum eKbdMode
+{
+    KBD_MODE_XFORM_VIEW,
+    KBD_MODE_DEFAULT = KBD_MODE_XFORM_VIEW,
+    KBD_MODE_XFORM_BKGD,
+    KBD_MODE_XFORM_MODEL,
+    KBD_MODE_XFORM_OBJECT,
+    KBD_MODE_LAYER,
+    KBD_MODE_ZLEVEL,
+    KBD_MODE_STEP,
+    KBD_MODE_SEPARATION,
+    KBD_MODE_ORIGIN,
+    KBD_MODE_OFFSET,
+    KBD_MODE_CENTER,
+    KBD_MODE_SIZE
+};
+
+enum eGridModel
+{
+    GRID_SCREEN,
+    GRID_MODEL
+};
+
 class Configuration
 {
 public:
@@ -237,9 +260,12 @@ public:
 
     DesignPtr getDesign(eDesign design) { return availableDesigns.value(design); }
 
-    ///
-    /// persistent
-    ///
+
+////////////////////////////////////////////////////////////////
+//
+// persistent
+//
+////////////////////////////////////////////////////////////////
 
     eRepeatType           repeatMode;
 
@@ -257,7 +283,10 @@ public:
     ePushTarget           pushTarget;
     eCSSelect             canvasSettings;
     eCycleMode            cycleMode;
+    eGridModel            gridModel;
+
     int                   cycleInterval;
+    int                   gridWidth;
 
     QString rootMediaDir;
     QString rootTileDir;
@@ -290,7 +319,11 @@ public:
     bool    logToStderr;
     bool    logToDisk;
     bool    logToPanel;
+    bool    logNumberLines;
     bool    wsStatusBox;
+    bool    showCenter;
+    bool    gridCenter;
+    bool    hideBackgroundImage;
 
     bool    verifyMaps;
     bool    verifyDump;     // TODO
@@ -303,30 +336,33 @@ public:
     bool    screenIsSplit;
 
     bool    compare_transparent;
-    bool    compare_differences;
+    bool    display_differences;
     bool    compare_ping_pong;
     bool    compare_side_by_side;
 
     QString designFilter;
     QString tileFilter;
 
-    ///
-    /// volatile
-    ///
 
+////////////////////////////////////////////////////////////////
+//
+// volatile
+//
+////////////////////////////////////////////////////////////////
 
     bool    circleX;
     bool    sceneGrid;
     bool    hideCircles;
 
-    bool    fgdGridModel;       // true= model, false = screen
-    int     fgdGridStepScreen;
-    qreal   fgdGridStepModel;
+    qreal   gridStepScreen;
+    qreal   gridStepModel;
 
     bool    updatePanel;
 
     bool    debugReplicate;
     bool    debugMapEnable;
+
+    eKbdMode    kbdMode;
 
     FaceSet * faceSet;
     FacePtr   selectedFace;                     // used by FaceSetView;
@@ -335,6 +371,8 @@ public:
     QColor    figureViewBkgdColor;                // used by some menus
 
     QMap<eDesign,DesignPtr>  availableDesigns;
+
+    static const QString sCanvasMode[KBD_MODE_SIZE];
 
 protected:
     QString getMediaRoot();

@@ -25,7 +25,7 @@
 #include "panels/panel.h"
 #include "panels/page_designs.h"
 #include "panels/page_style_maker.h"
-#include "panels/page_tile_layers.h"
+#include "panels/page_layers.h"
 #include "panels/page_tile_colors.h"
 #include "panels/page_tiling_maker.h"
 #include "panels/page_style_figure_info.h"
@@ -39,7 +39,7 @@
 #include "panels/page_figure_maker.h"
 #include "panels/page_workspace.h"
 #include "panels/page_canvasSettings.h"
-#include "panels/page_control.h"
+#include "panels/page_views.h"
 #include "panels/page_loaders.h"
 #include "panels/page_map_editor.h"
 #include "designs/design.h"
@@ -86,6 +86,7 @@ ControlPanel::ControlPanel(TiledPatternMaker * parent) : QWidget()
     floatPages();
 
     mpTimer->start(100);    // always runs
+
 
     // select page
     mpPanelPageList->setCurrentRow(config->panelName);
@@ -186,8 +187,21 @@ void ControlPanel::setupGUI()
     statusLabel = new QLabel("Status");
     statusLabel->setFixedWidth(401);
 
+    xformModeCombo = new QComboBox();
+    xformModeCombo->insertItem(KBD_MODE_XFORM_VIEW,     "XForm View");
+    xformModeCombo->insertItem(KBD_MODE_XFORM_BKGD,     "XForm Background");
+    xformModeCombo->insertItem(KBD_MODE_XFORM_MODEL,    "XForm Model Data");
+    xformModeCombo->insertItem(KBD_MODE_XFORM_OBJECT,   "XForm Object Data");
+    xformModeCombo->insertItem(KBD_MODE_LAYER,          "Mode Layer");
+    xformModeCombo->insertItem(KBD_MODE_ZLEVEL,         "Mode Z-level");
+    xformModeCombo->insertItem(KBD_MODE_STEP,           "Mode Step");
+    xformModeCombo->insertItem(KBD_MODE_SEPARATION,     "Mode separation");
+    xformModeCombo->insertItem(KBD_MODE_ORIGIN,         "Mode Origin");
+    xformModeCombo->insertItem(KBD_MODE_OFFSET,         "Mode Offset");
+    xformModeCombo->insertItem(KBD_MODE_CENTER,         "Set Center");
+    xformModeCombo->setCurrentIndex(config->kbdMode);
+
     cbUpdate                = new QCheckBox("Update Pages");
-    cbLockView              = new QCheckBox("Lock View");
     QPushButton *pbRaise    = new QPushButton("Raise Picture");
     QPushButton *pbExit     = new QPushButton("QUIT");
 
@@ -195,7 +209,7 @@ void ControlPanel::setupGUI()
     hbox->addWidget(statusLabel);
     hbox->addStretch();
     hbox->addWidget(cbUpdate);
-    hbox->addWidget(cbLockView);
+    hbox->addWidget(xformModeCombo);
     hbox->addWidget(pbRaise);
     hbox->addWidget(pbExit);
 
@@ -231,7 +245,6 @@ void ControlPanel::setupGUI()
     this->setLayout(panelBox);
 
     cbUpdate->setChecked(config->updatePanel);
-    cbLockView->setChecked(config->lockView);
 
     // connections
     WorkspaceViewer * viewer = WorkspaceViewer::getInstance();
@@ -246,7 +259,8 @@ void ControlPanel::setupGUI()
     connect(this,               &ControlPanel::sig_viewWS,          viewer,  &WorkspaceViewer::slot_viewWorkspace);
     connect(this,               &ControlPanel::sig_render,          maker,   &TiledPatternMaker::slot_render);
     connect(cbUpdate,           SIGNAL(clicked(bool)),              this,    SLOT(updateClicked(bool)));
-    connect(cbLockView,         SIGNAL(clicked(bool)),              this,    SLOT(lockViewClicked(bool)));
+    connect(xformModeCombo,     SIGNAL(currentIndexChanged(int)),   this, SLOT(slot_xformModeChanged(int)));
+    connect(canvas,              &Canvas::sig_kbdMode,            this,   &ControlPanel::slot_kbdMode);
 }
 
 void ControlPanel::populatePages()
@@ -269,11 +283,11 @@ void ControlPanel::populatePages()
 
     mpPanelPageList->addSeparator();
 
-    wp = new page_control(this);
+    wp = new page_views(this);
     mAttachedPages.push_back(wp);
     panelPagesWidget->addWidget(wp);
     mpPanelPageList->addItem(wp->getName());
-    page_control * wp_cnt = dynamic_cast<page_control*>(wp);
+    page_views * wp_cnt = dynamic_cast<page_views*>(wp);
 
     mpPanelPageList->addSeparator();
 
@@ -302,7 +316,7 @@ void ControlPanel::populatePages()
     panelPagesWidget->addWidget(wp);
     mpPanelPageList->addItem(wp->getName());
 
-    wp = new page_tileLayers(this);
+    wp = new page_layers(this);
     mAttachedPages.push_back(wp);
     panelPagesWidget->addWidget(wp);
     mpPanelPageList->addItem(wp->getName());
@@ -374,19 +388,21 @@ void ControlPanel::populatePages()
     connect(wp_td,  &page_tiling_maker::sig_tilingChanged,   wp_fm,  &page_figure_maker::slot_tilingChanged);
     connect(wp_tc,  &page_tileColorMaker::sig_tilingChanged, wp_fm,  &page_figure_maker::slot_tilingChanged);
 
-    connect(this,   &ControlPanel::sig_selectViewer,         wp_cnt, &page_control::slot_selectViewer);
+    connect(this,   &ControlPanel::sig_selectViewer,         wp_cnt, &page_views::slot_selectViewer);
 
     connect(wp_med, &page_map_editor::sig_stylesReplaceProto,wp_fm,  &page_figure_maker::slot_replaceInStyle);
     connect(wp_med, &page_map_editor::sig_stylesAddProto,    wp_fm,  &page_figure_maker::slot_addToStyle);
 
-    connect(wp_cnt, &page_control::sig_mapEdSelection,      wp_med, &page_map_editor::slot_reload);
+    connect(wp_cnt, &page_views::sig_mapEdSelection,      wp_med, &page_map_editor::slot_reload);
     connect(this,   &ControlPanel::sig_reload,              wp_med, &page_map_editor::slot_reload);
 
-    connect(wp_lod, &page_loaders::sig_viewStyles,          wp_cnt, &page_control::slot_setSyle);
-    connect(wp_lod, &page_loaders::sig_viewWS,              wp_cnt, &page_control::slot_setWS);
+    connect(wp_lod, &page_loaders::sig_viewStyles,          wp_cnt, &page_views::slot_setSyle);
+    connect(wp_lod, &page_loaders::sig_viewWS,              wp_cnt, &page_views::slot_setWS);
 
     connect(maker, &TiledPatternMaker::sig_image0,          wp_db, &page_debug::slot_setImage0);
     connect(maker, &TiledPatternMaker::sig_image1,          wp_db, &page_debug::slot_setImage1);
+    connect(maker, &TiledPatternMaker::sig_prepXML,         wp_cnt,&page_views::slot_setSyle);
+    connect(maker, &TiledPatternMaker::sig_prepTiling,      wp_cnt,&page_views::slot_setWS);
 }
 
 void ControlPanel::floatPages()
@@ -509,7 +525,6 @@ void ControlPanel::slot_attachWidget(QString name)
 void ControlPanel::slot_poll()
 {
     cbUpdate->setChecked(config->updatePanel);
-    cbLockView->setChecked(config->lockView);
 
     if (!config->updatePanel)
         return;
@@ -537,7 +552,7 @@ void ControlPanel::slot_poll()
     case VIEW_DEL:
         astring += sDELViewer[config->delViewer];
         break;
-    case VIEW_TILIING_MAKER:
+    case VIEW_TILING_MAKER:
         astring += sTilingMakerView[config->tilingMakerViewer];
         break;
     case  VIEW_MAP_EDITOR:
@@ -609,7 +624,7 @@ void ControlPanel::repeatChanged(int mode)
     case VIEW_TILING:
         if (config->tilingViewer == TV_WORKSPACE) rtype = RENDER_WS;
         break;
-    case VIEW_TILIING_MAKER:
+    case VIEW_TILING_MAKER:
         if (config->tilingMakerViewer == TD_WORKSPACE) rtype = RENDER_WS;
         break;
     case VIEW_MAP_EDITOR:
@@ -647,10 +662,23 @@ void  ControlPanel::autoLoadDesignsClicked(bool enb)
     config->autoLoadDesigns = enb;
 }
 
+void ControlPanel::slot_xformModeChanged(int row)
+{
+    qDebug() << "slot_xformMode_changed"  << row;
+    eKbdMode mode = static_cast<eKbdMode>(row);
+    config->kbdMode = mode;
+}
+
+void ControlPanel::slot_kbdMode(eKbdMode mode)
+{
+    xformModeCombo->setCurrentIndex(mode);
+}
+
 void ControlPanel::slot_logEvent()
 {
+    qInfo() << "** EVENT MARK **";
     canvas->dump(true);
-    qDebug() << "** EVENT MARK **";
+    qInfo() << "** EVENT MARK **";
 }
 
 void ControlPanel::slot_raise()
@@ -669,11 +697,6 @@ void ControlPanel::slot_exit()
 void  ControlPanel::updateClicked(bool enb)
 {
     config->updatePanel = enb;
-}
-
-void  ControlPanel::lockViewClicked(bool enb)
-{
-    config->lockView = enb;
 }
 
 void ControlPanel::delegateView()
@@ -700,7 +723,7 @@ void ControlPanel::delegateView()
     page_tiling_maker * ptm = dynamic_cast<page_tiling_maker*>(currentPage);
     if (ptm)
     {
-        emit sig_selectViewer(VIEW_TILIING_MAKER,config->tilingMakerViewer);
+        emit sig_selectViewer(VIEW_TILING_MAKER,config->tilingMakerViewer);
         return;
     }
 

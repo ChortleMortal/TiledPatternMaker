@@ -25,6 +25,7 @@
 #include "base/tiledpatternmaker.h"
 #include "base/canvas.h"
 #include "base/cycler.h"
+#include "base/fileservices.h"
 #include "base/styleddesign.h"
 #include "base/tilingmanager.h"
 #include "base/transparentwidget.h"
@@ -64,7 +65,7 @@ void TiledPatternMaker::startEverything()
 
     TilingManager::getInstance();
     MapEditor::getInstance();
-    TilingMaker::getInstance();
+    TilingMaker * tMaker = TilingMaker::getInstance();
 
     config->availableDesigns.insert(DESIGN_5,make_shared<Design5>(DESIGN_5,"Pattern 1 (created)"));
     config->availableDesigns.insert(DESIGN_6,make_shared<Design6>(DESIGN_6,"Pattern 2 (re-ceated)"));
@@ -100,11 +101,11 @@ void TiledPatternMaker::startEverything()
     cycler = Cycler::getInstance();
     cycler->init(thread);
 
-    connect(this,   &TiledPatternMaker::sig_readyNext,  cycler,  &Cycler::slot_readyNext);
-    connect(this,   &TiledPatternMaker::sig_takeNext,   cycler,  &Cycler::slot_nextCycle);
+    connect(this,   &TiledPatternMaker::sig_ready,         cycler,  &Cycler::slot_ready);
+    connect(this,   &TiledPatternMaker::sig_loadedTiling,  tMaker,  &TilingMaker::slot_setTiling);
 
-    connect(cycler,    &Cycler::sig_loadXML,        this,  &TiledPatternMaker::slot_loadXML);
-    connect(cycler,    &Cycler::sig_loadTiling,     this,  &TiledPatternMaker::slot_loadTiling);
+    connect(cycler,    &Cycler::sig_loadXML,        this,  &TiledPatternMaker::slot_loadXMLSimple);
+    connect(cycler,    &Cycler::sig_loadTiling,     this,  &TiledPatternMaker::slot_loadTilingSimple);
     connect(cycler,    &Cycler::sig_loadAndSave,    this,  &TiledPatternMaker::slot_loadAndSaveXML);
     connect(cycler,    &Cycler::sig_saveAsBMP,      this,  &TiledPatternMaker::slot_saveAsBMP);
     connect(cycler,    &Cycler::sig_saveTilingAsBMP,this,  &TiledPatternMaker::slot_saveTilingAsBMP);
@@ -113,10 +114,10 @@ void TiledPatternMaker::startEverything()
     connect(cycler,    &Cycler::sig_viewImage,      this,  &TiledPatternMaker::slot_view_image);
     connect(cycler,    &Cycler::sig_png,            canvas, &Canvas::slot_png);
 
-
     connect(canvas,   &Canvas::sig_cyclerStart,  cycler,  &Cycler::slot_startCycle, Qt::QueuedConnection);
     connect(canvas,   &Canvas::sig_cyclerKey,    cycler,  &Cycler::slot_psuedoKey);
     connect(canvas,   &Canvas::sig_cyclerQuit,   cycler,  &Cycler::slot_stopCycle);
+
 
     // pop-up control panel
     controlPanel = new ControlPanel(this);
@@ -132,14 +133,17 @@ void TiledPatternMaker::startEverything()
     // get started - kick off
     if (config->autoLoadStyles && !config->lastLoadedXML.isEmpty())
     {
+        emit sig_prepXML();
         slot_loadXML(config->lastLoadedXML);
     }
     else if (config->autoLoadTiling)
     {
+        emit sig_prepTiling();
         slot_loadTiling(config->lastLoadedTileName);
     }
     else if (config->autoLoadDesigns)
     {
+        emit sig_prepDesign();
         slot_loadDesign(config->lastLoadedDesignId);
     }
 
@@ -198,7 +202,7 @@ void TiledPatternMaker::slot_loadAndSaveXML(QString name)
     workspace->loadDesignXML(name);
     QString outfile;
     workspace->saveDesignXML(name,outfile,true);
-    emit sig_readyNext();
+    emit sig_ready();
 }
 
 void TiledPatternMaker::slot_loadXML(QString name)
@@ -211,8 +215,22 @@ void TiledPatternMaker::slot_loadXML(QString name)
     if (rv)
     {
         emit sig_viewWS();
-        emit sig_readyNext();
+        emit sig_ready();
         emit sig_loadedXML(name);
+        QString tileName = FileServices::getTileNameFromDesignName(name);
+        emit sig_loadedTiling(tileName);
+    }
+}
+
+void TiledPatternMaker::slot_loadXMLSimple(QString name)
+{
+    qDebug().noquote() << "TiledPatternMaker::slot_loadXML() <" << name << ">";
+    view->setWindowTitle(QString("Loading: %1").arg(name));
+    bool rv = workspace->loadDesignXML(name);
+    if (rv)
+    {
+        emit sig_viewWS();
+        emit sig_ready();
     }
 }
 
@@ -237,9 +255,9 @@ void TiledPatternMaker::slot_loadTiling(QString name)
     if (workspace->loadTiling(name))
     {
         config->lastLoadedTileName = name;
-        emit sig_viewWS();
-        emit sig_readyNext();
+        emit sig_ready();
         emit sig_loadedTiling(name);
+        emit sig_viewWS();
     }
     else
     {
@@ -250,12 +268,24 @@ void TiledPatternMaker::slot_loadTiling(QString name)
     }
 }
 
+void TiledPatternMaker::slot_loadTilingSimple(QString name)
+{
+    view->setWindowTitle(QString("Loading tiling: %1").arg(name));
+    bool rv = workspace->loadTiling(name);
+    if (rv)
+    {
+        config->lastLoadedTileName = name;
+        emit sig_viewWS();
+        emit sig_ready();
+    }
+}
+
 void TiledPatternMaker::slot_saveAsBMP(QString name)
 {
     workspace->loadDesignXML(name);
     emit sig_viewWS();
     canvas->saveBMP(name);
-    emit sig_readyNext();
+    emit sig_ready();
 }
 
 void TiledPatternMaker::slot_saveTilingAsBMP(QString name)
@@ -263,7 +293,7 @@ void TiledPatternMaker::slot_saveTilingAsBMP(QString name)
     workspace->loadTiling(name);
     emit sig_viewWS();
     canvas->saveBMP(name);
-    emit sig_readyNext();
+    emit sig_ready();
 }
 
 void TiledPatternMaker::slot_forceUpdateStyles()
@@ -422,12 +452,12 @@ void TiledPatternMaker::slot_cyclerFinished()
 
 void TiledPatternMaker::SplatCompareResult(QPixmap & pixmap, QString title)
 {
-    AQLabel * l = new AQLabel;
+    AQLabel * l = new AQLabel();
     l->resize(pixmap.size());
     l->setPixmap(pixmap);
     l->setWindowTitle(title);
 
-    connect(l,  &AQLabel::sig_takeNext,     this,   &TiledPatternMaker::sig_takeNext, Qt::UniqueConnection);
+    connect(l,  &AQLabel::sig_takeNext,     cycler, &Cycler::slot_ready, Qt::UniqueConnection);
     connect(l,  &AQLabel::sig_cyclerQuit,   cycler, &Cycler::slot_stopCycle,Qt::UniqueConnection);
     connect(l,  &AQLabel::sig_view_images,  cycler, &Cycler::slot_view_images,Qt::UniqueConnection);
 
@@ -445,7 +475,7 @@ void TiledPatternMaker::SplatShowImage(QImage & image, QString title)
     cyclerWindow->setPixmap(pixmap);
     cyclerWindow->setWindowTitle(title);
 
-    connect(cyclerWindow,  &AQLabel::sig_takeNext,     this,   &TiledPatternMaker::sig_takeNext, Qt::UniqueConnection);
+    connect(cyclerWindow,  &AQLabel::sig_takeNext,     cycler, &Cycler::slot_ready, Qt::UniqueConnection);
     connect(cyclerWindow,  &AQLabel::sig_cyclerQuit,   cycler, &Cycler::slot_stopCycle,Qt::UniqueConnection);
     connect(cyclerWindow,  &AQLabel::sig_view_images,  cycler, &Cycler::slot_view_images,Qt::UniqueConnection);
 
@@ -459,7 +489,7 @@ void TiledPatternMaker::SplatCompareResultTransparent(QPixmap &pixmap, QString t
     l->setPixmap(pixmap);
     l->setWindowTitle(title);
 
-    connect(l,  &TransparentWidget::sig_takeNext,     this,   &TiledPatternMaker::sig_takeNext, Qt::UniqueConnection);
+    connect(l,  &AQLabel::sig_takeNext,     cycler, &Cycler::slot_ready, Qt::UniqueConnection);
     connect(l,  &TransparentWidget::sig_cyclerQuit,   cycler, &Cycler::slot_stopCycle,Qt::UniqueConnection);
     connect(l,  &TransparentWidget::sig_view_images,  cycler, &Cycler::slot_view_images,Qt::UniqueConnection);
 
@@ -482,13 +512,13 @@ void TiledPatternMaker::slot_compareImages(QString fileLeft, QString fileRight)
 
     bool autoMode     = config->autoCycle;
     bool stopIfDiff   = config->stopIfDiff;
-    bool differences  = config->compare_differences;
+    bool differences  = config->display_differences;
     bool pingpong     = config->compare_ping_pong;
 
-    emit sig_image0(fileLeft);
-    emit sig_image1(fileRight);
+    emit sig_image0(fileLeft);      // sets page_debug status
+    emit sig_image1(fileRight);     // sets page_debug status
 
-    QCoreApplication::processEvents();
+    //QCoreApplication::processEvents();
 
     if (fileRight.isEmpty())
     {
@@ -502,7 +532,7 @@ void TiledPatternMaker::slot_compareImages(QString fileLeft, QString fileRight)
         }
         else
         {
-            emit sig_takeNext();
+            emit sig_ready();
         }
         return;
     }
@@ -522,7 +552,7 @@ void TiledPatternMaker::slot_compareImages(QString fileLeft, QString fileRight)
         }
         else
         {
-            emit sig_takeNext();
+            emit sig_ready();
         }
         return;
     }
@@ -531,11 +561,11 @@ void TiledPatternMaker::slot_compareImages(QString fileLeft, QString fileRight)
 
     qDebug() << "different" << fileLeft;
     QString str = "Images are different";
-    emit sig_compareResult(str);
+    emit sig_compareResult(str);    // sets page_debug status
 
     if (autoMode && !stopIfDiff)
     {
-        emit sig_takeNext();
+        emit sig_ready();
         return;
     }
 
@@ -548,7 +578,7 @@ void TiledPatternMaker::slot_compareImages(QString fileLeft, QString fileRight)
             QString str2 = QString("%1 = %2x%3").arg(fileRight).arg(right.width()).arg(right.height());
             QPixmap  pm = makeTextPixmap("Images different sizes:",str1,str2);
             QString str = "Images are different sizes";
-            emit sig_compareResult(str);
+            emit sig_compareResult(str);    // sets page_debug status
             SplatCompareResult(pm,str);
             return;
         }

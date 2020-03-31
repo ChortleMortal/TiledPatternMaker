@@ -120,7 +120,7 @@ void Figure::buildExtBoundary()
     qTrans.scale(extBoundaryScale,extBoundaryScale);
     if (extBoundarySides >= 3)
     {
-        Feature f2(extBoundarySides);
+        Feature f2(extBoundarySides,0);
         extBoundary = f2.getPoints();
         extBoundary = qTrans.map(extBoundary);
         //qDebug() << "Ext boundary:" << extBoundary;
@@ -133,12 +133,18 @@ void Figure::buildExtBoundary()
     }
 }
 
-void Figure::annotate()
+// uses existing tmpIndices
+void Figure::annotateEdges()
 {
-    MapPtr map = getFigureMap();
-
-    for (auto edge : map->getEdges())
+    if (!figureMap)
     {
-        qDebug() << "todo";
+        return;
     }
+
+    for (auto edge : figureMap->getEdges())
+    {
+        QPointF p = edge->getMidPoint();
+        debugMap->insertDebugMark(p, QString::number(edge->getTmpEdgeIndex()));
+    }
+    debugMap->dumpMap(false);
 }

@@ -38,6 +38,7 @@ Style::Style(PrototypePtr proto, PolyPtr bounds ) : Layer("Style")
     prototype = proto;
     boundary  = bounds;
     setupStyleMap();
+    debugMap = make_shared<Map>("Style debug map");
     refs++;
 }
 
@@ -49,6 +50,7 @@ Style::Style(const Style &other) : Layer(other)
     if (other.styleMap != nullptr)
     {
         styleMap = other.styleMap;
+        debugMap = other.debugMap;
     }
 
     refs++;
@@ -71,12 +73,37 @@ void Style::setPrototype(PrototypePtr pp)
     setupStyleMap();
 }
 
+TilingPtr Style::getTiling()
+{
+    TilingPtr tp;
+    if (prototype)
+    {
+        tp = prototype->getTiling();
+    }
+    return tp;
+}
+
 MapPtr Style::setupStyleMap()
 {
     Q_ASSERT(prototype);
     styleMap = prototype->getProtoMap();
     qDebug() << "Style::setupStyleMap proto=" << Utils::addr(prototype.get()) << "map="  << Utils::addr(styleMap.get());
     return styleMap;
+}
+
+// uses existing tmpIndices
+void Style::annotateEdges(MapPtr map)
+{
+    if (!map)
+        return;
+
+    debugMap->wipeout();
+    for (auto edge : map->getEdges())
+    {
+        QPointF p = edge->getMidPoint();
+        debugMap->insertDebugMark(p, QString::number(edge->getTmpEdgeIndex()));
+    }
+    debugMap->dumpMap(false);
 }
 
 // Retrieve a name describing this style and map.
@@ -103,15 +130,55 @@ QString Style::getInfo() const
 
 void Style::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-    Q_UNUSED(option);
-    Q_UNUSED(widget);
+    Q_UNUSED(option)
+    Q_UNUSED(widget)
 
-    qDebug() << "Style::paint" << getDescription() << (void*)this;
+    qDebug() << "Style::paint" << getDescription() << Utils::addr(this);
     painter->setRenderHint(QPainter::Antialiasing ,true);
     painter->setRenderHint(QPainter::SmoothPixmapTransform,true);
 
-    QTransform tr;   // identity
+    QTransform tr = getLayerTransform();
     GeoGraphics gg(painter,tr);
 
     draw(&gg);
+
+    debugMap->dumpMap(false);
+
+    if (!debugMap->isEmpty())
+    {
+        drawAnnotation(painter,tr);
+    }
+
+    if (config->showCenter)
+    {
+        QPointF pt = getCenter();
+        qDebug() << "style layer center=" << pt;
+        painter->setPen(QPen(Qt::green,3));
+        painter->setBrush(QBrush(Qt::green));
+        painter->drawEllipse(pt,13,13);
+    }
 }
+
+void Style::drawAnnotation(QPainter * painter, QTransform T)
+{
+    QPen pen(Qt::white);
+    painter->setPen(pen);
+
+    for (auto edge : debugMap->getEdges())
+    {
+        QPointF p1 = T.map(edge->getV1()->getPosition());
+        QPointF p2 = T.map(edge->getV2()->getPosition());
+        painter->drawLine(p1,p2);
+    }
+
+    if (debugMap->texts.count())
+    {
+        for (auto t = debugMap->texts.begin(); t != debugMap->texts.end(); t++)
+        {
+            sText stxt = *t;
+            QPointF pt = T.map(stxt.pt);
+            painter->drawText(QPointF(pt.x()+7,pt.y()+13),stxt.txt);
+        }
+    }
+}
+

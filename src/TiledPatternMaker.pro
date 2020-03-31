@@ -77,6 +77,7 @@ SOURCES += \
     geometry/edgepoly.cpp \
     geometry/facecycles.cpp \
     geometry/neighbours.cpp \
+    geometry/threads.cpp \
     geometry/xform.cpp \
     makers/FeatureButton.cpp \
     makers/FeatureLauncher.cpp \
@@ -105,11 +106,11 @@ SOURCES += \
     panels/layout_transform.cpp \
     panels/page_canvasSettings.cpp \
     panels/page_config.cpp \
-    panels/page_control.cpp \
     panels/page_debug.cpp \
     panels/page_design_elements.cpp \
     panels/page_designs.cpp \
     panels/page_figure_maker.cpp \
+    panels/page_layers.cpp \
     panels/page_loaders.cpp \
     panels/page_log.cpp \
     panels/page_map_editor.cpp \
@@ -119,8 +120,8 @@ SOURCES += \
     panels/page_style_figure_info.cpp \
     panels/page_style_maker.cpp \
     panels/page_tile_colors.cpp \
-    panels/page_tile_layers.cpp \
     panels/page_tiling_maker.cpp \
+    panels/page_views.cpp \
     panels/page_workspace.cpp \
     panels/panel.cpp \
     panels/panel_misc.cpp \
@@ -134,6 +135,7 @@ SOURCES += \
     style/Emboss.cpp \
     style/Filled.cpp \
     style/Interlace.cpp \
+    style/Interlaceinfo.cpp \
     style/Outline.cpp \
     style/Plain.cpp \
     style/Sketch.cpp \
@@ -218,6 +220,7 @@ HEADERS += \
     geometry/edgepoly.h \
     geometry/facecycles.h \
     geometry/neighbours.h \
+    geometry/threads.h \
     geometry/xform.h \
     makers/FeatureButton.h \
     makers/FeatureLauncher.h \
@@ -246,11 +249,11 @@ HEADERS += \
     panels/layout_transform.h \
     panels/page_canvasSettings.h \
     panels/page_config.h \
-    panels/page_control.h \
     panels/page_debug.h \
     panels/page_design_elements.h \
     panels/page_designs.h \
     panels/page_figure_maker.h \
+    panels/page_layers.h \
     panels/page_loaders.h \
     panels/page_log.h \
     panels/page_map_editor.h \
@@ -260,8 +263,8 @@ HEADERS += \
     panels/page_style_figure_info.h \
     panels/page_style_maker.h \
     panels/page_tile_colors.h \
-    panels/page_tile_layers.h \
     panels/page_tiling_maker.h \
+    panels/page_views.h \
     panels/page_workspace.h \
     panels/panel.h \
     panels/panel_misc.h \
@@ -318,6 +321,8 @@ HEADERS += \
 FORMS +=
 
 DISTFILES += \
+    ../etc/TIledPatternMaker.nsi \
+    ../etc/build-install.md \
     ../etc/docs/BrougImplemented.md \
     ../etc/docs/ViewersAndMakers.xlsx \
     ../etc/docs/bugs.md \
@@ -327,6 +332,7 @@ DISTFILES += \
     ../etc/docs/sample.md \
     ../etc/docs/taprats_notes.md \
     ../etc/docs/taprats_readme.txt \
+    ../etc/fixdropbox.py \
     ../etc/models/Components.qmodel \
     ../etc/models/Designs.qmodel \
     ../etc/models/Style.qmodel \
@@ -335,7 +341,8 @@ DISTFILES += \
     ../etc/models/figure_editors.qmodel \
     ../etc/models/figures.qmodel \
     ../etc/models/shapes.qmodel \
-    ../etc/models/styles.qmodel
+    ../etc/models/styles.qmodel \
+    ../etc/prune.sh
 
 RESOURCES += \
     tpm.qrc

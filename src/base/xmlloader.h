@@ -67,9 +67,8 @@ protected:
     void processTileColors(xml_node & node);
 
     // design
-    void procScale(xml_node & node);
     void procSize(xml_node & node, int &width, int &height);
-    QColor procBackground(xml_node & node);
+    QColor procBackgroundColor(xml_node & node);
     void procBorder(xml_node & node);
     qreal procWidth(xml_node & node);
 
@@ -143,6 +142,7 @@ private:
     void    procBorderTwoColor(xml_node & n);
     void    procBorderBlocks(xml_node & n);
     [[noreturn]] void fail(QString a, QString b);
+    QTransform getQTransform(QString txt);
 
     QMap<int,PrototypePtr>  proto_ids;
     QMap<int,VertexPtr>     vertex_ids;
@@ -170,7 +170,6 @@ private:
     int                     _width;
     int                     _height;
     BorderPtr               _border;
-    qreal                   _scale;
     unsigned int            _version;
 
     int vOrigCnt;

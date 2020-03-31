@@ -45,6 +45,7 @@ panel_page::panel_page(ControlPanel * panel,  QString name) : QWidget()
 
     newlySelected   = false;
     floated         = false;
+    refresh         = true;
 
     //setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Ignored);
     setLayout (vbox);
@@ -155,4 +156,15 @@ QString panel_page::addr(void * address)
 QString panel_page::addr(const void * address)
 {
     return QString::number(reinterpret_cast<uint64_t>(address),16);
+}
+
+void panel_page::enterEvent(QEvent *event)
+{
+    Q_UNUSED(event)
+    mouseEnter();
+}
+void panel_page::leaveEvent(QEvent *event)
+{
+    Q_UNUSED(event)
+    mouseLeave();
 }

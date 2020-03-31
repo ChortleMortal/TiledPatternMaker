@@ -41,13 +41,7 @@
 #include "tile/PlacedFeature.h"
 #include "base/layer.h"
 #include "base/configuration.h"
-
-enum eTileMakerXform
-{
-    XF_VIEW   = 0,
-    XF_BKGD   = 1,
-    XF_TILING = 2
-};
+#include "base/canvas.h"
 
 class TilingMakerView : public Layer
 {
@@ -79,6 +73,8 @@ public:
     TilingSelectionPtr findVertex(QPointF spt, TilingSelectionPtr ignore);
     TilingSelectionPtr findMidPoint(QPointF spt, TilingSelectionPtr ignore);
 
+    TilingSelectionPtr findCenter(PlacedFeaturePtr feature, QPointF spt);
+
     QPointF            findSelectionPointOrPoint(QPointF spt);
 
     QVector<PlacedFeaturePtr> & getAllFeatures()   { return allPlacedFeatures; }
@@ -88,8 +84,6 @@ public:
 
 protected:
     void determineOverlapsAndTouching();
-
-    eTileMakerXform             xformMode;
 
     eMouseMode  mouse_mode;     // set by tiling designer menu
 

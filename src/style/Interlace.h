@@ -27,6 +27,7 @@
 
 #include "style/Thick.h"
 #include "style/InterlaceInfo.h"
+#include "geometry/threads.h"
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -60,10 +61,14 @@ public:
 class segment
 {
 public:
+    segment() {}
+    segment(QColor color) { c = color; }
+
     QPolygonF toPoly();
 
     piece A;
     piece B;
+    QColor c;
 };
 
 
@@ -74,20 +79,20 @@ public:
     Interlace(const Style & other);
     virtual ~Interlace() override;
 
-    void resetStyleRepresentation() override;
-    void createStyleRepresentation() override;
+    void    resetStyleRepresentation() override;
+    void    createStyleRepresentation() override;
     void    draw(GeoGraphics *gg) override;
 
     virtual eStyleType getStyleType() const override { return STYLE_INTERLACED; }
     QString getStyleDesc() const override {return "Interlaced";}
 
-    qreal   getGap();
-    qreal   getShadow();
+    qreal   getGap()                { return gap; }
+    qreal   getShadow()             { return shadow; }
     bool    getIncludeTipVertices() { return includeTipVertices; }
 
-    void    setGap(qreal gap );
-    void    setShadow(qreal shadow );
-    void    setIncludeTipVertices(bool include);
+    void    setGap(qreal Gap)       { gap = Gap; resetStyleRepresentation(); }
+    void    setShadow(qreal Shadow) { shadow = Shadow; resetStyleRepresentation(); }
+    void    setIncludeTipVertices(bool include) { includeTipVertices = include; resetStyleRepresentation(); }
 
 protected:
 
@@ -113,7 +118,7 @@ private:
     void initializeMap();
     void buildFrom();
 
-    // Parameters of the rendering.
+    // Parameters of the rende   ring.
     qreal  gap;
     qreal  shadow;
     bool   includeTipVertices;
@@ -121,6 +126,7 @@ private:
     // Internal representations of the rendering.
     QVector<segment>    pts;
     QStack<EdgePtr>     todo;
+    Threads             threads;
 };
 #endif
 

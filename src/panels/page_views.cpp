@@ -22,7 +22,7 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "panels/page_control.h"
+#include "panels/page_views.h"
 #include "base/configuration.h"
 #include "base/canvas.h"
 #include "base/fileservices.h"
@@ -38,10 +38,10 @@
 #include "viewers/TilingView.h"
 #include "viewers/workspaceviewer.h"
 
-page_control::page_control(ControlPanel * cpanel) : panel_page(cpanel,"View")
+page_views::page_views(ControlPanel * cpanel) : panel_page(cpanel,"Views")
 {
     // gui setup has to be here for this page since it receives signals
-    createWorkspaceMakers();
+    createViewControl();
     createWorkspaceViewers();
     createWorkspaceStatus();
 
@@ -60,20 +60,20 @@ page_control::page_control(ControlPanel * cpanel) : panel_page(cpanel,"View")
     refreshPage();
 }
 
-void  page_control::createWorkspaceMakers()
+void  page_views::createViewControl()
 {
     QPushButton * pbViewWorkspace   = new QPushButton("View Workspace");
     QPushButton * btnSplit          = new QPushButton("Split Screen");
     QPushButton * btnPrimary        = new QPushButton("Primary Screen");
 
-
-    QGridLayout * grid1 = new QGridLayout();
-    grid1->addWidget(pbViewWorkspace,   0,0);
-    grid1->addWidget(btnSplit,          0,1);
-    grid1->addWidget(btnPrimary,        0,2);
+    QHBoxLayout * hbox = new QHBoxLayout();
+    hbox->addWidget(pbViewWorkspace);
+    hbox->addWidget(btnSplit);
+    hbox->addWidget(btnPrimary);
+    hbox->addStretch();
 
     workspaceMakersBox = new QGroupBox("View Control");
-    workspaceMakersBox->setLayout(grid1);
+    workspaceMakersBox->setLayout(hbox);
 
     // workspace buttons
 
@@ -83,10 +83,11 @@ void  page_control::createWorkspaceMakers()
 
 }
 
-void  page_control::createWorkspaceViewers()
+void  page_views::createWorkspaceViewers()
 {
-    workspaceViewersBox  = new QGroupBox("Workspace Viewers");
+    workspaceViewersBox  = new QGroupBox("View Select");
 
+    cbLockView           = new QCheckBox("Lock View");
     setStyle             = new QPushButton("Set Style");
     setWS                = new QPushButton("Set WS");
     setStyle->setMaximumWidth(91);
@@ -130,6 +131,7 @@ void  page_control::createWorkspaceViewers()
     QGridLayout * grid2 = new QGridLayout();
     int row = 0;
 
+    grid2->addWidget(cbLockView,row,0);
     grid2->addWidget(setStyle,row,1);
     grid2->addWidget(setWS,row,2);
     row++;
@@ -155,11 +157,6 @@ void  page_control::createWorkspaceViewers()
     grid2->addWidget(radioDelWSView,row,2);
     row++;
 
-    grid2->addWidget(cbTilingView,row,0);
-    grid2->addWidget(radioLoadedStyleTileView,row,1);
-    grid2->addWidget(radioWSTileView,row,2);
-    row++;
-
     grid2->addWidget(cbFigMapView,row,0);
     grid2->addWidget(mapEdStyle,row,1);
     grid2->addWidget(mapEdWS,row,2);
@@ -168,6 +165,11 @@ void  page_control::createWorkspaceViewers()
     grid2->addWidget(cbFigureView,row,0);
     grid2->addWidget(radioFigureStyle,row,1);
     grid2->addWidget(radioFigureWS,row,2);
+    row++;
+
+    grid2->addWidget(cbTilingView,row,0);
+    grid2->addWidget(radioLoadedStyleTileView,row,1);
+    grid2->addWidget(radioWSTileView,row,2);
     row++;
 
     grid2->addWidget(cbTilingMakerView,row,0);
@@ -186,7 +188,7 @@ void  page_control::createWorkspaceViewers()
     viewerGroup.addButton(cbTilingView,VIEW_TILING);
     viewerGroup.addButton(cbFigureView,VIEW_FIGURE_MAKER);
     viewerGroup.addButton(cbDELView,VIEW_DEL);
-    viewerGroup.addButton(cbTilingMakerView,VIEW_TILIING_MAKER);
+    viewerGroup.addButton(cbTilingMakerView,VIEW_TILING_MAKER);
     viewerGroup.addButton(cbFigMapView,VIEW_MAP_EDITOR);
     viewerGroup.addButton(cbFaceSetView,VIEW_FACE_SET);
     viewerGroup.button(config->viewerType)->setChecked(true);
@@ -232,11 +234,11 @@ void  page_control::createWorkspaceViewers()
     mapEdGroup.addButton(mapEdWS,MED_WS);
     mapEdGroup.button(config->mapEditorView)->setChecked(true);
 
-    connect(setStyle, &QPushButton::clicked, this, &page_control::slot_setSyle);
-    connect(setWS,    &QPushButton::clicked, this, &page_control::slot_setWS);
+    connect(setStyle, &QPushButton::clicked, this, &page_views::slot_setSyle);
+    connect(setWS,    &QPushButton::clicked, this, &page_views::slot_setWS);
 }
 
-void  page_control::createWorkspaceStatus()
+void  page_views::createWorkspaceStatus()
 {
     lab_activeDesigns   = new QLabel("activeDesigns");
     lab_LoadedStylename = new QLabel("loadedStyleName");
@@ -260,10 +262,10 @@ void  page_control::createWorkspaceStatus()
 
     slot_wsStatusBox(config->wsStatusBox);
 
-    connect(workspaceStatusBox, &QGroupBox::toggled, this, &page_control::slot_wsStatusBox);
+    connect(workspaceStatusBox, &QGroupBox::toggled, this, &page_views::slot_wsStatusBox);
 }
 
-void page_control::slot_wsStatusBox(bool on)
+void page_views::slot_wsStatusBox(bool on)
 {
     config->wsStatusBox = on;
     QLayout * l = workspaceStatusBox->layout();
@@ -318,32 +320,34 @@ void page_control::slot_wsStatusBox(bool on)
 
 
 
-void page_control::makeConnections()
+void page_views::makeConnections()
 {
     setObjectName("page_control");
 
-    connect(this,           &page_control::sig_loadTiling,   maker,   &TiledPatternMaker::slot_loadTiling);
+    connect(this,           &page_views::sig_loadTiling,   maker,   &TiledPatternMaker::slot_loadTiling);
 
     // workspace checkboxes
     connect(&viewerGroup,   SIGNAL(buttonClicked(int)),      this,     SLOT(slot_Viewer_pressed(int)));
     connect(&designGroup,   SIGNAL(buttonClicked(int)),      this,     SLOT(slot_designViewer_pressed(int)));
     connect(&protoGroup,    SIGNAL(buttonClicked(int)),      this,     SLOT(slot_protoViewer_pressed(int)));
-    connect(&protoFeatureGroup,  SIGNAL(buttonClicked(int)), this,     SLOT(slot_protoFeatureViewer_pressed(int)));
+    connect(&protoFeatureGroup, SIGNAL(buttonClicked(int)),  this,     SLOT(slot_protoFeatureViewer_pressed(int)));
     connect(&tilingGroup,   SIGNAL(buttonClicked(int)),      this,     SLOT(slot_tilingViewer_pressed(int)));
     connect(&figureGroup,   SIGNAL(buttonClicked(int)),      this,     SLOT(slot_figureViewer_pressed(int)));
-    connect(&tilingMakerGroup,SIGNAL(buttonClicked(int)), this,     SLOT(slot_tilingMakerViewer_pressed(int)));
+    connect(&tilingMakerGroup, SIGNAL(buttonClicked(int)),   this,     SLOT(slot_tilingMakerViewer_pressed(int)));
     connect(&delGroup,      SIGNAL(buttonClicked(int)),      this,     SLOT(slot_delViewer_pressed(int)));
     connect(&mapEdGroup,    SIGNAL(buttonClicked(int)),      this,     SLOT(slot_mapEdView_pressed(int)));
+    connect(cbLockView,     SIGNAL(clicked(bool)),           this,     SLOT(slot_lockViewClicked(bool)));
 }
 
-void page_control::refreshPage()
+void page_views::refreshPage()
 {
     updateWsStatus();
 }
 
-void page_control::onEnter()
+void page_views::onEnter()
 {
     blockSignals(true);
+    cbLockView->setChecked(config->lockView);
     viewerGroup.button(config->viewerType)->setChecked(true);
     designGroup.button(config->designViewer)->setChecked(true);
     protoGroup.button(config->protoViewer)->setChecked(true);
@@ -356,13 +360,13 @@ void page_control::onEnter()
     blockSignals(false);
 }
 
-void page_control::slot_loadedXML(QString name)
+void page_views::slot_loadedXML(QString name)
 {
     Q_UNUSED(name)
     onEnter();
 }
 
-void page_control::updateWsStatus()
+void page_views::updateWsStatus()
 {
     if (!config->wsStatusBox)
     {
@@ -477,13 +481,13 @@ void page_control::updateWsStatus()
 
 
 
-void  page_control::slot_Viewer_pressed(int id)
+void  page_views::slot_Viewer_pressed(int id)
 {
     config->viewerType = static_cast<eViewType>(id);
     emit sig_viewWS();
 }
 
-void page_control::slot_designViewer_pressed(int id)
+void page_views::slot_designViewer_pressed(int id)
 {
     config->designViewer = static_cast<eDesignViewer>(id);
     if (config->viewerType == VIEW_DESIGN)
@@ -492,7 +496,7 @@ void page_control::slot_designViewer_pressed(int id)
     }
 }
 
-void page_control::slot_tilingViewer_pressed(int id)
+void page_views::slot_tilingViewer_pressed(int id)
 {
     config->tilingViewer = static_cast<eTilingViewer>(id);
     if (config->viewerType == VIEW_TILING)
@@ -501,16 +505,16 @@ void page_control::slot_tilingViewer_pressed(int id)
     }
 }
 
-void page_control::slot_tilingMakerViewer_pressed(int id)
+void page_views::slot_tilingMakerViewer_pressed(int id)
 {
     config->tilingMakerViewer = static_cast<eTilingMakerView>(id);
-    if (config->viewerType == VIEW_TILIING_MAKER)
+    if (config->viewerType == VIEW_TILING_MAKER)
     {
         emit sig_viewWS();
     }
 }
 
-void page_control::slot_protoViewer_pressed(int id)
+void page_views::slot_protoViewer_pressed(int id)
 {
     config->protoViewer = static_cast<eProtoViewer>(id);
     if (config->viewerType == VIEW_PROTO)
@@ -519,7 +523,7 @@ void page_control::slot_protoViewer_pressed(int id)
     }
 }
 
-void page_control::slot_protoFeatureViewer_pressed(int id)
+void page_views::slot_protoFeatureViewer_pressed(int id)
 {
     config->protoFeatureViewer = static_cast<eProtoFeatureViewer>(id);
     if (config->viewerType == VIEW_PROTO_FEATURE)
@@ -528,7 +532,7 @@ void page_control::slot_protoFeatureViewer_pressed(int id)
     }
 }
 
-void  page_control::slot_figureViewer_pressed(int id)
+void  page_views::slot_figureViewer_pressed(int id)
 {
     config->figureViewer = static_cast<eFigureViewer>(id);
     if (config->viewerType == VIEW_FIGURE_MAKER)
@@ -537,7 +541,7 @@ void  page_control::slot_figureViewer_pressed(int id)
     }
 }
 
-void  page_control::slot_delViewer_pressed(int id)
+void  page_views::slot_delViewer_pressed(int id)
 {
     config->delViewer = static_cast<eDELViewer>(id);
     if (config->viewerType == VIEW_DEL)
@@ -546,7 +550,7 @@ void  page_control::slot_delViewer_pressed(int id)
     }
 }
 
-void  page_control::slot_mapEdView_pressed(int id)
+void  page_views::slot_mapEdView_pressed(int id)
 {
     config->mapEditorView = static_cast<eMapEditorView>(id);
     emit sig_mapEdSelection();
@@ -558,15 +562,20 @@ void  page_control::slot_mapEdView_pressed(int id)
 
 
 
-void  page_control::slot_selectViewer(int id, int id2)
+void  page_views::slot_selectViewer(int id, int id2)
 {
+    if (config->lockView)
+    {
+        return;
+    }
+
     selectView(id,id2);
 
     viewerGroup.button(id)->setChecked(true);
     emit viewerGroup.buttonClicked(id);
 }
 
-void  page_control::selectView(int id, int id2)
+void  page_views::selectView(int id, int id2)
 {
     eViewType vt = static_cast<eViewType>(id);
     switch (vt)
@@ -595,7 +604,7 @@ void  page_control::selectView(int id, int id2)
         tilingGroup.button(id2)->setChecked(true);
         emit tilingGroup.buttonClicked(id2);
         break;
-    case VIEW_TILIING_MAKER:
+    case VIEW_TILING_MAKER:
         tilingMakerGroup.button(id2)->setChecked(true);
         emit tilingMakerGroup.buttonClicked(id2);
         break;
@@ -608,7 +617,7 @@ void  page_control::selectView(int id, int id2)
     }
 }
 
-void page_control::slot_setSyle()
+void page_views::slot_setSyle()
 {
     selectView(VIEW_DESIGN,DV_LOADED_STYLE);
     selectView(VIEW_PROTO,PV_STYLE);
@@ -616,11 +625,11 @@ void page_control::slot_setSyle()
     selectView(VIEW_DEL,DEL_STYLES);
     selectView(VIEW_FIGURE_MAKER,FV_STYLE);
     selectView(VIEW_TILING,TV_STYLE);
-    selectView(VIEW_TILIING_MAKER,TD_STYLE);
+    selectView(VIEW_TILING_MAKER,TD_STYLE);
     selectView(VIEW_MAP_EDITOR,MED_STYLE);
 }
 
-void page_control::slot_setWS()
+void page_views::slot_setWS()
 {
     selectView(VIEW_DESIGN,DV_WS_STYLE);
     selectView(VIEW_PROTO,PV_WS);
@@ -628,6 +637,11 @@ void page_control::slot_setWS()
     selectView(VIEW_DEL,DEL_WS);
     selectView(VIEW_FIGURE_MAKER,FV_WS);
     selectView(VIEW_TILING,TV_WORKSPACE);
-    selectView(VIEW_TILIING_MAKER,TD_WORKSPACE);
+    selectView(VIEW_TILING_MAKER,TD_WORKSPACE);
     selectView(VIEW_MAP_EDITOR,MED_WS);
+}
+
+void  page_views::slot_lockViewClicked(bool enb)
+{
+    config->lockView = enb;
 }

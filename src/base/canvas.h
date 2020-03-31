@@ -29,28 +29,13 @@
 #include "base/cycler.h"
 #include "base/canvasSettings.h"
 #include "base/scene.h"
+#include "base/configuration.h"
 
-class Configuration;
 class Design;
 class Workspace;
 class Layer;
 class CanvasSettings;
 class WorkspaceViewer;
-
-enum eKbdMode
-{
-    KBD_MODE_TRANSFORM,
-    KBD_MODE_LAYER,
-    KBD_MODE_ZLEVEL,
-    KBD_MODE_STEP,
-    KBD_MODE_SEPARATION,
-    KBD_MODE_ORIGIN,
-    KBD_MODE_OFFSET,     // row/col offsets
-    KBD_MODE_BKGD,
-    KBD_MODE_DATA,
-    KBD_MODE_DEFAULT = KBD_MODE_TRANSFORM
-};
-
 class TiledPatternMaker;
 
 class Canvas : public QObject
@@ -81,12 +66,12 @@ public:
 
     void    saveImage();
 
-    void     procKeyEvent(QKeyEvent * k);    // not from View
+    bool     procKeyEvent(QKeyEvent * k);    // from View
+
     void     setKbdMode(eKbdMode mode);
-    eKbdMode getKbdMode() { return kbdMode; }
     QString  getKbdModeStr();
 
-    void           setCanvasSettings(CanvasSettings info);
+    void           useCanvasSettings(CanvasSettings & info);
     CanvasSettings getCanvasSettings() { return settings; }
 
     void    setMaxStep(int max);
@@ -113,9 +98,9 @@ signals:
     void sig_forceUpdateStyles();
     void sig_raiseMenu();
 
-public slots:
-    void slot_procKeyEvent(QKeyEvent * k);    // from view
+    void sig_kbdMode(eKbdMode);
 
+public slots:
     void slot_designReposition(qreal, qreal);
     void slot_designOffset(qreal, qreal);
     void slot_designOrigin(int, int);
@@ -135,8 +120,9 @@ private slots:
     void slot_nextStep();   // from timer
 
 protected:
-    void ProcKey(QKeyEvent *k, bool isALT);
+    bool ProcKey(QKeyEvent *k, bool isALT);
     bool ProcNavKey(int key, int multiplier, bool isALT);
+
     void ProcKeyLeft( int delta, bool isALT);
     void ProcKeyRight(int delta, bool isALT);
     void ProcKeyDown( int delta, bool isALT);
@@ -178,7 +164,6 @@ private:
 
     bool dragging;
 
-    eKbdMode kbdMode;
 };
 
 #endif // CANVAS_H

@@ -62,6 +62,7 @@ signals:
     void sig_takeNext();
     void sig_cyclerQuit();
     void sig_view_images();
+    void sig_close();
 };
 
 #endif // MISC_H

@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<Tiling version="2">
+	<Name>6.v1</Name>
+	<Fill>-8,6,-4,4</Fill>
+	<T1>2,0</T1>
+	<T2>1,1.732050807568877</T2>
+	<View>
+		<Scale>1</Scale>
+		<Rot>0</Rot>
+		<X>0</X>
+		<Y>0</Y>
+		<Center>481,600</Center>
+	</View>
+	<Feature type="regular" sides="6" rotation="90">
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Desc>The regular tiling by hexagons.</Desc>
+	<Auth>Craig S. Kaplan</Auth>
+</Tiling>

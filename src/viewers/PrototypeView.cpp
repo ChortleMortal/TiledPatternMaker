@@ -103,6 +103,15 @@ void ProtoView::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
     qDebug() << "PrototypeView::paint"  << Transform::toInfoString(tr);
     GeoGraphics gg(painter,tr);
     draw(&gg);
+
+    if (Layer::config->showCenter)
+    {
+        QPointF pt = getCenter();
+        qDebug() << "style layer center=" << pt;
+        painter->setPen(QPen(Qt::green,3));
+        painter->setBrush(QBrush(Qt::green));
+        painter->drawEllipse(pt,13,13);
+    }
 }
 
 void ProtoView::draw( GeoGraphics * gg )

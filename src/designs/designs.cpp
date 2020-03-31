@@ -193,7 +193,7 @@ bool Design8::build()
 
     // patern
     int gridWidth = 41;
-    config->fgdGridStepScreen = gridWidth;
+    config->gridStepScreen = gridWidth;
     qreal diameter = 20.0 * qreal(gridWidth);
 
     // positioning
@@ -244,7 +244,7 @@ bool Design9::build()
 
     // patern
     int gridWidth = 21;
-    config->fgdGridStepScreen = gridWidth;
+    config->gridStepScreen = gridWidth;
     qreal diameter = 20.0 * qreal(gridWidth);
 
     // positioning
@@ -290,10 +290,11 @@ bool DesignHuPacked::build()
     info.setSizeF(QSizeF(1794.0,1100.0));
 
     // patern
-    int gridWidth = 21;
-    config->fgdGridStepScreen = gridWidth;
-    qreal diameter = 20.0 * qreal(gridWidth);
-    info.setDiameter(diameter);
+    int igridWidth = 21;
+    config->gridStepScreen = igridWidth;
+
+    qreal gridWidth = 21.0;
+    qreal diameter  = 20.0 * gridWidth;
 
     // positioning
     //startTile = sceneRect().center();
@@ -304,11 +305,11 @@ bool DesignHuPacked::build()
 
     // pens
     QPen gridPen;
-    gridPen.setWidthF((qreal)gridWidth);
+    gridPen.setWidthF(gridWidth);
     gridPen.setColor(QColor(TileGold));
 
     QPen innerPen;
-    innerPen.setWidthF((qreal)gridWidth - 4.0);
+    innerPen.setWidthF(gridWidth - 4.0);
     innerPen.setColor(QColor(Qt::red));
 
     rows = 4;
@@ -320,9 +321,8 @@ bool DesignHuPacked::build()
     {
         for (int col=0; col < cols; col++)
         {
-            gridWidth = 21;
-            gridPen.setWidthF((qreal)gridWidth);
-            innerPen.setWidthF((qreal)gridWidth - 4.0);
+            gridPen.setWidthF(gridWidth);
+            innerPen.setWidthF(gridWidth - 4.0);
             PatternPtr pat = make_shared<PatternHuSymbol>(gridWidth,gridPen,innerPen, canvasColor,diameter,QBrush(Qt::NoBrush));
             pat->build();
             pat->setTilePosition(row,col);
@@ -348,9 +348,11 @@ bool DesignHuInsert::build()
     info.setSizeF(QSizeF(1794.0,1100.0));
 
     // patern
-    int gridWidth = 21;
-    config->fgdGridStepScreen = gridWidth;
-    qreal diameter = 20.0 * qreal(gridWidth);
+    int igridWidth = 21;
+    config->gridStepScreen = igridWidth;
+
+    qreal gridWidth = 21.0;
+    qreal diameter  = 20.0 * gridWidth;
 
     // positioning
     //startTile = sceneRect().center();
@@ -361,11 +363,11 @@ bool DesignHuInsert::build()
 
     // pens
     QPen gridPen;
-    gridPen.setWidthF((qreal)gridWidth);
+    gridPen.setWidthF(gridWidth);
     gridPen.setColor(QColor(TileGold));
 
     QPen innerPen;
-    innerPen.setWidthF((qreal)gridWidth - 4.0);
+    innerPen.setWidthF(gridWidth - 4.0);
     innerPen.setColor(QColor(Qt::blue));
 
     rows = 4;
@@ -376,9 +378,9 @@ bool DesignHuInsert::build()
         for (int col=0; col < cols; col++)
         {
             // smaller repeat, offset
-            gridWidth = 11;
-            gridPen.setWidthF((qreal)gridWidth);
-            innerPen.setWidthF((qreal)gridWidth - 4.0);
+            gridWidth = 11.0;
+            gridPen.setWidthF(gridWidth);
+            innerPen.setWidthF(gridWidth - 4.0);
             PatternPtr pat = make_shared<PatternHuSymbol>(gridWidth,gridPen,innerPen, canvasColor,diameter/2.0,QBrush(Qt::NoBrush));
             pat->build();
             pat->setTilePosition(row,col);
@@ -399,7 +401,7 @@ bool Design11::build()
 
     // patern
     int gridWidth = 41;
-    config->fgdGridStepScreen = gridWidth;
+    config->gridStepScreen = gridWidth;
     qreal diameter = 20.0 * qreal(gridWidth);
 
     // positioning
@@ -840,13 +842,11 @@ void DesignKumiko2::init()
         cols = 1;
         info.setStartTile(QPointF(400,400));
     }
-
-    info.setDiameter(2.0);
 }
 
 bool DesignKumiko2::build()
 {
-    PatternPtr pat = make_shared<PatternKumiko2>(info.getDiameter(), QBrush());
+    PatternPtr pat = make_shared<PatternKumiko2>(2.0, QBrush());
     pat->setLoc(info.getStartTile());        // needs to be done here since repeat is called after the map is created
     pat->fd.set(-5,5,-5,5);
     pat->trans1 = QPointF(2.0,0);

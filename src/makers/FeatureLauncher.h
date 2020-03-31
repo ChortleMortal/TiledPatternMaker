@@ -56,7 +56,7 @@ class FeatureLauncher : public QGridLayout
 public:
     FeatureLauncher();
 
-    FeatureBtnPtr   launchFromTiling(TilingPtr tiling , PrototypePtr proto);
+    FeatureBtnPtr   launchFromPrototype(PrototypePtr proto);
     FeatureBtnPtr   launchFromStyle(StylePtr style);
 
     FeatureBtnPtr   getCurrentButton() {return _current.lock(); }

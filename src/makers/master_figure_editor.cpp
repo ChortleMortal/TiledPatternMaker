@@ -45,7 +45,7 @@ MasterFigureEditor::MasterFigureEditor(FigureMaker * ed)
     figureMaker    = ed;
 
     // Explicit figure editors.
-    explicit_edit            = new ExplicitEditor(ed,"explcit_edit");
+    explicit_edit           = new ExplicitEditor(ed,"explcit_edit");
     explcit_infer_edit      = new ExplicitInferEditor(ed,"explcit_infer_edit");
     explict_star_edit       = new ExplicitStarEditor(ed,"explict_star_edit");
     explicit_rosette_edit   = new ExplicitRosetteEditor(ed,"explicit_rosette_edit");

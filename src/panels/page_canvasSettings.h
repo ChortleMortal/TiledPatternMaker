@@ -26,13 +26,14 @@
 #define PAGE_CANVAS_SETTINGS_H
 
 #include "panel_page.h"
+#include "panels/layout_transform.h"
 
 class page_canvasSettings : public panel_page
 {
     Q_OBJECT
 
 public:
-    page_canvasSettings(ControlPanel *panel);
+    page_canvasSettings(ControlPanel * apanel);
 
     void refreshPage() override;
     void onEnter() override;
@@ -40,20 +41,36 @@ public:
 signals:
 
 private slots:
+    void display();
+
     void setInfo();
+
     void pickBorderColor();
     void pickBorderColor2();
     void pickBackgroundColor();
     void settingsSelectionChanged(int);
     void borderChanged(int row);
 
+    void slot_loadBackground();
+    void slot_adjustBackground();
+    void slot_saveAdjustedBackground();
+    void slot_setBkgdXform();
+    void slot_setBkgd();
+
+    void slot_moveX(int amount);
+    void slot_moveY(int amount);
+    void slot_rotate(int amount);
+    void slot_scale(int amount);
+
 protected:
-    void display();
+    void displayBackgroundStatus();
     void setFromForm();
     void setBorderFromForm();
 
 private:
     void removeChildren(QTreeWidgetItem * parent);
+
+    class TilingMaker * tilingMaker;
 
     CanvasSettings  cSettings;      // local copy
 
@@ -64,12 +81,10 @@ private:
     QLineEdit * sizeEditH;
     QLineEdit * startEditX;
     QLineEdit * startEditY;
-    QLineEdit * diamEdit;
-    QLineEdit * scaleEdit;
     QLineEdit * bkColorEdit;
+    QLineEdit * imageEdit;
 
     QComboBox   borderType;
-
 
     QLineEdit * borderWidth;
     QLabel    * borderColorLabel[2];
@@ -79,6 +94,11 @@ private:
     QLabel  * line1;
     QLabel  * line2;
 
+    LayoutTransform bkgdLayout;
+
+    QCheckBox     * chk_showBkgd;
+    QCheckBox     * chk_adjustBkgd;
+    QCheckBox     * chk_xformBkgd;
 };
 
 #endif

@@ -30,10 +30,10 @@
 
 enum ppCols
 {
-    PP_LEFT,
-    PP_TOP,
     PP_SCALE,
     PP_ROT,
+    PP_LEFT,
+    PP_TOP,
     PP_LAYER_T,
     PP_CLEAR
 };
@@ -54,7 +54,6 @@ signals:
     void sig_originAbs(int x, int y);
 
 private slots:
-    void    setScale(int radius);
     void    set_sep(qreal);
     void    set_off(qreal);
     void    set_start(int);
@@ -67,7 +66,7 @@ protected:
     void    createLayerTable();
 
     void    updateDesignWidget();
-    void    updateLayerTable();
+    void    populateLayerTable();
     void    addLayerToTable(Layer * layer, int row);
 
 private:
@@ -76,7 +75,6 @@ private:
 
     SliderSet   * xSliderSet;
     SliderSet   * ySliderSet;
-    SliderSet   * scaleSliderSet;
     QSpinBox    * scaleSpin;
     QSpinBox    * xStart;
     QSpinBox    * yStart;

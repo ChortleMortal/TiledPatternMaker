@@ -65,7 +65,7 @@ MapPtr Star::buildUnit()
 
     unitMap = make_shared<Map>("star unit map");
 
-    const bool debug = true;
+    const bool debug = false;
 
     // s = number of intersects
     // d = angle (each integer is the next point around the star)
@@ -111,7 +111,7 @@ MapPtr Star::buildUnit()
         debugMap->insertDebugLine(a,b);
         debugMap->insertDebugLine(ar,br);
         QPointF mid = Intersect::getIntersection( a, b, ar, br );
-        debugMap->insertDebugMark(mid,"mid");
+        //debugMap->insertDebugMark(mid,"mid");
         points.push_back(mid);
     }
 
@@ -158,8 +158,9 @@ MapPtr Star::buildUnit()
         }
     }
 
-    //qDebug().noquote() << "Star: points =" << points.size() << unitMap->getInfo();
-    //unitMap->verify("Star::buildUnit",false);
+    unitMap->dumpMap(false);
+    //unitMap->verify("Star::buildUnit");
+
 
     // rotate
     qreal rotate = qDegreesToRadians(getFigureRotate());

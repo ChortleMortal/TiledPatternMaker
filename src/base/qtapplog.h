@@ -42,8 +42,8 @@ public:
     void logToStdErr(bool enable) { _logToStderr = enable; }
     void logToDisk(bool enable)   { _logToDisk   = enable; }
     void logToPanel(bool enable)  { _logToPanel  = enable; }
-    void copyLog(QString name);
-    void saveLog(QString name);
+    void logLines(bool enable)    { _logLines    = enable; }
+    void saveLog(QString to);
 
     static QString currentLogName;
 
@@ -61,9 +61,8 @@ private:
     static bool	_logToStderr;
     static bool _logToDisk;
     static bool _logToPanel;
+    static bool _logLines;
     static bool	_active;
-
-    QString path;
 
     QElapsedTimer elapseTimer;
 

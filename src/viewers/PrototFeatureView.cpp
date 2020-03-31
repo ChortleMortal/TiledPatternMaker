@@ -33,8 +33,8 @@ ProtoFeatureView::ProtoFeatureView(PrototypePtr proto) : Layer("ProtoFeatureView
     Q_ASSERT(proto);
     qDebug() << "ProtoFeatureView::constructor";
 
-    feature_interior = QColor(240, 240, 255);
-    feature_border   = QColor(140, 140, 160);
+    feature_interior = QColor(255, 217, 217, 127);
+    feature_border   = QColor(140, 140, 140);
 
     pp = proto;
     //proto->walk();
@@ -46,16 +46,16 @@ ProtoFeatureView::ProtoFeatureView(PrototypePtr proto) : Layer("ProtoFeatureView
     t1 = tiling->getTrans1();
     t2 = tiling->getTrans2();
 
-    for(auto i = tiling->getPlacedFeatures().begin(); i != tiling->getPlacedFeatures().end(); i++)
+    for(auto placedFeaturePtr : tiling->getPlacedFeatures())
     {
-        PlacedFeaturePtr pf = *i;
-        FeaturePtr feature  = pf->getFeature();
-        QTransform T        = pf->getTransform();
+        FeaturePtr feature  = placedFeaturePtr->getFeature();
+        QTransform T        = placedFeaturePtr->getTransform();
         FigurePtr fig       = proto->getFigure(feature );
 
         PlacedDesignElement rpf(feature,fig,T);
         rpfs.push_back(rpf);
     }
+
     forceRedraw();
 }
 
@@ -67,8 +67,8 @@ QRectF ProtoFeatureView::boundingRect() const
 
 void ProtoFeatureView::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-    Q_UNUSED(option);
-    Q_UNUSED(widget);
+    Q_UNUSED(option)
+    Q_UNUSED(widget)
     qDebug() << "ProtoFeatureView::paint";
 
     painter->setRenderHint(QPainter::Antialiasing ,true);
@@ -77,6 +77,15 @@ void ProtoFeatureView::paint(QPainter *painter, const QStyleOptionGraphicsItem *
     QTransform tr = getLayerTransform();
     GeoGraphics gg(painter,tr);
     draw(&gg);
+
+    if (Layer::config->showCenter)
+    {
+        QPointF pt = getCenter();
+        qDebug() << "style layer center=" << pt;
+        painter->setPen(QPen(Qt::green,3));
+        painter->setBrush(QBrush(Qt::green));
+        painter->drawEllipse(pt,13,13);
+    }
 }
 
 void ProtoFeatureView::draw( GeoGraphics * gg )
@@ -87,19 +96,22 @@ void ProtoFeatureView::draw( GeoGraphics * gg )
 
 void ProtoFeatureView::receive(GeoGraphics *gg, int h, int v )
 {
-    for (int i=0; i < rpfs.size(); i++)
+    for (auto placedDesignElement : rpfs)
     {
-        PlacedDesignElement & rpf = rpfs[i];
-
-        QTransform T0 = rpf.getTransform();
         QPointF pt    = (t1 * static_cast<qreal>(h)) + (t2 * static_cast<qreal>(v));
-        QTransform T  = QTransform::fromTranslate(pt.x(),pt.y());
-        //T.composeD(T0);
-        T = T0 * T;
+        QTransform T0 = placedDesignElement.getTransform();
+        QTransform T1 = QTransform::fromTranslate(pt.x(),pt.y());
+        QTransform T2 = T0 * T1;
         //qDebug() << "T" << Transform::toInfoString(T);
 
-        PlacedDesignElementPtr pdep = make_shared<PlacedDesignElement>(rpf.getFeature(), rpf.getFigure(), T);
-        PlacedDesignElementView::drawPlacedDesignElement(gg, pdep,QPen(Qt::green,3), QBrush(feature_interior), QPen(feature_border,3));
+        PlacedDesignElementPtr pdep = make_shared<PlacedDesignElement>(placedDesignElement.getFeature(),
+                                                                       placedDesignElement.getFigure(),
+                                                                       T2);
+        PlacedDesignElementView::drawPlacedDesignElement(gg,
+                                                         pdep,
+                                                         QPen(Qt::green,3),
+                                                         QBrush(feature_interior),
+                                                         QPen(feature_border,3));
     }
 }
 

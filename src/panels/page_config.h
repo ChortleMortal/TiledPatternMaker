@@ -27,6 +27,9 @@
 
 #include "panel_page.h"
 
+class Canvas;
+class DoubleSpinSet;
+
 class page_config : public panel_page
 {
     Q_OBJECT
@@ -59,6 +62,13 @@ private slots:
     void    slot_verifyDumpClicked(bool enb);
     void    slot_verifyVerboseClicked(bool enb);
 
+    void    slot_gridModel_pressed(int idx);
+    void    slot_gridSpacingChanged(qreal value);
+    void    slot_gridWidthChanged(int value);
+    void    slot_showCenterChanged(int state);
+    void    slot_hideBackChanged(int state);
+    void    slot_centeredChanged(int state);
+
 protected:
     void  updatePaths();
 
@@ -76,6 +86,10 @@ private:
     QLineEdit   *le_newTile;
     QLineEdit   *le_rootImage;
     QLineEdit   *le_examples;
+
+    DoubleSpinSet * gridSpacing;
+
+    QButtonGroup  gridModelGroup;
 
 };
 

@@ -14,6 +14,7 @@ public:
     EdgePoly(QPolygonF & poly);
     EdgePoly(PolyPtr pp);
 
+    void     rotate(qreal angle);
     void     mapD(QTransform T);
     EdgePoly map(QTransform T);
 

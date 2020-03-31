@@ -28,12 +28,14 @@
 #include <QtCore>
 #include <QtGui>
 #include "base/shared.h"
+#include "tile/backgroundimage.h"
 
 class Configuration;
 class Workspace;
 class Pattern;
 class Border;
 class Canvas;
+struct ViewDefinition;
 
 class CanvasSettings
 {
@@ -42,18 +44,17 @@ public:
     CanvasSettings(const CanvasSettings & other);
     ~CanvasSettings();
 
-    void            init();
-
-    bool            isDifferent(CanvasSettings & other);
+    void            init2();
+    void            set(ViewDefinition * viewDef);
 
     void            setBorder(BorderPtr border);
     BorderPtr       getBorder() { return _border; }
 
-    void            setScale(qreal scale) { _scale = scale; }
-    qreal           getScale() { return _scale; }
-
     QColor          getBackgroundColor();
     void            setBackgroundColor(QColor color);
+
+    void            setBkgdImage(BkgdImgPtr bkImage) { _bkgdImage = bkImage; }
+    BkgdImgPtr      getBkgdImage() { return  _bkgdImage; }
 
     void            setSizeF(QSizeF size);
     QSizeF          getSizeF() { return _sceneSize; }
@@ -63,18 +64,16 @@ public:
     QPointF         getStartTile();
     void            setStartTile(QPointF pt);
 
-    void            setDiameter(qreal diameter) { _diameter = diameter; }
-    qreal           getDiameter() { return _diameter; }
-
     QPointF         getCenter() { return getRectF().center(); }
+
+    void            dump();
 
 private:
     QColor          _bkgdColor;     // used by canvas
+    BkgdImgPtr      _bkgdImage;
     QSizeF          _sceneSize;     // used by canvas
 
-    qreal           _scale;
     BorderPtr       _border;
-    qreal           _diameter;
     QPointF         _startTile;
 };
 

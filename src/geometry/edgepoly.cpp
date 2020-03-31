@@ -1,6 +1,7 @@
 #include <QTransform>
 #include <QPainter>
 #include "geometry/edgepoly.h"
+#include "geometry/Transform.h"
 #include "base/utilities.h"
 #include "viewers/GeoGraphics.h"
 
@@ -35,20 +36,28 @@ void EdgePoly::init(QPolygonF & poly)
     push_back(make_shared<Edge>(v1,v));
 }
 
+void EdgePoly::rotate(qreal angle)
+{
+    QTransform T = QTransform().rotate(angle);
+    mapD(T);
+}
+
 void EdgePoly::mapD(QTransform T)
 {
-    EdgePoly newp;
     for (auto it = begin(); it != end(); it++)
     {
         EdgePtr e = *it;
         VertexPtr v1 = e->getV1();
-        VertexPtr v2 = e->getV2();
         v1->setPosition(T.map(v1->getPosition()));
-        v2->setPosition(T.map(v2->getPosition()));
+    }
+
+    for (auto it = begin(); it != end(); it++)
+    {
+        EdgePtr e = *it;
         if (e->getType() == EDGE_CURVE)
         {
             QPointF p3 = e->getArcCenter();
-            v2->setPosition(T.map(p3));
+            e->setArcCenter(T.map(p3),e->isConvex());
         }
     }
 }

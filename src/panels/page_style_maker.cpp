@@ -111,7 +111,7 @@ void  page_style_maker::refreshPage()
         QTableWidgetItem * item = styleTable->item(row,STYLE_COL_TRANS);
         if (item)
         {
-            Xform xf = style->getDeltas();
+            Xform xf = style->getLayerXform();
             item->setText(xf.toInfoString());
         }
         row++;

@@ -80,11 +80,13 @@ Interlace:: ~Interlace()
 #endif
 }
 
+
 // Style overrides.
+
 void Interlace::resetStyleRepresentation()
 {
     Thick::resetStyleRepresentation();
-    pts.erase(pts.begin(),pts.end());
+    pts.clear();
 }
 
 void Interlace::createStyleRepresentation()
@@ -94,152 +96,53 @@ void Interlace::createStyleRepresentation()
         return;
     }
 
-    setupStyleMap();
+    MapPtr map = setupStyleMap();
+    map->dumpMap(false);
+    map->verifyMap("interlace stylemapA");
+
+    if (colors.size() > 1)
+    {
+        map->setTmpIndices();
+        map->sortAllNeighboursByAngle();
+        map->verifyMap("interlace stylemapB");
+
+        threads.findThreads(map);
+        threads.assignColors(colors);
+    }
 
     assignInterlacing();
+    map->dumpMap(false);
 
     // Given the interlacing assignment created above, we can
     // use the beefy getPoints routine to extract the graphics
     // of the interlacing.
-
-    MapPtr map = getMap();
-    qDebug().noquote() << map->summary();
-
-    pts.resize(map->numEdges());
-    int index = 0;
 
     for (auto edge  : map->getEdges())
     {
         VertexPtr v1 = edge->getV1();
         VertexPtr v2 = edge->getV2();
 
-        segment * seg = &pts[index];
-        getPoints(map, edge, v1, v2, &seg->A);
-        getPoints(map, edge, v2, v1, &seg->B);
+        segment seg;
+        if (colors.size() > 1)
+        {
+            seg.c = edge->getInterlaceInfo().thread->color;
+        }
+        else
+        {
+            seg.c = colors.getFirstColor().color;
+        }
 
-        index += 1;
+        getPoints(map, edge, v1, v2, &seg.A);
+        getPoints(map, edge, v2, v1, &seg.B);
+        pts.push_back(seg);
     }
 
-    qDebug() << "interlace pts="  << index;
+    annotateEdges(map);
+
     map->verifyMap("interlace");
 }
 
-void Interlace::draw(GeoGraphics * gg)
-{
-    if (!isVisible())
-    {
-        return;
-    }
-
-    if (pts.size() == 0)
-    {
-        return;
-    }
-
-    gg->pushAndCompose(getLayerTransform());
-
-    QColor color = colors.getFirstColor().color;
-    QPen pen(color);
-    QBrush brush(color);
-
-    for(int idx = 0; idx < pts.size(); idx++)
-    {
-        QPolygonF poly = pts[idx].toPoly();
-        gg->drawPolygon(poly,pen,brush);
-    }
-
-    if ( shadow > 0.0)
-    {
-        qreal h,s,b;
-        color.getHsvF(&h,&s,&b);
-        QColor c;
-        c.setHsvF(h, s * 0.9, b * 0.8 );
-        QPen pen(c);
-        QBrush brush(c);
-
-        for (auto seg : pts)
-        {
-            if (seg.A.shadow)
-            {
-                QPolygonF shadowPts1;
-                shadowPts1 << (seg.A.above + getShadowVector(seg.A.above, seg.B.below));
-                shadowPts1 <<  seg.A.above;
-                shadowPts1 <<  seg.A.below;
-                shadowPts1 << (seg.A.below + getShadowVector(seg.A.below, seg.B.above));
-                gg->drawPolygon(shadowPts1,pen,brush);
-            }
-            if (seg.B.shadow)
-            {
-                QPolygonF shadowPts2;
-                shadowPts2 << (seg.B.below + getShadowVector(seg.B.below, seg.A.above));
-                shadowPts2 <<  seg.B.below;
-                shadowPts2 <<  seg.B.above;
-                shadowPts2 << (seg.B.above + getShadowVector(seg.B.above, seg.A.below));
-                gg->drawPolygon(shadowPts2,pen,brush);
-            }
-        }
-    }
-
-    if ( draw_outline )
-    {
-        QPen pen(Qt::black);
-        for(auto seg : pts)
-        {
-            gg->drawLine(seg.A.above, seg.B.below, pen);
-            gg->drawLine(seg.B.above, seg.A.below, pen);
-        }
-    }
-    gg->pop();
-
-}
-
-qreal Interlace::getGap()
-{
-    return gap;
-}
-
-void Interlace::setGap(qreal gap )
-{
-    this->gap = gap;
-    resetStyleRepresentation();
-}
-
-qreal Interlace::getShadow()
-{
-    return shadow;
-}
-
-void Interlace::setShadow(qreal shadow )
-{
-    this->shadow = shadow;
-    resetStyleRepresentation();
-}
-
-
-void Interlace::setIncludeTipVertices(bool include)
-{
-    includeTipVertices = include;
-    resetStyleRepresentation();
-}
-
 // Private magic to make it all happen.
-
-QPointF Interlace::getShadowVector(QPointF from, QPointF to)
-{
-    QPointF dir = to - from;
-    qreal magnitude = Point::mag(dir);
-    if ( shadow < magnitude )
-    {
-        dir *= (shadow / magnitude );
-    }
-    return dir;
-}
-
-qreal Interlace::capGap( QPointF p, QPointF base, qreal gap )
-{
-    qreal max_gap = Point::dist(p, base );
-    return (gap < max_gap) ? gap : max_gap;
-}
 
 void Interlace::getPoints(MapPtr map, EdgePtr  edge, VertexPtr from, VertexPtr to, piece * p)
 {
@@ -396,19 +299,18 @@ void Interlace::assignInterlacing()
     MapPtr map = getMap();
     for(auto edge : map->getEdges())
     {
-        interlaceInfo & ei = edge->getInterlaceInfo();
+        InterlaceInfo & ei = edge->getInterlaceInfo();
         if (!ei.visited )
         {
             ei.start_under = true;
             todo.push(edge);
             buildFrom();
-            qDebug().noquote() << map->summary();
+            map->dumpMap(false);
         }
     }
 }
 
-// Propagate the over-under relation from an edge to its incident
-// vertices.
+// Propagate the over-under relation from an edge to its incident vertices.
 void Interlace::buildFrom()
 {
     qDebug() << "buildFrom";
@@ -416,7 +318,7 @@ void Interlace::buildFrom()
     while (!todo.empty())
     {
         EdgePtr edge = todo.pop();
-        interlaceInfo & ei = edge->getInterlaceInfo();
+        InterlaceInfo & ei = edge->getInterlaceInfo();
 
         VertexPtr v1 = edge->getV1();
         VertexPtr v2 = edge->getV2();
@@ -441,18 +343,18 @@ void Interlace::buildFrom()
 
 void Interlace::propagate(VertexPtr vertex, EdgePtr edge, bool edge_under_at_vert)
 {
-    interlaceInfo  & vi = vertex->getInterlaceInfo();
+    InterlaceInfo  & vi = vertex->getInterlaceInfo();
     vi.visited = true;
 
     NeighbourMap & nmap = getMap()->getNeighbourMap();
     NeighboursPtr np    = nmap.getNeighbours(vertex);
     int nn              = np->numNeighbours();
 
-    if( nn == 2)
+    if (nn == 2)
     {
         BeforeAndAfter  ba  = np->getBeforeAndAfter(edge);
         EdgePtr oe          = ba.before;
-        interlaceInfo & oei = oe->getInterlaceInfo();
+        InterlaceInfo & oei = oe->getInterlaceInfo();
 
         if( !oei.visited )
         {
@@ -475,7 +377,7 @@ void Interlace::propagate(VertexPtr vertex, EdgePtr edge, bool edge_under_at_ver
     else if (nn == 1 && includeTipVertices)
     {
         EdgePtr oe = np->getEdge(0);
-        interlaceInfo & oei = oe->getInterlaceInfo();
+        InterlaceInfo & oei = oe->getInterlaceInfo();
 
         if( !oei.visited )
         {
@@ -495,7 +397,7 @@ void Interlace::propagate(VertexPtr vertex, EdgePtr edge, bool edge_under_at_ver
             todo.push( oe );
         }
     }
-    else if( nn > 2 )
+    else if (nn > 2)
     {
         //Q_ASSERT(nn == 4);
         QVector<EdgePtr> ns;
@@ -520,7 +422,7 @@ void Interlace::propagate(VertexPtr vertex, EdgePtr edge, bool edge_under_at_ver
             EdgePtr oe = ns[cur];
             Q_ASSERT(oe);
 
-            interlaceInfo & oei = oe->getInterlaceInfo();
+            InterlaceInfo & oei = oe->getInterlaceInfo();
             if (!oei.visited)
             {
                 if( oe->getV1() == vertex)
@@ -540,9 +442,97 @@ void Interlace::propagate(VertexPtr vertex, EdgePtr edge, bool edge_under_at_ver
     }
 }
 
+
+
+void Interlace::draw(GeoGraphics * gg)
+{
+    if (!isVisible())
+    {
+        return;
+    }
+
+    if (pts.size() == 0)
+    {
+        return;
+    }
+
+    for (auto seg : pts)
+    {
+        QColor c = seg.c;
+        QPen pen(c);
+        QBrush brush(c);
+
+        QPolygonF poly = seg.toPoly();
+        gg->drawPolygon(poly,pen,brush);
+    }
+
+    if ( shadow > 0.0)
+    {
+        for (auto seg : pts)
+        {
+            QColor color = seg.c;
+            qreal h,s,b;
+            color.getHsvF(&h,&s,&b);
+            QColor c;
+            c.setHsvF(h, s * 0.9, b * 0.8 );
+            QPen pen(c);
+            QBrush brush(c);
+
+            if (seg.A.shadow)
+            {
+                QPolygonF shadowPts1;
+                shadowPts1 << (seg.A.above + getShadowVector(seg.A.above, seg.B.below));
+                shadowPts1 <<  seg.A.above;
+                shadowPts1 <<  seg.A.below;
+                shadowPts1 << (seg.A.below + getShadowVector(seg.A.below, seg.B.above));
+                gg->drawPolygon(shadowPts1,pen,brush);
+            }
+            if (seg.B.shadow)
+            {
+                QPolygonF shadowPts2;
+                shadowPts2 << (seg.B.below + getShadowVector(seg.B.below, seg.A.above));
+                shadowPts2 <<  seg.B.below;
+                shadowPts2 <<  seg.B.above;
+                shadowPts2 << (seg.B.above + getShadowVector(seg.B.above, seg.A.below));
+                gg->drawPolygon(shadowPts2,pen,brush);
+            }
+        }
+    }
+
+    if ( draw_outline )
+    {
+        QPen pen(Qt::black);
+        for(auto seg : pts)
+        {
+            gg->drawLine(seg.A.above, seg.B.below, pen);
+            gg->drawLine(seg.B.above, seg.A.below, pen);
+        }
+    }
+}
+
+
+QPointF Interlace::getShadowVector(QPointF from, QPointF to)
+{
+    QPointF dir = to - from;
+    qreal magnitude = Point::mag(dir);
+    if ( shadow < magnitude )
+    {
+        dir *= (shadow / magnitude );
+    }
+    return dir;
+}
+
+qreal Interlace::capGap( QPointF p, QPointF base, qreal gap )
+{
+    qreal max_gap = Point::dist(p, base );
+    return (gap < max_gap) ? gap : max_gap;
+}
+
 QPolygonF segment::toPoly()
 {
     QPolygonF p;
     p <<  A.below <<  A.cen <<  A.above <<  B.below <<  B.cen <<  B.above;
     return p;
 }
+
+

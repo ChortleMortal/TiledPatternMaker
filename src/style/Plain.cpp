@@ -85,14 +85,11 @@ void Plain::draw(GeoGraphics *gg)
         return;
     }
 
-    gg->pushAndCompose(getLayerTransform());
     QPen pen(colors.getNextColor().color);
 
     for (auto edge : map->getEdges())
     {
         gg->drawEdge(edge,pen);
     }
-
-    gg->pop();
 }
 

@@ -58,14 +58,33 @@ Map::Map(QString Name) : neighbourMap(this)
     config = Configuration::getInstance();
 }
 
-Map::Map(MapPtr map) : neighbourMap(this)
+Map::Map(const Map & map)  : neighbourMap(this)
 {
-    mname        = "copy of "  + map->mname;
-    vertices     = map->vertices;
-    edges        = map->edges;
-    neighbourMap = map->neighbourMap;
+    mname        = "copy of "  + map.mname;
+    vertices     = map.vertices;
+    edges        = map.edges;
 
-    config = Configuration::getInstance();
+    neighbourMap = map.neighbourMap;    // fetches identical copy
+    // now we have it, we can make another local copy
+    NeighbourMap others = neighbourMap;
+    // reset our copy
+    neighbourMap.clear();
+
+    // rebuild a new neighbour map
+    QMap<VertexPtr,NeighboursPtr> & ourmap =neighbourMap.get();
+    QMapIterator<VertexPtr,NeighboursPtr> i(others.get());
+    while (i.hasNext())
+    {
+        i.next();
+        VertexPtr v = i.key();
+        NeighboursPtr np = i.value();
+        NeighboursPtr nnp = make_shared<Neighbours>(v);
+        for (auto edge : np->getNeighbours())
+        {
+            nnp->insertEdgeSimple(edge);
+        }
+        ourmap[v] = nnp;
+    }
 }
 
 Map::~Map()
@@ -205,18 +224,24 @@ EdgePtr Map::insertEdge(VertexPtr v1, VertexPtr v2, bool debug)
     Q_ASSERT(vertices.contains(v2));
 
     EdgePtr e = make_shared<Edge>(v1, v2);
+
+    insertEdge(e,debug);
+
+    return e;
+}
+
+void Map::insertEdge(EdgePtr e, bool debug)
+{
     insertEdge_Simple(e);
 
-    neighbourMap.insertNeighbour(v1,e);
-    neighbourMap.insertNeighbour(v2,e);
+    neighbourMap.insertNeighbour(e->getV1(),e);
+    neighbourMap.insertNeighbour(e->getV2(),e);
 
     if (debug)
     {
-        insertDebugMark(v1->getPosition(),QString());
-        insertDebugMark(v2->getPosition(),QString());
+        insertDebugMark(e->getV1()->getPosition(),QString());
+        insertDebugMark(e->getV2()->getPosition(),QString());
     }
-
-    return e;
 }
 
 
@@ -365,17 +390,81 @@ MapPtr Map::recreate()
     return ret;
 }
 
+MapPtr Map::compress()
+{
+    const Map & cmap = *this;
+    MapPtr m = make_shared<Map>(cmap);
+    m->dumpMap(false);
+    m->setTmpIndices();
+
+    bool changed = false;
+    do
+    {
+        changed = m->joinOneColinearEdgeIgnoringIntersects();
+    } while (changed);
+
+    m->dumpMap(false);
+    return m;
+}
+
+bool Map::joinOneColinearEdgeIgnoringIntersects()
+{
+    for (auto edge : edges)
+    {
+        for (auto edge2 : edges)
+        {
+            if (edge2 == edge)
+                continue;
+
+            if (edge2->isColinearAndTouching(edge))
+            {
+                joinEdges(edge,edge2);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+void Map::joinEdges(EdgePtr e1, EdgePtr e2)
+{
+    // find common vertex
+    VertexPtr comV;
+    if (e2->contains(e1->getV1()))
+        comV = e1->getV1();
+    else if (e2->contains(e1->getV2()))
+        comV = e1->getV2();
+    Q_ASSERT(comV);
+
+#if 0
+    combineLinearEdges(e1,e2,comV);
+#else
+    VertexPtr v1 = e1->getOtherV(comV);
+    VertexPtr v2 = e2->getOtherV(comV);
+
+    // make new Edge
+    EdgePtr e = make_shared<Edge>(v2,v1);
+    e->setTmpEdgeIndex(e1->getTmpEdgeIndex() + 100);
+    insertEdge(e);
+
+    // delete other edge and vertex
+    removeEdge(e1);
+    removeEdge(e2);
+    //qDebug() << "Joined" << e1->getTmpEdgeIndex() << "to" << e2->getTmpEdgeIndex() << "making" << e->getTmpEdgeIndex();
+#endif
+
+}
+
+
 void Map::cleanCopy()
 {
-    for (auto v = vertices.begin(); v != vertices.end(); v++)
+    for (auto vert : vertices)
     {
-        VertexPtr vert = *v;
         vert->copy.reset();
     }
 }
 
 // Routines used for spatial sorting of edges and vertices.
-
 
 int Map::lexCompareEdges( qreal a, qreal b )
 {
@@ -1298,6 +1387,7 @@ void Map::deDuplicateEdges(QVector<EdgePtr> & vec)
 }
 
 // Print a text version of the map.
+
 QString Map::summary()
 {
     QString str = QString("vertices=%1 edges=%2").arg(vertices.size()).arg(edges.size());
@@ -1306,7 +1396,7 @@ QString Map::summary()
 
 void Map::dumpMap(bool full)
 {
-    qDebug() << "vertices =" << vertices.size() << "edges = " << edges.size();
+    qDebug() << "vertices =" << vertices.size() << "edges =" << edges.size() << "neighbours =" << neighbourMap.size();
 
     if (full)
     {
@@ -1379,7 +1469,7 @@ void Map::dumpEdges(bool full)
     for( int idx = 0; idx < edges.size(); ++idx )
     {
         EdgePtr edge = edges.at(idx);
-        qDebug() << ((edge->getType() == EDGE_LINE) ? "Line" : "Curve") << "edge" << idx << "from" << vertices.indexOf(edge->getV1()) << "to"  << vertices.indexOf(edge->getV2());
+        qDebug() << ((edge->getType() == EDGE_LINE) ? "Line" : "Curve") << "edge" << idx  << Utils::addr(edge.get())<< "from" << vertices.indexOf(edge->getV1()) << "to"  << vertices.indexOf(edge->getV2());
     }
 }
 

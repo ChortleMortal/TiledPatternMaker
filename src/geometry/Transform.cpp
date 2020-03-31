@@ -34,7 +34,12 @@
 #include "geometry/Transform.h"
 #include <QtCore>
 
-QTransform Transform::rotateAroundPoint( QPointF pt, qreal t )
+QTransform Transform::scaleAroundPoint(QPointF pt, qreal t)
+{
+    return (QTransform::fromTranslate(-pt.x(),-pt.y()) * (QTransform::fromScale(t,t) * QTransform().translate(pt.x(), pt.y())));
+}
+
+QTransform Transform::rotateAroundPoint(QPointF pt, qreal t)
 {
     return (QTransform::fromTranslate(-pt.x(),-pt.y()) * (QTransform().rotateRadians(t) * QTransform().translate(pt.x(), pt.y())));
 }

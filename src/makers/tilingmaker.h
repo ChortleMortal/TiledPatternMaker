@@ -51,13 +51,14 @@ class TilingMaker : public TilingMakerView
 public:
     static TilingMaker * getInstance();
 
-    void      setTiling(TilingPtr tiling);
     TilingPtr getTiling() { return _tiling; }
+
+    bool procKeyEvent(QKeyEvent * k);
 
     void draw(GeoGraphics * g2d) override;
     void viewRectChanged();
 
-    void clearDesignerData();
+    void clearMakerData();
     void updatePlacedFeaturesFromData();
     QString  getStatus();
 
@@ -100,21 +101,22 @@ signals:
     void sig_current_feature(int fIndex);
 
 public slots:
+    TilingPtr slot_setTiling();
+
     void updatePolygonSides(int number);
+    void updatePolygonRot(qreal angle);
     void setMouseMode(eMouseMode mode);
     void addRegularPolygon();
     void fillUsingTranslations();
     void removeExcluded();
     void excludeAll();
-    void clearTranslation();
+    void clearTranslationVectors();
     void hide(bool state);
     void setFeatureEditPoint(QPointF pt);
     void setConvexEdge(bool convex);
     void slot_showOverlaps(bool checked);
-    void slot_xformMode_changed(int row);
 
-    void slot_procKeyEvent(QKeyEvent *k);
-    void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn);
+    void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
     void slot_mouseDragged(QPointF spt);
     void slot_mouseReleased(QPointF spt);
     void slot_mouseMoved(QPointF spt);
@@ -126,7 +128,7 @@ protected slots:
     void slot_copyMoveFeature();
 
 protected:
-    void setupDesigner(TilingPtr tiling);
+    void setupMaker();
     void addInTiling(PlacedFeaturePtr pf);
     void removeFromInTiling(PlacedFeaturePtr pf);
 
@@ -168,6 +170,7 @@ private:
     QPointF             menuSpt;
 
     int         poly_side_count;            // number of selected vertices when drawing polygons.
+    qreal       poly_rotation;              // regular polygon feature rotation
     bool        convex;                     // used when creating a curved edge
 
     // Translation vector so that the tiling tiles the plane.

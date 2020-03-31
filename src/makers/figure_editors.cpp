@@ -140,12 +140,14 @@ void StarEditor::resetWithFigure(FigurePtr fig)
     if (!star)
     {
         int n = 6;  // default
+        qreal rotate = 0.0;
         RadialPtr rp = std::dynamic_pointer_cast<RadialFigure>(fig);
         if (rp)
         {
             n = rp->getN();
+            rotate = rp->getFigureRotate();
         }
-        star = make_shared<Star>(*fig.get(), n, n <=6 ? n / 3.0 : 3.0, 2 );
+        star = make_shared<Star>(*fig.get(), n, n <=6 ? n / 3.0 : 3.0, 2, rotate);
     }
 
     Q_ASSERT(star);
@@ -234,13 +236,15 @@ void RosetteEditor::resetWithFigure(FigurePtr fig)
     rosette = std::dynamic_pointer_cast<Rosette>(fig);
     if (!rosette)
     {
-        int n=6;  // default
+        int n = 6;  // default
+        qreal rotate = 0.0;
         RadialPtr rp = std::dynamic_pointer_cast<RadialFigure>(fig);
         if (rp)
         {
             n = rp->getN();
+            rotate = rp->getFigureRotate();
         }
-        rosette = make_shared<Rosette>(*fig.get(), n, 0.0, 3);
+        rosette = make_shared<Rosette>(*fig.get(), n, 0.0, 3, 0.0, rotate);
     }
 
     Q_ASSERT(rosette);
@@ -319,13 +323,15 @@ void ConnectStarEditor::resetWithFigure(FigurePtr fig)
     starConnect = std::dynamic_pointer_cast<StarConnectFigure>(fig);
     if (!starConnect)
     {
-        int n=6;  // default
+        int n = 6;  // default
+        qreal rotate = 0.0;
         RadialPtr rp = std::dynamic_pointer_cast<RadialFigure>(fig);
         if (rp)
         {
             n = rp->getN();
+            rotate = rp->getFigureRotate();
         }
-        starConnect = make_shared<StarConnectFigure>(*fig.get(),n, n <= 6 ? n / 3.0 : 3.0, 2);
+        starConnect = make_shared<StarConnectFigure>(*fig.get(),n, n <= 6 ? n / 3.0 : 3.0, 2, rotate);
     }
 
     Q_ASSERT(starConnect);
@@ -373,12 +379,14 @@ void ConnectRosetteEditor::resetWithFigure(FigurePtr fig)
     if (!rosetteConnect)
     {
         int n = 6;  // default
+        qreal rotate = 0.0;
         RadialPtr rp = std::dynamic_pointer_cast<RadialFigure>(fig);
         if (rp)
         {
             n = rp->getN();
+            rotate = rp->getFigureRotate();
         }
-        rosetteConnect = make_shared<RosetteConnectFigure>(* fig.get(), n, 0.0, 3);
+        rosetteConnect = make_shared<RosetteConnectFigure>(* fig.get(), n, 0.0, 3, 0.0, rotate);
     }
 
     Q_ASSERT(rosetteConnect);
@@ -430,12 +438,14 @@ void ExtendedStarEditor::resetWithFigure(FigurePtr fig)
     if (!extended)
     {
         int  n = 6;  // default
+        qreal rotate = 0.0;
         RadialPtr rp = std::dynamic_pointer_cast<RadialFigure>(fig);
         if (rp)
         {
             n = rp->getN();
+            rotate = rp->getFigureRotate();
         }
-        extended = make_shared<ExtendedStar>(*fig.get(), n, n <= 6 ? n / 3.0 : 3.0, 2);
+        extended = make_shared<ExtendedStar>(*fig.get(), n, n <= 6 ? n / 3.0 : 3.0, 2, rotate);
     }
 
     Q_ASSERT(extended);
@@ -512,13 +522,15 @@ void ExtendedRosetteEditor::resetWithFigure(FigurePtr fig)
     extended = std::dynamic_pointer_cast<ExtendedRosette>(fig);
     if (!extended)
     {
-        int n=6;  // default
+        int n = 6;  // default
+        qreal rotate = 0.0;
         RadialPtr rp = std::dynamic_pointer_cast<RadialFigure>(fig);
         if (rp)
         {
             n = rp->getN();
+            rotate = rp->getFigureRotate();
         }
-        extended = make_shared<ExtendedRosette>(*fig.get(), n, 0.0, 3);
+        extended = make_shared<ExtendedRosette>(*fig.get(), n, 0.0, 3, 0, rotate);
     }
 
     Q_ASSERT(extended);
