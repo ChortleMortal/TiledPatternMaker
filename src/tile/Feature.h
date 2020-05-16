@@ -55,7 +55,7 @@ public:
     Feature(int n, qreal rotate);           // Create an n-sided regular polygon with a vertex at (1,0).
     Feature(EdgePoly epoly, qreal rotate);
     Feature(const FeaturePtr other );
-    ~Feature() { epoly.clear(); }
+    ~Feature();
 
     void reset();
 
@@ -65,15 +65,21 @@ public:
 
     bool equals(const FeaturePtr other);
 
+
     EdgePoly  & getEdgePoly()      { return epoly;}             // must be ref so can change
     QPolygonF   getPolygon()       { return epoly.getPoly(); }
     QPolygonF   getPoints()        { return epoly.getPoly(); }
     int         numPoints()        { return epoly.size(); }
-    QPointF     getCenter();
+    int         numSides()         { return epoly.size(); }
     ColorSet &  getBkgdColors()    { return bkgdColors; }
+    void        setRotation(qreal rot);
     qreal       getRotation()      { return rotation; }
+    QPointF     getCenter();
 
     QString     toString() const;
+    QString     info();
+
+    static int refs;
 
 private:
     bool             regular;

@@ -1,0 +1,151 @@
+<?xml version="1.0"?>
+<vector id="1" version="5">
+	<design>
+		<size>
+			<width>1500</width>
+			<height>1100</height>
+		</size>
+		<background>
+			<color>#ffc2bcb0</color>
+		</background>
+	</design>
+	<style.Filled id="2" serialization="custom">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,-1.77635683940025e-15</center>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<boundary id="3">
+				<pts id="4">
+					<Point id="5">
+						<x>-10</x>
+						<y>-10</y>
+					</Point>
+					<Point id="6">
+						<x>-10</x>
+						<y>10</y>
+					</Point>
+					<Point id="7">
+						<x>10</x>
+						<y>10</y>
+					</Point>
+					<Point id="8">
+						<x>10</x>
+						<y>-10</y>
+					</Point>
+				</pts>
+			</boundary>
+			<prototype id="9" serialization="custom">
+				<app.Prototype>
+					<string>8</string>
+					<entry>
+						<tile.Feature id="10">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<edges id="11">
+								<Line>
+									<Point id="12">1,0.4142135623730951</Point>
+									<Point id="13">0.4142135623730951,1</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point id="14">-0.414213562373095,1</Point>
+								</Line>
+								<Line>
+									<Point reference="14" />
+									<Point id="15">-1,0.4142135623730952</Point>
+								</Line>
+								<Line>
+									<Point reference="15" />
+									<Point id="16">-1,-0.4142135623730949</Point>
+								</Line>
+								<Line>
+									<Point reference="16" />
+									<Point id="17">-0.4142135623730957,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="17" />
+									<Point id="18">0.4142135623730953,-0.9999999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="18" />
+									<Point id="19">0.9999999999999998,-0.4142135623730958</Point>
+								</Line>
+								<Line>
+									<Point reference="19" />
+									<Point reference="12" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<ExtendedRosette id="20" extendPeripherals="f" extendFreeVertices="f" connectBoundaryVertices="f">
+							<n>8</n>
+							<q>0.6000000000000003</q>
+							<s>3</s>
+							<k>0.78</k>
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1.08</figureScale>
+							<r>22.5</r>
+						</ExtendedRosette>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<ColorBlacks>
+			<color hide="f">#ffffff00</color>
+			<color hide="f">#ffffaa7f</color>
+		</ColorBlacks>
+		<ColorWhites>
+			<color hide="f">#ffffff00</color>
+			<color hide="f">#ffa35807</color>
+		</ColorWhites>
+		<ColorGroup>
+			<Group hideSet="f">
+				<color hide="f">#ffffe05b</color>
+				<color hide="f">#ff34554a</color>
+				<color hide="f">#ffa35807</color>
+			</Group>
+		</ColorGroup>
+		<style.Filled>
+			<draw__inside>true</draw__inside>
+			<draw__outside>false</draw__outside>
+			<algorithm>3</algorithm>
+		</style.Filled>
+	</style.Filled>
+	<style.Thick id="21" serialization="custom">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,-1.77635683940025e-15</center>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<boundary reference="3" />
+			<prototype reference="9" />
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff1496d2</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>true</draw__outline>
+			<width>0.03</width>
+		</style.Thick>
+	</style.Thick>
+	<style.TileColors id="22" serialization="custom">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,-1.77635683940025e-15</center>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<boundary reference="3" />
+			<prototype reference="9" />
+		</style.Style>
+	</style.TileColors>
+</vector>

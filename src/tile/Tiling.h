@@ -83,7 +83,7 @@ public:
     PlacedFeaturePtr          getPlacedFeature(int idx) { return placed_features[idx]; }
     QList<PlacedFeaturePtr> & getPlacedFeatures()       { return placed_features; }
     int                       countPlacedFeatures() const { return placed_features.size(); }
-    QList<FeaturePtr>         getUniqueFeatures();    // unique features
+    QVector<FeaturePtr>       getUniqueFeatures();    // unique features
 
     void        setTrans1(QPointF pt) { t1=pt; }
     void        setTrans2(QPointF pt) { t2=pt; }
@@ -99,6 +99,11 @@ public:
     BkgdImgPtr  getBackground() { return bkgd; }
 
     QString     dump() const;
+
+    void        setDirty(bool dirty) { this->dirty = dirty; }
+    bool        isDirty() { return dirty; }
+
+    static int  refs;
 
 protected:
     void    setEdgePoly(QTextStream & ts, EdgePoly & epoly);
@@ -127,6 +132,7 @@ private:
 
     BkgdImgPtr  bkgd;
 
+    bool        dirty;
     QMap<VertexPtr,int>   vertex_ids;
     int         refId;
 };

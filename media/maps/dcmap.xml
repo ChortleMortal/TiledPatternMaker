@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+<vector id="1" version="5">
+	<map id="2">
+		<vertices id="3">
+			<Vertex id="4">
+				<pos>-6.333333333333333,-2.244444444444444</pos>
+			</Vertex>
+			<Vertex id="5">
+				<pos>-5.622222222222222,5.155555555555557</pos>
+			</Vertex>
+			<Vertex id="6">
+				<pos>-4.577777777777778,2.444444444444445</pos>
+			</Vertex>
+			<Vertex id="7">
+				<pos>0.3777777777777782,6.466666666666669</pos>
+			</Vertex>
+			<Vertex id="8">
+				<pos>0.8222222222222229,-2.688888888888888</pos>
+			</Vertex>
+			<Vertex id="9">
+				<pos>1.311111111111112,-5.622222222222222</pos>
+			</Vertex>
+			<Vertex id="10">
+				<pos>4.644444444444446,3.800000000000001</pos>
+			</Vertex>
+			<Vertex id="11">
+				<pos>6.022222222222222,6.822222222222223</pos>
+			</Vertex>
+			<Vertex id="12">
+				<pos>7.355555555555558,0.8888888888888893</pos>
+			</Vertex>
+		</vertices>
+		<edges id="13">
+			<Edge id="14">
+				<v1 reference="5" />
+				<v2 reference="4" />
+			</Edge>
+			<Edge id="15">
+				<v1 reference="4" />
+				<v2 reference="9" />
+			</Edge>
+			<Edge id="16">
+				<v1 reference="7" />
+				<v2 reference="5" />
+			</Edge>
+			<Edge id="17">
+				<v1 reference="10" />
+				<v2 reference="6" />
+			</Edge>
+			<Edge id="18">
+				<v1 reference="6" />
+				<v2 reference="8" />
+			</Edge>
+			<Edge id="19">
+				<v1 reference="11" />
+				<v2 reference="7" />
+			</Edge>
+			<Edge id="20">
+				<v1 reference="8" />
+				<v2 reference="10" />
+			</Edge>
+			<Edge id="21">
+				<v1 reference="9" />
+				<v2 reference="12" />
+			</Edge>
+			<Edge id="22">
+				<v1 reference="12" />
+				<v2 reference="11" />
+			</Edge>
+		</edges>
+		<neighbours>
+			<neighbourset reference="8">20,18</neighbourset>
+			<neighbourset reference="12">22,21</neighbourset>
+			<neighbourset reference="9">21,15</neighbourset>
+			<neighbourset reference="11">22,19</neighbourset>
+			<neighbourset reference="10">17,20</neighbourset>
+			<neighbourset reference="7">19,16</neighbourset>
+			<neighbourset reference="4">15,14</neighbourset>
+			<neighbourset reference="6">18,17</neighbourset>
+			<neighbourset reference="5">16,14</neighbourset>
+		</neighbours>
+	</map>
+</vector>

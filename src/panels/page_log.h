@@ -45,6 +45,7 @@ public:
     page_log(ControlPanel * cpanel);
 
     void onEnter() override;
+    void onExit() override {}
     void refreshPage() override;
 
 public slots:

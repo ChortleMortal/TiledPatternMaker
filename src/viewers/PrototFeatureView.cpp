@@ -23,7 +23,7 @@
  */
 
 #include "base/configuration.h"
-#include "base/canvas.h"
+#include "viewers/workspaceviewer.h"
 #include "viewers/ProtoFeatureView.h"
 #include "viewers/placeddesignelementview.h"
 #include "geometry/Point.h"
@@ -61,8 +61,8 @@ ProtoFeatureView::ProtoFeatureView(PrototypePtr proto) : Layer("ProtoFeatureView
 
 QRectF ProtoFeatureView::boundingRect() const
 {
-    Canvas * canvas = Canvas::getInstance();
-    return canvas->getCanvasSettings().getRectF();
+    QRectF rect = wsViewer->GetCanvasSettings().getCanvasRect();
+    return rect;
 }
 
 void ProtoFeatureView::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)

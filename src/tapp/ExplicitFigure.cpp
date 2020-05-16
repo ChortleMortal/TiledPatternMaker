@@ -24,35 +24,35 @@
 
 #include "tapp/ExplicitFigure.h"
 
-ExplicitFigure::ExplicitFigure(MapPtr map, eFigType figType)
+ExplicitFigure::ExplicitFigure(MapPtr map, eFigType figType, int sides)
     : Figure()
 {
     figureMap = map;
     setFigType(figType);
-    init();
+    init(sides);
 }
 
-ExplicitFigure::ExplicitFigure(const Figure &fig, MapPtr map, eFigType figType)
+ExplicitFigure::ExplicitFigure(const Figure &fig, MapPtr map, eFigType figType, int sides)
     : Figure(fig)
 {
     figureMap = map;
     setFigType(figType);
-    init();
+    init(sides);
 }
 
-ExplicitFigure::ExplicitFigure(const Figure & fig, eFigType figType)
+ExplicitFigure::ExplicitFigure(const Figure & fig, eFigType figType, int sides)
     : Figure(fig)
 {
     setFigType(figType);
-    init();
+    init(sides);
 }
 
 ExplicitFigure::~ExplicitFigure()
 {}
 
-void ExplicitFigure::init()
+void ExplicitFigure::init(int sides)
 {
-    sides = 10;          // girih + intersect + rosette + star
+    this->sides = sides;  // was sides = 10; // girih + intersect + rosette + star
     skip  = 3.0;         // girih
     d     = 2.0;         // hourglass + intersect + star
     s     = 1;           // hourglass + intersect + star

@@ -26,7 +26,6 @@
 #include "base/canvas.h"
 #include "base/configuration.h"
 #include "base/utilities.h"
-#include "base/misc.h"
 #include "base/tilingmanager.h"
 #include "base/workspace.h"
 #include "base/tiledpatternmaker.h"
@@ -1643,13 +1642,13 @@ void PatternKumiko2::build()
         t->setDescription("Kumiko2 translation vectors");
         t->setAuthor("David A. Casper");
 
-        workspace->setTiling(t);
+        workspace->setTiling(WS_TILING,t);
         workspace->saveTiling(tileName,t);
     }
 
     PrototypePtr proto = make_shared<Prototype>(t);
 
-    FigurePtr fp = make_shared<ExplicitFigure>(map,FIG_TYPE_EXPLICIT);
+    FigurePtr fp = make_shared<ExplicitFigure>(map,FIG_TYPE_EXPLICIT,10);
     QList<PlacedFeaturePtr> qlfp = t->getPlacedFeatures();
 
     DesignElementPtr dep = make_shared<DesignElement>(qlfp[0]->getFeature(),fp);

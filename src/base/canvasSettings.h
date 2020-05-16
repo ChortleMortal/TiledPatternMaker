@@ -29,13 +29,8 @@
 #include <QtGui>
 #include "base/shared.h"
 #include "tile/backgroundimage.h"
-
-class Configuration;
-class Workspace;
-class Pattern;
-class Border;
-class Canvas;
-struct ViewDefinition;
+#include "geometry/bounds.h"
+#include "configuration.h"
 
 class CanvasSettings
 {
@@ -44,8 +39,7 @@ public:
     CanvasSettings(const CanvasSettings & other);
     ~CanvasSettings();
 
-    void            init2();
-    void            set(ViewDefinition * viewDef);
+    void            clear();
 
     void            setBorder(BorderPtr border);
     BorderPtr       getBorder() { return _border; }
@@ -56,25 +50,47 @@ public:
     void            setBkgdImage(BkgdImgPtr bkImage) { _bkgdImage = bkImage; }
     BkgdImgPtr      getBkgdImage() { return  _bkgdImage; }
 
-    void            setSizeF(QSizeF size);
-    QSizeF          getSizeF() { return _sceneSize; }
-    QRectF          getRectF() { return QRectF(QPoint(0,0),_sceneSize); }
-    QRect           getRect()  { return getRectF().toAlignedRect(); }
+    void            setCanvasSize(QSizeF size);
+    QSizeF          getCanvasSize() { return _sceneSize; }
+    QRectF          getCanvasRect() { return QRectF(QPoint(0,0),_sceneSize); }
 
     QPointF         getStartTile();
     void            setStartTile(QPointF pt);
 
-    QPointF         getCenter() { return getRectF().center(); }
+    QPointF         getCenter() { return getCanvasRect().center(); }
 
-    void            dump();
+protected:
 
 private:
-    QColor          _bkgdColor;     // used by canvas
-    BkgdImgPtr      _bkgdImage;
-    QSizeF          _sceneSize;     // used by canvas
-
-    BorderPtr       _border;
+    QSizeF          _sceneSize;
+    QColor          _bkgdColor;
     QPointF         _startTile;
+    BkgdImgPtr      _bkgdImage;
+    BorderPtr       _border;
+};
+
+
+class ViewSettings
+{
+public:
+    ViewSettings();
+    ViewSettings(eViewType evt, Bounds bounds, QSize size);
+    void    init(eViewType evt, Bounds bounds, QSize size);
+
+    QTransform      getViewTransform() { return _t; }
+
+    void            setViewSize(QSize size);
+    QSize           getViewSize() { return  _viewSize; }
+    QRect           getViewRect() { return QRect(QPoint(0,0),_viewSize); }
+
+protected:
+    void            calculateViewTransform();
+
+private:
+    eViewType       _evt;
+    Bounds          _bounds;
+    QSize           _viewSize;
+    QTransform      _t;             // calculated
 };
 
 #endif

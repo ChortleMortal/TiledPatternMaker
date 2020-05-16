@@ -67,12 +67,11 @@ void  page_style_figure_info::refreshPage()
 void page_style_figure_info::showFiguresFromStyles()
 {
     int row = 0;
-
-    StyledDesign & sd = (config->designViewer == DV_LOADED_STYLE) ? workspace->getLoadedStyles() : workspace->getWsStyles();
-    const StyleSet & sset = sd.getStyleSet();
-    for (auto it = sset.begin(); it != sset.end(); it++)
+    eWsData wsdata      =  (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
+    StyledDesign & sd   = workspace->getStyledDesign(wsdata);
+    const StyleSet sset = sd.getStyleSet();
+    for (auto style : sset)
     {
-        StylePtr style  = *it;
         PrototypePtr pp = style->getPrototype();
 
         // from the prototype we can find things

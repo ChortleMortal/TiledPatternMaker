@@ -32,7 +32,7 @@
 using std::string;
 
 
-page_design_elements:: page_design_elements(ControlPanel *panel)  : panel_page(panel,"Des Element Info")
+page_design_elements:: page_design_elements(ControlPanel * cpanel)  : panel_page(cpanel,"Des Element Info")
 {
     wsProtoLabel = new QLabel;
     wsProtoLabel->setFixedWidth(251);
@@ -67,8 +67,8 @@ page_design_elements:: page_design_elements(ControlPanel *panel)  : panel_page(p
     sourceWS->setChecked(true);     // arbitrary default
 
     connect(refreshButton,      &QPushButton::clicked,             this, &page_design_elements::onEnter);
-    connect(&bgroup,            SIGNAL(buttonClicked(int)),        this, SLOT(sourceSelect(int)));
-    connect(delTable,           &QTableWidget::cellClicked,        this, &page_design_elements::rowSelected);
+    connect(&bgroup,            SIGNAL(buttonClicked(int)),        this, SLOT(slot_sourceSelect(int)));
+    connect(delTable,           &QTableWidget::cellClicked,        this, &page_design_elements::slot_rowSelected);
 
     connect(maker,  &TiledPatternMaker::sig_loadedTiling,   this,   &page_design_elements::slot_loadedTiling);
     connect(maker,  &TiledPatternMaker::sig_loadedXML,      this,   &page_design_elements::slot_loadedXML);
@@ -82,7 +82,7 @@ void  page_design_elements::refreshPage()
     bgroup.button(config->delViewer)->setChecked(true);
 }
 
-void page_design_elements::sourceSelect(int id)
+void page_design_elements::slot_sourceSelect(int id)
 {
     config->delViewer = eDELViewer(id);
     onEnter();
@@ -138,36 +138,15 @@ void  page_design_elements::onEnter()
 
 PrototypePtr page_design_elements::findPrototype()
 {
-    PrototypePtr proto;
-
-    if (config->delViewer == DEL_STYLES)
-    {
-        StylePtr sp = workspace->getLoadedStyles().getFirstStyle();
-        if (!sp)
-        {
-            wsProtoLabel->setText("WS Styles: none");
-            return proto;
-        }
-        proto = sp->getPrototype();
-        wsProtoLabel->setText(QString("Style Proto ptr: is 0x%1").arg(addr(proto.get())));
-    }
-    else
-    {
-        Q_ASSERT(config->delViewer == DEL_WS);
-        proto = workspace->getWSPrototype();
-        if (!proto)
-        {
-            wsProtoLabel->setText("WS Proto ptr: is null");
-            return proto;
-        }
-        wsProtoLabel->setText(QString("WS Proto ptr: is 0x%1").arg(addr(proto.get())));
-    }
+    eWsData ws = (config->delViewer == DEL_STYLES) ? WS_LOADED : WS_TILING;
+    PrototypePtr proto = workspace->getPrototype(ws);
+    wsProtoLabel->setText(QString("WS Proto ptr: is 0x%1").arg(addr(proto.get())));
     return proto;
 }
 
-void page_design_elements::rowSelected(int row, int col)
+void page_design_elements::slot_rowSelected(int row, int col)
 {
-    Q_UNUSED(col);
+    Q_UNUSED(col)
     QTableWidgetItem * item = delTable->item(row,0);
     QString addrString = item->text();
     qint64 addr = addrString.toLongLong(nullptr,16);
@@ -177,17 +156,17 @@ void page_design_elements::rowSelected(int row, int col)
 
 void page_design_elements::slot_loadedXML(QString name)
 {
-    Q_UNUSED(name);
+    Q_UNUSED(name)
     onEnter();
 }
 void page_design_elements::slot_loadedTiling (QString name)
 {
-    Q_UNUSED(name);
+    Q_UNUSED(name)
     onEnter();
 }
 
 void page_design_elements::slot_loadedDesign(eDesign design)
 {
-    Q_UNUSED(design);
+    Q_UNUSED(design)
     onEnter();
 }

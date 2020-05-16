@@ -64,8 +64,10 @@ void panel_page::closeEvent(QCloseEvent *event)
     setParent(nullptr);
 
     QSettings s;
-    QString name = QString("pane2/%1/pagePos").arg(pageName);
-    s.setValue(name,pos());
+    QString name = QString("panel2/%1/pagePos").arg(pageName);
+    QPoint pt = pos();
+    qDebug() << "panel_page close event pos = " << pt;
+    s.setValue(name,pt);
 
     event->setAccepted(false);
 
@@ -79,10 +81,16 @@ void panel_page::closeEvent(QCloseEvent *event)
 void panel_page::closePage()
 {
     QSettings s;
-    QString name = QString("pane2/%1/floated").arg(pageName);
+    QString name = QString("panel2/%1/floated").arg(pageName);
     if (floated)
     {
         s.setValue(name,true);
+
+        name = QString("panel2/%1/pagePos").arg(pageName);
+        QPoint pt = pos();
+        qDebug() << "panel_page close event pos = " << pt;
+        s.setValue(name,pt);
+
     }
     else
     {
@@ -93,7 +101,7 @@ void panel_page::closePage()
 bool panel_page::wasFloated()
 {
     QSettings s;
-    QString name = QString("pane2/%1/floated").arg(pageName);
+    QString name = QString("panel2/%1/floated").arg(pageName);
     bool wasFloated = s.value(name,false).toBool();
     return wasFloated;
 }
@@ -101,8 +109,10 @@ bool panel_page::wasFloated()
 void panel_page::floatMe()
 {
     QSettings s;
-    QString name = QString("pane2/%1/pagePos").arg(pageName);
-    move(s.value(name).toPoint());
+    QString name = QString("panel2/%1/pagePos").arg(pageName);
+    QPoint pt    = s.value(name).toPoint();
+    qDebug() << "panel_page::floatMe()" << pageName << pt;
+    move(pt);
 }
 
 int panel_page::getTableWidth(QTableWidget *t)

@@ -41,10 +41,11 @@ class page_design_elements : public panel_page
     };
 
 public:
-    page_design_elements(ControlPanel * panel);
+    page_design_elements(ControlPanel * cpanel);
 
     void refreshPage() override;
     void onEnter() override;
+    void onExit() override {}
 
 public slots:
     void     slot_loadedXML(QString name);
@@ -52,8 +53,8 @@ public slots:
     void     slot_loadedDesign(eDesign design);
 
 private slots:
-    void sourceSelect(int  id);
-    void rowSelected(int row, int col);
+    void     slot_sourceSelect(int  id);
+    void     slot_rowSelected(int row, int col);
 
 protected:
     PrototypePtr            findPrototype();

@@ -25,13 +25,34 @@
 #include "style/TileColors.h"
 
 TileColors::TileColors(PrototypePtr proto, PolyPtr bounds ) : Style(proto,bounds)
-{}
+{
+    outline = false;
+}
 
 TileColors::TileColors(const Style & other) : Style(other)
-{}
+{
+    outline = false;
+}
 
 TileColors::~TileColors()
 {}
+
+void TileColors::setOutline(bool enable,QColor color, int width)
+{
+    outline      = enable;
+    outlineColor = color;
+    outlineWidth = width;
+}
+
+bool TileColors::hasOutline(QColor & color, int & width)
+{
+    if (outline)
+    {
+        color = outlineColor;
+        width = outlineWidth;
+    }
+    return outline;
+}
 
 void TileColors::createStyleRepresentation()
 {
@@ -99,5 +120,9 @@ void TileColors::draw(GeoGraphics * gg)
     {
         bkgdPolyColor bpc = *it;
         gg->drawPolygon(bpc.poly,QPen(bpc.color),QBrush(bpc.color));
+        if (outline)
+        {
+            gg->drawPolygon(bpc.poly,QPen(outlineColor,outlineWidth),Qt::NoBrush);
+        }
     }
 }

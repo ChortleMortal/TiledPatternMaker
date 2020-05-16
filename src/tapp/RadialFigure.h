@@ -61,6 +61,7 @@ public:
     virtual MapPtr   buildUnit() = 0;
     virtual void     buildExtBoundary() override;
     virtual MapPtr   useBuiltMap() const { return figureMap; }
+    virtual MapPtr   useUnitMap() const { return unitMap; }
     virtual QString  getFigureDesc() override { return "Radial Figure"; }
 
     MapPtr           replicateUnit();

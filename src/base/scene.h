@@ -10,19 +10,14 @@ class Configuration;
 
 class Scene : public QGraphicsScene
 {
-    Q_OBJECT
-
 public:
-    Scene(View *view);
+    Scene();
 
-    [[noreturn]]void    clear() { qFatal("Do not call this"); }
+    void    clear() { qFatal("Do not call this"); }
 
-     bool paintBackground;
-
-signals:
-
-public slots:
-
+    void    setSceneRect(const QRectF & rect);
+    void    setSceneRect(qreal x, qreal y, qreal w, qreal h);
+    void    paintBackground(bool paint) { _paintBackground = paint; }
 
 protected:
     void drawForeground(QPainter *painter, const QRectF &rect) Q_DECL_OVERRIDE;
@@ -34,8 +29,11 @@ protected:
     void drawGridSceneUnitsCentered(QPainter *painter, QRectF & r);
 
 private:
+    View            * view;
  	WorkspaceViewer * viewer;
-    Configuration * config;
+    Configuration   * config;
+
+    bool   _paintBackground;
 
     QPen gridPen;
 };

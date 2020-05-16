@@ -39,7 +39,7 @@
 // segments and then draws them repeatedly to fill the window.
 
 #include "base/configuration.h"
-#include "base/canvas.h"
+#include "viewers/workspaceviewer.h"
 #include "viewers/PrototypeView.h"
 #include "geometry/Point.h"
 
@@ -64,7 +64,7 @@ ProtoView::ProtoView(PrototypePtr proto) : Layer("ProtoView")
         PlacedFeaturePtr pf = *i;
         FeaturePtr feature  = pf->getFeature();
         QTransform T        = pf->getTransform();
-        qDebug() << "proto T" << Transform::toInfoString(T);
+        //qDebug() << "proto T" << Transform::toInfoString(T);
         FigurePtr fig       = proto->getFigure(feature );
         if (!fig)
         {
@@ -86,8 +86,8 @@ ProtoView::ProtoView(PrototypePtr proto) : Layer("ProtoView")
 
 QRectF ProtoView::boundingRect() const
 {
-    Canvas * canvas = Canvas::getInstance();
-    return canvas->getCanvasSettings().getRectF();
+    QRectF rect = wsViewer->GetCanvasSettings().getCanvasRect();
+    return rect;
 }
 
 void ProtoView::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
@@ -124,7 +124,7 @@ void ProtoView::receive(GeoGraphics *gg, int h, int v )
 {
     QPointF t3  = (t1 * static_cast<qreal>(h)) + (t2 * static_cast<qreal>(v)) ;
     QTransform T  = QTransform::fromTranslate(t3.x(), t3.y()) ;
-    qDebug() << "receive T" << Transform::toInfoString(T);
+    //qDebug() << "receive T" << Transform::toInfoString(T);
 
     if (h==0 && v==0)
         layerPen.setColor(Qt::yellow);

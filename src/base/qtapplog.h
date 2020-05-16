@@ -45,6 +45,7 @@ public:
     void logLines(bool enable)    { _logLines    = enable; }
     void saveLog(QString to);
 
+    QString logDir() { return this->_logDir; }
     static QString currentLogName;
 
 protected:
@@ -67,6 +68,7 @@ private:
     QElapsedTimer elapseTimer;
 
     QFile	mCurrentFile;
+    QString _logDir;
 };
 
 #endif

@@ -35,26 +35,42 @@ public:
     page_save(ControlPanel * cpanel);
 
     void onEnter() override;
+    void onExit() override {}
     void refreshPage() override;
+
 signals:
-    void  sig_saveXML(QString);
+    void sig_saveXML(eWsData, QString);
 
 public slots:
-    void  slot_loadedXML(QString name);
+    void slot_loadedXML(QString name);
+    void slot_loadedTiling(QString name);
+    void slot_saveTiling();
 
 private slots:
     void slot_saveAsXML();
+    void slot_designSourceChanged(int wsdata);
+    void slot_tilingSourceChanged(int wsdata);
 
 protected:
-    void  createConfigGrid();
-    void  slot_showXMLName(QString name);
-    void  designNotesChanged();
+    void  createDesignSave();
+    void  createTilingSave();
+
+    TilingPtr getTiling();
 
 private:
-    QGridLayout *configGrid;
     QTextEdit   * designNotes;
     QLineEdit   * leSaveXmlName;
     QPushButton * saveXml;
+
+    QLineEdit   * tile_name;
+    QTextEdit   * tile_desc;
+    QLineEdit   * tile_author;
+    QLabel      * requiresSave;
+
+    QRadioButton * designStyle;
+    QRadioButton * designWS;
+    QRadioButton * tilingStyle;
+    QRadioButton * tilingWS;
 };
 
 #endif

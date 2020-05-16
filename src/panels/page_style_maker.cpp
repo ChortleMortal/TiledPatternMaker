@@ -103,11 +103,11 @@ page_style_maker:: page_style_maker(ControlPanel * apanel)  : panel_page(apanel,
 void  page_style_maker::refreshPage()
 {
     int row = 0;
-    StyledDesign & sd = (config->designViewer == DV_LOADED_STYLE) ? workspace->getLoadedStyles() : workspace->getWsStyles();
+    eWsData  wsdata       = (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
+    StyledDesign & sd     = workspace->getStyledDesign(wsdata);
     const StyleSet & sset = sd.getStyleSet();
-    for (auto it = sset.begin(); it != sset.end(); it++)
+    for (auto style : sset)
     {
-        StylePtr style = *it;
         QTableWidgetItem * item = styleTable->item(row,STYLE_COL_TRANS);
         if (item)
         {
@@ -130,12 +130,11 @@ void  page_style_maker::reEnter()
     styleTable->clearContents();
 
     int row = 0;
-    StyledDesign & sd = (config->designViewer == DV_LOADED_STYLE) ? workspace->getLoadedStyles() : workspace->getWsStyles();
+    eWsData  wsdata       = (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
+    StyledDesign & sd     = workspace->getStyledDesign(wsdata);
     const StyleSet & sset = sd.getStyleSet();
-    for (auto it = sset.begin(); it != sset.end(); it++)
+    for (auto style : sset)
     {
-        StylePtr style = *it;
-
         styleTable->setRowCount(row+1);
 
         // build structure
@@ -253,8 +252,12 @@ void page_style_maker::setupStyleParms(StylePtr style, QTableWidget * table)
         styleParms = new ColoredEditor(dynamic_cast<Sketch*>(style.get()),table);
         break;
     case STYLE_TILECOLORS:
-        styleParms = new TileColorsEditor(dynamic_cast<TileColors*>(style.get()),table);
+    {
+        eWsData  wsdata   = (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
+        StyledDesign & sd = workspace->getStyledDesign(wsdata);
+        styleParms = new TileColorsEditor(dynamic_cast<TileColors*>(style.get()),table,sd.getTiling());
         break;
+    }
     case STYLE_STYLE:
         break;
     }
@@ -311,19 +314,16 @@ void page_style_maker::slot_styleChanged(int row)
     case STYLE_TILECOLORS:
         newStyle= new TileColors(oldStyle);
         break;
-    default:
+    case STYLE_STYLE:
         Q_ASSERT(false);
         break;
     }
 
-    if (config->designViewer == DV_LOADED_STYLE)
-    {
-        workspace->getLoadedStyles().replaceStyle(oldStylePtr,StylePtr(newStyle));
-    }
-    else
-    {
-        workspace->getWsStyles().replaceStyle(oldStylePtr,StylePtr(newStyle));
-    }
+    eWsData  wsdata       = (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
+    StyledDesign & sd     = workspace->getStyledDesign(wsdata);
+
+    sd.replaceStyle(oldStylePtr,StylePtr(newStyle));
+
     emit sig_viewWS();
     reEnter();
     styleTable->selectRow(row);
@@ -332,11 +332,13 @@ void page_style_maker::slot_styleChanged(int row)
 
 void page_style_maker::slot_editProto(int row)
 {
+    eWsData wsdata = (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
 
     StylePtr style  = getStyleRow(row);
     PrototypePtr pp = style->getPrototype();
-    workspace->setWSPrototype(pp);
-    workspace->setTiling(pp->getTiling());  // TODO - should this be here?
+    workspace->setPrototype(wsdata,pp);
+    workspace->setTiling(wsdata,pp->getTiling());
+
     emit sig_viewWS();
     styleTable->selectRow(row);
     styleTable->setFocus();
@@ -357,26 +359,28 @@ StylePtr page_style_maker::getStyleRow(int row)
 
 StylePtr page_style_maker::getStyleIndex(int index)
 {
-    StylePtr rv;
-    StyledDesign & sd = (config->designViewer == DV_LOADED_STYLE) ? workspace->getLoadedStyles() : workspace->getWsStyles();
+    StylePtr sp;
+    eWsData  wsdata       = (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
+    StyledDesign & sd     = workspace->getStyledDesign(wsdata);
     const StyleSet & sset = sd.getStyleSet();
     if (index < sset.size())
     {
-        rv = sset[index];
+        sp = sset[index];
     }
-    return rv;
+    return sp;
 }
 
 void page_style_maker::slot_deleteStyle()
 {
     int row = styleTable->currentRow();
     if (row == -1) return;
+
     StylePtr style = getStyleRow(row);
 
-    if (config->designViewer == DV_LOADED_STYLE)
-        workspace->getLoadedStyles().deleteStyle(style);
-    else
-        workspace->getWsStyles().deleteStyle(style);
+    eWsData  wsdata       = (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
+    StyledDesign & sd     = workspace->getStyledDesign(wsdata);
+
+    sd.deleteStyle(style);
 
     if (row > 0)
         row -= 1;
@@ -395,10 +399,10 @@ void page_style_maker::slot_moveStyleUp()
     if (row == -1) return;
     StylePtr style = getStyleRow(row);
 
-    if (config->designViewer == DV_LOADED_STYLE)
-        row = workspace->getLoadedStyles().moveUp(style);
-    else
-        row = workspace->getWsStyles().moveUp(style);
+    eWsData  wsdata       = (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
+    StyledDesign & sd     = workspace->getStyledDesign(wsdata);
+
+    sd.moveUp(style);
 
     reEnter();
 
@@ -414,10 +418,10 @@ void  page_style_maker::slot_moveStyleDown()
     if (row == -1) return;
     StylePtr style = getStyleRow(row);
 
-    if (config->designViewer == DV_LOADED_STYLE)
-        row = workspace->getLoadedStyles().moveDown(style);
-    else
-        row = workspace->getWsStyles().moveDown(style);
+    eWsData  wsdata       = (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
+    StyledDesign & sd     = workspace->getStyledDesign(wsdata);
+
+    sd.moveDown(style);
 
     reEnter();
 
@@ -435,10 +439,10 @@ void  page_style_maker::slot_duplicateStyle()
 
     StylePtr style2 = copyStyle(style);
 
-    if (config->designViewer == DV_LOADED_STYLE)
-        workspace->getLoadedStyles().addStyle(style2);
-    else
-        workspace->getWsStyles().addStyle(style2);
+    eWsData  wsdata       = (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
+    StyledDesign & sd     = workspace->getStyledDesign(wsdata);
+
+    sd.addStyle(style2);
 
     reEnter();
 

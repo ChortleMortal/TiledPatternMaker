@@ -66,8 +66,7 @@ public slots:
 
     void slot_loadXML(QString name);
     void slot_loadXMLSimple(QString name);
-    void slot_saveXML(QString name);
-    void slot_loadAndSaveXML(QString name);
+    void slot_saveXML(eWsData wsdata, QString name);
     void slot_loadTiling(QString name);
     void slot_loadTilingSimple(QString name);
     void slot_saveAsBMP(QString name);
@@ -105,8 +104,6 @@ private:
     Canvas        * canvas;
 
     Cycler        * cycler;
-    SplitScreen   * splitter;
-
     AQLabel       * cyclerWindow;
 };
 

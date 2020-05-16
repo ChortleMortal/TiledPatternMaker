@@ -28,6 +28,7 @@
 #include "style/Style.h"
 #include "tapp/Star.h"
 #include "tapp/RosetteConnectFigure.h"
+#include "tapp/StarConnectFigure.h"
 #include "tapp/ExtendedRosette.h"
 #include <QtCore>
 #include "pugixml.hpp"
@@ -44,10 +45,12 @@ class Workspace;
 class XmlLoader
 {
 public:
-    XmlLoader(StyledDesign & styledDesign);
+    XmlLoader();
     ~XmlLoader();
 
-    bool    load(QString fileName);
+    bool    loadXML(QString fileName, StyledDesign * design);
+    MapPtr  loadXML(QString fileName);
+
     QString getLoadedFilename();
     QString getFailMessage() { return _failMessage; }
 
@@ -93,7 +96,9 @@ protected:
     ExtStarPtr          getExtendedStarFigure(xml_node & node);
     ExtRosettePtr       getExtendedRosetteFigure(xml_node & node);
     RosettePtr          getRosetteFigure(xml_node & node);
+    FigurePtr           getConnectFigure(xml_node & node);
     RosetteConnectPtr   getRosetteConnectFigure(xml_node & node);
+    StarConnectPtr      getStarConnectFigure(xml_node & node);
 
     PolyPtr         getPolygon(xml_node & node);
     VertexPtr       getVertex(xml_node & node);
@@ -119,6 +124,7 @@ protected:
     void   setExtRosetteReference(xml_node & node, ExtRosettePtr ptr);
     void   setRosetteReference(xml_node & node, RosettePtr ptr);
     void   setRosetteConnectReference(xml_node & node, RosetteConnectPtr ptr);
+    void   setStarConnectReference(xml_node & node, StarConnectPtr ptr);
     void   setMapReference(xml_node & node, MapPtr ptr);
 
     PrototypePtr    getProtoReferencedPtr(xml_node & node);
@@ -133,6 +139,7 @@ protected:
     ExtRosettePtr   getExtRosetteReferencedPtr(xml_node & node);
     RosettePtr      getRosetteReferencedPtr(xml_node & node);
     RosetteConnectPtr getRosetteConnectReferencedPtr(xml_node & node);
+    StarConnectPtr  getStarConnectReferencedPtr(xml_node & node);
     MapPtr          getMapReferencedPtr(xml_node & node);
 
 
@@ -155,12 +162,13 @@ private:
     QMap<int,ExtStarPtr>    ext_star_ids;
     QMap<int,ExtRosettePtr> ext_rosette_ids;
     QMap<int,RosettePtr>    rosette_ids;
-    QMap<int,RosetteConnectPtr>    rosette_connect_ids;
+    QMap<int,RosetteConnectPtr> rosette_connect_ids;
+    QMap<int,StarConnectPtr>star_connect_ids;
     QMap<int,MapPtr>        map_ids;
 
-    StyledDesign &          _styledDesign;
-
     MapPtr                  _currentMap;
+    StyledDesign          * sd;
+
 
     TilingPtr               _tiling;
     QString                 _fileName;
@@ -178,7 +186,8 @@ private:
     int eRefrCnt;
     int nRefrCnt;
 
-    Canvas * canvas;
+    Canvas      * canvas;
+    Workspace   * workspace;
 };
 
 #endif

@@ -30,6 +30,23 @@
 #include "designs/design.h"
 #include "tapp/DesignElement.h"
 
+enum eWsData
+{
+    WS_LOADED = 0,
+    WS_TILING = 1
+};
+
+class WorkspaceData
+{
+public:
+    void    clear();
+
+    StyledDesign        styles;
+    TilingPtr           tiling;
+    PrototypePtr        prototype;      // set by FigureMaker and page-styles
+    DesignElementPtr    desEle;         // set by FigureMaker and tiling maker
+};
+
 class Workspace : public QObject
 {
     Q_OBJECT
@@ -39,6 +56,13 @@ public:
     static void        releaseInstance();
 
     void        init();
+    void        clear(eWsData dataset) { ws[dataset].clear(); }
+
+    // loaders
+    bool        loadDesignXML(QString name);
+    bool        saveStyledDesign(eWsData wsdata, QString name, QString &savedName, bool forceOverwrite);
+    bool        loadTiling(QString name);
+    bool        saveTiling(QString name, TilingPtr tp);
 
     // designs
     void        addDesign(DesignPtr d);
@@ -47,26 +71,19 @@ public:
     void        clearDesigns();
 
     // styles
-    StyledDesign & getLoadedStyles() { return loadedStyles; }
-    StyledDesign & getWsStyles()     { return wsStyles; }
+    StyledDesign & getStyledDesign(eWsData dataset) { return ws[dataset].styles; }
 
     // loaded tilings
-    void        setTiling(TilingPtr t) { tiling = t; }
-    TilingPtr   getTiling()            { return tiling; }
-
-    // loaders
-    bool        loadDesignXML(QString name);
-    bool        saveDesignXML(QString name, QString &savedName, bool forceOverwrite);
-    bool        loadTiling(QString name);
-    bool        saveTiling(QString name, TilingPtr tp);
+    void        setTiling(eWsData dataset, TilingPtr t) { ws[dataset].tiling = t; }
+    TilingPtr   getTiling(eWsData dataset)              { return ws[dataset].tiling; }
 
     // prototypes
-    void         setWSPrototype(PrototypePtr pp);
-    PrototypePtr getWSPrototype();
+    void         setPrototype(eWsData dataset,PrototypePtr pp);
+    PrototypePtr getPrototype(eWsData dataset);
 
     // figures
-    void             setWSDesignElement(DesignElementPtr dp);
-    DesignElementPtr getWSDesignElement();
+    void             setSelectedDesignElement(eWsData dataset,DesignElementPtr dp);
+    DesignElementPtr getSelectedDesignElement(eWsData dataset);
 
 protected:
 
@@ -82,20 +99,15 @@ private:
     Workspace();
     ~Workspace();
 
-    static Workspace          * mpThis;
-    Configuration             * config;
-    Canvas                    * canvas;
+    static Workspace    * mpThis;
+    Configuration       * config;
+    Canvas              * canvas;
 
-    QVector<DesignPtr>          activeDesigns;
-    QString                     designName;
+    QVector<DesignPtr>  activeDesigns;
+    QString             designName;
 
-    StyledDesign                loadedStyles;
-    StyledDesign                wsStyles;
+    WorkspaceData       ws[2];
 
-    TilingPtr                   tiling;
-
-    PrototypePtr                wsPrototype;        // set by FigureMaker and page-styles
-    DesignElementPtr            wsDesEle;           // set by FigureMaker and figure maker
 };
 
 #endif // WORKSPACE_H

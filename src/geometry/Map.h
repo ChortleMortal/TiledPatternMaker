@@ -67,6 +67,7 @@ class Map
 
 public:
     Map(QString Name);
+    Map(QString Name, QPolygonF & poly);
     Map(const Map & map);     // duplictes the contents
     ~Map();
 
@@ -92,6 +93,7 @@ public:
     void removeEdge(EdgePtr e);
     void removeVertex(VertexPtr v);
     void removeVertexSimple(VertexPtr v) { vertices.removeOne(v); neighbourMap.removeVertex(v); }
+    void crop(QRectF rect);
 
     MapPtr  recreate();                // makes a new map with similar content
     MapPtr  compress();                // join all straight lines

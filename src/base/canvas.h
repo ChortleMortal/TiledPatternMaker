@@ -25,6 +25,7 @@
 #ifndef CANVAS_H
 #define CANVAS_H
 
+#include <QSvgGenerator>
 #include "base/shared.h"
 #include "base/cycler.h"
 #include "base/canvasSettings.h"
@@ -48,36 +49,29 @@ public:
 
     void    init();
     void    update();
+    void    clearScene();
     void    invalidate();
 
     Scene * swapScenes();
+    Scene * currentScene() { return scene; }
 
     void    addDesign(Design * design);
 
-    void    clearCanvas();
-
     void    duplicate();
 
-    void    setSceneRect(const QRectF & rect);
-    void    setSceneRect(qreal x, qreal y, qreal w, qreal h);
-
-    void    dump(bool force = false);
     void    dumpGraphicsInfo();
-
-    void    saveImage();
+    void    dump(bool force = false);
+    void    savePixmap(QString name);
 
     bool     procKeyEvent(QKeyEvent * k);    // from View
-
     void     setKbdMode(eKbdMode mode);
     QString  getKbdModeStr();
 
-    void           useCanvasSettings(CanvasSettings & info);
-    CanvasSettings getCanvasSettings() { return settings; }
+    QSvgGenerator * getSvgGenerator() { return &generator; }
 
     void    setMaxStep(int max);
     void    stopTimer();
 
-    Scene  * scene;
 
 signals:
     void sig_viewWS();
@@ -101,6 +95,9 @@ signals:
     void sig_kbdMode(eKbdMode);
 
 public slots:
+    void saveImage();
+    void saveSvg();
+
     void slot_designReposition(qreal, qreal);
     void slot_designOffset(qreal, qreal);
     void slot_designOrigin(int, int);
@@ -109,8 +106,7 @@ public slots:
     void slot_startTimer();
     void slot_setStep(int step);
 
-    void slot_png(QString file, int row, int col);
-    void saveBMP(QString name);
+    void slot_show_png(QString file, int row, int col);
 
     void slot_cycler_finished();
 
@@ -155,8 +151,9 @@ private:
     WorkspaceViewer * viewer;
     Scene           * sceneA;
     Scene           * sceneB;
+    Scene           * scene;    // the current scene
 
-    CanvasSettings  settings;
+    QSvgGenerator   generator;
 
     int maxStep;
     int stepsTaken;

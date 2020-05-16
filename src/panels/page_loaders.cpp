@@ -60,18 +60,19 @@ page_loaders::page_loaders(ControlPanel * apanel) : panel_page(apanel,"Load")
 
 void page_loaders::setupUI()
 {
+#define LOADER_MAX_HEIGHT   601
     designList = new LoaderListWidget();
-    designList->setFixedSize(205,801);
+    designList->setFixedSize(205,LOADER_MAX_HEIGHT);
     designList->setSelectionMode(QAbstractItemView::SingleSelection);
 
     xmlList = new LoaderListWidget();
-    xmlList->setFixedSize(231,801);
+    xmlList->setFixedSize(231,LOADER_MAX_HEIGHT);
     xmlList->setSortingEnabled(true);
     xmlList->setMouseTracking(true);
     xmlList->setSelectionMode(QAbstractItemView::SingleSelection);
 
     tileList = new LoaderListWidget();
-    tileList->setFixedSize(201,801);
+    tileList->setFixedSize(201,LOADER_MAX_HEIGHT);
     tileList->setSortingEnabled(false);
     tileList->setSelectionMode(QAbstractItemView::SingleSelection);
 
@@ -85,6 +86,9 @@ void page_loaders::setupUI()
     tilingFilterCheck = new QCheckBox();
 
     QGridLayout * grid = new QGridLayout;
+
+    QLabel * label = new QLabel("Filter : ");
+    grid->addWidget(label,0,0, Qt::AlignRight);
 
     QHBoxLayout * hbox = new QHBoxLayout();
     hbox->addWidget(designFilterCheck);
@@ -170,8 +174,8 @@ void page_loaders::loadXML()
     {
         return;
     }
+    emit sig_viewStyles();  // do this first to setup the WS (ignores config lockView)
     emit sig_loadXML(selectedXMLName);
-    emit sig_viewStyles();
     if (config->viewerType == VIEW_DESIGN || config->viewerType == VIEW_TILING)
     {
         emit panel->sig_selectViewer(VIEW_DESIGN,DV_LOADED_STYLE);

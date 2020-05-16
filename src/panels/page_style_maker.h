@@ -26,7 +26,7 @@
 #define PAGE_STYLE_MAKER_H
 
 #include "panels/panel_page.h"
-#include "panels/style_editors.h"
+#include "makers/style_maker/style_editors.h"
 
 class page_style_maker : public panel_page
 {
@@ -47,6 +47,7 @@ public:
     page_style_maker(ControlPanel * apanel);
 
     void onEnter() override;
+    void onExit() override {}
     void refreshPage() override;
 
 public slots:

@@ -1,6 +1,6 @@
 #include "facesetview.h"
-#include "base/canvas.h"
 #include "base/configuration.h"
+#include "viewers/workspaceviewer.h"
 
 FaceSetView::FaceSetView(FaceSet * set) : Layer("FaceSetView")
 {
@@ -9,10 +9,9 @@ FaceSetView::FaceSetView(FaceSet * set) : Layer("FaceSetView")
 
 QRectF FaceSetView::boundingRect() const
 {
-    Canvas * canvas  = Canvas::getInstance();
-    return canvas->getCanvasSettings().getRectF();
+    QRectF rect = wsViewer->GetCanvasSettings().getCanvasRect();
+    return rect;
 }
-
 
 void FaceSetView::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
@@ -37,7 +36,6 @@ void FaceSetView::paint(QPainter *painter, const QStyleOptionGraphicsItem *optio
         painter->drawEllipse(pt,13,13);
     }
 }
-
 
 void  FaceSetView::draw(GeoGraphics * gg )
 {

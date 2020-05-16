@@ -107,13 +107,7 @@ void page_log::slot_copyLog()
     QString name = config->currentlyLoadedXML;
     Q_ASSERT(!name.contains(".xml"));
 
-    QString path;
-#ifdef WIN32
-    path = "C:/logs/";
-#else
-    path = "./logs/";
-#endif
-
+    QString path      = qtAppLog::getInstance()->logDir();
     QString nameList  = "TXT (*.txt)";
 
     QFileDialog dlg(this, "Save log as", path, nameList);

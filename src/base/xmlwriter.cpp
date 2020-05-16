@@ -42,13 +42,14 @@
 #include "tapp/ExtendedStar.h"
 #include "tapp/ExtendedRosette.h"
 #include "tapp/RosetteConnectFigure.h"
+#include "tapp/StarConnectFigure.h"
 #include "tapp/ExplicitFigure.h"
 
 //const int currentXMLVersion = 3;
 //const int currentXMLVersion = 3;  // 05OCT19 use ColorSets in Colored
 const int currentXMLVersion = 5;    // 25OCT19 revised way of defining maps
 
-XmlWriter::XmlWriter(StyledDesign & styledDesign) : design(styledDesign)
+XmlWriter::XmlWriter()
 {
     config = Configuration::getInstance();
 }
@@ -57,10 +58,11 @@ XmlWriter::~XmlWriter()
 {
 }
 
-bool XmlWriter::writeXML(QString fileName)
+bool XmlWriter::writeXML(QString fileName, StyledDesign * design)
 {
     qDebug() << "Writing XML:" << fileName;
-    _fileName = fileName;
+    _fileName     = fileName;
+    sd = design;
 
     QFile xml(fileName);
     if (!xml.open(QFile::WriteOnly | QFile::Truncate))
@@ -100,11 +102,61 @@ bool XmlWriter::writeXML(QString fileName)
     return rv;
 }
 
+bool XmlWriter::writeXML(QString fileName, MapPtr map)
+{
+    qDebug() << "Writing XML:" << fileName;
+    _fileName = fileName;
+
+    QFile xml(fileName);
+    if (!xml.open(QFile::WriteOnly | QFile::Truncate))
+    {
+        _failMsg = QString("Could not open file to write: %1").arg(fileName);
+        return false;
+    }
+
+    QTextStream ts(& xml);
+    ts.setRealNumberPrecision(16);
+
+    ts << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" << endl;
+
+    bool rv;
+
+    try
+    {
+        refId = 0;
+        qDebug() << "version=" << currentXMLVersion;
+        QString qs = QString(" version=\"%1\"").arg(currentXMLVersion);
+        ts << "<vector" << nextId() << qs << ">" << endl;
+        rv = setMap(ts,map);
+        if (!rv)
+            return false;
+        ts << "</vector>" << endl;
+
+    }
+    catch (...)
+    {
+        xml.close();
+        return false;
+    }
+
+    xml.close();
+
+    if (!rv)
+    {
+        xml.close();
+        _failMsg = QString("ERROR writing XML file: %1").arg(fileName);
+        return false;
+    }
+
+    rv = FileServices::reformatXML(fileName);
+    return rv;
+}
+
 bool XmlWriter::generateDesignNotes(QTextStream & ts)
 {
-    if (!design.getNotes().isEmpty())
+    if (!sd->getNotes().isEmpty())
     {
-        ts << "<designNotes>" << design.getNotes() << "</designNotes>" << endl;
+        ts << "<designNotes>" << sd->getNotes() << "</designNotes>" << endl;
     }
     return true;
 }
@@ -150,7 +202,7 @@ bool XmlWriter::processVector(QTextStream &ts)
     processDesign(ts);
 
     // styles
-    const StyleSet & sset = design.getStyleSet();
+    const StyleSet & sset = sd->getStyleSet();
     for (auto it = sset.rbegin(); it != sset.rend(); it++)
     {
         StylePtr s = *it;
@@ -210,9 +262,9 @@ bool XmlWriter::processVector(QTextStream &ts)
 
 void XmlWriter::processDesign(QTextStream &ts)
 {
-    CanvasSettings info= design.getCanvasSettings();
+    CanvasSettings info= sd->getCanvasSettings();
     QColor bkgdColor   = info.getBackgroundColor();
-    QSizeF size        = info.getSizeF();
+    QSizeF size        = info.getCanvasSize();
     BorderPtr border   = info.getBorder();
     BkgdImgPtr bip     = info.getBkgdImage();
 
@@ -639,6 +691,17 @@ bool XmlWriter::processTileColors(QTextStream &ts, StylePtr s)
     processStyleStyle(ts,proto,poly);
     ts << "</" << str << ">" << endl;
 
+    QColor color(Qt::white);
+    int width = 3;
+    bool outline = tc->hasOutline(color,width);
+    if (outline)
+    {
+        ts << "<outline>" << endl;
+        procColor(ts,color);
+        procWidth(ts,width);
+        ts << "</outline>";
+    }
+
     return true;
 }
 
@@ -812,6 +875,10 @@ void XmlWriter::setPrototype(QTextStream & ts, PrototypePtr pp)
             break;
 
         case FIG_TYPE_CONNECT_STAR:
+            name = "app.ConnectFigure";
+            setStarConnectFigure(ts,name,figure);
+            break;
+
         case FIG_TYPE_CONNECT_ROSETTE:
             name = "app.ConnectFigure";
             setRosetteConnectFigure(ts,name,figure);
@@ -821,7 +888,7 @@ void XmlWriter::setPrototype(QTextStream & ts, PrototypePtr pp)
         case FIG_TYPE_UNDEFINED:
             fail("Unexpected figure type:", sFigType[figType]);
 
-        case FIG_TYPE_INFER:
+        case FIG_TYPE_EXPLICIT_INFER:
             name = "app.Infer";
             setExplicitFigure(ts,name,figure);
             break;
@@ -831,17 +898,17 @@ void XmlWriter::setPrototype(QTextStream & ts, PrototypePtr pp)
             setExplicitFigure(ts,name,figure);
             break;
 
-        case FIG_TYPE_HOURGLASS:
+        case FIG_TYPE_EXPLICIT_HOURGLASS:
             name = "app.ExplicitHourglass";
             setExplicitFigure(ts,name,figure);
             break;
 
-        case FIG_TYPE_INTERSECT:
+        case FIG_TYPE_EXPLICIT_INTERSECT:
             name = "app.ExplicitIntersect";
             setExplicitFigure(ts,name,figure);
             break;
 
-        case FIG_TYPE_GIRIH:
+        case FIG_TYPE_EXPLICIT_GIRIH:
             name = "app.ExplicitGirih";
             setExplicitFigure(ts,name,figure);
             break;
@@ -851,7 +918,7 @@ void XmlWriter::setPrototype(QTextStream & ts, PrototypePtr pp)
             setExplicitFigure(ts,name,figure);
             break;
 
-        case FIG_TYPE_FEATURE:
+        case FIG_TYPE_EXPLICIT_FEATURE:
             name = "app.ExplicitFeature";
             setExplicitFigure(ts,name,figure);
             break;
@@ -934,18 +1001,37 @@ void XmlWriter::setExplicitFigure(QTextStream & ts,QString name, FigurePtr fp)
     setExplicitReference(getRef(),ep);
     ts << "<" << name << qsid << " type=\"" << fp->getFigTypeString() << "\"" << ">" << endl;
 
-    _currentMap = ep->getFigureMap();
-    setMap(ts,_currentMap);
-
     switch(ep->getFigType())
     {
-    case FIG_TYPE_GIRIH:
+    case FIG_TYPE_UNDEFINED:
+    case FIG_TYPE_RADIAL:
+    case FIG_TYPE_ROSETTE:
+    case FIG_TYPE_STAR:
+    case FIG_TYPE_CONNECT_STAR:
+    case FIG_TYPE_CONNECT_ROSETTE:
+    case FIG_TYPE_EXTENDED_ROSETTE:
+    case FIG_TYPE_EXTENDED_STAR:
+        fail("Code Error","Not an explicit figure");
+
+    case FIG_TYPE_EXPLICIT:
+    {
+        MapPtr map = ep->getFigureMap();
+        setMap(ts,map);
+        break;
+    }
+
+    case FIG_TYPE_EXPLICIT_INFER:
+    case FIG_TYPE_EXPLICIT_FEATURE:
+        // these have no parameters
+        break;
+
+    case FIG_TYPE_EXPLICIT_GIRIH:
         ts << "<sides>" << ep->sides << "</sides>" << endl;
         ts << "<skip>"  << ep->skip  << "</skip>"  << endl;
         break;
 
     case FIG_TYPE_EXPLICIT_STAR:
-    case FIG_TYPE_HOURGLASS:
+    case FIG_TYPE_EXPLICIT_HOURGLASS:
         ts << "<s>" << ep->s << "</s>" << endl;
         ts << "<d>" << ep->d << "</d>"  << endl;
         break;
@@ -956,14 +1042,11 @@ void XmlWriter::setExplicitFigure(QTextStream & ts,QString name, FigurePtr fp)
         ts << "<rFlexPt>" << ep->r_flexPt << "</rFlexPt>"  << endl;
         break;
 
-    case FIG_TYPE_INTERSECT:
+    case FIG_TYPE_EXPLICIT_INTERSECT:
         ts << "<s>" << ep->s << "</s>" << endl;
         ts << "<sides>" << ep->sides << "</sides>" << endl;
         ts << "<skip>"  << ep->skip  << "</skip>"  << endl;
         ts << "<progressive>" << ((ep->progressive) ? "t" : "f") << "</progressive>" << endl;
-        break;
-
-    default:
         break;
     }
 
@@ -972,7 +1055,7 @@ void XmlWriter::setExplicitFigure(QTextStream & ts,QString name, FigurePtr fp)
     ts << "</" << name << ">" << endl;
 }
 
-void XmlWriter::setStarFigure(QTextStream & ts,QString name, FigurePtr fp)
+void XmlWriter::setStarFigure(QTextStream & ts, QString name, FigurePtr fp, bool childEnd)
 {
     StarPtr sp = std::dynamic_pointer_cast<Star>(fp);
     if (!sp)
@@ -1002,7 +1085,10 @@ void XmlWriter::setStarFigure(QTextStream & ts,QString name, FigurePtr fp)
 
     setFigureCommon(ts, fp);
 
-    ts << "</" << name << ">" << endl;
+    if (childEnd)
+        ts << "</child>" << endl;
+    else
+        ts << "</" << name << ">" << endl;
 }
 
 void XmlWriter::setExtendedStarFigure(QTextStream & ts,QString name, FigurePtr fp)
@@ -1063,10 +1149,12 @@ void XmlWriter::setRosetteFigure(QTextStream & ts,QString name, FigurePtr fp, bo
     int n       = rp->getN();
     int s       = rp->getS();
     qreal q     = rp->getQ();
+    qreal k     = rp->getK();
 
     ts << "<n>" << n << "</n>" << endl;
     ts << "<q>" << q << "</q>" << endl;
     ts << "<s>" << s << "</s>" << endl;
+    ts << "<k>" << k << "</k>" << endl;
 
     setFigureCommon(ts,fp);
 
@@ -1106,8 +1194,8 @@ void XmlWriter::setExtendedRosetteFigure(QTextStream & ts,QString name, FigurePt
     ts << "<" << name << qsid << "  extendPeripherals=" << ext_t << "  extendFreeVertices=" << ext_not_t << "  connectBoundaryVertices=" << con_bnd_v << ">" << endl;
     ts << "<n>" << n << "</n>" << endl;
     ts << "<q>" << q << "</q>" << endl;
-    ts << "<k>" << k << "</k>" << endl;
     ts << "<s>" << s << "</s>" << endl;
+    ts << "<k>" << k << "</k>" << endl;
 
     setFigureCommon(ts,fp);
 
@@ -1147,10 +1235,43 @@ void XmlWriter::setRosetteConnectFigure(QTextStream & ts,QString name, FigurePtr
     ts << "</" << name << ">" << endl;
 }
 
-void XmlWriter::setMap(QTextStream &ts, MapPtr map)
+void XmlWriter::setStarConnectFigure(QTextStream & ts,QString name, FigurePtr fp)
+{
+    qDebug() << fp->getFigureDesc();
+    StarConnectPtr scp = std::dynamic_pointer_cast<StarConnectFigure>(fp);
+    if (!scp)
+    {
+        fail("Style error","dynamic cast StarConnectFigure");
+    }
+
+    QString qsid;
+    if (hasReference(scp))
+    {
+        qsid = getStarConnectReference(scp);
+    }
+    else
+    {
+        qsid = nextId();
+        setStarConnectReference(getRef(),scp);
+    }
+    ts << "<" << name << qsid << ">" << endl;
+
+
+    int n = scp->getN();
+
+    ts << "<n>" << n << "</n>" << endl;
+
+    setStarFigure(ts,QString("child class=\"app.Star\""),scp,true);
+
+    qreal s2 = scp->getFigureScale();
+    ts << "<s>" << s2 << "</s>" << endl;
+    ts << "</" << name << ">" << endl;
+}
+
+bool XmlWriter::setMap(QTextStream &ts, MapPtr map)
 {
     qDebug().noquote() << map->summary();
-    bool verify = _currentMap->verifyMap("XMLWriter");
+    bool verify = map->verifyMap("XMLWriter");
     if (!verify)
     {
         QMessageBox box;
@@ -1162,7 +1283,7 @@ void XmlWriter::setMap(QTextStream &ts, MapPtr map)
         {
         case QMessageBox::Yes :
             map->cleanse();     // always write a good map
-            verify = _currentMap->verifyMap("XMLWriter: pst cleanse");
+            verify = map->verifyMap("XMLWriter: post cleanse");
             break;
         case QMessageBox::No :
             verify = true;
@@ -1174,6 +1295,7 @@ void XmlWriter::setMap(QTextStream &ts, MapPtr map)
             box.setIcon(QMessageBox::Warning);
             box.setText("XML Writer: Map verify failed after cleanse");
             box.exec();
+            return false;
         }
     }
 
@@ -1183,7 +1305,7 @@ void XmlWriter::setMap(QTextStream &ts, MapPtr map)
     {
         qsid = getMapReference(map);
         ts << "<map" << qsid << "/>" << endl;
-        return;
+        return true;
     }
 
     qsid = nextId();
@@ -1203,6 +1325,8 @@ void XmlWriter::setMap(QTextStream &ts, MapPtr map)
     setNeighbours(ts,nmap);
 
     ts << "</map>" << endl;
+
+    return true;
 }
 
 
@@ -1476,6 +1600,11 @@ bool XmlWriter::hasReference(RosetteConnectPtr n)
     return rosette_connect_ids.contains(n);
 }
 
+bool XmlWriter::hasReference(StarConnectPtr n)
+{
+    return star_connect_ids.contains(n);
+}
+
 bool XmlWriter::hasReference(EdgePtr e)
 {
     return edge_ids.contains(e);
@@ -1539,6 +1668,11 @@ void XmlWriter::setExtendedRosetteReference(int id, ExtRosettePtr ptr)
 void XmlWriter::setRosetteConnectReference(int id, RosetteConnectPtr ptr)
 {
     rosette_connect_ids[ptr] = id;
+}
+
+void XmlWriter::setStarConnectReference(int id, StarConnectPtr ptr)
+{
+    star_connect_ids[ptr] = id;
 }
 
 void XmlWriter::setEdgeReference(int id, EdgePtr ptr)
@@ -1629,6 +1763,14 @@ QString XmlWriter::getRosetteConnectReference(RosetteConnectPtr ptr)
     QString qs = QString(" reference=\"%1\"").arg(id);
     return qs;
 }
+
+QString XmlWriter::getStarConnectReference(StarConnectPtr ptr)
+{
+    int id =  star_connect_ids.value(ptr);
+    QString qs = QString(" reference=\"%1\"").arg(id);
+    return qs;
+}
+
 
 QString XmlWriter::getEdgeReference(EdgePtr ptr)
 {

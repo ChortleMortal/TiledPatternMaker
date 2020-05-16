@@ -22,8 +22,8 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DACPATS_LAYER_H
-#define DACPATS_LAYER_H
+#ifndef TPM_LAYER_H
+#define TPM_LAYER_H
 
 #include <QGraphicsItemGroup>
 #include <QPen>
@@ -48,7 +48,7 @@ class Layer : public QObject, public QGraphicsItemGroup
 public:
     Layer(QString name);
     Layer(const Layer & other);
-    ~Layer()  { refs--; }
+    ~Layer();
 
     void    addToGroup(QGraphicsItem *item);
     void    removeFromGroup(QGraphicsItem *item);
@@ -90,14 +90,13 @@ protected:
     Xform      layerXform;
 
     Configuration   * config;
+    Canvas          * canvas;
+    WorkspaceViewer * wsViewer;
 
 private:
     void computeLayerTransform();
 
-    Canvas          * canvas;
-    WorkspaceViewer * wsViewer;
-
     QString name;
 };
 
-#endif // LAYER_H
+#endif

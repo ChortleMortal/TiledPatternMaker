@@ -219,12 +219,12 @@ void  page_debug::onEnter()
     imageName0->setText(config->image0);
     imageName1->setText(config->image1);
     imageCompareResult->setText("");
-    panel->getStatus()->setText("");
+    panel->hideStatus();
 }
 
 void page_debug::onExit()
 {
-    panel->getStatus()->setText("");
+    panel->hideStatus();
 }
 
 void  page_debug::refreshPage()
@@ -353,7 +353,7 @@ void page_debug::slot_reprocessDesignXML()
         if (rv)
         {
             QString outfile;
-            rv = workspace->saveDesignXML(name,outfile,true);
+            rv = workspace->saveStyledDesign(WS_LOADED,name,outfile,true);
         }
         if (rv)
             goodDes++;
@@ -503,7 +503,7 @@ void page_debug::slot_selectImage1()
 {
     imageCompareResult->setText("");
 
-    QString old = config->image1;
+    QString old = imageName1->text();
     QString file = QFileDialog::getOpenFileName(this,"Select image file",old, tr("Image Files (*.png *.jpg *.bmp)"));
 
     if (!file.isNull())
@@ -575,7 +575,7 @@ void page_debug::slot_startCycle()
 {
     if (config->cycleMode == CYCLE_COMPARE_IMAGES)
     {
-        panel->getStatus()->setText("L=log  V=view Q=quit Spacebar=next");
+        panel->showStatus("L=log  V=view Q=quit Spacebar=next");
     }
 }
 

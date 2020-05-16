@@ -26,6 +26,7 @@
 #include "tile/Tiling.h"
 #include "tapp/Prototype.h"
 #include "style/Sketch.h"
+#include "base/qtapplog.h"
 
 using std::string;
 
@@ -58,6 +59,8 @@ page_workspace::page_workspace(ControlPanel * cpanel)  : panel_page(cpanel,"Work
     tree->setHeaderHidden(true);
     tree->setMinimumWidth(601);
     tree->setMinimumHeight(750);
+    tree->setRootIsDecorated(true);
+    tree->setItemsExpandable(true);
 
     AQVBoxLayout * box = new AQVBoxLayout();
     box->setSizeConstraint(QLayout::SetFixedSize);
@@ -95,48 +98,57 @@ void page_workspace::populateTree(bool expandAll)
 
     // loaded style
     loadedStyle = new QTreeWidgetItem();
-    loadedStyle->setText(0,"++ loadedStyle");
-    loadedStyle->setText(1,ws->getLoadedStyles().getName());
-    int size = ws->getLoadedStyles().getStyleSet().size();
-    loadedStyle->setText(2,QString("Num Styles = %1").arg(size));
+    loadedStyle->setText(0,"++ loadedStyles");
+    int size = ws->getStyledDesign(WS_LOADED).getStyleSet().size();
+    loadedStyle->setText(1,QString("Num=%1").arg(size));
+    loadedStyle->setText(2,ws->getStyledDesign(WS_LOADED).getName());
     tree->addTopLevelItem(loadedStyle);
+    loadedStyle->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
     if (expandAll)
         slot_itemClicked(loadedStyle,0);
 
     // working style
     workspaceStyle = new QTreeWidgetItem();
-    workspaceStyle->setText(0,"++ workspaceStyle");
-    workspaceStyle->setText(1,ws->getLoadedStyles().getName());
-    size = ws->getWsStyles().getStyleSet().size();
-    workspaceStyle->setText(2,QString("Num Styles = %1").arg(size));
+    workspaceStyle->setText(0,"++ workspaceStyles");
+    size = ws->getStyledDesign(WS_TILING).getStyleSet().size();
+    workspaceStyle->setText(1,QString("Num=%1").arg(size));
+    workspaceStyle->setText(2,ws->getStyledDesign(WS_TILING).getName());
     tree->addTopLevelItem(workspaceStyle);
-    if (expandAll)
+    workspaceStyle->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+        if (expandAll)
         slot_itemClicked(workspaceStyle,0);
 
     workspacePrototype = new QTreeWidgetItem;
     workspacePrototype->setText(0,"++ workspacePrototype");
-    workspacePrototype->setText(1,addr(ws->getWSPrototype().get()));
+    workspacePrototype->setText(1,addr(ws->getPrototype(WS_TILING).get()));
     tree->addTopLevelItem(workspacePrototype);
+    workspacePrototype->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
     if (expandAll)
         slot_itemClicked(workspacePrototype,0);
 
     workspaceTiling= new QTreeWidgetItem;
     workspaceTiling->setText(0,"++ workspaceTiling");
-    workspaceTiling->setText(1,addr(ws->getTiling().get()));
+    workspaceTiling->setText(1,addr(ws->getTiling(WS_TILING).get()));
+    if (ws->getTiling(WS_TILING))
+        workspaceTiling->setText(2,ws->getTiling(WS_TILING)->getName());
     tree->addTopLevelItem(workspaceTiling);
+    workspaceTiling->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+
     if (expandAll)
         slot_itemClicked(workspaceTiling,0);
 
     workingFigure = new QTreeWidgetItem;
     workingFigure->setText(0,"++ workspaceFigure");
     QString str;
-    DesignElementPtr dep = ws->getWSDesignElement();
+    DesignElementPtr dep = ws->getSelectedDesignElement(WS_TILING);
     if (dep)
     {
         str = addr(dep->getFigure().get());
     }
     workingFigure->setText(1,str);
     tree->addTopLevelItem(workingFigure);
+    workingFigure->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+
     if (expandAll)
         slot_itemClicked(workingFigure,0);
 
@@ -154,30 +166,30 @@ void page_workspace::slot_itemClicked(QTreeWidgetItem * item, int col)
     if (item == loadedStyle)
     {
         removeChildren(loadedStyle);
-        populateStyles(loadedStyle,workspace->getLoadedStyles());
+        populateStyles(loadedStyle,workspace->getStyledDesign(WS_LOADED));
         tree->expandItem(loadedStyle);
     }
     else if (item == workspaceStyle)
     {
         removeChildren(workspaceStyle);
-        populateStyles(workspaceStyle,workspace->getWsStyles());
+        populateStyles(workspaceStyle,workspace->getStyledDesign(WS_TILING));
         tree->expandItem(workspaceStyle);
     }
     else if (item == workspacePrototype)
     {
-        if (ws->getWSPrototype())
+        if (ws->getPrototype(WS_TILING))
         {
             removeChildren(workspacePrototype);
-            populatePrototype(workspacePrototype,ws->getWSPrototype());
+            populatePrototype(workspacePrototype,ws->getPrototype(WS_TILING));
             tree->expandItem(workspacePrototype);
         }
     }
     else if (item == workspaceTiling)
     {
-        if (ws->getTiling())
+        if (ws->getTiling(WS_TILING))
         {
             removeChildren(workspaceTiling);
-            populateTiling(workspaceTiling,ws->getTiling());
+            populateTiling(workspaceTiling,ws->getTiling(WS_TILING));
             tree->expandItem(workspaceTiling);
         }
     }
@@ -334,12 +346,11 @@ void page_workspace::populatePrototype(QTreeWidgetItem *parent, PrototypePtr pp)
     // design elements
     QTreeWidgetItem * item = new QTreeWidgetItem();
     item->setText(0,"Design Elements");
-    item->setText(2,QString("Num DELs = %1").arg(dels.count()));
+    item->setText(1,QString("Num=%1").arg(dels.count()));
     pitem->addChild(item);
-    for (auto it = dels.begin(); it != dels.end(); it++)
+    for (auto del : dels)
     {
-        DesignElementPtr de = *it;
-        populateDEL(item,de);
+        populateDEL(item,del);
     }
 
     // locations
@@ -359,12 +370,17 @@ void page_workspace::populatePrototype(QTreeWidgetItem *parent, PrototypePtr pp)
 
 void page_workspace::populateDEL(QTreeWidgetItem * parent, DesignElementPtr de)
 {
+    QTreeWidgetItem * item2 = new QTreeWidgetItem;
+    item2->setText(0,"DEL");
+    item2->setText(1,addr(de.get()));
+    parent->addChild(item2);
+
     FeaturePtr feature = de->getFeature();
     QTreeWidgetItem * item = new QTreeWidgetItem;
     item->setText(0,"Feature");
     item->setText(1, addr(feature.get()));
     item->setText(2, QString("Num points = %1 Rot = %2").arg(feature->numPoints()).arg(feature->getRotation()));
-    parent->addChild(item);
+    item2->addChild(item);
 
     FigurePtr figure = de->getFigure();
     item = new QTreeWidgetItem;
@@ -372,7 +388,7 @@ void page_workspace::populateDEL(QTreeWidgetItem * parent, DesignElementPtr de)
     item->setText(1,addr(figure.get()));
     QString astring = figure->getFigureDesc() + " " + figure->getFigTypeString();
     item->setText(2,astring);
-    parent->addChild(item);
+    item2->addChild(item);
 
 #if 0   // DAC - what was I thinking?
     // find matching vector of placed features in tiling
@@ -501,11 +517,7 @@ void page_workspace::dumpTree()
     QDate date = QDate::currentDate();
     QString stamp =  QString::number(date.toJulianDay()) + QTime::currentTime().toString();
     stamp = stamp.replace(':', '.');
-#ifdef __linux__
-    QString fileName  = "./logs/dumpFile" + stamp + ".txt";
-#else
-    QString fileName  = "C:/logs/dumpFile" + stamp + ".txt";
-#endif
+    QString fileName  = qtAppLog::getInstance()->logDir() + "wsDumpFile" + stamp + ".txt";
     qDebug() << "saving:" << fileName;
 
     QFile afile(fileName);

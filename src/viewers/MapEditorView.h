@@ -25,26 +25,26 @@
 #ifndef FIGURE_EDITOR_VIEW_H
 #define FIGURE_EDITOR_VIEW_H
 
-#include "makers/mapselection.h"
+#include "makers/map_editor/map_selection.h"
 #include "tile/PlacedFeature.h"
 #include "base/layer.h"
 
-
-enum eMapEdInput
+enum eMapType
 {
-    ME_INPUT_UNDEFINED,
-    ME_INPUT_FIGURE,
-    ME_INPUT_PROTO,
-    ME_INPUT_STYLE
+    MAP_TYPE_UNDEFINED,
+    MAP_TYPE_FIGURE,
+    MAP_TYPE_PROTO,
+    MAP_TYPE_STYLE,
+    MAP_TYPE_LOCAL,
 };
 
 #define E2STR(x) #x
 
 static QString sMapEdInput[] = {
-    E2STR(ME_INPUT_UNDEFINED),
-    E2STR(ME_INPUT_FIGURE),
-    E2STR(ME_INPUT_PROTO),
-    E2STR(ME_INPUT_STYLE)
+    E2STR(MAP_TYPE_UNDEFINED),
+    E2STR(MAP_TYPE_FIGURE),
+    E2STR(MAP_TYPE_PROTO),
+    E2STR(MAP_TYPE_STYLE)
 };
 
 class MapEditorView : public Layer
@@ -57,10 +57,15 @@ public:
     virtual void    draw(QPainter *) = 0;
 
     void            unload();
-    eMapEdInput     getInputMode() { return inputMode; }
-    MapPtr          getMap()  { return map; }
+    eMapType        getMapType() { return mapType; }
+    MapPtr          getMap()     { return map; }
+    FigurePtr       getFigure()  { return figp; }
+
+    QRectF          getCropRect(){ return cropRect; }
+    void            setCropRect(QRectF & rect) { cropRect = rect; }
 
     void            drawMap(QPainter * painer);
+    void            drawCropMap(QPainter * painer);
     void            drawFeature(QPainter * painter);
     void            drawBoundaries(QPainter * painter);
     void            drawPoints(QPainter * painter, QVector<pointInfo> & points);
@@ -78,7 +83,7 @@ public:
     QVector<CirclePtr> constructionCircles;
 
 protected:
-    eMapEdInput       inputMode;
+    eMapType          mapType;
     StylePtr          styp;     // set
     PrototypePtr      prop;     // set
     DesignElementPtr  delp;     // set
@@ -86,6 +91,7 @@ protected:
     FeaturePtr        feap;     // derived
 
     MapPtr             map;     // derived
+    QRectF             cropRect;
 
     QTransform        viewT;
     QTransform        viewTinv; // inverted

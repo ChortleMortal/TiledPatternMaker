@@ -74,8 +74,7 @@ signals:
     void sig_loadXML(QString name);
     void sig_loadTiling(QString name);
     void sig_finished();
-    void sig_loadAndSave(QString name);
-    void sig_png(QString file, int row, int col);
+    void sig_show_png(QString file, int row, int col);
     void sig_saveAsBMP(QString);
     void sig_saveTilingAsBMP(QString);
     void sig_compare(QString,QString);

@@ -30,19 +30,23 @@
 
 #include "panels/panel_page.h"
 #include "panels/panel_misc.h"
+#include "panels/panel_status.h"
 #include "panels/panel_pagesWidget.h"
 #include "base/configuration.h"
+#include "base/tpmsplash.h"
 
 class TiledPatternMaker;
 class WorkspaceViewer;
 
-class ControlPanel : public QWidget
+class ControlPanel : public AQWidget
 {
     Q_OBJECT
 
 public:
-    ControlPanel(TiledPatternMaker * parent);
-    ~ControlPanel() override;
+    static ControlPanel * getInstance();
+    static void releaseInstance();
+
+    void    init(TiledPatternMaker * parent);
 
     void	closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
     void    resizeEvent(QResizeEvent *event) Q_DECL_OVERRIDE;
@@ -50,7 +54,12 @@ public:
     void    floatPages();
     void    closePages();
 
-    QLabel  * getStatus()          { return status; }
+    void    showStatus(QString txt) { status->display(txt); }
+    void    showSplash(QString txt) { splash->display(txt); }
+    void    hideStatus()            { status->hide(); }
+    void    hideSplash()            { splash->hide(); }
+    void    setStatusStyle(QString txt) { status->setStyleSheet(txt); }
+
     TiledPatternMaker * getMaker() { return maker; }
     panel_page * getCurrentPage()  { return currentPage; }
 
@@ -79,8 +88,12 @@ private slots:
     void    updateClicked(bool enb);
     void    slot_xformModeChanged(int row);
     void    slot_kbdMode(eKbdMode mode);
+    void    showDesignClicked(bool state);
 
 protected:
+    ControlPanel();
+    ~ControlPanel() override;
+
     void    delegateView();
 
 private:
@@ -89,25 +102,33 @@ private:
     void	refreshPage(panel_page * wp);
 
 private:
+    static ControlPanel * mpThis;
+
     Configuration           * config;
     Canvas                  * canvas;
     TiledPatternMaker       * maker;
+
+    PanelStatus             * status;
+    TPMSplash               * splash;
 
     QVector<panel_page*>    mAttachedPages;
     QVector<panel_page*>    mDetachedPages;
     QTimer *				mpTimer;
     QMutex					mUpdateMutex;
 
+    eViewType               lastViewType;
+
+
     PanelListWidget      *  mpPanelPageList;
     PanelPagesWidget     *  panelPagesWidget;
     panel_page           *  currentPage;
-    QLabel               *  status;
 
     QCheckBox    * cbUpdate;
     QLabel       * statusLabel;
     QRadioButton * radioDefined;
     QRadioButton * radioPack;
     QRadioButton * radioSingle;
+    QCheckBox    * cbShowDesign;
     QCheckBox    * cbAutoClear;
     QCheckBox    * cbAutoLoadStyles;
     QCheckBox    * cbAutoLoadTiling;

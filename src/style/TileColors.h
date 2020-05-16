@@ -45,13 +45,18 @@ public:
     void        createStyleRepresentation() override;
     void        resetStyleRepresentation() override;
 
+    void        setOutline(bool enable,QColor color = Qt::white, int width = 3);
+    bool        hasOutline(QColor & color, int & width);
+
     eStyleType  getStyleType() const override;
     QString     getStyleDesc() const override;
     void        draw(GeoGraphics * gg) override;
 
 protected:
     QVector<bkgdPolyColor>  polys;
-
+    bool        outline;
+    QColor      outlineColor;
+    int         outlineWidth;
 
 };
 #endif

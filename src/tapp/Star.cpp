@@ -158,7 +158,7 @@ MapPtr Star::buildUnit()
         }
     }
 
-    unitMap->dumpMap(false);
+    //unitMap->dumpMap(false);
     //unitMap->verify("Star::buildUnit");
 
 

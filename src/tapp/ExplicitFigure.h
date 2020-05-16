@@ -39,9 +39,9 @@ class ExplicitFigure : public Figure
 {
 public:
 
-    ExplicitFigure(MapPtr map, eFigType figType);
-    ExplicitFigure(const Figure & fig, MapPtr map, eFigType figType);
-    ExplicitFigure(const Figure & fig, eFigType figType);
+    ExplicitFigure(MapPtr map, eFigType figType, int sides);
+    ExplicitFigure(const Figure & fig, MapPtr map, eFigType figType, int sides);
+    ExplicitFigure(const Figure & fig, eFigType figType, int sides);
 
     virtual ~ExplicitFigure() override;
 
@@ -62,7 +62,7 @@ public:
     bool    progressive;    // intersect
 
 protected:
-    void    init();
+    void    init(int sides);
 };
 
 #endif

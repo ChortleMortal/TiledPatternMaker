@@ -38,6 +38,7 @@ public:
 
     void refreshPage() override;
     void onEnter() override;
+    void onExit() override {}
 
 signals:
     void    sig_regenerate();
@@ -62,6 +63,7 @@ private slots:
     void    slot_mapEdView_pressed(int id);
     void    slot_wsStatusBox(bool on);
     void    slot_lockViewClicked(bool enb);
+    void    slot_scaleView(int state);
 
 
 protected:
@@ -72,6 +74,8 @@ protected:
     void  refreshPanel();
     void  makeConnections();
     void  updateWsStatus();
+    void  updateLoadedStatus();
+    void  updateTilingStatus();
 
 private:
     QGroupBox   *workspaceViewersBox;
@@ -117,15 +121,18 @@ private:
     QRadioButton *mapEdWS;
 
     QLabel  *  lab_activeDesigns;
-    QLabel  *  lab_LoadedStylename;
-    QLabel  *  lab_LoadedStyles;
+
+    QLabel  *  lab_LoadedStyle;
     QLabel  *  lab_LoadedStylesTiling;
+    QLabel  *  lab_LoadedStyleStyles;
+    QLabel  *  lab_LoadedStylesProto;
+    QLabel  *  lab_LoadedDEL;
+
+    QLabel  *  lab_tilingStyle;
     QLabel  *  lab_tiling;
-    QLabel  *  lab_WsStyles;
-    QLabel  *  lab_WsStylename;
-    QLabel  *  lab_wsPrototype;
-    QLabel  *  lab_wsDEL;
-    QLabel  *  lab_wsFigure;
+    QLabel  *  lab_tilingStyles;
+    QLabel  *  lab_tilingPrototype;
+    QLabel  *  lab_tilingDEL;
 
     QButtonGroup            viewerGroup;
     QButtonGroup            designGroup;

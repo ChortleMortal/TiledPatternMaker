@@ -27,7 +27,6 @@
 #include "base/canvas.h"
 #include "base/fileservices.h"
 #include "base/view.h"
-#include "base/misc.h"
 #include "base/workspace.h"
 #include "base/xmlwriter.h"
 #include "base/tilingmanager.h"
@@ -65,11 +64,15 @@ void  page_views::createViewControl()
     QPushButton * pbViewWorkspace   = new QPushButton("View Workspace");
     QPushButton * btnSplit          = new QPushButton("Split Screen");
     QPushButton * btnPrimary        = new QPushButton("Primary Screen");
+    QCheckBox   * chkScaleView      = new QCheckBox("Scale to View");
+    chkScaleView->setChecked(config->scaleToView);
 
     QHBoxLayout * hbox = new QHBoxLayout();
     hbox->addWidget(pbViewWorkspace);
     hbox->addWidget(btnSplit);
     hbox->addWidget(btnPrimary);
+    hbox->addSpacing(7);
+    hbox->addWidget(chkScaleView);
     hbox->addStretch();
 
     workspaceMakersBox = new QGroupBox("View Control");
@@ -80,6 +83,7 @@ void  page_views::createViewControl()
     connect(pbViewWorkspace,&QPushButton::clicked,      viewer,     &WorkspaceViewer::slot_viewWorkspace);
     connect(btnPrimary,     &QPushButton::clicked,      maker,      &TiledPatternMaker::slot_bringToPrimaryScreen);
     connect(btnSplit,       &QPushButton::clicked,      maker,      &TiledPatternMaker::slot_splitScreen);
+    connect(chkScaleView,   &QCheckBox::stateChanged,   this,       &page_views::slot_scaleView);
 
 }
 
@@ -129,6 +133,7 @@ void  page_views::createWorkspaceViewers()
     mapEdWS     = new QRadioButton("Workspace");
 
     QGridLayout * grid2 = new QGridLayout();
+    grid2->setColumnStretch(3,1);
     int row = 0;
 
     grid2->addWidget(cbLockView,row,0);
@@ -220,8 +225,8 @@ void  page_views::createWorkspaceViewers()
     figureGroup.button(config->figureViewer)->setChecked(true);
 
     // tiling designer group
-    tilingMakerGroup.addButton(radioTileDesSourceStyle,TD_STYLE);
-    tilingMakerGroup.addButton(radioTileDesSourceWS,TD_WORKSPACE);
+    tilingMakerGroup.addButton(radioTileDesSourceStyle,TMV_STYLE);
+    tilingMakerGroup.addButton(radioTileDesSourceWS,TMV_WORKSPACE);
     tilingMakerGroup.button(config->tilingMakerViewer)->setChecked(true);
 
     // design element group
@@ -240,20 +245,20 @@ void  page_views::createWorkspaceViewers()
 
 void  page_views::createWorkspaceStatus()
 {
-    lab_activeDesigns   = new QLabel("activeDesigns");
-    lab_LoadedStylename = new QLabel("loadedStyleName");
-    lab_LoadedStyles    = new QLabel("loadedStyles");
-    lab_LoadedStyles->setFixedWidth(401);
-    lab_LoadedStylesTiling = new QLabel("loadedStylesTiling");
+    lab_activeDesigns       = new QLabel("lab_activeDesigns");
+    lab_activeDesigns->setFixedWidth(501);      // this forces the width of the whole box
 
-    lab_WsStylename     = new QLabel("wsStyleName");
-    lab_WsStyles        = new QLabel("loadedStyles");
-    lab_WsStyles->setFixedWidth(401);
+    lab_LoadedStyle         = new QLabel("lab_LoadedStyle");
+    lab_LoadedStylesTiling  = new QLabel("lab_LoadedStylesTiling");
+    lab_LoadedStyleStyles   = new QLabel("lab_LoadedStyleStyles");
+    lab_LoadedStylesProto   = new QLabel("lab_LoadedStylesProto");
+    lab_LoadedDEL           = new QLabel("lab_LoadedDEL");
 
-    lab_wsPrototype     = new QLabel("wsPrototype");
-    lab_wsDEL           = new QLabel("wsDEL");
-    lab_wsFigure        = new QLabel("wsFigure");
-    lab_tiling          = new QLabel("wsTiling");
+    lab_tilingStyle         = new QLabel("lab_tilingStyle");
+    lab_tiling              = new QLabel("lab_tiling");
+    lab_tilingStyles        = new QLabel("lab_tilingStyles");
+    lab_tilingPrototype     = new QLabel("lab_tilingPrototype");
+    lab_tilingDEL           = new QLabel("lab_tilingDEL");
 
     workspaceStatusBox = new QGroupBox("Workspace Status");
     workspaceStatusBox->setMinimumWidth(531);
@@ -291,28 +296,31 @@ void page_views::slot_wsStatusBox(bool on)
     {
         int row = 0;
         statusBox = new QGridLayout;
-        statusBox->addWidget(new QLabel("activeDesigns"),row,0);
+        statusBox->addWidget(new QLabel("Active Designs"),row,0);
         statusBox->addWidget(lab_activeDesigns,row++,1);
-        statusBox->addWidget(new QLabel("loadedStyleName"),row,0);
-        statusBox->addWidget(lab_LoadedStylename,row++,1);
-        statusBox->addWidget(new QLabel("loadedStyles"),row,0);
-        statusBox->addWidget(lab_LoadedStyles,row++,1);
-        statusBox->addWidget(new QLabel("loadedStylesTiling"),row,0);
+
+        statusBox->addWidget(new QLabel("Loaded Style"),row,0);
+        statusBox->addWidget(lab_LoadedStyle,row++,1);
+        statusBox->addWidget(new QLabel("Loaded Style Tiling"),row,0);
         statusBox->addWidget(lab_LoadedStylesTiling,row++,1);
+        statusBox->addWidget(new QLabel("Loaded Style Styles"),row,0);
+        statusBox->addWidget(lab_LoadedStyleStyles,row++,1);
+        statusBox->addWidget(new QLabel("Loaded Style Proto"),row,0);
+        statusBox->addWidget(lab_LoadedStylesProto,row++,1);
+        statusBox->addWidget(new QLabel("Selected Design Element"),row,0);
+        statusBox->addWidget(lab_LoadedDEL,row++,1);
 
-        statusBox->addWidget(new QLabel("wsStyleName"),row,0);
-        statusBox->addWidget(lab_WsStylename,row++,1);
-        statusBox->addWidget(new QLabel("wsStyles"),row,0);
-        statusBox->addWidget(lab_WsStyles,row++,1);
-
-        statusBox->addWidget(new QLabel("wsPrototype"),row,0);
-        statusBox->addWidget(lab_wsPrototype,row++,1);
-        statusBox->addWidget(new QLabel("wsPlacedDesignElements"),row,0);
-        statusBox->addWidget(lab_wsDEL,row++,1);
-        statusBox->addWidget(new QLabel("wsFigure"),row,0);
-        statusBox->addWidget(lab_wsFigure,row++,1);
-        statusBox->addWidget(new QLabel("wsTiling"),row,0);
+        statusBox->addWidget(new QLabel("Tiling Style"),row,0);
+        statusBox->addWidget(lab_tilingStyle,row++,1);
+        statusBox->addWidget(new QLabel("Tiling"),row,0);
         statusBox->addWidget(lab_tiling,row++,1);
+        statusBox->addWidget(new QLabel("Tiling Styles"),row,0);
+        statusBox->addWidget(lab_tilingStyles,row++,1);
+        statusBox->addWidget(new QLabel("Tiling Prototype"),row,0);
+        statusBox->addWidget(lab_tilingPrototype,row++,1);
+        statusBox->addWidget(new QLabel("Selected Design Element"),row,0);
+        statusBox->addWidget(lab_tilingDEL,row++,1);
+;
 
         workspaceStatusBox->setLayout(statusBox);
     }
@@ -375,111 +383,186 @@ void page_views::updateWsStatus()
 
     // Designs
     QString astring;
-    QVector<DesignPtr> & des = workspace->getDesigns();
-    for (auto it= des.begin(); it != des.end(); it++)
+    QVector<DesignPtr> & designs= workspace->getDesigns();
+    for (auto design : designs)
     {
-        DesignPtr dp = *it;
-        astring += QString("%1 - %2 (%3)    ").arg(dp->getDesignName()).arg(dp->getTitle()).arg(addr(dp.get()));
+        astring += QString("%1 - %2 (%3)").arg(design->getDesignName()).arg(design->getTitle()).arg(addr(design.get()));
     }
     lab_activeDesigns->setText(astring);
 
-    //  Styled Designs
-    StyledDesign & sd = workspace->getLoadedStyles();
-    const StyleSet & sset = sd.getStyleSet();
-    lab_LoadedStylename->setText(sd.getName());
+    updateLoadedStatus();
+    updateTilingStatus();
+}
 
-    astring.clear();
-    for (auto it= sset.begin(); it != sset.end(); it++)
+// Loaded Styles
+void page_views::updateLoadedStatus()
+{
+    // Styled Design
+    StyledDesign & sd = workspace->getStyledDesign(WS_LOADED);
+    lab_LoadedStyle->setText(sd.getName());
+
+    // Tiling
+    QString astring;
+    TilingPtr tp  = workspace->getTiling(WS_LOADED);
+    TilingPtr tp2 = sd.getTiling();
+    if (tp != tp2)
     {
-        StylePtr sp     = *it;
-        PrototypePtr pp = sp->getPrototype();
-        MapPtr map      = pp->getExistingProtoMap();
-        astring+= QString("[%1 (%2)]  proto=%3  protoMap=%4").arg(sp->getStyleDesc()).arg(addr(sp.get())).arg(addr(pp.get())).arg(addr(map.get()));
+        astring += "MISMATCH ";
     }
-    lab_LoadedStyles->setText(astring);
-
-    TilingPtr tp = sd.getTiling();
     if (tp)
-        lab_LoadedStylesTiling->setText(QString("%1 (%2)").arg(tp->getName()).arg(addr(tp.get())));
-    else
-        lab_LoadedStylesTiling->clear();
-
-    // Workspace Styled Designs
-    StyledDesign & wsd = workspace->getWsStyles();
-    const StyleSet & wsset = wsd.getStyleSet();
-    lab_WsStylename->setText(wsd.getName());
-
-    astring.clear();
-    for (auto it= wsset.begin(); it != wsset.end(); it++)
     {
-        StylePtr sp = *it;
-        astring+= QString("[%1 (%2)]  ").arg(sp->getStyleDesc()).arg(addr(sp.get()));
+        astring += QString("%1 (%2)").arg(tp->getName()).arg(addr(tp.get()));
     }
-    lab_WsStyles->setText( astring);
+    lab_LoadedStylesTiling->setText(astring);
 
-    // Workspace proto
-    PrototypePtr pp = (workspace->getWSPrototype());
+    // Styles
+    astring.clear();
+    const StyleSet & sset = sd.getStyleSet();
+    for (auto style : sset)
+    {
+        astring += QString("[%1 (%2)] ").arg(style->getStyleDesc()).arg(addr(style.get()));
+    }
+    lab_LoadedStyleStyles->setText(astring);
+
+    // Prototype
+    astring.clear();
+    PrototypePtr pp = workspace->getPrototype(WS_LOADED);
+    PrototypePtr pp2;
+    StylePtr sp = sd.getFirstStyle();
+    if (sp)
+    {
+        pp2  = sp->getPrototype();
+    }
+    if (pp != pp2)
+    {
+        astring += "MISMATCH ";
+    }
+    MapPtr map;
     if (pp)
     {
-        QString str = addr(pp.get()) + " DELS:";
-        QVector<DesignElementPtr> & dels = pp->getDesignElements();
-        for (auto it = dels.begin(); it != dels.end(); it++)
-        {
-            auto del = *it;
-            str += " ";
-            str += addr(del.get());
-        }
-        lab_wsPrototype->setText(str);
+        map = pp->getExistingProtoMap();
+        astring += QString("%2 %1 map=%3").arg(pp->getInfo()).arg(addr(pp.get())).arg(addr(map.get()));
     }
-    else
-        lab_wsPrototype->clear();
+    lab_LoadedStylesProto->setText(astring);
 
-    DesignElementPtr del = workspace->getWSDesignElement();
+    // Design Element and Figure
+    DesignElementPtr del = workspace->getSelectedDesignElement(WS_LOADED);
     if (del)
     {
-        lab_wsDEL->setText(addr(del.get()));
+        QString astring = QString("(%1)").arg(addr(del.get()));
+
+        FeaturePtr fp = del->getFeature();
+        if (fp)
+        {
+            astring += " Feature: " ;
+            astring += fp->info();
+        }
 
         FigurePtr fig = del->getFigure();
         if (fig)
         {
-            MapPtr map; // = fig->getFigureMap();
-            lab_wsFigure->setText(QString("%1 : %2 map = %3").arg(fig->getFigureDesc()).arg(addr(fig.get())).arg(addr(map.get())));
+            astring += " Figure: (";
+            astring += addr(fig.get());
+            astring += ") ";
+            astring += fig->getFigureDesc();
         }
-        else
-            lab_wsFigure->clear();
+
+        lab_LoadedDEL->setText(astring);
     }
     else
     {
-        lab_wsDEL->clear();
-        lab_wsFigure->clear();
-    }
-
-    tp = workspace->getTiling();
-    if (tp)
-        lab_tiling->setText(QString("%1 (%2)").arg(tp->getName()).arg(addr(tp.get())));
-    else
-        lab_tiling->clear();
-
-    // viewer section
-    if (sset.size())
-        astring = QString("Style %1").arg(addr(sset.first()->getPrototype().get()));
-    else
-        astring = "Style";
-    radioStyleProtoViewer->setText(astring);
-    radioStyleProtoFeatureViewer->setText(astring);
-    astring = QString("Workspace %1").arg(addr(workspace->getWSPrototype().get()));
-    radioProtoMakerView->setText(astring);
-    radioProtoFeatureMakerView->setText(astring);
-
-    if (sset.size())
-    {
-        PrototypePtr pp = sset.first()->getPrototype();
-        //DesignElementPtr delp =
-
+        lab_LoadedDEL->clear();
     }
 }
 
+//  Tiling Workspace
+void page_views::updateTilingStatus()
+{
+    // Workspace Styled Design
+    StyledDesign & sd   = workspace->getStyledDesign(WS_TILING);
+    lab_tilingStyle->setText(sd.getName());
 
+    // Tiling
+    QString astring;
+    TilingPtr tp  = workspace->getTiling(WS_TILING);
+    if (sd.hasContent())
+    {
+        TilingPtr tp2 = sd.getTiling();
+        if (tp != tp2)
+        {
+            astring += "MISMATCH ";
+        }
+    }
+    if (tp)
+    {
+        astring += QString("%1 (%2)").arg(tp->getName()).arg(addr(tp.get()));
+    }
+    lab_tiling->setText(astring);
+
+    // styles
+    astring.clear();
+    if (sd.hasContent())
+    {
+        const StyleSet & sset = sd.getStyleSet();
+        for (auto style : sset)
+        {
+            astring+= QString("[%1 (%2)]  ").arg(style->getStyleDesc()).arg(addr(style.get()));
+        }
+    }
+    lab_tilingStyles->setText(astring);
+
+    // Prototype
+    PrototypePtr pp = workspace->getPrototype(WS_TILING);
+    if (sd.hasContent())
+    {
+        PrototypePtr pp2;
+        StylePtr sp = sd.getFirstStyle();
+        if (sp)
+        {
+            pp2  = sp->getPrototype();
+        }
+        if (pp != pp2)
+        {
+            astring += "MISMATCH ";
+        }
+    }
+    MapPtr map;;
+    if (pp)
+    {
+        map = pp->getExistingProtoMap();
+        astring += QString("(%2) %1 map=%3").arg(pp->getInfo()).arg(addr(pp.get())).arg(addr(map.get()));
+    }
+    lab_tilingPrototype->setText(astring);
+
+    // Design Element and Figure
+    DesignElementPtr del = workspace->getSelectedDesignElement(WS_TILING);
+    if (del)
+    {
+        QString astring = QString("(%1)").arg(addr(del.get()));
+
+        FeaturePtr fp = del->getFeature();
+        if (fp)
+        {
+            astring += " Feature: " ;
+            astring += fp->info();
+        }
+
+        FigurePtr fig = del->getFigure();
+        if (fig)
+        {
+            astring += " Figure: (";
+            astring += addr(fig.get());
+            astring += ") ";
+            astring += fig->getFigureDesc();
+        }
+
+        lab_tilingDEL->setText(astring);
+    }
+    else
+    {
+        lab_tilingDEL->clear();
+    }
+}
 
 void  page_views::slot_Viewer_pressed(int id)
 {
@@ -577,6 +660,11 @@ void  page_views::slot_selectViewer(int id, int id2)
 
 void  page_views::selectView(int id, int id2)
 {
+    if (id2 == -1)
+    {
+        return;
+    }
+
     eViewType vt = static_cast<eViewType>(id);
     switch (vt)
     {
@@ -625,7 +713,7 @@ void page_views::slot_setSyle()
     selectView(VIEW_DEL,DEL_STYLES);
     selectView(VIEW_FIGURE_MAKER,FV_STYLE);
     selectView(VIEW_TILING,TV_STYLE);
-    selectView(VIEW_TILING_MAKER,TD_STYLE);
+    selectView(VIEW_TILING_MAKER,TMV_STYLE);
     selectView(VIEW_MAP_EDITOR,MED_STYLE);
 }
 
@@ -637,11 +725,16 @@ void page_views::slot_setWS()
     selectView(VIEW_DEL,DEL_WS);
     selectView(VIEW_FIGURE_MAKER,FV_WS);
     selectView(VIEW_TILING,TV_WORKSPACE);
-    selectView(VIEW_TILING_MAKER,TD_WORKSPACE);
+    selectView(VIEW_TILING_MAKER,TMV_WORKSPACE);
     selectView(VIEW_MAP_EDITOR,MED_WS);
 }
 
 void  page_views::slot_lockViewClicked(bool enb)
 {
     config->lockView = enb;
+}
+
+void page_views::slot_scaleView(int state)
+{
+    config->scaleToView = (state == Qt::Checked);
 }

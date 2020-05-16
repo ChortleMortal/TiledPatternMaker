@@ -40,7 +40,8 @@
 #include "viewers/TilingView.h"
 #include "geometry/Point.h"
 #include "base/configuration.h"
-#include "base/canvas.h"
+#include "viewers/workspaceviewer.h"
+
 
 TilingView::TilingView(TilingPtr tiling) : Layer("TilingView")
 {
@@ -51,8 +52,8 @@ TilingView::TilingView(TilingPtr tiling) : Layer("TilingView")
 
 QRectF TilingView::boundingRect() const
 {
-    Canvas * canvas = Canvas::getInstance();
-    return canvas->getCanvasSettings().getRectF();
+    QRectF rect = wsViewer->GetCanvasSettings().getCanvasRect();
+    return rect;
 }
 
 void TilingView::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)

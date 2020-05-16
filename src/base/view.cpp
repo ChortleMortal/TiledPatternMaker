@@ -27,8 +27,8 @@
 #include "base/view.h"
 #include "panels/panel.h"
 #include "viewers/workspaceviewer.h"
-#include "makers/mapeditor.h"
-#include "makers/tilingmaker.h"
+#include "makers/map_editor/map_editor.h"
+#include "makers/tiling_maker/tiling_maker.h"
 
 View * View::mpThis = nullptr;
 
@@ -56,12 +56,11 @@ View::View() : QGraphicsView()
     setMouseTracking(true);
 
     setFrameStyle(0);
+    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     QSettings s;
     move(s.value("viewPos").toPoint());
-
-
-    expectedResize = false;
 }
 
 View::~View()
@@ -75,87 +74,95 @@ View::~View()
 
 void View::init()
 {
-    config  = Configuration::getInstance();
-    canvas  = Canvas::getInstance();
-    maped   = MapEditor::getInstance();
-    tmaker  = TilingMaker::getInstance();
+    config   = Configuration::getInstance();
+    canvas   = Canvas::getInstance();
+    maped    = MapEditor::getInstance();
+    tmaker   = TilingMaker::getInstance();
+    wsViewer = WorkspaceViewer::getInstance();
 
-    WorkspaceViewer * vw = WorkspaceViewer::getInstance();
-
-    connect(vw,   &WorkspaceViewer::sig_title, this,   &View::setWindowTitle, Qt::QueuedConnection);
+    connect(wsViewer, &WorkspaceViewer::sig_title, this, &View::setWindowTitle, Qt::QueuedConnection);
 }
 
-void View::slot_sceneRectChanged(const QRectF &rect)
+void View::matchViewSizeToScene(const QRectF & sceneRect)
 {
-    qDebug() << "Canvas rect:"  << rect;
-    matchSizeToCanvas();
-}
-
-void View::matchSizeToCanvas()
-{
-    qDebug() << "View::matchSizeToCanvas:" << canvas->scene->width() << canvas->scene->height();
-    QRectF crect = sceneRect();
-    QRect  vrect = crect.toAlignedRect();
-    expectedResize = true;
+    qDebug() << "View::matchSizeToCanvas (old):" << size().width() << size().height();
+    qDebug() << "View::matchSizeToCanvas (new):" << sceneRect.width() << sceneRect.height();
+    QRect  vrect = sceneRect.toAlignedRect();
     resize(vrect.width(),vrect.height());
-    centerOn(crect.width()/2,crect.height()/2);
+    centerOn(sceneRect.width()/2,sceneRect.height()/2);
+}
+
+bool View::scaleSceneSizeToView(const QSize &viewSize)
+{
+    if (!config->scaleToView)
+    {
+        return false;
+    }
+
+    QRectF scene_rectF = sceneRect();
+    QRect  scene_rect  = scene_rectF.toAlignedRect();
+    QSize  scene_size  = scene_rect.size();
+    if (scene_size != viewSize)
+    {
+        qDebug() << "Setting scene size because scene size=" << scene_size<< "and now view size=" << viewSize;
+        QRectF scRect(0.0,0.0,viewSize.width(),viewSize.height());
+        wsViewer->setSceneSize(viewSize);
+        scene()->setSceneRect(scRect);
+        return true;
+    }
+    return false;
+}
+
+
+void View::setSceneRect(const QRectF & rect)
+{
+    Q_UNUSED(rect)
+    qFatal("Do not call this");
+}
+
+void View::setSceneRect(qreal x, qreal y, qreal w, qreal h)
+{
+    Q_UNUSED(x);
+    Q_UNUSED(y);
+    Q_UNUSED(w);
+    Q_UNUSED(h);
+    qFatal("Do not call this");
 }
 
 void View::resizeEvent(QResizeEvent *event)
 {
-    qDebug() << "View::resizeEvent: was=" << size() << "becomes=" << event->size();
-
     QGraphicsView::resizeEvent(event);
 
-    if (config->viewerType == VIEW_TILING_MAKER)
+    QSize oldSize   = wsViewer->getViewSize(config->viewerType);
+    QSize viewSize  = size();
+    if (viewSize == oldSize)
     {
-        TilingMaker * td = TilingMaker::getInstance();
-        td->viewRectChanged();
-
-    }
-    else if (config->viewerType == VIEW_MAP_EDITOR)
-    {
-        MapEditor * me = MapEditor::getInstance();
-        me->viewRectChanged();
+        return;
     }
 
-    if (expectedResize)
+    qDebug() << "View::resizeEvent: was=" << event->oldSize() << "becomes=" << event->size();
+    qDebug() << "View::             was=" << oldSize          << "becomes=" << viewSize;
+    wsViewer->setViewSize(config->viewerType,viewSize);
+
+    if (scaleSceneSizeToView(viewSize))
     {
-        expectedResize = false;
-    }
-    else
-    {
-        QRectF crect = sceneRect();
-        QRect  vrect = crect.toAlignedRect();
-        if (vrect.size() != size())
+        QVector<Layer*> layers = wsViewer->getActiveLayers();
+        for (auto layer : layers)
         {
-            qDebug() << "Setting canvas size because canvas size=" << vrect.size() << "and now view size=" << size();
-            QRectF scRect(0.0,0.0,size().width(),size().height());
-            canvas->setSceneRect(scRect);
+            layer->forceUpdateLayer();
         }
 
-        WorkspaceViewer * viewer = WorkspaceViewer::getInstance();
-        QVector<Layer*>   layers = viewer->getActiveLayers();
-
-        if (layers.size())
-        {
-            for (auto it= layers.begin(); it != layers.end(); it++)
-            {
-                Layer * layer = *it;
-                layer->forceUpdateLayer();
-            }
-        }
         if (config->viewerType == VIEW_MAP_EDITOR)
         {
             MapEditor * me = MapEditor::getInstance();
             me->forceUpdateLayer();
         }
+
+        emit sig_resize();
     }
-    emit sig_resize();
 }
 
 #ifdef DEBUG_PAINT
-
 void View::paintEvent(QPaintEvent *event)
 {
     qDebug() << "++++START PAINT";
@@ -172,11 +179,11 @@ void View::paintEvent(QPaintEvent *event)
 
 void View::keyPressEvent( QKeyEvent *k )
 {
-    if (tmaker->procKeyEvent(k))
+    if (tmaker->procKeyEvent(k))        // tiling maker
     {
         return;
     }
-    else if (maped->procKeyEvent(k))
+    else if (maped->procKeyEvent(k))    // map editor
     {
         return;
     }

@@ -175,7 +175,7 @@ void ShapeViewer::paint(QPainter *painter,
     {
         painter->restore();
     }
-    UNTRANS;
+    UNTRANS
 }
 
 QRectF ShapeViewer::boundingRect() const

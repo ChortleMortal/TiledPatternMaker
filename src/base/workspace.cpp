@@ -30,7 +30,7 @@
 #include "base/fileservices.h"
 #include "base/tilingmanager.h"
 #include "base/utilities.h"
-#include "makers/tilingmaker.h"
+#include "makers/tiling_maker/tiling_maker.h"
 
 Workspace * Workspace::mpThis = nullptr;
 
@@ -66,8 +66,8 @@ void Workspace::init()
 Workspace::~Workspace()
 {
     clearDesigns();
-    loadedStyles.clear();
-    wsStyles.clear();
+    ws[WS_LOADED].clear();
+    ws[WS_TILING].clear();
 }
 
 void Workspace::clearDesigns()
@@ -83,7 +83,7 @@ void Workspace::clearDesigns()
 void Workspace::slot_clearCanvas()
 {
     // remove from scene but does not delete
-    canvas->clearCanvas();
+    canvas->clearScene();
 }
 
 void Workspace::slot_clearWorkspace()
@@ -91,12 +91,8 @@ void Workspace::slot_clearWorkspace()
     canvas->dump(true);
 
     clearDesigns();
-
-    loadedStyles.clear();
-    wsStyles.clear();
-    tiling.reset();
-    wsDesEle.reset();
-    wsPrototype.reset();
+    ws[WS_LOADED].clear();
+    ws[WS_TILING].clear();
 
     canvas->dump(true);
 }
@@ -122,7 +118,7 @@ bool Workspace::loadDesignXML(QString name)
 #endif
 
     canvas->dump(true);
-    loadedStyles.clear();
+    ws[WS_LOADED].clear();
     canvas->dump(true);
 
     QString file = FileServices::getDesignXMLFile(name);
@@ -145,14 +141,30 @@ bool Workspace::loadDesignXML(QString name)
 
     qDebug().noquote() << "Loading:"  << file;
 
-    XmlLoader loader(loadedStyles);
-    bool rv = loader.load(file);
+    StyledDesign * sd = &ws[WS_LOADED].styles;
+    XmlLoader loader;
+    bool rv = loader.loadXML(file,sd);
 
     if (rv)
     {
-        loadedStyles.setName(name);
         config->lastLoadedXML      = name;
         config->currentlyLoadedXML = name;
+        ws[WS_LOADED].styles.setName(name);
+
+        StylePtr sp = ws[WS_LOADED].styles.getFirstStyle();
+        if (sp)
+        {
+            PrototypePtr pp = sp->getPrototype();
+            if (pp)
+            {
+                ws[WS_LOADED].prototype = sp->getPrototype();
+                DesignElementPtr dp = pp->getDesignElement(0);
+                if (dp)
+                {
+                    ws[WS_LOADED].desEle = dp;
+                }
+            }
+        }
     }
     else
     {
@@ -164,7 +176,7 @@ bool Workspace::loadDesignXML(QString name)
     return rv;
 }
 
-bool Workspace::saveDesignXML(QString name, QString & savedName, bool forceOverwrite)
+bool Workspace::saveStyledDesign(eWsData wsdata, QString name, QString & savedName, bool forceOverwrite)
 {
     QString filename = FileServices::getDesignXMLFile(name);
     if (!forceOverwrite)
@@ -205,10 +217,9 @@ bool Workspace::saveDesignXML(QString name, QString & savedName, bool forceOverw
 
     qDebug() << "Saving XML to:"  << filename;
 
-    StyledDesign & sd = (config->designViewer == DV_LOADED_STYLE) ? getLoadedStyles() : getWsStyles();
-
-    XmlWriter writer(sd);
-    bool rv = writer.writeXML(filename);
+    StyledDesign * sd = &getStyledDesign(wsdata);
+    XmlWriter writer;
+    bool rv = writer.writeXML(filename,sd);
 
     if (!forceOverwrite)
     {
@@ -234,9 +245,10 @@ bool Workspace::loadTiling(QString name)
 {
     TilingManager * tm = TilingManager::getInstance();
 
-    tiling   = tm->loadTiling(name);
+    ws[WS_TILING].clear();
+    ws[WS_TILING].tiling = tm->loadTiling(name);
 
-    if (!tiling)
+    if (!ws[WS_TILING].tiling)
     {
         return false;
     }
@@ -263,37 +275,45 @@ bool Workspace::saveTiling(QString name, TilingPtr tp)
     bool rv = tp->writeTilingXML();   // uses the name in the tiling
     if (rv)
     {
-        tiling = tp;
+        tp->setDirty(false);
         emit sig_newTiling();
     }
     return rv;
 }
 
 // prototypes
-void  Workspace::setWSPrototype(PrototypePtr pp)
+void  Workspace::setPrototype(eWsData dataset, PrototypePtr pp)
 {
-    wsPrototype = pp;
+    ws[dataset].prototype = pp;
 }
 
-PrototypePtr Workspace::getWSPrototype()
+PrototypePtr Workspace::getPrototype(eWsData dataset)
 {
-    return wsPrototype;
+    return ws[dataset].prototype;
 }
 
 // figures
-void  Workspace::setWSDesignElement(DesignElementPtr dep)
+void  Workspace::setSelectedDesignElement(eWsData dataset, DesignElementPtr dep)
 {
     qDebug() << "setWSDesignElement" << Utils::addr(dep.get());
-    wsDesEle = dep;
+    ws[dataset].desEle = dep;
     emit sig_ws_dele_changed();
 }
 
-DesignElementPtr Workspace::getWSDesignElement()
+DesignElementPtr Workspace::getSelectedDesignElement(eWsData dataset)
 {
-    return wsDesEle;
+    return ws[dataset].desEle;
 }
 
 QVector<DesignPtr> & Workspace::getDesigns()
 {
     return activeDesigns;
+}
+
+void WorkspaceData::clear()
+{
+    styles.clear();
+    tiling.reset();
+    desEle.reset();
+    prototype.reset();
 }

@@ -72,6 +72,11 @@ Layer::Layer(const Layer & other) : QObject(), QGraphicsItemGroup()
     refs++;
 }
 
+Layer::~Layer()
+{
+    refs--;
+}
+
 void Layer::addToGroup(QGraphicsItem * item)
 {
     QGraphicsItemGroup::addToGroup(item);
@@ -102,8 +107,7 @@ QTransform Layer::getLayerTransform()
             QTransform bT = wsViewer->getViewTransform(config->viewerType);
             QTransform iT = bT.inverted();
 
-            Canvas * canvas = Canvas::getInstance();
-            Scene * scene   = canvas->scene;
+            Scene * scene   = canvas->currentScene();
             if (scene)
             {
                QPointF center = scene->sceneRect().center();
@@ -194,7 +198,7 @@ void Layer::slot_moveX(int amount)
     }
     else if (config->kbdMode == KBD_MODE_XFORM_BKGD)
     {
-        BkgdImgPtr bip = canvas->getCanvasSettings().getBkgdImage();
+        BkgdImgPtr bip = wsViewer->getBkgdImage();
         if (bip)
         {
             Xform xf = bip->getXform();
@@ -214,7 +218,7 @@ void Layer::slot_moveY(int amount)
     }
     else if (config->kbdMode == KBD_MODE_XFORM_BKGD)
     {
-        BkgdImgPtr bip = canvas->getCanvasSettings().getBkgdImage();
+        BkgdImgPtr bip = wsViewer->getBkgdImage();
         if (bip)
         {
             Xform xf = bip->getXform();
@@ -234,7 +238,7 @@ void Layer::slot_rotate(int amount)
     }
     else if (config->kbdMode == KBD_MODE_XFORM_BKGD)
     {
-        BkgdImgPtr bip = canvas->getCanvasSettings().getBkgdImage();
+        BkgdImgPtr bip = wsViewer->getBkgdImage();
         if (bip)
         {
             Xform xf = bip->getXform();
@@ -254,7 +258,7 @@ void Layer::slot_scale(int amount)
     }
     else if (config->kbdMode == KBD_MODE_XFORM_BKGD)
     {
-        BkgdImgPtr bip = canvas->getCanvasSettings().getBkgdImage();
+        BkgdImgPtr bip = wsViewer->getBkgdImage();
         if (bip)
         {
             Xform xf = bip->getXform();

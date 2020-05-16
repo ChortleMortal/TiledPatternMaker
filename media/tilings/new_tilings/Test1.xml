@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<Tiling version="2">
+	<Name>Test1</Name>
+	<Fill>-4,4,-4,4</Fill>
+	<T1>0,0</T1>
+	<T2>0,0</T2>
+	<Feature type="girih" name="gRhombus">
+		<Placement>0.587785252292473,0.8090169943749476,-4.771711778266562,-0.8090169943749476,0.587785252292473,-4.597630971080641</Placement>
+	</Feature>
+	<Feature type="girih" name="gDecagon">
+		<Placement>0.9510565162951536,0.3090169943749472,-4.245980666147428,-0.3090169943749472,0.9510565162951536,-2.979596982330747</Placement>
+	</Feature>
+	<Feature type="girih" name="gPentagon">
+		<Placement>1.266853010431011e-16,0.447213595499958,-2.869598745676255,-0.447213595499958,1.266853010431011e-16,-2.532383386830789</Placement>
+	</Feature>
+	<Feature type="girih" name="gBowtie">
+		<Placement>0.9510565162951534,-0.309016994374948,-6.148093698737735,0.309016994374948,0.9510565162951534,-2.361562993580853</Placement>
+	</Feature>
+	<Feature type="girih" name="gKite">
+		<Placement>0.9510565162951534,-0.309016994374948,-6.148093698737735,0.309016994374948,0.9510565162951534,-2.361562993580853</Placement>
+	</Feature>
+	<Desc>All the girih shapes</Desc>
+	<Auth>David</Auth>
+</Tiling>

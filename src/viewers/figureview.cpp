@@ -29,7 +29,7 @@
 #include "tapp/RadialFigure.h"
 #include "tapp/ExtendedStar.h"
 #include "tapp/ExtendedRosette.h"
-#include "makers/FeatureButton.h"
+#include "makers/figure_maker/feature_button.h"
 #include "base/utilities.h"
 #include "geometry/Transform.h"
 
@@ -136,10 +136,16 @@ void FigureView::paintRadialFigureMap(QPainter *painter, QPen pen)
 
     paintMap(painter,map,pen);
 
-    MapPtr dmap = rp->getDebugMap();
-    if (dmap)
+    map = rp->useDebugMap();
+    if (map)
     {
-        paintMap(painter,dmap,QPen(Qt::white,1.0));
+        paintMap(painter,map,QPen(Qt::white,1.0));
+    }
+
+    if (config->highlightUnit)
+    {
+        map = rp->useUnitMap();
+        paintMap(painter,map,QPen(Qt::red,3.0));
     }
 }
 

@@ -25,8 +25,8 @@
 #ifndef PAGE_FIGURE_EDITOR_H
 #define PAGE_FIGURE_EDITOR_H
 
-#include "panel_page.h"
-#include "makers/mapeditor.h"
+#include "panels/panel_page.h"
+#include "makers/map_editor/map_editor.h"
 
 class page_map_editor : public panel_page
 {
@@ -37,6 +37,7 @@ public:
 
     void refreshPage() override;
     void onEnter() override;
+    void onExit() override {}
 
 signals:
     void sig_stylesAddProto();
@@ -66,7 +67,11 @@ private slots:
     void slot_redoConstructionLines();
     void slot_clearConstructionLines();
     void slot_clearMap();
+    void slot_createMap();
+    void slot_loadMap();
+    void slot_saveMap();
     void slot_dumpMap();
+    void slot_applyCrop();
     void slot_cleanseMap();
     void slot_setModes(int mode);
     void slot_mapEdMode_pressed(int id);
@@ -88,6 +93,8 @@ protected:
 
 private:
     MapEditor * me;
+
+    MapPtr  localMap;       // for new maps created in the editor
 
     QGroupBox   * editorStatusBox;
     QVBoxLayout * dummyStatusBox;

@@ -74,46 +74,40 @@ qtAppLog::qtAppLog()
 #ifdef WIN32
     QString root = qApp->applicationDirPath();
     QStringList rootpath = root.split("/");
-    QString path = rootpath[0];
-    path += "/logs/";
+    _logDir  = rootpath[0] + "/logs/";
 
-    QDir adir(path);
+    QDir adir(_logDir);
     if (!adir.exists())
     {
-        if (!adir.mkpath(path))
+        if (!adir.mkpath(_logDir))
         {
             QMessageBox box;
-            box.setText(QString("Failed to create logfile directory: %1").arg(path));
+            box.setText(QString("Failed to create logfile directory: %1").arg(_logDir));
             box.exec();
             return;
         }
     }
-
-    if (QLibraryInfo::isDebugBuild())
-    {
-        currentLogName = path + "patternLogD.txt";
-    }
-    else
-    {
-        currentLogName = path + "patternLogR.txt";
-    }
 #else
-    QString path = "./logs/";
-    QDir adir(path);
+    _logDir = "./logs/";
+    QDir adir(_logDir);
     if (!adir.exists())
     {
         QDir adir2(".");
         if (!adir2.mkdir("logs"))
         {
             QMessageBox box;
-            box.setText(QString("Failed to create logfile directory: %1").arg(path));
+            box.setText(QString("Failed to create logfile directory: %1").arg(_logDir));
             box.exec();
             return;
         }
     }
     qDebug().noquote() << "log  :"  << adir.canonicalPath();
+#endif
 
-    currentLogName = "./logs/patternLog.txt";
+#ifdef QT_DEBUG
+    currentLogName = _logDir + "patternLogD.txt";
+#else
+    currentLogName = _logDir + "patternLogR.txt";
 #endif
 
     mCurrentFile.setFileName(currentLogName);

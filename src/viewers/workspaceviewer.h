@@ -28,9 +28,11 @@
 #include <QtCore>
 #include <QtWidgets>
 #include "base/layer.h"
+#include "base/misc.h"
 #include "base/configuration.h"
 #include "designs/design.h"
 #include "geometry/bounds.h"
+#include "base/shared.h"
 
 class Canvas;
 class DesignElement;
@@ -47,15 +49,7 @@ class MapEditor;
 class StyledDesign;
 class FaceSetView;
 class FaceSet;
-
-struct ViewDefinition
-{
-    eViewType   viewType;
-    Bounds      viewBounds;
-    QSizeF      viewSize;
-    QColor      viewBkgdColor;
-    QPointF     viewStartTile;
-};
+class Scene;
 
 class WorkspaceViewer : public QObject
 {
@@ -68,12 +62,23 @@ public:
     void   init();
     void   clear();
 
-    QVector<Layer*>    getActiveLayers();
+    bool            hasLayers();
+    QVector<Layer*> getActiveLayers();
 
-    QTransform         getViewTransform(eViewType e);
-    static QTransform  calculateViewTransform(ViewDefinition &sab);
+    ViewSettings   &  getViewSettings(eViewType e);
+    void              setViewSize(eViewType e, QSize sz);
+    QSize             getViewSize(eViewType e);
+    QRect             getViewRect(eViewType e);
+    QTransform        getViewTransform(eViewType e);
 
-    static ViewDefinition viewDimensions[];
+    CanvasSettings &  GetCanvasSettings();
+    void              setCanvasSettings(CanvasSettings & cs);
+
+    QSizeF            getSceneSize();
+    void              setSceneSize(QSizeF sz);
+
+    BorderPtr         getBorder() { return bp; }
+    BkgdImgPtr        getBkgdImage() { return bip; }
 
 public slots:
     void slot_viewWorkspace();
@@ -86,38 +91,39 @@ signals:
 protected:
    WorkspaceViewer();
 
-   void                generateCanvasSettings(CanvasSettings &cs);
-   void                setupBackgroundImage(CanvasSettings & cs, PrototypePtr pp);
-   void                setupBackgroundImage(CanvasSettings & cs, TilingPtr tp);
+   void     viewWorkspace();
 
-   void                viewWorkspace();
-   void                viewStyledDesign(StyledDesign &  sd);
-   ProtoView         * viewProto(StylePtr style);
-   ProtoView         * viewProto(PrototypePtr proto);
-   ProtoFeatureView  * viewProtoFeature(StylePtr style);
-   ProtoFeatureView  * viewProtoFeature(PrototypePtr proto);
-   TilingView        * viewTiling(StylePtr style);
-   TilingView        * viewTiling(TilingPtr tiling);
-   TilingMaker       * viewTilingMaker();
-   MapEditor         * viewFigMapEditor(QPointF center);
-   FigureView        * viewFigure(DesignElementPtr dep, QPointF center);
-   PlacedDesignElementView * viewPlacedDesignElement(PlacedDesignElementPtr pde);
-   FaceSetView       * viewFaceSet(FaceSet *set);
+   void     viewDesign();
+   void     viewProto();
+   void     viewProtoFeature();
+   void     viewDesignElement();
+   void     viewFigureMaker();
+   void     viewTiling();
+   void     viewTilingMaker();
+   void     viewMapEditor();
+   void     viewFaceSet();
 
-   void                setTitle(TilingPtr tp);
+   void     setTitle(TilingPtr tp);
 
 private:
-    static WorkspaceViewer * mpThis;
+   void     updateScene(Scene * scene);
+
+   static WorkspaceViewer * mpThis;
 
     class Configuration * config;
     class Workspace     * workspace;
     class Canvas        * canvas;
 
-    QVector<Layer*>     mViewers;
-    QVector<Layer*>     mStyles;    // don't delete - just clear
-    QVector<DesignPtr>  mDesigns;
+    UniqueQVector<Layer*> mViewers;
+    UniqueQVector<Layer*> mStyles;    // don't delete - just clear
 
-    QVector<QTransform> viewTransforms;
+    QVector<DesignPtr>    mDesigns;
+
+    BorderPtr       bp;
+    BkgdImgPtr      bip;
+
+    ViewSettings        viewSettings[VIEW_MAX+1];
+    CanvasSettings      canvasSettings;
 };
 
 #endif // DESIGNVIEWER_H

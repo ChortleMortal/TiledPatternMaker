@@ -54,6 +54,7 @@ public:
     page_layers(ControlPanel * cpanel);
 
     void onEnter() override;
+    void onExit() override {}
     void refreshPage() override;
 
 private slots:

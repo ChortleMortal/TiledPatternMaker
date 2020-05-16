@@ -49,9 +49,10 @@ public:
 
     const StyleSet & getStyleSet() { return styleSet; }
 
-    QVector<PrototypePtr> getPrototypes();
+    void             setPrototype(PrototypePtr pp);
+    PrototypePtr     getPrototype();
 
-    CanvasSettings   getCanvasSettings();
+    CanvasSettings & getCanvasSettings();
     void             setCanvasSettings(CanvasSettings settings);
 
     StylePtr    getFirstStyle();

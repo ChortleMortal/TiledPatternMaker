@@ -32,14 +32,14 @@
 #include "designs/designs.h"
 #include "style/Style.h"
 #include "panels/panel.h"
+#include "panels/page_views.h"
 #include "panels/splitscreen.h"
-#include "makers/mapeditor.h"
-#include "makers/tilingmaker.h"
+#include "makers/map_editor/map_editor.h"
+#include "makers/tiling_maker/tiling_maker.h"
 #include "viewers/workspaceviewer.h"
 
 TiledPatternMaker::TiledPatternMaker() : QObject()
 {
-    splitter = nullptr;
     connect(this,&TiledPatternMaker::sig_start, this, &TiledPatternMaker::startEverything, Qt::QueuedConnection);
     emit sig_start();
 }
@@ -51,8 +51,8 @@ void TiledPatternMaker::startEverything()
     bool oldPanelLock = config->lockView;
     config->lockView = true;    // disables view switching during init
 
-    canvas    = Canvas::getInstance();
     view      = View::getInstance();
+    canvas    = Canvas::getInstance();
     workspace = Workspace::getInstance();
 
     WorkspaceViewer * viewer = WorkspaceViewer::getInstance();
@@ -106,21 +106,20 @@ void TiledPatternMaker::startEverything()
 
     connect(cycler,    &Cycler::sig_loadXML,        this,  &TiledPatternMaker::slot_loadXMLSimple);
     connect(cycler,    &Cycler::sig_loadTiling,     this,  &TiledPatternMaker::slot_loadTilingSimple);
-    connect(cycler,    &Cycler::sig_loadAndSave,    this,  &TiledPatternMaker::slot_loadAndSaveXML);
     connect(cycler,    &Cycler::sig_saveAsBMP,      this,  &TiledPatternMaker::slot_saveAsBMP);
     connect(cycler,    &Cycler::sig_saveTilingAsBMP,this,  &TiledPatternMaker::slot_saveTilingAsBMP);
     connect(cycler,    &Cycler::sig_finished,       this,  &TiledPatternMaker::slot_cyclerFinished);
     connect(cycler,    &Cycler::sig_compare,        this,  &TiledPatternMaker::slot_compareImages);
     connect(cycler,    &Cycler::sig_viewImage,      this,  &TiledPatternMaker::slot_view_image);
-    connect(cycler,    &Cycler::sig_png,            canvas, &Canvas::slot_png);
+    connect(cycler,    &Cycler::sig_show_png,     canvas,  &Canvas::slot_show_png);
 
     connect(canvas,   &Canvas::sig_cyclerStart,  cycler,  &Cycler::slot_startCycle, Qt::QueuedConnection);
     connect(canvas,   &Canvas::sig_cyclerKey,    cycler,  &Cycler::slot_psuedoKey);
     connect(canvas,   &Canvas::sig_cyclerQuit,   cycler,  &Cycler::slot_stopCycle);
 
-
     // pop-up control panel
-    controlPanel = new ControlPanel(this);
+    controlPanel = ControlPanel::getInstance();
+    controlPanel->init(this);
     controlPanel->show();
     controlPanel->raise();
     controlPanel->activateWindow();
@@ -148,6 +147,14 @@ void TiledPatternMaker::startEverything()
     }
 
     config->lockView = oldPanelLock;    // restore
+    panel_page * pp = controlPanel->getCurrentPage();
+    page_views * pv = dynamic_cast<page_views*>(pp);
+    if (pv)
+    {
+        pv->onEnter();  // refreshes lock status
+    }
+
+    emit sig_viewWS();
 }
 
 TiledPatternMaker::~TiledPatternMaker()
@@ -157,7 +164,7 @@ TiledPatternMaker::~TiledPatternMaker()
     workspace->releaseInstance();
     controlPanel->closePages();
     controlPanel->close();
-    delete controlPanel;
+    controlPanel->releaseInstance();
     config->save();
     config->releaseInstance();      // performed last
 }
@@ -194,17 +201,6 @@ void TiledPatternMaker::slot_buildDesign(eDesign design)
     emit sig_loadedDesign(design);
 }
 
-void TiledPatternMaker::slot_loadAndSaveXML(QString name)
-{
-    qDebug().noquote() << "TiledPatternMaker::slot_loadAndSaveXML() <" << name << ">";
-    view->setWindowTitle(QString("Loading: %1").arg(name));
-    QCoreApplication::processEvents();
-    workspace->loadDesignXML(name);
-    QString outfile;
-    workspace->saveDesignXML(name,outfile,true);
-    emit sig_ready();
-}
-
 void TiledPatternMaker::slot_loadXML(QString name)
 {
     qDebug().noquote() << "TiledPatternMaker::slot_loadXML() <" << name << ">";
@@ -217,8 +213,11 @@ void TiledPatternMaker::slot_loadXML(QString name)
         emit sig_viewWS();
         emit sig_ready();
         emit sig_loadedXML(name);
+#if 0
+        // removed 26APR2020
         QString tileName = FileServices::getTileNameFromDesignName(name);
         emit sig_loadedTiling(tileName);
+#endif
     }
 }
 
@@ -234,11 +233,11 @@ void TiledPatternMaker::slot_loadXMLSimple(QString name)
     }
 }
 
-void TiledPatternMaker::slot_saveXML(QString filename)
+void TiledPatternMaker::slot_saveXML(eWsData wsdata, QString filename)
 {
     qDebug() << "TiledPatternMaker::slot_saveXML()";
     QString savedFile;
-    bool rv = workspace->saveDesignXML(filename,savedFile,false);
+    bool rv = workspace->saveStyledDesign(wsdata,filename,savedFile,false);
     if (rv)
     {
         MapEditor::getInstance()->keepStash(savedFile);
@@ -280,19 +279,21 @@ void TiledPatternMaker::slot_loadTilingSimple(QString name)
     }
 }
 
+// usaed by cycler
 void TiledPatternMaker::slot_saveAsBMP(QString name)
 {
     workspace->loadDesignXML(name);
     emit sig_viewWS();
-    canvas->saveBMP(name);
+    canvas->savePixmap(name);
     emit sig_ready();
 }
 
+// used by cycler
 void TiledPatternMaker::slot_saveTilingAsBMP(QString name)
 {
     workspace->loadTiling(name);
     emit sig_viewWS();
-    canvas->saveBMP(name);
+    canvas->savePixmap(name);
     emit sig_ready();
 }
 
@@ -316,11 +317,11 @@ void TiledPatternMaker::slot_render(eRender type)
 
 void TiledPatternMaker::slot_renderWS()
 {
-    StyledDesign & sd  = workspace->getWsStyles();
+    StyledDesign & sd  = workspace->getStyledDesign(WS_TILING);
     resetProtos(sd);
     resetStyles(sd);
 
-    PrototypePtr pp = workspace->getWSPrototype();
+    PrototypePtr pp = workspace->getPrototype(WS_TILING);
     if (pp)
     {
         pp->resetProtoMap();
@@ -331,11 +332,11 @@ void TiledPatternMaker::slot_renderWS()
 
 void TiledPatternMaker::slot_renderLoaded()
 {
-    StyledDesign & sd  = workspace->getLoadedStyles();
+    StyledDesign & sd  = workspace->getStyledDesign(WS_LOADED);
     resetProtos(sd);
     resetStyles(sd);
 
-    PrototypePtr pp = workspace->getWSPrototype();
+    PrototypePtr pp = workspace->getPrototype(WS_LOADED);
     if (pp)
     {
         pp->resetProtoMap();
@@ -348,12 +349,8 @@ void TiledPatternMaker::slot_renderLoaded()
 void TiledPatternMaker::resetProtos(StyledDesign & sd)
 {
     // reset prototypes
-    QVector<PrototypePtr> ppvec = sd.getPrototypes();
-    for (auto it = ppvec.begin(); it != ppvec.end(); it++)
-    {
-        PrototypePtr pp = *it;
-        pp->resetProtoMap();
-    }
+    PrototypePtr pp = sd.getPrototype();
+    pp->resetProtoMap();
 }
 
 void TiledPatternMaker::resetStyles(StyledDesign & sd)
@@ -369,7 +366,8 @@ void TiledPatternMaker::resetStyles(StyledDesign & sd)
 
 void TiledPatternMaker::forceUpdateStyles()
 {
-    StyledDesign & sd = (config->designViewer == DV_LOADED_STYLE) ? workspace->getLoadedStyles() : workspace->getWsStyles();
+    eWsData ws =  (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
+    StyledDesign & sd  = workspace->getStyledDesign(ws);
     const StyleSet & sset = sd.getStyleSet();
     for (auto it = sset.begin(); it != sset.end(); it++)
     {
@@ -399,20 +397,23 @@ void TiledPatternMaker::slot_bringToPrimaryScreen()
 void TiledPatternMaker::slot_splitScreen()
 {
     // toggles
-    if (!splitter)
-    {
-        splitter = new SplitScreen();
-    }
-
+    static SplitScreen  * splitter = nullptr;
     QSettings s;
+
     if (!config->screenIsSplit)
     {
+        // split the screen
+
+        if (!splitter)
+        {
+            splitter = new SplitScreen();
+        }
+
         s.setValue("viewPos",view->pos());
         s.setValue("panelPos", controlPanel->pos());
 
         QScreen * sc = qApp->screenAt(controlPanel->pos());
         splitter->addWidgets(controlPanel,view);
-
 
         QRect  rec = sc->geometry();
 
@@ -426,9 +427,9 @@ void TiledPatternMaker::slot_splitScreen()
     }
     else
     {
+        // unsplit the screen
         controlPanel->setParent(nullptr);
         view->setParent(nullptr);
-        splitter->hide();
 
         controlPanel->show();
         controlPanel->move(s.value("panelPos").toPoint());
@@ -438,6 +439,12 @@ void TiledPatternMaker::slot_splitScreen()
         view->move(s.value("viewPos").toPoint());
 
         config->screenIsSplit = false;
+
+        if (splitter)
+        {
+            delete splitter;
+            splitter = nullptr;
+        }
     }
 }
 

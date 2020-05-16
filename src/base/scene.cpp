@@ -5,21 +5,36 @@
 #include "base/view.h"
 #include "viewers/GeoGraphics.h"
 
-Scene::Scene(View * view)
+Scene::Scene()
 {
 	viewer = WorkspaceViewer::getInstance();
     config = Configuration::getInstance();
 
     gridPen.setColor(QColor(Qt::red));
 
-    paintBackground = true;
+    paintBackground(true);
 
-    connect(this, &Scene::sceneRectChanged, view, &View::slot_sceneRectChanged);
+    view = View::getInstance();
+}
+
+void Scene::setSceneRect(const QRectF & rect)
+{
+    QRectF old = sceneRect();
+    if (rect != old)
+    {
+        QGraphicsScene::setSceneRect(rect);
+    }
+    view->matchViewSizeToScene(rect);
+}
+
+void Scene::setSceneRect(qreal x, qreal y, qreal w, qreal h)
+{
+    setSceneRect(QRectF(x,y,w,h));
 }
 
 void Scene::drawBackground(QPainter *painter, const QRectF &rect)
 {
-    if (paintBackground)
+    if (_paintBackground)
     {
         QGraphicsScene::drawBackground(painter,rect);
     }
@@ -65,9 +80,13 @@ void Scene::drawForeground(QPainter *painter, const QRectF & r)
 void Scene::drawGridModelUnits(QPainter *painter, const QRectF &r)
 {
     // this centers on scene
+    QTransform T;
     qreal step   = config->gridStepModel;
-    Layer * l    = viewer->getActiveLayers().first();
-    QTransform T = l->getLayerTransform();
+    if (viewer->hasLayers())
+    {
+        Layer * l = viewer->getActiveLayers().first();
+        T = l->getLayerTransform();
+    }
     GeoGraphics gg(painter,T);
 
     // horizontal
@@ -86,12 +105,17 @@ void Scene::drawGridModelUnits(QPainter *painter, const QRectF &r)
 void Scene::drawGridModelUnitsCentered(QPainter *painter, QRectF &r)
 {
     // this centers on layer center
-    Layer * l       = viewer->getActiveLayers().first();
-    QTransform T    = l->getLayerTransform();
+    QTransform T;
+    QPointF center;
+    if (viewer->hasLayers())
+    {
+        Layer * l   = viewer->getActiveLayers().first();
+        T           = l->getLayerTransform();
+        center      = l->getCenter();
+    }
     qreal step      = config->gridStepModel;
     qreal scale     = Transform::scalex(T);
     step *= scale;
-    QPointF center  = l->getCenter();
     r.moveCenter(center);
 
     painter->setPen(gridPen);
@@ -138,8 +162,12 @@ void Scene::drawGridSceneUnits(QPainter *painter, const QRectF &r)
 
 void Scene::drawGridSceneUnitsCentered(QPainter *painter, QRectF & r)
 {
-    Layer * l       = viewer->getActiveLayers().first();
-    QPointF center = l->getCenter();
+    QPointF center;
+    if (viewer->hasLayers())
+    {
+        Layer * l  = viewer->getActiveLayers().first();
+        center = l->getCenter();
+    }
     r.moveCenter(center);
 
     qreal step = config->gridStepScreen;

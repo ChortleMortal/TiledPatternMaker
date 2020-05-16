@@ -40,7 +40,6 @@
 #include "geometry/Intersect.h"
 #include "geometry/Transform.h"
 #include "designs/shapefactory.h"
-#include "base/misc.h"
 #include "base/canvas.h"
 #include "tile/Feature.h"
 

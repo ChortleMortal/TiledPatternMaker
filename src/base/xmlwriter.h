@@ -44,10 +44,11 @@ class Configuration;
 class XmlWriter
 {
 public:
-    XmlWriter(StyledDesign &styledDesign);
+    XmlWriter();
     ~XmlWriter();
 
-    bool writeXML(QString fileName);
+    bool writeXML(QString fileName, StyledDesign * design);
+    bool writeXML(QString fileName, MapPtr map);
     QString getFailMsg() { return _failMsg; }
 
 protected:
@@ -90,13 +91,14 @@ protected:
     // figures
     void    setFigureCommon(QTextStream & ts, FigurePtr fp);
     void    setExplicitFigure(QTextStream & ts,QString name, FigurePtr fp);
-    void    setStarFigure(QTextStream & ts,QString name, FigurePtr fp);
+    void    setStarFigure(QTextStream & ts,QString name, FigurePtr fp, bool childEnd=false);
+    void    setRosetteFigure(QTextStream & ts, QString name, FigurePtr fp, bool childEnd=false);
     void    setExtendedStarFigure(QTextStream & ts,QString name, FigurePtr fp);
     void    setExtendedRosetteFigure(QTextStream & ts,QString name, FigurePtr fp);
-    void    setRosetteFigure(QTextStream & ts, QString name, FigurePtr fp, bool childEnd=false);
     void    setRosetteConnectFigure(QTextStream & ts,QString name, FigurePtr fp);
+    void    setStarConnectFigure(QTextStream & ts,QString name, FigurePtr fp);
 
-    void    setMap(QTextStream & ts, MapPtr map);
+    bool    setMap(QTextStream & ts, MapPtr map);
     void    setVertices(QTextStream & ts, const QVector<VertexPtr> & vertices);
     void    setEdges(QTextStream & ts, const QVector<EdgePtr> & edges );
     void    setNeighbours(QTextStream & ts, NeighbourMap &nmap );
@@ -126,6 +128,7 @@ protected:
     bool   hasReference(ExtStarPtr ep);
     bool   hasReference(ExtRosettePtr ep);
     bool   hasReference(RosetteConnectPtr ep);
+    bool   hasReference(StarConnectPtr ep);
     bool   hasReference(MapPtr map);
     bool   hasReference(VertexPtr map);
     bool   hasReference(EdgePtr map);
@@ -143,6 +146,7 @@ protected:
     void   setExtendedRosetteReference(int id, ExtRosettePtr ptr);
     void   setRosetteReference(int id, RosettePtr ptr);
     void   setRosetteConnectReference(int id, RosetteConnectPtr ptr);
+    void   setStarConnectReference(int id, StarConnectPtr ptr);
 
     QString getPolyReference(PolyPtr ptr);
     QString getProtoReference(PrototypePtr ptr);
@@ -157,6 +161,7 @@ protected:
     QString getExtendedRosetteReference(ExtRosettePtr ptr);
     QString getRosetteReference(RosettePtr ptr);
     QString getRosetteConnectReference(RosetteConnectPtr ptr);
+    QString getStarConnectReference(StarConnectPtr ptr);
 
     // writer methods
     QString  id(int id);
@@ -180,12 +185,12 @@ private:
     QMap<ExtRosettePtr,int> extended_rosette_ids;
     QMap<RosettePtr,int>    rosette_ids;
     QMap<RosetteConnectPtr,int>  rosette_connect_ids;
+    QMap<StarConnectPtr,int>  star_connect_ids;
 
-    StyledDesign          & design;
     Configuration         * config;
+    StyledDesign          * sd;
     QString                 _fileName;
     QString                 _failMsg;
-    MapPtr                  _currentMap;
 
     int refId;
 };

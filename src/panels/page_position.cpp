@@ -26,7 +26,7 @@
 #include "designs/patterns.h"
 #include "base/canvas.h"
 #include "viewers/workspaceviewer.h"
-#include "makers/mapeditor.h"
+#include "makers/map_editor/map_editor.h"
 
 using std::string;
 

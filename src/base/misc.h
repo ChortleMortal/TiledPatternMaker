@@ -29,6 +29,7 @@
 #include <QPainter>
 #include <QtWidgets>
 
+// MarkX
 class MarkX : public QGraphicsItem
 {
 public:
@@ -49,20 +50,25 @@ private:
     QString _txt;
 };
 
-class AQLabel : public QLabel
+
+// UniqueQVector
+template <class T> class UniqueQVector : public QVector<T>
 {
-    Q_OBJECT
-
 public:
-    AQLabel();
+    UniqueQVector();
 
-    void keyPressEvent( QKeyEvent *k ) Q_DECL_OVERRIDE;
-
-signals:
-    void sig_takeNext();
-    void sig_cyclerQuit();
-    void sig_view_images();
-    void sig_close();
+    void push_back(const T &value);
 };
+
+template <class T> UniqueQVector<T>::UniqueQVector() : QVector<T>()
+{}
+
+template <class T> void UniqueQVector<T>::push_back(const T & value)
+{
+    if (!contains(value))
+    {
+        QVector<T>::push_back(value);
+    }
+}
 
 #endif // MISC_H

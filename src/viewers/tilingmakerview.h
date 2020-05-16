@@ -36,8 +36,8 @@
 #define TILING_MAKER_VIEW_H
 
 #include "viewers/GeoGraphics.h"
-#include "makers/TilingSelection.h"
-#include "makers/tilingmouseactions.h"
+#include "makers/tiling_maker/tiling_selection.h"
+#include "makers/tiling_maker/tiling_mouseactions.h"
 #include "tile/PlacedFeature.h"
 #include "base/layer.h"
 #include "base/configuration.h"
@@ -103,10 +103,6 @@ protected:
 
     bool         _hide;
     bool         _showOverlaps;
-
-    QPointF     deltaTrans;
-
-    Configuration   * config;
 
     QVector<PlacedFeaturePtr> overlapping;  // calculated DAC was hash
     QVector<PlacedFeaturePtr> touching;     // calculated

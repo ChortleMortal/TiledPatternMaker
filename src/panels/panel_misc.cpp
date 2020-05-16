@@ -279,6 +279,37 @@ void ClickableLabel::mousePressEvent(QMouseEvent* event)
     emit clicked();
 }
 
+AQLabel::AQLabel() : QLabel()
+{
+    setAttribute(Qt::WA_DeleteOnClose);
+    connect(this, &AQLabel::sig_close, this, &AQLabel::close, Qt::QueuedConnection);
+}
+
+void AQLabel::keyPressEvent( QKeyEvent *k )
+{
+    int key = k->key();
+    if (key == Qt::Key_Space)
+    {
+        emit sig_takeNext();
+        emit sig_close();       // foces take before close
+    }
+    else if (key == 'Q')
+    {
+        emit sig_cyclerQuit();
+        close();
+    }
+    else if (key == 'V')
+    {
+        emit sig_view_images(); // all three are now visible
+    }
+    else if (key == 'L')
+    {
+        qWarning() << "FILE LOGGED (needs attention)";
+        emit sig_takeNext();
+        close();
+    }
+}
+
 void eraseLayout(QLayout * layout)
 {
     while(layout->count() > 0)

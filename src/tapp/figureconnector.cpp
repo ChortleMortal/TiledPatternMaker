@@ -37,7 +37,7 @@ void FigureConnector::connectFigure(MapPtr unitMap)
     int n     = rp->getN();
     qreal don = rp->get_don();
 
-    MapPtr dmap = rp->getDebugMap();
+    MapPtr dmap = rp->useDebugMap();
     dmap->wipeout();  // start again
 
     VertexPtr tip;

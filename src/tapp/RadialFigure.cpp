@@ -106,9 +106,8 @@ void RadialFigure::buildMaps()
         return;
     }
 
-#if 0
+#if 1
     figureMap = replicateUnit();
-    //figureMap->dump();
 #else
     //qDebug().noquote()  << "Tr=" << Tr.toString();
 
@@ -130,8 +129,9 @@ void RadialFigure::buildMaps()
     figureMap->mergeSimpleMany(unitMap, transforms);
 
     figureMap->verifyMap("RadialFigure::getMap-newret");
+#endif
 
-    figureMap->dumpMap(false);
+    //figureMap->dumpMap(false);
 
 #if 0
     figureMap = figureMap->compress();
@@ -141,7 +141,6 @@ void RadialFigure::buildMaps()
     figureMap->setTmpIndices();
     annotateEdges();
     //figureMap->dumpMap(false);
-#endif
 }
 
 MapPtr  RadialFigure::replicateUnit()

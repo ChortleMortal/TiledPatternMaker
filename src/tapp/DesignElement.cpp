@@ -49,13 +49,14 @@ DesignElement::DesignElement(FeaturePtr feature, FigurePtr figure)
 DesignElement::DesignElement(FeaturePtr feature)
 {
     this->feature = feature;
-    if( feature->isRegular() && (feature->numPoints() >= 4) )  // DAC was > 4
+    //if( feature->isRegular() && (feature->numPoints() >= 4) )  // DAC was > 4
+    if( feature->isRegular() && (feature->numPoints() > 4) )  // DAC was > 4
     {
         figure = make_shared<Rosette>(feature->numPoints(), 0.0, 3, 0, feature->getRotation() );
     }
     else
     {
-        figure = make_shared<ExplicitFigure>(make_shared<Map>("FIG_TYPE_EXPLICIT map"),FIG_TYPE_EXPLICIT);
+        figure = make_shared<ExplicitFigure>(make_shared<Map>("FIG_TYPE_EXPLICIT map"),FIG_TYPE_EXPLICIT, feature->numPoints());
     }
     refs++;
 }

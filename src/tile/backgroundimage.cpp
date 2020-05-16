@@ -39,8 +39,8 @@ void BackgroundImage::paint(QPainter *painter, const QStyleOptionGraphicsItem *o
     // center pixmap in the scene
     QSize sz = bkgdImage.size();
     Canvas * canvas = Canvas::getInstance();
-    qreal centerX   = (canvas->scene->width() -  sz.width()) / 2;
-    qreal centerY   = (canvas->scene->height() - sz.height()) / 2;
+    qreal centerX   = (canvas->currentScene()->width() -  sz.width()) / 2;
+    qreal centerY   = (canvas->currentScene()->height() - sz.height()) / 2;
     painter->translate(QPointF(centerX,centerY));
 
     if (bTransformBkgd)
@@ -135,8 +135,8 @@ void BackgroundImage::adjustBackground(QPointF topLeft, QPointF topRight, QPoint
     Canvas * canvas = Canvas::getInstance();
 
     QSize sz      = pixmap.size();
-    qreal offsetX = (canvas->scene->width() -  sz.width()) / 2;
-    qreal offsetY = (canvas->scene->height() - sz.height()) / 2;
+    qreal offsetX = (canvas->currentScene()->width() -  sz.width()) / 2;
+    qreal offsetY = (canvas->currentScene()->height() - sz.height()) / 2;
     QTransform t0 = QTransform::fromTranslate(offsetX,offsetY);
 
     QTransform bkgdXform = t0 * xform.getTransform();

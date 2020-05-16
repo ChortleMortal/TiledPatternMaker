@@ -37,6 +37,7 @@ class Cycler;
 class ControlPanel;
 class MapEditor;
 class TilingMaker;
+class WorkspaceViewer;
 
 class View : public QGraphicsView
 {
@@ -47,10 +48,11 @@ public:
     static void  releaseInstance();
 
     void init();
-    void matchSizeToCanvas();
+    void matchViewSizeToScene(const QRectF &sceneRect);
+    bool scaleSceneSizeToView(const QSize & viewSize);
 
-public slots:
-    void slot_sceneRectChanged(const QRectF &rect);
+    void setSceneRect(const QRectF &rect);                  // don't use
+    void setSceneRect(qreal x, qreal y, qreal w, qreal h);  // don't use
 
 signals:
     void sig_mousePressed(QPointF pos,Qt::MouseButton);
@@ -75,14 +77,14 @@ private:
     View();
     ~View() override;
 
-    static View    * mpThis;
-    Canvas         * canvas;
-    Configuration  * config;
-    TilingMaker    * tmaker;
-    MapEditor      * maped;
+    static View     * mpThis;
+    Canvas          * canvas;
+    Configuration   * config;
+    TilingMaker     * tmaker;
+    MapEditor       * maped;
+    WorkspaceViewer * wsViewer;
 
     bool   dragging;
-    bool   expectedResize;
 };
 
 #endif // VIEW_H

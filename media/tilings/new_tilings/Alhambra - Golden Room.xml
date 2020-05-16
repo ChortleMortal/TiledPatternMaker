@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<Tiling version="2">
+	<Name>Alhambra - Golden Room</Name>
+	<Fill>-4,4,-4,4</Fill>
+	<T1>-0.02666666666666728,-2.533333333333333</T1>
+	<T2>2.573333333333334,-0.02666666666666728</T2>
+	<Feature type="girih" name="gKite">
+		<Placement>1,0,-1.997121675317323,0,1,-0.4423316264972064</Placement>
+		<Placement>6.123233995736766e-17,-1,0.6162116580160104,1,6.123233995736766e-17,-1.815664959830539</Placement>
+		<Placement>6.123233995736766e-17,-1,-0.6504550086506573,1,6.123233995736766e-17,-3.122331626497208</Placement>
+		<Placement>1,0,-3.277121675317324,0,1,0.7710017068361283</Placement>
+	</Feature>
+	<Desc>Girih Kites</Desc>
+	<Auth>David A. Casper</Auth>
+</Tiling>

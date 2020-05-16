@@ -315,7 +315,7 @@ void Cycler::nextCyclePng()
     emit sig_clearCanvas();
     while (pngIndex < files.size())
     {
-        emit sig_png(files.at(pngIndex),pngRow,pngCol);
+        emit sig_show_png(files.at(pngIndex),pngRow,pngCol);
         pngIndex++;
 
         if (++pngCol > 4)

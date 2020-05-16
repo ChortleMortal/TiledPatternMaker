@@ -27,6 +27,8 @@
 #include "base/canvas.h"
 #include "base/utilities.h"
 #include "base/tpmsplash.h"
+#include "panels/panel_status.h"
+#include "panels/panel.h"
 
 int Prototype::refs = 0;
 
@@ -77,7 +79,7 @@ void Prototype::addElement(DesignElementPtr element )
 
 QString Prototype::getInfo() const
 {
-    return QString("features&figures=%1 tiling=%2").arg(designElements.size()).arg(tiling->getName());
+    return QString("elements=%1 tiling=%2").arg(designElements.size()).arg(tiling->getName());
 }
 
 DesignElementPtr Prototype::getDesignElement(FeaturePtr feature )
@@ -145,7 +147,7 @@ QList<FeaturePtr> Prototype::getFeatures()
     return ql;
 }
 
-void Prototype::setFeaturesReversed(QList<FeaturePtr> features)
+void Prototype::setFeaturesReversed(QVector<FeaturePtr> features)
 {
     for (int i=0; i < designElements.size(); i++)
     {
@@ -207,10 +209,12 @@ MapPtr Prototype::getProtoMap()
 
 MapPtr Prototype::createProtoMap()
 {
+    ControlPanel * panel = ControlPanel::getInstance();
+    QString astring = QString("<span style=\"color:rgb(0,240,0)\">Constructing prototype map for tiling: %1</span>").arg(tiling->getName());
+    panel->showStatus(astring);
 #ifdef TPMSPLASH
-    TPMSplash * sp = TPMSplash::getInstance();
-    QString astring = QString("Constructing prototype map for tiling: %1").arg(tiling->getName());
-    sp->display(astring);
+    astring = QString("Constructing prototype map for tiling: %1").arg(tiling->getName());
+    panel->showSplash(astring);
 #endif
 
     resetProtoMap();
@@ -280,8 +284,9 @@ MapPtr Prototype::createProtoMap()
 
     qDebug() << "Constructed complete map (ret): vertices=" << protoMap->numVertices() << "edges=" << protoMap->numEdges();
 
+    panel->hideStatus();
 #ifdef TPMSPLASH
-    sp->hide();
+    panel->hideSplash();
 #endif
 
     return protoMap;

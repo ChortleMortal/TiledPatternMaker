@@ -19,7 +19,7 @@ QString Shortcuts::getCanvasShortcuts()
     M   Raise Menu<br>\
     N   <br>\
     O   Layer Out (hide) <br>\
-    P   Print (actually save image) <br>\
+    P   Print (actually Save Image) <br>\
     Q   Quit app (or quit cycler)<br>\
     R   <br>\
 ALT-R   Run (start timer and mode layer) <br>\
@@ -30,7 +30,7 @@ ALT-S   MODE_STEP  up/down  0-9 <br>\
     V   Xform mode VIEW<br>\
     W   Xform mode OBJECT DATA<br>\
     X   Show Center/Show circle (X toggle) <br>\
-    Y   <br>\
+    Y   Save as SVG<br>\
     Z   MODE_ZLEVEL   up/down <br>\
         <br>\
     0   Toggle Design 0 visibility <br>\
@@ -111,7 +111,7 @@ Modes:<br>\
     F5 : Delete selected<br>\
     F6 : Split Edge in middle<br>\
     F7 : Extend Line<br>\
-    F8 : <br>\
+    F8 : Create Crop Mask<br>\
     F9 : Draw Consctruction Circles<br>\
             Right-click = create<br>\
             Left-click and drag = move<br>\

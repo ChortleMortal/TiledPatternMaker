@@ -23,7 +23,6 @@
  */
 
 #include "viewers/MapEditorView.h"
-#include "base/canvas.h"
 #include "base/utilities.h"
 #include "base/view.h"
 #include "geometry/Map.h"
@@ -31,13 +30,14 @@
 #include "geometry/Intersect.h"
 #include "geometry/Transform.h"
 #include "tapp/Figure.h"
+#include "viewers/workspaceviewer.h"
 
 MapEditorView::MapEditorView() : Layer("MapEditorView")
 {
     hideConstructionLines = false;
     hideMap               = false;
     hidePoints            = false;
-    hideMidPoints         = false;
+    hideMidPoints         = true;
     mapLineWidth          = 3.0;
     constructionLineWidth = 1.0;
     selectionWidth        = 3.0;
@@ -45,8 +45,8 @@ MapEditorView::MapEditorView() : Layer("MapEditorView")
 
 QRectF MapEditorView::boundingRect() const
 {
-    Canvas * canvas = Canvas::getInstance();
-    return canvas->getCanvasSettings().getRectF();
+    QRectF rect = wsViewer->GetCanvasSettings().getCanvasRect();
+    return rect;
 }
 
 void MapEditorView::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
@@ -60,19 +60,23 @@ void MapEditorView::paint(QPainter *painter, const QStyleOptionGraphicsItem *opt
     painter->setRenderHint(QPainter::Antialiasing ,true);
     painter->setRenderHint(QPainter::SmoothPixmapTransform,true);
 
-    QTransform t;
-    if (feap)
+    if (mapType == MAP_TYPE_FIGURE)
     {
         QPointF center = feap->getCenter();
-        t              = QTransform::fromTranslate(-center.x(),-center.y());
+        QTransform t  = QTransform::fromTranslate(-center.x(),-center.y());
+        QTransform t1 = QTransform::fromScale(8.0,8.0);  // TODO xform
+        viewT         = t * t1;
     }
+    else
+    {
+        viewT.reset();
+    }
+
     QTransform t0 = getLayerTransform();
-    QTransform t1 = QTransform::fromScale(8.0,8.0);  // TODO xform
-    viewT         = t * t1;
     viewT         = viewT * t0;
     viewTinv      = viewT.inverted();
 
-    qDebug() << "MapEditorView::paint viewT="  << Transform::toInfoString(viewT);
+    //qDebug() << "MapEditorView::paint viewT="  << Transform::toInfoString(viewT);
 
     draw(painter);
 
@@ -99,6 +103,22 @@ void MapEditorView::drawMap(QPainter * painter)
         painter->drawLine(viewT.map(v1),viewT.map(v2));
     }
 }
+
+void MapEditorView::drawCropMap(QPainter * painter)
+{
+    if (hideMap)
+        return;
+
+    if (cropRect.isEmpty())
+        return;
+
+    painter->setPen(QPen(Qt::red,mapLineWidth ));
+    painter->setBrush(Qt::NoBrush);
+
+    QRectF rect = viewT.mapRect(cropRect);
+    painter->drawRect(rect);
+}
+
 
 void MapEditorView::drawFeature(QPainter * painter)
 {
@@ -241,5 +261,5 @@ void MapEditorView::unload()
     constructionLines.clear();
     constructionCircles.clear();
 
-    inputMode = ME_INPUT_UNDEFINED;
+    mapType = MAP_TYPE_UNDEFINED;
 }

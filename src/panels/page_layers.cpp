@@ -206,7 +206,7 @@ void page_layers::populateLayer(Layer *layer, int col)
     zMapper.setMapping(zBox,col);
 
     // align
-    QPushButton * abtn = new QPushButton("Align-to");
+    QPushButton * abtn = new QPushButton("Align-to-this");
     layerTable->setCellWidget(LAYER_ALIGN,col,abtn);
     connect(abtn, SIGNAL(clicked(bool)), &alignMapper, SLOT(map()),Qt::UniqueConnection);
     alignMapper.setMapping(abtn,col);

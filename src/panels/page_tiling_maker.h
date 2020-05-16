@@ -28,18 +28,17 @@
 #include "panel_page.h"
 #include "panels/layout_sliderset.h"
 #include "panels/layout_transform.h"
-#include "makers/tilingmaker.h"
+#include "makers/tiling_maker/tiling_maker.h"
 
 enum epageTi
 {
-    TI_INDEX,
+    TI_TYPE_PFP,    // regular, poly, or girih
     TI_FEAT_SIDES,
     TI_FEAT_ROT,
     TI_SCALE,
     TI_ROT,
     TI_X,
     TI_Y,
-    TI_REGULAR,
     TI_CW,
     TI_FEAT_ADDR,
     TI_LOCATION
@@ -62,7 +61,6 @@ public:
 signals:
     void sig_tilingChanged();
     void sig_loadTiling(QString name);
-    void sig_setTiling();
 
 public slots:
     void slot_currentFeature(int index);
@@ -70,27 +68,28 @@ public slots:
     void slot_loadedTiling (QString name);
     void slot_buildMenu();
     void slot_refreshMenu();
+    void slot_unload();
 
 private slots:
+    void slot_reloadTiling();
     void slot_replaceTilingInStyles();
-    void slot_saveTiling();
+
     void slot_sidesChanged(int col);
     void slot_f_rotChanged(int col);
     void slot_transformChanged(int col);
     void slot_t1t2Changed(double val);
-    void slot_nameChanged();
-    void slot_authorChanged();
-    void slot_descChanged();
+
     void slot_cellSelected(int row, int col);
+    void slot_hideTable(bool checked);
     void slot_all_features(bool checked);
+    void slot_showDebug(bool checked);
+    void slot_autofill(bool checked);
     void slot_clearWS();
     void slot_sourceSelect(int id);
     void slot_swapTrans();
     void slot_remove_clicked();
     void slot_setModes(int mode);
     void slot_set_reps();
-    void slot_hideTable(bool checked);
-    void slot_reloadTiling();
     void slot_menu(QPointF spt);
     void slot_menu_edit_feature();
     void slot_menu_includePlaced();
@@ -126,36 +125,36 @@ protected:
     void displayBackgroundStatus(TilingPtr tiling);
 
     PlacedFeaturePtr getFeatureColumn(int col);
-    StyledDesign &   getSourceDesign();
 
 private:
     TilingMaker * tilingMaker;
 
-    bool    hideTable;
+    QRadioButton * radioSrcStyledDesign;
+    QRadioButton * radioSrcTiling;
+    QButtonGroup   tilingGroup3;
 
-    QRadioButton *radioLoadedStyleTileView;
-    QRadioButton *radioWSTileView;
-    QButtonGroup  tilingGroup3;
+    QRadioButton * radioDstStyledDesign;
+    QRadioButton * radioDstTiling;
 
     QCheckBox * chk_autoFill;
     QCheckBox * chk_hideTable;
+    QCheckBox * chk_showDebug;
     QCheckBox * chk_showOverlaps;
 
     QWidget      * makerSourceBox;
 
     QButtonGroup * mouseModeBtnGroup;
 
-    QLineEdit   tile_name;
-    QTextEdit   tile_desc;
-    QLineEdit   tile_author;
-    QTextEdit   featureInfo;
 
     DoubleSpinSet * t1x;
     DoubleSpinSet * t1y;
     DoubleSpinSet * t2x;
     DoubleSpinSet * t2y;
 
-    QLabel       * debugLabel;
+    AQWidget     * debugWidget;
+    QTextEdit    * featureInfo;
+    QLabel       * debugLabel1;
+    QLabel       * debugLabel2;
 
     QTableWidget * tileInfoTable;
 

@@ -54,11 +54,11 @@ public:
 
     virtual void	refreshPage() = 0;
     virtual void    onEnter()     = 0;
-    virtual void    onExit() {}
+    virtual void    onExit()      = 0;
 
-    void            leaveEvent(QEvent *event) Q_DECL_OVERRIDE;
-    void            enterEvent(QEvent *event) Q_DECL_OVERRIDE;
-    virtual void	closeEvent(QCloseEvent * event) Q_DECL_OVERRIDE;
+    void            leaveEvent(QEvent *event) override;
+    void            enterEvent(QEvent *event) override;
+    virtual void	closeEvent(QCloseEvent * event) override;
 
     void    setNewlySelected(bool state) { newlySelected = state; }
     bool    isNewlySelected() { return newlySelected; }

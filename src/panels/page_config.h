@@ -39,6 +39,7 @@ public:
 
     void refreshPage() override;
     void onEnter() override;
+    void onExit() override {}
 
 signals:
 

@@ -41,6 +41,7 @@ public:
     page_designs(ControlPanel * panel);
 
     void onEnter() override;
+    void onExit() override {}
     void refreshPage() override;
 
 private slots:

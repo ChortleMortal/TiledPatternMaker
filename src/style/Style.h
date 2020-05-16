@@ -85,7 +85,10 @@ public:
     virtual eStyleType  getStyleType() const = 0;
 
     virtual void    draw(GeoGraphics * gg) = 0;
-    virtual void    paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) Q_DECL_OVERRIDE;
+            void    paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) Q_DECL_OVERRIDE;
+            void    paintToSVG();
+
+    void    triggerPaintSVG() { paintSVG = true; }
 
     static int refs;
 
@@ -102,6 +105,7 @@ protected:
 private:
     MapPtr        styleMap;
     MapPtr        debugMap;
+    bool          paintSVG;
 
 };
 #endif

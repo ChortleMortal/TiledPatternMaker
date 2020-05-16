@@ -12,21 +12,18 @@
 class TPMSplash : public QSplashScreen
 {
 public:
-    static TPMSplash * getInstance();
+    TPMSplash(QWidget * parent);
 
     void display(QString txt);
-
-    void show();
     void hide();
 
 protected:
-    TPMSplash();
 
 private:
-    static TPMSplash * mpThis;
-
     QStack<QString>  msgStack;
+    int     w;
+    int     h;
 
 };
 
-#endif // TPMSPLASH_H
+#endif

@@ -31,7 +31,7 @@ void StyledDesign::clear()
     styleSet.clear(); // can now delete these since scene uses a copy
     name.clear();
     designNotes.clear();
-    canvasSettings.init2();
+    canvasSettings.clear();
 }
 
 void  StyledDesign::addStyle(StylePtr style)
@@ -63,7 +63,7 @@ void StyledDesign::setNotes(QString notes)
      designNotes = notes;
 }
 
-CanvasSettings StyledDesign::getCanvasSettings()
+CanvasSettings & StyledDesign::getCanvasSettings()
 {
     return canvasSettings;
 }
@@ -113,6 +113,15 @@ void  StyledDesign::setTiling(TilingPtr tp)
     }
 }
 
+void StyledDesign::setPrototype(PrototypePtr pp)
+{
+    pp->resetProtoMap();
+    for (auto style : styleSet)
+    {
+        style->setPrototype(pp);
+    }
+}
+
 QString StyledDesign::getName()
 {
     return name;
@@ -123,20 +132,15 @@ QString StyledDesign::getNotes()
     return designNotes;
 }
 
-QVector<PrototypePtr> StyledDesign::getPrototypes()
+PrototypePtr StyledDesign::getPrototype()
 {
-    QVector<PrototypePtr> vec;
-
-    for (auto it = styleSet.begin(); it != styleSet.end(); it++)
+    PrototypePtr pp;
+    if (hasContent())
     {
-        StylePtr sp = *it;
-        PrototypePtr pp = sp->getPrototype();
-        if (!vec.contains(pp))
-        {
-            vec.push_back(pp);
-        }
+        StylePtr sp = styleSet.first();
+        pp = sp->getPrototype();
     }
-    return vec;
+    return pp;
 }
 
 void StyledDesign::deleteStyle(StylePtr style)

@@ -42,10 +42,11 @@
 #include "tapp/ExtendedStar.h"
 #include "tapp/ExplicitFigure.h"
 #include "tile/featurereader.h"
+#include "tapp/Infer.h"
 
 #undef  DEBUG_REFERENCES
 
-XmlLoader::XmlLoader(StyledDesign & styledDesign) : _styledDesign(styledDesign)
+XmlLoader::XmlLoader()
 {
     qDebug() << "Constructing XML LOADER";
 
@@ -56,6 +57,7 @@ XmlLoader::XmlLoader(StyledDesign & styledDesign) : _styledDesign(styledDesign)
     _version    = 0;
     _border     = nullptr;
     canvas      = Canvas::getInstance();
+    workspace   = Workspace::getInstance();
 }
 
 XmlLoader::~XmlLoader()
@@ -68,8 +70,10 @@ QString XmlLoader::getLoadedFilename()
     return _fileName;
 }
 
-bool XmlLoader::load(QString fileName)
+bool XmlLoader::loadXML(QString fileName, StyledDesign * design)
 {
+    sd = design;
+
     canvas->dump(true);
 
     qDebug().noquote() << "XmlLoader loading:" << fileName;
@@ -100,6 +104,61 @@ bool XmlLoader::load(QString fileName)
     }
 }
 
+MapPtr XmlLoader::loadXML(QString fileName)
+{
+    MapPtr map;
+
+    canvas->dump(true);
+
+    qDebug().noquote() << "XmlLoader loading:" << fileName;
+    _fileName = fileName;
+
+    xml_document doc;
+    xml_parse_result result = doc.load_file(fileName.toStdString().c_str());
+
+    if (result == false)
+    {
+        _failMessage = result.description();
+        qWarning().noquote() << _failMessage;
+        return map;
+    }
+
+    try
+    {
+        qDebug() << "XML LOADER - start parsing";
+        vOrigCnt = 0;
+        vRefrCnt = 0;
+        eOrigCnt = 0;
+        eRefrCnt = 0;
+        nRefrCnt = 0;
+
+        xml_node node = doc.first_child();
+        string str = node.name();
+        qDebug() << str.c_str();
+        if (str  != "vector")
+        {
+            return map;
+        }
+
+        xml_attribute attr = node.attribute("version");
+        if (attr)
+        {
+            QString str = attr.value();
+            _version = str.toUInt();
+        }
+
+        map = getMap(node);
+
+        canvas->dump(true);
+    }
+    catch (...)
+    {
+        qWarning() << "ERROR processing XML file"  << fileName;
+    }
+
+    return map;
+}
+
 void XmlLoader::parseXML(xml_document & doc)
 {
     vOrigCnt = 0;
@@ -127,7 +186,7 @@ void XmlLoader::parseXML(xml_document & doc)
 void XmlLoader::processDesignNotes(xml_node & node)
 {
     string str = node.child_value();
-    _styledDesign.setNotes(str.c_str());
+    sd->setNotes(str.c_str());
 }
 
 void XmlLoader::processVector(xml_node & node)
@@ -150,6 +209,7 @@ void XmlLoader::processVector(xml_node & node)
         {
             TilingLoader tm;
             _tiling = tm.readTilingXML(n);
+            workspace->setTiling(WS_LOADED,_tiling);
         }
         else if (str == "design")
             processDesign(n);
@@ -176,9 +236,11 @@ void XmlLoader::processVector(xml_node & node)
 
     CanvasSettings info;
     info.setBackgroundColor(_background);
-    info.setSizeF(QSizeF(_width,_height));
+    info.setCanvasSize(QSizeF(_width,_height));
     info.setBorder(_border);
-    _styledDesign.setCanvasSettings(info);
+    info.setBkgdImage(_tiling->getBackground());
+
+    sd->setCanvasSettings(info);
 
 }
 
@@ -235,7 +297,8 @@ void XmlLoader::processThick(xml_node & node)
     thick->setLineWidth(width);
 
     qDebug().noquote() << "XmlServices created Style(Thick)" << thick->getInfo();
-    _styledDesign.addStyle(StylePtr(thick));
+
+    sd->addStyle(StylePtr(thick));
 
     qDebug() << "end thick";
 }
@@ -281,7 +344,8 @@ void XmlLoader::processInterlace(xml_node & node)
     interlace->setShadow(shadow);
     interlace->setIncludeTipVertices(includeTipVerts);
     qDebug().noquote() << "XmlServices created Style(Interlace)" << interlace->getInfo();
-    _styledDesign.addStyle(StylePtr(interlace));
+
+    sd->addStyle(StylePtr(interlace));
 
     qDebug() << "end interlace";
 }
@@ -320,7 +384,8 @@ void XmlLoader::processOutline(xml_node & node)
     outline->setLineWidth(width);
 
     qDebug().noquote() << "XmlServices created Style(Outline)" << outline->getInfo();
-    _styledDesign.addStyle(StylePtr(outline));
+
+    sd->addStyle(StylePtr(outline));
 
     qDebug() << "end outline";
 }
@@ -442,7 +507,8 @@ void XmlLoader::processFilled(xml_node & node)
     filled->setDrawOutsideWhites(draw_outside);
 
     qDebug().noquote() << "XmlServices created Style(Filled)" << filled->getInfo();
-    _styledDesign.addStyle(StylePtr(filled));
+
+    sd->addStyle(StylePtr(filled));
 
     qDebug() << "end filled";
 }
@@ -473,7 +539,8 @@ void XmlLoader::processPlain(xml_node & node)
     plain->setLayerXform(xf);
     plain->setColorSet(colorset);
     qDebug().noquote() << "XmlServices created Style (Plain)" << plain->getInfo();
-    _styledDesign.addStyle(StylePtr(plain));
+
+    sd->addStyle(StylePtr(plain));
 
     qDebug() << "end plain";
 }
@@ -504,7 +571,8 @@ void XmlLoader::processSketch(xml_node & node)
     sketch->setLayerXform(xf);
     sketch->setColorSet(colorset);
     qDebug().noquote() << "XmlServices created Style (Sketch)" << sketch->getInfo();
-    _styledDesign.addStyle(StylePtr(sketch));
+
+    sd->addStyle(StylePtr(sketch));
 
     qDebug() << "end sketch";
 }
@@ -547,7 +615,8 @@ void XmlLoader::processEmboss(xml_node & node)
     emboss->setAngle(angle);
 
     qDebug().noquote() << "XmlServices created Style(Emboss)" << emboss->getInfo();
-    _styledDesign.addStyle(StylePtr(emboss));
+
+    sd->addStyle(StylePtr(emboss));
 
     qDebug() << "end emboss";
 }
@@ -557,6 +626,9 @@ void XmlLoader::processTileColors(xml_node & node)
     PrototypePtr proto;
     PolyPtr poly;
     Xform   xf;
+    bool outline = false;
+    int  width   = 3;
+    QColor color = Qt::white;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
@@ -567,6 +639,14 @@ void XmlLoader::processTileColors(xml_node & node)
             procesToolkitGeoLayer(n,xf);
         else if (str == "style.Style")
             processStyleStyle(n,proto,poly);
+        else if (str == "outline")
+        {
+            outline = true;
+            QString w = n.child_value("width");
+            width = w.toInt();
+            w      = n.child_value("color");
+            color  = QColor(w);
+        }
         else
             fail("Unexpected", str.c_str());
     }
@@ -574,9 +654,14 @@ void XmlLoader::processTileColors(xml_node & node)
     qDebug() << "Constructing TileColors from prototype and poly";
     TileColors * tc  = new TileColors(proto,poly);
     tc->setLayerXform(xf);
+    if (outline)
+    {
+        tc->setOutline(true,color,width);
+    }
 
     qDebug().noquote() << "XmlServices created Style(TileColors)" << tc->getInfo();
-    _styledDesign.addStyle(StylePtr(tc));
+
+    sd->addStyle(StylePtr(tc));
 
     qDebug() << "end emboss";
 }
@@ -833,6 +918,7 @@ PrototypePtr XmlLoader::getPrototype(xml_node & node)
         {
             fail("Tiling not loaded: ",tilingName);
         }
+        workspace->setTiling(WS_LOADED,_tiling);
     }
 
     //qDebug().noquote() << _tiling->dump();
@@ -902,27 +988,27 @@ PrototypePtr XmlLoader::getPrototype(xml_node & node)
         else if (name == "app.ConnectFigure")
         {
             qDebug() << "adding Connect Figure";
-            figure =  getRosetteConnectFigure(xmlfigure);
+            figure =  getConnectFigure(xmlfigure);
             dc_found = true;
         }
         else if (name == "app.Infer")
         {
             qDebug() << "adding Infer";
-            figure = getExplicitFigure(xmlfigure,FIG_TYPE_INFER);
+            figure = getExplicitFigure(xmlfigure,FIG_TYPE_EXPLICIT_INFER);
             dc_found = true;
             canvas->dump(true);
         }
         else if (name == "app.ExplicitFeature")
         {
             qDebug() << "adding Explicit Feature";
-            figure = getExplicitFigure(xmlfigure,FIG_TYPE_FEATURE);
+            figure = getExplicitFigure(xmlfigure,FIG_TYPE_EXPLICIT_FEATURE);
             dc_found = true;
             canvas->dump(true);
         }
         else if (name == "app.ExplicitGirih")
         {
             qDebug() << "adding ExplicitGirih";
-            figure = getExplicitFigure(xmlfigure,FIG_TYPE_GIRIH);
+            figure = getExplicitFigure(xmlfigure,FIG_TYPE_EXPLICIT_GIRIH);
             dc_found = true;
             canvas->dump(true);
         }
@@ -943,14 +1029,14 @@ PrototypePtr XmlLoader::getPrototype(xml_node & node)
         else if (name == "app.ExplicitHourglass")
         {
             qDebug() << "adding ExplicitHourglass";
-            figure = getExplicitFigure(xmlfigure,FIG_TYPE_HOURGLASS);
+            figure = getExplicitFigure(xmlfigure,FIG_TYPE_EXPLICIT_HOURGLASS);
             dc_found = true;
             canvas->dump(true);
         }
         else if (name == "app.ExplicitIntersect")
         {
             qDebug() << "adding ExplicitIntersect";
-            figure = getExplicitFigure(xmlfigure,FIG_TYPE_INTERSECT);
+            figure = getExplicitFigure(xmlfigure,FIG_TYPE_EXPLICIT_INTERSECT);
             dc_found = true;
             canvas->dump(true);
         }
@@ -982,8 +1068,100 @@ PrototypePtr XmlLoader::getPrototype(xml_node & node)
         //p->walk();
     }
 
+
+    // create explicit maps
+    QVector<DesignElementPtr>  & qvde = proto->getDesignElements();
+    for (auto del : qvde)
+    {
+        FigurePtr figp = del->getFigure();
+        FeaturePtr featp = del->getFeature();
+        switch (figp->getFigType())
+        {
+        case FIG_TYPE_UNDEFINED:
+        case FIG_TYPE_RADIAL:
+        case FIG_TYPE_ROSETTE:
+        case FIG_TYPE_STAR:
+        case FIG_TYPE_CONNECT_STAR:
+        case FIG_TYPE_CONNECT_ROSETTE:
+        case FIG_TYPE_EXTENDED_ROSETTE:
+        case FIG_TYPE_EXTENDED_STAR:
+            // not explicit
+            break;
+
+        case FIG_TYPE_EXPLICIT:
+            // already has a map
+            break;
+
+        case FIG_TYPE_EXPLICIT_INFER:
+        {
+            ExplicitPtr ep = std::dynamic_pointer_cast<ExplicitFigure>(figp);
+            InferPtr inf = make_shared<Infer>(proto);
+            MapPtr map =  inf->infer(featp);
+            ep->setExplicitMap(map);
+            break;
+        }
+
+        case FIG_TYPE_EXPLICIT_ROSETTE:
+        {
+            ExplicitPtr ep = std::dynamic_pointer_cast<ExplicitFigure>(figp);
+            InferPtr inf = make_shared<Infer>(proto);
+            MapPtr map =  inf->inferRosette(featp, ep->q, ep->s, ep->r_flexPt);
+            ep->setExplicitMap(map);
+            break;
+        }
+
+        case FIG_TYPE_EXPLICIT_HOURGLASS:
+        {
+            ExplicitPtr ep = std::dynamic_pointer_cast<ExplicitFigure>(figp);
+            InferPtr inf = make_shared<Infer>(proto);
+            MapPtr map =  inf->inferHourglass(featp, ep->d, ep->s);
+            ep->setExplicitMap(map);
+            break;
+        }
+
+        case FIG_TYPE_EXPLICIT_INTERSECT:
+        {
+            ExplicitPtr ep = std::dynamic_pointer_cast<ExplicitFigure>(figp);
+            InferPtr inf = make_shared<Infer>(proto);
+            MapPtr map;
+            if (ep->progressive)
+                map =  inf->inferIntersectProgressive(featp, ep->sides, ep->skip,ep->s);
+            else
+                map =  inf->inferIntersect(featp, ep->sides, ep->skip, ep->s);
+            ep->setExplicitMap(map);
+            break;
+        }
+
+        case FIG_TYPE_EXPLICIT_STAR:
+        {
+            ExplicitPtr ep = std::dynamic_pointer_cast<ExplicitFigure>(figp);
+            InferPtr inf = make_shared<Infer>(proto);
+            MapPtr map =  inf->inferStar(featp, ep->d, ep->s);
+            ep->setExplicitMap(map);
+            break;
+        }
+        case FIG_TYPE_EXPLICIT_FEATURE:
+        {
+            ExplicitPtr ep = std::dynamic_pointer_cast<ExplicitFigure>(figp);
+            InferPtr inf = make_shared<Infer>(proto);
+            MapPtr map =  inf->inferFeature(featp);
+            ep->setExplicitMap(map);
+            break;
+        }
+
+        case FIG_TYPE_EXPLICIT_GIRIH:
+        {
+            ExplicitPtr ep = std::dynamic_pointer_cast<ExplicitFigure>(figp);
+            InferPtr inf = make_shared<Infer>(proto);
+            MapPtr map =  inf->inferGirih(featp, ep->sides, ep->skip);
+            ep->setExplicitMap(map);
+        }
+        }
+    }
+
     proto->createProtoMap();
     qDebug() << "Proto created";
+
     return proto;
 }
 
@@ -1072,11 +1250,32 @@ ExplicitPtr XmlLoader::getExplicitFigure(xml_node & node, eFigType figType)
 
     qDebug() << "getExplicitFigure";
 
-    _currentMap = getMap(node);
+    ep = make_shared<ExplicitFigure>(_currentMap,figType,10);
 
-    ep = make_shared<ExplicitFigure>(_currentMap,figType);
+    switch (figType)
+    {
+    case FIG_TYPE_UNDEFINED:
+    case FIG_TYPE_RADIAL:
+    case FIG_TYPE_ROSETTE:
+    case FIG_TYPE_STAR:
+    case FIG_TYPE_CONNECT_STAR:
+    case FIG_TYPE_CONNECT_ROSETTE:
+    case FIG_TYPE_EXTENDED_ROSETTE:
+    case FIG_TYPE_EXTENDED_STAR:
+        qFatal("Not an explicit figure");
 
-    if (figType == FIG_TYPE_GIRIH)
+    case FIG_TYPE_EXPLICIT:
+        // only the old original taprats formats have maps
+        _currentMap = getMap(node);
+        ep->setExplicitMap(_currentMap);
+        break;
+
+    case FIG_TYPE_EXPLICIT_INFER:
+    case FIG_TYPE_EXPLICIT_FEATURE:
+        // these have no parameters
+        break;
+
+    case FIG_TYPE_EXPLICIT_GIRIH:
     {
         QString str;
         str = node.child_value("sides");
@@ -1087,8 +1286,9 @@ ExplicitPtr XmlLoader::getExplicitFigure(xml_node & node, eFigType figType)
 
         ep->sides = sides;
         ep->skip  = skip;
+        break;
     }
-    else if (figType == FIG_TYPE_EXPLICIT_STAR)
+    case FIG_TYPE_EXPLICIT_STAR:
     {
         QString str;
         str = node.child_value("s");
@@ -1099,8 +1299,9 @@ ExplicitPtr XmlLoader::getExplicitFigure(xml_node & node, eFigType figType)
 
         ep->s = s;
         ep->d = d;
+        break;
     }
-    else if (figType == FIG_TYPE_EXPLICIT_ROSETTE)
+    case FIG_TYPE_EXPLICIT_ROSETTE:
     {
         QString str;
         str = node.child_value("s");
@@ -1115,8 +1316,9 @@ ExplicitPtr XmlLoader::getExplicitFigure(xml_node & node, eFigType figType)
         ep->s = s;
         ep->q = q;
         ep->setFigureRotate(r);
+        break;
     }
-    else if (figType == FIG_TYPE_HOURGLASS)
+    case FIG_TYPE_EXPLICIT_HOURGLASS:
     {
         QString str;
         str = node.child_value("s");
@@ -1127,8 +1329,9 @@ ExplicitPtr XmlLoader::getExplicitFigure(xml_node & node, eFigType figType)
 
         ep->s = s;
         ep->d = d;
+        break;
     }
-    else if (figType == FIG_TYPE_INTERSECT)
+    case FIG_TYPE_EXPLICIT_INTERSECT:
     {
         QString str;
         str = node.child_value("s");
@@ -1147,8 +1350,9 @@ ExplicitPtr XmlLoader::getExplicitFigure(xml_node & node, eFigType figType)
         ep->sides = sides;
         ep->skip  = skip;
         ep->progressive = prog;
+        break;
     }
-
+    }
     setExplicitReference(node,ep);
 
     getFigureCommon(node,ep);
@@ -1267,7 +1471,12 @@ RosettePtr XmlLoader::getRosetteFigure(xml_node & node)
     if (!str.isEmpty())
         r = str.toDouble();
 
-    RosettePtr rosette = make_shared<Rosette>(n, q, s, r);
+    qreal k = 0.0;
+    str = node.child_value("k");
+    if (!str.isEmpty())
+        k = str.toDouble();
+
+    RosettePtr rosette = make_shared<Rosette>(n, q, s, k, r);
     setRosetteReference(node,rosette);
 
     getFigureCommon(node,rosette);
@@ -1320,11 +1529,6 @@ ExtRosettePtr  XmlLoader::getExtendedRosetteFigure(xml_node & node)
     str = node.child_value("q");
     qreal q = str.toDouble();
 
-    qreal k = 0.0;
-    str = node.child_value("k");
-    if (!str.isEmpty())
-        k = str.toDouble();
-
     str = node.child_value("s");
     int s = str.toInt();
 
@@ -1333,11 +1537,44 @@ ExtRosettePtr  XmlLoader::getExtendedRosetteFigure(xml_node & node)
     if (!str.isEmpty())
         r = str.toDouble();
 
+    qreal k = 0.0;
+    str = node.child_value("k");
+    if (!str.isEmpty())
+        k = str.toDouble();
+
     ExtRosettePtr rosette = make_shared<ExtendedRosette>(n, q, s, k, r, extendPeripherals, extendFreeVertices, connectBoundaryVertices);
     setExtRosetteReference(node,rosette);
 
     getFigureCommon(node,rosette);
     return rosette;
+}
+
+FigurePtr XmlLoader::getConnectFigure(xml_node & node)
+{
+    FigurePtr fp;
+    xml_node child = node.child("child");
+    if (child)
+    {
+        xml_attribute class1 = child.attribute("class");
+        qDebug() << class1.value();
+        if (QString(class1.value()) == "app.Rosette")
+        {
+            fp = getRosetteConnectFigure(node);
+        }
+        else if (QString(class1.value()) == "app.Star")
+        {
+            fp = getStarConnectFigure(node);
+        }
+        else
+        {
+            fail("Connect Figure child","");
+        }
+    }
+    else
+    {
+        fail("Connect Figure","");
+    }
+    return fp;
 }
 
 RosetteConnectPtr XmlLoader::getRosetteConnectFigure(xml_node & node)
@@ -1371,7 +1608,7 @@ RosetteConnectPtr XmlLoader::getRosetteConnectFigure(xml_node & node)
         }
         else
         {
-            fail("Connect figure not based on Rosette","");
+            fail("Rosette Connect figure not based on Rosette","");
         }
         rcp = make_shared<RosetteConnectFigure>(rp->getN(),
                                                 rp->getQ(),
@@ -1386,6 +1623,53 @@ RosetteConnectPtr XmlLoader::getRosetteConnectFigure(xml_node & node)
         fail("Connect Figure","");
     }
     return rcp;
+}
+
+StarConnectPtr XmlLoader::getStarConnectFigure(xml_node & node)
+{
+    if (hasReference(node))
+    {
+        StarConnectPtr f = getStarConnectReferencedPtr(node);
+        return f;
+    }
+
+    QString str;
+    str = node.child_value("n");
+    int n = str.toInt();
+
+    str = node.child_value("s");
+    qreal s = str.toDouble();
+
+    StarPtr sp;
+    StarConnectPtr scp;
+    xml_node child = node.child("child");
+    if (child)
+    {
+        xml_attribute class1 = child.attribute("class");
+        qDebug() << class1.value();
+        if (QString(class1.value()) == "app.Star")
+        {
+            sp = getStarFigure(child);
+            Q_ASSERT(sp->getN() == n);
+            //Q_ASSERT(r->getS() == s);
+            qDebug() << "connect s:" <<  sp->getS() << s;
+        }
+        else
+        {
+            fail("Connect figure not based on Star","");
+        }
+        scp = make_shared<StarConnectFigure>(sp->getN(),
+                                             sp->getD(),
+                                             sp->getS(),
+                                             sp->getFigureRotate());
+        setStarConnectReference(node,scp);
+        qDebug() << scp->getFigureDesc();
+    }
+    else
+    {
+        fail("Connect Figure","");
+    }
+    return scp;
 }
 
 MapPtr XmlLoader::getMap(xml_node &node)
@@ -1964,6 +2248,21 @@ void   XmlLoader::setRosetteConnectReference(xml_node & node, RosetteConnectPtr 
 #endif
     }
 }
+
+void   XmlLoader::setStarConnectReference(xml_node & node, StarConnectPtr ptr)
+{
+    xml_attribute id;
+    id = node.attribute("id");
+    if (id)
+    {
+        int i = id.as_int();
+        star_connect_ids[i] = ptr;
+#ifdef DEBUG_REFERENCES
+        qDebug() << "set ref connect:" << i;
+#endif
+    }
+}
+
 void   XmlLoader::setMapReference(xml_node & node, MapPtr ptr)
 {
     xml_attribute id;
@@ -2135,6 +2434,24 @@ RosetteConnectPtr XmlLoader::getRosetteConnectReferencedPtr(xml_node & node)
         qDebug() << "using reference" << id;
 #endif
         retval = RosetteConnectPtr(rosette_connect_ids[id]);
+        if (!retval)
+            fail("reference NOT FOUND:",QString::number(id));
+    }
+    return retval;
+}
+
+StarConnectPtr XmlLoader::getStarConnectReferencedPtr(xml_node & node)
+{
+    StarConnectPtr retval;
+    xml_attribute ref;
+    ref = node.attribute("reference");
+    if (ref)
+    {
+        int id = ref.as_int();
+#ifdef DEBUG_REFERENCES
+        qDebug() << "using reference" << id;
+#endif
+        retval = StarConnectPtr(star_connect_ids[id]);
         if (!retval)
             fail("reference NOT FOUND:",QString::number(id));
     }

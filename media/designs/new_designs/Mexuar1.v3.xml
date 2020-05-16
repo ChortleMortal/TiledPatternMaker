@@ -1,0 +1,298 @@
+<?xml version="1.0"?>
+<vector id="1" version="5">
+	<designNotes>using tiling Mexuar1 based on girih key3
+modified for export to SVG then CNC</designNotes>
+	<design>
+		<size>
+			<width>1500</width>
+			<height>1100</height>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+	</design>
+	<style.Plain id="2" serialization="custom">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0.6666666666666661</center>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<boundary id="3">
+				<pts id="4">
+					<Point id="5">
+						<x>-10</x>
+						<y>-10</y>
+					</Point>
+					<Point id="6">
+						<x>-10</x>
+						<y>10</y>
+					</Point>
+					<Point id="7">
+						<x>10</x>
+						<y>10</y>
+					</Point>
+					<Point id="8">
+						<x>10</x>
+						<y>-10</y>
+					</Point>
+				</pts>
+			</boundary>
+			<prototype id="9" serialization="custom">
+				<app.Prototype>
+					<string>Mexuar1</string>
+					<entry>
+						<tile.Feature id="10">
+							<regular>false</regular>
+							<edges id="11">
+								<Line>
+									<Point id="12">-1,2</Point>
+									<Point id="13">0,2</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point id="14">0,1</Point>
+								</Line>
+								<Line>
+									<Point reference="14" />
+									<Point id="15">2.5,1</Point>
+								</Line>
+								<Line>
+									<Point reference="15" />
+									<Point id="16">3,0.5</Point>
+								</Line>
+								<Line>
+									<Point reference="16" />
+									<Point id="17">2.5,0</Point>
+								</Line>
+								<Line>
+									<Point reference="17" />
+									<Point id="18">2,0</Point>
+								</Line>
+								<Line>
+									<Point reference="18" />
+									<Point id="19">2,-0.5</Point>
+								</Line>
+								<Line>
+									<Point reference="19" />
+									<Point id="20">1.5,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="20" />
+									<Point id="21">1,-0.5</Point>
+								</Line>
+								<Line>
+									<Point reference="21" />
+									<Point id="22">1,0</Point>
+								</Line>
+								<Line>
+									<Point reference="22" />
+									<Point id="23">0,0</Point>
+								</Line>
+								<Line>
+									<Point reference="23" />
+									<Point id="24">0,-2</Point>
+								</Line>
+								<Line>
+									<Point reference="24" />
+									<Point id="25">-1,-2</Point>
+								</Line>
+								<Line>
+									<Point reference="25" />
+									<Point id="26">-1,-1.5</Point>
+								</Line>
+								<Line>
+									<Point reference="26" />
+									<Point id="27">-1.5,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="27" />
+									<Point id="28">-1,-0.5</Point>
+								</Line>
+								<Line>
+									<Point reference="28" />
+									<Point reference="12" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFigure id="29" type="FIG_TYPE_EXPLICIT">
+							<map id="30">
+								<vertices id="31">
+									<Vertex id="32">
+										<pos>-1.5,-1</pos>
+									</Vertex>
+									<Vertex id="33">
+										<pos>-1,-0.5</pos>
+									</Vertex>
+									<Vertex id="34">
+										<pos>-1,-2</pos>
+									</Vertex>
+									<Vertex id="35">
+										<pos>-1,-1.5</pos>
+									</Vertex>
+									<Vertex id="36">
+										<pos>-1,2</pos>
+									</Vertex>
+									<Vertex id="37">
+										<pos>0,-2</pos>
+									</Vertex>
+									<Vertex id="38">
+										<pos>0,0</pos>
+									</Vertex>
+									<Vertex id="39">
+										<pos>0,1</pos>
+									</Vertex>
+									<Vertex id="40">
+										<pos>0,2</pos>
+									</Vertex>
+									<Vertex id="41">
+										<pos>1,-0.5</pos>
+									</Vertex>
+									<Vertex id="42">
+										<pos>1,0</pos>
+									</Vertex>
+									<Vertex id="43">
+										<pos>1.5,-1</pos>
+									</Vertex>
+									<Vertex id="44">
+										<pos>2,-0.5</pos>
+									</Vertex>
+									<Vertex id="45">
+										<pos>2,0</pos>
+									</Vertex>
+									<Vertex id="46">
+										<pos>2.5,0</pos>
+									</Vertex>
+									<Vertex id="47">
+										<pos>2.5,1</pos>
+									</Vertex>
+									<Vertex id="48">
+										<pos>3,0.5</pos>
+									</Vertex>
+								</vertices>
+								<edges id="49">
+									<Edge id="50">
+										<v1 reference="35" />
+										<v2 reference="32" />
+									</Edge>
+									<Edge id="51">
+										<v1 reference="32" />
+										<v2 reference="33" />
+									</Edge>
+									<Edge id="52">
+										<v1 reference="33" />
+										<v2 reference="36" />
+									</Edge>
+									<Edge id="53">
+										<v1 reference="36" />
+										<v2 reference="40" />
+									</Edge>
+									<Edge id="54">
+										<v1 reference="37" />
+										<v2 reference="34" />
+									</Edge>
+									<Edge id="55">
+										<v1 reference="34" />
+										<v2 reference="35" />
+									</Edge>
+									<Edge id="56">
+										<v1 reference="40" />
+										<v2 reference="39" />
+									</Edge>
+									<Edge id="57">
+										<v1 reference="39" />
+										<v2 reference="47" />
+									</Edge>
+									<Edge id="58">
+										<v1 reference="42" />
+										<v2 reference="38" />
+									</Edge>
+									<Edge id="59">
+										<v1 reference="38" />
+										<v2 reference="37" />
+									</Edge>
+									<Edge id="60">
+										<v1 reference="43" />
+										<v2 reference="41" />
+									</Edge>
+									<Edge id="61">
+										<v1 reference="41" />
+										<v2 reference="42" />
+									</Edge>
+									<Edge id="62">
+										<v1 reference="44" />
+										<v2 reference="43" />
+									</Edge>
+									<Edge id="63">
+										<v1 reference="46" />
+										<v2 reference="45" />
+									</Edge>
+									<Edge id="64">
+										<v1 reference="45" />
+										<v2 reference="44" />
+									</Edge>
+									<Edge id="65">
+										<v1 reference="47" />
+										<v2 reference="48" />
+									</Edge>
+									<Edge id="66">
+										<v1 reference="48" />
+										<v2 reference="46" />
+									</Edge>
+								</edges>
+								<neighbours>
+									<neighbourset reference="33">52,51</neighbourset>
+									<neighbourset reference="34">54,55</neighbourset>
+									<neighbourset reference="35">55,50</neighbourset>
+									<neighbourset reference="37">59,54</neighbourset>
+									<neighbourset reference="36">52,53</neighbourset>
+									<neighbourset reference="39">57,56</neighbourset>
+									<neighbourset reference="38">59,58</neighbourset>
+									<neighbourset reference="40">56,53</neighbourset>
+									<neighbourset reference="32">50,51</neighbourset>
+									<neighbourset reference="41">60,61</neighbourset>
+									<neighbourset reference="44">64,62</neighbourset>
+									<neighbourset reference="43">62,60</neighbourset>
+									<neighbourset reference="47">65,57</neighbourset>
+									<neighbourset reference="46">66,63</neighbourset>
+									<neighbourset reference="42">61,58</neighbourset>
+									<neighbourset reference="45">64,63</neighbourset>
+									<neighbourset reference="48">65,66</neighbourset>
+								</neighbours>
+							</map>
+							<boundarySides>4</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFigure>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ffff0000</color>
+		</style.Colored>
+	</style.Plain>
+	<style.Thick id="67" serialization="custom">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0.6666666666666661</center>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<boundary reference="3" />
+			<prototype reference="9" />
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ffffffff</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>true</draw__outline>
+			<width>0.1</width>
+		</style.Thick>
+	</style.Thick>
+</vector>

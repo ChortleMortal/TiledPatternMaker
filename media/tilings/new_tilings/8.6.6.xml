@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<Tiling version="2">
+	<Name>8.6.6</Name>
+	<Fill>-3,3,-4,6</Fill>
+	<T1>1.332267629550188e-15,2.997277494534067</T1>
+	<T2>2.549636523580781,-4.440892098500626e-16</T2>
+	<Feature type="regular" sides="10" rotation="0">
+		<Placement>1.27481826179039,0,-2.054818261790396,0,1.27481826179039,-3.497277494534056</Placement>
+	</Feature>
+	<Feature type="edgepoly">
+		<Line>
+			<Point id="1">0.9999999999999998,0.3249196962329062</Point>
+			<Point id="2">0.9999999999999998,-0.3249196962329064</Point>
+		</Line>
+		<Line>
+			<Point reference="2" />
+			<Point id="3">1.618033988749895,-0.1241082803466793</Point>
+		</Line>
+		<Line>
+			<Point reference="3" />
+			<Point id="4">2.236067977499789,-0.3249196962329066</Point>
+		</Line>
+		<Line>
+			<Point reference="4" />
+			<Point id="5">2.236067977499789,0.3249196962329056</Point>
+		</Line>
+		<Line>
+			<Point reference="5" />
+			<Point id="6">1.618033988749895,0.1241082803466786</Point>
+		</Line>
+		<Line>
+			<Point reference="6" />
+			<Point reference="1" />
+		</Line>
+		<Placement>1.27481826179039,0,-4.117517538846307,0,1.27481826179039,-1.998638747267032</Placement>
+	</Feature>
+	<Feature type="edgepoly">
+		<Line>
+			<Point id="7">2.618033988749895,0.8506508083520394</Point>
+			<Point id="8">2.236067977499789,0.3249196962329056</Point>
+		</Line>
+		<Line>
+			<Point reference="8" />
+			<Point id="9">2.236067977499789,-0.3249196962329066</Point>
+		</Line>
+		<Line>
+			<Point reference="9" />
+			<Point id="10">2.618033988749894,-0.8506508083520405</Point>
+		</Line>
+		<Line>
+			<Point reference="10" />
+			<Point id="11">3,-0.3249196962329066</Point>
+		</Line>
+		<Line>
+			<Point reference="11" />
+			<Point id="12">3,0.3249196962329055</Point>
+		</Line>
+		<Line>
+			<Point reference="12" />
+			<Point reference="7" />
+		</Line>
+		<Placement>1.27481826179039,0,-4.117517538846307,0,1.27481826179039,-1.998638747267032</Placement>
+	</Feature>
+	<Desc>Octagons in contact</Desc>
+	<Auth>David Casper</Auth>
+</Tiling>

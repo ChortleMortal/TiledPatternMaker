@@ -677,7 +677,8 @@ MapPtr Infer::inferGirih( FeaturePtr feature, int starSides, qreal starSkip )
     // hops over from branch to branch (where 1 would mean drawing
     // a polygon) and deduce the inner angle of the star branches.
     // We support fractional side skipping.
-    qreal polygonInnerAngle    = M_PI * (starSides-2) / starSides;
+    qreal qstarSides           = static_cast<qreal>(starSides);
+    qreal polygonInnerAngle    = M_PI * (qstarSides-2.0) / qstarSides;
     qreal starBranchInnerAngle = (starSkip * polygonInnerAngle) - ((starSkip - 1) * M_PI);
     qreal requiredRotation     = (M_PI - starBranchInnerAngle) / 2;
 
@@ -776,9 +777,10 @@ MapPtr Infer::inferIntersect( FeaturePtr feature, int starSides, qreal starSkip,
     // hops over from branch to branch (where 1 would mean drawing
     // a polygon) and deduce the inner angle of the star branches.
     // We support fractional side skipping.
-    qreal polygonInnerAngle = M_PI * (starSides-2) / starSides;
+    qreal qstarSides           = static_cast<qreal>(starSides);
+    qreal polygonInnerAngle    = M_PI * (qstarSides-2.0) / qstarSides;
     qreal starBranchInnerAngle = (starSkip * polygonInnerAngle) - (starSkip - 1) * M_PI;
-    qreal requiredRotation = (M_PI - starBranchInnerAngle) / 2;
+    qreal requiredRotation     = (M_PI - starBranchInnerAngle) / 2;
 
     // Get the index of a good transform for this feature.
     int cur = findPrimaryFeature( feature );
@@ -936,9 +938,10 @@ MapPtr Infer::inferIntersectProgressive( FeaturePtr feature, int starSides, qrea
     // hops over from branch to branch (where 1 would mean drawing
     // a polygon) and deduce the inner angle of the star branches.
     // We support fractional side skipping.
-     qreal polygonInnerAngle = M_PI * (starSides-2) / starSides;
-     qreal starBranchInnerAngle = (starSkip * polygonInnerAngle) - (starSkip - 1) * M_PI;
-     qreal requiredRotation = (M_PI - starBranchInnerAngle) / 2;
+    qreal qstarSides           = static_cast<qreal>(starSides);
+    qreal polygonInnerAngle    = M_PI * (qstarSides-2.0) / qstarSides;
+    qreal starBranchInnerAngle = (starSkip * polygonInnerAngle) - (starSkip - 1) * M_PI;
+    qreal requiredRotation     = (M_PI - starBranchInnerAngle) / 2;
 
     // Get the index of a good transform for this feature.
     int cur = findPrimaryFeature( feature );

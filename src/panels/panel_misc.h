@@ -140,5 +140,20 @@ protected:
     void mousePressEvent(QMouseEvent* event);
 };
 
+class AQLabel : public QLabel
+{
+    Q_OBJECT
+
+public:
+    AQLabel();
+
+    void keyPressEvent( QKeyEvent *k ) Q_DECL_OVERRIDE;
+
+signals:
+    void sig_takeNext();
+    void sig_cyclerQuit();
+    void sig_view_images();
+    void sig_close();
+};
 
 #endif // MISC_H

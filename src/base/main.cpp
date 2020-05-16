@@ -106,6 +106,7 @@ int main(int argc, char *argv[])
             config->autoLoadStyles  = false;
             config->autoLoadTiling  = false;
             config->autoLoadDesigns = false;
+            config->enableDetachedPages     = false;
         }
         if (mapVerify)
         {

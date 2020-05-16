@@ -38,8 +38,12 @@ void EdgePoly::init(QPolygonF & poly)
 
 void EdgePoly::rotate(qreal angle)
 {
-    QTransform T = QTransform().rotate(angle);
-    mapD(T);
+    QPointF center = Point::center(*this);
+    QTransform t;
+    t.translate(center.x(), center.y());
+    t.rotate(angle);
+    t.translate(-center.x(), -center.y());
+    mapD(t);
 }
 
 void EdgePoly::mapD(QTransform T)

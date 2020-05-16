@@ -24,7 +24,6 @@
 
 #include "base/canvas.h"
 #include "base/cycler.h"
-#include "base/border.h"
 #include "base/scene.h"
 #include "base/configuration.h"
 #include "base/shortcuts.h"
@@ -33,7 +32,7 @@
 #include "panels/panel.h"
 #include "style/Style.h"
 #include "viewers/workspaceviewer.h"
-#include "makers/figure_maker.h"
+#include "makers/figure_maker/figure_maker.h"
 #include "base/tiledpatternmaker.h"
 
 #ifdef __linux__
@@ -69,7 +68,9 @@ Canvas::Canvas()
     maxStep         = 0;
     stepsTaken      = 0;
     dragging        = false;
-    scene           = nullptr;
+    sceneA          = new Scene();
+    sceneB          = new Scene();
+    scene           = sceneB;
 
     config    = Configuration::getInstance();
     setKbdMode(KBD_MODE_DEFAULT);
@@ -83,30 +84,29 @@ Canvas::Canvas()
 
 Canvas::~Canvas()
 {
-    clearCanvas();
+    clearScene();
 }
 
 void Canvas::init()
 {
     workspace = Workspace::getInstance();
     viewer    = WorkspaceViewer::getInstance();
-
     connect(this, &Canvas::sig_viewWS,    viewer,  &WorkspaceViewer::slot_viewWorkspace);
+
+    // initialise and synchronise scene/view
+    View * view = View::getInstance();
+    view->setScene(scene);
+
+    QRect rect = viewer->getViewRect(config->viewerType);
+    sceneA->setSceneRect(rect);
+    sceneB->setSceneRect(rect);
+    Q_ASSERT(view->size() == scene->sceneRect().size());
+    viewer->setSceneSize(rect.size());
 }
 
 Scene * Canvas::swapScenes()
 {
-    if (!scene)
-    {
-
-        View * view = View::getInstance();
-        sceneA = new Scene(view);
-        sceneB = new Scene(view);
-        scene = sceneA;
-    }
-
     scene = (scene == sceneA) ? sceneB : sceneA;
-
     return scene;
 }
 
@@ -120,32 +120,6 @@ void Canvas::invalidate()
 {
     if (scene)
         scene->invalidate();
-}
-
-void Canvas::useCanvasSettings(CanvasSettings & cset)
-{
-    scene->setBackgroundBrush(QBrush(cset.getBackgroundColor()));
-
-    setSceneRect(cset.getRectF());
-
-    BorderPtr bp = cset.getBorder();
-    if (bp)
-    {
-        // when border cleared from scene, its children become disconnected
-        // this reconnects them by re-parenting
-        bp->reconnectChildren();
-        // adds to the scene
-        scene->addItem(bp.get());
-    }
-
-    if (config->circleX)
-    {
-        MarkX * item = new MarkX(cset.getCenter(), QPen(Qt::blue,5), QString("center"));
-        item->setHuge();
-        scene->addItem(item);
-    }
-
-    settings = cset;     // makes local copy
 }
 
 void Canvas::addDesign(Design * d)
@@ -163,7 +137,7 @@ void Canvas::addDesign(Design * d)
     dump(true);
 }
 
-void Canvas::clearCanvas()
+void Canvas::clearScene()
 {
     if (!scene)
     {
@@ -182,35 +156,14 @@ void Canvas::clearCanvas()
 void Canvas::drainTheSwamp()
 {
     dump(true);
-    clearCanvas();
+    clearScene();
     viewer->clear();
     workspace->slot_clearWorkspace();
     emit sig_unload();
     dump(true);
 }
 
-void Canvas::setSceneRect(const QRectF & rect)
-{
-    if (!scene) return;
 
-    QRectF old =  scene->sceneRect();
-    if (rect != old)
-    {
-        scene->setSceneRect(rect);
-    }
-}
-
-void Canvas::setSceneRect(qreal x, qreal y, qreal w, qreal h)
-{
-    if (!scene) return;
-
-    QRectF old  =  scene->sceneRect();
-    QRectF rect(x,y,w,h);
-    if (rect != old)
-    {
-        scene->setSceneRect(x,y,w,h);
-    }
-}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -461,12 +414,12 @@ void Canvas::slot_designToggleVisibility(int design)
 }
 
 
-void Canvas::slot_png(QString file, int row, int col)
+void Canvas::slot_show_png(QString file, int row, int col)
 {
     QString name = config->examplesDir + file;
     QImage image(name);
     QGraphicsPixmapItem * item = new QGraphicsPixmapItem(QPixmap::fromImage(image));
-    item->setPos(col * 300, row* 200);
+    item->setPos(col * 300.0, row * 200.0);
     scene->addItem(item);
 
     View * view = View::getInstance();
@@ -482,13 +435,13 @@ void Canvas::designScale(int delta)
         {
             DesignPtr d = designs[i];
 
-            QSizeF sz =  d->getDesignInfo().getSizeF();
+            QSizeF sz =  d->getDesignInfo().getCanvasSize();
             qDebug() << "design: size=" << sz;
             if (delta > 0)
                 sz *= 1.1;
             else
                 sz *= 0.9;
-            d->getDesignInfo().setSizeF(sz);
+            d->getDesignInfo().setCanvasSize(sz);
         }
         invalidate();
     }
@@ -554,7 +507,10 @@ void Canvas::dump(bool force)
         }
     }
     if (force)
-        qDebug() << "*** Designs:" << Design::refs << "Patterns:" << Pattern::refs << "Layers:" << Layer::refs  << "Styles:" << Style::refs << "Maps:" << Map::refs << "Protos:" << Prototype::refs << "DELs:" << DesignElement::refs << "Figures:" << Figure::refs << "Edges:" << Edge::refs << "Vertices:"  << Vertex::refs;
+    {
+        //qDebug() << "*** Designs:" << Design::refs << "Patterns:" << Pattern::refs << "Layers:" << Layer::refs  << "Styles:" << Style::refs << "Maps:" << Map::refs << "Protos:" << Prototype::refs << "DELs:" << DesignElement::refs << "Figures:" << Figure::refs << "Edges:" << Edge::refs << "Vertices:"  << Vertex::refs;
+        qDebug() << "Tilings:" << Tiling::refs << "Layers:" << Layer::refs  << "Styles:" << Style::refs << "Maps:" << Map::refs << "Protos:" << Prototype::refs << "DELs:" << DesignElement::refs << "Figures:" << Figure::refs << "Features:" << Feature::refs << "Edges:" << Edge::refs << "Vertices:"  << Vertex::refs;
+    }
 }
 
 void Canvas::dumpGraphicsInfo()
@@ -629,6 +585,7 @@ bool Canvas::ProcKey(QKeyEvent *k, bool isALT)
     case 'B':  setKbdMode(KBD_MODE_OFFSET); break;
     case 'C':  emit sig_cyclerStart();  break;
     case 'D':  duplicate(); break;
+    case 'E':  emit sig_viewWS(); break;    // just for debug
     case 'F':  config->debugReplicate = !config->debugReplicate; emit sig_figure_changed(); break;
     case 'G':  config->sceneGrid = !config->sceneGrid; invalidate(); break;
     case 'H':  config->hideCircles = !config->hideCircles; invalidate(); break;
@@ -645,11 +602,12 @@ bool Canvas::ProcKey(QKeyEvent *k, bool isALT)
     case 'S':  if (isALT) { emit stopTimer(); setKbdMode(KBD_MODE_STEP); }
                 else { setKbdMode(KBD_MODE_SEPARATION); }
                 break;
-    case 'T':  setKbdMode(KBD_MODE_XFORM_MODEL);break;
+    case 'T':  setKbdMode(KBD_MODE_XFORM_TILING);break;
     case 'U':  setKbdMode(KBD_MODE_XFORM_BKGD); break;
     case 'V':  setKbdMode(KBD_MODE_XFORM_VIEW); break;
-    case 'W':  setKbdMode(KBD_MODE_XFORM_OBJECT);break;
+    case 'W':  setKbdMode(KBD_MODE_XFORM_FEATURE);break;
     case 'X':  config->circleX = !config->circleX; emit sig_viewWS(); invalidate(); break;
+    case 'Y':  saveSvg(); break;
     case 'Z':  setKbdMode(KBD_MODE_ZLEVEL); break;
 
     case Qt::Key_Return: if (config->kbdMode == KBD_MODE_STEP) slot_setStep(val); val = 0; break; // always val=0
@@ -723,11 +681,13 @@ void Canvas::ProcKeyUp(int delta, bool isALT)
             designOrigin(0,-1);
         break;
     case KBD_MODE_LAYER:
+    case KBD_MODE_CENTER:
+    case KBD_MODE_SIZE:
         break;
     case KBD_MODE_XFORM_VIEW:
     case KBD_MODE_XFORM_BKGD:
-    case KBD_MODE_XFORM_MODEL:
-    case KBD_MODE_XFORM_OBJECT:
+    case KBD_MODE_XFORM_TILING:
+    case KBD_MODE_XFORM_FEATURE:
         designMoveY(delta);           // applies deltas to designs
         emit sig_deltaMoveY(-delta);   // goes to Layer::slot_moveY  page_position::onEnter  tilingMaker:slot_moveY (for background)
         break;
@@ -758,11 +718,13 @@ void Canvas::ProcKeyDown(int delta, bool isALT)
             designOrigin(0,1);
         break;
     case KBD_MODE_LAYER:
+    case KBD_MODE_CENTER:
+    case KBD_MODE_SIZE:
         break;
     case KBD_MODE_XFORM_VIEW:
     case KBD_MODE_XFORM_BKGD:
-    case KBD_MODE_XFORM_MODEL:
-    case KBD_MODE_XFORM_OBJECT:
+    case KBD_MODE_XFORM_TILING:
+    case KBD_MODE_XFORM_FEATURE:
         designMoveY(-delta);
         emit sig_deltaMoveY(delta);
         break;
@@ -788,11 +750,13 @@ void Canvas::ProcKeyLeft(int delta, bool isALT)
     case KBD_MODE_ZLEVEL:
     case KBD_MODE_STEP:
     case KBD_MODE_LAYER:
+    case KBD_MODE_CENTER:
+    case KBD_MODE_SIZE:
         break;
     case KBD_MODE_XFORM_VIEW:
     case KBD_MODE_XFORM_BKGD:
-    case KBD_MODE_XFORM_MODEL:
-    case KBD_MODE_XFORM_OBJECT:
+    case KBD_MODE_XFORM_TILING:
+    case KBD_MODE_XFORM_FEATURE:
         designMoveX(-delta);
         emit sig_deltaMoveX(-delta);
         break;
@@ -818,11 +782,13 @@ void Canvas::ProcKeyRight(int delta, bool isALT)
     case KBD_MODE_ZLEVEL:
     case KBD_MODE_STEP:
     case KBD_MODE_LAYER:
+    case KBD_MODE_CENTER:
+    case KBD_MODE_SIZE:
         break;
     case KBD_MODE_XFORM_VIEW:
     case KBD_MODE_XFORM_BKGD:
-    case KBD_MODE_XFORM_MODEL:
-    case KBD_MODE_XFORM_OBJECT:
+    case KBD_MODE_XFORM_TILING:
+    case KBD_MODE_XFORM_FEATURE:
         designMoveX( delta);
         emit sig_deltaMoveX( delta);
         break;
@@ -842,10 +808,10 @@ void Canvas::duplicate()
     QPixmap pixmap(view->size());
     pixmap.fill((Qt::transparent));
 
-    scene->paintBackground = false;
+    scene->paintBackground(false);
     QPainter painter(&pixmap);
     scene->render(&painter);
-    scene->paintBackground = true;
+    scene->paintBackground(true);
 
     TransparentWidget * tw = new TransparentWidget();
     tw->resize(view->size());
@@ -926,14 +892,77 @@ void Canvas::saveImage()
         QFileInfo fileInfo(file);
         path = fileInfo.path();
         s.setValue("picPath2",path);
+
+        QMessageBox box;
+        box.setIcon(QMessageBox::Information);
+        box.setText(QString("File %1 saved: OK").arg(file));
+        box.exec();
     }
     else
     {
         qDebug() << file << "save ERROR";
+        QMessageBox box;
+        box.setIcon(QMessageBox::Warning);
+        box.setText(QString("ERROR:  File %1 not saved").arg(file));
+        box.exec();
     }
 }
 
-void Canvas::saveBMP(QString name)
+void Canvas::saveSvg()
+{
+    if (config->viewerType != VIEW_DESIGN)
+    {
+        QMessageBox box;
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Please select Design View");
+        box.exec();
+        return;
+    }
+
+    eWsData wsdata = (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
+    StyledDesign sd = workspace->getStyledDesign(wsdata);
+
+    StylePtr sp = sd.getFirstStyle();
+    if (!sp)
+    {
+        QMessageBox box;
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Styled Image not found");
+        box.exec();
+        return;
+    }
+
+    QString path = config->rootMediaDir;
+    QString name = sd.getName();
+    QString pathplus = path + "/" + name + ".svg";
+
+    QString newPath = QFileDialog::getSaveFileName(View::getInstance(), "Save SVG", pathplus, "SVG files (*.svg)");
+    if (newPath.isEmpty())
+        return;
+
+    path = newPath;
+
+    View * view = View::getInstance();
+
+    generator.setFileName(path);
+    generator.setSize(view->size());
+    generator.setViewBox(view->sceneRect());
+    generator.setTitle(QString("SVG Image: %1").arg(name));
+    generator.setDescription("Created using Tiled Pattern Maker (David Casper)");
+
+    sp->triggerPaintSVG();
+    invalidate();
+
+    QCoreApplication::processEvents();
+
+    QMessageBox box;
+    box.setIcon(QMessageBox::Information);
+    box.setText(QString("File %1 saved: OK").arg(path));
+    box.exec();
+}
+
+// used by cycler
+void Canvas::savePixmap(QString name)
 {
     Q_ASSERT(!name.contains(".xml"));
 

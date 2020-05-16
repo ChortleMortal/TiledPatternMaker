@@ -25,6 +25,7 @@
 #include "panels/page_map_editor.h"
 #include "panels/layout_sliderset.h"
 #include "panels/dlg_listselect.h"
+#include "panels/dlg_crop.h"
 #include "panels/dlg_name.h"
 #include "base/canvas.h"
 #include "base/fileservices.h"
@@ -32,31 +33,38 @@
 #include "base/utilities.h"
 #include "style/Style.h"
 #include "tapp/ExplicitFigure.h"
+#include "tapp/RadialFigure.h"
+#include "base/xmlwriter.h"
+#include "base/xmlloader.h"
+
 
 #define E2STR(x) #x
 
 static QString sMapEdMode[] =
 {
     E2STR(ME_MODE_UNDEFINED),
-    E2STR(ME_INPUT_FIGURE),
-    E2STR(ME_INPUT_PROTO),
-    E2STR(ME_INPUT_STYLE)
+    E2STR(MAP_TYPE_FIGURE),
+    E2STR(MAP_TYPE_PROTO),
+    E2STR(MAP_TYPE_STYLE)
 };
 
 page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Map Editor")
 {
     me = MapEditor::getInstance();
 
+    localMap  =  make_shared<Map>(QString("New local map"));
     debugInfo = false;
 
     QRadioButton * mapEdStyle  = new QRadioButton("Style");
     QRadioButton * mapEdProto  = new QRadioButton("Proto");
     QRadioButton * mapEdFigure = new QRadioButton("Figure");
+    QRadioButton * mapEdLocal  = new QRadioButton("Local");
 
     // map editor group
     mapEdModeGroup.addButton(mapEdStyle,MAP_MODE_STYLE);
     mapEdModeGroup.addButton(mapEdProto,MAP_MODE_PROTO);
     mapEdModeGroup.addButton(mapEdFigure,MAP_MODE_FIGURE);
+    mapEdModeGroup.addButton(mapEdLocal,MAP_MODE_LOCAL);
     mapEdModeGroup.button(config->mapEditorMode)->setChecked(true);
 
     line0 = new QLabel;
@@ -72,7 +80,7 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     editorStatusBox = new QGroupBox("Map Editor Status");
     editorStatusBox->setMinimumWidth(531);
     editorStatusBox->setCheckable(true);
-    editorStatusBox->setChecked(config->wsStatusBox);
+    editorStatusBox->setChecked(config->mapedStatusBox);
 
     QToolButton * pbVerifyMap = new QToolButton();
     QToolButton * pbMakeExplicit = new QToolButton();
@@ -86,6 +94,10 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     QToolButton * pbSortVertices = new QToolButton();
     QToolButton * pbSortEdges = new QToolButton();
     QToolButton * pbDumpMap = new QToolButton();
+    QToolButton * pbCreateMap = new QToolButton();
+    QToolButton * pbCropMap = new QToolButton();
+    QToolButton * pbLoadMap = new QToolButton();
+    QToolButton * pbSaveMap = new QToolButton();
 
     QToolButton * pbRestoreConstructs= new QToolButton();
     QToolButton * pbUndoConstructs= new QToolButton();
@@ -94,6 +106,14 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     QToolButton * pbCleanseMap = new QToolButton();
     QToolButton * pbSaveTemplate= new QToolButton();
     QToolButton * pbLoadTemplate= new QToolButton();
+
+    QPalette pal = pbVerifyMap->palette();
+    pal.setColor(QPalette::Button, QColor(Qt::yellow));
+    pbClearMap->setPalette(pal);
+    pbCreateMap->setPalette(pal);
+    pbCropMap->setPalette(pal);
+    pbLoadMap->setPalette(pal);
+    pbSaveMap->setPalette(pal);
 
     pbMakeExplicit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     pbVerifyMap->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -114,6 +134,10 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     pbLoadTemplate->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     pbClearMap->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     pbDumpMap->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    pbCropMap->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    pbCreateMap->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    pbLoadMap->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    pbSaveMap->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     pbMakeExplicit->setText("Make Explicit");
     pbVerifyMap->setText("Verify Map");
@@ -134,6 +158,10 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     pbClearMap->setText("Clear Map");
     pbCleanseMap->setText("Cleanse Map");
     pbDumpMap->setText("Dump Map");
+    pbCropMap->setText("Apply Crop");
+    pbCreateMap->setText("Create Map");
+    pbLoadMap->setText("Load Map");
+    pbSaveMap->setText("Save Map");
 
     pbUndoConstructs->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     pbRedoConstructs->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
@@ -148,8 +176,8 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     pbAddToStyle->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     pbRender->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    pbReplaceInStyle->setText("Replace DEL");
-    pbAddToStyle->setText("Add DEL");
+    pbReplaceInStyle->setText("Replace in Proto");
+    pbAddToStyle->setText("Add to Proto");
     pbRender->setText("Render");
 
     QRadioButton * targetStyle      = new QRadioButton("To Loaded Styles");
@@ -163,6 +191,7 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     QRadioButton * modeDelLine      = new QRadioButton("Delete Selected (F5)");
     QRadioButton * modeSplitLine    = new QRadioButton("Split Edges (F6)");
     QRadioButton * modeExtendLine   = new QRadioButton("Extend Line (F7)");
+    QRadioButton * modeCrop         = new QRadioButton("Create Crop (F8)");
     QRadioButton * modeConstrCicle  = new QRadioButton("Construct Circles (F9)");
     modeGroup.addButton(modeNone,           MAP_MODE_NONE);
     modeGroup.addButton(modeDrawLine,       MAP_MODE_DRAW_LINE);
@@ -170,6 +199,7 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     modeGroup.addButton(modeSplitLine,      MAP_MODE_SPLIT_LINE);
     modeGroup.addButton(modeConstruction,   MAP_MODE_CONSTRUCTION_LINES);
     modeGroup.addButton(modeExtendLine,     MAP_MODE_EXTEND_LINE);
+    modeGroup.addButton(modeCrop,           MAP_MODE_CREATE_CROP);
     modeGroup.addButton(modeConstrCicle,    MAP_MODE_CONSTRUCTION_CIRCLES);
 
     modeGroup.button(me->getMouseMode())->setChecked(true);
@@ -191,6 +221,7 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     vbox2->addWidget(mapEdStyle);
     vbox2->addWidget(mapEdProto);
     vbox2->addWidget(mapEdFigure);
+    vbox2->addWidget(mapEdLocal);
     vbox2->addSpacing(9);
     vbox2->addWidget(hideConsChk);
     vbox2->addWidget(hideMapChk);
@@ -229,6 +260,12 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
 
     row++;
     mapGrid->addWidget(pbDumpMap,row,0);
+    mapGrid->addWidget(pbCreateMap,row,1);
+    mapGrid->addWidget(pbCropMap,row,2);
+
+    row++;
+    mapGrid->addWidget(pbLoadMap,row,0);
+    mapGrid->addWidget(pbSaveMap,row,1);
 
     QGroupBox * mapBox  = new QGroupBox("Map");
     mapBox->setLayout(mapGrid);
@@ -258,6 +295,7 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
 
     editBox->addWidget(modeSplitLine);
     editBox->addWidget(modeExtendLine);
+    editBox->addWidget(modeCrop);
     editBox->addWidget(modeConstrCicle);
     editBox->addLayout(radiusSpin);
 
@@ -312,6 +350,10 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     connect(pbRemoveFloatingVerts,  &QToolButton::clicked,  this,   &page_map_editor::slot_removeUnconnectedVertices);
     connect(pbRemoveZombieEdges,    &QToolButton::clicked,  this,   &page_map_editor::slot_removeZombieEdges);
     connect(pbDumpMap,              &QToolButton::clicked,  this,   &page_map_editor::slot_dumpMap);
+    connect(pbCropMap,              &QToolButton::clicked,  this,   &page_map_editor::slot_applyCrop);
+    connect(pbCreateMap,            &QToolButton::clicked,  this,   &page_map_editor::slot_createMap);
+    connect(pbLoadMap,              &QToolButton::clicked,  this,   &page_map_editor::slot_loadMap);
+    connect(pbSaveMap,              &QToolButton::clicked,  this,   &page_map_editor::slot_saveMap);
 
     connect(pbRestoreConstructs,    &QToolButton::clicked,  this,   &page_map_editor::slot_popstash);
     connect(pbUndoConstructs,       &QToolButton::clicked,  this,   &page_map_editor::slot_undoConstructionLines);
@@ -336,8 +378,10 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     connect(lineWidthSpin,  &DoubleSpinSet::valueChanged, this, &page_map_editor::slot_lineWidthChanged);
     connect(consWidthSpin,  &DoubleSpinSet::valueChanged, this, &page_map_editor::slot_consWidthChanged);
 
-    slot_debugChk(config->wsStatusBox);
+    slot_debugChk(config->mapedStatusBox);
     connect(editorStatusBox, &QGroupBox::toggled, this, &page_map_editor::slot_debugChk);
+
+    hideMidPtsChk->setChecked(true);    // start hidden
 }
 
 void  page_map_editor::onEnter()
@@ -361,10 +405,13 @@ void  page_map_editor::reload()
 
     targetGroup.button(config->pushTarget)->setChecked(true);
 
-    if (config->mapEditorMode == MAP_MODE_FIGURE)
+    switch (config->mapEditorMode)
+    {
+    case MAP_MODE_FIGURE:
     {
         // this is set by the figure editor
-        DesignElementPtr dep  = workspace->getWSDesignElement();
+        eWsData wsdata = (config->figureViewer == FV_STYLE) ? WS_LOADED : WS_TILING;
+        DesignElementPtr dep  = workspace->getSelectedDesignElement(wsdata);
         if (dep)
         {
             me->setDesignElement(dep);
@@ -373,24 +420,12 @@ void  page_map_editor::reload()
         {
             me->unload();
         }
+        break;
     }
-    else if (config->mapEditorMode == MAP_MODE_PROTO)
+    case MAP_MODE_PROTO:
     {
-        PrototypePtr pp;
-        if (config->mapEditorView == MED_STYLE)
-        {
-            StyledDesign & sd     = workspace->getLoadedStyles();
-            const StyleSet & sset = sd.getStyleSet();
-            if (sset.size())
-            {
-                StylePtr sp  = sset.first();
-                pp = sp->getPrototype();
-            }
-        }
-        else
-        {
-            pp = workspace->getWSPrototype();
-        }
+        eWsData wsdata = (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
+        PrototypePtr pp = workspace->getPrototype(wsdata);
         if (pp)
         {
             me->setPrototype(pp);
@@ -399,10 +434,12 @@ void  page_map_editor::reload()
         {
             me->unload();
         }
+        break;
     }
-    else if (config->mapEditorMode == MAP_MODE_STYLE)
+    case MAP_MODE_STYLE:
     {
-        StyledDesign & sd = (config->mapEditorView == MED_STYLE) ? workspace->getLoadedStyles() : workspace->getWsStyles();
+        eWsData wsdata        = (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
+        StyledDesign & sd     = workspace->getStyledDesign(wsdata);
         const StyleSet & sset = sd.getStyleSet();
         if (sset.size())
         {
@@ -413,6 +450,12 @@ void  page_map_editor::reload()
         {
             me->unload();
         }
+        break;
+    }
+
+    case MAP_MODE_LOCAL:
+        me->setLocal(localMap);
+        break;
     }
 
     if (config->viewerType == VIEW_MAP_EDITOR)
@@ -425,7 +468,8 @@ void page_map_editor::slot_ws_dele_changed()
 {
     if (config->mapEditorMode == MAP_MODE_FIGURE)
     {
-        DesignElementPtr dep = workspace->getWSDesignElement();
+        eWsData wsdata = (config->figureViewer == FV_STYLE) ? WS_LOADED : WS_TILING;
+        DesignElementPtr dep = workspace->getSelectedDesignElement(wsdata);
         me->setDesignElement(dep);
     }
 }
@@ -434,11 +478,11 @@ void page_map_editor::refreshPage()
 {
     QString str;
 
-    eMapEdInput inputMode = me->getInputMode();
+    eMapType mapType = me->getMapType();
 
-    line0->setText(sMapEdInput[inputMode]);
+    line0->setText(sMapEdInput[mapType]);
 
-    if (inputMode == ME_INPUT_FIGURE)
+    if (mapType == MAP_TYPE_FIGURE)
     {
         DesignElementPtr delp = me->getDesignElement();
         if (!delp)
@@ -467,7 +511,7 @@ void page_map_editor::refreshPage()
             line3->setText("");
         }
     }
-    else if (inputMode == ME_INPUT_PROTO)
+    else if (mapType == MAP_TYPE_PROTO)
     {
         PrototypePtr pp = me->getPrototype();
         str = QString("Protoype = %1").arg(Utils::addr(pp.get()));
@@ -475,7 +519,7 @@ void page_map_editor::refreshPage()
         line2->setText("");
         line3->setText("");
     }
-    else if (inputMode == ME_INPUT_STYLE)
+    else if (mapType == MAP_TYPE_STYLE)
     {
         StylePtr sp = me->getStyle();
         str = QString("Style = %1").arg(Utils::addr(sp.get()));
@@ -483,7 +527,7 @@ void page_map_editor::refreshPage()
         line2->setText("");
         line3->setText("");
     }
-    else if (inputMode == ME_INPUT_UNDEFINED)
+    else if (mapType == MAP_TYPE_UNDEFINED)
     {
         line1->setText("");
         line2->setText("");
@@ -580,20 +624,29 @@ void page_map_editor::slot_loadedTiling (QString name)
 
 void page_map_editor::slot_convertToExplicit()
 {
-    if (me->getInputMode() == ME_INPUT_FIGURE)
+    if (me->getMapType() == MAP_TYPE_FIGURE)
     {
         DesignElementPtr delp = me->getDesignElement();
         FigurePtr        figp = delp->getFigure();
-        if (figp->getFigType() == FIG_TYPE_EXPLICIT)
+
+        ExplicitPtr        ep = std::dynamic_pointer_cast<ExplicitFigure>(figp);
+        if (ep)
         {
             QMessageBox box(this);
             box.setIcon(QMessageBox::Warning);
             box.setText("Ignoring - Figure is already explicit");
             box.exec();
+            return;
         }
 
+        int sides = 10;
+        RadialPtr rp = std::dynamic_pointer_cast<RadialFigure>(figp);
+        if (rp)
+        {
+            sides = rp->getN();
+        }
         MapPtr map = me->getMap();
-        ExplicitPtr ep = make_shared<ExplicitFigure>(map,FIG_TYPE_EXPLICIT);
+        ep = make_shared<ExplicitFigure>(map,FIG_TYPE_EXPLICIT,sides);
         delp->setFigure(ep);
     }
 }
@@ -725,7 +778,7 @@ void page_map_editor::slot_hideMidPoints(bool hide)
 
 void page_map_editor::slot_debugChk(bool on)
 {
-    config->wsStatusBox = on;
+    config->mapedStatusBox = on;
     QLayout * l = editorStatusBox->layout();
     if (l)
     {
@@ -795,12 +848,101 @@ void page_map_editor::slot_clearMap()
     me->forceRedraw();
 }
 
+void page_map_editor::slot_createMap()
+{
+    localMap = make_shared<Map>(QString("New local map"));
+    if (config->mapEditorMode == MAP_MODE_LOCAL)
+    {
+        me->setLocal(localMap);
+    }
+    else
+    {
+        mapEdModeGroup.button(MAP_MODE_LOCAL)->setChecked(true);
+    }
+}
+
+void page_map_editor::slot_loadMap()
+{
+    QString dir = config->rootMediaDir + "maps/";
+    QString filename = QFileDialog::getOpenFileName(nullptr,"Select Map File",dir, "Map Files (*.xml)");
+    if (filename.isEmpty()) return;
+
+    XmlLoader loader;
+    MapPtr map  = loader.loadXML(filename);
+    if (!map)
+    {
+        QMessageBox box;
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Map NOT loaded");
+        box.exec();
+        return;
+    }
+
+    if (config->mapEditorMode == MAP_MODE_LOCAL)
+    {
+        localMap = map;
+        me->setLocal(localMap);
+        QMessageBox box;
+
+        box.setIcon(QMessageBox::Information);
+        box.setText("Local map loaded OK");
+        box.exec();
+    }
+    else
+    {
+        QMessageBox box;
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Not implemented");
+        box.exec();
+    }
+}
+
+void page_map_editor::slot_saveMap()
+{
+    QString dir = config->rootMediaDir + "maps/";
+    QString filename = QFileDialog::getSaveFileName(this, "Save Map File",dir,"Map (*.xml)");
+    if (filename.isEmpty()) return;
+
+    XmlWriter writer;
+    bool rv = writer.writeXML(filename,me->getMap());
+    if (rv)
+    {
+        QMessageBox box;
+        box.setIcon(QMessageBox::Information);
+        box.setText("Map saved OK");
+        box.exec();
+    }
+    else
+    {
+        QMessageBox box;
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Map NOT saved");
+        box.exec();
+    }
+}
+
 void page_map_editor::slot_dumpMap()
 {
     MapPtr m = me->getMap();
-    m->dumpMap(true);
+    if (m)
+    {
+        m->dumpMap(true);
+    }
+    else
+    {
+        qDebug() << " Map not found!";
+    }
 }
 
+void page_map_editor::slot_applyCrop()
+{
+    DlgCrop dlg(me);
+    int rv = dlg.exec();
+    if (rv == QDialog::Accepted)
+    {
+        me->applyCrop();
+    }
+}
 
 void page_map_editor::slot_cleanseMap()
 {

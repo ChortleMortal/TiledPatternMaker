@@ -41,15 +41,16 @@ class page_protos : public panel_page
 
 public:
 
-    page_protos(ControlPanel *panel);
+    page_protos(ControlPanel * cpanel);
 
     void refreshPage() override;
     void onEnter() override;
+    void onExit() override {}
 
 public slots:
 
 private slots:
-    void display(int id);
+    void slot_display(int id);
 
 protected:
 

@@ -117,7 +117,7 @@ void Neighbours::insertNeighbour(EdgePtr e)
 
     if (list.contains(e))
     {
-        qWarning("inserting existing Neighbur");
+        qWarning("inserting existing Neighbour");
         return;
     }
 
@@ -361,7 +361,10 @@ void NeighbourMap::removeNeighbour(VertexPtr v, EdgePtr e)
 void NeighbourMap::replaceNeighbour(VertexPtr v, EdgePtr existingEdge, EdgePtr newEdge)
 {
     NeighboursPtr np = getNeighbours(v);
-    np->swapEdge2(existingEdge,newEdge);
+    if (np)
+    {
+        np->swapEdge2(existingEdge,newEdge);
+    }
 }
 
 NeighboursPtr NeighbourMap::getNeighbours(VertexPtr v)

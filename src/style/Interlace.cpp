@@ -97,7 +97,7 @@ void Interlace::createStyleRepresentation()
     }
 
     MapPtr map = setupStyleMap();
-    map->dumpMap(false);
+    //map->dumpMap(false);
     map->verifyMap("interlace stylemapA");
 
     if (colors.size() > 1)
@@ -111,7 +111,7 @@ void Interlace::createStyleRepresentation()
     }
 
     assignInterlacing();
-    map->dumpMap(false);
+    //map->dumpMap(false);
 
     // Given the interlacing assignment created above, we can
     // use the beefy getPoints routine to extract the graphics
@@ -305,7 +305,7 @@ void Interlace::assignInterlacing()
             ei.start_under = true;
             todo.push(edge);
             buildFrom();
-            map->dumpMap(false);
+            //map->dumpMap(false);
         }
     }
 }

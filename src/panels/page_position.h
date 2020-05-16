@@ -47,6 +47,7 @@ public:
 
     void refreshPage() override;
     void onEnter() override;
+    void onExit() override {}
 
 signals:
     void sig_separationAbs(qreal x, qreal y);

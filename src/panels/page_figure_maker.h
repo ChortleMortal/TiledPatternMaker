@@ -26,7 +26,7 @@
 #define PAGE_FIGURE_MAKER_H
 
 #include "panel_page.h"
-#include "makers/figure_editors.h"
+#include "makers/figure_maker/figure_editors.h"
 
 class page_figure_maker : public panel_page
 {
@@ -38,6 +38,7 @@ public:
     void	refreshPage(void) override;
     void    onEnter() override;
     void    onExit() override;
+    void    setupFigure(bool isRadial);
 
 public slots:
     void    slot_tilingChanged();
@@ -46,20 +47,20 @@ public slots:
     void    slot_replaceInStyle();
     void    slot_addToStyle();
     void    slot_render();
+
  private slots:
     void    slot_unload();
     void    slot_source_selected(int id);
     void    slot_target_selected(int id);
     void    whiteClicked(bool state);
+    void    repRadClicked(bool state);
+    void    hiliteClicked(bool state);
     void    slot_duplicateCurrent();
 
 protected:
     void    reload(bool force = false);
 
     FigureMaker  * figureMaker;
-
-    TilingPtr       loadedTiling;
-    StylePtr        loadedStyle;
 
 private:
     QRadioButton  * radioLoadedStyleTileView;
@@ -69,6 +70,8 @@ private:
     QButtonGroup    targetGroup;
 
     QCheckBox      * whiteBackground;
+    QCheckBox      * replicateRadial;
+    QCheckBox      * hiliteUnit;
 
     QRadioButton   * targetLoadedStyle;
     QRadioButton   * targetWS;

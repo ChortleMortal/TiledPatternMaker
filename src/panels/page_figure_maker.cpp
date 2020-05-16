@@ -25,7 +25,7 @@
 #include "panels/page_figure_maker.h"
 #include "base/tiledpatternmaker.h"
 #include "base/canvas.h"
-#include "makers/figure_maker.h"
+#include "makers/figure_maker/figure_maker.h"
 #include "style/Style.h"
 #include "panels/panel.h"
 #include "viewers/workspaceviewer.h"
@@ -36,7 +36,9 @@ page_figure_maker::page_figure_maker(ControlPanel * cpanel) : panel_page(cpanel,
     radioLoadedStyleTileView = new QRadioButton("Style Tiling");
     radioWSTileView          = new QRadioButton("Workspace Tiling");
     whiteBackground          = new QCheckBox("White background");
-    QPushButton * pbDup      = new QPushButton("Duplicate Current");
+    QPushButton * pbDup      = new QPushButton("Duplicate Figure");
+    replicateRadial          = new QCheckBox("Replicate Radial");
+    hiliteUnit               = new QCheckBox("Highlight Unit");
 
     tilingGroup.addButton(radioLoadedStyleTileView,FV_STYLE);
     tilingGroup.addButton(radioWSTileView,FV_WS);
@@ -45,17 +47,18 @@ page_figure_maker::page_figure_maker(ControlPanel * cpanel) : panel_page(cpanel,
     QHBoxLayout * hbox = new QHBoxLayout;
     hbox->addWidget(radioLoadedStyleTileView);
     hbox->addWidget(radioWSTileView);
-    hbox->addStretch();
     hbox->addWidget(whiteBackground);
-    hbox->addStretch();
+    hbox->addWidget(replicateRadial);
+    hbox->addWidget(hiliteUnit);
     hbox->addWidget(pbDup);
 
     // middle
-    figureMaker = new FigureMaker(maker);
+    figureMaker = FigureMaker::getInstance();
+    figureMaker->init(maker,this);
 
     // bottom line
-    QPushButton * pbReplaceInStyle = new QPushButton("Replace Proto");
-    QPushButton * pbAddToStyle     = new QPushButton("Add Proto");
+    QPushButton * pbReplaceInStyle = new QPushButton("Replace in Proto");
+    QPushButton * pbAddToStyle     = new QPushButton("Add to Proto");
     QPushButton * pbRender         = new QPushButton("Render");
 
     targetLoadedStyle = new QRadioButton("To Loaded Styles");
@@ -71,7 +74,6 @@ page_figure_maker::page_figure_maker(ControlPanel * cpanel) : panel_page(cpanel,
     hbox2->addWidget(pbReplaceInStyle);
     hbox2->addWidget(pbAddToStyle);
     hbox2->addWidget(pbRender);
-    hbox2->addStretch();
 
     vbox->addLayout(hbox);
     vbox->addSpacing(7);
@@ -86,6 +88,8 @@ page_figure_maker::page_figure_maker(ControlPanel * cpanel) : panel_page(cpanel,
     connect(pbRender,           &QPushButton::clicked,              this,  &page_figure_maker::slot_render);
     connect(pbDup,              &QPushButton::clicked,              this,  &page_figure_maker::slot_duplicateCurrent);
     connect(whiteBackground,    &QCheckBox::clicked,                this,  &page_figure_maker::whiteClicked);
+    connect(replicateRadial,    &QCheckBox::clicked,                this,  &page_figure_maker::repRadClicked);
+    connect(hiliteUnit,         &QCheckBox::clicked,                this,  &page_figure_maker::hiliteClicked);
 
     connect(maker,  &TiledPatternMaker::sig_loadedTiling,   this,   &page_figure_maker::slot_loadedTiling);
     connect(maker,  &TiledPatternMaker::sig_loadedXML,      this,   &page_figure_maker::slot_loadedXML);
@@ -97,40 +101,54 @@ page_figure_maker::page_figure_maker(ControlPanel * cpanel) : panel_page(cpanel,
     }
 }
 
+void page_figure_maker::setupFigure(bool isRadial)
+{
+    if (isRadial)
+    {
+        replicateRadial->show();
+        replicateRadial->blockSignals(true);
+        replicateRadial->setChecked(!config->debugReplicate);
+        replicateRadial->blockSignals(false);
+        hiliteUnit->show();
+        hiliteUnit->blockSignals(true);
+        hiliteUnit->setChecked(config->highlightUnit);
+        hiliteUnit->blockSignals(false);
+    }
+    else
+    {
+        replicateRadial->hide();
+        hiliteUnit->hide();
+    }
+}
+
+
 void page_figure_maker::slot_unload()
 {
     if (figureMaker)
         figureMaker->unload();
-    loadedStyle.reset();
-    loadedTiling.reset();
 }
 
 void page_figure_maker::reload(bool force)
 {
-    if (config->figureViewer == FV_STYLE)
-    {
-        // prototype from style
-        StyledDesign & sd = workspace->getLoadedStyles();
-        StylePtr sp = sd.getFirstStyle();
-        if (sp)
-        {
-            if (sp != loadedStyle || force)
-            {
+    Q_UNUSED(force);
 
-                loadedStyle = sp;
-                figureMaker->setNewStyle(loadedStyle);
-            }
-        }
+    eWsData wsdata = (config->figureViewer == FV_STYLE) ? WS_LOADED : WS_TILING;
+
+    StyledDesign & sd = workspace->getStyledDesign(wsdata);
+    if (sd.hasContent())
+    {
+        figureMaker->setFromStyledDesign(wsdata);
     }
     else
     {
-        Q_ASSERT(config->figureViewer ==  FV_WS);
-        TilingPtr tp = workspace->getTiling();
-
-        if (tp && tp->countPlacedFeatures())
+        TilingPtr tp = workspace->getTiling(wsdata);
+        if (tp)
         {
-                loadedTiling = tp;
-                figureMaker->setNewTiling(loadedTiling);
+            figureMaker->setFromTiling(wsdata);
+        }
+        else
+        {
+            figureMaker->unload();
         }
     }
 
@@ -140,22 +158,22 @@ void page_figure_maker::reload(bool force)
 void page_figure_maker::onEnter()
 {
     QString txt("<body style=\"background-color=#000000\"><font color=green>figure</font>  |  <font color=magenta>feature boundary</font>  |  <font color=red>radial figure boundary</font>  |  <font color=yellow>extended boundary</font></body>");
-    QLabel * l = panel->getStatus();
-    l->setStyleSheet("QLabel { background-color : black; }");
-    l->setMinimumHeight(21);
-    l->setText(txt);
+    panel->setStatusStyle("QLabel { background-color : black; }");
+    panel->showStatus(txt);
+
     reload();
 }
 
 void page_figure_maker::onExit()
 {
-    panel->getStatus()->setText("");
+    panel->hideStatus();
 }
 
 void page_figure_maker::refreshPage(void)
 {
-    radioLoadedStyleTileView->setText("Style Tiling " + addr(workspace->getLoadedStyles().getTiling().get()));
-    radioWSTileView->setText("Workspace Tiling " + addr(workspace->getTiling().get()));
+    radioLoadedStyleTileView->setText("Style Tiling " + addr(workspace->getTiling(WS_LOADED).get()));
+
+    radioWSTileView->setText("Workspace Tiling " + addr(workspace->getTiling(WS_TILING).get()));
 
     tilingGroup.blockSignals(true);
     tilingGroup.button(config->figureViewer)->setChecked(true);
@@ -167,7 +185,8 @@ void page_figure_maker::slot_tilingChanged()
     if (figureMaker)
     {
         qDebug() << "++tiling changed";
-        figureMaker->setTilingChanged();
+        eWsData input_wsdata  = (config->figureViewer == FV_STYLE) ? WS_LOADED : WS_TILING;
+        figureMaker->setFromTiling(input_wsdata);
     }
 }
 
@@ -175,8 +194,11 @@ void page_figure_maker::slot_replaceInStyle()
 {
     qDebug() << "page_figure_maker::slot_replaceInStyle()";
 
-    PrototypePtr pp = figureMaker->getPrototype();
-    StyledDesign & sd = (config->pushTarget == TARGET_WS_STYLES) ? workspace->getWsStyles() : workspace->getLoadedStyles();
+    eWsData input_wsdata  = (config->figureViewer == FV_STYLE) ? WS_LOADED : WS_TILING;
+    PrototypePtr pp       = figureMaker->getPrototype(input_wsdata);
+
+    eWsData output_wsdata = (config->pushTarget == TARGET_LOADED_STYLES) ? WS_LOADED : WS_TILING;
+    StyledDesign & sd     = workspace->getStyledDesign(output_wsdata);
     const StyleSet & sset = sd.getStyleSet();
 
     // put new prototype into existing workspace styles
@@ -198,10 +220,10 @@ void page_figure_maker::slot_replaceInStyle()
         return;
     }
 
-    if (config->pushTarget == TARGET_WS_STYLES)
-        emit sig_render(RENDER_WS);
-    else
+    if (config->pushTarget == TARGET_LOADED_STYLES)
         emit sig_render(RENDER_LOADED);
+    else
+        emit sig_render(RENDER_WS);
 }
 
 void page_figure_maker::slot_addToStyle()
@@ -210,22 +232,21 @@ void page_figure_maker::slot_addToStyle()
 
     StylePtr sp =  figureMaker->createDefaultStyleFromPrototype();
 
-    StyledDesign & sd = (config->pushTarget == TARGET_WS_STYLES) ? workspace->getWsStyles() : workspace->getLoadedStyles();
+    eWsData wsdata    = (config->pushTarget == TARGET_LOADED_STYLES) ? WS_LOADED : WS_TILING;
+    StyledDesign & sd =  workspace->getStyledDesign(wsdata);
 
     if (!sd.hasContent())
     {
-        ViewDefinition * viewDef = &WorkspaceViewer::viewDimensions[VIEW_DESIGN];
-        CanvasSettings cs;
-        cs.set(viewDef);
+        const CanvasSettings & cs = viewer->GetCanvasSettings();
         sd.setCanvasSettings(cs);
     }
 
     sd.addStyle(sp);
 
-    if (config->pushTarget == TARGET_WS_STYLES)
-        emit sig_render(RENDER_WS);
-    else
+    if (config->pushTarget == TARGET_LOADED_STYLES)
         emit sig_render(RENDER_LOADED);
+    else
+        emit sig_render(RENDER_WS);
 }
 
 void page_figure_maker::slot_render()
@@ -257,11 +278,25 @@ void  page_figure_maker::whiteClicked(bool state)
     emit sig_viewWS();
 }
 
+void  page_figure_maker::repRadClicked(bool state)
+{
+    config->debugReplicate = !state;
+    emit canvas->sig_figure_changed();
+}
+
+void  page_figure_maker::hiliteClicked(bool state)
+{
+    config->highlightUnit = state;
+    emit sig_viewWS();
+}
+
 void page_figure_maker::slot_duplicateCurrent()
 {
-    if (figureMaker->duplicateActiveFeature())
+    eWsData input_wsdata  = (config->figureViewer == FV_STYLE) ? WS_LOADED : WS_TILING;
+
+    if (figureMaker->duplicateActiveFeature(input_wsdata))
     {
-    reload(true);
+        reload(true);
         if (config->pushTarget == TARGET_WS_STYLES)
             emit sig_render(RENDER_WS);
         else

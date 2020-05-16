@@ -28,7 +28,7 @@
 #include <QtWidgets>
 #include <QSignalMapper>
 #include "tile/Feature.h"
-#include "panels/style_editors.h"
+#include "makers/style_maker/style_editors.h"
 
 class DlgTrim : public QDialog
 {

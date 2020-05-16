@@ -42,11 +42,15 @@
 #include "geometry/Point.h"
 #include "geometry/Edge.h"
 #include "geometry/Loose.h"
+#include "base/utilities.h"
+
+int Feature::refs = 0;
 
 Feature::Feature()
 {
     regular  = false;
     rotation = 0.0;
+    refs++;
 }
 
 Feature::Feature(EdgePoly ep, qreal rotate)
@@ -54,6 +58,7 @@ Feature::Feature(EdgePoly ep, qreal rotate)
     epoly    = ep;
     regular  = false;
     rotation = rotate;
+    refs++;
 }
 
 // Create an n-sided regular polygon with a vertex at (1,0).
@@ -63,14 +68,14 @@ Feature::Feature(int n, qreal rotate)
     rotation = rotate;
 
     int idx  = 0;
-    qreal angle = (M_PI / static_cast<qreal>(n)) * static_cast<qreal>(2 * idx + 1);
+    qreal angle = (M_PI / static_cast<qreal>(n)) * (static_cast<qreal>(2.0 * idx) + 1.0);
     qreal sc = 1.0 / qCos( M_PI / static_cast<qreal>(n) );
 
     VertexPtr v  = make_shared<Vertex>(QPointF(sc * qCos(angle), sc * qSin(angle)));
     VertexPtr v1 = v;
     for( int idx = 1; idx < n; ++idx )
     {
-        qreal angle2 = (M_PI / static_cast<qreal>(n)) * static_cast<qreal>(2 * idx + 1);
+        qreal angle2 = (M_PI / static_cast<qreal>(n)) * (static_cast<qreal>(2.0 * idx) + 1);
         VertexPtr v2 = make_shared<Vertex>(QPointF(sc * qCos(angle2), sc * qSin(angle2)));
         epoly.push_back(make_shared<Edge>(v1,v2));
         v1 = v2;
@@ -81,6 +86,7 @@ Feature::Feature(int n, qreal rotate)
     {
         epoly.rotate(rotate);
     }
+    refs++;
 }
 
 Feature::Feature(const FeaturePtr other )
@@ -88,6 +94,12 @@ Feature::Feature(const FeaturePtr other )
     regular  = other->regular;
     epoly    = other->epoly;
     rotation = other->rotation;
+    refs++;
+}
+
+Feature::~Feature()
+{
+    refs--;
 }
 
 void Feature::reset()
@@ -112,12 +124,29 @@ QString Feature::toString() const
 {
     QString text;
     QTextStream str(&text);
+
     str << "{ ";
     for (int i = 0; i < epoly.size(); ++i )
     {
         str << i+1 << ":"  << epoly[i]->getV1()->getPosition().x() << " " << epoly[i]->getV1()->getPosition().y() << " , ";
     }
     str << "}";
+
+    return text;
+}
+
+QString Feature::info()
+{
+    QString text;
+    QTextStream str(&text);
+
+    str << "(" <<Utils::addr(this) << ") ";
+    if (regular)
+        str << "regular";
+    else
+        str << "not-regular";
+    str << " " << "points=" << epoly.size();
+
     return text;
 }
 
@@ -126,4 +155,10 @@ QPointF Feature::getCenter()
     return Point::center(epoly);
 }
 
+void  Feature::setRotation(qreal rot)
+{
+    qreal diff = rot - rotation;
+    epoly.rotate(diff);
+    rotation = rot;
+}
 

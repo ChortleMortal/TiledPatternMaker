@@ -34,35 +34,8 @@
 
 int Design::refs = 0;
 
-QString Design::sDesign2[] =
-{
-    Enum2Str(DESIGN_0),
-    Enum2Str(DESIGN_1),
-    Enum2Str(DESIGN_2),
-    Enum2Str(DESIGN_3),
-    Enum2Str(DESIGN_4),
-    Enum2Str(DESIGN_5),
-    Enum2Str(DESIGN_6),
-    Enum2Str(DESIGN_7),
-    Enum2Str(DESIGN_8),
-    Enum2Str(DESIGN_9),
-    Enum2Str(DESIGN_10),
-    Enum2Str(DESIGN_11),
-    Enum2Str(DESIGN_12),
-    Enum2Str(DESIGN_13),
-    Enum2Str(DESIGN_14),
-    Enum2Str(DESIGN_15),
-    Enum2Str(DESIGN_16),
-    Enum2Str(DESIGN_17),
-    Enum2Str(DESIGN_18),
-    Enum2Str(DESIGN_19),
-    Enum2Str(DESIGN_KUMIKO1),
-    Enum2Str(DESIGN_KUMIKO2),
-    Enum2Str(DESIGN_HU_INSERT),
-    Enum2Str(DESIGN_ROSETTE_MAKER),
-    Enum2Str(DESIGN_STAR_MAKER),
-    Enum2Str(NO_DESIGN)
-};
+Q_DECLARE_METATYPE(eDesign)
+
 
 //////////////////////////////////////////////////////////////////////////////////
 /// Design
@@ -106,7 +79,7 @@ void Design::init()
         destoryPatterns();
     }
 
-    info.init2();
+    info.clear();
 
     //qDebug().noquote() << "Desgin::init" << sDesign2[_design];
 }

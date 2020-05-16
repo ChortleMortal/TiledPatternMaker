@@ -34,13 +34,16 @@
 // of the translation vectors.  In practice, we only draw at those
 // linear combinations within some viewport.
 
+#include <QtWidgets>
 #include "tile/Tiling.h"
 #include "base/configuration.h"
 #include "base/fileservices.h"
-#include <QtWidgets>
+#include "base/misc.h"
 
 using namespace pugi;
 using std::string;
+
+int Tiling::refs = 0;
 
 Tiling::Tiling()
 {
@@ -48,6 +51,8 @@ Tiling::Tiling()
     author = "Author";
     desc   = "Description";
     bkgd   = make_shared<BackgroundImage>();
+    dirty  = false;
+    refs++;
 }
 
 Tiling::Tiling(QString name, QPointF t1, QPointF t2)
@@ -66,6 +71,8 @@ Tiling::Tiling(QString name, QPointF t1, QPointF t2)
     author = "Author";
     desc   = "Description";
     bkgd   = make_shared<BackgroundImage>();
+    dirty  = false;
+    refs++;
 }
 
 Tiling::Tiling(Tiling * other)
@@ -85,13 +92,16 @@ Tiling::Tiling(Tiling * other)
     author = other->author;
 
     fillData = other->fillData;
+
+    dirty = other->dirty;
+    refs++;
 }
 
 Tiling::~Tiling()
 {
     placed_features.clear();
+    refs--;
 }
-
 
 
 // Feature management.
@@ -111,18 +121,13 @@ void Tiling::remove(PlacedFeaturePtr pf)
     placed_features.removeOne(pf);
 }
 
-QList<FeaturePtr> Tiling::getUniqueFeatures()
+QVector<FeaturePtr> Tiling::getUniqueFeatures()
 {
-    QList<FeaturePtr> fs;
+    UniqueQVector<FeaturePtr> fs;
 
-    for (auto it = placed_features.begin(); it != placed_features.end(); it++)
+    for (auto pfp : placed_features)
     {
-        PlacedFeaturePtr pfp = *it;
         FeaturePtr fp = pfp->getFeature();
-        if (fs.contains(fp))
-        {
-            continue;
-        }
         fs.push_back(fp);
     }
 
@@ -299,16 +304,19 @@ void Tiling::writeTilingXML(QTextStream & out)
 
         if (pfp->isGirihShape())    // TODO verify this code works
         {
+            // saved girih shapesd have a translation
             out << "<Feature type=\"girih\" name=\"" << pfp->getGirishShapeName() << "\">" << endl;
 
         }
         else if (f->isRegular())
         {
+            // regular features have sides and rotation
             out << "<Feature type=\"regular\" sides=\"" << f->numPoints() << "\"  rotation=\"" << f->getRotation() << "\">" << endl;
         }
         else
         {
-            out << "<Feature type=\"edgepoly\">" << endl;
+            // edge polys have rotation, numSides can be calculated
+            out << "<Feature type=\"edgepoly\" rotation=\"" << f->getRotation() << "\">" << endl;
             EdgePoly epoly = f->getEdgePoly();
             setEdgePoly(out,epoly);
         }

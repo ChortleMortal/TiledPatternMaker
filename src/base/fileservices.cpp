@@ -414,6 +414,8 @@ QString FileServices::getTileNameFromDesignName(QString designName)
     Q_ASSERT(!designName.contains(".xml"));
 
     QString designFile = getDesignXMLFile(designName);
+    if (designFile.isEmpty())
+        return designFile;  // corner case after deletion
     return getTileNameFromDesignFile(designFile);
 }
 

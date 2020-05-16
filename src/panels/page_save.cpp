@@ -24,69 +24,235 @@
 
 #include "page_save.h"
 #include "base/tiledpatternmaker.h"
-
-using std::string;
+#include "base/canvas.h"
+#include "tile/Tiling.h"
 
 page_save::page_save(ControlPanel * cpanel)  : panel_page(cpanel, "Save")
 {
-    createConfigGrid();
-    vbox->addLayout(configGrid);
-    vbox->addStretch();
+    createDesignSave();
+    createTilingSave();
 
-    refreshPage();
+    QPushButton * pbSaveImage = new QPushButton("Save Pixmap");
+    QPushButton * pbSaveSVG   = new QPushButton("Save as SVG");
+
+    QHBoxLayout * hbox = new QHBoxLayout;
+    hbox->addStretch();
+    hbox->addWidget(pbSaveImage);
+    hbox->addSpacing(17);
+    hbox->addWidget(pbSaveSVG);
+    hbox->addStretch();
+    vbox->addLayout(hbox);
+
+    connect(maker,  &TiledPatternMaker::sig_loadedXML,    this,   &page_save::slot_loadedXML);
+    connect(maker,  &TiledPatternMaker::sig_loadedTiling, this,   &page_save::slot_loadedTiling);
+    connect(pbSaveImage,  &QPushButton::clicked,          canvas, &Canvas::saveImage);
+    connect(pbSaveSVG,    &QPushButton::clicked,          canvas, &Canvas::saveSvg);
 }
 
-void page_save::createConfigGrid()
+void page_save::createDesignSave()
 {
+    designStyle = new QRadioButton("Loaded Styles");
+    designWS    = new QRadioButton("Workspace");
+
+    QButtonGroup * savegroup = new QButtonGroup();
+    savegroup->addButton(designStyle,WS_LOADED);
+    savegroup->addButton(designWS,WS_TILING);
+
+    QHBoxLayout * hbox = new QHBoxLayout;
+    hbox->addStretch();
+    hbox->addWidget(designStyle);
+    hbox->addWidget(designWS);
+    hbox->addStretch();
+
     leSaveXmlName   = new QLineEdit();
     saveXml         = new QPushButton("Save Design");
     designNotes     = new QTextEdit("Design Notes");
-    designNotes->setFixedSize(601,201);
-    QLabel * label  = new QLabel("Design");
+    designNotes->setFixedSize(601,101);
+    QLabel * label  = new QLabel("Name");
 
-    configGrid = new QGridLayout();
-    configGrid->addWidget(label,0,0);
-    configGrid->addWidget(leSaveXmlName,0,1);
-    configGrid->addWidget(saveXml,0,2);
+    QHBoxLayout * hbox2 = new QHBoxLayout;
+    hbox2->addWidget(label);
+    hbox2->addWidget(leSaveXmlName);
+    hbox2->addWidget(saveXml);
+    QVBoxLayout * vlayout = new QVBoxLayout();
+    vlayout->addLayout(hbox);
+    vlayout->addLayout(hbox2);
+    vlayout->addWidget(designNotes);
 
-    configGrid->addWidget(designNotes,1,0,1,3);
+    QGroupBox * saveBox = new QGroupBox("Design");
+    saveBox->setLayout(vlayout);
+    vbox->addWidget(saveBox);
 
-    connect(saveXml,        SIGNAL(clicked()),                  this,   SLOT(slot_saveAsXML()));
-    connect(designNotes,    &QTextEdit::textChanged,            this,   &page_save::designNotesChanged);
-    connect(this,           &page_save::sig_saveXML,            maker,  &TiledPatternMaker::slot_saveXML);
-    connect(maker,          &TiledPatternMaker::sig_loadedXML,  this,   &page_save::slot_loadedXML);
+    designStyle->setChecked(true);
+
+    connect(savegroup, static_cast<void(QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked), this , &page_save::slot_designSourceChanged);
+    connect(saveXml,   SIGNAL(clicked()),       this,   SLOT(slot_saveAsXML()));
+    connect(this,      &page_save::sig_saveXML, maker,  &TiledPatternMaker::slot_saveXML);
+}
+
+void page_save::createTilingSave()
+{
+    tilingStyle  = new QRadioButton("Loaded Styles");
+    tilingStyle->setChecked(true);
+    tilingWS     = new QRadioButton("Workspace");
+    requiresSave = new QLabel;
+    requiresSave->setStyleSheet("color: red");
+    requiresSave->setFixedWidth(91);
+    requiresSave->setAlignment(Qt::AlignRight);
+
+    QButtonGroup * savegroup = new QButtonGroup();
+    savegroup->addButton(tilingStyle,WS_LOADED);
+    savegroup->addButton(tilingWS,WS_TILING);
+
+    QHBoxLayout * hbox = new QHBoxLayout;
+    hbox->addStretch();
+    hbox->addWidget(tilingStyle);
+    hbox->addWidget(tilingWS);
+    hbox->addStretch();
+    hbox->addWidget(requiresSave);
+
+    QPushButton * pbSave  = new QPushButton("Save Tiling");
+    QLabel * label        = new QLabel("Name");
+    QLabel * label2       = new QLabel("Author");
+    tile_name             = new QLineEdit();
+    tile_author           = new QLineEdit();
+
+    QHBoxLayout * hbox2 = new QHBoxLayout;
+    hbox2->addWidget(label);
+    hbox2->addWidget(tile_name);
+    hbox2->addWidget(label2);
+    hbox2->addWidget(tile_author);
+    hbox2->addWidget(pbSave);
+
+    tile_desc = new QTextEdit();
+    tile_desc->setFixedHeight(101);
+
+    QVBoxLayout * vlayout = new QVBoxLayout();
+    vlayout->addLayout(hbox);
+    vlayout->addSpacing(3);
+    vlayout->addLayout(hbox2);
+    vlayout->addSpacing(3);
+    vlayout->addWidget(tile_desc);
+    vlayout->addSpacing(3);
+
+    QGroupBox * saveBox = new QGroupBox("Tiling");
+    saveBox->setLayout(vlayout);
+    vbox->addWidget(saveBox);
+
+    connect(savegroup, static_cast<void(QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked), this , &page_save::slot_tilingSourceChanged);
+    connect(pbSave, &QPushButton::clicked, this, &page_save::slot_saveTiling);
+}
+
+TilingPtr page_save::getTiling()
+{
+    eWsData wsdata   = (tilingStyle->isChecked()) ? WS_LOADED : WS_TILING;
+    TilingPtr tiling = workspace->getTiling(wsdata);
+    return tiling;
 }
 
 void page_save::onEnter()
 {
-    leSaveXmlName->setText(config->currentlyLoadedXML);
-    designNotes->setText(workspace->getLoadedStyles().getNotes());
+    eWsData wsdata    = (designStyle->isChecked()) ? WS_LOADED : WS_TILING;
+    StyledDesign & sd = workspace->getStyledDesign(wsdata);
+
+    leSaveXmlName->setText(sd.getName());
+    designNotes->setText(sd.getNotes());
+
+    TilingPtr tiling =  getTiling();
+
+    blockSignals(true);
+    if (tiling)
+    {
+        tile_desc->setText(tiling->getDescription());
+        tile_name->setText(tiling->getName());
+        tile_author->setText(tiling->getAuthor());
+    }
+    else
+    {
+        tile_desc->setText("");
+        tile_name->setText("");
+        tile_author->setText("");
+    }
+    blockSignals(false);
+
+    refreshPage();;
 }
 
 void page_save::refreshPage()
 {
+    TilingPtr tiling = getTiling();
+
+    if (tiling && tiling->isDirty())
+        requiresSave->setText("HAS CHANGED");
+    else
+        requiresSave->setText("");
 }
 
 void page_save::slot_saveAsXML()
 {
+    eWsData wsdata    = (designStyle->isChecked()) ? WS_LOADED : WS_TILING;
+    StyledDesign & sd = workspace->getStyledDesign(wsdata);
+    sd.setNotes(designNotes->toPlainText());
+
     QString name = leSaveXmlName->text();
     Q_ASSERT(!name.contains(".xml"));
-    emit sig_saveXML(name);
+    emit sig_saveXML(wsdata,name);
 }
 
-void page_save::slot_showXMLName(QString name)
-{
-    leSaveXmlName->setText(name);
-}
-
-void page_save::designNotesChanged()
-{
-    workspace->getLoadedStyles().setNotes(designNotes->toPlainText());
-    workspace->getWsStyles().setNotes(designNotes->toPlainText());
-}
 
 void page_save::slot_loadedXML(QString name)
 {
     Q_UNUSED(name)
     onEnter();
 }
+
+void page_save::slot_loadedTiling(QString name)
+{
+    Q_UNUSED(name)
+    onEnter();
+}
+
+void page_save::slot_designSourceChanged(int wsdata)
+{
+    Q_UNUSED(wsdata)
+    onEnter();
+}
+
+void page_save::slot_tilingSourceChanged(int wsdata)
+{
+    Q_UNUSED(wsdata)
+    onEnter();
+}
+
+void page_save::slot_saveTiling()
+{
+    TilingPtr tiling =  getTiling();
+    if (!tiling)
+    {
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Save Tiling: there is no tiling");
+        box.exec();
+        return;
+    }
+
+    if (tile_name->text().isEmpty() || tile_name->text() == "The Unnamed")
+    {
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Save Tiling: requires tiling name");
+        box.exec();
+        return;
+    }
+
+    tiling->setName(tile_name->text());
+    tiling->setAuthor(tile_author->text());
+    tiling->setDescription(tile_desc->toPlainText());
+
+    if (workspace->saveTiling(tile_name->text(),tiling))
+    {
+        tiling->setDirty(false);
+    }
+}
+
+

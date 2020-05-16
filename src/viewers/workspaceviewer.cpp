@@ -23,15 +23,15 @@
  */
 
 #include "base/canvas.h"
-#include "base/misc.h"
+#include "base/border.h"
 #include "base/tpmsplash.h"
 #include "base/view.h"
 #include "base/utilities.h"
 #include "base/workspace.h"
 #include "designs/patterns.h"
-#include "makers/tilingmaker.h"
-#include "makers/mapeditor.h"
-#include "makers/figure_maker.h"
+#include "makers/tiling_maker/tiling_maker.h"
+#include "makers/map_editor/map_editor.h"
+#include "makers/figure_maker/figure_maker.h"
 #include "viewers/placeddesignelementview.h"
 #include "viewers/facesetview.h"
 #include "viewers/figureview.h"
@@ -40,18 +40,8 @@
 #include "viewers/TilingView.h"
 #include "viewers/workspaceviewer.h"
 #include "style/Style.h"
-
-ViewDefinition WorkspaceViewer::viewDimensions[] = {
-    {VIEW_DESIGN,       Bounds(-10.0,10.0,20.0), QSizeF(1500,1100), QColor(Qt::white), QPointF(0.0,0.0)},
-    {VIEW_PROTO,        Bounds(-10.0,10.0,20.0), QSizeF(1500,1100), QColor(Qt::white), QPointF(0.0,0.0)},
-    {VIEW_PROTO_FEATURE,Bounds(-10.0,10.0,20.0), QSizeF(1500,1100), QColor(Qt::white), QPointF(0.0,0.0)},
-    {VIEW_DEL,          Bounds(-10.0,10.0,20.0), QSizeF(1500,1100), QColor(Qt::white), QPointF(0.0,0.0)},
-    {VIEW_FIGURE_MAKER, Bounds(-10.0,10.0,20.0), QSizeF( 900, 900), QColor(Qt::white), QPointF(0.0,0.0)},
-    {VIEW_TILING,       Bounds(-10.0,10.0,20.0), QSizeF(1500,1100), QColor(Qt::white), QPointF(0.0,0.0)},
-    {VIEW_TILING_MAKER, Bounds(-10.0,10.0,20.0), QSizeF(1500,1100), QColor(Qt::white), QPointF(0.0,0.0)},
-    {VIEW_MAP_EDITOR,   Bounds(-10.0,10.0,20.0), QSizeF( 900, 900), QColor(Qt::white), QPointF(0.0,0.0)},
-    {VIEW_FACE_SET,     Bounds( 10.0,10.0,20.0), QSizeF(1500,1100), QColor(Qt::white), QPointF(0.0,0.0)}
-};
+#include "panels/panel_status.h"
+#include "panels/panel.h"
 
 WorkspaceViewer * WorkspaceViewer::mpThis = nullptr;
 
@@ -66,12 +56,41 @@ WorkspaceViewer * WorkspaceViewer::getInstance()
 
 WorkspaceViewer::WorkspaceViewer()
 {
-    for (int i= VIEW_START; i <= VIEW_MAX; i++)
-    {
-        ViewDefinition sab = viewDimensions[i];
-        QTransform t      = calculateViewTransform(sab);
-        viewTransforms.push_back(t);
-    }
+    eViewType evt = VIEW_DESIGN;
+    ViewSettings * vs = &viewSettings[evt];
+    vs->init(evt, Bounds(-10.0,10.0,20.0), QSize(1500,1100));
+
+    evt = VIEW_PROTO;
+    vs  = &viewSettings[evt];
+    vs->init(evt, Bounds(-10.0,10.0,20.0), QSize(1500,1100));
+
+    evt = VIEW_PROTO_FEATURE;
+    vs  = &viewSettings[evt];
+    vs->init(evt, Bounds(-10.0,10.0,20.0), QSize(1500,1100));
+
+    evt = VIEW_DEL;
+    vs  = &viewSettings[evt];
+    vs->init(evt, Bounds(-10.0,10.0,20.0), QSize(1500,1100));
+
+    evt = VIEW_TILING;
+    vs  = &viewSettings[evt];
+    vs->init(evt, Bounds(-10.0,10.0,20.0), QSize(1500,1100));
+
+    evt = VIEW_TILING_MAKER;
+    vs  = &viewSettings[evt];
+    vs->init(evt, Bounds(-10.0,10.0,20.0), QSize(1500,1100));
+
+    evt = VIEW_FACE_SET;
+    vs  = &viewSettings[evt];
+    vs->init(evt, Bounds(-10.0,10.0,20.0), QSize(1500,1100));
+
+    evt = VIEW_FIGURE_MAKER;
+    vs  = &viewSettings[evt];
+    vs->init(evt, Bounds(-10.0,10.0,20.0), QSize( 900, 900));
+
+    evt = VIEW_MAP_EDITOR;
+    vs  = &viewSettings[evt];
+    vs->init(evt, Bounds(-10.0,10.0,20.0), QSize( 900, 900));
 }
 
 void WorkspaceViewer::init()
@@ -101,6 +120,7 @@ void WorkspaceViewer::slot_viewWorkspace()
     {
         qDebug() << "+ WorkspaceViewer::slot_viewWorkspace - BUSY IGNORED" ;
         review = true;
+        return;
     }
 
     busy = true;
@@ -126,217 +146,89 @@ void WorkspaceViewer::viewWorkspace()
         clear();
     }
 
-    CanvasSettings cs;
-    generateCanvasSettings(cs);
+    // prepare a fresh scene
+    Scene * scene = canvas->swapScenes();
+    if (config->autoClear)
+    {
+        canvas->clearScene();
+    }
 
+    // setup initial canvas settings according to view
     eViewType vtype = config->viewerType;
+
     switch (vtype)
     {
     case VIEW_DESIGN:
-        if (config->designViewer == DV_SHAPES)
-        {
-            mDesigns = workspace->getDesigns();
-
-            emit sig_title(workspace->getDesignName());
-        }
-        else
-        {
-            StyledDesign   & sd = (config->designViewer == DV_LOADED_STYLE) ? workspace->getLoadedStyles() : workspace->getWsStyles();
-            viewStyledDesign(sd);
-
-            emit sig_title(sd.getName());
-        }
+        viewDesign();
         break;
 
     case VIEW_PROTO:
-    {
-        ProtoView * pv = nullptr;
-        if (config->protoViewer == PV_STYLE)    // style
-        {
-            StyledDesign & sd = workspace->getLoadedStyles();
-            StylePtr  pStyle  = sd.getFirstStyle();
-            if (pStyle)
-            {
-                qDebug().noquote() << "Style:" << pStyle->getDescription();
-                qDebug().noquote() << "Add style to  viewProto:" << pStyle->getInfo();
-                pv = viewProto(pStyle);
-            }
-            emit sig_title(workspace->getLoadedStyles().getName());
-        }
-        else if (config->protoViewer == PV_WS)
-        {
-            PrototypePtr pp = workspace->getWSPrototype();
-            if (pp)
-            {
-                pv = viewProto(pp);
-            }
-            emit sig_title("WS Prototype");
-        }
-        if (pv)
-        {
-            setupBackgroundImage(cs,pv->getPrototype());
-        }
+        viewProto();
         break;
-    }
 
     case VIEW_PROTO_FEATURE:
-    {
-        ProtoFeatureView * pfv = nullptr;
-        if (config->protoFeatureViewer == PVF_STYLE)
-        {
-            StyledDesign & sd = workspace->getLoadedStyles();
-            StylePtr  pStyle  = sd.getFirstStyle();
-            if (pStyle)
-            {
-                qDebug().noquote() << pStyle->getDescription();
-                qDebug().noquote() << "Add style to  WorkspaceViewer:" << pStyle->getInfo();
-                pfv =  viewProtoFeature(pStyle);
-                emit sig_title(workspace->getLoadedStyles().getName());
-            }
-        }
-        else if (config->protoFeatureViewer == PVF_WS)
-        {
-            PrototypePtr pp = workspace->getWSPrototype();
-            if (pp)
-            {
-                pfv = viewProtoFeature(pp);
-            }
-            emit sig_title("WS Proto Feature");
-        }
-        if (pfv)
-        {
-            setupBackgroundImage(cs,pfv->getPrototype());
-        }
+        viewProtoFeature();
         break;
-    }
 
     case VIEW_DEL:
-    {
-        StyledDesign & sd  = (config->delViewer == DEL_STYLES) ? workspace->getLoadedStyles() : workspace->getWsStyles();
-
-        StylePtr st = sd.getFirstStyle();
-        if (!st) return;
-
-        PrototypePtr pp                    = st->getPrototype();
-        TilingPtr   tiling                 = pp->getTiling();
-        QList<PlacedFeaturePtr>	& placed   = tiling->getPlacedFeatures();
-        QVector<DesignElementPtr> &  dels  = pp->getDesignElements();
-        QVector<QTransform>       & tforms = pp->getLocations();
-        qDebug() << "dels=" << dels.size() << "tforms="  << tforms.size();
-        for (auto it = dels.begin(); it != dels.end(); it++)
-        {
-            DesignElementPtr delp = *it;
-            FeaturePtr       feap = delp->getFeature();
-            for (auto it2 = placed.begin(); it2 != placed.end(); it2++)
-            {
-                PlacedFeaturePtr pfp = *it2;
-                if (feap == pfp->getFeature())
-                {
-                    QTransform tr                  = pfp->getTransform();
-                    PlacedDesignElementPtr pdel    = make_shared<PlacedDesignElement>(delp,tr);
-                    viewPlacedDesignElement(pdel);
-                }
-            }
-        }
-        emit sig_title(sd.getName());
-        if (pp)
-        {
-            setupBackgroundImage(cs,pp);
-        }
+        viewDesignElement();
         break;
-    }
 
     case VIEW_FIGURE_MAKER:
-    {
-        // this is used by FigureMaker
-        // this is what we want to see painted
-        DesignElementPtr dep = workspace->getWSDesignElement();
-        if (!dep)
-        {
-            return;
-        }
-
-        FigureView * figView = viewFigure(dep, cs.getCenter());
-        figView->setPos(cs.getStartTile());
-
-        QString astring = QString("WS Figure: dep=%1 fig=%2").arg(Utils::addr(dep.get())).arg(Utils::addr(dep->getFigure().get()));
-        emit sig_title(astring);
-
+        viewFigureMaker();
         break;
-    }
 
     case VIEW_TILING:
-    {
-        TilingPtr tp;
-        if (config->tilingViewer  == TV_STYLE)
-        {
-            tp = workspace->getLoadedStyles().getTiling();
-        }
-        else
-        {
-            Q_ASSERT(config->tilingViewer == TV_WORKSPACE);
-            tp = workspace->getTiling();
-        }
-        if (tp)
-        {
-            setTitle(tp);
-            viewTiling(tp);
-            setupBackgroundImage(cs,tp);
-        }
+        viewTiling();
         break;
-    }
 
     case VIEW_TILING_MAKER:
-    {
-        TilingMaker * tm = viewTilingMaker();
-        TilingPtr  tp    = tm->getTiling();
-        if (tp)
-        {
-            setTitle(tp);
-            setupBackgroundImage(cs,tp);
-        }
+        viewTilingMaker();
         break;
-    }
 
     case VIEW_MAP_EDITOR:
-    {
-        MapEditor * mev = viewFigMapEditor(cs.getCenter());
-        mev->setPos(cs.getStartTile());
-        mev->forceUpdateLayer();
-
-        emit sig_title("Map Editor");
+        viewMapEditor();
         break;
-    }
 
     case VIEW_FACE_SET:
-        if (config->faceSet)
-        {
-            viewFaceSet(config->faceSet);
-        }
+        viewFaceSet();
         break;
     }
 
-    // now add to the scene
+    updateScene(scene);
 
-    Scene * scene = canvas->swapScenes();
+    View * view = View::getInstance();
+    view->setScene(scene);
+    view->show();
 
-    if (config->autoClear)
+    emit sig_viewUpdated();
+}
+
+void WorkspaceViewer::updateScene(Scene * scene)
+{
+    // TODO - border should be treated like background image and included in mStyles
+    bp = canvasSettings.getBorder();
+    if (bp)
     {
-        canvas->clearCanvas();
+        // when border cleared from scene, its children become disconnected
+        // this reconnects them by re-parenting
+        bp->reconnectChildren();
+        // adds to the scene
+        scene->addItem(bp.get());
     }
 
-    canvas->useCanvasSettings(cs);
+    scene->setSceneRect(canvasSettings.getCanvasRect());
+    scene->setBackgroundBrush(QBrush(canvasSettings.getBackgroundColor()));
 
-    BkgdImgPtr bip = cs.getBkgdImage();
+
+    // now add to the scene
+    bip = canvasSettings.getBkgdImage();
     if (bip)
     {
         if (bip->isLoaded() && bip->bShowBkgd)
         {
             BackgroundImage * bi = bip.get();
-            if (!mStyles.contains(bi))
-            {
-                mStyles.push_back(bi);
-            }
+            mStyles.push_back(bi);
         }
     }
 
@@ -346,290 +238,290 @@ void WorkspaceViewer::viewWorkspace()
         canvas->addDesign(dp.get());
     }
 
-    qDebug() << "mViewers count =" << mViewers.size();
-    for (auto viewer : mViewers)
+    //qDebug() << "mViewers count =" << mViewers.size();
+    for (auto layer : mViewers)
     {
-        qDebug() << "layer" << Utils::addr(viewer)  << viewer->getName();
-        scene->addItem(viewer);    // this does it
+        //qDebug() << "layer" << Utils::addr(layer)  << layer->getName();
+        scene->addItem(layer);    // this does it
     }
 
-    qDebug() << "mStyles count =" << mStyles.size();
-    for (auto style : mStyles)
+    //qDebug() << "mStyles count =" << mStyles.size();
+    for (auto layer : mStyles)
     {
-        qDebug() << "layer" << Utils::addr(style)  << style->getName();
-        scene->addItem(style);    // this does it
+        //qDebug() << "layer" << Utils::addr(layer)  << layer->getName();
+        scene->addItem(layer);    // this does it
     }
 
-    View * view = View::getInstance();
-    view->setScene(scene);
-    view->matchSizeToCanvas();
-    view->show();
-
-    emit sig_viewUpdated();
-}
-
-void  WorkspaceViewer::generateCanvasSettings(CanvasSettings & cs)
-{
-    eViewType vtype = config->viewerType;
-
-    ViewDefinition * viewDef = &viewDimensions[vtype];
-    Q_ASSERT(viewDef->viewType == vtype);
-    cs.set(viewDef);
-
-    switch (vtype)
+    if (config->circleX)
     {
-    case VIEW_DESIGN:
-
-        switch (config->designViewer)
-        {
-        case DV_SHAPES:
-        {
-            QVector<DesignPtr> & designs = workspace->getDesigns();
-            if (designs.count())
-            {
-                DesignPtr dp = designs.first();
-                cs = dp->getDesignInfo();
-            }
-            break;
-        }
-        case DV_LOADED_STYLE:
-        {
-            StyledDesign & sd = workspace->getLoadedStyles();
-            if (sd.hasContent())
-            {
-                cs = sd.getCanvasSettings();
-
-                StylePtr  sp = sd.getFirstStyle();
-                Q_ASSERT(sp);
-                TilingPtr tp = sp->getTiling();
-                if (tp)
-                {
-                    cs.setBkgdImage(tp->getBackground());
-                }
-                emit sig_title(sd.getName());
-            }
-            break;
-        }
-        case DV_WS_STYLE:
-        {
-            StyledDesign & sd = workspace->getWsStyles();
-            if (sd.hasContent())
-            {
-                cs = sd.getCanvasSettings();
-
-                StylePtr  sp = sd.getFirstStyle();
-                Q_ASSERT(sp);
-                TilingPtr tp = sp->getTiling();
-                if (tp)
-                {
-                    cs.setBkgdImage(tp->getBackground());
-                }
-            }
-            break;
-        }
-        }
-        break;
-    case VIEW_PROTO:
-        if (config->protoViewer == PV_WS)
-        {
-            cs.setBackgroundColor((TileBlack));
-        }
-        break;
-
-    case VIEW_PROTO_FEATURE:
-        if (config->protoFeatureViewer == PVF_WS)
-        {
-            cs.setBackgroundColor((TileBlack));
-        }
-        break;
-
-    case VIEW_FIGURE_MAKER:
-    case VIEW_MAP_EDITOR:
-        cs.setBackgroundColor(config->figureViewBkgdColor);
-        break;
-
-    case VIEW_DEL:
-    case VIEW_TILING:
-    case VIEW_TILING_MAKER:
-    case VIEW_FACE_SET:
-        break;
+        MarkX * item = new MarkX(scene->sceneRect().center(), QPen(Qt::blue,5), QString("center"));
+        item->setHuge();
+        scene->addItem(item);
     }
 }
 
-void WorkspaceViewer::setupBackgroundImage(CanvasSettings & cs, TilingPtr tp)
+void WorkspaceViewer::viewDesign()
 {
-    if (tp)
+    if (config->designViewer == DV_SHAPES)
     {
-        cs.setBkgdImage(tp->getBackground());
+        mDesigns = workspace->getDesigns();
+        if (mDesigns.count())
+        {
+            DesignPtr dp = mDesigns.first();
+            canvasSettings = dp->getDesignInfo();
+        }
+        emit sig_title(workspace->getDesignName());
     }
+    else
+    {
+        eWsData wsdata = (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
+        StyledDesign   & sd = workspace->getStyledDesign(wsdata);
+        if (sd.hasContent())
+        {
+            // copy canvas settings to view settings
+            canvasSettings = sd.getCanvasSettings();
+
+            emit sig_title(sd.getName());
+
+            ControlPanel * panel  = ControlPanel::getInstance();
+            QString astring = QString("<span style=\"color:rgb(0,240,0)\">Preparing design: %1</span>").arg(sd.getName());
+            panel->showStatus(astring);
+
+#ifdef TPMSPLASH
+            astring = QString("Preparing design: %1").arg(sd.getName());
+            panel->showSplash(astring);
+#endif
+            qDebug() << "Viewing styled design" << sd.getName();
+            const StyleSet & sset = sd.getStyleSet();
+            for (auto it = sset.begin(); it != sset.end(); it++)
+            {
+                StylePtr  style = *it;
+                Style *  pStyle = style.get();
+                qDebug().noquote() << "Adding Style:" << Utils::addr(style.get()) << "  " << style->getDescription();
+                style->createStyleRepresentation();   // important to do this here
+                mStyles.push_back(pStyle);
+            }
+
+            panel->hideStatus();
+#ifdef TPMSPLASH
+            panel->hideSplash();
+#endif
+            emit sig_title(sd.getName());
+        }
+        else
+        {
+            qWarning() <<  "Empty StyleSet - nothing to display";
+        }
+    }
+
+
 }
 
-void WorkspaceViewer::setupBackgroundImage(CanvasSettings & cs, PrototypePtr pp)
+void WorkspaceViewer::viewProto()
 {
+    qDebug() << "++WorkspaceViewer::viewProto";
+    eWsData wsdata = (config->protoViewer == PV_STYLE) ? WS_LOADED : WS_TILING;
+    PrototypePtr pp = workspace->getPrototype(wsdata);
     if (pp)
     {
-        setupBackgroundImage(cs,pp->getTiling());
+        emit sig_title("Prototype");
+        TilingPtr tp = workspace->getTiling(wsdata);
+        Q_ASSERT(tp);
+        canvasSettings.setBkgdImage(tp->getBackground());
+
+        ProtoView * protoView = new ProtoView(pp);
+        mViewers.push_back(protoView);
     }
+    else
+    {
+        qWarning() << "VIEW_PROTO: no prototype";
+    }
+
+    if (config->protoViewer == PV_WS)
+    {
+        canvasSettings.setBackgroundColor(TileBlack);
+    }
+    else
+    {
+        canvasSettings.setBackgroundColor(Qt::white);
+    }
+    canvasSettings.setCanvasSize(getViewSize(VIEW_PROTO));
 }
 
-void WorkspaceViewer::slot_update()
+void WorkspaceViewer::viewProtoFeature()
 {
-    for (auto it = mViewers.begin(); it != mViewers.end(); it++)
+    qDebug() << "++WorkspaceViewer::viewProtoFeature";
+    eWsData wsdata = (config->protoFeatureViewer == PVF_STYLE) ? WS_LOADED : WS_TILING;
+    PrototypePtr pp = workspace->getPrototype(wsdata);
+    if (pp)
     {
-        Layer * l = *it;
-        l->update();
+        TilingPtr tp = workspace->getTiling(wsdata);
+        Q_ASSERT(tp);
+        canvasSettings.setBkgdImage(tp->getBackground());
+
+        ProtoFeatureView * pfv = new ProtoFeatureView(pp);
+        mViewers.push_back(pfv);
+        emit sig_title("WS Proto Feature");
     }
-    for (auto it = mStyles.begin(); it != mStyles.end(); it++)
+    else
     {
-        Layer * l = *it;
-        l->update();
+        qWarning() << "VIEW_PROTO_FEATURE: no prototype";
     }
+
+    if (config->protoFeatureViewer == PVF_WS)
+    {
+        canvasSettings.setBackgroundColor(TileBlack);
+    }
+    else
+    {
+        canvasSettings.setBackgroundColor(Qt::white);
+    }
+    canvasSettings.setCanvasSize(getViewSize(VIEW_PROTO_FEATURE));
 }
 
-void WorkspaceViewer::viewStyledDesign(StyledDesign &sd)
+void WorkspaceViewer::viewDesignElement()
 {
-#ifdef TPMSPLASH
-    TPMSplash * sp = TPMSplash::getInstance();
-    QString astring = QString("Preparing design: %1").arg(sd.getName());
-    sp->display(astring);
-#endif
-
-    qDebug() << "Viewing styled design" << sd.getName();
-    const StyleSet & sset = sd.getStyleSet();
-    for (auto it = sset.begin(); it != sset.end(); it++)
+    qDebug() << "++WorkspaceViewer::viewDesignElement";
+    eWsData wsdata = (config->delViewer == DEL_STYLES) ? WS_LOADED : WS_TILING;
+    PrototypePtr pp = workspace->getPrototype(wsdata);
+    if (pp)
     {
-        StylePtr  style = *it;
-        Style *  pStyle = style.get();
-        qDebug().noquote() << "Adding Style:" << Utils::addr(style.get()) << "  " << style->getDescription();
-        style->createStyleRepresentation();   // important to do this here
-        if (!mStyles.contains(pStyle))
+        TilingPtr   tiling                 = workspace->getTiling(wsdata);
+        QList<PlacedFeaturePtr>	& placed   = tiling->getPlacedFeatures();
+        QVector<DesignElementPtr> &  dels  = pp->getDesignElements();
+        QVector<QTransform>       & tforms = pp->getLocations();
+        qDebug() << "dels=" << dels.size() << "tforms="  << tforms.size();
+        for (auto delp : dels)
         {
-            mStyles.push_back(pStyle);
+            FeaturePtr  feap = delp->getFeature();
+            for (auto pfp : placed)
+            {
+                if (feap == pfp->getFeature())
+                {
+                    QTransform tr                  = pfp->getTransform();
+                    PlacedDesignElementPtr pdel    = make_shared<PlacedDesignElement>(delp,tr);
+                    PlacedDesignElementView * delView = new  PlacedDesignElementView(pdel);
+                    mViewers.push_back(delView);
+                }
+            }
         }
+
+        canvasSettings.setBkgdImage(tiling->getBackground());
+        emit sig_title("Design element");
+    }
+    else
+    {
+        emit sig_title("Design element - not found");
     }
 
-#ifdef TPMSPLASH
-    sp->hide();
-#endif
+    canvasSettings.setBackgroundColor(Qt::white);
+    canvasSettings.setCanvasSize(getViewSize(VIEW_DEL));
 }
 
-ProtoView *  WorkspaceViewer::viewProto(StylePtr style)
+void WorkspaceViewer::viewFigureMaker()
 {
-    qDebug() << "++WorkspaceViewer::viewProto (style)";
+    // this is used by FigureMaker
+    // this is what we want to see painted
 
-    PrototypePtr pp = style->getPrototype();
+    eWsData dataset = (config->figureViewer == FV_STYLE) ? WS_LOADED : WS_TILING;
+    DesignElementPtr dep = workspace->getSelectedDesignElement(dataset);
+    if (!dep)
+    {
+        return;
+    }
 
-    return viewProto(pp);
+    qDebug() << "++WorkspaceViewer::viewFigure";
+
+    FigureView * figView = new FigureView(dep);
+    mViewers.push_back(figView);
+    figView->setPos(canvasSettings.getStartTile());
+
+    QString astring = QString("WS Figure: dep=%1 fig=%2").arg(Utils::addr(dep.get())).arg(Utils::addr(dep->getFigure().get()));
+    emit sig_title(astring);
+
+    QSize sz = getViewSize(VIEW_FIGURE_MAKER);
+    canvasSettings.setCanvasSize(sz);
+    canvasSettings.setBackgroundColor(config->figureViewBkgdColor);
+    figView->setCenter(QRect(QPoint(0,0),sz).center());
 }
 
-ProtoView * WorkspaceViewer::viewProto(PrototypePtr proto)
+void WorkspaceViewer::viewTiling()
 {
-    qDebug() << "++WorkspaceViewer::viewProto (proto)";
+    eWsData wsdata   = (config->tilingViewer == TV_STYLE) ? WS_LOADED : WS_TILING;
+    TilingPtr tiling = workspace->getTiling(wsdata);
+    if (tiling)
+    {
+        canvasSettings.setBkgdImage(tiling->getBackground());
+        setTitle(tiling);
+        qDebug() << "++WorkspaceViewer::viewTiling (tiling)";
+        TilingView * tilingView = new TilingView(tiling);
+        mViewers.push_back(tilingView);
+    }
+    canvasSettings.setBackgroundColor(Qt::white);
+    canvasSettings.setCanvasSize(getViewSize(VIEW_TILING));
 
-    ProtoView * protoView = new ProtoView(proto);
-
-    mViewers.push_back(protoView);
-
-    return protoView;
 }
 
-ProtoFeatureView * WorkspaceViewer::viewProtoFeature(StylePtr style)
-{
-    qDebug() << "++WorkspaceViewer::viewProtoFeature (style)";
-
-    PrototypePtr pp = style->getPrototype();
-
-    return viewProtoFeature(pp);
-}
-
-ProtoFeatureView * WorkspaceViewer::viewProtoFeature( PrototypePtr proto)
-{
-    qDebug() << "++WorkspaceViewer::viewProtoFeature (proto)";
-
-    ProtoFeatureView * protoView = new ProtoFeatureView(proto);
-
-    mViewers.push_back(protoView);
-
-    return protoView;
-}
-
-TilingView * WorkspaceViewer::viewTiling(StylePtr style)
-{
-    qDebug() << "++WorkspaceViewer::viewTiling (style)";
-
-    TilingPtr tiling = style->getPrototype()->getTiling();
-
-    return viewTiling(tiling);
-}
-
-TilingView * WorkspaceViewer::viewTiling(TilingPtr tiling)
-{
-    qDebug() << "++WorkspaceViewer::viewTiling (tiling)";
-
-    TilingView * tilingView = new TilingView(tiling);
-
-    mViewers.push_back(tilingView);
-
-    return tilingView;
-}
-
-TilingMaker * WorkspaceViewer::viewTilingMaker()
+void WorkspaceViewer::viewTilingMaker()
 {
     qDebug() << "++WorkspaceViewer::viewTilingMaker";
 
     TilingMaker * tilingMaker  = TilingMaker::getInstance();
+    mStyles.push_back(tilingMaker);  // add to non-deletable styles not viewers
 
-    if (!mStyles.contains(tilingMaker))
+    eWsData input_wsdata = (config->tilingMakerViewer == TMV_STYLE) ? WS_LOADED : WS_TILING;
+    TilingPtr tiling     = workspace->getTiling(input_wsdata);
+    if (tiling)
     {
-        mStyles.push_back(tilingMaker);  // add to non-deletable styles not viewers
+        setTitle(tiling);
+        canvasSettings.setBkgdImage(tiling->getBackground());
     }
-    return tilingMaker;
+    canvasSettings.setBackgroundColor(Qt::white);
+    canvasSettings.setCanvasSize(getViewSize(VIEW_TILING_MAKER));
+
 }
 
-PlacedDesignElementView * WorkspaceViewer::viewPlacedDesignElement(PlacedDesignElementPtr pde)
-{
-    qDebug() << "++WorkspaceViewer::viewDesignElement:" << pde->toString();
-
-    PlacedDesignElementView * delView = new  PlacedDesignElementView(pde);
-
-    mViewers.push_back(delView);
-
-    return delView;
-}
-
-MapEditor * WorkspaceViewer::viewFigMapEditor(QPointF center)
+void WorkspaceViewer::viewMapEditor()
 {
     qDebug() << "++WorkspaceViewer::viewFigMapEditor";
 
     MapEditor * ed  = MapEditor::getInstance();
-    ed->setCenter(center);
 
     mStyles.push_back(ed);  // add to non-deletable styles not viewers
 
-    return ed;
+    ed->setPos(canvasSettings.getStartTile());
+    ed->forceUpdateLayer();
+
+    emit sig_title("Map Editor");
+
+    QSize sz = getViewSize(VIEW_MAP_EDITOR);
+    canvasSettings.setCanvasSize(sz);
+    canvasSettings.setBackgroundColor(config->figureViewBkgdColor);
+    ed->setCenter(QRect(QPoint(0,0),sz).center());
 }
 
-FigureView * WorkspaceViewer::viewFigure(DesignElementPtr dep, QPointF center)
+void WorkspaceViewer::viewFaceSet()
 {
-    qDebug() << "++WorkspaceViewer::viewFigure";
-
-    FigureView * figView = new FigureView(dep);
-    figView->setCenter(center);
-
-    mViewers.push_back(figView);
-
-    return figView;
+    if (config->faceSet)
+    {
+        qDebug() << "++WorkspaceViewer::viewFaceSet";
+        FaceSetView * fsView = new FaceSetView(config->faceSet);
+        mViewers.push_back(fsView);
+    }
+    canvasSettings.setBackgroundColor(Qt::black);
+    canvasSettings.setCanvasSize(getViewSize(VIEW_FACE_SET));
 }
 
-FaceSetView  * WorkspaceViewer::viewFaceSet(FaceSet * set)
+void WorkspaceViewer::slot_update()
 {
-    qDebug() << "++WorkspaceViewer::viewFaceSet";
-
-    FaceSetView * fsView = new FaceSetView(set);
-
-    mViewers.push_back(fsView);
-
-    return fsView;
+    for (auto  layer : mViewers)
+    {
+        layer->update();
+    }
+    for (auto layer : mStyles)
+    {
+        layer->update();
+    }
 }
 
 QVector<Layer*> WorkspaceViewer::getActiveLayers()
@@ -640,46 +532,9 @@ QVector<Layer*> WorkspaceViewer::getActiveLayers()
     return layers;
 }
 
-QTransform WorkspaceViewer::calculateViewTransform(ViewDefinition & sab)
+bool WorkspaceViewer::hasLayers()
 {
-    Bounds b    = sab.viewBounds;
-    QSizeF sz   = sab.viewSize;
-    eViewType e = sab.viewType;
-
-    qreal aspect = sz.width() / sz.height();
-    qreal height = b.width / aspect;
-    qreal scalex = sz.width()/b.width;
-
-    QTransform first  = QTransform::fromTranslate(-b.left, - (b.top - height));
-    QTransform second = QTransform().scale(scalex,scalex);
-    QTransform third  = QTransform().translate(0.0,(sz.width() - sz.height())/2.0);
-    QTransform full   = first * second * third;
-
-    qDebug().noquote() << sViewerType[e] << Transform::toInfoString(full);
-
-#if 0
-    ViewTransform vt;
-    vt.viewType  = e;
-    vt.scale     = Transform::scalex(full);
-    vt.translate = Transform::trans(full);
-#endif
-    return full;
-/*
-    Results:
-    VIEW_DESIGN         scale=75 rot=0 (0) trans=750 550
-    VIEW_PROTO          scale=75 rot=0 (0) trans=750 550
-    VIEW_PROTO_FEATURE  scale=75 rot=0 (0) trans=750 550
-    VIEW_DEL            scale=75 rot=0 (0) trans=750 550
-    VIEW_FIGURE_MAKER   scale=45 rot=0 (0) trans=450 450
-    VIEW_TILING         scale=75 rot=0 (0) trans=750 550
-    VIEW_TILIING_MAKER  scale=100 rot=0 (0)trans=500 500
-    VIEW_MAP_EDITOR     scale=45 rot=0 (0) trans=450 450
-*/
-}
-
-QTransform WorkspaceViewer::getViewTransform(eViewType e)
-{
-    return viewTransforms[e];
+    return (mStyles.size() + mViewers.size());
 }
 
 void WorkspaceViewer::setTitle(TilingPtr tp)
@@ -688,4 +543,44 @@ void WorkspaceViewer::setTitle(TilingPtr tp)
 
     QString str = QString("%1 : %2 : %3 : %4").arg(sViewerType[config->viewerType]).arg(tp->getName()).arg(tp->getDescription()).arg(tp->getAuthor());
     emit sig_title(str);
+}
+
+ViewSettings & WorkspaceViewer::getViewSettings(eViewType e)
+{
+    return viewSettings[e];
+}
+
+CanvasSettings & WorkspaceViewer::GetCanvasSettings()
+{
+    return canvasSettings;
+}
+
+QTransform WorkspaceViewer::getViewTransform(eViewType e)
+{
+    return viewSettings[e].getViewTransform();
+}
+
+QSizeF WorkspaceViewer::getSceneSize()
+{
+    return canvasSettings.getCanvasSize();
+}
+
+void WorkspaceViewer::setSceneSize(QSizeF sz)
+{
+    canvasSettings.setCanvasSize(sz);
+}
+
+QSize WorkspaceViewer::getViewSize(eViewType e)
+{
+    return viewSettings[e].getViewSize();
+}
+
+void WorkspaceViewer::setViewSize(eViewType e, QSize sz)
+{
+    viewSettings[e].setViewSize(sz);
+}
+
+QRect WorkspaceViewer::getViewRect(eViewType e)
+{
+    return QRect(QPoint(0,0),getViewSize(e));
 }

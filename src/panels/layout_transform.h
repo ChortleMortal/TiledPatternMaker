@@ -10,7 +10,7 @@ class LayoutTransform : public QHBoxLayout
     Q_OBJECT
 
 public:
-    LayoutTransform(QString name);
+    LayoutTransform(QString name, int decimals = 8);
 
     void setScale(qreal val) { scale->setValue(val); }
     void setRot(qreal val)   { rot->setValue(val); }

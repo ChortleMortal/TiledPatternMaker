@@ -31,53 +31,32 @@
 
 CanvasSettings::CanvasSettings()
 {
+    _sceneSize = QSizeF(1500.0,1000.0);   // default
+    _bkgdColor = QColor(Qt::white);
+    _startTile = QPointF(0,0);
 }
 
 CanvasSettings::CanvasSettings(const CanvasSettings & other)
 {
-    _bkgdColor = other._bkgdColor;
-    _bkgdImage = other._bkgdImage;
     _sceneSize = other._sceneSize;
-    _border    = other._border;
+    _bkgdColor = other._bkgdColor;
     _startTile = other._startTile;
+    _bkgdImage = other._bkgdImage;
+    _border    = other._border;
 }
 
 CanvasSettings::~CanvasSettings()
-{
-}
+{}
 
-void CanvasSettings::init2()
+
+
+void CanvasSettings::clear()
 {
     _sceneSize  = QSize(1500.0,1100.0);
     _bkgdColor  = QColor(Qt::black);
     _startTile  = QPointF(0.0,0.0);
-
-    Configuration * config = Configuration::getInstance();
-    if (config->autoClear)
-    {
-        if (_border)
-        {
-            _border.reset();
-        }
-    }
+    _border.reset();
     _bkgdImage.reset();
-}
-
-void CanvasSettings::set(ViewDefinition * viewDef)
-{
-    _sceneSize  = viewDef->viewSize;
-    _bkgdColor  = viewDef->viewBkgdColor;
-    _startTile  = viewDef->viewStartTile;
-
-   Configuration * config = Configuration::getInstance();
-   if (config->autoClear)
-   {
-       if (_border)
-       {
-           _border.reset();
-       }
-   }
-   _bkgdImage.reset();
 }
 
 void CanvasSettings::setBorder(BorderPtr border)
@@ -86,7 +65,7 @@ void CanvasSettings::setBorder(BorderPtr border)
     _border = border;
 }
 
-void CanvasSettings::setSizeF(QSizeF size)
+void CanvasSettings::setCanvasSize(QSizeF size)
 {
     _sceneSize = size;
 }
@@ -112,11 +91,66 @@ void  CanvasSettings::setBackgroundColor(QColor color)
     _bkgdColor = color;
 }
 
-void CanvasSettings::dump()
+//
+// View Settings
+//
+
+ViewSettings::ViewSettings()
 {
-    qInfo() << "CanvasSettings" << _bkgdColor;
-    if (_bkgdImage)
-    {
-        qInfo()  << "Background name=" << _bkgdImage->bkgdName;
-    }
+    _bounds   =  Bounds(-10.0,10.0,20.0);  // default
+    _viewSize = QSize(1500,1100);
+    calculateViewTransform();
 }
+
+ViewSettings::ViewSettings(eViewType evt, Bounds bounds, QSize size)
+{
+    _evt      = evt;
+    _bounds   = bounds;
+    _viewSize = size;
+    calculateViewTransform();
+}
+
+void ViewSettings::init(eViewType evt, Bounds bounds, QSize size)
+{
+    _evt      = evt;
+    _bounds   = bounds;
+    _viewSize = size;
+    calculateViewTransform();
+}
+
+void ViewSettings::setViewSize(QSize size)
+{
+    _viewSize = size;
+    calculateViewTransform();
+}
+
+
+/*
+    Results:
+    VIEW_DESIGN         scale=75 rot=0 (0) trans=750 550
+    VIEW_PROTO          scale=75 rot=0 (0) trans=750 550
+    VIEW_PROTO_FEATURE  scale=75 rot=0 (0) trans=750 550
+    VIEW_DEL            scale=75 rot=0 (0) trans=750 550
+    VIEW_FIGURE_MAKER   scale=45 rot=0 (0) trans=450 450
+    VIEW_TILING         scale=75 rot=0 (0) trans=750 550
+    VIEW_TILIING_MAKER  scale=100 rot=0 (0)trans=500 500
+    VIEW_MAP_EDITOR     scale=45 rot=0 (0) trans=450 450
+*/
+void ViewSettings::calculateViewTransform()
+{
+    QSizeF size  = _viewSize;
+    //QSizeF size  = GetCanvasSettings().getCanvasSize();
+    qreal aspect = size.width() / size.height();
+    qreal height = _bounds.width / aspect;
+    qreal scalex = size.width()/_bounds.width;
+
+    QTransform first  = QTransform::fromTranslate(-_bounds.left, - (_bounds.top - height));
+    QTransform second = QTransform().scale(scalex,scalex);
+    QTransform third  = QTransform().translate(0.0,(size.width() - size.height())/2.0);
+    _t  = first * second * third;
+}
+
+
+
+
+

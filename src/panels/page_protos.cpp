@@ -36,7 +36,7 @@
 using std::string;
 
 
-page_protos:: page_protos(ControlPanel *panel)  : panel_page(panel,"Prototype Info")
+page_protos:: page_protos(ControlPanel * cpanel)  : panel_page(cpanel,"Prototype Info")
 {
     setMouseTracking(true);
 
@@ -66,47 +66,32 @@ page_protos:: page_protos(ControlPanel *panel)  : panel_page(panel,"Prototype In
     bgroup.button(config->protoViewer)->setChecked(true);
 
     connect(refreshButton, &QPushButton::clicked,      this, &page_protos::onEnter);
-    connect(&bgroup,       SIGNAL(buttonClicked(int)), this, SLOT(display(int)));
+    connect(&bgroup,       SIGNAL(buttonClicked(int)), this, SLOT(slot_display(int)));
 }
 
 void  page_protos::refreshPage()
 {
     bgroup.button(config->protoViewer)->setChecked(true);
 
-    PrototypePtr proto;
-
-    if (sourceStyle->isChecked())
+    eWsData wsdata     = (sourceStyle->isChecked()) ? WS_LOADED : WS_TILING;
+    PrototypePtr proto = workspace->getPrototype(wsdata);
+    if (proto)
     {
-        StylePtr sp = workspace->getLoadedStyles().getFirstStyle();
-        if (!sp)
-        {
-            wsProtoLabel->setText("WS Styles: none");
-            return;
-        }
-        proto = sp->getPrototype();
         wsProtoLabel->setText(QString("Style Proto ptr: is 0x%1").arg(addr(proto.get())));
     }
     else
     {
-        proto = workspace->getWSPrototype();
-        if (!proto)
-        {
-            wsProtoLabel->setText("WS Proto ptr: is null");
-            return;
-        }
-        wsProtoLabel->setText(QString("WS Proto ptr: is 0x%1").arg(addr(proto.get())));
+        wsProtoLabel->setText("WS Proto ptr: is null");
+        return;
     }
 
     protoTable->clearContents();
 
     int row = 0;
     QVector<DesignElementPtr> dels = proto->getDesignElements();
-
-    int index = 0;
-    for (auto it = dels.begin(); it!= dels.end(); it++, index++)
+    for (auto del :  dels)
     {
-        protoTable->setRowCount(row+1);
-        DesignElementPtr del = *it;
+        protoTable->setRowCount(row + 1);
 
         QTableWidgetItem * item;
         item = new QTableWidgetItem(addr(del.get()));
@@ -126,11 +111,10 @@ void  page_protos::refreshPage()
         item = new QTableWidgetItem(astring);
         protoTable->setItem(row,PROTO_COL_FIGURE,item);
 
-        QTransform t = proto->getTransform(index);
+        QTransform t = proto->getTransform(row);
         item = new QTableWidgetItem(Transform::toInfoString(t));
         protoTable->setItem(row,PROTO_COL_TRANSFORM,item);
 
-        // next design element
         row++;
     }
 
@@ -139,9 +123,9 @@ void  page_protos::refreshPage()
     updateGeometry();
 }
 
-void page_protos::display(int id)
+void page_protos::slot_display(int id)
 {
-    config->protoViewer = (eProtoViewer)id;
+    config->protoViewer = static_cast<eProtoViewer>(id);
     onEnter();
 }
 

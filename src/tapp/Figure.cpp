@@ -89,13 +89,13 @@ bool Figure::isExplicit()
     switch (figType)
     {
     case FIG_TYPE_EXPLICIT:
-    case FIG_TYPE_INFER:
+    case FIG_TYPE_EXPLICIT_INFER:
     case FIG_TYPE_EXPLICIT_ROSETTE:
-    case FIG_TYPE_HOURGLASS:
-    case FIG_TYPE_INTERSECT:
-    case FIG_TYPE_GIRIH:
+    case FIG_TYPE_EXPLICIT_HOURGLASS:
+    case FIG_TYPE_EXPLICIT_INTERSECT:
+    case FIG_TYPE_EXPLICIT_GIRIH:
     case FIG_TYPE_EXPLICIT_STAR:
-    case FIG_TYPE_FEATURE:
+    case FIG_TYPE_EXPLICIT_FEATURE:
         return true;
     default:
         return false;
@@ -146,5 +146,5 @@ void Figure::annotateEdges()
         QPointF p = edge->getMidPoint();
         debugMap->insertDebugMark(p, QString::number(edge->getTmpEdgeIndex()));
     }
-    debugMap->dumpMap(false);
+    //debugMap->dumpMap(false);
 }

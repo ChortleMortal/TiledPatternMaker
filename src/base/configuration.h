@@ -27,8 +27,8 @@
 
 #include <QtCore>
 #include <QColor>
-#include "designs/design.h"
 #include "base/cycler.h"
+#include "base/shared.h"
 
 #define NUM_DESIGNS 30
 
@@ -40,6 +40,58 @@
 #define RANGE(start,dur)  if (stepIndex >= SECONDS(start) && stepIndex <= (SECONDS(start) + SECONDS(dur)))
 #define STEP(start)       if (stepIndex == SECONDS(start))
 #define TICK(start)       if (stepIndex == start)
+
+enum eDesign
+{
+    DESIGN_5,
+    DESIGN_6,
+    DESIGN_7,
+    DESIGN_8,
+    DESIGN_9,
+    DESIGN_HU_INSERT,
+    DESIGN_10,
+    DESIGN_11,
+    DESIGN_12,
+    DESIGN_13,
+    DESIGN_14,
+    DESIGN_16,
+    DESIGN_17,
+    DESIGN_18,
+    DESIGN_19,
+    DESIGN_KUMIKO1,
+    DESIGN_KUMIKO2,
+    NO_DESIGN
+};
+
+static QString sDesign2[] =
+{
+    Enum2Str(DESIGN_0),
+    Enum2Str(DESIGN_1),
+    Enum2Str(DESIGN_2),
+    Enum2Str(DESIGN_3),
+    Enum2Str(DESIGN_4),
+    Enum2Str(DESIGN_5),
+    Enum2Str(DESIGN_6),
+    Enum2Str(DESIGN_7),
+    Enum2Str(DESIGN_8),
+    Enum2Str(DESIGN_9),
+    Enum2Str(DESIGN_10),
+    Enum2Str(DESIGN_11),
+    Enum2Str(DESIGN_12),
+    Enum2Str(DESIGN_13),
+    Enum2Str(DESIGN_14),
+    Enum2Str(DESIGN_15),
+    Enum2Str(DESIGN_16),
+    Enum2Str(DESIGN_17),
+    Enum2Str(DESIGN_18),
+    Enum2Str(DESIGN_19),
+    Enum2Str(DESIGN_KUMIKO1),
+    Enum2Str(DESIGN_KUMIKO2),
+    Enum2Str(DESIGN_HU_INSERT),
+    Enum2Str(DESIGN_ROSETTE_MAKER),
+    Enum2Str(DESIGN_STAR_MAKER),
+    Enum2Str(NO_DESIGN)
+};
 
 enum eViewType
 {
@@ -151,15 +203,15 @@ static QString sTilingViewer[] =
 
 enum eTilingMakerView
 {
-    TD_STYLE,
-    TD_WORKSPACE,
-    TD_MAX = TD_WORKSPACE
+    TMV_STYLE,
+    TMV_WORKSPACE,
+    TMV_MAX = TMV_WORKSPACE
 };
 
 static QString sTilingMakerView[] =
 {
-    E2STR(TD_STYLE),
-    E2STR(TD_WORKSPACE)
+    E2STR(TMV_STYLE),
+    E2STR(TMV_WORKSPACE)
 };
 
 
@@ -182,14 +234,16 @@ enum eMapEditorMode
     MAP_MODE_STYLE,
     MAP_MODE_PROTO,
     MAP_MODE_FIGURE,
-    MAP_MODE_MAX = MAP_MODE_FIGURE
+    MAP_MODE_LOCAL,
+    MAP_MODE_MAX = MAP_MODE_LOCAL
 };
 
 static QString sMapEditorMode[] =
 {
     E2STR(MAP_MODE_STYLE),
     E2STR(MAP_MODE_PROTO),
-    E2STR(MAP_MODE_FIGURE)
+    E2STR(MAP_MODE_FIGURE),
+    E2STR(MAP_MODE_LOCAL)
 };
 
 enum eRepeatType
@@ -217,7 +271,7 @@ enum eCSSelect  // canvas settings
 {
     CS_STYLE,
     CS_WS,
-    CS_CANVAS
+    CS_MAX = CS_WS
 };
 
 enum eRender
@@ -231,8 +285,8 @@ enum eKbdMode
     KBD_MODE_XFORM_VIEW,
     KBD_MODE_DEFAULT = KBD_MODE_XFORM_VIEW,
     KBD_MODE_XFORM_BKGD,
-    KBD_MODE_XFORM_MODEL,
-    KBD_MODE_XFORM_OBJECT,
+    KBD_MODE_XFORM_TILING,
+    KBD_MODE_XFORM_FEATURE,
     KBD_MODE_LAYER,
     KBD_MODE_ZLEVEL,
     KBD_MODE_STEP,
@@ -310,10 +364,10 @@ public:
     QString currentlyLoadedXML; // current status
 
     bool    firstBirthday;
-    bool    autoClear;
     bool    autoLoadStyles;
     bool    autoLoadTiling;
     bool    autoLoadDesigns;
+    bool    scaleToView;
     bool    autoCycle;
     bool    stopIfDiff;
     bool    logToStderr;
@@ -321,9 +375,11 @@ public:
     bool    logToPanel;
     bool    logNumberLines;
     bool    wsStatusBox;
+    bool    mapedStatusBox;
     bool    showCenter;
     bool    gridCenter;
     bool    hideBackgroundImage;
+    bool    highlightUnit;
 
     bool    verifyMaps;
     bool    verifyDump;     // TODO
@@ -331,9 +387,13 @@ public:
 
     bool    designFilterCheck;
     bool    tileFilterCheck;
-    bool    showAllFeatures;
     bool    lockView;
     bool    screenIsSplit;
+
+    bool    tm_showAllFeatures;
+    bool    tm_hideTable;
+    bool    tm_showDebug;
+    bool    tm_autofill;
 
     bool    compare_transparent;
     bool    display_differences;
@@ -353,6 +413,8 @@ public:
     bool    circleX;
     bool    sceneGrid;
     bool    hideCircles;
+    bool    enableDetachedPages;
+    bool    autoClear;
 
     qreal   gridStepScreen;
     qreal   gridStepModel;

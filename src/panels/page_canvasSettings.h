@@ -28,42 +28,69 @@
 #include "panel_page.h"
 #include "panels/layout_transform.h"
 
+
 class page_canvasSettings : public panel_page
 {
     Q_OBJECT
+
+//#define BORDER
+
+enum eSettingsGroup
+{
+    SDESIGN_SETTINGS  = 0,
+    CANVAS_SETTINGS   = 1,
+    VIEW_SETTINGS     = 0,
+    SCENE_STATUS      = 2,
+    VIEW_STATUS       = 1
+};
 
 public:
     page_canvasSettings(ControlPanel * apanel);
 
     void refreshPage() override;
     void onEnter() override;
-
-signals:
+    void onExit() override {}
 
 private slots:
     void display();
 
-    void setInfo();
-
     void pickBorderColor();
     void pickBorderColor2();
-    void pickBackgroundColor();
     void settingsSelectionChanged(int);
     void borderChanged(int row);
 
     void slot_loadBackground();
     void slot_adjustBackground();
     void slot_saveAdjustedBackground();
+
     void slot_setBkgdXform();
     void slot_setBkgd();
+    void pickBackgroundColor();
+
+    void slot_setBkgdXformCanvas();
+    void slot_setBkgdCanvas();
+    void pickBackgroundColorCanvas();
 
     void slot_moveX(int amount);
     void slot_moveY(int amount);
     void slot_rotate(int amount);
     void slot_scale(int amount);
 
+    void designSizeChanged(qreal);
+    void canvasSizeChanged(qreal);
+
+
 protected:
-    void displayBackgroundStatus();
+    QGroupBox * createDesignSettings();
+    QGroupBox * createCanvasSettings();
+    QGroupBox * createSceneStatus();
+
+    QGroupBox * createViewSettings();
+    QGroupBox * createViewStatus();
+
+    void displaySettings(CanvasSettings & cSettings, eSettingsGroup group);
+    void displayBkgdImgSettings(CanvasSettings & cSettings, eSettingsGroup group);
+
     void setFromForm();
     void setBorderFromForm();
 
@@ -72,33 +99,38 @@ private:
 
     class TilingMaker * tilingMaker;
 
-    CanvasSettings  cSettings;      // local copy
-
     QButtonGroup   bgroup;
 
-    ClickableLabel * bkgdColorPatch;
-    QLineEdit * sizeEditW;
-    QLineEdit * sizeEditH;
-    QLineEdit * startEditX;
-    QLineEdit * startEditY;
-    QLineEdit * bkColorEdit;
-    QLineEdit * imageEdit;
+    DoubleSpinSet * sizeEditW[3];
+    DoubleSpinSet * sizeEditH[3];
 
+    QLineEdit * bkColorEdit[3];
+    ClickableLabel * bkgdColorPatch[3];
+
+    DoubleSpinSet * startEditX[3];
+    DoubleSpinSet * startEditY[3];
+
+    SpinSet * viewW[2];
+    SpinSet * viewH[2];
+
+
+#ifdef BORDER
     QComboBox   borderType;
 
     QLineEdit * borderWidth;
     QLabel    * borderColorLabel[2];
     QLineEdit * borderColor[2];
     ClickableLabel * borderColorPatch[2];
+#endif
 
-    QLabel  * line1;
-    QLabel  * line2;
+    QPushButton   * bkgdImageBtn;
+    QLineEdit     * bkgdImage[2];
 
-    LayoutTransform bkgdLayout;
+    LayoutTransform * bkgdLayout[2];
 
-    QCheckBox     * chk_showBkgd;
-    QCheckBox     * chk_adjustBkgd;
-    QCheckBox     * chk_xformBkgd;
+    QCheckBox     * chk_showBkgd[2];
+    QCheckBox     * chk_adjustBkgd[2];
+    QCheckBox     * chk_xformBkgd[2];
 };
 
 #endif

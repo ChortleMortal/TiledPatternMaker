@@ -53,9 +53,26 @@ int Map::refs;
 Map::Map(QString Name) : neighbourMap(this)
 {
     refs++;
-    mname = Name;
-
+    mname  = Name;
     config = Configuration::getInstance();
+}
+
+
+Map::Map(QString Name, QPolygonF & poly) : neighbourMap(this)
+{
+    Q_ASSERT(poly.isClosed());
+    refs++;
+    mname  = Name;
+    config = Configuration::getInstance();
+
+    VertexPtr v1 = insertVertex(poly[0]);
+    VertexPtr v2;
+    for (int i=1; i < poly.size(); i++)
+    {
+        v2 = insertVertex(poly[i]);
+        insertEdge(v1,v2);
+        v1 = v2;
+    }
 }
 
 Map::Map(const Map & map)  : neighbourMap(this)
@@ -312,6 +329,8 @@ int Map::numEdges() const
 
 void Map::removeEdge(EdgePtr e)   // called by wipeout
 {
+    if (!e) return;
+
     qDebug() << "removing edge" << e->getTmpEdgeIndex();
 
     VertexPtr v1  = e->getV1();
@@ -341,6 +360,8 @@ void Map::removeEdge(EdgePtr e)   // called by wipeout
 
 void Map::removeVertex(VertexPtr v)
 {
+    if (!v)
+        return;
     qDebug() << "removing vertex" << v->getTmpVertexIndex();
 
     QVector<EdgePtr> removeList;
@@ -356,7 +377,33 @@ void Map::removeVertex(VertexPtr v)
         removeEdge(edge);
     }
     vertices.removeAll(v);
- }
+}
+
+void Map::crop(QRectF rect)
+{
+    // make a crop map - border has intersection points
+    QPolygonF poly(rect);
+
+    MapPtr cropMap = make_shared<Map>(QString("cropped map"),poly);
+    cropMap->verifyMap("crop map",true);
+
+    mergeMap(cropMap);
+
+    // remove anything with an outside edge
+    QVector<EdgePtr> outsideEdges;
+    for (auto edge : edges)
+    {
+        if (!rect.contains(edge->getV1()->getPosition()) || !rect.contains(edge->getV2()->getPosition()))
+        {
+            outsideEdges.push_back(edge);
+        }
+    }
+
+    for (auto edge : outsideEdges)
+    {
+        removeEdge(edge);
+    }
+}
 
 MapPtr Map::recreate()
 {

@@ -58,7 +58,7 @@ public:
 
     void    setTiling(TilingPtr t);
     void    addElement(DesignElementPtr element);
-    void    setFeaturesReversed(QList<FeaturePtr> features);
+    void    setFeaturesReversed(QVector<FeaturePtr> features);
 
     QString getInfo() const;
 

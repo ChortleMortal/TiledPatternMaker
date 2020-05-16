@@ -53,6 +53,7 @@ TilingPtr TilingLoader::readTiling(QString file )
     return t;
 }
 
+// This parses a taprats (non-XML) tiling
 TilingPtr TilingLoader::readTiling(QTextStream & st)
 {
     st.skipWhiteSpace();
@@ -240,6 +241,7 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
             qWarning("missing type attribute");
             continue;
         }
+
         QString strtype = fatt.as_string();
 
         if (strtype == "girih")
@@ -252,14 +254,14 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
             }
             QString name = nameattr.value();
             PlacedFeaturePtr pfp = make_shared<PlacedFeature>();
-            pfp->loadFromGirihShape(name);
-            bf = pfp->getFeature();
+            if (pfp->loadFromGirihShape(name))
+            {
+                bf = pfp->getFeature();
+            }
         }
         else if (strtype == "regular")
         {
             int sides      = 0;
-            qreal rotation = 0.0;
-
             xml_attribute sidesatt = feature.attribute("sides");
             if (!sidesatt)
             {
@@ -268,16 +270,18 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
             }
             sides = sidesatt.as_int();
 
+            qreal rotation = 0.0;
             xml_attribute rotatt = feature.attribute("rotation");
             if (rotatt)
             {
                 rotation = rotatt.as_double();
             }
-            bf = make_shared<Feature>(sides,rotation);
 
+            bf = make_shared<Feature>(sides,rotation);
         }
         else if (strtype == "polygon")
         {
+            // older tilings have this, newer tilings use edgepoly
             QPolygonF pts;
             for (xml_node pnode = feature.child("Point"); pnode; pnode = pnode.next_sibling("Point"))
             {
@@ -292,7 +296,15 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
         {
             FeatureReader fr;
             EdgePoly ep = fr.getEdgePoly(feature);
-            bf = make_shared<Feature>(ep,0);
+
+             qreal rotation = 0.0;
+             xml_attribute rotatt = feature.attribute("rotation");
+             if (rotatt)
+             {
+                 rotation = rotatt.as_double();
+             }
+
+            bf = make_shared<Feature>(ep,rotation);
         }
 
         for (xml_node plnode = feature.child("Placement"); plnode; plnode = plnode.next_sibling("Placement"))

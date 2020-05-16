@@ -33,7 +33,7 @@
 // interaction with features.
 
 #include "viewers/tilingmakerview.h"
-#include "base/canvas.h"
+#include "viewers/workspaceviewer.h"
 #include "base/view.h"
 #include "geometry/Transform.h"
 #include "geometry/Point.h"
@@ -288,9 +288,11 @@ TilingSelectionPtr TilingMakerView::findMidPoint(QPointF spt, TilingSelectionPtr
                 QPointF a2 = worldToScreen(aa);
                 QPointF b2 = worldToScreen(bb);
                 qreal screenDist = Point::dist2(a2,b2);
-                if ( screenDist < (7 * 7 * 7.0 * 7.0) )
+                if ( screenDist < (6.0 * 6.0 * 6.0 * 6.0) )
+                {
+                    qDebug() << "Screen dist too small = " << screenDist;
                     return sel;
-
+                }
                 return make_shared<TilingSelection>(MID_POINT, pf, edge, mid);
             }
         }
@@ -439,8 +441,8 @@ TilingSelectionPtr TilingMakerView::findCenter(PlacedFeaturePtr pf, QPointF spt)
 
 QRectF TilingMakerView::boundingRect() const
 {
-    Canvas * canvas = Canvas::getInstance();
-    return canvas->getCanvasSettings().getRectF();
+    QRectF rect = wsViewer->GetCanvasSettings().getCanvasRect();
+    return rect;
 }
 
 ////////////////////////////////////////////////////////////////////////////

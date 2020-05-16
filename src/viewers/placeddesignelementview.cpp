@@ -32,7 +32,7 @@
 #include "base/shared.h"
 #include "base/workspace.h"
 #include "base/configuration.h"
-#include "base/canvas.h"
+#include "viewers/workspaceviewer.h"
 
 
 PlacedDesignElementView::PlacedDesignElementView(PlacedDesignElementPtr pde) : Layer("PlacedDesignElementView")
@@ -48,8 +48,8 @@ PlacedDesignElementView::PlacedDesignElementView(PlacedDesignElementPtr pde) : L
 
 QRectF PlacedDesignElementView::boundingRect() const
 {
-    Canvas * canvas = Canvas::getInstance();
-    return canvas->getCanvasSettings().getRectF();
+    QRectF rect = wsViewer->GetCanvasSettings().getCanvasRect();
+    return rect;
 }
 
 void PlacedDesignElementView::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
