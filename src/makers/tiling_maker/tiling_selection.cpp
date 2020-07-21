@@ -30,7 +30,7 @@
 // Probably not used in the applet at all.
 
 #include "makers/tiling_maker/tiling_selection.h"
-#include "viewers/tilingmakerview.h"
+#include "viewers/tiling_maker_view.h"
 
 TilingSelection::TilingSelection(eSelection type, PlacedFeaturePtr pfp)
 {

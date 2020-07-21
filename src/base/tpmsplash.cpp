@@ -18,7 +18,7 @@ void TPMSplash::display(QString txt)
     msgStack.push(message());
 
     View * view = View::getInstance();
-    QPoint pos = view->frameRect().center();
+    QPoint pos = view->rect().center();
     pos = view->mapToGlobal(pos);
     QPoint p2  = pos - QPoint(w/2,h/2);
     move(p2);

@@ -1,5 +1,5 @@
 #include "threads.h"
-#include "geometry/Map.h"
+#include "geometry/map.h"
 
 Thread::Thread()
 {
@@ -33,10 +33,11 @@ void Threads::findThreads(MapPtr map)
 
 void Threads::findThread(ThreadPtr thread, MapPtr map, EdgePtr edge, VertexPtr touchPt)
 {
+    qDebug() << "Threads::findThread Edge" << edge->getTmpEdgeIndex() << "Thread" << thread.get();
+
     edge->getInterlaceInfo().thread  = thread;
     edge->getInterlaceInfo().visited = true;
     thread->push_back(edge);
-    //qDebug() << "Edge" << edge->getTmpEdgeIndex() << "Thread" << thread;
 
     NeighboursPtr nbs = map->getNeighbourMap().getNeighbours(touchPt);
 

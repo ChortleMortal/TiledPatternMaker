@@ -35,8 +35,8 @@
 #include <QPointF>
 #include <QLineF>
 #include <QString>
-#include "tile/Feature.h"
-#include "tile/PlacedFeature.h"
+#include "tile/feature.h"
+#include "tile/placed_feature.h"
 #include "base/shared.h"
 
 enum eSelection
@@ -47,7 +47,8 @@ enum eSelection
     VERTEX        = 3,
     MID_POINT     = 4,
     ARC_POINT     = 5,
-    FEAT_CENTER   = 6
+    FEAT_CENTER   = 6,
+    SCREEN_POINT  = 7,
 };
 
 #define Enum2Str(e)  {QString(#e)}
@@ -60,7 +61,8 @@ static QString strTiliingSelection[] =
     Enum2Str(VERTEX),
     Enum2Str(MID_POINT),
     Enum2Str(ARC_POINT),
-    Enum2Str(FEAT_CENTER)
+    Enum2Str(FEAT_CENTER),
+    Enum2Str(SCREEN_POINT)
 };
 
 class TilingMakerView;
@@ -73,17 +75,21 @@ public:
     TilingSelection(eSelection type, PlacedFeaturePtr pfp, EdgePtr edge);
     TilingSelection(eSelection type, PlacedFeaturePtr pfp, EdgePtr edge, QPointF pt);
 
+    eSelection       getType()          { return type; }
+
     PlacedFeaturePtr getPlacedFeature() { return pfp; }
     QTransform       getTransform()     { return pfp->getTransform(); }
     FeaturePtr       getFeature()       { return pfp->getFeature(); }
+
     QPolygonF        getModelPolygon()  { return pfp->getFeaturePolygon(); }
-    QPolygonF        getPlacedPolygon() { return pfp->getPlacedPolygon(); }
     EdgePtr          getModelEdge()     { return edge; }
     QLineF           getModelLine()     { return edge->getLine(); }
-    QLineF           getPlacedLine()    { return pfp->getTransform().map(edge->getLine()); }
     QPointF          getModelPoint()    { return pt; }
+
+    EdgePtr          getPlacedEdge()    { return make_shared<Edge>(edge,pfp->getTransform()); }
+    QPolygonF        getPlacedPolygon() { return pfp->getPlacedPolygon(); }
+    QLineF           getPlacedLine()    { return pfp->getTransform().map(edge->getLine()); }
     QPointF          getPlacedPoint()   { return pfp->getTransform().map(pt); }
-    eSelection       getType()          { return type; }
 
 private:
     PlacedFeaturePtr pfp;

@@ -22,10 +22,10 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "style/Interlace.h"
-#include "geometry/Map.h"
-#include "geometry/Point.h"
-#include "style/Outline.h"
+#include "style/interlace.h"
+#include "geometry/map.h"
+#include "geometry/point.h"
+#include "style/outline.h"
 #include <QPainter>
 
 ////////////////////////////////////////////////////////////////////////////
@@ -459,11 +459,9 @@ void Interlace::draw(GeoGraphics * gg)
     for (auto seg : pts)
     {
         QColor c = seg.c;
-        QPen pen(c);
-        QBrush brush(c);
 
         QPolygonF poly = seg.toPoly();
-        gg->drawPolygon(poly,pen,brush);
+        gg->fillPolygon(poly,c);
     }
 
     if ( shadow > 0.0)
@@ -475,8 +473,6 @@ void Interlace::draw(GeoGraphics * gg)
             color.getHsvF(&h,&s,&b);
             QColor c;
             c.setHsvF(h, s * 0.9, b * 0.8 );
-            QPen pen(c);
-            QBrush brush(c);
 
             if (seg.A.shadow)
             {
@@ -485,7 +481,7 @@ void Interlace::draw(GeoGraphics * gg)
                 shadowPts1 <<  seg.A.above;
                 shadowPts1 <<  seg.A.below;
                 shadowPts1 << (seg.A.below + getShadowVector(seg.A.below, seg.B.above));
-                gg->drawPolygon(shadowPts1,pen,brush);
+                gg->fillPolygon(shadowPts1,c);
             }
             if (seg.B.shadow)
             {
@@ -494,7 +490,7 @@ void Interlace::draw(GeoGraphics * gg)
                 shadowPts2 <<  seg.B.below;
                 shadowPts2 <<  seg.B.above;
                 shadowPts2 << (seg.B.above + getShadowVector(seg.B.above, seg.A.below));
-                gg->drawPolygon(shadowPts2,pen,brush);
+                gg->fillPolygon(shadowPts2,c);
             }
         }
     }

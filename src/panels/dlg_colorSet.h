@@ -27,7 +27,7 @@
 
 #include <QtWidgets>
 #include <QSignalMapper>
-#include "tile/Feature.h"
+#include "tile/feature.h"
 #include "makers/style_maker/style_editors.h"
 
 class DlgColorSet : public QDialog

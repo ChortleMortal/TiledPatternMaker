@@ -22,7 +22,7 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "style/Plain.h"
+#include "style/plain.h"
 #include <QPainter>
 
 ////////////////////////////////////////////////////////////////////////////

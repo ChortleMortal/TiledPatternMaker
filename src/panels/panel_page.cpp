@@ -24,7 +24,7 @@
 
 #include "panels/panel_page.h"
 #include "panels/panel.h"
-#include "viewers/workspaceviewer.h"
+#include "viewers/workspace_viewer.h"
 #include "base/tiledpatternmaker.h"
 #include "base/canvas.h"
 #include "base/utilities.h"
@@ -39,6 +39,7 @@ panel_page::panel_page(ControlPanel * panel,  QString name) : QWidget()
     canvas    = Canvas::getInstance();
     workspace = Workspace::getInstance();
     viewer    = WorkspaceViewer::getInstance();
+    view      = View::getInstance();
 
     vbox      = new QVBoxLayout;
     vbox->setSizeConstraint(QLayout::SetFixedSize);
@@ -113,49 +114,6 @@ void panel_page::floatMe()
     QPoint pt    = s.value(name).toPoint();
     qDebug() << "panel_page::floatMe()" << pageName << pt;
     move(pt);
-}
-
-int panel_page::getTableWidth(QTableWidget *t)
-{
-    int w = t->verticalHeader()->width() + (t->frameWidth() * 2); // +4 seems to be needed
-    for (int i = 0; i < t->columnCount(); i++)
-    {
-        w += t->columnWidth(i);
-    }
-    return w;
-}
-
-int panel_page::getTableHeight(QTableWidget *t)
-{
-    int h = t->horizontalHeader()->height() + (t->frameWidth() * 2);
-    for (int i = 0; i < t->rowCount(); i++)
-    {
-        h += t->rowHeight(i);
-    }
-    return h;
-}
-
-void panel_page::adjustTableSize(QTableWidget *table)
-{
-    int w = getTableWidth(table);
-    int h = getTableHeight(table);
-    QSize size(w,h);
-    table->setMaximumSize(size);
-    table->setMinimumSize(size);
-}
-
-void panel_page::adjustTableWidth(QTableWidget *table)
-{
-    int w = getTableWidth(table);
-    table->setMaximumWidth(w);
-    table->setMinimumWidth(w);
-}
-
-void panel_page::adjustTableHeight(QTableWidget *table)
-{
-    int h = getTableHeight(table);
-    table->setMaximumHeight(h);
-    table->setMinimumHeight(h);
 }
 
 QString panel_page::addr(void * address)

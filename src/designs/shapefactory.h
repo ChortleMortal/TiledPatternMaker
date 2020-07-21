@@ -26,7 +26,7 @@
 #define SHAPEFACTORY_H
 
 #include "designs/shapes.h"
-#include "viewers/shapeviewer.h"
+#include "viewers/shape_view.h"
 
 #include <QGraphicsItem>
 #include <QPainter>
@@ -99,8 +99,6 @@ public:
     void           setPPath(QPen pen = QPen(Qt::NoPen), QBrush brush = QBrush(Qt::NoBrush))
                             {ppPen = pen; ppBrush = brush;}
 
-    void enableAntialiasing(bool enable) {_antiAliasPolys = enable;}
-
     static QPointF   rotatePoint(QPointF & p, qreal angle);
     static QPolygonF getMidPoints(QPolygonF & p);
 
@@ -137,7 +135,10 @@ protected:
     void calcInscribedNonagonPoints(Polygon2 * p);
 
 private:
-    Canvas * canvas;
+    View * view;
+
+    qreal  _diameter;
+    qreal  _radius;
 };
 
 

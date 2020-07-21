@@ -22,8 +22,8 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "tapp/Prototype.h"
-#include "geometry/FillRegion.h"
+#include "tapp/prototype.h"
+#include "geometry/fill_region.h"
 #include "base/canvas.h"
 #include "base/utilities.h"
 #include "base/tpmsplash.h"
@@ -75,6 +75,11 @@ void Prototype::setTiling(TilingPtr t)
 void Prototype::addElement(DesignElementPtr element )
 {
     designElements.push_front(element);
+}
+
+void Prototype::removeElement(DesignElementPtr element)
+{
+    designElements.removeAll(element);
 }
 
 QString Prototype::getInfo() const
@@ -207,21 +212,26 @@ MapPtr Prototype::getProtoMap()
     return protoMap;
 }
 
-MapPtr Prototype::createProtoMap()
+
+MapPtr Prototype::createProtoMap(bool showSplash)
 {
     ControlPanel * panel = ControlPanel::getInstance();
     QString astring = QString("<span style=\"color:rgb(0,240,0)\">Constructing prototype map for tiling: %1</span>").arg(tiling->getName());
     panel->showStatus(astring);
 #ifdef TPMSPLASH
-    astring = QString("Constructing prototype map for tiling: %1").arg(tiling->getName());
-    panel->showSplash(astring);
+    if (showSplash)
+    {
+        // showing splash causes the event queue to bw processed.  This can be quite unwanted.
+        astring = QString("Constructing prototype map for tiling: %1").arg(tiling->getName());
+        panel->showSplash(astring);
+    }
 #endif
 
     resetProtoMap();
 
     qDebug() << "PROTOTYPE::CONSTRUCT MAP" << Utils::addr(this);
 
-    const bool debug = false;
+    const bool debug = true;
 
     // Use FillRegion to get a list of translations for this tiling.
     fill(nullptr, tiling->getFillData());
@@ -286,7 +296,10 @@ MapPtr Prototype::createProtoMap()
 
     panel->hideStatus();
 #ifdef TPMSPLASH
-    panel->hideSplash();
+    if (showSplash)
+    {
+        panel->hideSplash();
+    }
 #endif
 
     return protoMap;

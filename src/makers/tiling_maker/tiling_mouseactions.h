@@ -4,7 +4,7 @@
 #include <QtWidgets>
 #include "base/shared.h"
 #include "makers/tiling_maker/tiling_selection.h"
-#include "viewers/GeoGraphics.h"
+#include "viewers/geo_graphics.h"
 
 enum eMouseMode
 {
@@ -18,8 +18,7 @@ enum eMouseMode
     MEASURE_MODE,
     BKGD_SKEW_MODE,
     EDIT_FEATURE_MODE,
-    CURVE_EDGE_MODE,
-    FLATTEN_EDGE_MODE,
+    EDGE_CURVE_MODE,
     MIRROR_X_MODE,
     MIRROR_Y_MODE
 };
@@ -47,7 +46,7 @@ public:
     bool    active;
 
 private:
-    TilingMaker * tm;
+    TilingMakerPtr tm;
 
     QPointF wStart;
     QPointF wEnd;

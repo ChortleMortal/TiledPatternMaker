@@ -68,8 +68,8 @@ Configuration::Configuration()
 
     lastLoadedDesignId  = static_cast<eDesign>(s.value("design2",5).toInt());
     cycleMode           = static_cast<eCycleMode>(s.value("cycleMode",0).toInt());
-    cycleMode           = static_cast<eCycleMode>(s.value("cycleMode",0).toInt());
     cycleInterval       = s.value("cycleInterval",4).toInt();
+    polySides           = s.value("polySides",8).toInt();
     gridWidth           = s.value("gridWidth",3).toInt();
 
     lastLoadedTileName  = s.value("lastLoadedTileName","").toString();
@@ -82,19 +82,21 @@ Configuration::Configuration()
     rootDesignDir       = s.value("rootDesignDir3","").toString();
     newDesignDir        = s.value("newDesignDir3","").toString();
     templateDir         = s.value("templateDir","").toString();
-    image0              = s.value("imageDir0","").toString();
-    image1              = s.value("imageDir1","").toString();
+    image0              = s.value("image0","").toString();
+    image1              = s.value("image1","").toString();
     compareDir0         = s.value("compareDir0","").toString();
     compareDir1         = s.value("compareDir1","").toString();
     panelName           = s.value("panelName","Control").toString();
+
     designFilter        = s.value("designFilter","").toString();
     tileFilter          = s.value("tileFilter","").toString();
+    xmlTool             = s.value("xmlTool","").toString();
 
-    firstBirthday       = s.value("firstBirthday5",false).toBool();
+    firstBirthday       = s.value("firstBirthday7",false).toBool();
     autoLoadStyles      = s.value("autoLoadStyles",false).toBool();
     autoLoadTiling      = s.value("autoLoadTiling",false).toBool();
     autoLoadDesigns     = s.value("autoLoadDesigns",false).toBool();
-    scaleToView         = s.value("scaleToView",true).toBool();
+    scaleSceneToView    = s.value("scaleToView",true).toBool();
     autoCycle           = s.value("autoCycle",false).toBool();
     stopIfDiff          = s.value("stopIfDiff",true).toBool();
     verifyMaps          = s.value("verifyMaps",false).toBool();
@@ -104,6 +106,8 @@ Configuration::Configuration()
     logToDisk           = s.value("logToDisk",true).toBool();
     logToPanel          = s.value("logToPanel",true).toBool();
     logNumberLines      = s.value("logNumberLines",true).toBool();
+    logWarningsOnly     = s.value("logWarningsOnly",false).toBool();
+    logElapsedTime      = s.value("logElapsedTime",false).toBool();
     wsStatusBox         = s.value("wsStatusBox",false).toBool();
     mapedStatusBox      = s.value("mapedStatusBox",false).toBool();
     designFilterCheck   = s.value("designFilterCheck",false).toBool();
@@ -112,6 +116,7 @@ Configuration::Configuration()
     tm_hideTable        = s.value("tm_hideTable",true).toBool();
     tm_showDebug        = s.value("tm_showDebug",false).toBool();
     tm_autofill         = s.value("tm_autofill",false).toBool();
+    tm_showOverlaps     = s.value("tm_showOverlaps",true).toBool();
     lockView            = s.value("lockView",false).toBool();
     screenIsSplit       = s.value("screenIsSplit",false).toBool();
     compare_transparent = s.value("compare_transparent",false).toBool();
@@ -123,18 +128,8 @@ Configuration::Configuration()
     hideBackgroundImage = s.value("hideBackgroundImage",false).toBool();
     highlightUnit       = s.value("highlightUnit",false).toBool();
 
-    viewerType          = static_cast<eViewType>(s.value("viewerType",VIEW_DESIGN).toUInt());
-    designViewer        = static_cast<eDesignViewer>(s.value("designViewer",DV_LOADED_STYLE).toUInt());
-    protoViewer         = static_cast<eProtoViewer>(s.value("protoViewer2",PV_STYLE).toUInt());
-    protoFeatureViewer  = static_cast<eProtoFeatureViewer>(s.value("protoFeatureViewer",PVF_STYLE).toUInt());
-    tilingViewer        = static_cast<eTilingViewer>(s.value("tilingViewer2",TV_STYLE).toUInt());
-    tilingMakerViewer   = static_cast<eTilingMakerView>(s.value("makerSource4",TMV_STYLE).toUInt());
-    figureViewer        = static_cast<eFigureViewer>(s.value("figureViewer3",FV_STYLE).toUInt());
-    delViewer           = static_cast<eDELViewer>(s.value("delViewer",DEL_STYLES).toUInt());
-    mapEditorView       = static_cast<eMapEditorView>(s.value("mapEditorView",MED_STYLE).toUInt());
+    viewerType          = static_cast<eViewType>(s.value("viewerType",VIEW_MOSAIC).toUInt());
     mapEditorMode       = static_cast<eMapEditorMode>(s.value("mapEditorMode",MAP_MODE_FIGURE).toUInt());
-    canvasSettings      = static_cast<eCSSelect>(s.value("canvasSettings",CS_STYLE).toUInt());
-    pushTarget          = static_cast<ePushTarget>(s.value("pushTarget",TARGET_LOADED_STYLES).toUInt());
     repeatMode          = static_cast<eRepeatType>(s.value("repeat",REPEAT_DEFINED).toUInt());
     gridModel           = static_cast<eGridModel>(s.value("gridModel2",GRID_SCREEN).toUInt());
 
@@ -143,24 +138,14 @@ Configuration::Configuration()
 
     // ensures indices are in range
     if (viewerType > VIEW_MAX)          viewerType      = VIEW_MAX;
-    if (designViewer > DV_MAX)          designViewer    = DV_MAX;
-    if (protoViewer > PV_MAX)           protoViewer     = PV_MAX;
-    if (protoFeatureViewer > PVF_MAX)   protoFeatureViewer = PVF_MAX;
-    if (tilingViewer > TV_MAX)          tilingViewer    = TV_MAX;
-    if (tilingMakerViewer > TMV_MAX)     tilingMakerViewer = TMV_MAX;
-    if (figureViewer > FV_MAX)          figureViewer    = FV_MAX;
-    if (delViewer > DEL_MAX)            delViewer       = DEL_MAX;
-    if (mapEditorView > MED_MAX)        mapEditorView   = MED_MAX;
     if (mapEditorMode > MAP_MODE_MAX)   mapEditorMode   = MAP_MODE_MAX;
     if (repeatMode > REPEAT_MAX)        repeatMode      = REPEAT_MAX;
-    if (pushTarget > TARGET_MAX)        pushTarget      = TARGET_MAX;
-    if (canvasSettings > CS_MAX)        canvasSettings  = CS_MAX;
+    if (cycleMode > CYCLE_SAVE_TILING_BMPS) cycleMode   = CYCLE_SAVE_TILING_BMPS;
 
     // defaults (volatile)
     circleX         = false;
     sceneGrid       = false;
     hideCircles     = false;
-    autoClear       = true;
     updatePanel     = true;
     enableDetachedPages = true;
 
@@ -177,6 +162,8 @@ Configuration::Configuration()
     log->logToDisk(logToDisk);
     log->logToPanel(logToPanel);
     log->logLines(logNumberLines);
+    log->logElapsed(logElapsedTime);
+    log->logWarningsOnly(logWarningsOnly);
 
     if (!firstBirthday)
     {
@@ -190,6 +177,7 @@ void Configuration::save()
     s.setValue("design2",lastLoadedDesignId);
     s.setValue("cycleMode",cycleMode);
     s.setValue("gridWidth",gridWidth);
+    s.setValue("polySides",polySides);
     s.setValue("cycleInterval",cycleInterval);
     s.setValue("lastLoadedTileName",lastLoadedTileName);
     s.setValue("lastLoadedXML",lastLoadedXML);
@@ -201,22 +189,13 @@ void Configuration::save()
     s.setValue("rootDesignDir3",rootDesignDir);
     s.setValue("newDesignDir3",newDesignDir);
     s.setValue("templateDir",templateDir);
-    s.setValue("imageDir0",image0);
-    s.setValue("imageDir1",image1);
+    s.setValue("image0",image0);
+    s.setValue("image1",image1);
     s.setValue("compareDir0",compareDir0);
     s.setValue("compareDir1",compareDir1);
     s.setValue("viewerType",viewerType);
-    s.setValue("designViewer",designViewer);
-    s.setValue("protoViewer2",protoViewer);
-    s.setValue("protoFeatureViewer",protoFeatureViewer);
-    s.setValue("tilingViewer2",tilingViewer);
-    s.setValue("tilingViewer2",tilingViewer);
-    s.setValue("figureViewer3",figureViewer);
-    s.setValue("delViewer",delViewer);
-    s.setValue("mapEditorView",mapEditorView);
     s.setValue("mapEditorMode",mapEditorMode);
     s.setValue("repeat",repeatMode);
-    s.setValue("makerSource4",tilingMakerViewer);
     s.setValue("panelName", panelName);
     s.setValue("autoLoadStyles",autoLoadStyles);
     s.setValue("verifyMaps",verifyMaps);
@@ -225,12 +204,14 @@ void Configuration::save()
     s.setValue("logToStderr",logToStderr);
     s.setValue("logToDisk",logToDisk);
     s.setValue("logToPanel",logToPanel);
+    s.setValue("logWarningsOnly",logWarningsOnly);
     s.setValue("logNumberLines",logNumberLines);
+    s.setValue("logElapsedTime",logElapsedTime);
     s.setValue("wsStatusBox",wsStatusBox);
     s.setValue("mapedStatusBox",mapedStatusBox);
     s.setValue("autoLoadTiling",autoLoadTiling);
     s.setValue("autoLoadDesigns",autoLoadDesigns);
-    s.setValue("scaleToView",scaleToView);
+    s.setValue("scaleToView",scaleSceneToView);
     s.setValue("autoCycle",autoCycle);
     s.setValue("stopIfDiff",stopIfDiff);
     s.setValue("gridModel2",gridModel);
@@ -244,18 +225,19 @@ void Configuration::save()
     s.setValue("tm_hideTable",tm_hideTable);
     s.setValue("tm_showDebug",tm_showDebug);
     s.setValue("tm_autofill",tm_autofill);
+    s.setValue("tm_showOverlaps",tm_showOverlaps);
     s.setValue("lockView",lockView);
     s.setValue("screenIsSplit",screenIsSplit);
     s.setValue("compare_transparent",compare_transparent);
     s.setValue("compare_differences",display_differences);
     s.setValue("compare_ping_pong",compare_ping_pong);
     s.setValue("compare_side_by_side",compare_side_by_side);
-    s.setValue("pushTarget",pushTarget);
-    s.setValue("canvasSettings",canvasSettings);
     s.setValue("showCenter",showCenter);
     s.setValue("gridCenter",gridCenter);
     s.setValue("hideBackgroundImage",hideBackgroundImage);
     s.setValue("highlightUnit",highlightUnit);
+    s.setValue("xmlTool",xmlTool);
+    s.setValue("firstBirthday7",firstBirthday);
 }
 
 
@@ -297,7 +279,7 @@ QString Configuration::getMediaRootLocal()
     root.replace("debug","");
     root.replace("release","");
 #endif
-    root += "/media";
+    root += "../media";
 
     root = QDir::cleanPath(root);
 
@@ -343,6 +325,10 @@ void Configuration::reconfigurePaths()
     rootImageDir  = getImageRoot();
 
     firstBirthday = true;
-    QSettings s;
-    s.setValue("firstBirthday5",firstBirthday);
+
+    save();     //save everyting;
+
+    // restart the application
+    qApp->quit();
+    QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
 }

@@ -37,7 +37,7 @@
 #ifndef FIGURE_H
 #define FIGURE_H
 
-#include "geometry/Map.h"
+#include "geometry/map.h"
 #include "base/shared.h"
 #include <QPolygonF>
 #include <QGraphicsItem>

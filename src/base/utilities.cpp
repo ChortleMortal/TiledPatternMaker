@@ -24,8 +24,8 @@
 
 #include "base/utilities.h"
 #include "base/misc.h"
-#include "geometry/Loose.h"
-#include "geometry/Point.h"
+#include "geometry/loose.h"
+#include "geometry/point.h"
 #include "geometry/edgepoly.h"
 #include <QPainter>
 
@@ -46,8 +46,8 @@ void Utils::identify(Layer * layer, QPolygonF * poly)
         QPointF p   = poly->at(i);
         QString txt = QString("%1: %2 %3").arg(i).arg(QString:: number(p.x())).arg(QString::number(p.y()));
         qDebug() << txt;
-        MarkX * m   = new MarkX(p, QPen(QColor(Qt::green),3), txt);
-        layer->addToGroup(m);
+        MarkXPtr m   = make_shared<MarkX>(p, QPen(QColor(Qt::green),3), txt);
+        layer->addSubLayer(m);
     }
 }
 
@@ -615,7 +615,7 @@ QPointF Utils::getClosestPoint(QLineF line, QPointF p)
     return QPointF(xret,yret);
 }
 
-bool Utils::isClockwise(QPolygonF & poly)
+bool Utils::isClockwise(const QPolygonF & poly)
 {
     Q_ASSERT(!poly.isClosed());
 

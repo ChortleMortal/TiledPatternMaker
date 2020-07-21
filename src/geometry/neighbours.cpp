@@ -1,10 +1,10 @@
 #include "neighbours.h"
 #include "base/utilities.h"
-#include "geometry/Map.h"
+#include "geometry/map.h"
 
 Neighbours::Neighbours()
 {
-    qDebug() << "why am I here";
+    qWarning() << "why am I here";
 }
 
 Neighbours::Neighbours(VertexPtr vp)

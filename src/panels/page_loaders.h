@@ -44,7 +44,6 @@ signals:
     void    sig_loadXML(QString);
     void    sig_loadDesign(eDesign id);
     void    sig_buildDesign(eDesign id);
-    void    sig_viewStyles();
     void    sig_viewWS();
 
 public slots:
@@ -87,6 +86,10 @@ private slots:
     void    slot_designCheck(bool check);
     void    slot_tilingCheck(bool check);
 
+    void    autoLoadStylesClicked(bool enb);
+    void    autoLoadTilingClicked(bool enb);
+    void    autoLoadDesignsClicked(bool enb);
+
 protected:
     void    setupUI();
     void    refreshPanel();
@@ -112,6 +115,10 @@ private:
     eDesign     selectedDesign;
     QString     selectedXMLName;
     QString     selectedTilingName;
+
+    QCheckBox    * cbAutoLoadMosaics;
+    QCheckBox    * cbAutoLoadTiling;
+    QCheckBox    * cbAutoLoadDesigns;
 };
 
 #endif

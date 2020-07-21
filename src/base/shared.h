@@ -38,10 +38,14 @@
     #define badness  qCritical
 #endif
 
+
+extern class TiledPatternMaker * theApp;
+
 using std::shared_ptr;
 using std::weak_ptr;
 using std::make_shared;
 
+class Mosaic;
 class Prototype;
 class Vertex;
 class Edge;
@@ -58,7 +62,7 @@ class ExtendedRosette;
 class RadialFigure;
 class Map;
 class PlacedFeature;
-class GeoLayer;
+class Layer;
 class Style;
 class Tiling;
 class Infer;
@@ -76,11 +80,16 @@ class BackgroundImage;
 class Face;
 class FaceSet;
 class Thread;
+class MarkX;
+class TilingView;
+class MapEditor;
+class TilingMaker;
+class Thick;
 
-
+typedef shared_ptr<Mosaic>          MosaicPtr;
 typedef shared_ptr<Style>           StylePtr;
 typedef shared_ptr<Tiling>          TilingPtr;
-typedef shared_ptr<GeoLayer>        GeoLayerPtr;
+typedef shared_ptr<Layer>           LayerPtr;
 typedef shared_ptr<Vertex>          VertexPtr;
 typedef shared_ptr<Map>             MapPtr;
 typedef shared_ptr<Prototype>       PrototypePtr;
@@ -100,6 +109,9 @@ typedef shared_ptr<QPolygonF>       PolyPtr;
 typedef shared_ptr<Infer>           InferPtr;
 typedef shared_ptr<DesignElement>   DesignElementPtr;
 typedef shared_ptr<PlacedDesignElement> PlacedDesignElementPtr;
+typedef shared_ptr<MapEditor>       MapEditorPtr;
+typedef shared_ptr<TilingMaker>     TilingMakerPtr;
+typedef shared_ptr<Thick>           ThickPtr;
 
 typedef shared_ptr<Design>          DesignPtr;
 typedef shared_ptr<Pattern>         PatternPtr;
@@ -111,6 +123,8 @@ typedef shared_ptr<Face>            FacePtr;
 typedef shared_ptr<FaceSet>         FaceSetPtr;
 typedef shared_ptr<Thread>          ThreadPtr;
 typedef shared_ptr<BackgroundImage> BkgdImgPtr;
+typedef shared_ptr<MarkX>           MarkXPtr;
+typedef shared_ptr<TilingView>      TilingViewPtr;
 
 typedef weak_ptr<Style>           WeakStylePtr;
 typedef weak_ptr<Tiling>          WeakTilingPtr;

@@ -25,12 +25,14 @@
 #ifndef MISC_H
 #define MISC_H
 
-#include <QGraphicsItem>
-#include <QPainter>
 #include <QtWidgets>
+#include <QPainter>
+
+#include "base/layer.h"
+
 
 // MarkX
-class MarkX : public QGraphicsItem
+class MarkX : public Layer
 {
 public:
     MarkX(QPointF a, QPen  pen, int index=0);
@@ -38,9 +40,7 @@ public:
 
     void setHuge() {huge = true;}
 
-    QRectF boundingRect() const Q_DECL_OVERRIDE;
-
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) Q_DECL_OVERRIDE;
+    void paint(QPainter *painter);
 
 private:
     bool    huge;

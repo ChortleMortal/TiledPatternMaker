@@ -23,9 +23,9 @@
  */
 
 #include "page_workspace.h"
-#include "tile/Tiling.h"
-#include "tapp/Prototype.h"
-#include "style/Sketch.h"
+#include "tile/tiling.h"
+#include "tapp/prototype.h"
+#include "style/sketch.h"
 #include "base/qtapplog.h"
 
 using std::string;
@@ -98,39 +98,33 @@ void page_workspace::populateTree(bool expandAll)
 
     // loaded style
     loadedStyle = new QTreeWidgetItem();
-    loadedStyle->setText(0,"++ loadedStyles");
-    int size = ws->getStyledDesign(WS_LOADED).getStyleSet().size();
-    loadedStyle->setText(1,QString("Num=%1").arg(size));
-    loadedStyle->setText(2,ws->getStyledDesign(WS_LOADED).getName());
-    tree->addTopLevelItem(loadedStyle);
-    loadedStyle->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
-    if (expandAll)
-        slot_itemClicked(loadedStyle,0);
-
-    // working style
-    workspaceStyle = new QTreeWidgetItem();
-    workspaceStyle->setText(0,"++ workspaceStyles");
-    size = ws->getStyledDesign(WS_TILING).getStyleSet().size();
-    workspaceStyle->setText(1,QString("Num=%1").arg(size));
-    workspaceStyle->setText(2,ws->getStyledDesign(WS_TILING).getName());
-    tree->addTopLevelItem(workspaceStyle);
-    workspaceStyle->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+    loadedStyle->setText(0,"++ Mosaic");
+    MosaicPtr  mosaic = ws->getMosaic();
+    if (mosaic)
+    {
+        int size = mosaic->getStyleSet().size();
+        loadedStyle->setText(1,QString("Num=%1").arg(size));
+        loadedStyle->setText(2,mosaic->getName());
+        tree->addTopLevelItem(loadedStyle);
+        loadedStyle->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
         if (expandAll)
-        slot_itemClicked(workspaceStyle,0);
+            slot_itemClicked(loadedStyle,0);
+    }
 
+    QVector<PrototypePtr> prototypes = ws->getPrototypes();
     workspacePrototype = new QTreeWidgetItem;
-    workspacePrototype->setText(0,"++ workspacePrototype");
-    workspacePrototype->setText(1,addr(ws->getPrototype(WS_TILING).get()));
+    workspacePrototype->setText(0,"++ Prototypes");
+    workspacePrototype->setText(1,QString("count = %1").arg(prototypes.size()));
     tree->addTopLevelItem(workspacePrototype);
     workspacePrototype->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
     if (expandAll)
         slot_itemClicked(workspacePrototype,0);
 
     workspaceTiling= new QTreeWidgetItem;
-    workspaceTiling->setText(0,"++ workspaceTiling");
-    workspaceTiling->setText(1,addr(ws->getTiling(WS_TILING).get()));
-    if (ws->getTiling(WS_TILING))
-        workspaceTiling->setText(2,ws->getTiling(WS_TILING)->getName());
+    workspaceTiling->setText(0,"++ Tiling");
+    workspaceTiling->setText(1,addr(ws->getTiling().get()));
+    if (ws->getTiling())
+        workspaceTiling->setText(2,ws->getTiling()->getName());
     tree->addTopLevelItem(workspaceTiling);
     workspaceTiling->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
 
@@ -138,9 +132,9 @@ void page_workspace::populateTree(bool expandAll)
         slot_itemClicked(workspaceTiling,0);
 
     workingFigure = new QTreeWidgetItem;
-    workingFigure->setText(0,"++ workspaceFigure");
+    workingFigure->setText(0,"++ Figure");
     QString str;
-    DesignElementPtr dep = ws->getSelectedDesignElement(WS_TILING);
+    DesignElementPtr dep = ws->getSelectedDesignElement();
     if (dep)
     {
         str = addr(dep->getFigure().get());
@@ -166,54 +160,54 @@ void page_workspace::slot_itemClicked(QTreeWidgetItem * item, int col)
     if (item == loadedStyle)
     {
         removeChildren(loadedStyle);
-        populateStyles(loadedStyle,workspace->getStyledDesign(WS_LOADED));
+        populateStyles(loadedStyle,workspace->getMosaic());
         tree->expandItem(loadedStyle);
-    }
-    else if (item == workspaceStyle)
-    {
-        removeChildren(workspaceStyle);
-        populateStyles(workspaceStyle,workspace->getStyledDesign(WS_TILING));
-        tree->expandItem(workspaceStyle);
     }
     else if (item == workspacePrototype)
     {
-        if (ws->getPrototype(WS_TILING))
+        removeChildren(workspacePrototype);
+        QVector<PrototypePtr> prototypes = workspace->getPrototypes();
+        for (auto proto : prototypes)
         {
-            removeChildren(workspacePrototype);
-            populatePrototype(workspacePrototype,ws->getPrototype(WS_TILING));
+            populatePrototype(workspacePrototype,proto);
             tree->expandItem(workspacePrototype);
         }
     }
     else if (item == workspaceTiling)
     {
-        if (ws->getTiling(WS_TILING))
+        if (ws->getTiling())
         {
             removeChildren(workspaceTiling);
-            populateTiling(workspaceTiling,ws->getTiling(WS_TILING));
+            populateTiling(workspaceTiling,ws->getTiling());
             tree->expandItem(workspaceTiling);
         }
     }
     else
     {
-       // some other - just toggle expansion
-       if (item->isExpanded())
-       {
-           tree->collapseItem(item);
-       }
-       else
-       {
-           tree->expandItem(item);
-       }
+        // some other - just toggle expansion
+        if (item->isExpanded())
+        {
+            tree->collapseItem(item);
+        }
+        else
+        {
+            tree->expandItem(item);
+        }
     }
 
     tree->resizeColumnToContents(2);
 }
 
-void page_workspace::populateStyles(QTreeWidgetItem * parent, StyledDesign & design)
+void page_workspace::populateStyles(QTreeWidgetItem * parent, MosaicPtr mosaic)
 {
+    if (!mosaic)
+    {
+        return;
+
+    }
     QTreeWidgetItem * item;
 
-    TilingPtr tp = design.getTiling();
+    TilingPtr tp = mosaic->getTiling();
     if (tp)
     {
         item = new QTreeWidgetItem();
@@ -224,8 +218,8 @@ void page_workspace::populateStyles(QTreeWidgetItem * parent, StyledDesign & des
         populateTiling(item,tp);
     }
 
-    int size = design.getStyleSet().size();
-    const StyleSet & sset = design.getStyleSet();
+    int size = mosaic->getStyleSet().size();
+    const StyleSet & sset = mosaic->getStyleSet();
     for (int i=0; i < size; i++)
     {
         item = new QTreeWidgetItem;

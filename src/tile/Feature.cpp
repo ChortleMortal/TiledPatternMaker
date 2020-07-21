@@ -38,34 +38,34 @@
 // This helps later when deciding what Features can have Rosettes
 // in them.
 
-#include "tile/Feature.h"
-#include "geometry/Point.h"
-#include "geometry/Edge.h"
-#include "geometry/Loose.h"
+#include "tile/feature.h"
+#include "geometry/point.h"
+#include "geometry/edge.h"
+#include "geometry/loose.h"
 #include "base/utilities.h"
 
 int Feature::refs = 0;
 
 Feature::Feature()
 {
-    regular  = false;
-    rotation = 0.0;
+    regular     = false;
+    rotation    = 0.0;
     refs++;
 }
 
 Feature::Feature(EdgePoly ep, qreal rotate)
 {
-    epoly    = ep;
-    regular  = false;
-    rotation = rotate;
+    epoly       = ep;
+    regular     = false;
+    rotation    = rotate;
     refs++;
 }
 
 // Create an n-sided regular polygon with a vertex at (1,0).
 Feature::Feature(int n, qreal rotate)
 {
-    regular  = true;
-    rotation = rotate;
+    regular     = true;
+    rotation    = rotate;
 
     int idx  = 0;
     qreal angle = (M_PI / static_cast<qreal>(n)) * (static_cast<qreal>(2.0 * idx) + 1.0);
@@ -91,9 +91,9 @@ Feature::Feature(int n, qreal rotate)
 
 Feature::Feature(const FeaturePtr other )
 {
-    regular  = other->regular;
-    epoly    = other->epoly;
-    rotation = other->rotation;
+    regular     = other->regular;
+    epoly       = other->epoly;
+    rotation    = other->rotation;
     refs++;
 }
 
@@ -102,11 +102,20 @@ Feature::~Feature()
     refs--;
 }
 
+FeaturePtr Feature::recreate()
+{
+    FeaturePtr f = make_shared<Feature>();
+    f->regular   = regular;
+    f->rotation  = rotation;
+    f->epoly     = epoly.recreate();
+    return  f;
+}
+
 void Feature::reset()
 {
     epoly.clear();
     bkgdColors.clear();
-    rotation = 0;
+    rotation    = 0;
 }
 
 bool Feature::equals(const FeaturePtr other)

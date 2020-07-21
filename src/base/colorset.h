@@ -57,7 +57,7 @@ public:
     void          hide(int idx, bool hide);
     bool          isHidden(int idx);
 
-    void          resetIndex() { pos = colorgroup.begin(); }
+    void          resetIndex();
 
     int           size() { return colorgroup.size(); }
     void          resize(int num) { colorgroup.resize(num); }

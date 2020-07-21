@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<Tiling version="2">
+	<Name>Bird</Name>
+	<Fill>-4,4,-4,4</Fill>
+	<T1>0,0</T1>
+	<T2>0,0</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>1100</height>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>-0.01333333333333186,-0.01333333333333542</center>
+	</ViewSettings>
+	<Feature type="regular" sides="3" rotation="0">
+		<Placement>0.8660254037844385,0.5000000000000002,-1.013333333333333,-0.5000000000000002,0.8660254037844385,-0.8399999999999994</Placement>
+		<Placement>0.8660254037844387,0.4999999999999998,-2.745384140902208,-0.4999999999999998,0.8660254037844387,2.16</Placement>
+		<Placement>0.8660254037844387,-0.4999999999999999,-1.013333333333332,0.4999999999999999,0.8660254037844387,1.16</Placement>
+		<Placement>0.8660254037844385,0.5000000000000002,0.7187174742355456,-0.5000000000000002,0.8660254037844385,2.159999999999999</Placement>
+	</Feature>
+	<Desc>Description</Desc>
+	<Auth>Author</Auth>
+</Tiling>

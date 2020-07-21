@@ -29,6 +29,7 @@
 #include "base/layer.h"
 #include "geometry/circle.h"
 
+class QGraphicsItem;
 
 class Utils
 {
@@ -61,7 +62,7 @@ public:
     static QPointF         snapTo(QPointF pt, QLineF trackLine);
     static qreal           calcArea(QPolygonF & poly);
 
-    static bool            isClockwise(QPolygonF & poly);
+    static bool            isClockwise(const QPolygonF &poly);
     static bool            isClockwiseKaplan(QPolygonF &  poly);
 
     static void reverseOrder(QPolygonF & poly);
@@ -73,7 +74,6 @@ private:
     static void     circleTouchPt(qreal x0, qreal x1, qreal & x3,  qreal y0, qreal y1, qreal & y3, qreal r0, qreal r1);
     static QPointF  rotatePoint(QPointF fp, QPointF pt, qreal a);
     static qreal    acossafe(qreal x);
-
 };
 
 #endif

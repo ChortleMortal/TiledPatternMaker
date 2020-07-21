@@ -25,9 +25,9 @@
 #ifndef STYLE_H
 #define STYLE_H
 
-#include "tapp/Prototype.h"
-#include "geometry/Map.h"
-#include "viewers/GeoGraphics.h"
+#include "tapp/prototype.h"
+#include "geometry/map.h"
+#include "viewers/geo_graphics.h"
 #include "base/shared.h"
 #include "base/layer.h"
 
@@ -85,7 +85,7 @@ public:
     virtual eStyleType  getStyleType() const = 0;
 
     virtual void    draw(GeoGraphics * gg) = 0;
-            void    paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) Q_DECL_OVERRIDE;
+    virtual void    paint(QPainter *painter);
             void    paintToSVG();
 
     void    triggerPaintSVG() { paintSVG = true; }

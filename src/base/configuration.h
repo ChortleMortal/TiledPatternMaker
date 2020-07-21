@@ -97,6 +97,7 @@ enum eViewType
 {
     VIEW_DESIGN,
     VIEW_START = VIEW_DESIGN,
+    VIEW_MOSAIC,
     VIEW_PROTO,
     VIEW_PROTO_FEATURE,
     VIEW_DEL,
@@ -105,12 +106,14 @@ enum eViewType
     VIEW_TILING_MAKER,
     VIEW_MAP_EDITOR,
     VIEW_FACE_SET,
-    VIEW_MAX = VIEW_FACE_SET
+    VIEW_MAX = VIEW_FACE_SET,
+    VIEW_UNDEFINED,
 };
 
 static QString sViewerType[]
 {
     E2STR(VIEW_DESIGN),
+    E2STR(VIEW_MOSAIC),
     E2STR(VIEW_PROTO),
     E2STR(VIEW_PROTO_FEATURE),
     E2STR(VIEW_DEL),
@@ -118,132 +121,27 @@ static QString sViewerType[]
     E2STR(VIEW_TILING),
     E2STR(VIEW_TILING_MAKER),
     E2STR(VIEW_MAP_EDITOR),
-    E2STR(VIEW_FACE_SET)
+    E2STR(VIEW_FACE_SET),
+    E2STR(VIEW_UNDEFINED)
 };
-
-enum eDesignViewer
-{
-    DV_LOADED_STYLE,
-    DV_WS_STYLE,
-    DV_SHAPES,
-    DV_MAX = DV_SHAPES
-};
-
-static QString sDesignViewer[] =
-{
-    E2STR(DV_LOADED_STYLE),
-    E2STR(DV_WS_STYLE),
-    E2STR(DV_SHAPES),
-};
-
-enum eProtoViewer
-{
-    PV_STYLE,
-    PV_WS,
-    PV_MAX = PV_WS
-};
-
-static QString sProtoViewer[] =
-{
-    E2STR(PV_STYLE),
-    E2STR(PV_WS)
-};
-
-enum eProtoFeatureViewer
-{
-    PVF_STYLE,
-    PVF_WS,
-    PVF_MAX = PVF_WS
-};
-
-static QString sProtoFeatureViewer[] =
-{
-    E2STR(PVF_STYLE),
-    E2STR(PVF_WS)
-};
-
-enum eDELViewer
-{
-    DEL_STYLES,
-    DEL_WS,
-    DEL_MAX = DEL_WS
-};
-
-static QString sDELViewer[] =
-{
-    E2STR(DEL_STYLES),
-    E2STR(DEL_WS)
-};
-
-enum eFigureViewer
-{
-    FV_STYLE,
-    FV_WS,
-    FV_MAX = FV_WS
-};
-
-static QString sFigureViewer[] =
-{
-    E2STR(FV_STYLE),
-    E2STR(FV_WS),
-};
-
-enum eTilingViewer
-{
-    TV_STYLE,
-    TV_WORKSPACE,
-    TV_MAX = TV_WORKSPACE
-};
-
-static QString sTilingViewer[] =
-{
-    E2STR(TV_STYLE),
-    E2STR(TV_WORKSPACE)
-};
-
-enum eTilingMakerView
-{
-    TMV_STYLE,
-    TMV_WORKSPACE,
-    TMV_MAX = TMV_WORKSPACE
-};
-
-static QString sTilingMakerView[] =
-{
-    E2STR(TMV_STYLE),
-    E2STR(TMV_WORKSPACE)
-};
-
-
-enum eMapEditorView
-{
-    MED_STYLE,
-    MED_WS,
-    MED_MAX = MED_WS
-};
-
-static QString sMapEditorView[] =
-{
-    E2STR(ME_STYLE),
-    E2STR(ME_WS),
-};
-
 
 enum eMapEditorMode
 {
-    MAP_MODE_STYLE,
+    MAP_MODE_MOSAIC,
     MAP_MODE_PROTO,
     MAP_MODE_FIGURE,
     MAP_MODE_LOCAL,
-    MAP_MODE_MAX = MAP_MODE_LOCAL
+    MAP_MODE_TILING,
+    MAP_MODE_MAX = MAP_MODE_TILING
 };
 
 static QString sMapEditorMode[] =
 {
-    E2STR(MAP_MODE_STYLE),
+    E2STR(MAP_MODE_MOSAIC),
     E2STR(MAP_MODE_PROTO),
     E2STR(MAP_MODE_FIGURE),
-    E2STR(MAP_MODE_LOCAL)
+    E2STR(MAP_MODE_LOCAL),
+    E2STR(MAP_MODE_TILING),
 };
 
 enum eRepeatType
@@ -258,26 +156,6 @@ static QString sRepeatType[4]  = {
     E2STR(REPEAT_SINGLE),
     E2STR(REPEAT_PACK),
     E2STR(REPEAT_DEFINED)
-};
-
-enum ePushTarget
-{
-    TARGET_LOADED_STYLES,
-    TARGET_WS_STYLES,
-    TARGET_MAX = TARGET_WS_STYLES
-};
-
-enum eCSSelect  // canvas settings
-{
-    CS_STYLE,
-    CS_WS,
-    CS_MAX = CS_WS
-};
-
-enum eRender
-{
-    RENDER_LOADED,
-    RENDER_WS
 };
 
 enum eKbdMode
@@ -324,23 +202,14 @@ public:
     eRepeatType           repeatMode;
 
     eViewType             viewerType;
-    eDesignViewer         designViewer;
-    eProtoViewer          protoViewer;
-    eProtoFeatureViewer   protoFeatureViewer;
-    eTilingViewer         tilingViewer;
-    eTilingMakerView      tilingMakerViewer;
-    eFigureViewer         figureViewer;
-    eDELViewer            delViewer;
-    eMapEditorView        mapEditorView;
     eMapEditorMode        mapEditorMode;
 
-    ePushTarget           pushTarget;
-    eCSSelect             canvasSettings;
     eCycleMode            cycleMode;
     eGridModel            gridModel;
 
     int                   cycleInterval;
     int                   gridWidth;
+    int                   polySides;    // used by tiling maker
 
     QString rootMediaDir;
     QString rootTileDir;
@@ -352,6 +221,7 @@ public:
     QString examplesDir;
     QString compareDir0;
     QString compareDir1;
+    QString xmlTool;
 
     QString image0;
     QString image1;
@@ -367,13 +237,15 @@ public:
     bool    autoLoadStyles;
     bool    autoLoadTiling;
     bool    autoLoadDesigns;
-    bool    scaleToView;
+    bool    scaleSceneToView;
     bool    autoCycle;
     bool    stopIfDiff;
     bool    logToStderr;
     bool    logToDisk;
     bool    logToPanel;
     bool    logNumberLines;
+    bool    logWarningsOnly;
+    bool    logElapsedTime;
     bool    wsStatusBox;
     bool    mapedStatusBox;
     bool    showCenter;
@@ -382,8 +254,8 @@ public:
     bool    highlightUnit;
 
     bool    verifyMaps;
-    bool    verifyDump;     // TODO
-    bool    verifyVerbose;  // TODO
+    bool    verifyDump;     // TODO - make sure this flag work
+    bool    verifyVerbose;  // TODO - make sure this flga works
 
     bool    designFilterCheck;
     bool    tileFilterCheck;
@@ -394,6 +266,7 @@ public:
     bool    tm_hideTable;
     bool    tm_showDebug;
     bool    tm_autofill;
+    bool    tm_showOverlaps;
 
     bool    compare_transparent;
     bool    display_differences;
@@ -414,7 +287,6 @@ public:
     bool    sceneGrid;
     bool    hideCircles;
     bool    enableDetachedPages;
-    bool    autoClear;
 
     qreal   gridStepScreen;
     qreal   gridStepModel;

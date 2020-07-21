@@ -25,8 +25,8 @@
 #ifndef FEATURE_BUTTON
 #define FEATURE_BUTTON
 
-#include "tapp/DesignElement.h"
-#include "viewers/GeoGraphics.h"
+#include "tapp/design_element.h"
+#include "viewers/geo_graphics.h"
 #include <QtWidgets>
 
 ////////////////////////////////////////////////////////////////////////////

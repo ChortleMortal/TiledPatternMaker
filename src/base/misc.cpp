@@ -22,9 +22,10 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "misc.h"
+#include "base/misc.h"
+#include "base/layer.h"
 
-MarkX::MarkX(QPointF a, QPen pen, int index)
+MarkX::MarkX(QPointF a, QPen pen, int index) : Layer("MarkX")
 {
     _a     = a;
     _pen   = pen;
@@ -33,7 +34,7 @@ MarkX::MarkX(QPointF a, QPen pen, int index)
 
 }
 
-MarkX::MarkX(QPointF a, QPen pen, QString txt)
+MarkX::MarkX(QPointF a, QPen pen, QString txt) : Layer("MarkX")
 {
     _a     = a;
     _pen   = pen;
@@ -41,25 +42,8 @@ MarkX::MarkX(QPointF a, QPen pen, QString txt)
     huge   = false;
 }
 
-QRectF MarkX::boundingRect() const
+void MarkX::paint(QPainter *painter)
 {
-    if (huge)
-    {
-        return QRectF(200.0,200.0,400,400);
-    }
-    else
-    {
-        return QRectF(-20.0,-20.0,40.0,40.0);
-    }
-}
-
-void MarkX::paint(QPainter *painter,
-                           const QStyleOptionGraphicsItem *option,
-                           QWidget *widget)
-{
-    Q_UNUSED(option)
-    Q_UNUSED(widget)
-
     painter->setPen(_pen);
 
     qreal len   = 5;

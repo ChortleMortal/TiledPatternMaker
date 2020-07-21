@@ -45,14 +45,13 @@ signals:
 
 public slots:
     void slot_reload();
-    void slot_ws_dele_changed();
+    void slot_selected_dele_changed();
     void slot_loadedXML(QString name);
     void slot_loadedTiling (QString name);
 
 private slots:
     void slot_unload();
     void slot_convertToExplicit();
-    void slot_target_selected(int id);
     void slot_verify();
     void slot_divideIntersectingEdges();
     void slot_joinColinearEdges();
@@ -70,6 +69,7 @@ private slots:
     void slot_createMap();
     void slot_loadMap();
     void slot_saveMap();
+    void slot_pushToTiling();
     void slot_dumpMap();
     void slot_applyCrop();
     void slot_cleanseMap();
@@ -92,7 +92,7 @@ protected:
     void reload();
 
 private:
-    MapEditor * me;
+    MapEditorPtr me;
 
     MapPtr  localMap;       // for new maps created in the editor
 
@@ -109,7 +109,6 @@ private:
     QTextEdit * line6;
 
     QButtonGroup    mapEdModeGroup;
-    QButtonGroup    targetGroup;
     QButtonGroup    modeGroup;
 
     QCheckBox     * animateChk;

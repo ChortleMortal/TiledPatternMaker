@@ -1,7 +1,7 @@
 #ifndef MAPEDITORSELCTION_H
 #define MAPEDITORSELCTION_H
 
-#include "viewers/MapEditorView.h"
+#include "viewers/map_editor_view.h"
 
 
 class MapEditorSelection : public MapEditorView

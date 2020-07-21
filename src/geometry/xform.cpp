@@ -1,5 +1,5 @@
 #include "xform.h"
-#include "geometry/Transform.h"
+#include "geometry/transform.h"
 #include "base/canvas.h"
 
 Xform::Xform()
@@ -64,23 +64,23 @@ void Xform::addTransform(QTransform t)
 QTransform Xform::getTransform()
 {
     QTransform tr   = QTransform().rotateRadians(rotationRadians);
-    QTransform ts   = QTransform::fromScale(scale,scale);
     QTransform tt   = QTransform().fromTranslate(translateX,translateY);
-    QTransform t    = tr * ts * tt;
-    qDebug() << "XForm::getTransform()" << Transform::toInfoString(t);
+    QTransform ts   = QTransform::fromScale(scale,scale);
+    QTransform t    = tr * tt * ts;
+    //qDebug() << "XForm::getTransform()" << Transform::toInfoString(t);
     return t;
 }
 
-QTransform Xform::computeTransform(QTransform baseTransform)
+QTransform Xform::toQTransform(QTransform viewTransform)
 {
-    QPointF cent = baseTransform.map(center);
+    QPointF cent = viewTransform.map(center);
     QTransform t;
     t.translate(cent.x(), cent.y());
     t.rotateRadians(rotationRadians);
     t.translate(-cent.x(), -cent.y());
-    t.scale(scale,scale);
     t.translate(translateX,translateY);
-    qDebug() << "XForm::computeTransform()" << Transform::toInfoString(t);
+    t.scale(scale,scale);
+    //qDebug() << "XForm::computeTransform()" << Transform::toInfoString(t);
     return t;
 }
 

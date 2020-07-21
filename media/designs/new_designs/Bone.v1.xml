@@ -1,0 +1,191 @@
+<?xml version="1.0"?>
+<vector id="1" version="5">
+	<designNotes>Bone pattern (Alhambra)</designNotes>
+	<design>
+		<size>
+			<width>1800</width>
+			<height>1280</height>
+		</size>
+		<background>
+			<color>#ff000000</color>
+		</background>
+	</design>
+	<style.Thick id="2" serialization="custom">
+		<toolkit.GeoLayer>
+			<left__delta>474</left__delta>
+			<top__delta>205</top__delta>
+			<width__delta>0.6099999999999997</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>-4.013333333333333,-1.346666666666668</center>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<boundary id="3">
+				<pts id="4">
+					<Point id="5">
+						<x>-10</x>
+						<y>-10</y>
+					</Point>
+					<Point id="6">
+						<x>-10</x>
+						<y>10</y>
+					</Point>
+					<Point id="7">
+						<x>10</x>
+						<y>10</y>
+					</Point>
+					<Point id="8">
+						<x>10</x>
+						<y>-10</y>
+					</Point>
+				</pts>
+			</boundary>
+			<prototype id="9" serialization="custom">
+				<app.Prototype>
+					<string>bone.v1</string>
+					<entry>
+						<tile.Feature id="10">
+							<regular>false</regular>
+							<edges id="11">
+								<Line>
+									<Point id="12">-1,-1</Point>
+									<Point id="13">-1,1</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point id="14">-2,2</Point>
+								</Line>
+								<Line>
+									<Point reference="14" />
+									<Point id="15">-1,3</Point>
+								</Line>
+								<Line>
+									<Point reference="15" />
+									<Point id="16">1,3</Point>
+								</Line>
+								<Line>
+									<Point reference="16" />
+									<Point id="17">2,2</Point>
+								</Line>
+								<Line>
+									<Point reference="17" />
+									<Point id="18">1,1</Point>
+								</Line>
+								<Line>
+									<Point reference="18" />
+									<Point id="19">1,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="19" />
+									<Point id="20">2,-2</Point>
+								</Line>
+								<Line>
+									<Point reference="20" />
+									<Point id="21">1,-3</Point>
+								</Line>
+								<Line>
+									<Point reference="21" />
+									<Point id="22">-1,-3</Point>
+								</Line>
+								<Line>
+									<Point reference="22" />
+									<Point id="23">-2,-2</Point>
+								</Line>
+								<Line>
+									<Point reference="23" />
+									<Point reference="12" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="24" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="25">
+							<regular>false</regular>
+							<edges id="26">
+								<Line>
+									<Point id="27">-1,-1</Point>
+									<Point id="28">-1,1</Point>
+								</Line>
+								<Line>
+									<Point reference="28" />
+									<Point id="29">-2,2</Point>
+								</Line>
+								<Line>
+									<Point reference="29" />
+									<Point id="30">-1,3</Point>
+								</Line>
+								<Line>
+									<Point reference="30" />
+									<Point id="31">1,3</Point>
+								</Line>
+								<Line>
+									<Point reference="31" />
+									<Point id="32">2,2</Point>
+								</Line>
+								<Line>
+									<Point reference="32" />
+									<Point id="33">1,1</Point>
+								</Line>
+								<Line>
+									<Point reference="33" />
+									<Point id="34">1,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="34" />
+									<Point id="35">2,-2</Point>
+								</Line>
+								<Line>
+									<Point reference="35" />
+									<Point id="36">1,-3</Point>
+								</Line>
+								<Line>
+									<Point reference="36" />
+									<Point id="37">-1,-3</Point>
+								</Line>
+								<Line>
+									<Point reference="37" />
+									<Point id="38">-2,-2</Point>
+								</Line>
+								<Line>
+									<Point reference="38" />
+									<Point reference="27" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="39" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff10100e</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.02</width>
+		</style.Thick>
+	</style.Thick>
+	<style.TileColors id="40" serialization="custom">
+		<toolkit.GeoLayer>
+			<left__delta>474</left__delta>
+			<top__delta>205</top__delta>
+			<width__delta>0.6099999999999997</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>-4.013333333333333,-1.346666666666668</center>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<boundary reference="3" />
+			<prototype reference="9" />
+		</style.Style>
+	</style.TileColors>
+</vector>

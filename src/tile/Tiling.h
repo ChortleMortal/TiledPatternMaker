@@ -39,10 +39,13 @@
 
 #include <QtCore>
 #include "base/shared.h"
-#include "tile/tilingloader.h"
-#include "tile/PlacedFeature.h"
+#include "base/workspace.h"
+#include "tile/tiling_loader.h"
+#include "tile/placed_feature.h"
 #include "tile/backgroundimage.h"
 #include "geometry/xform.h"
+
+#define MAX_UNIQUE_FEATURES 8
 
 class FeatureGroup : public  QList<QPair<FeaturePtr,QList<PlacedFeaturePtr>>>
 {
@@ -63,9 +66,6 @@ public:
     Tiling(Tiling * other);
     ~Tiling();
 
-    bool        writeTilingXML();
-    void        writeTilingXML(QTextStream & out);     // also called when writing styles
-
     QString     getName()        const { return name; }
     QString     getDescription() const { return desc; }
     QString     getAuthor()      const { return author; }
@@ -83,6 +83,7 @@ public:
     PlacedFeaturePtr          getPlacedFeature(int idx) { return placed_features[idx]; }
     QList<PlacedFeaturePtr> & getPlacedFeatures()       { return placed_features; }
     int                       countPlacedFeatures() const { return placed_features.size(); }
+    int                       numPlacements(FeaturePtr fp);
     QVector<FeaturePtr>       getUniqueFeatures();    // unique features
 
     void        setTrans1(QPointF pt) { t1=pt; }
@@ -103,20 +104,14 @@ public:
     void        setDirty(bool dirty) { this->dirty = dirty; }
     bool        isDirty() { return dirty; }
 
+    void        setCanvasSize(QSize sz)    { canvasSize = sz; }
+    void        setCanvasXform(Xform & xf) { canvasXform = xf; }
+    QSize &     getCanvasSize()            { return canvasSize; }
+    Xform &     getCanvasXform()           { return canvasXform; }
+
     static int  refs;
 
 protected:
-    void    setEdgePoly(QTextStream & ts, EdgePoly & epoly);
-    void    setVertex(QTextStream & ts,VertexPtr v, QString name);
-    void    setPoint(QTextStream & ts, QPointF pt, QString name);
-
-    bool    hasReference(VertexPtr map);
-    QString getVertexReference(VertexPtr ptr);
-    void    setVertexReference(int id, VertexPtr ptr);
-
-    QString  id(int id);
-    QString nextId();
-    int     getRef()  { return refId; }
 
 private:
     FillData    fillData;
@@ -133,8 +128,9 @@ private:
     BkgdImgPtr  bkgd;
 
     bool        dirty;
-    QMap<VertexPtr,int>   vertex_ids;
-    int         refId;
+
+    QSize       canvasSize;
+    Xform       canvasXform;
 };
 
 #endif

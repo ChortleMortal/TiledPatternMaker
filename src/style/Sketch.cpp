@@ -22,7 +22,7 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "style/Sketch.h"
+#include "style/sketch.h"
 #include <QPainter>
 #include <QtGlobal>
 
@@ -98,11 +98,11 @@ void Sketch::draw(GeoGraphics * gg)
             VertexPtr v1 = make_shared<Vertex>(a + QPointF(r1,r2));
             VertexPtr v2 = make_shared<Vertex>(b + QPointF(r3,r4));
             EdgePtr edge2;
-            if (edge->getType() == EDGE_LINE)
+            if (edge->getType() == EDGETYPE_LINE)
             {
                 edge2 = make_shared<Edge>(v1,v2);
             }
-            else if (edge->getType() == EDGE_CURVE)
+            else if (edge->getType() == EDGETYPE_CURVE)
             {
                 edge2 = make_shared<Edge>(v1,v2, edge->getArcCenter(), edge->isConvex());
             }

@@ -26,18 +26,17 @@
 #include "designs/shapefactory.h"
 #include "designs/patterns.h"
 #include "base/configuration.h"
-#include "base/canvas.h"
+#include "base/view.h"
 #include <QDebug>
 
 ShapeFactory::ShapeFactory(qreal diameter, QPointF loc)
 {
-    canvas = Canvas::getInstance();
+    view = View::getInstance();
 
-    _loc            = loc;
+    setLoc(loc);
     _diameter       = diameter;
     _radius         = diameter/2.0;
-    _antiAliasPolys = true;
-    _boundingBase   = QRectF(-_radius ,-_radius, _diameter, _diameter);
+
 }
 
 ShapeFactory::~ShapeFactory()
@@ -56,7 +55,7 @@ Polyline2 * ShapeFactory::addLine(QPen Pen, QLineF line)
     *p << line.p1() << line.p2();
     addPolyform(p);
     //prepareGeometryChange();
-    canvas->invalidate();
+    view->update();
     return p;
 }
 
@@ -66,7 +65,7 @@ Polyline2 * ShapeFactory::addLine(QPen Pen, QPointF a, QPointF b)
     *p << a << b;
     addPolyform(p);
     //prepareGeometryChange();
-    canvas->invalidate();
+    view->update();
     return p;
 }
 
@@ -75,7 +74,7 @@ Circle2 * ShapeFactory::addCircle(qreal diameter, QPen pen, QBrush brush)
     Circle2 * c = new Circle2(diameter,pen,brush);
     addPolyform(c);
     //prepareGeometryChange();
-    canvas->invalidate();
+    view->update();
     return c;
 }
 
@@ -85,7 +84,7 @@ Circle2 * ShapeFactory::addCircle(const Circle2 & Circle)
     *c = Circle;
     addPolyform(c);
     //prepareGeometryChange();
-    canvas->invalidate();
+    view->update();
     return c;
 }
 
@@ -95,7 +94,7 @@ Polygon2 * ShapeFactory::addPolygon(QPen Pen, QBrush Brush, QPolygonF points)
     *p << points;
     addPolyform(p);
     //prepareGeometryChange();
-    canvas->invalidate();
+    view->update();
     return p;
 }
 
@@ -105,7 +104,7 @@ Polygon2 * ShapeFactory::addPolygon(const Polygon2 & Poly)
     *p = Poly;
     addPolyform(p);
     //prepareGeometryChange();
-    canvas->invalidate();
+    view->update();
     return p;
 }
 
@@ -115,7 +114,7 @@ Polyline2 * ShapeFactory::addPolyline(QPen Pen, QPolygonF points)
     *p << points;
     addPolyform(p);
     //prepareGeometryChange();
-    canvas->invalidate();
+    view->update();
     return p;
 }
 
@@ -125,7 +124,7 @@ Polyline2 * ShapeFactory::addPolyline(const Polyline2 & Poly)
     *p = Poly;
     addPolyform(p);
     //prepareGeometryChange();
-    canvas->invalidate();
+    view->update();
     return p;
 }
 
@@ -137,7 +136,7 @@ Polygon2 * ShapeFactory::addInscribedTriangle(QPen Pen, QBrush Brush,qreal Angle
     // try rotation of QGraphicsLineItem to find (rotated) points and then connect them in different orders
     addPolyform(p);
     //prepareGeometryChange();
-    canvas->invalidate();
+    view->update();
     return p;
 }
 
@@ -148,7 +147,7 @@ Polygon2 * ShapeFactory::addCircumscribedTriangle(QPen Pen, QBrush Brush, qreal 
     p->rotate(Angle);
     addPolyform(p);
     //prepareGeometryChange();
-    canvas->invalidate();
+    view->update();
     return p;
 }
 
@@ -159,7 +158,7 @@ Polygon2 * ShapeFactory::addInscribedSquare(QPen Pen, QBrush Brush, qreal Angle)
     p->rotate(Angle);
     addPolyform(p);
     //prepareGeometryChange();
-    canvas->invalidate();
+    view->update();
     return p;
 }
 
@@ -170,7 +169,7 @@ Polygon2 * ShapeFactory::addCircumscribedSquare(QPen Pen, QBrush Brush, qreal An
     p->rotate(Angle);
     addPolyform(p);
     //prepareGeometryChange();
-    canvas->invalidate();
+    view->update();
     return p;
 }
 
@@ -181,7 +180,7 @@ Polygon2 * ShapeFactory::addInscribedPentagon(QPen Pen, QBrush Brush, qreal Angl
     p->rotate(Angle);
     addPolyform(p);
     //prepareGeometryChange();
-    canvas->invalidate();
+    view->update();
     return p;
 }
 
@@ -192,7 +191,7 @@ Polygon2 * ShapeFactory::addInscribedHexagon(QPen Pen, QBrush Brush, qreal Angle
     p->rotate(Angle);
     addPolyform(p);
     //prepareGeometryChange();
-    canvas->invalidate();
+    view->update();
     return p;
 }
 
@@ -203,7 +202,7 @@ Polygon2 * ShapeFactory::addCircumscribedHexagon(QPen Pen, QBrush Brush, qreal A
     p->rotate(Angle);
     addPolyform(p);
     //prepareGeometryChange();
-    canvas->invalidate();
+    view->update();
     return p;
 }
 
@@ -214,7 +213,7 @@ Polygon2 * ShapeFactory::addExternalHexagon(QPen Pen, QBrush Brush, qreal Angle)
     p->rotate(Angle);
     addPolyform(p);
     //prepareGeometryChange();
-    canvas->invalidate();
+    view->update();
     return p;
 }
 
@@ -225,7 +224,7 @@ Polygon2 * ShapeFactory::addStretchedExternalHexagon(QPen Pen, QBrush Brush, qre
     p->rotate(Angle);
     addPolyform(p);
     //prepareGeometryChange();
-    canvas->invalidate();
+    view->update();
     return p;
 }
 
@@ -237,7 +236,7 @@ Polygon2 *  ShapeFactory::addInscribedHepatgon(QPen Pen, QBrush Brush, qreal Ang
     p->rotate(Angle);
     addPolyform(p);
     //prepareGeometryChange();
-    canvas->invalidate();
+    view->update();
     return p;
 }
 
@@ -248,7 +247,7 @@ Polygon2 * ShapeFactory::addInscribedOctagon(QPen Pen, QBrush Brush, qreal Angle
     p->rotate(Angle);
     addPolyform(p);
     //prepareGeometryChange();
-    canvas->invalidate();
+    view->update();
     return p;
 }
 
@@ -259,7 +258,7 @@ Polygon2 * ShapeFactory::addCircumscribedOctagon(QPen Pen, QBrush Brush, qreal A
     p->rotate(Angle);
     addPolyform(p);
     //prepareGeometryChange();
-    canvas->invalidate();
+    view->update();
     return p;
 }
 
@@ -270,7 +269,7 @@ Polygon2 *  ShapeFactory::addInscribedNonagon(  QPen Pen, QBrush Brush, qreal An
     p->rotate(Angle);
     addPolyform(p);
     //prepareGeometryChange();
-    canvas->invalidate();
+    view->update();
     return p;
 }
 
@@ -298,7 +297,7 @@ void ShapeFactory::addInscribedEnneagram(QPen Pen, QBrush Brush, qreal Angle)
     addPolyform(p2);
 
     //prepareGeometryChange();
-    canvas->invalidate();
+    view->update();
 }
 
 void ShapeFactory::add6ptStar(QPen pen, QBrush brush, qreal Angle)
@@ -321,7 +320,7 @@ Polygon2 * ShapeFactory::addInscribedRectangleInOctagon(QPen Pen, QBrush Brush, 
     p->rotate(Angle);
     addPolyform(p);
     //prepareGeometryChange();
-    canvas->invalidate();
+    view->update();
     return p;
 }
 
@@ -332,7 +331,7 @@ Polygon2 * ShapeFactory::addInscribedSquareInOcatgon(QPen Pen, QBrush Brush, qre
     p->rotate(Angle);
     addPolyform(p);
     //prepareGeometryChange();
-    canvas->invalidate();
+    view->update();
     return p;
 }
 

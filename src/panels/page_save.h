@@ -39,7 +39,7 @@ public:
     void refreshPage() override;
 
 signals:
-    void sig_saveXML(eWsData, QString);
+    void sig_saveXML(QString);
 
 public slots:
     void slot_loadedXML(QString name);
@@ -48,8 +48,8 @@ public slots:
 
 private slots:
     void slot_saveAsXML();
-    void slot_designSourceChanged(int wsdata);
-    void slot_tilingSourceChanged(int wsdata);
+    void slot_designSourceChanged();
+    void slot_tilingSourceChanged();
 
 protected:
     void  createDesignSave();
@@ -66,11 +66,6 @@ private:
     QTextEdit   * tile_desc;
     QLineEdit   * tile_author;
     QLabel      * requiresSave;
-
-    QRadioButton * designStyle;
-    QRadioButton * designWS;
-    QRadioButton * tilingStyle;
-    QRadioButton * tilingWS;
 };
 
 #endif

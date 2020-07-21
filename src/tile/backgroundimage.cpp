@@ -2,8 +2,8 @@
 #include <QFileDialog>
 #include "tile/backgroundimage.h"
 #include "base/configuration.h"
-#include "base/canvas.h"
-#include "geometry/Transform.h"
+#include "base/view.h"
+#include "geometry/transform.h"
 #include "panels/dlg_name.h"
 
 BackgroundImage::BackgroundImage() : Layer("Background Image")
@@ -20,11 +20,8 @@ BackgroundImage::~BackgroundImage()
 {
 }
 
-void BackgroundImage::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+void BackgroundImage::paint(QPainter *painter)
 {
-    Q_UNUSED(option)
-    Q_UNUSED(widget)
-
     if (config->hideBackgroundImage)
     {
         return;
@@ -33,14 +30,14 @@ void BackgroundImage::paint(QPainter *painter, const QStyleOptionGraphicsItem *o
     qDebug() << "BackgroundImage::paint" << Transform::toInfoString(painter->transform());
 
     QTransform base;
-    QTransform t = layerXform.computeTransform(base);
+    QTransform t = xf_canvas.toQTransform(base);
     painter->setTransform(t);
 
     // center pixmap in the scene
     QSize sz = bkgdImage.size();
-    Canvas * canvas = Canvas::getInstance();
-    qreal centerX   = (canvas->currentScene()->width() -  sz.width()) / 2;
-    qreal centerY   = (canvas->currentScene()->height() - sz.height()) / 2;
+    View * view = View::getInstance();
+    qreal centerX   = (view->width() -  sz.width()) / 2;
+    qreal centerY   = (view->height() - sz.height()) / 2;
     painter->translate(QPointF(centerX,centerY));
 
     if (bTransformBkgd)
@@ -117,26 +114,26 @@ void BackgroundImage::bkgdImageChanged(bool showBkgd, bool perspectiveBkgd, bool
         qDebug() << "using regular background image";
         pixmap = QPixmap::fromImage(bkgdImage);
     }
-    Canvas * canvas = Canvas::getInstance();
-    canvas->update();
+    View * view = View::getInstance();
+    view->update();
 }
 
 void BackgroundImage::bkgdTransformChanged(bool transformBkgd)
 {
     bTransformBkgd = transformBkgd;
-    Canvas * canvas = Canvas::getInstance();
-    canvas->update();
+    View * view = View::getInstance();
+    view->update();
 }
 
 // this is perspective correction
 // for images where camera was not normal to the plane of the tiling
 void BackgroundImage::adjustBackground(QPointF topLeft, QPointF topRight, QPointF botRight, QPointF botLeft)
 {
-    Canvas * canvas = Canvas::getInstance();
+    View * view = View::getInstance();
 
     QSize sz      = pixmap.size();
-    qreal offsetX = (canvas->currentScene()->width() -  sz.width()) / 2;
-    qreal offsetY = (canvas->currentScene()->height() - sz.height()) / 2;
+    qreal offsetX = (view->width() -  sz.width()) / 2;
+    qreal offsetY = (view->height() - sz.height()) / 2;
     QTransform t0 = QTransform::fromTranslate(offsetX,offsetY);
 
     QTransform bkgdXform = t0 * xform.getTransform();

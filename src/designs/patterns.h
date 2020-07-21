@@ -29,7 +29,7 @@
 #include "designs/shapefactory.h"
 #include "base/configuration.h"
 #include "base/shared.h"
-#include "tile/tilingloader.h"
+#include "tile/tiling_loader.h"
 
 enum eDirection
 {
@@ -78,11 +78,11 @@ class Pattern5: public Pattern
 public:
     Pattern5(qreal Diameter, QBrush brush);
     void build() override;
-    bool doStep(int Index) Q_DECL_OVERRIDE;
+
 private:
-    Layer * layer1;
-    Layer * layer2;
-    Layer * layer3;
+    LayerPtr layer1;
+    LayerPtr layer2;
+    LayerPtr layer3;
 };
 
 class Pattern6: public Pattern
@@ -90,10 +90,9 @@ class Pattern6: public Pattern
 public:
     Pattern6(qreal Diameter, QBrush brush);
     void build() override;
-    bool doStep(int Index) Q_DECL_OVERRIDE;
 private:
-    Layer * layer1;
-    Layer * layer2;
+    LayerPtr layer1;
+    LayerPtr layer2;
 };
 
 
@@ -104,7 +103,7 @@ public:
     void build() override;
     bool doStep(int Index) Q_DECL_OVERRIDE;
 private:
-    Layer * layer1;
+    LayerPtr layer1;
 };
 
 class PatternHuSymbol : public Pattern
@@ -116,10 +115,10 @@ public:
 
 private:
 private:
-    Layer * layer1;
-    Layer * layer3;
-    ShapeFactory * s;
-    ShapeFactory * s3;
+    LayerPtr layer1;
+    LayerPtr layer3;
+    ShapeFPtr s;
+    ShapeFPtr s3;
     qreal width;
     QPen  gridPen;
     QPen  innerPen;
@@ -134,15 +133,15 @@ public:
     bool doStep(int Index) Q_DECL_OVERRIDE;
 
 private:
-    Layer * layer1;
-    Layer * layer2;
-    Layer * layer3;
-    Layer * layer4;
+    LayerPtr layer1;
+    LayerPtr layer2;
+    LayerPtr layer3;
+    LayerPtr layer4;
 
-    ShapeFactory * l1; // level 1
-    ShapeFactory * l2; // level 2
-    ShapeFactory * l3; // level 3
-    ShapeFactory * l4; // level 4
+    ShapeFPtr l1; // level 1
+    ShapeFPtr l2; // level 2
+    ShapeFPtr l3; // level 3
+    ShapeFPtr l4; // level 4
 
     qreal width;
     QPen  gridPen;
@@ -158,7 +157,7 @@ public:
     bool doStep(int Index) Q_DECL_OVERRIDE;
 
 private:
-    Layer * layer1;
+    LayerPtr layer1;
 };
 
 class Pattern11 : public Pattern
@@ -170,8 +169,8 @@ protected:
     qreal Rotation;
     eDirection Direction;
 private:
-    Layer * layer1;
-    Layer * layer2;
+    LayerPtr layer1;
+    LayerPtr layer2;
 };
 
 class Pattern12 : public Pattern
@@ -184,9 +183,9 @@ protected:
     eDirection Direction;
     Polygon2 * hexagon;
 private:
-    Layer * layer1;
-    Layer * layer2;
-    Layer * layer3;
+    LayerPtr layer1;
+    LayerPtr layer2;
+    LayerPtr layer3;
 };
 
 class PatternIncompleteA : public Pattern
@@ -195,10 +194,10 @@ public:
     PatternIncompleteA(qreal Diameter, QBrush Brush);
     void build() override;
 private:
-    Layer * layer1;
-    Layer * layer2;
-    Layer * layer3;
-    Layer * layer4;
+    LayerPtr layer1;
+    LayerPtr layer2;
+    LayerPtr layer3;
+    LayerPtr layer4;
 };
 
 class Pattern14 : public Pattern
@@ -231,10 +230,10 @@ public:
     void build() override;
 
 protected:
-    ShapeFactory * s2;
-    ShapeFactory * s3;
-    ShapeFactory * s4;
-    ShapeFactory * s5;
+    ShapeFPtr s2;
+    ShapeFPtr s3;
+    ShapeFPtr s4;
+    ShapeFPtr s5;
 };
 
 class PatternKumiko2 : public Pattern
@@ -244,12 +243,12 @@ public:
     void build() override;
 
 protected:
-    ShapeFactory * s2;
-    ShapeFactory * s3;
-    ShapeFactory * s4;
-    ShapeFactory * s5;
+    ShapeFPtr s2;
+    ShapeFPtr s3;
+    ShapeFPtr s4;
+    ShapeFPtr s5;
 
-    Layer * layer2;
+    LayerPtr layer2;
 };
 
 #endif

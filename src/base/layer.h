@@ -25,7 +25,6 @@
 #ifndef TPM_LAYER_H
 #define TPM_LAYER_H
 
-#include <QGraphicsItemGroup>
 #include <QPen>
 #include "geometry/xform.h"
 #include "base/shared.h"
@@ -34,14 +33,9 @@ class Design;
 class Canvas;
 class WorkspaceViewer;
 class Configuration;
+class View;
 
-#define TRANS   painter->translate(getLoc())
-#define UNTRANS painter->translate(-getLoc());
-
-// Notes:
-// Rotation is handled by QGraphicsItemGroup
-// ZValue   is handled by QGraphicsItemGroup
-class Layer : public QObject, public QGraphicsItemGroup
+class Layer : public QObject
 {
     Q_OBJECT
 
@@ -50,14 +44,16 @@ public:
     Layer(const Layer & other);
     ~Layer();
 
-    void    addToGroup(QGraphicsItem *item);
-    void    removeFromGroup(QGraphicsItem *item);
+    virtual void paint(QPainter * painter);
+
+    void    addSubLayer(LayerPtr item);
+    void    removeSubLayer(LayerPtr item);
 
     void    setCenter (QPointF pt);
     QPointF getCenter();
 
-    void    setLayerXform(Xform & xf);
-    Xform   getLayerXform();
+    void    setCanvasXform(Xform & xf);
+    Xform   getCanvasXform();
 
     void    forceUpdateLayer();
     void    forceRedraw() ;
@@ -69,8 +65,25 @@ public:
     QLineF  worldToScreen(QLineF line);
 
     QTransform  getLayerTransform();
+    QTransform  getViewTransform();
 
     QString getName() { return name; }
+
+    void    setZValue(int z);
+    int     zValue() { return zlevel; }
+
+    void    setVisible(bool visibility) { visible = visibility; }
+    bool    isVisible() { return visible; }
+
+    LayerPtr firstSubLayer()           { return subLayers.first(); }
+    LayerPtr geSubLayer(int index)     { return subLayers.at(index); }
+    QVector<LayerPtr> & getSubLayers() { return subLayers; }
+    int     numSubLayers()             { return subLayers.size(); }
+
+    void    setLoc(QPointF loc);
+    QPointF getLoc() { return pos; }
+
+    static bool sortByZlevel(LayerPtr s1, LayerPtr s2);
 
     static int refs;
 
@@ -82,21 +95,31 @@ public slots:
     virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn);
 
 protected:
-    QTransform baseT;
-    QTransform layerXT;
-    QTransform layerT;
-    QTransform invT;
+    Xform      xf_canvas;
+    QTransform qtr_view;
+    QTransform qtr_canvas;
+    QTransform qtr_layer;
+    QTransform qtr_invert;
+
     QPen       layerPen;
-    Xform      layerXform;
 
     Configuration   * config;
     Canvas          * canvas;
     WorkspaceViewer * wsViewer;
+    View            * view;
+
+    bool    visible;
+
+    QVector<LayerPtr>  subLayers;
 
 private:
     void computeLayerTransform();
+    void deltaLoc(QPointF loc);
+
 
     QString name;
+    int     zlevel;
+    QPointF pos;
 };
 
 #endif

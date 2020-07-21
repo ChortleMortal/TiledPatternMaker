@@ -37,16 +37,21 @@ class page_layers : public panel_page
         LAYER_VISIBILITY,
         LAYER_Z,
         LAYER_ALIGN,
-        LAYER_DELTA_SCALE,
-        LAYER_DELTA_ROT,
-        LAYER_DELTA_X,
-        LAYER_DELTA_Y,
+        VIEW_SCALE,
+        VIEW_ROT,
+        VIEW_X,
+        VIEW_Y,
+        CANVAS_SCALE,
+        CANVAS_ROT,
+        CANVAS_X,
+        CANVAS_Y,
+        CANVAS_CLEAR,
         LAYER_CENTER,
         LAYER_SCALE,
         LAYER_ROT,
         LAYER_X,
         LAYER_Y,
-        LAYER_CLEAR,
+        SUB_LAYERS,
         NUM_LAYER_ROWS
     };
 
@@ -66,10 +71,10 @@ private slots:
 
 protected:
     void populateLayers();
-    void populateLayer(Layer * layer, int col);
+    void populateLayer(LayerPtr layer, int col);
 
 private:
-    QTableWidget * layerTable;
+    AQTableWidget * layerTable;
 
     QSignalMapper  visibilityMapper;
     QSignalMapper  zMapper;

@@ -22,8 +22,8 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "style/Emboss.h"
-#include "geometry/Point.h"
+#include "style/emboss.h"
+#include "geometry/point.h"
 #include <QPainter>
 
 ////////////////////////////////////////////////////////////////////////////
@@ -94,9 +94,8 @@ void Emboss::draw(GeoGraphics * gg)
 
             if ( draw_outline )
             {
-                QPen pen(Qt::black);
-                gg->drawPolygon(poly,pen,QBrush());
-                gg->drawLine(bae.v2.v, bae.v1.v,pen);
+                gg->drawPolygon(poly,Qt::black,1);
+                gg->drawLine(bae.v2.v, bae.v1.v,QPen(Qt::black));
             }
         }
     }
@@ -118,7 +117,7 @@ void Emboss::drawTrap(GeoGraphics * gg, QPointF a, QPointF b, QPointF c, QPointF
 
     QPolygonF trap_pts;
     trap_pts << a << b << c << d;
-    gg->drawPolygon(trap_pts,QPen(color),QBrush(color));
+    gg->fillPolygon(trap_pts,color);
 }
 
 // Data.

@@ -37,7 +37,7 @@
 #ifndef ROSETTE_H
 #define ROSETTE_H
 
-#include "tapp/RadialFigure.h"
+#include "tapp/radial_figure.h"
 
 class Rosette : public RadialFigure
 {

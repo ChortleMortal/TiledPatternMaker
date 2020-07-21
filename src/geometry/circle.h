@@ -2,7 +2,7 @@
 #define CIRCLE_H
 
 #include <QPointF>
-#include "geometry/Loose.h"
+#include "geometry/loose.h"
 
 class Circle;
 typedef std::shared_ptr<Circle> CirclePtr;

@@ -39,14 +39,15 @@
 // tricky later.  But it's more tractable than computing overlays of
 // DCELs.
 
-#include "geometry/Map.h"
-#include "geometry/Loose.h"
-#include "geometry/Intersect.h"
+#include <QtAlgorithms>
+#include "geometry/map.h"
+#include "geometry/loose.h"
+#include "geometry/intersect.h"
 #include "base/canvas.h"
 #include "base/configuration.h"
 #include "designs/shapefactory.h"
 #include "base/utilities.h"
-#include <QtAlgorithms>
+#include "geometry/edgepoly.h"
 
 int Map::refs;
 
@@ -57,10 +58,8 @@ Map::Map(QString Name) : neighbourMap(this)
     config = Configuration::getInstance();
 }
 
-
 Map::Map(QString Name, QPolygonF & poly) : neighbourMap(this)
 {
-    Q_ASSERT(poly.isClosed());
     refs++;
     mname  = Name;
     config = Configuration::getInstance();
@@ -73,6 +72,39 @@ Map::Map(QString Name, QPolygonF & poly) : neighbourMap(this)
         insertEdge(v1,v2);
         v1 = v2;
     }
+    if (!poly.isClosed())
+    {
+        v2 = insertVertex(poly[0]);
+        insertEdge(v1,v2);
+    }
+}
+
+Map::Map(QString Name, EdgePoly & poly) : neighbourMap(this)
+{
+    refs++;
+    mname  = Name;
+    config = Configuration::getInstance();
+
+    // we can do all this because the map is empty and this is a constructor
+    for (auto edge : poly)
+    {
+        VertexPtr v1 = edge->getV1();
+        if (!vertices.contains(v1))
+        {
+            vertices.push_back(v1);
+        }
+        VertexPtr v2 = edge->getV2();
+        if (!vertices.contains(v2))
+        {
+            vertices.push_back(v2);
+        }
+        edges.push_back(edge);
+
+        neighbourMap.insertNeighbour(edge->getV1(),edge);
+        neighbourMap.insertNeighbour(edge->getV2(),edge);
+    }
+    sortVertices();
+    sortAllNeighboursByAngle();
 }
 
 Map::Map(const Map & map)  : neighbourMap(this)
@@ -130,6 +162,17 @@ void Map::wipeout()
     neighbourMap.clear();
     texts.clear();
 }
+
+EdgePoly Map::getEdgePoly()
+{
+    EdgePoly ep;
+    for (auto edge : edges)
+    {
+        ep.push_back(edge);
+    }
+    return ep;
+}
+
 
 // The publically-accessible version.
 VertexPtr Map::insertVertex(QPointF  pt)
@@ -331,7 +374,7 @@ void Map::removeEdge(EdgePtr e)   // called by wipeout
 {
     if (!e) return;
 
-    qDebug() << "removing edge" << e->getTmpEdgeIndex();
+    //qDebug() << "removing edge" << e->getTmpEdgeIndex();
 
     VertexPtr v1  = e->getV1();
     if (v1)
@@ -581,7 +624,7 @@ void Map::sortVertices()
 {
     qDebug() << "sortVertices";
 
-    qSort( vertices.begin(),vertices.end(),vertexLessThan);
+    std::sort( vertices.begin(),vertices.end(),vertexLessThan);
 }
 
 
@@ -598,7 +641,7 @@ void Map::sortEdges()
 {
     qDebug() << "sortEdges";
 
-    qSort( edges.begin(), edges.end(), edgeLessThan );
+    std::sort( edges.begin(), edges.end(), edgeLessThan );
 }
 
 
@@ -1020,7 +1063,7 @@ void Map::mergeMap(MapPtr other)
         VertexPtr v1 = edge->getV1()->copy;
         VertexPtr v2 = edge->getV2()->copy;
 
-        if (edge->getType() == EDGE_LINE)
+        if (edge->getType() == EDGETYPE_LINE)
         {
             insertEdge(v1,v2);
         }
@@ -1104,11 +1147,11 @@ void Map::mergeSimpleMany(constMapPtr other, const QVector<QTransform> &transfor
             VertexPtr ov1 = oedge->getV1()->copy;
             VertexPtr ov2 = oedge->getV2()->copy;
 
-            if (oedge->getType() == EDGE_LINE)
+            if (oedge->getType() == EDGETYPE_LINE)
             {
                 nedge = make_shared<Edge>(ov1, ov2);
             }
-            else if (oedge->getType() == EDGE_CURVE)
+            else if (oedge->getType() == EDGETYPE_CURVE)
             {
                 QPointF pt   = T.map(oedge->getArcCenter());
                 bool  convex = oedge->isConvex();
@@ -1516,7 +1559,9 @@ void Map::dumpEdges(bool full)
     for( int idx = 0; idx < edges.size(); ++idx )
     {
         EdgePtr edge = edges.at(idx);
-        qDebug() << ((edge->getType() == EDGE_LINE) ? "Line" : "Curve") << "edge" << idx  << Utils::addr(edge.get())<< "from" << vertices.indexOf(edge->getV1()) << "to"  << vertices.indexOf(edge->getV2());
+        qDebug() << ((edge->getType() == EDGETYPE_LINE) ? "Line" : "Curve") << "edge" << idx  << Utils::addr(edge.get())
+                 << "from" << vertices.indexOf(edge->getV1()) << edge->getV1()->getPosition()
+                 << "to"   << vertices.indexOf(edge->getV2()) << edge->getV2()->getPosition();
     }
 }
 
@@ -1619,7 +1664,7 @@ bool Map::verifyVertices()
 
         if( cmp == 0 )
         {
-            qWarning() << "Duplicate vertices.";
+            qWarning() << "Duplicate vertices:" << v1->getTmpVertexIndex() << v1->getPosition() <<  v2->getTmpVertexIndex() << v2->getPosition();
             rv = false;
         }
         else if( cmp > 0 )
@@ -1647,7 +1692,7 @@ bool Map::verifyEdges()
             rv = false;
         }
 
-        if (edge->getType() != EDGE_CURVE)
+        if (edge->getType() != EDGETYPE_CURVE)
         {
             if (config->verifyVerbose) qDebug() <<  "verifying edge (" << edge->getTmpEdgeIndex() << ") : from" << v1->getTmpVertexIndex() << "to"  << v2->getTmpVertexIndex();
         }
@@ -1773,7 +1818,7 @@ bool Map::verifyNeighbours()
     return rv;
 }
 
-void Map::addShapeFactory(ShapeFactory * sf)
+void Map::addShapeFactory(ShapeFPtr sf)
 {
     for (auto it = sf->getPolyforms().begin(); it != sf->getPolyforms().end(); it++)
     {

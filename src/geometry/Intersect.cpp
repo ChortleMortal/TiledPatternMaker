@@ -22,8 +22,8 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "geometry/Intersect.h"
-#include "geometry/Loose.h"
+#include "geometry/intersect.h"
+#include "geometry/loose.h"
 
 QPointF Intersect::getIntersection(QLineF line1, QLineF line2 )
 {

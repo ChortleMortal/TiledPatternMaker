@@ -26,8 +26,8 @@
 #define MAP_EDITOR_H
 
 #include "base/view.h"
-#include "viewers/MapEditorView.h"
-#include "tile/Tiling.h"
+#include "viewers/map_editor_view.h"
+#include "tile/tiling.h"
 #include "makers/map_editor/map_mouseactions.h"
 #include "makers/map_editor/map_editor_selection.h"
 #include "makers/map_editor/map_editor_stash.h"
@@ -47,12 +47,15 @@ class MapEditor : public MapEditorSelection
     friend class CreateCrop;
 
 public:
-    static MapEditor * getInstance();
+    static MapEditorPtr getInstance();
+    MapEditor();
+    static MapEditorPtr mpThis;
 
-    void             setDesignElement(DesignElementPtr delpptr);
-    void             setPrototype(PrototypePtr prop);
-    void             setStyle(StylePtr styp);
-    void             setLocal(MapPtr map);
+    void            setDesignElement(DesignElementPtr delpptr);
+    void            setPrototype(PrototypePtr prop);
+    void            setStyle(StylePtr styp);
+    void            setLocal(MapPtr map);
+    void            setTiling(TilingPtr tiling);
 
     DesignElementPtr getDesignElement() { return delp; }
     PrototypePtr     getPrototype() { return prop; }
@@ -93,15 +96,10 @@ public slots:
     void slot_mouseMoved(QPointF spt);
 
 protected:
-    void setMousePos(QPointF pt);
-
+    void    setMousePos(QPointF pt);
+    MapPtr  createFromTiling();
 
 private:
-    MapEditor();
-    ~MapEditor() override;
-
-    static MapEditor * mpThis;
-
     SelectionSet currentSelections;
 
     // Mouse tracking.

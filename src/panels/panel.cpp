@@ -23,7 +23,6 @@
  */
 
 #include "panels/panel.h"
-#include "panels/page_designs.h"
 #include "panels/page_style_maker.h"
 #include "panels/page_layers.h"
 #include "panels/page_tiling_maker.h"
@@ -35,7 +34,7 @@
 #include "panels/page_config.h"
 #include "panels/page_log.h"
 #include "panels/page_save.h"
-#include "panels/page_figure_maker.h"
+#include "panels/page_prototype_maker.h"
 #include "panels/page_workspace.h"
 #include "panels/page_canvasSettings.h"
 #include "panels/page_views.h"
@@ -44,7 +43,7 @@
 #include "designs/design.h"
 #include "base/canvas.h"
 #include "base/tiledpatternmaker.h"
-#include "viewers/workspaceviewer.h"
+#include "viewers/workspace_viewer.h"
 #include "base/version.h"
 
 ControlPanel * ControlPanel::mpThis = nullptr;
@@ -101,7 +100,7 @@ void ControlPanel::init(TiledPatternMaker * parent)
     maker  = parent;
     canvas = Canvas::getInstance();
 
-    lastViewType = VIEW_DESIGN;
+    lastViewType = VIEW_MOSAIC;
 
     setupGUI();
 
@@ -179,10 +178,6 @@ void ControlPanel::setupGUI()
     QHBoxLayout * hlayout = new QHBoxLayout();
     hlayout->setSizeConstraint(QLayout::SetFixedSize);
 
-    cbAutoClear       = new QCheckBox("Auto-clear");
-    cbAutoLoadStyles  = new QCheckBox("Auto-load Styles");
-    cbAutoLoadTiling  = new QCheckBox("Auto-load Tiling");
-    cbAutoLoadDesigns = new QCheckBox("Auto-load Designs");
     cbShowDesign      = new QCheckBox("Show Design");
 
     radioDefined = new QRadioButton("Defined");
@@ -190,32 +185,26 @@ void ControlPanel::setupGUI()
     radioSingle  = new QRadioButton("Single");
 
 
-    QPushButton * pbLogEvent = new QPushButton("Log Event");
+    QPushButton * pbLogEvent      = new QPushButton("Log Event");
+    QPushButton * pbViewWorkspace = new QPushButton("View Workspace");
+    QPushButton * pbUpdateView    = new QPushButton("UpdateView");
 
     hlayout->setContentsMargins(0, 0, 0, 0);
     hlayout->addWidget(pbLogEvent);
     hlayout->addStretch();
-    hlayout->addWidget(cbAutoClear);
-    hlayout->addWidget(cbAutoLoadDesigns);
-    hlayout->addWidget(cbAutoLoadStyles);
-    hlayout->addWidget(cbAutoLoadTiling);
+    hlayout->addWidget(pbViewWorkspace);
+    hlayout->addWidget(pbUpdateView);
     hlayout->addStretch();
     hlayout->addWidget(radioDefined);
     hlayout->addWidget(radioPack);
     hlayout->addWidget(radioSingle);
     hlayout->addStretch();
     hlayout->addWidget(cbShowDesign);
-    hlayout->addStretch();
 
     repeatRadioGroup.addButton(radioDefined,REPEAT_DEFINED);
     repeatRadioGroup.addButton(radioPack,REPEAT_PACK);
     repeatRadioGroup.addButton(radioSingle,REPEAT_SINGLE);
     repeatRadioGroup.button(config->repeatMode)->setChecked(true);
-
-    cbAutoClear->setChecked(config->autoClear);
-    cbAutoLoadStyles->setChecked(config->autoLoadStyles);
-    cbAutoLoadTiling->setChecked(config->autoLoadTiling);
-    cbAutoLoadDesigns->setChecked(config->autoLoadDesigns);
 
     // hbox - second row
 
@@ -282,14 +271,13 @@ void ControlPanel::setupGUI()
 
     // connections
     WorkspaceViewer * viewer = WorkspaceViewer::getInstance();
+
     connect(pbExit,             &QPushButton::clicked,              this,    &ControlPanel::slot_exit);
     connect(pbLogEvent,         &QPushButton::clicked,              this,    &ControlPanel::slot_logEvent);
     connect(pbRaise,            &QPushButton::clicked,              this,    &ControlPanel::slot_raise);
+    connect(pbViewWorkspace,    &QPushButton::clicked,              viewer,  &WorkspaceViewer::slot_viewWorkspace);
+    connect(pbUpdateView,       &QPushButton::clicked,              this,    &ControlPanel::updateView);
     connect(&repeatRadioGroup,  SIGNAL(buttonClicked(int)),         this,    SLOT(repeatChanged(int)));
-    connect(cbAutoClear,        SIGNAL(clicked(bool)),              this,    SLOT(autoClearClicked(bool)));
-    connect(cbAutoLoadStyles,   SIGNAL(clicked(bool)),              this,    SLOT(autoLoadStylesClicked(bool)));
-    connect(cbAutoLoadTiling,   SIGNAL(clicked(bool)),              this,    SLOT(autoLoadTilingClicked(bool)));
-    connect(cbAutoLoadDesigns,  SIGNAL(clicked(bool)),              this,    SLOT(autoLoadDesignsClicked(bool)));
     connect(this,               &ControlPanel::sig_viewWS,          viewer,  &WorkspaceViewer::slot_viewWorkspace);
     connect(this,               &ControlPanel::sig_render,          maker,   &TiledPatternMaker::slot_render);
     connect(cbUpdate,           SIGNAL(clicked(bool)),              this,    SLOT(updateClicked(bool)));
@@ -309,7 +297,6 @@ void ControlPanel::populatePages()
     mAttachedPages.push_back(wp);
     panelPagesWidget->addWidget(wp);
     mpPanelPageList->addItem(wp->getName());
-    page_loaders * wp_lod = dynamic_cast<page_loaders*>(wp);
 
     wp = new page_save(this);
     mAttachedPages.push_back(wp);
@@ -327,11 +314,6 @@ void ControlPanel::populatePages()
     mpPanelPageList->addSeparator();
 
     wp = new page_workspace(this);
-    mAttachedPages.push_back(wp);
-    panelPagesWidget->addWidget(wp);
-    mpPanelPageList->addItem(wp->getName());
-
-    wp = new page_designs(this);
     mAttachedPages.push_back(wp);
     panelPagesWidget->addWidget(wp);
     mpPanelPageList->addItem(wp->getName());
@@ -369,11 +351,11 @@ void ControlPanel::populatePages()
     mpPanelPageList->addItem(wp->getName());
     page_map_editor * wp_med = dynamic_cast<page_map_editor*>(wp);
 
-    wp = new page_figure_maker(this);
+    wp = new page_prototype_maker(this);
     mAttachedPages.push_back(wp);
     panelPagesWidget->addWidget(wp);
     mpPanelPageList->addItem(wp->getName());
-    page_figure_maker * wp_fm = dynamic_cast<page_figure_maker*>(wp);
+    page_prototype_maker * wp_fm = dynamic_cast<page_prototype_maker*>(wp);
 
     wp = new page_tiling_maker(this);
     mAttachedPages.push_back(wp);
@@ -413,23 +395,19 @@ void ControlPanel::populatePages()
     connect(mpPanelPageList, &PanelListWidget::currentRowChanged, this, &ControlPanel::slot_selectWidget);
 
     // make inter-page connections
-    connect(wp_td,  &page_tiling_maker::sig_tilingChanged,   wp_fm,  &page_figure_maker::slot_tilingChanged);
+    connect(wp_td,  &page_tiling_maker::sig_tilingChanged,   wp_fm,  &page_prototype_maker::slot_tilingChanged);
+    connect(wp_td,  &page_tiling_maker::sig_reload,          wp_fm,  &page_prototype_maker::slot_reload);
 
     connect(this,   &ControlPanel::sig_selectViewer,         wp_cnt, &page_views::slot_selectViewer);
 
-    connect(wp_med, &page_map_editor::sig_stylesReplaceProto,wp_fm,  &page_figure_maker::slot_replaceInStyle);
-    connect(wp_med, &page_map_editor::sig_stylesAddProto,    wp_fm,  &page_figure_maker::slot_addToStyle);
+    connect(wp_med, &page_map_editor::sig_stylesReplaceProto,wp_fm,  &page_prototype_maker::slot_replaceInStyle);
+    connect(wp_med, &page_map_editor::sig_stylesAddProto,    wp_fm,  &page_prototype_maker::slot_addToStyle);
 
     connect(wp_cnt, &page_views::sig_mapEdSelection,        wp_med, &page_map_editor::slot_reload);
     connect(this,   &ControlPanel::sig_reload,              wp_med, &page_map_editor::slot_reload);
 
-    connect(wp_lod, &page_loaders::sig_viewStyles,          wp_cnt, &page_views::slot_setSyle);
-    connect(wp_lod, &page_loaders::sig_viewWS,              wp_cnt, &page_views::slot_setWS);
-
     connect(maker, &TiledPatternMaker::sig_image0,          wp_db, &page_debug::slot_setImage0);
     connect(maker, &TiledPatternMaker::sig_image1,          wp_db, &page_debug::slot_setImage1);
-    connect(maker, &TiledPatternMaker::sig_prepXML,         wp_cnt,&page_views::slot_setSyle);
-    connect(maker, &TiledPatternMaker::sig_prepTiling,      wp_cnt,&page_views::slot_setWS);
 }
 
 void ControlPanel::floatPages()
@@ -456,16 +434,28 @@ void ControlPanel::slot_selectWidget(int index)
     qDebug() << "select panel Widget" << index;
     if (index == -1)  return;
 
+    // exiting previous page
+    if (currentPage)
+    {
+        if (currentPage->canExit())
+        {
+            currentPage->onExit();
+        }
+        else
+        {
+            mpPanelPageList->blockSignals(true);
+            mpPanelPageList->setCurrentRow(currentPage->getName());
+            mpPanelPageList->blockSignals(false);
+            return;
+        }
+    }
+
+    // select new page
     QListWidgetItem * item =  mpPanelPageList->item(index);
     Q_ASSERT(item);
     QString name = item->text();
-    qDebug().noquote() << "panel:" << name;
+    qDebug().noquote() << "new panel selection:" << name;
 
-    // exit previous page
-    if (currentPage)
-        currentPage->onExit();
-
-    // select new page
     currentPage = panelPagesWidget->setPanelPage(name);
     Q_ASSERT(currentPage);
     currentPage->setNewlySelected(true);
@@ -564,39 +554,8 @@ void ControlPanel::slot_poll()
 
     QMutexLocker ml(&mUpdateMutex);
 
-    QString astring = canvas->getKbdModeStr() + " : " + sViewerType[config->viewerType] + "  ";
-    switch (config->viewerType)
-    {
-    case VIEW_DESIGN:
-        astring += sDesignViewer[config->designViewer];
-        break;
-    case VIEW_PROTO:
-        astring += sProtoViewer[config->protoViewer];
-        break;
-    case VIEW_PROTO_FEATURE:
-        astring += sProtoFeatureViewer[config->protoFeatureViewer];
-        break;
-    case VIEW_TILING:
-        astring += sTilingViewer[config->tilingViewer];
-        break;
-    case VIEW_FIGURE_MAKER:
-        astring += sFigureViewer[config->figureViewer];
-        break;
-    case VIEW_DEL:
-        astring += sDELViewer[config->delViewer];
-        break;
-    case VIEW_TILING_MAKER:
-        astring += sTilingMakerView[config->tilingMakerViewer];
-        break;
-    case  VIEW_MAP_EDITOR:
-        astring += "wsDesignElement";
-        break;
-    case VIEW_FACE_SET:
-        astring += "FaceSet";
-        break;
-    }
+    QString astring = canvas->getKbdModeStr() + " : " + sViewerType[config->viewerType];
     statusLabel->setText(astring);
-
 
     //	Update active page...
     panel_page * pp = panelPagesWidget->currentPage;
@@ -635,64 +594,12 @@ void ControlPanel::repeatChanged(int mode)
 {
     config->repeatMode = static_cast<eRepeatType>(mode);
 
-    eRender rtype = RENDER_LOADED;  // default
-
-    switch (config->viewerType)
-    {
-    case VIEW_DESIGN:
-        if (config->designViewer == DV_WS_STYLE) rtype = RENDER_WS;
-        break;
-    case VIEW_PROTO:
-        if (config->protoViewer == PV_WS) rtype = RENDER_WS;
-        break;
-    case VIEW_PROTO_FEATURE:
-        if (config->protoFeatureViewer == PVF_WS) rtype = RENDER_WS;
-        break;
-    case VIEW_DEL:
-        if (config->delViewer == DEL_WS) rtype = RENDER_WS;
-        break;
-    case VIEW_FIGURE_MAKER:
-        if (config->figureViewer == FV_WS) rtype = RENDER_WS;
-        break;
-    case VIEW_TILING:
-        if (config->tilingViewer == TV_WORKSPACE) rtype = RENDER_WS;
-        break;
-    case VIEW_TILING_MAKER:
-        if (config->tilingMakerViewer == TMV_WORKSPACE) rtype = RENDER_WS;
-        break;
-    case VIEW_MAP_EDITOR:
-        if (config->mapEditorView == MED_WS) rtype = RENDER_WS;
-        break;
-    case VIEW_FACE_SET:
-        break;
-    }
-
-    emit sig_render(rtype);
+    emit sig_render();
 
     if (config->viewerType == VIEW_MAP_EDITOR)
     {
         emit sig_reload();
     }
-}
-
-void  ControlPanel::autoClearClicked(bool enb)
-{
-    config->autoClear = enb;
-}
-
-void  ControlPanel::autoLoadStylesClicked(bool enb)
-{
-    config->autoLoadStyles = enb;
-}
-
-void  ControlPanel::autoLoadTilingClicked(bool enb)
-{
-    config->autoLoadTiling = enb;
-}
-
-void  ControlPanel::autoLoadDesignsClicked(bool enb)
-{
-    config->autoLoadDesigns = enb;
 }
 
 void ControlPanel::slot_xformModeChanged(int row)
@@ -710,7 +617,8 @@ void ControlPanel::slot_kbdMode(eKbdMode mode)
 void ControlPanel::slot_logEvent()
 {
     qInfo() << "** EVENT MARK **";
-    canvas->dump(true);
+    View * view = View::getInstance();
+    view->dump(true);
 }
 
 void ControlPanel::slot_raise()
@@ -731,6 +639,13 @@ void  ControlPanel::updateClicked(bool enb)
     config->updatePanel = enb;
 }
 
+void  ControlPanel::updateView(bool enb)
+{
+    Q_UNUSED(enb);
+    View * view = View::getInstance();
+    view->update();
+}
+
 void ControlPanel::delegateView()
 {
     if (config->lockView)
@@ -744,17 +659,17 @@ void ControlPanel::delegateView()
         if (cbShowDesign->isChecked())
             lastViewType = VIEW_MAP_EDITOR;
         else
-            emit sig_selectViewer(VIEW_MAP_EDITOR,config->mapEditorView);
+            emit sig_selectViewer(VIEW_MAP_EDITOR);
         return;
     }
 
-    page_figure_maker * pfm = dynamic_cast<page_figure_maker*>(currentPage);
+    page_prototype_maker * pfm = dynamic_cast<page_prototype_maker*>(currentPage);
     if (pfm)
     {
         if (cbShowDesign->isChecked())
             lastViewType = VIEW_FIGURE_MAKER;
         else
-            emit sig_selectViewer(VIEW_FIGURE_MAKER,config->figureViewer);
+            emit sig_selectViewer(VIEW_FIGURE_MAKER);
         return;
     }
 
@@ -764,7 +679,7 @@ void ControlPanel::delegateView()
         if (cbShowDesign->isChecked())
             lastViewType = VIEW_TILING_MAKER;
         else
-            emit sig_selectViewer(VIEW_TILING_MAKER,config->tilingMakerViewer);
+            emit sig_selectViewer(VIEW_TILING_MAKER);
         return;
     }
 
@@ -774,7 +689,17 @@ void ControlPanel::delegateView()
         if (cbShowDesign->isChecked())
             lastViewType = VIEW_DEL;
         else
-            emit sig_selectViewer(VIEW_DEL,DEL_WS);
+            emit sig_selectViewer(VIEW_DEL);
+        return;
+    }
+
+    page_style_maker * psm = dynamic_cast<page_style_maker*>(currentPage);
+    if (psm)
+    {
+        if (cbShowDesign->isChecked())
+            lastViewType = VIEW_MOSAIC;
+        else
+            emit sig_selectViewer(VIEW_MOSAIC);
         return;
     }
 }
@@ -784,11 +709,26 @@ void  ControlPanel::showDesignClicked(bool state)
     if (state)
     {
         lastViewType = config->viewerType;
-        emit sig_selectViewer(VIEW_DESIGN,-1);
+        emit sig_selectViewer(VIEW_MOSAIC);
     }
     else
     {
-        emit sig_selectViewer(lastViewType,-1);
+        emit sig_selectViewer(lastViewType);
     }
     emit sig_viewWS();
+}
+
+void  page_views::slot_selectViewer(int id)
+{
+    if (config->lockView)
+    {
+        return;
+    }
+
+    viewerGroup.button(id)->setChecked(true);
+#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
+    emit viewerGroup.buttonClicked(id);
+#else
+    emit viewerGroup.idClicked(id);
+#endif
 }

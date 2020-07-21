@@ -33,7 +33,7 @@
 #define LOOSE_H
 
 #include <QtCore>
-#include "geometry/Point.h"
+#include "geometry/point.h"
 #include <QPointF>
 
 class Loose

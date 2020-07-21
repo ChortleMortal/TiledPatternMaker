@@ -29,7 +29,7 @@
 #include <QVector>
 #include <QtWidgets>
 #include <QWidget>
-#include "tile/Tiling.h"
+#include "tile/tiling.h"
 #include "makers/figure_maker/feature_button.h"
 
 ////////////////////////////////////////////////////////////////////////////
@@ -56,8 +56,7 @@ class FeatureLauncher : public QGridLayout
 public:
     FeatureLauncher();
 
-    FeatureBtnPtr   launchFromPrototype(PrototypePtr proto);
-    FeatureBtnPtr   launchFromStyle(StylePtr style);
+    void            launch(PrototypePtr proto, TilingPtr tiling);
 
     void            populateProtoWithDELsFromButtons(PrototypePtr proto);
 
@@ -75,6 +74,7 @@ public slots:
     void            setCurrentButton(FeatureBtnPtr btn);
 
 protected:
+    void            create(PrototypePtr proto, QVector<FeaturePtr> & features);
     void            populate(QVector<DesignElementPtr> & dels);
     void            getPosition(int index, int & row, int & col);
 

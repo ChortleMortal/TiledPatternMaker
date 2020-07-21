@@ -23,7 +23,6 @@
  */
 
 #include "panels/dlg_trim.h"
-#include "panels/layout_sliderset.h"
 #include "base/utilities.h"
 
 DlgTrim::DlgTrim(QWidget * parent) :  QDialog(parent)
@@ -43,11 +42,10 @@ DlgTrim::DlgTrim(QWidget * parent) :  QDialog(parent)
 
     setLayout(vbox);
 
-    //setMinimumWidth(600);
-    //setMinimumHeight(150);
+    setFixedWidth(300);
 
     connect(doneBtn, &QPushButton::clicked, this, &QDialog::accept);
-    connect(applyBtn,  &QPushButton::clicked, this, &DlgTrim::slot_apply);
+    connect(applyBtn,&QPushButton::clicked, this, &DlgTrim::slot_apply);
 }
 
 void DlgTrim::slot_ok()

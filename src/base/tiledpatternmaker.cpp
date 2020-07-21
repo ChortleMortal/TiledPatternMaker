@@ -26,17 +26,17 @@
 #include "base/canvas.h"
 #include "base/cycler.h"
 #include "base/fileservices.h"
-#include "base/styleddesign.h"
+#include "base/mosaic.h"
 #include "base/tilingmanager.h"
 #include "base/transparentwidget.h"
 #include "designs/designs.h"
-#include "style/Style.h"
+#include "style/style.h"
 #include "panels/panel.h"
 #include "panels/page_views.h"
 #include "panels/splitscreen.h"
 #include "makers/map_editor/map_editor.h"
 #include "makers/tiling_maker/tiling_maker.h"
-#include "viewers/workspaceviewer.h"
+#include "viewers/workspace_viewer.h"
 
 TiledPatternMaker::TiledPatternMaker() : QObject()
 {
@@ -58,14 +58,14 @@ void TiledPatternMaker::startEverything()
     WorkspaceViewer * viewer = WorkspaceViewer::getInstance();
 
     // connect singleton classes
-    canvas->init();
     view->init();
+    canvas->init();
     workspace->init();
     viewer->init();
 
     TilingManager::getInstance();
     MapEditor::getInstance();
-    TilingMaker * tMaker = TilingMaker::getInstance();
+    TilingMakerPtr tMaker = TilingMaker::getInstance();
 
     config->availableDesigns.insert(DESIGN_5,make_shared<Design5>(DESIGN_5,"Pattern 1 (created)"));
     config->availableDesigns.insert(DESIGN_6,make_shared<Design6>(DESIGN_6,"Pattern 2 (re-ceated)"));
@@ -102,7 +102,7 @@ void TiledPatternMaker::startEverything()
     cycler->init(thread);
 
     connect(this,   &TiledPatternMaker::sig_ready,         cycler,  &Cycler::slot_ready);
-    connect(this,   &TiledPatternMaker::sig_loadedTiling,  tMaker,  &TilingMaker::slot_setTiling);
+    connect(this,   &TiledPatternMaker::sig_loadedTiling,  tMaker.get(), &TilingMaker::slot_setTiling);
 
     connect(cycler,    &Cycler::sig_loadXML,        this,  &TiledPatternMaker::slot_loadXMLSimple);
     connect(cycler,    &Cycler::sig_loadTiling,     this,  &TiledPatternMaker::slot_loadTilingSimple);
@@ -182,12 +182,9 @@ void TiledPatternMaker::slot_buildDesign(eDesign design)
 {
     qDebug().noquote() << "TiledPatternMaker::slot_buildDesign" << Design::getDesignName(design);
 
-    if (config->autoClear)
-    {
-        canvas->dump(true);
-        workspace->clearDesigns();
-    }
-    canvas->dump(true);
+    view->dump(true);
+    workspace->clearDesigns();
+    view->dump(true);
 
     DesignPtr d = config->availableDesigns.value(design);
     //d->init();
@@ -206,8 +203,8 @@ void TiledPatternMaker::slot_loadXML(QString name)
     qDebug().noquote() << "TiledPatternMaker::slot_loadXML() <" << name << ">";
     view->setWindowTitle(QString("Loading: %1").arg(name));
     QCoreApplication::processEvents();
-    canvas->dump(true);
-    bool rv = workspace->loadDesignXML(name);
+    view->dump(true);
+    bool rv = workspace->loadMosaic(name);
     if (rv)
     {
         emit sig_viewWS();
@@ -225,7 +222,7 @@ void TiledPatternMaker::slot_loadXMLSimple(QString name)
 {
     qDebug().noquote() << "TiledPatternMaker::slot_loadXML() <" << name << ">";
     view->setWindowTitle(QString("Loading: %1").arg(name));
-    bool rv = workspace->loadDesignXML(name);
+    bool rv = workspace->loadMosaic(name);
     if (rv)
     {
         emit sig_viewWS();
@@ -233,11 +230,11 @@ void TiledPatternMaker::slot_loadXMLSimple(QString name)
     }
 }
 
-void TiledPatternMaker::slot_saveXML(eWsData wsdata, QString filename)
+void TiledPatternMaker::slot_saveXML(QString filename)
 {
     qDebug() << "TiledPatternMaker::slot_saveXML()";
     QString savedFile;
-    bool rv = workspace->saveStyledDesign(wsdata,filename,savedFile,false);
+    bool rv = workspace->saveMosaic(filename,savedFile,false);
     if (rv)
     {
         MapEditor::getInstance()->keepStash(savedFile);
@@ -282,7 +279,7 @@ void TiledPatternMaker::slot_loadTilingSimple(QString name)
 // usaed by cycler
 void TiledPatternMaker::slot_saveAsBMP(QString name)
 {
-    workspace->loadDesignXML(name);
+    workspace->loadMosaic(name);
     emit sig_viewWS();
     canvas->savePixmap(name);
     emit sig_ready();
@@ -302,61 +299,38 @@ void TiledPatternMaker::slot_forceUpdateStyles()
     forceUpdateStyles();
 }
 
-void TiledPatternMaker::slot_render(eRender type)
+void TiledPatternMaker::slot_render()
 {
-    if (type == RENDER_LOADED)
-    {
-        slot_renderLoaded();
-    }
-    else
-    {
-        Q_ASSERT(type == RENDER_WS);
-        slot_renderWS();
-    }
-}
-
-void TiledPatternMaker::slot_renderWS()
-{
-    StyledDesign & sd  = workspace->getStyledDesign(WS_TILING);
-    resetProtos(sd);
-    resetStyles(sd);
-
-    PrototypePtr pp = workspace->getPrototype(WS_TILING);
-    if (pp)
-    {
-        pp->resetProtoMap();
-    }
+    MosaicPtr mosaic  = workspace->getMosaic();
+    resetProtos(mosaic);
+    resetStyles(mosaic);
 
     emit sig_viewWS();
 }
 
-void TiledPatternMaker::slot_renderLoaded()
+void TiledPatternMaker::resetProtos(MosaicPtr mosaic)
 {
-    StyledDesign & sd  = workspace->getStyledDesign(WS_LOADED);
-    resetProtos(sd);
-    resetStyles(sd);
+    if (!mosaic) return;
 
-    PrototypePtr pp = workspace->getPrototype(WS_LOADED);
-    if (pp)
-    {
-        pp->resetProtoMap();
-    }
-
-    emit sig_viewWS();
-}
-
-
-void TiledPatternMaker::resetProtos(StyledDesign & sd)
-{
     // reset prototypes
-    PrototypePtr pp = sd.getPrototype();
-    pp->resetProtoMap();
+    const StyleSet & sset = mosaic->getStyleSet();
+    for (auto it = sset.begin(); it != sset.end(); it++)
+    {
+        StylePtr s = *it;
+        PrototypePtr pp = s->getPrototype();
+        if (pp)
+        {
+            pp->resetProtoMap();
+        }
+    }
 }
 
-void TiledPatternMaker::resetStyles(StyledDesign & sd)
+void TiledPatternMaker::resetStyles(MosaicPtr mosaic)
 {
+    if (!mosaic) return;
+
     // reset styles
-    const StyleSet & sset = sd.getStyleSet();
+    const StyleSet & sset = mosaic->getStyleSet();
     for (auto it = sset.begin(); it != sset.end(); it++)
     {
         StylePtr s = *it;
@@ -366,13 +340,15 @@ void TiledPatternMaker::resetStyles(StyledDesign & sd)
 
 void TiledPatternMaker::forceUpdateStyles()
 {
-    eWsData ws =  (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
-    StyledDesign & sd  = workspace->getStyledDesign(ws);
-    const StyleSet & sset = sd.getStyleSet();
-    for (auto it = sset.begin(); it != sset.end(); it++)
+    MosaicPtr mosaic  = workspace->getMosaic();
+    if (mosaic)
     {
-        StylePtr s = *it;
-        s->forceUpdateLayer();
+        const StyleSet & sset = mosaic->getStyleSet();
+        for (auto it = sset.begin(); it != sset.end(); it++)
+        {
+            StylePtr s = *it;
+            s->forceUpdateLayer();
+        }
     }
 }
 
@@ -390,8 +366,19 @@ void TiledPatternMaker::slot_bringToPrimaryScreen()
     QList<QScreen *> screenList = qApp->screens();
     QScreen * primary = screenList[screen];
 
-    view->windowHandle()->setScreen(primary);
-    view->move(primary->geometry().center() - view->rect().center());
+    QWindow * wh = view->windowHandle();
+    if (wh)
+    {
+        wh->setScreen(primary);
+        view->move(primary->geometry().center() - view->rect().center());
+        view->setWindowState( (view->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
+        view->raise();  // for MacOS
+        view->activateWindow();  // for windows
+        controlPanel->move(primary->geometry().center() - view->rect().center());
+        controlPanel->setWindowState( (controlPanel->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
+        controlPanel->raise();  // for MacOS
+        controlPanel->activateWindow();  // for windows
+    }
 }
 
 void TiledPatternMaker::slot_splitScreen()
@@ -515,6 +502,9 @@ void TiledPatternMaker::slot_compareImagesReplace(QString fileLeft, QString file
 
 void TiledPatternMaker::slot_compareImages(QString fileLeft, QString fileRight)
 {
+    //qDebug() << "fileLeft " << fileLeft;
+    //qDebug() << "fileRight" << fileRight;
+
     static bool showFirst   = false;
 
     bool autoMode     = config->autoCycle;
@@ -544,15 +534,17 @@ void TiledPatternMaker::slot_compareImages(QString fileLeft, QString fileRight)
         return;
     }
 
-    QImage left(fileLeft);
-    QImage right(fileRight);
+    QString pathLeft  = config->compareDir0 + "/" + fileLeft;
+    QString pathRight = config->compareDir1 + "/" + fileRight;
+    QImage left(pathLeft);
+    QImage right(pathRight);
 
     if (left == right)
     {
-        qDebug() << "same     " << fileLeft;
+        qDebug() << "same     " << pathLeft;
         QString str = "Images are the same ";
         emit sig_compareResult(str);
-        QPixmap  pm = makeTextPixmap(str,fileLeft,fileRight);
+        QPixmap  pm = makeTextPixmap(str,pathLeft,pathRight);
         if (!autoMode)
         {
             SplatCompareResult(pm,str);
@@ -566,7 +558,7 @@ void TiledPatternMaker::slot_compareImages(QString fileLeft, QString fileRight)
 
     // files are different
 
-    qDebug() << "different" << fileLeft;
+    qDebug() << "different" << pathLeft;
     QString str = "Images are different";
     emit sig_compareResult(str);    // sets page_debug status
 
@@ -581,8 +573,8 @@ void TiledPatternMaker::slot_compareImages(QString fileLeft, QString fileRight)
         // display differences
         if (left.size() != right.size())
         {
-            QString str1 = QString("%1 = %2x%3").arg(fileLeft).arg(left.width()).arg(left.height());
-            QString str2 = QString("%1 = %2x%3").arg(fileRight).arg(right.width()).arg(right.height());
+            QString str1 = QString("%1 = %2x%3").arg(pathLeft).arg(left.width()).arg(left.height());
+            QString str2 = QString("%1 = %2x%3").arg(pathRight).arg(right.width()).arg(right.height());
             QPixmap  pm = makeTextPixmap("Images different sizes:",str1,str2);
             QString str = "Images are different sizes";
             emit sig_compareResult(str);    // sets page_debug status
@@ -611,11 +603,11 @@ void TiledPatternMaker::slot_compareImages(QString fileLeft, QString fileRight)
 
         if (config->compare_transparent)
         {
-            SplatCompareResultTransparent(pixmap, QString("Image Differences (%1) (%2").arg(fileLeft).arg(fileRight));
+            SplatCompareResultTransparent(pixmap, QString("Image Differences (%1) (%2").arg(pathLeft).arg(pathRight));
         }
         else
         {
-            SplatCompareResult(pixmap, QString("Image Differences (%1) (%2").arg(fileLeft).arg(fileRight));
+            SplatCompareResult(pixmap, QString("Image Differences (%1) (%2").arg(pathLeft).arg(pathRight));
         }
     }
 
@@ -625,11 +617,11 @@ void TiledPatternMaker::slot_compareImages(QString fileLeft, QString fileRight)
         showFirst = !showFirst;
         if (showFirst)
         {
-            SplatShowImage(left,fileLeft);
+            SplatShowImage(left,pathLeft);
         }
         else
         {
-            SplatShowImage(right,fileRight);
+            SplatShowImage(right,pathRight);
         }
     }
 }

@@ -42,7 +42,7 @@
 #define AlhambraGreen "#234b30"
 #define AlhambraGold  "#c59c0c"
 
-class Tile : public QGraphicsItemGroup
+class Tile : public Layer
 {
 public:
     Tile(int Row = 0, int Col = 0);
@@ -50,22 +50,14 @@ public:
 
     void setTilePosition(int Row, int Col) {row = Row; col = Col;}
 
-    void  setLoc(QPointF loc)       { setPos(loc); }
-    void  setLoc(qreal x, qreal y)  { setPos(x,y); }
-    QPointF getLoc() { return pos(); }
-
     int getRow() { return row;}
     int getCol() { return col;}
 
-    QVector<Layer*> & getLayers() {return tileLayers;}
-    Layer *  addLayer(qreal zLevel = 0.0);
-    void     addLayer(Layer * layer, qreal zlevel = 0.0);
-    Layer *  getLayer(int index);
+    LayerPtr addLayer(int zLevel = 0);
+    void     addLayer(LayerPtr layer, int zlevel = 0);
 
     virtual bool doStep(int index);
     virtual void reset() {}
-
-    void info();
 
     static int refs;
 
@@ -74,8 +66,6 @@ protected:
 
     bool odd (int i) { return ((i&1) == 1);}
     bool even(int i) { return ((i&1) == 0);}
-
-    QVector<Layer*>   tileLayers;
 
     int     stepIndex;
 

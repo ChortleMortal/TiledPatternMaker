@@ -28,7 +28,7 @@
 #include <QtCore>
 #include <QtGui>
 #include "base/shared.h"
-#include "base/canvasSettings.h"
+#include "base/canvas_settings.h"
 
 class Configuration;
 class Workspace;
@@ -110,7 +110,7 @@ protected:
     qreal           yOffset2;
 
     Configuration * config;
-    Canvas        * canvas;
+    View          * view;
     Workspace     * workspace;
 
     QVector<PatternPtr> patterns;

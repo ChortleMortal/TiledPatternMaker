@@ -26,15 +26,15 @@
 #include "base/shared.h"
 #include "base/tiledpatternmaker.h"
 #include "designs/patterns.h"
-#include "tapp/Prototype.h"
-#include "style/Style.h"
+#include "tapp/prototype.h"
+#include "style/style.h"
 
 using std::string;
 
 
 page_style_figure_info:: page_style_figure_info(ControlPanel *panel)  : panel_page(panel, "Style Figure Info")
 {
-    figureTable = new QTableWidget(this);
+    figureTable = new AQTableWidget(this);
     figureTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     figureTable->setColumnCount(2);
     figureTable->setColumnWidth(0,40);
@@ -56,7 +56,7 @@ void  page_style_figure_info::onEnter()
     showFiguresFromStyles();
 
     figureTable->resizeColumnsToContents();
-    adjustTableSize(figureTable);
+    figureTable->adjustTableSize();
     updateGeometry();
 }
 
@@ -67,9 +67,12 @@ void  page_style_figure_info::refreshPage()
 void page_style_figure_info::showFiguresFromStyles()
 {
     int row = 0;
-    eWsData wsdata      =  (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
-    StyledDesign & sd   = workspace->getStyledDesign(wsdata);
-    const StyleSet sset = sd.getStyleSet();
+    MosaicPtr mosaic = workspace->getMosaic();
+    if (!mosaic)
+    {
+        return;
+    }
+    const StyleSet sset = mosaic->getStyleSet();
     for (auto style : sset)
     {
         PrototypePtr pp = style->getPrototype();

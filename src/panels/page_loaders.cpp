@@ -76,40 +76,67 @@ void page_loaders::setupUI()
     tileList->setSortingEnabled(false);
     tileList->setSelectionMode(QAbstractItemView::SingleSelection);
 
-    pbLoadShapes = new QPushButton("Load Shape Factories");
+    pbLoadShapes = new QPushButton("Load Shapes");
+    pbLoadShapes->setFixedWidth(129);
     pbLoadTiling = new QPushButton("Load Tiling");
-    pbLoadXML    = new QPushButton("Load Design");
+    pbLoadTiling->setFixedWidth(129);
+    pbLoadXML    = new QPushButton("Load Mosaic");
+    pbLoadXML->setFixedWidth(129);
+
+    cbAutoLoadMosaics  = new QCheckBox("Auto-load");
+    cbAutoLoadTiling  = new QCheckBox("Auto-load");
+    cbAutoLoadDesigns = new QCheckBox("Auto-load");
 
     tilingFilter = new QLineEdit();
     designFilter = new QLineEdit();
     designFilterCheck = new QCheckBox();
     tilingFilterCheck = new QCheckBox();
 
+    QLabel * label1 = new QLabel("Filter:");
+    QLabel * label2 = new QLabel("Filter:");
+
     QGridLayout * grid = new QGridLayout;
 
-    QLabel * label = new QLabel("Filter : ");
-    grid->addWidget(label,0,0, Qt::AlignRight);
-
+    // designs
     QHBoxLayout * hbox = new QHBoxLayout();
+
+    // design patterns (shapes)
+    hbox = new QHBoxLayout();
+    hbox->addWidget(cbAutoLoadDesigns);
+    hbox->addWidget(pbLoadShapes);
+    grid->addLayout(hbox,1,0);
+    grid->addWidget(designList,2,0);
+
+    // Mosaics
+    hbox = new QHBoxLayout();
+    hbox->addWidget(label1);
     hbox->addWidget(designFilterCheck);
     hbox->addWidget(designFilter);
     grid->addLayout(hbox,0,1);
-
     hbox = new QHBoxLayout();
+    hbox->addWidget(cbAutoLoadMosaics);
+    hbox->addWidget(pbLoadXML);
+    grid->addLayout(hbox,1,1);
+    grid->addWidget(xmlList,2,1);
+
+    // tiling
+    hbox = new QHBoxLayout();
+    hbox->addWidget(label2);
     hbox->addWidget(tilingFilterCheck);
     hbox->addWidget(tilingFilter);
     grid->addLayout(hbox,0,2);
-
-    grid->addWidget(pbLoadShapes,1,0);
-    grid->addWidget(pbLoadXML,1,1);
-    grid->addWidget(pbLoadTiling,1,2);
-
-    grid->addWidget(designList,2,0);
-    grid->addWidget(xmlList,2,1);
+    hbox = new QHBoxLayout();
+    hbox->addWidget(cbAutoLoadTiling);
+    hbox->addWidget(pbLoadTiling);
+    grid->addLayout(hbox,1,2);
     grid->addWidget(tileList,2,2);
 
     vbox->addLayout(grid);
     vbox->addStretch();
+
+    cbAutoLoadMosaics->setChecked(config->autoLoadStyles);
+    cbAutoLoadTiling->setChecked(config->autoLoadTiling);
+    cbAutoLoadDesigns->setChecked(config->autoLoadDesigns);
 }
 
 void page_loaders::makeConnections()
@@ -142,6 +169,10 @@ void page_loaders::makeConnections()
 
     connect(tileList,       &QListWidget::currentItemChanged, this,  &page_loaders::tilingSelected);
     connect(tileList,       SIGNAL(rightClick(QPoint)),       this, SLOT(tileRightClick(QPoint)));
+
+    connect(cbAutoLoadMosaics,   SIGNAL(clicked(bool)),         this,    SLOT(autoLoadStylesClicked(bool)));
+    connect(cbAutoLoadTiling,   SIGNAL(clicked(bool)),         this,    SLOT(autoLoadTilingClicked(bool)));
+    connect(cbAutoLoadDesigns,  SIGNAL(clicked(bool)),         this,    SLOT(autoLoadDesignsClicked(bool)));
 }
 
 void page_loaders::slot_designCheck(bool check)
@@ -174,12 +205,46 @@ void page_loaders::loadXML()
     {
         return;
     }
-    emit sig_viewStyles();  // do this first to setup the WS (ignores config lockView)
+
     emit sig_loadXML(selectedXMLName);
-    if (config->viewerType == VIEW_DESIGN || config->viewerType == VIEW_TILING)
+
+    if (!config->lockView)
     {
-        emit panel->sig_selectViewer(VIEW_DESIGN,DV_LOADED_STYLE);
+        if (config->viewerType != VIEW_MOSAIC)
+        {
+            emit panel->sig_selectViewer(VIEW_MOSAIC);
+        }
     }
+    emit sig_viewWS();
+}
+
+void page_loaders::loadTiling()
+{
+    QString name = selectedTilingName;
+    emit sig_loadTiling(name);
+
+    if (!config->lockView)
+    {
+        if (config->viewerType != VIEW_TILING_MAKER)
+        {
+            emit panel->sig_selectViewer(VIEW_TILING);
+        }
+    }
+    emit sig_viewWS();
+}
+
+void page_loaders::loadShapes()
+{
+    emit sig_buildDesign(selectedDesign);
+
+    if (!config->lockView)
+    {
+        if (config->viewerType != VIEW_DESIGN)
+        {
+            emit panel->sig_selectViewer(VIEW_DESIGN);
+        }
+    }
+    emit sig_viewWS();
 }
 
 void page_loaders::slot_loadedXML(QString name)
@@ -345,30 +410,6 @@ void page_loaders::loadTilingsCombo()
     tileList->blockSignals(false);
 }
 
-void page_loaders::loadTiling()
-{
-    if (!config->lockView)
-    {
-        if (config->viewerType != VIEW_TILING_MAKER)
-        {
-            emit panel->sig_selectViewer(VIEW_TILING, TV_WORKSPACE);
-        }
-        emit sig_viewWS();
-    }
-
-    QString name = selectedTilingName;
-    emit sig_loadTiling(name);
-}
-
-void page_loaders::loadShapes()
-{
-    if (config->viewerType == VIEW_DESIGN)
-    {
-        emit panel->sig_selectViewer(VIEW_DESIGN,DV_SHAPES);
-    }
-    emit sig_buildDesign(selectedDesign);
-}
-
 void page_loaders::designSelected(QListWidgetItem * item, QListWidgetItem* oldItem)
 {
     Q_UNUSED(oldItem)
@@ -472,11 +513,15 @@ void page_loaders::openXML()
 
     QStringList qsl;
     qsl << path;
-#ifdef WIN32
-    QString cmd = "C:/Program Files (x86)/Notepad++/notepad++.exe";
-#else
-    QString cmd = "gedit";
-#endif
+    QString cmd = config->xmlTool;
+    if (!QFile::exists(cmd))
+    {
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Information);
+        box.setText("Please configure an XML viewet/editor");
+        box.exec();
+        return;
+    }
     qDebug() << "starting"  << cmd  << qsl;
     QProcess::startDetached(cmd,qsl);
 }
@@ -490,7 +535,7 @@ void page_loaders::rebaseXML()
     QString oldDatPath = FileServices::getDesignTemplateFile(name);
     if (oldXMLPath.isEmpty())
     {
-        QMessageBox box;
+        QMessageBox box(this);
         box.setText(QString("File <%1>not found").arg(name));
         box.exec();
         return;
@@ -498,7 +543,7 @@ void page_loaders::rebaseXML()
 
     if (!QFile::exists(oldXMLPath))
     {
-        QMessageBox box;
+        QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
         box.setText("Could not find file to rebase");
         box.exec();
@@ -582,7 +627,7 @@ void page_loaders::rebaseXML()
     bool rv = afile.copy(newXMLPath);
     if (!rv)
     {
-        QMessageBox box;
+        QMessageBox box(this);
         box.setIcon(QMessageBox::Critical);
         box.setText("Rebase - FAILED during copy");
         box.exec();
@@ -626,7 +671,7 @@ void page_loaders::renameXML()
     QString newName = dlg.newEdit->text();
     if (name == newName)
     {
-        QMessageBox box;
+        QMessageBox box(this);
         box.setIcon(QMessageBox::Critical);
         box.setText("Name not changed in dlg.  Must have a different name");
         box.exec();
@@ -645,7 +690,7 @@ void page_loaders::renameXML()
 
     if (!QFile::exists(oldXMLPath))
     {
-        QMessageBox box;
+        QMessageBox box(this);
         box.setIcon(QMessageBox::Critical);
         box.setText("Could not find existing file to rename");
         box.exec();
@@ -664,7 +709,7 @@ void page_loaders::renameXML()
     slot_newXML();
 
     // report satus
-    QMessageBox box;
+    QMessageBox box(this);
     if (rv)
     {
         selectedXMLName = newName;
@@ -688,7 +733,7 @@ void page_loaders::deleteXML()
     QString name = selectedXMLName;
     Q_ASSERT(!name.contains(".xml"));
 
-    QMessageBox box;
+    QMessageBox box(this);
     box.setIcon(QMessageBox::Question);
     box.setText(QString("Delete file: %1.  Are you sure?").arg(name));
     box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
@@ -703,7 +748,7 @@ void page_loaders::deleteXML()
 
     if (XMLPath.isEmpty())
     {
-        QMessageBox box;
+        QMessageBox box(this);
         box.setText(QString("File <%1>not found").arg(name));
         box.exec();
         return;
@@ -711,7 +756,7 @@ void page_loaders::deleteXML()
 
     if (!QFile::exists(XMLPath))
     {
-       QMessageBox box;
+       QMessageBox box(this);
        box.setIcon(QMessageBox::Critical);
        box.setText(QString("File <%1>not found").arg(XMLPath));
        box.exec();
@@ -724,7 +769,7 @@ void page_loaders::deleteXML()
     slot_newXML();
 
     // report satus
-    QMessageBox box2;
+    QMessageBox box2(this);
     if (rv)
     {
         slot_loadedXML(selectedXMLName);
@@ -749,11 +794,15 @@ void page_loaders::openTiling()
     }
     QStringList qsl;
     qsl << path;
-#ifdef WIN32
-    QString cmd = "C:/Program Files (x86)/Notepad++/notepad++.exe";
-#else
-    QString cmd = "gedit";
-#endif
+    QString cmd = config->xmlTool;
+    if (!QFile::exists(cmd))
+    {
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Information);
+        box.setText("Please configure an XML viewet/editor");
+        box.exec();
+        return;
+    }
     qDebug() << "starting"  << cmd  << qsl;
     QProcess::startDetached(cmd,qsl);
 }
@@ -778,7 +827,7 @@ void page_loaders::rebaseTiling()
 
     if (!QFile::exists(oldPath))
     {
-        QMessageBox box;
+        QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
         box.setText("Could not find file to rebase");
         box.exec();
@@ -849,7 +898,7 @@ void page_loaders::rebaseTiling()
     bool rv = afile.rename(newPath);
     if (!rv)
     {
-        QMessageBox box;
+        QMessageBox box(this);
         box.setIcon(QMessageBox::Critical);
         box.setText("Rebase - FAILED during copy");
         box.exec();
@@ -898,7 +947,7 @@ void page_loaders::renameTiling()
     QString newName = dlg.newEdit->text();
     if (name == newName)
     {
-        QMessageBox box;
+        QMessageBox box(this);
         box.setIcon(QMessageBox::Critical);
         box.setText("Name not changed in dlg.  Must have a different name");
         box.exec();
@@ -917,7 +966,7 @@ void page_loaders::renameTiling()
     QFile theFile(oldPath);
     if (!theFile.exists())
     {
-        QMessageBox box;
+        QMessageBox box(this);
         box.setIcon(QMessageBox::Critical);
         box.setText("Could not find existing file to rename");
         box.exec();
@@ -949,7 +998,7 @@ void page_loaders::renameTiling()
     }
 
     // report status
-    QMessageBox box;
+    QMessageBox box(this);
     if (rv)
     {
         QFile afile(oldPath);
@@ -991,7 +1040,7 @@ void page_loaders::deleteTiling()
     }
     msg += QString("Delete file: %1.  Are you sure?").arg(name);
 
-    QMessageBox box;
+    QMessageBox box(this);
     box.setIcon(QMessageBox::Question);
     box.setText(msg);
     box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
@@ -1004,7 +1053,7 @@ void page_loaders::deleteTiling()
     QString path = FileServices::getTilingFile(name);
     if (!QFile::exists(path))
     {
-        QMessageBox box;
+        QMessageBox box(this);
         box.setIcon(QMessageBox::Critical);
         box.setText(QString("File <%1>not found").arg(path));
         box.exec();
@@ -1016,7 +1065,7 @@ void page_loaders::deleteTiling()
     slot_newTile();
 
     // report status
-    QMessageBox box2;
+    QMessageBox box2(this);
     if (rv)
     {
         slot_newTile();
@@ -1052,7 +1101,7 @@ void  page_loaders::slot_whereTilingUsed()
     }
     results += "</pre>";
 
-    QMessageBox box;
+    QMessageBox box(this);
     box.setWindowTitle(QString("Where tiling %1 is used ").arg(name));
     box.setText(results);
     box.exec();
@@ -1184,4 +1233,19 @@ bool  page_loaders::putNewTilingNameIntoTiling(QString filename, QString newName
         rv = false;
     }
     return rv;
+}
+
+void  page_loaders::autoLoadStylesClicked(bool enb)
+{
+    config->autoLoadStyles = enb;
+}
+
+void  page_loaders::autoLoadTilingClicked(bool enb)
+{
+    config->autoLoadTiling = enb;
+}
+
+void  page_loaders::autoLoadDesignsClicked(bool enb)
+{
+    config->autoLoadDesigns = enb;
 }

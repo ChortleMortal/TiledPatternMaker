@@ -23,7 +23,7 @@
  */
 
 #include "makers/map_editor/map_selection.h"
-#include "geometry/Map.h"
+#include "geometry/map.h"
 #include "base/utilities.h"
 
 static bool debugInfoSelection = false;

@@ -31,28 +31,20 @@
 ///
 ////////////////////////////////////////////////
 
-Border::Border()
+Border::Border() : Layer("Border")
 {
     type = BORDER_NONE;  // undefined
     setZValue(BORDER_ZLEVEL);
     sp = make_shared<ShapeFactory>(2.0);
-    sp->setParentItem(this);
+    addSubLayer(sp);
 
     view = View::getInstance();
-    connect(view, &View::sig_resize, this, &Border::construct);
+    connect(view, &View::sig_reconstructBorder, this, &Border::construct);
 }
 
 Border::~Border()
 {
     //qDebug() << "Border destructor";
-}
-
-void Border::reconnectChildren()
-{
-    if (sp)
-    {
-        sp->setParentItem(this);
-    }
 }
 
 ////////////////////////////////////////////////
@@ -73,7 +65,7 @@ BorderPlain::BorderPlain(qreal width, QColor color)
 void BorderPlain::construct()
 {
     sp->reset();
-    size = view->sceneRect().size();
+    size = view->size();
 
     QPen pen(color,width);
 
@@ -108,7 +100,7 @@ BorderTwoColor::BorderTwoColor(QColor color1, QColor color2, qreal width)
 void BorderTwoColor::construct()
 {
     sp->reset();
-    size = view->sceneRect().size();
+    size = view->size();
 
     qreal w   = size.width();
     qreal h  = size.height();

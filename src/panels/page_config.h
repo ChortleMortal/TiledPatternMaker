@@ -50,6 +50,7 @@ private slots:
     void    selectRootImageDir();
     void    selectNewDesignDir();
     void    selectExamplesDir();
+    void    selectXMLTool();
 
     void    rootDesignChanged(QString txt);
     void    rootImageChanged(QString txt);
@@ -67,6 +68,7 @@ private slots:
     void    slot_gridSpacingChanged(qreal value);
     void    slot_gridWidthChanged(int value);
     void    slot_showCenterChanged(int state);
+    void    slot_scaleSceneToView(int state);
     void    slot_hideBackChanged(int state);
     void    slot_centeredChanged(int state);
 
@@ -74,12 +76,15 @@ protected:
     void  updatePaths();
 
 private:
+    QCheckBox   *scaleSceneToView;
+
     QPushButton *rootDesignBtn;
     QPushButton *newDesignBtn;
     QPushButton *rootTileBtn;
     QPushButton *newTileBtn;
     QPushButton *rootImageBtn;
     QPushButton *examplesBtn;
+    QPushButton *xmlToolBtn;
 
     QLineEdit   *le_rootDesign;
     QLineEdit   *le_newDesign;
@@ -87,6 +92,7 @@ private:
     QLineEdit   *le_newTile;
     QLineEdit   *le_rootImage;
     QLineEdit   *le_examples;
+    QLineEdit   *le_xmlTool;
 
     DoubleSpinSet * gridSpacing;
 

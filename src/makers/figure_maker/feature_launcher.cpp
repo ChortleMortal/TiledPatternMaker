@@ -24,7 +24,7 @@
 
 #include "makers/figure_maker/feature_launcher.h"
 #include "makers/figure_maker/master_figure_editor.h"
-#include "style/Style.h"
+#include "style/style.h"
 #include <QtWidgets>
 
 ////////////////////////////////////////////////////////////////////////////
@@ -51,101 +51,94 @@ FeatureLauncher::FeatureLauncher()
     //setGeometry(QRect(0,0,300,300));
 }
 
-// this is called with a new tiling or when tiling has changed
-// it creates new DesignElements
-FeatureBtnPtr  FeatureLauncher::launchFromPrototype(PrototypePtr proto)
+void FeatureLauncher::launch(PrototypePtr proto, TilingPtr tiling)
 {
     buttons.clear();
 
-    if (!proto)
+    if (!proto || !tiling)
     {
         FeatureBtnPtr fbp;
-        return fbp;
-    }
-
-    tiling = proto->getTiling();
-
-
-    if (!tiling)
-    {
-        FeatureBtnPtr fbp;
-        return fbp;
+        setCurrentButton(fbp);
+        return;
     }
 
     // The tiling keep track of PlacedFeatures, but (right now) it
     // doesn't know what _Feature_s those PlacedFeatures refer to.
     // So we have to uniquify the list of Features
-
-    QVector<FeaturePtr> fs = tiling->getUniqueFeatures();
+    QVector<FeaturePtr> features = tiling->getUniqueFeatures();
+    if (features.size() == 0)
+    {
+        FeatureBtnPtr fbp;
+        setCurrentButton(fbp);
+        return;
+    }
 
     // If possible, obtain design elements from existing design,
     // so when "reset with feature" is eventually called, it can deal with
     // an existing figure.
+    // we also have to deal with too many or too few design elements
 
     QVector<DesignElementPtr> & dels = proto->getDesignElements();
     if (dels.size() == 0)
     {
-        for (auto feature : fs)
+        create(proto,features);
+    }
+    else
+    {
+        QVector<DesignElementPtr> unmatchedDels;
+        // first verify existing dels are valid
+        for (auto del : dels)
+        {
+            if (!features.contains(del->getFeature()))
+            {
+                unmatchedDels.push_back(del);
+            }
+        }
+        for (auto del : unmatchedDels)
+        {
+            proto->removeElement(del);
+        }
+        // does the feature have a matching del
+        for (auto feature : features)
+        {
+            bool matched = false;
+            for (auto del : dels)
+            {
+                if (feature == del->getFeature())
+                {
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched)
+            {
+                DesignElementPtr dep = make_shared<DesignElement>(feature);
+                proto->addElement(dep);
+            }
+        }
+    }
+
+    populate(dels);
+
+    Q_ASSERT(buttons.size());
+    setCurrentButton(buttons[0]);
+}
+
+void FeatureLauncher::create(PrototypePtr proto, QVector<FeaturePtr> & features)
+{
+    int count = 0;
+    for (auto feature : features)
+    {
+        if (++count <= MAX_UNIQUE_FEATURES)
         {
             DesignElementPtr dep = make_shared<DesignElement>(feature);
             proto->addElement(dep);
         }
-    }
-    populate(dels);
-
-#if 0
-    for(int idx = 0; idx < fs.size(); idx++)
-    {
-        FeaturePtr featp  = fs[idx];
-        DesignElementPtr dep;
-        if (idx < iDels)
-        {
-            // use existing figure
-            dep = make_shared<DesignElement>(featp,dels[idx]->getFigure());
-        }
         else
         {
-            // there is no figure
-            dep = make_shared<DesignElement>(featp);
+            qWarning() << "Too many unqique features in tiling. count = " << count;
         }
-
-        FeatureBtnPtr fb = make_shared<FeatureButton>(dep,idx);
-        buttons.push_back(fb);
-        fb->setSize( QSize( 130, 130 ) );
-        fb->installEventFilter(this);
-
-        int row = 0;
-        int col = 0;
-        getPosition(idx, row, col);
-        addWidget(fb.get(),row,col,Qt::AlignTop);
-
-        idx++;
     }
-#endif
-    Q_ASSERT(buttons.size());
-    return(buttons[0]);
-}
-
-// DAC added
-// This uses existing design elements
-FeatureBtnPtr  FeatureLauncher::launchFromStyle(StylePtr style)
-{
-    buttons.clear();
-
-    if (!style)
-    {
-        FeatureBtnPtr fbp;
-        return fbp;
-    }
-
-    PrototypePtr pp = style->getPrototype();
-    Q_ASSERT(pp);
-
-    QVector<DesignElementPtr> & dels = pp->getDesignElements();
-    populate(dels);
-
-    Q_ASSERT(buttons.size());
-    return(buttons[0]);
 }
 
 void FeatureLauncher::populate(QVector<DesignElementPtr> & dels)
@@ -229,7 +222,7 @@ void FeatureLauncher::setCurrentButton(FeatureBtnPtr btn)
 
 void FeatureLauncher::getPosition(int index, int & row, int & col)
 {
-    Q_ASSERT(index < 8);
+    Q_ASSERT(index < MAX_UNIQUE_FEATURES);
     if (index < 4)
     {
         row = index;

@@ -66,16 +66,14 @@ public slots:
 
     void slot_loadXML(QString name);
     void slot_loadXMLSimple(QString name);
-    void slot_saveXML(eWsData wsdata, QString name);
+    void slot_saveXML(QString name);
     void slot_loadTiling(QString name);
     void slot_loadTilingSimple(QString name);
     void slot_saveAsBMP(QString name);
     void slot_saveTilingAsBMP(QString name);
 
     //  resets protos and syles
-    void slot_render(eRender type);
-    void slot_renderWS();
-    void slot_renderLoaded();
+    void slot_render();
 
     void slot_forceUpdateStyles();
     void slot_raiseMenu();
@@ -88,8 +86,8 @@ public slots:
     void slot_view_image(QString filename);
 
 protected:
-    void resetStyles(StyledDesign & sd);
-    void resetProtos(StyledDesign & sd);
+    void resetStyles(MosaicPtr mosaic);
+    void resetProtos(MosaicPtr mosaic);
     void init();
     void SplatShowImage(QImage & image, QString title);
     void SplatCompareResult(QPixmap & pixmap, QString title);

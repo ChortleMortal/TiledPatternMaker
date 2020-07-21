@@ -2,8 +2,8 @@
 #define FACECYCLES_H
 
 #include <QPolygonF>
-#include "geometry/Map.h"
-#include "geometry/Faces.h"
+#include "geometry/map.h"
+#include "geometry/faces.h"
 
 using namespace std;
 

@@ -25,9 +25,9 @@
 #include "page_design_elements.h"
 #include "base/tiledpatternmaker.h"
 #include "designs/patterns.h"
-#include "style/Style.h"
-#include "viewers/placeddesignelementview.h"
-#include "viewers/PrototypeView.h"
+#include "style/style.h"
+#include "viewers/placed_designelement_view.h"
+#include "viewers/prototype_view.h"
 
 using std::string;
 
@@ -40,20 +40,12 @@ page_design_elements:: page_design_elements(ControlPanel * cpanel)  : panel_page
     QPushButton * refreshButton = new QPushButton("Refresh");
     QHBoxLayout * hbox = new QHBoxLayout;
 
-    sourceStyle = new QRadioButton("Source: style");
-    sourceWS    = new QRadioButton("Source: workspace");
-    bgroup.addButton(sourceStyle,DEL_STYLES);
-    bgroup.addButton(sourceWS,DEL_WS);
-    bgroup.button(config->delViewer)->setChecked(true);
-
     hbox->addWidget(wsProtoLabel);
     hbox->addWidget(refreshButton);
-    hbox->addWidget(sourceStyle);
-    hbox->addWidget(sourceWS);
     hbox->addStretch();
     vbox->addLayout(hbox);
 
-    delTable = new QTableWidget(this);
+    delTable = new AQTableWidget(this);
     delTable->setColumnCount(5);
     delTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     QStringList qslH;
@@ -64,10 +56,8 @@ page_design_elements:: page_design_elements(ControlPanel * cpanel)  : panel_page
 
     vbox->addStretch();
 
-    sourceWS->setChecked(true);     // arbitrary default
 
     connect(refreshButton,      &QPushButton::clicked,             this, &page_design_elements::onEnter);
-    connect(&bgroup,            SIGNAL(buttonClicked(int)),        this, SLOT(slot_sourceSelect(int)));
     connect(delTable,           &QTableWidget::cellClicked,        this, &page_design_elements::slot_rowSelected);
 
     connect(maker,  &TiledPatternMaker::sig_loadedTiling,   this,   &page_design_elements::slot_loadedTiling);
@@ -79,69 +69,54 @@ page_design_elements:: page_design_elements(ControlPanel * cpanel)  : panel_page
 
 void  page_design_elements::refreshPage()
 {
-    bgroup.button(config->delViewer)->setChecked(true);
-}
-
-void page_design_elements::slot_sourceSelect(int id)
-{
-    config->delViewer = eDELViewer(id);
-    onEnter();
 }
 
 void  page_design_elements::onEnter()
 {
     delTable->clearContents();
 
-    PrototypePtr proto = findPrototype();
-    if (!proto)
+    PrototypePtr proto = workspace->getSelectedPrototype();
+    if (proto)
     {
-        return;
-    }
+        wsProtoLabel->setText(QString("WS Proto ptr: is 0x%1").arg(addr(proto.get())));
 
-    QVector<DesignElementPtr> & dels = proto->getDesignElements();
-    int row = 0;
-    for (auto it = dels.begin(); it != dels.end(); it++)
-    {
-        delTable->setRowCount(row+1);
+        QVector<DesignElementPtr> & dels = proto->getDesignElements();
+        int row = 0;
+        for (auto it = dels.begin(); it != dels.end(); it++)
+        {
+            delTable->setRowCount(row+1);
 
-        DesignElementPtr de = *it;
-        FeaturePtr       fp = de->getFeature();
-        FigurePtr      figp = de->getFigure();
+            DesignElementPtr de = *it;
+            FeaturePtr       fp = de->getFeature();
+            FigurePtr      figp = de->getFigure();
 
-        // DesignElement
-        QTableWidgetItem * twi = new QTableWidgetItem(addr(de.get()));
-        delTable->setItem(row,DEL_COL_DEL,twi);
+            // DesignElement
+            QTableWidgetItem * twi = new QTableWidgetItem(addr(de.get()));
+            delTable->setItem(row,DEL_COL_DEL,twi);
 
-        //  "Feature"
-        twi = new QTableWidgetItem(addr(fp.get()));
-        delTable->setItem(row,DEL_COL_FEATURE,twi);
+            //  "Feature"
+            twi = new QTableWidgetItem(addr(fp.get()));
+            delTable->setItem(row,DEL_COL_FEATURE,twi);
 
-        // "Figure"
-        twi = new QTableWidgetItem(addr(figp.get()));
-        delTable->setItem(row,DEL_COL_FIGURE,twi);
+            // "Figure"
+            twi = new QTableWidgetItem(addr(figp.get()));
+            delTable->setItem(row,DEL_COL_FIGURE,twi);
 
-        // "Desc"
-        twi = new QTableWidgetItem(figp->getFigureDesc());
-        delTable->setItem(row,DEL_COL_DESC,twi);
+            // "Desc"
+            twi = new QTableWidgetItem(figp->getFigureDesc());
+            delTable->setItem(row,DEL_COL_DESC,twi);
 
-        // "Figure Type"
-        twi = new QTableWidgetItem(sFigType[figp->getFigType()]);
-        delTable->setItem(row,DEL_COL_FIG_TYPE,twi);
+            // "Figure Type"
+            twi = new QTableWidgetItem(sFigType[figp->getFigType()]);
+            delTable->setItem(row,DEL_COL_FIG_TYPE,twi);
 
-        row++;
+            row++;
+        }
     }
 
     delTable->resizeColumnsToContents();
-    adjustTableSize(delTable);
+    delTable->adjustTableSize();
     updateGeometry();
-}
-
-PrototypePtr page_design_elements::findPrototype()
-{
-    eWsData ws = (config->delViewer == DEL_STYLES) ? WS_LOADED : WS_TILING;
-    PrototypePtr proto = workspace->getPrototype(ws);
-    wsProtoLabel->setText(QString("WS Proto ptr: is 0x%1").arg(addr(proto.get())));
-    return proto;
 }
 
 void page_design_elements::slot_rowSelected(int row, int col)

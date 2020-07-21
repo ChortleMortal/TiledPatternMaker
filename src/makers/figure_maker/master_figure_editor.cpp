@@ -24,11 +24,11 @@
 
 #include "master_figure_editor.h"
 
-#include "figure_maker.h"
+#include "prototype_maker.h"
 #include "base/tiledpatternmaker.h"
-#include "tapp/Star.h"
-#include "tapp/ExtendedStar.h"
-#include "tapp/ExtendedRosette.h"
+#include "tapp/star.h"
+#include "tapp/extended_star.h"
+#include "tapp/extended_rosette.h"
 
 Q_DECLARE_METATYPE(FigureEditor *)
 
@@ -40,7 +40,7 @@ Q_DECLARE_METATYPE(FigureEditor *)
 // figure editors available in the applet and branches out to the right
 // kind of editor as the DesignElement being edited is changed.
 
-MasterFigureEditor::MasterFigureEditor(FigureMaker * ed)
+MasterFigureEditor::MasterFigureEditor(PrototypeMaker * ed)
 {
     figureMaker    = ed;
     config         = Configuration::getInstance();
@@ -99,7 +99,7 @@ MasterFigureEditor::MasterFigureEditor(FigureMaker * ed)
     setLayout(layout);
 
     connect(choiceCombo2, SIGNAL(currentIndexChanged(int)),  this, SLOT(slot_figureChoiceSelected(int)));
-    connect(this, &MasterFigureEditor::sig_figure_changed,   ed,   &FigureMaker::slot_figureChanged);
+    connect(this, &MasterFigureEditor::sig_figure_changed,   ed,   &PrototypeMaker::slot_figureChanged);
 }
 
 FigurePtr MasterFigureEditor::getFigureFromEditor()

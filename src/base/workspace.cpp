@@ -22,15 +22,15 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "base/canvas.h"
 #include "base/configuration.h"
 #include "base/workspace.h"
-#include "base/xmlwriter.h"
-#include "base/xmlloader.h"
+#include "base/xml_writer.h"
+#include "base/xml_loader.h"
 #include "base/fileservices.h"
 #include "base/tilingmanager.h"
 #include "base/utilities.h"
 #include "makers/tiling_maker/tiling_maker.h"
+#include "panels/panel.h"
 
 Workspace * Workspace::mpThis = nullptr;
 
@@ -54,20 +54,18 @@ void Workspace::releaseInstance()
 }
 
 Workspace::Workspace()
-{
-}
+{}
 
 void Workspace::init()
 {
     config = Configuration::getInstance();
-    canvas = Canvas::getInstance();
+    view   = View::getInstance();
 }
 
 Workspace::~Workspace()
 {
     clearDesigns();
-    ws[WS_LOADED].clear();
-    ws[WS_TILING].clear();
+    ws.clear();
 }
 
 void Workspace::clearDesigns()
@@ -83,18 +81,17 @@ void Workspace::clearDesigns()
 void Workspace::slot_clearCanvas()
 {
     // remove from scene but does not delete
-    canvas->clearScene();
+    view->clearView();
 }
 
 void Workspace::slot_clearWorkspace()
 {
-    canvas->dump(true);
+    view->dump(true);
 
     clearDesigns();
-    ws[WS_LOADED].clear();
-    ws[WS_TILING].clear();
+    ws.clear();
 
-    canvas->dump(true);
+    view->dump(true);
 }
 
 void Workspace::addDesign(DesignPtr d)
@@ -105,7 +102,7 @@ void Workspace::addDesign(DesignPtr d)
     qDebug() << designName << "addded to workspace";
 }
 
-bool Workspace::loadDesignXML(QString name)
+bool Workspace::loadMosaic(QString name)
 {
     qDebug() << "Workspace::loadTapratsXML()" << name;
 
@@ -117,9 +114,9 @@ bool Workspace::loadDesignXML(QString name)
     }
 #endif
 
-    canvas->dump(true);
-    ws[WS_LOADED].clear();
-    canvas->dump(true);
+    view->dump(true);
+    ws.mosaic.reset();
+    view->dump(true);
 
     QString file = FileServices::getDesignXMLFile(name);
     if (file.isEmpty())
@@ -141,30 +138,30 @@ bool Workspace::loadDesignXML(QString name)
 
     qDebug().noquote() << "Loading:"  << file;
 
-    StyledDesign * sd = &ws[WS_LOADED].styles;
     XmlLoader loader;
-    bool rv = loader.loadXML(file,sd);
+    MosaicPtr mosaic = loader.loadMosaic(file);
 
-    if (rv)
+    ws.mosaic = mosaic;
+
+    if (mosaic)
     {
         config->lastLoadedXML      = name;
         config->currentlyLoadedXML = name;
-        ws[WS_LOADED].styles.setName(name);
+        ws.mosaic->setName(name);
 
-        StylePtr sp = ws[WS_LOADED].styles.getFirstStyle();
-        if (sp)
+        const StyleSet & styleset = mosaic->getStyleSet();
+        for (auto style : styleset)
         {
-            PrototypePtr pp = sp->getPrototype();
+            PrototypePtr pp = style->getPrototype();
             if (pp)
             {
-                ws[WS_LOADED].prototype = sp->getPrototype();
+                addPrototype(pp);
+                setSelectedPrototype(pp);
                 DesignElementPtr dp = pp->getDesignElement(0);
-                if (dp)
-                {
-                    ws[WS_LOADED].desEle = dp;
-                }
+                setSelectedDesignElement(dp);
             }
         }
+        return true;
     }
     else
     {
@@ -172,11 +169,11 @@ bool Workspace::loadDesignXML(QString name)
         QMessageBox box;
         box.setText(str);
         box.exec();
+        return false;
     }
-    return rv;
 }
 
-bool Workspace::saveStyledDesign(eWsData wsdata, QString name, QString & savedName, bool forceOverwrite)
+bool Workspace::saveMosaic(QString name, QString & savedName, bool forceOverwrite)
 {
     QString filename = FileServices::getDesignXMLFile(name);
     if (!forceOverwrite)
@@ -217,9 +214,8 @@ bool Workspace::saveStyledDesign(eWsData wsdata, QString name, QString & savedNa
 
     qDebug() << "Saving XML to:"  << filename;
 
-    StyledDesign * sd = &getStyledDesign(wsdata);
     XmlWriter writer;
-    bool rv = writer.writeXML(filename,sd);
+    bool rv = writer.writeXML(filename,ws.mosaic);
 
     if (!forceOverwrite)
     {
@@ -228,6 +224,7 @@ bool Workspace::saveStyledDesign(eWsData wsdata, QString name, QString & savedNa
         if (rv)
         {
             astring ="File (" +  filename + ") - saved OK";
+            ws.mosaic->setName(name);
         }
         else
         {
@@ -245,14 +242,16 @@ bool Workspace::loadTiling(QString name)
 {
     TilingManager * tm = TilingManager::getInstance();
 
-    ws[WS_TILING].clear();
-    ws[WS_TILING].tiling = tm->loadTiling(name);
-
-    if (!ws[WS_TILING].tiling)
+    TilingPtr tp = tm->loadTiling(name);
+    if (tp)
+    {
+        ws.tiling = tp;
+        return  true;
+    }
+    else
     {
         return false;
     }
-    return true;
 }
 
 bool Workspace::saveTiling(QString name, TilingPtr tp)
@@ -260,7 +259,7 @@ bool Workspace::saveTiling(QString name, TilingPtr tp)
     qDebug() << "Workspace::saveTiling"  << name;
     if (!tp)
     {
-        QMessageBox box;
+        QMessageBox box(ControlPanel::getInstance());
         box.setIcon(QMessageBox::Information);
         box.setText("Nothing to save");
         box.exec();
@@ -272,7 +271,19 @@ bool Workspace::saveTiling(QString name, TilingPtr tp)
         tp->setName(name);
     }
 
-    bool rv = tp->writeTilingXML();   // uses the name in the tiling
+    View * view = View::getInstance();
+    QSize size  = view->size();
+    tp->setCanvasSize(size);
+
+    TilingMakerPtr maker = TilingMaker::getInstance();
+    if (maker->currentTiling == tp)
+    {
+        Xform xf = maker->getCanvasXform();
+        tp->setCanvasXform(xf);
+    }
+
+    TilingWriter writer(tp);
+    bool rv = writer.writeTilingXML();   // uses the name in the tiling
     if (rv)
     {
         tp->setDirty(false);
@@ -282,27 +293,49 @@ bool Workspace::saveTiling(QString name, TilingPtr tp)
 }
 
 // prototypes
-void  Workspace::setPrototype(eWsData dataset, PrototypePtr pp)
+void  Workspace::addPrototype(PrototypePtr pp)
 {
-    ws[dataset].prototype = pp;
+    ws.prototypes.push_back(pp);
 }
 
-PrototypePtr Workspace::getPrototype(eWsData dataset)
+QVector<PrototypePtr> Workspace::getPrototypes()
 {
-    return ws[dataset].prototype;
+    return ws.prototypes;
+}
+
+void Workspace::setSelectedPrototype(PrototypePtr proto)
+{
+    if (ws.selectedPrototype != proto)
+    {
+        ws.selectedPrototype     = proto;
+        ws.selectedDesignElement  = proto->getDesignElement(0);
+        emit sig_selected_proto_changed();
+    }
+}
+
+PrototypePtr Workspace::getSelectedPrototype()
+{
+    return ws.selectedPrototype;
 }
 
 // figures
-void  Workspace::setSelectedDesignElement(eWsData dataset, DesignElementPtr dep)
+void  Workspace::setSelectedDesignElement(DesignElementPtr dep)
 {
-    qDebug() << "setWSDesignElement" << Utils::addr(dep.get());
-    ws[dataset].desEle = dep;
-    emit sig_ws_dele_changed();
+    if (!ws.selectedPrototype->getDesignElements().contains(dep))
+    {
+        qWarning("selected designEelement not in selectedPrototype");
+    }
+
+    if (ws.selectedDesignElement != dep)
+    {
+        ws.selectedDesignElement = dep;
+        emit sig_selected_dele_changed();
+    }
 }
 
-DesignElementPtr Workspace::getSelectedDesignElement(eWsData dataset)
+DesignElementPtr Workspace::getSelectedDesignElement()
 {
-    return ws[dataset].desEle;
+    return ws.selectedDesignElement;
 }
 
 QVector<DesignPtr> & Workspace::getDesigns()
@@ -310,10 +343,25 @@ QVector<DesignPtr> & Workspace::getDesigns()
     return activeDesigns;
 }
 
+CanvasSettings & Workspace::getMosaicSettings()
+{
+    static CanvasSettings dummy;    // default
+    if (ws.mosaic)
+    {
+        return ws.mosaic->getCanvasSettings();
+    }
+    else
+    {
+        return dummy;
+    }
+}
+
 void WorkspaceData::clear()
 {
-    styles.clear();
+    mosaic.reset();
     tiling.reset();
-    desEle.reset();
-    prototype.reset();
+    prototypes.clear();
+
+    selectedPrototype.reset();
+    selectedDesignElement.reset();
 }

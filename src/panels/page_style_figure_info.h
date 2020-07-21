@@ -51,7 +51,7 @@ protected:
     void showFiguresFromMaker();
 
 private:
-    QTableWidget * figureTable;
+    AQTableWidget * figureTable;
 };
 
 #endif

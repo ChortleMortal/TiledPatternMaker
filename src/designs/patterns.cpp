@@ -31,15 +31,15 @@
 #include "base/tiledpatternmaker.h"
 #include "designs/shapefactory.h"
 #include "designs/patterns.h"
-#include "tapp/Rosette.h"
-#include "tapp/RosetteConnectFigure.h"
-#include "tapp/Star.h"
-#include "tapp/Infer.h"
-#include "tapp/ExplicitFigure.h"
-#include "style/Thick.h"
-#include "style/Interlace.h"
-#include "viewers/figureview.h"
-#include "viewers/placeddesignelementview.h"
+#include "tapp/rosette.h"
+#include "tapp/rosette_connect_figure.h"
+#include "tapp/star.h"
+#include "tapp/infer.h"
+#include "tapp/explicit_figure.h"
+#include "style/thick.h"
+#include "style/interlace.h"
+#include "viewers/figure_view.h"
+#include "viewers/placed_designelement_view.h"
 
 int Pattern::refs = 0;
 
@@ -92,87 +92,24 @@ Pattern5::Pattern5(qreal Diameter, QBrush Brush)  : Pattern(Diameter, Brush)
 
 void Pattern5::build()
 {
-    ShapeFactory * s = new ShapeFactory(diameter);
-    layer1->addToGroup(s);
-
-    layer1->setZValue(2.0);
-    layer2->setZValue(3.0);
-    layer3->setZValue(1.0);
-
     // this used to generate a background
-    ShapeFactory * c2 = new ShapeFactory(diameter*1.8);
-    c2->addCircle(diameter*1.8,nopen,QBrush(QColor(TileWhite)));
-    layer3->addToGroup(c2);
+    ShapeFPtr c1 = make_shared<ShapeFactory>(diameter*1.8);
+    c1->addCircle(diameter*1.8,nopen,QBrush(QColor(TileWhite)));
+    layer1->addSubLayer(c1);
 
-    Canvas * canvas = Canvas::getInstance();
-    canvas->stopTimer();
+    ShapeFPtr s = make_shared<ShapeFactory>(diameter);
+    s->addInscribedHexagon(linePen,centerBrush,0.0);
+    layer2->addSubLayer(s);
 
-    doStep(0);
-    doStep(3);
-}
-
-bool Pattern5::doStep(int Index)
-{
-    stepIndex = Index;
-    //qDebug() << "step" << stepIndex;
-
-   ShapeFactory * s = dynamic_cast<ShapeFactory*>(layer1->childItems().first());
-
-    TICK(0)
+    QPolygonF pts;
+    s->getHexPackingPoints(pts);
+    for (int i = 0; i < 6; i++)
     {
-        s->addInscribedHexagon(linePen,centerBrush,0.0);
+        ShapeFPtr c = make_shared<ShapeFactory>(diameter,pts[i]);
+        c->addInscribedHexagon(linePen,QBrush(TileBlack),0.0);
+        layer3->addSubLayer(c);
     }
-    TICK(1)
-    {
-        s->addCircumscribedHexagon(linePen,QBrush(QColor(TileBlack)),0.0);
-    }
-    TICK(2)
-    {
-        s->addExternalHexagon(linePen,centerBrush,90.0);
-    }
-    TICK(3)
-    {
-        QPolygonF pts;
-        s->getHexPackingPoints(pts);
-        for (int i = 0; i < 6; i++)
-        {
-            //ShapeFactory * c = new ShapeFactory(diameter,s->mapToScene(pts[i]));
-            ShapeFactory * c = new ShapeFactory(diameter,pts[i]);
-            c->addInscribedHexagon(linePen,QBrush(TileBlack),0.0);
-            layer2->addToGroup(c);
-        }
-        layer2->setRotation(30);
-    }
-    TICK(31)
-    {
-        QBrush brush1;
-        brush1.setColor(TileGreen);
-        brush1.setStyle(Qt::SolidPattern);
-
-        QPolygonF pts;
-        s->getHexPackingPoints(pts);
-        for (int i = 0; i < 6; i++)
-        {
-            ShapeFactory * c = new ShapeFactory(diameter,pts[i]);
-            c->addCircle(diameter,linePen);
-            c->addCircumscribedHexagon(linePen,brush1,0.0);
-            layer2->addToGroup(c);
-        }
-        layer2->setRotation(30);
-    }
-    TICK(4)
-    {
-        ShapeFactory * c = new ShapeFactory(diameter*2);
-        c->addCircle(diameter*2,linePen);
-        layer3->addToGroup(c);
-    }
-    TICK(5)
-    {
-        ShapeFactory * c = new ShapeFactory(diameter*3);
-        c->addCircle(diameter*3,linePen);
-        layer3->addToGroup(c);
-    }
-    return true;
+    layer3->slot_rotate(30);
 }
 
 /////////////////////////////////////////////////////////////
@@ -187,40 +124,23 @@ Pattern6::Pattern6(qreal Diameter, QBrush Brush) : Pattern(Diameter, Brush)
 
 void Pattern6::build()
 {
-    ShapeFactory * s = new ShapeFactory(diameter);
-    layer1->addToGroup(s);
+    ShapeFPtr s = make_shared<ShapeFactory>(diameter,-getLoc());
+    layer1->addSubLayer(s);
+    s->addInscribedHexagon(QPen(centerBrush.color()),centerBrush,0.0);
 
-    Canvas * canvas = Canvas::getInstance();
-    canvas->stopTimer();
 
-    doStep(0);
-    doStep(3);
-}
-
-bool Pattern6::doStep(int Index)
-{
-    stepIndex = Index;
-    //qDebug() << "step" << stepIndex;
-
-   ShapeFactory * s = dynamic_cast<ShapeFactory*>(layer1->childItems().first());
-
-    TICK(0)
+    QPolygonF pts;
+    s->getHexPackingPoints(pts);
+    for (int i = 0; i < 6; i++)
     {
-        s->addInscribedHexagon(QPen(centerBrush.color()),centerBrush,0.0);
-    }
-    TICK(3)
-    {
-        QPolygonF pts;
-        s->getHexPackingPoints(pts);
-        for (int i = 0; i < 6; i++)
-        {
-            ShapeFactory * c = new ShapeFactory(diameter,s->mapToScene(pts[i]));
-            c->addInscribedHexagon(QPen(TileBlack),QBrush(TileBlack),0.0);
-            layer2->addToGroup(c);
-        }
-    }
 
-    return false;
+        QTransform t = QTransform::fromTranslate(getLoc().x(),getLoc().y());
+        QTransform t2 = t.inverted();
+        ShapeFPtr c = make_shared<ShapeFactory>(diameter,t2.map(pts[i]));
+        //ShapeFPtr c = make_shared<ShapeFactory>(diameter,pts[i]);
+        c->addInscribedHexagon(QPen(TileBlack),QBrush(TileBlack),0.0);
+        layer2->addSubLayer(c);
+    }
 }
 
 /////////////////////////////////////////////////////////////
@@ -236,8 +156,8 @@ void Pattern7::build()
     static bool two = false;
 
 
-    ShapeFactory * s = new ShapeFactory(diameter);
-    layer1->addToGroup(s);
+    ShapeFPtr s = make_shared<ShapeFactory>(diameter,-getLoc());
+    layer1->addSubLayer(s);
 
     Canvas * canvas = Canvas::getInstance();
     canvas->stopTimer();
@@ -258,7 +178,9 @@ void Pattern7::build()
 bool Pattern7::doStep(int Index)
 {
     stepIndex = Index;
-    ShapeFactory * s = dynamic_cast<ShapeFactory*>(layer1->childItems().first());
+    ShapeFPtr s = std::dynamic_pointer_cast<ShapeFactory>(layer1->firstSubLayer());
+    Q_ASSERT(s);
+
     TICK(1)
     {
         s->addCircumscribedOctagon(QPen(Qt::black,1.0),centerBrush,0.0);
@@ -304,16 +226,20 @@ PatternHuSymbol::PatternHuSymbol(int gridWidth, QPen GridPen, QPen InnerPen, QCo
 
 void PatternHuSymbol::build()
 {
-    s = new ShapeFactory(diameter);
-    layer1->addToGroup(s);
+    s = make_shared<ShapeFactory>(diameter,-getLoc());
+    layer1->addSubLayer(s);
 
-    s3 = new ShapeFactory(diameter);
-    layer3->addToGroup(s3);
+    s3 = make_shared<ShapeFactory>(diameter,-getLoc());
+    layer3->addSubLayer(s3);
 
     //canvas->views().at(0)->setRenderHint(QPainter::Antialiasing ,false);
     //canvas->views().at(0)->setRenderHint(QPainter::SmoothPixmapTransform,false);
     s->enableAntialiasing(false);
     s3->enableAntialiasing(false);
+
+    qDebug() << "loc =" << getLoc();
+    qDebug() << "sloc=" << s->getLoc();
+
 }
 
 bool PatternHuSymbol::doStep(int Index)
@@ -324,7 +250,7 @@ bool PatternHuSymbol::doStep(int Index)
     {
         gridPen.setCapStyle(Qt::RoundCap);
 
-        ShapeFactory c(width*16.0);
+        ShapeFactory c(width*16.0,-getLoc());
         Polygon2 * p = c.addCircumscribedOctagon(gridPen,nobrush,0.0);
         p->setInnerPen(innerPen);
         s->addPolygon(*p);
@@ -334,7 +260,7 @@ bool PatternHuSymbol::doStep(int Index)
         gridPen.setCapStyle(Qt::SquareCap);
         innerPen.setCapStyle(Qt::SquareCap);
 
-        ShapeFactory c(width*4.0);
+        ShapeFactory c(width*4.0,-getLoc());
         Polygon2 * p = c.addCircumscribedSquare(gridPen,nobrush,0.0);
         p->setInnerPen(innerPen);
         s->addPolygon(*p);
@@ -342,7 +268,7 @@ bool PatternHuSymbol::doStep(int Index)
     TICK(2)
     {
 
-        ShapeFactory c(width*12.0);
+        ShapeFactory c(width*12.0,-getLoc());
         Polygon2 * p = c.addCircumscribedSquare(nopen,nobrush,0.0);
 
         QPolygonF pf = ShapeFactory::getMidPoints(*p);
@@ -364,7 +290,7 @@ bool PatternHuSymbol::doStep(int Index)
         ShapeFactory c(width*2.0);
         Polygon2 * p = c.addCircumscribedSquare(gridPen,nobrush,0.0);
         p->setInnerPen(innerPen);
-        p->translate( s->getLoc() + QPointF(-width,-(width*5.0))) ;
+        p->translate(QPointF(-width,-(width*5.0))) ;
         s->addPolygon(*p);
     }
     TICK(4)
@@ -372,7 +298,7 @@ bool PatternHuSymbol::doStep(int Index)
         ShapeFactory c(width*2.0);
         Polygon2 * p = c.addCircumscribedSquare(gridPen,nobrush,0.0);
         p->setInnerPen(innerPen);
-        p->translate( s->getLoc() + QPointF(width,(width*5.0))) ;
+        p->translate(QPointF(width,(width*5.0))) ;
         s->addPolygon(*p);
     }
     TICK(5)
@@ -380,14 +306,14 @@ bool PatternHuSymbol::doStep(int Index)
         ShapeFactory c(width*2.0);
         Polygon2 * p = c.addCircumscribedSquare(gridPen,nobrush,0.0);
         p->setInnerPen(innerPen);
-        p->translate( s->getLoc() + QPointF((width*5.0),-width)) ;
+        p->translate(QPointF((width*5.0),-width)) ;
         s->addPolygon(*p);
     }
     TICK(6)
     {
         ShapeFactory c(width*2.0);
         Polygon2 * p = c.addCircumscribedSquare(gridPen,nobrush,0.0);
-        p->translate( s->getLoc() + QPointF(-(width*5.0),width)) ;
+        p->translate(QPointF(-(width*5.0),width)) ;
         p->setInnerPen(innerPen);
         s->addPolygon(*p);
     }
@@ -639,24 +565,24 @@ PatternHuInterlace::PatternHuInterlace(int gridWidth, QPen GridPen, QPen InnerPe
 
 void PatternHuInterlace::build()
 {
-    l1 = new ShapeFactory(diameter);
+    l1 = make_shared<ShapeFactory>(diameter);
     l1->enableAntialiasing(false);
-    layer1->addToGroup(l1);
+    layer1->addSubLayer(l1);
 
     // level 2
-    l2 = new ShapeFactory(diameter);
+    l2 = make_shared<ShapeFactory>(diameter);
     l2->enableAntialiasing(false);
-    layer2->addToGroup(l2);
+    layer2->addSubLayer(l2);
 
     // level 3
-    l3 = new ShapeFactory(diameter);
+    l3 = make_shared<ShapeFactory>(diameter);
     l3->enableAntialiasing(false);
-    layer3->addToGroup(l3);
+    layer3->addSubLayer(l3);
 
     // level 4
-    l4 = new ShapeFactory(diameter);
+    l4 = make_shared<ShapeFactory>(diameter);
     l4->enableAntialiasing(false);
-    layer4->addToGroup(l4);
+    layer4->addSubLayer(l4);
 
 
 }
@@ -664,7 +590,8 @@ void PatternHuInterlace::build()
 bool PatternHuInterlace::doStep(int Index)
 {
     stepIndex = Index;
-    ShapeFactory * s = dynamic_cast<ShapeFactory*>(layer1->childItems().first());
+    ShapeFPtr s = std::dynamic_pointer_cast<ShapeFactory>(layer1->firstSubLayer());
+    Q_ASSERT(s);
 
     TICK(0)
     {
@@ -989,8 +916,8 @@ Pattern10::Pattern10(qreal Diameter, QBrush Brush) : Pattern(Diameter, Brush)
 void Pattern10::build()
 {
 
-    ShapeFactory * s = new ShapeFactory(diameter);
-    layer1->addToGroup(s);
+    ShapeFPtr s = make_shared<ShapeFactory>(diameter,-getLoc());
+    layer1->addSubLayer(s);
 
     Canvas * canvas = Canvas::getInstance();
     canvas->stopTimer();
@@ -1004,7 +931,8 @@ void Pattern10::build()
 bool Pattern10::doStep(int Index)
 {
     stepIndex = Index;
-    ShapeFactory * s = dynamic_cast<ShapeFactory*>(layer1->childItems().first());
+    ShapeFPtr s = std::dynamic_pointer_cast<ShapeFactory>(layer1->firstSubLayer());
+    Q_ASSERT(s);
 
     TICK(0)
     {
@@ -1043,8 +971,8 @@ Pattern11::Pattern11(qreal Diameter, QBrush Brush, qreal rotation, eDirection di
 void Pattern11::build()
 {
     // the hexagon
-    ShapeFactory * s = new ShapeFactory(diameter);
-    layer1->addToGroup(s);
+    ShapeFPtr s = make_shared<ShapeFactory>(diameter);
+    layer1->addSubLayer(s);
     Polygon2 * p = s->addInscribedHexagon(nopen,centerBrush,Rotation);
 
     // calc midpoints
@@ -1078,8 +1006,8 @@ void Pattern11::build()
 
     for (int i=0; i < 6; i++)
     {
-        ShapeFactory * s2 = new ShapeFactory(diameter);
-        layer2->addToGroup(s2);
+        ShapeFPtr s2 = make_shared<ShapeFactory>(diameter);
+        layer2->addSubLayer(s2);
 
         QPainterPath & pp = s2->getPPath();
         s2->setPPath((i & 1) ? p1 : p2,(i & 1) ? b1 : b2);
@@ -1134,8 +1062,8 @@ Pattern12::Pattern12(qreal Diameter, QBrush Brush, qreal rotation, eDirection di
 void Pattern12::build()
 {
     // the hexagon
-    ShapeFactory * s = new ShapeFactory(diameter);
-    layer1->addToGroup(s);
+    ShapeFPtr s = make_shared<ShapeFactory>(diameter);
+    layer1->addSubLayer(s);
   //hexagon = s->addInscribedHexagon(QPen(QColor(Qt::red),3),Brush,rotation);
     hexagon = s->addInscribedHexagon(nopen,centerBrush,Rotation);
 
@@ -1189,8 +1117,8 @@ void Pattern12::build()
 
     for (int i=0; i < 6; i++)
     {
-        ShapeFactory * s2 = new ShapeFactory(diameter);
-        layer2->addToGroup(s2);
+        ShapeFPtr s2 = make_shared<ShapeFactory>(diameter);
+        layer2->addSubLayer(s2);
 
         // this steps the colors diagonaly
         QPainterPath & pp = s2->getPPath();
@@ -1238,24 +1166,24 @@ void Pattern12::build()
         pp.arcTo(arect,angles[iPrev] + span, -span);
     }
 
-    ShapeFactory * s3;
+    ShapeFPtr s3;
 
     // add hexagons in colors
-    s3 = new ShapeFactory(diameter/2.9, hexagon->at(0));
-    layer3->addToGroup(s3);
+    s3 = make_shared<ShapeFactory>(diameter/2.9, hexagon->at(0));
+    layer3->addSubLayer(s3);
     s3->addInscribedHexagon(pWhite,bWhite,0.0);
 
-    s3 = new ShapeFactory(diameter/2.9, hexagon->at(4));
-    layer3->addToGroup(s3);
+    s3 = make_shared<ShapeFactory>(diameter/2.9, hexagon->at(4));
+    layer3->addSubLayer(s3);
     s3->addInscribedHexagon(pWhite,bWhite,0.0);
 
     // add stars in colors
-    s3 = new ShapeFactory(diameter/2.9, hexagon->at(3));
-    layer3->addToGroup(s3);
+    s3 = make_shared<ShapeFactory>(diameter/2.9, hexagon->at(3));
+    layer3->addSubLayer(s3);
     s3->add6ptStar(pGold,bGold,90.0);
 
-    s3 = new ShapeFactory(diameter/2.9, hexagon->at(5));
-    layer3->addToGroup(s3);
+    s3 = make_shared<ShapeFactory>(diameter/2.9, hexagon->at(5));
+    layer3->addSubLayer(s3);
     s3->add6ptStar(pGold,bGold,90.0);
 }
 
@@ -1281,9 +1209,9 @@ void PatternIncompleteA::build()
     linePen.setCapStyle(Qt::RoundCap);
 
     // outlines for debug
-    ShapeFactory * s4 = new ShapeFactory(diameter);
-    layer4->addToGroup(s4);
-    layer4->setFlag(ItemClipsChildrenToShape);
+    ShapeFPtr s4 = make_shared<ShapeFactory>(diameter);
+    layer4->addSubLayer(s4);
+    //layer4->setFlag(ItemClipsChildrenToShape);
     // defining (invisible) square
     //Polygon2 *  p = s4->addCircumscribedSquare(rPen,nobrush);
     Polygon2 *  p = s4->addCircumscribedSquare(nopen,nobrush);  // invisible
@@ -1291,9 +1219,9 @@ void PatternIncompleteA::build()
     //s4->addCircle(diameter,QPen(QColor(Qt::red)));
 
     // main design
-    ShapeFactory * s1 = new ShapeFactory(diameter);
-    layer1->addToGroup(s1);
-    layer1->setFlag(ItemClipsChildrenToShape);
+    ShapeFPtr s1 = make_shared<ShapeFactory>(diameter);
+    layer1->addSubLayer(s1);
+    //layer1->setFlag(ItemClipsChildrenToShape);
 
     qreal radius = diameter/2.0;
     QPointF a;
@@ -1375,8 +1303,8 @@ void PatternIncompleteA::build()
 #endif
 
     // the eraser
-    ShapeFactory * s2 = new ShapeFactory(diameter/2.6);  // need to do the math 2.6
-    layer2->addToGroup(s2);
+    ShapeFPtr s2 = make_shared<ShapeFactory>(diameter/2.6);  // need to do the math 2.6
+    layer2->addSubLayer(s2);
     //layers[2].setFlag(ItemClipsChildrenToShape);
     s2->addCircumscribedOctagon(QPen(QColor(Qt::black),7,Qt::SolidLine,Qt::FlatCap),bBlack,22.5);
     //Polygon2 * pio = s3->addInscribedOctagon(QPen(QColor(Qt::blue),3,Qt::SolidLine,Qt::FlatCap),nobrush,22.5);
@@ -1411,10 +1339,10 @@ Pattern14::Pattern14(qreal Diameter, QBrush Brush) : Pattern(Diameter, Brush)
 
 void Pattern14::build()
 {
-    Layer * layer1 = addLayer(1);
+    LayerPtr layer1 = addLayer(1);
 
-    ShapeFactory * s1 = new ShapeFactory(diameter);
-    layer1->addToGroup(s1);
+    ShapeFPtr s1 = make_shared<ShapeFactory>(diameter);
+    layer1->addSubLayer(s1);
 
     //s1->addCircumscribedSquare(QPen(QColor(Qt::red),7), nobrush);
 
@@ -1435,9 +1363,9 @@ Pattern15::Pattern15(qreal Diameter, QBrush Brush) : Pattern(Diameter, Brush)
 
 void Pattern15::build()
 {
-    Layer * layer1 = addLayer(1);
-    ShapeFactory * s1 = new ShapeFactory(diameter);
-    layer1->addToGroup(s1);
+    LayerPtr layer1 = addLayer(1);
+    ShapeFPtr s1 = make_shared<ShapeFactory>(diameter);
+    layer1->addSubLayer(s1);
 
     //s1->addCircumscribedSquare(QPen(QColor(Qt::red),1), nobrush);
     s1->addInscribedHexagon(linePen, nobrush,90.0);
@@ -1453,13 +1381,13 @@ Pattern16::Pattern16(qreal Diameter, QBrush Brush) : Pattern(Diameter, Brush)
 
 void Pattern16::build()
 {
-    Layer * layer1 = addLayer(1);
-    ShapeFactory * s1 = new ShapeFactory(diameter);
-    layer1->addToGroup(s1);
+    LayerPtr layer1 = addLayer(1);
+    ShapeFPtr s1 = make_shared<ShapeFactory>(diameter);
+    layer1->addSubLayer(s1);
 
-    Layer * layer4 = addLayer(4);
-    ShapeFactory * s4 = new ShapeFactory(diameter);
-    layer4->addToGroup(s4);
+    LayerPtr layer4 = addLayer(4);
+    ShapeFPtr s4 = make_shared<ShapeFactory>(diameter);
+    layer4->addSubLayer(s4);
 
     s4->addCircumscribedSquare(QPen(QColor(Qt::red),1), nobrush);
 
@@ -1486,13 +1414,13 @@ void PatternKumiko1::build()
     //qDebug() << "ypos" << ypos << diameter << radius;
 
 #if 0
-    ShapeFactory * s1 = new ShapeFactory(diameter);
+    ShapeFPtr s1 = make_shared<ShapeFactory>(diameter);
     layers[1].addToGroup(s1);
 #endif
 
-    s2 = new ShapeFactory(diameter);
-    Layer * layer2 = addLayer(2);
-    layer2->addToGroup(s2);
+    s2 = make_shared<ShapeFactory>(diameter);
+    LayerPtr layer2 = addLayer(2);
+    layer2->addSubLayer(s2);
 
     QPointF a(-radius,-ypos);
     QPointF b( radius,-ypos);
@@ -1506,9 +1434,9 @@ void PatternKumiko1::build()
     QPointF f( radius,0);
     s2->addLine(woodPen,e,f);
 
-    s3 = new ShapeFactory(diameter);
-    Layer * layer3 = addLayer(3);
-    layer3->addToGroup(s3);
+    s3 = make_shared<ShapeFactory>(diameter);
+    LayerPtr layer3 = addLayer(3);
+    layer3->addSubLayer(s3);
 
     QPointF a1(0,ypos);
     QPointF b1(radius,0);
@@ -1527,23 +1455,23 @@ void PatternKumiko1::build()
     s3->addLine(woodPen,c2,d2);
 
 
-    s4 = new ShapeFactory(diameter);
-    Layer * layer4 = addLayer(4);
-    layer4->addToGroup(s4);
+    s4 = make_shared<ShapeFactory>(diameter);
+    LayerPtr layer4 = addLayer(4);
+    layer4->addSubLayer(s4);
 
     Polygon2 * p1 = s4->addStretchedExternalHexagon(woodPen, nobrush,90.0);
     Q_UNUSED(p1)
 
-    s5 = new ShapeFactory(diameter);
-    Layer * layer5 = addLayer(5);
-    layer5->addToGroup(s5);
+    s5 = make_shared<ShapeFactory>(diameter);
+    LayerPtr layer5 = addLayer(5);
+    layer5->addSubLayer(s5);
 
     Polygon2 * p2 = s5->addStretchedExternalHexagon(woodPen, nobrush,90.0);
     p2->translate(radius,ypos);
     //Utils::identify(&layers[5],p2);
 
 #if 0
-    ShapeFactory * s6 = new ShapeFactory(diameter);
+    ShapeFPtr s6 = make_shared<ShapeFactory>(diameter);
     layers[6].addToGroup(s1);
     MarkX * m = new MarkX(QPointF(0,0),QPen(QColor(Qt::green),5),"center");
     layers[6].addToGroup(m);
@@ -1571,11 +1499,11 @@ void PatternKumiko2::build()
     //qDebug() << "ypos" << ypos << diameter << radius;
 
 #if 0
-    ShapeFactory * s1 = new ShapeFactory(diameter);
+    ShapeFPtr s1 = make_shared<ShapeFactory>(diameter);
     layers[1].addToGroup(s1);
 #endif
 
-    s2 = new ShapeFactory(diameter);
+    s2 = make_shared<ShapeFactory>(diameter);
     QPointF a(-radius,-ypos);
     QPointF b( radius,-ypos);
     s2->addLine(woodPen,a,b);
@@ -1588,7 +1516,7 @@ void PatternKumiko2::build()
     QPointF f( radius,0);
     s2->addLine(woodPen,e,f);
 
-    s3 = new ShapeFactory(diameter);
+    s3 = make_shared<ShapeFactory>(diameter);
     QPointF a1(0,ypos);
     QPointF b1(radius,0);
     s3->addLine(woodPen,a1,b1);
@@ -1605,17 +1533,17 @@ void PatternKumiko2::build()
     QPointF d2(-radius,ypos*2);
     s3->addLine(woodPen,c2,d2);
 
-    s4 = new ShapeFactory(diameter);
+    s4 = make_shared<ShapeFactory>(diameter);
     Polygon2 * p1 = s4->addStretchedExternalHexagon(woodPen, nobrush,90.0);
     Q_UNUSED(p1)
 
-    s5 = new ShapeFactory(diameter);
+    s5 = make_shared<ShapeFactory>(diameter);
     Polygon2 * p2 = s5->addStretchedExternalHexagon(woodPen, nobrush,90.0);
     p2->translate(radius,ypos);
     //Utils::identify(&layers[5],p2);
 
 #if 0
-    ShapeFactory * s6 = new ShapeFactory(diameter);
+    ShapeFPtr s6 = make_shared<ShapeFactory>(diameter);
     layers[6].addToGroup(s1);
     MarkX * m = new MarkX(QPointF(0,0),QPen(QColor(Qt::green),5),"center");
     layers[6].addToGroup(m);
@@ -1642,7 +1570,7 @@ void PatternKumiko2::build()
         t->setDescription("Kumiko2 translation vectors");
         t->setAuthor("David A. Casper");
 
-        workspace->setTiling(WS_TILING,t);
+        workspace->setTiling(t);
         workspace->saveTiling(tileName,t);
     }
 
@@ -1653,7 +1581,7 @@ void PatternKumiko2::build()
 
     DesignElementPtr dep = make_shared<DesignElement>(qlfp[0]->getFeature(),fp);
     proto->addElement(dep);
-    proto->createProtoMap();
+    proto->createProtoMap(false);   // don't allow the event queue to be processed yet
 
     QPolygonF bounds;
     bounds << QPointF(-diameter, diameter);
@@ -1661,10 +1589,10 @@ void PatternKumiko2::build()
     bounds << QPointF( diameter,-diameter);
     bounds << QPointF(-diameter,-diameter);
 
-    Thick * thick = new Thick(proto,make_shared<QPolygonF>(bounds));
+    ThickPtr thick = make_shared<Thick>(proto,make_shared<QPolygonF>(bounds));
     thick->setColor(QColor(0xa2,0x79,0x67));
     thick->setDrawOutline(true);
     thick->createStyleRepresentation();
 
-    layer2->addToGroup(thick);
+    layer2->addSubLayer(thick);
 }

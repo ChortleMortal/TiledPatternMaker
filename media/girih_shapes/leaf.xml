@@ -1,0 +1,71 @@
+<?xml version="1.0"?>
+<Poly name="leaf">
+	<Line>
+		<Point id="1">0,0</Point>
+		<Point id="2">-1,0</Point>
+	</Line>
+	<Line>
+		<Point reference="2" />
+		<Point id="3">-1,-1</Point>
+	</Line>
+	<Line>
+		<Point reference="3" />
+		<Point id="4">-2,-2</Point>
+	</Line>
+	<Line>
+		<Point reference="4" />
+		<Point id="5">-1,-2</Point>
+	</Line>
+	<Line>
+		<Point reference="5" />
+		<Point id="6">-1,-3</Point>
+	</Line>
+	<Line>
+		<Point reference="6" />
+		<Point id="7">0,-3</Point>
+	</Line>
+	<Line>
+		<Point reference="7" />
+		<Point id="8">0,-2</Point>
+	</Line>
+	<Line>
+		<Point reference="8" />
+		<Point id="9">1,-3</Point>
+	</Line>
+	<Line>
+		<Point reference="9" />
+		<Point id="10">2,-3</Point>
+	</Line>
+	<Line>
+		<Point reference="10" />
+		<Point id="11">2,-2</Point>
+	</Line>
+	<Line>
+		<Point reference="11" />
+		<Point id="12">1,-1</Point>
+	</Line>
+	<Line>
+		<Point reference="12" />
+		<Point id="13">2,-1</Point>
+	</Line>
+	<Line>
+		<Point reference="13" />
+		<Point id="14">2,0</Point>
+	</Line>
+	<Line>
+		<Point reference="14" />
+		<Point id="15">1,0</Point>
+	</Line>
+	<Line>
+		<Point reference="15" />
+		<Point id="16">1,1</Point>
+	</Line>
+	<Line>
+		<Point reference="16" />
+		<Point reference="1" />
+	</Line>
+	<tx>0</tx>
+	<ty>0</ty>
+	<scale>1</scale>
+	<rot>-0.7853981633974483</rot>
+</Poly>

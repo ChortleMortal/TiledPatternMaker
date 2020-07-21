@@ -3,8 +3,8 @@
 
 #include <QtCore>
 #include "base/shared.h"
-#include "geometry/Edge.h"
-#include "geometry/Vertex.h"
+#include "geometry/edge.h"
+#include "geometry/vertex.h"
 
 struct BeforeAndAfter
 {

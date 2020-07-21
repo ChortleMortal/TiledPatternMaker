@@ -34,8 +34,8 @@
 // understand different ways of bulding maps, but have the advantage
 // of being parameterizable at a high level.
 
-#include "tapp/Figure.h"
-#include "tile/Feature.h"
+#include "tapp/figure.h"
+#include "tile/feature.h"
 
 int Figure::refs = 0;
 

@@ -449,6 +449,7 @@ dirInfo  FileServices::getDesignDirInfo()
     dirInfo info;
 
     Configuration * config = Configuration::getInstance();
+    qDebug() << "Design Dir is:" << config->rootDesignDir;
     QString path(config->rootDesignDir);
     QDirIterator it(path, QStringList() << "*.xml", QDir::Files, QDirIterator::Subdirectories);
     while (it.hasNext())

@@ -22,9 +22,9 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "geometry/Point.h"
+#include "geometry/point.h"
 #include "geometry/edgepoly.h"
-#include "geometry/Loose.h"
+#include "geometry/loose.h"
 #include "base/shared.h"
 
 // Point in a geometrical map.

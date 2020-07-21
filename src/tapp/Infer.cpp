@@ -42,12 +42,12 @@
 // probably coming from in here.  But you knew what you were infer
 // when you started using Taprats (sorry -- couldn't resist the pun).
 
-#include "tapp/Infer.h"
-#include "tapp/Prototype.h"
-#include "geometry/Loose.h"
-#include "geometry/Point.h"
-#include "geometry/Intersect.h"
-#include "tapp/Star.h"
+#include "tapp/infer.h"
+#include "tapp/prototype.h"
+#include "geometry/loose.h"
+#include "geometry/point.h"
+#include "geometry/intersect.h"
+#include "tapp/star.h"
 #include <algorithm>
 
 using std::max;
@@ -1512,7 +1512,7 @@ MapPtr Infer::inferFeature(FeaturePtr feature)
         VertexPtr v1 = map->insertVertex(edge->getV1()->getPosition());
         VertexPtr v2 = map->insertVertex(edge->getV2()->getPosition());
         EdgePtr newEdge = map->insertEdge(v1,v2);
-        if (edge->getType() == EDGE_CURVE)
+        if (edge->getType() == EDGETYPE_CURVE)
         {
             bool convex = edge->isConvex();
             QPointF ac  = edge->getArcCenter();

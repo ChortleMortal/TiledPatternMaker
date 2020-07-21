@@ -23,13 +23,13 @@
  */
 
 #include "figure_editors.h"
-#include "figure_maker.h"
+#include "prototype_maker.h"
 #include "base/tiledpatternmaker.h"
-#include "tapp/Star.h"
-#include "tapp/ExtendedStar.h"
-#include "tapp/StarConnectFigure.h"
-#include "tapp/RosetteConnectFigure.h"
-#include "tapp/ExtendedRosette.h"
+#include "tapp/star.h"
+#include "tapp/extended_star.h"
+#include "tapp/star_connect_figure.h"
+#include "tapp/rosette_connect_figure.h"
+#include "tapp/extended_rosette.h"
 #include "makers/figure_maker/feature_button.h"
 
 using std::dynamic_pointer_cast;
@@ -38,7 +38,7 @@ using std::dynamic_pointer_cast;
 // of one kind of figure.  A complex hierarchy of FigureEditors gets built
 // up to become the changeable controls for editing figures in FigureMaker.
 
-FigureEditor::FigureEditor(FigureMaker * fm, QString figname)
+FigureEditor::FigureEditor(PrototypeMaker * fm, QString figname)
 {
     figmaker = fm;
     name     = figname;
@@ -59,7 +59,7 @@ FigureEditor::FigureEditor(FigureMaker * fm, QString figname)
     addLayout(figureScale);
     addLayout(figureRotate);
 
-    connect(this,          &FigureEditor::sig_figure_changed, figmaker, &FigureMaker::slot_figureChanged, Qt::QueuedConnection);
+    connect(this,          &FigureEditor::sig_figure_changed, figmaker, &PrototypeMaker::slot_figureChanged, Qt::QueuedConnection);
 
     connect(boundaryScale, &DoubleSliderSet::valueChanged, this, &FigureEditor::updateGeometry);
     connect(boundarySides, &SliderSet::valueChanged,       this, &FigureEditor::updateGeometry);
@@ -110,7 +110,7 @@ void FigureEditor::updateGeometry()
     emit sig_figure_changed();
 }
 
-StarEditor::StarEditor(FigureMaker * fm, QString figname) : FigureEditor(fm,figname)
+StarEditor::StarEditor(PrototypeMaker * fm, QString figname) : FigureEditor(fm,figname)
 {
     n_slider = new SliderSet("Radial Points N", 8, 3, 64);
     d_slider = new DoubleSliderSet("Star Editor Hops D", 3.0, 1.0, 10.0, 100 );
@@ -202,7 +202,7 @@ void StarEditor::updateGeometry()
 // The controls for editing a Star.  Glue code, just like RosetteEditor.
 // DAC - Actually the comment above is not true
 
-RosetteEditor::RosetteEditor(FigureMaker * fm, QString figname) : FigureEditor(fm,figname)
+RosetteEditor::RosetteEditor(PrototypeMaker * fm, QString figname) : FigureEditor(fm,figname)
 {
     n_slider = new SliderSet("Radial Points N", 8, 3, 64);
     q_slider = new DoubleSliderSet("RosetteEditor Q (Tip Angle)", 0.0, -3.0, 3.0, 100 );
@@ -299,7 +299,7 @@ void RosetteEditor::updateGeometry()
 }
 
 // ConnectStarEditor
-ConnectStarEditor::ConnectStarEditor(FigureMaker * fm, QString figname) : StarEditor(fm,figname)
+ConnectStarEditor::ConnectStarEditor(PrototypeMaker * fm, QString figname) : StarEditor(fm,figname)
 {
     defaultBtn = new QPushButton("Calc Scale");
     defaultBtn->setFixedWidth(131);
@@ -362,7 +362,7 @@ void ConnectStarEditor::calcScale()
 
 // ConnectRosetteEditor
 
-ConnectRosetteEditor::ConnectRosetteEditor(FigureMaker * fm, QString figname) : RosetteEditor(fm,figname)
+ConnectRosetteEditor::ConnectRosetteEditor(PrototypeMaker * fm, QString figname) : RosetteEditor(fm,figname)
 {
     defaultBtn = new QPushButton("Calc Scale");
     defaultBtn->setFixedWidth(131);
@@ -429,7 +429,7 @@ void ConnectRosetteEditor::calcScale()
 }
 
 // ExtendedStarEditor
-ExtendedStarEditor::ExtendedStarEditor(FigureMaker * fm, QString figname) : StarEditor(fm,figname)
+ExtendedStarEditor::ExtendedStarEditor(PrototypeMaker * fm, QString figname) : StarEditor(fm,figname)
 {
     extendBox1 = new QCheckBox("Extend Peripheral Vertices");
     extendBox2 = new QCheckBox("Extend Free Vertices");
@@ -519,7 +519,7 @@ void ExtendedStarEditor::updateGeometry()
 
 // ExtendedRosetteEditor
 
-ExtendedRosetteEditor::ExtendedRosetteEditor(FigureMaker * fm, QString figname) : RosetteEditor(fm,figname)
+ExtendedRosetteEditor::ExtendedRosetteEditor(PrototypeMaker * fm, QString figname) : RosetteEditor(fm,figname)
 {
     extendPeriphBox    = new QCheckBox("Extend PeripheralVertices");
     extendFreeBox      = new QCheckBox("Extend Free Vertices");

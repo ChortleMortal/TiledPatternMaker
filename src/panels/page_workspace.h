@@ -47,7 +47,7 @@ private slots:
     void slot_itemClicked(QTreeWidgetItem * item, int col);
 
 protected:
-    void populateStyles(QTreeWidgetItem * parent, StyledDesign &design);
+    void populateStyles(QTreeWidgetItem * parent, MosaicPtr mosaic);
     void populateMap(QTreeWidgetItem *parent, MapPtr mp);
     void populatePrototype(QTreeWidgetItem * parent, PrototypePtr pp);
     void populateTiling(QTreeWidgetItem * parent, TilingPtr tp);
@@ -66,7 +66,6 @@ private:
     Workspace   * ws;
 
     QTreeWidgetItem * loadedStyle;
-    QTreeWidgetItem * workspaceStyle;
     QTreeWidgetItem * workspacePrototype;
     QTreeWidgetItem * workspaceTiling;
     QTreeWidgetItem * workingFigure;

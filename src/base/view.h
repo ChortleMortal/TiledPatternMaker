@@ -29,8 +29,7 @@
 #include <QtWidgets>
 
 #include "base/configuration.h"
-
-//#define DEBUG_PAINT
+#include "base/misc.h"
 
 class Canvas;
 class Cycler;
@@ -38,8 +37,9 @@ class ControlPanel;
 class MapEditor;
 class TilingMaker;
 class WorkspaceViewer;
+class Layer;
 
-class View : public QGraphicsView
+class View : public QWidget
 {
     Q_OBJECT
 
@@ -48,11 +48,21 @@ public:
     static void  releaseInstance();
 
     void init();
-    void matchViewSizeToScene(const QRectF &sceneRect);
-    bool scaleSceneSizeToView(const QSize & viewSize);
+    void clearView();
 
-    void setSceneRect(const QRectF &rect);                  // don't use
-    void setSceneRect(qreal x, qreal y, qreal w, qreal h);  // don't use
+    void addLayer(LayerPtr layer);
+    void clearLayers()           { layers.clear(); }
+    int  numLayers()             { return layers.size(); }
+    QVector<LayerPtr> getActiveLayers();
+
+    void   setBackgroundColor(QColor color);
+    QColor getBackgroundColor();
+
+    void clearLayout(); // only used by cycler for pngs
+
+    virtual QSize sizeHint() const override;
+
+    void dump(bool force = false);
 
 signals:
     void sig_mousePressed(QPointF pos,Qt::MouseButton);
@@ -60,18 +70,25 @@ signals:
     void sig_mouseDragged(QPointF pos);
     void sig_mouseReleased(QPointF pos);
     void sig_mouseMoved(QPointF pos);
-    void sig_resize();
+    void sig_reconstructBorder();
 
 protected:
-    void keyPressEvent( QKeyEvent *k ) Q_DECL_OVERRIDE;
-#ifdef DEBUG_PAINT
     void paintEvent(QPaintEvent *event) Q_DECL_OVERRIDE;
-#endif
     void resizeEvent(QResizeEvent *event) Q_DECL_OVERRIDE;
+    void keyPressEvent( QKeyEvent *k ) Q_DECL_OVERRIDE;
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
     void mouseMoveEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
     void mouseReleaseEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
     void mouseDoubleClickEvent(QMouseEvent * event) Q_DECL_OVERRIDE;
+
+    void drawForeground(QPainter *painter, const QRectF &rect);
+
+    void drawGridModelUnits(QPainter *painter, const QRectF & r);
+    void drawGridSceneUnits(QPainter *painter, const QRectF & r);
+    void drawGridModelUnitsCentered(QPainter *painter, QRectF & r);
+    void drawGridSceneUnitsCentered(QPainter *painter, QRectF & r);
+
+    void clearLayout(QLayout* layout, bool deleteWidgets = true);
 
 private:
     View();
@@ -80,11 +97,15 @@ private:
     static View     * mpThis;
     Canvas          * canvas;
     Configuration   * config;
-    TilingMaker     * tmaker;
-    MapEditor       * maped;
     WorkspaceViewer * wsViewer;
+    TilingMakerPtr    tmaker;
+    MapEditorPtr      maped;
 
-    bool   dragging;
+    UniqueQVector<LayerPtr> layers;
+
+    bool              dragging;
+    QColor            backgroundColor;
+    QPen              gridPen;
 };
 
 #endif // VIEW_H

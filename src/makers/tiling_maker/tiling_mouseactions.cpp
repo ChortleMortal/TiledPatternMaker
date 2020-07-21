@@ -1,7 +1,9 @@
 #include "makers/tiling_maker/tiling_mouseactions.h"
 #include "makers/tiling_maker/tiling_maker.h"
-#include "geometry/Point.h"
+#include "geometry/point.h"
+#include "geometry/transform.h"
 #include "base/utilities.h"
+#include "base/configuration.h"
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -53,7 +55,7 @@ void MovePolygon::updateDragging(QPointF spt)
 {
     if  (selection && selection->getType() == INTERIOR)
     {
-        //qDebug() << "move: update";
+        qDebug() << "MovePolygon: update";
 
         QPointF wpt         = tm->screenToWorld(spt);
         PlacedFeaturePtr pf = selection->getPlacedFeature();
@@ -61,7 +63,7 @@ void MovePolygon::updateDragging(QPointF spt)
 
         QTransform a = pf->getTransform();
         QTransform b = QTransform::fromTranslate(diff.x(),diff.y());
-        QTransform  t = a * b;
+        QTransform t = a * b;
         pf->setTransform(t);
 
         MouseAction::updateDragging(spt);
@@ -69,7 +71,7 @@ void MovePolygon::updateDragging(QPointF spt)
         emit tm->sig_refreshMenu();
     }
     else
-        qDebug() << "move: no selection";
+        qDebug() << "MovePolygon: no selection";
 }
 
 /////////
@@ -129,7 +131,7 @@ void DrawTranslation::draw(GeoGraphics * g2d )
     qreal arrow_width  = Transform::distFromInvertedZero(g2d->getTransform(),6.0);
     QPen pen(drag_color);
     g2d->drawLine(tm->wTrans1_start, wLastDrag,pen);
-    g2d->drawArrow(tm->wTrans1_start,wLastDrag, arrow_length, arrow_width, pen, QBrush(drag_color));
+    g2d->drawArrow(tm->wTrans1_start,wLastDrag, arrow_length, arrow_width, drag_color);
 }
 
 void DrawTranslation::endDragging(QPointF spt)
@@ -158,9 +160,16 @@ JoinEdge::JoinEdge(TilingMaker * tilingMaker, TilingSelectionPtr sel, QPointF sp
 bool JoinEdge::snapTo(QPointF spt)
 {
     // snap to an edge
-    TilingSelectionPtr tosel;
-    if (!selection || !(tosel = tm->findEdge(spt, selection)))
+    if (!selection)
     {
+        qDebug() << "no snap";
+        return false;
+    }
+
+    TilingSelectionPtr tosel = tm->findEdge(spt, selection);
+    if (!tosel || tosel->getType() != EDGE)
+    {
+        // it could be a mid-point
         qDebug() << "no snap";
         return false;
     }
@@ -171,18 +180,27 @@ bool JoinEdge::snapTo(QPointF spt)
     QLineF pline        = selection->getModelLine();
 
     QTransform To       = tosel->getTransform();
-    QLineF qline        = tosel->getModelLine();
+    EdgePtr edge        = tosel->getModelEdge();
+    if (edge)
+    {
+        QLineF qline        = tosel->getModelLine();
 
-    QTransform t        = matchTwoSegments(pline.p1(), pline.p2(), qline.p2(), qline.p1());
-    QTransform carry    = t * To;
+        QTransform t        = matchTwoSegments(pline.p1(), pline.p2(), qline.p2(), qline.p1());
+        QTransform carry    = t * To;
 
-    pf->setTransform(carry);
+        pf->setTransform(carry);
 
-    snapped = true;
+        snapped = true;
 
-    emit tm->sig_refreshMenu();
+        emit tm->sig_refreshMenu();
 
-    return true;
+        return true;
+    }
+    else
+    {
+        qWarning("no snap no edge found in selection");
+        return false;
+    }
 }
 
 void JoinEdge::updateDragging(QPointF spt)
@@ -381,6 +399,7 @@ CreatePolygon::CreatePolygon(TilingMaker * tilingMaker, QPointF spt )
 {
     qDebug() << "CreatePolygon";
     QPointF wpt = tilingMaker->findSelectionPointOrPoint(spt);
+    tm->nearGridPoint(spt,wpt);
     addVertex(wpt);
     desc = "CreatePolygon";
 }
@@ -409,7 +428,7 @@ void CreatePolygon::addVertex(QPointF wpt)
         qDebug("auto-complete the polygon");
         VertexPtr vnew = make_shared<Vertex>(wpt);
         EdgePtr last = wAccum.last();
-        Q_ASSERT(last->getType() == EDGE_POINT);
+        Q_ASSERT(last->getType() == EDGETYPE_POINT);
         last->setV2(firstV);
 
         QTransform t;
@@ -424,7 +443,7 @@ void CreatePolygon::addVertex(QPointF wpt)
         // is a new point
         VertexPtr vnew = make_shared<Vertex>(wpt);
         EdgePtr last = wAccum.last();
-        Q_ASSERT(last->getType() == EDGE_POINT);
+        Q_ASSERT(last->getType() == EDGETYPE_POINT);
         last->setV2(vnew);
 
         // start of next edge
@@ -440,6 +459,8 @@ void CreatePolygon::addVertex(QPointF wpt)
 
 void CreatePolygon::updateDragging(QPointF spt)
 {
+    MouseAction::updateDragging(spt);
+
     underneath = QPointF();
 
     EdgePoly & wAccum = tm->getAccumW();
@@ -450,16 +471,18 @@ void CreatePolygon::updateDragging(QPointF spt)
         if (Point::isNear(p1,spt))
         {
             underneath = edge->getV1()->getPosition();
-            break;
+            return;
         }
         else if (Point::isNear(p2,spt))
         {
             underneath = edge->getV2()->getPosition();
-            break;
+            return;
+        }
+        else if (tm->nearGridPoint(spt,underneath))
+        {
+            return;
         }
     }
-
-    MouseAction::updateDragging(spt);
 }
 
 void CreatePolygon::endDragging(QPointF spt )
@@ -469,6 +492,8 @@ void CreatePolygon::endDragging(QPointF spt )
     if (wAccum.size() != 0)
     {
         QPointF wpt = tm->findSelectionPointOrPoint(spt);
+        tm->nearGridPoint(spt,wpt);
+
         addVertex(wpt);
     }
     MouseAction::endDragging(spt);
@@ -711,7 +736,7 @@ void Perspective::addPoint(QPointF spos)
     else if (size == 1)
     {
         EdgePtr last = accum.last();
-        if (last->getType() == EDGE_POINT)
+        if (last->getType() == EDGETYPE_POINT)
         {
             last->setV2(vnew);
             qDebug() << "edge count =" << accum.size();
@@ -831,6 +856,10 @@ EditEdge::EditEdge(TilingMaker * tilingMaker, TilingSelectionPtr sel, QPointF sp
     : MouseAction(tilingMaker,sel,spt)
 {
     desc  = "EditEdge";
+    qDebug() << desc;
+
+    Q_ASSERT(selection->getType() == ARC_POINT);
+
     edge  = sel->getModelEdge();
     start = edge->getArcCenter();
     pfp   = sel->getPlacedFeature();
@@ -863,15 +892,8 @@ void EditEdge::updateDragging(QPointF spt)
     QPointF pt     = Utils::getClosestPoint(perp,wpt);
     QTransform inv = pfp->getTransform().inverted();
     pt             = inv.map(pt);
-    if (poly.containsPoint(wpt,Qt::OddEvenFill))
-    {
-        edge->setArcCenter(pt, true);
-    }
-    else
-    {
-        edge->setArcCenter(pt, false);
-    }
-
+    bool convex    = edge->isConvex();
+    edge->setArcCenter(pt, convex);
     MouseAction::updateDragging(tm->screenToWorld(spt));
     emit tm->sig_refreshMenu();
 }

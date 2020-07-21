@@ -29,14 +29,14 @@
 #include "panels/panel.h"
 #include "panels/layout_sliderset.h"
 #include "panels/panel_misc.h"
-#include "style/Colored.h"
-#include "style/Plain.h"
-#include "style/Emboss.h"
-#include "style/Filled.h"
-#include "style/Interlace.h"
-#include "style/Sketch.h"
-#include "style/Thick.h"
-#include "style/TileColors.h"
+#include "style/colored.h"
+#include "style/plain.h"
+#include "style/emboss.h"
+#include "style/filled.h"
+#include "style/interlace.h"
+#include "style/sketch.h"
+#include "style/thick.h"
+#include "style/tile_colors.h"
 
 class WorkspaceViewer;
 
@@ -54,8 +54,6 @@ signals:
     void    sig_update();
 
 protected:
-    WorkspaceViewer * viewer;
-
 };
 
 
@@ -65,7 +63,7 @@ class ColoredEditor : public StyleEditor
     Q_OBJECT
 
 public:
-    ColoredEditor(Colored * c, QTableWidget * table);
+    ColoredEditor(Colored * c, AQTableWidget *table);
 
 public slots:
     void slot_colorsChanged();
@@ -81,7 +79,7 @@ private:
     void updateTransparency();
 
     Colored         * colored;
-    QTableWidget    * table;
+    AQTableWidget   * table;
     AQWidget        * colorwidget;
     QPushButton     * color_button;
     DoubleSliderSet * transparency;
@@ -93,8 +91,7 @@ class ThickEditor : public ColoredEditor
     Q_OBJECT
 
 public:
-    ThickEditor(Thick * o, QTableWidget * table);
-
+    ThickEditor(Thick * o, AQTableWidget *table);
 
  private slots:
     void  slot_widthChanged(int width);
@@ -115,7 +112,7 @@ class FilledEditor : public StyleEditor
     Q_OBJECT
 
 public:
-    FilledEditor(Filled * f, QTableWidget * table, QVBoxLayout *parmsCtrl );
+    FilledEditor(Filled * f, AQTableWidget *table, QVBoxLayout *parmsCtrl );
     ~FilledEditor();
 
     Filled * getFilled() { return filled; }
@@ -139,7 +136,7 @@ protected:
     void        displayParms3();
 
 private:
-    QTableWidget * table;
+    AQTableWidget * table;
     Filled       * filled;
     QCheckBox    * inside_checkbox;
     QCheckBox    * outside_checkbox;
@@ -156,7 +153,7 @@ class EmbossEditor : public ThickEditor
     Q_OBJECT
 
 public:
-    EmbossEditor(Emboss * e, QTableWidget * table);
+    EmbossEditor(Emboss * e, AQTableWidget *table);
 
 public slots:
     void slot_anlgeChanged(int angle);
@@ -172,7 +169,7 @@ class InterlaceEditor : public ThickEditor
     Q_OBJECT
 
 public:
-    InterlaceEditor(Interlace * i, QTableWidget * table);
+    InterlaceEditor(Interlace * i, AQTableWidget * table);
 
 private slots :
     void slot_gapChanged(qreal gap);
@@ -200,7 +197,7 @@ class TileColorsEditor : public StyleEditor
     };
 
 public:
-    TileColorsEditor(TileColors * c, QTableWidget * table, TilingPtr tiling);
+    TileColorsEditor(TileColors * c, AQTableWidget * table, TilingPtr tiling);
 
 public slots:
 
@@ -220,13 +217,14 @@ private:
     ControlPanel    * panel;
     TilingPtr         tiling;
     TileColors      * colored;
-    QTableWidget    * table;
+    AQTableWidget   * table;
 
     SliderSet       * width_slider;
     QCheckBox       * outline_checkbox;
     AQWidget        * colorwidget;
     QPushButton     * color_button;
     DoubleSliderSet * transparency;
+    QTableWidgetItem * colorItem;
 
     QVector<FeaturePtr> qlfp;
 

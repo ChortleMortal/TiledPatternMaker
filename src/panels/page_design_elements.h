@@ -53,19 +53,14 @@ public slots:
     void     slot_loadedDesign(eDesign design);
 
 private slots:
-    void     slot_sourceSelect(int  id);
     void     slot_rowSelected(int row, int col);
 
 protected:
-    PrototypePtr            findPrototype();
 
 private:
-    QTableWidget *          delTable; // design element table
+    AQTableWidget *          delTable; // design element table
 
     QLabel *                wsProtoLabel;
-    QRadioButton *          sourceStyle;
-    QRadioButton *          sourceWS;
-    QButtonGroup            bgroup;
 };
 
 #endif

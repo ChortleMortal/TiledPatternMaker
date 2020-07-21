@@ -1,5 +1,5 @@
 #include "layout_transform.h"
-#include "geometry/Transform.h"
+#include "geometry/transform.h"
 
 LayoutTransform::LayoutTransform(QString name, int decimals)
 {

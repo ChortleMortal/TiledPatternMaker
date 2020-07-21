@@ -25,7 +25,7 @@
 #include "page_save.h"
 #include "base/tiledpatternmaker.h"
 #include "base/canvas.h"
-#include "tile/Tiling.h"
+#include "tile/tiling.h"
 
 page_save::page_save(ControlPanel * cpanel)  : panel_page(cpanel, "Save")
 {
@@ -51,21 +51,8 @@ page_save::page_save(ControlPanel * cpanel)  : panel_page(cpanel, "Save")
 
 void page_save::createDesignSave()
 {
-    designStyle = new QRadioButton("Loaded Styles");
-    designWS    = new QRadioButton("Workspace");
-
-    QButtonGroup * savegroup = new QButtonGroup();
-    savegroup->addButton(designStyle,WS_LOADED);
-    savegroup->addButton(designWS,WS_TILING);
-
-    QHBoxLayout * hbox = new QHBoxLayout;
-    hbox->addStretch();
-    hbox->addWidget(designStyle);
-    hbox->addWidget(designWS);
-    hbox->addStretch();
-
     leSaveXmlName   = new QLineEdit();
-    saveXml         = new QPushButton("Save Design");
+    saveXml         = new QPushButton("Save Mosaic");
     designNotes     = new QTextEdit("Design Notes");
     designNotes->setFixedSize(601,101);
     QLabel * label  = new QLabel("Name");
@@ -75,39 +62,25 @@ void page_save::createDesignSave()
     hbox2->addWidget(leSaveXmlName);
     hbox2->addWidget(saveXml);
     QVBoxLayout * vlayout = new QVBoxLayout();
-    vlayout->addLayout(hbox);
     vlayout->addLayout(hbox2);
     vlayout->addWidget(designNotes);
 
-    QGroupBox * saveBox = new QGroupBox("Design");
+    QGroupBox * saveBox = new QGroupBox("Mosaic");
     saveBox->setLayout(vlayout);
     vbox->addWidget(saveBox);
 
-    designStyle->setChecked(true);
-
-    connect(savegroup, static_cast<void(QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked), this , &page_save::slot_designSourceChanged);
     connect(saveXml,   SIGNAL(clicked()),       this,   SLOT(slot_saveAsXML()));
     connect(this,      &page_save::sig_saveXML, maker,  &TiledPatternMaker::slot_saveXML);
 }
 
 void page_save::createTilingSave()
 {
-    tilingStyle  = new QRadioButton("Loaded Styles");
-    tilingStyle->setChecked(true);
-    tilingWS     = new QRadioButton("Workspace");
     requiresSave = new QLabel;
     requiresSave->setStyleSheet("color: red");
     requiresSave->setFixedWidth(91);
     requiresSave->setAlignment(Qt::AlignRight);
 
-    QButtonGroup * savegroup = new QButtonGroup();
-    savegroup->addButton(tilingStyle,WS_LOADED);
-    savegroup->addButton(tilingWS,WS_TILING);
-
     QHBoxLayout * hbox = new QHBoxLayout;
-    hbox->addStretch();
-    hbox->addWidget(tilingStyle);
-    hbox->addWidget(tilingWS);
     hbox->addStretch();
     hbox->addWidget(requiresSave);
 
@@ -139,27 +112,25 @@ void page_save::createTilingSave()
     saveBox->setLayout(vlayout);
     vbox->addWidget(saveBox);
 
-    connect(savegroup, static_cast<void(QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked), this , &page_save::slot_tilingSourceChanged);
     connect(pbSave, &QPushButton::clicked, this, &page_save::slot_saveTiling);
 }
 
 TilingPtr page_save::getTiling()
 {
-    eWsData wsdata   = (tilingStyle->isChecked()) ? WS_LOADED : WS_TILING;
-    TilingPtr tiling = workspace->getTiling(wsdata);
+    TilingPtr tiling = workspace->getTiling();
     return tiling;
 }
 
 void page_save::onEnter()
 {
-    eWsData wsdata    = (designStyle->isChecked()) ? WS_LOADED : WS_TILING;
-    StyledDesign & sd = workspace->getStyledDesign(wsdata);
-
-    leSaveXmlName->setText(sd.getName());
-    designNotes->setText(sd.getNotes());
+    MosaicPtr mosaic = workspace->getMosaic();
+    if (mosaic)
+    {
+        leSaveXmlName->setText(mosaic->getName());
+        designNotes->setText(mosaic->getNotes());
+    }
 
     TilingPtr tiling =  getTiling();
-
     blockSignals(true);
     if (tiling)
     {
@@ -190,13 +161,14 @@ void page_save::refreshPage()
 
 void page_save::slot_saveAsXML()
 {
-    eWsData wsdata    = (designStyle->isChecked()) ? WS_LOADED : WS_TILING;
-    StyledDesign & sd = workspace->getStyledDesign(wsdata);
-    sd.setNotes(designNotes->toPlainText());
-
+    MosaicPtr mosaic = workspace->getMosaic();
+    if (mosaic)
+    {
+        mosaic->setNotes(designNotes->toPlainText());
+    }
     QString name = leSaveXmlName->text();
     Q_ASSERT(!name.contains(".xml"));
-    emit sig_saveXML(wsdata,name);
+    emit sig_saveXML(name);
 }
 
 
@@ -212,15 +184,13 @@ void page_save::slot_loadedTiling(QString name)
     onEnter();
 }
 
-void page_save::slot_designSourceChanged(int wsdata)
+void page_save::slot_designSourceChanged()
 {
-    Q_UNUSED(wsdata)
     onEnter();
 }
 
-void page_save::slot_tilingSourceChanged(int wsdata)
+void page_save::slot_tilingSourceChanged()
 {
-    Q_UNUSED(wsdata)
     onEnter();
 }
 
@@ -231,16 +201,40 @@ void page_save::slot_saveTiling()
     {
         QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
-        box.setText("Save Tiling: there is no tiling");
+        box.setWindowTitle("Save Tiling");
+        box.setText("There is no tiling to save.");
         box.exec();
         return;
     }
+
+    if (tiling->countPlacedFeatures() == 0)
+    {
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Warning);
+        box.setWindowTitle("Save Tiling");
+        box.setText("There are no placed features.  Please include some features.");
+        box.exec();
+        return;
+    }
+
+    int count = tiling->getUniqueFeatures().count();
+    if (count >= MAX_UNIQUE_FEATURES)
+    {
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Critical);
+        box.setWindowTitle("Save Tiling");
+        box.setText(QString("There are too many unique features (count=%1).\nSomething is wrong with this tiling.").arg(count));
+        box.exec();
+        return;
+    }
+
 
     if (tile_name->text().isEmpty() || tile_name->text() == "The Unnamed")
     {
         QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
-        box.setText("Save Tiling: requires tiling name");
+        box.setWindowTitle("Save Tiling");
+        box.setText("There is no tiling name. A tiling name is required.");
         box.exec();
         return;
     }

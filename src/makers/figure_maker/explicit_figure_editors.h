@@ -29,16 +29,16 @@
 #include "base/shared.h"
 #include "figure_editors.h"
 #include "panels/layout_sliderset.h"
-#include "makers/figure_maker/figure_maker.h"
+#include "makers/figure_maker/prototype_maker.h"
 
-class FigureMaker;
+class PrototypeMaker;
 
 class ExplicitEditor : public  FigureEditor
 {
     Q_OBJECT
 
 public:
-    ExplicitEditor(FigureMaker * ed, QString aname);
+    ExplicitEditor(PrototypeMaker * ed, QString aname);
 
     virtual FigurePtr getFigure() override;
 
@@ -68,7 +68,7 @@ protected:
 class ExplicitGirihEditor : public ExplicitEditor
 {
 public:
-    ExplicitGirihEditor(FigureMaker * ed, QString aname);
+    ExplicitGirihEditor(PrototypeMaker * ed, QString aname);
 
     FigurePtr  getFigure() override;
     void resetWithFigure(FigurePtr fig) override;
@@ -104,7 +104,7 @@ private:
     SliderSet        * s;
 
 public:
-    ExplicitHourglassEditor(FigureMaker * ed, QString aname);
+    ExplicitHourglassEditor(PrototypeMaker * ed, QString aname);
 
     FigurePtr getFigure() override;
     void resetWithFigure(FigurePtr fig) override;
@@ -133,7 +133,7 @@ class ExplicitInferEditor : public  ExplicitEditor
     Q_OBJECT
 
 public:
-    ExplicitInferEditor(FigureMaker * ed, QString aname);
+    ExplicitInferEditor(PrototypeMaker * ed, QString aname);
 
     FigurePtr getFigure() override;
 
@@ -164,7 +164,7 @@ class ExplicitIntersectEditor : public ExplicitEditor
     Q_OBJECT
 
 public:
-    ExplicitIntersectEditor(FigureMaker * ed, QString aname);
+    ExplicitIntersectEditor(PrototypeMaker * ed, QString aname);
 
     FigurePtr getFigure() override;
     void resetWithFigure(FigurePtr fig) override;
@@ -200,7 +200,7 @@ class ExplicitRosetteEditor : public ExplicitEditor
     Q_OBJECT
 
 public:
-    ExplicitRosetteEditor(FigureMaker * ed, QString aname);
+    ExplicitRosetteEditor(PrototypeMaker * ed, QString aname);
 
     FigurePtr getFigure() override;
 
@@ -228,7 +228,7 @@ class ExplicitStarEditor : public ExplicitEditor
     Q_OBJECT
 
 public:
-    ExplicitStarEditor(FigureMaker * ed, QString aname);
+    ExplicitStarEditor(PrototypeMaker * ed, QString aname);
 
     FigurePtr getFigure() override;
 
@@ -257,7 +257,7 @@ class ExplicitFeatureEditor : public ExplicitEditor
     Q_OBJECT
 
 public:
-    ExplicitFeatureEditor(FigureMaker * ed, QString aname);
+    ExplicitFeatureEditor(PrototypeMaker * ed, QString aname);
 
     FigurePtr getFigure() override;
     void resetWithFigure(FigurePtr fig) override;

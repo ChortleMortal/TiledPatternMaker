@@ -1,7 +1,6 @@
 <?xml version="1.0"?>
-<vector id="1" version="2">
+<vector id="1" version="5">
 	<design>
-		<scale>1</scale>
 		<size>
 			<width>1500</width>
 			<height>1100</height>
@@ -14,8 +13,9 @@
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
 			<top__delta>0</top__delta>
-			<width__delta>0</width__delta>
+			<width__delta>1</width__delta>
 			<theta__delta>0</theta__delta>
+			<center>-4.013333333333333,-1.346666666666668</center>
 		</toolkit.GeoLayer>
 		<style.Style>
 			<boundary id="3">
@@ -46,96 +46,39 @@
 							<regular>false</regular>
 							<edges id="11">
 								<Curve convex="t">
-									<Point id="1">1,1</Point>
-									<Point id="2">-0.9999999999999998,1</Point>
+									<Point id="12">1,1</Point>
+									<Point id="13">-0.9999999999999998,1</Point>
 									<Center>1.110223024625157e-16,-0.9999999999999998</Center>
 								</Curve>
 								<Curve convex="f">
-									<Point reference="2" />
-									<Point id="3">-1,-0.9999999999999998</Point>
-									<Center>-3,5.551115123125783e-16</Center>
+									<Point reference="13" />
+									<Point id="14">-1,-0.9999999999999998</Point>
+									<Center>0.9999999999999999,-1.110223024625157e-16</Center>
 								</Curve>
 								<Curve convex="t">
-									<Point reference="3" />
-									<Point id="4">0.9999999999999997,-1</Point>
-									<Center>2.220446049250313e-16,1</Center>
+									<Point reference="14" />
+									<Point id="15">0.9999999999999997,-1</Point>
+									<Center>0,0.9999999999999997</Center>
 								</Curve>
 								<Curve convex="f">
-									<Point reference="4" />
-									<Point reference="1" />
-									<Center>3,-5.551115123125783e-16</Center>
+									<Point reference="15" />
+									<Point reference="12" />
+									<Center>-1,3.33066907387547e-16</Center>
 								</Curve>
 							</edges>
 						</tile.Feature>
-						<app.ExplicitFeature id="12" type="FIG_TYPE_FEATURE">
-							<map id="13">
-								<vertices id="14">
-									<Vertex id="15">
-										<pos>-1,-0.9999999999999998</pos>
-										<edges2>
-											<curve id="16" convex="t">
-												<map reference="13" />
-												<v1 reference="15" />
-												<v2 id="17">
-													<pos>0.9999999999999997,-1</pos>
-													<edges2>
-														<curve id="18" convex="f">
-															<map reference="13" />
-															<v1 reference="17" />
-															<v2 id="19">
-																<pos>1,1</pos>
-																<edges2>
-																	<curve id="20" convex="t">
-																		<map reference="13" />
-																		<v1 reference="19" />
-																		<v2 id="21">
-																			<pos>-0.9999999999999998,1</pos>
-																			<edges2>
-																				<edge reference="20" />
-																				<curve id="22" convex="f">
-																					<map reference="13" />
-																					<v1 reference="21" />
-																					<v2 reference="15" />
-																					<pos>-3,5.551115123125783e-16</pos>
-																				</curve>
-																			</edges2>
-																		</v2>
-																		<pos>1.110223024625157e-16,-0.9999999999999998</pos>
-																	</curve>
-																	<edge reference="18" />
-																</edges2>
-															</v2>
-															<pos>3,-5.551115123125783e-16</pos>
-														</curve>
-														<edge reference="16" />
-													</edges2>
-												</v2>
-												<pos>2.220446049250313e-16,1</pos>
-											</curve>
-											<edge reference="22" />
-										</edges2>
-									</Vertex>
-									<Vertex reference="21" />
-									<Vertex reference="17" />
-									<Vertex reference="19" />
-								</vertices>
-								<edges id="23">
-									<Edge reference="20" />
-									<Edge reference="22" />
-									<Edge reference="16" />
-									<Edge reference="18" />
-								</edges>
-							</map>
-							<boundarySides>4</boundarySides>
+						<app.ExplicitFeature id="16" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
+							<r>0</r>
 						</app.ExplicitFeature>
 					</entry>
 				</app.Prototype>
 			</prototype>
 		</style.Style>
 		<style.Colored>
-			<color>#ffc59c0c</color>
+			<color hide="f">#ffc59c0c</color>
 		</style.Colored>
 		<style.Thick>
 			<draw__outline>true</draw__outline>

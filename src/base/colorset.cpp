@@ -198,6 +198,15 @@ void ColorGroup::removeColorSet(int idx)
     pos = colorgroup.begin();
 }
 
+void  ColorGroup::resetIndex()
+{
+    pos = colorgroup.begin();
+    for (auto fset : colorgroup)
+    {
+        fset.resetIndex();
+    }
+}
+
 ColorSet & ColorGroup::getNextColorSet()
 {
     if (size() == 0)

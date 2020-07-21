@@ -15,7 +15,7 @@ public:
     void       setTransform(QTransform t);
     void       addTransform(QTransform t);
 
-    QTransform computeTransform(QTransform baseTransform);
+    QTransform toQTransform(QTransform viewTransform);
     QTransform getTransform();
     QPointF    getTranslate() { return QPointF(translateX,translateY); }
     QString    toInfoString();

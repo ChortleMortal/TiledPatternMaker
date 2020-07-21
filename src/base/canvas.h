@@ -28,8 +28,7 @@
 #include <QSvgGenerator>
 #include "base/shared.h"
 #include "base/cycler.h"
-#include "base/canvasSettings.h"
-#include "base/scene.h"
+#include "base/canvas_settings.h"
 #include "base/configuration.h"
 
 class Design;
@@ -48,19 +47,9 @@ public:
     static void     releaseInstance();
 
     void    init();
-    void    update();
-    void    clearScene();
-    void    invalidate();
-
-    Scene * swapScenes();
-    Scene * currentScene() { return scene; }
-
-    void    addDesign(Design * design);
 
     void    duplicate();
 
-    void    dumpGraphicsInfo();
-    void    dump(bool force = false);
     void    savePixmap(QString name);
 
     bool     procKeyEvent(QKeyEvent * k);    // from View
@@ -71,7 +60,6 @@ public:
 
     void    setMaxStep(int max);
     void    stopTimer();
-
 
 signals:
     void sig_viewWS();
@@ -85,7 +73,7 @@ signals:
     void sig_deltaMoveX(int amount);
     void sig_deltaScale(int amount);
 
-    void sig_cyclerStart();
+    void sig_cyclerStart(eCycleMode);
     void sig_cyclerQuit();
     void sig_cyclerKey(int key);
 
@@ -149,9 +137,7 @@ private:
     QTimer          * timer;
     Workspace       * workspace;
     WorkspaceViewer * viewer;
-    Scene           * sceneA;
-    Scene           * sceneB;
-    Scene           * scene;    // the current scene
+    View            * view;
 
     QSvgGenerator   generator;
 
@@ -160,7 +146,6 @@ private:
     int selectedLayer;
 
     bool dragging;
-
 };
 
 #endif // CANVAS_H

@@ -26,21 +26,21 @@
 #include "base/configuration.h"
 #include "base/canvas.h"
 #include "base/shortcuts.h"
-#include "tapp/DesignElement.h"
-#include "tapp/Prototype.h"
-#include "viewers/placeddesignelementview.h"
-#include "viewers/workspaceviewer.h"
-#include "style/Style.h"
+#include "tapp/design_element.h"
+#include "tapp/prototype.h"
+#include "viewers/placed_designelement_view.h"
+#include "viewers/workspace_viewer.h"
+#include "style/style.h"
 
-MapEditor * MapEditor::mpThis = nullptr;
+MapEditorPtr MapEditor::mpThis;     // once initialised the destructor is never called
 
 const bool debugMouse = false;
 
-MapEditor * MapEditor::getInstance()
+MapEditorPtr MapEditor::getInstance()
 {
-    if (mpThis == nullptr)
+    if (!mpThis)
     {
-        mpThis = new MapEditor;
+        mpThis = make_shared<MapEditor>();
     }
     return mpThis;
 }
@@ -59,10 +59,6 @@ MapEditor::MapEditor() : MapEditorSelection(), stash(this)
     map_mouse_mode  = MAP_MODE_NONE;
     mapType       = MAP_TYPE_UNDEFINED;
     newCircleRadius = 0.25;
-}
-
-MapEditor::~MapEditor()
-{
 }
 
 void MapEditor::setDesignElement(DesignElementPtr delpptr)
@@ -114,6 +110,20 @@ void MapEditor::setLocal(MapPtr map)
 {
     mapType   = MAP_TYPE_LOCAL;
     this->map = map;
+
+    buildEditorDB();
+
+    if (config->viewerType == VIEW_MAP_EDITOR)
+    {
+        forceRedraw();
+    }
+}
+
+void  MapEditor::setTiling(TilingPtr tiling)
+{
+    mapType      = MAP_TYPE_TILING;
+    this->tiling = tiling;
+    map          = createFromTiling();
 
     buildEditorDB();
 
@@ -202,6 +212,20 @@ void MapEditor::setMouseMode(eMapMouseMode mode)
 {
     map_mouse_mode = mode;
     forceRedraw();
+}
+
+MapPtr MapEditor::createFromTiling()
+{
+    MapPtr map = make_shared<Map>("tiling map");
+    QList<PlacedFeaturePtr> & qlpf = tiling->getPlacedFeatures();
+    for (auto pfp : qlpf)
+    {
+        EdgePoly poly = pfp->getPlacedEdgePoly();
+        MapPtr emap = make_shared<Map>("feature",poly);
+        map->mergeMap(emap);
+    }
+
+    return map;
 }
 
 eMapMouseMode MapEditor::getMouseMode()

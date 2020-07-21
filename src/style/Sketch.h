@@ -25,7 +25,7 @@
 #ifndef SKETCH_H
 #define SKETCH_H
 
-#include "style/Plain.h"
+#include "style/plain.h"
 ////////////////////////////////////////////////////////////////////////////
 //
 // Sketch.java

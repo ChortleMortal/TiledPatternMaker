@@ -24,11 +24,11 @@
 
 #include "explicit_figure_editors.h"
 #include "base/tiledpatternmaker.h"
-#include "tapp/Star.h"
-#include "tapp/ExplicitFigure.h"
+#include "tapp/star.h"
+#include "tapp/explicit_figure.h"
 #include "makers/figure_maker/feature_button.h"
 
-ExplicitEditor::ExplicitEditor(FigureMaker * ed, QString aname) : FigureEditor(ed, aname)
+ExplicitEditor::ExplicitEditor(PrototypeMaker * ed, QString aname) : FigureEditor(ed, aname)
 {
 }
 
@@ -93,7 +93,7 @@ ExplicitPtr ExplicitEditor::resetFigure(FigurePtr fig, eFigType figType)
 // centre of every edge of the feature.
 
 
-ExplicitGirihEditor::ExplicitGirihEditor(FigureMaker * ed, QString aname) : ExplicitEditor (ed, aname)
+ExplicitGirihEditor::ExplicitGirihEditor(PrototypeMaker * ed, QString aname) : ExplicitEditor (ed, aname)
 {
     side = new SliderSet("ExplicitGirihEditor Star Sides", 10, 3, 24);
     skip = new DoubleSliderSet("ExplicitGirihEditor Skip D", 3.0, 1.0, 12.0, 100);
@@ -170,7 +170,7 @@ void  ExplicitGirihEditor::updateGeometry()
 // the explicit map directly by hand, beginning with a vertex in the
 // centre of every edge of the feature.
 
-ExplicitHourglassEditor::ExplicitHourglassEditor(FigureMaker * ed, QString aname) : ExplicitEditor(ed, aname)
+ExplicitHourglassEditor::ExplicitHourglassEditor(PrototypeMaker * ed, QString aname) : ExplicitEditor(ed, aname)
 {
     // Hourglass panel.
     d = new DoubleSliderSet("ExplicitHourglassEditor D", 2.0, 1.0, 12.0, 100);
@@ -266,7 +266,7 @@ void ExplicitHourglassEditor::updateGeometry()
 // the explicit map directly by hand, beginning with a vertex in the
 // centre of every edge of the feature.
 
-ExplicitInferEditor::ExplicitInferEditor(FigureMaker * ed, QString aname) : ExplicitEditor(ed, aname)
+ExplicitInferEditor::ExplicitInferEditor(PrototypeMaker * ed, QString aname) : ExplicitEditor(ed, aname)
 {
 }
 
@@ -315,7 +315,7 @@ void ExplicitInferEditor::updateGeometry()
 // the explicit map directly by hand, beginning with a vertex in the
 // centre of every edge of the feature.
 
-ExplicitIntersectEditor::ExplicitIntersectEditor(FigureMaker * ed, QString aname) : ExplicitEditor(ed, aname)
+ExplicitIntersectEditor::ExplicitIntersectEditor(PrototypeMaker * ed, QString aname) : ExplicitEditor(ed, aname)
 {
     side = new SliderSet("ExplicitIntersectEditor Star Sides", 10, 3, 24);
     skip = new DoubleSliderSet("ExplicitIntersectEditor D", 3, 0, 12, 100);
@@ -399,7 +399,7 @@ void ExplicitIntersectEditor::updateGeometry()
 // casper - interesting but somewhat inscrutable comment
 // this implementation inherits the rosette editor
 
-ExplicitRosetteEditor::ExplicitRosetteEditor(FigureMaker * ed, QString aname) : ExplicitEditor(ed, aname)
+ExplicitRosetteEditor::ExplicitRosetteEditor(PrototypeMaker * ed, QString aname) : ExplicitEditor(ed, aname)
 {
     q_slider = new DoubleSliderSet("ExplicitRosetteEditor Q (Tip Angle)", 0.0, -3.0, 3.0, 100 );
     s_slider = new SliderSet("ExplicitRosetteEditor S (Sides Intersections)", 1, 1, 5);
@@ -500,7 +500,7 @@ void ExplicitRosetteEditor::updateGeometry()
 // The controls for editing a Star.  Glue code, just like RosetteEditor.
 // caser pthis implementation inherits the rosette editor
 
-ExplicitStarEditor::ExplicitStarEditor(FigureMaker * ed, QString aname) : ExplicitEditor(ed, aname)
+ExplicitStarEditor::ExplicitStarEditor(PrototypeMaker * ed, QString aname) : ExplicitEditor(ed, aname)
 {
     d_slider = new DoubleSliderSet("ExplicitStarEditor D", 0.0, 0.0, 1.0, 100);
     s_slider = new SliderSet("ExplicitStarEditor S", 0.0, 0.0, 1.0);
@@ -582,7 +582,7 @@ void ExplicitStarEditor::updateGeometry()
 
 //  Make a figure from a feature
 
-ExplicitFeatureEditor::ExplicitFeatureEditor(FigureMaker * ed, QString aname) : ExplicitEditor(ed, aname)
+ExplicitFeatureEditor::ExplicitFeatureEditor(PrototypeMaker * ed, QString aname) : ExplicitEditor(ed, aname)
 {
 }
 

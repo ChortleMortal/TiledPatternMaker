@@ -31,7 +31,7 @@
 // 2D linear transform ((a b) (d e)) together with the translation (c f).
 
 
-#include "geometry/Transform.h"
+#include "geometry/transform.h"
 #include <QtCore>
 
 QTransform Transform::scaleAroundPoint(QPointF pt, qreal t)

@@ -23,9 +23,9 @@
  */
 
 #include "tilingmanager.h"
-#include "tile/Tiling.h"
-#include "tile/tilingloader.h"
-#include "geometry/Point.h"
+#include "tile/tiling.h"
+#include "tile/tiling_loader.h"
+#include "geometry/point.h"
 #include "base/shared.h"
 #include "base/fileservices.h"
 
@@ -69,6 +69,7 @@ TilingPtr TilingManager::loadTiling(QString name)
 
 bool TilingManager::verifyNameFiles()
 {
+    bool rv = true;
     QStringList files = FileServices::getTilingNames();
     for (int i=0; i < files.size(); i++)
     {
@@ -76,15 +77,15 @@ bool TilingManager::verifyNameFiles()
         TilingPtr tp = TilingManager::loadTiling(name);
         if (tp->getName() != name)
         {
-            qWarning() << "Error: name does not match (1)" << name;
-            return false;
+            qWarning() << "Error: name does not match filename =" << name <<"internal name= " << tp->getName();
+            rv = false;
         }
         if (!FileServices::verifyTilingName(name))
         {
-            qWarning() << "Error: name does not match (3)" << name;
-            return false;
+            qWarning() << "Error: name does not match filename =" << name;
+            rv = false;
         }
     }
-    return true;
+    return rv;
 }
 

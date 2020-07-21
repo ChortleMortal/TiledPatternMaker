@@ -68,11 +68,11 @@ protected:
 
     void    updateDesignWidget();
     void    populateLayerTable();
-    void    addLayerToTable(Layer * layer, int row);
+    void    addLayerToTable(LayerPtr layer, int row);
 
 private:
     QWidget      * designWidget;
-    QTableWidget * layerTable;
+    AQTableWidget * layerTable;
 
     SliderSet   * xSliderSet;
     SliderSet   * ySliderSet;

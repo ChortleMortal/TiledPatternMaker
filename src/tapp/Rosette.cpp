@@ -34,14 +34,14 @@
 //
 // [1] A.J. Lee, _Islamic Star Patterns_.  Muqarnas 4.
 
-#include "tapp/Rosette.h"
-#include "tapp/Star.h"
-#include "geometry/Point.h"
-#include "geometry/Intersect.h"
-#include "geometry/Transform.h"
+#include "tapp/rosette.h"
+#include "tapp/star.h"
+#include "geometry/point.h"
+#include "geometry/intersect.h"
+#include "geometry/transform.h"
 #include "designs/shapefactory.h"
 #include "base/canvas.h"
-#include "tile/Feature.h"
+#include "tile/feature.h"
 
 Rosette::Rosette(const Figure & fig,  int nsides, qreal q, int s, qreal k, qreal r)
     : RadialFigure(fig, nsides, r)

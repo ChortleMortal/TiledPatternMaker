@@ -25,11 +25,11 @@
 #ifndef PROTOTYPE_H
 #define PROTOTYPE_H
 
-#include "tile/Tiling.h"
-#include "tile/Feature.h"
-#include "tapp/Figure.h"
-#include "tapp/DesignElement.h"
-#include "geometry/FillRegion.h"
+#include "tile/tiling.h"
+#include "tile/feature.h"
+#include "tapp/figure.h"
+#include "tapp/design_element.h"
+#include "geometry/fill_region.h"
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -53,11 +53,12 @@ public:
 
     MapPtr  getProtoMap();
     MapPtr  getExistingProtoMap() { return protoMap; }
-    MapPtr  createProtoMap();
+    MapPtr  createProtoMap(bool showSplash = true);
     void    resetProtoMap();
 
     void    setTiling(TilingPtr t);
     void    addElement(DesignElementPtr element);
+    void    removeElement(DesignElementPtr element);
     void    setFeaturesReversed(QVector<FeaturePtr> features);
 
     QString getInfo() const;

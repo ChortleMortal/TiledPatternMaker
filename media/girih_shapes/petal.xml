@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<Poly name="petal">
+	<Curve convex="f">
+		<Point id="1">-1.216245299353273e-16,3.999999999999998</Point>
+		<Point id="2">-1.732050807568877,1</Point>
+		<Center>-3.866025403784437,4.232050807568877</Center>
+	</Curve>
+	<Curve convex="t">
+		<Point reference="2" />
+		<Point id="3">-1.332267629550188e-15,-2</Point>
+		<Center>2.13397459621556,1.232050807568876</Center>
+	</Curve>
+	<Curve convex="t">
+		<Point reference="3" />
+		<Point id="4">1.732050807568877,0.9999999999999993</Point>
+		<Center>-2.133974596215562,1.232050807568878</Center>
+	</Curve>
+	<Curve convex="f">
+		<Point reference="4" />
+		<Point reference="1" />
+		<Center>3.866025403784437,4.232050807568876</Center>
+	</Curve>
+	<tx>0</tx>
+	<ty>0</ty>
+	<scale>1</scale>
+	<rot>0</rot>
+</Poly>

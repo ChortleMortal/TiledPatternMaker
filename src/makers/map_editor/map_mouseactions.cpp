@@ -1,11 +1,11 @@
 #include "makers/map_editor/map_mouseactions.h"
 #include "makers/map_editor/map_editor.h"
-#include "geometry/Vertex.h"
-#include "geometry/Map.h"
-#include "geometry/Point.h"
-#include "geometry/Intersect.h"
+#include "geometry/vertex.h"
+#include "geometry/map.h"
+#include "geometry/point.h"
+#include "geometry/intersect.h"
 #include "base/utilities.h"
-#include "tapp/Figure.h"
+#include "tapp/figure.h"
 
 MapMouseAction::MapMouseAction(MapEditor * me, QPointF spt)
 {

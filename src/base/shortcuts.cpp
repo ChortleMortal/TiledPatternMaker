@@ -6,7 +6,7 @@ QString Shortcuts::getCanvasShortcuts()
 <pre><br><br>\
     A   MODE_ORIGIN    up/alt-up/down/alt-down/left/alt-left/right/alt-right <br>\
     B   MODE_OFFSET    up/down/left/right <br>\
-    C   Cycle through generating patterns<br>\
+    C   <br>\
     D   Duplicate (in new window)<br>\
     E   <br>\
     F   Toggle Radial replication in FigureView<br>\
@@ -17,7 +17,7 @@ QString Shortcuts::getCanvasShortcuts()
     K   Toggle debugMap in FigureView<br>\
     L   MODE_LAYER  0-9 <br>\
     M   Raise Menu<br>\
-    N   <br>\
+    N   Bring to center of primary screen<br>\
     O   Layer Out (hide) <br>\
     P   Print (actually Save Image) <br>\
     Q   Quit app (or quit cycler)<br>\

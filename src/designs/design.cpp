@@ -23,8 +23,8 @@
  */
 
 #include "base/border.h"
-#include "base/canvas.h"
-#include "base/canvasSettings.h"
+#include "base/view.h"
+#include "base/canvas_settings.h"
 #include "base/configuration.h"
 #include "base/workspace.h"
 #include "designs/design.h"
@@ -49,9 +49,9 @@ Design::Design(eDesign design, QString title)
 
     this->title = title;
 
-    canvas          = Canvas::getInstance();
-    config          = Configuration::getInstance();
-    workspace       = Workspace::getInstance();
+    view        = View::getInstance();
+    config      = Configuration::getInstance();
+    workspace   = Workspace::getInstance();
 
     init();
 }
@@ -74,10 +74,7 @@ void Design::init()
     currentStep     = 0;
     visible         = true;
 
-    if (config->autoClear)
-    {
-        destoryPatterns();
-    }
+    destoryPatterns();
 
     info.clear();
 
@@ -86,10 +83,7 @@ void Design::init()
 
 void Design::destoryPatterns()
 {
-    if (config->autoClear)
-    {
-        patterns.clear();
-    }
+    patterns.clear();
 }
 
 void Design::repeat()
@@ -114,7 +108,7 @@ void Design::repeat()
 
 void Design::updateDesign()
 {
-    canvas->invalidate();
+    view->update();
 }
 
 
@@ -125,13 +119,13 @@ void Design::showLayer(int layerNum)
     for (auto it = patterns.begin(); it < patterns.end(); it++)
     {
         PatternPtr t = *it;
-        Layer * layer = t->getLayer(layerNum);
+        LayerPtr layer = t->geSubLayer(layerNum);
         if (layer)
         {
-            layer->show();
+            layer->setVisible(true);
         }
     }
-    canvas->invalidate();
+    view->update();
 }
 
 void Design::hideLayer(int layerNum)
@@ -140,13 +134,13 @@ void Design::hideLayer(int layerNum)
     for (auto it = patterns.begin(); it < patterns.end(); it++)
     {
         PatternPtr t = *it;
-        Layer * layer = t->getLayer(layerNum);
+        LayerPtr layer = t->geSubLayer(layerNum);
         if (layer)
         {
-            layer->hide();
+            layer->setVisible(false);
         }
     }
-    canvas->invalidate();
+    view->update();
 }
 
 void Design::setVisible(bool visible)
@@ -156,17 +150,16 @@ void Design::setVisible(bool visible)
     for (auto it = patterns.begin(); it < patterns.end(); it++)
     {
         PatternPtr t = *it;
-        QVector<Layer*> & layers = t->getLayers();
-        for (auto it2 = layers.begin(); it2 != layers.end(); it2++)
+        QVector<LayerPtr> & layers = t->getSubLayers();
+        for (auto layer : layers)
         {
-            Layer * layer = *it2;
             layer->setVisible(visible);
         }
     }
 
     this->visible = visible;
 
-    canvas->invalidate();
+    view->update();
 }
 
 void  Design::zPlus(int layerNum)
@@ -174,10 +167,10 @@ void  Design::zPlus(int layerNum)
     for (auto it = patterns.begin(); it < patterns.end(); it++)
     {
         PatternPtr t = *it;
-        Layer * layer = t->getLayer(layerNum);
+        LayerPtr layer = t->geSubLayer(layerNum);
         if (layer)
         {
-            qreal zlevel = layer->zValue() + 1.0;
+            int zlevel = layer->zValue() + 1;
             layer->setZValue(zlevel);
             qDebug() << layerNum << "z-level:" << layer->zValue();
         }
@@ -189,10 +182,10 @@ void  Design::zMinus(int layerNum)
     for (auto it = patterns.begin(); it < patterns.end(); it++)
     {
         PatternPtr t = *it;
-        Layer * layer = t->getLayer(layerNum);
+        LayerPtr layer = t->geSubLayer(layerNum);
         if (layer)
         {
-            qreal zlevel = layer->zValue() - 1.0;
+            int zlevel = layer->zValue() - 1;
             layer->setZValue(zlevel);
             qDebug() << layerNum << "z-level:" << layer->zValue();
         }
@@ -222,8 +215,8 @@ void Design::RepeatSimples()
 void Design::LocSimple(PatternPtr pp)
 {
     QPointF pt = info.getStartTile();
-    pp->setLoc(pt.x() + (xSeparation * pp->getCol()),
-               pt.y() + (ySeparation * pp->getRow()));
+    pp->setLoc(QPointF(pt.x() + (xSeparation * pp->getCol()),
+                       pt.y() + (ySeparation * pp->getRow())));
     //qDebug() << "LocSimple" << pp->getLoc();
 }
 
@@ -241,8 +234,8 @@ void Design::LocHexagon(PatternPtr t)
 {
     QPointF pt = info.getStartTile();
     //qDebug() << t->getRow() << t->getCol() << xSeparation << ySeparation << xOffset2 << yOffset2;
-    t->setLoc(pt.x() + (xSeparation * t->getCol()) + (((xSeparation/2.0) + xOffset2) * (t->getRow() & 0x01)),
-              pt.y() + (ySeparation * t->getRow()) + (yOffset2 * (t->getCol() & 1)));
+    t->setLoc(QPointF(pt.x() + (xSeparation * t->getCol()) + (((xSeparation/2.0) + xOffset2) * (t->getRow() & 0x01)),
+                      pt.y() + (ySeparation * t->getRow()) + (yOffset2 * (t->getCol() & 1))));
     //qDebug() << "repeat hex loc:" << t->getLoc();
 }
 
@@ -258,8 +251,8 @@ void Design::RepeatOctagonsFilled()
 void Design::LocOctagonFilled(PatternPtr t)
 {
     QPointF pt = info.getStartTile();
-    t->setLoc(pt.x() + (xSeparation * t->getCol()) - (xSeparation/2.0),
-                  pt.y() + (ySeparation * t->getRow()) - (ySeparation/2.0));
+    t->setLoc(QPointF(pt.x() + (xSeparation * t->getCol()) - (xSeparation/2.0),
+                      pt.y() + (ySeparation * t->getRow()) - (ySeparation/2.0)));
 }
 
 

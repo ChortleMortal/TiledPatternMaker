@@ -130,7 +130,7 @@
 								</Line>
 								<Line>
 									<Point reference="30" />
-									<Point id="31">-1,-0.4142135623730949</Point>
+									<Point id="31">-1,-0.414213562373095</Point>
 								</Line>
 								<Line>
 									<Point reference="31" />
@@ -193,10 +193,10 @@
 			</prototype>
 		</style.Style>
 		<style.Colored>
-			<color hide="f">#ff1496d2</color>
+			<color hide="f">#ffffffff</color>
 		</style.Colored>
 		<style.Thick>
-			<draw__outline>false</draw__outline>
+			<draw__outline>true</draw__outline>
 			<width>0.05</width>
 		</style.Thick>
 	</style.Thick>
@@ -216,11 +216,17 @@
 			<color hide="f">#ffffff00</color>
 		</ColorBlacks>
 		<ColorWhites>
-			<color hide="f">#ffaaff00</color>
+			<color hide="f">#ff819528</color>
+			<color hide="f">#ff34554a</color>
 			<color hide="f">#ffc59c0c</color>
-			<color hide="t">#ffffe05b</color>
-			<color hide="f">#ffc2bcb0</color>
-			<color hide="t">#ffaaaa7f</color>
+			<color hide="f">#ff0a7db2</color>
+			<color hide="f">#ffc59c0c</color>
+			<color hide="f">#ff34554a</color>
+			<color hide="f">#ff34554a</color>
+			<color hide="f">#ffa35807</color>
+			<color hide="f">#ff0a7db2</color>
+			<color hide="f">#ff34554a</color>
+			<color hide="t">#ffffff00</color>
 		</ColorWhites>
 		<ColorGroup>
 			<Group hideSet="f">

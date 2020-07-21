@@ -27,14 +27,14 @@
 #include "base/configuration.h"
 #include "base/tiledpatternmaker.h"
 #include "designs/patterns.h"
-#include "style/Colored.h"
-#include "style/Thick.h"
-#include "style/Filled.h"
-#include "style/Interlace.h"
-#include "style/Outline.h"
-#include "style/Plain.h"
-#include "style/Sketch.h"
-#include "style/Emboss.h"
+#include "style/colored.h"
+#include "style/thick.h"
+#include "style/filled.h"
+#include "style/interlace.h"
+#include "style/outline.h"
+#include "style/plain.h"
+#include "style/sketch.h"
+#include "style/emboss.h"
 
 using std::string;
 
@@ -45,7 +45,7 @@ page_style_maker:: page_style_maker(ControlPanel * apanel)  : panel_page(apanel,
 {
     styleParms = nullptr;
 
-    styleTable = new QTableWidget(this);
+    styleTable = new AQTableWidget(this);
     styleTable->setColumnCount(6);
     styleTable->setSelectionMode(QAbstractItemView::SingleSelection);
     styleTable->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -74,7 +74,7 @@ page_style_maker:: page_style_maker(ControlPanel * apanel)  : panel_page(apanel,
     vbox->addLayout(hbox);
     vbox->addSpacing(5);
 
-    parmsTable = new QTableWidget(this);
+    parmsTable = new AQTableWidget(this);
 
     parmsCtrl = new QVBoxLayout;
 
@@ -103,21 +103,23 @@ page_style_maker:: page_style_maker(ControlPanel * apanel)  : panel_page(apanel,
 void  page_style_maker::refreshPage()
 {
     int row = 0;
-    eWsData  wsdata       = (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
-    StyledDesign & sd     = workspace->getStyledDesign(wsdata);
-    const StyleSet & sset = sd.getStyleSet();
-    for (auto style : sset)
+    MosaicPtr mosaic = workspace->getMosaic();
+    if (mosaic)
     {
-        QTableWidgetItem * item = styleTable->item(row,STYLE_COL_TRANS);
-        if (item)
+        const StyleSet & sset = mosaic->getStyleSet();
+        for (auto style : sset)
         {
-            Xform xf = style->getLayerXform();
-            item->setText(xf.toInfoString());
+            QTableWidgetItem * item = styleTable->item(row,STYLE_COL_TRANS);
+            if (item)
+            {
+                Xform xf = style->getCanvasXform();
+                item->setText(xf.toInfoString());
+            }
+            row++;
         }
-        row++;
+        styleTable->resizeColumnsToContents();
+        styleTable->adjustTableSize();
     }
-    styleTable->resizeColumnToContents(STYLE_COL_TRANS);
-    adjustTableSize(styleTable);
 }
 
 void  page_style_maker::onEnter()
@@ -130,66 +132,68 @@ void  page_style_maker::reEnter()
     styleTable->clearContents();
 
     int row = 0;
-    eWsData  wsdata       = (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
-    StyledDesign & sd     = workspace->getStyledDesign(wsdata);
-    const StyleSet & sset = sd.getStyleSet();
-    for (auto style : sset)
+    MosaicPtr mosaic = workspace->getMosaic();
+    if (mosaic)
     {
-        styleTable->setRowCount(row+1);
+        const StyleSet & sset = mosaic->getStyleSet();
+        for (auto style : sset)
+        {
+            styleTable->setRowCount(row+1);
 
-        // build structure
-        QCheckBox * cb = new QCheckBox();
-        styleTable->setCellWidget(row,STYLE_COL_CHECK_SHOW,cb);
-        styleTable->setColumnWidth(STYLE_COL_CHECK_SHOW,25);
-        cb->setChecked(style->isVisible());
+            // build structure
+            QCheckBox * cb = new QCheckBox();
+            styleTable->setCellWidget(row,STYLE_COL_CHECK_SHOW,cb);
+            styleTable->setColumnWidth(STYLE_COL_CHECK_SHOW,25);
+            cb->setChecked(style->isVisible());
 
-        QComboBox * qcb = new QComboBox();
-        qcb->setEditable(false);
-        qcb->setFrame(false);
+            QComboBox * qcb = new QComboBox();
+            qcb->setEditable(false);
+            qcb->setFrame(false);
 
-        qcb->addItem("Plain",STYLE_PLAIN);
-        qcb->addItem("Thick Lines",STYLE_THICK);
-        qcb->addItem("Filled",STYLE_FILLED);
-        qcb->addItem("Outlined",STYLE_OUTLINED);
-        qcb->addItem("Interlaced",STYLE_INTERLACED);
-        qcb->addItem("Embossed",STYLE_EMBOSSED);
-        qcb->addItem("Sketched",STYLE_SKETCHED);
-        qcb->addItem("Tile Colors",STYLE_TILECOLORS);
-        styleTable->setCellWidget(row,STYLE_COL_STYLE,qcb);
+            qcb->addItem("Plain",STYLE_PLAIN);
+            qcb->addItem("Thick Lines",STYLE_THICK);
+            qcb->addItem("Filled",STYLE_FILLED);
+            qcb->addItem("Outlined",STYLE_OUTLINED);
+            qcb->addItem("Interlaced",STYLE_INTERLACED);
+            qcb->addItem("Embossed",STYLE_EMBOSSED);
+            qcb->addItem("Sketched",STYLE_SKETCHED);
+            qcb->addItem("Tile Colors",STYLE_TILECOLORS);
+            styleTable->setCellWidget(row,STYLE_COL_STYLE,qcb);
 
-        QString tilename = style->getPrototype()->getTiling()->getName();
-        QTableWidgetItem * item = new QTableWidgetItem(tilename);
-        item->setData(Qt::UserRole,QVariant::fromValue(style));     // tiling name also stores Style address
-        styleTable->setItem(row,STYLE_COL_TILING,item);
+            QString tilename = style->getPrototype()->getTiling()->getName();
+            QTableWidgetItem * item = new QTableWidgetItem(tilename);
+            item->setData(Qt::UserRole,QVariant::fromValue(style));     // tiling name also stores Style address
+            styleTable->setItem(row,STYLE_COL_TILING,item);
 
-        QPushButton * pb = new QPushButton("Set WS Proto && Tiling");
-        styleTable->setCellWidget(row,STYLE_COL_PROTO_EDIT,pb);
+            QPushButton * pb = new QPushButton("Set WS Proto && Tiling");
+            styleTable->setCellWidget(row,STYLE_COL_PROTO_EDIT,pb);
 
-        item = new QTableWidgetItem(addr(style.get()));
-        styleTable->setItem(row,STYLE_COL_ADDR,item);
+            item = new QTableWidgetItem(addr(style.get()));
+            styleTable->setItem(row,STYLE_COL_ADDR,item);
 
-        item = new QTableWidgetItem("Xform");
-        styleTable->setItem(row,STYLE_COL_TRANS,item);
+            item = new QTableWidgetItem("Xform");
+            styleTable->setItem(row,STYLE_COL_TRANS,item);
 
-        QString stylename = style->getStyleDesc();
-        int index = qcb->findText(stylename);
-        Q_ASSERT(index != -1);
-        qcb->setCurrentIndex(index);
+            QString stylename = style->getStyleDesc();
+            int index = qcb->findText(stylename);
+            Q_ASSERT(index != -1);
+            qcb->setCurrentIndex(index);
 
-        connect(qcb, SIGNAL(currentIndexChanged(int)), &styleMapper, SLOT(map()),Qt::UniqueConnection);
-        styleMapper.setMapping(qcb,row);
+            connect(qcb, SIGNAL(currentIndexChanged(int)), &styleMapper, SLOT(map()),Qt::UniqueConnection);
+            styleMapper.setMapping(qcb,row);
 
-        connect(cb, SIGNAL(toggled(bool)), &styleVisMapper, SLOT(map()),Qt::UniqueConnection);
-        styleVisMapper.setMapping(cb,row);
+            connect(cb, SIGNAL(toggled(bool)), &styleVisMapper, SLOT(map()),Qt::UniqueConnection);
+            styleVisMapper.setMapping(cb,row);
 
-        connect(pb, SIGNAL(clicked()),    &editProtoMapper, SLOT(map()),Qt::UniqueConnection);
-        editProtoMapper.setMapping(pb,row);
+            connect(pb, SIGNAL(clicked()),    &editProtoMapper, SLOT(map()),Qt::UniqueConnection);
+            editProtoMapper.setMapping(pb,row);
 
-        row++;
+            row++;
+        }
     }
 
     styleTable->resizeColumnsToContents();
-    adjustTableSize(styleTable);
+    styleTable->adjustTableSize();
     updateGeometry();
 
     styleTable->selectRow(0);
@@ -224,7 +228,7 @@ void  page_style_maker::slot_styleSelected()
     setupStyleParms(style,parmsTable);
 }
 
-void page_style_maker::setupStyleParms(StylePtr style, QTableWidget * table)
+void page_style_maker::setupStyleParms(StylePtr style, AQTableWidget * table)
 {
     eraseLayout(dynamic_cast<QLayout*>(parmsCtrl));
 
@@ -253,16 +257,18 @@ void page_style_maker::setupStyleParms(StylePtr style, QTableWidget * table)
         break;
     case STYLE_TILECOLORS:
     {
-        eWsData  wsdata   = (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
-        StyledDesign & sd = workspace->getStyledDesign(wsdata);
-        styleParms = new TileColorsEditor(dynamic_cast<TileColors*>(style.get()),table,sd.getTiling());
+        MosaicPtr mosaic = workspace->getMosaic();
+        if (mosaic)
+        {
+            styleParms = new TileColorsEditor(dynamic_cast<TileColors*>(style.get()),table,mosaic->getTiling());
+        }
         break;
     }
     case STYLE_STYLE:
         break;
     }
-    styleTable->resizeColumnsToContents();
-    adjustTableSize(table);
+    table->resizeColumnsToContents();
+    table->adjustTableSize();
     updateGeometry();
 }
 
@@ -319,10 +325,11 @@ void page_style_maker::slot_styleChanged(int row)
         break;
     }
 
-    eWsData  wsdata       = (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
-    StyledDesign & sd     = workspace->getStyledDesign(wsdata);
-
-    sd.replaceStyle(oldStylePtr,StylePtr(newStyle));
+    MosaicPtr mosaic = workspace->getMosaic();
+    if (mosaic)
+    {
+        mosaic->replaceStyle(oldStylePtr,StylePtr(newStyle));
+    }
 
     emit sig_viewWS();
     reEnter();
@@ -332,12 +339,9 @@ void page_style_maker::slot_styleChanged(int row)
 
 void page_style_maker::slot_editProto(int row)
 {
-    eWsData wsdata = (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
-
     StylePtr style  = getStyleRow(row);
     PrototypePtr pp = style->getPrototype();
-    workspace->setPrototype(wsdata,pp);
-    workspace->setTiling(wsdata,pp->getTiling());
+    workspace->setSelectedPrototype(pp);
 
     emit sig_viewWS();
     styleTable->selectRow(row);
@@ -360,12 +364,14 @@ StylePtr page_style_maker::getStyleRow(int row)
 StylePtr page_style_maker::getStyleIndex(int index)
 {
     StylePtr sp;
-    eWsData  wsdata       = (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
-    StyledDesign & sd     = workspace->getStyledDesign(wsdata);
-    const StyleSet & sset = sd.getStyleSet();
-    if (index < sset.size())
+    MosaicPtr mosaic = workspace->getMosaic();
+    if (mosaic)
     {
-        sp = sset[index];
+        const StyleSet & sset = mosaic->getStyleSet();
+        if (index < sset.size())
+        {
+            sp = sset[index];
+        }
     }
     return sp;
 }
@@ -377,13 +383,14 @@ void page_style_maker::slot_deleteStyle()
 
     StylePtr style = getStyleRow(row);
 
-    eWsData  wsdata       = (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
-    StyledDesign & sd     = workspace->getStyledDesign(wsdata);
+    MosaicPtr mosaic = workspace->getMosaic();
+    if (mosaic)
+    {
+        mosaic->deleteStyle(style);
 
-    sd.deleteStyle(style);
-
-    if (row > 0)
-        row -= 1;
+        if (row > 0)
+        row--;
+    }
 
     reEnter();
 
@@ -399,11 +406,11 @@ void page_style_maker::slot_moveStyleUp()
     if (row == -1) return;
     StylePtr style = getStyleRow(row);
 
-    eWsData  wsdata       = (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
-    StyledDesign & sd     = workspace->getStyledDesign(wsdata);
-
-    sd.moveUp(style);
-
+    MosaicPtr mosaic = workspace->getMosaic();
+    if (mosaic)
+    {
+        mosaic->moveUp(style);
+    }
     reEnter();
 
     emit sig_viewWS();
@@ -418,10 +425,11 @@ void  page_style_maker::slot_moveStyleDown()
     if (row == -1) return;
     StylePtr style = getStyleRow(row);
 
-    eWsData  wsdata       = (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
-    StyledDesign & sd     = workspace->getStyledDesign(wsdata);
-
-    sd.moveDown(style);
+    MosaicPtr mosaic = workspace->getMosaic();
+    if (mosaic)
+    {
+        mosaic->moveDown(style);
+    }
 
     reEnter();
 
@@ -439,11 +447,11 @@ void  page_style_maker::slot_duplicateStyle()
 
     StylePtr style2 = copyStyle(style);
 
-    eWsData  wsdata       = (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
-    StyledDesign & sd     = workspace->getStyledDesign(wsdata);
-
-    sd.addStyle(style2);
-
+    MosaicPtr mosaic = workspace->getMosaic();
+    if (mosaic)
+    {
+        mosaic->addStyle(style2);
+    }
     reEnter();
 
     emit sig_viewWS();

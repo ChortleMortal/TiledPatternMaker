@@ -341,4 +341,90 @@ void eraseLayout(QLayout * layout)
     }
 }
 
+AQTableWidget::AQTableWidget(QWidget * parent) : QTableWidget(parent)
+{
 
+}
+
+void AQTableWidget::adjustTableSize(int maxWidth, int maxHeight)
+{
+    int w = getTableWidth(maxWidth);
+    int h = getTableHeight(maxHeight);
+    QSize size(w,h);
+    setMaximumSize(size);
+    setMinimumSize(size);
+}
+
+void AQTableWidget::adjustTableWidth(int maxWidth)
+{
+    int w = getTableWidth(maxWidth);
+    setMaximumWidth(w);
+    setMinimumWidth(w);
+}
+
+void AQTableWidget::adjustTableHeight(int maxHeight)
+{
+    int h = getTableHeight(maxHeight);
+    setMaximumHeight(h);
+    setMinimumHeight(h);
+}
+
+int AQTableWidget::getTableWidth(int maxWidth)
+{
+    int w = frameWidth() * 2;
+
+    if (verticalHeader()->count())
+    {
+        w += verticalHeader()->width(); // +4 seems to be needed
+    }
+
+    if (verticalScrollBar()->isVisible())
+    {
+        w += verticalScrollBar()->width();
+    }
+
+    for (int i = 0; i < columnCount(); i++)
+    {
+        w += columnWidth(i);
+    }
+
+    if (maxWidth)
+    {
+        if (w > maxWidth)
+        {
+            w = maxWidth;
+        }
+    }
+
+    return w;
+}
+
+int AQTableWidget::getTableHeight(int maxHeight)
+{
+    int h = frameWidth() * 2;    // width and height are same
+
+    if (horizontalHeader()->count())
+    {
+        h += horizontalHeader()->height();
+    }
+
+    if (horizontalScrollBar()->isVisible())
+    {
+        h += horizontalScrollBar()->height();
+    }
+
+    for (int i = 0; i < rowCount(); i++)
+    {
+        h += rowHeight(i);
+    }
+
+    if (maxHeight)
+    {
+        if (h > maxHeight)
+        {
+            h = maxHeight;
+        }
+    }
+
+    return h;
+}

@@ -23,7 +23,7 @@
  */
 
 #include <QSvgGenerator>
-#include "style/Style.h"
+#include "style/style.h"
 #include "base/configuration.h"
 #include "base/canvas.h"
 #include "base/workspace.h"
@@ -113,7 +113,6 @@ void Style::annotateEdges(MapPtr map)
 // Retrieve a name describing this style and map.
 QString Style::getDescription() const
 {
-    // TODO: improve the description with the settings of the prototype.
     return prototype->getTiling()->getName() + " : " + getStyleDesc();
 }
 
@@ -132,11 +131,8 @@ QString Style::getInfo() const
     return astring;
 }
 
-void Style::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+void Style::paint(QPainter *painter)
 {
-    Q_UNUSED(option)
-    Q_UNUSED(widget)
-
     if (paintSVG)
     {
         paintToSVG();

@@ -33,8 +33,6 @@
 #include <Windows.h>
 #endif
 
-#undef  MEASURE_ELAPSED
-
 qtAppLog  * qtAppLog::mpThis   = nullptr;
 QMutex    * qtAppLog::pLogLock = nullptr;
 QTextEdit * qtAppLog::ted      = nullptr;
@@ -45,8 +43,11 @@ bool qtAppLog::_logToStderr = true;
 bool qtAppLog::_logToDisk   = true;
 bool qtAppLog::_logToPanel  = true;
 bool qtAppLog::_logLines    = true;
-bool qtAppLog::_active    = false;
+bool qtAppLog::_logWarningsOnly = false;
+bool qtAppLog::_logElapsed  = false;
+bool qtAppLog::_active      = false;
 
+QElapsedTimer qtAppLog::elapseTimer;
 
 qtAppLog * qtAppLog::getInstance()
 {
@@ -122,10 +123,10 @@ qtAppLog::qtAppLog()
         return;
     }
 
-#ifdef MEASURE_ELAPSED
-    elapseTimer.start();
-#endif
-
+    if (_logElapsed)
+    {
+        elapseTimer.start();
+    }
 }
 
 qtAppLog::~qtAppLog()
@@ -140,16 +141,7 @@ qtAppLog::~qtAppLog()
 void qtAppLog::log(QString & msg)
 {
     QTextStream str(&mCurrentFile);
-#ifdef MEASURE_ELAPSED
-    //QDateTime tm = QDateTime::currentDateTime();
-    //QString  stm = tm.toString("MM/dd/yyyy hh:mm:ss:zzz");
-    //str << stm <<  "  " << msg;
-    qint64 delta = elapseTimer.restart();
-    QString Delta = QString("%1  ").arg(delta, 6, 10, QChar(' '));
-    str << Delta << msg;
-#else
-    str << msg;
-#endif
+        str << msg;
 }
 
 void qtAppLog::crashMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
@@ -163,28 +155,45 @@ void qtAppLog::crashMessageOutput(QtMsgType type, const QMessageLogContext &cont
 
     pLogLock->lock();
 
+    QString sDelta;
+    if (_logElapsed)
+    {
+        qint64 delta = elapseTimer.restart();
+        sDelta = QString("%1  ").arg(delta, 6, 10, QChar(' '));
+    }
+
     QString msg2;
     switch (type)
     {
     case QtDebugMsg:
+        if (_logWarningsOnly)
+        {
+            pLogLock->unlock();
+            return;
+        }
         ted->setTextColor(Qt::black);
-        msg2 = QString("Debug   : %1").arg(msg);
+        msg2 = QString("%2Debug   : %1").arg(msg).arg(sDelta);
         break;
     case QtInfoMsg:
+        if (_logWarningsOnly)
+        {
+            pLogLock->unlock();
+            return;
+        }
         ted->setTextColor(Qt::darkGreen);
-        msg2 = QString("Info    : %1").arg(msg);
+        msg2 = QString("%2Info    : %1").arg(msg).arg(sDelta);
         break;
     case QtWarningMsg:
         ted->setTextColor(Qt::darkRed);
-        msg2 = QString("Warning : %1").arg(msg);
+        msg2 = QString("%2Warning : %1").arg(msg).arg(sDelta);
         break;
     case QtCriticalMsg:
         ted->setTextColor(Qt::darkRed);
-        msg2 = QString("Critical: %1").arg(msg);
+        msg2 = QString("%2Critical: %1").arg(msg).arg(sDelta);
         break;
     case QtFatalMsg:
         ted->setTextColor(Qt::darkRed);
-        msg2 = QString("Fatal   : %1").arg(msg);
+        msg2 = QString("%2Fatal   : %1").arg(msg).arg(sDelta);
         break;
     }
 

@@ -29,7 +29,7 @@
 // A bunch of fuzzy comparisons that have a margin of error.
 // Useful whenever you're doing computational geometry.
 
-#include "geometry/Loose.h"
+#include "geometry/loose.h"
 
 qreal Loose::TOL      = 1e-7;
 qreal Loose::TOL2     = 1e-10;

@@ -22,12 +22,12 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "style/Thick.h"
-#include "style/Colored.h"
-#include "style/Interlace.h"
-#include "style/Outline.h"
-#include "style/Plain.h"
-#include "style/Emboss.h"
+#include "style/thick.h"
+#include "style/colored.h"
+#include "style/interlace.h"
+#include "style/outline.h"
+#include "style/plain.h"
+#include "style/emboss.h"
 #include "base/canvas.h"
 #include <QPainter>
 

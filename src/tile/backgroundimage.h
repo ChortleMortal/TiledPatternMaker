@@ -12,7 +12,7 @@ public:
     BackgroundImage();
     ~BackgroundImage() override;
 
-    virtual void  paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) Q_DECL_OVERRIDE;
+    void    paint(QPainter *painter) override;
 
     bool    loadAndCopy(QString filename);  // loads from new file
     bool    loadImageUsingName();           // loads from existing file

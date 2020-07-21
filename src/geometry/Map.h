@@ -46,8 +46,9 @@
 #include <QtCore>
 #include "base/shared.h"
 #include "designs/shapes.h"
-#include "geometry/Edge.h"
-#include "geometry/Vertex.h"
+#include "geometry/edge.h"
+#include "geometry/edgepoly.h"
+#include "geometry/vertex.h"
 #include "geometry/neighbours.h"
 
 using std::make_shared;
@@ -68,6 +69,7 @@ class Map
 public:
     Map(QString Name);
     Map(QString Name, QPolygonF & poly);
+    Map(QString Name, EdgePoly & poly);
     Map(const Map & map);     // duplictes the contents
     ~Map();
 
@@ -82,6 +84,7 @@ public:
     int numEdges() const;
     int numVertices() const;
 
+    EdgePoly                    getEdgePoly();
     const QVector<VertexPtr>  & getVertices() const { return vertices; }
     const QVector<EdgePtr>    & getEdges()    const { return edges; }
     NeighbourMap              & getNeighbourMap()   { return neighbourMap; }
@@ -180,7 +183,7 @@ public:
     bool verifyMap(QString mapname, bool force = false);
 
     // shape factory
-    void addShapeFactory(ShapeFactory * sf);
+    void addShapeFactory(ShapeFPtr sf);
 
     // edge counts as per A.J. Lee
     bool analyzeVertices();     // returns true if changed

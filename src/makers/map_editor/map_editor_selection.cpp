@@ -1,10 +1,10 @@
 #include "makers/map_editor/map_editor_selection.h"
-#include "geometry/Point.h"
-#include "geometry/Transform.h"
+#include "geometry/point.h"
+#include "geometry/transform.h"
 #include "makers/map_editor/map_selection.h"
 #include "base/utilities.h"
-#include "tapp/Figure.h"
-#include "geometry/Loose.h"
+#include "tapp/figure.h"
+#include "geometry/loose.h"
 
 const int debugSelection = 1;
 
@@ -356,7 +356,7 @@ SelectionSet  MapEditorSelection::findSelectionsUsingDB(const QPointF & spt)
         qreal scale     = Transform::scalex(viewT) * bscale;
         qreal radius    = 1.0 * scale;
         QPointF center  = QPointF(0.0,0.0);
-        QPointF scenter = mapToScene(center);
+        QPointF scenter = worldToScreen(center);    // FIXME - verify this
         scenter         = viewT.map(scenter);
 
         QPointF a;
@@ -461,7 +461,7 @@ MapSelectionPtr MapEditorSelection::findVertex(QPointF spt , VertexPtr exclude)
         {
             continue;
         }
-        QPointF pt   = mapToScene(vp->getPosition());
+        QPointF pt   = worldToScreen(vp->getPosition());    // FIXME - verify
         QPointF a    = viewT.map(pt);
         //QPointF sa   = worldToScreen(a);
         if (Point::isNear(spt,a))

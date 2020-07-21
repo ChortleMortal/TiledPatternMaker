@@ -41,15 +41,14 @@
 // about the faces, just the coordinates of their corners.
 
 #include "base/configuration.h"
-#include "geometry/Faces.h"
+#include "geometry/faces.h"
 #include "geometry/facecycles.h"
-#include "geometry/Point.h"
-#include "geometry/Loose.h"
-#include "geometry/Intersect.h"
+#include "geometry/point.h"
+#include "geometry/loose.h"
+#include "geometry/intersect.h"
 #include "base/utilities.h"
 #include <QPolygonF>
 
-#define DELETE_CLOCKWISE
 #undef  DELETE_LARGEST
 
 #define E2STR(x) #x
@@ -97,76 +96,172 @@ void Faces::buildFacesOriginal(MapPtr map)
 {
     map->verifyMap("buildFaces");
 
+    NeighbourMap & nmap = map->getNeighbourMap();
+
     clearFaces();
+
     for (auto edge : map->getEdges())
     {
         if( !v1.contains(edge) )
         {
-            handleVertex(map, edge->getV1(), edge);
+            handleVertex(nmap, edge->getV1(), edge);
         }
         if( !v2.contains(edge) )
         {
-            handleVertex(map, edge->getV2(), edge);
+            handleVertex(nmap, edge->getV2(), edge);
         }
     }
 
-    qDebug() << "buildFaces:: num=" << allFaces.size();
+    qDebug() << "buildFacesOriginal:: all=" << allFaces.size() << "v1Edges" << v1.size() << "v2Edges" << v2.size();
 }
 
-void Faces::buildFacesNew23(MapPtr map)
+// This algorithm doesn't distinguish between clockwise and
+// counterclockwise.  So every map will produce one extraneous
+// face, namely the countour that surrounds the whole map.
+// By the nature of extractFace, the surrounding polygon will
+// be the only clockwise polygon in the set.  So check for
+// clockwise and throw it away.
+void Faces::handleVertex(NeighbourMap & nmap, VertexPtr vert, EdgePtr edge)
 {
-    map->cleanse();
+    //qDebug() << "handleVertex:"  << "vert=" << vert->getTmpVertexIndex() << "edge=" << edge->getTmpEdgeIndex();
 
-    // First, build all the faces.
-#if 1
-    qDebug() << "Faces::extractFacesNew23 processing" << map->getEdges().size() << "edges";
-    FacePtr face;
-    //int i = 0;
-    for (auto edge : map->getEdges())
+    FacePtr face = extractFace(nmap, vert, edge);
+    Q_ASSERT(face->isValid());
+
+    if (face->isClockwise())
     {
-        //qDebug() << "processing" << ++i << "out of"  << sz;
-        if( !v1.contains(edge) )
-        {
-            face = extractFace(map,edge->getV1(),edge);
-            v1.insert(edge,face);
-            if (!isClockwise(face))
-            {
-                face->sortForComparion();
-                allFaces.push_back(face);
-            }
-        }
-        if( !v2.contains(edge) )
-        {
-           face = extractFace(map,edge->getV2(),edge);
-           v2.insert(edge,face);
-           if (!isClockwise(face))
-           {
-               face->sortForComparion();
-               allFaces.push_back(face);
-           }
-        }
+        allFaces.push_back(face);
     }
 
+    for(auto edge : *face)
+    {
+        VertexPtr from = edge->getV1();
+        VertexPtr to   = edge->getV2();
 
-    qDebug() << "Faces::extractFacesNew23 processing edges - done";
-#else
-    // new code
-    FaceCycles fc;
-    faces = fc.getFaceSet(map);
-#endif
+        NeighboursPtr np = nmap.getNeighbours(from);
+        EdgePtr conn     = np->getNeighbour(to);
+
+        if (!conn)
+        {
+            qWarning("no face to insert in map");
+            continue;
+        }
+        if( conn->getV1() == from )
+        {
+            //qDebug() << "v1 insert edge" << conn->getTmpEdgeIndex();
+            v1.insert(conn, face);
+        }
+        else
+        {
+            Q_ASSERT(conn->getV2() == from);
+            //qDebug() << "v2 insert edge" << conn->getTmpEdgeIndex();
+            v2.insert(conn, face);
+        }
+    }
+}
 
 
-#ifdef DELETE_LARGEST
-    removeLargest();
-#endif
+// Walk from a vertex along an edge, always taking the current edge's neighbour at every vertex.
+// The set of vertices encountered determines a face.
+FacePtr Faces::extractFace(NeighbourMap & nmap, VertexPtr vert, EdgePtr edge)
+{
+    bool debugFaces = false;
+
+    FacePtr face = make_shared<Face>();
+
+    if (debugFaces) qDebug() << "extractFace: Edge" << edge->getTmpEdgeIndex() << "vertex" << vert->getTmpVertexIndex();
+
+    EdgePtr   lastEdge;
+    EdgePtr   lastPush;
+    EdgePtr   pushEdge;
+
+    VertexPtr from;
+    VertexPtr to;
+
+    EdgePtr currentEdge = edge;
+
+    if (currentEdge->getV1() == vert)
+    {
+        pushEdge = currentEdge;
+        from     = vert;
+        to       = currentEdge->getV2();
+    }
+    else
+    {
+        Q_ASSERT(currentEdge->getV2() == vert);
+        pushEdge = currentEdge->getSwappedEdge();
+        from     = vert;
+        to       = currentEdge->getV1();
+    }
+
+    while( true )
+    {
+        face->push_back(pushEdge);
+
+        if (debugFaces) qDebug() << "added edge"  << pushEdge->getTmpEdgeIndex()
+                                 << "from" << pushEdge->getV1()->getTmpVertexIndex()
+                                 << "to"   << pushEdge->getV2()->getTmpVertexIndex();
+
+        lastPush  = pushEdge;
+        lastEdge  = currentEdge;
+
+        if (debugFaces) qDebug() << "next vert:" << to->getTmpVertexIndex();
+        NeighboursPtr np = nmap.getNeighbours(to);
+        if (np->numNeighbours() < 2)
+            return face;
+
+        BeforeAndAfter ba = np->getBeforeAndAfter(currentEdge);
+        currentEdge       = ba.before;
+        if (debugFaces) qDebug() << "next edge:" << currentEdge->getTmpEdgeIndex();
+
+        if (currentEdge->getV1() == lastPush->getV2())
+        {
+            pushEdge    = currentEdge;
+        }
+        else
+        {
+            pushEdge    = currentEdge->getSwappedEdge();
+            if (debugFaces) qDebug() << "push edge is" << currentEdge->getTmpEdgeIndex() << "swapped";
+        }
+
+        from = to;
+        if (from == currentEdge->getV2())
+        {
+            to = currentEdge->getV1();
+        }
+        else
+        {
+            Q_ASSERT(from == currentEdge->getV1());
+            to = currentEdge->getV2();
+        }
+
+        if (currentEdge == edge)
+        {
+            return face;
+        }
+    }
+}
+
+void Faces::buildFacesNew23()
+{
+    //map->cleanse();
+
+    for (auto face : allFaces)
+    {
+        face->sortForComparison();
+    }
 
     removeDuplicates();
 
-    //removeOverlaps();
+    decomposeCrossoverFaces();
 
-    // create face groups
+    removeOverlaps();
+
+    qDebug() << "Faces::extractFacesNew23 processing edges - done. Cleansed allFaces= " << allFaces.size();
     faceGroup.clear();
     zapFaceStates(FACE_UNDONE);
+
+    // create face groups
     for (auto it = allFaces.begin(); it != allFaces.end(); it++)
     {
         FacePtr fp = *it;
@@ -197,10 +292,12 @@ void Faces::buildFacesNew23(MapPtr map)
         }
     }
 
-   //dumpFaceGroup("algorithm 23");
-   std::sort(faceGroup.begin(), faceGroup.end(), FaceSet::sort);    // largest first
-   //dumpFaceGroup("algorithm 23 post sort");
+    //dumpFaceGroup("algorithm 23");
+    std::sort(faceGroup.begin(), faceGroup.end(), FaceSet::sort);    // largest first
+    //dumpFaceGroup("algorithm 23 post sort");
+    qDebug() << "Num face groups=" << faceGroup.size();
 }
+
 
 ////////////////////////////////////////////////////
 ///
@@ -294,20 +391,61 @@ void Faces::assignColorsNew1()
 
 void Faces::assignColorsNew2(ColorSet & colorSet)
  {
+    qDebug() << "Faces::assignColorsNew2" << faceGroup.size() << faceGroup.totalSize();;
+
+    // first make the color set size the same as the face group size
+    if (colorSet.size() < faceGroup.size())
+    {
+        qWarning() <<  "faces=" << faceGroup.size() << "colors=" << colorSet.size();
+        int diff = faceGroup.size() - colorSet.size();
+        for (int i = 0; i < diff; i++)
+        {
+            TPColor tpc(Qt::yellow);
+            tpc.hidden = true;
+            colorSet.addColor(tpc);
+        }
+    }
+    else if (colorSet.size() > faceGroup.size())
+    {
+        qWarning() <<  "faces=" << faceGroup.size() << "colors=" << colorSet.size();
+        colorSet.resize(faceGroup.size());
+    }
+    Q_ASSERT(colorSet.size() == faceGroup.size());
+
    // assign the color set to the sorted group
    colorSet.resetIndex();
-   for (auto it = faceGroup.begin(); it != faceGroup.end(); it++)
+   for (auto face : faceGroup)
    {
-       FaceSetPtr fsp = *it;
-       fsp->tpcolor     = colorSet.getNextColor();
+       face->tpcolor = colorSet.getNextColor();
    }
-
-   //dumpFaceGroup("algorithm 2 post sort");
 }
 
 void  Faces::assignColorsNew3(ColorGroup & colorGroup)
 {
-   sortFaceSetsByPosition();
+    qDebug() << "Faces::assignColorsNew3" << faceGroup.size() << faceGroup.totalSize();;
+
+    // first make the color set size the same as the face group size
+    if (colorGroup.size() < faceGroup.size())
+    {
+        qWarning() <<  "faces=" << faceGroup.size() << "colors=" << colorGroup.size();
+        int diff = faceGroup.size() - colorGroup.size();
+        for (int i = 0; i < diff; i++)
+        {
+            ColorSet cset;
+            TPColor tpc(Qt::yellow);
+            cset.addColor(tpc);
+            cset.hide(true);
+            colorGroup.addColorSet(cset);
+        }
+    }
+    else if (colorGroup.size() > faceGroup.size())
+    {
+        qWarning() <<  "faces=" << faceGroup.size() << "colors=" << colorGroup.size();
+        colorGroup.resize(faceGroup.size());
+    }
+    Q_ASSERT(colorGroup.size() == faceGroup.size());
+
+   sortFaceSetsByPosition();   // this is  helpful for consistency
 
    // assign the color group to the sorted group
    colorGroup.resetIndex();
@@ -352,20 +490,20 @@ void Faces::assignColorsToFaces(MapPtr map, FaceSet & fset)
 
         eColor color = C_WHITE;     // seed
 
-        for( int idx = 0; idx < face->size(); ++idx )
+        for (auto edge : *face)
         {
-            FacePtr nfi = getTwin(map, face, idx);
+            FacePtr nfi = getTwin(map, edge );
             if (!nfi)
             {
-                if (debug & DEBUG_ASSIGN) qDebug().noquote() << "    no twin:"  << idx;
+                if (debug & DEBUG_ASSIGN) qDebug().noquote() << "    no twin:";
                 continue;
             }
-            if (debug & DEBUG_ASSIGN) qDebug().noquote() << "  Twin face:" << idx << Utils::addr(nfi.get()) << sFaceState[nfi->state];
+            if (debug & DEBUG_ASSIGN) qDebug().noquote() << "  Twin face:" <<  Utils::addr(nfi.get()) << sFaceState[nfi->state];
             switch( nfi->state )
             {
             case FACE_UNDONE:
                 nfi->state = FACE_PROCESSING;
-                if (debug & DEBUG_ASSIGN) qDebug().noquote() << "    Pushing:" << idx << Utils::addr(nfi.get()) << sFaceState[nfi->state];
+                if (debug & DEBUG_ASSIGN) qDebug().noquote() << "    Pushing:" <<  Utils::addr(nfi.get()) << sFaceState[nfi->state];
                 st.push( nfi );
                 pushes++;
                 break;
@@ -411,92 +549,6 @@ void Faces::assignColorsToFaces(MapPtr map, FaceSet & fset)
     if (debug) dumpAllFaces("allfaces AFTER ASSIGN");
 }
 
-void Faces::handleVertex(MapPtr map, VertexPtr vert, EdgePtr edge)
-{
-    FacePtr face = extractFace(map, vert, edge);
-    //qDebug() << "Face" << Utils::addr(face.get()) << "sides=" << face->size();
-
-    if( face->size() == 0)
-    {
-        return;
-    }
-
-#ifdef DELETE_CLOCKWISE
-    if (isClockwise(face))
-    {
-        // This algorithm doesn't distinguish between clockwise and
-        // counterclockwise.  So every map will produce one extraneous
-        // face, namely the countour that surrounds the whole map.
-        // By the nature of extractFace, the surrounding polygon will
-        // be the only clockwise polygon in the set.  So check for
-        // clockwise and throw it away.
-        qDebug() << "dumping clockwise face";
-        return;
-    }
-#endif
-
-    face->sortForComparion();
-    allFaces.push_back(face);
-
-    NeighbourMap & nmap = map->getNeighbourMap();
-
-    for( int v = 0; v < face->size(); ++v )
-    {
-        VertexPtr from = face->at(v);
-        VertexPtr to   = face->at((v+1) % face->size());
-
-        NeighboursPtr np = nmap.getNeighbours(from);
-        EdgePtr conn     = np->getNeighbour(to);
-
-        if (!conn)
-        {
-            qWarning("no face to insert in map");
-            continue;
-        }
-        if( conn->getV1() == from )
-        {
-            v1.insert(conn, face);
-        }
-        else
-        {
-            Q_ASSERT(conn->getV2() == from);
-            v2.insert(conn, face);
-        }
-    }
-}
-
-// Walk from a vertex along an edge, always taking the current edge's neighbour at every vertex.
-// The set of vertices encountered determines a face.
-FacePtr Faces::extractFace(MapPtr map, VertexPtr from, EdgePtr edge)
-{
-    FacePtr ret   = make_shared<Face>();
-
-    VertexPtr cur = from;
-    EdgePtr  ecur = edge;
-
-    NeighbourMap & nmap = map->getNeighbourMap();
-
-    while( true )
-    {
-        ret->push_back(cur);
-        VertexPtr n = ecur->getOtherV(cur->getPosition());
-
-        NeighboursPtr np = nmap.getNeighbours(n);
-        if (np->numNeighbours() < 2)
-        {
-            return ret;
-        }
-
-        BeforeAndAfter ba = np->getBeforeAndAfter(ecur);
-        ecur = ba.before;
-
-        cur = n;
-        if (cur == from)
-        {
-            return ret;
-        }
-    }
-}
 
 void Faces::addFaceResults(FaceSet & fset)
 {
@@ -523,10 +575,10 @@ void Faces::addFaceResults(FaceSet & fset)
 
 // Find the face_info that lies across the given edge.
 // Used to propagate the search to adjacent faces, giving them opposite colours.
-FacePtr Faces::getTwin(MapPtr map, FacePtr fi, int idx)
+FacePtr Faces::getTwin(MapPtr map, EdgePtr edge)
 {
-    const VertexPtr from = fi->at(idx);
-    const VertexPtr to   = fi->at((idx+1) % fi->size());
+    const VertexPtr from = edge->getV1();
+    const VertexPtr to   = edge->getV2();
 
     NeighbourMap & nmap = map->getNeighbourMap();
     NeighboursPtr np    = nmap.getNeighbours(from);
@@ -546,42 +598,6 @@ FacePtr Faces::getTwin(MapPtr map, FacePtr fi, int idx)
         //Q_ASSERT(v1.contains(conn));
         return v1.value(conn);
     }
-}
-
-// Is a polygon (given here as a vector of Vertex instances) clockwise?
-// We can answer that question by finding a spot on the polygon where
-// we can distinguish inside from outside and looking at the edges
-// at that spot.  In this case, we look at the vertex with the
-// maximum X value.  Whether the polygon is clockwise depends on whether
-// the edge leaving that vertex is to the left or right of the edge
-// entering the vertex.  Left-or-right is computed using the sign of the cross product.
-bool Faces::isClockwise(FacePtr face)
-{
-    int sz = face->size();
-
-    // First, find the vertex with the greatest X coordinate.
-
-    int imax = 0;
-    qreal xmax = face->at( 0 )->getPosition().x();
-
-    for( int idx = 1; idx < sz; ++idx )
-    {
-        qreal x = face->at( idx )->getPosition().x();
-        if( x > xmax )
-        {
-            imax = idx;
-            xmax = x;
-        }
-    }
-
-    QPointF pmax  = face->at(imax)->getPosition();
-    QPointF pnext = face->at((imax+1) % sz)->getPosition();
-    QPointF pprev = face->at((imax+sz-1) %sz)->getPosition();
-
-    QPointF dprev = pmax -  pprev;
-    QPointF dnext = pnext - pmax;
-
-    return Point::cross(dprev, dnext ) <= 0.0;
 }
 
 // has same purpose as isClockwise()
@@ -635,10 +651,11 @@ void  Faces::removeLargest()
 
 void Faces::removeOverlaps()
 {
-    qDebug() << "Faces::removeOverlaps";
+    qDebug() << "Faces::removeOverlaps  allFaces=" << allFaces.size();
     zapFaceStates(FACE_UNDONE);
     int removed = 0;
-    QVector<FacePtr> overlaps;
+    FaceSet overlaps;
+
     for (auto it = allFaces.begin(); it != allFaces.end(); it++)
     {
         FacePtr f1 = *it;
@@ -646,9 +663,8 @@ void Faces::removeOverlaps()
         if (f1->state == FACE_UNDONE)
             f1->state = FACE_DONE;
 
-        if (it+1 == allFaces.end())
-            continue;
-
+        //if (it+1 == allFaces.end())
+        //    continue;
         for (auto it2 = it+1; it2 != allFaces.end(); it2++)
         {
             FacePtr f2 = *it2;
@@ -659,6 +675,7 @@ void Faces::removeOverlaps()
             //if (f1->overlaps(f2))
             if (isOverlapped(f1,f2))
             {
+#if 1
                 // which one is the larger overlapper?
                 if (f2->getArea() >= f1->getArea())
                 {
@@ -678,6 +695,7 @@ void Faces::removeOverlaps()
                         overlaps.push_back(f1);
                     }
                 }
+#endif
             }
         }
     }
@@ -687,6 +705,40 @@ void Faces::removeOverlaps()
         FacePtr fp = *it;
         allFaces.removeAll(fp);
     }
+    qDebug() << "removed overlaps - allfaces:" << allFaces.size();
+}
+
+void Faces::decomposeCrossoverFaces()
+{
+    qDebug() << "decomposeCrossoverFaces start:" << allFaces.size();
+    FaceSet fset = allFaces;
+    allFaces.clear();
+    for (auto face : fset)
+    {
+        if (face->containsCrossover())
+        {
+            //qWarning() <<  "need to break into smaller faces << size=" << face->size();
+            Q_ASSERT(face->isValid());
+            FaceSet fset = face->decompose();
+            //qDebug() << "decomposed faces=" << fset.size();
+            for (auto face2 : fset)
+            {
+                face2->sortForComparison();
+                allFaces.push_back(face2);
+            }
+            //qDebug() << "Face size now" << face->size();
+            if (face->size())
+            {
+                face->sortForComparison();
+                allFaces.push_back(face);
+            }
+        }
+        else
+        {
+            allFaces.push_back(face);
+        }
+    }
+    qDebug() << "decomposeCrossoverFaces end:" << allFaces.size();
 }
 
 void  Faces::sortFaceSetsByPosition()
@@ -730,30 +782,26 @@ bool Faces::edgeIntersection(QPointF a, QPointF b, QPointF c, QPointF d)
     }
 }
 
-bool Faces::isOverlapped(FacePtr a, FacePtr b)
+bool Faces::isOverlapped(const FacePtr a, const FacePtr b)
 {
-    QPointF p1,p2,p3,p4;
-    int asize = a->size();
-    int bsize = b->size();
-    for (int i = 0; i < asize; i++)
-    {
-        p1 = a->at(i)->getPosition();
-        p2 = a->at((i+1)%asize)->getPosition();
-        for (int j=0; j < bsize; j++)
-        {
-            p3 = b->at(j)->getPosition();
-            p4 = b->at((j+1)%bsize)->getPosition();
+    QPolygonF pa = a->getPolygon();
+    QPolygonF pb = b->getPolygon();
 
-            if (edgeIntersection(p1,p2,p3,p4))
-            {
-                if (!Intersect::getNearIntersection(p1,p2,p3,p4).isNull())
-                {
-                    return true;
-                }
-            }
+    if (pa.intersects(pb))
+    {
+        QPolygonF p3 = pa.intersected(pb);
+        if (!p3.isEmpty())
+        {
+            //qDebug() << "overlapping";
+            return true;
+        }
+        else
+        {
+            //qDebug() << "touching";
+            return  false;
         }
     }
-    return false;
+    return  false;
 }
 
 void Faces::removeDuplicates()
@@ -761,19 +809,17 @@ void Faces::removeDuplicates()
     FaceSet qvfp;
 
     qDebug() << "Faces::Remove duplicates - start count="  << allFaces.size();
-    for (auto it = allFaces.begin(); it != allFaces.end(); it++)
+    for (auto face : allFaces)
     {
-        FacePtr fp = *it;
-        if (fp->getNumSides() == 0)
+        if (face->getNumSides() == 0)
         {
             qDebug() << "empty face";
             continue;
         }
         bool found = false;
-        for (auto it2 = qvfp.begin(); it2 != qvfp.end(); it2++)
+        for (auto face2 : qvfp)
         {
-            FacePtr fp2 = *it2;
-            if (fp->equals(fp2))
+            if (face->equals(face2))
             {
                 found = true;
                 break;
@@ -781,13 +827,13 @@ void Faces::removeDuplicates()
         }
         if (!found)
         {
-            qvfp.push_back(fp);
+            qvfp.push_back(face);
         }
     }
 
     allFaces = qvfp; // replace
 
-    qDebug() << "Remove duplicates - end   count="  << allFaces.size();
+    qDebug() << "Faces::Remove duplicates - end   count="  << allFaces.size();
 }
 
 
@@ -814,7 +860,8 @@ void Faces::dumpAllFaces(QString title)
     for (int i=0; i < allFaces.size(); i++)
     {
         FacePtr fip = allFaces[i];
-        qDebug().noquote() << i << Utils::addr(fip.get()) << "state=" << sFaceState[fip->state] << "sides=" << fip->size() << "area=" << fip->getArea()  << fip->dump();
+        qDebug().noquote() << i << Utils::addr(fip.get()) << "state=" << sFaceState[fip->state] << "sides=" << fip->size() << "area=" << fip->getArea();
+        fip->dump();
     }
     qDebug().noquote() << "===============END" << title << "=============================";
 }
@@ -838,29 +885,6 @@ void  Faces::purifyMap(MapPtr map)
     map->calcVertexEdgeCounts();
 }
 
-void Faces::purifyFaces()
-{
-    qWarning() << "Faces::purifyFaces - currently does nothing useful";
-    int count = 0;
-
-    for (int i=0; i < allFaces.size(); i++)
-    {
-        FacePtr fp = allFaces[i];
-        if (fp->isClosed())
-        {
-            qDebug() << "face is closed";
-        }
-        if (i == 55)
-        {
-            qDebug() << "bingo";
-        }
-        bool rv = fp->containsCrossover();
-        if (rv)
-            count++;
-    }
-    qDebug() << count << "crossovers out of" << allFaces.size();
-}
-
 ////////////////////////////////////////
 ///
 /// Face
@@ -874,39 +898,25 @@ Face::Face()
     _areaCalculated = false;
 }
 
-PolyPtr Face::getPolygon()
+QPolygonF Face::getPolygon()
 {
-    PolyPtr pts = make_shared<QPolygonF>();
-    for( int i = 0; i < size(); i++ )
-    {
-        *pts << at(i)->getPosition();
-    }
-    return pts;
-}
-
-void Face::setPolygon(PolyPtr poly)
-{
-    for (int i=0; i < size(); i++)
-    {
-        VertexPtr p = at(i);
-        p->setPosition(poly->at(i));
-    }
+    return getPoly();
 }
 
 bool  Face::overlaps(FacePtr other)
 {
-    QPolygonF thisP   =  *getPolygon();
-    QPolygonF otherP  =  *other->getPolygon();
+    QPolygonF thisP   =  getPolygon();
+    QPolygonF otherP  =  other->getPolygon();
 
     return thisP.intersects(otherP);
 }
 
-PolyPtr Face::subtracted(FacePtr other)
+QPolygonF Face::subtracted(FacePtr other)
 {
-    PolyPtr thisP   =  getPolygon();
-    PolyPtr otherP  =  other->getPolygon();
-    QPolygonF p     = thisP->subtracted(*otherP);
-    return make_shared<QPolygonF>(p);
+    QPolygonF thisP   =  getPolygon();
+    QPolygonF otherP  =  other->getPolygon();
+    QPolygonF p       = thisP.subtracted(otherP);
+    return p;
 }
 
 qreal Face::getArea()
@@ -916,7 +926,7 @@ qreal Face::getArea()
         return _area;
     }
 
-    QPolygonF poly  = *getPolygon();
+    QPolygonF poly  = getPolygon();
     _area           = Utils::calcArea(poly);
     _areaCalculated = true;
     return _area;
@@ -927,7 +937,7 @@ bool Face::equals(FacePtr other)
     return getSorted() == other->getSorted();
 }
 
-QVector<VertexPtr> & Face::getSorted()
+QPolygonF & Face::getSorted()
 {
     Q_ASSERT(sortedShadow.size() != 0);
     return sortedShadow;
@@ -937,72 +947,132 @@ QPointF Face::center()
 {
     if (_center .isNull())
     {
-        _center = Point::center(*getPolygon());
+        QPolygonF pts = getPolygon();
+        _center = Point::center(pts);
     }
     return _center;
 }
 
-void Face::sortForComparion()
+bool lessThanPoint(const QPointF &p1, const QPointF & p2)
 {
-    sortedShadow.clear();
-    QVector<VertexPtr> & self = *this;
-    for (auto it = self.begin(); it !=self.end(); it ++)
-    {
-        VertexPtr v = *it;
-        bool found = false;
-        for (int i = 0; i < sortedShadow.size(); i++)
-        {
-            VertexPtr vert = sortedShadow[i];
-            if (v.get() <= vert.get())
-            {
-                sortedShadow.insert(i,v);
-                found = true;
-                break;
-            }
-        }
-        if (!found)
-        {
-            sortedShadow.push_back(v);
-        }
-    }
+    return ( p1.manhattanLength() < p2.manhattanLength());
+ }
+
+void Face::sortForComparison()
+{
+    sortedShadow = getPoly();
+    QVector<QPointF> & vec = sortedShadow;
+    std::sort(vec.begin(),vec.end(),lessThanPoint);
 }
 
-bool  Face::containsCrossover()
+bool Face::containsCrossover()
 {
     QVector<VertexPtr> qvec;
-    for (auto it= begin(); it != end(); it++)
+    for (auto edge : *this)
     {
-        VertexPtr vp = *it;
+        VertexPtr vp = edge->getV1();
         if (!qvec.contains(vp))
         {
             qvec.push_back(vp);
         }
         else
         {
-            if (vp != last())
-            {
-                qDebug() << "crossover detected";
-                return true;
-            }
+            //qDebug() << "crossover detected";
+            return true;
         }
     }
     return false;
 }
 
-QString Face::dump()
+FaceSet Face::decompose()
 {
-    QString astring;
-    QDebug  deb(&astring);
+    FaceSet fset;
 
-    QVector<VertexPtr> & vertices = *this;
-    for (auto it = vertices.begin(); it != vertices.end(); it++)
+    bool rv = false;
+    do
     {
-        VertexPtr v = *it;
-        QPointF pt = v->getPosition();
-        deb << "[" << Utils::addr(v.get()) << pt << "]";
+        FacePtr face = make_shared<Face>();
+        rv = decomposeOnce(face);
+        if (rv)
+        {
+            fset.push_back(face);
+        }
+    } while (rv);
+
+    return fset;
+}
+
+
+bool Face::decomposeOnce(FacePtr newFace)
+{
+    enum eState
+    {
+        NOT_STARTED,
+        STARTED,
+        ENDED
+    };
+
+    QVector<VertexPtr> qvec;
+    for (auto edge : *this)
+    {
+        VertexPtr vp = edge->getV1();
+        if (!qvec.contains(vp))
+        {
+            qvec.push_back(vp);
+        }
+        else
+        {
+            // create a good face and take it out of this face
+            //qDebug() << "Crossover vertex detected" << vp->getTmpVertexIndex();
+            Face master;
+            eState state = NOT_STARTED;
+            for (auto edge : *this)
+            {
+                switch(state)
+                {
+                case NOT_STARTED:
+                    if (edge->getV1() != vp)
+                    {
+                        master.push_back(edge);
+                    }
+                    else
+                    {
+                        state = STARTED;
+                        newFace->push_back(edge);
+                    }
+                    break;
+                case STARTED:
+                    if (edge->getV1() != vp)
+                    {
+                        newFace->push_back(edge);
+                    }
+                    else
+                    {
+                        state = ENDED;
+                        master.push_back(edge);
+                    }
+                    break;
+                case ENDED:
+                    master.push_back(edge);
+                    break;
+                }
+            }
+
+            Q_ASSERT(newFace->isValid());
+            Q_ASSERT(master.isValid());
+            *this = master;
+            return true;
+        }
     }
-    astring.remove("QPointF");
-    return astring;
+    return false;
+}
+
+void Face::dump()
+{
+    qDebug() << "=== FACE";
+    EdgePoly & ep = *this;
+    ep.dump();
+    qDebug() << "=== END FACE";
 }
 
 ////////////////////////////////////////
@@ -1161,3 +1231,12 @@ bool FaceGroup::isSelected(int idx)
     return false;
 }
 
+int FaceGroup::totalSize()
+{
+    int tot = 0;
+    for (auto fset : *this)
+    {
+        tot += fset->size();
+    }
+    return tot;
+}

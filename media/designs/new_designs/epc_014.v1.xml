@@ -3,7 +3,6 @@
 	<designNotes>?tude Pratique de la D?coration Polygonale Arabe
 figure fills tiling</designNotes>
 	<design>
-		<scale>1</scale>
 		<size>
 			<width>1500</width>
 			<height>1100</height>
@@ -18,6 +17,7 @@ figure fills tiling</designNotes>
 			<top__delta>0</top__delta>
 			<width__delta>1</width__delta>
 			<theta__delta>0</theta__delta>
+			<center>-0.01333333333333186,-5.346666666666668</center>
 		</toolkit.GeoLayer>
 		<style.Style>
 			<boundary id="3">
@@ -50,11 +50,11 @@ figure fills tiling</designNotes>
 							<edges id="11">
 								<Line>
 									<Point id="12">-0.5773502691896256,1</Point>
-									<Point id="13">-1.154700538379251,7.070501591499379e-17</Point>
+									<Point id="13">-1.154700538379251,2.187347525316813e-16</Point>
 								</Line>
 								<Line>
 									<Point reference="13" />
-									<Point id="14">-0.5773502691896261,-0.9999999999999998</Point>
+									<Point id="14">-0.5773502691896261,-0.9999999999999997</Point>
 								</Line>
 								<Line>
 									<Point reference="14" />
@@ -62,11 +62,11 @@ figure fills tiling</designNotes>
 								</Line>
 								<Line>
 									<Point reference="15" />
-									<Point id="16">1.154700538379251,-2.121150477449814e-16</Point>
+									<Point id="16">1.154700538379251,-6.40853111282938e-17</Point>
 								</Line>
 								<Line>
 									<Point reference="16" />
-									<Point id="17">0.5773502691896263,0.9999999999999997</Point>
+									<Point id="17">0.5773502691896263,0.9999999999999998</Point>
 								</Line>
 								<Line>
 									<Point reference="17" />
@@ -78,10 +78,11 @@ figure fills tiling</designNotes>
 							<n>6</n>
 							<q>0</q>
 							<s>3</s>
+							<k>0</k>
 							<boundarySides>1</boundarySides>
 							<boundaryScale>1</boundaryScale>
-							<figureScale>1.155</figureScale>
-							<r>0</r>
+							<figureScale>1</figureScale>
+							<r>90</r>
 						</app.Rosette>
 					</entry>
 				</app.Prototype>

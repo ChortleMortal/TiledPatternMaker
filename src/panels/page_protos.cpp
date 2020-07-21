@@ -24,120 +24,127 @@
 
 #include "panels/page_protos.h"
 #include "designs/patterns.h"
-#include "style/Colored.h"
-#include "style/Thick.h"
-#include "style/Filled.h"
-#include "style/Interlace.h"
-#include "style/Outline.h"
-#include "style/Plain.h"
-#include "style/Sketch.h"
-#include "style/Emboss.h"
+#include "style/colored.h"
+#include "style/thick.h"
+#include "style/filled.h"
+#include "style/interlace.h"
+#include "style/outline.h"
+#include "style/plain.h"
+#include "style/sketch.h"
+#include "style/emboss.h"
 
 using std::string;
 
+Q_DECLARE_METATYPE(DesignElementPtr);
+Q_DECLARE_METATYPE(PrototypePtr);
 
 page_protos:: page_protos(ControlPanel * cpanel)  : panel_page(cpanel,"Prototype Info")
 {
     setMouseTracking(true);
 
-    wsProtoLabel = new QLabel;
-    wsProtoLabel->setFixedWidth(251);
-
     QPushButton * refreshButton = new QPushButton("Refresh");
     QHBoxLayout * hbox = new QHBoxLayout;
 
-    sourceStyle = new QRadioButton("Source: style");
-    sourceWS    = new QRadioButton("Source: workspace");
-
-    hbox->addWidget(wsProtoLabel);
     hbox->addWidget(refreshButton);
-    hbox->addWidget(sourceStyle);
-    hbox->addWidget(sourceWS);
     hbox->addStretch();
 
-    protoTable = new QTableWidget(this);
+    protoTable = new AQTableWidget(this);
+    protoTable->setColumnCount(5);
+    QStringList qslH;
+    qslH << "Prototype" << "Design Element" << "Feature" << "Figure" << "Transform";
+    protoTable->setHorizontalHeaderLabels(qslH);
+    protoTable->verticalHeader()->setVisible(false);
+    protoTable->setSelectionMode(QAbstractItemView::SingleSelection);
+    protoTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+
     vbox->addLayout(hbox);
     vbox->addSpacing(7);
     vbox->addWidget(protoTable);
     vbox->addStretch();
 
-    bgroup.addButton(sourceStyle, PV_STYLE);
-    bgroup.addButton(sourceWS, PV_WS);
-    bgroup.button(config->protoViewer)->setChecked(true);
-
     connect(refreshButton, &QPushButton::clicked,      this, &page_protos::onEnter);
-    connect(&bgroup,       SIGNAL(buttonClicked(int)), this, SLOT(slot_display(int)));
+    connect(protoTable, SIGNAL(cellClicked(int,int)), this,   SLOT(slot_prototypeSelected(int,int)));
 }
 
 void  page_protos::refreshPage()
 {
-    bgroup.button(config->protoViewer)->setChecked(true);
-
-    eWsData wsdata     = (sourceStyle->isChecked()) ? WS_LOADED : WS_TILING;
-    PrototypePtr proto = workspace->getPrototype(wsdata);
-    if (proto)
-    {
-        wsProtoLabel->setText(QString("Style Proto ptr: is 0x%1").arg(addr(proto.get())));
-    }
-    else
-    {
-        wsProtoLabel->setText("WS Proto ptr: is null");
-        return;
-    }
-
-    protoTable->clearContents();
-
-    int row = 0;
-    QVector<DesignElementPtr> dels = proto->getDesignElements();
-    for (auto del :  dels)
-    {
-        protoTable->setRowCount(row + 1);
-
-        QTableWidgetItem * item;
-        item = new QTableWidgetItem(addr(del.get()));
-        protoTable->setItem(row,PROTO_COL_DEL,item);
-
-        FeaturePtr fp = del->getFeature();
-        QString astring = addr(fp.get());
-        if (fp->isRegular())
-        {
-            astring += " sides=" + QString::number(fp->numPoints());
-        }
-        item = new QTableWidgetItem(astring);
-        protoTable->setItem(row,PROTO_COL_FEATURE,item);
-
-        FigurePtr figp = del->getFigure();
-        astring = addr(figp.get()) + "  " + figp->getFigTypeString();
-        item = new QTableWidgetItem(astring);
-        protoTable->setItem(row,PROTO_COL_FIGURE,item);
-
-        QTransform t = proto->getTransform(row);
-        item = new QTableWidgetItem(Transform::toInfoString(t));
-        protoTable->setItem(row,PROTO_COL_TRANSFORM,item);
-
-        row++;
-    }
-
-    protoTable->resizeColumnsToContents();
-    adjustTableSize(protoTable);
-    updateGeometry();
-}
-
-void page_protos::slot_display(int id)
-{
-    config->protoViewer = static_cast<eProtoViewer>(id);
-    onEnter();
 }
 
 void page_protos::onEnter()
 {
-    protoTable->clear();
+    protoTable->clearContents();
 
-    protoTable->setColumnCount(4);
+    QVector<PrototypePtr> prototypes = workspace->getPrototypes();
+    int row = 0;
+    QTableWidgetItem * item;
+    for (auto proto : prototypes)
+    {
+        QVector<DesignElementPtr> dels = proto->getDesignElements();
+        for (auto del :  dels)
+        {
+            protoTable->setRowCount(row + 1);
 
-    QStringList qslH;
-    qslH << "Design Element" << "Feature" << "Figure" << "Transform";
-    protoTable->setHorizontalHeaderLabels(qslH);
-    protoTable->verticalHeader()->setVisible(false);
+            item = new QTableWidgetItem(addr(proto.get()));
+            item->setData(Qt::UserRole,QVariant::fromValue(proto));
+            protoTable->setItem(row,PROTO_COL_PROTO,item);
+
+            item = new QTableWidgetItem(addr(del.get()));
+            item->setData(Qt::UserRole,QVariant::fromValue(del));
+            protoTable->setItem(row,PROTO_COL_DEL,item);
+
+            FeaturePtr fp = del->getFeature();
+            QString astring = addr(fp.get());
+            if (fp->isRegular())
+            {
+                astring += " sides=" + QString::number(fp->numPoints());
+            }
+            item = new QTableWidgetItem(astring);
+            protoTable->setItem(row,PROTO_COL_FEATURE,item);
+
+            FigurePtr figp = del->getFigure();
+            astring = addr(figp.get()) + "  " + figp->getFigureDesc();
+            item = new QTableWidgetItem(astring);
+            protoTable->setItem(row,PROTO_COL_FIGURE,item);
+
+            QTransform t = proto->getTransform(row);
+            item = new QTableWidgetItem(Transform::toInfoString(t));
+            protoTable->setItem(row,PROTO_COL_TRANSFORM,item);
+
+            row++;
+        }
+    }
+
+    protoTable->resizeColumnsToContents();
+    protoTable->adjustTableSize();
+    updateGeometry();
+}
+
+void page_protos::slot_prototypeSelected(int row, int col)
+{
+    Q_UNUSED(col);
+
+    PrototypePtr pp;
+    QTableWidgetItem * twi = protoTable->item(row,PROTO_COL_PROTO);
+    QVariant var = twi->data(Qt::UserRole);
+    if (var.canConvert<PrototypePtr>())
+    {
+        pp = var.value<PrototypePtr>();
+    }
+    if (pp)
+    {
+        workspace->setSelectedPrototype(pp);
+    }
+
+    DesignElementPtr dp;
+    twi = protoTable->item(row,PROTO_COL_DEL);
+    var = twi->data(Qt::UserRole);
+    if (var.canConvert<DesignElementPtr>())
+    {
+        dp = var.value<DesignElementPtr>();
+    }
+    if (dp)
+    {
+        workspace->setSelectedDesignElement(dp);
+    }
 }
 

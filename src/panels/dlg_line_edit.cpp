@@ -1,13 +1,14 @@
 #include "panels/dlg_line_edit.h"
 #include "panels/panel_page.h"
 #include "panels/layout_sliderset.h"
-#include "tile/Feature.h"
+#include "tile/feature.h"
 #include "base/utilities.h"
+#include "base/view.h"
 
 DlgLineEdit::DlgLineEdit(EdgePoly & epoly, int row, int col) : QLineEdit(),
   _poly(epoly)
 {
-    canvas = Canvas::getInstance();
+    view = View::getInstance();
 
     setContextMenuPolicy(Qt::CustomContextMenu);
     connect(this, &DlgLineEdit::customContextMenuRequested, this, &DlgLineEdit::slot_menu);
@@ -55,7 +56,7 @@ void  DlgLineEdit::slot_down()
     }
     vp->setPosition(pos);
     emit currentPoint(pos);
-    canvas->update();
+    view->update();
 }
 
 void  DlgLineEdit::slot_nearest()
@@ -78,7 +79,7 @@ void  DlgLineEdit::slot_nearest()
     }
     vp->setPosition(pos);
     emit currentPoint(pos);
-    canvas->update();
+    view->update();
 }
 
 void  DlgLineEdit::slot_up()
@@ -101,7 +102,7 @@ void  DlgLineEdit::slot_up()
     }
     vp->setPosition(pos);
     emit currentPoint(pos);
-    canvas->update();
+    view->update();
 }
 
 void DlgLineEdit::slot_undo()
@@ -121,7 +122,7 @@ void DlgLineEdit::slot_undo()
     }
     vp->setPosition(pos);
     emit currentPoint(pos);
-    canvas->update();
+    view->update();
 }
 
 void DlgLineEdit::slot_editingFinished()
@@ -142,7 +143,7 @@ void DlgLineEdit::slot_editingFinished()
         }
         vp->setPosition(pos);
         emit currentPoint(pos);
-        canvas->update();
+        view->update();
     }
     else
     {

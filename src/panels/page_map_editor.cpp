@@ -31,11 +31,11 @@
 #include "base/fileservices.h"
 #include "base/tiledpatternmaker.h"
 #include "base/utilities.h"
-#include "style/Style.h"
-#include "tapp/ExplicitFigure.h"
-#include "tapp/RadialFigure.h"
-#include "base/xmlwriter.h"
-#include "base/xmlloader.h"
+#include "style/style.h"
+#include "tapp/explicit_figure.h"
+#include "tapp/radial_figure.h"
+#include "base/xml_writer.h"
+#include "base/xml_loader.h"
 
 
 #define E2STR(x) #x
@@ -55,16 +55,18 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     localMap  =  make_shared<Map>(QString("New local map"));
     debugInfo = false;
 
-    QRadioButton * mapEdStyle  = new QRadioButton("Style");
-    QRadioButton * mapEdProto  = new QRadioButton("Proto");
+    QRadioButton * mapEdMosaic = new QRadioButton("Mosaic");
+    QRadioButton * mapEdProto  = new QRadioButton("Prototype");
     QRadioButton * mapEdFigure = new QRadioButton("Figure");
     QRadioButton * mapEdLocal  = new QRadioButton("Local");
+    QRadioButton * mapEdTiling = new QRadioButton("Tiling");
 
     // map editor group
-    mapEdModeGroup.addButton(mapEdStyle,MAP_MODE_STYLE);
+    mapEdModeGroup.addButton(mapEdMosaic,MAP_MODE_MOSAIC);
     mapEdModeGroup.addButton(mapEdProto,MAP_MODE_PROTO);
     mapEdModeGroup.addButton(mapEdFigure,MAP_MODE_FIGURE);
     mapEdModeGroup.addButton(mapEdLocal,MAP_MODE_LOCAL);
+    mapEdModeGroup.addButton(mapEdTiling,MAP_MODE_TILING);
     mapEdModeGroup.button(config->mapEditorMode)->setChecked(true);
 
     line0 = new QLabel;
@@ -98,6 +100,7 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     QToolButton * pbCropMap = new QToolButton();
     QToolButton * pbLoadMap = new QToolButton();
     QToolButton * pbSaveMap = new QToolButton();
+
 
     QToolButton * pbRestoreConstructs= new QToolButton();
     QToolButton * pbUndoConstructs= new QToolButton();
@@ -171,19 +174,17 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     QToolButton * pbReplaceInStyle  = new QToolButton();
     QToolButton * pbAddToStyle      = new QToolButton();
     QToolButton * pbRender          = new QToolButton();
+    QToolButton * pbPushToTiling    = new QToolButton();
 
     pbReplaceInStyle->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     pbAddToStyle->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     pbRender->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    pbPushToTiling->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     pbReplaceInStyle->setText("Replace in Proto");
     pbAddToStyle->setText("Add to Proto");
     pbRender->setText("Render");
-
-    QRadioButton * targetStyle      = new QRadioButton("To Loaded Styles");
-    QRadioButton * targetWS         = new QRadioButton("To WS Styles");
-    targetGroup.addButton(targetStyle,TARGET_LOADED_STYLES);
-    targetGroup.addButton(targetWS,   TARGET_WS_STYLES);
+    pbPushToTiling->setText("Push to Tiling");
 
     QRadioButton * modeNone         = new QRadioButton("No Mode (ESC)");
     QRadioButton * modeDrawLine     = new QRadioButton("Draw Lines (F3)");
@@ -218,9 +219,10 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
 
     // View Box
     QVBoxLayout * vbox2 = new QVBoxLayout;
-    vbox2->addWidget(mapEdStyle);
+    vbox2->addWidget(mapEdMosaic);
     vbox2->addWidget(mapEdProto);
     vbox2->addWidget(mapEdFigure);
+    vbox2->addWidget(mapEdTiling);
     vbox2->addWidget(mapEdLocal);
     vbox2->addSpacing(9);
     vbox2->addWidget(hideConsChk);
@@ -307,11 +309,11 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     // Push Box
     QHBoxLayout * pushLayout = new QHBoxLayout;
 
-    pushLayout->addWidget(targetStyle);
-    pushLayout->addWidget(targetWS);
     pushLayout->addWidget(pbReplaceInStyle);
     pushLayout->addWidget(pbAddToStyle);
     pushLayout->addWidget(pbRender);
+    pushLayout->addWidget(pbPushToTiling);
+
 
     QGroupBox * pushBox = new QGroupBox("Push");
     pushBox->setLayout(pushLayout);
@@ -325,13 +327,13 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
 
     boxLayout->addWidget(viewBox,0,2,2,1);
 
-    boxLayout->addWidget(pushBox,2,0,1,2);
+    boxLayout->addWidget(pushBox,2,0,1,3);
 
     // putting it together
     vbox->addWidget(editorStatusBox);
     vbox->addLayout(boxLayout);
 
-    connect(workspace, &Workspace::sig_ws_dele_changed, this, &page_map_editor::slot_ws_dele_changed);
+    connect(workspace, &Workspace::sig_selected_dele_changed, this, &page_map_editor::slot_selected_dele_changed);
 
     connect(maker,  &TiledPatternMaker::sig_loadedTiling,   this,   &page_map_editor::slot_loadedTiling);
     connect(maker,  &TiledPatternMaker::sig_loadedXML,      this,   &page_map_editor::slot_loadedXML);
@@ -354,6 +356,7 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     connect(pbCreateMap,            &QToolButton::clicked,  this,   &page_map_editor::slot_createMap);
     connect(pbLoadMap,              &QToolButton::clicked,  this,   &page_map_editor::slot_loadMap);
     connect(pbSaveMap,              &QToolButton::clicked,  this,   &page_map_editor::slot_saveMap);
+    connect(pbPushToTiling,         &QToolButton::clicked,  this,   &page_map_editor::slot_pushToTiling);
 
     connect(pbRestoreConstructs,    &QToolButton::clicked,  this,   &page_map_editor::slot_popstash);
     connect(pbUndoConstructs,       &QToolButton::clicked,  this,   &page_map_editor::slot_undoConstructionLines);
@@ -368,7 +371,6 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     connect(hideMidPtsChk,  &QCheckBox::clicked,  this,   &page_map_editor::slot_hideMidPoints);
 
     connect(&mapEdModeGroup,    SIGNAL(buttonClicked(int)), this,   SLOT(slot_mapEdMode_pressed(int)));
-    connect(&targetGroup,       SIGNAL(buttonClicked(int)), this,   SLOT(slot_target_selected(int)));
     connect(&modeGroup,         SIGNAL(buttonClicked(int)), this,   SLOT(slot_setModes(int)));
     connect(pbReplaceInStyle,   &QToolButton::clicked,      this,   &page_map_editor::sig_stylesReplaceProto);
     connect(pbAddToStyle,       &QToolButton::clicked,      this,   &page_map_editor::sig_stylesAddProto);
@@ -393,7 +395,6 @@ void  page_map_editor::onEnter()
     reload();
 
     modeGroup.button(me->getMouseMode())->setChecked(true);
-    targetGroup.button(config->pushTarget)->setChecked(true);
 
     me->buildEditorDB();
     emit sig_viewWS();
@@ -403,48 +404,44 @@ void  page_map_editor::reload()
 {
     Q_ASSERT(me);
 
-    targetGroup.button(config->pushTarget)->setChecked(true);
-
     switch (config->mapEditorMode)
     {
     case MAP_MODE_FIGURE:
     {
         // this is set by the figure editor
-        eWsData wsdata = (config->figureViewer == FV_STYLE) ? WS_LOADED : WS_TILING;
-        DesignElementPtr dep  = workspace->getSelectedDesignElement(wsdata);
+        DesignElementPtr dep  = workspace->getSelectedDesignElement();
         if (dep)
-        {
             me->setDesignElement(dep);
-        }
         else
-        {
             me->unload();
-        }
         break;
     }
     case MAP_MODE_PROTO:
     {
-        eWsData wsdata = (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
-        PrototypePtr pp = workspace->getPrototype(wsdata);
-        if (pp)
+        PrototypePtr proto = workspace->getSelectedPrototype();
+        if (proto)
         {
-            me->setPrototype(pp);
+            me->setPrototype(proto);
         }
         else
-        {
             me->unload();
-        }
         break;
     }
-    case MAP_MODE_STYLE:
+    case MAP_MODE_MOSAIC:
     {
-        eWsData wsdata        = (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
-        StyledDesign & sd     = workspace->getStyledDesign(wsdata);
-        const StyleSet & sset = sd.getStyleSet();
-        if (sset.size())
+        MosaicPtr mosaic     = workspace->getMosaic();
+        if (mosaic)
         {
-            StylePtr sp  = sset.first();
-            me->setStyle(sp);
+            const StyleSet & sset = mosaic->getStyleSet();
+            if (sset.size())
+            {
+                StylePtr sp  = sset.first();
+                me->setStyle(sp);
+            }
+            else
+            {
+                me->unload();
+            }
         }
         else
         {
@@ -456,6 +453,14 @@ void  page_map_editor::reload()
     case MAP_MODE_LOCAL:
         me->setLocal(localMap);
         break;
+
+    case MAP_MODE_TILING:
+        TilingPtr tp = workspace->getTiling();
+        if (tp)
+            me->setTiling(tp);
+        else
+            me->unload();
+        break;
     }
 
     if (config->viewerType == VIEW_MAP_EDITOR)
@@ -464,12 +469,11 @@ void  page_map_editor::reload()
     }
 }
 
-void page_map_editor::slot_ws_dele_changed()
+void page_map_editor::slot_selected_dele_changed()
 {
     if (config->mapEditorMode == MAP_MODE_FIGURE)
     {
-        eWsData wsdata = (config->figureViewer == FV_STYLE) ? WS_LOADED : WS_TILING;
-        DesignElementPtr dep = workspace->getSelectedDesignElement(wsdata);
+        DesignElementPtr dep = workspace->getSelectedDesignElement();
         me->setDesignElement(dep);
     }
 }
@@ -604,7 +608,6 @@ void page_map_editor::refreshPage()
 
 
     modeGroup.button(me->getMouseMode())->setChecked(true);
-    targetGroup.button(config->pushTarget)->setChecked(true);
 
     me->updateStatus();
 }
@@ -649,11 +652,6 @@ void page_map_editor::slot_convertToExplicit()
         ep = make_shared<ExplicitFigure>(map,FIG_TYPE_EXPLICIT,sides);
         delp->setFigure(ep);
     }
-}
-
-void page_map_editor::slot_target_selected(int id)
-{
-    config->pushTarget = ePushTarget(id);
 }
 
 void page_map_editor::slot_verify()
@@ -868,10 +866,10 @@ void page_map_editor::slot_loadMap()
     if (filename.isEmpty()) return;
 
     XmlLoader loader;
-    MapPtr map  = loader.loadXML(filename);
+    MapPtr map  = loader.loadMosaicMap(filename);
     if (!map)
     {
-        QMessageBox box;
+        QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
         box.setText("Map NOT loaded");
         box.exec();
@@ -882,7 +880,7 @@ void page_map_editor::slot_loadMap()
     {
         localMap = map;
         me->setLocal(localMap);
-        QMessageBox box;
+        QMessageBox box(this);
 
         box.setIcon(QMessageBox::Information);
         box.setText("Local map loaded OK");
@@ -890,9 +888,9 @@ void page_map_editor::slot_loadMap()
     }
     else
     {
-        QMessageBox box;
+        QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
-        box.setText("Not implemented");
+        box.setText("View not implemented - please select Local View");
         box.exec();
     }
 }
@@ -907,19 +905,46 @@ void page_map_editor::slot_saveMap()
     bool rv = writer.writeXML(filename,me->getMap());
     if (rv)
     {
-        QMessageBox box;
+        QMessageBox box(this);
         box.setIcon(QMessageBox::Information);
         box.setText("Map saved OK");
         box.exec();
     }
     else
     {
-        QMessageBox box;
+        QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
         box.setText("Map NOT saved");
         box.exec();
     }
 }
+
+void page_map_editor::slot_pushToTiling()
+{
+    MapPtr map      = me->getMap();
+    EdgePoly ep     = map->getEdgePoly();
+    FeaturePtr fp   = make_shared<Feature>(ep,0);
+    EdgePoly ep2    = fp->getEdgePoly();
+
+    TilingPtr tiling = workspace->getTiling();
+    if (tiling)
+    {
+        tiling->add(fp,QTransform());
+
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Information);
+        box.setText("Pushed OK");
+        box.exec();
+    }
+    else
+    {
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Warning);
+        box.setText("No tiling - NOT pushed");
+        box.exec();
+    }
+}
+
 
 void page_map_editor::slot_dumpMap()
 {
@@ -1020,8 +1045,5 @@ void page_map_editor::slot_loadTemplate()
 
 void page_map_editor::slot_render()
 {
-    if (config->pushTarget == TARGET_LOADED_STYLES)
-        emit sig_render(RENDER_LOADED);
-    else
-        emit sig_render(RENDER_WS);
+    emit sig_render();
 }

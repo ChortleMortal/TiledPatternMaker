@@ -8,7 +8,7 @@ class DlgCrop : public QDialog
 {
     Q_OBJECT
 public:
-    DlgCrop(MapEditor *me, QWidget * parent = nullptr);
+    DlgCrop(MapEditorPtr me, QWidget * parent = nullptr);
 
     void enterEvent(QEvent *event) override;
     void leaveEvent(QEvent *event) override;
@@ -18,7 +18,7 @@ private slots:
     void    slot_setCrop(qreal);
 
 private:
-    MapEditor * mapeditor;
+    MapEditorPtr mapeditor;
 
     QDoubleSpinBox * width;
     QDoubleSpinBox * height;

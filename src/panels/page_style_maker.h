@@ -68,7 +68,7 @@ private slots:
 
 protected:
     void     reEnter();
-    void     setupStyleParms(StylePtr style, QTableWidget * table);
+    void     setupStyleParms(StylePtr style, AQTableWidget *table);
     StylePtr getStyleRow(int row);
     StylePtr getStyleIndex(int index);
     StylePtr copyStyle(const StylePtr style);
@@ -76,10 +76,10 @@ protected:
 private:
     QItemSelectionModel * selectModel;
 
-    StyleEditor  * styleParms;
-    QTableWidget * styleTable;
-    QTableWidget * parmsTable;
-    QVBoxLayout  * parmsCtrl;
+    StyleEditor   * styleParms;
+    AQTableWidget * styleTable;
+    AQTableWidget * parmsTable;
+    QVBoxLayout   * parmsCtrl;
 
     QSignalMapper  styleMapper;
     QSignalMapper  styleVisMapper;

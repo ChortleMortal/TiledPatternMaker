@@ -8,27 +8,11 @@ CONFIG += c++17
 msvc:QMAKE_LFLAGS_WINDOWS += /ignore:4099
 win32:RC_ICONS += dac1.ico
 
-CONFIG(debug, debug|release) {
-    TARGET = TiledPatternMakerD
-    DESTDIR = ../debug
-    OBJECTS_DIR = $$DESTDIR/obj
-    MOC_DIR = $$DESTDIR/moc
-    RCC_DIR = $$DESTDIR/rcc
-    UI_DIR = $$DESTDIR/ui
-} else {
-    TARGET = TiledPatternMaker
-    DESTDIR = ../release
-    OBJECTS_DIR = $$DESTDIR/obj
-    MOC_DIR = $$DESTDIR/moc
-    RCC_DIR = $$DESTDIR/rcc
-    UI_DIR = $$DESTDIR/ui
-}
-
 # Input
 SOURCES += \
     base/border.cpp \
     base/canvas.cpp \
-    base/canvasSettings.cpp \
+    base/canvas_settings.cpp \
     base/colorset.cpp \
     base/configuration.cpp \
     base/cycler.cpp \
@@ -36,11 +20,10 @@ SOURCES += \
     base/layer.cpp \
     base/main.cpp \
     base/misc.cpp \
+    base/mosaic.cpp \
     base/pugixml.cpp \
     base/qtapplog.cpp \
-    base/scene.cpp \
     base/shortcuts.cpp \
-    base/styleddesign.cpp \
     base/tile.cpp \
     base/tiledpatternmaker.cpp \
     base/tilingmanager.cpp \
@@ -49,35 +32,35 @@ SOURCES += \
     base/utilities.cpp \
     base/view.cpp \
     base/workspace.cpp \
-    base/xmlloader.cpp \
-    base/xmlwriter.cpp \
+    base/xml_loader.cpp \
+    base/xml_writer.cpp \
     designs/design.cpp \
     designs/designs.cpp \
     designs/patterns.cpp \
     designs/shapefactory.cpp \
     designs/shapes.cpp \
-    geometry/Edge.cpp \
-    geometry/Faces.cpp \
-    geometry/FillRegion.cpp \
-    geometry/Intersect.cpp \
-    geometry/Loose.cpp \
-    geometry/Map.cpp \
-    geometry/Point.cpp \
-    geometry/Transform.cpp \
-    geometry/Vertex.cpp \
     geometry/bounds.cpp \
     geometry/circle.cpp \
+    geometry/edge.cpp \
     geometry/edgepoly.cpp \
     geometry/facecycles.cpp \
+    geometry/faces.cpp \
+    geometry/fill_region.cpp \
+    geometry/intersect.cpp \
+    geometry/loose.cpp \
+    geometry/map.cpp \
     geometry/neighbours.cpp \
+    geometry/point.cpp \
     geometry/threads.cpp \
+    geometry/transform.cpp \
+    geometry/vertex.cpp \
     geometry/xform.cpp \
     makers/figure_maker/explicit_figure_editors.cpp \
     makers/figure_maker/feature_button.cpp \
     makers/figure_maker/feature_launcher.cpp \
     makers/figure_maker/figure_editors.cpp \
-    makers/figure_maker/figure_maker.cpp \
     makers/figure_maker/master_figure_editor.cpp \
+    makers/figure_maker/prototype_maker.cpp \
     makers/map_editor/map_editor.cpp \
     makers/map_editor/map_editor_selection.cpp \
     makers/map_editor/map_editor_stash.cpp \
@@ -91,10 +74,11 @@ SOURCES += \
     makers/tiling_maker/tiling_selection.cpp \
     panels/dlg_colorSet.cpp \
     panels/dlg_crop.cpp \
-    panels/dlg_feature_edit.cpp \
+    panels/dlg_edgepoly_edit.cpp \
     panels/dlg_line_edit.cpp \
     panels/dlg_listnameselect.cpp \
     panels/dlg_listselect.cpp \
+    panels/dlg_magnitude.cpp \
     panels/dlg_name.cpp \
     panels/dlg_rebase.cpp \
     panels/dlg_rename.cpp \
@@ -105,14 +89,13 @@ SOURCES += \
     panels/page_config.cpp \
     panels/page_debug.cpp \
     panels/page_design_elements.cpp \
-    panels/page_designs.cpp \
-    panels/page_figure_maker.cpp \
     panels/page_layers.cpp \
     panels/page_loaders.cpp \
     panels/page_log.cpp \
     panels/page_map_editor.cpp \
     panels/page_position.cpp \
     panels/page_protos.cpp \
+    panels/page_prototype_maker.cpp \
     panels/page_save.cpp \
     panels/page_style_figure_info.cpp \
     panels/page_style_maker.cpp \
@@ -125,67 +108,66 @@ SOURCES += \
     panels/panel_pagesWidget.cpp \
     panels/panel_status.cpp \
     panels/splitscreen.cpp \
-    style/Colored.cpp \
-    style/Emboss.cpp \
-    style/Filled.cpp \
-    style/Interlace.cpp \
-    style/Interlaceinfo.cpp \
-    style/Outline.cpp \
-    style/Plain.cpp \
-    style/Sketch.cpp \
-    style/Style.cpp \
-    style/Thick.cpp \
-    style/TileColors.cpp \
-    tapp/DesignElement.cpp \
-    tapp/ExplicitFigure.cpp \
-    tapp/ExtendedRosette.cpp \
-    tapp/ExtendedStar.cpp \
-    tapp/Figure.cpp \
-    tapp/Infer.cpp \
-    tapp/Prototype.cpp \
-    tapp/RadialFigure.cpp \
-    tapp/Rosette.cpp \
-    tapp/RosetteConnectFigure.cpp \
-    tapp/Star.cpp \
-    tapp/StarConnectFigure.cpp \
-    tapp/figureconnector.cpp \
-    tile/Feature.cpp \
-    tile/PlacedFeature.cpp \
-    tile/Tiling.cpp \
+    style/colored.cpp \
+    style/emboss.cpp \
+    style/filled.cpp \
+    style/interlace.cpp \
+    style/interlace_info.cpp \
+    style/outline.cpp \
+    style/plain.cpp \
+    style/sketch.cpp \
+    style/style.cpp \
+    style/thick.cpp \
+    style/tile_colors.cpp \
+    tapp/design_element.cpp \
+    tapp/explicit_figure.cpp \
+    tapp/extended_rosette.cpp \
+    tapp/extended_star.cpp \
+    tapp/figure.cpp \
+    tapp/figure_connector.cpp \
+    tapp/infer.cpp \
+    tapp/prototype.cpp \
+    tapp/radial_figure.cpp \
+    tapp/rosette.cpp \
+    tapp/rosette_connect_figure.cpp \
+    tapp/star.cpp \
+    tapp/star_connect_figure.cpp \
     tile/backgroundimage.cpp \
-    tile/featurereader.cpp \
-    tile/featurewriter.cpp \
-    tile/tilingloader.cpp \
-    viewers/GeoGraphics.cpp \
-    viewers/MapEditorView.cpp \
-    viewers/PrototFeatureView.cpp \
-    viewers/PrototypeView.cpp \
-    viewers/TilingView.cpp \
-    viewers/facesetview.cpp \
-    viewers/figureview.cpp \
-    viewers/itemviewer.cpp \
-    viewers/placeddesignelementview.cpp \
-    viewers/shapeviewer.cpp \
-    viewers/tilingmakerview.cpp \
-    viewers/workspaceviewer.cpp
+    tile/feature.cpp \
+    tile/feature_reader.cpp \
+    tile/feature_writer.cpp \
+    tile/placed_feature.cpp \
+    tile/tiling.cpp \
+    tile/tiling_loader.cpp \
+    tile/tiling_writer.cpp \
+    viewers/faceset_view.cpp \
+    viewers/figure_view.cpp \
+    viewers/geo_graphics.cpp \
+    viewers/map_editor_view.cpp \
+    viewers/placed_designelement_view.cpp \
+    viewers/prototype_feature_view.cpp \
+    viewers/prototype_view.cpp \
+    viewers/shape_view.cpp \
+    viewers/tiling_maker_view.cpp \
+    viewers/tiling_view.cpp \
+    viewers/workspace_viewer.cpp
 
 HEADERS += \
     base/border.h \
     base/canvas.h \
-    base/canvasSettings.h \
+    base/canvas_settings.h \
     base/colorset.h \
     base/configuration.h \
     base/cycler.h \
     base/fileservices.h \
     base/layer.h \
     base/misc.h \
+    base/mosaic.h \
     base/pugiconfig.hpp \
     base/pugixml.hpp \
     base/qtapplog.h \
-    base/scene.h \
     base/shared.h \
     base/shortcuts.h \
-    base/styleddesign.h \
     base/tile.h \
     base/tiledpatternmaker.h \
     base/tilingmanager.h \
@@ -195,34 +177,34 @@ HEADERS += \
     base/version.h \
     base/view.h \
     base/workspace.h \
-    base/xmlloader.h \
-    base/xmlwriter.h \
+    base/xml_loader.h \
+    base/xml_writer.h \
     designs/design.h \
     designs/designs.h \
     designs/patterns.h \
     designs/shapefactory.h \
     designs/shapes.h \
-    geometry/Edge.h \
-    geometry/Faces.h \
-    geometry/FillRegion.h \
-    geometry/Intersect.h \
-    geometry/Loose.h \
-    geometry/Map.h \
-    geometry/Point.h \
-    geometry/Transform.h \
-    geometry/Vertex.h \
     geometry/circle.h \
+    geometry/edge.h \
     geometry/edgepoly.h \
     geometry/facecycles.h \
+    geometry/faces.h \
+    geometry/fill_region.h \
+    geometry/intersect.h \
+    geometry/loose.h \
+    geometry/map.h \
     geometry/neighbours.h \
+    geometry/point.h \
     geometry/threads.h \
+    geometry/transform.h \
+    geometry/vertex.h \
     geometry/xform.h \
     makers/figure_maker/explicit_figure_editors.h \
     makers/figure_maker/feature_button.h \
     makers/figure_maker/feature_launcher.h \
     makers/figure_maker/figure_editors.h \
-    makers/figure_maker/figure_maker.h \
     makers/figure_maker/master_figure_editor.h \
+    makers/figure_maker/prototype_maker.h \
     makers/map_editor/map_editor.h \
     makers/map_editor/map_editor_selection.h \
     makers/map_editor/map_editor_stash.h \
@@ -236,10 +218,11 @@ HEADERS += \
     makers/tiling_maker/tiling_selection.h \
     panels/dlg_colorSet.h \
     panels/dlg_crop.h \
-    panels/dlg_feature_edit.h \
+    panels/dlg_edgepoly_edit.h \
     panels/dlg_line_edit.h \
     panels/dlg_listnameselect.h \
     panels/dlg_listselect.h \
+    panels/dlg_magnitude.h \
     panels/dlg_name.h \
     panels/dlg_rebase.h \
     panels/dlg_rename.h \
@@ -250,14 +233,13 @@ HEADERS += \
     panels/page_config.h \
     panels/page_debug.h \
     panels/page_design_elements.h \
-    panels/page_designs.h \
-    panels/page_figure_maker.h \
     panels/page_layers.h \
     panels/page_loaders.h \
     panels/page_log.h \
     panels/page_map_editor.h \
     panels/page_position.h \
     panels/page_protos.h \
+    panels/page_prototype_maker.h \
     panels/page_save.h \
     panels/page_style_figure_info.h \
     panels/page_style_maker.h \
@@ -270,49 +252,49 @@ HEADERS += \
     panels/panel_pagesWidget.h \
     panels/panel_status.h \
     panels/splitscreen.h \
-    style/Colored.h \
-    style/Emboss.h \
-    style/Filled.h \
-    style/Interlace.h \
-    style/InterlaceInfo.h \
-    style/Outline.h \
-    style/Plain.h \
-    style/Sketch.h \
-    style/Style.h \
-    style/Thick.h \
-    style/TileColors.h \
-    tapp/DesignElement.h \
-    tapp/ExplicitFigure.h \
-    tapp/ExtendedRosette.h \
-    tapp/ExtendedStar.h \
-    tapp/Figure.h \
-    tapp/Infer.h \
-    tapp/Prototype.h \
-    tapp/RadialFigure.h \
-    tapp/Rosette.h \
-    tapp/RosetteConnectFigure.h \
-    tapp/Star.h \
-    tapp/StarConnectFigure.h \
-    tapp/figureconnector.h \
-    tile/Feature.h \
-    tile/PlacedFeature.h \
-    tile/Tiling.h \
+    style/colored.h \
+    style/emboss.h \
+    style/filled.h \
+    style/interlace.h \
+    style/interlace_info.h \
+    style/outline.h \
+    style/plain.h \
+    style/sketch.h \
+    style/style.h \
+    style/thick.h \
+    style/tile_colors.h \
+    tapp/design_element.h \
+    tapp/explicit_figure.h \
+    tapp/extended_rosette.h \
+    tapp/extended_star.h \
+    tapp/figure.h \
+    tapp/figure_connector.h \
+    tapp/infer.h \
+    tapp/prototype.h \
+    tapp/radial_figure.h \
+    tapp/rosette.h \
+    tapp/rosette_connect_figure.h \
+    tapp/star.h \
+    tapp/star_connect_figure.h \
     tile/backgroundimage.h \
-    tile/featurereader.h \
-    tile/featurewriter.h \
-    tile/tilingloader.h \
-    viewers/GeoGraphics.h \
-    viewers/MapEditorView.h \
-    viewers/ProtoFeatureView.h \
-    viewers/PrototypeView.h \
-    viewers/TilingView.h \
-    viewers/facesetview.h \
-    viewers/figureview.h \
-    viewers/itemviewer.h \
-    viewers/placeddesignelementview.h \
-    viewers/shapeviewer.h \
-    viewers/tilingmakerview.h \
-    viewers/workspaceviewer.h
+    tile/feature.h \
+    tile/feature_reader.h \
+    tile/feature_writer.h \
+    tile/placed_feature.h \
+    tile/tiling.h \
+    tile/tiling_loader.h \
+    tile/tiling_writer.h \
+    viewers/faceset_view.h \
+    viewers/figure_view.h \
+    viewers/geo_graphics.h \
+    viewers/map_editor_view.h \
+    viewers/placed_designelement_view.h \
+    viewers/prototype_feature_view.h \
+    viewers/prototype_view.h \
+    viewers/shape_view.h \
+    viewers/tiling_maker_view.h \
+    viewers/tiling_view.h \
+    viewers/workspace_viewer.h
 
 FORMS +=
 

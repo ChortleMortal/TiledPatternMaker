@@ -30,10 +30,10 @@
 // component, a list of adjacent edges.  It also has the planar component,
 // a position.  Finally, there's a user data field for applications.
 
-#include "geometry/Vertex.h"
-#include "geometry/Edge.h"
-#include "geometry/Point.h"
-#include "style/Interlace.h"
+#include "geometry/vertex.h"
+#include "geometry/edge.h"
+#include "geometry/point.h"
+#include "style/interlace.h"
 
 //#include <iterator>
 

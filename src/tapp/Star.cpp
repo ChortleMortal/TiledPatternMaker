@@ -29,10 +29,10 @@
 // The classic [n/d]s star construction.  See the paper for more
 // details.
 
-#include "tapp/Star.h"
-#include "geometry/Loose.h"
-#include "geometry/Intersect.h"
-#include "tile/Feature.h"
+#include "tapp/star.h"
+#include "geometry/loose.h"
+#include "geometry/intersect.h"
+#include "tile/feature.h"
 
 Star::Star( int nsides, qreal d, int s, qreal r ) : RadialFigure(nsides, r)
 {

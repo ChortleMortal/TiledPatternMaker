@@ -30,7 +30,7 @@
 #include "panels/layout_sliderset.h"
 #include "panels/panel_misc.h"
 
-class FigureMaker;
+class PrototypeMaker;
 
 // An abstract class for containing the controls related to the editing
 // of one kind of figure.  A complex hierarchy of FigureEditors gets built
@@ -40,7 +40,7 @@ class FigureEditor : public AQWidget
     Q_OBJECT
 
 public:
-    FigureEditor(FigureMaker * fm, QString figname);
+    FigureEditor(PrototypeMaker * fm, QString figname);
 
     virtual FigurePtr getFigure()  { return figure; }
     virtual void      resetWithFigure(FigurePtr fig);
@@ -60,7 +60,7 @@ protected:
     FigurePtr       figure;
     QString         name;
 
-    FigureMaker	    * figmaker;
+    PrototypeMaker	    * figmaker;
     AQVBoxLayout    * vbox;
 
     DoubleSliderSet	* figureScale;
@@ -74,7 +74,7 @@ class StarEditor : public FigureEditor
     Q_OBJECT
 
 public:
-    StarEditor(FigureMaker * fm, QString figname);
+    StarEditor(PrototypeMaker * fm, QString figname);
 
     virtual FigurePtr getFigure();
     virtual void      resetWithFigure(FigurePtr fig);
@@ -99,7 +99,7 @@ class RosetteEditor : public FigureEditor
     Q_OBJECT
 
 public:
-    RosetteEditor(FigureMaker * fm, QString figname);
+    RosetteEditor(PrototypeMaker * fm, QString figname);
 
     virtual FigurePtr getFigure();
     virtual void      resetWithFigure(FigurePtr fig);
@@ -124,7 +124,7 @@ class ConnectStarEditor : public StarEditor
     Q_OBJECT
 
 public:
-    ConnectStarEditor(FigureMaker * fm, QString figname);
+    ConnectStarEditor(PrototypeMaker * fm, QString figname);
 
     FigurePtr getFigure();
     virtual void resetWithFigure(FigurePtr fig );
@@ -145,7 +145,7 @@ class ConnectRosetteEditor : public RosetteEditor
     Q_OBJECT
 
 public:
-    ConnectRosetteEditor(FigureMaker * fm, QString figname);
+    ConnectRosetteEditor(PrototypeMaker * fm, QString figname);
 
     FigurePtr getFigure();
     virtual void  resetWithFigure(FigurePtr fig);
@@ -164,7 +164,7 @@ class ExtendedStarEditor : public StarEditor
     Q_OBJECT
 
 public:
-    ExtendedStarEditor(FigureMaker * fm, QString figname);
+    ExtendedStarEditor(PrototypeMaker * fm, QString figname);
 
     FigurePtr getFigure();
     virtual void resetWithFigure(FigurePtr fig);
@@ -188,7 +188,7 @@ class ExtendedRosetteEditor : public RosetteEditor
     Q_OBJECT
 
 public:
-    ExtendedRosetteEditor(FigureMaker * fm, QString figname);
+    ExtendedRosetteEditor(PrototypeMaker * fm, QString figname);
 
     FigurePtr getFigure();
     virtual void resetWithFigure(FigurePtr fig);

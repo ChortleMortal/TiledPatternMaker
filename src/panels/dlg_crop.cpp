@@ -2,7 +2,7 @@
 
 #include <QtWidgets>
 
-DlgCrop::DlgCrop(MapEditor * me, QWidget *parent) : QDialog(parent)
+DlgCrop::DlgCrop(MapEditorPtr me, QWidget *parent) : QDialog(parent)
 {
     mapeditor = me;
     entered   = false;

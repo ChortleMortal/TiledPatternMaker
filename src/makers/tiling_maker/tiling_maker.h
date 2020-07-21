@@ -36,27 +36,31 @@
 #define TILING_MAKER_H
 
 #include "base/view.h"
+#include "base/workspace.h"
 #include "makers/tiling_maker/tiling_mouseactions.h"
-#include "viewers/tilingmakerview.h"
-#include "tile/Tiling.h"
+#include "viewers/tiling_maker_view.h"
+#include "tile/tiling_writer.h"
 
 class Canvas;
 class MouseAction;
-enum  eWsData;
 
 class TilingMaker : public TilingMakerView
 {
     Q_OBJECT
 
+    friend bool Workspace::saveTiling(QString name, TilingPtr tp);
+
 public:
-    static TilingMaker * getInstance();
+    static TilingMakerPtr getInstance();
+    TilingMaker();
+    static TilingMakerPtr mpThis;
 
     bool procKeyEvent(QKeyEvent * k);
 
     void draw(GeoGraphics * g2d) override;
 
     void clearMakerData();
-    void updatePlacedFeaturesFromData(eWsData wsdata);
+    void updatePlacedFeaturesFromData();
 
     QString  getStatus();
     TilingSelectionPtr getCurrentSelection() { return currentSelection; }
@@ -66,7 +70,7 @@ public:
     bool accumHasPoint(QPointF wpt);
 
     // push to styled desing
-    void pushTiling(eWsData input, eWsData output);
+    void pushTiling();
 
     // Internal tiling creation.
     QPointF getTrans1();
@@ -120,8 +124,8 @@ public slots:
     void clearTranslationVectors();
     void hide(bool state);
     void setFeatureEditPoint(QPointF pt);
-    void setConvexEdge(bool convex);
     void slot_showOverlaps(bool checked);
+    void slot_snapTo(bool checked);
 
     void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
     void slot_mouseDragged(QPointF spt);
@@ -133,9 +137,15 @@ protected slots:
     void slot_includeFeature();
     void slot_excludeFeature();
     void slot_copyMoveFeature();
+    void slot_uniquifyFeature();
+    void slot_flatenCurve();
+    void slot_makeConvex();
+    void slot_makeConcave();
+    void slot_moveArcCenter();
+    void slot_editMagnitude();
 
 protected:
-    void setupMaker(eWsData wsdata);
+    void setupMaker();
     void addInTiling(PlacedFeaturePtr pf);
     void removeFromInTiling(PlacedFeaturePtr pf);
 
@@ -162,11 +172,7 @@ protected:
     void startMouseInteraction(QPointF spt, enum Qt::MouseButton mouseButton);
 
 private:
-    TilingMaker();
-    ~TilingMaker() override;
-
-    static TilingMaker * mpThis;
-
+    TilingPtr           currentTiling;      // only used for xml save
     TilingSelectionPtr  currentSelection;   // Current mouse selection.
     PlacedFeaturePtr    editFeature;        // Feature in DlgFeatureEdit
     PlacedFeaturePtr    currentFeature;     // current menu row selection too
@@ -176,7 +182,6 @@ private:
 
     int         poly_side_count;            // number of selected vertices when drawing polygons.
     qreal       poly_rotation;              // regular polygon feature rotation
-    bool        convex;                     // used when creating a curved edge
 
     // Translation vector so that the tiling tiles the plane.
     QPointF     wTrans2_start;

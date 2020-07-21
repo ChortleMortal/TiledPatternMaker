@@ -27,7 +27,7 @@
 
 #include <QtWidgets>
 #include <QSignalMapper>
-#include "tile/Feature.h"
+#include "tile/feature.h"
 #include "makers/style_maker/style_editors.h"
 
 
@@ -35,13 +35,21 @@ class StyleColorFillGroup : public QObject
 {
     Q_OBJECT
 
-public:
-    StyleColorFillGroup(FilledEditor * editor, ColorGroup & cgroup, QVBoxLayout * vbox);
-    void display(ColorGroup  & cgroup);
+    enum eFGCol
+    {
+        COL_INDEX = 0,
+        COL_COUNT = 1,
+        COL_SIDES = 2,
+        COL_AREA  = 3,
+        COL_HIDE  = 4,
+        COL_SEL   = 5,
+        COL_BTN   = 6,
+        COL_COLORS= 7
+    };
 
-protected:
-    void createTable();
-    QTableWidget  * table;
+public:
+    StyleColorFillGroup(FaceGroup &fGroup, ColorGroup &cGroup, QVBoxLayout * vbox);
+    void display();
 
 signals:
     void sig_colorsChanged();
@@ -49,9 +57,7 @@ signals:
 private slots:
     void slot_edit();
 
-    void add();
     void modify();
-    void del();
     void up();
     void down();
     void rptSet();
@@ -64,8 +70,10 @@ private slots:
 
 
 private:
-    FilledEditor  * ed;
+    FaceGroup     & faceGroup;
     ColorGroup    & colorGroup;
+
+    AQTableWidget * table;
     QSignalMapper   mapper;
     ColorSet        copyPasteSet;
 };

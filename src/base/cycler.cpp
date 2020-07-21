@@ -27,7 +27,7 @@
 #include "base/canvas.h"
 #include "base/view.h"
 #include "base/tiledpatternmaker.h"
-#include "viewers/workspaceviewer.h"
+#include "viewers/workspace_viewer.h"
 #include "base/fileservices.h"
 
 Cycler * Cycler::mpThis = nullptr;
@@ -70,9 +70,9 @@ Cycler::~Cycler()
 }
 
 
-void Cycler::slot_startCycle()
+void Cycler::slot_startCycle(eCycleMode mode)
 {
-    cycleMode = config->cycleMode;
+    cycleMode = mode;
 
     qDebug() << "slot_cycle" << sCycleMode[cycleMode];
 
@@ -208,12 +208,9 @@ void Cycler::slot_timeout()
         else
         {
             busy = true;
-            QString name   = map_it.key();
-            QString file1  = map_it.value();
+            QString name = map_it.key();
             map_it++;
-            QString file2  = mapb.value(name);
-            emit sig_compare(file1,file2);
-
+            emit sig_compare(name,name);
         }
         break;
 

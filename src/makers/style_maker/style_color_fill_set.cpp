@@ -25,152 +25,120 @@
 #include "makers/style_maker/style_color_fill_set.h"
 #include "base/utilities.h"
 
-StyleColorFillSet::StyleColorFillSet(FilledEditor * editor, ColorSet & cset, QVBoxLayout * vbox)  : colorSet(cset)
+StyleColorFillSet::StyleColorFillSet(FaceGroup & fgroup, ColorSet & cset, QVBoxLayout * vbox)  : faceGroup(fgroup),colorSet(cset)
 {
-    ed = editor;
-    Q_ASSERT(ed);
-
-    connect(this, &StyleColorFillSet::sig_colorsChanged, editor, &FilledEditor::slot_colorsChanged);
-
     connect(&mapper, SIGNAL(mapped(int)), this, SLOT(slot_colorVisibilityChanged(int)));
 
     QGridLayout * grid = new QGridLayout;
 
-    QPushButton * addBtn = new QPushButton("Add");
     QPushButton * modBtn = new QPushButton("Modify");
-    QPushButton * delBtn = new QPushButton("Delete");
     QPushButton * upBtn  = new QPushButton("Up");
     QPushButton * dwnBtn = new QPushButton("Down");
     QPushButton * rptBtn = new QPushButton("Repeat Color");
     QPushButton * cpyBtn = new QPushButton("Copy");
     QPushButton * pstBtn = new QPushButton("Paste");
 
-    grid->addWidget(addBtn,0,0);
     grid->addWidget(modBtn,0,1);
-    grid->addWidget(delBtn,0,2);
-    grid->addWidget(cpyBtn,0,3);
-    grid->addWidget(upBtn, 1,0);
-    grid->addWidget(dwnBtn,1,1);
-    grid->addWidget(rptBtn,1,2);
-    grid->addWidget(pstBtn,1,3);
+    grid->addWidget(cpyBtn,0,2);
+    grid->addWidget(upBtn, 0,0);
+    grid->addWidget(dwnBtn,1,0);
+    grid->addWidget(rptBtn,1,1);
+    grid->addWidget(pstBtn,1,2);
     vbox->addLayout(grid);
 
-    table = new QTableWidget();
+    connect(modBtn, &QPushButton::clicked, this, &StyleColorFillSet::modify);
+    connect(upBtn,  &QPushButton::clicked, this, &StyleColorFillSet::up);
+    connect(dwnBtn, &QPushButton::clicked, this, &StyleColorFillSet::down);
+    connect(rptBtn, &QPushButton::clicked, this, &StyleColorFillSet::rptColor);
+    connect(cpyBtn, &QPushButton::clicked, this, &StyleColorFillSet::copyColor);
+    connect(pstBtn, &QPushButton::clicked, this, &StyleColorFillSet::pasteColor);
+
+    table = new AQTableWidget();
     table->horizontalHeader()->setVisible(false);
     table->verticalHeader()->setVisible(false);
     table->setRowCount(colorSet.size());
-    table->setColumnCount(7);
-    table->setColumnWidth(0,40);
+    table->setColumnCount(8);
+    table->setColumnWidth(COL_ROW,40);
+    table->setColumnWidth(COL_FACES,40);
+    table->setColumnWidth(COL_SIDES,40);
+    table->setColumnWidth(COL_AREA,70);
+    table->setColumnWidth(COL_HIDE,80);
+    table->setColumnWidth(COL_SEL,40);
     table->setSelectionMode(QAbstractItemView::SingleSelection);
     table->setSelectionBehavior(QAbstractItemView::SelectRows);
     table->setMinimumHeight(501);
 
     table->horizontalHeader()->setVisible(true);
     QStringList qslH;
-    qslH << "" << "Color" << "Color" << "Hide/Select" << "Number" << "Sides" << "Area";
+    qslH << "Row" <<  "Faces" << "Sides" << "Area" << "Hide" << "Select" << "Color" << "Color";
     table->setHorizontalHeaderLabels(qslH);
 
-    vbox->addWidget(table);
-
-    connect(addBtn, &QPushButton::clicked, this, &StyleColorFillSet::add);
-    connect(modBtn, &QPushButton::clicked, this, &StyleColorFillSet::modify);
-    connect(delBtn, &QPushButton::clicked, this, &StyleColorFillSet::del);
-    connect(upBtn,  &QPushButton::clicked, this, &StyleColorFillSet::up);
-    connect(dwnBtn, &QPushButton::clicked, this, &StyleColorFillSet::down);
-    connect(rptBtn, &QPushButton::clicked, this, &StyleColorFillSet::rptColor);
-    connect(cpyBtn, &QPushButton::clicked, this, &StyleColorFillSet::copyColor);
-    connect(pstBtn, &QPushButton::clicked, this, &StyleColorFillSet::pasteColor);
     connect(table,  &QTableWidget::cellClicked,       this, &StyleColorFillSet::slot_click);
     connect(table,  &QTableWidget::cellDoubleClicked, this, &StyleColorFillSet::slot_double_click);
 
-    createTable();
+    vbox->addWidget(table);
 }
 
-void StyleColorFillSet::createTable()
+void StyleColorFillSet::display()
 {
-    Filled * filled = ed->getFilled();
-    FaceGroup & faceGroup = filled->getFaceGroup();
+    QModelIndex selected = table->currentIndex();
 
-    int rowCount = qMax(faceGroup.size(),colorSet.size());
-    table->setRowCount(rowCount);
+    table->clearContents();
+    colorSet.resetIndex();
+
+    table->setRowCount(faceGroup.size());
+
     int row = 0;
-
-    for (auto it = faceGroup.begin(); it != faceGroup.end(); it++)
+    for (auto face : faceGroup)
     {
-        FaceSetPtr fsp = *it;
-
-        TPColor tpcolor = fsp->tpcolor;
-
-        qDebug() << "color="  << tpcolor.color << "sides=" << fsp->sides;
-
         QTableWidgetItem * item = new QTableWidgetItem(QString::number(row));
-        table->setItem(row,0,item);
+        table->setItem(row,COL_ROW,item);
 
-        item = new QTableWidgetItem(QString::number(fsp->size()));
-        table->setItem(row,4,item);
+        item = new QTableWidgetItem(QString::number(face->size()));
+        table->setItem(row,COL_FACES,item);
 
-        item = new QTableWidgetItem(QString::number(fsp->sides));
-        table->setItem(row,5,item);
+        item = new QTableWidgetItem(QString::number(face->sides));
+        table->setItem(row,COL_SIDES,item);
 
-        item = new QTableWidgetItem(QString::number(fsp->area));
-        table->setItem(row,6,item);
+        item = new QTableWidgetItem(QString::number(face->area));
+        table->setItem(row,COL_AREA,item);
 
-        row++;
-    }
-}
-
-void StyleColorFillSet::displayColors(ColorSet & cset)
-{
-    Filled * filled = ed->getFilled();
-    FaceGroup & faceGroup = filled->getFaceGroup();
-    int rowCount = qMax(faceGroup.size(),colorSet.size());
-    table->setRowCount(rowCount);
-
-    cset.resetIndex();
-    for (int i=0; i < cset.size(); i++)
-    {
-        int row = i;
-        TPColor tpcolor = cset.getNextColor();
+        TPColor tpcolor = colorSet.getColor(row);
         QColor color    = tpcolor.color;
 
-        QTableWidgetItem * item = new QTableWidgetItem(color.name());
-        table->setItem(row,1,item);
+        item = new QTableWidgetItem(color.name());
+        table->setItem(row,COL_COLOR_TEXT,item);
 
         QLabel * label = new QLabel;
         QVariant variant= color;
         QString colcode = variant.toString();
         label->setStyleSheet("QLabel { background-color :"+colcode+" ;}");
-        table->setCellWidget(row,2,label);
+        table->setCellWidget(row,COL_COLOR_PATCH,label);
 
         QCheckBox * cb = new QCheckBox("Hide");
         cb->setStyleSheet("padding-left:11px;");
-        table->setCellWidget(row,3,cb);
+        table->setCellWidget(row,COL_HIDE,cb);
         cb->setChecked(tpcolor.hidden);
         mapper.setMapping(cb,row);
-        QObject::connect(cb, SIGNAL(toggled(bool)), &mapper, SLOT(map()), Qt::UniqueConnection);
-    }
-}
+        QObject::connect(cb, SIGNAL(toggled(bool)), &mapper, SLOT(map()));
 
-void StyleColorFillSet::add()
-{
-    AQColorDialog dlg;
-    int rv = dlg.exec();
-    if (rv != QDialog::Accepted) return;
+        QString astring;
+        if (face->selected) astring = "X";
+        item = new QTableWidgetItem(astring);
+        table->setItem(row,COL_SEL,item);
 
-    QColor newColor = dlg.selectedColor();
-    if (newColor.isValid())
-    {
-        colorSet.addColor(newColor);
-        if (ed)
-        {
-            emit sig_colorsChanged();
-        }
-        displayColors(colorSet);
+        row++;
     }
+    table->adjustTableSize();
+
+    table->setCurrentIndex(selected);
+
 }
 
 void StyleColorFillSet::modify()
 {
+    qDebug().noquote() << "before" << colorSet.colorsString();
+
     int currentRow = table->currentRow();
     if (currentRow < 0 || currentRow >= colorSet.size())
         return;
@@ -180,29 +148,18 @@ void StyleColorFillSet::modify()
 
     AQColorDialog dlg(color);
     int rv = dlg.exec();
-    if (rv != QDialog::Accepted) return;
+    if (rv != QDialog::Accepted)
+        return;
 
     color = dlg.selectedColor();
     if (color.isValid())
     {
         colorSet.setColor(currentRow, color);
+        qDebug().noquote() << "after" << colorSet.colorsString();
 
+        display();
         emit sig_colorsChanged();
-        displayColors(colorSet);
     }
-}
-
-void StyleColorFillSet::del()
-{
-    int currentRow = table->currentRow();
-    if (currentRow < 0 || currentRow >= colorSet.size())
-        return;
-
-    colorSet.removeColor(currentRow);
-
-    emit sig_colorsChanged();
-
-    displayColors(colorSet);
 }
 
 void StyleColorFillSet::up()
@@ -221,7 +178,7 @@ void StyleColorFillSet::up()
 
     emit sig_colorsChanged();
 
-    displayColors(colorSet);
+    display();
 }
 
 void StyleColorFillSet::down()
@@ -240,7 +197,7 @@ void StyleColorFillSet::down()
 
     emit sig_colorsChanged();
 
-    displayColors(colorSet);
+    display();
 }
 
 void StyleColorFillSet::rptColor()
@@ -258,7 +215,7 @@ void StyleColorFillSet::rptColor()
 
     emit sig_colorsChanged();
 
-    displayColors(colorSet);
+    display();
 }
 
 void StyleColorFillSet::copyColor()
@@ -280,53 +237,48 @@ void StyleColorFillSet::pasteColor()
 
     emit sig_colorsChanged();
 
-    displayColors(colorSet);
+    display();
 }
 
 void StyleColorFillSet::slot_colorVisibilityChanged(int row)
 {
     qDebug() << "slot_colorVisibilityChanged row=" << row;
 
-    if (row >= colorSet.size())
-    {
-        qDebug() << "ignored - out of range of color set";
-    }
-
     TPColor tpcolor = colorSet.getColor(row);
-    QCheckBox * cb  = dynamic_cast<QCheckBox*>(table->cellWidget(row,3));
+    QCheckBox * cb  = dynamic_cast<QCheckBox*>(table->cellWidget(row,COL_HIDE));
     bool hide       = cb->isChecked();
     tpcolor.hidden  = hide;
-    qDebug() << "hide state="  << hide;
-
     colorSet.setColor(row, tpcolor);
+    qDebug() << "hide state="  << hide;
 
     emit sig_colorsChanged();
 
-    displayColors(colorSet);
+    display();
 
     qDebug() << "slot_colorVisibilityChanged: done";
 }
 
 void StyleColorFillSet::slot_click(int row, int col)
 {
-    FaceGroup & fg = ed->getFilled()->getFaceGroup();
-    if (col == 3)
+    if (col == COL_SEL)
     {
-        if (!fg.isSelected(row))
+        if (!faceGroup.isSelected(row))
         {
-            fg.select(row);
+            faceGroup.select(row);
         }
         else
         {
-            fg.deselect(row);
+            faceGroup.deselect(row);
         }
     }
     else
     {
-        fg.deselect();
+        faceGroup.deselect();
     }
 
     emit sig_colorsChanged();
+
+    display();
 }
 
 void StyleColorFillSet::slot_double_click(int row, int col)

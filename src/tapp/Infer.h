@@ -47,7 +47,7 @@
 
 #include <QtCore>
 
-#include "tile/Tiling.h"
+#include "tile/tiling.h"
 #include "base/tile.h"
 
 class Map;

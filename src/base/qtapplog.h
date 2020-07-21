@@ -43,6 +43,8 @@ public:
     void logToDisk(bool enable)   { _logToDisk   = enable; }
     void logToPanel(bool enable)  { _logToPanel  = enable; }
     void logLines(bool enable)    { _logLines    = enable; }
+    void logElapsed(bool enable)  { _logElapsed  = enable; }
+    void logWarningsOnly(bool enable)  { _logWarningsOnly  = enable; }
     void saveLog(QString to);
 
     QString logDir() { return this->_logDir; }
@@ -63,9 +65,11 @@ private:
     static bool _logToDisk;
     static bool _logToPanel;
     static bool _logLines;
+    static bool _logElapsed;
+    static bool _logWarningsOnly;
     static bool	_active;
 
-    QElapsedTimer elapseTimer;
+    static QElapsedTimer elapseTimer;
 
     QFile	mCurrentFile;
     QString _logDir;

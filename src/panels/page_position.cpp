@@ -25,7 +25,7 @@
 #include "panels/page_position.h"
 #include "designs/patterns.h"
 #include "base/canvas.h"
-#include "viewers/workspaceviewer.h"
+#include "viewers/workspace_viewer.h"
 #include "makers/map_editor/map_editor.h"
 
 using std::string;
@@ -141,7 +141,7 @@ void page_position::updateDesignWidget()
 
 void page_position::createLayerTable()
 {
-    layerTable = new QTableWidget();
+    layerTable = new AQTableWidget();
     layerTable->setSortingEnabled(false);
     layerTable->setColumnCount(6);
     layerTable->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -187,7 +187,7 @@ void  page_position::refreshPage()
         return;
     }
 
-    QVector<Layer*> views = viewer->getActiveLayers();
+    QVector<LayerPtr> views = view->getActiveLayers();
     if (views.size() != layerTable->rowCount())
     {
         onEnter();
@@ -199,7 +199,7 @@ void  page_position::refreshPage()
         if (row >= layerTable->rowCount())
             continue;
 
-        Xform xf = layer->getLayerXform();
+        Xform xf = layer->getCanvasXform();
         QWidget * w;
         QDoubleSpinBox * spin;
 
@@ -238,7 +238,7 @@ void  page_position::refreshPage()
         row++;
     }
     layerTable->resizeColumnToContents(PP_LAYER_T);
-    adjustTableSize(layerTable);
+    layerTable->adjustTableSize();
     updateGeometry();
 }
 
@@ -247,7 +247,7 @@ void  page_position::refreshPage()
 void page_position::populateLayerTable()
 {
     layerTable->clearContents();
-    QVector<Layer*> views = viewer->getActiveLayers();
+    QVector<LayerPtr> views = view->getActiveLayers();
     int num = views.size();
     layerTable->setRowCount(num);
     if (num == 0)return;
@@ -263,15 +263,15 @@ void page_position::populateLayerTable()
     layerTable->resizeColumnToContents(PP_SCALE);
     layerTable->resizeColumnToContents(PP_ROT);
     layerTable->resizeColumnToContents(PP_LAYER_T);
-    adjustTableSize(layerTable);
+    layerTable->adjustTableSize();
     updateGeometry();
 }
 
-void page_position::addLayerToTable(Layer * layer, int row)
+void page_position::addLayerToTable(LayerPtr layer, int row)
 {
     //layerDesc->setText(layer->getName());
 
-    Xform xf = layer->getLayerXform();
+    Xform xf = layer->getCanvasXform();
 
     QDoubleSpinBox * dleft  = new QDoubleSpinBox();
     QDoubleSpinBox * dtop   = new QDoubleSpinBox();
@@ -349,7 +349,7 @@ void page_position::set_start(int)
 void page_position::slot_set_deltas(int row)
 {
     qDebug() << "page_position::slot_set_deltas row =" << row;
-    QVector<Layer*> views = viewer->getActiveLayers();
+    QVector<LayerPtr> views = view->getActiveLayers();
 
     if (row > (views.size() -1))
     {
@@ -357,7 +357,7 @@ void page_position::slot_set_deltas(int row)
         return;
     }
 
-    Layer * layer = views[row];
+    LayerPtr layer = views[row];
 
     QWidget * w           = layerTable->cellWidget(row,PP_LEFT);
     QDoubleSpinBox * spin = dynamic_cast<QDoubleSpinBox*>(w);
@@ -380,16 +380,16 @@ void page_position::slot_set_deltas(int row)
     qreal drot = spin->value();
 
     Xform xf = Xform(dwidth,qDegreesToRadians(drot), dleft, dtop);
-    layer->setLayerXform(xf);
+    layer->setCanvasXform(xf);
     layer->forceUpdateLayer();
 }
 
 void page_position::slot_clear_deltas(int row)
 {
-    QVector<Layer*> views = viewer->getActiveLayers();
-    Layer * layer = views[row];
+    QVector<LayerPtr> views = view->getActiveLayers();
+    LayerPtr layer = views[row];
     Xform xf;
-    layer->setLayerXform(xf);
+    layer->setCanvasXform(xf);
     layer->forceUpdateLayer();
     onEnter();
 }

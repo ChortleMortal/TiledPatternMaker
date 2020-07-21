@@ -25,9 +25,9 @@
 #ifndef FILLED_H
 #define FILLED_H
 
-#include "style/Style.h"
+#include "style/style.h"
 #include "base/colorset.h"
-#include "geometry/Faces.h"
+#include "geometry/faces.h"
 
 ////////////////////////////////////////////////////////////////////////////
 //

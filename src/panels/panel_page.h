@@ -55,6 +55,7 @@ public:
     virtual void	refreshPage() = 0;
     virtual void    onEnter()     = 0;
     virtual void    onExit()      = 0;
+    virtual bool    canExit() { return true; }
 
     void            leaveEvent(QEvent *event) override;
     void            enterEvent(QEvent *event) override;
@@ -71,15 +72,8 @@ public:
     QString addr(const void * address);
     QString addr(void * address);
 
-    static void    adjustTableSize(QTableWidget *table);
-    static void    adjustTableWidth(QTableWidget *table);
-    static void    adjustTableHeight(QTableWidget *table);
-
-    static int     getTableWidth(QTableWidget *table);
-    static int     getTableHeight(QTableWidget * table);
-
 signals:
-    void    sig_render(eRender type);
+    void    sig_render();
     void	sig_attachMe(QString title);
     void    sig_viewWS();
 
@@ -94,6 +88,7 @@ protected:
 
     ControlPanel      * panel;
     Canvas            * canvas;
+    View              * view;
     Configuration     * config;
     Workspace         * workspace;
     TiledPatternMaker * maker;

@@ -25,8 +25,8 @@
 #ifndef FACES_H
 #define FACES_H
 
-#include "geometry/Vertex.h"
-#include "geometry/Map.h"
+#include "geometry/vertex.h"
+#include "geometry/map.h"
 #include "base/shared.h"
 #include "base/colorset.h"
 #include <QtCore>
@@ -51,7 +51,7 @@ enum eFaceState
 ///
 /////////////////////////////////////////////////
 
-class Face : public QVector<VertexPtr>
+class Face : public EdgePoly
 {
 public:
     Face();
@@ -59,32 +59,33 @@ public:
     qreal     getArea();
     int       getNumSides() { return size(); }
 
-    void      setPolygon(PolyPtr poly);
-    PolyPtr   getPolygon();
+    QPolygonF getPolygon();
 
     bool      overlaps(FacePtr other);
-    PolyPtr   subtracted(FacePtr other);
+    QPolygonF subtracted(FacePtr other);
 
     bool      equals(FacePtr other);
-    void      sortForComparion();
-    QVector<VertexPtr> & getSorted();
+    void      sortForComparison();
+    QPolygonF &getSorted();
 
-    bool      isClosed() { return first() == last(); }
+    bool      isClosed() { return first()->getV1() == last()->getV2(); }
     bool      containsCrossover();
+    FaceSet   decompose();
 
     QPointF   center();
 
     eFaceState  state;
 
-    QString dump();
+    void       dump();
 
 protected:
+    bool       decomposeOnce(FacePtr newFace);
 
 private:
     QPointF     _center;
     qreal       _area;
     bool        _areaCalculated;
-    QVector<VertexPtr>  sortedShadow;
+    QPolygonF   sortedShadow;
 };
 
 /////////////////////////////////////////////////
@@ -126,6 +127,7 @@ public:
     void select(int idx);
     void deselect(int idx);
     void deselect();
+    int  totalSize();
 };
 
 /////////////////////////////////////////////////
@@ -146,7 +148,7 @@ public:
     Faces();
 
     void        buildFacesOriginal(MapPtr map);
-    void        buildFacesNew23(MapPtr map);
+    void        buildFacesNew23();
 
     void        assignColorsOriginal(MapPtr map);
     void        assignColorsNew1();
@@ -154,17 +156,18 @@ public:
     void        assignColorsNew3(ColorGroup & colorGroup);
 
     void        purifyMap(MapPtr map);
-    void        purifyFaces();
 
-    FaceGroup & getFaceGroup() { return faceGroup; }
+    FaceGroup       & getFaceGroup()  { return faceGroup; }
+    const FaceSet   & getAllFaces()   { return allFaces; }
+    const FaceSet   & getWhiteFaces() { return whiteFaces; }
+    const FaceSet   & getBlackFaces() { return blackFaces; }
 
 protected:
     void        clearFaces();
-    void        handleVertex(MapPtr map, VertexPtr vert, EdgePtr edge);
+    void        handleVertex(NeighbourMap & nmap, VertexPtr vert, EdgePtr edge);
 
-    FacePtr     extractFace(MapPtr map, VertexPtr from, EdgePtr edge);
-    FacePtr     getTwin(MapPtr map, FacePtr fi, int idx);
-    bool        isClockwise(FacePtr face);
+    FacePtr     extractFace(NeighbourMap & nmap, VertexPtr from, EdgePtr edge);
+    FacePtr     getTwin(MapPtr map, EdgePtr edge);
     void        assignColorsToFaces(MapPtr map, FaceSet & fset);
     void        addFaceResults(FaceSet & fst);
 
@@ -176,6 +179,7 @@ protected:
     void        removeLargest();
     void        removeOverlaps();
     void        removeDuplicates();
+    void        decomposeCrossoverFaces();
     void        zapFaceStates(enum eFaceState state);
 
     // Internal representations of the rendering.
@@ -190,7 +194,7 @@ protected:
 private:
     qreal   determinant(QPointF vec1, QPointF vec2);
     bool    edgeIntersection(QPointF a, QPointF b, QPointF c, QPointF d);
-    bool    isOverlapped(FacePtr a, FacePtr b);
+    bool    isOverlapped(const FacePtr a, const FacePtr b);
 };
 
 #endif

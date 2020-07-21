@@ -54,7 +54,7 @@ DesignKumiko2::DesignKumiko2(eDesign design, QString atitle) : Design(design,ati
 
 bool Design5::build()
 {
-    QSizeF size(1800.0,1100.0);
+    QSize size(1800,1100);
     info.setCanvasSize(size);
     info.setBackgroundColor(QColor(TileBlue));
 
@@ -95,7 +95,7 @@ bool Design5::build()
 
 bool Design6::build()
 {
-    QSizeF size(1800.0,1100.0);
+    QSize size(1800,1100);
     info.setCanvasSize(size);
     info.setBackgroundColor((QColor(TileWhite)));
 
@@ -131,11 +131,11 @@ bool Design6::build()
                 pat = make_shared<Pattern6>(d,brush1);
             else
                 pat = make_shared<Pattern6>(d,brush2);
-            pat->build();
             toggle=!toggle;
             pat->setTilePosition(row,col);
             patterns.push_back(pat);
-            pat->setLoc(pt.x() + (xSeparation * col), pt.y() + (ySeparation * row));
+            pat->setLoc(QPointF(pt.x() + (xSeparation * col), pt.y() + (ySeparation * row)));
+            pat->build();
         }
     }
     return true;
@@ -149,7 +149,7 @@ bool Design7::build()
     qreal side     = diameter * qTan(M_PI/8.0);
     qreal piece    = sqrt(side*side*0.5);
 
-    QSizeF size((diameter*cols),(diameter*rows)+(piece*2.0));
+    QSize size((diameter*cols),(diameter*rows)+(piece*2.0));
     qDebug() << "pat 7 size:" << size;
     info.setCanvasSize(size);
     info.setBackgroundColor((QColor(TileGreen)));
@@ -174,10 +174,10 @@ bool Design7::build()
         for (int col = 0; col < cols; col++)
         {
             pat = make_shared<Pattern7>(diameter,brush1);
-            pat->build();
             pat->setTilePosition(row,col);
             patterns.push_back(pat);
-            pat->setLoc(pt.x() + (xSeparation * col), pt.y() + (ySeparation * row));
+            pat->setLoc(QPointF(pt.x() + (xSeparation * col), pt.y() + (ySeparation * row)));
+            pat->build();
         }
     }
     return true;
@@ -189,7 +189,7 @@ bool Design8::build()
     // canvas
     QColor canvasColor = QColor(TileBlack);
     info.setBackgroundColor((canvasColor));
-    info.setCanvasSize(QSizeF(1800.0,1100.0));
+    info.setCanvasSize(QSize(1800,1100));
 
     // patern
     int gridWidth = 41;
@@ -213,11 +213,11 @@ bool Design8::build()
     innerPen.setColor(QColor(Qt::red));
 
     PatternPtr pat = make_shared<PatternHuSymbol>(gridWidth,gridPen,innerPen, canvasColor,diameter,QBrush(Qt::NoBrush));
-    pat->build();
-    pat->setTilePosition(0,0);
     patterns.push_back(pat);
-
+    pat->setTilePosition(0,0);
     pat->setLoc(info.getStartTile());
+    pat->build();
+
 
 #if 0
     // test overlay
@@ -240,7 +240,7 @@ bool Design9::build()
 {
     QColor canvasColor = QColor(TileBlack);
     info.setBackgroundColor((canvasColor));
-    info.setCanvasSize(QSizeF(1776.0,1100.0));
+    info.setCanvasSize(QSize(1776,1100));
 
     // patern
     int gridWidth = 21;
@@ -273,10 +273,10 @@ bool Design9::build()
         for (int col=0; col < cols; col++)
         {
             PatternPtr pat = make_shared<PatternHuSymbol>(gridWidth,gridPen,innerPen, canvasColor,diameter,QBrush(Qt::NoBrush));
-            pat->build();
             pat->setTilePosition(row,col);
             patterns.push_back(pat);
-            pat->setLoc(pt.x() + (xSeparation * col), pt.y() + (ySeparation * row));
+            pat->setLoc(QPointF(pt.x() + (xSeparation * col), pt.y() + (ySeparation * row)));
+            pat->build();
         }
     }
     doSteps();
@@ -287,7 +287,7 @@ bool DesignHuPacked::build()
 {
     QColor canvasColor = QColor(TileBlack);
     info.setBackgroundColor((canvasColor));
-    info.setCanvasSize(QSizeF(1794.0,1100.0));
+    info.setCanvasSize(QSize(1794,1100));
 
     // patern
     int igridWidth = 21;
@@ -316,6 +316,7 @@ bool DesignHuPacked::build()
     cols = 6;
 
     // repeat
+    Canvas * canvas = Canvas::getInstance();
     canvas->slot_setStep(0);
     for (int row = 0; row < rows; row++)
     {
@@ -345,7 +346,7 @@ bool DesignHuInsert::build()
 {
     QColor canvasColor = QColor(TileBlack);
     info.setBackgroundColor((canvasColor));
-    info.setCanvasSize(QSizeF(1794.0,1100.0));
+    info.setCanvasSize(QSize(1794,1100));
 
     // patern
     int igridWidth = 21;
@@ -397,7 +398,7 @@ bool Design11::build()
 {
     QColor canvasColor = QColor(TileBlack);
     info.setBackgroundColor((canvasColor));
-    info.setCanvasSize(QSizeF(1800.0,1100.0));
+    info.setCanvasSize(QSize(1800,1100));
 
     // patern
     int gridWidth = 41;
@@ -444,7 +445,7 @@ bool Design11::build()
 
 bool Design12::build()
 {
-    QSizeF size(1000.0,1100.0);
+    QSize size(1000,1100);
     info.setCanvasSize(size);
     info.setBackgroundColor((TileBlack));
 
@@ -452,12 +453,12 @@ bool Design12::build()
     info.setBorder(bp);
 
     qreal diameter = 400.0;
-    info.setStartTile(info.getCanvasRect().center());
+    info.setStartTile(info.getCenter());
     PatternPtr pat = make_shared<Pattern10>(diameter, QBrush(Qt::NoBrush));
-    pat->build();
+    patterns.push_back(pat);
     pat->setTilePosition(0,0);
     pat->setLoc(info.getStartTile());
-    patterns.push_back(pat);
+    pat->build();
     return true;
 }
 
@@ -475,10 +476,10 @@ bool Design13::build()
     qreal rotation   = 90.0;
     eDirection turn  = CW;
 
-    info.setCanvasSize(QSizeF(1800.0,1100.0));
+    info.setCanvasSize(QSize(1800,1100));
     info.setBackgroundColor((TileBlack));
     qreal diameter = 400.0;
-    info.setStartTile(info.getCanvasRect().center());
+    info.setStartTile(info.getCenter());
 
     info.setStartTile(QPointF(0,75));
 
@@ -539,10 +540,10 @@ bool Design14::build()
     qreal rotation   = 90.0;
     eDirection turn  = CW;
 
-    info.setCanvasSize(QSizeF(1800.0,1100.0));
+    info.setCanvasSize(QSize(1800,1100));
     info.setBackgroundColor((Qt::yellow));
     qreal diameter = 400.0 / 2.0;
-    info.setStartTile(info.getCanvasRect().center());
+    info.setStartTile(info.getCenter());
 
   //startTile = QPointF(0,75);  // for full-size (400)
     info.setStartTile(QPointF(0,50));  // for half-size (200)
@@ -597,11 +598,11 @@ bool Design14::build()
 
 bool Design16::build()
 {
-    info.setCanvasSize(QSizeF(1800.0,1100.0));
+    info.setCanvasSize(QSize(1800,1100));
     info.setBackgroundColor((QColor(TileBlack)));
 
     qreal diameter = 200.0;
-    info.setStartTile(info.getCanvasRect().center());
+    info.setStartTile(info.getCenter());
 
     xSeparation = 206;
     ySeparation = 206;
@@ -639,11 +640,11 @@ bool Design16::build()
 
 bool Design17::build()
 {
-    info.setCanvasSize(QSizeF(1800.0,1100.0));
+    info.setCanvasSize(QSize(1800,1100));
     info.setBackgroundColor((QColor(TileBlack)));
 
     qreal diameter = 200.0;
-    info.setStartTile(info.getCanvasRect().center());
+    info.setStartTile(info.getCenter());
 
     xSeparation = 145;
     ySeparation = 145;
@@ -688,11 +689,11 @@ bool Design17::build()
 
 bool Design18::build()
 {
-    info.setCanvasSize(QSizeF(1800.0,1100.0));
+    info.setCanvasSize(QSize(1800,1100));
     info.setBackgroundColor((QColor(TileBlack)));
 
     qreal diameter = 200.0;
-    info.setStartTile(info.getCanvasRect().center());
+    info.setStartTile(info.getCenter());
 
     xSeparation = 136;
     ySeparation = 117;
@@ -729,11 +730,11 @@ bool Design18::build()
 
 bool Design19::build()
 {
-    info.setCanvasSize(QSizeF(1800.0,1100.0));
+    info.setCanvasSize(QSize(1800,1100));
     info.setBackgroundColor((QColor(TileBlack)));
 
     qreal diameter = 400.0;
-    info.setStartTile(info.getCanvasRect().center());
+    info.setStartTile(info.getCenter());
 
     xSeparation = 400.0;
     ySeparation = 400.0;
@@ -770,7 +771,7 @@ bool Design19::build()
 
 bool DesignKumiko1::build()
 {
-    QSizeF size(1395.0,1000.0);
+    QSize size(1395,1000);
     info.setCanvasSize(size);
     info.setBackgroundColor((QColor(0x58, 0x39, 0x3e)));
 
@@ -778,7 +779,7 @@ bool DesignKumiko1::build()
     info.setBorder(bp);
 
     qreal diameter = 200.0;
-    info.setStartTile(info.getCanvasRect().center());
+    info.setStartTile(info.getCenter());
 
     xSeparation = 200.0;
     ySeparation = 346.41;   // ypos * 2
@@ -816,13 +817,13 @@ void DesignKumiko2::init()
 {
     Design::init();
 
-    QSizeF size(1395.0,1000.0);
+    QSize size(1395,1000);
     info.setCanvasSize(size);
 
     info.setBackgroundColor((QColor(0x58, 0x39, 0x3e)));
 
-    BorderPtr bp = make_shared<BorderTwoColor>(QColor(0xa2,0x79,0x67),QColor(0xa2,0x79,0x67),20.0);
-    info.setBorder(bp);
+    //BorderPtr bp = make_shared<BorderTwoColor>(QColor(0xa2,0x79,0x67),QColor(0xa2,0x79,0x67),20.0);
+    //info.setBorder(bp);
 
     xSeparation = 200.0/100.0;
     ySeparation = 346.41/100.0;   // ypos * 2

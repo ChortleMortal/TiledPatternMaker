@@ -22,9 +22,10 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "style/Outline.h"
-#include "geometry/Point.h"
+#include "style/outline.h"
+#include "geometry/point.h"
 #include "base/view.h"
+#include "base/canvas.h"
 #include <QPainter>
 
 ////////////////////////////////////////////////////////////////////////////
@@ -89,7 +90,7 @@ void Outline::createStyleRepresentation()
         bae.v1.below = fromp.below;
         bae.v1.v     = v1->getPosition();
         bae.v1.above = fromp.above;
-        if (bae.type == EDGE_CURVE)
+        if (bae.type == EDGETYPE_CURVE)
         {
             bae.convex     = edge->isConvex();
             bae.arcCenter = edge->getArcCenter();
@@ -112,11 +113,11 @@ void Outline::draw(GeoGraphics *gg)
         {
             BelowAndAboveEdge bae = pts4[idx];
 
-            if (bae.type == EDGE_LINE)
+            if (bae.type == EDGETYPE_LINE)
             {
                 QPolygonF  poly = bae.getPoly();
                 QColor color = colors.getNextColor().color;
-                gg->drawPolygon(poly,QPen(color),QBrush(color));
+                gg->fillPolygon(poly,color);
                 QPen pen(Qt::black);
                 if ( draw_outline )
                 {
@@ -124,7 +125,7 @@ void Outline::draw(GeoGraphics *gg)
                     gg->drawLine( bae.v1.above, bae.v2.below, pen);
                 }
             }
-            else if (bae.type == EDGE_CURVE)
+            else if (bae.type == EDGETYPE_CURVE)
             {
 
                 QPointF center = bae.arcCenter;
@@ -147,8 +148,8 @@ void Outline::draw(GeoGraphics *gg)
                     gg->drawPie(bae.v1.above, bae.v2.below, center, pen, QBrush(color), convex);
 
                     View * view = View::getInstance();
-                    QGraphicsScene * scene = view->scene();
-                    QBrush br = scene->backgroundBrush();
+                    QColor c = view->getBackgroundColor();
+                    QBrush br(c);
                     gg->drawPie(bae.v1.below, bae.v2.above, center, pen, br, convex);
                 }
                 //gg->drawPolygon(poly,false);

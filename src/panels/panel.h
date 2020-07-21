@@ -65,8 +65,8 @@ public:
 
 signals:
     void    sig_viewWS();
-    void    sig_render(eRender type);
-    void    sig_selectViewer(int id, int id2);
+    void    sig_render();
+    void    sig_selectViewer(int id);
     void    sig_panelResized();
     void    sig_reload();
 
@@ -80,12 +80,10 @@ private slots:
     void    repeatChanged(int mode);
     void    slot_logEvent();
     void    slot_exit();
-    void    autoClearClicked(bool enb);
-    void    autoLoadStylesClicked(bool enb);
-    void    autoLoadTilingClicked(bool enb);
-    void    autoLoadDesignsClicked(bool enb);
+
     void    slot_raise();
     void    updateClicked(bool enb);
+    void    updateView(bool enb);
     void    slot_xformModeChanged(int row);
     void    slot_kbdMode(eKbdMode mode);
     void    showDesignClicked(bool state);
@@ -129,10 +127,7 @@ private:
     QRadioButton * radioPack;
     QRadioButton * radioSingle;
     QCheckBox    * cbShowDesign;
-    QCheckBox    * cbAutoClear;
-    QCheckBox    * cbAutoLoadStyles;
-    QCheckBox    * cbAutoLoadTiling;
-    QCheckBox    * cbAutoLoadDesigns;
+
     QComboBox    * xformModeCombo;
 
     QButtonGroup   repeatRadioGroup;

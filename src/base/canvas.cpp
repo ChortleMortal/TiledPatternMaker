@@ -24,15 +24,15 @@
 
 #include "base/canvas.h"
 #include "base/cycler.h"
-#include "base/scene.h"
 #include "base/configuration.h"
 #include "base/shortcuts.h"
+#include "base/utilities.h"
 #include "base/transparentwidget.h"
 #include "designs/patterns.h"
 #include "panels/panel.h"
-#include "style/Style.h"
-#include "viewers/workspaceviewer.h"
-#include "makers/figure_maker/figure_maker.h"
+#include "style/style.h"
+#include "viewers/workspace_viewer.h"
+#include "makers/figure_maker/prototype_maker.h"
 #include "base/tiledpatternmaker.h"
 
 #ifdef __linux__
@@ -68,9 +68,6 @@ Canvas::Canvas()
     maxStep         = 0;
     stepsTaken      = 0;
     dragging        = false;
-    sceneA          = new Scene();
-    sceneB          = new Scene();
-    scene           = sceneB;
 
     config    = Configuration::getInstance();
     setKbdMode(KBD_MODE_DEFAULT);
@@ -84,87 +81,30 @@ Canvas::Canvas()
 
 Canvas::~Canvas()
 {
-    clearScene();
 }
 
 void Canvas::init()
 {
     workspace = Workspace::getInstance();
     viewer    = WorkspaceViewer::getInstance();
+    view      = View::getInstance();
     connect(this, &Canvas::sig_viewWS,    viewer,  &WorkspaceViewer::slot_viewWorkspace);
 
-    // initialise and synchronise scene/view
-    View * view = View::getInstance();
-    view->setScene(scene);
-
-    QRect rect = viewer->getViewRect(config->viewerType);
-    sceneA->setSceneRect(rect);
-    sceneB->setSceneRect(rect);
-    Q_ASSERT(view->size() == scene->sceneRect().size());
-    viewer->setSceneSize(rect.size());
+    QSize size = viewer->getViewSize(config->viewerType);   // FIXME - is this actually needed?
+    viewer->setCurrentCanvasSize(size);
 }
 
-Scene * Canvas::swapScenes()
-{
-    scene = (scene == sceneA) ? sceneB : sceneA;
-    return scene;
-}
 
-void Canvas::update()
-{
-    if (scene)
-        scene->invalidate();
-}
-
-void Canvas::invalidate()
-{
-    if (scene)
-        scene->invalidate();
-}
-
-void Canvas::addDesign(Design * d)
-{
-    int before = scene->items().size();
-    QVector<PatternPtr>&  pats = d->getPatterns();
-    for (int i=0; i < pats.count(); i++)
-    {
-        scene->addItem(pats[i].get());
-    }
-    qDebug() << "Canvas::addDesign before=" << before << "after="  << scene->items().size();
-
-    invalidate();
-
-    dump(true);
-}
-
-void Canvas::clearScene()
-{
-    if (!scene)
-    {
-        return;
-    }
-
-    // removes from scene but does not delete
-    QList<QGraphicsItem*> ql = scene->items();
-    for (int i=0; i < ql.count(); i++)
-    {
-        QGraphicsItem * g = ql[i];
-        scene->removeItem(g);
-    }
-}
 
 void Canvas::drainTheSwamp()
 {
-    dump(true);
-    clearScene();
+    view->dump(true);
+    view->clearView();
     viewer->clear();
     workspace->slot_clearWorkspace();
     emit sig_unload();
-    dump(true);
+    view->dump(true);
 }
-
-
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -316,7 +256,7 @@ void Canvas::designReposition(qreal x, qreal y)
             d->repeat();
         }
     }
-    invalidate();
+    view->update();
 }
 
 void Canvas::designOffset(qreal x, qreal y)
@@ -368,7 +308,7 @@ void Canvas::slot_designReposition(qreal x, qreal y)
             d->repeat();
         }
     }
-    invalidate();   // scene
+    view->update();
 }
 
 void Canvas::slot_designOffset(qreal x, qreal y)
@@ -395,7 +335,7 @@ void Canvas::slot_designOrigin(int x, int y)
         DesignPtr d = designs[i];
         if (d->isVisible())
         {
-            QPointF pt(x,y);
+            QPoint pt(x,y);
             d->getDesignInfo().setStartTile(pt);
         }
     }
@@ -409,20 +349,21 @@ void Canvas::slot_designToggleVisibility(int design)
     {
         DesignPtr d = designs[design];
         d->setVisible(!d->isVisible());
-        invalidate();
+        view->update();
     }
 }
-
 
 void Canvas::slot_show_png(QString file, int row, int col)
 {
     QString name = config->examplesDir + file;
-    QImage image(name);
-    QGraphicsPixmapItem * item = new QGraphicsPixmapItem(QPixmap::fromImage(image));
-    item->setPos(col * 300.0, row * 200.0);
-    scene->addItem(item);
+    QPixmap pix(name);
+    QLabel  * label = new QLabel("Put PNG Here");
+    label->setPixmap(pix);
 
-    View * view = View::getInstance();
+    QLayout * l = view->layout();
+    QGridLayout * grid = dynamic_cast<QGridLayout*>(l);
+    grid->addWidget(label,row,col);
+
     view->show();
 }
 
@@ -435,15 +376,15 @@ void Canvas::designScale(int delta)
         {
             DesignPtr d = designs[i];
 
-            QSizeF sz =  d->getDesignInfo().getCanvasSize();
+            QSize sz =  d->getDesignInfo().getCanvasSize();
             qDebug() << "design: size=" << sz;
             if (delta > 0)
-                sz *= 1.1;
+                sz +=  QSize(delta,delta);
             else
-                sz *= 0.9;
+                sz -=  QSize(delta,delta);
             d->getDesignInfo().setCanvasSize(sz);
         }
-        invalidate();
+        view->update();
     }
 }
 
@@ -474,7 +415,7 @@ void Canvas::designMoveY(int delta)
             top -= delta;
             d->setYoffset2(top);
         }
-        invalidate();
+        view->update();
     }
 }
 
@@ -490,32 +431,8 @@ void Canvas::designMoveX(int delta)
             left -= delta;
             d->setXoffset2(left);
         }
-        invalidate();
+        view->update();
     }
-}
-
-void Canvas::dump(bool force)
-{
-    if (scene)
-    {
-        qDebug() << "Scene Items:" << scene->items().size();
-        QList<QGraphicsItem*> ql = scene->items();
-        for (int i=0; i < ql.count(); i++)
-        {
-            QGraphicsItem * g = ql[i];
-            qDebug() << g;
-        }
-    }
-    if (force)
-    {
-        //qDebug() << "*** Designs:" << Design::refs << "Patterns:" << Pattern::refs << "Layers:" << Layer::refs  << "Styles:" << Style::refs << "Maps:" << Map::refs << "Protos:" << Prototype::refs << "DELs:" << DesignElement::refs << "Figures:" << Figure::refs << "Edges:" << Edge::refs << "Vertices:"  << Vertex::refs;
-        qDebug() << "Tilings:" << Tiling::refs << "Layers:" << Layer::refs  << "Styles:" << Style::refs << "Maps:" << Map::refs << "Protos:" << Prototype::refs << "DELs:" << DesignElement::refs << "Figures:" << Figure::refs << "Features:" << Feature::refs << "Edges:" << Edge::refs << "Vertices:"  << Vertex::refs;
-    }
-}
-
-void Canvas::dumpGraphicsInfo()
-{
-    qDebug() << "Scene: items=" << scene->items().size() << "bounding=" << scene->itemsBoundingRect() << "sceneRect" << scene->sceneRect();
 }
 
 void Canvas::setKbdMode(eKbdMode mode)
@@ -583,16 +500,16 @@ bool Canvas::ProcKey(QKeyEvent *k, bool isALT)
     {
     case 'A':  setKbdMode(KBD_MODE_ORIGIN); break;
     case 'B':  setKbdMode(KBD_MODE_OFFSET); break;
-    case 'C':  emit sig_cyclerStart();  break;
     case 'D':  duplicate(); break;
     case 'E':  emit sig_viewWS(); break;    // just for debug
     case 'F':  config->debugReplicate = !config->debugReplicate; emit sig_figure_changed(); break;
-    case 'G':  config->sceneGrid = !config->sceneGrid; invalidate(); break;
-    case 'H':  config->hideCircles = !config->hideCircles; invalidate(); break;
+    case 'G':  config->sceneGrid = !config->sceneGrid; view->update(); break;
+    case 'H':  config->hideCircles = !config->hideCircles; view->update(); break;
     case 'I':  designLayerShow(); break;  // I=in
     case 'K':  config->debugMapEnable = !config->debugMapEnable; emit sig_figure_changed(); emit sig_viewWS(); break;
     case 'L':  setKbdMode(KBD_MODE_LAYER); break;
     case 'M':  emit sig_raiseMenu(); break;
+    case 'N':  {ControlPanel * panel = ControlPanel::getInstance(); TiledPatternMaker * maker =panel->getMaker(); maker->slot_bringToPrimaryScreen(); break;}  //kludge
     case 'O':  designLayerHide(); break; // o=out
     case 'P':  saveImage(); break;
     case 'Q':  if (Cycler::getInstance()->getMode() != CYCLE_NONE) { emit sig_cyclerQuit(); }
@@ -606,7 +523,7 @@ bool Canvas::ProcKey(QKeyEvent *k, bool isALT)
     case 'U':  setKbdMode(KBD_MODE_XFORM_BKGD); break;
     case 'V':  setKbdMode(KBD_MODE_XFORM_VIEW); break;
     case 'W':  setKbdMode(KBD_MODE_XFORM_FEATURE);break;
-    case 'X':  config->circleX = !config->circleX; emit sig_viewWS(); invalidate(); break;
+    case 'X':  config->circleX = !config->circleX; emit sig_viewWS(); view->update(); break;
     case 'Y':  saveSvg(); break;
     case 'Z':  setKbdMode(KBD_MODE_ZLEVEL); break;
 
@@ -623,7 +540,7 @@ bool Canvas::ProcKey(QKeyEvent *k, bool isALT)
         break;
     case Qt::Key_F2: setKbdMode(KBD_MODE_XFORM_VIEW); break;
     case Qt::Key_F3: break;
-    case Qt::Key_F4: dump(true); break;
+    case Qt::Key_F4: view->dump(true); break;
     case Qt::Key_F5: drainTheSwamp(); break;
     case Qt::Key_Space: if (Cycler::getInstance()->getMode() != CYCLE_NONE) emit sig_cyclerKey(key); break;
     case '0':
@@ -808,10 +725,8 @@ void Canvas::duplicate()
     QPixmap pixmap(view->size());
     pixmap.fill((Qt::transparent));
 
-    scene->paintBackground(false);
     QPainter painter(&pixmap);
-    scene->render(&painter);
-    scene->paintBackground(true);
+    view->render(&painter);
 
     TransparentWidget * tw = new TransparentWidget();
     tw->resize(view->size());
@@ -827,7 +742,7 @@ void Canvas::saveImage()
     Q_ASSERT(!name.contains(".xml"));
 
     QSettings s;
-    QString path = s.value("picPath2",QCoreApplication::applicationDirPath()).toString();
+    QString path = config->rootMediaDir;
     qDebug() << "path=" << path;
 
     QString nameList;
@@ -910,7 +825,7 @@ void Canvas::saveImage()
 
 void Canvas::saveSvg()
 {
-    if (config->viewerType != VIEW_DESIGN)
+    if (config->viewerType != VIEW_MOSAIC)
     {
         QMessageBox box;
         box.setIcon(QMessageBox::Warning);
@@ -919,10 +834,12 @@ void Canvas::saveSvg()
         return;
     }
 
-    eWsData wsdata = (config->designViewer == DV_LOADED_STYLE) ? WS_LOADED : WS_TILING;
-    StyledDesign sd = workspace->getStyledDesign(wsdata);
-
-    StylePtr sp = sd.getFirstStyle();
+    StylePtr sp;
+    MosaicPtr mosaic = workspace->getMosaic();
+    if (mosaic)
+    {
+        sp = mosaic->getFirstStyle();
+    }
     if (!sp)
     {
         QMessageBox box;
@@ -933,7 +850,7 @@ void Canvas::saveSvg()
     }
 
     QString path = config->rootMediaDir;
-    QString name = sd.getName();
+    QString name = mosaic->getName();
     QString pathplus = path + "/" + name + ".svg";
 
     QString newPath = QFileDialog::getSaveFileName(View::getInstance(), "Save SVG", pathplus, "SVG files (*.svg)");
@@ -946,12 +863,12 @@ void Canvas::saveSvg()
 
     generator.setFileName(path);
     generator.setSize(view->size());
-    generator.setViewBox(view->sceneRect());
+    generator.setViewBox(view->rect());
     generator.setTitle(QString("SVG Image: %1").arg(name));
     generator.setDescription("Created using Tiled Pattern Maker (David Casper)");
 
     sp->triggerPaintSVG();
-    invalidate();
+    view->update();
 
     QCoreApplication::processEvents();
 

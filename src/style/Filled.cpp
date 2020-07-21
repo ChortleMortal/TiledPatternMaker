@@ -22,7 +22,7 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "style/Filled.h"
+#include "style/filled.h"
 #include <QPainter>
 
 ////////////////////////////////////////////////////////////////////////////
@@ -112,8 +112,6 @@ void Filled::createStyleRepresentation()
         if (blackFaces.size() == 0 && whiteFaces.size() == 0)
         {
             buildFacesOriginal(map);
-            //purifyFaces();
-            //removeDuplicates();
             assignColorsOriginal(map);
             qDebug() << "black=" << blackFaces.size() <<  "white=" << whiteFaces.size();
         }
@@ -123,7 +121,6 @@ void Filled::createStyleRepresentation()
         if (blackFaces.size() == 0 && whiteFaces.size() == 0)
         {
             buildFacesOriginal(map);
-            purifyFaces();
             assignColorsNew1();
             qDebug() << "black=" << blackFaces.size() <<  "white=" << whiteFaces.size();
         }
@@ -132,8 +129,8 @@ void Filled::createStyleRepresentation()
     case 2:
         if (faceGroup.size() == 0)
         {
-            buildFacesNew23(map);
-            purifyFaces();
+            buildFacesOriginal(map);
+            buildFacesNew23();
             assignColorsNew2(whiteColorSet);
         }
         break;
@@ -141,8 +138,8 @@ void Filled::createStyleRepresentation()
     case 3:
         if (faceGroup.size() == 0)
         {
-            buildFacesNew23(map);
-            purifyFaces();
+            buildFacesOriginal(map);
+            buildFacesNew23();
             assignColorsNew3(colorGroup );
         }
         break;
@@ -156,20 +153,22 @@ void Filled::draw(GeoGraphics * gg)
         return;
     }
 
-    qDebug() << "Filled::draw()  algorithm=" << algorithm;
 
     switch (algorithm)
     {
     case 1:
     case 0:
+        qDebug() << "Filled::draw() algorithm=" << algorithm;
         drawOriginal(gg);
         break;
 
     case 2:
+        qDebug() << "Filled::draw() algorithm 2 :" << faceGroup.size() << faceGroup.totalSize();
         drawNew2(gg);
         break;
 
     case 3:
+        qDebug() << "Filled::draw() algorithm 3 :" << faceGroup.size() << faceGroup.totalSize();
         drawNew3(gg);
         break;
     }
@@ -184,10 +183,9 @@ void Filled::drawOriginal(GeoGraphics * gg)
         if (draw_outside_whites)
         {
             QColor color = whiteColorSet.getFirstColor().color;
-            for(int i=0; i < whiteFaces.size(); i++ )
+            for (auto face : whiteFaces)
             {
-                FacePtr fp = whiteFaces[i];
-                gg->drawPolygon(*fp->getPolygon(),QPen(color),QBrush(color));
+                gg->fillEdgePoly(*face.get(), color);
                 color = whiteColorSet.getNextColor().color;
             }
         }
@@ -195,11 +193,9 @@ void Filled::drawOriginal(GeoGraphics * gg)
         if (draw_inside_blacks)
         {
             QColor color = blackColorSet.getFirstColor().color;
-            for(int i=0; i < blackFaces.size(); i++)
+            for (auto face : blackFaces)
             {
-                FacePtr fp = blackFaces[i];
-                gg->drawPolygon(*fp->getPolygon(),QPen(color),QBrush(color));
-
+                gg->fillEdgePoly(*face.get(), color);
                 color = blackColorSet.getNextColor().color;
             }
         }
@@ -209,78 +205,50 @@ void Filled::drawOriginal(GeoGraphics * gg)
 void Filled::drawNew2(GeoGraphics *gg)
 {
     // not selected
-    for (auto it = faceGroup.begin(); it != faceGroup.end(); it++)
+    for (auto fset : faceGroup)
     {
-        FaceSetPtr fsp = *it;
-        if (fsp->selected || fsp->tpcolor.hidden)
-        {
+        if (fset->tpcolor.hidden && !fset->selected)
             continue;
+
+        QColor color = fset->tpcolor.color;
+        if (fset->selected)
+        {
+            color = Qt::red;
         }
 
-        TPColor tpcolor = fsp->tpcolor;
-        for (auto it2 = fsp->begin(); it2 != fsp->end(); it2++)
+        for (auto face : *fset)
         {
-            FacePtr fp = *it2;
-            gg->drawPolygon(*fp->getPolygon(),QPen(tpcolor.color),QBrush(tpcolor.color));
-        }
-    }
-
-    // selected
-    for (auto it = faceGroup.begin(); it != faceGroup.end(); it++)
-    {
-        FaceSetPtr fsp = *it;
-        if (!fsp->selected)
-        {
-            continue;
-        }
-
-        for (auto it2 = fsp->begin(); it2 != fsp->end(); it2++)
-        {
-            FacePtr fp = *it2;
-            gg->drawPolygon(*fp->getPolygon(),QPen(Qt::red),QBrush(Qt::red));
+            gg->fillEdgePoly(*face.get(),color);
         }
     }
 }
 
 void Filled::drawNew3(GeoGraphics *gg)
 {
-    // not selected
-    for (auto it = faceGroup.begin(); it != faceGroup.end(); it++)
+    qDebug() << "Filled::drawNew3";
+
+    for (auto fset : faceGroup)
     {
-        FaceSetPtr fsp = *it;
-
-        if (fsp->selected || fsp->tpcolor.hidden)
-        {
+        qDebug() << "FaceSet size:" << fset->size();
+        if (fset->colorSet.isHidden() && !fset->selected)
             continue;
-        }
 
-        ColorSet &  cset = fsp->colorSet;
-        if (cset.isHidden())
-        {
-            continue;
-        }
+        ColorSet &  cset = fset ->colorSet;
         cset.resetIndex();
-        for (auto it2 = fsp->begin(); it2 != fsp->end(); it2++)
-        {
-            TPColor tpcolor = cset.getNextColor();
-            FacePtr fp = *it2;
-            gg->drawPolygon(*fp->getPolygon(),QPen(tpcolor.color),QBrush(tpcolor.color));
-        }
-    }
 
-    // selected
-    for (auto it = faceGroup.begin(); it != faceGroup.end(); it++)
-    {
-        FaceSetPtr fsp = *it;
-        if (!fsp->selected)
+        for (auto face : *fset)
         {
-            continue;
-        }
+            Q_ASSERT(face->isClockwise());
+            TPColor tpc = cset.getNextColor();
+            if (tpc.hidden && !fset->selected)
+                continue;
 
-        for (auto it2 = fsp->begin(); it2 != fsp->end(); it2++)
-        {
-            FacePtr fp = *it2;
-            gg->drawPolygon(*fp->getPolygon(),QPen(Qt::red),QBrush(Qt::red));
+            QColor color = tpc.color;
+            if (fset->selected)
+            {
+                color = Qt::red;
+            }
+            gg->fillEdgePoly(*face.get(),color);
         }
     }
 }

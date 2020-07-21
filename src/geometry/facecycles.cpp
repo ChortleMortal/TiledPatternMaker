@@ -1,11 +1,12 @@
 #include "facecycles.h"
-#include "geometry/Map.h"
+#include "geometry/map.h"
 
 FaceCycles::FaceCycles()
 {
 
 }
 
+#if 0
 FaceSet FaceCycles::getFaceSet(MapPtr map)
 {
     this->map = map;
@@ -32,14 +33,14 @@ FaceSet FaceCycles::getFaceSet(MapPtr map)
             VertexPtr v = map->getVertex(index);
             face->push_back(v);
         }
-        face->sortForComparion();
+        face->sortForComparison();
         set.push_back(face);
     }
     qDebug() << "num faces =" << set.size();
 
     return set;
 }
-
+#endif
 void FaceCycles::findAllCycles()
 {
     qDebug() << "FaceCycles::findAllCycles()";

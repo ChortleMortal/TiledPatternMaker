@@ -29,6 +29,7 @@
 
 enum eProtoCol
 {
+    PROTO_COL_PROTO,
     PROTO_COL_DEL,
     PROTO_COL_FEATURE,
     PROTO_COL_FIGURE,
@@ -50,17 +51,12 @@ public:
 public slots:
 
 private slots:
-    void slot_display(int id);
+    void    slot_prototypeSelected(int row, int col);
 
 protected:
 
 private:
-    QTableWidget * protoTable;
-    QLabel       * wsProtoLabel;
-
-    QRadioButton * sourceStyle;
-    QRadioButton * sourceWS;
-    QButtonGroup   bgroup;
+    AQTableWidget * protoTable;
 };
 
 #endif

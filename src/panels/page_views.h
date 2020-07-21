@@ -46,43 +46,28 @@ signals:
     void    sig_mapEdSelection();
 
 public slots:
-    void    slot_selectViewer(int id, int id2);
+    void    slot_selectViewer(int id);
     void    slot_loadedXML(QString name);
-    void    slot_setSyle();
-    void    slot_setWS();
 
 private slots:
-    void    slot_Viewer_pressed(int id);
-    void    slot_designViewer_pressed(int id);
-    void    slot_protoViewer_pressed(int id);
-    void    slot_protoFeatureViewer_pressed(int id);
-    void    slot_tilingViewer_pressed(int id);
-    void    slot_tilingMakerViewer_pressed(int id);
-    void    slot_figureViewer_pressed(int id);
-    void    slot_delViewer_pressed(int id);
-    void    slot_mapEdView_pressed(int id);
-    void    slot_wsStatusBox(bool on);
+    void    slot_Viewer_pressed(int id, bool enb);
     void    slot_lockViewClicked(bool enb);
-    void    slot_scaleView(int state);
-
+    void    slot_scaleSceneToView(bool enb);
+    void    slot_multiSelect(bool enb);
 
 protected:
-    void  selectView(int id, int id2);
     void  createViewControl();
     void  createWorkspaceViewers();
-    void  createWorkspaceStatus();
     void  refreshPanel();
-    void  makeConnections();
     void  updateWsStatus();
     void  updateLoadedStatus();
-    void  updateTilingStatus();
 
 private:
     QGroupBox   *workspaceViewersBox;
     QGroupBox   *workspaceMakersBox;
-    QGroupBox   *workspaceStatusBox;
     QCheckBox   *cbLockView;
-    QCheckBox   *cbDesignView;
+    QCheckBox   *cbRawDesignView;
+    QCheckBox   *cbMosaicView;
     QCheckBox   *cbProtoView;
     QCheckBox   *cbProtoFeatureView;
     QCheckBox   *cbTilingView;
@@ -91,34 +76,7 @@ private:
     QCheckBox   *cbTilingMakerView;
     QCheckBox   *cbFigMapView;
     QCheckBox   *cbFaceSetView;
-
-    QPushButton * setStyle;
-    QPushButton * setWS;
-
-    QRadioButton *radioLoadedStyleView;
-    QRadioButton *radioWsStyleView;
-    QRadioButton *radioShapeView;
-
-    QRadioButton *radioStyleProtoViewer;
-    QRadioButton *radioProtoMakerView;
-
-    QRadioButton *radioStyleProtoFeatureViewer;
-    QRadioButton *radioProtoFeatureMakerView;
-
-    QRadioButton *radioDelStyleView;
-    QRadioButton *radioDelWSView;
-
-    QRadioButton *radioLoadedStyleTileView;
-    QRadioButton *radioWSTileView;
-
-    QRadioButton *radioFigureWS;
-    QRadioButton *radioFigureStyle;
-
-    QRadioButton *radioTileDesSourceStyle;
-    QRadioButton *radioTileDesSourceWS;
-
-    QRadioButton *mapEdStyle;
-    QRadioButton *mapEdWS;
+    QCheckBox   *chkScaleToView;
 
     QLabel  *  lab_activeDesigns;
 
@@ -128,21 +86,7 @@ private:
     QLabel  *  lab_LoadedStylesProto;
     QLabel  *  lab_LoadedDEL;
 
-    QLabel  *  lab_tilingStyle;
-    QLabel  *  lab_tiling;
-    QLabel  *  lab_tilingStyles;
-    QLabel  *  lab_tilingPrototype;
-    QLabel  *  lab_tilingDEL;
-
-    QButtonGroup            viewerGroup;
-    QButtonGroup            designGroup;
-    QButtonGroup            protoGroup;
-    QButtonGroup            protoFeatureGroup;
-    QButtonGroup            tilingGroup;
-    QButtonGroup            tilingMakerGroup;
-    QButtonGroup            figureGroup;
-    QButtonGroup            delGroup;
-    QButtonGroup            mapEdGroup;
+    QButtonGroup  viewerGroup;
 
     QGridLayout * statusBox;
     QVBoxLayout * dummyStatusBox;

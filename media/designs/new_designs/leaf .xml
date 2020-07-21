@@ -1,0 +1,143 @@
+<?xml version="1.0"?>
+<vector id="1" version="5">
+	<designNotes>Leaf pattern (Alhambtra Nasrid)</designNotes>
+	<design>
+		<size>
+			<width>1797</width>
+			<height>1225</height>
+		</size>
+		<background>
+			<color>#ffa35807</color>
+		</background>
+	</design>
+	<style.Filled id="2" serialization="custom">
+		<toolkit.GeoLayer>
+			<left__delta>-16</left__delta>
+			<top__delta>6</top__delta>
+			<width__delta>0.5099999999999996</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>-4.013333333333333,-1.346666666666668</center>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<boundary id="3">
+				<pts id="4">
+					<Point id="5">
+						<x>-10</x>
+						<y>-10</y>
+					</Point>
+					<Point id="6">
+						<x>-10</x>
+						<y>10</y>
+					</Point>
+					<Point id="7">
+						<x>10</x>
+						<y>10</y>
+					</Point>
+					<Point id="8">
+						<x>10</x>
+						<y>-10</y>
+					</Point>
+				</pts>
+			</boundary>
+			<prototype id="9" serialization="custom">
+				<app.Prototype>
+					<string>leaf</string>
+					<entry>
+						<tile.Feature id="10">
+							<regular>false</regular>
+							<edges id="11">
+								<Line>
+									<Point id="12">0,0</Point>
+									<Point id="13">-1,0</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point id="14">-1,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="14" />
+									<Point id="15">-2,-2</Point>
+								</Line>
+								<Line>
+									<Point reference="15" />
+									<Point id="16">-1,-2</Point>
+								</Line>
+								<Line>
+									<Point reference="16" />
+									<Point id="17">-1,-3</Point>
+								</Line>
+								<Line>
+									<Point reference="17" />
+									<Point id="18">0,-3</Point>
+								</Line>
+								<Line>
+									<Point reference="18" />
+									<Point id="19">0,-2</Point>
+								</Line>
+								<Line>
+									<Point reference="19" />
+									<Point id="20">1,-3</Point>
+								</Line>
+								<Line>
+									<Point reference="20" />
+									<Point id="21">2,-3</Point>
+								</Line>
+								<Line>
+									<Point reference="21" />
+									<Point id="22">2,-2</Point>
+								</Line>
+								<Line>
+									<Point reference="22" />
+									<Point id="23">1,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="23" />
+									<Point id="24">2,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="24" />
+									<Point id="25">2,0</Point>
+								</Line>
+								<Line>
+									<Point reference="25" />
+									<Point id="26">1,0</Point>
+								</Line>
+								<Line>
+									<Point reference="26" />
+									<Point id="27">1,1</Point>
+								</Line>
+								<Line>
+									<Point reference="27" />
+									<Point reference="12" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="28" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<ColorBlacks>
+			<color hide="f">#ffc2bcb0</color>
+		</ColorBlacks>
+		<ColorWhites>
+			<color hide="f">#ffa35807</color>
+		</ColorWhites>
+		<ColorGroup>
+			<Group hideSet="f">
+				<color hide="f">#ffa35807</color>
+			</Group>
+			<Group hideSet="f" />
+		</ColorGroup>
+		<style.Filled>
+			<draw__inside>true</draw__inside>
+			<draw__outside>false</draw__outside>
+			<algorithm>0</algorithm>
+		</style.Filled>
+	</style.Filled>
+</vector>

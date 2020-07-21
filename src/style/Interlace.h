@@ -25,8 +25,8 @@
 #ifndef INTERLACE_H
 #define INTERLACE_H
 
-#include "style/Thick.h"
-#include "style/InterlaceInfo.h"
+#include "style/thick.h"
+#include "style/interlace_info.h"
 #include "geometry/threads.h"
 
 ////////////////////////////////////////////////////////////////////////////

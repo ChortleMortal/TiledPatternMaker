@@ -23,11 +23,11 @@
  */
 
 #include "makers/figure_maker/feature_button.h"
-#include "viewers/GeoGraphics.h"
+#include "viewers/geo_graphics.h"
 #include "panels/panel_page.h"
-#include "viewers/placeddesignelementview.h"
+#include "viewers/placed_designelement_view.h"
 #include "base/utilities.h"
-#include "geometry/Transform.h"
+#include "geometry/transform.h"
 
 ////////////////////////////////////////////////////////////////////////////
 //

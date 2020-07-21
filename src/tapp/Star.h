@@ -27,7 +27,7 @@
 #ifndef STAR_H
 #define STAR_H
 
-#include "tapp/RadialFigure.h"
+#include "tapp/radial_figure.h"
 
 class Star : public RadialFigure
 {

@@ -91,6 +91,20 @@ protected:
     void set_CustomColors();
 };
 
+class AQTableWidget : public QTableWidget
+{
+public:
+    AQTableWidget(QWidget *parent = nullptr);
+
+    void    adjustTableSize(int maxWidth = 0, int maxHeight = 0);
+
+protected:
+    void    adjustTableWidth(int maxWidth = 0);
+    void    adjustTableHeight(int maxHeight = 0);
+
+    int     getTableWidth(int maxWidth);
+    int     getTableHeight(int maxHeight);
+};
 
 class LoaderListWidget : public QListWidget
 {

@@ -45,7 +45,7 @@
 #include <QPolygonF>
 #include "base/shared.h"
 #include "base/colorset.h"
-#include "geometry/Edge.h"
+#include "geometry/edge.h"
 #include "geometry/edgepoly.h"
 
 class Feature
@@ -56,6 +56,8 @@ public:
     Feature(EdgePoly epoly, qreal rotate);
     Feature(const FeaturePtr other );
     ~Feature();
+
+    FeaturePtr recreate();
 
     void reset();
 

@@ -30,9 +30,10 @@
 #include "base/view.h"
 #include "base/tile.h"
 #include "base/shared.h"
+#include "base/layer.h"
 
 #define LENGTH1        60.0
-#define BORDER_ZLEVEL  10.0
+#define BORDER_ZLEVEL  10
 
 enum eBorderType
 {
@@ -42,13 +43,11 @@ enum eBorderType
     BORDER_BLOCKS
 };
 
-class Border : public QObject, public QGraphicsItemGroup
+class Border : public Layer
 {
     Q_OBJECT
 
 public:
-    void    reconnectChildren();
-
     eBorderType getType()  { return type; }
 
     void    setWidth(qreal width) { this->width = width; construct(); }

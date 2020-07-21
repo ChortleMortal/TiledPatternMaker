@@ -36,7 +36,7 @@
 #include <QtCore>
 #include <list>
 #include "base/shared.h"
-#include "style/InterlaceInfo.h"
+#include "style/interlace_info.h"
 
 using std::list;
 

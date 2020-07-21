@@ -1,0 +1,81 @@
+<?xml version="1.0"?>
+<vector id="1" version="5">
+	<design>
+		<size>
+			<width>1800</width>
+			<height>1280</height>
+		</size>
+		<background>
+			<color>#ff000000</color>
+		</background>
+	</design>
+	<style.TileColors id="2" serialization="custom">
+		<toolkit.GeoLayer>
+			<left__delta>474</left__delta>
+			<top__delta>205</top__delta>
+			<width__delta>0.6099999999999997</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>-4.013333333333333,-1.346666666666668</center>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<boundary id="3">
+				<pts id="4">
+					<Point id="5">
+						<x>-10</x>
+						<y>-10</y>
+					</Point>
+					<Point id="6">
+						<x>-10</x>
+						<y>10</y>
+					</Point>
+					<Point id="7">
+						<x>10</x>
+						<y>10</y>
+					</Point>
+					<Point id="8">
+						<x>10</x>
+						<y>-10</y>
+					</Point>
+				</pts>
+			</boundary>
+			<prototype id="9" serialization="custom">
+				<app.Prototype>
+					<string>petal.v2</string>
+					<entry>
+						<tile.Feature id="10">
+							<regular>false</regular>
+							<edges id="11">
+								<Curve convex="f">
+									<Point id="12">-1.216245299353273e-16,3.999999999999998</Point>
+									<Point id="13">-1.732050807568877,1</Point>
+									<Center>-3.866025403784437,4.232050807568877</Center>
+								</Curve>
+								<Curve convex="t">
+									<Point reference="13" />
+									<Point id="14">-1.332267629550188e-15,-2</Point>
+									<Center>2.13397459621556,1.232050807568876</Center>
+								</Curve>
+								<Curve convex="t">
+									<Point reference="14" />
+									<Point id="15">1.732050807568877,0.9999999999999993</Point>
+									<Center>-2.133974596215562,1.232050807568878</Center>
+								</Curve>
+								<Curve convex="f">
+									<Point reference="15" />
+									<Point reference="12" />
+									<Center>3.866025403784437,4.232050807568876</Center>
+								</Curve>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="16" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+	</style.TileColors>
+</vector>

@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<Poly name="bird">
+	<Curve convex="t">
+		<Point id="1">-1.013333333333331,3.16</Point>
+		<Point id="2">-4.477434948471085,3.16</Point>
+		<Center>-2.745384140902208,-0.3041016151377538</Center>
+	</Curve>
+	<Curve convex="f">
+		<Point reference="2" />
+		<Point id="3">-2.74538414090221,0.160000000000001</Point>
+		<Center>-0.6114095446866488,3.392050807568876</Center>
+	</Curve>
+	<Curve convex="t">
+		<Point reference="3" />
+		<Point id="4">-1.013333333333335,-2.839999999999999</Point>
+		<Center>1.120641262882228,0.3920508075688756</Center>
+	</Curve>
+	<Curve convex="f">
+		<Point reference="4" />
+		<Point id="5">0.7187174742355442,0.1599999999999997</Point>
+		<Center>-3.147307929548894,0.3920508075688796</Center>
+	</Curve>
+	<Curve convex="t">
+		<Point reference="5" />
+		<Point id="6">2.450768281804423,3.159999999999998</Point>
+		<Center>-1.415257121980015,3.392050807568877</Center>
+	</Curve>
+	<Curve convex="f">
+		<Point reference="6" />
+		<Point reference="1" />
+		<Center>0.7187174742355438,-0.3041016151377547</Center>
+	</Curve>
+	<tx>0</tx>
+	<ty>0</ty>
+	<scale>1</scale>
+	<rot>0</rot>
+</Poly>

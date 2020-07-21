@@ -26,25 +26,22 @@
 #define WORKSPACE_H
 
 #include "base/shared.h"
-#include "base/styleddesign.h"
+#include "base/mosaic.h"
+#include "base/misc.h"
 #include "designs/design.h"
-#include "tapp/DesignElement.h"
-
-enum eWsData
-{
-    WS_LOADED = 0,
-    WS_TILING = 1
-};
+#include "tapp/design_element.h"
 
 class WorkspaceData
 {
 public:
     void    clear();
 
-    StyledDesign        styles;
+    MosaicPtr           mosaic;
     TilingPtr           tiling;
-    PrototypePtr        prototype;      // set by FigureMaker and page-styles
-    DesignElementPtr    desEle;         // set by FigureMaker and tiling maker
+    UniqueQVector<PrototypePtr> prototypes;
+
+    PrototypePtr        selectedPrototype;
+    DesignElementPtr    selectedDesignElement;
 };
 
 class Workspace : public QObject
@@ -56,11 +53,11 @@ public:
     static void        releaseInstance();
 
     void        init();
-    void        clear(eWsData dataset) { ws[dataset].clear(); }
+    void        clear() { ws.clear(); }
 
     // loaders
-    bool        loadDesignXML(QString name);
-    bool        saveStyledDesign(eWsData wsdata, QString name, QString &savedName, bool forceOverwrite);
+    bool        loadMosaic(QString name);
+    bool        saveMosaic(QString name, QString &savedName, bool forceOverwrite);
     bool        loadTiling(QString name);
     bool        saveTiling(QString name, TilingPtr tp);
 
@@ -70,26 +67,33 @@ public:
     QString     getDesignName() { return designName; }
     void        clearDesigns();
 
-    // styles
-    StyledDesign & getStyledDesign(eWsData dataset) { return ws[dataset].styles; }
+    // Mosaic
+    void        setMosaic(MosaicPtr mosaic) { ws.mosaic = mosaic; }
+    MosaicPtr   getMosaic() { return ws.mosaic; }
 
     // loaded tilings
-    void        setTiling(eWsData dataset, TilingPtr t) { ws[dataset].tiling = t; }
-    TilingPtr   getTiling(eWsData dataset)              { return ws[dataset].tiling; }
+    void        setTiling( TilingPtr t) { ws.tiling = t; }
+    TilingPtr   getTiling() { return ws.tiling; }
 
     // prototypes
-    void         setPrototype(eWsData dataset,PrototypePtr pp);
-    PrototypePtr getPrototype(eWsData dataset);
+    void         addPrototype(PrototypePtr pp);
+    QVector<PrototypePtr> getPrototypes();
+
+    void            setSelectedPrototype(PrototypePtr proto);
+    PrototypePtr    getSelectedPrototype();
 
     // figures
-    void             setSelectedDesignElement(eWsData dataset,DesignElementPtr dp);
-    DesignElementPtr getSelectedDesignElement(eWsData dataset);
+    void             setSelectedDesignElement(DesignElementPtr del);
+    DesignElementPtr getSelectedDesignElement();
+
+    CanvasSettings & getMosaicSettings();
 
 protected:
 
 signals:
     void    sig_newTiling();
-    void    sig_ws_dele_changed();
+    void    sig_selected_dele_changed();
+    void    sig_selected_proto_changed();
 
 public slots:
     void slot_clearCanvas();
@@ -101,12 +105,12 @@ private:
 
     static Workspace    * mpThis;
     Configuration       * config;
-    Canvas              * canvas;
+    View                * view;
 
     QVector<DesignPtr>  activeDesigns;
     QString             designName;
 
-    WorkspaceData       ws[2];
+    WorkspaceData       ws;
 
 };
 

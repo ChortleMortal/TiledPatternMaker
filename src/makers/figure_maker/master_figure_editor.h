@@ -32,7 +32,7 @@
 #include "makers/figure_maker/explicit_figure_editors.h"
 #include "panels/panel_misc.h"
 
-class FigureMaker;
+class PrototypeMaker;
 
 class MasterFigureWidget : public AQWidget
 {
@@ -56,7 +56,7 @@ class MasterFigureEditor : public QWidget
     Q_OBJECT
 
 public:
-    MasterFigureEditor(FigureMaker * ed);
+    MasterFigureEditor(PrototypeMaker * ed);
 
     void  MasterResetWithFigure(FigurePtr figure, FeatureBtnPtr btn);
     void  reset();
@@ -86,7 +86,7 @@ protected:
 private:
     FigurePtr               masterFigure;
 
-    FigureMaker             * figureMaker;
+    PrototypeMaker             * figureMaker;
     Workspace               * workspace;
     Configuration           * config;
 

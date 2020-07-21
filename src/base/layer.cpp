@@ -25,12 +25,12 @@
 #include "base/layer.h"
 #include "base/canvas.h"
 #include "base/view.h"
-#include "geometry/Transform.h"
-#include "viewers/workspaceviewer.h"
+#include "geometry/transform.h"
+#include "viewers/workspace_viewer.h"
 
 int Layer::refs = 0;
 
-Layer::Layer(QString name) : QObject(), QGraphicsItemGroup()
+Layer::Layer(QString name) : QObject()
 {
     canvas   = Canvas::getInstance();
     wsViewer = WorkspaceViewer::getInstance();
@@ -40,33 +40,42 @@ Layer::Layer(QString name) : QObject(), QGraphicsItemGroup()
     connect(canvas, &Canvas::sig_deltaRotate,   this, &Layer::slot_rotate);
     connect(canvas, &Canvas::sig_deltaMoveY,    this, &Layer::slot_moveY);
     connect(canvas, &Canvas::sig_deltaMoveX,    this, &Layer::slot_moveX);
-    View * view = View::getInstance();
+
+    view = View::getInstance();
     connect(view, &View::sig_mousePressed,      this, &Layer::slot_mousePressed);
 
     this->name = name;
 
+    visible = true;
+    zlevel  = 0;
+
     refs++;
 }
 
-Layer::Layer(const Layer & other) : QObject(), QGraphicsItemGroup()
+Layer::Layer(const Layer & other) : QObject()
 {
-    canvas  = Canvas::getInstance();
+    canvas   = Canvas::getInstance();
     wsViewer = WorkspaceViewer::getInstance();
     config   = Configuration::getInstance();
-    setVisible(other.isVisible());
 
-    layerXform    = other.layerXform;
-    name          = other.name;
-    baseT         = other.baseT;
-    layerT        = other.layerT;
-    invT          = other.invT;
-    layerPen      = other.layerPen;
+    visible     = other.visible;
+    xf_canvas   = other.xf_canvas;
+    name        = other.name;
+    qtr_view    = other.qtr_view;
+    qtr_layer   = other.qtr_layer;
+    qtr_invert  = other.qtr_invert;
+    layerPen    = other.layerPen;
+    name        = other.name;
+    visible     = other.visible;
+    subLayers   = other.subLayers;
+    zlevel      = other.zlevel;
 
     connect(canvas, &Canvas::sig_deltaScale,    this, &Layer::slot_scale,  Qt::UniqueConnection);
     connect(canvas, &Canvas::sig_deltaRotate,   this, &Layer::slot_rotate, Qt::UniqueConnection);
     connect(canvas, &Canvas::sig_deltaMoveY,    this, &Layer::slot_moveY,  Qt::UniqueConnection);
     connect(canvas, &Canvas::sig_deltaMoveX,    this, &Layer::slot_moveX,  Qt::UniqueConnection);
-    View * view = View::getInstance();
+
+    view = View::getInstance();
     connect(view, &View::sig_mousePressed,      this, &Layer::slot_mousePressed);
 
     refs++;
@@ -77,92 +86,127 @@ Layer::~Layer()
     refs--;
 }
 
-void Layer::addToGroup(QGraphicsItem * item)
+void Layer::paint(QPainter * painter)
 {
-    QGraphicsItemGroup::addToGroup(item);
+    qDebug() << "Layer paint subs =" << subLayers.count();
+
+    std::stable_sort(subLayers.begin(), subLayers.end(), sortByZlevel);
+
+    painter->save();
+    painter->translate(getLoc());
+    qreal rot = xf_canvas.getRotateDegrees();
+    painter->rotate(rot);
+
+    for (auto layer : subLayers)
+    {
+        layer->paint(painter);
+    }
+
+     painter->restore();
 }
 
-void Layer::removeFromGroup(QGraphicsItem * item)
+bool Layer::sortByZlevel(LayerPtr s1, LayerPtr s2)
 {
-    QGraphicsItemGroup::removeFromGroup(item);
+    return s1->zlevel < s2->zlevel;
+}
+
+void Layer::addSubLayer(LayerPtr item)
+{
+    item->setLoc(pos);
+    item->setZValue(zlevel);
+
+    subLayers.push_back(item);
+}
+
+void Layer::removeSubLayer(LayerPtr item)
+{
+   subLayers.removeAll(item);
 }
 
 void Layer::forceUpdateLayer()
 {
-    layerT.reset();
-    canvas->update();
+    qtr_layer.reset();
+    view->update();
 }
 
 void Layer::forceRedraw()
 {
-    canvas->update();
+    view->update();
 }
 
+// FIXME - should be a push not a pull
 QTransform Layer::getLayerTransform()
 {
-    if (layerT.isIdentity())
+    if (qtr_layer.isIdentity())
     {
-        if (!layerXform.hasCenter)
+        if (!xf_canvas.hasCenter)
         {
             QTransform bT = wsViewer->getViewTransform(config->viewerType);
             QTransform iT = bT.inverted();
 
-            Scene * scene   = canvas->currentScene();
-            if (scene)
-            {
-               QPointF center = scene->sceneRect().center();
+            QPointF center = view->rect().center();    // TODO - this should maybe be the canvas/design center
                center = iT.map(center);
-               layerXform.setCenter(center);
-            }
+               xf_canvas.setCenter(center);
         }
         // compute Transform
         computeLayerTransform();
     }
-    //qDebug().noquote() << "Layer transform:" << Transform::toInfoString(layerT);
-    return layerT;
+    //qDebug().noquote() << "Layer transform:" << Transform::toInfoString(qtr_layer);
+    return qtr_layer;
 }
 
+// FIXME - should be a push not a pull
+QTransform Layer::getViewTransform()
+{
+    if (qtr_layer.isIdentity())
+    {
+        getLayerTransform();
+    }
+    //qDebug().noquote() << "View transform:" << Transform::toInfoString(qtr_view);
+    return qtr_view;
+}
 
+// FIXME - should be a push not a pull
 // DAC - this taprats method did not work when the view (canvas) was not square
 // This has been refactored
 void Layer::computeLayerTransform()
 {
-    baseT             = wsViewer->getViewTransform(config->viewerType);
-    layerXT           = layerXform.computeTransform(baseT);
-    layerT            = baseT * layerXT;
-    invT              = layerT.inverted();
+    qtr_view    = wsViewer->getViewTransform(config->viewerType);  // FIXME - maybe should be the current view
+    qtr_canvas  = xf_canvas.toQTransform(qtr_view);     // qtr_view used to map the center
+    qtr_layer   = qtr_view * qtr_canvas;
+    qtr_invert  = qtr_layer.inverted();
 
-    qDebug().noquote() << "baseT   :" << name << Transform::toInfoString(baseT);
-    qDebug().noquote() << "layerXT :" << name << Transform::toInfoString(layerXT);
-    //qDebug().noquote() << "XForm :" << name << Transform::toInfoString(layerXform.getTransform());
-    qDebug().noquote() << "layerT  :" << name << Transform::toInfoString(layerT);
+    //qDebug().noquote() << "qtr_view:" << name << Transform::toInfoString(qtr_view);
+    //qDebug().noquote() << "layerXT :" << name << Transform::toInfoString(qtr_canvas);
+    //qDebug().noquote() << "layerT  :" << name << Transform::toInfoString(qtr_layer);
 }
 
 void Layer::setCenter (QPointF pt)
 {
     //qDebug() << "setRotateCenter=" << pt;
-    layerXform.setCenter(invT.map(pt));
+    xf_canvas.setCenter(qtr_invert.map(pt));
 }
 
 QPointF Layer::getCenter()
 {
-    return layerT.map(layerXform.getCenter());
+    return qtr_layer.map(xf_canvas.getCenter());
 }
 
-void Layer::setLayerXform(Xform & xf)
+void Layer::setCanvasXform(Xform & xf)
 {
-    layerXform = xf;
+    xf_canvas = xf;
+    qtr_layer.reset();
 }
 
-Xform Layer::getLayerXform()
+Xform Layer::getCanvasXform()
 {
-    return layerXform;
+    return xf_canvas;
 }
 
 QPointF Layer::screenToWorld(QPointF pt)
 {
     getLayerTransform();
-    return invT.map(pt);
+    return qtr_invert.map(pt);
 }
 
 QPointF Layer::screenToWorld(int x, int y)
@@ -171,21 +215,21 @@ QPointF Layer::screenToWorld(int x, int y)
     qreal yy = static_cast<qreal>(y);
 
     getLayerTransform();
-    return invT.map(QPointF(xx, yy));
+    return qtr_invert.map(QPointF(xx, yy));
 }
 
 QPointF Layer::worldToScreen(QPointF pt)
 {
     getLayerTransform();
-    return layerT.map(pt);
+    return qtr_layer.map(pt);
 }
 
 QLineF Layer::worldToScreen(QLineF line)
 {
     QLineF aline;
     getLayerTransform();
-    aline.setP1(layerT.map(line.p1()));
-    aline.setP2(layerT.map(line.p2()));
+    aline.setP1(qtr_layer.map(line.p1()));
+    aline.setP2(qtr_layer.map(line.p2()));
     return aline;
 }
 
@@ -193,7 +237,7 @@ void Layer::slot_moveX(int amount)
 {
     if (config->kbdMode == KBD_MODE_XFORM_VIEW)
     {
-        layerXform.setTranslateX(layerXform.getTranslateX() + amount);
+        xf_canvas.setTranslateX(xf_canvas.getTranslateX() + amount);
         forceUpdateLayer();
     }
     else if (config->kbdMode == KBD_MODE_XFORM_BKGD)
@@ -213,7 +257,7 @@ void Layer::slot_moveY(int amount)
 {
     if (config->kbdMode == KBD_MODE_XFORM_VIEW)
     {
-        layerXform.setTranslateY(layerXform.getTranslateY() + amount);
+        xf_canvas.setTranslateY(xf_canvas.getTranslateY() + amount);
         forceUpdateLayer();
     }
     else if (config->kbdMode == KBD_MODE_XFORM_BKGD)
@@ -233,7 +277,7 @@ void Layer::slot_rotate(int amount)
 {
     if (config->kbdMode == KBD_MODE_XFORM_VIEW)
     {
-        layerXform.setRotateRadians(layerXform.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
+        xf_canvas.setRotateRadians(xf_canvas.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
         forceUpdateLayer();
     }
     else if (config->kbdMode == KBD_MODE_XFORM_BKGD)
@@ -253,7 +297,7 @@ void Layer::slot_scale(int amount)
 {
     if (config->kbdMode == KBD_MODE_XFORM_VIEW)
     {
-        layerXform.setScale(layerXform.getScale() + static_cast<qreal>(amount)/100.0);
+        xf_canvas.setScale(xf_canvas.getScale() + static_cast<qreal>(amount)/100.0);
         forceUpdateLayer();
     }
     else if (config->kbdMode == KBD_MODE_XFORM_BKGD)
@@ -279,6 +323,17 @@ void Layer::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
     {
         return;
     }
-    layerXform.setCenter(invT.map(spt));
-    canvas->update();
+    xf_canvas.setCenter(qtr_invert.map(spt));
+    view->update();
+}
+
+void Layer::setLoc(QPointF loc)
+{
+    //qDebug() << name << "pos=" << pos << "new" << loc;
+    pos += loc;
+}
+
+void Layer::setZValue(int z)
+{
+    zlevel = z;
 }

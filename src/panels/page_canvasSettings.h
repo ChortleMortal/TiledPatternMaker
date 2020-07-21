@@ -33,16 +33,17 @@ class page_canvasSettings : public panel_page
 {
     Q_OBJECT
 
-//#define BORDER
-
 enum eSettingsGroup
 {
-    SDESIGN_SETTINGS  = 0,
+    DESIGN_SETTINGS   = 0,
     CANVAS_SETTINGS   = 1,
+    TILING_SETTINGS   = 2,
     VIEW_SETTINGS     = 0,
-    SCENE_STATUS      = 2,
     VIEW_STATUS       = 1
 };
+
+#define NUM_SETTINGS 3
+#define NUM_BORDER_COLORS 2
 
 public:
     page_canvasSettings(ControlPanel * apanel);
@@ -56,7 +57,6 @@ private slots:
 
     void pickBorderColor();
     void pickBorderColor2();
-    void settingsSelectionChanged(int);
     void borderChanged(int row);
 
     void slot_loadBackground();
@@ -65,7 +65,7 @@ private slots:
 
     void slot_setBkgdXform();
     void slot_setBkgd();
-    void pickBackgroundColor();
+    void pickDesignBackgroundColor();
 
     void slot_setBkgdXformCanvas();
     void slot_setBkgdCanvas();
@@ -76,20 +76,31 @@ private slots:
     void slot_rotate(int amount);
     void slot_scale(int amount);
 
-    void designSizeChanged(qreal);
-    void canvasSizeChanged(qreal);
+    void slot_matchDesign();
+    void slot_matchTiling();
 
+    void designSizeChanged(int);
+    void canvasSizeChanged(int);
+    void viewSizeChanged(int);
+
+    void designBkgdColorChanged(const QString & str);
 
 protected:
+    QGroupBox * createTilingSettings();
     QGroupBox * createDesignSettings();
     QGroupBox * createCanvasSettings();
-    QGroupBox * createSceneStatus();
+
+    QGroupBox * createCanvasBorderSettings();
+    QGroupBox * createDesignBorderSettings();
 
     QGroupBox * createViewSettings();
     QGroupBox * createViewStatus();
 
+    CanvasSettings & getDesignSettings();
+
     void displaySettings(CanvasSettings & cSettings, eSettingsGroup group);
     void displayBkgdImgSettings(CanvasSettings & cSettings, eSettingsGroup group);
+    void displayBorder(BorderPtr bp, eSettingsGroup group);
 
     void setFromForm();
     void setBorderFromForm();
@@ -99,38 +110,36 @@ private:
 
     class TilingMaker * tilingMaker;
 
-    QButtonGroup   bgroup;
+    SpinSet         * sizeEditW[NUM_SETTINGS];
+    SpinSet         * sizeEditH[NUM_SETTINGS];
 
-    DoubleSpinSet * sizeEditW[3];
-    DoubleSpinSet * sizeEditH[3];
+    QLineEdit       * bkColorEdit[NUM_SETTINGS];
+    ClickableLabel  * bkgdColorPatch[NUM_SETTINGS];
 
-    QLineEdit * bkColorEdit[3];
-    ClickableLabel * bkgdColorPatch[3];
+    DoubleSpinSet   * startEditX[NUM_SETTINGS];
+    DoubleSpinSet   * startEditY[NUM_SETTINGS];
 
-    DoubleSpinSet * startEditX[3];
-    DoubleSpinSet * startEditY[3];
+    SpinSet         * viewW[NUM_SETTINGS];
+    SpinSet         * viewH[NUM_SETTINGS];
+    QLabel          * viewLabel;
 
-    SpinSet * viewW[2];
-    SpinSet * viewH[2];
+    QComboBox         borderType[NUM_SETTINGS];
+    QLineEdit       * borderWidth[NUM_SETTINGS];
+    QLabel          * borderColorLabel[NUM_SETTINGS][NUM_BORDER_COLORS];
+    QLineEdit       * borderColor[NUM_SETTINGS][NUM_BORDER_COLORS];
+    ClickableLabel  * borderColorPatch[NUM_SETTINGS][NUM_BORDER_COLORS];
 
+    QPushButton     * bkgdImageBtn;
+    QLineEdit       * bkgdImage[NUM_SETTINGS];
 
-#ifdef BORDER
-    QComboBox   borderType;
+    LayoutTransform * bkgdLayout[NUM_SETTINGS];
 
-    QLineEdit * borderWidth;
-    QLabel    * borderColorLabel[2];
-    QLineEdit * borderColor[2];
-    ClickableLabel * borderColorPatch[2];
-#endif
+    QCheckBox       * chk_showBkgd[NUM_SETTINGS];
+    QCheckBox       * chk_adjustBkgd[NUM_SETTINGS];
+    QCheckBox       * chk_xformBkgd[NUM_SETTINGS];
 
-    QPushButton   * bkgdImageBtn;
-    QLineEdit     * bkgdImage[2];
-
-    LayoutTransform * bkgdLayout[2];
-
-    QCheckBox     * chk_showBkgd[2];
-    QCheckBox     * chk_adjustBkgd[2];
-    QCheckBox     * chk_xformBkgd[2];
+    QLabel          * labelViewTransform;
+    QLabel          * labelTilingTransform;
 };
 
 #endif

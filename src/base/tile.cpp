@@ -27,7 +27,7 @@
 
 int Tile::refs = 0;
 
-Tile::Tile(int Row, int Col)
+Tile::Tile(int Row, int Col) : Layer("Master Tile")
 {
     row = Row;
     col = Col;
@@ -40,34 +40,18 @@ Tile::~Tile()
     refs--;
 }
 
-Layer * Tile::addLayer(qreal zLevel)
+LayerPtr Tile::addLayer(int zLevel)
 {
-    Layer * layer = new Layer("Tile");
-    tileLayers.push_back(layer);
+    LayerPtr layer = make_shared<Layer>("Tile");
     layer->setZValue(zLevel);
-    addToGroup(layer);
+    addSubLayer(layer);
     return layer;
 }
 
-void Tile::addLayer(Layer * layer, qreal zlevel)
+void Tile::addLayer(LayerPtr layer, int zlevel)
 {
-    tileLayers.push_back(layer);
     layer->setZValue(zlevel);
-    //addToGroup(layer);    // is added by caller
-}
-
-Layer * Tile::getLayer(int index)
-{
-    int sz = tileLayers.size();
-    if (index >= 0 && index < sz)
-    {
-        return tileLayers[index];
-    }
-    else
-    {
-        return nullptr;
-    }
-
+    addSubLayer(layer);
 }
 
 bool Tile::doStep(int index)
@@ -90,12 +74,4 @@ qreal Tile::getSLinearPos(int step, int duration)
     qreal x  = (qreal)step * (13.0/((qreal)duration)) - 6.0;
     qreal normalizedValue = 1.0 / (1 + exp(-x));
     return normalizedValue;
-}
-
-void Tile::info()
-{
-    for (int i=0; i < tileLayers.size(); i++)
-    {
-        qDebug() << "layer" << i << ":" << tileLayers[i]->childItems().count();
-    }
 }

@@ -57,6 +57,8 @@ private slots:
     void    slot_logToDisk(bool enable);
     void    slot_logToPanel(bool enable);
     void    slot_numberLines(bool enable);
+    void    slot_warningsOnly(bool enable);
+    void    slot_elapsedTime(bool enable);
 
 protected:
 

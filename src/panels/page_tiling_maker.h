@@ -54,6 +54,7 @@ public:
     void refreshPage() override;
     void onEnter() override;
     void onExit() override;
+    bool canExit() override;
 
     void buildMenu();
     void refreshMenuData();
@@ -61,6 +62,7 @@ public:
 signals:
     void sig_tilingChanged();
     void sig_loadTiling(QString name);
+    void sig_reload();
 
 public slots:
     void slot_currentFeature(int index);
@@ -85,9 +87,10 @@ private slots:
     void slot_showDebug(bool checked);
     void slot_autofill(bool checked);
     void slot_clearWS();
-    void slot_sourceSelect(int id);
+    void slot_clearTiling();
     void slot_swapTrans();
     void slot_remove_clicked();
+    void slot_uniquify_clicked();
     void slot_setModes(int mode);
     void slot_set_reps();
     void slot_menu(QPointF spt);
@@ -127,14 +130,9 @@ protected:
     PlacedFeaturePtr getFeatureColumn(int col);
 
 private:
-    TilingMaker * tilingMaker;
+    TilingMakerPtr tilingMaker;
 
-    QRadioButton * radioSrcStyledDesign;
-    QRadioButton * radioSrcTiling;
-    QButtonGroup   tilingGroup3;
-
-    QRadioButton * radioDstStyledDesign;
-    QRadioButton * radioDstTiling;
+    QLabel       * currentTiling;
 
     QCheckBox * chk_autoFill;
     QCheckBox * chk_hideTable;
@@ -156,7 +154,7 @@ private:
     QLabel       * debugLabel1;
     QLabel       * debugLabel2;
 
-    QTableWidget * tileInfoTable;
+    AQTableWidget * tileInfoTable;
 
     SpinSet    * xRepMin;
     SpinSet    * xRepMax;

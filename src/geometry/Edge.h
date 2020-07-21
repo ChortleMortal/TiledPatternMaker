@@ -33,24 +33,25 @@
 
 #include <QtCore>
 #include "base/shared.h"
-#include "geometry/Vertex.h"
-#include "style/InterlaceInfo.h"
+#include "geometry/vertex.h"
+#include "style/interlace_info.h"
 
 class Map;
 
 
 enum eEdgeType
 {
-    EDGE_NULL,
-    EDGE_POINT,     // an incomplete edge
-    EDGE_LINE,
-    EDGE_CURVE,
+    EDGETYPE_NULL,
+    EDGETYPE_POINT,     // an incomplete edge
+    EDGETYPE_LINE,
+    EDGETYPE_CURVE,
 };
 
 struct arcData
 {
     QRectF  rect;
     qreal   start;
+    qreal   end;    // used internally
     qreal   span;
 };
 
@@ -62,6 +63,7 @@ public:
     Edge(VertexPtr V1);
     Edge(VertexPtr V1, VertexPtr V2 );
     Edge(VertexPtr V1, VertexPtr V2, QPointF arcCenter, bool convex);
+    Edge(EdgePtr other, QTransform T);
     ~Edge();
 
     VertexPtr getV1();
@@ -73,43 +75,56 @@ public:
     QLineF    getLine();
     QPointF   getMidPoint()  { return getLine().pointAt(0.50); }
     eEdgeType getType()      { return type; }
+    qreal     getAngle();
+    EdgePtr   getSwappedEdge();
+
+    void      setV1(VertexPtr v)  { v1 = v;}
+    void      setV2(VertexPtr v)  { v2 = v;  if ((type == EDGETYPE_NULL) || (type == EDGETYPE_POINT)) type = EDGETYPE_LINE; }
+
+    void      setArcCenter(QPointF ac, bool convex);
+    void      calcArcCenter(bool convex);
+    void      calcMagnitude();
+    void      setArcMagnitude(qreal magnitude);
+    void      setConvex(bool convexCurve) { convex = convexCurve; }
+    void      resetCurve();
 
     QPointF   getArcCenter() { return arcCenter; }
+    qreal     getArcMagnitude() { return arcMagnitude; }
     bool      isConvex()     { return convex; }
 
+    void      setSwapState(bool swap) { isSwapped = swap; }
+    bool      getSwapState()          { return isSwapped; }
+
     bool      isColinearAndTouching(EdgePtr e);
-    qreal     getAngle();
 
-    void resetCurve();
-    void setV1(VertexPtr v)  { v1 = v;}
-    void setV2(VertexPtr v)  { v2 = v;  if ((type == EDGE_NULL) || (type == EDGE_POINT)) type = EDGE_LINE; }
-    void setArcCenter(QPointF ac, bool convex);
+    static arcData  calcArcData(QPointF p1, QPointF p2, QPointF c, bool convex);
+           arcData  calcArcData();
 
-    QPointF  calcDefaultArcCenter(bool convex);
-    static arcData  calcArcData(QPointF V1, QPointF V2, QPointF ArcCenter, bool Convex);
-
-    bool contains(VertexPtr v);
-    bool sameAs(EdgePtr other);
-    bool equals(EdgePtr other);
+    bool      contains(VertexPtr v);
+    bool      sameAs(EdgePtr other);
+    bool      equals(EdgePtr other);
 
     InterlaceInfo & getInterlaceInfo() {  return interlaceData; }
     void            initInterlaceInfo() { interlaceData.initInterlace(); }
 
     // Used to sort the edges in the map.
-    qreal getMinX();
+    qreal     getMinX();
+
+    void      setTmpEdgeIndex(int i) { tmpEdgeIndex = i; }
+    int       getTmpEdgeIndex()      { return tmpEdgeIndex; }
+    void      dump();
 
     static int refs;
-
-    void setTmpEdgeIndex(int i) { tmpEdgeIndex = i; }
-    int  getTmpEdgeIndex()      { return tmpEdgeIndex; }
 
 protected:
     eEdgeType       type;
     VertexPtr       v1;
     VertexPtr       v2;
 
-    QPointF         arcCenter;   // inside or outside the polygon
+    bool            isSwapped;
     bool            convex;
+    QPointF         arcCenter;      // inside or outside the polygon
+    qreal           arcMagnitude;   // range 0 to 1
 
     InterlaceInfo   interlaceData;
     int             tmpEdgeIndex;

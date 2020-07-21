@@ -3,7 +3,7 @@
 
 #include <QtCore>
 #include <QColor>
-#include "geometry/Edge.h"
+#include "geometry/edge.h"
 #include "base/colorset.h"
 
 class Thread : public QVector<EdgePtr>

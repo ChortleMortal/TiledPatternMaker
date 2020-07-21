@@ -41,7 +41,7 @@
 #ifndef EMBOSS_H
 #define EMBOSS_H
 
-#include "style/Outline.h"
+#include "style/outline.h"
 
 class Emboss : public Outline
 {

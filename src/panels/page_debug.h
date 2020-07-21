@@ -39,7 +39,6 @@ public:
     void onExit() override;
 
 signals:
-    void    sig_cycle();
     void    sig_compareImageFiles(QString,QString);
     void    sig_view_image(QString file);
 
@@ -57,45 +56,45 @@ private slots:
 
     void    slot_autoCycleClicked(bool enb);
     void    slot_stopIfDiffClicked(bool enb);
-    void    slot_cycleModeChanged(int row);
+    void    slot_cycleModeChanged(int id);
     void    slot_cycleIntervalChanged(int value);
     void    selectDir0();
     void    selectDir1();
     void    swapDirs();
+    void    slot_previous();
+    void    slot_next();
 
-    void    slot_startCycle();
-    void    slot_selectImage0();
+    void    slot_ibox0_changed(int index);
+    void    slot_ibox1_changed(int index);
     void    slot_viewImage0();
-    void    slot_selectImage1();
     void    slot_viewImage1();
+    void    slot_cycle();
     void    slot_compareImages();
     void    slot_transparentClicked(bool checked);
     void    slot_differencesClicked(bool checked);
     void    slot_ping_pongClicked(bool checked);
     void    slot_side_by_sideClicked(bool checked);
 
+    void    slot_dir0Changed();
+    void    slot_dir1Changed();
+
 protected:
-    void  ViewImage(QString file);
+    QGroupBox * createDebugSection();
+    QGroupBox * createCycleSection();
+    QGroupBox * createImagesSection();
+
+    void        viewImage(QString file);
+
+    void loadCombo(QComboBox * box, QString dir);
+    void setCombo(QComboBox * box,QString name);
 
 private:
-    QComboBox   * cycleCombo;
+    QLineEdit   * dir0;
+    QLineEdit   * dir1;
 
-    QLineEdit   * comp0;
-    QLineEdit   * comp1;
-
-    QLineEdit   * imageName0;
-    QLineEdit   * imageName1;
+    QComboBox   * ibox0;
+    QComboBox   * ibox1;
     QLineEdit   * imageCompareResult;
-    QPushButton * selectImage0;
-    QPushButton * viewImage0;
-    QPushButton * selectImage1;
-    QPushButton * viewImage1;
-    QPushButton * compareImage;
-
-    QCheckBox   * transparent;
-    QCheckBox   * differences;
-    QCheckBox   * ping_pong;
-    QCheckBox   * side_by_side;
 };
 
 #endif

@@ -41,7 +41,9 @@ enum eCycleMode
     CYCLE_ORIGINAL_PNGS,
     CYCLE_SAVE_STYLE_BMPS,
     CYCLE_SAVE_TILING_BMPS,
-    CYCLE_COMPARE_IMAGES
+    CYCLE_COMPARE_IMAGES,
+    CYCLE_MIN = CYCLE_STYLES,
+    CYCLE_MAX = CYCLE_SAVE_TILING_BMPS
 };
 
 static QString sCycleMode[] = {
@@ -81,7 +83,7 @@ signals:
     void sig_viewImage(QString filename);
 
 public slots:
-   void slot_startCycle();
+   void slot_startCycle(eCycleMode mode);
    void slot_stopCycle();
    void slot_psuedoKey(int key);
    void slot_ready();

@@ -25,10 +25,12 @@
 #include "base/canvas.h"
 #include "base/cycler.h"
 #include "base/view.h"
+#include "base/utilities.h"
 #include "panels/panel.h"
-#include "viewers/workspaceviewer.h"
+#include "viewers/workspace_viewer.h"
 #include "makers/map_editor/map_editor.h"
 #include "makers/tiling_maker/tiling_maker.h"
+#include "style/style.h"
 
 View * View::mpThis = nullptr;
 
@@ -50,17 +52,18 @@ void View::releaseInstance()
     }
 }
 
-View::View() : QGraphicsView()
+View::View()
 {
     dragging = false;
     setMouseTracking(true);
 
-    setFrameStyle(0);
-    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    gridPen.setColor(QColor(Qt::red));
 
     QSettings s;
     move(s.value("viewPos").toPoint());
+
+    QGridLayout * grid = new QGridLayout();
+    setLayout(grid);
 }
 
 View::~View()
@@ -81,101 +84,88 @@ void View::init()
     wsViewer = WorkspaceViewer::getInstance();
 
     connect(wsViewer, &WorkspaceViewer::sig_title, this, &View::setWindowTitle, Qt::QueuedConnection);
+
+    //resize(QSize(1500,1000));
+    show();
 }
 
-void View::matchViewSizeToScene(const QRectF & sceneRect)
+QSize View::sizeHint() const
 {
-    qDebug() << "View::matchSizeToCanvas (old):" << size().width() << size().height();
-    qDebug() << "View::matchSizeToCanvas (new):" << sceneRect.width() << sceneRect.height();
-    QRect  vrect = sceneRect.toAlignedRect();
-    resize(vrect.width(),vrect.height());
-    centerOn(sceneRect.width()/2,sceneRect.height()/2);
+    return QSize(1500,1000);    // default
 }
 
-bool View::scaleSceneSizeToView(const QSize &viewSize)
+void View::addLayer(LayerPtr layer)
 {
-    if (!config->scaleToView)
+    layers.push_back(layer);
+}
+
+void View::clearView()
+{
+    clearLayers();
+    clearLayout();
+}
+
+QVector<LayerPtr> View::getActiveLayers()
+{
+    return layers;
+}
+
+void View::paintEvent(QPaintEvent *event)
+{
+    //qDebug() << "++++START VIEW PAINT - Scene: items=" << layers.size() << "viewRect" << rect();
+
+    QWidget::paintEvent(event);
+
+    QPainter painter(this);
+
+    std::stable_sort(layers.begin(),layers.end(),Layer::sortByZlevel);  // tempting to move this to addLayer, but if zlevel changed would not be picked up
+
+    for (auto layer : layers)
     {
-        return false;
+        layer->paint(&painter);
     }
 
-    QRectF scene_rectF = sceneRect();
-    QRect  scene_rect  = scene_rectF.toAlignedRect();
-    QSize  scene_size  = scene_rect.size();
-    if (scene_size != viewSize)
-    {
-        qDebug() << "Setting scene size because scene size=" << scene_size<< "and now view size=" << viewSize;
-        QRectF scRect(0.0,0.0,viewSize.width(),viewSize.height());
-        wsViewer->setSceneSize(viewSize);
-        scene()->setSceneRect(scRect);
-        return true;
-    }
-    return false;
-}
+    QRectF r = rect();
+    drawForeground(&painter,r);
 
-
-void View::setSceneRect(const QRectF & rect)
-{
-    Q_UNUSED(rect)
-    qFatal("Do not call this");
-}
-
-void View::setSceneRect(qreal x, qreal y, qreal w, qreal h)
-{
-    Q_UNUSED(x);
-    Q_UNUSED(y);
-    Q_UNUSED(w);
-    Q_UNUSED(h);
-    qFatal("Do not call this");
+    //qDebug() << "++++END PAINT";
 }
 
 void View::resizeEvent(QResizeEvent *event)
 {
-    QGraphicsView::resizeEvent(event);
+    QWidget::resizeEvent(event);
 
+#if 0
     QSize oldSize   = wsViewer->getViewSize(config->viewerType);
     QSize viewSize  = size();
     if (viewSize == oldSize)
     {
-        return;
+        //return;
     }
 
     qDebug() << "View::resizeEvent: was=" << event->oldSize() << "becomes=" << event->size();
     qDebug() << "View::             was=" << oldSize          << "becomes=" << viewSize;
-    wsViewer->setViewSize(config->viewerType,viewSize);
-
-    if (scaleSceneSizeToView(viewSize))
-    {
-        QVector<Layer*> layers = wsViewer->getActiveLayers();
-        for (auto layer : layers)
-        {
-            layer->forceUpdateLayer();
-        }
-
-        if (config->viewerType == VIEW_MAP_EDITOR)
-        {
-            MapEditor * me = MapEditor::getInstance();
-            me->forceUpdateLayer();
-        }
-
-        emit sig_resize();
-    }
-}
-
-#ifdef DEBUG_PAINT
-void View::paintEvent(QPaintEvent *event)
-{
-    qDebug() << "++++START PAINT";
-    canvas->dumpGraphicsInfo();
-    QTransform t1 = transform();
-    QTransform t2 = viewportTransform();
-    qDebug() << "view: items=" << items().size() << "sceneRect" << sceneRect() << "transform" << t1 << "view transform" << t2;
-
-    QGraphicsView::paintEvent(event);
-
-    qDebug() << "++++END PAINT";
-}
 #endif
+
+    if (config->scaleSceneToView)
+    {
+        QSize viewSize  = size();
+        wsViewer->setViewSize(config->viewerType,viewSize);  // only change view size if scaling - don't move this line
+    }
+
+    for (auto layer : layers)
+    {
+        layer->forceUpdateLayer();
+    }
+
+    if (config->viewerType == VIEW_MAP_EDITOR)
+    {
+        MapEditorPtr me = MapEditor::getInstance();
+        me->forceUpdateLayer();
+    }
+
+    emit sig_reconstructBorder();
+}
 
 void View::keyPressEvent( QKeyEvent *k )
 {
@@ -220,4 +210,209 @@ void View::mouseReleaseEvent(QMouseEvent *event)
     //qDebug() << event->scenePos();
     emit sig_mouseReleased(event->localPos());
     dragging = false;
+}
+
+
+void View::setBackgroundColor(QColor color)
+{
+    QPalette pal = palette();
+    pal.setColor(QPalette::Window, color);
+    //setAutoFillBackground(true);
+    setPalette(pal);
+}
+
+QColor View::getBackgroundColor()
+{
+    QPalette pal = palette();
+    QColor c = pal.color(QPalette::Window);
+    return c;
+}
+
+void View::drawForeground(QPainter *painter, const QRectF & r)
+{
+    QRectF rect = r;    // rect is modifiable;
+
+    Configuration * config = Configuration::getInstance();
+    if (!config->sceneGrid)
+    {
+        return;
+    }
+
+    gridPen.setWidth(config->gridWidth);
+    painter->setPen(gridPen);
+
+    // draw a grid
+    switch (config->gridModel)
+    {
+    case GRID_SCREEN:
+        if (config->gridCenter)
+            drawGridSceneUnitsCentered(painter,rect);
+        else
+            drawGridSceneUnits(painter,rect);
+        break;
+    case GRID_MODEL:
+        if (config->gridCenter)
+            drawGridModelUnitsCentered(painter,rect);
+        else
+            drawGridModelUnits(painter,rect);
+        break;
+    }
+
+    // draw X and center
+    painter->drawLine(rect.topLeft(),   rect.bottomRight());
+    painter->drawLine(rect.bottomLeft(),rect.topRight());
+    QPointF center = rect.center();
+    painter->drawEllipse(center,10,10);
+}
+
+void View::drawGridModelUnits(QPainter *painter, const QRectF &r)
+{
+    // this centers on scene
+    QTransform T;
+    qreal step   = config->gridStepModel;
+    if (layers.size())
+    {
+        LayerPtr l = layers.first();
+        T = l->getLayerTransform();
+    }
+    GeoGraphics gg(painter,T);
+
+    // horizontal
+    for (qreal i = (-20.0 * step); i < (20 * step); i += step)
+    {
+        gg.drawLine(-r.width()/2, i, r.width()/2, i,gridPen);
+    }
+
+    // vertical
+    for (qreal j = (-20.0 * step); j < (20 * step); j += step)
+    {
+        gg.drawLine(j, -r.height()/2, j, r.height()/2,gridPen);
+    }
+}
+
+void View::drawGridModelUnitsCentered(QPainter *painter, QRectF &r)
+{
+    // this centers on layer center
+    QTransform T;
+    QPointF center;
+    if (layers.size())
+    {
+        LayerPtr l  = layers.first();
+        T           = l->getLayerTransform();
+        center      = l->getCenter();
+    }
+    qreal step      = config->gridStepModel;
+    qreal scale     = Transform::scalex(T);
+    step *= scale;
+    r.moveCenter(center);
+
+    painter->setPen(gridPen);
+
+    // horizontal
+    for (qreal y = center.y() + (-10.0 * step); y < (center.y() + (10 * step)); y += step)
+    {
+        painter->drawLine( QPointF(r.topLeft().x(), y),  QPointF(r.topRight().x(), y));
+    }
+
+    // vertical
+    for (qreal x = center.x() + (-10.0 * step); x <  (center.x() +(10 * step)); x += step)
+    {
+        painter->drawLine(QPointF(x, r.topLeft().y()),QPointF(x,r.bottomLeft().y()));
+    }
+}
+
+void View::drawGridSceneUnits(QPainter *painter, const QRectF &r)
+{
+    QPointF center = r.center();
+    qreal step = config->gridStepScreen;
+    if (step < 10.0)
+    {
+        qDebug() << "grid step too small" << step;
+        return;
+    }
+
+    // draw horizontal lines
+    qreal y = center.y() - ((r.height()/2) * step);
+    while (y < r.height())
+    {
+        painter->drawLine(QPointF(r.topLeft().x(),y),QPointF(r.topRight().x(),y));
+        y += step;
+    }
+
+    // draw vertical lines
+    qreal x = center.x() - ((r.width()/2) * step);
+    while (x < r.width())
+    {
+        painter->drawLine(QPointF(x,r.topLeft().y()),QPointF(x,r.bottomLeft().y()));
+        x += step;
+    }
+}
+
+void View::drawGridSceneUnitsCentered(QPainter *painter, QRectF & r)
+{
+    QPointF center;
+    if (layers.size())
+    {
+        LayerPtr l = layers.first();
+        center = l->getCenter();
+    }
+    r.moveCenter(center);
+
+    qreal step = config->gridStepScreen;
+    if (step < 10.0)
+    {
+        qDebug() << "grid step too small" << step;
+        return;
+    }
+
+    // draw horizontal lines
+    qreal y = center.y() - ((r.height()/2) * step);
+    while (y < r.height())
+    {
+        painter->drawLine(QPointF(r.topLeft().x(),y),QPointF(r.topRight().x(),y));
+        y += step;
+    }
+
+    // draw vertical lines
+    qreal x = center.x() - ((r.width()/2) * step);
+    while (x < r.width())
+    {
+        painter->drawLine(QPointF(x,r.topLeft().y()),QPointF(x,r.bottomLeft().y()));
+        x += step;
+    }
+}
+
+void View::clearLayout()
+{
+    clearLayout(layout(),true);
+}
+
+void View::clearLayout(QLayout* layout, bool deleteWidgets)
+{
+    while (QLayoutItem* item = layout->takeAt(0))
+    {
+        if (deleteWidgets)
+        {
+            if (QWidget* widget = item->widget())
+                widget->deleteLater();
+        }
+        if (QLayout* childLayout = item->layout())
+            clearLayout(childLayout, deleteWidgets);
+        delete item;
+    }
+}
+
+void View::dump(bool force)
+{
+    qDebug() << "View Layers:" << numLayers();
+#if 0
+    for (auto layer : layers)
+    {
+        qDebug() << "Layer:" << layer->getName() << Utils::addr(layer);
+    }
+#endif
+    if (force)
+    {
+        qDebug() << "Tilings:" << Tiling::refs << "Layers:" << Layer::refs  << "Styles:" << Style::refs << "Maps:" << Map::refs << "Protos:" << Prototype::refs << "DELs:" << DesignElement::refs  << "PDELs:" << PlacedDesignElement::refs2 << "Figures:" << Figure::refs << "Features:" << Feature::refs << "Edges:" << Edge::refs << "Vertices:"  << Vertex::refs;
+    }
 }

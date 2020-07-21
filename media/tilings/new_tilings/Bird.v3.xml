@@ -1,0 +1,86 @@
+<?xml version="1.0"?>
+<Tiling version="2">
+	<Name>Bird.v3</Name>
+	<Fill>-4,4,-4,4</Fill>
+	<T1>3.464101615137746,-6.000000000000004</T1>
+	<T2>6.928203230275508,-8.215650382226158e-15</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>1000</height>
+		<left__delta>-89</left__delta>
+		<top__delta>41</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>-0.01333333333333186,-0.01333333333333542</center>
+	</ViewSettings>
+	<Feature type="edgepoly" rotation="0">
+		<Curve convex="t">
+			<Point id="1">-1.013333333333331,3.16</Point>
+			<Point id="2">-4.477434948471085,3.16</Point>
+			<Center>-2.745384140902208,-0.3041016151377538</Center>
+		</Curve>
+		<Curve convex="f">
+			<Point reference="2" />
+			<Point id="3">-2.74538414090221,0.160000000000001</Point>
+			<Center>-0.6114095446866488,3.392050807568876</Center>
+		</Curve>
+		<Curve convex="t">
+			<Point reference="3" />
+			<Point id="4">-1.013333333333335,-2.839999999999999</Point>
+			<Center>1.120641262882228,0.3920508075688756</Center>
+		</Curve>
+		<Curve convex="f">
+			<Point reference="4" />
+			<Point id="5">0.7187174742355442,0.1599999999999997</Point>
+			<Center>-3.147307929548894,0.3920508075688796</Center>
+		</Curve>
+		<Curve convex="t">
+			<Point reference="5" />
+			<Point id="6">2.450768281804423,3.159999999999998</Point>
+			<Center>-1.415257121980015,3.392050807568877</Center>
+		</Curve>
+		<Curve convex="f">
+			<Point reference="6" />
+			<Point reference="1" />
+			<Center>0.7187174742355438,-0.3041016151377547</Center>
+		</Curve>
+		<BkgdColors>#a35807</BkgdColors>
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Feature type="edgepoly" rotation="0">
+		<Curve convex="t">
+			<Point id="7">-1.013333333333331,3.16</Point>
+			<Point id="8">-4.477434948471085,3.16</Point>
+			<Center>-2.745384140902208,-0.3041016151377538</Center>
+		</Curve>
+		<Curve convex="f">
+			<Point reference="8" />
+			<Point id="9">-2.74538414090221,0.160000000000001</Point>
+			<Center>-0.6114095446866488,3.392050807568876</Center>
+		</Curve>
+		<Curve convex="t">
+			<Point reference="9" />
+			<Point id="10">-1.013333333333335,-2.839999999999999</Point>
+			<Center>1.120641262882228,0.3920508075688756</Center>
+		</Curve>
+		<Curve convex="f">
+			<Point reference="10" />
+			<Point id="11">0.7187174742355442,0.1599999999999997</Point>
+			<Center>-3.147307929548894,0.3920508075688796</Center>
+		</Curve>
+		<Curve convex="t">
+			<Point reference="11" />
+			<Point id="12">2.450768281804423,3.159999999999998</Point>
+			<Center>-1.415257121980015,3.392050807568877</Center>
+		</Curve>
+		<Curve convex="f">
+			<Point reference="12" />
+			<Point reference="7" />
+			<Center>0.7187174742355438,-0.3041016151377547</Center>
+		</Curve>
+		<BkgdColors>#c2bcb0</BkgdColors>
+		<Placement>0.5000000000000007,-0.8660254037844383,3.962024416861036,0.8660254037844383,0.5000000000000007,-0.5424275908317735</Placement>
+	</Feature>
+	<Desc>Nasrid bird</Desc>
+	<Auth>David Casper</Auth>
+</Tiling>

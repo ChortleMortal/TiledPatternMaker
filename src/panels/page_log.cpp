@@ -39,6 +39,8 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel, "Log")
     QCheckBox   * cbLogToDisk           = new QCheckBox("Log To Disk");
     QCheckBox   * cbLogToPanel          = new QCheckBox("Log To Panel");
     QCheckBox   * cbLogNumberLines      = new QCheckBox("Number Lines");
+    QCheckBox   * cbLogElapsedTime      = new QCheckBox("Elapsed Time");
+    QCheckBox   * cbLogWarningsOnly     = new QCheckBox("Warnings Only");
 
     hbox->addWidget(btnCopyLog);
     hbox->addSpacing(43);
@@ -46,7 +48,9 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel, "Log")
     hbox->addWidget(cbLogToStderr);
     hbox->addWidget(cbLogToPanel);
     hbox->addStretch();
+    hbox->addWidget(cbLogWarningsOnly);
     hbox->addWidget(cbLogNumberLines);
+    hbox->addWidget(cbLogElapsedTime);
     hbox->addStretch();
 
     vbox->addLayout(hbox);
@@ -55,11 +59,15 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel, "Log")
     cbLogToDisk->setChecked(config->logToDisk);
     cbLogToPanel->setChecked(config->logToPanel);
     cbLogNumberLines->setChecked(config->logNumberLines);
+    cbLogWarningsOnly->setChecked(config->logWarningsOnly);
+    cbLogElapsedTime->setChecked(config->logElapsedTime);
 
     connect(cbLogToStderr,    &QCheckBox::clicked,    this,   &page_log::slot_logToStdErr);
     connect(cbLogToDisk,      &QCheckBox::clicked,    this,   &page_log::slot_logToDisk);
     connect(cbLogToPanel,     &QCheckBox::clicked,    this,   &page_log::slot_logToPanel);
+    connect(cbLogWarningsOnly,&QCheckBox::clicked,    this,   &page_log::slot_warningsOnly);
     connect(cbLogNumberLines, &QCheckBox::clicked,    this,   &page_log::slot_numberLines);
+    connect(cbLogElapsedTime, &QCheckBox::clicked,    this,   &page_log::slot_elapsedTime);
     connect(btnCopyLog,       &QPushButton::clicked,  this,   &page_log::slot_copyLog);
 
     ed = qtAppLog::getTextEditor();     // linkage to qtAppLog
@@ -169,11 +177,25 @@ void page_log::slot_logToPanel(bool enable)
     }
 }
 
+void page_log::slot_warningsOnly(bool enable)
+{
+    qtAppLog * log = qtAppLog::getInstance();
+    log->logWarningsOnly(enable);
+    config->logWarningsOnly = enable;
+}
+
 void page_log::slot_numberLines(bool enable)
 {
     qtAppLog * log = qtAppLog::getInstance();
     log->logLines(enable);
     config->logNumberLines = enable;
+}
+
+void page_log::slot_elapsedTime(bool enable)
+{
+    qtAppLog * log = qtAppLog::getInstance();
+    log->logElapsed(enable);
+    config->logElapsedTime = enable;
 }
 
 AQScrollBar::AQScrollBar(page_log * plog)
