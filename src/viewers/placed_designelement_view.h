@@ -40,9 +40,9 @@ class PlacedDesignElementView : public Layer
 public:
     PlacedDesignElementView(PlacedDesignElementPtr pde);
 
-    virtual void    paint(QPainter *painter);
+    virtual void paint(QPainter *painter);
 
-    static void     drawPlacedDesignElement(GeoGraphics * gg, PlacedDesignElementPtr pde, QPen linePen, QBrush interiorBrush, QPen borderPen);
+    void  drawPlacedDesignElement(GeoGraphics * gg, PlacedDesignElementPtr pde, QPen linePen, QBrush interiorBrush, QPen borderPen);
 
     PlacedDesignElementPtr get() { return pde; }
 

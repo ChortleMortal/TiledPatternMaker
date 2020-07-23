@@ -24,6 +24,7 @@
 
 #include "page_design_elements.h"
 #include "base/tiledpatternmaker.h"
+#include "base/utilities.h"
 #include "designs/patterns.h"
 #include "style/style.h"
 #include "viewers/placed_designelement_view.h"
@@ -122,7 +123,7 @@ void  page_design_elements::onEnter()
 void page_design_elements::slot_rowSelected(int row, int col)
 {
     Q_UNUSED(col)
-    QTableWidgetItem * item = delTable->item(row,0);
+    QTableWidgetItem * item = delTable->item(row,DEL_COL_FEATURE);
     QString addrString = item->text();
     qint64 addr = addrString.toLongLong(nullptr,16);
     config->selectedDesignElementFeature = reinterpret_cast<Feature*>(addr);

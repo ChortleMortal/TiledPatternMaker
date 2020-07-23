@@ -350,7 +350,7 @@ void WorkspaceViewer::viewPrototype()
         qWarning() << "viewProto: no  selected prototype";
     }
 
-    currentCanvasSettings.setBackgroundColor(TileBlack);
+    currentCanvasSettings.setBackgroundColor(Qt::white);
     currentCanvasSettings.setCanvasSize(getViewSize(VIEW_PROTO));
 }
 
@@ -393,7 +393,7 @@ void WorkspaceViewer::viewProtoFeature()
         qWarning() << "viewProtoFeature: no selected prototype";
     }
 
-    currentCanvasSettings.setBackgroundColor(TileBlack);
+    currentCanvasSettings.setBackgroundColor(Qt::white);
     currentCanvasSettings.setCanvasSize(getViewSize(VIEW_PROTO_FEATURE));
 }
 

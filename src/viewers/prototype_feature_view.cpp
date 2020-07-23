@@ -25,31 +25,30 @@
 #include "base/configuration.h"
 #include "viewers/workspace_viewer.h"
 #include "viewers/prototype_feature_view.h"
-#include "viewers/placed_designelement_view.h"
+#include "viewers/viewerbase.h"
+
 #include "geometry/point.h"
 
 ProtoFeatureView::ProtoFeatureView(PrototypePtr proto) : Layer("ProtoFeatureView")
 {
-    Q_ASSERT(proto);
     qDebug() << "ProtoFeatureView::constructor";
+    Q_ASSERT(proto);
 
     feature_interior = QColor(255, 217, 217, 127);
     feature_border   = QColor(140, 140, 140);
 
-    pp = proto;
-    //proto->walk();
+    this->proto = proto;
 
     TilingPtr tiling = proto->getTiling();
     Q_ASSERT(tiling);
-    //tiling->dump();
 
     t1 = tiling->getTrans1();
     t2 = tiling->getTrans2();
 
-    for(auto placedFeaturePtr : tiling->getPlacedFeatures())
+    for(auto placedFeature : tiling->getPlacedFeatures())
     {
-        FeaturePtr feature  = placedFeaturePtr->getFeature();
-        QTransform T        = placedFeaturePtr->getTransform();
+        FeaturePtr feature  = placedFeature->getFeature();
+        QTransform T        = placedFeature->getTransform();
         FigurePtr fig       = proto->getFigure(feature );
 
         PlacedDesignElement rpf(feature,fig,T);
@@ -82,8 +81,7 @@ void ProtoFeatureView::paint(QPainter *painter)
 
 void ProtoFeatureView::draw( GeoGraphics * gg )
 {
-    //gg->setColor(QColor(20,150,210));
-    fill(gg, pp->getTiling()->getFillData());
+    fill(gg, proto->getTiling()->getFillData());
 }
 
 void ProtoFeatureView::receive(GeoGraphics *gg, int h, int v )
@@ -94,16 +92,14 @@ void ProtoFeatureView::receive(GeoGraphics *gg, int h, int v )
         QTransform T0 = placedDesignElement.getTransform();
         QTransform T1 = QTransform::fromTranslate(pt.x(),pt.y());
         QTransform T2 = T0 * T1;
-        //qDebug() << "T" << Transform::toInfoString(T);
 
-        PlacedDesignElementPtr pdep = make_shared<PlacedDesignElement>(placedDesignElement.getFeature(),
-                                                                       placedDesignElement.getFigure(),
-                                                                       T2);
-        PlacedDesignElementView::drawPlacedDesignElement(gg,
-                                                         pdep,
-                                                         QPen(Qt::green,3),
-                                                         QBrush(feature_interior),
-                                                         QPen(feature_border,3));
+        gg->pushAndCompose(T2);
+
+        ViewerBase::drawFeature(gg,placedDesignElement.getFeature(),QBrush(feature_interior),QPen(feature_border,3));
+
+        ViewerBase::drawFigure(gg,placedDesignElement.getFigure(),QPen(Qt::green,3));
+
+        gg->pop();
     }
 }
 

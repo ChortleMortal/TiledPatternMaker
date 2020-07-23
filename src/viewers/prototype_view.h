@@ -46,23 +46,22 @@
 #include "tapp/prototype.h"
 #include "base/layer.h"
 
-
-class ProtoView : public FillRegion, public Layer
+class ProtoView : public Layer
 {
 public:
     ProtoView(PrototypePtr proto);
-    PrototypePtr getPrototype() {return pp; }
+    PrototypePtr getPrototype() { return proto; }
 
     virtual void   paint(QPainter *painter) override;
-    void           receive(GeoGraphics * gg,int h, int v ) override;
-    virtual void   draw( GeoGraphics * gg );
+    virtual void   draw(GeoGraphics * gg);
 
 protected:
     QPointF             t1;
     QPointF             t2;
 
-    EdgePoly            edges;
+    EdgePoly            edges;  // this is not really an EdgePoly it is a vector of Edges
+    QVector<PlacedDesignElement> rpfs;
 
-    PrototypePtr        pp;
+    PrototypePtr        proto;
 };
 #endif

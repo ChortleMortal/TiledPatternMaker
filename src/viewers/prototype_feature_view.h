@@ -35,7 +35,7 @@ class ProtoFeatureView : public FillRegion, public Layer
 public:
     ProtoFeatureView(PrototypePtr proto);
 
-    PrototypePtr getPrototype() {return pp; }
+    PrototypePtr getPrototype() {return proto; }
 
     virtual void   paint(QPainter *painter) override;
     void           receive(GeoGraphics * gg,int h, int v ) override;
@@ -45,7 +45,7 @@ protected:
     QPointF             t1;
     QPointF             t2;
 
-    PrototypePtr        pp;
+    PrototypePtr        proto;
     QVector<PlacedDesignElement> rpfs;
     QColor              feature_interior;
     QColor              feature_border;

@@ -150,6 +150,7 @@ SOURCES += \
     viewers/shape_view.cpp \
     viewers/tiling_maker_view.cpp \
     viewers/tiling_view.cpp \
+    viewers/viewerbase.cpp \
     viewers/workspace_viewer.cpp
 
 HEADERS += \
@@ -294,6 +295,7 @@ HEADERS += \
     viewers/shape_view.h \
     viewers/tiling_maker_view.h \
     viewers/tiling_view.h \
+    viewers/viewerbase.h \
     viewers/workspace_viewer.h
 
 FORMS +=

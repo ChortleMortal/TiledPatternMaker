@@ -23,11 +23,12 @@
  */
 
 #include "makers/figure_maker/feature_button.h"
-#include "viewers/geo_graphics.h"
-#include "panels/panel_page.h"
-#include "viewers/placed_designelement_view.h"
 #include "base/utilities.h"
 #include "geometry/transform.h"
+#include "viewers/geo_graphics.h"
+#include "viewers/viewerbase.h"
+#include "viewers/placed_designelement_view.h"
+#include "panels/panel_page.h"
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -317,19 +318,18 @@ void FeatureButton::paintEvent(QPaintEvent * event)
 
     //qDebug().noquote() << "paint btn:" << index << transform.toString();
     GeoGraphics gg(&painter, transform);
-    QTransform t;  // unity
-    PlacedDesignElementPtr pdep = make_shared<PlacedDesignElement>(designElement,t);
-    PlacedDesignElementView::drawPlacedDesignElement(&gg, pdep, QPen(Qt::black,3), QBrush(feature_interior), QPen(feature_border,3));
+
+    ViewerBase::drawFeature(&gg,designElement->getFeature(),QBrush(feature_interior),QPen(feature_border,3));
+
+    ViewerBase::drawFigure(&gg,designElement->getFigure(),QPen(Qt::black,3));
 
 #if 1
     QString tempLabel;
-    tempLabel = "del=" + Utils::addr(pdep.get());
+    tempLabel = "feature=" + Utils::addr(designElement->getFeature().get());
     painter.drawText(5,50,tempLabel);
-    tempLabel = "fig=" + Utils::addr(pdep->getFigure().get());
+    tempLabel = "fig=" + Utils::addr(designElement->getFigure().get());
     painter.drawText(5,20,tempLabel);
 #endif
 
     QFrame::paintEvent(event);
 }
-
-

@@ -33,6 +33,7 @@
 #include "base/workspace.h"
 #include "base/configuration.h"
 #include "viewers/workspace_viewer.h"
+#include "viewers/viewerbase.h"
 
 
 PlacedDesignElementView::PlacedDesignElementView(PlacedDesignElementPtr pde) : Layer("PlacedDesignElementView")
@@ -83,41 +84,32 @@ void PlacedDesignElementView::drawPlacedDesignElement(GeoGraphics * gg, PlacedDe
     QTransform T = pde->getTransform();
     gg->pushAndCompose(T);
 
-    // Draw the feature.
     FeaturePtr fp = pde->getFeature();
-    QPolygonF pts = fp->getPoints();
-    gg->fillPolygon(pts, interiorBrush.color());
-    gg->drawPolygon(pts,linePen.color(), linePen.width());
-
     QPen pen;
     if (fp.get() == config->selectedDesignElementFeature)
         pen = QPen(Qt::red,3);
     else
         pen = borderPen;
-    EdgePoly ep = fp->getEdgePoly();
-    ep.draw(gg,pen);        // outlines the feature
+
+    ViewerBase::drawFeature(gg,fp,interiorBrush,pen);
 
     // Draw the figure
-    pen = linePen;
     FigurePtr fig = pde->getFigure();
+
     if (!fig)
     {
         qWarning() << "DesignElementView::drawDesignElement - figure is NULL";
         gg->pop();
         return;
     }
-
-    MapPtr map = fig->getFigureMap();
-    for(auto edge :  map->getEdges())
+    if (fig->getFigType() == FIG_TYPE_EXPLICIT_FEATURE)
     {
-        if (edge->getType() == EDGETYPE_LINE)
-        {
-            gg->drawLine(edge->getLine(),pen);
-        }
-        else if (edge->getType() == EDGETYPE_CURVE)
-        {
-            gg->drawChord(edge->getV1()->getPosition(),edge->getV2()->getPosition(),edge->getArcCenter(),pen,QBrush(),edge->isConvex());
-        }
+        // figure is same as feature
+        gg->pop();
+        return;
     }
+
+    ViewerBase::drawFigure(gg,fig,linePen);
+
     gg->pop();
 }

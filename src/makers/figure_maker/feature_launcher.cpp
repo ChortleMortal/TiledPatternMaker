@@ -149,7 +149,7 @@ void FeatureLauncher::populate(QVector<DesignElementPtr> & dels)
         FeatureBtnPtr fb = make_shared<FeatureButton>(del,idx);
         buttons.push_back(fb);
         fb->setSize( QSize( 130, 130 ) );
-        fb->installEventFilter(this);
+        fb->QFrame::installEventFilter(this);
 
         int row = 0;
         int col = 0;

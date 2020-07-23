@@ -462,6 +462,11 @@ MapPtr Map::recreate()
     for(auto edge : edges)
     {
         EdgePtr ne = make_shared<Edge>(edge->getV1()->copy, edge->getV2()->copy);
+        ne->setSwapState(edge->getSwapState());
+        if (edge->getType() == EDGETYPE_CURVE)
+        {
+            ne->setArcCenter(edge->getArcCenter(),edge->isConvex());
+        }
 
         ret->edges.push_back(ne);
 

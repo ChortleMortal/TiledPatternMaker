@@ -38,54 +38,37 @@
 // This class just turns the translational unit into a collection of line
 // segments and then draws them repeatedly to fill the window.
 
-#include "base/configuration.h"
 #include "viewers/workspace_viewer.h"
 #include "viewers/prototype_view.h"
-#include "geometry/point.h"
+#include "viewers/viewerbase.h"
 
 ProtoView::ProtoView(PrototypePtr proto) : Layer("ProtoView")
 {
     qDebug() << "ProtoView::constructor";
     Q_ASSERT(proto);
 
-    pp = proto;
-    proto->walk();
+    this->proto = proto;
+
+    MapPtr map = proto->getProtoMap();
+
+    for(auto edge : map->getEdges())
+    {
+        edges.push_back(edge);
+    }
 
     TilingPtr tiling = proto->getTiling();
     Q_ASSERT(tiling);
-    //tiling->dump();
 
-    t1 = tiling->getTrans1();
-    t2 = tiling->getTrans2();
-
-    edges.clear();
-    for(auto i = tiling->getPlacedFeatures().begin(); i != tiling->getPlacedFeatures().end(); i++)
+    for(auto placedFeature : tiling->getPlacedFeatures())
     {
-        PlacedFeaturePtr pf = *i;
-        FeaturePtr feature  = pf->getFeature();
-        QTransform T        = pf->getTransform();
-        //qDebug() << "proto T" << Transform::toInfoString(T);
+        FeaturePtr feature  = placedFeature->getFeature();
+        QTransform T        = placedFeature->getTransform();
         FigurePtr fig       = proto->getFigure(feature );
-        if (!fig)
-        {
-            qWarning("Proto feature does not yet have a figure");
-            continue;
-        }
-        MapPtr map = fig->getFigureMap();
-        if (map->isEmpty())
-        {
-            qWarning() << "ProtoView::constructor - empty map";
-            continue;
-        }
-        EdgePoly ep;
-        for(auto edge : map->getEdges())
-        {
-            ep.push_back(edge);
-        }
-        EdgePoly ep2 = ep.map(T);
-        edges.append(ep2);
+
+        PlacedDesignElement rpf(feature,fig,T);
+        rpfs.push_back(rpf);
     }
-    //qDebug() << "num lines = " << lines.size();
+
     forceRedraw();
 }
 
@@ -93,14 +76,14 @@ void ProtoView::paint(QPainter *painter)
 {
     painter->setRenderHint(QPainter::Antialiasing ,true);
     painter->setRenderHint(QPainter::SmoothPixmapTransform,true);
-    layerPen = QPen(Qt::black,3);
 
     QTransform tr = getLayerTransform();
     qDebug() << "PrototypeView::paint"  << Transform::toInfoString(tr);
     GeoGraphics gg(painter,tr);
+
     draw(&gg);
 
-    if (Layer::config->showCenter)
+    if (config->showCenter)
     {
         QPointF pt = getCenter();
         qDebug() << "style layer center=" << pt;
@@ -112,24 +95,18 @@ void ProtoView::paint(QPainter *painter)
 
 void ProtoView::draw( GeoGraphics * gg )
 {
-    //gg->setColor(QColor(20,150,210));
-    fill(gg, pp->getTiling()->getFillData());
-}
-
-void ProtoView::receive(GeoGraphics *gg, int h, int v )
-{
-    QPointF t3  = (t1 * static_cast<qreal>(h)) + (t2 * static_cast<qreal>(v)) ;
-    QTransform T  = QTransform::fromTranslate(t3.x(), t3.y()) ;
-    //qDebug() << "receive T" << Transform::toInfoString(T);
-
-    if (h==0 && v==0)
-        layerPen.setColor(Qt::yellow);
-    else
-        layerPen.setColor(QColor(20,150,210));
-
-    gg->pushAndCompose(T);
-
+    layerPen = QPen(QColor(20,150,210),3);
     edges.draw(gg, layerPen);
 
-    gg->pop();
+    layerPen.setColor(Qt::yellow);
+    for (auto placedDesignElement : rpfs)
+    {
+        QTransform T0 = placedDesignElement.getTransform();
+
+        gg->pushAndCompose(T0);
+
+        ViewerBase::drawFigure(gg,placedDesignElement.getFigure(),layerPen);
+
+        gg->pop();
+    }
 }
