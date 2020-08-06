@@ -234,7 +234,7 @@ MapPtr Prototype::createProtoMap(bool showSplash)
     const bool debug = true;
 
     // Use FillRegion to get a list of translations for this tiling.
-    fill(nullptr, tiling->getFillData());
+    fill(nullptr);
     qDebug() << "locations=" << locations.size();
 
     walk();

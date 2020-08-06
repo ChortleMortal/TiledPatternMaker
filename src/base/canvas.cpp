@@ -41,6 +41,20 @@
 #define ALT_MODIFIER Qt::AltModifier
 #endif
 
+const QString Canvas::sCanvasMode[]  = {
+    E2STR(KBD_MODE_XFORM_VIEW),
+    E2STR(KBD_MODE_XFORM_BKGD),
+    E2STR(KBD_MODE_XFORM_MODEL),
+    E2STR(KBD_MODE_XFORM_OBJECT),
+    E2STR(KBD_MODE_LAYER),
+    E2STR(KBD_MODE_ZLEVEL),
+    E2STR(KBD_MODE_STEP),
+    E2STR(KBD_MODE_SEPARATION),
+    E2STR(KBD_MODE_ORIGIN),
+    E2STR(KBD_MODE_OFFSET),
+    E2STR(KBD_MODE_CENTER)
+};
+
 Canvas * Canvas::mpThis = nullptr;
 
 Canvas * Canvas::getInstance()
@@ -83,8 +97,9 @@ Canvas::~Canvas()
 {
 }
 
-void Canvas::init()
+void Canvas::init(TiledPatternMaker * tpm)
 {
+    this->tpm = tpm;
     workspace = Workspace::getInstance();
     viewer    = WorkspaceViewer::getInstance();
     view      = View::getInstance();
@@ -94,17 +109,6 @@ void Canvas::init()
     viewer->setCurrentCanvasSize(size);
 }
 
-
-
-void Canvas::drainTheSwamp()
-{
-    view->dump(true);
-    view->clearView();
-    viewer->clear();
-    workspace->slot_clearWorkspace();
-    emit sig_unload();
-    view->dump(true);
-}
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -438,13 +442,13 @@ void Canvas::designMoveX(int delta)
 void Canvas::setKbdMode(eKbdMode mode)
 {
     config->kbdMode = mode;
-    qDebug().noquote() << Configuration::sCanvasMode[mode];
+    qDebug().noquote() << sCanvasMode[mode];
     emit sig_kbdMode(mode);
 }
 
 QString Canvas::getKbdModeStr()
 {
-    return Configuration::sCanvasMode[config->kbdMode];
+    return sCanvasMode[config->kbdMode];
 }
 
 bool Canvas::procKeyEvent(QKeyEvent *k)
@@ -503,7 +507,7 @@ bool Canvas::ProcKey(QKeyEvent *k, bool isALT)
     case 'D':  duplicate(); break;
     case 'E':  emit sig_viewWS(); break;    // just for debug
     case 'F':  config->debugReplicate = !config->debugReplicate; emit sig_figure_changed(); break;
-    case 'G':  config->sceneGrid = !config->sceneGrid; view->update(); break;
+    case 'G':  config->showGrid = !config->showGrid; view->update(); break;
     case 'H':  config->hideCircles = !config->hideCircles; view->update(); break;
     case 'I':  designLayerShow(); break;  // I=in
     case 'K':  config->debugMapEnable = !config->debugMapEnable; emit sig_figure_changed(); emit sig_viewWS(); break;
@@ -541,7 +545,7 @@ bool Canvas::ProcKey(QKeyEvent *k, bool isALT)
     case Qt::Key_F2: setKbdMode(KBD_MODE_XFORM_VIEW); break;
     case Qt::Key_F3: break;
     case Qt::Key_F4: view->dump(true); break;
-    case Qt::Key_F5: drainTheSwamp(); break;
+    case Qt::Key_F5: tpm->drainTheSwamp(); break;
     case Qt::Key_Space: if (Cycler::getInstance()->getMode() != CYCLE_NONE) emit sig_cyclerKey(key); break;
     case '0':
     case '1':
@@ -834,12 +838,8 @@ void Canvas::saveSvg()
         return;
     }
 
-    StylePtr sp;
     MosaicPtr mosaic = workspace->getMosaic();
-    if (mosaic)
-    {
-        sp = mosaic->getFirstStyle();
-    }
+    StylePtr sp = mosaic->getFirstStyle();
     if (!sp)
     {
         QMessageBox box;

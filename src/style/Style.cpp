@@ -39,7 +39,6 @@ Style::Style(PrototypePtr proto, PolyPtr bounds ) : Layer("Style")
     Q_ASSERT(bounds != nullptr);
     prototype = proto;
     boundary  = bounds;
-    setupStyleMap();
     debugMap = make_shared<Map>("Style debug map");
     paintSVG = false;
     refs++;
@@ -50,9 +49,8 @@ Style::Style(const Style &other) : Layer(other)
     prototype = other.prototype;
     boundary  = other.boundary;
 
-    if (other.styleMap != nullptr)
+    if (other.debugMap)
     {
-        styleMap = other.styleMap;
         debugMap = other.debugMap;
     }
     paintSVG = false;
@@ -74,7 +72,6 @@ Style::~Style()
 void Style::setPrototype(PrototypePtr pp)
 {
     prototype = pp;
-    setupStyleMap();
 }
 
 TilingPtr Style::getTiling()
@@ -87,13 +84,15 @@ TilingPtr Style::getTiling()
     return tp;
 }
 
-MapPtr Style::setupStyleMap()
+MapPtr Style::getMap()
 {
-    Q_ASSERT(prototype);
-    styleMap = prototype->getProtoMap();
-    qDebug() << "Style::setupStyleMap proto=" << Utils::addr(prototype.get()) << "map="  << Utils::addr(styleMap.get());
+    if (!styleMap)
+    {
+        styleMap = prototype->getProtoMap();
+    }
     return styleMap;
 }
+
 
 // uses existing tmpIndices
 void Style::annotateEdges(MapPtr map)
@@ -122,11 +121,8 @@ QString Style::getInfo() const
     if (prototype)
     {
         astring += prototype->getInfo();
-        astring += " : ";
-    }
-    if (styleMap)
-    {
-        astring += styleMap->getInfo();
+        //astring += " : ";
+        //astring += prototype->getProtoMap()->getInfo();
     }
     return astring;
 }

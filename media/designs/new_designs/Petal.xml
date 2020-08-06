@@ -1,19 +1,20 @@
 <?xml version="1.0"?>
-<vector id="1" version="5">
+<vector id="1" version="6">
 	<design>
 		<size>
-			<width>1800</width>
-			<height>1280</height>
+			<width>1838</width>
+			<height>1147</height>
 		</size>
 		<background>
-			<color>#ff000000</color>
+			<color>#ffffffff</color>
 		</background>
+		<Fill>-4,4,-4,6</Fill>
 	</design>
-	<style.TileColors id="2" serialization="custom">
+	<style.Thick id="2" serialization="custom">
 		<toolkit.GeoLayer>
-			<left__delta>474</left__delta>
-			<top__delta>205</top__delta>
-			<width__delta>0.6099999999999997</width__delta>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>-4.013333333333333,-1.346666666666668</center>
 		</toolkit.GeoLayer>
@@ -40,7 +41,7 @@
 			</boundary>
 			<prototype id="9" serialization="custom">
 				<app.Prototype>
-					<string>petal.v2</string>
+					<string>petal.v3</string>
 					<entry>
 						<tile.Feature id="10">
 							<regular>false</regular>
@@ -48,7 +49,7 @@
 								<Curve convex="f">
 									<Point id="12">-1.216245299353273e-16,3.999999999999998</Point>
 									<Point id="13">-1.732050807568877,1</Point>
-									<Center>-3.866025403784437,4.232050807568877</Center>
+									<Center>2.133974596215559,0.7679491924311224</Center>
 								</Curve>
 								<Curve convex="t">
 									<Point reference="13" />
@@ -63,7 +64,7 @@
 								<Curve convex="f">
 									<Point reference="15" />
 									<Point reference="12" />
-									<Center>3.866025403784437,4.232050807568876</Center>
+									<Center>-2.13397459621556,0.767949192431121</Center>
 								</Curve>
 							</edges>
 						</tile.Feature>
@@ -77,5 +78,42 @@
 				</app.Prototype>
 			</prototype>
 		</style.Style>
-	</style.TileColors>
+		<style.Colored>
+			<color hide="f">#ff382310</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.03</width>
+		</style.Thick>
+	</style.Thick>
+	<style.Filled id="17" serialization="custom">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>-4.013333333333333,-1.346666666666668</center>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<boundary reference="3" />
+			<prototype reference="9" />
+		</style.Style>
+		<ColorBlacks>
+			<color hide="f">#ffc2bcb0</color>
+		</ColorBlacks>
+		<ColorWhites>
+			<color hide="f">#ffa35807</color>
+		</ColorWhites>
+		<ColorGroup>
+			<Group hideSet="f">
+				<color hide="f">#ffa35807</color>
+			</Group>
+			<Group hideSet="f" />
+		</ColorGroup>
+		<style.Filled>
+			<draw__inside>true</draw__inside>
+			<draw__outside>true</draw__outside>
+			<algorithm>0</algorithm>
+		</style.Filled>
+	</style.Filled>
 </vector>

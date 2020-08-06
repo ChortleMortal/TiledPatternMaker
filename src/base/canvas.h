@@ -46,7 +46,7 @@ public:
     static Canvas * getInstance();
     static void     releaseInstance();
 
-    void    init();
+    void    init(TiledPatternMaker * tpm);
 
     void    duplicate();
 
@@ -64,7 +64,6 @@ public:
 signals:
     void sig_viewWS();
     void sig_figure_changed();
-    void sig_unload();
 
     void sig_clearWorkspace();
 
@@ -98,8 +97,6 @@ public slots:
 
     void slot_cycler_finished();
 
-    void drainTheSwamp();   // for debug
-
 private slots:
     void slot_nextStep();   // from timer
 
@@ -132,14 +129,18 @@ private:
     Canvas();
     virtual ~Canvas();
 
-    static Canvas   * mpThis;
-    Configuration   * config;
-    QTimer          * timer;
-    Workspace       * workspace;
-    WorkspaceViewer * viewer;
-    View            * view;
+    static Canvas     * mpThis;
+
+    Configuration     * config;
+    QTimer            * timer;
+    Workspace         * workspace;
+    WorkspaceViewer   * viewer;
+    View              * view;
+    TiledPatternMaker * tpm;
 
     QSvgGenerator   generator;
+
+    static const QString sCanvasMode[KBD_MODE_SIZE];
 
     int maxStep;
     int stepsTaken;

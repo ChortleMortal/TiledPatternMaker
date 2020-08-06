@@ -109,6 +109,9 @@ public:
     QSize &     getCanvasSize()            { return canvasSize; }
     Xform &     getCanvasXform()           { return canvasXform; }
 
+    int         getVersion() { return version; }
+    void        setVersion(int ver) { version = ver; }
+
     static int  refs;
 
 protected:
@@ -131,6 +134,8 @@ private:
 
     QSize       canvasSize;
     Xform       canvasXform;
+
+    int         version;
 };
 
 #endif

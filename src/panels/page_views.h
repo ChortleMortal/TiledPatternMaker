@@ -46,13 +46,12 @@ signals:
     void    sig_mapEdSelection();
 
 public slots:
-    void    slot_selectViewer(int id);
     void    slot_loadedXML(QString name);
+    void    slot_selectViewer(int id);
 
 private slots:
     void    slot_Viewer_pressed(int id, bool enb);
     void    slot_lockViewClicked(bool enb);
-    void    slot_scaleSceneToView(bool enb);
     void    slot_multiSelect(bool enb);
 
 protected:
@@ -76,7 +75,6 @@ private:
     QCheckBox   *cbTilingMakerView;
     QCheckBox   *cbFigMapView;
     QCheckBox   *cbFaceSetView;
-    QCheckBox   *chkScaleToView;
 
     QLabel  *  lab_activeDesigns;
 

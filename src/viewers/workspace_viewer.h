@@ -102,8 +102,8 @@ protected:
    void     viewMapEditor();
    void     viewFaceSet();
 
-   MosaicPtr setCanvasFromDesign();
-   void      setCanvasFromTiling(TilingPtr tiling, LayerPtr layer);
+   bool     setCanvasFromDesign();
+   void     setCanvasFromTiling(TilingPtr tiling, LayerPtr layer);
 
    void     setTitle(TilingPtr tp);
 

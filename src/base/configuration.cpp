@@ -27,20 +27,6 @@
 #include "designs/design.h"
 #include <cstddef>
 
-const QString Configuration::sCanvasMode[]  = {
-    E2STR(KBD_MODE_XFORM_VIEW),
-    E2STR(KBD_MODE_XFORM_BKGD),
-    E2STR(KBD_MODE_XFORM_MODEL),
-    E2STR(KBD_MODE_XFORM_OBJECT),
-    E2STR(KBD_MODE_LAYER),
-    E2STR(KBD_MODE_ZLEVEL),
-    E2STR(KBD_MODE_STEP),
-    E2STR(KBD_MODE_SEPARATION),
-    E2STR(KBD_MODE_ORIGIN),
-    E2STR(KBD_MODE_OFFSET),
-    E2STR(KBD_MODE_CENTER)
-};
-
 Configuration * Configuration::mpThis = nullptr;
 
 Configuration * Configuration::getInstance()
@@ -70,7 +56,6 @@ Configuration::Configuration()
     cycleMode           = static_cast<eCycleMode>(s.value("cycleMode",0).toInt());
     cycleInterval       = s.value("cycleInterval",4).toInt();
     polySides           = s.value("polySides",8).toInt();
-    gridWidth           = s.value("gridWidth",3).toInt();
 
     lastLoadedTileName  = s.value("lastLoadedTileName","").toString();
     lastLoadedXML       = s.value("lastLoadedXML","").toString();
@@ -88,7 +73,7 @@ Configuration::Configuration()
     compareDir1         = s.value("compareDir1","").toString();
     panelName           = s.value("panelName","Control").toString();
 
-    designFilter        = s.value("designFilter","").toString();
+    mosaicFilter        = s.value("designFilter","").toString();
     tileFilter          = s.value("tileFilter","").toString();
     xmlTool             = s.value("xmlTool","").toString();
 
@@ -96,7 +81,7 @@ Configuration::Configuration()
     autoLoadStyles      = s.value("autoLoadStyles",false).toBool();
     autoLoadTiling      = s.value("autoLoadTiling",false).toBool();
     autoLoadDesigns     = s.value("autoLoadDesigns",false).toBool();
-    scaleSceneToView    = s.value("scaleToView",true).toBool();
+    scaleToView         = s.value("scaleToView",true).toBool();
     autoCycle           = s.value("autoCycle",false).toBool();
     stopIfDiff          = s.value("stopIfDiff",true).toBool();
     verifyMaps          = s.value("verifyMaps",false).toBool();
@@ -108,9 +93,8 @@ Configuration::Configuration()
     logNumberLines      = s.value("logNumberLines",true).toBool();
     logWarningsOnly     = s.value("logWarningsOnly",false).toBool();
     logElapsedTime      = s.value("logElapsedTime",false).toBool();
-    wsStatusBox         = s.value("wsStatusBox",false).toBool();
     mapedStatusBox      = s.value("mapedStatusBox",false).toBool();
-    designFilterCheck   = s.value("designFilterCheck",false).toBool();
+    mosaicFilterCheck   = s.value("designFilterCheck",false).toBool();
     tileFilterCheck     = s.value("tileFilterCheck",false).toBool();
     tm_showAllFeatures  = s.value("tm_showAllFeatures",false).toBool();
     tm_hideTable        = s.value("tm_hideTable",true).toBool();
@@ -118,23 +102,27 @@ Configuration::Configuration()
     tm_autofill         = s.value("tm_autofill",false).toBool();
     tm_showOverlaps     = s.value("tm_showOverlaps",true).toBool();
     lockView            = s.value("lockView",false).toBool();
-    screenIsSplit       = s.value("screenIsSplit",false).toBool();
+    splitScreen       = s.value("screenIsSplit",false).toBool();
     compare_transparent = s.value("compare_transparent",false).toBool();
     display_differences = s.value("compare_differences",true).toBool();
     compare_ping_pong   = s.value("compare_ping_pong",false).toBool();
     compare_side_by_side= s.value("compare_side_by_side",false).toBool();
     showCenter          = s.value("showCenter",false).toBool();
-    gridCenter          = s.value("gridCenter",false).toBool();
     hideBackgroundImage = s.value("hideBackgroundImage",false).toBool();
     highlightUnit       = s.value("highlightUnit",false).toBool();
 
     viewerType          = static_cast<eViewType>(s.value("viewerType",VIEW_MOSAIC).toUInt());
     mapEditorMode       = static_cast<eMapEditorMode>(s.value("mapEditorMode",MAP_MODE_FIGURE).toUInt());
     repeatMode          = static_cast<eRepeatType>(s.value("repeat",REPEAT_DEFINED).toUInt());
-    gridModel           = static_cast<eGridModel>(s.value("gridModel2",GRID_SCREEN).toUInt());
 
-    gridStepScreen   = s.value("fgdGridStep",100).toInt();
-    gridStepModel    = s.value("fgdGridStepModel2",1.0).toDouble();
+    showGrid            = s.value("showGrid",false).toBool();
+    gridType            = static_cast<eGridType>(s.value("gridType",GRID_SCREEN).toUInt());
+    gridModelWidth      = s.value("gridModelWidth",3).toInt();
+    gridModelCenter     = s.value("gridModelCenter",false).toBool();
+    gridModelSpacing    = s.value("gridModelSpacing",1.0).toDouble();
+    gridScreenWidth     = s.value("gridScreenWidth",3).toInt();
+    gridScreenSpacing   = s.value("gridScreenSpacing",100).toInt();
+    gridScreenCenter    = s.value("gridModelCenter",false).toBool();
 
     // ensures indices are in range
     if (viewerType > VIEW_MAX)          viewerType      = VIEW_MAX;
@@ -144,7 +132,6 @@ Configuration::Configuration()
 
     // defaults (volatile)
     circleX         = false;
-    sceneGrid       = false;
     hideCircles     = false;
     updatePanel     = true;
     enableDetachedPages = true;
@@ -176,7 +163,6 @@ void Configuration::save()
     QSettings s;
     s.setValue("design2",lastLoadedDesignId);
     s.setValue("cycleMode",cycleMode);
-    s.setValue("gridWidth",gridWidth);
     s.setValue("polySides",polySides);
     s.setValue("cycleInterval",cycleInterval);
     s.setValue("lastLoadedTileName",lastLoadedTileName);
@@ -207,19 +193,15 @@ void Configuration::save()
     s.setValue("logWarningsOnly",logWarningsOnly);
     s.setValue("logNumberLines",logNumberLines);
     s.setValue("logElapsedTime",logElapsedTime);
-    s.setValue("wsStatusBox",wsStatusBox);
     s.setValue("mapedStatusBox",mapedStatusBox);
     s.setValue("autoLoadTiling",autoLoadTiling);
     s.setValue("autoLoadDesigns",autoLoadDesigns);
-    s.setValue("scaleToView",scaleSceneToView);
+    s.setValue("scaleToView",scaleToView);
     s.setValue("autoCycle",autoCycle);
     s.setValue("stopIfDiff",stopIfDiff);
-    s.setValue("gridModel2",gridModel);
-    s.setValue("fgdGridStep",gridStepScreen);
-    s.setValue("fgdGridStepModel2",gridStepModel);
-    s.setValue("designFilterCheck",designFilterCheck);
+    s.setValue("designFilterCheck",mosaicFilterCheck);
     s.setValue("tileFilterCheck",tileFilterCheck);
-    s.setValue("designFilter",designFilter);
+    s.setValue("designFilter",mosaicFilter);
     s.setValue("tileFilter",tileFilter);
     s.setValue("tm_showAllFeatures",tm_showAllFeatures);
     s.setValue("tm_hideTable",tm_hideTable);
@@ -227,17 +209,25 @@ void Configuration::save()
     s.setValue("tm_autofill",tm_autofill);
     s.setValue("tm_showOverlaps",tm_showOverlaps);
     s.setValue("lockView",lockView);
-    s.setValue("screenIsSplit",screenIsSplit);
+    s.setValue("screenIsSplit",splitScreen);
     s.setValue("compare_transparent",compare_transparent);
     s.setValue("compare_differences",display_differences);
     s.setValue("compare_ping_pong",compare_ping_pong);
     s.setValue("compare_side_by_side",compare_side_by_side);
     s.setValue("showCenter",showCenter);
-    s.setValue("gridCenter",gridCenter);
     s.setValue("hideBackgroundImage",hideBackgroundImage);
     s.setValue("highlightUnit",highlightUnit);
     s.setValue("xmlTool",xmlTool);
     s.setValue("firstBirthday7",firstBirthday);
+
+    s.setValue("showGrid",showGrid);
+    s.setValue("gridType",gridType);
+    s.setValue("gridModelWidth",gridModelWidth);
+    s.setValue("gridModelCenter",gridModelCenter);
+    s.setValue("gridModelSpacing",gridModelSpacing);
+    s.setValue("gridScreenWidth",gridScreenWidth);
+    s.setValue("gridScreenCenter",gridScreenCenter);
+    s.setValue("gridScreenSpacing",gridScreenSpacing);
 }
 
 

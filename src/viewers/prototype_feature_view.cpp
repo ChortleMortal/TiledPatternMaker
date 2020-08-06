@@ -81,7 +81,7 @@ void ProtoFeatureView::paint(QPainter *painter)
 
 void ProtoFeatureView::draw( GeoGraphics * gg )
 {
-    fill(gg, proto->getTiling()->getFillData());
+    fill(gg);
 }
 
 void ProtoFeatureView::receive(GeoGraphics *gg, int h, int v )

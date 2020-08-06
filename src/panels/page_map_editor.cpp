@@ -335,9 +335,9 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
 
     connect(workspace, &Workspace::sig_selected_dele_changed, this, &page_map_editor::slot_selected_dele_changed);
 
-    connect(maker,  &TiledPatternMaker::sig_loadedTiling,   this,   &page_map_editor::slot_loadedTiling);
-    connect(maker,  &TiledPatternMaker::sig_loadedXML,      this,   &page_map_editor::slot_loadedXML);
-    connect(canvas, &Canvas::sig_unload,                    this,   &page_map_editor::slot_unload);
+    connect(tpm,  &TiledPatternMaker::sig_loadedTiling,   this,   &page_map_editor::slot_loadedTiling);
+    connect(tpm,  &TiledPatternMaker::sig_loadedXML,      this,   &page_map_editor::slot_loadedXML);
+    connect(tpm,  &TiledPatternMaker::sig_unload,         this,   &page_map_editor::slot_unload);
 
     connect(pbVerifyMap,            &QToolButton::clicked,  this,   &page_map_editor::slot_verify);
     connect(pbMakeExplicit,         &QToolButton::clicked,  this,   &page_map_editor::slot_convertToExplicit);
@@ -429,19 +429,12 @@ void  page_map_editor::reload()
     }
     case MAP_MODE_MOSAIC:
     {
-        MosaicPtr mosaic     = workspace->getMosaic();
-        if (mosaic)
+        MosaicPtr mosaic = workspace->getMosaic();
+        const StyleSet & sset = mosaic->getStyleSet();
+        if (sset.size())
         {
-            const StyleSet & sset = mosaic->getStyleSet();
-            if (sset.size())
-            {
-                StylePtr sp  = sset.first();
-                me->setStyle(sp);
-            }
-            else
-            {
-                me->unload();
-            }
+            StylePtr sp  = sset.first();
+            me->setStyle(sp);
         }
         else
         {
@@ -456,10 +449,7 @@ void  page_map_editor::reload()
 
     case MAP_MODE_TILING:
         TilingPtr tp = workspace->getTiling();
-        if (tp)
-            me->setTiling(tp);
-        else
-            me->unload();
+        me->setTiling(tp);
         break;
     }
 
@@ -728,6 +718,7 @@ void page_map_editor::slot_reload()
 
 void page_map_editor::slot_unload()
 {
+    localMap.reset();
     if (me)
     {
         me->unload();
@@ -840,8 +831,11 @@ void page_map_editor::slot_clearConstructionLines()
 
 void page_map_editor::slot_clearMap()
 {
-    MapPtr m = me->getMap();
-    m->wipeout();
+    MapPtr map = me->getMap();
+    if (map)
+    {
+        map->wipeout();
+    }
     me->buildEditorDB();
     me->forceRedraw();
 }
@@ -927,24 +921,13 @@ void page_map_editor::slot_pushToTiling()
     EdgePoly ep2    = fp->getEdgePoly();
 
     TilingPtr tiling = workspace->getTiling();
-    if (tiling)
-    {
-        tiling->add(fp,QTransform());
+    tiling->add(fp,QTransform());
 
-        QMessageBox box(this);
-        box.setIcon(QMessageBox::Information);
-        box.setText("Pushed OK");
-        box.exec();
-    }
-    else
-    {
-        QMessageBox box(this);
-        box.setIcon(QMessageBox::Warning);
-        box.setText("No tiling - NOT pushed");
-        box.exec();
-    }
+    QMessageBox box(this);
+    box.setIcon(QMessageBox::Information);
+    box.setText("Pushed OK");
+    box.exec();
 }
-
 
 void page_map_editor::slot_dumpMap()
 {

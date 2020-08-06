@@ -92,7 +92,7 @@ protected:
     void reload();
 
 private:
-    MapEditorPtr me;
+    MapEditor * me;
 
     MapPtr  localMap;       // for new maps created in the editor
 

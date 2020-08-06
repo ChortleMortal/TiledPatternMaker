@@ -52,38 +52,37 @@ page_views::page_views(ControlPanel * cpanel) : panel_page(cpanel,"Views")
     vbox->addLayout(vbox2);
     vbox->addStretch();
 
-    connect(this, &page_views::sig_loadTiling, maker, &TiledPatternMaker::slot_loadTiling);
+    connect(this, &page_views::sig_loadTiling, tpm, &TiledPatternMaker::slot_loadTiling);
 
     refreshPage();
 }
 
 void  page_views::createViewControl()
 {
-    QPushButton * btnSplit          = new QPushButton("Split Screen");
-    QPushButton * btnPrimary        = new QPushButton("Primary Screen");
-    QCheckBox   * multiSelect       = new QCheckBox("Multi-select");
-    chkScaleToView             = new QCheckBox("Scale Canvas to View");
-    cbLockView                      = new QCheckBox("Lock View");
+    QCheckBox   * chkSplit      = new QCheckBox("Split Screen");
+    QPushButton * btnPrimary    = new QPushButton("Primary Screen");
+    QCheckBox   * multiSelect   = new QCheckBox("Multi-select");
+    cbLockView                  = new QCheckBox("Lock View");
 
     QHBoxLayout * hbox = new QHBoxLayout();
-    hbox->addWidget(btnSplit);
+    hbox->addWidget(chkSplit);
     hbox->addWidget(btnPrimary);
     hbox->addStretch();
     hbox->addWidget(cbLockView);
     hbox->addWidget(multiSelect);
     hbox->addStretch();
-    hbox->addWidget(chkScaleToView);
     hbox->addStretch();
 
     workspaceMakersBox = new QGroupBox("View Control");
     workspaceMakersBox->setLayout(hbox);
 
+    chkSplit->setChecked(config->splitScreen);
+
     // workspace buttons
-    connect(btnPrimary,     &QPushButton::clicked,      maker,   &TiledPatternMaker::slot_bringToPrimaryScreen);
-    connect(btnSplit,       &QPushButton::clicked,      maker,   &TiledPatternMaker::slot_splitScreen);
-    connect(chkScaleToView, &QCheckBox::clicked,   this,    &page_views::slot_scaleSceneToView);
-    connect(cbLockView,     &QCheckBox::clicked,   this,    &page_views::slot_lockViewClicked);
-    connect(multiSelect,    &QCheckBox::clicked,   this,    &page_views::slot_multiSelect);
+    connect(btnPrimary,     &QPushButton::clicked, tpm,   &TiledPatternMaker::slot_bringToPrimaryScreen);
+    connect(chkSplit,       &QPushButton::clicked, tpm,   &TiledPatternMaker::slot_splitScreen);
+    connect(cbLockView,     &QCheckBox::clicked,   this,  &page_views::slot_lockViewClicked);
+    connect(multiSelect,    &QCheckBox::clicked,   this,  &page_views::slot_multiSelect);
 }
 
 void  page_views::createWorkspaceViewers()
@@ -177,7 +176,6 @@ void page_views::refreshPage()
 void page_views::onEnter()
 {
     blockSignals(true);
-    chkScaleToView->setChecked(config->scaleSceneToView);
     cbLockView->setChecked(config->lockView);
     viewerGroup.button(config->viewerType)->setChecked(true);
     blockSignals(false);
@@ -191,11 +189,6 @@ void page_views::slot_loadedXML(QString name)
 
 void page_views::updateWsStatus()
 {
-    if (!config->wsStatusBox)
-    {
-        return;
-    }
-
     // Designs
     QString astring;
     QVector<DesignPtr> & designs= workspace->getDesigns();
@@ -210,41 +203,25 @@ void page_views::updateWsStatus()
 
 void page_views::updateLoadedStatus()
 {
-    // Styled Design
+    // Mosaic
     QString astring;
     MosaicPtr mosaic = workspace->getMosaic();
-    if (!mosaic)
+    astring = mosaic->getName();
+    if (mosaic->hasContent())
     {
-        astring = "NO MOSAIC";
+        astring += QString(" numStyles = %1").arg(mosaic->numStyles());
     }
     else
     {
-        if (!mosaic->getName().isEmpty())
-        {
-            astring = mosaic->getName();
-        }
-        else
-        {
-            astring = "NOT NAMED";
-        }
-        if (mosaic->hasContent())
-        {
-            astring += QString(" numStyles = %1").arg(mosaic->numStyles());
-        }
-        else
-        {
-            astring += " - NO CONTENT";
-        }
+        astring += " - NO CONTENT";
     }
     lab_LoadedStyle->setText(astring);
 
     // Tiling
     astring.clear();
     TilingPtr tp  = workspace->getTiling();
-    if (tp)
-    {
-        astring += QString("%1 (%2)").arg(tp->getName()).arg(addr(tp.get()));
-    }
+    astring += QString("%1 (%2)").arg(tp->getName()).arg(addr(tp.get()));
+
     TilingPtr tp2;
     if (mosaic)
     {
@@ -338,9 +315,9 @@ void  page_views::slot_Viewer_pressed(int id, bool enb)
 
     if (viewerGroup.exclusive())
     {
-        viewer->disableAll();
+        wsViewer->disableAll();
     }
-    viewer->viewEnable(evt,enb);
+    wsViewer->viewEnable(evt,enb);
 
     emit sig_viewWS();
 }
@@ -348,11 +325,6 @@ void  page_views::slot_Viewer_pressed(int id, bool enb)
 void  page_views::slot_lockViewClicked(bool enb)
 {
     config->lockView = enb;
-}
-
-void page_views::slot_scaleSceneToView(bool enb)
-{
-    config->scaleSceneToView = enb;
 }
 
 void page_views::slot_multiSelect(bool enb)
@@ -370,8 +342,23 @@ void page_views::slot_multiSelect(bool enb)
             viewerGroup.button(i)->setChecked(false);
         }
         viewerGroup.blockSignals(false);
-        viewer->disableAll();
-        viewer->viewEnable(config->viewerType,true);
+        wsViewer->disableAll();
+        wsViewer->viewEnable(config->viewerType,true);
         emit sig_viewWS();
     }
+}
+
+void  page_views::slot_selectViewer(int id)
+{
+    if (config->lockView)
+    {
+        return;
+    }
+
+    viewerGroup.button(id)->setChecked(true);
+#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
+    emit viewerGroup.buttonClicked(id);
+#else
+    emit viewerGroup.idClicked(id);
+#endif
 }

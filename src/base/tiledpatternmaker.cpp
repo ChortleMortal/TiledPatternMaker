@@ -47,25 +47,25 @@ TiledPatternMaker::TiledPatternMaker() : QObject()
 void TiledPatternMaker::startEverything()
 {
     // instantiate everything
-    config = Configuration::getInstance();
+    config            = Configuration::getInstance();
     bool oldPanelLock = config->lockView;
-    config->lockView = true;    // disables view switching during init
+    config->lockView  = true;    // disables view switching during init
 
     view      = View::getInstance();
     canvas    = Canvas::getInstance();
     workspace = Workspace::getInstance();
-
-    WorkspaceViewer * viewer = WorkspaceViewer::getInstance();
+    wsViewer  = WorkspaceViewer::getInstance();
 
     // connect singleton classes
     view->init();
-    canvas->init();
+    canvas->init(this);
     workspace->init();
-    viewer->init();
+    wsViewer->init();
 
     TilingManager::getInstance();
-    MapEditor::getInstance();
-    TilingMakerPtr tMaker = TilingMaker::getInstance();
+
+    mapEditor   = MapEditor::getInstance();
+    tilingMaker = TilingMaker::getInstance();
 
     config->availableDesigns.insert(DESIGN_5,make_shared<Design5>(DESIGN_5,"Pattern 1 (created)"));
     config->availableDesigns.insert(DESIGN_6,make_shared<Design6>(DESIGN_6,"Pattern 2 (re-ceated)"));
@@ -88,7 +88,7 @@ void TiledPatternMaker::startEverything()
     qRegisterMetaType<MapPtr>("MapPtr");
     qRegisterMetaType<PolyPtr>("PolyPtr");
 
-    connect(this, &TiledPatternMaker::sig_viewWS,         viewer, &WorkspaceViewer::slot_viewWorkspace);
+    connect(this, &TiledPatternMaker::sig_viewWS,         wsViewer, &WorkspaceViewer::slot_viewWorkspace);
 
     connect(canvas, &Canvas::sig_forceUpdateStyles,       this, &TiledPatternMaker::slot_forceUpdateStyles);
     connect(canvas, &Canvas::sig_raiseMenu,               this, &TiledPatternMaker::slot_raiseMenu);
@@ -102,12 +102,10 @@ void TiledPatternMaker::startEverything()
     cycler->init(thread);
 
     connect(this,   &TiledPatternMaker::sig_ready,         cycler,  &Cycler::slot_ready);
-    connect(this,   &TiledPatternMaker::sig_loadedTiling,  tMaker.get(), &TilingMaker::slot_setTiling);
+    connect(this,   &TiledPatternMaker::sig_loadedTiling,  tilingMaker, &TilingMaker::slot_setTiling);
 
     connect(cycler,    &Cycler::sig_loadXML,        this,  &TiledPatternMaker::slot_loadXMLSimple);
     connect(cycler,    &Cycler::sig_loadTiling,     this,  &TiledPatternMaker::slot_loadTilingSimple);
-    connect(cycler,    &Cycler::sig_saveAsBMP,      this,  &TiledPatternMaker::slot_saveAsBMP);
-    connect(cycler,    &Cycler::sig_saveTilingAsBMP,this,  &TiledPatternMaker::slot_saveTilingAsBMP);
     connect(cycler,    &Cycler::sig_finished,       this,  &TiledPatternMaker::slot_cyclerFinished);
     connect(cycler,    &Cycler::sig_compare,        this,  &TiledPatternMaker::slot_compareImages);
     connect(cycler,    &Cycler::sig_viewImage,      this,  &TiledPatternMaker::slot_view_image);
@@ -123,26 +121,30 @@ void TiledPatternMaker::startEverything()
     controlPanel->show();
     controlPanel->raise();
     controlPanel->activateWindow();
-    if (config->screenIsSplit)
+
+    // split-screen
+    if (config->splitScreen)
     {
-        config->screenIsSplit = false;  // needed to trigger the split
-        slot_splitScreen();
+        slot_splitScreen(true);
     }
 
     // get started - kick off
     if (config->autoLoadStyles && !config->lastLoadedXML.isEmpty())
     {
-        emit sig_prepXML();
-        slot_loadXML(config->lastLoadedXML);
+        if (!config->lastLoadedXML.isEmpty())
+        {
+            slot_loadXML(config->lastLoadedXML);
+        }
     }
     else if (config->autoLoadTiling)
     {
-        emit sig_prepTiling();
-        slot_loadTiling(config->lastLoadedTileName);
+        if (!config->lastLoadedTileName.isEmpty())
+        {
+            slot_loadTiling(config->lastLoadedTileName);
+        }
     }
     else if (config->autoLoadDesigns)
     {
-        emit sig_prepDesign();
         slot_loadDesign(config->lastLoadedDesignId);
     }
 
@@ -276,24 +278,6 @@ void TiledPatternMaker::slot_loadTilingSimple(QString name)
     }
 }
 
-// usaed by cycler
-void TiledPatternMaker::slot_saveAsBMP(QString name)
-{
-    workspace->loadMosaic(name);
-    emit sig_viewWS();
-    canvas->savePixmap(name);
-    emit sig_ready();
-}
-
-// used by cycler
-void TiledPatternMaker::slot_saveTilingAsBMP(QString name)
-{
-    workspace->loadTiling(name);
-    emit sig_viewWS();
-    canvas->savePixmap(name);
-    emit sig_ready();
-}
-
 void TiledPatternMaker::slot_forceUpdateStyles()
 {
     forceUpdateStyles();
@@ -301,54 +285,45 @@ void TiledPatternMaker::slot_forceUpdateStyles()
 
 void TiledPatternMaker::slot_render()
 {
-    MosaicPtr mosaic  = workspace->getMosaic();
-    resetProtos(mosaic);
-    resetStyles(mosaic);
+    resetProtos();
+    resetStyles();
 
     emit sig_viewWS();
 }
 
-void TiledPatternMaker::resetProtos(MosaicPtr mosaic)
+void TiledPatternMaker::resetProtos()
 {
-    if (!mosaic) return;
-
     // reset prototypes
+    MosaicPtr mosaic = workspace->getMosaic();
     const StyleSet & sset = mosaic->getStyleSet();
-    for (auto it = sset.begin(); it != sset.end(); it++)
+    for (auto style : sset)
     {
-        StylePtr s = *it;
-        PrototypePtr pp = s->getPrototype();
+        PrototypePtr pp = style->getPrototype();
         if (pp)
         {
-            pp->resetProtoMap();
+            pp->createProtoMap();
         }
     }
 }
 
-void TiledPatternMaker::resetStyles(MosaicPtr mosaic)
+void TiledPatternMaker::resetStyles()
 {
-    if (!mosaic) return;
-
     // reset styles
+    MosaicPtr mosaic = workspace->getMosaic();
     const StyleSet & sset = mosaic->getStyleSet();
-    for (auto it = sset.begin(); it != sset.end(); it++)
+    for (auto style : sset)
     {
-        StylePtr s = *it;
-        s->resetStyleRepresentation();
+        style->resetStyleRepresentation();
     }
 }
 
 void TiledPatternMaker::forceUpdateStyles()
 {
     MosaicPtr mosaic  = workspace->getMosaic();
-    if (mosaic)
+    const StyleSet & sset = mosaic->getStyleSet();
+    for (auto style : sset)
     {
-        const StyleSet & sset = mosaic->getStyleSet();
-        for (auto it = sset.begin(); it != sset.end(); it++)
-        {
-            StylePtr s = *it;
-            s->forceUpdateLayer();
-        }
+        style->forceUpdateLayer();
     }
 }
 
@@ -361,10 +336,7 @@ void TiledPatternMaker::slot_raiseMenu()
 
 void TiledPatternMaker::slot_bringToPrimaryScreen()
 {
-    QDesktopWidget w;
-    int screen = w.primaryScreen();
-    QList<QScreen *> screenList = qApp->screens();
-    QScreen * primary = screenList[screen];
+    QScreen * primary = qApp->primaryScreen();
 
     QWindow * wh = view->windowHandle();
     if (wh)
@@ -381,13 +353,15 @@ void TiledPatternMaker::slot_bringToPrimaryScreen()
     }
 }
 
-void TiledPatternMaker::slot_splitScreen()
+void TiledPatternMaker::slot_splitScreen(bool checked)
 {
-    // toggles
     static SplitScreen  * splitter = nullptr;
+
     QSettings s;
 
-    if (!config->screenIsSplit)
+    config->splitScreen = checked;
+
+    if (config->splitScreen)
     {
         // split the screen
 
@@ -409,8 +383,6 @@ void TiledPatternMaker::slot_splitScreen()
         splitter->setMaximumSize(rec.width(),rec.height());
         splitter->move(rec.topLeft());
         splitter->show();
-
-        config->screenIsSplit = true;
     }
     else
     {
@@ -424,8 +396,6 @@ void TiledPatternMaker::slot_splitScreen()
 
         view->show();
         view->move(s.value("viewPos").toPoint());
-
-        config->screenIsSplit = false;
 
         if (splitter)
         {
@@ -657,4 +627,18 @@ void TiledPatternMaker::slot_view_image(QString file)
     l->setPixmap(pixmap);
     l->setWindowTitle(file);
     l->show();
+}
+
+void TiledPatternMaker::drainTheSwamp()
+{
+    view->dump(true);
+    emit sig_unload();
+    view->dump(true);
+    workspace->slot_clearWorkspace();
+    view->dump(true);
+    view->clearView();
+    view->dump(true);
+    wsViewer->clear();
+    view->dump(true);
+    view->update();
 }

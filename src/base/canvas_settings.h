@@ -28,6 +28,7 @@
 #include <QtCore>
 #include <QtGui>
 #include "base/shared.h"
+#include "base/filldata.h"
 #include "tile/backgroundimage.h"
 #include "geometry/bounds.h"
 #include "configuration.h"
@@ -56,6 +57,9 @@ public:
     QPointF         getStartTile();
     void            setStartTile(QPointF pt);
 
+    void            setFillData(FillData & fd);
+    FillData &      getFillData();
+
     QPointF         getCenter();
 
 protected:
@@ -66,6 +70,7 @@ private:
     QPointF         _startTile;
     BkgdImgPtr      _bkgdImage;
     BorderPtr       _border;
+    FillData        _fillData;
 };
 
 

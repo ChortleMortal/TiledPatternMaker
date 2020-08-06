@@ -95,31 +95,28 @@ page_style_maker:: page_style_maker(ControlPanel * apanel)  : panel_page(apanel,
     selectModel = styleTable->selectionModel();
     connect(selectModel, SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(slot_styleSelected()));
 
-    connect(maker,  &TiledPatternMaker::sig_loadedTiling,   this,   &page_style_maker::slot_loadedTiling);
-    connect(maker,  &TiledPatternMaker::sig_loadedXML,      this,   &page_style_maker::slot_loadedXML);
-    connect(canvas, &Canvas::sig_unload,                    this,   &page_style_maker::slot_unload);
+    connect(tpm,  &TiledPatternMaker::sig_loadedTiling,   this,   &page_style_maker::slot_loadedTiling);
+    connect(tpm,  &TiledPatternMaker::sig_loadedXML,      this,   &page_style_maker::slot_loadedXML);
+    connect(tpm,  &TiledPatternMaker::sig_unload,         this,   &page_style_maker::slot_unload);
 }
 
 void  page_style_maker::refreshPage()
 {
     int row = 0;
     MosaicPtr mosaic = workspace->getMosaic();
-    if (mosaic)
+    const StyleSet & sset = mosaic->getStyleSet();
+    for (auto style : sset)
     {
-        const StyleSet & sset = mosaic->getStyleSet();
-        for (auto style : sset)
+        QTableWidgetItem * item = styleTable->item(row,STYLE_COL_TRANS);
+        if (item)
         {
-            QTableWidgetItem * item = styleTable->item(row,STYLE_COL_TRANS);
-            if (item)
-            {
-                Xform xf = style->getCanvasXform();
-                item->setText(xf.toInfoString());
-            }
-            row++;
+            Xform xf = style->getCanvasXform();
+            item->setText(xf.toInfoString());
         }
-        styleTable->resizeColumnsToContents();
-        styleTable->adjustTableSize();
+        row++;
     }
+    styleTable->resizeColumnsToContents();
+    styleTable->adjustTableSize();
 }
 
 void  page_style_maker::onEnter()
@@ -133,63 +130,60 @@ void  page_style_maker::reEnter()
 
     int row = 0;
     MosaicPtr mosaic = workspace->getMosaic();
-    if (mosaic)
+    const StyleSet & sset = mosaic->getStyleSet();
+    for (auto style : sset)
     {
-        const StyleSet & sset = mosaic->getStyleSet();
-        for (auto style : sset)
-        {
-            styleTable->setRowCount(row+1);
+        styleTable->setRowCount(row+1);
 
-            // build structure
-            QCheckBox * cb = new QCheckBox();
-            styleTable->setCellWidget(row,STYLE_COL_CHECK_SHOW,cb);
-            styleTable->setColumnWidth(STYLE_COL_CHECK_SHOW,25);
-            cb->setChecked(style->isVisible());
+        // build structure
+        QCheckBox * cb = new QCheckBox();
+        styleTable->setCellWidget(row,STYLE_COL_CHECK_SHOW,cb);
+        styleTable->setColumnWidth(STYLE_COL_CHECK_SHOW,25);
+        cb->setChecked(style->isVisible());
 
-            QComboBox * qcb = new QComboBox();
-            qcb->setEditable(false);
-            qcb->setFrame(false);
+        QComboBox * qcb = new QComboBox();
+        qcb->setEditable(false);
+        qcb->setFrame(false);
 
-            qcb->addItem("Plain",STYLE_PLAIN);
-            qcb->addItem("Thick Lines",STYLE_THICK);
-            qcb->addItem("Filled",STYLE_FILLED);
-            qcb->addItem("Outlined",STYLE_OUTLINED);
-            qcb->addItem("Interlaced",STYLE_INTERLACED);
-            qcb->addItem("Embossed",STYLE_EMBOSSED);
-            qcb->addItem("Sketched",STYLE_SKETCHED);
-            qcb->addItem("Tile Colors",STYLE_TILECOLORS);
-            styleTable->setCellWidget(row,STYLE_COL_STYLE,qcb);
+        qcb->addItem("Plain",STYLE_PLAIN);
+        qcb->addItem("Thick Lines",STYLE_THICK);
+        qcb->addItem("Filled",STYLE_FILLED);
+        qcb->addItem("Outlined",STYLE_OUTLINED);
+        qcb->addItem("Interlaced",STYLE_INTERLACED);
+        qcb->addItem("Embossed",STYLE_EMBOSSED);
+        qcb->addItem("Sketched",STYLE_SKETCHED);
+        qcb->addItem("Tile Colors",STYLE_TILECOLORS);
+        styleTable->setCellWidget(row,STYLE_COL_STYLE,qcb);
 
-            QString tilename = style->getPrototype()->getTiling()->getName();
-            QTableWidgetItem * item = new QTableWidgetItem(tilename);
-            item->setData(Qt::UserRole,QVariant::fromValue(style));     // tiling name also stores Style address
-            styleTable->setItem(row,STYLE_COL_TILING,item);
+        QString tilename = style->getPrototype()->getTiling()->getName();
+        QTableWidgetItem * item = new QTableWidgetItem(tilename);
+        item->setData(Qt::UserRole,QVariant::fromValue(style));     // tiling name also stores Style address
+        styleTable->setItem(row,STYLE_COL_TILING,item);
 
-            QPushButton * pb = new QPushButton("Set WS Proto && Tiling");
-            styleTable->setCellWidget(row,STYLE_COL_PROTO_EDIT,pb);
+        QPushButton * pb = new QPushButton("Set WS Proto && Tiling");
+        styleTable->setCellWidget(row,STYLE_COL_PROTO_EDIT,pb);
 
-            item = new QTableWidgetItem(addr(style.get()));
-            styleTable->setItem(row,STYLE_COL_ADDR,item);
+        item = new QTableWidgetItem(addr(style.get()));
+        styleTable->setItem(row,STYLE_COL_ADDR,item);
 
-            item = new QTableWidgetItem("Xform");
-            styleTable->setItem(row,STYLE_COL_TRANS,item);
+        item = new QTableWidgetItem("Xform");
+        styleTable->setItem(row,STYLE_COL_TRANS,item);
 
-            QString stylename = style->getStyleDesc();
-            int index = qcb->findText(stylename);
-            Q_ASSERT(index != -1);
-            qcb->setCurrentIndex(index);
+        QString stylename = style->getStyleDesc();
+        int index = qcb->findText(stylename);
+        Q_ASSERT(index != -1);
+        qcb->setCurrentIndex(index);
 
-            connect(qcb, SIGNAL(currentIndexChanged(int)), &styleMapper, SLOT(map()),Qt::UniqueConnection);
-            styleMapper.setMapping(qcb,row);
+        connect(qcb, SIGNAL(currentIndexChanged(int)), &styleMapper, SLOT(map()),Qt::UniqueConnection);
+        styleMapper.setMapping(qcb,row);
 
-            connect(cb, SIGNAL(toggled(bool)), &styleVisMapper, SLOT(map()),Qt::UniqueConnection);
-            styleVisMapper.setMapping(cb,row);
+        connect(cb, SIGNAL(toggled(bool)), &styleVisMapper, SLOT(map()),Qt::UniqueConnection);
+        styleVisMapper.setMapping(cb,row);
 
-            connect(pb, SIGNAL(clicked()),    &editProtoMapper, SLOT(map()),Qt::UniqueConnection);
-            editProtoMapper.setMapping(pb,row);
+        connect(pb, SIGNAL(clicked()),    &editProtoMapper, SLOT(map()),Qt::UniqueConnection);
+        editProtoMapper.setMapping(pb,row);
 
-            row++;
-        }
+        row++;
     }
 
     styleTable->resizeColumnsToContents();
@@ -326,10 +320,7 @@ void page_style_maker::slot_styleChanged(int row)
     }
 
     MosaicPtr mosaic = workspace->getMosaic();
-    if (mosaic)
-    {
-        mosaic->replaceStyle(oldStylePtr,StylePtr(newStyle));
-    }
+    mosaic->replaceStyle(oldStylePtr,StylePtr(newStyle));
 
     emit sig_viewWS();
     reEnter();
@@ -365,13 +356,10 @@ StylePtr page_style_maker::getStyleIndex(int index)
 {
     StylePtr sp;
     MosaicPtr mosaic = workspace->getMosaic();
-    if (mosaic)
+    const StyleSet & sset = mosaic->getStyleSet();
+    if (index < sset.size())
     {
-        const StyleSet & sset = mosaic->getStyleSet();
-        if (index < sset.size())
-        {
-            sp = sset[index];
-        }
+        sp = sset[index];
     }
     return sp;
 }
@@ -384,13 +372,10 @@ void page_style_maker::slot_deleteStyle()
     StylePtr style = getStyleRow(row);
 
     MosaicPtr mosaic = workspace->getMosaic();
-    if (mosaic)
-    {
-        mosaic->deleteStyle(style);
+    mosaic->deleteStyle(style);
 
-        if (row > 0)
+    if (row > 0)
         row--;
-    }
 
     reEnter();
 
@@ -407,10 +392,7 @@ void page_style_maker::slot_moveStyleUp()
     StylePtr style = getStyleRow(row);
 
     MosaicPtr mosaic = workspace->getMosaic();
-    if (mosaic)
-    {
-        mosaic->moveUp(style);
-    }
+    mosaic->moveUp(style);
     reEnter();
 
     emit sig_viewWS();
@@ -426,10 +408,7 @@ void  page_style_maker::slot_moveStyleDown()
     StylePtr style = getStyleRow(row);
 
     MosaicPtr mosaic = workspace->getMosaic();
-    if (mosaic)
-    {
-        mosaic->moveDown(style);
-    }
+    mosaic->moveDown(style);
 
     reEnter();
 
@@ -448,10 +427,8 @@ void  page_style_maker::slot_duplicateStyle()
     StylePtr style2 = copyStyle(style);
 
     MosaicPtr mosaic = workspace->getMosaic();
-    if (mosaic)
-    {
-        mosaic->addStyle(style2);
-    }
+    mosaic->addStyle(style2);
+
     reEnter();
 
     emit sig_viewWS();

@@ -8,6 +8,12 @@
 using namespace pugi;
 using std::string;
 
+#if (QT_VERSION >= QT_VERSION_CHECK(5,15,0))
+#define endl Qt::endl
+#endif
+
+const int currentTilingXMLVersion = 3;    // 26JUL20 excludesFillData
+
 bool TilingWriter::writeTilingXML()
 {
     Configuration * config = Configuration::getInstance();
@@ -89,14 +95,10 @@ void TilingWriter::writeTilingXML(QTextStream & out)
     FeatureGroup fgroup = tiling->regroupFeatures();
 
     out << "<?xml version=\"1.0\"?>" << endl;
-    out << "<Tiling version=\"2\">" << endl;
+    QString qs = QString("<Tiling version=\"%1\">").arg(currentTilingXMLVersion);
+    out << qs << endl;
     out << "<Name>" << tiling->getName() << "</Name>" << endl;
 
-    // fill paratmeters not part of original taprats
-    int minX,minY,maxX,maxY;
-    tiling->getFillData().get(minX,maxX,minY,maxY);
-    out << "<Fill>" << minX << "," << maxX << ","
-                    << minY << "," << maxY << "</Fill>" << endl;
     QPointF t1 = tiling->getTrans1();
     QPointF t2 = tiling->getTrans2();
     out << "<T1>" <<  t1.x() << "," << t1.y() << "</T1>" << endl;

@@ -88,7 +88,7 @@ Layer::~Layer()
 
 void Layer::paint(QPainter * painter)
 {
-    qDebug() << "Layer paint subs =" << subLayers.count();
+    //qDebug() << "Layer paint subs =" << subLayers.count();
 
     std::stable_sort(subLayers.begin(), subLayers.end(), sortByZlevel);
 
@@ -102,7 +102,7 @@ void Layer::paint(QPainter * painter)
         layer->paint(painter);
     }
 
-     painter->restore();
+    painter->restore();
 }
 
 bool Layer::sortByZlevel(LayerPtr s1, LayerPtr s2)
@@ -171,8 +171,9 @@ QTransform Layer::getViewTransform()
 // This has been refactored
 void Layer::computeLayerTransform()
 {
-    qtr_view    = wsViewer->getViewTransform(config->viewerType);  // FIXME - maybe should be the current view
-    qtr_canvas  = xf_canvas.toQTransform(qtr_view);     // qtr_view used to map the center
+    QTransform qtr_canvas;
+    qtr_canvas  = xf_canvas.toQTransform(qtr_view);                 // qtr_view used to map the center
+    qtr_view    = wsViewer->getViewTransform(config->viewerType);    // FIXME - maybe should be the current view
     qtr_layer   = qtr_view * qtr_canvas;
     qtr_invert  = qtr_layer.inverted();
 

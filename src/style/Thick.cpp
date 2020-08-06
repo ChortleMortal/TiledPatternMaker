@@ -84,12 +84,7 @@ void Thick::resetStyleRepresentation()
 
 void Thick::createStyleRepresentation()
 {
-    if (getMap())
-    {
-        return;
-    }
-
-    setupStyleMap();
+    getMap();
 }
 
 

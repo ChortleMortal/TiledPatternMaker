@@ -18,17 +18,21 @@ DlgListSelect::DlgListSelect(QStringList files)
     list->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     list->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
+    hbox = new QHBoxLayout;
+    hbox->addWidget(list);
+
     QPushButton * cancelBtn = new QPushButton("Cancel");
     QPushButton * okBtn = new QPushButton("OK");
     okBtn->setDefault(true);
 
-    QHBoxLayout * hbox = new QHBoxLayout;
-    hbox->addWidget(cancelBtn);
-    hbox->addWidget(okBtn);
+    QHBoxLayout * hBtnBox = new QHBoxLayout;
+    hBtnBox->addWidget(cancelBtn);
+    hBtnBox->addWidget(okBtn);
+    hBtnBox->addStretch();
 
     QVBoxLayout * vbox = new QVBoxLayout;
-    vbox->addWidget(list);
     vbox->addLayout(hbox);
+    vbox->addLayout(hBtnBox);
     setLayout(vbox);
 
     connect(cancelBtn, &QPushButton::clicked, this, &QDialog::reject);
@@ -52,11 +56,14 @@ void DlgListSelect::slot_currentRow(int row)
     if (row == -1)
     {
         selectedFile.clear();
-        return;
+    }
+    else
+    {
+        QListWidgetItem * item = list->item(row);
+        selectedFile = item->text();
     }
 
-    QListWidgetItem * item = list->item(row);
-    selectedFile = item->text();
+    selectAction();
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -67,10 +74,27 @@ void DlgListSelect::slot_currentRow(int row)
 
 GirihListSelect::GirihListSelect(QStringList names) : DlgListSelect (names)
 {
+    QVBoxLayout * vbox = new QVBoxLayout;
+    frame = new AQFrame();
+    frame->setFixedSize(300,300);
+    frame->setStyleSheet("background-color: white;");
+    frame->setFrameStyle(QFrame::Box | QFrame::Plain);
+    frame->setLineWidth(1); 
+    vbox->addWidget(frame);
+
+    magSlider = new SliderSet("Size",20,10,100);
+    magSlider->setRange(10,100);
+    vbox->addLayout(magSlider);
+
+    hbox->addLayout(vbox);
+
     setMouseTracking(true);
     list->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
+    frame->scale = 20;  // default
+
     connect(list, &LoaderListWidget::rightClick, this, &GirihListSelect::slot_rightClick);
+    connect(magSlider,  &SliderSet::valueChanged, this, &GirihListSelect::magChanged);
 
     for (int i=0; i < list->count(); i++)
     {
@@ -180,3 +204,40 @@ QStringList GirihListSelect::getSelected()
     return blist;
 }
 
+
+void GirihListSelect::selectAction()
+{
+    qDebug() << "file:" << selectedFile;
+
+    frame->feature = make_shared<PlacedFeature>();
+    bool rv = frame->feature->loadFromGirihShape(selectedFile);
+    Q_ASSERT(rv);
+
+    frame->update();
+}
+
+
+void GirihListSelect::magChanged(int mag)
+{
+    //frame->scale = magSlider->value();
+    frame->scale = mag;
+    frame->update();
+}
+
+
+void AQFrame::paintEvent(QPaintEvent *event)
+{
+    Q_UNUSED(event);
+    qDebug() << "paint";
+
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing ,true);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform,true);
+
+    painter.setPen(QPen(Qt::black,3));
+    EdgePoly ep = feature->getFeatureEdgePoly();
+    QTransform tr = QTransform::fromTranslate(150,150);
+    QTransform t2 = QTransform::fromScale(scale,scale);
+    QTransform t3 = t2 * tr;
+    ep.paint(&painter,t3);
+}

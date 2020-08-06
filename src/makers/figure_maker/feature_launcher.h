@@ -64,7 +64,7 @@ public:
 
     bool            eventFilter(QObject *watched, QEvent *event) override;
 
-    void            clear() { buttons.clear(); }
+    void            clear() { buttons.clear(); tiling.reset(); _current.reset(); }
     bool            verify();
 
 signals:

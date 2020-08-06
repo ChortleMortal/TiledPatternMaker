@@ -193,7 +193,7 @@ bool Design8::build()
 
     // patern
     int gridWidth = 41;
-    config->gridStepScreen = gridWidth;
+    config->gridScreenSpacing = gridWidth;
     qreal diameter = 20.0 * qreal(gridWidth);
 
     // positioning
@@ -244,7 +244,7 @@ bool Design9::build()
 
     // patern
     int gridWidth = 21;
-    config->gridStepScreen = gridWidth;
+    config->gridScreenSpacing = gridWidth;
     qreal diameter = 20.0 * qreal(gridWidth);
 
     // positioning
@@ -291,7 +291,7 @@ bool DesignHuPacked::build()
 
     // patern
     int igridWidth = 21;
-    config->gridStepScreen = igridWidth;
+    config->gridScreenSpacing = igridWidth;
 
     qreal gridWidth = 21.0;
     qreal diameter  = 20.0 * gridWidth;
@@ -350,7 +350,7 @@ bool DesignHuInsert::build()
 
     // patern
     int igridWidth = 21;
-    config->gridStepScreen = igridWidth;
+    config->gridScreenSpacing = igridWidth;
 
     qreal gridWidth = 21.0;
     qreal diameter  = 20.0 * gridWidth;
@@ -402,7 +402,7 @@ bool Design11::build()
 
     // patern
     int gridWidth = 41;
-    config->gridStepScreen = gridWidth;
+    config->gridScreenSpacing = gridWidth;
     qreal diameter = 20.0 * qreal(gridWidth);
 
     // positioning

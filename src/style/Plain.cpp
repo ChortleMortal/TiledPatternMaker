@@ -62,12 +62,7 @@ void Plain::resetStyleRepresentation()
 
 void Plain::createStyleRepresentation()
 {
-    if (getMap())
-    {
-        return;
-    }
-
-    setupStyleMap();
+    getMap();
 }
 
 void Plain::draw(GeoGraphics *gg)

@@ -42,7 +42,8 @@
 #include "style/style.h"
 #include "panels/dlg_magnitude.h"
 
-TilingMakerPtr TilingMaker::mpThis;
+TilingMaker *  TilingMaker::mpThis = nullptr;
+TilingMakerPtr TilingMaker::spThis;
 
 const bool debugMouse = false;
 
@@ -65,14 +66,27 @@ static QString strMouseMode[] =
 };
 
 
-TilingMakerPtr TilingMaker::getInstance()
+TilingMaker * TilingMaker::getInstance()
 {
     if (!mpThis)
     {
-        mpThis = make_shared<TilingMaker>();
+        spThis = make_shared<TilingMaker>();
+        mpThis = spThis.get();
     }
     return mpThis;
 }
+
+
+TilingMakerPtr TilingMaker::getSharedInstance()
+{
+    if (!mpThis)
+    {
+        spThis = make_shared<TilingMaker>();
+        mpThis = spThis.get();
+    }
+    return spThis;
+}
+
 
 TilingMaker::TilingMaker() : TilingMakerView()
 {
@@ -94,12 +108,6 @@ TilingMaker::TilingMaker() : TilingMakerView()
 void TilingMaker::slot_setTiling()
 {
     TilingPtr tp = workspace->getTiling();
-
-    if (!tp)
-    {
-        tp = std::make_shared<Tiling>();
-        workspace->setTiling(tp);
-    }
 
     clearMakerData();
 
@@ -126,11 +134,15 @@ void TilingMaker::clearMakerData()
     in_tiling.clear();
     wAccum.clear();
     wMeasurements.clear();
+    overlapping.clear();
+    touching.clear();
 
+    currentTiling.reset();
     currentSelection.reset();
     currentFeature.reset();
     editFeature.reset();
     mouse_interaction.reset();
+    menuSelection.reset();
 
     mouse_mode    = NO_MOUSE_MODE;
 
@@ -143,11 +155,6 @@ void TilingMaker::clearMakerData()
 void TilingMaker::setupMaker()
 {
     TilingPtr tiling = workspace->getTiling();
-    if (!tiling)
-    {
-        qWarning() << "TilingMaker::setupMaker() - no tiling";
-        return;
-    }
     QList<PlacedFeaturePtr> & qlpf = tiling->getPlacedFeatures();
     for(auto it = qlpf.begin(); it != qlpf.end(); it++)
     {
@@ -184,33 +191,14 @@ void TilingMaker::setupMaker()
 void TilingMaker::pushTiling()
 {
     TilingPtr tiling = workspace->getTiling();
-    Q_ASSERT(tiling);
-    QVector<PrototypePtr> prototypes = workspace->getPrototypes();
-    if (prototypes.isEmpty())
-    {
-        qWarning("Push tiling failure: Should we create a prototype here?");
-        return;
-    }
-    for (auto proto : prototypes )
-    {
-        proto->setTiling(tiling);
-        proto->resetProtoMap();
-        proto->createProtoMap();
-    }
-
-    // proceed tp update styles
-    MosaicPtr mosaic  = workspace->getMosaic();
-    if (!mosaic || !mosaic->hasContent())
-    {
-        return;
-    }
-
     tiling->setDirty(true);
 
-    prototypes = mosaic->getUniquePrototypes();
+    MosaicPtr mosaic  = workspace->getMosaic();
+    QVector<PrototypePtr> prototypes = mosaic->getUniquePrototypes();
     for (auto prototype : prototypes)
     {
-        prototype->setTiling(tiling);   // FIXME - maybe this is redundant
+        prototype->setTiling(tiling);
+        prototype->createProtoMap();
     }
 
     const StyleSet & sset = mosaic->getStyleSet();
@@ -229,18 +217,13 @@ void TilingMaker::hide(bool state)
 
 void TilingMaker::updatePlacedFeaturesFromData()
 {
-    TilingPtr tiling = workspace->getTiling();
-    if (!tiling)
-    {
-        return;
-    }
-
     if (in_tiling.size() <= 0)
     {
         return;
     }
 
     // need to remove what is there already
+    TilingPtr tiling = workspace->getTiling();
     tiling->getPlacedFeatures().clear();
 
     // We assume the data has already been verified (verifyTiling() == true).

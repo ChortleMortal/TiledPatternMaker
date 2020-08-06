@@ -91,8 +91,8 @@ protected:
     View              * view;
     Configuration     * config;
     Workspace         * workspace;
-    TiledPatternMaker * maker;
-    WorkspaceViewer   * viewer;
+    TiledPatternMaker * tpm;
+    WorkspaceViewer   * wsViewer;
 
     bool    refresh;
 

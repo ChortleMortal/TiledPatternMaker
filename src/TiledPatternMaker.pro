@@ -17,6 +17,7 @@ SOURCES += \
     base/configuration.cpp \
     base/cycler.cpp \
     base/fileservices.cpp \
+    base/filldata.cpp \
     base/layer.cpp \
     base/main.cpp \
     base/misc.cpp \
@@ -108,6 +109,7 @@ SOURCES += \
     panels/panel_pagesWidget.cpp \
     panels/panel_status.cpp \
     panels/splitscreen.cpp \
+    panels/versioned_list_widget.cpp \
     style/colored.cpp \
     style/emboss.cpp \
     style/filled.cpp \
@@ -161,6 +163,7 @@ HEADERS += \
     base/configuration.h \
     base/cycler.h \
     base/fileservices.h \
+    base/filldata.h \
     base/layer.h \
     base/misc.h \
     base/mosaic.h \
@@ -253,6 +256,7 @@ HEADERS += \
     panels/panel_pagesWidget.h \
     panels/panel_status.h \
     panels/splitscreen.h \
+    panels/versioned_list_widget.h \
     style/colored.h \
     style/emboss.h \
     style/filled.h \

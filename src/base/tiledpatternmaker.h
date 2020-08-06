@@ -53,10 +53,7 @@ signals:
     void sig_compareResult(QString);
     void sig_image0(QString name);
     void sig_image1(QString name);
-
-    void sig_prepXML();
-    void sig_prepTiling();
-    void sig_prepDesign();
+    void sig_unload();
 
 public slots:
     void startEverything();
@@ -69,8 +66,6 @@ public slots:
     void slot_saveXML(QString name);
     void slot_loadTiling(QString name);
     void slot_loadTilingSimple(QString name);
-    void slot_saveAsBMP(QString name);
-    void slot_saveTilingAsBMP(QString name);
 
     //  resets protos and syles
     void slot_render();
@@ -78,16 +73,18 @@ public slots:
     void slot_forceUpdateStyles();
     void slot_raiseMenu();
     void slot_bringToPrimaryScreen();
-    void slot_splitScreen();
+    void slot_splitScreen(bool checked);
 
     void slot_compareImagesReplace(QString fileLeft, QString fileRight);
     void slot_compareImages(QString fileLeft, QString fileRight);
     void slot_cyclerFinished();
     void slot_view_image(QString filename);
 
+    void drainTheSwamp();
+
 protected:
-    void resetStyles(MosaicPtr mosaic);
-    void resetProtos(MosaicPtr mosaic);
+    void resetStyles();
+    void resetProtos();
     void init();
     void SplatShowImage(QImage & image, QString title);
     void SplatCompareResult(QPixmap & pixmap, QString title);
@@ -95,14 +92,17 @@ protected:
     QPixmap makeTextPixmap(QString txt,QString txt2=QString(),QString txt3=QString());
 
 private:
-    Configuration * config;
-    Workspace     * workspace;
-    ControlPanel  * controlPanel;
-    View          * view;
-    Canvas        * canvas;
+    Configuration   * config;
+    Workspace       * workspace;
+    ControlPanel    * controlPanel;
+    View            * view;
+    Canvas          * canvas;
+    TilingMaker     * tilingMaker;
+    MapEditor       * mapEditor;
+    WorkspaceViewer * wsViewer;
 
-    Cycler        * cycler;
-    AQLabel       * cyclerWindow;
+    Cycler          * cycler;
+    AQLabel         * cyclerWindow;
 };
 
 #endif // TILEDPATTERNMAKER_H

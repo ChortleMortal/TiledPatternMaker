@@ -75,7 +75,7 @@ void TilingView::paint(QPainter *painter)
 
 void TilingView::draw(GeoGraphics *g2d )
 {
-    fill(g2d, tiling->getFillData());
+    fill(g2d);
 }
 
 // The FillRegion algorithm relies on a callback to send information

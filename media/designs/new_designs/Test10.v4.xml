@@ -1,9 +1,8 @@
 <?xml version="1.0"?>
-<vector id="1">
+<vector id="1" version="6">
 	<designNotes>Trying for Salih Talai based on photo, not on Broug - with some coloration 
 	And now color2</designNotes>
 	<design>
-		<scale>1</scale>
 		<size>
 			<width>1500</width>
 			<height>1100</height>
@@ -11,13 +10,15 @@
 		<background>
 			<color>#ffffffff</color>
 		</background>
+		<Fill>-5,5,-7,7</Fill>
 	</design>
 	<style.Thick id="2" serialization="custom">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
-			<theta__delta>0</theta__delta>
 			<top__delta>0</top__delta>
-			<width__delta>0</width__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>-0.01333333333333186,-0.01333333333333542</center>
 		</toolkit.GeoLayer>
 		<style.Style>
 			<boundary id="3">
@@ -46,57 +47,58 @@
 					<entry>
 						<tile.Feature id="10">
 							<regular>true</regular>
-							<points id="11">
-								<Point id="12">
-									<x>1</x>
-									<y>0.4142135623730951</y>
-								</Point>
-								<Point id="13">
-									<x>0.4142135623730951</x>
-									<y>1</y>
-								</Point>
-								<Point id="14">
-									<x>-0.414213562373095</x>
-									<y>1</y>
-								</Point>
-								<Point id="15">
-									<x>-1</x>
-									<y>0.4142135623730952</y>
-								</Point>
-								<Point id="16">
-									<x>-1</x>
-									<y>-0.4142135623730949</y>
-								</Point>
-								<Point id="17">
-									<x>-0.4142135623730957</x>
-									<y>-0.9999999999999998</y>
-								</Point>
-								<Point id="18">
-									<x>0.4142135623730953</x>
-									<y>-0.9999999999999999</y>
-								</Point>
-								<Point id="19">
-									<x>0.9999999999999998</x>
-									<y>-0.4142135623730958</y>
-								</Point>
-							</points>
+							<rotation>0</rotation>
+							<edges id="11">
+								<Line>
+									<Point id="12">1,0.4142135623730951</Point>
+									<Point id="13">0.4142135623730951,1</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point id="14">-0.414213562373095,1</Point>
+								</Line>
+								<Line>
+									<Point reference="14" />
+									<Point id="15">-1,0.4142135623730952</Point>
+								</Line>
+								<Line>
+									<Point reference="15" />
+									<Point id="16">-1,-0.414213562373095</Point>
+								</Line>
+								<Line>
+									<Point reference="16" />
+									<Point id="17">-0.4142135623730957,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="17" />
+									<Point id="18">0.4142135623730953,-0.9999999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="18" />
+									<Point id="19">0.9999999999999998,-0.4142135623730958</Point>
+								</Line>
+								<Line>
+									<Point reference="19" />
+									<Point reference="12" />
+								</Line>
+							</edges>
 						</tile.Feature>
 						<ExtendedRosette id="20" extendPeripherals="t" extendFreeVertices="f" connectBoundaryVertices="f">
 							<n>8</n>
 							<q>0</q>
-							<k>0</k>
 							<s>3</s>
-							<r>0</r>
+							<k>0</k>
 							<boundarySides>4</boundarySides>
 							<boundaryScale>1.71</boundaryScale>
 							<figureScale>1</figureScale>
+							<r>0</r>
 						</ExtendedRosette>
 					</entry>
 				</app.Prototype>
 			</prototype>
 		</style.Style>
 		<style.Colored>
-			<color>#ff1496d2</color>
+			<color hide="f">#ff1496d2</color>
 		</style.Colored>
 		<style.Thick>
 			<draw__outline>true</draw__outline>
@@ -106,25 +108,26 @@
 	<style.Filled id="21" serialization="custom">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
-			<theta__delta>0</theta__delta>
 			<top__delta>0</top__delta>
-			<width__delta>0</width__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>-0.01333333333333186,-0.01333333333333542</center>
 		</toolkit.GeoLayer>
 		<style.Style>
 			<boundary reference="3" />
 			<prototype reference="9" />
 		</style.Style>
 		<ColorBlacks>
-			<color>#ff8ae234</color>
+			<color hide="f">#ff8ae234</color>
 		</ColorBlacks>
 		<ColorWhites>
-			<color>#fff57900</color>
+			<color hide="f">#fff57900</color>
 		</ColorWhites>
 		<ColorGroup>
-			<Group>
-				<color>#fff57900</color>
+			<Group hideSet="f">
+				<color hide="f">#fff57900</color>
 			</Group>
-			<Group />
+			<Group hideSet="f" />
 		</ColorGroup>
 		<style.Filled>
 			<draw__inside>true</draw__inside>
@@ -135,9 +138,10 @@
 	<style.TileColors id="22" serialization="custom">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
-			<theta__delta>0</theta__delta>
 			<top__delta>0</top__delta>
-			<width__delta>0</width__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>-0.01333333333333186,-0.01333333333333542</center>
 		</toolkit.GeoLayer>
 		<style.Style>
 			<boundary reference="3" />

@@ -44,6 +44,7 @@
 
 #include "geometry/fill_region.h"
 #include "base/configuration.h"
+#include "base/workspace.h"
 #include "tapp/prototype.h"
 #include "viewers/tiling_view.h"
 #include "viewers/prototype_view.h"
@@ -52,10 +53,11 @@
 
 FillRegion::FillRegion()
 {
-    config = Configuration::getInstance();
+    config    = Configuration::getInstance();
+    workspace = Workspace::getInstance();
 }
 
-void FillRegion::fill(GeoGraphics *gg, FillData fd)
+void FillRegion::fill(GeoGraphics *gg)
 {
     switch(config->repeatMode)
     {
@@ -76,8 +78,10 @@ void FillRegion::fill(GeoGraphics *gg, FillData fd)
 
     case REPEAT_DEFINED:
     {
+        FillData fd = workspace->getMosaicSettings().getFillData();
         int minX,minY,maxX,maxY;
         fd.get(minX,maxX,minY,maxY);
+        qDebug() << "REPEAT_DEFINED"  << minX << maxX << minY << maxY;
         for (int h = minX; h <= maxX; h++)
         {
             for (int v = minY; v <= maxY; v++)

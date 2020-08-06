@@ -68,10 +68,6 @@ void page_style_figure_info::showFiguresFromStyles()
 {
     int row = 0;
     MosaicPtr mosaic = workspace->getMosaic();
-    if (!mosaic)
-    {
-        return;
-    }
     const StyleSet sset = mosaic->getStyleSet();
     for (auto style : sset)
     {

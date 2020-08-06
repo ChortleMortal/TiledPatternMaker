@@ -54,7 +54,7 @@ page_prototype_maker::page_prototype_maker(ControlPanel * cpanel) : panel_page(c
 
     // middle
     prototypeMaker = PrototypeMaker::getInstance();
-    prototypeMaker->init(maker,this);
+    prototypeMaker->init(tpm,this);
 
     // bottom line
     QPushButton * pbReplaceInProto = new QPushButton("Replace in Proto");
@@ -80,9 +80,9 @@ page_prototype_maker::page_prototype_maker(ControlPanel * cpanel) : panel_page(c
     connect(replicateRadial,    &QCheckBox::clicked,                this,  &page_prototype_maker::repRadClicked);
     connect(hiliteUnit,         &QCheckBox::clicked,                this,  &page_prototype_maker::hiliteClicked);
 
-    connect(maker,  &TiledPatternMaker::sig_loadedTiling,   this,   &page_prototype_maker::slot_loadedTiling);
-    connect(maker,  &TiledPatternMaker::sig_loadedXML,      this,   &page_prototype_maker::slot_loadedXML);
-    connect(canvas, &Canvas::sig_unload,                    this,   &page_prototype_maker::slot_unload);
+    connect(tpm,  &TiledPatternMaker::sig_loadedTiling,   this,   &page_prototype_maker::slot_loadedTiling);
+    connect(tpm,  &TiledPatternMaker::sig_loadedXML,      this,   &page_prototype_maker::slot_loadedXML);
+    connect(tpm,  &TiledPatternMaker::sig_unload,         this,   &page_prototype_maker::slot_unload);
     connect(protoListBox, SIGNAL(currentIndexChanged(int)), this,   SLOT(slot_prototypeSelected(int)));
 
     if (config->figureViewBkgdColor == Qt::white)
@@ -114,8 +114,11 @@ void page_prototype_maker::setupFigure(bool isRadial)
 
 void page_prototype_maker::slot_unload()
 {
-    if (prototypeMaker)
-        prototypeMaker->unload();
+    protoListBox->blockSignals(true);
+    protoListBox->clear();
+    protoListBox->blockSignals(false);
+
+    prototypeMaker->unload();
 }
 
 void page_prototype_maker::slot_reload()
@@ -126,13 +129,6 @@ void page_prototype_maker::slot_reload()
 void page_prototype_maker::reload()
 {
     TilingPtr tiling = workspace->getTiling();
-    if (!tiling)
-    {
-        prototypeMaker->unload();
-        protoListBox->clear();
-        return;
-    }
-
     QVector<PrototypePtr> protos = workspace->getPrototypes();
     if (protos.isEmpty())
     {
@@ -184,11 +180,8 @@ void page_prototype_maker::refreshPage(void)
 
 void page_prototype_maker::slot_tilingChanged()
 {
-    if (prototypeMaker)
-    {
-        qDebug() << "++tiling changed";
-        reload();
-    }
+    qDebug() << "++tiling changed";
+    reload();
 }
 
 void page_prototype_maker::slot_replaceInStyle()
@@ -198,20 +191,17 @@ void page_prototype_maker::slot_replaceInStyle()
     bool replaced = false;
     PrototypePtr pp       = prototypeMaker->getPrototype();
     MosaicPtr mosaic      = workspace->getMosaic();
-    if (mosaic)
-    {
-        const StyleSet & sset = mosaic->getStyleSet();
+    const StyleSet & sset = mosaic->getStyleSet();
 
-        // put new prototype into existing workspace styles
-        for (auto it = sset.begin(); it != sset.end(); it++)
+    // put new prototype into existing workspace styles
+    for (auto it = sset.begin(); it != sset.end(); it++)
+    {
+        StylePtr sp = *it;
+        PrototypePtr existingPP = sp->getPrototype();
+        if (existingPP->getTiling()->getName() == pp->getTiling()->getName())
         {
-            StylePtr sp = *it;
-            PrototypePtr existingPP = sp->getPrototype();
-            if (existingPP->getTiling()->getName() == pp->getTiling()->getName())
-            {
-                replaced = true;
-                sp->setPrototype(pp);
-            }
+            replaced = true;
+            sp->setPrototype(pp);
         }
     }
 
@@ -231,14 +221,9 @@ void page_prototype_maker::slot_addToStyle()
     StylePtr sp =  prototypeMaker->createDefaultStyleFromPrototype();
 
     MosaicPtr mosaic = workspace->getMosaic();
-    if (!mosaic)
-    {
-        mosaic = make_shared<Mosaic>();
-        workspace->setMosaic(mosaic);
-    }
     if (!mosaic->hasContent())
     {
-        const CanvasSettings & cs = viewer->getCurrentCanvasSettings();
+        const CanvasSettings & cs = wsViewer->getCurrentCanvasSettings();
         mosaic->setCanvasSettings(cs);
     }
 
@@ -275,11 +260,9 @@ void  page_prototype_maker::hiliteClicked(bool state)
 
 void page_prototype_maker::slot_duplicateCurrent()
 {
-    if (prototypeMaker->duplicateActiveFeature())
-    {
-        reload();
-        emit sig_render();
-    }
+    prototypeMaker->duplicateActiveFeature();
+    reload();
+    emit sig_render();
 }
 
 void  page_prototype_maker::slot_loadedXML(QString name)

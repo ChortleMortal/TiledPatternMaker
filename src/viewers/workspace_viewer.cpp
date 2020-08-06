@@ -278,8 +278,9 @@ void WorkspaceViewer::viewDesign()
 
 void WorkspaceViewer::viewMosaic()
 {
-    if (MosaicPtr mosaic = setCanvasFromDesign())
+    if (setCanvasFromDesign())
     {
+        MosaicPtr mosaic = workspace->getMosaic();
         QString name = mosaic->getName();
         qDebug() << "WorkspaceViewer::viewMosaic" << name;
 
@@ -316,9 +317,9 @@ void WorkspaceViewer::viewPrototype()
     qDebug() << "++WorkspaceViewer::viewPrototype";
 
     StylePtr sp;
-    MosaicPtr mosaic = setCanvasFromDesign();
-    if (mosaic)
+    if (setCanvasFromDesign())
     {
+        MosaicPtr mosaic = workspace->getMosaic();
         sp = mosaic->getFirstStyle();
     }
 
@@ -327,7 +328,6 @@ void WorkspaceViewer::viewPrototype()
     {
         emit sig_title("Prototype");
         TilingPtr tiling = workspace->getTiling();
-        Q_ASSERT(tiling);
 
         LayerPtr protoView = make_shared<ProtoView>(pp);
         if (sp)
@@ -359,9 +359,9 @@ void WorkspaceViewer::viewProtoFeature()
     qDebug() << "++WorkspaceViewer::viewProtoFeature";
 
     StylePtr sp;
-    MosaicPtr mosaic = setCanvasFromDesign();
-    if (mosaic)
+    if (setCanvasFromDesign())
     {
+        MosaicPtr mosaic = workspace->getMosaic();
         sp = mosaic->getFirstStyle();
     }
 
@@ -369,7 +369,6 @@ void WorkspaceViewer::viewProtoFeature()
     if (pp)
     {
         TilingPtr tiling = workspace->getTiling();
-        Q_ASSERT(tiling);
 
         LayerPtr pfview = make_shared<ProtoFeatureView>(pp);
         if (sp)
@@ -402,9 +401,9 @@ void WorkspaceViewer::viewDesignElement()
     qDebug() << "++WorkspaceViewer::viewDesignElement";
 
     StylePtr sp;
-    MosaicPtr mosaic = setCanvasFromDesign();
-    if (mosaic)
+    if (setCanvasFromDesign())
     {
+        MosaicPtr mosaic = workspace->getMosaic();
         sp = mosaic->getFirstStyle();
     }
 
@@ -412,7 +411,6 @@ void WorkspaceViewer::viewDesignElement()
     if (pp)
     {
         TilingPtr   tiling                 = workspace->getTiling();
-        Q_ASSERT(tiling);
         QList<PlacedFeaturePtr>	& placed   = tiling->getPlacedFeatures();
         QVector<DesignElementPtr> &  dels  = pp->getDesignElements();
         QVector<QTransform>       & tforms = pp->getLocations();
@@ -484,20 +482,15 @@ void WorkspaceViewer::viewFigureMaker()
 void WorkspaceViewer::viewTiling()
 {
     TilingPtr tiling = workspace->getTiling();
-    if (!tiling)
-    {
-        currentCanvasSettings.setBackgroundColor(Qt::white);
-        currentCanvasSettings.setCanvasSize(getViewSize(VIEW_TILING));
-        return;
-    }
 
     qDebug() << "++WorkspaceViewer::viewTiling (tiling)"  << tiling->getName();
 
     TilingViewPtr tilingView = make_shared<TilingView>(tiling);
 
-    if (MosaicPtr mosaic = setCanvasFromDesign())
+    if (setCanvasFromDesign())
     {
         // use settings from design
+        MosaicPtr mosaic = workspace->getMosaic();
         StylePtr sp = mosaic->getFirstStyle();
         Xform xf = sp->getCanvasXform();
         tilingView->setCanvasXform(xf);
@@ -518,19 +511,14 @@ void WorkspaceViewer::viewTiling()
 void WorkspaceViewer::viewTilingMaker()
 {
     TilingPtr tiling     = workspace->getTiling();
-    if (!tiling)
-    {
-        currentCanvasSettings.setBackgroundColor(Qt::white);
-        currentCanvasSettings.setCanvasSize(getViewSize(VIEW_TILING_MAKER));
-        return;
-    }
 
     qDebug() << "++WorkspaceViewer::viewTilingMaker" << tiling->getName();
 
-    TilingMakerPtr tilingMaker = TilingMaker::getInstance();
-    if (MosaicPtr mosaic = setCanvasFromDesign())
+    TilingMakerPtr tilingMaker = TilingMaker::getSharedInstance();
+    if (setCanvasFromDesign())
     {
         // use settings from design
+        MosaicPtr mosaic = workspace->getMosaic();
         StylePtr sp = mosaic->getFirstStyle();
         Xform xf    = sp->getCanvasXform();
         tilingMaker->setCanvasXform(xf);
@@ -541,6 +529,7 @@ void WorkspaceViewer::viewTilingMaker()
     }
 
     currentCanvasSettings.setBackgroundColor(Qt::white);
+    currentCanvasSettings.setBkgdImage(tiling->getBackground());
 
     mViewers.push_back(tilingMaker);  // add to non-deletable styles not viewers
 }
@@ -549,7 +538,7 @@ void WorkspaceViewer::viewMapEditor()
 {
     qDebug() << "++WorkspaceViewer::viewFigMapEditor";
 
-    MapEditorPtr ed  = MapEditor::getInstance();
+    MapEditorPtr ed  = MapEditor::getSharedInstance();
 
     mViewers.push_back(ed);  // add to non-deletable styles not viewers
 
@@ -638,17 +627,16 @@ void WorkspaceViewer::setViewSize(eViewType e, QSize sz)
 // setters
 //
 
-MosaicPtr WorkspaceViewer::setCanvasFromDesign()
+bool WorkspaceViewer::setCanvasFromDesign()
 {
     MosaicPtr mosaic = workspace->getMosaic();
-    if (mosaic && mosaic->hasContent())
+    if (mosaic->hasContent())
     {
         // copy canvas settings to view settings
         currentCanvasSettings = mosaic->getCanvasSettings();
-        return mosaic;
+        return true;
     }
-    mosaic.reset();
-    return mosaic;
+    return false;
 }
 
 void WorkspaceViewer::setCanvasFromTiling(TilingPtr tiling, LayerPtr layer)

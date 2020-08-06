@@ -100,16 +100,13 @@ void page_workspace::populateTree(bool expandAll)
     loadedStyle = new QTreeWidgetItem();
     loadedStyle->setText(0,"++ Mosaic");
     MosaicPtr  mosaic = ws->getMosaic();
-    if (mosaic)
-    {
-        int size = mosaic->getStyleSet().size();
-        loadedStyle->setText(1,QString("Num=%1").arg(size));
-        loadedStyle->setText(2,mosaic->getName());
-        tree->addTopLevelItem(loadedStyle);
-        loadedStyle->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
-        if (expandAll)
-            slot_itemClicked(loadedStyle,0);
-    }
+    int size = mosaic->getStyleSet().size();
+    loadedStyle->setText(1,QString("Num=%1").arg(size));
+    loadedStyle->setText(2,mosaic->getName());
+    tree->addTopLevelItem(loadedStyle);
+    loadedStyle->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+    if (expandAll)
+        slot_itemClicked(loadedStyle,0);
 
     QVector<PrototypePtr> prototypes = ws->getPrototypes();
     workspacePrototype = new QTreeWidgetItem;
@@ -175,12 +172,9 @@ void page_workspace::slot_itemClicked(QTreeWidgetItem * item, int col)
     }
     else if (item == workspaceTiling)
     {
-        if (ws->getTiling())
-        {
-            removeChildren(workspaceTiling);
-            populateTiling(workspaceTiling,ws->getTiling());
-            tree->expandItem(workspaceTiling);
-        }
+        removeChildren(workspaceTiling);
+        populateTiling(workspaceTiling,ws->getTiling());
+        tree->expandItem(workspaceTiling);
     }
     else
     {

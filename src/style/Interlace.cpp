@@ -96,7 +96,7 @@ void Interlace::createStyleRepresentation()
         return;
     }
 
-    MapPtr map = setupStyleMap();
+    MapPtr map = getMap();
     //map->dumpMap(false);
     map->verifyMap("interlace stylemapA");
 

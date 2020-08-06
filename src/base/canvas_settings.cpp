@@ -44,6 +44,7 @@ CanvasSettings::CanvasSettings(const CanvasSettings & other)
     _startTile = other._startTile;
     _bkgdImage = other._bkgdImage;
     _border    = other._border;
+    _fillData  = other._fillData;
 }
 
 CanvasSettings::~CanvasSettings()
@@ -98,6 +99,17 @@ QPointF CanvasSettings::getCenter()
     return r.center();
 }
 
+void  CanvasSettings::setFillData(FillData & fd)
+{
+    _fillData = fd;
+}
+
+FillData & CanvasSettings::getFillData()
+{
+    return _fillData;
+}
+
+
 //
 // View Settings
 //
@@ -128,7 +140,6 @@ void ViewSettings::init(eViewType evt, Bounds bounds, QSize size)
 
 void ViewSettings::setViewSize(QSize size)
 {
-    _viewSize = size;
     if (size != _viewSize)
     {
         _viewSize = size;

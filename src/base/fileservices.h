@@ -55,7 +55,7 @@ public:
     static bool        usesTilingInDesign(QString file, QString tilename);
     static tilingUses  getTilingUses();
 
-    static QMap<QString,QString> getDirFiles(QString path);
+    static QMap<QString,QString> getDirBMPFiles(QString path);
 
     static QStringList getTemplates();
     static QStringList getPolys();

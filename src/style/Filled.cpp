@@ -101,7 +101,7 @@ void Filled::createStyleRepresentation()
         return;     // already created
     }
 
-    MapPtr map = setupStyleMap();
+    MapPtr map = getMap();
     map->verifyMap("Filled");
 
     purifyMap(map);

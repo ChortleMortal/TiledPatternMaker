@@ -36,7 +36,7 @@ ShapeViewer::ShapeViewer() : Layer("ShapeViewer")
 
 void ShapeViewer::paint(QPainter *painter)
 {
-    qDebug() << "ShapeViewer::paint" << this;
+    //qDebug() << "ShapeViewer::paint" << this;
 
     painter->save();
     painter->translate(getLoc());

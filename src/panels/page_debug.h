@@ -25,7 +25,7 @@
 #ifndef PAGE_DEBUG_H
 #define PAGE_DEBUG_H
 
-#include "panel_page.h"
+#include "panels/panel_page.h"
 
 class page_debug : public panel_page
 {
@@ -78,15 +78,35 @@ private slots:
     void    slot_dir0Changed();
     void    slot_dir1Changed();
 
-protected:
-    QGroupBox * createDebugSection();
-    QGroupBox * createCycleSection();
-    QGroupBox * createImagesSection();
+    void    slot_verifyMapsClicked(bool enb);
+    void    slot_verifyDumpClicked(bool enb);
+    void    slot_verifyVerboseClicked(bool enb);
 
-    void        viewImage(QString file);
+    void    slot_showGridChanged(bool checked);
+    void    slot_gridType_pressed(int idx);
+    void    slot_gridScreenSpacingChanged(int value);
+    void    slot_gridModelSpacingChanged(qreal value);
+    void    slot_gridScreenWidthChanged(int value);
+    void    slot_gridModelWidthChanged(int value);
+    void    slot_gridScreenCenteredChanged(int state);
+    void    slot_gridModelCenteredChanged(int state);
+
+    void    slot_showCenterChanged(int state);
+    void    slot_hideBackChanged(int state);
+
+protected:
+    QGroupBox   * createDebugSection();
+    QGroupBox   * createCycleSection();
+    QGroupBox   * createImagesSection();
+    QVBoxLayout * createMiscSection();
+
+    void viewImage(QString file);
 
     void loadCombo(QComboBox * box, QString dir);
     void setCombo(QComboBox * box,QString name);
+
+    void saveMosaicBitmaps();
+    void saveTilingBitmaps();
 
 private:
     QLineEdit   * dir0;
@@ -95,6 +115,10 @@ private:
     QComboBox   * ibox0;
     QComboBox   * ibox1;
     QLineEdit   * imageCompareResult;
+
+    QGroupBox    *gridBox;
+
+    QButtonGroup  gridModelGroup;
 };
 
 #endif

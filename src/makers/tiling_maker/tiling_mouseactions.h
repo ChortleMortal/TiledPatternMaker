@@ -46,7 +46,7 @@ public:
     bool    active;
 
 private:
-    TilingMakerPtr tm;
+    TilingMaker * tm;
 
     QPointF wStart;
     QPointF wEnd;

@@ -106,29 +106,6 @@ protected:
     int     getTableHeight(int maxHeight);
 };
 
-class LoaderListWidget : public QListWidget
-{
-    Q_OBJECT
-
-public:
-    LoaderListWidget(QWidget *parent = nullptr);
-
-    void addItemList(QStringList list);
-    bool selectItemByName(QString name);
-    bool selectItemByValue(QVariant val);
-
-
-private:
-    void keyReleaseEvent(QKeyEvent *event) override;
-    void mousePressEvent(QMouseEvent *event) override;
-    void mouseDoubleClickEvent(QMouseEvent *) override;
-
-signals:
-    void rightClick(QPoint pos);
-    void leftDoubleClick(QPoint pos);
-    void listEnter();
-};
-
 class AQLineEdit : public QLineEdit
 {
 public:

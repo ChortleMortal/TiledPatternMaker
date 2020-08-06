@@ -175,7 +175,7 @@ enum eKbdMode
     KBD_MODE_SIZE
 };
 
-enum eGridModel
+enum eGridType
 {
     GRID_SCREEN,
     GRID_MODEL
@@ -205,10 +205,8 @@ public:
     eMapEditorMode        mapEditorMode;
 
     eCycleMode            cycleMode;
-    eGridModel            gridModel;
 
     int                   cycleInterval;
-    int                   gridWidth;
     int                   polySides;    // used by tiling maker
 
     QString rootMediaDir;
@@ -237,7 +235,7 @@ public:
     bool    autoLoadStyles;
     bool    autoLoadTiling;
     bool    autoLoadDesigns;
-    bool    scaleSceneToView;
+    bool    scaleToView;
     bool    autoCycle;
     bool    stopIfDiff;
     bool    logToStderr;
@@ -246,10 +244,8 @@ public:
     bool    logNumberLines;
     bool    logWarningsOnly;
     bool    logElapsedTime;
-    bool    wsStatusBox;
     bool    mapedStatusBox;
     bool    showCenter;
-    bool    gridCenter;
     bool    hideBackgroundImage;
     bool    highlightUnit;
 
@@ -257,10 +253,10 @@ public:
     bool    verifyDump;     // TODO - make sure this flag work
     bool    verifyVerbose;  // TODO - make sure this flga works
 
-    bool    designFilterCheck;
+    bool    mosaicFilterCheck;
     bool    tileFilterCheck;
     bool    lockView;
-    bool    screenIsSplit;
+    bool    splitScreen;
 
     bool    tm_showAllFeatures;
     bool    tm_hideTable;
@@ -273,8 +269,17 @@ public:
     bool    compare_ping_pong;
     bool    compare_side_by_side;
 
-    QString designFilter;
+    QString mosaicFilter;
     QString tileFilter;
+
+    bool        showGrid;
+    eGridType   gridType;
+    int         gridModelWidth;
+    bool        gridModelCenter;
+    qreal       gridModelSpacing;
+    int         gridScreenWidth;
+    bool        gridScreenCenter;
+    int         gridScreenSpacing;
 
 
 ////////////////////////////////////////////////////////////////
@@ -284,12 +289,8 @@ public:
 ////////////////////////////////////////////////////////////////
 
     bool    circleX;
-    bool    sceneGrid;
     bool    hideCircles;
     bool    enableDetachedPages;
-
-    qreal   gridStepScreen;
-    qreal   gridStepModel;
 
     bool    updatePanel;
 
@@ -305,8 +306,6 @@ public:
     QColor    figureViewBkgdColor;                // used by some menus
 
     QMap<eDesign,DesignPtr>  availableDesigns;
-
-    static const QString sCanvasMode[KBD_MODE_SIZE];
 
 protected:
     QString getMediaRoot();

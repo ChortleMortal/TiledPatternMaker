@@ -73,6 +73,7 @@ protected:
     void procSize(xml_node & node, int &width, int &height);
     QColor procBackgroundColor(xml_node & node);
     void procBorder(xml_node & node);
+    void procFill(xml_node & node);
     qreal procWidth(xml_node & node);
 
     // styles
@@ -179,6 +180,7 @@ private:
     int                     _height;
     BorderPtr               _border;
     unsigned int            _version;
+    FillData                _fillData;
 
     int vOrigCnt;
     int vRefrCnt;

@@ -38,19 +38,13 @@ using std::string;
 
 page_canvasSettings::page_canvasSettings(ControlPanel * apanel)  : panel_page(apanel,"Canvas Settings")
 {
-    QLabel * label              = new QLabel("Design Source:");
-    QRadioButton *radioStyle    = new QRadioButton("Style");
-    QRadioButton *radioWS       = new QRadioButton("Workspace");
-    QRadioButton *radioShapes   = new QRadioButton("Shapes");
+    view = View::getInstance();
+
     QPushButton  *pbRefresh     = new QPushButton("Refresh");
     QPushButton  *pbMatchDesign = new QPushButton("Match Design to View");
     QPushButton  *pbMatchTiling = new QPushButton("Match Tiling to View");
 
     QHBoxLayout * sourcebox = new QHBoxLayout();
-    sourcebox->addWidget(label);
-    sourcebox ->addWidget(radioStyle);
-    sourcebox ->addWidget(radioWS);
-    sourcebox ->addWidget(radioShapes);
     sourcebox->addStretch();
     sourcebox->addWidget(pbMatchDesign);
     sourcebox->addWidget(pbMatchTiling);
@@ -60,115 +54,63 @@ page_canvasSettings::page_canvasSettings(ControlPanel * apanel)  : panel_page(ap
     QGridLayout * pgrid  = new QGridLayout();
     QGroupBox * box;
 
-    box = createTilingSettings();
-    pgrid->addWidget(box,1,0);
-
     box = createDesignSettings();
     pgrid->addWidget(box,0,0);
 
-    box = createCanvasSettings();
-    pgrid->addWidget(box,0,1);
+    box = createTilingSettings();
+    pgrid->addWidget(box,1,0);
 
     box = createViewSettings();
-    pgrid->addWidget(box,1,1);
-
-    box = createViewStatus();
     pgrid->addWidget(box,2,0);
 
+    box = createWorkspaceStatus();
+    pgrid->addWidget(box,0,1);
+
+    box = createViewStatus();
+    pgrid->addWidget(box,2,1);
+
+#if 0
     box = createDesignBorderSettings();
     pgrid->addWidget(box,3,0);
 
     box = createCanvasBorderSettings();
     pgrid->addWidget(box,3,1);
 
-
     //  source background image
-    QGroupBox * sbox       = new QGroupBox("Design Background Image");
-    QVBoxLayout * svlayout = new QVBoxLayout;
-    sbox->setLayout(svlayout);
-
-    QHBoxLayout * hbox              = new QHBoxLayout;
-    bkgdImageBtn                    = new QPushButton("Select");
-    bkgdImage[DESIGN_SETTINGS]      = new QLineEdit();
-    chk_showBkgd[DESIGN_SETTINGS]   = new QCheckBox("Show Background");
-    chk_adjustBkgd[DESIGN_SETTINGS] = new QCheckBox("Perspective");
-    chk_xformBkgd[DESIGN_SETTINGS]  = new QCheckBox("Xform");
-    hbox->addWidget(bkgdImage[DESIGN_SETTINGS]);
-    hbox->addWidget(bkgdImageBtn);
-    hbox->addWidget(chk_showBkgd[DESIGN_SETTINGS]);
-    hbox->addWidget(chk_xformBkgd[DESIGN_SETTINGS]);
-    hbox->addWidget(chk_adjustBkgd[DESIGN_SETTINGS]);
-    hbox->addStretch();
-    svlayout->addLayout(hbox);
-
-    bkgdLayout[DESIGN_SETTINGS] = new LayoutTransform("Xform",5);
-    svlayout->addLayout(bkgdLayout[DESIGN_SETTINGS]);
-
-    connect(bkgdLayout[DESIGN_SETTINGS],    &LayoutTransform::xformChanged,   this,    &page_canvasSettings::slot_setBkgdXform);
-    connect(chk_showBkgd[DESIGN_SETTINGS],  &QAbstractButton::clicked,        this,    &page_canvasSettings::slot_setBkgd);
-    connect(chk_adjustBkgd[DESIGN_SETTINGS],&QAbstractButton::clicked,        this,    &page_canvasSettings::slot_setBkgd);
-    connect(chk_xformBkgd[DESIGN_SETTINGS], &QAbstractButton::clicked,        this,    &page_canvasSettings::slot_setBkgd);
-
-    hbox = new QHBoxLayout;
-    QPushButton * adjustBtn       = new QPushButton("Adjust perspective");
-    QPushButton * saveAdjustedBtn = new QPushButton("Save Adjusted");
-    hbox->addWidget(adjustBtn);
-    hbox->addStretch();
-    hbox->addWidget(saveAdjustedBtn);
-    svlayout->addLayout(hbox);
+    QGroupBox * sbox = createBackgroundImage(DESIGN_SETTINGS,"Design Background Image");
 
     // canvas background image
-    QGroupBox * cbox = new QGroupBox("Canvas Background Image");
-    QVBoxLayout * cvlayout = new QVBoxLayout();
-    cbox->setLayout(cvlayout);
+    QGroupBox * cbox = createBackgroundImage(WSVIEWER_STATUS,"Canvas Background Image");
+#endif
 
-    hbox = new QHBoxLayout;
-    bkgdImage[CANVAS_SETTINGS]      = new QLineEdit();
-    bkgdImage[CANVAS_SETTINGS]->setReadOnly(true);
-    chk_showBkgd[CANVAS_SETTINGS]   = new QCheckBox("Show Background");
-    chk_adjustBkgd[CANVAS_SETTINGS] = new QCheckBox("Perspective");
-    chk_xformBkgd[CANVAS_SETTINGS]  = new QCheckBox("Xform");
-    hbox->addWidget(bkgdImage[CANVAS_SETTINGS]);
-    hbox->addWidget(chk_showBkgd[CANVAS_SETTINGS]);
-    hbox->addWidget(chk_xformBkgd[CANVAS_SETTINGS]);
-    hbox->addWidget(chk_adjustBkgd[CANVAS_SETTINGS]);
-    hbox->addStretch();
-    cvlayout->addLayout(hbox);
-
-    bkgdLayout[CANVAS_SETTINGS] = new LayoutTransform("Xform",5);
-    cvlayout->addLayout(bkgdLayout[CANVAS_SETTINGS]);
-
-    connect(bkgdLayout[CANVAS_SETTINGS],    &LayoutTransform::xformChanged,   this,    &page_canvasSettings::slot_setBkgdXformCanvas);
-    connect(chk_showBkgd[CANVAS_SETTINGS],  &QAbstractButton::clicked,        this,    &page_canvasSettings::slot_setBkgdCanvas);
-    connect(chk_adjustBkgd[CANVAS_SETTINGS],&QAbstractButton::clicked,        this,    &page_canvasSettings::slot_setBkgdCanvas);
-    connect(chk_xformBkgd[CANVAS_SETTINGS], &QAbstractButton::clicked,        this,    &page_canvasSettings::slot_setBkgdCanvas);
 
     // putting it all together
     vbox->addLayout(sourcebox);
     vbox->addLayout(pgrid);
-    vbox->addWidget(sbox);
-    vbox->addWidget(cbox);
+    /////vbox->addWidget(sbox);
+    ////vbox->addWidget(cbox);
     adjustSize();
 
     // connections
-    WorkspaceViewer * wviewer  = WorkspaceViewer::getInstance();
 
-    connect(bkgdImageBtn,     &QPushButton::clicked,            this,    &page_canvasSettings::slot_loadBackground);
-    connect(adjustBtn,        &QPushButton::clicked,            this,    &page_canvasSettings::slot_adjustBackground);
-    connect(saveAdjustedBtn,  &QPushButton::clicked,            this,    &page_canvasSettings::slot_saveAdjustedBackground);
     connect(pbRefresh,        &QPushButton::clicked,            this,    &page_canvasSettings::display);
     connect(pbMatchDesign,    &QPushButton::clicked,            this,    &page_canvasSettings::slot_matchDesign);
     connect(pbMatchTiling,    &QPushButton::clicked,            this,    &page_canvasSettings::slot_matchTiling);
-    connect(wviewer,          &WorkspaceViewer::sig_viewUpdated,this,    &page_canvasSettings::display);
 
-    connect(maker,  &TiledPatternMaker::sig_loadedTiling,      this, &page_canvasSettings::onEnter);
-    connect(maker,  &TiledPatternMaker::sig_loadedXML,         this, &page_canvasSettings::onEnter);
-    connect(maker,  &TiledPatternMaker::sig_loadedDesign,      this, &page_canvasSettings::onEnter);
+    connect(wsViewer,         &WorkspaceViewer::sig_viewUpdated,this,    &page_canvasSettings::display);
 
-    connect(canvas, &Canvas::sig_deltaScale,    this, &page_canvasSettings::slot_scale);
-    connect(canvas, &Canvas::sig_deltaRotate,   this, &page_canvasSettings::slot_rotate);
-    connect(canvas, &Canvas::sig_deltaMoveY,    this, &page_canvasSettings::slot_moveY);
-    connect(canvas, &Canvas::sig_deltaMoveX,    this, &page_canvasSettings::slot_moveX);
+    connect(tpm,  &TiledPatternMaker::sig_loadedTiling,      this, &page_canvasSettings::onEnter);
+    connect(tpm,  &TiledPatternMaker::sig_loadedXML,         this, &page_canvasSettings::onEnter);
+    connect(tpm,  &TiledPatternMaker::sig_loadedDesign,      this, &page_canvasSettings::onEnter);
+
+    //connect(bkgdImageBtn,     &QPushButton::clicked,            this,    &page_canvasSettings::slot_loadBackground);
+    //connect(adjustBtn,        &QPushButton::clicked,            this,    &page_canvasSettings::slot_adjustBackground);
+    //connect(saveAdjustedBtn,  &QPushButton::clicked,            this,    &page_canvasSettings::slot_saveAdjustedBackground);
+
+    //connect(canvas, &Canvas::sig_deltaScale,    this, &page_canvasSettings::slot_bkgd_scale);
+    //connect(canvas, &Canvas::sig_deltaRotate,   this, &page_canvasSettings::slot_bkgd_rotate);
+    //connect(canvas, &Canvas::sig_deltaMoveY,    this, &page_canvasSettings::slot_bkgd_moveY);
+    //connect(canvas, &Canvas::sig_deltaMoveX,    this, &page_canvasSettings::slot_bkgd_moveX);
 }
 
 QGroupBox *page_canvasSettings::createTilingSettings()
@@ -176,14 +118,12 @@ QGroupBox *page_canvasSettings::createTilingSettings()
     viewW[TILING_SETTINGS] = new SpinSet("width",0,1,4096);
     viewH[TILING_SETTINGS] = new SpinSet("height",0,1,2160);
 
-    labelTilingTransform = new QLabel;
 
     QGridLayout * grid = new QGridLayout();
-    grid->addWidget(labelTilingTransform,0,0,1,2);
-    grid->addLayout(viewW[TILING_SETTINGS],1,0);
-    grid->addLayout(viewH[TILING_SETTINGS],1,1);
+    grid->addLayout(viewW[TILING_SETTINGS],0,0);
+    grid->addLayout(viewH[TILING_SETTINGS],0,1);
 
-    QGroupBox * box = new QGroupBox("Tling Settings");
+    QGroupBox * box = new QGroupBox("Tiling Settings");
     box->setAlignment(Qt::AlignTop);
     box->setLayout(grid);
     return box;
@@ -198,10 +138,33 @@ QGroupBox *page_canvasSettings::createDesignSettings()
     bkColorEdit[DESIGN_SETTINGS]    = new QLineEdit;
     bkgdColorPatch[DESIGN_SETTINGS] = new ClickableLabel;
 
+    QHBoxLayout * hbox1 = new QHBoxLayout;
+    QHBoxLayout * hbox2 = new QHBoxLayout;
+
+    const int rmin = -1000;
+    const int rmax =  1000;
+
+    xRepMin[DESIGN_SETTINGS] = new SpinSet("xMin",0,rmin,rmax);
+    xRepMax[DESIGN_SETTINGS] = new SpinSet("xMax",0,rmin,rmax);
+    yRepMin[DESIGN_SETTINGS] = new SpinSet("yMin",0,rmin,rmax);
+    yRepMax[DESIGN_SETTINGS] = new SpinSet("yMax",0,rmin,rmax);
+    QPushButton * pb =  new QPushButton("Set");
+
+    hbox1->addLayout(xRepMin[DESIGN_SETTINGS]);
+    hbox1->addLayout(xRepMax[DESIGN_SETTINGS]);
+    hbox1->addStretch();
+
+    hbox2->addLayout(yRepMin[DESIGN_SETTINGS]);
+    hbox2->addLayout(yRepMax[DESIGN_SETTINGS]);
+    hbox2->addWidget(pb);
+    hbox2->addStretch();
+
     connect(sizeEditW[DESIGN_SETTINGS],      &SpinSet::valueChanged,  this, &page_canvasSettings::designSizeChanged);
     connect(sizeEditH[DESIGN_SETTINGS],      &SpinSet::valueChanged,  this, &page_canvasSettings::designSizeChanged);
-    connect(bkgdColorPatch[DESIGN_SETTINGS], &ClickableLabel::clicked,this, &page_canvasSettings::pickDesignBackgroundColor);
-    connect(bkColorEdit[DESIGN_SETTINGS],    &QLineEdit::textChanged, this, &page_canvasSettings::designBkgdColorChanged);
+    connect(bkgdColorPatch[DESIGN_SETTINGS], &ClickableLabel::clicked,this, &page_canvasSettings::backgroundColorDesignPick);
+    connect(bkColorEdit[DESIGN_SETTINGS],    &QLineEdit::textChanged, this, &page_canvasSettings::backgroundColorDesignChanged);
+    connect(pb,                              &QPushButton::clicked,   this, &page_canvasSettings::slot_set_repsDesign);
+
     QGridLayout * grid = new QGridLayout();
     grid->addLayout(sizeEditW[DESIGN_SETTINGS],0,0);
     grid->addLayout(sizeEditH[DESIGN_SETTINGS],0,1);
@@ -209,35 +172,42 @@ QGroupBox *page_canvasSettings::createDesignSettings()
     grid->addLayout(startEditY[DESIGN_SETTINGS],1,1);
     grid->addWidget(bkColorEdit[DESIGN_SETTINGS],2,0);
     grid->addWidget(bkgdColorPatch[DESIGN_SETTINGS],2,1);
+    grid->addLayout(hbox1,3,0,1,2);
+    grid->addLayout(hbox2,4,0,1,2);
 
     QGroupBox * box = new QGroupBox("Design Settings");
     box->setLayout(grid);
     return box;
 }
 
-QGroupBox * page_canvasSettings::createCanvasSettings()
+QGroupBox * page_canvasSettings::createWorkspaceStatus()
 {
-    sizeEditW[CANVAS_SETTINGS]      = new SpinSet("width",0,1,4096);
-    sizeEditH[CANVAS_SETTINGS]      = new SpinSet("height",0,1,2160);
-    startEditX[CANVAS_SETTINGS]     = new DoubleSpinSet("start-X",0,-4096,4096);
-    startEditY[CANVAS_SETTINGS]     = new DoubleSpinSet("start-y",0,-2160,2160);
-    bkColorEdit[CANVAS_SETTINGS]    = new QLineEdit;
-    bkgdColorPatch[CANVAS_SETTINGS] = new ClickableLabel;
+    sizeEditW[WSVIEWER_STATUS]      = new SpinSet("width",0,1,4096);
+    sizeEditH[WSVIEWER_STATUS]      = new SpinSet("height",0,1,2160);
+    startEditX[WSVIEWER_STATUS]     = new DoubleSpinSet("start-X",0,-4096,4096);
+    startEditY[WSVIEWER_STATUS]     = new DoubleSpinSet("start-y",0,-2160,2160);
+    bkColorEdit[WSVIEWER_STATUS]    = new QLineEdit;
+    bkgdColorPatch[WSVIEWER_STATUS] = new ClickableLabel;
+    QLabel * l1 = new QLabel("");
+    QLabel * l2 = new QLabel("");
 
-
-    connect(sizeEditW[CANVAS_SETTINGS],      &SpinSet::valueChanged, this, &page_canvasSettings::canvasSizeChanged);
-    connect(sizeEditH[CANVAS_SETTINGS],      &SpinSet::valueChanged, this, &page_canvasSettings::canvasSizeChanged);
-    connect(bkgdColorPatch[CANVAS_SETTINGS], &ClickableLabel::clicked,     this, &page_canvasSettings::pickBackgroundColorCanvas);
+    sizeEditW[WSVIEWER_STATUS]->setReadOnly(true);
+    sizeEditH[WSVIEWER_STATUS]->setReadOnly(true);
+    startEditX[WSVIEWER_STATUS]->setReadOnly(true);
+    startEditY[WSVIEWER_STATUS]->setReadOnly(true);
+    bkColorEdit[WSVIEWER_STATUS]->setReadOnly(true);
 
     QGridLayout * grid = new QGridLayout();
-    grid->addLayout(sizeEditW[CANVAS_SETTINGS],0,0);
-    grid->addLayout(sizeEditH[CANVAS_SETTINGS],0,1);
-    grid->addLayout(startEditX[CANVAS_SETTINGS],1,0);
-    grid->addLayout(startEditY[CANVAS_SETTINGS],1,1);
-    grid->addWidget(bkColorEdit[CANVAS_SETTINGS],2,0);
-    grid->addWidget(bkgdColorPatch[CANVAS_SETTINGS],2,1);
+    grid->addLayout(sizeEditW[WSVIEWER_STATUS],0,0);
+    grid->addLayout(sizeEditH[WSVIEWER_STATUS],0,1);
+    grid->addLayout(startEditX[WSVIEWER_STATUS],1,0);
+    grid->addLayout(startEditY[WSVIEWER_STATUS],1,1);
+    grid->addWidget(bkColorEdit[WSVIEWER_STATUS],2,0);
+    grid->addWidget(bkgdColorPatch[WSVIEWER_STATUS],2,1);
+    grid->addWidget(l1,3,0);
+    grid->addWidget(l2,4,0);
 
-    QGroupBox * box = new QGroupBox("Canvas Settings");
+    QGroupBox * box = new QGroupBox("Workspace Status");
     box->setLayout(grid);
     return box;
 }
@@ -246,20 +216,17 @@ QGroupBox *page_canvasSettings::createViewSettings()
 {
     viewW[VIEW_SETTINGS] = new SpinSet("width",0,1,4096);
     viewH[VIEW_SETTINGS] = new SpinSet("height",0,1,2160);
-    viewLabel            = new QLabel;
-    viewLabel->setAlignment(Qt::AlignRight);
 
     connect(viewW[VIEW_SETTINGS], &SpinSet::valueChanged, this, &page_canvasSettings::viewSizeChanged);
     connect(viewH[VIEW_SETTINGS], &SpinSet::valueChanged, this, &page_canvasSettings::viewSizeChanged);
 
     QGridLayout * grid = new QGridLayout();
-    grid->addWidget(viewLabel,0,0,1,2);
     grid->addLayout(viewW[VIEW_SETTINGS],1,0);
     grid->addLayout(viewH[VIEW_SETTINGS],1,1);
 
-    QGroupBox * box = new QGroupBox("View Settings");
-    box->setLayout(grid);
-    return box;
+    viewBox = new QGroupBox("View Settings");
+    viewBox->setLayout(grid);
+    return viewBox;
 }
 
 QGroupBox *page_canvasSettings::createViewStatus()
@@ -270,12 +237,9 @@ QGroupBox *page_canvasSettings::createViewStatus()
     viewW[VIEW_STATUS]->setReadOnly(true);
     viewH[VIEW_STATUS]->setReadOnly(true);
 
-    labelViewTransform = new QLabel;
-
     QGridLayout * grid = new QGridLayout();
-    grid->addWidget(labelViewTransform,0,0,1,2);
-    grid->addLayout(viewW[VIEW_STATUS],1,0);
-    grid->addLayout(viewH[VIEW_STATUS],1,1);
+    grid->addLayout(viewW[VIEW_STATUS],0,0);
+    grid->addLayout(viewH[VIEW_STATUS],0,1);
 
     QGroupBox * box = new QGroupBox("View Status");
     box->setAlignment(Qt::AlignTop);
@@ -283,6 +247,58 @@ QGroupBox *page_canvasSettings::createViewStatus()
     return box;
 }
 
+#if 0
+QGroupBox * page_canvasSettings::createBackgroundImage(eSettingsGroup group, QString title)
+{
+    QGroupBox * sbox       = new QGroupBox("title");
+    QVBoxLayout * svlayout = new QVBoxLayout;
+    sbox->setLayout(svlayout);
+
+    QHBoxLayout * hbox    = new QHBoxLayout;
+    bkgdImageBtn          = new QPushButton("Select");
+    bkgdImage[group]      = new QLineEdit();
+    chk_showBkgd[group]   = new QCheckBox("Show Background");
+    chk_adjustBkgd[group] = new QCheckBox("Perspective");
+    chk_xformBkgd[group]  = new QCheckBox("Xform");
+    hbox->addWidget(bkgdImage[group]);
+    hbox->addWidget(bkgdImageBtn);
+    hbox->addWidget(chk_showBkgd[group]);
+    hbox->addWidget(chk_xformBkgd[group]);
+    hbox->addWidget(chk_adjustBkgd[group]);
+    hbox->addStretch();
+    svlayout->addLayout(hbox);
+
+    bkgdLayout[group] = new LayoutTransform("Xform",5);
+    svlayout->addLayout(bkgdLayout[group]);
+
+    if (group == DESIGN_SETTINGS)
+    {
+        connect(bkgdLayout[group],    &LayoutTransform::xformChanged,   this,    &page_canvasSettings::slot_setBkgdXform);
+        connect(chk_showBkgd[group],  &QAbstractButton::clicked,        this,    &page_canvasSettings::slot_setBkgd);
+        connect(chk_adjustBkgd[group],&QAbstractButton::clicked,        this,    &page_canvasSettings::slot_setBkgd);
+        connect(chk_xformBkgd[group], &QAbstractButton::clicked,        this,    &page_canvasSettings::slot_setBkgd);
+    }
+
+    if (group == WSVIEWER_STATUS)
+    {
+        connect(bkgdLayout[group],    &LayoutTransform::xformChanged,   this,    &page_canvasSettings::slot_setBkgdXformCanvas);
+        connect(chk_showBkgd[group],  &QAbstractButton::clicked,        this,    &page_canvasSettings::slot_setBkgdCanvas);
+        connect(chk_adjustBkgd[group],&QAbstractButton::clicked,        this,    &page_canvasSettings::slot_setBkgdCanvas);
+        connect(chk_xformBkgd[group], &QAbstractButton::clicked,        this,    &page_canvasSettings::slot_setBkgdCanvas);
+    }
+
+    hbox = new QHBoxLayout;
+    QPushButton * adjustBtn       = new QPushButton("Adjust perspective");
+    QPushButton * saveAdjustedBtn = new QPushButton("Save Adjusted");
+    hbox->addWidget(adjustBtn);
+    hbox->addStretch();
+    hbox->addWidget(saveAdjustedBtn);
+    svlayout->addLayout(hbox);
+
+    return sbox;
+}
+#endif
+#if 0
 QGroupBox *page_canvasSettings::createCanvasBorderSettings()
 {
     QGroupBox * bbox = new QGroupBox("Canvas Border Settings");
@@ -370,11 +386,13 @@ QGroupBox *page_canvasSettings::createDesignBorderSettings()
 
     return bbox;
 }
+#endif
 
 void  page_canvasSettings::refreshPage()
 {
+#if 0
     // background Images
-    BkgdImgPtr bi = viewer->getBkgdImage();
+    BkgdImgPtr bi = wsViewer->getBkgdImage();
     if (bi)
     {
         Xform xf = bi->getXform();
@@ -392,14 +410,18 @@ void  page_canvasSettings::refreshPage()
     {
         bkgdImage[VIEW_STATUS]->setText("none");
     }
+#endif
 
-    // view
-    View * view = View::getInstance();
+    // Workspace status
+    CanvasSettings & cSettingsv = wsViewer->getCurrentCanvasSettings();
+    displaySettings(cSettingsv, WSVIEWER_STATUS);
+    //displayBkgdImgSettings(cSettingsv,CANVAS_SETTINGS);
+
+    // View Status
     QSize size  = view->size();
     viewW[VIEW_STATUS]->setValue(size.width());
     viewH[VIEW_STATUS]->setValue(size.height());
-    viewLabel->setText(sViewerType[config->viewerType]);
-    labelViewTransform->setText(Transform::toInfoString(viewer->getViewTransform(config->viewerType)));
+    viewBox->setTitle(QString("View Settings : %1").arg(sViewerType[config->viewerType]));
 }
 
 void page_canvasSettings::onEnter()
@@ -409,29 +431,24 @@ void page_canvasSettings::onEnter()
 
 void page_canvasSettings::display()
 {
-    CanvasSettings & cSettings = getDesignSettings();
+    // mosaic/design settings;
+    CanvasSettings & cSettings = getMosaicOrDesignSettings();
     displaySettings(cSettings, DESIGN_SETTINGS);
-    displayBkgdImgSettings(cSettings,DESIGN_SETTINGS);
+    //displayBkgdImgSettings(cSettings,DESIGN_SETTINGS);
 
-    CanvasSettings & cSettingsv = viewer->getCurrentCanvasSettings();
-    displaySettings(cSettingsv, CANVAS_SETTINGS);
-    displayBkgdImgSettings(cSettingsv,CANVAS_SETTINGS);
-
-    TilingPtr tiling = workspace->getTiling();
-    if (tiling)
-    {
-        QSize size  = tiling->getCanvasSize();
-        Xform xf    = tiling->getCanvasXform();
-        viewW[TILING_SETTINGS]->setValue(size.width());
-        viewH[TILING_SETTINGS]->setValue(size.height());
-        labelTilingTransform->setText(Transform::toInfoString(xf.getTransform()));
-    }
-
-    ViewSettings & vsettings = viewer->getViewSettings(config->viewerType);
+    // view settings
+    ViewSettings & vsettings = wsViewer->getViewSettings(config->viewerType);
     QSize sz = vsettings.getViewSize();
     viewW[VIEW_SETTINGS]->setValue(sz.width());
     viewH[VIEW_SETTINGS]->setValue(sz.height());
 
+    // tiling settings
+    TilingPtr tiling = workspace->getTiling();
+    QSize size  = tiling->getCanvasSize();
+    viewW[TILING_SETTINGS]->setValue(size.width());
+    viewH[TILING_SETTINGS]->setValue(size.height());
+
+  #if 0
     // display background
     BkgdImgPtr bi = cSettings.getBkgdImage();
     if (bi)
@@ -460,6 +477,7 @@ void page_canvasSettings::display()
 
     bp = cSettingsv.getBorder();
     displayBorder(bp,CANVAS_SETTINGS);
+#endif
 }
 
 void page_canvasSettings::displaySettings(CanvasSettings & cSettings, eSettingsGroup group)
@@ -480,8 +498,115 @@ void page_canvasSettings::displaySettings(CanvasSettings & cSettings, eSettingsG
     QPointF  pt = cSettings.getStartTile();
     startEditX[group]->setValue(pt.x());
     startEditY[group]->setValue(pt.y());
+
+    if (group == DESIGN_SETTINGS)
+    {
+        int xMin,xMax,yMin,yMax;
+        cSettings.getFillData().get(xMin ,xMax,yMin,yMax);
+        xRepMin[group]->setValue(xMin);
+        xRepMax[group]->setValue(xMax);
+        yRepMin[group]->setValue(yMin);
+        yRepMax[group]->setValue(yMax);
+    }
 }
 
+void page_canvasSettings::designSizeChanged(int)
+{
+    CanvasSettings & cSettings = getMosaicOrDesignSettings();
+    QSize sz = QSize(sizeEditW[DESIGN_SETTINGS]->value(),sizeEditH[DESIGN_SETTINGS]->value());
+    cSettings.setCanvasSize(sz);
+    emit sig_viewWS();
+}
+
+void page_canvasSettings::viewSizeChanged(int)
+{
+    ViewSettings & vSettings = wsViewer->getViewSettings(config->viewerType);
+    QSize sz = QSize(sizeEditW[WSVIEWER_STATUS]->value(),sizeEditH[WSVIEWER_STATUS]->value());
+    vSettings.setViewSize(sz);
+    emit sig_viewWS();
+}
+
+CanvasSettings & page_canvasSettings::getMosaicOrDesignSettings()
+{
+    static CanvasSettings dummy;
+    if (config->viewerType == VIEW_DESIGN)
+    {
+        QVector<DesignPtr> & designs = workspace->getDesigns();
+        if (designs.count())
+        {
+            DesignPtr dp = designs.first();
+            return dp->getDesignInfo();
+        }
+        else
+        {
+            return dummy;
+        }
+    }
+    else
+    {
+        return workspace->getMosaicSettings();
+    }
+}
+
+// match design to view
+void page_canvasSettings::slot_matchDesign()
+{
+    QSize size = view->size();
+    CanvasSettings & cSettings = getMosaicOrDesignSettings();
+    cSettings.setCanvasSize(size);
+    emit sig_viewWS();
+}
+
+
+void page_canvasSettings::slot_matchTiling()
+{
+    QSize size = view->size();
+    TilingPtr tiling = workspace->getTiling();
+    tiling->setCanvasSize(size);
+    emit sig_viewWS();
+}
+
+void page_canvasSettings::slot_set_repsDesign()
+{
+    FillData fd;
+    fd.set(xRepMin[DESIGN_SETTINGS]->value(), xRepMax[DESIGN_SETTINGS]->value(), yRepMin[DESIGN_SETTINGS]->value(), yRepMax[DESIGN_SETTINGS]->value());
+
+    CanvasSettings & cSettings = getMosaicOrDesignSettings();
+    cSettings.setFillData(fd);
+
+    emit sig_render();
+}
+
+void page_canvasSettings::backgroundColorDesignPick()
+{
+    CanvasSettings & cSettings = getMosaicOrDesignSettings();
+    QColor color = cSettings.getBackgroundColor();
+
+    AQColorDialog dlg(color,this);
+    dlg.setCurrentColor(color);
+    int rv = dlg.exec();
+    if (rv != QDialog::Accepted) return;
+
+    color = dlg.selectedColor();
+    if (color.isValid())
+    {
+        bkColorEdit[DESIGN_SETTINGS]->setText(color.name(QColor::HexArgb));
+
+        QVariant variant = color;
+        QString colcode  = variant.toString();
+        bkgdColorPatch[DESIGN_SETTINGS]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+    }
+}
+
+void page_canvasSettings::backgroundColorDesignChanged(const QString & str)
+{
+    QColor color = QColor(str);
+    CanvasSettings & cSettings = getMosaicOrDesignSettings();
+    cSettings.setBackgroundColor(color);
+    emit sig_viewWS();
+}
+
+#if 0
 void page_canvasSettings::displayBkgdImgSettings(CanvasSettings & cSettings, eSettingsGroup group)
 {
     // display background
@@ -577,7 +702,7 @@ void page_canvasSettings::setBorderFromForm()
     bool ok;
     QColor color;
 
-    CanvasSettings & cSettings = viewer->getCurrentCanvasSettings();
+    CanvasSettings & cSettings = wsViewer->getCurrentCanvasSettings();
     BorderPtr bp = cSettings.getBorder();
     if (bp)
     {
@@ -607,7 +732,7 @@ void page_canvasSettings::setBorderFromForm()
 
 void page_canvasSettings::pickBorderColor()
 {
-    CanvasSettings & cSettings = viewer->getCurrentCanvasSettings();
+    CanvasSettings & cSettings = wsViewer->getCurrentCanvasSettings();
     BorderPtr bp = cSettings.getBorder();
     if (!bp) return;
     QColor color = bp->getColor();
@@ -630,7 +755,7 @@ void page_canvasSettings::pickBorderColor()
 
 void page_canvasSettings::pickBorderColor2()
 {
-    CanvasSettings & cSettings = viewer->getCurrentCanvasSettings();
+    CanvasSettings & cSettings = wsViewer->getCurrentCanvasSettings();
     BorderPtr bp = cSettings.getBorder();
     if (!bp) return;
 
@@ -677,30 +802,13 @@ void page_canvasSettings::borderChanged(int row)
         break;
     }
 
-    CanvasSettings & cSettings = viewer->getCurrentCanvasSettings();
+    CanvasSettings & cSettings = wsViewer->getCurrentCanvasSettings();
     cSettings.setBorder(bp);
 }
+#endif
 
-// match design to view
-void page_canvasSettings::slot_matchDesign()
-{
-    QSize size = view->size();
-    CanvasSettings & cSettings = getDesignSettings();
-    cSettings.setCanvasSize(size);
-    emit sig_viewWS();
-}
 
-void page_canvasSettings::slot_matchTiling()
-{
-    QSize size = view->size();
-    TilingPtr tiling = workspace->getTiling();
-    if (tiling)
-    {
-        tiling->setCanvasSize(size);
-    }
-    emit sig_viewWS();
-}
-
+#if 0
 void page_canvasSettings::slot_loadBackground()
 {
     QString bkgdDir = config->rootMediaDir + "bkgd_photos/";
@@ -719,36 +827,10 @@ void page_canvasSettings::slot_loadBackground()
         }
     }
 }
+#endif
 
-void page_canvasSettings::pickDesignBackgroundColor()
-{
-    CanvasSettings & cSettings = getDesignSettings();
-    QColor color = cSettings.getBackgroundColor();
 
-    AQColorDialog dlg(color,this);
-    dlg.setCurrentColor(color);
-    int rv = dlg.exec();
-    if (rv != QDialog::Accepted) return;
-
-    color = dlg.selectedColor();
-    if (color.isValid())
-    {
-        bkColorEdit[DESIGN_SETTINGS]->setText(color.name(QColor::HexArgb));
-
-        QVariant variant = color;
-        QString colcode  = variant.toString();
-        bkgdColorPatch[DESIGN_SETTINGS]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
-    }
-}
-
-void page_canvasSettings::designBkgdColorChanged(const QString & str)
-{
-    QColor color = QColor(str);
-    CanvasSettings & cSettings = getDesignSettings();
-    cSettings.setBackgroundColor(color);
-    emit sig_viewWS();
-}
-
+#if 0
 void page_canvasSettings::slot_setBkgd()
 {
     CanvasSettings & cSettings = workspace->getMosaicSettings();
@@ -783,7 +865,7 @@ void page_canvasSettings::slot_setBkgdXform()
 
 void page_canvasSettings::slot_setBkgdXformCanvas()
 {
-    CanvasSettings & cSettings = viewer->getCurrentCanvasSettings();
+    CanvasSettings & cSettings = wsViewer->getCurrentCanvasSettings();
     BkgdImgPtr bi = cSettings.getBkgdImage();
     if (bi)
     {
@@ -796,7 +878,7 @@ void page_canvasSettings::slot_setBkgdXformCanvas()
 
 void page_canvasSettings::slot_setBkgdCanvas()
 {
-    CanvasSettings & cSettings = viewer->getCurrentCanvasSettings();
+    CanvasSettings & cSettings = wsViewer->getCurrentCanvasSettings();
     BkgdImgPtr bi = cSettings.getBkgdImage();
     if (bi)
     {
@@ -810,26 +892,7 @@ void page_canvasSettings::slot_setBkgdCanvas()
     }
 }
 
-void page_canvasSettings::pickBackgroundColorCanvas()
-{
-    CanvasSettings & cSettings = viewer->getCurrentCanvasSettings();
-    QColor color = cSettings.getBackgroundColor();
 
-    AQColorDialog dlg(color,this);
-    dlg.setCurrentColor(color);
-    int rv = dlg.exec();
-    if (rv != QDialog::Accepted) return;
-
-    color = dlg.selectedColor();
-    if (color.isValid())
-    {
-        bkColorEdit[CANVAS_SETTINGS]->setText(color.name(QColor::HexArgb));
-
-        QVariant variant = color;
-        QString colcode  = variant.toString();
-        bkgdColorPatch[CANVAS_SETTINGS]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
-    }
-}
 
 
 void page_canvasSettings::slot_adjustBackground()
@@ -912,8 +975,10 @@ void page_canvasSettings::slot_saveAdjustedBackground()
     box.exec();
 #endif
 }
+#endif
 
-void page_canvasSettings::slot_moveX(int amount)
+#if 0
+void page_canvasSettings::slot_bkgd_moveX(int amount)
 {
     if (panel->getCurrentPage() == dynamic_cast<panel_page*>(this) && config->kbdMode == KBD_MODE_XFORM_BKGD)
     {
@@ -922,7 +987,7 @@ void page_canvasSettings::slot_moveX(int amount)
     }
 }
 
-void page_canvasSettings::slot_moveY(int amount)
+void page_canvasSettings::slot_bkgd_moveY(int amount)
 {
     if (panel->getCurrentPage() == dynamic_cast<panel_page*>(this) && config->kbdMode == KBD_MODE_XFORM_BKGD)
     {
@@ -931,7 +996,7 @@ void page_canvasSettings::slot_moveY(int amount)
     }
 }
 
-void page_canvasSettings::slot_rotate(int amount)
+void page_canvasSettings::slot_bkgd_rotate(int amount)
 {
     if (panel->getCurrentPage() == dynamic_cast<panel_page*>(this) && config->kbdMode == KBD_MODE_XFORM_BKGD)
     {
@@ -940,7 +1005,7 @@ void page_canvasSettings::slot_rotate(int amount)
     }
 }
 
-void page_canvasSettings::slot_scale(int amount)
+void page_canvasSettings::slot_bkgd_scale(int amount)
 {
     if (panel->getCurrentPage() == dynamic_cast<panel_page*>(this) && config->kbdMode == KBD_MODE_XFORM_BKGD)
     {
@@ -948,50 +1013,6 @@ void page_canvasSettings::slot_scale(int amount)
         bkgdLayout[DESIGN_SETTINGS]->bumpScale(-amount);
     }
 }
+#endif
 
-void page_canvasSettings::designSizeChanged(int)
-{
-    CanvasSettings & cSettings = getDesignSettings();
-    QSize sz = QSize(sizeEditW[DESIGN_SETTINGS]->value(),sizeEditH[DESIGN_SETTINGS]->value());
-    cSettings.setCanvasSize(sz);
-    emit sig_viewWS();
-}
-
-void page_canvasSettings::canvasSizeChanged(int)
-{
-    CanvasSettings & cSettings = viewer->getCurrentCanvasSettings();
-    QSize sz = QSize(sizeEditW[CANVAS_SETTINGS]->value(),sizeEditH[CANVAS_SETTINGS]->value());
-    cSettings.setCanvasSize(sz);
-    emit sig_viewWS();
-}
-
-void page_canvasSettings::viewSizeChanged(int)
-{
-    ViewSettings & vSettings = viewer->getViewSettings(config->viewerType);
-    QSize sz = QSize(sizeEditW[CANVAS_SETTINGS]->value(),sizeEditH[CANVAS_SETTINGS]->value());
-    vSettings.setViewSize(sz);
-    emit sig_viewWS();
-}
-
-CanvasSettings & page_canvasSettings::getDesignSettings()
-{
-    static CanvasSettings dummy;
-    if (config->viewerType == VIEW_DESIGN)
-    {
-        QVector<DesignPtr> & designs = workspace->getDesigns();
-        if (designs.count())
-        {
-            DesignPtr dp = designs.first();
-            return dp->getDesignInfo();
-        }
-        else
-        {
-            return dummy;
-        }
-    }
-    else
-    {
-        return workspace->getMosaicSettings();
-    }
-}
 

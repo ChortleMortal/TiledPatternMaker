@@ -26,26 +26,25 @@
 
 DlgRebase::DlgRebase(QWidget * parent) : QDialog(parent)
 {
-    QGridLayout * grid = new QGridLayout();
-    QLabel * oldLabel = new QLabel("Old Version");
-    QLabel * newLabel = new QLabel("New Version");
     QLabel * descrip  = new QLabel("Deletes all versions higher than new version");
-
-    oldVersion = new QLineEdit();
+    oldVersion = new SpinSet("Old version",0,0,99);
     oldVersion->setReadOnly(true);
-    newVersion = new QLineEdit();
+    newVersion = new SpinSet("New Version",0,0,99);
 
     QPushButton * cancelBtn = new QPushButton("Cancel");
     QPushButton * renameBtn = new QPushButton("Rebase");
 
-    grid->addWidget(oldLabel,0,0);
-    grid->addWidget(oldVersion,0,1);
-    grid->addWidget(newLabel,1,0);
-    grid->addWidget(newVersion,1,1);
-    grid->addWidget(descrip,2,0,1,2);
-    grid->addWidget(cancelBtn,3,0);
-    grid->addWidget(renameBtn,3,1);
-    setLayout(grid);
+    QVBoxLayout * vbox = new QVBoxLayout();
+    vbox->addWidget(descrip);
+    vbox->addLayout(oldVersion);
+    vbox->addLayout(newVersion);
+
+    QHBoxLayout * hbox = new QHBoxLayout();
+    hbox->addWidget(cancelBtn);
+    hbox->addWidget(renameBtn);
+    vbox->addLayout(hbox);
+
+    setLayout(vbox);
 
     connect(cancelBtn, &QPushButton::clicked, this, &QDialog::reject);
     connect(renameBtn, &QPushButton::clicked, this, &QDialog::accept);

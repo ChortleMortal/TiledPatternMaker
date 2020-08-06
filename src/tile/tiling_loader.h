@@ -30,23 +30,7 @@
 #include "geometry/xform.h"
 #include "tile/placed_feature.h"
 #include "base/pugixml.hpp"
-
-class Tiling;
-
-class FillData
-{
-public:
-    FillData();
-    void set(int minX, int minY, int maxX, int maxY);
-    void set(FillData & fdata);
-    void get(int & minX, int & maxX, int & minY, int & maxY);
-
-protected:
-    int minX;
-    int minY;
-    int maxX;
-    int maxY;
-};
+#include "base/filldata.h"
 
 class TilingLoader
 {
@@ -70,7 +54,6 @@ protected:
     void        getViewSettings(pugi::xml_node & node);
 
 private:
-    int            version;
     TilingPtr      tiling;
 };
 

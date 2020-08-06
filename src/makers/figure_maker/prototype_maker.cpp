@@ -157,10 +157,10 @@ FeaturePtr PrototypeMaker::getActiveFeature()
 }
 
 
-bool PrototypeMaker::duplicateActiveFeature()
+void PrototypeMaker::duplicateActiveFeature()
 {
     FeaturePtr fp = getActiveFeature();
-    if (!fp) return false;
+    if (!fp) return;
 
     // create new feature
     FeaturePtr fp2;
@@ -174,8 +174,6 @@ bool PrototypeMaker::duplicateActiveFeature()
     }
 
     TilingPtr tiling = workspace->getTiling();
-    if (!tiling) return false;
-
     QList<PlacedFeaturePtr> & pfps = tiling->getPlacedFeatures();
 
     for (auto pfp : pfps)
@@ -194,8 +192,6 @@ bool PrototypeMaker::duplicateActiveFeature()
             }
         }
     }
-
-    return true;
 }
 
 

@@ -495,7 +495,7 @@ bool  TilingMakerView::nearGridPoint(QPointF spt, QPointF & foundGridPoint)
 {
     if (_snapToGrid)
     {
-        qreal step  = config->gridStepModel;
+        qreal step  = config->gridModelSpacing;
 
         for (qreal x = (-20.0 * step); x < (20 * step); x += step)
         {

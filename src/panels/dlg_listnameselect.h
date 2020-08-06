@@ -2,7 +2,7 @@
 #define DLG_LIST_NAME_SELECT_H
 
 #include <QDialog>
-#include "panels/panel_misc.h"
+#include "panels/versioned_list_widget.h"
 
 class DlgListNameSelect : public QDialog
 {

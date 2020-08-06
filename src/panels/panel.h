@@ -86,6 +86,7 @@ private slots:
     void    updateView(bool enb);
     void    slot_xformModeChanged(int row);
     void    slot_kbdMode(eKbdMode mode);
+    void    slot_scaleToView(bool enb);
     void    showDesignClicked(bool state);
 
 protected:

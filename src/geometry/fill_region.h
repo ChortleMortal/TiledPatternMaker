@@ -53,6 +53,7 @@
 
 class FillData;
 class Configuration;
+class Workspace;
 
 class FillRegion
 {
@@ -60,13 +61,14 @@ public:
     FillRegion();
     virtual ~FillRegion() {}
 
-    void fill(GeoGraphics * gg, FillData fd);
+    void fill(GeoGraphics * gg);
     virtual void receive(class GeoGraphics * gg, int h, int v ) = 0;
 
 protected:
 
 private:
     Configuration * config;
+    Workspace     * workspace;
 
 };
 #endif

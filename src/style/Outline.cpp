@@ -72,7 +72,7 @@ void Outline::createStyleRepresentation()
         return;
     }
 
-    MapPtr map = setupStyleMap();
+    MapPtr map = getMap();
 
     for (auto edge : map->getEdges())
     {

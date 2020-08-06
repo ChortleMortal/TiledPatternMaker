@@ -49,7 +49,7 @@ public:
 
     void        setActiveFeature(FeatureBtnPtr fb);
     FeaturePtr  getActiveFeature();
-    bool        duplicateActiveFeature();
+    void        duplicateActiveFeature();
 
     PrototypePtr getPrototype();
 

@@ -53,3 +53,11 @@ DlgRename::DlgRename(QWidget * parent) : QDialog(parent)
 
     newEdit->setFocus();
 }
+
+
+void DlgRename::keyPressEvent(QKeyEvent *evt)
+{
+    if(evt->key() == Qt::Key_Enter || evt->key() == Qt::Key_Return)
+        return;
+    QDialog::keyPressEvent(evt);
+}

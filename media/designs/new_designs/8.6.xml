@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<vector id="1" version="5">
+<vector id="1" version="6">
 	<designNotes>based on tiling 8.6</designNotes>
 	<design>
 		<size>
@@ -9,6 +9,7 @@
 		<background>
 			<color>#ffffffff</color>
 		</background>
+		<Fill>-5,5,-6,4</Fill>
 	</design>
 	<style.Interlace id="2" serialization="custom">
 		<toolkit.GeoLayer>

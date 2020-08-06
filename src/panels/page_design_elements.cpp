@@ -61,9 +61,9 @@ page_design_elements:: page_design_elements(ControlPanel * cpanel)  : panel_page
     connect(refreshButton,      &QPushButton::clicked,             this, &page_design_elements::onEnter);
     connect(delTable,           &QTableWidget::cellClicked,        this, &page_design_elements::slot_rowSelected);
 
-    connect(maker,  &TiledPatternMaker::sig_loadedTiling,   this,   &page_design_elements::slot_loadedTiling);
-    connect(maker,  &TiledPatternMaker::sig_loadedXML,      this,   &page_design_elements::slot_loadedXML);
-    connect(maker,  &TiledPatternMaker::sig_loadedDesign,   this,   &page_design_elements::slot_loadedDesign);
+    connect(tpm,  &TiledPatternMaker::sig_loadedTiling,   this,   &page_design_elements::slot_loadedTiling);
+    connect(tpm,  &TiledPatternMaker::sig_loadedXML,      this,   &page_design_elements::slot_loadedXML);
+    connect(tpm,  &TiledPatternMaker::sig_loadedDesign,   this,   &page_design_elements::slot_loadedDesign);
 
 
 }

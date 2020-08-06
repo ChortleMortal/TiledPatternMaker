@@ -29,6 +29,7 @@
 #include "base/tiledpatternmaker.h"
 #include "viewers/workspace_viewer.h"
 #include "base/fileservices.h"
+#include "panels/versioned_list_widget.h"
 
 Cycler * Cycler::mpThis = nullptr;
 
@@ -55,7 +56,7 @@ void Cycler::init(QThread * thread)
 {
     moveToThread(thread);
 
-    QTimer * timer = new QTimer();
+    timer = new QTimer();
 
     Workspace * ws = Workspace::getInstance();
     connect(this,   &Cycler::sig_clearCanvas, ws,   &Workspace::slot_clearCanvas);
@@ -82,11 +83,9 @@ void Cycler::slot_startCycle(eCycleMode mode)
     switch(cycleMode)
     {
     case CYCLE_STYLES:
-    case CYCLE_SAVE_STYLE_BMPS:
         startCycleStyles();
         break;
     case CYCLE_TILINGS:
-    case CYCLE_SAVE_TILING_BMPS:
         startCycleTilings();
         break;
     case CYCLE_ORIGINAL_PNGS:
@@ -96,8 +95,9 @@ void Cycler::slot_startCycle(eCycleMode mode)
         startCycleCompareImages();
         break;
     case CYCLE_NONE:
-        qWarning() << "CYCLE_NONE sent to start";
-        break;
+    case CYCLE_SAVE_TILING_BMPS:
+    case CYCLE_SAVE_STYLE_BMPS:
+        qWarning() << "slot_startCycle: unexpeced mode";
     }
 }
 
@@ -139,7 +139,7 @@ void Cycler::slot_timeout()
         if (++cIndex < files.size())
         {
             QString name = files.at(cIndex);
-            sig_loadTiling(name);
+            emit sig_loadTiling(name);
         }
         else
         {
@@ -156,7 +156,7 @@ void Cycler::slot_timeout()
         if (++cIndex < files.size())
         {
             QString name = files.at(cIndex);
-            sig_loadXML(name);
+            emit sig_loadXML(name);
         }
         else
         {
@@ -164,58 +164,25 @@ void Cycler::slot_timeout()
         }
         break;
 
-    case  CYCLE_SAVE_STYLE_BMPS:
-        if (++cCount < config->cycleInterval)
-           break;
-
-        cCount = 0;
-        busy   = true;
-        if (++cIndex < files.size())
-        {
-            // this saves a copy for testing
-            QString name  = files.at(cIndex);
-            emit sig_saveAsBMP(name);
-        }
-        else
-        {
-            slot_stopCycle();
-        }
-        break;
-
-    case  CYCLE_SAVE_TILING_BMPS:
-        if (++cCount < config->cycleInterval)
-           break;
-
-        cCount = 0;
-        busy   = true;
-        if (++cIndex < files.size())
-        {
-            // this saves a copy for testing
-            QString name  = files.at(cIndex);
-            emit sig_saveTilingAsBMP(name);
-        }
-        else
-        {
-            slot_stopCycle();
-        }
-        break;
 
     case CYCLE_COMPARE_IMAGES:
-        if (map_it == mapa.end())
+        if (imgList_it == imgList.end())
         {
             slot_stopCycle();
         }
         else
         {
             busy = true;
-            QString name = map_it.key();
-            map_it++;
+            QString name = *imgList_it;
+            imgList_it++;
             emit sig_compare(name,name);
         }
         break;
 
-    case CYCLE_ORIGINAL_PNGS:
     case CYCLE_NONE:
+    case CYCLE_ORIGINAL_PNGS:
+    case CYCLE_SAVE_STYLE_BMPS:
+    case CYCLE_SAVE_TILING_BMPS:
         break;
     }
 }
@@ -241,9 +208,9 @@ void Cycler::slot_psuedoKey(int key )
 
 void Cycler::startCycleStyles()
 {
-    if (config->designFilterCheck &&  !config->designFilter.isEmpty())
+    if (config->mosaicFilterCheck &&  !config->mosaicFilter.isEmpty())
     {
-        files = FileServices::getFilteredDesignNames(config->designFilter);
+        files = FileServices::getFilteredDesignNames(config->mosaicFilter);
     }
     else
     {
@@ -271,19 +238,25 @@ void Cycler::startCycleTilings()
 
 void Cycler::startCycleCompareImages()
 {
-    mapa = FileServices::getDirFiles(config->compareDir0);
-    mapb = FileServices::getDirFiles(config->compareDir1);
+    mapa = FileServices::getDirBMPFiles(config->compareDir0);
+    mapb = FileServices::getDirBMPFiles(config->compareDir1);
 
-    map_it = mapa.begin();
+    QStringList names = mapa.keys();
+
+    VersionList vlist;
+    vlist.create(names);
+    imgList = vlist.recompose();
+
+    imgList_it = imgList.begin();
 }
 
 void Cycler::slot_view_images()
 {
-    map_it--;
-    QString name   = map_it.key();
-    QString file1  = map_it.value();
+    imgList_it--;
+    QString name   = *imgList_it;
+    QString file1  = mapa.value(name);
     QString file2  = mapb.value(name);
-    map_it++;
+    imgList_it++;
 
     emit sig_viewImage(file1);
     emit sig_viewImage(file2);

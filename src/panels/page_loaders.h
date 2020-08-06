@@ -27,6 +27,8 @@
 
 #include "base/configuration.h"
 #include "panels/panel_page.h"
+#include "panels/versioned_list_widget.h"
+
 
 class page_loaders : public panel_page
 {
@@ -83,7 +85,9 @@ private slots:
     void    loadXMLCombo();
     void    loadDesignCombo();
 
-    void    slot_designCheck(bool check);
+    void    slot_mosaicFilter(const QString & filter);
+    void    slot_tilingFilter(const QString & filter);
+    void    slot_mosaicCheck(bool check);
     void    slot_tilingCheck(bool check);
 
     void    autoLoadStylesClicked(bool enb);
@@ -99,16 +103,16 @@ protected:
     bool    putNewTilingNameIntoTiling(QString filename, QString newName);
 
 private:
-    LoaderListWidget * tileList;
-    LoaderListWidget * xmlList;
-    LoaderListWidget * designList;
+    VersionedListWidget * tileList;
+    VersionedListWidget * mosaicList;
+    LoaderListWidget    * designList;
 
     QPushButton * pbLoadShapes;
     QPushButton * pbLoadTiling;
     QPushButton * pbLoadXML;
 
-    QCheckBox   * designFilterCheck;
-    QLineEdit   * designFilter;
+    QCheckBox   * mosaicFilterCheck;
+    QLineEdit   * mosaicFilter;
     QCheckBox   * tilingFilterCheck;
     QLineEdit   * tilingFilter;
 

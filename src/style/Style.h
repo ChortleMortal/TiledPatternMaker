@@ -68,7 +68,7 @@ public:
     void         setPrototype(PrototypePtr pp);
     PolyPtr      getBoundary() const {return boundary;}
 
-    MapPtr       getMap()          { return styleMap; }
+    MapPtr       getMap();
 
     TilingPtr    getTiling();
 
@@ -85,7 +85,7 @@ public:
     virtual eStyleType  getStyleType() const = 0;
 
     virtual void    draw(GeoGraphics * gg) = 0;
-    virtual void    paint(QPainter *painter);
+    virtual void    paint(QPainter *painter) override;
             void    paintToSVG();
 
     void    triggerPaintSVG() { paintSVG = true; }
@@ -93,7 +93,6 @@ public:
     static int refs;
 
 protected:
-    MapPtr setupStyleMap();  // copies shared pointer from prototype
     void   resetStyleMap() { styleMap.reset(); }
 
     void   annotateEdges(MapPtr map);

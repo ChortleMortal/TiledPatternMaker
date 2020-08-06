@@ -97,101 +97,14 @@ page_config:: page_config(ControlPanel * cpanel)  : panel_page(cpanel,"Configura
     connect(le_newTile,    &QLineEdit::textChanged,   this, &page_config::newTtileChanged);
     connect(le_rootImage,  &QLineEdit::textChanged,   this, &page_config::rootImageChanged);
     connect(le_examples,   &QLineEdit::textChanged,   this, &page_config::examplesChanged);
-
-    QCheckBox    * hideBackImage       = new QCheckBox("Hide background image");
-    QCheckBox    * showCenterChk       = new QCheckBox("Show Center");
-    scaleSceneToView                   = new QCheckBox("Scale Scene to View");
-
-    QHBoxLayout * hbox2 = new QHBoxLayout;
-    hbox2->addWidget(hideBackImage);
-    hbox2->addWidget(showCenterChk);
-    hbox2->addWidget(scaleSceneToView);
-    hbox2->addStretch();
-
-    QLabel       * gridLabel           = new QLabel("Grid:");
-    QRadioButton * gridScreen          = new QRadioButton("Screen");
-    QRadioButton * gridModel           = new QRadioButton("Model");
-    gridSpacing                        = new DoubleSpinSet("Spacing",1.0,0.0001,900);
-    gridSpacing->setDecimals(8);
-    QCheckBox    * gridCentered        = new QCheckBox("Centered");
-    SpinSet      * gridWidth           = new SpinSet("Width",config->gridWidth,1,9);
-
-    showCenterChk->setChecked(config->showCenter);
-    gridCentered->setChecked(config->gridCenter);
-
-    // map editor group
-    gridModelGroup.addButton(gridScreen,GRID_SCREEN);
-    gridModelGroup.addButton(gridModel,GRID_MODEL);
-    gridModelGroup.button(config->gridModel)->setChecked(true);
-
-    connect(&gridModelGroup,    SIGNAL(buttonClicked(int)),   this,  SLOT(slot_gridModel_pressed(int)));
-    connect(gridSpacing,        &DoubleSpinSet::valueChanged, this, &page_config::slot_gridSpacingChanged);
-    connect(gridWidth,          &SpinSet::valueChanged,       this, &page_config::slot_gridWidthChanged);
-    connect(showCenterChk,      &QCheckBox::stateChanged,     this, &page_config::slot_showCenterChanged);
-    connect(scaleSceneToView,      &QCheckBox::stateChanged,  this, &page_config::slot_scaleSceneToView);
-    connect(hideBackImage,      &QCheckBox::stateChanged,     this, &page_config::slot_hideBackChanged);
-    connect(gridCentered,       &QCheckBox::stateChanged,     this, &page_config::slot_centeredChanged);
-
-    QHBoxLayout * hbox = new QHBoxLayout;
-    hbox->addWidget(gridLabel);
-    hbox->addWidget(gridScreen);
-    hbox->addWidget(gridModel);
-    hbox->addLayout(gridSpacing);
-    hbox->addWidget(gridCentered);
-    hbox->addLayout(gridWidth);
-    hbox->addStretch();
-
-    QCheckBox   * cbVerifyMaps          = new QCheckBox("Verify Maps");
-    QCheckBox   * cbVerifyDump          = new QCheckBox("Dump Map");
-    QCheckBox   * cbVerifyVerbose       = new QCheckBox("Verbose");
-
-    vbox->addSpacing(9);
-    vbox->addLayout(hbox2);
-    vbox->addLayout(hbox);
-    vbox->addWidget(cbVerifyMaps);
-
-    hbox = new QHBoxLayout();
-    hbox->addSpacing(15);
-    hbox->addWidget(cbVerifyDump);
-    vbox->addLayout(hbox);
-
-    hbox = new QHBoxLayout();
-    hbox->addSpacing(15);
-    hbox->addWidget(cbVerifyVerbose);
-    vbox->addLayout(hbox);
-
-    cbVerifyMaps->setChecked(config->verifyMaps);
-    cbVerifyDump->setChecked(config->verifyDump);
-    cbVerifyVerbose->setChecked(config->verifyVerbose);
-
-    connect(cbVerifyMaps,   &QCheckBox::clicked,    this,   &page_config::slot_verifyMapsClicked);
-    connect(cbVerifyDump,   &QCheckBox::clicked,    this,   &page_config::slot_verifyDumpClicked);
-    connect(cbVerifyVerbose,&QCheckBox::clicked,    this,   &page_config::slot_verifyVerboseClicked);
-
 }
 
 void  page_config::onEnter()
 {
-    scaleSceneToView->setChecked(config->scaleSceneToView);
-    gridModelGroup.button(config->gridModel)->setChecked(true);
-    switch (config->gridModel)
-    {
-    case GRID_MODEL:
-        gridSpacing->setLabel("Model Units:");
-        gridSpacing->setValue(config->gridStepModel);
-        gridSpacing->setSingleStep(0.01);
-        break;
-    case GRID_SCREEN:
-        gridSpacing->setLabel("Screen Units:");
-        gridSpacing->setValue(config->gridStepScreen);
-        gridSpacing->setSingleStep(1.0);
-        break;
-    }
 }
 
 void  page_config::refreshPage()
 {
-
 }
 
 void page_config::selectRootTileDir()
@@ -310,70 +223,4 @@ void page_config::updatePaths()
     le_examples->setText(config->examplesDir);
     le_xmlTool->setText(config->xmlTool);
     update();
-}
-
-void  page_config::slot_verifyMapsClicked(bool enb)
-{
-    config->verifyMaps = enb;
-}
-
-void  page_config::slot_verifyDumpClicked(bool enb)
-{
-    config->verifyDump = enb;
-}
-
-void  page_config::slot_verifyVerboseClicked(bool enb)
-{
-    config->verifyVerbose = enb;
-}
-
-void page_config::slot_gridSpacingChanged(qreal value)
-{
-    switch(config->gridModel)
-    {
-    case GRID_MODEL:
-        config->gridStepModel = value;
-        break;
-    case GRID_SCREEN:
-        config->gridStepScreen = static_cast<int>(value);
-        break;
-    }
-    view->update();
-}
-
-void page_config::slot_gridWidthChanged(int value)
-{
-    config->gridWidth = value;
-    view->update();
-}
-
-void page_config::slot_gridModel_pressed(int id)
-{
-    config->gridModel = eGridModel(id);
-    view->update();
-    onEnter();
-}
-
-void page_config::slot_showCenterChanged(int id)
-{
-    config->showCenter = (id == Qt::Checked);
-    view->update();
-}
-
-void page_config::slot_hideBackChanged(int id)
-{
-    config->hideBackgroundImage = (id == Qt::Checked);
-    view->update();
-}
-
-void page_config::slot_centeredChanged(int id)
-{
-    config->gridCenter = (id == Qt::Checked);
-    view->update();
-}
-
-void  page_config::slot_scaleSceneToView(int state)
-{
-    config->scaleSceneToView = (state == Qt::Checked);
-
 }

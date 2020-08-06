@@ -34,7 +34,7 @@ typedef QVector<StylePtr> StyleSet;
 class Mosaic
 {
 public:
-    Mosaic() {}
+    Mosaic() { name = "The Formless"; }
     ~Mosaic() {}
 
     bool        hasContent() { return (styleSet.size() > 0); }
@@ -46,7 +46,6 @@ public:
     int         moveUp(StylePtr style);
     int         moveDown(StylePtr style);
     void        deleteStyle(StylePtr style);
-    void        clear();
 
     const StyleSet & getStyleSet() { return styleSet; }
 

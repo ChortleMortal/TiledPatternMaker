@@ -140,8 +140,7 @@ bool Workspace::loadMosaic(QString name)
 
     XmlLoader loader;
     MosaicPtr mosaic = loader.loadMosaic(file);
-
-    ws.mosaic = mosaic;
+    setMosaic(mosaic);
 
     if (mosaic)
     {
@@ -238,6 +237,31 @@ bool Workspace::saveMosaic(QString name, QString & savedName, bool forceOverwrit
     return rv;
 }
 
+void Workspace::setMosaic(MosaicPtr mosaic)
+{
+    ws.mosaic = mosaic;
+}
+
+
+MosaicPtr Workspace::getMosaic()
+{
+    if (!ws.mosaic)
+    {
+        ws.mosaic = make_shared<Mosaic>();
+    }
+    return ws.mosaic;
+}
+
+
+TilingPtr Workspace::getTiling()
+{
+    if (!ws.tiling)
+    {
+        ws.tiling = make_shared<Tiling>();
+    }
+    return ws.tiling;
+}
+
 bool Workspace::loadTiling(QString name)
 {
     TilingManager * tm = TilingManager::getInstance();
@@ -275,7 +299,7 @@ bool Workspace::saveTiling(QString name, TilingPtr tp)
     QSize size  = view->size();
     tp->setCanvasSize(size);
 
-    TilingMakerPtr maker = TilingMaker::getInstance();
+    TilingMaker * maker = TilingMaker::getInstance();
     if (maker->currentTiling == tp)
     {
         Xform xf = maker->getCanvasXform();

@@ -476,7 +476,7 @@ tilingUses  FileServices::getTilingUses()
     return uses;
 }
 
-QMap<QString,QString> FileServices::getDirFiles(QString path)
+QMap<QString,QString> FileServices::getDirBMPFiles(QString path)
 {
     QMap<QString,QString> map;
 
@@ -485,6 +485,7 @@ QMap<QString,QString> FileServices::getDirFiles(QString path)
     {
         QString file = it.next();
         QString name = it.fileName();
+        name.remove(".bmp");
         map[name] = file;
     }
     return map;

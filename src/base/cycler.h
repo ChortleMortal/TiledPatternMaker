@@ -77,8 +77,6 @@ signals:
     void sig_loadTiling(QString name);
     void sig_finished();
     void sig_show_png(QString file, int row, int col);
-    void sig_saveAsBMP(QString);
-    void sig_saveTilingAsBMP(QString);
     void sig_compare(QString,QString);
     void sig_viewImage(QString filename);
 
@@ -89,7 +87,6 @@ public slots:
    void slot_ready();
    void slot_view_images();
    void slot_timeout();
-
 
 protected:
     void startCycleStyles();
@@ -107,6 +104,8 @@ private:
     Configuration * config;
     Canvas        * canvas;
 
+    QTimer        * timer;
+
     bool            cyclePause;
 
     bool            busy;
@@ -123,7 +122,8 @@ private:
 
     QMap<QString,QString> mapa;
     QMap<QString,QString> mapb;
-    QMap<QString,QString>::iterator map_it;
+    QStringList           imgList;
+    QStringList::iterator imgList_it;
 };
 
 #endif // CYCLER_H

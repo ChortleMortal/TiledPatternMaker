@@ -26,14 +26,6 @@
 #include "style/style.h"
 #include <QDebug>
 
-void Mosaic::clear()
-{
-    styleSet.clear(); // can now delete these since scene uses a copy
-    name.clear();
-    designNotes.clear();
-    canvasSettings.clear();
-}
-
 void  Mosaic::addStyle(StylePtr style)
 {
     qDebug() << "adding style to workspace: old count=" << styleSet.size();

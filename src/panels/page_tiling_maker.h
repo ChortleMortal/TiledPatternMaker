@@ -92,7 +92,6 @@ private slots:
     void slot_remove_clicked();
     void slot_uniquify_clicked();
     void slot_setModes(int mode);
-    void slot_set_reps();
     void slot_menu(QPointF spt);
     void slot_menu_edit_feature();
     void slot_menu_includePlaced();
@@ -130,9 +129,9 @@ protected:
     PlacedFeaturePtr getFeatureColumn(int col);
 
 private:
-    TilingMakerPtr tilingMaker;
+    TilingMaker * tilingMaker;
 
-    QLabel       * currentTiling;
+    QLabel    * currentTiling;
 
     QCheckBox * chk_autoFill;
     QCheckBox * chk_hideTable;
@@ -155,11 +154,6 @@ private:
     QLabel       * debugLabel2;
 
     AQTableWidget * tileInfoTable;
-
-    SpinSet    * xRepMin;
-    SpinSet    * xRepMax;
-    SpinSet    * yRepMin;
-    SpinSet    * yRepMax;
 
     QSignalMapper  f_sidesMapper;
     QSignalMapper  f_rotMapper;

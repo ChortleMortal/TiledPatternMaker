@@ -140,7 +140,7 @@ void ControlPanel::closeEvent(QCloseEvent *event)
 {
     Q_UNUSED(event)
 
-    if (!config->screenIsSplit)
+    if (!config->splitScreen)
     {
         QSettings s;
         s.setValue("panelPos", pos());
@@ -187,13 +187,15 @@ void ControlPanel::setupGUI()
 
     QPushButton * pbLogEvent      = new QPushButton("Log Event");
     QPushButton * pbViewWorkspace = new QPushButton("View Workspace");
-    QPushButton * pbUpdateView    = new QPushButton("UpdateView");
+    QPushButton * pbUpdateView    = new QPushButton("Updatev View");
+    QCheckBox   * chkScaleToView  = new QCheckBox("Scale to View");
 
     hlayout->setContentsMargins(0, 0, 0, 0);
     hlayout->addWidget(pbLogEvent);
     hlayout->addStretch();
     hlayout->addWidget(pbViewWorkspace);
     hlayout->addWidget(pbUpdateView);
+    hlayout->addWidget(chkScaleToView);
     hlayout->addStretch();
     hlayout->addWidget(radioDefined);
     hlayout->addWidget(radioPack);
@@ -268,6 +270,7 @@ void ControlPanel::setupGUI()
     this->setLayout(panelBox);
 
     cbUpdate->setChecked(config->updatePanel);
+    chkScaleToView->setChecked(config->scaleToView);
 
     // connections
     WorkspaceViewer * viewer = WorkspaceViewer::getInstance();
@@ -284,6 +287,7 @@ void ControlPanel::setupGUI()
     connect(xformModeCombo,     SIGNAL(currentIndexChanged(int)),   this,    SLOT(slot_xformModeChanged(int)));
     connect(canvas,             &Canvas::sig_kbdMode,               this,    &ControlPanel::slot_kbdMode);
     connect(cbShowDesign,       &QCheckBox::clicked,                this,    &ControlPanel::showDesignClicked);
+    connect(chkScaleToView,     &QCheckBox::clicked,                this,    &ControlPanel::slot_scaleToView);
 }
 
 void ControlPanel::populatePages()
@@ -718,17 +722,8 @@ void  ControlPanel::showDesignClicked(bool state)
     emit sig_viewWS();
 }
 
-void  page_views::slot_selectViewer(int id)
+void ControlPanel::slot_scaleToView(bool enb)
 {
-    if (config->lockView)
-    {
-        return;
-    }
-
-    viewerGroup.button(id)->setChecked(true);
-#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
-    emit viewerGroup.buttonClicked(id);
-#else
-    emit viewerGroup.idClicked(id);
-#endif
+    config->scaleToView = enb;
 }
+

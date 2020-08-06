@@ -97,9 +97,8 @@ public slots:
 protected:
     Xform      xf_canvas;
     QTransform qtr_view;
-    QTransform qtr_canvas;
-    QTransform qtr_layer;
-    QTransform qtr_invert;
+    QTransform qtr_layer;       // calculated
+    QTransform qtr_invert;      // calculated
 
     QPen       layerPen;
 
@@ -108,14 +107,12 @@ protected:
     WorkspaceViewer * wsViewer;
     View            * view;
 
-    bool    visible;
-
-    QVector<LayerPtr>  subLayers;
-
 private:
     void computeLayerTransform();
     void deltaLoc(QPointF loc);
 
+    bool    visible;
+    QVector<LayerPtr>  subLayers;
 
     QString name;
     int     zlevel;

@@ -51,9 +51,9 @@ class TilingMaker : public TilingMakerView
     friend bool Workspace::saveTiling(QString name, TilingPtr tp);
 
 public:
-    static TilingMakerPtr getInstance();
+    static TilingMaker*    getInstance();
+    static TilingMakerPtr  getSharedInstance();
     TilingMaker();
-    static TilingMakerPtr mpThis;
 
     bool procKeyEvent(QKeyEvent * k);
 
@@ -172,6 +172,10 @@ protected:
     void startMouseInteraction(QPointF spt, enum Qt::MouseButton mouseButton);
 
 private:
+
+    static TilingMaker *  mpThis;
+    static TilingMakerPtr spThis;
+
     TilingPtr           currentTiling;      // only used for xml save
     TilingSelectionPtr  currentSelection;   // Current mouse selection.
     PlacedFeaturePtr    editFeature;        // Feature in DlgFeatureEdit

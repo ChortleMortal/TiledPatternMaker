@@ -50,12 +50,13 @@ int Tiling::refs = 0;
 
 Tiling::Tiling()
 {
-    name     = "The Unnamed";
-    author   = "Author";
-    desc     = "Description";
-    bkgd     = make_shared<BackgroundImage>();
-    dirty    = false;
+    name       = "The Unnamed";
+    author     = "Author";
+    desc       = "Description";
+    bkgd       = make_shared<BackgroundImage>();
+    dirty      = false;
     canvasSize = QSize(1500,1100);
+    version    = -1;
     refs++;
 }
 
@@ -76,7 +77,8 @@ Tiling::Tiling(QString name, QPointF t1, QPointF t2)
     desc        = "Description";
     bkgd        = make_shared<BackgroundImage>();
     dirty       = false;
-    canvasSize    = QSize(1500,1100);
+    canvasSize  = QSize(1500,1100);
+    version     = -1;
     refs++;
 }
 
@@ -95,9 +97,10 @@ Tiling::Tiling(Tiling * other)
     desc        = other->desc;
     author      = other->author;
     fillData    = other->fillData;
-    canvasSize    = other->canvasSize;
+    canvasSize  = other->canvasSize;
     dirty       = other->dirty;
-    canvasXform  = other->canvasXform;
+    canvasXform = other->canvasXform;
+    version     = -1;
     refs++;
 }
 

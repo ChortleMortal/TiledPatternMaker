@@ -236,14 +236,24 @@ void XmlLoader::processVector(xml_node & node)
     }
     qDebug() << "end vector";
 
-    CanvasSettings info;
-    info.setBackgroundColor(_background);
-    info.setCanvasSize(QSize(_width,_height));
-    info.setBorder(_border);
-    info.setBkgdImage(_tiling->getBackground());
+    CanvasSettings cs;
+    cs.setBackgroundColor(_background);
+    cs.setCanvasSize(QSize(_width,_height));
+    cs.setBorder(_border);
+    cs.setBkgdImage(_tiling->getBackground());
 
-    mosaic->setCanvasSettings(info);
+    // Canvas Settings fill data defaults to FillData defaults, loader can  override these
+    if (_version >= 6)
+    {
+        cs.setFillData(_fillData);
+    }
+    else if (_tiling->getVersion() == 2)
+    {
+        FillData fd = _tiling->getFillData();
+        cs.setFillData(fd);
+    }
 
+    mosaic->setCanvasSettings(cs);
 }
 
 void XmlLoader::processDesign(xml_node & node)
@@ -260,6 +270,8 @@ void XmlLoader::processDesign(xml_node & node)
             _background = procBackgroundColor(n);
         else if (str == "border")
             procBorder(n);
+        else if (str == "Fill")
+            procFill(n);
         else
             fail("Unexpected", str.c_str());
     }
@@ -1173,7 +1185,6 @@ PrototypePtr XmlLoader::getPrototype(xml_node & node)
         }
     }
 
-    proto->createProtoMap();
     qDebug() << "Proto created";
 
     return proto;
@@ -1967,6 +1978,14 @@ QTransform XmlLoader::getQTransform(QString txt)
     return QTransform(m11,m12,m13,m21,m22,m23,m31,m32,m33);
 }
 
+void XmlLoader::procFill(xml_node & node)
+{
+    QString txt = node.child_value();
+    QStringList qsl;
+    qsl = txt.split(',');
+    _fillData.set(qsl[0].toInt(),qsl[1].toInt(),qsl[2].toInt(),qsl[3].toInt());
+}
+
 void XmlLoader::procBorder(xml_node & node)
 {
     xml_attribute atype = node.attribute("type");
@@ -1988,6 +2007,8 @@ void XmlLoader::procBorder(xml_node & node)
         break;
     }
 }
+
+
 
 void XmlLoader::procBorderPlain(xml_node & node)
 {

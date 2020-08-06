@@ -263,10 +263,10 @@ void MapEditorView::drawConstructionCircles(QPainter * painter)
 
 void MapEditorView::unload()
 {
-    delp.reset();
-    prop.reset();
     styp.reset();
-
+    prop.reset();
+    delp.reset();
+    tiling.reset();
     figp.reset();
     feap.reset();
     map.reset();

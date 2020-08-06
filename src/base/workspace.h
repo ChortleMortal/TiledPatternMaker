@@ -68,12 +68,12 @@ public:
     void        clearDesigns();
 
     // Mosaic
-    void        setMosaic(MosaicPtr mosaic) { ws.mosaic = mosaic; }
-    MosaicPtr   getMosaic() { return ws.mosaic; }
+    void        setMosaic(MosaicPtr mosaic);
+    MosaicPtr   getMosaic();
 
     // loaded tilings
     void        setTiling( TilingPtr t) { ws.tiling = t; }
-    TilingPtr   getTiling() { return ws.tiling; }
+    TilingPtr   getTiling();
 
     // prototypes
     void         addPrototype(PrototypePtr pp);

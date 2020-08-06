@@ -47,9 +47,10 @@ class MapEditor : public MapEditorSelection
     friend class CreateCrop;
 
 public:
-    static MapEditorPtr getInstance();
+    static MapEditor *  getInstance();
+    static MapEditorPtr getSharedInstance();
+
     MapEditor();
-    static MapEditorPtr mpThis;
 
     void            setDesignElement(DesignElementPtr delpptr);
     void            setPrototype(PrototypePtr prop);
@@ -96,10 +97,15 @@ public slots:
     void slot_mouseMoved(QPointF spt);
 
 protected:
+
     void    setMousePos(QPointF pt);
     MapPtr  createFromTiling();
 
 private:
+
+    static MapEditor    * mpThis;
+    static MapEditorPtr   spThis;
+
     SelectionSet currentSelections;
 
     // Mouse tracking.

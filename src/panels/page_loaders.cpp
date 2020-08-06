@@ -38,9 +38,9 @@ page_loaders::page_loaders(ControlPanel * apanel) : panel_page(apanel,"Load")
 
     setupUI();
 
-    designFilter->setText(config->designFilter);
+    mosaicFilter->setText(config->mosaicFilter);
     tilingFilter->setText(config->tileFilter);
-    designFilterCheck->setChecked(config->designFilterCheck);
+    mosaicFilterCheck->setChecked(config->mosaicFilterCheck);
     tilingFilterCheck->setChecked(config->tileFilterCheck);
 
     // make connections before making selections
@@ -65,15 +65,12 @@ void page_loaders::setupUI()
     designList->setFixedSize(205,LOADER_MAX_HEIGHT);
     designList->setSelectionMode(QAbstractItemView::SingleSelection);
 
-    xmlList = new LoaderListWidget();
-    xmlList->setFixedSize(231,LOADER_MAX_HEIGHT);
-    xmlList->setSortingEnabled(true);
-    xmlList->setMouseTracking(true);
-    xmlList->setSelectionMode(QAbstractItemView::SingleSelection);
+    mosaicList = new VersionedListWidget();
+    mosaicList->setFixedSize(231,LOADER_MAX_HEIGHT);
+    mosaicList->setSelectionMode(QAbstractItemView::SingleSelection);
 
-    tileList = new LoaderListWidget();
+    tileList = new VersionedListWidget();
     tileList->setFixedSize(201,LOADER_MAX_HEIGHT);
-    tileList->setSortingEnabled(false);
     tileList->setSelectionMode(QAbstractItemView::SingleSelection);
 
     pbLoadShapes = new QPushButton("Load Shapes");
@@ -88,8 +85,8 @@ void page_loaders::setupUI()
     cbAutoLoadDesigns = new QCheckBox("Auto-load");
 
     tilingFilter = new QLineEdit();
-    designFilter = new QLineEdit();
-    designFilterCheck = new QCheckBox();
+    mosaicFilter = new QLineEdit();
+    mosaicFilterCheck = new QCheckBox();
     tilingFilterCheck = new QCheckBox();
 
     QLabel * label1 = new QLabel("Filter:");
@@ -110,14 +107,14 @@ void page_loaders::setupUI()
     // Mosaics
     hbox = new QHBoxLayout();
     hbox->addWidget(label1);
-    hbox->addWidget(designFilterCheck);
-    hbox->addWidget(designFilter);
+    hbox->addWidget(mosaicFilterCheck);
+    hbox->addWidget(mosaicFilter);
     grid->addLayout(hbox,0,1);
     hbox = new QHBoxLayout();
     hbox->addWidget(cbAutoLoadMosaics);
     hbox->addWidget(pbLoadXML);
     grid->addLayout(hbox,1,1);
-    grid->addWidget(xmlList,2,1);
+    grid->addWidget(mosaicList,2,1);
 
     // tiling
     hbox = new QHBoxLayout();
@@ -141,31 +138,33 @@ void page_loaders::setupUI()
 
 void page_loaders::makeConnections()
 {
-    connect(maker,          &TiledPatternMaker::sig_loadedXML,    this, &page_loaders::slot_loadedXML);
-    connect(maker,          &TiledPatternMaker::sig_loadedTiling, this, &page_loaders::slot_loadedTiling);
-    connect(maker,          &TiledPatternMaker::sig_loadedDesign, this, &page_loaders::slot_loadedDesign);
+    connect(tpm,          &TiledPatternMaker::sig_loadedXML,    this, &page_loaders::slot_loadedXML);
+    connect(tpm,          &TiledPatternMaker::sig_loadedTiling, this, &page_loaders::slot_loadedTiling);
+    connect(tpm,          &TiledPatternMaker::sig_loadedDesign, this, &page_loaders::slot_loadedDesign);
 
-    connect(maker,          &TiledPatternMaker::sig_newXML, this,    &page_loaders::slot_newXML);
+    connect(tpm,          &TiledPatternMaker::sig_newXML, this,    &page_loaders::slot_newXML);
     connect(workspace,      &Workspace::sig_newTiling,      this,    &page_loaders::slot_newTile);
 
     connect(pbLoadXML,      &QPushButton::clicked,          this,    &page_loaders::loadXML);
     connect(pbLoadTiling,   &QPushButton::clicked,          this ,   &page_loaders::loadTiling);
     connect(pbLoadShapes,   &QPushButton::clicked,          this ,   &page_loaders::loadShapes);
-    connect(designFilterCheck, &QCheckBox::clicked,         this ,   &page_loaders::slot_designCheck);
+    connect(mosaicFilter,   &QLineEdit::textEdited,         this ,   &page_loaders::slot_mosaicFilter);
+    connect(tilingFilter,   &QLineEdit::textEdited,         this ,   &page_loaders::slot_tilingFilter);
+    connect(mosaicFilterCheck, &QCheckBox::clicked,         this ,   &page_loaders::slot_mosaicCheck);
     connect(tilingFilterCheck, &QCheckBox::clicked,         this ,   &page_loaders::slot_tilingCheck);
-    connect(this,           &page_loaders::sig_loadXML,     maker,   &TiledPatternMaker::slot_loadXML);
-    connect(this,           &page_loaders::sig_loadTiling,  maker,   &TiledPatternMaker::slot_loadTiling);
-    connect(this,           &page_loaders::sig_loadDesign,  maker,   &TiledPatternMaker::slot_loadDesign);
-    connect(this,           &page_loaders::sig_buildDesign, maker,   &TiledPatternMaker::slot_buildDesign);
+    connect(this,           &page_loaders::sig_loadXML,     tpm,   &TiledPatternMaker::slot_loadXML);
+    connect(this,           &page_loaders::sig_loadTiling,  tpm,   &TiledPatternMaker::slot_loadTiling);
+    connect(this,           &page_loaders::sig_loadDesign,  tpm,   &TiledPatternMaker::slot_loadDesign);
+    connect(this,           &page_loaders::sig_buildDesign, tpm,   &TiledPatternMaker::slot_buildDesign);
 
     connect(designList,     &QListWidget::currentItemChanged, this,  &page_loaders::designSelected);
     connect(designList,     SIGNAL(rightClick(QPoint)),       this,  SLOT(desRightClick(QPoint)));
 
-    connect(xmlList,        &QListWidget::currentItemChanged, this,  &page_loaders::xmlSelected);
-    connect(xmlList,        &LoaderListWidget::itemEntered,   this,  &page_loaders::slot_itemEnteredToolTip);
-    connect(xmlList,        SIGNAL(rightClick(QPoint)),       this,  SLOT(xmlRightClick(QPoint)));
-    connect(xmlList,        SIGNAL(leftDoubleClick(QPoint)),  this,  SLOT(loadXML()));
-    connect(xmlList,        SIGNAL(listEnter()),              this,  SLOT(loadXML()));
+    connect(mosaicList,        &QListWidget::currentItemChanged, this,  &page_loaders::xmlSelected);
+    connect(mosaicList,        &LoaderListWidget::itemEntered,   this,  &page_loaders::slot_itemEnteredToolTip);
+    connect(mosaicList,        SIGNAL(rightClick(QPoint)),       this,  SLOT(xmlRightClick(QPoint)));
+    connect(mosaicList,        SIGNAL(leftDoubleClick(QPoint)),  this,  SLOT(loadXML()));
+    connect(mosaicList,        SIGNAL(listEnter()),              this,  SLOT(loadXML()));
 
     connect(tileList,       &QListWidget::currentItemChanged, this,  &page_loaders::tilingSelected);
     connect(tileList,       SIGNAL(rightClick(QPoint)),       this, SLOT(tileRightClick(QPoint)));
@@ -175,10 +174,28 @@ void page_loaders::makeConnections()
     connect(cbAutoLoadDesigns,  SIGNAL(clicked(bool)),         this,    SLOT(autoLoadDesignsClicked(bool)));
 }
 
-void page_loaders::slot_designCheck(bool check)
+void page_loaders::slot_mosaicFilter(const QString & filter)
 {
-    config->designFilter      = designFilter->text();
-    config->designFilterCheck = check;
+    config->mosaicFilter = filter;
+    if (config->mosaicFilterCheck)
+    {
+        loadXMLCombo();
+    }
+}
+
+void page_loaders::slot_tilingFilter(const QString & filter)
+{
+    config->tileFilter = filter;
+    if (config->tileFilterCheck)
+    {
+        loadTilingsCombo();
+    }
+}
+
+void page_loaders::slot_mosaicCheck(bool check)
+{
+    config->mosaicFilter      = mosaicFilter->text();
+    config->mosaicFilterCheck = check;
     loadXMLCombo();
 }
 
@@ -251,8 +268,8 @@ void page_loaders::slot_loadedXML(QString name)
 {
     qDebug() << "page_loaders:: loaded XML:" << name;
 
-    xmlList->blockSignals(true);
-    if (xmlList->selectItemByName(name))
+    mosaicList->blockSignals(true);
+    if (mosaicList->selectItemByName(name))
     {
         selectedXMLName = name;
     }
@@ -260,7 +277,7 @@ void page_loaders::slot_loadedXML(QString name)
     {
         selectedXMLName.clear();
     }
-    xmlList->blockSignals(false);
+    mosaicList->blockSignals(false);
 
     // update the tiling too
     QString tileName = FileServices::getTileNameFromDesignName(name);
@@ -303,8 +320,8 @@ void page_loaders::onEnter()
     item = tileList->currentItem();
     tileList->scrollToItem(item);
 
-    item = xmlList->currentItem();
-    xmlList->scrollToItem(item);
+    item = mosaicList->currentItem();
+    mosaicList->scrollToItem(item);
 
     item = designList->currentItem();
     designList->scrollToItem(item);
@@ -346,18 +363,18 @@ void page_loaders::loadDesignCombo()
 void page_loaders::loadXMLCombo()
 {
     QStringList list;
-    if (config->designFilterCheck &&  !config->designFilter.isEmpty())
+    if (config->mosaicFilterCheck &&  !config->mosaicFilter.isEmpty())
     {
-        list = FileServices::getFilteredDesignNames(config->designFilter);
+        list = FileServices::getFilteredDesignNames(config->mosaicFilter);
     }
     else
     {
         list = FileServices::getDesignNames();
     }
-    xmlList->blockSignals(true);
-    xmlList->addItemList(list);
-    xmlList->blockSignals(false);
-    if (!xmlList->selectItemByName(config->lastLoadedXML))
+    mosaicList->blockSignals(true);
+    mosaicList->addItemList(list);
+    mosaicList->blockSignals(false);
+    if (!mosaicList->selectItemByName(config->lastLoadedXML))
     {
         config->lastLoadedXML.clear();
     }
@@ -481,7 +498,7 @@ void page_loaders::xmlRightClick(QPoint pos)
     myMenu.addAction("Rebase",  this, SLOT(rebaseXML()));
     myMenu.addAction("Delete",  this, SLOT(deleteXML()));
 
-    myMenu.exec(xmlList->mapToGlobal(pos));
+    myMenu.exec(mosaicList->mapToGlobal(pos));
 }
 
 void page_loaders::tileRightClick(QPoint pos)
@@ -550,18 +567,36 @@ void page_loaders::rebaseXML()
         return;
     }
 
-    DlgRebase dlg(this);
-
     QStringList parts = name.split('.');
-    QString nameRoot = parts[0];
-    QString old_ver;
-    if (parts.size() > 1)
+    if (parts.size() == 1)
     {
-        old_ver = parts[1];
+        QMessageBox box(view);
+        box.setIcon(QMessageBox::Information);
+        box.setText("Cannot rebase");
+        box.exec();
+        return;
     }
 
-    dlg.oldVersion->setText(old_ver);
-    dlg.newVersion->setText(old_ver);
+    QString old_vstring = parts.last();
+    if (!old_vstring.contains('v'))
+    {
+        QMessageBox box(view);
+        box.setIcon(QMessageBox::Information);
+        box.setText("Cannot rebase");
+        box.exec();
+        return;
+    }
+
+    QStringList allParts = parts;
+    allParts.removeLast();
+    QString nameRoot = allParts.join('.');
+
+    old_vstring.remove('v');
+    int old_ver = old_vstring.toInt();
+
+    DlgRebase dlg(this);
+    dlg.oldVersion->setValue(old_ver);
+    dlg.newVersion->setValue(old_ver);
 
     int retval = dlg.exec();
     if (retval == QDialog::Rejected)
@@ -571,32 +606,40 @@ void page_loaders::rebaseXML()
     }
     Q_ASSERT(retval == QDialog::Accepted);
 
-    // specify new name
-    QString new_ver = dlg.newVersion->text();
-    QString newName;
-    if (new_ver.isEmpty())
-        newName = nameRoot;
+    int new_ver = dlg.newVersion->value();
+
+    if (old_ver == new_ver)
+    {
+        QMessageBox box(view);
+        box.setIcon(QMessageBox::Information);
+        box.setText("Cannot rebase");
+        box.exec();
+        return;
+    }
+
+    if (new_ver == 0)
+    {
+        parts.removeLast();
+    }
     else
-        newName = nameRoot + "." + new_ver;
+    {
+        QString newV = "v" + QString::number(new_ver);
+        QString & lastV = parts.last();
+        lastV = newV;
+    }
+
+    QString newName = parts.join('.');
 
     // this is the new file
     QString newXMLPath = config->newDesignDir + newName + ".xml";
     QString newDatPath = config->templateDir  + newName + ".dat";
 
     // purge other versions
-    old_ver = old_ver.remove('v');
-    new_ver = new_ver.remove('v');
-    int i_old_ver = old_ver.toInt();
-    int i_new_ver;
-    if (new_ver.isEmpty())
-        i_new_ver = 0;
-    else
-        i_new_ver = new_ver.toInt();
-    Q_ASSERT(i_new_ver < i_old_ver);
+    Q_ASSERT(new_ver < old_ver);
 
     QString aname;
 
-    for (int i= i_new_ver; i < i_old_ver; i++)
+    for (int i= new_ver; i < old_ver; i++)
     {
         if (i==0)
             aname = nameRoot;
@@ -609,12 +652,12 @@ void page_loaders::rebaseXML()
         }
     }
 
-    for (int i= i_new_ver; i < i_old_ver; i++)
+    for (int i= new_ver; i < old_ver; i++)
     {
         if (i==0)
             aname = nameRoot;
         else
-            aname = nameRoot + ".v" + QString::number(i);
+                    aname = nameRoot + ".v" + QString::number(i);
         QString path = FileServices::getDesignTemplateFile(aname);
         if (!path.isEmpty())
         {
@@ -834,19 +877,37 @@ void page_loaders::rebaseTiling()
         return;
     }
 
-    // select new version
-    DlgRebase dlg(this);
 
     QStringList parts = name.split('.');
-    QString nameRoot = parts[0];
-    QString old_ver;
-    if (parts.size() > 1)
+    if (parts.size() == 1)
     {
-        old_ver = parts[1];
+        QMessageBox box(view);
+        box.setIcon(QMessageBox::Information);
+        box.setText("Cannot rebase");
+        box.exec();
+        return;
     }
 
-    dlg.oldVersion->setText(old_ver);
-    dlg.newVersion->setText(old_ver);
+    QString old_vstring = parts.last();
+    if (!old_vstring.contains('v'))
+    {
+        QMessageBox box(view);
+        box.setIcon(QMessageBox::Information);
+        box.setText("Cannot rebase");
+        box.exec();
+        return;
+    }
+
+    QStringList allParts = parts;
+    allParts.removeLast();
+    QString nameRoot = allParts.join('.');
+
+    old_vstring.remove('v');
+    int old_ver = old_vstring.toInt();
+
+    DlgRebase dlg(this);
+    dlg.oldVersion->setValue(old_ver);
+    dlg.newVersion->setValue(old_ver);
 
     int retval = dlg.exec();
     if (retval == QDialog::Rejected)
@@ -856,31 +917,38 @@ void page_loaders::rebaseTiling()
     }
     Q_ASSERT(retval == QDialog::Accepted);
 
-    // specify new name
-    QString new_ver = dlg.newVersion->text();
-    new_ver         = new_ver.trimmed();
-    QString newName;
-    if (new_ver.isEmpty())
-        newName = nameRoot;
+    int new_ver = dlg.newVersion->value();
+
+    if (old_ver == new_ver)
+    {
+        QMessageBox box(view);
+        box.setIcon(QMessageBox::Information);
+        box.setText("Cannot rebase");
+        box.exec();
+        return;
+    }
+
+    if (new_ver == 0)
+    {
+        parts.removeLast();
+    }
     else
-        newName = nameRoot + "." + new_ver;
+    {
+        QString newV = "v" + QString::number(new_ver);
+        QString & lastV = parts.last();
+        lastV = newV;
+    }
+
+    QString newName = parts.join('.');
 
     // this is the new file
     QString newPath = config->newTileDir + "/" + newName + ".xml";
 
     // purge other versions
-    old_ver = old_ver.remove('v');
-    new_ver = new_ver.remove('v');
-    int i_old_ver = old_ver.toInt();
-    int i_new_ver;
-    if (new_ver.isEmpty())
-        i_new_ver = 0;
-    else
-        i_new_ver = new_ver.toInt();
-    Q_ASSERT(i_new_ver < i_old_ver);
+    Q_ASSERT(new_ver < old_ver);
 
     QString aname;
-    for (int i= i_new_ver; i < i_old_ver; i++)
+    for (int i= new_ver; i < old_ver; i++)
     {
         if (i==0)
             aname = nameRoot;
@@ -1017,7 +1085,6 @@ void page_loaders::renameTiling()
         box.setText("Rename - FAILED");
     }
     box.exec();
-
 }
 
 void page_loaders::deleteTiling()

@@ -32,8 +32,8 @@ page_save::page_save(ControlPanel * cpanel)  : panel_page(cpanel, "Save")
     createDesignSave();
     createTilingSave();
 
-    QPushButton * pbSaveImage = new QPushButton("Save Pixmap");
-    QPushButton * pbSaveSVG   = new QPushButton("Save as SVG");
+    QPushButton * pbSaveImage = new QPushButton("Save BMP");
+    QPushButton * pbSaveSVG   = new QPushButton("Save SVG");
 
     QHBoxLayout * hbox = new QHBoxLayout;
     hbox->addStretch();
@@ -43,8 +43,8 @@ page_save::page_save(ControlPanel * cpanel)  : panel_page(cpanel, "Save")
     hbox->addStretch();
     vbox->addLayout(hbox);
 
-    connect(maker,  &TiledPatternMaker::sig_loadedXML,    this,   &page_save::slot_loadedXML);
-    connect(maker,  &TiledPatternMaker::sig_loadedTiling, this,   &page_save::slot_loadedTiling);
+    connect(tpm,  &TiledPatternMaker::sig_loadedXML,    this,   &page_save::slot_loadedXML);
+    connect(tpm,  &TiledPatternMaker::sig_loadedTiling, this,   &page_save::slot_loadedTiling);
     connect(pbSaveImage,  &QPushButton::clicked,          canvas, &Canvas::saveImage);
     connect(pbSaveSVG,    &QPushButton::clicked,          canvas, &Canvas::saveSvg);
 }
@@ -70,7 +70,7 @@ void page_save::createDesignSave()
     vbox->addWidget(saveBox);
 
     connect(saveXml,   SIGNAL(clicked()),       this,   SLOT(slot_saveAsXML()));
-    connect(this,      &page_save::sig_saveXML, maker,  &TiledPatternMaker::slot_saveXML);
+    connect(this,      &page_save::sig_saveXML, tpm,  &TiledPatternMaker::slot_saveXML);
 }
 
 void page_save::createTilingSave()
@@ -124,11 +124,8 @@ TilingPtr page_save::getTiling()
 void page_save::onEnter()
 {
     MosaicPtr mosaic = workspace->getMosaic();
-    if (mosaic)
-    {
-        leSaveXmlName->setText(mosaic->getName());
-        designNotes->setText(mosaic->getNotes());
-    }
+    leSaveXmlName->setText(mosaic->getName());
+    designNotes->setText(mosaic->getNotes());
 
     TilingPtr tiling =  getTiling();
     blockSignals(true);
@@ -162,10 +159,7 @@ void page_save::refreshPage()
 void page_save::slot_saveAsXML()
 {
     MosaicPtr mosaic = workspace->getMosaic();
-    if (mosaic)
-    {
-        mosaic->setNotes(designNotes->toPlainText());
-    }
+    mosaic->setNotes(designNotes->toPlainText());
     QString name = leSaveXmlName->text();
     Q_ASSERT(!name.contains(".xml"));
     emit sig_saveXML(name);

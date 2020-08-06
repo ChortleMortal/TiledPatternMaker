@@ -93,6 +93,7 @@ public:
     void    setReadOnly(bool val) { spin->setReadOnly(val); }
     int     value() { return spin->value(); }
 
+    void    setFocus()  { spin->setFocus(); }
 signals:
    void valueChanged(int val);
 

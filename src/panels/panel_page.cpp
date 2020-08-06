@@ -32,13 +32,13 @@
 panel_page::panel_page(ControlPanel * panel,  QString name) : QWidget()
 {
     this->panel = panel;
-    maker     = panel->getMaker();
-    pageName  = name;
+    tpm         = panel->getMaker();
+    pageName    = name;
 
     config    = Configuration::getInstance();
     canvas    = Canvas::getInstance();
     workspace = Workspace::getInstance();
-    viewer    = WorkspaceViewer::getInstance();
+    wsViewer  = WorkspaceViewer::getInstance();
     view      = View::getInstance();
 
     vbox      = new QVBoxLayout;
@@ -54,8 +54,8 @@ panel_page::panel_page(ControlPanel * panel,  QString name) : QWidget()
 
     setObjectName("panel_page");
 
-    connect(this,   &panel_page::sig_render,                maker,  &TiledPatternMaker::slot_render);
-    connect(this,   &panel_page::sig_viewWS,                viewer, &WorkspaceViewer::slot_viewWorkspace);
+    connect(this,   &panel_page::sig_render,                tpm,  &TiledPatternMaker::slot_render);
+    connect(this,   &panel_page::sig_viewWS,                wsViewer, &WorkspaceViewer::slot_viewWorkspace);
     connect(this,   &panel_page::sig_attachMe,              panel,  &ControlPanel::slot_attachWidget,       Qt::QueuedConnection);
 }
 

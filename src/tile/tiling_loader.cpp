@@ -169,7 +169,7 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
         return nullptr;
     }
 
-    version = 0;
+    int version = 0;
     xml_attribute vatt = tiling_node.attribute("version");
     if (vatt)
     {
@@ -208,6 +208,7 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
 
     // create the tiling
     tiling = make_shared<Tiling>(name, ptt1, ptt2);
+    tiling->setVersion(version);
 
     // view settings
     getViewSettings(tiling_node);
@@ -229,12 +230,21 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
     }
 
     // fills - not part of taprats and not necessarily found
-    xml_node t0 = tiling_node.child("Fill");
-    if (t0)
+    // 26JUL2020 fillData moved to Mosaic
+    if (version <= 3)
     {
-        QString strt0 = t0.child_value();
-        FillData fd = getFill(strt0);
-        tiling->setFillData(fd);
+        xml_node t0 = tiling_node.child("Fill");
+        if (t0)
+        {
+            QString strt0 = t0.child_value();
+            FillData fd = getFill(strt0);
+            tiling->setFillData(fd);
+            tiling->setVersion(2);  // has fill data
+        }
+        else
+        {
+            tiling->setVersion(1);  // does not have fill data
+        }
     }
 
     FeatureReader fr;   // must be located here to bw used for all features
@@ -588,34 +598,3 @@ void TilingLoader::getViewSettings(xml_node & node)
     tiling->setCanvasXform(xf);
 }
 
-FillData::FillData()
-{
-    minX = -4;
-    minY = -4;
-    maxX = 4;
-    maxY = 4;
-}
-
-void FillData::set(int minX, int maxX, int minY, int maxY)
-{
-    this->minX = minX;
-    this->minY = minY;
-    this->maxX = maxX;
-    this->maxY = maxY;
-}
-
-void FillData::set(FillData & fdata)
-{
-    minX = fdata.minX;
-    minY = fdata.minY;
-    maxX = fdata.maxX;
-    maxY = fdata.maxY;
-}
-
-void FillData::get(int & minX, int & maxX, int & minY, int & maxY)
-{
-    minX = this->minX;
-    minY = this->minY;
-    maxX = this->maxX;
-    maxY = this->maxY;
-}

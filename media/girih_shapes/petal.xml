@@ -3,7 +3,7 @@
 	<Curve convex="f">
 		<Point id="1">-1.216245299353273e-16,3.999999999999998</Point>
 		<Point id="2">-1.732050807568877,1</Point>
-		<Center>-3.866025403784437,4.232050807568877</Center>
+		<Center>2.133974596215559,0.7679491924311224</Center>
 	</Curve>
 	<Curve convex="t">
 		<Point reference="2" />
@@ -18,10 +18,10 @@
 	<Curve convex="f">
 		<Point reference="4" />
 		<Point reference="1" />
-		<Center>3.866025403784437,4.232050807568876</Center>
+		<Center>-2.13397459621556,0.767949192431121</Center>
 	</Curve>
-	<tx>0</tx>
-	<ty>0</ty>
+	<tx>0.5853841409022111</tx>
+	<ty>0.3333333333333304</ty>
 	<scale>1</scale>
 	<rot>0</rot>
 </Poly>

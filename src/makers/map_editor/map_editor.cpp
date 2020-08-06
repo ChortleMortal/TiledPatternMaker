@@ -32,18 +32,32 @@
 #include "viewers/workspace_viewer.h"
 #include "style/style.h"
 
-MapEditorPtr MapEditor::mpThis;     // once initialised the destructor is never called
+MapEditor *  MapEditor::mpThis = nullptr;     // once initialised the destructor is never called
+MapEditorPtr MapEditor::spThis;
+
 
 const bool debugMouse = false;
 
-MapEditorPtr MapEditor::getInstance()
+MapEditorPtr MapEditor::getSharedInstance()
 {
     if (!mpThis)
     {
-        mpThis = make_shared<MapEditor>();
+        spThis = make_shared<MapEditor>();
+        mpThis = spThis.get();
+    }
+    return spThis;
+}
+
+MapEditor * MapEditor::getInstance()
+{
+    if (!mpThis)
+    {
+        spThis = make_shared<MapEditor>();
+        mpThis = spThis.get();
     }
     return mpThis;
 }
+
 
 MapEditor::MapEditor() : MapEditorSelection(), stash(this)
 {

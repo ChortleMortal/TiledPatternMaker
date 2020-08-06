@@ -46,8 +46,13 @@
 #include "tapp/explicit_figure.h"
 
 //const int currentXMLVersion = 3;
-//const int currentXMLVersion = 3;  // 05OCT19 use ColorSets in Colored
-const int currentXMLVersion = 5;    // 25OCT19 revised way of defining maps
+//const int currentXMLVersion = 4;  // 05OCT19 use ColorSets in Colored
+//const int currentXMLVersion = 5;  // 25OCT19 revised way of defining maps
+const int currentXMLVersion = 6;    // 26JUL20 includes FillData
+
+#if (QT_VERSION >= QT_VERSION_CHECK(5,15,0))
+#define endl Qt::endl
+#endif
 
 XmlWriter::XmlWriter()
 {
@@ -272,6 +277,9 @@ void XmlWriter::processDesign(QTextStream &ts)
     procSize(ts,size);
     procBackground(ts,bkgdColor);
     procBorder(ts,border);
+    int minX,minY,maxX,maxY;
+    info.getFillData().get(minX,maxX,minY,maxY);
+    ts << "<Fill>" << minX << "," << maxX << "," << minY << "," << maxY << "</Fill>" << endl;
     ts << "</design>" << endl;
 }
 

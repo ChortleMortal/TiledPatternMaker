@@ -62,7 +62,7 @@ void TileColors::createStyleRepresentation()
         return;
     }
 
-    setupStyleMap();
+    getMap();
 
     PrototypePtr pp  = getPrototype();
     TilingPtr    tp  = pp->getTiling();

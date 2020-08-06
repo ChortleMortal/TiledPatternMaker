@@ -68,7 +68,7 @@ View::View()
 
 View::~View()
 {
-    if (!config->screenIsSplit)
+    if (!config->splitScreen)
     {
         QSettings s;
         s.setValue("viewPos",pos());
@@ -77,11 +77,11 @@ View::~View()
 
 void View::init()
 {
-    config   = Configuration::getInstance();
-    canvas   = Canvas::getInstance();
-    maped    = MapEditor::getInstance();
-    tmaker   = TilingMaker::getInstance();
-    wsViewer = WorkspaceViewer::getInstance();
+    config      = Configuration::getInstance();
+    canvas      = Canvas::getInstance();
+    mapEditor   = MapEditor::getInstance();
+    tilingMaker = TilingMaker::getInstance();
+    wsViewer    = WorkspaceViewer::getInstance();
 
     connect(wsViewer, &WorkspaceViewer::sig_title, this, &View::setWindowTitle, Qt::QueuedConnection);
 
@@ -135,32 +135,49 @@ void View::resizeEvent(QResizeEvent *event)
 {
     QWidget::resizeEvent(event);
 
-#if 0
+    if (!config->scaleToView)
+    {
+        return;
+    }
+
     QSize oldSize   = wsViewer->getViewSize(config->viewerType);
-    QSize viewSize  = size();
-    if (viewSize == oldSize)
+    QSize newSize  = size();
+    qDebug() << "View::resizeEvent: old" << oldSize << "new" << newSize;
+
+    if (oldSize == newSize)
     {
-        //return;
+        return;
     }
 
-    qDebug() << "View::resizeEvent: was=" << event->oldSize() << "becomes=" << event->size();
-    qDebug() << "View::             was=" << oldSize          << "becomes=" << viewSize;
-#endif
-
-    if (config->scaleSceneToView)
-    {
-        QSize viewSize  = size();
-        wsViewer->setViewSize(config->viewerType,viewSize);  // only change view size if scaling - don't move this line
-    }
+    wsViewer->setViewSize(config->viewerType,newSize);
 
     for (auto layer : layers)
     {
+       // set scale based on widht only - height is not affecting scale
+        Xform xf        = layer->getCanvasXform();
+
+        qreal oldWidth  = oldSize.width();
+        qreal newWidth  = newSize.width();
+
+        // recenter scaled image
+        qreal old_dx = xf.getTranslateX();
+        qreal old_dy = xf.getTranslateY();
+        qreal new_dx = (newWidth/oldWidth) * old_dx;
+        xf.setTranslateX(new_dx);
+
+        qreal oldHeight = oldSize.height();
+        qreal newHeight = newSize.height();
+        qreal new_dy    = (newHeight/oldHeight) * old_dy;
+        xf.setTranslateY(new_dy);
+
+        layer->setCanvasXform(xf);
+
         layer->forceUpdateLayer();
     }
 
     if (config->viewerType == VIEW_MAP_EDITOR)
     {
-        MapEditorPtr me = MapEditor::getInstance();
+        MapEditor * me = MapEditor::getInstance();
         me->forceUpdateLayer();
     }
 
@@ -169,11 +186,11 @@ void View::resizeEvent(QResizeEvent *event)
 
 void View::keyPressEvent( QKeyEvent *k )
 {
-    if (tmaker->procKeyEvent(k))        // tiling maker
+    if (tilingMaker->procKeyEvent(k))        // tiling maker
     {
         return;
     }
-    else if (maped->procKeyEvent(k))    // map editor
+    else if (mapEditor->procKeyEvent(k))    // map editor
     {
         return;
     }
@@ -233,29 +250,38 @@ void View::drawForeground(QPainter *painter, const QRectF & r)
     QRectF rect = r;    // rect is modifiable;
 
     Configuration * config = Configuration::getInstance();
-    if (!config->sceneGrid)
+    if (!config->showGrid)
     {
         return;
     }
 
-    gridPen.setWidth(config->gridWidth);
-    painter->setPen(gridPen);
-
     // draw a grid
-    switch (config->gridModel)
+    if (config->gridType == GRID_SCREEN)
     {
-    case GRID_SCREEN:
-        if (config->gridCenter)
+        gridPen.setWidth(config->gridScreenWidth);
+        painter->setPen(gridPen);
+        if (config->gridScreenCenter)
+        {
             drawGridSceneUnitsCentered(painter,rect);
+        }
         else
+        {
             drawGridSceneUnits(painter,rect);
-        break;
-    case GRID_MODEL:
-        if (config->gridCenter)
+        }
+    }
+    else
+    {
+        Q_ASSERT(config->gridType == GRID_MODEL);
+        gridPen.setWidth(config->gridModelWidth);
+        painter->setPen(gridPen);
+        if (config->gridModelCenter)
+        {
             drawGridModelUnitsCentered(painter,rect);
+        }
         else
+        {
             drawGridModelUnits(painter,rect);
-        break;
+        }
     }
 
     // draw X and center
@@ -269,7 +295,7 @@ void View::drawGridModelUnits(QPainter *painter, const QRectF &r)
 {
     // this centers on scene
     QTransform T;
-    qreal step   = config->gridStepModel;
+    qreal step   = config->gridModelSpacing;
     if (layers.size())
     {
         LayerPtr l = layers.first();
@@ -301,7 +327,7 @@ void View::drawGridModelUnitsCentered(QPainter *painter, QRectF &r)
         T           = l->getLayerTransform();
         center      = l->getCenter();
     }
-    qreal step      = config->gridStepModel;
+    qreal step      = config->gridModelSpacing;
     qreal scale     = Transform::scalex(T);
     step *= scale;
     r.moveCenter(center);
@@ -309,13 +335,13 @@ void View::drawGridModelUnitsCentered(QPainter *painter, QRectF &r)
     painter->setPen(gridPen);
 
     // horizontal
-    for (qreal y = center.y() + (-10.0 * step); y < (center.y() + (10 * step)); y += step)
+    for (qreal y = center.y() + (-20.0 * step); y < (center.y() + (20 * step)); y += step)
     {
         painter->drawLine( QPointF(r.topLeft().x(), y),  QPointF(r.topRight().x(), y));
     }
 
     // vertical
-    for (qreal x = center.x() + (-10.0 * step); x <  (center.x() +(10 * step)); x += step)
+    for (qreal x = center.x() + (-20.0 * step); x <  (center.x() +(20 * step)); x += step)
     {
         painter->drawLine(QPointF(x, r.topLeft().y()),QPointF(x,r.bottomLeft().y()));
     }
@@ -324,7 +350,7 @@ void View::drawGridModelUnitsCentered(QPainter *painter, QRectF &r)
 void View::drawGridSceneUnits(QPainter *painter, const QRectF &r)
 {
     QPointF center = r.center();
-    qreal step = config->gridStepScreen;
+    qreal step = config->gridScreenSpacing;
     if (step < 10.0)
     {
         qDebug() << "grid step too small" << step;
@@ -358,7 +384,7 @@ void View::drawGridSceneUnitsCentered(QPainter *painter, QRectF & r)
     }
     r.moveCenter(center);
 
-    qreal step = config->gridStepScreen;
+    qreal step = config->gridScreenSpacing;
     if (step < 10.0)
     {
         qDebug() << "grid step too small" << step;
@@ -402,17 +428,17 @@ void View::clearLayout(QLayout* layout, bool deleteWidgets)
     }
 }
 
-void View::dump(bool force)
+void View::dump(bool summary)
 {
-    qDebug() << "View Layers:" << numLayers();
-#if 0
-    for (auto layer : layers)
+    qDebug() << "View: layers =" << numLayers();
+
+    if (!summary)
     {
-        qDebug() << "Layer:" << layer->getName() << Utils::addr(layer);
+        for (auto layer : layers)
+        {
+            qDebug() << "Layer:" << layer->getName() << Utils::addr(layer.get());
+        }
     }
-#endif
-    if (force)
-    {
-        qDebug() << "Tilings:" << Tiling::refs << "Layers:" << Layer::refs  << "Styles:" << Style::refs << "Maps:" << Map::refs << "Protos:" << Prototype::refs << "DELs:" << DesignElement::refs  << "PDELs:" << PlacedDesignElement::refs2 << "Figures:" << Figure::refs << "Features:" << Feature::refs << "Edges:" << Edge::refs << "Vertices:"  << Vertex::refs;
-    }
+
+    qDebug() << "Tilings:" << Tiling::refs << "Layers:" << Layer::refs  << "Styles:" << Style::refs << "Maps:" << Map::refs << "Protos:" << Prototype::refs << "DELs:" << DesignElement::refs  << "PDELs:" << PlacedDesignElement::refs2 << "Figures:" << Figure::refs << "Features:" << Feature::refs << "Edges:" << Edge::refs << "Vertices:"  << Vertex::refs;
 }

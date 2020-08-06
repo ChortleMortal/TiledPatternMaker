@@ -62,7 +62,7 @@ public:
 
     virtual QSize sizeHint() const override;
 
-    void dump(bool force = false);
+    void dump(bool summary);
 
 signals:
     void sig_mousePressed(QPointF pos,Qt::MouseButton);
@@ -98,8 +98,8 @@ private:
     Canvas          * canvas;
     Configuration   * config;
     WorkspaceViewer * wsViewer;
-    TilingMakerPtr    tmaker;
-    MapEditorPtr      maped;
+    TilingMaker     * tilingMaker;
+    MapEditor       * mapEditor;
 
     UniqueQVector<LayerPtr> layers;
 
