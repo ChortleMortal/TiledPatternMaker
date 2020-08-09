@@ -323,7 +323,7 @@ void FeatureButton::paintEvent(QPaintEvent * event)
 
     ViewerBase::drawFigure(&gg,designElement->getFigure(),QPen(Qt::black,3));
 
-#if 1
+#if 0
     QString tempLabel;
     tempLabel = "feature=" + Utils::addr(designElement->getFeature().get());
     painter.drawText(5,50,tempLabel);

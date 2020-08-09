@@ -32,7 +32,7 @@ using std::string;
 
 #define SPACING 50
 
-page_position:: page_position(ControlPanel * cpanel)  : panel_page(cpanel,"Position")
+page_position:: page_position(ControlPanel * cpanel)  : panel_page(cpanel,"Position Info")
 {
     createDesignWidget();
     vbox->addWidget(designWidget);

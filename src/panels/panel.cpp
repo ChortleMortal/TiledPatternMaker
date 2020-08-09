@@ -295,7 +295,7 @@ void ControlPanel::populatePages()
     // qDebug() << "populateDevice";
     panel_page * wp;
 
-    mpPanelPageList->addSeparator();
+    //mpPanelPageList->addSeparator();
 
     wp = new page_loaders(this);
     mAttachedPages.push_back(wp);
@@ -317,32 +317,10 @@ void ControlPanel::populatePages()
 
     mpPanelPageList->addSeparator();
 
-    wp = new page_workspace(this);
+    wp = new page_canvasSettings(this);
     mAttachedPages.push_back(wp);
     panelPagesWidget->addWidget(wp);
     mpPanelPageList->addItem(wp->getName());
-
-    wp = new page_protos(this);
-    mAttachedPages.push_back(wp);
-    panelPagesWidget->addWidget(wp);
-    mpPanelPageList->addItem(wp->getName());
-
-    wp = new page_style_figure_info(this);
-    mAttachedPages.push_back(wp);
-    panelPagesWidget->addWidget(wp);
-    mpPanelPageList->addItem(wp->getName());
-
-    wp = new page_design_elements(this);
-    mAttachedPages.push_back(wp);
-    panelPagesWidget->addWidget(wp);
-    mpPanelPageList->addItem(wp->getName());
-
-    wp = new page_layers(this);
-    mAttachedPages.push_back(wp);
-    panelPagesWidget->addWidget(wp);
-    mpPanelPageList->addItem(wp->getName());
-
-    mpPanelPageList->addSeparator();
 
     wp = new page_style_maker(this);
     mAttachedPages.push_back(wp);
@@ -367,7 +345,29 @@ void ControlPanel::populatePages()
     mpPanelPageList->addItem(wp->getName());
     page_tiling_maker * wp_td = dynamic_cast<page_tiling_maker*>(wp);
 
-    wp = new page_canvasSettings(this);
+    mpPanelPageList->addSeparator();
+
+    wp = new page_workspace(this);
+    mAttachedPages.push_back(wp);
+    panelPagesWidget->addWidget(wp);
+    mpPanelPageList->addItem(wp->getName());
+
+    wp = new page_protos(this);
+    mAttachedPages.push_back(wp);
+    panelPagesWidget->addWidget(wp);
+    mpPanelPageList->addItem(wp->getName());
+
+    wp = new page_style_figure_info(this);
+    mAttachedPages.push_back(wp);
+    panelPagesWidget->addWidget(wp);
+    mpPanelPageList->addItem(wp->getName());
+
+    wp = new page_design_elements(this);
+    mAttachedPages.push_back(wp);
+    panelPagesWidget->addWidget(wp);
+    mpPanelPageList->addItem(wp->getName());
+
+    wp = new page_layers(this);
     mAttachedPages.push_back(wp);
     panelPagesWidget->addWidget(wp);
     mpPanelPageList->addItem(wp->getName());

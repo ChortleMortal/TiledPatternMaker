@@ -40,16 +40,31 @@ Q_DECLARE_METATYPE(PlacedFeaturePtr)
 
 page_tiling_maker:: page_tiling_maker(ControlPanel * cpanel)  : panel_page(cpanel,"Tiling Maker"), bkgdLayout("Bkgd Xform")
 {
-    // create tiling designer
-    tilingMaker = TilingMaker::getInstance();
+    tilingMaker = TilingMaker::getInstance(); // create tiling designer
 
-    createTopGrid();
+    QHBoxLayout * controlLayout = createControlRow();
+    vbox->addLayout(controlLayout);
 
-    AQWidget * widget = createTilingTable();
-    vbox->addWidget(widget);
+    QGroupBox * actionGroup = createActionsGroup();
+    vbox->addWidget(actionGroup);
 
-    widget = createTiliingMakerControls();
-    vbox->addWidget(widget);
+    QGroupBox * modeGroup = createModesGroup();
+    vbox->addWidget(modeGroup);
+
+    QHBoxLayout * tableControl = createTableControlRow();
+    vbox->addLayout(tableControl);
+
+    translationsWidget = createTranslationsRow();
+    vbox->addWidget(translationsWidget);
+
+    AQTableWidget * table = createTilingTable();
+    vbox->addWidget(table);
+
+    debugWidget = createDebugInfo();
+    vbox->addWidget(debugWidget);
+
+    bkgdGroup = createBackgroundGroup();
+    vbox->addWidget(bkgdGroup);
 
     connect(&f_sidesMapper,SIGNAL(mapped(int)), this, SLOT(slot_sidesChanged(int)));
     connect(&f_rotMapper,  SIGNAL(mapped(int)), this, SLOT(slot_f_rotChanged(int)));
@@ -73,48 +88,40 @@ page_tiling_maker:: page_tiling_maker(ControlPanel * cpanel)  : panel_page(cpane
     connect(canvas, &Canvas::sig_deltaMoveX,    this, &page_tiling_maker::slot_moveX);
 
     buildMenu();
+
     tileInfoTable->setVisible(!config->tm_hideTable);
+    translationsWidget->setVisible(!config->tm_hideTable);
     debugWidget->setVisible(config->tm_showDebug);
 }
 
-void page_tiling_maker::createTopGrid()
+QHBoxLayout * page_tiling_maker::createControlRow()
 {
-    ///
-    /// control row
-    //
     currentTiling                 = new QLabel("No Tiling");
     QPushButton * reloadTilingBtn = new QPushButton("Re-load Tiling");
     QPushButton * pbClearWS       = new QPushButton("Clear WS");
     QPushButton * pbClearTiling   = new QPushButton("Clear Tiling");
-    QPushButton * replaceInDesignBtn   = new QPushButton("Replace in Mosaic");
+    QPushButton * replaceInMosaic = new QPushButton("Replace in Mosaic");
 
-    QHBoxLayout * hbox1 = new QHBoxLayout;
-    hbox1->addWidget(currentTiling);
-    hbox1->addStretch();
-    hbox1->addWidget(reloadTilingBtn);
-    hbox1->addWidget(pbClearTiling);
-    hbox1->addWidget(pbClearWS);
-    hbox1->addStretch();
-    hbox1->addWidget(replaceInDesignBtn);
+    QHBoxLayout * hbox = new QHBoxLayout;
+    hbox->addWidget(currentTiling);
+    hbox->addStretch();
+    hbox->addWidget(reloadTilingBtn);
+    hbox->addWidget(pbClearTiling);
+    hbox->addWidget(pbClearWS);
+    hbox->addStretch();
+    hbox->addStretch();
+    hbox->addWidget(replaceInMosaic);
 
     connect(pbClearWS,         &QPushButton::clicked,  this, &page_tiling_maker::slot_clearWS);
     connect(pbClearTiling,     &QPushButton::clicked,  this, &page_tiling_maker::slot_clearTiling);
     connect(reloadTilingBtn,   &QPushButton::clicked,  this, &page_tiling_maker::slot_reloadTiling);
-    connect(replaceInDesignBtn,&QPushButton::clicked,  this,  &page_tiling_maker::slot_replaceTilingInStyles);
+    connect(replaceInMosaic,   &QPushButton::clicked,  this, &page_tiling_maker::slot_replaceTilingInStyles);
 
-    ///
-    ///  Row
-    ///
-    QHBoxLayout * hbox3 = new QHBoxLayout;
+    return hbox;
+}
 
-    QPushButton * swapBtn = new QPushButton("Swap T1/T2");
-    hbox3->addWidget(swapBtn);
-
-    ///
-    /// Translations row
-    ///
-    QGridLayout * grid3 = new QGridLayout;
-    int row = 0;
+AQWidget * page_tiling_maker::createTranslationsRow()
+{
 
     t1x = new DoubleSpinSet("T1-X",0,-100.0,100.0);
     t1y = new DoubleSpinSet("T1-Y",0,-100.0,100.0);
@@ -129,42 +136,26 @@ void page_tiling_maker::createTopGrid()
     t2x->setDecimals(16);
     t2y->setDecimals(16);
 
-    grid3->addLayout(t1x,row,0);
-    grid3->addLayout(t1y,row,1);
-    grid3->addLayout(t2x,row,2);
-    grid3->addLayout(t2y,row,3);
+    QGridLayout * grid = new QGridLayout;
+    int row = 0;
+    grid->addLayout(t1x,row,0);
+    grid->addLayout(t1y,row,1);
+    grid->addLayout(t2x,row,2);
+    grid->addLayout(t2y,row,3);
 
     QObject::connect(t1x,  SIGNAL(valueChanged(double)), this, SLOT(slot_t1t2Changed(double)));
     QObject::connect(t1y,  SIGNAL(valueChanged(double)), this, SLOT(slot_t1t2Changed(double)));
     QObject::connect(t2x,  SIGNAL(valueChanged(double)), this, SLOT(slot_t1t2Changed(double)));
     QObject::connect(t2y,  SIGNAL(valueChanged(double)), this, SLOT(slot_t1t2Changed(double)));
-    QObject::connect(swapBtn,  &QPushButton::clicked,    this, &page_tiling_maker::slot_swapTrans);
 
-    vbox->addLayout(hbox1);
-    vbox->addLayout(hbox3);
-    vbox->addLayout(grid3);
+    AQWidget * widget = new AQWidget();
+    widget->setLayout(grid);
+
+    return widget;
 }
 
-AQWidget * page_tiling_maker::createTilingTable()
+QHBoxLayout * page_tiling_maker::createTableControlRow()
 {
-    // tile info table
-    tileInfoTable = new AQTableWidget();
-    tileInfoTable->setSortingEnabled(false);
-    tileInfoTable->setRowCount(10);
-    tileInfoTable->setSelectionMode(QAbstractItemView::SingleSelection);
-    tileInfoTable->setSelectionBehavior(QAbstractItemView::SelectColumns);
-    tileInfoTable->setContextMenuPolicy(Qt::CustomContextMenu);
-    tileInfoTable->setStyleSheet("selection-color : white; selection-background-color : green");
-    QStringList qslv;
-    qslv << "type" << "f-sides" << "f-rot" << "scale" << "rot" << "X" << "Y" << "CW" << "feat" << "loc";
-    tileInfoTable->setVerticalHeaderLabels(qslv);
-    tileInfoTable->horizontalHeader()->setVisible(false);
-    tileInfoTable->setMaximumWidth(880);
-    tileInfoTable->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    tileInfoTable->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-
-    QHeaderView * qhv = tileInfoTable->verticalHeader();
-
     chk_hideTable                 = new QCheckBox("Hide table");
     chk_autoFill                  = new QCheckBox("Auto-fill on load");
     chk_showOverlaps              = new QCheckBox("Show overlaps/touching");
@@ -172,24 +163,16 @@ AQWidget * page_tiling_maker::createTilingTable()
     QCheckBox * chk_all_features  = new QCheckBox("All features in table");
     chk_all_features->setChecked(config->tm_showAllFeatures);
 
-    QHBoxLayout * hbox = new QHBoxLayout;
-    hbox->setSpacing(7);
+    QPushButton * swapBtn         = new QPushButton("Swap T1/T2");
 
+    QHBoxLayout * hbox = new QHBoxLayout;
     hbox->addWidget(chk_hideTable);
     hbox->addWidget(chk_all_features);
     hbox->addWidget(chk_autoFill);
     hbox->addWidget(chk_showOverlaps);
     hbox->addWidget(chk_showDebug);
     hbox->addStretch();
-
-    AQVBoxLayout * vlayout = new AQVBoxLayout();
-    vlayout->addLayout(hbox);
-    vlayout->addSpacing(7);
-    vlayout->addWidget(tileInfoTable);
-    //vlayout->addSpacing(3);
-
-    AQWidget * widget = new AQWidget();
-    widget->setLayout(vlayout);
+    hbox->addWidget(swapBtn);
 
     chk_hideTable->setChecked(config->tm_hideTable);
     chk_all_features->setChecked(config->tm_showAllFeatures);
@@ -201,82 +184,41 @@ AQWidget * page_tiling_maker::createTilingTable()
     connect(chk_all_features,&QCheckBox::clicked,    this,   &page_tiling_maker::slot_all_features);
     connect(chk_autoFill,    &QCheckBox::clicked,    this,   &page_tiling_maker::slot_autofill);
     connect(chk_showDebug,   &QCheckBox::clicked,    this,   &page_tiling_maker::slot_showDebug);
+    connect(swapBtn,         &QPushButton::clicked,  this,   &page_tiling_maker::slot_swapTrans);
     connect(chk_showOverlaps,&QCheckBox::clicked, tilingMaker, &TilingMaker::slot_showOverlaps);
+
+    return hbox;
+}
+
+AQTableWidget * page_tiling_maker::createTilingTable()
+{
+    // tile info table
+    tileInfoTable = new AQTableWidget();
+    tileInfoTable->setSortingEnabled(false);
+    tileInfoTable->setRowCount(10);
+    tileInfoTable->setSelectionMode(QAbstractItemView::SingleSelection);
+    tileInfoTable->setSelectionBehavior(QAbstractItemView::SelectColumns);
+    tileInfoTable->setContextMenuPolicy(Qt::CustomContextMenu);
+    tileInfoTable->setStyleSheet("selection-color : white; selection-background-color : green");
+
+    QStringList qslv;
+    qslv << "type" << "f-sides" << "f-rot" << "scale" << "rot" << "X" << "Y" << "CW" << "feat" << "loc";
+    tileInfoTable->setVerticalHeaderLabels(qslv);
+    tileInfoTable->horizontalHeader()->setVisible(false);
+    tileInfoTable->setMaximumWidth(880);
+    tileInfoTable->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    tileInfoTable->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+    QHeaderView * qhv = tileInfoTable->verticalHeader();
+
     connect(tileInfoTable,   &QTableWidget::customContextMenuRequested, this, &page_tiling_maker::slot_menu);
     connect(qhv,             &QHeaderView::sectionClicked, this, &page_tiling_maker::tableHeaderClicked);
 
-    return widget;
+    return tileInfoTable;
 }
 
-void page_tiling_maker::slot_hideTable(bool checked)
-{
-    config->tm_hideTable = checked;
-    tileInfoTable->setVisible(!checked);
-}
 
-void page_tiling_maker::slot_all_features(bool checked)
-{
-    config->tm_showAllFeatures = checked;
-    buildMenu();
-}
-
-void page_tiling_maker::slot_showDebug(bool checked)
-{
-    config->tm_showDebug = checked;
-    debugWidget->setVisible(checked);
-}
-
-void page_tiling_maker::slot_autofill(bool checked)
-{
-    config->tm_autofill = checked;
-}
-
-void page_tiling_maker::slot_menu(QPointF spt)
-{
-   qDebug() << "menu spt=" << spt;
-
-   QMenu myMenu(tileInfoTable);
-
-   myMenu.addAction("Edit Feature", this, SLOT(slot_menu_edit_feature()));
-
-   int col = tileInfoTable->currentColumn();
-   PlacedFeaturePtr pfp = getFeatureColumn(col);
-   QString str =  (tilingMaker->getInTiling().contains(pfp))  ? "Exclude" : "Include";
-   myMenu.addAction(str, this, SLOT(slot_menu_includePlaced()));
-
-   myMenu.addAction("Remove Feature", this, SLOT(slot_remove_clicked()));
-   myMenu.addAction("Uniquify Feature", this, SLOT(slot_uniquify_clicked()));
-
-   myMenu.exec(tileInfoTable->viewport()->mapToGlobal(spt.toPoint()));
-}
-
-void page_tiling_maker::slot_menu_edit_feature()
-{
-    qDebug() << "selected edit feature";
-    int              col = tileInfoTable->currentColumn();
-    PlacedFeaturePtr pfp = getFeatureColumn(col);
-    FeaturePtr        fp = pfp->getFeature();
-    QTransform         t = pfp->getTransform();
-
-    DlgEdgePolyEdit * fe  = new DlgEdgePolyEdit(fp->getEdgePoly(),t);
-    fe->show();
-    fe->raise();
-    fe->activateWindow();
-
-    connect(fe,          &DlgEdgePolyEdit::sig_currentPoint, tilingMaker, &TilingMaker::setFeatureEditPoint, Qt::UniqueConnection);
-    connect(tilingMaker, &TilingMaker::sig_refreshMenu,      fe,          &DlgEdgePolyEdit::display,         Qt::UniqueConnection);
-}
-
-void page_tiling_maker::slot_menu_includePlaced()
-{
-    int col = tileInfoTable->currentColumn();
-    PlacedFeaturePtr pfp = getFeatureColumn(col);
-
-    TilingSelectionPtr tsp = make_shared<TilingSelection>(INTERIOR,pfp);
-    tilingMaker->toggleInclusion(tsp);
-}
-
-AQWidget * page_tiling_maker::createTiliingMakerControls()
+AQWidget * page_tiling_maker::createDebugInfo()
 {
     ///  Debug Status    ///
     debugLabel1  = new QLabel;
@@ -297,6 +239,11 @@ AQWidget * page_tiling_maker::createTiliingMakerControls()
     debugWidget = new AQWidget;
     debugWidget->setLayout(debvbox);
 
+    return debugWidget;
+}
+
+QGroupBox * page_tiling_maker::createActionsGroup()
+{
     // actions
     QPushButton * addPolyBtn      = new QPushButton("Add regular poly (A)");
     QPushButton * addGirihBtn     = new QPushButton("Add girih shape");
@@ -307,12 +254,12 @@ AQWidget * page_tiling_maker::createTiliingMakerControls()
 
     QPushButton * exportBtn       = new QPushButton("Export Poly");
     QPushButton * importBtn       = new QPushButton("Import Poly");
-    QCheckBox   * chkSnapTo       = new QCheckBox("Snap to Grid");
 
     sides = new QSpinBox;
     sides->setFixedWidth(41);
     sides->setMinimum(3);
     sides->setMaximum(128);
+    sides->setValue(config->polySides);
 
     featRot = new QDoubleSpinBox;
     featRot->setRange(-360.0,360.0);
@@ -355,16 +302,22 @@ AQWidget * page_tiling_maker::createTiliingMakerControls()
     QGroupBox * actionGroup = new QGroupBox("Actions");
     actionGroup->setLayout(actionBox);
 
-    //
-    // background
-    //
+    connect(exportBtn,      &QPushButton::clicked,            this,    &page_tiling_maker::slot_exportPoly);
+    connect(importBtn,      &QPushButton::clicked,            this,    &page_tiling_maker::slot_importPoly);
+    connect(addGirihBtn,    &QPushButton::clicked,            this,    &page_tiling_maker::slot_addGirihShape);
+    connect(sides,          SIGNAL(valueChanged(int)),  tilingMaker,    SLOT(updatePolygonSides(int)));
+    connect(featRot,        SIGNAL(valueChanged(qreal)),tilingMaker, SLOT(updatePolygonRot(qreal)));
+    connect(addPolyBtn,       &QPushButton::clicked,    tilingMaker,    &TilingMaker::addRegularPolygon);
+    connect(clearVectorsBtn,  &QPushButton::clicked,    tilingMaker,    &TilingMaker::clearTranslationVectors);
+    connect(fillVectorsBtn,   &QPushButton::clicked,    tilingMaker,    &TilingMaker::fillUsingTranslations);
+    connect(removeExclBtn,    &QPushButton::clicked,    tilingMaker,    &TilingMaker::removeExcluded);
+    connect(exclAllBtn,       &QPushButton::clicked,    tilingMaker,    &TilingMaker::excludeAll);
 
-    createBackgroundGroup();
+    return actionGroup;
+}
 
-    //
-    // modes
-    //
-
+QGroupBox * page_tiling_maker::createModesGroup()
+{
     QRadioButton * nomode       = new QRadioButton("No Mode (ESC)");
     QRadioButton * drawTrans    = new QRadioButton("Translation Vectors (F3)");
     QRadioButton * newPoly      = new QRadioButton("Create Polygon (F4)");
@@ -378,10 +331,11 @@ AQWidget * page_tiling_maker::createTiliingMakerControls()
     QRadioButton * mirrorX      = new QRadioButton("Mirror X");
     QRadioButton * mirrorY      = new QRadioButton("Mirror Y");
     QRadioButton * curveEdge    = new QRadioButton("Edit Curved Edge (F12)");
+    QCheckBox    * chkSnapTo    = new QCheckBox("Snap to Grid");
 
     QGridLayout * modeBox = new QGridLayout();
 
-    row=0;
+    int row=0;
     modeBox->addWidget(nomode,row,0);
     modeBox->addWidget(drawTrans,row,1);
     modeBox->addWidget(newPoly,row,2);
@@ -422,38 +376,13 @@ AQWidget * page_tiling_maker::createTiliingMakerControls()
     mouseModeBtnGroup->addButton(mirrorX,       MIRROR_X_MODE);
     mouseModeBtnGroup->addButton(mirrorY,       MIRROR_Y_MODE);
 
-    AQVBoxLayout * avbox = new AQVBoxLayout;
-    avbox->addWidget(debugWidget);
-    avbox->addWidget(modeGroup);
-    avbox->addWidget(actionGroup);
-    avbox->addWidget(bkgdGroup);
-
-    AQWidget * widget = new AQWidget();
-    widget->setLayout(avbox);
-
-    sides->setValue(config->polySides);
-
-    connect(exportBtn,      &QPushButton::clicked,            this,    &page_tiling_maker::slot_exportPoly);
-    connect(importBtn,      &QPushButton::clicked,            this,    &page_tiling_maker::slot_importPoly);
-    connect(addGirihBtn,    &QPushButton::clicked,            this,    &page_tiling_maker::slot_addGirihShape);
-
-    connect(chkSnapTo ,     &QCheckBox::clicked,        tilingMaker,   &TilingMaker::slot_snapTo);
-
+    connect(chkSnapTo, &QCheckBox::clicked, tilingMaker, &TilingMaker::slot_snapTo);
     connect(mouseModeBtnGroup, SIGNAL(buttonClicked(int)),     this,        SLOT(slot_setModes(int)));
-    connect(sides,             SIGNAL(valueChanged(int)),      tilingMaker, SLOT(updatePolygonSides(int)));
-    connect(featRot,           SIGNAL(valueChanged(qreal)),    tilingMaker, SLOT(updatePolygonRot(qreal)));
 
-    connect(addPolyBtn,       &QPushButton::clicked,    tilingMaker,    &TilingMaker::addRegularPolygon);
-    connect(clearVectorsBtn,  &QPushButton::clicked,    tilingMaker,    &TilingMaker::clearTranslationVectors);
-    connect(fillVectorsBtn,   &QPushButton::clicked,    tilingMaker,    &TilingMaker::fillUsingTranslations);
-    connect(removeExclBtn,    &QPushButton::clicked,    tilingMaker,    &TilingMaker::removeExcluded);
-    connect(exclAllBtn,       &QPushButton::clicked,    tilingMaker,    &TilingMaker::excludeAll);
-
-
-    return widget;
+    return modeGroup;
 }
 
-void page_tiling_maker::createBackgroundGroup()
+QGroupBox * page_tiling_maker::createBackgroundGroup()
 {
     QPushButton * loadBkgdBtn     = new QPushButton("Load Background");
     QPushButton * adjustBtn       = new QPushButton("Adjust perspective");
@@ -478,7 +407,7 @@ void page_tiling_maker::createBackgroundGroup()
     bkg->addLayout(&bkgdLayout);
     bkg->addLayout(bkh2);
 
-    bkgdGroup = new QGroupBox("Background Image");
+    QGroupBox * bkgdGroup  = new QGroupBox("Background Image");
     bkgdGroup->setLayout(bkg);
 
     connect(loadBkgdBtn,    &QPushButton::clicked,            this,    &page_tiling_maker::slot_loadBackground);
@@ -491,6 +420,8 @@ void page_tiling_maker::createBackgroundGroup()
     connect(chk_xformBkgd,  &QAbstractButton::clicked,        this,    &page_tiling_maker::slot_setBkgd);
 
     connect(chk_hideTiling, &QCheckBox::clicked,       tilingMaker,    &TilingMaker::hide);
+
+    return bkgdGroup;
 }
 
 void page_tiling_maker::slot_setModes(int mode)
@@ -649,6 +580,75 @@ void  page_tiling_maker::onEnter()
     }
 
     emit sig_viewWS();
+}
+
+void page_tiling_maker::slot_hideTable(bool checked)
+{
+    config->tm_hideTable = checked;
+    tileInfoTable->setVisible(!checked);
+    translationsWidget->setVisible(!checked);
+}
+
+void page_tiling_maker::slot_all_features(bool checked)
+{
+    config->tm_showAllFeatures = checked;
+    buildMenu();
+}
+
+void page_tiling_maker::slot_showDebug(bool checked)
+{
+    config->tm_showDebug = checked;
+    debugWidget->setVisible(checked);
+}
+
+void page_tiling_maker::slot_autofill(bool checked)
+{
+    config->tm_autofill = checked;
+}
+
+void page_tiling_maker::slot_menu(QPointF spt)
+{
+   qDebug() << "menu spt=" << spt;
+
+   QMenu myMenu(tileInfoTable);
+
+   myMenu.addAction("Edit Feature", this, SLOT(slot_menu_edit_feature()));
+
+   int col = tileInfoTable->currentColumn();
+   PlacedFeaturePtr pfp = getFeatureColumn(col);
+   QString str =  (tilingMaker->getInTiling().contains(pfp))  ? "Exclude" : "Include";
+   myMenu.addAction(str, this, SLOT(slot_menu_includePlaced()));
+
+   myMenu.addAction("Remove Feature", this, SLOT(slot_remove_clicked()));
+   myMenu.addAction("Uniquify Feature", this, SLOT(slot_uniquify_clicked()));
+
+   myMenu.exec(tileInfoTable->viewport()->mapToGlobal(spt.toPoint()));
+}
+
+void page_tiling_maker::slot_menu_edit_feature()
+{
+    qDebug() << "selected edit feature";
+    int              col = tileInfoTable->currentColumn();
+    PlacedFeaturePtr pfp = getFeatureColumn(col);
+    FeaturePtr        fp = pfp->getFeature();
+    QTransform         t = pfp->getTransform();
+
+    DlgEdgePolyEdit * fe  = new DlgEdgePolyEdit(fp->getEdgePoly(),t);
+    fe->show();
+    fe->raise();
+    fe->activateWindow();
+
+    connect(fe,          &DlgEdgePolyEdit::sig_currentPoint, tilingMaker, &TilingMaker::setFeatureEditPoint, Qt::UniqueConnection);
+    connect(tilingMaker, &TilingMaker::sig_refreshMenu,      fe,          &DlgEdgePolyEdit::display,         Qt::UniqueConnection);
+}
+
+void page_tiling_maker::slot_menu_includePlaced()
+{
+    int col = tileInfoTable->currentColumn();
+    PlacedFeaturePtr pfp = getFeatureColumn(col);
+
+    TilingSelectionPtr tsp = make_shared<TilingSelection>(INTERIOR,pfp);
+    tilingMaker->toggleInclusion(tsp);
 }
 
 void page_tiling_maker::slot_buildMenu()
@@ -1186,6 +1186,10 @@ void page_tiling_maker::displayBackgroundStatus(TilingPtr tiling)
         chk_showBkgd->setChecked(bi->bShowBkgd);
 
         bkgdGroup->setTitle(QString("Background Image: %1").arg(bi->bkgdName));
+    }
+    else
+    {
+        bkgdGroup->setTitle(QString("Background Image:"));
     }
 }
 

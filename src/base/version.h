@@ -1,1 +1,1 @@
-const QString tpmVersion = "Version 1.7.0  ";
+const QString tpmVersion = "Version 1.7.1  ";

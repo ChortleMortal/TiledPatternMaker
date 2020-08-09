@@ -114,10 +114,15 @@ private slots:
     void slot_setBkgd();
 
 protected:
-    AQWidget * createTiliingMakerControls();
-    AQWidget * createTilingTable();
-    void       createTopGrid();
-    void       createBackgroundGroup();
+
+    AQTableWidget * createTilingTable();
+    AQWidget      * createDebugInfo();
+    QGroupBox     * createBackgroundGroup();
+    QGroupBox     * createModesGroup();
+    QGroupBox     * createActionsGroup();
+    QHBoxLayout   * createControlRow();
+    QHBoxLayout   * createTableControlRow();
+    AQWidget      * createTranslationsRow();
 
     void clear();
     void buildTableEntry(PlacedFeaturePtr pf, int col, QString inclusion);
@@ -138,22 +143,21 @@ private:
     QCheckBox * chk_showDebug;
     QCheckBox * chk_showOverlaps;
 
-    QWidget      * makerSourceBox;
-
     QButtonGroup * mouseModeBtnGroup;
-
 
     DoubleSpinSet * t1x;
     DoubleSpinSet * t1y;
     DoubleSpinSet * t2x;
     DoubleSpinSet * t2y;
 
-    AQWidget     * debugWidget;
+    AQWidget      * translationsWidget;
+    AQTableWidget * tileInfoTable;
+    AQWidget      * debugWidget;
+
     QTextEdit    * featureInfo;
     QLabel       * debugLabel1;
     QLabel       * debugLabel2;
 
-    AQTableWidget * tileInfoTable;
 
     QSignalMapper  f_sidesMapper;
     QSignalMapper  f_rotMapper;
@@ -174,6 +178,7 @@ private:
     QCheckBox     * chk_xformBkgd;
 
     QGroupBox     * bkgdGroup;
+
 };
 
 #endif
