@@ -75,34 +75,20 @@ StylePtr  Mosaic::getFirstStyle()
     return sp;
 }
 
-//  This assumes a single tiling
-TilingPtr Mosaic::getTiling()
+UniqueQVector<TilingPtr> Mosaic::getTilings()
 {
-    TilingPtr tp;
-    StylePtr sp = getFirstStyle();
-    if (sp)
+    UniqueQVector<TilingPtr> tilings;
+    for (auto proto : getUniquePrototypes())
     {
-        PrototypePtr pp = sp->getPrototype();
-        if (pp)
-        {
-            tp = pp->getTiling();
-        }
+        TilingPtr tp = proto->getTiling();
+        tilings.push_back(tp);
     }
-    return tp;
+    return tilings;
 }
 
-// This assumes all styles have the same prototype
-void  Mosaic::setTiling(TilingPtr tp)
+void  Mosaic::replaceTiling(PrototypePtr pp, TilingPtr tp)
 {
-    StylePtr sp = getFirstStyle();
-    if (sp)
-    {
-        PrototypePtr pp = sp->getPrototype();
-        if (pp)
-        {
-            pp->setTiling(tp);
-        }
-    }
+    pp->setTiling(tp);
 }
 
 void Mosaic::setPrototype(StylePtr style, PrototypePtr pp)

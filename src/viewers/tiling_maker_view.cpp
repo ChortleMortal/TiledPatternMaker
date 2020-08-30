@@ -80,14 +80,7 @@ void TilingMakerView::paint(QPainter *painter)
     GeoGraphics gg(painter,tr);
     draw(&gg);
 
-    if (config->showCenter)
-    {
-        QPointF pt = getCenter();
-        qDebug() << "style layer center=" << pt;
-        painter->setPen(QPen(Qt::green,3));
-        painter->setBrush(QBrush(Qt::green));
-        painter->drawEllipse(pt,13,13);
-    }
+    drawCenter(painter);
 }
 
 void TilingMakerView::drawTranslationVectors(GeoGraphics * g2d, QPointF t1_start, QPointF t1_end, QPointF t2_start, QPointF t2_end)

@@ -22,8 +22,7 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "base/xml_writer.h"
-#include "base/canvas.h"
+#include "base/mosaic_writer.h"
 #include "base/border.h"
 #include "base/fileservices.h"
 #include "base/configuration.h"
@@ -54,16 +53,16 @@ const int currentXMLVersion = 6;    // 26JUL20 includes FillData
 #define endl Qt::endl
 #endif
 
-XmlWriter::XmlWriter()
+MosaicWriter::MosaicWriter()
 {
     config = Configuration::getInstance();
 }
 
-XmlWriter::~XmlWriter()
+MosaicWriter::~MosaicWriter()
 {
 }
 
-bool XmlWriter::writeXML(QString fileName, MosaicPtr mosaic)
+bool MosaicWriter::writeXML(QString fileName, MosaicPtr mosaic)
 {
     qDebug() << "Writing XML:" << fileName;
     _fileName  = fileName;
@@ -107,7 +106,7 @@ bool XmlWriter::writeXML(QString fileName, MosaicPtr mosaic)
     return rv;
 }
 
-bool XmlWriter::writeXML(QString fileName, MapPtr map)
+bool MosaicWriter::writeXML(QString fileName, MapPtr map)
 {
     qDebug() << "Writing XML:" << fileName;
     _fileName = fileName;
@@ -157,7 +156,7 @@ bool XmlWriter::writeXML(QString fileName, MapPtr map)
     return rv;
 }
 
-bool XmlWriter::generateDesignNotes(QTextStream & ts)
+bool MosaicWriter::generateDesignNotes(QTextStream & ts)
 {
     if (!_mosaic->getNotes().isEmpty())
     {
@@ -166,7 +165,7 @@ bool XmlWriter::generateDesignNotes(QTextStream & ts)
     return true;
 }
 
-bool XmlWriter::generateVector(QTextStream & ts)
+bool MosaicWriter::generateVector(QTextStream & ts)
 {
     refId    = 0;
     qDebug() << "XML Writer - start generation";
@@ -185,7 +184,7 @@ bool XmlWriter::generateVector(QTextStream & ts)
     return true;
 }
 
-bool XmlWriter::processVector(QTextStream &ts)
+bool MosaicWriter::processVector(QTextStream &ts)
 {
     qDebug() << "start vector";
 
@@ -265,7 +264,7 @@ bool XmlWriter::processVector(QTextStream &ts)
     return true;
 }
 
-void XmlWriter::processDesign(QTextStream &ts)
+void MosaicWriter::processDesign(QTextStream &ts)
 {
     CanvasSettings info= _mosaic->getCanvasSettings();
     QColor bkgdColor   = info.getBackgroundColor();
@@ -283,12 +282,12 @@ void XmlWriter::processDesign(QTextStream &ts)
     ts << "</design>" << endl;
 }
 
-void XmlWriter::procWidth(QTextStream &ts,qreal width)
+void MosaicWriter::procWidth(QTextStream &ts,qreal width)
 {
     ts << "<width>" << width << "</width>" << endl;
 }
 
-void XmlWriter::procSize(QTextStream &ts,QSizeF size)
+void MosaicWriter::procSize(QTextStream &ts,QSizeF size)
 {
     ts << "<size>"   << endl;
     ts << "<width>"  << size.width()  << "</width>" << endl;
@@ -296,27 +295,27 @@ void XmlWriter::procSize(QTextStream &ts,QSizeF size)
     ts << "</size>"  << endl;
 }
 
-void XmlWriter::procBackground(QTextStream &ts,QColor color)
+void MosaicWriter::procBackground(QTextStream &ts,QColor color)
 {
     ts << "<background>" << endl;
     procColor(ts,color);
     ts << "</background>" << endl;
 }
 
-void XmlWriter::procColor(QTextStream & ts, QColor color)
+void MosaicWriter::procColor(QTextStream & ts, QColor color)
 {
     ts << "<color>";
     ts << color.name(QColor::HexArgb);
     ts << "</color>" << endl;
 }
 
-void XmlWriter::procColor(QTextStream & ts, TPColor tpcolor)
+void MosaicWriter::procColor(QTextStream & ts, TPColor tpcolor)
 {
     QString qs = QString("<color hide=\"%1\">").arg(tpcolor.hidden ? 't' : 'f');
     ts << qs << tpcolor.color.name(QColor::HexArgb) << "</color>" << endl;
 }
 
-void XmlWriter::procBorder(QTextStream &ts,BorderPtr border)
+void MosaicWriter::procBorder(QTextStream &ts,BorderPtr border)
 {
     if (!border)
     {
@@ -364,7 +363,7 @@ void XmlWriter::procBorder(QTextStream &ts,BorderPtr border)
     ts << "</border>" << endl;
 }
 
-bool XmlWriter::processThick(QTextStream &ts, StylePtr s)
+bool MosaicWriter::processThick(QTextStream &ts, StylePtr s)
 {
     Thick * th = dynamic_cast<Thick*>(s.get());
     if (th == nullptr)
@@ -405,7 +404,7 @@ bool XmlWriter::processThick(QTextStream &ts, StylePtr s)
     return true;
 }
 
-bool XmlWriter::processInterlace(QTextStream & ts, StylePtr s)
+bool MosaicWriter::processInterlace(QTextStream & ts, StylePtr s)
 {
     Interlace * il = dynamic_cast<Interlace*>(s.get());
     if (il == nullptr)
@@ -454,7 +453,7 @@ bool XmlWriter::processInterlace(QTextStream & ts, StylePtr s)
     return true;
 }
 
-bool XmlWriter::processOutline(QTextStream &ts, StylePtr s)
+bool MosaicWriter::processOutline(QTextStream &ts, StylePtr s)
 {
     Outline * ol = dynamic_cast<Outline*>(s.get());
     if (ol == nullptr)
@@ -495,7 +494,7 @@ bool XmlWriter::processOutline(QTextStream &ts, StylePtr s)
     return true;
 }
 
-bool XmlWriter::processFilled(QTextStream &ts, StylePtr s)
+bool MosaicWriter::processFilled(QTextStream &ts, StylePtr s)
 {
     Filled * fl = dynamic_cast<Filled*>(s.get());
     if (fl == nullptr)
@@ -561,7 +560,7 @@ bool XmlWriter::processFilled(QTextStream &ts, StylePtr s)
     return true;
 }
 
-bool XmlWriter::processPlain(QTextStream &ts, StylePtr s)
+bool MosaicWriter::processPlain(QTextStream &ts, StylePtr s)
 {
     Plain * pl = dynamic_cast<Plain*>(s.get());
     if (pl == nullptr)
@@ -595,7 +594,7 @@ bool XmlWriter::processPlain(QTextStream &ts, StylePtr s)
     return true;
 }
 
-bool XmlWriter::processSketch(QTextStream &ts, StylePtr s)
+bool MosaicWriter::processSketch(QTextStream &ts, StylePtr s)
 {
     Sketch * sk = dynamic_cast<Sketch*>(s.get());
     if (sk == nullptr)
@@ -628,7 +627,7 @@ bool XmlWriter::processSketch(QTextStream &ts, StylePtr s)
     return true;
 }
 
-bool XmlWriter::processEmboss(QTextStream &ts, StylePtr s)
+bool MosaicWriter::processEmboss(QTextStream &ts, StylePtr s)
 {
     Emboss * em = dynamic_cast<Emboss*>(s.get());
     if (em == nullptr)
@@ -675,7 +674,7 @@ bool XmlWriter::processEmboss(QTextStream &ts, StylePtr s)
     return true;
 }
 
-bool XmlWriter::processTileColors(QTextStream &ts, StylePtr s)
+bool MosaicWriter::processTileColors(QTextStream &ts, StylePtr s)
 {
     TileColors * tc = dynamic_cast<TileColors*>(s.get());
     if (tc == nullptr)
@@ -713,7 +712,7 @@ bool XmlWriter::processTileColors(QTextStream &ts, StylePtr s)
     return true;
 }
 
-void XmlWriter::procesToolkitGeoLayer(QTextStream & ts, Xform & xf)
+void MosaicWriter::procesToolkitGeoLayer(QTextStream & ts, Xform & xf)
 {
     ts << "<left__delta>"  << xf.getTranslateX()      << "</left__delta>"  << endl;
     ts << "<top__delta>"   << xf.getTranslateY()      << "</top__delta>"   << endl;
@@ -723,13 +722,13 @@ void XmlWriter::procesToolkitGeoLayer(QTextStream & ts, Xform & xf)
     ts << "<center>" << pt.x() << "," << pt.y()       << "</center>"        << endl;
 }
 
-void XmlWriter::processStyleStyle(QTextStream & ts, PrototypePtr & proto, PolyPtr & poly)
+void MosaicWriter::processStyleStyle(QTextStream & ts, PrototypePtr & proto, PolyPtr & poly)
 {
     setBoundary(ts,poly);
     setPrototype(ts,proto);
 }
 
-void XmlWriter::procColorSet(QTextStream &ts, ColorSet & colorSet)
+void MosaicWriter::procColorSet(QTextStream &ts, ColorSet & colorSet)
 {
     int count = colorSet.size();
     colorSet.resetIndex();
@@ -740,7 +739,7 @@ void XmlWriter::procColorSet(QTextStream &ts, ColorSet & colorSet)
     }
 }
 
-void XmlWriter::procColorGroup(QTextStream &ts, ColorGroup & colorGroup)
+void MosaicWriter::procColorGroup(QTextStream &ts, ColorGroup & colorGroup)
 {
     int count = colorGroup.size();
     colorGroup.resetIndex();
@@ -755,14 +754,14 @@ void XmlWriter::procColorGroup(QTextStream &ts, ColorGroup & colorGroup)
     }
 }
 
-void XmlWriter::processsStyleThick(QTextStream &ts, bool draw_outline, qreal width)
+void MosaicWriter::processsStyleThick(QTextStream &ts, bool draw_outline, qreal width)
 {
     QString draw = (draw_outline) ? "true" : "false";
     ts << "<draw__outline>" << draw << "</draw__outline>" << endl;
     ts << "<width>" << width << "</width>" << endl;
 }
 
-void XmlWriter::processsStyleInterlace(QTextStream &ts, qreal gap, qreal shadow, bool includeTipVerts)
+void MosaicWriter::processsStyleInterlace(QTextStream &ts, qreal gap, qreal shadow, bool includeTipVerts)
 {
     QString include = (includeTipVerts) ? "true" : "false";
     ts << "<gap>" << gap << "</gap>" << endl;
@@ -770,7 +769,7 @@ void XmlWriter::processsStyleInterlace(QTextStream &ts, qreal gap, qreal shadow,
     ts << "<includeTipVerts>" << include << "</includeTipVerts>" << endl;
 }
 
-void XmlWriter::processsStyleFilled(QTextStream &ts, bool draw_inside, bool draw_outside, int algorithm)
+void MosaicWriter::processsStyleFilled(QTextStream &ts, bool draw_inside, bool draw_outside, int algorithm)
 {
     QString drawi = (draw_inside) ? "true" : "false";
     QString drawo = (draw_outside) ? "true" : "false";
@@ -779,12 +778,12 @@ void XmlWriter::processsStyleFilled(QTextStream &ts, bool draw_inside, bool draw
     ts << "<algorithm>" << algorithm << "</algorithm>" << endl;
 }
 
-void XmlWriter::processsStyleEmboss(QTextStream &ts, qreal  angle)
+void MosaicWriter::processsStyleEmboss(QTextStream &ts, qreal  angle)
 {
     ts << "<angle>" << angle << "</angle>";
 }
 
-void XmlWriter::setBoundary(QTextStream & ts, PolyPtr p)
+void MosaicWriter::setBoundary(QTextStream & ts, PolyPtr p)
 {
     QString qsid;
     if (hasReference(p))
@@ -806,7 +805,7 @@ void XmlWriter::setBoundary(QTextStream & ts, PolyPtr p)
     ts << "</boundary>" << endl;
 }
 
-void XmlWriter::setPolygon(QTextStream & ts, PolyPtr pp)
+void MosaicWriter::setPolygon(QTextStream & ts, PolyPtr pp)
 {
     for (int i=0; i < pp->size(); i++)
     {
@@ -818,7 +817,7 @@ void XmlWriter::setPolygon(QTextStream & ts, PolyPtr pp)
     }
 }
 
-void XmlWriter::setPrototype(QTextStream & ts, PrototypePtr pp)
+void MosaicWriter::setPrototype(QTextStream & ts, PrototypePtr pp)
 {
     QString qsid;
     if (hasReference(pp))
@@ -939,7 +938,7 @@ void XmlWriter::setPrototype(QTextStream & ts, PrototypePtr pp)
     qDebug() << "Proto created";
 }
 
-void XmlWriter::setFeature(QTextStream & ts,FeaturePtr fp)
+void MosaicWriter::setFeature(QTextStream & ts,FeaturePtr fp)
 {
     QString str = "tile.Feature";
 
@@ -976,7 +975,7 @@ void XmlWriter::setFeature(QTextStream & ts,FeaturePtr fp)
 
 }
 
-void XmlWriter::setFigureCommon(QTextStream & ts, FigurePtr fp)
+void MosaicWriter::setFigureCommon(QTextStream & ts, FigurePtr fp)
 {
     int    bs = fp->getExtBoundarySides();
     qreal bsc = fp->getExtBoundaryScale();
@@ -989,7 +988,7 @@ void XmlWriter::setFigureCommon(QTextStream & ts, FigurePtr fp)
     ts << "<r>"             << r   << "</r>"             << endl;
 }
 
-void XmlWriter::setExplicitFigure(QTextStream & ts,QString name, FigurePtr fp)
+void MosaicWriter::setExplicitFigure(QTextStream & ts,QString name, FigurePtr fp)
 {
     ExplicitPtr ep = std::dynamic_pointer_cast<ExplicitFigure>(fp);
     if (!ep)
@@ -1063,7 +1062,7 @@ void XmlWriter::setExplicitFigure(QTextStream & ts,QString name, FigurePtr fp)
     ts << "</" << name << ">" << endl;
 }
 
-void XmlWriter::setStarFigure(QTextStream & ts, QString name, FigurePtr fp, bool childEnd)
+void MosaicWriter::setStarFigure(QTextStream & ts, QString name, FigurePtr fp, bool childEnd)
 {
     StarPtr sp = std::dynamic_pointer_cast<Star>(fp);
     if (!sp)
@@ -1099,7 +1098,7 @@ void XmlWriter::setStarFigure(QTextStream & ts, QString name, FigurePtr fp, bool
         ts << "</" << name << ">" << endl;
 }
 
-void XmlWriter::setExtendedStarFigure(QTextStream & ts,QString name, FigurePtr fp)
+void MosaicWriter::setExtendedStarFigure(QTextStream & ts,QString name, FigurePtr fp)
 {
     ExtStarPtr sp = std::dynamic_pointer_cast<ExtendedStar>(fp);
     if (!sp)
@@ -1134,7 +1133,7 @@ void XmlWriter::setExtendedStarFigure(QTextStream & ts,QString name, FigurePtr f
     ts << "</" << name << ">" << endl;
 }
 
-void XmlWriter::setRosetteFigure(QTextStream & ts,QString name, FigurePtr fp, bool childEnd)
+void MosaicWriter::setRosetteFigure(QTextStream & ts,QString name, FigurePtr fp, bool childEnd)
 {
     RosettePtr rp = std::dynamic_pointer_cast<Rosette>(fp);
     if (!rp)
@@ -1172,7 +1171,7 @@ void XmlWriter::setRosetteFigure(QTextStream & ts,QString name, FigurePtr fp, bo
         ts << "</" << name << ">" << endl;
 }
 
-void XmlWriter::setExtendedRosetteFigure(QTextStream & ts,QString name, FigurePtr fp)
+void MosaicWriter::setExtendedRosetteFigure(QTextStream & ts,QString name, FigurePtr fp)
 {
     ExtRosettePtr rp = std::dynamic_pointer_cast<ExtendedRosette>(fp);
     if (!rp)
@@ -1210,7 +1209,7 @@ void XmlWriter::setExtendedRosetteFigure(QTextStream & ts,QString name, FigurePt
     ts << "</" << name << ">" << endl;
 }
 
-void XmlWriter::setRosetteConnectFigure(QTextStream & ts,QString name, FigurePtr fp)
+void MosaicWriter::setRosetteConnectFigure(QTextStream & ts,QString name, FigurePtr fp)
 {
     qDebug() << fp->getFigureDesc();
     RosetteConnectPtr rcp = std::dynamic_pointer_cast<RosetteConnectFigure>(fp);
@@ -1243,7 +1242,7 @@ void XmlWriter::setRosetteConnectFigure(QTextStream & ts,QString name, FigurePtr
     ts << "</" << name << ">" << endl;
 }
 
-void XmlWriter::setStarConnectFigure(QTextStream & ts,QString name, FigurePtr fp)
+void MosaicWriter::setStarConnectFigure(QTextStream & ts,QString name, FigurePtr fp)
 {
     qDebug() << fp->getFigureDesc();
     StarConnectPtr scp = std::dynamic_pointer_cast<StarConnectFigure>(fp);
@@ -1276,7 +1275,7 @@ void XmlWriter::setStarConnectFigure(QTextStream & ts,QString name, FigurePtr fp
     ts << "</" << name << ">" << endl;
 }
 
-bool XmlWriter::setMap(QTextStream &ts, MapPtr map)
+bool MosaicWriter::setMap(QTextStream &ts, MapPtr map)
 {
     qDebug().noquote() << map->summary();
     bool verify = map->verifyMap("XMLWriter");
@@ -1338,7 +1337,7 @@ bool XmlWriter::setMap(QTextStream &ts, MapPtr map)
 }
 
 
-void XmlWriter::setVertices(QTextStream & ts, const QVector<VertexPtr> & vertices)
+void MosaicWriter::setVertices(QTextStream & ts, const QVector<VertexPtr> & vertices)
 {
     ts << "<vertices" << nextId() <<  ">" << endl;
     for (auto v : vertices)
@@ -1348,7 +1347,7 @@ void XmlWriter::setVertices(QTextStream & ts, const QVector<VertexPtr> & vertice
     ts << "</vertices>" << endl;
 }
 
-void XmlWriter::setEdges(QTextStream & ts, const QVector<EdgePtr> & edges)
+void MosaicWriter::setEdges(QTextStream & ts, const QVector<EdgePtr> & edges)
 {
     ts << "<edges" << nextId() <<  ">" << endl;
     for (auto edge : edges)
@@ -1358,7 +1357,7 @@ void XmlWriter::setEdges(QTextStream & ts, const QVector<EdgePtr> & edges)
     ts << "</edges>" << endl;
 }
 
-void XmlWriter::setNeighbours(QTextStream & ts, NeighbourMap & nmap)
+void MosaicWriter::setNeighbours(QTextStream & ts, NeighbourMap & nmap)
 {
     ts << "<neighbours>" << endl;
     QMapIterator<VertexPtr,NeighboursPtr> i(nmap.get());
@@ -1372,7 +1371,7 @@ void XmlWriter::setNeighbours(QTextStream & ts, NeighbourMap & nmap)
     ts << "</neighbours>" << endl;
 }
 
-void XmlWriter::setNeighbour(QTextStream & ts, VertexPtr v, NeighboursPtr np)
+void MosaicWriter::setNeighbour(QTextStream & ts, VertexPtr v, NeighboursPtr np)
 {
     qDebug() << "setting neighbours for vertex" << v->getTmpVertexIndex();
 
@@ -1397,7 +1396,7 @@ void XmlWriter::setNeighbour(QTextStream & ts, VertexPtr v, NeighboursPtr np)
     ts << "</neighbourset>" << endl;
 }
 
-void XmlWriter::setEdgePoly(QTextStream & ts, EdgePoly & epoly)
+void MosaicWriter::setEdgePoly(QTextStream & ts, EdgePoly & epoly)
 {
     for (auto it = epoly.begin(); it != epoly.end(); it++)
     {
@@ -1426,7 +1425,7 @@ void XmlWriter::setEdgePoly(QTextStream & ts, EdgePoly & epoly)
     }
 }
 
-void XmlWriter::setVertexEP(QTextStream & ts,VertexPtr v, QString name)
+void MosaicWriter::setVertexEP(QTextStream & ts,VertexPtr v, QString name)
 {
     QString qsid;
     if (hasReference(v))
@@ -1446,14 +1445,14 @@ void XmlWriter::setVertexEP(QTextStream & ts,VertexPtr v, QString name)
     ts << "</" << name << ">" << endl;
 }
 
-void XmlWriter::setPoint(QTextStream & ts, QPointF pt, QString name)
+void MosaicWriter::setPoint(QTextStream & ts, QPointF pt, QString name)
 {
     ts << "<" << name << ">";
     ts << pt.x() << "," << pt.y();
     ts << "</" << name << ">" << endl;
 }
 
-void XmlWriter::setVertex(QTextStream & ts, VertexPtr v, QString name)
+void MosaicWriter::setVertex(QTextStream & ts, VertexPtr v, QString name)
 {
     QString qsid;
     if (hasReference(v))
@@ -1475,7 +1474,7 @@ void XmlWriter::setVertex(QTextStream & ts, VertexPtr v, QString name)
     ts << "</" << name << ">" << endl;
 }
 
-void XmlWriter::setEdges(QTextStream & ts, QVector<EdgePtr> & qvec)
+void MosaicWriter::setEdges(QTextStream & ts, QVector<EdgePtr> & qvec)
 {
     ts << "<edges>" << endl;
 
@@ -1490,7 +1489,7 @@ void XmlWriter::setEdges(QTextStream & ts, QVector<EdgePtr> & qvec)
  }
 
 
-void XmlWriter::setEdge(QTextStream & ts, EdgePtr e)
+void MosaicWriter::setEdge(QTextStream & ts, EdgePtr e)
 {
     qDebug() << "Edge" << e.get();
     QString qsid;
@@ -1548,231 +1547,231 @@ void XmlWriter::setEdge(QTextStream & ts, EdgePtr e)
 //
 //////////////////////////////////////////////////////////////
 
-bool XmlWriter::hasReference(PolyPtr pp)
+bool MosaicWriter::hasReference(PolyPtr pp)
 {
     return poly_ids.contains(pp);
 }
 
-bool XmlWriter::hasReference(PrototypePtr pp)
+bool MosaicWriter::hasReference(PrototypePtr pp)
 {
     return proto_ids.contains(pp);
 }
 
-bool XmlWriter::hasReference(FeaturePtr fp)
+bool MosaicWriter::hasReference(FeaturePtr fp)
 {
     return feature_ids.contains(fp);
 }
 
-bool XmlWriter::hasReference(FigurePtr fp)
+bool MosaicWriter::hasReference(FigurePtr fp)
 {
     return figure_ids.contains(fp);
 }
 
-bool XmlWriter::hasReference(ExplicitPtr ep)
+bool MosaicWriter::hasReference(ExplicitPtr ep)
 {
     return explicit_ids.contains(ep);
 }
 
-bool XmlWriter::hasReference(MapPtr map)
+bool MosaicWriter::hasReference(MapPtr map)
 {
     return map_ids.contains(map);
 }
 
-bool XmlWriter::hasReference(VertexPtr v)
+bool MosaicWriter::hasReference(VertexPtr v)
 {
     return vertex_ids.contains(v);
 }
 
-bool XmlWriter::hasReference(RosettePtr n)
+bool MosaicWriter::hasReference(RosettePtr n)
 {
     return rosette_ids.contains(n);
 }
 
-bool XmlWriter::hasReference(StarPtr n)
+bool MosaicWriter::hasReference(StarPtr n)
 {
     return star_ids.contains(n);
 }
 
-bool XmlWriter::hasReference(ExtStarPtr n)
+bool MosaicWriter::hasReference(ExtStarPtr n)
 {
     return extended_star_ids.contains(n);
 }
 
-bool XmlWriter::hasReference(ExtRosettePtr n)
+bool MosaicWriter::hasReference(ExtRosettePtr n)
 {
     return extended_rosette_ids.contains(n);
 }
 
-bool XmlWriter::hasReference(RosetteConnectPtr n)
+bool MosaicWriter::hasReference(RosetteConnectPtr n)
 {
     return rosette_connect_ids.contains(n);
 }
 
-bool XmlWriter::hasReference(StarConnectPtr n)
+bool MosaicWriter::hasReference(StarConnectPtr n)
 {
     return star_connect_ids.contains(n);
 }
 
-bool XmlWriter::hasReference(EdgePtr e)
+bool MosaicWriter::hasReference(EdgePtr e)
 {
     return edge_ids.contains(e);
 }
 
-void XmlWriter::setProtoReference(int id, PrototypePtr ptr)
+void MosaicWriter::setProtoReference(int id, PrototypePtr ptr)
 {
     proto_ids[ptr] = id;
 }
 
-void XmlWriter::setPolyReference(int id, PolyPtr ptr)
+void MosaicWriter::setPolyReference(int id, PolyPtr ptr)
 {
     poly_ids[ptr] = id;
 }
 
-void XmlWriter::setFigureReference(int id, FigurePtr ptr)
+void MosaicWriter::setFigureReference(int id, FigurePtr ptr)
 {
    figure_ids[ptr] = id;
 }
 
-void XmlWriter::setFeatureReference(int id,FeaturePtr ptr)
+void MosaicWriter::setFeatureReference(int id,FeaturePtr ptr)
 {
     feature_ids[ptr] = id;
 }
 
-void XmlWriter::setExplicitReference(int id,ExplicitPtr ptr)
+void MosaicWriter::setExplicitReference(int id,ExplicitPtr ptr)
 {
     explicit_ids[ptr] = id;
 }
 
-void XmlWriter::setMapReference(int id, MapPtr ptr)
+void MosaicWriter::setMapReference(int id, MapPtr ptr)
 {
     map_ids[ptr] = id;
 }
 
-void XmlWriter::setVertexReference(int id, VertexPtr ptr)
+void MosaicWriter::setVertexReference(int id, VertexPtr ptr)
 {
     vertex_ids[ptr] = id;
 }
 
-void XmlWriter::setRosetteReference(int id, RosettePtr ptr)
+void MosaicWriter::setRosetteReference(int id, RosettePtr ptr)
 {
     rosette_ids[ptr] = id;
 }
 
-void XmlWriter::setStarReference(int id, StarPtr ptr)
+void MosaicWriter::setStarReference(int id, StarPtr ptr)
 {
     star_ids[ptr] = id;
 }
 
-void XmlWriter::setExtendedStarReference(int id, ExtStarPtr ptr)
+void MosaicWriter::setExtendedStarReference(int id, ExtStarPtr ptr)
 {
     extended_star_ids[ptr] = id;
 }
 
-void XmlWriter::setExtendedRosetteReference(int id, ExtRosettePtr ptr)
+void MosaicWriter::setExtendedRosetteReference(int id, ExtRosettePtr ptr)
 {
     extended_rosette_ids[ptr] = id;
 }
 
-void XmlWriter::setRosetteConnectReference(int id, RosetteConnectPtr ptr)
+void MosaicWriter::setRosetteConnectReference(int id, RosetteConnectPtr ptr)
 {
     rosette_connect_ids[ptr] = id;
 }
 
-void XmlWriter::setStarConnectReference(int id, StarConnectPtr ptr)
+void MosaicWriter::setStarConnectReference(int id, StarConnectPtr ptr)
 {
     star_connect_ids[ptr] = id;
 }
 
-void XmlWriter::setEdgeReference(int id, EdgePtr ptr)
+void MosaicWriter::setEdgeReference(int id, EdgePtr ptr)
 {
     edge_ids[ptr] = id;
 }
 
-QString XmlWriter::getPolyReference(PolyPtr ptr)
+QString MosaicWriter::getPolyReference(PolyPtr ptr)
 {
     int id =  poly_ids.value(ptr);
     QString qs = QString(" reference=\"%1\"").arg(id);
     return qs;
 }
 
-QString XmlWriter::getProtoReference(PrototypePtr ptr)
+QString MosaicWriter::getProtoReference(PrototypePtr ptr)
 {
     int id =  proto_ids.value(ptr);
     QString qs = QString(" reference=\"%1\"").arg(id);
     return qs;
 }
 
-QString XmlWriter::getFeatureReference(FeaturePtr ptr)
+QString MosaicWriter::getFeatureReference(FeaturePtr ptr)
 {
     int id =  feature_ids.value(ptr);
     QString qs = QString(" reference=\"%1\"").arg(id);
     return qs;
 }
 
-QString XmlWriter::getFigureReference(FigurePtr ptr)
+QString MosaicWriter::getFigureReference(FigurePtr ptr)
 {
     int id =  figure_ids.value(ptr);
     QString qs = QString(" reference=\"%1\"").arg(id);
     return qs;
 }
 
-QString XmlWriter::getExplicitReference(ExplicitPtr ptr)
+QString MosaicWriter::getExplicitReference(ExplicitPtr ptr)
 {
     int id =  explicit_ids.value(ptr);
     QString qs = QString(" reference=\"%1\"").arg(id);
     return qs;
 }
 
-QString XmlWriter::getMapReference(MapPtr ptr)
+QString MosaicWriter::getMapReference(MapPtr ptr)
 {
     int id =  map_ids.value(ptr);
     QString qs = QString(" reference=\"%1\"").arg(id);
     return qs;
 }
 
-QString XmlWriter::getVertexReference(VertexPtr ptr)
+QString MosaicWriter::getVertexReference(VertexPtr ptr)
 {
     int id =  vertex_ids.value(ptr);
     QString qs = QString(" reference=\"%1\"").arg(id);
     return qs;
 }
 
-QString XmlWriter::getRosetteReference(RosettePtr ptr)
+QString MosaicWriter::getRosetteReference(RosettePtr ptr)
 {
     int id =  rosette_ids.value(ptr);
     QString qs = QString(" reference=\"%1\"").arg(id);
     return qs;
 }
 
-QString XmlWriter::getStarReference(StarPtr ptr)
+QString MosaicWriter::getStarReference(StarPtr ptr)
 {
     int id =  star_ids.value(ptr);
     QString qs = QString(" reference=\"%1\"").arg(id);
     return qs;
 }
 
-QString XmlWriter::getExtendedStarReference(ExtStarPtr ptr)
+QString MosaicWriter::getExtendedStarReference(ExtStarPtr ptr)
 {
     int id =  extended_star_ids.value(ptr);
     QString qs = QString(" reference=\"%1\"").arg(id);
     return qs;
 }
 
-QString XmlWriter::getExtendedRosetteReference(ExtRosettePtr ptr)
+QString MosaicWriter::getExtendedRosetteReference(ExtRosettePtr ptr)
 {
     int id =  extended_rosette_ids.value(ptr);
     QString qs = QString(" reference=\"%1\"").arg(id);
     return qs;
 }
 
-QString XmlWriter::getRosetteConnectReference(RosetteConnectPtr ptr)
+QString MosaicWriter::getRosetteConnectReference(RosetteConnectPtr ptr)
 {
     int id =  rosette_connect_ids.value(ptr);
     QString qs = QString(" reference=\"%1\"").arg(id);
     return qs;
 }
 
-QString XmlWriter::getStarConnectReference(StarConnectPtr ptr)
+QString MosaicWriter::getStarConnectReference(StarConnectPtr ptr)
 {
     int id =  star_connect_ids.value(ptr);
     QString qs = QString(" reference=\"%1\"").arg(id);
@@ -1780,7 +1779,7 @@ QString XmlWriter::getStarConnectReference(StarConnectPtr ptr)
 }
 
 
-QString XmlWriter::getEdgeReference(EdgePtr ptr)
+QString MosaicWriter::getEdgeReference(EdgePtr ptr)
 {
     int id =  edge_ids.value(ptr);
     qDebug() << "edge ref" << id;
@@ -1788,26 +1787,26 @@ QString XmlWriter::getEdgeReference(EdgePtr ptr)
     return qs;
 }
 
-QString  XmlWriter::id(int id)
+QString  MosaicWriter::id(int id)
 {
     qDebug() << "id=" << id;
     QString qs = QString(" id=\"%1\"").arg(id);
     return qs;
 }
 
-QString  XmlWriter::nextId()
+QString  MosaicWriter::nextId()
 {
     return id(++refId);
 }
 
-void XmlWriter::setPos(QTextStream & ts,QPointF qpf)
+void MosaicWriter::setPos(QTextStream & ts,QPointF qpf)
 {
     ts << "<pos>";
     ts << qpf.x() << "," << qpf.y();
     ts << "</pos>" << endl;
 }
 
-void XmlWriter::fail(QString a, QString b)
+void MosaicWriter::fail(QString a, QString b)
 {
     _failMsg = QString("%1 %2").arg(a).arg(b);
     qWarning().noquote() << _failMsg;

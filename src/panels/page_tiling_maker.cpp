@@ -23,10 +23,8 @@
  */
 
 #include "panels/page_tiling_maker.h"
-#include "base/canvas.h"
 #include "base/utilities.h"
 #include "base/tiledpatternmaker.h"
-#include "base/tilingmanager.h"
 #include "panels/dlg_edgepoly_edit.h"
 #include "panels/dlg_name.h"
 #include "base/fileservices.h"
@@ -35,8 +33,9 @@
 #include "panels/dlg_trim.h"
 #include "panels/panel.h"
 #include "style/style.h"
+#include "tile/tiling_manager.h"
 
-Q_DECLARE_METATYPE(PlacedFeaturePtr)
+Q_DECLARE_METATYPE(WeakPlacedFeaturePtr)
 
 page_tiling_maker:: page_tiling_maker(ControlPanel * cpanel)  : panel_page(cpanel,"Tiling Maker"), bkgdLayout("Bkgd Xform")
 {
@@ -75,19 +74,16 @@ page_tiling_maker:: page_tiling_maker(ControlPanel * cpanel)  : panel_page(cpane
 
     connect(tpm,  &TiledPatternMaker::sig_loadedTiling,   this, &page_tiling_maker::slot_loadedTiling);
     connect(tpm,  &TiledPatternMaker::sig_loadedXML,      this, &page_tiling_maker::slot_loadedXML);
-    connect(tpm,  &TiledPatternMaker::sig_unload,         this, &page_tiling_maker::slot_unload);
-    connect(this, &page_tiling_maker::sig_loadTiling,     tpm,  &TiledPatternMaker::slot_loadTiling);
 
     connect(tilingMaker,  &TilingMaker::sig_buildMenu,      this,  &page_tiling_maker::slot_buildMenu);
     connect(tilingMaker,  &TilingMaker::sig_refreshMenu,    this,  &page_tiling_maker::slot_refreshMenu);
     connect(tilingMaker,  &TilingMaker::sig_current_feature,this,  &page_tiling_maker::slot_currentFeature);
 
-    connect(canvas, &Canvas::sig_deltaScale,    this, &page_tiling_maker::slot_scale);
-    connect(canvas, &Canvas::sig_deltaRotate,   this, &page_tiling_maker::slot_rotate);
-    connect(canvas, &Canvas::sig_deltaMoveY,    this, &page_tiling_maker::slot_moveY);
-    connect(canvas, &Canvas::sig_deltaMoveX,    this, &page_tiling_maker::slot_moveX);
-
-    buildMenu();
+    connect(view, &View::sig_unload,        this, &page_tiling_maker::slot_unload);
+    connect(view, &View::sig_deltaScale,    this, &page_tiling_maker::slot_scale);
+    connect(view, &View::sig_deltaRotate,   this, &page_tiling_maker::slot_rotate);
+    connect(view, &View::sig_deltaMoveY,    this, &page_tiling_maker::slot_moveY);
+    connect(view, &View::sig_deltaMoveX,    this, &page_tiling_maker::slot_moveX);
 
     tileInfoTable->setVisible(!config->tm_hideTable);
     translationsWidget->setVisible(!config->tm_hideTable);
@@ -96,14 +92,17 @@ page_tiling_maker:: page_tiling_maker(ControlPanel * cpanel)  : panel_page(cpane
 
 QHBoxLayout * page_tiling_maker::createControlRow()
 {
-    currentTiling                 = new QLabel("No Tiling");
+    QLabel * label                = new QLabel("Loaded Tilings:");
+    tilingCombo                   = new QComboBox();
+    tilingCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     QPushButton * reloadTilingBtn = new QPushButton("Re-load Tiling");
     QPushButton * pbClearWS       = new QPushButton("Clear WS");
     QPushButton * pbClearTiling   = new QPushButton("Clear Tiling");
     QPushButton * replaceInMosaic = new QPushButton("Replace in Mosaic");
 
     QHBoxLayout * hbox = new QHBoxLayout;
-    hbox->addWidget(currentTiling);
+    hbox->addWidget(label);
+    hbox->addWidget(tilingCombo);
     hbox->addStretch();
     hbox->addWidget(reloadTilingBtn);
     hbox->addWidget(pbClearTiling);
@@ -112,6 +111,7 @@ QHBoxLayout * page_tiling_maker::createControlRow()
     hbox->addStretch();
     hbox->addWidget(replaceInMosaic);
 
+    connect(tilingCombo,       SIGNAL(currentIndexChanged(int)),  this, SLOT(slot_currentTilingChanged(int)));
     connect(pbClearWS,         &QPushButton::clicked,  this, &page_tiling_maker::slot_clearWS);
     connect(pbClearTiling,     &QPushButton::clicked,  this, &page_tiling_maker::slot_clearTiling);
     connect(reloadTilingBtn,   &QPushButton::clicked,  this, &page_tiling_maker::slot_reloadTiling);
@@ -156,35 +156,52 @@ AQWidget * page_tiling_maker::createTranslationsRow()
 
 QHBoxLayout * page_tiling_maker::createTableControlRow()
 {
-    chk_hideTable                 = new QCheckBox("Hide table");
-    chk_autoFill                  = new QCheckBox("Auto-fill on load");
-    chk_showOverlaps              = new QCheckBox("Show overlaps/touching");
-    chk_showDebug                 = new QCheckBox("Show debug");
-    QCheckBox * chk_all_features  = new QCheckBox("All features in table");
-    chk_all_features->setChecked(config->tm_showAllFeatures);
-
-    QPushButton * swapBtn         = new QPushButton("Swap T1/T2");
-
     QHBoxLayout * hbox = new QHBoxLayout;
-    hbox->addWidget(chk_hideTable);
-    hbox->addWidget(chk_all_features);
-    hbox->addWidget(chk_autoFill);
-    hbox->addWidget(chk_showOverlaps);
-    hbox->addWidget(chk_showDebug);
-    hbox->addStretch();
-    hbox->addWidget(swapBtn);
 
-    chk_hideTable->setChecked(config->tm_hideTable);
-    chk_all_features->setChecked(config->tm_showAllFeatures);
+    QCheckBox * chk_autoFill     = new QCheckBox("Auto-fill on load");
+    QCheckBox * chk_showOverlaps = new QCheckBox("Show overlaps/touching");
+
+    if (config->nerdMode)
+    {
+        QCheckBox * chk_hideTable     = new QCheckBox("Hide table");
+        QCheckBox * chk_showDebug     = new QCheckBox("Show debug");
+        QCheckBox * chk_all_features  = new QCheckBox("All features in table");
+        chk_all_features->setChecked(config->tm_showAllFeatures);
+        QPushButton * swapBtn         = new QPushButton("Swap T1/T2");
+
+        hbox->addWidget(chk_hideTable);
+        hbox->addWidget(chk_all_features);
+        hbox->addWidget(chk_autoFill);
+        hbox->addWidget(chk_showOverlaps);
+        hbox->addWidget(chk_showDebug);
+        hbox->addStretch();
+        hbox->addWidget(swapBtn);
+
+        chk_hideTable->setChecked(config->tm_hideTable);
+        chk_all_features->setChecked(config->tm_showAllFeatures);
+        chk_showDebug->setChecked(config->tm_showDebug);
+
+        connect(chk_hideTable,   &QCheckBox::clicked,    this,   &page_tiling_maker::slot_hideTable);
+        connect(chk_all_features,&QCheckBox::clicked,    this,   &page_tiling_maker::slot_all_features);
+        connect(chk_showDebug,   &QCheckBox::clicked,    this,   &page_tiling_maker::slot_showDebug);
+        connect(swapBtn,         &QPushButton::clicked,  this,   &page_tiling_maker::slot_swapTrans);
+    }
+    else
+    {
+        config->tm_hideTable       = true;
+        config->tm_showAllFeatures = false;
+        config->tm_showDebug       = false;
+
+        hbox->addStretch();
+        hbox->addWidget(chk_autoFill);
+        hbox->addWidget(chk_showOverlaps);
+        hbox->addStretch();
+    }
+
     chk_autoFill->setChecked(config->tm_autofill);
     chk_showOverlaps->setChecked(config->tm_showOverlaps);
-    chk_showDebug->setChecked(config->tm_showDebug);
 
-    connect(chk_hideTable,   &QCheckBox::clicked,    this,   &page_tiling_maker::slot_hideTable);
-    connect(chk_all_features,&QCheckBox::clicked,    this,   &page_tiling_maker::slot_all_features);
     connect(chk_autoFill,    &QCheckBox::clicked,    this,   &page_tiling_maker::slot_autofill);
-    connect(chk_showDebug,   &QCheckBox::clicked,    this,   &page_tiling_maker::slot_showDebug);
-    connect(swapBtn,         &QPushButton::clicked,  this,   &page_tiling_maker::slot_swapTrans);
     connect(chk_showOverlaps,&QCheckBox::clicked, tilingMaker, &TilingMaker::slot_showOverlaps);
 
     return hbox;
@@ -424,40 +441,59 @@ QGroupBox * page_tiling_maker::createBackgroundGroup()
     return bkgdGroup;
 }
 
-void page_tiling_maker::slot_setModes(int mode)
+void  page_tiling_maker::onEnter()
 {
-    eMouseMode mm = static_cast<eMouseMode>(mode);
-    tilingMaker->setMouseMode(mm);
+    mouseModeBtnGroup->button(tilingMaker->getMouseMode())->setChecked(true);
 
-    QString txt;
-    switch (mm)
+    sides->setValue(tilingMaker->getPolygonSides());
+
+    clear();
+
+    int id = tilingMaker->getMouseMode();
+    mouseModeBtnGroup->button(id)->setChecked(true);
+
+    TilingPtr tiling = workspace->getCurrentTiling();
+    tilingMaker->setTiling(tiling);
+
+    displayBackgroundStatus(tiling);
+
+    loadTilingCombo(tiling);
+
+    buildMenu();
+
+    if (config->viewerType == VIEW_TILING_MAKER)
     {
-    case INCLUSION_MODE:
-        txt = "Toggle the inclusion of polygons in the tiling by clicking on them with the mouse.";
-        break;
-    case DRAW_POLY_MODE:
-        txt = "Select a series of vertices clockwise to draw a free-form polygon. (Click on vertices).";
-        break;
-    case TRANSLATION_VECTOR_MODE:
-        txt = "Select the two translation vectors used to tile the plane, using the mouse. (Drag with the mouse).";
-        break;
-    case BKGD_SKEW_MODE:
-        txt = "Click to select four points on background image. Then press 'Adjust Perspective' to fix camera skew.";
-        break;
-    case NO_MOUSE_MODE:
-    case COPY_MODE:
-    case DELETE_MODE:
-    case POSITION_MODE:
-    case MEASURE_MODE:
-    case EDIT_FEATURE_MODE:
-    case EDGE_CURVE_MODE:
-    case MIRROR_X_MODE:
-    case MIRROR_Y_MODE:
-        txt = "<body style=\"background-color=ffffffff; font=bold;\"><span style=\"color:rgb(217,217,255)\">normal</span>  |  <span style=\"color:rgb(255,217,217)\">in-tiling</span>  |  <span style=\"color:rgb(205,102, 25)\">overlapping</span>  |  <span style=\"color:rgb( 25,102,205)\">touching</span> |  <span style=\"color:rgb(127,255,127)\">under-mouse</span>  |  <span style=\"color:rgb(206,179,102)\">dragging</span></body>";
-        break;
+        tilingMaker->forceRedraw();
     }
-    panel->hideStatus();    // clear previous
-    panel->showStatus(txt); // set new
+
+    emit sig_viewWS();
+}
+
+void  page_tiling_maker::onExit()
+{
+    panel->hidePanelStatus();
+}
+
+void  page_tiling_maker::refreshPage()
+{
+    QString status = tilingMaker->getStatus();
+    debugLabel1->setText(status);
+
+    QPointF a = tilingMaker->sMousePos;
+    QPointF b = tilingMaker->screenToWorld(a);
+    QString astring;
+    QTextStream ts(&astring);
+    ts << "pos: (" << b.x() << ", " << b.y() << ")";
+
+    TilingSelectionPtr tsp = tilingMaker->getCurrentSelection();
+    if (tsp)
+    {
+        QPointF c = tsp->getModelPoint();
+        ts << "  sel: (" << c.x() << ", " << c.y() << ")";
+    }
+    debugLabel2->setText(astring);
+
+    mouseModeBtnGroup->button(tilingMaker->getMouseMode())->setChecked(true);
 }
 
 void page_tiling_maker::clear()
@@ -479,35 +515,6 @@ void page_tiling_maker::clear()
     t1y->blockSignals(false);
     t2x->blockSignals(false);
     t2y->blockSignals(false);
-}
-
-void  page_tiling_maker::refreshPage()
-{
-    QString txt = "Tiling: ";
-    TilingPtr tiling = workspace->getTiling();
-    txt += addr(tiling.get());
-    txt += " ";
-    txt += tiling->getName();
-    currentTiling->setText(txt);
-
-    QString status = tilingMaker->getStatus();
-    debugLabel1->setText(status);
-
-    QPointF a = tilingMaker->sMousePos;
-    QPointF b = tilingMaker->screenToWorld(a);
-    QString astring;
-    QTextStream ts(&astring);
-    ts << "pos: (" << b.x() << ", " << b.y() << ")";
-
-    TilingSelectionPtr tsp = tilingMaker->getCurrentSelection();
-    if (tsp)
-    {
-        QPointF c = tsp->getModelPoint();
-        ts << "  sel: (" << c.x() << ", " << c.y() << ")";
-    }
-    debugLabel2->setText(astring);
-
-    mouseModeBtnGroup->button(tilingMaker->getMouseMode())->setChecked(true);
 }
 
 bool page_tiling_maker::canExit()
@@ -543,43 +550,68 @@ bool page_tiling_maker::canExit()
     return true;
 }
 
-void  page_tiling_maker::onExit()
+void page_tiling_maker::loadTilingCombo(TilingPtr selected)
 {
-    panel->hideStatus();
+    tilingCombo->blockSignals(true);
+    tilingCombo->clear();
+    UniqueQVector<TilingPtr> tilings = workspace->getTilings();
+    for (auto tiling : tilings)
+    {
+        tilingCombo->addItem(tiling->getName());
+    }
+    int index = tilingCombo->findText(selected->getName());
+    tilingCombo->setCurrentIndex(index);
+    tilingCombo->blockSignals(false);
 }
 
-void  page_tiling_maker::onEnter()
+void page_tiling_maker::slot_currentTilingChanged(int index)
 {
-    mouseModeBtnGroup->button(tilingMaker->getMouseMode())->setChecked(true);
+    Q_UNUSED(index);
+    QString name = tilingCombo->currentText();
+    TilingPtr tp = workspace->findTiling(name);
+    workspace->setCurrentTiling(tp);
 
-    sides->setValue(tilingMaker->getPolygonSides());
+    onEnter();
+    emit sig_tilingChanged();   // FIXME - needs a better signal here
+}
 
-    clear();
+void page_tiling_maker::slot_setModes(int mode)
+{
+    eTilingMouseMode mm = static_cast<eTilingMouseMode>(mode);
+    tilingMaker->setMouseMode(mm);
 
-    int id = tilingMaker->getMouseMode();
-    mouseModeBtnGroup->button(id)->setChecked(true);
+    panel->hidePanelStatus();
 
-    tilingMaker->slot_setTiling();
-
-    TilingPtr tiling = workspace->getTiling();
-
-    displayBackgroundStatus(tiling);
-
-    buildMenu();
-
-    if (panel->getCurrentPage() == this)
+    QString txt;
+    switch (mm)
     {
-        QString txt("<body style=\"background-color=ffffffff; font=bold;\"><span style=\"color:rgb(217,217,255)\">normal</span>  |  <span style=\"color:rgb(255,217,217)\">in-tiling</span>  |  <span style=\"color:rgb(205,102, 25)\">overlapping</span>  |  <span style=\"color:rgb( 25,102,205)\">touching</span> |  <span style=\"color:rgb(127,255,127)\">under-mouse</span>  |  <span style=\"color:rgb(206,179,102)\">dragging</span></body>");
-        panel->setStatusStyle("QLabel { background-color : white; }");
-        panel->showStatus(txt);
+    case INCLUSION_MODE:
+        txt = "Toggle the inclusion of polygons in the tiling by clicking on them with the mouse.";
+        panel->showPanelStatus(txt);
+        break;
+    case DRAW_POLY_MODE:
+        txt = "Select a series of vertices clockwise to draw a free-form polygon. (Click on vertices).";
+        panel->showPanelStatus(txt);
+        break;
+    case TRANSLATION_VECTOR_MODE:
+        txt = "Select the two translation vectors used to tile the plane, using the mouse. (Drag with the mouse).";
+        panel->showPanelStatus(txt);
+        break;
+    case BKGD_SKEW_MODE:
+        txt = "Click to select four points on background image. Then press 'Adjust Perspective' to fix camera skew.";
+        panel->showPanelStatus(txt);
+        break;
+    case NO_MOUSE_MODE:
+    case COPY_MODE:
+    case DELETE_MODE:
+    case POSITION_MODE:
+    case MEASURE_MODE:
+    case EDIT_FEATURE_MODE:
+    case EDGE_CURVE_MODE:
+    case MIRROR_X_MODE:
+    case MIRROR_Y_MODE:
+        break;
     }
-
-    if (config->viewerType == VIEW_TILING_MAKER)
-    {
-        tilingMaker->forceRedraw();
-    }
-
-    emit sig_viewWS();
 }
 
 void page_tiling_maker::slot_hideTable(bool checked)
@@ -694,7 +726,7 @@ void page_tiling_maker::refreshMenuData()
 {
     //qDebug() << "page_tiling_maker::refreshMenuData";
 
-    TilingPtr tiling     = workspace->getTiling();
+    TilingPtr tiling     = tilingMaker->getTiling();
 
     QPointF t1 = tilingMaker->getTrans1();
     QPointF t2 = tilingMaker->getTrans2();
@@ -746,7 +778,7 @@ void page_tiling_maker::buildTableEntry(PlacedFeaturePtr pf, int col, QString in
     else
         type = "poly";
     QTableWidgetItem * twi = new QTableWidgetItem(type);
-    twi->setData(Qt::UserRole,QVariant::fromValue(pf));
+    twi->setData(Qt::UserRole,QVariant::fromValue(WeakPlacedFeaturePtr(pf)));
     tileInfoTable->setItem(TI_TYPE_PFP,col,twi);
 
     QSpinBox * sp = new QSpinBox;
@@ -830,7 +862,7 @@ void page_tiling_maker::refreshTableEntry(PlacedFeaturePtr pf, int col, QString 
     else
         type = "poly";
     QTableWidgetItem * twi = new QTableWidgetItem(type);
-    twi->setData(Qt::UserRole,QVariant::fromValue(pf));
+    twi->setData(Qt::UserRole,QVariant::fromValue(WeakPlacedFeaturePtr(pf)));
     tileInfoTable->setItem(TI_TYPE_PFP,col,twi);
 
     QWidget * w = tileInfoTable->cellWidget(TI_FEAT_SIDES,col);
@@ -888,9 +920,10 @@ PlacedFeaturePtr page_tiling_maker::getFeatureColumn(int col)
     if (twi)
     {
         QVariant var = twi->data(Qt::UserRole);
-        if (var.canConvert<PlacedFeaturePtr>())
+        if (var.canConvert<WeakPlacedFeaturePtr>())
         {
-            pf = var.value<PlacedFeaturePtr>();
+            WeakPlacedFeaturePtr wkpf = var.value<WeakPlacedFeaturePtr>();
+            pf = wkpf.lock();
         }
         Q_ASSERT(pf);
     }
@@ -972,7 +1005,7 @@ void page_tiling_maker::slot_t1t2Changed(double val)
     qreal x2 = t2x->value();
     qreal y2 = t2y->value();
 
-    TilingPtr tiling     = workspace->getTiling();
+    TilingPtr tiling = tilingMaker->getTiling();
 
     tiling->setTrans1(QPointF(x1,y1));
     tiling->setTrans2(QPointF(x2,y2));
@@ -1002,27 +1035,31 @@ void page_tiling_maker::slot_swapTrans()
 
 void page_tiling_maker::slot_reloadTiling()
 {
-    TilingPtr currentTiling = workspace->getTiling();
+    TilingPtr oldTiling = tilingMaker->getTiling();
+    QString name = oldTiling->getName();
 
-    QString name = currentTiling->getName();
-
-    TilingManager * tm  = TilingManager::getInstance();
-    TilingPtr newTiling = tm->loadTiling(name);
+    TilingManager tm;
+    TilingPtr newTiling = tm.loadTiling(name);  // replaces if already there
     if (!newTiling)
     {
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Reload failed");
+        box.exec();
         return;
     }
-    Q_ASSERT(!newTiling->isDirty());
+    newTiling->setState(TILING_LOADED);
 
-    workspace->setTiling(newTiling);
+    workspace->replaceTiling(oldTiling,newTiling);
 
-    MosaicPtr mosaic = workspace->getMosaic();
-    if (mosaic->hasContent())
+    MosaicPtr mosaic  = workspace->getMosaic();
+    QVector<PrototypePtr> protos = mosaic->getUniquePrototypes();
+    for (auto proto : protos)
     {
-        mosaic->setTiling(newTiling);
+        mosaic->replaceTiling(proto,newTiling);
     }
 
-    tilingMaker->slot_setTiling();
+    tilingMaker->setTiling(newTiling);
 
     emit sig_reload();
 
@@ -1040,8 +1077,6 @@ void page_tiling_maker::slot_reloadTiling()
 // puts the tiling into the loaded style set
 void page_tiling_maker::slot_replaceTilingInStyles()
 {
-    TilingPtr tiling = workspace->getTiling();
-
     tilingMaker->updatePlacedFeaturesFromData();
 
     tilingMaker->pushTiling();
@@ -1054,9 +1089,6 @@ void page_tiling_maker::slot_replaceTilingInStyles()
 
 void page_tiling_maker::slot_remove_clicked()
 {
-    TilingPtr tiling     = workspace->getTiling();
-    if (!tiling) return;
-
     int col = tileInfoTable->currentColumn();
     PlacedFeaturePtr pf = getFeatureColumn(col);
 
@@ -1066,8 +1098,6 @@ void page_tiling_maker::slot_remove_clicked()
 
 void page_tiling_maker::slot_uniquify_clicked()
 {
-    TilingPtr tiling     = workspace->getTiling();
-
     int col = tileInfoTable->currentColumn();
     PlacedFeaturePtr pf = getFeatureColumn(col);
     FeaturePtr fp = pf->getFeature();
@@ -1140,7 +1170,11 @@ void page_tiling_maker::slot_loadedXML(QString name)
 void page_tiling_maker::slot_loadedTiling (QString name)
 {
     Q_UNUSED(name)
+
+    TilingPtr tp = workspace->getCurrentTiling();
+
     onEnter();
+
     if (config->tm_autofill)
     {
         tilingMaker->fillUsingTranslations();
@@ -1149,9 +1183,8 @@ void page_tiling_maker::slot_loadedTiling (QString name)
 
 void page_tiling_maker::slot_clearWS()
 {
-    // Now: clears everything
-    // Previously: this clears the tiling in the workspace, does not touch a loaded style tiling
-    workspace->clear();
+    // clears everything
+    workspace->resetMosaic();
     tilingMaker->clearMakerData();
     onEnter();
     view->dump(true);
@@ -1159,11 +1192,11 @@ void page_tiling_maker::slot_clearWS()
 
 void page_tiling_maker::slot_clearTiling()
 {
-    // Now: clears everything
-    // Previously: this clears the tiling in the workspace, does not touch a loaded style tiling
-    TilingPtr nullTiling;
-    workspace->setTiling(nullTiling);
+    // clears current tiling
+    TilingPtr tp = tilingMaker->getTiling();
+    workspace->removeTiling(tp);
     tilingMaker->clearMakerData();
+
     onEnter();
     view->dump(true);
 }
@@ -1195,7 +1228,7 @@ void page_tiling_maker::displayBackgroundStatus(TilingPtr tiling)
 
 void page_tiling_maker::slot_loadBackground()
 {
-    TilingPtr tiling     = workspace->getTiling();;
+    TilingPtr tiling = tilingMaker->getTiling();
 
     QString bkgdDir = config->rootMediaDir + "bkgd_photos/";
     QString filename = QFileDialog::getOpenFileName(nullptr,"Select image file",bkgdDir, "Image Files (*.png *.jpg *.bmp *.heic)");
@@ -1218,8 +1251,7 @@ void page_tiling_maker::slot_loadBackground()
 
 void page_tiling_maker::slot_setBkgd()
 {
-    TilingPtr tiling     = workspace->getTiling();
-    if (!tiling) return;
+    TilingPtr tiling = tilingMaker->getTiling();
 
     BkgdImgPtr bi = tiling->getBackground();
     if (bi)
@@ -1241,7 +1273,7 @@ void page_tiling_maker::slot_setBkgd()
 
 void page_tiling_maker::slot_setBkgdXform()
 {
-    TilingPtr tiling     = workspace->getTiling();
+    TilingPtr tiling = tilingMaker->getTiling();
 
     BkgdImgPtr bi = tiling->getBackground();
     if (bi)
@@ -1280,7 +1312,7 @@ void page_tiling_maker::slot_adjustBackground()
         return;
     }
 
-    TilingPtr tiling     = workspace->getTiling();
+    TilingPtr tiling = tilingMaker->getTiling();
 
     BkgdImgPtr bi = tiling->getBackground();
     bi->adjustBackground(
@@ -1301,7 +1333,7 @@ void page_tiling_maker::slot_adjustBackground()
 
 void page_tiling_maker::slot_saveAdjustedBackground()
 {
-    TilingPtr tiling     = workspace->getTiling();
+    TilingPtr tiling  = tilingMaker->getTiling();
 
     BkgdImgPtr bi   = tiling->getBackground();
     QString oldname = bi->bkgdName;
@@ -1411,11 +1443,16 @@ void page_tiling_maker::slot_importPoly()
         bool rv =  pfp->loadFromGirihShape(name);
         if (rv)
         {
-            QTransform t;
-            tilingMaker->addToAllPlacedFeatures(pfp);
+            tilingMaker->addNewPlacedFeature(pfp);
         }
     }
+
     buildMenu();
+
+    if (config->viewerType == VIEW_TILING_MAKER)
+    {
+        tilingMaker->forceRedraw();
+    }
 }
 
 void page_tiling_maker::slot_addGirihShape()
@@ -1426,8 +1463,12 @@ void page_tiling_maker::slot_addGirihShape()
     if (rv)
     {
         QTransform t;
-        tilingMaker->addToAllPlacedFeatures(pfp);
+        tilingMaker->addNewPlacedFeature(pfp);
         buildMenu();
+        if (config->viewerType == VIEW_TILING_MAKER)
+        {
+            tilingMaker->forceRedraw();
+        }
     }
 }
 

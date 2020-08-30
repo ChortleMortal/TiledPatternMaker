@@ -41,6 +41,8 @@ public:
 signals:
     void    sig_compareImageFiles(QString,QString);
     void    sig_view_image(QString file);
+    void    sig_cyclerStart(eCycleMode);
+
 
 public slots:
     void    slot_compareResult(QString result);
@@ -92,7 +94,6 @@ private slots:
     void    slot_gridModelCenteredChanged(int state);
 
     void    slot_showCenterChanged(int state);
-    void    slot_hideBackChanged(int state);
 
 protected:
     QGroupBox   * createDebugSection();
@@ -107,6 +108,8 @@ protected:
 
     void saveMosaicBitmaps();
     void saveTilingBitmaps();
+    void savePixmap(QString name);
+
 
 private:
     QLineEdit   * dir0;

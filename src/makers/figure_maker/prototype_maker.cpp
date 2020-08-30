@@ -22,7 +22,6 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "base/canvas.h"
 #include "base/tiledpatternmaker.h"
 #include "base/utilities.h"
 #include "base/workspace.h"
@@ -68,13 +67,13 @@ void PrototypeMaker::init(TiledPatternMaker * maker, page_prototype_maker * menu
     addLayout(hbox);
     addWidget(masterEdit);
 
-    Canvas          * canvas = Canvas::getInstance();
     WorkspaceViewer * viewer = WorkspaceViewer::getInstance();
+    View * view              = View::getInstance();
 
     setObjectName("FigureMaker");
-    connect(this,     &PrototypeMaker::sig_viewWS,            viewer, &WorkspaceViewer::slot_viewWorkspace);
+    connect(this,     &PrototypeMaker::sig_viewWS,          viewer, &WorkspaceViewer::slot_viewWorkspace);
     connect(launcher, &FeatureLauncher::sig_launcherButton, this,   &PrototypeMaker::slot_launcherButton);
-    connect(canvas,   &Canvas::sig_figure_changed,          this,   &PrototypeMaker::slot_launcherButton);
+    connect(view,     &View::sig_figure_changed,            this,   &PrototypeMaker::slot_launcherButton);
 }
 
 void PrototypeMaker::slot_launcherButton()
@@ -173,9 +172,8 @@ void PrototypeMaker::duplicateActiveFeature()
         fp2 = make_shared<Feature>(fp->getEdgePoly(),fp->getRotation());
     }
 
-    TilingPtr tiling = workspace->getTiling();
-    QList<PlacedFeaturePtr> & pfps = tiling->getPlacedFeatures();
-
+    TilingPtr tiling = workspace->getCurrentTiling();
+    const QVector<PlacedFeaturePtr> & pfps = tiling->getPlacedFeatures();
     for (auto pfp : pfps)
     {
         if (pfp->getFeature() == fp)

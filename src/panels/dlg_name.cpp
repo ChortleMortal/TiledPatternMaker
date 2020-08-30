@@ -22,7 +22,7 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "dlg_name.h"
+#include "panels/dlg_name.h"
 
 DlgName::DlgName(QWidget * parent) : QDialog(parent)
 {

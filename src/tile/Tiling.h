@@ -47,6 +47,13 @@
 
 #define MAX_UNIQUE_FEATURES 8
 
+enum eTilingState
+{
+    TILING_EMPTY,
+    TILING_LOADED,
+    TILING_MODIFED
+};
+
 class FeatureGroup : public  QList<QPair<FeaturePtr,QList<PlacedFeaturePtr>>>
 {
 public:
@@ -80,11 +87,12 @@ public:
     void        add(FeaturePtr f, QTransform T );
     void        remove(PlacedFeaturePtr pf);
 
-    PlacedFeaturePtr          getPlacedFeature(int idx) { return placed_features[idx]; }
-    QList<PlacedFeaturePtr> & getPlacedFeatures()       { return placed_features; }
+    void                      setPlacedFeatures(QVector<PlacedFeaturePtr> features);
+    const PlacedFeaturePtr    getPlacedFeature(int idx)   { return placed_features[idx]; }
+    const QVector<PlacedFeaturePtr> & getPlacedFeatures() { return placed_features; }
     int                       countPlacedFeatures() const { return placed_features.size(); }
     int                       numPlacements(FeaturePtr fp);
-    QVector<FeaturePtr>       getUniqueFeatures();    // unique features
+    UniqueQVector<FeaturePtr> getUniqueFeatures();
 
     void        setTrans1(QPointF pt) { t1=pt; }
     void        setTrans2(QPointF pt) { t2=pt; }
@@ -101,16 +109,16 @@ public:
 
     QString     dump() const;
 
-    void        setDirty(bool dirty) { this->dirty = dirty; }
-    bool        isDirty() { return dirty; }
-
     void        setCanvasSize(QSize sz)    { canvasSize = sz; }
     void        setCanvasXform(Xform & xf) { canvasXform = xf; }
     QSize &     getCanvasSize()            { return canvasSize; }
     Xform &     getCanvasXform()           { return canvasXform; }
 
-    int         getVersion() { return version; }
-    void        setVersion(int ver) { version = ver; }
+    int         getVersion();
+    void        setVersion(int ver);
+
+    eTilingState getState();
+    void         setState(eTilingState state);
 
     static int  refs;
 
@@ -122,7 +130,7 @@ private:
     QPointF     t1;
     QPointF     t2;
 
-    QList<PlacedFeaturePtr>	placed_features;
+    QVector<PlacedFeaturePtr> placed_features;
 
     QString     name;
     QString     desc;
@@ -130,12 +138,11 @@ private:
 
     BkgdImgPtr  bkgd;
 
-    bool        dirty;
-
     QSize       canvasSize;
     Xform       canvasXform;
 
     int         version;
+    eTilingState state;
 };
 
 #endif

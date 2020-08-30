@@ -42,35 +42,30 @@ public:
 
 signals:
     void    sig_regenerate();
-    void    sig_loadTiling(QString);
-    void    sig_mapEdSelection();
 
 public slots:
     void    slot_loadedXML(QString name);
     void    slot_selectViewer(int id);
+    void    slot_view_synch(int id, int enb);
 
 private slots:
-    void    slot_Viewer_pressed(int id, bool enb);
     void    slot_lockViewClicked(bool enb);
     void    slot_multiSelect(bool enb);
 
 protected:
-    void  createViewControl();
-    void  createWorkspaceViewers();
+    QGroupBox * createViewControl();
+    QGroupBox * createWorkspaceViewers();
     void  refreshPanel();
     void  updateWsStatus();
     void  updateLoadedStatus();
 
 private:
-    QGroupBox   *workspaceViewersBox;
-    QGroupBox   *workspaceMakersBox;
     QCheckBox   *cbLockView;
     QCheckBox   *cbRawDesignView;
     QCheckBox   *cbMosaicView;
-    QCheckBox   *cbProtoView;
-    QCheckBox   *cbProtoFeatureView;
+    QCheckBox   *cbPrototypeView;
     QCheckBox   *cbTilingView;
-    QCheckBox   *cbFigureView;
+    QCheckBox   *cbProtoMaker;
     QCheckBox   *cbDELView;
     QCheckBox   *cbTilingMakerView;
     QCheckBox   *cbFigMapView;

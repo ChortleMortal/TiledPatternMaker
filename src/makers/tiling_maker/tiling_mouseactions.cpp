@@ -11,7 +11,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
-MouseAction::MouseAction(TilingMaker * tilingMaker, TilingSelectionPtr sel, QPointF spt)
+TilingMouseAction::TilingMouseAction(TilingMaker * tilingMaker, TilingSelectionPtr sel, QPointF spt)
 {
     desc       = "MouseAction";
     tm         = tilingMaker;
@@ -22,18 +22,18 @@ MouseAction::MouseAction(TilingMaker * tilingMaker, TilingSelectionPtr sel, QPoi
     tm->forceRedraw();
 }
 
-void MouseAction::updateDragging(QPointF spt)
+void TilingMouseAction::updateDragging(QPointF spt)
 {
     wLastDrag = tm->screenToWorld(spt);
     tm->forceRedraw();
 }
 
-void MouseAction::draw(GeoGraphics * g2d)
+void TilingMouseAction::draw(GeoGraphics * g2d)
 {
     Q_UNUSED(g2d)
 }
 
-void MouseAction::endDragging(QPointF spt)
+void TilingMouseAction::endDragging(QPointF spt)
 {
     Q_UNUSED(spt)
     tm->forceRedraw();
@@ -46,7 +46,7 @@ void MouseAction::endDragging(QPointF spt)
 /////////
 
 MovePolygon::MovePolygon(TilingMaker * tilingMaker, TilingSelectionPtr sel, QPointF spt )
-    : MouseAction(tilingMaker,sel,spt)
+    : TilingMouseAction(tilingMaker,sel,spt)
 {
     desc = "MovePolygon";
 }
@@ -66,7 +66,7 @@ void MovePolygon::updateDragging(QPointF spt)
         QTransform t = a * b;
         pf->setTransform(t);
 
-        MouseAction::updateDragging(spt);
+        TilingMouseAction::updateDragging(spt);
 
         emit tm->sig_refreshMenu();
     }
@@ -97,7 +97,7 @@ void CopyMovePolygon::endDragging(QPointF spt )
         selection.reset();
         emit tm->sig_buildMenu();
     }
-    MouseAction::endDragging(spt);
+    TilingMouseAction::endDragging(spt);
 }
 
 /////////
@@ -107,7 +107,7 @@ void CopyMovePolygon::endDragging(QPointF spt )
 /////////
 
 DrawTranslation::DrawTranslation(TilingMaker * tilingMaker, TilingSelectionPtr sel, QPointF spt )
-    : MouseAction(tilingMaker,sel,spt)
+    : TilingMouseAction(tilingMaker,sel,spt)
 {
     tm->addToTranslate(sel->getPlacedPoint(), false);
     desc = "DrawTranslation";
@@ -122,7 +122,7 @@ void DrawTranslation::updateDragging(QPointF spt )
         tm->wTrans1_end = wpos;
     }
 
-    MouseAction::updateDragging(spt);
+    TilingMouseAction::updateDragging(spt);
 }
 
 void DrawTranslation::draw(GeoGraphics * g2d )
@@ -141,7 +141,7 @@ void DrawTranslation::endDragging(QPointF spt)
     {
         tm->addToTranslate(sel->getPlacedPoint(), true );
     }
-    MouseAction::endDragging(spt);
+    TilingMouseAction::endDragging(spt);
 }
 
 /////////
@@ -150,7 +150,7 @@ void DrawTranslation::endDragging(QPointF spt)
 ///
 /////////
 
-JoinEdge::JoinEdge(TilingMaker * tilingMaker, TilingSelectionPtr sel, QPointF spt ) : MouseAction(tilingMaker,sel,spt)
+JoinEdge::JoinEdge(TilingMaker * tilingMaker, TilingSelectionPtr sel, QPointF spt ) : TilingMouseAction(tilingMaker,sel,spt)
 {
     desc = "JoinEdge";
     snapped = false;
@@ -217,7 +217,7 @@ void JoinEdge::updateDragging(QPointF spt)
         pf->setTransform(T);
         emit tm->sig_refreshMenu();
     }
-    MouseAction::updateDragging(spt);
+    TilingMouseAction::updateDragging(spt);
 }
 
 void JoinEdge::endDragging(QPointF spt)
@@ -226,7 +226,7 @@ void JoinEdge::endDragging(QPointF spt)
     {
         snapTo(spt);
     }
-    MouseAction::endDragging(spt);
+    TilingMouseAction::endDragging(spt);
 }
 
 // Provide the transform matrix to carry the unit interval
@@ -395,7 +395,7 @@ void CopyJoinPoint::endDragging(QPointF spt)
 /////////
 
 CreatePolygon::CreatePolygon(TilingMaker * tilingMaker, QPointF spt )
-    : MouseAction(tilingMaker,nullptr,spt)
+    : TilingMouseAction(tilingMaker,nullptr,spt)
 {
     qDebug() << "CreatePolygon";
     QPointF wpt = tilingMaker->findSelectionPointOrPoint(spt);
@@ -432,7 +432,7 @@ void CreatePolygon::addVertex(QPointF wpt)
         last->setV2(firstV);
 
         QTransform t;
-        tm->addToAllPlacedFeatures(make_shared<PlacedFeature>(make_shared<Feature>(wAccum,0), t));
+        tm->addNewPlacedFeature(make_shared<PlacedFeature>(make_shared<Feature>(wAccum,0), t));
         tm->setMouseMode(NO_MOUSE_MODE);
         tm->sig_buildMenu();
         return;
@@ -459,7 +459,7 @@ void CreatePolygon::addVertex(QPointF wpt)
 
 void CreatePolygon::updateDragging(QPointF spt)
 {
-    MouseAction::updateDragging(spt);
+    TilingMouseAction::updateDragging(spt);
 
     underneath = QPointF();
 
@@ -496,7 +496,7 @@ void CreatePolygon::endDragging(QPointF spt )
 
         addVertex(wpt);
     }
-    MouseAction::endDragging(spt);
+    TilingMouseAction::endDragging(spt);
 }
 
 void CreatePolygon::draw(GeoGraphics * g2d)
@@ -582,7 +582,7 @@ qreal Measurement::lenW()
 ///
 /////////
 
-Measure::Measure(TilingMaker * tilingMaker, QPointF spt, TilingSelectionPtr sel) : MouseAction(tilingMaker,sel,spt)
+Measure::Measure(TilingMaker * tilingMaker, QPointF spt, TilingSelectionPtr sel) : TilingMouseAction(tilingMaker,sel,spt)
 {
     Qt::KeyboardModifiers kms =  QApplication::keyboardModifiers();
     if (sel && (kms == (Qt::CTRL | Qt::SHIFT)))
@@ -652,7 +652,7 @@ void Measure::endDragging(QPointF spt)
         tm->getMeasurementsS().push_back(m);
         m.reset();
     }
-    MouseAction::endDragging(spt);
+    TilingMouseAction::endDragging(spt);
 }
 
 QLineF Measure::normalVectorA(QLineF line)
@@ -671,7 +671,7 @@ QLineF Measure::normalVectorB(QLineF line)
 ///
 /////////
 
-Position::Position(TilingMaker * tilingMaker, QPointF spt) : MouseAction(tilingMaker,nullptr,spt)
+Position::Position(TilingMaker * tilingMaker, QPointF spt) : TilingMouseAction(tilingMaker,nullptr,spt)
 {
     this->spt = spt;
     desc = "Position";
@@ -708,7 +708,7 @@ void Position::draw(GeoGraphics * g2d)
 /////////
 
 Perspective::Perspective(TilingMaker * tilingMaker, QPointF spt )
-    : MouseAction(tilingMaker,nullptr,spt)
+    : TilingMouseAction(tilingMaker,nullptr,spt)
 {
     desc = "Perspective";
     EdgePoly & waccum = tilingMaker->getAccumW();
@@ -754,13 +754,13 @@ void Perspective::addPoint(QPointF spos)
         qDebug() << "edge count = " << accum.size();
         accum.push_back(make_shared<Edge>(vnew,accum.first()->getV1()));
         qDebug() << "completed with edge count =" << accum.size();
-        MouseAction::endDragging(spt);
+        TilingMouseAction::endDragging(spt);
     }
 }
 
 void Perspective::updateDragging(QPointF spt)
 {
-    MouseAction::updateDragging(spt);
+    TilingMouseAction::updateDragging(spt);
 }
 
 void Perspective::endDragging(QPointF spt )
@@ -770,7 +770,7 @@ void Perspective::endDragging(QPointF spt )
     {
         addPoint(spt);
     }
-    MouseAction::endDragging(spt);
+    TilingMouseAction::endDragging(spt);
 }
 
 void Perspective::draw(GeoGraphics * g2d)
@@ -795,7 +795,7 @@ void Perspective::draw(GeoGraphics * g2d)
 /////////
 
 EditFeature::EditFeature(TilingMaker * tilingMaker, TilingSelectionPtr sel, PlacedFeaturePtr pfp, QPointF spt )
-    : MouseAction(tilingMaker,sel,spt)
+    : TilingMouseAction(tilingMaker,sel,spt)
 {
     Q_ASSERT(sel->getType() == VERTEX);
 
@@ -829,7 +829,7 @@ void EditFeature::updateDragging(QPointF spt)
     VertexPtr v = ep[vertexIndex]->getV1();
     v->setPosition(wpt);
 
-    MouseAction::updateDragging(tm->screenToWorld(spt));
+    TilingMouseAction::updateDragging(tm->screenToWorld(spt));
     emit tm->sig_refreshMenu();
 }
 
@@ -842,7 +842,7 @@ void EditFeature::endDragging(QPointF spt )
     VertexPtr v = ep[vertexIndex]->getV1();
     v->setPosition(wpt);
 
-    MouseAction::endDragging(spt);
+    TilingMouseAction::endDragging(spt);
     emit tm->sig_refreshMenu();
 }
 
@@ -853,7 +853,7 @@ void EditFeature::endDragging(QPointF spt )
 /////////
 
 EditEdge::EditEdge(TilingMaker * tilingMaker, TilingSelectionPtr sel, QPointF spt)
-    : MouseAction(tilingMaker,sel,spt)
+    : TilingMouseAction(tilingMaker,sel,spt)
 {
     desc  = "EditEdge";
     qDebug() << desc;
@@ -894,11 +894,11 @@ void EditEdge::updateDragging(QPointF spt)
     pt             = inv.map(pt);
     bool convex    = edge->isConvex();
     edge->setArcCenter(pt, convex);
-    MouseAction::updateDragging(tm->screenToWorld(spt));
+    TilingMouseAction::updateDragging(tm->screenToWorld(spt));
     emit tm->sig_refreshMenu();
 }
 
 void EditEdge::endDragging(QPointF spt )
 {
-    MouseAction::endDragging(spt);
+    TilingMouseAction::endDragging(spt);
 }

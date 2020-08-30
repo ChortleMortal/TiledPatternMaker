@@ -27,7 +27,6 @@
 
 #include "base/shared.h"
 #include "base/layer.h"
-#include "base/canvas.h"
 #include "viewers/geo_graphics.h"
 
 class FigureView : public Layer

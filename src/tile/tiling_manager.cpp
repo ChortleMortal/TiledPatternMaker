@@ -22,31 +22,29 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "tilingmanager.h"
+#include "tile/tiling_manager.h"
 #include "tile/tiling.h"
 #include "tile/tiling_loader.h"
+#include "makers/tiling_maker/tiling_maker.h"
 #include "geometry/point.h"
 #include "base/shared.h"
 #include "base/fileservices.h"
+#include "base/view.h"
 
-TilingManager * TilingManager::mpThis = nullptr;
-
-TilingManager * TilingManager::getInstance()
-{
-    if (mpThis == nullptr)
-    {
-        mpThis = new TilingManager();
-    }
-    return mpThis;
-}
 
 TilingManager::TilingManager()
 {
+    workspace = Workspace::getInstance();
 }
 
 TilingPtr TilingManager::loadTiling(QString name)
 {
-    TilingPtr tp;
+    TilingPtr tp = workspace->findTiling(name);
+    if (tp)
+    {
+       workspace->removeTiling(tp);
+    }
+
     QString filename = FileServices::getTilingFile(name);
     if (filename.isEmpty())
     {
@@ -59,12 +57,41 @@ TilingPtr TilingManager::loadTiling(QString name)
     if (tp)
     {
         qDebug().noquote() << "Loaded tiling:" << filename << tp->getName();
+        tp->setState(TILING_LOADED);
+        workspace->setCurrentTiling(tp);        // also adds
     }
     else
     {
         qWarning().noquote() << "Error loading" << filename;
     }
     return tp;
+}
+
+bool TilingManager::saveTiling(QString name, TilingPtr tp)
+{
+    if (tp->getName() != name)
+    {
+        tp->setName(name);
+    }
+
+    View * view = View::getInstance();
+    QSize size  = view->size();
+    tp->setCanvasSize(size);
+
+    TilingMaker * maker = TilingMaker::getInstance();
+    if (maker->getTiling() == tp)
+    {
+        Xform xf = maker->getCanvasXform();
+        tp->setCanvasXform(xf);
+    }
+
+    TilingWriter writer(tp);
+    bool rv = writer.writeTilingXML();   // uses the name in the tiling
+    if (rv)
+    {
+        tp->setState(TILING_LOADED);
+    }
+    return rv;
 }
 
 bool TilingManager::verifyNameFiles()
@@ -74,7 +101,8 @@ bool TilingManager::verifyNameFiles()
     for (int i=0; i < files.size(); i++)
     {
         QString name = files[i];
-        TilingPtr tp = TilingManager::loadTiling(name);
+        workspace->resetTilings();
+        TilingPtr tp = loadTiling(name);    // adds to workspace
         if (tp->getName() != name)
         {
             qWarning() << "Error: name does not match filename =" << name <<"internal name= " << tp->getName();

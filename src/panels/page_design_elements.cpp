@@ -23,6 +23,7 @@
  */
 
 #include "page_design_elements.h"
+#include "base/shared.h"
 #include "base/tiledpatternmaker.h"
 #include "base/utilities.h"
 #include "designs/patterns.h"
@@ -30,20 +31,24 @@
 #include "viewers/placed_designelement_view.h"
 #include "viewers/prototype_view.h"
 
-using std::string;
-
+Q_DECLARE_METATYPE(WeakFeaturePtr)
+Q_DECLARE_METATYPE(WeakPrototypePtr)
 
 page_design_elements:: page_design_elements(ControlPanel * cpanel)  : panel_page(cpanel,"Des Element Info")
 {
-    wsProtoLabel = new QLabel;
-    wsProtoLabel->setFixedWidth(251);
+    // top line
+    QLabel  * tilingLabel    = new QLabel("Tiling:");
+    protoListBox             = new QComboBox();
+    protoListBox->setMinimumWidth(131);
 
     QPushButton * refreshButton = new QPushButton("Refresh");
     QHBoxLayout * hbox = new QHBoxLayout;
 
-    hbox->addWidget(wsProtoLabel);
-    hbox->addWidget(refreshButton);
+    hbox->addWidget(tilingLabel);
+    hbox->addWidget(protoListBox);
     hbox->addStretch();
+    hbox->addWidget(refreshButton);
+
     vbox->addLayout(hbox);
 
     delTable = new AQTableWidget(this);
@@ -65,7 +70,9 @@ page_design_elements:: page_design_elements(ControlPanel * cpanel)  : panel_page
     connect(tpm,  &TiledPatternMaker::sig_loadedXML,      this,   &page_design_elements::slot_loadedXML);
     connect(tpm,  &TiledPatternMaker::sig_loadedDesign,   this,   &page_design_elements::slot_loadedDesign);
 
+    connect(workspace, &Workspace::sig_selected_proto_changed, this, &page_design_elements::onEnter);
 
+    connect(protoListBox, SIGNAL(currentIndexChanged(int)), this,   SLOT(slot_prototypeSelected(int)));
 }
 
 void  page_design_elements::refreshPage()
@@ -74,13 +81,27 @@ void  page_design_elements::refreshPage()
 
 void  page_design_elements::onEnter()
 {
-    delTable->clearContents();
+    protoListBox->blockSignals(true);
+    protoListBox->clear();
+    QVector<PrototypePtr> protos = workspace->getPrototypes();
+    for (auto proto : protos)
+    {
+        protoListBox->addItem(proto->getTiling()->getName(),QVariant::fromValue(WeakPrototypePtr(proto)));
+    }
 
     PrototypePtr proto = workspace->getSelectedPrototype();
     if (proto)
     {
-        wsProtoLabel->setText(QString("WS Proto ptr: is 0x%1").arg(addr(proto.get())));
+        QString name = proto->getTiling()->getName();
+        int index = protoListBox->findText(name);
+        protoListBox->setCurrentIndex(index);
+    }
+    protoListBox->blockSignals(false);
 
+    delTable->clearContents();
+
+    if (proto)
+    {
         QVector<DesignElementPtr> & dels = proto->getDesignElements();
         int row = 0;
         for (auto it = dels.begin(); it != dels.end(); it++)
@@ -97,6 +118,7 @@ void  page_design_elements::onEnter()
 
             //  "Feature"
             twi = new QTableWidgetItem(addr(fp.get()));
+            twi->setData(Qt::UserRole,QVariant::fromValue(WeakFeaturePtr(fp)));
             delTable->setItem(row,DEL_COL_FEATURE,twi);
 
             // "Figure"
@@ -120,16 +142,6 @@ void  page_design_elements::onEnter()
     updateGeometry();
 }
 
-void page_design_elements::slot_rowSelected(int row, int col)
-{
-    Q_UNUSED(col)
-    QTableWidgetItem * item = delTable->item(row,DEL_COL_FEATURE);
-    QString addrString = item->text();
-    qint64 addr = addrString.toLongLong(nullptr,16);
-    config->selectedDesignElementFeature = reinterpret_cast<Feature*>(addr);
-    emit sig_viewWS();
-}
-
 void page_design_elements::slot_loadedXML(QString name)
 {
     Q_UNUSED(name)
@@ -145,4 +157,31 @@ void page_design_elements::slot_loadedDesign(eDesign design)
 {
     Q_UNUSED(design)
     onEnter();
+}
+
+void page_design_elements::slot_rowSelected(int row, int col)
+{
+    Q_UNUSED(col)
+    QTableWidgetItem * item = delTable->item(row,DEL_COL_FEATURE);
+    QVariant var = item->data(Qt::UserRole);
+    if (var.canConvert<WeakFeaturePtr>())
+    {
+        WeakFeaturePtr wfp = var.value<WeakFeaturePtr>();
+        workspace->selectFeature(wfp);
+        emit sig_viewWS();
+    }
+}
+
+void page_design_elements::slot_prototypeSelected(int row)
+{
+    WeakPrototypePtr wpp;
+    QVariant var = protoListBox->itemData(row);
+    if (var.canConvert<WeakPrototypePtr>())
+    {
+        wpp = var.value<WeakPrototypePtr>();
+        workspace->setSelectedPrototype(wpp);
+        emit sig_viewWS();
+        onEnter();
+
+    }
 }

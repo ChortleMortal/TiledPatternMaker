@@ -63,8 +63,8 @@ class Map
 {
     #define MAP_EDGECOUNT_MAX 16
 
-    friend class XmlLoader;
-    friend class XmlWriter;
+    friend class MosaicLoader;
+    friend class MosaicWriter;
 
 public:
     Map(QString Name);

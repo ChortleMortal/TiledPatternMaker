@@ -60,8 +60,9 @@ Emboss::Emboss(const Style & other) : Outline(other)
         light_y = emb.light_y;
         greys   = emb.greys;
     }
-    catch(std::bad_cast exp)
+    catch(std::bad_cast & exp)
     {
+        Q_UNUSED(exp);
         setAngle(M_PI * 0.25 );
         setGreys();
     }

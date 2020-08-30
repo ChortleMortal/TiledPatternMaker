@@ -1,4 +1,4 @@
-#include "dlg_listselect.h"
+#include "panels/dlg_listselect.h"
 #include "base/fileservices.h"
 #include "base/pugixml.hpp"
 

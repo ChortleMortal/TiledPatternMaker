@@ -102,14 +102,14 @@ Configuration::Configuration()
     tm_autofill         = s.value("tm_autofill",false).toBool();
     tm_showOverlaps     = s.value("tm_showOverlaps",true).toBool();
     lockView            = s.value("lockView",false).toBool();
-    splitScreen       = s.value("screenIsSplit",false).toBool();
+    splitScreen         = s.value("screenIsSplit",false).toBool();
     compare_transparent = s.value("compare_transparent",false).toBool();
     display_differences = s.value("compare_differences",true).toBool();
     compare_ping_pong   = s.value("compare_ping_pong",false).toBool();
     compare_side_by_side= s.value("compare_side_by_side",false).toBool();
-    showCenter          = s.value("showCenter",false).toBool();
-    hideBackgroundImage = s.value("hideBackgroundImage",false).toBool();
+    showBackgroundImage = s.value("showBackgroundImage",true).toBool();
     highlightUnit       = s.value("highlightUnit",false).toBool();
+    nerdMode            = s.value("nerdMode",false).toBool();
 
     viewerType          = static_cast<eViewType>(s.value("viewerType",VIEW_MOSAIC).toUInt());
     mapEditorMode       = static_cast<eMapEditorMode>(s.value("mapEditorMode",MAP_MODE_FIGURE).toUInt());
@@ -134,24 +134,33 @@ Configuration::Configuration()
     circleX         = false;
     hideCircles     = false;
     updatePanel     = true;
+    showCenter      = false;
     enableDetachedPages = true;
 
     figureViewBkgdColor = QColor(Qt::black);
-    kbdMode         = KBD_MODE_XFORM_VIEW;
+    kbdMode         = KBD_MODE_UNDEFINED;
     debugReplicate  = false;
     debugMapEnable  = false;
 
-    selectedDesignElementFeature = nullptr;
-    faceSet = nullptr;
-
     qtAppLog * log = qtAppLog::getInstance();
-    log->logToStdErr(logToStderr);
-    log->logToDisk(logToDisk);
-    log->logToPanel(logToPanel);
-    log->logLines(logNumberLines);
-    log->logElapsed(logElapsedTime);
-    log->logWarningsOnly(logWarningsOnly);
-
+    if (nerdMode)
+    {
+        log->logToStdErr(logToStderr);
+        log->logToDisk(logToDisk);
+        log->logToPanel(logToPanel);
+        log->logLines(logNumberLines);
+        log->logElapsed(logElapsedTime);
+        log->logWarningsOnly(logWarningsOnly);
+    }
+    else
+    {
+        log->logToStdErr(true);
+        log->logToDisk(true);
+        log->logToPanel(false);
+        log->logLines(false);
+        log->logElapsed(false);
+        log->logWarningsOnly(false);
+    }
     if (!firstBirthday)
     {
         reconfigurePaths();
@@ -214,11 +223,11 @@ void Configuration::save()
     s.setValue("compare_differences",display_differences);
     s.setValue("compare_ping_pong",compare_ping_pong);
     s.setValue("compare_side_by_side",compare_side_by_side);
-    s.setValue("showCenter",showCenter);
-    s.setValue("hideBackgroundImage",hideBackgroundImage);
+    s.setValue("showBackgroundImage",showBackgroundImage);
     s.setValue("highlightUnit",highlightUnit);
     s.setValue("xmlTool",xmlTool);
     s.setValue("firstBirthday7",firstBirthday);
+    s.setValue("nerdMode",nerdMode);
 
     s.setValue("showGrid",showGrid);
     s.setValue("gridType",gridType);

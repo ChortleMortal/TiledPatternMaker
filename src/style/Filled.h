@@ -41,7 +41,7 @@
 // The code to build the faces from the map is contained in
 // geometry.Faces.
 
-class Filled : public Style, public Faces
+class Filled : public Style
 {
     friend class FilledEditor;
 
@@ -81,6 +81,7 @@ protected:
     ColorSet            whiteColorSet;
     ColorSet            blackColorSet;
     ColorGroup          colorGroup;
+    FacesPtr            faces;
 
 private:
     void drawOriginal(GeoGraphics *gg);

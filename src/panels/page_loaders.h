@@ -43,7 +43,7 @@ public:
 
 signals:
     void    sig_loadTiling(QString);
-    void    sig_loadXML(QString);
+    void    sig_loadMosaic(QString);
     void    sig_loadDesign(eDesign id);
     void    sig_buildDesign(eDesign id);
     void    sig_viewWS();
@@ -63,7 +63,11 @@ public slots:
 private slots:
     void    designSelected(QListWidgetItem * item, QListWidgetItem* oldItem);
     void    tilingSelected(QListWidgetItem * item, QListWidgetItem* oldItem);
-    void    xmlSelected(QListWidgetItem *item, QListWidgetItem *oldItem);
+    void    mosaicSelected(QListWidgetItem *item, QListWidgetItem *oldItem);
+    void    designClicked(QListWidgetItem * item);
+    void    tilingClicked(QListWidgetItem * item);
+    void    mosaicClicked(QListWidgetItem *item);
+
     void    slot_itemEnteredToolTip(QListWidgetItem * item);
 
     void    loadShapes();

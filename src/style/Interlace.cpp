@@ -63,8 +63,9 @@ Interlace::Interlace(const Style & other) : Thick(other)
         shadow  = intl.shadow;
         includeTipVertices = intl.includeTipVertices;
     }
-    catch(std::bad_cast exp)
+    catch(std::bad_cast & exp)
     {
+        Q_UNUSED(exp);
         gap     = 0.0;
         shadow  = 0.05;
         includeTipVertices = false;

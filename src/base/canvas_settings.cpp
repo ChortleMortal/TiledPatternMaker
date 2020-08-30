@@ -32,7 +32,7 @@
 
 CanvasSettings::CanvasSettings()
 {
-    _canvasSize = QSize(1500,1000);   // default
+    _canvasSize = QSize(1500,1100);   // default
     _bkgdColor  = QColor(Qt::white);
     _startTile  = QPoint(0,0);
 }

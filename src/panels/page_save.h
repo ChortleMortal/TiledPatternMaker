@@ -25,7 +25,7 @@
 #ifndef PAGE_SAVE_H
 #define PAGE_SAVE_H
 
-#include "panel_page.h"
+#include "panels/panel_page.h"
 
 class page_save : public panel_page
 {
@@ -45,6 +45,8 @@ public slots:
     void slot_loadedXML(QString name);
     void slot_loadedTiling(QString name);
     void slot_saveTiling();
+    void slot_saveImage();
+    void slot_saveSvg();
 
 private slots:
     void slot_saveAsXML();
@@ -52,10 +54,10 @@ private slots:
     void slot_tilingSourceChanged();
 
 protected:
-    void  createDesignSave();
-    void  createTilingSave();
+    void createDesignSave();
+    void createTilingSave();
 
-    TilingPtr getTiling();
+
 
 private:
     QTextEdit   * designNotes;

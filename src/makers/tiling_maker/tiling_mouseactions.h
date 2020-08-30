@@ -6,7 +6,7 @@
 #include "makers/tiling_maker/tiling_selection.h"
 #include "viewers/geo_graphics.h"
 
-enum eMouseMode
+enum eTilingMouseMode
 {
     NO_MOUSE_MODE,
     COPY_MODE,
@@ -52,11 +52,11 @@ private:
     QPointF wEnd;
 };
 
-class MouseAction
+class TilingMouseAction
 {
 public:
-    MouseAction(TilingMaker * tm, TilingSelectionPtr sel, QPointF spt );
-    virtual ~MouseAction() {}
+    TilingMouseAction(TilingMaker * tm, TilingSelectionPtr sel, QPointF spt );
+    virtual ~TilingMouseAction() {}
     virtual void updateDragging( QPointF spt );
     virtual void draw(GeoGraphics * g2d );
     virtual void endDragging( QPointF spt );
@@ -73,9 +73,9 @@ protected:
 private:
 };
 
-typedef shared_ptr<MouseAction> MouseActionPtr;
+typedef shared_ptr<TilingMouseAction> MouseActionPtr;
 
-class MovePolygon : public MouseAction
+class MovePolygon : public TilingMouseAction
 {
 public:
     MovePolygon(TilingMaker * tilingMaker, TilingSelectionPtr sel, QPointF spt);
@@ -92,7 +92,7 @@ private:
     QTransform initial_transform;
 };
 
-class DrawTranslation : public MouseAction
+class DrawTranslation : public TilingMouseAction
 {
 public:
     DrawTranslation(TilingMaker * tilingMaker,  TilingSelectionPtr sel, QPointF spt );
@@ -101,7 +101,7 @@ public:
     void endDragging(QPointF spt);
 };
 
-class JoinEdge : public MouseAction
+class JoinEdge : public TilingMouseAction
 {
 public:
     JoinEdge(TilingMaker * tilingMaker, TilingSelectionPtr sel, QPointF spt );
@@ -161,7 +161,7 @@ private:
     QTransform initial_transform;
 };
 
-class CreatePolygon : public MouseAction
+class CreatePolygon : public TilingMouseAction
 {
 public:
     CreatePolygon(TilingMaker * tilingMaker, QPointF spt );
@@ -174,7 +174,7 @@ private:
     QPointF underneath;
 };
 
-class Measure : public MouseAction
+class Measure : public TilingMouseAction
 {
 public:
     Measure(TilingMaker * tilingMaker, QPointF spt, TilingSelectionPtr sel);
@@ -191,7 +191,7 @@ private:
     QLineF       sPerpLine; // perpendicular line
 };
 
-class Position : public MouseAction
+class Position : public TilingMouseAction
 {
 public:
     Position(TilingMaker * tilingMaker, QPointF spt);
@@ -202,7 +202,7 @@ private:
     QPointF spt;
 };
 
-class Perspective : public MouseAction
+class Perspective : public TilingMouseAction
 {
 public:
     Perspective(TilingMaker * tilingMaker, QPointF spt);
@@ -218,7 +218,7 @@ private:
 
 typedef shared_ptr<Perspective> PerspectivePtr;
 
-class EditFeature : public MouseAction
+class EditFeature : public TilingMouseAction
 {
 public:
     EditFeature(TilingMaker * tilingMaker,  TilingSelectionPtr sel, PlacedFeaturePtr pfp, QPointF spt );
@@ -230,7 +230,7 @@ private:
     int              vertexIndex;
 };
 
-class EditEdge : public MouseAction
+class EditEdge : public TilingMouseAction
 {
 public:
     EditEdge(TilingMaker * tilingMaker,  TilingSelectionPtr sel, QPointF spt );

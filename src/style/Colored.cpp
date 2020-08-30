@@ -45,8 +45,9 @@ Colored::Colored(const Style & other ) : Style(other)
         const Colored & otherColored = dynamic_cast<const Colored&>(other);
         colors.setColors(otherColored.colors);
     }
-    catch(std::bad_cast exp)
+    catch(std::bad_cast & exp)
     {
+        Q_UNUSED(exp);
         colors.addColor(QColor( 20, 150, 210 ));
     }
 }
@@ -60,7 +61,6 @@ Colored::~Colored()
 
 void Colored::setColor(QColor color)
 {
-    qWarning() << "Is this right (setColor)";
     colors.clear();
     colors.addColor(color);
 }

@@ -27,15 +27,14 @@
 #include "panels/dlg_listselect.h"
 #include "panels/dlg_crop.h"
 #include "panels/dlg_name.h"
-#include "base/canvas.h"
 #include "base/fileservices.h"
 #include "base/tiledpatternmaker.h"
 #include "base/utilities.h"
 #include "style/style.h"
 #include "tapp/explicit_figure.h"
 #include "tapp/radial_figure.h"
-#include "base/xml_writer.h"
-#include "base/xml_loader.h"
+#include "base/mosaic_writer.h"
+#include "base/mosaic_loader.h"
 
 
 #define E2STR(x) #x
@@ -337,7 +336,7 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
 
     connect(tpm,  &TiledPatternMaker::sig_loadedTiling,   this,   &page_map_editor::slot_loadedTiling);
     connect(tpm,  &TiledPatternMaker::sig_loadedXML,      this,   &page_map_editor::slot_loadedXML);
-    connect(tpm,  &TiledPatternMaker::sig_unload,         this,   &page_map_editor::slot_unload);
+    connect(view, &View::sig_unload,                      this,   &page_map_editor::slot_unload);
 
     connect(pbVerifyMap,            &QToolButton::clicked,  this,   &page_map_editor::slot_verify);
     connect(pbMakeExplicit,         &QToolButton::clicked,  this,   &page_map_editor::slot_convertToExplicit);
@@ -448,7 +447,7 @@ void  page_map_editor::reload()
         break;
 
     case MAP_MODE_TILING:
-        TilingPtr tp = workspace->getTiling();
+        TilingPtr tp = workspace->getCurrentTiling();
         me->setTiling(tp);
         break;
     }
@@ -859,7 +858,7 @@ void page_map_editor::slot_loadMap()
     QString filename = QFileDialog::getOpenFileName(nullptr,"Select Map File",dir, "Map Files (*.xml)");
     if (filename.isEmpty()) return;
 
-    XmlLoader loader;
+    MosaicLoader loader;
     MapPtr map  = loader.loadMosaicMap(filename);
     if (!map)
     {
@@ -895,7 +894,7 @@ void page_map_editor::slot_saveMap()
     QString filename = QFileDialog::getSaveFileName(this, "Save Map File",dir,"Map (*.xml)");
     if (filename.isEmpty()) return;
 
-    XmlWriter writer;
+    MosaicWriter writer;
     bool rv = writer.writeXML(filename,me->getMap());
     if (rv)
     {
@@ -920,7 +919,7 @@ void page_map_editor::slot_pushToTiling()
     FeaturePtr fp   = make_shared<Feature>(ep,0);
     EdgePoly ep2    = fp->getEdgePoly();
 
-    TilingPtr tiling = workspace->getTiling();
+    TilingPtr tiling = workspace->getCurrentTiling();
     tiling->add(fp,QTransform());
 
     QMessageBox box(this);

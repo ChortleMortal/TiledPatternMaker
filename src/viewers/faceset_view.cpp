@@ -2,9 +2,9 @@
 #include "base/configuration.h"
 #include "viewers/workspace_viewer.h"
 
-FaceSetView::FaceSetView(FaceSet * set) : Layer("FaceSetView")
+FaceSetView::FaceSetView(WeakFacesPtr faces) : Layer("FaceSetView")
 {
-    fset = set;
+    wfaces = faces;
 }
 
 void FaceSetView::paint(QPainter *painter)
@@ -19,27 +19,28 @@ void FaceSetView::paint(QPainter *painter)
     GeoGraphics gg(painter,tr);
     draw(&gg);
 
-    if (config->showCenter)
-    {
-        QPointF pt = getCenter();
-        qDebug() << "style layer center=" << pt;
-        painter->setPen(QPen(Qt::green,3));
-        painter->setBrush(QBrush(Qt::green));
-        painter->drawEllipse(pt,13,13);
-    }
+    drawCenter(painter);
 }
 
 void  FaceSetView::draw(GeoGraphics * gg )
 {
-    for (auto face : *fset)
+    FacesPtr faces = wfaces.lock();
+    if (!faces)
+    {
+        return;
+    }
+
+    const FaceSet & fset = faces->getAllFaces();
+    for (auto face : fset)
     {
         gg->drawPolygon( face->getPolygon(),Qt::green,3);
     }
 
-    Configuration * config = Configuration::getInstance();
-    FacePtr selectedFace   = config->selectedFace;
-    if (selectedFace)
+    Configuration * config     = Configuration::getInstance();
+    WeakFacePtr selectedFace   = config->selectedFace;
+    FacePtr face               = selectedFace.lock();
+    if (face)
     {
-        gg->drawPolygon(selectedFace->getPolygon(),Qt::red,3);
+        gg->drawPolygon(face->getPolygon(),Qt::red,3);
     }
 }

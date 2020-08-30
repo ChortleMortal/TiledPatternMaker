@@ -41,7 +41,7 @@
 #include "base/misc.h"
 #include "panels/panel.h"
 #include "makers/tiling_maker/tiling_maker.h"
-#include "base/xml_writer.h"
+#include "base/mosaic_writer.h"
 
 using namespace pugi;
 using std::string;
@@ -54,9 +54,9 @@ Tiling::Tiling()
     author     = "Author";
     desc       = "Description";
     bkgd       = make_shared<BackgroundImage>();
-    dirty      = false;
     canvasSize = QSize(1500,1100);
     version    = -1;
+    state      = TILING_EMPTY;
     refs++;
 }
 
@@ -76,9 +76,9 @@ Tiling::Tiling(QString name, QPointF t1, QPointF t2)
     author      = "Author";
     desc        = "Description";
     bkgd        = make_shared<BackgroundImage>();
-    dirty       = false;
     canvasSize  = QSize(1500,1100);
     version     = -1;
+    state       = TILING_EMPTY;
     refs++;
 }
 
@@ -89,7 +89,6 @@ Tiling::Tiling(Tiling * other)
         PlacedFeaturePtr pf = make_shared<PlacedFeature>(*it);
         placed_features.push_back(pf);
     }
-    //placed_features = other->placed_features;
 
     t1          = other->t1;
     t2          = other->t2;
@@ -98,9 +97,9 @@ Tiling::Tiling(Tiling * other)
     author      = other->author;
     fillData    = other->fillData;
     canvasSize  = other->canvasSize;
-    dirty       = other->dirty;
     canvasXform = other->canvasXform;
     version     = -1;
+    state       = TILING_LOADED;
     refs++;
 }
 
@@ -113,22 +112,51 @@ Tiling::~Tiling()
 
 // Feature management.
 // Added feature are embedded into a PlacedFeature.
+void Tiling::setPlacedFeatures(QVector<PlacedFeaturePtr> features)
+{
+    placed_features = features;
+    setState(TILING_MODIFED);
+}
+
 void Tiling::add(const PlacedFeaturePtr pf )
 {
     placed_features.push_back(pf);
+    setState(TILING_MODIFED);
 }
 
 void Tiling::add(FeaturePtr f, QTransform  T)
 {
     add(make_shared<PlacedFeature>(f, T));
+    setState(TILING_MODIFED);
 }
 
 void Tiling::remove(PlacedFeaturePtr pf)
 {
     placed_features.removeOne(pf);
+    setState(TILING_MODIFED);
 }
 
-QVector<FeaturePtr> Tiling::getUniqueFeatures()
+int Tiling::getVersion()
+{
+    return version;
+}
+
+void Tiling::setVersion(int ver)
+{
+    version = ver;
+}
+
+eTilingState Tiling::getState()
+{
+    return state;
+}
+
+void Tiling::setState(eTilingState state)
+{
+    this->state = state;
+}
+
+UniqueQVector<FeaturePtr> Tiling::getUniqueFeatures()
 {
     UniqueQVector<FeaturePtr> fs;
 

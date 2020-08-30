@@ -6,9 +6,9 @@
 
 class TilingWriter
 {
-public:
-    TilingWriter(TilingPtr tiling) { this->tiling = tiling; };
+    friend class TilingManager;
 
+public:
     bool        writeTilingXML();
     void        writeTilingXML(QTextStream & out);     // also called when writing styles
     void        writeViewSettings(QTextStream & out);
@@ -27,10 +27,11 @@ protected:
     int     getRef()  { return refId; }
 
 private:
+    TilingWriter(TilingPtr tiling) { this->tiling = tiling; };
+
     TilingPtr   tiling;
 
     QMap<VertexPtr,int>   vertex_ids;
-
     int         refId;
 };
 

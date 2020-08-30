@@ -117,7 +117,6 @@ private:
     // Mouse mode, triggered by the toolbar.
     eMapMouseMode     map_mouse_mode;
 
-    Canvas          * canvas;
     View            * view;
 };
 #endif

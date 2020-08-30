@@ -1,4 +1,4 @@
-#include "dlg_crop.h"
+#include "panels/dlg_crop.h"
 
 #include <QtWidgets>
 

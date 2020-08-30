@@ -5,13 +5,14 @@ QT += core gui widgets svg
 TEMPLATE = app
 CONFIG += c++17
 
+DEFINES += QT_DEPRECATED_WARNINGS
+
 msvc:QMAKE_LFLAGS_WINDOWS += /ignore:4099
 win32:RC_ICONS += dac1.ico
 
 # Input
 SOURCES += \
     base/border.cpp \
-    base/canvas.cpp \
     base/canvas_settings.cpp \
     base/colorset.cpp \
     base/configuration.cpp \
@@ -22,20 +23,21 @@ SOURCES += \
     base/main.cpp \
     base/misc.cpp \
     base/mosaic.cpp \
+    base/mosaic_loader.cpp \
+    base/mosaic_manager.cpp \
+    base/mosaic_writer.cpp \
     base/pugixml.cpp \
     base/qtapplog.cpp \
     base/shortcuts.cpp \
     base/tile.cpp \
     base/tiledpatternmaker.cpp \
-    base/tilingmanager.cpp \
     base/tpmsplash.cpp \
     base/transparentwidget.cpp \
     base/utilities.cpp \
     base/view.cpp \
     base/workspace.cpp \
-    base/xml_loader.cpp \
-    base/xml_writer.cpp \
     designs/design.cpp \
+    designs/design_control.cpp \
     designs/designs.cpp \
     designs/patterns.cpp \
     designs/shapefactory.cpp \
@@ -94,8 +96,7 @@ SOURCES += \
     panels/page_loaders.cpp \
     panels/page_log.cpp \
     panels/page_map_editor.cpp \
-    panels/page_position.cpp \
-    panels/page_protos.cpp \
+    panels/page_prototype_info.cpp \
     panels/page_prototype_maker.cpp \
     panels/page_save.cpp \
     panels/page_style_figure_info.cpp \
@@ -104,12 +105,14 @@ SOURCES += \
     panels/page_views.cpp \
     panels/page_workspace.cpp \
     panels/panel.cpp \
+    panels/panel_list_widget.cpp \
     panels/panel_misc.cpp \
     panels/panel_page.cpp \
     panels/panel_pagesWidget.cpp \
     panels/panel_status.cpp \
     panels/splitscreen.cpp \
     panels/versioned_list_widget.cpp \
+    panels/view_panel.cpp \
     style/colored.cpp \
     style/emboss.cpp \
     style/filled.cpp \
@@ -141,13 +144,13 @@ SOURCES += \
     tile/placed_feature.cpp \
     tile/tiling.cpp \
     tile/tiling_loader.cpp \
+    tile/tiling_manager.cpp \
     tile/tiling_writer.cpp \
     viewers/faceset_view.cpp \
     viewers/figure_view.cpp \
     viewers/geo_graphics.cpp \
     viewers/map_editor_view.cpp \
     viewers/placed_designelement_view.cpp \
-    viewers/prototype_feature_view.cpp \
     viewers/prototype_view.cpp \
     viewers/shape_view.cpp \
     viewers/tiling_maker_view.cpp \
@@ -157,7 +160,6 @@ SOURCES += \
 
 HEADERS += \
     base/border.h \
-    base/canvas.h \
     base/canvas_settings.h \
     base/colorset.h \
     base/configuration.h \
@@ -167,6 +169,9 @@ HEADERS += \
     base/layer.h \
     base/misc.h \
     base/mosaic.h \
+    base/mosaic_loader.h \
+    base/mosaic_manager.h \
+    base/mosaic_writer.h \
     base/pugiconfig.hpp \
     base/pugixml.hpp \
     base/qtapplog.h \
@@ -174,16 +179,14 @@ HEADERS += \
     base/shortcuts.h \
     base/tile.h \
     base/tiledpatternmaker.h \
-    base/tilingmanager.h \
     base/tpmsplash.h \
     base/transparentwidget.h \
     base/utilities.h \
     base/version.h \
     base/view.h \
     base/workspace.h \
-    base/xml_loader.h \
-    base/xml_writer.h \
     designs/design.h \
+    designs/design_control.h \
     designs/designs.h \
     designs/patterns.h \
     designs/shapefactory.h \
@@ -241,8 +244,7 @@ HEADERS += \
     panels/page_loaders.h \
     panels/page_log.h \
     panels/page_map_editor.h \
-    panels/page_position.h \
-    panels/page_protos.h \
+    panels/page_prototype_info.h \
     panels/page_prototype_maker.h \
     panels/page_save.h \
     panels/page_style_figure_info.h \
@@ -251,12 +253,14 @@ HEADERS += \
     panels/page_views.h \
     panels/page_workspace.h \
     panels/panel.h \
+    panels/panel_list_widget.h \
     panels/panel_misc.h \
     panels/panel_page.h \
     panels/panel_pagesWidget.h \
     panels/panel_status.h \
     panels/splitscreen.h \
     panels/versioned_list_widget.h \
+    panels/view_panel.h \
     style/colored.h \
     style/emboss.h \
     style/filled.h \
@@ -288,13 +292,13 @@ HEADERS += \
     tile/placed_feature.h \
     tile/tiling.h \
     tile/tiling_loader.h \
+    tile/tiling_manager.h \
     tile/tiling_writer.h \
     viewers/faceset_view.h \
     viewers/figure_view.h \
     viewers/geo_graphics.h \
     viewers/map_editor_view.h \
     viewers/placed_designelement_view.h \
-    viewers/prototype_feature_view.h \
     viewers/prototype_view.h \
     viewers/shape_view.h \
     viewers/tiling_maker_view.h \

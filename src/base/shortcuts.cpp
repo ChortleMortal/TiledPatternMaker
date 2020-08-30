@@ -1,4 +1,4 @@
-#include "shortcuts.h"
+#include "base/shortcuts.h"
 
 QString Shortcuts::getCanvasShortcuts()
 {

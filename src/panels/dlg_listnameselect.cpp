@@ -1,4 +1,4 @@
-#include "dlg_listnameselect.h"
+#include "panels/dlg_listnameselect.h"
 
 DlgListNameSelect::DlgListNameSelect(QStringList files)
 {

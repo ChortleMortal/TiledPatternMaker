@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+<Tiling version="3">
+	<Name>GirihPat1.v2</Name>
+	<T1>-7.771561172376096e-16,-1.960380581895727</T1>
+	<T2>1.667599326667244,-8.881784197001252e-16</T2>
+	<ViewSettings>
+		<width>1000</width>
+		<height>1000</height>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>-3.346666666666667,-0.6800000000000024</center>
+	</ViewSettings>
+	<Feature type="regular" sides="10" rotation="0">
+		<Placement>0.8337996633336217,0,0.5821317989349832,0,0.8337996633336217,-1.863856771519247</Placement>
+	</Feature>
+	<Feature type="edgepoly" rotation="0">
+		<Line>
+			<Point id="1">0.9999999999999998,0.3249196962329062</Point>
+			<Point id="2">0.9999999999999998,-0.3249196962329064</Point>
+		</Line>
+		<Line>
+			<Point reference="2" />
+			<Point id="3">1.618033988749895,-0.1241082803466793</Point>
+		</Line>
+		<Line>
+			<Point reference="3" />
+			<Point id="4">2.236067977499789,-0.3249196962329066</Point>
+		</Line>
+		<Line>
+			<Point reference="4" />
+			<Point id="5">2.236067977499789,0.3249196962329056</Point>
+		</Line>
+		<Line>
+			<Point reference="5" />
+			<Point id="6">1.618033988749895,0.1241082803466786</Point>
+		</Line>
+		<Line>
+			<Point reference="6" />
+			<Point reference="1" />
+		</Line>
+		<Placement>0.8337996633336223,0,-0.7669843961470371,0,0.8337996633336223,-0.8836664805713836</Placement>
+	</Feature>
+	<Feature type="edgepoly" rotation="0">
+		<Line>
+			<Point id="7">2.618033988749895,0.8506508083520394</Point>
+			<Point id="8">2.236067977499789,0.3249196962329056</Point>
+		</Line>
+		<Line>
+			<Point reference="8" />
+			<Point id="9">2.236067977499789,-0.3249196962329066</Point>
+		</Line>
+		<Line>
+			<Point reference="9" />
+			<Point id="10">2.618033988749894,-0.8506508083520405</Point>
+		</Line>
+		<Line>
+			<Point reference="10" />
+			<Point id="11">3,-0.3249196962329066</Point>
+		</Line>
+		<Line>
+			<Point reference="11" />
+			<Point id="12">3,0.3249196962329055</Point>
+		</Line>
+		<Line>
+			<Point reference="12" />
+			<Point reference="7" />
+		</Line>
+		<Placement>0.8337996633336223,0,-0.7669843961470371,0,0.8337996633336223,-0.8836664805713836</Placement>
+	</Feature>
+	<Feature type="regular" sides="10" rotation="0">
+		<Placement>0.8337996633336217,0,0.5821317989349832,0,0.8337996633336217,-1.863856771519247</Placement>
+	</Feature>
+	<Desc>Based on photo from Liu and Stodart</Desc>
+	<Auth>David A Casper</Auth>
+	<BackgroundImage name="Decagonal and Quasi-Crystalline TilingsinMedievalIslamicArchitecture  - Supporting_3.jpg">
+		<Scale>2.5</Scale>
+		<Rot>0</Rot>
+		<X>-20</X>
+		<Y>-122</Y>
+	</BackgroundImage>
+</Tiling>

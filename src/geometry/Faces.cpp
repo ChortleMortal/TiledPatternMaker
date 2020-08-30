@@ -72,7 +72,6 @@ static QString sFaceState[]
 Faces::Faces()
 {
     Configuration * config = Configuration::getInstance();
-    config->faceSet = &allFaces;
     config->selectedFace.reset();
 }
 
@@ -83,6 +82,7 @@ void Faces::clearFaces()
     whiteFaces.clear();
     blackFaces.clear();
     faceGroup.clear();
+
     allFaces.clear();
 }
 

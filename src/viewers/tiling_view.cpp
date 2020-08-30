@@ -63,14 +63,7 @@ void TilingView::paint(QPainter *painter)
     draw(&gg);  // DAC - draw goes to receive which goes to draw placed feature
                 // DAC - receive is really 'draw one tile'
 
-    if (Layer::config->showCenter)
-    {
-        QPointF pt = getCenter();
-        qDebug() << "style layer center=" << pt;
-        painter->setPen(QPen(Qt::green,3));
-        painter->setBrush(QBrush(Qt::green));
-        painter->drawEllipse(pt,13,13);
-    }
+   drawCenter(painter);
 }
 
 void TilingView::draw(GeoGraphics *g2d )

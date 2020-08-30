@@ -22,7 +22,7 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "page_config.h"
+#include "panels/page_config.h"
 #include "panels/layout_sliderset.h"
 
 page_config:: page_config(ControlPanel * cpanel)  : panel_page(cpanel,"Configuration")
@@ -80,6 +80,21 @@ page_config:: page_config(ControlPanel * cpanel)  : panel_page(cpanel,"Configura
 
     vbox->addLayout(configGrid);
 
+    QRadioButton * designerMode = new QRadioButton("Designer Mode");
+    QRadioButton * nerdMode     = new QRadioButton("Nerd Mode");
+    QButtonGroup * btnGroup     = new QButtonGroup;
+    btnGroup->addButton(designerMode,0);
+    btnGroup->addButton(nerdMode,1);
+
+    int button  = (config->nerdMode) ? 1 : 0;
+    btnGroup->button(button)->setChecked(true);
+
+    QHBoxLayout * hbox = new QHBoxLayout;
+    hbox->addWidget(designerMode);
+    hbox->addWidget(nerdMode);
+    hbox->addStretch();
+    vbox->addLayout(hbox);
+
     updatePaths();
 
     connect(rootImageBtn,   SIGNAL(clicked()),                  this,   SLOT(selectRootImageDir()));
@@ -97,6 +112,12 @@ page_config:: page_config(ControlPanel * cpanel)  : panel_page(cpanel,"Configura
     connect(le_newTile,    &QLineEdit::textChanged,   this, &page_config::newTtileChanged);
     connect(le_rootImage,  &QLineEdit::textChanged,   this, &page_config::rootImageChanged);
     connect(le_examples,   &QLineEdit::textChanged,   this, &page_config::examplesChanged);
+
+#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
+    connect(btnGroup,      SIGNAL(buttonClicked(int)), this, SLOT(slot_mode(int)));
+#else
+    connect(btnGroup,      &QButtonGroup::idClicked,  this,  &page_config::slot_mode);
+#endif
 }
 
 void  page_config::onEnter()
@@ -223,4 +244,13 @@ void page_config::updatePaths()
     le_examples->setText(config->examplesDir);
     le_xmlTool->setText(config->xmlTool);
     update();
+}
+
+void page_config::slot_mode(int id)
+{
+    config->nerdMode = (id == 1);
+
+    // restart the application
+    qApp->quit();
+    QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
 }

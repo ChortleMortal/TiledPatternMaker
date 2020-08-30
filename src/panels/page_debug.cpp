@@ -22,19 +22,18 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "page_debug.h"
+#include "panels/page_debug.h"
 #include "panels/dlg_name.h"
 #include "base/qtapplog.h"
-#include "base/canvas.h"
-#include "base/tilingmanager.h"
 #include "base/fileservices.h"
+#include "base/mosaic_manager.h"
 #include "base/tiledpatternmaker.h"
 #include "panels/layout_sliderset.h"
 #include "panels/versioned_list_widget.h"
 #include "panels/panel.h"
 #include "base/shared.h"
 #include "tile/tiling.h"
-#include "tile/tiling_writer.h"
+#include "tile/tiling_manager.h"
 #include "viewers/workspace_viewer.h"
 
 page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,"Debug Tools")
@@ -52,6 +51,10 @@ page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,"Debug Tools
      connect(tpm, &TiledPatternMaker::sig_compareResult, this,  &page_debug::slot_compareResult);
      connect(this,  &page_debug::sig_view_image,           tpm, &TiledPatternMaker::slot_view_image);
      connect(this,  &page_debug::sig_compareImageFiles,    tpm, &TiledPatternMaker::slot_compareImagesReplace, Qt::QueuedConnection);
+
+     Cycler * cycler = Cycler::getInstance();
+     connect(this,  &page_debug::sig_cyclerStart,          cycler,  &Cycler::slot_startCycle, Qt::QueuedConnection);
+
 }
 
 QGroupBox * page_debug::createDebugSection()
@@ -94,7 +97,7 @@ QGroupBox * page_debug::createDebugSection()
     connect(pbReprocessTileXMLBtn,    &QPushButton::clicked,     this,   &page_debug::slot_reprocessTilingXML);
     connect(pbClearCanvas,            &QPushButton::clicked,     workspace,  &Workspace::slot_clearCanvas);
     connect(pbRender,                 &QPushButton::clicked,     tpm,        &TiledPatternMaker::slot_render);
-    connect(pbDrainAll,               &QPushButton::clicked,     tpm,        &TiledPatternMaker::drainTheSwamp);
+    connect(pbDrainAll,               &QPushButton::clicked,     view,       &View::drainTheSwamp);
     connect(pbClearWS,                &QPushButton::clicked,     workspace,  &Workspace::slot_clearWorkspace);
 
     return debugGroup;
@@ -265,11 +268,9 @@ QVBoxLayout *  page_debug::createMiscSection()
 {
     QVBoxLayout  * vbox                = new QVBoxLayout();
 
-    QCheckBox    * hideBackImage       = new QCheckBox("Hide background image");
     QCheckBox    * showCenterChk       = new QCheckBox("Show Center");
 
     QHBoxLayout * hbox2 = new QHBoxLayout;
-    hbox2->addWidget(hideBackImage);
     hbox2->addWidget(showCenterChk);
     hbox2->addStretch();
 
@@ -296,7 +297,6 @@ QVBoxLayout *  page_debug::createMiscSection()
     gridModelGroup.addButton(gridModel,GRID_MODEL);
 
     // initial values
-    hideBackImage->setChecked(config->hideBackgroundImage);
     showCenterChk->setChecked(config->showCenter);
 
     gridBox->setChecked(config->showGrid);
@@ -319,7 +319,6 @@ QVBoxLayout *  page_debug::createMiscSection()
     connect(gridModelCentered,  &QCheckBox::stateChanged,     this, &page_debug::slot_gridModelCenteredChanged);
 
     connect(showCenterChk,      &QCheckBox::stateChanged,     this, &page_debug::slot_showCenterChanged);
-    connect(hideBackImage,      &QCheckBox::stateChanged,     this, &page_debug::slot_hideBackChanged);
 
     QVBoxLayout * vboxG = new QVBoxLayout();
 
@@ -377,12 +376,11 @@ QVBoxLayout *  page_debug::createMiscSection()
 void  page_debug::onEnter()
 {
     imageCompareResult->setText("");
-    panel->hideStatus();
 }
 
 void page_debug::onExit()
 {
-    panel->hideStatus();
+    panel->hidePanelStatus();
 
     View * view = View::getInstance();
     view->clearLayout();   // removes any cler pngs
@@ -406,8 +404,8 @@ void page_debug::slot_stopIfDiffClicked(bool enb)
 
 void page_debug::slot_verifyTilingNames()
 {
-    TilingManager * tm = TilingManager::getInstance();
-    bool rv = tm->verifyNameFiles();
+    TilingManager tm;
+    bool rv = tm.verifyNameFiles();
 
     QMessageBox box(this);
     if (rv)
@@ -512,11 +510,12 @@ void page_debug::slot_reprocessDesignXML()
     for (int i=0; i < files.size(); i++)
     {
         QString name = files[i];
-        bool rv = workspace->loadMosaic(name);
+        MosaicManager mm;
+        bool rv = mm.loadMosaic(name);
         if (rv)
         {
             QString outfile;
-            rv = workspace->saveMosaic(name,outfile,true);
+            rv = mm.saveMosaic(name,outfile,true);
         }
         if (rv)
             goodDes++;
@@ -549,7 +548,6 @@ void page_debug::slot_reprocessTilingXML()
 
     qDebug() << "Reprocessing tilings...";
 
-    TilingManager * tm = TilingManager::getInstance();
 
     QStringList files = FileServices::getTilingNames();
     for (int i=0; i < files.size(); i++)
@@ -558,12 +556,13 @@ void page_debug::slot_reprocessTilingXML()
 
         QString name = files[i];
 
-        TilingPtr tp = tm->loadTiling(name);
+        workspace->resetTilings();
+        TilingManager tm;
+        TilingPtr tp = tm.loadTiling(name);     // adds to workspace
         if (tp)
         {
             Q_ASSERT(tp->getName() == name);
-            TilingWriter writer(tp);
-            rv = writer.writeTilingXML();
+            rv = tm.saveTiling(name,tp);
         }
         if (rv)
             goodTiles++;
@@ -678,28 +677,28 @@ void page_debug::slot_cycle()
     switch (config->cycleMode)
     {
     case CYCLE_SAVE_STYLE_BMPS:
-        emit panel->sig_selectViewer(VIEW_MOSAIC);
+        panel->selectViewer(VIEW_MOSAIC);
         saveMosaicBitmaps();
         break;
 
     case CYCLE_SAVE_TILING_BMPS:
-        emit panel->sig_selectViewer(VIEW_TILING);
+        panel->selectViewer(VIEW_TILING);
         saveTilingBitmaps();
         break;
 
     case CYCLE_STYLES:
-        emit panel->sig_selectViewer(VIEW_MOSAIC);
-        emit canvas->sig_cyclerStart(config->cycleMode);
+        panel->selectViewer(VIEW_MOSAIC);
+        emit sig_cyclerStart(config->cycleMode);
         break;
 
     case CYCLE_TILINGS:
-        emit panel->sig_selectViewer(VIEW_TILING);
-        emit canvas->sig_cyclerStart(config->cycleMode);
+        panel->selectViewer(VIEW_TILING);
+        emit sig_cyclerStart(config->cycleMode);
 
     case CYCLE_ORIGINAL_PNGS:
     case CYCLE_COMPARE_IMAGES:
-        emit canvas->sig_cyclerStart(config->cycleMode);
-        emit canvas->sig_cyclerStart(config->cycleMode);
+        emit sig_cyclerStart(config->cycleMode);
+        emit sig_cyclerStart(config->cycleMode);
         break;
 
     case CYCLE_NONE:
@@ -721,10 +720,12 @@ void page_debug::saveMosaicBitmaps()
 
     for (auto name : files)
     {
-        workspace->loadMosaic(name);
+        // this forces immediate action
+        MosaicManager mm;
+        mm.loadMosaic(name);
         wsViewer->slot_viewWorkspace();
         view->repaint();
-        canvas->savePixmap(name);
+        savePixmap(name);
     }
 
     QMessageBox box(this);
@@ -748,10 +749,13 @@ void page_debug::saveTilingBitmaps()
 
     for (auto name : files)
     {
-        workspace->loadTiling(name);
+        // this forces immediate action
+        workspace->resetTilings();
+        TilingManager tm;
+        tm.loadTiling(name);    // adds to workspace
         wsViewer->slot_viewWorkspace();
         view->repaint();
-        canvas->savePixmap(name);
+        savePixmap(name);
     }
 
     QMessageBox box(this);
@@ -764,8 +768,8 @@ void page_debug::slot_compareImages()
 {
     if (config->autoCycle)
     {
-        panel->showStatus("L=log  V=view Q=quit Spacebar=next");
-        emit canvas->sig_cyclerStart(CYCLE_COMPARE_IMAGES);
+        panel->showPanelStatus("L=log  V=view Q=quit Spacebar=next");
+        emit sig_cyclerStart(CYCLE_COMPARE_IMAGES);
     }
     else
     {
@@ -858,6 +862,9 @@ void page_debug::slot_previous()
     if (index == 0) return;
     index--;
     ibox1->setCurrentIndex(index);
+
+    imageCompareResult->setText("");
+    emit sig_compareImageFiles(ibox0->currentText(),ibox1->currentText());
 }
 
 void page_debug::slot_next()
@@ -872,6 +879,8 @@ void page_debug::slot_next()
     index++;
     ibox1->setCurrentIndex(index);
 
+    imageCompareResult->setText("");
+    emit sig_compareImageFiles(ibox0->currentText(),ibox1->currentText());
 }
 
 void  page_debug::slot_verifyMapsClicked(bool enb)
@@ -932,12 +941,6 @@ void page_debug::slot_showCenterChanged(int id)
     view->update();
 }
 
-void page_debug::slot_hideBackChanged(int id)
-{
-    config->hideBackgroundImage = (id == Qt::Checked);
-    view->update();
-}
-
 void page_debug::slot_gridScreenCenteredChanged(int id)
 {
     config->gridScreenCenter = (id == Qt::Checked);
@@ -948,4 +951,53 @@ void page_debug::slot_gridModelCenteredChanged(int id)
 {
     config->gridModelCenter = (id == Qt::Checked);
     view->update();
+}
+
+void page_debug::savePixmap(QString name)
+{
+    Q_ASSERT(!name.contains(".xml"));
+
+    QPixmap pixmap = View::getInstance()->grab();
+
+    QString subdir;
+    switch (config->repeatMode)
+    {
+    case REPEAT_SINGLE:
+        subdir = "single/";
+        break;
+    case REPEAT_PACK:
+        subdir = "pack/";
+        break;
+    case REPEAT_DEFINED:
+        subdir = "defined/";
+        break;
+    }
+
+    QDateTime d = QDateTime::currentDateTime();
+    QString date = d.toString("yyyy-MM-dd");
+
+    QString path = config->rootImageDir;
+    if (config->viewerType == VIEW_TILING)
+        path += "tilings/" + subdir + date;
+    else
+        path += subdir + date;
+
+    QDir adir(path);
+    if (!adir.exists())
+    {
+        if (!adir.mkpath(path))
+        {
+            qFatal("could not make path");
+        }
+    }
+    QString file = path + "/" + name + ".bmp";
+    qDebug() << "saving" << file;
+
+    //QFileInfo fileInfo(file);
+    //QString path = fileInfo.filePath();
+    //s.setValue("picPath",path);
+
+    bool rv = pixmap.save(file);
+    if (!rv)
+        qDebug() << file << "save ERROR";
 }

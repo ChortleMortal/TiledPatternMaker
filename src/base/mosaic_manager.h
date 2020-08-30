@@ -22,27 +22,23 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef TILINGMANAGER_H
-#define TILINGMANAGER_H
+#ifndef MOSAIC_MANAGER_H
+#define MOSAIC_MANAGER_H
 
-#include <QtCore>
-#include "base/shared.h"
+#include "base/configuration.h"
+#include "base/workspace.h"
 
-class TilingManager
+class MosaicManager
 {
 public:
-    static TilingManager * getInstance();
+    MosaicManager();
 
-    TilingPtr loadTiling(QString name);
-
-    bool       verifyNameFiles();
-
-protected:
-    TilingManager();
+    bool loadMosaic(QString name);
+    bool saveMosaic(QString name, QString &savedName, bool forceOverwrite);
 
 private:
-    static TilingManager * mpThis;
-
+    Workspace     * workspace;
+    Configuration * config;
 };
 
-#endif // TILINGMANAGER_H
+#endif

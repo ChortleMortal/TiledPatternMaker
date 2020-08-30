@@ -3,7 +3,7 @@
 #include "base/fileservices.h"
 #include "base/tiledpatternmaker.h"
 #include "panels/panel.h"
-#include "base/xml_writer.h"
+#include "base/mosaic_writer.h"
 
 using namespace pugi;
 using std::string;
@@ -212,7 +212,7 @@ void TilingWriter::writeViewSettings(QTextStream & out)
     out << "<width>"  << size.width()  << "</width>" << endl;
     out << "<height>" << size.height() << "</height>" << endl;
 
-    XmlWriter::procesToolkitGeoLayer(out,tiling->getCanvasXform());
+    MosaicWriter::procesToolkitGeoLayer(out,tiling->getCanvasXform());
 
     out << "</ViewSettings>" <<  endl;
 }

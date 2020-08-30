@@ -22,7 +22,7 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "qtapplog.h"
+#include "base/qtapplog.h"
 #include <QtCore>
 #include <QMessageBox>
 #include <QTextCursor>

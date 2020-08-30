@@ -40,8 +40,6 @@ public:
     TiledPatternMaker();
     ~TiledPatternMaker();
 
-    void forceUpdateStyles();
-
 signals:
     void sig_start();
     void sig_newXML();
@@ -53,7 +51,6 @@ signals:
     void sig_compareResult(QString);
     void sig_image0(QString name);
     void sig_image1(QString name);
-    void sig_unload();
 
 public slots:
     void startEverything();
@@ -61,16 +58,15 @@ public slots:
     void slot_loadDesign(eDesign design);
     void slot_buildDesign(eDesign design);
 
-    void slot_loadXML(QString name);
-    void slot_loadXMLSimple(QString name);
+    void slot_loadMosaic(QString name);
+    void slot_cycleLoadMosaic(QString name);
     void slot_saveXML(QString name);
     void slot_loadTiling(QString name);
-    void slot_loadTilingSimple(QString name);
+    void slot_cyclerLoadTiling(QString name);
 
     //  resets protos and syles
     void slot_render();
 
-    void slot_forceUpdateStyles();
     void slot_raiseMenu();
     void slot_bringToPrimaryScreen();
     void slot_splitScreen(bool checked);
@@ -79,8 +75,7 @@ public slots:
     void slot_compareImages(QString fileLeft, QString fileRight);
     void slot_cyclerFinished();
     void slot_view_image(QString filename);
-
-    void drainTheSwamp();
+    void slot_show_png(QString file, int row, int col);
 
 protected:
     void resetStyles();
@@ -96,7 +91,6 @@ private:
     Workspace       * workspace;
     ControlPanel    * controlPanel;
     View            * view;
-    Canvas          * canvas;
     TilingMaker     * tilingMaker;
     MapEditor       * mapEditor;
     WorkspaceViewer * wsViewer;

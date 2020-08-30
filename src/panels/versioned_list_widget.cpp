@@ -50,7 +50,7 @@ bool LoaderListWidget::selectItemByName(QString name)
         QListWidgetItem * qitem = item(i);
         if (qitem->text() == name)
         {
-            qDebug() << "selected" << name;
+            //qDebug() << "selected" << name;
             setCurrentItem(qitem);
             return true;
         }
@@ -67,7 +67,7 @@ bool LoaderListWidget::selectItemByValue(QVariant val)
         QListWidgetItem * qitem = item(i);
         if (qitem->data(Qt::UserRole) == val)
         {
-            qDebug() << "selected" << val;
+            //qDebug() << "selected" << val;
             setCurrentItem(qitem);
             return true;
         }
@@ -123,7 +123,7 @@ void VersionedListWidget::addItemList(QStringList list)
 
 bool VersionList::ciCharLess( char c1, char c2 )
 {
-    return (std::tolower( static_cast<unsigned char>( c1 ) ) < std::tolower( static_cast<unsigned char>( c2) ));
+    return (tolower( static_cast<unsigned char>( c1 ) ) < tolower( static_cast<unsigned char>( c2) ));
 }
 
 bool VersionList::CompareNoCase( const std::string& s1, const std::string& s2 )

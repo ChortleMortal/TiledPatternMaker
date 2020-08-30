@@ -22,7 +22,7 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "fileservices.h"
+#include "base/fileservices.h"
 #include "base/pugixml.hpp"
 #include "base/configuration.h"
 #include <QMessageBox>

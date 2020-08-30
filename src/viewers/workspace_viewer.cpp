@@ -22,7 +22,6 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "base/canvas.h"
 #include "base/border.h"
 #include "base/tpmsplash.h"
 #include "base/view.h"
@@ -36,7 +35,6 @@
 #include "viewers/faceset_view.h"
 #include "viewers/figure_view.h"
 #include "viewers/prototype_view.h"
-#include "viewers/prototype_feature_view.h"
 #include "viewers/tiling_view.h"
 #include "viewers/workspace_viewer.h"
 #include "style/style.h"
@@ -62,15 +60,11 @@ WorkspaceViewer::WorkspaceViewer()
     ViewSettings * vs = &viewSettings[evt];
     vs->init(evt, Bounds(-10.0,10.0,20.0), QSize(1500,1100));
 
-    evt = VIEW_PROTO;
+    evt = VIEW_PROTOTYPE;
     vs  = &viewSettings[evt];
     vs->init(evt, Bounds(-10.0,10.0,20.0), QSize(1500,1100));
 
-    evt = VIEW_PROTO_FEATURE;
-    vs  = &viewSettings[evt];
-    vs->init(evt, Bounds(-10.0,10.0,20.0), QSize(1500,1100));
-
-    evt = VIEW_DEL;
+    evt = VIEW_DESIGN_ELEMENT;
     vs  = &viewSettings[evt];
     vs->init(evt, Bounds(-10.0,10.0,20.0), QSize(1500,1100));
 
@@ -80,13 +74,13 @@ WorkspaceViewer::WorkspaceViewer()
 
     evt = VIEW_TILING_MAKER;
     vs  = &viewSettings[evt];
-    vs->init(evt, Bounds(-10.0,10.0,20.0), QSize(1500,1100));
+    vs->init(evt, Bounds(-5.0,5.0,10.0), QSize(1000,1000));
 
     evt = VIEW_FACE_SET;
     vs  = &viewSettings[evt];
     vs->init(evt, Bounds(-10.0,10.0,20.0), QSize(1500,1100));
 
-    evt = VIEW_FIGURE_MAKER;
+    evt = VIEW_FROTOTYPE_MAKER;
     vs  = &viewSettings[evt];
     vs->init(evt, Bounds(-10.0,10.0,20.0), QSize( 900, 900));
 
@@ -99,7 +93,7 @@ void WorkspaceViewer::init()
 {
     workspace       = Workspace::getInstance();
     config          = Configuration::getInstance();
-    canvas          = Canvas::getInstance();
+    panel           = ControlPanel::getInstance();
 
     disableAll();
     viewEnable(config->viewerType,true);
@@ -210,7 +204,8 @@ void WorkspaceViewer::viewWorkspace()
 
 void WorkspaceViewer::setupViews()
 {
-    //eViewType vtype = config->viewerType;
+    eViewType vtype = config->viewerType;
+    panel->reflectCurrentView(vtype);
 
     for (int i=0; i <= VIEW_MAX; i++)
     {
@@ -226,20 +221,16 @@ void WorkspaceViewer::setupViews()
                 viewMosaic();
                 break;
 
-            case VIEW_PROTO:
+            case VIEW_PROTOTYPE:
                 viewPrototype();
                 break;
 
-            case VIEW_PROTO_FEATURE:
-                viewProtoFeature();
-                break;
-
-            case VIEW_DEL:
+            case VIEW_DESIGN_ELEMENT:
                 viewDesignElement();
                 break;
 
-            case VIEW_FIGURE_MAKER:
-                viewFigureMaker();
+            case VIEW_FROTOTYPE_MAKER:
+                viewPrototypeMaker();
                 break;
 
             case VIEW_TILING:
@@ -285,11 +276,10 @@ void WorkspaceViewer::viewMosaic()
         qDebug() << "WorkspaceViewer::viewMosaic" << name;
 
         ControlPanel * panel  = ControlPanel::getInstance();
-        QString astring = QString("<span style=\"color:rgb(0,240,0)\">Preparing design: %1</span>").arg(name);
-        panel->showStatus(astring);
+        QString astring = QString("Preparing design: %1").arg(name);
+        panel->showPanelStatus(astring);
 
 #ifdef TPMSPLASH
-        astring = QString("Preparing design: %1").arg(name);
         panel->showSplash(astring);
 #endif
         const StyleSet & sset = mosaic->getStyleSet();
@@ -300,7 +290,7 @@ void WorkspaceViewer::viewMosaic()
             mViewers.push_back(style);
         }
 
-        panel->hideStatus();
+        panel->hidePanelStatus();
 #ifdef TPMSPLASH
         panel->hideSplash();
 #endif
@@ -316,65 +306,23 @@ void WorkspaceViewer::viewPrototype()
 {
     qDebug() << "++WorkspaceViewer::viewPrototype";
 
-    StylePtr sp;
+    StylePtr style;
     if (setCanvasFromDesign())
     {
         MosaicPtr mosaic = workspace->getMosaic();
-        sp = mosaic->getFirstStyle();
+        style = mosaic->getFirstStyle();
     }
 
     PrototypePtr pp = workspace->getSelectedPrototype();
     if (pp)
     {
-        emit sig_title("Prototype");
-        TilingPtr tiling = workspace->getTiling();
+        TilingPtr tiling = pp->getTiling();
 
-        LayerPtr protoView = make_shared<ProtoView>(pp);
-        if (sp)
+        LayerPtr pfview = make_shared<PrototypeView>(pp,workspace->getProtoMode());
+        if (style)
         {
             // use settings from design
-            Xform xf = sp->getCanvasXform();
-            protoView->setCanvasXform(xf);
-        }
-        else
-        {
-            // use settings from tiling maker
-            setCanvasFromTiling(tiling,protoView);
-        }
-        mViewers.push_back(protoView);
-
-        currentCanvasSettings.setBkgdImage(tiling->getBackground());
-    }
-    else
-    {
-        qWarning() << "viewProto: no  selected prototype";
-    }
-
-    currentCanvasSettings.setBackgroundColor(Qt::white);
-    currentCanvasSettings.setCanvasSize(getViewSize(VIEW_PROTO));
-}
-
-void WorkspaceViewer::viewProtoFeature()
-{
-    qDebug() << "++WorkspaceViewer::viewProtoFeature";
-
-    StylePtr sp;
-    if (setCanvasFromDesign())
-    {
-        MosaicPtr mosaic = workspace->getMosaic();
-        sp = mosaic->getFirstStyle();
-    }
-
-    PrototypePtr pp = workspace->getSelectedPrototype();
-    if (pp)
-    {
-        TilingPtr tiling = workspace->getTiling();
-
-        LayerPtr pfview = make_shared<ProtoFeatureView>(pp);
-        if (sp)
-        {
-            // use settings from design
-            Xform xf = sp->getCanvasXform();
+            Xform xf = style->getCanvasXform();
             pfview->setCanvasXform(xf);
         }
         else
@@ -393,43 +341,44 @@ void WorkspaceViewer::viewProtoFeature()
     }
 
     currentCanvasSettings.setBackgroundColor(Qt::white);
-    currentCanvasSettings.setCanvasSize(getViewSize(VIEW_PROTO_FEATURE));
+    currentCanvasSettings.setCanvasSize(getViewSize(VIEW_PROTOTYPE));
 }
 
 void WorkspaceViewer::viewDesignElement()
 {
     qDebug() << "++WorkspaceViewer::viewDesignElement";
 
-    StylePtr sp;
+    StylePtr style;
     if (setCanvasFromDesign())
     {
         MosaicPtr mosaic = workspace->getMosaic();
-        sp = mosaic->getFirstStyle();
+        style = mosaic->getFirstStyle();
     }
 
     PrototypePtr pp = workspace->getSelectedPrototype();
     if (pp)
     {
-        TilingPtr   tiling                 = workspace->getTiling();
-        QList<PlacedFeaturePtr>	& placed   = tiling->getPlacedFeatures();
-        QVector<DesignElementPtr> &  dels  = pp->getDesignElements();
-        QVector<QTransform>       & tforms = pp->getLocations();
+        TilingPtr   tiling                     = pp->getTiling();
+        const QVector<PlacedFeaturePtr> & placed = tiling->getPlacedFeatures();
+        QVector<DesignElementPtr> &  dels      = pp->getDesignElements();
+        QVector<QTransform>       & tforms     = pp->getLocations();
 
         qDebug() << "dels=" << dels.size() << "tforms="  << tforms.size();
         for (auto delp : dels)
         {
-            FeaturePtr  feap = delp->getFeature();
+            FeaturePtr  feature = delp->getFeature();
+            bool selected = (feature == workspace->getSelectedFeature());
             for (auto pfp : placed)
             {
-                if (feap == pfp->getFeature())
+                if (feature == pfp->getFeature())
                 {
                     QTransform tr                  = pfp->getTransform();
                     PlacedDesignElementPtr pdel    = make_shared<PlacedDesignElement>(delp,tr);
-                    LayerPtr delView               = make_shared<PlacedDesignElementView>(pdel);
-                    if (sp)
+                    LayerPtr delView               = make_shared<PlacedDesignElementView>(pdel,selected);
+                    if (style)
                     {
                         // use settings from design
-                        Xform xf = sp->getCanvasXform();
+                        Xform xf = style->getCanvasXform();
                         delView->setCanvasXform(xf);
                     }
                     else
@@ -437,13 +386,21 @@ void WorkspaceViewer::viewDesignElement()
                         // use settings from tiling maker
                         setCanvasFromTiling(tiling,delView);
                     }
-                    mViewers.push_back(delView);
+                    if (selected)
+                    {
+                        mViewers.push_back(delView);
+                    }
+                    else
+                    {
+                        mViewers.push_front(delView);
+                    }
                 }
             }
         }
 
         currentCanvasSettings.setBkgdImage(tiling->getBackground());
-        emit sig_title("Design element");
+        QString astring = QString("Design elements for tiling: %1").arg(tiling->getName());
+        emit sig_title(astring);
     }
     else
     {
@@ -451,10 +408,10 @@ void WorkspaceViewer::viewDesignElement()
     }
 
     currentCanvasSettings.setBackgroundColor(Qt::white);
-    currentCanvasSettings.setCanvasSize(getViewSize(VIEW_DEL));
+    currentCanvasSettings.setCanvasSize(getViewSize(VIEW_DESIGN_ELEMENT));
 }
 
-void WorkspaceViewer::viewFigureMaker()
+void WorkspaceViewer::viewPrototypeMaker()
 {
     // this is used by FigureMaker
     // this is what we want to see painted
@@ -473,7 +430,7 @@ void WorkspaceViewer::viewFigureMaker()
     QString astring = QString("WS Figure: dep=%1 fig=%2").arg(Utils::addr(dep.get())).arg(Utils::addr(dep->getFigure().get()));
     emit sig_title(astring);
 
-    QSize sz = getViewSize(VIEW_FIGURE_MAKER);
+    QSize sz = getViewSize(VIEW_FROTOTYPE_MAKER);
     currentCanvasSettings.setCanvasSize(sz);
     currentCanvasSettings.setBackgroundColor(config->figureViewBkgdColor);
     figView->setCenter(QRect(QPoint(0,0),sz).center());
@@ -481,7 +438,7 @@ void WorkspaceViewer::viewFigureMaker()
 
 void WorkspaceViewer::viewTiling()
 {
-    TilingPtr tiling = workspace->getTiling();
+    TilingPtr tiling = workspace->getCurrentTiling();
 
     qDebug() << "++WorkspaceViewer::viewTiling (tiling)"  << tiling->getName();
 
@@ -510,11 +467,10 @@ void WorkspaceViewer::viewTiling()
 
 void WorkspaceViewer::viewTilingMaker()
 {
-    TilingPtr tiling     = workspace->getTiling();
-
-    qDebug() << "++WorkspaceViewer::viewTilingMaker" << tiling->getName();
-
     TilingMakerPtr tilingMaker = TilingMaker::getSharedInstance();
+    TilingPtr tiling           = tilingMaker->getTiling();
+    qDebug() << "++WorkspaceViewer::viewTilingMaker";
+
     if (setCanvasFromDesign())
     {
         // use settings from design
@@ -523,14 +479,16 @@ void WorkspaceViewer::viewTilingMaker()
         Xform xf    = sp->getCanvasXform();
         tilingMaker->setCanvasXform(xf);
     }
-    else
+    else if (tiling)
     {
         setCanvasFromTiling(tiling,tilingMaker);
     }
 
     currentCanvasSettings.setBackgroundColor(Qt::white);
-    currentCanvasSettings.setBkgdImage(tiling->getBackground());
-
+    if (tiling)
+    {
+        currentCanvasSettings.setBkgdImage(tiling->getBackground());
+    }
     mViewers.push_back(tilingMaker);  // add to non-deletable styles not viewers
 }
 
@@ -554,12 +512,10 @@ void WorkspaceViewer::viewMapEditor()
 
 void WorkspaceViewer::viewFaceSet()
 {
-    if (config->faceSet)
-    {
-        qDebug() << "++WorkspaceViewer::viewFaceSet";
-        LayerPtr fsView = make_shared<FaceSetView>(config->faceSet);
-        mViewers.push_back(fsView);
-    }
+    qDebug() << "++WorkspaceViewer::viewFaceSet";
+    LayerPtr fsView = make_shared<FaceSetView>(config->faces);
+    mViewers.push_back(fsView);
+
     currentCanvasSettings.setBackgroundColor(Qt::black);
     currentCanvasSettings.setCanvasSize(getViewSize(VIEW_FACE_SET));
 }

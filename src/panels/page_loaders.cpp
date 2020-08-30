@@ -152,21 +152,24 @@ void page_loaders::makeConnections()
     connect(tilingFilter,   &QLineEdit::textEdited,         this ,   &page_loaders::slot_tilingFilter);
     connect(mosaicFilterCheck, &QCheckBox::clicked,         this ,   &page_loaders::slot_mosaicCheck);
     connect(tilingFilterCheck, &QCheckBox::clicked,         this ,   &page_loaders::slot_tilingCheck);
-    connect(this,           &page_loaders::sig_loadXML,     tpm,   &TiledPatternMaker::slot_loadXML);
+    connect(this,           &page_loaders::sig_loadMosaic,  tpm,   &TiledPatternMaker::slot_loadMosaic);
     connect(this,           &page_loaders::sig_loadTiling,  tpm,   &TiledPatternMaker::slot_loadTiling);
     connect(this,           &page_loaders::sig_loadDesign,  tpm,   &TiledPatternMaker::slot_loadDesign);
     connect(this,           &page_loaders::sig_buildDesign, tpm,   &TiledPatternMaker::slot_buildDesign);
 
-    connect(designList,     &QListWidget::currentItemChanged, this,  &page_loaders::designSelected);
+  //connect(designList,     &QListWidget::currentItemChanged, this,  &page_loaders::designSelected);
+    connect(designList,     &QListWidget::itemClicked,        this,  &page_loaders::designClicked);
     connect(designList,     SIGNAL(rightClick(QPoint)),       this,  SLOT(desRightClick(QPoint)));
 
-    connect(mosaicList,        &QListWidget::currentItemChanged, this,  &page_loaders::xmlSelected);
-    connect(mosaicList,        &LoaderListWidget::itemEntered,   this,  &page_loaders::slot_itemEnteredToolTip);
-    connect(mosaicList,        SIGNAL(rightClick(QPoint)),       this,  SLOT(xmlRightClick(QPoint)));
-    connect(mosaicList,        SIGNAL(leftDoubleClick(QPoint)),  this,  SLOT(loadXML()));
-    connect(mosaicList,        SIGNAL(listEnter()),              this,  SLOT(loadXML()));
+  //connect(mosaicList,     &QListWidget::currentItemChanged, this,  &page_loaders::mosaicSelected);
+    connect(mosaicList,     &QListWidget::itemClicked,         this,  &page_loaders::mosaicClicked);
+    connect(mosaicList,     &LoaderListWidget::itemEntered,   this,  &page_loaders::slot_itemEnteredToolTip);
+    connect(mosaicList,     SIGNAL(rightClick(QPoint)),       this,  SLOT(xmlRightClick(QPoint)));
+    connect(mosaicList,     SIGNAL(leftDoubleClick(QPoint)),  this,  SLOT(loadXML()));
+    connect(mosaicList,      SIGNAL(listEnter()),              this,  SLOT(loadXML()));
 
-    connect(tileList,       &QListWidget::currentItemChanged, this,  &page_loaders::tilingSelected);
+  //connect(tileList,       &QListWidget::currentItemChanged, this,  &page_loaders::tilingSelected);
+    connect(tileList,       &QListWidget::itemClicked,        this,  &page_loaders::tilingClicked);
     connect(tileList,       SIGNAL(rightClick(QPoint)),       this, SLOT(tileRightClick(QPoint)));
 
     connect(cbAutoLoadMosaics,   SIGNAL(clicked(bool)),         this,    SLOT(autoLoadStylesClicked(bool)));
@@ -223,29 +226,29 @@ void page_loaders::loadXML()
         return;
     }
 
-    emit sig_loadXML(selectedXMLName);
+    emit sig_loadMosaic(selectedXMLName);
 
     if (!config->lockView)
     {
-        if (config->viewerType != VIEW_MOSAIC)
-        {
-            emit panel->sig_selectViewer(VIEW_MOSAIC);
-        }
+       panel->selectViewer(VIEW_MOSAIC);
     }
     emit sig_viewWS();
 }
 
 void page_loaders::loadTiling()
 {
+    // loading this way loads a single tiling into the tiling maker
+    // ro add additional tilings, use the tiling maker "Add" function
+
     QString name = selectedTilingName;
+
+    workspace->resetTilings();
+
     emit sig_loadTiling(name);
 
     if (!config->lockView)
     {
-        if (config->viewerType != VIEW_TILING_MAKER)
-        {
-            emit panel->sig_selectViewer(VIEW_TILING);
-        }
+        panel->selectViewer(VIEW_TILING);
     }
     emit sig_viewWS();
 }
@@ -256,10 +259,7 @@ void page_loaders::loadShapes()
 
     if (!config->lockView)
     {
-        if (config->viewerType != VIEW_DESIGN)
-        {
-            emit panel->sig_selectViewer(VIEW_DESIGN);
-        }
+       panel->selectViewer(VIEW_DESIGN);
     }
     emit sig_viewWS();
 }
@@ -374,7 +374,11 @@ void page_loaders::loadXMLCombo()
     mosaicList->blockSignals(true);
     mosaicList->addItemList(list);
     mosaicList->blockSignals(false);
-    if (!mosaicList->selectItemByName(config->lastLoadedXML))
+    if (mosaicList->selectItemByName(config->lastLoadedXML))
+    {
+        selectedXMLName = config->lastLoadedXML;
+    }
+    else
     {
         config->lastLoadedXML.clear();
     }
@@ -443,10 +447,30 @@ void page_loaders::tilingSelected(QListWidgetItem *item, QListWidgetItem *oldIte
     loadTiling();
 }
 
-void page_loaders::xmlSelected(QListWidgetItem *item, QListWidgetItem *oldItem)
+void page_loaders::mosaicSelected(QListWidgetItem *item, QListWidgetItem *oldItem)
 {
     Q_UNUSED(oldItem)
     selectedXMLName = item->text();
+}
+
+void page_loaders::designClicked(QListWidgetItem * item)
+{
+    qDebug() << "page_loaders::designSelected";
+    selectedDesign = static_cast<eDesign>(item->data(Qt::UserRole).toInt());
+    emit sig_loadDesign(selectedDesign);
+    panel->selectViewer(VIEW_DESIGN);
+}
+
+void page_loaders::tilingClicked(QListWidgetItem *item)
+{
+    selectedTilingName = item->text();
+    loadTiling();
+}
+
+void page_loaders::mosaicClicked(QListWidgetItem *item)
+{
+    selectedXMLName = item->text();
+    panel->selectViewer(VIEW_MOSAIC);
 }
 
 void page_loaders::slot_itemEnteredToolTip(QListWidgetItem * item)

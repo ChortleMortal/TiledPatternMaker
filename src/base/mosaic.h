@@ -27,7 +27,7 @@
 
 #include "base/shared.h"
 #include "base/canvas_settings.h"
-#include <QVector>
+#include "base/misc.h"
 
 typedef QVector<StylePtr> StyleSet;
 
@@ -49,8 +49,8 @@ public:
 
     const StyleSet & getStyleSet() { return styleSet; }
 
-    void             setPrototype(StylePtr style, PrototypePtr pp);
-    QVector<PrototypePtr>     getUniquePrototypes();
+    void                  setPrototype(StylePtr style, PrototypePtr pp);
+    QVector<PrototypePtr> getUniquePrototypes();
 
     CanvasSettings & getCanvasSettings();
     void             setCanvasSettings(CanvasSettings settings);
@@ -63,8 +63,8 @@ public:
     void        setNotes(QString notes);
     QString     getNotes();
 
-    TilingPtr   getTiling();
-    void        setTiling(TilingPtr tp);    // use carefully
+    void          replaceTiling(PrototypePtr proto, TilingPtr tp);    // use carefully
+    UniqueQVector<TilingPtr> getTilings();
 
 private:
     StyleSet            styleSet;

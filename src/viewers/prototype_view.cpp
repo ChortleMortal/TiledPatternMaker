@@ -1,4 +1,4 @@
-﻿/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
+/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
  *
  *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
  *
@@ -22,91 +22,116 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-////////////////////////////////////////////////////////////////////////////
-//
-// DesignPreview.java
-//
-// Boy, am I glad I thought of this class.  The design preview uses the
-// same FillRegion algorithm as TilingViewer (used by TilingCard, for
-// instance), to draw instead the _figures_ as they would appear in the
-// final design.  Because we're not constructing the map, just drawing
-// lines, previewing the design is really fast.  Plus, you can use the
-// viewport of the preview window to indicate the region to fill for the
-// final design -- I was searching for a way to let the user express
-// this piece of information.
-//
-// This class just turns the translational unit into a collection of line
-// segments and then draws them repeatedly to fill the window.
-
+#include "base/configuration.h"
 #include "viewers/workspace_viewer.h"
 #include "viewers/prototype_view.h"
 #include "viewers/viewerbase.h"
 
-ProtoView::ProtoView(PrototypePtr proto) : Layer("ProtoView")
+#include "geometry/point.h"
+
+PrototypeView::PrototypeView(PrototypePtr proto,int mode) : Layer("ProtoFeatureView")
 {
-    qDebug() << "ProtoView::constructor";
+    qDebug() << "ProtoFeatureView::constructor";
     Q_ASSERT(proto);
 
+    feature_interior = QColor(255, 217, 217, 127);
+    feature_border   = QColor(140, 140, 140);
+    layerPen         = QPen(QColor(20,150,210),3);
+
     this->proto = proto;
+    this->mode  = mode;
 
-    MapPtr map = proto->getProtoMap();
-
-    for(auto edge : map->getEdges())
+    if (mode & PROTO_DRAW_MAP)
     {
-        edges.push_back(edge);
+        MapPtr map = proto->getProtoMap();
+
+        for(auto edge : map->getEdges())
+        {
+           edges.push_back(edge);
+        }
     }
 
     TilingPtr tiling = proto->getTiling();
     Q_ASSERT(tiling);
 
-    for(auto placedFeature : tiling->getPlacedFeatures())
+    t1 = tiling->getTrans1();
+    t2 = tiling->getTrans2();
+
+    if (mode & (PROTO_DRAW_FEATURES | PROTO_DRAW_FIGURES))
     {
-        FeaturePtr feature  = placedFeature->getFeature();
-        QTransform T        = placedFeature->getTransform();
-        FigurePtr fig       = proto->getFigure(feature );
+        for(auto placedFeature : tiling->getPlacedFeatures())
+        {
+            FeaturePtr feature  = placedFeature->getFeature();
+            QTransform T        = placedFeature->getTransform();
+            FigurePtr fig       = proto->getFigure(feature );
 
-        PlacedDesignElement rpf(feature,fig,T);
-        rpfs.push_back(rpf);
+            PlacedDesignElement rpf(feature,fig,T);
+            rpfs.push_back(rpf);
+        }
     }
-
     forceRedraw();
 }
 
-void ProtoView::paint(QPainter *painter)
+void PrototypeView::paint(QPainter *painter)
 {
+    qDebug() << "ProtoFeatureView::paint";
+
     painter->setRenderHint(QPainter::Antialiasing ,true);
     painter->setRenderHint(QPainter::SmoothPixmapTransform,true);
 
     QTransform tr = getLayerTransform();
-    qDebug() << "PrototypeView::paint"  << Transform::toInfoString(tr);
     GeoGraphics gg(painter,tr);
-
     draw(&gg);
 
-    if (config->showCenter)
+    drawCenter(painter);
+}
+
+void PrototypeView::draw( GeoGraphics * gg )
+{
+    if (mode & PROTO_DRAW_MAP)
     {
-        QPointF pt = getCenter();
-        qDebug() << "style layer center=" << pt;
-        painter->setPen(QPen(Qt::green,3));
-        painter->setBrush(QBrush(Qt::green));
-        painter->drawEllipse(pt,13,13);
+        layerPen = QPen(QColor(20,150,210),3);
+        edges.draw(gg, layerPen);
+    }
+
+    if (mode & (PROTO_DRAW_FEATURES | PROTO_DRAW_FIGURES))
+    {
+        fill(gg);
     }
 }
 
-void ProtoView::draw( GeoGraphics * gg )
+void PrototypeView::receive(GeoGraphics *gg, int h, int v )
 {
-    layerPen = QPen(QColor(20,150,210),3);
-    edges.draw(gg, layerPen);
 
-    layerPen.setColor(Qt::yellow);
     for (auto placedDesignElement : rpfs)
     {
+        QPointF pt    = (t1 * static_cast<qreal>(h)) + (t2 * static_cast<qreal>(v));
         QTransform T0 = placedDesignElement.getTransform();
+        QTransform T1 = QTransform::fromTranslate(pt.x(),pt.y());
+        QTransform T2 = T0 * T1;
 
-        gg->pushAndCompose(T0);
+        gg->pushAndCompose(T2);
 
-        ViewerBase::drawFigure(gg,placedDesignElement.getFigure(),layerPen);
+        if (mode & PROTO_DRAW_FEATURES)
+        {
+            //ViewerBase::drawFeature(gg,placedDesignElement.getFeature(),QBrush(feature_interior),QPen(feature_border,3));
+            ViewerBase::drawFeature(gg,placedDesignElement.getFeature(),QBrush(),QPen(feature_border,3));
+        }
 
+        if (mode & PROTO_DRAW_FIGURES)
+        {
+            ViewerBase::drawFigure(gg,placedDesignElement.getFigure(),QPen(Qt::green,3));
+        }
+
+        //if (workspace->getSelectedDesignElement() == placedDesignElement)
+        {
+
+        }
+        if (workspace->getSelectedFeature() == placedDesignElement.getFeature())
+        {
+
+        }
         gg->pop();
     }
 }
+

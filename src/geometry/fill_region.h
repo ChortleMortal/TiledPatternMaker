@@ -65,10 +65,10 @@ public:
     virtual void receive(class GeoGraphics * gg, int h, int v ) = 0;
 
 protected:
-
-private:
     Configuration * config;
     Workspace     * workspace;
+
+private:
 
 };
 #endif

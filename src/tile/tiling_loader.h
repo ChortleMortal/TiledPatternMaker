@@ -34,15 +34,16 @@
 
 class TilingLoader
 {
-public:
-    TilingLoader() {}
+    friend class TilingManager;
 
+public:
     TilingPtr   readTiling(QString file);
     TilingPtr   readTiling(QTextStream & st);
     TilingPtr   readTilingXML(QString file);
     TilingPtr   readTilingXML(pugi::xml_node & tiling_node);
 
 protected:
+
     QString     readQuotedString(QTextStream & str);
     QPointF     getPoint(QString txt);
     QTransform  getAffineTransform(QString txt);
@@ -54,6 +55,7 @@ protected:
     void        getViewSettings(pugi::xml_node & node);
 
 private:
+    TilingLoader() {}
     TilingPtr      tiling;
 };
 

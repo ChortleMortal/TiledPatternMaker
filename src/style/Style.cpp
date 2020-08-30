@@ -25,7 +25,6 @@
 #include <QSvgGenerator>
 #include "style/style.h"
 #include "base/configuration.h"
-#include "base/canvas.h"
 #include "base/workspace.h"
 #include "base/view.h"
 #include "base/tiledpatternmaker.h"
@@ -41,6 +40,7 @@ Style::Style(PrototypePtr proto, PolyPtr bounds ) : Layer("Style")
     boundary  = bounds;
     debugMap = make_shared<Map>("Style debug map");
     paintSVG = false;
+    generator = nullptr;
     refs++;
 }
 
@@ -53,8 +53,8 @@ Style::Style(const Style &other) : Layer(other)
     {
         debugMap = other.debugMap;
     }
-    paintSVG = false;
-
+    paintSVG  = false;
+    generator = nullptr;
     refs++;
 }
 
@@ -66,6 +66,7 @@ Style::~Style()
     prototype.reset();
     boundary.reset();
     styleMap.reset();
+    debugMap.reset();
 #endif
 }
 
@@ -157,20 +158,18 @@ void Style::paint(QPainter *painter)
         drawAnnotation(painter,tr);
     }
 
-    if (config->showCenter)
-    {
-        QPointF pt = getCenter();
-        qDebug() << "style layer center=" << pt;
-        painter->setPen(QPen(Qt::green,3));
-        painter->setBrush(QBrush(Qt::green));
-        painter->drawEllipse(pt,13,13);
-    }
+    drawCenter(painter);
 }
 
 void Style::paintToSVG()
 {
+    if (generator == nullptr)
+    {
+        qWarning() << "QSvgGenerator not found";
+        return;
+    }
+
     QPainter painter;
-    QSvgGenerator * generator = canvas->getSvgGenerator();
 
     painter.begin(generator);
 
@@ -183,29 +182,9 @@ void Style::paintToSVG()
 
     draw(&gg);
 
-    if (!debugMap)
-    {
-        qWarning() << "Style::paint - no debug map";
-        return;
-    }
-
-    debugMap->dumpMap(false);
-
-    if (!debugMap->isEmpty())
-    {
-        drawAnnotation(&painter,tr);
-    }
-
-    if (config->showCenter)
-    {
-        QPointF pt = getCenter();
-        qDebug() << "style layer center=" << pt;
-        painter.setPen(QPen(Qt::green,3));
-        painter.setBrush(QBrush(Qt::green));
-        painter.drawEllipse(pt,13,13);
-    }
-
     painter.end();
+
+    generator = nullptr;
 }
 
 void Style::drawAnnotation(QPainter * painter, QTransform T)

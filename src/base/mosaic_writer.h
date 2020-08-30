@@ -25,12 +25,12 @@
 #ifndef XMLWRITER_H
 #define XMLWRITER_H
 
+#include <QtCore>
+#include <string>
 #include "style/style.h"
 #include "tapp/star.h"
 #include "tapp/extended_rosette.h"
-#include <QtCore>
-#include "pugixml.hpp"
-#include <string>
+#include "base/pugixml.hpp"
 #include "base/shared.h"
 #include "base/mosaic.h"
 #include "geometry/xform.h"
@@ -41,13 +41,13 @@ using namespace pugi;
 class Workspace;
 class Configuration;
 
-class XmlWriter
+class MosaicWriter
 {
     friend class TilingWriter;
 
 public:
-    XmlWriter();
-    ~XmlWriter();
+    MosaicWriter();
+    ~MosaicWriter();
 
     bool writeXML(QString fileName, MosaicPtr design);
     bool writeXML(QString fileName, MapPtr map);

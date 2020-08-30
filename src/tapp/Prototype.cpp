@@ -24,7 +24,6 @@
 
 #include "tapp/prototype.h"
 #include "geometry/fill_region.h"
-#include "base/canvas.h"
 #include "base/utilities.h"
 #include "base/tpmsplash.h"
 #include "panels/panel_status.h"
@@ -70,6 +69,7 @@ Prototype::~Prototype()
 void Prototype::setTiling(TilingPtr t)
 {
     tiling = t;
+    resetProtoMap();
 }
 
 void Prototype::addElement(DesignElementPtr element )
@@ -216,13 +216,12 @@ MapPtr Prototype::getProtoMap()
 MapPtr Prototype::createProtoMap(bool showSplash)
 {
     ControlPanel * panel = ControlPanel::getInstance();
-    QString astring = QString("<span style=\"color:rgb(0,240,0)\">Constructing prototype map for tiling: %1</span>").arg(tiling->getName());
-    panel->showStatus(astring);
+    QString astring = QString("Constructing prototype map for tiling: %1").arg(tiling->getName());
+    panel->showPanelStatus(astring);
 #ifdef TPMSPLASH
     if (showSplash)
     {
         // showing splash causes the event queue to bw processed.  This can be quite unwanted.
-        astring = QString("Constructing prototype map for tiling: %1").arg(tiling->getName());
         panel->showSplash(astring);
     }
 #endif
@@ -294,7 +293,7 @@ MapPtr Prototype::createProtoMap(bool showSplash)
 
     qDebug() << "Constructed complete map (ret): vertices=" << protoMap->numVertices() << "edges=" << protoMap->numEdges();
 
-    panel->hideStatus();
+    panel->hidePanelStatus();
 #ifdef TPMSPLASH
     if (showSplash)
     {

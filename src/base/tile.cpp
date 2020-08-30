@@ -22,8 +22,8 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "tile.h"
-#include "configuration.h"
+#include "base/tile.h"
+#include "base/configuration.h"
 
 int Tile::refs = 0;
 
@@ -42,7 +42,7 @@ Tile::~Tile()
 
 LayerPtr Tile::addLayer(int zLevel)
 {
-    LayerPtr layer = make_shared<Layer>("Tile");
+    LayerPtr layer = make_shared<Layer>("Tile Layer");
     layer->setZValue(zLevel);
     addSubLayer(layer);
     return layer;

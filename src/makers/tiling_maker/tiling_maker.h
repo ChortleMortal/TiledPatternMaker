@@ -42,13 +42,11 @@
 #include "tile/tiling_writer.h"
 
 class Canvas;
-class MouseAction;
+class TilingMouseAction;
 
 class TilingMaker : public TilingMakerView
 {
     Q_OBJECT
-
-    friend bool Workspace::saveTiling(QString name, TilingPtr tp);
 
 public:
     static TilingMaker*    getInstance();
@@ -62,8 +60,10 @@ public:
     void clearMakerData();
     void updatePlacedFeaturesFromData();
 
-    QString  getStatus();
+    void      setTiling(TilingPtr tp);
+    TilingPtr getTiling() { return currentTiling; }
     TilingSelectionPtr getCurrentSelection() { return currentSelection; }
+
 
     bool verifyTiling();
     void removeFeature(PlacedFeaturePtr pf);
@@ -77,7 +77,8 @@ public:
     QPointF getTrans2();
     void    fixupTranslate(TilingPtr tiling);
 
-    eMouseMode getMouseMode();
+    eTilingMouseMode getMouseMode();
+    QString    getStatus();
     int        getPolygonSides() { return poly_side_count; }
 
     // Mouse interaction underway..
@@ -88,7 +89,7 @@ public:
     QPointF     featureEditPoint;
 
     // Feature management.
-    int         addToAllPlacedFeatures( PlacedFeaturePtr pf );
+    void        addNewPlacedFeature(PlacedFeaturePtr pf);
     TilingSelectionPtr addFeatureSelectionPointer(TilingSelectionPtr sel );
     void        removeFeature(TilingSelectionPtr sel);
     void        addToTranslate(QPointF wpt, bool ending);
@@ -112,11 +113,10 @@ signals:
     void sig_current_feature(int fIndex);
 
 public slots:
-    void slot_setTiling();
     void slot_unload();
     void updatePolygonSides(int number);
     void updatePolygonRot(qreal angle);
-    void setMouseMode(eMouseMode mode);
+    void setMouseMode(eTilingMouseMode mode);
     void addRegularPolygon();
     void fillUsingTranslations();
     void removeExcluded();
@@ -145,7 +145,7 @@ protected slots:
     void slot_editMagnitude();
 
 protected:
-    void setupMaker();
+    void setupMaker(TilingPtr tp);
     void addInTiling(PlacedFeaturePtr pf);
     void removeFromInTiling(PlacedFeaturePtr pf);
 
@@ -191,7 +191,6 @@ private:
     QPointF     wTrans2_start;
     QPointF     wTrans2_end;
 
-    Canvas          * canvas;
     View            * view;
     Workspace       * workspace;
 };

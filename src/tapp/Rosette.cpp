@@ -40,7 +40,6 @@
 #include "geometry/intersect.h"
 #include "geometry/transform.h"
 #include "designs/shapefactory.h"
-#include "base/canvas.h"
 #include "tile/feature.h"
 
 Rosette::Rosette(const Figure & fig,  int nsides, qreal q, int s, qreal k, qreal r)

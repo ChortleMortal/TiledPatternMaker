@@ -7,11 +7,13 @@
 
 void  ViewerBase::drawFeature(GeoGraphics * gg, FeaturePtr fp, QBrush brush, QPen pen)
 {
-    qDebug() << "draw feature" << Utils::addr(fp.get());
+    EdgePoly ep   = fp->getEdgePoly();
 
     // Fill the feature.
-    EdgePoly ep   = fp->getEdgePoly();
-    gg->fillEdgePoly(ep, brush.color());
+    if (brush.style() != Qt::NoBrush)
+    {
+        gg->fillEdgePoly(ep, brush.color());
+    }
 
     // Outline the feature.
     gg->drawEdgePoly(ep,pen.color(), pen.width());

@@ -25,7 +25,7 @@
 #ifndef PAGE_WORKSPACE_H
 #define PAGE_WORKSPACE_H
 
-#include "panel_page.h"
+#include "panels/panel_page.h"
 
 class page_workspace : public panel_page
 {

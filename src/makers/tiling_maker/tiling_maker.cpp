@@ -32,7 +32,6 @@
 // previous version.
 
 #include "base/configuration.h"
-#include "base/canvas.h"
 #include "base/shortcuts.h"
 #include "base/workspace.h"
 #include "makers/tiling_maker/tiling_maker.h"
@@ -92,7 +91,6 @@ TilingMaker::TilingMaker() : TilingMakerView()
 {
     qDebug() << "TilingMaker::TilingMaker";
 
-    canvas    = Canvas::getInstance();
     view      = View::getInstance();
     workspace = Workspace::getInstance();
 
@@ -105,13 +103,12 @@ TilingMaker::TilingMaker() : TilingMakerView()
     poly_rotation   = 0.0;
 }
 
-void TilingMaker::slot_setTiling()
+// sets up the tiling used by the maker
+void TilingMaker::setTiling(TilingPtr tp)
 {
-    TilingPtr tp = workspace->getTiling();
-
     clearMakerData();
 
-    setupMaker();
+    setupMaker(tp);
 
     if (config->viewerType == VIEW_TILING_MAKER)
     {
@@ -152,14 +149,13 @@ void TilingMaker::clearMakerData()
     wTrans2_end   = QPointF();
 }
 
-void TilingMaker::setupMaker()
+void TilingMaker::setupMaker(TilingPtr tiling)
 {
-    TilingPtr tiling = workspace->getTiling();
-    QList<PlacedFeaturePtr> & qlpf = tiling->getPlacedFeatures();
+    const QVector<PlacedFeaturePtr> & qlpf = tiling->getPlacedFeatures();
     for(auto it = qlpf.begin(); it != qlpf.end(); it++)
     {
         PlacedFeaturePtr pf = *it;
-        addToAllPlacedFeatures(pf);
+        allPlacedFeatures.push_back(pf);
         in_tiling.push_back(pf);
     }
 
@@ -184,20 +180,17 @@ void TilingMaker::setupMaker()
     // set the layer transform and the view size
     wsViewer->setViewSize(VIEW_TILING_MAKER,tiling->getCanvasSize());
     Layer::setCanvasXform(tiling->getCanvasXform());
-
-    qtr_layer.reset();     // forced recompute of layer transform
 }
 
 void TilingMaker::pushTiling()
 {
-    TilingPtr tiling = workspace->getTiling();
-    tiling->setDirty(true);
+    currentTiling->setState(TILING_MODIFED);
 
     MosaicPtr mosaic  = workspace->getMosaic();
     QVector<PrototypePtr> prototypes = mosaic->getUniquePrototypes();
     for (auto prototype : prototypes)
     {
-        prototype->setTiling(tiling);
+        prototype->setTiling(currentTiling);
         prototype->createProtoMap();
     }
 
@@ -217,21 +210,10 @@ void TilingMaker::hide(bool state)
 
 void TilingMaker::updatePlacedFeaturesFromData()
 {
-    if (in_tiling.size() <= 0)
+    if (in_tiling != currentTiling->getPlacedFeatures())
     {
-        return;
+        currentTiling->setPlacedFeatures(in_tiling);
     }
-
-    // need to remove what is there already
-    TilingPtr tiling = workspace->getTiling();
-    tiling->getPlacedFeatures().clear();
-
-    // We assume the data has already been verified (verifyTiling() == true).
-    for (auto placedFeature : in_tiling)
-    {
-        tiling->add(placedFeature);
-    }
-    tiling->setDirty(true);
 }
 
 bool TilingMaker::verifyTiling()
@@ -380,7 +362,7 @@ void TilingMaker::drawTiling( GeoGraphics * g2d )
     }
 }
 
-void TilingMaker::setMouseMode(eMouseMode mode)
+void TilingMaker::setMouseMode(eTilingMouseMode mode)
 {
     mouse_mode = mode;
 
@@ -390,30 +372,23 @@ void TilingMaker::setMouseMode(eMouseMode mode)
     forceRedraw();
 }
 
-eMouseMode TilingMaker::getMouseMode()
+eTilingMouseMode TilingMaker::getMouseMode()
 {
     return mouse_mode;
 }
 
 // Feature management.
 
-int TilingMaker::addToAllPlacedFeatures(PlacedFeaturePtr pf)
+void TilingMaker::addNewPlacedFeature(PlacedFeaturePtr pf)
 {
-    int add_pos = allPlacedFeatures.size();
     allPlacedFeatures.push_front(pf);   // push_front so it (the new) becomes selected for move
-
-    if (config->viewerType == VIEW_TILING_MAKER)
-    {
-        forceRedraw();
-    }
-    return add_pos;
 }
 
 TilingSelectionPtr TilingMaker::addFeatureSelectionPointer(TilingSelectionPtr sel)
 {
     PlacedFeaturePtr pf    = sel->getPlacedFeature();
     PlacedFeaturePtr pfnew = make_shared<PlacedFeature>(pf->getFeature(), pf->getTransform());
-    addToAllPlacedFeatures(pfnew);
+    addNewPlacedFeature(pfnew);
 
     TilingSelectionPtr ret;
     switch (sel->getType())
@@ -604,7 +579,7 @@ void TilingMaker::createFillCopies()
                 QPointF pt = (t1*x) + (t2 * y);
                 QTransform tt = QTransform::fromTranslate(pt.x(),pt.y());
                 QTransform placement= T * tt;
-                addToAllPlacedFeatures(make_shared<PlacedFeature>( f, placement ) );
+                allPlacedFeatures.push_back(make_shared<PlacedFeature>(f, placement));
             }
         }
     }
@@ -920,7 +895,7 @@ void TilingMaker::addRegularPolygon()
 
      FeaturePtr f = make_shared<Feature>(poly_side_count,poly_rotation);
      QTransform t;
-     addToAllPlacedFeatures(make_shared<PlacedFeature>(f,t));
+     addNewPlacedFeature(make_shared<PlacedFeature>(f,t));
      forceRedraw();
      emit sig_buildMenu();
 }
@@ -990,7 +965,7 @@ void TilingMaker::copyPolygon(TilingSelectionPtr sel)
     if (sel)
     {
         PlacedFeaturePtr pf = sel->getPlacedFeature();
-        addToAllPlacedFeatures(make_shared<PlacedFeature>(pf->getFeature(), pf->getTransform()));
+        addNewPlacedFeature(make_shared<PlacedFeature>(pf->getFeature(), pf->getTransform()));
         forceRedraw();
         emit sig_buildMenu();
     }
@@ -1334,7 +1309,7 @@ void TilingMaker::startMouseInteraction(QPointF spt, enum Qt::MouseButton mouseB
             case FEAT_CENTER:
                 if (config->kbdMode == KBD_MODE_CENTER)
                 {
-                    xf_canvas.setCenter(spt);
+                    slot_setCenter(spt);
                 }
                 break;
             case SCREEN_POINT:
@@ -1499,7 +1474,7 @@ bool TilingMaker::procKeyEvent(QKeyEvent * k)
         case 'E': excludeAll(); break;
         case 'F': fillUsingTranslations(); break;
         case 'I': toggleInclusion(findFeatureUnderMouse()); break;
-        case 'M': emit canvas->sig_raiseMenu(); break;
+        case 'M': emit view->sig_raiseMenu(); break;
         case 'R': removeExcluded(); break;
         case 'Q': QApplication::quit(); break;
         case 'X': clearTranslationVectors(); break;

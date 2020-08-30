@@ -87,7 +87,6 @@ protected:
     QString				pageName;
 
     ControlPanel      * panel;
-    Canvas            * canvas;
     View              * view;
     Configuration     * config;
     Workspace         * workspace;

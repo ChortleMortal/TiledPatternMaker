@@ -24,13 +24,12 @@
 
 #include "panels/page_layers.h"
 #include "designs/patterns.h"
-#include "base/canvas.h"
 #include "base/utilities.h"
 #include "viewers/workspace_viewer.h"
 
 using std::string;
 
-Q_DECLARE_METATYPE(LayerPtr)
+Q_DECLARE_METATYPE(WeakLayerPtr)
 
 page_layers:: page_layers(ControlPanel * cpanel)  : panel_page(cpanel,"Layer Info")
 {
@@ -45,8 +44,8 @@ page_layers:: page_layers(ControlPanel * cpanel)  : panel_page(cpanel,"Layer Inf
     QStringList qslV;
     qslV << "Layer" << "Visible" << "Z-level" << "Align-to"
          << "View Scale"  << "View Rot"  << "View Left (X)"  << "View Top (Y)"
-         << "Canvas Scale" << "Canvas Rot" << "Canvas Left (X)" << "Canvas Top (Y)" << "Clear"
-         << "Center" << "Layer Scale" << "Layer Rot" << "Layer X" << "Layer Y" << "Sub-layers";
+         << "Canvas Scale" << "Canvas Rot" << "Canvas Left (X)" << "Canvas Top (Y)" << "Canvas Centre" << "Clear"
+         << "Layer Centre" << "Layer Scale" << "Layer Rot" << "Layer X" << "Layer Y" << "Sub-layers";
 
     layerTable->setVerticalHeaderLabels(qslV);
     layerTable->horizontalHeader()->setVisible(false);
@@ -54,19 +53,19 @@ page_layers:: page_layers(ControlPanel * cpanel)  : panel_page(cpanel,"Layer Inf
     layerTable->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     layerTable->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
-    connect(&visibilityMapper, SIGNAL(mapped(int)), this, SLOT(slot_visibilityChanged(int)),Qt::UniqueConnection);
-    connect(&zMapper,        SIGNAL(mapped(int)), this, SLOT(slot_zChanged(int)),Qt::UniqueConnection);
-    connect(&alignMapper,    SIGNAL(mapped(int)), this, SLOT(slot_alignPressed(int)),Qt::UniqueConnection);
+    connect(&visibilityMapper, SIGNAL(mapped(int)), this, SLOT(slot_visibilityChanged(int)));
+    connect(&zMapper,        SIGNAL(mapped(int)), this, SLOT(slot_zChanged(int)));
+    connect(&alignMapper,    SIGNAL(mapped(int)), this, SLOT(slot_alignPressed(int)));
     connect(&leftMapper,     SIGNAL(mapped(int)), this, SLOT(slot_set_deltas(int)));
     connect(&topMapper,      SIGNAL(mapped(int)), this, SLOT(slot_set_deltas(int)));
     connect(&widthMapper,    SIGNAL(mapped(int)), this, SLOT(slot_set_deltas(int)));
     connect(&rotMapper,      SIGNAL(mapped(int)), this, SLOT(slot_set_deltas(int)));
     connect(&clearMapper,    SIGNAL(mapped(int)), this, SLOT(slot_clear_deltas(int)));
 
-    connect(canvas, &Canvas::sig_deltaScale,    this, &page_layers::refreshPage);
-    connect(canvas, &Canvas::sig_deltaRotate,   this, &page_layers::refreshPage);
-    connect(canvas, &Canvas::sig_deltaMoveY,    this, &page_layers::refreshPage);
-    connect(canvas, &Canvas::sig_deltaMoveX,    this, &page_layers::refreshPage);
+    connect(view, &View::sig_deltaScale,    this, &page_layers::refreshPage);
+    connect(view, &View::sig_deltaRotate,   this, &page_layers::refreshPage);
+    connect(view, &View::sig_deltaMoveY,    this, &page_layers::refreshPage);
+    connect(view, &View::sig_deltaMoveX,    this, &page_layers::refreshPage);
 }
 
 void page_layers::onEnter()
@@ -93,7 +92,7 @@ void  page_layers::refreshPage()
         // design number
         QTableWidgetItem * twi = layerTable->item(LAYER_NAME,col);
         twi->setText(QString("%1 %2").arg(layer->getName()).arg(Utils::addr(layer.get())));
-        twi->setData(Qt::UserRole,QVariant::fromValue(layer));
+        twi->setData(Qt::UserRole,QVariant::fromValue(WeakLayerPtr(layer)));
 
         // layer number and visibility
         QWidget * w = layerTable->cellWidget(LAYER_VISIBILITY,col);
@@ -158,8 +157,12 @@ void  page_layers::refreshPage()
         spin->setValue(xf.getTranslateY());
         w->blockSignals(false);
 
+        twi = layerTable->item(CANVAS_CENTER,col);
+        QPointF center = xf.getCenter();
+        twi->setText(QString("%1 : %2").arg(center.x()).arg(center.y()));
+
         twi = layerTable->item(LAYER_CENTER,col);
-        QPointF center = layer->getCenter();
+        center = layer->getCenter();
         twi->setText(QString("%1 : %2").arg(center.x()).arg(center.y()));
 
         // layer transform
@@ -211,7 +214,7 @@ void page_layers::populateLayer(LayerPtr layer, int col)
 {
     // design number
     QTableWidgetItem * twi = new QTableWidgetItem(layer->getName());
-    twi->setData(Qt::UserRole,QVariant::fromValue(layer));
+    twi->setData(Qt::UserRole,QVariant::fromValue(WeakLayerPtr(layer)));
     layerTable->setItem(LAYER_NAME,col,twi);
 
     // layer number and visibility
@@ -238,7 +241,7 @@ void page_layers::populateLayer(LayerPtr layer, int col)
     alignMapper.setMapping(abtn,col);
 
     // view transform
-    QTransform t = layer->getViewTransform();
+    QTransform t = layer->getLayerTransform();
 
     QTableWidgetItem * item = new QTableWidgetItem( QString::number(Transform::scalex(t),'f',16));
     layerTable->setItem(VIEW_SCALE,col,item);
@@ -298,7 +301,12 @@ void page_layers::populateLayer(LayerPtr layer, int col)
     rotMapper.setMapping(drot,col);
 
     twi = new QTableWidgetItem();
+    layerTable->setItem(CANVAS_CENTER,col,twi);
+    twi->setBackground(Qt::yellow);
+
+    twi = new QTableWidgetItem();
     layerTable->setItem(LAYER_CENTER,col,twi);
+    twi->setBackground(Qt::yellow);
 
     // layer transform
     t = layer->getLayerTransform();
@@ -335,12 +343,17 @@ void page_layers::slot_visibilityChanged(int col)
 
     QTableWidgetItem * twi = layerTable->item(LAYER_NAME,col);
     QVariant tmp = twi->data(Qt::UserRole);
-    LayerPtr layer = tmp.value<LayerPtr>();
-
-    qDebug() << "visibility changed: row=" << col << "layer=" << layer->getName();
-
-    layer->setVisible(visible);
-    layer->forceRedraw();
+    if (tmp.canConvert<WeakLayerPtr>())
+    {
+        WeakLayerPtr wlayer = tmp.value<WeakLayerPtr>();
+        LayerPtr layer = wlayer.lock();
+        if (layer)
+        {
+            qDebug() << "visibility changed: row=" << col << "layer=" << layer->getName();
+            layer->setVisible(visible);
+            layer->forceRedraw();
+        }
+    }
 }
 
 void page_layers::slot_zChanged(int col)
@@ -350,12 +363,16 @@ void page_layers::slot_zChanged(int col)
 
     QTableWidgetItem * twi = layerTable->item(LAYER_NAME,col);
     QVariant tmp = twi->data(Qt::UserRole);
-    LayerPtr layer = tmp.value<LayerPtr>();
-
-    qDebug() << "z-level changed: row=" << col << "layer=" << layer->getName();
-
-    layer->setZValue(z);
-    layer->forceRedraw();
+    {
+        WeakLayerPtr wlayer = tmp.value<WeakLayerPtr>();
+        LayerPtr layer = wlayer.lock();
+        if (layer)
+        {
+            qDebug() << "z-level changed: row=" << col << "layer=" << layer->getName();
+            layer->setZValue(z);
+            layer->forceRedraw();
+        }
+    }
 }
 
 void page_layers::slot_alignPressed(int col)
@@ -363,7 +380,18 @@ void page_layers::slot_alignPressed(int col)
     // get from settings
     QTableWidgetItem * twi = layerTable->item(LAYER_NAME,col);
     QVariant tmp = twi->data(Qt::UserRole);
-    LayerPtr layer = tmp.value<LayerPtr>();
+    WeakLayerPtr wklayer;
+    LayerPtr layer;
+    if (tmp.canConvert<WeakLayerPtr>())
+    {
+        wklayer = tmp.value<WeakLayerPtr>();
+        layer = wklayer.lock();
+    }
+    if (!layer)
+    {
+        return;
+    }
+
     Xform xf =  layer->getCanvasXform();
 
     qDebug() << "align to: col=" << col << "layer=" << layer->getName();

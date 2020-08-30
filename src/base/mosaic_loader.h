@@ -27,7 +27,7 @@
 
 #include <QtCore>
 #include <string>
-#include "pugixml.hpp"
+#include "base/pugixml.hpp"
 #include "style/style.h"
 #include "base/shared.h"
 #include "geometry/xform.h"
@@ -42,11 +42,11 @@ using namespace pugi;
 
 class Workspace;
 
-class XmlLoader
+class MosaicLoader
 {
 public:
-    XmlLoader();
-    ~XmlLoader();
+    MosaicLoader();
+    ~MosaicLoader();
 
     MosaicPtr loadMosaic(QString fileName);
     MapPtr    loadMosaicMap(QString fileName);
@@ -143,6 +143,8 @@ protected:
     StarConnectPtr  getStarConnectReferencedPtr(xml_node & node);
     MapPtr          getMapReferencedPtr(xml_node & node);
 
+    TilingPtr       findTiling(QString name);
+    TilingPtr       getFirstTiling() { return _tilings.first(); }
 
 private:
     QColor  processColor(xml_node & n);
@@ -168,10 +170,9 @@ private:
     QMap<int,MapPtr>        map_ids;
 
     MapPtr                  _currentMap;
-    MosaicPtr               mosaic;
+    MosaicPtr               _mosaic;
 
-
-    TilingPtr               _tiling;
+    QVector<TilingPtr>      _tilings;
     QString                 _fileName;
     QString                 _failMessage;
 

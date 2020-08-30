@@ -415,10 +415,17 @@ qreal Edge::getAngle()
 EdgePtr Edge::getSwappedEdge()
 {
     // has same edge index as original
-    EdgePtr ep = make_shared<Edge>(*this);
+    EdgePtr ep = make_shared<Edge>();
     ep->setV1(v2);
     ep->setV2(v1);
-    ep->isSwapped = true;
+    ep->type          = type;
+    ep->isSwapped     = true;
+    ep->convex        = convex;
+    ep->arcCenter     = arcCenter;
+    ep->arcMagnitude  = arcMagnitude;
+    ep->interlaceData = interlaceData;
+    ep->tmpEdgeIndex  = tmpEdgeIndex;
+
     return ep;
 }
 

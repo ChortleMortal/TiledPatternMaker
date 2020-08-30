@@ -26,7 +26,7 @@
 #include "tile/tiling_loader.h"
 #include "tile/feature_reader.h"
 #include "viewers/workspace_viewer.h"
-#include "base/xml_loader.h"
+#include "base/mosaic_loader.h"
 #include "makers/tiling_maker/tiling_maker.h"
 
 using namespace pugi;

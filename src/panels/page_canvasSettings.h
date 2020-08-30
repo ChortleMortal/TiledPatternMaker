@@ -25,7 +25,7 @@
 #ifndef PAGE_CANVAS_SETTINGS_H
 #define PAGE_CANVAS_SETTINGS_H
 
-#include "panel_page.h"
+#include "panels/panel_page.h"
 #include "panels/layout_transform.h"
 
 
@@ -65,26 +65,30 @@ private slots:
     void backgroundColorDesignPick();
     void backgroundColorDesignChanged(const QString & str);
 
+    void slot_setBkgdMosaicXform();
+    void slot_setBkgdTilingXform();
+    void slot_setBkdViewerXform();
+    void slot_setBkgdMosaic();
+    void slot_setBkgdTiling();
+    void slot_setBkgdViewer();
+
+    void slot_loadMosaicBackground();
+    void slot_loadTilingBackground();
+
+    void slot_tilingSizeChanged(int val);
+
 #if 0
     void pickBorderColor();
     void pickBorderColor2();
     void borderChanged(int row);
 
-    void slot_loadBackground();
     void slot_adjustBackground();
     void slot_saveAdjustedBackground();
-
-    void slot_setBkgdXform();
-    void slot_setBkgd();
-
-    void slot_setBkgdXformCanvas();
-    void slot_setBkgdCanvas();
 
     void slot_bkgd_moveX(int amount);
     void slot_bkgd_moveY(int amount);
     void slot_bkgd_rotate(int amount);
     void slot_bkgd_scale(int amount);
-
 #endif
 
 protected:
@@ -98,12 +102,12 @@ protected:
     QGroupBox * createViewSettings();
     QGroupBox * createViewStatus();
 
-    QGroupBox * createBackgroundImage(eSettingsGroup group, QString title);
+    QGroupBox * createBackgroundImageGroup(eSettingsGroup group, QString title);
 
     CanvasSettings & getMosaicOrDesignSettings();
 
     void displaySettings(CanvasSettings & cSettings, eSettingsGroup group);
-    void displayBkgdImgSettings(CanvasSettings & cSettings, eSettingsGroup group);
+    void displayBkgdImgSettings(BkgdImgPtr bi, eSettingsGroup group);
     void displayBorder(BorderPtr bp, eSettingsGroup group);
 
     void setFromForm();
@@ -137,7 +141,7 @@ private:
     QLineEdit       * borderColor[NUM_SETTINGS][NUM_BORDER_COLORS];
     ClickableLabel  * borderColorPatch[NUM_SETTINGS][NUM_BORDER_COLORS];
 
-    QPushButton     * bkgdImageBtn;
+    QPushButton     * bkgdImageBtn[NUM_SETTINGS];
     QLineEdit       * bkgdImage[NUM_SETTINGS];
 
     LayoutTransform * bkgdLayout[NUM_SETTINGS];

@@ -23,12 +23,11 @@
  */
 
 #include "base/border.h"
-#include "base/canvas.h"
 #include "base/configuration.h"
 #include "base/utilities.h"
-#include "base/tilingmanager.h"
 #include "base/workspace.h"
 #include "base/tiledpatternmaker.h"
+#include "designs/design_control.h"
 #include "designs/shapefactory.h"
 #include "designs/patterns.h"
 #include "tapp/rosette.h"
@@ -38,6 +37,7 @@
 #include "tapp/explicit_figure.h"
 #include "style/thick.h"
 #include "style/interlace.h"
+#include "tile/tiling_manager.h"
 #include "viewers/figure_view.h"
 #include "viewers/placed_designelement_view.h"
 
@@ -159,8 +159,8 @@ void Pattern7::build()
     ShapeFPtr s = make_shared<ShapeFactory>(diameter,-getLoc());
     layer1->addSubLayer(s);
 
-    Canvas * canvas = Canvas::getInstance();
-    canvas->stopTimer();
+    DesignControl * ctrl = DesignControl::getInstance();
+    ctrl->stopTimer();
 
     doStep(1);
     if (two == false)
@@ -919,8 +919,8 @@ void Pattern10::build()
     ShapeFPtr s = make_shared<ShapeFactory>(diameter,-getLoc());
     layer1->addSubLayer(s);
 
-    Canvas * canvas = Canvas::getInstance();
-    canvas->stopTimer();
+    DesignControl * ctrl = DesignControl::getInstance();
+    ctrl->stopTimer();
 
     doStep(0);
     //step(1);
@@ -1558,8 +1558,9 @@ void PatternKumiko2::build()
 
     // make an explicit figure and position it
     QString tileName  = "Kumiko2";
-    TilingManager* tm = TilingManager::getInstance();
-    TilingPtr t       = tm->loadTiling(tileName);
+    TilingManager tm;
+    workspace->resetTilings();
+    TilingPtr t = tm.loadTiling(tileName);  // adds to  workspace
     if (!t)
     {
         t = make_shared<Tiling>(tileName, trans1, trans2);
@@ -1570,14 +1571,15 @@ void PatternKumiko2::build()
         t->setDescription("Kumiko2 translation vectors");
         t->setAuthor("David A. Casper");
 
-        workspace->setTiling(t);
-        workspace->saveTiling(tileName,t);
+        workspace->setCurrentTiling(t);
+        TilingManager tm;
+        tm.saveTiling(tileName,t);
     }
 
     PrototypePtr proto = make_shared<Prototype>(t);
 
     FigurePtr fp = make_shared<ExplicitFigure>(map,FIG_TYPE_EXPLICIT,10);
-    QList<PlacedFeaturePtr> qlfp = t->getPlacedFeatures();
+    const QVector<PlacedFeaturePtr> qlfp = t->getPlacedFeatures();
 
     DesignElementPtr dep = make_shared<DesignElement>(qlfp[0]->getFeature(),fp);
     proto->addElement(dep);

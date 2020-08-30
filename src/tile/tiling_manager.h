@@ -22,41 +22,22 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef PAGE_PROTOS_H
-#define PAGE_PROTOS_H
+#ifndef TILINGMANAGER_H
+#define TILINGMANAGER_H
 
-#include "panel_page.h"
+#include "base/workspace.h"
 
-enum eProtoCol
+class TilingManager
 {
-    PROTO_COL_PROTO,
-    PROTO_COL_DEL,
-    PROTO_COL_FEATURE,
-    PROTO_COL_FIGURE,
-    PROTO_COL_TRANSFORM
-};
-
-class page_protos : public panel_page
-{
-    Q_OBJECT
-
 public:
+    TilingManager();
 
-    page_protos(ControlPanel * cpanel);
-
-    void refreshPage() override;
-    void onEnter() override;
-    void onExit() override {}
-
-public slots:
-
-private slots:
-    void    slot_prototypeSelected(int row, int col);
-
-protected:
+    TilingPtr loadTiling(QString name);
+    bool      saveTiling(QString name, TilingPtr tp);
+    bool      verifyNameFiles();
 
 private:
-    AQTableWidget * protoTable;
+    Workspace * workspace;
 };
 
-#endif
+#endif // TILINGMANAGER_H

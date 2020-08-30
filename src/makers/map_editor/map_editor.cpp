@@ -24,7 +24,6 @@
 
 #include "makers/map_editor/map_editor.h"
 #include "base/configuration.h"
-#include "base/canvas.h"
 #include "base/shortcuts.h"
 #include "tapp/design_element.h"
 #include "tapp/prototype.h"
@@ -63,7 +62,6 @@ MapEditor::MapEditor() : MapEditorSelection(), stash(this)
 {
     qDebug() << "MapEditor::MapEditor";
 
-    canvas = Canvas::getInstance();
     config = Configuration::getInstance();
     view   = View::getInstance();
     connect(view, &View::sig_mouseDragged,  this, &MapEditor::slot_mouseDragged);
@@ -231,7 +229,7 @@ void MapEditor::setMouseMode(eMapMouseMode mode)
 MapPtr MapEditor::createFromTiling()
 {
     MapPtr map = make_shared<Map>("tiling map");
-    QList<PlacedFeaturePtr> & qlpf = tiling->getPlacedFeatures();
+    const QVector<PlacedFeaturePtr> & qlpf = tiling->getPlacedFeatures();
     for (auto pfp : qlpf)
     {
         EdgePoly poly = pfp->getPlacedEdgePoly();
@@ -607,7 +605,7 @@ bool MapEditor::procKeyEvent(QKeyEvent * k)
     {
     // actions
     case 'F': flipLineExtension(); break;
-    case 'M': emit canvas->sig_raiseMenu(); break;
+    case 'M': emit view->sig_raiseMenu(); break;
     case 'Q': QApplication::quit(); break;
     case Qt::Key_F1:
     {

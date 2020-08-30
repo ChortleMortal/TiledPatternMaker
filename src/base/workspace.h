@@ -31,17 +31,30 @@
 #include "designs/design.h"
 #include "tapp/design_element.h"
 
+enum eProtoMode
+{
+    PROTO_DRAW_MAP       =  0x01,
+    PROTO_DRAW_FEATURES  =  0x02,
+    PROTO_DRAW_FIGURES   =  0x04
+};
+
 class WorkspaceData
 {
 public:
-    void    clear();
+    WorkspaceData() { protoViewMode = PROTO_DRAW_FIGURES | PROTO_DRAW_FEATURES; }
+    void    resetAll();
+    void    resetTilings();
 
-    MosaicPtr           mosaic;
-    TilingPtr           tiling;
+    MosaicPtr                   mosaic;
+    UniqueQVector<TilingPtr>    tilings;
     UniqueQVector<PrototypePtr> prototypes;
 
-    PrototypePtr        selectedPrototype;
-    DesignElementPtr    selectedDesignElement;
+    TilingPtr               currentTiling;
+    WeakPrototypePtr        selectedPrototype;
+    WeakDesignElementPtr    selectedDesignElement;
+    WeakFeaturePtr          selectedFeature;
+
+    int protoViewMode;
 };
 
 class Workspace : public QObject
@@ -53,13 +66,6 @@ public:
     static void        releaseInstance();
 
     void        init();
-    void        clear() { ws.clear(); }
-
-    // loaders
-    bool        loadMosaic(QString name);
-    bool        saveMosaic(QString name, QString &savedName, bool forceOverwrite);
-    bool        loadTiling(QString name);
-    bool        saveTiling(QString name, TilingPtr tp);
 
     // designs
     void        addDesign(DesignPtr d);
@@ -68,25 +74,38 @@ public:
     void        clearDesigns();
 
     // Mosaic
+    void        resetMosaic() { ws.resetAll(); }
     void        setMosaic(MosaicPtr mosaic);
     MosaicPtr   getMosaic();
 
     // loaded tilings
-    void        setTiling( TilingPtr t) { ws.tiling = t; }
-    TilingPtr   getTiling();
+    void        resetTilings() { ws.resetTilings(); }
+    void        addTiling(TilingPtr t) { ws.tilings.push_back(t); }
+    void        removeTiling(TilingPtr tp);
+    void        replaceTiling(TilingPtr oldtp, TilingPtr newtp);
+    void        setCurrentTiling(TilingPtr tp);
+
+    UniqueQVector<TilingPtr> getTilings() { return ws.tilings; }
+    TilingPtr   getCurrentTiling();
+    TilingPtr   findTiling(QString name);
+
+    CanvasSettings & getMosaicSettings();
 
     // prototypes
     void         addPrototype(PrototypePtr pp);
-    QVector<PrototypePtr> getPrototypes();
+    UniqueQVector<PrototypePtr> getPrototypes();
 
-    void            setSelectedPrototype(PrototypePtr proto);
+    // selections
+    void            selectFeature(WeakFeaturePtr fp);
+    void            setSelectedPrototype(WeakPrototypePtr proto);
+    void            setSelectedDesignElement(WeakDesignElementPtr del);
+
+    FeaturePtr      getSelectedFeature();
     PrototypePtr    getSelectedPrototype();
-
-    // figures
-    void             setSelectedDesignElement(DesignElementPtr del);
     DesignElementPtr getSelectedDesignElement();
 
-    CanvasSettings & getMosaicSettings();
+    void    setProtoMode(eProtoMode mode, bool enb);
+    int     getProtoMode() {  return  ws.protoViewMode; }
 
 protected:
 

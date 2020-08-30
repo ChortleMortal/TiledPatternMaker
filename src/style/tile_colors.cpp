@@ -75,7 +75,7 @@ void TileColors::createStyleRepresentation()
     }
 
     QVector<QTransform> & locations  = pp->getLocations();
-    QList<PlacedFeaturePtr> & qlfp   = tp->getPlacedFeatures();
+    const QVector<PlacedFeaturePtr> & qlfp   = tp->getPlacedFeatures();
     qDebug() << "num placed features=" << qlfp.size();
     qDebug() << "num locs=" << locations.size();
 
@@ -84,7 +84,7 @@ void TileColors::createStyleRepresentation()
         PlacedFeaturePtr fp = *it;
         FeaturePtr        f = fp->getFeature();
         EdgePoly & ep       = f->getEdgePoly();
-        QTransform T1        = fp->getTransform();
+        QTransform T1       = fp->getTransform();
 
         ColorSet & bkgdColors = f->getBkgdColors();
         for (auto T2 : locations)

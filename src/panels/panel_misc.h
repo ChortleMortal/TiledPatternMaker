@@ -52,35 +52,6 @@ public:
     AQStackedWidget();
 };
 
-class PanelListWidget : public QListWidget
-{
-    Q_OBJECT
-
-public:
-    PanelListWidget(QWidget *parent = nullptr);
-
-    void setCurrentRow(QString name);
-    void removeItem(QString name);
-
-    void addSeparator();
-
-    void mousePressEvent(QMouseEvent * event);
-
-signals:
-    void detachWidget(QString name);
-
-protected slots:
-    void slot_floatAction();
-
-protected:
-    QAction * floatAction;
-
-private:
-    volatile bool localDrop;
-    int  floatIndex;
-
-};
-
 class AQColorDialog : public QColorDialog
 {
 public:

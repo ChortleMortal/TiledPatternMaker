@@ -22,32 +22,48 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DESIGN_PREVIEW2
-#define DESIGN_PREVIEW2
+#ifndef PAGE_PROTOS_H
+#define PAGE_PROTOS_H
 
-#include <QtCore>
-#include "geometry/fill_region.h"
-#include "base/layer.h"
-#include "tapp/prototype.h"
+#include "panels/panel_page.h"
 
-class ProtoFeatureView : public FillRegion, public Layer
+enum eProtoCol
 {
+    PROTO_ROW_PROTO,
+    PROTO_ROW_TILING,
+    PROTO_ROW_DEL,
+    PROTO_ROW_FEATURE,
+    PROTO_ROW_FIGURE,
+    PROTO_ROW_SCALE,
+    PROTO_ROW_ROT,
+    PROTO_ROW_X,
+    PROTO_ROW_Y
+};
+
+class page_prototype_info : public panel_page
+{
+    Q_OBJECT
+
 public:
-    ProtoFeatureView(PrototypePtr proto);
 
-    PrototypePtr getPrototype() {return proto; }
+    page_prototype_info(ControlPanel * cpanel);
 
-    virtual void   paint(QPainter *painter) override;
-    void           receive(GeoGraphics * gg,int h, int v ) override;
-    virtual void   draw( GeoGraphics * gg );
+    void refreshPage() override;
+    void onEnter() override;
+    void onExit() override {}
+
+public slots:
+
+private slots:
+    void    slot_prototypeSelected(int row, int col);
+    void    drawMapClicked(bool enb);
+    void    drawFigureClicked(bool enb);
+    void    drawFeatureClicked(bool enb);
 
 protected:
-    QPointF             t1;
-    QPointF             t2;
 
-    PrototypePtr        proto;
-    QVector<PlacedDesignElement> rpfs;
-    QColor              feature_interior;
-    QColor              feature_border;
+private:
+    AQTableWidget * protoTable;
 };
+
 #endif

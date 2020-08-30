@@ -31,20 +31,19 @@
 #include "viewers/geo_graphics.h"
 #include "base/shared.h"
 #include "base/workspace.h"
-#include "base/configuration.h"
 #include "viewers/workspace_viewer.h"
 #include "viewers/viewerbase.h"
 
 
-PlacedDesignElementView::PlacedDesignElementView(PlacedDesignElementPtr pde) : Layer("PlacedDesignElementView")
+PlacedDesignElementView::PlacedDesignElementView(PlacedDesignElementPtr pde, bool selected) : Layer("PlacedDesignElementView")
 {
-    qDebug() << "DesignElementView::constructor";
     Q_ASSERT(pde);
 
     feature_interior = QColor(255, 217, 217, 127);
     feature_border   = QColor(140, 140, 140);
 
     this->pde = pde;
+    this->selected = selected;
 }
 
 void PlacedDesignElementView::paint(QPainter *painter)
@@ -67,26 +66,17 @@ void PlacedDesignElementView::paint(QPainter *painter)
     // On the other hand, it's really fast enough already.
     drawPlacedDesignElement(&gg, pde, QPen(Qt::blue,3), QBrush(feature_interior), QPen(feature_border,3));
 
-    if (config->showCenter)
-    {
-        QPointF pt = getCenter();
-        qDebug() << "style layer center=" << pt;
-        painter->setPen(QPen(Qt::green,3));
-        painter->setBrush(QBrush(Qt::green));
-        painter->drawEllipse(pt,13,13);
-    }
+    drawCenter(painter);
 }
 
 void PlacedDesignElementView::drawPlacedDesignElement(GeoGraphics * gg, PlacedDesignElementPtr pde, QPen linePen, QBrush interiorBrush, QPen borderPen)
 {
-    Configuration * config = Configuration::getInstance();
-
     QTransform T = pde->getTransform();
     gg->pushAndCompose(T);
 
     FeaturePtr fp = pde->getFeature();
     QPen pen;
-    if (fp.get() == config->selectedDesignElementFeature)
+    if (selected)
         pen = QPen(Qt::red,3);
     else
         pen = borderPen;

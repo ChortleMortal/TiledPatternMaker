@@ -1,4 +1,4 @@
-#include "splitscreen.h"
+#include "panels/splitscreen.h"
 #include "panels/panel.h"
 #include "base/view.h"
 

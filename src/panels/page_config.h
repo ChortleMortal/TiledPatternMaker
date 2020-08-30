@@ -25,7 +25,7 @@
 #ifndef PAGE_CONFIG_H
 #define PAGE_CONFIG_H
 
-#include "panel_page.h"
+#include "panels/panel_page.h"
 
 class Canvas;
 class DoubleSpinSet;
@@ -58,6 +58,8 @@ private slots:
     void    examplesChanged(QString txt);
 
     void    slot_reconfigurePaths();
+
+    void    slot_mode(int id);
 
 protected:
     void  updatePaths();

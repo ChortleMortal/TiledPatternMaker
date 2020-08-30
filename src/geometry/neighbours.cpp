@@ -1,4 +1,4 @@
-#include "neighbours.h"
+#include "geometry/neighbours.h"
 #include "base/utilities.h"
 #include "geometry/map.h"
 

@@ -31,7 +31,7 @@
 #include "base/filldata.h"
 #include "tile/backgroundimage.h"
 #include "geometry/bounds.h"
-#include "configuration.h"
+#include "base/configuration.h"
 
 class CanvasSettings
 {

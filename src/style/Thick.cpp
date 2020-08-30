@@ -28,7 +28,6 @@
 #include "style/outline.h"
 #include "style/plain.h"
 #include "style/emboss.h"
-#include "base/canvas.h"
 #include <QPainter>
 
 ////////////////////////////////////////////////////////////////////////////
@@ -56,8 +55,9 @@ Thick::Thick(const Style &other ) : Colored(other)
         width        = thick.width;
         draw_outline = thick.draw_outline;
     }
-    catch(std::bad_cast exp)
+    catch(std::bad_cast & exp)
     {
+        Q_UNUSED(exp);
         width = 0.05;
         draw_outline = false;           // DAC added
     }

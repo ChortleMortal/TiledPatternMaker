@@ -1,7 +1,7 @@
 #include "base/tpmsplash.h"
 #include "base/view.h"
 
-TPMSplash::TPMSplash(QWidget * parent) : QSplashScreen(parent)
+TPMSplash::TPMSplash() : QSplashScreen()
 {
     QPixmap pm(":/tpm.png");
     setPixmap(pm);
@@ -11,11 +11,17 @@ TPMSplash::TPMSplash(QWidget * parent) : QSplashScreen(parent)
     QSize qs = pm.size();
     w = qs.width();
     h = qs.height();
+    hide();
 }
 
 void TPMSplash::display(QString txt)
 {
-    msgStack.push(message());
+    //qDebug()  << "splash:" << txt;
+
+    if (!isHidden())
+    {
+        msgStack.push(message());
+    }
 
     View * view = View::getInstance();
     QPoint pos = view->rect().center();
@@ -26,19 +32,16 @@ void TPMSplash::display(QString txt)
     showMessage(txt, Qt::AlignCenter);
 }
 
-void TPMSplash::hide()
+void TPMSplash::remove()
 {
     if (msgStack.count())
     {
-        msgStack.pop();
-    }
-    if (msgStack.count())
-    {
-        QString str = msgStack.top();
+        QString str = msgStack.pop();
+        //qDebug() << "redisplay:" << str;
         showMessage(str, Qt::AlignCenter);
     }
     else
     {
-        QSplashScreen::hide();
+        hide();
     }
 }

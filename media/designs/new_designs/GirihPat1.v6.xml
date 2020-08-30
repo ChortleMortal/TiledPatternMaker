@@ -1,0 +1,285 @@
+<?xml version="1.0"?>
+<vector id="1" version="6">
+	<designNotes>same as Timuriid Tumq Aqa but built from new tiling based on picture</designNotes>
+	<design>
+		<size>
+			<width>1500</width>
+			<height>1100</height>
+		</size>
+		<background>
+			<color>#ffc2bcb0</color>
+		</background>
+		<Fill>-4,3,-6,5</Fill>
+	</design>
+	<style.Filled id="2" serialization="custom">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>2.35</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>-0.01333333333333186,-0.01333333333333542</center>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<boundary id="3">
+				<pts id="4">
+					<Point id="5">
+						<x>-10</x>
+						<y>-10</y>
+					</Point>
+					<Point id="6">
+						<x>-10</x>
+						<y>10</y>
+					</Point>
+					<Point id="7">
+						<x>10</x>
+						<y>10</y>
+					</Point>
+					<Point id="8">
+						<x>10</x>
+						<y>-10</y>
+					</Point>
+				</pts>
+			</boundary>
+			<prototype id="9" serialization="custom">
+				<app.Prototype>
+					<string>GirihPat1.v1</string>
+					<entry>
+						<tile.Feature id="10">
+							<regular>false</regular>
+							<edges id="11">
+								<Line>
+									<Point id="12">2.618033988749895,0.8506508083520394</Point>
+									<Point id="13">2.236067977499789,0.3249196962329056</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point id="14">2.236067977499789,-0.3249196962329066</Point>
+								</Line>
+								<Line>
+									<Point reference="14" />
+									<Point id="15">2.618033988749894,-0.8506508083520405</Point>
+								</Line>
+								<Line>
+									<Point reference="15" />
+									<Point id="16">3,-0.3249196962329066</Point>
+								</Line>
+								<Line>
+									<Point reference="16" />
+									<Point id="17">3,0.3249196962329055</Point>
+								</Line>
+								<Line>
+									<Point reference="17" />
+									<Point reference="12" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitGirih id="18" type="FIG_TYPE_EXPLICIT_GIRIH">
+							<sides>10</sides>
+							<skip>3</skip>
+							<boundarySides>4</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitGirih>
+					</entry>
+					<entry>
+						<tile.Feature id="19">
+							<regular>false</regular>
+							<edges id="20">
+								<Line>
+									<Point id="21">0.9999999999999998,0.3249196962329062</Point>
+									<Point id="22">0.9999999999999998,-0.3249196962329064</Point>
+								</Line>
+								<Line>
+									<Point reference="22" />
+									<Point id="23">1.618033988749895,-0.1241082803466793</Point>
+								</Line>
+								<Line>
+									<Point reference="23" />
+									<Point id="24">2.236067977499789,-0.3249196962329066</Point>
+								</Line>
+								<Line>
+									<Point reference="24" />
+									<Point id="25">2.236067977499789,0.3249196962329056</Point>
+								</Line>
+								<Line>
+									<Point reference="25" />
+									<Point id="26">1.618033988749895,0.1241082803466786</Point>
+								</Line>
+								<Line>
+									<Point reference="26" />
+									<Point reference="21" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitGirih id="27" type="FIG_TYPE_EXPLICIT_GIRIH">
+							<sides>10</sides>
+							<skip>3</skip>
+							<boundarySides>4</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitGirih>
+					</entry>
+					<entry>
+						<tile.Feature id="28">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<edges id="29">
+								<Line>
+									<Point id="30">0.9999999999999999,0.3249196962329063</Point>
+									<Point id="31">0.6180339887498948,0.85065080835204</Point>
+								</Line>
+								<Line>
+									<Point reference="31" />
+									<Point id="32">6.438349236688752e-17,1.051462224238267</Point>
+								</Line>
+								<Line>
+									<Point reference="32" />
+									<Point id="33">-0.6180339887498947,0.85065080835204</Point>
+								</Line>
+								<Line>
+									<Point reference="33" />
+									<Point id="34">-0.9999999999999999,0.3249196962329064</Point>
+								</Line>
+								<Line>
+									<Point reference="34" />
+									<Point id="35">-1,-0.3249196962329062</Point>
+								</Line>
+								<Line>
+									<Point reference="35" />
+									<Point id="36">-0.6180339887498949,-0.8506508083520398</Point>
+								</Line>
+								<Line>
+									<Point reference="36" />
+									<Point id="37">-1.931504771006626e-16,-1.051462224238267</Point>
+								</Line>
+								<Line>
+									<Point reference="37" />
+									<Point id="38">0.6180339887498946,-0.8506508083520401</Point>
+								</Line>
+								<Line>
+									<Point reference="38" />
+									<Point id="39">0.9999999999999999,-0.3249196962329066</Point>
+								</Line>
+								<Line>
+									<Point reference="39" />
+									<Point reference="30" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.Rosette id="40">
+							<n>10</n>
+							<q>-1</q>
+							<s>2</s>
+							<k>0</k>
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.Rosette>
+					</entry>
+					<entry>
+						<tile.Feature id="41">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<edges id="42">
+								<Line>
+									<Point id="43">0.9999999999999999,0.3249196962329063</Point>
+									<Point id="44">0.6180339887498948,0.85065080835204</Point>
+								</Line>
+								<Line>
+									<Point reference="44" />
+									<Point id="45">6.438349236688752e-17,1.051462224238267</Point>
+								</Line>
+								<Line>
+									<Point reference="45" />
+									<Point id="46">-0.6180339887498947,0.85065080835204</Point>
+								</Line>
+								<Line>
+									<Point reference="46" />
+									<Point id="47">-0.9999999999999999,0.3249196962329064</Point>
+								</Line>
+								<Line>
+									<Point reference="47" />
+									<Point id="48">-1,-0.3249196962329062</Point>
+								</Line>
+								<Line>
+									<Point reference="48" />
+									<Point id="49">-0.6180339887498949,-0.8506508083520398</Point>
+								</Line>
+								<Line>
+									<Point reference="49" />
+									<Point id="50">-1.931504771006626e-16,-1.051462224238267</Point>
+								</Line>
+								<Line>
+									<Point reference="50" />
+									<Point id="51">0.6180339887498946,-0.8506508083520401</Point>
+								</Line>
+								<Line>
+									<Point reference="51" />
+									<Point id="52">0.9999999999999999,-0.3249196962329066</Point>
+								</Line>
+								<Line>
+									<Point reference="52" />
+									<Point reference="43" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.Rosette id="53">
+							<n>10</n>
+							<q>0</q>
+							<s>3</s>
+							<k>0</k>
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>0.5</figureScale>
+							<r>0</r>
+						</app.Rosette>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<ColorBlacks>
+			<color hide="f">#ffffff00</color>
+		</ColorBlacks>
+		<ColorWhites>
+			<color hide="f">#ff7c6843</color>
+			<color hide="t">#ffc59c0c</color>
+			<color hide="t">#ff7c6843</color>
+			<color hide="t">#ffffaa00</color>
+			<color hide="f">#ff382310</color>
+			<color hide="f">#ff382310</color>
+			<color hide="f">#ff382310</color>
+			<color hide="t">#ff382310</color>
+			<color hide="f">#ff7c6843</color>
+		</ColorWhites>
+		<ColorGroup>
+			<Group hideSet="f">
+				<color hide="t">#ff234b30</color>
+				<color hide="t">#ffc2bcb0</color>
+				<color hide="t">#ff34554a</color>
+				<color hide="t">#ffc2bcb0</color>
+				<color hide="t">#ffc2bcb0</color>
+				<color hide="t">#ffc2bcb0</color>
+				<color hide="t">#ffc2bcb0</color>
+				<color hide="t">#ffc2bcb0</color>
+				<color hide="t">#ffc2bcb0</color>
+				<color hide="t">#ffc2bcb0</color>
+				<color hide="t">#ffc2bcb0</color>
+				<color hide="t">#ffc2bcb0</color>
+				<color hide="t">#ffc2bcb0</color>
+				<color hide="t">#ffc2bcb0</color>
+				<color hide="t">#ffc2bcb0</color>
+				<color hide="t">#ffc2bcb0</color>
+				<color hide="t">#ffc2bcb0</color>
+			</Group>
+			<Group hideSet="f" />
+		</ColorGroup>
+		<style.Filled>
+			<draw__inside>true</draw__inside>
+			<draw__outside>true</draw__outside>
+			<algorithm>2</algorithm>
+		</style.Filled>
+	</style.Filled>
+</vector>

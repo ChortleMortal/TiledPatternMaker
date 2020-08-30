@@ -6,7 +6,7 @@
 #include "geometry/transform.h"
 #include "panels/dlg_name.h"
 
-BackgroundImage::BackgroundImage() : Layer("Background Image")
+BackgroundImage::BackgroundImage() : Layer("Bkgd Image")
 {
     setZValue(-20);
 
@@ -22,15 +22,14 @@ BackgroundImage::~BackgroundImage()
 
 void BackgroundImage::paint(QPainter *painter)
 {
-    if (config->hideBackgroundImage)
+    if (!config->showBackgroundImage)
     {
         return;
     }
 
     qDebug() << "BackgroundImage::paint" << Transform::toInfoString(painter->transform());
 
-    QTransform base;
-    QTransform t = xf_canvas.toQTransform(base);
+    QTransform t = getCanvasXform().getTransform();
     painter->setTransform(t);
 
     // center pixmap in the scene

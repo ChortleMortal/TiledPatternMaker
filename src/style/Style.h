@@ -52,6 +52,8 @@ enum eStyleType
 //
 // A style encapsulates drawing a map with some interesting style.
 
+class QSvgGenerator;
+
 class Style : public Layer
 {
     Q_OBJECT
@@ -88,7 +90,7 @@ public:
     virtual void    paint(QPainter *painter) override;
             void    paintToSVG();
 
-    void    triggerPaintSVG() { paintSVG = true; }
+    void    triggerPaintSVG(QSvgGenerator * generator) { this->generator = generator; paintSVG = true; }
 
     static int refs;
 
@@ -104,7 +106,8 @@ protected:
 private:
     MapPtr        styleMap;
     MapPtr        debugMap;
-    bool          paintSVG;
 
+    bool          paintSVG;
+    QSvgGenerator * generator;
 };
 #endif

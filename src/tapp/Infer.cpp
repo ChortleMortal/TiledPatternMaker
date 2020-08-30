@@ -212,10 +212,9 @@ int Infer::add(int t1, int t2, int count)
     QPointF pt   = (tiling->getTrans1() * static_cast<qreal>(t1)) + (tiling->getTrans2() * static_cast<qreal>(t2));
     QTransform T = QTransform::fromTranslate(pt.x(),pt.y());
 
-    QList<PlacedFeaturePtr> & pflist = tiling->getPlacedFeatures();
-    for(auto it = pflist.begin(); it != pflist.end(); it++)
+    const QVector<PlacedFeaturePtr> & pflist = tiling->getPlacedFeatures();
+    for(auto pf :  pflist)
     {
-        PlacedFeaturePtr pf = *it;
         QTransform Tf       = pf->getTransform();
         FeaturePtr feature  = pf->getFeature();
         count = add2(Tf * T, feature, count);

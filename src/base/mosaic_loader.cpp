@@ -22,12 +22,10 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "base/xml_loader.h"
+#include "base/mosaic_loader.h"
 #include "base/border.h"
 #include "base/configuration.h"
-#include "base/tilingmanager.h"
 #include "base/utilities.h"
-#include "base/workspace.h"
 #include "style/colored.h"
 #include "style/thick.h"
 #include "style/filled.h"
@@ -39,41 +37,40 @@
 #include "style/tile_colors.h"
 #include "tapp/star.h"
 #include "tapp/extended_star.h"
+#include "tapp/infer.h"
 #include "tapp/explicit_figure.h"
 #include "tile/feature_reader.h"
-#include "tapp/infer.h"
+#include "tile/tiling_manager.h"
 
 #undef  DEBUG_REFERENCES
 
-XmlLoader::XmlLoader()
+MosaicLoader::MosaicLoader()
 {
-    qDebug() << "Constructing XML LOADER";
-
     // defaults
     _background = QColor(Qt::white);
     _width      = 1500;
     _height     = 1100;
     _version    = 0;
-    _border     = nullptr;
+
     view        = View::getInstance();
     workspace   = Workspace::getInstance();
 }
 
-XmlLoader::~XmlLoader()
+MosaicLoader::~MosaicLoader()
 {
-    qDebug() << "Destroying XML LOADER";
+    qDebug() << "MosaicLoader: descructor";
 }
 
-QString XmlLoader::getLoadedFilename()
+QString MosaicLoader::getLoadedFilename()
 {
     return _fileName;
 }
 
-MosaicPtr XmlLoader::loadMosaic(QString fileName)
+MosaicPtr MosaicLoader::loadMosaic(QString fileName)
 {
     view->dump(true);
 
-    qDebug().noquote() << "XmlLoader loading:" << fileName;
+    qDebug().noquote() << "MosaicLoader loading:" << fileName;
     _fileName = fileName;
 
     xml_document doc;
@@ -83,35 +80,35 @@ MosaicPtr XmlLoader::loadMosaic(QString fileName)
     {
         _failMessage = result.description();
         qWarning().noquote() << _failMessage;
-        mosaic.reset();
-        return mosaic;
+        _mosaic.reset();
+        return _mosaic;
     }
 
     try
     {
-        mosaic = make_shared<Mosaic>();
+        _mosaic = make_shared<Mosaic>();
 
         parseXML(doc);
 
         view->dump(true);
 
-        return mosaic;
+        return _mosaic;
     }
     catch (...)
     {
         qWarning() << "ERROR processing XML file"  << fileName;
-        mosaic.reset();
-        return false;
+        _mosaic.reset();
+        return _mosaic;
     }
 }
 
-MapPtr XmlLoader::loadMosaicMap(QString fileName)
+MapPtr MosaicLoader::loadMosaicMap(QString fileName)
 {
     MapPtr map;
 
     view->dump(true);
 
-    qDebug().noquote() << "XmlLoader loading:" << fileName;
+    qDebug().noquote() << "MosaicLoader loading:" << fileName;
     _fileName = fileName;
 
     xml_document doc;
@@ -126,7 +123,7 @@ MapPtr XmlLoader::loadMosaicMap(QString fileName)
 
     try
     {
-        qDebug() << "XML LOADER - start parsing";
+        qDebug() << "MosaicLoader - start parsing";
         vOrigCnt = 0;
         vRefrCnt = 0;
         eOrigCnt = 0;
@@ -160,14 +157,14 @@ MapPtr XmlLoader::loadMosaicMap(QString fileName)
     return map;
 }
 
-void XmlLoader::parseXML(xml_document & doc)
+void MosaicLoader::parseXML(xml_document & doc)
 {
     vOrigCnt = 0;
     vRefrCnt = 0;
     eOrigCnt = 0;
     eRefrCnt = 0;
     nRefrCnt = 0;
-    qDebug() << "XML LOADER - start parsing";
+    qDebug() << "MosaicLoader - start parsing";
 
     for (xml_node n = doc.first_child(); n; n = n.next_sibling())
     {
@@ -181,16 +178,16 @@ void XmlLoader::parseXML(xml_document & doc)
 
     view->dump(true);
 
-    qDebug() << "XML LOADER - end parsing";
+    qDebug() << "MosaicLoader - end parsing";
 }
 
-void XmlLoader::processDesignNotes(xml_node & node)
+void MosaicLoader::processDesignNotes(xml_node & node)
 {
     string str = node.child_value();
-    mosaic->setNotes(str.c_str());
+    _mosaic->setNotes(str.c_str());
 }
 
-void XmlLoader::processVector(xml_node & node)
+void MosaicLoader::processVector(xml_node & node)
 {
 
     xml_attribute attr = node.attribute("version");
@@ -206,13 +203,6 @@ void XmlLoader::processVector(xml_node & node)
         qDebug() << str.c_str();
         if (str  == "designNotes")
             processDesignNotes(n);
-        else if (str == "Tiling")
-        {
-            // for backwards compatability
-            TilingLoader tm;
-            _tiling = tm.readTilingXML(n);
-            workspace->setTiling(_tiling);
-        }
         else if (str == "design")
             processDesign(n);
         else if (str == "style.Thick")
@@ -240,23 +230,23 @@ void XmlLoader::processVector(xml_node & node)
     cs.setBackgroundColor(_background);
     cs.setCanvasSize(QSize(_width,_height));
     cs.setBorder(_border);
-    cs.setBkgdImage(_tiling->getBackground());
+    cs.setBkgdImage(getFirstTiling()->getBackground());
 
     // Canvas Settings fill data defaults to FillData defaults, loader can  override these
     if (_version >= 6)
     {
         cs.setFillData(_fillData);
     }
-    else if (_tiling->getVersion() == 2)
+    else if (getFirstTiling()->getVersion() == 2)
     {
-        FillData fd = _tiling->getFillData();
+        FillData fd =  getFirstTiling()->getFillData();
         cs.setFillData(fd);
     }
 
-    mosaic->setCanvasSettings(cs);
+    _mosaic->setCanvasSettings(cs);
 }
 
-void XmlLoader::processDesign(xml_node & node)
+void MosaicLoader::processDesign(xml_node & node)
 {
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
@@ -277,7 +267,7 @@ void XmlLoader::processDesign(xml_node & node)
     }
 }
 
-void XmlLoader::processThick(xml_node & node)
+void MosaicLoader::processThick(xml_node & node)
 {
     ColorSet  colorset;
     bool    draw_outline = false;
@@ -312,12 +302,12 @@ void XmlLoader::processThick(xml_node & node)
 
     qDebug().noquote() << "XmlServices created Style(Thick)" << thick->getInfo();
 
-    mosaic->addStyle(StylePtr(thick));
+    _mosaic->addStyle(StylePtr(thick));
 
     qDebug() << "end thick";
 }
 
-void XmlLoader::processInterlace(xml_node & node)
+void MosaicLoader::processInterlace(xml_node & node)
 {
     ColorSet  colorset;
     PrototypePtr proto;
@@ -359,12 +349,12 @@ void XmlLoader::processInterlace(xml_node & node)
     interlace->setIncludeTipVertices(includeTipVerts);
     qDebug().noquote() << "XmlServices created Style(Interlace)" << interlace->getInfo();
 
-    mosaic->addStyle(StylePtr(interlace));
+    _mosaic->addStyle(StylePtr(interlace));
 
     qDebug() << "end interlace";
 }
 
-void XmlLoader::processOutline(xml_node & node)
+void MosaicLoader::processOutline(xml_node & node)
 {
     ColorSet  colorset;
     bool    draw_outline = false;
@@ -399,12 +389,12 @@ void XmlLoader::processOutline(xml_node & node)
 
     qDebug().noquote() << "XmlServices created Style(Outline)" << outline->getInfo();
 
-    mosaic->addStyle(StylePtr(outline));
+    _mosaic->addStyle(StylePtr(outline));
 
     qDebug() << "end outline";
 }
 
-void XmlLoader::processFilled(xml_node & node)
+void MosaicLoader::processFilled(xml_node & node)
 {
     int     algorithm   = 0;
     bool    oldFormat   = false;
@@ -522,12 +512,12 @@ void XmlLoader::processFilled(xml_node & node)
 
     qDebug().noquote() << "XmlServices created Style(Filled)" << filled->getInfo();
 
-    mosaic->addStyle(StylePtr(filled));
+    _mosaic->addStyle(StylePtr(filled));
 
     qDebug() << "end filled";
 }
 
-void XmlLoader::processPlain(xml_node & node)
+void MosaicLoader::processPlain(xml_node & node)
 {
     ColorSet  colorset;
     PrototypePtr proto;
@@ -554,12 +544,12 @@ void XmlLoader::processPlain(xml_node & node)
     plain->setColorSet(colorset);
     qDebug().noquote() << "XmlServices created Style (Plain)" << plain->getInfo();
 
-    mosaic->addStyle(StylePtr(plain));
+    _mosaic->addStyle(StylePtr(plain));
 
     qDebug() << "end plain";
 }
 
-void XmlLoader::processSketch(xml_node & node)
+void MosaicLoader::processSketch(xml_node & node)
 {
     ColorSet  colorset;
     PrototypePtr proto;
@@ -586,12 +576,12 @@ void XmlLoader::processSketch(xml_node & node)
     sketch->setColorSet(colorset);
     qDebug().noquote() << "XmlServices created Style (Sketch)" << sketch->getInfo();
 
-    mosaic->addStyle(StylePtr(sketch));
+    _mosaic->addStyle(StylePtr(sketch));
 
     qDebug() << "end sketch";
 }
 
-void XmlLoader::processEmboss(xml_node & node)
+void MosaicLoader::processEmboss(xml_node & node)
 {
     ColorSet  colorset;
     bool    draw_outline = false;
@@ -630,12 +620,12 @@ void XmlLoader::processEmboss(xml_node & node)
 
     qDebug().noquote() << "XmlServices created Style(Emboss)" << emboss->getInfo();
 
-    mosaic->addStyle(StylePtr(emboss));
+    _mosaic->addStyle(StylePtr(emboss));
 
     qDebug() << "end emboss";
 }
 
-void XmlLoader::processTileColors(xml_node & node)
+void MosaicLoader::processTileColors(xml_node & node)
 {
     PrototypePtr proto;
     PolyPtr poly;
@@ -675,12 +665,12 @@ void XmlLoader::processTileColors(xml_node & node)
 
     qDebug().noquote() << "XmlServices created Style(TileColors)" << tc->getInfo();
 
-    mosaic->addStyle(StylePtr(tc));
+    _mosaic->addStyle(StylePtr(tc));
 
     qDebug() << "end emboss";
 }
 
-void XmlLoader::procesToolkitGeoLayer(xml_node & node, Xform & xf)
+void MosaicLoader::procesToolkitGeoLayer(xml_node & node, Xform & xf)
 {
     QString val;
     qreal   fval;
@@ -739,7 +729,7 @@ void XmlLoader::procesToolkitGeoLayer(xml_node & node, Xform & xf)
     }
 }
 
-void XmlLoader::processStyleStyle(xml_node & node, PrototypePtr & proto, PolyPtr & poly)
+void MosaicLoader::processStyleStyle(xml_node & node, PrototypePtr & proto, PolyPtr & poly)
 {
     xml_node n   = node.child("boundary");
     qDebug() << n.name();
@@ -760,7 +750,7 @@ void XmlLoader::processColorSet(xml_node & node, QColor & color)
     color        = processColor(n);
 }
 #endif
-void XmlLoader::processColorSet(xml_node & node, ColorSet &colorSet)
+void MosaicLoader::processColorSet(xml_node & node, ColorSet &colorSet)
 {
     bool hide = false;
     xml_attribute attr = node.attribute("hideSet");
@@ -800,7 +790,7 @@ void XmlLoader::processColorSet(xml_node & node, ColorSet &colorSet)
     }
 }
 
-void XmlLoader::processColorGroup(xml_node & node, ColorGroup &colorGroup)
+void MosaicLoader::processColorGroup(xml_node & node, ColorGroup &colorGroup)
 {
     xml_node n;
     for (n = node.child("Group"); n; n = n.next_sibling("Group"))
@@ -811,20 +801,20 @@ void XmlLoader::processColorGroup(xml_node & node, ColorGroup &colorGroup)
     }
 }
 
-QColor XmlLoader::processColor(xml_node & n)
+QColor MosaicLoader::processColor(xml_node & n)
 {
     QString str = n.child_value();
     QColor color(str);
     return color;
 }
 
-qreal XmlLoader::procWidth(xml_node & node)
+qreal MosaicLoader::procWidth(xml_node & node)
 {
     QString str = node.child_value();
     return str.toDouble();
 }
 
-void XmlLoader::processsStyleThick(xml_node & node, bool & draw_outline, qreal & width)
+void MosaicLoader::processsStyleThick(xml_node & node, bool & draw_outline, qreal & width)
 {
     QString str  = node.child_value("draw__outline");
     draw_outline = (str == "true");
@@ -833,7 +823,7 @@ void XmlLoader::processsStyleThick(xml_node & node, bool & draw_outline, qreal &
     width = w.toDouble();
  }
 
-void XmlLoader::processsStyleInterlace(xml_node & node, qreal & gap, qreal & shadow, bool & includeTipVerts)
+void MosaicLoader::processsStyleInterlace(xml_node & node, qreal & gap, qreal & shadow, bool & includeTipVerts)
 {
     QString str  = node.child_value("gap");
     gap =  str.toDouble();
@@ -845,7 +835,7 @@ void XmlLoader::processsStyleInterlace(xml_node & node, qreal & gap, qreal & sha
     includeTipVerts = (str == "true");
 }
 
-void XmlLoader::processsStyleFilled(xml_node & node, bool & draw_inside, bool & draw_outside, int & algorithm)
+void MosaicLoader::processsStyleFilled(xml_node & node, bool & draw_inside, bool & draw_outside, int & algorithm)
 {
     QString str;
     str = node.child_value("draw__inside");
@@ -862,13 +852,13 @@ void XmlLoader::processsStyleFilled(xml_node & node, bool & draw_inside, bool & 
     }
 }
 
-void XmlLoader::processsStyleEmboss(xml_node & node, qreal & angle)
+void MosaicLoader::processsStyleEmboss(xml_node & node, qreal & angle)
 {
     QString str  = node.child_value("angle");
     angle =  str.toDouble();
 }
 
-PolyPtr XmlLoader::getBoundary(xml_node & node)
+PolyPtr MosaicLoader::getBoundary(xml_node & node)
 {
     if (hasReference(node))
     {
@@ -882,7 +872,7 @@ PolyPtr XmlLoader::getBoundary(xml_node & node)
     return b;
 }
 
-PolyPtr XmlLoader::getPolygon(xml_node & node)
+PolyPtr MosaicLoader::getPolygon(xml_node & node)
 {
     PolyPtr poly = make_shared<QPolygonF>();
     xml_node point;
@@ -895,7 +885,7 @@ PolyPtr XmlLoader::getPolygon(xml_node & node)
     return poly;
 }
 
-QPointF XmlLoader::getPos(xml_node & node)
+QPointF MosaicLoader::getPos(xml_node & node)
 {
     QString txt = node.child_value();
     QStringList qsl;
@@ -905,7 +895,7 @@ QPointF XmlLoader::getPos(xml_node & node)
     return QPointF(x,y);
 }
 
-PrototypePtr XmlLoader::getPrototype(xml_node & node)
+PrototypePtr MosaicLoader::getPrototype(xml_node & node)
 {
     qDebug() << node.name();
     if (hasReference(node))
@@ -919,30 +909,26 @@ PrototypePtr XmlLoader::getPrototype(xml_node & node)
     QString tilingName = protonode.child_value("string");
     qDebug() << "string=" << tilingName;
 
-    if (_tiling && _tiling->getName() == tilingName)
-    {
-        // for backwards compatability
-        qDebug() << "Using tiling from Mosaic";
-    }
-    else
+    TilingPtr tp = findTiling(tilingName);
+    if (!tp)
     {
         qDebug() << "loading named tiling" << tilingName;
-        TilingManager * tm = TilingManager::getInstance();
-        _tiling = tm->loadTiling(tilingName);
-        if (!_tiling)
+        TilingManager tm;
+        tp = tm.loadTiling(tilingName);     // adds to workspace
+        if (!tp)
         {
             fail("Tiling not loaded: ",tilingName);
         }
-        workspace->setTiling(_tiling);
+        _tilings.push_back(tp);
     }
-    //qDebug().noquote() << _tiling->dump();
+    //qDebug().noquote() << tp->dump();
 
     qDebug() << "Creating new prototype";
 
-    PrototypePtr proto = make_shared<Prototype>(_tiling);
+    PrototypePtr proto = make_shared<Prototype>(tp);
     setProtoReference(node,proto);
 
-    QVector<FeaturePtr> uniqueFeatures = _tiling->getUniqueFeatures();
+    QVector<FeaturePtr> uniqueFeatures = tp->getUniqueFeatures();
     int numFeatures = uniqueFeatures.size();
 
     QVector<FeaturePtr> usedFeatures;
@@ -1190,7 +1176,7 @@ PrototypePtr XmlLoader::getPrototype(xml_node & node)
     return proto;
 }
 
-FeaturePtr XmlLoader::getFeature(xml_node & node)
+FeaturePtr MosaicLoader::getFeature(xml_node & node)
 {
     if (hasReference(node))
     {
@@ -1239,7 +1225,7 @@ FeaturePtr XmlLoader::getFeature(xml_node & node)
     return f;
 }
 
-void XmlLoader::getFigureCommon(xml_node & node, FigurePtr fig)
+void MosaicLoader::getFigureCommon(xml_node & node, FigurePtr fig)
 {
     QString str;
     if (node.child("boundarySides"))
@@ -1264,7 +1250,7 @@ void XmlLoader::getFigureCommon(xml_node & node, FigurePtr fig)
     }
 }
 
-ExplicitPtr XmlLoader::getExplicitFigure(xml_node & node, eFigType figType)
+ExplicitPtr MosaicLoader::getExplicitFigure(xml_node & node, eFigType figType)
 {
     ExplicitPtr ep;
     if (hasReference(node))
@@ -1385,7 +1371,7 @@ ExplicitPtr XmlLoader::getExplicitFigure(xml_node & node, eFigType figType)
     return(ep);
 }
 
-StarPtr XmlLoader::getStarFigure(xml_node & node)
+StarPtr MosaicLoader::getStarFigure(xml_node & node)
 {
     if (hasReference(node))
     {
@@ -1420,7 +1406,7 @@ StarPtr XmlLoader::getStarFigure(xml_node & node)
     return star;
 }
 
-ExtStarPtr  XmlLoader::getExtendedStarFigure(xml_node & node)
+ExtStarPtr  MosaicLoader::getExtendedStarFigure(xml_node & node)
 {
     if (hasReference(node))
     {
@@ -1473,7 +1459,7 @@ ExtStarPtr  XmlLoader::getExtendedStarFigure(xml_node & node)
     return star;
 }
 
-RosettePtr XmlLoader::getRosetteFigure(xml_node & node)
+RosettePtr MosaicLoader::getRosetteFigure(xml_node & node)
 {
     if (hasReference(node))
     {
@@ -1509,7 +1495,7 @@ RosettePtr XmlLoader::getRosetteFigure(xml_node & node)
     return rosette;
 }
 
-ExtRosettePtr  XmlLoader::getExtendedRosetteFigure(xml_node & node)
+ExtRosettePtr  MosaicLoader::getExtendedRosetteFigure(xml_node & node)
 {
     if (hasReference(node))
     {
@@ -1574,7 +1560,7 @@ ExtRosettePtr  XmlLoader::getExtendedRosetteFigure(xml_node & node)
     return rosette;
 }
 
-FigurePtr XmlLoader::getConnectFigure(xml_node & node)
+FigurePtr MosaicLoader::getConnectFigure(xml_node & node)
 {
     FigurePtr fp;
     xml_node child = node.child("child");
@@ -1602,7 +1588,7 @@ FigurePtr XmlLoader::getConnectFigure(xml_node & node)
     return fp;
 }
 
-RosetteConnectPtr XmlLoader::getRosetteConnectFigure(xml_node & node)
+RosetteConnectPtr MosaicLoader::getRosetteConnectFigure(xml_node & node)
 {
     if (hasReference(node))
     {
@@ -1650,7 +1636,7 @@ RosetteConnectPtr XmlLoader::getRosetteConnectFigure(xml_node & node)
     return rcp;
 }
 
-StarConnectPtr XmlLoader::getStarConnectFigure(xml_node & node)
+StarConnectPtr MosaicLoader::getStarConnectFigure(xml_node & node)
 {
     if (hasReference(node))
     {
@@ -1697,7 +1683,7 @@ StarConnectPtr XmlLoader::getStarConnectFigure(xml_node & node)
     return scp;
 }
 
-MapPtr XmlLoader::getMap(xml_node &node)
+MapPtr MosaicLoader::getMap(xml_node &node)
 {
     //qDebug() << node.name();
     //qDebug() << "use count=" << map.use_count();
@@ -1789,7 +1775,7 @@ MapPtr XmlLoader::getMap(xml_node &node)
 }
 
 
-VertexPtr XmlLoader::getVertex(xml_node & node)
+VertexPtr MosaicLoader::getVertex(xml_node & node)
 {
     if (hasReference(node))
     {
@@ -1857,7 +1843,7 @@ VertexPtr XmlLoader::getVertex(xml_node & node)
     return v;
 }
 
-EdgePtr XmlLoader::getEdge(xml_node & node)
+EdgePtr MosaicLoader::getEdge(xml_node & node)
 {
     //qDebug() << node.name();
 
@@ -1896,7 +1882,7 @@ EdgePtr XmlLoader::getEdge(xml_node & node)
     return edge;
 }
 
-EdgePtr XmlLoader::getCurve(xml_node & node)
+EdgePtr MosaicLoader::getCurve(xml_node & node)
 {
     //qDebug() << node.name();
 
@@ -1936,7 +1922,7 @@ EdgePtr XmlLoader::getCurve(xml_node & node)
     return edge;
 }
 
-void XmlLoader::procSize(xml_node & node, int & width, int & height)
+void MosaicLoader::procSize(xml_node & node, int & width, int & height)
 {
     QString val;
     xml_node w = node.child("width");
@@ -1953,7 +1939,7 @@ void XmlLoader::procSize(xml_node & node, int & width, int & height)
     }
 }
 
-QColor XmlLoader::procBackgroundColor(xml_node & node)
+QColor MosaicLoader::procBackgroundColor(xml_node & node)
 {
     xml_node n   = node.child("color");
     if (n)
@@ -1962,7 +1948,7 @@ QColor XmlLoader::procBackgroundColor(xml_node & node)
         return _background;     // default;
 }
 
-QTransform XmlLoader::getQTransform(QString txt)
+QTransform MosaicLoader::getQTransform(QString txt)
 {
     QStringList qsl;
     qsl = txt.split(',');
@@ -1978,7 +1964,7 @@ QTransform XmlLoader::getQTransform(QString txt)
     return QTransform(m11,m12,m13,m21,m22,m23,m31,m32,m33);
 }
 
-void XmlLoader::procFill(xml_node & node)
+void MosaicLoader::procFill(xml_node & node)
 {
     QString txt = node.child_value();
     QStringList qsl;
@@ -1986,7 +1972,7 @@ void XmlLoader::procFill(xml_node & node)
     _fillData.set(qsl[0].toInt(),qsl[1].toInt(),qsl[2].toInt(),qsl[3].toInt());
 }
 
-void XmlLoader::procBorder(xml_node & node)
+void MosaicLoader::procBorder(xml_node & node)
 {
     xml_attribute atype = node.attribute("type");
     if (!atype)  return;
@@ -2010,7 +1996,7 @@ void XmlLoader::procBorder(xml_node & node)
 
 
 
-void XmlLoader::procBorderPlain(xml_node & node)
+void MosaicLoader::procBorderPlain(xml_node & node)
 {
     xml_node cnode = node.child("color");
     QColor col1 = processColor(cnode);
@@ -2025,7 +2011,7 @@ void XmlLoader::procBorderPlain(xml_node & node)
     _border = make_shared<BorderPlain>(bwidth, col1);
 }
 
-void XmlLoader::procBorderTwoColor(xml_node & node)
+void MosaicLoader::procBorderTwoColor(xml_node & node)
 {
     xml_node cnode = node.child("color");
     QColor col1 = processColor(cnode);
@@ -2043,7 +2029,7 @@ void XmlLoader::procBorderTwoColor(xml_node & node)
     _border = make_shared<BorderTwoColor>(col1, col2, bwidth);
 }
 
-void XmlLoader::procBorderBlocks(xml_node & node)
+void MosaicLoader::procBorderBlocks(xml_node & node)
 {
     Q_UNUSED(node)  // FIXME border2
     //void addBorder2(QColor color, qreal diameter, int rows, int cols);
@@ -2053,14 +2039,14 @@ void XmlLoader::procBorderBlocks(xml_node & node)
 //
 //////////////////////////////////////////////////////////////
 
-bool XmlLoader::hasReference(xml_node & node)
+bool MosaicLoader::hasReference(xml_node & node)
 {
     xml_attribute ref;
     ref = node.attribute("reference");
     return (ref);
 }
 
-void XmlLoader::setProtoReference(xml_node & node, PrototypePtr ptr)
+void MosaicLoader::setProtoReference(xml_node & node, PrototypePtr ptr)
 {
     xml_attribute id;
     id = node.attribute("id");
@@ -2074,7 +2060,7 @@ void XmlLoader::setProtoReference(xml_node & node, PrototypePtr ptr)
     }
 }
 
-PrototypePtr XmlLoader::getProtoReferencedPtr(xml_node & node)
+PrototypePtr MosaicLoader::getProtoReferencedPtr(xml_node & node)
 {
     PrototypePtr retval;
     xml_attribute ref;
@@ -2092,7 +2078,7 @@ PrototypePtr XmlLoader::getProtoReferencedPtr(xml_node & node)
     return retval;
 }
 
-void XmlLoader::setVertexReference(xml_node & node, VertexPtr ptr)
+void MosaicLoader::setVertexReference(xml_node & node, VertexPtr ptr)
 {
     xml_attribute id;
     id = node.attribute("id");
@@ -2106,7 +2092,7 @@ void XmlLoader::setVertexReference(xml_node & node, VertexPtr ptr)
     }
 }
 
-VertexPtr XmlLoader::getVertexReferencedPtr(xml_node & node)
+VertexPtr MosaicLoader::getVertexReferencedPtr(xml_node & node)
 {
     VertexPtr retval;
     xml_attribute ref;
@@ -2126,7 +2112,7 @@ VertexPtr XmlLoader::getVertexReferencedPtr(xml_node & node)
     return retval;
 }
 
-void XmlLoader::setEdgeReference(xml_node & node, EdgePtr ptr)
+void MosaicLoader::setEdgeReference(xml_node & node, EdgePtr ptr)
 {
     xml_attribute id;
     id = node.attribute("id");
@@ -2140,7 +2126,7 @@ void XmlLoader::setEdgeReference(xml_node & node, EdgePtr ptr)
     }
 }
 
-EdgePtr XmlLoader::getEdgeReferencedPtr(xml_node & node)
+EdgePtr MosaicLoader::getEdgeReferencedPtr(xml_node & node)
 {
     EdgePtr retval;
     xml_attribute ref;
@@ -2158,7 +2144,7 @@ EdgePtr XmlLoader::getEdgeReferencedPtr(xml_node & node)
     return retval;
 }
 
-void   XmlLoader::setPolyReference(xml_node & node, PolyPtr ptr)
+void   MosaicLoader::setPolyReference(xml_node & node, PolyPtr ptr)
 {
     xml_attribute id;
     id = node.attribute("id");
@@ -2172,7 +2158,7 @@ void   XmlLoader::setPolyReference(xml_node & node, PolyPtr ptr)
     }
 }
 
-void   XmlLoader::setFeatureReference(xml_node & node, FeaturePtr ptr)
+void   MosaicLoader::setFeatureReference(xml_node & node, FeaturePtr ptr)
 {
     xml_attribute id;
     id = node.attribute("id");
@@ -2185,7 +2171,7 @@ void   XmlLoader::setFeatureReference(xml_node & node, FeaturePtr ptr)
 #endif
     }
 }
-void   XmlLoader::setFigureReference(xml_node & node, FigurePtr ptr)
+void   MosaicLoader::setFigureReference(xml_node & node, FigurePtr ptr)
 {
     xml_attribute id;
     id = node.attribute("id");
@@ -2198,7 +2184,7 @@ void   XmlLoader::setFigureReference(xml_node & node, FigurePtr ptr)
 #endif
     }
 }
-void   XmlLoader::setExplicitReference(xml_node & node, ExplicitPtr ptr)
+void   MosaicLoader::setExplicitReference(xml_node & node, ExplicitPtr ptr)
 {
     xml_attribute id;
     id = node.attribute("id");
@@ -2212,7 +2198,7 @@ void   XmlLoader::setExplicitReference(xml_node & node, ExplicitPtr ptr)
     }
 }
 
-void   XmlLoader::setStarReference(xml_node & node, StarPtr ptr)
+void   MosaicLoader::setStarReference(xml_node & node, StarPtr ptr)
 {
     xml_attribute id;
     id = node.attribute("id");
@@ -2226,7 +2212,7 @@ void   XmlLoader::setStarReference(xml_node & node, StarPtr ptr)
     }
 }
 
-void  XmlLoader::setExtStarReference(xml_node & node, ExtStarPtr ptr)
+void  MosaicLoader::setExtStarReference(xml_node & node, ExtStarPtr ptr)
 {
     xml_attribute id;
     id = node.attribute("id");
@@ -2240,7 +2226,7 @@ void  XmlLoader::setExtStarReference(xml_node & node, ExtStarPtr ptr)
     }
 }
 
-void   XmlLoader::setRosetteReference(xml_node & node, RosettePtr ptr)
+void   MosaicLoader::setRosetteReference(xml_node & node, RosettePtr ptr)
 {
     xml_attribute id;
     id = node.attribute("id");
@@ -2254,7 +2240,7 @@ void   XmlLoader::setRosetteReference(xml_node & node, RosettePtr ptr)
     }
 }
 
-void  XmlLoader::setExtRosetteReference(xml_node & node, ExtRosettePtr ptr)
+void  MosaicLoader::setExtRosetteReference(xml_node & node, ExtRosettePtr ptr)
 {
     xml_attribute id;
     id = node.attribute("id");
@@ -2268,7 +2254,7 @@ void  XmlLoader::setExtRosetteReference(xml_node & node, ExtRosettePtr ptr)
     }
 }
 
-void   XmlLoader::setRosetteConnectReference(xml_node & node, RosetteConnectPtr ptr)
+void   MosaicLoader::setRosetteConnectReference(xml_node & node, RosetteConnectPtr ptr)
 {
     xml_attribute id;
     id = node.attribute("id");
@@ -2282,7 +2268,7 @@ void   XmlLoader::setRosetteConnectReference(xml_node & node, RosetteConnectPtr 
     }
 }
 
-void   XmlLoader::setStarConnectReference(xml_node & node, StarConnectPtr ptr)
+void   MosaicLoader::setStarConnectReference(xml_node & node, StarConnectPtr ptr)
 {
     xml_attribute id;
     id = node.attribute("id");
@@ -2296,7 +2282,7 @@ void   XmlLoader::setStarConnectReference(xml_node & node, StarConnectPtr ptr)
     }
 }
 
-void   XmlLoader::setMapReference(xml_node & node, MapPtr ptr)
+void   MosaicLoader::setMapReference(xml_node & node, MapPtr ptr)
 {
     xml_attribute id;
     id = node.attribute("id");
@@ -2310,7 +2296,7 @@ void   XmlLoader::setMapReference(xml_node & node, MapPtr ptr)
     }
 }
 
-PolyPtr XmlLoader::getPolyReferencedPtr(xml_node & node)
+PolyPtr MosaicLoader::getPolyReferencedPtr(xml_node & node)
 {
     PolyPtr retval;
     xml_attribute ref;
@@ -2328,7 +2314,7 @@ PolyPtr XmlLoader::getPolyReferencedPtr(xml_node & node)
     return retval;
 }
 
-FeaturePtr XmlLoader::getFeatureReferencedPtr(xml_node & node)
+FeaturePtr MosaicLoader::getFeatureReferencedPtr(xml_node & node)
 {
     FeaturePtr retval;
     xml_attribute ref;
@@ -2346,7 +2332,7 @@ FeaturePtr XmlLoader::getFeatureReferencedPtr(xml_node & node)
     return retval;
 }
 
-FigurePtr XmlLoader::getFigureReferencedPtr(xml_node & node)
+FigurePtr MosaicLoader::getFigureReferencedPtr(xml_node & node)
 {
     FigurePtr retval;
     xml_attribute ref;
@@ -2364,7 +2350,7 @@ FigurePtr XmlLoader::getFigureReferencedPtr(xml_node & node)
     return retval;
 }
 
-ExplicitPtr XmlLoader::getExplicitReferencedPtr(xml_node & node)
+ExplicitPtr MosaicLoader::getExplicitReferencedPtr(xml_node & node)
 {
     ExplicitPtr retval;
     xml_attribute ref;
@@ -2382,7 +2368,7 @@ ExplicitPtr XmlLoader::getExplicitReferencedPtr(xml_node & node)
     return retval;
 }
 
-StarPtr XmlLoader::getStarReferencedPtr(xml_node & node)
+StarPtr MosaicLoader::getStarReferencedPtr(xml_node & node)
 {
     StarPtr retval;
     xml_attribute ref;
@@ -2400,7 +2386,7 @@ StarPtr XmlLoader::getStarReferencedPtr(xml_node & node)
     return retval;
 }
 
-ExtStarPtr XmlLoader::getExtStarReferencedPtr(xml_node & node)
+ExtStarPtr MosaicLoader::getExtStarReferencedPtr(xml_node & node)
 {
     ExtStarPtr retval;
     xml_attribute ref;
@@ -2419,7 +2405,7 @@ ExtStarPtr XmlLoader::getExtStarReferencedPtr(xml_node & node)
 }
 
 
-RosettePtr XmlLoader::getRosetteReferencedPtr(xml_node & node)
+RosettePtr MosaicLoader::getRosetteReferencedPtr(xml_node & node)
 {
     RosettePtr retval;
     xml_attribute ref;
@@ -2437,7 +2423,7 @@ RosettePtr XmlLoader::getRosetteReferencedPtr(xml_node & node)
     return retval;
 }
 
-ExtRosettePtr XmlLoader::getExtRosetteReferencedPtr(xml_node & node)
+ExtRosettePtr MosaicLoader::getExtRosetteReferencedPtr(xml_node & node)
 {
     ExtRosettePtr retval;
     xml_attribute ref;
@@ -2455,7 +2441,7 @@ ExtRosettePtr XmlLoader::getExtRosetteReferencedPtr(xml_node & node)
     return retval;
 }
 
-RosetteConnectPtr XmlLoader::getRosetteConnectReferencedPtr(xml_node & node)
+RosetteConnectPtr MosaicLoader::getRosetteConnectReferencedPtr(xml_node & node)
 {
     RosetteConnectPtr retval;
     xml_attribute ref;
@@ -2473,7 +2459,7 @@ RosetteConnectPtr XmlLoader::getRosetteConnectReferencedPtr(xml_node & node)
     return retval;
 }
 
-StarConnectPtr XmlLoader::getStarConnectReferencedPtr(xml_node & node)
+StarConnectPtr MosaicLoader::getStarConnectReferencedPtr(xml_node & node)
 {
     StarConnectPtr retval;
     xml_attribute ref;
@@ -2491,7 +2477,7 @@ StarConnectPtr XmlLoader::getStarConnectReferencedPtr(xml_node & node)
     return retval;
 }
 
-MapPtr XmlLoader::getMapReferencedPtr(xml_node & node)\
+MapPtr MosaicLoader::getMapReferencedPtr(xml_node & node)\
 {
     MapPtr retval;
     xml_attribute ref;
@@ -2508,9 +2494,23 @@ MapPtr XmlLoader::getMapReferencedPtr(xml_node & node)\
     return retval;
 }
 
-void XmlLoader::fail(QString a, QString b)
+void MosaicLoader::fail(QString a, QString b)
 {
     _failMessage = QString("%1 %2").arg(a).arg(b);
     qWarning().noquote() << _failMessage;
     throw(_failMessage);
+}
+
+
+TilingPtr MosaicLoader::findTiling(QString name)
+{
+    for (auto tiling : _tilings)
+    {
+        if (tiling->getName() == name)
+        {
+            return tiling;
+        }
+    }
+    TilingPtr tp;
+    return tp;  // empty
 }

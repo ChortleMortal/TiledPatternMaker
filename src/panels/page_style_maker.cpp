@@ -23,7 +23,6 @@
  */
 
 #include "panels/page_style_maker.h"
-#include "base/canvas.h"
 #include "base/configuration.h"
 #include "base/tiledpatternmaker.h"
 #include "designs/patterns.h"
@@ -38,20 +37,19 @@
 
 using std::string;
 
-Q_DECLARE_METATYPE(StylePtr)
-Q_DECLARE_SMART_POINTER_METATYPE(std::shared_ptr)
+Q_DECLARE_METATYPE(WeakStylePtr)
 
 page_style_maker:: page_style_maker(ControlPanel * apanel)  : panel_page(apanel,"Style Maker")
 {
     styleParms = nullptr;
 
     styleTable = new AQTableWidget(this);
-    styleTable->setColumnCount(6);
+    styleTable->setColumnCount(STYLE_COL_NUM_COLS);
     styleTable->setSelectionMode(QAbstractItemView::SingleSelection);
     styleTable->setSelectionBehavior(QAbstractItemView::SelectRows);
 
     QStringList qslH;
-    qslH << "" << "Tiling" << "Style" << "Set WS" << "Addr" << "Transform";
+    qslH << "" << "Tiling" << "Style" << "Addr" << "Transform";
     styleTable->setHorizontalHeaderLabels(qslH);
     styleTable->verticalHeader()->setVisible(false);
 
@@ -82,9 +80,9 @@ page_style_maker:: page_style_maker(ControlPanel * apanel)  : panel_page(apanel,
     vbox->addSpacing(7);
     vbox->addLayout(parmsCtrl);
 
-    connect(&styleMapper,     SIGNAL(mapped(int)), this, SLOT(slot_styleChanged(int)),Qt::UniqueConnection);
-    connect(&styleVisMapper,  SIGNAL(mapped(int)), this, SLOT(slot_styleVisibilityChanged(int)),Qt::UniqueConnection);
-    connect(&editProtoMapper, SIGNAL(mapped(int)), this, SLOT(slot_editProto(int)),Qt::UniqueConnection);
+    connect(&styleMapper,     SIGNAL(mapped(int)), this, SLOT(slot_styleChanged(int)));
+    connect(&tilingMapper,    SIGNAL(mapped(int)), this, SLOT(slot_tilingChanged(int)));
+    connect(&styleVisMapper,  SIGNAL(mapped(int)), this, SLOT(slot_styleVisibilityChanged(int)));
 
     connect(delBtn,  &QPushButton::clicked, this, &page_style_maker::slot_deleteStyle);
     connect(upBtn,   &QPushButton::clicked, this, &page_style_maker::slot_moveStyleUp);
@@ -97,7 +95,7 @@ page_style_maker:: page_style_maker(ControlPanel * apanel)  : panel_page(apanel,
 
     connect(tpm,  &TiledPatternMaker::sig_loadedTiling,   this,   &page_style_maker::slot_loadedTiling);
     connect(tpm,  &TiledPatternMaker::sig_loadedXML,      this,   &page_style_maker::slot_loadedXML);
-    connect(tpm,  &TiledPatternMaker::sig_unload,         this,   &page_style_maker::slot_unload);
+    connect(view, &View::sig_unload,                      this,   &page_style_maker::slot_unload);
 }
 
 void  page_style_maker::refreshPage()
@@ -130,6 +128,9 @@ void  page_style_maker::reEnter()
 
     int row = 0;
     MosaicPtr mosaic = workspace->getMosaic();
+
+    UniqueQVector<TilingPtr>tilings = mosaic->getTilings();
+
     const StyleSet & sset = mosaic->getStyleSet();
     for (auto style : sset)
     {
@@ -155,33 +156,36 @@ void  page_style_maker::reEnter()
         qcb->addItem("Tile Colors",STYLE_TILECOLORS);
         styleTable->setCellWidget(row,STYLE_COL_STYLE,qcb);
 
-        QString tilename = style->getPrototype()->getTiling()->getName();
-        QTableWidgetItem * item = new QTableWidgetItem(tilename);
-        item->setData(Qt::UserRole,QVariant::fromValue(style));     // tiling name also stores Style address
-        styleTable->setItem(row,STYLE_COL_TILING,item);
+        QComboBox * qcb2 = new QComboBox();
+        for (auto tiling : tilings)
+        {
+            qcb2->addItem(tiling->getName());
+        }
+        qcb2->addItem("New");
+        int index = qcb2->findText(style->getPrototype()->getTiling()->getName());
+        qcb2->setCurrentIndex(index);
+        styleTable->setCellWidget(row,STYLE_COL_TILING,qcb2);
 
-        QPushButton * pb = new QPushButton("Set WS Proto && Tiling");
-        styleTable->setCellWidget(row,STYLE_COL_PROTO_EDIT,pb);
-
-        item = new QTableWidgetItem(addr(style.get()));
+        QTableWidgetItem * item = new QTableWidgetItem(addr(style.get()));
+        item->setData(Qt::UserRole,QVariant::fromValue(WeakStylePtr(style)));     // tiling name also stores Style address
         styleTable->setItem(row,STYLE_COL_ADDR,item);
 
         item = new QTableWidgetItem("Xform");
         styleTable->setItem(row,STYLE_COL_TRANS,item);
 
         QString stylename = style->getStyleDesc();
-        int index = qcb->findText(stylename);
+        index = qcb->findText(stylename);
         Q_ASSERT(index != -1);
         qcb->setCurrentIndex(index);
 
         connect(qcb, SIGNAL(currentIndexChanged(int)), &styleMapper, SLOT(map()),Qt::UniqueConnection);
         styleMapper.setMapping(qcb,row);
 
+        connect(qcb2, SIGNAL(currentIndexChanged(int)), &tilingMapper, SLOT(map()),Qt::UniqueConnection);
+        tilingMapper.setMapping(qcb2,row);
+
         connect(cb, SIGNAL(toggled(bool)), &styleVisMapper, SLOT(map()),Qt::UniqueConnection);
         styleVisMapper.setMapping(cb,row);
-
-        connect(pb, SIGNAL(clicked()),    &editProtoMapper, SLOT(map()),Qt::UniqueConnection);
-        editProtoMapper.setMapping(pb,row);
 
         row++;
     }
@@ -196,17 +200,12 @@ void  page_style_maker::reEnter()
 
 void  page_style_maker::slot_styleSelected()
 {
-
-    if (styleTable->rowCount() == 0)
-        return;
+    qDebug() << "page_style_maker::slot_styleSelected";
 
     int row = styleTable->currentRow();
-    if (row == -1)
-    {
-        row = 0;
-    }
+    if (row == -1) return;
 
-    qDebug() << "style row=" << row;
+    qDebug() << "page_style_maker row=" << row;
 
     StylePtr style = getStyleIndex(row);
     if (styleParms && styleParms->style == style)
@@ -220,6 +219,39 @@ void  page_style_maker::slot_styleSelected()
     }
 
     setupStyleParms(style,parmsTable);
+
+    PrototypePtr pp = style->getPrototype();
+    workspace->setSelectedPrototype(pp);
+
+    emit sig_viewWS();
+}
+
+void page_style_maker::slot_tilingChanged(int row)
+{
+    QComboBox * qcb = dynamic_cast<QComboBox*>(styleTable->cellWidget(row,STYLE_COL_TILING));
+    QString name = qcb->currentText();
+    TilingPtr tp;
+    if (name == "New")
+    {
+        tp = loadNewTiling(name);
+    }
+    else
+    {
+        tp = workspace->findTiling(name);
+    }
+    if (!tp)
+    {
+        return;
+    }
+
+    StylePtr sp = getStyleRow(row);
+    PrototypePtr pp = sp->getPrototype();
+    MosaicPtr mosaic = workspace->getMosaic();
+    mosaic->replaceTiling(pp,tp);
+
+    emit sig_viewWS();
+
+    reEnter();
 }
 
 void page_style_maker::setupStyleParms(StylePtr style, AQTableWidget * table)
@@ -251,10 +283,10 @@ void page_style_maker::setupStyleParms(StylePtr style, AQTableWidget * table)
         break;
     case STYLE_TILECOLORS:
     {
-        MosaicPtr mosaic = workspace->getMosaic();
-        if (mosaic)
+        TilingPtr tiling = workspace->getCurrentTiling();
+        if (tiling)
         {
-            styleParms = new TileColorsEditor(dynamic_cast<TileColors*>(style.get()),table,mosaic->getTiling());
+            styleParms = new TileColorsEditor(dynamic_cast<TileColors*>(style.get()),table,tiling);
         }
         break;
     }
@@ -328,27 +360,19 @@ void page_style_maker::slot_styleChanged(int row)
     styleTable->setFocus();
 }
 
-void page_style_maker::slot_editProto(int row)
-{
-    StylePtr style  = getStyleRow(row);
-    PrototypePtr pp = style->getPrototype();
-    workspace->setSelectedPrototype(pp);
-
-    emit sig_viewWS();
-    styleTable->selectRow(row);
-    styleTable->setFocus();
-}
-
 StylePtr page_style_maker::getStyleRow(int row)
 {
-    QTableWidgetItem * twi = styleTable->item(row,STYLE_COL_DATA);
-    QVariant var = twi->data(Qt::UserRole);
     StylePtr sp;
-    if (var.canConvert<StylePtr>())
+
+    QTableWidgetItem * twi = styleTable->item(row,STYLE_COL_STYLE_DATA);
+    QVariant var = twi->data(Qt::UserRole);
+
+    if (var.canConvert<WeakStylePtr>())
     {
-        sp = var.value<StylePtr>();
+        WeakStylePtr wsp = var.value<WeakStylePtr>();
+        sp = wsp.lock();
+        Q_ASSERT(sp);
     }
-    Q_ASSERT(sp);
     return sp;
 }
 
@@ -510,4 +534,13 @@ void page_style_maker::slot_unload()
     {
         styleParms->style.reset();
     }
+}
+
+
+TilingPtr page_style_maker::loadNewTiling(QString name)
+{
+    TilingPtr tp;
+
+
+    return  tp;
 }

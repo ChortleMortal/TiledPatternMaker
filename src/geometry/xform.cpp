@@ -1,6 +1,5 @@
 #include "xform.h"
 #include "geometry/transform.h"
-#include "base/canvas.h"
 
 Xform::Xform()
 {
@@ -63,24 +62,24 @@ void Xform::addTransform(QTransform t)
 
 QTransform Xform::getTransform()
 {
-    QTransform tr   = QTransform().rotateRadians(rotationRadians);
-    QTransform tt   = QTransform().fromTranslate(translateX,translateY);
-    QTransform ts   = QTransform::fromScale(scale,scale);
-    QTransform t    = tr * tt * ts;
-    //qDebug() << "XForm::getTransform()" << Transform::toInfoString(t);
+    QTransform t;
+    t.translate(translateX,translateY);
+    t.rotateRadians(rotationRadians);
+    t.scale(scale,scale);
+    //qDebug().noquote() << "XForm::getTransform()" << Transform::toInfoString(t);
     return t;
 }
 
-QTransform Xform::toQTransform(QTransform viewTransform)
+QTransform Xform::toQTransform(QTransform transform)
 {
-    QPointF cent = viewTransform.map(center);
+    QPointF cent = transform.map(center);
     QTransform t;
     t.translate(cent.x(), cent.y());
-    t.rotateRadians(rotationRadians);
-    t.translate(-cent.x(), -cent.y());
     t.translate(translateX,translateY);
+    t.rotateRadians(rotationRadians);
     t.scale(scale,scale);
-    //qDebug() << "XForm::computeTransform()" << Transform::toInfoString(t);
+    t.translate(-cent.x(), -cent.y());
+    //qDebug().noquote() << "XForm::toQTransform()" << Transform::toInfoString(t);
     return t;
 }
 
@@ -131,12 +130,6 @@ qreal Xform::getTranslateY()
     return translateY;
 }
 
-QPointF Xform::getCenter()
-{
-    //qDebug().noquote() << center=" << center;
-    return center;
-}
-
 void Xform::setScale(qreal s)
 {
     scale = s;
@@ -145,6 +138,11 @@ void Xform::setScale(qreal s)
 void Xform::setRotateRadians(qreal rr)
 {
     rotationRadians = rr;
+}
+
+void Xform::setRotateDegrees(qreal deg)
+{
+    rotationRadians = qDegreesToRadians(deg);
 }
 
 void Xform::setTranslateX(qreal x)
@@ -157,8 +155,19 @@ void Xform::setTranslateY(qreal y)
     translateY = y;
 }
 
+QPointF Xform::getCenter()
+{
+    //qDebug().noquote() << "Xform::getCenter:" << center;
+    return center;
+}
+
 void Xform::setCenter(QPointF pt)
 {
+    if (pt.x() > 10 || pt.y() > 10)
+    {
+        qWarning() << "not model units";
+    }
     center    = pt;
     hasCenter = true;
+    qDebug().noquote() << "Xform::setCenter:" << center;
 }

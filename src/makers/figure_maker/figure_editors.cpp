@@ -22,8 +22,8 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "figure_editors.h"
-#include "prototype_maker.h"
+#include "makers/figure_maker/figure_editors.h"
+#include "makers/figure_maker/prototype_maker.h"
 #include "base/tiledpatternmaker.h"
 #include "tapp/star.h"
 #include "tapp/extended_star.h"

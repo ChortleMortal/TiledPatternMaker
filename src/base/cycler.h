@@ -73,8 +73,8 @@ public:
 
 signals:
     void sig_clearCanvas();
-    void sig_loadXML(QString name);
-    void sig_loadTiling(QString name);
+    void sig_cycleLoadMosaic(QString name);
+    void sig_cycleLoadTiling(QString name);
     void sig_finished();
     void sig_show_png(QString file, int row, int col);
     void sig_compare(QString,QString);
@@ -100,16 +100,11 @@ private:
     ~Cycler();
 
     static Cycler * mpThis;
-
     Configuration * config;
-    Canvas        * canvas;
-
     QTimer        * timer;
 
     bool            cyclePause;
-
     bool            busy;
-
     eCycleMode      cycleMode;
     QStringList     files;
     QStringList     fileFilter;

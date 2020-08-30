@@ -98,6 +98,8 @@ ExplicitGirihEditor::ExplicitGirihEditor(PrototypeMaker * ed, QString aname) : E
     side = new SliderSet("ExplicitGirihEditor Star Sides", 10, 3, 24);
     skip = new DoubleSliderSet("ExplicitGirihEditor Skip D", 3.0, 1.0, 12.0, 100);
 
+    skip->setPrecision(8);
+
     addLayout(side);
     addLayout(skip);
 

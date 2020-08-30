@@ -22,46 +22,43 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-////////////////////////////////////////////////////////////////////////////
-//
-// DesignPreview.java
-//
-// Boy, am I glad I thought of this class.  The design preview uses the
-// same FillRegion algorithm as TilingViewer (used by TilingCard, for
-// instance), to draw instead the _figures_ as they would appear in the
-// final design.  Because we're not constructing the map, just drawing
-// lines, previewing the design is really fast.  Plus, you can use the
-// viewport of the preview window to indicate the region to fill for the
-// final design -- I was searching for a way to let the user express
-// this piece of information.
-//
-// This class just turns the translational unit into a collection of line
-// segments and then draws them repeatedly to fill the window.
-
-#ifndef DESIGN_PROTOVIEW
-#define DESIGN_PROTOVIEW
+#ifndef DESIGN_PREVIEW2
+#define DESIGN_PREVIEW2
 
 #include <QtCore>
 #include "geometry/fill_region.h"
-#include "tapp/prototype.h"
 #include "base/layer.h"
+#include "tapp/prototype.h"
 
-class ProtoView : public Layer
+class PrototypeView : public FillRegion, public Layer
 {
+    enum eProtoMode
+    {
+        PROTO_DRAW_MAP       =  0x01,
+        PROTO_DRAW_FEATURES  =  0x02,
+        PROTO_DRAW_FIGURES   =  0x04
+    };
+
 public:
-    ProtoView(PrototypePtr proto);
-    PrototypePtr getPrototype() { return proto; }
+    PrototypeView(PrototypePtr proto, int mode);
+
+    PrototypePtr getPrototype() {return proto; }
 
     virtual void   paint(QPainter *painter) override;
-    virtual void   draw(GeoGraphics * gg);
+    void           receive(GeoGraphics * gg,int h, int v ) override;
+    virtual void   draw( GeoGraphics * gg );
 
 protected:
-    QPointF             t1;
-    QPointF             t2;
+    int             mode;
+    QPointF         t1;
+    QPointF         t2;
 
-    EdgePoly            edges;  // this is not really an EdgePoly it is a vector of Edges
+    PrototypePtr    proto;
+
+    EdgePoly        edges;              // this is not really an EdgePoly it is a vector of Edges
+    QColor          feature_interior;
+    QColor          feature_border;
+
     QVector<PlacedDesignElement> rpfs;
-
-    PrototypePtr        proto;
 };
 #endif

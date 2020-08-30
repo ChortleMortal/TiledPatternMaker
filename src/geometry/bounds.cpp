@@ -1,4 +1,4 @@
-#include "bounds.h"
+#include "geometry/bounds.h"
 
 Bounds::Bounds()
 {

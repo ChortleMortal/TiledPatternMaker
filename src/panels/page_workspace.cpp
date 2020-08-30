@@ -117,14 +117,12 @@ void page_workspace::populateTree(bool expandAll)
     if (expandAll)
         slot_itemClicked(workspacePrototype,0);
 
+    QVector<TilingPtr> tilings = workspace->getTilings();
     workspaceTiling= new QTreeWidgetItem;
     workspaceTiling->setText(0,"++ Tiling");
-    workspaceTiling->setText(1,addr(ws->getTiling().get()));
-    if (ws->getTiling())
-        workspaceTiling->setText(2,ws->getTiling()->getName());
+    workspaceTiling->setText(1,QString("count = %1").arg(tilings.size()));
     tree->addTopLevelItem(workspaceTiling);
     workspaceTiling->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
-
     if (expandAll)
         slot_itemClicked(workspaceTiling,0);
 
@@ -173,8 +171,12 @@ void page_workspace::slot_itemClicked(QTreeWidgetItem * item, int col)
     else if (item == workspaceTiling)
     {
         removeChildren(workspaceTiling);
-        populateTiling(workspaceTiling,ws->getTiling());
-        tree->expandItem(workspaceTiling);
+        QVector<TilingPtr> tilings = workspace->getTilings();
+        for (auto tiling : tilings)
+        {
+            populateTiling(workspaceTiling,tiling);
+            tree->expandItem(workspaceTiling);
+        }
     }
     else
     {
@@ -201,8 +203,8 @@ void page_workspace::populateStyles(QTreeWidgetItem * parent, MosaicPtr mosaic)
     }
     QTreeWidgetItem * item;
 
-    TilingPtr tp = mosaic->getTiling();
-    if (tp)
+    UniqueQVector<TilingPtr> tilings = mosaic->getTilings();
+    for (auto tp : tilings)
     {
         item = new QTreeWidgetItem();
         item->setText(0,"Tiling");
@@ -377,115 +379,30 @@ void page_workspace::populateDEL(QTreeWidgetItem * parent, DesignElementPtr de)
     QString astring = figure->getFigureDesc() + " " + figure->getFigTypeString();
     item->setText(2,astring);
     item2->addChild(item);
-
-#if 0   // DAC - what was I thinking?
-    // find matching vector of placed features in tiling
-    TilingPtr tp = ws->GetTiling();
-    if (!tp)
-    {
-        item = new QTreeWidgetItem;
-        item->setText(0,"** ERROR - tiling is null");
-        parent->addChild(item);
-        return;
-    }
-    QMap<FeaturePtr,QVector<PlacedFeaturePtr>> pfm = tp->regroupFeatures();
-    QVector<PlacedFeaturePtr> pfpv = pfm.value(feap);
-    for (auto it = pfpv.begin(); it != pfpv.end(); it++)
-    {
-        PlacedFeaturePtr pfp = *it;
-        Transform tr = pfp->getTransform();
-        PlacedDesignElement pdel(de,tr);
-
-        item = new QTreeWidgetItem;
-        item->setText(0,"Placed Feature");
-        item->setText(1,addr(pfp.get()));
-        item->setText(2,pdel.getTransform().toString());
-        parent->addChild(item);
-
-        QTreeWidgetItem * item2;
-
-        // combine design element with transform to make placed design element
-        FeaturePtr feap2 = pdel.getFeature();
-        FigurePtr  figp2 = pdel.getFigure();
-        if (feap2 != feap)
-        {
-            //  FEAP error
-            item2 = new QTreeWidgetItem;
-            item2->setText(0,"** FEAP ERRROR");
-            item2->setText(1, addr(feap.get()));
-            item2->setText(2, addr(feap2.get()));
-            item->addChild(item2);
-            return;
-        }
-        if (figp2 != figp)
-        {
-            //  FIGP error
-            item2 = new QTreeWidgetItem;
-            item2->setText(0,"** FIGP ERRROR");
-            item2->setText(1, addr(figp.get()));
-            item2->setText(2, addr(figp2.get()));
-            item->addChild(item2);
-            return;
-        }
-
-        if (!feap)
-        {
-            item2 = new QTreeWidgetItem;
-            item2->setText(0,"Feature");
-            item2->setText(1,"null");
-            item->addChild(item2);
-        }
-        else
-        {
-            item2 = new QTreeWidgetItem;
-            item2->setText(0,"Feature");
-            item2->setText(1, addr(feap.get()));
-            item2->setText(2, QString("Num points = %1").arg(feap->numPoints()));
-            item->addChild(item2);
-        }
-
-        if (!figp)
-        {
-            item2 = new QTreeWidgetItem;
-            item2->setText(0,"Figure");
-            item2->setText(1,"nullptr");
-            item->addChild(item2);
-        }
-        else
-        {
-            item2 = new QTreeWidgetItem;
-            item2->setText(0,"Figure");
-            item2->setText(1,addr(figp.get()));
-            item2->setText(2,figp->getFigureDesc());
-            item->addChild(item2);
-
-            ExplicitPtr efp = std::dynamic_pointer_cast<ExplicitFigure>(figp);
-            if (efp)
-            {
-                MapPtr map = efp->getMap();
-                map->dump();
-                populateMap(item2,map);
-            }
-        }
-    }
-#endif
 }
 
 void page_workspace::populateTiling(QTreeWidgetItem * parent, TilingPtr tp)
 {
-    QList <PlacedFeaturePtr> & qlpf = tp->getPlacedFeatures();
-    QList <PlacedFeaturePtr>::iterator it;
-    for (it = qlpf.begin(); it != qlpf.end(); it++)
+    const QVector<PlacedFeaturePtr> & qlpf = tp->getPlacedFeatures();
+
+    // summary
+    QTreeWidgetItem * pitem = new QTreeWidgetItem;
+    pitem->setText(0,"Tiling");
+    pitem->setText(1,tp->getName());
+    QString astring = "Num PlacedFeatures:" + QString::number(qlpf.size());
+    pitem->setText(2,astring);
+    parent->addChild(pitem);
+
+    for (auto pfp : qlpf)
     {
-        PlacedFeaturePtr pfp = *it;
-        QTransform tr        = pfp->getTransform();
-        FeaturePtr fp        = pfp->getFeature();
+        QTransform tr  = pfp->getTransform();
+        FeaturePtr fp  = pfp->getFeature();
 
         QTreeWidgetItem * item = new QTreeWidgetItem;
         item->setText(0,"Placed Feature");
         item->setText(1,addr(pfp.get()));
         item->setText(2,Transform::toInfoString(tr));
-        parent->addChild(item);
+        pitem->addChild(item);
 
         QTreeWidgetItem * item2 = new QTreeWidgetItem;
         item2->setText(0,"Feature");

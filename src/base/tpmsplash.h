@@ -12,10 +12,10 @@
 class TPMSplash : public QSplashScreen
 {
 public:
-    TPMSplash(QWidget * parent);
+    TPMSplash();
 
     void display(QString txt);
-    void hide();
+    void remove();
 
 protected:
 

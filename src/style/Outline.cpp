@@ -25,7 +25,6 @@
 #include "style/outline.h"
 #include "geometry/point.h"
 #include "base/view.h"
-#include "base/canvas.h"
 #include <QPainter>
 
 ////////////////////////////////////////////////////////////////////////////

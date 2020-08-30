@@ -26,7 +26,6 @@
 #include "panels/panel.h"
 #include "viewers/workspace_viewer.h"
 #include "base/tiledpatternmaker.h"
-#include "base/canvas.h"
 #include "base/utilities.h"
 
 panel_page::panel_page(ControlPanel * panel,  QString name) : QWidget()
@@ -36,7 +35,6 @@ panel_page::panel_page(ControlPanel * panel,  QString name) : QWidget()
     pageName    = name;
 
     config    = Configuration::getInstance();
-    canvas    = Canvas::getInstance();
     workspace = Workspace::getInstance();
     wsViewer  = WorkspaceViewer::getInstance();
     view      = View::getInstance();

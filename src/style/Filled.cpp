@@ -43,6 +43,9 @@
 
 Filled::Filled(PrototypePtr proto, PolyPtr bounds, int algorithm ) : Style(proto,bounds)
 {
+    faces = make_shared<Faces>();
+    config->faces = WeakFacesPtr(faces);
+
     draw_inside_blacks    = true;
     draw_outside_whites   = true;
     this->algorithm       = algorithm;
@@ -58,12 +61,19 @@ Filled::Filled(const Style  &other) : Style(other)
         whiteColorSet         = filled.whiteColorSet;
         blackColorSet         = filled.blackColorSet;
         algorithm             = filled.algorithm;
+
+        faces = make_shared<Faces>();
+        config->faces = WeakFacesPtr(faces);
     }
-    catch(std::bad_cast exp)
+    catch(std::bad_cast & exp)
     {
+        Q_UNUSED(exp);
         draw_inside_blacks    = true;
         draw_outside_whites   = true;
         algorithm             = 0;
+
+        faces = make_shared<Faces>();
+        config->faces = WeakFacesPtr(faces);
     }
 }
 
@@ -90,13 +100,13 @@ void Filled::resetStyleRepresentation()
     whiteColorSet.resetIndex();
     blackColorSet.resetIndex();
     colorGroup.resetIndex();
-    clearFaces();
+    faces->clearFaces();
 }
 
 
 void Filled::createStyleRepresentation()
 {
-    if (! whiteFaces.isEmpty() || !blackFaces.isEmpty() || !allFaces.isEmpty() || !faceGroup.isEmpty())
+    if (! faces->whiteFaces.isEmpty() || !faces->blackFaces.isEmpty() || !faces->allFaces.isEmpty() || !faces->faceGroup.isEmpty())
     {
         return;     // already created
     }
@@ -104,43 +114,43 @@ void Filled::createStyleRepresentation()
     MapPtr map = getMap();
     map->verifyMap("Filled");
 
-    purifyMap(map);
+    faces->purifyMap(map);
 
     switch (algorithm)
     {
     case 0:
-        if (blackFaces.size() == 0 && whiteFaces.size() == 0)
+        if (faces->blackFaces.size() == 0 && faces->whiteFaces.size() == 0)
         {
-            buildFacesOriginal(map);
-            assignColorsOriginal(map);
-            qDebug() << "black=" << blackFaces.size() <<  "white=" << whiteFaces.size();
+            faces->buildFacesOriginal(map);
+            faces->assignColorsOriginal(map);
+            qDebug() << "black=" << faces->blackFaces.size() <<  "white=" << faces->whiteFaces.size();
         }
         break;
 
     case 1:
-        if (blackFaces.size() == 0 && whiteFaces.size() == 0)
+        if (faces->blackFaces.size() == 0 && faces->whiteFaces.size() == 0)
         {
-            buildFacesOriginal(map);
-            assignColorsNew1();
-            qDebug() << "black=" << blackFaces.size() <<  "white=" << whiteFaces.size();
+            faces->buildFacesOriginal(map);
+            faces->assignColorsNew1();
+            qDebug() << "black=" << faces->blackFaces.size() <<  "white=" << faces->whiteFaces.size();
         }
         break;
 
     case 2:
-        if (faceGroup.size() == 0)
+        if (faces->faceGroup.size() == 0)
         {
-            buildFacesOriginal(map);
-            buildFacesNew23();
-            assignColorsNew2(whiteColorSet);
+            faces->buildFacesOriginal(map);
+            faces->buildFacesNew23();
+            faces->assignColorsNew2(whiteColorSet);
         }
         break;
 
     case 3:
-        if (faceGroup.size() == 0)
+        if (faces->faceGroup.size() == 0)
         {
-            buildFacesOriginal(map);
-            buildFacesNew23();
-            assignColorsNew3(colorGroup );
+            faces->buildFacesOriginal(map);
+            faces->buildFacesNew23();
+            faces->assignColorsNew3(colorGroup );
         }
         break;
     }
@@ -163,12 +173,12 @@ void Filled::draw(GeoGraphics * gg)
         break;
 
     case 2:
-        qDebug() << "Filled::draw() algorithm 2 :" << faceGroup.size() << faceGroup.totalSize();
+        qDebug() << "Filled::draw() algorithm 2 :" << faces->faceGroup.size() << faces->faceGroup.totalSize();
         drawNew2(gg);
         break;
 
     case 3:
-        qDebug() << "Filled::draw() algorithm 3 :" << faceGroup.size() << faceGroup.totalSize();
+        qDebug() << "Filled::draw() algorithm 3 :" << faces->faceGroup.size() << faces->faceGroup.totalSize();
         drawNew3(gg);
         break;
     }
@@ -176,14 +186,14 @@ void Filled::draw(GeoGraphics * gg)
 
 void Filled::drawOriginal(GeoGraphics * gg)
 {
-    if( whiteFaces.size() != 0 || blackFaces.size() != 0 )
+    if( faces->whiteFaces.size() != 0 || faces->blackFaces.size() != 0 )
     {
-        qDebug()  << "black=" << blackFaces.size() << "white=" << whiteFaces.size();
+        qDebug()  << "black=" << faces->blackFaces.size() << "white=" << faces->whiteFaces.size();
 
         if (draw_outside_whites)
         {
             QColor color = whiteColorSet.getFirstColor().color;
-            for (auto face : whiteFaces)
+            for (auto face : faces->whiteFaces)
             {
                 gg->fillEdgePoly(*face.get(), color);
                 color = whiteColorSet.getNextColor().color;
@@ -193,7 +203,7 @@ void Filled::drawOriginal(GeoGraphics * gg)
         if (draw_inside_blacks)
         {
             QColor color = blackColorSet.getFirstColor().color;
-            for (auto face : blackFaces)
+            for (auto face : faces->blackFaces)
             {
                 gg->fillEdgePoly(*face.get(), color);
                 color = blackColorSet.getNextColor().color;
@@ -205,7 +215,7 @@ void Filled::drawOriginal(GeoGraphics * gg)
 void Filled::drawNew2(GeoGraphics *gg)
 {
     // not selected
-    for (auto fset : faceGroup)
+    for (auto fset : faces->faceGroup)
     {
         if (fset->tpcolor.hidden && !fset->selected)
             continue;
@@ -227,7 +237,7 @@ void Filled::drawNew3(GeoGraphics *gg)
 {
     qDebug() << "Filled::drawNew3";
 
-    for (auto fset : faceGroup)
+    for (auto fset : faces->faceGroup)
     {
         qDebug() << "FaceSet size:" << fset->size();
         if (fset->colorSet.isHidden() && !fset->selected)

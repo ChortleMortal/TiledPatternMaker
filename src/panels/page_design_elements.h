@@ -25,7 +25,7 @@
 #ifndef PAGE_DELS_H
 #define PAGE_DELS_H
 
-#include "panel_page.h"
+#include "panels/panel_page.h"
 
 class page_design_elements : public panel_page
 {
@@ -43,24 +43,25 @@ class page_design_elements : public panel_page
 public:
     page_design_elements(ControlPanel * cpanel);
 
-    void refreshPage() override;
-    void onEnter() override;
-    void onExit() override {}
+    void    refreshPage() override;
+    void    onEnter() override;
+    void    onExit() override {}
 
 public slots:
-    void     slot_loadedXML(QString name);
-    void     slot_loadedTiling (QString name);
-    void     slot_loadedDesign(eDesign design);
+    void    slot_loadedXML(QString name);
+    void    slot_loadedTiling (QString name);
+    void    slot_loadedDesign(eDesign design);
 
 private slots:
-    void     slot_rowSelected(int row, int col);
+    void    slot_rowSelected(int row, int col);
+    void    slot_prototypeSelected(int);
 
 protected:
 
 private:
-    AQTableWidget *          delTable; // design element table
+    AQTableWidget * delTable; // design element table
 
-    QLabel *                wsProtoLabel;
+    QComboBox     * protoListBox;
 };
 
 #endif

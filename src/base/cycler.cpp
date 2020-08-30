@@ -24,12 +24,14 @@
 
 #include "base/cycler.h"
 #include "base/configuration.h"
-#include "base/canvas.h"
 #include "base/view.h"
 #include "base/tiledpatternmaker.h"
 #include "viewers/workspace_viewer.h"
 #include "base/fileservices.h"
 #include "panels/versioned_list_widget.h"
+
+Q_DECLARE_METATYPE(QTextCharFormat)
+Q_DECLARE_METATYPE(QTextCursor)
 
 Cycler * Cycler::mpThis = nullptr;
 
@@ -42,14 +44,12 @@ Cycler * Cycler::getInstance()
     return mpThis;
 }
 
-
 Cycler::Cycler() : QObject()
 {
     busy        = false;
     cycleMode   = CYCLE_NONE;
 
     config      = Configuration::getInstance();
-    canvas      = Canvas::getInstance();
 }
 
 void Cycler::init(QThread * thread)
@@ -57,6 +57,11 @@ void Cycler::init(QThread * thread)
     moveToThread(thread);
 
     timer = new QTimer();
+
+    qRegisterMetaType<eCycleMode>();
+    qRegisterMetaType<QTextEdit*>();
+    qRegisterMetaType<QTextCharFormat>();
+    qRegisterMetaType<QTextCursor>();
 
     Workspace * ws = Workspace::getInstance();
     connect(this,   &Cycler::sig_clearCanvas, ws,   &Workspace::slot_clearCanvas);
@@ -69,7 +74,6 @@ Cycler::~Cycler()
 {
     qDebug() << "Cycler destructor";
 }
-
 
 void Cycler::slot_startCycle(eCycleMode mode)
 {
@@ -139,7 +143,7 @@ void Cycler::slot_timeout()
         if (++cIndex < files.size())
         {
             QString name = files.at(cIndex);
-            emit sig_loadTiling(name);
+            emit sig_cycleLoadTiling(name);
         }
         else
         {
@@ -156,7 +160,7 @@ void Cycler::slot_timeout()
         if (++cIndex < files.size())
         {
             QString name = files.at(cIndex);
-            emit sig_loadXML(name);
+            emit sig_cycleLoadMosaic(name);
         }
         else
         {
@@ -303,4 +307,5 @@ void Cycler::nextCyclePng()
     pngRow = 0;
     pngCol = 0;
 }
+
 

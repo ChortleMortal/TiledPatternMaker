@@ -27,7 +27,7 @@
 
 #include <QtCore>
 #include <QtWidgets>
-#include "layer.h"
+#include "base/layer.h"
 
 
 #define TileBlue    "#39426d"

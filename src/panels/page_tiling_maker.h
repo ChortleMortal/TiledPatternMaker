@@ -25,7 +25,7 @@
 #ifndef PAGE_TILING_MAKER_H
 #define PAGE_TILING_MAKER_H
 
-#include "panel_page.h"
+#include "panels/panel_page.h"
 #include "panels/layout_sliderset.h"
 #include "panels/layout_transform.h"
 #include "makers/tiling_maker/tiling_maker.h"
@@ -61,7 +61,6 @@ public:
 
 signals:
     void sig_tilingChanged();
-    void sig_loadTiling(QString name);
     void sig_reload();
 
 public slots:
@@ -73,6 +72,7 @@ public slots:
     void slot_unload();
 
 private slots:
+    void slot_currentTilingChanged(int index);
     void slot_reloadTiling();
     void slot_replaceTilingInStyles();
 
@@ -129,6 +129,7 @@ protected:
     void refreshTableEntry(PlacedFeaturePtr pf, int col, QString inclusion);
     void updateFeaturePointInfo(PlacedFeaturePtr pfp);
 
+    void loadTilingCombo(TilingPtr selected);
     void displayBackgroundStatus(TilingPtr tiling);
 
     PlacedFeaturePtr getFeatureColumn(int col);
@@ -136,12 +137,7 @@ protected:
 private:
     TilingMaker * tilingMaker;
 
-    QLabel    * currentTiling;
-
-    QCheckBox * chk_autoFill;
-    QCheckBox * chk_hideTable;
-    QCheckBox * chk_showDebug;
-    QCheckBox * chk_showOverlaps;
+    QComboBox * tilingCombo;
 
     QButtonGroup * mouseModeBtnGroup;
 

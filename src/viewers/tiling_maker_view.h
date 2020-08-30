@@ -41,7 +41,6 @@
 #include "tile/placed_feature.h"
 #include "base/layer.h"
 #include "base/configuration.h"
-#include "base/canvas.h"
 
 class TilingMakerView : public Layer
 {
@@ -56,7 +55,6 @@ public:
     void drawTranslationVectors(GeoGraphics * g2d, QPointF t1_start, QPointF t1_end, QPointF t2_start, QPointF t2_end);
     void drawAccum(GeoGraphics * g2d);
     void drawMeasurements(GeoGraphics * g2d);
-
 
     TilingSelectionPtr findSelection(QPointF spt);
     TilingSelectionPtr findFeature(QPointF spt);
@@ -86,10 +84,10 @@ public:
 protected:
     void determineOverlapsAndTouching();
 
-    eMouseMode  mouse_mode;     // set by tiling designer menu
+    eTilingMouseMode  mouse_mode;     // set by tiling designer menu
 
     QVector<PlacedFeaturePtr> allPlacedFeatures;
-    QVector<PlacedFeaturePtr> in_tiling;    // DAC was hash
+    QVector<PlacedFeaturePtr> in_tiling;
 
     EdgePoly                  wAccum;       // world points
     QVector<Measurement>      wMeasurements;

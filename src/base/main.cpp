@@ -25,9 +25,8 @@
 #include <QtCore>
 #include <QtWidgets>
 
-#include "qtapplog.h"
+#include "base/qtapplog.h"
 #include "base/configuration.h"
-#include "base/canvas.h"
 #include "viewers/workspace_viewer.h"
 #include "base/tiledpatternmaker.h"
 

@@ -22,7 +22,7 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "dlg_rename.h"
+#include "panels/dlg_rename.h"
 
 DlgRename::DlgRename(QWidget * parent) : QDialog(parent)
 {

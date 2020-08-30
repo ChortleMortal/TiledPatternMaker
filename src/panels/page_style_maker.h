@@ -34,13 +34,13 @@ class page_style_maker : public panel_page
 
     enum eStyleCol
     {
-        STYLE_COL_CHECK_SHOW = 0,
-        STYLE_COL_TILING     = 1,
-        STYLE_COL_DATA       = STYLE_COL_TILING,
-        STYLE_COL_STYLE      = 2,
-        STYLE_COL_PROTO_EDIT = 3,
-        STYLE_COL_ADDR       = 4,
-        STYLE_COL_TRANS      = 5
+        STYLE_COL_CHECK_SHOW,
+        STYLE_COL_TILING,
+        STYLE_COL_STYLE,
+        STYLE_COL_ADDR,
+        STYLE_COL_STYLE_DATA = STYLE_COL_ADDR,
+        STYLE_COL_TRANS,
+        STYLE_COL_NUM_COLS
     };
 
 public:
@@ -58,8 +58,8 @@ private slots:
     void    slot_unload();
     void    slot_styleSelected();
     void    slot_styleChanged(int row);
+    void    slot_tilingChanged(int row);
     void    slot_styleVisibilityChanged(int row);
-    void    slot_editProto(int row);        // DAC should be slot_setWSProto
     void    slot_deleteStyle();
     void    slot_moveStyleUp();
     void    slot_moveStyleDown();
@@ -73,6 +73,8 @@ protected:
     StylePtr getStyleIndex(int index);
     StylePtr copyStyle(const StylePtr style);
 
+    TilingPtr loadNewTiling(QString name);
+
 private:
     QItemSelectionModel * selectModel;
 
@@ -82,8 +84,8 @@ private:
     QVBoxLayout   * parmsCtrl;
 
     QSignalMapper  styleMapper;
+    QSignalMapper  tilingMapper;
     QSignalMapper  styleVisMapper;
-    QSignalMapper  editProtoMapper;
 
     QPushButton * delBtn;
     QPushButton * upBtn;

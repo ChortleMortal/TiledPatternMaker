@@ -22,7 +22,7 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "dlg_colorSet.h"
+#include "panels/dlg_colorSet.h"
 #include "base/utilities.h"
 
 DlgColorSet::DlgColorSet(ColorSet & cset, QWidget * parent) :  QDialog(parent), colorSet(cset)

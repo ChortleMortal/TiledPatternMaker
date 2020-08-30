@@ -56,13 +56,10 @@ private:
     QVector<EdgePtr> list;   // this is the list neighbours for the vertex
 };
 
-typedef shared_ptr<Neighbours> NeighboursPtr;
-
-
 class NeighbourMap
 {
-    friend class XmlWriter;
-    friend class XmlLoader;
+    friend class MosaicWriter;
+    friend class MosaicLoader;
     friend class Map;
 
 public:

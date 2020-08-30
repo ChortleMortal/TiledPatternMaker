@@ -15,7 +15,7 @@ public:
     void       setTransform(QTransform t);
     void       addTransform(QTransform t);
 
-    QTransform toQTransform(QTransform viewTransform);
+    QTransform toQTransform(QTransform transform);
     QTransform getTransform();
     QPointF    getTranslate() { return QPointF(translateX,translateY); }
     QString    toInfoString();
@@ -29,6 +29,7 @@ public:
 
     void       setScale(qreal s);
     void       setRotateRadians(qreal rr);
+    void       setRotateDegrees(qreal deg);
     void       setTranslateX(qreal x);
     void       setTranslateY(qreal y);
     void       setCenter(QPointF pt);

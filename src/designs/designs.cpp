@@ -23,7 +23,7 @@
  */
 
 #include "base/border.h"
-#include "base/canvas.h"
+#include "designs/design_control.h"
 #include "base/workspace.h"
 #include "designs/designs.h"
 #include "designs/patterns.h"
@@ -316,8 +316,8 @@ bool DesignHuPacked::build()
     cols = 6;
 
     // repeat
-    Canvas * canvas = Canvas::getInstance();
-    canvas->slot_setStep(0);
+    DesignControl * ctrl = DesignControl::getInstance();
+    ctrl->setStep(0);
     for (int row = 0; row < rows; row++)
     {
         for (int col=0; col < cols; col++)

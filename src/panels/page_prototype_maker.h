@@ -25,7 +25,7 @@
 #ifndef PAGE_FIGURE_MAKER_H
 #define PAGE_FIGURE_MAKER_H
 
-#include "panel_page.h"
+#include "panels/panel_page.h"
 #include "makers/figure_maker/figure_editors.h"
 
 class page_prototype_maker : public panel_page

@@ -22,7 +22,7 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "dlg_rebase.h"
+#include "panels/dlg_rebase.h"
 
 DlgRebase::DlgRebase(QWidget * parent) : QDialog(parent)
 {

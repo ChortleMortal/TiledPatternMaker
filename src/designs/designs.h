@@ -25,7 +25,7 @@
 #define TPM_DESIGN_H
 
 #include <QtCore>
-#include "design.h"
+#include "designs/design.h"
 
 class Design5 : public Design
 {

@@ -25,11 +25,8 @@
 #ifndef PANEL_H
 #define PANEL_H
 
-#include <QtGui>
-#include <QtWidgets>
-
 #include "panels/panel_page.h"
-#include "panels/panel_misc.h"
+#include "panels/panel_list_widget.h"
 #include "panels/panel_status.h"
 #include "panels/panel_pagesWidget.h"
 #include "base/configuration.h"
@@ -48,33 +45,41 @@ public:
 
     void    init(TiledPatternMaker * parent);
 
-    void	closeEvent(QCloseEvent *event) Q_DECL_OVERRIDE;
-    void    resizeEvent(QResizeEvent *event) Q_DECL_OVERRIDE;
+    void	closeEvent(QCloseEvent *event) override;
+    void    resizeEvent(QResizeEvent *event) override;
     void    populatePages();
     void    floatPages();
     void    closePages();
 
-    void    showStatus(QString txt) { status->display(txt); }
-    void    showSplash(QString txt) { splash->display(txt); }
-    void    hideStatus()            { status->hide(); }
-    void    hideSplash()            { splash->hide(); }
-    void    setStatusStyle(QString txt) { status->setStyleSheet(txt); }
+    void    showPanelStatus(QString txt) { panelStatus->display(txt); }
+    void    hidePanelStatus()            { panelStatus->hide(); }
+    void    reflectCurrentView(eViewType vtype) { panelStatus->setCurrentView(vtype); }
+
+    void    showSplash(QString txt)      { splash->display(txt); }
+    void    hideSplash()                 { splash->remove(); }
 
     TiledPatternMaker * getMaker() { return maker; }
     panel_page * getCurrentPage()  { return currentPage; }
 
+    void    selectViewer(int id);
+
+    static eKbdMode getValidKbdMode(eKbdMode mode);
+
 signals:
     void    sig_viewWS();
     void    sig_render();
-    void    sig_selectViewer(int id);
     void    sig_panelResized();
     void    sig_reload();
+    void    sig_view_synch(int id,  bool  enb);
 
 public slots:
-    void    slot_selectWidget(int index);
+    void    slot_selectPanelPage(int index);
     void    slot_detachWidget(QString name);
     void    slot_attachWidget(QString name);
     void    slot_poll();
+
+    void    slot_Viewer_pressed(int id, bool enb);
+    void    slot_multiSelect(bool enb);
 
 private slots:
     void    repeatChanged(int mode);
@@ -84,30 +89,40 @@ private slots:
     void    slot_raise();
     void    updateClicked(bool enb);
     void    updateView(bool enb);
-    void    slot_xformModeChanged(int row);
+    void    slot_kbdModeChanged(int row);
     void    slot_kbdMode(eKbdMode mode);
     void    slot_scaleToView(bool enb);
-    void    showDesignClicked(bool state);
+    void    showTilingPressed();
+    void    showMosaicPressed();
+    void    slot_showBackChanged(bool state);
+    void    slot_view_synch(int id, int enb);
 
 protected:
     ControlPanel();
     ~ControlPanel() override;
 
+    QGroupBox * createWorkspaceViewers();
+
     void    delegateView();
+    void    delegateKeyboardMouse(eViewType viewType);
+
+
+    static eKbdMode getValidMosaicMode(eKbdMode mode);
+    static eKbdMode getValidDesignMode(eKbdMode mode);
 
 private:
     void	setupGUI();
-    void	setupTools(QToolBar *tools);
     void	refreshPage(panel_page * wp);
 
 private:
     static ControlPanel * mpThis;
 
     Configuration           * config;
-    Canvas                  * canvas;
     TiledPatternMaker       * maker;
+    WorkspaceViewer         * viewer;
+    View                    * view;
 
-    PanelStatus             * status;
+    PanelStatus             * panelStatus;
     TPMSplash               * splash;
 
     QVector<panel_page*>    mAttachedPages;
@@ -115,8 +130,7 @@ private:
     QTimer *				mpTimer;
     QMutex					mUpdateMutex;
 
-    eViewType               lastViewType;
-
+    bool                    closed;
 
     PanelListWidget      *  mpPanelPageList;
     PanelPagesWidget     *  panelPagesWidget;
@@ -127,11 +141,24 @@ private:
     QRadioButton * radioDefined;
     QRadioButton * radioPack;
     QRadioButton * radioSingle;
-    QCheckBox    * cbShowDesign;
 
-    QComboBox    * xformModeCombo;
+    QComboBox    * kbdModeCombo;
 
     QButtonGroup   repeatRadioGroup;
+
+    ///
+    QCheckBox   *cbLockView;
+    QCheckBox   *cbRawDesignView;
+    QCheckBox   *cbMosaicView;
+    QCheckBox   *cbPrototypeView;
+    QCheckBox   *cbTilingView;
+    QCheckBox   *cbProtoMaker;
+    QCheckBox   *cbDELView;
+    QCheckBox   *cbTilingMakerView;
+    QCheckBox   *cbFigMapView;
+    QCheckBox   *cbFaceSetView;
+
+    QButtonGroup  viewerGroup;
 };
 
 #endif

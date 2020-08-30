@@ -23,19 +23,21 @@
  */
 
 #include "panels/page_prototype_maker.h"
+#include "panels/panel.h"
 #include "base/tiledpatternmaker.h"
-#include "base/canvas.h"
+#include "base/shared.h"
 #include "base/utilities.h"
 #include "makers/figure_maker/prototype_maker.h"
 #include "style/style.h"
-#include "panels/panel.h"
 #include "viewers/workspace_viewer.h"
 
-Q_DECLARE_METATYPE(PrototypePtr)
+Q_DECLARE_METATYPE(WeakPrototypePtr)
 
 page_prototype_maker::page_prototype_maker(ControlPanel * cpanel) : panel_page(cpanel,"Prototype Maker")
 {
     // top line
+
+    QLabel  * tilingLabel    = new QLabel("Tiling:");
     protoListBox             = new QComboBox();
     protoListBox->setMinimumWidth(131);
 
@@ -45,6 +47,7 @@ page_prototype_maker::page_prototype_maker(ControlPanel * cpanel) : panel_page(c
     QPushButton * pbDup      = new QPushButton("Duplicate Figure");
 
     QHBoxLayout * hbox = new QHBoxLayout;
+    hbox->addWidget(tilingLabel);
     hbox->addWidget(protoListBox);
     hbox->addSpacing(31);
     hbox->addWidget(whiteBackground);
@@ -82,13 +85,28 @@ page_prototype_maker::page_prototype_maker(ControlPanel * cpanel) : panel_page(c
 
     connect(tpm,  &TiledPatternMaker::sig_loadedTiling,   this,   &page_prototype_maker::slot_loadedTiling);
     connect(tpm,  &TiledPatternMaker::sig_loadedXML,      this,   &page_prototype_maker::slot_loadedXML);
-    connect(tpm,  &TiledPatternMaker::sig_unload,         this,   &page_prototype_maker::slot_unload);
+    connect(view, &View::sig_unload,                      this,   &page_prototype_maker::slot_unload);
     connect(protoListBox, SIGNAL(currentIndexChanged(int)), this,   SLOT(slot_prototypeSelected(int)));
+
+    connect(workspace, &Workspace::sig_selected_proto_changed, this, &page_prototype_maker::onEnter);
 
     if (config->figureViewBkgdColor == Qt::white)
     {
         whiteBackground->setChecked(true);
     }
+}
+
+void page_prototype_maker::onEnter()
+{
+    reload();
+}
+
+void page_prototype_maker::onExit()
+{
+}
+
+void page_prototype_maker::refreshPage(void)
+{
 }
 
 void page_prototype_maker::setupFigure(bool isRadial)
@@ -111,7 +129,6 @@ void page_prototype_maker::setupFigure(bool isRadial)
     }
 }
 
-
 void page_prototype_maker::slot_unload()
 {
     protoListBox->blockSignals(true);
@@ -128,14 +145,15 @@ void page_prototype_maker::slot_reload()
 
 void page_prototype_maker::reload()
 {
-    TilingPtr tiling = workspace->getTiling();
     QVector<PrototypePtr> protos = workspace->getPrototypes();
     if (protos.isEmpty())
     {
         // create new prototype
+        TilingPtr tiling = workspace->getCurrentTiling();
         PrototypePtr pp = make_shared<Prototype>(tiling);
         workspace->addPrototype(pp);
         workspace->setSelectedPrototype(pp);
+        protos = workspace->getPrototypes();
     }
 
     protoListBox->blockSignals(true);
@@ -143,39 +161,20 @@ void page_prototype_maker::reload()
 
     for (auto proto : protos)
     {
-        QString paddr = Utils::addr(proto.get());
-        protoListBox->addItem(paddr,QVariant::fromValue(proto));
+        qDebug() << "proto tiling" << proto->getTiling()->getName();
+        protoListBox->addItem(proto->getTiling()->getName(),QVariant::fromValue(WeakPrototypePtr(proto)));
     }
 
     PrototypePtr pp = workspace->getSelectedPrototype();
-    QString paddr = Utils::addr(pp.get());
     if (pp)
     {
-        pp->setTiling(tiling);
         prototypeMaker->setupFigures(pp);   // sets the prototype maker
 
-        int index = protoListBox->findText(paddr);
+        QString name = pp->getTiling()->getName();
+        int index = protoListBox->findText(name);
         protoListBox->setCurrentIndex(index);
     }
     protoListBox->blockSignals(false);
-}
-
-void page_prototype_maker::onEnter()
-{
-    QString txt("<body style=\"background-color=#000000\"><font color=green>figure</font>  |  <font color=magenta>feature boundary</font>  |  <font color=red>radial figure boundary</font>  |  <font color=yellow>extended boundary</font></body>");
-    panel->setStatusStyle("QLabel { background-color : black; }");
-    panel->showStatus(txt);
-
-    reload();
-}
-
-void page_prototype_maker::onExit()
-{
-    panel->hideStatus();
-}
-
-void page_prototype_maker::refreshPage(void)
-{
 }
 
 void page_prototype_maker::slot_tilingChanged()
@@ -249,7 +248,7 @@ void  page_prototype_maker::whiteClicked(bool state)
 void  page_prototype_maker::repRadClicked(bool state)
 {
     config->debugReplicate = !state;
-    emit canvas->sig_figure_changed();
+    emit view->sig_figure_changed();
 }
 
 void  page_prototype_maker::hiliteClicked(bool state)
@@ -277,18 +276,14 @@ void page_prototype_maker::slot_loadedTiling (QString name)
     reload();
 }
 
-
 void page_prototype_maker::slot_prototypeSelected(int row)
 {
-    PrototypePtr pp;
+    WeakPrototypePtr wpp;
     QVariant var = protoListBox->itemData(row);
-    if (var.canConvert<PrototypePtr>())
+    if (var.canConvert<WeakPrototypePtr>())
     {
-        pp = var.value<PrototypePtr>();
-    }
-    if (pp)
-    {
-        workspace->setSelectedPrototype(pp);
+        wpp = var.value<WeakPrototypePtr>();
+        workspace->setSelectedPrototype(wpp);
         reload();
     }
 }

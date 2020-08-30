@@ -277,7 +277,7 @@ void FilledEditor::displayParms01()
     outside_checkbox->setChecked(filled->getDrawOutsideWhites());
     table->setCellWidget(row,0,outside_checkbox);
 
-    item = new QTableWidgetItem(QString("%1 faces out of %2").arg(filled->getWhiteFaces().size()).arg(filled->getAllFaces().size()));
+    item = new QTableWidgetItem(QString("%1 faces out of %2").arg(filled->faces->getWhiteFaces().size()).arg(filled->faces->getAllFaces().size()));
     table->setItem(row,3,item);
 
     ColorSet & colorSetW    = filled->getWhiteColorSet();
@@ -295,7 +295,7 @@ void FilledEditor::displayParms01()
     inside_checkbox->setChecked(filled->getDrawInsideBlacks());
     table->setCellWidget(row,0,inside_checkbox);
 
-    item = new QTableWidgetItem(QString("%1 faces out of %2").arg(filled->getBlackFaces().size()).arg(filled->getAllFaces().size()));
+    item = new QTableWidgetItem(QString("%1 faces out of %2").arg(filled->faces->getBlackFaces().size()).arg(filled->faces->getAllFaces().size()));
     table->setItem(row,3,item);
 
     ColorSet & colorSetB    = filled->getBlackColorSet();
@@ -319,7 +319,7 @@ void FilledEditor::displayParms01()
 void FilledEditor::displayParms2()
 {
 
-    fillSet = new StyleColorFillSet(filled->getFaceGroup(),filled->getWhiteColorSet(),vbox);
+    fillSet = new StyleColorFillSet(filled->faces->getFaceGroup(),filled->getWhiteColorSet(),vbox);
     fillSet->display();
     connect(fillSet, &StyleColorFillSet::sig_colorsChanged, this, &FilledEditor::slot_colorsChanged);
 }
@@ -327,7 +327,7 @@ void FilledEditor::displayParms2()
 
 void FilledEditor::displayParms3()
 {
-    fillGroup = new StyleColorFillGroup(filled->getFaceGroup(),filled->getColorGroup(),vbox);
+    fillGroup = new StyleColorFillGroup(filled->faces->getFaceGroup(),filled->getColorGroup(),vbox);
     fillGroup->display();
     connect(fillGroup, &StyleColorFillGroup::sig_colorsChanged, this, &FilledEditor::slot_colorsChanged, Qt::UniqueConnection);
 }
@@ -400,10 +400,10 @@ void FilledEditor::slot_colorsChanged()
     switch(filled->getAlgorithm())
     {
     case 3:
-        filled->assignColorsNew3(filled->colorGroup);
+        filled->faces->assignColorsNew3(filled->colorGroup);
         break;
     case 2:
-        filled->assignColorsNew2(filled->whiteColorSet);
+        filled->faces->assignColorsNew2(filled->whiteColorSet);
         break;
     case 1:
     case 0:
@@ -456,7 +456,7 @@ void FilledEditor::slot_viewFaces()
 
 void FilledEditor::slot_setSelect(int face)
 {
-    FaceSet & set = filled->allFaces;
+    const FaceSet & set = filled->faces->getAllFaces();
     if (face >=0 && face < set.size())
     {
         FacePtr fp  = set[face];

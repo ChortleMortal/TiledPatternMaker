@@ -73,12 +73,7 @@ void page_style_figure_info::showFiguresFromStyles()
     {
         PrototypePtr pp = style->getPrototype();
 
-        // from the prototype we can find things
         QVector<DesignElementPtr>  dels = pp->getDesignElements();
-        TilingPtr  tp = pp->getTiling();
-        // also from the tiling
-        //QList <PlacedFeaturePtr> & qpf = tp->getPlacedFeatures();
-
         for (int i=0; i < dels.size(); i++)
         {
             DesignElementPtr del = dels[i];
@@ -88,7 +83,6 @@ void page_style_figure_info::showFiguresFromStyles()
 
             QString stylename = style->getStyleDesc();
             QTableWidgetItem * item =  new QTableWidgetItem(stylename);
-            item->setData(Qt::UserRole,QVariant::fromValue(WeakTilingPtr(tp)));
             figureTable->setItem(row,COL_STYLE_NAME,item);
 
             QString figName = figp->getFigureDesc();

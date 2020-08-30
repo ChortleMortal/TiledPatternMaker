@@ -38,7 +38,7 @@ class GeoGraphics;
 class PlacedDesignElementView : public Layer
 {
 public:
-    PlacedDesignElementView(PlacedDesignElementPtr pde);
+    PlacedDesignElementView(PlacedDesignElementPtr pde, bool selected);
 
     virtual void paint(QPainter *painter);
 
@@ -52,6 +52,7 @@ private:
     PlacedDesignElementPtr  pde;
     QColor feature_interior;
     QColor feature_border;
+    bool   selected;
 };
 
 #endif

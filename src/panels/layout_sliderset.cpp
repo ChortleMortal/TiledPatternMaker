@@ -22,7 +22,7 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "layout_sliderset.h"
+#include "panels/layout_sliderset.h"
 
 // Slider Set
 

@@ -43,7 +43,6 @@
 #include "geometry/map.h"
 #include "geometry/loose.h"
 #include "geometry/intersect.h"
-#include "base/canvas.h"
 #include "base/configuration.h"
 #include "designs/shapefactory.h"
 #include "base/utilities.h"

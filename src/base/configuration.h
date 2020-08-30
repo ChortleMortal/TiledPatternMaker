@@ -98,26 +98,25 @@ enum eViewType
     VIEW_DESIGN,
     VIEW_START = VIEW_DESIGN,
     VIEW_MOSAIC,
-    VIEW_PROTO,
-    VIEW_PROTO_FEATURE,
-    VIEW_DEL,
-    VIEW_FIGURE_MAKER,
+    VIEW_PROTOTYPE,
+    VIEW_DESIGN_ELEMENT,
+    VIEW_FROTOTYPE_MAKER,
     VIEW_TILING,
     VIEW_TILING_MAKER,
     VIEW_MAP_EDITOR,
     VIEW_FACE_SET,
     VIEW_MAX = VIEW_FACE_SET,
     VIEW_UNDEFINED,
+    NUM_VIEW_TYPES
 };
 
 static QString sViewerType[]
 {
     E2STR(VIEW_DESIGN),
     E2STR(VIEW_MOSAIC),
-    E2STR(VIEW_PROTO),
-    E2STR(VIEW_PROTO_FEATURE),
-    E2STR(VIEW_DEL),
-    E2STR(VIEW_FIGURE_MAKER),
+    E2STR(VIEW_PROTOTYPE),
+    E2STR(VIEW_DESIGN_ELEMENT),
+    E2STR(VIEW_FROTOTYPE_MAKER),
     E2STR(VIEW_TILING),
     E2STR(VIEW_TILING_MAKER),
     E2STR(VIEW_MAP_EDITOR),
@@ -160,20 +159,37 @@ static QString sRepeatType[4]  = {
 
 enum eKbdMode
 {
+    KBD_MODE_UNDEFINED,
     KBD_MODE_XFORM_VIEW,
-    KBD_MODE_DEFAULT = KBD_MODE_XFORM_VIEW,
     KBD_MODE_XFORM_BKGD,
     KBD_MODE_XFORM_TILING,
     KBD_MODE_XFORM_FEATURE,
+    KBD_MODE_POS,
     KBD_MODE_LAYER,
     KBD_MODE_ZLEVEL,
     KBD_MODE_STEP,
     KBD_MODE_SEPARATION,
     KBD_MODE_ORIGIN,
     KBD_MODE_OFFSET,
-    KBD_MODE_CENTER,
-    KBD_MODE_SIZE
+    KBD_MODE_CENTER
 };
+
+const QString sKbdMode[]  = {
+    E2STR(KBD_MODE_UNDEFINED),
+    E2STR(KBD_MODE_XFORM_VIEW),
+    E2STR(KBD_MODE_XFORM_BKGD),
+    E2STR(KBD_MODE_XFORM_TILING),
+    E2STR(KBD_MODE_XFORM_FEATURE),
+    E2STR(KBD_MODE_POS),
+    E2STR(KBD_MODE_LAYER),
+    E2STR(KBD_MODE_ZLEVEL),
+    E2STR(KBD_MODE_STEP),
+    E2STR(KBD_MODE_SEPARATION),
+    E2STR(KBD_MODE_ORIGIN),
+    E2STR(KBD_MODE_OFFSET),
+    E2STR(KBD_MODE_CENTER)
+};
+
 
 enum eGridType
 {
@@ -245,9 +261,9 @@ public:
     bool    logWarningsOnly;
     bool    logElapsedTime;
     bool    mapedStatusBox;
-    bool    showCenter;
-    bool    hideBackgroundImage;
+    bool    showBackgroundImage;
     bool    highlightUnit;
+    bool    nerdMode;
 
     bool    verifyMaps;
     bool    verifyDump;     // TODO - make sure this flag work
@@ -291,6 +307,7 @@ public:
     bool    circleX;
     bool    hideCircles;
     bool    enableDetachedPages;
+    bool    showCenter;
 
     bool    updatePanel;
 
@@ -299,11 +316,10 @@ public:
 
     eKbdMode    kbdMode;
 
-    FaceSet * faceSet;
-    FacePtr   selectedFace;                     // used by FaceSetView;
+    WeakFacesPtr   faces;                           // used by FaceSetView
+    WeakFacePtr    selectedFace;                    // used by FaceSetView
 
-    Feature * selectedDesignElementFeature;     // set by menu
-    QColor    figureViewBkgdColor;                // used by some menus
+    QColor    figureViewBkgdColor;                  // used by some menus
 
     QMap<eDesign,DesignPtr>  availableDesigns;
 

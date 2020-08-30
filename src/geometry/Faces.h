@@ -144,6 +144,8 @@ class Faces
         C_BLACK = 1
     };
 
+    friend class Filled;
+
 public:
     Faces();
 

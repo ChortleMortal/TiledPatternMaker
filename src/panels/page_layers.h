@@ -25,7 +25,7 @@
 #ifndef PAGE_LAYERS_H
 #define PAGE_LAYERS_H
 
-#include "panel_page.h"
+#include "panels/panel_page.h"
 
 class page_layers : public panel_page
 {
@@ -45,6 +45,7 @@ class page_layers : public panel_page
         CANVAS_ROT,
         CANVAS_X,
         CANVAS_Y,
+        CANVAS_CENTER,
         CANVAS_CLEAR,
         LAYER_CENTER,
         LAYER_SCALE,

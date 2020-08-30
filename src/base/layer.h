@@ -49,12 +49,6 @@ public:
     void    addSubLayer(LayerPtr item);
     void    removeSubLayer(LayerPtr item);
 
-    void    setCenter (QPointF pt);
-    QPointF getCenter();
-
-    void    setCanvasXform(Xform & xf);
-    Xform   getCanvasXform();
-
     void    forceUpdateLayer();
     void    forceRedraw() ;
 
@@ -64,8 +58,14 @@ public:
     QPointF worldToScreen(QPointF pt);
     QLineF  worldToScreen(QLineF line);
 
-    QTransform  getLayerTransform();
+    void        setCenter (QPointF pt);
+    QPointF     getCenter();
+
+    void        setCanvasXform(Xform & xf);
+    Xform       getCanvasXform();
+    QTransform  getCanvasTransform();
     QTransform  getViewTransform();
+    QTransform  getLayerTransform();
 
     QString getName() { return name; }
 
@@ -90,26 +90,30 @@ public:
 public slots:
     void slot_moveX(int amount);
     void slot_moveY(int amount);
+    void slot_mouseTranslate(QPointF pt);
     void slot_rotate(int amount);
+    void slot_wheel_rottate(qreal delta);
     void slot_scale(int amount);
+    void slot_wheel_scale(qreal delta);
+    void slot_setCenter(QPointF spt);
+
     virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn);
 
 protected:
-    Xform      xf_canvas;
-    QTransform qtr_view;
-    QTransform qtr_layer;       // calculated
-    QTransform qtr_invert;      // calculated
-
+    void    drawCenter(QPainter * painter);
     QPen       layerPen;
 
     Configuration   * config;
-    Canvas          * canvas;
     WorkspaceViewer * wsViewer;
     View            * view;
 
 private:
     void computeLayerTransform();
     void deltaLoc(QPointF loc);
+
+    Xform      xf_canvas;
+    QTransform qtr_layer;       // calculated
+    QTransform qtr_invert;      // calculated
 
     bool    visible;
     QVector<LayerPtr>  subLayers;

@@ -7,13 +7,13 @@
 class FaceSetView : public Layer
 {
 public:
-    FaceSetView(FaceSet * set);
+    FaceSetView(WeakFacesPtr faces);
 
     virtual void   paint(QPainter *painter) override;
     virtual void   draw( GeoGraphics * gg );
 
 private:
-    FaceSet * fset;
+    WeakFacesPtr wfaces;
 };
 
 #endif // FACESETVIEW_H

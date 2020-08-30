@@ -39,7 +39,7 @@ class DesignElement;
 class PlacedDesignElementView;
 class FigureView;
 class ProtoView;
-class ProtoFeatureView;
+class PrototypeView;
 class Tiling;
 class TilingMaker;
 class TilingView;
@@ -94,9 +94,8 @@ protected:
    void     viewDesign();
    void     viewMosaic();
    void     viewPrototype();
-   void     viewProtoFeature();
    void     viewDesignElement();
-   void     viewFigureMaker();
+   void     viewPrototypeMaker();
    void     viewTiling();
    void     viewTilingMaker();
    void     viewMapEditor();
@@ -112,8 +111,8 @@ private:
 
     class Configuration * config;
     class Workspace     * workspace;
-    class Canvas        * canvas;
     class View          * view;
+    class ControlPanel  * panel;
 
     UniqueQVector<LayerPtr> mViewers;
     QVector<DesignPtr>      mDesigns;
