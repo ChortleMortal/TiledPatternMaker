@@ -30,11 +30,13 @@
 #include "base/shared.h"
 #include "base/fileservices.h"
 #include "base/view.h"
+#include "viewers/workspace_viewer.h"
 
 
 TilingManager::TilingManager()
 {
     workspace = Workspace::getInstance();
+    config    = Configuration::getInstance();
 }
 
 TilingPtr TilingManager::loadTiling(QString name)
@@ -59,6 +61,14 @@ TilingPtr TilingManager::loadTiling(QString name)
         qDebug().noquote() << "Loaded tiling:" << filename << tp->getName();
         tp->setState(TILING_LOADED);
         workspace->setCurrentTiling(tp);        // also adds
+
+        // size view to tiling
+        QSize size = tp->getSize();
+        workspace->setAllTilingActiveSizes(size);
+        if (config->scaleToView)
+        {
+            workspace->setAllTilingFrameSizes(size);
+        }
     }
     else
     {
@@ -74,9 +84,9 @@ bool TilingManager::saveTiling(QString name, TilingPtr tp)
         tp->setName(name);
     }
 
-    View * view = View::getInstance();
-    QSize size  = view->size();
-    tp->setCanvasSize(size);
+    // match size to current view
+    QSize size  = workspace->size();
+    tp->setSize(size);
 
     TilingMaker * maker = TilingMaker::getInstance();
     if (maker->getTiling() == tp)
@@ -85,6 +95,7 @@ bool TilingManager::saveTiling(QString name, TilingPtr tp)
         tp->setCanvasXform(xf);
     }
 
+    // write
     TilingWriter writer(tp);
     bool rv = writer.writeTilingXML();   // uses the name in the tiling
     if (rv)

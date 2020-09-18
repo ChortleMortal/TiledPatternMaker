@@ -49,9 +49,8 @@ int main(int argc, char *argv[])
 #else
     qInfo().noquote() << "============Release Build:" << cd.toString() << ct.toString();
 #endif
-    qInfo().noquote() << "App path:" << qApp->applicationDirPath();
     qInfo().noquote() << "Log:"  << qtAppLog::currentLogName;
-
+    qInfo() << "Qt version :" << QT_VERSION_STR;
 #ifdef __linux__
     qDebug().noquote() << "Font:" << QApplication::font().toString();
     QFont afont = QApplication::font();
@@ -67,7 +66,6 @@ int main(int argc, char *argv[])
     bool noAutoLoad = false;
     bool mapVerify  = false;
     bool forceLoad  = false;
-    bool firstBirthday = false;
     QString loadFile;
     for (int i = 1; i < argc; ++i)
     {
@@ -85,10 +83,6 @@ int main(int argc, char *argv[])
             i++;
             loadFile = argv[i];
         }
-        if (qstrcmp(argv[i], "--first-birthday") == 0)
-        {
-            firstBirthday = true;
-        }
     }
 
     // holding down shift key on start stop autoload
@@ -99,7 +93,7 @@ int main(int argc, char *argv[])
     }
 
     // preconfigure
-    if (noAutoLoad || mapVerify || forceLoad || firstBirthday)
+    if (noAutoLoad || mapVerify || forceLoad)
     {
         Configuration * config = Configuration::getInstance();
         if (noAutoLoad)
@@ -117,10 +111,6 @@ int main(int argc, char *argv[])
         {
             config->autoLoadStyles  = true;
             config->lastLoadedXML   = loadFile;
-        }
-        if (firstBirthday)
-        {
-            config->reconfigurePaths();
         }
     }
 

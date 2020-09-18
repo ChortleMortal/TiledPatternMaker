@@ -27,7 +27,7 @@
 
 int Tile::refs = 0;
 
-Tile::Tile(int Row, int Col) : Layer("Master Tile")
+Tile::Tile(int Row, int Col) : Layer("Master Tile",LTYPE_VIEW)
 {
     row = Row;
     col = Col;
@@ -42,7 +42,7 @@ Tile::~Tile()
 
 LayerPtr Tile::addLayer(int zLevel)
 {
-    LayerPtr layer = make_shared<Layer>("Tile Layer");
+    LayerPtr layer = make_shared<Layer>("Tile Layer",LTYPE_VIEW);
     layer->setZValue(zLevel);
     addSubLayer(layer);
     return layer;

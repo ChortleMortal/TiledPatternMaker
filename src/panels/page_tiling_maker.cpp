@@ -34,6 +34,7 @@
 #include "panels/panel.h"
 #include "style/style.h"
 #include "tile/tiling_manager.h"
+#include "viewers/workspace_viewer.h"
 
 Q_DECLARE_METATYPE(WeakPlacedFeaturePtr)
 
@@ -49,6 +50,9 @@ page_tiling_maker:: page_tiling_maker(ControlPanel * cpanel)  : panel_page(cpane
 
     QGroupBox * modeGroup = createModesGroup();
     vbox->addWidget(modeGroup);
+
+    QHBoxLayout * fillRow = createFillDataRow();
+    vbox->addLayout(fillRow);
 
     QHBoxLayout * tableControl = createTableControlRow();
     vbox->addLayout(tableControl);
@@ -72,18 +76,12 @@ page_tiling_maker:: page_tiling_maker(ControlPanel * cpanel)  : panel_page(cpane
     connect(&xMapper,      SIGNAL(mapped(int)), this, SLOT(slot_transformChanged(int)));
     connect(&yMapper,      SIGNAL(mapped(int)), this, SLOT(slot_transformChanged(int)));
 
-    connect(tpm,  &TiledPatternMaker::sig_loadedTiling,   this, &page_tiling_maker::slot_loadedTiling);
-    connect(tpm,  &TiledPatternMaker::sig_loadedXML,      this, &page_tiling_maker::slot_loadedXML);
-
-    connect(tilingMaker,  &TilingMaker::sig_buildMenu,      this,  &page_tiling_maker::slot_buildMenu);
-    connect(tilingMaker,  &TilingMaker::sig_refreshMenu,    this,  &page_tiling_maker::slot_refreshMenu);
-    connect(tilingMaker,  &TilingMaker::sig_current_feature,this,  &page_tiling_maker::slot_currentFeature);
-
-    connect(view, &View::sig_unload,        this, &page_tiling_maker::slot_unload);
-    connect(view, &View::sig_deltaScale,    this, &page_tiling_maker::slot_scale);
-    connect(view, &View::sig_deltaRotate,   this, &page_tiling_maker::slot_rotate);
-    connect(view, &View::sig_deltaMoveY,    this, &page_tiling_maker::slot_moveY);
-    connect(view, &View::sig_deltaMoveX,    this, &page_tiling_maker::slot_moveX);
+    connect(tpm,  &TiledPatternMaker::sig_loadedTiling,     this, &page_tiling_maker::slot_loadedTiling);
+    connect(tpm,  &TiledPatternMaker::sig_loadedXML,        this, &page_tiling_maker::slot_loadedXML);
+    connect(tilingMaker,  &TilingMaker::sig_buildMenu,      this, &page_tiling_maker::slot_buildMenu);
+    connect(tilingMaker,  &TilingMaker::sig_refreshMenu,    this, &page_tiling_maker::slot_refreshMenu);
+    connect(tilingMaker,  &TilingMaker::sig_current_feature,this, &page_tiling_maker::slot_currentFeature);
+    connect(workspace,    &View::sig_unload,                this, &page_tiling_maker::slot_unload);
 
     tileInfoTable->setVisible(!config->tm_hideTable);
     translationsWidget->setVisible(!config->tm_hideTable);
@@ -143,10 +141,10 @@ AQWidget * page_tiling_maker::createTranslationsRow()
     grid->addLayout(t2x,row,2);
     grid->addLayout(t2y,row,3);
 
-    QObject::connect(t1x,  SIGNAL(valueChanged(double)), this, SLOT(slot_t1t2Changed(double)));
-    QObject::connect(t1y,  SIGNAL(valueChanged(double)), this, SLOT(slot_t1t2Changed(double)));
-    QObject::connect(t2x,  SIGNAL(valueChanged(double)), this, SLOT(slot_t1t2Changed(double)));
-    QObject::connect(t2y,  SIGNAL(valueChanged(double)), this, SLOT(slot_t1t2Changed(double)));
+    QObject::connect(t1x,  &DoubleSpinSet::sig_valueChanged, this, &page_tiling_maker::slot_t1t2Changed);
+    QObject::connect(t1y,  &DoubleSpinSet::sig_valueChanged, this, &page_tiling_maker::slot_t1t2Changed);
+    QObject::connect(t2x,  &DoubleSpinSet::sig_valueChanged, this, &page_tiling_maker::slot_t1t2Changed);
+    QObject::connect(t2y,  &DoubleSpinSet::sig_valueChanged, this, &page_tiling_maker::slot_t1t2Changed);
 
     AQWidget * widget = new AQWidget();
     widget->setLayout(grid);
@@ -161,7 +159,7 @@ QHBoxLayout * page_tiling_maker::createTableControlRow()
     QCheckBox * chk_autoFill     = new QCheckBox("Auto-fill on load");
     QCheckBox * chk_showOverlaps = new QCheckBox("Show overlaps/touching");
 
-    if (config->nerdMode)
+    if (config->insightMode)
     {
         QCheckBox * chk_hideTable     = new QCheckBox("Hide table");
         QCheckBox * chk_showDebug     = new QCheckBox("Show debug");
@@ -203,6 +201,41 @@ QHBoxLayout * page_tiling_maker::createTableControlRow()
 
     connect(chk_autoFill,    &QCheckBox::clicked,    this,   &page_tiling_maker::slot_autofill);
     connect(chk_showOverlaps,&QCheckBox::clicked, tilingMaker, &TilingMaker::slot_showOverlaps);
+
+    return hbox;
+}
+
+QHBoxLayout * page_tiling_maker::createFillDataRow()
+{
+    QHBoxLayout * hbox = new QHBoxLayout;
+
+    const int rmin = -99;
+    const int rmax =  99;
+
+    xRepMin = new QSpinBox();
+    xRepMax = new QSpinBox();
+    yRepMin = new QSpinBox();
+    yRepMax = new QSpinBox();
+
+    xRepMin->setRange(rmin,rmax);
+    xRepMax->setRange(rmin,rmax);
+    yRepMin->setRange(rmin,rmax);
+    yRepMax->setRange(rmin,rmax);
+
+    hbox->addWidget(new QLabel("Repeats:  xMin"));
+    hbox->addWidget(xRepMin);
+    hbox->addWidget(new QLabel("xMax"));
+    hbox->addWidget(xRepMax);
+    hbox->addWidget(new QLabel("yMin"));
+    hbox->addWidget(yRepMin);
+    hbox->addWidget(new QLabel("yMax"));
+    hbox->addWidget(yRepMax);
+    hbox->addStretch();
+
+    connect(xRepMin, SIGNAL(valueChanged(int)), this,  SLOT(slot_set_reps(int)));
+    connect(xRepMax, SIGNAL(valueChanged(int)), this,  SLOT(slot_set_reps(int)));
+    connect(yRepMin, SIGNAL(valueChanged(int)), this,  SLOT(slot_set_reps(int)));
+    connect(yRepMax, SIGNAL(valueChanged(int)), this,  SLOT(slot_set_reps(int)));
 
     return hbox;
 }
@@ -379,19 +412,19 @@ QGroupBox * page_tiling_maker::createModesGroup()
 
     // grouping
     mouseModeBtnGroup = new QButtonGroup;
-    mouseModeBtnGroup->addButton(drawTrans,     TRANSLATION_VECTOR_MODE);
-    mouseModeBtnGroup->addButton(newPoly,       DRAW_POLY_MODE);
-    mouseModeBtnGroup->addButton(copyPoly,      COPY_MODE);
-    mouseModeBtnGroup->addButton(deletePoly,    DELETE_MODE);
-    mouseModeBtnGroup->addButton(includePoly,   INCLUSION_MODE);
-    mouseModeBtnGroup->addButton(nomode,        NO_MOUSE_MODE);
-    mouseModeBtnGroup->addButton(position,      POSITION_MODE);
-    mouseModeBtnGroup->addButton(measure,       MEASURE_MODE);
-    mouseModeBtnGroup->addButton(perspective,   BKGD_SKEW_MODE);
-    mouseModeBtnGroup->addButton(editPoly,      EDIT_FEATURE_MODE);
-    mouseModeBtnGroup->addButton(curveEdge,     EDGE_CURVE_MODE);
-    mouseModeBtnGroup->addButton(mirrorX,       MIRROR_X_MODE);
-    mouseModeBtnGroup->addButton(mirrorY,       MIRROR_Y_MODE);
+    mouseModeBtnGroup->addButton(drawTrans,     TM_TRANSLATION_VECTOR_MODE);
+    mouseModeBtnGroup->addButton(newPoly,       TM_DRAW_POLY_MODE);
+    mouseModeBtnGroup->addButton(copyPoly,      TM_COPY_MODE);
+    mouseModeBtnGroup->addButton(deletePoly,    TM_DELETE_MODE);
+    mouseModeBtnGroup->addButton(includePoly,   TM_INCLUSION_MODE);
+    mouseModeBtnGroup->addButton(nomode,        TM_NO_MOUSE_MODE);
+    mouseModeBtnGroup->addButton(position,      TM_POSITION_MODE);
+    mouseModeBtnGroup->addButton(measure,       TM_MEASURE_MODE);
+    mouseModeBtnGroup->addButton(perspective,   TM_BKGD_SKEW_MODE);
+    mouseModeBtnGroup->addButton(editPoly,      TM_EDIT_FEATURE_MODE);
+    mouseModeBtnGroup->addButton(curveEdge,     TM_EDGE_CURVE_MODE);
+    mouseModeBtnGroup->addButton(mirrorX,       TM_MIRROR_X_MODE);
+    mouseModeBtnGroup->addButton(mirrorY,       TM_MIRROR_Y_MODE);
 
     connect(chkSnapTo, &QCheckBox::clicked, tilingMaker, &TilingMaker::slot_snapTo);
     connect(mouseModeBtnGroup, SIGNAL(buttonClicked(int)),     this,        SLOT(slot_setModes(int)));
@@ -407,14 +440,12 @@ QGroupBox * page_tiling_maker::createBackgroundGroup()
 
     chk_showBkgd    = new QCheckBox("Show Background");
     chk_adjustBkgd  = new QCheckBox("Perspective");
-    chk_xformBkgd   = new QCheckBox("Xform");
     chk_hideTiling  = new QCheckBox("Hide Tiling");
 
     QHBoxLayout * bkh2 = new QHBoxLayout();
     bkh2->addWidget(loadBkgdBtn);
     bkh2->addWidget(chk_showBkgd);
     bkh2->addWidget(chk_adjustBkgd);
-    bkh2->addWidget(chk_xformBkgd);
     bkh2->addWidget(chk_hideTiling);
     bkh2->addWidget(adjustBtn);
     bkh2->addWidget(saveAdjustedBtn);
@@ -434,7 +465,6 @@ QGroupBox * page_tiling_maker::createBackgroundGroup()
     connect(&bkgdLayout,    &LayoutTransform::xformChanged,   this,    &page_tiling_maker::slot_setBkgdXform);
     connect(chk_showBkgd,   &QAbstractButton::clicked,        this,    &page_tiling_maker::slot_setBkgd);
     connect(chk_adjustBkgd, &QAbstractButton::clicked,        this,    &page_tiling_maker::slot_setBkgd);
-    connect(chk_xformBkgd,  &QAbstractButton::clicked,        this,    &page_tiling_maker::slot_setBkgd);
 
     connect(chk_hideTiling, &QCheckBox::clicked,       tilingMaker,    &TilingMaker::hide);
 
@@ -443,13 +473,13 @@ QGroupBox * page_tiling_maker::createBackgroundGroup()
 
 void  page_tiling_maker::onEnter()
 {
-    mouseModeBtnGroup->button(tilingMaker->getMouseMode())->setChecked(true);
+    mouseModeBtnGroup->button(tilingMaker->getTilingMakerMouseMode())->setChecked(true);
 
     sides->setValue(tilingMaker->getPolygonSides());
 
     clear();
 
-    int id = tilingMaker->getMouseMode();
+    int id = tilingMaker->getTilingMakerMouseMode();
     mouseModeBtnGroup->button(id)->setChecked(true);
 
     TilingPtr tiling = workspace->getCurrentTiling();
@@ -493,28 +523,22 @@ void  page_tiling_maker::refreshPage()
     }
     debugLabel2->setText(astring);
 
-    mouseModeBtnGroup->button(tilingMaker->getMouseMode())->setChecked(true);
+    mouseModeBtnGroup->button(tilingMaker->getTilingMakerMouseMode())->setChecked(true);
 }
 
 void page_tiling_maker::clear()
 {
+    blockPage(true);
+
     featureInfo->clear();
     tileInfoTable->clearContents();
-
-    t1x->blockSignals(true);
-    t1y->blockSignals(true);
-    t2x->blockSignals(true);
-    t2y->blockSignals(true);
 
     t1x->setValue(0);
     t1y->setValue(0);
     t2x->setValue(0);
     t2y->setValue(0);
 
-    t1x->blockSignals(false);
-    t1y->blockSignals(false);
-    t2x->blockSignals(false);
-    t2y->blockSignals(false);
+    blockPage(false);
 }
 
 bool page_tiling_maker::canExit()
@@ -577,39 +601,39 @@ void page_tiling_maker::slot_currentTilingChanged(int index)
 
 void page_tiling_maker::slot_setModes(int mode)
 {
-    eTilingMouseMode mm = static_cast<eTilingMouseMode>(mode);
-    tilingMaker->setMouseMode(mm);
+    eTMMouseMode mm = static_cast<eTMMouseMode>(mode);
+    tilingMaker->setTilingMakerMouseMode(mm);
 
     panel->hidePanelStatus();
 
     QString txt;
     switch (mm)
     {
-    case INCLUSION_MODE:
+    case TM_INCLUSION_MODE:
         txt = "Toggle the inclusion of polygons in the tiling by clicking on them with the mouse.";
         panel->showPanelStatus(txt);
         break;
-    case DRAW_POLY_MODE:
+    case TM_DRAW_POLY_MODE:
         txt = "Select a series of vertices clockwise to draw a free-form polygon. (Click on vertices).";
         panel->showPanelStatus(txt);
         break;
-    case TRANSLATION_VECTOR_MODE:
+    case TM_TRANSLATION_VECTOR_MODE:
         txt = "Select the two translation vectors used to tile the plane, using the mouse. (Drag with the mouse).";
         panel->showPanelStatus(txt);
         break;
-    case BKGD_SKEW_MODE:
+    case TM_BKGD_SKEW_MODE:
         txt = "Click to select four points on background image. Then press 'Adjust Perspective' to fix camera skew.";
         panel->showPanelStatus(txt);
         break;
-    case NO_MOUSE_MODE:
-    case COPY_MODE:
-    case DELETE_MODE:
-    case POSITION_MODE:
-    case MEASURE_MODE:
-    case EDIT_FEATURE_MODE:
-    case EDGE_CURVE_MODE:
-    case MIRROR_X_MODE:
-    case MIRROR_Y_MODE:
+    case TM_NO_MOUSE_MODE:
+    case TM_COPY_MODE:
+    case TM_DELETE_MODE:
+    case TM_POSITION_MODE:
+    case TM_MEASURE_MODE:
+    case TM_EDIT_FEATURE_MODE:
+    case TM_EDGE_CURVE_MODE:
+    case TM_MIRROR_X_MODE:
+    case TM_MIRROR_Y_MODE:
         break;
     }
 }
@@ -695,6 +719,8 @@ void page_tiling_maker::slot_refreshMenu()
 
 void page_tiling_maker::buildMenu()
 {
+    blockPage(true);
+
     //qDebug() << "page_tiling_maker::buildMenu";
     tileInfoTable->clearContents();
     tileInfoTable->setColumnCount(0);
@@ -720,34 +746,33 @@ void page_tiling_maker::buildMenu()
     tileInfoTable->setVisible(!config->tm_hideTable);
 
     refreshMenuData();
+
+    blockPage(false);
 }
 
 void page_tiling_maker::refreshMenuData()
 {
     //qDebug() << "page_tiling_maker::refreshMenuData";
 
+    blockPage(true);
+
     TilingPtr tiling     = tilingMaker->getTiling();
 
-    QPointF t1 = tilingMaker->getTrans1();
-    QPointF t2 = tilingMaker->getTrans2();
-
-    tiling->setTrans1(t1);
-    tiling->setTrans2(t2);
-
-    t1x->blockSignals(true);
-    t1y->blockSignals(true);
-    t2x->blockSignals(true);
-    t2y->blockSignals(true);
+    QPointF t1 = tiling->getTrans1();
+    QPointF t2 = tiling->getTrans2();
 
     t1x->setValue(t1.x());
     t1y->setValue(t1.y());
     t2x->setValue(t2.x());
     t2y->setValue(t2.y());
 
-    t1x->blockSignals(false);
-    t1y->blockSignals(false);
-    t2x->blockSignals(false);
-    t2y->blockSignals(false);
+    int xMin,xMax,yMin,yMax;
+    const FillData & fd = tiling->getFillData();
+    fd.get(xMin ,xMax,yMin,yMax);
+    xRepMin->setValue(xMin);
+    xRepMax->setValue(xMax);
+    yRepMin->setValue(yMin);
+    yRepMax->setValue(yMax);
 
     int col = 0;
     QVector<PlacedFeaturePtr> & pfeatures = (config->tm_showAllFeatures) ? tilingMaker->getAllFeatures() : tilingMaker->getInTiling();
@@ -763,6 +788,8 @@ void page_tiling_maker::refreshMenuData()
         PlacedFeaturePtr pfp = getFeatureColumn(col);
         updateFeaturePointInfo(pfp);
     }
+
+    blockPage(false);
 }
 
 void page_tiling_maker::buildTableEntry(PlacedFeaturePtr pf, int col, QString inclusion)
@@ -932,6 +959,8 @@ PlacedFeaturePtr page_tiling_maker::getFeatureColumn(int col)
 
 void page_tiling_maker::slot_sidesChanged(int col)
 {
+    if (pageBlocked()) return;
+
     QWidget * cw  = tileInfoTable->cellWidget(TI_FEAT_SIDES,col);
     QSpinBox * sp = dynamic_cast<QSpinBox*>(cw);
     Q_ASSERT(sp);
@@ -948,6 +977,8 @@ void page_tiling_maker::slot_sidesChanged(int col)
 
 void page_tiling_maker::slot_f_rotChanged(int col)
 {
+    if (pageBlocked()) return;
+
     QWidget * cw  = tileInfoTable->cellWidget(TI_FEAT_ROT,col);
     QDoubleSpinBox * sp = dynamic_cast<QDoubleSpinBox*>(cw);
     Q_ASSERT(sp);
@@ -962,6 +993,8 @@ void page_tiling_maker::slot_f_rotChanged(int col)
 
 void page_tiling_maker::slot_transformChanged(int col)
 {
+    if (pageBlocked()) return;
+
     QWidget        * cw  = tileInfoTable->cellWidget(TI_SCALE,col);
     QDoubleSpinBox * dsp = dynamic_cast<QDoubleSpinBox*>(cw);
     Q_ASSERT(dsp);
@@ -1000,6 +1033,8 @@ void page_tiling_maker::slot_t1t2Changed(double val)
 {
     Q_UNUSED(val)
 
+    if (pageBlocked()) return;
+
     qreal x1 = t1x->value();
     qreal y1 = t1y->value();
     qreal x2 = t2x->value();
@@ -1010,7 +1045,7 @@ void page_tiling_maker::slot_t1t2Changed(double val)
     tiling->setTrans1(QPointF(x1,y1));
     tiling->setTrans2(QPointF(x2,y2));
 
-    tilingMaker->fixupTranslate(tiling);
+    tilingMaker->updateVisibleVectors();
 
     if (tilingMaker->getAllFeatures().size() > tilingMaker->getInTiling().size())
     {
@@ -1020,6 +1055,7 @@ void page_tiling_maker::slot_t1t2Changed(double val)
 
 void page_tiling_maker::slot_swapTrans()
 {
+
     qreal x1 = t1x->value();
     qreal y1 = t1y->value();
     qreal x2 = t2x->value();
@@ -1107,6 +1143,25 @@ void page_tiling_maker::slot_uniquify_clicked()
     buildMenu();
 }
 
+
+void page_tiling_maker::slot_set_reps(int val)
+{
+    Q_UNUSED(val);
+
+    if (pageBlocked()) return;
+
+    TilingPtr tiling = workspace->getCurrentTiling();
+    if (!tiling) return;
+
+    FillData fd;
+    fd.set(xRepMin->value(), xRepMax->value(), yRepMin->value(), yRepMax->value());
+
+    tiling->setFillData(fd);
+    workspace->setFillData(fd);
+
+    emit sig_viewWS();
+}
+
 void page_tiling_maker::slot_cellSelected(int row, int col)
 {
     Q_UNUSED(row)
@@ -1187,7 +1242,7 @@ void page_tiling_maker::slot_clearWS()
     workspace->resetMosaic();
     tilingMaker->clearMakerData();
     onEnter();
-    view->dump(true);
+    workspace->dump(true);
 }
 
 void page_tiling_maker::slot_clearTiling()
@@ -1198,7 +1253,7 @@ void page_tiling_maker::slot_clearTiling()
     tilingMaker->clearMakerData();
 
     onEnter();
-    view->dump(true);
+    workspace->dump(true);
 }
 
 void page_tiling_maker::displayBackgroundStatus(TilingPtr tiling)
@@ -1211,11 +1266,10 @@ void page_tiling_maker::displayBackgroundStatus(TilingPtr tiling)
     BkgdImgPtr bi = tiling->getBackground();
     if (bi)
     {
-        Xform xform = bi->getXform();
+        Xform xform = bi->getCanvasXform();
         bkgdLayout.setTransform(xform.getTransform());
 
         chk_adjustBkgd->setChecked(bi->bAdjustPerspective);
-        chk_xformBkgd->setChecked(bi->bTransformBkgd);
         chk_showBkgd->setChecked(bi->bShowBkgd);
 
         bkgdGroup->setTitle(QString("Background Image: %1").arg(bi->bkgdName));
@@ -1240,7 +1294,6 @@ void page_tiling_maker::slot_loadBackground()
     if (rv)
     {
         chk_adjustBkgd->setChecked(false);
-        chk_xformBkgd->setChecked(false);
         chk_showBkgd->setChecked(true);
 
         slot_setBkgd();
@@ -1256,13 +1309,12 @@ void page_tiling_maker::slot_setBkgd()
     BkgdImgPtr bi = tiling->getBackground();
     if (bi)
     {
-        Xform xform = bi->getXform();
+        Xform xform = bi->getCanvasXform();
         xform.setTransform(bkgdLayout.getQTransform());
-        bi->setXform(xform);
+        bi->updateCanvasXform(xform);
 
         bi->bkgdImageChanged(chk_showBkgd->isChecked(),
-                             chk_adjustBkgd->isChecked(),
-                             chk_xformBkgd->isChecked());
+                             chk_adjustBkgd->isChecked());
     }
 
     if (config->viewerType == VIEW_TILING_MAKER)
@@ -1278,11 +1330,9 @@ void page_tiling_maker::slot_setBkgdXform()
     BkgdImgPtr bi = tiling->getBackground();
     if (bi)
     {
-        Xform xform = bi->getXform();
+        Xform xform = bi->getCanvasXform();
         xform.setTransform(bkgdLayout.getQTransform());
-        bi->setXform(xform);
-
-        bi->bkgdTransformChanged(chk_xformBkgd->isChecked());
+        bi->updateCanvasXform(xform);
     }
 
     if (config->viewerType == VIEW_TILING_MAKER)
@@ -1293,7 +1343,7 @@ void page_tiling_maker::slot_setBkgdXform()
 
 void page_tiling_maker::slot_adjustBackground()
 {
-    if (tilingMaker->getMouseMode() != BKGD_SKEW_MODE)
+    if (tilingMaker->getTilingMakerMouseMode() != TM_BKGD_SKEW_MODE)
     {
         QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
@@ -1323,7 +1373,7 @@ void page_tiling_maker::slot_adjustBackground()
 
 
     displayBackgroundStatus(tiling);
-    tilingMaker->setMouseMode(NO_MOUSE_MODE);
+    tilingMaker->setTilingMakerMouseMode(TM_NO_MOUSE_MODE);
 
     if (config->viewerType == VIEW_TILING_MAKER)
     {
@@ -1472,94 +1522,7 @@ void page_tiling_maker::slot_addGirihShape()
     }
 }
 
-void page_tiling_maker::slot_moveX(int amount)
-{
-    qDebug() << "page_tiling_maker::slot_moveX" << amount;
-    switch (config->kbdMode)
-    {
-    case KBD_MODE_XFORM_BKGD:
-        bkgdLayout.bumpX(amount);
-        break;
 
-    case  KBD_MODE_XFORM_FEATURE:
-        tilingMaker->featureDeltaX(amount);
-        break;
-
-    case  KBD_MODE_XFORM_TILING:
-        tilingMaker->tilingDeltaX(amount);
-        break;
-
-    default:
-        break;
-    }
-}
-
-void page_tiling_maker::slot_moveY(int amount)
-{
-    qDebug() << "page_tiling_maker::slot_moveY" << amount;
-    switch (config->kbdMode)
-    {
-    case KBD_MODE_XFORM_BKGD:
-        bkgdLayout.bumpY(amount);
-        break;
-
-    case KBD_MODE_XFORM_FEATURE:
-        tilingMaker->featureDeltaY(amount);
-        break;
-
-    case KBD_MODE_XFORM_TILING:
-        tilingMaker->tilingDeltaY(amount);
-        break;
-
-    default:
-        break;
-    }
-}
-
-void page_tiling_maker::slot_rotate(int amount)
-{
-    qDebug() << "page_tiling_maker::slot_rotate" << amount;
-    switch (config->kbdMode)
-    {
-    case KBD_MODE_XFORM_BKGD:
-        bkgdLayout.bumpRot(amount);
-        break;
-
-    case KBD_MODE_XFORM_FEATURE:
-        tilingMaker->featureDeltaRotate(amount);
-        break;
-
-    case KBD_MODE_XFORM_TILING:
-        tilingMaker->tilingDeltaRotate(amount);
-        break;
-
-    default:
-        break;
-    }
-}
-
-void page_tiling_maker::slot_scale(int amount)
-{
-    qDebug() << "page_tiling_maker::slot_scale" << amount;
-    switch (config->kbdMode)
-    {
-    case KBD_MODE_XFORM_BKGD:
-        bkgdLayout.bumpScale(-amount);
-        break;
-
-    case KBD_MODE_XFORM_FEATURE:
-        tilingMaker->featureDeltaScale(amount);
-        break;
-
-    case KBD_MODE_XFORM_TILING:
-        tilingMaker->tilingDeltaScale(amount);
-        break;
-
-    default:
-        qWarning("Unexpected state");
-        break;
-    }
-}
 
 void page_tiling_maker::tableHeaderClicked(int index)
 {

@@ -55,14 +55,14 @@ void Mosaic::setNotes(QString notes)
      designNotes = notes;
 }
 
-CanvasSettings & Mosaic::getCanvasSettings()
+WorkspaceSettings & Mosaic::getSettings()
 {
-    return canvasSettings;
+    return settings;
 }
 
-void Mosaic::setCanvasSettings(CanvasSettings settings)
+void Mosaic::setSettings(WorkspaceSettings & settings)
 {
-    canvasSettings = settings;
+    this->settings = settings;
 }
 
 StylePtr  Mosaic::getFirstStyle()

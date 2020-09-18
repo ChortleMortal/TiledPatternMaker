@@ -27,6 +27,7 @@
 #include "tapp/prototype.h"
 #include "style/sketch.h"
 #include "base/qtapplog.h"
+#include "base/utilities.h"
 
 using std::string;
 
@@ -119,7 +120,7 @@ void page_workspace::populateTree(bool expandAll)
 
     QVector<TilingPtr> tilings = workspace->getTilings();
     workspaceTiling= new QTreeWidgetItem;
-    workspaceTiling->setText(0,"++ Tiling");
+    workspaceTiling->setText(0,"++ Tilings");
     workspaceTiling->setText(1,QString("count = %1").arg(tilings.size()));
     tree->addTopLevelItem(workspaceTiling);
     workspaceTiling->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
@@ -207,7 +208,7 @@ void page_workspace::populateStyles(QTreeWidgetItem * parent, MosaicPtr mosaic)
     for (auto tp : tilings)
     {
         item = new QTreeWidgetItem();
-        item->setText(0,"Tiling");
+        item->setText(0,"Tilings");
         item->setText(1,addr(tp.get()));
         item->setText(2,tp->getName());
         parent->addChild(item);
@@ -389,7 +390,7 @@ void page_workspace::populateTiling(QTreeWidgetItem * parent, TilingPtr tp)
     QTreeWidgetItem * pitem = new QTreeWidgetItem;
     pitem->setText(0,"Tiling");
     pitem->setText(1,tp->getName());
-    QString astring = "Num PlacedFeatures:" + QString::number(qlpf.size());
+    QString astring = "Num PlacedFeatures:" + QString::number(qlpf.size()) + "  T1" + Utils::str(tp->getTrans1()) + "  T2" + Utils::str(tp->getTrans2());
     pitem->setText(2,astring);
     parent->addChild(pitem);
 

@@ -51,7 +51,6 @@
 #include <QPainter>
 #include "viewers/geo_graphics.h"
 
-class FillData;
 class Configuration;
 class Workspace;
 

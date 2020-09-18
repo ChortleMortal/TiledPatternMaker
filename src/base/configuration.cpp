@@ -59,14 +59,7 @@ Configuration::Configuration()
 
     lastLoadedTileName  = s.value("lastLoadedTileName","").toString();
     lastLoadedXML       = s.value("lastLoadedXML","").toString();
-    rootMediaDir        = s.value("rootMediaDir","").toString();
-    rootTileDir         = s.value("rootTileDir3","").toString();
-    rootImageDir        = s.value("rootImageDir","").toString();
-    examplesDir         = s.value("examplesDir","").toString();
-    newTileDir          = s.value("newTileDir3","").toString();
-    rootDesignDir       = s.value("rootDesignDir3","").toString();
-    newDesignDir        = s.value("newDesignDir3","").toString();
-    templateDir         = s.value("templateDir","").toString();
+
     image0              = s.value("image0","").toString();
     image1              = s.value("image1","").toString();
     compareDir0         = s.value("compareDir0","").toString();
@@ -77,7 +70,6 @@ Configuration::Configuration()
     tileFilter          = s.value("tileFilter","").toString();
     xmlTool             = s.value("xmlTool","").toString();
 
-    firstBirthday       = s.value("firstBirthday7",false).toBool();
     autoLoadStyles      = s.value("autoLoadStyles",false).toBool();
     autoLoadTiling      = s.value("autoLoadTiling",false).toBool();
     autoLoadDesigns     = s.value("autoLoadDesigns",false).toBool();
@@ -109,7 +101,7 @@ Configuration::Configuration()
     compare_side_by_side= s.value("compare_side_by_side",false).toBool();
     showBackgroundImage = s.value("showBackgroundImage",true).toBool();
     highlightUnit       = s.value("highlightUnit",false).toBool();
-    nerdMode            = s.value("nerdMode",false).toBool();
+    insightMode         = s.value("insightMode",false).toBool();
 
     viewerType          = static_cast<eViewType>(s.value("viewerType",VIEW_MOSAIC).toUInt());
     mapEditorMode       = static_cast<eMapEditorMode>(s.value("mapEditorMode",MAP_MODE_FIGURE).toUInt());
@@ -142,8 +134,10 @@ Configuration::Configuration()
     debugReplicate  = false;
     debugMapEnable  = false;
 
+    configurePaths();
+
     qtAppLog * log = qtAppLog::getInstance();
-    if (nerdMode)
+    if (insightMode)
     {
         log->logToStdErr(logToStderr);
         log->logToDisk(logToDisk);
@@ -161,10 +155,6 @@ Configuration::Configuration()
         log->logElapsed(false);
         log->logWarningsOnly(false);
     }
-    if (!firstBirthday)
-    {
-        reconfigurePaths();
-    }
 }
 
 void Configuration::save()
@@ -176,14 +166,6 @@ void Configuration::save()
     s.setValue("cycleInterval",cycleInterval);
     s.setValue("lastLoadedTileName",lastLoadedTileName);
     s.setValue("lastLoadedXML",lastLoadedXML);
-    s.setValue("rootMediaDir",rootMediaDir);
-    s.setValue("rootTileDir3",rootTileDir);
-    s.setValue("rootImageDir",rootImageDir);
-    s.setValue("examplesDir",examplesDir);
-    s.setValue("newTileDir3",newTileDir);
-    s.setValue("rootDesignDir3",rootDesignDir);
-    s.setValue("newDesignDir3",newDesignDir);
-    s.setValue("templateDir",templateDir);
     s.setValue("image0",image0);
     s.setValue("image1",image1);
     s.setValue("compareDir0",compareDir0);
@@ -226,8 +208,7 @@ void Configuration::save()
     s.setValue("showBackgroundImage",showBackgroundImage);
     s.setValue("highlightUnit",highlightUnit);
     s.setValue("xmlTool",xmlTool);
-    s.setValue("firstBirthday7",firstBirthday);
-    s.setValue("nerdMode",nerdMode);
+    s.setValue("insightMode",insightMode);
 
     s.setValue("showGrid",showGrid);
     s.setValue("gridType",gridType);
@@ -257,7 +238,7 @@ QString Configuration::getMediaRoot()
 QString Configuration::getMediaRootLocal()
 {
     QString root = qApp->applicationDirPath();
-    qDebug() << "root:"  << root;
+    qInfo().noquote() << "App path:"  << root;
 #ifdef __APPLE__
     int i = root.indexOf("debug");
     if (i == -1)
@@ -285,7 +266,7 @@ QString Configuration::getMediaRootLocal()
     QDir adir(root);
     if (adir.exists())
     {
-        qDebug() << "Local Media root:"  << root;
+        qInfo().noquote() << "Local Media root:"  << root;
         return root;
     }
     else
@@ -298,7 +279,7 @@ QString Configuration::getMediaRootLocal()
 QString Configuration::getMediaRootAppdata()
 {
     QString root = QStandardPaths::locate(QStandardPaths::AppLocalDataLocation,"media",QStandardPaths::LocateDirectory);
-    qDebug() << "App Media root:"  << root;
+    qInfo().noquote() << "App Media root:"  << root;
     return root;
 }
 
@@ -308,10 +289,8 @@ QString Configuration::getImageRoot()
     return path;
 }
 
-void Configuration::reconfigurePaths()
+void Configuration::configurePaths()
 {
-    qDebug() << "reconfigurePaths()";
-
     QString root = getMediaRoot();
 
     rootMediaDir  = root + "/";
@@ -321,13 +300,6 @@ void Configuration::reconfigurePaths()
     newDesignDir  = root + "/designs/new_designs/";
     templateDir   = root + "/designs/templates/";
     examplesDir   = root + "/history/examples/";
+
     rootImageDir  = getImageRoot();
-
-    firstBirthday = true;
-
-    save();     //save everyting;
-
-    // restart the application
-    qApp->quit();
-    QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
 }

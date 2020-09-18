@@ -28,7 +28,7 @@
 #include "panels/panel_page.h"
 #include "makers/style_maker/style_editors.h"
 
-class page_style_maker : public panel_page
+class page_mosaic_maker : public panel_page
 {
     Q_OBJECT
 
@@ -44,7 +44,7 @@ class page_style_maker : public panel_page
     };
 
 public:
-    page_style_maker(ControlPanel * apanel);
+    page_mosaic_maker(ControlPanel * apanel);
 
     void onEnter() override;
     void onExit() override {}
@@ -65,6 +65,7 @@ private slots:
     void    slot_moveStyleDown();
     void    slot_duplicateStyle();
     void    slot_analyzeStyleMap();
+    void    slot_set_reps();
 
 protected:
     void     reEnter();
@@ -74,6 +75,8 @@ protected:
     StylePtr copyStyle(const StylePtr style);
 
     TilingPtr loadNewTiling(QString name);
+
+    QGroupBox * createFillDataRow();
 
 private:
     QItemSelectionModel * selectModel;
@@ -92,6 +95,11 @@ private:
     QPushButton * downBtn;
     QPushButton * dupBtn;
     QPushButton * analyzeBtn;
+
+    SpinSet    * xRepMin;
+    SpinSet    * xRepMax;
+    SpinSet    * yRepMin;
+    SpinSet    * yRepMax;
 };
 
 #endif

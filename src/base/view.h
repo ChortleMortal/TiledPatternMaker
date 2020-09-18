@@ -30,47 +30,51 @@
 
 #include "base/configuration.h"
 #include "base/misc.h"
+#include "base/frame_settings.h"
 
 class Canvas;
 class Cycler;
 class ControlPanel;
 class MapEditor;
 class TilingMaker;
-class WorkspaceViewer;
 class Layer;
 class MouseAction;
 class DesignControl;
-
-enum eMouseMode
-{
-    MOUSE_MODE_NONE,
-    MOUSE_MODE_TRANSLATE,
-    MOUSE_MODE_ROTATE,
-    MOUSE_MODE_SCALE,
-};
 
 class View : public QWidget
 {
     Q_OBJECT
 
-    friend class MouseActionPan;
-
 public:
-    static View * getInstance();
-    static void  releaseInstance();
-
     void    init();
     void    clearView();
 
     void    addLayer(LayerPtr layer);
+    void    addTopLayer(LayerPtr layer);
     void    clearLayers()           { layers.clear(); }
     int     numLayers()             { return layers.size(); }
     QVector<LayerPtr> getActiveLayers();
 
     void    setMouseMode(eMouseMode mode);
+    eMouseMode getMouseMode() { return mouseMode; }
 
     void    setBackgroundColor(QColor color);
     QColor  getBackgroundColor();
+
+    void    setAllMosaicFrameSizes(QSize sz);
+    void    setAllTilingFrameSizes(QSize sz);
+    void    setAllFrameSizes();
+
+    void    setAllMosaicActiveSizes(QSize sz);
+    void    setAllTilingActiveSizes(QSize sz);
+    void    setAllActiveSizes();
+
+    FrameSettings & getFrameSettings(eViewType e);
+    void            setFrameSize(eViewType e, QSize sz);
+    QSize           getFrameSize(eViewType e);
+    QTransform      getFrameTransform(eViewType e);
+    void            setActiveSize(eViewType e, QSize sz);
+    QSize           getActiveSize(eViewType e);
 
     void    clearLayout(); // only used by cycler for pngs
     void    setKbdMode(eKbdMode mode);
@@ -111,6 +115,11 @@ signals:
     void sig_saveSVG();
 
 protected:
+    View();
+    ~View() override;
+
+    void resize(QSize sz);
+
     void closeEvent(QCloseEvent *event) override;
     void paintEvent(QPaintEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
@@ -142,17 +151,15 @@ protected:
     void duplicateView();
 
 private:
-    View();
-    ~View() override;
 
-    static View     * mpThis;
     Configuration   * config;
-    WorkspaceViewer * wsViewer;
     TilingMaker     * tilingMaker;
     MapEditor       * mapEditor;
     DesignControl   * designCtrl;
 
     UniqueQVector<LayerPtr> layers;
+
+    FrameSettings     frameSettings[VIEW_MAX+1];
 
     eMouseMode        mouseMode;
     bool              dragging;

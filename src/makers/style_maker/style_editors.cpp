@@ -33,13 +33,12 @@
 
 StyleEditor::StyleEditor()
 {
-    WorkspaceViewer * viewer = WorkspaceViewer::getInstance();
-    View * view              = View::getInstance();
+    Workspace * workspace = Workspace::getInstance();
 
     setObjectName("StyleEditor");
 
-    connect(this, &StyleEditor::sig_viewWS,  viewer, &WorkspaceViewer::slot_viewWorkspace);
-    connect(this, SIGNAL(sig_update()),      view,   SLOT(update()));
+    connect(this, &StyleEditor::sig_viewWS,  workspace, &WorkspaceViewer::slot_viewWorkspace);
+    connect(this, SIGNAL(sig_update()),      workspace, SLOT(update()));
 }
 
 ///////////////////////////////////////////////////////////////
@@ -421,8 +420,8 @@ void FilledEditor::slot_viewFaces()
 
     Configuration * config = Configuration::getInstance();
 
-    View * view = View::getInstance();
-    QVector<LayerPtr> layers = view->getActiveLayers();
+    Workspace * workspace = Workspace::getInstance();
+    QVector<LayerPtr> layers = workspace->getActiveLayers();
     if (layers.empty())
     {
         return;
@@ -445,7 +444,7 @@ void FilledEditor::slot_viewFaces()
     emit sig_viewWS();
 
     // match the settings for the two views
-    layers = view->getActiveLayers();
+    layers = workspace->getActiveLayers();
     for (auto it = layers.begin(); it != layers.end(); it++)
     {
         LayerPtr l2 = *it;

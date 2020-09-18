@@ -84,7 +84,7 @@ public:
 protected:
     void determineOverlapsAndTouching();
 
-    eTilingMouseMode  mouse_mode;     // set by tiling designer menu
+    eTMMouseMode  tilingMakerMouseMode;     // set by tiling designer menu
 
     QVector<PlacedFeaturePtr> allPlacedFeatures;
     QVector<PlacedFeaturePtr> in_tiling;
@@ -99,6 +99,7 @@ protected:
     QColor       construction_color;
     QColor       normal_color;
     QColor       drag_color;
+    QColor       selected_color;
 
     bool         _hide;
     bool         _snapToGrid;

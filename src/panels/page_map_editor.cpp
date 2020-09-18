@@ -35,6 +35,7 @@
 #include "tapp/radial_figure.h"
 #include "base/mosaic_writer.h"
 #include "base/mosaic_loader.h"
+#include "viewers/workspace_viewer.h"
 
 
 #define E2STR(x) #x
@@ -336,7 +337,7 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
 
     connect(tpm,  &TiledPatternMaker::sig_loadedTiling,   this,   &page_map_editor::slot_loadedTiling);
     connect(tpm,  &TiledPatternMaker::sig_loadedXML,      this,   &page_map_editor::slot_loadedXML);
-    connect(view, &View::sig_unload,                      this,   &page_map_editor::slot_unload);
+    connect(workspace, &View::sig_unload,                 this,   &page_map_editor::slot_unload);
 
     connect(pbVerifyMap,            &QToolButton::clicked,  this,   &page_map_editor::slot_verify);
     connect(pbMakeExplicit,         &QToolButton::clicked,  this,   &page_map_editor::slot_convertToExplicit);
@@ -375,9 +376,9 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     connect(pbAddToStyle,       &QToolButton::clicked,      this,   &page_map_editor::sig_stylesAddProto);
     connect(pbRender,           &QToolButton::clicked,      this,   &page_map_editor::slot_render);
 
-    connect(radiusSpin,     &DoubleSpinSet::valueChanged, this, &page_map_editor::slot_radiusChanged);
-    connect(lineWidthSpin,  &DoubleSpinSet::valueChanged, this, &page_map_editor::slot_lineWidthChanged);
-    connect(consWidthSpin,  &DoubleSpinSet::valueChanged, this, &page_map_editor::slot_consWidthChanged);
+    connect(radiusSpin,     &DoubleSpinSet::sig_valueChanged, this, &page_map_editor::slot_radiusChanged);
+    connect(lineWidthSpin,  &DoubleSpinSet::sig_valueChanged, this, &page_map_editor::slot_lineWidthChanged);
+    connect(consWidthSpin,  &DoubleSpinSet::sig_valueChanged, this, &page_map_editor::slot_consWidthChanged);
 
     slot_debugChk(config->mapedStatusBox);
     connect(editorStatusBox, &QGroupBox::toggled, this, &page_map_editor::slot_debugChk);

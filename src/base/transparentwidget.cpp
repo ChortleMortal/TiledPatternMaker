@@ -22,7 +22,7 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "transparentwidget.h"
+#include "base/transparentwidget.h"
 #include <QDebug>
 
 TransparentWidget::TransparentWidget()

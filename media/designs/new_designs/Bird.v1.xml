@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<vector id="1" version="5">
+<vector id="1" version="6">
 	<designNotes>Nasrid bird</designNotes>
 	<design>
 		<size>
@@ -9,11 +9,12 @@
 		<background>
 			<color>#ff000000</color>
 		</background>
+		<Fill>-4,4,-4,4</Fill>
 	</design>
 	<style.Thick id="2" serialization="custom">
 		<toolkit.GeoLayer>
-			<left__delta>41</left__delta>
-			<top__delta>686</top__delta>
+			<left__delta>-102.7</left__delta>
+			<top__delta>542.4</top__delta>
 			<width__delta>0.6799999999999997</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>-4.013333333333333,-1.346666666666668</center>
@@ -54,7 +55,7 @@
 								<Curve convex="f">
 									<Point reference="13" />
 									<Point id="14">-2.74538414090221,0.160000000000001</Point>
-									<Center>-6.611409544686646,-0.0720508075688755</Center>
+									<Center>-0.6114095446866488,3.392050807568876</Center>
 								</Curve>
 								<Curve convex="t">
 									<Point reference="14" />
@@ -64,7 +65,7 @@
 								<Curve convex="f">
 									<Point reference="15" />
 									<Point id="16">0.7187174742355442,0.1599999999999997</Point>
-									<Center>2.852692070451103,-3.072050807568879</Center>
+									<Center>-3.147307929548894,0.3920508075688796</Center>
 								</Curve>
 								<Curve convex="t">
 									<Point reference="16" />
@@ -74,59 +75,69 @@
 								<Curve convex="f">
 									<Point reference="17" />
 									<Point reference="12" />
-									<Center>0.7187174742355478,6.624101615137754</Center>
+									<Center>0.7187174742355438,-0.3041016151377547</Center>
 								</Curve>
 							</edges>
 						</tile.Feature>
-						<app.ExplicitFeature id="18" type="FIG_TYPE_EXPLICIT_FEATURE">
+						<app.ExplicitFigure id="18" type="FIG_TYPE_EXPLICIT">
+							<map id="19">
+								<vertices id="20" />
+								<edges id="21" />
+								<neighbours />
+							</map>
 							<boundarySides>1</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+						</app.ExplicitFigure>
 					</entry>
 					<entry>
-						<tile.Feature id="19">
+						<tile.Feature id="22">
 							<regular>false</regular>
-							<edges id="20">
+							<edges id="23">
 								<Curve convex="t">
-									<Point id="21">-1.013333333333331,3.16</Point>
-									<Point id="22">-4.477434948471085,3.16</Point>
+									<Point id="24">-1.013333333333331,3.16</Point>
+									<Point id="25">-4.477434948471085,3.16</Point>
 									<Center>-2.745384140902208,-0.3041016151377538</Center>
 								</Curve>
 								<Curve convex="f">
-									<Point reference="22" />
-									<Point id="23">-2.74538414090221,0.160000000000001</Point>
-									<Center>-6.611409544686646,-0.0720508075688755</Center>
+									<Point reference="25" />
+									<Point id="26">-2.74538414090221,0.160000000000001</Point>
+									<Center>-0.6114095446866488,3.392050807568876</Center>
 								</Curve>
 								<Curve convex="t">
-									<Point reference="23" />
-									<Point id="24">-1.013333333333335,-2.839999999999999</Point>
+									<Point reference="26" />
+									<Point id="27">-1.013333333333335,-2.839999999999999</Point>
 									<Center>1.120641262882228,0.3920508075688756</Center>
 								</Curve>
 								<Curve convex="f">
-									<Point reference="24" />
-									<Point id="25">0.7187174742355442,0.1599999999999997</Point>
-									<Center>2.852692070451103,-3.072050807568879</Center>
+									<Point reference="27" />
+									<Point id="28">0.7187174742355442,0.1599999999999997</Point>
+									<Center>-3.147307929548894,0.3920508075688796</Center>
 								</Curve>
 								<Curve convex="t">
-									<Point reference="25" />
-									<Point id="26">2.450768281804423,3.159999999999998</Point>
+									<Point reference="28" />
+									<Point id="29">2.450768281804423,3.159999999999998</Point>
 									<Center>-1.415257121980015,3.392050807568877</Center>
 								</Curve>
 								<Curve convex="f">
-									<Point reference="26" />
-									<Point reference="21" />
-									<Center>0.7187174742355478,6.624101615137754</Center>
+									<Point reference="29" />
+									<Point reference="24" />
+									<Center>0.7187174742355438,-0.3041016151377547</Center>
 								</Curve>
 							</edges>
 						</tile.Feature>
-						<app.ExplicitFeature id="27" type="FIG_TYPE_EXPLICIT_FEATURE">
+						<app.ExplicitFigure id="30" type="FIG_TYPE_EXPLICIT">
+							<map id="31">
+								<vertices id="32" />
+								<edges id="33" />
+								<neighbours />
+							</map>
 							<boundarySides>1</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+						</app.ExplicitFigure>
 					</entry>
 				</app.Prototype>
 			</prototype>
@@ -139,10 +150,10 @@
 			<width>0.03</width>
 		</style.Thick>
 	</style.Thick>
-	<style.TileColors id="28" serialization="custom">
+	<style.TileColors id="34" serialization="custom">
 		<toolkit.GeoLayer>
-			<left__delta>41</left__delta>
-			<top__delta>686</top__delta>
+			<left__delta>-102.7</left__delta>
+			<top__delta>542.4</top__delta>
 			<width__delta>0.6799999999999997</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>-4.013333333333333,-1.346666666666668</center>

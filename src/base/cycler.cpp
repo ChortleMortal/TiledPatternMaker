@@ -77,8 +77,14 @@ Cycler::~Cycler()
 
 void Cycler::slot_startCycle(eCycleMode mode)
 {
-    cycleMode = mode;
+    if (cycleMode != CYCLE_NONE)
+    {
+        qDebug() << "Stopping the cycler";
+        slot_stopCycle();
+        return;
+    }
 
+    cycleMode = mode;
     qDebug() << "slot_cycle" << sCycleMode[cycleMode];
 
     cyclePause = false;
@@ -111,7 +117,10 @@ void Cycler::slot_stopCycle()
     qDebug() << "slot_stopCycle";
     cycleMode = CYCLE_NONE;
     if (oldMode != CYCLE_NONE)
-        sig_finished();
+    {
+        imgList.clear();
+        emit sig_finished();
+    }
     busy = false;
 }
 
@@ -256,14 +265,17 @@ void Cycler::startCycleCompareImages()
 
 void Cycler::slot_view_images()
 {
-    imgList_it--;
-    QString name   = *imgList_it;
-    QString file1  = mapa.value(name);
-    QString file2  = mapb.value(name);
-    imgList_it++;
+    if (!imgList.isEmpty())
+    {
+        imgList_it--;
+        QString name   = *imgList_it;
+        QString file1  = mapa.value(name);
+        QString file2  = mapb.value(name);
+        imgList_it++;
 
-    emit sig_viewImage(file1);
-    emit sig_viewImage(file2);
+        emit sig_viewImage(file1);
+        emit sig_viewImage(file2);
+    }
 }
 
 void Cycler::startCycleOriginalDesignPngs()

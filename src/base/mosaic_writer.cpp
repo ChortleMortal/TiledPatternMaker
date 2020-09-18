@@ -266,9 +266,9 @@ bool MosaicWriter::processVector(QTextStream &ts)
 
 void MosaicWriter::processDesign(QTextStream &ts)
 {
-    CanvasSettings info= _mosaic->getCanvasSettings();
+    WorkspaceSettings info= _mosaic->getSettings();
     QColor bkgdColor   = info.getBackgroundColor();
-    QSizeF size        = info.getCanvasSize();
+    QSizeF size        = info.getSize();
     BorderPtr border   = info.getBorder();
     BkgdImgPtr bip     = info.getBkgdImage();
 

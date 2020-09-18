@@ -25,7 +25,7 @@
 #include "base/misc.h"
 #include "base/layer.h"
 
-MarkX::MarkX(QPointF a, QPen pen, int index) : Layer("MarkX")
+MarkX::MarkX(QPointF a, QPen pen, int index) : Layer("MarkX",LTYPE_MARK)
 {
     _a     = a;
     _pen   = pen;
@@ -34,7 +34,7 @@ MarkX::MarkX(QPointF a, QPen pen, int index) : Layer("MarkX")
 
 }
 
-MarkX::MarkX(QPointF a, QPen pen, QString txt) : Layer("MarkX")
+MarkX::MarkX(QPointF a, QPen pen, QString txt) : Layer("MarkX",LTYPE_MARK)
 {
     _a     = a;
     _pen   = pen;

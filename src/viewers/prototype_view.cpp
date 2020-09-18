@@ -29,7 +29,7 @@
 
 #include "geometry/point.h"
 
-PrototypeView::PrototypeView(PrototypePtr proto,int mode) : Layer("ProtoFeatureView")
+PrototypeView::PrototypeView(PrototypePtr proto,int mode) : Layer("ProtoFeatureView",LTYPE_VIEW)
 {
     qDebug() << "ProtoFeatureView::constructor";
     Q_ASSERT(proto);
@@ -127,7 +127,7 @@ void PrototypeView::receive(GeoGraphics *gg, int h, int v )
         {
 
         }
-        if (workspace->getSelectedFeature() == placedDesignElement.getFeature())
+        if (Layer::workspace->getSelectedFeature() == placedDesignElement.getFeature())
         {
 
         }

@@ -27,68 +27,31 @@
 
 #include <QtCore>
 #include <QtWidgets>
-#include "base/layer.h"
-#include "base/misc.h"
+#include "base/view.h"
 #include "base/configuration.h"
-#include "designs/design.h"
-#include "geometry/bounds.h"
 #include "base/shared.h"
 
-class Canvas;
-class DesignElement;
-class PlacedDesignElementView;
-class FigureView;
-class ProtoView;
-class PrototypeView;
-class Tiling;
-class TilingMaker;
-class TilingView;
-class Workspace;
-class Transformer;
-class MapEditor;
-class Mosaic;
-class FaceSetView;
-class FaceSet;
-class Scene;
-
-class WorkspaceViewer : public QObject
+class WorkspaceViewer : public View
 {
     Q_OBJECT
 
 public:
-    static WorkspaceViewer *getInstance();
-    virtual ~WorkspaceViewer() {}
+    void    init();
 
-    void   init();
-    void   clear();
-
-    void   viewEnable(eViewType view, bool enable);
-    void   disableAll();
-
-    ViewSettings   &  getViewSettings(eViewType e);
-    void              setViewSize(eViewType e, QSize sz);
-    QSize             getViewSize(eViewType e);
-    QTransform        getViewTransform(eViewType e);
-
-    CanvasSettings &  getCurrentCanvasSettings();
-
-    QSize             getCurrentCanvasSize();
-    void              setCurrentCanvasSize(QSize sz);
-
-    BorderPtr         getBorder()    { return currentCanvasSettings.getBorder(); }
-    BkgdImgPtr        getBkgdImage() { return currentCanvasSettings.getBkgdImage(); }
+    void    viewEnable(eViewType view, bool enable);
+    void    disableAll();
 
 public slots:
-    void slot_viewWorkspace();
+    void    slot_viewWorkspace();
 
 signals:
-    void sig_title(QString);
-    void sig_viewUpdated();
+    void    sig_viewUpdated();
 
 protected:
    WorkspaceViewer();
+   ~WorkspaceViewer() {}
 
-   void     setupViews();
+   void     setupViewers();
    void     viewWorkspace();
 
    void     viewDesign();
@@ -101,26 +64,16 @@ protected:
    void     viewMapEditor();
    void     viewFaceSet();
 
-   bool     setCanvasFromDesign();
-   void     setCanvasFromTiling(TilingPtr tiling, LayerPtr layer);
-
    void     setTitle(TilingPtr tp);
+   void     setBackgroundImg(BkgdImgPtr bkgd);
+   void     setBorder(BorderPtr bp);
 
 private:
-    static WorkspaceViewer * mpThis;
+    class   Configuration * config;
+    class   Workspace     * workspace;
+    class   ControlPanel  * panel;
 
-    class Configuration * config;
-    class Workspace     * workspace;
-    class View          * view;
-    class ControlPanel  * panel;
-
-    UniqueQVector<LayerPtr> mViewers;
-    QVector<DesignPtr>      mDesigns;
-
-    // current values
-    CanvasSettings          currentCanvasSettings;
-    ViewSettings            viewSettings[VIEW_MAX+1];
-    bool                    enabledViews[VIEW_MAX+1];
+    bool    enabledViews[VIEW_MAX+1];
 };
 
 #endif // DESIGNVIEWER_H

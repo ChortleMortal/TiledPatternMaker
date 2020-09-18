@@ -45,7 +45,7 @@
 #include "tile/backgroundimage.h"
 #include "geometry/xform.h"
 
-#define MAX_UNIQUE_FEATURES 8
+#define MAX_UNIQUE_FEATURE_INDEX 7
 
 enum eTilingState
 {
@@ -101,17 +101,9 @@ public:
 
     FeatureGroup regroupFeatures();      // the map was deadly, it reordered
 
-    FillData    getFillData() { return fillData;}
-    void        setFillData(FillData & fdata) {fillData.set(fdata);}
-
-    void        setBackground(BkgdImgPtr bip) { bkgd = bip; }
-    BkgdImgPtr  getBackground() { return bkgd; }
-
     QString     dump() const;
 
-    void        setCanvasSize(QSize sz)    { canvasSize = sz; }
     void        setCanvasXform(Xform & xf) { canvasXform = xf; }
-    QSize &     getCanvasSize()            { return canvasSize; }
     Xform &     getCanvasXform()           { return canvasXform; }
 
     int         getVersion();
@@ -120,12 +112,25 @@ public:
     eTilingState getState();
     void         setState(eTilingState state);
 
+    // settings
+    void        setSettings(WorkspaceSettings & settings) { this->settings = settings; }
+    void        setSize(QSize sz)             { settings.setSize(sz); }
+    void        setBackground(BkgdImgPtr bip) { settings.setBkgdImage(bip); }
+    void        setFillData(FillData & fdata) { settings.setFillData(fdata); }
+
+    WorkspaceSettings & getSettings()  { return settings; }
+    QSize               getSize()      { return settings.getSize(); }
+    BkgdImgPtr          getBackground(){ return settings.getBkgdImage(); }
+    const FillData    & getFillData()  { return settings.getFillData(); }
+
     static int  refs;
 
 protected:
 
 private:
-    FillData    fillData;
+    int               version;
+    WorkspaceSettings settings;
+    eTilingState      state;
 
     QPointF     t1;
     QPointF     t2;
@@ -136,13 +141,7 @@ private:
     QString     desc;
     QString     author;
 
-    BkgdImgPtr  bkgd;
-
-    QSize       canvasSize;
     Xform       canvasXform;
-
-    int         version;
-    eTilingState state;
 };
 
 #endif

@@ -3,10 +3,10 @@
 
 #include <QtWidgets>
 #include "base/shared.h"
-#include "panels/layout_sliderset.h"
 #include "geometry/edgepoly.h"
+#include "base/workspace.h"
 
-class View;
+class WorkspaceViewer;
 
 class DlgLineEdit : public QLineEdit
 {
@@ -32,7 +32,7 @@ protected slots:
     void slot_editingFinished();
 
 private:
-    View * view;
+    Workspace * workspace;
 
     int row;
     int col;

@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<vector id="1" version="5">
+<vector id="1" version="6">
 	<designNotes>A floor in Grenada</designNotes>
 	<design>
 		<size>
@@ -9,11 +9,12 @@
 		<background>
 			<color>#ff000000</color>
 		</background>
+		<Fill>-2,2,-2,2</Fill>
 	</design>
 	<style.Plain id="2" serialization="custom">
 		<toolkit.GeoLayer>
-			<left__delta>1354</left__delta>
-			<top__delta>684</top__delta>
+			<left__delta>746.5</left__delta>
+			<top__delta>76.5</top__delta>
 			<width__delta>-0.35</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>-4,-1.333333333333336</center>
@@ -317,8 +318,8 @@
 	</style.Plain>
 	<style.TileColors id="73" serialization="custom">
 		<toolkit.GeoLayer>
-			<left__delta>1354</left__delta>
-			<top__delta>684</top__delta>
+			<left__delta>746.5</left__delta>
+			<top__delta>76.5</top__delta>
 			<width__delta>-0.35</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>-4,-1.333333333333336</center>

@@ -13,12 +13,12 @@ win32:RC_ICONS += dac1.ico
 # Input
 SOURCES += \
     base/border.cpp \
-    base/canvas_settings.cpp \
     base/colorset.cpp \
     base/configuration.cpp \
     base/cycler.cpp \
     base/fileservices.cpp \
     base/filldata.cpp \
+    base/frame_settings.cpp \
     base/layer.cpp \
     base/main.cpp \
     base/misc.cpp \
@@ -36,6 +36,7 @@ SOURCES += \
     base/utilities.cpp \
     base/view.cpp \
     base/workspace.cpp \
+    base/workspace_settings.cpp \
     designs/design.cpp \
     designs/design_control.cpp \
     designs/designs.cpp \
@@ -96,11 +97,11 @@ SOURCES += \
     panels/page_loaders.cpp \
     panels/page_log.cpp \
     panels/page_map_editor.cpp \
+    panels/page_mosaic_maker.cpp \
     panels/page_prototype_info.cpp \
     panels/page_prototype_maker.cpp \
     panels/page_save.cpp \
     panels/page_style_figure_info.cpp \
-    panels/page_style_maker.cpp \
     panels/page_tiling_maker.cpp \
     panels/page_views.cpp \
     panels/page_workspace.cpp \
@@ -160,12 +161,12 @@ SOURCES += \
 
 HEADERS += \
     base/border.h \
-    base/canvas_settings.h \
     base/colorset.h \
     base/configuration.h \
     base/cycler.h \
     base/fileservices.h \
     base/filldata.h \
+    base/frame_settings.h \
     base/layer.h \
     base/misc.h \
     base/mosaic.h \
@@ -185,6 +186,7 @@ HEADERS += \
     base/version.h \
     base/view.h \
     base/workspace.h \
+    base/workspace_settings.h \
     designs/design.h \
     designs/design_control.h \
     designs/designs.h \
@@ -244,11 +246,11 @@ HEADERS += \
     panels/page_loaders.h \
     panels/page_log.h \
     panels/page_map_editor.h \
+    panels/page_mosaic_maker.h \
     panels/page_prototype_info.h \
     panels/page_prototype_maker.h \
     panels/page_save.h \
     panels/page_style_figure_info.h \
-    panels/page_style_maker.h \
     panels/page_tiling_maker.h \
     panels/page_views.h \
     panels/page_workspace.h \

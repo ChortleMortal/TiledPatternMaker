@@ -17,25 +17,18 @@ public:
     bool    loadAndCopy(QString filename);  // loads from new file
     bool    loadImageUsingName();           // loads from existing file
 
-    void    bkgdImageChanged(bool showBkgd, bool perspectiveBkgd, bool transformBkgd);
-    void    bkgdTransformChanged(bool transformBkgd);
+    void    bkgdImageChanged(bool showBkgd, bool perspectiveBkgd);
 
     void    adjustBackground(QPointF topLeft, QPointF topRight, QPointF botRight, QPointF botLeft);
     void    adjustBackground();
 
     bool    saveAdjusted(QString newName);
 
-    Xform      getXform() { return xform;}
-    void       setXform (Xform & xf) { xform = xf; }
-    QTransform getTransform();
-    void       setTransform(QTransform t);
-
     bool    isLoaded() { return _loaded; }
 
     // public data
     QString    bkgdName;
     QTransform perspective;
-    bool       bTransformBkgd;
     bool       bShowBkgd;
     bool       bAdjustPerspective;
 
@@ -43,7 +36,8 @@ protected:
     void       correctPerspective(QPointF topLeft, QPointF topRight, QPointF botRight, QPointF botLeft);
 
 private:
-    Xform       xform;
+    Workspace * workspace;
+
     QPixmap     pixmap;
     QImage      bkgdImage;
     QImage      adjustedImage;

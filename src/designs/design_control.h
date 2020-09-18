@@ -4,6 +4,7 @@
 #include <QtCore>
 
 class Workspace;
+class WorkspaceViewer;
 class View;
 class Configuration;
 
@@ -52,7 +53,6 @@ private:
     static DesignControl * mpThis;
     QTimer            * timer;
     Workspace         * workspace;
-    View              * view;
     Configuration     * config;
 
 

@@ -27,6 +27,7 @@
 #include "tile/tiling.h"
 #include "tile/tiling_manager.h"
 #include "style/style.h"
+#include "viewers/workspace_viewer.h"
 #include <QSvgGenerator>
 
 page_save::page_save(ControlPanel * cpanel)  : panel_page(cpanel, "Save")
@@ -48,9 +49,9 @@ page_save::page_save(ControlPanel * cpanel)  : panel_page(cpanel, "Save")
     connect(tpm,  &TiledPatternMaker::sig_loadedXML,    this,   &page_save::slot_loadedXML);
     connect(tpm,  &TiledPatternMaker::sig_loadedTiling, this,   &page_save::slot_loadedTiling);
     connect(pbSaveImage,  &QPushButton::clicked,        this,   &page_save::slot_saveImage);
-    connect(view,         &View::sig_saveImage,         this,   &page_save::slot_saveImage);
+    connect(workspace,    &View::sig_saveImage,         this,   &page_save::slot_saveImage);
     connect(pbSaveSVG,    &QPushButton::clicked,        this,   &page_save::slot_saveSvg);
-    connect(view,         &View::sig_saveSVG,           this,   &page_save::slot_saveSvg);
+    connect(workspace,    &View::sig_saveSVG,           this,   &page_save::slot_saveSvg);
 }
 
 void page_save::createDesignSave()
@@ -74,7 +75,7 @@ void page_save::createDesignSave()
     vbox->addWidget(saveBox);
 
     connect(saveXml,   SIGNAL(clicked()),       this,   SLOT(slot_saveAsXML()));
-    connect(this,      &page_save::sig_saveXML, tpm,  &TiledPatternMaker::slot_saveXML);
+    connect(this,      &page_save::sig_saveXML, tpm,  &TiledPatternMaker::slot_saveMosaic);
 }
 
 void page_save::createTilingSave()
@@ -212,7 +213,7 @@ void page_save::slot_saveTiling()
     }
 
     int count = tiling->getUniqueFeatures().count();
-    if (count >= MAX_UNIQUE_FEATURES)
+    if (count >= MAX_UNIQUE_FEATURE_INDEX)
     {
         QMessageBox box(this);
         box.setIcon(QMessageBox::Critical);
@@ -242,7 +243,7 @@ void page_save::slot_saveTiling()
 
 void page_save::slot_saveImage()
 {
-    QPixmap pixmap = View::getInstance()->grab();
+    QPixmap pixmap = workspace->grab();
 
     QString name = config->lastLoadedXML;
     Q_ASSERT(!name.contains(".xml"));
@@ -265,7 +266,7 @@ void page_save::slot_saveImage()
         nameList = "BMP Files (*.bmp);;JPG (*.jpg);;PNG (*.png)";
     }
 
-    QFileDialog dlg(View::getInstance(), "Save image", path, nameList);
+    QFileDialog dlg(workspace, "Save image", path, nameList);
     dlg.setFileMode(QFileDialog::AnyFile);
     dlg.setAcceptMode(QFileDialog::AcceptSave);
     dlg.selectFile(name);
@@ -355,23 +356,21 @@ void page_save::slot_saveSvg()
     QString name = mosaic->getName();
     QString pathplus = path + "/" + name + ".svg";
 
-    QString newPath = QFileDialog::getSaveFileName(View::getInstance(), "Save SVG", pathplus, "SVG files (*.svg)");
+    QString newPath = QFileDialog::getSaveFileName(workspace, "Save SVG", pathplus, "SVG files (*.svg)");
     if (newPath.isEmpty())
         return;
 
     path = newPath;
 
-    View * view = View::getInstance();
-
     QSvgGenerator generator;
     generator.setFileName(path);
-    generator.setSize(view->size());
-    generator.setViewBox(view->rect());
+    generator.setSize(workspace->size());
+    generator.setViewBox(workspace->rect());
     generator.setTitle(QString("SVG Image: %1").arg(name));
     generator.setDescription("Created using Tiled Pattern Maker (David Casper)");
 
     sp->triggerPaintSVG(&generator);
-    view->update();
+    workspace->update();
 
     QCoreApplication::processEvents();
 

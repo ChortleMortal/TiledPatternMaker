@@ -31,6 +31,7 @@
 #include "base/tile.h"
 #include "base/shared.h"
 #include "base/layer.h"
+#include "base/workspace.h"
 
 #define LENGTH1        60.0
 #define BORDER_ZLEVEL  10
@@ -67,7 +68,6 @@ protected:
     QColor      color;
     qreal       width;
     ShapeFPtr   sp;
-    View      * view;
 };
 
 class BorderPlain : public Border

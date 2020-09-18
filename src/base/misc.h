@@ -58,6 +58,8 @@ public:
     UniqueQVector();
 
     void push_back(const T &value);
+    void push_front(const T &value);
+
 };
 
 template <class T> UniqueQVector<T>::UniqueQVector() : QVector<T>()
@@ -71,4 +73,11 @@ template <class T> void UniqueQVector<T>::push_back(const T & value)
     }
 }
 
+template <class T> void UniqueQVector<T>::push_front(const T & value)
+{
+    if (!contains(value))
+    {
+        QVector<T>::push_front(value);
+    }
+}
 #endif // MISC_H

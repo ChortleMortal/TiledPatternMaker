@@ -30,6 +30,7 @@
 #include "base/fileservices.h"
 #include "base/utilities.h"
 #include "panels/panel.h"
+#include "viewers/workspace_viewer.h"
 
 Workspace * Workspace::mpThis = nullptr;
 
@@ -52,18 +53,20 @@ void Workspace::releaseInstance()
 }
 
 Workspace::Workspace()
-{}
+{
+    protoViewMode = PROTO_DRAW_FIGURES | PROTO_DRAW_FEATURES;
+}
 
 void Workspace::init()
 {
     config = Configuration::getInstance();
-    view   = View::getInstance();
+    WorkspaceViewer::init();
 }
 
 Workspace::~Workspace()
 {
     clearDesigns();
-    ws.resetAll();
+    resetAll();
 }
 
 void Workspace::clearDesigns()
@@ -79,17 +82,17 @@ void Workspace::clearDesigns()
 void Workspace::slot_clearCanvas()
 {
     // remove from scene but does not delete
-    view->clearView();
+    clearView();
 }
 
 void Workspace::slot_clearWorkspace()
 {
-    view->dump(true);
+    dump(true);
 
     clearDesigns();
-    ws.resetAll();
+    resetAll();
 
-    view->dump(true);
+    dump(true);
 }
 
 void Workspace::addDesign(DesignPtr d)
@@ -102,44 +105,50 @@ void Workspace::addDesign(DesignPtr d)
 
 void Workspace::setMosaic(MosaicPtr mosaic)
 {
-    ws.mosaic = mosaic;
+    this->mosaic = mosaic;
     UniqueQVector<TilingPtr> tilings = mosaic->getTilings();
-    ws.tilings = tilings;
+    this->tilings = tilings;
+    setFillData(mosaic->getSettings().getFillData());
 }
 
 MosaicPtr Workspace::getMosaic()
 {
-    if (!ws.mosaic)
+    if (!mosaic)
     {
-        ws.mosaic = make_shared<Mosaic>();
+        mosaic = make_shared<Mosaic>();
     }
-    return ws.mosaic;
+    return mosaic;
 }
 
+void Workspace::setCurrentTiling(TilingPtr tp)
+{
+    currentTiling = tp;
+    tilings.push_front(tp);   // does nothing if already there
+    fillData = tp->getFillData();
+}
 
 TilingPtr Workspace::getCurrentTiling()
 {
-    if (ws.currentTiling)
+    if (currentTiling)
     {
-        return ws.currentTiling;
+        return currentTiling;
     }
-    else if (ws.tilings.count())
+    else if (tilings.count())
     {
-        ws.currentTiling = ws.tilings.first();
-        return ws.currentTiling;
+        currentTiling = tilings.first();
+        return currentTiling;
     }
     else
     {
         TilingPtr tp = make_shared<Tiling>();
-        ws.tilings.push_back(tp);
-        ws.currentTiling = tp;
+        setCurrentTiling(tp);
         return tp;
     }
 }
 
 TilingPtr Workspace::findTiling(QString name)
 {
-    for (auto tiling : ws.tilings)
+    for (auto tiling : tilings)
     {
         if (tiling->getName() == name)
         {
@@ -152,74 +161,77 @@ TilingPtr Workspace::findTiling(QString name)
 
 void Workspace::replaceTiling(TilingPtr oldtp, TilingPtr newtp)
 {
-    ws.tilings.removeOne(oldtp);
-    ws.tilings.push_back(newtp);
-    ws.currentTiling = newtp;
+    tilings.removeOne(oldtp);
+    tilings.push_back(newtp);
+    currentTiling = newtp;
 }
 
 void Workspace::removeTiling(TilingPtr tp)
 {
-    ws.tilings.removeOne(tp);
-    if (ws.currentTiling == tp)
+    tilings.removeOne(tp);
+    if (currentTiling == tp)
     {
-        ws.currentTiling.reset();
+        currentTiling.reset();
     }
 }
 
-void Workspace::setCurrentTiling(TilingPtr tp)
+void Workspace::resetTilings()
 {
-    ws.currentTiling = tp;
-    ws.tilings.push_back(tp);   // does nothing if already there
-}
+    currentTiling.reset();
+    tilings.clear();
+    prototypes.clear();
 
+    selectedPrototype.reset();
+    selectedDesignElement.reset();
+}
 // prototypes
 void  Workspace::addPrototype(PrototypePtr pp)
 {
-    ws.prototypes.push_back(pp);
+    prototypes.push_back(pp);
 }
 
 UniqueQVector<PrototypePtr> Workspace::getPrototypes()
 {
-    return ws.prototypes;
+    return prototypes;
 }
 
 void Workspace::setSelectedPrototype(WeakPrototypePtr proto)
 {
-    if (ws.selectedPrototype.lock() != proto.lock())
+    if (selectedPrototype.lock() != proto.lock())
     {
-        ws.selectedPrototype     = proto;
+        selectedPrototype     = proto;
         emit sig_selected_proto_changed();
     }
 }
 
 PrototypePtr Workspace::getSelectedPrototype()
 {
-    return ws.selectedPrototype.lock();
+    return selectedPrototype.lock();
 }
 
 void Workspace::selectFeature(WeakFeaturePtr wfp)
 {
-    ws.selectedFeature = wfp;
+    selectedFeature = wfp;
 }
 
 FeaturePtr Workspace::getSelectedFeature()
 {
-    return ws.selectedFeature.lock();
+    return selectedFeature.lock();
 }
 
 // figures
 void  Workspace::setSelectedDesignElement(WeakDesignElementPtr dep)
 {
-    if (ws.selectedDesignElement.lock() != dep.lock())
+    if (selectedDesignElement.lock() != dep.lock())
     {
-        ws.selectedDesignElement = dep;
+        selectedDesignElement = dep;
         emit sig_selected_dele_changed();
     }
 }
 
 DesignElementPtr Workspace::getSelectedDesignElement()
 {
-    return ws.selectedDesignElement.lock();
+    return selectedDesignElement.lock();
 }
 
 QVector<DesignPtr> & Workspace::getDesigns()
@@ -227,12 +239,12 @@ QVector<DesignPtr> & Workspace::getDesigns()
     return activeDesigns;
 }
 
-CanvasSettings & Workspace::getMosaicSettings()
+WorkspaceSettings & Workspace::getMosaicSettings()
 {
-    static CanvasSettings dummy;    // default
-    if (ws.mosaic)
+    static WorkspaceSettings dummy;    // default
+    if (mosaic)
     {
-        return ws.mosaic->getCanvasSettings();
+        return mosaic->getSettings();
     }
     else
     {
@@ -243,24 +255,14 @@ CanvasSettings & Workspace::getMosaicSettings()
 void  Workspace::setProtoMode(eProtoMode mode, bool enb)
 {
     if (enb)
-        ws.protoViewMode |= mode;
+       protoViewMode |= mode;
     else
-        ws.protoViewMode &= ~mode;
+       protoViewMode &= ~mode;
 }
 
-void WorkspaceData::resetAll()
+void Workspace::resetAll()
 {
     mosaic.reset();
     resetTilings();
-}
-
-void WorkspaceData::resetTilings()
-{
-    currentTiling.reset();
-    tilings.clear();
-    prototypes.clear();
-
-    selectedPrototype.reset();
-    selectedDesignElement.reset();
 }
 

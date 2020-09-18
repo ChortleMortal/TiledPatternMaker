@@ -17,10 +17,10 @@ public:
     void setX(qreal val)     { X->setValue(val); }
     void setY(qreal val)     { Y->setValue(val); }
 
-    void bumpScale(qreal val) { scale->setValue(getScale() + (val * scale->getSingleStep())); emit scale->valueChanged(0); }
-    void bumpRot(qreal val)   { rot->setValue(getRot() + (val * rot->getSingleStep()));  emit rot->valueChanged(0); }
-    void bumpX(qreal val)     { X->setValue(getX() + (val * X->getSingleStep())); emit X->valueChanged(0);}
-    void bumpY(qreal val)     { Y->setValue(getY() + (val * Y->getSingleStep()));  emit Y->valueChanged(0); }
+    void bumpScale(qreal val) { scale->setValue(getScale() + (val * scale->getSingleStep())); emit scale->sig_valueChanged(0); }
+    void bumpRot(qreal val)   { rot->setValue(getRot() + (val * rot->getSingleStep()));  emit rot->sig_valueChanged(0); }
+    void bumpX(qreal val)     { X->setValue(getX() + (val * X->getSingleStep())); emit X->sig_valueChanged(0);}
+    void bumpY(qreal val)     { Y->setValue(getY() + (val * Y->getSingleStep()));  emit Y->sig_valueChanged(0); }
 
     qreal getScale() { return scale->value(); }
     qreal getRot()   { return rot->value(); }

@@ -28,15 +28,13 @@
 #include <QtCore>
 #include <QtGui>
 #include "base/shared.h"
-#include "base/canvas_settings.h"
+#include "base/workspace_settings.h"
+#include "base/configuration.h"
 
-class Configuration;
 class Workspace;
+class WorkspaceViewer;
 class Pattern;
 class Border;
-class Canvas;
-
-
 
 class Design
 {
@@ -51,7 +49,7 @@ public:
     void            updateDesign();
 
     QString         getTitle() { return title; }
-    CanvasSettings &    getDesignInfo() { return info; }
+    WorkspaceSettings &    getDesignInfo() { return info; }
 
     QVector<PatternPtr> &      getPatterns()      { return patterns; }
 
@@ -109,9 +107,8 @@ protected:
     qreal           xOffset2;
     qreal           yOffset2;
 
-    Configuration * config;
-    View          * view;
-    Workspace     * workspace;
+    Configuration    * config;
+    Workspace        * workspace;
 
     QVector<PatternPtr> patterns;
 
@@ -119,7 +116,7 @@ protected:
 
     bool            visible;
 
-    CanvasSettings      info;
+    WorkspaceSettings      info;
 };
 
 

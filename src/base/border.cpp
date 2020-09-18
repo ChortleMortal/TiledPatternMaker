@@ -31,15 +31,15 @@
 ///
 ////////////////////////////////////////////////
 
-Border::Border() : Layer("Border")
+Border::Border() : Layer("Border",LTYPE_BORDER)
 {
     type = BORDER_NONE;  // undefined
     setZValue(BORDER_ZLEVEL);
     sp = make_shared<ShapeFactory>(2.0);
     addSubLayer(sp);
 
-    view = View::getInstance();
-    connect(view, &View::sig_reconstructBorder, this, &Border::construct);
+    Workspace * workspace = Workspace::getInstance();
+    connect(workspace, &View::sig_reconstructBorder, this, &Border::construct);
 }
 
 Border::~Border()
@@ -65,7 +65,7 @@ BorderPlain::BorderPlain(qreal width, QColor color)
 void BorderPlain::construct()
 {
     sp->reset();
-    size = view->size();
+    size = workspace->size();
 
     QPen pen(color,width);
 
@@ -100,7 +100,7 @@ BorderTwoColor::BorderTwoColor(QColor color1, QColor color2, qreal width)
 void BorderTwoColor::construct()
 {
     sp->reset();
-    size = view->size();
+    size = workspace->size();
 
     qreal w   = size.width();
     qreal h  = size.height();

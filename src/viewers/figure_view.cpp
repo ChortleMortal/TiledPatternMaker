@@ -31,10 +31,10 @@
 #include "tapp/extended_rosette.h"
 #include "makers/figure_maker/feature_button.h"
 #include "base/utilities.h"
-#include "base/view.h"
+#include "base/workspace.h"
 #include "geometry/transform.h"
 
-FigureView::FigureView(DesignElementPtr dep) : Layer("FigureView")
+FigureView::FigureView(DesignElementPtr dep) : Layer("FigureView",LTYPE_VIEW)
 {
     Q_ASSERT(dep);
 
@@ -84,8 +84,8 @@ void FigureView::paint(QPainter *painter)
     qDebug().noquote() << "FigureView::scale8   " << Transform::toInfoString(t1);
     qDebug().noquote() << "FigureView::layer    " << Transform::toInfoString(t0);
 #else
-    View * view = View::getInstance();
-    _T = FeatureButton::resetViewport(_dep,view->rect());
+    Workspace * workspace = Workspace::getInstance();
+    _T = FeatureButton::resetViewport(_dep,workspace->rect());
 #endif
     qDebug().noquote() << "FigureView::transform" << Transform::toInfoString(_T);
 

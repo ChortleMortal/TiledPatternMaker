@@ -44,6 +44,8 @@
 class Canvas;
 class TilingMouseAction;
 
+;
+
 class TilingMaker : public TilingMakerView
 {
     Q_OBJECT
@@ -72,40 +74,24 @@ public:
     // push to styled desing
     void pushTiling();
 
-    // Internal tiling creation.
-    QPointF getTrans1();
-    QPointF getTrans2();
-    void    fixupTranslate(TilingPtr tiling);
-
-    eTilingMouseMode getMouseMode();
+    eTMMouseMode getTilingMakerMouseMode();
     QString    getStatus();
     int        getPolygonSides() { return poly_side_count; }
 
     // Mouse interaction underway..
+    void       updateVisibleVectors();
+
     MouseActionPtr mouse_interaction;
     QPointF     sMousePos;   // screen points DAC added
-    QPointF     wTrans1_start;
-    QPointF     wTrans1_end;
     QPointF     featureEditPoint;
 
     // Feature management.
     void        addNewPlacedFeature(PlacedFeaturePtr pf);
     TilingSelectionPtr addFeatureSelectionPointer(TilingSelectionPtr sel );
     void        removeFeature(TilingSelectionPtr sel);
-    void        addToTranslate(QPointF wpt, bool ending);
+    void        addToTranslate(QLineF mLine);
     void        setCurrentFeature(PlacedFeaturePtr pfp) { currentFeature = pfp; }
     void        toggleInclusion(TilingSelectionPtr sel);
-
-    // global modifications to features
-    void tilingDeltaX(int delta);
-    void tilingDeltaY(int delta);
-    void tilingDeltaScale(int delta);
-    void tilingDeltaRotate(int delta);
-
-    void featureDeltaX(int delta);
-    void featureDeltaY(int delta);
-    void featureDeltaScale(int delta);
-    void featureDeltaRotate(int delta);
 
 signals:
     void sig_buildMenu();
@@ -116,7 +102,7 @@ public slots:
     void slot_unload();
     void updatePolygonSides(int number);
     void updatePolygonRot(qreal angle);
-    void setMouseMode(eTilingMouseMode mode);
+    void setTilingMakerMouseMode(eTMMouseMode mode);
     void addRegularPolygon();
     void fillUsingTranslations();
     void removeExcluded();
@@ -131,6 +117,15 @@ public slots:
     void slot_mouseDragged(QPointF spt);
     void slot_mouseReleased(QPointF spt);
     void slot_mouseMoved(QPointF spt);
+
+    void slot_moveX(int amount);
+    void slot_moveY(int amount);
+    void slot_rotate(int amount);
+    void slot_scale(int amount);
+
+    void slot_mouseTranslate(QPointF spt);
+    void slot_wheel_rotate(qreal delta);
+    void slot_wheel_scale(qreal delta);
 
 protected slots:
     void slot_deleteFeature();
@@ -171,12 +166,25 @@ protected:
     // Mouse interactions.
     void startMouseInteraction(QPointF spt, enum Qt::MouseButton mouseButton);
 
+    // global modifications to features
+    void tilingDeltaX(int delta);
+    void tilingDeltaY(int delta);
+    void tilingDeltaScale(int delta);
+    void tilingDeltaRotate(int delta);
+
+    void featureDeltaX(int delta);
+    void featureDeltaY(int delta);
+    void featureDeltaScale(int delta);
+    void featureDeltaScale(qreal scale);
+    void featureDeltaRotate(int delta);
+    void featureDeltaRotate(qreal rotate);
+
 private:
 
     static TilingMaker *  mpThis;
     static TilingMakerPtr spThis;
 
-    TilingPtr           currentTiling;      // only used for xml save
+    TilingPtr           currentTiling;
     TilingSelectionPtr  currentSelection;   // Current mouse selection.
     PlacedFeaturePtr    editFeature;        // Feature in DlgFeatureEdit
     PlacedFeaturePtr    currentFeature;     // current menu row selection too
@@ -187,11 +195,9 @@ private:
     int         poly_side_count;            // number of selected vertices when drawing polygons.
     qreal       poly_rotation;              // regular polygon feature rotation
 
-    // Translation vector so that the tiling tiles the plane.
-    QPointF     wTrans2_start;
-    QPointF     wTrans2_end;
+    QLineF      visibleT1;                  // Translation vector so that the tiling tiles the plane.
+    QLineF      visibleT2;
 
-    View            * view;
     Workspace       * workspace;
 };
 

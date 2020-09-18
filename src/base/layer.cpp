@@ -25,29 +25,28 @@
 #include "base/layer.h"
 #include "base/view.h"
 #include "geometry/transform.h"
-#include "viewers/workspace_viewer.h"
+#include "base/workspace.h"
 
 int Layer::refs = 0;
 
-Layer::Layer(QString name) : QObject()
+Layer::Layer(QString name, eLayerType ltype) : QObject()
 {
-    wsViewer = WorkspaceViewer::getInstance();
-    config   = Configuration::getInstance();
+    workspace = Workspace::getInstance();
+    config    = Configuration::getInstance();
 
-    view = View::getInstance();
-    connect(view, &View::sig_deltaScale,    this, &Layer::slot_scale);
-    connect(view, &View::sig_deltaRotate,   this, &Layer::slot_rotate);
-    connect(view, &View::sig_deltaMoveY,    this, &Layer::slot_moveY);
-    connect(view, &View::sig_deltaMoveX,    this, &Layer::slot_moveX);
+    connect(workspace, &View::sig_deltaScale,    this, &Layer::slot_scale);
+    connect(workspace, &View::sig_deltaRotate,   this, &Layer::slot_rotate);
+    connect(workspace, &View::sig_deltaMoveY,    this, &Layer::slot_moveY);
+    connect(workspace, &View::sig_deltaMoveX,    this, &Layer::slot_moveX);
 
-    connect(view, &View::sig_mousePressed,      this, &Layer::slot_mousePressed);
-    connect(view, &View::sig_mouseTranslate,    this, &Layer::slot_mouseTranslate);
-    connect(view, &View::sig_wheel_scale,       this, &Layer::slot_wheel_scale);
-    connect(view, &View::sig_wheel_rotate,      this, &Layer::slot_wheel_rottate);
-    connect(view, &View::sig_setCenter,         this, &Layer::slot_setCenter);
+    connect(workspace, &View::sig_mousePressed,      this, &Layer::slot_mousePressed);
+    connect(workspace, &View::sig_mouseTranslate,    this, &Layer::slot_mouseTranslate);
+    connect(workspace, &View::sig_wheel_scale,       this, &Layer::slot_wheel_scale);
+    connect(workspace, &View::sig_wheel_rotate,      this, &Layer::slot_wheel_rotate);
+    connect(workspace, &View::sig_setCenter,         this, &Layer::slot_setCenterScreen);
 
     this->name = name;
-
+    layerType  = ltype;
     visible = true;
     zlevel  = 0;
 
@@ -56,9 +55,10 @@ Layer::Layer(QString name) : QObject()
 
 Layer::Layer(const Layer & other) : QObject()
 {
-    wsViewer = WorkspaceViewer::getInstance();
+    workspace = Workspace::getInstance();
     config   = Configuration::getInstance();
 
+    layerType   = other.layerType;
     visible     = other.visible;
     xf_canvas   = other.xf_canvas;
     name        = other.name;
@@ -70,18 +70,16 @@ Layer::Layer(const Layer & other) : QObject()
     subLayers   = other.subLayers;
     zlevel      = other.zlevel;
 
-    view = View::getInstance();
+    connect(workspace, &View::sig_deltaScale,    this, &Layer::slot_scale,  Qt::UniqueConnection);
+    connect(workspace, &View::sig_deltaRotate,   this, &Layer::slot_rotate, Qt::UniqueConnection);
+    connect(workspace, &View::sig_deltaMoveY,    this, &Layer::slot_moveY,  Qt::UniqueConnection);
+    connect(workspace, &View::sig_deltaMoveX,    this, &Layer::slot_moveX,  Qt::UniqueConnection);
 
-    connect(view, &View::sig_deltaScale,    this, &Layer::slot_scale,  Qt::UniqueConnection);
-    connect(view, &View::sig_deltaRotate,   this, &Layer::slot_rotate, Qt::UniqueConnection);
-    connect(view, &View::sig_deltaMoveY,    this, &Layer::slot_moveY,  Qt::UniqueConnection);
-    connect(view, &View::sig_deltaMoveX,    this, &Layer::slot_moveX,  Qt::UniqueConnection);
-
-    connect(view, &View::sig_mousePressed,      this, &Layer::slot_mousePressed);
-    connect(view, &View::sig_mouseTranslate,              this, &Layer::slot_mouseTranslate);
-    connect(view, &View::sig_wheel_scale,       this, &Layer::slot_wheel_scale);
-    connect(view, &View::sig_wheel_rotate,      this, &Layer::slot_wheel_rottate);
-    connect(view, &View::sig_setCenter,         this, &Layer::slot_setCenter);
+    connect(workspace, &View::sig_mousePressed,      this, &Layer::slot_mousePressed);
+    connect(workspace, &View::sig_mouseTranslate,    this, &Layer::slot_mouseTranslate);
+    connect(workspace, &View::sig_wheel_scale,       this, &Layer::slot_wheel_scale);
+    connect(workspace, &View::sig_wheel_rotate,      this, &Layer::slot_wheel_rotate);
+    connect(workspace, &View::sig_setCenter,         this, &Layer::slot_setCenterScreen);
 
     refs++;
 }
@@ -128,38 +126,35 @@ void Layer::removeSubLayer(LayerPtr item)
    subLayers.removeAll(item);
 }
 
-void Layer::forceUpdateLayer()
+void Layer::forceLayerRecalc(bool update)
 {
     qtr_layer.reset();
-    getLayerTransform();    // recalcs
-    view->update();
+    getLayerTransform();    // recalc
+    if (update)
+    {
+        workspace->update();
+    }
 }
 
 void Layer::forceRedraw()
 {
-    view->update();
+    workspace->update();
 }
 
-QTransform  Layer::getViewTransform()
+QTransform  Layer::getFrameTransform()
 {
-    return wsViewer->getViewTransform(config->viewerType);
+    return workspace->getFrameTransform(config->viewerType);
 }
 
 QTransform  Layer::getCanvasTransform()
 {
-    return xf_canvas.toQTransform(getViewTransform());
+    return xf_canvas.toQTransform(getFrameTransform());
 }
 
 QTransform Layer::getLayerTransform()
 {
     if (qtr_layer.isIdentity())
     {
-        if (!xf_canvas.hasCenter)
-        {
-            QTransform t   = getViewTransform().inverted();
-            QPointF center = t.map(view->rect().center());
-            xf_canvas.setCenter(center);
-        }
         // compute Transform
         computeLayerTransform();
     }
@@ -169,52 +164,72 @@ QTransform Layer::getLayerTransform()
 
 void Layer::computeLayerTransform()
 {
-    qtr_layer   = getViewTransform() * getCanvasTransform();
+    qtr_layer   = getFrameTransform() * getCanvasTransform();
     qtr_invert  = qtr_layer.inverted();
     //qDebug().noquote() << "qtr_layer:" << name << Transform::toInfoString(qtr_layer);
 }
 
-void Layer::setCenter (QPointF pt)
+void Layer::setCenterScreen(QPointF spt)
 {
-    qDebug() << "Layer::setCenter=" << pt;
+    qDebug().noquote() << "Layer::setCenterScreen new=" << spt << "old=" << getCenterScreen()  << "diff = " << (spt - getCenterScreen());
     if (qtr_invert.isIdentity())
     {
         computeLayerTransform();
-        qDebug() << "Layer::setCenter" << Transform::toInfoString(qtr_layer);
+        qDebug().noquote() << "Layer::setCenterScreen" << Transform::toInfoString(qtr_layer);
     }
-    qDebug() << "Layer::setCenter" << Transform::toInfoString(qtr_layer);
-    xf_canvas.setCenter(qtr_invert.map(pt));
+    qDebug().noquote() << "Layer::setCenterScreen" << getName() << Transform::toInfoString(qtr_layer);
+
+    xf_canvas.setCenter(qtr_invert.map(spt));
+    computeLayerTransform();
+
+    QPointF diff = spt - getCenterScreen();
+    xf_canvas.setTranslateX(xf_canvas.getTranslateX() + diff.x());
+    xf_canvas.setTranslateY(xf_canvas.getTranslateY() + diff.y());
+    computeLayerTransform();
+
+    emit sig_center();
 }
 
-void Layer::slot_setCenter(QPointF pt)
+void Layer::setCenterModel(QPointF mpt)
 {
-    qDebug() << "Layer::slot_setCenter=" << pt;
-    if (qtr_invert.isIdentity())
-    {
-        computeLayerTransform();
-        qDebug() << "Layer::slot_setCenter" << Transform::toInfoString(qtr_layer);
-    }
-    qDebug() << "Layer::slot_setCenter" << getName() << Transform::toInfoString(qtr_layer);
-    xf_canvas.setCenter(qtr_invert.map(pt));
+    xf_canvas.setCenter(mpt);
+    emit sig_center();
+
+}
+void Layer::slot_setCenterScreen(QPointF spt)
+{
+    setCenterScreen(spt);
 }
 
-QPointF Layer::getCenter()
+QPointF Layer::getCenterScreen()
 {
     if (qtr_invert.isIdentity())
     {
         computeLayerTransform();
-        qDebug() << "Layer::getCenter()" << Transform::toInfoString(qtr_layer);
+        //qDebug() << "Layer::getCenter()" << Transform::toInfoString(qtr_layer);
     }
     return qtr_layer.map(xf_canvas.getCenter());
 }
 
-void Layer::setCanvasXform(Xform & xf)
+QPointF Layer::getCenterModel()
 {
-    xf_canvas = xf;
-    forceUpdateLayer();
+    return xf_canvas.getCenter();
 }
 
-Xform Layer::getCanvasXform()
+void Layer::setCanvasXform(const Xform & xf)
+{
+    xf_canvas = xf;
+    forceLayerRecalc();
+}
+
+void Layer::updateCanvasXform(const Xform & xf)
+{
+    // does not touch the center
+    xf_canvas.update(xf);
+    forceLayerRecalc();
+}
+
+const Xform & Layer::getCanvasXform()
 {
     return xf_canvas;
 }
@@ -251,143 +266,79 @@ QLineF Layer::worldToScreen(QLineF line)
 
 void Layer::slot_mouseTranslate(QPointF pt)
 {
-    if (config->kbdMode == KBD_MODE_XFORM_VIEW)
+    if (   (config->kbdMode == KBD_MODE_XFORM_VIEW && layerType != LTYPE_BACKGROUND)
+        || (config->kbdMode == KBD_MODE_XFORM_BKGD && layerType == LTYPE_BACKGROUND)
+        || (config->viewerType == VIEW_DESIGN))
     {
         xf_canvas.setTranslateX(xf_canvas.getTranslateX() + pt.x());
         xf_canvas.setTranslateY(xf_canvas.getTranslateY() + pt.y());
-        forceUpdateLayer();
-    }
-    else if (config->kbdMode == KBD_MODE_XFORM_BKGD)
-    {
-        BkgdImgPtr bip = wsViewer->getBkgdImage();
-        if (bip)
-        {
-            Xform xf = bip->getXform();
-            xf.setTranslateX(xf.getTranslateX() + pt.x());
-            xf.setTranslateY(xf.getTranslateY() + pt.y());
-            bip->setXform(xf);
-            bip->bkgdTransformChanged(true);
-        }
+        forceLayerRecalc();
     }
 }
 
 void Layer::slot_moveX(int amount)
 {
-    if (config->kbdMode == KBD_MODE_XFORM_VIEW)
+    if (   (config->kbdMode == KBD_MODE_XFORM_VIEW && layerType != LTYPE_BACKGROUND)
+        || (config->kbdMode == KBD_MODE_XFORM_BKGD && layerType == LTYPE_BACKGROUND)
+        || (config->viewerType == VIEW_DESIGN))
     {
         xf_canvas.setTranslateX(xf_canvas.getTranslateX() + amount);
-        forceUpdateLayer();
-    }
-    else if (config->kbdMode == KBD_MODE_XFORM_BKGD)
-    {
-        BkgdImgPtr bip = wsViewer->getBkgdImage();
-        if (bip)
-        {
-            Xform xf = bip->getXform();
-            xf.setTranslateX(xf.getTranslateX() + amount);
-            bip->setXform(xf);
-            bip->bkgdTransformChanged(true);
-        }
+        forceLayerRecalc();
     }
 }
 
 void Layer::slot_moveY(int amount)
 {
-    if (config->kbdMode == KBD_MODE_XFORM_VIEW)
+    if (   (config->kbdMode == KBD_MODE_XFORM_VIEW && layerType != LTYPE_BACKGROUND)
+        || (config->kbdMode == KBD_MODE_XFORM_BKGD && layerType == LTYPE_BACKGROUND)
+        || (config->viewerType == VIEW_DESIGN))
     {
         xf_canvas.setTranslateY(xf_canvas.getTranslateY() + amount);
-        forceUpdateLayer();
-    }
-    else if (config->kbdMode == KBD_MODE_XFORM_BKGD)
-    {
-        BkgdImgPtr bip = wsViewer->getBkgdImage();
-        if (bip)
-        {
-            Xform xf = bip->getXform();
-            xf.setTranslateY(xf.getTranslateY() + amount);
-            bip->setXform(xf);
-            bip->bkgdTransformChanged(true);
-        }
+        forceLayerRecalc();
     }
 }
 
 void Layer::slot_rotate(int amount)
 {
-    if (config->kbdMode == KBD_MODE_XFORM_VIEW)
+    if (   (config->kbdMode == KBD_MODE_XFORM_VIEW && layerType != LTYPE_BACKGROUND)
+         || (config->kbdMode == KBD_MODE_XFORM_BKGD && layerType == LTYPE_BACKGROUND)
+         || (config->viewerType == VIEW_DESIGN))
     {
         xf_canvas.setRotateRadians(xf_canvas.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
-        forceUpdateLayer();
-    }
-    else if (config->kbdMode == KBD_MODE_XFORM_BKGD)
-    {
-        BkgdImgPtr bip = wsViewer->getBkgdImage();
-        if (bip)
-        {
-            Xform xf = bip->getXform();
-            xf.setRotateRadians(xf.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
-            bip->setXform(xf);
-            bip->bkgdTransformChanged(true);
-        }
+        forceLayerRecalc();
     }
 }
 
-void Layer::slot_wheel_rottate(qreal delta)
+void Layer::slot_wheel_rotate(qreal delta)
 {
-    if (config->kbdMode == KBD_MODE_XFORM_VIEW)
+    if (   (config->kbdMode == KBD_MODE_XFORM_VIEW && layerType != LTYPE_BACKGROUND)
+        || (config->kbdMode == KBD_MODE_XFORM_BKGD && layerType == LTYPE_BACKGROUND)
+        || (config->viewerType == VIEW_DESIGN))
     {
         xf_canvas.setRotateDegrees(xf_canvas.getRotateDegrees() + delta);
-        forceUpdateLayer();
-    }
-    else if (config->kbdMode == KBD_MODE_XFORM_BKGD)
-    {
-        BkgdImgPtr bip = wsViewer->getBkgdImage();
-        if (bip)
-        {
-            Xform xf = bip->getXform();
-            xf.setRotateDegrees(xf.getRotateDegrees() + delta);
-            bip->setXform(xf);
-            bip->bkgdTransformChanged(true);
-        }
+        forceLayerRecalc();
     }
 }
 
 void Layer::slot_scale(int amount)
 {
-    if (config->kbdMode == KBD_MODE_XFORM_VIEW)
+    if (   (config->kbdMode == KBD_MODE_XFORM_VIEW && layerType != LTYPE_BACKGROUND)
+        || (config->kbdMode == KBD_MODE_XFORM_BKGD && layerType == LTYPE_BACKGROUND)
+        || (config->viewerType == VIEW_DESIGN))
     {
         xf_canvas.setScale(xf_canvas.getScale() + static_cast<qreal>(amount)/100.0);
-        forceUpdateLayer();
-    }
-    else if (config->kbdMode == KBD_MODE_XFORM_BKGD)
-    {
-        BkgdImgPtr bip = wsViewer->getBkgdImage();
-        if (bip)
-        {
-            Xform xf = bip->getXform();
-            xf.setScale(xf.getScale() + static_cast<qreal>(amount)/100.0);
-            bip->setXform(xf);
-            bip->bkgdTransformChanged(true);
-        }
+        forceLayerRecalc();
     }
 }
 
 void Layer::slot_wheel_scale(qreal delta)
 {
-    if (config->kbdMode == KBD_MODE_XFORM_VIEW)
+    if (   (config->kbdMode == KBD_MODE_XFORM_VIEW && layerType != LTYPE_BACKGROUND)
+        || (config->kbdMode == KBD_MODE_XFORM_BKGD && layerType == LTYPE_BACKGROUND)
+        || (config->viewerType == VIEW_DESIGN))
     {
         xf_canvas.setScale(xf_canvas.getScale() + delta);
-        forceUpdateLayer();
-    }
-    else if (config->kbdMode == KBD_MODE_XFORM_BKGD)
-    {
-        BkgdImgPtr bip = wsViewer->getBkgdImage();
-        if (bip)
-        {
-            Xform xf = bip->getXform();
-            xf.setScale(xf.getScale() + delta);
-            bip->setXform(xf);
-            bip->bkgdTransformChanged(true);
-        }
+        forceLayerRecalc();
     }
 }
 
@@ -395,16 +346,10 @@ void Layer::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
 {
     qDebug() << getName() << config->kbdMode;
 
-    if (config->kbdMode != KBD_MODE_CENTER)
+    if (config->kbdMode == KBD_MODE_CENTER && btn == Qt::LeftButton)
     {
-        return;
+        setCenterScreen(spt);
     }
-    if (btn != Qt::LeftButton)
-    {
-        return;
-    }
-    xf_canvas.setCenter(qtr_invert.map(spt));
-    view->update();
 }
 
 void Layer::setLoc(QPointF loc)
@@ -422,8 +367,8 @@ void  Layer::drawCenter(QPainter * painter)
 {
     if (config->showCenter)
     {
-        QPointF pt = getCenter();
-        qDebug() << "Layer::drawCenter:" << pt;
+        QPointF pt = getCenterScreen();
+        //qDebug() << "Layer::drawCenter:" << pt;
         qreal len = 13;
         QColor green(Qt::green);
         painter->setPen(QPen(green));

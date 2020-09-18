@@ -1,4 +1,4 @@
-#include "feature_reader.h"
+#include "tile/feature_reader.h"
 #include "geometry/xform.h"
 #include <QTransform>
 

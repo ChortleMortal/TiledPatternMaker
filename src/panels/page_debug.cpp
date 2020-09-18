@@ -97,7 +97,7 @@ QGroupBox * page_debug::createDebugSection()
     connect(pbReprocessTileXMLBtn,    &QPushButton::clicked,     this,   &page_debug::slot_reprocessTilingXML);
     connect(pbClearCanvas,            &QPushButton::clicked,     workspace,  &Workspace::slot_clearCanvas);
     connect(pbRender,                 &QPushButton::clicked,     tpm,        &TiledPatternMaker::slot_render);
-    connect(pbDrainAll,               &QPushButton::clicked,     view,       &View::drainTheSwamp);
+    connect(pbDrainAll,               &QPushButton::clicked,     workspace,  &View::drainTheSwamp);
     connect(pbClearWS,                &QPushButton::clicked,     workspace,  &Workspace::slot_clearWorkspace);
 
     return debugGroup;
@@ -130,9 +130,8 @@ QGroupBox * page_debug::createCycleSection()
     hbox00->addWidget(rSavStyles);
     hbox00->addWidget(rSavTiles);
     hbox00->addStretch();
-    hbox00->addWidget(rPngs);
-    hbox00->addStretch();
     hbox00->addLayout(spCycleInterval);
+    hbox00->addWidget(rPngs);
     hbox00->addWidget(rStyles);
     hbox00->addWidget(rTiles);
     hbox00->addStretch();
@@ -312,7 +311,7 @@ QVBoxLayout *  page_debug::createMiscSection()
     connect(&gridModelGroup,    SIGNAL(buttonClicked(int)),   this,  SLOT(slot_gridType_pressed(int)));
     connect(gridBox,            &QGroupBox::clicked,          this, &page_debug::slot_showGridChanged);
     connect(gridScreenSpacing,  &SpinSet::valueChanged,       this, &page_debug::slot_gridScreenSpacingChanged);
-    connect(gridModelSpacing,   &DoubleSpinSet::valueChanged, this, &page_debug::slot_gridModelSpacingChanged);
+    connect(gridModelSpacing,   &DoubleSpinSet::sig_valueChanged, this, &page_debug::slot_gridModelSpacingChanged);
     connect(gridScreenWidth,    &SpinSet::valueChanged,       this, &page_debug::slot_gridScreenWidthChanged);
     connect(gridModelWidth,     &SpinSet::valueChanged,       this, &page_debug::slot_gridModelWidthChanged);
     connect(gridScreenCentered, &QCheckBox::stateChanged,     this, &page_debug::slot_gridScreenCenteredChanged);
@@ -382,9 +381,8 @@ void page_debug::onExit()
 {
     panel->hidePanelStatus();
 
-    View * view = View::getInstance();
-    view->clearLayout();   // removes any cler pngs
-    view->show();
+    workspace->clearLayout();   // removes any cler pngs
+    workspace->show();
 }
 
 void  page_debug::refreshPage()
@@ -694,10 +692,10 @@ void page_debug::slot_cycle()
     case CYCLE_TILINGS:
         panel->selectViewer(VIEW_TILING);
         emit sig_cyclerStart(config->cycleMode);
+        break;
 
     case CYCLE_ORIGINAL_PNGS:
     case CYCLE_COMPARE_IMAGES:
-        emit sig_cyclerStart(config->cycleMode);
         emit sig_cyclerStart(config->cycleMode);
         break;
 
@@ -723,8 +721,8 @@ void page_debug::saveMosaicBitmaps()
         // this forces immediate action
         MosaicManager mm;
         mm.loadMosaic(name);
-        wsViewer->slot_viewWorkspace();
-        view->repaint();
+        workspace->slot_viewWorkspace();
+        workspace->repaint();
         savePixmap(name);
     }
 
@@ -753,8 +751,8 @@ void page_debug::saveTilingBitmaps()
         workspace->resetTilings();
         TilingManager tm;
         tm.loadTiling(name);    // adds to workspace
-        wsViewer->slot_viewWorkspace();
-        view->repaint();
+        workspace->slot_viewWorkspace();
+        workspace->repaint();
         savePixmap(name);
     }
 
@@ -901,63 +899,63 @@ void  page_debug::slot_verifyVerboseClicked(bool enb)
 void page_debug::slot_showGridChanged(bool checked)
 {
     config->showGrid = checked;
-    view->update();
+    workspace->update();
 }
 
 void page_debug::slot_gridModelSpacingChanged(qreal value)
 {
     config->gridModelSpacing = value;
-    view->update();
+    workspace->update();
 }
 
 void page_debug::slot_gridScreenSpacingChanged(int value)
 {
     config->gridScreenSpacing = value;
-    view->update();
+    workspace->update();
 }
 
 void page_debug::slot_gridScreenWidthChanged(int value)
 {
     config->gridScreenWidth = value;
-    view->update();
+    workspace->update();
 }
 
 void page_debug::slot_gridModelWidthChanged(int value)
 {
     config->gridModelWidth = value;
-    view->update();
+    workspace->update();
 }
 
 void page_debug::slot_gridType_pressed(int id)
 {
     config->gridType = eGridType(id);
-    view->update();
+    workspace->update();
     onEnter();
 }
 
 void page_debug::slot_showCenterChanged(int id)
 {
     config->showCenter = (id == Qt::Checked);
-    view->update();
+    workspace->update();
 }
 
 void page_debug::slot_gridScreenCenteredChanged(int id)
 {
     config->gridScreenCenter = (id == Qt::Checked);
-    view->update();
+    workspace->update();
 }
 
 void page_debug::slot_gridModelCenteredChanged(int id)
 {
     config->gridModelCenter = (id == Qt::Checked);
-    view->update();
+    workspace->update();
 }
 
 void page_debug::savePixmap(QString name)
 {
     Q_ASSERT(!name.contains(".xml"));
 
-    QPixmap pixmap = View::getInstance()->grab();
+    QPixmap pixmap = workspace->grab();
 
     QString subdir;
     switch (config->repeatMode)

@@ -67,13 +67,12 @@ void PrototypeMaker::init(TiledPatternMaker * maker, page_prototype_maker * menu
     addLayout(hbox);
     addWidget(masterEdit);
 
-    WorkspaceViewer * viewer = WorkspaceViewer::getInstance();
-    View * view              = View::getInstance();
+    Workspace * workspace = Workspace::getInstance();
 
     setObjectName("FigureMaker");
-    connect(this,     &PrototypeMaker::sig_viewWS,          viewer, &WorkspaceViewer::slot_viewWorkspace);
-    connect(launcher, &FeatureLauncher::sig_launcherButton, this,   &PrototypeMaker::slot_launcherButton);
-    connect(view,     &View::sig_figure_changed,            this,   &PrototypeMaker::slot_launcherButton);
+    connect(this,      &PrototypeMaker::sig_viewWS,          workspace, &WorkspaceViewer::slot_viewWorkspace);
+    connect(launcher,  &FeatureLauncher::sig_launcherButton, this,      &PrototypeMaker::slot_launcherButton);
+    connect(workspace, &View::sig_figure_changed,            this,      &PrototypeMaker::slot_launcherButton);
 }
 
 void PrototypeMaker::slot_launcherButton()

@@ -118,7 +118,10 @@ public:
     qreal   getSingleStep()          { return spin->singleStep(); }
 
 signals:
-   void valueChanged(qreal val);
+    void sig_valueChanged(qreal val);
+
+private slots:
+    void slot_valueChanged(qreal val);
 
 private:
    QLabel           * label;

@@ -26,11 +26,11 @@
 #define TILEDPATTERNMAKER_H
 
 #include "base/configuration.h"
-#include "base/view.h"
 #include "base/workspace.h"
 
 class SplitScreen;
 class AQLabel;
+class ControlPanel;
 
 class TiledPatternMaker : public QObject
 {
@@ -60,7 +60,7 @@ public slots:
 
     void slot_loadMosaic(QString name);
     void slot_cycleLoadMosaic(QString name);
-    void slot_saveXML(QString name);
+    void slot_saveMosaic(QString name);
     void slot_loadTiling(QString name);
     void slot_cyclerLoadTiling(QString name);
 
@@ -90,10 +90,8 @@ private:
     Configuration   * config;
     Workspace       * workspace;
     ControlPanel    * controlPanel;
-    View            * view;
     TilingMaker     * tilingMaker;
     MapEditor       * mapEditor;
-    WorkspaceViewer * wsViewer;
 
     Cycler          * cycler;
     AQLabel         * cyclerWindow;

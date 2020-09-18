@@ -22,7 +22,7 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "figure_connector.h"
+#include "tapp/figure_connector.h"
 #include "tapp/radial_figure.h"
 #include "geometry/intersect.h"
 #include "geometry/loose.h"

@@ -38,7 +38,7 @@
 #include "geometry/transform.h"
 #include "geometry/point.h"
 
-TilingMakerView::TilingMakerView() : Layer("TilingMakerView")
+TilingMakerView::TilingMakerView() : Layer("TilingMakerView",LTYPE_TILING_MAKER)
 {
     config              = Configuration::getInstance();
 #if 0
@@ -56,6 +56,7 @@ TilingMakerView::TilingMakerView() : Layer("TilingMakerView")
     under_mouse_color   = QColor(127,255,127,127);  // green
     drag_color          = QColor(206,179,102,127);
 #endif
+    selected_color      = QColor(  0,255,  0,127);
     construction_color  = Qt::darkGreen;
 
     _hide               = false;
@@ -112,7 +113,7 @@ void TilingMakerView::drawFeature(GeoGraphics * g2d, PlacedFeaturePtr pf, bool d
     g2d->fillEdgePoly(ep,icol);
     g2d->drawEdgePoly(ep,Qt::black,3);
 
-    if (mouse_mode == EDGE_CURVE_MODE)
+    if (tilingMakerMouseMode == TM_EDGE_CURVE_MODE)
     {
         for (auto edge : ep)
         {

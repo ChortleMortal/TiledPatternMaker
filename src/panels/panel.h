@@ -58,12 +58,12 @@ public:
     void    showSplash(QString txt)      { splash->display(txt); }
     void    hideSplash()                 { splash->remove(); }
 
-    TiledPatternMaker * getMaker() { return maker; }
-    panel_page * getCurrentPage()  { return currentPage; }
-
     void    selectViewer(int id);
 
-    static eKbdMode getValidKbdMode(eKbdMode mode);
+    TiledPatternMaker * getMaker()       { return maker; }
+    panel_page        * getCurrentPage() { return currentPage; }
+    eViewType           getCurrentView() { return panelStatus->getCurrentView(); }
+    static eKbdMode     getValidKbdMode(eKbdMode mode);
 
 signals:
     void    sig_viewWS();
@@ -119,8 +119,7 @@ private:
 
     Configuration           * config;
     TiledPatternMaker       * maker;
-    WorkspaceViewer         * viewer;
-    View                    * view;
+    Workspace               * workspace;
 
     PanelStatus             * panelStatus;
     TPMSplash               * splash;

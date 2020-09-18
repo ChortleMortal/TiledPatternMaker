@@ -35,31 +35,11 @@
 #include "style/style.h"
 #include "designs/design_control.h"
 
-View * View::mpThis = nullptr;
-
 #ifdef __linux__
 #define ALT_MODIFIER Qt::MetaModifier
 #else
 #define ALT_MODIFIER Qt::AltModifier
 #endif
-
-View * View::getInstance()
-{
-    if (mpThis == nullptr)
-    {
-        mpThis = new View();
-    }
-    return mpThis;
-}
-
-void View::releaseInstance()
-{
-    if (mpThis != nullptr)
-    {
-        delete mpThis;
-        mpThis = nullptr;
-    }
-}
 
 View::View()
 {
@@ -77,6 +57,38 @@ View::View()
 
     QGridLayout * grid = new QGridLayout();
     setLayout(grid);
+
+    eViewType evt = VIEW_MOSAIC;
+    FrameSettings * vs = &frameSettings[evt];
+    vs->init(evt, Bounds(-10.0,10.0,20.0), QSize(1500,1100));
+
+    evt = VIEW_PROTOTYPE;
+    vs  = &frameSettings[evt];
+    vs->init(evt, Bounds(-10.0,10.0,20.0), QSize(1500,1100));
+
+    evt = VIEW_DESIGN_ELEMENT;
+    vs  = &frameSettings[evt];
+    vs->init(evt, Bounds(-10.0,10.0,20.0), QSize(1500,1100));
+
+    evt = VIEW_TILING;
+    vs  = &frameSettings[evt];
+    vs->init(evt, Bounds(-10.0,10.0,20.0), QSize(1500,1100));
+
+    evt = VIEW_TILING_MAKER;
+    vs  = &frameSettings[evt];
+    vs->init(evt, Bounds(-5.0,5.0,10.0), QSize(1000,1000));
+
+    evt = VIEW_FACE_SET;
+    vs  = &frameSettings[evt];
+    vs->init(evt, Bounds(-10.0,10.0,20.0), QSize(1500,1100));
+
+    evt = VIEW_FROTOTYPE_MAKER;
+    vs  = &frameSettings[evt];
+    vs->init(evt, Bounds(-10.0,10.0,20.0), QSize( 900, 900));
+
+    evt = VIEW_MAP_EDITOR;
+    vs  = &frameSettings[evt];
+    vs->init(evt, Bounds(-10.0,10.0,20.0), QSize( 900, 900));
 }
 
 View::~View()
@@ -93,13 +105,12 @@ void View::init()
     config      = Configuration::getInstance();
     mapEditor   = MapEditor::getInstance();
     tilingMaker = TilingMaker::getInstance();
-    wsViewer    = WorkspaceViewer::getInstance();
     designCtrl  = DesignControl::getInstance();
 
     setKbdMode(KBD_MODE_UNDEFINED);
 
-    connect(wsViewer, &WorkspaceViewer::sig_title, this, &View::setWindowTitle, Qt::QueuedConnection);
-    connect(this,     &View::sig_viewWS,       wsViewer, &WorkspaceViewer::slot_viewWorkspace);
+    Workspace  * workspace = Workspace::getInstance();
+    connect(this,     &View::sig_viewWS,     workspace, &WorkspaceViewer::slot_viewWorkspace);
 
     Cycler * cycler = Cycler::getInstance();
     connect(this,     &View::sig_cyclerQuit,   cycler,  &Cycler::slot_stopCycle);
@@ -130,6 +141,11 @@ void View::addLayer(LayerPtr layer)
     layers.push_back(layer);
 }
 
+void View::addTopLayer(LayerPtr layer)
+{
+    layers.push_front(layer);
+}
+
 void View::clearView()
 {
     clearLayers();
@@ -140,6 +156,45 @@ QVector<LayerPtr> View::getActiveLayers()
 {
     return layers;
 }
+
+FrameSettings & View::getFrameSettings(eViewType e)
+{
+    return frameSettings[e];
+}
+
+QTransform View::getFrameTransform(eViewType e)
+{
+    QTransform t = frameSettings[e].getFrameTransform();
+    //qDebug().noquote() << "WorkspaceViewer::getViewTransform" << sViewerType[e] << Transform::toInfoString(t);
+    return t;
+}
+
+QSize View::getFrameSize(eViewType e)
+{
+    QSize sz =  frameSettings[e].getFrameSize();
+    qDebug().noquote() << "WorkspaceViewer::getViewSize()" << sViewerType[e] << sz;
+    return sz;
+}
+
+void View::setFrameSize(eViewType e, QSize sz)
+{
+    qDebug().noquote() << "WorkspaceViewer::setViewSize()" << sViewerType[e] << sz;
+    frameSettings[e].setFrameSize(sz);
+}
+
+QSize View::getActiveSize(eViewType e)
+{
+    QSize sz =  frameSettings[e].getActiveSize();
+    qDebug().noquote() << "WorkspaceViewer::getActiveSize()" << sViewerType[e] << sz;
+    return sz;
+}
+
+void View::setActiveSize(eViewType e, QSize sz)
+{
+    qDebug().noquote() << "WorkspaceViewer::setActiveSize()" << sViewerType[e] << sz;
+    frameSettings[e].setActiveSize(sz);
+}
+
 
 void View::paintEvent(QPaintEvent *event)
 {
@@ -155,6 +210,7 @@ void View::paintEvent(QPaintEvent *event)
     {
         if (layer->isVisible())
         {
+            layer->forceLayerRecalc(false);
             layer->paint(&painter);
         }
     }
@@ -165,16 +221,16 @@ void View::paintEvent(QPaintEvent *event)
     //qDebug() << "++++END PAINT";
 }
 
+void View::resize(QSize sz)
+{
+    QWidget::resize(sz);
+}
+
 void View::resizeEvent(QResizeEvent *event)
 {
     QWidget::resizeEvent(event);
 
-    if (!config->scaleToView)
-    {
-        return;
-    }
-
-    QSize oldSize   = wsViewer->getViewSize(config->viewerType);
+    QSize oldSize  = getActiveSize(config->viewerType);
     QSize newSize  = size();
     qDebug() << "View::resizeEvent: old" << oldSize << "new" << newSize;
 
@@ -183,39 +239,51 @@ void View::resizeEvent(QResizeEvent *event)
         return;
     }
 
-    wsViewer->setViewSize(config->viewerType,newSize);
-
-    for (auto layer : layers)
+    setActiveSize(config->viewerType, newSize);
+    if (config->scaleToView)
     {
-       // set scale based on widht only - height is not affecting scale
-        Xform xf        = layer->getCanvasXform();
-
-        qreal oldWidth  = oldSize.width();
-        qreal newWidth  = newSize.width();
-
-        // recenter scaled image
-        qreal old_dx = xf.getTranslateX();
-        qreal old_dy = xf.getTranslateY();
-        qreal new_dx = (newWidth/oldWidth) * old_dx;
-        xf.setTranslateX(new_dx);
-
-        qreal oldHeight = oldSize.height();
-        qreal newHeight = newSize.height();
-        qreal new_dy    = (newHeight/oldHeight) * old_dy;
-        xf.setTranslateY(new_dy);
-
-        layer->setCanvasXform(xf);
-
-        layer->forceUpdateLayer();
-    }
-
-    if (config->viewerType == VIEW_MAP_EDITOR)
-    {
-        MapEditor * me = MapEditor::getInstance();
-        me->forceUpdateLayer();
+        setFrameSize(config->viewerType,newSize);
     }
 
     emit sig_reconstructBorder();
+}
+
+void  View::setAllMosaicFrameSizes(QSize sz)
+{
+    // this overwrites some set by tiling
+    setFrameSize(VIEW_DESIGN,sz);
+    setFrameSize(VIEW_MOSAIC,sz);
+    setFrameSize(VIEW_PROTOTYPE,sz);
+    setFrameSize(VIEW_DESIGN_ELEMENT,sz);
+    setFrameSize(VIEW_TILING,sz);
+}
+
+void View::setAllTilingFrameSizes(QSize sz)
+{
+    // some of these are overwritten when mosaic is loaded/changed
+    setFrameSize(VIEW_TILING,sz);
+    setFrameSize(VIEW_TILING_MAKER,sz);
+    setFrameSize(VIEW_DESIGN_ELEMENT,sz);
+    setFrameSize(VIEW_PROTOTYPE,sz);
+}
+
+void  View::setAllMosaicActiveSizes(QSize sz)
+{
+    // this overwrites some set by tiling
+    setActiveSize(VIEW_DESIGN,sz);
+    setActiveSize(VIEW_MOSAIC,sz);
+    setActiveSize(VIEW_PROTOTYPE,sz);
+    setActiveSize(VIEW_DESIGN_ELEMENT,sz);
+    setActiveSize(VIEW_TILING,sz);
+}
+
+void View::setAllTilingActiveSizes(QSize sz)
+{
+    // some of these are overwritten when mosaic is loaded/changed
+    setActiveSize(VIEW_TILING,sz);
+    setActiveSize(VIEW_TILING_MAKER,sz);
+    setActiveSize(VIEW_DESIGN_ELEMENT,sz);
+    setActiveSize(VIEW_PROTOTYPE,sz);
 }
 
 void View::keyPressEvent( QKeyEvent *k )
@@ -311,7 +379,7 @@ void View::mouseMoveEvent(QMouseEvent *event)
             QPointF spt  = event->globalPos();
             QPointF translate = spt - sLast;
             sLast = spt;
-            qDebug() << "moved" << translate;
+            qDebug() << "dragged" << translate;
             emit sig_mouseTranslate(translate);
         }
     }
@@ -461,7 +529,7 @@ void View::drawGridModelUnitsCentered(QPainter *painter, QRectF &r)
     {
         LayerPtr l  = layers.first();
         T           = l->getLayerTransform();
-        center      = l->getCenter();
+        center      = l->getCenterModel();
     }
     qreal step      = config->gridModelSpacing;
     qreal scale     = Transform::scalex(T);
@@ -516,7 +584,7 @@ void View::drawGridSceneUnitsCentered(QPainter *painter, QRectF & r)
     if (layers.size())
     {
         LayerPtr l = layers.first();
-        center = l->getCenter();
+        center = l->getCenterScreen();
     }
     r.moveCenter(center);
 
@@ -582,8 +650,8 @@ void View::dump(bool summary)
 void View::setKbdMode(eKbdMode mode)
 {
     config->kbdMode = ControlPanel::getValidKbdMode(mode);
-    qDebug().noquote() << sKbdMode[mode];
-    emit sig_kbdMode(mode);
+    qDebug().noquote() << sKbdMode[config->kbdMode];
+    emit sig_kbdMode(config->kbdMode);
 }
 
 QString View::getKbdModeStr()
@@ -807,8 +875,6 @@ void View::drainTheSwamp()
     wspace->slot_clearWorkspace();
     dump(true);
     clearView();
-    dump(true);
-    wsViewer->clear();
     dump(true);
     update();
 }

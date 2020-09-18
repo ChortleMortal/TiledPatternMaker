@@ -39,6 +39,11 @@ QString Utils::addr(const void * address)
   return QString::number(reinterpret_cast<uint64_t>(address),16);
 }
 
+QString Utils::str(QPointF pt)
+{
+    return QString("(%1 : %2)").arg(pt.x()).arg(pt.y());
+}
+
 void Utils::identify(Layer * layer, QPolygonF * poly)
 {
     for (int i=0; i< poly->count(); i++)

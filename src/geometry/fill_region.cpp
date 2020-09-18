@@ -62,10 +62,12 @@ void FillRegion::fill(GeoGraphics *gg)
     switch(config->repeatMode)
     {
     case REPEAT_SINGLE:
+        qDebug() << "REPEAT_SINGLE";
         receive(gg,0,0);
         break;
 
     case REPEAT_PACK:
+        qDebug() << "REPEAT_PACK";
       //for (int h = -1; h <= 1; h++)
         for (int h = 0; h <= 1; h++)
         {
@@ -78,10 +80,10 @@ void FillRegion::fill(GeoGraphics *gg)
 
     case REPEAT_DEFINED:
     {
-        FillData fd = workspace->getMosaicSettings().getFillData();
+        FillData fd = workspace->getFillData();
         int minX,minY,maxX,maxY;
         fd.get(minX,maxX,minY,maxY);
-        qDebug() << "REPEAT_DEFINED"  << minX << maxX << minY << maxY;
+        qDebug().noquote() << "REPEAT_DEFINED"  << minX << maxX << minY << maxY;
         for (int h = minX; h <= maxX; h++)
         {
             for (int v = minY; v <= maxY; v++)

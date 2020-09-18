@@ -231,20 +231,13 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
 
     // fills - not part of taprats and not necessarily found
     // 26JUL2020 fillData moved to Mosaic
-    if (version <= 3)
+    // 13SEP2020 fillData can be in both Mosaic and tiling
+    xml_node t0 = tiling_node.child("Fill");
+    if (t0)
     {
-        xml_node t0 = tiling_node.child("Fill");
-        if (t0)
-        {
-            QString strt0 = t0.child_value();
-            FillData fd = getFill(strt0);
-            tiling->setFillData(fd);
-            tiling->setVersion(2);  // has fill data
-        }
-        else
-        {
-            tiling->setVersion(1);  // does not have fill data
-        }
+        QString strt0 = t0.child_value();
+        FillData fd = getFill(strt0);
+        tiling->setFillData(fd);
     }
 
     FeatureReader fr;   // must be located here to bw used for all features
@@ -356,7 +349,7 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
         if (attr)
         {
             BkgdImgPtr bi = tiling->getBackground();
-            Xform xf = bi->getXform();
+            Xform xf = bi->getCanvasXform();
 
             bi->bkgdName  = attr.value();
 
@@ -388,7 +381,7 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
                 xf.setTranslateY(str.toDouble());
             }
 
-            bi->setXform(xf);
+            bi->updateCanvasXform(xf);
 
             n= bkImage.child("Perspective");
             if (n)
@@ -401,17 +394,12 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
             if (bi->loadImageUsingName())
             {
                 bool adjPerspective = false;
-                bool xform          = false;
                 if (!bi->perspective.isIdentity())
                 {
                     bi->adjustBackground();
                     adjPerspective = true;
                 }
-                if (!bi->getTransform().isIdentity())
-                {
-                    xform = true;
-                }
-                bi->bkgdImageChanged(true,adjPerspective,xform);
+                bi->bkgdImageChanged(true,adjPerspective);
             }
         }
     }
@@ -547,7 +535,7 @@ void TilingLoader::getViewSettings(xml_node & node)
         height = str.toInt();
     }
 
-    tiling->setCanvasSize(QSize(width,height));
+    tiling->setSize(QSize(width,height));
 
     Xform xf;
     QString val;

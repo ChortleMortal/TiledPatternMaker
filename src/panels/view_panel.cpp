@@ -1,9 +1,9 @@
 #include "panels/view_panel.h"
-#include "base/view.h"
+#include "base/workspace.h"
 
 ViewPanel::ViewPanel() : QWidget()
 {
-    view = View::getInstance();
+    workspace = Workspace::getInstance();
 
     btn1 = new QPushButton("Pan");
     btn2 = new QPushButton("Rotate");
@@ -12,6 +12,10 @@ ViewPanel::ViewPanel() : QWidget()
     btn1->setCheckable(true);
     btn2->setCheckable(true);
     btn3->setCheckable(true);
+
+    btn1->setStyleSheet("QPushButton:checked { background-color: yellow; color: red; }");
+    btn2->setStyleSheet("QPushButton:checked { background-color: yellow; color: red;}");
+    btn3->setStyleSheet("QPushButton:checked { background-color: yellow; color: red;}");
 
     AQHBoxLayout * layout = new AQHBoxLayout;
     layout->addWidget(btn1);
@@ -38,11 +42,11 @@ void  ViewPanel::setTranslateMode(bool checked)
         btn2->setChecked(false);
         btn3->setChecked(false);
         blockSignals(false);
-        view->setMouseMode(MOUSE_MODE_TRANSLATE);
+        workspace->setMouseMode(MOUSE_MODE_TRANSLATE);
     }
     else
     {
-        view->setMouseMode(MOUSE_MODE_NONE);
+        workspace->setMouseMode(MOUSE_MODE_NONE);
     }
 }
 
@@ -54,11 +58,11 @@ void  ViewPanel::setRotateMode(bool checked)
         btn1->setChecked(false);
         btn3->setChecked(false);
         blockSignals(false);
-        view->setMouseMode(MOUSE_MODE_ROTATE);
+        workspace->setMouseMode(MOUSE_MODE_ROTATE);
     }
     else
     {
-        view->setMouseMode(MOUSE_MODE_NONE);
+        workspace->setMouseMode(MOUSE_MODE_NONE);
     }
 }
 
@@ -70,11 +74,11 @@ void  ViewPanel::setScaleMode(bool checked)
         btn1->setChecked(false);
         btn2->setChecked(false);
         blockSignals(false);
-        view->setMouseMode(MOUSE_MODE_SCALE);
+        workspace->setMouseMode(MOUSE_MODE_SCALE);
     }
     else
     {
-        view->setMouseMode(MOUSE_MODE_NONE);
+        workspace->setMouseMode(MOUSE_MODE_NONE);
     }
 }
 

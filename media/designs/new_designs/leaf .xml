@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<vector id="1" version="5">
+<vector id="1" version="6">
 	<designNotes>Leaf pattern (Alhambtra Nasrid)</designNotes>
 	<design>
 		<size>
@@ -9,11 +9,12 @@
 		<background>
 			<color>#ffa35807</color>
 		</background>
+		<Fill>-4,4,-4,4</Fill>
 	</design>
 	<style.Filled id="2" serialization="custom">
 		<toolkit.GeoLayer>
-			<left__delta>-16</left__delta>
-			<top__delta>6</top__delta>
+			<left__delta>-236</left__delta>
+			<top__delta>-214</top__delta>
 			<width__delta>0.5099999999999996</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>-4.013333333333333,-1.346666666666668</center>

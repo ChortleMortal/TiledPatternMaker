@@ -92,17 +92,13 @@ private slots:
     void slot_remove_clicked();
     void slot_uniquify_clicked();
     void slot_setModes(int mode);
+    void slot_set_reps(int val);
     void slot_menu(QPointF spt);
     void slot_menu_edit_feature();
     void slot_menu_includePlaced();
     void slot_exportPoly();
     void slot_importPoly();
     void slot_addGirihShape();
-
-    void slot_moveX(int amount);
-    void slot_moveY(int amount);
-    void slot_rotate(int amount);
-    void slot_scale(int amount);
 
     void tableHeaderClicked(int index);
     void slot_trim(qreal valX, qreal valY);
@@ -123,6 +119,8 @@ protected:
     QHBoxLayout   * createControlRow();
     QHBoxLayout   * createTableControlRow();
     AQWidget      * createTranslationsRow();
+    QHBoxLayout   * createFillDataRow();
+
 
     void clear();
     void buildTableEntry(PlacedFeaturePtr pf, int col, QString inclusion);
@@ -154,6 +152,10 @@ private:
     QLabel       * debugLabel1;
     QLabel       * debugLabel2;
 
+    QSpinBox    * xRepMin;
+    QSpinBox    * xRepMax;
+    QSpinBox    * yRepMin;
+    QSpinBox    * yRepMax;
 
     QSignalMapper  f_sidesMapper;
     QSignalMapper  f_rotMapper;
@@ -171,7 +173,6 @@ private:
     QCheckBox     * chk_showBkgd;
     QCheckBox     * chk_hideTiling;
     QCheckBox     * chk_adjustBkgd;
-    QCheckBox     * chk_xformBkgd;
 
     QGroupBox     * bkgdGroup;
 

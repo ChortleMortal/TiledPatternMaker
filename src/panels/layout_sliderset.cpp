@@ -208,7 +208,7 @@ DoubleSpinSet::DoubleSpinSet(QString txt, qreal val, qreal min, qreal max)
     addSpacing(4);
     addWidget(spin);
 
-    connect(spin,   SIGNAL(valueChanged(qreal)), this,   SIGNAL(valueChanged(qreal)));
+    connect(spin,   SIGNAL(valueChanged(qreal)), this,   SLOT(slot_valueChanged(qreal)));
 }
 
 void DoubleSpinSet::setValue(qreal val)
@@ -216,4 +216,9 @@ void DoubleSpinSet::setValue(qreal val)
     spin->blockSignals(true);
     spin->setValue(val);
     spin->blockSignals(false);
+}
+
+void  DoubleSpinSet::slot_valueChanged(qreal val)
+{
+    emit sig_valueChanged(val);
 }

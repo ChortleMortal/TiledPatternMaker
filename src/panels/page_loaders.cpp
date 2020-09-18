@@ -29,6 +29,7 @@
 #include "base/tiledpatternmaker.h"
 #include "base/pugixml.hpp"
 #include "base/fileservices.h"
+#include  "viewers/workspace_viewer.h"
 
 using namespace pugi;
 
@@ -246,7 +247,7 @@ void page_loaders::loadTiling()
 
     emit sig_loadTiling(name);
 
-    if (!config->lockView)
+    if (!config->lockView && panel->getCurrentView() != VIEW_TILING_MAKER)
     {
         panel->selectViewer(VIEW_TILING);
     }
@@ -516,11 +517,12 @@ void page_loaders::xmlRightClick(QPoint pos)
     QMenu myMenu;
     myMenu.addSection(selectedXMLName);
     myMenu.addSection(FileServices::getTileNameFromDesignName(selectedXMLName));
-    myMenu.addAction("Load",    this, SLOT(loadXML()));
-    myMenu.addAction("View XML",this, SLOT(openXML()));
-    myMenu.addAction("Rename",  this, SLOT(renameXML()));
-    myMenu.addAction("Rebase",  this, SLOT(rebaseXML()));
-    myMenu.addAction("Delete",  this, SLOT(deleteXML()));
+    myMenu.addAction("Load",       this, SLOT(loadXML()));
+    myMenu.addAction("View XML",   this, SLOT(openXML()));
+    myMenu.addAction("Tiling used",this, SLOT(showTilings()));
+    myMenu.addAction("Rename",     this, SLOT(renameXML()));
+    myMenu.addAction("Rebase",     this, SLOT(rebaseXML()));
+    myMenu.addAction("Delete",     this, SLOT(deleteXML()));
 
     myMenu.exec(mosaicList->mapToGlobal(pos));
 }
@@ -594,7 +596,7 @@ void page_loaders::rebaseXML()
     QStringList parts = name.split('.');
     if (parts.size() == 1)
     {
-        QMessageBox box(view);
+        QMessageBox box(workspace);
         box.setIcon(QMessageBox::Information);
         box.setText("Cannot rebase");
         box.exec();
@@ -604,7 +606,7 @@ void page_loaders::rebaseXML()
     QString old_vstring = parts.last();
     if (!old_vstring.contains('v'))
     {
-        QMessageBox box(view);
+        QMessageBox box(workspace);
         box.setIcon(QMessageBox::Information);
         box.setText("Cannot rebase");
         box.exec();
@@ -634,7 +636,7 @@ void page_loaders::rebaseXML()
 
     if (old_ver == new_ver)
     {
-        QMessageBox box(view);
+        QMessageBox box(workspace);
         box.setIcon(QMessageBox::Information);
         box.setText("Cannot rebase");
         box.exec();
@@ -850,6 +852,22 @@ void page_loaders::deleteXML()
     box2.exec();
 }
 
+void page_loaders::showTilings()
+{
+    QString tilingName = FileServices::getTileNameFromDesignName(selectedXMLName);
+
+    QString results = "<pre>";
+    results += tilingName;
+    results += "<br>";
+    results += "</pre>";
+
+    QMessageBox box(this);
+    box.setWindowTitle("Tiling used");
+    box.setText(results);
+    box.exec();
+
+}
+
 void page_loaders::openTiling()
 {
     QString name = selectedTilingName;
@@ -905,7 +923,7 @@ void page_loaders::rebaseTiling()
     QStringList parts = name.split('.');
     if (parts.size() == 1)
     {
-        QMessageBox box(view);
+        QMessageBox box(workspace);
         box.setIcon(QMessageBox::Information);
         box.setText("Cannot rebase");
         box.exec();
@@ -915,7 +933,7 @@ void page_loaders::rebaseTiling()
     QString old_vstring = parts.last();
     if (!old_vstring.contains('v'))
     {
-        QMessageBox box(view);
+        QMessageBox box(workspace);
         box.setIcon(QMessageBox::Information);
         box.setText("Cannot rebase");
         box.exec();
@@ -945,7 +963,7 @@ void page_loaders::rebaseTiling()
 
     if (old_ver == new_ver)
     {
-        QMessageBox box(view);
+        QMessageBox box(workspace);
         box.setIcon(QMessageBox::Information);
         box.setText("Cannot rebase");
         box.exec();
@@ -1196,6 +1214,7 @@ void  page_loaders::slot_whereTilingUsed()
     box.setWindowTitle(QString("Where tiling %1 is used ").arg(name));
     box.setText(results);
     box.exec();
+
 }
 
 

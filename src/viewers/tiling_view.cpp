@@ -43,7 +43,7 @@
 #include "viewers/workspace_viewer.h"
 
 
-TilingView::TilingView(TilingPtr tiling) : Layer("TilingView")
+TilingView::TilingView(TilingPtr tiling) : Layer("TilingView",LTYPE_VIEW)
 {
     Q_ASSERT(tiling);
     this->tiling = tiling;

@@ -1,8 +1,8 @@
 #include "design_control.h"
 #include "base/shared.h"
 #include "base/workspace.h"
-#include "base/view.h"
 #include "base/configuration.h"
+#include "viewers/workspace_viewer.h"
 
 DesignControl * DesignControl::mpThis = nullptr;
 
@@ -31,7 +31,6 @@ DesignControl::DesignControl()
     stepsTaken      = 0;
 
     workspace = Workspace::getInstance();
-    view      = View::getInstance();
     config    = Configuration::getInstance();
 
     timer     = new QTimer();
@@ -114,7 +113,7 @@ void DesignControl::designReposition(qreal x, qreal y)
             d->repeat();
         }
     }
-    view->update();
+    workspace->update();
 }
 
 void DesignControl::designOffset(qreal x, qreal y)
@@ -139,7 +138,7 @@ void DesignControl::designToggleVisibility(int design)
     {
         DesignPtr d = designs[design];
         d->setVisible(!d->isVisible());
-        view->update();
+        workspace->update();
     }
 }
 
@@ -356,15 +355,15 @@ void DesignControl::designScale(int delta)
         {
             DesignPtr d = designs[i];
 
-            QSize sz =  d->getDesignInfo().getCanvasSize();
+            QSize sz =  d->getDesignInfo().getSize();
             qDebug() << "design: size=" << sz;
             if (delta > 0)
                 sz +=  QSize(delta,delta);
             else
                 sz -=  QSize(delta,delta);
-            d->getDesignInfo().setCanvasSize(sz);
+            d->getDesignInfo().setSize(sz);
         }
-        view->update();
+        workspace->update();
     }
 }
 
@@ -395,7 +394,7 @@ void DesignControl::designMoveY(int delta)
             top -= delta;
             d->setYoffset2(top);
         }
-        view->update();
+        workspace->update();
     }
 }
 
@@ -411,6 +410,6 @@ void DesignControl::designMoveX(int delta)
             left -= delta;
             d->setXoffset2(left);
         }
-        view->update();
+        workspace->update();
     }
 }

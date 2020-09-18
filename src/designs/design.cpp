@@ -23,12 +23,10 @@
  */
 
 #include "base/border.h"
-#include "base/view.h"
-#include "base/canvas_settings.h"
-#include "base/configuration.h"
 #include "base/workspace.h"
 #include "designs/design.h"
 #include "designs/patterns.h"
+#include "viewers/workspace_viewer.h"
 
 #define Enum2Str(e)  {QString(#e)}
 
@@ -49,7 +47,6 @@ Design::Design(eDesign design, QString title)
 
     this->title = title;
 
-    view        = View::getInstance();
     config      = Configuration::getInstance();
     workspace   = Workspace::getInstance();
 
@@ -108,7 +105,7 @@ void Design::repeat()
 
 void Design::updateDesign()
 {
-    view->update();
+    workspace->update();
 }
 
 
@@ -125,7 +122,7 @@ void Design::showLayer(int layerNum)
             layer->setVisible(true);
         }
     }
-    view->update();
+    workspace->update();
 }
 
 void Design::hideLayer(int layerNum)
@@ -140,7 +137,7 @@ void Design::hideLayer(int layerNum)
             layer->setVisible(false);
         }
     }
-    view->update();
+    workspace->update();
 }
 
 void Design::setVisible(bool visible)
@@ -159,7 +156,7 @@ void Design::setVisible(bool visible)
 
     this->visible = visible;
 
-    view->update();
+    workspace->update();
 }
 
 void  Design::zPlus(int layerNum)

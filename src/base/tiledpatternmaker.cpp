@@ -48,10 +48,10 @@ TiledPatternMaker::TiledPatternMaker() : QObject()
 void TiledPatternMaker::startEverything()
 {
     // instantiate everything
-    config            = Configuration::getInstance();
+    config                 = Configuration::getInstance();
 
     bool oldPanelLock;
-    if (config->nerdMode)
+    if (config->insightMode)
     {
         oldPanelLock      = config->lockView;
         config->lockView  = true;    // disables view switching during init
@@ -62,15 +62,8 @@ void TiledPatternMaker::startEverything()
         oldPanelLock     = false;
     }
 
-    view      = View::getInstance();
-    workspace = Workspace::getInstance();
-    wsViewer  = WorkspaceViewer::getInstance();
-
-    // connect singleton classes
-    view->init();
+    workspace   = Workspace::getInstance();
     workspace->init();
-    wsViewer->init();
-
     mapEditor   = MapEditor::getInstance();
     tilingMaker = TilingMaker::getInstance();
 
@@ -95,9 +88,9 @@ void TiledPatternMaker::startEverything()
     qRegisterMetaType<MapPtr>("MapPtr");
     qRegisterMetaType<PolyPtr>("PolyPtr");
 
-    connect(this, &TiledPatternMaker::sig_viewWS,         wsViewer, &WorkspaceViewer::slot_viewWorkspace);
+    connect(this, &TiledPatternMaker::sig_viewWS, workspace, &WorkspaceViewer::slot_viewWorkspace);
 
-    connect(view,   &View::sig_raiseMenu,                 this, &TiledPatternMaker::slot_raiseMenu);
+    connect(workspace, &View::sig_raiseMenu, this, &TiledPatternMaker::slot_raiseMenu);
 
     // create cycler
     QThread * thread = new QThread();
@@ -162,7 +155,6 @@ void TiledPatternMaker::startEverything()
 
 TiledPatternMaker::~TiledPatternMaker()
 {
-    View::releaseInstance();
     workspace->releaseInstance();
     controlPanel->closePages();
     controlPanel->close();
@@ -184,9 +176,9 @@ void TiledPatternMaker::slot_buildDesign(eDesign design)
 {
     qDebug().noquote() << "TiledPatternMaker::slot_buildDesign" << Design::getDesignName(design);
 
-    view->dump(true);
+    workspace->dump(true);
     workspace->clearDesigns();
-    view->dump(true);
+    workspace->dump(true);
 
     DesignPtr d = config->availableDesigns.value(design);
     //d->init();
@@ -196,6 +188,14 @@ void TiledPatternMaker::slot_buildDesign(eDesign design)
 
     config->lastLoadedDesignId = design;
 
+    // size view to design
+    QSize size = d->getDesignInfo().getSize();
+    workspace->setAllMosaicActiveSizes(size);
+    if (config->scaleToView)
+    {
+        workspace->setAllMosaicFrameSizes(size);
+    }
+
     emit sig_viewWS();
     emit sig_loadedDesign(design);
 }
@@ -203,9 +203,9 @@ void TiledPatternMaker::slot_buildDesign(eDesign design)
 void TiledPatternMaker::slot_loadMosaic(QString name)
 {
     qDebug().noquote() << "TiledPatternMaker::slot_loadXML() <" << name << ">";
-    view->setWindowTitle(QString("Loading: %1").arg(name));
+    workspace->setWindowTitle(QString("Loading: %1").arg(name));
     //QCoreApplication::processEvents();
-    view->dump(true);
+    workspace->dump(true);
     MosaicManager mm;
     bool rv = mm.loadMosaic(name);
     if (rv)
@@ -225,8 +225,8 @@ void TiledPatternMaker::slot_loadMosaic(QString name)
 
 void TiledPatternMaker::slot_cycleLoadMosaic(QString name)
 {
-    qDebug().noquote() << "TiledPatternMaker::slot_loadXML() <" << name << ">";
-    view->setWindowTitle(QString("Loading: %1").arg(name));
+    qDebug().noquote() << "TiledPatternMaker::slot_cycleLoadMosaic() <" << name << ">";
+    workspace->setWindowTitle(QString("Loading: %1").arg(name));
     MosaicManager mm;
     bool rv = mm.loadMosaic(name);
     if (rv)
@@ -236,9 +236,10 @@ void TiledPatternMaker::slot_cycleLoadMosaic(QString name)
     }
 }
 
-void TiledPatternMaker::slot_saveXML(QString filename)
+void TiledPatternMaker::slot_saveMosaic(QString filename)
 {
-    qDebug() << "TiledPatternMaker::slot_saveXML()";
+    qDebug() << "TiledPatternMaker::slot_saveMosaic()";
+
     QString savedFile;
     MosaicManager mm;
     bool rv = mm.saveMosaic(filename,savedFile,false);
@@ -254,7 +255,7 @@ void TiledPatternMaker::slot_saveXML(QString filename)
 
 void TiledPatternMaker::slot_loadTiling(QString name)
 {
-    view->setWindowTitle(QString("Loading tiling: %1").arg(name));
+    workspace->setWindowTitle(QString("Loading tiling: %1").arg(name));
     TilingManager tm;
     if (tm.loadTiling(name))
     {
@@ -274,7 +275,7 @@ void TiledPatternMaker::slot_loadTiling(QString name)
 
 void TiledPatternMaker::slot_cyclerLoadTiling(QString name)
 {
-    view->setWindowTitle(QString("Loading tiling: %1").arg(name));
+    workspace->setWindowTitle(QString("Loading tiling: %1").arg(name));
     TilingManager tm;
     if (tm.loadTiling(name))
     {
@@ -329,15 +330,15 @@ void TiledPatternMaker::slot_bringToPrimaryScreen()
 {
     QScreen * primary = qApp->primaryScreen();
 
-    QWindow * wh = view->windowHandle();
+    QWindow * wh = workspace->windowHandle();
     if (wh)
     {
         wh->setScreen(primary);
-        view->move(primary->geometry().center() - view->rect().center());
-        view->setWindowState( (view->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
-        view->raise();  // for MacOS
-        view->activateWindow();  // for windows
-        controlPanel->move(primary->geometry().center() - view->rect().center());
+        workspace->move(primary->geometry().center() - workspace->rect().center());
+        workspace->setWindowState( (workspace->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
+        workspace->raise();  // for MacOS
+        workspace->activateWindow();  // for windows
+        controlPanel->move(primary->geometry().center() - workspace->rect().center());
         controlPanel->setWindowState( (controlPanel->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
         controlPanel->raise();  // for MacOS
         controlPanel->activateWindow();  // for windows
@@ -361,11 +362,11 @@ void TiledPatternMaker::slot_splitScreen(bool checked)
             splitter = new SplitScreen();
         }
 
-        s.setValue("viewPos",view->pos());
+        s.setValue("viewPos",workspace->pos());
         s.setValue("panelPos", controlPanel->pos());
 
         QScreen * sc = qApp->screenAt(controlPanel->pos());
-        splitter->addWidgets(controlPanel,view);
+        splitter->addWidgets(controlPanel,workspace);
 
         QRect  rec = sc->geometry();
 
@@ -379,14 +380,14 @@ void TiledPatternMaker::slot_splitScreen(bool checked)
     {
         // unsplit the screen
         controlPanel->setParent(nullptr);
-        view->setParent(nullptr);
+        workspace->setParent(nullptr);
 
         controlPanel->show();
         controlPanel->move(s.value("panelPos").toPoint());
         controlPanel->adjustSize();
 
-        view->show();
-        view->move(s.value("viewPos").toPoint());
+        workspace->show();
+        workspace->move(s.value("viewPos").toPoint());
 
         if (splitter)
         {
@@ -398,7 +399,7 @@ void TiledPatternMaker::slot_splitScreen(bool checked)
 
 void TiledPatternMaker::slot_cyclerFinished()
 {
-    QMessageBox box(view);
+    QMessageBox box(workspace);
     box.setIcon(QMessageBox::Information);
     box.setText("Cycle complete");
     box.exec();
@@ -412,9 +413,12 @@ void TiledPatternMaker::SplatCompareResult(QPixmap & pixmap, QString title)
     l->setPixmap(pixmap);
     l->setWindowTitle(title);
 
-    connect(l,  &AQLabel::sig_takeNext,     cycler, &Cycler::slot_ready, Qt::UniqueConnection);
-    connect(l,  &AQLabel::sig_cyclerQuit,   cycler, &Cycler::slot_stopCycle,Qt::UniqueConnection);
-    connect(l,  &AQLabel::sig_view_images,  cycler, &Cycler::slot_view_images,Qt::UniqueConnection);
+    if (cycler->getMode() != CYCLE_NONE)
+    {
+        connect(l,  &AQLabel::sig_takeNext,     cycler, &Cycler::slot_ready, Qt::UniqueConnection);
+        connect(l,  &AQLabel::sig_cyclerQuit,   cycler, &Cycler::slot_stopCycle,Qt::UniqueConnection);
+        connect(l,  &AQLabel::sig_view_images,  cycler, &Cycler::slot_view_images,Qt::UniqueConnection);
+    }
 
     l->show();
 }
@@ -430,9 +434,12 @@ void TiledPatternMaker::SplatShowImage(QImage & image, QString title)
     cyclerWindow->setPixmap(pixmap);
     cyclerWindow->setWindowTitle(title);
 
-    connect(cyclerWindow,  &AQLabel::sig_takeNext,     cycler, &Cycler::slot_ready, Qt::UniqueConnection);
-    connect(cyclerWindow,  &AQLabel::sig_cyclerQuit,   cycler, &Cycler::slot_stopCycle,Qt::UniqueConnection);
-    connect(cyclerWindow,  &AQLabel::sig_view_images,  cycler, &Cycler::slot_view_images,Qt::UniqueConnection);
+    if (cycler->getMode() != CYCLE_NONE)
+    {
+        connect(cyclerWindow,  &AQLabel::sig_takeNext,     cycler, &Cycler::slot_ready, Qt::UniqueConnection);
+        connect(cyclerWindow,  &AQLabel::sig_cyclerQuit,   cycler, &Cycler::slot_stopCycle,Qt::UniqueConnection);
+        connect(cyclerWindow,  &AQLabel::sig_view_images,  cycler, &Cycler::slot_view_images,Qt::UniqueConnection);
+    }
 
     cyclerWindow->show();
 }
@@ -613,11 +620,22 @@ void TiledPatternMaker::slot_view_image(QString file)
     QPixmap pixmap(file);
     Q_ASSERT(!pixmap.isNull());
 
-    AQLabel * l = new AQLabel;
-    l->resize(pixmap.size());
-    l->setPixmap(pixmap);
-    l->setWindowTitle(file);
-    l->show();
+    if (!config->compare_transparent)
+    {
+        AQLabel * l = new AQLabel;
+        l->resize(pixmap.size());
+        l->setPixmap(pixmap);
+        l->setWindowTitle(file);
+        l->show();
+    }
+    else
+    {
+        TransparentWidget * l = new TransparentWidget;
+        l->resize(pixmap.size());
+        l->setPixmap(pixmap);
+        l->setWindowTitle(file);
+        l->show();
+    }
 }
 
 
@@ -628,9 +646,9 @@ void TiledPatternMaker::slot_show_png(QString file, int row, int col)
     QLabel  * label = new QLabel("Put PNG Here");
     label->setPixmap(pix);
 
-    QLayout * l = view->layout();
+    QLayout * l = workspace->layout();
     QGridLayout * grid = dynamic_cast<QGridLayout*>(l);
     grid->addWidget(label,row,col);
 
-    view->show();
+    workspace->show();
 }

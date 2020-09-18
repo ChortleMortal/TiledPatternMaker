@@ -26,7 +26,7 @@
 #define MOSAIC_H
 
 #include "base/shared.h"
-#include "base/canvas_settings.h"
+#include "base/workspace_settings.h"
 #include "base/misc.h"
 
 typedef QVector<StylePtr> StyleSet;
@@ -52,8 +52,8 @@ public:
     void                  setPrototype(StylePtr style, PrototypePtr pp);
     QVector<PrototypePtr> getUniquePrototypes();
 
-    CanvasSettings & getCanvasSettings();
-    void             setCanvasSettings(CanvasSettings settings);
+    WorkspaceSettings & getSettings();
+    void                setSettings(WorkspaceSettings & settings);
 
     StylePtr    getFirstStyle();
 
@@ -70,7 +70,7 @@ private:
     StyleSet            styleSet;
     QString             name;
     QString             designNotes;
-    CanvasSettings      canvasSettings;
+    WorkspaceSettings   settings;
 };
 
 #endif

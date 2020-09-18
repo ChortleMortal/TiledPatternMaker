@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<vector id="1" version="5">
+<vector id="1" version="6">
 	<design>
 		<size>
 			<width>1500</width>
@@ -8,11 +8,12 @@
 		<background>
 			<color>#ff000000</color>
 		</background>
+		<Fill>-4,4,-4,4</Fill>
 	</design>
 	<style.Interlace id="2" serialization="custom">
 		<toolkit.GeoLayer>
-			<left__delta>-360</left__delta>
-			<top__delta>-350</top__delta>
+			<left__delta>-60</left__delta>
+			<top__delta>-130</top__delta>
 			<width__delta>1.4</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>0,-1.77635683940025e-15</center>

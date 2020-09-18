@@ -13,8 +13,8 @@
 	</design>
 	<style.Interlace id="2" serialization="custom">
 		<toolkit.GeoLayer>
-			<left__delta>-370</left__delta>
-			<top__delta>-10</top__delta>
+			<left__delta>57.5</left__delta>
+			<top__delta>303.5</top__delta>
 			<width__delta>1.570000000000001</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>0,0</center>

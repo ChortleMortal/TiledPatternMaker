@@ -24,7 +24,7 @@
 
 #include "style/outline.h"
 #include "geometry/point.h"
-#include "base/view.h"
+#include "viewers/workspace_viewer.h"
 #include <QPainter>
 
 ////////////////////////////////////////////////////////////////////////////
@@ -146,8 +146,8 @@ void Outline::draw(GeoGraphics *gg)
                 {
                     gg->drawPie(bae.v1.above, bae.v2.below, center, pen, QBrush(color), convex);
 
-                    View * view = View::getInstance();
-                    QColor c = view->getBackgroundColor();
+                    Workspace * workspace = Workspace::getInstance();
+                    QColor c = workspace->getBackgroundColor();
                     QBrush br(c);
                     gg->drawPie(bae.v1.below, bae.v2.above, center, pen, br, convex);
                 }

@@ -37,16 +37,17 @@ class page_layers : public panel_page
         LAYER_VISIBILITY,
         LAYER_Z,
         LAYER_ALIGN,
-        VIEW_SCALE,
-        VIEW_ROT,
-        VIEW_X,
-        VIEW_Y,
+        FRAME_SCALE,
+        FRAME_ROT,
+        FRAME_X,
+        FRAME_Y,
+        CANVAS_CLEAR,
         CANVAS_SCALE,
         CANVAS_ROT,
         CANVAS_X,
         CANVAS_Y,
-        CANVAS_CENTER,
-        CANVAS_CLEAR,
+        CANVAS_CENTER_X,
+        CANVAS_CENTER_Y,
         LAYER_CENTER,
         LAYER_SCALE,
         LAYER_ROT,
@@ -69,15 +70,17 @@ private slots:
     void slot_alignPressed(int col);
     void slot_set_deltas(int col);
     void slot_clear_deltas(int col);
+    void refreshCanvas();
 
 protected:
     void populateLayers();
     void populateLayer(LayerPtr layer, int col);
+    LayerPtr getLayer(int col);
 
 private:
     AQTableWidget * layerTable;
 
-    QSignalMapper  visibilityMapper;
+    QSignalMapper  visMapper;
     QSignalMapper  zMapper;
     QSignalMapper  alignMapper;
     QSignalMapper  leftMapper;
@@ -85,6 +88,8 @@ private:
     QSignalMapper  widthMapper;
     QSignalMapper  rotMapper;
     QSignalMapper  clearMapper;
+    QSignalMapper  cenXMapper;
+    QSignalMapper  cenYMapper;
 };
 
 #endif

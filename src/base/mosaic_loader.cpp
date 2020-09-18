@@ -41,6 +41,7 @@
 #include "tapp/explicit_figure.h"
 #include "tile/feature_reader.h"
 #include "tile/tiling_manager.h"
+#include "viewers/workspace_viewer.h"
 
 #undef  DEBUG_REFERENCES
 
@@ -52,7 +53,6 @@ MosaicLoader::MosaicLoader()
     _height     = 1100;
     _version    = 0;
 
-    view        = View::getInstance();
     workspace   = Workspace::getInstance();
 }
 
@@ -68,7 +68,7 @@ QString MosaicLoader::getLoadedFilename()
 
 MosaicPtr MosaicLoader::loadMosaic(QString fileName)
 {
-    view->dump(true);
+    workspace->dump(true);
 
     qDebug().noquote() << "MosaicLoader loading:" << fileName;
     _fileName = fileName;
@@ -90,7 +90,7 @@ MosaicPtr MosaicLoader::loadMosaic(QString fileName)
 
         parseXML(doc);
 
-        view->dump(true);
+        workspace->dump(true);
 
         return _mosaic;
     }
@@ -106,7 +106,7 @@ MapPtr MosaicLoader::loadMosaicMap(QString fileName)
 {
     MapPtr map;
 
-    view->dump(true);
+    workspace->dump(true);
 
     qDebug().noquote() << "MosaicLoader loading:" << fileName;
     _fileName = fileName;
@@ -147,7 +147,7 @@ MapPtr MosaicLoader::loadMosaicMap(QString fileName)
 
         map = getMap(node);
 
-        view->dump(true);
+        workspace->dump(true);
     }
     catch (...)
     {
@@ -176,7 +176,7 @@ void MosaicLoader::parseXML(xml_document & doc)
             fail("Unexpected", str.c_str());
     }
 
-    view->dump(true);
+    workspace->dump(true);
 
     qDebug() << "MosaicLoader - end parsing";
 }
@@ -226,24 +226,26 @@ void MosaicLoader::processVector(xml_node & node)
     }
     qDebug() << "end vector";
 
-    CanvasSettings cs;
+    WorkspaceSettings cs;
     cs.setBackgroundColor(_background);
-    cs.setCanvasSize(QSize(_width,_height));
+    cs.setSize(QSize(_width,_height));
     cs.setBorder(_border);
     cs.setBkgdImage(getFirstTiling()->getBackground());
 
     // Canvas Settings fill data defaults to FillData defaults, loader can  override these
-    if (_version >= 6)
+    if (_fillData.isSet())
     {
+        qDebug() << "Using Mosaic FiilData";
         cs.setFillData(_fillData);
     }
-    else if (getFirstTiling()->getVersion() == 2)
+    else
     {
+        qDebug() << "Using Tiling FiilData";
         FillData fd =  getFirstTiling()->getFillData();
         cs.setFillData(fd);
     }
 
-    _mosaic->setCanvasSettings(cs);
+    _mosaic->setSettings(cs);
 }
 
 void MosaicLoader::processDesign(xml_node & node)
@@ -737,9 +739,9 @@ void MosaicLoader::processStyleStyle(xml_node & node, PrototypePtr & proto, Poly
 
     n = node.child("prototype");
     qDebug() << n.name();
-    view->dump(true);
+    workspace->dump(true);
     proto = getPrototype(n);
-    view->dump(true);
+    workspace->dump(true);
     qDebug().noquote() << proto->getInfo();
 }
 

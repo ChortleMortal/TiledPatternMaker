@@ -36,8 +36,6 @@ panel_page::panel_page(ControlPanel * panel,  QString name) : QWidget()
 
     config    = Configuration::getInstance();
     workspace = Workspace::getInstance();
-    wsViewer  = WorkspaceViewer::getInstance();
-    view      = View::getInstance();
 
     vbox      = new QVBoxLayout;
     vbox->setSizeConstraint(QLayout::SetFixedSize);
@@ -45,6 +43,7 @@ panel_page::panel_page(ControlPanel * panel,  QString name) : QWidget()
     newlySelected   = false;
     floated         = false;
     refresh         = true;
+    blockCount      = 0;
 
     //setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Ignored);
     setLayout (vbox);
@@ -52,9 +51,9 @@ panel_page::panel_page(ControlPanel * panel,  QString name) : QWidget()
 
     setObjectName("panel_page");
 
-    connect(this,   &panel_page::sig_render,                tpm,  &TiledPatternMaker::slot_render);
-    connect(this,   &panel_page::sig_viewWS,                wsViewer, &WorkspaceViewer::slot_viewWorkspace);
-    connect(this,   &panel_page::sig_attachMe,              panel,  &ControlPanel::slot_attachWidget,       Qt::QueuedConnection);
+    connect(this,   &panel_page::sig_render,     tpm,       &TiledPatternMaker::slot_render);
+    connect(this,   &panel_page::sig_viewWS,     workspace, &WorkspaceViewer::slot_viewWorkspace);
+    connect(this,   &panel_page::sig_attachMe,   panel,     &ControlPanel::slot_attachWidget,       Qt::QueuedConnection);
 }
 
 // pressing 'x' to close detached/floating page is used to re-attach
@@ -133,4 +132,22 @@ void panel_page::leaveEvent(QEvent *event)
 {
     Q_UNUSED(event)
     mouseLeave();
+}
+
+void  panel_page::blockPage(bool block)
+{
+    if (block)
+    {
+        blockCount++;
+    }
+    else
+    {
+        blockCount--;
+        Q_ASSERT(blockCount >= 0);
+    }
+}
+
+bool  panel_page::pageBlocked()
+{
+    return (blockCount != 0);
 }

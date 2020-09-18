@@ -2,16 +2,17 @@
 #include <QFileDialog>
 #include "tile/backgroundimage.h"
 #include "base/configuration.h"
-#include "base/view.h"
+#include "base/workspace.h"
 #include "geometry/transform.h"
 #include "panels/dlg_name.h"
 
-BackgroundImage::BackgroundImage() : Layer("Bkgd Image")
+BackgroundImage::BackgroundImage() : Layer("Bkgd Image",LTYPE_BACKGROUND)
 {
+    workspace = Workspace::getInstance();
+
     setZValue(-20);
 
     _loaded            = false;
-    bTransformBkgd     = false;
     bShowBkgd          = false;
     bAdjustPerspective = false;
 }
@@ -27,30 +28,22 @@ void BackgroundImage::paint(QPainter *painter)
         return;
     }
 
-    qDebug() << "BackgroundImage::paint" << Transform::toInfoString(painter->transform());
-
-    QTransform t = getCanvasXform().getTransform();
-    painter->setTransform(t);
+    painter->save();
 
     // center pixmap in the scene
-    QSize sz = bkgdImage.size();
-    View * view = View::getInstance();
-    qreal centerX   = (view->width() -  sz.width()) / 2;
-    qreal centerY   = (view->height() - sz.height()) / 2;
+    QSize sz = bkgdImage.size();  // or pixmap?
+    qreal centerX   = (workspace->width() -  sz.width()) / 2;
+    qreal centerY   = (workspace->height() - sz.height()) / 2;
     painter->translate(QPointF(centerX,centerY));
 
-    if (bTransformBkgd)
-    {
-        qDebug().noquote() << xform.toInfoString();
-        // apply specified transforms
-        painter->rotate(xform.getRotateDegrees());
-        painter->scale(xform.getScale(),xform.getScale());
-        painter->translate(xform.getTranslate());
-    }
+    QTransform t = getCanvasXform().toQTransform(getFrameTransform());
+    painter->setTransform(t,true);
+    qDebug() << "BackgroundImage::paint" << Transform::toInfoString(painter->transform());
 
     QRectF src(QPointF(0,0),sz);
     painter->drawPixmap(src,pixmap,src);
-    painter->resetTransform();
+
+    painter->restore();
 }
 
 bool BackgroundImage::loadAndCopy(QString  filename)
@@ -70,11 +63,9 @@ bool BackgroundImage::loadAndCopy(QString  filename)
         qDebug() << "copy made:" << newFilename;
     }
 
-    QTransform t;
-    setTransform(t);
-    perspective = t;
-
+    perspective = QTransform();  // reset
     bkgdName    = name;
+
     return loadImageUsingName();
 }
 
@@ -97,11 +88,10 @@ bool BackgroundImage::loadImageUsingName()
     return rv;
 }
 
-void BackgroundImage::bkgdImageChanged(bool showBkgd, bool perspectiveBkgd, bool transformBkgd)
+void BackgroundImage::bkgdImageChanged(bool showBkgd, bool perspectiveBkgd)
 {
     bShowBkgd          = showBkgd;
     bAdjustPerspective = perspectiveBkgd;
-    bTransformBkgd     = transformBkgd;
 
     if (bAdjustPerspective)
     {
@@ -113,29 +103,20 @@ void BackgroundImage::bkgdImageChanged(bool showBkgd, bool perspectiveBkgd, bool
         qDebug() << "using regular background image";
         pixmap = QPixmap::fromImage(bkgdImage);
     }
-    View * view = View::getInstance();
-    view->update();
+    workspace->update();
 }
 
-void BackgroundImage::bkgdTransformChanged(bool transformBkgd)
-{
-    bTransformBkgd = transformBkgd;
-    View * view = View::getInstance();
-    view->update();
-}
 
 // this is perspective correction
 // for images where camera was not normal to the plane of the tiling
 void BackgroundImage::adjustBackground(QPointF topLeft, QPointF topRight, QPointF botRight, QPointF botLeft)
 {
-    View * view = View::getInstance();
-
     QSize sz      = pixmap.size();
-    qreal offsetX = (view->width() -  sz.width()) / 2;
-    qreal offsetY = (view->height() - sz.height()) / 2;
+    qreal offsetX = (workspace->width() -  sz.width()) / 2;
+    qreal offsetY = (workspace->height() - sz.height()) / 2;
     QTransform t0 = QTransform::fromTranslate(offsetX,offsetY);
 
-    QTransform bkgdXform = t0 * xform.getTransform();
+    QTransform bkgdXform = t0 * getCanvasXform().getTransform();
     QTransform t1        = bkgdXform.inverted();
 
     correctPerspective(
@@ -166,16 +147,6 @@ bool BackgroundImage::saveAdjusted(QString newName)
     qDebug() << "Saving adjusted:" << file;
     bool rv = adjustedImage.save(file);
     return rv;
-}
-
-QTransform BackgroundImage::getTransform()
-{
-    return xform.getTransform();
-}
-
-void BackgroundImage::setTransform(QTransform t)
-{
-    xform.setTransform(t);
 }
 
 void BackgroundImage::correctPerspective(QPointF topLeft, QPointF topRight, QPointF botRight, QPointF botLeft)

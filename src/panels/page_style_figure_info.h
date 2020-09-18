@@ -25,7 +25,7 @@
 #ifndef PAGE_FIGURES_H
 #define PAGE_FIGURES_H
 
-#include "panel_page.h"
+#include "panels/panel_page.h"
 #include "base/shared.h"
 
 Q_DECLARE_METATYPE(WeakTilingPtr)

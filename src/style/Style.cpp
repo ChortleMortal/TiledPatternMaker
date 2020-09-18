@@ -32,7 +32,7 @@
 
 int Style::refs = 0;
 
-Style::Style(PrototypePtr proto, PolyPtr bounds ) : Layer("Style")
+Style::Style(PrototypePtr proto, PolyPtr bounds ) : Layer("Style",LTYPE_VIEW)
 {
     Q_ASSERT(proto != nullptr);
     Q_ASSERT(bounds != nullptr);

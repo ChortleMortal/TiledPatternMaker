@@ -12,7 +12,8 @@ using std::string;
 #define endl Qt::endl
 #endif
 
-const int currentTilingXMLVersion = 3;    // 26JUL20 excludesFillData
+//const int currentTilingXMLVersion = 3;  // 26JUL20 excludes FillData
+const int currentTilingXMLVersion = 4;    // 13SEP20 restore FillData
 
 bool TilingWriter::writeTilingXML()
 {
@@ -99,6 +100,11 @@ void TilingWriter::writeTilingXML(QTextStream & out)
     out << qs << endl;
     out << "<Name>" << tiling->getName() << "</Name>" << endl;
 
+    // fill paratmeters not part of original taprats
+    int minX,minY,maxX,maxY;
+    tiling->getFillData().get(minX,maxX,minY,maxY);
+    out << "<Fill>" << minX << "," << maxX << ","
+                    << minY << "," << maxY << "</Fill>" << endl;
     QPointF t1 = tiling->getTrans1();
     QPointF t2 = tiling->getTrans2();
     out << "<T1>" <<  t1.x() << "," << t1.y() << "</T1>" << endl;
@@ -185,7 +191,7 @@ void TilingWriter::writeTilingXML(QTextStream & out)
         QString astring = QString("<BackgroundImage name=\"%1\">").arg(bkgd->bkgdName);
         out << astring << endl;
 
-        Xform xform = bkgd->getXform();
+        Xform xform = bkgd->getCanvasXform();
         out << "<Scale>" << xform.getScale()           << "</Scale>" << endl;
         out << "<Rot>"   << xform.getRotateRadians()   << "</Rot>"  << endl;
         out << "<X>"     << xform.getTranslateX()      << "</X>" << endl;
@@ -208,7 +214,7 @@ void TilingWriter::writeViewSettings(QTextStream & out)
 {
     out << "<ViewSettings>" <<  endl;
 
-    QSize size = tiling->getCanvasSize();
+    QSize size = tiling->getSize();
     out << "<width>"  << size.width()  << "</width>" << endl;
     out << "<height>" << size.height() << "</height>" << endl;
 

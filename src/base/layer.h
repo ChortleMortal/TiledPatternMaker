@@ -31,16 +31,25 @@
 
 class Design;
 class Canvas;
-class WorkspaceViewer;
 class Configuration;
-class View;
+class Workspace;
+
+enum eLayerType
+{
+    LTYPE_VIEW,
+    LTYPE_BACKGROUND,
+    LTYPE_MARK,
+    LTYPE_BORDER,
+    LTYPE_MAP_EDITOR,
+    LTYPE_TILING_MAKER
+};
 
 class Layer : public QObject
 {
     Q_OBJECT
 
 public:
-    Layer(QString name);
+    Layer(QString name, eLayerType ltype);
     Layer(const Layer & other);
     ~Layer();
 
@@ -49,7 +58,7 @@ public:
     void    addSubLayer(LayerPtr item);
     void    removeSubLayer(LayerPtr item);
 
-    void    forceUpdateLayer();
+    void    forceLayerRecalc(bool update = true);
     void    forceRedraw() ;
 
     QPointF screenToWorld(QPointF pt) ;
@@ -58,13 +67,17 @@ public:
     QPointF worldToScreen(QPointF pt);
     QLineF  worldToScreen(QLineF line);
 
-    void        setCenter (QPointF pt);
-    QPointF     getCenter();
+    void        setCenterScreen(QPointF spt);
+    void        setCenterModel(QPointF mpt);
+    QPointF     getCenterScreen();
+    QPointF     getCenterModel();
 
-    void        setCanvasXform(Xform & xf);
-    Xform       getCanvasXform();
+    const Xform & getCanvasXform();
+    void        setCanvasXform(const Xform & xf);
+    void        updateCanvasXform(const Xform & xf);
+
     QTransform  getCanvasTransform();
-    QTransform  getViewTransform();
+    QTransform  getFrameTransform();
     QTransform  getLayerTransform();
 
     QString getName() { return name; }
@@ -87,29 +100,35 @@ public:
 
     static int refs;
 
+signals:
+    void sig_center();
+
 public slots:
     void slot_moveX(int amount);
     void slot_moveY(int amount);
-    void slot_mouseTranslate(QPointF pt);
     void slot_rotate(int amount);
-    void slot_wheel_rottate(qreal delta);
     void slot_scale(int amount);
-    void slot_wheel_scale(qreal delta);
-    void slot_setCenter(QPointF spt);
 
     virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn);
 
+    void slot_mouseTranslate(QPointF pt);
+    void slot_wheel_rotate(qreal delta);
+    void slot_wheel_scale(qreal delta);
+    void slot_setCenterScreen(QPointF spt);
+
 protected:
-    void    drawCenter(QPainter * painter);
-    QPen       layerPen;
+    void drawCenter(QPainter * painter);
+
+    QPen              layerPen;
 
     Configuration   * config;
-    WorkspaceViewer * wsViewer;
-    View            * view;
+    Workspace       * workspace;
 
 private:
     void computeLayerTransform();
     void deltaLoc(QPointF loc);
+
+    eLayerType  layerType;
 
     Xform      xf_canvas;
     QTransform qtr_layer;       // calculated

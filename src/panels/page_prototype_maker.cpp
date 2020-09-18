@@ -85,7 +85,7 @@ page_prototype_maker::page_prototype_maker(ControlPanel * cpanel) : panel_page(c
 
     connect(tpm,  &TiledPatternMaker::sig_loadedTiling,   this,   &page_prototype_maker::slot_loadedTiling);
     connect(tpm,  &TiledPatternMaker::sig_loadedXML,      this,   &page_prototype_maker::slot_loadedXML);
-    connect(view, &View::sig_unload,                      this,   &page_prototype_maker::slot_unload);
+    connect(workspace, &View::sig_unload,                 this,   &page_prototype_maker::slot_unload);
     connect(protoListBox, SIGNAL(currentIndexChanged(int)), this,   SLOT(slot_prototypeSelected(int)));
 
     connect(workspace, &Workspace::sig_selected_proto_changed, this, &page_prototype_maker::onEnter);
@@ -222,8 +222,13 @@ void page_prototype_maker::slot_addToStyle()
     MosaicPtr mosaic = workspace->getMosaic();
     if (!mosaic->hasContent())
     {
-        const CanvasSettings & cs = wsViewer->getCurrentCanvasSettings();
-        mosaic->setCanvasSettings(cs);
+        // This is a new mosaic
+        TilingPtr tp = workspace->getTilings().first();
+        if (tp)
+        {
+            WorkspaceSettings & cs = tp->getSettings();
+            mosaic->setSettings(cs);
+        }
     }
 
     mosaic->addStyle(sp);
@@ -248,7 +253,7 @@ void  page_prototype_maker::whiteClicked(bool state)
 void  page_prototype_maker::repRadClicked(bool state)
 {
     config->debugReplicate = !state;
-    emit view->sig_figure_changed();
+    emit workspace->sig_figure_changed();
 }
 
 void  page_prototype_maker::hiliteClicked(bool state)

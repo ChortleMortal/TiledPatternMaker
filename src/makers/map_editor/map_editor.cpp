@@ -62,11 +62,11 @@ MapEditor::MapEditor() : MapEditorSelection(), stash(this)
 {
     qDebug() << "MapEditor::MapEditor";
 
-    config = Configuration::getInstance();
-    view   = View::getInstance();
-    connect(view, &View::sig_mouseDragged,  this, &MapEditor::slot_mouseDragged);
-    connect(view, &View::sig_mouseReleased, this, &MapEditor::slot_mouseReleased);
-    connect(view, &View::sig_mouseMoved,    this, &MapEditor::slot_mouseMoved);
+    config      = Configuration::getInstance();
+    workspace   = Workspace::getInstance();
+    connect(workspace, &View::sig_mouseDragged,  this, &MapEditor::slot_mouseDragged);
+    connect(workspace, &View::sig_mouseReleased, this, &MapEditor::slot_mouseReleased);
+    connect(workspace, &View::sig_mouseMoved,    this, &MapEditor::slot_mouseMoved);
 
     map_mouse_mode  = MAP_MODE_NONE;
     mapType       = MAP_TYPE_UNDEFINED;
@@ -521,7 +521,7 @@ void MapEditor::updateStatus()
         s += "  ";
         s += mouse_interaction->desc;
     }
-    view->setWindowTitle(s);
+    workspace->setWindowTitle(s);
 }
 
 
@@ -605,7 +605,7 @@ bool MapEditor::procKeyEvent(QKeyEvent * k)
     {
     // actions
     case 'F': flipLineExtension(); break;
-    case 'M': emit view->sig_raiseMenu(); break;
+    case 'M': emit workspace->sig_raiseMenu(); break;
     case 'Q': QApplication::quit(); break;
     case Qt::Key_F1:
     {

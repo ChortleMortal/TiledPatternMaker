@@ -1,4 +1,4 @@
-/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
+﻿/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
  *
  *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
  *
@@ -22,23 +22,35 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef TILINGMANAGER_H
-#define TILINGMANAGER_H
+#ifndef VIEW_SETTINGS_H
+#define VIEW_SETTINGS_H
 
-#include "base/workspace.h"
+#include "geometry/bounds.h"
+#include "base/configuration.h"
 
-class TilingManager
+class FrameSettings
 {
 public:
-    TilingManager();
+    FrameSettings();
+    void    init(eViewType evt, Bounds bounds, QSize size);
 
-    TilingPtr loadTiling(QString name);
-    bool      saveTiling(QString name, TilingPtr tp);
-    bool      verifyNameFiles();
+    QTransform      getFrameTransform()         { return _t; }
+
+    void            setFrameSize(QSize size);
+    QSize           getFrameSize()              { return  _size; }
+
+    void            setActiveSize(QSize size)   { _activeSize = size; }
+    QSize           getActiveSize()             { return  _activeSize; }
+
+protected:
+    void            calculateFrameTransform();
 
 private:
-    Workspace       * workspace;
-    Configuration   * config;
+    eViewType       _evt;
+    Bounds          _bounds;
+    QSize           _size;
+    QSize           _activeSize;
+    QTransform      _t;             // calculated
 };
 
-#endif // TILINGMANAGER_H
+#endif

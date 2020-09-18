@@ -27,7 +27,7 @@
 #include "base/configuration.h"
 #include "designs/shapes.h"
 
-ShapeViewer::ShapeViewer() : Layer("ShapeViewer")
+ShapeViewer::ShapeViewer() : Layer("ShapeViewer",LTYPE_VIEW)
 {
     config = Configuration::getInstance();
 

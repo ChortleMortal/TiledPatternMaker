@@ -155,6 +155,13 @@ void qtAppLog::crashMessageOutput(QtMsgType type, const QMessageLogContext &cont
 
     pLogLock->lock();
 
+    QString number;
+    if (_logLines)
+    {
+        number = QString("%1  ").arg(line, 5, 10, QChar('0'));
+        line++;
+    }
+
     QString sDelta;
     if (_logElapsed)
     {
@@ -172,7 +179,7 @@ void qtAppLog::crashMessageOutput(QtMsgType type, const QMessageLogContext &cont
             return;
         }
         ted->setTextColor(Qt::black);
-        msg2 = QString("%2Debug   : %1").arg(msg).arg(sDelta);
+        msg2 = QString("%3%2Debug   : %1").arg(msg).arg(sDelta).arg(number);
         break;
     case QtInfoMsg:
         if (_logWarningsOnly)
@@ -181,19 +188,19 @@ void qtAppLog::crashMessageOutput(QtMsgType type, const QMessageLogContext &cont
             return;
         }
         ted->setTextColor(Qt::darkGreen);
-        msg2 = QString("%2Info    : %1").arg(msg).arg(sDelta);
+        msg2 = QString("%3%2Info    : %1").arg(msg).arg(sDelta).arg(number);
         break;
     case QtWarningMsg:
         ted->setTextColor(Qt::darkRed);
-        msg2 = QString("%2Warning : %1").arg(msg).arg(sDelta);
+        msg2 = QString("%3%2Warning : %1").arg(msg).arg(sDelta).arg(number);
         break;
     case QtCriticalMsg:
         ted->setTextColor(Qt::darkRed);
-        msg2 = QString("%2Critical: %1").arg(msg).arg(sDelta);
+        msg2 = QString("%3%2Critical: %1").arg(msg).arg(sDelta).arg(number);
         break;
     case QtFatalMsg:
         ted->setTextColor(Qt::darkRed);
-        msg2 = QString("%2Fatal   : %1").arg(msg).arg(sDelta);
+        msg2 = QString("%3%2Fatal   : %1").arg(msg).arg(sDelta).arg(number);
         break;
     }
 
@@ -206,12 +213,6 @@ void qtAppLog::crashMessageOutput(QtMsgType type, const QMessageLogContext &cont
 
     if (_logToPanel)
     {
-        if (_logLines)
-        {
-            QString number = QString("%1  ").arg(line, 5, 10, QChar('0'));
-            ted->insertPlainText(number);
-        }
-        line++;
         ted->insertPlainText(msg2);
     }
 

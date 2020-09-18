@@ -1,5 +1,5 @@
 #include "base/tpmsplash.h"
-#include "base/view.h"
+#include "base/workspace.h"
 
 TPMSplash::TPMSplash() : QSplashScreen()
 {
@@ -23,9 +23,9 @@ void TPMSplash::display(QString txt)
         msgStack.push(message());
     }
 
-    View * view = View::getInstance();
-    QPoint pos = view->rect().center();
-    pos = view->mapToGlobal(pos);
+    Workspace * workspace = Workspace::getInstance();
+    QPoint pos = workspace->rect().center();
+    pos = workspace->mapToGlobal(pos);
     QPoint p2  = pos - QPoint(w/2,h/2);
     move(p2);
     show();

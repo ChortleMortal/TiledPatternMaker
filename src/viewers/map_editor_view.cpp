@@ -30,10 +30,10 @@
 #include "geometry/intersect.h"
 #include "geometry/transform.h"
 #include "tapp/figure.h"
-#include "viewers/workspace_viewer.h"
+#include "base/workspace.h"
 #include "makers/figure_maker/feature_button.h"
 
-MapEditorView::MapEditorView() : Layer("MapEditorView")
+MapEditorView::MapEditorView() : Layer("MapEditorView",LTYPE_MAP_EDITOR)
 {
     hideConstructionLines = false;
     hideMap               = false;
@@ -63,8 +63,8 @@ void MapEditorView::paint(QPainter *painter)
         QTransform t0 = getLayerTransform();
         viewT         = viewT * t0;
 #else
-        View * view = View::getInstance();
-        viewT = FeatureButton::resetViewport(delp,view->rect());
+        Workspace * workspace = Workspace::getInstance();
+        viewT = FeatureButton::resetViewport(delp,workspace->rect());
 #endif
     }
     else

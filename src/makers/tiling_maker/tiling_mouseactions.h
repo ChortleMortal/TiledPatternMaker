@@ -6,21 +6,29 @@
 #include "makers/tiling_maker/tiling_selection.h"
 #include "viewers/geo_graphics.h"
 
-enum eTilingMouseMode
+enum eTMMouseMode
 {
-    NO_MOUSE_MODE,
-    COPY_MODE,
-    DELETE_MODE,
-    TRANSLATION_VECTOR_MODE,
-    DRAW_POLY_MODE,
-    INCLUSION_MODE,
-    POSITION_MODE,
-    MEASURE_MODE,
-    BKGD_SKEW_MODE,
-    EDIT_FEATURE_MODE,
-    EDGE_CURVE_MODE,
-    MIRROR_X_MODE,
-    MIRROR_Y_MODE
+    TM_NO_MOUSE_MODE,
+    TM_COPY_MODE,
+    TM_DELETE_MODE,
+    TM_TRANSLATION_VECTOR_MODE,
+    TM_DRAW_POLY_MODE,
+    TM_INCLUSION_MODE,
+    TM_POSITION_MODE,
+    TM_MEASURE_MODE,
+    TM_BKGD_SKEW_MODE,
+    TM_EDIT_FEATURE_MODE,
+    TM_EDGE_CURVE_MODE,
+    TM_MIRROR_X_MODE,
+    TM_MIRROR_Y_MODE
+};
+
+enum eAddToTranslate
+{
+    ADTT_NOSTATE,
+    ADTT_STARTED,
+    ADTT_DRAGGING,
+    ADTT_ENDED,
 };
 
 class TilingMaker;
@@ -95,10 +103,14 @@ private:
 class DrawTranslation : public TilingMouseAction
 {
 public:
-    DrawTranslation(TilingMaker * tilingMaker,  TilingSelectionPtr sel, QPointF spt );
+    DrawTranslation(TilingMaker * tilingMaker,  TilingSelectionPtr sel, QPointF spt , QPen apen);
     void updateDragging( QPointF spt );
     void draw( GeoGraphics* g2d );
     void endDragging(QPointF spt);
+
+    eAddToTranslate   state;
+    QLineF vector;
+    QPen apen;
 };
 
 class JoinEdge : public TilingMouseAction

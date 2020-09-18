@@ -77,6 +77,7 @@ private slots:
     void    rebaseXML();
     void    renameXML();
     void    deleteXML();
+    void    showTilings();
 
     void    loadTiling();
     void    openTiling();

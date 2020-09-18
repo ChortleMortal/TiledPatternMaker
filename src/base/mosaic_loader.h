@@ -189,7 +189,6 @@ private:
     int eRefrCnt;
     int nRefrCnt;
 
-    View      * view;
     Workspace * workspace;
 };
 

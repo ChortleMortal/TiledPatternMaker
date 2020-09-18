@@ -21,7 +21,7 @@ protected:
     void    setScaleMode(bool checked);
 
 private:
-    View * view;
+    Workspace * workspace;
 
     QPushButton * btn1;
     QPushButton * btn2;

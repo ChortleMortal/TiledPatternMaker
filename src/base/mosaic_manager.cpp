@@ -27,6 +27,7 @@
 #include "base/mosaic_loader.h"
 #include "base/mosaic_writer.h"
 #include "panels/panel.h"
+#include "viewers/workspace_viewer.h"
 
 MosaicManager::MosaicManager()
 {
@@ -37,7 +38,6 @@ MosaicManager::MosaicManager()
 bool MosaicManager::loadMosaic(QString name)
 {
     qDebug() << "MosaicManager::loadMosaic()" << name;
-
 
     QString file = FileServices::getDesignXMLFile(name);
     if (file.isEmpty())
@@ -64,30 +64,8 @@ bool MosaicManager::loadMosaic(QString name)
     MosaicLoader loader;
     MosaicPtr mosaic = loader.loadMosaic(file);
     workspace->setMosaic(mosaic);
-    if (mosaic)
-    {
-        mosaic->setName(name);
 
-        PrototypePtr selectedProto;
-        const StyleSet & styleset = mosaic->getStyleSet();
-        for (auto style : styleset)
-        {
-            PrototypePtr pp = style->getPrototype();
-            if (pp)
-            {
-                if (!selectedProto)
-                {
-                    selectedProto = pp;
-                }
-                workspace->addPrototype(pp);
-                DesignElementPtr dp = pp->getDesignElement(0);
-                workspace->setSelectedDesignElement(dp);
-            }
-        }
-        workspace->setSelectedPrototype(selectedProto);
-        return true;
-    }
-    else
+    if (!mosaic)
     {
         QString str = QString("Load ERROR - %1").arg(loader.getFailMessage());
         QMessageBox box(ControlPanel::getInstance());
@@ -95,6 +73,37 @@ bool MosaicManager::loadMosaic(QString name)
         box.exec();
         return false;
     }
+
+    mosaic->setName(name);
+
+    PrototypePtr selectedProto;
+    const StyleSet & styleset = mosaic->getStyleSet();
+    for (auto style : styleset)
+    {
+        PrototypePtr pp = style->getPrototype();
+        if (pp)
+        {
+            if (!selectedProto)
+            {
+                selectedProto = pp;
+            }
+            workspace->addPrototype(pp);
+            DesignElementPtr dp = pp->getDesignElement(0);
+            workspace->setSelectedDesignElement(dp);
+        }
+    }
+
+    workspace->setSelectedPrototype(selectedProto);
+
+    // size view to mosaic
+    QSize size = mosaic->getSettings().getSize();
+    workspace->setAllMosaicActiveSizes(size);
+    if (config->scaleToView)
+    {
+        workspace->setAllMosaicFrameSizes(size);
+    }
+
+    return true;
 }
 
 bool MosaicManager::saveMosaic(QString name, QString & savedName, bool forceOverwrite)
@@ -139,6 +148,13 @@ bool MosaicManager::saveMosaic(QString name, QString & savedName, bool forceOver
     qDebug() << "Saving XML to:"  << filename;
 
     MosaicPtr mosaic = workspace->getMosaic();
+    Q_ASSERT(mosaic);
+
+    // match size to current view
+    QSize size  = workspace->size();
+    mosaic->getSettings().setSize(size);
+
+    // write
     MosaicWriter writer;
     bool rv = writer.writeXML(filename,mosaic);
 

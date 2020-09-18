@@ -55,7 +55,7 @@ DesignKumiko2::DesignKumiko2(eDesign design, QString atitle) : Design(design,ati
 bool Design5::build()
 {
     QSize size(1800,1100);
-    info.setCanvasSize(size);
+    info.setSize(size);
     info.setBackgroundColor(QColor(TileBlue));
 
     BorderPtr bp = make_shared<BorderTwoColor>(QColor(TileGreen),QColor(TileWhite),20.0);
@@ -96,7 +96,7 @@ bool Design5::build()
 bool Design6::build()
 {
     QSize size(1800,1100);
-    info.setCanvasSize(size);
+    info.setSize(size);
     info.setBackgroundColor((QColor(TileWhite)));
 
     BorderPtr bp = make_shared<BorderTwoColor>(QColor(TileGreen),QColor(TileWhite),20.0);
@@ -151,7 +151,7 @@ bool Design7::build()
 
     QSize size((diameter*cols),(diameter*rows)+(piece*2.0));
     qDebug() << "pat 7 size:" << size;
-    info.setCanvasSize(size);
+    info.setSize(size);
     info.setBackgroundColor((QColor(TileGreen)));
 
     BorderPtr bp = make_shared<BorderBlocks>(QColor(TileWhite),diameter,rows,cols);
@@ -189,7 +189,7 @@ bool Design8::build()
     // canvas
     QColor canvasColor = QColor(TileBlack);
     info.setBackgroundColor((canvasColor));
-    info.setCanvasSize(QSize(1800,1100));
+    info.setSize(QSize(1800,1100));
 
     // patern
     int gridWidth = 41;
@@ -240,7 +240,7 @@ bool Design9::build()
 {
     QColor canvasColor = QColor(TileBlack);
     info.setBackgroundColor((canvasColor));
-    info.setCanvasSize(QSize(1776,1100));
+    info.setSize(QSize(1776,1100));
 
     // patern
     int gridWidth = 21;
@@ -287,7 +287,7 @@ bool DesignHuPacked::build()
 {
     QColor canvasColor = QColor(TileBlack);
     info.setBackgroundColor((canvasColor));
-    info.setCanvasSize(QSize(1794,1100));
+    info.setSize(QSize(1794,1100));
 
     // patern
     int igridWidth = 21;
@@ -346,7 +346,7 @@ bool DesignHuInsert::build()
 {
     QColor canvasColor = QColor(TileBlack);
     info.setBackgroundColor((canvasColor));
-    info.setCanvasSize(QSize(1794,1100));
+    info.setSize(QSize(1794,1100));
 
     // patern
     int igridWidth = 21;
@@ -398,7 +398,7 @@ bool Design11::build()
 {
     QColor canvasColor = QColor(TileBlack);
     info.setBackgroundColor((canvasColor));
-    info.setCanvasSize(QSize(1800,1100));
+    info.setSize(QSize(1800,1100));
 
     // patern
     int gridWidth = 41;
@@ -446,7 +446,7 @@ bool Design11::build()
 bool Design12::build()
 {
     QSize size(1000,1100);
-    info.setCanvasSize(size);
+    info.setSize(size);
     info.setBackgroundColor((TileBlack));
 
     BorderPtr bp = make_shared<BorderTwoColor>(QColor(Qt::green),QColor(Qt::red),20.0);
@@ -476,7 +476,7 @@ bool Design13::build()
     qreal rotation   = 90.0;
     eDirection turn  = CW;
 
-    info.setCanvasSize(QSize(1800,1100));
+    info.setSize(QSize(1800,1100));
     info.setBackgroundColor((TileBlack));
     qreal diameter = 400.0;
     info.setStartTile(info.getCenter());
@@ -540,7 +540,7 @@ bool Design14::build()
     qreal rotation   = 90.0;
     eDirection turn  = CW;
 
-    info.setCanvasSize(QSize(1800,1100));
+    info.setSize(QSize(1800,1100));
     info.setBackgroundColor((Qt::yellow));
     qreal diameter = 400.0 / 2.0;
     info.setStartTile(info.getCenter());
@@ -598,7 +598,7 @@ bool Design14::build()
 
 bool Design16::build()
 {
-    info.setCanvasSize(QSize(1800,1100));
+    info.setSize(QSize(1800,1100));
     info.setBackgroundColor((QColor(TileBlack)));
 
     qreal diameter = 200.0;
@@ -640,7 +640,7 @@ bool Design16::build()
 
 bool Design17::build()
 {
-    info.setCanvasSize(QSize(1800,1100));
+    info.setSize(QSize(1800,1100));
     info.setBackgroundColor((QColor(TileBlack)));
 
     qreal diameter = 200.0;
@@ -689,7 +689,7 @@ bool Design17::build()
 
 bool Design18::build()
 {
-    info.setCanvasSize(QSize(1800,1100));
+    info.setSize(QSize(1800,1100));
     info.setBackgroundColor((QColor(TileBlack)));
 
     qreal diameter = 200.0;
@@ -730,7 +730,7 @@ bool Design18::build()
 
 bool Design19::build()
 {
-    info.setCanvasSize(QSize(1800,1100));
+    info.setSize(QSize(1800,1100));
     info.setBackgroundColor((QColor(TileBlack)));
 
     qreal diameter = 400.0;
@@ -772,7 +772,7 @@ bool Design19::build()
 bool DesignKumiko1::build()
 {
     QSize size(1395,1000);
-    info.setCanvasSize(size);
+    info.setSize(size);
     info.setBackgroundColor((QColor(0x58, 0x39, 0x3e)));
 
     BorderPtr bp = make_shared<BorderTwoColor>(QColor(0xa2,0x79,0x67),QColor(0xa2,0x79,0x67),20);
@@ -818,7 +818,7 @@ void DesignKumiko2::init()
     Design::init();
 
     QSize size(1395,1000);
-    info.setCanvasSize(size);
+    info.setSize(size);
 
     info.setBackgroundColor((QColor(0x58, 0x39, 0x3e)));
 

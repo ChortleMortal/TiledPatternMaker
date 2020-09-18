@@ -35,7 +35,7 @@
 #include "viewers/viewerbase.h"
 
 
-PlacedDesignElementView::PlacedDesignElementView(PlacedDesignElementPtr pde, bool selected) : Layer("PlacedDesignElementView")
+PlacedDesignElementView::PlacedDesignElementView(PlacedDesignElementPtr pde, bool selected) : Layer("PlacedDesignElementView",LTYPE_VIEW)
 {
     Q_ASSERT(pde);
 

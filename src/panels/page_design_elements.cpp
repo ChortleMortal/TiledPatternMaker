@@ -22,7 +22,7 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "page_design_elements.h"
+#include "panels/page_design_elements.h"
 #include "base/shared.h"
 #include "base/tiledpatternmaker.h"
 #include "base/utilities.h"

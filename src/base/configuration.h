@@ -190,6 +190,13 @@ const QString sKbdMode[]  = {
     E2STR(KBD_MODE_CENTER)
 };
 
+enum eMouseMode
+{
+    MOUSE_MODE_NONE,
+    MOUSE_MODE_TRANSLATE,
+    MOUSE_MODE_ROTATE,
+    MOUSE_MODE_SCALE,
+};
 
 enum eGridType
 {
@@ -203,7 +210,7 @@ public:
     static Configuration * getInstance();
     static void            releaseInstance();
 
-    void    reconfigurePaths();
+    void    configurePaths();
     void    save();
 
     DesignPtr getDesign(eDesign design) { return availableDesigns.value(design); }
@@ -225,14 +232,6 @@ public:
     int                   cycleInterval;
     int                   polySides;    // used by tiling maker
 
-    QString rootMediaDir;
-    QString rootTileDir;
-    QString newTileDir;
-    QString rootDesignDir;
-    QString newDesignDir;
-    QString templateDir;
-    QString rootImageDir;
-    QString examplesDir;
     QString compareDir0;
     QString compareDir1;
     QString xmlTool;
@@ -247,7 +246,6 @@ public:
     QString lastLoadedXML;      // used on startup
     QString currentlyLoadedXML; // current status
 
-    bool    firstBirthday;
     bool    autoLoadStyles;
     bool    autoLoadTiling;
     bool    autoLoadDesigns;
@@ -263,7 +261,7 @@ public:
     bool    mapedStatusBox;
     bool    showBackgroundImage;
     bool    highlightUnit;
-    bool    nerdMode;
+    bool    insightMode;
 
     bool    verifyMaps;
     bool    verifyDump;     // TODO - make sure this flag work
@@ -303,6 +301,15 @@ public:
 // volatile
 //
 ////////////////////////////////////////////////////////////////
+
+    QString rootMediaDir;
+    QString rootTileDir;
+    QString newTileDir;
+    QString rootDesignDir;
+    QString newDesignDir;
+    QString templateDir;
+    QString examplesDir;
+    QString rootImageDir;
 
     bool    circleX;
     bool    hideCircles;

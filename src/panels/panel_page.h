@@ -83,21 +83,23 @@ protected:
     virtual void    mouseEnter() { refresh = false; }
     virtual void    mouseLeave() { refresh = true; }
 
+    void    blockPage(bool block);
+    bool    pageBlocked();
+
     QVBoxLayout *		vbox;
     QString				pageName;
 
     ControlPanel      * panel;
-    View              * view;
     Configuration     * config;
     Workspace         * workspace;
     TiledPatternMaker * tpm;
-    WorkspaceViewer   * wsViewer;
 
-    bool    refresh;
+    bool                refresh;
 
 private:
     bool                newlySelected;
     bool                floated;
+    int                 blockCount;
 };
 
 #endif

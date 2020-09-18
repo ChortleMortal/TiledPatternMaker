@@ -106,11 +106,21 @@ void CopyMovePolygon::endDragging(QPointF spt )
 ///
 /////////
 
-DrawTranslation::DrawTranslation(TilingMaker * tilingMaker, TilingSelectionPtr sel, QPointF spt )
+DrawTranslation::DrawTranslation(TilingMaker * tilingMaker, TilingSelectionPtr sel, QPointF spt, QPen apen )
     : TilingMouseAction(tilingMaker,sel,spt)
 {
-    tm->addToTranslate(sel->getPlacedPoint(), false);
     desc = "DrawTranslation";
+    this->apen = apen;
+    apen.setColor(drag_color);
+    if (sel)
+    {
+        state = ADTT_STARTED;
+        vector.setP1(sel->getPlacedPoint());
+    }
+    else
+    {
+        state = ADTT_NOSTATE;
+    }
 }
 
 void DrawTranslation::updateDragging(QPointF spt )
@@ -118,8 +128,14 @@ void DrawTranslation::updateDragging(QPointF spt )
     TilingSelectionPtr sel = tm->findSelection(spt);
     if( sel)
     {
-        QPointF wpos = sel->getPlacedPoint();
-        tm->wTrans1_end = wpos;
+        if (state == ADTT_STARTED)
+        {
+            state = ADTT_DRAGGING;
+        }
+        if (state == ADTT_DRAGGING)
+        {
+            vector.setP2(sel->getPlacedPoint());
+        }
     }
 
     TilingMouseAction::updateDragging(spt);
@@ -127,19 +143,25 @@ void DrawTranslation::updateDragging(QPointF spt )
 
 void DrawTranslation::draw(GeoGraphics * g2d )
 {
-    qreal arrow_length = Transform::distFromInvertedZero(g2d->getTransform(),12.0);
-    qreal arrow_width  = Transform::distFromInvertedZero(g2d->getTransform(),6.0);
-    QPen pen(drag_color);
-    g2d->drawLine(tm->wTrans1_start, wLastDrag,pen);
-    g2d->drawArrow(tm->wTrans1_start,wLastDrag, arrow_length, arrow_width, drag_color);
+    if (state == ADTT_DRAGGING)
+    {
+        qreal arrow_length = Transform::distFromInvertedZero(g2d->getTransform(),12.0);
+        qreal arrow_width  = Transform::distFromInvertedZero(g2d->getTransform(),6.0);
+        g2d->drawLine(vector.p1(), vector.p2(),apen);
+        g2d->drawArrow(vector.p1(),vector.p2(), arrow_length, arrow_width, drag_color);
+    }
 }
 
 void DrawTranslation::endDragging(QPointF spt)
 {
-    TilingSelectionPtr sel = tm->findSelection(spt);
-    if (sel)
+    if (state == ADTT_DRAGGING)
     {
-        tm->addToTranslate(sel->getPlacedPoint(), true );
+        TilingSelectionPtr sel = tm->findSelection(spt);
+        if (sel)
+        {
+            vector.setP2(sel->getPlacedPoint());
+            tm->addToTranslate(vector);
+        }
     }
     TilingMouseAction::endDragging(spt);
 }
@@ -433,7 +455,7 @@ void CreatePolygon::addVertex(QPointF wpt)
 
         QTransform t;
         tm->addNewPlacedFeature(make_shared<PlacedFeature>(make_shared<Feature>(wAccum,0), t));
-        tm->setMouseMode(NO_MOUSE_MODE);
+        tm->setTilingMakerMouseMode(TM_NO_MOUSE_MODE);
         tm->sig_buildMenu();
         return;
     }

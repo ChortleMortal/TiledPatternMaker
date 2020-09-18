@@ -39,12 +39,12 @@ page_views::page_views(ControlPanel * cpanel) : panel_page(cpanel,"Views")
 {
     // gui setup has to be here for this page since it receives signals
     QGroupBox * wsControl = createViewControl();
-    QGroupBox * wsViewers = createWorkspaceViewers();
+    QGroupBox * workspaces = createWorkspaceViewers();
 
     QVBoxLayout * vbox2 = new QVBoxLayout();        // shouldbe 597x668
     vbox2->addWidget(wsControl);
     vbox2->addSpacing(7);
-    vbox2->addWidget(wsViewers);
+    vbox2->addWidget(workspaces);
     vbox2->addSpacing(7);
 
     vbox->addLayout(vbox2);
@@ -321,8 +321,8 @@ void page_views::slot_multiSelect(bool enb)
             viewerGroup.button(i)->setChecked(false);
         }
         viewerGroup.blockSignals(false);
-        wsViewer->disableAll();
-        wsViewer->viewEnable(config->viewerType,true);
+        workspace->disableAll();
+        workspace->viewEnable(config->viewerType,true);
         emit sig_viewWS();
     }
 }

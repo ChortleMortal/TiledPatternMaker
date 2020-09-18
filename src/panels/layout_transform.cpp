@@ -1,4 +1,4 @@
-#include "layout_transform.h"
+#include "panels/layout_transform.h"
 #include "geometry/transform.h"
 
 LayoutTransform::LayoutTransform(QString name, int decimals)
@@ -29,10 +29,10 @@ LayoutTransform::LayoutTransform(QString name, int decimals)
     addLayout(Y);
     addStretch();
 
-    connect(scale,  &DoubleSpinSet::valueChanged,     this,    &LayoutTransform::xformChanged);
-    connect(rot,    &DoubleSpinSet::valueChanged,     this,    &LayoutTransform::xformChanged);
-    connect(X,      &DoubleSpinSet::valueChanged,     this,    &LayoutTransform::xformChanged);
-    connect(Y,      &DoubleSpinSet::valueChanged,     this,    &LayoutTransform::xformChanged);
+    connect(scale,  &DoubleSpinSet::sig_valueChanged,     this,    &LayoutTransform::xformChanged);
+    connect(rot,    &DoubleSpinSet::sig_valueChanged,     this,    &LayoutTransform::xformChanged);
+    connect(X,      &DoubleSpinSet::sig_valueChanged,     this,    &LayoutTransform::xformChanged);
+    connect(Y,      &DoubleSpinSet::sig_valueChanged,     this,    &LayoutTransform::xformChanged);
 }
 
 void LayoutTransform::setTransform(QTransform T)

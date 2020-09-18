@@ -23,7 +23,7 @@
  */
 
 #include "panels/panel.h"
-#include "panels/page_style_maker.h"
+#include "panels/page_mosaic_maker.h"
 #include "panels/page_layers.h"
 #include "panels/page_tiling_maker.h"
 #include "panels/page_style_figure_info.h"
@@ -98,8 +98,7 @@ void ControlPanel::init(TiledPatternMaker * parent)
 {
     maker  = parent;
     closed = false;
-    viewer = WorkspaceViewer::getInstance();
-    view   = View::getInstance();
+    workspace = Workspace::getInstance();
 
     setupGUI();
 
@@ -179,8 +178,21 @@ void ControlPanel::closePages()
 
 void ControlPanel::setupGUI()
 {
-    // hlayout - top row
+    // top row
+    panelStatus = new PanelStatus();
+    panelStatus->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+
+    QPushButton *pbRaise    = new QPushButton("Raise Picture to Top");
+    QPushButton *pbExit     = new QPushButton("QUIT");
+
+    QHBoxLayout * statusHbox = new QHBoxLayout;
+    statusHbox->addWidget(panelStatus);
+    statusHbox->addWidget(pbRaise);
+    statusHbox->addWidget(pbExit);
+
+    // hlayout - second row row
     QHBoxLayout * hlayout = new QHBoxLayout();
+    hlayout->setContentsMargins(0, 0, 0, 0);
     hlayout->setSizeConstraint(QLayout::SetFixedSize);
 
     radioDefined = new QRadioButton("Full Mosiac");
@@ -192,13 +204,12 @@ void ControlPanel::setupGUI()
     QCheckBox   * chkScaleToView  = new QCheckBox("Scale to View");
     QCheckBox   * showBackImage   = new QCheckBox("Show background images");
 
-    if (config->nerdMode)
+    if (config->insightMode)
     {
         QPushButton * pbLogEvent      = new QPushButton("Log Event");
         QPushButton * pbUpdateView    = new QPushButton("Updatev View");
         QPushButton * pbViewWorkspace = new QPushButton("View Workspace");
 
-        hlayout->setContentsMargins(0, 0, 0, 0);
         hlayout->addWidget(pbLogEvent);
         hlayout->addStretch();
         hlayout->addWidget(pbViewWorkspace);
@@ -216,11 +227,10 @@ void ControlPanel::setupGUI()
 
         connect(pbUpdateView,       &QPushButton::clicked,              this,    &ControlPanel::updateView);
         connect(pbLogEvent,         &QPushButton::clicked,              this,    &ControlPanel::slot_logEvent);
-        connect(pbViewWorkspace,    &QPushButton::clicked,              viewer,  &WorkspaceViewer::slot_viewWorkspace);
+        connect(pbViewWorkspace,    &QPushButton::clicked,              workspace,  &WorkspaceViewer::slot_viewWorkspace);
     }
     else
     {
-        hlayout->setContentsMargins(0, 0, 0, 0);
         hlayout->addWidget(chkScaleToView);
         hlayout->addWidget(showBackImage);
         hlayout->addStretch();
@@ -237,16 +247,18 @@ void ControlPanel::setupGUI()
     repeatRadioGroup.addButton(radioSingle,REPEAT_SINGLE);
     repeatRadioGroup.button(config->repeatMode)->setChecked(true);
 
-    // hbox - second row
+    // hbox - third row
     kbdModeCombo = new QComboBox();
+    kbdModeCombo->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Ignored);
     delegateKeyboardMouse(config->viewerType);
 
-    QPushButton *pbRaise    = new QPushButton("Raise Picture to Top");
-    QPushButton *pbExit     = new QPushButton("QUIT");
+    ViewPanel * vpanel = new ViewPanel;
+    vpanel->setButtonSize(QSize(79,29));
+    vpanel->setContentsMargins(0,0,0,0);
 
     QHBoxLayout * hbox = new QHBoxLayout;
 
-    if (config->nerdMode)
+    if (config->insightMode)
     {
         statusLabel = new QLabel("Status");
         statusLabel->setFixedWidth(401);
@@ -257,8 +269,7 @@ void ControlPanel::setupGUI()
         hbox->addStretch();
         hbox->addWidget(cbUpdate);
         hbox->addWidget(kbdModeCombo);
-        hbox->addWidget(pbRaise);
-        hbox->addWidget(pbExit);
+        hbox->addWidget(vpanel);
 
         connect(cbUpdate, SIGNAL(clicked(bool)), this, SLOT(updateClicked(bool)));
     }
@@ -266,8 +277,7 @@ void ControlPanel::setupGUI()
     {
         hbox->addStretch();
         hbox->addWidget(kbdModeCombo);
-        hbox->addWidget(pbRaise);
-        hbox->addWidget(pbExit);
+        hbox->addWidget(vpanel);
     }
 
     // left widget
@@ -289,17 +299,6 @@ void ControlPanel::setupGUI()
     mainBox->addWidget(panelPagesWidget);
     mainBox->addStretch(2);
     mainBox->setAlignment(panelPagesWidget,Qt::AlignTop);
-
-    panelStatus = new PanelStatus();
-    panelStatus->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
-
-    ViewPanel * vpanel = new ViewPanel;
-    vpanel->setButtonSize(QSize(89,29));
-    vpanel->setContentsMargins(0,0,0,0);
-
-    QHBoxLayout * statusHbox = new QHBoxLayout;
-    statusHbox->addWidget(panelStatus);
-    statusHbox->addWidget(vpanel);
 
     // panel box - top level
     QVBoxLayout * panelBox = new QVBoxLayout;
@@ -323,10 +322,10 @@ void ControlPanel::setupGUI()
     connect(pbShowTiling,       &QPushButton::pressed,              this,    &ControlPanel::showTilingPressed);
     connect(pbShowMosaic,       &QPushButton::pressed,              this,    &ControlPanel::showMosaicPressed);
     connect(&repeatRadioGroup,  SIGNAL(buttonClicked(int)),         this,    SLOT(repeatChanged(int)));
-    connect(this,               &ControlPanel::sig_viewWS,          viewer,  &WorkspaceViewer::slot_viewWorkspace);
+    connect(this,               &ControlPanel::sig_viewWS,          workspace,  &WorkspaceViewer::slot_viewWorkspace);
     connect(this,               &ControlPanel::sig_render,          maker,   &TiledPatternMaker::slot_render);
     connect(kbdModeCombo,       SIGNAL(currentIndexChanged(int)),   this,    SLOT(slot_kbdModeChanged(int)));
-    connect(view,               &View::sig_kbdMode,                 this,    &ControlPanel::slot_kbdMode);
+    connect(workspace,             &View::sig_kbdMode,                 this,    &ControlPanel::slot_kbdMode);
     connect(chkScaleToView,     &QCheckBox::clicked,                this,    &ControlPanel::slot_scaleToView);
     connect(showBackImage,      &QCheckBox::clicked,                this,    &ControlPanel::slot_showBackChanged);
 
@@ -347,7 +346,7 @@ void ControlPanel::populatePages()
     panelPagesWidget->addWidget(wp);
     mpPanelPageList->addItem(wp->getName());
 
-    if (config->nerdMode)
+    if (config->insightMode)
     {
         mpPanelPageList->addSeparator();
 
@@ -377,7 +376,7 @@ void ControlPanel::populatePages()
     mpPanelPageList->addItem(wp->getName());
     page_map_editor * wp_med = dynamic_cast<page_map_editor*>(wp);
 
-    wp = new page_style_maker(this);
+    wp = new page_mosaic_maker(this);
     mAttachedPages.push_back(wp);
     panelPagesWidget->addWidget(wp);
     mpPanelPageList->addItem(wp->getName());
@@ -387,7 +386,7 @@ void ControlPanel::populatePages()
     panelPagesWidget->addWidget(wp);
     mpPanelPageList->addItem(wp->getName());
 
-    if (config->nerdMode)
+    if (config->insightMode)
     {
         mpPanelPageList->addSeparator();
 
@@ -424,7 +423,7 @@ void ControlPanel::populatePages()
     panelPagesWidget->addWidget(wp);
     mpPanelPageList->addItem(wp->getName());
 
-    if (config->nerdMode)
+    if (config->insightMode)
     {
         wp = new page_debug(this);
         mAttachedPages.push_back(wp);
@@ -596,16 +595,16 @@ void ControlPanel::slot_attachWidget(QString name)
 // called by mpTimer
 void ControlPanel::slot_poll()
 {
-    if (config->nerdMode && !config->updatePanel)
+    if (config->insightMode && !config->updatePanel)
     {
         return;
     }
 
     QMutexLocker ml(&mUpdateMutex);
 
-    if (config->nerdMode)
+    if (config->insightMode)
     {
-        QString astring = view->getKbdModeStr() + " : " + sViewerType[config->viewerType];
+        QString astring = workspace->getKbdModeStr() + " : " + sViewerType[config->viewerType];
         statusLabel->setText(astring);
     }
 
@@ -659,16 +658,14 @@ void ControlPanel::repeatChanged(int mode)
 void ControlPanel::slot_logEvent()
 {
     qInfo() << "** EVENT MARK **";
-    View * view = View::getInstance();
-    view->dump(true);
+    workspace->dump(true);
 }
 
 void ControlPanel::slot_raise()
 {
-    View * view = View::getInstance();
-    view->setWindowState( (view->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
-    view->raise();
-    view->activateWindow();
+    workspace->setWindowState( (workspace->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
+    workspace->raise();
+    workspace->activateWindow();
 }
 
 void ControlPanel::slot_exit()
@@ -684,8 +681,7 @@ void  ControlPanel::updateClicked(bool enb)
 void  ControlPanel::updateView(bool enb)
 {
     Q_UNUSED(enb);
-    View * view = View::getInstance();
-    view->update();
+    workspace->update();
 }
 
 void ControlPanel::delegateView()
@@ -723,7 +719,7 @@ void ControlPanel::delegateView()
         return;
     }
 
-    page_style_maker * psm = dynamic_cast<page_style_maker*>(currentPage);
+    page_mosaic_maker * psm = dynamic_cast<page_mosaic_maker*>(currentPage);
     if (psm)
     {
         selectViewer(VIEW_MOSAIC);
@@ -733,11 +729,11 @@ void ControlPanel::delegateView()
     page_canvasSettings * pcs = dynamic_cast<page_canvasSettings*>(currentPage);
     if (pcs)
     {
-        selectViewer(VIEW_MOSAIC);
+        //selectViewer(VIEW_MOSAIC);
         return;
     }
 
-    if (config->nerdMode)
+    if (config->insightMode)
     {
         page_style_figure_info * sfi = dynamic_cast<page_style_figure_info*>(currentPage);
         if (sfi)
@@ -775,19 +771,18 @@ void ControlPanel::delegateKeyboardMouse(eViewType viewType)
         kbdModeCombo->insertItem(100,"Mode Separation", QVariant(KBD_MODE_SEPARATION));
         kbdModeCombo->insertItem(100,"Mode Origin",     QVariant(KBD_MODE_ORIGIN));
         kbdModeCombo->insertItem(100,"Mode Offset",     QVariant(KBD_MODE_OFFSET));
-
-        config->kbdMode = getValidDesignMode(config->kbdMode);
     }
     else
     {
         kbdModeCombo->insertItem(100,"XForm View",      QVariant(KBD_MODE_XFORM_VIEW));
         kbdModeCombo->insertItem(100,"XForm Background",QVariant(KBD_MODE_XFORM_BKGD));
         kbdModeCombo->insertItem(100,"XForm Tiling",    QVariant(KBD_MODE_XFORM_TILING));
-        kbdModeCombo->insertItem(100,"XForm Feature",   QVariant(KBD_MODE_XFORM_FEATURE));
+        kbdModeCombo->insertItem(100,"XForm Tiling Feature",   QVariant(KBD_MODE_XFORM_FEATURE));
         kbdModeCombo->insertItem(100,"Set Center",      QVariant(KBD_MODE_CENTER));
-
-        config->kbdMode = getValidMosaicMode(config->kbdMode);
     }
+
+    workspace->setKbdMode(config->kbdMode); // converts if necessry
+
     kbdModeCombo->blockSignals(false);
 
     slot_kbdMode(config->kbdMode);  // selects
@@ -845,7 +840,7 @@ void ControlPanel::slot_kbdModeChanged(int row)
     qDebug() << "slot_kbdModeChanged to:"  << kbdModeCombo->currentText();
     QVariant var = kbdModeCombo->currentData();
     eKbdMode mode = static_cast<eKbdMode>(var.toInt());
-    config->kbdMode = getValidKbdMode(mode);
+    workspace->setKbdMode(mode);
 }
 
 // from canvas setKbdMode
@@ -963,9 +958,9 @@ void  ControlPanel::slot_Viewer_pressed(int id, bool enb)
 
     if (viewerGroup.exclusive())
     {
-        viewer->disableAll();
+        workspace->disableAll();
     }
-    viewer->viewEnable(evt,enb);
+    workspace->viewEnable(evt,enb);
 
     emit sig_view_synch(id, enb);
     emit sig_viewWS();

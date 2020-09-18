@@ -81,17 +81,17 @@ page_config:: page_config(ControlPanel * cpanel)  : panel_page(cpanel,"Configura
     vbox->addLayout(configGrid);
 
     QRadioButton * designerMode = new QRadioButton("Designer Mode");
-    QRadioButton * nerdMode     = new QRadioButton("Nerd Mode");
+    QRadioButton * insightMode  = new QRadioButton("Insight Mode");
     QButtonGroup * btnGroup     = new QButtonGroup;
     btnGroup->addButton(designerMode,0);
-    btnGroup->addButton(nerdMode,1);
+    btnGroup->addButton(insightMode,1);
 
-    int button  = (config->nerdMode) ? 1 : 0;
+    int button  = (config->insightMode) ? 1 : 0;
     btnGroup->button(button)->setChecked(true);
 
     QHBoxLayout * hbox = new QHBoxLayout;
     hbox->addWidget(designerMode);
-    hbox->addWidget(nerdMode);
+    hbox->addWidget(insightMode);
     hbox->addStretch();
     vbox->addLayout(hbox);
 
@@ -118,6 +118,7 @@ page_config:: page_config(ControlPanel * cpanel)  : panel_page(cpanel,"Configura
 #else
     connect(btnGroup,      &QButtonGroup::idClicked,  this,  &page_config::slot_mode);
 #endif
+
 }
 
 void  page_config::onEnter()
@@ -229,8 +230,11 @@ void page_config::examplesChanged(QString txt)
 
 void page_config::slot_reconfigurePaths()
 {
-    config->reconfigurePaths();
+    config->configurePaths();
     updatePaths();
+
+    qApp->quit();
+    QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
 }
 
 void page_config::updatePaths()
@@ -248,7 +252,7 @@ void page_config::updatePaths()
 
 void page_config::slot_mode(int id)
 {
-    config->nerdMode = (id == 1);
+    config->insightMode = (id == 1);
 
     // restart the application
     qApp->quit();

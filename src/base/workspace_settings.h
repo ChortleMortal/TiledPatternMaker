@@ -22,23 +22,20 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DESIGN_INFO_H
-#define DESIGN_INFO_H
+#ifndef WORKSPACE_SETTINGS_H
+#define WORKSPACE_SETTINGS_H
 
 #include <QtCore>
-#include <QtGui>
+#include <QColor>
 #include "base/shared.h"
 #include "base/filldata.h"
-#include "tile/backgroundimage.h"
-#include "geometry/bounds.h"
-#include "base/configuration.h"
 
-class CanvasSettings
+class WorkspaceSettings
 {
 public:
-    CanvasSettings();
-    CanvasSettings(const CanvasSettings & other);
-    ~CanvasSettings();
+    WorkspaceSettings();
+    WorkspaceSettings(const WorkspaceSettings & other);
+    ~WorkspaceSettings();
 
     void            clear();
 
@@ -51,8 +48,8 @@ public:
     void            setBkgdImage(BkgdImgPtr bkImage) { _bkgdImage = bkImage; }
     BkgdImgPtr      getBkgdImage() { return  _bkgdImage; }
 
-    void            setCanvasSize(QSize size);
-    QSize           getCanvasSize() { return _canvasSize; }
+    void            setSize(QSize size);
+    QSize           getSize() { return _size; }
 
     QPointF         getStartTile();
     void            setStartTile(QPointF pt);
@@ -65,35 +62,12 @@ public:
 protected:
 
 private:
-    QSize           _canvasSize;
+    QSize           _size;
     QColor          _bkgdColor;
     QPointF         _startTile;
     BkgdImgPtr      _bkgdImage;
     BorderPtr       _border;
     FillData        _fillData;
-};
-
-
-class ViewSettings
-{
-public:
-    ViewSettings();
-    ViewSettings(eViewType evt, Bounds bounds, QSize size);
-    void    init(eViewType evt, Bounds bounds, QSize size);
-
-    QTransform      getViewTransform() { return _t; }
-
-    void            setViewSize(QSize size);
-    QSize           getViewSize() { return  _viewSize; }
-
-protected:
-    void            calculateViewTransform();
-
-private:
-    eViewType       _evt;
-    Bounds          _bounds;
-    QSize           _viewSize;
-    QTransform      _t;             // calculated
 };
 
 #endif

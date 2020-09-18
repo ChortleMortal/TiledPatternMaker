@@ -1,7 +1,6 @@
 <?xml version="1.0"?>
-<vector id="1" version="5">
+<vector id="1" version="6">
 	<design>
-		<scale>1</scale>
 		<size>
 			<width>1500</width>
 			<height>1100</height>
@@ -9,13 +8,15 @@
 		<background>
 			<color>#ff000000</color>
 		</background>
+		<Fill>-4,4,-4,4</Fill>
 	</design>
 	<style.Interlace id="2" serialization="custom">
 		<toolkit.GeoLayer>
-			<left__delta>-356</left__delta>
-			<top__delta>-350</top__delta>
+			<left__delta>4</left__delta>
+			<top__delta>-100</top__delta>
 			<width__delta>1.4</width__delta>
 			<theta__delta>0</theta__delta>
+			<center>2,1</center>
 		</toolkit.GeoLayer>
 		<style.Style>
 			<boundary id="3">
@@ -44,6 +45,7 @@
 					<entry>
 						<tile.Feature id="10">
 							<regular>true</regular>
+							<rotation>0</rotation>
 							<edges id="11">
 								<Line>
 									<Point id="12">0.9999999999999999,0.2679491924311226</Point>

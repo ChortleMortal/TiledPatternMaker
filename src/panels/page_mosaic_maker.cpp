@@ -22,7 +22,7 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "panels/page_style_maker.h"
+#include "panels/page_mosaic_maker.h"
 #include "base/configuration.h"
 #include "base/tiledpatternmaker.h"
 #include "designs/patterns.h"
@@ -34,12 +34,13 @@
 #include "style/plain.h"
 #include "style/sketch.h"
 #include "style/emboss.h"
+#include "viewers/workspace_viewer.h"
 
 using std::string;
 
 Q_DECLARE_METATYPE(WeakStylePtr)
 
-page_style_maker:: page_style_maker(ControlPanel * apanel)  : panel_page(apanel,"Style Maker")
+page_mosaic_maker:: page_mosaic_maker(ControlPanel * apanel)  : panel_page(apanel,"Mosaic Maker")
 {
     styleParms = nullptr;
 
@@ -53,7 +54,6 @@ page_style_maker:: page_style_maker(ControlPanel * apanel)  : panel_page(apanel,
     styleTable->setHorizontalHeaderLabels(qslH);
     styleTable->verticalHeader()->setVisible(false);
 
-    vbox->addWidget(styleTable);
 
     delBtn  = new QPushButton("Delete");
     upBtn   = new QPushButton("Move Up");
@@ -68,7 +68,11 @@ page_style_maker:: page_style_maker(ControlPanel * apanel)  : panel_page(apanel,
     hbox->addWidget(dupBtn);
     hbox->addWidget(analyzeBtn);
 
+    QGroupBox * fillBox = createFillDataRow();
+
+    vbox->addWidget(fillBox);
     vbox->addSpacing(3);
+    vbox->addWidget(styleTable);
     vbox->addLayout(hbox);
     vbox->addSpacing(5);
 
@@ -84,24 +88,33 @@ page_style_maker:: page_style_maker(ControlPanel * apanel)  : panel_page(apanel,
     connect(&tilingMapper,    SIGNAL(mapped(int)), this, SLOT(slot_tilingChanged(int)));
     connect(&styleVisMapper,  SIGNAL(mapped(int)), this, SLOT(slot_styleVisibilityChanged(int)));
 
-    connect(delBtn,  &QPushButton::clicked, this, &page_style_maker::slot_deleteStyle);
-    connect(upBtn,   &QPushButton::clicked, this, &page_style_maker::slot_moveStyleUp);
-    connect(downBtn, &QPushButton::clicked, this, &page_style_maker::slot_moveStyleDown);
-    connect(dupBtn,  &QPushButton::clicked, this, &page_style_maker::slot_duplicateStyle);
-    connect(analyzeBtn,  &QPushButton::clicked, this, &page_style_maker::slot_analyzeStyleMap);
+    connect(delBtn,  &QPushButton::clicked, this, &page_mosaic_maker::slot_deleteStyle);
+    connect(upBtn,   &QPushButton::clicked, this, &page_mosaic_maker::slot_moveStyleUp);
+    connect(downBtn, &QPushButton::clicked, this, &page_mosaic_maker::slot_moveStyleDown);
+    connect(dupBtn,  &QPushButton::clicked, this, &page_mosaic_maker::slot_duplicateStyle);
+    connect(analyzeBtn,  &QPushButton::clicked, this, &page_mosaic_maker::slot_analyzeStyleMap);
 
     selectModel = styleTable->selectionModel();
     connect(selectModel, SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(slot_styleSelected()));
 
-    connect(tpm,  &TiledPatternMaker::sig_loadedTiling,   this,   &page_style_maker::slot_loadedTiling);
-    connect(tpm,  &TiledPatternMaker::sig_loadedXML,      this,   &page_style_maker::slot_loadedXML);
-    connect(view, &View::sig_unload,                      this,   &page_style_maker::slot_unload);
+    connect(tpm,  &TiledPatternMaker::sig_loadedTiling,   this,   &page_mosaic_maker::slot_loadedTiling);
+    connect(tpm,  &TiledPatternMaker::sig_loadedXML,      this,   &page_mosaic_maker::slot_loadedXML);
+    connect(workspace, &View::sig_unload,                 this,   &page_mosaic_maker::slot_unload);
 }
 
-void  page_style_maker::refreshPage()
+void  page_mosaic_maker::refreshPage()
 {
     int row = 0;
     MosaicPtr mosaic = workspace->getMosaic();
+
+    int xMin,xMax,yMin,yMax;
+    const FillData & fd = mosaic->getSettings().getFillData();
+    fd.get(xMin ,xMax,yMin,yMax);
+    xRepMin->setValue(xMin);
+    xRepMax->setValue(xMax);
+    yRepMin->setValue(yMin);
+    yRepMax->setValue(yMax);
+
     const StyleSet & sset = mosaic->getStyleSet();
     for (auto style : sset)
     {
@@ -117,12 +130,12 @@ void  page_style_maker::refreshPage()
     styleTable->adjustTableSize();
 }
 
-void  page_style_maker::onEnter()
+void  page_mosaic_maker::onEnter()
 {
     reEnter();
 }
 
-void  page_style_maker::reEnter()
+void  page_mosaic_maker::reEnter()
 {
     styleTable->clearContents();
 
@@ -161,7 +174,7 @@ void  page_style_maker::reEnter()
         {
             qcb2->addItem(tiling->getName());
         }
-        qcb2->addItem("New");
+        qcb2->addItem("New T");
         int index = qcb2->findText(style->getPrototype()->getTiling()->getName());
         qcb2->setCurrentIndex(index);
         styleTable->setCellWidget(row,STYLE_COL_TILING,qcb2);
@@ -198,7 +211,7 @@ void  page_style_maker::reEnter()
     styleTable->setFocus();
 }
 
-void  page_style_maker::slot_styleSelected()
+void  page_mosaic_maker::slot_styleSelected()
 {
     qDebug() << "page_style_maker::slot_styleSelected";
 
@@ -226,12 +239,12 @@ void  page_style_maker::slot_styleSelected()
     emit sig_viewWS();
 }
 
-void page_style_maker::slot_tilingChanged(int row)
+void page_mosaic_maker::slot_tilingChanged(int row)
 {
     QComboBox * qcb = dynamic_cast<QComboBox*>(styleTable->cellWidget(row,STYLE_COL_TILING));
     QString name = qcb->currentText();
     TilingPtr tp;
-    if (name == "New")
+    if (name == "New T")
     {
         tp = loadNewTiling(name);
     }
@@ -254,7 +267,7 @@ void page_style_maker::slot_tilingChanged(int row)
     reEnter();
 }
 
-void page_style_maker::setupStyleParms(StylePtr style, AQTableWidget * table)
+void page_mosaic_maker::setupStyleParms(StylePtr style, AQTableWidget * table)
 {
     eraseLayout(dynamic_cast<QLayout*>(parmsCtrl));
 
@@ -298,7 +311,7 @@ void page_style_maker::setupStyleParms(StylePtr style, AQTableWidget * table)
     updateGeometry();
 }
 
-void page_style_maker::slot_styleVisibilityChanged(int row)
+void page_mosaic_maker::slot_styleVisibilityChanged(int row)
 {
     qDebug() << "visibility changed: row=" << row;
 
@@ -310,7 +323,7 @@ void page_style_maker::slot_styleVisibilityChanged(int row)
     emit sig_viewWS();
 }
 
-void page_style_maker::slot_styleChanged(int row)
+void page_mosaic_maker::slot_styleChanged(int row)
 {
     qDebug() << "style changed: row=" << row;
 
@@ -360,7 +373,7 @@ void page_style_maker::slot_styleChanged(int row)
     styleTable->setFocus();
 }
 
-StylePtr page_style_maker::getStyleRow(int row)
+StylePtr page_mosaic_maker::getStyleRow(int row)
 {
     StylePtr sp;
 
@@ -376,7 +389,7 @@ StylePtr page_style_maker::getStyleRow(int row)
     return sp;
 }
 
-StylePtr page_style_maker::getStyleIndex(int index)
+StylePtr page_mosaic_maker::getStyleIndex(int index)
 {
     StylePtr sp;
     MosaicPtr mosaic = workspace->getMosaic();
@@ -388,7 +401,7 @@ StylePtr page_style_maker::getStyleIndex(int index)
     return sp;
 }
 
-void page_style_maker::slot_deleteStyle()
+void page_mosaic_maker::slot_deleteStyle()
 {
     int row = styleTable->currentRow();
     if (row == -1) return;
@@ -409,7 +422,7 @@ void page_style_maker::slot_deleteStyle()
     styleTable->setFocus();
 }
 
-void page_style_maker::slot_moveStyleUp()
+void page_mosaic_maker::slot_moveStyleUp()
 {
     int row = styleTable->currentRow();
     if (row == -1) return;
@@ -425,7 +438,7 @@ void page_style_maker::slot_moveStyleUp()
     styleTable->setFocus();
 }
 
-void  page_style_maker::slot_moveStyleDown()
+void  page_mosaic_maker::slot_moveStyleDown()
 {
     int row = styleTable->currentRow();
     if (row == -1) return;
@@ -442,7 +455,7 @@ void  page_style_maker::slot_moveStyleDown()
     styleTable->setFocus();
 }
 
-void  page_style_maker::slot_duplicateStyle()
+void  page_mosaic_maker::slot_duplicateStyle()
 {
     int row = styleTable->currentRow();
     if (row == -1) return;
@@ -461,7 +474,7 @@ void  page_style_maker::slot_duplicateStyle()
     styleTable->setFocus();
 }
 
-void  page_style_maker::slot_analyzeStyleMap()
+void  page_mosaic_maker::slot_analyzeStyleMap()
 {
     int row = styleTable->currentRow();
     if (row == -1) return;
@@ -478,7 +491,7 @@ void  page_style_maker::slot_analyzeStyleMap()
     }
 }
 
-StylePtr page_style_maker::copyStyle(const StylePtr style)
+StylePtr page_mosaic_maker::copyStyle(const StylePtr style)
 {
     Style & s = *style.get();
     Style *  newStyle = nullptr;
@@ -515,19 +528,19 @@ StylePtr page_style_maker::copyStyle(const StylePtr style)
     return StylePtr(newStyle);
 }
 
-void  page_style_maker::slot_loadedXML(QString name)
+void  page_mosaic_maker::slot_loadedXML(QString name)
 {
     Q_UNUSED(name)
     reEnter();
 }
 
-void page_style_maker::slot_loadedTiling (QString name)
+void page_mosaic_maker::slot_loadedTiling (QString name)
 {
     Q_UNUSED(name)
     reEnter();
 }
 
-void page_style_maker::slot_unload()
+void page_mosaic_maker::slot_unload()
 {
     styleTable->clearContents();
     if (styleParms)
@@ -537,10 +550,58 @@ void page_style_maker::slot_unload()
 }
 
 
-TilingPtr page_style_maker::loadNewTiling(QString name)
+TilingPtr page_mosaic_maker::loadNewTiling(QString name)
 {
     TilingPtr tp;
 
+    // FIXME now - what is this all about !!!!
 
     return  tp;
+}
+
+
+QGroupBox * page_mosaic_maker::createFillDataRow()
+{
+    QHBoxLayout * hbox = new QHBoxLayout;
+
+    const int rmin = -1000;
+    const int rmax =  1000;
+
+    xRepMin = new SpinSet("xMin",0,rmin,rmax);
+    xRepMax = new SpinSet("xMax",0,rmin,rmax);
+    yRepMin = new SpinSet("yMin",0,rmin,rmax);
+    yRepMax = new SpinSet("yMax",0,rmin,rmax);
+
+    hbox->addLayout(xRepMin);
+    hbox->addSpacing(7);
+    hbox->addLayout(xRepMax);
+    hbox->addSpacing(7);
+    hbox->addLayout(yRepMin);
+    hbox->addSpacing(7);
+    hbox->addLayout(yRepMax);
+    hbox->addStretch();
+
+    connect(xRepMin, &SpinSet::valueChanged, this, &page_mosaic_maker::slot_set_reps);
+    connect(xRepMax, &SpinSet::valueChanged, this, &page_mosaic_maker::slot_set_reps);
+    connect(yRepMin, &SpinSet::valueChanged, this, &page_mosaic_maker::slot_set_reps);
+    connect(yRepMax, &SpinSet::valueChanged, this, &page_mosaic_maker::slot_set_reps);
+
+    QGroupBox * gb = new  QGroupBox("Repeats");
+    gb->setLayout(hbox);
+
+    return gb;
+}
+
+void page_mosaic_maker::slot_set_reps()
+{
+    MosaicPtr mosaic = workspace->getMosaic();
+    Q_ASSERT(mosaic);
+
+    FillData fd;
+    fd.set(xRepMin->value(), xRepMax->value(), yRepMin->value(), yRepMax->value());
+
+    mosaic->getSettings().setFillData(fd);
+    workspace->setFillData(fd);
+
+    emit sig_render();
 }

@@ -18,12 +18,13 @@ class PanelStatus : public AQLabel
 public:
     PanelStatus();
 
-    void setCurrentView(eViewType vtype);
-    void display(QString txt);
-    void hide();
+    void        setCurrentView(eViewType vtype);
+    eViewType   getCurrentView() { return  viewType; }
+    void        display(QString txt);
+    void        hide();
 
 protected:
-    QString getMsg();
+    QString     getMsg();
 
 private:
     QStack<QString>  msgStack;

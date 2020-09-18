@@ -36,6 +36,7 @@ class Utils
 public:
     static QString  addr(void * address);
     static QString  addr(const void * address);
+    static QString  str(QPointF pt);
 
     static void identify(Layer * layer, QPolygonF * poly);
     static int  circleLineIntersectionPoints(const QGraphicsItem & circle, qreal radius, const QLineF & line, QPointF & aa, QPointF & bb);

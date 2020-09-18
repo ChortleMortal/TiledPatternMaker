@@ -129,7 +129,7 @@ void FeatureLauncher::create(PrototypePtr proto, QVector<FeaturePtr> & features)
     int count = 0;
     for (auto feature : features)
     {
-        if (++count <= MAX_UNIQUE_FEATURES)
+        if (++count <= MAX_UNIQUE_FEATURE_INDEX)
         {
             DesignElementPtr dep = make_shared<DesignElement>(feature);
             proto->addElement(dep);
@@ -222,7 +222,11 @@ void FeatureLauncher::setCurrentButton(FeatureBtnPtr btn)
 
 void FeatureLauncher::getPosition(int index, int & row, int & col)
 {
-    Q_ASSERT(index < MAX_UNIQUE_FEATURES);
+    if (index > MAX_UNIQUE_FEATURE_INDEX)
+    {
+        qWarning() << "Max unique feature limit exceeded:" << index;
+        return;
+    }
     if (index < 4)
     {
         row = index;

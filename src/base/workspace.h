@@ -30,6 +30,7 @@
 #include "base/misc.h"
 #include "designs/design.h"
 #include "tapp/design_element.h"
+#include "viewers/workspace_viewer.h"
 
 enum eProtoMode
 {
@@ -38,26 +39,7 @@ enum eProtoMode
     PROTO_DRAW_FIGURES   =  0x04
 };
 
-class WorkspaceData
-{
-public:
-    WorkspaceData() { protoViewMode = PROTO_DRAW_FIGURES | PROTO_DRAW_FEATURES; }
-    void    resetAll();
-    void    resetTilings();
-
-    MosaicPtr                   mosaic;
-    UniqueQVector<TilingPtr>    tilings;
-    UniqueQVector<PrototypePtr> prototypes;
-
-    TilingPtr               currentTiling;
-    WeakPrototypePtr        selectedPrototype;
-    WeakDesignElementPtr    selectedDesignElement;
-    WeakFeaturePtr          selectedFeature;
-
-    int protoViewMode;
-};
-
-class Workspace : public QObject
+class Workspace : public WorkspaceViewer
 {
     Q_OBJECT
 
@@ -74,22 +56,22 @@ public:
     void        clearDesigns();
 
     // Mosaic
-    void        resetMosaic() { ws.resetAll(); }
+    void        resetMosaic() { resetAll(); }
     void        setMosaic(MosaicPtr mosaic);
     MosaicPtr   getMosaic();
 
     // loaded tilings
-    void        resetTilings() { ws.resetTilings(); }
-    void        addTiling(TilingPtr t) { ws.tilings.push_back(t); }
+    void        resetTilings();
     void        removeTiling(TilingPtr tp);
     void        replaceTiling(TilingPtr oldtp, TilingPtr newtp);
     void        setCurrentTiling(TilingPtr tp);
 
-    UniqueQVector<TilingPtr> getTilings() { return ws.tilings; }
+    UniqueQVector<TilingPtr> getTilings() { return tilings; }
     TilingPtr   getCurrentTiling();
     TilingPtr   findTiling(QString name);
 
-    CanvasSettings & getMosaicSettings();
+    WorkspaceSettings & getMosaicSettings();
+    WorkspaceSettings & getSettings();
 
     // prototypes
     void         addPrototype(PrototypePtr pp);
@@ -105,9 +87,13 @@ public:
     DesignElementPtr getSelectedDesignElement();
 
     void    setProtoMode(eProtoMode mode, bool enb);
-    int     getProtoMode() {  return  ws.protoViewMode; }
+    int     getProtoMode() {  return  protoViewMode; }
+
+    void       setFillData(FillData & fd) { fillData = fd; }
+    FillData & getFillData() { return fillData; }
 
 protected:
+    void resetAll();
 
 signals:
     void    sig_newTiling();
@@ -122,15 +108,24 @@ private:
     Workspace();
     ~Workspace();
 
-    static Workspace    * mpThis;
-    Configuration       * config;
-    View                * view;
+    static Workspace      * mpThis;
+    Configuration         * config;
 
-    QVector<DesignPtr>  activeDesigns;
-    QString             designName;
+    QVector<DesignPtr>      activeDesigns;
+    QString                 designName;
 
-    WorkspaceData       ws;
+    MosaicPtr                   mosaic;
+    UniqueQVector<TilingPtr>    tilings;
+    UniqueQVector<PrototypePtr> prototypes;
 
+    TilingPtr               currentTiling;
+    WeakPrototypePtr        selectedPrototype;
+    WeakDesignElementPtr    selectedDesignElement;
+    WeakFeaturePtr          selectedFeature;
+
+    FillData                fillData;
+
+    int                     protoViewMode;
 };
 
 #endif // WORKSPACE_H

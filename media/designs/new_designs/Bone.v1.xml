@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<vector id="1" version="5">
+<vector id="1" version="6">
 	<designNotes>Bone pattern (Alhambra)</designNotes>
 	<design>
 		<size>
@@ -9,11 +9,12 @@
 		<background>
 			<color>#ff000000</color>
 		</background>
+		<Fill>-4,4,-5,5</Fill>
 	</design>
 	<style.Thick id="2" serialization="custom">
 		<toolkit.GeoLayer>
-			<left__delta>474</left__delta>
-			<top__delta>205</top__delta>
+			<left__delta>298.89</left__delta>
+			<top__delta>29.89</top__delta>
 			<width__delta>0.6099999999999997</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>-4.013333333333333,-1.346666666666668</center>
@@ -177,8 +178,8 @@
 	</style.Thick>
 	<style.TileColors id="40" serialization="custom">
 		<toolkit.GeoLayer>
-			<left__delta>474</left__delta>
-			<top__delta>205</top__delta>
+			<left__delta>298.89</left__delta>
+			<top__delta>29.89</top__delta>
 			<width__delta>0.6099999999999997</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>-4.013333333333333,-1.346666666666668</center>

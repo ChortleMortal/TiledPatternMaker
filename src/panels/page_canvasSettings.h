@@ -37,8 +37,7 @@ enum eSettingsGroup
 {
     DESIGN_SETTINGS,    // propagates to CANVAS_SETTINGS
     TILING_SETTINGS,    // propagates to CANVAS_SETTINGS
-    VIEW_SETTINGS,      // definitions per view type
-    WSVIEWER_STATUS,    // workspace viewer sets these
+    FRAME_SETTINGS,     // definitions per view type
     VIEW_STATUS,        // current status
     NUM_SETTINGS
 };
@@ -57,9 +56,11 @@ private slots:
 
     void slot_matchDesign();
     void slot_matchTiling();
-    void slot_set_repsDesign();
+    void slot_set_repsDesign(int val);
+    void slot_set_repsTiling(int val);
 
     void designSizeChanged(int);
+    void frameSizeChanged(int);
     void viewSizeChanged(int);
 
     void backgroundColorDesignPick();
@@ -67,46 +68,39 @@ private slots:
 
     void slot_setBkgdMosaicXform();
     void slot_setBkgdTilingXform();
-    void slot_setBkdViewerXform();
     void slot_setBkgdMosaic();
     void slot_setBkgdTiling();
-    void slot_setBkgdViewer();
 
     void slot_loadMosaicBackground();
     void slot_loadTilingBackground();
 
     void slot_tilingSizeChanged(int val);
-
 #if 0
     void pickBorderColor();
     void pickBorderColor2();
     void borderChanged(int row);
-
+#endif
     void slot_adjustBackground();
     void slot_saveAdjustedBackground();
-
+#if 0
     void slot_bkgd_moveX(int amount);
     void slot_bkgd_moveY(int amount);
     void slot_bkgd_rotate(int amount);
     void slot_bkgd_scale(int amount);
 #endif
-
 protected:
     QGroupBox * createTilingSettings();
     QGroupBox * createDesignSettings();
-    QGroupBox * createWorkspaceStatus();
-
+    QGroupBox * createFrameSettings();
     QGroupBox * createCanvasBorderSettings();
     QGroupBox * createDesignBorderSettings();
-
-    QGroupBox * createViewSettings();
     QGroupBox * createViewStatus();
 
     QGroupBox * createBackgroundImageGroup(eSettingsGroup group, QString title);
+    QGridLayout * createFillDataRow(eSettingsGroup group);
 
-    CanvasSettings & getMosaicOrDesignSettings();
+    WorkspaceSettings & getMosaicOrDesignSettings();
 
-    void displaySettings(CanvasSettings & cSettings, eSettingsGroup group);
     void displayBkgdImgSettings(BkgdImgPtr bi, eSettingsGroup group);
     void displayBorder(BorderPtr bp, eSettingsGroup group);
 
@@ -116,24 +110,19 @@ protected:
 private:
     void removeChildren(QTreeWidgetItem * parent);
 
-    View            * view;
+    QSpinBox        * xRepMin[NUM_SETTINGS];
+    QSpinBox        * xRepMax[NUM_SETTINGS];
+    QSpinBox        * yRepMin[NUM_SETTINGS];
+    QSpinBox        * yRepMax[NUM_SETTINGS];
 
-    SpinSet         * xRepMin[NUM_SETTINGS];
-    SpinSet         * xRepMax[NUM_SETTINGS];
-    SpinSet         * yRepMin[NUM_SETTINGS];
-    SpinSet         * yRepMax[NUM_SETTINGS];
-
-    SpinSet         * sizeEditW[NUM_SETTINGS];
-    SpinSet         * sizeEditH[NUM_SETTINGS];
+    SpinSet         * sizeW[NUM_SETTINGS];
+    SpinSet         * sizeH[NUM_SETTINGS];
 
     QLineEdit       * bkColorEdit[NUM_SETTINGS];
     ClickableLabel  * bkgdColorPatch[NUM_SETTINGS];
 
     DoubleSpinSet   * startEditX[NUM_SETTINGS];
     DoubleSpinSet   * startEditY[NUM_SETTINGS];
-
-    SpinSet         * viewW[NUM_SETTINGS];
-    SpinSet         * viewH[NUM_SETTINGS];
 
     QComboBox         borderType[NUM_SETTINGS];
     QLineEdit       * borderWidth[NUM_SETTINGS];
@@ -148,7 +137,6 @@ private:
 
     QCheckBox       * chk_showBkgd[NUM_SETTINGS];
     QCheckBox       * chk_adjustBkgd[NUM_SETTINGS];
-    QCheckBox       * chk_xformBkgd[NUM_SETTINGS];
 
     QGroupBox       * viewBox;
 };

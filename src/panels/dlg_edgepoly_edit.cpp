@@ -4,7 +4,7 @@
 #include "panels/dlg_line_edit.h"
 #include "tile/feature.h"
 #include "base/utilities.h"
-#include "base/view.h"
+#include "viewers/workspace_viewer.h"
 
 /////////////////////////////////////////////////////////////////
 ///
@@ -154,8 +154,8 @@ void DlgEdgePolyEdit::slot_undo()
 {
     epoly = original;
 
-    View * view = View::getInstance();
-    view->update();
+    Workspace * workspace = Workspace::getInstance();
+    workspace->update();
 
     reject();
 }

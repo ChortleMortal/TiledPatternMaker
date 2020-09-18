@@ -22,7 +22,7 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "colorset.h"
+#include "base/colorset.h"
 
 ColorSet::ColorSet()
 {

@@ -14,8 +14,8 @@ figure fills tiling</designNotes>
 	</design>
 	<style.Thick id="2" serialization="custom">
 		<toolkit.GeoLayer>
-			<left__delta>443</left__delta>
-			<top__delta>276</top__delta>
+			<left__delta>-37</left__delta>
+			<top__delta>-76</top__delta>
 			<width__delta>0.3599999999999994</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>0,-1.77635683940025e-15</center>

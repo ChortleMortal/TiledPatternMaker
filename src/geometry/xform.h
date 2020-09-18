@@ -11,41 +11,39 @@ public:
     Xform(const Xform  & other);
     Xform(QTransform t);
 
-    void       init();
-    void       setTransform(QTransform t);
-    void       addTransform(QTransform t);
+    void        update(const Xform & other);
+    void        setTransform(QTransform t);
+    void        addTransform(QTransform t);
 
-    QTransform toQTransform(QTransform transform);
-    QTransform getTransform();
-    QPointF    getTranslate() { return QPointF(translateX,translateY); }
-    QString    toInfoString();
+    QTransform  toQTransform(QTransform transform) const;
+    QTransform  getTransform() const;
+    QPointF     getTranslate() { return QPointF(translateX,translateY); }
+    QString     toInfoString();
 
-    qreal      getScale();
-    qreal      getRotateRadians();
-    qreal      getRotateDegrees();
-    qreal      getTranslateX();
-    qreal      getTranslateY();
-    QPointF    getCenter();
+    qreal       getScale();
+    qreal       getRotateRadians();
+    qreal       getRotateDegrees() const;
+    qreal       getTranslateX();
+    qreal       getTranslateY();
+    QPointF     getCenter() const;
 
-    void       setScale(qreal s);
-    void       setRotateRadians(qreal rr);
-    void       setRotateDegrees(qreal deg);
-    void       setTranslateX(qreal x);
-    void       setTranslateY(qreal y);
-    void       setCenter(QPointF pt);
-
-    bool    hasCenter;
+    void        setScale(qreal s);
+    void        setRotateRadians(qreal rr);
+    void        setRotateDegrees(qreal deg);
+    void        setTranslateX(qreal x);
+    void        setTranslateY(qreal y);
+    void        setCenter(QPointF mpt);  // model units
 
 protected:
-    QTransform rotateAroundPoint(QPointF pt);
-    QTransform scaleAroundPoint(QPointF pt);
+    QTransform  rotateAroundPoint(QPointF pt);
+    QTransform  scaleAroundPoint(QPointF pt);
 
 private:
-    qreal   scale;
-    qreal   rotationRadians;     // radians
-    qreal   translateX;
-    qreal   translateY;
-    QPointF center;             // model units
+    qreal       scale;
+    qreal       rotRadians;     // radians
+    qreal       translateX;
+    qreal       translateY;
+    QPointF     mCenter;             // model units so (0,0) is valid
 };
 
 #endif // XFORM_H
