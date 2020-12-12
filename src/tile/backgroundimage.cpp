@@ -2,13 +2,14 @@
 #include <QFileDialog>
 #include "tile/backgroundimage.h"
 #include "base/configuration.h"
-#include "base/workspace.h"
+#include "viewers/view.h"
 #include "geometry/transform.h"
 #include "panels/dlg_name.h"
 
 BackgroundImage::BackgroundImage() : Layer("Bkgd Image",LTYPE_BACKGROUND)
 {
-    workspace = Workspace::getInstance();
+    view   = View::getInstance();
+    config = Configuration::getInstance();
 
     setZValue(-20);
 
@@ -31,61 +32,74 @@ void BackgroundImage::paint(QPainter *painter)
     painter->save();
 
     // center pixmap in the scene
-    QSize sz = bkgdImage.size();  // or pixmap?
-    qreal centerX   = (workspace->width() -  sz.width()) / 2;
-    qreal centerY   = (workspace->height() - sz.height()) / 2;
-    painter->translate(QPointF(centerX,centerY));
+    QRectF rect         = pixmap.rect();
+    QPointF pix_center  = rect.center();
+
+    QSize sz            = view->getDefinedFrameSize(config->viewerType);
+    QPointF view_center(sz.width()/2, sz.height()/2);
+    QPointF center      = view_center - pix_center;
+    //qDebug() << rect << pix_center << center;
+
+    painter->translate(center);
+
+    xf_bkImg.setCenter(pix_center);
+
+    QTransform tbi = xf_bkImg.toQTransform(QTransform());
+    //qDebug() << "tbi" << Transform::toInfoString(tbi);
+    painter->setTransform(tbi,true);
 
     QTransform t = getCanvasXform().toQTransform(getFrameTransform());
     painter->setTransform(t,true);
-    qDebug() << "BackgroundImage::paint" << Transform::toInfoString(painter->transform());
 
-    QRectF src(QPointF(0,0),sz);
-    painter->drawPixmap(src,pixmap,src);
+    //qDebug() << "BackgroundImage::paint" << Transform::toInfoString(painter->transform());
+    painter->drawPixmap(rect,pixmap,rect);
+
+    drawCenter(painter);
 
     painter->restore();
 }
 
-bool BackgroundImage::loadAndCopy(QString  filename)
+bool BackgroundImage::import(QString filename)
 {
-    qDebug() << "BackgroundImage:: loadAndCopy:" << filename;
+    qDebug() << "BackgroundImage::import()" << filename;
     QFileInfo info(filename);
     QString name = info.fileName();
 
-    Configuration * config = Configuration::getInstance();
-    QString bkgdDir = config->rootMediaDir + "bkgd_photos/";
-
-    QString newFilename = bkgdDir + name;
+    QString newFilename = config->rootMediaDir + "bkgd_photos/" + name;
 
     if (!QFile::exists(newFilename))
     {
         QFile::copy(filename,newFilename);
-        qDebug() << "copy made:" << newFilename;
+        qDebug() << "import created:" << newFilename;
     }
 
-    perspective = QTransform();  // reset
-    bkgdName    = name;
-
-    return loadImageUsingName();
+    return load(name);
 }
 
-bool BackgroundImage::loadImageUsingName()
+bool BackgroundImage::load(QString imageName)
 {
-    Configuration * config = Configuration::getInstance();
+    bkgdName    = imageName;
+    perspective = QTransform();  // reset
+
     QString filename = config->rootMediaDir + "bkgd_photos/" + bkgdName;
-    qDebug() << "BackgroundImage:: loadImageUsingName:" << filename;
-    bool rv = bkgdImage.load(filename);
-    if (rv)
-    {
+    qDebug() << "BackgroundImage::load()" << filename;
+
+    _loaded = bkgdImage.load(filename);
+
+    if (_loaded)
         qDebug() << "BackgroundImage: loaded OK - size =" << bkgdImage.size();
-        _loaded = true;
-    }
     else
-    {
         qWarning() << "BackgroundImage: LOAD ERROR";
-        _loaded = false;
-    }
-    return rv;
+
+    return _loaded;
+}
+
+void BackgroundImage::updateBkgdXform(const Xform & xf)
+{
+    // FIXME ??
+    //xf_bkImg.update(xf);
+    xf_bkImg = xf;
+    forceLayerRecalc();
 }
 
 void BackgroundImage::bkgdImageChanged(bool showBkgd, bool perspectiveBkgd)
@@ -103,7 +117,7 @@ void BackgroundImage::bkgdImageChanged(bool showBkgd, bool perspectiveBkgd)
         qDebug() << "using regular background image";
         pixmap = QPixmap::fromImage(bkgdImage);
     }
-    workspace->update();
+    view->update();
 }
 
 
@@ -112,11 +126,11 @@ void BackgroundImage::bkgdImageChanged(bool showBkgd, bool perspectiveBkgd)
 void BackgroundImage::adjustBackground(QPointF topLeft, QPointF topRight, QPointF botRight, QPointF botLeft)
 {
     QSize sz      = pixmap.size();
-    qreal offsetX = (workspace->width() -  sz.width()) / 2;
-    qreal offsetY = (workspace->height() - sz.height()) / 2;
+    qreal offsetX = (view->width() -  sz.width()) / 2;
+    qreal offsetY = (view->height() - sz.height()) / 2;
     QTransform t0 = QTransform::fromTranslate(offsetX,offsetY);
 
-    QTransform bkgdXform = t0 * getCanvasXform().getTransform();
+    QTransform bkgdXform = t0 * xf_bkImg.getTransform();
     QTransform t1        = bkgdXform.inverted();
 
     correctPerspective(
@@ -142,7 +156,6 @@ void BackgroundImage::adjustBackground()
 
 bool BackgroundImage::saveAdjusted(QString newName)
 {
-    Configuration * config = Configuration::getInstance();
     QString file = config->rootMediaDir + "bkgd_photos/" +  newName;
     qDebug() << "Saving adjusted:" << file;
     bool rv = adjustedImage.save(file);
@@ -199,5 +212,190 @@ void BackgroundImage::correctPerspective(QPointF topLeft, QPointF topRight, QPoi
     if (!rv)
     {
         qDebug() << "Could not create the transformation matrix.";
+    }
+}
+
+void BackgroundImage::slot_mouseTranslate(QPointF pt)
+{
+    switch (config->kbdMode)
+    {
+    case KBD_MODE_XFORM_VIEW:
+        Layer::slot_mouseTranslate(pt);
+        break;
+    case KBD_MODE_XFORM_BKGD:
+        xf_bkImg.setTranslateX(xf_bkImg.getTranslateX() + pt.x());
+        xf_bkImg.setTranslateY(xf_bkImg.getTranslateY() + pt.y());
+        forceRedraw();
+        break;
+    case KBD_MODE_XFORM_TILING:
+    case KBD_MODE_XFORM_UNIQUE_FEATURE:
+    case KBD_MODE_XFORM_PLACED_FEATURE:
+        break;
+    default:
+        qWarning() << "BackgroundImage: Unexpected keyboard mode" << view->getKbdModeStr();
+        break;
+    }
+}
+
+void BackgroundImage::slot_moveX(int amount)
+{
+    switch (config->kbdMode)
+    {
+    case KBD_MODE_XFORM_VIEW:
+        Layer::slot_moveX(amount);
+        break;
+    case KBD_MODE_XFORM_BKGD:
+        xf_bkImg.setTranslateX(xf_bkImg.getTranslateX() + amount);
+        forceRedraw();
+        break;
+    case KBD_MODE_XFORM_TILING:
+    case KBD_MODE_XFORM_UNIQUE_FEATURE:
+    case KBD_MODE_XFORM_PLACED_FEATURE:
+        break;
+    default:
+        qWarning() << "BackgroundImage: Unexpected keyboard mode" << view->getKbdModeStr();
+        break;
+    }
+}
+
+void BackgroundImage::slot_moveY(int amount)
+{
+    switch (config->kbdMode)
+    {
+    case KBD_MODE_XFORM_VIEW:
+        Layer::slot_moveY(amount);
+        break;
+    case KBD_MODE_XFORM_BKGD:
+        xf_bkImg.setTranslateY(xf_bkImg.getTranslateY() + amount);
+        forceRedraw();
+        break;
+    case KBD_MODE_XFORM_TILING:
+    case KBD_MODE_XFORM_UNIQUE_FEATURE:
+    case KBD_MODE_XFORM_PLACED_FEATURE:
+        break;
+    default:
+        qWarning() << "BackgroundImage: Unexpected keyboard mode" << view->getKbdModeStr();
+        break;
+    }
+}
+
+void BackgroundImage::slot_rotate(int amount)
+{
+    switch (config->kbdMode)
+    {
+    case KBD_MODE_XFORM_VIEW:
+        Layer::slot_rotate(amount);
+        break;
+    case KBD_MODE_XFORM_BKGD:
+        xf_bkImg.setRotateRadians(xf_bkImg.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
+        forceRedraw();
+        break;
+    case KBD_MODE_XFORM_TILING:
+    case KBD_MODE_XFORM_UNIQUE_FEATURE:
+    case KBD_MODE_XFORM_PLACED_FEATURE:
+        break;
+    default:
+        qWarning() << "BackgroundImage: Unexpected keyboard mode" << view->getKbdModeStr();
+        break;
+    }
+}
+
+void BackgroundImage::slot_wheel_rotate(qreal delta)
+{
+    switch (config->kbdMode)
+    {
+    case KBD_MODE_XFORM_VIEW:
+        Layer::slot_wheel_rotate(delta);
+        break;
+    case KBD_MODE_XFORM_BKGD:
+        xf_bkImg.setRotateDegrees(xf_bkImg.getRotateDegrees() + delta);
+        forceRedraw();
+        break;
+    case KBD_MODE_XFORM_TILING:
+    case KBD_MODE_XFORM_UNIQUE_FEATURE:
+    case KBD_MODE_XFORM_PLACED_FEATURE:
+        break;
+    default:
+        qWarning() << "BackgroundImage: Unexpected keyboard mode" << view->getKbdModeStr();
+        break;
+    }
+}
+
+void BackgroundImage::slot_scale(int amount)
+{
+    switch (config->kbdMode)
+    {
+    case KBD_MODE_XFORM_VIEW:
+        Layer::slot_scale(amount);
+        break;
+    case KBD_MODE_XFORM_BKGD:
+        xf_bkImg.setScale(xf_bkImg.getScale() + static_cast<qreal>(amount)/100.0);
+        forceRedraw();
+        break;
+    case KBD_MODE_XFORM_TILING:
+    case KBD_MODE_XFORM_UNIQUE_FEATURE:
+    case KBD_MODE_XFORM_PLACED_FEATURE:
+        break;
+    default:
+        qWarning() << "BackgroundImage: Unexpected keyboard mode" << view->getKbdModeStr();
+        break;
+    }
+}
+
+void BackgroundImage::slot_wheel_scale(qreal delta)
+{
+    switch (config->kbdMode)
+    {
+    case KBD_MODE_XFORM_VIEW:
+        Layer::slot_wheel_scale(delta);
+        break;
+    case KBD_MODE_XFORM_BKGD:
+        xf_bkImg.setScale(xf_bkImg.getScale() + delta);
+        forceRedraw();
+        break;
+    case KBD_MODE_XFORM_TILING:
+    case KBD_MODE_XFORM_UNIQUE_FEATURE:
+    case KBD_MODE_XFORM_PLACED_FEATURE:
+        break;
+    default:
+        qWarning() << "BackgroundImage: Unexpected keyboard mode" << view->getKbdModeStr();
+        break;
+    }
+}
+
+void BackgroundImage::slot_setCenterScreen(QPointF spt)
+{
+    switch (config->kbdMode)
+    {
+    case KBD_MODE_XFORM_VIEW:
+        Layer::slot_setCenterScreen(spt);
+        break;
+    case KBD_MODE_XFORM_BKGD:
+        break;
+    case KBD_MODE_XFORM_TILING:
+    case KBD_MODE_XFORM_UNIQUE_FEATURE:
+    case KBD_MODE_XFORM_PLACED_FEATURE:
+        break;
+    default:
+        qWarning() << "BackgroundImage: Unexpected keyboard mode" << view->getKbdModeStr();
+        break;
+    }
+}
+
+void  BackgroundImage::drawCenter(QPainter * painter)
+{
+    if (config->showCenterDebug || config->showCenterMouse)
+    {
+        QPointF pt = xf_bkImg.getCenter();
+        //qDebug() << "BackgroundImage::drawCenter:" << pt;
+        qreal len = 13;
+        QColor color(Qt::darkYellow);
+        painter->setPen(QPen(color));
+        color.setAlpha(128);
+        painter->setBrush(QBrush(color));
+        painter->drawEllipse(pt,len,len);
+        painter->setPen(QPen(Qt::blue));
+        painter->drawLine(QPointF(pt.x()-len,pt.y()),QPointF(pt.x()+len,pt.y()));
+        painter->drawLine(QPointF(pt.x(),pt.y()-len),QPointF(pt.x(),pt.y()+len));
     }
 }

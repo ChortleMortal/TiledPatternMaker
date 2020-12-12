@@ -54,6 +54,16 @@ private:
     QSpinBox       * spin;
 };
 
+class AQDoubleSpinBox : public QDoubleSpinBox
+{
+public:
+    AQDoubleSpinBox();
+    void  leaveEvent(QEvent *event) override;
+    void  enterEvent(QEvent *event) override;
+
+    bool blocked;
+};
+
 class DoubleSliderSet : public QHBoxLayout
 {
     Q_OBJECT
@@ -83,6 +93,16 @@ private:
     QDoubleSpinBox * spin;
 };
 
+class AQSpinBox : public QSpinBox
+{
+public:
+    AQSpinBox();
+    void  leaveEvent(QEvent *event) override;
+    void  enterEvent(QEvent *event) override;
+
+    bool blocked;
+};
+
 class SpinSet: public QHBoxLayout
 {
     Q_OBJECT
@@ -90,16 +110,18 @@ class SpinSet: public QHBoxLayout
 public:
     SpinSet(QString txt, int val, int min, int max);
     void    setValue(int val);
-    void    setReadOnly(bool val) { spin->setReadOnly(val); }
-    int     value() { return spin->value(); }
+    void    setReadOnly(bool val)   { spin->setReadOnly(val); }
+    int     value()                 { return spin->value(); }
+    void    setFocus()              { spin->setFocus(); }
+    void    hide()                  { label->hide(); spin->hide(); }
+    void    show()                  { label->show(); spin->show(); }
 
-    void    setFocus()  { spin->setFocus(); }
 signals:
    void valueChanged(int val);
 
 private:
    QLabel           * label;
-   QSpinBox         * spin;
+   AQSpinBox        * spin;
 };
 
 class DoubleSpinSet: public QHBoxLayout
@@ -125,7 +147,7 @@ private slots:
 
 private:
    QLabel           * label;
-   QDoubleSpinBox   * spin;
+   AQDoubleSpinBox  * spin;
 };
 
 #endif // SLIDERSET_H

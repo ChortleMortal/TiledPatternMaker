@@ -24,7 +24,7 @@
 
 #include "style/outline.h"
 #include "geometry/point.h"
-#include "viewers/workspace_viewer.h"
+#include "viewers/view.h"
 #include <QPainter>
 
 ////////////////////////////////////////////////////////////////////////////
@@ -41,7 +41,7 @@
 
 // Creation.
 
-Outline::Outline(PrototypePtr proto, PolyPtr bounds ) : Thick (proto,bounds)
+Outline::Outline(PrototypePtr proto) : Thick (proto)
 {
 }
 
@@ -62,6 +62,7 @@ Outline::~Outline()
 void Outline::resetStyleRepresentation()
 {
     pts4.clear();
+    eraseStyleMap();
 }
 
 void Outline::createStyleRepresentation()
@@ -146,8 +147,8 @@ void Outline::draw(GeoGraphics *gg)
                 {
                     gg->drawPie(bae.v1.above, bae.v2.below, center, pen, QBrush(color), convex);
 
-                    Workspace * workspace = Workspace::getInstance();
-                    QColor c = workspace->getBackgroundColor();
+                    View * view = View::getInstance();
+                    QColor c = view->getBackgroundColor();
                     QBrush br(c);
                     gg->drawPie(bae.v1.below, bae.v2.above, center, pen, br, convex);
                 }

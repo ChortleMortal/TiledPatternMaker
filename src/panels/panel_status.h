@@ -2,7 +2,6 @@
 #define PANEL_STATUS_H
 
 #include <QtWidgets>
-#include "panels/panel_misc.h"
 #include "base/configuration.h"
 
 struct viewMsg
@@ -11,9 +10,7 @@ struct viewMsg
     QString   msg;
 };
 
-
-
-class PanelStatus : public AQLabel
+class PanelStatus : public QLabel
 {
 public:
     PanelStatus();

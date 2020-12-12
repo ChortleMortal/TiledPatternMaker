@@ -25,19 +25,16 @@
 #include <QSvgGenerator>
 #include "style/style.h"
 #include "base/configuration.h"
-#include "base/workspace.h"
-#include "base/view.h"
+#include "viewers/viewcontrol.h"
+#include "viewers/view.h"
 #include "base/tiledpatternmaker.h"
 #include "base/utilities.h"
 
 int Style::refs = 0;
 
-Style::Style(PrototypePtr proto, PolyPtr bounds ) : Layer("Style",LTYPE_VIEW)
+Style::Style(PrototypePtr proto) : Layer("Style",LTYPE_VIEW)
 {
-    Q_ASSERT(proto != nullptr);
-    Q_ASSERT(bounds != nullptr);
     prototype = proto;
-    boundary  = bounds;
     debugMap = make_shared<Map>("Style debug map");
     paintSVG = false;
     generator = nullptr;
@@ -47,7 +44,6 @@ Style::Style(PrototypePtr proto, PolyPtr bounds ) : Layer("Style",LTYPE_VIEW)
 Style::Style(const Style &other) : Layer(other)
 {
     prototype = other.prototype;
-    boundary  = other.boundary;
 
     if (other.debugMap)
     {
@@ -83,6 +79,15 @@ TilingPtr Style::getTiling()
         tp = prototype->getTiling();
     }
     return tp;
+}
+
+void Style::eraseStyleMap()
+{
+    if (styleMap)
+    {
+        styleMap->wipeout();
+        styleMap.reset();
+    }
 }
 
 MapPtr Style::getMap()
@@ -137,7 +142,7 @@ void Style::paint(QPainter *painter)
         return;
     }
 
-    qDebug() << "Style::paint" << getDescription() << Utils::addr(this);
+    qDebug() << "Style::paint" << getDescription() << this;
     painter->setRenderHint(QPainter::Antialiasing ,true);
     painter->setRenderHint(QPainter::SmoothPixmapTransform,true);
 
@@ -173,7 +178,7 @@ void Style::paintToSVG()
 
     painter.begin(generator);
 
-    qDebug() << "Style::paintToSVG" << getDescription() << Utils::addr(this);
+    qDebug() << "Style::paintToSVG" << getDescription() << this;
     painter.setRenderHint(QPainter::Antialiasing ,true);
     painter.setRenderHint(QPainter::SmoothPixmapTransform,true);
 

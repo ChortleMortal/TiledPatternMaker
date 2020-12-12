@@ -33,7 +33,7 @@
 //
 // Creation.
 
-Colored::Colored(PrototypePtr proto, PolyPtr bounds ) : Style(proto,bounds)
+Colored::Colored(PrototypePtr proto) : Style(proto)
 {
     colors.addColor(QColor( 20, 150, 210 ));
 }

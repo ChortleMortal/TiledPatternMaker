@@ -1,6 +1,5 @@
 #include "viewers/faceset_view.h"
 #include "base/configuration.h"
-#include "viewers/workspace_viewer.h"
 
 FaceSetView::FaceSetView(WeakFacesPtr faces) : Layer("FaceSetView",LTYPE_VIEW)
 {

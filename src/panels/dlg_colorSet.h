@@ -28,7 +28,7 @@
 #include <QtWidgets>
 #include <QSignalMapper>
 #include "tile/feature.h"
-#include "makers/style_maker/style_editors.h"
+#include "makers/decoration_maker/style_editors.h"
 
 class DlgColorSet : public QDialog
 {
@@ -38,7 +38,7 @@ public:
     DlgColorSet(ColorSet & cset, QWidget * parent = nullptr);
 
 protected:
-    virtual void displayTable();
+    void displayTable();
 
     QTableWidget  * table;
 

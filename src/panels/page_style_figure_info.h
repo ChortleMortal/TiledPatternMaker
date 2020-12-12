@@ -26,15 +26,14 @@
 #define PAGE_FIGURES_H
 
 #include "panels/panel_page.h"
-#include "base/shared.h"
-
-Q_DECLARE_METATYPE(WeakTilingPtr)
+#include "panels/panel_misc.h"
 
 class page_style_figure_info : public panel_page
 {
     enum eCols
     {
         COL_STYLE_NAME,
+        COL_TILING_NAME,
         COL_FIGURE_TYPE
     };
 
@@ -47,8 +46,6 @@ public:
 
 protected:
     void showFiguresFromStyles();
-    void showFiguresFromTiling();
-    void showFiguresFromMaker();
 
 private:
     AQTableWidget * figureTable;

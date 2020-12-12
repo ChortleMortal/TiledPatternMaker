@@ -14,6 +14,9 @@ public:
     Circle(const Circle & c);
     Circle(QPointF centre, qreal radius);
 
+    void set(CirclePtr other) { radius = other->radius; centre = other->centre; };
+    void set(Circle & other)  { radius = other.radius;  centre = other.centre; };
+
     QRectF  boundingRect();
     qreal   x() { return centre.x(); }
     qreal   y() { return centre.y(); }

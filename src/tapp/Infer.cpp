@@ -47,7 +47,9 @@
 #include "geometry/loose.h"
 #include "geometry/point.h"
 #include "geometry/intersect.h"
+#include "geometry/transform.h"
 #include "tapp/star.h"
+#include "tile/placed_feature.h"
 #include <algorithm>
 
 using std::max;
@@ -78,6 +80,9 @@ intersection_info::intersection_info()
     dist2 = 1e100;
     intersection = QPointF();
     Q_ASSERT(intersection.isNull());
+
+    otherSide  = -1;
+    otherIsLeft = false;
 }
 
 intersection_info::intersection_info( int side, int otherSide, bool otherIsLeft, qreal dist2, QPointF i )
@@ -235,7 +240,7 @@ int Infer::add2(QTransform T, FeaturePtr feature, int count)
 
     placed << new placed_points(feature, T, mids);
 
-    return count++;
+    return ++count;
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -288,8 +293,10 @@ int Infer::findPrimaryFeature( FeaturePtr feature )
 
     if( cur == -1 )
     {
-        qFatal("Couldn't find feature in (0,0) unit!");
+        qFatal("Couldn't find feature in (0,0) unit!");  // FIXME qFatal
     }
+
+    qDebug() << "Primary feature index =" << cur;
     return cur;
 }
 
@@ -406,7 +413,7 @@ QVector<contact *> Infer::buildContacts( placed_points * pp, QVector<adjacency_i
 
         NeighbourMap & nmap = map->getNeighbourMap();
 
-        for (auto v : map->getVertices())
+        for (const auto & v : map->getVertices())
         {
             QPointF pos = v->getPosition();
             qreal dist2 = Point::dist2ToLine(pos, a, b );
@@ -417,7 +424,7 @@ QVector<contact *> Infer::buildContacts( placed_points * pp, QVector<adjacency_i
                 // This vertex lies on the edge.  Add all its edges to the contact list.
                 NeighboursPtr np        = nmap.getNeighbours(v);
                 QVector<EdgePtr> & qvep = np->getNeighbours();
-                for (auto edge : qvep)
+                for (const auto & edge : qvep)
                 {
                     QPointF opos    = edge->getOtherP(v);
                     ret.push_back(new contact(pos, opos));
@@ -1217,8 +1224,11 @@ MapPtr Infer::infer( FeaturePtr feature )
     placed_points * pmain = placed[ cur ];
     QPolygonF fpts        = pmain->T.map( pmain->feature->getPolygon() );
 
-    QVector<adjacency_info *>  adjs = getAdjacencies( pmain, cur );
-    QVector<contact *> cons         = buildContacts( pmain, adjs );
+    // adjacencies
+    QVector<adjacency_info *> adjs = getAdjacencies(pmain, cur);
+
+    // contacts
+    QVector<contact *> cons = buildContacts(pmain, adjs);
 
     // For every contact, if it hasn't found an extension,
     // Look at all other contacts for likely candidates.
@@ -1441,7 +1451,7 @@ MapPtr Infer::infer( FeaturePtr feature )
                 QPointF tmp  = con->position - con->other;
                 tmp = Point::normalize(tmp);
                 tmp *= (minlen*0.5);
-                QPointF ex1 = con->position + tmp;  // DAC hard to decipher the jave precedence rules used here
+                QPointF ex1 = con->position + tmp;  // DAC hard to decipher the java precedence rules used here
 
                 tmp  = ocon->position - ocon->other;
                 tmp = Point::normalize(tmp);
@@ -1522,37 +1532,5 @@ MapPtr Infer::inferFeature(FeaturePtr feature)
 
     return map;
 }
-
-#if 0
-// debug_contacts is a quick helper class for viewing the transformed
-// feature along with the contacts along its boundary.
-
-class debug_contacts extends toolkit.GeoView
-{
-    QPolygonF pts;
-    Vector<contact> contacts;
-
-    debug_contacts( QPolygonF pts, Vector<contact> contacts )
-    {
-        super( -2.0, 2.0, 4.0 );
-        setPreferredSize( new Dimension( 400, 400 ) );
-        this.pts = pts;
-        this.contacts = contacts;
-    }
-
-    public void redraw( toolkit.GeoGraphics gg )
-    {
-        gg.setColor( java.awt.Color.black );
-        for( int idx = 0; idx < pts.length; ++idx ) {
-            gg.drawLine( pts[ idx ], pts[ (idx+1) % pts.length ] );
-        }
-        gg.setColor( java.awt.Color.blue );
-        for( int idx = 0; idx < contacts.size(); ++idx ) {
-            contact c = (contact)( contacts.elementAt( idx ) );
-            gg.drawLine( c.other, c.position );
-        }
-    }
-}
-#endif
 
 

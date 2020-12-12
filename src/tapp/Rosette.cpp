@@ -63,6 +63,30 @@ Rosette::Rosette(int nsides, qreal q, int s, qreal k, qreal r) : RadialFigure(ns
     count = 0;
 }
 
+bool Rosette::equals(const FigurePtr other)
+{
+    RosettePtr otherp = std::dynamic_pointer_cast<Rosette>(other);
+    if (!otherp)
+        return  false;
+
+    if (q != otherp->q)
+        return  false;
+
+    if (s != otherp->s)
+        return false;
+
+    if (k != otherp->k)
+        return  false;
+
+    if (n != otherp->n)
+        return  false;
+
+     if (getFigureRotate() != otherp->getFigureRotate())
+         return false;
+
+     return true;
+}
+
 void Rosette::setQ( qreal q )
 {
     this->q = q;
@@ -87,7 +111,7 @@ void Rosette::setN(int nn)
 
 MapPtr Rosette::buildUnit()
 {
-    qDebug().noquote() << "Rosette::buildUnit"  << n << q << s << "Tr:" << Transform::toInfoString(Tr);
+    qDebug().noquote() << "Rosette::buildUnit"  << n << q << s << "Tr:" << Transform::toInfoString(Tr) << "rot" << getFigureRotate();
 
     buildExtBoundary();
 

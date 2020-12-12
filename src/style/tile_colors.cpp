@@ -23,8 +23,9 @@
  */
 
 #include "style/tile_colors.h"
+#include "tile/placed_feature.h"
 
-TileColors::TileColors(PrototypePtr proto, PolyPtr bounds ) : Style(proto,bounds)
+TileColors::TileColors(PrototypePtr proto) : Style(proto)
 {
     outlineEnb =  false;
     outlineColor = Qt::blue;
@@ -87,7 +88,7 @@ void TileColors::createStyleRepresentation()
         QTransform T1       = fp->getTransform();
 
         ColorSet & bkgdColors = f->getBkgdColors();
-        for (auto T2 : locations)
+        for (auto& T2 : locations)
         {
             QTransform T3  = T1 * T2;
             EdgePoly  ep2  =  ep.map(T3);
@@ -103,6 +104,7 @@ void TileColors::createStyleRepresentation()
 void TileColors::resetStyleRepresentation()
 {
     epolys.clear();
+    eraseStyleMap();
 }
 
 eStyleType TileColors::getStyleType() const
@@ -124,7 +126,7 @@ void TileColors::draw(GeoGraphics * gg)
         return;
     }
 
-    for (auto bpc : epolys)
+    for (auto& bpc : epolys)
     {
         EdgePoly & ep = bpc.epoly;
         gg->fillEdgePoly(ep,bpc.color);

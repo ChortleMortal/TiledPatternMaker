@@ -86,7 +86,7 @@ void  ColorSet::setColors(const ColorSet & cset)
 
 void ColorSet::setOpacity(qreal val)
 {
-    for (auto tpcolor : colorset)
+    for (auto& tpcolor : colorset)
     {
         QColor c = tpcolor.color;
         c.setAlpha(int(val));
@@ -201,7 +201,7 @@ void ColorGroup::removeColorSet(int idx)
 void  ColorGroup::resetIndex()
 {
     pos = colorgroup.begin();
-    for (auto fset : colorgroup)
+    for (auto fset : qAsConst(colorgroup))
     {
         fset.resetIndex();
     }

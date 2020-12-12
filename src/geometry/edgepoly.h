@@ -17,6 +17,7 @@ public:
     EdgePoly recreate() const;          // makes a new edge poly
 
     void     rotate(qreal angle);
+    void     scale(qreal delta);
     void     mapD(QTransform T);        // maps this EdgePoly
     EdgePoly map(QTransform T) const;   // creates a new EdgePoly
 

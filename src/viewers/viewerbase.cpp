@@ -1,13 +1,12 @@
 #include "viewers/viewerbase.h"
 #include "viewers/geo_graphics.h"
-#include "base/utilities.h"
 #include "geometry/edgepoly.h"
 #include "tapp/figure.h"
 #include "tile/feature.h"
 
-void  ViewerBase::drawFeature(GeoGraphics * gg, FeaturePtr fp, QBrush brush, QPen pen)
+void  ViewerBase::drawFeature(GeoGraphics * gg, FeaturePtr feature, QBrush brush, QPen pen)
 {
-    EdgePoly ep   = fp->getEdgePoly();
+    EdgePoly ep   = feature->getEdgePoly();
 
     // Fill the feature.
     if (brush.style() != Qt::NoBrush)
@@ -19,9 +18,9 @@ void  ViewerBase::drawFeature(GeoGraphics * gg, FeaturePtr fp, QBrush brush, QPe
     gg->drawEdgePoly(ep,pen.color(), pen.width());
 }
 
-void  ViewerBase ::drawFigure(GeoGraphics * gg, FigurePtr fig, QPen pen)
+void  ViewerBase ::drawFigure(GeoGraphics * gg, FigurePtr figure, QPen pen)
 {
-    MapPtr map = fig->getFigureMap();
+    MapPtr map = figure->getFigureMap();
     for(auto edge :  map->getEdges())
     {
         if (edge->getType() == EDGETYPE_LINE)

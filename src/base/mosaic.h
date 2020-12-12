@@ -26,15 +26,15 @@
 #define MOSAIC_H
 
 #include "base/shared.h"
-#include "base/workspace_settings.h"
+#include "base/model_settings.h"
 #include "base/misc.h"
 
-typedef QVector<StylePtr> StyleSet;
+typedef QVector<StylePtr>  StyleSet;
 
 class Mosaic
 {
 public:
-    Mosaic() { name = "The Formless"; }
+    Mosaic();
     ~Mosaic() {}
 
     bool        hasContent() { return (styleSet.size() > 0); }
@@ -47,15 +47,14 @@ public:
     int         moveDown(StylePtr style);
     void        deleteStyle(StylePtr style);
 
-    const StyleSet & getStyleSet() { return styleSet; }
-
     void                  setPrototype(StylePtr style, PrototypePtr pp);
-    QVector<PrototypePtr> getUniquePrototypes();
+    QVector<PrototypePtr> getPrototypes();
 
-    WorkspaceSettings & getSettings();
-    void                setSettings(WorkspaceSettings & settings);
+    ModelSettingsPtr getSettings();
+    void             setSettings(ModelSettingsPtr settings);
 
-    StylePtr    getFirstStyle();
+    const StyleSet & getStyleSet() { return styleSet; }
+    StylePtr         getFirstStyle();
 
     void        setName(QString name);
     QString     getName();
@@ -63,14 +62,15 @@ public:
     void        setNotes(QString notes);
     QString     getNotes();
 
-    void          replaceTiling(PrototypePtr proto, TilingPtr tp);    // use carefully
-    UniqueQVector<TilingPtr> getTilings();
+    QVector<TilingPtr> getTilings();
+
+    static const QString defaultName;
 
 private:
-    StyleSet            styleSet;
-    QString             name;
-    QString             designNotes;
-    WorkspaceSettings   settings;
+    StyleSet         styleSet;
+    QString          name;
+    QString          designNotes;
+    ModelSettingsPtr settings;
 };
 
 #endif

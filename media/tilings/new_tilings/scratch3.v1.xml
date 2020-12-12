@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<Tiling version="4">
+	<Name>scratch3.v1</Name>
+	<Fill>-4,4,-4,4</Fill>
+	<T1>-2,7.771561172376096e-16</T1>
+	<T2>-1,-1.732050807568877</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>1000</height>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+	</ViewSettings>
+	<Feature type="regular" sides="6" rotation="0">
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Desc>Description</Desc>
+	<Auth>David</Auth>
+</Tiling>

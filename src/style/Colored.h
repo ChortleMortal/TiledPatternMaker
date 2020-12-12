@@ -42,7 +42,7 @@ public:
     ColorSet & getColorSet() { return colors; }
 
 protected:
-    Colored(PrototypePtr proto, PolyPtr bounds );
+    Colored(PrototypePtr proto);
     Colored(const Style & other);
     ~Colored();
 

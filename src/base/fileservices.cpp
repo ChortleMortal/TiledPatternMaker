@@ -72,6 +72,7 @@ QStringList FileServices::getDesignNames()
 
 QStringList FileServices::getFilteredDesignNames(QString filter)
 {
+    QString filter_lc = filter.toLower();
     Configuration * config = Configuration::getInstance();
 
     QStringList names;
@@ -79,8 +80,9 @@ QStringList FileServices::getFilteredDesignNames(QString filter)
     QDirIterator it(path, QStringList() << "*.xml", QDir::Files, QDirIterator::Subdirectories);
     while (it.hasNext())
     {
-        QString path = it.next();
-        if (path.contains(filter))
+        QString file = it.next();
+        QString file_lc = file.toLower();
+        if (file_lc.contains(filter_lc))
         {
             names << it.fileName();
         }
@@ -237,7 +239,7 @@ QString FileServices::getNextVersion(QString name, bool isTiling)
         root += parts[i];
     }
 #else
-    QString old_ver = getVersion(name);
+    //QString old_ver = getVersion(name);
     QString root    = getRoot(name);
 #endif
 
@@ -279,12 +281,12 @@ QStringList FileServices::getFileVersions(QString name, QString rootPath)
     Q_ASSERT(!name.contains(".xml"));
 
     QStringList versions;
-    QString file;
+    //QString file;
     QString root(rootPath);
     QDirIterator it(root, QStringList() << "*.xml", QDir::Files, QDirIterator::Subdirectories);
     while (it.hasNext())
     {
-        QString afile = it.next();
+        it.next();
         if (it.fileName().contains(name))
         {
             QString candidate = it.fileName();
@@ -506,7 +508,7 @@ QStringList FileServices::getTemplates()
         QFileInfo afile(name);
         QDateTime dt  = afile.lastModified();
         QString date  = dt.toString("yyyy-MM-dd hh:mm:ss");
-        QString label = QString("%1 + %2").arg(name).arg(date);
+        QString label = QString("%1 + %2").arg(name,date);
         files.push_back(label);
     }
 
@@ -519,7 +521,7 @@ QStringList FileServices::getTemplates()
         QFileInfo afile(name);
         QDateTime dt  = afile.lastModified();
         QString date  = dt.toString("yyyy-MM-dd hh:mm:ss");
-        QString label = QString("%1 + %2").arg(name).arg(date);
+        QString label = QString("%1 + %2").arg(name,date);
         files.push_back(label);
     }
     return files;

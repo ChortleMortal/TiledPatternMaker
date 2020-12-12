@@ -46,7 +46,7 @@ class Filled : public Style
     friend class FilledEditor;
 
 public:
-    Filled(PrototypePtr proto, PolyPtr bounds, int algorithm);
+    Filled(PrototypePtr proto, int algorithm);
     Filled(const Style & other);
     virtual ~Filled() override;
 

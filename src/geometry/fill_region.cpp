@@ -44,7 +44,7 @@
 
 #include "geometry/fill_region.h"
 #include "base/configuration.h"
-#include "base/workspace.h"
+#include "viewers/viewcontrol.h"
 #include "tapp/prototype.h"
 #include "viewers/tiling_view.h"
 #include "viewers/prototype_view.h"
@@ -53,8 +53,8 @@
 
 FillRegion::FillRegion()
 {
-    config    = Configuration::getInstance();
-    workspace = Workspace::getInstance();
+    config   = Configuration::getInstance();
+    vcontrol = ViewControl::getInstance();
 }
 
 void FillRegion::fill(GeoGraphics *gg)
@@ -80,7 +80,7 @@ void FillRegion::fill(GeoGraphics *gg)
 
     case REPEAT_DEFINED:
     {
-        FillData fd = workspace->getFillData();
+        FillData fd = vcontrol->getFillData();
         int minX,minY,maxX,maxY;
         fd.get(minX,maxX,minY,maxY);
         qDebug().noquote() << "REPEAT_DEFINED"  << minX << maxX << minY << maxY;

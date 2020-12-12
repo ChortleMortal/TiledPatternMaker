@@ -25,6 +25,7 @@
 #include "base/mosaic_loader.h"
 #include "base/border.h"
 #include "base/configuration.h"
+#include "base/tiledpatternmaker.h"
 #include "base/utilities.h"
 #include "style/colored.h"
 #include "style/thick.h"
@@ -41,7 +42,6 @@
 #include "tapp/explicit_figure.h"
 #include "tile/feature_reader.h"
 #include "tile/tiling_manager.h"
-#include "viewers/workspace_viewer.h"
 
 #undef  DEBUG_REFERENCES
 
@@ -53,7 +53,7 @@ MosaicLoader::MosaicLoader()
     _height     = 1100;
     _version    = 0;
 
-    workspace   = Workspace::getInstance();
+    view        = View::getInstance();
 }
 
 MosaicLoader::~MosaicLoader()
@@ -68,7 +68,7 @@ QString MosaicLoader::getLoadedFilename()
 
 MosaicPtr MosaicLoader::loadMosaic(QString fileName)
 {
-    workspace->dump(true);
+    view->dump(true);
 
     qDebug().noquote() << "MosaicLoader loading:" << fileName;
     _fileName = fileName;
@@ -90,7 +90,7 @@ MosaicPtr MosaicLoader::loadMosaic(QString fileName)
 
         parseXML(doc);
 
-        workspace->dump(true);
+        view->dump(true);
 
         return _mosaic;
     }
@@ -106,7 +106,7 @@ MapPtr MosaicLoader::loadMosaicMap(QString fileName)
 {
     MapPtr map;
 
-    workspace->dump(true);
+    view->dump(true);
 
     qDebug().noquote() << "MosaicLoader loading:" << fileName;
     _fileName = fileName;
@@ -147,7 +147,7 @@ MapPtr MosaicLoader::loadMosaicMap(QString fileName)
 
         map = getMap(node);
 
-        workspace->dump(true);
+        view->dump(true);
     }
     catch (...)
     {
@@ -176,7 +176,7 @@ void MosaicLoader::parseXML(xml_document & doc)
             fail("Unexpected", str.c_str());
     }
 
-    workspace->dump(true);
+    view->dump(true);
 
     qDebug() << "MosaicLoader - end parsing";
 }
@@ -226,26 +226,26 @@ void MosaicLoader::processVector(xml_node & node)
     }
     qDebug() << "end vector";
 
-    WorkspaceSettings cs;
-    cs.setBackgroundColor(_background);
-    cs.setSize(QSize(_width,_height));
-    cs.setBorder(_border);
-    cs.setBkgdImage(getFirstTiling()->getBackground());
+    ModelSettingsPtr settings = make_shared<ModelSettings>();
+    settings->setBackgroundColor(_background);
+    settings->setSize(QSize(_width,_height));
+    settings->setBorder(_border);
+    settings->setBkgdImage(getFirstTiling()->getBackground());
 
     // Canvas Settings fill data defaults to FillData defaults, loader can  override these
     if (_fillData.isSet())
     {
         qDebug() << "Using Mosaic FiilData";
-        cs.setFillData(_fillData);
+        settings->setFillData(_fillData);
     }
     else
     {
         qDebug() << "Using Tiling FiilData";
         FillData fd =  getFirstTiling()->getFillData();
-        cs.setFillData(fd);
+        settings->setFillData(fd);
     }
 
-    _mosaic->setSettings(cs);
+    _mosaic->setSettings(settings);
 }
 
 void MosaicLoader::processDesign(xml_node & node)
@@ -275,7 +275,6 @@ void MosaicLoader::processThick(xml_node & node)
     bool    draw_outline = false;
     qreal   width        = 0.0;
     PrototypePtr proto;
-    PolyPtr poly;
     Xform   xf;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
@@ -286,7 +285,7 @@ void MosaicLoader::processThick(xml_node & node)
         if (str == "toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf);
         else if (str == "style.Style")
-            processStyleStyle(n,proto,poly);
+            processStyleStyle(n,proto);
         else if (str == "style.Colored")
             processColorSet(n,colorset);
         else if (str == "style.Thick")
@@ -296,7 +295,7 @@ void MosaicLoader::processThick(xml_node & node)
     }
 
     qDebug() << "Constructing Thick from prototype and poly";
-    Thick * thick = new Thick(proto,poly);
+    Thick * thick = new Thick(proto);
     thick->setCanvasXform(xf);
     thick->setColorSet(colorset);
     thick->setDrawOutline(draw_outline);
@@ -313,7 +312,6 @@ void MosaicLoader::processInterlace(xml_node & node)
 {
     ColorSet  colorset;
     PrototypePtr proto;
-    PolyPtr poly;
     bool    draw_outline    = false;
     bool    includeTipVerts   = false;
     qreal   width           = 0.0;
@@ -329,7 +327,7 @@ void MosaicLoader::processInterlace(xml_node & node)
         if (str == "toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf);
         else if (str == "style.Style")
-            processStyleStyle(n,proto,poly);
+            processStyleStyle(n,proto);
         else if (str == "style.Colored")
             processColorSet(n,colorset);
         else if (str == "style.Thick")
@@ -341,7 +339,7 @@ void MosaicLoader::processInterlace(xml_node & node)
     }
 
     qDebug() << "Constructing Interlace (DAC) from prototype and poly";
-    Interlace * interlace = new Interlace(proto,poly);
+    Interlace * interlace = new Interlace(proto);
     interlace->setCanvasXform(xf);
     interlace->setColorSet(colorset);
     interlace->setDrawOutline(draw_outline);
@@ -362,7 +360,6 @@ void MosaicLoader::processOutline(xml_node & node)
     bool    draw_outline = false;
     qreal   width        = 0.0;
     PrototypePtr proto;
-    PolyPtr poly;
     Xform   xf;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
@@ -373,7 +370,7 @@ void MosaicLoader::processOutline(xml_node & node)
         if (str == "toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf);
         else if (str == "style.Style")
-            processStyleStyle(n,proto,poly);
+            processStyleStyle(n,proto);
         else if (str == "style.Colored")
             processColorSet(n,colorset);
         else if (str == "style.Thick")
@@ -383,7 +380,7 @@ void MosaicLoader::processOutline(xml_node & node)
     }
 
     qDebug() << "Constructing Outline from prototype and poly";
-    Outline * outline = new Outline(proto,poly);
+    Outline * outline = new Outline(proto);
     outline->setCanvasXform(xf);
     outline->setColorSet(colorset);
     outline->setDrawOutline(draw_outline);
@@ -410,7 +407,6 @@ void MosaicLoader::processFilled(xml_node & node)
     bool    draw_outside = true;
 
     PrototypePtr proto;
-    PolyPtr poly;
 
     Xform xf;
 
@@ -425,7 +421,7 @@ void MosaicLoader::processFilled(xml_node & node)
         }
         else if (str == "style.Style")
         {
-            processStyleStyle(n,proto,poly);
+            processStyleStyle(n,proto);
         }
         else if (str == "style.Colored")
         {
@@ -457,7 +453,7 @@ void MosaicLoader::processFilled(xml_node & node)
         }
     }
 
-    Filled * filled = new Filled(proto,poly,algorithm);
+    Filled * filled = new Filled(proto,algorithm);
     filled->setCanvasXform(xf);
 
     if (oldFormat)
@@ -523,7 +519,6 @@ void MosaicLoader::processPlain(xml_node & node)
 {
     ColorSet  colorset;
     PrototypePtr proto;
-    PolyPtr poly;
     Xform   xf;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
@@ -534,14 +529,14 @@ void MosaicLoader::processPlain(xml_node & node)
         if (str == "toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf);
         else if (str == "style.Style")
-            processStyleStyle(n,proto,poly);
+            processStyleStyle(n,proto);
         else if (str == "style.Colored")
             processColorSet(n,colorset);
         else
             fail("Unexpected", str.c_str());
     }
 
-    Plain * plain = new Plain(proto,poly);
+    Plain * plain = new Plain(proto);
     plain->setCanvasXform(xf);
     plain->setColorSet(colorset);
     qDebug().noquote() << "XmlServices created Style (Plain)" << plain->getInfo();
@@ -555,7 +550,6 @@ void MosaicLoader::processSketch(xml_node & node)
 {
     ColorSet  colorset;
     PrototypePtr proto;
-    PolyPtr poly;
     Xform   xf;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
@@ -566,14 +560,14 @@ void MosaicLoader::processSketch(xml_node & node)
         if (str == "toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf);
         else if (str == "style.Style")
-            processStyleStyle(n,proto,poly);
+            processStyleStyle(n,proto);
         else if (str == "style.Colored")
             processColorSet(n,colorset);
         else
             fail("Unexpected", str.c_str());
     }
 
-    Sketch * sketch = new Sketch(proto,poly);
+    Sketch * sketch = new Sketch(proto);
     sketch->setCanvasXform(xf);
     sketch->setColorSet(colorset);
     qDebug().noquote() << "XmlServices created Style (Sketch)" << sketch->getInfo();
@@ -590,7 +584,6 @@ void MosaicLoader::processEmboss(xml_node & node)
     qreal   width        = 0.0;
     qreal   angle        = 0.0;
     PrototypePtr proto;
-    PolyPtr poly;
     Xform   xf;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
@@ -601,7 +594,7 @@ void MosaicLoader::processEmboss(xml_node & node)
         if (str == "toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf);
         else if (str == "style.Style")
-            processStyleStyle(n,proto,poly);
+            processStyleStyle(n,proto);
         else if (str == "style.Colored")
             processColorSet(n,colorset);
         else if (str == "style.Thick")
@@ -613,7 +606,7 @@ void MosaicLoader::processEmboss(xml_node & node)
     }
 
     qDebug() << "Constructing Emboss from prototype and poly";
-    Emboss * emboss = new Emboss(proto,poly);
+    Emboss * emboss = new Emboss(proto);
     emboss->setCanvasXform(xf);
     emboss->setColorSet(colorset);
     emboss->setDrawOutline(draw_outline);
@@ -630,7 +623,6 @@ void MosaicLoader::processEmboss(xml_node & node)
 void MosaicLoader::processTileColors(xml_node & node)
 {
     PrototypePtr proto;
-    PolyPtr poly;
     Xform   xf;
     bool outline = false;
     int  width   = 3;
@@ -644,7 +636,7 @@ void MosaicLoader::processTileColors(xml_node & node)
         if (str == "toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf);
         else if (str == "style.Style")
-            processStyleStyle(n,proto,poly);
+            processStyleStyle(n,proto);
         else if (str == "outline")
         {
             outline = true;
@@ -658,7 +650,7 @@ void MosaicLoader::processTileColors(xml_node & node)
     }
 
     qDebug() << "Constructing TileColors from prototype and poly";
-    TileColors * tc  = new TileColors(proto,poly);
+    TileColors * tc  = new TileColors(proto);
     tc->setCanvasXform(xf);
     if (outline)
     {
@@ -731,17 +723,13 @@ void MosaicLoader::procesToolkitGeoLayer(xml_node & node, Xform & xf)
     }
 }
 
-void MosaicLoader::processStyleStyle(xml_node & node, PrototypePtr & proto, PolyPtr & poly)
+void MosaicLoader::processStyleStyle(xml_node & node, PrototypePtr & proto)
 {
-    xml_node n   = node.child("boundary");
+    xml_node n = node.child("prototype");
     qDebug() << n.name();
-    poly = getBoundary(n);
-
-    n = node.child("prototype");
-    qDebug() << n.name();
-    workspace->dump(true);
+    view->dump(true);
     proto = getPrototype(n);
-    workspace->dump(true);
+    view->dump(true);
     qDebug().noquote() << proto->getInfo();
 }
 
@@ -916,7 +904,7 @@ PrototypePtr MosaicLoader::getPrototype(xml_node & node)
     {
         qDebug() << "loading named tiling" << tilingName;
         TilingManager tm;
-        tp = tm.loadTiling(tilingName);     // adds to workspace
+        tp = tm.loadTiling(tilingName,SM_LOAD_FROM_MOSAIC);
         if (!tp)
         {
             fail("Tiling not loaded: ",tilingName);
@@ -937,7 +925,7 @@ PrototypePtr MosaicLoader::getPrototype(xml_node & node)
     xml_node entry;
     for (entry = protonode.child("entry"); entry; entry = entry.next_sibling("entry"))
     {
-        bool dc_found = false;
+        bool found = false;
 
         FeaturePtr feature;
         FigurePtr  figure;
@@ -963,91 +951,91 @@ PrototypePtr MosaicLoader::getPrototype(xml_node & node)
         {
             qDebug() << "adding ExplicitFigure";
             figure = getExplicitFigure(xmlfigure, FIG_TYPE_EXPLICIT);
-            dc_found = true;
+            found = true;
         }
         else if (name == "app.Star")
         {
             qDebug() << "adding Star Figure";
             figure =  getStarFigure(xmlfigure);
-            dc_found = true;
+            found = true;
         }
         else if (name == "ExtendedStar")
         {
             qDebug() << "adding ExtendedStar Figure";
             figure =  getExtendedStarFigure(xmlfigure);
-            dc_found = true;
+            found = true;
         }
         else if (name == "app.Rosette")
         {
             qDebug() << "adding Rosette Figure";
             figure =  getRosetteFigure(xmlfigure);
-            dc_found = true;
+            found = true;
         }
         else if (name == "ExtendedRosette")
         {
             qDebug() << "adding ExtendedRosette Figure";
             figure =  getExtendedRosetteFigure(xmlfigure);
-            dc_found = true;
+            found = true;
         }
         else if (name == "app.ConnectFigure")
         {
             qDebug() << "adding Connect Figure";
             figure =  getConnectFigure(xmlfigure);
-            dc_found = true;
+            found = true;
         }
         else if (name == "app.Infer")
         {
             qDebug() << "adding Infer";
             figure = getExplicitFigure(xmlfigure,FIG_TYPE_EXPLICIT_INFER);
-            dc_found = true;
+            found = true;
         }
         else if (name == "app.ExplicitFeature")
         {
             qDebug() << "adding Explicit Feature";
             figure = getExplicitFigure(xmlfigure,FIG_TYPE_EXPLICIT_FEATURE);
-            dc_found = true;
+            found = true;
         }
         else if (name == "app.ExplicitGirih")
         {
             qDebug() << "adding ExplicitGirih";
             figure = getExplicitFigure(xmlfigure,FIG_TYPE_EXPLICIT_GIRIH);
-            dc_found = true;
+            found = true;
         }
         else if (name == "app.ExplicitStar")
         {
             qDebug() << "adding ExplicitStar";
             figure = getExplicitFigure(xmlfigure,FIG_TYPE_EXPLICIT_STAR);
-            dc_found = true;
+            found = true;
         }
         else if (name == "app.ExplicitRosette")
         {
             qDebug() << "adding ExplicitRosette";
             figure = getExplicitFigure(xmlfigure,FIG_TYPE_EXPLICIT_ROSETTE);
-            dc_found = true;
+            found = true;
         }
         else if (name == "app.ExplicitHourglass")
         {
             qDebug() << "adding ExplicitHourglass";
             figure = getExplicitFigure(xmlfigure,FIG_TYPE_EXPLICIT_HOURGLASS);
-            dc_found = true;
+            found = true;
         }
         else if (name == "app.ExplicitIntersect")
         {
             qDebug() << "adding ExplicitIntersect";
             figure = getExplicitFigure(xmlfigure,FIG_TYPE_EXPLICIT_INTERSECT);
-            dc_found = true;
+            found = true;
         }
         else
         {
             fail("Figure not found:", name);
         }
 
-        if (dc_found)
+        if (found)
         {
             // if the found feature is identical to the one in the known tiling
             // then use that
             // DAC 27MAY17 - imprtant that this code not removed or Design View will fail
-            dc_found = false;
+            bool found2 = false;
             for (auto tilingFeature :  uniqueFeatures)
             {
                 if (usedFeatures.contains(tilingFeature))
@@ -1063,11 +1051,11 @@ PrototypePtr MosaicLoader::getPrototype(xml_node & node)
                     DesignElementPtr  dep = make_shared<DesignElement>(feature, figure);
                     proto->addElement(dep);
                     qDebug() << "design element:" << dep->toString();
-                    dc_found = true;
+                    found2 = true;
                     break;
                 }
             }
-            if (!dc_found)
+            if (!found2)
             {
                 qWarning("Design feature not matching tiling feature");
             }
@@ -1139,9 +1127,9 @@ PrototypePtr MosaicLoader::getPrototype(xml_node & node)
             InferPtr inf = make_shared<Infer>(proto);
             MapPtr map;
             if (ep->progressive)
-                map =  inf->inferIntersectProgressive(featp, ep->sides, ep->skip,ep->s);
+                map =  inf->inferIntersectProgressive(featp, ep->getN(), ep->skip,ep->s);
             else
-                map =  inf->inferIntersect(featp, ep->sides, ep->skip, ep->s);
+                map =  inf->inferIntersect(featp, ep->getN(), ep->skip, ep->s);
             ep->setExplicitMap(map);
             break;
         }
@@ -1167,7 +1155,7 @@ PrototypePtr MosaicLoader::getPrototype(xml_node & node)
         {
             ExplicitPtr ep = std::dynamic_pointer_cast<ExplicitFigure>(figp);
             InferPtr inf = make_shared<Infer>(proto);
-            MapPtr map =  inf->inferGirih(featp, ep->sides, ep->skip);
+            MapPtr map =  inf->inferGirih(featp, ep->getN(), ep->skip);
             ep->setExplicitMap(map);
         }
         }
@@ -1191,14 +1179,19 @@ FeaturePtr MosaicLoader::getFeature(xml_node & node)
     bool regular = (str == "true");
 
     qreal rotation = 0.0;
-    if (regular)
+    xml_node r = node.child("rotation");
+    if (r)
     {
-        xml_node r = node.child("rotation");
-        if (r)
-        {
-            str = r.child_value();
-            rotation = str.toDouble();
-        }
+        str = r.child_value();
+        rotation = str.toDouble();
+    }
+
+    qreal scale = 1.0;
+    xml_node s = node.child("scale");
+    if (s)
+    {
+        str = s.child_value();
+        scale = str.toDouble();
     }
 
     xml_node poly = node.child("points");
@@ -1208,7 +1201,7 @@ FeaturePtr MosaicLoader::getFeature(xml_node & node)
         PolyPtr b    = getPolygon(poly);
         EdgePoly ep(b);
 
-        f = make_shared<Feature>(ep,rotation);
+        f = make_shared<Feature>(ep,rotation,scale);
         setFeatureReference(node,f);
         f->setRegular(regular);
         return f;
@@ -1219,7 +1212,7 @@ FeaturePtr MosaicLoader::getFeature(xml_node & node)
         FeatureReader fr;
         EdgePoly ep = fr.getEdgePoly(poly);
 
-        f = make_shared<Feature>(ep,rotation);
+        f = make_shared<Feature>(ep,rotation,scale);
         setFeatureReference(node,f);
         f->setRegular(regular);
         return f;
@@ -1297,7 +1290,7 @@ ExplicitPtr MosaicLoader::getExplicitFigure(xml_node & node, eFigType figType)
         str = node.child_value("skip");
         qreal skip  = str.toDouble();
 
-        ep->sides = sides;
+        ep->setN(sides);
         ep->skip  = skip;
         break;
     }
@@ -1360,7 +1353,7 @@ ExplicitPtr MosaicLoader::getExplicitFigure(xml_node & node, eFigType figType)
         bool prog = (str == "t");
 
         ep->s     = s;
-        ep->sides = sides;
+        ep->setN(sides);
         ep->skip  = skip;
         ep->progressive = prog;
         break;
@@ -1750,7 +1743,7 @@ MapPtr MosaicLoader::getMap(xml_node &node)
             NeighboursPtr n = make_shared<Neighbours>(v);
             QString nbs = set.child_value();
             QStringList nbslst = nbs.split(",");
-            for (auto str : nbslst)
+            for (const auto & str : nbslst)
             {
                 int id = str.toInt();
                 EdgePtr e = EdgePtr(edge_ids[id]);
@@ -1858,7 +1851,7 @@ EdgePtr MosaicLoader::getEdge(xml_node & node)
     eOrigCnt++;
     EdgePtr edge = make_shared<Edge>();
     setEdgeReference(node,edge);        // early for recursion
-    //qDebug() << "created Edge" << Utils::addr(edge.get());
+    //qDebug() << "created Edge" << edge.get();
 
     if (_version < 5)
     {
@@ -1879,7 +1872,7 @@ EdgePtr MosaicLoader::getEdge(xml_node & node)
 #endif
     edge->setV1(v1);
     edge->setV2(v2);
-    qDebug() << "Edge" << Utils::addr(edge.get()) << "added" << v1->getPosition() << v2->getPosition();
+    qDebug() << "Edge:" << edge.get() << "added" << v1->getPosition() << v2->getPosition();
 
     return edge;
 }
@@ -1897,7 +1890,7 @@ EdgePtr MosaicLoader::getCurve(xml_node & node)
     eOrigCnt++;
     EdgePtr edge = make_shared<Edge>();
     setEdgeReference(node,edge);        // early for recursion
-    //qDebug() << "created Edge" << Utils::addr(edge.get());
+    //qDebug() << "created Edge" << edge.get();
 
     if (_version < 5)
     {
@@ -2003,14 +1996,13 @@ void MosaicLoader::procBorderPlain(xml_node & node)
     xml_node cnode = node.child("color");
     QColor col1 = processColor(cnode);
 
-    qreal bwidth;
+    qreal bwidth = 20.0;
     xml_node wnode = node.child("width");
     if (wnode)
         bwidth = procWidth(wnode);
-    else
-        bwidth = 20.0; // default
 
-    _border = make_shared<BorderPlain>(bwidth, col1);
+    _border = make_shared<BorderPlain>(QSize(_width,_height),bwidth, col1);
+    _border->construct();
 }
 
 void MosaicLoader::procBorderTwoColor(xml_node & node)
@@ -2021,20 +2013,44 @@ void MosaicLoader::procBorderTwoColor(xml_node & node)
     cnode = cnode.next_sibling("color");
     QColor col2 = processColor(cnode);
 
-    qreal bwidth;
+    qreal bwidth = 20;
     xml_node wnode = node.child("width");
     if (wnode)
         bwidth = procWidth(wnode);
-    else
-        bwidth = 20.0; // default
 
-    _border = make_shared<BorderTwoColor>(col1, col2, bwidth);
+
+    _border = make_shared<BorderTwoColor>(QSize(_width,_height),col1, col2, bwidth);
+    _border->construct();
 }
 
 void MosaicLoader::procBorderBlocks(xml_node & node)
 {
-    Q_UNUSED(node)  // FIXME border2
-    //void addBorder2(QColor color, qreal diameter, int rows, int cols);
+    xml_node cnode = node.child("color");
+    QColor col1 = processColor(cnode);
+
+    qreal bwidth = 20;
+    xml_node wnode = node.child("width");
+    if (wnode)
+        bwidth = procWidth(wnode);
+
+    int rows = 3;
+    wnode = node.child("rows");
+    if (wnode)
+    {
+        QString str = wnode.child_value();
+        rows =  str.toInt();
+    }
+
+    int cols = 3;
+    wnode = node.child("cols");
+    if (wnode)
+    {
+        QString str = wnode.child_value();
+        cols =  str.toInt();
+    }
+
+    _border = make_shared<BorderBlocks>(QSize(_width,_height),col1, bwidth, rows, cols);
+    _border->construct();
 }
 
 //////////////////////////////////////////////////////////////
@@ -2498,7 +2514,7 @@ MapPtr MosaicLoader::getMapReferencedPtr(xml_node & node)\
 
 void MosaicLoader::fail(QString a, QString b)
 {
-    _failMessage = QString("%1 %2").arg(a).arg(b);
+    _failMessage = QString("%1 %2").arg(a,b);
     qWarning().noquote() << _failMessage;
     throw(_failMessage);
 }
@@ -2506,7 +2522,7 @@ void MosaicLoader::fail(QString a, QString b)
 
 TilingPtr MosaicLoader::findTiling(QString name)
 {
-    for (auto tiling : _tilings)
+    for (auto tiling : qAsConst(_tilings))
     {
         if (tiling->getName() == name)
         {

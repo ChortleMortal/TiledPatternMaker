@@ -6,29 +6,44 @@
 
 PanelListWidget::PanelListWidget(QWidget *parent) : QListWidget(parent)
 {
+    separators = 0;
     setSelectionMode(QAbstractItemView::SingleSelection);
     setSizeAdjustPolicy(QListWidget::AdjustToContents);
     setResizeMode(QListWidget::Adjust);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setStyleSheet("QListWidget::item:selected { background:yellow; color:red; }");
 
-    floatAction = new QAction("Float",this);
-    connect(floatAction, &QAction::triggered,this, &PanelListWidget::slot_floatAction);
+
 }
 
-void PanelListWidget::removeItem(QString name)
+void PanelListWidget::hide(QString name)
 {
+    qDebug() << "hiding:" << name;
     QList<QListWidgetItem*> ql = findItems(name, Qt::MatchExactly);
-    for (auto it = ql.begin(); it != ql.end(); it++)
+    if (ql.count())
     {
-        QListWidgetItem * qlwi = *it;
-        removeItemWidget(qlwi);
-        delete qlwi;
+        QListWidgetItem * qlwi = ql[0];
+        qlwi->setHidden(true);
+    }
+}
+
+void PanelListWidget::show(QString name)
+{
+    for (int i=0; i < count(); ++i)
+    {
+        QListWidgetItem * qlwi = item(i);
+        qDebug() << "item:" << qlwi->text();
+        if (qlwi->text() == name)
+        {
+            qlwi->setHidden(false);
+            return;
+        }
     }
 }
 
 void PanelListWidget::setCurrentRow(QString name)
 {
+    qDebug() <<  "Looking for:" << name;
     QList<QListWidgetItem*> ql = findItems(name, Qt::MatchExactly);
     if (ql.count())
     {
@@ -42,13 +57,24 @@ void PanelListWidget::setCurrentRow(QString name)
     setCurrentRow("Load");     // default
 }
 
+void PanelListWidget::setCurrentRow(int row)
+{
+    QListWidgetItem * litem = item(row);
+    while (row && (litem->text().isEmpty() ||  litem->isHidden()) )
+    {
+        litem = item(--row);  // assumes row 0 is not a separator
+    }
+
+    QListWidget::setCurrentRow(row);
+}
+
 void PanelListWidget::slot_floatAction()
 {
-    QListWidgetItem * qlwi = takeItem(floatIndex);
+    QListWidgetItem * qlwi = item(floatIndex);
     QString name = qlwi->text();
     qDebug() << "trigger float" << floatIndex << name;
 
-    emit detachWidget(name);
+    emit sig_detachWidget(name);
 }
 
 void PanelListWidget::mousePressEvent(QMouseEvent * event)
@@ -70,10 +96,12 @@ void PanelListWidget::mousePressEvent(QMouseEvent * event)
         if (found)
         {
             floatIndex =  index;
-            qDebug() << "right click=" << index;
+            QString name = qlwi->text();
+            qDebug() << "right click=" << index << name;
 
             QMenu menu(this);
-            menu.addAction(floatAction);
+            menu.addSection(name);
+            menu.addAction("Float",this,&PanelListWidget::slot_floatAction);
             menu.exec(event->globalPos());
          }
     }
@@ -94,16 +122,13 @@ void PanelListWidget::addSeparator()
     frame->setFrameShape(QFrame::HLine);
 
     setItemWidget(item,frame);
+
+    separators++;
 }
 
-QSize PanelListWidget::sizeHint() const
+void PanelListWidget::establishSize()
 {
-    int height = count() * 15;  // kludge alert
-    return QSize(92, height);
+    int rowCount = count() - separators;
+    setFixedSize(sizeHintForColumn(0) + (2 * frameWidth()), (sizeHintForRow(0) * rowCount) + (10 * separators) + (2 * frameWidth()) + 5);   // 5 is a little pad
 }
 
-void PanelListWidget::establishHeight()
-{
-    int height = count() * 15;  // kludge alert
-    setFixedHeight(height);
-}

@@ -26,7 +26,9 @@
 #define MOSAIC_MANAGER_H
 
 #include "base/configuration.h"
-#include "base/workspace.h"
+
+class MotifMaker;
+class DecorationMaker;
 
 class MosaicManager
 {
@@ -37,8 +39,10 @@ public:
     bool saveMosaic(QString name, QString &savedName, bool forceOverwrite);
 
 private:
-    Workspace     * workspace;
-    Configuration * config;
+    class View      * view;
+    Configuration   * config;
+    MotifMaker      * motifMaker;
+    DecorationMaker * decorationMaker;
 };
 
 #endif

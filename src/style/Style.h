@@ -60,7 +60,7 @@ class Style : public Layer
 
 public:
     // Creation.
-    Style(PrototypePtr proto,PolyPtr bounds);
+    Style(PrototypePtr proto);
     Style(const Style  & other);
 
     ~Style() override;
@@ -68,9 +68,9 @@ public:
     // Geometry data.
     PrototypePtr getPrototype() const {return prototype;}
     void         setPrototype(PrototypePtr pp);
-    PolyPtr      getBoundary() const {return boundary;}
 
     MapPtr       getMap();
+    MapPtr       getExistingMap() { return prototype->getExistingProtoMap(); }
 
     TilingPtr    getTiling();
 
@@ -95,13 +95,12 @@ public:
     static int refs;
 
 protected:
-    void   resetStyleMap() { styleMap.reset(); }
+    void   eraseStyleMap();
 
     void   annotateEdges(MapPtr map);
     void   drawAnnotation(QPainter *painter, QTransform T);
 
     PrototypePtr  prototype; // The input geometry to be rendered
-    PolyPtr       boundary;
 
 private:
     MapPtr        styleMap;

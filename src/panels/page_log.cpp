@@ -24,6 +24,7 @@
 
 #include "panels/page_log.h"
 #include "base/qtapplog.h"
+#include "base/configuration.h"
 
 
 page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel, "Log")
@@ -84,7 +85,9 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel, "Log")
     sbar = new AQScrollBar(this);
     ed->setVerticalScrollBar(sbar);
 
-    refreshPage();
+    QTextCursor cursor = ed->textCursor();
+    cursor.movePosition(QTextCursor::End);
+    ed->setTextCursor(cursor);
 
     vbox->addStretch();
 }

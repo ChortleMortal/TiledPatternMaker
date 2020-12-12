@@ -26,11 +26,8 @@
 #define TILEDPATTERNMAKER_H
 
 #include "base/configuration.h"
-#include "base/workspace.h"
 
 class SplitScreen;
-class AQLabel;
-class ControlPanel;
 
 class TiledPatternMaker : public QObject
 {
@@ -42,15 +39,17 @@ public:
 
 signals:
     void sig_start();
-    void sig_newXML();
-    void sig_loadedXML(QString name);
-    void sig_loadedTiling(QString name);
+    void sig_mosaicWritten();
+    void sig_tilingWritten();
+    void sig_mosaicLoaded(QString name);
+    void sig_tilingLoaded(QString name);
     void sig_loadedDesign(eDesign design);
     void sig_ready();
-    void sig_viewWS();
+    void sig_refreshView();
     void sig_compareResult(QString);
     void sig_image0(QString name);
     void sig_image1(QString name);
+    void sig_lockStatus();
 
 public slots:
     void startEverything();
@@ -61,8 +60,10 @@ public slots:
     void slot_loadMosaic(QString name);
     void slot_cycleLoadMosaic(QString name);
     void slot_saveMosaic(QString name);
-    void slot_loadTiling(QString name);
+
+    void slot_loadTiling(QString name,eSM_Event mode);
     void slot_cyclerLoadTiling(QString name);
+    void slot_saveTiling(QString name);
 
     //  resets protos and syles
     void slot_render();
@@ -71,15 +72,13 @@ public slots:
     void slot_bringToPrimaryScreen();
     void slot_splitScreen(bool checked);
 
-    void slot_compareImagesReplace(QString fileLeft, QString fileRight);
-    void slot_compareImages(QString fileLeft, QString fileRight);
+    void slot_compareImagesReplace(QString fileLeft, QString fileRight, bool autoMode);
+    void slot_compareImages(QString fileLeft, QString fileRight, bool autoMode);
     void slot_cyclerFinished();
     void slot_view_image(QString filename);
     void slot_show_png(QString file, int row, int col);
 
 protected:
-    void resetStyles();
-    void resetProtos();
     void init();
     void SplatShowImage(QImage & image, QString title);
     void SplatCompareResult(QPixmap & pixmap, QString title);
@@ -87,14 +86,15 @@ protected:
     QPixmap makeTextPixmap(QString txt,QString txt2=QString(),QString txt3=QString());
 
 private:
-    Configuration   * config;
-    Workspace       * workspace;
-    ControlPanel    * controlPanel;
-    TilingMaker     * tilingMaker;
-    MapEditor       * mapEditor;
-
-    Cycler          * cycler;
-    AQLabel         * cyclerWindow;
+    Configuration          * config;
+    class View             * view;
+    class ViewControl      * vcontrol;
+    class ControlPanel     * controlPanel;
+    class DecorationMaker  * decorationMaker;
+    class MotifMaker       * motifMaker;
+    TilingMaker            * tilingMaker;
+    MapEditor              * mapEditor;
+    Cycler                 * cycler;
 };
 
 #endif // TILEDPATTERNMAKER_H

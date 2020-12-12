@@ -35,44 +35,61 @@
 #ifndef TILING_MAKER_H
 #define TILING_MAKER_H
 
-#include "base/view.h"
-#include "base/workspace.h"
-#include "makers/tiling_maker/tiling_mouseactions.h"
 #include "viewers/tiling_maker_view.h"
-#include "tile/tiling_writer.h"
+#include "base/misc.h"
 
-class Canvas;
-class TilingMouseAction;
+enum eTMState
+{
+    TM_EMPTY,
+    TM_SINGLE,
+    TM_MULTI
+};
 
-;
+static QString tm_states[]
+{
+    E2STR(TM_EMPTY),
+    E2STR(TM_SINGLE),
+    E2STR(TM_MULTI)
+};
 
 class TilingMaker : public TilingMakerView
 {
     Q_OBJECT
 
 public:
-    static TilingMaker*    getInstance();
+    static TilingMaker *   getInstance();
     static TilingMakerPtr  getSharedInstance();
+
     TilingMaker();
+    void        init();
 
-    bool procKeyEvent(QKeyEvent * k);
+    void        sm_take(TilingPtr tiling, eSM_Event mode);
 
-    void draw(GeoGraphics * g2d) override;
+    void        select(TilingPtr tiling);
+    void        select(PrototypePtr prototype);
+    TilingPtr   getSelected() { return selectedTiling; }
+    int         numTilings() { return tilings.size(); }
 
-    void clearMakerData();
-    void updatePlacedFeaturesFromData();
+    void        pushTilingToMotifMaker(eSM_Event event);
 
-    void      setTiling(TilingPtr tp);
-    TilingPtr getTiling() { return currentTiling; }
-    TilingSelectionPtr getCurrentSelection() { return currentSelection; }
+    void        eraseTilings();
+    void        removeTiling(TilingPtr tp);
+    TilingPtr   findTilingByName(QString name);
+    bool        isLoaded(QString name);
+    bool        isValidTiling(TilingPtr tiling);
 
+    void        unload();
 
-    bool verifyTiling();
-    void removeFeature(PlacedFeaturePtr pf);
-    bool accumHasPoint(QPointF wpt);
+    const QVector<TilingPtr> & getTilings() { return tilings; }
 
-    // push to styled desing
-    void pushTiling();
+    void        clearMakerData();
+    void        updateTilingPlacedFeatures();
+
+    TilingSelectorPtr getCurrentSelection() { return featureSelector; }
+
+    bool        verifyTiling();
+    void        deleteFeature(PlacedFeaturePtr pf);
+    bool        accumHasPoint(QPointF wpt);
 
     eTMMouseMode getTilingMakerMouseMode();
     QString    getStatus();
@@ -80,26 +97,25 @@ public:
 
     // Mouse interaction underway..
     void       updateVisibleVectors();
-
-    MouseActionPtr mouse_interaction;
-    QPointF     sMousePos;   // screen points DAC added
-    QPointF     featureEditPoint;
+    void       drawMouseInteraction(GeoGraphics * g2d);
 
     // Feature management.
     void        addNewPlacedFeature(PlacedFeaturePtr pf);
-    TilingSelectionPtr addFeatureSelectionPointer(TilingSelectionPtr sel );
-    void        removeFeature(TilingSelectionPtr sel);
+    void        deleteFeature(TilingSelectorPtr sel);
+    TilingSelectorPtr addFeatureSelectionPointer(TilingSelectorPtr sel );
     void        addToTranslate(QLineF mLine);
-    void        setCurrentFeature(PlacedFeaturePtr pfp) { currentFeature = pfp; }
-    void        toggleInclusion(TilingSelectionPtr sel);
+    void        setCurrentFeature(PlacedFeaturePtr pfp) { currentPlacedFeature = pfp; }
+    void        toggleInclusion(TilingSelectorPtr sel);
+    bool        isIncluded(PlacedFeaturePtr pfp)  { return in_tiling.contains(pfp); }
+    bool        procKeyEvent(QKeyEvent * k);
 
+    void        clearConstructionLines() { constructionLines.clear(); }
 signals:
     void sig_buildMenu();
     void sig_refreshMenu();
     void sig_current_feature(int fIndex);
 
 public slots:
-    void slot_unload();
     void updatePolygonSides(int number);
     void updatePolygonRot(qreal angle);
     void setTilingMakerMouseMode(eTMMouseMode mode);
@@ -108,7 +124,6 @@ public slots:
     void removeExcluded();
     void excludeAll();
     void clearTranslationVectors();
-    void hide(bool state);
     void setFeatureEditPoint(QPointF pt);
     void slot_showOverlaps(bool checked);
     void slot_snapTo(bool checked);
@@ -118,14 +133,14 @@ public slots:
     void slot_mouseReleased(QPointF spt);
     void slot_mouseMoved(QPointF spt);
 
-    void slot_moveX(int amount);
-    void slot_moveY(int amount);
-    void slot_rotate(int amount);
-    void slot_scale(int amount);
+    void slot_moveX(int amount) override;
+    void slot_moveY(int amount) override;
+    void slot_rotate(int amount) override;
+    void slot_scale(int amount) override;
 
-    void slot_mouseTranslate(QPointF spt);
-    void slot_wheel_rotate(qreal delta);
-    void slot_wheel_scale(qreal delta);
+    void slot_mouseTranslate(QPointF spt) override;
+    void slot_wheel_rotate(qreal delta) override;
+    void slot_wheel_scale(qreal delta) override;
 
 protected slots:
     void slot_deleteFeature();
@@ -141,27 +156,33 @@ protected slots:
 
 protected:
     void setupMaker(TilingPtr tp);
+
     void addInTiling(PlacedFeaturePtr pf);
     void removeFromInTiling(PlacedFeaturePtr pf);
-
-    void drawTiling(GeoGraphics * g2d);
 
     void createFillCopies();
 
     bool isTranslationInvalid();
+
+    // state machine
+    void     sm_resetAllAndAdd(TilingPtr tiling);
+    void     sm_resetCurrentAndAdd(TilingPtr tiling);
+    void     sm_add(TilingPtr tiling);
+    eTMState sm_getState();
+    bool     sm_askAdd();
+    void     sm_title(TilingPtr tiling);
 
     // Mouse mode handling.
     void setMousePos(QPointF spt);
     void updateUnderMouse(QPointF  spt);
 
     // Possible user actions.
-    void deleteFeature(TilingSelectionPtr sel);
-    void copyPolygon( TilingSelectionPtr sel );
-    void mirrorPolygonX(TilingSelectionPtr sel);
-    void mirrorPolygonY(TilingSelectionPtr sel);
+    void copyPolygon(TilingSelectorPtr sel );
+    void mirrorPolygonX(TilingSelectorPtr sel);
+    void mirrorPolygonY(TilingSelectorPtr sel);
 
     // Mouse tracking.
-    TilingSelectionPtr findFeatureUnderMouse();
+    TilingSelectorPtr findFeatureUnderMouse();
 
     // Mouse interactions.
     void startMouseInteraction(QPointF spt, enum Qt::MouseButton mouseButton);
@@ -172,33 +193,37 @@ protected:
     void tilingDeltaScale(int delta);
     void tilingDeltaRotate(int delta);
 
-    void featureDeltaX(int delta);
-    void featureDeltaY(int delta);
-    void featureDeltaScale(int delta);
-    void featureDeltaScale(qreal scale);
-    void featureDeltaRotate(int delta);
-    void featureDeltaRotate(qreal rotate);
+    void placedFeatureDeltaX(int delta);
+    void placedFeatureDeltaY(int delta);
+    void placedFeatureDeltaScale(int delta);
+    void placedFeatureDeltaScale(qreal scale);
+    void placedFeatureDeltaRotate(int delta);
+    void placedFeatureDeltaRotate(qreal rotate);
+
+    void uniqueFeatureDeltaScale(int delta);
+    void uniqueFeatureDeltaScale(qreal scale);
+    void uniqueFeatureDeltaRotate(int delta);
+    void uniqueFeatureDeltaRotate(qreal rotate);
 
 private:
+    static TilingMaker       *  mpThis;
+    static TilingMakerPtr       spThis;
 
-    static TilingMaker *  mpThis;
-    static TilingMakerPtr spThis;
+    MouseActionPtr              mouse_interaction;
 
-    TilingPtr           currentTiling;
-    TilingSelectionPtr  currentSelection;   // Current mouse selection.
-    PlacedFeaturePtr    editFeature;        // Feature in DlgFeatureEdit
-    PlacedFeaturePtr    currentFeature;     // current menu row selection too
+    UniqueQVector<TilingPtr>    tilings;
+    TilingPtr                   selectedTiling;
 
-    TilingSelectionPtr  menuSelection;
-    QPointF             menuSpt;
+    TilingSelectorPtr           clickedSelector;
+    QPointF                     clickedSpt;
 
-    int         poly_side_count;            // number of selected vertices when drawing polygons.
-    qreal       poly_rotation;              // regular polygon feature rotation
+    int                         poly_side_count;            // number of selected vertices when drawing polygons.
+    qreal                       poly_rotation;              // regular polygon feature rotation
+    bool                        filled;                     // state - currently filled or not
 
-    QLineF      visibleT1;                  // Translation vector so that the tiling tiles the plane.
-    QLineF      visibleT2;
-
-    Workspace       * workspace;
+    class View                * view;
+    class MotifMaker          * motifMaker;
+    class DecorationMaker     * decorationMaker;
 };
 
 #endif

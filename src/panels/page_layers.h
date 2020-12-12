@@ -26,6 +26,8 @@
 #define PAGE_LAYERS_H
 
 #include "panels/panel_page.h"
+#include "base/shared.h"
+#include "panels/panel_misc.h"
 
 class page_layers : public panel_page
 {

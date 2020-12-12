@@ -36,7 +36,7 @@
 class Thick : public Colored
 {
 public:
-    Thick(PrototypePtr proto, PolyPtr bounds );
+    Thick(PrototypePtr proto);
     Thick(const Style & other);
     ~Thick() override;
 
@@ -45,6 +45,9 @@ public:
 
     void  setLineWidth(qreal width );
     qreal getLineWidth() { return width; }
+
+    void  setOutlineWidth(qreal width );
+
 
     bool getDrawOutline() {return draw_outline;}
     void setDrawOutline(bool draw_outline) { this->draw_outline = draw_outline; }
@@ -57,6 +60,7 @@ protected:
     // Parameters of the rendering.
     qreal      width;
     bool       draw_outline;
+    qreal      outline_width;
 
 private:
 };

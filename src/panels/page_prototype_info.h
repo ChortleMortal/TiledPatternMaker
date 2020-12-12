@@ -26,6 +26,7 @@
 #define PAGE_PROTOS_H
 
 #include "panels/panel_page.h"
+#include "panels/panel_misc.h"
 
 enum eProtoCol
 {

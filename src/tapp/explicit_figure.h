@@ -52,8 +52,9 @@ public:
 
     virtual QString getFigureDesc()  override { return "ExplicitFigure"; }
 
+    bool equals(const FigurePtr other) override;
+
     // a miscellany (hodge-podge)
-    int     sides;          // girih + intersect + rosette + star
     qreal   skip;           // girih
     qreal   d;              // hourglass + intersect + star
     int     s;              // hourglass + intersect + star

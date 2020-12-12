@@ -38,7 +38,7 @@ struct bkgdEPolyColor
 class TileColors : public Style
 {
 public:
-    TileColors(PrototypePtr proto, PolyPtr bounds );
+    TileColors(PrototypePtr proto);
     TileColors(const Style & other);
     ~TileColors() override;
 

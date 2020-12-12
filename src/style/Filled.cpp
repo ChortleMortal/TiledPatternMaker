@@ -23,6 +23,7 @@
  */
 
 #include "style/filled.h"
+#include "base/configuration.h"
 #include <QPainter>
 
 ////////////////////////////////////////////////////////////////////////////
@@ -41,7 +42,7 @@
 
 // Creation.
 
-Filled::Filled(PrototypePtr proto, PolyPtr bounds, int algorithm ) : Style(proto,bounds)
+Filled::Filled(PrototypePtr proto, int algorithm ) : Style(proto)
 {
     faces = make_shared<Faces>();
     config->faces = WeakFacesPtr(faces);
@@ -97,6 +98,7 @@ void  Filled::setAlgorithm(int val)
 
 void Filled::resetStyleRepresentation()
 {
+    eraseStyleMap();
     whiteColorSet.resetIndex();
     blackColorSet.resetIndex();
     colorGroup.resetIndex();
@@ -193,7 +195,7 @@ void Filled::drawOriginal(GeoGraphics * gg)
         if (draw_outside_whites)
         {
             QColor color = whiteColorSet.getFirstColor().color;
-            for (auto face : faces->whiteFaces)
+            for (auto& face : qAsConst(faces->whiteFaces))
             {
                 gg->fillEdgePoly(*face.get(), color);
                 color = whiteColorSet.getNextColor().color;
@@ -203,7 +205,7 @@ void Filled::drawOriginal(GeoGraphics * gg)
         if (draw_inside_blacks)
         {
             QColor color = blackColorSet.getFirstColor().color;
-            for (auto face : faces->blackFaces)
+            for (auto& face : qAsConst(faces->blackFaces))
             {
                 gg->fillEdgePoly(*face.get(), color);
                 color = blackColorSet.getNextColor().color;
@@ -215,7 +217,7 @@ void Filled::drawOriginal(GeoGraphics * gg)
 void Filled::drawNew2(GeoGraphics *gg)
 {
     // not selected
-    for (auto fset : faces->faceGroup)
+    for (auto& fset : qAsConst(faces->faceGroup))
     {
         if (fset->tpcolor.hidden && !fset->selected)
             continue;
@@ -226,7 +228,7 @@ void Filled::drawNew2(GeoGraphics *gg)
             color = Qt::red;
         }
 
-        for (auto face : *fset)
+        for (auto& face : qAsConst(*fset))
         {
             gg->fillEdgePoly(*face.get(),color);
         }
@@ -237,7 +239,7 @@ void Filled::drawNew3(GeoGraphics *gg)
 {
     qDebug() << "Filled::drawNew3";
 
-    for (auto fset : faces->faceGroup)
+    for (auto& fset : qAsConst(faces->faceGroup))
     {
         qDebug() << "FaceSet size:" << fset->size();
         if (fset->colorSet.isHidden() && !fset->selected)
@@ -246,7 +248,7 @@ void Filled::drawNew3(GeoGraphics *gg)
         ColorSet &  cset = fset ->colorSet;
         cset.resetIndex();
 
-        for (auto face : *fset)
+        for (auto& face : qAsConst(*fset))
         {
             Q_ASSERT(face->isClockwise());
             TPColor tpc = cset.getNextColor();

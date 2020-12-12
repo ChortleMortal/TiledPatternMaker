@@ -24,7 +24,7 @@
 
 #include "panels/dlg_magnitude.h"
 
-DlgMagnitude::DlgMagnitude(TilingSelectionPtr sel, QWidget * parent) :  QDialog(parent)
+DlgMagnitude::DlgMagnitude(TilingSelectorPtr sel, QWidget * parent) :  QDialog(parent)
 {
     this->sel = sel;
     edge = sel->getModelEdge();

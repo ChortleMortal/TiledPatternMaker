@@ -24,20 +24,27 @@
 
 #include "panels/panel_page.h"
 #include "panels/panel.h"
-#include "viewers/workspace_viewer.h"
 #include "base/tiledpatternmaker.h"
 #include "base/utilities.h"
+#include "viewers/view.h"
+#include "viewers/viewcontrol.h"
+#include "makers/motif_maker/motif_maker.h"
+#include "makers/tiling_maker/tiling_maker.h"
+#include "makers/decoration_maker/decoration_maker.h"
 
 panel_page::panel_page(ControlPanel * panel,  QString name) : QWidget()
 {
-    this->panel = panel;
-    tpm         = panel->getMaker();
     pageName    = name;
 
-    config    = Configuration::getInstance();
-    workspace = Workspace::getInstance();
+    this->panel     = panel;
+    config          = Configuration::getInstance();
+    vcontrol        = ViewControl::getInstance();
+    view            = View::getInstance();
+    motifMaker      = MotifMaker::getInstance();
+    tilingMaker     = TilingMaker::getInstance();
+    decorationMaker = DecorationMaker::getInstance();
 
-    vbox      = new QVBoxLayout;
+    vbox = new QVBoxLayout;
     vbox->setSizeConstraint(QLayout::SetFixedSize);
 
     newlySelected   = false;
@@ -45,15 +52,11 @@ panel_page::panel_page(ControlPanel * panel,  QString name) : QWidget()
     refresh         = true;
     blockCount      = 0;
 
-    //setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Ignored);
     setLayout (vbox);
-    //setAcceptDrops (true);
 
-    setObjectName("panel_page");
-
-    connect(this,   &panel_page::sig_render,     tpm,       &TiledPatternMaker::slot_render);
-    connect(this,   &panel_page::sig_viewWS,     workspace, &WorkspaceViewer::slot_viewWorkspace);
-    connect(this,   &panel_page::sig_attachMe,   panel,     &ControlPanel::slot_attachWidget,       Qt::QueuedConnection);
+    connect(this,   &panel_page::sig_render,     theApp,   &TiledPatternMaker::slot_render);
+    connect(this,   &panel_page::sig_refreshView,vcontrol, &ViewControl::slot_refreshView);
+    connect(this,   &panel_page::sig_attachMe,   panel,    &ControlPanel::slot_attachWidget, Qt::QueuedConnection);
 }
 
 // pressing 'x' to close detached/floating page is used to re-attach

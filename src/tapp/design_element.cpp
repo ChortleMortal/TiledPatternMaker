@@ -40,25 +40,17 @@ int PlacedDesignElement::refs2 = 0;
 // tile library and will be used to determine where to place copies of the
 // Figure, which is designed by the user.
 
-DesignElement::DesignElement(FeaturePtr feature, FigurePtr figure)
+DesignElement::DesignElement(FeaturePtr feat, FigurePtr fig)
 {
-    this->feature = feature;
-    this->figure = figure;
+    feature = feat;
+    figure  = fig;
     refs++;
 }
 
-DesignElement::DesignElement(FeaturePtr feature)
+DesignElement::DesignElement(FeaturePtr feat)
 {
-    this->feature = feature;
-    //if( feature->isRegular() && (feature->numPoints() >= 4) )  // DAC was > 4
-    if( feature->isRegular() && (feature->numPoints() > 4) )  // DAC was > 4
-    {
-        figure = make_shared<Rosette>(feature->numPoints(), 0.0, 3, 0, feature->getRotation() );
-    }
-    else
-    {
-        figure = make_shared<ExplicitFigure>(make_shared<Map>("FIG_TYPE_EXPLICIT map"),FIG_TYPE_EXPLICIT, feature->numPoints());
-    }
+    feature = feat;
+    figure  = createFigure(feat);
     refs++;
 }
 
@@ -97,21 +89,57 @@ FigurePtr DesignElement::getFigure()
     return figure;
 }
 
-void DesignElement::setFigure(FigurePtr afigure)
+FigurePtr DesignElement::createFigure(FeaturePtr feature)
 {
-    qDebug() << "oldfig =" << figure.get() << "newfig =" << afigure.get();
-    figure = afigure;
+    FigurePtr figure;
+    if (feature->isRegular() && (feature->numPoints() > 4) )  // DAC was > 4
+    {
+        figure = make_shared<Rosette>(feature->numPoints(), 0.0, 3, 0, feature->getRotation() );
+    }
+    else
+    {
+        figure = make_shared<ExplicitFigure>(make_shared<Map>("FIG_TYPE_EXPLICIT map"),FIG_TYPE_EXPLICIT, feature->numPoints());
+    }
+    return figure;
 }
 
-void DesignElement::setFeature(FeaturePtr afeature)
+void DesignElement::setFigure(FigurePtr fig)
 {
-    qDebug() << "oldfeat=" << feature.get() << "newfeat=" << afeature.get();
-    feature = afeature;
+    qDebug() << "oldfig =" << figure.get() << "newfig =" << fig.get();
+    figure = fig;
+}
+
+void DesignElement::replaceFeature(FeaturePtr feat)
+{
+    qDebug() << "oldfeat=" << feature.get() << "newfeat=" << feat.get();
+    if (feat->isSimilar(feature))
+    {
+        feature = feat;
+    }
+    else
+    {
+        feature = feat;
+        figure  = createFigure(feat);
+    }
 }
 
 QString DesignElement::toString()
 {
-    return QString("this=%1 feature=%2 figure=%3").arg(Utils::addr(this)).arg(Utils::addr(feature.get())).arg(Utils::addr(figure.get()));
+    return QString("this=%1 feature=%2 figure=%3").arg(Utils::addr(this), Utils::addr(feature.get()), Utils::addr(figure.get()));
+}
+
+void DesignElement::describe()
+{
+    FigurePtr  fig  = getFigure();
+    FeaturePtr feat = getFeature();
+    if (fig)
+        qDebug().noquote()  << "Figure:" << fig.get()  << fig->getFigureDesc() << fig->getFigureMap()->summary();
+    else
+        qDebug().noquote()  << "Figure: 0";
+    if (feat)
+        qDebug().noquote()  << "Feature:" << feat.get()  << "sides:" << feat->numSides() << ((feat->isRegular()) ? "regular" : "irregular");
+    else
+        qDebug().noquote()  << "Feature: 0";
 }
 
 /////////////////////////////////////////////////////////
@@ -155,5 +183,5 @@ PlacedDesignElement::~PlacedDesignElement()
 
 QString PlacedDesignElement::toString()
 {
-    return QString("feature=%1 figure=%2 T=%3").arg(Utils::addr(feature.get())).arg(Utils::addr(figure.get())).arg(Transform::toInfoString(trans));
+    return QString("feature=%1 figure=%2 T=%3").arg(Utils::addr(feature.get()), Utils::addr(figure.get()), Transform::toInfoString(trans));
 }

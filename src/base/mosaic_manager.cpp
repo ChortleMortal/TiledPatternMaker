@@ -26,13 +26,17 @@
 #include "base/fileservices.h"
 #include "base/mosaic_loader.h"
 #include "base/mosaic_writer.h"
+#include "viewers/view.h"
 #include "panels/panel.h"
-#include "viewers/workspace_viewer.h"
+#include "makers/motif_maker/motif_maker.h"
+#include "makers/decoration_maker/decoration_maker.h"
 
 MosaicManager::MosaicManager()
 {
-    workspace = Workspace::getInstance();
-    config    = Configuration::getInstance();
+    view            = View::getInstance();
+    config          = Configuration::getInstance();
+    motifMaker      = MotifMaker::getInstance();
+    decorationMaker = DecorationMaker::getInstance();
 }
 
 bool MosaicManager::loadMosaic(QString name)
@@ -59,16 +63,16 @@ bool MosaicManager::loadMosaic(QString name)
 
     qDebug().noquote() << "Loading:"  << file;
 
-    workspace->resetMosaic();
 
+    // load
     MosaicLoader loader;
     MosaicPtr mosaic = loader.loadMosaic(file);
-    workspace->setMosaic(mosaic);
 
     if (!mosaic)
     {
         QString str = QString("Load ERROR - %1").arg(loader.getFailMessage());
         QMessageBox box(ControlPanel::getInstance());
+        box.setIcon(QMessageBox::Warning);
         box.setText(str);
         box.exec();
         return false;
@@ -76,31 +80,16 @@ bool MosaicManager::loadMosaic(QString name)
 
     mosaic->setName(name);
 
-    PrototypePtr selectedProto;
-    const StyleSet & styleset = mosaic->getStyleSet();
-    for (auto style : styleset)
-    {
-        PrototypePtr pp = style->getPrototype();
-        if (pp)
-        {
-            if (!selectedProto)
-            {
-                selectedProto = pp;
-            }
-            workspace->addPrototype(pp);
-            DesignElementPtr dp = pp->getDesignElement(0);
-            workspace->setSelectedDesignElement(dp);
-        }
-    }
-
-    workspace->setSelectedPrototype(selectedProto);
+    // starts the chain reaction
+    decorationMaker->takeDown(mosaic);
 
     // size view to mosaic
-    QSize size = mosaic->getSettings().getSize();
-    workspace->setAllMosaicActiveSizes(size);
+    ModelSettingsPtr settings = mosaic->getSettings();
+    QSize size = settings->getSize();
+    view->setAllMosaicActiveSizes(size);
     if (config->scaleToView)
     {
-        workspace->setAllMosaicFrameSizes(size);
+        view->setAllMosaicDefinedSizes(size);
     }
 
     return true;
@@ -108,6 +97,16 @@ bool MosaicManager::loadMosaic(QString name)
 
 bool MosaicManager::saveMosaic(QString name, QString & savedName, bool forceOverwrite)
 {
+    MosaicPtr mosaic = decorationMaker->getMosaic();
+    if (!mosaic)
+    {
+        QMessageBox box(ControlPanel::getInstance());
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Dave FAILED: There is no mosaic to save");
+        box.exec();
+        return false;
+    }
+
     QString filename = FileServices::getDesignXMLFile(name);
     if (!forceOverwrite)
     {
@@ -147,12 +146,9 @@ bool MosaicManager::saveMosaic(QString name, QString & savedName, bool forceOver
 
     qDebug() << "Saving XML to:"  << filename;
 
-    MosaicPtr mosaic = workspace->getMosaic();
-    Q_ASSERT(mosaic);
-
     // match size to current view
-    QSize size  = workspace->size();
-    mosaic->getSettings().setSize(size);
+    QSize size  = view->size();
+    mosaic->getSettings()->setSize(size);
 
     // write
     MosaicWriter writer;
@@ -170,7 +166,7 @@ bool MosaicManager::saveMosaic(QString name, QString & savedName, bool forceOver
         else
         {
             QString str = writer.getFailMsg();
-            astring = QString("Save File (%1) FAILED %2").arg(filename).arg(str);
+            astring = QString("Save File (%1) FAILED %2").arg(filename,str);
             box.setIcon(QMessageBox::Warning);
         }
         box.setText(astring);

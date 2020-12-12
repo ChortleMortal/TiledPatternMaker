@@ -23,9 +23,11 @@
  */
 
 #include "panels/page_layers.h"
+#include "viewers/view.h"
 #include "designs/patterns.h"
 #include "base/utilities.h"
-#include "viewers/workspace_viewer.h"
+#include "viewers/view.h"
+#include "geometry/transform.h"
 
 using std::string;
 
@@ -63,13 +65,13 @@ page_layers:: page_layers(ControlPanel * cpanel)  : panel_page(cpanel,"Layer Inf
     connect(&cenYMapper,     SIGNAL(mapped(int)), this, SLOT(slot_set_deltas(int)));
     connect(&clearMapper,    SIGNAL(mapped(int)), this, SLOT(slot_clear_deltas(int)));
 
-    connect(workspace, &View::sig_deltaScale,    this, &page_layers::refreshCanvas);
-    connect(workspace, &View::sig_deltaRotate,   this, &page_layers::refreshCanvas);
-    connect(workspace, &View::sig_deltaMoveY,    this, &page_layers::refreshCanvas);
-    connect(workspace, &View::sig_deltaMoveX,    this, &page_layers::refreshCanvas);
-    connect(workspace, &View::sig_wheel_scale,   this, &page_layers::refreshCanvas);
-    connect(workspace, &View::sig_wheel_rotate,  this, &page_layers::refreshCanvas);
-    connect(workspace, &View::sig_mouseTranslate,this, &page_layers::refreshCanvas);
+    connect(view, &View::sig_deltaScale,    this, &page_layers::refreshCanvas);
+    connect(view, &View::sig_deltaRotate,   this, &page_layers::refreshCanvas);
+    connect(view, &View::sig_deltaMoveY,    this, &page_layers::refreshCanvas);
+    connect(view, &View::sig_deltaMoveX,    this, &page_layers::refreshCanvas);
+    connect(view, &View::sig_wheel_scale,   this, &page_layers::refreshCanvas);
+    connect(view, &View::sig_wheel_rotate,  this, &page_layers::refreshCanvas);
+    connect(view, &View::sig_mouseTranslate,this, &page_layers::refreshCanvas);
 }
 
 void page_layers::onEnter()
@@ -82,11 +84,11 @@ void page_layers::populateLayers()
 {
     layerTable->clearContents();
 
-    QVector<LayerPtr> layers = workspace->getActiveLayers();
+    QVector<LayerPtr> layers = view->getActiveLayers();
     layerTable->setColumnCount(layers.size());
 
     int col = 0;
-    for (auto layer : layers)
+    for (const auto & layer : layers)
     {
         populateLayer(layer,col++);
     }
@@ -261,7 +263,7 @@ void page_layers::populateLayer(LayerPtr layer, int col)
 
 void  page_layers::refreshPage()
 {
-    QVector<LayerPtr> layers = workspace->getActiveLayers();
+    QVector<LayerPtr> layers = view->getActiveLayers();
     if (layers.size() != layerTable->columnCount())
     {
         populateLayers();
@@ -273,7 +275,7 @@ void  page_layers::refreshPage()
     {
         // design number
         QTableWidgetItem * twi = layerTable->item(LAYER_NAME,col);
-        twi->setText(QString("%1 %2").arg(layer->getName()).arg(Utils::addr(layer.get())));
+        twi->setText(QString("%1 %2").arg(layer->getName(),Utils::addr(layer.get())));
 
         // layer number and visibility
         QWidget * w = layerTable->cellWidget(LAYER_VISIBILITY,col);
@@ -313,7 +315,7 @@ void  page_layers::refreshPage()
 
         twi = layerTable->item(LAYER_CENTER,col);
         QPointF center = layer->getCenterScreen();
-        twi->setText(QString("%1 : %2").arg(QString::number(center.x(),'f',4)).arg(QString::number(center.y(),'f',4)));
+        twi->setText(QString("%1 : %2").arg(QString::number(center.x(),'f',4),QString::number(center.y(),'f',4)));
 
         item = layerTable->item(LAYER_SCALE,col);
         item->setText(QString::number(Transform::scalex(t),'f',16));
@@ -341,7 +343,7 @@ void  page_layers::refreshPage()
 void page_layers::refreshCanvas()
 {
     int col = 0;
-    QVector<LayerPtr> layers = workspace->getActiveLayers();
+    QVector<LayerPtr> layers = view->getActiveLayers();
     if (layers.size() != layerTable->columnCount())
     {
         refreshPage();
@@ -445,7 +447,7 @@ void page_layers::slot_alignPressed(int col)
     qDebug() << "align to: col=" << col << "layer=" << layer->getName();
 
     // apply settings to
-    QVector<LayerPtr> layers = workspace->getActiveLayers();
+    QVector<LayerPtr> layers = view->getActiveLayers();
     for (auto olayer : layers)
     {
         if (olayer == layer)
@@ -519,7 +521,7 @@ void page_layers::slot_clear_deltas(int col)
 LayerPtr page_layers::getLayer(int col)
 {
     LayerPtr layer;
-    QVector<LayerPtr> views = workspace->getActiveLayers();
+    QVector<LayerPtr> views = view->getActiveLayers();
 
     if (col > (views.size() -1))
     {

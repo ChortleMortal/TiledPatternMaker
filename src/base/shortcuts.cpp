@@ -1,6 +1,50 @@
 #include "base/shortcuts.h"
 
-QString Shortcuts::getCanvasShortcuts()
+QString Shortcuts::getMosaicShortcuts()
+{
+    const QString shortcuts = " \
+<pre><br><br>\
+    A   <br>\
+    B   <br>\
+    C   <br>\
+    D   Duplicate (in new window)<br>\
+    E   <br>\
+    F   Toggle Radial replication in FigureView<br>\
+    G   Grid (toggle) <br>\
+    H   Toggle Show Center/ Toggle Circle<br>\
+    I   <br>\
+    J   <br>\
+    K   Toggle debugMap in FigureView<br>\
+    L   <br>\
+    M   Raise Menu<br>\
+    N   Bring to center of primary screen<br>\
+    O   <br>\
+    P   Print (actually Save Image) <br>\
+    Q   Quit app (or quit cycler)<br>\
+    R   <br>\
+    S   <br>\
+    T   Xfrom mode MODEL DATA<br>\
+    U   Xform mode BKGD<br>\
+    V   Xform mode VIEW<br>\
+    W   Xform mode OBJECT DATA<br>\
+    X   Show Center/Show circle (X toggle) <br>\
+    Y   Save as SVG<br>\
+    Z   <br>\
+        <br>\
+    ESC MODE_DEFAULT<br>\
+    F1  Help (show this)<br>\
+    F2  MODE_TRANSFORM up/down/left/right/,/./-/= <br>\
+    F3  <br>\
+    F4  Dump info <br>\
+    F5  Unload canvas (drain the swamp) <br>\
+       <br>\
+</pre> \
+";
+    return shortcuts;
+}
+
+
+QString Shortcuts::getDesignShortcuts()
 {
     const QString shortcuts = " \
 <pre><br><br>\
@@ -9,12 +53,12 @@ QString Shortcuts::getCanvasShortcuts()
     C   <br>\
     D   Duplicate (in new window)<br>\
     E   <br>\
-    F   Toggle Radial replication in FigureView<br>\
+    F   <br>\
     G   Grid (toggle) <br>\
     H   Hide Circles (toggle) <br>\
     I   Layer In (show) <br>\
     J   <br>\
-    K   Toggle debugMap in FigureView<br>\
+    K   <br>\
     L   MODE_LAYER  0-9 <br>\
     M   Raise Menu<br>\
     N   Bring to center of primary screen<br>\
@@ -25,10 +69,10 @@ QString Shortcuts::getCanvasShortcuts()
 ALT-R   Run (start timer and mode layer) <br>\
     S   MODE_SEPARATION  up/down/left/right <br>\
 ALT-S   MODE_STEP  up/down  0-9 <br>\
-    T   Xfrom mode MODEL DATA<br>\
-    U   Xform mode BKGD<br>\
-    V   Xform mode VIEW<br>\
-    W   Xform mode OBJECT DATA<br>\
+    T   <br>\
+    U   <br>\
+    V   <br>\
+    W   <br>\
     X   Show Center/Show circle (X toggle) <br>\
     Y   Save as SVG<br>\
     Z   MODE_ZLEVEL   up/down <br>\
@@ -44,23 +88,21 @@ ALT-S   MODE_STEP  up/down  0-9 <br>\
     F4  Dump info <br>\
     F5  Unload canvas (drain the swamp) <br>\
        <br>\
-Return  if (modeStep) step<br>\
-Spacebar this\
 </pre> \
 ";
     return shortcuts;
 }
-
 
 QString Shortcuts::getTilingMakerShortcuts()
 {
     const  QString td_shortcuts = " \
 <pre><br><br>\
 Modes:<br>\
-    ESC  Normal Mode<br>\
+    ESC Normal Mode<br>\
     F1  Help (show this)<br>\
-    F2  MODE_TRANSFORM up/down/left/right/,/./-/= <br>\
-          Use arrow codes to translate, +/- keys to rotate. and ./, keys to scale<br>\
+    F2  Adjust View: up/down/left/right/,/./-/= <br>\
+          Use arrow keys to position, +/- keys to rotate. and ./, keys to zoom<br>\
+          Also use 'Set Center' to set center for rotation and zooming\
     F3  Translation Vector Mode<br>\
           Use the mouse to draw the two translation vectors used to tile the plane<br>\
     F4  New Polygon Mode<br>\
@@ -85,6 +127,7 @@ Actions:<br>\
           Excludes all polygons from the tiling<br>\
     F  Fill Using Translation Vectors<br>\
           Surrounds the design with copies using the translation vectors<br>\
+    H  Toggles Show Cneters<br>\
     I  Include/Exclude Polygons in Tiling<br>\
           Toggles the inclusion/exclusion of the polygon under the mouse<br>\
     R  Remove Excluded Polygons<br>\

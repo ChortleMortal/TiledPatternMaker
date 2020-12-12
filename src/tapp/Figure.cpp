@@ -76,6 +76,28 @@ Figure::~Figure()
     refs--;
 }
 
+bool Figure::equals(const  FigurePtr other)
+{
+    if (figType != other->figType)
+        return false;
+    if (extBoundarySides  != other->extBoundarySides)
+        return false;
+    if (extBoundaryScale  != other->extBoundaryScale)
+        return false;
+    if (figureScale       != other->figureScale)
+        return false;
+    if (figureRotate      != other->figureRotate)
+        return false;
+
+    if (radialFigBoundary != other->radialFigBoundary)
+        return false;
+    if (extBoundary       != other->extBoundary)
+        return false;
+    if (hasCircleBoundary != other->hasCircleBoundary)
+        return false;
+    return true;
+}
+
 void Figure::resetMaps()
 {
     if (figureMap)
@@ -106,6 +128,11 @@ bool Figure::isRadial()
 {
     // assume undefined is radial
     return !isExplicit();
+}
+
+int Figure::getN()
+{
+    return n;
 }
 
 void Figure::setExtBoundarySides(int sides)

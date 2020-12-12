@@ -135,7 +135,7 @@ protected:
     void calcInscribedNonagonPoints(Polygon2 * p);
 
 private:
-    Workspace * workspace;
+    class View * view;
 
     qreal  _diameter;
     qreal  _radius;

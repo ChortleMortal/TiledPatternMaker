@@ -28,15 +28,17 @@
 #include "base/utilities.h"
 #include "designs/patterns.h"
 #include "style/style.h"
+#include "viewers/viewcontrol.h"
 #include "viewers/placed_designelement_view.h"
 #include "viewers/prototype_view.h"
+#include "makers/motif_maker/motif_maker.h"
 
 Q_DECLARE_METATYPE(WeakFeaturePtr)
 Q_DECLARE_METATYPE(WeakPrototypePtr)
 
 page_design_elements:: page_design_elements(ControlPanel * cpanel)  : panel_page(cpanel,"Des Element Info")
 {
-    // top line
+	// top line
     QLabel  * tilingLabel    = new QLabel("Tiling:");
     protoListBox             = new QComboBox();
     protoListBox->setMinimumWidth(131);
@@ -63,14 +65,14 @@ page_design_elements:: page_design_elements(ControlPanel * cpanel)  : panel_page
     vbox->addStretch();
 
 
-    connect(refreshButton,      &QPushButton::clicked,             this, &page_design_elements::onEnter);
-    connect(delTable,           &QTableWidget::cellClicked,        this, &page_design_elements::slot_rowSelected);
+    connect(refreshButton,      &QPushButton::clicked,      this,   &page_design_elements::onEnter);
+    connect(delTable,           &QTableWidget::cellClicked, this,   &page_design_elements::slot_rowSelected);
 
-    connect(tpm,  &TiledPatternMaker::sig_loadedTiling,   this,   &page_design_elements::slot_loadedTiling);
-    connect(tpm,  &TiledPatternMaker::sig_loadedXML,      this,   &page_design_elements::slot_loadedXML);
-    connect(tpm,  &TiledPatternMaker::sig_loadedDesign,   this,   &page_design_elements::slot_loadedDesign);
+    connect(theApp,  &TiledPatternMaker::sig_tilingLoaded,     this,   &page_design_elements::onEnter);
+    connect(theApp,  &TiledPatternMaker::sig_mosaicLoaded,     this,   &page_design_elements::onEnter);
+    connect(theApp,  &TiledPatternMaker::sig_loadedDesign,     this,   &page_design_elements::onEnter);
 
-    connect(workspace, &Workspace::sig_selected_proto_changed, this, &page_design_elements::onEnter);
+    connect(vcontrol,&ViewControl::sig_selected_proto_changed,this, &page_design_elements::onEnter);
 
     connect(protoListBox, SIGNAL(currentIndexChanged(int)), this,   SLOT(slot_prototypeSelected(int)));
 }
@@ -83,13 +85,13 @@ void  page_design_elements::onEnter()
 {
     protoListBox->blockSignals(true);
     protoListBox->clear();
-    QVector<PrototypePtr> protos = workspace->getPrototypes();
+    const QVector<PrototypePtr> & protos = motifMaker->getPrototypes();
     for (auto proto : protos)
     {
         protoListBox->addItem(proto->getTiling()->getName(),QVariant::fromValue(WeakPrototypePtr(proto)));
     }
 
-    PrototypePtr proto = workspace->getSelectedPrototype();
+    PrototypePtr proto = motifMaker->getSelectedPrototype();
     if (proto)
     {
         QString name = proto->getTiling()->getName();
@@ -142,23 +144,6 @@ void  page_design_elements::onEnter()
     updateGeometry();
 }
 
-void page_design_elements::slot_loadedXML(QString name)
-{
-    Q_UNUSED(name)
-    onEnter();
-}
-void page_design_elements::slot_loadedTiling (QString name)
-{
-    Q_UNUSED(name)
-    onEnter();
-}
-
-void page_design_elements::slot_loadedDesign(eDesign design)
-{
-    Q_UNUSED(design)
-    onEnter();
-}
-
 void page_design_elements::slot_rowSelected(int row, int col)
 {
     Q_UNUSED(col)
@@ -167,8 +152,8 @@ void page_design_elements::slot_rowSelected(int row, int col)
     if (var.canConvert<WeakFeaturePtr>())
     {
         WeakFeaturePtr wfp = var.value<WeakFeaturePtr>();
-        workspace->selectFeature(wfp);
-        emit sig_viewWS();
+        vcontrol->selectFeature(wfp);
+        emit sig_refreshView();
     }
 }
 
@@ -179,9 +164,9 @@ void page_design_elements::slot_prototypeSelected(int row)
     if (var.canConvert<WeakPrototypePtr>())
     {
         wpp = var.value<WeakPrototypePtr>();
-        workspace->setSelectedPrototype(wpp);
-        emit sig_viewWS();
+        PrototypePtr pp = wpp.lock();
+        motifMaker->setSelectedPrototype(pp);
+        emit sig_refreshView();
         onEnter();
-
     }
 }

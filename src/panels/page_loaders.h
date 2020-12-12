@@ -42,18 +42,17 @@ public:
     void onExit() override {}
 
 signals:
-    void    sig_loadTiling(QString);
+    void    sig_loadTiling(QString,eSM_Event);
     void    sig_loadMosaic(QString);
     void    sig_loadDesign(eDesign id);
     void    sig_buildDesign(eDesign id);
-    void    sig_viewWS();
 
 public slots:
    void     slot_newTile();
    void     slot_newXML();
 
-   void     slot_loadedXML(QString name);
-   void     slot_loadedTiling (QString name);
+   void     slot_mosaicLoaded(QString name);
+   void     slot_tilingLoaded (QString name);
    void     slot_loadedDesign(eDesign design);
 
    void     desRightClick(QPoint pos);
@@ -79,7 +78,7 @@ private slots:
     void    deleteXML();
     void    showTilings();
 
-    void    loadTiling();
+    void    tilingLoadChanged(int id);
     void    openTiling();
     void    rebaseTiling();
     void    renameTiling();
@@ -87,7 +86,7 @@ private slots:
     void    slot_whereTilingUsed();
 
     void    loadTilingsCombo();
-    void    loadXMLCombo();
+    void    loadMosaicCombo();
     void    loadDesignCombo();
 
     void    slot_mosaicFilter(const QString & filter);
@@ -100,6 +99,7 @@ private slots:
     void    autoLoadDesignsClicked(bool enb);
 
 protected:
+    void    loadTiling();
     void    setupUI();
     void    refreshPanel();
     void    makeConnections();
@@ -113,7 +113,10 @@ private:
     LoaderListWidget    * designList;
 
     QPushButton * pbLoadShapes;
-    QPushButton * pbLoadTiling;
+	QPushButton * pbLoadTiling;
+    QRadioButton* rbLoadSingle;
+    QRadioButton* rbLoadMulti;
+    QButtonGroup* tileLoadGroup;
     QPushButton * pbLoadXML;
 
     QCheckBox   * mosaicFilterCheck;

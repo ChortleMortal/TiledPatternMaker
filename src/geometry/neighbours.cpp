@@ -31,7 +31,7 @@ BeforeAndAfter Neighbours::getBeforeAndAfter(EdgePtr edge )
 {
     if (numEdges() < 2)
     {
-        qDebug() << "getBeforeAndAfter - edge=" << Utils::addr(edge.get()) << "count=" << numEdges();
+        qDebug() << "getBeforeAndAfter - edge:" << edge.get() << "count:" << numEdges();
     }
 
     BeforeAndAfter ret;
@@ -61,7 +61,7 @@ QVector<EdgePtr> & Neighbours::getNeighbours()
 
 EdgePtr Neighbours::getNeighbour(const VertexPtr other)
 {
-    for (auto edge : list)
+    for (auto edge : qAsConst(list))
     {
         VertexPtr vp = edge->getOtherV(v);
         if (vp == other)
@@ -152,7 +152,7 @@ void Neighbours::sortEdgesByAngle()
 
     QVector<EdgePtr> vec;
 
-    for (auto edge : list)
+    for (const auto & edge : qAsConst(list))
     {
         qreal    a = v->getAngle(edge);
         bool found = false;
@@ -185,7 +185,7 @@ void Neighbours::dumpNeighbours() const
 #if 0
         QPointF v1 = edge->getV1()->getPosition();
         QPointF v2 = edge->getV2()->getPosition();
-        qDebug() << "      edge: " << Utils::addr(edge.get()) << " " << v1 << " " << v2;
+        qDebug() << "      edge: " << edge.get() << " " << v1 << " " << v2;
 #else
         qDebug() << "      edge: " << edge->getTmpEdgeIndex() << "vertices:" << edge->getV1()->getTmpVertexIndex() << " " << edge->getV2()->getTmpVertexIndex();
 #endif
@@ -237,7 +237,7 @@ EdgePtr Neighbours::getFirstNonvisitedNeighbour(EdgePtr home)
     qreal hangle = home->getAngle();
     angles.push_back(hangle);
     EdgePtr ep;
-    for (auto edge : list)
+    for (auto edge : qAsConst(list))
     {
         if (edge->getInterlaceInfo().visited)
         {
@@ -254,7 +254,7 @@ EdgePtr Neighbours::getFirstNonvisitedNeighbour(EdgePtr home)
 bool Neighbours::verify()
 {
     bool rv = true;
-    for (auto e : list)
+    for (auto e : qAsConst(list))
     {
         if (v != e->getV1()  && v != e->getV2())
         {
@@ -269,7 +269,7 @@ bool Neighbours::verify()
 void Neighbours::cleanse()
 {
     QVector<EdgePtr> baddies;
-    for (auto e : list)
+    for (auto e : qAsConst(list))
     {
         if (v != e->getV1()  && v != e->getV2())
         {
@@ -277,7 +277,7 @@ void Neighbours::cleanse()
             baddies.push_back(e);
         }
     }
-    for (auto e : baddies)
+    for (const auto & e : baddies)
     {
         list.removeAll(e);
     }
@@ -460,7 +460,7 @@ void NeighbourMap::cleanse()
             np->cleanse();
         }
     }
-    for (auto v : baddies)
+    for (const auto & v : baddies)
     {
         neighbours.remove(v);
     }

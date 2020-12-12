@@ -24,23 +24,21 @@
 
 #include "panels/page_style_figure_info.h"
 #include "base/shared.h"
-#include "base/tiledpatternmaker.h"
-#include "designs/patterns.h"
-#include "tapp/prototype.h"
-#include "style/style.h"
+#include "base/mosaic.h"
+#include "makers/decoration_maker/decoration_maker.h"
 
 using std::string;
 
 
-page_style_figure_info:: page_style_figure_info(ControlPanel *panel)  : panel_page(panel, "Style Figure Info")
+page_style_figure_info:: page_style_figure_info(ControlPanel *panel)  : panel_page(panel, "Mosaic Info")
 {
     figureTable = new AQTableWidget(this);
     figureTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-    figureTable->setColumnCount(2);
+    figureTable->setColumnCount(3);
     figureTable->setColumnWidth(0,40);
 
     QStringList qslH;
-    qslH << "Style" << "Figure";
+    qslH << "Style" << "Tiling" << "Figure";
     figureTable->setHorizontalHeaderLabels(qslH);
     figureTable->verticalHeader()->setVisible(false);
 
@@ -67,29 +65,36 @@ void  page_style_figure_info::refreshPage()
 void page_style_figure_info::showFiguresFromStyles()
 {
     int row = 0;
-    MosaicPtr mosaic = workspace->getMosaic();
-    const StyleSet sset = mosaic->getStyleSet();
-    for (auto style : sset)
+    MosaicPtr mosaic = decorationMaker->getMosaic();
+    if (mosaic)
     {
-        PrototypePtr pp = style->getPrototype();
-
-        QVector<DesignElementPtr>  dels = pp->getDesignElements();
-        for (int i=0; i < dels.size(); i++)
+        const StyleSet sset = mosaic->getStyleSet();
+        for (auto& style : sset)
         {
-            DesignElementPtr del = dels[i];
-            FigurePtr  figp = del->getFigure();
+            PrototypePtr pp = style->getPrototype();
 
-            figureTable->setRowCount(row+1);
+            QVector<DesignElementPtr>  dels = pp->getDesignElements();
+            for (int i=0; i < dels.size(); i++)
+            {
+                DesignElementPtr del = dels[i];
+                FigurePtr  figp = del->getFigure();
 
-            QString stylename = style->getStyleDesc();
-            QTableWidgetItem * item =  new QTableWidgetItem(stylename);
-            figureTable->setItem(row,COL_STYLE_NAME,item);
+                figureTable->setRowCount(row+1);
 
-            QString figName = figp->getFigureDesc();
-            item =  new QTableWidgetItem(figName);
-            figureTable->setItem(row,COL_FIGURE_TYPE,item);
+                QString stylename = style->getStyleDesc() + " " + addr(style.get());
+                QTableWidgetItem * item =  new QTableWidgetItem(stylename);
+                figureTable->setItem(row,COL_STYLE_NAME,item);
 
-            row++;
+                QString tileName = pp->getTiling()->getName() + "  " + addr(pp->getTiling().get());
+                item =  new QTableWidgetItem(tileName);
+                figureTable->setItem(row,COL_TILING_NAME,item);
+
+                QString figName = figp->getFigureDesc() + "  " + addr(figp.get());
+                item =  new QTableWidgetItem(figName);
+                figureTable->setItem(row,COL_FIGURE_TYPE,item);
+
+                row++;
+            }
         }
     }
 }

@@ -29,11 +29,6 @@
 #include "geometry/xform.h"
 #include "base/shared.h"
 
-class Design;
-class Canvas;
-class Configuration;
-class Workspace;
-
 enum eLayerType
 {
     LTYPE_VIEW,
@@ -41,7 +36,8 @@ enum eLayerType
     LTYPE_MARK,
     LTYPE_BORDER,
     LTYPE_MAP_EDITOR,
-    LTYPE_TILING_MAKER
+    LTYPE_TILING_MAKER,
+    LTYPE_GRID
 };
 
 class Layer : public QObject
@@ -74,7 +70,6 @@ public:
 
     const Xform & getCanvasXform();
     void        setCanvasXform(const Xform & xf);
-    void        updateCanvasXform(const Xform & xf);
 
     QTransform  getCanvasTransform();
     QTransform  getFrameTransform();
@@ -104,25 +99,25 @@ signals:
     void sig_center();
 
 public slots:
-    void slot_moveX(int amount);
-    void slot_moveY(int amount);
-    void slot_rotate(int amount);
-    void slot_scale(int amount);
+    virtual void slot_moveX(int amount);
+    virtual void slot_moveY(int amount);
+    virtual void slot_rotate(int amount);
+    virtual void slot_scale(int amount);
 
     virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn);
 
-    void slot_mouseTranslate(QPointF pt);
-    void slot_wheel_rotate(qreal delta);
-    void slot_wheel_scale(qreal delta);
-    void slot_setCenterScreen(QPointF spt);
+    virtual void slot_mouseTranslate(QPointF pt);
+    virtual void slot_wheel_rotate(qreal delta);
+    virtual void slot_wheel_scale(qreal delta);
+    virtual void slot_setCenterScreen(QPointF spt);
 
 protected:
-    void drawCenter(QPainter * painter);
+    virtual void drawCenter(QPainter * painter);
 
     QPen              layerPen;
 
-    Configuration   * config;
-    Workspace       * workspace;
+    class Configuration   * config;
+    class View            * view;
 
 private:
     void computeLayerTransform();

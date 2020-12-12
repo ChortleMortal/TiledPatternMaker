@@ -44,7 +44,7 @@ void FigureConnector::connectFigure(MapPtr unitMap)
     QPointF tip_pos(1.0,0.0);
 
     // Find the tip, i.e. the vertex at (1,0)
-    for (auto vert : unitMap->getVertices())
+    for (const auto & vert : unitMap->getVertices())
     {
         QPointF pos = vert->getPosition();
         qDebug() << "test" << pos << tip_pos;
@@ -81,7 +81,7 @@ void FigureConnector::connectFigure(MapPtr unitMap)
     NeighboursPtr np        = nmap.getNeighbours(tip);
     QVector<EdgePtr> & qvep = np->getNeighbours();
 
-    for (auto edge : qvep)
+    for (const auto & edge : qvep)
     {
         VertexPtr ov = edge->getOtherV(pos);
         if (ov->getPosition().y() < 0.0)
@@ -173,14 +173,14 @@ qreal FigureConnector::computeScale(MapPtr cunit)
 
     // Find the tip, i.e. the vertex at (1,0)
     NeighbourMap & nmap     = cunit->getNeighbourMap();
-    for (auto vert : cunit->getVertices())
+    for (const auto & vert : cunit->getVertices())
     {
         QPointF pos = vert->getPosition();
         if( Loose::equals( pos, tip_pos ))
         {
             NeighboursPtr np        = nmap.getNeighbours(vert);
             QVector<EdgePtr> & qvep = np->getNeighbours();
-            for (auto edge : qvep)
+            for (const auto &edge : qvep)
             {
                 VertexPtr ov = edge->getOtherV(pos);
                 if( ov->getPosition().y() < 0.0 )
@@ -239,7 +239,7 @@ void FigureConnector::rotateHalf( MapPtr cunit )
 
     QTransform Tp = QTransform().rotateRadians(-2.0 * M_PI * rp->get_don());
 
-    for (auto vert : cunit->getVertices())
+    for (const auto &vert : cunit->getVertices())
     {
         if( (vert->getPosition().y() + Loose::TOL) > 0.0 )
         {
@@ -299,7 +299,7 @@ void FigureConnector::scaleToUnit(MapPtr cunit )
     VertexPtr vmax = nullptr;
     qreal xmax = 0.0;
 
-    for (auto vert : cunit->getVertices())
+    for (const auto &vert : cunit->getVertices())
     {
         if( vmax == nullptr )
         {

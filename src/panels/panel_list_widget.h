@@ -11,28 +11,29 @@ public:
     PanelListWidget(QWidget *parent = nullptr);
 
     void setCurrentRow(QString name);
-    void removeItem(QString name);
+    void setCurrentRow(int row);
+
+    void hide(QString name);
+    void show(QString name);
 
     void addSeparator();
 
     void mousePressEvent(QMouseEvent * event) override;
 
-    void  establishHeight();
-    QSize sizeHint() const override;
+    void  establishSize();
 
 signals:
-    void detachWidget(QString name);
+    void sig_detachWidget(QString name);
 
 protected slots:
     void slot_floatAction();
 
 protected:
-    QAction * floatAction;
 
 private:
     volatile bool localDrop;
-    int  floatIndex;
-
+    int           floatIndex;
+    int           separators;
 };
 
 #endif // PANELLISTWIDGET_H

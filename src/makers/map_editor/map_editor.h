@@ -25,7 +25,6 @@
 #ifndef MAP_EDITOR_H
 #define MAP_EDITOR_H
 
-#include "base/view.h"
 #include "viewers/map_editor_view.h"
 #include "tile/tiling.h"
 #include "makers/map_editor/map_mouseactions.h"
@@ -106,6 +105,8 @@ private:
     static MapEditor    * mpThis;
     static MapEditorPtr   spThis;
 
+    class View * view;
+
     SelectionSet currentSelections;
 
     // Mouse tracking.
@@ -116,7 +117,5 @@ private:
 
     // Mouse mode, triggered by the toolbar.
     eMapMouseMode     map_mouse_mode;
-
-    Workspace       * workspace;
 };
 #endif

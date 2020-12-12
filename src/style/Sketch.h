@@ -49,7 +49,7 @@ class Sketch : public Plain
 protected:
 
 public:
-    Sketch(PrototypePtr proto, PolyPtr bounds);
+    Sketch(PrototypePtr proto);
     Sketch(const Style & other);
     virtual ~Sketch() override;
 

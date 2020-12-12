@@ -26,31 +26,44 @@
 #define VIEW_SETTINGS_H
 
 #include "geometry/bounds.h"
-#include "base/configuration.h"
+#include <QTransform>
 
 class FrameSettings
 {
+    friend class View;
+
 public:
     FrameSettings();
-    void    init(eViewType evt, Bounds bounds, QSize size);
+    FrameSettings(Bounds bounds, QSize size);
+    FrameSettings(const FrameSettings & other);
 
-    QTransform      getFrameTransform()         { return _t; }
+    FrameSettings & operator=(const FrameSettings & other);
 
-    void            setFrameSize(QSize size);
-    QSize           getFrameSize()              { return  _size; }
+    void            reInit();
 
-    void            setActiveSize(QSize size)   { _activeSize = size; }
-    QSize           getActiveSize()             { return  _activeSize; }
+    QTransform      getDefinedFrameTransform() const { return _definedTransform; }
+    QTransform      getActiveFrameTransform() const { return _activeTransform; }
+
+    void            setDefinedFrameSize(QSize size);
+    QSize           getDefinedFrameSize() const { return  _definedSize; }
+
+    void            setActiveFrameSize(QSize size);
+    QSize           getActiveFrameSize() const;
+
+    QSize           getDefaultFrameSize() const { return _defaultSize; }
 
 protected:
-    void            calculateFrameTransform();
+    void            calculateDefinedFrameTransform();
+    void            calculateActiveFrameTransform();
+    QTransform      calculateTransform(QSize size);
 
 private:
-    eViewType       _evt;
     Bounds          _bounds;
-    QSize           _size;
+    QSize           _defaultSize;
+    QSize           _definedSize;
     QSize           _activeSize;
-    QTransform      _t;             // calculated
+    QTransform      _definedTransform;      // calculated
+    QTransform      _activeTransform;       // calculated
 };
 
 #endif

@@ -24,11 +24,10 @@
 
 #include "base/cycler.h"
 #include "base/configuration.h"
-#include "base/view.h"
 #include "base/tiledpatternmaker.h"
-#include "viewers/workspace_viewer.h"
 #include "base/fileservices.h"
 #include "panels/versioned_list_widget.h"
+#include "viewers/viewcontrol.h"
 
 Q_DECLARE_METATYPE(QTextCharFormat)
 Q_DECLARE_METATYPE(QTextCursor)
@@ -63,9 +62,9 @@ void Cycler::init(QThread * thread)
     qRegisterMetaType<QTextCharFormat>();
     qRegisterMetaType<QTextCursor>();
 
-    Workspace * ws = Workspace::getInstance();
-    connect(this,   &Cycler::sig_clearCanvas, ws,   &Workspace::slot_clearCanvas);
-    connect(timer,  &QTimer::timeout,         this, &Cycler::slot_timeout);
+    ViewControl * vc = ViewControl::getInstance();
+    connect(this,   &Cycler::sig_clearView, vc,   &ViewControl::slot_clearView);
+    connect(timer,  &QTimer::timeout,       this, &Cycler::slot_timeout);
 
     timer->start(1000);
 }
@@ -188,7 +187,7 @@ void Cycler::slot_timeout()
             busy = true;
             QString name = *imgList_it;
             imgList_it++;
-            emit sig_compare(name,name);
+            emit sig_compare(name,name,true);
         }
         break;
 
@@ -298,7 +297,7 @@ void Cycler::nextCyclePng()
 {
     qDebug() << "page starting: " << pngIndex;
 
-    emit sig_clearCanvas();
+    emit sig_clearView();
     while (pngIndex < files.size())
     {
         emit sig_show_png(files.at(pngIndex),pngRow,pngCol);

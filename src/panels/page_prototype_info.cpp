@@ -32,13 +32,16 @@
 #include "style/plain.h"
 #include "style/sketch.h"
 #include "style/emboss.h"
+#include "makers/motif_maker/motif_maker.h"
+#include "viewers/viewcontrol.h"
+#include "geometry/transform.h"
 
 using std::string;
 
 Q_DECLARE_METATYPE(WeakDesignElementPtr);
 Q_DECLARE_METATYPE(WeakPrototypePtr);
 
-page_prototype_info:: page_prototype_info(ControlPanel * cpanel)  : panel_page(cpanel,"Prototype Info")
+page_prototype_info:: page_prototype_info(ControlPanel * cpanel)  : panel_page(cpanel,"WS Prototype Info")
 {
     setMouseTracking(true);
 
@@ -47,7 +50,7 @@ page_prototype_info:: page_prototype_info(ControlPanel * cpanel)  : panel_page(c
     QCheckBox * cbDrawFeatures = new QCheckBox("Draw Features");
     QCheckBox * cbDrawfigures  = new QCheckBox("Draw Figures");
 
-    int mode = workspace->getProtoMode();
+    int mode = vcontrol->getProtoViewMode();
     if (mode & PROTO_DRAW_MAP)
         cbDrawMap->setChecked(true);
     if (mode & PROTO_DRAW_FEATURES)
@@ -84,7 +87,7 @@ page_prototype_info:: page_prototype_info(ControlPanel * cpanel)  : panel_page(c
 
     connect(refreshButton,  &QPushButton::clicked,        this, &page_prototype_info::onEnter);
     connect(protoTable,     SIGNAL(cellClicked(int,int)), this,   SLOT(slot_prototypeSelected(int,int)));
-    connect(workspace,      &Workspace::sig_selected_proto_changed, this, &page_prototype_info::onEnter);
+    connect(vcontrol,       &ViewControl::sig_selected_proto_changed, this, &page_prototype_info::onEnter);
     connect(cbDrawMap,      &QCheckBox::clicked, this, &page_prototype_info::drawMapClicked);
     connect(cbDrawFeatures, &QCheckBox::clicked, this, &page_prototype_info::drawFeatureClicked);
     connect(cbDrawfigures,  &QCheckBox::clicked, this, &page_prototype_info::drawFigureClicked);
@@ -99,7 +102,7 @@ void page_prototype_info::onEnter()
 {
     protoTable->clearContents();
 
-    QVector<PrototypePtr> prototypes = workspace->getPrototypes();
+    const QVector<PrototypePtr> & prototypes = motifMaker->getPrototypes();
     int col = 0;
     QTableWidgetItem * item;
     for (auto proto : prototypes)
@@ -168,7 +171,11 @@ void page_prototype_info::slot_prototypeSelected(int row, int col)
     if (var.canConvert<WeakPrototypePtr>())
     {
         WeakPrototypePtr wpp = var.value<WeakPrototypePtr>();
-        workspace->setSelectedPrototype(wpp);
+        PrototypePtr pp = wpp.lock();
+        if (pp)
+        {
+            motifMaker->setSelectedPrototype(pp);
+        }
     }
 
     twi = protoTable->item(PROTO_ROW_DEL,col);
@@ -176,26 +183,29 @@ void page_prototype_info::slot_prototypeSelected(int row, int col)
     if (var.canConvert<WeakDesignElementPtr>())
     {
         WeakDesignElementPtr wdp = var.value<WeakDesignElementPtr>();
-        workspace->setSelectedDesignElement(wdp);
+        if (wdp.lock())
+        {
+            motifMaker->setSelectedDesignElement(wdp.lock());
+        }
     }
 
-    emit sig_viewWS();
+    emit sig_refreshView();
 }
 
 void  page_prototype_info::drawMapClicked(bool enb)
 {
-    workspace->setProtoMode(PROTO_DRAW_MAP,enb);
-    emit sig_viewWS();
+    vcontrol->setProtoViewMode(PROTO_DRAW_MAP,enb);
+    emit sig_refreshView();
 }
 
 void page_prototype_info::drawFigureClicked(bool enb)
 {
-    workspace->setProtoMode(PROTO_DRAW_FIGURES,enb);
-    emit sig_viewWS();
+    vcontrol->setProtoViewMode(PROTO_DRAW_FIGURES,enb);
+    emit sig_refreshView();
 }
 
 void page_prototype_info::drawFeatureClicked(bool enb)
 {
-    workspace->setProtoMode(PROTO_DRAW_FEATURES,enb);
-    emit sig_viewWS();
+    vcontrol->setProtoViewMode(PROTO_DRAW_FEATURES,enb);
+    emit sig_refreshView();
 }

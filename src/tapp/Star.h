@@ -46,6 +46,8 @@ public:
 
     virtual QString getFigureDesc() override { return "Star"; }
 
+    bool equals(const FigurePtr other) override;
+
 private:
     qreal 	d;
     int		s;

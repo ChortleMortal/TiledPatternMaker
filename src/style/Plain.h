@@ -41,7 +41,7 @@
 class Plain : public Colored
 {
 public:
-    Plain(PrototypePtr proto, PolyPtr bounds);
+    Plain(PrototypePtr proto);
     Plain(const Style & other);
     virtual ~Plain() override;
 

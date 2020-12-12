@@ -51,9 +51,6 @@
 #include <QPainter>
 #include "viewers/geo_graphics.h"
 
-class Configuration;
-class Workspace;
-
 class FillRegion
 {
 public:
@@ -64,8 +61,8 @@ public:
     virtual void receive(class GeoGraphics * gg, int h, int v ) = 0;
 
 protected:
-    Configuration * config;
-    Workspace     * workspace;
+    class Configuration * config;
+    class ViewControl   * vcontrol;
 
 private:
 

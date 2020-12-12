@@ -37,7 +37,7 @@
 
 // Creation.
 
-Plain::Plain(PrototypePtr proto, PolyPtr  bounds ) : Colored(proto,bounds)
+Plain::Plain(PrototypePtr proto) : Colored(proto)
 {
 }
 
@@ -57,7 +57,7 @@ Plain::~Plain()
 
 void Plain::resetStyleRepresentation()
 {
-    resetStyleMap();
+    eraseStyleMap();
 }
 
 void Plain::createStyleRepresentation()
@@ -82,7 +82,7 @@ void Plain::draw(GeoGraphics *gg)
 
     QPen pen(colors.getNextColor().color);
 
-    for (auto edge : map->getEdges())
+    for (const auto &edge : map->getEdges())
     {
         gg->drawEdge(edge,pen);
     }

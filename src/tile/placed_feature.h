@@ -49,7 +49,7 @@ public:
     ~PlacedFeature() {}
 
     // Data.
-    void             setTransform(QTransform T);
+    void             setTransform(QTransform newT);
     void             setFeature(FeaturePtr feature);
     FeaturePtr       getFeature();
     QTransform       getTransform();
@@ -62,7 +62,10 @@ public:
     bool loadFromGirihShape(QString name);
 
     bool isGirihShape() { return !girihShapeName.isEmpty(); }
-    QString getGirishShapeName() { return girihShapeName; }
+    QString getGirihShapeName() { return girihShapeName; }
+
+    bool show() { return _show; }
+    void setShow(bool show) { _show = show; }
 
 protected:
     void saveGirihShape(QTextStream & out, QString name);
@@ -74,5 +77,6 @@ private:
     QString      girihShapeName;
     FeaturePtr   feature;
     QTransform   T;
+    bool         _show;  // used by tiling maker view
 };
 #endif

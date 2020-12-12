@@ -27,7 +27,6 @@
 
 #include "base/qtapplog.h"
 #include "base/configuration.h"
-#include "viewers/workspace_viewer.h"
 #include "base/tiledpatternmaker.h"
 
 TiledPatternMaker * theApp = nullptr;
@@ -117,6 +116,7 @@ int main(int argc, char *argv[])
     // instantiate and run
     TiledPatternMaker * maker = new TiledPatternMaker();
     theApp = maker;
+    emit theApp->sig_start();
 
     int rv =  app.exec();
 

@@ -35,7 +35,7 @@ LoaderListWidget::LoaderListWidget(QWidget *parent) : QListWidget(parent)
 void LoaderListWidget::addItemList(QStringList list)
 {
     clear();
-    for (auto item : list)
+    for (const auto & item : list)
     {
         addItem(item);
     }
@@ -138,7 +138,7 @@ bool VersionList::ComparePair(const VersionSet & a, VersionSet &b)
 
 void VersionList::create(QStringList list)
 {
-    for (auto file : list)
+    for (const auto & file : list)
     {
         QStringList l = file.split('.');
         int size = l.size();
@@ -187,7 +187,7 @@ void VersionList::create(QStringList list)
 QStringList VersionList::recompose()
 {
     QStringList list;
-    for  (auto set : versionList)
+    for  (const auto & set : qAsConst(versionList))
     {
         std::string name = set.first;
         for  (int version : set.second)

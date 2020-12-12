@@ -22,6 +22,7 @@ SOURCES += \
     base/layer.cpp \
     base/main.cpp \
     base/misc.cpp \
+    base/model_settings.cpp \
     base/mosaic.cpp \
     base/mosaic_loader.cpp \
     base/mosaic_manager.cpp \
@@ -34,11 +35,8 @@ SOURCES += \
     base/tpmsplash.cpp \
     base/transparentwidget.cpp \
     base/utilities.cpp \
-    base/view.cpp \
-    base/workspace.cpp \
-    base/workspace_settings.cpp \
     designs/design.cpp \
-    designs/design_control.cpp \
+    designs/design_maker.cpp \
     designs/designs.cpp \
     designs/patterns.cpp \
     designs/shapefactory.cpp \
@@ -59,23 +57,24 @@ SOURCES += \
     geometry/transform.cpp \
     geometry/vertex.cpp \
     geometry/xform.cpp \
-    makers/figure_maker/explicit_figure_editors.cpp \
-    makers/figure_maker/feature_button.cpp \
-    makers/figure_maker/feature_launcher.cpp \
-    makers/figure_maker/figure_editors.cpp \
-    makers/figure_maker/master_figure_editor.cpp \
-    makers/figure_maker/prototype_maker.cpp \
+    makers/decoration_maker/decoration_maker.cpp \
+    makers/motif_maker/explicit_figure_editors.cpp \
+    makers/motif_maker/feature_button.cpp \
+    makers/motif_maker/feature_launcher.cpp \
+    makers/motif_maker/figure_editors.cpp \
+    makers/motif_maker/master_figure_editor.cpp \
     makers/map_editor/map_editor.cpp \
     makers/map_editor/map_editor_selection.cpp \
     makers/map_editor/map_editor_stash.cpp \
     makers/map_editor/map_mouseactions.cpp \
     makers/map_editor/map_selection.cpp \
-    makers/style_maker/style_color_fill_group.cpp \
-    makers/style_maker/style_color_fill_set.cpp \
-    makers/style_maker/style_editors.cpp \
+    makers/decoration_maker/style_color_fill_group.cpp \
+    makers/decoration_maker/style_color_fill_set.cpp \
+    makers/decoration_maker/style_editors.cpp \
+    makers/motif_maker/motif_maker.cpp \
+    makers/tiling_maker/feature_selection.cpp \
     makers/tiling_maker/tiling_maker.cpp \
     makers/tiling_maker/tiling_mouseactions.cpp \
-    makers/tiling_maker/tiling_selection.cpp \
     panels/dlg_colorSet.cpp \
     panels/dlg_crop.cpp \
     panels/dlg_edgepoly_edit.cpp \
@@ -89,22 +88,22 @@ SOURCES += \
     panels/dlg_trim.cpp \
     panels/layout_sliderset.cpp \
     panels/layout_transform.cpp \
-    panels/page_canvasSettings.cpp \
+    panels/motif_display_widget.cpp \
     panels/page_config.cpp \
     panels/page_debug.cpp \
+    panels/page_decoration_maker.cpp \
     panels/page_design_elements.cpp \
     panels/page_layers.cpp \
     panels/page_loaders.cpp \
     panels/page_log.cpp \
     panels/page_map_editor.cpp \
-    panels/page_mosaic_maker.cpp \
+    panels/page_modelSettings.cpp \
+    panels/page_motif_maker.cpp \
     panels/page_prototype_info.cpp \
-    panels/page_prototype_maker.cpp \
     panels/page_save.cpp \
     panels/page_style_figure_info.cpp \
+    panels/page_system_info.cpp \
     panels/page_tiling_maker.cpp \
-    panels/page_views.cpp \
-    panels/page_workspace.cpp \
     panels/panel.cpp \
     panels/panel_list_widget.cpp \
     panels/panel_misc.cpp \
@@ -142,6 +141,7 @@ SOURCES += \
     tile/feature.cpp \
     tile/feature_reader.cpp \
     tile/feature_writer.cpp \
+    tile/grid.cpp \
     tile/placed_feature.cpp \
     tile/tiling.cpp \
     tile/tiling_loader.cpp \
@@ -156,8 +156,9 @@ SOURCES += \
     viewers/shape_view.cpp \
     viewers/tiling_maker_view.cpp \
     viewers/tiling_view.cpp \
-    viewers/viewerbase.cpp \
-    viewers/workspace_viewer.cpp
+    viewers/view.cpp \
+    viewers/viewcontrol.cpp \
+    viewers/viewerbase.cpp
 
 HEADERS += \
     base/border.h \
@@ -169,6 +170,7 @@ HEADERS += \
     base/frame_settings.h \
     base/layer.h \
     base/misc.h \
+    base/model_settings.h \
     base/mosaic.h \
     base/mosaic_loader.h \
     base/mosaic_manager.h \
@@ -184,11 +186,8 @@ HEADERS += \
     base/transparentwidget.h \
     base/utilities.h \
     base/version.h \
-    base/view.h \
-    base/workspace.h \
-    base/workspace_settings.h \
     designs/design.h \
-    designs/design_control.h \
+    designs/design_maker.h \
     designs/designs.h \
     designs/patterns.h \
     designs/shapefactory.h \
@@ -208,23 +207,24 @@ HEADERS += \
     geometry/transform.h \
     geometry/vertex.h \
     geometry/xform.h \
-    makers/figure_maker/explicit_figure_editors.h \
-    makers/figure_maker/feature_button.h \
-    makers/figure_maker/feature_launcher.h \
-    makers/figure_maker/figure_editors.h \
-    makers/figure_maker/master_figure_editor.h \
-    makers/figure_maker/prototype_maker.h \
+    makers/decoration_maker/decoration_maker.h \
+    makers/motif_maker/explicit_figure_editors.h \
+    makers/motif_maker/feature_button.h \
+    makers/motif_maker/feature_launcher.h \
+    makers/motif_maker/figure_editors.h \
+    makers/motif_maker/master_figure_editor.h \
     makers/map_editor/map_editor.h \
     makers/map_editor/map_editor_selection.h \
     makers/map_editor/map_editor_stash.h \
     makers/map_editor/map_mouseactions.h \
     makers/map_editor/map_selection.h \
-    makers/style_maker/style_color_fill_group.h \
-    makers/style_maker/style_color_fill_set.h \
-    makers/style_maker/style_editors.h \
+    makers/decoration_maker/style_color_fill_group.h \
+    makers/decoration_maker/style_color_fill_set.h \
+    makers/decoration_maker/style_editors.h \
+    makers/motif_maker/motif_maker.h \
+    makers/tiling_maker/feature_selection.h \
     makers/tiling_maker/tiling_maker.h \
     makers/tiling_maker/tiling_mouseactions.h \
-    makers/tiling_maker/tiling_selection.h \
     panels/dlg_colorSet.h \
     panels/dlg_crop.h \
     panels/dlg_edgepoly_edit.h \
@@ -238,22 +238,22 @@ HEADERS += \
     panels/dlg_trim.h \
     panels/layout_sliderset.h \
     panels/layout_transform.h \
-    panels/page_canvasSettings.h \
+    panels/motif_display_widget.h \
     panels/page_config.h \
     panels/page_debug.h \
+    panels/page_decoration_maker.h \
     panels/page_design_elements.h \
     panels/page_layers.h \
     panels/page_loaders.h \
     panels/page_log.h \
     panels/page_map_editor.h \
-    panels/page_mosaic_maker.h \
+    panels/page_modelSettings.h \
+    panels/page_motif_maker.h \
     panels/page_prototype_info.h \
-    panels/page_prototype_maker.h \
     panels/page_save.h \
     panels/page_style_figure_info.h \
+    panels/page_system_info.h \
     panels/page_tiling_maker.h \
-    panels/page_views.h \
-    panels/page_workspace.h \
     panels/panel.h \
     panels/panel_list_widget.h \
     panels/panel_misc.h \
@@ -291,6 +291,7 @@ HEADERS += \
     tile/feature.h \
     tile/feature_reader.h \
     tile/feature_writer.h \
+    tile/grid.h \
     tile/placed_feature.h \
     tile/tiling.h \
     tile/tiling_loader.h \
@@ -305,8 +306,9 @@ HEADERS += \
     viewers/shape_view.h \
     viewers/tiling_maker_view.h \
     viewers/tiling_view.h \
-    viewers/viewerbase.h \
-    viewers/workspace_viewer.h
+    viewers/view.h \
+    viewers/viewcontrol.h \
+    viewers/viewerbase.h
 
 FORMS +=
 
@@ -331,6 +333,8 @@ DISTFILES += \
     ../etc/models/designeditor.qmodel \
     ../etc/models/figure_editors.qmodel \
     ../etc/models/figures.qmodel \
+    ../etc/models/makers.qmodel \
+    ../etc/models/makers2.qmodel \
     ../etc/models/shapes.qmodel \
     ../etc/models/styles.qmodel \
     ../etc/prune.sh \

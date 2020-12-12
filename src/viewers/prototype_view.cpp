@@ -23,11 +23,11 @@
  */
 
 #include "base/configuration.h"
-#include "viewers/workspace_viewer.h"
-#include "viewers/prototype_view.h"
-#include "viewers/viewerbase.h"
-
 #include "geometry/point.h"
+#include "tile/placed_feature.h"
+#include "viewers/prototype_view.h"
+#include "viewers/viewcontrol.h"
+#include "viewers/viewerbase.h"
 
 PrototypeView::PrototypeView(PrototypePtr proto,int mode) : Layer("ProtoFeatureView",LTYPE_VIEW)
 {
@@ -45,7 +45,7 @@ PrototypeView::PrototypeView(PrototypePtr proto,int mode) : Layer("ProtoFeatureV
     {
         MapPtr map = proto->getProtoMap();
 
-        for(auto edge : map->getEdges())
+        for(auto& edge : map->getEdges())
         {
            edges.push_back(edge);
         }
@@ -74,7 +74,7 @@ PrototypeView::PrototypeView(PrototypePtr proto,int mode) : Layer("ProtoFeatureV
 
 void PrototypeView::paint(QPainter *painter)
 {
-    qDebug() << "ProtoFeatureView::paint";
+    qDebug() << "ProtoFeatureView::paint proto =" << proto.get();
 
     painter->setRenderHint(QPainter::Antialiasing ,true);
     painter->setRenderHint(QPainter::SmoothPixmapTransform,true);
@@ -102,8 +102,7 @@ void PrototypeView::draw( GeoGraphics * gg )
 
 void PrototypeView::receive(GeoGraphics *gg, int h, int v )
 {
-
-    for (auto placedDesignElement : rpfs)
+    for (auto placedDesignElement : qAsConst(rpfs))
     {
         QPointF pt    = (t1 * static_cast<qreal>(h)) + (t2 * static_cast<qreal>(v));
         QTransform T0 = placedDesignElement.getTransform();
@@ -123,11 +122,8 @@ void PrototypeView::receive(GeoGraphics *gg, int h, int v )
             ViewerBase::drawFigure(gg,placedDesignElement.getFigure(),QPen(Qt::green,3));
         }
 
-        //if (workspace->getSelectedDesignElement() == placedDesignElement)
-        {
-
-        }
-        if (Layer::workspace->getSelectedFeature() == placedDesignElement.getFeature())
+        ViewControl * vcontrol = ViewControl::getInstance();
+        if (vcontrol->getSelectedFeature() == placedDesignElement.getFeature())
         {
 
         }

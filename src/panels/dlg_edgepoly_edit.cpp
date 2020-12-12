@@ -4,7 +4,7 @@
 #include "panels/dlg_line_edit.h"
 #include "tile/feature.h"
 #include "base/utilities.h"
-#include "viewers/workspace_viewer.h"
+#include "viewers/view.h"
 
 /////////////////////////////////////////////////////////////////
 ///
@@ -133,7 +133,7 @@ void DlgEdgePolyEdit::display()
             bool  convex = edge->isConvex();
 
             col++;
-            QString str = QString("%1 , %2").arg(QString::number(arcC.x(),'g',16)).arg(QString::number(arcC.y(),'g',16));
+            QString str = QString("%1 , %2").arg(QString::number(arcC.x(),'g',16),QString::number(arcC.y(),'g',16));
             item = new QTableWidgetItem(str);
             table.setItem(row,col,item);
 
@@ -154,8 +154,8 @@ void DlgEdgePolyEdit::slot_undo()
 {
     epoly = original;
 
-    Workspace * workspace = Workspace::getInstance();
-    workspace->update();
+    View * view = View::getInstance();
+    view->update();
 
     reject();
 }

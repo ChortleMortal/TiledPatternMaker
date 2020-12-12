@@ -28,14 +28,14 @@
 #include <QtWidgets>
 #include <QSignalMapper>
 #include "panels/layout_sliderset.h"
-#include "makers/tiling_maker/tiling_selection.h"
+#include "makers/tiling_maker/feature_selection.h"
 
 class DlgMagnitude : public QDialog
 {
     Q_OBJECT
 
 public:
-    DlgMagnitude(TilingSelectionPtr sel, QWidget * parent = nullptr);
+    DlgMagnitude(TilingSelectorPtr sel, QWidget * parent = nullptr);
 
 signals:
     void sig_magnitudeChanged();
@@ -47,7 +47,7 @@ private slots:
 
 private:
     DoubleSliderSet   * magWidget;
-    TilingSelectionPtr  sel;
+    TilingSelectorPtr   sel;
     EdgePtr             edge;
 };
 

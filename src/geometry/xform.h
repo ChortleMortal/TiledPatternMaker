@@ -11,6 +11,8 @@ public:
     Xform(const Xform  & other);
     Xform(QTransform t);
 
+    Xform & operator=(const Xform & other);
+
     void        update(const Xform & other);
     void        setTransform(QTransform t);
     void        addTransform(QTransform t);
@@ -18,7 +20,7 @@ public:
     QTransform  toQTransform(QTransform transform) const;
     QTransform  getTransform() const;
     QPointF     getTranslate() { return QPointF(translateX,translateY); }
-    QString     toInfoString();
+    QString     toInfoString() const;
 
     qreal       getScale();
     qreal       getRotateRadians();

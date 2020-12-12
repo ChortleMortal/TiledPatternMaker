@@ -51,22 +51,21 @@
 class Feature
 {
 public:
-    Feature();
-    Feature(int n, qreal rotate);           // Create an n-sided regular polygon with a vertex at (1,0).
-    Feature(EdgePoly epoly, qreal rotate);
-    Feature(const FeaturePtr other );
+    Feature(int n, qreal rotate = 0.0, qreal scale = 1.0);           // Create an n-sided regular polygon with a vertex at (1,0).
+    Feature(EdgePoly epoly, qreal rotate = 0.0, qreal scale = 1.0);
+    Feature(const FeaturePtr other);
     ~Feature();
 
+    void create();
     FeaturePtr recreate();
 
-    void reset();
-
-    void setRegular(bool regular) { this->regular = regular; }
+    void setRegular(bool enb);
     bool isRegular() { return regular; }
+
     bool isClockwise() { return  epoly.isClockwise(); }
 
     bool equals(const FeaturePtr other);
-
+    bool isSimilar(const FeaturePtr other);
 
     EdgePoly  & getEdgePoly()      { return epoly;}             // must be ref so can change
     QPolygonF   getPolygon()       { return epoly.getPoly(); }
@@ -74,20 +73,35 @@ public:
     int         numPoints()        { return epoly.size(); }
     int         numSides()         { return epoly.size(); }
     ColorSet &  getBkgdColors()    { return bkgdColors; }
+
+    EdgePoly &  getBase()          { return base; }
+
+    qreal       getRotation();
     void        setRotation(qreal rot);
-    qreal       getRotation()      { return rotation; }
+    void        deltaRotation(qreal delta);
+
+    qreal       getScale();
+    void        setScale(qreal rot);
+    void        deltaScale(qreal delta);
+
     QPointF     getCenter();
 
     QString     toString() const;
     QString     info();
+    QString     summary();
 
     static int refs;
 
-private:
-    bool             regular;
-    EdgePoly         epoly;
-    ColorSet         bkgdColors;    // backgrounds
-    qreal            rotation;
+protected:
+    int         n;             // sides
+    bool        regular;
+    EdgePoly    base;
+
+    qreal       rotation;
+    qreal       scale;
+
+    EdgePoly    epoly;
+    ColorSet    bkgdColors;    // backgrounds
 };
 
 #endif

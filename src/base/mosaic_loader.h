@@ -40,9 +40,7 @@
 using std::string;
 using namespace pugi;
 
-class Workspace;
-
-class MosaicLoader
+ class MosaicLoader
 {
 public:
     MosaicLoader();
@@ -70,22 +68,21 @@ protected:
     void processTileColors(xml_node & node);
 
     // design
-    void procSize(xml_node & node, int &width, int &height);
-    QColor procBackgroundColor(xml_node & node);
-    void procBorder(xml_node & node);
-    void procFill(xml_node & node);
-    qreal procWidth(xml_node & node);
+    void    procSize(xml_node & node, int &width, int &height);
+    QColor  procBackgroundColor(xml_node & node);
+    void    procBorder(xml_node & node);
+    void    procFill(xml_node & node);
+    qreal   procWidth(xml_node & node);
 
     // styles
     void    procesToolkitGeoLayer(xml_node & node, Xform & xf);
-    //void    processColorSet(xml_node & node, QColor & color);
     void    processColorSet(xml_node & node, ColorSet & colorSet);
     void    processColorGroup(xml_node & node, ColorGroup & colorGroup);
     void    processsStyleThick(xml_node & node, bool & draw_outline, qreal & width);
     void    processsStyleInterlace(xml_node & node, qreal & gap, qreal & shadow, bool & includeSVerts);
     void    processsStyleFilled(xml_node & node, bool &draw_inside, bool &draw_outside, int &algorithm);
     void    processsStyleEmboss(xml_node & node, qreal & angle);
-    void    processStyleStyle(xml_node & node, PrototypePtr &proto, PolyPtr &poly);
+    void    processStyleStyle(xml_node & node, PrototypePtr &proto);
 
     // features
     FeaturePtr  getFeature(xml_node & node);
@@ -189,7 +186,7 @@ private:
     int eRefrCnt;
     int nRefrCnt;
 
-    Workspace * workspace;
+    class View * view;
 };
 
 #endif

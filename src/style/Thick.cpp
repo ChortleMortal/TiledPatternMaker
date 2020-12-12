@@ -40,8 +40,7 @@
 //
 // Creation.
 
-Thick::Thick(PrototypePtr proto, PolyPtr bounds ):
-    Colored(proto,bounds)
+Thick::Thick(PrototypePtr proto): Colored(proto)
 {
     width = 0.05;
     draw_outline = false;           // DAC added
@@ -77,9 +76,19 @@ void Thick::setLineWidth(qreal width )
     resetStyleRepresentation();
 }
 
+void Thick::setOutlineWidth(qreal width )
+{
+    this->outline_width = width;
+    if (width != 0)
+    {
+        draw_outline = true;
+    }
+    resetStyleRepresentation();
+}
+
 void Thick::resetStyleRepresentation()
 {
-    resetStyleMap();
+    eraseStyleMap();
 }
 
 void Thick::createStyleRepresentation()
@@ -111,14 +120,14 @@ void Thick::draw(GeoGraphics * gg )
     if ( draw_outline )
     {
         QPen pen(Qt::black);
-        for (auto edge : map->getEdges())
+        for (auto& edge : map->getEdges())
         {
             gg->drawThickEdge(edge,width * 2 + 0.05, pen);
         }
     }
 
     QPen pen(colors.getNextColor().color);
-    for (auto edge : map->getEdges())
+    for (auto& edge : map->getEdges())
     {
         gg->drawThickEdge(edge, width * 2, pen);
     }

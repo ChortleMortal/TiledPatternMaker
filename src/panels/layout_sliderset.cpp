@@ -174,45 +174,85 @@ void DoubleSliderSet::setPrecision(int val)
 
 // Spin set
 
+AQSpinBox::AQSpinBox() : QSpinBox()
+{
+    blocked = false;
+}
+
+void  AQSpinBox::leaveEvent(QEvent *event)
+{
+    Q_UNUSED(event);
+    blocked = false;
+}
+
+void  AQSpinBox::enterEvent(QEvent *event)
+{
+    Q_UNUSED(event);
+    blocked = true;
+}
+
 SpinSet::SpinSet(QString txt, int val, int min, int max)
 {
     label = new QLabel(txt);
 
-    spin = new QSpinBox();
+    spin = new AQSpinBox();
     spin->setRange(min,max);
     spin->setValue(val);
 
     addWidget(label);
     addSpacing(4);
     addWidget(spin);
+    addStretch();
 
     connect(spin,   SIGNAL(valueChanged(int)), this,   SIGNAL(valueChanged(int)));
 }
 
 void SpinSet::setValue(int val)
 {
+    if  (spin->blocked) return;
+
     spin->blockSignals(true);
     spin->setValue(val);
     spin->blockSignals(false);
+}
+
+AQDoubleSpinBox::AQDoubleSpinBox() : QDoubleSpinBox()
+{
+    blocked = false;
+}
+
+void  AQDoubleSpinBox::leaveEvent(QEvent *event)
+{
+    Q_UNUSED(event);
+    blocked = false;
+}
+
+void  AQDoubleSpinBox::enterEvent(QEvent *event)
+{
+    Q_UNUSED(event);
+    blocked = true;
 }
 
 DoubleSpinSet::DoubleSpinSet(QString txt, qreal val, qreal min, qreal max)
 {
     label = new QLabel(txt);
 
-    spin = new QDoubleSpinBox();
+    spin = new AQDoubleSpinBox();
     spin->setRange(min,max);
     spin->setValue(val);
 
     addWidget(label);
     addSpacing(4);
     addWidget(spin);
+    addStretch();
 
     connect(spin,   SIGNAL(valueChanged(qreal)), this,   SLOT(slot_valueChanged(qreal)));
 }
 
 void DoubleSpinSet::setValue(qreal val)
 {
+    if  (spin->blocked) return;
+
     spin->blockSignals(true);
     spin->setValue(val);
     spin->blockSignals(false);

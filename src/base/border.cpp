@@ -31,15 +31,16 @@
 ///
 ////////////////////////////////////////////////
 
-Border::Border() : Layer("Border",LTYPE_BORDER)
+Border::Border(QSize sz) : Layer("Border",LTYPE_BORDER)
 {
+    size = sz;
     type = BORDER_NONE;  // undefined
     setZValue(BORDER_ZLEVEL);
     sp = make_shared<ShapeFactory>(2.0);
     addSubLayer(sp);
 
-    Workspace * workspace = Workspace::getInstance();
-    connect(workspace, &View::sig_reconstructBorder, this, &Border::construct);
+    View * view = View::getInstance();
+    connect(view, &View::sig_viewSizeChanged, this, &Border::resize);
 }
 
 Border::~Border()
@@ -47,25 +48,28 @@ Border::~Border()
     //qDebug() << "Border destructor";
 }
 
+void Border::resize(QSize sz)
+{
+    size = sz;
+    construct();
+}
+
 ////////////////////////////////////////////////
 ///
-/// Border0
+/// BorderPlain
 ///
 ////////////////////////////////////////////////
 
-BorderPlain::BorderPlain(qreal width, QColor color)
+BorderPlain::BorderPlain(QSize sz, qreal width, QColor color) : Border(sz)
 {
     type         = BORDER_PLAIN;
     this->width  = width;
     this->color  = color;
-
-    construct();
 }
 
 void BorderPlain::construct()
 {
     sp->reset();
-    size = workspace->size();
 
     QPen pen(color,width);
 
@@ -82,25 +86,22 @@ void BorderPlain::get(qreal & width, QColor & color)
 
 ////////////////////////////////////////////////
 ///
-/// Border0
+/// BorderTwoColor
 /// An outer border with alternating tiles
 ///
 ////////////////////////////////////////////////
 
-BorderTwoColor::BorderTwoColor(QColor color1, QColor color2, qreal width)
+BorderTwoColor::BorderTwoColor(QSize sz, QColor color1, QColor color2, qreal width) : Border(sz)
 {
     type         = BORDER_TWO_COLOR;
     color        = color1;
     this->color2 = color2;
     this->width  = width;
-
-    construct();
 }
 
 void BorderTwoColor::construct()
 {
     sp->reset();
-    size = workspace->size();
 
     qreal w   = size.width();
     qreal h  = size.height();
@@ -109,7 +110,6 @@ void BorderTwoColor::construct()
     qreal y = 0.0;
 
     qreal bw, bh;
-    QPen pen(Qt::green,1);
 
     // top
     while (x < w)
@@ -236,23 +236,28 @@ QPen BorderTwoColor::nextBorderPen()
 
 ////////////////////////////////////////////////
 ///
-/// Border2
+/// BorderBlocks
 ///
 ////////////////////////////////////////////////
 
-BorderBlocks::BorderBlocks(QColor color, qreal diameter, int rows, int cols)
+BorderBlocks::BorderBlocks(QSize sz, QColor color, qreal diameter, int rows, int cols) : Border(sz)
 {
     type        = BORDER_BLOCKS;
     this->color = color;
     this->width = diameter;
     this->rows  = rows;
     this->cols  = cols;
-
-    construct();
 }
 
 void BorderBlocks::construct()
 {
+    sp->reset();
+
+    qreal w   = size.width();
+    qreal h  = size.height();
+
+    width = w /cols;
+
     qreal side  = width * qTan(M_PI/8.0);
     qreal piece = sqrt(side*side*0.5);
 
@@ -273,12 +278,12 @@ void BorderBlocks::construct()
         tt << (start + QPointF(piece,             piece));
         sp->addPolygon(pen,brush,tt);
 
-        start += QPointF(150.0,0.0);
+        start += QPointF(width,0.0);
     }
 
     // bottom row
     start.setX(0.0);
-    start.setY(fabs(piece + (width * rows)) + 0.5);
+    start.setY(h-piece);
     for (int i=0; i < cols; i++)
     {
 
@@ -291,7 +296,45 @@ void BorderBlocks::construct()
 
         sp->addPolygon(pen,brush,tt);
 
-        start += QPointF(150.0,0.0);
+        start += QPointF(width,0.0);
+    }
+
+    width = h /rows;
+
+    side  = width * qTan(M_PI/8.0);
+    piece = sqrt(side*side*0.5);
+
+    // left col
+    start= QPointF(0.0,0.0);
+    for (int i=0; i < rows; i++)
+    {
+
+        // trapezium
+        QPolygonF tt;
+        tt << (start + QPointF(0.0,               0.0));
+        tt << (start + QPointF(piece,             piece));
+        tt << (start + QPointF(piece,             side + piece));
+        tt << (start + QPointF(0,                 (piece*2) + side));
+        sp->addPolygon(pen,brush,tt);
+
+        start += QPointF(0.0,width);
+    }
+
+
+    // right col
+    start = QPointF(w,0);
+    for (int i=0; i < rows; i++)
+    {
+
+        // trapezium
+        QPolygonF tt;
+        tt << (start + QPointF(0.0,               0.0));
+        tt << (start + QPointF(0,                 (piece*2) + side));
+        tt << (start + QPointF(-piece,            side +  piece));
+        tt << (start + QPointF(-piece,            piece));
+        sp->addPolygon(pen,brush,tt);
+
+        start += QPointF(0.0,width);
     }
 }
 

@@ -25,20 +25,26 @@
 #ifndef TILINGMANAGER_H
 #define TILINGMANAGER_H
 
-#include "base/workspace.h"
+#include "base/shared.h"
+#include "base/configuration.h"
 
 class TilingManager
 {
 public:
     TilingManager();
 
-    TilingPtr loadTiling(QString name);
-    bool      saveTiling(QString name, TilingPtr tp);
+    TilingPtr loadTiling(QString name, eSM_Event mode);
+    bool      saveTiling(QString name, TilingPtr tiling);
     bool      verifyNameFiles();
 
+protected:
+    void      setVCFillData(TilingPtr tiling);
+
 private:
-    Workspace       * workspace;
-    Configuration   * config;
+    class View            * view;
+    class Configuration   * config;
+    class TilingMaker     * tilingMaker;
+    class MotifMaker      * motifMaker;
 };
 
 #endif // TILINGMANAGER_H

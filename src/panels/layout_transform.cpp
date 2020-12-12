@@ -29,10 +29,22 @@ LayoutTransform::LayoutTransform(QString name, int decimals)
     addLayout(Y);
     addStretch();
 
+    init();
+
     connect(scale,  &DoubleSpinSet::sig_valueChanged,     this,    &LayoutTransform::xformChanged);
     connect(rot,    &DoubleSpinSet::sig_valueChanged,     this,    &LayoutTransform::xformChanged);
     connect(X,      &DoubleSpinSet::sig_valueChanged,     this,    &LayoutTransform::xformChanged);
     connect(Y,      &DoubleSpinSet::sig_valueChanged,     this,    &LayoutTransform::xformChanged);
+}
+
+void LayoutTransform::init()
+{
+    blockSignals(true);
+    scale->setValue(1.0);
+    rot->setValue(0.0);
+    X->setValue(0.0);
+    Y->setValue(0.0);
+    blockSignals(false);
 }
 
 void LayoutTransform::setTransform(QTransform T)
@@ -42,6 +54,16 @@ void LayoutTransform::setTransform(QTransform T)
     rot->setValue(Transform::rotation(T));
     X->setValue(Transform::transx(T));
     Y->setValue(Transform::transy(T));
+    blockSignals(false);
+}
+
+void LayoutTransform::setTransform(Xform & xf)
+{
+    blockSignals(true);
+    scale->setValue(xf.getScale());
+    rot->setValue(xf.getRotateDegrees());
+    X->setValue(xf.getTranslateX());
+    Y->setValue(xf.getTranslateY());
     blockSignals(false);
 }
 

@@ -3,8 +3,6 @@
 
 #include "panels/panel_page.h"
 
-class View;
-
 class ViewPanel : public QWidget
 {
     Q_OBJECT
@@ -21,7 +19,7 @@ protected:
     void    setScaleMode(bool checked);
 
 private:
-    Workspace * workspace;
+    class View * view;
 
     QPushButton * btn1;
     QPushButton * btn2;

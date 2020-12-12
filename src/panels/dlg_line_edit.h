@@ -4,9 +4,6 @@
 #include <QtWidgets>
 #include "base/shared.h"
 #include "geometry/edgepoly.h"
-#include "base/workspace.h"
-
-class WorkspaceViewer;
 
 class DlgLineEdit : public QLineEdit
 {
@@ -32,7 +29,7 @@ protected slots:
     void slot_editingFinished();
 
 private:
-    Workspace * workspace;
+    class View * view;
 
     int row;
     int col;

@@ -48,17 +48,17 @@ void PanelPagesWidget::addWidget(panel_page * page)
      pages[page->getName()] = page;
 }
 
-panel_page *PanelPagesWidget::setPanelPage(QString name)
+panel_page *PanelPagesWidget::setCurrentPage(QString name)
 {
     panel_page * pp = pages.value(name);
     if (pp)
     {
-        setPanelPage(pp);
+        setCurrentPage(pp);
     }
     return pp;
 }
 
-void PanelPagesWidget::setPanelPage(panel_page * pp)
+void PanelPagesWidget::setCurrentPage(panel_page * pp)
 {
     currentPage = pp;
 

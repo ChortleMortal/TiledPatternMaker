@@ -77,13 +77,22 @@ EdgePoly EdgePoly::recreate() const
     return epoly;
 }
 
-
 void EdgePoly::rotate(qreal angle)
 {
     QPointF center = Point::center(*this);
     QTransform t;
     t.translate(center.x(), center.y());
     t.rotate(angle);
+    t.translate(-center.x(), -center.y());
+    mapD(t);
+}
+
+void EdgePoly::scale(qreal delta)
+{
+    QPointF center = Point::center(*this);
+    QTransform t;
+    t.translate(center.x(), center.y());
+    t.scale(delta,delta);
     t.translate(-center.x(), -center.y());
     mapD(t);
 }
@@ -197,7 +206,7 @@ bool EdgePoly::isValid()
 
     auto elast = last();
     auto p = elast->getV2();
-    for (auto edge : *this)
+    for (auto edge : qAsConst(*this))
     {
         if (edge->getV1() != p)
         {
@@ -326,7 +335,7 @@ QVector<VertexPtr> EdgePoly::getVertices()
 int EdgePoly::numSwapped()
 {
     int num = 0;
-    for (auto edge : *this)
+    for (auto edge : qAsConst(*this))
     {
         if (edge->getSwapState())
         {

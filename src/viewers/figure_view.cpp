@@ -29,21 +29,26 @@
 #include "tapp/radial_figure.h"
 #include "tapp/extended_star.h"
 #include "tapp/extended_rosette.h"
-#include "makers/figure_maker/feature_button.h"
+#include "makers/motif_maker/feature_button.h"
 #include "base/utilities.h"
-#include "base/workspace.h"
+#include "viewers/view.h"
 #include "geometry/transform.h"
 
-FigureView::FigureView(DesignElementPtr dep) : Layer("FigureView",LTYPE_VIEW)
+FigureView::FigureView(DesignElementPtr del) : Layer("FigureView",LTYPE_VIEW)
 {
-    Q_ASSERT(dep);
+    Q_ASSERT(del);
 
-    _dep    = dep;
-    _fig    = dep->getFigure();     // for now just a single figure
-    _feat   = dep->getFeature();
+    debugContacts = false;
+
+    _dep    = del;
+    _fig    = del->getFigure();     // for now just a single figure
+    _feat   = del->getFeature();
     _fig->buildExtBoundary();
 
-    qDebug() << "FigureView  this=" << Utils::addr(this) << "dep=" << Utils::addr(_dep.get()) << "fig=" << Utils::addr(_fig.get());
+    qDebug() << "FigureView  this=" << this << "del:" << _dep.get() << "fig:" << _fig.get();
+    View * view = View::getInstance();
+    _T = FeatureButton::resetViewport(-2,_dep,view->rect());
+    qDebug().noquote() << "FigureView::transform" << Transform::toInfoString(_T);
 }
 
 FigureView::~FigureView()
@@ -74,19 +79,8 @@ void FigureView::paint(QPainter *painter)
     painter->setRenderHint(QPainter::Antialiasing ,true);
     painter->setRenderHint(QPainter::SmoothPixmapTransform,true);
 
-#if 0
-    QPointF center  = _feat->getCenter();
-    QTransform t    = QTransform::fromTranslate(-center.x(),-center.y());
-    QTransform t0   = getLayerTransform();
-    QTransform t1   = QTransform::fromScale(8.0,8.0);
-    _T = t * t1 * t0;
-    qDebug().noquote() << "FigureView::center   " << Transform::toInfoString(t);
-    qDebug().noquote() << "FigureView::scale8   " << Transform::toInfoString(t1);
-    qDebug().noquote() << "FigureView::layer    " << Transform::toInfoString(t0);
-#else
-    Workspace * workspace = Workspace::getInstance();
-    _T = FeatureButton::resetViewport(_dep,workspace->rect());
-#endif
+    View * view = View::getInstance();
+    _T = FeatureButton::resetViewport(-2,_dep,view->rect());
     qDebug().noquote() << "FigureView::transform" << Transform::toInfoString(_T);
 
     // paint boundaries
@@ -110,6 +104,22 @@ void FigureView::paint(QPainter *painter)
     }
 
     drawCenter(painter);
+
+    if (debugContacts)
+    {
+        painter->setPen(Qt::white);
+        for( int idx = 0; idx < debugPts.size(); ++idx )
+        {
+            painter->drawLine( _T.map(debugPts[idx]), _T.map(debugPts[ (idx+1) % debugPts.size()]) );
+        }
+
+        painter->setPen(Qt::blue);
+        for( int idx = 0; idx < debugContactPts.size(); ++idx )
+        {
+            contact * c = debugContactPts.at(idx);
+            painter->drawLine(_T.map(c->other), _T.map(c->position));
+        }
+    }
 }
 
 void FigureView::paintExplicitFigureMap(QPainter *painter, QPen pen)
@@ -218,4 +228,10 @@ void FigureView::paintMap(QPainter * painter, MapPtr map, QPen pen)
     }
 }
 
+void FigureView::setDebugContacts(bool enb, QPolygonF pts, QVector<contact*> contacts)
+{
+    debugContacts   = enb;
+    debugPts        = pts;
+    debugContactPts = contacts;
+}
 

@@ -36,25 +36,28 @@
 
 #include <QtWidgets>
 #include "tile/tiling.h"
+#include "tile/backgroundimage.h"
 #include "base/configuration.h"
 #include "base/fileservices.h"
 #include "base/misc.h"
+#include "geometry/transform.h"
 #include "panels/panel.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "base/mosaic_writer.h"
 
-using namespace pugi;
-using std::string;
+#if (QT_VERSION >= QT_VERSION_CHECK(5,15,0))
+#define endl Qt::endl
+#endif
+
+const QString Tiling::defaultName = "The Unnamed";
 
 int Tiling::refs = 0;
 
 Tiling::Tiling()
 {
-    name       = "The Unnamed";
-    author     = "Author";
-    desc       = "Description";
-    settings.setBkgdImage(make_shared<BackgroundImage>());
-    settings.setSize(QSize(1500,1100));
+    name       = defaultName;
+    settings   = make_shared<ModelSettings>();
+    settings->setSize(QSize(1500,1100));
     version    = -1;
     state      = TILING_EMPTY;
     refs++;
@@ -71,12 +74,11 @@ Tiling::Tiling(QString name, QPointF t1, QPointF t2)
     }
     else
     {
-        name   = "The Unnamed";
+        name   = defaultName;
     }
-    author      = "Author";
-    desc        = "Description";
-    settings.setBkgdImage(make_shared<BackgroundImage>());
-    settings.setSize(QSize(1500,1100));
+
+    settings   = make_shared<ModelSettings>();
+    settings->setSize(QSize(1500,1100));
     version     = -1;
     state       = TILING_EMPTY;
     refs++;
@@ -108,10 +110,22 @@ Tiling::~Tiling()
     refs--;
 }
 
+bool Tiling::isEmpty()
+{
+    if (name == "The Unnamed" && placed_features.isEmpty() && t1.isNull() && t2.isNull())
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
 
 // Feature management.
 // Added feature are embedded into a PlacedFeature.
-void Tiling::setPlacedFeatures(QVector<PlacedFeaturePtr> features)
+void Tiling::setPlacedFeatures(QVector<PlacedFeaturePtr> & features)
 {
     placed_features = features;
     setState(TILING_MODIFED);
@@ -155,23 +169,23 @@ void Tiling::setState(eTilingState state)
     this->state = state;
 }
 
-UniqueQVector<FeaturePtr> Tiling::getUniqueFeatures()
+QVector<FeaturePtr> Tiling::getUniqueFeatures()
 {
     UniqueQVector<FeaturePtr> fs;
 
-    for (auto pfp : placed_features)
+    for (auto pfp : qAsConst(placed_features))
     {
         FeaturePtr fp = pfp->getFeature();
         fs.push_back(fp);
     }
 
-    return fs;
+    return static_cast<QVector<FeaturePtr>>(fs);
 }
 
 int Tiling::numPlacements(FeaturePtr fp)
 {
     int count = 0;
-    for (auto pfp : placed_features)
+    for (auto pfp : qAsConst(placed_features))
     {
         FeaturePtr fp2 = pfp->getFeature();
         if (fp2 == fp)
@@ -187,20 +201,19 @@ int Tiling::numPlacements(FeaturePtr fp)
 FeatureGroup Tiling::regroupFeatures()
 {
     FeatureGroup featureGroup;
-    for(auto it = placed_features.begin(); it != placed_features.end(); it++ )
+    for(auto placedFeature : qAsConst(placed_features))
     {
-        PlacedFeaturePtr pf = *it;
-        FeaturePtr f = pf->getFeature();
-        if (featureGroup.containsFeature(f))
+        FeaturePtr feature = placedFeature->getFeature();
+        if (featureGroup.containsFeature(feature))
         {
-            QList<PlacedFeaturePtr>  & v = featureGroup.getPlacements(f);
-            v.push_back(pf);
+            QVector<PlacedFeaturePtr>  & v = featureGroup.getPlacements(feature);
+            v.push_back(placedFeature);
         }
         else
         {
-            QList<PlacedFeaturePtr> v;
-            v.push_back(pf);
-            featureGroup.push_back(qMakePair(f,v));
+            QVector<PlacedFeaturePtr> v;
+            v.push_back(placedFeature);
+            featureGroup.push_back(qMakePair(feature,v));
         }
     }
     return featureGroup;
@@ -222,11 +235,14 @@ QString Tiling::dump() const
     return astring;
 }
 
+///
+/// class Feature Group
+///
+
 bool FeatureGroup::containsFeature(FeaturePtr fp)
 {
-    for (auto it = begin(); it != end(); it++)
+    for (auto& apair : *this)
     {
-        QPair<FeaturePtr,QList<PlacedFeaturePtr>> & apair = *it;
         FeaturePtr f = apair.first;
         if (f == fp)
         {
@@ -236,12 +252,14 @@ bool FeatureGroup::containsFeature(FeaturePtr fp)
     return false;
 }
 
-QList<PlacedFeaturePtr> & FeatureGroup::getPlacements(FeaturePtr fp)
+
+QVector<PlacedFeaturePtr> & FeatureGroup::getPlacements(FeaturePtr fp)
 {
+
     Q_ASSERT(containsFeature(fp));
-    for (auto it = begin(); it != end(); it++)
+
+    for (auto& apair : *this)
     {
-        QPair<FeaturePtr,QList<PlacedFeaturePtr>> & apair = *it;
         FeaturePtr f = apair.first;
         if (f == fp)
         {
@@ -249,8 +267,10 @@ QList<PlacedFeaturePtr> & FeatureGroup::getPlacements(FeaturePtr fp)
         }
     }
 
-    qFatal("should never reach here");
-    static QList<PlacedFeaturePtr> qvpf;
-    return qvpf;
+    qWarning("should never reach here");
+    static QVector <PlacedFeaturePtr> v;
+    return v;
 }
+
+
 

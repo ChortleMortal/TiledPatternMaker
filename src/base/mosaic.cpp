@@ -26,9 +26,17 @@
 #include "style/style.h"
 #include <QDebug>
 
+const QString Mosaic::defaultName =  "The Formless";
+
+Mosaic::Mosaic()
+{
+    name     = defaultName;
+    settings = make_shared<ModelSettings>();
+}
+
 void  Mosaic::addStyle(StylePtr style)
 {
-    qDebug() << "adding style to workspace: old count=" << styleSet.size();
+    qDebug() << "Mosaic adding style: old count=" << styleSet.size();
     styleSet.push_front(style);
 }
 
@@ -55,12 +63,12 @@ void Mosaic::setNotes(QString notes)
      designNotes = notes;
 }
 
-WorkspaceSettings & Mosaic::getSettings()
+ModelSettingsPtr Mosaic::getSettings()
 {
     return settings;
 }
 
-void Mosaic::setSettings(WorkspaceSettings & settings)
+void Mosaic::setSettings(ModelSettingsPtr settings)
 {
     this->settings = settings;
 }
@@ -75,20 +83,15 @@ StylePtr  Mosaic::getFirstStyle()
     return sp;
 }
 
-UniqueQVector<TilingPtr> Mosaic::getTilings()
+QVector<TilingPtr> Mosaic::getTilings()
 {
     UniqueQVector<TilingPtr> tilings;
-    for (auto proto : getUniquePrototypes())
+    for (auto& proto : getPrototypes())
     {
         TilingPtr tp = proto->getTiling();
         tilings.push_back(tp);
     }
-    return tilings;
-}
-
-void  Mosaic::replaceTiling(PrototypePtr pp, TilingPtr tp)
-{
-    pp->setTiling(tp);
+    return static_cast<QVector<TilingPtr>>(tilings);
 }
 
 void Mosaic::setPrototype(StylePtr style, PrototypePtr pp)
@@ -107,18 +110,15 @@ QString Mosaic::getNotes()
     return designNotes;
 }
 
-QVector<PrototypePtr> Mosaic::getUniquePrototypes()
+QVector<PrototypePtr> Mosaic::getPrototypes()
 {
-    QVector<PrototypePtr> vec;
-    for (auto style : styleSet)
+    UniqueQVector<PrototypePtr> vec;
+    for (auto& style : styleSet)
     {
         PrototypePtr pp = style->getPrototype();
-        if (!vec.contains(pp))
-        {
-            vec.push_back(pp);
-        }
+        vec.push_back(pp);
     }
-    return vec;
+    return static_cast<QVector<PrototypePtr>>(vec);
 }
 
 void Mosaic::deleteStyle(StylePtr style)

@@ -39,30 +39,26 @@ public:
     void refreshPage() override;
 
 signals:
-    void sig_saveXML(QString);
+    void sig_saveMosaic(QString name);
+    void sig_saveTiling(QString name);
 
 public slots:
-    void slot_loadedXML(QString name);
-    void slot_loadedTiling(QString name);
     void slot_saveTiling();
     void slot_saveImage();
     void slot_saveSvg();
 
 private slots:
-    void slot_saveAsXML();
+    void slot_saveMosaic();
     void slot_designSourceChanged();
     void slot_tilingSourceChanged();
 
 protected:
-    void createDesignSave();
+    void createMosaicSave();
     void createTilingSave();
-
-
 
 private:
     QTextEdit   * designNotes;
     QLineEdit   * leSaveXmlName;
-    QPushButton * saveXml;
 
     QLineEdit   * tile_name;
     QTextEdit   * tile_desc;

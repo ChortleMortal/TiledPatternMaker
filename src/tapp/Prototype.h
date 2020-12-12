@@ -51,19 +51,22 @@ public:
     Prototype(TilingPtr t);
     virtual ~Prototype();
 
+    bool    operator==(const Prototype & other);
+
     MapPtr  getProtoMap();
     MapPtr  getExistingProtoMap() { return protoMap; }
     MapPtr  createProtoMap(bool showSplash = true);
     void    resetProtoMap();
 
-    void    setTiling(TilingPtr t);
+    void    setTiling(TilingPtr newTiling);
     void    addElement(DesignElementPtr element);
     void    removeElement(DesignElementPtr element);
-    void    setFeaturesReversed(QVector<FeaturePtr> features);
 
-    QString getInfo() const;
+    bool    hasContent() { return (designElements.size() > 0); }
 
+    int     numDesignElements() { return designElements.size(); }
     void    walk();
+    QString getInfo() const;
 
     TilingPtr         getTiling()   { return tiling; }
     QList<FeaturePtr> getFeatures();
@@ -81,6 +84,7 @@ public:
     static int refs;
 
 protected:
+    void    analyze(TilingPtr newTiling);
 
 private:
     TilingPtr                   tiling;

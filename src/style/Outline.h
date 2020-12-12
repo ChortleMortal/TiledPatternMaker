@@ -69,7 +69,7 @@ public:
 class Outline : public Thick
 {
 public:
-    Outline(PrototypePtr proto, PolyPtr bounds );
+    Outline(PrototypePtr proto);
     Outline(const Style &  other);
     virtual ~Outline() override;
 

@@ -24,14 +24,14 @@
 
 #include "viewers/map_editor_view.h"
 #include "base/utilities.h"
-#include "base/view.h"
+#include "viewers/view.h"
 #include "geometry/map.h"
 #include "geometry/point.h"
 #include "geometry/intersect.h"
 #include "geometry/transform.h"
 #include "tapp/figure.h"
-#include "base/workspace.h"
-#include "makers/figure_maker/feature_button.h"
+#include "viewers/viewcontrol.h"
+#include "makers/motif_maker/feature_button.h"
 
 MapEditorView::MapEditorView() : Layer("MapEditorView",LTYPE_MAP_EDITOR)
 {
@@ -63,8 +63,8 @@ void MapEditorView::paint(QPainter *painter)
         QTransform t0 = getLayerTransform();
         viewT         = viewT * t0;
 #else
-        Workspace * workspace = Workspace::getInstance();
-        viewT = FeatureButton::resetViewport(delp,workspace->rect());
+        View * view = View::getInstance();
+        viewT = FeatureButton::resetViewport(-3,delp,view->rect());
 #endif
     }
     else
@@ -224,10 +224,9 @@ void MapEditorView::drawConstructionLines(QPainter * painter)
     if (hideConstructionLines)
         return;
 
-    for (auto it = constructionLines.begin(); it != constructionLines.end(); it++)
+    painter->setPen(QPen(Qt::white,constructionLineWidth));
+    for (auto line : qAsConst(constructionLines))
     {
-        QLineF line = *it;
-        painter->setPen(QPen(Qt::white,constructionLineWidth));
         painter->drawLine(viewT.map(line));
     }
 }
@@ -237,12 +236,11 @@ void MapEditorView::drawConstructionCircles(QPainter * painter)
     if (hideConstructionLines)
         return;
 
-    for (auto it = constructionCircles.begin(); it != constructionCircles.end(); it++)
+    for (const auto &circle : qAsConst(constructionCircles))
     {
-        CirclePtr c = *it;
-        QPointF pt = viewT.map(c->centre);
+        QPointF pt = viewT.map(circle->centre);
         painter->setPen(QPen(Qt::white,constructionLineWidth));
-        painter->drawEllipse(pt, Transform::scalex(viewT) * c->radius, Transform::scalex(viewT)  * c->radius);
+        painter->drawEllipse(pt, Transform::scalex(viewT) * circle->radius, Transform::scalex(viewT)  * circle->radius);
 
         if (!hidePoints)
         {

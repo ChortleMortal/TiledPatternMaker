@@ -38,7 +38,7 @@
 using std::string;
 using namespace pugi;
 
-class Workspace;
+class ViewControl;
 class Configuration;
 
 class MosaicWriter
@@ -85,7 +85,6 @@ protected:
     void    processsStyleInterlace(QTextStream &ts, qreal gap, qreal shadow, bool includeSVerts);
     void    processsStyleFilled(QTextStream &ts, bool draw_inside, bool draw_outside, int algorithm);
     void    processsStyleEmboss(QTextStream &ts, qreal angle);
-    void    processStyleStyle(QTextStream &ts, PrototypePtr &proto, PolyPtr &poly);
 
     // features
     void    setFeature(QTextStream & ts,FeaturePtr fp);

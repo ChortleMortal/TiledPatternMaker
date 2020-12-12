@@ -1,4 +1,6 @@
 #include "tile/tiling_writer.h"
+#include "tile/backgroundimage.h"
+#include "geometry/transform.h"
 #include "base/configuration.h"
 #include "base/fileservices.h"
 #include "base/tiledpatternmaker.h"
@@ -13,7 +15,9 @@ using std::string;
 #endif
 
 //const int currentTilingXMLVersion = 3;  // 26JUL20 excludes FillData
-const int currentTilingXMLVersion = 4;    // 13SEP20 restore FillData
+//const int currentTilingXMLVersion = 4;  // 13SEP20 restore FillData
+//const int currentTilingXMLVersion = 5;  // 09NOV20 new background image positioning
+  const int currentTilingXMLVersion = 6;  // 14NOV20 <Placement> becomes <Transform>
 
 bool TilingWriter::writeTilingXML()
 {
@@ -73,7 +77,7 @@ bool TilingWriter::writeTilingXML()
             box.setText(QString("Saved: %1 - OK").arg(data.fileName()));
             box.exec();
 
-            emit theApp->sig_loadedTiling(name);
+            emit theApp->sig_tilingLoaded(name);
             return true;
         }
     }
@@ -113,34 +117,33 @@ void TilingWriter::writeTilingXML(QTextStream & out)
     writeViewSettings(out);
 
     //structure is feature then placements. so feature is not duplicated. I dont know if this adds any value
-    for (auto it = fgroup.begin(); it != fgroup.end(); it++)
+    for (auto& apair : fgroup)
     {
-        QPair<FeaturePtr,QList<PlacedFeaturePtr>> & apair = *it;
-        FeaturePtr f                     = apair.first;
-        QList<PlacedFeaturePtr> & qvpfp = apair.second;
-        PlacedFeaturePtr pfp = qvpfp.first();
+        FeaturePtr feature                = apair.first;
+        QVector<PlacedFeaturePtr> & qvpfp = apair.second;
+        PlacedFeaturePtr placedFeature    = qvpfp.first();
 
-        if (pfp->isGirihShape())    // TODO verify this code works
+        if (placedFeature->isGirihShape())    // TODO verify this code works
         {
             // saved girih shapesd have a translation
-            out << "<Feature type=\"girih\" name=\"" << pfp->getGirishShapeName() << "\">" << endl;
+            out << "<Feature type=\"girih\" name=\"" << placedFeature->getGirihShapeName() << "\">" << endl;
 
         }
-        else if (f->isRegular())
+        else if (feature->isRegular())
         {
             // regular features have sides and rotation
-            out << "<Feature type=\"regular\" sides=\"" << f->numPoints() << "\"  rotation=\"" << f->getRotation() << "\">" << endl;
+            out << "<Feature type=\"regular\" sides=\"" << feature->numPoints() << "\" rotation=\"" << feature->getRotation() << "\" scale=\"" << feature->getScale() << "\">" << endl;
         }
         else
         {
             // edge polys have rotation, numSides can be calculated
-            out << "<Feature type=\"edgepoly\" rotation=\"" << f->getRotation() << "\">" << endl;
-            EdgePoly epoly = f->getEdgePoly();
+            out << "<Feature type=\"edgepoly\" rotation=\"" << feature->getRotation() << "\" scale=\"" << feature->getScale() << "\">" << endl;
+            EdgePoly epoly = feature->getEdgePoly();
             setEdgePoly(out,epoly);
         }
 
         // background colors
-        ColorSet & bkgdColors  = f->getBkgdColors();
+        ColorSet & bkgdColors  = feature->getBkgdColors();
         int sz = bkgdColors.size();
         if (sz)
         {
@@ -157,25 +160,15 @@ void TilingWriter::writeTilingXML(QTextStream & out)
             out << s << endl;
         }
 
-        // placements - still using Kaplan's affine transform class for read/write
         for(auto it= qvpfp.begin(); it != qvpfp.end(); it++ )
         {
             PlacedFeaturePtr & pf = *it;
             QTransform t = pf->getTransform();
-            QVector<qreal> ds;
-            ds << t.m11();
-            ds << t.m21();
-            ds << t.dx();
-            ds << t.m12();
-            ds << t.m22();
-            ds << t.dy();
-            Q_ASSERT(ds.size() == 6);
             out << "<Placement>";
-            for (int j=0; j<5; j++)
-            {
-                out << ds[j] << ",";
-            }
-            out << ds[5];
+            out << "<scale>" << Transform::scalex(t) << "</scale>";
+            out << "<rot>"   << qRadiansToDegrees(Transform::rotation(t)) << "</rot>";
+            out << "<tranX>" << Transform::transx(t) << "</tranX>";
+            out << "<tranY>" << Transform::transy(t) << "</tranY>";
             out << "</Placement>" << endl;
         }
 
@@ -186,12 +179,12 @@ void TilingWriter::writeTilingXML(QTextStream & out)
     out << "<Auth>" << tiling->getAuthor() << "</Auth>" << endl;
 
     BkgdImgPtr bkgd = tiling->getBackground();
-    if (!bkgd->bkgdName.isEmpty())
+    if (bkgd && bkgd->isLoaded())
     {
-        QString astring = QString("<BackgroundImage name=\"%1\">").arg(bkgd->bkgdName);
+        QString astring = QString("<BackgroundImage name=\"%1\">").arg(bkgd->getName());
         out << astring << endl;
 
-        Xform xform = bkgd->getCanvasXform();
+        Xform xform = bkgd->getBkgdXform();
         out << "<Scale>" << xform.getScale()           << "</Scale>" << endl;
         out << "<Rot>"   << xform.getRotateRadians()   << "</Rot>"  << endl;
         out << "<X>"     << xform.getTranslateX()      << "</X>" << endl;

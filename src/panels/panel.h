@@ -32,9 +32,6 @@
 #include "base/configuration.h"
 #include "base/tpmsplash.h"
 
-class TiledPatternMaker;
-class WorkspaceViewer;
-
 class ControlPanel : public AQWidget
 {
     Q_OBJECT
@@ -60,26 +57,27 @@ public:
 
     void    selectViewer(int id);
 
-    TiledPatternMaker * getMaker()       { return maker; }
-    panel_page        * getCurrentPage() { return currentPage; }
     eViewType           getCurrentView() { return panelStatus->getCurrentView(); }
+    panel_page *        getCurrentPage() { return panelPages->getCurrentPage(); }
+    bool                isVisiblePage(panel_page *);
     static eKbdMode     getValidKbdMode(eKbdMode mode);
 
 signals:
-    void    sig_viewWS();
+    void    sig_refreshView();
     void    sig_render();
     void    sig_panelResized();
     void    sig_reload();
     void    sig_view_synch(int id,  bool  enb);
 
 public slots:
+    void    slot_itemPanelPage(QListWidgetItem * item);
     void    slot_selectPanelPage(int index);
     void    slot_detachWidget(QString name);
     void    slot_attachWidget(QString name);
     void    slot_poll();
 
-    void    slot_Viewer_pressed(int id, bool enb);
-    void    slot_multiSelect(bool enb);
+    void    slot_Viewer_pressed(int id, bool enable);
+    void    slot_lockStatusChanged();
 
 private slots:
     void    repeatChanged(int mode);
@@ -97,15 +95,17 @@ private slots:
     void    slot_showBackChanged(bool state);
     void    slot_view_synch(int id, int enb);
 
+    void    slot_lockViewClicked(bool enb);
+    void    slot_multiSelect(bool enb);
+
 protected:
     ControlPanel();
     ~ControlPanel() override;
 
-    QGroupBox * createWorkspaceViewers();
+    QGroupBox * createViewersBox();
 
     void    delegateView();
     void    delegateKeyboardMouse(eViewType viewType);
-
 
     static eKbdMode getValidMosaicMode(eKbdMode mode);
     static eKbdMode getValidDesignMode(eKbdMode mode);
@@ -117,26 +117,24 @@ private:
 private:
     static ControlPanel * mpThis;
 
-    Configuration           * config;
-    TiledPatternMaker       * maker;
-    Workspace               * workspace;
+    Configuration        * config;
+    TiledPatternMaker    * maker;
+    class View           * view;
+    class ViewControl    * vcontrol;
 
-    PanelStatus             * panelStatus;
-    TPMSplash               * splash;
+    PanelStatus          * panelStatus;
+    TPMSplash            * splash;
 
-    QVector<panel_page*>    mAttachedPages;
-    QVector<panel_page*>    mDetachedPages;
-    QTimer *				mpTimer;
-    QMutex					mUpdateMutex;
+    QTimer               *	mpTimer;
+    volatile bool           updateLocked;
 
     bool                    closed;
 
-    PanelListWidget      *  mpPanelPageList;
-    PanelPagesWidget     *  panelPagesWidget;
-    panel_page           *  currentPage;
+    QVector<panel_page*>    mPages;
+    PanelListWidget      *  panelPageList;
+    PanelPagesWidget     *  panelPages;
 
     QCheckBox    * cbUpdate;
-    QLabel       * statusLabel;
     QRadioButton * radioDefined;
     QRadioButton * radioPack;
     QRadioButton * radioSingle;
@@ -145,8 +143,6 @@ private:
 
     QButtonGroup   repeatRadioGroup;
 
-    ///
-    QCheckBox   *cbLockView;
     QCheckBox   *cbRawDesignView;
     QCheckBox   *cbMosaicView;
     QCheckBox   *cbPrototypeView;
@@ -154,8 +150,11 @@ private:
     QCheckBox   *cbProtoMaker;
     QCheckBox   *cbDELView;
     QCheckBox   *cbTilingMakerView;
-    QCheckBox   *cbFigMapView;
+    QCheckBox   *cbMapEditor;
     QCheckBox   *cbFaceSetView;
+
+    QCheckBox   *cbLockView;
+    QCheckBox   *cbMultiSelect;
 
     QButtonGroup  viewerGroup;
 };

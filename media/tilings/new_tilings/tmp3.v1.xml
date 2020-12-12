@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<Tiling version="4">
+	<Name>tmp3.v1</Name>
+	<Fill>-4,4,-4,4</Fill>
+	<T1>4.733333333333336,-4.093333333333331</T1>
+	<T2>8.186666666666669,0.6666666666666656</T2>
+	<ViewSettings>
+		<width>900</width>
+		<height>900</height>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>-4.013333333333333,-1.346666666666668</center>
+	</ViewSettings>
+	<Feature type="edgepoly" rotation="0">
+		<Curve convex="t">
+			<Point id="1">1,1.732050807568877</Point>
+			<Point id="2">-2,2.449293598294706e-16</Point>
+			<Center>1.232050807568877,-2.133974596215561</Center>
+		</Curve>
+		<Curve convex="t">
+			<Point reference="2" />
+			<Point id="3">0.9999999999999984,-1.732050807568878</Point>
+			<Center>1.232050807568877,2.133974596215559</Center>
+		</Curve>
+		<Curve convex="t">
+			<Point reference="3" />
+			<Point reference="1" />
+			<Center>-2.464101615137755,1.110223024625157e-15</Center>
+		</Curve>
+		<BkgdColors>#ffff00</BkgdColors>
+		<Placement>0.882947592858927,-0.4694715627858908,-3.720000000000001,0.4694715627858908,0.882947592858927,0.5200000000000007</Placement>
+	</Feature>
+	<Desc>Jusst fod debug only</Desc>
+	<Auth>Author</Auth>
+</Tiling>

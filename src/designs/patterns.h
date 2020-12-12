@@ -27,9 +27,8 @@
 
 #include "base/tile.h"
 #include "designs/shapefactory.h"
-#include "base/configuration.h"
 #include "base/shared.h"
-#include "tile/tiling_loader.h"
+#include "base/filldata.h"
 
 enum eDirection
 {
@@ -37,7 +36,7 @@ enum eDirection
     CCW
 };
 
-class Workspace;
+class ViewControl;
 
 class Pattern : public Tile
 {
@@ -68,8 +67,6 @@ protected:
     QBrush  nobrush;
 
     Configuration * config;
-    Workspace     * workspace;
-
 };
 
 

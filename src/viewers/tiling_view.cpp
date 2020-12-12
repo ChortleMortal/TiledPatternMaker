@@ -36,12 +36,10 @@
 // on System.in and displays that tiling.  Access it using
 // 		java tile.TilingViewer
 
-#include "base/workspace.h"
 #include "viewers/tiling_view.h"
 #include "geometry/point.h"
 #include "base/configuration.h"
-#include "viewers/workspace_viewer.h"
-
+#include "tile/placed_feature.h"
 
 TilingView::TilingView(TilingPtr tiling) : Layer("TilingView",LTYPE_VIEW)
 {

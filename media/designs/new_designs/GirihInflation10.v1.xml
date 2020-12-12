@@ -3,8 +3,8 @@
 	<designNotes>Using the existing tiling</designNotes>
 	<design>
 		<size>
-			<width>1920</width>
-			<height>1147</height>
+			<width>1500</width>
+			<height>1000</height>
 		</size>
 		<background>
 			<color>#ff10100e</color>
@@ -13,9 +13,9 @@
 	</design>
 	<style.Thick id="2" serialization="custom">
 		<toolkit.GeoLayer>
-			<left__delta>-128.5</left__delta>
-			<top__delta>-213.5</top__delta>
-			<width__delta>0.4300000000000001</width__delta>
+			<left__delta>-283.5</left__delta>
+			<top__delta>-209.5</top__delta>
+			<width__delta>0.36</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>0,0</center>
 		</toolkit.GeoLayer>
@@ -192,9 +192,9 @@
 	</style.Thick>
 	<style.Filled id="41" serialization="custom">
 		<toolkit.GeoLayer>
-			<left__delta>-128.5</left__delta>
-			<top__delta>-213.5</top__delta>
-			<width__delta>0.4300000000000001</width__delta>
+			<left__delta>-283.5</left__delta>
+			<top__delta>-209.5</top__delta>
+			<width__delta>0.36</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>0,0</center>
 		</toolkit.GeoLayer>

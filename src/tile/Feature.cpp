@@ -46,26 +46,27 @@
 
 int Feature::refs = 0;
 
-Feature::Feature()
+Feature::Feature(EdgePoly ep, qreal rotate, qreal scale)
 {
+    // createas irregular feature
+    base        = ep;
+    n           = ep.size();
+    rotation    = rotate;
+    this->scale = scale;
     regular     = false;
-    rotation    = 0.0;
     refs++;
+
+    create();
 }
 
-Feature::Feature(EdgePoly ep, qreal rotate)
+Feature::Feature(int n, qreal rotate, qreal scale)
 {
-    epoly       = ep;
-    regular     = false;
-    rotation    = rotate;
+    // Create an n-sided regular polygon with a vertex at (1,0).
+    this->n   = n;
+    rotation  = rotate;
+    this->scale = scale;
+    regular   = true;
     refs++;
-}
-
-// Create an n-sided regular polygon with a vertex at (1,0).
-Feature::Feature(int n, qreal rotate)
-{
-    regular     = true;
-    rotation    = rotate;
 
     int idx  = 0;
     qreal angle = (M_PI / static_cast<qreal>(n)) * (static_cast<qreal>(2.0 * idx) + 1.0);
@@ -77,23 +78,38 @@ Feature::Feature(int n, qreal rotate)
     {
         qreal angle2 = (M_PI / static_cast<qreal>(n)) * (static_cast<qreal>(2.0 * idx) + 1);
         VertexPtr v2 = make_shared<Vertex>(QPointF(sc * qCos(angle2), sc * qSin(angle2)));
-        epoly.push_back(make_shared<Edge>(v1,v2));
+        base.push_back(make_shared<Edge>(v1,v2));
         v1 = v2;
     }
-    epoly.push_back(make_shared<Edge>(v1,v));
+    base.push_back(make_shared<Edge>(v1,v));
 
-    if (!Loose::zero(rotate))
+    create();
+}
+
+void Feature::create()
+{
+    epoly.clear();
+    epoly = base.recreate();
+
+    if (!Loose::zero(rotation))
     {
-        epoly.rotate(rotate);
+        epoly.rotate(rotation);
     }
-    refs++;
+    if (!Loose::equals(scale,1.0))
+    {
+        epoly.scale(scale);
+    }
 }
 
 Feature::Feature(const FeaturePtr other )
 {
-    regular     = other->regular;
-    epoly       = other->epoly;
+    n           = other->n;
     rotation    = other->rotation;
+    scale       = other->scale;
+    regular     = other->regular;
+    base        = other->base;
+    epoly       = other->epoly;
+
     refs++;
 }
 
@@ -102,29 +118,92 @@ Feature::~Feature()
     refs--;
 }
 
+void Feature::setRotation(qreal rotate)
+{
+    rotation = rotate;
+    create();
+}
+
+qreal Feature::getRotation()
+{
+    return rotation;
+}
+
+void Feature::deltaRotation(qreal delta)
+{
+    setRotation(rotation + delta);
+}
+
+void Feature::setScale(qreal scale)
+{
+    this->scale = scale;
+    create();
+}
+
+qreal Feature::getScale()
+{
+    return scale;
+}
+
+void Feature::deltaScale(qreal delta)
+{
+    setScale(scale + delta);
+}
+
+void Feature::setRegular(bool enb)
+{
+    if (enb && !regular)
+    {
+        regular =  true;
+        create();
+    }
+    else if (!enb && regular)
+    {
+        // convert to irregular
+        regular = false;
+        create();
+    }
+}
+
+
 FeaturePtr Feature::recreate()
 {
-    FeaturePtr f = make_shared<Feature>();
-    f->regular   = regular;
-    f->rotation  = rotation;
-    f->epoly     = epoly.recreate();
+    FeaturePtr f;
+    if (regular)
+    {
+        f = make_shared<Feature>(n,rotation);
+    }
+    else
+    {
+        f = make_shared<Feature>(base,rotation);
+
+    }
     return  f;
 }
 
-void Feature::reset()
-{
-    epoly.clear();
-    bkgdColors.clear();
-    rotation    = 0;
-}
 
 bool Feature::equals(const FeaturePtr other)
 {
     if (regular != other->regular)
         return false;
-    if (!epoly.equals(other->epoly))
+    if (!base.equals(other->base))
         return false;
     if (!Loose::equals(rotation, other->rotation))
+        return false;
+    if (!Loose::equals(scale, other->scale))
+        return false;
+    return true;
+}
+
+bool Feature::isSimilar(const FeaturePtr other)
+{
+    if (regular != other->regular)
+        return false;
+    if (numSides() != other->numSides())
+        return false;
+    if (!Loose::equals(rotation, other->rotation))
+        return false;
+    if (!Loose::equals(scale, other->scale))
         return false;
     return true;
 }
@@ -149,14 +228,19 @@ QString Feature::info()
     QString text;
     QTextStream str(&text);
 
-    str << "(" <<Utils::addr(this) << ") ";
+    //str << "(" <<Utils::addr(this) << ") ";
+    str << "sides:" << epoly.size();
     if (regular)
-        str << "regular";
+        str << " regular";
     else
-        str << "not-regular";
-    str << " " << "points=" << epoly.size();
+        str << " irregular";
 
     return text;
+}
+
+QString Feature::summary()
+{
+    return QString("%1%2 ").arg(numSides()).arg((regular) ? 'r' : 'i' );
 }
 
 QPointF Feature::getCenter()
@@ -164,10 +248,5 @@ QPointF Feature::getCenter()
     return Point::center(epoly);
 }
 
-void  Feature::setRotation(qreal rot)
-{
-    qreal diff = rot - rotation;
-    epoly.rotate(diff);
-    rotation = rot;
-}
+
 

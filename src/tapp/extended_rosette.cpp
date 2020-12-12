@@ -177,7 +177,7 @@ void ExtendedRosette::connectOuterVertices(MapPtr map)
 
     NeighbourMap & nmap = map->getNeighbourMap();
 
-    for (auto v : map->getVertices())
+    for (const auto & v : map->getVertices())
     {
         //qDebug() << "num neigbours=" << v->numNeighbours();
         NeighboursPtr np = nmap.getNeighbours(v);

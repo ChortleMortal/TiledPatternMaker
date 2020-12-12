@@ -28,11 +28,9 @@
 #include <QtCore>
 #include <QtGui>
 #include "base/shared.h"
-#include "base/workspace_settings.h"
+#include "base/model_settings.h"
 #include "base/configuration.h"
 
-class Workspace;
-class WorkspaceViewer;
 class Pattern;
 class Border;
 
@@ -48,8 +46,8 @@ public:
 
     void            updateDesign();
 
-    QString         getTitle() { return title; }
-    WorkspaceSettings &    getDesignInfo() { return info; }
+    QString          getTitle() { return title; }
+    ModelSettingsPtr getDesignInfo() { return settings; }
 
     QVector<PatternPtr> &      getPatterns()      { return patterns; }
 
@@ -108,7 +106,7 @@ protected:
     qreal           yOffset2;
 
     Configuration    * config;
-    Workspace        * workspace;
+    class View       * view;
 
     QVector<PatternPtr> patterns;
 
@@ -116,7 +114,7 @@ protected:
 
     bool            visible;
 
-    WorkspaceSettings      info;
+    ModelSettingsPtr  settings;
 };
 
 

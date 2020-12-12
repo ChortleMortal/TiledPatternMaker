@@ -28,20 +28,23 @@
 #include "panels/panel_page.h"
 #include "panels/layout_sliderset.h"
 #include "panels/layout_transform.h"
-#include "makers/tiling_maker/tiling_maker.h"
+#include "base/shared.h"
+#include "panels/panel_misc.h"
 
 enum epageTi
 {
+    TI_LOCATION,
+    TI_SHOW,
     TI_TYPE_PFP,    // regular, poly, or girih
     TI_FEAT_SIDES,
     TI_FEAT_ROT,
+    TI_FEAT_SCALE,
     TI_SCALE,
     TI_ROT,
     TI_X,
     TI_Y,
     TI_CW,
-    TI_FEAT_ADDR,
-    TI_LOCATION
+    TI_FEAT_ADDR
 };
 
 class page_tiling_maker : public panel_page
@@ -57,41 +60,34 @@ public:
     bool canExit() override;
 
     void buildMenu();
-    void refreshMenuData();
 
-signals:
-    void sig_tilingChanged();
-    void sig_reload();
-
-public slots:
-    void slot_currentFeature(int index);
-    void slot_loadedXML(QString name);
-    void slot_loadedTiling (QString name);
-    void slot_buildMenu();
-    void slot_refreshMenu();
-    void slot_unload();
+protected slots:
+    void slot_clearMakers();
+    void slot_clearTiling();
+    void slot_reloadTiling();
 
 private slots:
-    void slot_currentTilingChanged(int index);
-    void slot_reloadTiling();
-    void slot_replaceTilingInStyles();
+    void slot_buildMenu();
+    void slot_refreshMenuData();
+    void slot_currentFeature(int index);
 
+    void slot_currentTilingChanged(int index);
     void slot_sidesChanged(int col);
     void slot_f_rotChanged(int col);
+    void slot_f_scaleChanged(int col);
     void slot_transformChanged(int col);
+    void slot_showFeatureChanged(int col);
     void slot_t1t2Changed(double val);
 
     void slot_cellSelected(int row, int col);
-    void slot_hideTable(bool checked);
+    void slot_showTable(bool checked);
     void slot_all_features(bool checked);
     void slot_showDebug(bool checked);
     void slot_autofill(bool checked);
-    void slot_clearWS();
-    void slot_clearTiling();
     void slot_swapTrans();
-    void slot_remove_clicked();
+    void slot_delete_clicked();
     void slot_uniquify_clicked();
-    void slot_setModes(int mode);
+    void slot_setModes(QAbstractButton *btn);
     void slot_set_reps(int val);
     void slot_menu(QPointF spt);
     void slot_menu_edit_feature();
@@ -110,7 +106,6 @@ private slots:
     void slot_setBkgd();
 
 protected:
-
     AQTableWidget * createTilingTable();
     AQWidget      * createDebugInfo();
     QGroupBox     * createBackgroundGroup();
@@ -121,8 +116,9 @@ protected:
     AQWidget      * createTranslationsRow();
     QHBoxLayout   * createFillDataRow();
 
+    void refreshMenuData();
 
-    void clear();
+    void tallyMouseMode();
     void buildTableEntry(PlacedFeaturePtr pf, int col, QString inclusion);
     void refreshTableEntry(PlacedFeaturePtr pf, int col, QString inclusion);
     void updateFeaturePointInfo(PlacedFeaturePtr pfp);
@@ -133,7 +129,7 @@ protected:
     PlacedFeaturePtr getFeatureColumn(int col);
 
 private:
-    TilingMaker * tilingMaker;
+    class TilingMaker * tilingMaker;
 
     QComboBox * tilingCombo;
 
@@ -159,10 +155,12 @@ private:
 
     QSignalMapper  f_sidesMapper;
     QSignalMapper  f_rotMapper;
+    QSignalMapper  f_scaleMapper;
     QSignalMapper  scaleMapper;
     QSignalMapper  rotMapper;
     QSignalMapper  xMapper;
     QSignalMapper  yMapper;
+    QSignalMapper  showMapper;
 
     QSpinBox      * sides;
     QDoubleSpinBox* featRot;

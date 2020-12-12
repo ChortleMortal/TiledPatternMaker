@@ -30,8 +30,6 @@
 #include "viewers/placed_designelement_view.h"
 #include "viewers/geo_graphics.h"
 #include "base/shared.h"
-#include "base/workspace.h"
-#include "viewers/workspace_viewer.h"
 #include "viewers/viewerbase.h"
 
 

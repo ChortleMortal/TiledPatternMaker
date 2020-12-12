@@ -22,14 +22,9 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "base/border.h"
-#include "base/configuration.h"
-#include "base/utilities.h"
-#include "base/workspace.h"
-#include "base/tiledpatternmaker.h"
-#include "designs/design_control.h"
-#include "designs/shapefactory.h"
 #include "designs/patterns.h"
+#include "base/border.h"
+#include "base/utilities.h"
 #include "tapp/rosette.h"
 #include "tapp/rosette_connect_figure.h"
 #include "tapp/star.h"
@@ -38,8 +33,7 @@
 #include "style/thick.h"
 #include "style/interlace.h"
 #include "tile/tiling_manager.h"
-#include "viewers/figure_view.h"
-#include "viewers/placed_designelement_view.h"
+#include "tile/placed_feature.h"
 
 int Pattern::refs = 0;
 
@@ -67,7 +61,6 @@ Pattern::Pattern(qreal Diameter, QBrush Brush, int Row, int Col)
     nobrush = QBrush(Qt::NoBrush);
 
     config    = Configuration::getInstance();
-    workspace = Workspace::getInstance();
 
     refs++;
 }
@@ -158,9 +151,6 @@ void Pattern7::build()
 
     ShapeFPtr s = make_shared<ShapeFactory>(diameter,-getLoc());
     layer1->addSubLayer(s);
-
-    DesignControl * ctrl = DesignControl::getInstance();
-    ctrl->stopTimer();
 
     doStep(1);
     if (two == false)
@@ -915,12 +905,8 @@ Pattern10::Pattern10(qreal Diameter, QBrush Brush) : Pattern(Diameter, Brush)
 
 void Pattern10::build()
 {
-
     ShapeFPtr s = make_shared<ShapeFactory>(diameter,-getLoc());
     layer1->addSubLayer(s);
-
-    DesignControl * ctrl = DesignControl::getInstance();
-    ctrl->stopTimer();
 
     doStep(0);
     //step(1);
@@ -1203,7 +1189,7 @@ void PatternIncompleteA::build()
 {
     // brushes & pens
     QBrush bBlack(Qt::black);
-    QPen   rPen = QPen(QColor(Qt::red),1);
+    //QPen   rPen = QPen(QColor(Qt::red),1);
 
     linePen.setJoinStyle(Qt::MiterJoin);
     linePen.setCapStyle(Qt::RoundCap);
@@ -1231,11 +1217,11 @@ void PatternIncompleteA::build()
 
     QGraphicsEllipseItem i(-radius,-radius,diameter,diameter);
 
-    QLineF line2(p->at(0),p->at(2));
-    int points = Utils::circleLineIntersectionPoints(i,radius,line2,a,b);
+    //QLineF line2(p->at(0),p->at(2));
+    //int points = Utils::circleLineIntersectionPoints(i,radius,line2,a,b);
 
     QLineF line3(p->at(1),p->at(3));
-    points = Utils::circleLineIntersectionPoints(i,radius,line3,c,d);
+    int points = Utils::circleLineIntersectionPoints(i,radius,line3,c,d);
 
     Q_UNUSED(points)
 
@@ -1316,7 +1302,7 @@ void PatternIncompleteA::build()
     //tileLayers[3].addToGroup(m3.get());
     //layers[2].setFlag(ItemClipsChildrenToShape);
     FigurePtr fp = make_shared<Star>(8,3.0,2.0);
-    FeaturePtr nullFeature = make_shared<Feature>();
+    FeaturePtr nullFeature = make_shared<Feature>(8,0);
     DesignElementPtr dep   = make_shared<DesignElement>(nullFeature,fp);
 #if 0 // TODO
     Viewer * viewer = new Viewer;
@@ -1549,6 +1535,7 @@ void PatternKumiko2::build()
     layers[6].addToGroup(m);
 #endif
 
+
     // Make a map of the shape factory design and create a style from it
     MapPtr map = make_shared<Map>("PatternKumiko2 map");
     map->addShapeFactory(s2);
@@ -1559,8 +1546,7 @@ void PatternKumiko2::build()
     // make an explicit figure and position it
     QString tileName  = "Kumiko2";
     TilingManager tm;
-    workspace->resetTilings();
-    TilingPtr t = tm.loadTiling(tileName);  // adds to  workspace
+    TilingPtr t = tm.loadTiling(tileName,SM_LOAD_FROM_MOSAIC);
     if (!t)
     {
         t = make_shared<Tiling>(tileName, trans1, trans2);
@@ -1570,8 +1556,6 @@ void PatternKumiko2::build()
         t->add(pfp);
         t->setDescription("Kumiko2 translation vectors");
         t->setAuthor("David A. Casper");
-
-        workspace->setCurrentTiling(t);
         TilingManager tm;
         tm.saveTiling(tileName,t);
     }
@@ -1585,13 +1569,7 @@ void PatternKumiko2::build()
     proto->addElement(dep);
     proto->createProtoMap(false);   // don't allow the event queue to be processed yet
 
-    QPolygonF bounds;
-    bounds << QPointF(-diameter, diameter);
-    bounds << QPointF( diameter, diameter);
-    bounds << QPointF( diameter,-diameter);
-    bounds << QPointF(-diameter,-diameter);
-
-    ThickPtr thick = make_shared<Thick>(proto,make_shared<QPolygonF>(bounds));
+    ThickPtr thick = make_shared<Thick>(proto);
     thick->setColor(QColor(0xa2,0x79,0x67));
     thick->setDrawOutline(true);
     thick->createStyleRepresentation();

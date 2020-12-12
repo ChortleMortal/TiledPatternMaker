@@ -21,7 +21,7 @@ void  MapEditorSelection::buildEditorDB()
     if (map)
     {
         // add points from map vertices
-        for (auto vert : map->getVertices())
+        for (const auto & vert : map->getVertices())
         {
             pointInfo pi(PT_VERTEX,vert,"vertex");
             points.push_back(pi);
@@ -356,7 +356,7 @@ SelectionSet  MapEditorSelection::findSelectionsUsingDB(const QPointF & spt)
         qreal scale     = Transform::scalex(viewT) * bscale;
         qreal radius    = 1.0 * scale;
         QPointF center  = QPointF(0.0,0.0);
-        QPointF scenter = worldToScreen(center);    // FIXME - verify this
+        QPointF scenter = worldToScreen(center);    // TODO - verify this
         scenter         = viewT.map(scenter);
 
         QPointF a;
@@ -461,7 +461,7 @@ MapSelectionPtr MapEditorSelection::findVertex(QPointF spt , VertexPtr exclude)
         {
             continue;
         }
-        QPointF pt   = worldToScreen(vp->getPosition());    // FIXME - verify
+        QPointF pt   = worldToScreen(vp->getPosition());    // TODO - verify
         QPointF a    = viewT.map(pt);
         //QPointF sa   = worldToScreen(a);
         if (Point::isNear(spt,a))

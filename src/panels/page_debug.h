@@ -26,6 +26,7 @@
 #define PAGE_DEBUG_H
 
 #include "panels/panel_page.h"
+#include "base/configuration.h"
 
 class page_debug : public panel_page
 {
@@ -34,15 +35,14 @@ class page_debug : public panel_page
 public:
     page_debug(ControlPanel * cpanel);
 
-    void refreshPage() override;
-    void onEnter() override;
-    void onExit() override;
+    void    refreshPage() override;
+    void    onEnter() override;
+    void    onExit() override;
 
 signals:
-    void    sig_compareImageFiles(QString,QString);
+    void    sig_compareImageFiles(QString,QString,bool);
     void    sig_view_image(QString file);
     void    sig_cyclerStart(eCycleMode);
-
 
 public slots:
     void    slot_compareResult(QString result);
@@ -56,7 +56,6 @@ private slots:
     void    slot_reprocessDesignXML();
     void    slot_reprocessTilingXML();
 
-    void    slot_autoCycleClicked(bool enb);
     void    slot_stopIfDiffClicked(bool enb);
     void    slot_cycleModeChanged(int id);
     void    slot_cycleIntervalChanged(int value);
@@ -72,6 +71,7 @@ private slots:
     void    slot_viewImage1();
     void    slot_cycle();
     void    slot_compareImages();
+    void    slot_compareCycle();
     void    slot_transparentClicked(bool checked);
     void    slot_differencesClicked(bool checked);
     void    slot_ping_pongClicked(bool checked);
@@ -84,22 +84,11 @@ private slots:
     void    slot_verifyDumpClicked(bool enb);
     void    slot_verifyVerboseClicked(bool enb);
 
-    void    slot_showGridChanged(bool checked);
-    void    slot_gridType_pressed(int idx);
-    void    slot_gridScreenSpacingChanged(int value);
-    void    slot_gridModelSpacingChanged(qreal value);
-    void    slot_gridScreenWidthChanged(int value);
-    void    slot_gridModelWidthChanged(int value);
-    void    slot_gridScreenCenteredChanged(int state);
-    void    slot_gridModelCenteredChanged(int state);
-
-    void    slot_showCenterChanged(int state);
-
 protected:
     QGroupBox   * createDebugSection();
     QGroupBox   * createCycleSection();
     QGroupBox   * createImagesSection();
-    QVBoxLayout * createMiscSection();
+    QGroupBox   * createVerifyMaps();
 
     void viewImage(QString file);
 
@@ -110,7 +99,6 @@ protected:
     void saveTilingBitmaps();
     void savePixmap(QString name);
 
-
 private:
     QLineEdit   * dir0;
     QLineEdit   * dir1;
@@ -118,10 +106,6 @@ private:
     QComboBox   * ibox0;
     QComboBox   * ibox1;
     QLineEdit   * imageCompareResult;
-
-    QGroupBox    *gridBox;
-
-    QButtonGroup  gridModelGroup;
 };
 
 #endif

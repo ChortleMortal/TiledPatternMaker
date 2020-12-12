@@ -23,10 +23,9 @@
  */
 
 #include "base/border.h"
-#include "base/workspace.h"
+#include "viewers/view.h"
 #include "designs/design.h"
 #include "designs/patterns.h"
-#include "viewers/workspace_viewer.h"
 
 #define Enum2Str(e)  {QString(#e)}
 
@@ -47,10 +46,10 @@ Design::Design(eDesign design, QString title)
 
     this->title = title;
 
-    config      = Configuration::getInstance();
-    workspace   = Workspace::getInstance();
+    config  = Configuration::getInstance();
+    view    = View::getInstance();
 
-    init();
+    Design::init();
 }
 
 Design::~Design()
@@ -73,7 +72,7 @@ void Design::init()
 
     destoryPatterns();
 
-    info.clear();
+    settings = make_shared<ModelSettings>();
 
     //qDebug().noquote() << "Desgin::init" << sDesign2[_design];
 }
@@ -105,7 +104,7 @@ void Design::repeat()
 
 void Design::updateDesign()
 {
-    workspace->update();
+    view->update();
 }
 
 
@@ -122,7 +121,7 @@ void Design::showLayer(int layerNum)
             layer->setVisible(true);
         }
     }
-    workspace->update();
+    view->update();
 }
 
 void Design::hideLayer(int layerNum)
@@ -137,7 +136,7 @@ void Design::hideLayer(int layerNum)
             layer->setVisible(false);
         }
     }
-    workspace->update();
+    view->update();
 }
 
 void Design::setVisible(bool visible)
@@ -156,7 +155,7 @@ void Design::setVisible(bool visible)
 
     this->visible = visible;
 
-    workspace->update();
+    view->update();
 }
 
 void  Design::zPlus(int layerNum)
@@ -211,7 +210,7 @@ void Design::RepeatSimples()
 
 void Design::LocSimple(PatternPtr pp)
 {
-    QPointF pt = info.getStartTile();
+    QPointF pt = settings->getStartTile();
     pp->setLoc(QPointF(pt.x() + (xSeparation * pp->getCol()),
                        pt.y() + (ySeparation * pp->getRow())));
     //qDebug() << "LocSimple" << pp->getLoc();
@@ -229,7 +228,7 @@ void Design::RepeatHexagons()
 
 void Design::LocHexagon(PatternPtr t)
 {
-    QPointF pt = info.getStartTile();
+    QPointF pt = settings->getStartTile();
     //qDebug() << t->getRow() << t->getCol() << xSeparation << ySeparation << xOffset2 << yOffset2;
     t->setLoc(QPointF(pt.x() + (xSeparation * t->getCol()) + (((xSeparation/2.0) + xOffset2) * (t->getRow() & 0x01)),
                       pt.y() + (ySeparation * t->getRow()) + (yOffset2 * (t->getCol() & 1))));
@@ -247,7 +246,7 @@ void Design::RepeatOctagonsFilled()
 
 void Design::LocOctagonFilled(PatternPtr t)
 {
-    QPointF pt = info.getStartTile();
+    QPointF pt = settings->getStartTile();
     t->setLoc(QPointF(pt.x() + (xSeparation * t->getCol()) - (xSeparation/2.0),
                       pt.y() + (ySeparation * t->getRow()) - (ySeparation/2.0)));
 }

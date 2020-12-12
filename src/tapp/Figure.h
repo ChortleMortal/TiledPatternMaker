@@ -102,6 +102,9 @@ public:
     virtual void    resetMaps();
     virtual void    buildExtBoundary();
 
+    virtual void    setN(int n) { this->n = n; }
+    int             getN();
+
     QPolygonF       getPoints() { return points; }
     int             size() { return points.size(); }
 
@@ -129,6 +132,7 @@ public:
     bool            isExplicit();
     bool            isRadial();
 
+    virtual bool    equals(const  FigurePtr other);
     static int refs;
 
 protected:
@@ -139,10 +143,12 @@ protected:
     MapPtr      debugMap;
     QPolygonF   points;
 
+    int         n;                      // number of sides = number of points
+
 private:
     qreal       figureRotate;
     qreal       figureScale;
-    QPolygonF   radialFigBoundary;        // currently only set for radial figures
+    QPolygonF   radialFigBoundary;      // currently only set for radial figures
 
     int         extBoundarySides;
     qreal       extBoundaryScale;

@@ -42,7 +42,7 @@ void Threads::findThread(ThreadPtr thread, MapPtr map, EdgePtr edge, VertexPtr t
     NeighboursPtr nbs = map->getNeighbourMap().getNeighbours(touchPt);
 
     // first pass looking for colinear
-    for (auto edge2 : nbs->getNeighbours())
+    for (auto edge2 : qAsConst(nbs->getNeighbours()))
     {
         //qDebug() << "Edge2" << edge2->getTmpEdgeIndex() << "Thread" << edge2->getInterlaceInfo().threadNumber << "visited"  << edge2->getInterlaceInfo().visited;
         if (edge2->getInterlaceInfo().visited)
@@ -66,7 +66,7 @@ void Threads::assignColors(ColorSet & colors)
 {
     colors.resetIndex();
     QVector<ThreadPtr> & threads = *this;
-    for (auto thread : threads)
+    for (const auto & thread : threads)
     {
         thread->color = colors.getNextColor().color;
     }

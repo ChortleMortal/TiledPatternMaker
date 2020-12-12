@@ -68,6 +68,7 @@ public:
     AQTableWidget(QWidget *parent = nullptr);
 
     void    adjustTableSize(int maxWidth = 0, int maxHeight = 0);
+    void    selectRow(int row);
 
 protected:
     void    adjustTableWidth(int maxWidth = 0);
@@ -102,20 +103,17 @@ protected:
     void mousePressEvent(QMouseEvent* event);
 };
 
-class AQLabel : public QLabel
+class AQPushButton : public QPushButton
 {
-    Q_OBJECT
-
 public:
-    AQLabel();
+    AQPushButton(const QString &text, QWidget * parent = nullptr);
+};
 
-    void keyPressEvent( QKeyEvent *k ) Q_DECL_OVERRIDE;
 
-signals:
-    void sig_takeNext();
-    void sig_cyclerQuit();
-    void sig_view_images();
-    void sig_close();
+class BQPushButton : public QPushButton
+{
+public:
+    BQPushButton(const QString &text, QWidget * parent = nullptr);
 };
 
 #endif // MISC_H

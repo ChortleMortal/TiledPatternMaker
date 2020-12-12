@@ -25,32 +25,15 @@
 #ifndef PANELPAGE_H
 #define PANELPAGE_H
 
-#include <QtGui>
 #include <QtWidgets>
 #include <QString>
-
-#include "base/configuration.h"
-#include "base/view.h"
-#include "base/workspace.h"
-#include "panels/panel_misc.h"
-#include <vector>
-
-using std::vector;
-
-class Canvas;
-class View;
-class Configuration;
-class Workspace;
-class WorkspaceViewer;
-class TiledPatternMaker;
-class ControlPanel;
 
 class panel_page : public QWidget
 {
     Q_OBJECT
 
 public:
-    panel_page(ControlPanel * panel, QString name);
+    panel_page(class ControlPanel * panel, QString name);
 
     virtual void	refreshPage() = 0;
     virtual void    onEnter()     = 0;
@@ -61,23 +44,22 @@ public:
     void            enterEvent(QEvent *event) override;
     virtual void	closeEvent(QCloseEvent * event) override;
 
+    QString getName()                    { return pageName; }
     void    setNewlySelected(bool state) { newlySelected = state; }
-    bool    isNewlySelected() { return newlySelected; }
-    void    setFloated(bool isFloated) { floated = isFloated; }
+    bool    isNewlySelected()            { return newlySelected; }
+    bool    isFloated()                  { return floated;}
+    void    setFloated(bool isFloated)   { floated = isFloated; }
     void    closePage();
     void    floatMe();
     bool    wasFloated();
 
-    QString getName() { return pageName; }
     QString addr(const void * address);
     QString addr(void * address);
 
 signals:
     void    sig_render();
     void	sig_attachMe(QString title);
-    void    sig_viewWS();
-
-public slots:
+    void    sig_refreshView();
 
 protected:
     virtual void    mouseEnter() { refresh = false; }
@@ -89,10 +71,13 @@ protected:
     QVBoxLayout *		vbox;
     QString				pageName;
 
-    ControlPanel      * panel;
-    Configuration     * config;
-    Workspace         * workspace;
-    TiledPatternMaker * tpm;
+    class ControlPanel      * panel;
+    class Configuration     * config;
+    class View              * view;
+    class ViewControl       * vcontrol;
+    class TilingMaker       * tilingMaker;
+    class MotifMaker        * motifMaker;
+    class DecorationMaker   * decorationMaker;
 
     bool                refresh;
 

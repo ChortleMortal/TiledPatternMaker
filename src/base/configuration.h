@@ -33,13 +33,40 @@
 #define NUM_DESIGNS 30
 
 #define E2STR(x) #x
-#define Enum2Str(e)  {QString(#e)}
 
 #define FPS    60     // frames per second
 #define SECONDS(x)  (x * FPS)
 #define RANGE(start,dur)  if (stepIndex >= SECONDS(start) && stepIndex <= (SECONDS(start) + SECONDS(dur)))
 #define STEP(start)       if (stepIndex == SECONDS(start))
 #define TICK(start)       if (stepIndex == start)
+
+enum eSM_Event
+{
+    SM_LOAD_EMPTY,
+    SM_LOAD_FROM_MOSAIC,
+    SM_LOAD_SINGLE,
+    SM_RELOAD_SINGLE,
+    SM_LOAD_MULTI,
+    SM_RELOAD_MULTI,
+    SM_FEATURE_CHANGED,
+    SM_TILING_CHANGED,
+    SM_FIGURE_CHANGED,
+    SM_RENDER
+};
+
+static QString sSM_Events[] =
+{
+    E2STR(SM_LOAD_EMPTY),
+    E2STR(SM_LOAD_FROM_MOSAIC),
+    E2STR(SM_LOAD_SINGLE),
+    E2STR(SM_RELOAD_SINGLE),
+    E2STR(SM_LOAD_MULTI),
+    E2STR(SM_RELOAD_MULTI),
+    E2STR(SM_FEATURE_CHANGED),
+    E2STR(SM_TILING_CHANGED),
+    E2STR(SM_FIGURE_CHANGED),
+    E2STR(SM_RENDER)
+};
 
 enum eDesign
 {
@@ -65,32 +92,32 @@ enum eDesign
 
 static QString sDesign2[] =
 {
-    Enum2Str(DESIGN_0),
-    Enum2Str(DESIGN_1),
-    Enum2Str(DESIGN_2),
-    Enum2Str(DESIGN_3),
-    Enum2Str(DESIGN_4),
-    Enum2Str(DESIGN_5),
-    Enum2Str(DESIGN_6),
-    Enum2Str(DESIGN_7),
-    Enum2Str(DESIGN_8),
-    Enum2Str(DESIGN_9),
-    Enum2Str(DESIGN_10),
-    Enum2Str(DESIGN_11),
-    Enum2Str(DESIGN_12),
-    Enum2Str(DESIGN_13),
-    Enum2Str(DESIGN_14),
-    Enum2Str(DESIGN_15),
-    Enum2Str(DESIGN_16),
-    Enum2Str(DESIGN_17),
-    Enum2Str(DESIGN_18),
-    Enum2Str(DESIGN_19),
-    Enum2Str(DESIGN_KUMIKO1),
-    Enum2Str(DESIGN_KUMIKO2),
-    Enum2Str(DESIGN_HU_INSERT),
-    Enum2Str(DESIGN_ROSETTE_MAKER),
-    Enum2Str(DESIGN_STAR_MAKER),
-    Enum2Str(NO_DESIGN)
+    E2STR(DESIGN_0),
+    E2STR(DESIGN_1),
+    E2STR(DESIGN_2),
+    E2STR(DESIGN_3),
+    E2STR(DESIGN_4),
+    E2STR(DESIGN_5),
+    E2STR(DESIGN_6),
+    E2STR(DESIGN_7),
+    E2STR(DESIGN_8),
+    E2STR(DESIGN_9),
+    E2STR(DESIGN_10),
+    E2STR(DESIGN_11),
+    E2STR(DESIGN_12),
+    E2STR(DESIGN_13),
+    E2STR(DESIGN_14),
+    E2STR(DESIGN_15),
+    E2STR(DESIGN_16),
+    E2STR(DESIGN_17),
+    E2STR(DESIGN_18),
+    E2STR(DESIGN_19),
+    E2STR(DESIGN_KUMIKO1),
+    E2STR(DESIGN_KUMIKO2),
+    E2STR(DESIGN_HU_INSERT),
+    E2STR(DESIGN_ROSETTE_MAKER),
+    E2STR(DESIGN_STAR_MAKER),
+    E2STR(NO_DESIGN)
 };
 
 enum eViewType
@@ -100,7 +127,7 @@ enum eViewType
     VIEW_MOSAIC,
     VIEW_PROTOTYPE,
     VIEW_DESIGN_ELEMENT,
-    VIEW_FROTOTYPE_MAKER,
+    VIEW_MOTIF_MAKER,
     VIEW_TILING,
     VIEW_TILING_MAKER,
     VIEW_MAP_EDITOR,
@@ -116,7 +143,7 @@ static QString sViewerType[]
     E2STR(VIEW_MOSAIC),
     E2STR(VIEW_PROTOTYPE),
     E2STR(VIEW_DESIGN_ELEMENT),
-    E2STR(VIEW_FROTOTYPE_MAKER),
+    E2STR(VIEW_MOTIF_MAKER),
     E2STR(VIEW_TILING),
     E2STR(VIEW_TILING_MAKER),
     E2STR(VIEW_MAP_EDITOR),
@@ -163,7 +190,8 @@ enum eKbdMode
     KBD_MODE_XFORM_VIEW,
     KBD_MODE_XFORM_BKGD,
     KBD_MODE_XFORM_TILING,
-    KBD_MODE_XFORM_FEATURE,
+    KBD_MODE_XFORM_UNIQUE_FEATURE,
+    KBD_MODE_XFORM_PLACED_FEATURE,
     KBD_MODE_POS,
     KBD_MODE_LAYER,
     KBD_MODE_ZLEVEL,
@@ -179,7 +207,8 @@ const QString sKbdMode[]  = {
     E2STR(KBD_MODE_XFORM_VIEW),
     E2STR(KBD_MODE_XFORM_BKGD),
     E2STR(KBD_MODE_XFORM_TILING),
-    E2STR(KBD_MODE_XFORM_FEATURE),
+    E2STR(KBD_MODE_XFORM_UNIQUE_FEATURE),
+    E2STR(KBD_MODE_XFORM_PLACED_FEATURE),
     E2STR(KBD_MODE_POS),
     E2STR(KBD_MODE_LAYER),
     E2STR(KBD_MODE_ZLEVEL),
@@ -198,10 +227,17 @@ enum eMouseMode
     MOUSE_MODE_SCALE,
 };
 
-enum eGridType
+enum eGridUnits
 {
-    GRID_SCREEN,
-    GRID_MODEL
+    GRID_UNITS_SCREEN,
+    GRID_UNITS_MODEL
+};
+
+enum  eGridType
+{
+    GRID_ORTHOGONAL,
+    GRID_ISOMETRIC,
+    GRID_RHOMBIC
 };
 
 class Configuration
@@ -215,6 +251,7 @@ public:
 
     DesignPtr getDesign(eDesign design) { return availableDesigns.value(design); }
 
+    void setViewerType(eViewType  viewerType);
 
 ////////////////////////////////////////////////////////////////
 //
@@ -222,15 +259,13 @@ public:
 //
 ////////////////////////////////////////////////////////////////
 
-    eRepeatType           repeatMode;
+    eViewType       viewerType;
+    eRepeatType     repeatMode;
+    eMapEditorMode  mapEditorMode;
+    eCycleMode      cycleMode;
 
-    eViewType             viewerType;
-    eMapEditorMode        mapEditorMode;
-
-    eCycleMode            cycleMode;
-
-    int                   cycleInterval;
-    int                   polySides;    // used by tiling maker
+    int     cycleInterval;
+    int     polySides;    // used by tiling maker
 
     QString compareDir0;
     QString compareDir1;
@@ -249,8 +284,8 @@ public:
     bool    autoLoadStyles;
     bool    autoLoadTiling;
     bool    autoLoadDesigns;
+    bool    loadTilingMulti;
     bool    scaleToView;
-    bool    autoCycle;
     bool    stopIfDiff;
     bool    logToStderr;
     bool    logToDisk;
@@ -283,10 +318,15 @@ public:
     bool    compare_ping_pong;
     bool    compare_side_by_side;
 
+    bool    cs_showBkgds;
+    bool    cs_showBorders;
+    bool    cs_showFrameSettings;
+
     QString mosaicFilter;
     QString tileFilter;
 
     bool        showGrid;
+    eGridUnits  gridUnits;
     eGridType   gridType;
     int         gridModelWidth;
     bool        gridModelCenter;
@@ -294,7 +334,7 @@ public:
     int         gridScreenWidth;
     bool        gridScreenCenter;
     int         gridScreenSpacing;
-
+    qreal       gridAngle;
 
 ////////////////////////////////////////////////////////////////
 //
@@ -314,7 +354,8 @@ public:
     bool    circleX;
     bool    hideCircles;
     bool    enableDetachedPages;
-    bool    showCenter;
+    bool    showCenterDebug;
+    bool    showCenterMouse;
 
     bool    updatePanel;
 
@@ -335,6 +376,7 @@ protected:
     QString getMediaRootLocal();
     QString getMediaRootAppdata();
     QString getImageRoot();
+
 
 private:
     Configuration();

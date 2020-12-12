@@ -25,11 +25,12 @@
 #include "makers/map_editor/map_editor.h"
 #include "base/configuration.h"
 #include "base/shortcuts.h"
+#include "geometry/transform.h"
 #include "tapp/design_element.h"
 #include "tapp/prototype.h"
 #include "viewers/placed_designelement_view.h"
-#include "viewers/workspace_viewer.h"
 #include "style/style.h"
+#include "viewers/view.h"
 
 MapEditor *  MapEditor::mpThis = nullptr;     // once initialised the destructor is never called
 MapEditorPtr MapEditor::spThis;
@@ -63,10 +64,10 @@ MapEditor::MapEditor() : MapEditorSelection(), stash(this)
     qDebug() << "MapEditor::MapEditor";
 
     config      = Configuration::getInstance();
-    workspace   = Workspace::getInstance();
-    connect(workspace, &View::sig_mouseDragged,  this, &MapEditor::slot_mouseDragged);
-    connect(workspace, &View::sig_mouseReleased, this, &MapEditor::slot_mouseReleased);
-    connect(workspace, &View::sig_mouseMoved,    this, &MapEditor::slot_mouseMoved);
+    view        = View::getInstance();
+    connect(view, &View::sig_mouseDragged,  this, &MapEditor::slot_mouseDragged);
+    connect(view, &View::sig_mouseReleased, this, &MapEditor::slot_mouseReleased);
+    connect(view, &View::sig_mouseMoved,    this, &MapEditor::slot_mouseMoved);
 
     map_mouse_mode  = MAP_MODE_NONE;
     mapType       = MAP_TYPE_UNDEFINED;
@@ -521,7 +522,7 @@ void MapEditor::updateStatus()
         s += "  ";
         s += mouse_interaction->desc;
     }
-    workspace->setWindowTitle(s);
+    view->setWindowTitle(s);
 }
 
 
@@ -605,7 +606,7 @@ bool MapEditor::procKeyEvent(QKeyEvent * k)
     {
     // actions
     case 'F': flipLineExtension(); break;
-    case 'M': emit workspace->sig_raiseMenu(); break;
+    case 'M': emit view->sig_raiseMenu(); break;
     case 'Q': QApplication::quit(); break;
     case Qt::Key_F1:
     {

@@ -46,7 +46,7 @@
 class Emboss : public Outline
 {
 public:
-    Emboss(PrototypePtr proto, PolyPtr bounds);
+    Emboss(PrototypePtr proto);
     Emboss(const Style &  other);
     virtual ~Emboss() override;
 

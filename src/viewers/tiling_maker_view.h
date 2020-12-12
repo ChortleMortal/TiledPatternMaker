@@ -36,7 +36,7 @@
 #define TILING_MAKER_VIEW_H
 
 #include "viewers/geo_graphics.h"
-#include "makers/tiling_maker/tiling_selection.h"
+#include "makers/tiling_maker/feature_selection.h"
 #include "makers/tiling_maker/tiling_mouseactions.h"
 #include "tile/placed_feature.h"
 #include "base/layer.h"
@@ -45,35 +45,37 @@
 class TilingMakerView : public Layer
 {
 public:
-    TilingMakerView();
+    TilingMakerView(class TilingMaker * maker);
     ~TilingMakerView() override;
 
     virtual void    paint(QPainter * painter) override;
-    virtual void    draw( GeoGraphics * gg) = 0;
 
     void drawFeature(GeoGraphics * g2d, PlacedFeaturePtr pf, bool draw_c, QColor icol );
     void drawTranslationVectors(GeoGraphics * g2d, QPointF t1_start, QPointF t1_end, QPointF t2_start, QPointF t2_end);
     void drawAccum(GeoGraphics * g2d);
     void drawMeasurements(GeoGraphics * g2d);
 
-    TilingSelectionPtr findSelection(QPointF spt);
-    TilingSelectionPtr findFeature(QPointF spt);
-    TilingSelectionPtr findEdge(QPointF spt);
-    TilingSelectionPtr findPoint(QPointF spt);
-    TilingSelectionPtr findVertex(QPointF spt);
-    TilingSelectionPtr findMidPoint(QPointF spt);
-    TilingSelectionPtr findArcPoint(QPointF spt);
+    void hideTiling(bool state);
 
-    TilingSelectionPtr findEdge(QPointF spt, TilingSelectionPtr ignore );
-    TilingSelectionPtr findPoint(QPointF spt, TilingSelectionPtr ignore);
-    TilingSelectionPtr findVertex(QPointF spt, TilingSelectionPtr ignore);
-    TilingSelectionPtr findMidPoint(QPointF spt, TilingSelectionPtr ignore);
+    TilingSelectorPtr findSelection(QPointF spt);
+    TilingSelectorPtr findFeature(QPointF spt);
+    TilingSelectorPtr findEdge(QPointF spt);
+    TilingSelectorPtr findPoint(QPointF spt);
+    TilingSelectorPtr findVertex(QPointF spt);
+    TilingSelectorPtr findMidPoint(QPointF spt);
+    TilingSelectorPtr findArcPoint(QPointF spt);
 
-    TilingSelectionPtr findCenter(PlacedFeaturePtr feature, QPointF spt);
+    TilingSelectorPtr findFeature(QPointF spt, TilingSelectorPtr ignore);
+    TilingSelectorPtr findEdge(QPointF spt, TilingSelectorPtr ignore );
+    TilingSelectorPtr findPoint(QPointF spt, TilingSelectorPtr ignore);
+    TilingSelectorPtr findVertex(QPointF spt, TilingSelectorPtr ignore);
+    TilingSelectorPtr findMidPoint(QPointF spt, TilingSelectorPtr ignore);
+
+    TilingSelectorPtr findCenter(PlacedFeaturePtr feature, QPointF spt);
 
     QPointF            findSelectionPointOrPoint(QPointF spt);
 
-    TilingSelectionPtr findNearGridPoint(QPointF spt);
+    TilingSelectorPtr findNearGridPoint(QPointF spt);
     bool               nearGridPoint(QPointF spt, QPointF & foundGridPoint );
 
     QVector<PlacedFeaturePtr> & getAllFeatures()   { return allPlacedFeatures; }
@@ -81,31 +83,51 @@ public:
     EdgePoly                  & getAccumW()        { return wAccum; }
     QVector<Measurement>      & getMeasurementsS() { return wMeasurements; }
 
+    QPointF getMousePos() { return sMousePos; }
+    QVector<QLineF> & getConstructionLines() { return constructionLines; }
+
 protected:
+    void draw(GeoGraphics * g2d);
+    void drawTiling(GeoGraphics * g2d);
+
     void determineOverlapsAndTouching();
 
-    eTMMouseMode  tilingMakerMouseMode;     // set by tiling designer menu
+    static constexpr QColor normal_color        = QColor(217,217,255,128);  // pale lilac
+    static constexpr QColor in_tiling_color     = QColor(255,217,217,128);  // pink
+    static constexpr QColor overlapping_color   = QColor(205,102, 25,128);  // ochre
+    static constexpr QColor touching_color      = QColor( 25,102,205,128);  // blue
+    static constexpr QColor under_mouse_color   = QColor(127,255,127,128);  // green
+    static constexpr QColor selected_color      = QColor(  0,255,  0,128);
+    static constexpr QColor construction_color  = QColor(  0,128,  0,128);
+    static constexpr QColor drag_color          = QColor(206,179,102,128);
+    static constexpr QColor circle_color        = QColor(202,200,  0,128);
 
-    QVector<PlacedFeaturePtr> allPlacedFeatures;
-    QVector<PlacedFeaturePtr> in_tiling;
+    eTMMouseMode                tilingMakerMouseMode;     // set by tiling designer menu
+    QVector<PlacedFeaturePtr>   allPlacedFeatures;
+    QVector<PlacedFeaturePtr>   in_tiling;
 
-    EdgePoly                  wAccum;       // world points
-    QVector<Measurement>      wMeasurements;
+    EdgePoly                    wAccum;       // world points
+    QVector<Measurement>        wMeasurements;
 
-    QColor       in_tiling_color;
-    QColor       overlapping_color;
-    QColor       touching_color;
-    QColor       under_mouse_color;
-    QColor       construction_color;
-    QColor       normal_color;
-    QColor       drag_color;
-    QColor       selected_color;
+    bool                        _hideTiling;
+    bool                        _snapToGrid;
 
-    bool         _hide;
-    bool         _snapToGrid;
+    QVector<PlacedFeaturePtr>   overlapping;  // calculated DAC was hash
+    QVector<PlacedFeaturePtr>   touching;     // calculated
 
-    QVector<PlacedFeaturePtr> overlapping;  // calculated DAC was hash
-    QVector<PlacedFeaturePtr> touching;     // calculated
+    TilingSelectorPtr           featureSelector;        // Current mouse selection.
+    PlacedFeaturePtr            currentPlacedFeature;   // current menu row selection too
+    PlacedFeaturePtr            editPlacedFeature;      // Feature in DlgFeatureEdit
+
+    QLineF                      visibleT1;                  // Translation vector so that the tiling tiles the plane.
+    QLineF                      visibleT2;
+
+    QPointF                     sMousePos;                  // screen points DAC added
+    QPointF                     featureEditPoint;
+    QVector<QLineF>             constructionLines;
+
+private:
+    class TilingMaker *         tilingMaker;
 };
 
 #endif

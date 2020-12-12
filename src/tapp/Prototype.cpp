@@ -28,6 +28,7 @@
 #include "base/tpmsplash.h"
 #include "panels/panel_status.h"
 #include "panels/panel.h"
+#include "tile/placed_feature.h"
 
 int Prototype::refs = 0;
 
@@ -50,26 +51,113 @@ Prototype::Prototype(TilingPtr t)
 Prototype::~Prototype()
 {
     refs--;
-#ifdef EXPLICIT_DESTRUCTOR
-    qDebug() << "Prototype destructor";
-    QMap<FeaturePtr, FigurePtr>::iterator it;
-#if 1
-    for (it = figures.begin(); it!= figures.end(); it++)
-    {
-        FigurePtr f = it.value();
-        f.reset();
-        FeaturePtr f2 = it.key();
-        f2.reset();
-    }
-#endif
-    figures.clear();
-#endif
+    designElements.clear();
 }
 
-void Prototype::setTiling(TilingPtr t)
+bool Prototype::operator==(const Prototype & other)
 {
-    tiling = t;
+    if (tiling != other.tiling)
+        return false;
+
+    if (designElements.size() != other.designElements.size())
+        return false;
+
+    for (int i=0; i <  designElements.size(); i++)
+    {
+        DesignElementPtr ele  = designElements[i];
+        DesignElementPtr eleo = other.designElements[i];
+
+        if ( !(ele->getFeature()->equals(eleo->getFeature())))
+            return  false;
+
+        if ( !(ele->getFigure()->equals(eleo->getFigure())))
+            return  false;
+    }
+    return  true;
+}
+
+void Prototype::setTiling(TilingPtr newTiling)
+{
+    // replace the features (keeping the figures) where possible
+    // make sure every feature in the new tiling has a design element
+    // delete redundant design element
+
+    Q_ASSERT(newTiling);
+    analyze(newTiling);
+
+    tiling = newTiling;
+
     resetProtoMap();
+    //protoMap->wipeout();
+
+    QVector<FeaturePtr>       unusedFeatures;
+    QVector<DesignElementPtr> usedElements;
+
+    // match elements to features
+    QVector<FeaturePtr> uniqueFeatures = newTiling->getUniqueFeatures();
+    for (auto newFeature : uniqueFeatures)
+    {
+        bool used = false;
+        for (auto element : qAsConst(designElements))
+        {
+            if (usedElements.contains(element))
+            {
+                continue;
+            }
+            if (newFeature->equals(element->getFeature()))
+            {
+                // replace
+                element->replaceFeature(newFeature);
+                usedElements.push_back(element);
+                used = true;
+                break;
+            }
+        }
+        if (!used)
+        {
+            unusedFeatures.push_back(newFeature);
+        }
+    }
+
+    // remove unused elements
+    QVector<DesignElementPtr> unusedElements;
+    for (auto& element : qAsConst(designElements))
+    {
+        if (!usedElements.contains(element))
+        {
+            unusedElements.push_back(element);
+        }
+    }
+
+    for (auto& element : unusedElements)
+    {
+        removeElement(element);
+    }
+
+    // create new elements
+    for (auto feature : unusedFeatures)
+    {
+        DesignElementPtr del = make_shared<DesignElement>(feature);
+        addElement(del);
+    }
+}
+
+void Prototype::analyze(TilingPtr newTiling)
+{
+    QVector<FeaturePtr> features = newTiling->getUniqueFeatures();
+    QString line = "elements: ";
+    for (auto designElement : qAsConst(designElements))
+    {
+        FeaturePtr feature = designElement->getFeature();
+        line += feature->summary();
+    }
+    qDebug().noquote() <<  line;
+    line = "features: ";
+    for (auto feature : features)
+    {
+        line += feature->summary();
+    }
+    qDebug().noquote() <<  line;
 }
 
 void Prototype::addElement(DesignElementPtr element )
@@ -89,14 +177,17 @@ QString Prototype::getInfo() const
 
 DesignElementPtr Prototype::getDesignElement(FeaturePtr feature )
 {
-    for (int i=0; i < designElements.size(); i++)
+    for (auto designElement : qAsConst(designElements))
     {
-        if (designElements[i]->getFeature() == feature)
-            return designElements[i];
+        if (designElement->getFeature() == feature)
+        {
+            return designElement;
+        }
     }
 
     qWarning() << "DESIGN ELEMENT NOT FOUND";
-    return nullptr;
+    DesignElementPtr del;
+    return del;
 }
 
 DesignElementPtr Prototype::getDesignElement(int index)
@@ -105,7 +196,10 @@ DesignElementPtr Prototype::getDesignElement(int index)
     {
         return designElements[index];
     }
-    return nullptr;
+
+    qWarning() << "DESIGN ELEMENT NOT FOUND";
+    DesignElementPtr del;
+    return del;
 }
 
 QTransform Prototype::getTransform(int index)
@@ -114,53 +208,49 @@ QTransform Prototype::getTransform(int index)
     {
         return locations[index];
     }
+
     QTransform t;
     return t;
 }
 
-FeaturePtr  Prototype::getFeature(FigurePtr figure )
+FeaturePtr  Prototype::getFeature(FigurePtr figure)
 {
-    for (int i=0; i < designElements.size(); i++)
+    for (auto designElement: qAsConst(designElements))
     {
-        if (designElements[i]->getFigure() == figure)
-            return designElements[i]->getFeature();
+        if (designElement->getFigure() == figure)
+        {
+            return designElement->getFeature();
+        }
     }
+
+    qWarning() << "FEATURE NOT FOUND";
     FeaturePtr f;
-    qWarning() << "FEATURE IS NULL";
     return f;
 }
 
-FigurePtr Prototype::getFigure(FeaturePtr feature )
+FigurePtr Prototype::getFigure(FeaturePtr feature)
 {
-    for (int i=0; i < designElements.size(); i++)
+    for (auto designElement: qAsConst(designElements))
     {
-        if (designElements[i]->getFeature() == feature)
-            return designElements[i]->getFigure();
+        if (designElement->getFeature() == feature)
+        {
+            return designElement->getFigure();
+        }
     }
+
+    qWarning() << "FIGURE IS NOT FOUND";
     FigurePtr f;
-    qWarning() << "FIGURE IS NULL";
     return f;
 }
 
 QList<FeaturePtr> Prototype::getFeatures()
 {
     QList<FeaturePtr> ql;
-    for (int i=0; i < designElements.size(); i++)
+    for (auto designElement: qAsConst(designElements))
     {
-        ql.append(designElements[i]->getFeature());
+        ql.append(designElement->getFeature());
     }
     return ql;
-}
-
-void Prototype::setFeaturesReversed(QVector<FeaturePtr> features)
-{
-    for (int i=0; i < designElements.size(); i++)
-    {
-        if (i < features.size())
-        {
-            designElements[i]->setFeature(features[features.size() - (i+1)]);
-        }
-    }
 }
 
 void Prototype::walk()
@@ -173,12 +263,11 @@ void Prototype::walk()
     qDebug() << "num locations      =" << locations.size();
 
     qDebug() << "start Prototype walk.... num figures=" << designElements.size();
-    for (auto it = designElements.begin(); it != designElements.end(); it++)
+    for (auto element : qAsConst(designElements))
     {
-        DesignElementPtr dep = *it;
-        FeaturePtr feature = dep->getFeature();
-        FigurePtr  figure  = dep->getFigure();
-        qDebug().noquote() << "figure:" << figure->getFigureDesc() << " feature:" << feature->toString();
+        FeaturePtr feature = element->getFeature();
+        FigurePtr  figure  = element->getFigure();
+        qDebug().noquote() << "figure:" << figure->getFigureDesc() << " feature:" << feature->summary();
     }
     qDebug() << "....end Prototype walk";
 }
@@ -188,7 +277,7 @@ void Prototype::walk()
 void Prototype::receive(GeoGraphics *gg, int h, int v )
 {
     Q_UNUSED(gg)
-    //qDebug() << "fill qxy Prototype::receive:"  << h << v;
+    //qDebug() << "Prototype::receive:"  << h << v;
     QPointF pt   = (tiling->getTrans1() * static_cast<qreal>(h)) + (tiling->getTrans2() * static_cast<qreal>(v));
     QTransform T = QTransform::fromTranslate(pt.x(),pt.y());
     locations << T;
@@ -228,7 +317,7 @@ MapPtr Prototype::createProtoMap(bool showSplash)
 
     resetProtoMap();
 
-    qDebug() << "PROTOTYPE::CONSTRUCT MAP" << Utils::addr(this);
+    qDebug() << "PROTOTYPE::CONSTRUCT MAP" << this;
 
     const bool debug = true;
 
@@ -242,7 +331,7 @@ MapPtr Prototype::createProtoMap(bool showSplash)
     // to all translations of that feature.
     qDebug() << "designElements count=" << designElements.size();
 
-    for (auto dep : designElements)
+    for (auto dep : qAsConst(designElements))
     {
         qDebug().noquote() << "design element:" << dep->toString();
 

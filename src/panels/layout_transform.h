@@ -4,6 +4,7 @@
 #include <QtWidgets>
 
 #include "panels/layout_sliderset.h"
+#include "geometry/xform.h"
 
 class LayoutTransform : public QHBoxLayout
 {
@@ -11,6 +12,7 @@ class LayoutTransform : public QHBoxLayout
 
 public:
     LayoutTransform(QString name, int decimals = 8);
+    void init();
 
     void setScale(qreal val) { scale->setValue(val); }
     void setRot(qreal val)   { rot->setValue(val); }
@@ -28,7 +30,8 @@ public:
     qreal getY()     { return Y->value(); }
     QString getName(){ return name;}
 
-    void       setTransform(QTransform T);
+    void  setTransform(QTransform T);
+    void  setTransform(Xform & xf);
 
     QTransform getQTransform();
 

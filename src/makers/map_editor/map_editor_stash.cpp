@@ -1,6 +1,8 @@
 #include "makers/map_editor/map_editor_stash.h"
 #include "makers/map_editor/map_editor.h"
 #include "base/fileservices.h"
+#include "base/configuration.h"
+
 #include <QTimer>
 
 #define STASH_VERSION 3

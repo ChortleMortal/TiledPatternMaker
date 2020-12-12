@@ -26,6 +26,8 @@
 #define PAGE_DELS_H
 
 #include "panels/panel_page.h"
+#include "panels/panel_misc.h"
+#include "base/configuration.h"
 
 class page_design_elements : public panel_page
 {
@@ -46,11 +48,6 @@ public:
     void    refreshPage() override;
     void    onEnter() override;
     void    onExit() override {}
-
-public slots:
-    void    slot_loadedXML(QString name);
-    void    slot_loadedTiling (QString name);
-    void    slot_loadedDesign(eDesign design);
 
 private slots:
     void    slot_rowSelected(int row, int col);

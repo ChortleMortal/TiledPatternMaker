@@ -40,17 +40,16 @@ public:
     void onExit() override {}
 
 signals:
-    void sig_stylesAddProto();
-    void sig_stylesReplaceProto();
-
+#if 0
+    void sig_pushProtoToMosaic();
+#endif
 public slots:
     void slot_reload();
     void slot_selected_dele_changed();
-    void slot_loadedXML(QString name);
-    void slot_loadedTiling (QString name);
+    void slot_mosaicLoaded(QString name);
+    void slot_tilingLoaded (QString name);
 
 private slots:
-    void slot_unload();
     void slot_convertToExplicit();
     void slot_verify();
     void slot_divideIntersectingEdges();
@@ -82,7 +81,6 @@ private slots:
     void slot_hidePoints(bool hide);
     void slot_hideMidPoints(bool hide);
     void slot_debugChk(bool on);
-    void slot_render();
 
     void slot_radiusChanged(qreal r);
     void slot_lineWidthChanged(qreal r);

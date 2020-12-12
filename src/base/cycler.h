@@ -72,12 +72,12 @@ public:
     eCycleMode getMode() { return cycleMode; }
 
 signals:
-    void sig_clearCanvas();
+    void sig_clearView();
     void sig_cycleLoadMosaic(QString name);
     void sig_cycleLoadTiling(QString name);
     void sig_finished();
     void sig_show_png(QString file, int row, int col);
-    void sig_compare(QString,QString);
+    void sig_compare(QString,QString,bool);
     void sig_viewImage(QString filename);
 
 public slots:

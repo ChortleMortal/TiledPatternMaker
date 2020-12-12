@@ -51,8 +51,7 @@ public:
     // Get a complete map from unit.
     virtual MapPtr  getFigureMap() override;
 
-    virtual void    setN(int n);
-    int     getN();
+    virtual void    setN(int n) override;
 
     qreal   get_dn()  { return dn; }
     qreal   get_don() { return don; }
@@ -73,7 +72,6 @@ protected:
     RadialFigure(int n, qreal rotate);
     RadialFigure(const Figure & fig, int n, qreal rotate);
 
-    int           n;
     qreal         dn;
     qreal         don;
     QTransform    Tr;

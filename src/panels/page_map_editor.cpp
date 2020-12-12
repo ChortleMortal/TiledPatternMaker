@@ -27,6 +27,7 @@
 #include "panels/dlg_listselect.h"
 #include "panels/dlg_crop.h"
 #include "panels/dlg_name.h"
+#include "panels/panel.h"
 #include "base/fileservices.h"
 #include "base/tiledpatternmaker.h"
 #include "base/utilities.h"
@@ -35,8 +36,10 @@
 #include "tapp/radial_figure.h"
 #include "base/mosaic_writer.h"
 #include "base/mosaic_loader.h"
-#include "viewers/workspace_viewer.h"
-
+#include "makers/motif_maker/motif_maker.h"
+#include "makers/tiling_maker/tiling_maker.h"
+#include "makers/decoration_maker/decoration_maker.h"
+#include "viewers/viewcontrol.h"
 
 #define E2STR(x) #x
 
@@ -171,18 +174,15 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     pbUndoConstructs->setIcon(QApplication::style()->standardIcon(QStyle::SP_ArrowLeft));
     pbRedoConstructs->setIcon(QApplication::style()->standardIcon(QStyle::SP_ArrowRight));
 
-    QToolButton * pbReplaceInStyle  = new QToolButton();
-    QToolButton * pbAddToStyle      = new QToolButton();
+    //QToolButton * pbReplaceInStyle  = new QToolButton();
     QToolButton * pbRender          = new QToolButton();
     QToolButton * pbPushToTiling    = new QToolButton();
 
-    pbReplaceInStyle->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    pbAddToStyle->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    //pbReplaceInStyle->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     pbRender->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     pbPushToTiling->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    pbReplaceInStyle->setText("Replace in Proto");
-    pbAddToStyle->setText("Add to Proto");
+    //pbReplaceInStyle->setText("Push Proto to Mosaic");
     pbRender->setText("Render");
     pbPushToTiling->setText("Push to Tiling");
 
@@ -309,8 +309,7 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     // Push Box
     QHBoxLayout * pushLayout = new QHBoxLayout;
 
-    pushLayout->addWidget(pbReplaceInStyle);
-    pushLayout->addWidget(pbAddToStyle);
+    //pushLayout->addWidget(pbReplaceInStyle);
     pushLayout->addWidget(pbRender);
     pushLayout->addWidget(pbPushToTiling);
 
@@ -333,11 +332,10 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     vbox->addWidget(editorStatusBox);
     vbox->addLayout(boxLayout);
 
-    connect(workspace, &Workspace::sig_selected_dele_changed, this, &page_map_editor::slot_selected_dele_changed);
+    connect(vcontrol, &ViewControl::sig_selected_dele_changed, this, &page_map_editor::slot_selected_dele_changed);
 
-    connect(tpm,  &TiledPatternMaker::sig_loadedTiling,   this,   &page_map_editor::slot_loadedTiling);
-    connect(tpm,  &TiledPatternMaker::sig_loadedXML,      this,   &page_map_editor::slot_loadedXML);
-    connect(workspace, &View::sig_unload,                 this,   &page_map_editor::slot_unload);
+    connect(theApp,  &TiledPatternMaker::sig_tilingLoaded,   this,   &page_map_editor::slot_tilingLoaded);
+    connect(theApp,  &TiledPatternMaker::sig_mosaicLoaded,   this,   &page_map_editor::slot_mosaicLoaded);
 
     connect(pbVerifyMap,            &QToolButton::clicked,  this,   &page_map_editor::slot_verify);
     connect(pbMakeExplicit,         &QToolButton::clicked,  this,   &page_map_editor::slot_convertToExplicit);
@@ -372,9 +370,7 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
 
     connect(&mapEdModeGroup,    SIGNAL(buttonClicked(int)), this,   SLOT(slot_mapEdMode_pressed(int)));
     connect(&modeGroup,         SIGNAL(buttonClicked(int)), this,   SLOT(slot_setModes(int)));
-    connect(pbReplaceInStyle,   &QToolButton::clicked,      this,   &page_map_editor::sig_stylesReplaceProto);
-    connect(pbAddToStyle,       &QToolButton::clicked,      this,   &page_map_editor::sig_stylesAddProto);
-    connect(pbRender,           &QToolButton::clicked,      this,   &page_map_editor::slot_render);
+    connect(pbRender,           &QToolButton::clicked,      this,   &panel_page::sig_render);
 
     connect(radiusSpin,     &DoubleSpinSet::sig_valueChanged, this, &page_map_editor::slot_radiusChanged);
     connect(lineWidthSpin,  &DoubleSpinSet::sig_valueChanged, this, &page_map_editor::slot_lineWidthChanged);
@@ -397,7 +393,7 @@ void  page_map_editor::onEnter()
     modeGroup.button(me->getMouseMode())->setChecked(true);
 
     me->buildEditorDB();
-    emit sig_viewWS();
+    emit sig_refreshView();
 }
 
 void  page_map_editor::reload()
@@ -409,7 +405,7 @@ void  page_map_editor::reload()
     case MAP_MODE_FIGURE:
     {
         // this is set by the figure editor
-        DesignElementPtr dep  = workspace->getSelectedDesignElement();
+        DesignElementPtr dep  = motifMaker->getSelectedDesignElement();
         if (dep)
             me->setDesignElement(dep);
         else
@@ -418,7 +414,7 @@ void  page_map_editor::reload()
     }
     case MAP_MODE_PROTO:
     {
-        PrototypePtr proto = workspace->getSelectedPrototype();
+        PrototypePtr proto = motifMaker->getSelectedPrototype();
         if (proto)
         {
             me->setPrototype(proto);
@@ -429,16 +425,23 @@ void  page_map_editor::reload()
     }
     case MAP_MODE_MOSAIC:
     {
-        MosaicPtr mosaic = workspace->getMosaic();
-        const StyleSet & sset = mosaic->getStyleSet();
-        if (sset.size())
+        MosaicPtr mosaic = decorationMaker->getMosaic();
+        if (!mosaic)
         {
-            StylePtr sp  = sset.first();
-            me->setStyle(sp);
+            me->unload();
         }
         else
         {
-            me->unload();
+            const StyleSet & sset = mosaic->getStyleSet();
+            if (sset.size())
+            {
+                StylePtr sp  = sset.first();
+                me->setStyle(sp);
+            }
+            else
+            {
+                me->unload();
+            }
         }
         break;
     }
@@ -448,14 +451,14 @@ void  page_map_editor::reload()
         break;
 
     case MAP_MODE_TILING:
-        TilingPtr tp = workspace->getCurrentTiling();
+        TilingPtr tp = tilingMaker->getSelected();
         me->setTiling(tp);
         break;
     }
 
     if (config->viewerType == VIEW_MAP_EDITOR)
     {
-        emit sig_viewWS();
+        emit sig_refreshView();
     }
 }
 
@@ -463,7 +466,7 @@ void page_map_editor::slot_selected_dele_changed()
 {
     if (config->mapEditorMode == MAP_MODE_FIGURE)
     {
-        DesignElementPtr dep = workspace->getSelectedDesignElement();
+        DesignElementPtr dep = motifMaker->getSelectedDesignElement();
         me->setDesignElement(dep);
     }
 }
@@ -495,7 +498,7 @@ void page_map_editor::refreshPage()
             line1->setText(str);
             str = QString("Feature = %1").arg(Utils::addr(feap.get()));
             line2->setText(str);
-            str = QString("Figure = %1 %2").arg(Utils::addr(figp.get())).arg(figp->getFigTypeString());
+            str = QString("Figure = %1 %2").arg(Utils::addr(figp.get()),figp->getFigTypeString());
             line3->setText(str);
         }
         else
@@ -531,7 +534,7 @@ void page_map_editor::refreshPage()
     // line 4
     MapPtr map = me->getMap();
     if (map)
-        str = QString("Map: %1  %2").arg(Utils::addr(map.get())).arg(map->summary());
+        str = QString("Map: %1  %2").arg(Utils::addr(map.get()),map->summary());
     else
         str = "Map: NO MAP";
     line4->setText(str);
@@ -551,7 +554,7 @@ void page_map_editor::refreshPage()
                       << b.x() << ", " << b.y() << ")";
     mi += astring;
 
-    str = QString("%1 : %2").arg(sMapMouseMode[me->getMouseMode()]).arg(mi);
+    str = QString("%1 : %2").arg(sMapMouseMode[me->getMouseMode()], mi);
     line5->setText(str);
 
     // line 6
@@ -602,17 +605,23 @@ void page_map_editor::refreshPage()
     me->updateStatus();
 }
 
-void page_map_editor::slot_loadedXML(QString name)
+void page_map_editor::slot_mosaicLoaded(QString name)
 {
     qDebug() << "page_map_editor: loaded -" << name;
-    reload();
     me->initStashFrom(name);
+    if (panel->isVisiblePage(this))
+    {
+    reload();
+    }
 }
 
-void page_map_editor::slot_loadedTiling (QString name)
+void page_map_editor::slot_tilingLoaded (QString name)
 {
     Q_UNUSED(name)
-    reload();
+    if (panel->isVisiblePage(this))
+    {
+        reload();
+    }
 }
 
 void page_map_editor::slot_convertToExplicit()
@@ -659,70 +668,61 @@ void page_map_editor::slot_divideIntersectingEdges()
 {
     MapPtr map = me->getMap();
     map->divideIntersectingEdges();
-    emit sig_viewWS();
+    emit sig_refreshView();
 }
 
 void page_map_editor::slot_joinColinearEdges()
 {
     MapPtr map = me->getMap();
     map->joinColinearEdges();
-    emit sig_viewWS();
+    emit sig_refreshView();
 }
 
 void page_map_editor::slot_cleanNeighbours()
 {
     MapPtr map = me->getMap();
     map->cleanNeighbours();
-    emit sig_viewWS();
+    emit sig_refreshView();
 }
 
 void page_map_editor::slot_removeUnconnectedVertices()
 {
     MapPtr map = me->getMap();
     map->removeDanglingVertices();
-    emit sig_viewWS();
+    emit sig_refreshView();
 }
 
 void page_map_editor::slot_removeZombieEdges()
 {
     MapPtr map = me->getMap();
     map->removeBadEdges();
-    emit sig_viewWS();
+    emit sig_refreshView();
 }
 
 void page_map_editor::slot_sortAllNeighboursByAngle()
 {
     MapPtr map = me->getMap();
     map->sortAllNeighboursByAngle();
-    emit sig_viewWS();
+    emit sig_refreshView();
 }
 
 void page_map_editor::slot_sortVertices()
 {
     MapPtr map = me->getMap();
     map->sortVertices();
-    emit sig_viewWS();
+    emit sig_refreshView();
 }
 
 void page_map_editor::slot_sortEdges()
 {
     MapPtr map = me->getMap();
     map->sortEdges();
-    emit sig_viewWS();
+    emit sig_refreshView();
 }
 
 void page_map_editor::slot_reload()
 {
     reload();
-}
-
-void page_map_editor::slot_unload()
-{
-    localMap.reset();
-    if (me)
-    {
-        me->unload();
-    }
 }
 
 void page_map_editor::slot_setModes(int mode)
@@ -915,13 +915,11 @@ void page_map_editor::slot_saveMap()
 
 void page_map_editor::slot_pushToTiling()
 {
-    MapPtr map      = me->getMap();
-    EdgePoly ep     = map->getEdgePoly();
-    FeaturePtr fp   = make_shared<Feature>(ep,0);
-    EdgePoly ep2    = fp->getEdgePoly();
-
-    TilingPtr tiling = workspace->getCurrentTiling();
-    tiling->add(fp,QTransform());
+    MapPtr map           = me->getMap();
+    EdgePoly ep          = map->getEdgePoly();
+    FeaturePtr fp        = make_shared<Feature>(ep);
+    PlacedFeaturePtr pfp = make_shared<PlacedFeature>(fp,QTransform());
+    tilingMaker->addNewPlacedFeature(pfp);
 
     QMessageBox box(this);
     box.setIcon(QMessageBox::Information);
@@ -1024,9 +1022,4 @@ void page_map_editor::slot_loadTemplate()
 
     QFileInfo fi(name);
     lastNamedTemplate = fi.baseName();
-}
-
-void page_map_editor::slot_render()
-{
-    emit sig_render();
 }

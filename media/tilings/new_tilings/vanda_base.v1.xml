@@ -1,0 +1,100 @@
+<?xml version="1.0"?>
+<Tiling version="6">
+	<Name>vanda_base.v1</Name>
+	<Fill>-4,4,-4,4</Fill>
+	<T1>8.592520905951968,-5.329070518200751e-15</T1>
+	<T2>4.28292711964265,7.427113795701093</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>1100</height>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,-1.77635683940025e-15</center>
+	</ViewSettings>
+	<Feature type="regular" sides="6" rotation="0" scale="1">
+		<Placement>
+			<scale>2.480447129034427</scale>
+			<rot>29.99999999999999</rot>
+			<tranX>-3.866666666666666</tranX>
+			<tranY>-1.573333333333332</tranY>
+		</Placement>
+		<Placement>
+			<scale>2.480447129034427</scale>
+			<rot>29.99999999999999</rot>
+			<tranX>4.725854239285301</tranX>
+			<tranY>-1.573333333333337</tranY>
+		</Placement>
+		<Placement>
+			<scale>2.480447129034428</scale>
+			<rot>29.99999999999999</rot>
+			<tranX>0.4295937863093182</tranX>
+			<tranY>0.9071137957010929</tranY>
+		</Placement>
+		<Placement>
+			<scale>2.480447129034427</scale>
+			<rot>29.99999999999998</rot>
+			<tranX>0.4295937863093147</tranX>
+			<tranY>-4.053780462367762</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="1">-3.866666666666667,-4.053780462367758</Point>
+			<Point id="2">-1.718536440178674,-0.3331097688161198</Point>
+		</Line>
+		<Line>
+			<Point reference="2" />
+			<Point id="3">-6.014796893154656,-0.3331097688161173</Point>
+		</Line>
+		<Line>
+			<Point reference="3" />
+			<Point reference="1" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>59.99999999999999</rot>
+			<tranX>0.2666666666666693</tranX>
+			<tranY>-1.160000000000001</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>59.99999999999999</rot>
+			<tranX>2.426666666666668</tranX>
+			<tranY>0.1066666666666665</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>59.99999999999999</rot>
+			<tranX>0.2933333333333348</tranX>
+			<tranY>1.319999999999999</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>5.026666666666667</tranX>
+			<tranY>3.706666666666668</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>5.026666666666668</tranX>
+			<tranY>1.253333333333333</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>2.866666666666668</tranX>
+			<tranY>2.480000000000001</tranY>
+		</Placement>
+	</Feature>
+	<Desc>transform rotation 30</Desc>
+	<Auth />
+	<BackgroundImage name="IMG_0066ADJ.JPG">
+		<Scale>0.55</Scale>
+		<Rot>1.553343034274953</Rot>
+		<X>0</X>
+		<Y>0</Y>
+	</BackgroundImage>
+</Tiling>

@@ -133,7 +133,7 @@ void Faces::handleVertex(NeighbourMap & nmap, VertexPtr vert, EdgePtr edge)
         allFaces.push_back(face);
     }
 
-    for(auto edge : *face)
+    for(auto edge : qAsConst(*face))
     {
         VertexPtr from = edge->getV1();
         VertexPtr to   = edge->getV2();
@@ -246,7 +246,7 @@ void Faces::buildFacesNew23()
 {
     //map->cleanse();
 
-    for (auto face : allFaces)
+    for (auto face : qAsConst(allFaces))
     {
         face->sortForComparison();
     }
@@ -414,7 +414,7 @@ void Faces::assignColorsNew2(ColorSet & colorSet)
 
    // assign the color set to the sorted group
    colorSet.resetIndex();
-   for (auto face : faceGroup)
+   for (const auto & face : qAsConst(faceGroup))
    {
        face->tpcolor = colorSet.getNextColor();
    }
@@ -486,11 +486,11 @@ void Faces::assignColorsToFaces(MapPtr map, FaceSet & fset)
     {
         face = st.pop();
         pops++;
-        if (debug & DEBUG_ASSIGN) qDebug().noquote() << "Popped face:" << Utils::addr(face.get()) << sFaceState[face->state];
+        if (debug & DEBUG_ASSIGN) qDebug().noquote() << "Popped face:" << face.get() << sFaceState[face->state];
 
         eColor color = C_WHITE;     // seed
 
-        for (auto edge : *face)
+        for (const auto & edge : qAsConst(*face))
         {
             FacePtr nfi = getTwin(map, edge );
             if (!nfi)
@@ -498,12 +498,12 @@ void Faces::assignColorsToFaces(MapPtr map, FaceSet & fset)
                 if (debug & DEBUG_ASSIGN) qDebug().noquote() << "    no twin:";
                 continue;
             }
-            if (debug & DEBUG_ASSIGN) qDebug().noquote() << "  Twin face:" <<  Utils::addr(nfi.get()) << sFaceState[nfi->state];
+            if (debug & DEBUG_ASSIGN) qDebug().noquote() << "  Twin face:" << nfi.get() << sFaceState[nfi->state];
             switch( nfi->state )
             {
             case FACE_UNDONE:
                 nfi->state = FACE_PROCESSING;
-                if (debug & DEBUG_ASSIGN) qDebug().noquote() << "    Pushing:" <<  Utils::addr(nfi.get()) << sFaceState[nfi->state];
+                if (debug & DEBUG_ASSIGN) qDebug().noquote() << "    Pushing:" << nfi.get() << sFaceState[nfi->state];
                 st.push( nfi );
                 pushes++;
                 break;
@@ -541,7 +541,7 @@ void Faces::assignColorsToFaces(MapPtr map, FaceSet & fset)
             face->state = FACE_DONE_BLACK;
         }
 
-        if (debug & DEBUG_ASSIGN) qDebug().noquote() << " Popped now:" << Utils::addr(face.get()) << sFaceState[face->state];
+        if (debug & DEBUG_ASSIGN) qDebug().noquote() << " Popped now:" << face.get() << sFaceState[face->state];
     }
 
     qDebug() << "Pushes=" << pushes << "Pops=" << pops;
@@ -809,7 +809,7 @@ void Faces::removeDuplicates()
     FaceSet qvfp;
 
     qDebug() << "Faces::Remove duplicates - start count="  << allFaces.size();
-    for (auto face : allFaces)
+    for (auto face : qAsConst(allFaces))
     {
         if (face->getNumSides() == 0)
         {
@@ -817,7 +817,7 @@ void Faces::removeDuplicates()
             continue;
         }
         bool found = false;
-        for (auto face2 : qvfp)
+        for (const auto & face2 : qvfp)
         {
             if (face->equals(face2))
             {
@@ -860,7 +860,7 @@ void Faces::dumpAllFaces(QString title)
     for (int i=0; i < allFaces.size(); i++)
     {
         FacePtr fip = allFaces[i];
-        qDebug().noquote() << i << Utils::addr(fip.get()) << "state=" << sFaceState[fip->state] << "sides=" << fip->size() << "area=" << fip->getArea();
+        qDebug().noquote() << i << fip.get() << "state=" << sFaceState[fip->state] << "sides=" << fip->size() << "area=" << fip->getArea();
         fip->dump();
     }
     qDebug().noquote() << "===============END" << title << "=============================";
@@ -871,7 +871,7 @@ void Faces::dumpEdgeFaceMap(QMap<EdgePtr,FacePtr> & dmap, QString title)
     qDebug().noquote() << "=============== MAP" << title << "=================================";
     for (auto it = dmap.constBegin(); it != dmap.constEnd(); it++)
     {
-        qDebug() << "Edge:"  << Utils::addr(it.key().get()) <<  "Face:" << Utils::addr(it.value().get()) << "face sides=" << it.value()->size();
+        qDebug() << "Edge:"  << it.key().get() <<  "Face:" << it.value().get() << "face sides:" << it.value()->size();
     }
     qDebug().noquote() << "=============== END" << title << "=================================";
 
@@ -968,7 +968,7 @@ void Face::sortForComparison()
 bool Face::containsCrossover()
 {
     QVector<VertexPtr> qvec;
-    for (auto edge : *this)
+    for (auto edge : qAsConst(*this))
     {
         VertexPtr vp = edge->getV1();
         if (!qvec.contains(vp))
@@ -1013,7 +1013,7 @@ bool Face::decomposeOnce(FacePtr newFace)
     };
 
     QVector<VertexPtr> qvec;
-    for (auto edge : *this)
+    for (auto edge : qAsConst(*this))
     {
         VertexPtr vp = edge->getV1();
         if (!qvec.contains(vp))
@@ -1026,7 +1026,7 @@ bool Face::decomposeOnce(FacePtr newFace)
             //qDebug() << "Crossover vertex detected" << vp->getTmpVertexIndex();
             Face master;
             eState state = NOT_STARTED;
-            for (auto edge : *this)
+            for (auto edge : qAsConst(*this))
             {
                 switch(state)
                 {
@@ -1234,7 +1234,7 @@ bool FaceGroup::isSelected(int idx)
 int FaceGroup::totalSize()
 {
     int tot = 0;
-    for (auto fset : *this)
+    for (const auto & fset : qAsConst(*this))
     {
         tot += fset->size();
     }

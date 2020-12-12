@@ -23,6 +23,7 @@
  */
 
 #include "style/sketch.h"
+#include "geometry/transform.h"
 #include <QPainter>
 #include <QtGlobal>
 
@@ -48,7 +49,7 @@
 
 // Creation.
 
-Sketch::Sketch(PrototypePtr proto, PolyPtr bounds ) : Plain(proto,bounds)
+Sketch::Sketch(PrototypePtr proto) : Plain(proto)
 {
     qsrand(279401L);
 }

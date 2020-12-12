@@ -3,6 +3,7 @@
 #include "geometry/vertex.h"
 #include "geometry/map.h"
 #include "geometry/point.h"
+#include "geometry/transform.h"
 #include "geometry/intersect.h"
 #include "base/utilities.h"
 #include "tapp/figure.h"
@@ -82,7 +83,7 @@ void MoveVertex::endDragging( QPointF spt)
     if (sel)
     {
         VertexPtr existing = sel->getVertex();
-        for (auto ep : np->getNeighbours())
+        for (auto ep : qAsConst(np->getNeighbours()))
         {
             Q_ASSERT(map->contains(ep));
             if (ep->getV1() == _vp)
@@ -388,8 +389,8 @@ void ConstructionLine::endDragging( QPointF spt)
         me->saveStash();
     }
 
-    MapMouseAction::endDragging(spt);
     me->buildEditorDB();
+    me->forceRedraw();
 }
 
 /////////
@@ -562,7 +563,7 @@ MoveConstructionCircle::MoveConstructionCircle(MapEditor * maped, CirclePtr circ
 {
     desc = "MoveConstructionCircle";
     origCircle    = circle;
-    currentCircle = *origCircle;
+    currentCircle.set(circle);
 
     last_drag    = me->viewTinv.map(spt);
 }
@@ -594,7 +595,7 @@ void MoveConstructionCircle::endDragging( QPointF spt)
     }
     // if no selection, don't adjust
     currentCircle.centre = center;
-    *origCircle = currentCircle;
+    origCircle->set(currentCircle);
     me->buildEditorDB();
     MapMouseAction::endDragging(spt);
 }

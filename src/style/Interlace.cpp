@@ -47,7 +47,7 @@
 // just a pain when crossing edges don't cross in a perfect X.  I
 // might get this wrong.
 
-Interlace::Interlace(PrototypePtr proto, PolyPtr bounds ) : Thick(proto,bounds)
+Interlace::Interlace(PrototypePtr proto) : Thick(proto)
 {
     gap    = 0.0;
     shadow = 0.05;
@@ -193,7 +193,7 @@ void Interlace::getPoints(MapPtr map, EdgePtr  edge, VertexPtr from, VertexPtr t
             int index    = 0;
             int edge_idx = -1;
 
-            for (auto nedge : np->getNeighbours())
+            for (auto& nedge : qAsConst(np->getNeighbours()))
             {
                 ns << nedge;
                 if (nedge == edge)
@@ -314,7 +314,7 @@ void Interlace::assignInterlacing()
 // Propagate the over-under relation from an edge to its incident vertices.
 void Interlace::buildFrom()
 {
-    qDebug() << "buildFrom";
+    //qDebug() << "Interlace::buildFrom";
 
     while (!todo.empty())
     {
@@ -405,7 +405,7 @@ void Interlace::propagate(VertexPtr vertex, EdgePtr edge, bool edge_under_at_ver
         int index = 0;
         int edge_idx = -1;
 
-        for (auto edge2 : np->getNeighbours())
+        for (auto& edge2 : qAsConst(np->getNeighbours()))
         {
             ns << edge2;
             if (edge2 == edge)
@@ -457,7 +457,7 @@ void Interlace::draw(GeoGraphics * gg)
         return;
     }
 
-    for (auto seg : pts)
+    for (auto seg : qAsConst(pts))
     {
         QColor c = seg.c;
 
@@ -467,7 +467,7 @@ void Interlace::draw(GeoGraphics * gg)
 
     if ( shadow > 0.0)
     {
-        for (auto seg : pts)
+        for (auto& seg : qAsConst(pts))
         {
             QColor color = seg.c;
             qreal h,s,b;
@@ -499,7 +499,7 @@ void Interlace::draw(GeoGraphics * gg)
     if ( draw_outline )
     {
         QPen pen(Qt::black);
-        for(auto seg : pts)
+        for(auto& seg : qAsConst(pts))
         {
             gg->drawLine(seg.A.above, seg.B.below, pen);
             gg->drawLine(seg.B.above, seg.A.below, pen);

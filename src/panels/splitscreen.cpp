@@ -1,6 +1,6 @@
 #include "panels/splitscreen.h"
 #include "panels/panel.h"
-#include "base/view.h"
+#include "viewers/view.h"
 
 
 SplitScreen::SplitScreen(QWidget *parent) : QFrame(parent)

@@ -10,6 +10,7 @@ public:
     Bounds(const Bounds & other);
     Bounds(qreal left, qreal top, qreal width);
 
+    Bounds & operator=(const Bounds & other);
     Bounds   operator+(const Bounds & other);
 
     void reset();

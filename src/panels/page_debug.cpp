@@ -28,77 +28,76 @@
 #include "base/fileservices.h"
 #include "base/mosaic_manager.h"
 #include "base/tiledpatternmaker.h"
+#include "viewers/view.h"
 #include "panels/layout_sliderset.h"
 #include "panels/versioned_list_widget.h"
 #include "panels/panel.h"
 #include "base/shared.h"
 #include "tile/tiling.h"
 #include "tile/tiling_manager.h"
-#include "viewers/workspace_viewer.h"
+#include "viewers/viewcontrol.h"
 
 page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,"Debug Tools")
 {
      QGroupBox   * cycle = createCycleSection();
      QGroupBox   * image = createImagesSection();
-     QVBoxLayout * avbox = createMiscSection();
      QGroupBox   * debug = createDebugSection();
 
      vbox->addWidget(cycle);
      vbox->addWidget(image);
-     vbox->addLayout(avbox);
      vbox->addWidget(debug);
 
-     connect(tpm, &TiledPatternMaker::sig_compareResult, this,  &page_debug::slot_compareResult);
-     connect(this,  &page_debug::sig_view_image,           tpm, &TiledPatternMaker::slot_view_image);
-     connect(this,  &page_debug::sig_compareImageFiles,    tpm, &TiledPatternMaker::slot_compareImagesReplace, Qt::QueuedConnection);
+     connect(theApp,&TiledPatternMaker::sig_compareResult, this,  &page_debug::slot_compareResult);
+     connect(this,  &page_debug::sig_view_image,           theApp, &TiledPatternMaker::slot_view_image);
+     connect(this,  &page_debug::sig_compareImageFiles,    theApp, &TiledPatternMaker::slot_compareImagesReplace, Qt::QueuedConnection);
 
      Cycler * cycler = Cycler::getInstance();
      connect(this,  &page_debug::sig_cyclerStart,          cycler,  &Cycler::slot_startCycle, Qt::QueuedConnection);
-
 }
 
 QGroupBox * page_debug::createDebugSection()
 {
+    QGroupBox   * maps  = createVerifyMaps();
+
     QPushButton * pbVerifyTileNames     = new QPushButton("Verify Tile Names");
     QPushButton * pbReformatDesXMLBtn   = new QPushButton("Reformat All Design XML");
     QPushButton * pbReformatTileXMLBtn  = new QPushButton("Reformat All Tiling XML");
     QPushButton * pbReprocessDesXMLBtn  = new QPushButton("Reprocess All Design XML");
     QPushButton * pbReprocessTileXMLBtn = new QPushButton("Reprocess All Tiling XML");
     QPushButton * pbRender              = new QPushButton("Render");
-    QPushButton * pbClearWS             = new QPushButton("Clear WS");
-    QPushButton * pbClearCanvas         = new QPushButton("Clear Canvas");
-    QPushButton * pbDrainAll            = new QPushButton("Drain The Swamp");
+    QPushButton * pbClearMakers         = new QPushButton("Clear Makers");
+    QPushButton * pbClearView           = new QPushButton("Clear View");
 
-    QGridLayout * grid1 = new QGridLayout();
-    grid1->setHorizontalSpacing(51);
+    QGridLayout * grid = new QGridLayout();
+    grid->setHorizontalSpacing(51);
 
     int row = 0;
-    grid1->addWidget(pbReformatDesXMLBtn,   row,0);
-    grid1->addWidget(pbReprocessDesXMLBtn,  row,1);
-    grid1->addWidget(pbReformatTileXMLBtn,  row,2);
-    grid1->addWidget(pbReprocessTileXMLBtn, row,3);
+    grid->addWidget(pbReformatDesXMLBtn,   row,0);
+    grid->addWidget(pbReprocessDesXMLBtn,  row,1);
+    grid->addWidget(pbReformatTileXMLBtn,  row,2);
+    grid->addWidget(pbReprocessTileXMLBtn, row,3);
 
     row++;
-    grid1->addWidget(pbClearWS,             row,0);
-    grid1->addWidget(pbClearCanvas,         row,1);
-    grid1->addWidget(pbDrainAll,            row,2);
+    grid->addWidget(pbClearMakers,         row,0);
+    grid->addWidget(pbClearView,           row,1);
+    grid->addWidget(pbRender,              row,2);
+    grid->addWidget(pbVerifyTileNames,     row,3);
 
-    row++;
-    grid1->addWidget(pbRender,              row,0);
-    grid1->addWidget(pbVerifyTileNames,     row,3);
+    QVBoxLayout * vbox = new QVBoxLayout;;
+    vbox->addLayout(grid);
+    vbox->addWidget(maps);
 
     QGroupBox * debugGroup = new QGroupBox("Debug");
-    debugGroup->setLayout(grid1);
+    debugGroup->setLayout(vbox);
 
     connect(pbVerifyTileNames,        &QPushButton::clicked,     this,   &page_debug::slot_verifyTilingNames);
     connect(pbReformatDesXMLBtn,      &QPushButton::clicked,     this,   &page_debug::slot_reformatDesignXML);
     connect(pbReformatTileXMLBtn,     &QPushButton::clicked,     this,   &page_debug::slot_reformatTilingXML);
     connect(pbReprocessDesXMLBtn,     &QPushButton::clicked,     this,   &page_debug::slot_reprocessDesignXML);
     connect(pbReprocessTileXMLBtn,    &QPushButton::clicked,     this,   &page_debug::slot_reprocessTilingXML);
-    connect(pbClearCanvas,            &QPushButton::clicked,     workspace,  &Workspace::slot_clearCanvas);
-    connect(pbRender,                 &QPushButton::clicked,     tpm,        &TiledPatternMaker::slot_render);
-    connect(pbDrainAll,               &QPushButton::clicked,     workspace,  &View::drainTheSwamp);
-    connect(pbClearWS,                &QPushButton::clicked,     workspace,  &Workspace::slot_clearWorkspace);
+    connect(pbRender,                 &QPushButton::clicked,     this,   &panel_page::sig_render);
+    connect(pbClearView,              &QPushButton::clicked,     vcontrol,  &ViewControl::slot_clearView);
+    connect(pbClearMakers,            &QPushButton::clicked,     vcontrol,  &ViewControl::slot_clearMakers);
 
     return debugGroup;
 }
@@ -171,11 +170,11 @@ QGroupBox * page_debug::createImagesSection()
     QPushButton * viewImage0   = new QPushButton("View");
     QPushButton * viewImage1   = new QPushButton("View");
     QPushButton * compareBtn   = new QPushButton("Compare");
+    QPushButton * cycleBtn     = new QPushButton("Cycle");
     QPushButton * previousBtn  = new QPushButton("Previous");
     QPushButton * nextBtn      = new QPushButton("Next");
 
     QPushButton * swapBtn      = new QPushButton("Swap");
-    QCheckBox   * cbAutoCycle  = new QCheckBox("AutoCycle");
     QCheckBox   * cbStopIfDiff = new QCheckBox("Stop if Diff");
     QCheckBox   * transparent  = new QCheckBox("Transparent");
     QCheckBox   * differences  = new QCheckBox("Display Differences");
@@ -183,13 +182,13 @@ QGroupBox * page_debug::createImagesSection()
     QCheckBox   * side_by_side = new QCheckBox("Side-by-side");
 
     QHBoxLayout * hbox = new QHBoxLayout;
+    hbox->addStretch();
     hbox->addWidget(cbStopIfDiff);
     hbox->addWidget(transparent);
     hbox->addWidget(differences);
     hbox->addWidget(ping_pong);
     hbox->addWidget(side_by_side);
-    hbox->addWidget(cbAutoCycle);
-    hbox->addWidget(compareBtn);
+    hbox->addWidget(cycleBtn);
 
     QGridLayout * imageGrid = new QGridLayout();
 
@@ -217,6 +216,7 @@ QGroupBox * page_debug::createImagesSection()
 
     row++;
     imageGrid->addWidget(imageCompareResult,row,1);
+    imageGrid->addWidget(compareBtn,row,2);
 
     QGroupBox * imageGroup = new QGroupBox("View/Compare Images");
     imageGroup->setLayout(imageGrid);
@@ -228,7 +228,6 @@ QGroupBox * page_debug::createImagesSection()
     dir1->setText(dir);
     loadCombo(ibox1,dir);
 
-    cbAutoCycle->setChecked(config->autoCycle);
     cbStopIfDiff->setChecked(config->stopIfDiff);
     transparent->setChecked(config->compare_transparent);
     differences->setChecked(config->display_differences);
@@ -242,10 +241,10 @@ QGroupBox * page_debug::createImagesSection()
     connect(viewImage0,             &QPushButton::clicked,     this,   &page_debug::slot_viewImage0);
     connect(viewImage1,             &QPushButton::clicked,     this,   &page_debug::slot_viewImage1);
     connect(compareBtn,             &QPushButton::clicked,     this,   &page_debug::slot_compareImages);
+    connect(cycleBtn,               &QPushButton::clicked,     this,   &page_debug::slot_compareCycle);
     connect(previousBtn,            &QPushButton::clicked,     this,   &page_debug::slot_previous);
     connect(nextBtn,                &QPushButton::clicked,     this,   &page_debug::slot_next);
 
-    connect(cbAutoCycle,            &QCheckBox::clicked,       this,   &page_debug::slot_autoCycleClicked);
     connect(transparent,            &QCheckBox::clicked,       this,   &page_debug::slot_transparentClicked);
     connect(cbStopIfDiff,           &QCheckBox::clicked,       this,   &page_debug::slot_stopIfDiffClicked);
     connect(differences,            &QCheckBox::clicked,       this,   &page_debug::slot_differencesClicked);
@@ -263,89 +262,13 @@ QGroupBox * page_debug::createImagesSection()
     return  imageGroup;
 }
 
-QVBoxLayout *  page_debug::createMiscSection()
+QGroupBox * page_debug::createVerifyMaps()
 {
-    QVBoxLayout  * vbox                = new QVBoxLayout();
-
-    QCheckBox    * showCenterChk       = new QCheckBox("Show Center");
-
-    QHBoxLayout * hbox2 = new QHBoxLayout;
-    hbox2->addWidget(showCenterChk);
-    hbox2->addStretch();
-
-    gridBox = new QGroupBox("Show  Grid");
-    gridBox->setCheckable(true);
-
-    QRadioButton * gridScreen          = new QRadioButton("Screen");
-    QCheckBox    * gridScreenCentered  = new QCheckBox("Centered");
-    SpinSet      * gridScreenSpacing   = new SpinSet("Spacing",100,10,990);
-    SpinSet      * gridScreenWidth     = new SpinSet("Width",config->gridScreenWidth,1,9);
-
-    QRadioButton * gridModel           = new QRadioButton("Model");
-    QCheckBox    * gridModelCentered   = new QCheckBox("Centered");
-    DoubleSpinSet* gridModelSpacing    = new DoubleSpinSet("Spacing",1.0,0.0001,900);
-    SpinSet      * gridModelWidth      = new SpinSet("Width",config->gridModelWidth,1,9);
-
-    gridModel->setFixedWidth(71);
-    gridScreen->setFixedWidth(71);
-
-    gridModelSpacing->setDecimals(8);
-    gridModelSpacing->setSingleStep(0.01);
-
-    gridModelGroup.addButton(gridScreen,GRID_SCREEN);
-    gridModelGroup.addButton(gridModel,GRID_MODEL);
-
-    // initial values
-    showCenterChk->setChecked(config->showCenter);
-
-    gridBox->setChecked(config->showGrid);
-    gridModelGroup.button(config->gridType)->setChecked(true);
-
-    gridScreenCentered->setChecked(config->gridScreenCenter);
-    gridScreenSpacing->setValue(config->gridScreenSpacing);
-    gridScreenWidth->setValue(config->gridScreenWidth);
-    gridModelCentered->setChecked(config->gridModelCenter);
-    gridModelSpacing->setValue(config->gridModelSpacing);
-    gridModelWidth->setValue(config->gridModelWidth);
-
-    connect(&gridModelGroup,    SIGNAL(buttonClicked(int)),   this,  SLOT(slot_gridType_pressed(int)));
-    connect(gridBox,            &QGroupBox::clicked,          this, &page_debug::slot_showGridChanged);
-    connect(gridScreenSpacing,  &SpinSet::valueChanged,       this, &page_debug::slot_gridScreenSpacingChanged);
-    connect(gridModelSpacing,   &DoubleSpinSet::sig_valueChanged, this, &page_debug::slot_gridModelSpacingChanged);
-    connect(gridScreenWidth,    &SpinSet::valueChanged,       this, &page_debug::slot_gridScreenWidthChanged);
-    connect(gridModelWidth,     &SpinSet::valueChanged,       this, &page_debug::slot_gridModelWidthChanged);
-    connect(gridScreenCentered, &QCheckBox::stateChanged,     this, &page_debug::slot_gridScreenCenteredChanged);
-    connect(gridModelCentered,  &QCheckBox::stateChanged,     this, &page_debug::slot_gridModelCenteredChanged);
-
-    connect(showCenterChk,      &QCheckBox::stateChanged,     this, &page_debug::slot_showCenterChanged);
-
-    QVBoxLayout * vboxG = new QVBoxLayout();
-
-    QHBoxLayout * hbox = new QHBoxLayout();
-    hbox->addWidget(gridScreen);
-    hbox->addWidget(gridScreenCentered);
-    hbox->addLayout(gridScreenWidth);
-    hbox->addSpacing(7);
-    hbox->addLayout(gridScreenSpacing);
-    hbox->addStretch();
-    vboxG->addLayout(hbox);
-
-    hbox = new QHBoxLayout();
-    hbox->addWidget(gridModel);
-    hbox->addWidget(gridModelCentered);
-    hbox->addLayout(gridModelWidth);
-    hbox->addSpacing(7);
-    hbox->addLayout(gridModelSpacing);
-    hbox->addStretch();
-    vboxG->addLayout(hbox);
-
-    gridBox->setLayout(vboxG);
-
-    QGroupBox   * gbVerifyMaps          = new QGroupBox("Verify Maps");
-    QCheckBox   * cbVerifyDump          = new QCheckBox("Dump Map");
-    QCheckBox   * cbVerifyVerbose       = new QCheckBox("Verbose");
-
+    QGroupBox * gbVerifyMaps = new QGroupBox("Verify Maps");
     gbVerifyMaps->setCheckable(true);
+
+    QCheckBox * cbVerifyDump    = new QCheckBox("Dump Map");
+    QCheckBox * cbVerifyVerbose = new QCheckBox("Verbose");
 
     QHBoxLayout * hverBox = new QHBoxLayout();
     hverBox->addSpacing(15);
@@ -355,12 +278,6 @@ QVBoxLayout *  page_debug::createMiscSection()
 
     gbVerifyMaps->setLayout(hverBox);
 
-    // put it together
-    vbox->addLayout(hbox2);
-    vbox->addWidget(gridBox);
-    vbox->addWidget(gbVerifyMaps);
-
-
     gbVerifyMaps->setChecked(config->verifyMaps);
     cbVerifyDump->setChecked(config->verifyDump);
     cbVerifyVerbose->setChecked(config->verifyVerbose);
@@ -369,7 +286,7 @@ QVBoxLayout *  page_debug::createMiscSection()
     connect(cbVerifyDump,   &QCheckBox::clicked,    this,   &page_debug::slot_verifyDumpClicked);
     connect(cbVerifyVerbose,&QCheckBox::clicked,    this,   &page_debug::slot_verifyVerboseClicked);
 
-    return vbox;
+    return gbVerifyMaps;
 }
 
 void  page_debug::onEnter()
@@ -381,18 +298,12 @@ void page_debug::onExit()
 {
     panel->hidePanelStatus();
 
-    workspace->clearLayout();   // removes any cler pngs
-    workspace->show();
+    view->clearLayout();   // removes any cler pngs
+    view->show();
 }
 
 void  page_debug::refreshPage()
 {
-    gridBox->setChecked(config->showGrid);
-}
-
-void  page_debug::slot_autoCycleClicked(bool enb)
-{
-    config->autoCycle = enb;
 }
 
 void page_debug::slot_stopIfDiffClicked(bool enb)
@@ -546,7 +457,6 @@ void page_debug::slot_reprocessTilingXML()
 
     qDebug() << "Reprocessing tilings...";
 
-
     QStringList files = FileServices::getTilingNames();
     for (int i=0; i < files.size(); i++)
     {
@@ -554,9 +464,8 @@ void page_debug::slot_reprocessTilingXML()
 
         QString name = files[i];
 
-        workspace->resetTilings();
         TilingManager tm;
-        TilingPtr tp = tm.loadTiling(name);     // adds to workspace
+        TilingPtr tp = tm.loadTiling(name,SM_LOAD_SINGLE);
         if (tp)
         {
             Q_ASSERT(tp->getName() == name);
@@ -716,13 +625,13 @@ void page_debug::saveMosaicBitmaps()
         files = FileServices::getDesignNames();
     }
 
-    for (auto name : files)
+    for (const auto & name : qAsConst(files))
     {
         // this forces immediate action
         MosaicManager mm;
         mm.loadMosaic(name);
-        workspace->slot_viewWorkspace();
-        workspace->repaint();
+        vcontrol->slot_refreshView();
+        view->repaint();
         savePixmap(name);
     }
 
@@ -734,7 +643,6 @@ void page_debug::saveMosaicBitmaps()
 
 void page_debug::saveTilingBitmaps()
 {
-
     QStringList files;
     if (config->tileFilterCheck && !config->tileFilter.isEmpty())
     {
@@ -745,15 +653,17 @@ void page_debug::saveTilingBitmaps()
         files = FileServices::getTilingNames();
     }
 
-    for (auto name : files)
+    for (const auto & name : qAsConst(files))
     {
         // this forces immediate action
-        workspace->resetTilings();
         TilingManager tm;
-        tm.loadTiling(name);    // adds to workspace
-        workspace->slot_viewWorkspace();
-        workspace->repaint();
-        savePixmap(name);
+        TilingPtr tp = tm.loadTiling(name,SM_LOAD_SINGLE);
+        if (tp)
+        {
+            vcontrol->slot_refreshView();
+            view->repaint();
+            savePixmap(name);
+        }
     }
 
     QMessageBox box(this);
@@ -764,16 +674,14 @@ void page_debug::saveTilingBitmaps()
 
 void page_debug::slot_compareImages()
 {
-    if (config->autoCycle)
-    {
-        panel->showPanelStatus("L=log  V=view Q=quit Spacebar=next");
-        emit sig_cyclerStart(CYCLE_COMPARE_IMAGES);
-    }
-    else
-    {
-        imageCompareResult->setText("");
-        emit sig_compareImageFiles(ibox0->currentText(),ibox1->currentText());
-    }
+    imageCompareResult->setText("");
+    emit sig_compareImageFiles(ibox0->currentText(),ibox1->currentText(),false);
+}
+
+void page_debug::slot_compareCycle()
+{
+    panel->showPanelStatus("L=log  V=view Q=quit Spacebar=next");
+    emit sig_cyclerStart(CYCLE_COMPARE_IMAGES);
 }
 
 void page_debug::slot_transparentClicked(bool checked)
@@ -813,7 +721,7 @@ void page_debug::loadCombo(QComboBox * box,QString dir)
     vlist.create(names);
     QStringList names2 = vlist.recompose();
 
-    for (auto name : names2)
+    for (const auto & name : names2)
     {
         box->addItem(name);
     }
@@ -822,6 +730,7 @@ void page_debug::loadCombo(QComboBox * box,QString dir)
 void page_debug::setCombo(QComboBox * box, QString name)
 {
     int index = box->findText(name);
+    if (index == -1) index = 0;
     box->setCurrentIndex(index);
 }
 
@@ -841,6 +750,9 @@ void page_debug::slot_ibox0_changed(int index)
 {
     Q_UNUSED(index);
     config->image0 = ibox0->currentText();
+
+    // special case for ibox1 - not symmetric
+    slot_setImage1(config->image0);  // makes it the same
 }
 
 void page_debug::slot_ibox1_changed(int index)
@@ -855,14 +767,14 @@ void page_debug::slot_previous()
     if (index == 0) return;
     index--;
     ibox0->setCurrentIndex(index);
-
+#if 0
     index = ibox1->currentIndex();
     if (index == 0) return;
     index--;
     ibox1->setCurrentIndex(index);
-
+#endif
     imageCompareResult->setText("");
-    emit sig_compareImageFiles(ibox0->currentText(),ibox1->currentText());
+    emit sig_compareImageFiles(ibox0->currentText(),ibox1->currentText(),false);
 }
 
 void page_debug::slot_next()
@@ -872,13 +784,14 @@ void page_debug::slot_next()
     index++;
     ibox0->setCurrentIndex(index);
 
+#if 0
     index = ibox1->currentIndex();
     if (index >= ibox1->count()-1) return;
     index++;
     ibox1->setCurrentIndex(index);
-
+#endif
     imageCompareResult->setText("");
-    emit sig_compareImageFiles(ibox0->currentText(),ibox1->currentText());
+    emit sig_compareImageFiles(ibox0->currentText(),ibox1->currentText(),false);
 }
 
 void  page_debug::slot_verifyMapsClicked(bool enb)
@@ -896,66 +809,11 @@ void  page_debug::slot_verifyVerboseClicked(bool enb)
     config->verifyVerbose = enb;
 }
 
-void page_debug::slot_showGridChanged(bool checked)
-{
-    config->showGrid = checked;
-    workspace->update();
-}
-
-void page_debug::slot_gridModelSpacingChanged(qreal value)
-{
-    config->gridModelSpacing = value;
-    workspace->update();
-}
-
-void page_debug::slot_gridScreenSpacingChanged(int value)
-{
-    config->gridScreenSpacing = value;
-    workspace->update();
-}
-
-void page_debug::slot_gridScreenWidthChanged(int value)
-{
-    config->gridScreenWidth = value;
-    workspace->update();
-}
-
-void page_debug::slot_gridModelWidthChanged(int value)
-{
-    config->gridModelWidth = value;
-    workspace->update();
-}
-
-void page_debug::slot_gridType_pressed(int id)
-{
-    config->gridType = eGridType(id);
-    workspace->update();
-    onEnter();
-}
-
-void page_debug::slot_showCenterChanged(int id)
-{
-    config->showCenter = (id == Qt::Checked);
-    workspace->update();
-}
-
-void page_debug::slot_gridScreenCenteredChanged(int id)
-{
-    config->gridScreenCenter = (id == Qt::Checked);
-    workspace->update();
-}
-
-void page_debug::slot_gridModelCenteredChanged(int id)
-{
-    config->gridModelCenter = (id == Qt::Checked);
-    workspace->update();
-}
-
 void page_debug::savePixmap(QString name)
 {
     Q_ASSERT(!name.contains(".xml"));
 
-    QPixmap pixmap = workspace->grab();
+    QPixmap pixmap = view->grab();
 
     QString subdir;
     switch (config->repeatMode)
@@ -999,3 +857,5 @@ void page_debug::savePixmap(QString name)
     if (!rv)
         qDebug() << file << "save ERROR";
 }
+
+

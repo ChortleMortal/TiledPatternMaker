@@ -24,8 +24,6 @@
 
 #include "base/configuration.h"
 #include "base/qtapplog.h"
-#include "designs/design.h"
-#include <cstddef>
 
 Configuration * Configuration::mpThis = nullptr;
 
@@ -73,8 +71,8 @@ Configuration::Configuration()
     autoLoadStyles      = s.value("autoLoadStyles",false).toBool();
     autoLoadTiling      = s.value("autoLoadTiling",false).toBool();
     autoLoadDesigns     = s.value("autoLoadDesigns",false).toBool();
+    loadTilingMulti   = s.value("loadReplaceTiling",true).toBool();
     scaleToView         = s.value("scaleToView",true).toBool();
-    autoCycle           = s.value("autoCycle",false).toBool();
     stopIfDiff          = s.value("stopIfDiff",true).toBool();
     verifyMaps          = s.value("verifyMaps",false).toBool();
     verifyDump          = s.value("verifyDump",false).toBool();
@@ -102,19 +100,24 @@ Configuration::Configuration()
     showBackgroundImage = s.value("showBackgroundImage",true).toBool();
     highlightUnit       = s.value("highlightUnit",false).toBool();
     insightMode         = s.value("insightMode",false).toBool();
+    cs_showBkgds        = s.value("cs_showBkgds",false).toBool();
+    cs_showBorders      = s.value("cs_showBorders",false).toBool();
+    cs_showFrameSettings = s.value("cs_showFrameSettings",false).toBool();
 
     viewerType          = static_cast<eViewType>(s.value("viewerType",VIEW_MOSAIC).toUInt());
     mapEditorMode       = static_cast<eMapEditorMode>(s.value("mapEditorMode",MAP_MODE_FIGURE).toUInt());
     repeatMode          = static_cast<eRepeatType>(s.value("repeat",REPEAT_DEFINED).toUInt());
 
     showGrid            = s.value("showGrid",false).toBool();
-    gridType            = static_cast<eGridType>(s.value("gridType",GRID_SCREEN).toUInt());
+    gridUnits           = static_cast<eGridUnits>(s.value("gridUnits",GRID_UNITS_SCREEN).toUInt());
+    gridType            = static_cast<eGridType>(s.value("gridType2",GRID_ORTHOGONAL).toUInt());
     gridModelWidth      = s.value("gridModelWidth",3).toInt();
     gridModelCenter     = s.value("gridModelCenter",false).toBool();
     gridModelSpacing    = s.value("gridModelSpacing",1.0).toDouble();
     gridScreenWidth     = s.value("gridScreenWidth",3).toInt();
     gridScreenSpacing   = s.value("gridScreenSpacing",100).toInt();
-    gridScreenCenter    = s.value("gridModelCenter",false).toBool();
+    gridScreenCenter    = s.value("gridScreenCenter",false).toBool();
+    gridAngle           = s.value("gridAngle",30.0).toDouble();
 
     // ensures indices are in range
     if (viewerType > VIEW_MAX)          viewerType      = VIEW_MAX;
@@ -126,7 +129,8 @@ Configuration::Configuration()
     circleX         = false;
     hideCircles     = false;
     updatePanel     = true;
-    showCenter      = false;
+    showCenterDebug = false;
+    showCenterMouse = false;
     enableDetachedPages = true;
 
     figureViewBkgdColor = QColor(Qt::black);
@@ -186,9 +190,9 @@ void Configuration::save()
     s.setValue("logElapsedTime",logElapsedTime);
     s.setValue("mapedStatusBox",mapedStatusBox);
     s.setValue("autoLoadTiling",autoLoadTiling);
+    s.setValue("loadReplaceTiling",loadTilingMulti);
     s.setValue("autoLoadDesigns",autoLoadDesigns);
     s.setValue("scaleToView",scaleToView);
-    s.setValue("autoCycle",autoCycle);
     s.setValue("stopIfDiff",stopIfDiff);
     s.setValue("designFilterCheck",mosaicFilterCheck);
     s.setValue("tileFilterCheck",tileFilterCheck);
@@ -209,17 +213,27 @@ void Configuration::save()
     s.setValue("highlightUnit",highlightUnit);
     s.setValue("xmlTool",xmlTool);
     s.setValue("insightMode",insightMode);
+    s.setValue("cs_showBkgds",cs_showBkgds);
+    s.setValue("cs_showBorders",cs_showBorders);
+    s.setValue("cs_showFrameSettings",cs_showFrameSettings);
 
     s.setValue("showGrid",showGrid);
-    s.setValue("gridType",gridType);
+    s.setValue("gridUnits",gridUnits);
+    s.setValue("gridType2",gridType);
     s.setValue("gridModelWidth",gridModelWidth);
     s.setValue("gridModelCenter",gridModelCenter);
     s.setValue("gridModelSpacing",gridModelSpacing);
     s.setValue("gridScreenWidth",gridScreenWidth);
     s.setValue("gridScreenCenter",gridScreenCenter);
     s.setValue("gridScreenSpacing",gridScreenSpacing);
+    s.setValue("gridAngle",gridAngle);
 }
 
+void Configuration::setViewerType(eViewType  viewerType)
+{
+    qDebug().noquote() << "Configuration::setViewerType()" << sViewerType[viewerType];
+    this->viewerType = viewerType;
+}
 
 QString Configuration::getMediaRoot()
 {

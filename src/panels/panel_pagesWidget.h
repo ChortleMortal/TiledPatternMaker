@@ -40,8 +40,11 @@ public:
 
     void addWidget(panel_page * page);
 
-    panel_page * setPanelPage(QString name);
-    void setPanelPage(panel_page * pp);
+    panel_page * setCurrentPage(QString name);
+    void         setCurrentPage(panel_page * pp);
+    panel_page * getCurrentPage() {  return  currentPage; }
+
+private:
 
     QMap<QString,panel_page *> pages;
     panel_page * currentPage;

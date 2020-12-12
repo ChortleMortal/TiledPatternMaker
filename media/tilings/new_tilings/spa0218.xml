@@ -1,10 +1,79 @@
 <?xml version="1.0"?>
-<Tiling>
+<Tiling version="5">
 	<Name>spa0218</Name>
 	<Fill>-4,4,-4,4</Fill>
 	<T1>-6.479999999999997,0</T1>
 	<T2>-4.440892098500626e-16,6.479999999999999</T2>
-	<Feature type="girih" name="key2">
+	<ViewSettings>
+		<width>1500</width>
+		<height>1100</height>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+	</ViewSettings>
+	<Feature type="edgepoly" rotation="0">
+		<Line>
+			<Point id="1">0,-1.5</Point>
+			<Point id="2">-0.5,-2</Point>
+		</Line>
+		<Line>
+			<Point reference="2" />
+			<Point id="3">-1,-2</Point>
+		</Line>
+		<Line>
+			<Point reference="3" />
+			<Point id="4">-1,-4</Point>
+		</Line>
+		<Line>
+			<Point reference="4" />
+			<Point id="5">0,-4</Point>
+		</Line>
+		<Line>
+			<Point reference="5" />
+			<Point id="6">0,-3</Point>
+		</Line>
+		<Line>
+			<Point reference="6" />
+			<Point id="7">2,-3</Point>
+		</Line>
+		<Line>
+			<Point reference="7" />
+			<Point id="8">2,-3.5</Point>
+		</Line>
+		<Line>
+			<Point reference="8" />
+			<Point id="9">2.5,-4</Point>
+		</Line>
+		<Line>
+			<Point reference="9" />
+			<Point id="10">3,-3.5</Point>
+		</Line>
+		<Line>
+			<Point reference="10" />
+			<Point id="11">3,-3</Point>
+		</Line>
+		<Line>
+			<Point reference="11" />
+			<Point id="12">3.5,-3</Point>
+		</Line>
+		<Line>
+			<Point reference="12" />
+			<Point id="13">4,-2.5</Point>
+		</Line>
+		<Line>
+			<Point reference="13" />
+			<Point id="14">3.5,-2</Point>
+		</Line>
+		<Line>
+			<Point reference="14" />
+			<Point id="15">0.5,-2</Point>
+		</Line>
+		<Line>
+			<Point reference="15" />
+			<Point reference="1" />
+		</Line>
 		<Placement>0.8099999999999998,0,0.01499999999999904,0,0.8099999999999998,3.579999999999999</Placement>
 		<Placement>-0.8099999999999998,0,0.01499999999999924,0,-0.8099999999999998,-2.899999999999999</Placement>
 		<Placement>0,0.8099999999999998,3.254999999999999,-0.8099999999999998,0,0.3399999999999999</Placement>
@@ -17,9 +86,9 @@
 	<Desc>Picture from David Wade website  Uses key 2 which is mirror image of key1 key-shape girih</Desc>
 	<Auth>David Casper</Auth>
 	<BackgroundImage name="spa_0218-adjusted-2.png">
-		<Scale>1</Scale>
+		<Scale>0.7600000000000002</Scale>
 		<Rot>0</Rot>
-		<X>0</X>
+		<X>3</X>
 		<Y>0</Y>
 	</BackgroundImage>
 </Tiling>

@@ -23,20 +23,24 @@
  */
 
 #include "panels/page_save.h"
+#include "panels/panel.h"
+#include "base/mosaic.h"
 #include "base/tiledpatternmaker.h"
-#include "tile/tiling.h"
-#include "tile/tiling_manager.h"
-#include "style/style.h"
-#include "viewers/workspace_viewer.h"
+#include "viewers/view.h"
+#include "makers/tiling_maker/tiling_maker.h"
+#include "makers/decoration_maker/decoration_maker.h"
 #include <QSvgGenerator>
 
 page_save::page_save(ControlPanel * cpanel)  : panel_page(cpanel, "Save")
 {
-    createDesignSave();
+    createMosaicSave();
     createTilingSave();
 
     QPushButton * pbSaveImage = new QPushButton("Save BMP");
+    pbSaveImage->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
+
     QPushButton * pbSaveSVG   = new QPushButton("Save SVG");
+    pbSaveSVG->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
 
     QHBoxLayout * hbox = new QHBoxLayout;
     hbox->addStretch();
@@ -46,18 +50,21 @@ page_save::page_save(ControlPanel * cpanel)  : panel_page(cpanel, "Save")
     hbox->addStretch();
     vbox->addLayout(hbox);
 
-    connect(tpm,  &TiledPatternMaker::sig_loadedXML,    this,   &page_save::slot_loadedXML);
-    connect(tpm,  &TiledPatternMaker::sig_loadedTiling, this,   &page_save::slot_loadedTiling);
-    connect(pbSaveImage,  &QPushButton::clicked,        this,   &page_save::slot_saveImage);
-    connect(workspace,    &View::sig_saveImage,         this,   &page_save::slot_saveImage);
-    connect(pbSaveSVG,    &QPushButton::clicked,        this,   &page_save::slot_saveSvg);
-    connect(workspace,    &View::sig_saveSVG,           this,   &page_save::slot_saveSvg);
+    connect(theApp,     &TiledPatternMaker::sig_mosaicLoaded,   this,   &page_save::onEnter);
+    connect(theApp,     &TiledPatternMaker::sig_tilingLoaded,   this,   &page_save::onEnter);
+    connect(pbSaveImage,&QPushButton::clicked,                  this,   &page_save::slot_saveImage);
+    connect(view,       &View::sig_saveImage,                   this,   &page_save::slot_saveImage);
+    connect(pbSaveSVG,  &QPushButton::clicked,                  this,   &page_save::slot_saveSvg);
+    connect(view,       &View::sig_saveSVG,                     this,   &page_save::slot_saveSvg);
 }
 
-void page_save::createDesignSave()
+void page_save::createMosaicSave()
 {
     leSaveXmlName   = new QLineEdit();
-    saveXml         = new QPushButton("Save Mosaic");
+
+    QPushButton * saveMosaic  = new QPushButton("Save Mosaic");
+    saveMosaic->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
+
     designNotes     = new QTextEdit("Design Notes");
     designNotes->setFixedSize(601,101);
     QLabel * label  = new QLabel("Name");
@@ -65,17 +72,21 @@ void page_save::createDesignSave()
     QHBoxLayout * hbox2 = new QHBoxLayout;
     hbox2->addWidget(label);
     hbox2->addWidget(leSaveXmlName);
-    hbox2->addWidget(saveXml);
+    hbox2->addWidget(saveMosaic);
+
+    QLabel * label2 = new QLabel("Description/Notes");
+
     QVBoxLayout * vlayout = new QVBoxLayout();
     vlayout->addLayout(hbox2);
+    vlayout->addWidget(label2);
     vlayout->addWidget(designNotes);
 
     QGroupBox * saveBox = new QGroupBox("Mosaic");
     saveBox->setLayout(vlayout);
     vbox->addWidget(saveBox);
 
-    connect(saveXml,   SIGNAL(clicked()),       this,   SLOT(slot_saveAsXML()));
-    connect(this,      &page_save::sig_saveXML, tpm,  &TiledPatternMaker::slot_saveMosaic);
+    connect(saveMosaic, &QPushButton::clicked,      this, &page_save::slot_saveMosaic);
+    connect(this,       &page_save::sig_saveMosaic, theApp,  &TiledPatternMaker::slot_saveMosaic);
 }
 
 void page_save::createTilingSave()
@@ -90,8 +101,11 @@ void page_save::createTilingSave()
     hbox->addWidget(requiresSave);
 
     QPushButton * pbSave  = new QPushButton("Save Tiling");
+    pbSave->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
+
     QLabel * label        = new QLabel("Name");
     QLabel * label2       = new QLabel("Author");
+    QLabel * label3       = new QLabel("Description");
     tile_name             = new QLineEdit();
     tile_author           = new QLineEdit();
 
@@ -110,6 +124,7 @@ void page_save::createTilingSave()
     vlayout->addSpacing(3);
     vlayout->addLayout(hbox2);
     vlayout->addSpacing(3);
+    vlayout->addWidget(label3);
     vlayout->addWidget(tile_desc);
     vlayout->addSpacing(3);
 
@@ -117,16 +132,25 @@ void page_save::createTilingSave()
     saveBox->setLayout(vlayout);
     vbox->addWidget(saveBox);
 
-    connect(pbSave, &QPushButton::clicked, this, &page_save::slot_saveTiling);
+    connect(pbSave, &QPushButton::clicked,      this, &page_save::slot_saveTiling);
+    connect(this,   &page_save::sig_saveTiling, theApp,  &TiledPatternMaker::slot_saveTiling);
 }
 
 void page_save::onEnter()
 {
-    MosaicPtr mosaic = workspace->getMosaic();
-    leSaveXmlName->setText(mosaic->getName());
-    designNotes->setText(mosaic->getNotes());
+    MosaicPtr mosaic = decorationMaker->getMosaic();
+    if (mosaic)
+    {
+        leSaveXmlName->setText(mosaic->getName());
+        designNotes->setText(mosaic->getNotes());
+    }
+    else
+    {
+        leSaveXmlName->setText("");
+        designNotes->setText("");
+    }
 
-    TilingPtr tiling =  workspace->getCurrentTiling();
+    TilingPtr tiling =  tilingMaker->getSelected();
     blockSignals(true);
     if (tiling)
     {
@@ -147,7 +171,7 @@ void page_save::onEnter()
 
 void page_save::refreshPage()
 {
-    TilingPtr tiling =  workspace->getCurrentTiling();
+    TilingPtr tiling =  tilingMaker->getSelected();
 
     if (tiling && (tiling->getState() == TILING_MODIFED))
         requiresSave->setText("HAS CHANGED");
@@ -155,27 +179,67 @@ void page_save::refreshPage()
         requiresSave->setText("");
 }
 
-void page_save::slot_saveAsXML()
+void page_save::slot_saveMosaic()
 {
-    MosaicPtr mosaic = workspace->getMosaic();
+    MosaicPtr mosaic = decorationMaker->getMosaic();
+    if (!mosaic)
+    {
+        QMessageBox box(panel);
+        box.setIcon(QMessageBox::Warning);
+        box.setWindowTitle("Save Mosaic");
+        box.setText("Thereis no Mosaic to save");
+        box.setInformativeText("Please load a tiling and then use the Protoyype Maker and the Mosaic Maker");
+        box.exec();
+        return;
+    }
+
     mosaic->setNotes(designNotes->toPlainText());
+
+    if (!mosaic->hasContent())
+    {
+        QMessageBox box(panel);
+        box.setIcon(QMessageBox::Warning);
+        box.setWindowTitle("Save Mosaic");
+        box.setText("Mosaic has no content");
+        box.setInformativeText("Please load a tiling and then use the Protoyype Maker and the Mosaic Maker");
+        box.exec();
+        return;
+    }
+
+    QVector<TilingPtr> tilings = mosaic->getTilings();
+    for (auto tiling : tilings)
+    {
+        if   (tiling->getState() == TILING_MODIFED
+           || tiling->getState() == TILING_EMPTY
+           || tiling->getName()  == Tiling::defaultName)
+        {
+            QMessageBox box(panel);
+            box.setIcon(QMessageBox::Warning);
+            box.setWindowTitle("Save Mosaic");
+            box.setText("Tiling requires saving");
+            box.setInformativeText("Please save tiling first");
+            box.exec();
+            return;
+        }
+    }
+
     QString name = leSaveXmlName->text();
+
+    if (name == Mosaic::defaultName || name.isEmpty())
+    {
+        QMessageBox box(panel);
+        box.setIcon(QMessageBox::Warning);
+        box.setWindowTitle("Save Mosaic");
+        box.setText("Mosaic requires an identifying name");
+        box.setInformativeText("Please set a name first");
+        box.exec();
+        return;
+    }
     Q_ASSERT(!name.contains(".xml"));
-    emit sig_saveXML(name);
+
+    emit sig_saveMosaic(name);
 }
 
-
-void page_save::slot_loadedXML(QString name)
-{
-    Q_UNUSED(name)
-    onEnter();
-}
-
-void page_save::slot_loadedTiling(QString name)
-{
-    Q_UNUSED(name)
-    onEnter();
-}
 
 void page_save::slot_designSourceChanged()
 {
@@ -189,9 +253,10 @@ void page_save::slot_tilingSourceChanged()
 
 void page_save::slot_saveTiling()
 {
+
+    TilingPtr tiling = tilingMaker->getSelected();
     QString name = tile_name->text();
 
-    TilingPtr tiling = workspace->getCurrentTiling();
     if (!tiling || tiling->getState() == TILING_EMPTY)
     {
         QMessageBox box(this);
@@ -207,7 +272,7 @@ void page_save::slot_saveTiling()
         QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
         box.setWindowTitle("Save Tiling");
-        box.setText("There are no placed features.  Please add som features.");
+        box.setText("There are no placed features.  Please add some features.");
         box.exec();
         return;
     }
@@ -218,17 +283,19 @@ void page_save::slot_saveTiling()
         QMessageBox box(this);
         box.setIcon(QMessageBox::Critical);
         box.setWindowTitle("Save Tiling");
-        box.setText(QString("There are too many unique features (count=%1).\nSomething is wrong with this tiling.").arg(count));
+        box.setText("Something is wrong with this tiling");
+        box.setInformativeText(QString("There are too many unique features (count=%1)").arg(count));
         box.exec();
         return;
     }
 
-    if (name.isEmpty() || name == "The Unnamed")
+    if (name.isEmpty() || name == Tiling::defaultName)
     {
         QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
         box.setWindowTitle("Save Tiling");
-        box.setText("There is no tiling name. A tiling name is required.");
+        box.setText("There is no tiling name");
+        box.setInformativeText("There is no tiling name. A tiling name is required.");
         box.exec();
         return;
     }
@@ -237,13 +304,12 @@ void page_save::slot_saveTiling()
     tiling->setAuthor(tile_author->text());
     tiling->setDescription(tile_desc->toPlainText());
 
-    TilingManager tm;
-    tm.saveTiling(name,tiling); // Tiling Manager haandles OK/FAIL status
+    emit sig_saveTiling(name);
 }
 
 void page_save::slot_saveImage()
 {
-    QPixmap pixmap = workspace->grab();
+    QPixmap pixmap = view->grab();
 
     QString name = config->lastLoadedXML;
     Q_ASSERT(!name.contains(".xml"));
@@ -266,7 +332,7 @@ void page_save::slot_saveImage()
         nameList = "BMP Files (*.bmp);;JPG (*.jpg);;PNG (*.png)";
     }
 
-    QFileDialog dlg(workspace, "Save image", path, nameList);
+    QFileDialog dlg(panel, "Save image", path, nameList);
     dlg.setFileMode(QFileDialog::AnyFile);
     dlg.setAcceptMode(QFileDialog::AcceptSave);
     dlg.selectFile(name);
@@ -336,12 +402,21 @@ void page_save::slot_saveSvg()
     {
         QMessageBox box;
         box.setIcon(QMessageBox::Warning);
-        box.setText("Please select Design View");
+        box.setText("Please select Mosaic View");
         box.exec();
         return;
     }
 
-    MosaicPtr mosaic = workspace->getMosaic();
+    MosaicPtr mosaic = decorationMaker->getMosaic();
+    if (!mosaic)
+    {
+        QMessageBox box;
+        box.setIcon(QMessageBox::Warning);
+        box.setText("There is no Mosaic to save");
+        box.exec();
+        return;
+    }
+
     StylePtr sp = mosaic->getFirstStyle();
     if (!sp)
     {
@@ -356,7 +431,7 @@ void page_save::slot_saveSvg()
     QString name = mosaic->getName();
     QString pathplus = path + "/" + name + ".svg";
 
-    QString newPath = QFileDialog::getSaveFileName(workspace, "Save SVG", pathplus, "SVG files (*.svg)");
+    QString newPath = QFileDialog::getSaveFileName(panel, "Save SVG", pathplus, "SVG files (*.svg)");
     if (newPath.isEmpty())
         return;
 
@@ -364,13 +439,13 @@ void page_save::slot_saveSvg()
 
     QSvgGenerator generator;
     generator.setFileName(path);
-    generator.setSize(workspace->size());
-    generator.setViewBox(workspace->rect());
+    generator.setSize(view->size());
+    generator.setViewBox(view->rect());
     generator.setTitle(QString("SVG Image: %1").arg(name));
     generator.setDescription("Created using Tiled Pattern Maker (David Casper)");
 
     sp->triggerPaintSVG(&generator);
-    workspace->update();
+    view->update();
 
     QCoreApplication::processEvents();
 

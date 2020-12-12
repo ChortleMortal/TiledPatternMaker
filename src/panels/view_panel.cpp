@@ -1,9 +1,10 @@
 #include "panels/view_panel.h"
-#include "base/workspace.h"
+#include "panels/panel_misc.h"
+#include "viewers/view.h"
 
 ViewPanel::ViewPanel() : QWidget()
 {
-    workspace = Workspace::getInstance();
+    view = View::getInstance();
 
     btn1 = new QPushButton("Pan");
     btn2 = new QPushButton("Rotate");
@@ -13,9 +14,9 @@ ViewPanel::ViewPanel() : QWidget()
     btn2->setCheckable(true);
     btn3->setCheckable(true);
 
-    btn1->setStyleSheet("QPushButton:checked { background-color: yellow; color: red; }");
-    btn2->setStyleSheet("QPushButton:checked { background-color: yellow; color: red;}");
-    btn3->setStyleSheet("QPushButton:checked { background-color: yellow; color: red;}");
+    btn1->setStyleSheet("QPushButton{ background-color: white; border: 1px solid black; border-radius: 3px; } QPushButton:checked { background-color: yellow; color: red;}");
+    btn2->setStyleSheet("QPushButton{ background-color: white; border: 1px solid black; border-radius: 3px; } QPushButton:checked { background-color: yellow; color: red;}");
+    btn3->setStyleSheet("QPushButton{ background-color: white; border: 1px solid black; border-radius: 3px; } QPushButton:checked { background-color: yellow; color: red;}");
 
     AQHBoxLayout * layout = new AQHBoxLayout;
     layout->addWidget(btn1);
@@ -42,11 +43,11 @@ void  ViewPanel::setTranslateMode(bool checked)
         btn2->setChecked(false);
         btn3->setChecked(false);
         blockSignals(false);
-        workspace->setMouseMode(MOUSE_MODE_TRANSLATE);
+        view->setMouseMode(MOUSE_MODE_TRANSLATE);
     }
     else
     {
-        workspace->setMouseMode(MOUSE_MODE_NONE);
+        view->setMouseMode(MOUSE_MODE_NONE);
     }
 }
 
@@ -58,11 +59,11 @@ void  ViewPanel::setRotateMode(bool checked)
         btn1->setChecked(false);
         btn3->setChecked(false);
         blockSignals(false);
-        workspace->setMouseMode(MOUSE_MODE_ROTATE);
+        view->setMouseMode(MOUSE_MODE_ROTATE);
     }
     else
     {
-        workspace->setMouseMode(MOUSE_MODE_NONE);
+        view->setMouseMode(MOUSE_MODE_NONE);
     }
 }
 
@@ -74,11 +75,11 @@ void  ViewPanel::setScaleMode(bool checked)
         btn1->setChecked(false);
         btn2->setChecked(false);
         blockSignals(false);
-        workspace->setMouseMode(MOUSE_MODE_SCALE);
+        view->setMouseMode(MOUSE_MODE_SCALE);
     }
     else
     {
-        workspace->setMouseMode(MOUSE_MODE_NONE);
+        view->setMouseMode(MOUSE_MODE_NONE);
     }
 }
 

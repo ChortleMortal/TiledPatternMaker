@@ -32,7 +32,8 @@ class Shortcuts
 public:
 
 public:
-    static QString getCanvasShortcuts();
+    static QString getMosaicShortcuts();
+    static QString getDesignShortcuts();
     static QString getTilingMakerShortcuts();
     static QString getMapEditorShortcuts();
 

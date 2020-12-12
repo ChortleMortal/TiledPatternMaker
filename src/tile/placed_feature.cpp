@@ -40,34 +40,35 @@
 #include "base/utilities.h"
 #include "base/fileservices.h"
 
-//#include <QColor>
-
-using namespace pugi;
-using std::string;
+#if (QT_VERSION >= QT_VERSION_CHECK(5,15,0))
+#define endl Qt::endl
+#endif
 
 PlacedFeature::PlacedFeature()
 {
+    _show = true;
 } // default
 
 PlacedFeature::PlacedFeature(FeaturePtr feature, QTransform T )
 {
     this->feature = feature;
     this->T       = T;
-    qDebug() << "setTransform1=" << Transform::toInfoString(T);
+    _show = true;
+    //qDebug() << "setTransform1=" << Transform::toInfoString(T);
 }
 
 PlacedFeature::PlacedFeature(PlacedFeaturePtr other)
 {
     feature = other->feature;
     T       = other->T;
-    qDebug() << "setTransform2=" << Transform::toInfoString(T);
+    _show = true;
+    //qDebug() << "setTransform2=" << Transform::toInfoString(T);
 }
 
 void PlacedFeature::setFeature(FeaturePtr feature)
 {
     this->feature = feature;
 }
-
 
 FeaturePtr PlacedFeature::getFeature()
 {
@@ -91,10 +92,11 @@ EdgePoly  PlacedFeature::getPlacedEdgePoly()
     return ep2;
 }
 
-void PlacedFeature::setTransform(QTransform T)
+void PlacedFeature::setTransform(QTransform newT)
 {
-    this->T = T;
-    qDebug() << "setTransform3=" << Transform::toInfoString(T);
+    //qDebug() << "setTransform3 before =" << Transform::toInfoString(T);
+    T = newT;
+    //qDebug() << "setTransform3 after =" << Transform::toInfoString(T);
 }
 
 bool PlacedFeature::saveAsGirihShape(QString name)

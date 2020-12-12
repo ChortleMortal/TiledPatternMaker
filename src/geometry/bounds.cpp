@@ -21,6 +21,14 @@ Bounds::Bounds(qreal left, qreal top, qreal width)
     this->width = width;
 }
 
+Bounds & Bounds::operator=(const Bounds & other)
+{
+    left  = other.left;
+    top   = other.top;
+    width = other.width;
+    return *this;
+}
+
 Bounds  Bounds::operator+(const Bounds & other)
 {
     Bounds b = *this;

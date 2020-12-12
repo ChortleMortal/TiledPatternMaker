@@ -59,6 +59,8 @@ public:
 
     virtual QString getFigureDesc() override { return "Rosette";}
 
+    bool equals(const FigurePtr other) override;
+
 private:
     int     count;
     qreal   q;

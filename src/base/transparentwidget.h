@@ -28,9 +28,24 @@
 #include <QWidget>
 #include <QLabel>
 #include <QMouseEvent>
-#include "panels//panel_misc.h"
 
-class TransparentWidget : public AQLabel
+class ImageWidget : public QLabel
+{
+    Q_OBJECT
+
+public:
+    ImageWidget();
+
+    void keyPressEvent(QKeyEvent *k) Q_DECL_OVERRIDE;
+
+signals:
+    void sig_takeNext();
+    void sig_cyclerQuit();
+    void sig_view_images();
+    void sig_close();
+};
+
+class TransparentWidget : public ImageWidget
 {
 public:
     TransparentWidget();
@@ -39,7 +54,7 @@ public:
 protected:
     void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
     void mouseMoveEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
-    void keyPressEvent( QKeyEvent *k ) Q_DECL_OVERRIDE;
+    void keyPressEvent(QKeyEvent *k) Q_DECL_OVERRIDE;
 
 private:
     QPoint oldPos;

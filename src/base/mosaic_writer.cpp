@@ -26,7 +26,7 @@
 #include "base/border.h"
 #include "base/fileservices.h"
 #include "base/configuration.h"
-#include "base/workspace.h"
+#include "viewers/viewcontrol.h"
 #include "panels/panel.h"
 #include "style/colored.h"
 #include "style/thick.h"
@@ -266,18 +266,18 @@ bool MosaicWriter::processVector(QTextStream &ts)
 
 void MosaicWriter::processDesign(QTextStream &ts)
 {
-    WorkspaceSettings info= _mosaic->getSettings();
-    QColor bkgdColor   = info.getBackgroundColor();
-    QSizeF size        = info.getSize();
-    BorderPtr border   = info.getBorder();
-    BkgdImgPtr bip     = info.getBkgdImage();
+    ModelSettingsPtr info = _mosaic->getSettings();
+    QColor bkgdColor   = info->getBackgroundColor();
+    QSizeF size        = info->getSize();
+    BorderPtr border   = info->getBorder();
+    BkgdImgPtr bip     = info->getBkgdImage();
 
     ts << "<design>" << endl;
     procSize(ts,size);
     procBackground(ts,bkgdColor);
     procBorder(ts,border);
     int minX,minY,maxX,maxY;
-    info.getFillData().get(minX,maxX,minY,maxY);
+    info->getFillData().get(minX,maxX,minY,maxY);
     ts << "<Fill>" << minX << "," << maxX << "," << minY << "," << maxY << "</Fill>" << endl;
     ts << "</design>" << endl;
 }
@@ -358,6 +358,8 @@ void MosaicWriter::procBorder(QTextStream &ts,BorderPtr border)
         b2->get(color,diameter,rows,cols);
         procColor(ts,color);
         procWidth(ts,diameter);
+        ts << "<rows>" << rows << "</rows>" << endl;
+        ts << "<cols>" << cols << "</cols>" << endl;
     }
 
     ts << "</border>" << endl;
@@ -375,7 +377,6 @@ bool MosaicWriter::processThick(QTextStream &ts, StylePtr s)
     bool    draw_outline    = th->getDrawOutline();
     qreal   width           = th->getLineWidth();
     PrototypePtr proto      = th->getPrototype();
-    PolyPtr poly            = th->getBoundary();
     Xform   xf              = th->getCanvasXform();
 
     QString str;
@@ -387,7 +388,7 @@ bool MosaicWriter::processThick(QTextStream &ts, StylePtr s)
 
     str = "style.Style";
     ts << "<" << str << ">" << endl;
-    processStyleStyle(ts,proto,poly);
+    setPrototype(ts,proto);
     ts << "</" << str << ">" << endl;
 
     str = "style.Colored";
@@ -419,7 +420,6 @@ bool MosaicWriter::processInterlace(QTextStream & ts, StylePtr s)
     qreal   gap          = il->getGap();
     qreal   shadow       = il->getShadow();
     PrototypePtr proto   = il->getPrototype();
-    PolyPtr poly         = il->getBoundary();       // DAC - is this right
     Xform   xf           = il->getCanvasXform();
 
     QString str;
@@ -431,7 +431,7 @@ bool MosaicWriter::processInterlace(QTextStream & ts, StylePtr s)
 
     str = "style.Style";
     ts << "<" << str << ">" << endl;
-    processStyleStyle(ts,proto,poly);
+    setPrototype(ts,proto);
     ts << "</" << str << ">" << endl;
 
     str = "style.Colored";
@@ -465,7 +465,6 @@ bool MosaicWriter::processOutline(QTextStream &ts, StylePtr s)
     bool    draw_outline = ol->getDrawOutline();
     qreal   width        = ol->getLineWidth();
     PrototypePtr proto   = ol->getPrototype();
-    PolyPtr poly         = ol->getBoundary();
     Xform   xf           = ol->getCanvasXform();
 
     QString str;
@@ -477,7 +476,7 @@ bool MosaicWriter::processOutline(QTextStream &ts, StylePtr s)
 
     str = "style.Style";
     ts << "<" << str << ">" << endl;
-    processStyleStyle(ts,proto,poly);
+    setPrototype(ts,proto);
     ts << "</" << str << ">" << endl;
 
     str = "style.Colored";
@@ -512,7 +511,6 @@ bool MosaicWriter::processFilled(QTextStream &ts, StylePtr s)
     bool    draw_outside    = fl->getDrawOutsideWhites();
 
     PrototypePtr proto      = fl->getPrototype();
-    PolyPtr poly            = fl->getBoundary();
     Xform   xf              = fl->getCanvasXform();
 
     QString str;
@@ -524,7 +522,7 @@ bool MosaicWriter::processFilled(QTextStream &ts, StylePtr s)
 
     str = "style.Style";
     ts << "<" << str << ">" << endl;
-    processStyleStyle(ts,proto,poly);
+    setPrototype(ts,proto);
     ts << "</" << str << ">" << endl;
 
     if (colorSetB.size())
@@ -570,7 +568,6 @@ bool MosaicWriter::processPlain(QTextStream &ts, StylePtr s)
 
     ColorSet & cset     = pl->getColorSet();
     PrototypePtr proto  = pl->getPrototype();
-    PolyPtr poly        = pl->getBoundary();
     Xform   xf          = pl->getCanvasXform();
 
     QString str;
@@ -582,7 +579,7 @@ bool MosaicWriter::processPlain(QTextStream &ts, StylePtr s)
 
     str = "style.Style";
     ts << "<" << str << ">" << endl;
-    processStyleStyle(ts,proto,poly);
+    setPrototype(ts,proto);
     ts << "</" << str << ">" << endl;
 
     str = "style.Colored";
@@ -604,7 +601,6 @@ bool MosaicWriter::processSketch(QTextStream &ts, StylePtr s)
 
     ColorSet & cset     = sk->getColorSet();
     PrototypePtr proto  = sk->getPrototype();
-    PolyPtr poly        = sk->getBoundary();
     Xform   xf          = sk->getCanvasXform();
 
     QString str;
@@ -616,7 +612,7 @@ bool MosaicWriter::processSketch(QTextStream &ts, StylePtr s)
 
     str = "style.Style";
     ts << "<" << str << ">" << endl;
-    processStyleStyle(ts,proto,poly);
+    setPrototype(ts,proto);
     ts << "</" << str << ">" << endl;
 
     str = "style.Colored";
@@ -640,7 +636,6 @@ bool MosaicWriter::processEmboss(QTextStream &ts, StylePtr s)
     qreal   width        = em->getLineWidth();
     qreal   angle        = em->getAngle();
     PrototypePtr proto   = em->getPrototype();
-    PolyPtr poly         = em->getBoundary();
     Xform   xf           = em->getCanvasXform();
 
     QString str;
@@ -652,7 +647,7 @@ bool MosaicWriter::processEmboss(QTextStream &ts, StylePtr s)
 
     str = "style.Style";
     ts << "<" << str << ">" << endl;
-    processStyleStyle(ts,proto,poly);
+    setPrototype(ts,proto);
     ts << "</" << str << ">" << endl;
 
     str = "style.Colored";
@@ -683,7 +678,6 @@ bool MosaicWriter::processTileColors(QTextStream &ts, StylePtr s)
     }
 
     PrototypePtr proto  = tc->getPrototype();
-    PolyPtr poly        = tc->getBoundary();
     Xform   xf          = tc->getCanvasXform();
 
     QString str;
@@ -695,7 +689,7 @@ bool MosaicWriter::processTileColors(QTextStream &ts, StylePtr s)
 
     str = "style.Style";
     ts << "<" << str << ">" << endl;
-    processStyleStyle(ts,proto,poly);
+    setPrototype(ts,proto);
     ts << "</" << str << ">" << endl;
 
     QColor color;
@@ -720,12 +714,6 @@ void MosaicWriter::procesToolkitGeoLayer(QTextStream & ts, Xform & xf)
     ts << "<theta__delta>" << xf.getRotateRadians()   << "</theta__delta>" << endl;
     QPointF pt = xf.getCenter();
     ts << "<center>" << pt.x() << "," << pt.y()       << "</center>"        << endl;
-}
-
-void MosaicWriter::processStyleStyle(QTextStream & ts, PrototypePtr & proto, PolyPtr & poly)
-{
-    setBoundary(ts,poly);
-    setPrototype(ts,proto);
 }
 
 void MosaicWriter::procColorSet(QTextStream &ts, ColorSet & colorSet)
@@ -957,16 +945,17 @@ void MosaicWriter::setFeature(QTextStream & ts,FeaturePtr fp)
     if (fp->isRegular())
     {
         ts << "<regular>true</regular>" << endl;
-        ts << "<rotation>" << fp->getRotation() << "</rotation>" << endl;
     }
     else
     {
         ts << "<regular>false</regular>" << endl;
     }
+    ts << "<rotation>" << fp->getRotation() << "</rotation>" << endl;
+    ts << "<scale>" << fp->getScale() << "</scale>" << endl;
 
     ts << "<edges" << nextId() << ">" << endl;
 
-    EdgePoly & ep  = fp->getEdgePoly();
+    EdgePoly & ep  = fp->getBase();
     setEdgePoly(ts,ep);
 
     ts << "</edges>" << endl;
@@ -1033,7 +1022,7 @@ void MosaicWriter::setExplicitFigure(QTextStream & ts,QString name, FigurePtr fp
         break;
 
     case FIG_TYPE_EXPLICIT_GIRIH:
-        ts << "<sides>" << ep->sides << "</sides>" << endl;
+        ts << "<sides>" << ep->getN() << "</sides>" << endl;
         ts << "<skip>"  << ep->skip  << "</skip>"  << endl;
         break;
 
@@ -1051,7 +1040,7 @@ void MosaicWriter::setExplicitFigure(QTextStream & ts,QString name, FigurePtr fp
 
     case FIG_TYPE_EXPLICIT_INTERSECT:
         ts << "<s>" << ep->s << "</s>" << endl;
-        ts << "<sides>" << ep->sides << "</sides>" << endl;
+        ts << "<sides>" << ep->getN() << "</sides>" << endl;
         ts << "<skip>"  << ep->skip  << "</skip>"  << endl;
         ts << "<progressive>" << ((ep->progressive) ? "t" : "f") << "</progressive>" << endl;
         break;
@@ -1340,7 +1329,7 @@ bool MosaicWriter::setMap(QTextStream &ts, MapPtr map)
 void MosaicWriter::setVertices(QTextStream & ts, const QVector<VertexPtr> & vertices)
 {
     ts << "<vertices" << nextId() <<  ">" << endl;
-    for (auto v : vertices)
+    for (const auto & v : vertices)
     {
         setVertex(ts,v);
     }
@@ -1350,7 +1339,7 @@ void MosaicWriter::setVertices(QTextStream & ts, const QVector<VertexPtr> & vert
 void MosaicWriter::setEdges(QTextStream & ts, const QVector<EdgePtr> & edges)
 {
     ts << "<edges" << nextId() <<  ">" << endl;
-    for (auto edge : edges)
+    for (const auto & edge : edges)
     {
         setEdge(ts,edge);
     }
@@ -1510,7 +1499,7 @@ void MosaicWriter::setEdge(QTextStream & ts, EdgePtr e)
 
     if (curved)
     {
-        QString str = QString("<curve %1 convex=\"%2\">").arg(qsid).arg(e->isConvex() ? "t" : "f");
+        QString str = QString("<curve %1 convex=\"%2\">").arg(qsid,e->isConvex() ? "t" : "f");
         ts << str << endl;
     }
     else
@@ -1808,7 +1797,7 @@ void MosaicWriter::setPos(QTextStream & ts,QPointF qpf)
 
 void MosaicWriter::fail(QString a, QString b)
 {
-    _failMsg = QString("%1 %2").arg(a).arg(b);
+    _failMsg = QString("%1 %2").arg(a,b);
     qWarning().noquote() << _failMsg;
     throw(_failMsg);
 }

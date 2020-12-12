@@ -25,82 +25,107 @@
 #include "tile/tiling_manager.h"
 #include "tile/tiling.h"
 #include "tile/tiling_loader.h"
+#include "tile/tiling_writer.h"
 #include "makers/tiling_maker/tiling_maker.h"
+#include "makers/motif_maker/motif_maker.h"
+#include "makers/decoration_maker/decoration_maker.h"
 #include "geometry/point.h"
 #include "base/shared.h"
 #include "base/fileservices.h"
-#include "base/view.h"
-#include "viewers/workspace_viewer.h"
-
+#include "viewers/view.h"
+#include "viewers/viewcontrol.h"
 
 TilingManager::TilingManager()
 {
-    workspace = Workspace::getInstance();
-    config    = Configuration::getInstance();
+    view         = View::getInstance();
+    config       = Configuration::getInstance();
+    tilingMaker  = TilingMaker::getInstance();
+    motifMaker   = MotifMaker::getInstance();
 }
 
-TilingPtr TilingManager::loadTiling(QString name)
+TilingPtr TilingManager::loadTiling(QString name, eSM_Event mode)
 {
-    TilingPtr tp = workspace->findTiling(name);
-    if (tp)
-    {
-       workspace->removeTiling(tp);
-    }
+    TilingPtr loadedTiling;
 
     QString filename = FileServices::getTilingFile(name);
     if (filename.isEmpty())
     {
         qWarning() << "No tiling found with name" << name;
-        return tp;
+        return loadedTiling;
     }
 
     TilingLoader tm;
-    tp = tm.readTilingXML(filename);
-    if (tp)
-    {
-        qDebug().noquote() << "Loaded tiling:" << filename << tp->getName();
-        tp->setState(TILING_LOADED);
-        workspace->setCurrentTiling(tp);        // also adds
-
-        // size view to tiling
-        QSize size = tp->getSize();
-        workspace->setAllTilingActiveSizes(size);
-        if (config->scaleToView)
-        {
-            workspace->setAllTilingFrameSizes(size);
-        }
-    }
-    else
+    loadedTiling  = tm.readTilingXML(filename);
+    if (!loadedTiling)
     {
         qWarning().noquote() << "Error loading" << filename;
+        return loadedTiling;
     }
-    return tp;
+
+    qDebug().noquote() << "Loaded tiling:" << filename << loadedTiling->getName();
+    loadedTiling->setState(TILING_LOADED);
+
+    // tiling is loaded, now use it
+    switch(mode)
+    {
+    case SM_LOAD_SINGLE:
+    case SM_RELOAD_SINGLE:
+    case SM_LOAD_MULTI:
+    case SM_RELOAD_MULTI:
+        view->setAllTilingActiveSizes(loadedTiling->getSize());
+        view->setAllTilingDefinedSizes(loadedTiling->getSize());
+        setVCFillData(loadedTiling);
+        tilingMaker->sm_take(loadedTiling, mode);
+        break;
+
+    case SM_LOAD_FROM_MOSAIC:
+        setVCFillData(loadedTiling);
+        break;
+
+    case SM_LOAD_EMPTY:
+    case SM_RENDER:
+    case SM_FEATURE_CHANGED:
+    case SM_FIGURE_CHANGED:
+    case SM_TILING_CHANGED:
+        break;
+    }
+
+    return loadedTiling;
 }
 
-bool TilingManager::saveTiling(QString name, TilingPtr tp)
+void  TilingManager::setVCFillData(TilingPtr tiling)
 {
-    if (tp->getName() != name)
+    ModelSettingsPtr settings = tiling->getSettings();
+    ViewControl * vcontrol = ViewControl::getInstance();
+    vcontrol->setFillData(settings->getFillData());
+}
+
+bool TilingManager::saveTiling(QString name, TilingPtr tiling)
+{
+    if (tiling->getName() != name)
     {
-        tp->setName(name);
+        tiling->setName(name);
     }
 
     // match size to current view
-    QSize size  = workspace->size();
-    tp->setSize(size);
+    // FIXME :  this takes the size of the current view which may not be the same as the tiling maker or the tiling view
+    QSize size  = view->size();
+    tiling->setSize(size);
 
     TilingMaker * maker = TilingMaker::getInstance();
-    if (maker->getTiling() == tp)
+    if (maker->getSelected() == tiling)
     {
+        // FIXME : this is the transform of the TilingMaker view which may no be the same as  what is currently being viewed
         Xform xf = maker->getCanvasXform();
-        tp->setCanvasXform(xf);
+        tiling->setCanvasXform(xf);
     }
 
     // write
-    TilingWriter writer(tp);
+    TilingWriter writer(tiling);
     bool rv = writer.writeTilingXML();   // uses the name in the tiling
     if (rv)
     {
-        tp->setState(TILING_LOADED);
+        tiling->setState(TILING_LOADED);
     }
     return rv;
 }
@@ -112,11 +137,10 @@ bool TilingManager::verifyNameFiles()
     for (int i=0; i < files.size(); i++)
     {
         QString name = files[i];
-        workspace->resetTilings();
-        TilingPtr tp = loadTiling(name);    // adds to workspace
-        if (tp->getName() != name)
+        TilingPtr tiling = loadTiling(name,SM_LOAD_SINGLE);
+        if (tiling->getName() != name)
         {
-            qWarning() << "Error: name does not match filename =" << name <<"internal name= " << tp->getName();
+            qWarning() << "Error: name does not match filename =" << name <<"internal name= " << tiling->getName();
             rv = false;
         }
         if (!FileServices::verifyTilingName(name))

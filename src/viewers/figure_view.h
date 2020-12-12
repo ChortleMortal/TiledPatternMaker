@@ -28,12 +28,15 @@
 #include "base/shared.h"
 #include "base/layer.h"
 #include "viewers/geo_graphics.h"
+#include "tapp/infer.h"
 
 class FigureView : public Layer
 {
 public:
     FigureView(DesignElementPtr dep);
     virtual ~FigureView() override;
+
+    void    setDebugContacts(bool enb, QPolygonF pts, QVector<contact*> contacts);
 
     virtual void   paint(QPainter *painter) override;
     virtual void   receive(GeoGraphics * gg, int h, int v );
@@ -53,6 +56,10 @@ private:
     FigurePtr        _fig;
     FeaturePtr       _feat;
     QTransform       _T;
+
+    bool                debugContacts;
+    QPolygonF           debugPts;
+    QVector<contact *>  debugContactPts;
 };
 
 #endif // FIGUREVIEW_H

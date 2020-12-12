@@ -48,6 +48,26 @@ Star::Star(const Figure & fig,  int nsides, qreal d, int s, qreal r ) : RadialFi
     setFigType(FIG_TYPE_STAR);
 }
 
+bool Star::equals(const FigurePtr other)
+{
+    StarPtr otherp = std::dynamic_pointer_cast<Star>(other);
+    if (!otherp)
+        return  false;
+
+    if (d != otherp->d)
+        return  false;
+
+    if (s != otherp->s)
+        return false;
+
+    if (n != otherp->n)
+        return  false;
+
+     if (getFigureRotate() != otherp->getFigureRotate())
+         return false;
+
+     return true;
+}
 
 void Star::setD( qreal d )
 {

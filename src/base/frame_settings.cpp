@@ -27,31 +27,64 @@
 
 FrameSettings::FrameSettings()
 {
-    _evt        = VIEW_UNDEFINED;
-    _bounds     = Bounds(-10.0,10.0,20.0);  // default
-    _size       = QSize(1500,1100);
-    _activeSize = _size;
-
-    calculateFrameTransform();
 }
 
-void FrameSettings::init(eViewType evt, Bounds bounds, QSize size)
+FrameSettings::FrameSettings(Bounds bounds, QSize size)
 {
-    _evt        = evt;
-    _bounds     = bounds;
-    _size       = size;
-    _activeSize = _size;
+    _bounds      = bounds;
+    _defaultSize = size;
+    _definedSize = size;
+    _activeSize  = size;
 
-    calculateFrameTransform();
+    calculateDefinedFrameTransform();
 }
 
-void FrameSettings::setFrameSize(QSize size)
+FrameSettings::FrameSettings(const FrameSettings & other)
 {
-    if (size != _size)
+    _bounds      = other._bounds;
+    _defaultSize = other._defaultSize;
+    _definedSize = other._definedSize;
+    _activeSize  = other._activeSize;
+    _definedTransform           = other._definedTransform;
+}
+
+FrameSettings & FrameSettings::operator=(const FrameSettings & other)
+{
+    _bounds      = other._bounds;
+    _defaultSize = other._defaultSize;
+    _definedSize = other._definedSize;
+    _activeSize  = other._activeSize;
+    _definedTransform           = other._definedTransform;
+    return *this;
+}
+
+void FrameSettings::reInit()
+{
+    setDefinedFrameSize(_defaultSize);
+    _activeSize = _defaultSize;
+}
+
+void FrameSettings::setDefinedFrameSize(QSize size)
+{
+    if (size != _definedSize)
     {
-        _size = size;
-        calculateFrameTransform();
+        _definedSize = size;
+        calculateDefinedFrameTransform();
     }
+}
+
+void FrameSettings::setActiveFrameSize(QSize size)
+{
+    if (size != _activeSize)
+    {
+        _activeSize = size;
+        calculateActiveFrameTransform();
+    }
+}
+
+QSize FrameSettings::getActiveFrameSize() const
+{
+    return  _activeSize;
 }
 
 /*
@@ -65,9 +98,19 @@ void FrameSettings::setFrameSize(QSize size)
     VIEW_TILIING_MAKER  scale=100 rot=0 (0)trans=500 500
     VIEW_MAP_EDITOR     scale=45 rot=0 (0) trans=450 450
 */
-void FrameSettings::calculateFrameTransform()
+
+void FrameSettings::calculateDefinedFrameTransform()
 {
-    QSize size   = _size;
+    _definedTransform = calculateTransform(_definedSize);
+}
+
+void FrameSettings::calculateActiveFrameTransform()
+{
+    _activeTransform = calculateTransform(_activeSize);
+}
+
+QTransform FrameSettings::calculateTransform(QSize size)
+{
     qreal w      = qreal(size.width());
     qreal h      = qreal(size.height());
     qreal aspect = w / h;
@@ -77,10 +120,9 @@ void FrameSettings::calculateFrameTransform()
     QTransform first  = QTransform().translate(-_bounds.left, - (_bounds.top - height));
     QTransform second = QTransform().scale(scalex,scalex);
     QTransform third  = QTransform().translate(0.0,((w -h)/2.0));
-    _t  = first * second * third;
-    qDebug().noquote() << "ViewSettings:: viewTransform" << sViewerType[_evt] << _size << Transform::toInfoString(_t);
+    QTransform transf = first * second * third;
+    return transf;
 }
-
 
 
 

@@ -25,7 +25,7 @@
 #include "tile/tiling.h"
 #include "tile/tiling_loader.h"
 #include "tile/feature_reader.h"
-#include "viewers/workspace_viewer.h"
+#include "tile/backgroundimage.h"
 #include "base/mosaic_loader.h"
 #include "makers/tiling_maker/tiling_maker.h"
 
@@ -288,7 +288,14 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
                 rotation = rotatt.as_double();
             }
 
-            bf = make_shared<Feature>(sides,rotation);
+            qreal scale = 1.0;
+            xml_attribute scaleatt = feature.attribute("scale");
+            if (scaleatt)
+            {
+                scale = scaleatt.as_double();
+            }
+
+            bf = make_shared<Feature>(sides,rotation,scale);
         }
         else if (strtype == "polygon")
         {
@@ -301,26 +308,43 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
                 pts << pt;
             }
             EdgePoly ep(pts);
-            bf = make_shared<Feature>(ep,0);
+            bf = make_shared<Feature>(ep);
         }
         else if (strtype == "edgepoly")
         {
             EdgePoly ep = fr.getEdgePoly(feature);
 
-             qreal rotation = 0.0;
-             xml_attribute rotatt = feature.attribute("rotation");
-             if (rotatt)
-             {
-                 rotation = rotatt.as_double();
-             }
+            qreal rotation = 0.0;
+            xml_attribute rotatt = feature.attribute("rotation");
+            if (rotatt)
+            {
+                rotation = rotatt.as_double();
+            }
 
-            bf = make_shared<Feature>(ep,rotation);
+            qreal scale = 1.0;
+            xml_attribute scaleatt = feature.attribute("scale");
+            if (scaleatt)
+            {
+                scale = scaleatt.as_double();
+            }
+
+            bf = make_shared<Feature>(ep,rotation,scale);
         }
 
         for (xml_node plnode = feature.child("Placement"); plnode; plnode = plnode.next_sibling("Placement"))
         {
-            string txt    = plnode.child_value();
-            QTransform  T = getAffineTransform(txt.c_str());
+            QTransform T;
+            if (version <= 5)
+            {
+                QString txt = plnode.child_value();
+                T = getAffineTransform(txt);
+            }
+            else
+            {
+                Q_ASSERT(version >= 6);
+                T = getAffineTransform(plnode);
+            }
+
             PlacedFeaturePtr pfp = make_shared<PlacedFeature>(bf,T);
             tiling->add(pfp);
         }
@@ -345,67 +369,81 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
     xml_node bkImage = tiling_node.child("BackgroundImage");
     if (bkImage)
     {
-        xml_attribute attr = bkImage.attribute("name");
-        if (attr)
-        {
-            BkgdImgPtr bi = tiling->getBackground();
-            Xform xf = bi->getCanvasXform();
-
-            bi->bkgdName  = attr.value();
-
-            xml_node n = bkImage.child("Scale");
-            if (n)
-            {
-                QString str = n.child_value();
-                xf.setScale(str.toDouble());
-            }
-
-            n = bkImage.child("Rot");
-            if (n)
-            {
-                QString str = n.child_value();
-                xf.setRotateRadians(str.toDouble());
-            }
-
-            n = bkImage.child("X");
-            if (n)
-            {
-                QString str= n.child_value();
-                xf.setTranslateX(str.toDouble());
-            }
-
-            n = bkImage.child("Y");
-            if (n)
-            {
-                QString str = n.child_value();
-                xf.setTranslateY(str.toDouble());
-            }
-
-            bi->updateCanvasXform(xf);
-
-            n= bkImage.child("Perspective");
-            if (n)
-            {
-                QString str = n.child_value();
-                bi->perspective = getQTransform(str);
-            }
-
-            // load
-            if (bi->loadImageUsingName())
-            {
-                bool adjPerspective = false;
-                if (!bi->perspective.isIdentity())
-                {
-                    bi->adjustBackground();
-                    adjPerspective = true;
-                }
-                bi->bkgdImageChanged(true,adjPerspective);
-            }
-        }
+       BkgdImgPtr bip = getBackgroundImage(bkImage);
+       if (bip)
+       {
+           tiling->setBackground(bip);
+       }
     }
 
     // tiling->dump();
     return tiling;
+}
+
+BkgdImgPtr TilingLoader::getBackgroundImage(xml_node & node)
+{
+    BkgdImgPtr bi = make_shared<BackgroundImage>();
+
+    xml_attribute attr = node.attribute("name");
+    QString name       = attr.value();
+
+    bool rv = bi->load(name);
+    if (rv)
+    {
+        Xform xf = bi->getCanvasXform();
+
+        xml_node n = node.child("Scale");
+        if (n)
+        {
+            QString str = n.child_value();
+            xf.setScale(str.toDouble());
+        }
+
+        n = node.child("Rot");
+        if (n)
+        {
+            QString str = n.child_value();
+            xf.setRotateRadians(str.toDouble());
+        }
+
+        n = node.child("X");
+        if (n)
+        {
+            QString str= n.child_value();
+            xf.setTranslateX(str.toDouble());
+        }
+
+        n = node.child("Y");
+        if (n)
+        {
+            QString str = n.child_value();
+            xf.setTranslateY(str.toDouble());
+        }
+
+        bi->updateBkgdXform(xf);  // does not set center
+
+        n= node.child("Perspective");
+        if (n)
+        {
+            QString str = n.child_value();
+            bi->perspective = getQTransform(str);
+        }
+
+        bool adjPerspective = false;
+        if (!bi->perspective.isIdentity())
+        {
+            bi->adjustBackground();
+            adjPerspective = true;
+        }
+        bi->bkgdImageChanged(true,adjPerspective);
+
+    }
+    else
+    {
+        bi.reset();
+    }
+
+    return bi;
 }
 
 Xform  TilingLoader::getXform(xml_node & node)
@@ -494,6 +532,30 @@ QTransform TilingLoader::getAffineTransform(QString txt)
                       c,f);
 }
 
+QTransform TilingLoader::getAffineTransform(xml_node & node)
+{
+    xml_node  n = node.child("scale");
+    QString   s = n.child_value();
+    qreal scale = s.toDouble();
+
+    n           = node.child("rot");
+    s           = n.child_value();
+    qreal rot   = s.toDouble();
+
+    n           = node.child("tranX");
+    s           = n.child_value();
+    qreal x     = s.toDouble();
+
+    n           = node.child("tranY");
+    s           = n.child_value();
+    qreal y     = s.toDouble();
+
+    QTransform t;
+    t.translate(x,y);
+    t.rotate(rot);
+    t.scale(scale,scale);
+    return t;
+}
 
 QTransform TilingLoader::getQTransform(QString txt)
 {

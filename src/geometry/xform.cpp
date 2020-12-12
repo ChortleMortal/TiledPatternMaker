@@ -26,6 +26,16 @@ Xform::Xform(const Xform  & other)
     mCenter      = other.mCenter;
 }
 
+Xform & Xform::operator=(const Xform & other)
+{
+    scale        = other.scale;
+    translateX   = other.translateX;
+    translateY   = other.translateY;
+    rotRadians   = other.rotRadians;
+    mCenter      = other.mCenter;
+    return *this;
+}
+
 Xform::Xform(QTransform t)
 {
     setTransform(t);
@@ -89,7 +99,7 @@ QTransform Xform::scaleAroundPoint(QPointF pt)
     return (QTransform::fromTranslate(-pt.x(),-pt.y()) * (QTransform::fromScale(scale,scale) * QTransform().translate(pt.x(), pt.y())));
 }
 
-QString Xform::toInfoString()
+QString Xform::toInfoString() const
 {
     QString s;
     s  = QString("Scale=%1 ").arg(QString::number(scale,'g',16));
@@ -159,6 +169,6 @@ QPointF Xform::getCenter() const
 
 void Xform::setCenter(QPointF mpt)
 {
-    qDebug().noquote() << "Xform::setCenter: new=" << mpt  << "old=" << mCenter << "diff=" << (mpt - mCenter);
+    //qDebug().noquote() << "Xform::setCenter: new=" << mpt  << "old=" << mCenter << "diff=" << (mpt - mCenter);
     mCenter   = mpt;
 }

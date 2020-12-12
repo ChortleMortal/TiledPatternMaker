@@ -47,8 +47,10 @@ protected:
     QString     readQuotedString(QTextStream & str);
     QPointF     getPoint(QString txt);
     QTransform  getAffineTransform(QString txt);
+    QTransform  getAffineTransform(pugi::xml_node & node);
     QTransform  getQTransform(QString txt);
 
+    BkgdImgPtr  getBackgroundImage(pugi::xml_node & node);
     Xform       getXform(pugi::xml_node & node);
     FillData    getFill(QString txt);
 

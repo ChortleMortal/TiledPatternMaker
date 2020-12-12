@@ -42,23 +42,26 @@ class DesignElement
 {
 public:
 
-    DesignElement(FeaturePtr feature, FigurePtr figure );
-    DesignElement(FeaturePtr feature );
+    DesignElement(FeaturePtr feat, FigurePtr fig );
+    DesignElement(FeaturePtr feat );
     DesignElement(DesignElementPtr dep);
     DesignElement();
     DesignElement(const DesignElement & other);
     ~DesignElement();
 
-    FeaturePtr getFeature();
-    FigurePtr  getFigure();
-    void       setFigure(FigurePtr afigure);
-    void       setFeature(FeaturePtr afeature);
+    FeaturePtr  getFeature();
+    void        replaceFeature(FeaturePtr afeature);
+    FigurePtr   getFigure();
+    void        setFigure(FigurePtr fig);
 
-    QString toString();
+    QString     toString();
+    void        describe();
 
     static int refs;
 
 protected:
+    FigurePtr   createFigure(FeaturePtr feature);
+
     FeaturePtr	feature;
     FigurePtr	figure;
 };

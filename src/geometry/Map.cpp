@@ -127,7 +127,7 @@ Map::Map(const Map & map)  : neighbourMap(this)
         VertexPtr v = i.key();
         NeighboursPtr np = i.value();
         NeighboursPtr nnp = make_shared<Neighbours>(v);
-        for (auto edge : np->getNeighbours())
+        for (auto& edge : np->getNeighbours())
         {
             nnp->insertEdgeSimple(edge);
         }
@@ -165,7 +165,7 @@ void Map::wipeout()
 EdgePoly Map::getEdgePoly()
 {
     EdgePoly ep;
-    for (auto edge : edges)
+    for (auto& edge : edges)
     {
         ep.push_back(edge);
     }
@@ -225,7 +225,7 @@ void Map::splitEdgesByVertex(VertexPtr vert)
     QPointF vp = vert->getPosition();
     qreal    x = vp.x();
 
-    for (auto e : edges)
+    for (auto e : qAsConst(edges))
     {
         qreal xm = e->getMinX();
 
@@ -407,14 +407,14 @@ void Map::removeVertex(VertexPtr v)
     qDebug() << "removing vertex" << v->getTmpVertexIndex();
 
     QVector<EdgePtr> removeList;
-    for (auto edge : edges)
+    for (auto edge : qAsConst(edges))
     {
         if (edge->contains(v))
         {
             removeList.push_back(edge);
         }
     }
-    for (auto edge : removeList)
+    for (auto& edge : removeList)
     {
         removeEdge(edge);
     }
@@ -433,7 +433,7 @@ void Map::crop(QRectF rect)
 
     // remove anything with an outside edge
     QVector<EdgePtr> outsideEdges;
-    for (auto edge : edges)
+    for (auto edge : qAsConst(edges))
     {
         if (!rect.contains(edge->getV1()->getPosition()) || !rect.contains(edge->getV2()->getPosition()))
         {
@@ -441,7 +441,7 @@ void Map::crop(QRectF rect)
         }
     }
 
-    for (auto edge : outsideEdges)
+    for (auto& edge : outsideEdges)
     {
         removeEdge(edge);
     }
@@ -451,14 +451,14 @@ MapPtr Map::recreate()
 {
     MapPtr ret = make_shared<Map>("recreated map");
 
-    for(auto vert : vertices)
+    for(auto& vert : vertices)
     {
         VertexPtr nv = make_shared<Vertex>(vert->getPosition());
         vert->copy   = nv;
         ret->vertices.push_back(nv);
     }
 
-    for(auto edge : edges)
+    for(auto edge : qAsConst(edges))
     {
         EdgePtr ne = make_shared<Edge>(edge->getV1()->copy, edge->getV2()->copy);
         ne->setSwapState(edge->getSwapState());
@@ -503,9 +503,9 @@ MapPtr Map::compress()
 
 bool Map::joinOneColinearEdgeIgnoringIntersects()
 {
-    for (auto edge : edges)
+    for (auto& edge : qAsConst(edges))
     {
-        for (auto edge2 : edges)
+        for (auto edge2 : qAsConst(edges))
         {
             if (edge2 == edge)
                 continue;
@@ -552,7 +552,7 @@ void Map::joinEdges(EdgePtr e1, EdgePtr e2)
 
 void Map::cleanCopy()
 {
-    for (auto vert : vertices)
+    for (auto& vert : vertices)
     {
         vert->copy.reset();
     }
@@ -1136,9 +1136,9 @@ public synchronized void mergeSimple( Map other )
 // Here, we transform vertices as they are put into the current map.
 void Map::mergeSimpleMany(constMapPtr other, const QVector<QTransform> &transforms)
 {
-    for (auto T : transforms)
+    for (auto& T : transforms)
     {
-        for (auto overt :  other->getVertices())
+        for (auto& overt :  other->getVertices())
         {
             // this makes vertex and inserts it in neighbours table
             overt->copy = getVertex_Simple(T.map(overt->getPosition()));
@@ -1260,7 +1260,7 @@ void Map::joinColinearEdges()
 
 bool Map::joinOneColinearEdge()
 {
-    for (auto vp : vertices)
+    for (auto& vp : vertices)
     {
         int count = neighbourMap.numNeighbours(vp);
         if (count == 2)
@@ -1384,7 +1384,7 @@ void Map::fixNeighbours()
     qDebug() << "fixNeighbours";
 
     int index = 200;
-    for (auto e : edges)
+    for (auto e : qAsConst(edges))
     {
         VertexPtr v1 = e->getV1();
         if (!vertices.contains(v1))
@@ -1494,11 +1494,11 @@ void Map::dumpMap(bool full)
 
     if (full)
     {
-        qDebug() << "=== start map" << Utils::addr(this);
+        qDebug() << "=== start map" << this;
         dumpVertices(full);
         dumpEdges(full);
         neighbourMap.dump();
-        qDebug() << "=== end  map" << Utils::addr(this);
+        qDebug() << "=== end  map" << this;
     }
 }
 
@@ -1519,7 +1519,7 @@ void Map::setTmpIndices() const
 
 void Map::dumpVertices(bool full)
 {
-    for (auto vp : vertices)
+    for (auto vp : qAsConst(vertices))
     {
         qDebug() <<  "vertex: "  << vp->getTmpVertexIndex() << "at" << vp->getPosition();
         if (full)
@@ -1535,7 +1535,7 @@ QString Map::verticesToString()
     QString astring;
     QDebug  deb(&astring);
 
-    for (auto v : vertices)
+    for (auto& v : vertices)
     {
         QPointF pt = v->getPosition();
         deb << pt;
@@ -1549,7 +1549,7 @@ QString Map::vptrsToString()
     QString astring;
     QDebug  deb(&astring);
 
-    for (auto v : vertices)
+    for (auto& v : vertices)
     {
         deb << Utils::addr(v.get());
     }
@@ -1560,10 +1560,10 @@ QString Map::vptrsToString()
 void Map::dumpEdges(bool full)
 {
     Q_UNUSED(full)
-    for( int idx = 0; idx < edges.size(); ++idx )
+    int idx = 0;
+    for(auto edge : qAsConst(edges))
     {
-        EdgePtr edge = edges.at(idx);
-        qDebug() << ((edge->getType() == EDGETYPE_LINE) ? "Line" : "Curve") << "edge" << idx  << Utils::addr(edge.get())
+        qDebug() << ((edge->getType() == EDGETYPE_LINE) ? "Line" : "Curve") << "edge" << idx++ << Utils::addr(edge.get())
                  << "from" << vertices.indexOf(edge->getV1()) << edge->getV1()->getPosition()
                  << "to"   << vertices.indexOf(edge->getV2()) << edge->getV2()->getPosition();
     }
@@ -1643,7 +1643,7 @@ bool Map::verifyVertices()
 {
     bool rv = true;
 
-    for (auto v : vertices)
+    for (auto v : qAsConst(vertices))
     {
         NeighboursPtr np = neighbourMap.getNeighbours(v);
         if (!neighbourMap.contains(v))
@@ -1685,7 +1685,7 @@ bool Map::verifyEdges()
 {
     bool rv = true;
 
-    for (auto edge: edges)
+    for (auto edge: qAsConst(edges))
     {
         VertexPtr v1 = edge->getV1();
         VertexPtr v2 = edge->getV2();
@@ -1787,7 +1787,7 @@ bool Map::verifyNeighbours()
     }
 
     // Make sure the vertices each have a neighbour and all neigours are good
-    for (auto vp : vertices)
+    for (auto vp : qAsConst(vertices))
     {
         NeighboursPtr np = neighbourMap.getNeighbours(vp);
         if (np->numNeighbours() == 0)
@@ -1795,7 +1795,7 @@ bool Map::verifyNeighbours()
             qWarning() << "Vertex" << vp->getTmpVertexIndex() << "at position" << vp->getPosition() << "has no neigbours, is floating in space";
             rv = false;
         }
-        for (auto edge : np->getNeighbours())
+        for (auto edge : qAsConst(np->getNeighbours()))
         {
             if (!edge)
             {
@@ -1869,7 +1869,7 @@ void Map::calcVertexEdgeCounts()
         vEdgeCounts[i] = 0;
     }
 
-    for (auto v : vertices)
+    for (auto& v : vertices)
     {
         NeighboursPtr np = neighbourMap.getNeighbours(v);
         int count = np->numEdges();
@@ -1902,7 +1902,7 @@ void Map::calcVertexEdgeCounts()
 void Map::removeVerticesWithEdgeCount(int edgeCount)
 {
     QVector<VertexPtr> verts;
-    for (auto v : vertices)
+    for (auto& v : vertices)
     {
         NeighboursPtr np = neighbourMap.getNeighbours(v);
 
@@ -1912,7 +1912,7 @@ void Map::removeVerticesWithEdgeCount(int edgeCount)
         }
     }
 
-    for (auto v : verts)
+    for (auto& v : verts)
     {
         removeVertex(v);
     }
@@ -1920,10 +1920,9 @@ void Map::removeVerticesWithEdgeCount(int edgeCount)
 
 QRectF Map::calcBoundingRect()
 {
-   QPolygonF poly;
+    QPolygonF poly;
 
-    QVector<VertexPtr> verts;
-    for (auto v : vertices)
+    for (auto& v : vertices)
     {
         poly << v->getPosition();
     }
@@ -1934,7 +1933,7 @@ void Map::cleanNeighbours()
 {
     qDebug() << "cleanNeighbours BEGIN edges=" << edges.size()  << "vertices=" << vertices.size();
 
-    for (auto v :  vertices)
+    for (auto& v :  vertices)
     {
         // examining a vertex
         NeighboursPtr np = neighbourMap.getNeighbours(v);
@@ -1950,7 +1949,7 @@ void Map::removeDanglingVertices()
 
     QVector<VertexPtr> baddies;
 
-    for (auto v : vertices)
+    for (auto& v : vertices)
     {
         // examining a vertex
         NeighboursPtr np = neighbourMap.getNeighbours(v);
@@ -1960,7 +1959,7 @@ void Map::removeDanglingVertices()
         }
     }
 
-    for (auto v : baddies)
+    for (auto& v : baddies)
     {
         removeVertex(v);
     }
@@ -1972,7 +1971,7 @@ void Map::removeBadEdges()
 
     QVector<EdgePtr> baddies;
 
-    for (auto e : edges)
+    for (auto e : qAsConst(edges))
     {
         // examining a vertex
         if (e->getV1() == e->getV2())
@@ -1997,7 +1996,7 @@ void Map::removeBadEdges()
         }
     }
 
-    for (auto e : baddies)
+    for (auto& e : baddies)
     {
         removeEdge(e);
     }
@@ -2007,18 +2006,18 @@ void Map::removeBadEdgesFromNeighboursMap()
 {
     qDebug() << "removeBadEdgesFromNeighboursMap";
 
-    for (auto vp : vertices)
+    for (auto& vp : vertices)
     {
         NeighboursPtr np = neighbourMap.getNeighbours(vp);
         QVector<EdgePtr> baddies;
-        for (auto edge : np->getNeighbours())
+        for (auto& edge : np->getNeighbours())
         {
             if (!edges.contains(edge))
             {
                 baddies.push_back(edge);
             }
         }
-        for (auto edge : baddies)
+        for (auto& edge : baddies)
         {
             np->removeEdge(edge);
         }

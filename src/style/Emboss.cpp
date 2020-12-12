@@ -45,7 +45,7 @@
 
 // Creation.
 
-Emboss::Emboss(PrototypePtr proto, PolyPtr bounds) : Outline(proto,bounds)
+Emboss::Emboss(PrototypePtr proto) : Outline(proto)
 {
     setAngle(M_PI * 0.25 );
 }

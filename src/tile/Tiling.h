@@ -39,10 +39,7 @@
 
 #include <QtCore>
 #include "base/shared.h"
-#include "base/workspace.h"
-#include "tile/tiling_loader.h"
-#include "tile/placed_feature.h"
-#include "tile/backgroundimage.h"
+#include "base/model_settings.h"
 #include "geometry/xform.h"
 
 #define MAX_UNIQUE_FEATURE_INDEX 7
@@ -54,11 +51,11 @@ enum eTilingState
     TILING_MODIFED
 };
 
-class FeatureGroup : public  QList<QPair<FeaturePtr,QList<PlacedFeaturePtr>>>
+class FeatureGroup : public  QVector<QPair<FeaturePtr,QVector<PlacedFeaturePtr>>>
 {
 public:
     bool containsFeature(FeaturePtr fp);
-    QList<PlacedFeaturePtr> & getPlacements(FeaturePtr fp);
+    QVector<PlacedFeaturePtr> & getPlacements(FeaturePtr fp);
 };
 
 // Translations to tile the plane. Two needed for two-dimensional plane.
@@ -72,6 +69,8 @@ public:
     Tiling(QString name, QPointF t1, QPointF t2);
     Tiling(Tiling * other);
     ~Tiling();
+
+    bool        isEmpty();
 
     QString     getName()        const { return name; }
     QString     getDescription() const { return desc; }
@@ -87,12 +86,12 @@ public:
     void        add(FeaturePtr f, QTransform T );
     void        remove(PlacedFeaturePtr pf);
 
-    void                      setPlacedFeatures(QVector<PlacedFeaturePtr> features);
+    void                      setPlacedFeatures(QVector<PlacedFeaturePtr> & features);
     const PlacedFeaturePtr    getPlacedFeature(int idx)   { return placed_features[idx]; }
     const QVector<PlacedFeaturePtr> & getPlacedFeatures() { return placed_features; }
     int                       countPlacedFeatures() const { return placed_features.size(); }
     int                       numPlacements(FeaturePtr fp);
-    UniqueQVector<FeaturePtr> getUniqueFeatures();
+    QVector<FeaturePtr>       getUniqueFeatures();
 
     void        setTrans1(QPointF pt) { t1=pt; }
     void        setTrans2(QPointF pt) { t2=pt; }
@@ -113,35 +112,32 @@ public:
     void         setState(eTilingState state);
 
     // settings
-    void        setSettings(WorkspaceSettings & settings) { this->settings = settings; }
-    void        setSize(QSize sz)             { settings.setSize(sz); }
-    void        setBackground(BkgdImgPtr bip) { settings.setBkgdImage(bip); }
-    void        setFillData(FillData & fdata) { settings.setFillData(fdata); }
+    void        setSettings(ModelSettingsPtr settings) { this->settings = settings; }
+    void        setSize(QSize sz)             { settings->setSize(sz); }
+    void        setBackground(BkgdImgPtr bip) { settings->setBkgdImage(bip); }
+    void        setFillData(FillData & fdata) { settings->setFillData(fdata); }
 
-    WorkspaceSettings & getSettings()  { return settings; }
-    QSize               getSize()      { return settings.getSize(); }
-    BkgdImgPtr          getBackground(){ return settings.getBkgdImage(); }
-    const FillData    & getFillData()  { return settings.getFillData(); }
+    ModelSettingsPtr    getSettings()  { return settings; }
+    QSize               getSize()      { return settings->getSize(); }
+    BkgdImgPtr          getBackground(){ return settings->getBkgdImage(); }
+    const FillData    & getFillData()  { return settings->getFillData(); }
 
+    static const QString defaultName;
     static int  refs;
 
 protected:
 
 private:
-    int               version;
-    WorkspaceSettings settings;
-    eTilingState      state;
-
-    QPointF     t1;
-    QPointF     t2;
-
+    int             version;
+    QString         name;
+    QString         desc;
+    QString         author;
+    ModelSettingsPtr settings;
+    eTilingState    state;
+    QPointF         t1;
+    QPointF         t2;
+    Xform           canvasXform;
     QVector<PlacedFeaturePtr> placed_features;
-
-    QString     name;
-    QString     desc;
-    QString     author;
-
-    Xform       canvasXform;
 };
 
 #endif

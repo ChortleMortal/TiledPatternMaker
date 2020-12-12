@@ -82,17 +82,17 @@ AQColorDialog::AQColorDialog(const QColor & initial, QWidget * parent) : QColorD
 void AQColorDialog::set_CustomColors()
 {
     int index = 0;
-    setCustomColor(index++,"#39426d");
-    setCustomColor(index++,"#34554a");
-    setCustomColor(index++,"#10100e");
-    setCustomColor(index++,"#c2bcb0");
-    setCustomColor(index++,"#382310");
-    setCustomColor(index++,"#632E1C");
-    setCustomColor(index++,"#ffe05b");
-    setCustomColor(index++,"#a35807");
-    setCustomColor(index++,"#1840b2");
-    setCustomColor(index++,"#234b30");
-    setCustomColor(index++,"#c59c0c");
+    setCustomColor(index++,0x39426d);
+    setCustomColor(index++,0x34554a);
+    setCustomColor(index++,0x10100e);
+    setCustomColor(index++,0xc2bcb0);
+    setCustomColor(index++,0x382310);
+    setCustomColor(index++,0x632E1C);
+    setCustomColor(index++,0xffe05b);
+    setCustomColor(index++,0xa35807);
+    setCustomColor(index++,0x1840b2);
+    setCustomColor(index++,0x234b30);
+    setCustomColor(index++,0xc59c0c);
 }
 
 
@@ -108,37 +108,6 @@ void ClickableLabel::mousePressEvent(QMouseEvent* event)
 {
     Q_UNUSED(event);
     emit clicked();
-}
-
-AQLabel::AQLabel() : QLabel()
-{
-    setAttribute(Qt::WA_DeleteOnClose);
-    connect(this, &AQLabel::sig_close, this, &AQLabel::close, Qt::QueuedConnection);
-}
-
-void AQLabel::keyPressEvent( QKeyEvent *k )
-{
-    int key = k->key();
-    if (key == Qt::Key_Space)
-    {
-        emit sig_takeNext();
-        emit sig_close();       // foces take before close
-    }
-    else if (key == 'Q')
-    {
-        emit sig_cyclerQuit();
-        close();
-    }
-    else if (key == 'V')
-    {
-        emit sig_view_images(); // all three are now visible
-    }
-    else if (key == 'L')
-    {
-        qWarning() << "FILE LOGGED (needs attention)";
-        emit sig_takeNext();
-        close();
-    }
 }
 
 void eraseLayout(QLayout * layout)
@@ -174,7 +143,15 @@ void eraseLayout(QLayout * layout)
 
 AQTableWidget::AQTableWidget(QWidget * parent) : QTableWidget(parent)
 {
+}
 
+void AQTableWidget::selectRow(int row)
+{
+    if (row < rowCount())
+    {
+        qDebug() << "select row" << row;
+        QTableWidget::selectRow(row);
+    }
 }
 
 void AQTableWidget::adjustTableSize(int maxWidth, int maxHeight)
@@ -258,4 +235,15 @@ int AQTableWidget::getTableHeight(int maxHeight)
     }
 
     return h;
+}
+
+AQPushButton::AQPushButton(const QString &text, QWidget * parent) : QPushButton(text,parent)
+{
+    setCheckable(true);
+    setStyleSheet("QPushButton:checked{background-color:LightGreen}");
+}
+
+BQPushButton::BQPushButton(const QString &text, QWidget * parent) : QPushButton(text,parent)
+{
+    setStyleSheet("QPushButton:pressed{background-color:LightGreen}");
 }

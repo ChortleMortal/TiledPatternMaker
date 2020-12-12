@@ -174,10 +174,7 @@ void RadialFigure::setN(int n)
     Tr      = QTransform().rotateRadians( 2.0 * M_PI * don );
 }
 
-int RadialFigure::getN()
-{
-    return n;
-}
+
 
 void RadialFigure::buildExtBoundary()
 {
