@@ -119,10 +119,10 @@ bool Edge::sameAs(EdgePtr other)
 
 bool Edge::equals(EdgePtr other)
 {
-    if (v1->getPosition() != other->v1->getPosition())
+    if (!Loose::equals(v1->getPosition(),other->v1->getPosition()))
         return false;
 
-    if (v2->getPosition() != other->v2->getPosition())
+    if (!Loose::equals(v2->getPosition(),other->v2->getPosition()))
         return false;
 
     if (type != other->type)

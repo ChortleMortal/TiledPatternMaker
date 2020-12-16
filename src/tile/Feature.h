@@ -56,7 +56,9 @@ public:
     Feature(const FeaturePtr other);
     ~Feature();
 
-    void create();
+    void create();          // makes epoly from base
+    void decompose();       // makes base from epoly (should not be needed except to fix historical files)
+
     FeaturePtr recreate();
 
     void setRegular(bool enb);

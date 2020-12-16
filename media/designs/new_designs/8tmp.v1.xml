@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<vector id="1" version="5">
+<vector id="1" version="6">
 	<design>
 		<size>
 			<width>1500</width>
@@ -8,6 +8,7 @@
 		<background>
 			<color>#ffc2bcb0</color>
 		</background>
+		<Fill>-3,3,-3,3</Fill>
 	</design>
 	<style.Filled id="2" serialization="custom">
 		<toolkit.GeoLayer>
@@ -18,72 +19,53 @@
 			<center>0,-1.77635683940025e-15</center>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<boundary id="3">
-				<pts id="4">
-					<Point id="5">
-						<x>-10</x>
-						<y>-10</y>
-					</Point>
-					<Point id="6">
-						<x>-10</x>
-						<y>10</y>
-					</Point>
-					<Point id="7">
-						<x>10</x>
-						<y>10</y>
-					</Point>
-					<Point id="8">
-						<x>10</x>
-						<y>-10</y>
-					</Point>
-				</pts>
-			</boundary>
-			<prototype id="9" serialization="custom">
+			<prototype id="3" serialization="custom">
 				<app.Prototype>
 					<string>8</string>
 					<entry>
-						<tile.Feature id="10">
+						<tile.Feature id="4">
 							<regular>true</regular>
 							<rotation>0</rotation>
-							<edges id="11">
+							<scale>1</scale>
+							<edges id="5">
 								<Line>
-									<Point id="12">1,0.4142135623730951</Point>
-									<Point id="13">0.4142135623730951,1</Point>
+									<Point id="6">1,0.4142135623730951</Point>
+									<Point id="7">0.4142135623730951,1</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">-0.414213562373095,1</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">-1,0.4142135623730952</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point id="10">-1,-0.414213562373095</Point>
+								</Line>
+								<Line>
+									<Point reference="10" />
+									<Point id="11">-0.4142135623730957,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="11" />
+									<Point id="12">0.4142135623730953,-0.9999999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="12" />
+									<Point id="13">0.9999999999999998,-0.4142135623730958</Point>
 								</Line>
 								<Line>
 									<Point reference="13" />
-									<Point id="14">-0.414213562373095,1</Point>
-								</Line>
-								<Line>
-									<Point reference="14" />
-									<Point id="15">-1,0.4142135623730952</Point>
-								</Line>
-								<Line>
-									<Point reference="15" />
-									<Point id="16">-1,-0.4142135623730949</Point>
-								</Line>
-								<Line>
-									<Point reference="16" />
-									<Point id="17">-0.4142135623730957,-0.9999999999999998</Point>
-								</Line>
-								<Line>
-									<Point reference="17" />
-									<Point id="18">0.4142135623730953,-0.9999999999999999</Point>
-								</Line>
-								<Line>
-									<Point reference="18" />
-									<Point id="19">0.9999999999999998,-0.4142135623730958</Point>
-								</Line>
-								<Line>
-									<Point reference="19" />
-									<Point reference="12" />
+									<Point reference="6" />
 								</Line>
 							</edges>
 						</tile.Feature>
-						<ExtendedRosette id="20" extendPeripherals="f" extendFreeVertices="f" connectBoundaryVertices="f">
+						<ExtendedRosette id="14" extendPeripherals="f" extendFreeVertices="f" connectBoundaryVertices="f">
 							<n>8</n>
-							<q>0.6000000000000003</q>
-							<s>3</s>
+							<q>0.6</q>
+							<s>1</s>
 							<k>0.78</k>
 							<boundarySides>1</boundarySides>
 							<boundaryScale>1</boundaryScale>
@@ -115,7 +97,7 @@
 			<algorithm>3</algorithm>
 		</style.Filled>
 	</style.Filled>
-	<style.Thick id="21" serialization="custom">
+	<style.Thick id="15" serialization="custom">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
 			<top__delta>0</top__delta>
@@ -124,8 +106,7 @@
 			<center>0,-1.77635683940025e-15</center>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<boundary reference="3" />
-			<prototype reference="9" />
+			<prototype reference="3" />
 		</style.Style>
 		<style.Colored>
 			<color hide="f">#ff1496d2</color>
@@ -135,7 +116,7 @@
 			<width>0.03</width>
 		</style.Thick>
 	</style.Thick>
-	<style.TileColors id="22" serialization="custom">
+	<style.TileColors id="16" serialization="custom">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
 			<top__delta>0</top__delta>
@@ -144,8 +125,7 @@
 			<center>0,-1.77635683940025e-15</center>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<boundary reference="3" />
-			<prototype reference="9" />
+			<prototype reference="3" />
 		</style.Style>
 	</style.TileColors>
 </vector>

@@ -40,7 +40,7 @@ public:
 
     virtual FigurePtr getFigure() override;
 
-    virtual void resetWithFigure(FigurePtr fig, bool dcEmit = true) override;
+    virtual void resetWithFigure(FigurePtr fig, bool dcEmit) override;
 
 protected:
     ExplicitPtr resetFigure(FigurePtr fig, eFigType figType);
@@ -69,7 +69,7 @@ public:
     ExplicitGirihEditor(page_motif_maker *ed, QString aname);
 
     FigurePtr  getFigure() override;
-    void resetWithFigure(FigurePtr fig, bool doEmit = true) override;
+    void resetWithFigure(FigurePtr fig, bool doEmit) override;
 
 private:
     void updateGeometry(bool doEmit) override;
@@ -105,7 +105,7 @@ public:
     ExplicitHourglassEditor(page_motif_maker * ed, QString aname);
 
     FigurePtr getFigure() override;
-    void resetWithFigure(FigurePtr fig, bool doEmit = true) override;
+    void resetWithFigure(FigurePtr fig, bool doEmit) override;
 
 private:
     void updateLimits() override;
@@ -135,7 +135,7 @@ public:
 
     FigurePtr getFigure() override;
 
-    void resetWithFigure(FigurePtr fig, bool doEmit = true) override;
+    void resetWithFigure(FigurePtr fig, bool doEmit) override;
 
 private:
     void updateGeometry(bool doEmit) override;
@@ -165,7 +165,7 @@ public:
     ExplicitIntersectEditor(page_motif_maker * ed, QString aname);
 
     FigurePtr getFigure() override;
-    void resetWithFigure(FigurePtr fi, bool doEmit = true) override;
+    void resetWithFigure(FigurePtr fi, bool doEmit) override;
 
 private:
     void updateGeometry(bool doEmit) override;
@@ -202,7 +202,7 @@ public:
 
     FigurePtr getFigure() override;
 
-    void resetWithFigure(FigurePtr fig, bool doEmit = true) override;
+    void resetWithFigure(FigurePtr fig, bool doEmit) override;
 
 private:
     void updateLimits() override;
@@ -230,7 +230,7 @@ public:
 
     FigurePtr getFigure() override;
 
-    void resetWithFigure(FigurePtr fig, bool doEmit = true) override;
+    void resetWithFigure(FigurePtr fig, bool doEmit) override;
 
 protected:
     void updateGeometry(bool doEmit) override;
@@ -258,7 +258,7 @@ public:
     ExplicitFeatureEditor(page_motif_maker *ed, QString aname);
 
     FigurePtr getFigure() override;
-    void resetWithFigure(FigurePtr fig, bool doEmit = true) override;
+    void resetWithFigure(FigurePtr fig, bool doEmit) override;
 
 private:
     void updateGeometry(bool doEmit) override;

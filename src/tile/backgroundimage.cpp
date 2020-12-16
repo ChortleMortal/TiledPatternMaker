@@ -96,7 +96,7 @@ bool BackgroundImage::load(QString imageName)
 
 void BackgroundImage::updateBkgdXform(const Xform & xf)
 {
-    // FIXME ??
+    // FIXME updatebkgdxform
     //xf_bkImg.update(xf);
     xf_bkImg = xf;
     forceLayerRecalc();

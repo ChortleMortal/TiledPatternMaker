@@ -87,8 +87,11 @@ bool Point::intersectPoly(QLineF line, QPolygonF bounds)
     {
         QPointF intersect;
         QLineF l2(bounds[i],bounds[i+1]);
-        QLineF::IntersectType it = line.intersect(l2,&intersect);  // FIXME - deprecated
-
+#if (QT_VERSION >= QT_VERSION_CHECK(5,15,0))
+        QLineF::IntersectType it = line.intersects(l2,&intersect);
+#else
+        QLineF::IntersectType it = line.intersect(l2,&intersect);
+#endif
         if (it == QLineF::BoundedIntersection)
         {
             return true;
@@ -117,7 +120,11 @@ QLineF Point::clipLine(QLineF line,QPolygonF bounds)
     for (int i=0; i < (bounds.count()-1); i++)
     {
         QLineF l2 = QLineF(bounds.at(i), bounds.at(i+1));
-        if (line.intersect(l2,&clipped) == QLineF::BoundedIntersection)  // FIXME - deprecated
+#if (QT_VERSION >= QT_VERSION_CHECK(5,15,0))
+        if (line.intersects(l2,&clipped) == QLineF::BoundedIntersection)
+#else
+        if (line.intersect(l2,&clipped) == QLineF::BoundedIntersection)
+#endif
         {
             line.setP2(clipped);
             return line;

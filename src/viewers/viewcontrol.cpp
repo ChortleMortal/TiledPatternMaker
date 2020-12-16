@@ -188,6 +188,8 @@ void ViewControl::refreshView()
 {
     qDebug().noquote() << "+ ViewController::refreshView type=" << sViewerType[config->viewerType];
 
+    view->paintEnable(false);
+
     view->clearView();
 
     // add the viewers
@@ -212,6 +214,9 @@ void ViewControl::refreshView()
     }
 
     // trigger repaint
+
+    view->paintEnable(true);
+
     view->update();
 
     emit sig_viewUpdated();

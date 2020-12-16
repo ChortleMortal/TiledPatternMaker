@@ -74,7 +74,7 @@ ExplicitPtr ExplicitEditor::resetFigure(FigurePtr fig, eFigType figType)
     }
 
     Q_ASSERT(ep);
-    FigureEditor::resetWithFigure(ep);
+    FigureEditor::resetWithFigure(ep,false);
 
     return ep;
 }

@@ -57,6 +57,7 @@ void View::releaseInstance()
 
 View::View()
 {
+    canPaint    = true;
     closed      = false;
     dragging    = false;
     mouseMode   = MOUSE_MODE_NONE;
@@ -213,9 +214,22 @@ void View::setActiveFrameSize(eViewType e, QSize sz)
     frameSettings[e].setActiveFrameSize(sz);
 }
 
+void  View::paintEnable(bool enable)
+{
+    setAttribute(Qt::WA_NoSystemBackground,!enable);
+    setAutoFillBackground(enable);
+    canPaint = enable;
+}
 
 void View::paintEvent(QPaintEvent *event)
 {
+    if (!canPaint)
+    {
+        qDebug() << "View::paintEvent() - discarded";
+        QWidget::paintEvent(event);
+        return;
+    }
+
     //qDebug() << "++++START VIEW PAINT - Scene: items=" << layers.size() << "viewRect" << rect();
 
     QWidget::paintEvent(event);

@@ -1057,7 +1057,7 @@ PrototypePtr MosaicLoader::getPrototype(xml_node & node)
             }
             if (!found2)
             {
-                qWarning("Design feature not matching tiling feature");
+                qWarning() << "Design feature not matching tiling feature" << _fileName;
             }
         }
         //p->walk();
@@ -1211,10 +1211,15 @@ FeaturePtr MosaicLoader::getFeature(xml_node & node)
     {
         FeatureReader fr;
         EdgePoly ep = fr.getEdgePoly(poly);
-
         f = make_shared<Feature>(ep,rotation,scale);
-        setFeatureReference(node,f);
         f->setRegular(regular);
+        if (((_version == 5) || (_version ==6)) && (!Loose::zero(rotation) || !Loose::equals(scale,1.0)))
+        {
+            qWarning() << "Decomposing Feature for backwards compatability"  << _fileName;
+            f->decompose();
+        }
+
+        setFeatureReference(node,f);
         return f;
     }
     return f;

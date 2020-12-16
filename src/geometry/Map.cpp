@@ -684,20 +684,23 @@ void Map::insertPolyline(Polyform * poly)
     //verify("insertPolyline",false,false,false);
 }
 
-void Map::insertDebugMark(QPointF m, QString txt, qreal size)
+void Map::insertDebugMark(QPointF m, QString txt, qreal size, QPointF offset)
 {
     if (!config->debugMapEnable)
         return;
 
     qreal x = m.x();
     qreal y = m.y();
+
     QPointF p1(x-size,y);
     QPointF p2(x+size,y);
     QPointF p3(x,y+size);
     QPointF p4(x,y-size);
+
     VertexPtr v1 = insertVertex(p1);
     VertexPtr v2 = insertVertex(p2);
     insertEdge(v1,v2);
+
     v1 = insertVertex(p3);
     v2 = insertVertex(p4);
     insertEdge(v1,v2);
@@ -705,7 +708,7 @@ void Map::insertDebugMark(QPointF m, QString txt, qreal size)
     if (!txt.isEmpty())
     {
         sText stxt;
-        stxt.pt  = m;
+        stxt.pt  = m + offset;
         stxt.txt = txt;
         texts.push_back(stxt);
     }

@@ -42,6 +42,7 @@ public:
 
     void    init();
     void    clearView();
+    void    paintEnable(bool enable);
 
     void    resize(QSize sz);
 
@@ -152,6 +153,7 @@ private:
 
     QMap<eViewType,FrameSettings>    frameSettings;
 
+    bool              canPaint;
     eMouseMode        mouseMode;
     bool              dragging;
     QColor            backgroundColor;

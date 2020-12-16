@@ -278,13 +278,13 @@ void FeatureButton::paintEvent(QPaintEvent * event)
         return;
     }
 
-    qDebug() << "FeatureButton::paintEvent() index ="  << index;
+    //qDebug() << "FeatureButton::paintEvent() index ="  << index;
     QPainter painter(this);
 
     painter.setRenderHint(QPainter::Antialiasing ,true);
     painter.setRenderHint(QPainter::SmoothPixmapTransform,true);
 
-    qDebug().noquote() << "paint btn:" << index << Transform::toInfoString(transform);
+    //qDebug().noquote() << "paint btn:" << index << Transform::toInfoString(transform);
     GeoGraphics gg(&painter, transform);
 
     ViewerBase::drawFeature(&gg,designElement->getFeature(),QBrush(feature_interior),QPen(feature_border,3));

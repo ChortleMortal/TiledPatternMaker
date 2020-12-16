@@ -156,7 +156,7 @@ void StarEditor::resetWithFigure(FigurePtr fig, bool doEmit)
     }
 
     Q_ASSERT(star);
-    FigureEditor::resetWithFigure(star);
+    FigureEditor::resetWithFigure(star,false);
 
     updateLimits();
     updateGeometry(doEmit);
@@ -254,7 +254,7 @@ void RosetteEditor::resetWithFigure(FigurePtr fig, bool doEmit)
     }
 
     Q_ASSERT(rosette);
-    FigureEditor::resetWithFigure(rosette);
+    FigureEditor::resetWithFigure(rosette,false);
     updateLimits();
     updateGeometry(doEmit);
 }
@@ -350,7 +350,7 @@ void ConnectStarEditor::resetWithFigure(FigurePtr fig, bool doEmit)
     }
 
     Q_ASSERT(starConnect);
-    StarEditor::resetWithFigure(starConnect);
+    StarEditor::resetWithFigure(starConnect,false);
 
     starConnect->setFigureScale(starConnect->computeConnectScale());
 
@@ -415,7 +415,7 @@ void ConnectRosetteEditor::resetWithFigure(FigurePtr fig, bool doEmit)
     }
 
     Q_ASSERT(rosetteConnect);
-    RosetteEditor::resetWithFigure(rosetteConnect);
+    RosetteEditor::resetWithFigure(rosetteConnect,false);
 
     rosetteConnect->setFigureScale(rosetteConnect->computeConnectScale());
 
@@ -482,7 +482,7 @@ void ExtendedStarEditor::resetWithFigure(FigurePtr fig, bool doEmit)
     }
 
     Q_ASSERT(extended);
-    StarEditor::resetWithFigure(extended);
+    StarEditor::resetWithFigure(extended,false);
 
     updateLimits();
     updateGeometry(doEmit);
@@ -577,7 +577,7 @@ void ExtendedRosetteEditor::resetWithFigure(FigurePtr fig, bool doEmit)
     }
 
     Q_ASSERT(extended);
-    RosetteEditor::resetWithFigure(extended);
+    RosetteEditor::resetWithFigure(extended,false);
 
     updateLimits();
     updateGeometry(doEmit);

@@ -101,6 +101,22 @@ void Feature::create()
     }
 }
 
+void Feature::decompose()
+{
+    // the base is really the created
+    epoly.clear();
+    epoly = base.recreate();
+
+    if (!Loose::zero(rotation))
+    {
+        base.rotate(-rotation);
+    }
+    if (!Loose::equals(scale,1.0))
+    {
+        base.scale(1.0/scale);
+    }
+}
+
 Feature::Feature(const FeaturePtr other )
 {
     n           = other->n;
@@ -171,12 +187,11 @@ FeaturePtr Feature::recreate()
     FeaturePtr f;
     if (regular)
     {
-        f = make_shared<Feature>(n,rotation);
+        f = make_shared<Feature>(n,rotation,scale);
     }
     else
     {
-        f = make_shared<Feature>(base,rotation);
-
+        f = make_shared<Feature>(base,rotation,scale);
     }
     return  f;
 }

@@ -43,7 +43,7 @@ public:
     FigureEditor(page_motif_maker * fm, QString figname);
 
     virtual FigurePtr getFigure()  { return figure; }
-    virtual void      resetWithFigure(FigurePtr fig, bool doEmit = true);
+    virtual void      resetWithFigure(FigurePtr fig, bool doEmit);
 
     void    addLayout(QBoxLayout * layout) { vbox->addLayout(layout);}
     void    addWidget(QWidget    * widget) { vbox->addWidget(widget);}
@@ -57,7 +57,7 @@ public slots:
 protected:
     virtual void updateLimits();
 
-    FigurePtr       figure;   // FIXME - this is not properly connected to editor4s, thts why things dont work
+    FigurePtr       figure;
     QString         name;
 
     page_motif_maker * menu;
@@ -77,7 +77,7 @@ public:
     StarEditor(page_motif_maker * fm, QString figname);
 
     virtual FigurePtr getFigure() override;
-    virtual void      resetWithFigure(FigurePtr fig, bool doEmit = true) override;
+    virtual void      resetWithFigure(FigurePtr fig, bool doEmit) override;
 
 public slots:
     virtual void updateGeometry(bool doEmit) override;
@@ -102,7 +102,7 @@ public:
     RosetteEditor(page_motif_maker *fm, QString figname);
 
     virtual FigurePtr getFigure() override;
-    virtual void      resetWithFigure(FigurePtr fig, bool doEmit = true) override;
+    virtual void      resetWithFigure(FigurePtr fig, bool doEmit) override;
 
 public slots:
     virtual void updateGeometry(bool doEmit) override;
@@ -127,7 +127,7 @@ public:
     ConnectStarEditor(page_motif_maker * fm, QString figname);
 
     FigurePtr getFigure() override;
-    virtual void resetWithFigure(FigurePtr fig, bool doEmit = true) override;
+    virtual void resetWithFigure(FigurePtr fig, bool doEmit) override;
 
 public slots:
 
@@ -148,7 +148,7 @@ public:
     ConnectRosetteEditor(page_motif_maker *fm, QString figname);
 
     FigurePtr getFigure() override;
-    virtual void  resetWithFigure(FigurePtr fig, bool doEmit = true) override;
+    virtual void  resetWithFigure(FigurePtr fig, bool doEmit) override;
 
 protected:
     void    calcScale();
@@ -167,7 +167,7 @@ public:
     ExtendedStarEditor(page_motif_maker * fm, QString figname);
 
     FigurePtr getFigure() override;
-    virtual void resetWithFigure(FigurePtr fig, bool doEmit = true) override;
+    virtual void resetWithFigure(FigurePtr fig, bool doEmit) override;
 
 public slots:
     virtual void updateGeometry(bool doEmit) override;
@@ -191,7 +191,7 @@ public:
     ExtendedRosetteEditor(page_motif_maker *fm, QString figname);
 
     FigurePtr getFigure() override;
-    virtual void resetWithFigure(FigurePtr fig, bool doEmit = true) override;
+    virtual void resetWithFigure(FigurePtr fig, bool doEmit) override;
 
 public slots:
     void updateGeometry(bool doEmit) override;

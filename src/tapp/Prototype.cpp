@@ -258,7 +258,7 @@ void Prototype::walk()
     qDebug() << "num design elements=" << designElements.size();
     if (designElements.size() == 0)
     {
-        qWarning() << "There are no design elements in the prototype";
+        qWarning() << "There are no design elements in the prototype for tiling" << tiling->getName();
     }
     qDebug() << "num locations      =" << locations.size();
 

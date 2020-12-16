@@ -79,7 +79,6 @@ public:
     MasterFigureEditor(page_motif_maker * menu);
 
     void  masterResetWithFigure(FigurePtr figure);
-    void  setMasterFigure(FigurePtr fp) { masterFigure = fp; }
 
 public slots:
     void slot_figureTypeChanged(eFigType type);

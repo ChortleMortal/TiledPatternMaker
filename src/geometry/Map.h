@@ -111,7 +111,7 @@ public:
     // The publically-accessible version.
     VertexPtr insertVertex(QPointF pt);
 
-    void insertDebugMark(QPointF m, QString txt, qreal size = 0.05 );
+    void insertDebugMark(QPointF m, QString txt, qreal size = 0.05 , QPointF offset = QPointF());
     void insertDebugLine(EdgePtr edge);
     void insertDebugLine(QPointF p1, QPointF p2);
     void insertDebugLine(QLineF l1);

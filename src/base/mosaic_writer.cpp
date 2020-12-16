@@ -47,7 +47,8 @@
 //const int currentXMLVersion = 3;
 //const int currentXMLVersion = 4;  // 05OCT19 use ColorSets in Colored
 //const int currentXMLVersion = 5;  // 25OCT19 revised way of defining maps
-const int currentXMLVersion = 6;    // 26JUL20 includes FillData
+//const int currentXMLVersion = 6;  // 26JUL20 includes FillData
+  const int currentXMLVersion = 7;  // 15DEC20 Feature epolys beein saved correctly
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5,15,0))
 #define endl Qt::endl

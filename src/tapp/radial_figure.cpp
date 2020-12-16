@@ -130,7 +130,6 @@ void RadialFigure::buildMaps()
 
     figureMap->verifyMap("RadialFigure::getMap-newret");
 #endif
-
     //figureMap->dumpMap(false);
 
 #if 0
@@ -138,9 +137,11 @@ void RadialFigure::buildMaps()
     figureMap->dumpMap(false);
 #endif
 
+#if 0
     figureMap->setTmpIndices();
     annotateEdges();
     //figureMap->dumpMap(false);
+#endif
 }
 
 MapPtr  RadialFigure::replicateUnit()

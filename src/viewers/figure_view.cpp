@@ -73,11 +73,13 @@ void FigureView::draw( GeoGraphics * gg )
 void FigureView::paint(QPainter *painter)
 {
     qDebug() << "FigureView::paint";
-
     if (!_fig) return;
 
     painter->setRenderHint(QPainter::Antialiasing ,true);
     painter->setRenderHint(QPainter::SmoothPixmapTransform,true);
+
+    painter->translate(0,view->height());
+    painter->scale(1.0, -1.0);
 
     View * view = View::getInstance();
     _T = FeatureButton::resetViewport(-2,_dep,view->rect());
@@ -217,14 +219,14 @@ void FigureView::paintMap(QPainter * painter, MapPtr map, QPen pen)
         }
     }
 
-    if (map->texts.count())
+    for (auto stxt : map->texts)
     {
-        for (auto t = map->texts.begin(); t != map->texts.end(); t++)
-        {
-            sText stxt = *t;
-            QPointF pt = _T.map(stxt.pt);
-            painter->drawText(QPointF(pt.x()+7,pt.y()+13),stxt.txt);
-        }
+        painter->save();
+        painter->scale(1.0, -1.0);
+        QTransform t2 = _T * QTransform().scale(1.0,-1.0);
+        QPointF pt = t2.map(stxt.pt);
+        painter->drawText(QPointF(pt.x()+7,pt.y()+13),stxt.txt);
+        painter->restore();
     }
 }
 
