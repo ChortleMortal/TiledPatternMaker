@@ -36,6 +36,16 @@ MotifDisplayWidget::MotifDisplayWidget(page_motif_maker * menu)
 void MotifDisplayWidget::prototypeChanged()
 {
     launcher->launch(motifMaker->getSelectedPrototype());
+    update();
+}
+
+void MotifDisplayWidget::figureChanged()
+{
+    viewerBtn->designElementChanged();
+    FeatureBtnPtr btn = launcher->getCurrentButton();
+    if (btn)
+        btn->designElementChanged();
+    update();
 }
 
 void MotifDisplayWidget::slot_launcherButton()
@@ -64,14 +74,11 @@ void MotifDisplayWidget::setActiveFeature(FeatureBtnPtr fb)
     masterEdit->masterResetWithFigure(figure);
 
     menu->setupFigure(figure->isRadial());
-    emit menu->sig_refreshView();
+
+    View * view = View::getInstance();
+    view->update();
     menu->update();
 }
 
-void MotifDisplayWidget::figureChanged()
-{
-    viewerBtn->designElementChanged();
-    launcher->getCurrentButton()->designElementChanged();
-}
 
 

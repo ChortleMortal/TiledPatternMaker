@@ -89,8 +89,6 @@ page_decoration_maker:: page_decoration_maker(ControlPanel * apanel)  : panel_pa
 
     selectModel = styleTable->selectionModel();
     connect(selectModel, SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(slot_styleSelected(QItemSelection,QItemSelection)));
-
-    connect(theApp,  &TiledPatternMaker::sig_tilingLoaded,   this,   &page_decoration_maker::onEnter);
 }
 
 void  page_decoration_maker::refreshPage()
@@ -441,10 +439,7 @@ void  page_decoration_maker::slot_analyzeStyleMap()
     MapPtr map = style->getMap();
     if (map)
     {
-        if (map->analyzeVertices())
-        {
-            emit sig_refreshView();
-        }
+        qDebug().noquote() << map->calcVertexEdgeCounts();
     }
 }
 

@@ -56,6 +56,8 @@ public:
     QString addr(const void * address);
     QString addr(void * address);
 
+    void    updateView();
+
 signals:
     void    sig_render();
     void	sig_attachMe(QString title);

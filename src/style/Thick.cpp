@@ -46,17 +46,16 @@ Thick::Thick(PrototypePtr proto): Colored(proto)
     draw_outline = false;           // DAC added
 }
 
-Thick::Thick(const Style &other ) : Colored(other)
+Thick::Thick(StylePtr other ) : Colored(other)
 {
-    try
+    shared_ptr<Thick> thick  = std::dynamic_pointer_cast<Thick>(other);
+    if (thick)
     {
-        const Thick & thick  = dynamic_cast<const Thick &>(other);
-        width        = thick.width;
-        draw_outline = thick.draw_outline;
+        width        = thick->width;
+        draw_outline = thick->draw_outline;
     }
-    catch(std::bad_cast & exp)
+    else
     {
-        Q_UNUSED(exp);
         width = 0.05;
         draw_outline = false;           // DAC added
     }

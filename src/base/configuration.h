@@ -317,6 +317,8 @@ public:
     bool    display_differences;
     bool    compare_ping_pong;
     bool    compare_side_by_side;
+    bool    use_badList;
+    bool    use_badList2;
 
     bool    cs_showBkgds;
     bool    cs_showBorders;
@@ -324,6 +326,8 @@ public:
 
     QString mosaicFilter;
     QString tileFilter;
+
+    QStringList badImages;
 
     bool        showGrid;
     eGridUnits  gridUnits;

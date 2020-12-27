@@ -33,20 +33,24 @@ class Star : public RadialFigure
 {
 public:
     // n = points, d = sides hops, s = sides intersections
-    Star( int n, qreal d, int s, qreal figureRotate= 0.0);
-    Star( const Figure & fig, int n, qreal d, int s, qreal figureRotate= 0.0);
+    Star(int n, qreal dd, int ss, qreal rr = 0.0);
+    Star(const Figure & fig, int n, qreal dd, int ss, qreal rr = 0.0);
 
     virtual MapPtr buildUnit() override;
 
     qreal   getD()  {return d;}
     int     getS()  {return s;}
 
-    void    setD(qreal d);
-    void    setS(int s);
+    void    setD(qreal dd);
+    void    setS(int ss);
 
     virtual QString getFigureDesc() override { return "Star"; }
 
     bool equals(const FigurePtr other) override;
+
+protected:
+    qreal clamp_d(qreal d);
+    int   clamp_s(int s);
 
 private:
     qreal 	d;

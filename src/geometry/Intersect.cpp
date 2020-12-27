@@ -25,72 +25,64 @@
 #include "geometry/intersect.h"
 #include "geometry/loose.h"
 
-QPointF Intersect::getIntersection(QLineF line1, QLineF line2 )
+bool Intersect::getIntersection(QLineF line1, QLineF line2, QPointF & intersect)
 {
-    return getIntersection(line1.p1(), line1.p2(), line2.p1(), line2.p2());
+    return getIntersection(line1.p1(), line1.p2(), line2.p1(), line2.p2(), intersect);
 }
 
-QPointF Intersect::getIntersection( QPointF p1, QPointF q1, QPointF p2, QPointF q2 )
+bool Intersect::getIntersection( QPointF p1, QPointF q1, QPointF p2, QPointF q2, QPointF & intersect)
 {
     // Get the position of the intersection by interpolating.
     // Returns null if parallel or if it ends up outside of the segments.
 
-    QPointF ip = stayOnSegments( getIntersectionParams( p1, q1, p2, q2 ) );
-    if( !ip.isNull() )
-        return Point::convexSum(p1, q1, ip.x() );
+    QPointF isect;
+    if (getIntersectionParams( p1, q1, p2, q2, isect) && stayOnSegments(isect))
+    {
+        intersect = Point::convexSum(p1, q1, isect.x());
+        return true;
+    }
     else
-        return ip;
+    {
+        return false;
+    }
+
 }
 
-QPointF Intersect::getNearIntersection( QPointF & p1, QPointF & q1, QPointF & p2, QPointF & q2 )
-{
-    // Get the position of the intersection by interpolating.
-    // Returns null if parallel or if the point is too far off.
-
-    QPointF null;
-    QPointF ip = stayNearSegments( getIntersectionParams( p1, q1, p2, q2 ) );
-    if( ip != null )
-        return Point::convexSum(p1, q1, ip.x() );
-    else
-        return null;
-}
-
-QPointF Intersect::getTrueIntersection( QPointF & p1, QPointF & q1, QPointF & p2, QPointF & q2 )
+bool Intersect::getTrueIntersection( QPointF & p1, QPointF & q1, QPointF & p2, QPointF & q2, QPointF & intersect )
 {
     // Don't return the intersection if it is at the enpoints of both segments.
 
-    QPointF null;
-    QPointF ip = stayOnSegments( getIntersectionParams( p1, q1, p2, q2 ) );
-
-    if( ip != null )
+    QPointF isect;
+    if (getIntersectionParams( p1, q1, p2, q2, isect) && stayOnSegments(isect))
     {
-        qreal s = ip.x();
-        qreal t = ip.y();
+        qreal s = isect.x();
+        qreal t = isect.y();
 
         if( s < Loose::TOL )
         {
             if( (t < Loose::TOL) || ((1.0-t) < Loose::TOL) )
             {
-                return null;
+                return false;
             }
         }
         else if( (1.0-s) < Loose::TOL )
         {
             if( (t < Loose::TOL) || ((1.0-t) < Loose::TOL) )
             {
-                return null;
+                return false;
             }
         }
 
-        return Point::convexSum(p1, q1, s );
+        intersect =  Point::convexSum(p1, q1, s );
+        return true;
     }
     else
     {
-        return null;
+        return false;
     }
 }
 
-QPointF Intersect::getIntersectionParams( QPointF p1, QPointF q1, QPointF p2, QPointF q2 )
+bool Intersect::getIntersectionParams( QPointF p1, QPointF q1, QPointF p2, QPointF q2 , QPointF & intersect)
 {
     // Return a point (s,t), where s is the fraction of the from p1 to
     // q1 where an intersection occurs.  t is defined similarly for p2 and q2.
@@ -120,8 +112,7 @@ QPointF Intersect::getIntersectionParams( QPointF p1, QPointF q1, QPointF p2, QP
         // Parallel.  We won't worry about cases where endpoints touch
         // and we certainly won't worry about overlapping lines.
         // That leaves, um, nothing.  Done!
-        QPointF null;
-        return null;
+        return false;
     }
 
     // These two lines are adapted from O'Rourke's
@@ -129,45 +120,27 @@ QPointF Intersect::getIntersectionParams( QPointF p1, QPointF q1, QPointF p2, QP
     qreal is = -((p1x*d2y) + p2x*(p1y-q2y) + q2x*(p2y-p1y)) / det;
     qreal it = ((p1x*(p2y-q1y)) + q1x*(p1y-p2y) + p2x*d1y) / det;
 
-    return QPointF( is, it );
+    intersect = QPointF( is, it );
+    return true;
 }
 
-QPointF Intersect::stayOnSegments( QPointF ip )
+bool Intersect::stayOnSegments(QPointF ip)
 {
     // Coerce the point to be null if not on both segments.
 
     QPointF null;
     if ( ip == null )
-        return null;
+        return false;
 
     qreal is = ip.x();
     if( (is < -Loose::TOL) || (is > (1.0 + Loose::TOL)) )
-        return null;
+        return false;
 
     qreal it = ip.y();
     if( (it < -Loose::TOL) || (it > (1.0 + Loose::TOL)) )
-        return null;
+        return false;
 
-    return ip;
-}
-
-QPointF Intersect::stayNearSegments( QPointF ip )
-{
-    // Coerce the point to be null if too far off both segments.
-
-    QPointF null;
-    if ( ip == null )
-        return null;
-
-    qreal is = ip.x();
-    if ( is < -0.2 || is > 1.0 + 0.2 )
-        return null;
-
-    qreal it = ip.y();
-    if( it < -0.2 || it > 1.0 + 0.2 )
-        return null;
-
-    return ip;
+    return true;
 }
 
 

@@ -33,14 +33,12 @@
 class FigureView : public Layer
 {
 public:
-    FigureView(DesignElementPtr dep);
+    FigureView();
     virtual ~FigureView() override;
 
-    void    setDebugContacts(bool enb, QPolygonF pts, QVector<contact*> contacts);
-
     virtual void   paint(QPainter *painter) override;
-    virtual void   receive(GeoGraphics * gg, int h, int v );
-    virtual void   draw( GeoGraphics * gg );
+
+    void    setDebugContacts(bool enb, QPolygonF pts, QVector<contact*> contacts);
 
 protected:
     void paintExplicitFigureMap(QPainter *painter, QPen pen);
@@ -51,6 +49,8 @@ protected:
 
 private:
     void paintMap(QPainter * painter, MapPtr map, QPen pen);
+
+    class MotifMaker * motifMaker;
 
     DesignElementPtr _dep;
     FigurePtr        _fig;

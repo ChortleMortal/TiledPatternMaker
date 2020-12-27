@@ -20,24 +20,6 @@
 			<tranX>-3.866666666666666</tranX>
 			<tranY>-1.573333333333332</tranY>
 		</Placement>
-		<Placement>
-			<scale>2.480447129034427</scale>
-			<rot>29.99999999999999</rot>
-			<tranX>4.725854239285301</tranX>
-			<tranY>-1.573333333333337</tranY>
-		</Placement>
-		<Placement>
-			<scale>2.480447129034428</scale>
-			<rot>29.99999999999999</rot>
-			<tranX>0.4295937863093182</tranX>
-			<tranY>0.9071137957010929</tranY>
-		</Placement>
-		<Placement>
-			<scale>2.480447129034427</scale>
-			<rot>29.99999999999998</rot>
-			<tranX>0.4295937863093147</tranX>
-			<tranY>-4.053780462367762</tranY>
-		</Placement>
 	</Feature>
 	<Feature type="edgepoly" rotation="0" scale="1">
 		<Line>
@@ -55,38 +37,46 @@
 		<Placement>
 			<scale>1</scale>
 			<rot>59.99999999999999</rot>
-			<tranX>0.2666666666666693</tranX>
-			<tranY>-1.160000000000001</tranY>
+			<tranX>0.2843370755258017</tranX>
+			<tranY>-1.15870579891848</tranY>
 		</Placement>
 		<Placement>
 			<scale>1</scale>
 			<rot>59.99999999999999</rot>
-			<tranX>2.426666666666668</tranX>
-			<tranY>0.1066666666666665</tranY>
+			<tranX>2.432467302013793</tranX>
+			<tranY>0.08151776559873183</tranY>
 		</Placement>
 		<Placement>
 			<scale>1</scale>
 			<rot>59.99999999999999</rot>
-			<tranX>0.2933333333333348</tranX>
-			<tranY>1.319999999999999</tranY>
+			<tranX>0.2843370755258037</tranX>
+			<tranY>1.321741330115946</tranY>
 		</Placement>
 		<Placement>
 			<scale>1</scale>
 			<rot>0</rot>
-			<tranX>5.026666666666667</tranX>
-			<tranY>3.706666666666668</tranY>
+			<tranX>5.012303861805314</tranX>
+			<tranY>3.720670693551636</tranY>
 		</Placement>
 		<Placement>
 			<scale>1</scale>
 			<rot>0</rot>
-			<tranX>5.026666666666668</tranX>
-			<tranY>1.253333333333333</tranY>
+			<tranX>5.012303861805313</tranX>
+			<tranY>1.240223564517209</tranY>
 		</Placement>
 		<Placement>
 			<scale>1</scale>
 			<rot>0</rot>
-			<tranX>2.866666666666668</tranX>
-			<tranY>2.480000000000001</tranY>
+			<tranX>2.864173635317323</tranX>
+			<tranY>2.480447129034424</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="regular" sides="6" rotation="0" scale="1">
+		<Placement>
+			<scale>2.480447129034427</scale>
+			<rot>29.99999999999999</rot>
+			<tranX>-3.866666666666666</tranX>
+			<tranY>-1.573333333333332</tranY>
 		</Placement>
 	</Feature>
 	<Desc>transform rotation 30</Desc>

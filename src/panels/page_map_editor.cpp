@@ -29,16 +29,17 @@
 #include "panels/dlg_name.h"
 #include "panels/panel.h"
 #include "base/fileservices.h"
+#include "base/mosaic_loader.h"
+#include "base/mosaic_writer.h"
 #include "base/tiledpatternmaker.h"
 #include "base/utilities.h"
+#include "geometry/map_cleanser.h"
+#include "makers/decoration_maker/decoration_maker.h"
+#include "makers/motif_maker/motif_maker.h"
+#include "makers/tiling_maker/tiling_maker.h"
 #include "style/style.h"
 #include "tapp/explicit_figure.h"
 #include "tapp/radial_figure.h"
-#include "base/mosaic_writer.h"
-#include "base/mosaic_loader.h"
-#include "makers/motif_maker/motif_maker.h"
-#include "makers/tiling_maker/tiling_maker.h"
-#include "makers/decoration_maker/decoration_maker.h"
 #include "viewers/viewcontrol.h"
 
 #define E2STR(x) #x
@@ -498,7 +499,7 @@ void page_map_editor::refreshPage()
             line1->setText(str);
             str = QString("Feature = %1").arg(Utils::addr(feap.get()));
             line2->setText(str);
-            str = QString("Figure = %1 %2").arg(Utils::addr(figp.get()),figp->getFigTypeString());
+            str = QString("Figure = %1 %2").arg(Utils::addr(figp.get())).arg(figp->getFigTypeString());
             line3->setText(str);
         }
         else
@@ -534,7 +535,7 @@ void page_map_editor::refreshPage()
     // line 4
     MapPtr map = me->getMap();
     if (map)
-        str = QString("Map: %1  %2").arg(Utils::addr(map.get()),map->summary());
+        str = QString("Map: %1  %2").arg(Utils::addr(map.get())).arg(map->summary());
     else
         str = "Map: NO MAP";
     line4->setText(str);
@@ -554,7 +555,7 @@ void page_map_editor::refreshPage()
                       << b.x() << ", " << b.y() << ")";
     mi += astring;
 
-    str = QString("%1 : %2").arg(sMapMouseMode[me->getMouseMode()], mi);
+    str = QString("%1 : %2").arg(sMapMouseMode[me->getMouseMode()]).arg(mi);
     line5->setText(str);
 
     // line 6
@@ -659,7 +660,24 @@ void page_map_editor::slot_verify()
     config->verifyMaps = true;
 
     MapPtr map = me->getMap();
-    map->verifyMap("page_figure_editor::verify");
+
+    MapCleanser cleanser(map);
+    bool verified = cleanser.verifyMap("page_figure_editor::verify");
+
+    if (verified)
+    {
+        QMessageBox box;
+        box.setIcon(QMessageBox::Information);
+        box.setText("Verified OK");
+        box.exec();
+    }
+    else
+    {
+        QMessageBox box;
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Verification FAILED");
+        box.exec();
+    }
 
     config->verifyMaps = oldConf;
 }
@@ -667,58 +685,64 @@ void page_map_editor::slot_verify()
 void page_map_editor::slot_divideIntersectingEdges()
 {
     MapPtr map = me->getMap();
-    map->divideIntersectingEdges();
-    emit sig_refreshView();
+    MapCleanser cleanser(map);
+    cleanser.divideIntersectingEdges();
+    me->buildEditorDB();
+    updateView();
 }
 
 void page_map_editor::slot_joinColinearEdges()
 {
     MapPtr map = me->getMap();
-    map->joinColinearEdges();
-    emit sig_refreshView();
-}
+    MapCleanser cleanser(map);
+    cleanser.joinColinearEdges();
+    me->buildEditorDB();
+    updateView();}
 
 void page_map_editor::slot_cleanNeighbours()
 {
     MapPtr map = me->getMap();
-    map->cleanNeighbours();
-    emit sig_refreshView();
-}
+    MapCleanser cleanser(map);
+    cleanser.cleanNeighbours();
+    me->buildEditorDB();
+    updateView();}
 
 void page_map_editor::slot_removeUnconnectedVertices()
 {
     MapPtr map = me->getMap();
-    map->removeDanglingVertices();
-    emit sig_refreshView();
-}
+    MapCleanser cleanser(map);
+    cleanser.removeDanglingVertices();
+    me->buildEditorDB();
+    updateView();}
 
 void page_map_editor::slot_removeZombieEdges()
 {
     MapPtr map = me->getMap();
-    map->removeBadEdges();
-    emit sig_refreshView();
-}
+    MapCleanser cleanser(map);
+    cleanser.removeBadEdges();
+    me->buildEditorDB();
+    updateView();}
 
 void page_map_editor::slot_sortAllNeighboursByAngle()
 {
     MapPtr map = me->getMap();
     map->sortAllNeighboursByAngle();
-    emit sig_refreshView();
-}
+    me->buildEditorDB();
+    updateView();}
 
 void page_map_editor::slot_sortVertices()
 {
     MapPtr map = me->getMap();
     map->sortVertices();
-    emit sig_refreshView();
-}
+    me->buildEditorDB();
+    updateView();}
 
 void page_map_editor::slot_sortEdges()
 {
     MapPtr map = me->getMap();
     map->sortEdges();
-    emit sig_refreshView();
-}
+    me->buildEditorDB();
+    updateView();}
 
 void page_map_editor::slot_reload()
 {
@@ -741,28 +765,28 @@ void page_map_editor::slot_hideCons(bool hide)
 {
     me->hideConstructionLines = hide;
     me->buildEditorDB();
-    me->forceRedraw();
+    updateView();
 }
 
 void page_map_editor::slot_hideMap(bool hide)
 {
     me->hideMap = hide;
     me->buildEditorDB();
-    me->forceRedraw();
+    updateView();
 }
 
 void page_map_editor::slot_hidePoints(bool hide)
 {
     me->hidePoints = hide;
     me->buildEditorDB();
-    me->forceRedraw();
+    updateView();
 }
 
 void page_map_editor::slot_hideMidPoints(bool hide)
 {
     me->hideMidPoints = hide;
     me->buildEditorDB();
-    me->forceRedraw();
+    updateView();
 }
 
 void page_map_editor::slot_debugChk(bool on)
@@ -803,21 +827,21 @@ void page_map_editor::slot_debugChk(bool on)
 void page_map_editor::slot_popstash()
 {
     me->loadCurrentStash();
-    me->forceRedraw();
+    updateView();
 }
 
 void page_map_editor::slot_undoConstructionLines()
 {
     me->stash.getPrev();
     me->loadCurrentStash();
-    me->forceRedraw();
+    updateView();
 }
 
 void page_map_editor::slot_redoConstructionLines()
 {
     me->stash.getNext();
     me->loadCurrentStash();
-    me->forceRedraw();
+    updateView();
 }
 
 void page_map_editor::slot_clearConstructionLines()
@@ -826,7 +850,7 @@ void page_map_editor::slot_clearConstructionLines()
     me->constructionLines.clear();
     me->constructionCircles.clear();
     me->buildEditorDB();
-    me->forceRedraw();
+    updateView();
 }
 
 void page_map_editor::slot_clearMap()
@@ -837,7 +861,7 @@ void page_map_editor::slot_clearMap()
         map->wipeout();
     }
     me->buildEditorDB();
-    me->forceRedraw();
+    updateView();
 }
 
 void page_map_editor::slot_createMap()
@@ -953,9 +977,10 @@ void page_map_editor::slot_applyCrop()
 void page_map_editor::slot_cleanseMap()
 {
     MapPtr m = me->getMap();
-    m->cleanse();
+    MapCleanser cleanser(m);
+    cleanser.cleanse();
     me->buildEditorDB();
-    me->forceRedraw();
+    updateView();
 }
 
 void page_map_editor::slot_radiusChanged(qreal r)
@@ -966,13 +991,13 @@ void page_map_editor::slot_radiusChanged(qreal r)
 void page_map_editor::slot_lineWidthChanged(qreal r)
 {
     me->mapLineWidth = r;
-    me->forceRedraw();
+    updateView();
 }
 
 void page_map_editor::slot_consWidthChanged(qreal r)
 {
     me->constructionLineWidth = r;
-    me->forceRedraw();
+    updateView();
 }
 
 void page_map_editor::slot_saveTemplate()

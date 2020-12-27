@@ -327,7 +327,11 @@ void page_config::selectRootImageDir()
     QString old = config->rootImageDir;
     QString dir = QFileDialog::getExistingDirectory(this, tr("Select Image Directory"),
                    old, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-
+    int pos = dir.lastIndexOf(QChar('/'));
+    if (pos != dir.length()-1)
+    {
+        dir += '/';
+    }
     le_rootImage->setText(dir);
     config->rootImageDir = dir;
 }

@@ -70,8 +70,6 @@ public:
     TilingPtr   getSelected() { return selectedTiling; }
     int         numTilings() { return tilings.size(); }
 
-    void        pushTilingToMotifMaker(eSM_Event event);
-
     void        eraseTilings();
     void        removeTiling(TilingPtr tp);
     TilingPtr   findTilingByName(QString name);
@@ -146,6 +144,7 @@ protected slots:
     void slot_deleteFeature();
     void slot_includeFeature();
     void slot_excludeFeature();
+    void slot_editFeature();
     void slot_copyMoveFeature();
     void slot_uniquifyFeature();
     void slot_flatenCurve();

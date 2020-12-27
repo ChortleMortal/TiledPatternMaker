@@ -56,35 +56,34 @@ public:
     Feature(const FeaturePtr other);
     ~Feature();
 
-    void create();          // makes epoly from base
-    void decompose();       // makes base from epoly (should not be needed except to fix historical files)
+    void        setRegular(bool enb);
+    void        setN(int n);
+    void        setRotation(qreal rot);
+    void        setScale(qreal rot);
 
-    FeaturePtr recreate();
-
-    void setRegular(bool enb);
-    bool isRegular() { return regular; }
-
-    bool isClockwise() { return  epoly.isClockwise(); }
-
-    bool equals(const FeaturePtr other);
-    bool isSimilar(const FeaturePtr other);
-
-    EdgePoly  & getEdgePoly()      { return epoly;}             // must be ref so can change
-    QPolygonF   getPolygon()       { return epoly.getPoly(); }
-    QPolygonF   getPoints()        { return epoly.getPoly(); }
-    int         numPoints()        { return epoly.size(); }
-    int         numSides()         { return epoly.size(); }
-    ColorSet &  getBkgdColors()    { return bkgdColors; }
-
-    EdgePoly &  getBase()          { return base; }
+    void        deltaRotation(qreal delta);
+    void        deltaScale(qreal delta);
 
     qreal       getRotation();
-    void        setRotation(qreal rot);
-    void        deltaRotation(qreal delta);
-
     qreal       getScale();
-    void        setScale(qreal rot);
-    void        deltaScale(qreal delta);
+
+    void        create();          // makes epoly from base
+    void        decompose();       // makes base from epoly (should not be needed except to fix historical files)
+    FeaturePtr  recreate();
+
+    bool        isRegular() { return regular; }
+    bool        isClockwise() { return  epoly.isClockwise(); }
+    bool        equals(const FeaturePtr other);
+    bool        isSimilar(const FeaturePtr other);
+
+    EdgePoly &  getEdgePoly()       { return epoly;}             // must be ref so can change
+    EdgePoly &  getBase()           { return base; }
+
+    QPolygonF   getPolygon()        { return epoly.getPoly(); }
+    QPolygonF   getPoints()         { return epoly.getPoly(); }
+    int         numPoints()         { return epoly.size(); }
+    int         numSides()          { return epoly.size(); }
+    ColorSet &  getBkgdColors()     { return bkgdColors; }
 
     QPointF     getCenter();
 

@@ -166,7 +166,7 @@ bool MosaicManager::saveMosaic(QString name, QString & savedName, bool forceOver
         else
         {
             QString str = writer.getFailMsg();
-            astring = QString("Save File (%1) FAILED %2").arg(filename,str);
+            astring = QString("Save File (%1) FAILED %2").arg(filename).arg(str);
             box.setIcon(QMessageBox::Warning);
         }
         box.setText(astring);

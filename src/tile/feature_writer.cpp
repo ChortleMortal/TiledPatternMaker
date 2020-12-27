@@ -2,12 +2,13 @@
 #include "geometry/xform.h"
 #include <QTransform>
 
+
 FeatureWriter::FeatureWriter()
 {
     refId    = 0;
 }
 
-void FeatureWriter::setEdgePoly(QTextStream & ts, EdgePoly & epoly)
+void FeatureWriter::setEdgePoly(QTextStream & ts, const EdgePoly & epoly)
 {
     for (auto it = epoly.begin(); it != epoly.end(); it++)
     {

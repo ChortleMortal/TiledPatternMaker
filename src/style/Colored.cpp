@@ -38,16 +38,15 @@ Colored::Colored(PrototypePtr proto) : Style(proto)
     colors.addColor(QColor( 20, 150, 210 ));
 }
 
-Colored::Colored(const Style & other ) : Style(other)
+Colored::Colored(StylePtr other) : Style(other)
 {
-    try
+    shared_ptr<Colored> otherColored = std::dynamic_pointer_cast<Colored>(other);
+    if (otherColored)
     {
-        const Colored & otherColored = dynamic_cast<const Colored&>(other);
-        colors.setColors(otherColored.colors);
+        colors.setColors(otherColored->colors);
     }
-    catch(std::bad_cast & exp)
+    else
     {
-        Q_UNUSED(exp);
         colors.addColor(QColor( 20, 150, 210 ));
     }
 }

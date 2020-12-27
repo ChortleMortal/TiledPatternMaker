@@ -51,12 +51,12 @@
 
 Sketch::Sketch(PrototypePtr proto) : Plain(proto)
 {
-    qsrand(279401L);
+    qsrand(279401L);    // FIXME depecated
 }
 
-Sketch::Sketch(const Style & other ) : Plain(other)
+Sketch::Sketch(StylePtr other) : Plain(other)
 {
-    qsrand(279401L);
+    qsrand(279401L);    // FIXME depecated
 }
 
 Sketch::~Sketch()

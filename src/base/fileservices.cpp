@@ -508,7 +508,7 @@ QStringList FileServices::getTemplates()
         QFileInfo afile(name);
         QDateTime dt  = afile.lastModified();
         QString date  = dt.toString("yyyy-MM-dd hh:mm:ss");
-        QString label = QString("%1 + %2").arg(name,date);
+        QString label = QString("%1 + %2").arg(name).arg(date);
         files.push_back(label);
     }
 
@@ -521,7 +521,7 @@ QStringList FileServices::getTemplates()
         QFileInfo afile(name);
         QDateTime dt  = afile.lastModified();
         QString date  = dt.toString("yyyy-MM-dd hh:mm:ss");
-        QString label = QString("%1 + %2").arg(name,date);
+        QString label = QString("%1 + %2").arg(name).arg(date);
         files.push_back(label);
     }
     return files;

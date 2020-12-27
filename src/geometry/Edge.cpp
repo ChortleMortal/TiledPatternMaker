@@ -394,7 +394,7 @@ bool Edge::isColinearAndTouching(EdgePtr e)
 
     if ((e->contains(v1)) || (e->contains(v2)))
     {
-        qreal angle = getLine().angle(e->getLine());
+        qreal angle = getLine().angle(e->getLine());    // FIXME - deprecated
         if (debug) qDebug() << "    angle=" << angle;
         if ((qAbs(angle) < 1e-5) || (qAbs(angle-180.0) < 1e-5))
         {

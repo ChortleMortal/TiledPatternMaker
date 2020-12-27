@@ -72,8 +72,6 @@ page_design_elements:: page_design_elements(ControlPanel * cpanel)  : panel_page
     connect(theApp,  &TiledPatternMaker::sig_mosaicLoaded,     this,   &page_design_elements::onEnter);
     connect(theApp,  &TiledPatternMaker::sig_loadedDesign,     this,   &page_design_elements::onEnter);
 
-    connect(vcontrol,&ViewControl::sig_selected_proto_changed,this, &page_design_elements::onEnter);
-
     connect(protoListBox, SIGNAL(currentIndexChanged(int)), this,   SLOT(slot_prototypeSelected(int)));
 }
 

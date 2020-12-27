@@ -25,6 +25,7 @@
 #include "tapp/extended_star.h"
 #include "geometry/loose.h"
 #include "geometry/intersect.h"
+#include "geometry/map_cleanser.h"
 #include "tile/feature.h"
 #include "base/utilities.h"
 
@@ -50,15 +51,54 @@ ExtendedStar::ExtendedStar(int nn, qreal d, int s, qreal r,
 void ExtendedStar::buildMaps()
 {
     Star::buildMaps();
-    if (extendFreeVertices || extendPeripheralVertices)
+
+    if (extendPeripheralVertices)
     {
-        extendMap();
+        extendPeripheralMap();
+    }
+
+    if (extendFreeVertices)
+    {
+        extendFreeMap();
     }
 }
 
-void ExtendedStar::extendMap()
+void ExtendedStar::extendFreeMap()
 {
-    qDebug() << "ExtendedStar::extendMap";
+    if (n != getExtBoundarySides())
+    {
+        qWarning("Cannot extend - no matching boundar");
+        return;
+    }
+
+    QPointF tip(1,0);
+    QTransform t = QTransform::fromScale(getFigureScale(),getFigureScale());
+    tip = t.map(tip);
+    VertexPtr v1 = findVertex(tip);
+
+    QPointF e_tip(1,0);
+    QTransform t2 = QTransform::fromScale(getExtBoundaryScale(),getExtBoundaryScale());
+    e_tip = t2.map(e_tip);
+    VertexPtr v2 = figureMap->insertVertex(e_tip);
+
+    figureMap->insertEdge(v1,v2);
+
+    for (int idx = 1; idx < n; idx++)
+    {
+        tip   = Tr.map(tip);
+        v1    = findVertex(tip);
+
+        e_tip = Tr.map(e_tip);
+        v2 = figureMap->insertVertex(e_tip);
+
+        figureMap->insertEdge(v1,v2);
+    }
+}
+
+
+void ExtendedStar::extendPeripheralMap()
+{
+    qDebug() << "ExtendedStar::extendFreeMap";
 
     qreal radius = getExtBoundaryScale();
     QGraphicsEllipseItem circle(-radius,-radius,radius * 2.0, radius * 2.0);
@@ -131,5 +171,21 @@ void ExtendedStar::extendMap()
             }
         }
     }
-    figureMap->verifyMap("Extended figure - after");
+
+    MapCleanser cleanser(figureMap);
+    cleanser.verifyMap("Extended figure - after");
+}
+
+VertexPtr ExtendedStar::findVertex(QPointF pt)
+{
+    const QVector<VertexPtr> & vertices = figureMap->getVertices();
+    for (auto v : vertices)
+    {
+        if (v->getPosition() == pt)
+        {
+            return v;
+        }
+    }
+    VertexPtr vp;
+    return vp;
 }

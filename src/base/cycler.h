@@ -37,13 +37,14 @@ enum eCycleMode
 {
     CYCLE_NONE,
     CYCLE_STYLES,
+    CYCLE_MIN = CYCLE_STYLES,
     CYCLE_TILINGS,
     CYCLE_ORIGINAL_PNGS,
     CYCLE_SAVE_STYLE_BMPS,
     CYCLE_SAVE_TILING_BMPS,
+    CYCLE_MAX = CYCLE_SAVE_TILING_BMPS,
     CYCLE_COMPARE_IMAGES,
-    CYCLE_MIN = CYCLE_STYLES,
-    CYCLE_MAX = CYCLE_SAVE_TILING_BMPS
+    RE_CYCLE_COMPARE_IMAGES
 };
 
 static QString sCycleMode[] = {
@@ -54,6 +55,7 @@ static QString sCycleMode[] = {
     E2STR(CYCLE_SAVE_STYLE_BMPS),
     E2STR(CYCLE_SAVE_TILING_BMPS),
     E2STR(CYCLE_COMPARE_IMAGES)
+    E2STR(RE_CYCLE_COMPARE_IMAGES)
 };
 
 Q_DECLARE_METATYPE(eCycleMode)
@@ -93,6 +95,7 @@ protected:
     void startCycleTilings();
     void startCycleOriginalDesignPngs();
     void startCycleCompareImages();
+    void startReCycleCompareImages();
     void nextCyclePng();
 
 private:

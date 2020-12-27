@@ -47,7 +47,7 @@ class Filled : public Style
 
 public:
     Filled(PrototypePtr proto, int algorithm);
-    Filled(const Style & other);
+    Filled(StylePtr other);
     virtual ~Filled() override;
 
     virtual eStyleType getStyleType() const override { return STYLE_FILLED; }

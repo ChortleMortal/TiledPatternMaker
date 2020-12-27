@@ -32,6 +32,7 @@
 #include "makers/decoration_maker/decoration_maker.h"
 #include "style/interlace.h"
 #include "style/plain.h"
+#include "tapp/explicit_figure.h"
 #include "tapp/infer.h"
 #include "panels/panel.h"
 
@@ -82,6 +83,97 @@ PrototypePtr MotifMaker::createPrototype(TilingPtr tiling)
     return prototype;
 }
 
+void MotifMaker::recreatePrototype(TilingPtr tiling)
+{
+    PrototypePtr prototype = getSelectedPrototype();
+    Q_ASSERT(prototype->getTiling() == tiling);
+
+    QVector<FeaturePtr> uniqueFeatures = tiling->getUniqueFeatures();
+    int count = 0;
+    for (auto feature : uniqueFeatures)
+    {
+        if (++count <= MAX_UNIQUE_FEATURE_INDEX)
+        {
+            bool found = false;
+            for (auto del : prototype->getDesignElements())
+            {
+                if (del->getFeature() == feature)
+                {
+                    found = true;
+                    if (!del->validFigure())
+                    {
+                       del->createFigure();
+                    }
+                    break;
+                }
+            }
+            if (!found)
+            {
+                DesignElementPtr dep = make_shared<DesignElement>(feature);
+                prototype->addElement(dep);
+            }
+        }
+        else
+        {
+            qWarning() << "Too many unique features in tiling. count:" << count;
+        }
+    }
+    QVector<DesignElementPtr> forDeletion;
+    for (auto del : prototype->getDesignElements())
+    {
+        FeaturePtr feature = del->getFeature();
+        if (!uniqueFeatures.contains(feature))
+        {
+            forDeletion.push_back(del);
+        }
+    }
+    for (auto del : forDeletion)
+    {
+        prototype->removeElement(del);
+    }
+}
+
+void MotifMaker::recreateFigures(TilingPtr tiling)
+{
+    PrototypePtr prototype = getSelectedPrototype();
+    Q_ASSERT(prototype->getTiling() == tiling);
+
+    for (auto del : prototype->getDesignElements())
+    {
+        FeaturePtr feature = del->getFeature();
+        FigurePtr  figure  = del->getFigure();
+        if (del->validFigure())
+        {
+            if (feature->isRegular())
+            {
+                if (feature->numSides() != figure->getN())
+                {
+                    figure->setN(feature->numSides());
+                    figure->buildExtBoundary();
+                    figure->buildMaps();
+                }
+            }
+            else
+            {
+                ExplicitPtr ep = std::dynamic_pointer_cast<ExplicitFigure>(figure);
+                if (feature->numSides() != ep->getN())
+                {
+                    ep->setN(feature->numSides());
+                    ep->buildExtBoundary();
+                    ep->buildMaps();
+                }
+            }
+        }
+        else
+        {
+            del->createFigure();
+            figure  = del->getFigure();
+            figure->buildExtBoundary();
+            figure->buildMaps();
+        }
+    }
+}
+
 void MotifMaker::takeDown(PrototypePtr prototype)
 {
     qDebug() << "MotifMaker::takeDown()";
@@ -111,7 +203,7 @@ void MotifMaker::sm_eraseAllCreateAdd(TilingPtr tiling)
 
 void MotifMaker::sm_eraseCurrentCreateAdd(TilingPtr tiling)
 {
-    prototypes.removeOne(selectedPrototype);
+    prototypes.removeOne(getSelectedPrototype());
     PrototypePtr prototype = createPrototype(tiling);
     prototypes.push_front(prototype);
     setSelectedPrototype(prototype);
@@ -148,8 +240,9 @@ void  MotifMaker::sm_take(TilingPtr tiling, eSM_Event event)
     {
     case SM_LOAD_EMPTY:
         sm_eraseAllCreateAdd(tiling);
-        protos.push_back(selectedPrototype);
+        protos.push_back(getSelectedPrototype());
         decorationMaker->sm_takeUp(protos,event);
+        menu->tilingChoicesChanged();
         break;
 
     case SM_LOAD_SINGLE:
@@ -176,7 +269,7 @@ void  MotifMaker::sm_take(TilingPtr tiling, eSM_Event event)
                  }
 #else
                  sm_eraseAllCreateAdd(tiling);
-                 protos.push_back(selectedPrototype);
+                 protos.push_back(getSelectedPrototype());
                  decorationMaker->sm_takeUp(protos,event);
 #endif
              }
@@ -186,30 +279,31 @@ void  MotifMaker::sm_take(TilingPtr tiling, eSM_Event event)
                  if (createNew)
                  {
                      sm_eraseCurrentCreateAdd(tiling);
-                     protos.push_back(selectedPrototype);
+                     protos.push_back(getSelectedPrototype());
                      decorationMaker->sm_takeUp(protos,SM_LOAD_MULTI);
                  }
                  else
                  {
-                     sm_replaceTiling(selectedPrototype, tiling);
-                     protos.push_back(selectedPrototype);
+                     sm_replaceTiling(getSelectedPrototype(), tiling);
+                     protos.push_back(getSelectedPrototype());
                      decorationMaker->sm_takeUp(protos,SM_RELOAD_MULTI);
                  }
              }
         }
+        menu->tilingChoicesChanged();
         break;
 
     case SM_RELOAD_SINGLE:
         if (state == MM_SINGLE)
         {
-            sm_replaceTiling(selectedPrototype,tiling);
-            protos.push_back(selectedPrototype);
+            sm_replaceTiling(getSelectedPrototype(),tiling);
+            protos.push_back(getSelectedPrototype());
             decorationMaker->sm_takeUp(protos,event);
         }
         else if (state == MM_MULTI)
         {
-            sm_replaceTiling(selectedPrototype,tiling);
-            protos.push_back(selectedPrototype);
+            sm_replaceTiling(getSelectedPrototype(),tiling);
+            protos.push_back(getSelectedPrototype());
             decorationMaker->sm_takeUp(protos,event);
         }
         else
@@ -217,6 +311,7 @@ void  MotifMaker::sm_take(TilingPtr tiling, eSM_Event event)
             Q_ASSERT(state == MM_EMPTY);
             qWarning("MotifMaker ; invalid state");
         }
+        menu->tilingChoicesChanged();
         break;
 
     case SM_LOAD_MULTI:
@@ -227,16 +322,17 @@ void  MotifMaker::sm_take(TilingPtr tiling, eSM_Event event)
         else if (state == MM_SINGLE)
         {
             sm_createAdd(tiling);
-            protos.push_back(selectedPrototype);
+            protos.push_back(getSelectedPrototype());
             decorationMaker->sm_takeUp(protos,event);
         }
         else if (state == MM_MULTI)
         {
             sm_createAdd(tiling);
-            protos.push_back(selectedPrototype);
+            protos.push_back(getSelectedPrototype());
             decorationMaker->sm_takeUp(protos,event);
 
         }
+        menu->tilingChoicesChanged();
         break;
 
     case SM_RELOAD_MULTI:
@@ -246,16 +342,17 @@ void  MotifMaker::sm_take(TilingPtr tiling, eSM_Event event)
         }
         else if (state == MM_SINGLE)
         {
-            sm_replaceTiling(selectedPrototype,tiling);
-            protos.push_back(selectedPrototype);
+            sm_replaceTiling(getSelectedPrototype(),tiling);
+            protos.push_back(getSelectedPrototype());
             decorationMaker->sm_takeUp(protos,event);
         }
         else if (state == MM_MULTI)
         {
-            sm_replaceTiling(selectedPrototype,tiling);
-            protos.push_back(selectedPrototype);
+            sm_replaceTiling(getSelectedPrototype(),tiling);
+            protos.push_back(getSelectedPrototype());
             decorationMaker->sm_takeUp(protos,event);
         }
+        menu->tilingChoicesChanged();
         break;
 
     case SM_FIGURE_CHANGED:
@@ -264,35 +361,18 @@ void  MotifMaker::sm_take(TilingPtr tiling, eSM_Event event)
         break;
 
     case SM_FEATURE_CHANGED:
-        Q_ASSERT(tiling == selectedPrototype->getTiling());
-        sm_resetMaps();
+        Q_ASSERT(tiling == getSelectedPrototype()->getTiling());
+        recreateFigures(tiling);
         decorationMaker->sm_takeUp(protos,event);
-        menu->contentChanged();
+        menu->featureChanged();
         break;
 
     case SM_TILING_CHANGED:
-    {
-        PrototypePtr newprototype = createPrototype(tiling);
-        for (auto del : qAsConst(newprototype->getDesignElements()))
-        {
-            FeaturePtr fp = del->getFeature();
-            for (auto oldDel : qAsConst(selectedPrototype->getDesignElements()))
-            {
-                if (fp == oldDel->getFeature())
-                {
-                    FigurePtr fig = oldDel->getFigure();
-                    del->setFigure(fig);
-                    break;
-                }
-            }
-        }
-        int i = prototypes.indexOf(selectedPrototype);
-        prototypes.replace(i,newprototype);
-        selectedPrototype = newprototype;   // triggers menu refresh
-        menu->contentChanged();
+        recreatePrototype(tiling);
+        menu->tilingChanged();
         decorationMaker->sm_takeUp(protos,event);
-    }
         break;
+
     case SM_RENDER:
         sm_resetMaps();
         for (auto& prototype : prototypes )
@@ -328,9 +408,9 @@ void MotifMaker::removePrototype(TilingPtr tiling)
     for (auto& prototype : forRemoval)
     {
         prototypes.removeAll(prototype);
-        if (selectedPrototype == prototype)
+        if (getSelectedPrototype() == prototype)
         {
-            selectedPrototype.reset();
+            resetSelectedPrototype();
         }
     }
 }
@@ -338,7 +418,7 @@ void MotifMaker::removePrototype(TilingPtr tiling)
 void MotifMaker::erasePrototypes()
 {
     prototypes.clear();
-    selectedPrototype.reset();
+    resetSelectedPrototype();
 }
 
 eMMState MotifMaker::sm_getState()
@@ -353,9 +433,9 @@ eMMState MotifMaker::sm_getState()
     }
     else
     {
-        Q_ASSERT(selectedPrototype);
+        Q_ASSERT(getSelectedPrototype());
         Q_ASSERT(prototypes.size() == 1);
-        if (selectedPrototype->hasContent())
+        if (getSelectedPrototype()->hasContent())
         {
             return MM_SINGLE;
         }
@@ -372,7 +452,7 @@ void MotifMaker::duplicateActiveFeature()
 {
     FeaturePtr fp = getActiveFeature();
     if (!fp) return;
-    if (!selectedPrototype) return;
+    if (!getSelectedPrototype()) return;
 
     // create new feature
     FeaturePtr newFeature;
@@ -385,7 +465,7 @@ void MotifMaker::duplicateActiveFeature()
         newFeature = make_shared<Feature>(fp->getEdgePoly(),fp->getRotation());
     }
 
-    TilingPtr tiling = selectedPrototype->getTiling();
+    TilingPtr tiling = getSelectedPrototype()->getTiling();
     const QVector<PlacedFeaturePtr> & pfps = tiling->getPlacedFeatures();
     for (auto pfp : pfps)
     {
@@ -397,13 +477,31 @@ void MotifMaker::duplicateActiveFeature()
 
             DesignElementPtr newDesignElement = make_shared<DesignElement>(newFeature);
             // put design element in the prototype
-            selectedPrototype->addElement(newDesignElement);
-            selectedPrototype->resetProtoMap();
+            getSelectedPrototype()->addElement(newDesignElement);
+            getSelectedPrototype()->resetProtoMap();
             return;
         }
     }
 }
 
+void MotifMaker::deleteActiveFeature()
+{
+    FeaturePtr fp = getActiveFeature();
+    if (!fp) return;
+    if (!getSelectedPrototype()) return;
+
+    TilingPtr tiling = getSelectedPrototype()->getTiling();
+    const QVector<PlacedFeaturePtr> & pfps = tiling->getPlacedFeatures();
+    for (auto pfp : pfps)
+    {
+        if (pfp->getFeature() == fp)
+        {
+            tiling->remove(pfp);
+        }
+    }
+    getSelectedPrototype()->removeElement(getSelectedDesignElement());
+    getSelectedPrototype()->resetProtoMap();
+}
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -419,12 +517,24 @@ void MotifMaker::duplicateActiveFeature()
 
 void MotifMaker::setSelectedPrototype(PrototypePtr pp)
 {
-    selectedPrototype = pp;
+    if (_selectedPrototype == pp)
+    {
+        return;
+    }
+
+    _selectedPrototype = pp;
+    if (pp && pp->hasContent())
+    {
+        _selectedDesignElement = pp->getDesignElement(0);  // first
+        // this is often ovverwritten by MotifDisplayWidget
+    }
+    else
+        _selectedDesignElement.reset();
 }
 
 PrototypePtr MotifMaker::getSelectedPrototype()
 {
-    return selectedPrototype;
+    return _selectedPrototype;
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -440,7 +550,7 @@ MapPtr MotifMaker::createExplicitInferredMap()
 {
     try
     {
-        InferPtr inf = make_shared<Infer>(selectedPrototype);
+        InferPtr inf = make_shared<Infer>(getSelectedPrototype());
         return inf->infer( getActiveFeature() );
     }
     catch(...)
@@ -452,7 +562,7 @@ MapPtr MotifMaker::createExplicitInferredMap()
 
 MapPtr MotifMaker::createExplicitFeatureMap()
 {
-    InferPtr inf = make_shared<Infer>(selectedPrototype);
+    InferPtr inf = make_shared<Infer>(getSelectedPrototype());
     return inf->inferFeature(getActiveFeature());
 }
 
@@ -460,7 +570,7 @@ MapPtr MotifMaker::createExplicitStarMap( qreal d, int s )
 {
     try
     {
-        InferPtr inf = make_shared<Infer>(selectedPrototype);
+        InferPtr inf = make_shared<Infer>(getSelectedPrototype());
         return inf->inferStar( getActiveFeature(), d, s );
     }
     catch(...)
@@ -474,7 +584,7 @@ MapPtr MotifMaker::createExplicitHourglassMap( qreal d, int s )
 {
     try
     {
-        InferPtr inf = make_shared<Infer>(selectedPrototype);
+        InferPtr inf = make_shared<Infer>(getSelectedPrototype());
         return inf->inferHourglass( getActiveFeature(), d, s );
     }
     catch(...)
@@ -488,7 +598,7 @@ MapPtr MotifMaker::createExplicitGirihMap( int starSides, qreal starSkip )
 {
     try
     {
-        InferPtr inf = make_shared<Infer>(selectedPrototype);
+        InferPtr inf = make_shared<Infer>(getSelectedPrototype());
         return inf->inferGirih( getActiveFeature(), starSides, starSkip );
     }
     catch(...)
@@ -502,7 +612,7 @@ MapPtr MotifMaker::createExplicitIntersectMap(int starSides, qreal starSkip, int
 {
     try
     {
-        InferPtr inf = make_shared<Infer>(selectedPrototype);
+        InferPtr inf = make_shared<Infer>(getSelectedPrototype());
         if ( progressive )
         {
             return inf->inferIntersectProgressive( getActiveFeature(), starSides, starSkip, s );
@@ -523,7 +633,7 @@ MapPtr MotifMaker::createExplicitRosetteMap( qreal q, int s, qreal r )
 {
     try
     {
-        InferPtr inf = make_shared<Infer>(selectedPrototype);
+        InferPtr inf = make_shared<Infer>(getSelectedPrototype());
         return inf->inferRosette( getActiveFeature(), q, s, r );
     }
     catch(...)

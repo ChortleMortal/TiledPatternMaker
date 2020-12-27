@@ -50,7 +50,7 @@ protected:
 
 public:
     Sketch(PrototypePtr proto);
-    Sketch(const Style & other);
+    Sketch(StylePtr other);
     virtual ~Sketch() override;
 
     void draw(GeoGraphics *gg) override;

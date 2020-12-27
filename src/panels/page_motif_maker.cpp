@@ -24,7 +24,6 @@
 
 #include "panels/page_motif_maker.h"
 #include "panels/panel.h"
-#include "panels/motif_display_widget.h"
 #include "base/tiledpatternmaker.h"
 #include "base/shared.h"
 #include "base/utilities.h"
@@ -49,7 +48,8 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,"M
     whiteBackground          = new QCheckBox("White background");
     replicateRadial          = new QCheckBox("Replicate Radial");
     hiliteUnit               = new QCheckBox("Highlight Unit");
-    QPushButton * pbDup      = new QPushButton("Duplicate Figure");
+    QPushButton * pbDup      = new QPushButton("Duplicate Selected Figure");
+    QPushButton * pbDel      = new QPushButton("Delete Selected Figure");
 
     QHBoxLayout * hbox = new QHBoxLayout;
     hbox->addWidget(tilingLabel);
@@ -59,6 +59,7 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,"M
     hbox->addWidget(replicateRadial);
     hbox->addWidget(hiliteUnit);
     hbox->addWidget(pbDup);
+    hbox->addWidget(pbDel);
 
     // Feature Buttons
     motifWidget = new MotifDisplayWidget(this);
@@ -82,13 +83,10 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,"M
 
     connect(pbRender,           &QPushButton::clicked,                  this,   &panel_page::sig_render);
     connect(pbDup,              &QPushButton::clicked,                  this,   &page_motif_maker::slot_duplicateCurrent);
+    connect(pbDel,              &QPushButton::clicked,                  this,   &page_motif_maker::slot_deleteCurrent);
     connect(whiteBackground,    &QCheckBox::clicked,                    this,   &page_motif_maker::whiteClicked);
     connect(replicateRadial,    &QCheckBox::clicked,                    this,   &page_motif_maker::replicateRadialClicked);
     connect(hiliteUnit,         &QCheckBox::clicked,                    this,   &page_motif_maker::hiliteClicked);
-
-    connect(theApp,             &TiledPatternMaker::sig_tilingLoaded,   this,   &page_motif_maker::slot_tilingLoaded);
-    connect(theApp,             &TiledPatternMaker::sig_mosaicLoaded,   this,   &page_motif_maker::onEnter);
-    connect(vcontrol,           &ViewControl::sig_selected_proto_changed,this,  &page_motif_maker::onEnter);
     connect(tilingListBox,      SIGNAL(currentIndexChanged(int)),       this,   SLOT(slot_prototypeSelected(int)));
 
 
@@ -100,7 +98,6 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,"M
 
 void page_motif_maker::onEnter()
 {
-    reloadTilingChoices();
 }
 
 void page_motif_maker::onExit()
@@ -114,26 +111,19 @@ void page_motif_maker::refreshPage(void)
     if (wpp.lock() != motifMaker->getSelectedPrototype())
     {
         wpp = motifMaker->getSelectedPrototype();
-
-        reloadTilingChoices();
-
+        tilingChoicesChanged();
         motifWidget->prototypeChanged();
     }
 }
 
-void page_motif_maker::slot_tilingLoaded()
+void page_motif_maker::featureChanged()
 {
-    if (panel->isVisiblePage(this) || config->viewerType == VIEW_MOTIF_MAKER)
-    {
-        reloadTilingChoices();
-        select(motifMaker->getSelectedPrototype());
-        refreshPage();
-    }
+    motifWidget->figureChanged();
 }
 
-void page_motif_maker::contentChanged()
+void page_motif_maker::tilingChanged()
 {
-    reloadTilingChoices();
+    motifWidget->prototypeChanged();
 }
 
 void page_motif_maker::setupFigure(bool isRadial)
@@ -156,17 +146,15 @@ void page_motif_maker::setupFigure(bool isRadial)
     }
 }
 
-void page_motif_maker::reloadTilingChoices()
+void page_motif_maker::tilingChoicesChanged()
 {
     tilingListBox->blockSignals(true);
 
     tilingListBox->clear();
 
     const QVector<PrototypePtr> & protos = motifMaker->getPrototypes();
-    qDebug() << "page_prototype_maker::reloadTilingBox() - num protos =" << protos.size();
     for (auto proto : protos)
     {
-        qDebug() << "page_prototype_maker::reload() tiling:" << proto->getTiling()->getName();
         tilingListBox->addItem(proto->getTiling()->getName(),QVariant::fromValue(WeakPrototypePtr(proto)));
     }
 
@@ -177,9 +165,6 @@ void page_motif_maker::reloadTilingChoices()
         qDebug() << "page_prototype_maker::reload() selected tiling:" << name;
         int index = tilingListBox->findText(name);
         tilingListBox->setCurrentIndex(index);
-
-        // this sets up the figures for the selected prototype
-        select(motifMaker->getSelectedPrototype());
     }
 
     tilingListBox->blockSignals(false);
@@ -209,6 +194,12 @@ void  page_motif_maker::hiliteClicked(bool state)
 void page_motif_maker::slot_duplicateCurrent()
 {
     motifMaker->duplicateActiveFeature();
+    motifWidget->prototypeChanged();
+}
+
+void page_motif_maker::slot_deleteCurrent()
+{
+    motifMaker->deleteActiveFeature();
     motifWidget->prototypeChanged();
 }
 

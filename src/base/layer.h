@@ -47,6 +47,7 @@ class Layer : public QObject
 public:
     Layer(QString name, eLayerType ltype);
     Layer(const Layer & other);
+    Layer(LayerPtr other);
     ~Layer();
 
     virtual void paint(QPainter * painter);

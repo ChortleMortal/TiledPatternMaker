@@ -35,6 +35,7 @@
 
 #include "tapp/rosette_connect_figure.h"
 #include "geometry/loose.h"
+#include "geometry/map_cleanser.h"
 
 RosetteConnectFigure::RosetteConnectFigure(int nn, qreal q, int s, qreal k, qreal r)
     : Rosette(nn,q,s,k,r), FigureConnector(this)
@@ -101,7 +102,8 @@ MapPtr RosetteConnectFigure::buildUnit()
 
     scaleToUnit(unitMap);
 
-    unitMap->verifyMap("RosetteConnectFigure");
+    MapCleanser cleanser(unitMap);
+    cleanser.verifyMap("RosetteConnectFigure");
 
     return unitMap;
 }

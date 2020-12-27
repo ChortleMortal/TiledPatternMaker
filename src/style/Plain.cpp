@@ -41,7 +41,7 @@ Plain::Plain(PrototypePtr proto) : Colored(proto)
 {
 }
 
-Plain::Plain(const Style & other ) : Colored(other)
+Plain::Plain(StylePtr other) : Colored(other)
 {
 }
 

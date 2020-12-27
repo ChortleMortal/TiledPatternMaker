@@ -70,12 +70,15 @@ private slots:
     void    slot_viewImage0();
     void    slot_viewImage1();
     void    slot_cycle();
+    void    slot_opendir();
     void    slot_compareImages();
     void    slot_compareCycle();
     void    slot_transparentClicked(bool checked);
     void    slot_differencesClicked(bool checked);
     void    slot_ping_pongClicked(bool checked);
     void    slot_side_by_sideClicked(bool checked);
+    void    slot_use_badlist(bool checked);
+    void    slot_use_badlist2(bool checked);
 
     void    slot_dir0Changed();
     void    slot_dir1Changed();
@@ -99,9 +102,12 @@ protected:
     void saveTilingBitmaps();
     void savePixmap(QString name);
 
+    QString getPixmapPath();
+
 private:
     QLineEdit   * dir0;
     QLineEdit   * dir1;
+    QLineEdit   * directory;
 
     QComboBox   * ibox0;
     QComboBox   * ibox1;

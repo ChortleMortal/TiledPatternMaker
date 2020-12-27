@@ -30,6 +30,7 @@
 #include "panels/layout_transform.h"
 #include "base/shared.h"
 #include "panels/panel_misc.h"
+#include "base/configuration.h"
 
 enum epageTi
 {
@@ -61,12 +62,11 @@ public:
 
     void buildMenu();
 
-protected slots:
+private slots:
     void slot_clearMakers();
     void slot_clearTiling();
     void slot_reloadTiling();
 
-private slots:
     void slot_buildMenu();
     void slot_refreshMenuData();
     void slot_currentFeature(int index);
@@ -86,6 +86,7 @@ private slots:
     void slot_autofill(bool checked);
     void slot_swapTrans();
     void slot_delete_clicked();
+    void slot_make_irregular_clicked();
     void slot_uniquify_clicked();
     void slot_setModes(QAbstractButton *btn);
     void slot_set_reps(int val);
@@ -117,6 +118,7 @@ protected:
     QHBoxLayout   * createFillDataRow();
 
     void refreshMenuData();
+    void pushTilingToMotifMaker(eSM_Event event);
 
     void tallyMouseMode();
     void buildTableEntry(PlacedFeaturePtr pf, int col, QString inclusion);

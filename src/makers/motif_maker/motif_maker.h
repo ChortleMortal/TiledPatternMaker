@@ -63,11 +63,14 @@ public:
     PrototypePtr findPrototypeByName(TilingPtr tiling);
     PrototypePtr getSelectedPrototype();
     void         setSelectedPrototype(PrototypePtr pp);
+    void         resetSelectedPrototype() { _selectedPrototype.reset(); _selectedDesignElement.reset(); }
 
-    DesignElementPtr getSelectedDesignElement() { return  selectedDesignElement; }
-    void         setSelectedDesignElement(DesignElementPtr del) { selectedDesignElement = del; }
+    DesignElementPtr getSelectedDesignElement() { return  _selectedDesignElement; }
+    void         setSelectedDesignElement(DesignElementPtr del) { _selectedDesignElement = del; }
+    void         resetSelectedDesignElement() { _selectedDesignElement.reset(); }
 
     void         duplicateActiveFeature();
+    void         deleteActiveFeature();
 
     MapPtr createExplicitGirihMap(int starSides, qreal starSkip);
     MapPtr createExplicitHourglassMap(qreal d, int s);
@@ -77,8 +80,8 @@ public:
     MapPtr createExplicitStarMap(qreal d, int s);
     MapPtr createExplicitFeatureMap();
 
-    void   setActiveFeature(FeaturePtr feature) { activeFeature = feature; }
-    FeaturePtr getActiveFeature() { return activeFeature; }
+    void   setActiveFeature(FeaturePtr feature) { _activeFeature = feature; }
+    FeaturePtr getActiveFeature() { return _activeFeature; }
 
 protected:
     eMMState sm_getState();
@@ -89,6 +92,8 @@ protected:
     void     sm_resetMaps();
 
     PrototypePtr createPrototype(TilingPtr tiling);
+    void         recreatePrototype(TilingPtr tiling);
+    void         recreateFigures(TilingPtr tiling);
     bool         askNewProto();
 
 private:
@@ -104,9 +109,9 @@ private:
     class DecorationMaker  * decorationMaker;
 
     UniqueQVector<PrototypePtr> prototypes;
-    PrototypePtr        selectedPrototype;
-    DesignElementPtr    selectedDesignElement;
-    FeaturePtr          activeFeature;
+    PrototypePtr        _selectedPrototype;
+    DesignElementPtr    _selectedDesignElement;
+    FeaturePtr          _activeFeature;
 
     MapPtr              nullMap;
 };

@@ -87,7 +87,6 @@ page_prototype_info:: page_prototype_info(ControlPanel * cpanel)  : panel_page(c
 
     connect(refreshButton,  &QPushButton::clicked,        this, &page_prototype_info::onEnter);
     connect(protoTable,     SIGNAL(cellClicked(int,int)), this,   SLOT(slot_prototypeSelected(int,int)));
-    connect(vcontrol,       &ViewControl::sig_selected_proto_changed, this, &page_prototype_info::onEnter);
     connect(cbDrawMap,      &QCheckBox::clicked, this, &page_prototype_info::drawMapClicked);
     connect(cbDrawFeatures, &QCheckBox::clicked, this, &page_prototype_info::drawFeatureClicked);
     connect(cbDrawfigures,  &QCheckBox::clicked, this, &page_prototype_info::drawFigureClicked);

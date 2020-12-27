@@ -103,6 +103,9 @@ void Cycler::slot_startCycle(eCycleMode mode)
     case CYCLE_COMPARE_IMAGES:
         startCycleCompareImages();
         break;
+    case RE_CYCLE_COMPARE_IMAGES:
+        startReCycleCompareImages();
+        break;
     case CYCLE_NONE:
     case CYCLE_SAVE_TILING_BMPS:
     case CYCLE_SAVE_STYLE_BMPS:
@@ -178,6 +181,7 @@ void Cycler::slot_timeout()
 
 
     case CYCLE_COMPARE_IMAGES:
+    case RE_CYCLE_COMPARE_IMAGES:
         if (imgList_it == imgList.end())
         {
             slot_stopCycle();
@@ -257,8 +261,19 @@ void Cycler::startCycleCompareImages()
 
     VersionList vlist;
     vlist.create(names);
-    imgList = vlist.recompose();
 
+    imgList    = vlist.recompose();
+    imgList_it = imgList.begin();
+}
+
+void Cycler::startReCycleCompareImages()
+{
+    mapa = FileServices::getDirBMPFiles(config->compareDir0);
+    mapb = FileServices::getDirBMPFiles(config->compareDir1);
+
+    QStringList names = mapa.keys();
+
+    imgList    = config->badImages;
     imgList_it = imgList.begin();
 }
 

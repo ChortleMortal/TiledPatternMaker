@@ -38,6 +38,7 @@
 #include "tapp/radial_figure.h"
 #include "tile/feature.h"
 #include "geometry/map.h"
+#include "geometry/map_cleanser.h"
 #include "base/configuration.h"
 #include "base/utilities.h"
 
@@ -163,7 +164,8 @@ MapPtr  RadialFigure::replicateUnit()
         //T.composeD(Tr);
         T *= Tr;    // TODO xform order
     }
-    map->verifyMap("Replicated Unit Map");
+    MapCleanser cleanser(map);
+    cleanser.verifyMap("Replicated Unit Map");
     return map;
 }
 

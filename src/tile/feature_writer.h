@@ -15,7 +15,7 @@ class FeatureWriter
 public:
     FeatureWriter();
 
-    void setEdgePoly(QTextStream & ts, EdgePoly & epoly);
+    void setEdgePoly(QTextStream & ts, const EdgePoly & epoly);
     void setTransform(QTextStream & ts, QTransform T);
 
 protected:

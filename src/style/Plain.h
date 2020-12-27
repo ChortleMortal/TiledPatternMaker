@@ -42,7 +42,7 @@ class Plain : public Colored
 {
 public:
     Plain(PrototypePtr proto);
-    Plain(const Style & other);
+    Plain(StylePtr other);
     virtual ~Plain() override;
 
     virtual eStyleType getStyleType() const override { return STYLE_PLAIN; }

@@ -83,7 +83,7 @@ public:
     int  countNeighbouringEdges();
 
     void sortByAngle();
-    bool verify();
+    bool verify(QDebug *deb);
     void cleanse();
     void dump();
 

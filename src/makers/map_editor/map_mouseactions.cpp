@@ -2,6 +2,7 @@
 #include "makers/map_editor/map_editor.h"
 #include "geometry/vertex.h"
 #include "geometry/map.h"
+#include "geometry/map_cleanser.h"
 #include "geometry/point.h"
 #include "geometry/transform.h"
 #include "geometry/intersect.h"
@@ -147,13 +148,15 @@ void MoveVertex::endDragging( QPointF spt)
         // tidy up
         map->sortVertices();
         map->sortEdges();
-        map->cleanNeighbours();
+
+        MapCleanser cleanser(map);
+        cleanser.cleanNeighbours();
 
         // deal with lines crossing existing lines
-        map->joinColinearEdges();
-        map->divideIntersectingEdges();
+        cleanser.joinColinearEdges();
+        cleanser.divideIntersectingEdges();
 
-        map->verifyMap("modifed fig map");
+        cleanser.verifyMap("modifed fig map");
     }
 
     MapMouseAction::endDragging(spt);
@@ -200,10 +203,12 @@ void MoveEdge::endDragging(QPointF spt)
 
     map->sortVertices();
     map->sortEdges();
-    map->cleanNeighbours();
+
+    MapCleanser cleanser(map);
+    cleanser.cleanNeighbours();
 
     // deal with lines crossing existing lines
-    map->divideIntersectingEdges();
+    cleanser.divideIntersectingEdges();
 
     MapMouseAction::endDragging(spt);
     me->buildEditorDB();
@@ -316,7 +321,8 @@ void DrawLine::endDragging( QPointF spt)
     }
 
     // deal with new line crossing existing lines
-    map->divideIntersectingEdges();
+    MapCleanser cleanser(map);
+    cleanser.divideIntersectingEdges();
     MapMouseAction::endDragging(spt);
     me->buildEditorDB();
 }
@@ -509,7 +515,8 @@ void ExtendLine::endDragging( QPointF spt)
         // extending an edge
         VertexPtr v2 = startEdge->getV2();
         v2->setPosition(currentLine.p2());
-        map->divideIntersectingEdges(); // deal with new line crossing existing lines
+        MapCleanser cleanser(map);
+        cleanser.divideIntersectingEdges(); // deal with new line crossing existing lines
     }
     else
     {

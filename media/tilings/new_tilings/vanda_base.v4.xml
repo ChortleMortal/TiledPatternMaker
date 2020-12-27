@@ -6,21 +6,13 @@
 	<T2>4.28292711964265,7.427113795701093</T2>
 	<ViewSettings>
 		<width>1500</width>
-		<height>1100</height>
+		<height>1000</height>
 		<left__delta>0</left__delta>
 		<top__delta>0</top__delta>
 		<width__delta>1</width__delta>
 		<theta__delta>0</theta__delta>
-		<center>0,-1.77635683940025e-15</center>
+		<center>-3.333333333333333,-8.881784197001252e-16</center>
 	</ViewSettings>
-	<Feature type="regular" sides="6" rotation="30" scale="1">
-		<Placement>
-			<scale>2.480447129034427</scale>
-			<rot>0</rot>
-			<tranX>-3.866666666666666</tranX>
-			<tranY>-1.573333333333332</tranY>
-		</Placement>
-	</Feature>
 	<Feature type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="1">-3.866666666666667,-4.053780462367758</Point>
@@ -71,10 +63,10 @@
 			<tranY>2.480447129034424</tranY>
 		</Placement>
 	</Feature>
-	<Feature type="regular" sides="6" rotation="30" scale="1">
+	<Feature type="regular" sides="6" rotation="0" scale="1">
 		<Placement>
 			<scale>2.480447129034427</scale>
-			<rot>0</rot>
+			<rot>29.99999999999999</rot>
 			<tranX>-3.866666666666666</tranX>
 			<tranY>-1.573333333333332</tranY>
 		</Placement>

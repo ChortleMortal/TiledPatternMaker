@@ -23,6 +23,7 @@ public slots:
     void display();
 
 protected slots:
+    void slot_ok();
     void slot_undo();
     void slot_applyDeltas();
     void slot_moveUp();
@@ -38,7 +39,6 @@ private:
     DoubleSpinSet * deltaX;
     DoubleSpinSet * deltaY;
     QLabel        * label;
-
 };
 
 #endif // DLG_EDGE_POLY_EDIT_H

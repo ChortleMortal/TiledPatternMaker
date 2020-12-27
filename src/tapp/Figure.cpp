@@ -126,9 +126,21 @@ bool Figure::isExplicit()
 
 bool Figure::isRadial()
 {
-    // assume undefined is radial
-    return !isExplicit();
+    switch (figType)
+    {
+    case FIG_TYPE_RADIAL:
+    case FIG_TYPE_ROSETTE:
+    case FIG_TYPE_STAR:
+    case FIG_TYPE_CONNECT_STAR:
+    case FIG_TYPE_CONNECT_ROSETTE:
+    case FIG_TYPE_EXTENDED_ROSETTE:
+    case FIG_TYPE_EXTENDED_STAR:
+        return true;
+    default:
+        return false;
+    }
 }
+
 
 int Figure::getN()
 {

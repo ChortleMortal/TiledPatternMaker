@@ -32,7 +32,7 @@ TileColors::TileColors(PrototypePtr proto) : Style(proto)
     outlineWidth = 3;
 }
 
-TileColors::TileColors(const Style & other) : Style(other)
+TileColors::TileColors(StylePtr other) : Style(other)
 {
     outlineEnb = false;
     outlineColor = Qt::blue;
@@ -84,7 +84,7 @@ void TileColors::createStyleRepresentation()
     {
         PlacedFeaturePtr fp = *it;
         FeaturePtr        f = fp->getFeature();
-        EdgePoly & ep       = f->getEdgePoly();
+        const EdgePoly & ep = f->getEdgePoly();
         QTransform T1       = fp->getTransform();
 
         ColorSet & bkgdColors = f->getBkgdColors();

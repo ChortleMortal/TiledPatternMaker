@@ -452,18 +452,12 @@ void ViewControl::viewDesignElement()
 
 void ViewControl::viewMotifMaker()
 {
-    DesignElementPtr dep = motifMaker->getSelectedDesignElement();
-    if (!dep)
-    {
-        return;
-    }
-
     qDebug() << "++ViewController::viewFigure";
 
-    LayerPtr figView = make_shared<FigureView>(dep);
+    LayerPtr figView = make_shared<FigureView>();
     view->addLayer(figView);
 
-    QString astring = QString("WS Figure: dep=%1 fig=%2 tiling=%3").arg(Utils::addr(dep.get()),Utils::addr(dep->getFigure().get()),motifMaker->getSelectedPrototype()->getTiling()->getName());
+    QString astring = QString("Motif Maker Figure");
     view->setWindowTitle(astring);
 
     QSize sz = view->getActiveFrameSize(VIEW_MOTIF_MAKER);
@@ -573,7 +567,7 @@ void ViewControl::setTitle(TilingPtr tp)
 {
     if (!tp) return;
 
-    QString str = QString("%1 : %2 : %3 : %4").arg(sViewerType[config->viewerType],tp->getName(),tp->getDescription(),tp->getAuthor());
+    QString str = QString("%1 : %2 : %3 : %4").arg(sViewerType[config->viewerType]).arg(tp->getName()).arg(tp->getDescription()).arg(tp->getAuthor());
     view->setWindowTitle(str);
 }
 

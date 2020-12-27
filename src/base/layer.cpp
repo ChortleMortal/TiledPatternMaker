@@ -83,6 +83,37 @@ Layer::Layer(const Layer & other) : QObject()
     refs++;
 }
 
+Layer::Layer(LayerPtr other) : QObject()
+{
+    view    =  View::getInstance();
+    config  = Configuration::getInstance();
+
+    layerType   = other->layerType;
+    visible     = other->visible;
+    xf_canvas   = other->xf_canvas;
+    name        = other->name;
+    qtr_layer   = other->qtr_layer;
+    qtr_invert  = other->qtr_invert;
+    layerPen    = other->layerPen;
+    name        = other->name;
+    visible     = other->visible;
+    subLayers   = other->subLayers;
+    zlevel      = other->zlevel;
+
+    connect(view, &View::sig_deltaScale,    this, &Layer::slot_scale,  Qt::UniqueConnection);
+    connect(view, &View::sig_deltaRotate,   this, &Layer::slot_rotate, Qt::UniqueConnection);
+    connect(view, &View::sig_deltaMoveY,    this, &Layer::slot_moveY,  Qt::UniqueConnection);
+    connect(view, &View::sig_deltaMoveX,    this, &Layer::slot_moveX,  Qt::UniqueConnection);
+
+    connect(view, &View::sig_mousePressed,      this, &Layer::slot_mousePressed);
+    connect(view, &View::sig_mouseTranslate,    this, &Layer::slot_mouseTranslate);
+    connect(view, &View::sig_wheel_scale,       this, &Layer::slot_wheel_scale);
+    connect(view, &View::sig_wheel_rotate,      this, &Layer::slot_wheel_rotate);
+    connect(view, &View::sig_setCenter,         this, &Layer::slot_setCenterScreen);
+
+    refs++;
+}
+
 Layer::~Layer()
 {
     refs--;

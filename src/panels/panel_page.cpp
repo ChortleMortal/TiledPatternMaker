@@ -154,3 +154,8 @@ bool  panel_page::pageBlocked()
 {
     return (blockCount != 0);
 }
+
+void panel_page::updateView()
+{
+    view->update();
+}

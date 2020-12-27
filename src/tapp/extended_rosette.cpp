@@ -26,6 +26,7 @@
 #include "tapp/radial_figure.h"
 #include "tile/feature.h"
 #include "base/utilities.h"
+#include "geometry/map_cleanser.h"
 
 ExtendedRosette::ExtendedRosette(const Figure & fig,
                 int nsides, qreal q, int s, qreal k,
@@ -159,7 +160,8 @@ void ExtendedRosette::extendMap()
             }
         }
     }
-    figureMap->verifyMap("Extended figure - after");
+    MapCleanser cleanser(figureMap);
+    cleanser.verifyMap("Extended figure - after");
 
     if (connectBoundaryVertices)
     {
@@ -248,6 +250,8 @@ void ExtendedRosette::connectOuterVertices(MapPtr map)
             v2.reset();
         }
     }
-    map->verifyMap("Extended figure - after2");
+
+    MapCleanser cleanser(map);
+    cleanser.verifyMap("Extended figure - after2");
 }
 

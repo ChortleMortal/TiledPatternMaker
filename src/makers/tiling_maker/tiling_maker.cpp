@@ -43,6 +43,7 @@
 #include "style/style.h"
 #include "panels/dlg_magnitude.h"
 #include "panels/panel.h"
+#include "panels/dlg_edgepoly_edit.h"
 
 TilingMaker *  TilingMaker::mpThis = nullptr;
 TilingMakerPtr TilingMaker::spThis;
@@ -427,8 +428,8 @@ bool TilingMaker::sm_askAdd()
     Q_UNUSED(replaceButton);
     box.exec();
 
-     bool add = (box.clickedButton() == addButton);
-     return add;
+    bool add = (box.clickedButton() == addButton);
+    return add;
 }
 
 void TilingMaker::clearMakerData()
@@ -481,17 +482,11 @@ void TilingMaker::setupMaker(TilingPtr tiling)
     Layer::setCanvasXform(tiling->getCanvasXform());
 }
 
-void TilingMaker::pushTilingToMotifMaker(eSM_Event event)
-{
-    sm_take(selectedTiling,event);
-}
-
 void TilingMaker::updateTilingPlacedFeatures()
 {
     if (in_tiling != selectedTiling->getPlacedFeatures())
     {
         selectedTiling->setPlacedFeatures(in_tiling);
-        pushTilingToMotifMaker(SM_TILING_CHANGED);
     }
 }
 
@@ -587,6 +582,7 @@ void TilingMaker::slot_deleteFeature()
         deleteFeature(clickedSelector);
         clickedSelector.reset();
     }
+    sm_take(selectedTiling,SM_TILING_CHANGED);
 }
 
 void TilingMaker::deleteFeature(TilingSelectorPtr sel)
@@ -606,6 +602,7 @@ void TilingMaker::deleteFeature(TilingSelectorPtr sel)
         emit sig_buildMenu();
         forceRedraw();
     }
+    sm_take(selectedTiling,SM_TILING_CHANGED);
 }
 
 void TilingMaker::deleteFeature(PlacedFeaturePtr pf)
@@ -618,18 +615,21 @@ void TilingMaker::deleteFeature(PlacedFeaturePtr pf)
     in_tiling.removeOne(pf);
     updateTilingPlacedFeatures();
     forceRedraw();
+    sm_take(selectedTiling,SM_TILING_CHANGED);
 }
 
 void TilingMaker::addInTiling(PlacedFeaturePtr pf)
 {
     in_tiling.push_back(pf);
     updateTilingPlacedFeatures();
+    sm_take(selectedTiling,SM_TILING_CHANGED);
 }
 
 void TilingMaker::removeFromInTiling(PlacedFeaturePtr pf)
 {
     in_tiling.removeOne(pf);
     updateTilingPlacedFeatures();
+    sm_take(selectedTiling,SM_TILING_CHANGED);
 }
 
 void TilingMaker::fillUsingTranslations()
@@ -675,6 +675,7 @@ void TilingMaker::removeExcluded()
 
     forceRedraw();
     emit sig_buildMenu();
+    sm_take(selectedTiling,SM_TILING_CHANGED);
 }
 
 void TilingMaker::excludeAll()
@@ -682,6 +683,7 @@ void TilingMaker::excludeAll()
     in_tiling.clear();
     forceRedraw();
     emit sig_buildMenu();
+    sm_take(selectedTiling,SM_TILING_CHANGED);
 }
 
 void TilingMaker::slot_includeFeature()
@@ -695,6 +697,7 @@ void TilingMaker::slot_includeFeature()
             emit sig_buildMenu();
             forceRedraw();
             clickedSelector.reset();
+            sm_take(selectedTiling,SM_TILING_CHANGED);
         }
     }
 }
@@ -710,7 +713,26 @@ void TilingMaker::slot_excludeFeature()
             emit sig_buildMenu();
             forceRedraw();
             clickedSelector.reset();
+            sm_take(selectedTiling,SM_TILING_CHANGED);
         }
+    }
+}
+
+void TilingMaker::slot_editFeature()
+{
+    if (clickedSelector)
+    {
+        PlacedFeaturePtr pfp = clickedSelector->getPlacedFeature();
+        FeaturePtr        fp = pfp->getFeature();
+        QTransform         t = pfp->getTransform();
+
+        DlgEdgePolyEdit * fe  = new DlgEdgePolyEdit(fp->getEdgePoly(),t);
+        fe->show();
+        fe->raise();
+        fe->activateWindow();
+
+        connect(fe,   &DlgEdgePolyEdit::sig_currentPoint, this, &TilingMaker::setFeatureEditPoint, Qt::UniqueConnection);
+        connect(this, &TilingMaker::sig_refreshMenu,      fe,   &DlgEdgePolyEdit::display,         Qt::UniqueConnection);
     }
 }
 
@@ -733,6 +755,7 @@ void TilingMaker::slot_uniquifyFeature()
         FeaturePtr fp2 = fp->recreate();  // creates a new feature same as other
         pf->setFeature(fp2);
         emit sig_buildMenu();
+        sm_take(selectedTiling,SM_FEATURE_CHANGED);
     }
 }
 
@@ -792,17 +815,9 @@ void TilingMaker::tilingDeltaX(int delta)
         pfp->setTransform(t);
     }
 
-    if (config->viewerType != VIEW_TILING_MAKER  &&  config->viewerType != VIEW_TILING)
-    {
-
-        pushTilingToMotifMaker(SM_FEATURE_CHANGED);
-        forceRedraw();
-    }
-    else
-    {
-        forceRedraw();
-        emit sig_refreshMenu();
-    }
+    sm_take(selectedTiling,SM_FEATURE_CHANGED);
+    forceRedraw();
+    emit sig_refreshMenu();
 }
 
 void TilingMaker::tilingDeltaY(int delta)
@@ -815,17 +830,9 @@ void TilingMaker::tilingDeltaY(int delta)
         pfp->setTransform(t);
     }
 
-    if (config->viewerType != VIEW_TILING_MAKER  &&  config->viewerType != VIEW_TILING)
-    {
-
-        pushTilingToMotifMaker(SM_FEATURE_CHANGED);
-        forceRedraw();
-    }
-    else
-    {
-        forceRedraw();
-        emit sig_refreshMenu();
-    }
+    sm_take(selectedTiling,SM_FEATURE_CHANGED);
+    forceRedraw();
+    emit sig_refreshMenu();
 }
 
 void TilingMaker::tilingDeltaScale(int delta)
@@ -850,16 +857,9 @@ void TilingMaker::tilingDeltaScale(int delta)
         pfp->setTransform(t);
     }
 
-    if (config->viewerType != VIEW_TILING_MAKER  &&  config->viewerType != VIEW_TILING)
-    {
-        pushTilingToMotifMaker(SM_FEATURE_CHANGED);
-        forceRedraw();
-    }
-    else
-    {
-        forceRedraw();
-        emit sig_refreshMenu();
-    }
+    sm_take(selectedTiling,SM_FEATURE_CHANGED);
+    forceRedraw();
+    emit sig_refreshMenu();
 }
 
 void TilingMaker::tilingDeltaRotate(int delta)
@@ -872,17 +872,9 @@ void TilingMaker::tilingDeltaRotate(int delta)
         pfp->setTransform(t);
     }
 
-    if (config->viewerType != VIEW_TILING_MAKER  &&  config->viewerType != VIEW_TILING)
-    {
-
-        pushTilingToMotifMaker(SM_FEATURE_CHANGED);
-        forceRedraw();
-    }
-    else
-    {
-        forceRedraw();
-        emit sig_refreshMenu();
-    }
+    sm_take(selectedTiling,SM_FEATURE_CHANGED);
+    forceRedraw();
+    emit sig_refreshMenu();
 }
 
 void TilingMaker::placedFeatureDeltaX(int delta)
@@ -895,6 +887,7 @@ void TilingMaker::placedFeatureDeltaX(int delta)
     t *= QTransform::fromTranslate(qdelta,0.0);
     currentPlacedFeature->setTransform(t);
 
+    sm_take(selectedTiling,SM_FEATURE_CHANGED);
     forceRedraw();
     emit sig_refreshMenu();
 }
@@ -909,6 +902,7 @@ void TilingMaker::placedFeatureDeltaY(int delta)
     t *= QTransform::fromTranslate(0.0,qdelta);
     currentPlacedFeature->setTransform(t);
 
+    sm_take(selectedTiling,SM_FEATURE_CHANGED);
     forceRedraw();
     emit sig_refreshMenu();
 }
@@ -937,6 +931,7 @@ void TilingMaker::placedFeatureDeltaScale(qreal scale)
     t *= ts;
     currentPlacedFeature->setTransform(t);
 
+    sm_take(selectedTiling,SM_FEATURE_CHANGED);
     forceRedraw();
     emit sig_refreshMenu();
 }
@@ -963,6 +958,7 @@ void TilingMaker::placedFeatureDeltaRotate(qreal rotate)
     t *= tr;
     currentPlacedFeature->setTransform(t);
 
+    sm_take(selectedTiling,SM_FEATURE_CHANGED);
     forceRedraw();
     emit sig_refreshMenu();
 }
@@ -1055,10 +1051,12 @@ void TilingMaker::toggleInclusion(TilingSelectorPtr sel)
         {
             addInTiling(pf);
         }
+        sm_take(selectedTiling,SM_TILING_CHANGED);
         forceRedraw();
         emit sig_buildMenu();
     }
 }
+
 
 void TilingMaker::clearTranslationVectors()
 {
@@ -1123,6 +1121,7 @@ void TilingMaker::mirrorPolygonX(TilingSelectorPtr sel )
         }
         ep.reverseWindingOrder();
 #endif
+        sm_take(selectedTiling,SM_FEATURE_CHANGED);
         forceRedraw();
         emit sig_refreshMenu();
     }
@@ -1136,6 +1135,7 @@ void TilingMaker::mirrorPolygonY(TilingSelectorPtr sel )
         EdgePoly & ep = pfp->getFeature()->getEdgePoly();
         QTransform t = QTransform::fromScale(1,-1);
         ep.mapD(t);
+        sm_take(selectedTiling,SM_FEATURE_CHANGED);
         forceRedraw();
         emit sig_refreshMenu();
     }
@@ -1149,6 +1149,7 @@ void TilingMaker::copyPolygon(TilingSelectorPtr sel)
         addNewPlacedFeature(make_shared<PlacedFeature>(pf->getFeature(), pf->getTransform()));
         forceRedraw();
         emit sig_buildMenu();
+        sm_take(selectedTiling,SM_TILING_CHANGED);
     }
 }
 
@@ -1540,6 +1541,7 @@ void TilingMaker::startMouseInteraction(QPointF spt, enum Qt::MouseButton mouseB
                 myMenu.addSection("Options");
                 myMenu.addSeparator();
                 myMenu.addAction("Copy/Move", this, &TilingMaker::slot_copyMoveFeature);
+                myMenu.addAction("Edit Figure", this, &TilingMaker::slot_editFeature);
                 if (isIncluded(feature))
                 {
                     myMenu.addAction("Exclude", this, &TilingMaker::slot_excludeFeature);
@@ -1801,16 +1803,9 @@ void TilingMaker::slot_wheel_rotate(qreal delta)
             pfp->setTransform(t);
         }
 
-        if (config->viewerType != VIEW_TILING_MAKER  &&  config->viewerType != VIEW_TILING)
-        {
-            pushTilingToMotifMaker(SM_FEATURE_CHANGED);
-            forceRedraw();
-        }
-        else
-        {
-            forceRedraw();
-            emit sig_refreshMenu();
-        }
+        sm_take(selectedTiling,SM_FEATURE_CHANGED);
+        forceRedraw();
+        emit sig_refreshMenu();
     }
         break;
 
@@ -1851,16 +1846,9 @@ void TilingMaker::slot_wheel_scale(qreal delta)
             pfp->setTransform(t);
         }
 
-        if (config->viewerType != VIEW_TILING_MAKER  &&  config->viewerType != VIEW_TILING)
-        {
-            pushTilingToMotifMaker(SM_FEATURE_CHANGED);
-            forceRedraw();
-        }
-        else
-        {
-            forceRedraw();
-            emit sig_refreshMenu();
-        }
+        sm_take(selectedTiling,SM_FEATURE_CHANGED);
+        forceRedraw();
+        emit sig_refreshMenu();
     }
         break;
 
@@ -1902,16 +1890,9 @@ void TilingMaker::slot_mouseTranslate(QPointF spt)
             pfp->setTransform(t);
         }
 
-        if (config->viewerType != VIEW_TILING_MAKER  &&  config->viewerType != VIEW_TILING)
-        {
-            pushTilingToMotifMaker(SM_FEATURE_CHANGED);
-            forceRedraw();
-        }
-        else
-        {
-            forceRedraw();
-            emit sig_refreshMenu();
-        }
+        sm_take(selectedTiling,SM_FEATURE_CHANGED);
+        forceRedraw();
+        emit sig_refreshMenu();
     }
         break;
 

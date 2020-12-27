@@ -62,10 +62,10 @@ FigureEditor::FigureEditor(page_motif_maker * fm, QString figname)
 
     connect(this,          &FigureEditor::sig_figure_changed, menu, &page_motif_maker::slot_figureChanged); //, Qt::QueuedConnection);
 
-    connect(boundaryScale, &DoubleSliderSet::valueChanged, this, &FigureEditor::updateGeometry);
-    connect(boundarySides, &SliderSet::valueChanged,       this, &FigureEditor::updateGeometry);
-    connect(figureScale,   &DoubleSliderSet::valueChanged, this, &FigureEditor::updateGeometry);
-    connect(figureRotate,  &DoubleSliderSet::valueChanged, this, &FigureEditor::updateGeometry);
+    connect(boundaryScale, &DoubleSliderSet::valueChanged, this, [this]() { updateFigure(true);});
+    connect(boundarySides, &SliderSet::valueChanged,       this, [this]() { updateFigure(true);});
+    connect(figureScale,   &DoubleSliderSet::valueChanged, this, [this]() { updateFigure(true);});
+    connect(figureRotate,  &DoubleSliderSet::valueChanged, this, [this]() { updateFigure(true);});
 }
 
 void FigureEditor::resetWithFigure(FigurePtr fig, bool doEmit)
@@ -74,7 +74,7 @@ void FigureEditor::resetWithFigure(FigurePtr fig, bool doEmit)
     figure = fig;
 }
 
-void FigureEditor::updateLimits()
+void FigureEditor::updateEditor()
 {
     if (!figure)
         return;
@@ -92,7 +92,7 @@ void FigureEditor::updateLimits()
     blockSignals(false);
 }
 
-void FigureEditor::updateGeometry(bool doEmit)
+void FigureEditor::updateFigure(bool doEmit)
 {
     if (!figure)
         return;
@@ -123,9 +123,9 @@ StarEditor::StarEditor(page_motif_maker *fm, QString figname) : FigureEditor(fm,
     addLayout(d_slider);
     addLayout(s_slider);
 
-    connect(n_slider, &SliderSet::valueChanged,       this, &StarEditor::updateGeometry);
-    connect(d_slider, &DoubleSliderSet::valueChanged, this, &StarEditor::updateGeometry);
-    connect(s_slider, &SliderSet::valueChanged,       this, &StarEditor::updateGeometry);
+    connect(n_slider, &SliderSet::valueChanged,       this, [this]() { updateFigure(true);});
+    connect(d_slider, &DoubleSliderSet::valueChanged, this, [this]() { updateFigure(true);});
+    connect(s_slider, &SliderSet::valueChanged,       this, [this]() { updateFigure(true);});
 }
 
 FigurePtr StarEditor::getFigure()
@@ -158,15 +158,15 @@ void StarEditor::resetWithFigure(FigurePtr fig, bool doEmit)
     Q_ASSERT(star);
     FigureEditor::resetWithFigure(star,false);
 
-    updateLimits();
-    updateGeometry(doEmit);
+    updateEditor();
+    updateFigure(doEmit);
 }
 
-void StarEditor::updateLimits()
+void StarEditor::updateEditor()
 {
     if (star)
     {
-        FigureEditor::updateLimits();
+        FigureEditor::updateEditor();
 
         int    nn = star->getN();
         qreal  dd = star->getD();
@@ -181,11 +181,11 @@ void StarEditor::updateLimits()
     }
 }
 
-void StarEditor::updateGeometry(bool doEmit)
+void StarEditor::updateFigure(bool doEmit)
 {
     if (star)
     {
-        FigureEditor::updateGeometry(false);
+        FigureEditor::updateFigure(false);
 
         int nval      = n_slider->value();
         qreal dval    = d_slider->value();
@@ -219,10 +219,10 @@ RosetteEditor::RosetteEditor(page_motif_maker * fm, QString figname) : FigureEdi
     addLayout(k_slider);
     addLayout(s_slider);
 
-    connect(n_slider, &SliderSet::valueChanged,       this, &RosetteEditor::updateGeometry, Qt::QueuedConnection);
-    connect(q_slider, &DoubleSliderSet::valueChanged, this, &RosetteEditor::updateGeometry, Qt::QueuedConnection);
-    connect(k_slider, &DoubleSliderSet::valueChanged, this, &RosetteEditor::updateGeometry, Qt::QueuedConnection);
-    connect(s_slider, &SliderSet::valueChanged,       this, &RosetteEditor::updateGeometry, Qt::QueuedConnection);
+    connect(n_slider, &SliderSet::valueChanged,       this, [this]() { updateFigure(true);});
+    connect(q_slider, &DoubleSliderSet::valueChanged, this, [this]() { updateFigure(true);});
+    connect(k_slider, &DoubleSliderSet::valueChanged, this, [this]() { updateFigure(true);});
+    connect(s_slider, &SliderSet::valueChanged,       this, [this]() { updateFigure(true);});
 }
 
 FigurePtr RosetteEditor::getFigure()
@@ -255,15 +255,15 @@ void RosetteEditor::resetWithFigure(FigurePtr fig, bool doEmit)
 
     Q_ASSERT(rosette);
     FigureEditor::resetWithFigure(rosette,false);
-    updateLimits();
-    updateGeometry(doEmit);
+    updateEditor();
+    updateFigure(doEmit);
 }
 
-void RosetteEditor::updateLimits()
+void RosetteEditor::updateEditor()
 {
     if( rosette)
     {
-        FigureEditor::updateLimits();
+        FigureEditor::updateEditor();
 
         int    nn = rosette->getN();
         double qq = rosette->getQ();
@@ -279,11 +279,11 @@ void RosetteEditor::updateLimits()
     }
 }
 
-void RosetteEditor::updateGeometry(bool doEmit)
+void RosetteEditor::updateFigure(bool doEmit)
 {
     if(rosette)
     {
-        FigureEditor::updateGeometry(false);
+        FigureEditor::updateFigure(false);
 
         qreal  qval = q_slider->value();
         qreal  kval = k_slider->value();
@@ -354,15 +354,15 @@ void ConnectStarEditor::resetWithFigure(FigurePtr fig, bool doEmit)
 
     starConnect->setFigureScale(starConnect->computeConnectScale());
 
-    updateLimits();
-    updateGeometry(doEmit);
+    updateEditor();
+    updateFigure(doEmit);
 }
 
 void ConnectStarEditor::calcScale()
 {
     qreal scale = starConnect->computeConnectScale();
     figureScale->setValue(scale);
-    updateGeometry(true);
+    updateFigure(true);
 }
 
 // ConnectRosetteEditor
@@ -419,8 +419,8 @@ void ConnectRosetteEditor::resetWithFigure(FigurePtr fig, bool doEmit)
 
     rosetteConnect->setFigureScale(rosetteConnect->computeConnectScale());
 
-    updateLimits();
-    updateGeometry(doEmit);
+    updateEditor();
+    updateFigure(doEmit);
 }
 
 void ConnectRosetteEditor::calcScale()
@@ -429,7 +429,7 @@ void ConnectRosetteEditor::calcScale()
     {
         qreal scale = rosetteConnect->computeConnectScale();
         figureScale->setValue(scale);
-        updateGeometry(true);
+        updateFigure(true);
     }
 }
 
@@ -442,8 +442,8 @@ ExtendedStarEditor::ExtendedStarEditor(page_motif_maker *fm, QString figname) : 
     addWidget(extendBox1);
     addWidget(extendBox2);
 
-    connect(extendBox1,    &QCheckBox::clicked,            this, &ExtendedStarEditor::updateGeometry, Qt::QueuedConnection);
-    connect(extendBox2,    &QCheckBox::clicked,            this, &ExtendedStarEditor::updateGeometry, Qt::QueuedConnection);
+    connect(extendBox1,    &QCheckBox::clicked,  this, [this]() { updateFigure(true);});
+    connect(extendBox2,    &QCheckBox::clicked,  this, [this]() { updateFigure(true);});
 }
 
 FigurePtr ExtendedStarEditor::getFigure()
@@ -484,11 +484,11 @@ void ExtendedStarEditor::resetWithFigure(FigurePtr fig, bool doEmit)
     Q_ASSERT(extended);
     StarEditor::resetWithFigure(extended,false);
 
-    updateLimits();
-    updateGeometry(doEmit);
+    updateEditor();
+    updateFigure(doEmit);
 }
 
-void ExtendedStarEditor::updateLimits()
+void ExtendedStarEditor::updateEditor()
 {
     if (extended)
     {
@@ -500,11 +500,11 @@ void ExtendedStarEditor::updateLimits()
         extendBox2->setChecked(ext_nt);
         blockSignals(false);
 
-        StarEditor::updateLimits();
+        StarEditor::updateEditor();
     }
 }
 
-void ExtendedStarEditor::updateGeometry(bool doEmit)
+void ExtendedStarEditor::updateFigure(bool doEmit)
 {
     if (extended)
     {
@@ -516,7 +516,7 @@ void ExtendedStarEditor::updateGeometry(bool doEmit)
         extended->setExtendFreeVertices(extendFreeVertices);
         blockSignals(false);
 
-        StarEditor::updateGeometry(false);
+        StarEditor::updateFigure(false);
 
         if (doEmit)
             emit sig_figure_changed(extended);
@@ -535,9 +535,9 @@ ExtendedRosetteEditor::ExtendedRosetteEditor(page_motif_maker * fm, QString fign
     addWidget(extendFreeBox);
     addWidget(connectBoundaryBox);
 
-    connect(extendPeriphBox,    &QCheckBox::clicked,       this, &ExtendedRosetteEditor::updateGeometry, Qt::QueuedConnection);
-    connect(extendFreeBox,      &QCheckBox::clicked,       this, &ExtendedRosetteEditor::updateGeometry, Qt::QueuedConnection);
-    connect(connectBoundaryBox, &QCheckBox::clicked,       this, &ExtendedRosetteEditor::updateGeometry, Qt::QueuedConnection);
+    connect(extendPeriphBox,    &QCheckBox::clicked,       this, [this]() { updateFigure(true);});
+    connect(extendFreeBox,      &QCheckBox::clicked,       this, [this]() { updateFigure(true);});
+    connect(connectBoundaryBox, &QCheckBox::clicked,       this, [this]() { updateFigure(true);});
 }
 
 FigurePtr ExtendedRosetteEditor::getFigure()
@@ -579,12 +579,12 @@ void ExtendedRosetteEditor::resetWithFigure(FigurePtr fig, bool doEmit)
     Q_ASSERT(extended);
     RosetteEditor::resetWithFigure(extended,false);
 
-    updateLimits();
-    updateGeometry(doEmit);
+    updateEditor();
+    updateFigure(doEmit);
 }
 
 
-void ExtendedRosetteEditor::updateLimits()
+void ExtendedRosetteEditor::updateEditor()
 {
     if (extended)
     {
@@ -598,11 +598,11 @@ void ExtendedRosetteEditor::updateLimits()
         connectBoundaryBox->setChecked(con_bd);
         blockSignals(false);
 
-        RosetteEditor::updateLimits();
+        RosetteEditor::updateEditor();
     }
 }
 
-void ExtendedRosetteEditor::updateGeometry(bool doEmit)
+void ExtendedRosetteEditor::updateFigure(bool doEmit)
 {
     if (extended)
     {
@@ -616,7 +616,7 @@ void ExtendedRosetteEditor::updateGeometry(bool doEmit)
         extended->setConnectBoundaryVertices(connectBoundary);
         blockSignals(false);
 
-        RosetteEditor::updateGeometry(false);
+        RosetteEditor::updateFigure(false);
 
         if (doEmit)
             emit sig_figure_changed(extended);

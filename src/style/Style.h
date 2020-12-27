@@ -61,7 +61,7 @@ class Style : public Layer
 public:
     // Creation.
     Style(PrototypePtr proto);
-    Style(const Style  & other);
+    Style(StylePtr other);
 
     ~Style() override;
 

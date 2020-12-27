@@ -54,14 +54,15 @@ public:
     FigurePtr   getFigure();
     void        setFigure(FigurePtr fig);
 
+    bool        validFigure();
+    void        createFigure();
+
     QString     toString();
     void        describe();
 
     static int refs;
 
 protected:
-    FigurePtr   createFigure(FeaturePtr feature);
-
     FeaturePtr	feature;
     FigurePtr	figure;
 };

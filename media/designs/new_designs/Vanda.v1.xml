@@ -1,17 +1,17 @@
 <?xml version="1.0"?>
-<vector id="1" version="7">
-	<designNotes>this uses figure rotation</designNotes>
+<vector id="1" version="6">
+	<designNotes>adds another explicit feature figure</designNotes>
 	<design>
 		<size>
-			<width>2028</width>
-			<height>1849</height>
+			<width>1500</width>
+			<height>1100</height>
 		</size>
 		<background>
 			<color>#ffffffff</color>
 		</background>
 		<Fill>-4,4,-4,4</Fill>
 	</design>
-	<style.Plain id="2" serialization="custom">
+	<style.Thick id="2" serialization="custom">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
 			<top__delta>0</top__delta>
@@ -22,11 +22,11 @@
 		<style.Style>
 			<prototype id="3" serialization="custom">
 				<app.Prototype>
-					<string>vanda_base.v4</string>
+					<string>vanda_base.v1</string>
 					<entry>
 						<tile.Feature id="4">
 							<regular>true</regular>
-							<rotation>30</rotation>
+							<rotation>0</rotation>
 							<scale>1</scale>
 							<edges id="5">
 								<Line>
@@ -62,8 +62,8 @@
 							<k>0</k>
 							<boundarySides>1</boundarySides>
 							<boundaryScale>1</boundaryScale>
-							<figureScale>1.155</figureScale>
-							<r>0</r>
+							<figureScale>1.15</figureScale>
+							<r>30</r>
 						</app.Rosette>
 					</entry>
 					<entry>
@@ -96,7 +96,7 @@
 					<entry>
 						<tile.Feature id="19">
 							<regular>true</regular>
-							<rotation>30</rotation>
+							<rotation>0</rotation>
 							<scale>1</scale>
 							<edges id="20">
 								<Line>
@@ -138,5 +138,9 @@
 		<style.Colored>
 			<color hide="f">#ff1496d2</color>
 		</style.Colored>
-	</style.Plain>
+		<style.Thick>
+			<draw__outline>true</draw__outline>
+			<width>0.03</width>
+		</style.Thick>
+	</style.Thick>
 </vector>

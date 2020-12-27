@@ -275,7 +275,7 @@ void  page_layers::refreshPage()
     {
         // design number
         QTableWidgetItem * twi = layerTable->item(LAYER_NAME,col);
-        twi->setText(QString("%1 %2").arg(layer->getName(),Utils::addr(layer.get())));
+        twi->setText(QString("%1 %2").arg(layer->getName()).arg(Utils::addr(layer.get())));
 
         // layer number and visibility
         QWidget * w = layerTable->cellWidget(LAYER_VISIBILITY,col);
@@ -315,7 +315,7 @@ void  page_layers::refreshPage()
 
         twi = layerTable->item(LAYER_CENTER,col);
         QPointF center = layer->getCenterScreen();
-        twi->setText(QString("%1 : %2").arg(QString::number(center.x(),'f',4),QString::number(center.y(),'f',4)));
+        twi->setText(QString("%1 : %2").arg(QString::number(center.x(),'f',4)).arg(QString::number(center.y(),'f',4)));
 
         item = layerTable->item(LAYER_SCALE,col);
         item->setText(QString::number(Transform::scalex(t),'f',16));

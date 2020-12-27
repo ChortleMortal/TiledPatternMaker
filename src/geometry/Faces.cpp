@@ -45,6 +45,7 @@
 #include "geometry/facecycles.h"
 #include "geometry/point.h"
 #include "geometry/loose.h"
+#include "geometry/map_cleanser.h"
 #include "geometry/intersect.h"
 #include "base/utilities.h"
 #include <QPolygonF>
@@ -94,7 +95,8 @@ void Faces::clearFaces()
 
 void Faces::buildFacesOriginal(MapPtr map)
 {
-    map->verifyMap("buildFaces");
+    MapCleanser cleanser(map);
+    cleanser.verifyMap("buildFaces");
 
     NeighbourMap & nmap = map->getNeighbourMap();
 
@@ -879,10 +881,12 @@ void Faces::dumpEdgeFaceMap(QMap<EdgePtr,FacePtr> & dmap, QString title)
 
 void  Faces::purifyMap(MapPtr map)
 {
-    map->cleanse();
-    map->calcVertexEdgeCounts();
-    map->removeVerticesWithEdgeCount(1);
-    map->calcVertexEdgeCounts();
+    MapCleanser cleanser(map);
+    cleanser.cleanse();
+
+    qDebug().noquote() << map->calcVertexEdgeCounts();
+    cleanser.removeVerticesWithEdgeCount(1);
+    qDebug().noquote() << map->calcVertexEdgeCounts();
 }
 
 ////////////////////////////////////////

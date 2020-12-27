@@ -41,12 +41,12 @@ QString Utils::addr(const void * address)
 
 QString Utils::str(QPointF pt)
 {
-    return QString("(%1,%2)").arg(QString::number(pt.x()),QString::number(pt.y()));
+    return QString("(%1,%2)").arg(QString::number(pt.x())).arg(QString::number(pt.y()));
 }
 
 QString Utils::str(QSize sz)
 {
-    return QString("%1 x %2").arg(QString::number(sz.width()),QString::number(sz.height()));
+    return QString("%1 x %2").arg(QString::number(sz.width())).arg(QString::number(sz.height()));
 }
 
 void Utils::identify(Layer * layer, QPolygonF * poly)
@@ -54,7 +54,7 @@ void Utils::identify(Layer * layer, QPolygonF * poly)
     for (int i=0; i< poly->count(); i++)
     {
         QPointF p   = poly->at(i);
-        QString txt = QString("%1: %2 %3").arg(i,p.x(), p.y());
+        QString txt = QString("%1: %2 %3").arg(i).arg(p.x()).arg(p.y());
         qDebug() << txt;
         MarkXPtr m   = make_shared<MarkX>(p, QPen(QColor(Qt::green),3), txt);
         layer->addSubLayer(m);

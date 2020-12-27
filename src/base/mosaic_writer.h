@@ -108,7 +108,7 @@ protected:
     void    setPrototype(QTextStream & ts, PrototypePtr pp);
     void    setPolygon(QTextStream & ts,PolyPtr pp);    // deprecated
 
-    void    setEdgePoly(QTextStream & ts, EdgePoly & epoly);
+    void    setEdgePoly(QTextStream & ts, const EdgePoly & epoly);
     void    setVertexEP(QTextStream & ts,VertexPtr v, QString name);
     void    setVertex(QTextStream & ts, VertexPtr v, QString name = "Vertex");
     void    setEdges(QTextStream & ts, QVector<EdgePtr> &qvec);

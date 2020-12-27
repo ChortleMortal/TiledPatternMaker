@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <vector id="1">
-	<designNotes>Using extended star with extended free vertices</designNotes>
+	<designNotes>Using extended star with extended peripheral vertices</designNotes>
 	<design>
 		<scale>1</scale>
 		<size>
@@ -72,13 +72,13 @@
 								</Point>
 							</points>
 						</tile.Feature>
-						<ExtendedStar id="18" extendPeripherals="f" extendFreeVertices="t">
+						<ExtendedStar id="18" extendPeripherals="t" extendFreeVertices="f">
 							<n>12</n>
 							<d>4</d>
 							<s>2</s>
 							<r>0</r>
 							<boundarySides>6</boundarySides>
-							<boundaryScale>1.1</boundaryScale>
+							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 						</ExtendedStar>
 					</entry>

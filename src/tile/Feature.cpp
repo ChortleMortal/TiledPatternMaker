@@ -134,6 +134,15 @@ Feature::~Feature()
     refs--;
 }
 
+void Feature::setN(int n)
+{
+    if (regular)
+    {
+        this->n = n;
+        create();
+    }
+}
+
 void Feature::setRotation(qreal rotate)
 {
     rotation = rotate;

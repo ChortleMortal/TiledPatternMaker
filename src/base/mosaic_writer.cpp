@@ -26,7 +26,7 @@
 #include "base/border.h"
 #include "base/fileservices.h"
 #include "base/configuration.h"
-#include "viewers/viewcontrol.h"
+#include "geometry/map_cleanser.h"
 #include "panels/panel.h"
 #include "style/colored.h"
 #include "style/thick.h"
@@ -43,6 +43,7 @@
 #include "tapp/rosette_connect_figure.h"
 #include "tapp/star_connect_figure.h"
 #include "tapp/explicit_figure.h"
+#include "viewers/viewcontrol.h"
 
 //const int currentXMLVersion = 3;
 //const int currentXMLVersion = 4;  // 05OCT19 use ColorSets in Colored
@@ -50,9 +51,6 @@
 //const int currentXMLVersion = 6;  // 26JUL20 includes FillData
   const int currentXMLVersion = 7;  // 15DEC20 Feature epolys beein saved correctly
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5,15,0))
-#define endl Qt::endl
-#endif
 
 MosaicWriter::MosaicWriter()
 {
@@ -956,7 +954,7 @@ void MosaicWriter::setFeature(QTextStream & ts,FeaturePtr fp)
 
     ts << "<edges" << nextId() << ">" << endl;
 
-    EdgePoly & ep  = fp->getBase();
+    const EdgePoly & ep  = fp->getBase();
     setEdgePoly(ts,ep);
 
     ts << "</edges>" << endl;
@@ -1268,7 +1266,9 @@ void MosaicWriter::setStarConnectFigure(QTextStream & ts,QString name, FigurePtr
 bool MosaicWriter::setMap(QTextStream &ts, MapPtr map)
 {
     qDebug().noquote() << map->summary();
-    bool verify = map->verifyMap("XMLWriter");
+    MapCleanser cleanser(map);
+
+    bool verify = cleanser.verifyMap("XMLWriter");
     if (!verify)
     {
         QMessageBox box;
@@ -1279,8 +1279,8 @@ bool MosaicWriter::setMap(QTextStream &ts, MapPtr map)
         switch (ret)
         {
         case QMessageBox::Yes :
-            map->cleanse();     // always write a good map
-            verify = map->verifyMap("XMLWriter: post cleanse");
+            cleanser.cleanse();     // always write a good map
+            verify = cleanser.verifyMap("XMLWriter: post cleanse");
             break;
         case QMessageBox::No :
             verify = true;
@@ -1386,7 +1386,7 @@ void MosaicWriter::setNeighbour(QTextStream & ts, VertexPtr v, NeighboursPtr np)
     ts << "</neighbourset>" << endl;
 }
 
-void MosaicWriter::setEdgePoly(QTextStream & ts, EdgePoly & epoly)
+void MosaicWriter::setEdgePoly(QTextStream & ts, const EdgePoly & epoly)
 {
     for (auto it = epoly.begin(); it != epoly.end(); it++)
     {
@@ -1500,7 +1500,7 @@ void MosaicWriter::setEdge(QTextStream & ts, EdgePtr e)
 
     if (curved)
     {
-        QString str = QString("<curve %1 convex=\"%2\">").arg(qsid,e->isConvex() ? "t" : "f");
+        QString str = QString("<curve %1 convex=\"%2\">").arg(qsid).arg(e->isConvex() ? "t" : "f");
         ts << str << endl;
     }
     else
@@ -1798,7 +1798,7 @@ void MosaicWriter::setPos(QTextStream & ts,QPointF qpf)
 
 void MosaicWriter::fail(QString a, QString b)
 {
-    _failMsg = QString("%1 %2").arg(a,b);
+    _failMsg = QString("%1 %2").arg(a).arg(b);
     qWarning().noquote() << _failMsg;
     throw(_failMsg);
 }

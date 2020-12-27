@@ -26,6 +26,7 @@
 #include "base/configuration.h"
 #include "base/shortcuts.h"
 #include "geometry/transform.h"
+#include "geometry/map_cleanser.h"
 #include "tapp/design_element.h"
 #include "tapp/prototype.h"
 #include "viewers/placed_designelement_view.h"
@@ -325,7 +326,8 @@ void MapEditor::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
             if (sel->getType() == MAP_EDGE)
             {
                 map->removeEdge(sel->getEdge());
-                map->verifyMap("delete edge");
+                MapCleanser cleanser(map);
+                cleanser.verifyMap("delete edge");
                 break;
             }
             else if (sel->getType() == MAP_LINE && sel->isConstructionLine())
@@ -339,6 +341,7 @@ void MapEditor::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
             {
                 CirclePtr c = sel->getCircle();
                 constructionCircles.removeOne(c);
+                break;
             }
         }
         buildEditorDB();
@@ -354,7 +357,8 @@ void MapEditor::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
         {
             auto sel = *it;
             map->splitEdge(sel->getEdge());
-            map->verifyMap("split edge");
+            MapCleanser cleanser(map);
+            cleanser.verifyMap("split edge");
         }
         buildEditorDB();
         forceRedraw();

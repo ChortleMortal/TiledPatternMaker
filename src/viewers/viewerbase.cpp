@@ -21,6 +21,7 @@ void  ViewerBase::drawFeature(GeoGraphics * gg, FeaturePtr feature, QBrush brush
 void  ViewerBase ::drawFigure(GeoGraphics * gg, FigurePtr figure, QPen pen)
 {
     MapPtr map = figure->getFigureMap();
+    if (!map) return;
     for(auto edge :  map->getEdges())
     {
         if (edge->getType() == EDGETYPE_LINE)

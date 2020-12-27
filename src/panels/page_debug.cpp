@@ -53,6 +53,7 @@ page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,"Debug Tools
 
      Cycler * cycler = Cycler::getInstance();
      connect(this,  &page_debug::sig_cyclerStart,          cycler,  &Cycler::slot_startCycle, Qt::QueuedConnection);
+     connect(this,  &page_debug::sig_cyclerStart,          theApp,  &TiledPatternMaker::slot_startCycle);
 }
 
 QGroupBox * page_debug::createDebugSection()
@@ -105,13 +106,23 @@ QGroupBox * page_debug::createDebugSection()
 QGroupBox * page_debug::createCycleSection()
 {
     SpinSet     * spCycleInterval       = new SpinSet("Cycle Interval",0,0,9);
-    QPushButton * cycleBtn              = new QPushButton("Cycle");
+    QPushButton * generateBtn           = new QPushButton("Generate");
+    generateBtn->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
 
     QRadioButton * rStyles    = new QRadioButton("Mosaics");
     QRadioButton * rTiles     = new QRadioButton("Tilings");
     QRadioButton * rPngs      = new QRadioButton("PNGS");
     QRadioButton * rSavStyles = new QRadioButton("Save Mosaic BMPs");
     QRadioButton * rSavTiles  = new QRadioButton("Save Tiling BMPs");
+    QCheckBox    * use_badlist= new QCheckBox("Use Bad List");
+                   directory  = new QLineEdit("");
+#ifdef Q_OS_WINDOWS
+    QPushButton  * opendirBtn = new QPushButton("Open");
+#endif
+    QDateTime d = QDateTime::currentDateTime();
+    QString date = d.toString("yyyy-MM-dd");
+    directory->setText(date);
+    directory->setMinimumWidth(132);
 
     QButtonGroup * cycleGroup = new QButtonGroup;
     cycleGroup->addButton(rStyles,CYCLE_STYLES);
@@ -127,25 +138,42 @@ QGroupBox * page_debug::createCycleSection()
 
     QHBoxLayout * hbox00 = new QHBoxLayout;
     hbox00->addWidget(rSavStyles);
+    hbox00->addWidget(use_badlist);
     hbox00->addWidget(rSavTiles);
+    hbox00->addWidget(directory);
+#ifdef Q_OS_WINDOWS
+    hbox00->addWidget(opendirBtn);
+#endif
     hbox00->addStretch();
-    hbox00->addLayout(spCycleInterval);
-    hbox00->addWidget(rPngs);
-    hbox00->addWidget(rStyles);
-    hbox00->addWidget(rTiles);
-    hbox00->addStretch();
-    hbox00->addWidget(cycleBtn);
+
+    QHBoxLayout * hbox11 = new QHBoxLayout;
+    hbox11->addLayout(spCycleInterval);
+    hbox11->addWidget(rPngs);
+    hbox11->addWidget(rStyles);
+    hbox11->addWidget(rTiles);
+    hbox11->addStretch();
 
     QVBoxLayout * cycleLayout = new QVBoxLayout;
     cycleLayout->addLayout(hbox00);
+    cycleLayout->addLayout(hbox11);
+
+    QHBoxLayout * hbox22 = new QHBoxLayout;
+    hbox22->addLayout(cycleLayout);
+    hbox22->addWidget(generateBtn);
 
     QGroupBox * cycleGroupBox = new  QGroupBox("Cycling");
-    cycleGroupBox->setLayout(cycleLayout);
+    cycleGroupBox->setLayout(hbox22);
 
     spCycleInterval->setValue(config->cycleInterval);
+    use_badlist->setChecked(config->use_badList2);
 
     connect(spCycleInterval,    &SpinSet::valueChanged,    this,  &page_debug::slot_cycleIntervalChanged);
-    connect(cycleBtn,           &QPushButton::clicked,     this,  &page_debug::slot_cycle);
+    connect(generateBtn,        &QPushButton::clicked,     this,  &page_debug::slot_cycle);
+#ifdef Q_OS_WINDOWS
+    connect(opendirBtn,         &QPushButton::clicked,     this,  &page_debug::slot_opendir);
+#endif
+    connect(use_badlist,        &QCheckBox::clicked,       this,  &page_debug::slot_use_badlist2);
+
 #if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
     connect(cycleGroup,         SIGNAL(buttonClicked(int)), this, SLOT(slot_cycleModeChanged(int)));
 #else
@@ -170,9 +198,12 @@ QGroupBox * page_debug::createImagesSection()
     QPushButton * viewImage0   = new QPushButton("View");
     QPushButton * viewImage1   = new QPushButton("View");
     QPushButton * compareBtn   = new QPushButton("Compare");
-    QPushButton * cycleBtn     = new QPushButton("Cycle");
+    QPushButton * reviewBtn    = new QPushButton("Review");
     QPushButton * previousBtn  = new QPushButton("Previous");
     QPushButton * nextBtn      = new QPushButton("Next");
+
+    reviewBtn->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
+    compareBtn->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
 
     QPushButton * swapBtn      = new QPushButton("Swap");
     QCheckBox   * cbStopIfDiff = new QCheckBox("Stop if Diff");
@@ -180,6 +211,7 @@ QGroupBox * page_debug::createImagesSection()
     QCheckBox   * differences  = new QCheckBox("Display Differences");
     QCheckBox   * ping_pong    = new QCheckBox("Ping-pong");
     QCheckBox   * side_by_side = new QCheckBox("Side-by-side");
+    QCheckBox   * use_badlist  = new QCheckBox("Use Bad List");
 
     QHBoxLayout * hbox = new QHBoxLayout;
     hbox->addStretch();
@@ -188,7 +220,8 @@ QGroupBox * page_debug::createImagesSection()
     hbox->addWidget(differences);
     hbox->addWidget(ping_pong);
     hbox->addWidget(side_by_side);
-    hbox->addWidget(cycleBtn);
+    hbox->addWidget(use_badlist);
+    hbox->addWidget(reviewBtn);
 
     QGridLayout * imageGrid = new QGridLayout();
 
@@ -233,6 +266,7 @@ QGroupBox * page_debug::createImagesSection()
     differences->setChecked(config->display_differences);
     ping_pong->setChecked(config->compare_ping_pong);
     side_by_side->setChecked(config->compare_side_by_side);
+    use_badlist->setChecked(config->use_badList);
 
     connect(swapBtn,                &QPushButton::clicked,     this,  &page_debug::swapDirs);
     connect(compareDir0Btn,         &QPushButton::clicked,     this,  &page_debug::selectDir0);
@@ -241,7 +275,7 @@ QGroupBox * page_debug::createImagesSection()
     connect(viewImage0,             &QPushButton::clicked,     this,   &page_debug::slot_viewImage0);
     connect(viewImage1,             &QPushButton::clicked,     this,   &page_debug::slot_viewImage1);
     connect(compareBtn,             &QPushButton::clicked,     this,   &page_debug::slot_compareImages);
-    connect(cycleBtn,               &QPushButton::clicked,     this,   &page_debug::slot_compareCycle);
+    connect(reviewBtn,              &QPushButton::clicked,     this,   &page_debug::slot_compareCycle);
     connect(previousBtn,            &QPushButton::clicked,     this,   &page_debug::slot_previous);
     connect(nextBtn,                &QPushButton::clicked,     this,   &page_debug::slot_next);
 
@@ -250,6 +284,7 @@ QGroupBox * page_debug::createImagesSection()
     connect(differences,            &QCheckBox::clicked,       this,   &page_debug::slot_differencesClicked);
     connect(ping_pong,              &QCheckBox::clicked,       this,   &page_debug::slot_ping_pongClicked);
     connect(side_by_side,           &QCheckBox::clicked,       this,   &page_debug::slot_side_by_sideClicked);
+    connect(use_badlist,            &QCheckBox::clicked,       this,   &page_debug::slot_use_badlist);
 
     connect(dir0, &QLineEdit::editingFinished, this, &page_debug::slot_dir0Changed);
     connect(dir1, &QLineEdit::editingFinished, this, &page_debug::slot_dir1Changed);
@@ -605,6 +640,7 @@ void page_debug::slot_cycle()
 
     case CYCLE_ORIGINAL_PNGS:
     case CYCLE_COMPARE_IMAGES:
+    case RE_CYCLE_COMPARE_IMAGES:
         emit sig_cyclerStart(config->cycleMode);
         break;
 
@@ -616,13 +652,21 @@ void page_debug::slot_cycle()
 void page_debug::saveMosaicBitmaps()
 {
     QStringList files;
-    if (config->mosaicFilterCheck &&  !config->mosaicFilter.isEmpty())
+
+    if (!config->use_badList2)
     {
-        files = FileServices::getFilteredDesignNames(config->mosaicFilter);
+        if (config->mosaicFilterCheck &&  !config->mosaicFilter.isEmpty())
+        {
+            files = FileServices::getFilteredDesignNames(config->mosaicFilter);
+        }
+        else
+        {
+            files = FileServices::getDesignNames();
+        }
     }
     else
     {
-        files = FileServices::getDesignNames();
+        files = config->badImages;
     }
 
     for (const auto & name : qAsConst(files))
@@ -681,7 +725,10 @@ void page_debug::slot_compareImages()
 void page_debug::slot_compareCycle()
 {
     panel->showPanelStatus("L=log  V=view Q=quit Spacebar=next");
-    emit sig_cyclerStart(CYCLE_COMPARE_IMAGES);
+    if (config->use_badList)
+        emit sig_cyclerStart(RE_CYCLE_COMPARE_IMAGES);
+    else
+        emit sig_cyclerStart(CYCLE_COMPARE_IMAGES);
 }
 
 void page_debug::slot_transparentClicked(bool checked)
@@ -702,6 +749,16 @@ void page_debug::slot_ping_pongClicked(bool checked)
 void page_debug::slot_side_by_sideClicked(bool checked)
 {
     config->compare_side_by_side = checked;
+}
+
+void page_debug::slot_use_badlist(bool checked)
+{
+    config->use_badList = checked;
+}
+
+void page_debug::slot_use_badlist2(bool checked)
+{
+    config->use_badList2 = checked;
 }
 
 void page_debug::slot_compareResult(QString result)
@@ -809,12 +866,8 @@ void  page_debug::slot_verifyVerboseClicked(bool enb)
     config->verifyVerbose = enb;
 }
 
-void page_debug::savePixmap(QString name)
+QString page_debug::getPixmapPath()
 {
-    Q_ASSERT(!name.contains(".xml"));
-
-    QPixmap pixmap = view->grab();
-
     QString subdir;
     switch (config->repeatMode)
     {
@@ -829,8 +882,7 @@ void page_debug::savePixmap(QString name)
         break;
     }
 
-    QDateTime d = QDateTime::currentDateTime();
-    QString date = d.toString("yyyy-MM-dd");
+    QString date = directory->text();
 
     QString path = config->rootImageDir;
     if (config->viewerType == VIEW_TILING)
@@ -846,16 +898,34 @@ void page_debug::savePixmap(QString name)
             qFatal("could not make path");
         }
     }
+    return path;
+}
+
+void page_debug::savePixmap(QString name)
+{
+    Q_ASSERT(!name.contains(".xml"));
+
+    QPixmap pixmap = view->grab();
+
+    QString path = getPixmapPath();
+
     QString file = path + "/" + name + ".bmp";
     qDebug() << "saving" << file;
-
-    //QFileInfo fileInfo(file);
-    //QString path = fileInfo.filePath();
-    //s.setValue("picPath",path);
 
     bool rv = pixmap.save(file);
     if (!rv)
         qDebug() << file << "save ERROR";
 }
 
+void page_debug::slot_opendir()
+{
+#ifdef Q_OS_WINDOWS
+    QString path = getPixmapPath();
+    qDebug() <<  "Path:" << path;
 
+    QStringList args;
+    args << "/select," << QDir::toNativeSeparators(path);
+
+    QProcess::startDetached("explorer",args);
+#endif
+}

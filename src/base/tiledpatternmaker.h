@@ -72,8 +72,9 @@ public slots:
     void slot_bringToPrimaryScreen();
     void slot_splitScreen(bool checked);
 
-    void slot_compareImagesReplace(QString fileLeft, QString fileRight, bool autoMode);
-    void slot_compareImages(QString fileLeft, QString fileRight, bool autoMode);
+    void slot_startCycle(eCycleMode mode);
+    void slot_compareImagesReplace(QString nameLeft, QString nameRight, bool autoMode);
+    void slot_compareImages(QString nameLeft, QString nameRight, bool autoMode);
     void slot_cyclerFinished();
     void slot_view_image(QString filename);
     void slot_show_png(QString file, int row, int col);

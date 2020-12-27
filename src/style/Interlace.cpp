@@ -25,6 +25,7 @@
 #include "style/interlace.h"
 #include "geometry/map.h"
 #include "geometry/point.h"
+#include "geometry/map_cleanser.h"
 #include "style/outline.h"
 #include <QPainter>
 
@@ -54,18 +55,17 @@ Interlace::Interlace(PrototypePtr proto) : Thick(proto)
     includeTipVertices = false;
 }
 
-Interlace::Interlace(const Style & other) : Thick(other)
+Interlace::Interlace(StylePtr other) : Thick(other)
 {
-    try
+    shared_ptr<Interlace> intl = std::dynamic_pointer_cast<Interlace>(other);
+    if (intl)
     {
-        const Interlace & intl = dynamic_cast<const Interlace &>(other);
-        gap     = intl.gap;
-        shadow  = intl.shadow;
-        includeTipVertices = intl.includeTipVertices;
+        gap     = intl->gap;
+        shadow  = intl->shadow;
+        includeTipVertices = intl->includeTipVertices;
     }
-    catch(std::bad_cast & exp)
+    else
     {
-        Q_UNUSED(exp);
         gap     = 0.0;
         shadow  = 0.05;
         includeTipVertices = false;
@@ -98,14 +98,15 @@ void Interlace::createStyleRepresentation()
     }
 
     MapPtr map = getMap();
-    //map->dumpMap(false);
-    map->verifyMap("interlace stylemapA");
+
+    MapCleanser cleanser(map);
+    cleanser.verifyMap("interlace stylemapA");
 
     if (colors.size() > 1)
     {
-        map->setTmpIndices();
         map->sortAllNeighboursByAngle();
-        map->verifyMap("interlace stylemapB");
+
+        cleanser.verifyMap("interlace stylemapB");
 
         threads.findThreads(map);
         threads.assignColors(colors);
@@ -140,7 +141,7 @@ void Interlace::createStyleRepresentation()
 
     annotateEdges(map);
 
-    map->verifyMap("interlace");
+    cleanser.verifyMap("interlace");
 }
 
 // Private magic to make it all happen.

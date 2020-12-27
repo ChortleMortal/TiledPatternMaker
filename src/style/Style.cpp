@@ -41,13 +41,13 @@ Style::Style(PrototypePtr proto) : Layer("Style",LTYPE_VIEW)
     refs++;
 }
 
-Style::Style(const Style &other) : Layer(other)
+Style::Style(StylePtr other) : Layer(other)
 {
-    prototype = other.prototype;
+    prototype = other->prototype;
 
-    if (other.debugMap)
+    if (other->debugMap)
     {
-        debugMap = other.debugMap;
+        debugMap = other->debugMap;
     }
     paintSVG  = false;
     generator = nullptr;

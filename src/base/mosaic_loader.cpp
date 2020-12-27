@@ -27,6 +27,7 @@
 #include "base/configuration.h"
 #include "base/tiledpatternmaker.h"
 #include "base/utilities.h"
+#include "geometry/map_cleanser.h"
 #include "style/colored.h"
 #include "style/thick.h"
 #include "style/filled.h"
@@ -36,7 +37,6 @@
 #include "style/sketch.h"
 #include "style/emboss.h"
 #include "style/tile_colors.h"
-#include "tapp/star.h"
 #include "tapp/extended_star.h"
 #include "tapp/infer.h"
 #include "tapp/explicit_figure.h"
@@ -1759,10 +1759,11 @@ MapPtr MosaicLoader::getMap(xml_node &node)
         }
     }
 
-    if (!_currentMap->verifyMap("XML Loader"))
+    MapCleanser cleanser(_currentMap);
+    if (!cleanser.verifyMap("XML Loader"))
     {
-        _currentMap->cleanse();
-        if (!_currentMap->verifyMap("XML Loader - cleanse"))
+        cleanser.cleanse();
+        if (!cleanser.verifyMap("XML Loader - cleanse"))
         {
             QMessageBox box;
             box.setIcon(QMessageBox::Warning);
@@ -2519,7 +2520,7 @@ MapPtr MosaicLoader::getMapReferencedPtr(xml_node & node)\
 
 void MosaicLoader::fail(QString a, QString b)
 {
-    _failMessage = QString("%1 %2").arg(a,b);
+    _failMessage = QString("%1 %2").arg(a).arg(b);
     qWarning().noquote() << _failMessage;
     throw(_failMessage);
 }

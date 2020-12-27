@@ -50,19 +50,18 @@ Emboss::Emboss(PrototypePtr proto) : Outline(proto)
     setAngle(M_PI * 0.25 );
 }
 
-Emboss::Emboss(const Style & other) : Outline(other)
+Emboss::Emboss(StylePtr other) : Outline(other)
 {
-    try
+    shared_ptr<Emboss> emb = std::dynamic_pointer_cast<Emboss>(other);
+    if (emb)
     {
-        const Emboss & emb = dynamic_cast<const Emboss&>(other);
-        angle   = emb.angle;
-        light_x = emb.light_x;
-        light_y = emb.light_y;
-        greys   = emb.greys;
+        angle   = emb->angle;
+        light_x = emb->light_x;
+        light_y = emb->light_y;
+        greys   = emb->greys;
     }
-    catch(std::bad_cast & exp)
+    else
     {
-        Q_UNUSED(exp);
         setAngle(M_PI * 0.25 );
         setGreys();
     }

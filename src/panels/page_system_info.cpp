@@ -32,9 +32,6 @@
 #include "makers/decoration_maker/decoration_maker.h"
 #include "viewers/viewcontrol.h"
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5,15,0))
-#define endl Qt::endl
-#endif
 
 page_system_info::page_system_info(ControlPanel * cpanel)  : panel_page(cpanel,"System Info")
 {
@@ -399,7 +396,9 @@ void page_system_info::populateDEL(QTreeWidgetItem * parent, DesignElementPtr de
     QTreeWidgetItem * item = new QTreeWidgetItem;
     item->setText(0,"Feature");
     item->setText(1, addr(feature.get()));
-    item->setText(2, QString("Points: %1 Rot: %2").arg(feature->numPoints()).arg(feature->getRotation()));
+    item->setText(2, QString("Points: %1 Rot: %2 %3").arg(feature->numPoints())
+                                                     .arg(feature->getRotation())
+                                                     .arg((feature->isRegular()) ? "Regular" : "Irregular"));
     item2->addChild(item);
     tree->expandItem(item);
 
@@ -440,7 +439,9 @@ void page_system_info::populateTiling(QTreeWidgetItem * parent, TilingPtr tp, QS
         QTreeWidgetItem * item2 = new QTreeWidgetItem;
         item2->setText(0,"Feature");
         item2->setText(1, addr(fp.get()));
-        item2->setText(2, QString("Points: %1 Rot: %2").arg(fp->numPoints()).arg(fp->getRotation()));
+        item->setText(2, QString("Points: %1 Rot: %2 %3").arg(fp->numPoints())
+                                                         .arg(fp->getRotation())
+                                                         .arg((fp->isRegular()) ? "Regular" : "Irregular"));
         item->addChild(item2);
     }
 }

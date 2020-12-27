@@ -68,10 +68,12 @@ Configuration::Configuration()
     tileFilter          = s.value("tileFilter","").toString();
     xmlTool             = s.value("xmlTool","").toString();
 
+    badImages           = s.value("badImages","").toStringList();
+
     autoLoadStyles      = s.value("autoLoadStyles",false).toBool();
     autoLoadTiling      = s.value("autoLoadTiling",false).toBool();
     autoLoadDesigns     = s.value("autoLoadDesigns",false).toBool();
-    loadTilingMulti   = s.value("loadReplaceTiling",true).toBool();
+    loadTilingMulti     = s.value("loadReplaceTiling",true).toBool();
     scaleToView         = s.value("scaleToView",true).toBool();
     stopIfDiff          = s.value("stopIfDiff",true).toBool();
     verifyMaps          = s.value("verifyMaps",false).toBool();
@@ -97,6 +99,8 @@ Configuration::Configuration()
     display_differences = s.value("compare_differences",true).toBool();
     compare_ping_pong   = s.value("compare_ping_pong",false).toBool();
     compare_side_by_side= s.value("compare_side_by_side",false).toBool();
+    use_badList         = s.value("use_badList",false).toBool();
+    use_badList2        = s.value("use_badList2",false).toBool();
     showBackgroundImage = s.value("showBackgroundImage",true).toBool();
     highlightUnit       = s.value("highlightUnit",false).toBool();
     insightMode         = s.value("insightMode",false).toBool();
@@ -209,6 +213,8 @@ void Configuration::save()
     s.setValue("compare_differences",display_differences);
     s.setValue("compare_ping_pong",compare_ping_pong);
     s.setValue("compare_side_by_side",compare_side_by_side);
+    s.setValue("use_badList",use_badList);
+    s.setValue("use_badList2",use_badList2);
     s.setValue("showBackgroundImage",showBackgroundImage);
     s.setValue("highlightUnit",highlightUnit);
     s.setValue("xmlTool",xmlTool);
@@ -216,6 +222,8 @@ void Configuration::save()
     s.setValue("cs_showBkgds",cs_showBkgds);
     s.setValue("cs_showBorders",cs_showBorders);
     s.setValue("cs_showFrameSettings",cs_showFrameSettings);
+
+    s.setValue("badImages",badImages);
 
     s.setValue("showGrid",showGrid);
     s.setValue("gridUnits",gridUnits);

@@ -271,7 +271,7 @@ void TilingMakerView::drawMeasurements(GeoGraphics *g2d)
     {
         Measurement & mm = *it;
         g2d->drawLineDirect(mm.startS(), mm.endS(),layerPen);
-        QString msg = QString("%1 (%2)").arg(QString::number(mm.lenS(),'f',2),QString::number(mm.lenW(),'f',8));
+        QString msg = QString("%1 (%2)").arg(QString::number(mm.lenS(),'f',2)).arg(QString::number(mm.lenW(),'f',8));
         g2d->drawText(mm.endS() + QPointF(10,0),msg);
     }
 }

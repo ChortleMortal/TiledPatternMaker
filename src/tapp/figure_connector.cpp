@@ -26,6 +26,7 @@
 #include "tapp/radial_figure.h"
 #include "geometry/intersect.h"
 #include "geometry/loose.h"
+#include "geometry/map_cleanser.h"
 
 FigureConnector::FigureConnector(RadialFigure * rp)
 {
@@ -109,8 +110,8 @@ void FigureConnector::connectFigure(MapPtr unitMap)
         QPointF poly_a = border[ idx ];
         QPointF poly_b = border[ (idx + 1) % n ];
 
-        QPointF ep = Intersect::getIntersection(tip_pos, seg_end, poly_a, poly_b );
-        if( !ep.isNull() )
+        QPointF ep;
+        if (Intersect::getIntersection(tip_pos, seg_end, poly_a, poly_b, ep))
         {
             endpoint = ep;
             dmap->insertDebugMark(endpoint,"endpoint");
@@ -129,8 +130,8 @@ void FigureConnector::connectFigure(MapPtr unitMap)
 
     for( int idx = 0; idx < (n+1)/2; ++idx )
     {
-        QPointF isect = Intersect::getIntersection(tip_pos, endpoint, neg_start, neg_end);
-        if( isect.isNull() )
+        QPointF isect;
+        if (!Intersect::getIntersection(tip_pos, endpoint, neg_start, neg_end, isect))
         {
             break;
         }
@@ -160,7 +161,8 @@ void FigureConnector::connectFigure(MapPtr unitMap)
     // rotate the unit
     unitMap->rotate(rp->getFigureRotate());
 
-    unitMap->verifyMap("RosetteConnectFigure");
+    MapCleanser cleanser(unitMap);
+    cleanser.verifyMap("RosetteConnectFigure");
 }
 
 qreal FigureConnector::computeScale(MapPtr cunit)
@@ -195,8 +197,8 @@ qreal FigureConnector::computeScale(MapPtr cunit)
                     QPointF ra = rp->getTransform().map( tip_pos );
                     QPointF rb = rp->getTransform().map( neg_seg );
 
-                    QPointF isect = Intersect::getIntersection( tip_pos, seg_end, ra, rb );
-                    if( isect.isNull() )
+                    QPointF isect;
+                    if (!Intersect::getIntersection(tip_pos, seg_end, ra, rb, isect))
                     {
                         qDebug() << "computeConnectScale = 1.0";
                         return 1.0;
@@ -291,7 +293,8 @@ void FigureConnector::rotateHalf( MapPtr cunit )
 
     //dumpM("three",movers);
 
-    cunit->verifyMap("rotateHalf end");
+    MapCleanser cleanser(cunit);
+    cleanser.verifyMap("rotateHalf end");
 }
 
 void FigureConnector::scaleToUnit(MapPtr cunit )

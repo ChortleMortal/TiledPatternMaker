@@ -50,7 +50,7 @@ DesignElement::DesignElement(FeaturePtr feat, FigurePtr fig)
 DesignElement::DesignElement(FeaturePtr feat)
 {
     feature = feat;
-    figure  = createFigure(feat);
+    createFigure();
     refs++;
 }
 
@@ -89,9 +89,8 @@ FigurePtr DesignElement::getFigure()
     return figure;
 }
 
-FigurePtr DesignElement::createFigure(FeaturePtr feature)
+void DesignElement::createFigure()
 {
-    FigurePtr figure;
     if (feature->isRegular() && (feature->numPoints() > 4) )  // DAC was > 4
     {
         figure = make_shared<Rosette>(feature->numPoints(), 0.0, 3, 0, feature->getRotation() );
@@ -100,7 +99,6 @@ FigurePtr DesignElement::createFigure(FeaturePtr feature)
     {
         figure = make_shared<ExplicitFigure>(make_shared<Map>("FIG_TYPE_EXPLICIT map"),FIG_TYPE_EXPLICIT, feature->numPoints());
     }
-    return figure;
 }
 
 void DesignElement::setFigure(FigurePtr fig)
@@ -119,13 +117,38 @@ void DesignElement::replaceFeature(FeaturePtr feat)
     else
     {
         feature = feat;
-        figure  = createFigure(feat);
+        createFigure();
     }
+}
+bool DesignElement::validFigure()
+{
+   if (figure->getFigType() == FIG_TYPE_EXPLICIT_FEATURE)
+   {
+       return true;     // always valid
+   }
+   if (feature->isRegular())
+   {
+       if (figure->isRadial())
+            return true;
+        else
+           return false;
+   }
+   else
+   {
+        if (figure->isExplicit())
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+   }
 }
 
 QString DesignElement::toString()
 {
-    return QString("this=%1 feature=%2 figure=%3").arg(Utils::addr(this), Utils::addr(feature.get()), Utils::addr(figure.get()));
+    return QString("this=%1 feature=%2 figure=%3").arg(Utils::addr(this)).arg(Utils::addr(feature.get())).arg(Utils::addr(figure.get()));
 }
 
 void DesignElement::describe()
@@ -183,5 +206,5 @@ PlacedDesignElement::~PlacedDesignElement()
 
 QString PlacedDesignElement::toString()
 {
-    return QString("feature=%1 figure=%2 T=%3").arg(Utils::addr(feature.get()), Utils::addr(figure.get()), Transform::toInfoString(trans));
+    return QString("feature=%1 figure=%2 T=%3").arg(Utils::addr(feature.get())).arg(Utils::addr(figure.get())).arg(Transform::toInfoString(trans));
 }

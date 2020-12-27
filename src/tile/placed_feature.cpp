@@ -40,9 +40,6 @@
 #include "base/utilities.h"
 #include "base/fileservices.h"
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5,15,0))
-#define endl Qt::endl
-#endif
 
 PlacedFeature::PlacedFeature()
 {
@@ -82,7 +79,7 @@ QTransform PlacedFeature::getTransform()
 
 EdgePoly  PlacedFeature::getPlacedEdgePoly()
 {
-    EdgePoly & ep = feature->getEdgePoly();
+    const EdgePoly & ep = feature->getEdgePoly();
 #if 1
     EdgePoly ep2  = ep.recreate();
     ep2.mapD(T);

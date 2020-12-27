@@ -71,7 +71,7 @@
 								</Point>
 							</points>
 						</tile.Feature>
-						<ExtendedStar id="18" extendPeripherals="f" extendFreeVertices="t">
+						<ExtendedStar id="18" extendPeripherals="f" extendFreeVertices="f">
 							<n>6</n>
 							<d>2</d>
 							<s>1</s>

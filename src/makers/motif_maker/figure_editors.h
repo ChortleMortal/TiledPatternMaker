@@ -51,11 +51,9 @@ public:
 signals:
     void sig_figure_changed(FigurePtr fig);
 
-public slots:
-    virtual void updateGeometry(bool doEmit);
-
 protected:
-    virtual void updateLimits();
+    virtual void updateFigure(bool doEmit);
+    virtual void updateEditor();
 
     FigurePtr       figure;
     QString         name;
@@ -79,11 +77,9 @@ public:
     virtual FigurePtr getFigure() override;
     virtual void      resetWithFigure(FigurePtr fig, bool doEmit) override;
 
-public slots:
-    virtual void updateGeometry(bool doEmit) override;
-
 protected:
-    virtual void updateLimits() override;
+    virtual void updateFigure(bool doEmit) override;
+    virtual void updateEditor() override;
 
     SliderSet       *   n_slider;
     DoubleSliderSet	*	d_slider;
@@ -104,11 +100,9 @@ public:
     virtual FigurePtr getFigure() override;
     virtual void      resetWithFigure(FigurePtr fig, bool doEmit) override;
 
-public slots:
-    virtual void updateGeometry(bool doEmit) override;
-
 protected:
-    virtual void updateLimits() override;
+    virtual void updateFigure(bool doEmit) override;
+    virtual void updateEditor() override;
 
     SliderSet       *   n_slider;
     DoubleSliderSet	*	q_slider;
@@ -169,11 +163,9 @@ public:
     FigurePtr getFigure() override;
     virtual void resetWithFigure(FigurePtr fig, bool doEmit) override;
 
-public slots:
-    virtual void updateGeometry(bool doEmit) override;
-
 protected:
-    virtual void updateLimits() override;
+    virtual void updateFigure(bool doEmit) override;
+    virtual void updateEditor() override;
 
 private:
     ExtStarPtr      extended;
@@ -193,11 +185,9 @@ public:
     FigurePtr getFigure() override;
     virtual void resetWithFigure(FigurePtr fig, bool doEmit) override;
 
-public slots:
-    void updateGeometry(bool doEmit) override;
-
 protected:
-    void updateLimits() override;
+    virtual void updateFigure(bool doEmit) override;
+    virtual void updateEditor() override;
 
 private:
     ExtRosettePtr   extended;

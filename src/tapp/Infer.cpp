@@ -48,6 +48,7 @@
 #include "geometry/point.h"
 #include "geometry/intersect.h"
 #include "geometry/transform.h"
+#include "geometry/map_cleanser.h"
 #include "tapp/star.h"
 #include "tile/placed_feature.h"
 #include <algorithm>
@@ -200,7 +201,7 @@ Infer::Infer( PrototypePtr proto )
         for( int x = -1; x <= 1; ++x )
         {
             count = add(x, y, count);     // add uses tiling
-            qDebug() << x << y << count;
+            //qDebug() << x << y << count;
         }
     }
 }
@@ -293,7 +294,7 @@ int Infer::findPrimaryFeature( FeaturePtr feature )
 
     if( cur == -1 )
     {
-        qFatal("Couldn't find feature in (0,0) unit!");  // FIXME qFatal
+        throw("Couldn't find feature in (0,0) unit!");
     }
 
     qDebug() << "Primary feature index =" << cur;
@@ -491,11 +492,11 @@ QPolygonF  Infer::buildStarBranchPoints( qreal d, int s, qreal side_frac, qreal 
     {
         QPointF ar = getArc( side_frac + sign *  idx * circle_frac, mid_points );
         QPointF br = getArc( side_frac + sign * (idx - clamp_d) * circle_frac, mid_points );
-        QPointF inter = Intersect::getIntersection( a, b, ar, br );
         // FIXMECSK: we should handle the concave case by extending the intersection.
         //        (After all, two lines will intersect if not parallel and two
         //         consecutive edges can hardly be parallel.)
-        if ( !inter.isNull() )
+        QPointF inter;
+        if (Intersect::getIntersection( a, b, ar, br, inter))
         {
             points << inter;
         }
@@ -541,8 +542,8 @@ MapPtr Infer::buildStarHalfBranch( qreal d, int s, qreal side_frac, qreal sign, 
             QPointF ar   = getArc( side_frac + sign * d_i    * circle_frac, mid_points );
             QPointF br   = getArc( side_frac - sign * d_frac * circle_frac, mid_points );
             QPointF c    = getArc( side_frac + sign * d * circle_frac, mid_points );
-            QPointF cent = Intersect::getIntersection( ar, br, points[0], c );
-            if ( !cent.isNull() )
+            QPointF cent;
+            if (Intersect::getIntersection( ar, br, points[0], c, cent))
             {
                 VertexPtr v4    = map->insertVertex( midr );
                 VertexPtr vcent = map->insertVertex( cent );
@@ -621,12 +622,10 @@ intersection_info Infer::FindClosestIntersection(int side, QPointF sideHalf, boo
         else
         {
             QPointF otherSide = buildGirihHalfBranch( i_side, otherIsLeft, requiredRotation, points, midPoints );
-            intersection = Intersect::getIntersection( otherMidPoint, otherSide, sideMidPoint, sideHalf );
-        }
-
-        if (intersection.isNull())
-        {
-            continue;
+            if (!Intersect::getIntersection( otherMidPoint, otherSide, sideMidPoint, sideHalf, intersection))
+            {
+                continue;
+            }
         }
 
         qreal dist2 = Point::dist2( intersection, sideMidPoint ) + Point::dist2(intersection, otherMidPoint );
@@ -749,10 +748,10 @@ QList<edges_length_info *> Infer::buildIntersectEdgesLengthInfos(
             QPointF otherMidPoint = midPoints[i_side];
             QPointF otherSide     = buildGirihHalfBranch( i_side, otherIsLeft, requiredRotation, points, midPoints );
             QList<intersection_info*> other_inter_infos = buildIntersectionInfos( i_side, otherSide, otherIsLeft,
-                                                          requiredRotation, points, midPoints );
+                                                                                  requiredRotation, points, midPoints );
 
-            QPointF intersection = Intersect::getIntersection( otherMidPoint, otherSide, sideMidPoint, sideHalf );
-            if ( intersection.isNull() )
+            QPointF intersection;
+            if (!Intersect::getIntersection( otherMidPoint, otherSide, sideMidPoint, sideHalf,intersection))
             {
                 // Lines are parallel, see if they actually point at each other.
                 if ( Loose::zero( Point::dist2ToLine(otherMidPoint, sideMidPoint, sideHalf ) ) )
@@ -761,15 +760,13 @@ QList<edges_length_info *> Infer::buildIntersectEdgesLengthInfos(
                     intersection = Point::convexSum( otherMidPoint, sideMidPoint, 0.5 );
                 }
             }
-            if ( !intersection.isNull() )
+
+            if (points.containsPoint(intersection,Qt::OddEvenFill))
             {
-                if (points.containsPoint(intersection,Qt::OddEvenFill))
-                {
-                    int inter_rank = getIntersectionRank( i_side, otherIsLeft, inter_infos );
-                    int other_rank = getIntersectionRank( side, isLeftHalf, other_inter_infos );
-                    qreal dist2    = Point::dist2( intersection, sideMidPoint ) + Point::dist2( intersection, otherMidPoint );
-                    infos << new edges_length_info( side, isLeftHalf, i_side, otherIsLeft, inter_rank + other_rank, dist2, intersection );
-                }
+                int inter_rank = getIntersectionRank( i_side, otherIsLeft, inter_infos );
+                int other_rank = getIntersectionRank( side, isLeftHalf, other_inter_infos );
+                qreal dist2    = Point::dist2( intersection, sideMidPoint ) + Point::dist2( intersection, otherMidPoint );
+                infos << new edges_length_info( side, isLeftHalf, i_side, otherIsLeft, inter_rank + other_rank, dist2, intersection );
             }
         }
     }
@@ -889,9 +886,7 @@ MapPtr Infer::inferIntersect( FeaturePtr feature, int starSides, qreal starSkip,
 }
 
 // Progressive intersect inferring.
-QList<intersection_info*> Infer::buildIntersectionInfos(
-    int side, QPointF sideHalf, bool isLeftHalf, qreal requiredRotation,
-    QPolygonF points, QPolygonF midPoints )
+QList<intersection_info*> Infer::buildIntersectionInfos( int side, QPointF sideHalf, bool isLeftHalf, qreal requiredRotation, QPolygonF points, QPolygonF midPoints )
 {
     Q_UNUSED(isLeftHalf)
     QList<intersection_info*> infos;
@@ -910,8 +905,8 @@ QList<intersection_info*> Infer::buildIntersectionInfos(
             QPointF otherMidPoint = midPoints[i_side];
 
             QPointF otherSide = buildGirihHalfBranch( i_side, otherIsLeft, requiredRotation, points, midPoints );
-            QPointF intersection = Intersect::getIntersection( otherMidPoint, otherSide, sideMidPoint, sideHalf );
-            if ( intersection.isNull() )
+            QPointF intersection;
+            if (!Intersect::getIntersection( otherMidPoint, otherSide, sideMidPoint, sideHalf,intersection))
             {
                 if ( Loose::zero( Point::dist2ToLine( otherMidPoint, sideMidPoint, sideHalf ) ) )
                 {
@@ -919,11 +914,8 @@ QList<intersection_info*> Infer::buildIntersectionInfos(
                     intersection = Point::convexSum( otherMidPoint, sideMidPoint, 0.5 );
                 }
             }
-            if ( !intersection.isNull() )
-            {
-                qreal dist2 = Point::dist2(intersection, sideMidPoint );
-                infos <<  new intersection_info( side, i_side, otherIsLeft, dist2, intersection );
-            }
+            qreal dist2 = Point::dist2(intersection, sideMidPoint );
+            infos <<  new intersection_info( side, i_side, otherIsLeft, dist2, intersection );
         }
     }
 
@@ -1083,11 +1075,11 @@ QPolygonF Infer::buildRosetteBranchPoints(qreal q, int s, qreal r,
     bisector *= 10.0;
     bisector += up_outer;
 
-    QPointF e = Intersect::getIntersection( up_outer, bisector, tip, rtip );
-    if (e.isNull())
+    QPointF e;
+    if (!Intersect::getIntersection( up_outer, bisector, tip, rtip, e))
         e = Point::convexSum(up_outer, QPointF(0,0), 0.5 );
-    QPointF ad = Intersect::getIntersection( up_outer, bisector, tip, QPointF(0,0) );
-    if (ad.isNull())
+    QPointF ad;
+    if (!Intersect::getIntersection( up_outer, bisector, tip, QPointF(0,0), ad ))
         ad = QPointF(0,0);
     QPointF qe = q_clamp >= 0  ? Point::convexSum(e, up_outer, q ) : Point::convexSum(e, ad, -q );
     QPointF f  = up_outer * r;
@@ -1119,10 +1111,10 @@ QPolygonF Infer::buildRosetteIntersections(qreal q, int s, qreal r,
         {
             QPolygonF other_points = buildRosetteBranchPoints( q, s, r, side_frac + sign * circle_frac * is, other_sign * sign, mid_points, corner_points );
             QPointF other_qe_f     = other_points[F_POINT] - other_points[QE_POINT];
-            QPointF meet_f         = Intersect::getIntersection(points[QE_POINT], points[QE_POINT] + ( qe_f * 10.0),
-                                     other_points[QE_POINT], other_points[QE_POINT] + other_qe_f * 10.0 );
-            if (meet_f.isNull())
+            QPointF meet_f;
+            if (!Intersect::getIntersection(points[QE_POINT], points[QE_POINT] + ( qe_f * 10.0), other_points[QE_POINT], other_points[QE_POINT] + other_qe_f * 10.0, meet_f))
                 continue;
+
             intersections << meet_f;
         }
     }
@@ -1302,8 +1294,7 @@ MapPtr Infer::infer( FeaturePtr feature )
             }
             else
             {
-                isect = Intersect::getTrueIntersection( con->position, con->end, ocon->position, ocon->end );
-                if( !isect.isNull())
+                if (Intersect::getTrueIntersection( con->position, con->end, ocon->position, ocon->end, isect))
                 {
                     // We don't want the case where the intersection
                     // lies too close to either vertex.  Note that
@@ -1477,7 +1468,10 @@ MapPtr Infer::infer( FeaturePtr feature )
     }
 
     ret->transformMap( pmain->T.inverted() );
-    ret->verifyMap("infer");
+
+    MapCleanser cleanser(ret);
+    cleanser.verifyMap("infer");
+
     return ret;
 }
 
@@ -1528,7 +1522,9 @@ MapPtr Infer::inferFeature(FeaturePtr feature)
             newEdge->setArcCenter(ac,convex);
         }
     }
-    map->verifyMap("infer feature-figure");
+
+    MapCleanser cleanser(map);
+    cleanser.verifyMap("infer feature-figure");
 
     return map;
 }

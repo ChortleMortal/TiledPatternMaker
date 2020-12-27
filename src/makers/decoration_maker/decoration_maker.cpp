@@ -241,28 +241,28 @@ StylePtr DecorationMaker::makeStyle(eStyleType type, StylePtr oldStyle)
     switch (type)
     {
     case STYLE_PLAIN:
-        newStyle = make_shared<Plain>(*oldStyle.get());
+        newStyle = make_shared<Plain>(oldStyle);
         break;
     case STYLE_THICK:
-        newStyle = make_shared<Thick>(*oldStyle.get());
+        newStyle = make_shared<Thick>(oldStyle);
         break;
     case STYLE_OUTLINED:
-        newStyle = make_shared<Outline>(*oldStyle.get());
+        newStyle = make_shared<Outline>(oldStyle);
         break;
     case STYLE_INTERLACED:
-        newStyle = make_shared<Interlace>(*oldStyle.get());
+        newStyle = make_shared<Interlace>(oldStyle);
         break;
     case STYLE_EMBOSSED:
-        newStyle = make_shared<Emboss>(*oldStyle.get());
+        newStyle = make_shared<Emboss>(oldStyle);
         break;
     case STYLE_SKETCHED:
-        newStyle = make_shared<Sketch>(*oldStyle.get());
+        newStyle = make_shared<Sketch>(oldStyle);
         break;
     case STYLE_FILLED:
-        newStyle = make_shared<Filled>(*oldStyle.get());
+        newStyle = make_shared<Filled>(oldStyle);
         break;
     case STYLE_TILECOLORS:
-        newStyle = make_shared<TileColors>(*oldStyle.get());
+        newStyle = make_shared<TileColors>(oldStyle);
         break;
     case STYLE_STYLE:
         Q_ASSERT(false);

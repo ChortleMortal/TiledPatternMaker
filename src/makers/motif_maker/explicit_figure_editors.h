@@ -72,8 +72,8 @@ public:
     void resetWithFigure(FigurePtr fig, bool doEmit) override;
 
 private:
-    void updateGeometry(bool doEmit) override;
-    void updateLimits() override;
+    void updateFigure(bool doEmit) override;
+    void updateEditor() override;
 
     ExplicitPtr       girihFig;
     SliderSet       * side;
@@ -108,8 +108,8 @@ public:
     void resetWithFigure(FigurePtr fig, bool doEmit) override;
 
 private:
-    void updateLimits() override;
-    void updateGeometry(bool doEmit) override;
+    void updateEditor() override;
+    void updateFigure(bool doEmit) override;
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -138,7 +138,7 @@ public:
     void resetWithFigure(FigurePtr fig, bool doEmit) override;
 
 private:
-    void updateGeometry(bool doEmit) override;
+    void updateFigure(bool doEmit) override;
 
     ExplicitPtr   explicitInferFig;
 };
@@ -168,8 +168,8 @@ public:
     void resetWithFigure(FigurePtr fi, bool doEmit) override;
 
 private:
-    void updateGeometry(bool doEmit) override;
-    void updateLimits() override;
+    void updateFigure(bool doEmit) override;
+    void updateEditor() override;
 
     ExplicitPtr              intersect;
 
@@ -205,8 +205,8 @@ public:
     void resetWithFigure(FigurePtr fig, bool doEmit) override;
 
 private:
-    void updateLimits() override;
-    void updateGeometry(bool doEmit) override;
+    void updateEditor() override;
+    void updateFigure(bool doEmit) override;
 
     DoubleSliderSet	*	q_slider;
     SliderSet       *   s_slider;
@@ -233,8 +233,8 @@ public:
     void resetWithFigure(FigurePtr fig, bool doEmit) override;
 
 protected:
-    void updateGeometry(bool doEmit) override;
-    void updateLimits() override;
+    void updateFigure(bool doEmit) override;
+    void updateEditor() override;
 
 private:
     ExplicitPtr     expStarFig;
@@ -261,7 +261,7 @@ public:
     void resetWithFigure(FigurePtr fig, bool doEmit) override;
 
 private:
-    void updateGeometry(bool doEmit) override;
+    void updateFigure(bool doEmit) override;
 
     ExplicitPtr featFig;
 };

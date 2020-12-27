@@ -39,7 +39,7 @@ class TileColors : public Style
 {
 public:
     TileColors(PrototypePtr proto);
-    TileColors(const Style & other);
+    TileColors(StylePtr other);
     ~TileColors() override;
 
     void        createStyleRepresentation() override;

@@ -35,27 +35,20 @@ class Intersect
 public:
     // Get the position of the intersection by interpolating.
     // Returns null if parallel or if it ends up outside of the segments.
-    static  QPointF getIntersection(QLineF line1, QLineF line2 );
-    static  QPointF getIntersection(QPointF p1, QPointF q1, QPointF p2, QPointF q2 );
-
-    // Get the position of the intersection by interpolating.
-    // Returns null if parallel or if the point is too far off.
-    static  QPointF getNearIntersection(QPointF &p1, QPointF &q1, QPointF &p2, QPointF &q2 );
+    static  bool getIntersection(QLineF line1, QLineF line2, QPointF & intersect );
+    static  bool getIntersection(QPointF p1, QPointF q1, QPointF p2, QPointF q2 , QPointF &intersect);
 
     // Don't return the intersection if it is at the enpoints of both segments.
-    static  QPointF getTrueIntersection( QPointF & p1, QPointF & q1, QPointF & p2, QPointF & q2 );
+    static  bool getTrueIntersection(QPointF & p1, QPointF & q1, QPointF & p2, QPointF & q2 , QPointF &intersect);
 
 protected:
     // Return a point (s,t), where s is the fraction of the from p1 to
     // q1 where an intersection occurs.  t is defined similarly for p2 and q2.
     // If there's no intersection, return null.
-    static QPointF getIntersectionParams(QPointF p1, QPointF q1, QPointF p2, QPointF q2 );
+    static bool getIntersectionParams(QPointF p1, QPointF q1, QPointF p2, QPointF q2, QPointF & intersect);
 
     // Coerce the point to be null if not on both segments.
-    static QPointF stayOnSegments(QPointF ip );
-
-    // Coerce the point to be null if too far off both segments.
-    static  QPointF stayNearSegments(QPointF ip );
+    static bool stayOnSegments(QPointF ip );
 };
 
 #endif

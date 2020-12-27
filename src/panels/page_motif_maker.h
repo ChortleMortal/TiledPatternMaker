@@ -26,6 +26,7 @@
 #define PAGE_MOTIF_MAKER_H
 
 #include "panels/panel_page.h"
+#include "panels/motif_display_widget.h"
 #include "makers/motif_maker/figure_editors.h"
 #include "tapp/figure.h"
 
@@ -40,7 +41,9 @@ public:
     void    onEnter() override;
     void    onExit() override;
     void    setupFigure(bool isRadial);
-    void    contentChanged();
+    void    featureChanged();
+    void    tilingChanged();
+    void    tilingChoicesChanged();
 
     void     select(PrototypePtr prototype);
     FeaturePtr getActiveFeature();
@@ -53,13 +56,11 @@ private slots:
     void    replicateRadialClicked(bool state);
     void    hiliteClicked(bool state);
     void    slot_duplicateCurrent();
+    void    slot_deleteCurrent();
     void    slot_prototypeSelected(int);
-    void    slot_tilingLoaded();
-
-    void slot_figureTypeChanged(eFigType type);
+    void    slot_figureTypeChanged(eFigType type);
 
 protected:
-    void    reloadTilingChoices();
 
 private:
     QCheckBox   * whiteBackground;
@@ -67,7 +68,7 @@ private:
     QCheckBox   * hiliteUnit;
     QComboBox   * tilingListBox;
 
-    class MotifDisplayWidget  * motifWidget;
+    MotifDisplayWidget  * motifWidget;
 };
 
 #endif

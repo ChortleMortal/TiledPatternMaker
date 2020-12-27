@@ -845,7 +845,7 @@ void EditFeature::updateDragging(QPointF spt)
     QPointF wpt = tm->screenToWorld(spt);
     QTransform T = pfp->getTransform().inverted();
     wpt = T.map(wpt);
-    EdgePoly & ep = pfp->getFeature()->getEdgePoly();
+    const EdgePoly & ep = pfp->getFeature()->getEdgePoly();
     VertexPtr v = ep[vertexIndex]->getV1();
     v->setPosition(wpt);
 
@@ -858,7 +858,7 @@ void EditFeature::endDragging(QPointF spt )
     QPointF wpt = tm->screenToWorld(spt);
     QTransform T = pfp->getTransform().inverted();
     wpt = T.map(wpt);
-    EdgePoly & ep = pfp->getFeature()->getEdgePoly();
+    const EdgePoly & ep = pfp->getFeature()->getEdgePoly();
     VertexPtr v = ep[vertexIndex]->getV1();
     v->setPosition(wpt);
 

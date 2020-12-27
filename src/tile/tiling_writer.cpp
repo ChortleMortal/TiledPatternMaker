@@ -10,9 +10,6 @@
 using namespace pugi;
 using std::string;
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5,15,0))
-#define endl Qt::endl
-#endif
 
 //const int currentTilingXMLVersion = 3;  // 26JUL20 excludes FillData
 //const int currentTilingXMLVersion = 4;  // 13SEP20 restore FillData

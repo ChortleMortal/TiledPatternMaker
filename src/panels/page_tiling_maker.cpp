@@ -751,9 +751,9 @@ void page_tiling_maker::buildTableEntry(PlacedFeaturePtr pf, int col, QString in
 
     QString type;
     if (feature->isRegular())
-        type = "regular";
+        type = "Regular";
     else
-        type = "poly";
+        type = "Irregular";
     QTableWidgetItem * twi = new QTableWidgetItem(type);
     twi->setData(Qt::UserRole,QVariant::fromValue(WeakPlacedFeaturePtr(pf)));
     tileInfoTable->setItem(TI_TYPE_PFP,col,twi);
@@ -851,9 +851,9 @@ void page_tiling_maker::refreshTableEntry(PlacedFeaturePtr pf, int col, QString 
 
     QString type;
     if (feature->isRegular())
-        type = "regular";
+        type = "Regular";
     else
-        type = "poly";
+        type = "Irregular";
     QTableWidgetItem * twi = new QTableWidgetItem(type);
     twi->setData(Qt::UserRole,QVariant::fromValue(WeakPlacedFeaturePtr(pf)));
     tileInfoTable->setItem(TI_TYPE_PFP,col,twi);
@@ -949,14 +949,16 @@ void page_tiling_maker::slot_sidesChanged(int col)
     int sides = sp->value();
 
     PlacedFeaturePtr pf = getFeatureColumn(col);
-    FeaturePtr f0       = pf->getFeature();
-    qreal rotation      = f0->getRotation();
-    FeaturePtr f2       = make_shared<Feature>(sides,rotation);
-    pf->setFeature(f2);
+    FeaturePtr feature  = pf->getFeature();
+    if (!feature->isRegular())
+    {
+        return;
+    }
+    feature->setN(sides);
 
     if (tilingMaker->isIncluded(pf))
     {
-        tilingMaker->pushTilingToMotifMaker(SM_FEATURE_CHANGED);
+        pushTilingToMotifMaker(SM_FEATURE_CHANGED);
     }
 
     refreshMenuData();
@@ -979,7 +981,7 @@ void page_tiling_maker::slot_f_rotChanged(int col)
 
     if (tilingMaker->isIncluded(pf))
     {
-        tilingMaker->pushTilingToMotifMaker(SM_FEATURE_CHANGED);
+        pushTilingToMotifMaker(SM_FEATURE_CHANGED);
     }
 
     refreshMenuData();
@@ -1002,7 +1004,7 @@ void page_tiling_maker::slot_f_scaleChanged(int col)
 
     if (tilingMaker->isIncluded(pf))
     {
-        tilingMaker->pushTilingToMotifMaker(SM_FEATURE_CHANGED);
+        pushTilingToMotifMaker(SM_FEATURE_CHANGED);
     }
 
     refreshMenuData();
@@ -1047,7 +1049,7 @@ void page_tiling_maker::slot_transformChanged(int col)
 
     if (tilingMaker->isIncluded(placedFeature))
     {
-        tilingMaker->pushTilingToMotifMaker(SM_FEATURE_CHANGED);
+        pushTilingToMotifMaker(SM_FEATURE_CHANGED);
     }
 
     emit sig_refreshView();
@@ -1238,21 +1240,25 @@ void page_tiling_maker::slot_autofill(bool checked)
 
 void page_tiling_maker::slot_menu(QPointF spt)
 {
-   qDebug() << "menu spt=" << spt;
+    qDebug() << "menu spt=" << spt;
 
-   QMenu myMenu(tileInfoTable);
+    QMenu myMenu(tileInfoTable);
 
-   myMenu.addAction("Edit Feature", this, &page_tiling_maker::slot_menu_edit_feature);
+    myMenu.addAction("Edit Feature", this, &page_tiling_maker::slot_menu_edit_feature);
 
-   int col = tileInfoTable->currentColumn();
-   PlacedFeaturePtr pfp = getFeatureColumn(col);
-   QString str =  (tilingMaker->isIncluded(pfp))  ? "Exclude" : "Include";
-   myMenu.addAction(str, this, &page_tiling_maker::slot_menu_includePlaced);
+    int col = tileInfoTable->currentColumn();
+    PlacedFeaturePtr pfp = getFeatureColumn(col);
+    QString str =  (tilingMaker->isIncluded(pfp))  ? "Exclude" : "Include";
+    myMenu.addAction(str, this, &page_tiling_maker::slot_menu_includePlaced);
 
-   myMenu.addAction("Delete Feature", this, &page_tiling_maker::slot_delete_clicked);
-   myMenu.addAction("Uniquify Feature", this, &page_tiling_maker::slot_uniquify_clicked);
+    if (pfp->getFeature()->isRegular())
+    {
+        myMenu.addAction("Make Irregular", this, &page_tiling_maker::slot_make_irregular_clicked);
+    }
+    myMenu.addAction("Delete Feature", this, &page_tiling_maker::slot_delete_clicked);
+    myMenu.addAction("Uniquify Feature", this, &page_tiling_maker::slot_uniquify_clicked);
 
-   myMenu.exec(tileInfoTable->viewport()->mapToGlobal(spt.toPoint()));
+    myMenu.exec(tileInfoTable->viewport()->mapToGlobal(spt.toPoint()));
 }
 
 void page_tiling_maker::slot_menu_edit_feature()
@@ -1278,16 +1284,25 @@ void page_tiling_maker::slot_menu_includePlaced()
     PlacedFeaturePtr pfp = getFeatureColumn(col);
 
     TilingSelectorPtr tsp = make_shared<InteriorTilingSelector>(pfp);
-    tilingMaker->toggleInclusion(tsp);
+    tilingMaker->toggleInclusion(tsp);    
 }
 
 void page_tiling_maker::slot_delete_clicked()
 {
     int col = tileInfoTable->currentColumn();
     PlacedFeaturePtr pf = getFeatureColumn(col);
-
     tilingMaker->deleteFeature(pf);
+    buildMenu();
+}
 
+void page_tiling_maker::slot_make_irregular_clicked()
+{
+    int col             = tileInfoTable->currentColumn();
+    PlacedFeaturePtr pf = getFeatureColumn(col);
+    FeaturePtr fp       = pf->getFeature();
+    fp->setRegular(false);
+
+    pushTilingToMotifMaker(SM_TILING_CHANGED);
     buildMenu();
 }
 
@@ -1299,6 +1314,7 @@ void page_tiling_maker::slot_uniquify_clicked()
     FeaturePtr fp2 = fp->recreate();  // creates a new feature same as other
     pf->setFeature(fp2);
 
+    pushTilingToMotifMaker(SM_TILING_CHANGED);
     buildMenu();
 }
 
@@ -1679,6 +1695,10 @@ void page_tiling_maker::slot_trim(qreal valX, qreal valY)
     refreshMenuData();
 }
 
+void page_tiling_maker::pushTilingToMotifMaker(eSM_Event event)
+{
+    tilingMaker->sm_take(tilingMaker->getSelected(),event);
+}
 
 
 

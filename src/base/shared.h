@@ -26,6 +26,7 @@
 #define SHARED_H
 
 #include <memory>
+#include <QtGlobal>
 
 #undef  EXPLICIT_DESTRUCTOR
 
@@ -38,6 +39,10 @@
     #define badness  qCritical
 #endif
 
+#if (QT_VERSION >= QT_VERSION_CHECK(5,15,0))
+#include <QTextStream>
+#define endl Qt::endl
+#endif
 
 extern class TiledPatternMaker * theApp;
 

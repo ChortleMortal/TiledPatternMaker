@@ -26,25 +26,24 @@
 //
 // Star.java
 //
-// The classic [n/d]s star construction.  See the paper for more
-// details.
+// The classic [n/d]s star construction.  See the paper for more details.
 
 #include "tapp/star.h"
 #include "geometry/loose.h"
 #include "geometry/intersect.h"
 #include "tile/feature.h"
 
-Star::Star( int nsides, qreal d, int s, qreal r ) : RadialFigure(nsides, r)
+Star::Star( int nsides, qreal dd, int ss, qreal rr ) : RadialFigure(nsides, rr)
 {
-    this->d = d;
-    this->s = s;
+    d = clamp_d(dd);
+    s = clamp_s(ss);
     setFigType(FIG_TYPE_STAR);
 }
 
-Star::Star(const Figure & fig,  int nsides, qreal d, int s, qreal r ) : RadialFigure(fig, nsides, r)
+Star::Star(const Figure & fig,  int nsides, qreal dd, int ss, qreal rr ) : RadialFigure(fig, nsides, rr)
 {
-    this->d = d;
-    this->s = s;
+    d = clamp_d(dd);
+    s = clamp_s(ss);
     setFigType(FIG_TYPE_STAR);
 }
 
@@ -69,14 +68,27 @@ bool Star::equals(const FigurePtr other)
      return true;
 }
 
-void Star::setD( qreal d )
+void Star::setD(qreal dd)
 {
-    this->d = d;
+    d = clamp_d(dd);
+    s = clamp_s(d);
 }
 
-void Star::setS( int s )
+void Star::setS(int ss)
 {
-    this->s = s;
+    s = clamp_s(ss);
+}
+
+qreal Star::clamp_d(qreal d)
+{
+    return qMax(1.0, qMin(d, 0.5 * dn - 0.01));    // range limits d
+}
+
+int Star::clamp_s(int s)
+{
+    qreal did   = qFloor(d);
+    int   di    = int(did);
+    return qMin(s, di);
 }
 
 MapPtr Star::buildUnit()
@@ -93,15 +105,12 @@ MapPtr Star::buildUnit()
 
     debugMap = make_shared<Map>("star debug map");
 
-    qreal clamp_d = qMax( 1.0, qMin( d, 0.5 * dn - 0.01 ) );    // range limits d
-
-    qreal did   = qFloor( clamp_d );
-    qreal dfrac = clamp_d - did;
+    qreal did   = qFloor(d);
+    qreal dfrac = d - did;
     int   di    = int(did);
     bool d_is_int = false;
 
-    int clamp_s = qMin( s, di );
-    int outer_s = qMin( s, di - 1 );
+    int outer_s = qMin(s, di - 1 );
 
     if( dfrac < Loose::TOL )
     {
@@ -115,24 +124,30 @@ MapPtr Star::buildUnit()
         d_is_int = true;
     }
 
-    qDebug() << "d:"  << d <<  "clamp_d:" << clamp_d  << "s-intersects:" << s << "clamp_s:" << clamp_s << "outer_s" << outer_s << "d_is_int:" << d_is_int;
-
+    qDebug() << "d:"  << d << "s-intersects:" << s << "s:" << s << "outer_s" << outer_s << "d_is_int:" << d_is_int;
 
     points.erase(points.begin(),points.end());
 
     QPointF a( 1.0, 0.0 );
-    QPointF b = getArc( clamp_d * don );
+    QPointF b = getArc(d * don);
+    debugMap->insertDebugMark(a,"a");
+    debugMap->insertDebugMark(b,"b");
+    debugMap->insertDebugLine(a,b);
+    QLineF ab(a,b);
 
     for( int idx = 1; idx <= outer_s; ++idx )
     {
         QPointF ar = getArc(  qreal(idx) * don );
-        QPointF br = getArc( (qreal(idx) - clamp_d) * don );
-
-        debugMap->insertDebugLine(a,b);
-        debugMap->insertDebugLine(ar,br);
-        QPointF mid = Intersect::getIntersection( a, b, ar, br );
-        //debugMap->insertDebugMark(mid,"mid");
-        points.push_back(mid);
+        QPointF br = getArc( (qreal(idx) - d) * don );
+        QLineF arbr(ar,br);
+    //    debugMap->insertDebugLine(a,b);
+    //    debugMap->insertDebugLine(ar,br);
+        QPointF mid;
+        if (ab.intersects(arbr,&mid) == QLineF::BoundedIntersection)
+        {
+    //        debugMap->insertDebugMark(mid,QString("mid%1").arg(idx));
+            points.push_back(mid);
+        }
     }
 
     VertexPtr vt = unitMap->insertVertex(a);
@@ -151,7 +166,7 @@ MapPtr Star::buildUnit()
         bot_prev = bot;
     }
 
-    if( clamp_s == di )
+    if (s == di )
     {
         QPointF midr = Tr.map( top_prev->getPosition() );
         VertexPtr v4 = unitMap->insertVertex(midr);
@@ -167,10 +182,11 @@ MapPtr Star::buildUnit()
 
             QPointF c  = getArc( d * don );
 
-            debugMap->insertDebugLine(ar,br);
-            debugMap->insertDebugLine(a,c);
-            QPointF   cent = Intersect::getIntersection( ar, br, a, c );
-            debugMap->insertDebugMark(cent,"cent");
+  //          debugMap->insertDebugLine(ar,br);
+  //          debugMap->insertDebugLine(a,c);
+            QPointF cent;
+            Intersect::getIntersection(ar, br, a, c, cent );
+  //          debugMap->insertDebugMark(cent,"cent");
 
             VertexPtr vcent = unitMap->insertVertex(cent);
             unitMap->insertEdge( top_prev, vcent, debug);
@@ -189,7 +205,7 @@ MapPtr Star::buildUnit()
 
     // scale
     unitMap->scale(getFigureScale());
-    debugMap->scale(getFigureScale());
+    //debugMap->scale(getFigureScale());
 
     return unitMap;
 }

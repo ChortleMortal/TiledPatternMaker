@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <vector id="1" version="7">
-	<designNotes />
+	<designNotes>simplified to deao with intersections</designNotes>
 	<design>
 		<size>
 			<width>1500</width>
@@ -22,7 +22,7 @@
 		<style.Style>
 			<prototype id="3" serialization="custom">
 				<app.Prototype>
-					<string>vanda_base.v4</string>
+					<string>vanda_base.v3</string>
 					<entry>
 						<tile.Feature id="4">
 							<regular>false</regular>
@@ -49,48 +49,6 @@
 							<figureScale>1</figureScale>
 							<r>0</r>
 						</app.ExplicitFeature>
-					</entry>
-					<entry>
-						<tile.Feature id="10">
-							<regular>true</regular>
-							<rotation>0</rotation>
-							<scale>1</scale>
-							<edges id="11">
-								<Line>
-									<Point id="12">1,0.5773502691896256</Point>
-									<Point id="13">7.070501591499379e-17,1.154700538379251</Point>
-								</Line>
-								<Line>
-									<Point reference="13" />
-									<Point id="14">-0.9999999999999998,0.5773502691896261</Point>
-								</Line>
-								<Line>
-									<Point reference="14" />
-									<Point id="15">-1,-0.5773502691896254</Point>
-								</Line>
-								<Line>
-									<Point reference="15" />
-									<Point id="16">-2.121150477449814e-16,-1.154700538379251</Point>
-								</Line>
-								<Line>
-									<Point reference="16" />
-									<Point id="17">0.9999999999999997,-0.5773502691896263</Point>
-								</Line>
-								<Line>
-									<Point reference="17" />
-									<Point reference="12" />
-								</Line>
-							</edges>
-						</tile.Feature>
-						<ExtendedStar id="18" extendPeripherals="f" extendFreeVertices="t">
-							<n>6</n>
-							<d>2</d>
-							<s>1</s>
-							<boundarySides>6</boundarySides>
-							<boundaryScale>1</boundaryScale>
-							<figureScale>0.5</figureScale>
-							<r>0</r>
-						</ExtendedStar>
 					</entry>
 				</app.Prototype>
 			</prototype>

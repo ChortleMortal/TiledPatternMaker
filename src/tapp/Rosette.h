@@ -43,8 +43,8 @@ class Rosette : public RadialFigure
 {
 public:
     // n = points, q = tip angle, s=sides intersections
-    Rosette(const Figure & fig,  int n, qreal q, int s, qreal k=0.0, qreal figureRotate=0.0);
-    Rosette( int n, qreal q, int s, qreal k=0.0, qreal figureRotate=0.0);
+    Rosette(const Figure & fig,  int n, qreal qq, int ss, qreal kk=0.0, qreal rr=0.0);
+    Rosette(int n, qreal qq, int ss, qreal kk=0.0, qreal rr=0.0);
 
     virtual MapPtr   buildUnit() override;
 
@@ -52,14 +52,18 @@ public:
     qreal   getK() {return k;}
     int     getS() {return s;}
 
-    void    setQ( qreal q );
-    void    setK( qreal k );
-    void    setS( int s );
+    void    setQ(qreal qq);
+    void    setK(qreal kk);
+    void    setS(int ss);
     void    setN(int n) override;
 
     virtual QString getFigureDesc() override { return "Rosette";}
 
     bool equals(const FigurePtr other) override;
+
+protected:
+    inline int     s_clamp(int s);
+    inline qreal   q_clamp(qreal q);
 
 private:
     int     count;

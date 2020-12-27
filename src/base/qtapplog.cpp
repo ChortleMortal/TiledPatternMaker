@@ -179,7 +179,7 @@ void qtAppLog::crashMessageOutput(QtMsgType type, const QMessageLogContext &cont
             return;
         }
         ted->setTextColor(Qt::black);
-        msg2 = QString("%3%2Debug   : %1").arg(msg,sDelta,number);
+        msg2 = QString("%3%2Debug   : %1").arg(msg).arg(sDelta).arg(number);
         break;
     case QtInfoMsg:
         if (_logWarningsOnly)
@@ -188,19 +188,19 @@ void qtAppLog::crashMessageOutput(QtMsgType type, const QMessageLogContext &cont
             return;
         }
         ted->setTextColor(Qt::darkGreen);
-        msg2 = QString("%3%2Info    : %1").arg(msg,sDelta,number);
+        msg2 = QString("%3%2Info    : %1").arg(msg).arg(sDelta).arg(number);
         break;
     case QtWarningMsg:
         ted->setTextColor(Qt::darkRed);
-        msg2 = QString("%3%2Warning : %1").arg(msg,sDelta,number);
+        msg2 = QString("%3%2Warning : %1").arg(msg).arg(sDelta).arg(number);
         break;
     case QtCriticalMsg:
         ted->setTextColor(Qt::darkRed);
-        msg2 = QString("%3%2Critical: %1").arg(msg,sDelta,number);
+        msg2 = QString("%3%2Critical: %1").arg(msg).arg(sDelta).arg(number);
         break;
     case QtFatalMsg:
         ted->setTextColor(Qt::darkRed);
-        msg2 = QString("%3%2Fatal   : %1").arg(msg,sDelta,number);
+        msg2 = QString("%3%2Fatal   : %1").arg(msg).arg(sDelta).arg(number);
         break;
     }
 

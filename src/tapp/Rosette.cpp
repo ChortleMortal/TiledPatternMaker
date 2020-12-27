@@ -39,26 +39,25 @@
 #include "geometry/point.h"
 #include "geometry/intersect.h"
 #include "geometry/transform.h"
+#include "geometry/map_cleanser.h"
 #include "designs/shapefactory.h"
 #include "tile/feature.h"
 
-Rosette::Rosette(const Figure & fig,  int nsides, qreal q, int s, qreal k, qreal r)
-    : RadialFigure(fig, nsides, r)
+Rosette::Rosette(const Figure & fig,  int nsides, qreal qq, int ss, qreal kk, qreal rr)
+    : RadialFigure(fig, nsides, rr)
 {
-    this->q = q;
-    //this->s = qMin( s, (n-1) / 2 ); // DAC remove limiting here - is done in buildUnit
-    this->s = s;
-    this->k = k;
+    q = q_clamp(qq);
+    s = s_clamp(ss);
+    k = kk;
     setFigType(FIG_TYPE_ROSETTE);
     count = 0;
 }
 
-Rosette::Rosette(int nsides, qreal q, int s, qreal k, qreal r) : RadialFigure(nsides, r)
+Rosette::Rosette(int nsides, qreal qq, int ss, qreal kk, qreal rr) : RadialFigure(nsides, rr)
 {
-    this->q = q;
-    //this->s = qMin( s, (n-1) / 2 ); // DAC remove limiting here - is done in buildUnit
-    this->s = s;
-    this->k = k;
+    q = q_clamp(qq);
+    s = s_clamp(ss);
+    k = kk;
     setFigType(FIG_TYPE_ROSETTE);
     count = 0;
 }
@@ -87,26 +86,37 @@ bool Rosette::equals(const FigurePtr other)
      return true;
 }
 
-void Rosette::setQ( qreal q )
+void Rosette::setQ(qreal qq)
 {
-    this->q = q;
+    q = q_clamp(qq);
 }
 
-void Rosette::setK( qreal k )
+void Rosette::setK(qreal kk)
 {
-    this->k = k;
+    k = kk;
 }
 
-void Rosette::setS( int s )
+void Rosette::setS(int ss)
 {
-    //this->s = qMin( s, (n-1) / 2 ); // DAC remove limiting here - is done in buildUnit
-    this->s = s;
+    s = s_clamp(ss);
 }
 
 void Rosette::setN(int nn)
 {
     RadialFigure::setN(nn);
-    //this->s = qMin( s, (n-1) / 2 );  // DAC remove limiting here - is done in buildUnit
+    s = s_clamp(s);
+}
+
+int Rosette::s_clamp(int s)
+{
+    //return s;
+    return qMin(s, (n-1)/2);
+}
+
+qreal Rosette::q_clamp(qreal q)
+{
+    //return q;
+    return qMin(qMax(q, -0.99), 0.99);
 }
 
 MapPtr Rosette::buildUnit()
@@ -127,7 +137,7 @@ MapPtr Rosette::buildUnit()
 
     QPointF center(0.0,0.0);
     QPointF tip(1.0, 0.0 );         // The point to build from
-    QPointF rtip  = getArc( don );  // The next point over.
+    QPointF rtip = getArc(don);     // The next point over.
     if (d1)
     {
         debugMap->insertDebugMark(center,"center");
@@ -135,14 +145,12 @@ MapPtr Rosette::buildUnit()
         debugMap->insertDebugMark(rtip,"rtip");
     }
 
-    qreal q_clamp = qMin(qMax(q, -0.99), 0.99);
-
     // Consider an equilateral triangle formed by the origin,
     // up_outer and a vertical edge extending down from up_outer.
     // The center of the bottom edge of that triangle defines the
     // bisector of the angle leaving up_outer that we care about.
     qreal   qr_outer    = 1.0 / qCos( M_PI * don );
-    QPointF r_outer(0.0, qr_outer);
+    QPointF r_outer     = QPointF(0.0, qr_outer);
     QPointF up_outer    = getArc( 0.5 * don ) * qr_outer;
     QPointF down_outer  = up_outer - r_outer;
     QPointF bisector    = down_outer * 0.5;
@@ -155,12 +163,10 @@ MapPtr Rosette::buildUnit()
     }
 
     QPointF apoint       = rtip - tip;
-    qreal theta          = Point::getAngle(apoint);
     QPointF norm_up_outer= Point::normalize(up_outer);
     QPointF stable_isect = (up_outer + (Point::normalize(up_outer)) * (-up_outer.y()) );
     QPointF apoint2      = stable_isect - tip;
     qreal stable_angle   = Point::getAngle(apoint2);
-    qDebug() << "theta:"  << theta  << qRadiansToDegrees(theta);
     qDebug() << "stable_angle:"  << stable_angle  << qRadiansToDegrees(stable_angle);
     stable_isect.setY(stable_isect.y() - k);    // uses k
     if (d3)
@@ -171,27 +177,29 @@ MapPtr Rosette::buildUnit()
         debugMap->insertDebugMark(apoint2,"apoint2");
     }
 
+    qreal theta         = Point::getAngle(apoint);
     qreal theta2;
-    if( q_clamp >= 0.0 )
+    if (q >= 0.0)
     {
-        theta2 = (theta * (1.0 - q_clamp)) + ((M_PI * 0.5) * q_clamp);
+        theta2 = (theta * (1.0 - q)) + ((M_PI * 0.5) * q);
     }
     else
     {
-        //theta2 = theta * (1.0 - (-q_clamp)) + M_PI * (-q_clamp);
-        theta2 = (theta * (1.0 + q_clamp)) - (stable_angle * q_clamp);
+        //theta2 = theta * (1.0 - (-q)) + M_PI * (-q);
+        theta2 = (theta * (1.0 + q)) - (stable_angle * q);
     }
     qDebug() << "theta=" << qRadiansToDegrees(theta)  << "theta2=" << qRadiansToDegrees(theta2)  << "stable_angle=" << qRadiansToDegrees(stable_angle);
 
     // Heh heh - you said q-tip - heh heh.
     QPointF qtip( 1.0 + qCos(theta2), qSin(theta2));
-    QPointF key_point = Intersect::getIntersection(tip, qtip, up_outer, bisector );
+    QPointF key_point;
+    Intersect::getIntersection(tip, qtip, up_outer, bisector, key_point);
     QPointF key_end   = Point::convexSum(key_point, stable_isect, 10.0);
     if (d4)
     {
         debugMap->insertDebugMark(qtip,"qtip",0.1);
-        debugMap->insertDebugLine(tip, qtip);
-        debugMap->insertDebugLine(up_outer, bisector);
+        debugMap->insertDebugLine(tip, qtip);              // adjusting q adjusts qtip
+        debugMap->insertDebugLine(up_outer, bisector);     // this is the line along hich the key_point (aka) shoulder moved
         debugMap->insertDebugMark(key_point,"key_point",0.1);
         debugMap->insertDebugMark(key_end,"key_end",0.1);
         //debugMap->insertDebugLine(key_point,key_end);
@@ -278,7 +286,9 @@ MapPtr Rosette::buildUnit()
     unitMap->scale(getFigureScale());
     debugMap->scale(getFigureScale());
 
-    unitMap->verifyMap("rosette unitMap");
+    MapCleanser cleanser(unitMap);
+    cleanser.verifyMap("rosette unitMap");
+
     return unitMap;
 }
 

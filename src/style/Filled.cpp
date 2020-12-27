@@ -24,6 +24,7 @@
 
 #include "style/filled.h"
 #include "base/configuration.h"
+#include "geometry/map_cleanser.h"
 #include <QPainter>
 
 ////////////////////////////////////////////////////////////////////////////
@@ -52,23 +53,22 @@ Filled::Filled(PrototypePtr proto, int algorithm ) : Style(proto)
     this->algorithm       = algorithm;
 }
 
-Filled::Filled(const Style  &other) : Style(other)
+Filled::Filled(StylePtr other) : Style(other)
 {
-    try
+    shared_ptr<Filled> filled = std::dynamic_pointer_cast<Filled>(other);
+    if (filled)
     {
-        const Filled & filled = dynamic_cast<const Filled&>(other);
-        draw_inside_blacks    = filled.draw_inside_blacks;
-        draw_outside_whites   = filled.draw_outside_whites;
-        whiteColorSet         = filled.whiteColorSet;
-        blackColorSet         = filled.blackColorSet;
-        algorithm             = filled.algorithm;
+        draw_inside_blacks    = filled->draw_inside_blacks;
+        draw_outside_whites   = filled->draw_outside_whites;
+        whiteColorSet         = filled->whiteColorSet;
+        blackColorSet         = filled->blackColorSet;
+        algorithm             = filled->algorithm;
 
         faces = make_shared<Faces>();
         config->faces = WeakFacesPtr(faces);
     }
-    catch(std::bad_cast & exp)
+    else
     {
-        Q_UNUSED(exp);
         draw_inside_blacks    = true;
         draw_outside_whites   = true;
         algorithm             = 0;
@@ -114,7 +114,9 @@ void Filled::createStyleRepresentation()
     }
 
     MapPtr map = getMap();
-    map->verifyMap("Filled");
+
+    MapCleanser cleanser(map);
+    cleanser.verifyMap("Filled");
 
     faces->purifyMap(map);
 

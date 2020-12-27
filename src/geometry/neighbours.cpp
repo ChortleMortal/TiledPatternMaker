@@ -401,7 +401,7 @@ int  NeighbourMap::countNeighbouringEdges()
     return count;
 }
 
-bool NeighbourMap::verify()
+bool NeighbourMap::verify(QDebug * deb)
 {
     bool rv = true;
     QMapIterator<VertexPtr,NeighboursPtr> i(neighbours);
@@ -409,17 +409,17 @@ bool NeighbourMap::verify()
     {
         i.next();
         VertexPtr v  = i.key();
-        qDebug() << "NeighbourMap verifying vertex:" << v->getTmpVertexIndex();
+        //qDebug() << "NeighbourMap verifying vertex:" << v->getTmpVertexIndex();
         if (!parent->getVertices().contains(v))
         {
-            qDebug() << "unknown vertex" << v->getTmpVertexIndex() << "in NeighbourMap";
+            *deb << "WARNING: unknown vertex" << v->getTmpVertexIndex() << "in NeighbourMap" << endl;
             rv = false;
         }
 
         NeighboursPtr np = i.value();
         if (v != np->getVertex())
         {
-            qWarning() << "Neighbours has wrong vertex";
+            *deb << "WARNING: Neighbours has wrong vertex" << endl;
             rv = false;
         }
         if (!np->verify())

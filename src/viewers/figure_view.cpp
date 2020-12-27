@@ -29,23 +29,19 @@
 #include "tapp/radial_figure.h"
 #include "tapp/extended_star.h"
 #include "tapp/extended_rosette.h"
+#include "makers/motif_maker/motif_maker.h"
 #include "makers/motif_maker/feature_button.h"
 #include "base/utilities.h"
 #include "viewers/view.h"
 #include "geometry/transform.h"
 
-FigureView::FigureView(DesignElementPtr del) : Layer("FigureView",LTYPE_VIEW)
+FigureView::FigureView() : Layer("FigureView",LTYPE_VIEW)
 {
-    Q_ASSERT(del);
+    motifMaker = MotifMaker::getInstance();
 
     debugContacts = false;
 
-    _dep    = del;
-    _fig    = del->getFigure();     // for now just a single figure
-    _feat   = del->getFeature();
-    _fig->buildExtBoundary();
 
-    qDebug() << "FigureView  this=" << this << "del:" << _dep.get() << "fig:" << _fig.get();
     View * view = View::getInstance();
     _T = FeatureButton::resetViewport(-2,_dep,view->rect());
     qDebug().noquote() << "FigureView::transform" << Transform::toInfoString(_T);
@@ -56,24 +52,20 @@ FigureView::~FigureView()
     qDebug() << "FigureView destructor";
 }
 
-void FigureView::receive(GeoGraphics * gg,int h, int v )
-{
-    Q_UNUSED(gg)
-    Q_UNUSED(h)
-    Q_UNUSED(v)
-    qFatal("receive: not implemented");
-}
-
-void FigureView::draw( GeoGraphics * gg )
-{
-    Q_UNUSED(gg)
-    qFatal("draw: not implemented");
-}
-
 void FigureView::paint(QPainter *painter)
 {
     qDebug() << "FigureView::paint";
-    if (!_fig) return;
+    DesignElementPtr del = motifMaker->getSelectedDesignElement();
+    if (!del)
+    {
+        qDebug() << "FigureView - no design element";
+        return;
+    }
+    _dep    = del;
+    _fig    = del->getFigure();     // for now just a single figure
+    _feat   = del->getFeature();
+    _fig->buildExtBoundary();
+    qDebug() << "FigureView  this=" << this << "del:" << _dep.get() << "fig:" << _fig.get();
 
     painter->setRenderHint(QPainter::Antialiasing ,true);
     painter->setRenderHint(QPainter::SmoothPixmapTransform,true);
@@ -141,7 +133,7 @@ void FigureView::paintRadialFigureMap(QPainter *painter, QPen pen)
     RadialPtr rp = std::dynamic_pointer_cast<RadialFigure>(_fig);
 
     MapPtr map = rp->useBuiltMap();
-    if (!map)
+    if (!map || map->isEmpty())
     {
         map = rp->getFigureMap();
     }

@@ -43,7 +43,7 @@ public:
 
 protected:
     Colored(PrototypePtr proto);
-    Colored(const Style & other);
+    Colored(StylePtr other);
     ~Colored();
 
     ColorSet colors;

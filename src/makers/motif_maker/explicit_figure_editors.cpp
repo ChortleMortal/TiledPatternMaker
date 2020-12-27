@@ -50,8 +50,8 @@ void ExplicitEditor::resetWithFigure(FigurePtr fig, bool doEmit)
 
     explicitFig = resetFigure(fig,FIG_TYPE_EXPLICIT);
 
-    updateLimits();
-    updateGeometry(doEmit);
+    updateEditor();
+    updateFigure(doEmit);
 }
 
 ExplicitPtr ExplicitEditor::resetFigure(FigurePtr fig, eFigType figType)
@@ -104,8 +104,8 @@ ExplicitGirihEditor::ExplicitGirihEditor(page_motif_maker * ed, QString aname) :
     addLayout(side);
     addLayout(skip);
 
-    connect(skip, &DoubleSliderSet::valueChanged, this, &ExplicitGirihEditor::updateGeometry);
-    connect(side, &SliderSet::valueChanged,       this, &ExplicitGirihEditor::updateGeometry);
+    connect(skip, &DoubleSliderSet::valueChanged, this, [this]() { updateFigure(true);});
+    connect(side, &SliderSet::valueChanged,       this, [this]() { updateFigure(true);});
 }
 
 FigurePtr  ExplicitGirihEditor::getFigure()
@@ -123,11 +123,11 @@ void  ExplicitGirihEditor::resetWithFigure(FigurePtr fig, bool doEmit)
 
     girihFig = resetFigure(fig,FIG_TYPE_EXPLICIT_GIRIH);
 
-    updateLimits();
-    updateGeometry(doEmit);
+    updateEditor();
+    updateFigure(doEmit);
 }
 
-void ExplicitGirihEditor::updateLimits()
+void ExplicitGirihEditor::updateEditor()
 {
     if (!girihFig)
         return;
@@ -140,10 +140,10 @@ void ExplicitGirihEditor::updateLimits()
     skip->setValue(skipval);
     blockSignals(false);
 
-    FigureEditor::updateLimits();
+    FigureEditor::updateEditor();
 }
 
-void  ExplicitGirihEditor::updateGeometry(bool doEmit)
+void  ExplicitGirihEditor::updateFigure(bool doEmit)
 {
     int side_val   = side->value();
     qreal skip_val = skip->value();
@@ -151,7 +151,7 @@ void  ExplicitGirihEditor::updateGeometry(bool doEmit)
     girihFig->setN(side_val);
     girihFig->skip  = skip_val;
 
-    FigureEditor::updateGeometry(false);
+    FigureEditor::updateFigure(false);
 
     MotifMaker * motifMaker = MotifMaker::getInstance();
     MapPtr map = motifMaker->createExplicitGirihMap(side_val, skip_val);
@@ -184,8 +184,8 @@ ExplicitHourglassEditor::ExplicitHourglassEditor(page_motif_maker *ed, QString a
     addLayout(d);
     addLayout(s);
 
-    connect(d, &DoubleSliderSet::valueChanged, this, &ExplicitHourglassEditor::updateGeometry);
-    connect(s, &SliderSet::valueChanged,       this, &ExplicitHourglassEditor::updateGeometry);
+    connect(d, &DoubleSliderSet::valueChanged, this, [this]() { updateFigure(true);});
+    connect(s, &SliderSet::valueChanged,       this, [this]() { updateFigure(true);});
 }
 
 
@@ -204,11 +204,11 @@ void ExplicitHourglassEditor::resetWithFigure(FigurePtr fig, bool doEmit)
 
     hourglassFig = resetFigure(fig,FIG_TYPE_EXPLICIT_HOURGLASS);
 
-    updateLimits();
-    updateGeometry(doEmit);
+    updateEditor();
+    updateFigure(doEmit);
 }
 
-void ExplicitHourglassEditor::updateLimits()
+void ExplicitHourglassEditor::updateEditor()
 {
     FeaturePtr feature = menu->getActiveFeature();
     if (feature)
@@ -238,10 +238,10 @@ void ExplicitHourglassEditor::updateLimits()
         blockSignals(false);
     }
 
-    FigureEditor::updateLimits();
+    FigureEditor::updateEditor();
 }
 
-void ExplicitHourglassEditor::updateGeometry(bool doEmit)
+void ExplicitHourglassEditor::updateFigure(bool doEmit)
 {
     qreal dval = d->value();
     int sval   = s->value();
@@ -249,7 +249,7 @@ void ExplicitHourglassEditor::updateGeometry(bool doEmit)
     hourglassFig->d = dval;
     hourglassFig->s = sval;
 
-    FigureEditor::updateGeometry(false);
+    FigureEditor::updateFigure(false);
 
     MotifMaker * motifMaker = MotifMaker::getInstance();
     MapPtr map = motifMaker->createExplicitHourglassMap(dval, sval);
@@ -294,13 +294,13 @@ void ExplicitInferEditor::resetWithFigure(FigurePtr fig, bool doEmit)
 
     explicitInferFig = resetFigure(fig,FIG_TYPE_EXPLICIT_INFER);
 
-    updateLimits();
-    updateGeometry(doEmit);
+    updateEditor();
+    updateFigure(doEmit);
 }
 
-void ExplicitInferEditor::updateGeometry(bool doEmit)
+void ExplicitInferEditor::updateFigure(bool doEmit)
 {
-    FigureEditor::updateGeometry(false);
+    FigureEditor::updateFigure(false);
 
     MotifMaker * motifMaker = MotifMaker::getInstance();
     MapPtr map  = motifMaker->createExplicitInferredMap();
@@ -336,10 +336,10 @@ ExplicitIntersectEditor::ExplicitIntersectEditor(page_motif_maker *ed, QString a
     addLayout(s);
     addWidget(progressive_box);
 
-    connect(skip, &DoubleSliderSet::valueChanged, this, &ExplicitIntersectEditor::updateGeometry);
-    connect(side, &SliderSet::valueChanged,       this, &ExplicitIntersectEditor::updateGeometry);
-    connect(s,    &SliderSet::valueChanged,       this, &ExplicitIntersectEditor::updateGeometry);
-    connect(progressive_box, &QCheckBox::stateChanged, this, &ExplicitIntersectEditor::updateGeometry);
+    connect(skip, &DoubleSliderSet::valueChanged, this, [this]() { updateFigure(true);});
+    connect(side, &SliderSet::valueChanged,       this, [this]() { updateFigure(true);});
+    connect(s,    &SliderSet::valueChanged,       this, [this]() { updateFigure(true);});
+    connect(progressive_box, &QCheckBox::stateChanged, this, [this]() { updateFigure(true);});
 }
 
 FigurePtr ExplicitIntersectEditor::getFigure()
@@ -357,11 +357,11 @@ void ExplicitIntersectEditor::resetWithFigure(FigurePtr fi, bool doEmit)
 
     intersect = resetFigure(fi, FIG_TYPE_EXPLICIT_INTERSECT);
 
-    updateLimits();
-    updateGeometry(doEmit);
+    updateEditor();
+    updateFigure(doEmit);
 }
 
-void ExplicitIntersectEditor::updateLimits()
+void ExplicitIntersectEditor::updateEditor()
 {
     blockSignals(true);
     side->setValue(intersect->getN());
@@ -370,10 +370,10 @@ void ExplicitIntersectEditor::updateLimits()
     progressive_box->setChecked(intersect->progressive);
     blockSignals(false);
 
-    FigureEditor::updateLimits();
+    FigureEditor::updateEditor();
 }
 
-void ExplicitIntersectEditor::updateGeometry(bool doEmit)
+void ExplicitIntersectEditor::updateFigure(bool doEmit)
 {
     int side_val        = side->value();
     qreal skip_val      = skip->value();
@@ -385,7 +385,7 @@ void ExplicitIntersectEditor::updateGeometry(bool doEmit)
     intersect->s     = sval;
     intersect->progressive = progressive;
 
-    FigureEditor::updateGeometry(false);
+    FigureEditor::updateFigure(false);
 
     MotifMaker * motifMaker = MotifMaker::getInstance();
     MapPtr map = motifMaker->createExplicitIntersectMap(side_val, skip_val, sval, progressive);
@@ -422,9 +422,9 @@ ExplicitRosetteEditor::ExplicitRosetteEditor(page_motif_maker * ed, QString anam
     addLayout(s_slider);
     addLayout(r_slider);
 
-    connect(q_slider, &DoubleSliderSet::valueChanged, this, &ExplicitRosetteEditor::updateGeometry);
-    connect(s_slider, &SliderSet::valueChanged,       this, &ExplicitRosetteEditor::updateGeometry);
-    connect(r_slider, &DoubleSliderSet::valueChanged, this, &ExplicitRosetteEditor::updateGeometry);
+    connect(q_slider, &DoubleSliderSet::valueChanged, this, [this]() { updateFigure(true);});
+    connect(s_slider, &SliderSet::valueChanged,       this, [this]() { updateFigure(true);});
+    connect(r_slider, &DoubleSliderSet::valueChanged, this, [this]() { updateFigure(true);});
 }
 
 FigurePtr ExplicitRosetteEditor::getFigure()
@@ -442,11 +442,11 @@ void ExplicitRosetteEditor::resetWithFigure(FigurePtr fig, bool doEmit)
 
     expRoseFig =resetFigure(fig,FIG_TYPE_EXPLICIT_ROSETTE);
 
-    updateLimits();
-    updateGeometry(doEmit);
+    updateEditor();
+    updateFigure(doEmit);
 }
 
-void ExplicitRosetteEditor::updateLimits()
+void ExplicitRosetteEditor::updateEditor()
 {
     blockSignals(true);
 
@@ -485,10 +485,10 @@ void ExplicitRosetteEditor::updateLimits()
 
     blockSignals(false);
 
-    FigureEditor::updateLimits();
+    FigureEditor::updateEditor();
 }
 
-void ExplicitRosetteEditor::updateGeometry(bool doEmit)
+void ExplicitRosetteEditor::updateFigure(bool doEmit)
 {
     qreal qval = q_slider->value();
     int   sval = s_slider->value();
@@ -498,7 +498,7 @@ void ExplicitRosetteEditor::updateGeometry(bool doEmit)
     expRoseFig->s = sval;
     expRoseFig->r_flexPt = rval;
 
-    FigureEditor::updateGeometry(false);
+    FigureEditor::updateFigure(false);
 
     MotifMaker * motifMaker = MotifMaker::getInstance();
     MapPtr map = motifMaker->createExplicitRosetteMap(qval, sval, rval);
@@ -523,8 +523,8 @@ ExplicitStarEditor::ExplicitStarEditor(page_motif_maker *ed, QString aname) : Ex
     addLayout(d_slider);
     addLayout(s_slider);
 
-    connect(d_slider, &DoubleSliderSet::valueChanged, this, &ExplicitStarEditor::updateGeometry);
-    connect(s_slider, &SliderSet::valueChanged,       this, &ExplicitStarEditor::updateGeometry);
+    connect(d_slider, &DoubleSliderSet::valueChanged, this, [this]() { updateFigure(true);});
+    connect(s_slider, &SliderSet::valueChanged,       this, [this]() { updateFigure(true);});
 }
 
 FigurePtr ExplicitStarEditor::getFigure()
@@ -542,11 +542,11 @@ void ExplicitStarEditor::resetWithFigure(FigurePtr fig, bool doEmit)
 
     expStarFig = resetFigure(fig,FIG_TYPE_EXPLICIT_STAR);
 
-    updateLimits();
-    updateGeometry(doEmit);
+    updateEditor();
+    updateFigure(doEmit);
 }
 
-void ExplicitStarEditor::updateLimits()
+void ExplicitStarEditor::updateEditor()
 {
     FeaturePtr feature = menu->getActiveFeature();
     if (feature)
@@ -576,10 +576,10 @@ void ExplicitStarEditor::updateLimits()
         blockSignals(false);
     }
 
-    FigureEditor::updateLimits();
+    FigureEditor::updateEditor();
 }
 
-void ExplicitStarEditor::updateGeometry(bool doEmit)
+void ExplicitStarEditor::updateFigure(bool doEmit)
 {
     qreal dval = d_slider->value();
     int sval   = s_slider->value();
@@ -587,7 +587,7 @@ void ExplicitStarEditor::updateGeometry(bool doEmit)
     expStarFig->d = dval;
     expStarFig->s = sval;
 
-    FigureEditor::updateGeometry(false);
+    FigureEditor::updateFigure(false);
 
     MotifMaker * motifMaker = MotifMaker::getInstance();
     MapPtr map = motifMaker->createExplicitStarMap(dval, sval);
@@ -618,13 +618,13 @@ void ExplicitFeatureEditor::resetWithFigure(FigurePtr fig, bool doEmit)
 
     featFig = resetFigure(fig,FIG_TYPE_EXPLICIT_FEATURE);
 
-    updateLimits();
-    updateGeometry(doEmit);
+    updateEditor();
+    updateFigure(doEmit);
 }
 
-void ExplicitFeatureEditor::updateGeometry(bool doEmit)
+void ExplicitFeatureEditor::updateFigure(bool doEmit)
 {
-    FigureEditor::updateGeometry(false);
+    FigureEditor::updateFigure(false);
 
     MotifMaker * motifMaker = MotifMaker::getInstance();
     MapPtr map = motifMaker->createExplicitFeatureMap();

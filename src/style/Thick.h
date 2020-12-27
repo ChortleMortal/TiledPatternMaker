@@ -37,7 +37,7 @@ class Thick : public Colored
 {
 public:
     Thick(PrototypePtr proto);
-    Thick(const Style & other);
+    Thick(StylePtr other);
     ~Thick() override;
 
     virtual eStyleType getStyleType() const  override { return STYLE_THICK; }

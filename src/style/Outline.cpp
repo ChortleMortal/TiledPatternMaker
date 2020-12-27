@@ -45,7 +45,7 @@ Outline::Outline(PrototypePtr proto) : Thick (proto)
 {
 }
 
-Outline::Outline(const Style &other ) : Thick(other)
+Outline::Outline(StylePtr other) : Thick(other)
 {
 }
 

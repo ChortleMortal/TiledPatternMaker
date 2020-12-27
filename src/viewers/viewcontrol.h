@@ -82,7 +82,6 @@ protected:
 
 signals:
     void    sig_selected_dele_changed();
-    void    sig_selected_proto_changed();
     void    sig_viewUpdated();
 
 public slots:

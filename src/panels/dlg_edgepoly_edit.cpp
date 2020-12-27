@@ -5,6 +5,7 @@
 #include "tile/feature.h"
 #include "base/utilities.h"
 #include "viewers/view.h"
+#include "makers/tiling_maker/tiling_maker.h"
 
 /////////////////////////////////////////////////////////////////
 ///
@@ -69,7 +70,7 @@ DlgEdgePolyEdit::DlgEdgePolyEdit(EdgePoly & epoly, QTransform t, QWidget *parent
     vlayout->addLayout(hbox2);
     setLayout(vlayout);
 
-    connect(okbtn,      &QPushButton::clicked, this, &DlgEdgePolyEdit::accept);
+    connect(okbtn,      &QPushButton::clicked, this, &DlgEdgePolyEdit::slot_ok);
     connect(canbtn,     &QPushButton::clicked, this, &DlgEdgePolyEdit::slot_undo);
     connect(apply,      &QPushButton::clicked, this, &DlgEdgePolyEdit::slot_applyDeltas);
     connect(moveUp,     &QPushButton::clicked, this, &DlgEdgePolyEdit::slot_moveUp);
@@ -100,7 +101,7 @@ void DlgEdgePolyEdit::display()
         DlgLineEdit * le = new DlgLineEdit(epoly,row,col);
         le->setText(QString::number(pt.x(),'g',16));
         table.setCellWidget(row,col,le);
-        connect(this, &DlgEdgePolyEdit::sig_update, le,   &DlgLineEdit::slot_update);
+        connect(this, &DlgEdgePolyEdit::sig_update, le,  &DlgLineEdit::slot_update);
         connect(le,   &DlgLineEdit::currentPoint,  this, &DlgEdgePolyEdit::slot_currentPoint);
 
         col++;
@@ -133,7 +134,7 @@ void DlgEdgePolyEdit::display()
             bool  convex = edge->isConvex();
 
             col++;
-            QString str = QString("%1 , %2").arg(QString::number(arcC.x(),'g',16),QString::number(arcC.y(),'g',16));
+            QString str = QString("%1 , %2").arg(QString::number(arcC.x(),'g',16)).arg(QString::number(arcC.y(),'g',16));
             item = new QTableWidgetItem(str);
             table.setItem(row,col,item);
 
@@ -148,6 +149,13 @@ void DlgEdgePolyEdit::display()
     table.resizeColumnToContents(5);
     table.adjustTableSize();
     updateGeometry();
+}
+
+void DlgEdgePolyEdit::slot_ok()
+{
+    TilingMaker * tilingMaker = TilingMaker::getInstance();
+    tilingMaker->sm_take(tilingMaker->getSelected(),SM_FEATURE_CHANGED);
+    accept();
 }
 
 void DlgEdgePolyEdit::slot_undo()

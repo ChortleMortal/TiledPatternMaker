@@ -70,7 +70,7 @@ class Outline : public Thick
 {
 public:
     Outline(PrototypePtr proto);
-    Outline(const Style &  other);
+    Outline(StylePtr other);
     virtual ~Outline() override;
 
     void resetStyleRepresentation() override;

@@ -23,11 +23,12 @@
  */
 
 #include "tapp/prototype.h"
-#include "geometry/fill_region.h"
-#include "base/utilities.h"
 #include "base/tpmsplash.h"
-#include "panels/panel_status.h"
+#include "base/utilities.h"
+#include "geometry/fill_region.h"
+#include "geometry/map_cleanser.h"
 #include "panels/panel.h"
+#include "panels/panel_status.h"
 #include "tile/placed_feature.h"
 
 int Prototype::refs = 0;
@@ -330,18 +331,21 @@ MapPtr Prototype::createProtoMap(bool showSplash)
     // Now, for each different feature, build a submap corresponding
     // to all translations of that feature.
     qDebug() << "designElements count=" << designElements.size();
-
+    int count = 0;
     for (auto dep : qAsConst(designElements))
     {
-        qDebug().noquote() << "design element:" << dep->toString();
+        qDebug().noquote() << "merging design element:" << count++ << "into prototype:" << dep->toString();
 
         FeaturePtr feature   = dep->getFeature();
         FigurePtr figure     = dep->getFigure();
         MapPtr figmap        = figure->getFigureMap();
 
-        qDebug().noquote() << figure->getFigureDesc();
-        if (debug) figmap->verifyMap("figmap1");
-
+        qDebug().noquote() << "figmap1" << figure->getFigureDesc();
+        if (debug)
+        {
+            MapCleanser cleanFig(figmap);
+            cleanFig.verifyMap("figmap1");
+        }
         QVector<QTransform> subT;
         for (auto it2 = tiling->getPlacedFeatures().begin(); it2 != tiling->getPlacedFeatures().end(); it2++)
         {
@@ -364,20 +368,38 @@ MapPtr Prototype::createProtoMap(bool showSplash)
         // transformed figures corresponding to the given feature into a map.
         MapPtr transmap = make_shared<Map>("proto transmap");
         transmap->mergeSimpleMany(figmap, subT);
-        if (debug) transmap->verifyMap("transmap");
+        if (debug)
+        {
+            MapCleanser cleanTran(transmap);
+            cleanTran.verifyMap("transmap");
+        }
 
         // Now put all the translations together into a single map for this feature.
         MapPtr featuremap = make_shared<Map>("proto featuremap");
         featuremap->mergeSimpleMany(transmap, locations);
-        if (debug) featuremap->verifyMap("featuremap");
+        if (debug)
+        {
+            MapCleanser cleanFeat(featuremap);
+            cleanFeat.verifyMap("featuremap");
+        }
 
         // And do a slow merge to add this map to the finished design.
-        if (debug) protoMap->verifyMap("protoMap before Merge:");
-        protoMap->mergeMap(featuremap);
-        if (debug) protoMap->verifyMap("protoMap after Merge:");
+        if (debug)
+        {
+            MapCleanser cleanProt(protoMap);
+            cleanProt.verifyMap("protoMap before featuremap Merge:");
 
-        if (debug) qDebug() << "Constructed SUB map (ret): vertices=" << protoMap->numVertices()<< "edges=" << protoMap->numEdges();
-        protoMap->analyzeVertices();
+            protoMap->mergeMap(featuremap);
+
+            cleanProt.verifyMap("protoMap after featuremap Merge:");
+        }
+        else
+        {
+            protoMap->mergeMap(featuremap);
+        }
+
+        if (debug) qDebug().noquote() << "Constructed SUB map (ret): vertices=" << protoMap->numVertices()<< "edges=" << protoMap->numEdges();
+        if (debug) qDebug().noquote() << protoMap->calcVertexEdgeCounts();
     }
 
     qDebug() << "Constructed complete map (ret): vertices=" << protoMap->numVertices() << "edges=" << protoMap->numEdges();

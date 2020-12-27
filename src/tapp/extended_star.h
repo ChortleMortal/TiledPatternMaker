@@ -55,11 +55,14 @@ public:
     virtual QString getFigureDesc() override { return "Extended Star";}
 
 protected:
-    void    extendMap();
+    void    extendPeripheralMap();
+    void    extendFreeMap();
     void    extendLine(MapPtr map, QLineF line);
 
     bool    extendFreeVertices;
     bool    extendPeripheralVertices;
+
+    VertexPtr findVertex(QPointF pt);
 
 private:
 

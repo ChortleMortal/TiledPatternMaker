@@ -45,9 +45,6 @@
 #include "makers/tiling_maker/tiling_maker.h"
 #include "base/mosaic_writer.h"
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5,15,0))
-#define endl Qt::endl
-#endif
 
 const QString Tiling::defaultName = "The Unnamed";
 

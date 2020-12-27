@@ -51,6 +51,7 @@ SOURCES += \
     geometry/intersect.cpp \
     geometry/loose.cpp \
     geometry/map.cpp \
+    geometry/map_cleanser.cpp \
     geometry/neighbours.cpp \
     geometry/point.cpp \
     geometry/threads.cpp \
@@ -85,6 +86,7 @@ SOURCES += \
     panels/dlg_name.cpp \
     panels/dlg_rebase.cpp \
     panels/dlg_rename.cpp \
+    panels/dlg_textedit.cpp \
     panels/dlg_trim.cpp \
     panels/layout_sliderset.cpp \
     panels/layout_transform.cpp \
@@ -201,6 +203,7 @@ HEADERS += \
     geometry/intersect.h \
     geometry/loose.h \
     geometry/map.h \
+    geometry/map_cleanser.h \
     geometry/neighbours.h \
     geometry/point.h \
     geometry/threads.h \
@@ -235,6 +238,7 @@ HEADERS += \
     panels/dlg_name.h \
     panels/dlg_rebase.h \
     panels/dlg_rename.h \
+    panels/dlg_textedit.h \
     panels/dlg_trim.h \
     panels/layout_sliderset.h \
     panels/layout_transform.h \
