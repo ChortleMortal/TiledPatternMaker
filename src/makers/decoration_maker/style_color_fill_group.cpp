@@ -31,8 +31,6 @@ StyleColorFillGroup::StyleColorFillGroup(FaceGroup & fGroup, ColorGroup & cGroup
     colorGroup = cGroup;
     faceGroup  = fGroup;
 
-    connect(&mapper, SIGNAL(mapped(int)), this, SLOT(slot_colorSetVisibilityChanged(int)));
-
     QGridLayout * grid = new QGridLayout;
 
     QPushButton * modBtn = new QPushButton("Modify");
@@ -111,13 +109,12 @@ void StyleColorFillGroup::display()
         cb->setStyleSheet("padding-left:11px;");
         table->setCellWidget(row,COL_HIDE,cb);
         cb->setChecked(colorGroup.isHidden(row));
-        mapper.setMapping(cb,row);
-        QObject::connect(cb, SIGNAL(toggled(bool)), &mapper, SLOT(map()), Qt::UniqueConnection);
+        connect(cb, &QCheckBox::toggled, [this,row] { colorSetVisibilityChanged(row); });
 
         QPushButton * btn = new QPushButton("Edit");
         btn->setFixedWidth(40);
         table->setCellWidget(row,COL_BTN,btn);
-        connect(btn, &QPushButton::clicked, this, &StyleColorFillGroup::slot_edit, Qt::UniqueConnection);
+        connect(btn, &QPushButton::clicked, [this,row] { edit(row); });
 
         ColorSet & cset = colorGroup.getColorSet(row);
         AQWidget * widget = cset.createWidget();
@@ -139,9 +136,8 @@ void StyleColorFillGroup::display()
 
 }
 
-void StyleColorFillGroup::slot_edit()
+void StyleColorFillGroup::edit(int row)
 {
-    int row = table->currentRow();
     if (row < 0 || row >= colorGroup.size())
     {
         return;
@@ -160,7 +156,8 @@ void StyleColorFillGroup::slot_edit()
 
 void StyleColorFillGroup::modify()
 {
-    slot_edit();
+    int row = table->currentRow();
+    edit(row);
 }
 
 void StyleColorFillGroup::up()
@@ -239,11 +236,11 @@ void StyleColorFillGroup::pasteSet()
     display();
 }
 
-void StyleColorFillGroup::slot_colorSetVisibilityChanged(int row)
+void StyleColorFillGroup::colorSetVisibilityChanged(int row)
 {
-    qDebug() << "slot_colorVisibilityChanged row=" << row;
+    qDebug() << "colorVisibilityChanged row=" << row;
 
-    QCheckBox * cb  = dynamic_cast<QCheckBox*>(table->cellWidget(row,4));
+    QCheckBox * cb  = dynamic_cast<QCheckBox*>(table->cellWidget(row,COL_HIDE));
     bool hide       = cb->isChecked();
     qDebug() << "hide state="  << hide;
 
@@ -251,9 +248,7 @@ void StyleColorFillGroup::slot_colorSetVisibilityChanged(int row)
 
     emit sig_colorsChanged();
 
-    display();
-
-    qDebug() << "slot_colorVisibilityChanged: done";
+    qDebug() << "colorVisibilityChanged: done";
 }
 
 void StyleColorFillGroup::slot_click(int row, int col)

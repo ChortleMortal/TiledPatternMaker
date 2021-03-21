@@ -1,7 +1,6 @@
 #include "dlg_textedit.h"
 #include <QtWidgets>
-#include "makers/decoration_maker/decoration_maker.h"
-#include "base/mosaic.h"
+#include "base/configuration.h"
 
 DlgTextEdit::DlgTextEdit(bool show)
 {
@@ -21,8 +20,12 @@ DlgTextEdit::DlgTextEdit(bool show)
     //const QFont fixedFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
     //txt.setCurrentFont(fixedFont);
 
-    DecorationMaker * dm = DecorationMaker::getInstance();
-    MosaicPtr mos = dm->getMosaic();
-    if (mos)
-        setWindowTitle(mos->getName());
+    Configuration * config = Configuration::getInstance();
+    QString name;
+    if (!config->currentlyLoadingXML.isEmpty())
+        name = config->currentlyLoadingXML;
+    else
+        name = config->currentlyLoadedXML;
+    setWindowTitle(name);
+    qWarning() << "Problem with " << name;
 }

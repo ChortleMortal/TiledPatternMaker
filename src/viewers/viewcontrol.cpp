@@ -82,7 +82,7 @@ void ViewControl::init()
     view            = View::getInstance();
 
     disableAllViews();
-    viewEnable(config->viewerType,true);
+    viewEnable(config->getViewerType(),true);
 }
 
 ViewControl::~ViewControl()
@@ -186,7 +186,7 @@ void ViewControl::slot_refreshView()
 
 void ViewControl::refreshView()
 {
-    qDebug().noquote() << "+ ViewController::refreshView type=" << sViewerType[config->viewerType];
+    qDebug().noquote() << "+ ViewController::refreshView type=" << sViewerType[config->getViewerType()];
 
     view->paintEnable(false);
 
@@ -203,7 +203,7 @@ void ViewControl::refreshView()
     }
 
     // resize
-    view->resize(view->getActiveFrameSize(config->viewerType));
+    view->resize(view->getActiveFrameSize(config->getViewerType()));
 
     // big blue cross
     if (config->circleX)
@@ -224,7 +224,7 @@ void ViewControl::refreshView()
 
 void ViewControl::setupViewers()
 {
-    eViewType vtype = config->viewerType;
+    eViewType vtype = config->getViewerType();
     panel->reflectCurrentView(vtype);
 
     for (int i=0; i <= VIEW_MAX; i++)
@@ -557,7 +557,7 @@ void ViewControl::viewMapEditor()
 void ViewControl::viewFaceSet()
 {
     qDebug() << "++ViewController::viewFaceSet";
-    LayerPtr fsView = make_shared<FaceSetView>(config->faces);
+    LayerPtr fsView = make_shared<FaceSetView>(config->colorMaker);
     view->addLayer(fsView);
 
     view->setBackgroundColor(Qt::black);
@@ -567,18 +567,16 @@ void ViewControl::setTitle(TilingPtr tp)
 {
     if (!tp) return;
 
-    QString str = QString("%1 : %2 : %3 : %4").arg(sViewerType[config->viewerType]).arg(tp->getName()).arg(tp->getDescription()).arg(tp->getAuthor());
+    QString str = QString("%1 : %2 : %3 : %4").arg(sViewerType[config->getViewerType()]).arg(tp->getName()).arg(tp->getDescription()).arg(tp->getAuthor());
     view->setWindowTitle(str);
 }
 
 void  ViewControl::setBackgroundImg(BkgdImgPtr bkgd)
 {
-    if (bkgd)
+    if (bkgd &&  bkgd->isLoaded())
     {
-        if (bkgd->isLoaded() && bkgd->bShowBkgd)
-        {
-            view->addLayer(bkgd);
-        }
+        qDebug() << "adding image" << bkgd->getName();
+        view->addLayer(bkgd);
     }
 }
 

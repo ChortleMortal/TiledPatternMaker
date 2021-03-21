@@ -11,18 +11,19 @@ void  ViewerBase::drawFeature(GeoGraphics * gg, FeaturePtr feature, QBrush brush
     // Fill the feature.
     if (brush.style() != Qt::NoBrush)
     {
-        gg->fillEdgePoly(ep, brush.color());
+        gg->fillEdgePoly(&ep, brush.color());
     }
 
     // Outline the feature.
-    gg->drawEdgePoly(ep,pen.color(), pen.width());
+    gg->drawEdgePoly(&ep,pen.color(), pen.width());
 }
 
 void  ViewerBase ::drawFigure(GeoGraphics * gg, FigurePtr figure, QPen pen)
 {
     MapPtr map = figure->getFigureMap();
     if (!map) return;
-    for(auto edge :  map->getEdges())
+
+    for(auto edge :  map->edges)
     {
         if (edge->getType() == EDGETYPE_LINE)
         {
@@ -30,7 +31,7 @@ void  ViewerBase ::drawFigure(GeoGraphics * gg, FigurePtr figure, QPen pen)
         }
         else if (edge->getType() == EDGETYPE_CURVE)
         {
-            gg->drawChord(edge->getV1()->getPosition(),edge->getV2()->getPosition(),edge->getArcCenter(),pen,QBrush(),edge->isConvex());
+            gg->drawChord(edge->v1->pt,edge->v2->pt,edge->getArcCenter(),pen,QBrush(),edge->isConvex());
         }
     }
 }

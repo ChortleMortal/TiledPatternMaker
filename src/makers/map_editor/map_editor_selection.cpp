@@ -1,4 +1,5 @@
 #include "makers/map_editor/map_editor_selection.h"
+#include "geometry/dcel.h"
 #include "geometry/point.h"
 #include "geometry/transform.h"
 #include "makers/map_editor/map_selection.h"
@@ -21,13 +22,13 @@ void  MapEditorSelection::buildEditorDB()
     if (map)
     {
         // add points from map vertices
-        for (const auto & vert : map->getVertices())
+        for (const auto & vert : map->vertices)
         {
             pointInfo pi(PT_VERTEX,vert,"vertex");
             points.push_back(pi);
         }
 
-        for (auto edge : map->getEdges())
+        for (auto edge : map->edges)
         {
             // add lines from map edges
             lineInfo li(LINE_EDGE,edge,"edge");
@@ -162,6 +163,32 @@ void  MapEditorSelection::buildEditorDB()
         }
     }
 
+    if (mapType == MAP_TYPE_DCEL)
+    {
+        DCELPtr dp = dcel.lock();
+        if  (dp)
+        {
+            // add points from map vertices
+            for (auto  v : qAsConst(dp->vertices))
+            {
+                pointInfo pi(PT_VERTEX,v->vert,"vertex");
+                points.push_back(pi);
+            }
+
+            for (auto e : qAsConst(dp->edges))
+            {
+                // add lines from map edges
+                lineInfo li(LINE_EDGE,e->edge,"edge");
+                lines.push_back(li);
+
+                // add points from map edges mid-points
+                QPointF midPt = e->edge->getLine().pointAt(0.5);
+                pointInfo pi(PT_VERTEX_MID,midPt,"mid-point edge");
+                points.push_back(pi);
+            }
+        }
+    }
+
     // build construction lines
     for (auto it = constructionLines.begin(); it != constructionLines.end(); it++)
     {
@@ -284,7 +311,7 @@ void  MapEditorSelection::buildEditorDB()
             }
             QLineF line  = linfo._line;
             QPointF intersect;
-            QLineF::IntersectType itype = cline.intersect(line,&intersect);
+            QLineF::IntersectType itype = cline.intersects(line,&intersect);
             if (itype == QLineF::BoundedIntersection)
             {
                 // hapily this does into include intersecting ends (which previously I thought was a Qt bug)
@@ -455,13 +482,13 @@ MapSelectionPtr MapEditorSelection::findVertex(QPointF spt , VertexPtr exclude)
     if (mapType == MAP_TYPE_UNDEFINED)
         return sel;
 
-    for (auto vp : map->getVertices())
+    for (auto vp : map->vertices)
     {
         if (vp == exclude)
         {
             continue;
         }
-        QPointF pt   = worldToScreen(vp->getPosition());    // TODO - verify
+        QPointF pt   = worldToScreen(vp->pt);    // TODO - verify
         QPointF a    = viewT.map(pt);
         //QPointF sa   = worldToScreen(a);
         if (Point::isNear(spt,a))
@@ -474,21 +501,21 @@ MapSelectionPtr MapEditorSelection::findVertex(QPointF spt , VertexPtr exclude)
     return sel;
 }
 
-SelectionSet MapEditorSelection::findEdges(QPointF spt, QVector<EdgePtr> & excludes)
+SelectionSet MapEditorSelection::findEdges(QPointF spt, const QVector<EdgePtr> & excludes)
 {
     SelectionSet set;
 
     if (mapType == MAP_TYPE_UNDEFINED)
         return set;
 
-    for (auto e : map->getEdges())
+    for (auto e : map->edges)
     {
         if (excludes.contains(e))
         {
             continue;
         }
-        QPointF a = viewT.map(e->getV1()->getPosition());
-        QPointF b = viewT.map(e->getV2()->getPosition());
+        QPointF a = viewT.map(e->v1->pt);
+        QPointF b = viewT.map(e->v2->pt);
 
         if (Point::distToLine(spt, a , b) < 7.0)
         {

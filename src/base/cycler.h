@@ -43,19 +43,8 @@ enum eCycleMode
     CYCLE_SAVE_STYLE_BMPS,
     CYCLE_SAVE_TILING_BMPS,
     CYCLE_MAX = CYCLE_SAVE_TILING_BMPS,
-    CYCLE_COMPARE_IMAGES,
-    RE_CYCLE_COMPARE_IMAGES
-};
-
-static QString sCycleMode[] = {
-    E2STR(CYCLE_NONE),
-    E2STR(CYCLE_STYLES),
-    E2STR(CYCLE_TILINGS),
-    E2STR(CYCLE_ORIGINAL_PNGS),
-    E2STR(CYCLE_SAVE_STYLE_BMPS),
-    E2STR(CYCLE_SAVE_TILING_BMPS),
-    E2STR(CYCLE_COMPARE_IMAGES)
-    E2STR(RE_CYCLE_COMPARE_IMAGES)
+    CYCLE_COMPARE_ALL_IMAGES,
+    CYCLE_COMPARE_WORKLIST_IMAGES
 };
 
 Q_DECLARE_METATYPE(eCycleMode)
@@ -80,22 +69,21 @@ signals:
     void sig_finished();
     void sig_show_png(QString file, int row, int col);
     void sig_compare(QString,QString,bool);
-    void sig_viewImage(QString filename);
+    void sig_workList();
 
 public slots:
    void slot_startCycle(eCycleMode mode);
    void slot_stopCycle();
    void slot_psuedoKey(int key);
    void slot_ready();
-   void slot_view_images();
    void slot_timeout();
 
 protected:
     void startCycleStyles();
     void startCycleTilings();
     void startCycleOriginalDesignPngs();
-    void startCycleCompareImages();
-    void startReCycleCompareImages();
+    void startCycleCompareAllImages();
+    void startCycleCompareWorklistImages();
     void nextCyclePng();
 
 private:

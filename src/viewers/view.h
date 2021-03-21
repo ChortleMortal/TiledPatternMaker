@@ -58,11 +58,8 @@ public:
     void    setBackgroundColor(QColor color);
     QColor  getBackgroundColor();
 
-    void    setAllMosaicDefinedSizes(QSize sz);
-    void    setAllTilingDefinedSizes(QSize sz);
-
-    void    setAllMosaicActiveSizes(QSize sz);
-    void    setAllTilingActiveSizes(QSize sz);
+    void    setAllCommonDefinedSizes(QSize sz);
+    void    setAllCommonActiveSizes(QSize sz);
 
     void    reInitFrameSettings();
 
@@ -80,6 +77,8 @@ public:
     const QMap<eViewType,FrameSettings> & getFrameSettings() { return  frameSettings; }
 
     void    dump(bool summary);
+
+    QElapsedTimer  loadTimer;
 
 signals:
     void sig_mousePressed(QPointF pos,Qt::MouseButton);
@@ -111,10 +110,12 @@ signals:
     void sig_saveImage();
     void sig_saveSVG();
 
+
 protected:
     void closeEvent(QCloseEvent *event) override;
     void paintEvent(QPaintEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
+    void moveEvent(QMoveEvent *event) override;
     void keyPressEvent( QKeyEvent *k ) override;
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
@@ -160,6 +161,7 @@ private:
 
     QPointF           sLast;    // used by pan
     bool              closed;
+    QPointF           deltaPos;
 };
 
 #endif // VIEW_H

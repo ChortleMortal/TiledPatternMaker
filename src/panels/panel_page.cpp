@@ -126,11 +126,20 @@ QString panel_page::addr(const void * address)
     return QString::number(reinterpret_cast<uint64_t>(address),16);
 }
 
+#if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
+void panel_page::enterEvent(QEnterEvent *event)
+{
+    Q_UNUSED(event)
+    mouseEnter();
+}
+#else
 void panel_page::enterEvent(QEvent *event)
 {
     Q_UNUSED(event)
     mouseEnter();
 }
+#endif
+
 void panel_page::leaveEvent(QEvent *event)
 {
     Q_UNUSED(event)

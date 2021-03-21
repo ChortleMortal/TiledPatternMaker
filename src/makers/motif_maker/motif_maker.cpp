@@ -95,7 +95,7 @@ void MotifMaker::recreatePrototype(TilingPtr tiling)
         if (++count <= MAX_UNIQUE_FEATURE_INDEX)
         {
             bool found = false;
-            for (auto del : prototype->getDesignElements())
+            for (auto del : qAsConst(prototype->getDesignElements()))
             {
                 if (del->getFeature() == feature)
                 {
@@ -119,7 +119,7 @@ void MotifMaker::recreatePrototype(TilingPtr tiling)
         }
     }
     QVector<DesignElementPtr> forDeletion;
-    for (auto del : prototype->getDesignElements())
+    for (auto del : qAsConst(prototype->getDesignElements()))
     {
         FeaturePtr feature = del->getFeature();
         if (!uniqueFeatures.contains(feature))
@@ -127,7 +127,7 @@ void MotifMaker::recreatePrototype(TilingPtr tiling)
             forDeletion.push_back(del);
         }
     }
-    for (auto del : forDeletion)
+    for (const auto & del : forDeletion)
     {
         prototype->removeElement(del);
     }
@@ -138,7 +138,7 @@ void MotifMaker::recreateFigures(TilingPtr tiling)
     PrototypePtr prototype = getSelectedPrototype();
     Q_ASSERT(prototype->getTiling() == tiling);
 
-    for (auto del : prototype->getDesignElements())
+    for (auto del : qAsConst(prototype->getDesignElements()))
     {
         FeaturePtr feature = del->getFeature();
         FigurePtr  figure  = del->getFigure();

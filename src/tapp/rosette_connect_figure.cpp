@@ -102,8 +102,7 @@ MapPtr RosetteConnectFigure::buildUnit()
 
     scaleToUnit(unitMap);
 
-    MapCleanser cleanser(unitMap);
-    cleanser.verifyMap("RosetteConnectFigure");
+    unitMap->verifyMap("RosetteConnectFigure");
 
     return unitMap;
 }

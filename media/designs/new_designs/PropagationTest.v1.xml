@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<vector id="1" version="7">
+<vector id="1" version="8">
 	<designNotes>testing propagation of tiling changes</designNotes>
 	<design>
 		<size>
@@ -212,6 +212,7 @@
 			<color hide="f">#ffffff00</color>
 		</ColorBlacks>
 		<ColorWhites>
+			<color hide="t">#ff657ab2</color>
 			<color hide="f">#ff657ab2</color>
 			<color hide="f">#ffa35807</color>
 			<color hide="f">#ffffe05b</color>
@@ -235,6 +236,7 @@
 			<draw__inside>true</draw__inside>
 			<draw__outside>true</draw__outside>
 			<algorithm>2</algorithm>
+			<cleanse>0</cleanse>
 		</style.Filled>
 	</style.Filled>
 </vector>

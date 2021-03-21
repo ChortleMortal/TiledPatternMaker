@@ -168,7 +168,7 @@ MapPtr Star::buildUnit()
 
     if (s == di )
     {
-        QPointF midr = Tr.map( top_prev->getPosition() );
+        QPointF midr = Tr.map( top_prev->pt );
         VertexPtr v4 = unitMap->insertVertex(midr);
 
         if( d_is_int )

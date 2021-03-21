@@ -19,7 +19,7 @@ public:
     QTransform  getTransform(xml_node & node);
 
 protected:
-    VertexPtr   getVertex(xml_node & node, int & index);
+    VertexPtr   getVertex(xml_node & node);
     QPointF     getPoint(xml_node & node);
 
     bool        hasReference(xml_node & node);

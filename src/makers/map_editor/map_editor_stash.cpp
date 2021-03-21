@@ -105,7 +105,7 @@ bool MapEditorStash::readStashTo(QString name, QVector<QLineF>  & lines, QVector
     in >> magic;
     if (magic != 0xA0B0C0D00)
     {
-        qWarning() << "invalid stash header"  << hex << magic;
+        qWarning() << "invalid stash header"  << magic;
         return false;
     }
     qint64 version = 0;

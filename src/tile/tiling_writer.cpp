@@ -27,6 +27,7 @@ bool TilingWriter::writeTilingXML()
     if (!filename.isEmpty())
     {
         // file already exists
+        bool isOriginal = filename.contains("original");
         QMessageBox msgBox(ControlPanel::getInstance());
         msgBox.setText(QString("The tiling %1 already exists").arg(name));
         msgBox.setInformativeText("Do you want to bump version (Bump) or overwrite (Save)?");
@@ -46,7 +47,14 @@ bool TilingWriter::writeTilingXML()
             // appends a version
             name = FileServices::getNextVersion(name,true);
             tiling->setName(name);
-            filename = config->newTileDir + "/" + name + ".xml";
+            if (isOriginal)
+            {
+                filename = config->originalTileDir + name + ".xml";
+            }
+            else
+            {
+                filename = config->newTileDir + name + ".xml";
+           }
         }
         // save drops thru
         Q_UNUSED(save)
@@ -54,7 +62,7 @@ bool TilingWriter::writeTilingXML()
     else
     {
         // new file
-        filename = config->newTileDir + "/" + name + ".xml";
+        filename = config->newTileDir + name + ".xml";
     }
 
     QFile data(filename);
@@ -176,6 +184,13 @@ void TilingWriter::writeTilingXML(QTextStream & out)
     out << "<Auth>" << tiling->getAuthor() << "</Auth>" << endl;
 
     BkgdImgPtr bkgd = tiling->getBackground();
+    writeBackgroundImage(out,bkgd);
+
+    out << "</Tiling>" << endl;
+}
+
+void TilingWriter::writeBackgroundImage(QTextStream & out, BkgdImgPtr bkgd)
+{
     if (bkgd && bkgd->isLoaded())
     {
         QString astring = QString("<BackgroundImage name=\"%1\">").arg(bkgd->getName());
@@ -196,8 +211,6 @@ void TilingWriter::writeTilingXML(QTextStream & out)
 
         out << "</BackgroundImage>" << endl;
     }
-
-    out << "</Tiling>" << endl;
 }
 
 void TilingWriter::writeViewSettings(QTextStream & out)
@@ -218,13 +231,13 @@ void TilingWriter::setEdgePoly(QTextStream & ts, EdgePoly & epoly)
     for (auto it = epoly.begin(); it != epoly.end(); it++)
     {
         EdgePtr ep = *it;
-        VertexPtr v1 = ep->getV1();
-        VertexPtr v2 = ep->getV2();
+        VertexPtr v1 = ep->v1;
+        VertexPtr v2 = ep->v2;
         if (ep->getType() == EDGETYPE_LINE)
         {
             ts << "<Line>" << endl;
-            VertexPtr v1 = ep->getV1();
-            VertexPtr v2 = ep->getV2();
+            VertexPtr v1 = ep->v1;
+            VertexPtr v2 = ep->v2;
             setVertex(ts,v1,"Point");
             setVertex(ts,v2,"Point");
             ts << "</Line>" << endl;
@@ -255,7 +268,7 @@ void TilingWriter::setVertex(QTextStream & ts,VertexPtr v, QString name)
     qsid = nextId();
     setVertexReference(getRef(),v);
 
-    QPointF pt = v->getPosition();
+    QPointF pt = v->pt;
 
     ts << "<" << name << qsid << ">";
     ts << pt.x() << "," << pt.y();

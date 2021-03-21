@@ -48,7 +48,12 @@ bool Intersect::getIntersection( QPointF p1, QPointF q1, QPointF p2, QPointF q2,
 
 }
 
-bool Intersect::getTrueIntersection( QPointF & p1, QPointF & q1, QPointF & p2, QPointF & q2, QPointF & intersect )
+bool Intersect::getTrueIntersection(QLineF  l1, QLineF  l2, QPointF &intersect)
+{
+    return getTrueIntersection(l1.p1(),l1.p2(),l2.p1(),l2.p2(),intersect);
+}
+
+bool Intersect::getTrueIntersection(QPointF p1, QPointF q1, QPointF p2, QPointF q2, QPointF & intersect)
 {
     // Don't return the intersection if it is at the enpoints of both segments.
 
@@ -82,7 +87,7 @@ bool Intersect::getTrueIntersection( QPointF & p1, QPointF & q1, QPointF & p2, Q
     }
 }
 
-bool Intersect::getIntersectionParams( QPointF p1, QPointF q1, QPointF p2, QPointF q2 , QPointF & intersect)
+bool Intersect::getIntersectionParams(QPointF p1, QPointF q1, QPointF p2, QPointF q2 , QPointF & intersect)
 {
     // Return a point (s,t), where s is the fraction of the from p1 to
     // q1 where an intersection occurs.  t is defined similarly for p2 and q2.

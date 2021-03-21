@@ -29,6 +29,8 @@
 #include "base/shared.h"
 #include "panels/panel_misc.h"
 
+class AQDoubleSpinBox;
+
 class page_layers : public panel_page
 {
     Q_OBJECT
@@ -67,11 +69,6 @@ public:
     void refreshPage() override;
 
 private slots:
-    void slot_visibilityChanged(int col);
-    void slot_zChanged(int col);
-    void slot_alignPressed(int col);
-    void slot_set_deltas(int col);
-    void slot_clear_deltas(int col);
     void refreshCanvas();
 
 protected:
@@ -79,19 +76,15 @@ protected:
     void populateLayer(LayerPtr layer, int col);
     LayerPtr getLayer(int col);
 
+    void visibilityChanged(int col);
+    void zChanged(AQDoubleSpinBox *dsp, int col);
+    void alignPressed(int col);
+    void slot_set_deltas(int col);
+    void clear_deltas(int col);
+
+
 private:
     AQTableWidget * layerTable;
-
-    QSignalMapper  visMapper;
-    QSignalMapper  zMapper;
-    QSignalMapper  alignMapper;
-    QSignalMapper  leftMapper;
-    QSignalMapper  topMapper;
-    QSignalMapper  widthMapper;
-    QSignalMapper  rotMapper;
-    QSignalMapper  clearMapper;
-    QSignalMapper  cenXMapper;
-    QSignalMapper  cenYMapper;
 };
 
 #endif

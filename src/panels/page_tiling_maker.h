@@ -78,6 +78,8 @@ private slots:
     void slot_transformChanged(int col);
     void slot_showFeatureChanged(int col);
     void slot_t1t2Changed(double val);
+    void slot_t1t2LenChanged(double val);
+    void slot_t1t2AngleChanged(double val);
 
     void slot_cellSelected(int row, int col);
     void slot_showTable(bool checked);
@@ -87,6 +89,7 @@ private slots:
     void slot_swapTrans();
     void slot_delete_clicked();
     void slot_make_irregular_clicked();
+    void slot_useAdjustedClicked(bool checked);
     void slot_uniquify_clicked();
     void slot_setModes(QAbstractButton *btn);
     void slot_set_reps(int val);
@@ -104,7 +107,7 @@ private slots:
     void slot_adjustBackground();
     void slot_saveAdjustedBackground();
     void slot_setBkgdXform();
-    void slot_setBkgd();
+    void slot_clearBackground();
 
 protected:
     AQTableWidget * createTilingTable();
@@ -117,16 +120,18 @@ protected:
     AQWidget      * createTranslationsRow();
     QHBoxLayout   * createFillDataRow();
 
-    void refreshMenuData();
-    void pushTilingToMotifMaker(eSM_Event event);
+    void setupBackground(BkgdImgPtr bi);
 
-    void tallyMouseMode();
+    void displayBackgroundStatus(TilingPtr tiling,bool force);
+    void refreshMenuData();
     void buildTableEntry(PlacedFeaturePtr pf, int col, QString inclusion);
     void refreshTableEntry(PlacedFeaturePtr pf, int col, QString inclusion);
-    void updateFeaturePointInfo(PlacedFeaturePtr pfp);
 
     void loadTilingCombo(TilingPtr selected);
-    void displayBackgroundStatus(TilingPtr tiling);
+    void tallyMouseMode();
+
+    void updateFeaturePointInfo(PlacedFeaturePtr pfp);
+    void pushTilingToMotifMaker(eSM_Event event);
 
     PlacedFeaturePtr getFeatureColumn(int col);
 
@@ -142,6 +147,11 @@ private:
     DoubleSpinSet * t2x;
     DoubleSpinSet * t2y;
 
+    DoubleSpinSet * T1len;
+    DoubleSpinSet * T2len;
+    DoubleSpinSet * T1angle;
+    DoubleSpinSet * T2angle;
+
     AQWidget      * translationsWidget;
     AQTableWidget * tileInfoTable;
     AQWidget      * debugWidget;
@@ -150,29 +160,19 @@ private:
     QLabel       * debugLabel1;
     QLabel       * debugLabel2;
 
-    QSpinBox    * xRepMin;
-    QSpinBox    * xRepMax;
-    QSpinBox    * yRepMin;
-    QSpinBox    * yRepMax;
+    AQSpinBox    * xRepMin;
+    AQSpinBox    * xRepMax;
+    AQSpinBox    * yRepMin;
+    AQSpinBox    * yRepMax;
 
-    QSignalMapper  f_sidesMapper;
-    QSignalMapper  f_rotMapper;
-    QSignalMapper  f_scaleMapper;
-    QSignalMapper  scaleMapper;
-    QSignalMapper  rotMapper;
-    QSignalMapper  xMapper;
-    QSignalMapper  yMapper;
-    QSignalMapper  showMapper;
-
-    QSpinBox      * sides;
-    QDoubleSpinBox* featRot;
-    QComboBox     * girihShapes;
+    AQSpinBox      * sides;
+    AQDoubleSpinBox* featRot;
+    QComboBox      * girihShapes;
 
     LayoutTransform bkgdLayout;
 
-    QCheckBox     * chk_showBkgd;
     QCheckBox     * chk_hideTiling;
-    QCheckBox     * chk_adjustBkgd;
+    QCheckBox     * chk_useAdjusted;
 
     QGroupBox     * bkgdGroup;
 

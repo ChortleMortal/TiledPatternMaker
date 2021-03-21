@@ -39,16 +39,6 @@ public:
     void    onEnter() override;
     void    onExit() override;
 
-signals:
-    void    sig_compareImageFiles(QString,QString,bool);
-    void    sig_view_image(QString file);
-    void    sig_cyclerStart(eCycleMode);
-
-public slots:
-    void    slot_compareResult(QString result);
-    void    slot_setImage0(QString name);
-    void    slot_setImage1(QString name);
-
 private slots:
     void    slot_verifyTilingNames();
     void    slot_reformatDesignXML();
@@ -56,62 +46,17 @@ private slots:
     void    slot_reprocessDesignXML();
     void    slot_reprocessTilingXML();
 
-    void    slot_stopIfDiffClicked(bool enb);
-    void    slot_cycleModeChanged(int id);
-    void    slot_cycleIntervalChanged(int value);
-    void    selectDir0();
-    void    selectDir1();
-    void    swapDirs();
-    void    slot_previous();
-    void    slot_next();
-
-    void    slot_ibox0_changed(int index);
-    void    slot_ibox1_changed(int index);
-    void    slot_viewImage0();
-    void    slot_viewImage1();
-    void    slot_cycle();
-    void    slot_opendir();
-    void    slot_compareImages();
-    void    slot_compareCycle();
-    void    slot_transparentClicked(bool checked);
-    void    slot_differencesClicked(bool checked);
-    void    slot_ping_pongClicked(bool checked);
-    void    slot_side_by_sideClicked(bool checked);
-    void    slot_use_badlist(bool checked);
-    void    slot_use_badlist2(bool checked);
-
-    void    slot_dir0Changed();
-    void    slot_dir1Changed();
-
     void    slot_verifyMapsClicked(bool enb);
     void    slot_verifyDumpClicked(bool enb);
     void    slot_verifyVerboseClicked(bool enb);
 
+    void    slot_verifyTiling();
+
 protected:
     QGroupBox   * createDebugSection();
-    QGroupBox   * createCycleSection();
-    QGroupBox   * createImagesSection();
     QGroupBox   * createVerifyMaps();
 
-    void viewImage(QString file);
-
-    void loadCombo(QComboBox * box, QString dir);
-    void setCombo(QComboBox * box,QString name);
-
-    void saveMosaicBitmaps();
-    void saveTilingBitmaps();
-    void savePixmap(QString name);
-
-    QString getPixmapPath();
-
 private:
-    QLineEdit   * dir0;
-    QLineEdit   * dir1;
-    QLineEdit   * directory;
-
-    QComboBox   * ibox0;
-    QComboBox   * ibox1;
-    QLineEdit   * imageCompareResult;
 };
 
 #endif

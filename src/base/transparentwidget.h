@@ -28,6 +28,7 @@
 #include <QWidget>
 #include <QLabel>
 #include <QMouseEvent>
+#include <QTimer>
 
 class ImageWidget : public QLabel
 {
@@ -38,11 +39,11 @@ public:
 
     void keyPressEvent(QKeyEvent *k) Q_DECL_OVERRIDE;
 
-signals:
-    void sig_takeNext();
-    void sig_cyclerQuit();
-    void sig_view_images();
-    void sig_close();
+public slots:
+    void slot_closeMe();
+
+private:
+   // QTimer  timer;
 };
 
 class TransparentWidget : public ImageWidget

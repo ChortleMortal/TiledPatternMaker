@@ -45,25 +45,25 @@ void FigureConnector::connectFigure(MapPtr unitMap)
     QPointF tip_pos(1.0,0.0);
 
     // Find the tip, i.e. the vertex at (1,0)
-    for (const auto & vert : unitMap->getVertices())
+    for (const auto & vert : unitMap->vertices)
     {
-        QPointF pos = vert->getPosition();
+        QPointF pos = vert->pt;
         qDebug() << "test" << pos << tip_pos;
-        if( Loose::equals( pos, tip_pos ) )
+        if (Loose::equalsPt(pos, tip_pos))
         {
             tip = vert;
             break;
         }
     }
     Q_ASSERT(tip != nullptr);
-    qDebug() << "tip is: " << tip->getPosition();
+    qDebug() << "tip is: " << tip->pt;
 
     // Scale the unit
     unitMap->scale(rp->getFigureScale());
 
-    qDebug() << "tip is: " << tip->getPosition();
+    qDebug() << "tip is: " << tip->pt;
 
-    tip_pos = tip->getPosition();
+    tip_pos = tip->pt;
     dmap->insertDebugMark(tip_pos,"tip");
 
     // Build the clipping polygon
@@ -76,16 +76,14 @@ void FigureConnector::connectFigure(MapPtr unitMap)
     // Locate the other vertex of the segment we're going to extend.
     VertexPtr below_tip;
 
-    QPointF pos = tip->getPosition();
+    QPointF pos = tip->pt;
 
-    NeighbourMap & nmap     = unitMap->getNeighbourMap();
-    NeighboursPtr np        = nmap.getNeighbours(tip);
-    QVector<EdgePtr> & qvep = np->getNeighbours();
+    const QVector<EdgePtr> & qvep = tip->getNeighbours();
 
     for (const auto & edge : qvep)
     {
         VertexPtr ov = edge->getOtherV(pos);
-        if (ov->getPosition().y() < 0.0)
+        if (ov->pt.y() < 0.0)
         {
             below_tip = ov;
             break;
@@ -95,7 +93,7 @@ void FigureConnector::connectFigure(MapPtr unitMap)
     Q_ASSERT(below_tip != nullptr);
 
     // Extend and clip.
-    QPointF bpos = below_tip->getPosition();
+    QPointF bpos = below_tip->pt;
     dmap->insertDebugMark(bpos,"bpos");
 
     QPointF tmp  = tip_pos - bpos;
@@ -161,8 +159,7 @@ void FigureConnector::connectFigure(MapPtr unitMap)
     // rotate the unit
     unitMap->rotate(rp->getFigureRotate());
 
-    MapCleanser cleanser(unitMap);
-    cleanser.verifyMap("RosetteConnectFigure");
+    unitMap->verifyMap("RosetteConnectFigure");
 }
 
 qreal FigureConnector::computeScale(MapPtr cunit)
@@ -174,20 +171,18 @@ qreal FigureConnector::computeScale(MapPtr cunit)
     QPointF tip_pos( 1.0, 0.0 );
 
     // Find the tip, i.e. the vertex at (1,0)
-    NeighbourMap & nmap     = cunit->getNeighbourMap();
-    for (const auto & vert : cunit->getVertices())
+    for (const auto & vert : cunit->vertices)
     {
-        QPointF pos = vert->getPosition();
-        if( Loose::equals( pos, tip_pos ))
+        QPointF pos = vert->pt;
+        if (Loose::equalsPt(pos, tip_pos))
         {
-            NeighboursPtr np        = nmap.getNeighbours(vert);
-            QVector<EdgePtr> & qvep = np->getNeighbours();
+            const QVector<EdgePtr> & qvep = vert->getNeighbours();
             for (const auto &edge : qvep)
             {
                 VertexPtr ov = edge->getOtherV(pos);
-                if( ov->getPosition().y() < 0.0 )
+                if( ov->pt.y() < 0.0 )
                 {
-                    QPointF bpos = ov->getPosition();
+                    QPointF bpos = ov->pt;
                     QPointF tmp = tip_pos - bpos;
                     tmp = Point::normalize(tmp);
                     tmp *= 100.0;
@@ -223,7 +218,7 @@ void FigureConnector::dumpM(QString s,  QMap<VertexPtr,VertexPtr> & movers)
         QMap<VertexPtr, VertexPtr>::const_iterator i = movers.constBegin();
         while (i != movers.constEnd())
         {
-          qDebug() << s  << i.key()->getPosition() << ": " << i.value()->getPosition();
+          qDebug() << s  << i.key()->pt << ": " << i.value()->pt;
           ++i;
       }
 }
@@ -241,32 +236,28 @@ void FigureConnector::rotateHalf( MapPtr cunit )
 
     QTransform Tp = QTransform().rotateRadians(-2.0 * M_PI * rp->get_don());
 
-    for (const auto &vert : cunit->getVertices())
+    for (const auto &vert : cunit->vertices)
     {
-        if( (vert->getPosition().y() + Loose::TOL) > 0.0 )
+        if( (vert->pt.y() + Loose::TOL) > 0.0 )
         {
             movers.insert( vert, vert );
         }
     }
 
-    //dumpM("one",movers);
-
     QList<VertexPtr> keys = movers.keys();
     for (auto e2 = keys.begin(); e2 != keys.end(); e2++)
     {
         VertexPtr vert = *e2;
-        VertexPtr nvert = cunit->insertVertex(Tp.map(vert->getPosition()));
+        VertexPtr nvert = cunit->insertVertex(Tp.map(vert->pt));
         movers.insert( vert, nvert );   // DAC - this should replace
     }
 
-    //dumpM("two",movers);
-
     QVector<EdgePtr> eadds;
 
-    for (auto edge : cunit->getEdges())
+    for (auto edge : cunit->edges)
     {
-        if (   movers.contains(edge->getV1())
-            && movers.contains(edge->getV2()))
+        if (   movers.contains(edge->v1)
+            && movers.contains(edge->v2))
         {
             eadds << edge;
         }
@@ -275,26 +266,21 @@ void FigureConnector::rotateHalf( MapPtr cunit )
     for(auto e4 = eadds.begin(); e4 != eadds.end(); e4++)
     {
         EdgePtr edge = *e4;
-        cunit->insertEdge(movers.value(edge->getV1()), movers.value(edge->getV2()));
+        cunit->insertEdge(movers.value(edge->v1), movers.value(edge->v2));
     }
-
-    //cunit->verify("rotateHalf end penultimate",false);
 
     QMap<VertexPtr, VertexPtr>::const_iterator i = movers.constBegin();
     while (i != movers.constEnd())
     {
         VertexPtr v = i.key();
-        if( v->getPosition().y() > Loose::TOL )
+        if( v->pt.y() > Loose::TOL )
         {
             cunit->removeVertex(v);
         }
         ++i;
     }
 
-    //dumpM("three",movers);
-
-    MapCleanser cleanser(cunit);
-    cleanser.verifyMap("rotateHalf end");
+    cunit->verifyMap("rotateHalf end");
 }
 
 void FigureConnector::scaleToUnit(MapPtr cunit )
@@ -302,16 +288,16 @@ void FigureConnector::scaleToUnit(MapPtr cunit )
     VertexPtr vmax = nullptr;
     qreal xmax = 0.0;
 
-    for (const auto &vert : cunit->getVertices())
+    for (const auto &vert : cunit->vertices)
     {
         if( vmax == nullptr )
         {
             vmax = vert;
-            xmax = vert->getPosition().x();
+            xmax = vert->pt.x();
         }
         else
         {
-            qreal x = vert->getPosition().x();
+            qreal x = vert->pt.x();
             if( x > xmax )
             {
                 xmax = x;

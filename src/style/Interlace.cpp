@@ -99,59 +99,48 @@ void Interlace::createStyleRepresentation()
 
     MapPtr map = getMap();
 
-    MapCleanser cleanser(map);
-    cleanser.verifyMap("interlace stylemapA");
-
     if (colors.size() > 1)
     {
-        map->sortAllNeighboursByAngle();
-
-        cleanser.verifyMap("interlace stylemapB");
-
         threads.findThreads(map);
         threads.assignColors(colors);
     }
 
     assignInterlacing();
-    //map->dumpMap(false);
 
     // Given the interlacing assignment created above, we can
     // use the beefy getPoints routine to extract the graphics
     // of the interlacing.
 
-    for (auto edge  : map->getEdges())
+    for (auto edge  : map->edges)
     {
-        VertexPtr v1 = edge->getV1();
-        VertexPtr v2 = edge->getV2();
-
         segment seg;
         if (colors.size() > 1)
         {
-            seg.c = edge->getInterlaceInfo().thread->color;
+            seg.c = edge->thread->color;
         }
         else
         {
             seg.c = colors.getFirstColor().color;
         }
 
-        getPoints(map, edge, v1, v2, &seg.A);
-        getPoints(map, edge, v2, v1, &seg.B);
+        getPoints(edge, edge->v1, edge->v2, &seg.A);
+        getPoints(edge, edge->v2, edge->v1, &seg.B);
         pts.push_back(seg);
     }
 
     annotateEdges(map);
 
-    cleanser.verifyMap("interlace");
+    map->verifyMap("interlace");
 }
 
 // Private magic to make it all happen.
 
-void Interlace::getPoints(MapPtr map, EdgePtr  edge, VertexPtr from, VertexPtr to, piece * p)
+void Interlace::getPoints(EdgePtr  edge, VertexPtr from, VertexPtr to, piece * p)
 {
-    bool from_under = (edge->getV1() == from ) == edge->getInterlaceInfo().start_under;  // methinks ugly code
+    bool from_under = (edge->v1 == from ) == edge->start_under;  // methinks ugly code
 
-    QPointF pfrom = from->getPosition();
-    QPointF pto   = to->getPosition();
+    QPointF pfrom = from->pt;
+    QPointF pto   = to->pt;
 
     // Four cases:
     //  - cap
@@ -159,9 +148,7 @@ void Interlace::getPoints(MapPtr map, EdgePtr  edge, VertexPtr from, VertexPtr t
     //  - interlace over
     //  - interlace under
 
-    NeighbourMap & nmap = getMap()->getNeighbourMap();
-    NeighboursPtr np    = nmap.getNeighbours(to);
-    int nn           = np->numNeighbours();
+    int nn = to->numNeighbours();
 
     if( nn == 1 )
     {
@@ -180,7 +167,7 @@ void Interlace::getPoints(MapPtr map, EdgePtr  edge, VertexPtr from, VertexPtr t
     else if( nn == 2 )
     {
         // bend
-        BelowAndAbove jps = Outline::getPoints(map, edge, from, to, width);
+        BelowAndAbove jps = Outline::getPoints(edge, from, to, width);
         p->below = jps.below;
         p->cen   = pto;
         p->above = jps.above;
@@ -194,7 +181,7 @@ void Interlace::getPoints(MapPtr map, EdgePtr  edge, VertexPtr from, VertexPtr t
             int index    = 0;
             int edge_idx = -1;
 
-            for (auto& nedge : qAsConst(np->getNeighbours()))
+            for (auto& nedge : qAsConst(to->getNeighbours()))
             {
                 ns << nedge;
                 if (nedge == edge)
@@ -230,7 +217,7 @@ void Interlace::getPoints(MapPtr map, EdgePtr  edge, VertexPtr from, VertexPtr t
             // now does a reasonable job on well-behaved maps
             // and doesn't dump core on badly-behaved ones.
 
-            BeforeAndAfter ba = np->getBeforeAndAfter(edge);
+            BeforeAndAfter ba = to->getBeforeAndAfter(edge);
             QPointF before_pt = ba.before->getOtherP(to);
             QPointF after_pt  = ba.after->getOtherP(to);
 
@@ -280,14 +267,15 @@ void Interlace::getPoints(MapPtr map, EdgePtr  edge, VertexPtr from, VertexPtr t
 void Interlace::initializeMap()
 {
     MapPtr map = getMap();
-    for (auto edge : map->getEdges())
+    for (auto edge : map->edges)
     {
-        edge->initInterlaceInfo();
+        edge->visited     = false;
+        edge->start_under = false;
     }
 
-    for (auto vert : map->getVertices())
+    for (auto vert : map->vertices)
     {
-        vert->initInterlaceInfo();
+        vert->visited = false;
     }
 }
 
@@ -299,12 +287,11 @@ void Interlace::assignInterlacing()
     todo.clear();
 
     MapPtr map = getMap();
-    for(auto edge : map->getEdges())
+    for(auto edge : map->edges)
     {
-        InterlaceInfo & ei = edge->getInterlaceInfo();
-        if (!ei.visited )
+        if (!edge->visited )
         {
-            ei.start_under = true;
+            edge->start_under = true;
             todo.push(edge);
             buildFrom();
             //map->dumpMap(false);
@@ -320,18 +307,17 @@ void Interlace::buildFrom()
     while (!todo.empty())
     {
         EdgePtr edge = todo.pop();
-        InterlaceInfo & ei = edge->getInterlaceInfo();
 
-        VertexPtr v1 = edge->getV1();
-        VertexPtr v2 = edge->getV2();
+        VertexPtr v1 = edge->v1;
+        VertexPtr v2 = edge->v2;
 
-        if (!v1->getInterlaceInfo().visited)
+        if (!v1->visited)
         {
-            propagate(v1, edge, ei.start_under);
+            propagate(v1, edge, edge->start_under);
         }
-        if (!v2->getInterlaceInfo().visited)
+        if (!v2->visited)
         {
-            propagate(v2, edge, !ei.start_under);
+            propagate(v2, edge, !edge->start_under);
         }
     }
 }
@@ -345,57 +331,52 @@ void Interlace::buildFrom()
 
 void Interlace::propagate(VertexPtr vertex, EdgePtr edge, bool edge_under_at_vert)
 {
-    InterlaceInfo  & vi = vertex->getInterlaceInfo();
-    vi.visited = true;
+    vertex->visited = true;
 
-    NeighbourMap & nmap = getMap()->getNeighbourMap();
-    NeighboursPtr np    = nmap.getNeighbours(vertex);
-    int nn              = np->numNeighbours();
+    int nn = vertex->numNeighbours();
 
     if (nn == 2)
     {
-        BeforeAndAfter  ba  = np->getBeforeAndAfter(edge);
+        BeforeAndAfter  ba  = vertex->getBeforeAndAfter(edge);
         EdgePtr oe          = ba.before;
-        InterlaceInfo & oei = oe->getInterlaceInfo();
 
-        if( !oei.visited )
+        if( !oe->visited )
         {
             // With a bend, we don't want to change the underness
             // of the edge we're propagating to.
-            if( oe->getV1() == vertex)
+            if( oe->v1 == vertex)
             {
                 // The new edge starts at the current vertex.
-                oei.start_under = !edge_under_at_vert;
+                oe->start_under = !edge_under_at_vert;
             }
             else
             {
                 // The new edge ends at the current vertex.
-                oei.start_under = edge_under_at_vert;
+                oe->start_under = edge_under_at_vert;
             }
-            oei.visited = true;
+            oe->visited = true;
             todo.push( oe );
         }
     }
     else if (nn == 1 && includeTipVertices)
     {
-        EdgePtr oe = np->getEdge(0);
-        InterlaceInfo & oei = oe->getInterlaceInfo();
+        EdgePtr oe = vertex->getNeighbour(0);
 
-        if( !oei.visited )
+        if( !oe->visited )
         {
             // With a bend, we don't want to change the underness
             // of the edge we're propagating to.
-            if( oe->getV1() == vertex)
+            if( oe->v1 == vertex)
             {
                 // The new edge starts at the current vertex.
-                oei.start_under = !edge_under_at_vert;
+                oe->start_under = !edge_under_at_vert;
             }
             else
             {
                 // The new edge ends at the current vertex.
-                oei.start_under = edge_under_at_vert;
+                oe->start_under = edge_under_at_vert;
             }
-            oei.visited = true;
+            oe->visited = true;
             todo.push( oe );
         }
     }
@@ -406,7 +387,7 @@ void Interlace::propagate(VertexPtr vertex, EdgePtr edge, bool edge_under_at_ver
         int index = 0;
         int edge_idx = -1;
 
-        for (auto& edge2 : qAsConst(np->getNeighbours()))
+        for (auto& edge2 : qAsConst(vertex->getNeighbours()))
         {
             ns << edge2;
             if (edge2 == edge)
@@ -424,18 +405,17 @@ void Interlace::propagate(VertexPtr vertex, EdgePtr edge, bool edge_under_at_ver
             EdgePtr oe = ns[cur];
             Q_ASSERT(oe);
 
-            InterlaceInfo & oei = oe->getInterlaceInfo();
-            if (!oei.visited)
+            if (!oe->visited)
             {
-                if( oe->getV1() == vertex)
+                if( oe->v1 == vertex)
                 {
-                    oei.start_under = !cur_under;
+                    oe->start_under = !cur_under;
                 }
                 else
                 {
-                    oei.start_under = cur_under;
+                    oe->start_under = cur_under;
                 }
-                oei.visited = true;
+                oe->visited = true;
                 todo.push(oe);
             }
 
@@ -471,7 +451,15 @@ void Interlace::draw(GeoGraphics * gg)
         for (auto& seg : qAsConst(pts))
         {
             QColor color = seg.c;
-            qreal h,s,b;
+#if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
+            float h;
+            float s;
+            float b;
+#else
+            qreal h;
+            qreal s;
+            qreal b;
+#endif
             color.getHsvF(&h,&s,&b);
             QColor c;
             c.setHsvF(h, s * 0.9, b * 0.8 );

@@ -13,13 +13,13 @@ void FeatureWriter::setEdgePoly(QTextStream & ts, const EdgePoly & epoly)
     for (auto it = epoly.begin(); it != epoly.end(); it++)
     {
         EdgePtr ep = *it;
-        VertexPtr v1 = ep->getV1();
-        VertexPtr v2 = ep->getV2();
+        VertexPtr v1 = ep->v1;
+        VertexPtr v2 = ep->v2;
         if (ep->getType() == EDGETYPE_LINE)
         {
             ts << "<Line>" << endl;
-            VertexPtr v1 = ep->getV1();
-            VertexPtr v2 = ep->getV2();
+            VertexPtr v1 = ep->v1;
+            VertexPtr v2 = ep->v2;
             setVertex(ts,v1,"Point");
             setVertex(ts,v2,"Point");
             ts << "</Line>" << endl;
@@ -61,7 +61,7 @@ void FeatureWriter::setVertex(QTextStream & ts,VertexPtr v, QString name)
     qsid = nextId();
     setVertexReference(getRef(),v);
 
-    QPointF pt = v->getPosition();
+    QPointF pt = v->pt;
 
     ts << "<" << name << qsid << ">";
     ts << pt.x() << "," << pt.y();

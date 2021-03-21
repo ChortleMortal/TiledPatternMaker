@@ -73,7 +73,7 @@ int Utils::circleLineIntersectionPoints(const QGraphicsItem & circle, qreal radi
     if (!Loose::equals(line.x2(),line.x1()))
     {
         QPointF yaxis_intersection;
-        line.intersect( QLineF(QPointF(0, 10000), QPointF(0, -10000)), &yaxis_intersection);
+        line.intersects( QLineF(QPointF(0, 10000), QPointF(0, -10000)), &yaxis_intersection);
 
         qreal a = (line.y2() - line.y1())/(line.x2() - line.x1());
         qreal b = yaxis_intersection.y();
@@ -696,11 +696,26 @@ void Utils::reverseOrder(EdgePoly & ep)
     for (int i = ep.size()-1; i >= 0; i--)
     {
         EdgePtr edge = ep[i];
-        VertexPtr v1 = edge->getV1();
-        VertexPtr v2 = edge->getV2();
+        VertexPtr v1 = edge->v1;
+        VertexPtr v2 = edge->v2;
         edge->setV1(v2);
         edge->setV2(v1);
         ret << edge;
     }
     ep = ret;
+}
+
+#ifndef M_2PI
+#define M_2PI 6.28318530717958647692528676655900576
+#endif
+
+qreal Utils::angle(const QLineF &l0,const QLineF &l)
+{
+    if (l0.isNull() || l.isNull())
+        return 0;
+    qreal cos_line = (l0.dx()*l.dx() + l0.dy()*l.dy()) / (l0.length()*l.length());
+    qreal rad = 0;
+    // only accept cos_line in the range [-1,1], if it is outside, use 0 (we return 0 rather than PI for those cases)
+    if (cos_line >= -1.0 && cos_line <= 1.0) rad = qAcos( cos_line );
+    return rad * 360 / M_2PI;
 }

@@ -96,6 +96,7 @@ public:
 
 protected:
     void   eraseStyleMap();
+    void   eraseProtoMap() { prototype->resetProtoMap(); }
 
     void   annotateEdges(MapPtr map);
     void   drawAnnotation(QPainter *painter, QTransform T);

@@ -6,16 +6,17 @@
 #include "geometry/transform.h"
 #include "panels/dlg_name.h"
 
-BackgroundImage::BackgroundImage() : Layer("Bkgd Image",LTYPE_BACKGROUND)
+BackgroundImage::BackgroundImage(QString name) : Layer("Bkgd Image",LTYPE_BACKGROUND)
 {
     view   = View::getInstance();
     config = Configuration::getInstance();
 
     setZValue(-20);
 
-    _loaded            = false;
-    bShowBkgd          = false;
-    bAdjustPerspective = false;
+    bUseAdjusted = false;
+
+    // load image
+    _loaded = load(name);
 }
 
 BackgroundImage::~BackgroundImage()
@@ -35,7 +36,7 @@ void BackgroundImage::paint(QPainter *painter)
     QRectF rect         = pixmap.rect();
     QPointF pix_center  = rect.center();
 
-    QSize sz            = view->getDefinedFrameSize(config->viewerType);
+    QSize sz            = view->getDefinedFrameSize(config->getViewerType());
     QPointF view_center(sz.width()/2, sz.height()/2);
     QPointF center      = view_center - pix_center;
     //qDebug() << rect << pix_center << center;
@@ -65,21 +66,26 @@ bool BackgroundImage::import(QString filename)
     QFileInfo info(filename);
     QString name = info.fileName();
 
+    Configuration * config = Configuration::getInstance();
     QString newFilename = config->rootMediaDir + "bkgd_photos/" + name;
 
-    if (!QFile::exists(newFilename))
+    if (QFile::exists(newFilename))
     {
-        QFile::copy(filename,newFilename);
+        return true;
+    }
+    else if (QFile::copy(filename,newFilename))
+    {
         qDebug() << "import created:" << newFilename;
+        return true;
     }
 
-    return load(name);
+    return false;
 }
 
 bool BackgroundImage::load(QString imageName)
 {
     bkgdName    = imageName;
-    perspective = QTransform();  // reset
+    perspective.reset();
 
     QString filename = config->rootMediaDir + "bkgd_photos/" + bkgdName;
     qDebug() << "BackgroundImage::load()" << filename;
@@ -102,12 +108,16 @@ void BackgroundImage::updateBkgdXform(const Xform & xf)
     forceLayerRecalc();
 }
 
-void BackgroundImage::bkgdImageChanged(bool showBkgd, bool perspectiveBkgd)
+void  BackgroundImage::setUseAdjusted(bool use)
 {
-    bShowBkgd          = showBkgd;
-    bAdjustPerspective = perspectiveBkgd;
+    bUseAdjusted = use;
+    qDebug() << "useAdjusted" << bUseAdjusted;
+}
 
-    if (bAdjustPerspective)
+void BackgroundImage::createPixmap()
+{
+
+    if (bUseAdjusted && !adjustedImage.isNull())
     {
         qDebug() << "using adjusted image";
         pixmap = QPixmap::fromImage(adjustedImage);
@@ -123,7 +133,7 @@ void BackgroundImage::bkgdImageChanged(bool showBkgd, bool perspectiveBkgd)
 
 // this is perspective correction
 // for images where camera was not normal to the plane of the tiling
-void BackgroundImage::adjustBackground(QPointF topLeft, QPointF topRight, QPointF botRight, QPointF botLeft)
+void BackgroundImage::createBackgroundAdjustment(QPointF topLeft, QPointF topRight, QPointF botRight, QPointF botLeft)
 {
     QSize sz      = pixmap.size();
     qreal offsetX = (view->width() -  sz.width()) / 2;
@@ -142,15 +152,21 @@ void BackgroundImage::adjustBackground(QPointF topLeft, QPointF topRight, QPoint
     qDebug().noquote() << "perspective:" << Transform::toString(perspective);
     qDebug().noquote() << "perspective:" << perspective;
 
-    bAdjustPerspective = true;
-    adjustBackground();
+    bUseAdjusted = true;     // since we have just created it, let's use it
+
+    createAdjustedImage();
 }
 
-void BackgroundImage::adjustBackground()
+void BackgroundImage::createAdjustedImage()
 {
-    if (!bkgdImage.isNull())
+    if (!bkgdImage.isNull() && !perspective.isIdentity())
     {
         adjustedImage = bkgdImage.transformed(perspective,Qt::SmoothTransformation);
+    }
+    else
+    {
+        adjustedImage = QImage();
+        Q_ASSERT(adjustedImage.isNull());
     }
 }
 

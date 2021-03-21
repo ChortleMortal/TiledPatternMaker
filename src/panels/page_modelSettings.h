@@ -58,8 +58,6 @@ public slots:
 private slots:
     void display();
 
-    void slot_matchDesign();
-    void slot_matchTiling();
     void slot_set_repsDesign(int val);
     void slot_set_repsTiling(int val);
 
@@ -117,10 +115,10 @@ protected:
 private:
     void removeChildren(QTreeWidgetItem * parent);
 
-    QSpinBox        * xRepMin[NUM_SETTINGS];
-    QSpinBox        * xRepMax[NUM_SETTINGS];
-    QSpinBox        * yRepMin[NUM_SETTINGS];
-    QSpinBox        * yRepMax[NUM_SETTINGS];
+    AQSpinBox       * xRepMin[NUM_SETTINGS];
+    AQSpinBox       * xRepMax[NUM_SETTINGS];
+    AQSpinBox       * yRepMin[NUM_SETTINGS];
+    AQSpinBox       * yRepMax[NUM_SETTINGS];
 
     SpinSet         * sizeW[NUM_SETTINGS];
     SpinSet         * sizeH[NUM_SETTINGS];
@@ -148,7 +146,6 @@ private:
 
     LayoutTransform * bkgdLayout[NUM_SETTINGS];
 
-    QCheckBox       * chk_showBkgd[NUM_SETTINGS];
     QCheckBox       * chk_adjustBkgd[NUM_SETTINGS];
 
     QGroupBox       * viewBox;

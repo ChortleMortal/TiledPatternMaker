@@ -173,7 +173,7 @@ void Layer::forceRedraw()
 
 QTransform  Layer::getFrameTransform()
 {
-    return view->getDefinedFrameTransform(config->viewerType);
+    return view->getDefinedFrameTransform(config->getViewerType());
 }
 
 QTransform  Layer::getCanvasTransform()

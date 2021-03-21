@@ -245,8 +245,8 @@ bool JoinEdge::snapTo(QPointF spt)
 // on the positive X axis to the line segment from p to q.
 QTransform JoinEdge::matchLineSegment(QPointF p, QPointF q)
 {
-    QMatrix m(q.x() - p.x(), q.y() - p.y() , p.y() - q.y(), q.x() - p.x(), p.x(), p.y());
-    return  QTransform(m);
+    QTransform m(q.x() - p.x(), q.y() - p.y() , p.y() - q.y(), q.x() - p.x(), p.x(), p.y());
+    return  m;
 }
 
 // get the transform that carries p1->q1 to p2->q2.
@@ -432,8 +432,8 @@ void CreatePolygon::addVertex(QPointF wpt)
     }
 
     QPointF newPoint   = tm->worldToScreen(wpt);
-    VertexPtr firstV   = wAccum.first()->getV1();
-    QPointF firstPoint = tm->worldToScreen(firstV->getPosition());
+    VertexPtr firstV   = wAccum.first()->v1;
+    QPointF firstPoint = tm->worldToScreen(firstV->pt);
     if ((wAccum.size() > 2) &&  Point::isNear(newPoint,firstPoint))
     {
         // add last point
@@ -478,16 +478,16 @@ void CreatePolygon::updateDragging(QPointF spt)
     EdgePoly & wAccum = tm->getAccumW();
     for (auto edge : wAccum)
     {
-        QPointF p1 = tm->worldToScreen(edge->getV1()->getPosition());
-        QPointF p2 = tm->worldToScreen(edge->getV2()->getPosition());
+        QPointF p1 = tm->worldToScreen(edge->v1->pt);
+        QPointF p2 = tm->worldToScreen(edge->v2->pt);
         if (Point::isNear(p1,spt))
         {
-            underneath = edge->getV1()->getPosition();
+            underneath = edge->v1->pt;
             return;
         }
         else if (Point::isNear(p2,spt))
         {
-            underneath = edge->getV2()->getPosition();
+            underneath = edge->v2->pt;
             return;
         }
         else if (tm->nearGridPoint(spt,underneath))
@@ -519,7 +519,7 @@ void CreatePolygon::draw(GeoGraphics * g2d)
         if (!wLastDrag.isNull())
         {
             QPen pen(drag_color,3);
-            g2d->drawLine(wAccum.last()->getV2()->getPosition(),wLastDrag,pen);
+            g2d->drawLine(wAccum.last()->v2->pt,wLastDrag,pen);
             g2d->drawCircle(wLastDrag,6,pen,QBrush(drag_color));
         }
         if (!underneath.isNull())
@@ -760,16 +760,16 @@ void Perspective::addPoint(QPointF spos)
         }
         else
         {
-            accum.push_back(make_shared<Edge>(last->getV2(),vnew));
+            accum.push_back(make_shared<Edge>(last->v2,vnew));
             qDebug() << "edge count =" << accum.size();
         }
     }
     else if (size == 2)
     {
         EdgePtr last = accum.last();
-        accum.push_back(make_shared<Edge>(last->getV2(),vnew));
+        accum.push_back(make_shared<Edge>(last->v2,vnew));
         qDebug() << "edge count = " << accum.size();
-        accum.push_back(make_shared<Edge>(vnew,accum.first()->getV1()));
+        accum.push_back(make_shared<Edge>(vnew,accum.first()->v1));
         qDebug() << "completed with edge count =" << accum.size();
         TilingMouseAction::endDragging(spt);
     }
@@ -783,7 +783,7 @@ void Perspective::updateDragging(QPointF spt)
 void Perspective::endDragging(QPointF spt )
 {
     EdgePoly & waccum = tm->getAccumW();
-    if (!Point::isNear(spt,tm->worldToScreen(waccum.first()->getV1()->getPosition())))
+    if (!Point::isNear(spt,tm->worldToScreen(waccum.first()->v1->pt)))
     {
         addPoint(spt);
     }
@@ -798,7 +798,7 @@ void Perspective::draw(GeoGraphics * g2d)
         if (!wLastDrag.isNull())
         {
             QPen pen(drag_color);
-            g2d->drawLine(waccum.last()->getV2()->getPosition(),wLastDrag,pen);
+            g2d->drawLine(waccum.last()->v2->pt,wLastDrag,pen);
             g2d->drawCircle(wLastDrag,10,pen,QBrush(drag_color));
         }
     }
@@ -846,7 +846,7 @@ void EditFeature::updateDragging(QPointF spt)
     QTransform T = pfp->getTransform().inverted();
     wpt = T.map(wpt);
     const EdgePoly & ep = pfp->getFeature()->getEdgePoly();
-    VertexPtr v = ep[vertexIndex]->getV1();
+    VertexPtr v = ep[vertexIndex]->v1;
     v->setPosition(wpt);
 
     TilingMouseAction::updateDragging(tm->screenToWorld(spt));
@@ -859,7 +859,7 @@ void EditFeature::endDragging(QPointF spt )
     QTransform T = pfp->getTransform().inverted();
     wpt = T.map(wpt);
     const EdgePoly & ep = pfp->getFeature()->getEdgePoly();
-    VertexPtr v = ep[vertexIndex]->getV1();
+    VertexPtr v = ep[vertexIndex]->v1;
     v->setPosition(wpt);
 
     TilingMouseAction::endDragging(spt);

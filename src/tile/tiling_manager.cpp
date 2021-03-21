@@ -66,19 +66,24 @@ TilingPtr TilingManager::loadTiling(QString name, eSM_Event mode)
     loadedTiling->setState(TILING_LOADED);
 
     // tiling is loaded, now use it
+    QSize sz = loadedTiling->getSize();
     switch(mode)
     {
     case SM_LOAD_SINGLE:
     case SM_RELOAD_SINGLE:
     case SM_LOAD_MULTI:
     case SM_RELOAD_MULTI:
-        view->setAllTilingActiveSizes(loadedTiling->getSize());
-        view->setAllTilingDefinedSizes(loadedTiling->getSize());
+        view->setActiveFrameSize(VIEW_TILING_MAKER,sz);
+        view->setAllCommonActiveSizes(sz);
+        view->setDefinedFrameSize(VIEW_TILING_MAKER,sz);
+        view->setAllCommonDefinedSizes(sz);
         setVCFillData(loadedTiling);
         tilingMaker->sm_take(loadedTiling, mode);
         break;
 
     case SM_LOAD_FROM_MOSAIC:
+        view->setActiveFrameSize(VIEW_TILING_MAKER,sz);
+        view->setDefinedFrameSize(VIEW_TILING_MAKER,sz);
         setVCFillData(loadedTiling);
         break;
 

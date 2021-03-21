@@ -41,8 +41,16 @@
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5,15,0))
 #include <QTextStream>
+#if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
+using Qt::endl;
+#else
 #define endl Qt::endl
 #endif
+#endif
+
+#define GOLDEN_RATIO  1.61803398874989484820
+
+#define DAC_DEPRECATED QT_DEPRECATED
 
 extern class TiledPatternMaker * theApp;
 
@@ -52,8 +60,12 @@ using std::make_shared;
 
 class BackgroundImage;
 class Border;
+class ColorMaker;
 class Design;
 class DesignElement;
+class DCEL;
+class dcelEdge;
+class dcelVertex;
 class Edge;
 class ExplicitFigure;
 class ExtendedRosette;
@@ -97,8 +109,12 @@ class Vertex;
 
 typedef shared_ptr<BackgroundImage> BkgdImgPtr;
 typedef shared_ptr<Border>          BorderPtr;
+typedef shared_ptr<ColorMaker>      ColorMakerPtr;
 typedef shared_ptr<Design>          DesignPtr;
 typedef shared_ptr<DesignElement>   DesignElementPtr;
+typedef shared_ptr<DCEL>            DCELPtr;
+typedef shared_ptr<dcelEdge>        dcelEdgePtr;
+typedef shared_ptr<dcelVertex>      dcelVertexPtr;
 typedef shared_ptr<Edge>            EdgePtr;
 typedef shared_ptr<ExplicitFigure>  ExplicitPtr;
 typedef shared_ptr<ExtendedRosette> ExtRosettePtr;
@@ -141,9 +157,10 @@ typedef shared_ptr<TilingView>      TilingViewPtr;
 typedef shared_ptr<Vertex>          VertexPtr;
 typedef shared_ptr<const Map>       constMapPtr;
 
+typedef weak_ptr<ColorMaker>      WeakColorMakerPtr;
+typedef weak_ptr<DCEL>            WeakDCELPtr;
 typedef weak_ptr<DesignElement>   WeakDesignElementPtr;
 typedef weak_ptr<Face>            WeakFacePtr;
-typedef weak_ptr<Faces>           WeakFacesPtr;
 typedef weak_ptr<Feature>         WeakFeaturePtr;
 typedef weak_ptr<FeatureButton>   WeakFeatureBtnPtr;
 typedef weak_ptr<Layer>           WeakLayerPtr;

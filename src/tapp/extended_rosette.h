@@ -66,6 +66,8 @@ protected:
     bool    extendPeripheralVertices;
     bool    connectBoundaryVertices;
 
+    qreal   len(VertexPtr v1, VertexPtr v2) { return QLineF(v1->pt,v2->pt).length(); }
+
 private:
 
 };

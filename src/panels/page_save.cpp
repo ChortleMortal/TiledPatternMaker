@@ -309,13 +309,20 @@ void page_save::slot_saveTiling()
 
 void page_save::slot_saveImage()
 {
+    static bool firstTime = true;
+    static QString path;
+
     QPixmap pixmap = view->grab();
 
     QString name = config->lastLoadedXML;
     Q_ASSERT(!name.contains(".xml"));
 
     QSettings s;
-    QString path = config->rootMediaDir;
+    if (firstTime)
+    {
+        path = config->rootMediaDir;
+        firstTime = false;
+    }
     qDebug() << "path=" << path;
 
     QString nameList;
@@ -352,6 +359,10 @@ void page_save::slot_saveImage()
         return;
     }
     QString file = fileList.at(0);
+
+    QFileInfo afile(file);
+    path = afile.absolutePath();    //saved for next time
+
     QString flt  = dlg.selectedNameFilter();
     QString ext;
     if (flt.contains(".png"))
@@ -398,7 +409,7 @@ void page_save::slot_saveImage()
 
 void page_save::slot_saveSvg()
 {
-    if (config->viewerType != VIEW_MOSAIC)
+    if (config->getViewerType() != VIEW_MOSAIC)
     {
         QMessageBox box;
         box.setIcon(QMessageBox::Warning);

@@ -36,7 +36,8 @@ enum eMapType
     MAP_TYPE_PROTO,
     MAP_TYPE_STYLE,
     MAP_TYPE_LOCAL,
-    MAP_TYPE_TILING
+    MAP_TYPE_TILING,
+    MAP_TYPE_DCEL
 };
 
 #define E2STR(x) #x
@@ -47,7 +48,8 @@ static QString sMapEdInput[] = {
     E2STR(MAP_TYPE_PROTO),
     E2STR(MAP_TYPE_STYLE),
     E2STR(MAP_TYPE_LOCAL),
-    E2STR(MAP_TYPE_TILING)
+    E2STR(MAP_TYPE_TILING),
+    E2STR(MAP_TYPE_DCEL)
 };
 
 class MapEditorView : public Layer
@@ -62,11 +64,13 @@ public:
     eMapType        getMapType() { return mapType; }
     MapPtr          getMap()     { return map; }
     FigurePtr       getFigure()  { return figp; }
+    WeakDCELPtr     getDCEL()    { return dcel; }
 
     QRectF          getCropRect(){ return cropRect; }
     void            setCropRect(QRectF & rect) { cropRect = rect; }
 
     void            drawMap(QPainter * painer);
+    void            drawDCEL(QPainter * painer);
     void            drawCropMap(QPainter * painer);
     void            drawFeature(QPainter * painter);
     void            drawBoundaries(QPainter * painter);
@@ -90,6 +94,8 @@ protected:
     PrototypePtr      prop;     // set
     DesignElementPtr  delp;     // set
     TilingPtr         tiling;   // set
+    WeakDCELPtr       dcel;     // set
+
     FigurePtr         figp;     // derived
     FeaturePtr        feap;     // derived
 

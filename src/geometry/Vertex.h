@@ -34,43 +34,25 @@
 #define VERTEX_H
 
 #include <QtCore>
-#include <list>
 #include "base/shared.h"
-#include "style/interlace_info.h"
+#include "geometry/neighbours.h"
 
-using std::list;
 
-class Vertex
+class Vertex  : public Neighbours
 {
-    friend class XmlLoader;
-    friend class Map;
-    friend class Star;
-
 public:
     Vertex(QPointF pos);
     ~Vertex();
 
-    QPointF getPosition() const {return pos;}
-    void    setPosition(QPointF pt) {pos = pt;}
+    void    setPosition(QPointF pt) {this->pt = pt;}
+    qreal   getAngle(EdgePtr edge);
+    void    applyRigidMotion(QTransform T);
 
-    InterlaceInfo & getInterlaceInfo() {  return interlaceData; }
-    void            initInterlaceInfo() { interlaceData.initInterlace(); }
+    static int  refs;
 
-    qreal getAngle(EdgePtr edge);
-
-
-    void applyRigidMotion(QTransform T);
-
-    static int refs;
-
-    void    setTmpVertexIndex(int i) { tmpVertexIndex = i; }
-    int     getTmpVertexIndex()      { return tmpVertexIndex; }
-
-private:
-    QPointF       pos;
-    VertexPtr     copy; 	// Used when cloning the map.
-    InterlaceInfo interlaceData;
-    int           tmpVertexIndex;
+    QPointF     pt;
+    bool        visited;    // used by interlace
+    VertexPtr   copy;       // Used when cloning the map.
 };
 
 #endif

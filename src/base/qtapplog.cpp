@@ -26,6 +26,7 @@
 #include <QtCore>
 #include <QMessageBox>
 #include <QTextCursor>
+#include <QFontDatabase>
 
 #ifdef WIN32
 #include <stdio.h>
@@ -44,8 +45,8 @@ bool qtAppLog::_logToDisk   = true;
 bool qtAppLog::_logToPanel  = true;
 bool qtAppLog::_logLines    = true;
 bool qtAppLog::_logWarningsOnly = false;
-bool qtAppLog::_logElapsed  = false;
 bool qtAppLog::_active      = false;
+eLogTimer qtAppLog::_logTimerSetting = LOGT_NONE;
 
 QElapsedTimer qtAppLog::elapseTimer;
 
@@ -71,6 +72,8 @@ void qtAppLog::releaseInstance()
 qtAppLog::qtAppLog()
 {
     ted = new QTextEdit();
+    const QFont fixedFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    ted->setFont(fixedFont);
 
 #ifdef WIN32
     QString root = qApp->applicationDirPath();
@@ -122,11 +125,6 @@ qtAppLog::qtAppLog()
         box.exec();
         return;
     }
-
-    if (_logElapsed)
-    {
-        elapseTimer.start();
-    }
 }
 
 qtAppLog::~qtAppLog()
@@ -135,6 +133,19 @@ qtAppLog::~qtAppLog()
     if (pLogLock)
     {
         delete pLogLock;
+    }
+}
+void qtAppLog::logTimer(eLogTimer val)
+{
+    _logTimerSetting = val;
+
+    switch (val)
+    {
+    case LOGT_NONE:
+        break;
+    case LOGT_INTERVAL:
+    case LOGT_ELAPSED:
+        elapseTimer.restart();
     }
 }
 
@@ -163,10 +174,24 @@ void qtAppLog::crashMessageOutput(QtMsgType type, const QMessageLogContext &cont
     }
 
     QString sDelta;
-    if (_logElapsed)
+    switch (_logTimerSetting)
+    {
+    case LOGT_INTERVAL:
     {
         qint64 delta = elapseTimer.restart();
-        sDelta = QString("%1  ").arg(delta, 6, 10, QChar(' '));
+        double qdelta = delta /1000.0;
+        sDelta = QString("%1  ").arg(qdelta, 8, 'f', 3, QChar(' '));
+    }
+        break;
+    case LOGT_ELAPSED:
+    {
+        qint64 delta = elapseTimer.elapsed();
+        double qdelta = delta /1000.0;
+        sDelta = QString("%1  ").arg(qdelta, 8, 'f', 3, QChar(' '));
+    }
+        break;
+    case LOGT_NONE:
+        break;
     }
 
     QString msg2;
@@ -233,12 +258,8 @@ void qtAppLog::crashMessageOutput(QtMsgType type, const QMessageLogContext &cont
 
     pLogLock->unlock();
 
-    if (type == QtFatalMsg)
-    {
-        abort();
-    }
-#ifdef WIN32
-    if (type == QtCriticalMsg)
+#if defined(WIN32) && defined(QT_DEBUG)
+    if (type == QtCriticalMsg || type == QtFatalMsg)
     {
         DebugBreak();
     }

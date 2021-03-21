@@ -17,20 +17,20 @@ DlgCrop::DlgCrop(MapEditor * me, QWidget *parent) : QDialog(parent)
     QLabel * label3 = new QLabel("top-left-X");
     QLabel * label4 = new QLabel("top-left-Y");
 
-    width  = new QDoubleSpinBox;
-    height = new QDoubleSpinBox;
-    startX = new QDoubleSpinBox;
-    startY = new QDoubleSpinBox;
+    width  = new AQDoubleSpinBox;
+    height = new AQDoubleSpinBox;
+    startX = new AQDoubleSpinBox;
+    startY = new AQDoubleSpinBox;
 
     width->setRange(1.0,50.0);
     height->setRange(1.0,50.0);
     startX->setRange(-50.0,50.0);
     startY->setRange(-50.0,50.0);
 
-    widthS  = new QDoubleSpinBox;
-    heightS = new QDoubleSpinBox;
-    startXS = new QDoubleSpinBox;
-    startYS = new QDoubleSpinBox;
+    widthS  = new AQDoubleSpinBox;
+    heightS = new AQDoubleSpinBox;
+    startXS = new AQDoubleSpinBox;
+    startYS = new AQDoubleSpinBox;
 
     widthS->setRange(1.0,4096.0);
     heightS->setRange(1.0,2040.0);
@@ -108,11 +108,19 @@ void DlgCrop::slot_timeout()
     blockSignals(false);
 }
 
+#if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
+void DlgCrop::enterEvent(QEnterEvent *event)
+{
+    Q_UNUSED(event);
+    entered = true;
+}
+#else
 void DlgCrop::enterEvent(QEvent *event)
 {
     Q_UNUSED(event);
     entered = true;
 }
+#endif
 
 void DlgCrop::leaveEvent(QEvent *event)
 {

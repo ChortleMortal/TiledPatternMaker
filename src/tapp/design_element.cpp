@@ -91,7 +91,7 @@ FigurePtr DesignElement::getFigure()
 
 void DesignElement::createFigure()
 {
-    if (feature->isRegular() && (feature->numPoints() > 4) )  // DAC was > 4
+    if (feature->isRegular())
     {
         figure = make_shared<Rosette>(feature->numPoints(), 0.0, 3, 0, feature->getRotation() );
     }

@@ -45,9 +45,9 @@ EdgePoly EdgePoly::recreate() const
     QMap<VertexPtr,VertexPtr> vmap;
     for (auto edge : *this)
     {
-        VertexPtr oldv1 = edge->getV1();
+        VertexPtr oldv1 = edge->v1;
         VertexPtr newv1;
-        VertexPtr oldv2 = edge->getV2();
+        VertexPtr oldv2 = edge->v2;
         VertexPtr newv2;
         if (vmap.contains(oldv1))
         {
@@ -55,7 +55,7 @@ EdgePoly EdgePoly::recreate() const
         }
         else
         {
-            newv1 = make_shared<Vertex>(oldv1->getPosition());
+            newv1 = make_shared<Vertex>(oldv1->pt);
             vmap[oldv1] = newv1;
         }
         if (vmap.contains(oldv2))
@@ -64,7 +64,7 @@ EdgePoly EdgePoly::recreate() const
         }
         else
         {
-            newv2 = make_shared<Vertex>(oldv2->getPosition());
+            newv2 = make_shared<Vertex>(oldv2->pt);
             vmap[oldv2] = newv2;
         }
         EdgePtr edge2 = make_shared<Edge>(newv1,newv2);
@@ -106,18 +106,18 @@ void EdgePoly::mapD(QTransform T)
         EdgePtr e = *it;
         QPointF pt;
 
-        VertexPtr v = e->getV1();
+        VertexPtr v = e->v1;
         if (!mapped.contains(v))
         {
-            pt = v->getPosition();
+            pt = v->pt;
             v->setPosition(T.map(pt));
             mapped.push_back(v);
         }
 
-        v = e->getV2();
+        v = e->v2;
         if (!mapped.contains(v))
         {
-            pt = v->getPosition();
+            pt = v->pt;
             v->setPosition(T.map(pt));
             mapped.push_back(v);
         }
@@ -142,14 +142,14 @@ EdgePoly EdgePoly::map(QTransform T) const
     const QVector<EdgePtr> & edges = *this;
 
     EdgePtr efirst = edges[0];
-    pt = efirst->getV1()->getPosition();
+    pt = efirst->v1->pt;
     first = make_shared<Vertex>(T.map(pt));
     v1 = first;
 
     for (auto i = 0; i < (edges.size()-1); i++)
     {
         EdgePtr e = edges[i];
-        pt = e->getV2()->getPosition();
+        pt = e->v2->pt;
         VertexPtr v2 = make_shared<Vertex>(T.map(pt));
 
         EdgePtr ne = make_shared<Edge>(v1,v2);
@@ -197,22 +197,45 @@ bool EdgePoly::isClockwise() const
     return Utils::isClockwise(poly);
 }
 
-bool EdgePoly::isValid()
+bool EdgePoly::isValid(bool rigorous)
 {
     if (size() == 0)
     {
         return false;
     }
 
-    auto elast = last();
-    auto p = elast->getV2();
+    QVector<VertexPtr> v1s;
+    QVector<VertexPtr> v2s;
+
+    VertexPtr v0 = last()->v2;
     for (auto edge : qAsConst(*this))
     {
-        if (edge->getV1() != p)
+        VertexPtr v1 = edge->v1;
+        VertexPtr v2 = edge->v2;
+
+        if (rigorous)
         {
+            if (v1s.contains(v1))
+            {
+                qWarning() << "EdgePoly v1 error";
+                return false;
+            }
+            if (v2s.contains(v2))
+            {
+                qWarning() << "Edgepoly v2 error";
+                return false;
+            }
+
+            v1s.push_back(v1);
+            v2s.push_back(v2);
+        }
+
+        if (v1 != v0)
+        {
+            qWarning() << "EdgePoly sequence error";
             return false;
         }
-        p = edge->getV2();
+        v0 = v2;
     }
     return true;
 }
@@ -222,7 +245,7 @@ QPolygonF EdgePoly::getPoly() const
     QPolygonF poly;
     for (auto edge : *this)
     {
-        QPointF pt = edge->getV1()->getPosition();
+        QPointF pt = edge->v1->pt;
         poly << pt;
     }
     return poly;
@@ -236,10 +259,10 @@ qreal EdgePoly::getAngle(int edge)
         return 0.0;
 
     EdgePtr e = edges[edge];
-    QPointF p1 = e->getV1()->getPosition();
-    QPointF p2 = e->getV2()->getPosition();
+    QPointF p1 = e->v1->pt;
+    QPointF p2 = e->v2->pt;
     e = edges[++edge % edges.size()];
-    QPointF p3 = e->getV2()->getPosition();
+    QPointF p3 = e->v2->pt;
 
     qreal dx21 = p2.x()-p1.x();
     qreal dx31 = p3.x()-p1.x();
@@ -257,8 +280,8 @@ void EdgePoly::paint(QPainter * painter, QTransform T)
     {
         EdgePtr edge = *e;
 
-        QPointF p1 = T.map(edge->getV1()->getPosition());
-        QPointF p2 = T.map(edge->getV2()->getPosition());
+        QPointF p1 = T.map(edge->v1->pt);
+        QPointF p2 = T.map(edge->v2->pt);
 
         if (edge->getType() == EDGETYPE_LINE)
         {
@@ -284,7 +307,7 @@ void EdgePoly::draw(GeoGraphics * gg, QPen pen)
         }
         else if (edge->getType() == EDGETYPE_CURVE)
         {
-            gg->drawChord(edge->getV1()->getPosition(),edge->getV2()->getPosition(),edge->getArcCenter(),pen,QBrush(),edge->isConvex());
+            gg->drawChord(edge->v1->pt,edge->v2->pt,edge->getArcCenter(),pen,QBrush(),edge->isConvex());
         }
     }
 }
@@ -316,7 +339,7 @@ void EdgePoly::relink()
         {
             next = epoly.first();
         }
-        VertexPtr v = next->getV1();
+        VertexPtr v = next->v1;
         edge->setV2(v);
     }
 }
@@ -327,7 +350,7 @@ QVector<VertexPtr> EdgePoly::getVertices()
     for (auto it = begin(); it != end(); it++)
     {
         EdgePtr edge = *it;
-        vec.push_back(edge->getV1());
+        vec.push_back(edge->v1);
     }
     return vec;
 }

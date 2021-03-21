@@ -26,10 +26,8 @@ void SplitScreen::addWidgets(ControlPanel *panel, View *view)
 
     grid = new QGridLayout;
     grid->setSpacing(0);
-    grid->setMargin(0);
-
-    setContentsMargins(0,0,0,0);
-
+    //grid->setMargin(0);
+    grid->setContentsMargins(0,0,0,0);
     grid->addWidget(cp,0,0,Qt::AlignTop);
     grid->addWidget(vw,0,1,-1,-1);
 

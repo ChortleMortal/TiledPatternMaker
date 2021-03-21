@@ -194,10 +194,10 @@ void FigureView::paintMap(QPainter * painter, MapPtr map, QPen pen)
 
     painter->setPen(pen);
 
-    for (auto edge : map->getEdges())
+    for (auto edge : map->edges)
     {
-        QPointF p1 = _T.map(edge->getV1()->getPosition());
-        QPointF p2 = _T.map(edge->getV2()->getPosition());
+        QPointF p1 = _T.map(edge->v1->pt);
+        QPointF p2 = _T.map(edge->v2->pt);
 
         if (edge->getType() == EDGETYPE_LINE)
         {
@@ -211,7 +211,7 @@ void FigureView::paintMap(QPainter * painter, MapPtr map, QPen pen)
         }
     }
 
-    for (auto stxt : map->texts)
+    for (const auto & stxt : qAsConst(map->texts))
     {
         painter->save();
         painter->scale(1.0, -1.0);

@@ -30,6 +30,7 @@
 #include "panels/page_design_elements.h"
 #include "panels/page_prototype_info.h"
 #include "panels/page_debug.h"
+#include "panels/page_image_tools.h"
 #include "panels/page_config.h"
 #include "panels/page_log.h"
 #include "panels/page_save.h"
@@ -70,6 +71,17 @@ ControlPanel::ControlPanel() : AQWidget()
 {
     setObjectName("ControlPanel");
 
+    QProcess process;
+    QStringList qsl;
+    qsl << "branch" << "--show-current";
+    process.start("git",qsl);
+    process.waitForFinished(-1); // will wait forever until finished
+
+    QByteArray sout  = process.readAllStandardOutput();
+    QString branch(sout);
+    QString br = branch.trimmed();
+    qDebug().noquote() << QDir::currentPath() <<  "branch =" << br;
+
 #if (QT_VERSION >= QT_VERSION_CHECK(5,9,0))
     setWindowFlag(Qt::WindowMinimizeButtonHint,true);
 #endif
@@ -80,13 +92,20 @@ ControlPanel::ControlPanel() : AQWidget()
 
     QString title;
 #ifdef QT_DEBUG
-    title = "Control Panel - Debug - ";
+    title  = "Control Panel - Debug - ";
+    title += tpmVersion;
+    if  (!br.isEmpty())
+    {
+        title += "[";
+        title += branch.trimmed();
+        title += "]  ";
+    }
 #else
     title = "Control Panel - Release - ";
+    title  += tpmVersion;
 #endif
-    title    += tpmVersion;
-    config    = Configuration::getInstance();
-    title    += config->rootMediaDir;
+    config  = Configuration::getInstance();
+    title  += config->rootMediaDir;
     setWindowTitle(title);
 
     QSettings s;
@@ -235,7 +254,7 @@ void ControlPanel::setupGUI()
     kbdModeCombo = new QComboBox();
     kbdModeCombo->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Ignored);
     kbdModeCombo->setFixedHeight(29);
-    delegateKeyboardMouse(config->viewerType);
+    delegateKeyboardMouse(config->getViewerType());
 
     ViewPanel * vpanel = new ViewPanel;
     vpanel->setButtonSize(QSize(79,29));
@@ -328,7 +347,7 @@ void ControlPanel::setupGUI()
     connect(pbRaise,            &QPushButton::clicked,              this,     &ControlPanel::slot_raise);
     connect(pbShowTiling,       &QPushButton::pressed,              this,     &ControlPanel::showTilingPressed);
     connect(pbShowMosaic,       &QPushButton::pressed,              this,     &ControlPanel::showMosaicPressed);
-    connect(&repeatRadioGroup,  SIGNAL(buttonClicked(int)),         this,     SLOT(repeatChanged(int)));
+    connect(&repeatRadioGroup,  &QButtonGroup::idClicked,           this,     &ControlPanel::repeatChanged);
     connect(this,               &ControlPanel::sig_refreshView,     vcontrol, &ViewControl::slot_refreshView);
     connect(this,               &ControlPanel::sig_render,          theApp,   &TiledPatternMaker::slot_render);
     connect(kbdModeCombo,       SIGNAL(currentIndexChanged(int)),   this,     SLOT(slot_kbdModeChanged(int)));
@@ -429,15 +448,20 @@ void ControlPanel::populatePages()
         mPages.push_back(wp);
         panelPages->addWidget(wp);
         panelPageList->addItem(wp->getName());
-        page_debug * wp_db = dynamic_cast<page_debug*>(wp);
+
+        wp = new page_image_tools(this);
+        mPages.push_back(wp);
+        panelPages->addWidget(wp);
+        panelPageList->addItem(wp->getName());
+        page_image_tools * wp_im = dynamic_cast<page_image_tools*>(wp);
 
         wp = new page_log(this);
         mPages.push_back(wp);
         panelPages->addWidget(wp);
         panelPageList->addItem(wp->getName());
 
-        connect(maker, &TiledPatternMaker::sig_image0, wp_db, &page_debug::slot_setImage0);
-        connect(maker, &TiledPatternMaker::sig_image1, wp_db, &page_debug::slot_setImage1);
+        connect(maker, &TiledPatternMaker::sig_image0, wp_im, &page_image_tools::slot_setImage0);
+        connect(maker, &TiledPatternMaker::sig_image1, wp_im, &page_image_tools::slot_setImage1);
     }
 
     panelPageList->adjustSize();
@@ -499,7 +523,7 @@ void ControlPanel::slot_selectPanelPage(int index)
     config->panelName = name;
 
     delegateView();
-    delegateKeyboardMouse(config->viewerType);
+    delegateKeyboardMouse(config->getViewerType());
 
     adjustSize();
 }
@@ -514,7 +538,7 @@ void  ControlPanel::slot_itemPanelPage(QListWidgetItem * item)
         return;
 
     delegateView();
-    delegateKeyboardMouse(config->viewerType);
+    delegateKeyboardMouse(config->getViewerType());
 }
 
 
@@ -646,13 +670,13 @@ void ControlPanel::refreshPage(panel_page * wp)
     wp->show();
 }
 
-void ControlPanel::repeatChanged(int mode)
+void ControlPanel::repeatChanged(int id)
 {
-    config->repeatMode = static_cast<eRepeatType>(mode);
+    config->repeatMode = static_cast<eRepeatType>(id);
 
     emit sig_render();
 
-    if (config->viewerType == VIEW_MAP_EDITOR)
+    if (config->getViewerType() == VIEW_MAP_EDITOR)
     {
         emit sig_reload();
     }
@@ -792,7 +816,7 @@ void ControlPanel::delegateKeyboardMouse(eViewType viewType)
 eKbdMode ControlPanel::getValidKbdMode(eKbdMode mode)
 {
     Configuration * conf = Configuration::getInstance();
-    if (conf->viewerType == VIEW_DESIGN)
+    if (conf->getViewerType() == VIEW_DESIGN)
     {
         return getValidDesignMode(mode);
     }
@@ -864,7 +888,7 @@ void ControlPanel::showTilingPressed()
     panel_page * currentPage = panelPages->getCurrentPage();
 
     page_tiling_maker * ptm  = dynamic_cast<page_tiling_maker*>(currentPage);
-    if (ptm && (config->viewerType == VIEW_TILING))
+    if (ptm && (config->getViewerType() == VIEW_TILING))
     {
         selectViewer(VIEW_TILING_MAKER);
     }
@@ -937,7 +961,7 @@ QGroupBox *  ControlPanel::createViewersBox()
         viewerGroup.addButton(cbMapEditor,VIEW_MAP_EDITOR);
     }
     viewerGroup.addButton(cbFaceSetView,VIEW_FACE_SET);
-    viewerGroup.button(config->viewerType)->setChecked(true);
+    viewerGroup.button(config->getViewerType())->setChecked(true);
 #if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
     connect(&viewerGroup,   SIGNAL(buttonToggled(int, bool)),  this, SLOT(slot_Viewer_pressed(int,bool)));
 #else
@@ -1003,7 +1027,7 @@ void ControlPanel::slot_multiSelect(bool enb)
         viewerGroup.blockSignals(true);
         for (int i=0; i <= VIEW_MAX; i++ )
         {
-            if (i == config->viewerType)
+            if (i == config->getViewerType())
             {
                 continue;
             }
@@ -1012,7 +1036,7 @@ void ControlPanel::slot_multiSelect(bool enb)
         viewerGroup.blockSignals(false);
     }
     vcontrol->disableAllViews();
-    vcontrol->viewEnable(config->viewerType,true);
+    vcontrol->viewEnable(config->getViewerType(),true);
     emit sig_refreshView();
 }
 

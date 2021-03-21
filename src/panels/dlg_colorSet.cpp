@@ -29,8 +29,6 @@ DlgColorSet::DlgColorSet(ColorSet & cset, QWidget * parent) :  QDialog(parent), 
 {
     currentRow = 0;
 
-    connect(&mapper, SIGNAL(mapped(int)), this, SLOT(slot_colorVisibilityChanged(int)));
-
     QVBoxLayout * vbox = new QVBoxLayout;
 
     QGridLayout * grid = new QGridLayout;
@@ -95,6 +93,8 @@ void DlgColorSet::displayTable()
     {
         TPColor tpcolor = colorSet.getNextColor();
         QColor color    = tpcolor.color;
+        QColor fullColor= color;
+        fullColor.setAlpha(255);
         QTableWidgetItem * twi = new QTableWidgetItem(QString::number(row));
         table->setItem(row,0,twi);
 
@@ -102,7 +102,7 @@ void DlgColorSet::displayTable()
         table->setItem(row,1,twi);
 
         QLabel * label = new QLabel;
-        QVariant variant= color;
+        QVariant variant= fullColor;
         QString colcode = variant.toString();
         label->setStyleSheet("QLabel { background-color :"+colcode+" ;}");
         table->setCellWidget(row,2,label);
@@ -111,8 +111,7 @@ void DlgColorSet::displayTable()
         cb->setStyleSheet("padding-left:11px;");
         table->setCellWidget(row,3,cb);
         cb->setChecked(tpcolor.hidden);
-        QObject::connect(cb, SIGNAL(toggled(bool)), &mapper, SLOT(map()));
-        mapper.setMapping(cb,row);
+        connect(cb, &QCheckBox::toggled, [this,row] { colorVisibilityChanged(row); });
 
         row++;
     }
@@ -208,7 +207,7 @@ void DlgColorSet::down()
     emit sig_colorsChanged();
 }
 
-void DlgColorSet::slot_colorVisibilityChanged(int row)
+void DlgColorSet::colorVisibilityChanged(int row)
 {
     qDebug() << "row=" << row;
     TPColor tpcolor = colorSet.getColor(row);

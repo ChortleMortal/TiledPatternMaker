@@ -23,37 +23,23 @@
  */
 
 #include "base/transparentwidget.h"
+#include "base/tiledpatternmaker.h"
 #include <QDebug>
 
 ImageWidget::ImageWidget() : QLabel()
 {
     setAttribute(Qt::WA_DeleteOnClose);
-    connect(this, &ImageWidget::sig_close, this, &ImageWidget::close, Qt::QueuedConnection);
+    connect(theApp, &TiledPatternMaker::sig_closeAllImageViewers,this, &ImageWidget::slot_closeMe);
 }
 
 void ImageWidget::keyPressEvent( QKeyEvent *k )
 {
-    int key = k->key();
-    if (key == Qt::Key_Space)
-    {
-        emit sig_takeNext();
-        emit sig_close();       // foces take before close
-    }
-    else if (key == 'Q')
-    {
-        emit sig_cyclerQuit();
-        close();
-    }
-    else if (key == 'V')
-    {
-        emit sig_view_images(); // all three are now visible
-    }
-    else if (key == 'L')
-    {
-        qWarning() << "FILE LOGGED (needs attention)";
-        emit sig_takeNext();
-        close();
-    }
+    theApp->imageKeyPressed(k);
+}
+
+void ImageWidget::slot_closeMe()
+{
+    QTimer::singleShot(500, this, &ImageWidget::close);
 }
 
 TransparentWidget::TransparentWidget()

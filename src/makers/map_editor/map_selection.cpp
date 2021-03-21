@@ -40,7 +40,7 @@ pointInfo::pointInfo(ePointInfo type, VertexPtr v, QString desc)
 {
     _type = type;
     _vert = v;
-    _pt   = v->getPosition();
+    _pt   = v->pt;
     _desc = desc;
     if (debugInfoSelection) qDebug() << desc;
 }
@@ -73,7 +73,7 @@ MapSelection::MapSelection(VertexPtr v)
 {
     _type = MAP_VERTEX;
     _vert = v;
-    _pt   = v->getPosition();
+    _pt   = v->pt;
     _constructionLine = false;
 }
 

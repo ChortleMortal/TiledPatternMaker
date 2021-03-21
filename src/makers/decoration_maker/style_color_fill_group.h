@@ -26,7 +26,6 @@
 #define STYLE_COLOR_FILL_GROUP_H
 
 #include <QtWidgets>
-#include <QSignalMapper>
 #include "tile/feature.h"
 #include "makers/decoration_maker/style_editors.h"
 
@@ -55,7 +54,6 @@ signals:
     void sig_colorsChanged();
 
 private slots:
-    void slot_edit();
 
     void modify();
     void up();
@@ -66,7 +64,9 @@ private slots:
     void slot_click(int row, int col);
     void slot_double_click(int row, int col);
 
-    void slot_colorSetVisibilityChanged(int row);
+protected:
+    void edit(int row);
+    void colorSetVisibilityChanged(int row);
 
 
 private:
@@ -74,7 +74,6 @@ private:
     ColorGroup    & colorGroup;
 
     AQTableWidget * table;
-    QSignalMapper   mapper;
     ColorSet        copyPasteSet;
 };
 #endif

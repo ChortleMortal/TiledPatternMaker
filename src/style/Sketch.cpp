@@ -51,12 +51,12 @@
 
 Sketch::Sketch(PrototypePtr proto) : Plain(proto)
 {
-    qsrand(279401L);    // FIXME depecated
+    srand(279401L);    // FIXME depecated
 }
 
 Sketch::Sketch(StylePtr other) : Plain(other)
 {
-    qsrand(279401L);    // FIXME depecated
+    srand(279401L);    // FIXME depecated
 }
 
 Sketch::~Sketch()
@@ -85,17 +85,17 @@ void Sketch::draw(GeoGraphics * gg)
 
     qreal jitter = Transform::distFromInvertedZero(gg->getTransform(),5.0);
     qreal halfjit = jitter / 2.0;
-    for (auto edge : map->getEdges())
+    for (auto edge : map->edges)
     {
-        QPointF a = edge->getV1()->getPosition() - QPointF(halfjit,halfjit);
-        QPointF b = edge->getV2()->getPosition() - QPointF(halfjit,halfjit);
+        QPointF a = edge->v1->pt - QPointF(halfjit,halfjit);
+        QPointF b = edge->v2->pt - QPointF(halfjit,halfjit);
 
         for( int c = 0; c < 8; ++c )
         {
-            volatile qreal r1 = (qrand()/RAND_MAX) * jitter;
-            volatile qreal r2 = (qrand()/RAND_MAX) * jitter;
-            volatile qreal r3 = (qrand()/RAND_MAX) * jitter;
-            volatile qreal r4 = (qrand()/RAND_MAX) * jitter;
+            volatile qreal r1 = (rand()/RAND_MAX) * jitter;
+            volatile qreal r2 = (rand()/RAND_MAX) * jitter;
+            volatile qreal r3 = (rand()/RAND_MAX) * jitter;
+            volatile qreal r4 = (rand()/RAND_MAX) * jitter;
             VertexPtr v1 = make_shared<Vertex>(a + QPointF(r1,r2));
             VertexPtr v2 = make_shared<Vertex>(b + QPointF(r3,r4));
             EdgePtr edge2;

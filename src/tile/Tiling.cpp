@@ -110,15 +110,35 @@ Tiling::~Tiling()
 bool Tiling::isEmpty()
 {
     if (name == "The Unnamed" && placed_features.isEmpty() && t1.isNull() && t2.isNull())
-    {
         return true;
-    }
     else
-    {
         return false;
-    }
 }
 
+bool Tiling::hasOverlaps()
+{
+    for (auto pf : qAsConst(placed_features))
+    {
+        QPolygonF poly = pf->getPlacedPolygon();
+
+        for (auto pf2 : qAsConst(placed_features))
+        {
+            if (pf2 == pf) continue;
+
+            QPolygonF poly2 = pf2->getPlacedPolygon();
+            if (poly2.intersects(poly))
+            {
+                QPolygonF p3 = poly2.intersected(poly);
+                if (!p3.isEmpty())
+                {
+                    //qDebug() << "overlapping";
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
 
 // Feature management.
 // Added feature are embedded into a PlacedFeature.

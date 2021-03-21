@@ -31,56 +31,40 @@
 
 page_config:: page_config(ControlPanel * cpanel)  : panel_page(cpanel,"Configuration")
 {
-    le_rootTile   = new QLineEdit();
-    le_newTile    = new QLineEdit();
-    le_rootDesign = new QLineEdit();
-    le_newDesign  = new QLineEdit();
-    le_newDesign->setMinimumWidth(501);
-    le_rootImage  = new QLineEdit();
-    le_examples  = new QLineEdit();
-    le_xmlTool  = new QLineEdit();
+    le_rootDesigns = new QLineEdit();
+    le_rootImages  = new QLineEdit();
+    le_xmlTool     = new QLineEdit();
 
-    rootDesignBtn = new QPushButton("Root Design Dir");
-    newDesignBtn  = new QPushButton("New Design Dir");
-    rootTileBtn   = new QPushButton("Root Tile Dir");
-    newTileBtn    = new QPushButton("New Tile Dir");
-    examplesBtn   = new QPushButton("Examples Dir");
-    rootImageBtn  = new QPushButton("Image Dir");
-    xmlToolBtn  = new QPushButton("XML Viewer/Editor");
-    QPushButton *reconfigurePathsBtn = new QPushButton("Reset Paths");
+    le_rootDesigns->setMinimumWidth(501);
+
+    rootDesignsBtn = new QPushButton("Root Design Dir");
+    rootImagesBtn  = new QPushButton("Root Image Dir");
+    xmlToolBtn     = new QPushButton("XML Viewer/Editor");
+
+    defaultDesigns = new QCheckBox("Default Designs root");
+    defaultImages  = new QCheckBox("Default Images  root");
+
+    QHBoxLayout * hbox = new QHBoxLayout();
+    hbox->addWidget(defaultDesigns);
+    hbox->addWidget(defaultImages);
+    hbox->addStretch();
 
     QGridLayout *configGrid = new QGridLayout();
 
     int row = 0;
-    configGrid->addWidget(rootDesignBtn,row,0);
-    configGrid->addWidget(le_rootDesign,row,1);
+    configGrid->addLayout(hbox,row,1);
 
     row++;
-    configGrid->addWidget(newDesignBtn,row,0);
-    configGrid->addWidget(le_newDesign,row,1);
+    configGrid->addWidget(rootDesignsBtn,row,0);
+    configGrid->addWidget(le_rootDesigns,row,1);
 
     row++;
-    configGrid->addWidget(rootTileBtn,row,0);
-    configGrid->addWidget(le_rootTile,row,1);
-
-    row++;
-    configGrid->addWidget(newTileBtn,row,0);
-    configGrid->addWidget(le_newTile,row,1);
-
-    row++;
-    configGrid->addWidget(examplesBtn,row,0);
-    configGrid->addWidget(le_examples,row,1);
-
-    row++;
-    configGrid->addWidget(rootImageBtn,row,0);
-    configGrid->addWidget(le_rootImage,row,1);
+    configGrid->addWidget(rootImagesBtn,row,0);
+    configGrid->addWidget(le_rootImages,row,1);
 
     row++;
     configGrid->addWidget(xmlToolBtn,row,0);
     configGrid->addWidget(le_xmlTool,row,1);
-
-    row++;
-    configGrid->addWidget(reconfigurePathsBtn,row,0);
 
     QGroupBox * pathGroup = new QGroupBox("Media File Paths");
     pathGroup->setLayout(configGrid);
@@ -94,7 +78,7 @@ page_config:: page_config(ControlPanel * cpanel)  : panel_page(cpanel,"Configura
     int button  = (config->insightMode) ? 1 : 0;
     btnGroup->button(button)->setChecked(true);
 
-    QHBoxLayout * hbox = new QHBoxLayout;
+    hbox = new QHBoxLayout;
     hbox->addWidget(designerMode);
     hbox->addWidget(insightMode);
     hbox->addStretch();
@@ -111,28 +95,21 @@ page_config:: page_config(ControlPanel * cpanel)  : panel_page(cpanel,"Configura
 
     updatePaths();
 
-    connect(rootImageBtn,   SIGNAL(clicked()),                  this,   SLOT(selectRootImageDir()));
-    connect(rootTileBtn,    SIGNAL(clicked()),                  this,   SLOT(selectRootTileDir()));
-    connect(newTileBtn,     SIGNAL(clicked()),                  this,   SLOT(selectNewTileDir()));
-    connect(rootDesignBtn,  SIGNAL(clicked()),                  this,   SLOT(selectRootDesignDir()));
-    connect(newDesignBtn,   SIGNAL(clicked()),                  this,   SLOT(selectNewDesignDir()));
-    connect(examplesBtn,    SIGNAL(clicked()),                  this,   SLOT(selectExamplesDir()));
-    connect(xmlToolBtn,     SIGNAL(clicked()),                  this,   SLOT(selectXMLTool()));
-    connect(reconfigurePathsBtn, SIGNAL(clicked()),             this,   SLOT(slot_reconfigurePaths()));
+    connect(rootImagesBtn,      &QPushButton::clicked,   this,  &page_config::selectRootImageDir);
+    connect(rootDesignsBtn,     &QPushButton::clicked,   this,  &page_config::selectRootDesignDir);
+    connect(xmlToolBtn,         &QPushButton::clicked,   this,  &page_config::selectXMLTool);
 
-    connect(le_rootDesign, &QLineEdit::textChanged,   this, &page_config::rootDesignChanged);
-    connect(le_newDesign,  &QLineEdit::textChanged,   this, &page_config::newDesignChanged);
-    connect(le_rootTile,   &QLineEdit::textChanged,   this, &page_config::rootTileChanged);
-    connect(le_newTile,    &QLineEdit::textChanged,   this, &page_config::newTtileChanged);
-    connect(le_rootImage,  &QLineEdit::textChanged,   this, &page_config::rootImageChanged);
-    connect(le_examples,   &QLineEdit::textChanged,   this, &page_config::examplesChanged);
+    connect(le_rootDesigns, &QLineEdit::textChanged,   this, &page_config::rootDesignChanged);
+    connect(le_rootImages,  &QLineEdit::textChanged,   this, &page_config::rootImageChanged);
+
+    connect(defaultDesigns, &QCheckBox::clicked, this, &page_config::designDefaultChanged);
+    connect(defaultImages,  &QCheckBox::clicked, this, &page_config::imageDefaultChanged);
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
     connect(btnGroup,      SIGNAL(buttonClicked(int)), this, SLOT(slot_mode(int)));
 #else
     connect(btnGroup,      &QButtonGroup::idClicked,  this,  &page_config::slot_mode);
 #endif
-
 }
 
 QGroupBox * page_config::createViewControl()
@@ -207,7 +184,7 @@ QVBoxLayout *  page_config::createGridSection()
     gridModelSpacing->setValue(config->gridModelSpacing);
     gridModelWidth->setValue(config->gridModelWidth);
 
-    connect(&gridUnitGroup,     SIGNAL(buttonClicked(int)),   this,  SLOT(slot_gridUnitsChanged(int)));
+    connect(&gridUnitGroup,     &QButtonGroup::idClicked,     this, &page_config::slot_gridUnitsChanged);
     connect(gridBox,            &QGroupBox::clicked,          this, &page_config::slot_showGridChanged);
     connect(gridScreenSpacing,  &SpinSet::valueChanged,       this, &page_config::slot_gridScreenSpacingChanged);
     connect(gridModelSpacing,   &DoubleSpinSet::sig_valueChanged, this, &page_config::slot_gridModelSpacingChanged);
@@ -260,8 +237,8 @@ QHBoxLayout * page_config::createGridTypeLayout()
 
     gridTypeGroup.button(config->gridType)->setChecked(true);
 
-    connect(&gridTypeGroup, SIGNAL(buttonClicked(int)),  this, SLOT(slot_gridTypeSelected(int)));
-    connect(angleSpin,  &DoubleSpinSet::sig_valueChanged,this, &page_config::slot_gridAngleChanged);
+    connect(&gridTypeGroup, &QButtonGroup::idClicked,         this, &page_config::slot_gridTypeSelected);
+    connect(angleSpin,      &DoubleSpinSet::sig_valueChanged, this, &page_config::slot_gridAngleChanged);
 
     QHBoxLayout * hbox = new QHBoxLayout;
     hbox->addWidget(glabel);
@@ -282,44 +259,23 @@ void  page_config::refreshPage()
     gridBox->setChecked(config->showGrid);
 }
 
-void page_config::selectRootTileDir()
-{
-    QString old = config->rootTileDir;
-    QString dir = QFileDialog::getExistingDirectory(this, tr("Select Tiling Directory"),
-                   old, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-
-    le_rootTile->setText(dir);
-    config->rootTileDir = dir;
-}
-
-void page_config::selectNewTileDir()
-{
-    QString old = config->newTileDir;
-    QString dir = QFileDialog::getExistingDirectory(this, tr("Select Tiling Directory"),
-                   old, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-
-    le_newTile->setText(dir);
-    config->newTileDir = dir;
-}
-
 void page_config::selectRootDesignDir()
 {
-    QString old = config->rootDesignDir;
-    QString dir = QFileDialog::getExistingDirectory(this, tr("Select XML Directory"),
+    QString old = config->rootMediaDir;
+    QString dir = QFileDialog::getExistingDirectory(this, tr("Select Root Media Directory"),
                    old, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
 
-    le_rootDesign->setText(dir);
-    config->rootDesignDir = dir;
-}
+    if (dir.isEmpty())
+    {
+        qDebug() << "Cancel Pressed";
+        config->defaultMediaRoot = true;
+        return;
+    }
 
-void page_config::selectNewDesignDir()
-{
-    QString old = config->newDesignDir;
-    QString dir = QFileDialog::getExistingDirectory(this, tr("Select XML Directory"),
-                   old, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-
-    le_newDesign->setText(dir);
-    config->newDesignDir = dir;
+    le_rootDesigns->setText(dir);
+    config->rootMediaDir = dir;
+    config->defaultMediaRoot = false;
+    slot_reconfigurePaths();
 }
 
 void page_config::selectRootImageDir()
@@ -327,23 +283,23 @@ void page_config::selectRootImageDir()
     QString old = config->rootImageDir;
     QString dir = QFileDialog::getExistingDirectory(this, tr("Select Image Directory"),
                    old, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-    int pos = dir.lastIndexOf(QChar('/'));
-    if (pos != dir.length()-1)
+
+
+    if (dir.isEmpty())
     {
-        dir += '/';
+        qDebug() << "Cancel Pressed";
+        config->defaultImageRoot = true;
+        return;
     }
-    le_rootImage->setText(dir);
+    if (!dir.endsWith("/"))
+    {
+        dir += "/";
+    }
+
+    le_rootImages->setText(dir);
     config->rootImageDir = dir;
-}
-
-void page_config::selectExamplesDir()
-{
-    QString old = config->examplesDir;
-    QString dir = QFileDialog::getExistingDirectory(this, tr("Select Examples Directory"),
-                                                    old, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-
-    le_examples->setText(dir);
-    config->examplesDir = dir;
+    config->defaultImageRoot = false;
+    updatePaths();
 }
 
 void page_config::selectXMLTool()
@@ -358,37 +314,39 @@ void page_config::selectXMLTool()
 void page_config::rootDesignChanged(QString txt)
 {
     config->rootDesignDir= txt;
-}
-
-void page_config::newDesignChanged(QString txt)
-{
-    config->newDesignDir = txt;
-}
-
-void page_config::rootTileChanged(QString txt)
-{
-    config->rootTileDir = txt;
-}
-
-void page_config::newTtileChanged(QString txt)
-{
-    config->newTileDir = txt;
+    if (!config->defaultMediaRoot)
+    {
+        slot_reconfigurePaths();    // reboot
+    }
 }
 
 void page_config::rootImageChanged(QString txt)
 {
     config->rootImageDir = txt;
+    if (!config->defaultImageRoot)
+    {
+        config->configurePaths();   // does not reboot
+    }
+    updatePaths();
 }
 
-void page_config::examplesChanged(QString txt)
+void page_config::designDefaultChanged(bool checked)
 {
-    config->examplesDir = txt;
+    config->defaultMediaRoot = checked;
+    slot_reconfigurePaths();        // reboots
+}
+
+void page_config::imageDefaultChanged(bool checked)
+{
+    config->defaultImageRoot = checked;
+    config->configurePaths();       // does not reboot
+    updatePaths();
 }
 
 void page_config::slot_reconfigurePaths()
 {
     config->configurePaths();
-    updatePaths();
+    config->save();
 
     qApp->quit();
     QProcess::startDetached(qApp->arguments()[0], qApp->arguments());
@@ -397,13 +355,13 @@ void page_config::slot_reconfigurePaths()
 void page_config::updatePaths()
 {
     // basic config
-    le_rootDesign->setText(config->rootDesignDir);
-    le_newDesign->setText(config->newDesignDir);
-    le_rootTile->setText(config->rootTileDir);
-    le_newTile->setText(config->newTileDir);
-    le_rootImage->setText(config->rootImageDir);
-    le_examples->setText(config->examplesDir);
+    defaultDesigns->setChecked(config->defaultMediaRoot);
+    defaultImages->setChecked(config->defaultImageRoot);
+
+    le_rootDesigns->setText(config->rootMediaDir);
+    le_rootImages->setText(config->rootImageDir);
     le_xmlTool->setText(config->xmlTool);
+
     update();
 }
 

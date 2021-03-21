@@ -45,7 +45,7 @@ PrototypeView::PrototypeView(PrototypePtr proto,int mode) : Layer("ProtoFeatureV
     {
         MapPtr map = proto->getProtoMap();
 
-        for(auto& edge : map->getEdges())
+        for(auto& edge : map->edges)
         {
            edges.push_back(edge);
         }

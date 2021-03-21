@@ -45,7 +45,7 @@ public:
     QColor          getBackgroundColor();
     void            setBackgroundColor(QColor color);
 
-    void            setBkgdImage(BkgdImgPtr bkImage) { _bkgdImage = bkImage; }
+    void            setBkgdImage(BkgdImgPtr bkImage);
     BkgdImgPtr      getBkgdImage() { return  _bkgdImage; }
 
     void            setSize(QSize size);

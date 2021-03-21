@@ -54,8 +54,11 @@ public:
     void            setDesignElement(DesignElementPtr delpptr);
     void            setPrototype(PrototypePtr prop);
     void            setStyle(StylePtr styp);
-    void            setLocal(MapPtr map);
     void            setTiling(TilingPtr tiling);
+    void            setDCEL(WeakDCELPtr dcel);
+    void            setLocal();
+    void            reload();
+    void            setLocalMap(MapPtr map) { localMap = map; }
 
     DesignElementPtr getDesignElement() { return delp; }
     PrototypePtr     getPrototype() { return prop; }
@@ -94,18 +97,25 @@ public slots:
     void slot_mouseDragged(QPointF spt);
     void slot_mouseReleased(QPointF spt);
     void slot_mouseMoved(QPointF spt);
+    void slot_view_synch(int id, int enb);
 
 protected:
 
     void    setMousePos(QPointF pt);
     MapPtr  createFromTiling();
 
+    MapPtr  localMap;       // for new maps created in the editor
+
 private:
 
-    static MapEditor    * mpThis;
-    static MapEditorPtr   spThis;
+    static MapEditor      * mpThis;
+    static MapEditorPtr     spThis;
 
-    class View * view;
+    class View            * view;
+    class DecorationMaker * decorationMaker;
+    class MotifMaker      * motifMaker;
+    class TilingMaker     * tilingMaker;
+    class ControlPanel    * cpanel;
 
     SelectionSet currentSelections;
 

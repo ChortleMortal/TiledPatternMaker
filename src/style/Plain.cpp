@@ -82,7 +82,7 @@ void Plain::draw(GeoGraphics *gg)
 
     QPen pen(colors.getNextColor().color);
 
-    for (const auto &edge : map->getEdges())
+    for (const auto &edge : map->edges)
     {
         gg->drawEdge(edge,pen);
     }

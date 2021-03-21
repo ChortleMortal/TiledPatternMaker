@@ -26,7 +26,6 @@
 #define DLG_TRIM_H
 
 #include <QtWidgets>
-#include <QSignalMapper>
 #include "panels/layout_sliderset.h"
 
 

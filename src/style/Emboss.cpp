@@ -143,18 +143,29 @@ void Emboss::setColorSet(ColorSet & cset)
 
 void Emboss::setGreys()
 {
-    qreal h,s,b;
+#if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
+    float h;
+    float s;
+    float b;
+#else
+    qreal h;
+    qreal s;
+    qreal b;
+#endif
     getColorSet().getFirstColor().color.getHsvF(&h,&s,&b);
 
-    greys.erase(greys.begin(),greys.end());
+    greys.clear();
 
     for( int idx = 0; idx < 17; ++idx )
     {
         float t  = (float)idx / 16.0f;
         float s1 = (1.0f-t)*0.7f + t*0.99f;
         float b1 = (1.0f-t)*0.4f + t*0.99f;
+        float ss = s * s1;
+        float bb = b * b1;
+
         QColor c;
-        c.setHsvF(h, s * s1, b * b1 );
+        c.setHsvF(h, ss, bb);
         greys << c;
     }
 }

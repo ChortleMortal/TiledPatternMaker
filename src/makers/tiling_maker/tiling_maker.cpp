@@ -35,6 +35,7 @@
 #include "makers/tiling_maker/feature_selection.h"
 #include "makers/motif_maker/motif_maker.h"
 #include "makers/decoration_maker/decoration_maker.h"
+#include "makers/map_editor/map_editor.h"
 #include "base/configuration.h"
 #include "base/shortcuts.h"
 #include "viewers/view.h"
@@ -101,7 +102,8 @@ void TilingMaker::init()
 {
     view            = View::getInstance();
     motifMaker      = MotifMaker::getInstance();
-    decorationMaker = DecorationMaker:: getInstance();
+    decorationMaker = DecorationMaker::getInstance();
+    me              = MapEditor::getInstance();
 
     connect(view, &View::sig_mouseDragged,  this, &TilingMaker::slot_mouseDragged);
     connect(view, &View::sig_mouseReleased, this, &TilingMaker::slot_mouseReleased);
@@ -354,7 +356,7 @@ void TilingMaker::select(TilingPtr tiling)
 
     setupMaker(tiling);
 
-    if (config->viewerType == VIEW_TILING_MAKER)
+    if (config->getViewerType() == VIEW_TILING_MAKER)
     {
         forceLayerRecalc();
     }
@@ -384,7 +386,7 @@ void TilingMaker::select(PrototypePtr prototype)
 
     setupMaker(tiling);
 
-    if (config->viewerType == VIEW_TILING_MAKER)
+    if (config->getViewerType() == VIEW_TILING_MAKER)
     {
         forceLayerRecalc();
     }
@@ -632,6 +634,21 @@ void TilingMaker::removeFromInTiling(PlacedFeaturePtr pf)
     sm_take(selectedTiling,SM_TILING_CHANGED);
 }
 
+void TilingMaker::updateVectors()
+{
+    updateVisibleVectors();
+    refillUsingTranslations();
+    sm_take(selectedTiling,SM_TILING_CHANGED);
+    me->reload();
+}
+
+void TilingMaker::updateReps()
+{
+   refillUsingTranslations();
+   sm_take(selectedTiling,SM_TILING_CHANGED);
+   me->reload();
+}
+
 void TilingMaker::fillUsingTranslations()
 {
     if (!verifyTiling())
@@ -651,6 +668,16 @@ void TilingMaker::fillUsingTranslations()
 
     forceRedraw();
     emit sig_buildMenu();
+}
+
+void TilingMaker::refillUsingTranslations()
+{
+
+    if (filled)
+    {
+        filled = false;
+        fillUsingTranslations();
+    }
 }
 
 void TilingMaker::removeExcluded()
@@ -771,8 +798,12 @@ void TilingMaker::createFillCopies()
     if ( isTranslationInvalid() )
         return;
 
-    QPointF t1 = getSelected()->getTrans1();
-    QPointF t2 = getSelected()->getTrans2();
+    QPointF t1    = getSelected()->getTrans1();
+    QPointF t2    = getSelected()->getTrans2();
+
+    const FillData & fd = getSelected()->getFillData();
+    int minX, maxX, minY, maxY;
+    fd.get(minX, maxX, minY, maxY);
 
     for (auto pf : qAsConst(in_tiling))
     {
@@ -783,9 +814,9 @@ void TilingMaker::createFillCopies()
         FeaturePtr f = pf->getFeature();
         QTransform T = pf->getTransform();
 
-        for( int y = -1; y <= 1; ++y )
+        for( int y = minY; y <= maxY; ++y )
         {
-            for( int x = -1; x <= 1; ++x )
+            for( int x = minX; x <= maxX; ++x )
             {
                 if ( y == 0 && x == 0 )
                     continue;
@@ -1103,7 +1134,7 @@ void TilingMaker::mirrorPolygonX(TilingSelectorPtr sel )
         qreal x = Point::center(pts).x();
         for (auto edge : ep)
         {
-            QPointF pos = edge->getV1()->getPosition();
+            QPointF pos = edge->getV1()->pt;
             qreal px = pos.x();
             qreal diff = px-x;
             px -= (diff *2);
@@ -1174,7 +1205,7 @@ void  TilingMaker::drawMouseInteraction(GeoGraphics * g2d)
 
 void TilingMaker::slot_mouseMoved(QPointF spt)
 {
-    if (config->viewerType != VIEW_TILING_MAKER)
+    if (config->getViewerType() != VIEW_TILING_MAKER)
         return;
 
     setMousePos(spt);
@@ -1186,7 +1217,7 @@ void TilingMaker::slot_mouseMoved(QPointF spt)
 
 void TilingMaker::slot_mouseDragged(QPointF spt)
 {
-    if (config->viewerType != VIEW_TILING_MAKER)
+    if (config->getViewerType() != VIEW_TILING_MAKER)
         return;
 
     setMousePos(spt);
@@ -1220,7 +1251,7 @@ void TilingMaker::slot_mouseDragged(QPointF spt)
 
 void TilingMaker::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
 {
-    if (config->viewerType != VIEW_TILING_MAKER)
+    if (config->getViewerType() != VIEW_TILING_MAKER)
         return;
 
     sMousePos = spt;
@@ -1385,7 +1416,7 @@ void TilingMaker::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
 void TilingMaker::slot_mouseReleased(QPointF spt)
 {
 
-    if (config->viewerType != VIEW_TILING_MAKER)
+    if (config->getViewerType() != VIEW_TILING_MAKER)
         return;
 
     setMousePos(spt);
@@ -1601,7 +1632,7 @@ bool TilingMaker::accumHasPoint(QPointF wpt)
     for (auto it = wAccum.begin(); it != wAccum.end(); it++)
     {
         EdgePtr edge = *it;
-        QPointF existing = worldToScreen(edge->getV1()->getPosition());
+        QPointF existing = worldToScreen(edge->v1->pt);
         if (Point::isNear(newpoint,existing))
         {
             return true;
@@ -1940,7 +1971,7 @@ void TilingMaker::slot_mouseTranslate(QPointF spt)
 
 bool TilingMaker::procKeyEvent(QKeyEvent * k)
 {
-    if (config->viewerType != VIEW_TILING_MAKER)
+    if (config->getViewerType() != VIEW_TILING_MAKER)
     {
         return false;
     }

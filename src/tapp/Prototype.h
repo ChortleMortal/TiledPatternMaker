@@ -55,7 +55,7 @@ public:
 
     MapPtr  getProtoMap();
     MapPtr  getExistingProtoMap() { return protoMap; }
-    MapPtr  createProtoMap(bool showSplash = true);
+    MapPtr  createProtoMap();
     void    resetProtoMap();
 
     void    setTiling(TilingPtr newTiling);
@@ -91,6 +91,7 @@ private:
     QVector<DesignElementPtr>   designElements;
     QVector<QTransform>         locations;
     MapPtr                      protoMap;
+    class ControlPanel        * panel;
 };
 #endif
 

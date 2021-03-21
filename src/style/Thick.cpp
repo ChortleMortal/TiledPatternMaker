@@ -119,14 +119,14 @@ void Thick::draw(GeoGraphics * gg )
     if ( draw_outline )
     {
         QPen pen(Qt::black);
-        for (auto& edge : map->getEdges())
+        for (auto& edge : map->edges)
         {
             gg->drawThickEdge(edge,width * 2 + 0.05, pen);
         }
     }
 
     QPen pen(colors.getNextColor().color);
-    for (auto& edge : map->getEdges())
+    for (auto& edge : map->edges)
     {
         gg->drawThickEdge(edge, width * 2, pen);
     }

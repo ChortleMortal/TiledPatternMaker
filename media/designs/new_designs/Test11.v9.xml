@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<vector id="1" version="5">
+<vector id="1" version="8">
 	<designNotes>using algo=2</designNotes>
 	<design>
 		<size>
@@ -9,6 +9,7 @@
 		<background>
 			<color>#ffffffff</color>
 		</background>
+		<Fill>-2,2,-5,5</Fill>
 	</design>
 	<style.Filled id="2" serialization="custom">
 		<toolkit.GeoLayer>
@@ -19,69 +20,50 @@
 			<center>-0.01333333333333186,-0.01333333333333542</center>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<boundary id="3">
-				<pts id="4">
-					<Point id="5">
-						<x>-10</x>
-						<y>-10</y>
-					</Point>
-					<Point id="6">
-						<x>-10</x>
-						<y>10</y>
-					</Point>
-					<Point id="7">
-						<x>10</x>
-						<y>10</y>
-					</Point>
-					<Point id="8">
-						<x>10</x>
-						<y>-10</y>
-					</Point>
-				</pts>
-			</boundary>
-			<prototype id="9" serialization="custom">
+			<prototype id="3" serialization="custom">
 				<app.Prototype>
 					<string>DAC8.v6</string>
 					<entry>
-						<tile.Feature id="10">
+						<tile.Feature id="4">
 							<regular>true</regular>
 							<rotation>0</rotation>
-							<edges id="11">
+							<scale>1</scale>
+							<edges id="5">
 								<Line>
-									<Point id="12">1,0.4142135623730951</Point>
-									<Point id="13">0.4142135623730951,1</Point>
+									<Point id="6">1,0.4142135623730951</Point>
+									<Point id="7">0.4142135623730951,1</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">-0.414213562373095,1</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">-1,0.4142135623730952</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point id="10">-1,-0.414213562373095</Point>
+								</Line>
+								<Line>
+									<Point reference="10" />
+									<Point id="11">-0.4142135623730957,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="11" />
+									<Point id="12">0.4142135623730953,-0.9999999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="12" />
+									<Point id="13">0.9999999999999998,-0.4142135623730958</Point>
 								</Line>
 								<Line>
 									<Point reference="13" />
-									<Point id="14">-0.414213562373095,1</Point>
-								</Line>
-								<Line>
-									<Point reference="14" />
-									<Point id="15">-1,0.4142135623730952</Point>
-								</Line>
-								<Line>
-									<Point reference="15" />
-									<Point id="16">-1,-0.414213562373095</Point>
-								</Line>
-								<Line>
-									<Point reference="16" />
-									<Point id="17">-0.4142135623730957,-0.9999999999999998</Point>
-								</Line>
-								<Line>
-									<Point reference="17" />
-									<Point id="18">0.4142135623730953,-0.9999999999999999</Point>
-								</Line>
-								<Line>
-									<Point reference="18" />
-									<Point id="19">0.9999999999999998,-0.4142135623730958</Point>
-								</Line>
-								<Line>
-									<Point reference="19" />
-									<Point reference="12" />
+									<Point reference="6" />
 								</Line>
 							</edges>
 						</tile.Feature>
-						<ExtendedRosette id="20" extendPeripherals="t" extendFreeVertices="f" connectBoundaryVertices="t">
+						<ExtendedRosette id="14" extendPeripherals="t" extendFreeVertices="f" connectBoundaryVertices="t">
 							<n>8</n>
 							<q>0</q>
 							<s>3</s>
@@ -99,9 +81,16 @@
 			<color hide="f">#ffff0000</color>
 		</ColorBlacks>
 		<ColorWhites>
+			<color hide="t">#fff57900</color>
+			<color hide="f">#ff00aaff</color>
+			<color hide="t">#ff00aaff</color>
 			<color hide="f">#fff57900</color>
+			<color hide="t">#ffffff00</color>
+			<color hide="t">#ffffff00</color>
+			<color hide="t">#ffffff00</color>
 			<color hide="f">#ff00aaff</color>
-			<color hide="f">#ff00aaff</color>
+			<color hide="f">#fff57900</color>
+			<color hide="f">#fff57900</color>
 			<color hide="f">#ff000000</color>
 		</ColorWhites>
 		<ColorGroup>
@@ -121,6 +110,7 @@
 			<draw__inside>false</draw__inside>
 			<draw__outside>true</draw__outside>
 			<algorithm>2</algorithm>
+			<cleanse>1</cleanse>
 		</style.Filled>
 	</style.Filled>
 </vector>

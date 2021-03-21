@@ -86,6 +86,7 @@ public:
     ColorSet &  getBkgdColors()     { return bkgdColors; }
 
     QPointF     getCenter();
+    qreal       edgeLen(int side = 0);
 
     QString     toString() const;
     QString     info();

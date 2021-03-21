@@ -42,6 +42,21 @@ bool Point::isNear(const QPointF &pt,  const QPointF & other )
     return (dist2(pt,other) < 49.0);
 }
 
+// Less-than compares x coordinates first, then y, using the default tolerance.
+bool Point::lessThan(const QPointF & a, QPointF & other)
+{
+   if (Loose::lessThan(a.x(), other.x()))
+      return true;
+
+   if (Loose::greaterThan(a.x(), other.x()))
+      return false;
+
+   if (Loose::lessThan(a.y(), other.y()))
+      return true;
+
+   return false;
+}
+
 // Useful maths on QPointFs.
 
 qreal Point::mag2(QPointF & pt)
@@ -75,7 +90,7 @@ QLineF Point::extendLine(QLineF line, qreal scale)
     return line;
 }
 
-bool Point::intersectPoly(QLineF line, QPolygonF bounds)
+bool Point::intersectPoly(QLineF line, QPolygonF bounds, QPointF & intersect)
 {
     if (!bounds.isClosed())
     {
@@ -85,7 +100,6 @@ bool Point::intersectPoly(QLineF line, QPolygonF bounds)
 
     for (int i=0; i < (bounds.size()-1); i++)
     {
-        QPointF intersect;
         QLineF l2(bounds[i],bounds[i+1]);
 #if (QT_VERSION >= QT_VERSION_CHECK(5,15,0))
         QLineF::IntersectType it = line.intersects(l2,&intersect);
@@ -99,7 +113,7 @@ bool Point::intersectPoly(QLineF line, QPolygonF bounds)
 
         if (it == QLineF::UnboundedIntersection)
         {
-            if (Loose::equals(intersect,line.p1()) || Loose::equals(intersect,line.p2()))
+            if (Loose::equalsPt(intersect,line.p1()) || Loose::equalsPt(intersect,line.p2()))
             {
                 return true;
             }
@@ -272,7 +286,7 @@ QPointF Point::center(EdgePoly & epoly)
     int count = epoly.size();
     for( int i = 0; i < count; ++i )
     {
-        accum += epoly[i]->getV1()->getPosition();
+        accum += epoly[i]->v1->pt;
     }
     QPointF cent = accum / static_cast<qreal>(count);
     return cent;

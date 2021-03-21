@@ -16,7 +16,7 @@ DlgLineEdit::DlgLineEdit(EdgePoly & epoly, int row, int col) : QLineEdit(),
     this->row = row;
     this->col = col;
 
-    _orig = _poly[row]->getV1()->getPosition();
+    _orig = _poly[row]->v1->pt;
 }
 
 void DlgLineEdit::slot_menu(QPointF spt)
@@ -33,13 +33,13 @@ void DlgLineEdit::slot_menu(QPointF spt)
 void DlgLineEdit::focusInEvent(QFocusEvent * event)
 {
     Q_UNUSED(event)
-    emit currentPoint(_poly[row]->getV1()->getPosition());
+    emit currentPoint(_poly[row]->v1->pt);
 }
 
 void  DlgLineEdit::slot_down()
 {
-    VertexPtr vp = _poly[row]->getV1();
-    QPointF pos  = vp->getPosition();
+    VertexPtr vp = _poly[row]->v1;
+    QPointF pos  = vp->pt;
     if (col == 0)
     {
         qreal val = pos.x();
@@ -61,8 +61,8 @@ void  DlgLineEdit::slot_down()
 
 void  DlgLineEdit::slot_nearest()
 {
-    VertexPtr vp = _poly[row]->getV1();
-    QPointF pos  = vp->getPosition();
+    VertexPtr vp = _poly[row]->v1;
+    QPointF pos  = vp->pt;
     if (col == 0)
     {
         qreal val     = pos.x();
@@ -84,8 +84,8 @@ void  DlgLineEdit::slot_nearest()
 
 void  DlgLineEdit::slot_up()
 {
-    VertexPtr vp = _poly[row]->getV1();
-    QPointF pos  = vp->getPosition();
+    VertexPtr vp = _poly[row]->v1;
+    QPointF pos  = vp->pt;
     if (col == 0)
     {
         qreal val = pos.x();
@@ -107,8 +107,8 @@ void  DlgLineEdit::slot_up()
 
 void DlgLineEdit::slot_undo()
 {
-    VertexPtr vp = _poly[row]->getV1();
-    QPointF pos  = vp->getPosition();
+    VertexPtr vp = _poly[row]->v1;
+    QPointF pos  = vp->pt;
     if (col == 0)
     {
         pos.setX(_orig.x());
@@ -127,8 +127,8 @@ void DlgLineEdit::slot_undo()
 
 void DlgLineEdit::slot_editingFinished()
 {
-    VertexPtr vp = _poly[row]->getV1();
-    QPointF pos  = vp->getPosition();
+    VertexPtr vp = _poly[row]->v1;
+    QPointF pos  = vp->pt;
     bool ok;
     qreal val = text().toDouble(&ok);
     if (ok)
@@ -153,8 +153,8 @@ void DlgLineEdit::slot_editingFinished()
 
 void DlgLineEdit::slot_update()
 {
-    VertexPtr vp = _poly[row]->getV1();
-    QPointF pos  = vp->getPosition();
+    VertexPtr vp = _poly[row]->v1;
+    QPointF pos  = vp->pt;
     if (col == 0)
     {
         setText(QString::number(pos.x(),'g',16));

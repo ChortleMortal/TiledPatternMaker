@@ -1,6 +1,6 @@
 #include "panels/panel_status.h"
 
-const viewMsg PanelStatus::viewMsgs[NUM_VIEW_TYPES] = {
+const viewMsg PanelStatus::viewMsgs[] = {
     {VIEW_DESIGN,         ""},
     {VIEW_MOSAIC,         ""},
     {VIEW_DESIGN_ELEMENT, ""},
@@ -66,7 +66,7 @@ void PanelStatus::setCurrentView(eViewType vtype)
 
 QString PanelStatus::getMsg()
 {
-    for (int i=0; i < NUM_VIEW_TYPES; i++)
+    for (int i=0; i <= LAST_VIEW_TYPE; i++)
     {
         const viewMsg & vm = viewMsgs[i];
         if (vm.view == viewType)

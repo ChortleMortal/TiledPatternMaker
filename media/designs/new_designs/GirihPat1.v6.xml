@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<vector id="1" version="6">
+<vector id="1" version="8">
 	<designNotes>same as Timuriid Tumq Aqa but built from new tiling based on picture</designNotes>
 	<design>
 		<size>
@@ -10,6 +10,12 @@
 			<color>#ffc2bcb0</color>
 		</background>
 		<Fill>-4,3,-6,5</Fill>
+		<BackgroundImage name="Decagonal and Quasi-Crystalline TilingsinMedievalIslamicArchitecture  - Supporting_3.jpg">
+			<Scale>2.5</Scale>
+			<Rot>0</Rot>
+			<X>-20</X>
+			<Y>-122</Y>
+		</BackgroundImage>
 	</design>
 	<style.Filled id="2" serialization="custom">
 		<toolkit.GeoLayer>
@@ -20,60 +26,83 @@
 			<center>-0.01333333333333186,-0.01333333333333542</center>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<boundary id="3">
-				<pts id="4">
-					<Point id="5">
-						<x>-10</x>
-						<y>-10</y>
-					</Point>
-					<Point id="6">
-						<x>-10</x>
-						<y>10</y>
-					</Point>
-					<Point id="7">
-						<x>10</x>
-						<y>10</y>
-					</Point>
-					<Point id="8">
-						<x>10</x>
-						<y>-10</y>
-					</Point>
-				</pts>
-			</boundary>
-			<prototype id="9" serialization="custom">
+			<prototype id="3" serialization="custom">
 				<app.Prototype>
 					<string>GirihPat1.v1</string>
 					<entry>
-						<tile.Feature id="10">
+						<tile.Feature id="4">
 							<regular>false</regular>
-							<edges id="11">
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
 								<Line>
-									<Point id="12">2.618033988749895,0.8506508083520394</Point>
-									<Point id="13">2.236067977499789,0.3249196962329056</Point>
+									<Point id="6">2.618033988749895,0.8506508083520394</Point>
+									<Point id="7">2.236067977499789,0.3249196962329056</Point>
 								</Line>
 								<Line>
-									<Point reference="13" />
-									<Point id="14">2.236067977499789,-0.3249196962329066</Point>
+									<Point reference="7" />
+									<Point id="8">2.236067977499789,-0.3249196962329066</Point>
 								</Line>
 								<Line>
-									<Point reference="14" />
-									<Point id="15">2.618033988749894,-0.8506508083520405</Point>
+									<Point reference="8" />
+									<Point id="9">2.618033988749894,-0.8506508083520405</Point>
 								</Line>
 								<Line>
-									<Point reference="15" />
-									<Point id="16">3,-0.3249196962329066</Point>
+									<Point reference="9" />
+									<Point id="10">3,-0.3249196962329066</Point>
+								</Line>
+								<Line>
+									<Point reference="10" />
+									<Point id="11">3,0.3249196962329055</Point>
+								</Line>
+								<Line>
+									<Point reference="11" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitGirih id="12" type="FIG_TYPE_EXPLICIT_GIRIH">
+							<sides>10</sides>
+							<skip>3</skip>
+							<boundarySides>4</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitGirih>
+					</entry>
+					<entry>
+						<tile.Feature id="13">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="14">
+								<Line>
+									<Point id="15">0.9999999999999998,0.3249196962329062</Point>
+									<Point id="16">0.9999999999999998,-0.3249196962329064</Point>
 								</Line>
 								<Line>
 									<Point reference="16" />
-									<Point id="17">3,0.3249196962329055</Point>
+									<Point id="17">1.618033988749895,-0.1241082803466793</Point>
 								</Line>
 								<Line>
 									<Point reference="17" />
-									<Point reference="12" />
+									<Point id="18">2.236067977499789,-0.3249196962329066</Point>
+								</Line>
+								<Line>
+									<Point reference="18" />
+									<Point id="19">2.236067977499789,0.3249196962329056</Point>
+								</Line>
+								<Line>
+									<Point reference="19" />
+									<Point id="20">1.618033988749895,0.1241082803466786</Point>
+								</Line>
+								<Line>
+									<Point reference="20" />
+									<Point reference="15" />
 								</Line>
 							</edges>
 						</tile.Feature>
-						<app.ExplicitGirih id="18" type="FIG_TYPE_EXPLICIT_GIRIH">
+						<app.ExplicitGirih id="21" type="FIG_TYPE_EXPLICIT_GIRIH">
 							<sides>10</sides>
 							<skip>3</skip>
 							<boundarySides>4</boundarySides>
@@ -83,94 +112,56 @@
 						</app.ExplicitGirih>
 					</entry>
 					<entry>
-						<tile.Feature id="19">
-							<regular>false</regular>
-							<edges id="20">
+						<tile.Feature id="22">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="23">
 								<Line>
-									<Point id="21">0.9999999999999998,0.3249196962329062</Point>
-									<Point id="22">0.9999999999999998,-0.3249196962329064</Point>
-								</Line>
-								<Line>
-									<Point reference="22" />
-									<Point id="23">1.618033988749895,-0.1241082803466793</Point>
-								</Line>
-								<Line>
-									<Point reference="23" />
-									<Point id="24">2.236067977499789,-0.3249196962329066</Point>
-								</Line>
-								<Line>
-									<Point reference="24" />
-									<Point id="25">2.236067977499789,0.3249196962329056</Point>
+									<Point id="24">0.9999999999999999,0.3249196962329063</Point>
+									<Point id="25">0.6180339887498948,0.85065080835204</Point>
 								</Line>
 								<Line>
 									<Point reference="25" />
-									<Point id="26">1.618033988749895,0.1241082803466786</Point>
+									<Point id="26">6.438349236688752e-17,1.051462224238267</Point>
 								</Line>
 								<Line>
 									<Point reference="26" />
-									<Point reference="21" />
+									<Point id="27">-0.6180339887498947,0.85065080835204</Point>
 								</Line>
-							</edges>
-						</tile.Feature>
-						<app.ExplicitGirih id="27" type="FIG_TYPE_EXPLICIT_GIRIH">
-							<sides>10</sides>
-							<skip>3</skip>
-							<boundarySides>4</boundarySides>
-							<boundaryScale>1</boundaryScale>
-							<figureScale>1</figureScale>
-							<r>0</r>
-						</app.ExplicitGirih>
-					</entry>
-					<entry>
-						<tile.Feature id="28">
-							<regular>true</regular>
-							<rotation>0</rotation>
-							<edges id="29">
 								<Line>
-									<Point id="30">0.9999999999999999,0.3249196962329063</Point>
-									<Point id="31">0.6180339887498948,0.85065080835204</Point>
+									<Point reference="27" />
+									<Point id="28">-0.9999999999999999,0.3249196962329064</Point>
+								</Line>
+								<Line>
+									<Point reference="28" />
+									<Point id="29">-1,-0.3249196962329062</Point>
+								</Line>
+								<Line>
+									<Point reference="29" />
+									<Point id="30">-0.6180339887498949,-0.8506508083520398</Point>
+								</Line>
+								<Line>
+									<Point reference="30" />
+									<Point id="31">-1.931504771006626e-16,-1.051462224238267</Point>
 								</Line>
 								<Line>
 									<Point reference="31" />
-									<Point id="32">6.438349236688752e-17,1.051462224238267</Point>
+									<Point id="32">0.6180339887498946,-0.8506508083520401</Point>
 								</Line>
 								<Line>
 									<Point reference="32" />
-									<Point id="33">-0.6180339887498947,0.85065080835204</Point>
+									<Point id="33">0.9999999999999999,-0.3249196962329066</Point>
 								</Line>
 								<Line>
 									<Point reference="33" />
-									<Point id="34">-0.9999999999999999,0.3249196962329064</Point>
-								</Line>
-								<Line>
-									<Point reference="34" />
-									<Point id="35">-1,-0.3249196962329062</Point>
-								</Line>
-								<Line>
-									<Point reference="35" />
-									<Point id="36">-0.6180339887498949,-0.8506508083520398</Point>
-								</Line>
-								<Line>
-									<Point reference="36" />
-									<Point id="37">-1.931504771006626e-16,-1.051462224238267</Point>
-								</Line>
-								<Line>
-									<Point reference="37" />
-									<Point id="38">0.6180339887498946,-0.8506508083520401</Point>
-								</Line>
-								<Line>
-									<Point reference="38" />
-									<Point id="39">0.9999999999999999,-0.3249196962329066</Point>
-								</Line>
-								<Line>
-									<Point reference="39" />
-									<Point reference="30" />
+									<Point reference="24" />
 								</Line>
 							</edges>
 						</tile.Feature>
-						<app.Rosette id="40">
+						<app.Rosette id="34">
 							<n>10</n>
-							<q>-1</q>
+							<q>-0.99</q>
 							<s>2</s>
 							<k>0</k>
 							<boundarySides>1</boundarySides>
@@ -180,53 +171,54 @@
 						</app.Rosette>
 					</entry>
 					<entry>
-						<tile.Feature id="41">
+						<tile.Feature id="35">
 							<regular>true</regular>
 							<rotation>0</rotation>
-							<edges id="42">
+							<scale>1</scale>
+							<edges id="36">
 								<Line>
-									<Point id="43">0.9999999999999999,0.3249196962329063</Point>
-									<Point id="44">0.6180339887498948,0.85065080835204</Point>
+									<Point id="37">0.9999999999999999,0.3249196962329063</Point>
+									<Point id="38">0.6180339887498948,0.85065080835204</Point>
+								</Line>
+								<Line>
+									<Point reference="38" />
+									<Point id="39">6.438349236688752e-17,1.051462224238267</Point>
+								</Line>
+								<Line>
+									<Point reference="39" />
+									<Point id="40">-0.6180339887498947,0.85065080835204</Point>
+								</Line>
+								<Line>
+									<Point reference="40" />
+									<Point id="41">-0.9999999999999999,0.3249196962329064</Point>
+								</Line>
+								<Line>
+									<Point reference="41" />
+									<Point id="42">-1,-0.3249196962329062</Point>
+								</Line>
+								<Line>
+									<Point reference="42" />
+									<Point id="43">-0.6180339887498949,-0.8506508083520398</Point>
+								</Line>
+								<Line>
+									<Point reference="43" />
+									<Point id="44">-1.931504771006626e-16,-1.051462224238267</Point>
 								</Line>
 								<Line>
 									<Point reference="44" />
-									<Point id="45">6.438349236688752e-17,1.051462224238267</Point>
+									<Point id="45">0.6180339887498946,-0.8506508083520401</Point>
 								</Line>
 								<Line>
 									<Point reference="45" />
-									<Point id="46">-0.6180339887498947,0.85065080835204</Point>
+									<Point id="46">0.9999999999999999,-0.3249196962329066</Point>
 								</Line>
 								<Line>
 									<Point reference="46" />
-									<Point id="47">-0.9999999999999999,0.3249196962329064</Point>
-								</Line>
-								<Line>
-									<Point reference="47" />
-									<Point id="48">-1,-0.3249196962329062</Point>
-								</Line>
-								<Line>
-									<Point reference="48" />
-									<Point id="49">-0.6180339887498949,-0.8506508083520398</Point>
-								</Line>
-								<Line>
-									<Point reference="49" />
-									<Point id="50">-1.931504771006626e-16,-1.051462224238267</Point>
-								</Line>
-								<Line>
-									<Point reference="50" />
-									<Point id="51">0.6180339887498946,-0.8506508083520401</Point>
-								</Line>
-								<Line>
-									<Point reference="51" />
-									<Point id="52">0.9999999999999999,-0.3249196962329066</Point>
-								</Line>
-								<Line>
-									<Point reference="52" />
-									<Point reference="43" />
+									<Point reference="37" />
 								</Line>
 							</edges>
 						</tile.Feature>
-						<app.Rosette id="53">
+						<app.Rosette id="47">
 							<n>10</n>
 							<q>0</q>
 							<s>3</s>
@@ -244,14 +236,15 @@
 			<color hide="f">#ffffff00</color>
 		</ColorBlacks>
 		<ColorWhites>
+			<color hide="t">#ff7c6843</color>
 			<color hide="f">#ff7c6843</color>
-			<color hide="t">#ffc59c0c</color>
 			<color hide="t">#ff7c6843</color>
 			<color hide="t">#ffffaa00</color>
-			<color hide="f">#ff382310</color>
-			<color hide="f">#ff382310</color>
-			<color hide="f">#ff382310</color>
 			<color hide="t">#ff382310</color>
+			<color hide="f">#ff382310</color>
+			<color hide="f">#ff382310</color>
+			<color hide="f">#ff382310</color>
+			<color hide="t">#ff7c6843</color>
 			<color hide="f">#ff7c6843</color>
 		</ColorWhites>
 		<ColorGroup>

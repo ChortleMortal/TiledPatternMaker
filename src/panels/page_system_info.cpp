@@ -273,14 +273,18 @@ void page_system_info::populateMap(QTreeWidgetItem *parent, MapPtr mp)
     parent->addChild(item);
     tree->expandItem(item);
 
-    if (!mp)
+    if (mp)
+    {
+        item->setText(2,mp->name());
+    }
+    else
     {
         item->setText(2,"EMPTY Map");
         return;
     }
 
-    const QVector<VertexPtr> & vertices = mp->getVertices();
-    const QVector<EdgePtr>   & edges    = mp->getEdges();
+    const QVector<VertexPtr> & vertices = mp->vertices;
+    const QVector<EdgePtr>   & edges    = mp->edges;
 
     QTreeWidgetItem * item2;
     item2 = new QTreeWidgetItem;
@@ -289,20 +293,17 @@ void page_system_info::populateMap(QTreeWidgetItem *parent, MapPtr mp)
     item->addChild(item2);
     //tree->expandItem(item2);
 
-    NeighbourMap & nmap = mp->getNeighbourMap();
-
     for (int i=0; i< mp->numVertices(); i++)
     {
         VertexPtr v = vertices.at(i);
-        QPointF pos = v->getPosition();
+        QPointF pos = v->pt;
         QTreeWidgetItem * item3 = new QTreeWidgetItem;
         item3->setText(0,QString("(%1) %2").arg(i).arg(addr(v.get())));
         item3->setText(1,QString::number(pos.x()));
         item3->setText(2,QString::number(pos.y()));
         item2->addChild(item3);
 
-        NeighboursPtr np        = nmap.getNeighbours(v);
-        QVector<EdgePtr> & qvep = np->getNeighbours();
+        const QVector<EdgePtr> & qvep = v->getNeighbours();
         for (auto& edge : qvep)
         {
             QTreeWidgetItem * item4 = new QTreeWidgetItem;
@@ -323,7 +324,7 @@ void page_system_info::populateMap(QTreeWidgetItem *parent, MapPtr mp)
         EdgePtr e = edges.at(i);
         QTreeWidgetItem * item3 = new QTreeWidgetItem;
         item3->setText(0,QString("(%1) %2").arg(i).arg(addr(e.get())));
-        item3->setText(1, QString("from %1 to %2").arg(vertices.indexOf(e->getV1())).arg(vertices.indexOf(e->getV2())));
+        item3->setText(1, QString("from %1 to %2").arg(vertices.indexOf(e->v1)).arg(vertices.indexOf(e->v2)));
         item2->addChild(item3);
     }
 }
@@ -414,6 +415,8 @@ void page_system_info::populateDEL(QTreeWidgetItem * parent, DesignElementPtr de
 
 void page_system_info::populateTiling(QTreeWidgetItem * parent, TilingPtr tp, QString name)
 {
+    if (!tp) return;
+
     const QVector<PlacedFeaturePtr> & qlpf = tp->getPlacedFeatures();
 
     // summary

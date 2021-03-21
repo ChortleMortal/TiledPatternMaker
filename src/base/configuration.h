@@ -29,6 +29,7 @@
 #include <QColor>
 #include "base/cycler.h"
 #include "base/shared.h"
+#include "base/qtapplog.h"
 
 #define NUM_DESIGNS 30
 
@@ -134,7 +135,7 @@ enum eViewType
     VIEW_FACE_SET,
     VIEW_MAX = VIEW_FACE_SET,
     VIEW_UNDEFINED,
-    NUM_VIEW_TYPES
+    LAST_VIEW_TYPE = VIEW_UNDEFINED
 };
 
 static QString sViewerType[]
@@ -158,6 +159,7 @@ enum eMapEditorMode
     MAP_MODE_FIGURE,
     MAP_MODE_LOCAL,
     MAP_MODE_TILING,
+    MAP_MODE_DCEL,
     MAP_MODE_MAX = MAP_MODE_TILING
 };
 
@@ -167,7 +169,7 @@ static QString sMapEditorMode[] =
     E2STR(MAP_MODE_PROTO),
     E2STR(MAP_MODE_FIGURE),
     E2STR(MAP_MODE_LOCAL),
-    E2STR(MAP_MODE_TILING),
+    E2STR(MAP_MODE_DCEL),
 };
 
 enum eRepeatType
@@ -252,6 +254,7 @@ public:
     DesignPtr getDesign(eDesign design) { return availableDesigns.value(design); }
 
     void setViewerType(eViewType  viewerType);
+    inline eViewType getViewerType() { return viewerType; }
 
 ////////////////////////////////////////////////////////////////
 //
@@ -259,10 +262,10 @@ public:
 //
 ////////////////////////////////////////////////////////////////
 
-    eViewType       viewerType;
     eRepeatType     repeatMode;
     eMapEditorMode  mapEditorMode;
     eCycleMode      cycleMode;
+    eLogTimer       logTime;
 
     int     cycleInterval;
     int     polySides;    // used by tiling maker
@@ -280,6 +283,7 @@ public:
     QString lastLoadedTileName; // used on startup
     QString lastLoadedXML;      // used on startup
     QString currentlyLoadedXML; // current status
+    QString currentlyLoadingXML;    // not persistent
 
     bool    autoLoadStyles;
     bool    autoLoadTiling;
@@ -292,7 +296,6 @@ public:
     bool    logToPanel;
     bool    logNumberLines;
     bool    logWarningsOnly;
-    bool    logElapsedTime;
     bool    mapedStatusBox;
     bool    showBackgroundImage;
     bool    highlightUnit;
@@ -315,10 +318,13 @@ public:
 
     bool    compare_transparent;
     bool    display_differences;
-    bool    compare_ping_pong;
-    bool    compare_side_by_side;
-    bool    use_badList;
-    bool    use_badList2;
+
+    bool    use_workListForCompare;
+    bool    use_workListForGenerate;
+    bool    generate_workList;
+    bool    skipExisting;
+
+    QStringList workList;
 
     bool    cs_showBkgds;
     bool    cs_showBorders;
@@ -326,8 +332,6 @@ public:
 
     QString mosaicFilter;
     QString tileFilter;
-
-    QStringList badImages;
 
     bool        showGrid;
     eGridUnits  gridUnits;
@@ -340,20 +344,26 @@ public:
     int         gridScreenSpacing;
     qreal       gridAngle;
 
+    QString     rootImageDir;
+    QString     rootMediaDir;
+    bool        defaultMediaRoot;
+    bool        defaultImageRoot;
+
 ////////////////////////////////////////////////////////////////
 //
 // volatile
 //
 ////////////////////////////////////////////////////////////////
 
-    QString rootMediaDir;
     QString rootTileDir;
+    QString originalTileDir;
     QString newTileDir;
     QString rootDesignDir;
+    QString originalDesignDir;
     QString newDesignDir;
     QString templateDir;
     QString examplesDir;
-    QString rootImageDir;
+
 
     bool    circleX;
     bool    hideCircles;
@@ -368,8 +378,9 @@ public:
 
     eKbdMode    kbdMode;
 
-    WeakFacesPtr   faces;                           // used by FaceSetView
-    WeakFacePtr    selectedFace;                    // used by FaceSetView
+    WeakColorMakerPtr  colorMaker;                  // used by FaceSetView
+    WeakFacePtr        selectedFace;                // used by FaceSetView
+    WeakDCELPtr        dcel;                        // used by map editor
 
     QColor    figureViewBkgdColor;                  // used by some menus
 
@@ -381,12 +392,13 @@ protected:
     QString getMediaRootAppdata();
     QString getImageRoot();
 
-
 private:
     Configuration();
     ~Configuration() {}
 
     static Configuration * mpThis;
+
+    eViewType   viewerType;
 };
 
 #endif // CONFIGURATION_H

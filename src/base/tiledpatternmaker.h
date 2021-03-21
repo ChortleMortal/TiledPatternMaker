@@ -28,6 +28,8 @@
 #include "base/configuration.h"
 
 class SplitScreen;
+class ImageWidget;
+class TransparentWidget;
 
 class TiledPatternMaker : public QObject
 {
@@ -36,6 +38,8 @@ class TiledPatternMaker : public QObject
 public:
     TiledPatternMaker();
     ~TiledPatternMaker();
+
+    void imageKeyPressed(QKeyEvent * k);
 
 signals:
     void sig_start();
@@ -50,6 +54,10 @@ signals:
     void sig_image0(QString name);
     void sig_image1(QString name);
     void sig_lockStatus();
+
+    void sig_takeNext();
+    void sig_cyclerQuit();
+    void sig_closeAllImageViewers();
 
 public slots:
     void startEverything();
@@ -72,18 +80,17 @@ public slots:
     void slot_bringToPrimaryScreen();
     void slot_splitScreen(bool checked);
 
-    void slot_startCycle(eCycleMode mode);
-    void slot_compareImagesReplace(QString nameLeft, QString nameRight, bool autoMode);
     void slot_compareImages(QString nameLeft, QString nameRight, bool autoMode);
     void slot_cyclerFinished();
-    void slot_view_image(QString filename);
+    void slot_view_image(QString left, QString right);
     void slot_show_png(QString file, int row, int col);
 
 protected:
     void init();
-    void SplatShowImage(QImage & image, QString title);
-    void SplatCompareResult(QPixmap & pixmap, QString title);
-    void SplatCompareResultTransparent(QPixmap & pixmap, QString title);
+
+    ImageWidget       * showPixmap(QPixmap & pixmap,QString title);
+    TransparentWidget * showTransparentPixmap(QPixmap & pixmap,QString title);
+
     QPixmap makeTextPixmap(QString txt,QString txt2=QString(),QString txt3=QString());
 
 private:
@@ -96,6 +103,12 @@ private:
     TilingMaker            * tilingMaker;
     MapEditor              * mapEditor;
     Cycler                 * cycler;
+
+    bool                    showFirst;
+    QString                 pathLeft;
+    QString                 pathRight;
+
+
 };
 
 #endif // TILEDPATTERNMAKER_H

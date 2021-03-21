@@ -27,7 +27,7 @@ private:
     QStack<QString>  msgStack;
     eViewType        viewType;
 
-    static const viewMsg viewMsgs[NUM_VIEW_TYPES];
+    static const viewMsg viewMsgs[LAST_VIEW_TYPE+1];
 };
 
 #endif

@@ -78,8 +78,8 @@ public:
     void fillPolygon(const QPolygonF & pgon, QColor color);
     void drawPolygon(const QPolygonF & pgon, QColor color, int  width);
 
-    void fillEdgePoly(const EdgePoly &epoly, QColor color);
-    void drawEdgePoly(const EdgePoly &epoly, QColor color, int width);
+    void fillEdgePoly(EdgePoly *epoly, QColor color);
+    void drawEdgePoly(EdgePoly *epoly, QColor color, int width);
 
     void drawArrow( QPointF from, QPointF to, qreal length, qreal half_width, QColor color);
 

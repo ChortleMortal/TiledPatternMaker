@@ -211,8 +211,8 @@ void TilingMakerView::drawFeature(GeoGraphics * g2d, PlacedFeaturePtr pf, bool d
 
     // fill the polygon
     EdgePoly ep = pf->getPlacedEdgePoly();
-    g2d->fillEdgePoly(ep,icol);
-    g2d->drawEdgePoly(ep,Qt::black,3);
+    g2d->fillEdgePoly(&ep,icol);
+    g2d->drawEdgePoly(&ep,Qt::black,3);
 
     if (tilingMakerMouseMode == TM_EDGE_CURVE_MODE)
     {
@@ -249,8 +249,8 @@ void TilingMakerView::drawAccum(GeoGraphics * g2d)
         if (edge->getType() == EDGETYPE_LINE)
         {
             qDebug() << "draw accum edge";
-            QPointF p1 = edge->getV1()->getPosition();
-            QPointF p2 = edge->getV2()->getPosition();
+            QPointF p1 = edge->v1->pt;
+            QPointF p2 = edge->v2->pt;
             g2d->drawCircle(p1,6,layerPen,brush);
             g2d->drawCircle(p2,6,layerPen,brush);
             g2d->drawLine(p1, p2,layerPen);
@@ -258,7 +258,7 @@ void TilingMakerView::drawAccum(GeoGraphics * g2d)
         else if (edge->getType() == EDGETYPE_POINT)
         {
             qDebug() << "draw accum point";
-            QPointF p = edge->getV1()->getPosition();
+            QPointF p = edge->v1->pt;
             g2d->drawCircle(p,6,layerPen,brush);
         }
     }
@@ -367,8 +367,8 @@ TilingSelectorPtr TilingMakerView::findMidPoint(QPointF spt, TilingSelectorPtr i
         EdgePoly ep  = pf->getFeatureEdgePoly();
         for (auto edge : ep)
         {
-            QPointF a    = edge->getV1()->getPosition();
-            QPointF b    = edge->getV2()->getPosition();
+            QPointF a    = edge->v1->pt;
+            QPointF b    = edge->v2->pt;
             QPointF mid  = edge->getMidPoint();
             QPointF aa   = T.map(a);
             QPointF bb   = T.map(b);
@@ -575,18 +575,14 @@ void TilingMakerView::determineOverlapsAndTouching()
                 if (!p3.isEmpty())
                 {
                     //qDebug() << "overlapping";
-                    if (!overlapping.contains(pf))
-                        overlapping.push_back(pf);
-                    if (!overlapping.contains(pf2))
-                        overlapping.push_back(pf2);
+                    overlapping.push_back(pf);
+                    overlapping.push_back(pf2);
                 }
                 else
                 {
                     //qDebug() << "touching";
-                    if (!touching.contains(pf))
-                        touching.push_back(pf);
-                    if (!touching.contains(pf2))
-                        touching.push_back(pf2);
+                    touching.push_back(pf);
+                    touching.push_back(pf2);
                 }
             }
         }

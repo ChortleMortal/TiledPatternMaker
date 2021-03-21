@@ -63,9 +63,9 @@ public:
         return a > (b - TOL);
     }
 
-    static bool equals( QPointF a, QPointF b )
+    static bool equalsPt( QPointF a, QPointF b )
     {
-        return Point::dist2(a, b ) < TOL2;
+        return Point::dist2(a, b ) < TOL;   // DAC - was TOL2
     }
 
     static bool Near( qreal a, qreal tolerance )

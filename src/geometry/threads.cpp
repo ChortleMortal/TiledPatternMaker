@@ -14,38 +14,35 @@ Threads::Threads()
 void Threads::findThreads(MapPtr map)
 {
     // reset visited
-    for (auto edge : map->getEdges())
+    for (auto edge : map->edges)
     {
-        InterlaceInfo & ii = edge->getInterlaceInfo();
-        ii.initThread();
+        edge->thread.reset();
     }
 
-    for (auto edge : map->getEdges())
+    for (auto edge : map->edges)
     {
-        if (edge->getInterlaceInfo().visited)
+        if (edge->visited)
             continue;
         ThreadPtr thread = make_shared<Thread>();
         this->push_back(thread);
-        findThread(thread,map,edge,edge->getV2());
+        findThread(thread,map,edge,edge->v2);
     }
     qDebug() << "interlace: num threads =" << size();
 }
 
 void Threads::findThread(ThreadPtr thread, MapPtr map, EdgePtr edge, VertexPtr touchPt)
 {
-    qDebug() << "Threads::findThread Edge" << edge->getTmpEdgeIndex() << "Thread" << thread.get();
+    qDebug() << "Threads::findThread Edge" << edge->dump() << "Thread" << thread.get();
 
-    edge->getInterlaceInfo().thread  = thread;
-    edge->getInterlaceInfo().visited = true;
+    edge->thread  = thread;
+    edge->visited = true;
     thread->push_back(edge);
 
-    NeighboursPtr nbs = map->getNeighbourMap().getNeighbours(touchPt);
-
     // first pass looking for colinear
-    for (auto edge2 : qAsConst(nbs->getNeighbours()))
+    for (auto edge2 : qAsConst(touchPt->getNeighbours()))
     {
         //qDebug() << "Edge2" << edge2->getTmpEdgeIndex() << "Thread" << edge2->getInterlaceInfo().threadNumber << "visited"  << edge2->getInterlaceInfo().visited;
-        if (edge2->getInterlaceInfo().visited)
+        if (edge2->visited)
             continue;
         if (edge->isColinearAndTouching(edge2))
         {
@@ -55,7 +52,7 @@ void Threads::findThread(ThreadPtr thread, MapPtr map, EdgePtr edge, VertexPtr t
     }
 
     // second pass looking for anything can make a turn
-    auto edge3 = nbs->getFirstNonvisitedNeighbour(edge);
+    auto edge3 = touchPt->getFirstNonvisitedNeighbour(edge);
     if (edge3)
     {
         findThread(thread, map,edge3,edge3->getOtherV(touchPt));           // recurse

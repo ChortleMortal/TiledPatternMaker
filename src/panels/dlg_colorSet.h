@@ -26,7 +26,6 @@
 #define DLG_COLOR_SET_H
 
 #include <QtWidgets>
-#include <QSignalMapper>
 #include "tile/feature.h"
 #include "makers/decoration_maker/style_editors.h"
 
@@ -52,11 +51,12 @@ private slots:
     void slot_ok();
     void up();
     void down();
-    void slot_colorVisibilityChanged(int row);
+
+protected:
+    void colorVisibilityChanged(int row);
 
 private:
     ColorSet &      colorSet;
-    QSignalMapper   mapper;
     int             currentRow;
 };
 

@@ -33,6 +33,7 @@
 #include "base/mosaic_writer.h"
 #include "base/tiledpatternmaker.h"
 #include "base/utilities.h"
+#include "geometry/dcel.h"
 #include "geometry/map_cleanser.h"
 #include "makers/decoration_maker/decoration_maker.h"
 #include "makers/motif_maker/motif_maker.h"
@@ -56,14 +57,12 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
 {
     me = MapEditor::getInstance();
 
-    localMap  =  make_shared<Map>(QString("New local map"));
-    debugInfo = false;
-
     QRadioButton * mapEdMosaic = new QRadioButton("Mosaic");
     QRadioButton * mapEdProto  = new QRadioButton("Prototype");
     QRadioButton * mapEdFigure = new QRadioButton("Figure");
     QRadioButton * mapEdLocal  = new QRadioButton("Local");
     QRadioButton * mapEdTiling = new QRadioButton("Tiling");
+    QRadioButton * mapEdDCEL   = new QRadioButton("DCEL");
 
     // map editor group
     mapEdModeGroup.addButton(mapEdMosaic,MAP_MODE_MOSAIC);
@@ -71,6 +70,7 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     mapEdModeGroup.addButton(mapEdFigure,MAP_MODE_FIGURE);
     mapEdModeGroup.addButton(mapEdLocal,MAP_MODE_LOCAL);
     mapEdModeGroup.addButton(mapEdTiling,MAP_MODE_TILING);
+    mapEdModeGroup.addButton(mapEdDCEL,MAP_MODE_DCEL);
     mapEdModeGroup.button(config->mapEditorMode)->setChecked(true);
 
     line0 = new QLabel;
@@ -95,8 +95,9 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     QToolButton * pbJoinEdges = new QToolButton();
     QToolButton * pbCleanNeighbours = new QToolButton();
     QToolButton * pbRemoveFloatingVerts = new QToolButton();
+    QToolButton * pbRemoveSingleVerts = new QToolButton();
     QToolButton * pbRemoveZombieEdges = new QToolButton();
-    QToolButton * pbSortNeigbours = new QToolButton();
+    QToolButton * pbRebuildNeigbours = new QToolButton();
     QToolButton * pbSortVertices = new QToolButton();
     QToolButton * pbSortEdges = new QToolButton();
     QToolButton * pbDumpMap = new QToolButton();
@@ -127,10 +128,11 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     pbDivideEdges->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     pbJoinEdges->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     pbCleanNeighbours->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    pbSortNeigbours->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    pbRebuildNeigbours->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     pbSortVertices->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     pbSortEdges->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     pbRemoveFloatingVerts->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    pbRemoveSingleVerts->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     pbRemoveZombieEdges->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     pbRestoreConstructs->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     pbUndoConstructs->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -151,10 +153,11 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     pbDivideEdges->setText("Divide\nIntersecting Edges");
     pbJoinEdges->setText("Join\nColinear Edges");
     pbCleanNeighbours->setText("Clean Neighbours");
-    pbSortNeigbours->setText("Sort Neighbours");
+    pbRebuildNeigbours->setText("Rebuild Neighbours");
     pbSortVertices->setText("Sort Vertices");
     pbSortEdges->setText("Sort Edges");
     pbRemoveFloatingVerts->setText("Remove\nFloating Vertices");
+    pbRemoveSingleVerts->setText("Remove\nSingle Vertices");
     pbRemoveZombieEdges->setText("Remove\nZombie Edges");
     pbRestoreConstructs->setText("Restore\nConstruct Lines");
     pbUndoConstructs->setText("Undo\nConstruct Lines");
@@ -214,7 +217,7 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
 
     DoubleSpinSet * lineWidthSpin = new DoubleSpinSet("Line Width",3.0,1.0,10.0);
     DoubleSpinSet * consWidthSpin = new DoubleSpinSet("Cons Width",1.0,1.0,10.0);
-    DoubleSpinSet * radiusSpin    =new DoubleSpinSet("Radius",0.25,0.0,2.0);
+    DoubleSpinSet * radiusSpin    = new DoubleSpinSet("Radius",0.25,0.0,2.0);
     radiusSpin->setPrecision(8);
     radiusSpin->setSingleStep(0.05);
 
@@ -225,6 +228,7 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     vbox2->addWidget(mapEdFigure);
     vbox2->addWidget(mapEdTiling);
     vbox2->addWidget(mapEdLocal);
+    vbox2->addWidget(mapEdDCEL);
     vbox2->addSpacing(9);
     vbox2->addWidget(hideConsChk);
     vbox2->addWidget(hideMapChk);
@@ -246,29 +250,29 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     mapGrid->addWidget(pbClearMap,row,2);
 
     row++;
+    mapGrid->addWidget(pbRemoveZombieEdges,row,0);
+    mapGrid->addWidget(pbRemoveFloatingVerts,row,1);
+    mapGrid->addWidget(pbRemoveSingleVerts,row,2);
+
+    row++;
     mapGrid->addWidget(pbDivideEdges,row,0);
     mapGrid->addWidget(pbJoinEdges,row,1);
     mapGrid->addWidget(pbCleanNeighbours,row,2);
 
     row++;
-    mapGrid->addWidget(pbSortNeigbours,row,0);
+    mapGrid->addWidget(pbRebuildNeigbours,row,0);
     mapGrid->addWidget(pbSortVertices,row,1);
     mapGrid->addWidget(pbSortEdges,row,2);
 
-
     row++;
     mapGrid->addWidget(pbCleanseMap,row,0);
-    mapGrid->addWidget(pbRemoveFloatingVerts,row,1);
-    mapGrid->addWidget(pbRemoveZombieEdges,row,2);
-
-    row++;
-    mapGrid->addWidget(pbDumpMap,row,0);
-    mapGrid->addWidget(pbCreateMap,row,1);
+    mapGrid->addWidget(pbDumpMap,row,1);
     mapGrid->addWidget(pbCropMap,row,2);
 
     row++;
-    mapGrid->addWidget(pbLoadMap,row,0);
-    mapGrid->addWidget(pbSaveMap,row,1);
+    mapGrid->addWidget(pbCreateMap,row,0);
+    mapGrid->addWidget(pbLoadMap,row,1);
+    mapGrid->addWidget(pbSaveMap,row,2);
 
     QGroupBox * mapBox  = new QGroupBox("Map");
     mapBox->setLayout(mapGrid);
@@ -344,11 +348,12 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     connect(pbDivideEdges,          &QToolButton::clicked,  this,   &page_map_editor::slot_divideIntersectingEdges);
     connect(pbJoinEdges,            &QToolButton::clicked,  this,   &page_map_editor::slot_joinColinearEdges);
     connect(pbCleanNeighbours,      &QToolButton::clicked,  this,   &page_map_editor::slot_cleanNeighbours);
-    connect(pbSortNeigbours,        &QToolButton::clicked,  this,   &page_map_editor::slot_sortAllNeighboursByAngle);
+    connect(pbRebuildNeigbours,     &QToolButton::clicked,  this,   &page_map_editor::slot_rebuildNeighbours);
     connect(pbSortVertices,         &QToolButton::clicked,  this,   &page_map_editor::slot_sortVertices);
     connect(pbSortEdges,            &QToolButton::clicked,  this,   &page_map_editor::slot_sortEdges);
     connect(pbCleanseMap,           &QToolButton::clicked,  this,   &page_map_editor::slot_cleanseMap);
     connect(pbRemoveFloatingVerts,  &QToolButton::clicked,  this,   &page_map_editor::slot_removeUnconnectedVertices);
+    connect(pbRemoveSingleVerts,    &QToolButton::clicked,  this,   &page_map_editor::slot_removeSingleConnectVertices);
     connect(pbRemoveZombieEdges,    &QToolButton::clicked,  this,   &page_map_editor::slot_removeZombieEdges);
     connect(pbDumpMap,              &QToolButton::clicked,  this,   &page_map_editor::slot_dumpMap);
     connect(pbCropMap,              &QToolButton::clicked,  this,   &page_map_editor::slot_applyCrop);
@@ -369,9 +374,9 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     connect(hidePtsChk,     &QCheckBox::clicked,  this,   &page_map_editor::slot_hidePoints);
     connect(hideMidPtsChk,  &QCheckBox::clicked,  this,   &page_map_editor::slot_hideMidPoints);
 
-    connect(&mapEdModeGroup,    SIGNAL(buttonClicked(int)), this,   SLOT(slot_mapEdMode_pressed(int)));
-    connect(&modeGroup,         SIGNAL(buttonClicked(int)), this,   SLOT(slot_setModes(int)));
-    connect(pbRender,           &QToolButton::clicked,      this,   &panel_page::sig_render);
+    connect(&mapEdModeGroup,    &QButtonGroup::idClicked, this,   &page_map_editor::slot_mapEdMode_pressed);
+    connect(&modeGroup,         &QButtonGroup::idClicked, this,   &page_map_editor::slot_setModes);
+    connect(pbRender,           &QToolButton::clicked,    this,   &panel_page::sig_render);
 
     connect(radiusSpin,     &DoubleSpinSet::sig_valueChanged, this, &page_map_editor::slot_radiusChanged);
     connect(lineWidthSpin,  &DoubleSpinSet::sig_valueChanged, this, &page_map_editor::slot_lineWidthChanged);
@@ -389,7 +394,7 @@ void  page_map_editor::onEnter()
     mapEdModeGroup.button(config->mapEditorMode)->setChecked(true);
     mapEdModeGroup.blockSignals(false);
 
-    reload();
+    me->reload();
 
     modeGroup.button(me->getMouseMode())->setChecked(true);
 
@@ -397,87 +402,11 @@ void  page_map_editor::onEnter()
     emit sig_refreshView();
 }
 
-void  page_map_editor::reload()
-{
-    Q_ASSERT(me);
-
-    switch (config->mapEditorMode)
-    {
-    case MAP_MODE_FIGURE:
-    {
-        // this is set by the figure editor
-        DesignElementPtr dep  = motifMaker->getSelectedDesignElement();
-        if (dep)
-            me->setDesignElement(dep);
-        else
-            me->unload();
-        break;
-    }
-    case MAP_MODE_PROTO:
-    {
-        PrototypePtr proto = motifMaker->getSelectedPrototype();
-        if (proto)
-        {
-            me->setPrototype(proto);
-        }
-        else
-            me->unload();
-        break;
-    }
-    case MAP_MODE_MOSAIC:
-    {
-        MosaicPtr mosaic = decorationMaker->getMosaic();
-        if (!mosaic)
-        {
-            me->unload();
-        }
-        else
-        {
-            const StyleSet & sset = mosaic->getStyleSet();
-            if (sset.size())
-            {
-                StylePtr sp  = sset.first();
-                me->setStyle(sp);
-            }
-            else
-            {
-                me->unload();
-            }
-        }
-        break;
-    }
-
-    case MAP_MODE_LOCAL:
-        me->setLocal(localMap);
-        break;
-
-    case MAP_MODE_TILING:
-        TilingPtr tp = tilingMaker->getSelected();
-        me->setTiling(tp);
-        break;
-    }
-
-    if (config->viewerType == VIEW_MAP_EDITOR)
-    {
-        emit sig_refreshView();
-    }
-}
-
-void page_map_editor::slot_selected_dele_changed()
-{
-    if (config->mapEditorMode == MAP_MODE_FIGURE)
-    {
-        DesignElementPtr dep = motifMaker->getSelectedDesignElement();
-        me->setDesignElement(dep);
-    }
-}
-
 void page_map_editor::refreshPage()
 {
     QString str;
 
     eMapType mapType = me->getMapType();
-
     line0->setText(sMapEdInput[mapType]);
 
     if (mapType == MAP_TYPE_FIGURE)
@@ -533,11 +462,22 @@ void page_map_editor::refreshPage()
     }
 
     // line 4
-    MapPtr map = me->getMap();
-    if (map)
-        str = QString("Map: %1  %2").arg(Utils::addr(map.get())).arg(map->summary());
+    if (mapType == MAP_TYPE_DCEL)
+    {
+        DCELPtr dp = me->getDCEL().lock();
+        if (dp)
+            str = QString("DCEL: vertices = %1 half-edges = %2 faces = %3").arg(dp->vertices.size()).arg(dp->edges.size()).arg(dp->faces.size());
+        else
+            str = "DECEL: NONE";
+    }
     else
-        str = "Map: NO MAP";
+    {
+        MapPtr map = me->getMap();
+        if (map)
+            str = QString("Map: %1  [%2] %3").arg(Utils::addr(map.get())).arg(map->name()).arg(map->summary());
+        else
+            str = "Map: NO MAP";
+    }
     line4->setText(str);
 
     // line 5
@@ -610,19 +550,33 @@ void page_map_editor::slot_mosaicLoaded(QString name)
 {
     qDebug() << "page_map_editor: loaded -" << name;
     me->initStashFrom(name);
-    if (panel->isVisiblePage(this))
+    if (config->getViewerType() == VIEW_MAP_EDITOR)
     {
-    reload();
+        me->reload();
+    }
+}
+
+void page_map_editor::slot_selected_dele_changed()
+{
+    if (config->mapEditorMode == MAP_MODE_FIGURE)
+    {
+        DesignElementPtr dep = motifMaker->getSelectedDesignElement();
+        me->setDesignElement(dep);
     }
 }
 
 void page_map_editor::slot_tilingLoaded (QString name)
 {
     Q_UNUSED(name)
-    if (panel->isVisiblePage(this))
+    if (config->getViewerType() == VIEW_MAP_EDITOR)
     {
-        reload();
+        me->reload();
     }
+}
+
+void page_map_editor::slot_reload()
+{
+    me->reload();
 }
 
 void page_map_editor::slot_convertToExplicit()
@@ -661,19 +615,18 @@ void page_map_editor::slot_verify()
 
     MapPtr map = me->getMap();
 
-    MapCleanser cleanser(map);
-    bool verified = cleanser.verifyMap("page_figure_editor::verify");
+    bool verified = map->verifyMap("page_figure_editor::verify");
 
     if (verified)
     {
-        QMessageBox box;
+        QMessageBox box(this);
         box.setIcon(QMessageBox::Information);
         box.setText("Verified OK");
         box.exec();
     }
     else
     {
-        QMessageBox box;
+        QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
         box.setText("Verification FAILED");
         box.exec();
@@ -697,7 +650,8 @@ void page_map_editor::slot_joinColinearEdges()
     MapCleanser cleanser(map);
     cleanser.joinColinearEdges();
     me->buildEditorDB();
-    updateView();}
+    updateView();
+}
 
 void page_map_editor::slot_cleanNeighbours()
 {
@@ -705,15 +659,27 @@ void page_map_editor::slot_cleanNeighbours()
     MapCleanser cleanser(map);
     cleanser.cleanNeighbours();
     me->buildEditorDB();
-    updateView();}
+    updateView();
+}
 
 void page_map_editor::slot_removeUnconnectedVertices()
 {
     MapPtr map = me->getMap();
     MapCleanser cleanser(map);
-    cleanser.removeDanglingVertices();
+    cleanser.removeVerticesWithEdgeCount(0);
     me->buildEditorDB();
-    updateView();}
+    updateView();
+}
+
+void page_map_editor::slot_removeSingleConnectVertices()
+{
+    MapPtr map = me->getMap();
+    MapCleanser cleanser(map);
+    cleanser.removeVerticesWithEdgeCount(1);
+    me->buildEditorDB();
+    updateView();
+}
+
 
 void page_map_editor::slot_removeZombieEdges()
 {
@@ -721,32 +687,31 @@ void page_map_editor::slot_removeZombieEdges()
     MapCleanser cleanser(map);
     cleanser.removeBadEdges();
     me->buildEditorDB();
-    updateView();}
+    updateView();
+}
 
-void page_map_editor::slot_sortAllNeighboursByAngle()
+void page_map_editor::slot_rebuildNeighbours()
 {
     MapPtr map = me->getMap();
-    map->sortAllNeighboursByAngle();
+    map->buildNeighbours();
     me->buildEditorDB();
-    updateView();}
+    updateView();
+}
 
 void page_map_editor::slot_sortVertices()
 {
     MapPtr map = me->getMap();
     map->sortVertices();
     me->buildEditorDB();
-    updateView();}
+    updateView();
+}
 
 void page_map_editor::slot_sortEdges()
 {
     MapPtr map = me->getMap();
     map->sortEdges();
     me->buildEditorDB();
-    updateView();}
-
-void page_map_editor::slot_reload()
-{
-    reload();
+    updateView();
 }
 
 void page_map_editor::slot_setModes(int mode)
@@ -758,7 +723,7 @@ void page_map_editor::slot_setModes(int mode)
 void page_map_editor::slot_mapEdMode_pressed(int id)
 {
     config->mapEditorMode = eMapEditorMode(id);
-    reload();
+    me->reload();
 }
 
 void page_map_editor::slot_hideCons(bool hide)
@@ -866,10 +831,10 @@ void page_map_editor::slot_clearMap()
 
 void page_map_editor::slot_createMap()
 {
-    localMap = make_shared<Map>(QString("New local map"));
+    me->setLocalMap(make_shared<Map>(QString("New local map")));
     if (config->mapEditorMode == MAP_MODE_LOCAL)
     {
-        me->setLocal(localMap);
+        me->setLocal();
     }
     else
     {
@@ -896,8 +861,8 @@ void page_map_editor::slot_loadMap()
 
     if (config->mapEditorMode == MAP_MODE_LOCAL)
     {
-        localMap = map;
-        me->setLocal(localMap);
+        me->setLocalMap(map);
+        me->setLocal();
         QMessageBox box(this);
 
         box.setIcon(QMessageBox::Information);
@@ -978,7 +943,7 @@ void page_map_editor::slot_cleanseMap()
 {
     MapPtr m = me->getMap();
     MapCleanser cleanser(m);
-    cleanser.cleanse();
+    cleanser.cleanse(default_cleanse);
     me->buildEditorDB();
     updateView();
 }

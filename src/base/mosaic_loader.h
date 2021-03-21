@@ -80,7 +80,7 @@ protected:
     void    processColorGroup(xml_node & node, ColorGroup & colorGroup);
     void    processsStyleThick(xml_node & node, bool & draw_outline, qreal & width);
     void    processsStyleInterlace(xml_node & node, qreal & gap, qreal & shadow, bool & includeSVerts);
-    void    processsStyleFilled(xml_node & node, bool &draw_inside, bool &draw_outside, int &algorithm);
+    void    processsStyleFilled(xml_node & node, bool &draw_inside, bool &draw_outside, int &algorithm, int & cleanseLevel);
     void    processsStyleEmboss(xml_node & node, qreal & angle);
     void    processStyleStyle(xml_node & node, PrototypePtr &proto);
 
@@ -179,12 +179,15 @@ private:
     BorderPtr               _border;
     unsigned int            _version;
     FillData                _fillData;
+    BkgdImgPtr              _bip;
 
     int vOrigCnt;
     int vRefrCnt;
     int eOrigCnt;
     int eRefrCnt;
     int nRefrCnt;
+
+    bool _debug;
 
     class View * view;
 };

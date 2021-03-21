@@ -106,7 +106,7 @@ void TilingView::drawPlacedFeature(GeoGraphics * g2d, PlacedFeaturePtr pf)
         }
         else if (edge->getType() == EDGETYPE_CURVE)
         {
-            g2d->drawChord(edge->getV1()->getPosition(),edge->getV2()->getPosition(),edge->getArcCenter(),layerPen,QBrush(),edge->isConvex());
+            g2d->drawChord(edge->v1->pt,edge->v2->pt,edge->getArcCenter(),layerPen,QBrush(),edge->isConvex());
         }
     }
 }

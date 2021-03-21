@@ -41,6 +41,7 @@
 #include "tapp/infer.h"
 #include "tapp/explicit_figure.h"
 #include "tile/feature_reader.h"
+#include "tile/tiling_loader.h"
 #include "tile/tiling_manager.h"
 
 #undef  DEBUG_REFERENCES
@@ -52,13 +53,13 @@ MosaicLoader::MosaicLoader()
     _width      = 1500;
     _height     = 1100;
     _version    = 0;
-
+    _debug      = false;
     view        = View::getInstance();
 }
 
 MosaicLoader::~MosaicLoader()
 {
-    qDebug() << "MosaicLoader: descructor";
+    qDebug() << "MosaicLoader: destructor";
 }
 
 QString MosaicLoader::getLoadedFilename()
@@ -68,9 +69,11 @@ QString MosaicLoader::getLoadedFilename()
 
 MosaicPtr MosaicLoader::loadMosaic(QString fileName)
 {
+    view->loadTimer.restart();
+
     view->dump(true);
 
-    qDebug().noquote() << "MosaicLoader loading:" << fileName;
+    qDebug().noquote() << "MosaicLoader load" << fileName << " : start";
     _fileName = fileName;
 
     xml_document doc;
@@ -91,6 +94,8 @@ MosaicPtr MosaicLoader::loadMosaic(QString fileName)
         parseXML(doc);
 
         view->dump(true);
+
+        qDebug().noquote() << "MosaicLoader load" << fileName << " : complete";
 
         return _mosaic;
     }
@@ -123,7 +128,7 @@ MapPtr MosaicLoader::loadMosaicMap(QString fileName)
 
     try
     {
-        qDebug() << "MosaicLoader - start parsing";
+        if (_debug) qDebug() << "MosaicLoader - start parsing";
         vOrigCnt = 0;
         vRefrCnt = 0;
         eOrigCnt = 0;
@@ -132,7 +137,7 @@ MapPtr MosaicLoader::loadMosaicMap(QString fileName)
 
         xml_node node = doc.first_child();
         string str = node.name();
-        qDebug() << str.c_str();
+        if (_debug) qDebug().noquote() << str.c_str();
         if (str  != "vector")
         {
             return map;
@@ -164,12 +169,12 @@ void MosaicLoader::parseXML(xml_document & doc)
     eOrigCnt = 0;
     eRefrCnt = 0;
     nRefrCnt = 0;
-    qDebug() << "MosaicLoader - start parsing";
+    if (_debug) qDebug() << "MosaicLoader - start parsing";
 
     for (xml_node n = doc.first_child(); n; n = n.next_sibling())
     {
         string str = n.name();
-        qDebug() << str.c_str();
+        if (_debug) qDebug().noquote() << str.c_str();
         if (str  == "vector")
             processVector(n);
         else
@@ -178,7 +183,7 @@ void MosaicLoader::parseXML(xml_document & doc)
 
     view->dump(true);
 
-    qDebug() << "MosaicLoader - end parsing";
+    if (_debug) qDebug() << "MosaicLoader - end parsing";
 }
 
 void MosaicLoader::processDesignNotes(xml_node & node)
@@ -200,7 +205,7 @@ void MosaicLoader::processVector(xml_node & node)
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
         string str = n.name();
-        qDebug() << str.c_str();
+        if (_debug) qDebug().noquote() << str.c_str();
         if (str  == "designNotes")
             processDesignNotes(n);
         else if (str == "design")
@@ -224,23 +229,28 @@ void MosaicLoader::processVector(xml_node & node)
         else
             fail("Unexpected", str.c_str());
     }
-    qDebug() << "end vector";
+    if (_debug) qDebug() << "end vector";
 
     ModelSettingsPtr settings = make_shared<ModelSettings>();
     settings->setBackgroundColor(_background);
     settings->setSize(QSize(_width,_height));
     settings->setBorder(_border);
-    settings->setBkgdImage(getFirstTiling()->getBackground());
+
+    if (!_bip)
+    {
+        _bip = getFirstTiling()->getBackground();
+    }
+    settings->setBkgdImage(_bip);
 
     // Canvas Settings fill data defaults to FillData defaults, loader can  override these
     if (_fillData.isSet())
     {
-        qDebug() << "Using Mosaic FiilData";
+        if (_debug) qDebug() << "Using Mosaic FiilData";
         settings->setFillData(_fillData);
     }
     else
     {
-        qDebug() << "Using Tiling FiilData";
+        if (_debug) qDebug() << "Using Tiling FiilData";
         FillData fd =  getFirstTiling()->getFillData();
         settings->setFillData(fd);
     }
@@ -253,7 +263,7 @@ void MosaicLoader::processDesign(xml_node & node)
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
         string str = n.name();
-        qDebug() << str.c_str();
+        if (_debug) qDebug().noquote() << str.c_str();
         if (str == "scale")
             continue;       // scale deprecated 30DEC19
         else if (str == "size")
@@ -264,6 +274,8 @@ void MosaicLoader::processDesign(xml_node & node)
             procBorder(n);
         else if (str == "Fill")
             procFill(n);
+        else if (str == "BackgroundImage")
+            _bip = TilingLoader::getBackgroundImage(n);
         else
             fail("Unexpected", str.c_str());
     }
@@ -280,7 +292,7 @@ void MosaicLoader::processThick(xml_node & node)
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
         string str = n.name();
-        qDebug() << str.c_str();
+        if (_debug) qDebug().noquote() << str.c_str();
 
         if (str == "toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf);
@@ -294,18 +306,18 @@ void MosaicLoader::processThick(xml_node & node)
             fail("Unexpected", str.c_str());
     }
 
-    qDebug() << "Constructing Thick from prototype and poly";
+    if (_debug) qDebug() << "Constructing Thick from prototype and poly";
     Thick * thick = new Thick(proto);
     thick->setCanvasXform(xf);
     thick->setColorSet(colorset);
     thick->setDrawOutline(draw_outline);
     thick->setLineWidth(width);
 
-    qDebug().noquote() << "XmlServices created Style(Thick)" << thick->getInfo();
+    if (_debug) qDebug().noquote() << "XmlServices created Style(Thick)" << thick->getInfo();
 
     _mosaic->addStyle(StylePtr(thick));
 
-    qDebug() << "end thick";
+    if (_debug) qDebug() << "end thick";
 }
 
 void MosaicLoader::processInterlace(xml_node & node)
@@ -322,7 +334,7 @@ void MosaicLoader::processInterlace(xml_node & node)
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
         string str = n.name();
-        qDebug() << str.c_str();
+        if (_debug) qDebug().noquote() << str.c_str();
 
         if (str == "toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf);
@@ -338,7 +350,7 @@ void MosaicLoader::processInterlace(xml_node & node)
             fail("Unexpected", str.c_str());
     }
 
-    qDebug() << "Constructing Interlace (DAC) from prototype and poly";
+    if (_debug) qDebug() << "Constructing Interlace (DAC) from prototype and poly";
     Interlace * interlace = new Interlace(proto);
     interlace->setCanvasXform(xf);
     interlace->setColorSet(colorset);
@@ -347,11 +359,11 @@ void MosaicLoader::processInterlace(xml_node & node)
     interlace->setGap(gap);
     interlace->setShadow(shadow);
     interlace->setIncludeTipVertices(includeTipVerts);
-    qDebug().noquote() << "XmlServices created Style(Interlace)" << interlace->getInfo();
+    if (_debug) qDebug().noquote() << "XmlServices created Style(Interlace)" << interlace->getInfo();
 
     _mosaic->addStyle(StylePtr(interlace));
 
-    qDebug() << "end interlace";
+    if (_debug) qDebug() << "end interlace";
 }
 
 void MosaicLoader::processOutline(xml_node & node)
@@ -365,7 +377,7 @@ void MosaicLoader::processOutline(xml_node & node)
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
         string str = n.name();
-        qDebug() << str.c_str();
+        if (_debug) qDebug().noquote() << str.c_str();
 
         if (str == "toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf);
@@ -379,24 +391,25 @@ void MosaicLoader::processOutline(xml_node & node)
             fail("Unexpected", str.c_str());
     }
 
-    qDebug() << "Constructing Outline from prototype and poly";
+    if (_debug) qDebug() << "Constructing Outline from prototype and poly";
     Outline * outline = new Outline(proto);
     outline->setCanvasXform(xf);
     outline->setColorSet(colorset);
     outline->setDrawOutline(draw_outline);
     outline->setLineWidth(width);
 
-    qDebug().noquote() << "XmlServices created Style(Outline)" << outline->getInfo();
+    if (_debug) qDebug().noquote() << "XmlServices created Style(Outline)" << outline->getInfo();
 
     _mosaic->addStyle(StylePtr(outline));
 
-    qDebug() << "end outline";
+    if (_debug) qDebug() << "end outline";
 }
 
 void MosaicLoader::processFilled(xml_node & node)
 {
-    int     algorithm   = 0;
-    bool    oldFormat   = false;
+    int     algorithm    = 0;
+    int     cleanseLevel = 0;
+    bool    oldFormat    = false;
 
     ColorSet colorSet;
     ColorSet colorsB;
@@ -413,7 +426,7 @@ void MosaicLoader::processFilled(xml_node & node)
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
         string str = n.name();
-        qDebug() << str.c_str();
+        if (_debug) qDebug().noquote() << str.c_str();
 
         if (str == "toolkit.GeoLayer")
         {
@@ -430,7 +443,7 @@ void MosaicLoader::processFilled(xml_node & node)
         }
         else if (str == "style.Filled")
         {
-            processsStyleFilled(n,draw_inside,draw_outside,algorithm);
+            processsStyleFilled(n,draw_inside,draw_outside,algorithm, cleanseLevel);
         }
         else if (str == "ColorBlacks")
         {
@@ -454,6 +467,7 @@ void MosaicLoader::processFilled(xml_node & node)
     }
 
     Filled * filled = new Filled(proto,algorithm);
+    filled->setCleanseLevel(cleanseLevel);
     filled->setCanvasXform(xf);
 
     if (oldFormat)
@@ -478,7 +492,7 @@ void MosaicLoader::processFilled(xml_node & node)
 
         ColorGroup & cgroup = filled->getColorGroup();
         cgroup = colorGroup;
-#if 1
+
         if (cgroup.size()== 0)
         {
             // for backwards compatabililts
@@ -502,17 +516,16 @@ void MosaicLoader::processFilled(xml_node & node)
             cs.addColor(Qt::black);
             cgroup.addColorSet(cs);
         }
-#endif
     }
 
     filled->setDrawInsideBlacks(draw_inside);
     filled->setDrawOutsideWhites(draw_outside);
 
-    qDebug().noquote() << "XmlServices created Style(Filled)" << filled->getInfo();
+    if (_debug) qDebug().noquote() << "XmlServices created Style(Filled)" << filled->getInfo();
 
     _mosaic->addStyle(StylePtr(filled));
 
-    qDebug() << "end filled";
+    if (_debug) qDebug() << "end filled";
 }
 
 void MosaicLoader::processPlain(xml_node & node)
@@ -524,7 +537,7 @@ void MosaicLoader::processPlain(xml_node & node)
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
         string str = n.name();
-        qDebug() << str.c_str();
+        if (_debug) qDebug().noquote() << str.c_str();
 
         if (str == "toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf);
@@ -539,11 +552,11 @@ void MosaicLoader::processPlain(xml_node & node)
     Plain * plain = new Plain(proto);
     plain->setCanvasXform(xf);
     plain->setColorSet(colorset);
-    qDebug().noquote() << "XmlServices created Style (Plain)" << plain->getInfo();
+    if (_debug) qDebug().noquote() << "XmlServices created Style (Plain)" << plain->getInfo();
 
     _mosaic->addStyle(StylePtr(plain));
 
-    qDebug() << "end plain";
+    if (_debug) qDebug() << "end plain";
 }
 
 void MosaicLoader::processSketch(xml_node & node)
@@ -555,7 +568,7 @@ void MosaicLoader::processSketch(xml_node & node)
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
         string str = n.name();
-        qDebug() << str.c_str();
+        if (_debug) qDebug().noquote() << str.c_str();
 
         if (str == "toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf);
@@ -570,11 +583,11 @@ void MosaicLoader::processSketch(xml_node & node)
     Sketch * sketch = new Sketch(proto);
     sketch->setCanvasXform(xf);
     sketch->setColorSet(colorset);
-    qDebug().noquote() << "XmlServices created Style (Sketch)" << sketch->getInfo();
+    if (_debug) qDebug().noquote() << "XmlServices created Style (Sketch)" << sketch->getInfo();
 
     _mosaic->addStyle(StylePtr(sketch));
 
-    qDebug() << "end sketch";
+    if (_debug) qDebug() << "end sketch";
 }
 
 void MosaicLoader::processEmboss(xml_node & node)
@@ -589,7 +602,7 @@ void MosaicLoader::processEmboss(xml_node & node)
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
         string str = n.name();
-        qDebug() << str.c_str();
+        if (_debug) qDebug().noquote() << str.c_str();
 
         if (str == "toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf);
@@ -605,7 +618,7 @@ void MosaicLoader::processEmboss(xml_node & node)
             fail("Unexpected", str.c_str());
     }
 
-    qDebug() << "Constructing Emboss from prototype and poly";
+    if (_debug) qDebug() << "Constructing Emboss from prototype and poly";
     Emboss * emboss = new Emboss(proto);
     emboss->setCanvasXform(xf);
     emboss->setColorSet(colorset);
@@ -613,11 +626,11 @@ void MosaicLoader::processEmboss(xml_node & node)
     emboss->setLineWidth(width);
     emboss->setAngle(angle);
 
-    qDebug().noquote() << "XmlServices created Style(Emboss)" << emboss->getInfo();
+    if (_debug) qDebug().noquote() << "XmlServices created Style(Emboss)" << emboss->getInfo();
 
     _mosaic->addStyle(StylePtr(emboss));
 
-    qDebug() << "end emboss";
+    if (_debug) qDebug() << "end emboss";
 }
 
 void MosaicLoader::processTileColors(xml_node & node)
@@ -631,7 +644,7 @@ void MosaicLoader::processTileColors(xml_node & node)
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
         string str = n.name();
-        qDebug() << str.c_str();
+        if (_debug) qDebug().noquote() << str.c_str();
 
         if (str == "toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf);
@@ -649,7 +662,7 @@ void MosaicLoader::processTileColors(xml_node & node)
             fail("Unexpected", str.c_str());
     }
 
-    qDebug() << "Constructing TileColors from prototype and poly";
+    if (_debug) qDebug() << "Constructing TileColors from prototype and poly";
     TileColors * tc  = new TileColors(proto);
     tc->setCanvasXform(xf);
     if (outline)
@@ -657,11 +670,11 @@ void MosaicLoader::processTileColors(xml_node & node)
         tc->setOutline(true,color,width);
     }
 
-    qDebug().noquote() << "XmlServices created Style(TileColors)" << tc->getInfo();
+    if (_debug) qDebug().noquote() << "XmlServices created Style(TileColors)" << tc->getInfo();
 
     _mosaic->addStyle(StylePtr(tc));
 
-    qDebug() << "end emboss";
+    if (_debug) qDebug() << "end emboss";
 }
 
 void MosaicLoader::procesToolkitGeoLayer(xml_node & node, Xform & xf)
@@ -726,11 +739,11 @@ void MosaicLoader::procesToolkitGeoLayer(xml_node & node, Xform & xf)
 void MosaicLoader::processStyleStyle(xml_node & node, PrototypePtr & proto)
 {
     xml_node n = node.child("prototype");
-    qDebug() << n.name();
+    if (_debug) qDebug().noquote() << n.name();
     view->dump(true);
     proto = getPrototype(n);
     view->dump(true);
-    qDebug().noquote() << proto->getInfo();
+    if (_debug) qDebug().noquote() << proto->getInfo();
 }
 
 #if 0
@@ -825,7 +838,7 @@ void MosaicLoader::processsStyleInterlace(xml_node & node, qreal & gap, qreal & 
     includeTipVerts = (str == "true");
 }
 
-void MosaicLoader::processsStyleFilled(xml_node & node, bool & draw_inside, bool & draw_outside, int & algorithm)
+void MosaicLoader::processsStyleFilled(xml_node & node, bool & draw_inside, bool & draw_outside, int & algorithm, int & cleanseLevel)
 {
     QString str;
     str = node.child_value("draw__inside");
@@ -839,6 +852,13 @@ void MosaicLoader::processsStyleFilled(xml_node & node, bool & draw_inside, bool
     {
         QString algo = n.child_value();
         algorithm = algo.toInt();
+    }
+
+    n = node.child("cleanse");
+    if (n)
+    {
+        QString cl = n.child_value();
+        cleanseLevel = cl.toInt();
     }
 }
 
@@ -887,22 +907,22 @@ QPointF MosaicLoader::getPos(xml_node & node)
 
 PrototypePtr MosaicLoader::getPrototype(xml_node & node)
 {
-    qDebug() << node.name();
+    if (_debug) qDebug().noquote() << node.name();
     if (hasReference(node))
     {
         return getProtoReferencedPtr(node);
     }
 
     xml_node protonode = node.child("app.Prototype");
-    qDebug() << protonode.name();
+    if (_debug) qDebug().noquote() << protonode.name();
 
     QString tilingName = protonode.child_value("string");
-    qDebug() << "string=" << tilingName;
+    qDebug().noquote() << "Tiling Name:" << tilingName;
 
     TilingPtr tp = findTiling(tilingName);
     if (!tp)
     {
-        qDebug() << "loading named tiling" << tilingName;
+        qDebug().noquote() << "loading named tiling" << tilingName;
         TilingManager tm;
         tp = tm.loadTiling(tilingName,SM_LOAD_FROM_MOSAIC);
         if (!tp)
@@ -913,7 +933,7 @@ PrototypePtr MosaicLoader::getPrototype(xml_node & node)
     }
     //qDebug().noquote() << tp->dump();
 
-    qDebug() << "Creating new prototype";
+    if (_debug) qDebug() << "Creating new prototype";
 
     PrototypePtr proto = make_shared<Prototype>(tp);
     setProtoReference(node,proto);
@@ -936,7 +956,7 @@ PrototypePtr MosaicLoader::getPrototype(xml_node & node)
         qDebug() << name;
         if ( name == "tile.Feature")
         {
-            qDebug() << "adding Feature";
+            if (_debug) qDebug() << "adding Feature";
             feature = getFeature(xmlfeature);
         }
         else
@@ -946,82 +966,82 @@ PrototypePtr MosaicLoader::getPrototype(xml_node & node)
 
         xml_node xmlfigure  = xmlfeature.next_sibling();
         name = xmlfigure.name();
-        qDebug() << name;
+        if (_debug) qDebug().noquote() << name;
         if (name == "app.ExplicitFigure")
         {
-            qDebug() << "adding ExplicitFigure";
+            if (_debug) qDebug() << "adding ExplicitFigure";
             figure = getExplicitFigure(xmlfigure, FIG_TYPE_EXPLICIT);
             found = true;
         }
         else if (name == "app.Star")
         {
-            qDebug() << "adding Star Figure";
+            if (_debug) qDebug() << "adding Star Figure";
             figure =  getStarFigure(xmlfigure);
             found = true;
         }
         else if (name == "ExtendedStar")
         {
-            qDebug() << "adding ExtendedStar Figure";
+            if (_debug) qDebug() << "adding ExtendedStar Figure";
             figure =  getExtendedStarFigure(xmlfigure);
             found = true;
         }
         else if (name == "app.Rosette")
         {
-            qDebug() << "adding Rosette Figure";
+            if (_debug) qDebug() << "adding Rosette Figure";
             figure =  getRosetteFigure(xmlfigure);
             found = true;
         }
         else if (name == "ExtendedRosette")
         {
-            qDebug() << "adding ExtendedRosette Figure";
+            if (_debug) qDebug() << "adding ExtendedRosette Figure";
             figure =  getExtendedRosetteFigure(xmlfigure);
             found = true;
         }
         else if (name == "app.ConnectFigure")
         {
-            qDebug() << "adding Connect Figure";
+            if (_debug) qDebug() << "adding Connect Figure";
             figure =  getConnectFigure(xmlfigure);
             found = true;
         }
         else if (name == "app.Infer")
         {
-            qDebug() << "adding Infer";
+            if (_debug) qDebug() << "adding Infer";
             figure = getExplicitFigure(xmlfigure,FIG_TYPE_EXPLICIT_INFER);
             found = true;
         }
         else if (name == "app.ExplicitFeature")
         {
-            qDebug() << "adding Explicit Feature";
+            if (_debug) qDebug() << "adding Explicit Feature";
             figure = getExplicitFigure(xmlfigure,FIG_TYPE_EXPLICIT_FEATURE);
             found = true;
         }
         else if (name == "app.ExplicitGirih")
         {
-            qDebug() << "adding ExplicitGirih";
+            if (_debug) qDebug() << "adding ExplicitGirih";
             figure = getExplicitFigure(xmlfigure,FIG_TYPE_EXPLICIT_GIRIH);
             found = true;
         }
         else if (name == "app.ExplicitStar")
         {
-            qDebug() << "adding ExplicitStar";
+            if (_debug) qDebug() << "adding ExplicitStar";
             figure = getExplicitFigure(xmlfigure,FIG_TYPE_EXPLICIT_STAR);
             found = true;
         }
         else if (name == "app.ExplicitRosette")
         {
-            qDebug() << "adding ExplicitRosette";
+            if (_debug) qDebug() << "adding ExplicitRosette";
             figure = getExplicitFigure(xmlfigure,FIG_TYPE_EXPLICIT_ROSETTE);
             found = true;
         }
         else if (name == "app.ExplicitHourglass")
         {
-            qDebug() << "adding ExplicitHourglass";
+            if (_debug) qDebug() << "adding ExplicitHourglass";
             figure = getExplicitFigure(xmlfigure,FIG_TYPE_EXPLICIT_HOURGLASS);
             found = true;
         }
         else if (name == "app.ExplicitIntersect")
         {
-            qDebug() << "adding ExplicitIntersect";
+            if (_debug) qDebug() << "adding ExplicitIntersect";
             figure = getExplicitFigure(xmlfigure,FIG_TYPE_EXPLICIT_INTERSECT);
             found = true;
         }
@@ -1047,10 +1067,10 @@ PrototypePtr MosaicLoader::getPrototype(xml_node & node)
                 {
                     usedFeatures.push_back(tilingFeature);
                     feature = tilingFeature;
-                    qDebug() << "adding to Proto" << figure->getFigureDesc();
+                    if (_debug) qDebug().noquote() << "adding to Proto" << figure->getFigureDesc();
                     DesignElementPtr  dep = make_shared<DesignElement>(feature, figure);
                     proto->addElement(dep);
-                    qDebug() << "design element:" << dep->toString();
+                    if (_debug) qDebug().noquote() << "design element:" << dep->toString();
                     found2 = true;
                     break;
                 }
@@ -1075,8 +1095,11 @@ PrototypePtr MosaicLoader::getPrototype(xml_node & node)
     // create explicit maps
     for (auto del : designElements)
     {
-        FigurePtr figp = del->getFigure();
-        FeaturePtr featp = del->getFeature();
+        FigurePtr   figp  = del->getFigure();
+        FeaturePtr  featp = del->getFeature();
+        ExplicitPtr ep    = std::dynamic_pointer_cast<ExplicitFigure>(figp);
+        MapPtr      map;
+
         switch (figp->getFigType())
         {
         case FIG_TYPE_UNDEFINED:
@@ -1096,36 +1119,31 @@ PrototypePtr MosaicLoader::getPrototype(xml_node & node)
 
         case FIG_TYPE_EXPLICIT_INFER:
         {
-            ExplicitPtr ep = std::dynamic_pointer_cast<ExplicitFigure>(figp);
             InferPtr inf = make_shared<Infer>(proto);
-            MapPtr map =  inf->infer(featp);
+            map =  inf->infer(featp);
             ep->setExplicitMap(map);
             break;
         }
 
         case FIG_TYPE_EXPLICIT_ROSETTE:
         {
-            ExplicitPtr ep = std::dynamic_pointer_cast<ExplicitFigure>(figp);
             InferPtr inf = make_shared<Infer>(proto);
-            MapPtr map =  inf->inferRosette(featp, ep->q, ep->s, ep->r_flexPt);
+            map =  inf->inferRosette(featp, ep->q, ep->s, ep->r_flexPt);
             ep->setExplicitMap(map);
             break;
         }
 
         case FIG_TYPE_EXPLICIT_HOURGLASS:
         {
-            ExplicitPtr ep = std::dynamic_pointer_cast<ExplicitFigure>(figp);
             InferPtr inf = make_shared<Infer>(proto);
-            MapPtr map =  inf->inferHourglass(featp, ep->d, ep->s);
+            map =  inf->inferHourglass(featp, ep->d, ep->s);
             ep->setExplicitMap(map);
             break;
         }
 
         case FIG_TYPE_EXPLICIT_INTERSECT:
         {
-            ExplicitPtr ep = std::dynamic_pointer_cast<ExplicitFigure>(figp);
             InferPtr inf = make_shared<Infer>(proto);
-            MapPtr map;
             if (ep->progressive)
                 map =  inf->inferIntersectProgressive(featp, ep->getN(), ep->skip,ep->s);
             else
@@ -1136,32 +1154,39 @@ PrototypePtr MosaicLoader::getPrototype(xml_node & node)
 
         case FIG_TYPE_EXPLICIT_STAR:
         {
-            ExplicitPtr ep = std::dynamic_pointer_cast<ExplicitFigure>(figp);
             InferPtr inf = make_shared<Infer>(proto);
-            MapPtr map =  inf->inferStar(featp, ep->d, ep->s);
+            map =  inf->inferStar(featp, ep->d, ep->s);
             ep->setExplicitMap(map);
             break;
         }
+
         case FIG_TYPE_EXPLICIT_FEATURE:
         {
-            ExplicitPtr ep = std::dynamic_pointer_cast<ExplicitFigure>(figp);
             InferPtr inf = make_shared<Infer>(proto);
-            MapPtr map =  inf->inferFeature(featp);
+            map =  inf->inferFeature(featp);
             ep->setExplicitMap(map);
             break;
         }
 
         case FIG_TYPE_EXPLICIT_GIRIH:
         {
-            ExplicitPtr ep = std::dynamic_pointer_cast<ExplicitFigure>(figp);
             InferPtr inf = make_shared<Infer>(proto);
-            MapPtr map =  inf->inferGirih(featp, ep->getN(), ep->skip);
+            map =  inf->inferGirih(featp, ep->getN(), ep->skip);
             ep->setExplicitMap(map);
         }
         }
+
+        if (map)
+        {
+            map->sortVertices();
+            map->sortEdges();
+            map->buildNeighbours();
+            map->verifyMap("Explicit map",true);
+        }
     }
 
-    qDebug() << "Proto created";
+    if (_debug) qDebug() << "Proto created";
+
 
     return proto;
 }
@@ -1259,7 +1284,7 @@ ExplicitPtr MosaicLoader::getExplicitFigure(xml_node & node, eFigType figType)
         return ep;
     }
 
-    qDebug() << "getExplicitFigure";
+    if (_debug) qDebug() << "getExplicitFigure";
 
     ep = make_shared<ExplicitFigure>(_currentMap,figType,10);
 
@@ -1379,7 +1404,7 @@ StarPtr MosaicLoader::getStarFigure(xml_node & node)
         return f;
     }
 
-    qDebug() << "getStarFigure";
+    if (_debug) qDebug() << "getStarFigure";
 
     _currentMap = getMap(node);
 
@@ -1414,7 +1439,7 @@ ExtStarPtr  MosaicLoader::getExtendedStarFigure(xml_node & node)
         return f;
     }
 
-    qDebug() << "getExtendedStarFigure";
+    if (_debug) qDebug() << "getExtendedStarFigure";
 
     _currentMap = getMap(node);
 
@@ -1503,7 +1528,7 @@ ExtRosettePtr  MosaicLoader::getExtendedRosetteFigure(xml_node & node)
         return f;
     }
 
-    qDebug() << "getExtendedRosetteFigure";
+    if (_debug) qDebug() << "getExtendedRosetteFigure";
 
     _currentMap = getMap(node);
 
@@ -1567,7 +1592,7 @@ FigurePtr MosaicLoader::getConnectFigure(xml_node & node)
     if (child)
     {
         xml_attribute class1 = child.attribute("class");
-        qDebug() << class1.value();
+        //qDebug() << class1.value();
         if (QString(class1.value()) == "app.Rosette")
         {
             fp = getRosetteConnectFigure(node);
@@ -1600,8 +1625,10 @@ RosetteConnectPtr MosaicLoader::getRosetteConnectFigure(xml_node & node)
     str = node.child_value("n");
     int n = str.toInt();
 
+#if 0
     str = node.child_value("s");
     qreal s = str.toDouble();
+#endif
 
     RosetteConnectPtr rcp;
     RosettePtr rp;
@@ -1609,13 +1636,13 @@ RosetteConnectPtr MosaicLoader::getRosetteConnectFigure(xml_node & node)
     if (child)
     {
         xml_attribute class1 = child.attribute("class");
-        qDebug() << class1.value();
+        //qDebug() << class1.value();
         if (QString(class1.value()) == "app.Rosette")
         {
             rp = getRosetteFigure(child);
             Q_ASSERT(rp->getN() == n);
             //Q_ASSERT(r->getS() == s);
-            qDebug() << "connect s:" <<  rp->getS() << s;
+            //qDebug() << "connect s:" <<  rp->getS() << s;
         }
         else
         {
@@ -1627,7 +1654,7 @@ RosetteConnectPtr MosaicLoader::getRosetteConnectFigure(xml_node & node)
                                                 rp->getK(),
                                                 rp->getFigureRotate());
         setRosetteConnectReference(node,rcp);
-        qDebug() << rcp->getFigureDesc();
+        //qDebug() << rcp->getFigureDesc();
     }
     else
     {
@@ -1648,8 +1675,10 @@ StarConnectPtr MosaicLoader::getStarConnectFigure(xml_node & node)
     str = node.child_value("n");
     int n = str.toInt();
 
+#if 0
     str = node.child_value("s");
     qreal s = str.toDouble();
+#endif
 
     StarPtr sp;
     StarConnectPtr scp;
@@ -1657,13 +1686,13 @@ StarConnectPtr MosaicLoader::getStarConnectFigure(xml_node & node)
     if (child)
     {
         xml_attribute class1 = child.attribute("class");
-        qDebug() << class1.value();
+        //qDebug() << class1.value();
         if (QString(class1.value()) == "app.Star")
         {
             sp = getStarFigure(child);
             Q_ASSERT(sp->getN() == n);
             //Q_ASSERT(r->getS() == s);
-            qDebug() << "connect s:" <<  sp->getS() << s;
+            //qDebug() << "connect s:" <<  sp->getS() << s;
         }
         else
         {
@@ -1674,7 +1703,7 @@ StarConnectPtr MosaicLoader::getStarConnectFigure(xml_node & node)
                                              sp->getS(),
                                              sp->getFigureRotate());
         setStarConnectReference(node,scp);
-        qDebug() << scp->getFigureDesc();
+        //qDebug() << scp->getFigureDesc();
     }
     else
     {
@@ -1706,7 +1735,6 @@ MapPtr MosaicLoader::getMap(xml_node &node)
     for (xml_node vertex = vertices.child("Vertex"); vertex; vertex = vertex.next_sibling("Vertex"))
     {
         VertexPtr v = getVertex(vertex);
-        _currentMap->vertices.push_back(v);
     }
 
     if (_version < 5)
@@ -1729,41 +1757,25 @@ MapPtr MosaicLoader::getMap(xml_node &node)
             if (name == "Edge")
             {
                 EdgePtr ep = getEdge(e);
-                _currentMap->edges.push_back(ep);
+                _currentMap->insertEdge(ep);
             }
             else if (name == "curve")
             {
                 EdgePtr ep = getCurve(e);
-                _currentMap->edges.push_back(ep);
+                _currentMap->insertEdge(ep);
             }
-        }
-
-        // Neighbours
-        NeighbourMap & nmap = _currentMap->getNeighbourMap();
-        QMap<VertexPtr,NeighboursPtr> & qnmap = nmap.get();
-        xml_node neighbours = xmlmap.child("neighbours");
-        for (xml_node set = neighbours.child("neighbourset"); set; set = set.next_sibling("neighbourset"))
-        {
-            VertexPtr v = getVertexReferencedPtr(set);
-            NeighboursPtr n = make_shared<Neighbours>(v);
-            QString nbs = set.child_value();
-            QStringList nbslst = nbs.split(",");
-            for (const auto & str : nbslst)
-            {
-                int id = str.toInt();
-                EdgePtr e = EdgePtr(edge_ids[id]);
-                Q_ASSERT(e);
-                n->insertEdgeSimple(e);
-            }
-            qnmap[v] = n;
         }
     }
 
-    MapCleanser cleanser(_currentMap);
-    if (!cleanser.verifyMap("XML Loader"))
+    _currentMap->sortEdges();
+    _currentMap->sortVertices();
+    _currentMap->buildNeighbours();
+
+    if (!_currentMap->verifyMap("XML Loader"))
     {
-        cleanser.cleanse();
-        if (!cleanser.verifyMap("XML Loader - cleanse"))
+        MapCleanser cleanser(_currentMap);
+        cleanser.cleanse(default_cleanse);
+        if (!_currentMap->verifyMap("XML Loader - cleanse"))
         {
             QMessageBox box;
             box.setIcon(QMessageBox::Warning);
@@ -1804,17 +1816,14 @@ VertexPtr MosaicLoader::getVertex(xml_node & node)
     VertexPtr v = make_shared<Vertex>(pt);
     setVertexReference(node,v);
 
+     _currentMap->vertices.push_back(v);
+
     if (_version >= 5)
     {
         return v;
     }
 
     // the old way
-    NeighbourMap & nmap = _currentMap->getNeighbourMap();
-    nmap.insertVertex(v);
-
-    NeighboursPtr np = nmap.getNeighbours(v);
-
     // edges = neighbour
     xml_node edges2 = node.child("edges2");
     if (edges2)
@@ -1823,23 +1832,22 @@ VertexPtr MosaicLoader::getVertex(xml_node & node)
         for (e = edges2.first_child(); e; e= e.next_sibling())
         {
             QString name = e.name();
+            EdgePtr ep;
             if (name == "edge")
             {
-                EdgePtr ep = getEdge(e);
-                np->insertEdgeSimple(ep);
+                ep = getEdge(e);
             }
             else if (name == "curve")
             {
-                EdgePtr ep = getCurve(e);
-                np->insertEdgeSimple(ep);
+                ep = getCurve(e);
             }
+            _currentMap->edges.push_back(ep);
         }
     }
     else
     {
         qWarning("edges2 not found");
     }
-
 
     return v;
 }
@@ -1878,7 +1886,7 @@ EdgePtr MosaicLoader::getEdge(xml_node & node)
 #endif
     edge->setV1(v1);
     edge->setV2(v2);
-    qDebug() << "Edge:" << edge.get() << "added" << v1->getPosition() << v2->getPosition();
+    if (_debug) qDebug().noquote() << "Edge:" << edge.get() << "added" << v1->pt << v2->pt;
 
     return edge;
 }

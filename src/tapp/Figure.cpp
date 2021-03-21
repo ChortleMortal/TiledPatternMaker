@@ -180,10 +180,11 @@ void Figure::annotateEdges()
         return;
     }
 
-    for (auto edge : figureMap->getEdges())
+    int i=0;
+    for (auto edge : figureMap->edges)
     {
         QPointF p = edge->getMidPoint();
-        debugMap->insertDebugMark(p, QString::number(edge->getTmpEdgeIndex()));
+        debugMap->insertDebugMark(p, QString::number(i++));
     }
     //debugMap->dumpMap(false);
 }

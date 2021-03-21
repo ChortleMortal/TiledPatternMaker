@@ -71,6 +71,7 @@ public:
     ~Tiling();
 
     bool        isEmpty();
+    bool        hasOverlaps();
 
     QString     getName()        const { return name; }
     QString     getDescription() const { return desc; }

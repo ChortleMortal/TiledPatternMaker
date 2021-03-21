@@ -82,6 +82,8 @@ public:
 
     void        clearMakerData();
     void        updateTilingPlacedFeatures();
+    void        updateVectors();
+    void        updateReps();
 
     TilingSelectorPtr getCurrentSelection() { return featureSelector; }
 
@@ -94,7 +96,6 @@ public:
     int        getPolygonSides() { return poly_side_count; }
 
     // Mouse interaction underway..
-    void       updateVisibleVectors();
     void       drawMouseInteraction(GeoGraphics * g2d);
 
     // Feature management.
@@ -159,7 +160,9 @@ protected:
     void addInTiling(PlacedFeaturePtr pf);
     void removeFromInTiling(PlacedFeaturePtr pf);
 
+    void updateVisibleVectors();
     void createFillCopies();
+    void refillUsingTranslations();
 
     bool isTranslationInvalid();
 
@@ -223,6 +226,7 @@ private:
     class View                * view;
     class MotifMaker          * motifMaker;
     class DecorationMaker     * decorationMaker;
+    class MapEditor           * me;
 };
 
 #endif

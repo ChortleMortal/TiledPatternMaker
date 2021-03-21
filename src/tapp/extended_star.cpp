@@ -107,15 +107,16 @@ void ExtendedStar::extendPeripheralMap()
     // extendLine and clipLine both assume that p1 is closest to the center
     // and p0 is closest to the edge
 
-    QVector<EdgePtr> ledges = figureMap->getEdges();    // local copy of vector
+    QVector<EdgePtr> ledges = figureMap->edges;    // local copy of vector
     for (auto edge : ledges)
     {
-        VertexPtr v1 = edge->getV1();   // outer
-        VertexPtr v2 = edge->getV2();   // inner
-        QLineF l1 = QLineF(v2->getPosition(),v1->getPosition());
+        VertexPtr v1 = edge->v1;   // outer
+        VertexPtr v2 = edge->v2;   // inner
+        QLineF l1 = QLineF(v2->pt,v1->pt);
 
         bool extend = false;
-        if (!Point::intersectPoly(l1,getRadialFigBoundary()))
+        QPointF intersect;
+        if (!Point::intersectPoly(l1,getRadialFigBoundary(),intersect))
         {
             // point doesn't touch the figure boundary
             if (extendFreeVertices)
@@ -137,7 +138,7 @@ void ExtendedStar::extendPeripheralMap()
             if (!hasExtCircleBoundary())
             {
                 // dont extend lines which already touch boundary
-                if (!Point::intersectPoly(l1,getExtBoundary()))
+                if (!Point::intersectPoly(l1,getExtBoundary(),intersect))
                 {
                     // extend lines
                     QLineF l2 = Point::extendLine(l1,10.0);      // extends
@@ -145,7 +146,7 @@ void ExtendedStar::extendPeripheralMap()
                     // insert Vertex and Insert edge
                     VertexPtr newv = figureMap->insertVertex(l2.p2()); // outer
                     figureMap->insertEdge(newv,v1);
-                    //qDebug() << "extension" << newv->getPosition() << v1->getPosition();
+                    //qDebug() << "extension" << newv->pt << v1->pt;
                     //figureMap->verify("Extended figure - mid",true,true,false);
                 }
             }
@@ -172,16 +173,15 @@ void ExtendedStar::extendPeripheralMap()
         }
     }
 
-    MapCleanser cleanser(figureMap);
-    cleanser.verifyMap("Extended figure - after");
+    figureMap->verifyMap("Extended figure - after");
 }
 
 VertexPtr ExtendedStar::findVertex(QPointF pt)
 {
-    const QVector<VertexPtr> & vertices = figureMap->getVertices();
+    const QVector<VertexPtr> & vertices = figureMap->vertices;
     for (auto v : vertices)
     {
-        if (v->getPosition() == pt)
+        if (v->pt == pt)
         {
             return v;
         }

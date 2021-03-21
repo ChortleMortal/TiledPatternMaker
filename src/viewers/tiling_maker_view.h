@@ -41,6 +41,7 @@
 #include "tile/placed_feature.h"
 #include "base/layer.h"
 #include "base/configuration.h"
+#include "base/misc.h"
 
 class TilingMakerView : public Layer
 {
@@ -112,8 +113,8 @@ protected:
     bool                        _hideTiling;
     bool                        _snapToGrid;
 
-    QVector<PlacedFeaturePtr>   overlapping;  // calculated DAC was hash
-    QVector<PlacedFeaturePtr>   touching;     // calculated
+    UniqueQVector<PlacedFeaturePtr>   overlapping;  // calculated DAC was hash
+    UniqueQVector<PlacedFeaturePtr>   touching;     // calculated
 
     TilingSelectorPtr           featureSelector;        // Current mouse selection.
     PlacedFeaturePtr            currentPlacedFeature;   // current menu row selection too

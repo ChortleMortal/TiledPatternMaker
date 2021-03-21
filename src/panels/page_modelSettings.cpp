@@ -42,8 +42,6 @@ using std::string;
 page_modelSettings::page_modelSettings(ControlPanel * apanel)  : panel_page(apanel,"Model Settings")
 {
     QPushButton  *pbRefresh       = new QPushButton("Refresh");
-    QPushButton  *pbMatchDesign   = new QPushButton("Match Design to View");
-    QPushButton  *pbMatchTiling   = new QPushButton("Match Tiling to View");
     QCheckBox    * chkShowBkgds   = new QCheckBox("Show Backgrounds");
     QCheckBox    * chkShowBorders = new QCheckBox("Show Borders");
     chkShowBkgds->setChecked(config->cs_showBkgds);
@@ -51,8 +49,6 @@ page_modelSettings::page_modelSettings(ControlPanel * apanel)  : panel_page(apan
 
     QHBoxLayout * sourcebox = new QHBoxLayout();
     sourcebox->addStretch();
-    sourcebox->addWidget(pbMatchDesign);
-    sourcebox->addWidget(pbMatchTiling);
     sourcebox->addWidget(pbRefresh);
     sourcebox->addStretch();
     sourcebox->addWidget(chkShowBkgds);
@@ -121,8 +117,6 @@ page_modelSettings::page_modelSettings(ControlPanel * apanel)  : panel_page(apan
 
     // connections
     connect(pbRefresh,        &QPushButton::clicked,            this,   &page_modelSettings::display);
-    connect(pbMatchDesign,    &QPushButton::clicked,            this,   &page_modelSettings::slot_matchDesign);
-    connect(pbMatchTiling,    &QPushButton::clicked,            this,   &page_modelSettings::slot_matchTiling);
     connect(chkShowBkgds,     &QCheckBox::clicked,              this,   &page_modelSettings::slot_showBkgdsChanged);
     connect(chkShowBorders,   &QCheckBox::clicked,              this,   &page_modelSettings::slot_showBordersChanged);
 
@@ -266,13 +260,11 @@ QGroupBox * page_modelSettings::createBackgroundImageGroup(eSettingsGroup group,
     sbox->setLayout(svlayout);
 
     QHBoxLayout * hbox    = new QHBoxLayout;
-    bkgdImageBtn[group]   = new QPushButton("Select");
+    bkgdImageBtn[group]   = new QPushButton("Load Background");
     bkgdImage[group]      = new QLineEdit();
-    chk_showBkgd[group]   = new QCheckBox("Show");
-    chk_adjustBkgd[group] = new QCheckBox("Perspective");
+    chk_adjustBkgd[group] = new QCheckBox("Use Perspective");
     hbox->addWidget(bkgdImage[group]);
     hbox->addWidget(bkgdImageBtn[group]);
-    hbox->addWidget(chk_showBkgd[group]);
     hbox->addWidget(chk_adjustBkgd[group]);
     //hbox->addStretch();
     svlayout->addLayout(hbox);
@@ -284,7 +276,6 @@ QGroupBox * page_modelSettings::createBackgroundImageGroup(eSettingsGroup group,
     {
         connect(bkgdImageBtn[group],  &QPushButton::clicked,            this,    &page_modelSettings::slot_loadMosaicBackground);
         connect(bkgdLayout[group],    &LayoutTransform::xformChanged,   this,    &page_modelSettings::slot_setBkgdMosaicXform);
-        connect(chk_showBkgd[group],  &QAbstractButton::clicked,        this,    &page_modelSettings::slot_setBkgdMosaic);
         connect(chk_adjustBkgd[group],&QAbstractButton::clicked,        this,    &page_modelSettings::slot_setBkgdMosaic);
     }
 
@@ -292,17 +283,8 @@ QGroupBox * page_modelSettings::createBackgroundImageGroup(eSettingsGroup group,
     {
         connect(bkgdImageBtn[group],  &QPushButton::clicked,            this,    &page_modelSettings::slot_loadTilingBackground);
         connect(bkgdLayout[group],    &LayoutTransform::xformChanged,   this,    &page_modelSettings::slot_setBkgdTilingXform);
-        connect(chk_showBkgd[group],  &QAbstractButton::clicked,        this,    &page_modelSettings::slot_setBkgdTiling);
         connect(chk_adjustBkgd[group],&QAbstractButton::clicked,        this,    &page_modelSettings::slot_setBkgdTiling);
     }
-
-    hbox = new QHBoxLayout;
-    QPushButton * adjustBtn       = new QPushButton("Adjust perspective");
-    QPushButton * saveAdjustedBtn = new QPushButton("Save Adjusted");
-    hbox->addWidget(adjustBtn);
-    hbox->addStretch();
-    hbox->addWidget(saveAdjustedBtn);
-    svlayout->addLayout(hbox);
 
     return sbox;
 }
@@ -314,10 +296,10 @@ QGridLayout * page_modelSettings::createFillDataRow(eSettingsGroup group)
     const int rmin = -99;
     const int rmax =  99;
 
-    xRepMin[group] = new QSpinBox();
-    xRepMax[group] = new QSpinBox();
-    yRepMin[group] = new QSpinBox();
-    yRepMax[group] = new QSpinBox();
+    xRepMin[group] = new AQSpinBox();
+    xRepMax[group] = new AQSpinBox();
+    yRepMin[group] = new AQSpinBox();
+    yRepMax[group] = new AQSpinBox();
 
     xRepMin[group]->setRange(rmin,rmax);
     xRepMax[group]->setRange(rmin,rmax);
@@ -413,11 +395,11 @@ QGroupBox *page_modelSettings::createDesignBorderBox()
 void  page_modelSettings::refreshPage()
 {
     // frame settings
-    viewBox->setTitle(QString("FrameSize : %1").arg(sViewerType[config->viewerType]));
-    QSize isz = view->getActiveFrameSize(config->viewerType);
+    viewBox->setTitle(QString("FrameSize : %1").arg(sViewerType[config->getViewerType()]));
+    QSize isz = view->getActiveFrameSize(config->getViewerType());
     sizeW2->setValue(isz.width());
     sizeH2->setValue(isz.height());
-    frameXform->setText(Transform::toInfoString(view->getDefinedFrameTransform(config->viewerType)));
+    frameXform->setText(Transform::toInfoString(view->getDefinedFrameTransform(config->getViewerType())));
 
     // View Status
     // sizeW
@@ -499,39 +481,40 @@ void page_modelSettings::display()
     blockPage(true);
 
     // mosaic/design settings;
-    ModelSettingsPtr settings = getMosaicOrDesignSettings();
+    ModelSettingsPtr mosaicSettings = getMosaicOrDesignSettings();
+
     // size
-    QSizeF sz = settings->getSize();
+    QSizeF sz = mosaicSettings->getSize();
     sizeW[DESIGN_SETTINGS]->setValue(sz.width());
     sizeH[DESIGN_SETTINGS]->setValue(sz.height());
 
     // background color
-    QColor qc = settings->getBackgroundColor();
+    QColor qc = mosaicSettings->getBackgroundColor();
     bkColorEdit[DESIGN_SETTINGS]->setText(qc.name(QColor::HexArgb));
     QVariant variant = qc;
     QString colcode  = variant.toString();
     bkgdColorPatch[DESIGN_SETTINGS]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
 
     // start tile
-    QPointF  pt = settings->getStartTile();
+    QPointF  pt = mosaicSettings->getStartTile();
     startEditX[DESIGN_SETTINGS]->setValue(pt.x());
     startEditY[DESIGN_SETTINGS]->setValue(pt.y());
 
     int xMin,xMax,yMin,yMax;
-    settings->getFillData().get(xMin ,xMax,yMin,yMax);
+    mosaicSettings->getFillData().get(xMin ,xMax,yMin,yMax);
     xRepMin[DESIGN_SETTINGS]->setValue(xMin);
     xRepMax[DESIGN_SETTINGS]->setValue(xMax);
     yRepMin[DESIGN_SETTINGS]->setValue(yMin);
     yRepMax[DESIGN_SETTINGS]->setValue(yMax);
 
     // frame settings
-    QSize isz = view->getDefinedFrameSize(config->viewerType);
+    QSize isz = view->getDefinedFrameSize(config->getViewerType());
     sizeW[FRAME_SETTINGS]->setValue(isz.width());
     sizeH[FRAME_SETTINGS]->setValue(isz.height());
-    isz = view->getActiveFrameSize(config->viewerType);
+    isz = view->getActiveFrameSize(config->getViewerType());
     sizeW2->setValue(isz.width());
     sizeH2->setValue(isz.height());
-    frameXform->setText(Transform::toInfoString(view->getDefinedFrameTransform(config->viewerType)));
+    frameXform->setText(Transform::toInfoString(view->getDefinedFrameTransform(config->getViewerType())));
 
     // tiling settings
     TilingPtr tiling = tilingMaker->getSelected();
@@ -554,11 +537,17 @@ void page_modelSettings::display()
 
     if (config->cs_showBkgds)
     {
-        displayBkgdImgSettings(settings->getBkgdImage(),DESIGN_SETTINGS);
+        BkgdImgPtr p1 = mosaicSettings->getBkgdImage();
+        BkgdImgPtr p2;
+        displayBkgdImgSettings(p1,DESIGN_SETTINGS);
+
         if (tiling)
         {
-            displayBkgdImgSettings(tiling->getBackground(),TILING_SETTINGS);
+            p2 = tiling->getBackground();
+            displayBkgdImgSettings(p2,TILING_SETTINGS);
         }
+        qDebug() << "Mosaic settings" << p1.get() << "Tiling settings" << p2.get();
+
         mosaicBkgdBox->show();
         tilingBkgdBox->show();
     }
@@ -571,7 +560,7 @@ void page_modelSettings::display()
     if (config->cs_showBorders)
     {
         // border
-        BorderPtr bp = settings->getBorder();
+        BorderPtr bp = mosaicSettings->getBorder();
         displayBorder(bp);
         borderBox->show();
     }
@@ -610,7 +599,7 @@ void page_modelSettings::frameSizeChanged(int)
 
     QSize sz = QSize(sizeW[FRAME_SETTINGS]->value(),sizeH[FRAME_SETTINGS]->value());
 
-    view->setDefinedFrameSize(config->viewerType,sz);
+    view->setDefinedFrameSize(config->getViewerType(),sz);
 
     emit sig_refreshView();
 }
@@ -621,17 +610,17 @@ void page_modelSettings::viewSizeChanged(int)
 
     QSize sz = QSize(sizeW[VIEW_STATUS]->value(),sizeH[VIEW_STATUS]->value());
 
-    view->setActiveFrameSize(config->viewerType,sz);
+    view->setActiveFrameSize(config->getViewerType(),sz);
     if (config->scaleToView)
     {
-        view->setDefinedFrameSize(config->viewerType,sz);
+        view->setDefinedFrameSize(config->getViewerType(),sz);
     }
     emit sig_refreshView();
 }
 
 ModelSettingsPtr page_modelSettings::getMosaicOrDesignSettings()
 {
-    if (config->viewerType == VIEW_DESIGN)
+    if (config->getViewerType() == VIEW_DESIGN)
     {
         DesignMaker * designMaker = DesignMaker::getInstance();
         QVector<DesignPtr> & designs = designMaker->getDesigns();
@@ -650,37 +639,6 @@ ModelSettingsPtr page_modelSettings::getMosaicOrDesignSettings()
     {
         return decorationMaker->getMosaicSettings();
     }
-}
-
-// match design to view
-void page_modelSettings::slot_matchDesign()
-{
-    QSize size = view->size();
-    ModelSettingsPtr settings = getMosaicOrDesignSettings();
-    settings->setSize(size);
-
-    view->setAllMosaicActiveSizes(size);
-    if  (config->scaleToView)
-    {
-        view->setAllMosaicDefinedSizes(size);
-    }
-    emit sig_refreshView();
-}
-
-
-void page_modelSettings::slot_matchTiling()
-{
-    QSize size = view->size();
-    TilingPtr tiling = tilingMaker->getSelected();
-    tiling->setSize(size);
-
-    view->setAllTilingActiveSizes(size);
-    if  (config->scaleToView)
-    {
-        view->setAllTilingDefinedSizes(size);
-    }
-
-    emit sig_refreshView();
 }
 
 void page_modelSettings::slot_set_repsDesign(int val)
@@ -757,8 +715,8 @@ void page_modelSettings::displayBkgdImgSettings(BkgdImgPtr bi, eSettingsGroup gr
         Xform xf = bi->getBkgdXform();
         bkgdLayout[group]->setTransform(xf);
         bkgdImage[group]->setText(bi->getName());
-        chk_showBkgd[group]->setChecked(bi->bShowBkgd);
-        chk_adjustBkgd[group]->setChecked(bi->bAdjustPerspective);
+        //chk_showBkgd[group]->setChecked(bi->bShowBkgd);
+        chk_adjustBkgd[group]->setChecked(bi->useAdjusted());
     }
     else
     {
@@ -772,18 +730,23 @@ void page_modelSettings::slot_loadMosaicBackground()
     QString filename = QFileDialog::getOpenFileName(nullptr,"Select image file",bkgdDir, "Image Files (*.png *.jpg *.bmp *.heic)");
     if (filename.isEmpty()) return;
 
-    // load
-    BkgdImgPtr bi = make_shared<BackgroundImage>();
-    if (bi)
+    bool rv = BackgroundImage::import(filename);
+    if (rv)
     {
-        if (bi->import(filename))
+        // load
+        QFileInfo info(filename);
+        QString name = info.fileName();
+        BkgdImgPtr bi = make_shared<BackgroundImage>(name);
+        if (bi->isLoaded())
         {
             ModelSettingsPtr settings = getMosaicOrDesignSettings();
             settings->setBkgdImage(bi);
 
-            bi->bkgdImageChanged(true,false);  // TODO use checkboxes
+            bi->createPixmap();
 
             display();
+
+            emit sig_refreshView();
         }
     }
 }
@@ -794,18 +757,23 @@ void page_modelSettings::slot_loadTilingBackground()
     QString filename = QFileDialog::getOpenFileName(nullptr,"Select image file",bkgdDir, "Image Files (*.png *.jpg *.bmp *.heic)");
     if (filename.isEmpty()) return;
 
-    // load
-    BkgdImgPtr bi = make_shared<BackgroundImage>();
-    if (bi)
+    bool rv = BackgroundImage::import(filename);
+    if (rv)
     {
-        if (bi->import(filename))
+        // load
+        QFileInfo info(filename);
+        QString name = info.fileName();
+        BkgdImgPtr bi = make_shared<BackgroundImage>(name);
+        if (bi->isLoaded())
         {
             TilingPtr tp = tilingMaker->getSelected();
             tp->setBackground(bi);
 
-            bi->bkgdImageChanged(true,false);  // TODO use checkboxes
+            bi->createPixmap();
 
             display();
+
+            emit sig_refreshView();
         }
     }
 }
@@ -820,9 +788,7 @@ void page_modelSettings::slot_setBkgdMosaic()
         Xform xf = bi->getCanvasXform();
         xf.setTransform(bkgdLayout[DESIGN_SETTINGS]->getQTransform());
         bi->updateBkgdXform(xf);
-        bi->bkgdImageChanged(chk_showBkgd[DESIGN_SETTINGS]->isChecked(),
-                             chk_adjustBkgd[DESIGN_SETTINGS]->isChecked());
-        emit sig_refreshView();
+        bi->createPixmap();
     }
 }
 
@@ -834,9 +800,7 @@ void page_modelSettings::slot_setBkgdTiling()
         Xform xf = bi->getCanvasXform();
         xf.setTransform(bkgdLayout[TILING_SETTINGS]->getQTransform());
         bi->updateBkgdXform(xf);
-        bi->bkgdImageChanged(chk_showBkgd[TILING_SETTINGS]->isChecked(),
-                             chk_adjustBkgd[TILING_SETTINGS]->isChecked());
-        emit sig_refreshView();
+        bi->createPixmap();
     }
 }
 
@@ -901,7 +865,7 @@ void page_modelSettings::slot_adjustBackground()
     displayBackgroundStatus(tiling);
     tilingMaker->setMouseMode(NO_MOUSE_MODE);
 
-    if (config->viewerType == VIEW_TILING_MAKER)
+    if (config->getViewerType() == VIEW_TILING_MAKER)
     {
         emit sig_viewWS();
     }

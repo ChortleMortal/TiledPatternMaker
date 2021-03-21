@@ -23,7 +23,6 @@
  */
 
 #include "base/configuration.h"
-#include "base/qtapplog.h"
 
 Configuration * Configuration::mpThis = nullptr;
 
@@ -58,6 +57,8 @@ Configuration::Configuration()
     lastLoadedTileName  = s.value("lastLoadedTileName","").toString();
     lastLoadedXML       = s.value("lastLoadedXML","").toString();
 
+    rootMediaDir        = s.value("rootMediaDir",getMediaRoot()).toString();
+    rootImageDir        = s.value("rootImageDir",getImageRoot()).toString();
     image0              = s.value("image0","").toString();
     image1              = s.value("image1","").toString();
     compareDir0         = s.value("compareDir0","").toString();
@@ -68,7 +69,7 @@ Configuration::Configuration()
     tileFilter          = s.value("tileFilter","").toString();
     xmlTool             = s.value("xmlTool","").toString();
 
-    badImages           = s.value("badImages","").toStringList();
+    workList            = s.value("workList","").toStringList();
 
     autoLoadStyles      = s.value("autoLoadStyles",false).toBool();
     autoLoadTiling      = s.value("autoLoadTiling",false).toBool();
@@ -84,7 +85,7 @@ Configuration::Configuration()
     logToPanel          = s.value("logToPanel",true).toBool();
     logNumberLines      = s.value("logNumberLines",true).toBool();
     logWarningsOnly     = s.value("logWarningsOnly",false).toBool();
-    logElapsedTime      = s.value("logElapsedTime",false).toBool();
+    logTime             = static_cast<eLogTimer>(s.value("logTimer",LOGT_NONE).toUInt());
     mapedStatusBox      = s.value("mapedStatusBox",false).toBool();
     mosaicFilterCheck   = s.value("designFilterCheck",false).toBool();
     tileFilterCheck     = s.value("tileFilterCheck",false).toBool();
@@ -97,16 +98,18 @@ Configuration::Configuration()
     splitScreen         = s.value("screenIsSplit",false).toBool();
     compare_transparent = s.value("compare_transparent",false).toBool();
     display_differences = s.value("compare_differences",true).toBool();
-    compare_ping_pong   = s.value("compare_ping_pong",false).toBool();
-    compare_side_by_side= s.value("compare_side_by_side",false).toBool();
-    use_badList         = s.value("use_badList",false).toBool();
-    use_badList2        = s.value("use_badList2",false).toBool();
+    use_workListForCompare  = s.value("use_workListForCompare",false).toBool();
+    use_workListForGenerate = s.value("use_workListForGenerate",false).toBool();
+    generate_workList   = s.value("generate_workList",false).toBool();
+    skipExisting        = s.value("skipExisting",false).toBool();
     showBackgroundImage = s.value("showBackgroundImage",true).toBool();
     highlightUnit       = s.value("highlightUnit",false).toBool();
     insightMode         = s.value("insightMode",false).toBool();
     cs_showBkgds        = s.value("cs_showBkgds",false).toBool();
     cs_showBorders      = s.value("cs_showBorders",false).toBool();
     cs_showFrameSettings = s.value("cs_showFrameSettings",false).toBool();
+    defaultImageRoot    = s.value("defaultImageRoot",true).toBool();
+    defaultMediaRoot    = s.value("defaultMediaRoot",true).toBool();
 
     viewerType          = static_cast<eViewType>(s.value("viewerType",VIEW_MOSAIC).toUInt());
     mapEditorMode       = static_cast<eMapEditorMode>(s.value("mapEditorMode",MAP_MODE_FIGURE).toUInt());
@@ -151,8 +154,8 @@ Configuration::Configuration()
         log->logToDisk(logToDisk);
         log->logToPanel(logToPanel);
         log->logLines(logNumberLines);
-        log->logElapsed(logElapsedTime);
         log->logWarningsOnly(logWarningsOnly);
+        log->logTimer(logTime);     // last
     }
     else
     {
@@ -160,8 +163,8 @@ Configuration::Configuration()
         log->logToDisk(true);
         log->logToPanel(false);
         log->logLines(false);
-        log->logElapsed(false);
         log->logWarningsOnly(false);
+        log->logTimer(LOGT_NONE);   // last
     }
 }
 
@@ -191,7 +194,7 @@ void Configuration::save()
     s.setValue("logToPanel",logToPanel);
     s.setValue("logWarningsOnly",logWarningsOnly);
     s.setValue("logNumberLines",logNumberLines);
-    s.setValue("logElapsedTime",logElapsedTime);
+    s.setValue("logTimer",logTime);
     s.setValue("mapedStatusBox",mapedStatusBox);
     s.setValue("autoLoadTiling",autoLoadTiling);
     s.setValue("loadReplaceTiling",loadTilingMulti);
@@ -211,10 +214,10 @@ void Configuration::save()
     s.setValue("screenIsSplit",splitScreen);
     s.setValue("compare_transparent",compare_transparent);
     s.setValue("compare_differences",display_differences);
-    s.setValue("compare_ping_pong",compare_ping_pong);
-    s.setValue("compare_side_by_side",compare_side_by_side);
-    s.setValue("use_badList",use_badList);
-    s.setValue("use_badList2",use_badList2);
+    s.setValue("use_workListForCompare",use_workListForCompare);
+    s.setValue("use_workListForGenerate",use_workListForGenerate);
+    s.setValue("skipExisting",skipExisting);
+    s.setValue("generate_workList",generate_workList);
     s.setValue("showBackgroundImage",showBackgroundImage);
     s.setValue("highlightUnit",highlightUnit);
     s.setValue("xmlTool",xmlTool);
@@ -222,8 +225,12 @@ void Configuration::save()
     s.setValue("cs_showBkgds",cs_showBkgds);
     s.setValue("cs_showBorders",cs_showBorders);
     s.setValue("cs_showFrameSettings",cs_showFrameSettings);
+    s.setValue("defaultImageRoot",defaultImageRoot);
+    s.setValue("defaultMediaRoot",defaultMediaRoot);
+    s.setValue("rootImageDir",rootImageDir);
+    s.setValue("rootMediaDir",rootMediaDir);
 
-    s.setValue("badImages",badImages);
+    s.setValue("workList",workList);
 
     s.setValue("showGrid",showGrid);
     s.setValue("gridUnits",gridUnits);
@@ -313,15 +320,37 @@ QString Configuration::getImageRoot()
 
 void Configuration::configurePaths()
 {
-    QString root = getMediaRoot();
+    QString root;
+    if (defaultMediaRoot)
+    {
+        root = getMediaRoot();
+    }
+    else
+    {
+        root = rootMediaDir;    // fetched
+    }
+    root = root.trimmed();
+    if (!root.endsWith("/"))
+    {
+        root += "/";
+    }
 
-    rootMediaDir  = root + "/";
-    rootTileDir   = root + "/tilings/";
-    newTileDir    = root + "/tilings/new_tilings/";
-    rootDesignDir = root + "/designs/";
-    newDesignDir  = root + "/designs/new_designs/";
-    templateDir   = root + "/designs/templates/";
-    examplesDir   = root + "/history/examples/";
+    rootMediaDir        = root;
+    rootTileDir         = root + "tilings/";
+    originalTileDir     = root + "tilings/original/";
+    newTileDir          = root + "tilings/new_tilings/";
+    rootDesignDir       = root + "designs/";
+    originalDesignDir   = root + "designs/original/";
+    newDesignDir        = root + "designs/new_designs/";
+    templateDir         = root + "designs/templates/";
+    examplesDir         = root + "history/examples/";
 
-    rootImageDir  = getImageRoot();
+    if (defaultImageRoot)
+        rootImageDir  = getImageRoot();
+    // else fetched
+    rootImageDir = rootImageDir.trimmed();
+    if (!rootImageDir.endsWith("/"))
+    {
+        rootImageDir += "/";
+    }
 }

@@ -27,78 +27,37 @@
 
 #include <QtWidgets>
 
-class SliderSet : public QHBoxLayout
+
+class AQSpinBox : public QSpinBox
 {
-    Q_OBJECT
-
 public:
-    SliderSet(QString txt, int val, int min, int max);
+    AQSpinBox();
+
+    virtual void  leaveEvent(QEvent *event) override;
+#if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
+    virtual void  enterEvent(QEnterEvent *event) override;
+#else
+    virtual void  enterEvent(QEvent *event) override;
+#endif
+
     void setValue(int val);
-    void setRange(int min, int max);
-    void setValues(int val, int min, int max);
-    void reset() { setValue(defaultVal); }
 
-    int  value() { return spin->value(); }
-
-signals:
-    void valueChanged(int val);
-
-private slots:
-    void spinChanged(int val);
-    void sliderChanged(int val);
-
-private:
-    int              defaultVal;
-    QLabel         * label;
-    QSlider        * slider;
-    QSpinBox       * spin;
+    bool blocked;
 };
 
 class AQDoubleSpinBox : public QDoubleSpinBox
 {
 public:
     AQDoubleSpinBox();
-    void  leaveEvent(QEvent *event) override;
-    void  enterEvent(QEvent *event) override;
 
-    bool blocked;
-};
+   virtual  void  leaveEvent(QEvent *event) override;
+#if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
+    virtual void  enterEvent(QEnterEvent *event) override;
+#else
+   virtual void  enterEvent(QEvent *event) override;
+#endif
 
-class DoubleSliderSet : public QHBoxLayout
-{
-    Q_OBJECT
-
-public:
-    DoubleSliderSet(QString txt, qreal val, qreal min, qreal max, int mult);
-    void setValue(qreal val);
-    void setRange(qreal min, qreal qreal);
-    void setValues(qreal val, qreal min, qreal max);
-    void reset() { setValue(defaultVal); }
-    void setPrecision(int val);
-    qreal value() { return spin->value(); }
-
-signals:
-    void valueChanged(qreal val);
-
-private slots:
-    void spinChanged(qreal val);
-    void sliderChanged(int val);
-
-private:
-    int            scale;
-    qreal          defaultVal;
-
-    QLabel         * label;
-    QSlider        * slider;
-    QDoubleSpinBox * spin;
-};
-
-class AQSpinBox : public QSpinBox
-{
-public:
-    AQSpinBox();
-    void  leaveEvent(QEvent *event) override;
-    void  enterEvent(QEvent *event) override;
+    void setValue(double val);
 
     bool blocked;
 };
@@ -150,4 +109,60 @@ private:
    AQDoubleSpinBox  * spin;
 };
 
+
+class SliderSet : public QHBoxLayout
+{
+    Q_OBJECT
+
+public:
+    SliderSet(QString txt, int val, int min, int max);
+    void setValue(int val);
+    void setRange(int min, int max);
+    void setValues(int val, int min, int max);
+    void reset() { setValue(defaultVal); }
+
+    int  value() { return spin->value(); }
+
+signals:
+    void valueChanged(int val);
+
+private slots:
+    void spinChanged(int val);
+    void sliderChanged(int val);
+
+private:
+    int              defaultVal;
+    QLabel         * label;
+    QSlider        * slider;
+    AQSpinBox      * spin;
+};
+
+class DoubleSliderSet : public QHBoxLayout
+{
+    Q_OBJECT
+
+public:
+    DoubleSliderSet(QString txt, qreal val, qreal min, qreal max, int mult);
+    void setValue(qreal val);
+    void setRange(qreal min, qreal qreal);
+    void setValues(qreal val, qreal min, qreal max);
+    void reset() { setValue(defaultVal); }
+    void setPrecision(int val);
+    qreal value() { return spin->value(); }
+
+signals:
+    void valueChanged(qreal val);
+
+private slots:
+    void spinChanged(qreal val);
+    void sliderChanged(int val);
+
+private:
+    int            scale;
+    qreal          defaultVal;
+
+    QLabel         * label;
+    QSlider        * slider;
+    AQDoubleSpinBox * spin;
+};
 #endif // SLIDERSET_H

@@ -122,15 +122,17 @@ private slots:
     void slot_outsideChanged(int state);
     void slot_editB();
     void slot_editW();
-    void slot_algo(int index);
     void slot_viewFaces();
-    void slot_setSelect(int face);
+    void slot_setSelect(int facenum);
 
 protected:
-    void        displayParms();
-    void        displayParms01();
-    void        displayParms2();
-    void        displayParms3();
+    void slot_algo(int index);
+    void slot_cleanse(int index);
+
+    void displayParms();
+    void displayParms01();
+    void displayParms2();
+    void displayParms3();
 
 private:
     AQTableWidget * table;
@@ -138,6 +140,7 @@ private:
     QCheckBox    * inside_checkbox;
     QCheckBox    * outside_checkbox;
     QVBoxLayout  * vbox;
+    QComboBox    * cleanseBox;
 
     StyleColorFillSet   * fillSet;
     StyleColorFillGroup * fillGroup;

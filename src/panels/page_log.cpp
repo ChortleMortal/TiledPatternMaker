@@ -35,13 +35,14 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel, "Log")
     follow->setChecked(true);
     hbox->addWidget(follow);
 
-    QPushButton * btnCopyLog = new QPushButton("Save Log");
+    QPushButton * btnCopyLog            = new QPushButton("Save Log");
     QCheckBox   * cbLogToStderr         = new QCheckBox("Log To stderr");
     QCheckBox   * cbLogToDisk           = new QCheckBox("Log To Disk");
     QCheckBox   * cbLogToPanel          = new QCheckBox("Log To Panel");
-    QCheckBox   * cbLogNumberLines      = new QCheckBox("Number Lines");
-    QCheckBox   * cbLogElapsedTime      = new QCheckBox("Elapsed Time");
     QCheckBox   * cbLogWarningsOnly     = new QCheckBox("Warnings Only");
+    QCheckBox   * cbLogNumberLines      = new QCheckBox("Number Lines");
+                  cbLogElapsedTime      = new QCheckBox("Elapsed Time");
+                  cbLogIntervalTime     = new QCheckBox("Interval Time");
 
     hbox->addWidget(btnCopyLog);
     hbox->addSpacing(43);
@@ -51,6 +52,7 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel, "Log")
     hbox->addStretch();
     hbox->addWidget(cbLogWarningsOnly);
     hbox->addWidget(cbLogNumberLines);
+    hbox->addWidget(cbLogIntervalTime);
     hbox->addWidget(cbLogElapsedTime);
     hbox->addStretch();
 
@@ -61,7 +63,22 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel, "Log")
     cbLogToPanel->setChecked(config->logToPanel);
     cbLogNumberLines->setChecked(config->logNumberLines);
     cbLogWarningsOnly->setChecked(config->logWarningsOnly);
-    cbLogElapsedTime->setChecked(config->logElapsedTime);
+
+    switch (config->logTime)
+    {
+    case LOGT_NONE:
+        cbLogElapsedTime->setChecked(false);
+        cbLogIntervalTime->setChecked(false);
+        break;
+    case LOGT_ELAPSED:
+        cbLogElapsedTime->setChecked(true);
+        cbLogIntervalTime->setChecked(false);
+        break;
+    case LOGT_INTERVAL:
+        cbLogElapsedTime->setChecked(false);
+        cbLogIntervalTime->setChecked(true);
+        break;
+    }
 
     connect(cbLogToStderr,    &QCheckBox::clicked,    this,   &page_log::slot_logToStdErr);
     connect(cbLogToDisk,      &QCheckBox::clicked,    this,   &page_log::slot_logToDisk);
@@ -69,6 +86,7 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel, "Log")
     connect(cbLogWarningsOnly,&QCheckBox::clicked,    this,   &page_log::slot_warningsOnly);
     connect(cbLogNumberLines, &QCheckBox::clicked,    this,   &page_log::slot_numberLines);
     connect(cbLogElapsedTime, &QCheckBox::clicked,    this,   &page_log::slot_elapsedTime);
+    connect(cbLogIntervalTime,&QCheckBox::clicked,    this,   &page_log::slot_intervalTime);
     connect(btnCopyLog,       &QPushButton::clicked,  this,   &page_log::slot_copyLog);
 
     ed = qtAppLog::getTextEditor();     // linkage to qtAppLog
@@ -77,8 +95,8 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel, "Log")
     ed->setLineWrapMode(QTextEdit::NoWrap);
     ed->setReadOnly(true);
 
-    const QFont fixedFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-    ed->setCurrentFont(fixedFont);
+    const QFont font = ed->font();
+    qInfo().noquote() << "log :" << font.toString();
 
     vbox->addWidget(ed);
 
@@ -197,8 +215,37 @@ void page_log::slot_numberLines(bool enable)
 void page_log::slot_elapsedTime(bool enable)
 {
     qtAppLog * log = qtAppLog::getInstance();
-    log->logElapsed(enable);
-    config->logElapsedTime = enable;
+    if (enable)
+    {
+        log->logTimer(LOGT_ELAPSED);
+        config->logTime = LOGT_ELAPSED;
+        cbLogIntervalTime->blockSignals(true);
+        cbLogIntervalTime->setChecked(false);
+        cbLogIntervalTime->blockSignals(false);
+    }
+    else
+    {
+        log->logTimer(LOGT_NONE);
+        config->logTime = LOGT_NONE;
+    }
+}
+
+void page_log::slot_intervalTime(bool enable)
+{
+    qtAppLog * log = qtAppLog::getInstance();
+    if (enable)
+    {
+        log->logTimer(LOGT_INTERVAL);
+        config->logTime = LOGT_INTERVAL;
+        cbLogElapsedTime->blockSignals(true);
+        cbLogElapsedTime->setChecked(false);
+        cbLogElapsedTime->blockSignals(false);
+    }
+    else
+    {
+        log->logTimer(LOGT_NONE);
+        config->logTime = LOGT_NONE;
+    }
 }
 
 AQScrollBar::AQScrollBar(page_log * plog)

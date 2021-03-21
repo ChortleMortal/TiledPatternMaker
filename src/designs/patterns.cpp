@@ -1567,7 +1567,7 @@ void PatternKumiko2::build()
 
     DesignElementPtr dep = make_shared<DesignElement>(qlfp[0]->getFeature(),fp);
     proto->addElement(dep);
-    proto->createProtoMap(false);   // don't allow the event queue to be processed yet
+    proto->createProtoMap();
 
     ThickPtr thick = make_shared<Thick>(proto);
     thick->setColor(QColor(0xa2,0x79,0x67));

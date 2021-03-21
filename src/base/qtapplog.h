@@ -29,6 +29,13 @@
 #include <QTextDocument>
 #include <QTextEdit>
 
+enum eLogTimer
+{
+    LOGT_NONE,
+    LOGT_INTERVAL,
+    LOGT_ELAPSED,
+};
+
 class qtAppLog
 {
 public:
@@ -39,12 +46,13 @@ public:
 
     static void crashMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg);
 
-    void logToStdErr(bool enable) { _logToStderr = enable; }
-    void logToDisk(bool enable)   { _logToDisk   = enable; }
-    void logToPanel(bool enable)  { _logToPanel  = enable; }
-    void logLines(bool enable)    { _logLines    = enable; }
-    void logElapsed(bool enable)  { _logElapsed  = enable; }
-    void logWarningsOnly(bool enable)  { _logWarningsOnly  = enable; }
+    void logToStdErr(bool enable)   { _logToStderr = enable; }
+    void logToDisk(bool enable)     { _logToDisk   = enable; }
+    void logToPanel(bool enable)    { _logToPanel  = enable; }
+    void logLines(bool enable)      { _logLines    = enable; }
+    void logWarningsOnly(bool enb)  { _logWarningsOnly  = enb; }
+    void logTimer(eLogTimer val);
+
     void saveLog(QString to);
 
     QString logDir() { return this->_logDir; }
@@ -65,10 +73,9 @@ private:
     static bool _logToDisk;
     static bool _logToPanel;
     static bool _logLines;
-    static bool _logElapsed;
     static bool _logWarningsOnly;
     static bool	_active;
-
+    static eLogTimer _logTimerSetting;
     static QElapsedTimer elapseTimer;
 
     QFile	mCurrentFile;

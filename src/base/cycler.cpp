@@ -32,6 +32,17 @@
 Q_DECLARE_METATYPE(QTextCharFormat)
 Q_DECLARE_METATYPE(QTextCursor)
 
+static QString sCycleMode[] = {
+    E2STR(CYCLE_NONE),
+    E2STR(CYCLE_STYLES),
+    E2STR(CYCLE_TILINGS),
+    E2STR(CYCLE_ORIGINAL_PNGS),
+    E2STR(CYCLE_SAVE_STYLE_BMPS),
+    E2STR(CYCLE_SAVE_TILING_BMPS),
+    E2STR(CYCLE_COMPARE_ALL_IMAGES),
+    E2STR(CYCLE_COMPARE_WORKLIST_IMAGES)
+};
+
 Cycler * Cycler::mpThis = nullptr;
 
 Cycler * Cycler::getInstance()
@@ -100,11 +111,11 @@ void Cycler::slot_startCycle(eCycleMode mode)
     case CYCLE_ORIGINAL_PNGS:
         startCycleOriginalDesignPngs();
         break;
-    case CYCLE_COMPARE_IMAGES:
-        startCycleCompareImages();
+    case CYCLE_COMPARE_ALL_IMAGES:
+        startCycleCompareAllImages();
         break;
-    case RE_CYCLE_COMPARE_IMAGES:
-        startReCycleCompareImages();
+    case CYCLE_COMPARE_WORKLIST_IMAGES:
+        startCycleCompareWorklistImages();
         break;
     case CYCLE_NONE:
     case CYCLE_SAVE_TILING_BMPS:
@@ -117,6 +128,12 @@ void Cycler::slot_stopCycle()
 {
     eCycleMode oldMode = cycleMode;
     qDebug() << "slot_stopCycle";
+
+    if ((oldMode == CYCLE_COMPARE_ALL_IMAGES || oldMode == CYCLE_COMPARE_WORKLIST_IMAGES) && config->generate_workList)
+    {
+        emit sig_workList();
+    }
+
     cycleMode = CYCLE_NONE;
     if (oldMode != CYCLE_NONE)
     {
@@ -147,10 +164,13 @@ void Cycler::slot_timeout()
     switch (cycleMode)
     {
     case CYCLE_TILINGS:
-        if (++cCount < config->cycleInterval)
-            break;
-
+        if (cCount++ <= config->cycleInterval)
+        {
+            qDebug() << "Tick";
+            return;
+        }
         cCount = 0;
+        busy   = true;
         if (++cIndex < files.size())
         {
             QString name = files.at(cIndex);
@@ -163,9 +183,12 @@ void Cycler::slot_timeout()
         break;
 
     case CYCLE_STYLES:
-        if (++cCount < config->cycleInterval)
+        if (cCount++ <= config->cycleInterval)
+        {
+            qDebug() << "Tick";
+            return;
             break;
-
+        }
         cCount = 0;
         busy   = true;
         if (++cIndex < files.size())
@@ -180,8 +203,8 @@ void Cycler::slot_timeout()
         break;
 
 
-    case CYCLE_COMPARE_IMAGES:
-    case RE_CYCLE_COMPARE_IMAGES:
+    case CYCLE_COMPARE_ALL_IMAGES:
+    case CYCLE_COMPARE_WORKLIST_IMAGES:
         if (imgList_it == imgList.end())
         {
             slot_stopCycle();
@@ -252,7 +275,7 @@ void Cycler::startCycleTilings()
     cCount = config->cycleInterval;     // start now
 }
 
-void Cycler::startCycleCompareImages()
+void Cycler::startCycleCompareAllImages()
 {
     mapa = FileServices::getDirBMPFiles(config->compareDir0);
     mapb = FileServices::getDirBMPFiles(config->compareDir1);
@@ -264,31 +287,24 @@ void Cycler::startCycleCompareImages()
 
     imgList    = vlist.recompose();
     imgList_it = imgList.begin();
+
+    if  (config->generate_workList)
+    {
+        config->workList.clear();
+    }
 }
 
-void Cycler::startReCycleCompareImages()
+void Cycler::startCycleCompareWorklistImages()
 {
     mapa = FileServices::getDirBMPFiles(config->compareDir0);
     mapb = FileServices::getDirBMPFiles(config->compareDir1);
 
-    QStringList names = mapa.keys();
-
-    imgList    = config->badImages;
+    imgList    = config->workList;
     imgList_it = imgList.begin();
-}
 
-void Cycler::slot_view_images()
-{
-    if (!imgList.isEmpty())
+    if  (config->generate_workList)
     {
-        imgList_it--;
-        QString name   = *imgList_it;
-        QString file1  = mapa.value(name);
-        QString file2  = mapb.value(name);
-        imgList_it++;
-
-        emit sig_viewImage(file1);
-        emit sig_viewImage(file2);
+        config->workList.clear();
     }
 }
 
@@ -333,5 +349,4 @@ void Cycler::nextCyclePng()
     pngRow = 0;
     pngCol = 0;
 }
-
 

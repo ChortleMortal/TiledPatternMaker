@@ -52,8 +52,6 @@
 #include "geometry/vertex.h"
 #include "geometry/neighbours.h"
 
-using std::make_shared;
-
 struct sText
 {
     QPointF pt;
@@ -76,22 +74,20 @@ public:
     ~Map();
 
     void wipeout();     // reclaim memory
+    bool verifyMap(QString mapname, bool force = false);
 
     // Some obvious getters.
     int numEdges() const;
     int numVertices() const;
 
-    EdgePoly                    getEdgePoly();
-    const QVector<VertexPtr>  & getVertices() const { return vertices; }
-    const QVector<EdgePtr>    & getEdges()    const { return edges; }
-    NeighbourMap              & getNeighbourMap()   { return neighbourMap; }
+    EdgePoly getEdgePoly();
 
-    bool    isEmpty();
+    bool isEmpty();
 
     // Remove stuff from the map.
     void removeEdge(EdgePtr e);
     void removeVertex(VertexPtr v);
-    void removeVertexSimple(VertexPtr v) { vertices.removeOne(v); neighbourMap.removeVertex(v); }
+    void removeVertexSimple(VertexPtr v) { vertices.removeOne(v);  }
     void crop(QRectF rect);
 
     MapPtr  recreate();                // makes a new map with similar content
@@ -104,6 +100,9 @@ public:
 
     VertexPtr insertVertex(QPointF pt);
 
+    int  vertexIndex(VertexPtr v) { return vertices.indexOf(v); }
+    int  edgeIndex(EdgePtr e)     { return edges.indexOf(e); }
+
     void insertDebugMark(QPointF m, QString txt, qreal size = 0.05 , QPointF offset = QPointF());
     void insertDebugLine(EdgePtr edge);
     void insertDebugLine(QPointF p1, QPointF p2);
@@ -115,66 +114,53 @@ public:
     void translate(qreal x, qreal y);
     void transformMap(QTransform T);
 
-    void transformVertex(Vertex v, QTransform T);
-
     void mergeMap(MapPtr other);
     void mergeSimpleMany(constMapPtr other, const QVector<QTransform> & transforms);
 
     void sortVertices();
     void sortEdges();
-    void sortAllNeighboursByAngle();
+    void buildNeighbours();
 
     void    dumpMap(bool full=true);
+    QString name() { return mname; }
     QString getInfo() const;
     QString summary();
     QString calcVertexEdgeCounts();
 
     bool contains (VertexPtr v) { return vertices.contains(v); }
     bool contains (EdgePtr e)   { return edges.contains(e); }
+    bool edgeSameAs(VertexPtr v1, VertexPtr v2);
 
     void addShapeFactory(ShapeFPtr sf);
+
+    DCELPtr getDCEL();
 
     QVector<sText>  texts;
 
     static int refs;
+
+    UniqueQVector<VertexPtr>  vertices;
+    UniqueQVector<EdgePtr>    edges;
+    DCELPtr                   dcel;
 
 protected:
     // Make map from DAC structures
     void insertPolygon(Polyform  * poly);
     void insertPolyline(Polyform * poly);
 
-    // Get a Map Vertex given that we're asserting the vertex
-    // doesn't lie on an edge in the map.
-    VertexPtr getVertex_Simple( QPointF pt );
+    VertexPtr getOrCreateVertex( QPointF pt );
 
-    // Insert an edge given that we know the edge doesn't interact
-    // with other edges or vertices other than its endpoints.
     void insertEdge_Simple(EdgePtr edge );
 
-    // Split any edge (there is at most one) that intersects
-    // this new vertex.  You'll want to make sure this vertex isn't
-    // a duplicate of one already in the map.  That would just
-    // make life unpleasant.
     void splitEdgesByVertex(VertexPtr vert);
+    bool splitTwoEdgesByVertex(VertexPtr vert);
 
-    // The "correct" version of inserting a vertex.  Make sure the
-    // map stays consistent.
-    VertexPtr getVertex_Complex(QPointF pt );
-
-    // Given another vector of vertices, add them to the vertices of the
-    // current map.  We can do this in linear time with a simple merge
-    // algorithm.  Note that we want to coalesce identical vertices to
-    // eliminate duplicates.
     void mergeVertices(MapPtr other);
 
-    // Applying a motion made up only of uniform scales and translations,
-    // Angles don't change.  So we can just transform each vertex.
     void applyTrivialRigidMotion(QTransform T);
 
-    // In the general case, the vertices and edges must be re-sorted.
     void applyGeneralRigidMotion(QTransform T );
 
-    // Routines used for spatial sorting of edges and vertices.
     static int lexCompareEdges( qreal a, qreal b );
     static int lexComparePoints( QPointF a, QPointF b );
     static bool edgeLessThan(EdgePtr a, EdgePtr b );
@@ -189,12 +175,15 @@ protected:
     void cleanCopy();
 
 private:
-    UniqueQVector<VertexPtr>  vertices;
-    UniqueQVector<EdgePtr>    edges;
-    NeighbourMap        neighbourMap;
+    bool verifyVertices();
+    bool verifyEdges();
+    bool verifyNeighbours();
 
     QString             mname;
     Configuration     * config;
+
+    QDebug  * deb;
+    QString astring;
 };
 
 #endif

@@ -26,7 +26,6 @@
 #define DLG_MAGNITUDE_H
 
 #include <QtWidgets>
-#include <QSignalMapper>
 #include "panels/layout_sliderset.h"
 #include "makers/tiling_maker/feature_selection.h"
 

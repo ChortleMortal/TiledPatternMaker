@@ -412,19 +412,16 @@ QVector<contact *> Infer::buildContacts( placed_points * pp, QVector<adjacency_i
         MapPtr map = amaps[idx2];
         adjacency_info  * adj = adjs[idx2];
 
-        NeighbourMap & nmap = map->getNeighbourMap();
-
-        for (const auto & v : map->getVertices())
+        for (const auto & v : map->vertices)
         {
-            QPointF pos = v->getPosition();
+            QPointF pos = v->pt;
             qreal dist2 = Point::dist2ToLine(pos, a, b );
             if(         Loose::Near( dist2, adj->tolerance )
                   &&  ! Loose::Near( pos, a, adj->tolerance )
                   &&  ! Loose::Near( pos, b, adj->tolerance ) )
             {
                 // This vertex lies on the edge.  Add all its edges to the contact list.
-                NeighboursPtr np        = nmap.getNeighbours(v);
-                QVector<EdgePtr> & qvep = np->getNeighbours();
+                const QVector<EdgePtr> & qvep = v->getNeighbours();
                 for (const auto & edge : qvep)
                 {
                     QPointF opos    = edge->getOtherP(v);
@@ -1255,7 +1252,7 @@ MapPtr Infer::infer( FeaturePtr feature )
             }
 
             // Don't try on two contacts that involve the same vertex.
-            if( Loose::equals( con->position, ocon->position ) )
+            if (Loose::equalsPt(con->position, ocon->position))
             {
                 continue;
             }
@@ -1300,16 +1297,16 @@ MapPtr Infer::infer( FeaturePtr feature )
                     // lies too close to either vertex.  Note that
                     // I think these checks are subsumed by
                     // getTrueIntersection.
-                    if( Loose::equals( isect, con->position ) )
+                    if (Loose::equalsPt(isect, con->position))
                     {
                         continue;
                     }
-                    if( Loose::equals( isect, ocon->position ) )
+                    if (Loose::equalsPt(isect, ocon->position))
                     {
                         continue;
                     }
 
-                    qreal dist = Point::dist(con->position,isect );
+                    qreal dist  = Point::dist(con->position,isect );
                     qreal odist = Point::dist(ocon->position,isect );
 
                     bool inside = fpts.containsPoint(isect,Qt::OddEvenFill);
@@ -1469,8 +1466,7 @@ MapPtr Infer::infer( FeaturePtr feature )
 
     ret->transformMap( pmain->T.inverted() );
 
-    MapCleanser cleanser(ret);
-    cleanser.verifyMap("infer");
+    ret->verifyMap("infer");
 
     return ret;
 }
@@ -1512,8 +1508,8 @@ MapPtr Infer::inferFeature(FeaturePtr feature)
     {
         // this makes new eges and vertices since they can get altered in the map
         EdgePtr edge = *it;
-        VertexPtr v1 = map->insertVertex(edge->getV1()->getPosition());
-        VertexPtr v2 = map->insertVertex(edge->getV2()->getPosition());
+        VertexPtr v1 = map->insertVertex(edge->v1->pt);
+        VertexPtr v2 = map->insertVertex(edge->v2->pt);
         EdgePtr newEdge = map->insertEdge(v1,v2);
         if (edge->getType() == EDGETYPE_CURVE)
         {
@@ -1523,8 +1519,7 @@ MapPtr Infer::inferFeature(FeaturePtr feature)
         }
     }
 
-    MapCleanser cleanser(map);
-    cleanser.verifyMap("infer feature-figure");
+    map->verifyMap("infer feature-figure");
 
     return map;
 }

@@ -77,10 +77,6 @@ page_decoration_maker:: page_decoration_maker(ControlPanel * apanel)  : panel_pa
     vbox->addSpacing(7);
     vbox->addLayout(parmsLayout);
 
-    connect(&styleMapper,     SIGNAL(mapped(int)), this, SLOT(slot_styleChanged(int)));
-    connect(&tilingMapper,    SIGNAL(mapped(int)), this, SLOT(slot_tilingChanged(int)));
-    connect(&styleVisMapper,  SIGNAL(mapped(int)), this, SLOT(slot_styleVisibilityChanged(int)));
-
     connect(delBtn,  &QPushButton::clicked, this, &page_decoration_maker::slot_deleteStyle);
     connect(upBtn,   &QPushButton::clicked, this, &page_decoration_maker::slot_moveStyleUp);
     connect(downBtn, &QPushButton::clicked, this, &page_decoration_maker::slot_moveStyleDown);
@@ -197,14 +193,9 @@ void  page_decoration_maker::reEnter()
             Q_ASSERT(index != -1);
             qcb->setCurrentIndex(index);
 
-            connect(qcb, SIGNAL(currentIndexChanged(int)), &styleMapper, SLOT(map()),Qt::UniqueConnection);
-            styleMapper.setMapping(qcb,row);
-
-            connect(qcb2, SIGNAL(currentIndexChanged(int)), &tilingMapper, SLOT(map()),Qt::UniqueConnection);
-            tilingMapper.setMapping(qcb2,row);
-
-            connect(cb, SIGNAL(toggled(bool)), &styleVisMapper, SLOT(map()),Qt::UniqueConnection);
-            styleVisMapper.setMapping(cb,row);
+            connect(qcb, &QComboBox::currentIndexChanged, [this,row] { page_decoration_maker::styleChanged(row); });
+            connect(qcb2,&QComboBox::currentIndexChanged, [this,row] { page_decoration_maker::tilingChanged(row); });
+            connect(cb,  &QCheckBox::toggled,             [this,row] { page_decoration_maker::styleVisibilityChanged(row); });
 
             row++;
         }
@@ -260,10 +251,10 @@ void page_decoration_maker::displayStyleParams()
     parmsTable->adjustTableSize();
     updateGeometry();
 
-    emit sig_refreshView();
+    //emit sig_refreshView();
 }
 
-void page_decoration_maker::slot_tilingChanged(int row)
+void page_decoration_maker::tilingChanged(int row)
 {
     QComboBox * qcb = dynamic_cast<QComboBox*>(styleTable->cellWidget(row,STYLE_COL_TILING));
     QString name = qcb->currentText();
@@ -280,7 +271,7 @@ void page_decoration_maker::slot_tilingChanged(int row)
     reEnter();
 }
 
-void page_decoration_maker::slot_styleVisibilityChanged(int row)
+void page_decoration_maker::styleVisibilityChanged(int row)
 {
     qDebug() << "visibility changed: row=" << row;
 
@@ -292,7 +283,7 @@ void page_decoration_maker::slot_styleVisibilityChanged(int row)
     emit sig_refreshView();
 }
 
-void page_decoration_maker::slot_styleChanged(int row)
+void page_decoration_maker::styleChanged(int row)
 {
     qDebug() << "style changed: row=" << row;
 

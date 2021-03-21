@@ -27,8 +27,6 @@
 
 StyleColorFillSet::StyleColorFillSet(FaceGroup & fgroup, ColorSet & cset, QVBoxLayout * vbox)  : faceGroup(fgroup),colorSet(cset)
 {
-    connect(&mapper, SIGNAL(mapped(int)), this, SLOT(slot_colorVisibilityChanged(int)));
-
     QGridLayout * grid = new QGridLayout;
 
     QPushButton * modBtn = new QPushButton("Modify");
@@ -103,15 +101,19 @@ void StyleColorFillSet::display()
         item = new QTableWidgetItem(QString::number(face->area));
         table->setItem(row,COL_AREA,item);
 
-        TPColor tpcolor = colorSet.getColor(row);
-        QColor color    = tpcolor.color;
+        TPColor tpcolor  = colorSet.getColor(row);
+        QColor color     = tpcolor.color;
+        QColor fullColor = color;
+        fullColor.setAlpha(255);
 
-        item = new QTableWidgetItem(color.name());
-        table->setItem(row,COL_COLOR_TEXT,item);
+        QLineEdit * le = new QLineEdit();
+        table->setCellWidget(row,COL_COLOR_TEXT,le);
+        le->setText(color.name());
+        connect(le, &QLineEdit::textEdited, [this,row] { colorChanged(row); });
 
-        QLabel * label = new QLabel;
-        QVariant variant= color;
-        QString colcode = variant.toString();
+        QLabel * label   = new QLabel;
+        QVariant variant = fullColor;
+        QString colcode  = variant.toString();
         label->setStyleSheet("QLabel { background-color :"+colcode+" ;}");
         table->setCellWidget(row,COL_COLOR_PATCH,label);
 
@@ -119,8 +121,7 @@ void StyleColorFillSet::display()
         cb->setStyleSheet("padding-left:11px;");
         table->setCellWidget(row,COL_HIDE,cb);
         cb->setChecked(tpcolor.hidden);
-        mapper.setMapping(cb,row);
-        QObject::connect(cb, SIGNAL(toggled(bool)), &mapper, SLOT(map()));
+        connect(cb, &QCheckBox::clicked, [this, row] { colorVisibilityChanged(row); });
 
         QString astring;
         if (face->selected) astring = "X";
@@ -132,7 +133,6 @@ void StyleColorFillSet::display()
     table->adjustTableSize();
 
     table->setCurrentIndex(selected);
-
 }
 
 void StyleColorFillSet::modify()
@@ -240,9 +240,9 @@ void StyleColorFillSet::pasteColor()
     display();
 }
 
-void StyleColorFillSet::slot_colorVisibilityChanged(int row)
+void StyleColorFillSet::colorVisibilityChanged(int row)
 {
-    qDebug() << "slot_colorVisibilityChanged row=" << row;
+    qDebug() << "colorVisibilityChanged row=" << row;
 
     TPColor tpcolor = colorSet.getColor(row);
     QCheckBox * cb  = dynamic_cast<QCheckBox*>(table->cellWidget(row,COL_HIDE));
@@ -253,9 +253,28 @@ void StyleColorFillSet::slot_colorVisibilityChanged(int row)
 
     emit sig_colorsChanged();
 
-    display();
+    qDebug() << "colorVisibilityChanged: done";
+}
 
-    qDebug() << "slot_colorVisibilityChanged: done";
+void StyleColorFillSet::colorChanged(int row)
+{
+    qDebug() << "colorChanged row=" << row;
+
+    QLineEdit *  le = dynamic_cast<QLineEdit*>(table->cellWidget(row,COL_COLOR_TEXT));
+
+    QString  sColor = le->text();
+    if (sColor.size() != 7)
+    {
+        return;     // wait for complete color
+    }
+
+    QColor color(sColor);
+    if (color.isValid())
+    {
+        colorSet.setColor(row, color);
+        display();
+        emit sig_colorsChanged();
+    }
 }
 
 void StyleColorFillSet::slot_click(int row, int col)
@@ -276,7 +295,7 @@ void StyleColorFillSet::slot_click(int row, int col)
         faceGroup.deselect();
     }
 
-    emit sig_colorsChanged();
+    //emit sig_colorsChanged();
 
     display();
 }

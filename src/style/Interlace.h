@@ -26,7 +26,6 @@
 #define INTERLACE_H
 
 #include "style/thick.h"
-#include "style/interlace_info.h"
 #include "geometry/threads.h"
 
 ////////////////////////////////////////////////////////////////////////////
@@ -103,7 +102,7 @@ private:
 
     qreal capGap(QPointF p, QPointF base, qreal gap);
 
-    void getPoints(MapPtr map, EdgePtr edge, VertexPtr from, VertexPtr to, piece *p);
+    void getPoints(EdgePtr edge, VertexPtr from, VertexPtr to, piece *p);
 
     // Propagate the over-under relationship from a vertices to its
     // adjacent edges.  The relationship is encapsulated in the

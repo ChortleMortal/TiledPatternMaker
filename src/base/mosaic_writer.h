@@ -83,7 +83,7 @@ protected:
     static void procesToolkitGeoLayer(QTextStream &ts, Xform &xf);
     void    processsStyleThick(QTextStream &ts, bool draw_outline, qreal width);
     void    processsStyleInterlace(QTextStream &ts, qreal gap, qreal shadow, bool includeSVerts);
-    void    processsStyleFilled(QTextStream &ts, bool draw_inside, bool draw_outside, int algorithm);
+    void    processsStyleFilled(QTextStream &ts, bool draw_inside, bool draw_outside, int algorithm, int cleanseLevel);
     void    processsStyleEmboss(QTextStream &ts, qreal angle);
 
     // features
@@ -102,7 +102,6 @@ protected:
     bool    setMap(QTextStream & ts, MapPtr map);
     void    setVertices(QTextStream & ts, const QVector<VertexPtr> & vertices);
     void    setEdges(QTextStream & ts, const QVector<EdgePtr> & edges );
-    void    setNeighbours(QTextStream & ts, NeighbourMap &nmap );
 
     void    setBoundary(QTextStream & ts, PolyPtr p);
     void    setPrototype(QTextStream & ts, PrototypePtr pp);
@@ -113,7 +112,6 @@ protected:
     void    setVertex(QTextStream & ts, VertexPtr v, QString name = "Vertex");
     void    setEdges(QTextStream & ts, QVector<EdgePtr> &qvec);
     void    setEdge(QTextStream & ts, EdgePtr e);
-    void    setNeighbour(QTextStream & ts, VertexPtr v, NeighboursPtr np);
 
     void    setPos(QTextStream & ts, QPointF qpf);
     void    setPoint(QTextStream & ts, QPointF pt, QString name);

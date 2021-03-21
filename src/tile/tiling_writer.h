@@ -9,9 +9,10 @@ class TilingWriter
     friend class TilingManager;
 
 public:
-    bool        writeTilingXML();
-    void        writeTilingXML(QTextStream & out);     // also called when writing styles
-    void        writeViewSettings(QTextStream & out);
+    bool    writeTilingXML();
+    void    writeTilingXML(QTextStream & out);     // also called when writing styles
+    void    writeViewSettings(QTextStream & out);
+    static void writeBackgroundImage(QTextStream & out, BkgdImgPtr bkgd);
 
 protected:
     void    setEdgePoly(QTextStream & ts, EdgePoly & epoly);
@@ -22,7 +23,7 @@ protected:
     QString getVertexReference(VertexPtr ptr);
     void    setVertexReference(int id, VertexPtr ptr);
 
-    QString  id(int id);
+    QString id(int id);
     QString nextId();
     int     getRef()  { return refId; }
 

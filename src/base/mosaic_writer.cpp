@@ -43,13 +43,16 @@
 #include "tapp/rosette_connect_figure.h"
 #include "tapp/star_connect_figure.h"
 #include "tapp/explicit_figure.h"
+#include "tile/tiling_writer.h"
 #include "viewers/viewcontrol.h"
 
 //const int currentXMLVersion = 3;
 //const int currentXMLVersion = 4;  // 05OCT19 use ColorSets in Colored
 //const int currentXMLVersion = 5;  // 25OCT19 revised way of defining maps
 //const int currentXMLVersion = 6;  // 26JUL20 includes FillData
-  const int currentXMLVersion = 7;  // 15DEC20 Feature epolys beein saved correctly
+//const int currentXMLVersion = 7;  // 15DEC20 Feature epolys being saved correctly
+//const int currentXMLVersion = 8;  // 31DEC20 Indepedent background image being saved
+  const int currentXMLVersion = 9;  // 03MAR21 Neighbour Map no longer needed
 
 
 MosaicWriter::MosaicWriter()
@@ -278,6 +281,7 @@ void MosaicWriter::processDesign(QTextStream &ts)
     int minX,minY,maxX,maxY;
     info->getFillData().get(minX,maxX,minY,maxY);
     ts << "<Fill>" << minX << "," << maxX << "," << minY << "," << maxY << "</Fill>" << endl;
+    TilingWriter::writeBackgroundImage(ts,bip);
     ts << "</design>" << endl;
 }
 
@@ -500,7 +504,8 @@ bool MosaicWriter::processFilled(QTextStream &ts, StylePtr s)
         fail("Style error","dynamic cast of Filled");
     }
 
-    int     algorithm       = fl->getAlgorithm();
+    int algorithm           = fl->getAlgorithm();
+    int cleanseLevel        = fl->getCleanseLevel();
 
     ColorSet & colorSetB    = fl->getBlackColorSet();
     ColorSet & colorSetW    = fl->getWhiteColorSet();
@@ -550,7 +555,7 @@ bool MosaicWriter::processFilled(QTextStream &ts, StylePtr s)
 
     str = "style.Filled";
     ts << "<" << str << ">" << endl;
-    processsStyleFilled(ts,draw_inside,draw_outside,algorithm);
+    processsStyleFilled(ts,draw_inside,draw_outside,algorithm,cleanseLevel);
     ts << "</" << str << ">" << endl;
 
     qDebug() << "end filled";
@@ -756,13 +761,14 @@ void MosaicWriter::processsStyleInterlace(QTextStream &ts, qreal gap, qreal shad
     ts << "<includeTipVerts>" << include << "</includeTipVerts>" << endl;
 }
 
-void MosaicWriter::processsStyleFilled(QTextStream &ts, bool draw_inside, bool draw_outside, int algorithm)
+void MosaicWriter::processsStyleFilled(QTextStream &ts, bool draw_inside, bool draw_outside, int algorithm, int cleanseLevel)
 {
     QString drawi = (draw_inside) ? "true" : "false";
     QString drawo = (draw_outside) ? "true" : "false";
     ts << "<draw__inside>" << drawi << "</draw__inside>" << endl;
     ts << "<draw__outside>" << drawo << "</draw__outside>" << endl;
     ts << "<algorithm>" << algorithm << "</algorithm>" << endl;
+    ts << "<cleanse>" << cleanseLevel << "</cleanse>" << endl;
 }
 
 void MosaicWriter::processsStyleEmboss(QTextStream &ts, qreal  angle)
@@ -1266,9 +1272,8 @@ void MosaicWriter::setStarConnectFigure(QTextStream & ts,QString name, FigurePtr
 bool MosaicWriter::setMap(QTextStream &ts, MapPtr map)
 {
     qDebug().noquote() << map->summary();
-    MapCleanser cleanser(map);
 
-    bool verify = cleanser.verifyMap("XMLWriter");
+    bool verify = map->verifyMap("XMLWriter");
     if (!verify)
     {
         QMessageBox box;
@@ -1279,8 +1284,10 @@ bool MosaicWriter::setMap(QTextStream &ts, MapPtr map)
         switch (ret)
         {
         case QMessageBox::Yes :
-            cleanser.cleanse();     // always write a good map
-            verify = cleanser.verifyMap("XMLWriter: post cleanse");
+        {
+            MapCleanser cleanser(map);
+            verify = cleanser.cleanse(default_cleanse);     // always write a good map
+        }
             break;
         case QMessageBox::No :
             verify = true;
@@ -1310,16 +1317,12 @@ bool MosaicWriter::setMap(QTextStream &ts, MapPtr map)
     ts << "<map" << qsid << ">" << endl;
 
     // vertices
-    const QVector<VertexPtr> & vertices = map->getVertices();
+    const QVector<VertexPtr> & vertices = map->vertices;
     setVertices(ts,vertices);
 
     // Edges
-    const QVector<EdgePtr> & edges = map->getEdges();
+    const QVector<EdgePtr> & edges = map->edges;
     setEdges(ts,edges);
-
-    // Neighbours
-    NeighbourMap & nmap = map->getNeighbourMap();
-    setNeighbours(ts,nmap);
 
     ts << "</map>" << endl;
 
@@ -1347,57 +1350,18 @@ void MosaicWriter::setEdges(QTextStream & ts, const QVector<EdgePtr> & edges)
     ts << "</edges>" << endl;
 }
 
-void MosaicWriter::setNeighbours(QTextStream & ts, NeighbourMap & nmap)
-{
-    ts << "<neighbours>" << endl;
-    QMapIterator<VertexPtr,NeighboursPtr> i(nmap.get());
-    while (i.hasNext())
-    {
-        i.next();
-        VertexPtr v = i.key();
-        NeighboursPtr np = i.value();
-        setNeighbour(ts,v,np);
-    }
-    ts << "</neighbours>" << endl;
-}
-
-void MosaicWriter::setNeighbour(QTextStream & ts, VertexPtr v, NeighboursPtr np)
-{
-    qDebug() << "setting neighbours for vertex" << v->getTmpVertexIndex();
-
-    QString qsid;
-    Q_ASSERT(hasReference(v));
-    qsid = getVertexReference(v);
-    ts << "<neighbourset" << qsid << ">";
-    QVector<EdgePtr> & nbs = np->getNeighbours();
-    QVector<EdgePtr>::iterator it = nbs.begin();
-    while (it != nbs.end())
-    {
-        EdgePtr e = *it;
-        qDebug() << "inserting edge" << e->getTmpEdgeIndex();
-        Q_ASSERT(hasReference(e));
-        int id =  edge_ids.value(e);
-        ts << id;
-        if (++it != nbs.end())
-        {
-            ts << ",";
-        }
-    }
-    ts << "</neighbourset>" << endl;
-}
-
 void MosaicWriter::setEdgePoly(QTextStream & ts, const EdgePoly & epoly)
 {
     for (auto it = epoly.begin(); it != epoly.end(); it++)
     {
         EdgePtr ep = *it;
-        VertexPtr v1 = ep->getV1();
-        VertexPtr v2 = ep->getV2();
+        VertexPtr v1 = ep->v1;
+        VertexPtr v2 = ep->v2;
         if (ep->getType() == EDGETYPE_LINE)
         {
             ts << "<Line>" << endl;
-            VertexPtr v1 = ep->getV1();
-            VertexPtr v2 = ep->getV2();
+            VertexPtr v1 = ep->v1;
+            VertexPtr v2 = ep->v2;
             setVertexEP(ts,v1,"Point");
             setVertexEP(ts,v2,"Point");
             ts << "</Line>" << endl;
@@ -1428,7 +1392,7 @@ void MosaicWriter::setVertexEP(QTextStream & ts,VertexPtr v, QString name)
     qsid = nextId();
     setVertexReference(getRef(),v);
 
-    QPointF pt = v->getPosition();
+    QPointF pt = v->pt;
 
     ts << "<" << name << qsid << ">";
     ts << pt.x() << "," << pt.y();
@@ -1456,10 +1420,8 @@ void MosaicWriter::setVertex(QTextStream & ts, VertexPtr v, QString name)
     setVertexReference(getRef(),v);
     ts << "<" << name << qsid << ">" << endl;
 
-    qDebug() << "vertex" << v->getTmpVertexIndex() << "id" << refId;
-
     // pos
-    setPos(ts,v->getPosition());
+    setPos(ts,v->pt);
 
     ts << "</" << name << ">" << endl;
 }
@@ -1496,8 +1458,6 @@ void MosaicWriter::setEdge(QTextStream & ts, EdgePtr e)
     qDebug() << "new edge ref=" << getRef();
     setEdgeReference(getRef(),e);
 
-    qDebug() << "edge" << e->getTmpEdgeIndex() << "id" << refId;
-
     if (curved)
     {
         QString str = QString("<curve %1 convex=\"%2\">").arg(qsid).arg(e->isConvex() ? "t" : "f");
@@ -1509,11 +1469,11 @@ void MosaicWriter::setEdge(QTextStream & ts, EdgePtr e)
     }
 
     // v1
-    VertexPtr v1 = e->getV1();
+    VertexPtr v1 = e->v1;
     setVertex(ts,v1,"v1");
 
     // v2
-    VertexPtr v2 = e->getV2();
+    VertexPtr v2 = e->v2;
     setVertex(ts,v2,"v2");
 
     if (curved)
@@ -1521,7 +1481,6 @@ void MosaicWriter::setEdge(QTextStream & ts, EdgePtr e)
         QPointF p = e->getArcCenter();
         setPos(ts,p);
     }
-
 
     if (curved)
     {

@@ -34,10 +34,6 @@
 #include <QtCore>
 #include "base/shared.h"
 #include "geometry/vertex.h"
-#include "style/interlace_info.h"
-
-class Map;
-
 
 enum eEdgeType
 {
@@ -66,8 +62,6 @@ public:
     Edge(EdgePtr other, QTransform T);
     ~Edge();
 
-    VertexPtr getV1();
-    VertexPtr getV2();
     VertexPtr getOtherV(VertexPtr vert) const;
     VertexPtr getOtherV(QPointF pos) const;
     QPointF   getOtherP(VertexPtr vert) const;
@@ -102,32 +96,30 @@ public:
 
     bool      contains(VertexPtr v);
     bool      sameAs(EdgePtr other);
+    bool      sameAs(VertexPtr ov1, VertexPtr ov2);
     bool      equals(EdgePtr other);
-
-    InterlaceInfo & getInterlaceInfo() {  return interlaceData; }
-    void            initInterlaceInfo() { interlaceData.initInterlace(); }
 
     // Used to sort the edges in the map.
     qreal     getMinX();
 
-    void      setTmpEdgeIndex(int i) { tmpEdgeIndex = i; }
-    int       getTmpEdgeIndex()      { return tmpEdgeIndex; }
-    void      dump();
+    QString   dump();
 
     static int refs;
 
-protected:
-    eEdgeType       type;
     VertexPtr       v1;
     VertexPtr       v2;
+
+    bool            visited;        // used by interlace
+    bool            start_under;    // used by interlace
+    ThreadPtr       thread;         // used by interlace
+
+protected:
+    eEdgeType       type;
 
     bool            isSwapped;
     bool            convex;
     QPointF         arcCenter;      // inside or outside the polygon
     qreal           arcMagnitude;   // range 0 to 1
-
-    InterlaceInfo   interlaceData;
-    int             tmpEdgeIndex;
 };
 
 #endif

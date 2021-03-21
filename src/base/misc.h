@@ -67,7 +67,7 @@ template <class T> UniqueQVector<T>::UniqueQVector() : QVector<T>()
 
 template <class T> void UniqueQVector<T>::push_back(const T & value)
 {
-    if (!contains(value))
+    if (!QVector<T>::contains(value))
     {
         QVector<T>::push_back(value);
     }
@@ -75,7 +75,7 @@ template <class T> void UniqueQVector<T>::push_back(const T & value)
 
 template <class T> void UniqueQVector<T>::push_front(const T & value)
 {
-    if (!contains(value))
+    if (!QVector<T>::contains(value))
     {
         QVector<T>::push_front(value);
     }

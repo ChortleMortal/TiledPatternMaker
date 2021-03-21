@@ -1,9 +1,10 @@
 #include "viewers/faceset_view.h"
 #include "base/configuration.h"
+#include "geometry/colormaker.h"
 
-FaceSetView::FaceSetView(WeakFacesPtr faces) : Layer("FaceSetView",LTYPE_VIEW)
+FaceSetView::FaceSetView(WeakColorMakerPtr cm) : Layer("FaceSetView",LTYPE_VIEW)
 {
-    wfaces = faces;
+    wcm = cm;
 }
 
 void FaceSetView::paint(QPainter *painter)
@@ -23,16 +24,16 @@ void FaceSetView::paint(QPainter *painter)
 
 void  FaceSetView::draw(GeoGraphics * gg )
 {
-    FacesPtr faces = wfaces.lock();
-    if (!faces)
+    ColorMakerPtr cm = wcm.lock();
+    if (!cm)
     {
         return;
     }
 
-    const FaceSet & fset = faces->getAllFaces();
+    FaceSet & fset = cm->getFacesToDo();
     for (auto face : fset)
     {
-        gg->drawPolygon( face->getPolygon(),Qt::green,3);
+        gg->drawPolygon(face->getPolygon(),Qt::green,3);
     }
 
     Configuration * config     = Configuration::getInstance();

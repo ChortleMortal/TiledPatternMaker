@@ -39,10 +39,6 @@ public:
     void onEnter() override;
     void onExit() override {}
 
-signals:
-#if 0
-    void sig_pushProtoToMosaic();
-#endif
 public slots:
     void slot_reload();
     void slot_selected_dele_changed();
@@ -55,10 +51,11 @@ private slots:
     void slot_divideIntersectingEdges();
     void slot_joinColinearEdges();
     void slot_cleanNeighbours();
-    void slot_sortAllNeighboursByAngle();
+    void slot_rebuildNeighbours();
     void slot_sortVertices();
     void slot_sortEdges();
     void slot_removeUnconnectedVertices();
+    void slot_removeSingleConnectVertices();
     void slot_removeZombieEdges();
     void slot_popstash();
     void slot_undoConstructionLines();
@@ -86,25 +83,20 @@ private slots:
     void slot_lineWidthChanged(qreal r);
     void slot_consWidthChanged(qreal r);
 
-protected:
-    void reload();
-
 private:
-    MapEditor * me;
+    MapEditor       * me;
 
-    MapPtr  localMap;       // for new maps created in the editor
+    QGroupBox       * editorStatusBox;
+    QVBoxLayout     * dummyStatusBox;
+    QVBoxLayout     * statusBox;
 
-    QGroupBox   * editorStatusBox;
-    QVBoxLayout * dummyStatusBox;
-    QVBoxLayout * statusBox;
-
-    QLabel * line0;
-    QLabel * line1;
-    QLabel * line2;
-    QLabel * line3;
-    QLabel * line4;
-    QLabel * line5;
-    QTextEdit * line6;
+    QLabel          * line0;
+    QLabel          * line1;
+    QLabel          * line2;
+    QLabel          * line3;
+    QLabel          * line4;
+    QLabel          * line5;
+    QTextEdit       * line6;
 
     QButtonGroup    mapEdModeGroup;
     QButtonGroup    modeGroup;
@@ -112,8 +104,6 @@ private:
     QCheckBox     * animateChk;
 
     QString         lastNamedTemplate;
-
-    bool            debugInfo;
 };
 
 #endif

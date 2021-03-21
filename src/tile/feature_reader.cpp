@@ -11,8 +11,6 @@ FeatureReader::FeatureReader()
 EdgePoly FeatureReader::getEdgePoly(xml_node & node)
 {
     EdgePoly ep;
-    int eindex = 0;
-    int vindex = 0;
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
         string name = n.name();
@@ -20,8 +18,8 @@ EdgePoly FeatureReader::getEdgePoly(xml_node & node)
         {
             xml_node n2  = n.child("Point");
             xml_node n3  = n2.next_sibling("Point");
-            VertexPtr v1 = getVertex(n2,vindex);
-            VertexPtr v2 = getVertex(n3,vindex);
+            VertexPtr v1 = getVertex(n2);
+            VertexPtr v2 = getVertex(n3);
             ep.push_back(make_shared<Edge>(v1,v2));
         }
         else if (name == "Curve")
@@ -29,8 +27,8 @@ EdgePoly FeatureReader::getEdgePoly(xml_node & node)
             xml_node n2  = n.child("Point");
             xml_node n3  = n2.next_sibling("Point");
             xml_node n4  = n.child("Center");
-            VertexPtr v1 = getVertex(n2,vindex);
-            VertexPtr v2 = getVertex(n3,vindex);
+            VertexPtr v1 = getVertex(n2);
+            VertexPtr v2 = getVertex(n3);
             QPointF   c0 = getPoint(n4);
             bool convex = true; // default
             xml_attribute conv = n.attribute("convex");
@@ -40,7 +38,6 @@ EdgePoly FeatureReader::getEdgePoly(xml_node & node)
                 convex = (val == "t") ? true : false;
             }
             EdgePtr eptr = make_shared<Edge>(v1,v2,c0,convex);
-            eptr->setTmpEdgeIndex(eindex++);
             ep.push_back(eptr);
         }
     }
@@ -83,7 +80,7 @@ QTransform  FeatureReader::getTransform(xml_node & node)
     return xf.getTransform();
 }
 
-VertexPtr FeatureReader::getVertex(xml_node & node, int &index)
+VertexPtr FeatureReader::getVertex(xml_node & node)
 {
     if (hasReference(node))
     {
@@ -101,7 +98,6 @@ VertexPtr FeatureReader::getVertex(xml_node & node, int &index)
 
     vOrigCnt++;
     VertexPtr v = make_shared<Vertex>(QPointF(x,y));
-    v->setTmpVertexIndex(index++);
     setVertexReference(node,v);
 
     return v;

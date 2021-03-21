@@ -53,9 +53,6 @@ public:
 
 private slots:
     void    slot_styleSelected(const QItemSelection &selected, const QItemSelection &deselected);
-    void    slot_styleChanged(int row);
-    void    slot_tilingChanged(int row);
-    void    slot_styleVisibilityChanged(int row);
     void    slot_deleteStyle();
     void    slot_moveStyleUp();
     void    slot_moveStyleDown();
@@ -64,6 +61,10 @@ private slots:
     void    slot_set_reps();
 
 protected:
+    void     styleChanged(int row);
+    void     tilingChanged(int row);
+    void     styleVisibilityChanged(int row);
+
     void     reEnter();
     void     displayStyleParams();
     StylePtr getStyleRow(int row);
@@ -80,10 +81,6 @@ private:
     AQTableWidget * styleTable;
     AQTableWidget * parmsTable;
     QVBoxLayout   * parmsLayout;
-
-    QSignalMapper  styleMapper;
-    QSignalMapper  tilingMapper;
-    QSignalMapper  styleVisMapper;
 
     QPushButton * delBtn;
     QPushButton * upBtn;

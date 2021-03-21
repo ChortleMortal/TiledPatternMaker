@@ -126,13 +126,13 @@ void TileColors::draw(GeoGraphics * gg)
         return;
     }
 
-    for (auto& bpc : epolys)
+    for (auto bpc : epolys)
     {
-        EdgePoly & ep = bpc.epoly;
-        gg->fillEdgePoly(ep,bpc.color);
+        EdgePoly ep = bpc.epoly;
+        gg->fillEdgePoly(&ep,bpc.color);
         if (outlineEnb)
         {
-            gg->drawEdgePoly(ep,outlineColor,outlineWidth);
+            gg->drawEdgePoly(&ep,outlineColor,outlineWidth);
         }
     }
 }

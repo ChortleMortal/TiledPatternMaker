@@ -39,20 +39,14 @@ public:
     void onExit() override {}
 
 private slots:
-    void    selectRootTileDir();
-    void    selectNewTileDir();
     void    selectRootDesignDir();
     void    selectRootImageDir();
-    void    selectNewDesignDir();
-    void    selectExamplesDir();
     void    selectXMLTool();
 
     void    rootDesignChanged(QString txt);
     void    rootImageChanged(QString txt);
-    void    newDesignChanged(QString txt);
-    void    rootTileChanged(QString txt);
-    void    newTtileChanged(QString txt);
-    void    examplesChanged(QString txt);
+    void    designDefaultChanged(bool checked);
+    void    imageDefaultChanged(bool checked);
 
     void    slot_reconfigurePaths();
 
@@ -72,30 +66,25 @@ private slots:
     void    slot_showCenterChanged(int state);
 
 protected:
-    void  updatePaths();
+    void    updatePaths();
 
     QGroupBox   * createViewControl();
     QVBoxLayout * createGridSection();
     QHBoxLayout * createGridTypeLayout();
 
 private:
-    QPushButton *rootDesignBtn;
-    QPushButton *newDesignBtn;
-    QPushButton *rootTileBtn;
-    QPushButton *newTileBtn;
-    QPushButton *rootImageBtn;
-    QPushButton *examplesBtn;
-    QPushButton *xmlToolBtn;
+    QPushButton * rootDesignsBtn;
+    QPushButton * rootImagesBtn;
+    QPushButton * xmlToolBtn;
 
-    QLineEdit   *le_rootDesign;
-    QLineEdit   *le_newDesign;
-    QLineEdit   *le_rootTile;
-    QLineEdit   *le_newTile;
-    QLineEdit   *le_rootImage;
-    QLineEdit   *le_examples;
-    QLineEdit   *le_xmlTool;
+    QLineEdit   * le_rootDesigns;
+    QLineEdit   * le_rootImages;
+    QLineEdit   * le_xmlTool;
 
-    QGroupBox    * gridBox;
+    QCheckBox   * defaultDesigns;
+    QCheckBox   * defaultImages;
+
+    QGroupBox   * gridBox;
     QButtonGroup  gridUnitGroup;
     QButtonGroup  gridTypeGroup;
 };

@@ -23,6 +23,7 @@
  */
 
 #include "base/model_settings.h"
+#include "tile/backgroundimage.h"
 
 ModelSettings::ModelSettings()
 {
@@ -102,7 +103,18 @@ FillData & ModelSettings::getFillData()
 {
     return _fillData;
 }
-
+void ModelSettings::setBkgdImage(BkgdImgPtr bkImage)
+{
+    _bkgdImage = bkImage;
+    if (_bkgdImage)
+    {
+        qDebug() << "ModelSetings: image ="  << _bkgdImage->getName();
+    }
+    else
+    {
+        qDebug() << "ModelSettings: image = null";
+    }
+}
 
 
 

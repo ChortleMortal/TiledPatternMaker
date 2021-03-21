@@ -240,7 +240,7 @@ QString Feature::toString() const
     str << "{ ";
     for (int i = 0; i < epoly.size(); ++i )
     {
-        str << i+1 << ":"  << epoly[i]->getV1()->getPosition().x() << " " << epoly[i]->getV1()->getPosition().y() << " , ";
+        str << i+1 << ":"  << epoly[i]->v1->pt.x() << " " << epoly[i]->v1->pt.y() << " , ";
     }
     str << "}";
 
@@ -272,5 +272,12 @@ QPointF Feature::getCenter()
     return Point::center(epoly);
 }
 
+qreal Feature::edgeLen(int side)
+{
+    if (numSides() > side)
+        return epoly[side]->getLine().length();
+    else
+        return 0.0;
+}
 
 

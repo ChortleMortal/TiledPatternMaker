@@ -26,7 +26,7 @@
 
 ColorSet::ColorSet()
 {
-    pos = QVector<TPColor>::iterator(1234); // dummy
+    pos = colorset.end();
     hidden = false;
 }
 
@@ -107,7 +107,7 @@ TPColor ColorSet::getNextColor()
         colorset.push_back(TPColor(Qt::yellow,false));
         pos = colorset.begin();
     }
-    Q_ASSERT(pos != (QVector<TPColor>::iterator(1234)));
+    Q_ASSERT(pos != colorset.end());
 
     TPColor color = *pos;
     if (++pos == colorset.end())
@@ -150,9 +150,11 @@ AQHBoxLayout * ColorSet::createLayout()
     {
         TPColor tpcolor  = *it;
         QColor color     = tpcolor.color;
+        QColor fullColor = color;
+        fullColor.setAlpha(255);
         QLabel * label   = new QLabel;
         label->setMinimumWidth(50);
-        QVariant variant = color;
+        QVariant variant = fullColor;
         QString colcode  = variant.toString();
         label->setStyleSheet("QLabel { background-color :"+colcode+" ;}");
         hbox->addWidget(label);

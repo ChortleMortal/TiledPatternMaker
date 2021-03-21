@@ -1,0 +1,156 @@
+<?xml version="1.0"?>
+<vector id="1" version="8">
+	<designNotes>test</designNotes>
+	<design>
+		<size>
+			<width>1924</width>
+			<height>1061</height>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Fill>-2,3,-3,1</Fill>
+		<BackgroundImage name="vanda_base2.JPG">
+			<Scale>0.5</Scale>
+			<Rot>0</Rot>
+			<X>0</X>
+			<Y>0</Y>
+		</BackgroundImage>
+	</design>
+	<style.Thick id="2" serialization="custom">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3" serialization="custom">
+				<app.Prototype>
+					<string>vanda_base2.v3</string>
+					<entry>
+						<tile.Feature id="4">
+							<regular>true</regular>
+							<rotation>30</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">1,0.5773502691896256</Point>
+									<Point id="7">7.070501591499379e-17,1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">-0.9999999999999998,0.5773502691896261</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">-1,-0.5773502691896254</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point id="10">-2.121150477449814e-16,-1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="10" />
+									<Point id="11">0.9999999999999997,-0.5773502691896263</Point>
+								</Line>
+								<Line>
+									<Point reference="11" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.Rosette id="12">
+							<n>6</n>
+							<q>0</q>
+							<s>2</s>
+							<k>0</k>
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>30</r>
+						</app.Rosette>
+					</entry>
+					<entry>
+						<tile.Feature id="13">
+							<regular>true</regular>
+							<rotation>30</rotation>
+							<scale>0.8699999999999999</scale>
+							<edges id="14">
+								<Line>
+									<Point id="15">1,1.732050807568877</Point>
+									<Point id="16">-2,2.449293598294706e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="16" />
+									<Point id="17">0.9999999999999984,-1.732050807568878</Point>
+								</Line>
+								<Line>
+									<Point reference="17" />
+									<Point reference="15" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="18" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>3.65</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ffc59c0c</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>true</draw__outline>
+			<width>0.05</width>
+		</style.Thick>
+	</style.Thick>
+	<style.Thick id="19" serialization="custom">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ffc2bcb0</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>true</draw__outline>
+			<width>0.14</width>
+		</style.Thick>
+	</style.Thick>
+	<style.Filled id="20" serialization="custom">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<ColorBlacks>
+			<color hide="f">#ffffff00</color>
+			<color hide="f">#ff55aaff</color>
+		</ColorBlacks>
+		<ColorWhites>
+			<color hide="f">#ffff0000</color>
+		</ColorWhites>
+		<style.Filled>
+			<draw__inside>true</draw__inside>
+			<draw__outside>true</draw__outside>
+			<algorithm>0</algorithm>
+		</style.Filled>
+	</style.Filled>
+</vector>

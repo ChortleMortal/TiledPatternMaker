@@ -39,10 +39,19 @@ enum eFaceState
 {
     FACE_UNDONE,
     FACE_PROCESSING,
-    FACE_DONE_BLACK,
-    FACE_DONE_WHITE,
+    FACE_BLACK,
+    FACE_WHITE,
     FACE_DONE,
     FACE_REMOVE
+};
+
+enum eFaceColor
+{
+    UNDEFINED,
+    BLACK,
+    WHITE,
+    RED,
+    EXTERIOR
 };
 
 /////////////////////////////////////////////////
@@ -51,41 +60,40 @@ enum eFaceState
 ///
 /////////////////////////////////////////////////
 
+class dcelEdge;
+
 class Face : public EdgePoly
 {
 public:
     Face();
 
-    qreal     getArea();
-    int       getNumSides() { return size(); }
+    int         getNumSides() { return size(); }
+    QPolygonF   getPolygon();
+    QPointF     center();
 
-    QPolygonF getPolygon();
+    bool        overlaps(FacePtr other);
 
-    bool      overlaps(FacePtr other);
-    QPolygonF subtracted(FacePtr other);
+DAC_DEPRECATED  void    sortForComparison();
+DAC_DEPRECATED  bool    equals(FacePtr other);
+DAC_DEPRECATED  bool    containsCrossover();
+DAC_DEPRECATED  FaceSet decompose();
 
-    bool      equals(FacePtr other);
-    void      sortForComparison();
-    QPolygonF &getSorted();
+    void        dump();
 
-    bool      isClosed() { return first()->getV1() == last()->getV2(); }
-    bool      containsCrossover();
-    FaceSet   decompose();
-
-    QPointF   center();
-
+    bool        outer;
+    dcelEdgePtr incident_edge;
+    eFaceColor  color;
     eFaceState  state;
-
-    void       dump();
+    qreal       area;
 
 protected:
-    bool       decomposeOnce(FacePtr newFace);
+DAC_DEPRECATED  bool    decomposeOnce(FacePtr newFace);
+DAC_DEPRECATED  QPolygonF & getSorted();
 
 private:
     QPointF     _center;
-    qreal       _area;
-    bool        _areaCalculated;
-    QPolygonF   sortedShadow;
+
+DAC_DEPRECATED  QPolygonF   sortedShadow;
 };
 
 /////////////////////////////////////////////////
@@ -110,9 +118,12 @@ public:
 
     QVector<FacePtr> newSet;    // used in calcs
 
+    void   dump(DCELPtr dcel);
+
 protected:
     void sortByPositon(FacePtr fp);
 };
+
 
 /////////////////////////////////////////////////
 ///
@@ -128,75 +139,6 @@ public:
     void deselect(int idx);
     void deselect();
     int  totalSize();
-};
-
-/////////////////////////////////////////////////
-///
-///  Faces
-///
-/////////////////////////////////////////////////
-
-class Faces
-{
-    enum eColor
-    {
-        C_WHITE = 0,
-        C_BLACK = 1
-    };
-
-    friend class Filled;
-
-public:
-    Faces();
-
-    void        buildFacesOriginal(MapPtr map);
-    void        buildFacesNew23();
-
-    void        assignColorsOriginal(MapPtr map);
-    void        assignColorsNew1();
-    void        assignColorsNew2(ColorSet & colorSet);
-    void        assignColorsNew3(ColorGroup & colorGroup);
-
-    void        purifyMap(MapPtr map);
-
-    FaceGroup       & getFaceGroup()  { return faceGroup; }
-    const FaceSet   & getAllFaces()   { return allFaces; }
-    const FaceSet   & getWhiteFaces() { return whiteFaces; }
-    const FaceSet   & getBlackFaces() { return blackFaces; }
-
-protected:
-    void        clearFaces();
-    void        handleVertex(NeighbourMap & nmap, VertexPtr vert, EdgePtr edge);
-
-    FacePtr     extractFace(NeighbourMap & nmap, VertexPtr from, EdgePtr edge);
-    FacePtr     getTwin(MapPtr map, EdgePtr edge);
-    void        assignColorsToFaces(MapPtr map, FaceSet & fset);
-    void        addFaceResults(FaceSet & fst);
-
-    void        dumpAllFaces(QString title);
-    void        dumpFaceGroup(QString title);
-    void        dumpEdgeFaceMap(QMap<EdgePtr,FacePtr> & dmap, QString title);
-
-    void        sortFaceSetsByPosition();
-    void        removeLargest();
-    void        removeOverlaps();
-    void        removeDuplicates();
-    void        decomposeCrossoverFaces();
-    void        zapFaceStates(enum eFaceState state);
-
-    // Internal representations of the rendering.
-    // Inside and outside (even/odd) regions.
-    QMap<EdgePtr,FacePtr>   v1;
-    QMap<EdgePtr,FacePtr>   v2;
-    FaceSet                 allFaces;
-    FaceSet                 whiteFaces;
-    FaceSet                 blackFaces;
-    FaceGroup               faceGroup;
-
-private:
-    qreal   determinant(QPointF vec1, QPointF vec2);
-    bool    edgeIntersection(QPointF a, QPointF b, QPointF c, QPointF d);
-    bool    isOverlapped(const FacePtr a, const FacePtr b);
 };
 
 #endif

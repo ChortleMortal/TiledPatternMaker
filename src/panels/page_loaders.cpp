@@ -1035,7 +1035,7 @@ void page_loaders::rebaseTiling()
     QString newName = parts.join('.');
 
     // this is the new file
-    QString newPath = config->newTileDir + "/" + newName + ".xml";
+    QString newPath = config->newTileDir + newName + ".xml";
 
     // purge other versions
     Q_ASSERT(new_ver < old_ver);

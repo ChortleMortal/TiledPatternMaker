@@ -247,6 +247,16 @@ void View::paintEvent(QPaintEvent *event)
         }
     }
 
+    if (loadTimer.isValid())
+    {
+        qint64 delta = loadTimer.elapsed();
+        double qdelta = delta /1000.0;
+        QString str = QString("%1  ").arg(qdelta, 8, 'f', 3, QChar(' '));
+
+        qInfo().noquote() << "The load operation took" << str << "seconds";
+        loadTimer.invalidate();
+    }
+
     //qDebug() << "++++END PAINT";
 }
 
@@ -255,31 +265,79 @@ void View::resize(QSize sz)
     QWidget::resize(sz);
 }
 
+void View::moveEvent(QMoveEvent *event)
+{
+    deltaPos = event->oldPos() - event->pos();
+    qDebug() << "View::moveEvent: deltaPos" << deltaPos;
+}
+
 void View::resizeEvent(QResizeEvent *event)
 {
-    QWidget::resizeEvent(event);
+    Q_UNUSED(event);
 
-    QSize oldSize  = getActiveFrameSize(config->viewerType);
-    QSize newSize  = size();
-    qDebug() << "View::resizeEvent: old" << oldSize << "new" << newSize;
+    QSize oldSize   = getActiveFrameSize(config->getViewerType());
+    QSize newSize   = size();
+    QPointF diffPos = deltaPos;
+    deltaPos        = QPointF();
+    qDebug() << "View::resizeEvent: old" << oldSize << "new" << newSize << "delta" << diffPos;
 
     if (oldSize == newSize)
     {
         return;
     }
 
-    frameSettings[config->viewerType].setActiveFrameSize(newSize);
+    if (!diffPos.isNull())
+    {
+        emit sig_mouseTranslate(diffPos);
+    }
+
+    frameSettings[config->getViewerType()].setActiveFrameSize(newSize);
+    switch(config->getViewerType())
+    {
+    case VIEW_MOTIF_MAKER:
+    case VIEW_MAP_EDITOR:
+    case VIEW_FACE_SET:
+    case VIEW_UNDEFINED:
+        break;
+
+    case VIEW_DESIGN:
+    case VIEW_MOSAIC:
+    case VIEW_PROTOTYPE:
+    case VIEW_DESIGN_ELEMENT:
+    case VIEW_TILING:
+    case VIEW_TILING_MAKER:
+        setAllCommonActiveSizes(newSize);
+        break;
+    }
+
     if (config->scaleToView)
     {
-        frameSettings[config->viewerType].setDefinedFrameSize(newSize);
+        frameSettings[config->getViewerType()].setDefinedFrameSize(newSize);
+        switch (config->getViewerType())
+        {
+        case VIEW_MOTIF_MAKER:
+        case VIEW_MAP_EDITOR:
+        case VIEW_FACE_SET:
+        case VIEW_UNDEFINED:
+            break;
+
+        case VIEW_DESIGN:
+        case VIEW_MOSAIC:
+        case VIEW_PROTOTYPE:
+        case VIEW_DESIGN_ELEMENT:
+        case VIEW_TILING:
+        case VIEW_TILING_MAKER:
+            setAllCommonDefinedSizes(newSize);
+            break;
+        }
     }
 
     emit sig_viewSizeChanged(newSize);
 }
 
-void  View::setAllMosaicDefinedSizes(QSize sz)
+void  View::setAllCommonDefinedSizes(QSize sz)
 {
-    // this overwrites some set by tiling
+    // list does not include the tiling maker
     frameSettings[VIEW_DESIGN].setDefinedFrameSize(sz);
     frameSettings[VIEW_MOSAIC].setDefinedFrameSize(sz);
     frameSettings[VIEW_PROTOTYPE].setDefinedFrameSize(sz);
@@ -287,32 +345,14 @@ void  View::setAllMosaicDefinedSizes(QSize sz)
     frameSettings[VIEW_TILING].setDefinedFrameSize(sz);
 }
 
-void View::setAllTilingDefinedSizes(QSize sz)
+void  View::setAllCommonActiveSizes(QSize sz)
 {
-    // some of these are overwritten when mosaic is loaded/changed
-    frameSettings[VIEW_TILING].setDefinedFrameSize(sz);
-    frameSettings[VIEW_TILING_MAKER].setDefinedFrameSize(sz);
-    frameSettings[VIEW_DESIGN_ELEMENT].setDefinedFrameSize(sz);
-    frameSettings[VIEW_PROTOTYPE].setDefinedFrameSize(sz);
-}
-
-void  View::setAllMosaicActiveSizes(QSize sz)
-{
-    // this overwrites some set by tiling
+    // list does not include the tiling maker
     frameSettings[VIEW_DESIGN].setActiveFrameSize(sz);
     frameSettings[VIEW_MOSAIC].setActiveFrameSize(sz);
     frameSettings[VIEW_PROTOTYPE].setActiveFrameSize(sz);
     frameSettings[VIEW_DESIGN_ELEMENT].setActiveFrameSize(sz);
     frameSettings[VIEW_TILING].setActiveFrameSize(sz);
-}
-
-void View::setAllTilingActiveSizes(QSize sz)
-{
-    // some of these are overwritten when mosaic is loaded/changed
-    frameSettings[VIEW_TILING].setActiveFrameSize(sz);
-    frameSettings[VIEW_TILING_MAKER].setActiveFrameSize(sz);
-    frameSettings[VIEW_DESIGN_ELEMENT].setActiveFrameSize(sz);
-    frameSettings[VIEW_PROTOTYPE].setActiveFrameSize(sz);
 }
 
 void View::keyPressEvent( QKeyEvent *k )
@@ -610,7 +650,7 @@ bool View::ProcKey(QKeyEvent *k)
     {
         QMessageBox  * box = new QMessageBox();
         box->setWindowTitle("Shortcuts");
-        if (config->viewerType == VIEW_DESIGN)
+        if (config->getViewerType() == VIEW_DESIGN)
         {
             box->setText(Shortcuts::getDesignShortcuts());
         }

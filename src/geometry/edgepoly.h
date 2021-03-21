@@ -23,7 +23,7 @@ public:
 
     bool equals(const EdgePoly & other);
 
-    bool isValid();
+    bool isValid(bool rigorous = false);
     bool isClockwise() const;
     void reverseWindingOrder();
     void relink();

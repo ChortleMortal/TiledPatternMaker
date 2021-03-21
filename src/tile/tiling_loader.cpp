@@ -156,6 +156,8 @@ TilingPtr TilingLoader::readTilingXML(QString file )
 
     xml_node tiling_node = doc.first_child();
     TilingPtr tp = readTilingXML(tiling_node);
+    if (tp->hasOverlaps())
+        qInfo() << tiling->getName() << "HAS OVERLAPS";
     return tp;
 }
 
@@ -370,7 +372,7 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
     if (bkImage)
     {
        BkgdImgPtr bip = getBackgroundImage(bkImage);
-       if (bip)
+       if (bip && bip->isLoaded())
        {
            tiling->setBackground(bip);
        }
@@ -382,13 +384,11 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
 
 BkgdImgPtr TilingLoader::getBackgroundImage(xml_node & node)
 {
-    BkgdImgPtr bi = make_shared<BackgroundImage>();
-
     xml_attribute attr = node.attribute("name");
     QString name       = attr.value();
 
-    bool rv = bi->load(name);
-    if (rv)
+    BkgdImgPtr bi = make_shared<BackgroundImage>(name);
+    if (bi->isLoaded())
     {
         Xform xf = bi->getCanvasXform();
 
@@ -427,16 +427,14 @@ BkgdImgPtr TilingLoader::getBackgroundImage(xml_node & node)
         {
             QString str = n.child_value();
             bi->perspective = getQTransform(str);
+
+            if (!bi->perspective.isIdentity())
+            {
+                bi->createAdjustedImage();
+            }
         }
 
-        bool adjPerspective = false;
-        if (!bi->perspective.isIdentity())
-        {
-            bi->adjustBackground();
-            adjPerspective = true;
-        }
-        bi->bkgdImageChanged(true,adjPerspective);
-
+        bi->createPixmap();
     }
     else
     {

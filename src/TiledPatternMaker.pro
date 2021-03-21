@@ -43,9 +43,10 @@ SOURCES += \
     designs/shapes.cpp \
     geometry/bounds.cpp \
     geometry/circle.cpp \
+    geometry/colormaker.cpp \
+    geometry/dcel.cpp \
     geometry/edge.cpp \
     geometry/edgepoly.cpp \
-    geometry/facecycles.cpp \
     geometry/faces.cpp \
     geometry/fill_region.cpp \
     geometry/intersect.cpp \
@@ -95,6 +96,7 @@ SOURCES += \
     panels/page_debug.cpp \
     panels/page_decoration_maker.cpp \
     panels/page_design_elements.cpp \
+    panels/page_image_tools.cpp \
     panels/page_layers.cpp \
     panels/page_loaders.cpp \
     panels/page_log.cpp \
@@ -119,7 +121,6 @@ SOURCES += \
     style/emboss.cpp \
     style/filled.cpp \
     style/interlace.cpp \
-    style/interlace_info.cpp \
     style/outline.cpp \
     style/plain.cpp \
     style/sketch.cpp \
@@ -195,9 +196,10 @@ HEADERS += \
     designs/shapefactory.h \
     designs/shapes.h \
     geometry/circle.h \
+    geometry/colormaker.h \
+    geometry/dcel.h \
     geometry/edge.h \
     geometry/edgepoly.h \
-    geometry/facecycles.h \
     geometry/faces.h \
     geometry/fill_region.h \
     geometry/intersect.h \
@@ -247,6 +249,7 @@ HEADERS += \
     panels/page_debug.h \
     panels/page_decoration_maker.h \
     panels/page_design_elements.h \
+    panels/page_image_tools.h \
     panels/page_layers.h \
     panels/page_loaders.h \
     panels/page_log.h \
@@ -271,7 +274,6 @@ HEADERS += \
     style/emboss.h \
     style/filled.h \
     style/interlace.h \
-    style/interlace_info.h \
     style/outline.h \
     style/plain.h \
     style/sketch.h \

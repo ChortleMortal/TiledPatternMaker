@@ -40,57 +40,58 @@ class Point
 public:
     static qreal TOLERANCE;
     static qreal TOLERANCE2;
-
     static QPointF ORIGIN;
 
     // Equality.
-    static bool isNear(const QPointF &pt,  const QPointF &other );
+    static bool     isNear(const QPointF &pt, const QPointF &other);
+
+    // Less-than compares x coordinates first, then y, using the default tolerance.
+    static bool     lessThan(const QPointF & a, QPointF & other);
 
     // Useful maths on QPointFs.
-    static qreal mag2(QPointF & pt);
-    static qreal mag(QPointF & pt);
-    static qreal dist2(const QPointF &pt, const QPointF &other );
-    static qreal dist( QPointF pt, QPointF other );
+    static qreal    mag2(QPointF & pt);
+    static qreal    mag(QPointF & pt);
+    static qreal    dist2(const QPointF &pt, const QPointF &other );
+    static qreal    dist( QPointF pt, QPointF other );
 
-    static QLineF extendLine(QLineF line, qreal scale);
+    static QLineF   extendLine(QLineF line, qreal scale);
 
-    static QLineF clipLine(QLineF line,QPolygonF bounds);
+    static QLineF   clipLine(QLineF line,QPolygonF bounds);
 
-    static bool   intersectPoly(QLineF line, QPolygonF bounds);
+    static bool     intersectPoly(QLineF line, QPolygonF bounds, QPointF &intersect);
  
-    static QPointF normalize(QPointF & pt);
-    static void normalizeD(QPointF & pt);
+    static QPointF  normalize(QPointF & pt);
+    static void     normalizeD(QPointF & pt);
 
-    static qreal dot(QPointF & pt, QPointF & other );
+    static qreal    dot(QPointF & pt, QPointF & other );
 
     // Return the absolute angle of the edge from this to other, in the
     // range -PI to PI.
-    static qreal getAngle(QPointF & pt, QPointF & other );
+    static qreal    getAngle(QPointF & pt, QPointF & other );
 
     // Angle wrt the origin.
-    static qreal getAngle(QPointF & pt);
+    static qreal    getAngle(QPointF & pt);
 
     // Return a vector ccw-perpendicular to this.libglu1-mesa-dev
-    static QPointF perp(QPointF & pt);
-    static void perpD(QPointF & pt);
+    static QPointF  perp(QPointF & pt);
+    static void     perpD(QPointF & pt);
 
     // Returns a point which is on a line between the two points at fraction t
-    static QPointF convexSum(QPointF pt, QPointF other, double t );
+    static QPointF  convexSum(QPointF pt, QPointF other, double t);
    
-    static qreal cross(QPointF & pt, QPointF & other );
+    static qreal    cross(QPointF & pt, QPointF & other);
 
     // Get the section of arc swept out between the edges this ==> from
     // and this ==> to.
-    static qreal sweep(QPointF joint, QPointF from, QPointF to );
+    static qreal    sweep(QPointF joint, QPointF from, QPointF to);
 
-    static qreal distToLine(QPointF pt, QLineF line);
-    static qreal distToLine(QPointF pt, QPointF p, QPointF q );
-    static qreal dist2ToLine(QPointF pt,  QPointF p, QPointF q );
+    static qreal    distToLine(QPointF pt, QLineF line);
+    static qreal    distToLine(QPointF pt, QPointF p, QPointF q);
+    static qreal    dist2ToLine(QPointF pt,  QPointF p, QPointF q);
 
-
-    static QPointF center(QPolygonF & pts);
-    static QPointF center(EdgePoly & epoly);
-    static QPolygonF recenter( QPolygonF pts, QPointF center );
+    static QPointF  center(QPolygonF & pts);
+    static QPointF  center(EdgePoly & epoly);
+    static QPolygonF recenter(QPolygonF pts, QPointF center);
 };
 #endif
 

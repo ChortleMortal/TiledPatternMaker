@@ -33,17 +33,15 @@
 #include "geometry/vertex.h"
 #include "geometry/edge.h"
 #include "geometry/point.h"
-#include "style/interlace.h"
-
-//#include <iterator>
+#include <QTransform>
 
 int Vertex::refs = 0;
 
-Vertex::Vertex( QPointF pos )
+Vertex::Vertex( QPointF pos ) : Neighbours(this)
 {
     refs++;
-    this->pos       = pos;
-    tmpVertexIndex  = -1;
+    this->pt        = pos;
+    visited         = false;
 }
 
 Vertex::~Vertex()
@@ -61,15 +59,15 @@ Vertex::~Vertex()
 // casper: don't need to recalc angle
 void Vertex::applyRigidMotion(QTransform T)
 {
-    pos = T.map(pos);
+    pt = T.map(pt);
 }
 
 qreal Vertex::getAngle(EdgePtr edge)
 {
-    VertexPtr other = edge->getOtherV(pos);
-    QPointF pd  = other->getPosition() - pos;
+    VertexPtr other = edge->getOtherV(pt);
+    QPointF pd      = other->pt - pt;
     Point::normalizeD(pd);
-    qreal angle = qAtan2(pd.x(), pd.y());
+    qreal angle     = qAtan2(pd.x(), pd.y());
     return angle;
 }
 

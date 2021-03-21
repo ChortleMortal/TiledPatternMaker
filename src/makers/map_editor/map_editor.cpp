@@ -23,7 +23,11 @@
  */
 
 #include "makers/map_editor/map_editor.h"
+#include "makers/decoration_maker/decoration_maker.h"
+#include "makers/motif_maker/motif_maker.h"
+#include "makers/tiling_maker/tiling_maker.h"
 #include "base/configuration.h"
+#include "base/mosaic.h"
 #include "base/shortcuts.h"
 #include "geometry/transform.h"
 #include "geometry/map_cleanser.h"
@@ -32,10 +36,10 @@
 #include "viewers/placed_designelement_view.h"
 #include "style/style.h"
 #include "viewers/view.h"
+#include "panels/panel.h"
 
 MapEditor *  MapEditor::mpThis = nullptr;     // once initialised the destructor is never called
 MapEditorPtr MapEditor::spThis;
-
 
 const bool debugMouse = false;
 
@@ -59,20 +63,28 @@ MapEditor * MapEditor::getInstance()
     return mpThis;
 }
 
-
 MapEditor::MapEditor() : MapEditorSelection(), stash(this)
 {
     qDebug() << "MapEditor::MapEditor";
 
-    config      = Configuration::getInstance();
-    view        = View::getInstance();
+    config          = Configuration::getInstance();
+    decorationMaker = DecorationMaker::getInstance();
+    motifMaker      = MotifMaker::getInstance();
+    tilingMaker     = TilingMaker::getInstance();
+    view            = View::getInstance();
+    cpanel          = ControlPanel::getInstance();
+
     connect(view, &View::sig_mouseDragged,  this, &MapEditor::slot_mouseDragged);
     connect(view, &View::sig_mouseReleased, this, &MapEditor::slot_mouseReleased);
     connect(view, &View::sig_mouseMoved,    this, &MapEditor::slot_mouseMoved);
 
+    connect(cpanel, &ControlPanel::sig_view_synch, this, &MapEditor::slot_view_synch);
+
     map_mouse_mode  = MAP_MODE_NONE;
-    mapType       = MAP_TYPE_UNDEFINED;
+    mapType         = MAP_TYPE_UNDEFINED;
     newCircleRadius = 0.25;
+
+    localMap  =  make_shared<Map>(QString("New local map"));
 }
 
 void MapEditor::setDesignElement(DesignElementPtr delpptr)
@@ -81,11 +93,12 @@ void MapEditor::setDesignElement(DesignElementPtr delpptr)
     delp    = delpptr;
     figp    = delp->getFigure();
     feap    = delp->getFeature();
+
     map     = figp->getFigureMap();
 
     buildEditorDB();
 
-    if (config->viewerType == VIEW_MAP_EDITOR)
+    if (config->getViewerType() == VIEW_MAP_EDITOR)
     {
         forceRedraw();
     }
@@ -95,13 +108,17 @@ void  MapEditor::setPrototype(PrototypePtr proptr)
 {
     mapType = MAP_TYPE_PROTO;
     prop    = proptr;
-    map     = prop->getProtoMap();
 
-    buildEditorDB();
-
-    if (config->viewerType == VIEW_MAP_EDITOR)
+    if (config->getViewerType() == VIEW_MAP_EDITOR)
     {
+        map = prop->getProtoMap();
+        buildEditorDB();
         forceRedraw();
+    }
+    else
+    {
+        map     = prop->getProtoMap();
+        buildEditorDB();
     }
 }
 
@@ -110,24 +127,26 @@ void MapEditor::setStyle(StylePtr styptr)
     mapType = MAP_TYPE_STYLE;
     styp    = styptr;
     prop    = styp->getPrototype();
+
     map     = prop->getProtoMap();
 
     buildEditorDB();
 
-    if (config->viewerType == VIEW_MAP_EDITOR)
+    if (config->getViewerType() == VIEW_MAP_EDITOR)
     {
         forceRedraw();
     }
 }
 
-void MapEditor::setLocal(MapPtr map)
+void MapEditor::setLocal()
 {
     mapType   = MAP_TYPE_LOCAL;
-    this->map = map;
+
+    map       = localMap;
 
     buildEditorDB();
 
-    if (config->viewerType == VIEW_MAP_EDITOR)
+    if (config->getViewerType() == VIEW_MAP_EDITOR)
     {
         forceRedraw();
     }
@@ -141,9 +160,103 @@ void  MapEditor::setTiling(TilingPtr tiling)
 
     buildEditorDB();
 
-    if (config->viewerType == VIEW_MAP_EDITOR)
+    if (config->getViewerType() == VIEW_MAP_EDITOR)
     {
         forceRedraw();
+    }
+}
+
+void MapEditor::setDCEL(WeakDCELPtr dcel)
+{
+    mapType = MAP_TYPE_DCEL;
+    map.reset();
+    this->dcel = dcel;
+
+    buildEditorDB();
+
+    if (config->getViewerType() == VIEW_MAP_EDITOR)
+    {
+        forceRedraw();
+    }
+}
+
+void  MapEditor::reload()
+{
+    qDebug() << "MapEditor::reload";
+
+    switch (config->mapEditorMode)
+    {
+    case MAP_MODE_FIGURE:
+    {
+        // this is set by the figure editor
+        DesignElementPtr dep  = motifMaker->getSelectedDesignElement();
+        if (dep)
+            setDesignElement(dep);
+        else
+            unload();
+        break;
+    }
+    case MAP_MODE_PROTO:
+    {
+        PrototypePtr proto = motifMaker->getSelectedPrototype();
+        if (proto)
+        {
+            setPrototype(proto);
+        }
+        else
+            unload();
+        break;
+    }
+    case MAP_MODE_MOSAIC:
+    {
+        MosaicPtr mosaic = decorationMaker->getMosaic();
+        if (!mosaic)
+        {
+            unload();
+        }
+        else
+        {
+            const StyleSet & sset = mosaic->getStyleSet();
+            if (sset.size())
+            {
+                StylePtr sp  = sset.first();
+                setStyle(sp);
+            }
+            else
+            {
+                unload();
+            }
+        }
+        break;
+    }
+
+    case MAP_MODE_LOCAL:
+        setLocal();
+        break;
+
+    case MAP_MODE_TILING:
+    {
+        TilingPtr tp = tilingMaker->getSelected();
+        setTiling(tp);
+    }
+        break;
+
+    case MAP_MODE_DCEL:
+    {
+        WeakDCELPtr wdp = config->dcel;
+        setDCEL(wdp);
+    }
+        break;
+    }
+
+    forceRedraw();
+}
+
+void MapEditor::slot_view_synch(int id, int enb)
+{
+    if (enb && id == VIEW_MAP_EDITOR)
+    {
+        reload();
     }
 }
 
@@ -158,6 +271,11 @@ void MapEditor::draw(QPainter *painter )
     {
         drawFeature(painter);
         drawBoundaries(painter);
+    }
+
+    if (mapType == MAP_TYPE_DCEL)
+    {
+        drawDCEL(painter);
     }
 
     drawConstructionLines(painter);
@@ -282,7 +400,7 @@ void MapEditor::startMouseInteraction(QPointF spt, enum Qt::MouseButton mouseBut
 
 void MapEditor::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
 {
-    if (config->viewerType != VIEW_MAP_EDITOR)
+    if (config->getViewerType() != VIEW_MAP_EDITOR)
         return;
 
     setMousePos(spt);
@@ -326,8 +444,7 @@ void MapEditor::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
             if (sel->getType() == MAP_EDGE)
             {
                 map->removeEdge(sel->getEdge());
-                MapCleanser cleanser(map);
-                cleanser.verifyMap("delete edge");
+                map->verifyMap("delete edge");
                 break;
             }
             else if (sel->getType() == MAP_LINE && sel->isConstructionLine())
@@ -357,8 +474,7 @@ void MapEditor::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
         {
             auto sel = *it;
             map->splitEdge(sel->getEdge());
-            MapCleanser cleanser(map);
-            cleanser.verifyMap("split edge");
+            map->verifyMap("split edge");
         }
         buildEditorDB();
         forceRedraw();
@@ -437,7 +553,7 @@ void MapEditor::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
 
 void MapEditor::slot_mouseDragged(QPointF spt)
 {
-    if (config->viewerType != VIEW_MAP_EDITOR)
+    if (config->getViewerType() != VIEW_MAP_EDITOR)
         return;
 
     setMousePos(spt);
@@ -456,7 +572,7 @@ void MapEditor::slot_mouseDragged(QPointF spt)
 
 void MapEditor::slot_mouseReleased(QPointF spt)
 {
-    if (config->viewerType != VIEW_MAP_EDITOR)
+    if (config->getViewerType() != VIEW_MAP_EDITOR)
         return;
 
     setMousePos(spt);
@@ -472,7 +588,7 @@ void MapEditor::slot_mouseReleased(QPointF spt)
 
 void MapEditor::slot_mouseMoved(QPointF spt)
 {
-    if (config->viewerType != VIEW_MAP_EDITOR)
+    if (config->getViewerType() != VIEW_MAP_EDITOR)
         return;
 
     setMousePos(spt);
@@ -599,7 +715,7 @@ void  MapEditor::applyCrop()
 
 bool MapEditor::procKeyEvent(QKeyEvent * k)
 {
-    if (config->viewerType != VIEW_MAP_EDITOR)
+    if (config->getViewerType() != VIEW_MAP_EDITOR)
     {
         return false;
     }

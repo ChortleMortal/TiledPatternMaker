@@ -209,11 +209,12 @@ void FilledEditor::displayParms()
 
     // clear the table
     table->clearContents();
-    table->setColumnCount(3);
+    table->setColumnCount(4);
     table->setRowCount(1);
 
-    int algo = filled->getAlgorithm();
-    int row  = 0;
+    int algo         = filled->getAlgorithm();
+    int cleanseLevel = filled->getCleanseLevel();
+    int row          = 0;
 
     // algorithm
     QTableWidgetItem * item = new QTableWidgetItem("Algorithm");
@@ -227,18 +228,29 @@ void FilledEditor::displayParms()
     table->setCellWidget(row,1,algoBox);
 
     algoBox->setCurrentIndex(algo);
-    connect(algoBox,SIGNAL(currentIndexChanged(int)), this, SLOT(slot_algo(int)));
+    connect(algoBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index){ slot_algo(index);} );
+
+    cleanseBox = new QComboBox();
+    cleanseBox->addItem("No Cleanse",0);
+    cleanseBox->addItem("Cleanse V",2);
+    cleanseBox->addItem("Cleanse E",3);
+    cleanseBox->addItem("Cleanse V&E",1);
+    table->setCellWidget(row,2,cleanseBox);
+
+    cleanseBox->setCurrentIndex(cleanseBox->findData(cleanseLevel));
+    connect(cleanseBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index){ slot_cleanse(index);} );
 
     QPushButton * pbViewFaces = new QPushButton("View faces");
     pbViewFaces->setFixedWidth(61);
-    QSpinBox * faceSetSelect = new QSpinBox;
+    AQSpinBox * faceSetSelect = new AQSpinBox;
     faceSetSelect->setRange(0,9999);
     AQWidget * w = new AQWidget;
     AQHBoxLayout * l = new AQHBoxLayout;
     l->addWidget(pbViewFaces);
     l->addWidget(faceSetSelect);
     w->setLayout(l);
-    table->setCellWidget(row,2,w);
+    table->setCellWidget(row,3,w);
+
     connect(pbViewFaces,&QPushButton::clicked, this, &FilledEditor::slot_viewFaces);
     connect(faceSetSelect,SIGNAL(valueChanged(int)), this, SLOT(slot_setSelect(int)));
 
@@ -257,10 +269,14 @@ void FilledEditor::displayParms()
     }
 
     table->adjustTableSize();
+    table->update();
 }
 
 void FilledEditor::displayParms01()
 {
+    if (!filled->cm)
+        return;
+
     int row = 0;
 
     table->setRowCount(3);
@@ -276,7 +292,7 @@ void FilledEditor::displayParms01()
     outside_checkbox->setChecked(filled->getDrawOutsideWhites());
     table->setCellWidget(row,0,outside_checkbox);
 
-    item = new QTableWidgetItem(QString("%1 faces out of %2").arg(filled->faces->getWhiteFaces().size()).arg(filled->faces->getAllFaces().size()));
+    item = new QTableWidgetItem(QString("%1 faces out of %2").arg(filled->cm->getWhiteFaces().size()).arg(filled->cm->getFacesToDo().size()));
     table->setItem(row,3,item);
 
     ColorSet & colorSetW    = filled->getWhiteColorSet();
@@ -294,7 +310,7 @@ void FilledEditor::displayParms01()
     inside_checkbox->setChecked(filled->getDrawInsideBlacks());
     table->setCellWidget(row,0,inside_checkbox);
 
-    item = new QTableWidgetItem(QString("%1 faces out of %2").arg(filled->faces->getBlackFaces().size()).arg(filled->faces->getAllFaces().size()));
+    item = new QTableWidgetItem(QString("%1 faces out of %2").arg(filled->cm->getBlackFaces().size()).arg(filled->cm->getFacesToDo().size()));
     table->setItem(row,3,item);
 
     ColorSet & colorSetB    = filled->getBlackColorSet();
@@ -317,16 +333,27 @@ void FilledEditor::displayParms01()
 
 void FilledEditor::displayParms2()
 {
+    if (fillSet)
+        delete fillSet;
 
-    fillSet = new StyleColorFillSet(filled->faces->getFaceGroup(),filled->getWhiteColorSet(),vbox);
+    if (!filled->cm)
+        return;
+
+    fillSet = new StyleColorFillSet(filled->cm->getFaceGroup(),filled->getWhiteColorSet(),vbox);
     fillSet->display();
-    connect(fillSet, &StyleColorFillSet::sig_colorsChanged, this, &FilledEditor::slot_colorsChanged);
+    connect(fillSet, &StyleColorFillSet::sig_colorsChanged, this, &FilledEditor::slot_colorsChanged,Qt::UniqueConnection);
 }
 
 
 void FilledEditor::displayParms3()
 {
-    fillGroup = new StyleColorFillGroup(filled->faces->getFaceGroup(),filled->getColorGroup(),vbox);
+    if (fillGroup)
+        delete fillGroup;
+
+    if (!filled->cm)
+        return;
+
+    fillGroup = new StyleColorFillGroup(filled->cm->getFaceGroup(),filled->getColorGroup(),vbox);
     fillGroup->display();
     connect(fillGroup, &StyleColorFillGroup::sig_colorsChanged, this, &FilledEditor::slot_colorsChanged, Qt::UniqueConnection);
 }
@@ -359,8 +386,20 @@ void FilledEditor::slot_algo(int index)
     displayParms();
     emit sig_update();
     emit sig_refreshView();
-
 }
+
+void FilledEditor::slot_cleanse(int index)
+{
+    int level = cleanseBox->itemData(index).toInt();
+    filled->setCleanseLevel(level);
+    filled->eraseProtoMap();
+    filled->resetStyleRepresentation();
+    filled->createStyleRepresentation();
+    displayParms();
+    emit sig_update();
+    emit sig_refreshView();
+}
+
 
 void FilledEditor::slot_editB()
 {
@@ -399,10 +438,10 @@ void FilledEditor::slot_colorsChanged()
     switch(filled->getAlgorithm())
     {
     case 3:
-        filled->faces->assignColorsNew3(filled->colorGroup);
+        filled->cm->assignColorGroups(filled->colorGroup);
         break;
     case 2:
-        filled->faces->assignColorsNew2(filled->whiteColorSet);
+        filled->cm->assignColorSets(filled->whiteColorSet);
         break;
     case 1:
     case 0:
@@ -432,7 +471,7 @@ void FilledEditor::slot_viewFaces()
     if (!selected)
     {
         selected = true;
-        old_vtype    = config->viewerType;
+        old_vtype    = config->getViewerType();
         config->setViewerType(VIEW_FACE_SET);
     }
     else
@@ -453,12 +492,12 @@ void FilledEditor::slot_viewFaces()
     emit sig_refreshView();
 }
 
-void FilledEditor::slot_setSelect(int face)
+void FilledEditor::slot_setSelect(int facenum)
 {
-    const FaceSet & set = filled->faces->getAllFaces();
-    if (face >=0 && face < set.size())
+    FaceSet & fset = filled->cm->getFacesToDo();
+    if (facenum >=0 && facenum < fset.size())
     {
-        FacePtr fp  = set[face];
+        FacePtr fp  = fset[facenum];
         Configuration * config = Configuration::getInstance();
         config->selectedFace = fp;
         emit sig_update();

@@ -9,19 +9,20 @@
 class  BackgroundImage : public Layer
 {
 public:
-    BackgroundImage();
+    BackgroundImage(QString imageName);
     ~BackgroundImage() override;
 
     void    paint(QPainter *painter) override;
 
-    bool    import(QString filename);  // loads from new file
-    bool    load(QString imageName);   // loads from existing imported file
+    static bool import(QString filename);
 
-    void    bkgdImageChanged(bool showBkgd, bool perspectiveBkgd);
+    void    createPixmap();
 
-    void    adjustBackground(QPointF topLeft, QPointF topRight, QPointF botRight, QPointF botLeft);
-    void    adjustBackground();
+    void    createBackgroundAdjustment(QPointF topLeft, QPointF topRight, QPointF botRight, QPointF botLeft);
+    void    createAdjustedImage();
 
+    bool    useAdjusted() { return bUseAdjusted; }
+    void    setUseAdjusted(bool use);
     bool    saveAdjusted(QString newName);
 
     bool    isLoaded() { return _loaded; }
@@ -32,8 +33,6 @@ public:
 
     // public data
     QTransform perspective;
-    bool       bShowBkgd;
-    bool       bAdjustPerspective;
 
 public slots:
     virtual void slot_moveX(int amount) override;
@@ -47,6 +46,7 @@ public slots:
     virtual void slot_setCenterScreen(QPointF spt) override;
 
 protected:
+    bool    load(QString imageName);   // loads from existing imported file
     void    correctPerspective(QPointF topLeft, QPointF topRight, QPointF botRight, QPointF botLeft);
     void    drawCenter(QPainter * painter) override;
 
@@ -54,9 +54,11 @@ private:
     View          * view;
     Configuration * config;
 
-    QPixmap     pixmap;
-    QImage      bkgdImage;
-    QImage      adjustedImage;
+    QPixmap     pixmap;         // is painted, created from bkgdImage or adjusted image
+    QImage      bkgdImage;      // as loaded
+    QImage      adjustedImage;  // as adjusted
+
+    bool        bUseAdjusted;
 
     Xform       xf_bkImg;
 

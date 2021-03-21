@@ -46,6 +46,9 @@ Prototype::Prototype(TilingPtr t)
     Q_ASSERT(t);
     tiling = t;
     protoMap = make_shared<Map>("proto map");
+
+    panel = ControlPanel::getInstance();
+
     refs++;
 }
 
@@ -303,24 +306,16 @@ MapPtr Prototype::getProtoMap()
 }
 
 
-MapPtr Prototype::createProtoMap(bool showSplash)
+MapPtr Prototype::createProtoMap()
 {
-    ControlPanel * panel = ControlPanel::getInstance();
+    qDebug() << "PROTOTYPE CONSTRUCT MAP" << this;
     QString astring = QString("Constructing prototype map for tiling: %1").arg(tiling->getName());
     panel->showPanelStatus(astring);
 #ifdef TPMSPLASH
-    if (showSplash)
-    {
-        // showing splash causes the event queue to bw processed.  This can be quite unwanted.
-        panel->showSplash(astring);
-    }
+     panel->showSplash(astring);
 #endif
 
     resetProtoMap();
-
-    qDebug() << "PROTOTYPE::CONSTRUCT MAP" << this;
-
-    const bool debug = true;
 
     // Use FillRegion to get a list of translations for this tiling.
     fill(nullptr);
@@ -334,18 +329,13 @@ MapPtr Prototype::createProtoMap(bool showSplash)
     int count = 0;
     for (auto dep : qAsConst(designElements))
     {
-        qDebug().noquote() << "merging design element:" << count++ << "into prototype:" << dep->toString();
+        qDebug().noquote() << "merging design element:" << count << "into prototype:" << dep->toString();
 
         FeaturePtr feature   = dep->getFeature();
         FigurePtr figure     = dep->getFigure();
+        qDebug().noquote() << "figure" << figure->getFigureDesc();
         MapPtr figmap        = figure->getFigureMap();
 
-        qDebug().noquote() << "figmap1" << figure->getFigureDesc();
-        if (debug)
-        {
-            MapCleanser cleanFig(figmap);
-            cleanFig.verifyMap("figmap1");
-        }
         QVector<QTransform> subT;
         for (auto it2 = tiling->getPlacedFeatures().begin(); it2 != tiling->getPlacedFeatures().end(); it2++)
         {
@@ -368,48 +358,48 @@ MapPtr Prototype::createProtoMap(bool showSplash)
         // transformed figures corresponding to the given feature into a map.
         MapPtr transmap = make_shared<Map>("proto transmap");
         transmap->mergeSimpleMany(figmap, subT);
-        if (debug)
-        {
-            MapCleanser cleanTran(transmap);
-            cleanTran.verifyMap("transmap");
-        }
+
+#if 0
+            transmap->buildNeighbours();
+            MapCleanser cleant(transmap);
+            cleant.verifyMap("transmap");
+#endif
 
         // Now put all the translations together into a single map for this feature.
         MapPtr featuremap = make_shared<Map>("proto featuremap");
         featuremap->mergeSimpleMany(transmap, locations);
-        if (debug)
-        {
-            MapCleanser cleanFeat(featuremap);
-            cleanFeat.verifyMap("featuremap");
-        }
+
+#if 0
+            featuremap->buildNeighbours();
+            MapCleanser cleanf(featuremap);
+            cleanf.verifyMap("featuremap");
+#endif
 
         // And do a slow merge to add this map to the finished design.
-        if (debug)
-        {
-            MapCleanser cleanProt(protoMap);
-            cleanProt.verifyMap("protoMap before featuremap Merge:");
+        protoMap->mergeMap(featuremap);
 
-            protoMap->mergeMap(featuremap);
+#if 0
+            protoMap->buildNeighbours();
+            MapCleanser cleanp(protoMap);
+            cleanp.verifyMap("pmap");
+#endif
 
-            cleanProt.verifyMap("protoMap after featuremap Merge:");
-        }
-        else
-        {
-            protoMap->mergeMap(featuremap);
-        }
-
-        if (debug) qDebug().noquote() << "Constructed SUB map (ret): vertices=" << protoMap->numVertices()<< "edges=" << protoMap->numEdges();
-        if (debug) qDebug().noquote() << protoMap->calcVertexEdgeCounts();
+        qDebug().noquote() << "merged design element:" << count++;
     }
 
-    qDebug() << "Constructed complete map (ret): vertices=" << protoMap->numVertices() << "edges=" << protoMap->numEdges();
+    qDebug() << "PROTOTYPE merged";
+
+    protoMap->sortEdges();
+    protoMap->sortVertices();
+    protoMap->buildNeighbours();
+
+    protoMap->verifyMap("protoMap");
+
+    qDebug() << "PROTOTYPE COMPLETED MAP: vertices=" << protoMap->numVertices() << "edges=" << protoMap->numEdges();
 
     panel->hidePanelStatus();
 #ifdef TPMSPLASH
-    if (showSplash)
-    {
-        panel->hideSplash();
-    }
+     panel->hideSplash();
 #endif
 
     return protoMap;

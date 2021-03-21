@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+<Tiling version="6">
+	<Name>vanda_base2.v3</Name>
+	<Fill>-1,1,-1,1</Fill>
+	<T1>-9.579474585646258e-16,5.214823077868036</T1>
+	<T2>4.515663504504687,2.607119539895553</T2>
+	<ViewSettings>
+		<width>2128</width>
+		<height>1695</height>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+	</ViewSettings>
+	<Feature type="regular" sides="6" rotation="30" scale="1">
+		<Placement>
+			<scale>0.8699999999999999</scale>
+			<rot>0</rot>
+			<tranX>1.258566978193148</tranX>
+			<tranY>0.6355140186915893</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="regular" sides="3" rotation="30" scale="0.8699999999999999">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>3.770040649168018</tranX>
+			<tranY>-1.974485981308412</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>2.263156446583096</tranX>
+			<tranY>-1.104485981308411</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>2.263156446583096</tranX>
+			<tranY>-2.844485981308411</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>59.99999999999999</rot>
+			<tranX>4.774630117557969</tranX>
+			<tranY>1.505514018691588</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>59.99999999999999</rot>
+			<tranX>4.774630117557968</tranX>
+			<tranY>-0.2344859813084117</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>59.99999999999999</rot>
+			<tranX>3.267745914973045</tranX>
+			<tranY>0.6355140186915889</tranY>
+		</Placement>
+	</Feature>
+	<Desc />
+	<Auth />
+	<BackgroundImage name="vanda_base2.JPG">
+		<Scale>0.5</Scale>
+		<Rot>0</Rot>
+		<X>0</X>
+		<Y>0</Y>
+	</BackgroundImage>
+</Tiling>

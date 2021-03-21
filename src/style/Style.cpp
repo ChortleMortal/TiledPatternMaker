@@ -107,10 +107,11 @@ void Style::annotateEdges(MapPtr map)
         return;
 
     debugMap->wipeout();
-    for (auto edge : map->getEdges())
+    int i=0;
+    for (auto edge : map->edges)
     {
         QPointF p = edge->getMidPoint();
-        debugMap->insertDebugMark(p, QString::number(edge->getTmpEdgeIndex()));
+        debugMap->insertDebugMark(p, QString::number(i++));
     }
     //debugMap->dumpMap(false);
 }
@@ -197,10 +198,10 @@ void Style::drawAnnotation(QPainter * painter, QTransform T)
     QPen pen(Qt::white);
     painter->setPen(pen);
 
-    for (auto edge : debugMap->getEdges())
+    for (auto edge : debugMap->edges)
     {
-        QPointF p1 = T.map(edge->getV1()->getPosition());
-        QPointF p2 = T.map(edge->getV2()->getPosition());
+        QPointF p1 = T.map(edge->v1->pt);
+        QPointF p2 = T.map(edge->v2->pt);
         painter->drawLine(p1,p2);
     }
 

@@ -38,7 +38,7 @@ AQVBoxLayout::AQVBoxLayout() : QVBoxLayout()
 {
     setAlignment(Qt::AlignTop);
     setSpacing(0);
-    setMargin(0);
+    //setMargin(0);
     setContentsMargins(0,0,0,0);
 }
 
@@ -46,7 +46,7 @@ AQHBoxLayout::AQHBoxLayout() : QHBoxLayout()
 {
     setAlignment(Qt::AlignLeft);
     setSpacing(0);
-    setMargin(0);
+    //setMargin(0);
     setContentsMargins(0,0,0,0);
 }
 

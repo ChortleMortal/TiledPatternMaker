@@ -29,6 +29,7 @@
 #include "geometry/point.h"
 #include "geometry/intersect.h"
 #include "geometry/transform.h"
+#include "geometry/dcel.h"
 #include "tapp/figure.h"
 #include "viewers/viewcontrol.h"
 #include "makers/motif_maker/feature_button.h"
@@ -46,7 +47,7 @@ MapEditorView::MapEditorView() : Layer("MapEditorView",LTYPE_MAP_EDITOR)
 
 void MapEditorView::paint(QPainter *painter)
 {
-    if (!map)
+    if (!map && !dcel.lock())
         return;
 
     painter->setRenderHint(QPainter::Antialiasing ,true);
@@ -85,19 +86,58 @@ void MapEditorView::drawMap(QPainter * painter)
     if (hideMap)
         return;
 
+    if (!map)
+        return;
+
     painter->setPen(QPen(Qt::green,mapLineWidth ));
-    for (auto edge : map->getEdges())
+    for (auto edge : map->edges)
     {
-        QPointF v1 = edge->getV1()->getPosition();
-        QPointF v2 = edge->getV2()->getPosition();
+        QPointF v1 = edge->v1->pt;
+        QPointF v2 = edge->v2->pt;
         if (edge->getType() == EDGETYPE_LINE)
         {
             painter->drawLine(viewT.map(v1),viewT.map(v2));
         }
         else if (edge->getType() == EDGETYPE_CURVE)
         {
-            QPointF v1 = viewT.map(edge->getV1()->getPosition());
-            QPointF v2 = viewT.map(edge->getV2()->getPosition());
+            QPointF v1 = viewT.map(edge->v1->pt);
+            QPointF v2 = viewT.map(edge->v2->pt);
+            QPointF ac = viewT.map(edge->getArcCenter());
+
+            arcData ad = Edge::calcArcData(v1,v2,ac,edge->isConvex());
+
+            int start = qRound(ad.start * 16.0);
+            int span  = qRound(ad.span  * 16.0);
+
+            painter->drawArc(ad.rect, start, span);
+        }
+    }
+}
+
+void MapEditorView::drawDCEL(QPainter * painter)
+{
+    if (hideMap)
+        return;
+
+    DCELPtr dp = dcel.lock();
+    if (!dp)
+        return;
+
+    painter->setPen(QPen(Qt::green,mapLineWidth ));
+
+    for (auto hedge : qAsConst(dp->edges))
+    {
+        EdgePtr edge = hedge->edge;
+        QPointF v1 = edge->v1->pt;
+        QPointF v2 = edge->v2->pt;
+        if (edge->getType() == EDGETYPE_LINE)
+        {
+            painter->drawLine(viewT.map(v1),viewT.map(v2));
+        }
+        else if (edge->getType() == EDGETYPE_CURVE)
+        {
+            QPointF v1 = viewT.map(edge->v1->pt);
+            QPointF v2 = viewT.map(edge->v2->pt);
             QPointF ac = viewT.map(edge->getArcCenter());
 
             arcData ad = Edge::calcArcData(v1,v2,ac,edge->isConvex());

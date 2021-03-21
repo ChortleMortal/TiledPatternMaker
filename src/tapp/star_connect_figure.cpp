@@ -103,8 +103,7 @@ MapPtr StarConnectFigure::buildUnit()
 
     scaleToUnit(unitMap);
 
-    MapCleanser cleanser(unitMap);
-    cleanser.verifyMap("StarConnectFigure");
+    unitMap->verifyMap("StarConnectFigure");
 
     return unitMap;
 }

@@ -268,10 +268,6 @@ QString FileServices::getNextVersion(QString name, bool isTiling)
 
     // bump
     new_version++;
-    if (isTiling)
-        path = config->newTileDir;
-    else
-        path = config->newDesignDir;
     name = root + ".v" + QString::number(new_version);
     return name;
 }

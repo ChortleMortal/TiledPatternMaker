@@ -65,6 +65,8 @@ void ExtendedRosette::extendMap()
 {
     qDebug() << "ExtendedRosette::extendMap";
 
+    figureMap->verifyMap("Extended figure - before");
+
     qreal radius = getExtBoundaryScale();
     QGraphicsEllipseItem circle(-radius,-radius,radius * 2.0, radius * 2.0);
 
@@ -72,101 +74,89 @@ void ExtendedRosette::extendMap()
     // extendLine and clipLine both assume that p1 is closest to the center
     // and p0 is closest to the edge
 
-    QVector<QPointF>   extendPoints;
-    QVector<VertexPtr> extendVertices;
+    // the shortest line is the one to insert
+    QMap<VertexPtr,VertexPtr> new_edges;    // key is new vertex
 
-    QVector<EdgePtr> ledges = figureMap->getEdges();    // local copy of vector
-    for(auto e = ledges.begin(); e != ledges.end(); e++)
+
+    QVector<EdgePtr> local_edges = figureMap->edges;    // local copy of vector
+    for (auto & edge  : local_edges)
     {
-        EdgePtr edge = *e;
-        VertexPtr v1 = edge->getV1();   // outer
-        VertexPtr v2 = edge->getV2();   // inner
-        QLineF l1 = QLineF(v2->getPosition(),v1->getPosition());
+        VertexPtr v1 = edge->v1;   // outer
+        VertexPtr v2 = edge->v2;   // inner
+        QLineF l1 = QLineF(v2->pt,v1->pt);
 
         bool extend = false;
-        if (!Point::intersectPoly(l1,getRadialFigBoundary()))
-        {
-            // point doesn't touch the figure boundary
-            if (extendFreeVertices)
-            {
-                extend = true;
-            }
-        }
-        else
-        {
-            // point does touch the figure boundary
-            if (extendPeripheralVertices)
-            {
-                extend = true;
-            }
-        }
+        QPointF intersect;
+        bool touches = Point::intersectPoly(l1,getRadialFigBoundary(),intersect);
 
-        if (extend)
+        if (!touches && extendFreeVertices)
+            extend = true; // point doesn't touch the figure boundary
+        else if (touches && extendPeripheralVertices)
+            extend = true; // point does touch the figure boundary
+
+        if (!extend)
+            continue;
+
+        if (!hasExtCircleBoundary())
         {
-            if (!hasExtCircleBoundary())
+            // dont extend lines which already touch boundary
+            QPointF intersect2;
+            touches = Point::intersectPoly(l1,getExtBoundary(),intersect2);
+            if (touches)
+                continue;
+
+            // extend lines
+            QLineF l2  = Point::extendLine(l1,10.0);      // extends
+            l2         = Point::clipLine(l2,getExtBoundary()); // clips
+            QPointF pt = l2.p2();                         // outer
+            // test if this new point is already a vertex
+            VertexPtr newv = figureMap->insertVertex(pt);
+            if (new_edges.contains(newv))
             {
-                // dont extend lines which already touch boundary
-                if (!Point::intersectPoly(l1,getExtBoundary()))
+                VertexPtr old1 = new_edges[newv];
+                if (len(v1,newv) < len(old1,newv))
                 {
-                    // extend lines
-                    QLineF l2  = Point::extendLine(l1,10.0);      // extends
-                    l2         = Point::clipLine(l2,getExtBoundary()); // clips
-                    QPointF pt = l2.p2();                         // outer
-                    // test if this new point is already a vertex
-                    VertexPtr newv;
-                    for (int i=0; i < extendPoints.size(); i++)
-                    {
-                        if (!newv)
-                        {
-                            QPointF oldPt = extendPoints[i];
-                            if (Utils::canSnapTo(oldPt,pt))
-                            {
-                                newv = extendVertices[i];
-                            }
-                        }
-                    }
-                    if (!newv)
-                    {
-                        // insert new Vertex
-                        newv = figureMap->insertVertex(pt);
-                        extendPoints.push_back(pt);
-                        extendVertices.push_back(newv);
-                    }
-                    // insertEdge
-                    figureMap->insertEdge(newv,v1);
-                    qDebug() << "extension" << newv->getPosition() << v1->getPosition();
-                    //map->verify("Extended figure - mid",true,true,false);
+                    new_edges[newv] = v1;
                 }
             }
             else
             {
-                QPointF a;
-                QPointF b;
-                int points = Utils::circleLineIntersectionPoints(circle,radius,l1,a,b);
-                if (points)
+                new_edges[newv] = v1;
+            }
+        }
+        else
+        {
+            QPointF a;
+            QPointF b;
+            int points = Utils::circleLineIntersectionPoints(circle,radius,l1,a,b);
+            if (points)
+            {
+                VertexPtr newv;
+                if (!a.isNull())
                 {
-                    VertexPtr newv;
-                    if (!a.isNull())
-                    {
-                        newv = figureMap->insertVertex(a);
-                        figureMap->insertEdge(newv,v1);
-                    }
-                    if (!b.isNull())
-                    {
-                        newv = figureMap->insertVertex(b);
-                        figureMap->insertEdge(newv,v1);
-                    }
+                    newv = figureMap->insertVertex(a);
+                    figureMap->insertEdge(newv,v1);
+                }
+                if (!b.isNull())
+                {
+                    newv = figureMap->insertVertex(b);
+                    figureMap->insertEdge(newv,v1);
                 }
             }
         }
     }
-    MapCleanser cleanser(figureMap);
-    cleanser.verifyMap("Extended figure - after");
+
+    for (QMap<VertexPtr,VertexPtr>::const_iterator it = new_edges.cbegin(), end = new_edges.cend(); it != end; ++it)
+    {
+        figureMap->insertEdge(it.value(),it.key());
+    }
 
     if (connectBoundaryVertices)
     {
         connectOuterVertices(figureMap);
     }
+
+    figureMap->verifyMap("Extended figure - after");
 }
 
 void ExtendedRosette::connectOuterVertices(MapPtr map)
@@ -177,19 +167,16 @@ void ExtendedRosette::connectOuterVertices(MapPtr map)
 
     QVector<VertexPtr> edgeVerts;
 
-    NeighbourMap & nmap = map->getNeighbourMap();
-
-    for (const auto & v : map->getVertices())
+    for (const auto & v : map->vertices)
     {
         //qDebug() << "num neigbours=" << v->numNeighbours();
-        NeighboursPtr np = nmap.getNeighbours(v);
-        if (np->numNeighbours() < 2)
+        if (v->numNeighbours() < 2)
         {
             bool doInsert = false;
             for (int i=0; i < blines.size(); i++)
             {
                 QLineF line = blines[i];
-                if (!Utils::pointAtEndOfLine(line,v->getPosition()))
+                if (!Utils::pointAtEndOfLine(line,v->pt))
                 {
                     doInsert = true;
                 }
@@ -197,7 +184,7 @@ void ExtendedRosette::connectOuterVertices(MapPtr map)
             if (doInsert)
             {
                 //qDebug() << "insert";
-                //debugMap->insertDebugMark(v->getPosition(),"v0");
+                //debugMap->insertDebugMark(v->pt,"v0");
                 edgeVerts.push_back(v);
             }
             else
@@ -222,7 +209,7 @@ void ExtendedRosette::connectOuterVertices(MapPtr map)
                 if (it == edgeVerts.end())
                     continue;
                 v1  = *it++;
-                if (!Utils::pointOnLine(line,v1->getPosition()))
+                if (!Utils::pointOnLine(line,v1->pt))
                 {
                     v1.reset();
                     continue;
@@ -234,7 +221,7 @@ void ExtendedRosette::connectOuterVertices(MapPtr map)
                 if (it == edgeVerts.end())
                     continue;
                 v2  = *it++;
-                if (!Utils::pointOnLine(line,v2->getPosition()))
+                if (!Utils::pointOnLine(line,v2->pt))
                 {
                     v2.reset();
                     continue;
@@ -243,15 +230,13 @@ void ExtendedRosette::connectOuterVertices(MapPtr map)
             // we have v1 and v2
 
             map->insertEdge(v1,v2);
-            qDebug() << "newLine=" << v1->getPosition() << v2->getPosition();
-            debugMap->insertDebugMark(v1->getPosition(),"v1");
-            debugMap->insertDebugMark(v2->getPosition(),"v2");
+            qDebug() << "newLine=" << v1->pt << v2->pt;
+            debugMap->insertDebugMark(v1->pt,"v1");
+            debugMap->insertDebugMark(v2->pt,"v2");
             v1.reset();
             v2.reset();
         }
     }
 
-    MapCleanser cleanser(map);
-    cleanser.verifyMap("Extended figure - after2");
+    map->verifyMap("Extended figure - after2");
 }
-

@@ -2,6 +2,7 @@
 #define DLGCROP_H
 
 #include <QDialog>
+#include "panels/layout_sliderset.h"
 #include "makers/map_editor/map_editor.h"
 
 class DlgCrop : public QDialog
@@ -9,8 +10,11 @@ class DlgCrop : public QDialog
     Q_OBJECT
 public:
     DlgCrop(MapEditor * me, QWidget * parent = nullptr);
-
-    void enterEvent(QEvent *event) override;
+#if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
+    virtual void  enterEvent(QEnterEvent *event) override;
+#else
+    virtual void  enterEvent(QEvent *event) override;
+#endif
     void leaveEvent(QEvent *event) override;
 
 private slots:
@@ -20,15 +24,15 @@ private slots:
 private:
     MapEditor * mapeditor;
 
-    QDoubleSpinBox * width;
-    QDoubleSpinBox * height;
-    QDoubleSpinBox * startX;
-    QDoubleSpinBox * startY;
+    AQDoubleSpinBox * width;
+    AQDoubleSpinBox * height;
+    AQDoubleSpinBox * startX;
+    AQDoubleSpinBox * startY;
 
-    QDoubleSpinBox * widthS;
-    QDoubleSpinBox * heightS;
-    QDoubleSpinBox * startXS;
-    QDoubleSpinBox * startYS;
+    AQDoubleSpinBox * widthS;
+    AQDoubleSpinBox * heightS;
+    AQDoubleSpinBox * startXS;
+    AQDoubleSpinBox * startYS;
 
     bool entered;
 };

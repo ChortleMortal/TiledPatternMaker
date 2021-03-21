@@ -39,7 +39,8 @@ public:
     static  bool getIntersection(QPointF p1, QPointF q1, QPointF p2, QPointF q2 , QPointF &intersect);
 
     // Don't return the intersection if it is at the enpoints of both segments.
-    static  bool getTrueIntersection(QPointF & p1, QPointF & q1, QPointF & p2, QPointF & q2 , QPointF &intersect);
+    static  bool getTrueIntersection(QLineF  l1, QLineF  l2, QPointF &intersect);
+    static  bool getTrueIntersection(QPointF p1, QPointF q1, QPointF p2, QPointF q2 , QPointF &intersect);
 
 protected:
     // Return a point (s,t), where s is the fraction of the from p1 to

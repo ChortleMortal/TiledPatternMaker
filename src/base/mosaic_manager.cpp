@@ -86,10 +86,10 @@ bool MosaicManager::loadMosaic(QString name)
     // size view to mosaic
     ModelSettingsPtr settings = mosaic->getSettings();
     QSize size = settings->getSize();
-    view->setAllMosaicActiveSizes(size);
+    view->setAllCommonActiveSizes(size);
     if (config->scaleToView)
     {
-        view->setAllMosaicDefinedSizes(size);
+        view->setAllCommonDefinedSizes(size);
     }
 
     return true;
@@ -102,7 +102,7 @@ bool MosaicManager::saveMosaic(QString name, QString & savedName, bool forceOver
     {
         QMessageBox box(ControlPanel::getInstance());
         box.setIcon(QMessageBox::Warning);
-        box.setText("Dave FAILED: There is no mosaic to save");
+        box.setText("Save FAILED: There is no mosaic to save");
         box.exec();
         return false;
     }
@@ -112,6 +112,8 @@ bool MosaicManager::saveMosaic(QString name, QString & savedName, bool forceOver
     {
         if (!filename.isEmpty())
         {
+            bool isOriginal = filename.contains("original");
+
             QMessageBox msgBox(ControlPanel::getInstance());
             QString str = QString("The XML design file <%1> already exists").arg(filename);
             msgBox.setText(str);
@@ -131,14 +133,21 @@ bool MosaicManager::saveMosaic(QString name, QString & savedName, bool forceOver
             {
                 // appends a version
                 name = FileServices::getNextVersion(name,false);
-                filename = config->newDesignDir + "/" + name + ".xml";
+                if (isOriginal)
+                {
+                    filename = config->originalDesignDir + name + ".xml";
+                }
+                else
+                {
+                    filename = config->newDesignDir + name + ".xml";
+                }
             }
             // save drops thru
             Q_UNUSED(save)
         }
         else
         {
-            filename = config->newDesignDir + "/" + name + ".xml";
+            filename = config->newDesignDir + name + ".xml";
         }
     }
 
@@ -146,8 +155,8 @@ bool MosaicManager::saveMosaic(QString name, QString & savedName, bool forceOver
 
     qDebug() << "Saving XML to:"  << filename;
 
-    // match size to current view
-    QSize size  = view->size();
+    // match size of mosaic view
+    QSize size  = view->getActiveFrameSize(VIEW_MOSAIC);
     mosaic->getSettings()->setSize(size);
 
     // write

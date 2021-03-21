@@ -28,6 +28,7 @@
 #include "style/style.h"
 #include "base/colorset.h"
 #include "geometry/faces.h"
+#include "geometry/colormaker.h"
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -71,6 +72,8 @@ public:
     void    setAlgorithm(int val);
     int     getAlgorithm() { return algorithm; }
 
+    void    setCleanseLevel(int val);
+    int     getCleanseLevel() { return cleanseLevel; }
 protected:
 
     // Parameters of the rendering.
@@ -81,14 +84,16 @@ protected:
     ColorSet            whiteColorSet;
     ColorSet            blackColorSet;
     ColorGroup          colorGroup;
-    FacesPtr            faces;
+
+    ColorMakerPtr       cm;
 
 private:
-    void drawOriginal(GeoGraphics *gg);
-    void drawNew2(GeoGraphics *gg);
-    void drawNew3(GeoGraphics *gg);
+    void drawDCEL(GeoGraphics *gg);
+    void drawDCELNew2(GeoGraphics *gg);
+    void drawDCELNew3(GeoGraphics *gg);
 
     int algorithm;
+    int cleanseLevel;
 };
 #endif
 

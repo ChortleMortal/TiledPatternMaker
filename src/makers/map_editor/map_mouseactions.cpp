@@ -76,28 +76,25 @@ void MoveVertex::endDragging( QPointF spt)
 
     // if new vertex is over an old vertex, delete this vertex, and
     // replace old vertex in edges
-    NeighbourMap & nmap  = map->getNeighbourMap();
-    NeighboursPtr     np = nmap.getNeighbours(_vp);
     MapSelectionPtr  sel = me->findVertex(spt,_vp);
-    SelectionSet     set = me->findEdges(spt,np->getNeighbours());
+    SelectionSet     set = me->findEdges(spt,_vp->getNeighbours());
     MapSelectionPtr sel2 = me->findAnEdge(set);
     if (sel)
     {
         VertexPtr existing = sel->getVertex();
-        for (auto ep : qAsConst(np->getNeighbours()))
+        for (auto ep : qAsConst(_vp->getNeighbours()))
         {
             Q_ASSERT(map->contains(ep));
-            if (ep->getV1() == _vp)
+            if (ep->v1 == _vp)
             {
                 ep->setV1(existing);    // substitute
             }
             else
             {
-                Q_ASSERT(ep->getV2() == _vp);
+                Q_ASSERT(ep->v2 == _vp);
                 ep->setV2(existing);    // substitue
             }
-            NeighboursPtr np2 = nmap.getNeighbours(existing);
-            np2->insertEdge(ep);        // connect
+            existing->insertNeighbour(ep);        // connect
         }
         map->removeVertexSimple(_vp);   // delete
         qDebug() << "SNAPTO vertex";
@@ -145,18 +142,15 @@ void MoveVertex::endDragging( QPointF spt)
 
     if (edited)
     {
+
         // tidy up
+        MapCleanser cleanser(map);
+        cleanser.cleanse(joinupColinearEdges | divideupIntersectingEdges,false);   // deal with lines crossing existing lines
+
         map->sortVertices();
         map->sortEdges();
-
-        MapCleanser cleanser(map);
-        cleanser.cleanNeighbours();
-
-        // deal with lines crossing existing lines
-        cleanser.joinColinearEdges();
-        cleanser.divideIntersectingEdges();
-
-        cleanser.verifyMap("modifed fig map");
+        map->buildNeighbours();
+        map->verifyMap("modifed fig map");
     }
 
     MapMouseAction::endDragging(spt);
@@ -168,7 +162,7 @@ void MoveVertex::draw(QPainter* painter)
     qreal radius = 5.0;
     painter->setPen(QPen(Qt::blue,1));
     painter->setBrush(Qt::blue);
-    painter->drawEllipse(me->viewT.map(_vp->getPosition()), radius, radius);
+    painter->drawEllipse(me->viewT.map(_vp->pt), radius, radius);
 }
 
 /////////
@@ -187,12 +181,12 @@ void MoveEdge::updateDragging(QPointF spt)
 {
     QPointF delta  = me->viewTinv.map(spt)  - me->viewTinv.map(last_drag);
 
-    QPointF a = _edge->getV1()->getPosition();
-    QPointF b = _edge->getV2()->getPosition();
+    QPointF a = _edge->v1->pt;
+    QPointF b = _edge->v2->pt;
     a += delta;
     b += delta;
-    _edge->getV1()->setPosition(a);
-    _edge->getV2()->setPosition(b);
+    _edge->v1->setPosition(a);
+    _edge->v2->setPosition(b);
 
     MapMouseAction::updateDragging(spt);
 }
@@ -201,14 +195,12 @@ void MoveEdge::endDragging(QPointF spt)
 {
     MapPtr map = me->map;
 
+    MapCleanser cleanser(map);
+    cleanser.cleanse(divideupIntersectingEdges,false);     // deal with lines crossing existing lines
+
     map->sortVertices();
     map->sortEdges();
-
-    MapCleanser cleanser(map);
-    cleanser.cleanNeighbours();
-
-    // deal with lines crossing existing lines
-    cleanser.divideIntersectingEdges();
+    map->buildNeighbours();
 
     MapMouseAction::endDragging(spt);
     me->buildEditorDB();
@@ -270,7 +262,7 @@ void DrawLine::updateDragging(QPointF spt)
     for (auto it = me->lines.begin(); it != me->lines.end(); it++)
     {
         lineInfo & linfo = *it;
-        QLineF::IntersectType itype = newline.intersect(linfo._line,&intersect);
+        QLineF::IntersectType itype = newline.intersects(linfo._line,&intersect);
         if (itype == QLineF::BoundedIntersection)
         {
             intersectPoints.push_back(intersect);
@@ -322,7 +314,8 @@ void DrawLine::endDragging( QPointF spt)
 
     // deal with new line crossing existing lines
     MapCleanser cleanser(map);
-    cleanser.divideIntersectingEdges();
+    cleanser.cleanse(divideupIntersectingEdges,false);     // deal with lines crossing existing lines
+
     MapMouseAction::endDragging(spt);
     me->buildEditorDB();
 }
@@ -456,7 +449,7 @@ void ExtendLine::updateDragging(QPointF spt)
     for (auto it = me->lines.begin(); it != me->lines.end(); it++)
     {
         lineInfo & linfo = *it;
-        QLineF::IntersectType itype = currentLine.intersect(linfo._line,&intersect);
+        QLineF::IntersectType itype = currentLine.intersects(linfo._line,&intersect);
         if (itype == QLineF::BoundedIntersection)
         {
             intersectPoints.push_back(intersect);
@@ -513,10 +506,11 @@ void ExtendLine::endDragging( QPointF spt)
     {
         MapPtr map = me->map;
         // extending an edge
-        VertexPtr v2 = startEdge->getV2();
+        VertexPtr v2 = startEdge->v2;
         v2->setPosition(currentLine.p2());
+
         MapCleanser cleanser(map);
-        cleanser.divideIntersectingEdges(); // deal with new line crossing existing lines
+        cleanser.cleanse(divideupIntersectingEdges,false);     // deal with lines crossing existing lines
     }
     else
     {
@@ -558,8 +552,8 @@ void ExtendLine::flipDirection()
 
     if (startEdge)
     {
-        VertexPtr va = startEdge->getV1();
-        VertexPtr vb = startEdge->getV2();
+        VertexPtr va = startEdge->v1;
+        VertexPtr vb = startEdge->v2;
         startEdge->setV1(vb);
         startEdge->setV2(va);
     }

@@ -23,6 +23,7 @@
  */
 
 #include "panels/page_layers.h"
+#include "panels/layout_sliderset.h"
 #include "viewers/view.h"
 #include "designs/patterns.h"
 #include "base/utilities.h"
@@ -53,17 +54,6 @@ page_layers:: page_layers(ControlPanel * cpanel)  : panel_page(cpanel,"Layer Inf
     layerTable->setMaximumWidth(880);
     layerTable->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     layerTable->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-
-    connect(&visMapper,      SIGNAL(mapped(int)), this, SLOT(slot_visibilityChanged(int)));
-    connect(&zMapper,        SIGNAL(mapped(int)), this, SLOT(slot_zChanged(int)));
-    connect(&alignMapper,    SIGNAL(mapped(int)), this, SLOT(slot_alignPressed(int)));
-    connect(&leftMapper,     SIGNAL(mapped(int)), this, SLOT(slot_set_deltas(int)));
-    connect(&topMapper,      SIGNAL(mapped(int)), this, SLOT(slot_set_deltas(int)));
-    connect(&widthMapper,    SIGNAL(mapped(int)), this, SLOT(slot_set_deltas(int)));
-    connect(&rotMapper,      SIGNAL(mapped(int)), this, SLOT(slot_set_deltas(int)));
-    connect(&cenXMapper,     SIGNAL(mapped(int)), this, SLOT(slot_set_deltas(int)));
-    connect(&cenYMapper,     SIGNAL(mapped(int)), this, SLOT(slot_set_deltas(int)));
-    connect(&clearMapper,    SIGNAL(mapped(int)), this, SLOT(slot_clear_deltas(int)));
 
     connect(view, &View::sig_deltaScale,    this, &page_layers::refreshCanvas);
     connect(view, &View::sig_deltaRotate,   this, &page_layers::refreshCanvas);
@@ -115,25 +105,21 @@ void page_layers::populateLayer(LayerPtr layer, int col)
     cbBox->setContentsMargins(0,0,0,0);
     layerTable->setCellWidget(LAYER_VISIBILITY,col,cbWidget);
     cb->setChecked(layer->isVisible());
-    connect(cb, SIGNAL(toggled(bool)), &visMapper, SLOT(map()),Qt::UniqueConnection);
-    visMapper.setMapping(cb,col);
+    connect(cb, &QCheckBox::toggled, [this, col] { visibilityChanged(col); });
 
     // z-level
     qreal z = layer->zValue();
-    QDoubleSpinBox * zBox = new QDoubleSpinBox;
+    AQDoubleSpinBox * zBox = new AQDoubleSpinBox;
     zBox->setRange(-10,10);
     zBox->setValue(z);
     zBox->setAlignment(Qt::AlignCenter);
     layerTable->setCellWidget(LAYER_Z,col,zBox);
-
-    connect(zBox, SIGNAL(valueChanged(double)), &zMapper, SLOT(map()),Qt::UniqueConnection);
-    zMapper.setMapping(zBox,col);
+    connect(zBox, &AQDoubleSpinBox::valueChanged, [this,zBox,col] { zChanged(zBox,col); });
 
     // align
     QPushButton * abtn = new QPushButton("Align-to-this");
     layerTable->setCellWidget(LAYER_ALIGN,col,abtn);
-    connect(abtn, SIGNAL(clicked(bool)), &alignMapper, SLOT(map()),Qt::UniqueConnection);
-    alignMapper.setMapping(abtn,col);
+    connect(abtn, &QPushButton::clicked, [this,col] { alignPressed(col); });
 
     // view transform
     QTransform t = layer->getLayerTransform();
@@ -161,12 +147,12 @@ void page_layers::populateLayer(LayerPtr layer, int col)
     // scene xfrorm
     Xform xf = layer->getCanvasXform();
 
-    QDoubleSpinBox * dleft  = new QDoubleSpinBox();
-    QDoubleSpinBox * dtop   = new QDoubleSpinBox();
-    QDoubleSpinBox * dwidth = new QDoubleSpinBox();
-    QDoubleSpinBox * drot   = new QDoubleSpinBox();
-    QDoubleSpinBox * dcenX  = new QDoubleSpinBox();
-    QDoubleSpinBox * dcenY  = new QDoubleSpinBox();
+    AQDoubleSpinBox * dleft  = new AQDoubleSpinBox();
+    AQDoubleSpinBox * dtop   = new AQDoubleSpinBox();
+    AQDoubleSpinBox * dwidth = new AQDoubleSpinBox();
+    AQDoubleSpinBox * drot   = new AQDoubleSpinBox();
+    AQDoubleSpinBox * dcenX  = new AQDoubleSpinBox();
+    AQDoubleSpinBox * dcenY  = new AQDoubleSpinBox();
 
     dleft->setRange(-4096.0,4096.0);
     dtop->setRange(-3840.0,3840.0);
@@ -199,28 +185,22 @@ void page_layers::populateLayer(LayerPtr layer, int col)
     dcenY->setSingleStep(0.001);
 
     layerTable->setCellWidget(CANVAS_SCALE,col,dwidth);
-    QObject::connect(dwidth, SIGNAL(valueChanged(qreal)), &widthMapper, SLOT(map()));
-    widthMapper.setMapping(dwidth,col);
+    connect(dwidth, &AQDoubleSpinBox::valueChanged, [this,col] { slot_set_deltas(col); });
 
     layerTable->setCellWidget(CANVAS_ROT,col,drot);
-    QObject::connect(drot, SIGNAL(valueChanged(qreal)), &rotMapper, SLOT(map()));
-    rotMapper.setMapping(drot,col);
+    connect(drot, &AQDoubleSpinBox::valueChanged, [this,col] { slot_set_deltas(col); });
 
     layerTable->setCellWidget(CANVAS_X,col,dleft);
-    QObject::connect(dleft, SIGNAL(valueChanged(qreal)), &leftMapper, SLOT(map()));
-    leftMapper.setMapping(dleft,col);
+    connect(dleft, &AQDoubleSpinBox::valueChanged, [this,col] { slot_set_deltas(col); });
 
     layerTable->setCellWidget(CANVAS_Y,col,dtop);
-    QObject::connect(dtop, SIGNAL(valueChanged(qreal)), &topMapper, SLOT(map()));
-    topMapper.setMapping(dtop,col);
+    connect(dtop, &AQDoubleSpinBox::valueChanged, [this,col] { slot_set_deltas(col); });
 
     layerTable->setCellWidget(CANVAS_CENTER_X,col,dcenX);
-    QObject::connect(dcenX, SIGNAL(valueChanged(qreal)), &cenXMapper, SLOT(map()));
-    cenXMapper.setMapping(dcenX,col);
+    connect(dcenX, &AQDoubleSpinBox::valueChanged, [this,col] { slot_set_deltas(col); });
 
     layerTable->setCellWidget(CANVAS_CENTER_Y,col,dcenY);
-    QObject::connect(dcenY, SIGNAL(valueChanged(qreal)), &cenYMapper, SLOT(map()));
-    cenYMapper.setMapping(dcenY,col);
+    connect(dcenY, &AQDoubleSpinBox::valueChanged, [this,col] { slot_set_deltas(col); });
 
     // layer transform
     twi = new QTableWidgetItem();
@@ -252,8 +232,7 @@ void page_layers::populateLayer(LayerPtr layer, int col)
 
     QPushButton * clearD = new QPushButton("Clear Canvas");
     layerTable->setCellWidget(CANVAS_CLEAR,col,clearD);
-    QObject::connect(clearD, SIGNAL(clicked(bool)), &clearMapper, SLOT(map()));
-    clearMapper.setMapping(clearD,col);
+    connect(clearD, &QPushButton::clicked, [this,col] { clear_deltas(col); });
 
     item = new QTableWidgetItem(QString::number(layer->numSubLayers()));
     item->setBackground(Qt::yellow);
@@ -289,7 +268,7 @@ void  page_layers::refreshPage()
 
         // z-level
         w = layerTable->cellWidget(LAYER_Z,col);
-        QDoubleSpinBox * zBox = dynamic_cast<QDoubleSpinBox*>(w);
+        AQDoubleSpinBox * zBox = dynamic_cast<AQDoubleSpinBox*>(w);
         Q_ASSERT(zBox);
         zBox->blockSignals(true);
         zBox->setValue(layer->zValue());
@@ -355,30 +334,30 @@ void page_layers::refreshCanvas()
         // canvas transform
         Xform xf = layer->getCanvasXform();
 
-        QDoubleSpinBox * spin;
+        AQDoubleSpinBox * spin;
         QWidget * w  = layerTable->cellWidget(CANVAS_SCALE,col);
-        spin = dynamic_cast<QDoubleSpinBox*>(w);
+        spin = dynamic_cast<AQDoubleSpinBox*>(w);
         Q_ASSERT(spin);
         w->blockSignals(true);
         spin->setValue(xf.getScale());
         w->blockSignals(false);
 
         w = layerTable->cellWidget(CANVAS_ROT,col);
-        spin = dynamic_cast<QDoubleSpinBox*>(w);
+        spin = dynamic_cast<AQDoubleSpinBox*>(w);
         Q_ASSERT(spin);
         w->blockSignals(true);
         spin->setValue(xf.getRotateDegrees());
         w->blockSignals(false);
 
         w = layerTable->cellWidget(CANVAS_X,col);
-        spin = dynamic_cast<QDoubleSpinBox*>(w);
+        spin = dynamic_cast<AQDoubleSpinBox*>(w);
         Q_ASSERT(spin);
         w->blockSignals(true);
         spin->setValue(xf.getTranslateX());
         w->blockSignals(false);
 
         w  = layerTable->cellWidget(CANVAS_Y,col);
-        spin = dynamic_cast<QDoubleSpinBox*>(w);
+        spin = dynamic_cast<AQDoubleSpinBox*>(w);
         Q_ASSERT(spin);
         w->blockSignals(true);
         spin->setValue(xf.getTranslateY());
@@ -387,14 +366,14 @@ void page_layers::refreshCanvas()
         QPointF center = xf.getCenter();
 
         w = layerTable->cellWidget(CANVAS_CENTER_X,col);
-        spin = dynamic_cast<QDoubleSpinBox*>(w);
+        spin = dynamic_cast<AQDoubleSpinBox*>(w);
         Q_ASSERT(spin);
         w->blockSignals(true);
         spin->setValue(center.x());
         w->blockSignals(false);
 
         w  = layerTable->cellWidget(CANVAS_CENTER_Y,col);
-        spin = dynamic_cast<QDoubleSpinBox*>(w);
+        spin = dynamic_cast<AQDoubleSpinBox*>(w);
         Q_ASSERT(spin);
         w->blockSignals(true);
         spin->setValue(center.y());
@@ -405,7 +384,7 @@ void page_layers::refreshCanvas()
 
 
 
-void page_layers::slot_visibilityChanged(int col)
+void page_layers::visibilityChanged(int col)
 {
     QWidget * qw = layerTable->cellWidget(LAYER_VISIBILITY,col);
     Q_ASSERT(qw);
@@ -422,9 +401,8 @@ void page_layers::slot_visibilityChanged(int col)
     }
 }
 
-void page_layers::slot_zChanged(int col)
+void page_layers::zChanged(AQDoubleSpinBox * dsp, int col)
 {
-    QDoubleSpinBox * dsp = dynamic_cast<QDoubleSpinBox*>(layerTable->cellWidget(LAYER_Z,col));
     Q_ASSERT(dsp);
     qreal z = dsp->value();
 
@@ -437,7 +415,7 @@ void page_layers::slot_zChanged(int col)
     }
 }
 
-void page_layers::slot_alignPressed(int col)
+void page_layers::alignPressed(int col)
 {
     LayerPtr layer = getLayer(col);
     if (!layer) return;
@@ -469,35 +447,35 @@ void page_layers::slot_set_deltas(int col)
     if (!layer) return;
 
     QWidget * w;
-    QDoubleSpinBox * spin;
+    AQDoubleSpinBox * spin;
 
     w    = layerTable->cellWidget(CANVAS_X,col);
-    spin = dynamic_cast<QDoubleSpinBox*>(w);
+    spin = dynamic_cast<AQDoubleSpinBox*>(w);
     Q_ASSERT(spin);
     qreal dleft = spin->value();
 
     w    = layerTable->cellWidget(CANVAS_Y,col);
-    spin = dynamic_cast<QDoubleSpinBox*>(w);
+    spin = dynamic_cast<AQDoubleSpinBox*>(w);
     Q_ASSERT(spin);
     qreal dtop = spin->value();
 
     w    = layerTable->cellWidget(CANVAS_SCALE,col);
-    spin = dynamic_cast<QDoubleSpinBox*>(w);
+    spin = dynamic_cast<AQDoubleSpinBox*>(w);
     Q_ASSERT(spin);
     qreal dwidth = spin->value();
 
     w    = layerTable->cellWidget(CANVAS_ROT,col);
-    spin = dynamic_cast<QDoubleSpinBox*>(w);
+    spin = dynamic_cast<AQDoubleSpinBox*>(w);
     Q_ASSERT(spin);
     qreal drot = spin->value();
 
     w    = layerTable->cellWidget(CANVAS_CENTER_X,col);
-    spin = dynamic_cast<QDoubleSpinBox*>(w);
+    spin = dynamic_cast<AQDoubleSpinBox*>(w);
     Q_ASSERT(spin);
     qreal cenx = spin->value();
 
     w    = layerTable->cellWidget(CANVAS_CENTER_Y,col);
-    spin = dynamic_cast<QDoubleSpinBox*>(w);
+    spin = dynamic_cast<AQDoubleSpinBox*>(w);
     Q_ASSERT(spin);
     qreal ceny = spin->value();
 
@@ -508,7 +486,7 @@ void page_layers::slot_set_deltas(int col)
     layer->setCanvasXform(xf);
 }
 
-void page_layers::slot_clear_deltas(int col)
+void page_layers::clear_deltas(int col)
 {
     LayerPtr layer = getLayer(col);
     if (!layer) return;

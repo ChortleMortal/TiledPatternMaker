@@ -107,42 +107,7 @@ void RadialFigure::buildMaps()
         return;
     }
 
-#if 1
     figureMap = replicateUnit();
-#else
-    //qDebug().noquote()  << "Tr=" << Tr.toString();
-
-    figureMap->wipeout();
-    debugMap->wipeout();
-
-    qreal rotateR = qDegreesToRadians(getFigureRotate());
-    QVector<QTransform> transforms;
-    QTransform base = QTransform().rotateRadians((2.0 * M_PI * don) + rotateR);
-    for( int idx = 0; idx < n; ++idx )
-    {
-        transforms.push_back(base);
-        //base = base.compose(Tr);
-        base = Tr * base;   // TODO xformo rder
-    }
-
-    unitMap->verifyMap("RadialFigure::getMap-unit");
-
-    figureMap->mergeSimpleMany(unitMap, transforms);
-
-    figureMap->verifyMap("RadialFigure::getMap-newret");
-#endif
-    //figureMap->dumpMap(false);
-
-#if 0
-    figureMap = figureMap->compress();
-    figureMap->dumpMap(false);
-#endif
-
-#if 0
-    figureMap->setTmpIndices();
-    annotateEdges();
-    //figureMap->dumpMap(false);
-#endif
 }
 
 MapPtr  RadialFigure::replicateUnit()
@@ -153,19 +118,19 @@ MapPtr  RadialFigure::replicateUnit()
     MapPtr map = make_shared<Map>("radial replicated unit map");
     for( int idx = 0; idx < getN(); ++idx )
     {
-        for (auto edge : unitMap->getEdges())
+        for (auto & edge : unitMap->edges)
         {
-            QPointF v1 = T.map( edge->getV1()->getPosition() );
-            QPointF v2 = T.map( edge->getV2()->getPosition() );
+            QPointF v1 = T.map(edge->v1->pt);
+            QPointF v2 = T.map(edge->v2->pt);
             VertexPtr vp1 = map->insertVertex(v1);
             VertexPtr vp2 = map->insertVertex(v2);
             map->insertEdge(vp1,vp2);
         }
-        //T.composeD(Tr);
-        T *= Tr;    // TODO xform order
+        T *= Tr;
     }
-    MapCleanser cleanser(map);
-    cleanser.verifyMap("Replicated Unit Map");
+
+    map->verifyMap("Replicated Unit Map");
+
     return map;
 }
 
@@ -176,8 +141,6 @@ void RadialFigure::setN(int n)
     don     = 1.0 / dn;
     Tr      = QTransform().rotateRadians( 2.0 * M_PI * don );
 }
-
-
 
 void RadialFigure::buildExtBoundary()
 {

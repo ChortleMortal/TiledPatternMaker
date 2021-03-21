@@ -59,13 +59,16 @@ private slots:
     void    slot_numberLines(bool enable);
     void    slot_warningsOnly(bool enable);
     void    slot_elapsedTime(bool enable);
+    void    slot_intervalTime(bool enable);
 
 protected:
 
 private:
-    QCheckBox * follow;
-    QTextEdit * ed;
+    QCheckBox   * follow;
+    QTextEdit   * ed;
     AQScrollBar * sbar;
+    QCheckBox   * cbLogElapsedTime;
+    QCheckBox   * cbLogIntervalTime;
 };
 
 #endif

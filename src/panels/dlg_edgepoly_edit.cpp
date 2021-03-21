@@ -94,8 +94,8 @@ void DlgEdgePolyEdit::display()
     for (int row = 0; row < epoly.size(); row++)
     {
         EdgePtr edge = epoly[row];
-        QPointF pt   = edge->getV1()->getPosition();
-        QPointF pt2  = edge->getV2()->getPosition();
+        QPointF pt   = edge->v1->pt;
+        QPointF pt2  = edge->v2->pt;
         int col      = 0;
 
         DlgLineEdit * le = new DlgLineEdit(epoly,row,col);
@@ -176,8 +176,8 @@ void DlgEdgePolyEdit::slot_applyDeltas()
     for (int i=0; i < epoly.size(); i++)
     {
         EdgePtr e = epoly[i];
-        VertexPtr v1 = e->getV1();
-        v1->setPosition(QPointF(v1->getPosition().x() + dx, v1->getPosition().y() + dy));
+        VertexPtr v1 = e->v1;
+        v1->setPosition(QPointF(v1->pt.x() + dx, v1->pt.y() + dy));
         // only do v1 since v2 will already be set
     }
 

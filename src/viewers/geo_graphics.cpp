@@ -141,19 +141,19 @@ void GeoGraphics::fillPolygon(const QPolygonF & pgon, QColor color)
     painter->drawPolygon(p);
 }
 
-void GeoGraphics::fillEdgePoly(const EdgePoly &epoly, QColor color)
+void GeoGraphics::fillEdgePoly(EdgePoly * epoly, QColor color)
 {
-    EdgePoly ep = epoly.map(transform);
+    EdgePoly ep = epoly->map(transform);
 
     QPainterPath path;
 
     auto e = ep.first();
-    path.moveTo(e->getV1()->getPosition());
+    path.moveTo(e->v1->pt);
     for (auto edge : ep)
     {
         if (edge->getType() == EDGETYPE_LINE)
         {
-            path.lineTo(edge->getV2()->getPosition());
+            path.lineTo(edge->v2->pt);
         }
         else if (edge->getType() == EDGETYPE_CURVE)
         {
@@ -169,18 +169,18 @@ void GeoGraphics::fillEdgePoly(const EdgePoly &epoly, QColor color)
 }
 
 
-void GeoGraphics::drawEdgePoly(const EdgePoly &epoly, QColor color, int width)
+void GeoGraphics::drawEdgePoly(EdgePoly *epoly, QColor color, int width)
 {
-    EdgePoly ep = epoly.map(transform);
+    EdgePoly ep = epoly->map(transform);
     QPainterPath path;
 
     auto e = ep.first();
-    path.moveTo(e->getV1()->getPosition());
+    path.moveTo(e->v1->pt);
     for (auto edge : ep)
     {
         if (edge->getType() == EDGETYPE_LINE)
         {
-            path.lineTo(edge->getV2()->getPosition());
+            path.lineTo(edge->v2->pt);
         }
         else if (edge->getType() == EDGETYPE_CURVE)
         {
@@ -269,7 +269,7 @@ void GeoGraphics::drawEdge(EdgePtr e, QPen pen)
     }
     else if (e->getType() == EDGETYPE_CURVE)
     {
-        drawChord(e->getV1()->getPosition(),e->getV2()->getPosition(),e->getArcCenter(),pen, QBrush(),e->isConvex());
+        drawChord(e->v1->pt,e->v2->pt,e->getArcCenter(),pen, QBrush(),e->isConvex());
     }
 }
 
@@ -277,11 +277,11 @@ void GeoGraphics::drawThickEdge(EdgePtr e, qreal width, QPen pen)
 {
     if (e->getType() == EDGETYPE_LINE)
     {
-        drawThickLine(e->getV1()->getPosition(),e->getV2()->getPosition(),width, pen);
+        drawThickLine(e->v1->pt,e->v2->pt,width, pen);
     }
     else if (e->getType() == EDGETYPE_CURVE)
     {
-        drawThickChord(e->getV1()->getPosition(),e->getV2()->getPosition(),e->getArcCenter(),pen, QBrush(),e->isConvex(), width);
+        drawThickChord(e->v1->pt,e->v2->pt,e->getArcCenter(),pen, QBrush(),e->isConvex(), width);
     }
 }
 
