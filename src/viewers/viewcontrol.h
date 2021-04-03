@@ -32,9 +32,11 @@
 
 enum eProtoViewMode
 {
-    PROTO_DRAW_MAP       =  0x01,
-    PROTO_DRAW_FEATURES  =  0x02,
-    PROTO_DRAW_FIGURES   =  0x04
+    PROTO_DRAW_MAP           =  0x01,
+    PROTO_DRAW_FEATURES      =  0x02,
+    PROTO_DRAW_FIGURES       =  0x04,
+    PROTO_HIGHLIGHT_FEATURES =  0x08,
+    PROTO_HIGHLIGHT_FIGURES  =  0x10
 };
 
 class ViewControl : public QObject
@@ -72,7 +74,6 @@ protected:
     void     viewTiling();
     void     viewTilingMaker();
     void     viewMapEditor();
-    void     viewFaceSet();
 
     void     setTitle(TilingPtr tp);
     void     setBackgroundImg(BkgdImgPtr bkgd);

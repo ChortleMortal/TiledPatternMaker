@@ -433,7 +433,7 @@ void ExtendLine::updateDragging(QPointF spt)
         qDebug() << "Extend line - cancelled";
         currentLine = startLine;
         MapMouseAction::endDragging(spt);
-        me->setMouseMode(MAP_MODE_NONE);
+        me->setMouseMode(MAPED_MOUSE_NONE);
         return;
     }
 
@@ -466,7 +466,7 @@ void ExtendLine::endDragging( QPointF spt)
     {
         qDebug() << "Extend line - cancelled";
         MapMouseAction::endDragging(spt);
-        me->setMouseMode(MAP_MODE_NONE);
+        me->setMouseMode(MAPED_MOUSE_NONE);
         return;
     }
 
@@ -522,7 +522,7 @@ void ExtendLine::endDragging( QPointF spt)
 
     MapMouseAction::endDragging(spt);
     me->buildEditorDB();
-    me->setMouseMode(MAP_MODE_NONE);
+    me->setMouseMode(MAPED_MOUSE_NONE);
 }
 
 void ExtendLine::draw(QPainter * painter)
@@ -660,7 +660,7 @@ void CreateCrop::endDragging( QPointF spt)
 
     MapMouseAction::endDragging(spt);
 
-    me->setMouseMode(MAP_MODE_NONE);
+    me->setMouseMode(MAPED_MOUSE_NONE);
 }
 
 void CreateCrop::draw(QPainter * painter)

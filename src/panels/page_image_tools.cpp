@@ -39,20 +39,22 @@
 
 page_image_tools:: page_image_tools(ControlPanel * cpanel)  : panel_page(cpanel,"Image Tools")
 {
-     QGroupBox   * cycle = createCycleSection();
-     QGroupBox   * image = createCompareSection();
+    QGroupBox * gbox;
+    gbox = createCycleSection();
+    vbox->addWidget(gbox);
+    gbox = createWorklistSection();
+    vbox->addWidget(gbox);
+    gbox = createCompareSection();
+    vbox->addWidget(gbox);
 
-     vbox->addWidget(cycle);
-     vbox->addWidget(image);
+    connect(theApp,&TiledPatternMaker::sig_compareResult,       this,   &page_image_tools::slot_compareResult);
+    connect(this,  &page_image_tools::sig_view_image,           theApp, &TiledPatternMaker::slot_view_image);
+    connect(this,  &page_image_tools::sig_compareImageFiles,    theApp, &TiledPatternMaker::slot_compareImages, Qt::QueuedConnection);
+    connect(this,  &page_image_tools::sig_loadMosaic,           theApp, &TiledPatternMaker::slot_loadMosaic);
 
-     connect(theApp,&TiledPatternMaker::sig_compareResult,       this,   &page_image_tools::slot_compareResult);
-     connect(this,  &page_image_tools::sig_view_image,           theApp, &TiledPatternMaker::slot_view_image);
-     connect(this,  &page_image_tools::sig_compareImageFiles,    theApp, &TiledPatternMaker::slot_compareImages, Qt::QueuedConnection);
-     connect(this,  &page_image_tools::sig_loadMosaic,           theApp, &TiledPatternMaker::slot_loadMosaic);
-
-     Cycler * cycler = Cycler::getInstance();
-     connect(this,  &page_image_tools::sig_cyclerStart,          cycler,  &Cycler::slot_startCycle, Qt::QueuedConnection);
-     connect(cycler, &Cycler::sig_workList,                      this,   &page_image_tools::slot_dir0Changed, Qt::QueuedConnection);
+    Cycler * cycler = Cycler::getInstance();
+    connect(this,  &page_image_tools::sig_cyclerStart,          cycler,  &Cycler::slot_startCycle, Qt::QueuedConnection);
+    connect(cycler, &Cycler::sig_workList,                      this,   &page_image_tools::slot_dir0Changed, Qt::QueuedConnection);
 }
 
 QGroupBox * page_image_tools::createCycleSection()
@@ -60,7 +62,6 @@ QGroupBox * page_image_tools::createCycleSection()
     SpinSet     * spCycleInterval       = new SpinSet("Cycle Interval",0,0,9);
     QPushButton * generateBtn           = new QPushButton("Generate");
     generateBtn->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
-    QPushButton * loadListBtn           = new QPushButton("Load Work List");
 
     QRadioButton * rStyles    = new QRadioButton("Mosaics");
     QRadioButton * rTiles     = new QRadioButton("Tilings");
@@ -107,7 +108,6 @@ QGroupBox * page_image_tools::createCycleSection()
     hbox11->addWidget(rStyles);
     hbox11->addWidget(rTiles);
     hbox11->addStretch();
-    hbox11->addWidget(loadListBtn);
 
     QVBoxLayout * cycleLayout = new QVBoxLayout;
     cycleLayout->addLayout(hbox00);
@@ -117,7 +117,7 @@ QGroupBox * page_image_tools::createCycleSection()
     hbox22->addLayout(cycleLayout);
     hbox22->addWidget(generateBtn,0,Qt::AlignTop);
 
-    QGroupBox * cycleGroupBox = new  QGroupBox("Cycling");
+    QGroupBox * cycleGroupBox = new  QGroupBox("Generate Images");
     cycleGroupBox->setLayout(hbox22);
 
     spCycleInterval->setValue(config->cycleInterval);
@@ -127,9 +127,6 @@ QGroupBox * page_image_tools::createCycleSection()
     connect(spCycleInterval,    &SpinSet::valueChanged,    this,  &page_image_tools::slot_cycleIntervalChanged);
     connect(generateBtn,        &QPushButton::clicked,     this,  &page_image_tools::slot_cycle);
     connect(opendirBtn,         &QPushButton::clicked,     this,  &page_image_tools::slot_opendir);
-#ifdef Q_OS_WINDOWS
-    connect(loadListBtn,        &QPushButton::clicked,     this,  &page_image_tools::loadWorkListFromFile);
-#endif
     connect(use_wlistG,         &QCheckBox::clicked,       this,  &page_image_tools::slot_use_worklist_generate);
     connect(skip,               &QCheckBox::clicked,       this,  &page_image_tools::slot_skipExisting);
 
@@ -139,6 +136,28 @@ QGroupBox * page_image_tools::createCycleSection()
     connect(cycleGroup,          &QButtonGroup::idClicked,  this,  &page_image_tools::slot_cycleModeChanged);
 #endif
     return cycleGroupBox;
+}
+
+QGroupBox * page_image_tools::createWorklistSection()
+{
+    QPushButton * loadListBtn= new QPushButton("Load Work List");
+    QPushButton * saveListBtn= new QPushButton("Save Work List");
+    QPushButton * editListBtn= new QPushButton("Edit Work List");
+
+    QHBoxLayout * hbox = new QHBoxLayout;
+    hbox->addWidget(loadListBtn);
+    hbox->addWidget(saveListBtn);
+    hbox->addWidget(editListBtn);
+    hbox->addStretch();
+
+    QGroupBox * box = new  QGroupBox("Work List operations");
+    box->setLayout(hbox);
+
+    connect(loadListBtn,  &QPushButton::clicked,     this,  &page_image_tools::loadWorkListFromFile);
+    connect(saveListBtn,  &QPushButton::clicked,     this,  &page_image_tools::saveWorkListToFile);
+    connect(editListBtn,  &QPushButton::clicked,     this,  &page_image_tools::editWorkList);
+
+    return box;
 }
 
 QGroupBox * page_image_tools::createCompareSection()
@@ -624,13 +643,8 @@ void page_image_tools::slot_previous()
     if (index == 0) return;
     index--;
     ibox0->setCurrentIndex(index);
-#if 0
-    index = ibox1->currentIndex();
-    if (index == 0) return;
-    index--;
-    ibox1->setCurrentIndex(index);
-#endif
     imageCompareResult->setText("");
+    emit theApp->sig_closeAllImageViewers();
     emit sig_compareImageFiles(ibox0->currentText(),ibox1->currentText(),false);
 }
 
@@ -640,14 +654,8 @@ void page_image_tools::slot_next()
     if (index >= ibox0->count()-1) return;
     index++;
     ibox0->setCurrentIndex(index);
-
-#if 0
-    index = ibox1->currentIndex();
-    if (index >= ibox1->count()-1) return;
-    index++;
-    ibox1->setCurrentIndex(index);
-#endif
     imageCompareResult->setText("");
+    emit theApp->sig_closeAllImageViewers();
     emit sig_compareImageFiles(ibox0->currentText(),ibox1->currentText(),false);
 }
 
@@ -775,4 +783,74 @@ void page_image_tools::loadWorkListFromFile()
     box.exec();
 
     slot_use_worklist_compare(true);
+}
+
+
+void page_image_tools::saveWorkListToFile()
+{
+    if (config->workList.isEmpty())
+    {
+        QMessageBox box;
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Empty Work List - nothing to save");
+        box.exec();
+        return;
+    }
+
+    QString dir = config->rootMediaDir;
+    QString fileName = QFileDialog::getSaveFileName(nullptr,"Select text file",dir, "All  files (*)");
+    if (fileName.isEmpty())
+    {
+        QMessageBox box;
+        box.setIcon(QMessageBox::Warning);
+        box.setText("FILE NOT FOUND");
+        box.exec();
+        return;
+    }
+
+    if (!fileName.contains(".txt"))
+        fileName  += ".txt";
+
+    qDebug() << "saving" << fileName;
+
+    QFile file(fileName);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text))
+    {
+        QMessageBox box;
+        box.setIcon(QMessageBox::Warning);
+        box.setText(QString("Text file <%1> failed to open").arg(fileName));
+        box.exec();
+        return;
+    }
+
+    QTextStream ts(&file);
+
+    QStringList::const_iterator constIterator;
+    for (constIterator = config->workList.constBegin(); constIterator != config->workList.constEnd(); ++constIterator)
+    {
+       ts << (*constIterator).toLocal8Bit().constData() << Qt::endl;
+    }
+    file.close();
+
+    QMessageBox box;
+    box.setIcon(QMessageBox::Information);
+    box.setText("Work List saved - OK");
+    box.exec();
+}
+
+void page_image_tools::editWorkList()
+{
+    ListListWidget * plw = new ListListWidget(this);
+    plw->addItems(config->workList);
+    plw->establishSize();
+
+    QVBoxLayout * vbox = new QVBoxLayout;
+    vbox->addWidget(plw);
+
+    QDialog * ewl = new QDialog(this);
+    ewl->setAttribute(Qt::WA_DeleteOnClose);
+    ewl->setLayout(vbox);
+
+    ewl->exec();
+
 }

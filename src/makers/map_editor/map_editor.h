@@ -51,12 +51,6 @@ public:
 
     MapEditor();
 
-    void            setDesignElement(DesignElementPtr delpptr);
-    void            setPrototype(PrototypePtr prop);
-    void            setStyle(StylePtr styp);
-    void            setTiling(TilingPtr tiling);
-    void            setDCEL(WeakDCELPtr dcel);
-    void            setLocal();
     void            reload();
     void            setLocalMap(MapPtr map) { localMap = map; }
 

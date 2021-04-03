@@ -74,7 +74,8 @@ Configuration::Configuration()
     autoLoadStyles      = s.value("autoLoadStyles",false).toBool();
     autoLoadTiling      = s.value("autoLoadTiling",false).toBool();
     autoLoadDesigns     = s.value("autoLoadDesigns",false).toBool();
-    loadTilingMulti     = s.value("loadReplaceTiling",true).toBool();
+    loadTilingMulti     = s.value("loadTilingMulti",false).toBool();
+    loadTilingModify    = s.value("loadTilingModify",false).toBool();
     scaleToView         = s.value("scaleToView",true).toBool();
     stopIfDiff          = s.value("stopIfDiff",true).toBool();
     verifyMaps          = s.value("verifyMaps",false).toBool();
@@ -112,7 +113,7 @@ Configuration::Configuration()
     defaultMediaRoot    = s.value("defaultMediaRoot",true).toBool();
 
     viewerType          = static_cast<eViewType>(s.value("viewerType",VIEW_MOSAIC).toUInt());
-    mapEditorMode       = static_cast<eMapEditorMode>(s.value("mapEditorMode",MAP_MODE_FIGURE).toUInt());
+    mapEditorMode       = static_cast<eMapEditorMode>(s.value("mapEditorMode",MAPED_MODE_NONE).toUInt());
     repeatMode          = static_cast<eRepeatType>(s.value("repeat",REPEAT_DEFINED).toUInt());
 
     showGrid            = s.value("showGrid",false).toBool();
@@ -128,7 +129,7 @@ Configuration::Configuration()
 
     // ensures indices are in range
     if (viewerType > VIEW_MAX)          viewerType      = VIEW_MAX;
-    if (mapEditorMode > MAP_MODE_MAX)   mapEditorMode   = MAP_MODE_MAX;
+    if (mapEditorMode > MAPED_MODE_MAX)   mapEditorMode   = MAPED_MODE_MAX;
     if (repeatMode > REPEAT_MAX)        repeatMode      = REPEAT_MAX;
     if (cycleMode > CYCLE_SAVE_TILING_BMPS) cycleMode   = CYCLE_SAVE_TILING_BMPS;
 
@@ -197,7 +198,8 @@ void Configuration::save()
     s.setValue("logTimer",logTime);
     s.setValue("mapedStatusBox",mapedStatusBox);
     s.setValue("autoLoadTiling",autoLoadTiling);
-    s.setValue("loadReplaceTiling",loadTilingMulti);
+    s.setValue("loadTilingMulti",loadTilingMulti);
+    s.setValue("loadTilingModify",loadTilingModify);
     s.setValue("autoLoadDesigns",autoLoadDesigns);
     s.setValue("scaleToView",scaleToView);
     s.setValue("stopIfDiff",stopIfDiff);

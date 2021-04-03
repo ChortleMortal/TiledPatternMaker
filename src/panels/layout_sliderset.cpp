@@ -80,7 +80,7 @@ void  AQDoubleSpinBox::leaveEvent(QEvent *event)
 {
     Q_UNUSED(event);
     blocked = false;
-    qDebug() << "unblocked";
+    //qDebug() << "unblocked";
     setStyleSheet("");
 }
 
@@ -89,7 +89,7 @@ void AQDoubleSpinBox::enterEvent(QEnterEvent *event)
 {
     Q_UNUSED(event);
     blocked = true;
-    qDebug() << "blocked";
+    //qDebug() << "blocked";
     setStyleSheet("background-color:yellow;");
 }
 #else
@@ -97,7 +97,7 @@ void  AQDoubleSpinBox::enterEvent(QEvent *event)
 {
     Q_UNUSED(event);
     blocked = true;
-    qDebug() << "blocked";
+    //qDebug() << "blocked";
     setStyleSheet("background-color:yellow;");
 }
 #endif
@@ -165,7 +165,7 @@ void DoubleSpinSet::setValue(qreal val)
 {
     if  (spin->blocked) return;
 
-    qDebug() << "value set" << val;
+    //qDebug() << "value set" << val;
     spin->blockSignals(true);
     spin->setValue(val);
     spin->blockSignals(false);
@@ -173,7 +173,7 @@ void DoubleSpinSet::setValue(qreal val)
 
 void  DoubleSpinSet::slot_valueChanged(qreal val)
 {
-    qDebug() << "value changed" << val;
+    //qDebug() << "value changed" << val;
     emit sig_valueChanged(val);
 }
 

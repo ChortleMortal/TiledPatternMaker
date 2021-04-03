@@ -35,6 +35,10 @@ bool MapCleanser::cleanse(unsigned int options, bool forceVerify)
     if (options & divideupIntersectingEdges)
     {
         divideIntersectingEdges();
+        cleanNeighbours();
+        map->sortVertices();
+        map->sortEdges();
+        map->buildNeighbours();
         if (debug) map->verifyMap("Map:divideIntersectingEdges()");
     }
 

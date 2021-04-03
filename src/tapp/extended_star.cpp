@@ -67,7 +67,7 @@ void ExtendedStar::extendFreeMap()
 {
     if (n != getExtBoundarySides())
     {
-        qWarning("Cannot extend - no matching boundar");
+        qWarning("Cannot extend - no matching boundary");
         return;
     }
 

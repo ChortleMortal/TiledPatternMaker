@@ -148,18 +148,18 @@ void TilingWriter::writeTilingXML(QTextStream & out)
         }
 
         // background colors
-        ColorSet & bkgdColors  = feature->getBkgdColors();
-        int sz = bkgdColors.size();
+        ColorSet * bkgdColors  = feature->getBkgdColors();
+        int sz = bkgdColors->size();
         if (sz)
         {
             QString s = "<BkgdColors>";
             for (int i = 0; i < (sz-1); i++)
             {
-                QColor color = bkgdColors.getColor(i).color;
+                QColor color = bkgdColors->getColor(i).color;
                 s += color.name();
                 s += ",";
             }
-            QColor color = bkgdColors.getColor(sz-1).color;
+            QColor color = bkgdColors->getColor(sz-1).color;
             s += color.name();
             s += "</BkgdColors>";
             out << s << endl;

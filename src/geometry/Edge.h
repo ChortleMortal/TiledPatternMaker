@@ -90,6 +90,7 @@ public:
     bool      getSwapState()          { return isSwapped; }
 
     bool      isColinearAndTouching(EdgePtr e);
+    bool      isColinear(EdgePtr e);
 
     static arcData  calcArcData(QPointF p1, QPointF p2, QPointF c, bool convex);
            arcData  calcArcData();

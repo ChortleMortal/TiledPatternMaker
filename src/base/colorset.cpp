@@ -168,90 +168,71 @@ AQHBoxLayout * ColorSet::createLayout()
 
 ColorGroup::ColorGroup()
 {
-    pos = colorgroup.begin();
+    ipos = -1;
 }
 
 ColorGroup::ColorGroup(const ColorGroup & other)
 {
     colorgroup = other.colorgroup;
-    pos = colorgroup.begin();
+    ipos = colorgroup.size() -1;
 }
 
 void ColorGroup::addColorSet(ColorSet & cset)
 {
     colorgroup.push_back(cset);
-    pos = colorgroup.begin();
+    ipos = 0;
 }
 
 void ColorGroup::setColorSet(int idx, ColorSet & cset)
 {
     colorgroup.replace(idx,cset);
-    pos = colorgroup.begin();
+    ipos = 0;
 }
 
-ColorSet & ColorGroup::getColorSet(int idx)
+ColorSet * ColorGroup::getColorSet(int idx)
 {
-    return colorgroup[idx];
+    return &colorgroup[idx];
 }
 
 void ColorGroup::removeColorSet(int idx)
 {
     colorgroup.removeAt(idx);
-    pos = colorgroup.begin();
+    ipos = 9;
 }
 
 void  ColorGroup::resetIndex()
 {
-    pos = colorgroup.begin();
+    if (colorgroup.size())
+        ipos = 0;
+    else
+        ipos = -1;
     for (auto fset : qAsConst(colorgroup))
     {
         fset.resetIndex();
     }
 }
 
-ColorSet & ColorGroup::getNextColorSet()
+ColorSet * ColorGroup::getNextColorSet()
 {
-    if (size() == 0)
+    if (size() == 0 || ipos == -1)
     {
         ColorSet colorSet;
         colorgroup.push_back(colorSet);
-        pos = colorgroup.begin();
+        ipos = 0;
     }
-    ColorSet & cset =  *pos;
-    if (++pos == colorgroup.end())
+    ColorSet * cset = &colorgroup[ipos++];
+    if (ipos >= colorgroup.size())
     {
-        pos =colorgroup.begin();
+        ipos = 0;
     }
     return cset;
-}
-
-AQWidget * ColorGroup::createWidget()
-{
-    AQHBoxLayout * hbox = createLayout();
-    AQWidget   * widget = new AQWidget;
-    widget->setLayout(hbox);
-    return widget;
-}
-
-AQHBoxLayout * ColorGroup::createLayout()
-{
-    AQHBoxLayout * hbox = new AQHBoxLayout;
-    for (auto it = colorgroup.begin(); it != colorgroup.end(); it++)
-    {
-        ColorSet & cset = *it;
-        AQHBoxLayout * h2 = cset.createLayout();
-        hbox->addLayout(h2);
-        hbox->addSpacing(5);
-    }
-    return hbox;
 }
 
 void ColorGroup::hide(int idx, bool hide)
 {
     if (idx >= 0 && idx < size())
     {
-        ColorSet & cs =  colorgroup[idx];
-        cs.hide(hide);
+        colorgroup[idx].hide(hide);
     }
 
 }
@@ -259,8 +240,7 @@ bool  ColorGroup::isHidden(int idx)
 {
     if (idx >= 0 && idx < size())
     {
-        ColorSet & cs =  colorgroup[idx];
-        return cs.isHidden();
+        return colorgroup[idx].isHidden();
     }
     return false;
 }

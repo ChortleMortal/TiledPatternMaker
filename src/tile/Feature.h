@@ -83,7 +83,7 @@ public:
     QPolygonF   getPoints()         { return epoly.getPoly(); }
     int         numPoints()         { return epoly.size(); }
     int         numSides()          { return epoly.size(); }
-    ColorSet &  getBkgdColors()     { return bkgdColors; }
+    ColorSet *  getBkgdColors()     { return &bkgdColors; }
 
     QPointF     getCenter();
     qreal       edgeLen(int side = 0);

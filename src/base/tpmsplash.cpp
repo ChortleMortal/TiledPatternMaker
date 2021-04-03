@@ -1,16 +1,19 @@
 #include "base/tpmsplash.h"
-#include "viewers/view.h"
+#include "panels/panel.h"
 
 TPMSplash::TPMSplash() : QSplashScreen()
 {
     QPixmap pm(":/tpm.png");
     setPixmap(pm);
+
     QFont f = font();
     f.setPointSize(16);
     setFont(f);
+
     QSize qs = pm.size();
     w = qs.width();
     h = qs.height();
+
     hide();
 }
 
@@ -23,10 +26,10 @@ void TPMSplash::display(QString txt)
         msgStack.push(message());
     }
 
-    View * view = View::getInstance();
-    QPoint pos  = view->rect().center();
-    pos         = view->mapToGlobal(pos);
-    QPoint p2   = pos - QPoint(w/2,h/2);
+    ControlPanel * p = ControlPanel::getInstance();
+    QPoint pos       = p->rect().center();
+    pos              = p->mapToGlobal(pos);
+    QPoint p2        = pos - QPoint(w/2,h/2);
     move(p2);
     show();
     showMessage(txt, Qt::AlignCenter);

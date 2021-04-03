@@ -894,8 +894,7 @@ void Map::mergeMap(MapPtr other)
     //    and from the other map.  Record the positions of the
     //    intersections.
 
-    const QVector<EdgePtr> & oedges = other->edges;
-    for (auto & edge : oedges)
+    for (auto & edge : qAsConst(other->edges))
     {
         // To check all intersections of this edge with edges in
         // the current map, we can use the optimization that
@@ -908,22 +907,20 @@ void Map::mergeMap(MapPtr other)
 
         qreal exm = qMax( ep.x(), eq.x() );
 
-        for (auto me = edges.begin(); me != edges.end(); me++ )
+        for (auto cur : edges)
         {
-            EdgePtr cur = *me;
-
             QPointF cp = cur->v1->pt;
             QPointF cq = cur->v2->pt;
 
-            if( lexCompareEdges( cur->getMinX(), exm ) > 0 )
+            if (lexCompareEdges( cur->getMinX(), exm ) > 0)
             {
                 break;
             }
 
             QPointF ipt;
-            if (Intersect::getTrueIntersection( ep, eq, cp, cq, ipt))
+            if (Intersect::getTrueIntersection(ep, eq, cp, cq, ipt))
             {
-                intersections.push_back( ipt );
+                intersections.push_back(ipt);
             }
         }
     }
@@ -941,15 +938,13 @@ void Map::mergeMap(MapPtr other)
 
     // 4. Add the edges in the trivial way, since now there will
     //    be no intersections.
-    int dupCount = 0;
-    for (auto edge : oedges)
+    for (auto edge : qAsConst(other->edges))
     {
         VertexPtr v1 = edge->v1->copy;
         VertexPtr v2 = edge->v2->copy;
 
-        if (edgeSameAs(v1,v2))
+        if (findEdge(v1,v2))
         {
-            dupCount++;
             continue;           // fix 13MAR21
         }
 
@@ -962,9 +957,6 @@ void Map::mergeMap(MapPtr other)
             insertCurvedEdge(v1,v2,edge->getArcCenter(),edge->isConvex());
         }
     }
-
-    if (dupCount)
-        qInfo() << dupCount << "duplicate edges not merged";
 
     cleanCopy();
 
@@ -1156,7 +1148,7 @@ DCELPtr Map::getDCEL()
     return dcel;
 }
 
-bool Map::edgeSameAs(VertexPtr v1, VertexPtr v2)
+bool Map::findEdge(VertexPtr v1, VertexPtr v2)
 {
     for (auto & edge : edges)
     {

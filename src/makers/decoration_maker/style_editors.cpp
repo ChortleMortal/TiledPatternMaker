@@ -50,7 +50,7 @@ ColoredEditor::ColoredEditor(Colored * c, AQTableWidget * table)
     colored = c;
     this->table = table;
 
-    TPColor tpcolor = colored->getColorSet().getFirstColor();
+    TPColor tpcolor = colored->getColorSet()->getFirstColor();
     qreal  opacity  = tpcolor.color.alphaF();
     qDebug() << "color=" << tpcolor.color << "opacity=" << opacity;
 
@@ -65,7 +65,7 @@ ColoredEditor::ColoredEditor(Colored * c, AQTableWidget * table)
     QTableWidgetItem * item = new QTableWidgetItem("Color");
     table->setItem(rows,0,item);
 
-    colorwidget = colored->getColorSet().createWidget();
+    colorwidget = colored->getColorSet()->createWidget();
     table->setCellWidget(rows,1,colorwidget);
 
     color_button = new QPushButton("Select Color");
@@ -92,10 +92,10 @@ ColoredEditor::ColoredEditor(Colored * c, AQTableWidget * table)
 
 void ColoredEditor::slot_transparencyChanged(qreal val)
 {
-    ColorSet & cset = colored->getColorSet();
-    cset.setOpacity(val);
+    ColorSet * cset = colored->getColorSet();
+    cset->setOpacity(val);
 
-    colorwidget = cset.createWidget();
+    colorwidget = cset->createWidget();
     table->setCellWidget(rows,1,colorwidget);
 
     emit sig_colorsChanged();
@@ -113,7 +113,7 @@ void ColoredEditor::slot_pickColor()
 
 void ColoredEditor::slot_colorsChanged()
 {
-    colorwidget = colored->getColorSet().createWidget();
+    colorwidget = colored->getColorSet()->createWidget();
     table->setCellWidget(0,1,colorwidget);
     colored->resetStyleRepresentation();
     emit sig_colorsChanged();
@@ -176,16 +176,16 @@ void  ThickEditor::slot_outlineChanged(int state)
 ////////////////////////////////////////////////////////////////////////////
 // Filled
 ////////////////////////////////////////////////////////////////////////////
-FilledEditor::FilledEditor(Filled * f, AQTableWidget * table , QVBoxLayout *parmsCtrl) : StyleEditor()
+FilledEditor::FilledEditor(FilledPtr f, AQTableWidget * table , QVBoxLayout *parmsCtrl) : StyleEditor()
 {
     filled      = f;
     this->table = table;
     vbox        = parmsCtrl;
     fillSet     = nullptr;
     fillGroup   = nullptr;
+    view        = View::getInstance();
 
     table->clear();
-
 
     table->horizontalHeader()->setVisible(false);
     table->verticalHeader()->setVisible(false);
@@ -204,8 +204,16 @@ FilledEditor::~FilledEditor()
 void FilledEditor::displayParms()
 {
     eraseLayout(dynamic_cast<QLayout*>(vbox));
-    fillSet   = nullptr;
-    fillGroup = nullptr;
+    if (fillSet)
+    {
+        delete fillSet;
+        fillSet   = nullptr;
+    }
+    if (fillGroup)
+    {
+        delete fillGroup;
+        fillGroup = nullptr;
+    }
 
     // clear the table
     table->clearContents();
@@ -240,20 +248,6 @@ void FilledEditor::displayParms()
     cleanseBox->setCurrentIndex(cleanseBox->findData(cleanseLevel));
     connect(cleanseBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index){ slot_cleanse(index);} );
 
-    QPushButton * pbViewFaces = new QPushButton("View faces");
-    pbViewFaces->setFixedWidth(61);
-    AQSpinBox * faceSetSelect = new AQSpinBox;
-    faceSetSelect->setRange(0,9999);
-    AQWidget * w = new AQWidget;
-    AQHBoxLayout * l = new AQHBoxLayout;
-    l->addWidget(pbViewFaces);
-    l->addWidget(faceSetSelect);
-    w->setLayout(l);
-    table->setCellWidget(row,3,w);
-
-    connect(pbViewFaces,&QPushButton::clicked, this, &FilledEditor::slot_viewFaces);
-    connect(faceSetSelect,SIGNAL(valueChanged(int)), this, SLOT(slot_setSelect(int)));
-
     switch (algo)
     {
     case 0:
@@ -274,9 +268,6 @@ void FilledEditor::displayParms()
 
 void FilledEditor::displayParms01()
 {
-    if (!filled->cm)
-        return;
-
     int row = 0;
 
     table->setRowCount(3);
@@ -292,11 +283,11 @@ void FilledEditor::displayParms01()
     outside_checkbox->setChecked(filled->getDrawOutsideWhites());
     table->setCellWidget(row,0,outside_checkbox);
 
-    item = new QTableWidgetItem(QString("%1 faces out of %2").arg(filled->cm->getWhiteFaces().size()).arg(filled->cm->getFacesToDo().size()));
+    item = new QTableWidgetItem(QString("%1 faces").arg(filled->whiteFaces.size()));
     table->setItem(row,3,item);
 
-    ColorSet & colorSetW    = filled->getWhiteColorSet();
-    AQWidget * widget       = colorSetW.createWidget();
+    ColorSet * colorSetW    = filled->getWhiteColorSet();
+    AQWidget * widget       = colorSetW->createWidget();
     table->setCellWidget(row,1,widget);
 
     QPushButton * btnW = new QPushButton("Edit");
@@ -310,11 +301,11 @@ void FilledEditor::displayParms01()
     inside_checkbox->setChecked(filled->getDrawInsideBlacks());
     table->setCellWidget(row,0,inside_checkbox);
 
-    item = new QTableWidgetItem(QString("%1 faces out of %2").arg(filled->cm->getBlackFaces().size()).arg(filled->cm->getFacesToDo().size()));
+    item = new QTableWidgetItem(QString("%1 faces").arg(filled->blackFaces.size()));
     table->setItem(row,3,item);
 
-    ColorSet & colorSetB    = filled->getBlackColorSet();
-    widget                  = colorSetB.createWidget();
+    ColorSet * colorSetB    = filled->getBlackColorSet();
+    widget                  = colorSetB->createWidget();
     table->setCellWidget(row,1,widget);
 
     QPushButton * btnB = new QPushButton("Edit");
@@ -333,29 +324,23 @@ void FilledEditor::displayParms01()
 
 void FilledEditor::displayParms2()
 {
-    if (fillSet)
-        delete fillSet;
+//    if (!filled->dcel)
+//        return;
 
-    if (!filled->cm)
-        return;
-
-    fillSet = new StyleColorFillSet(filled->cm->getFaceGroup(),filled->getWhiteColorSet(),vbox);
+    fillSet = new StyleColorFillSet(filled,vbox);
     fillSet->display();
-    connect(fillSet, &StyleColorFillSet::sig_colorsChanged, this, &FilledEditor::slot_colorsChanged,Qt::UniqueConnection);
+    connect(fillSet, &StyleColorFillSet::sig_colorsChanged,     this, &FilledEditor::slot_colorsChanged,     Qt::UniqueConnection);
 }
 
 
 void FilledEditor::displayParms3()
 {
-    if (fillGroup)
-        delete fillGroup;
+//    if (!filled->dcel)
+//        return;
 
-    if (!filled->cm)
-        return;
-
-    fillGroup = new StyleColorFillGroup(filled->cm->getFaceGroup(),filled->getColorGroup(),vbox);
+    fillGroup = new StyleColorFillGroup(filled,vbox);
+    connect(fillGroup, &StyleColorFillGroup::sig_colorsChanged,     this, &FilledEditor::slot_colorsChanged,     Qt::UniqueConnection);
     fillGroup->display();
-    connect(fillGroup, &StyleColorFillGroup::sig_colorsChanged, this, &FilledEditor::slot_colorsChanged, Qt::UniqueConnection);
 }
 
 void FilledEditor::slot_insideChanged(int state)
@@ -364,8 +349,8 @@ void FilledEditor::slot_insideChanged(int state)
     filled->setDrawInsideBlacks(checked);
 
     slot_colorsChanged();
-    displayParms();
-    emit sig_refreshView();
+    //displayParms();
+    //emit sig_refreshView();
 }
 
 void FilledEditor::slot_outsideChanged(int state)
@@ -374,8 +359,8 @@ void FilledEditor::slot_outsideChanged(int state)
     filled->setDrawOutsideWhites(checked);
 
     slot_colorsChanged();
-    displayParms();
-    emit sig_refreshView();
+    //displayParms();
+    //emit sig_refreshView();
 }
 
 void FilledEditor::slot_algo(int index)
@@ -403,21 +388,21 @@ void FilledEditor::slot_cleanse(int index)
 
 void FilledEditor::slot_editB()
 {
-    ColorSet & colorSet = filled->getBlackColorSet();
+    qDebug() << "DLG B" << filled.get() << filled->getBlackColorSet();
 
-    DlgColorSet dlg(colorSet);
+    DlgColorSet dlg(filled->getBlackColorSet());
 
     connect(&dlg, &DlgColorSet::sig_colorsChanged, this, &FilledEditor::slot_colorsChanged);
 
     dlg.exec();
 
     displayParms();
-
-    slot_colorsChanged();
 }
 
 void FilledEditor::slot_editW()
 {
+    qDebug() << "DLG W" << filled.get() << filled->getWhiteColorSet();
+
     DlgColorSet dlg(filled->getWhiteColorSet());
 
     connect(&dlg, &DlgColorSet::sig_colorsChanged, this, &FilledEditor::slot_colorsChanged);
@@ -425,84 +410,13 @@ void FilledEditor::slot_editW()
     dlg.exec();
 
     displayParms();
-
-    slot_colorsChanged();
 }
 
 void FilledEditor::slot_colorsChanged()
 {
-    filled->whiteColorSet.resetIndex();
-    filled->blackColorSet.resetIndex();
-    filled->colorGroup.resetIndex();
-
-    switch(filled->getAlgorithm())
-    {
-    case 3:
-        filled->cm->assignColorGroups(filled->colorGroup);
-        break;
-    case 2:
-        filled->cm->assignColorSets(filled->whiteColorSet);
-        break;
-    case 1:
-    case 0:
-        filled->resetStyleRepresentation();
-        break;
-    }
-
-    emit sig_refreshView();
+    view->update();     // that's all
 }
 
-void FilledEditor::slot_viewFaces()
-{
-    static eViewType old_vtype;
-    static bool selected = false;
-
-    Configuration * config = Configuration::getInstance();
-
-    View * view = View::getInstance();
-    QVector<LayerPtr> layers = view->getActiveLayers();
-    if (layers.empty())
-    {
-        return;
-    }
-    LayerPtr l = layers[0];
-    Xform xf = l->getCanvasXform();
-
-    if (!selected)
-    {
-        selected = true;
-        old_vtype    = config->getViewerType();
-        config->setViewerType(VIEW_FACE_SET);
-    }
-    else
-    {
-        selected = false;
-        config->setViewerType(old_vtype);
-    }
-
-    emit sig_refreshView();
-
-    // match the settings for the two views
-    layers = view->getActiveLayers();
-    for (auto it = layers.begin(); it != layers.end(); it++)
-    {
-        LayerPtr l2 = *it;
-        l2->setCanvasXform(xf);
-    }
-    emit sig_refreshView();
-}
-
-void FilledEditor::slot_setSelect(int facenum)
-{
-    FaceSet & fset = filled->cm->getFacesToDo();
-    if (facenum >=0 && facenum < fset.size())
-    {
-        FacePtr fp  = fset[facenum];
-        Configuration * config = Configuration::getInstance();
-        config->selectedFace = fp;
-        emit sig_update();
-    }
-}
 
 ////////////////////////////////////////////////////////////////////////////
 // Embossed
@@ -526,6 +440,7 @@ EmbossEditor::EmbossEditor(Emboss * e, AQTableWidget * table) : ThickEditor(e,ta
     widget->setLayout(angle_slider);
     table->setCellWidget(rows,1,widget);
     table->setRowHeight(rows,41);
+    table->adjustTableSize();
 
     rows++;
 
@@ -630,13 +545,11 @@ TileColorsEditor::TileColorsEditor(TileColors * c, AQTableWidget * table, Tiling
 void TileColorsEditor::buildTable()
 {
     table->clear();
-    table->setRowCount(2);
     table->setColumnCount(4);
     table->setColumnWidth(TILE_COLORS_ADDR,  100);
     table->setColumnWidth(TILE_COLORS_SIDES, 130);
     table->setColumnWidth(TILE_COLORS_BTN,   100);
     table->setColumnWidth(TILE_COLORS_COLORS,400);
-
 
     QStringList qslH;
     qslH << "Feature" << "Sides" << "Btn" << "Colors" ;
@@ -690,13 +603,14 @@ void TileColorsEditor::buildTable()
         table->setCellWidget(row,TILE_COLORS_BTN,btn);
         connect(btn, &QPushButton::clicked, this, &TileColorsEditor::slot_edit);
 
-        ColorSet & bkgdColors = fp->getBkgdColors();
-        AQWidget * widget = bkgdColors.createWidget();
+        ColorSet * bkgdColors = fp->getBkgdColors();
+        AQWidget * widget = bkgdColors->createWidget();
         table->setCellWidget(row,TILE_COLORS_COLORS,widget);
 
         row++;
     }
     table->adjustTableSize();
+    table->selectRow(0);
 }
 
 void TileColorsEditor::slot_edit()
@@ -708,7 +622,7 @@ void TileColorsEditor::slot_edit()
         return;
 
     FeaturePtr fp = qlfp[row];
-    ColorSet & colorSet = fp->getBkgdColors();
+    ColorSet * colorSet = fp->getBkgdColors();
     DlgColorSet dlg(colorSet,table);
 
     connect(&dlg, &DlgColorSet::sig_colorsChanged, this, &TileColorsEditor::slot_colors_changed);

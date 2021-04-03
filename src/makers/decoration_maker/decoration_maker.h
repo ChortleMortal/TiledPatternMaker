@@ -2,9 +2,8 @@
 #define DECORATIONMAKER_H
 
 #include "base/shared.h"
-#include "panels/panel_misc.h"
-#include "style/style.h"
 #include "base/configuration.h"
+#include "style/style.h"
 
 class DecorationMaker
 {
@@ -20,13 +19,7 @@ public:
     void           resetMosaic();
     ModelSettingsPtr getMosaicSettings();
 
-    void           selectStyle(StylePtr sp) { selectedStyle = sp; }
-    StylePtr       getSelectedStyle()  { return selectedStyle; }
-
     StylePtr       makeStyle(eStyleType type, StylePtr oldStyle);
-
-    void           setCurrentEditor(StylePtr style, AQTableWidget * table, QVBoxLayout * vbox);
-    StyleEditorPtr currentEditor() { return  currentStyleEditor; }
 
 protected:
     void sm_resetStyles(QVector<PrototypePtr> prototypes);
@@ -42,8 +35,6 @@ private:
     class TilingMaker * tilingMaker;
     class ViewControl * viewControl;
 
-    StyleEditorPtr  currentStyleEditor;
-    StylePtr        selectedStyle;
     MosaicPtr       mosaic;
 
 };

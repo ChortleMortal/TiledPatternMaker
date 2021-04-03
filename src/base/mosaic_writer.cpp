@@ -376,7 +376,7 @@ bool MosaicWriter::processThick(QTextStream &ts, StylePtr s)
         fail("Style error","dynamic cast of Thick");
     }
 
-    ColorSet & cset         = th->getColorSet();
+    ColorSet * cset         = th->getColorSet();
     bool    draw_outline    = th->getDrawOutline();
     qreal   width           = th->getLineWidth();
     PrototypePtr proto      = th->getPrototype();
@@ -416,9 +416,9 @@ bool MosaicWriter::processInterlace(QTextStream & ts, StylePtr s)
         fail("Style error","dynamic cast of Interlace");
     }
 
-    ColorSet & cset      = il->getColorSet();
+    ColorSet * cset      = il->getColorSet();
     bool    draw_outline = il->getDrawOutline();
-    bool    includeTipVerts= il->getIncludeTipVertices();
+    bool    includeTipVerts = il->getIncludeTipVertices();
     qreal   width        = il->getLineWidth();
     qreal   gap          = il->getGap();
     qreal   shadow       = il->getShadow();
@@ -464,7 +464,7 @@ bool MosaicWriter::processOutline(QTextStream &ts, StylePtr s)
         fail("Style error","dynamic cast of Interlace");
     }
 
-    ColorSet & cset      = ol->getColorSet();
+    ColorSet * cset      = ol->getColorSet();
     bool    draw_outline = ol->getDrawOutline();
     qreal   width        = ol->getLineWidth();
     PrototypePtr proto   = ol->getPrototype();
@@ -507,9 +507,9 @@ bool MosaicWriter::processFilled(QTextStream &ts, StylePtr s)
     int algorithm           = fl->getAlgorithm();
     int cleanseLevel        = fl->getCleanseLevel();
 
-    ColorSet & colorSetB    = fl->getBlackColorSet();
-    ColorSet & colorSetW    = fl->getWhiteColorSet();
-    ColorGroup & colorGroup = fl->getColorGroup();
+    ColorSet * colorSetB    = fl->getBlackColorSet();
+    ColorSet * colorSetW    = fl->getWhiteColorSet();
+    ColorGroup * colorGroup = fl->getColorGroup();
 
     bool    draw_inside     = fl->getDrawInsideBlacks();
     bool    draw_outside    = fl->getDrawOutsideWhites();
@@ -529,7 +529,7 @@ bool MosaicWriter::processFilled(QTextStream &ts, StylePtr s)
     setPrototype(ts,proto);
     ts << "</" << str << ">" << endl;
 
-    if (colorSetB.size())
+    if (colorSetB->size())
     {
         str = "ColorBlacks";
         ts << "<" << str << ">" << endl;
@@ -537,7 +537,7 @@ bool MosaicWriter::processFilled(QTextStream &ts, StylePtr s)
         ts << "</" << str << ">" << endl;
     }
 
-    if (colorSetW.size())
+    if (colorSetW->size())
     {
         str = "ColorWhites";
         ts << "<" << str << ">" << endl;
@@ -545,7 +545,7 @@ bool MosaicWriter::processFilled(QTextStream &ts, StylePtr s)
         ts << "</" << str << ">" << endl;
     }
 
-    if (colorGroup.size())
+    if (colorGroup->size())
     {
         str = "ColorGroup";
         ts << "<" << str << ">" << endl;
@@ -570,7 +570,7 @@ bool MosaicWriter::processPlain(QTextStream &ts, StylePtr s)
         fail("Style error","dynamic cast of Plain");
     }
 
-    ColorSet & cset     = pl->getColorSet();
+    ColorSet * cset     = pl->getColorSet();
     PrototypePtr proto  = pl->getPrototype();
     Xform   xf          = pl->getCanvasXform();
 
@@ -603,7 +603,7 @@ bool MosaicWriter::processSketch(QTextStream &ts, StylePtr s)
         fail("Style error","dynamic cast of Sketch");
     }
 
-    ColorSet & cset     = sk->getColorSet();
+    ColorSet * cset     = sk->getColorSet();
     PrototypePtr proto  = sk->getPrototype();
     Xform   xf          = sk->getCanvasXform();
 
@@ -635,7 +635,7 @@ bool MosaicWriter::processEmboss(QTextStream &ts, StylePtr s)
         fail("Style error","dynamic cast of Emboss");
     }
 
-    ColorSet & cset      = em->getColorSet();
+    ColorSet * cset      = em->getColorSet();
     bool    draw_outline = em->getDrawOutline();
     qreal   width        = em->getLineWidth();
     qreal   angle        = em->getAngle();
@@ -720,25 +720,25 @@ void MosaicWriter::procesToolkitGeoLayer(QTextStream & ts, Xform & xf)
     ts << "<center>" << pt.x() << "," << pt.y()       << "</center>"        << endl;
 }
 
-void MosaicWriter::procColorSet(QTextStream &ts, ColorSet & colorSet)
+void MosaicWriter::procColorSet(QTextStream &ts, ColorSet * colorSet)
 {
-    int count = colorSet.size();
-    colorSet.resetIndex();
+    int count = colorSet->size();
+    colorSet->resetIndex();
     for (int i=0; i < count; i++)
     {
-        TPColor tpcolor = colorSet.getNextColor();
+        TPColor tpcolor = colorSet->getNextColor();
         procColor(ts,tpcolor);
     }
 }
 
-void MosaicWriter::procColorGroup(QTextStream &ts, ColorGroup & colorGroup)
+void MosaicWriter::procColorGroup(QTextStream &ts, ColorGroup * colorGroup)
 {
-    int count = colorGroup.size();
-    colorGroup.resetIndex();
+    int count = colorGroup->size();
+    colorGroup->resetIndex();
     for (int i=0; i < count; i++)
     {
-        ColorSet & cs = colorGroup.getNextColorSet();
-        bool hide = cs.isHidden();
+        ColorSet * cs = colorGroup->getNextColorSet();
+        bool hide = cs->isHidden();
         QString qs = QString("<Group hideSet=\"%1\">").arg( (hide) ? "t" : "f");
         ts << qs << endl;
         procColorSet(ts,cs);

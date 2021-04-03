@@ -84,15 +84,11 @@ void page_loaders::setupUI()
     pbLoadTiling->setFixedWidth(129);
     pbLoadTiling->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
 
-    rbLoadSingle  = new QRadioButton("Single Tiling");
-    rbLoadMulti   = new QRadioButton("Multiple Tilings");
-    tileLoadGroup = new QButtonGroup;
-    tileLoadGroup->addButton(rbLoadSingle,SM_LOAD_SINGLE);
-    tileLoadGroup->addButton(rbLoadMulti,SM_LOAD_MULTI);
-    if (config->loadTilingMulti)
-        rbLoadMulti->setChecked(true);
-    else
-        rbLoadSingle->setChecked(true);
+    cbLoadMulti   = new QCheckBox("Load Multiple");
+    cbLoadModify  = new QCheckBox("Load Modify");
+
+    cbLoadMulti->setChecked(config->loadTilingMulti);
+    cbLoadModify->setChecked(config->loadTilingModify);
 
     pbLoadXML = new QPushButton("Load Mosaic");
     pbLoadXML->setFixedWidth(129);
@@ -153,8 +149,8 @@ void page_loaders::setupUI()
     hbox->addWidget(tilingFilter);
 
     hbox2 = new QHBoxLayout();
-    hbox2->addWidget(rbLoadSingle);
-    hbox2->addWidget(rbLoadMulti);
+    hbox2->addWidget(cbLoadModify);
+    hbox2->addWidget(cbLoadMulti);
 
     hbox3 = new QHBoxLayout();
     hbox3->addWidget(cbAutoLoadTiling);
@@ -197,7 +193,6 @@ void page_loaders::makeConnections()
 
     connect(pbLoadXML,      &QPushButton::clicked,                  this,   &page_loaders::loadXML);
     connect(pbLoadTiling,   &QPushButton::clicked,                  this,   &page_loaders::loadTiling);
-    connect(tileLoadGroup,  &QButtonGroup::idClicked,               this,   &page_loaders::tilingLoadChanged);
     connect(pbLoadShapes,   &QPushButton::clicked,                  this,   &page_loaders::loadShapes);
     connect(mosaicFilter,   &QLineEdit::textEdited,                 this,   &page_loaders::slot_mosaicFilter);
     connect(tilingFilter,   &QLineEdit::textEdited,                 this,   &page_loaders::slot_tilingFilter);
@@ -223,9 +218,11 @@ void page_loaders::makeConnections()
     connect(tileList,       &QListWidget::itemClicked,              this,   &page_loaders::tilingClicked);
     connect(tileList,       SIGNAL(rightClick(QPoint)),             this,   SLOT(tileRightClick(QPoint)));
 
-    connect(cbAutoLoadMosaics,  SIGNAL(clicked(bool)),              this,   SLOT(autoLoadStylesClicked(bool)));
-    connect(cbAutoLoadTiling,   SIGNAL(clicked(bool)),              this,   SLOT(autoLoadTilingClicked(bool)));
-    connect(cbAutoLoadDesigns,  SIGNAL(clicked(bool)),              this,   SLOT(autoLoadDesignsClicked(bool)));
+    connect(cbAutoLoadMosaics,  &QCheckBox::clicked,                this,   &page_loaders::autoLoadStylesClicked);
+    connect(cbAutoLoadTiling,   &QCheckBox::clicked,                this,   &page_loaders::autoLoadTilingClicked);
+    connect(cbAutoLoadDesigns,  &QCheckBox::clicked,                this,   &page_loaders::autoLoadDesignsClicked);
+    connect(cbLoadMulti,        &QCheckBox::clicked,  [=]  { config->loadTilingMulti = cbLoadMulti->isChecked(); });
+    connect(cbLoadModify,       &QCheckBox::clicked,  [=]  { config->loadTilingModify = cbLoadModify->isChecked(); });
 }
 
 void page_loaders::slot_mosaicFilter(const QString & filter)
@@ -286,25 +283,30 @@ void page_loaders::loadXML()
     emit sig_refreshView();
 }
 
-void page_loaders::tilingLoadChanged(int id)
-{
-    config->loadTilingMulti = (id == SM_LOAD_MULTI);
-}
-
 void page_loaders::loadTiling()
 {
-    QString name = selectedTilingName;
-
-    eSM_Event mode = (config->loadTilingMulti) ? SM_LOAD_MULTI : SM_LOAD_SINGLE;
-
-    if (tilingMaker->isLoaded(name))
-    {
-        mode = (mode == SM_LOAD_MULTI) ? SM_RELOAD_MULTI : SM_RELOAD_SINGLE;
-    }
-
     if (panel->getCurrentView() != VIEW_TILING_MAKER)
     {
+        // delegate the view
         panel->selectViewer(VIEW_TILING);
+    }
+
+    eSM_Event mode;
+    QString name = selectedTilingName;
+    if (tilingMaker->isLoaded(name))
+    {
+        // must be a reload
+        mode = (config->loadTilingMulti) ? SM_RELOAD_MULTI : SM_RELOAD_SINGLE;
+    }
+    else if (config->loadTilingModify)
+    {
+       // modify is a reload too
+       mode = (config->loadTilingMulti) ? SM_RELOAD_MULTI : SM_RELOAD_SINGLE;
+    }
+    else
+    {
+        // replace any tiling
+        mode = (config->loadTilingMulti) ? SM_LOAD_MULTI : SM_LOAD_SINGLE;
     }
 
     emit sig_loadTiling(name,mode);

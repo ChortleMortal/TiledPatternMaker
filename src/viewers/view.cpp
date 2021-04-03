@@ -79,7 +79,6 @@ View::View()
     addFrameSetting(VIEW_TILING,            Bounds(-10.0,10.0,20.0), QSize(1500,1100));
     addFrameSetting(VIEW_TILING_MAKER,      Bounds(-10.0,10.0,20.0), QSize(1000,1000));
     addFrameSetting(VIEW_MAP_EDITOR,        Bounds(-10.0,10.0,20.0), QSize( 900, 900));
-    addFrameSetting(VIEW_FACE_SET,          Bounds(-10.0,10.0,20.0), QSize(1500,1100));
 }
 
 View::~View()
@@ -160,7 +159,6 @@ void  View::reInitFrameSettings()
     reInitFrameSetting(VIEW_TILING);
     reInitFrameSetting(VIEW_TILING_MAKER);
     reInitFrameSetting(VIEW_MAP_EDITOR);
-    reInitFrameSetting(VIEW_FACE_SET);
 }
 
 void  View::addFrameSetting(eViewType evt, Bounds bounds, QSize size)
@@ -268,7 +266,7 @@ void View::resize(QSize sz)
 void View::moveEvent(QMoveEvent *event)
 {
     deltaPos = event->oldPos() - event->pos();
-    qDebug() << "View::moveEvent: deltaPos" << deltaPos;
+    //qDebug() << "View::moveEvent: deltaPos" << deltaPos;
 }
 
 void View::resizeEvent(QResizeEvent *event)
@@ -296,7 +294,6 @@ void View::resizeEvent(QResizeEvent *event)
     {
     case VIEW_MOTIF_MAKER:
     case VIEW_MAP_EDITOR:
-    case VIEW_FACE_SET:
     case VIEW_UNDEFINED:
         break;
 
@@ -317,7 +314,6 @@ void View::resizeEvent(QResizeEvent *event)
         {
         case VIEW_MOTIF_MAKER:
         case VIEW_MAP_EDITOR:
-        case VIEW_FACE_SET:
         case VIEW_UNDEFINED:
             break;
 

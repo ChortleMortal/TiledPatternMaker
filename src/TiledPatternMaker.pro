@@ -150,7 +150,6 @@ SOURCES += \
     tile/tiling_loader.cpp \
     tile/tiling_manager.cpp \
     tile/tiling_writer.cpp \
-    viewers/faceset_view.cpp \
     viewers/figure_view.cpp \
     viewers/geo_graphics.cpp \
     viewers/map_editor_view.cpp \
@@ -303,7 +302,6 @@ HEADERS += \
     tile/tiling_loader.h \
     tile/tiling_manager.h \
     tile/tiling_writer.h \
-    viewers/faceset_view.h \
     viewers/figure_view.h \
     viewers/geo_graphics.h \
     viewers/map_editor_view.h \

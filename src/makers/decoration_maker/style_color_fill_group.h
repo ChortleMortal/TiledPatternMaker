@@ -26,6 +26,7 @@
 #define STYLE_COLOR_FILL_GROUP_H
 
 #include <QtWidgets>
+#include "base/shared.h"
 #include "tile/feature.h"
 #include "makers/decoration_maker/style_editors.h"
 
@@ -47,7 +48,7 @@ class StyleColorFillGroup : public QObject
     };
 
 public:
-    StyleColorFillGroup(FaceGroup &fGroup, ColorGroup &cGroup, QVBoxLayout * vbox);
+    StyleColorFillGroup(FilledPtr style, QVBoxLayout * vbox);
     void display();
 
 signals:
@@ -70,8 +71,7 @@ protected:
 
 
 private:
-    FaceGroup     & faceGroup;
-    ColorGroup    & colorGroup;
+    FilledPtr       filled;
 
     AQTableWidget * table;
     ColorSet        copyPasteSet;

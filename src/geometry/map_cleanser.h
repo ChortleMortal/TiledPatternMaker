@@ -19,8 +19,6 @@ enum eMCOptions
 
 class MapCleanser
 {
-    friend class page_map_editor;
-
 public:
     MapCleanser(MapPtr map);
     ~MapCleanser();

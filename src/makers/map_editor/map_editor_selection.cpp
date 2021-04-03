@@ -6,8 +6,9 @@
 #include "base/utilities.h"
 #include "tapp/figure.h"
 #include "geometry/loose.h"
+#include "base/configuration.h"
 
-const int debugSelection = 1;
+const bool debugSelection = false;
 
 MapEditorSelection::MapEditorSelection() : MapEditorView ()
 {
@@ -18,6 +19,8 @@ void  MapEditorSelection::buildEditorDB()
     points.clear();
     lines.clear();
     circles.clear();
+
+    eMapEditorMode mode = config->mapEditorMode;
 
     if (map)
     {
@@ -41,7 +44,8 @@ void  MapEditorSelection::buildEditorDB()
         }
     }
 
-    if (mapType == MAP_TYPE_FIGURE)
+
+    if (mode == MAPED_MODE_FIGURE)
     {
         QPolygonF p    = figp->getExtBoundary();
         QPointF center = feap->getCenter();
@@ -163,19 +167,19 @@ void  MapEditorSelection::buildEditorDB()
         }
     }
 
-    if (mapType == MAP_TYPE_DCEL)
+    if (mode == MAPED_MODE_DCEL)
     {
         DCELPtr dp = dcel.lock();
         if  (dp)
         {
             // add points from map vertices
-            for (auto  v : qAsConst(dp->vertices))
+            for (auto & v : qAsConst(dp->vertices))
             {
                 pointInfo pi(PT_VERTEX,v->vert,"vertex");
                 points.push_back(pi);
             }
 
-            for (auto e : qAsConst(dp->edges))
+            for (auto & e : qAsConst(dp->edges))
             {
                 // add lines from map edges
                 lineInfo li(LINE_EDGE,e->edge,"edge");
@@ -210,7 +214,7 @@ void  MapEditorSelection::buildEditorDB()
     }
 
     // add circles
-    if (mapType == MAP_TYPE_FIGURE)
+    if (mode == MAPED_MODE_FIGURE)
     {
         if (figp->hasExtCircleBoundary())
         {
@@ -479,7 +483,7 @@ MapSelectionPtr MapEditorSelection::findVertex(QPointF spt , VertexPtr exclude)
 {
     MapSelectionPtr sel;
 
-    if (mapType == MAP_TYPE_UNDEFINED)
+    if (config->mapEditorMode == MAPED_MODE_NONE)
         return sel;
 
     for (auto vp : map->vertices)
@@ -505,7 +509,7 @@ SelectionSet MapEditorSelection::findEdges(QPointF spt, const QVector<EdgePtr> &
 {
     SelectionSet set;
 
-    if (mapType == MAP_TYPE_UNDEFINED)
+    if (config->mapEditorMode == MAPED_MODE_NONE)
         return set;
 
     for (auto e : map->edges)
@@ -531,7 +535,7 @@ bool MapEditorSelection::insideBoundary(QPointF wpt)
 {
     // TODO - optimize me
 
-    if (mapType != MAP_TYPE_FIGURE)
+    if (config->mapEditorMode == MAPED_MODE_NONE)
         return true;    // no boundary
 
     qreal b_area = 0;
@@ -581,7 +585,7 @@ MapSelectionPtr MapEditorSelection::findConstructionCircle(const QPointF & spt)
     // if pt is in more than one circle, closes to centre is selected
     MapSelectionPtr sel;
 
-    if (mapType == MAP_TYPE_UNDEFINED)
+    if (config->mapEditorMode == MAPED_MODE_NONE)
         return sel;
 
     QVector<CirclePtr> selected;

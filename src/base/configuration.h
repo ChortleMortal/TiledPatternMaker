@@ -132,8 +132,7 @@ enum eViewType
     VIEW_TILING,
     VIEW_TILING_MAKER,
     VIEW_MAP_EDITOR,
-    VIEW_FACE_SET,
-    VIEW_MAX = VIEW_FACE_SET,
+    VIEW_MAX = VIEW_MAP_EDITOR,
     VIEW_UNDEFINED,
     LAST_VIEW_TYPE = VIEW_UNDEFINED
 };
@@ -148,28 +147,30 @@ static QString sViewerType[]
     E2STR(VIEW_TILING),
     E2STR(VIEW_TILING_MAKER),
     E2STR(VIEW_MAP_EDITOR),
-    E2STR(VIEW_FACE_SET),
     E2STR(VIEW_UNDEFINED)
 };
 
 enum eMapEditorMode
 {
-    MAP_MODE_MOSAIC,
-    MAP_MODE_PROTO,
-    MAP_MODE_FIGURE,
-    MAP_MODE_LOCAL,
-    MAP_MODE_TILING,
-    MAP_MODE_DCEL,
-    MAP_MODE_MAX = MAP_MODE_TILING
+    MAPED_MODE_MOSAIC,
+    MAPED_MODE_PROTO,
+    MAPED_MODE_FIGURE,
+    MAPED_MODE_LOCAL,
+    MAPED_MODE_TILING,
+    MAPED_MODE_DCEL,
+    MAPED_MODE_NONE,
+    MAPED_MODE_MAX = MAPED_MODE_NONE
 };
 
 static QString sMapEditorMode[] =
 {
-    E2STR(MAP_MODE_MOSAIC),
-    E2STR(MAP_MODE_PROTO),
-    E2STR(MAP_MODE_FIGURE),
-    E2STR(MAP_MODE_LOCAL),
-    E2STR(MAP_MODE_DCEL),
+    E2STR(MAPED_MODE_MOSAIC),
+    E2STR(MAPED_MODE_PROTO),
+    E2STR(MAPED_MODE_FIGURE),
+    E2STR(MAPED_MODE_LOCAL),
+    E2STR(MAPED_MODE_TILING),
+    E2STR(MAPED_MODE_DCEL),
+    E2STR(MAPED_MODE_NONE)
 };
 
 enum eRepeatType
@@ -289,6 +290,7 @@ public:
     bool    autoLoadTiling;
     bool    autoLoadDesigns;
     bool    loadTilingMulti;
+    bool    loadTilingModify;
     bool    scaleToView;
     bool    stopIfDiff;
     bool    logToStderr;
@@ -364,25 +366,18 @@ public:
     QString templateDir;
     QString examplesDir;
 
-
     bool    circleX;
     bool    hideCircles;
     bool    enableDetachedPages;
     bool    showCenterDebug;
     bool    showCenterMouse;
-
     bool    updatePanel;
-
     bool    debugReplicate;
     bool    debugMapEnable;
 
     eKbdMode    kbdMode;
-
-    WeakColorMakerPtr  colorMaker;                  // used by FaceSetView
-    WeakFacePtr        selectedFace;                // used by FaceSetView
-    WeakDCELPtr        dcel;                        // used by map editor
-
-    QColor    figureViewBkgdColor;                  // used by some menus
+    WeakDCELPtr dcel;                           // used by map editor
+    QColor      figureViewBkgdColor;            // used by some menus
 
     QMap<eDesign,DesignPtr>  availableDesigns;
 

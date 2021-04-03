@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<vector id="1" version="8">
+<vector id="1" version="9">
 	<designNotes>using algo=2</designNotes>
 	<design>
 		<size>
@@ -83,15 +83,12 @@
 		<ColorWhites>
 			<color hide="t">#fff57900</color>
 			<color hide="f">#ff00aaff</color>
-			<color hide="t">#ff00aaff</color>
 			<color hide="f">#fff57900</color>
-			<color hide="t">#ffffff00</color>
-			<color hide="t">#ffffff00</color>
-			<color hide="t">#ffffff00</color>
+			<color hide="t">#fff57900</color>
 			<color hide="f">#ff00aaff</color>
 			<color hide="f">#fff57900</color>
-			<color hide="f">#fff57900</color>
 			<color hide="f">#ff000000</color>
+			<color hide="t">#ff00aaff</color>
 		</ColorWhites>
 		<ColorGroup>
 			<Group hideSet="f">

@@ -81,10 +81,13 @@ private slots:
     void    slot_dir1Changed();
 
     void    loadWorkListFromFile();
+    void    saveWorkListToFile();
+    void    editWorkList();
 
 protected:
     QGroupBox   * createCycleSection();
     QGroupBox   * createCompareSection();
+    QGroupBox   * createWorklistSection();
 
     void viewImage(QString file);
 

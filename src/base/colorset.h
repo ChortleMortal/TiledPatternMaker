@@ -50,8 +50,8 @@ public:
 
     void          addColorSet(ColorSet & cset);
     void          setColorSet(int idx, ColorSet & cset);
-    ColorSet &    getNextColorSet();
-    ColorSet &    getColorSet(int idx);
+    ColorSet *    getNextColorSet();
+    ColorSet *    getColorSet(int idx);
     void          removeColorSet(int idx);
 
     void          hide(int idx, bool hide);
@@ -62,12 +62,9 @@ public:
     int           size() { return colorgroup.size(); }
     void          resize(int num) { colorgroup.resize(num); }
 
-    AQHBoxLayout * createLayout();
-    AQWidget     * createWidget();
-
 private:
     QVector<ColorSet>           colorgroup;
-    QVector<ColorSet>::iterator pos;
+    int                         ipos;
 };
 
 class ColorSet

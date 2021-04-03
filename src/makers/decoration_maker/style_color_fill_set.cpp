@@ -24,8 +24,9 @@
 
 #include "makers/decoration_maker/style_color_fill_set.h"
 #include "base/utilities.h"
+#include "viewers/view.h"
 
-StyleColorFillSet::StyleColorFillSet(FaceGroup & fgroup, ColorSet & cset, QVBoxLayout * vbox)  : faceGroup(fgroup),colorSet(cset)
+StyleColorFillSet::StyleColorFillSet(FilledPtr style, QVBoxLayout * vbox)  : filled(style)
 {
     QGridLayout * grid = new QGridLayout;
 
@@ -52,9 +53,8 @@ StyleColorFillSet::StyleColorFillSet(FaceGroup & fgroup, ColorSet & cset, QVBoxL
     connect(pstBtn, &QPushButton::clicked, this, &StyleColorFillSet::pasteColor);
 
     table = new AQTableWidget();
-    table->horizontalHeader()->setVisible(false);
     table->verticalHeader()->setVisible(false);
-    table->setRowCount(colorSet.size());
+    table->setRowCount(filled->getWhiteColorSet()->size());
     table->setColumnCount(8);
     table->setColumnWidth(COL_ROW,40);
     table->setColumnWidth(COL_FACES,40);
@@ -66,7 +66,6 @@ StyleColorFillSet::StyleColorFillSet(FaceGroup & fgroup, ColorSet & cset, QVBoxL
     table->setSelectionBehavior(QAbstractItemView::SelectRows);
     table->setMinimumHeight(501);
 
-    table->horizontalHeader()->setVisible(true);
     QStringList qslH;
     qslH << "Row" <<  "Faces" << "Sides" << "Area" << "Hide" << "Select" << "Color" << "Color";
     table->setHorizontalHeaderLabels(qslH);
@@ -82,12 +81,12 @@ void StyleColorFillSet::display()
     QModelIndex selected = table->currentIndex();
 
     table->clearContents();
-    colorSet.resetIndex();
+    filled->getWhiteColorSet()->resetIndex();
 
-    table->setRowCount(faceGroup.size());
+    table->setRowCount(filled->getFaceGroup()->size());
 
     int row = 0;
-    for (const auto & face : qAsConst(faceGroup))
+    for (const auto & face : qAsConst(*filled->getFaceGroup()))
     {
         QTableWidgetItem * item = new QTableWidgetItem(QString::number(row));
         table->setItem(row,COL_ROW,item);
@@ -101,7 +100,7 @@ void StyleColorFillSet::display()
         item = new QTableWidgetItem(QString::number(face->area));
         table->setItem(row,COL_AREA,item);
 
-        TPColor tpcolor  = colorSet.getColor(row);
+        TPColor tpcolor  = filled->getWhiteColorSet()->getColor(row);
         QColor color     = tpcolor.color;
         QColor fullColor = color;
         fullColor.setAlpha(255);
@@ -137,13 +136,13 @@ void StyleColorFillSet::display()
 
 void StyleColorFillSet::modify()
 {
-    qDebug().noquote() << "before" << colorSet.colorsString();
+    qDebug().noquote() << "before" << filled->getWhiteColorSet()->colorsString();
 
     int currentRow = table->currentRow();
-    if (currentRow < 0 || currentRow >= colorSet.size())
+    if (currentRow < 0 || currentRow >= filled->getWhiteColorSet()->size())
         return;
 
-    TPColor tpcolor = colorSet.getColor(currentRow);
+    TPColor tpcolor = filled->getWhiteColorSet()->getColor(currentRow);
     QColor color    = tpcolor.color;
 
     AQColorDialog dlg(color);
@@ -154,8 +153,8 @@ void StyleColorFillSet::modify()
     color = dlg.selectedColor();
     if (color.isValid())
     {
-        colorSet.setColor(currentRow, color);
-        qDebug().noquote() << "after" << colorSet.colorsString();
+        filled->getWhiteColorSet()->setColor(currentRow, color);
+        qDebug().noquote() << "after" << filled->getWhiteColorSet()->colorsString();
 
         display();
         emit sig_colorsChanged();
@@ -168,11 +167,11 @@ void StyleColorFillSet::up()
     if (currentRow < 1)
         return;
 
-    TPColor a = colorSet.getColor(currentRow);
-    TPColor b = colorSet.getColor(currentRow-1);
+    TPColor a = filled->getWhiteColorSet()->getColor(currentRow);
+    TPColor b = filled->getWhiteColorSet()->getColor(currentRow-1);
 
-    colorSet.setColor(currentRow-1, a);
-    colorSet.setColor(currentRow  , b);
+    filled->getWhiteColorSet()->setColor(currentRow-1, a);
+    filled->getWhiteColorSet()->setColor(currentRow  , b);
 
     currentRow--;
 
@@ -184,14 +183,14 @@ void StyleColorFillSet::up()
 void StyleColorFillSet::down()
 {
     int currentRow = table->currentRow();
-    if (currentRow < 0 || currentRow >= (colorSet.size()-1))
+    if (currentRow < 0 || currentRow >= (filled->getWhiteColorSet()->size()-1))
         return;
 
-    TPColor a = colorSet.getColor(currentRow);
-    TPColor b = colorSet.getColor(currentRow+1);
+    TPColor a = filled->getWhiteColorSet()->getColor(currentRow);
+    TPColor b = filled->getWhiteColorSet()->getColor(currentRow+1);
 
-    colorSet.setColor(currentRow+1, a);
-    colorSet.setColor(currentRow,   b);
+    filled->getWhiteColorSet()->setColor(currentRow+1, a);
+    filled->getWhiteColorSet()->setColor(currentRow,   b);
 
     currentRow++;
 
@@ -203,14 +202,14 @@ void StyleColorFillSet::down()
 void StyleColorFillSet::rptColor()
 {
     int currentRow = table->currentRow();
-    if (currentRow < 0 || currentRow >= colorSet.size())
+    if (currentRow < 0 || currentRow >= filled->getWhiteColorSet()->size())
         return;
 
-    TPColor a = colorSet.getColor(currentRow);
-    colorSet.resize(table->rowCount());
+    TPColor a = filled->getWhiteColorSet()->getColor(currentRow);
+    filled->getWhiteColorSet()->resize(table->rowCount());
     for (int i = currentRow + 1; i < table->rowCount(); i++)
     {
-        colorSet.setColor(i,a);
+        filled->getWhiteColorSet()->setColor(i,a);
     }
 
     emit sig_colorsChanged();
@@ -221,19 +220,19 @@ void StyleColorFillSet::rptColor()
 void StyleColorFillSet::copyColor()
 {
     int currentRow = table->currentRow();
-    if (currentRow < 0 || currentRow >= colorSet.size())
+    if (currentRow < 0 || currentRow >= filled->getWhiteColorSet()->size())
         return;
 
-    copyPasteColor = colorSet.getColor(currentRow);
+    copyPasteColor = filled->getWhiteColorSet()->getColor(currentRow);
 }
 
 void StyleColorFillSet::pasteColor()
 {
     int currentRow = table->currentRow();
-    if (currentRow < 0 || currentRow >= colorSet.size())
+    if (currentRow < 0 || currentRow >= filled->getWhiteColorSet()->size())
         return;
 
-    colorSet.setColor(currentRow,copyPasteColor);
+    filled->getWhiteColorSet()->setColor(currentRow,copyPasteColor);
 
     emit sig_colorsChanged();
 
@@ -244,14 +243,15 @@ void StyleColorFillSet::colorVisibilityChanged(int row)
 {
     qDebug() << "colorVisibilityChanged row=" << row;
 
-    TPColor tpcolor = colorSet.getColor(row);
+    TPColor tpcolor = filled->getWhiteColorSet()->getColor(row);
     QCheckBox * cb  = dynamic_cast<QCheckBox*>(table->cellWidget(row,COL_HIDE));
     bool hide       = cb->isChecked();
     tpcolor.hidden  = hide;
-    colorSet.setColor(row, tpcolor);
+    filled->getWhiteColorSet()->setColor(row, tpcolor);
     qDebug() << "hide state="  << hide;
 
-    emit sig_colorsChanged();
+    View * view = View::getInstance();
+    view->update();
 
     qDebug() << "colorVisibilityChanged: done";
 }
@@ -271,7 +271,7 @@ void StyleColorFillSet::colorChanged(int row)
     QColor color(sColor);
     if (color.isValid())
     {
-        colorSet.setColor(row, color);
+        filled->getWhiteColorSet()->setColor(row, color);
         display();
         emit sig_colorsChanged();
     }
@@ -281,21 +281,22 @@ void StyleColorFillSet::slot_click(int row, int col)
 {
     if (col == COL_SEL)
     {
-        if (!faceGroup.isSelected(row))
+        if (!filled->getFaceGroup()->isSelected(row))
         {
-            faceGroup.select(row);
+            filled->getFaceGroup()->select(row);
         }
         else
         {
-            faceGroup.deselect(row);
+            filled->getFaceGroup()->deselect(row);
         }
     }
     else
     {
-        faceGroup.deselect();
+        filled->getFaceGroup()->deselect();
     }
 
-    //emit sig_colorsChanged();
+    View * view = View::getInstance();
+    view->update();
 
     display();
 }

@@ -8,7 +8,6 @@ const viewMsg PanelStatus::viewMsgs[] = {
     {VIEW_TILING,         ""},
     {VIEW_TILING_MAKER,   "<body style=\"background-color=ffffffff; font=bold;\"><span style=\"color:rgb(217,217,255)\">excluded</span>  |  <span style=\"color:rgb(255,217,217)\">included</span>  |  <span style=\"color:rgb(205,102, 25)\">overlapping</span>  |  <span style=\"color:rgb( 25,102,205)\">touching</span> |  <span style=\"color:rgb(127,255,127)\">under-mouse</span>  |  <span style=\"color:rgb(206,179,102)\">dragging</span></body>"},
     {VIEW_MAP_EDITOR,     ""},
-    {VIEW_FACE_SET,       ""},
     {VIEW_UNDEFINED,      ""}
 };
 

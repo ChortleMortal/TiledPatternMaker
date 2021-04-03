@@ -109,10 +109,10 @@ class FilledEditor : public StyleEditor
     Q_OBJECT
 
 public:
-    FilledEditor(Filled * f, AQTableWidget *table, QVBoxLayout *parmsCtrl );
+    FilledEditor(FilledPtr f, AQTableWidget *table, QVBoxLayout *parmsCtrl );
     ~FilledEditor();
 
-    Filled * getFilled() { return filled; }
+    FilledPtr getFilled() { return filled; }
 
 public slots:
     void slot_colorsChanged();
@@ -122,8 +122,6 @@ private slots:
     void slot_outsideChanged(int state);
     void slot_editB();
     void slot_editW();
-    void slot_viewFaces();
-    void slot_setSelect(int facenum);
 
 protected:
     void slot_algo(int index);
@@ -135,15 +133,17 @@ protected:
     void displayParms3();
 
 private:
+    FilledPtr       filled;
     AQTableWidget * table;
-    Filled       * filled;
-    QCheckBox    * inside_checkbox;
-    QCheckBox    * outside_checkbox;
-    QVBoxLayout  * vbox;
-    QComboBox    * cleanseBox;
+    QCheckBox     * inside_checkbox;
+    QCheckBox     * outside_checkbox;
+    QVBoxLayout   * vbox;
+    QComboBox     * cleanseBox;
 
     StyleColorFillSet   * fillSet;
     StyleColorFillGroup * fillGroup;
+
+    View * view;
 };
 
 

@@ -32,13 +32,6 @@
 
 class PrototypeView : public FillRegion, public Layer
 {
-    enum eProtoMode
-    {
-        PROTO_DRAW_MAP       =  0x01,
-        PROTO_DRAW_FEATURES  =  0x02,
-        PROTO_DRAW_FIGURES   =  0x04
-    };
-
 public:
     PrototypeView(PrototypePtr proto, int mode);
 

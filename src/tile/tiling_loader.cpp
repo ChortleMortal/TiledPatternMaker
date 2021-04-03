@@ -363,8 +363,8 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
                 tpcolors.push_back(TPColor(acolor,false));
 
             }
-            ColorSet & bkgds = bf->getBkgdColors();
-            bkgds.setColors(tpcolors);
+            ColorSet * bkgds = bf->getBkgdColors();
+            bkgds->setColors(tpcolors);
         }
     }
 

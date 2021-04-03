@@ -129,7 +129,7 @@ public:
 
     bool contains (VertexPtr v) { return vertices.contains(v); }
     bool contains (EdgePtr e)   { return edges.contains(e); }
-    bool edgeSameAs(VertexPtr v1, VertexPtr v2);
+    bool findEdge(VertexPtr v1, VertexPtr v2);
 
     void addShapeFactory(ShapeFPtr sf);
 

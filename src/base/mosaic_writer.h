@@ -67,8 +67,8 @@ protected:
 
     void procColor(QTextStream & ts, QColor color);
     void procColor(QTextStream & ts, TPColor tpcolor);
-    void procColorSet(QTextStream &ts, ColorSet & colorSet);
-    void procColorGroup(QTextStream &ts, ColorGroup & colorGroup);
+    void procColorSet(QTextStream &ts, ColorSet *colorSet);
+    void procColorGroup(QTextStream &ts, ColorGroup *colorGroup);
 
     bool processInterlace(QTextStream &ts, StylePtr s);
     bool processThick(QTextStream & ts, StylePtr s);

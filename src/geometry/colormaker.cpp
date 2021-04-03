@@ -1,24 +1,15 @@
 #include "colormaker.h"
 #include "geometry/loose.h"
 
-ColorMaker::ColorMaker(DCELPtr d)
+ColorMaker::ColorMaker()
 {
-    dcel = d;
-}
 
-FaceSet & ColorMaker::getFacesToDo()
-{
-    if (facesToDo.size() == 0)
-    {
-        createFacesToDo();
-    }
-    return  facesToDo;
 }
 
 void ColorMaker::createFacesToDo()
 {
-    whites.clear();
-    blacks.clear();
+    whiteFaces.clear();
+    blackFaces.clear();
     facesToDo.clear();
 
     // remove outer
@@ -49,7 +40,7 @@ void ColorMaker::assignColorsOriginal()
         //qDebug() << "facesLeft=" << facesLeft;
     } while ((facesLeft != 0) &&  (facesLeft < facesToProcess));
 
-    qDebug() << "done: white =" << whites.size() << "black =" << blacks.size();
+    qDebug() << "done: white =" << whiteFaces.size() << "black =" << blackFaces.size();
 }
 
 // Propagate colours using a DFS (Depth First Search).
@@ -123,11 +114,11 @@ void ColorMaker::addFaceResults(FaceSet & fset)
     {
         if( face->state == FACE_WHITE )
         {
-            whites.push_back(face);
+            whiteFaces.push_back(face);
         }
         else if(face->state == FACE_BLACK )
         {
-            blacks.push_back(face);
+            blackFaces.push_back(face);
         }
         else
         {
@@ -171,11 +162,11 @@ void ColorMaker::assignColorsNew1()
     {
         if( fi->state == FACE_WHITE )
         {
-            whites.push_back(fi);
+            whiteFaces.push_back(fi);
         }
         else if( fi->state == FACE_BLACK )
         {
-            blacks.push_back(fi);
+            blackFaces.push_back(fi);
         }
         else
         {
@@ -183,8 +174,8 @@ void ColorMaker::assignColorsNew1()
         }
     }
 
-    whites.sortByPositon();
-    blacks.sortByPositon();
+    whiteFaces.sortByPositon();
+    blackFaces.sortByPositon();
 }
 
 void ColorMaker::buildFaceGroups()
@@ -194,12 +185,14 @@ void ColorMaker::buildFaceGroups()
     createFacesToDo();
     faceGroup.clear();
 
+#if 0
     for (auto face : qAsConst(facesToDo))
     {
         face->sortForComparison();
     }
 
     removeOverlappingFaces();	// fix 1
+#endif
 
     for (auto & face : qAsConst(facesToDo))
     {
@@ -268,7 +261,7 @@ void ColorMaker::assignColorSets(ColorSet & colorSet)
 
     // assign the color set to the sorted group
     colorSet.resetIndex();
-    for (const auto & face : qAsConst(faceGroup))
+    for (FaceSetPtr face : faceGroup)
     {
         face->tpcolor = colorSet.getNextColor();
     }
@@ -276,7 +269,7 @@ void ColorMaker::assignColorSets(ColorSet & colorSet)
 
 void  ColorMaker::assignColorGroups(ColorGroup & colorGroup)
 {
-    qDebug() << "ColorMaker::assignColorsNew3" << faceGroup.size() << faceGroup.totalSize();;
+    qDebug() << "ColorMaker::assignColorGroups" << faceGroup.size() << faceGroup.totalSize();
 
     // first make the color set size the same as the face group size
     if (colorGroup.size() < faceGroup.size())
@@ -297,22 +290,37 @@ void  ColorMaker::assignColorGroups(ColorGroup & colorGroup)
         qWarning() <<  "more  color groups than face  groups: facegroup" << faceGroup.size() << "colorgroup=" << colorGroup.size();
         colorGroup.resize(faceGroup.size());
     }
-    Q_ASSERT(colorGroup.size() == faceGroup.size());
 
+    Q_ASSERT(colorGroup.size() == faceGroup.size());
+#if 0
     // this is  helpful for consistency
-    for (auto it = faceGroup.begin(); it != faceGroup.end(); it++)
+    qDebug() << "sorting...";
+    for (FaceSetPtr fsp  : faceGroup)
     {
-        FaceSetPtr fsp = *it;
         fsp->sortByPositon();
     }
 
     // assign the color group to the sorted group
+    qDebug() << "assigning...";
     colorGroup.resetIndex();
-    for (auto it = faceGroup.begin(); it != faceGroup.end(); it++)
+    for (FaceSetPtr fsp  : faceGroup)
     {
-        FaceSetPtr fsp = *it;
         fsp->colorSet  = colorGroup.getNextColorSet();
     }
+
+#else
+    colorGroup.resetIndex();
+    int i=0;
+    for (FaceSetPtr fsp  : faceGroup)
+    {
+        qDebug() << "sorting..." << i;
+        fsp->sortByPositon();
+        qDebug() << "assigning..." << i;
+        fsp->pColorSet  = colorGroup.getNextColorSet();
+        i++;
+    }
+#endif
+    qDebug() << "ColorMaker::assignColorGroups - done";
 }
 
 

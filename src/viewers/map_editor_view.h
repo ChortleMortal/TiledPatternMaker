@@ -29,29 +29,6 @@
 #include "tile/placed_feature.h"
 #include "base/layer.h"
 
-enum eMapType
-{
-    MAP_TYPE_UNDEFINED,
-    MAP_TYPE_FIGURE,
-    MAP_TYPE_PROTO,
-    MAP_TYPE_STYLE,
-    MAP_TYPE_LOCAL,
-    MAP_TYPE_TILING,
-    MAP_TYPE_DCEL
-};
-
-#define E2STR(x) #x
-
-static QString sMapEdInput[] = {
-    E2STR(MAP_TYPE_UNDEFINED),
-    E2STR(MAP_TYPE_FIGURE),
-    E2STR(MAP_TYPE_PROTO),
-    E2STR(MAP_TYPE_STYLE),
-    E2STR(MAP_TYPE_LOCAL),
-    E2STR(MAP_TYPE_TILING),
-    E2STR(MAP_TYPE_DCEL)
-};
-
 class MapEditorView : public Layer
 {
 public:
@@ -61,7 +38,6 @@ public:
     virtual void    draw(QPainter *) = 0;
 
     void            unload();
-    eMapType        getMapType() { return mapType; }
     MapPtr          getMap()     { return map; }
     FigurePtr       getFigure()  { return figp; }
     WeakDCELPtr     getDCEL()    { return dcel; }
@@ -89,7 +65,6 @@ public:
     QVector<CirclePtr> constructionCircles;
 
 protected:
-    eMapType          mapType;
     StylePtr          styp;     // set
     PrototypePtr      prop;     // set
     DesignElementPtr  delp;     // set

@@ -152,7 +152,7 @@ void Emboss::setGreys()
     qreal s;
     qreal b;
 #endif
-    getColorSet().getFirstColor().color.getHsvF(&h,&s,&b);
+    getColorSet()->getFirstColor().color.getHsvF(&h,&s,&b);
 
     greys.clear();
 

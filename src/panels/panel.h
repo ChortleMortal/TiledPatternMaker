@@ -151,7 +151,6 @@ private:
     QCheckBox   *cbDELView;
     QCheckBox   *cbTilingMakerView;
     QCheckBox   *cbMapEditor;
-    QCheckBox   *cbFaceSetView;
 
     QCheckBox   *cbLockView;
     QCheckBox   *cbMultiSelect;

@@ -35,20 +35,23 @@
 #include "makers/motif_maker/motif_maker.h"
 #include "viewers/viewcontrol.h"
 #include "geometry/transform.h"
+#include "viewers/view.h"
 
 using std::string;
 
 Q_DECLARE_METATYPE(WeakDesignElementPtr);
 Q_DECLARE_METATYPE(WeakPrototypePtr);
 
-page_prototype_info:: page_prototype_info(ControlPanel * cpanel)  : panel_page(cpanel,"WS Prototype Info")
+page_prototype_info:: page_prototype_info(ControlPanel * cpanel)  : panel_page(cpanel,"Prototype Info")
 {
     setMouseTracking(true);
 
 
-    QCheckBox * cbDrawMap      = new QCheckBox("DrawFigureMap");
-    QCheckBox * cbDrawFeatures = new QCheckBox("Draw Features");
-    QCheckBox * cbDrawfigures  = new QCheckBox("Draw Figures");
+    QCheckBox * cbDrawMap        = new QCheckBox("DrawFigureMap");
+    QCheckBox * cbDrawFeatures   = new QCheckBox("Draw Features");
+    QCheckBox * cbDrawfigures    = new QCheckBox("Draw Figures");
+    QCheckBox * cbHiliteFeatures = new QCheckBox("Highlight Features");
+    QCheckBox * cbHiliteFigures  = new QCheckBox("Highlight Figures");
 
     int mode = vcontrol->getProtoViewMode();
     if (mode & PROTO_DRAW_MAP)
@@ -57,12 +60,19 @@ page_prototype_info:: page_prototype_info(ControlPanel * cpanel)  : panel_page(c
         cbDrawFeatures->setChecked(true);
     if (mode & PROTO_DRAW_FIGURES)
         cbDrawfigures->setChecked(true);
+    if (mode & PROTO_HIGHLIGHT_FEATURES)
+        cbHiliteFeatures->setChecked(true);
+    if (mode & PROTO_HIGHLIGHT_FIGURES)
+        cbHiliteFigures->setChecked(true);
+
 
     QPushButton * refreshButton = new QPushButton("Refresh");
     QHBoxLayout * hbox = new QHBoxLayout;
 
     hbox->addWidget(cbDrawFeatures);
     hbox->addWidget(cbDrawfigures);
+    hbox->addWidget(cbHiliteFeatures);
+    hbox->addWidget(cbHiliteFigures);
     hbox->addWidget(cbDrawMap);
     hbox->addStretch();
     hbox->addWidget(refreshButton);
@@ -85,11 +95,13 @@ page_prototype_info:: page_prototype_info(ControlPanel * cpanel)  : panel_page(c
     vbox->addWidget(protoTable);
     vbox->addStretch();
 
-    connect(refreshButton,  &QPushButton::clicked,        this, &page_prototype_info::onEnter);
-    connect(protoTable,     SIGNAL(cellClicked(int,int)), this,   SLOT(slot_prototypeSelected(int,int)));
-    connect(cbDrawMap,      &QCheckBox::clicked, this, &page_prototype_info::drawMapClicked);
-    connect(cbDrawFeatures, &QCheckBox::clicked, this, &page_prototype_info::drawFeatureClicked);
-    connect(cbDrawfigures,  &QCheckBox::clicked, this, &page_prototype_info::drawFigureClicked);
+    connect(refreshButton,    &QPushButton::clicked,        this, &page_prototype_info::onEnter);
+    connect(protoTable,       SIGNAL(cellClicked(int,int)), this,   SLOT(slot_prototypeSelected(int,int)));
+    connect(cbDrawMap,        &QCheckBox::clicked, this, &page_prototype_info::drawMapClicked);
+    connect(cbDrawFeatures,   &QCheckBox::clicked, this, &page_prototype_info::drawFeatureClicked);
+    connect(cbDrawfigures,    &QCheckBox::clicked, this, &page_prototype_info::drawFigureClicked);
+    connect(cbHiliteFeatures, &QCheckBox::clicked, this, &page_prototype_info::hiliteFeatureClicked);
+    connect(cbHiliteFigures,  &QCheckBox::clicked, this, &page_prototype_info::hiliteFigureClicked);
 
 }
 
@@ -206,5 +218,17 @@ void page_prototype_info::drawFigureClicked(bool enb)
 void page_prototype_info::drawFeatureClicked(bool enb)
 {
     vcontrol->setProtoViewMode(PROTO_DRAW_FEATURES,enb);
+    emit sig_refreshView();
+}
+
+void page_prototype_info::hiliteFigureClicked(bool enb)
+{
+    vcontrol->setProtoViewMode(PROTO_HIGHLIGHT_FIGURES,enb);
+    emit sig_refreshView();
+}
+
+void page_prototype_info::hiliteFeatureClicked(bool enb)
+{
+    vcontrol->setProtoViewMode(PROTO_HIGHLIGHT_FEATURES,enb);
     emit sig_refreshView();
 }

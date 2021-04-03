@@ -78,7 +78,7 @@ private slots:
     void    deleteXML();
     void    showTilings();
 
-    void    tilingLoadChanged(int id);
+    //void    tilingLoadChanged(int id);
     void    openTiling();
     void    rebaseTiling();
     void    renameTiling();
@@ -114,10 +114,10 @@ private:
 
     QPushButton * pbLoadShapes;
 	QPushButton * pbLoadTiling;
-    QRadioButton* rbLoadSingle;
-    QRadioButton* rbLoadMulti;
-    QButtonGroup* tileLoadGroup;
     QPushButton * pbLoadXML;
+
+    QCheckBox   * cbLoadMulti;
+    QCheckBox   * cbLoadModify;
 
     QCheckBox   * mosaicFilterCheck;
     QLineEdit   * mosaicFilter;

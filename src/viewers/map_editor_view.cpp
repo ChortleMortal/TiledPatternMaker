@@ -47,14 +47,12 @@ MapEditorView::MapEditorView() : Layer("MapEditorView",LTYPE_MAP_EDITOR)
 
 void MapEditorView::paint(QPainter *painter)
 {
-    if (!map && !dcel.lock())
-        return;
 
     painter->setRenderHint(QPainter::Antialiasing ,true);
     painter->setRenderHint(QPainter::SmoothPixmapTransform,true);
 
 
-    if (mapType == MAP_TYPE_FIGURE)
+    if (config->mapEditorMode == MAPED_MODE_FIGURE)
     {
 #if 0
         QPointF center = feap->getCenter();
@@ -304,6 +302,4 @@ void MapEditorView::unload()
 
     constructionLines.clear();
     constructionCircles.clear();
-
-    mapType = MAP_TYPE_UNDEFINED;
 }

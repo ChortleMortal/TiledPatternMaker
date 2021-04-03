@@ -1,5 +1,4 @@
 #include "makers/decoration_maker/decoration_maker.h"
-#include "makers/decoration_maker/style_editors.h"
 #include "makers/motif_maker/motif_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "style/colored.h"
@@ -10,6 +9,7 @@
 #include "style/plain.h"
 #include "style/sketch.h"
 #include "style/emboss.h"
+#include "style/tile_colors.h"
 #include "base/mosaic.h"
 #include "viewers/viewcontrol.h"
 
@@ -76,8 +76,6 @@ void DecorationMaker::sm_createMosaic(const QVector<PrototypePtr> prototypes)
         TilingPtr tp = prototype->getTiling();
         ModelSettingsPtr settings = tp->getSettings();
         mosaic->setSettings(settings);
-
-        selectStyle(thick);
     }
 }
 
@@ -89,18 +87,20 @@ void DecorationMaker::sm_addPrototype(const QVector<PrototypePtr> prototypes)
         {
             StylePtr thick = make_shared<Plain>(prototype);
             mosaic->addStyle(thick);
-
-            selectStyle(thick);
         }
     }
 }
 
 void DecorationMaker::sm_replacePrototype(PrototypePtr prototype)
 {
-    StylePtr  style = selectedStyle;
-    style->setPrototype(prototype);
-
-    selectStyle(style);
+    if (mosaic)
+    {
+        const StyleSet & sset = mosaic->getStyleSet();
+        for (auto style : sset)
+        {
+                style->setPrototype(prototype);
+        }
+    }
 }
 
 void DecorationMaker::sm_resetStyles(QVector<PrototypePtr> prototypes)
@@ -191,48 +191,7 @@ void DecorationMaker::resetMosaic()
 }
 
 
-void DecorationMaker::setCurrentEditor(StylePtr style, AQTableWidget * table, QVBoxLayout *vbox)
-{
-    currentStyleEditor.reset();
-    table->clearContents();
-    table->setRowCount(0);
-    eraseLayout(dynamic_cast<QLayout*>(vbox));
 
-    if (!style)
-    {
-        return;
-    }
-
-    switch (style->getStyleType())
-    {
-    case STYLE_PLAIN:
-        currentStyleEditor = make_shared<ColoredEditor>(dynamic_cast<Plain*>(style.get()),table);
-        break;
-    case STYLE_THICK:
-        currentStyleEditor = make_shared<ThickEditor>(dynamic_cast<Thick*>(style.get()),table);
-        break;
-    case STYLE_FILLED:
-        currentStyleEditor = make_shared<FilledEditor>(dynamic_cast<Filled*>(style.get()),table,vbox);
-        break;
-    case STYLE_EMBOSSED:
-        currentStyleEditor = make_shared<EmbossEditor>(dynamic_cast<Emboss*>(style.get()),table);
-        break;
-    case STYLE_INTERLACED:
-        currentStyleEditor = make_shared<InterlaceEditor>(dynamic_cast<Interlace*>(style.get()),table);
-        break;
-    case STYLE_OUTLINED:
-        currentStyleEditor = make_shared<ThickEditor>(dynamic_cast<Outline*>(style.get()),table);
-        break;
-    case STYLE_SKETCHED:
-        currentStyleEditor = make_shared<ColoredEditor>(dynamic_cast<Sketch*>(style.get()),table);
-        break;
-    case STYLE_TILECOLORS:
-        currentStyleEditor = make_shared<TileColorsEditor>(dynamic_cast<TileColors*>(style.get()),table,style->getTiling());
-        break;
-    case STYLE_STYLE:
-        break;
-    }
-}
 
 StylePtr DecorationMaker::makeStyle(eStyleType type, StylePtr oldStyle)
 {

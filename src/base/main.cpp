@@ -28,6 +28,7 @@
 #include "base/qtapplog.h"
 #include "base/configuration.h"
 #include "base/tiledpatternmaker.h"
+#include "base/version.h"
 
 TiledPatternMaker * theApp = nullptr;
 
@@ -49,7 +50,8 @@ int main(int argc, char *argv[])
     qInfo().noquote() << "============Release Build:" << cd.toString() << ct.toString();
 #endif
     qInfo().noquote() << "Log:"  << qtAppLog::currentLogName;
-    qInfo() << "Qt version :" << QT_VERSION_STR;
+    qInfo().noquote() << "App version :" << tpmVersion;
+    qInfo().noquote() << "Qt  version :" << QT_VERSION_STR;
 #ifdef __linux__
     qDebug().noquote() << "Font:" << QApplication::font().toString();
     QFont afont = QApplication::font();

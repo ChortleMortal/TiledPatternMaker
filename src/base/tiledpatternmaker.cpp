@@ -451,7 +451,7 @@ void TiledPatternMaker::slot_compareImages(QString nameLeft, QString nameRight, 
     if (img_left == img_right)
     {
         qDebug() << "same     " << pathLeft;
-        QString str = "Images are the same ";
+        QString str = "Images are the same";
         emit sig_compareResult(str);
         QPixmap  pm = makeTextPixmap(str,pathLeft,pathRight);
         if (!autoMode)
@@ -465,13 +465,30 @@ void TiledPatternMaker::slot_compareImages(QString nameLeft, QString nameRight, 
         return;
     }
 
+    if (img_right.isNull())
+    {
+        qDebug() << "different (no match)" << nameLeft;
+        QString str = "No matching image found";
+        emit sig_compareResult(str);
+        QPixmap  pm = makeTextPixmap(str,nameLeft);
+        if (!autoMode || config->stopIfDiff)
+        {
+            showPixmap(pm,str);
+        }
+        else
+        {
+            emit sig_ready();
+        }
+        return;
+    }
+
+    qDebug() << "different" << pathLeft;
+
     // files are different
     if ( (cycler->getMode() == CYCLE_COMPARE_ALL_IMAGES || cycler->getMode() == CYCLE_COMPARE_WORKLIST_IMAGES) && config->generate_workList)
     {
         config->workList << nameLeft;
     }
-
-    qDebug() << "different" << pathLeft;
 
     QString str = "Images are different";
     emit sig_compareResult(str);    // sets page_debug status

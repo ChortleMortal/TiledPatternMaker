@@ -7,7 +7,7 @@
 class ColorMaker
 {
 public:
-    ColorMaker(DCELPtr d);
+    ColorMaker();
 
     void createFacesToDo();
 
@@ -21,10 +21,9 @@ public:
     void assignColorsToFaces(FaceSet & fset);
     void addFaceResults(FaceSet & fset);
 
-    FaceGroup   & getFaceGroup()     { return faceGroup; }
-    FaceSet     & getWhiteFaces()    { return whites; }
-    FaceSet     & getBlackFaces()    { return blacks; }
-    FaceSet     & getFacesToDo();
+    FaceGroup  * getFaceGroup() { return &faceGroup; }
+
+    DCELPtr getDCEL() { return dcel; }
 
 protected:
     DAC_DEPRECATED void removeDuplicateFaces();
@@ -32,13 +31,14 @@ protected:
                    void removeOverlappingFaces();
 
     FaceSet     facesToDo;
-    FaceSet     whites;
-    FaceSet     blacks;
+    FaceSet     whiteFaces;
+    FaceSet     blackFaces;
 
     FaceGroup   faceGroup;
 
-private:
     DCELPtr     dcel;
+
+private:
 };
 
 #endif // COLORMAKER_H

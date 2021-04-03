@@ -290,36 +290,36 @@ void FaceSet::sortByPositon(FacePtr fp)
 #if 1
     // sort by y-axis then x-axis
     QPointF pt = fp->center();
-    for (auto it = newSet.begin(); it != newSet.end(); it++)
+    for (int i =0; i < newSet.size(); i++)
     {
         // sort by y-axis
-        FacePtr fp2 = *it;
+        FacePtr fp2 = newSet[i];
         QPointF pt2 = fp2->center();
         if (pt.y() < pt2.y())
         {
-            newSet.insert(it,fp);   // insert before
+            newSet.insert(i,fp);   // insert before
             return;
         }
         else if (Loose::equals(pt.y(), pt2.y()) )
         {
             // sort by x-axis
-            while (it != newSet.end())
+            while (i < newSet.size())
             {
-                fp2 = *it;
+                fp2 = newSet[i];
                 pt2 = fp2->center();
                 if (!Loose::equals(pt.y(), pt2.y()))
                 {
-                    newSet.insert(it,fp);
+                    newSet.insert(i,fp);
                     return;
                 }
                 if (pt.x() < pt2.x())
                 {
-                    newSet.insert(it,fp);
+                    newSet.insert(i,fp);
                     return;
                 }
-                it++;
+                i++;
             }
-            newSet.insert(it,fp);
+            newSet.push_back(fp);
             return;
         }
     }

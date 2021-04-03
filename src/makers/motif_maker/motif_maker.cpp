@@ -131,6 +131,8 @@ void MotifMaker::recreatePrototype(TilingPtr tiling)
     {
         prototype->removeElement(del);
     }
+
+    prototype->resetProtoMap();
 }
 
 void MotifMaker::recreateFigures(TilingPtr tiling)

@@ -159,8 +159,10 @@ void AQTableWidget::adjustTableSize(int maxWidth, int maxHeight)
     int w = getTableWidth(maxWidth);
     int h = getTableHeight(maxHeight);
     QSize size(w,h);
-    setMaximumSize(size);
-    setMinimumSize(size);
+    setFixedSize(size);
+    qDebug() << "adjusted size" << size;
+    resize(size);
+    updateGeometry();
 }
 
 void AQTableWidget::adjustTableWidth(int maxWidth)
@@ -211,16 +213,21 @@ int AQTableWidget::getTableHeight(int maxHeight)
 {
     int h = frameWidth() * 2;    // width and height are same
 
-    if (horizontalHeader()->count())
+    QHeaderView * hh = horizontalHeader();
+    if (hh->count())
     {
-        h += horizontalHeader()->height();
+        qDebug() << "header" << hh->height();
+        h += hh->height();
     }
 
-    if (horizontalScrollBar()->isVisible())
+    QScrollBar * sb = horizontalScrollBar();
+    if (sb->isVisible())
     {
-        h += horizontalScrollBar()->height();
+        qDebug() << "scroll" << sb->height();
+        h += sb->height();
     }
 
+    qDebug() << "rows" << rowCount();
     for (int i = 0; i < rowCount(); i++)
     {
         h += rowHeight(i);

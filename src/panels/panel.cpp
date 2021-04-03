@@ -92,17 +92,18 @@ ControlPanel::ControlPanel() : AQWidget()
 
     QString title;
 #ifdef QT_DEBUG
-    title  = "Control Panel - Debug - ";
+    title  = "Control Panel - Debug - Version ";
     title += tpmVersion;
     if  (!br.isEmpty())
     {
-        title += "[";
+        title += " [";
         title += branch.trimmed();
         title += "]  ";
     }
 #else
-    title = "Control Panel - Release - ";
+    title = "Control Panel - Release - Version ";
     title  += tpmVersion;
+    title  += "  ";
 #endif
     config  = Configuration::getInstance();
     title  += config->rootMediaDir;
@@ -921,7 +922,6 @@ QGroupBox *  ControlPanel::createViewersBox()
     cbProtoMaker         = new QCheckBox("Motif Maker");
     cbTilingView         = new QCheckBox("Tiling");
     cbTilingMakerView    = new QCheckBox("Tiling Maker");
-    cbFaceSetView        = new QCheckBox("FaceSet");
     cbRawDesignView      = new QCheckBox("Fixed Design");
 
     cbMultiSelect        = new QCheckBox("Multi View");    // defaults to off - not persisted
@@ -940,7 +940,6 @@ QGroupBox *  ControlPanel::createViewersBox()
     avbox->addWidget(cbProtoMaker);
     avbox->addWidget(cbTilingView);
     avbox->addWidget(cbTilingMakerView);
-    avbox->addWidget(cbFaceSetView);
     avbox->addWidget(cbRawDesignView);
     avbox->addSpacing(13);
     avbox->addWidget(cbLockView);
@@ -960,7 +959,6 @@ QGroupBox *  ControlPanel::createViewersBox()
     {
         viewerGroup.addButton(cbMapEditor,VIEW_MAP_EDITOR);
     }
-    viewerGroup.addButton(cbFaceSetView,VIEW_FACE_SET);
     viewerGroup.button(config->getViewerType())->setChecked(true);
 #if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
     connect(&viewerGroup,   SIGNAL(buttonToggled(int, bool)),  this, SLOT(slot_Viewer_pressed(int,bool)));

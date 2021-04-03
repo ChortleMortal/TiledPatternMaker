@@ -397,6 +397,18 @@ bool Edge::isColinearAndTouching(EdgePtr e)
 
     if ((e->contains(v1)) || (e->contains(v2)))
     {
+        return isColinear(e);
+    }
+
+    if (debug) qDebug() << "    not touching";
+
+    return false;
+}
+
+bool Edge::isColinear(EdgePtr e)
+{
+    static bool debug = false;
+
         qreal angle = Utils::angle(getLine(),e->getLine());
         if (debug) qDebug() << "    angle=" << angle;
         if ((qAbs(angle) < 1e-5) || (qAbs(angle-180.0) < 1e-5))
@@ -404,8 +416,6 @@ bool Edge::isColinearAndTouching(EdgePtr e)
             if (debug) qDebug() << "    colinear";
             return true;
         }
-    }
-    else if (debug) qDebug() << "    not touching";
 
     return false;
 }

@@ -42,7 +42,7 @@
 // The code to build the faces from the map is contained in
 // geometry.Faces.
 
-class Filled : public Style
+class Filled : public Style, public ColorMaker
 {
     friend class FilledEditor;
 
@@ -55,45 +55,42 @@ public:
 
     QString getStyleDesc() const override {return "Filled";}
 
-    void createStyleRepresentation() override;
     void resetStyleRepresentation()  override;
+    void createStyleRepresentation() override;
+    void updateStyleRepresentation();
 
     void draw(GeoGraphics *gg) override;
 
     bool getDrawOutsideWhites() { return draw_outside_whites; }
     bool getDrawInsideBlacks()  { return draw_inside_blacks; }
-    void setDrawOutsideWhites(bool draw_outside_whites) { this->draw_outside_whites = draw_outside_whites; }
-    void setDrawInsideBlacks(bool  draw_inside_blacks)  { this->draw_inside_blacks  = draw_inside_blacks; }
+    void setDrawOutsideWhites(bool draw) { draw_outside_whites = draw; }
+    void setDrawInsideBlacks(bool  draw) { draw_inside_blacks  = draw; }
 
-    ColorSet   & getWhiteColorSet() { return whiteColorSet; }
-    ColorSet   & getBlackColorSet() { return blackColorSet; }
-    ColorGroup & getColorGroup()    { return colorGroup; }
+    ColorSet   * getWhiteColorSet() { return &whiteColorSet; }
+    ColorSet   * getBlackColorSet() { return &blackColorSet; }
+    ColorGroup * getColorGroup()    { return &colorGroup; }
 
     void    setAlgorithm(int val);
     int     getAlgorithm() { return algorithm; }
 
     void    setCleanseLevel(int val);
     int     getCleanseLevel() { return cleanseLevel; }
+
 protected:
-
-    // Parameters of the rendering.
-    // Control what gets drawn.
-    bool   draw_inside_blacks;
-    bool   draw_outside_whites;
-
-    ColorSet            whiteColorSet;
-    ColorSet            blackColorSet;
-    ColorGroup          colorGroup;
-
-    ColorMakerPtr       cm;
+    ColorSet    whiteColorSet;
+    ColorSet    blackColorSet;
+    ColorGroup  colorGroup;
 
 private:
     void drawDCEL(GeoGraphics *gg);
     void drawDCELNew2(GeoGraphics *gg);
     void drawDCELNew3(GeoGraphics *gg);
 
-    int algorithm;
-    int cleanseLevel;
+    // Parameters of the rendering. Control what gets drawn.
+    bool        draw_outside_whites;
+    bool        draw_inside_blacks;
+    int         algorithm;
+    int         cleanseLevel;
 };
 #endif
 

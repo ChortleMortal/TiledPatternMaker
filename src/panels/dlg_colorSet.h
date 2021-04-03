@@ -34,7 +34,7 @@ class DlgColorSet : public QDialog
     Q_OBJECT
 
 public:
-    DlgColorSet(ColorSet & cset, QWidget * parent = nullptr);
+    DlgColorSet(ColorSet * cset, QWidget * parent = nullptr);
 
 protected:
     void displayTable();
@@ -56,7 +56,7 @@ protected:
     void colorVisibilityChanged(int row);
 
 private:
-    ColorSet &      colorSet;
+    ColorSet *      colorSet;
     int             currentRow;
 };
 

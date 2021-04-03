@@ -56,13 +56,6 @@ TransparentWidget::TransparentWidget()
 
     // also
     setAttribute(Qt::WA_DeleteOnClose);
-
-    //grabMouse();
-}
-
-TransparentWidget::~TransparentWidget()
-{
-    //releaseMouse();
 }
 
 void TransparentWidget::mousePressEvent(QMouseEvent *event)
@@ -83,7 +76,6 @@ void TransparentWidget::mouseMoveEvent(QMouseEvent *event)
     move(x() + delta.x(), y() + delta.y());
     oldPos = event->globalPos();
 }
-
 
 void TransparentWidget::keyPressEvent( QKeyEvent *k )
 {

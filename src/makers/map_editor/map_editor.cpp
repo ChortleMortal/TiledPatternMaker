@@ -80,176 +80,79 @@ MapEditor::MapEditor() : MapEditorSelection(), stash(this)
 
     connect(cpanel, &ControlPanel::sig_view_synch, this, &MapEditor::slot_view_synch);
 
-    map_mouse_mode  = MAP_MODE_NONE;
-    mapType         = MAP_TYPE_UNDEFINED;
+    map_mouse_mode  = MAPED_MOUSE_NONE;
     newCircleRadius = 0.25;
 
     localMap  =  make_shared<Map>(QString("New local map"));
-}
-
-void MapEditor::setDesignElement(DesignElementPtr delpptr)
-{
-    mapType = MAP_TYPE_FIGURE;
-    delp    = delpptr;
-    figp    = delp->getFigure();
-    feap    = delp->getFeature();
-
-    map     = figp->getFigureMap();
-
-    buildEditorDB();
-
-    if (config->getViewerType() == VIEW_MAP_EDITOR)
-    {
-        forceRedraw();
-    }
-}
-
-void  MapEditor::setPrototype(PrototypePtr proptr)
-{
-    mapType = MAP_TYPE_PROTO;
-    prop    = proptr;
-
-    if (config->getViewerType() == VIEW_MAP_EDITOR)
-    {
-        map = prop->getProtoMap();
-        buildEditorDB();
-        forceRedraw();
-    }
-    else
-    {
-        map     = prop->getProtoMap();
-        buildEditorDB();
-    }
-}
-
-void MapEditor::setStyle(StylePtr styptr)
-{
-    mapType = MAP_TYPE_STYLE;
-    styp    = styptr;
-    prop    = styp->getPrototype();
-
-    map     = prop->getProtoMap();
-
-    buildEditorDB();
-
-    if (config->getViewerType() == VIEW_MAP_EDITOR)
-    {
-        forceRedraw();
-    }
-}
-
-void MapEditor::setLocal()
-{
-    mapType   = MAP_TYPE_LOCAL;
-
-    map       = localMap;
-
-    buildEditorDB();
-
-    if (config->getViewerType() == VIEW_MAP_EDITOR)
-    {
-        forceRedraw();
-    }
-}
-
-void  MapEditor::setTiling(TilingPtr tiling)
-{
-    mapType      = MAP_TYPE_TILING;
-    this->tiling = tiling;
-    map          = createFromTiling();
-
-    buildEditorDB();
-
-    if (config->getViewerType() == VIEW_MAP_EDITOR)
-    {
-        forceRedraw();
-    }
-}
-
-void MapEditor::setDCEL(WeakDCELPtr dcel)
-{
-    mapType = MAP_TYPE_DCEL;
-    map.reset();
-    this->dcel = dcel;
-
-    buildEditorDB();
-
-    if (config->getViewerType() == VIEW_MAP_EDITOR)
-    {
-        forceRedraw();
-    }
 }
 
 void  MapEditor::reload()
 {
     qDebug() << "MapEditor::reload";
 
+    unload();
+
     switch (config->mapEditorMode)
     {
-    case MAP_MODE_FIGURE:
+    case MAPED_MODE_FIGURE:
     {
         // this is set by the figure editor
-        DesignElementPtr dep  = motifMaker->getSelectedDesignElement();
-        if (dep)
-            setDesignElement(dep);
-        else
-            unload();
-        break;
-    }
-    case MAP_MODE_PROTO:
-    {
-        PrototypePtr proto = motifMaker->getSelectedPrototype();
-        if (proto)
+        delp  = motifMaker->getSelectedDesignElement();
+        if (delp)
         {
-            setPrototype(proto);
+            figp    = delp->getFigure();
+            feap    = delp->getFeature();
         }
         else
             unload();
         break;
     }
-    case MAP_MODE_MOSAIC:
+    case MAPED_MODE_PROTO:
+    {
+        prop = motifMaker->getSelectedPrototype();
+        if (!prop)
+            unload();
+        break;
+    }
+    case MAPED_MODE_MOSAIC:
     {
         MosaicPtr mosaic = decorationMaker->getMosaic();
-        if (!mosaic)
-        {
-            unload();
-        }
-        else
+        if (mosaic)
         {
             const StyleSet & sset = mosaic->getStyleSet();
             if (sset.size())
             {
-                StylePtr sp  = sset.first();
-                setStyle(sp);
+                styp  = sset.first();
+                prop  = styp->getPrototype();
             }
             else
-            {
                 unload();
-            }
         }
+        else
+            unload();
         break;
     }
 
-    case MAP_MODE_LOCAL:
-        setLocal();
+    case MAPED_MODE_LOCAL:
         break;
 
-    case MAP_MODE_TILING:
+    case MAPED_MODE_TILING:
+        tiling = tilingMaker->getSelected();
+        break;
+
+    case MAPED_MODE_DCEL:
+        dcel = config->dcel;
+        map.reset();
+        break;
+
+    case MAPED_MODE_NONE:
+        break;
+    }
+
+    if (config->getViewerType() == VIEW_MAP_EDITOR)
     {
-        TilingPtr tp = tilingMaker->getSelected();
-        setTiling(tp);
+        forceRedraw();
     }
-        break;
-
-    case MAP_MODE_DCEL:
-    {
-        WeakDCELPtr wdp = config->dcel;
-        setDCEL(wdp);
-    }
-        break;
-    }
-
-    forceRedraw();
 }
 
 void MapEditor::slot_view_synch(int id, int enb)
@@ -262,20 +165,52 @@ void MapEditor::slot_view_synch(int id, int enb)
 
 void MapEditor::draw(QPainter *painter )
 {
-    if (mapType == MAP_TYPE_UNDEFINED)
+    eMapEditorMode mode = config->mapEditorMode;
+    switch (mode)
     {
-        return;
-    }
+    case MAPED_MODE_FIGURE:
+        if (figp)
+        {
+            map = figp->getFigureMap();
+            buildEditorDB();
+            drawFeature(painter);
+            drawBoundaries(painter);
+        }
+        break;
 
-    if (mapType == MAP_TYPE_FIGURE)
-    {
-        drawFeature(painter);
-        drawBoundaries(painter);
-    }
+    case MAPED_MODE_PROTO:
+        if (prop)
+        {
+            map = prop->getProtoMap();
+            buildEditorDB();
+        }
+        break;
 
-    if (mapType == MAP_TYPE_DCEL)
-    {
+    case MAPED_MODE_MOSAIC:
+        if (prop)
+        {
+            map = prop->getProtoMap();
+            buildEditorDB();
+        }
+        break;
+
+    case MAPED_MODE_LOCAL:
+        map = localMap;
+        buildEditorDB();
+        break;
+
+    case MAPED_MODE_TILING:
+        map = createFromTiling();
+        buildEditorDB();
+        break;
+
+    case MAPED_MODE_DCEL:
+        buildEditorDB();
         drawDCEL(painter);
+        break;
+
+    case MAPED_MODE_NONE:
+        return;
     }
 
     drawConstructionLines(painter);
@@ -287,9 +222,8 @@ void MapEditor::draw(QPainter *painter )
 
     drawCropMap(painter);
 
-    for (auto it = currentSelections.begin(); it != currentSelections.end(); it++)
+    for (auto sel : currentSelections)
     {
-        auto sel = *it;
         eMapSelection type = sel->getType();
         if (type == MAP_EDGE && !hideMap)
         {
@@ -417,25 +351,25 @@ void MapEditor::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
 
     switch (map_mouse_mode)
     {
-    case MAP_MODE_NONE:
+    case MAPED_MOUSE_NONE:
         startMouseInteraction(mousePos,btn);
         break;
 
-    case MAP_MODE_DRAW_LINE:
+    case MAPED_MOUSE_DRAW_LINE:
     {
         set = findSelectionsUsingDB(spt);
         mouse_interaction = std::make_shared<DrawLine>(this,set,mousePos);
         break;
     }
 
-    case MAP_MODE_CONSTRUCTION_LINES:
+    case MAPED_MOUSE_CONSTRUCTION_LINES:
     {
         set = findSelectionsUsingDB(spt);
         mouse_interaction = std::make_shared<ConstructionLine>(this,set,mousePos);
         break;
     }
 
-    case MAP_MODE_DELETE:
+    case MAPED_MOUSE_DELETE:
         set = findSelectionsUsingDB(spt);
         // only delete one line
         for (auto it = set.begin(); it != set.end(); it++)
@@ -463,10 +397,10 @@ void MapEditor::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
         }
         buildEditorDB();
         forceRedraw();
-        setMouseMode(MAP_MODE_NONE);
+        setMouseMode(MAPED_MOUSE_NONE);
         break;
 
-    case MAP_MODE_SPLIT_LINE:
+    case MAPED_MOUSE_SPLIT_LINE:
     {
         QVector<EdgePtr> qvep;
         set = findEdges(spt, qvep);
@@ -478,16 +412,16 @@ void MapEditor::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
         }
         buildEditorDB();
         forceRedraw();
-        setMouseMode(MAP_MODE_NONE);
+        setMouseMode(MAPED_MOUSE_NONE);
     }
         break;
 
-    case MAP_MODE_EXTEND_LINE:
+    case MAPED_MOUSE_EXTEND_LINE:
         set = findSelectionsUsingDB(spt);
         mouse_interaction = std::make_shared<ExtendLine>(this,set,mousePos);
         break;
 
-    case MAP_MODE_CONSTRUCTION_CIRCLES:
+    case MAPED_MOUSE_CONSTRUCTION_CIRCLES:
         if (btn == Qt::RightButton)
         {
             // add circle
@@ -534,7 +468,7 @@ void MapEditor::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
         }
         break;
 
-    case MAP_MODE_CREATE_CROP:
+    case MAPED_MOUSE_CREATE_CROP:
     {
         mouse_interaction = std::make_shared<CreateCrop>(this,mousePos);
         break;
@@ -739,14 +673,14 @@ bool MapEditor::procKeyEvent(QKeyEvent * k)
     }
 
     // modes
-    case Qt::Key_Escape: setMouseMode(MAP_MODE_NONE);  return false; // propagate
-    case Qt::Key_F3:     setMouseMode(MAP_MODE_DRAW_LINE); break;
-    case Qt::Key_F4:     setMouseMode(MAP_MODE_CONSTRUCTION_LINES); break;
-    case Qt::Key_F5:     setMouseMode(MAP_MODE_DELETE); break;
-    case Qt::Key_F6:     setMouseMode(MAP_MODE_SPLIT_LINE); break;
-    case Qt::Key_F7:     setMouseMode(MAP_MODE_EXTEND_LINE); break;
-    case Qt::Key_F8:     setMouseMode(MAP_MODE_CREATE_CROP); break;
-    case Qt::Key_F9:     setMouseMode(MAP_MODE_CONSTRUCTION_CIRCLES); break;
+    case Qt::Key_Escape: setMouseMode(MAPED_MOUSE_NONE);  return false; // propagate
+    case Qt::Key_F3:     setMouseMode(MAPED_MOUSE_DRAW_LINE); break;
+    case Qt::Key_F4:     setMouseMode(MAPED_MOUSE_CONSTRUCTION_LINES); break;
+    case Qt::Key_F5:     setMouseMode(MAPED_MOUSE_DELETE); break;
+    case Qt::Key_F6:     setMouseMode(MAPED_MOUSE_SPLIT_LINE); break;
+    case Qt::Key_F7:     setMouseMode(MAPED_MOUSE_EXTEND_LINE); break;
+    case Qt::Key_F8:     setMouseMode(MAPED_MOUSE_CREATE_CROP); break;
+    case Qt::Key_F9:     setMouseMode(MAPED_MOUSE_CONSTRUCTION_CIRCLES); break;
 
     default: return false;
     }

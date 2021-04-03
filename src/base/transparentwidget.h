@@ -28,7 +28,6 @@
 #include <QWidget>
 #include <QLabel>
 #include <QMouseEvent>
-#include <QTimer>
 
 class ImageWidget : public QLabel
 {
@@ -37,25 +36,23 @@ class ImageWidget : public QLabel
 public:
     ImageWidget();
 
-    void keyPressEvent(QKeyEvent *k) Q_DECL_OVERRIDE;
+    void keyPressEvent(QKeyEvent *k) override;
 
 public slots:
     void slot_closeMe();
 
 private:
-   // QTimer  timer;
 };
 
 class TransparentWidget : public ImageWidget
 {
 public:
     TransparentWidget();
-    ~TransparentWidget();
 
 protected:
-    void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
-    void mouseMoveEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
-    void keyPressEvent(QKeyEvent *k) Q_DECL_OVERRIDE;
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
+    void keyPressEvent(QKeyEvent *k) override;
 
 private:
     QPoint oldPos;

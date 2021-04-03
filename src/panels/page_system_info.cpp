@@ -31,7 +31,7 @@
 #include "makers/motif_maker/motif_maker.h"
 #include "makers/decoration_maker/decoration_maker.h"
 #include "viewers/viewcontrol.h"
-
+#include "style/filled.h"
 
 page_system_info::page_system_info(ControlPanel * cpanel)  : panel_page(cpanel,"System Info")
 {
@@ -255,6 +255,18 @@ void page_system_info::populateStyles(QTreeWidgetItem * parent, MosaicPtr mosaic
         item->setText(2,style->getStyleDesc());
         parent->addChild(item);
         tree->expandItem(item);
+
+        if (style->getStyleType() == STYLE_FILLED)
+        {
+            FilledPtr fp = std::dynamic_pointer_cast<Filled>(style);
+            Q_ASSERT(fp);
+            QString astring = QString("Filled: algo=%1 cleanse=%2 blacks=%3 whites=%4")
+                .arg(fp->getAlgorithm())
+                .arg(fp->getCleanseLevel())
+                .arg(fp->getDrawInsideBlacks())
+                .arg(fp->getDrawOutsideWhites());
+            item->setText(2,astring);  // overwrites
+        }
 
         populateMap(item,style->getExistingMap());
         populatePrototype(item,style->getPrototype(),"Prototype");

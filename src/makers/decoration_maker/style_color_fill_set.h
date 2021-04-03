@@ -46,7 +46,7 @@ class StyleColorFillSet : public QObject
     };
 
 public:
-    StyleColorFillSet(FaceGroup & fgroup, ColorSet & cset, QVBoxLayout * vbox);
+    StyleColorFillSet(FilledPtr style, QVBoxLayout * vbox);
     void display();
 
 signals:
@@ -67,10 +67,8 @@ protected:
     void colorVisibilityChanged(int row);
 
 private:
-    FaceGroup    & faceGroup;
-    ColorSet     & colorSet;
-
+    FilledPtr        filled;
     AQTableWidget  * table;
-    TPColor         copyPasteColor;
+    TPColor          copyPasteColor;
 };
 #endif

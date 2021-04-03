@@ -39,7 +39,7 @@ public:
     void   setColor(QColor color);
     void   setColorSet(ColorSet & cset) { colors = cset; }
 
-    ColorSet & getColorSet() { return colors; }
+    ColorSet * getColorSet() { return &colors; }
 
 protected:
     Colored(PrototypePtr proto);

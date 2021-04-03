@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<Tiling version="6">
+	<Name>DAC8.v9</Name>
+	<Fill>-5,5,-2,5</Fill>
+	<T1>0,2.619999999999997</T1>
+	<T2>-2.619999999999997,0</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>1100</height>
+		<left__delta>65.22413793103419</left__delta>
+		<top__delta>-81.75862068965512</top__delta>
+		<width__delta>2.32</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>-0.8696551724137915,1.090114942528733</center>
+	</ViewSettings>
+	<Feature type="regular" sides="8" rotation="0" scale="1">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="regular" sides="4" rotation="0" scale="0.6">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-1.316091954022989</tranX>
+			<tranY>1.304597701149425</tranY>
+		</Placement>
+	</Feature>
+	<Desc>Trying to pack hexagons - now rotated 22.5 degrees and now separation increased
+v3 So now here the octagons overlap (taprats would not allow) but the stars touch
+v4. back out rotation</Desc>
+	<Auth>David Java</Auth>
+</Tiling>

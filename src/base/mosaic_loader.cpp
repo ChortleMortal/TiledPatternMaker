@@ -407,21 +407,21 @@ void MosaicLoader::processOutline(xml_node & node)
 
 void MosaicLoader::processFilled(xml_node & node)
 {
-    int     algorithm    = 0;
-    int     cleanseLevel = 0;
     bool    oldFormat    = false;
 
-    ColorSet colorSet;
-    ColorSet colorsB;
-    ColorSet colorsW;
-    ColorGroup colorGroup;
+    int     l_algorithm    = 0;
+    int     l_cleanseLevel = 0;
+    bool    l_draw_inside  = false;
+    bool    l_draw_outside = true;
 
-    bool    draw_inside  = false;
-    bool    draw_outside = true;
+    ColorSet   l_colorSet;
+    ColorSet   l_colorsB;
+    ColorSet   l_colorsW;
+    ColorGroup l_colorGroup;
 
-    PrototypePtr proto;
+    PrototypePtr l_proto;
 
-    Xform xf;
+    Xform l_xf;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
@@ -430,35 +430,35 @@ void MosaicLoader::processFilled(xml_node & node)
 
         if (str == "toolkit.GeoLayer")
         {
-            procesToolkitGeoLayer(n,xf);
+            procesToolkitGeoLayer(n,l_xf);
         }
         else if (str == "style.Style")
         {
-            processStyleStyle(n,proto);
+            processStyleStyle(n,l_proto);
         }
         else if (str == "style.Colored")
         {
             oldFormat = true;
-            processColorSet(n,colorSet);
+            processColorSet(n,l_colorSet);
         }
         else if (str == "style.Filled")
         {
-            processsStyleFilled(n,draw_inside,draw_outside,algorithm, cleanseLevel);
+            processsStyleFilled(n,l_draw_inside,l_draw_outside,l_algorithm, l_cleanseLevel);
         }
         else if (str == "ColorBlacks")
         {
             oldFormat = false;
-            processColorSet(n,colorsB);
+            processColorSet(n,l_colorsB);
         }
         else if (str == "ColorWhites")
         {
             oldFormat = false;
-            processColorSet(n,colorsW);
+            processColorSet(n,l_colorsW);
         }
         else if (str == "ColorGroup")
         {
             oldFormat = false;
-            processColorGroup(n,colorGroup);
+            processColorGroup(n,l_colorGroup);
         }
         else
         {
@@ -466,60 +466,60 @@ void MosaicLoader::processFilled(xml_node & node)
         }
     }
 
-    Filled * filled = new Filled(proto,algorithm);
-    filled->setCleanseLevel(cleanseLevel);
-    filled->setCanvasXform(xf);
+    Filled * filled = new Filled(l_proto,l_algorithm);
+    filled->setCleanseLevel(l_cleanseLevel);
+    filled->setCanvasXform(l_xf);
 
     if (oldFormat)
     {
         // old - redundant way of dealing with colors
-        ColorSet & csetW = filled->getWhiteColorSet();
-        csetW.addColor(colorSet.getColor(0));
+        ColorSet * csetW = filled->getWhiteColorSet();
+        csetW->addColor(l_colorSet.getColor(0));
 
-        ColorSet & csetB = filled->getBlackColorSet();
-        if (colorSet.size() >= 2)
-            csetB.addColor(colorSet.getColor(1));
+        ColorSet * csetB = filled->getBlackColorSet();
+        if (l_colorSet.size() >= 2)
+            csetB->addColor(l_colorSet.getColor(1));
         else
-            csetB.addColor(colorSet.getColor(0));
+            csetB->addColor(l_colorSet.getColor(0));
     }
     else
     {
-        ColorSet & csetW = filled->getWhiteColorSet();
-        csetW.setColors(colorsW);
+        ColorSet * csetW = filled->getWhiteColorSet();
+        csetW->setColors(l_colorsW);
 
-        ColorSet & csetB = filled->getBlackColorSet();
-        csetB.setColors(colorsB);
+        ColorSet * csetB = filled->getBlackColorSet();
+        csetB->setColors(l_colorsB);
 
-        ColorGroup & cgroup = filled->getColorGroup();
-        cgroup = colorGroup;
+        ColorGroup * cgroup = filled->getColorGroup();
+        *cgroup = l_colorGroup;
 
-        if (cgroup.size()== 0)
+        if (cgroup->size()== 0)
         {
             // for backwards compatabililts
-            ColorSet csw;
-            if (colorsW.size())
+            ColorSet ll_csw;
+            if (l_colorsW.size())
             {
-                csw.setColors(colorsW);
-                cgroup.addColorSet(csw);
+                ll_csw.setColors(l_colorsW);
+                cgroup->addColorSet(ll_csw);
             }
-            ColorSet csb;
-            if (colorsB.size())
+            ColorSet ll_csb;
+            if (l_colorsB.size())
             {
-                csw.setColors(colorsB);
-                cgroup.addColorSet(csb);
+                ll_csw.setColors(l_colorsB);
+                cgroup->addColorSet(ll_csb);
             }
         }
-        if (cgroup.size()== 0)
+        if (cgroup->size()== 0)
         {
             // last resort
             ColorSet cs;
             cs.addColor(Qt::black);
-            cgroup.addColorSet(cs);
+            cgroup->addColorSet(cs);
         }
     }
 
-    filled->setDrawInsideBlacks(draw_inside);
-    filled->setDrawOutsideWhites(draw_outside);
+    filled->setDrawInsideBlacks(l_draw_inside);
+    filled->setDrawOutsideWhites(l_draw_outside);
 
     if (_debug) qDebug().noquote() << "XmlServices created Style(Filled)" << filled->getInfo();
 

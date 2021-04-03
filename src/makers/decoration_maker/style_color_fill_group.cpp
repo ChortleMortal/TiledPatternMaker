@@ -25,12 +25,10 @@
 #include "makers/decoration_maker/style_color_fill_group.h"
 #include "panels/dlg_colorSet.h"
 #include "base/utilities.h"
+#include "viewers/view.h"
 
-StyleColorFillGroup::StyleColorFillGroup(FaceGroup & fGroup, ColorGroup & cGroup, QVBoxLayout *vbox) : faceGroup(fGroup), colorGroup(cGroup)
+StyleColorFillGroup::StyleColorFillGroup(FilledPtr style, QVBoxLayout *vbox) : filled(style)
 {
-    colorGroup = cGroup;
-    faceGroup  = fGroup;
-
     QGridLayout * grid = new QGridLayout;
 
     QPushButton * modBtn = new QPushButton("Modify");
@@ -56,7 +54,6 @@ StyleColorFillGroup::StyleColorFillGroup(FaceGroup & fGroup, ColorGroup & cGroup
     connect(pstBtn, &QPushButton::clicked, this, &StyleColorFillGroup::pasteSet);
 
     table = new AQTableWidget();
-    table->horizontalHeader()->setVisible(false);
     table->verticalHeader()->setVisible(false);
     table->setColumnCount(8);
     table->setColumnWidth(COL_INDEX,35);
@@ -68,13 +65,13 @@ StyleColorFillGroup::StyleColorFillGroup(FaceGroup & fGroup, ColorGroup & cGroup
     table->setColumnWidth(COL_BTN,70);
     table->setSelectionMode(QAbstractItemView::SingleSelection);
     table->setSelectionBehavior(QAbstractItemView::SelectRows);
-    table->setRowCount(1);
 
-    table->horizontalHeader()->setVisible(true);
     QStringList qslH;
     qslH << "" << "Count" << "Sides" << "Area" << "Hide" << "Sel" << "Edit" << "Colors";
     table->setHorizontalHeaderLabels(qslH);
     table->setMinimumHeight(501);
+    table->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    table->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     connect(table,  &QTableWidget::cellClicked,       this, &StyleColorFillGroup::slot_click);
     connect(table,  &QTableWidget::cellDoubleClicked, this, &StyleColorFillGroup::slot_double_click);
@@ -84,14 +81,15 @@ StyleColorFillGroup::StyleColorFillGroup(FaceGroup & fGroup, ColorGroup & cGroup
 
 void StyleColorFillGroup::display()
 {
-    QModelIndex selected = table->currentIndex();
+    //QModelIndex selected = table->currentIndex();
+    int crow = table->currentRow();
 
     table->clearContents();
 
-    table->setRowCount(faceGroup.size());
+    table->setRowCount(filled->getFaceGroup()->size());
 
     int row = 0;
-    for (auto& face : faceGroup)
+    for (const auto & face : *filled->getFaceGroup())
     {
         QTableWidgetItem * item = new QTableWidgetItem(QString::number(row));
         table->setItem(row,COL_INDEX,item);
@@ -108,7 +106,7 @@ void StyleColorFillGroup::display()
         QCheckBox * cb = new QCheckBox("Hide");
         cb->setStyleSheet("padding-left:11px;");
         table->setCellWidget(row,COL_HIDE,cb);
-        cb->setChecked(colorGroup.isHidden(row));
+        cb->setChecked(filled->getColorGroup()->isHidden(row));
         connect(cb, &QCheckBox::toggled, [this,row] { colorSetVisibilityChanged(row); });
 
         QPushButton * btn = new QPushButton("Edit");
@@ -116,8 +114,8 @@ void StyleColorFillGroup::display()
         table->setCellWidget(row,COL_BTN,btn);
         connect(btn, &QPushButton::clicked, [this,row] { edit(row); });
 
-        ColorSet & cset = colorGroup.getColorSet(row);
-        AQWidget * widget = cset.createWidget();
+        ColorSet * cset = filled->getColorGroup()->getColorSet(row);
+        AQWidget * widget = cset->createWidget();
         table->setCellWidget(row,COL_COLORS,widget);
 
         QString astring;
@@ -127,23 +125,26 @@ void StyleColorFillGroup::display()
         row++;
     }
 
-    table->setColumnWidth(COL_BTN,45);
+    table->setColumnWidth(COL_BTN,90);
     table->resizeColumnToContents(5);
     table->resizeColumnToContents(6);
     table->adjustTableSize();
 
-    table->setCurrentIndex(selected);
-
+    if (crow < 0)
+    {
+        crow = 0;
+    }
+    table->setCurrentCell(crow,0);
 }
 
 void StyleColorFillGroup::edit(int row)
 {
-    if (row < 0 || row >= colorGroup.size())
+    if (row < 0 || row >= filled->getColorGroup()->size())
     {
         return;
     }
 
-    ColorSet & colorSet = colorGroup.getColorSet(row);
+    ColorSet * colorSet = filled->getColorGroup()->getColorSet(row);
 
     DlgColorSet dlg(colorSet);
 
@@ -166,11 +167,11 @@ void StyleColorFillGroup::up()
     if (currentRow < 1)
         return;
 
-    ColorSet a = colorGroup.getColorSet(currentRow);
-    ColorSet b = colorGroup.getColorSet(currentRow-1);
+    ColorSet a = *filled->getColorGroup()->getColorSet(currentRow);
+    ColorSet b = *filled->getColorGroup()->getColorSet(currentRow-1);
 
-    colorGroup.setColorSet(currentRow-1, a);
-    colorGroup.setColorSet(currentRow  , b);
+    filled->getColorGroup()->setColorSet(currentRow-1, a);
+    filled->getColorGroup()->setColorSet(currentRow  , b);
 
     emit sig_colorsChanged();
 
@@ -180,15 +181,14 @@ void StyleColorFillGroup::up()
 void StyleColorFillGroup::down()
 {
     int currentRow = table->currentRow();
-    if (currentRow >= (colorGroup.size()-1))
+    if (currentRow >= (filled->getColorGroup()->size()-1))
         return;
 
-    ColorSet a = colorGroup.getColorSet(currentRow);
-    ColorSet b = colorGroup.getColorSet(currentRow+1);
+    ColorSet a = *filled->getColorGroup()->getColorSet(currentRow);
+    ColorSet b = *filled->getColorGroup()->getColorSet(currentRow+1);
 
-    colorGroup.setColorSet(currentRow+1, a);
-    colorGroup.setColorSet(currentRow  , b);
-
+    filled->getColorGroup()->setColorSet(currentRow+1, a);
+    filled->getColorGroup()->setColorSet(currentRow  , b);
 
     emit sig_colorsChanged();
 
@@ -199,14 +199,14 @@ void StyleColorFillGroup::down()
 void StyleColorFillGroup::rptSet()
 {
     int currentRow = table->currentRow();
-    if (currentRow < 0 || currentRow >= colorGroup.size())
+    if (currentRow < 0 || currentRow >= filled->getColorGroup()->size())
         return;
 
-    ColorSet  set = colorGroup.getColorSet(currentRow);
-    colorGroup.resize(table->rowCount());
+    copyPasteSet = *filled->getColorGroup()->getColorSet(currentRow);
+    filled->getColorGroup()->resize(table->rowCount());
     for (int i = currentRow + 1; i < table->rowCount(); i++)
     {
-        colorGroup.setColorSet(i,set);
+        filled->getColorGroup()->setColorSet(i,copyPasteSet);
     }
 
     emit sig_colorsChanged();
@@ -216,20 +216,22 @@ void StyleColorFillGroup::rptSet()
 
 void StyleColorFillGroup::copySet()
 {
+    qDebug() << "StyleColorFillGroup::copySet()";
     int currentRow = table->currentRow();
-    if (currentRow < 0 || currentRow >= colorGroup.size())
+    if (currentRow < 0 || currentRow >= filled->getColorGroup()->size())
         return;
 
-    copyPasteSet = colorGroup.getColorSet(currentRow);
+    copyPasteSet = *filled->getColorGroup()->getColorSet(currentRow);
 }
 
 void StyleColorFillGroup::pasteSet()
 {
+    qDebug() << "StyleColorFillGroup::pasteSet()";
     int currentRow = table->currentRow();
-    if (currentRow < 0 || currentRow >= colorGroup.size())
+    if (currentRow < 0 || currentRow >= filled->getColorGroup()->size())
         return;
 
-    colorGroup.setColorSet(currentRow,copyPasteSet);
+    filled->getColorGroup()->setColorSet(currentRow,copyPasteSet);
 
     emit sig_colorsChanged();
 
@@ -244,9 +246,10 @@ void StyleColorFillGroup::colorSetVisibilityChanged(int row)
     bool hide       = cb->isChecked();
     qDebug() << "hide state="  << hide;
 
-    colorGroup.hide(row, hide);
+    filled->getColorGroup()->hide(row, hide);
 
-    emit sig_colorsChanged();
+    View * view = View::getInstance();
+    view->update();
 
     qDebug() << "colorVisibilityChanged: done";
 }
@@ -255,21 +258,22 @@ void StyleColorFillGroup::slot_click(int row, int col)
 {
     if (col == COL_SEL)
     {
-        if (!faceGroup.isSelected(row))
+        if (!filled->getFaceGroup()->isSelected(row))
         {
-            faceGroup.select(row);
+            filled->getFaceGroup()->select(row);
         }
         else
         {
-            faceGroup.deselect(row);
+            filled->getFaceGroup()->deselect(row);
         }
     }
     else
     {
-        faceGroup.deselect();
+        filled->getFaceGroup()->deselect();
     }
 
-    emit sig_colorsChanged();
+    View * view = View::getInstance();
+    view->update();
 
     display();
 }

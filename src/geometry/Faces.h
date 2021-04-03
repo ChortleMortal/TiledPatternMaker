@@ -108,7 +108,7 @@ public:
     FaceSet() { selected = false;}
     qreal            area;
     TPColor          tpcolor;   // algo 0/1/2
-    ColorSet         colorSet;	// algo3
+    ColorSet       * pColorSet;	// algo3
     int              sides;     // all members of the group have same number of vertices
     bool             selected;  // volatile
 
@@ -116,12 +116,13 @@ public:
 
     void sortByPositon();
 
-    QVector<FacePtr> newSet;    // used in calcs
-
     void   dump(DCELPtr dcel);
 
 protected:
     void sortByPositon(FacePtr fp);
+
+private:
+    QVector<FacePtr> newSet;    // used in calcs
 };
 
 

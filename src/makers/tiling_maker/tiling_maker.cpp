@@ -192,8 +192,8 @@ void TilingMaker::sm_resetAllAndAdd(TilingPtr tiling)
 
 void TilingMaker::sm_resetCurrentAndAdd(TilingPtr tiling)
 {
-    tilings.removeOne(selectedTiling);
-    tilings.push_front(tiling);
+    int i = tilings.indexOf(selectedTiling);
+    tilings.replace(i,tiling);
     select(tiling);
 }
 

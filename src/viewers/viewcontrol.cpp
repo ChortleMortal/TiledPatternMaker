@@ -40,7 +40,6 @@
 #include "tile/grid.h"
 #include "tile/backgroundimage.h"
 #include "viewers/view.h"
-#include "viewers/faceset_view.h"
 #include "viewers/figure_view.h"
 #include "viewers/placed_designelement_view.h"
 #include "viewers/prototype_view.h"
@@ -68,7 +67,7 @@ void ViewControl::releaseInstance()
 
 ViewControl::ViewControl()
 {
-    protoViewMode = PROTO_DRAW_FIGURES | PROTO_DRAW_FEATURES;
+    protoViewMode = PROTO_DRAW_FIGURES | PROTO_DRAW_FEATURES | PROTO_HIGHLIGHT_FEATURES | PROTO_HIGHLIGHT_FIGURES;
 }
 
 void ViewControl::init()
@@ -263,10 +262,6 @@ void ViewControl::setupViewers()
 
             case VIEW_MAP_EDITOR:
                 viewMapEditor();
-                break;
-
-            case VIEW_FACE_SET:
-                viewFaceSet();
                 break;
 
             case VIEW_UNDEFINED:
@@ -552,15 +547,6 @@ void ViewControl::viewMapEditor()
 
     QSize sz = view->getActiveFrameSize(VIEW_MAP_EDITOR);
     ed->setCenterScreen(QRect(QPoint(0,0),sz).center());
-}
-
-void ViewControl::viewFaceSet()
-{
-    qDebug() << "++ViewController::viewFaceSet";
-    LayerPtr fsView = make_shared<FaceSetView>(config->colorMaker);
-    view->addLayer(fsView);
-
-    view->setBackgroundColor(Qt::black);
 }
 
 void ViewControl::setTitle(TilingPtr tp)

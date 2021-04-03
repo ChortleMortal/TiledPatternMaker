@@ -60,7 +60,8 @@ private slots:
     void    drawMapClicked(bool enb);
     void    drawFigureClicked(bool enb);
     void    drawFeatureClicked(bool enb);
-
+    void    hiliteFigureClicked(bool enb);
+    void    hiliteFeatureClicked(bool enb);
 protected:
 
 private:

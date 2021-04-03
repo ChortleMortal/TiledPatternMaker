@@ -43,20 +43,11 @@
 #include "tapp/radial_figure.h"
 #include "viewers/viewcontrol.h"
 
-#define E2STR(x) #x
-
-static QString sMapEdMode[] =
-{
-    E2STR(ME_MODE_UNDEFINED),
-    E2STR(MAP_TYPE_FIGURE),
-    E2STR(MAP_TYPE_PROTO),
-    E2STR(MAP_TYPE_STYLE)
-};
-
 page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Map Editor")
 {
     me = MapEditor::getInstance();
 
+    QRadioButton * mapEdNone   = new QRadioButton("None");
     QRadioButton * mapEdMosaic = new QRadioButton("Mosaic");
     QRadioButton * mapEdProto  = new QRadioButton("Prototype");
     QRadioButton * mapEdFigure = new QRadioButton("Figure");
@@ -65,12 +56,13 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     QRadioButton * mapEdDCEL   = new QRadioButton("DCEL");
 
     // map editor group
-    mapEdModeGroup.addButton(mapEdMosaic,MAP_MODE_MOSAIC);
-    mapEdModeGroup.addButton(mapEdProto,MAP_MODE_PROTO);
-    mapEdModeGroup.addButton(mapEdFigure,MAP_MODE_FIGURE);
-    mapEdModeGroup.addButton(mapEdLocal,MAP_MODE_LOCAL);
-    mapEdModeGroup.addButton(mapEdTiling,MAP_MODE_TILING);
-    mapEdModeGroup.addButton(mapEdDCEL,MAP_MODE_DCEL);
+    mapEdModeGroup.addButton(mapEdNone,MAPED_MODE_NONE);
+    mapEdModeGroup.addButton(mapEdMosaic,MAPED_MODE_MOSAIC);
+    mapEdModeGroup.addButton(mapEdProto,MAPED_MODE_PROTO);
+    mapEdModeGroup.addButton(mapEdFigure,MAPED_MODE_FIGURE);
+    mapEdModeGroup.addButton(mapEdLocal,MAPED_MODE_LOCAL);
+    mapEdModeGroup.addButton(mapEdTiling,MAPED_MODE_TILING);
+    mapEdModeGroup.addButton(mapEdDCEL,MAPED_MODE_DCEL);
     mapEdModeGroup.button(config->mapEditorMode)->setChecked(true);
 
     line0 = new QLabel;
@@ -198,14 +190,14 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     QRadioButton * modeExtendLine   = new QRadioButton("Extend Line (F7)");
     QRadioButton * modeCrop         = new QRadioButton("Create Crop (F8)");
     QRadioButton * modeConstrCicle  = new QRadioButton("Construct Circles (F9)");
-    modeGroup.addButton(modeNone,           MAP_MODE_NONE);
-    modeGroup.addButton(modeDrawLine,       MAP_MODE_DRAW_LINE);
-    modeGroup.addButton(modeDelLine,        MAP_MODE_DELETE);
-    modeGroup.addButton(modeSplitLine,      MAP_MODE_SPLIT_LINE);
-    modeGroup.addButton(modeConstruction,   MAP_MODE_CONSTRUCTION_LINES);
-    modeGroup.addButton(modeExtendLine,     MAP_MODE_EXTEND_LINE);
-    modeGroup.addButton(modeCrop,           MAP_MODE_CREATE_CROP);
-    modeGroup.addButton(modeConstrCicle,    MAP_MODE_CONSTRUCTION_CIRCLES);
+    modeGroup.addButton(modeNone,           MAPED_MOUSE_NONE);
+    modeGroup.addButton(modeDrawLine,       MAPED_MOUSE_DRAW_LINE);
+    modeGroup.addButton(modeDelLine,        MAPED_MOUSE_DELETE);
+    modeGroup.addButton(modeSplitLine,      MAPED_MOUSE_SPLIT_LINE);
+    modeGroup.addButton(modeConstruction,   MAPED_MOUSE_CONSTRUCTION_LINES);
+    modeGroup.addButton(modeExtendLine,     MAPED_MOUSE_EXTEND_LINE);
+    modeGroup.addButton(modeCrop,           MAPED_MOUSE_CREATE_CROP);
+    modeGroup.addButton(modeConstrCicle,    MAPED_MOUSE_CONSTRUCTION_CIRCLES);
 
     modeGroup.button(me->getMouseMode())->setChecked(true);
 
@@ -223,6 +215,7 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
 
     // View Box
     QVBoxLayout * vbox2 = new QVBoxLayout;
+    vbox2->addWidget(mapEdNone);
     vbox2->addWidget(mapEdMosaic);
     vbox2->addWidget(mapEdProto);
     vbox2->addWidget(mapEdFigure);
@@ -406,10 +399,10 @@ void page_map_editor::refreshPage()
 {
     QString str;
 
-    eMapType mapType = me->getMapType();
-    line0->setText(sMapEdInput[mapType]);
+    eMapEditorMode mode = config->mapEditorMode;
+    line0->setText(sMapEditorMode[mode]);
 
-    if (mapType == MAP_TYPE_FIGURE)
+    if (mode == MAPED_MODE_FIGURE)
     {
         DesignElementPtr delp = me->getDesignElement();
         if (!delp)
@@ -438,7 +431,7 @@ void page_map_editor::refreshPage()
             line3->setText("");
         }
     }
-    else if (mapType == MAP_TYPE_PROTO)
+    else if (mode == MAPED_MODE_PROTO)
     {
         PrototypePtr pp = me->getPrototype();
         str = QString("Protoype = %1").arg(Utils::addr(pp.get()));
@@ -446,7 +439,7 @@ void page_map_editor::refreshPage()
         line2->setText("");
         line3->setText("");
     }
-    else if (mapType == MAP_TYPE_STYLE)
+    else if (mode == MAPED_MODE_MOSAIC)
     {
         StylePtr sp = me->getStyle();
         str = QString("Style = %1").arg(Utils::addr(sp.get()));
@@ -454,7 +447,7 @@ void page_map_editor::refreshPage()
         line2->setText("");
         line3->setText("");
     }
-    else if (mapType == MAP_TYPE_UNDEFINED)
+    else if (mode == MAPED_MODE_NONE)
     {
         line1->setText("");
         line2->setText("");
@@ -462,7 +455,7 @@ void page_map_editor::refreshPage()
     }
 
     // line 4
-    if (mapType == MAP_TYPE_DCEL)
+    if (mode == MAPED_MODE_DCEL)
     {
         DCELPtr dp = me->getDCEL().lock();
         if (dp)
@@ -558,10 +551,9 @@ void page_map_editor::slot_mosaicLoaded(QString name)
 
 void page_map_editor::slot_selected_dele_changed()
 {
-    if (config->mapEditorMode == MAP_MODE_FIGURE)
+    if (config->mapEditorMode == MAPED_MODE_FIGURE)
     {
-        DesignElementPtr dep = motifMaker->getSelectedDesignElement();
-        me->setDesignElement(dep);
+        me->reload();
     }
 }
 
@@ -581,7 +573,7 @@ void page_map_editor::slot_reload()
 
 void page_map_editor::slot_convertToExplicit()
 {
-    if (me->getMapType() == MAP_TYPE_FIGURE)
+    if (config->mapEditorMode == MAPED_MODE_FIGURE)
     {
         DesignElementPtr delp = me->getDesignElement();
         FigurePtr        figp = delp->getFigure();
@@ -639,8 +631,7 @@ void page_map_editor::slot_divideIntersectingEdges()
 {
     MapPtr map = me->getMap();
     MapCleanser cleanser(map);
-    cleanser.divideIntersectingEdges();
-    me->buildEditorDB();
+    cleanser.cleanse(divideupIntersectingEdges);
     updateView();
 }
 
@@ -648,8 +639,7 @@ void page_map_editor::slot_joinColinearEdges()
 {
     MapPtr map = me->getMap();
     MapCleanser cleanser(map);
-    cleanser.joinColinearEdges();
-    me->buildEditorDB();
+    cleanser.cleanse(joinupColinearEdges);
     updateView();
 }
 
@@ -657,8 +647,7 @@ void page_map_editor::slot_cleanNeighbours()
 {
     MapPtr map = me->getMap();
     MapCleanser cleanser(map);
-    cleanser.cleanNeighbours();
-    me->buildEditorDB();
+    cleanser.cleanse(cleanupNeighbours);
     updateView();
 }
 
@@ -666,8 +655,7 @@ void page_map_editor::slot_removeUnconnectedVertices()
 {
     MapPtr map = me->getMap();
     MapCleanser cleanser(map);
-    cleanser.removeVerticesWithEdgeCount(0);
-    me->buildEditorDB();
+    cleanser.cleanse(badVertices_0);
     updateView();
 }
 
@@ -675,8 +663,7 @@ void page_map_editor::slot_removeSingleConnectVertices()
 {
     MapPtr map = me->getMap();
     MapCleanser cleanser(map);
-    cleanser.removeVerticesWithEdgeCount(1);
-    me->buildEditorDB();
+    cleanser.cleanse(badVertices_1);
     updateView();
 }
 
@@ -685,8 +672,7 @@ void page_map_editor::slot_removeZombieEdges()
 {
     MapPtr map = me->getMap();
     MapCleanser cleanser(map);
-    cleanser.removeBadEdges();
-    me->buildEditorDB();
+    cleanser.cleanse(badEdges);
     updateView();
 }
 
@@ -694,7 +680,6 @@ void page_map_editor::slot_rebuildNeighbours()
 {
     MapPtr map = me->getMap();
     map->buildNeighbours();
-    me->buildEditorDB();
     updateView();
 }
 
@@ -702,7 +687,6 @@ void page_map_editor::slot_sortVertices()
 {
     MapPtr map = me->getMap();
     map->sortVertices();
-    me->buildEditorDB();
     updateView();
 }
 
@@ -710,7 +694,6 @@ void page_map_editor::slot_sortEdges()
 {
     MapPtr map = me->getMap();
     map->sortEdges();
-    me->buildEditorDB();
     updateView();
 }
 
@@ -729,28 +712,24 @@ void page_map_editor::slot_mapEdMode_pressed(int id)
 void page_map_editor::slot_hideCons(bool hide)
 {
     me->hideConstructionLines = hide;
-    me->buildEditorDB();
     updateView();
 }
 
 void page_map_editor::slot_hideMap(bool hide)
 {
     me->hideMap = hide;
-    me->buildEditorDB();
     updateView();
 }
 
 void page_map_editor::slot_hidePoints(bool hide)
 {
     me->hidePoints = hide;
-    me->buildEditorDB();
     updateView();
 }
 
 void page_map_editor::slot_hideMidPoints(bool hide)
 {
     me->hideMidPoints = hide;
-    me->buildEditorDB();
     updateView();
 }
 
@@ -814,7 +793,6 @@ void page_map_editor::slot_clearConstructionLines()
     // this does not affect the stash
     me->constructionLines.clear();
     me->constructionCircles.clear();
-    me->buildEditorDB();
     updateView();
 }
 
@@ -825,20 +803,19 @@ void page_map_editor::slot_clearMap()
     {
         map->wipeout();
     }
-    me->buildEditorDB();
     updateView();
 }
 
 void page_map_editor::slot_createMap()
 {
     me->setLocalMap(make_shared<Map>(QString("New local map")));
-    if (config->mapEditorMode == MAP_MODE_LOCAL)
+    if (config->mapEditorMode == MAPED_MODE_LOCAL)
     {
-        me->setLocal();
+        me->reload();
     }
     else
     {
-        mapEdModeGroup.button(MAP_MODE_LOCAL)->setChecked(true);
+        mapEdModeGroup.button(MAPED_MODE_LOCAL)->setChecked(true);
     }
 }
 
@@ -859,12 +836,12 @@ void page_map_editor::slot_loadMap()
         return;
     }
 
-    if (config->mapEditorMode == MAP_MODE_LOCAL)
+    if (config->mapEditorMode == MAPED_MODE_LOCAL)
     {
         me->setLocalMap(map);
-        me->setLocal();
-        QMessageBox box(this);
+        me->reload();
 
+        QMessageBox box(this);
         box.setIcon(QMessageBox::Information);
         box.setText("Local map loaded OK");
         box.exec();

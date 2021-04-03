@@ -61,12 +61,15 @@ private slots:
     void    slot_set_reps();
 
 protected:
+    void     setCurrentEditor(StylePtr style);
     void     styleChanged(int row);
     void     tilingChanged(int row);
     void     styleVisibilityChanged(int row);
 
     void     reEnter();
+    void     displayStyles();
     void     displayStyleParams();
+
     StylePtr getStyleRow(int row);
     StylePtr getStyleIndex(int index);
     StylePtr copyStyle(const StylePtr style);
@@ -76,7 +79,7 @@ protected:
 private:
     DecorationMaker   * decorationMaker;
 
-    QItemSelectionModel * selectModel;
+    StyleEditorPtr  currentStyleEditor;
 
     AQTableWidget * styleTable;
     AQTableWidget * parmsTable;

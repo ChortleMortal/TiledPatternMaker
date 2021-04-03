@@ -95,7 +95,7 @@ void  Filled::setCleanseLevel(int val)
 void Filled::resetStyleRepresentation()
 {
     eraseStyleMap();
-    cm.reset();
+    dcel.reset();
     whiteColorSet.resetIndex();
     blackColorSet.resetIndex();
     colorGroup.resetIndex();
@@ -104,7 +104,7 @@ void Filled::resetStyleRepresentation()
 
 void Filled::createStyleRepresentation()
 {
-    if (!cm)
+    if (!dcel)
     {
         MapPtr map = getMap();
 
@@ -124,53 +124,70 @@ void Filled::createStyleRepresentation()
         }
         qDebug().noquote() << "Filled post map cleanse" << map->summary();
 
-        DCELPtr dp = map->getDCEL();
-        cm = make_shared<ColorMaker>(dp);
-        config->colorMaker = WeakColorMakerPtr(cm);
+        dcel = map->getDCEL();
     }
 
+    Q_ASSERT(dcel);
     switch (algorithm)
     {
     case 0:
-        if (cm->getBlackFaces().size() == 0 && cm->getWhiteFaces().size() == 0)
+        if (blackFaces.size() == 0 && whiteFaces.size() == 0)
         {
-            cm->assignColorsOriginal();
+            assignColorsOriginal();
         }
         break;
 
     case 1:
-        if (cm->getBlackFaces().size() == 0 && cm->getWhiteFaces().size() == 0)
+        if (blackFaces.size() == 0 && whiteFaces.size() == 0)
         {
-            cm->assignColorsNew1();
+            assignColorsNew1();
         }
         break;
 
     case 2:
-        if (cm->getFaceGroup().size() == 0)
+        if (faceGroup.size() == 0)
         {
-            cm->buildFaceGroups();
-            cm->assignColorSets(whiteColorSet);
+            buildFaceGroups();
+            assignColorSets(whiteColorSet);
         }
         break;
 
     case 3:
-        if (cm->getFaceGroup().size() == 0)
+        if (faceGroup.size() == 0)
         {
-            cm->buildFaceGroups();
-            cm->assignColorGroups(colorGroup);
+            buildFaceGroups();
+            assignColorGroups(colorGroup);
         }
+        break;
+    }
+}
+
+void Filled::updateStyleRepresentation()
+{
+    Q_ASSERT(dcel);
+    switch (algorithm)
+    {
+    case 0:
+        assignColorsOriginal();
+        break;
+
+    case 1:
+        assignColorsNew1();
+        break;
+
+    case 2:
+        assignColorSets(whiteColorSet);
+        break;
+
+    case 3:
+        assignColorGroups(colorGroup);
         break;
     }
 }
 
 void Filled::draw(GeoGraphics * gg)
 {
-    if (!isVisible())
-    {
-        return;
-    }
-
-    if (!cm)
+    if (!isVisible() || !dcel)
     {
         return;
     }
@@ -188,12 +205,12 @@ void Filled::draw(GeoGraphics * gg)
         break;
 
     case 2:
-        qDebug() << "Filled::draw() algorithm 2 :" << cm->getFaceGroup().size() << cm->getFaceGroup().totalSize();
+        qDebug() << "Filled::draw() algorithm 2 :" << faceGroup.size() << faceGroup.totalSize();
         drawDCELNew2(gg);
         break;
 
     case 3:
-        qDebug() << "Filled::draw() algorithm 3 :" << cm->getFaceGroup().size() << cm->getFaceGroup().totalSize();
+        qDebug() << "Filled::draw() algorithm 3 :" << faceGroup.size() << faceGroup.totalSize();
         drawDCELNew3(gg);
         break;
     }
@@ -201,28 +218,23 @@ void Filled::draw(GeoGraphics * gg)
 
 void Filled::drawDCEL(GeoGraphics * gg)
 {
-    if( cm->getWhiteFaces().size() != 0 || cm->getBlackFaces().size() != 0 )
+    if (draw_outside_whites)
     {
-        qDebug()  << "black=" << cm->getWhiteFaces().size() << "white=" <<  cm->getBlackFaces().size();
-
-        if (draw_outside_whites)
+        QColor color = whiteColorSet.getFirstColor().color;
+        for (auto & face : qAsConst(whiteFaces))
         {
-            QColor color = whiteColorSet.getFirstColor().color;
-            for (auto & face : qAsConst(cm->getWhiteFaces()))
-            {
-                gg->fillEdgePoly(face.get(), color);
-                color = whiteColorSet.getNextColor().color;
-            }
+            gg->fillEdgePoly(face.get(), color);
+            color = whiteColorSet.getNextColor().color;
         }
+    }
 
-        if (draw_inside_blacks)
+    if (draw_inside_blacks)
+    {
+        QColor color = blackColorSet.getFirstColor().color;
+        for (auto & face : qAsConst(blackFaces))
         {
-            QColor color = blackColorSet.getFirstColor().color;
-            for (auto & face : qAsConst(cm->getBlackFaces()))
-            {
-                gg->fillEdgePoly(face.get(), color);
-                color = blackColorSet.getNextColor().color;
-            }
+            gg->fillEdgePoly(face.get(), color);
+            color = blackColorSet.getNextColor().color;
         }
     }
 }
@@ -230,7 +242,7 @@ void Filled::drawDCEL(GeoGraphics * gg)
 void Filled::drawDCELNew2(GeoGraphics *gg)
 {
     // not selected
-    for (auto& fset : qAsConst(cm->getFaceGroup()))
+    for (auto& fset : qAsConst(faceGroup))
     {
         if (fset->tpcolor.hidden && !fset->selected)
             continue;
@@ -250,28 +262,36 @@ void Filled::drawDCELNew2(GeoGraphics *gg)
 
 void Filled::drawDCELNew3(GeoGraphics *gg)
 {
-    qDebug() << "Filled::drawNew3";
-
-    for (auto& fset : qAsConst(cm->getFaceGroup()))
+    for (FaceSetPtr fset : faceGroup)
     {
-        if (fset->colorSet.isHidden() && !fset->selected)
+        if (fset->selected)
+        {
+            for (FacePtr face : *fset)
+            {
+                gg->fillEdgePoly(face.get(),Qt::red);
+            }
             continue;
+        }
 
-        ColorSet &  cset = fset ->colorSet;
-        cset.resetIndex();
+        ColorSet *  cset = fset->pColorSet;
 
-        for (auto & face : qAsConst(*fset))
+        if (cset->isHidden())
+        {
+            continue;
+        }
+
+        cset->resetIndex();
+
+        for (FacePtr face : *fset)
         {
             Q_ASSERT(face->isClockwise());
-            TPColor tpc = cset.getNextColor();
-            if (tpc.hidden && !fset->selected)
-                continue;
-
-            QColor color = tpc.color;
-            if (fset->selected)
+            TPColor tpc = cset->getNextColor();
+            if (tpc.hidden)
             {
-                color = Qt::red;
+
+                continue;
             }
+            QColor color = tpc.color;
             gg->fillEdgePoly(face.get(),color);
         }
     }

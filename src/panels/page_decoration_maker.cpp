@@ -26,6 +26,15 @@
 #include "base/tiledpatternmaker.h"
 #include "base/mosaic.h"
 #include "style/style.h"
+#include "style/colored.h"
+#include "style/thick.h"
+#include "style/filled.h"
+#include "style/interlace.h"
+#include "style/outline.h"
+#include "style/plain.h"
+#include "style/sketch.h"
+#include "style/emboss.h"
+#include "makers/decoration_maker/style_editors.h"
 #include "makers/motif_maker/motif_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "viewers/viewcontrol.h"
@@ -47,7 +56,6 @@ page_decoration_maker:: page_decoration_maker(ControlPanel * apanel)  : panel_pa
     styleTable->setHorizontalHeaderLabels(qslH);
     styleTable->verticalHeader()->setVisible(false);
 
-
     delBtn  = new QPushButton("Delete");
     upBtn   = new QPushButton("Move Up");
     downBtn = new QPushButton("MoveDown");
@@ -63,19 +71,20 @@ page_decoration_maker:: page_decoration_maker(ControlPanel * apanel)  : panel_pa
 
     QHBoxLayout * fillBox = createFillDataRow();
 
-    vbox->addLayout(fillBox);
-    vbox->addSpacing(3);
-    vbox->addWidget(styleTable);
-    vbox->addLayout(hbox);
-    vbox->addSpacing(5);
-
     parmsTable = new AQTableWidget(this);
 
     parmsLayout = new QVBoxLayout;
 
+    vbox->addLayout(fillBox);
+    vbox->addSpacing(3);
+    vbox->addWidget(styleTable);
+    vbox->addSpacing(3);
+    vbox->addLayout(hbox);
+    vbox->addSpacing(5);
     vbox->addWidget(parmsTable);
     vbox->addSpacing(7);
     vbox->addLayout(parmsLayout);
+
 
     connect(delBtn,  &QPushButton::clicked, this, &page_decoration_maker::slot_deleteStyle);
     connect(upBtn,   &QPushButton::clicked, this, &page_decoration_maker::slot_moveStyleUp);
@@ -83,13 +92,14 @@ page_decoration_maker:: page_decoration_maker(ControlPanel * apanel)  : panel_pa
     connect(dupBtn,  &QPushButton::clicked, this, &page_decoration_maker::slot_duplicateStyle);
     connect(analyzeBtn,  &QPushButton::clicked, this, &page_decoration_maker::slot_analyzeStyleMap);
 
-    selectModel = styleTable->selectionModel();
-    connect(selectModel, SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(slot_styleSelected(QItemSelection,QItemSelection)));
+    QItemSelectionModel * selectModel = styleTable->selectionModel();
+    connect(selectModel, &QItemSelectionModel::selectionChanged, this, &page_decoration_maker::slot_styleSelected);
 }
 
 void  page_decoration_maker::refreshPage()
 {
     static WeakMosaicPtr wmp;
+    static int styleRows = 0;
 
     MosaicPtr mosaic = decorationMaker->getMosaic();
     if (mosaic != wmp.lock())
@@ -120,16 +130,21 @@ void  page_decoration_maker::refreshPage()
             }
             row++;
         }
+        if (row != styleRows)
+        {
+            styleRows = row;
+            styleTable->resizeColumnsToContents();
+            styleTable->adjustTableSize();
+        }
     }
-
-    styleTable->resizeColumnsToContents();
-    styleTable->adjustTableSize();
 }
 
 void  page_decoration_maker::onEnter()
 {
     reEnter();
     styleTable->selectRow(0);
+    parmsTable->selectRow(0);
+    parmsTable->setFocus();
 }
 
 void  page_decoration_maker::reEnter()
@@ -139,6 +154,23 @@ void  page_decoration_maker::reEnter()
     styleTable->setRowCount(0);
     blockPage(false);
 
+    displayStyles();
+    styleTable->adjustTableSize();
+
+    displayStyleParams();
+    parmsTable->adjustTableSize();
+
+    styleTable->setFocus();
+    parmsTable->setFocus();
+
+    updateGeometry();
+
+    qDebug() << "row count   =" << styleTable->rowCount();
+    qDebug() << "current row =" << styleTable->currentRow();
+}
+
+void page_decoration_maker::displayStyles()
+{
     int row = 0;
     MosaicPtr mosaic = decorationMaker->getMosaic();
     if (mosaic && mosaic->hasContent())
@@ -204,16 +236,6 @@ void  page_decoration_maker::reEnter()
     }
 
     styleTable->resizeColumnsToContents();
-    styleTable->adjustTableSize();
-
-    displayStyleParams();
-
-    updateGeometry();
-
-    styleTable->setFocus();
-
-    qDebug() << "row count   =" << styleTable->rowCount();
-    qDebug() << "current row =" << styleTable->currentRow();
 }
 
 void  page_decoration_maker::slot_styleSelected(const QItemSelection &selected, const QItemSelection &deselected)
@@ -233,25 +255,74 @@ void  page_decoration_maker::slot_styleSelected(const QItemSelection &selected, 
 
 void page_decoration_maker::displayStyleParams()
 {
+    static StylePtr selectedStyle;
+
     int row = styleTable->currentRow();  // can be -1
     qDebug() << "displayStyleParams row =" << row;
 
     StylePtr style = getStyleIndex(row);
-    if (decorationMaker->getSelectedStyle() == style)
+    if (style == selectedStyle)
     {
         // no need to redisplay
         return;
     }
-
     // the style can be null - it's handled
-    decorationMaker->setCurrentEditor(style,parmsTable,parmsLayout);
-    decorationMaker->selectStyle(style);
+
+    parmsTable->clear();
+    eraseLayout(dynamic_cast<QLayout*>(parmsLayout));
+
+    setCurrentEditor(style);
+
+    updateGeometry();
 
     parmsTable->resizeColumnsToContents();
     parmsTable->adjustTableSize();
-    updateGeometry();
+}
 
-    //emit sig_refreshView();
+void page_decoration_maker::setCurrentEditor(StylePtr style)
+{
+    if (!style)
+    {
+        return;
+    }
+
+    switch (style->getStyleType())
+    {
+    case STYLE_PLAIN:
+        currentStyleEditor = make_shared<ColoredEditor>(dynamic_cast<Plain*>(style.get()),parmsTable);
+        break;
+    case STYLE_THICK:
+        currentStyleEditor = make_shared<ThickEditor>(dynamic_cast<Thick*>(style.get()),parmsTable);
+        break;
+    case STYLE_FILLED:
+    {
+        FilledPtr fp = std::dynamic_pointer_cast<Filled>(style);
+        if (!fp->getDCEL())
+        {
+            fp->createStyleRepresentation();
+            Q_ASSERT(fp->getDCEL());            // FIXME - not nice the view is modifying the data for the menu
+        }
+        currentStyleEditor = make_shared<FilledEditor>(fp,parmsTable,parmsLayout);
+    }
+        break;
+    case STYLE_EMBOSSED:
+        currentStyleEditor = make_shared<EmbossEditor>(dynamic_cast<Emboss*>(style.get()),parmsTable);
+        break;
+    case STYLE_INTERLACED:
+        currentStyleEditor = make_shared<InterlaceEditor>(dynamic_cast<Interlace*>(style.get()),parmsTable);
+        break;
+    case STYLE_OUTLINED:
+        currentStyleEditor = make_shared<ThickEditor>(dynamic_cast<Outline*>(style.get()),parmsTable);
+        break;
+    case STYLE_SKETCHED:
+        currentStyleEditor = make_shared<ColoredEditor>(dynamic_cast<Sketch*>(style.get()),parmsTable);
+        break;
+    case STYLE_TILECOLORS:
+        currentStyleEditor = make_shared<TileColorsEditor>(dynamic_cast<TileColors*>(style.get()),parmsTable,style->getTiling());
+        break;
+    case STYLE_STYLE:
+        break;
+    }
 }
 
 void page_decoration_maker::tilingChanged(int row)

@@ -31,7 +31,6 @@
 
 PrototypeView::PrototypeView(PrototypePtr proto,int mode) : Layer("ProtoFeatureView",LTYPE_VIEW)
 {
-    qDebug() << "ProtoFeatureView::constructor";
     Q_ASSERT(proto);
 
     feature_interior = QColor(255, 217, 217, 127);
@@ -41,41 +40,11 @@ PrototypeView::PrototypeView(PrototypePtr proto,int mode) : Layer("ProtoFeatureV
     this->proto = proto;
     this->mode  = mode;
 
-    if (mode & PROTO_DRAW_MAP)
-    {
-        MapPtr map = proto->getProtoMap();
-
-        for(auto& edge : map->edges)
-        {
-           edges.push_back(edge);
-        }
-    }
-
-    TilingPtr tiling = proto->getTiling();
-    Q_ASSERT(tiling);
-
-    t1 = tiling->getTrans1();
-    t2 = tiling->getTrans2();
-
-    if (mode & (PROTO_DRAW_FEATURES | PROTO_DRAW_FIGURES))
-    {
-        for(auto placedFeature : tiling->getPlacedFeatures())
-        {
-            FeaturePtr feature  = placedFeature->getFeature();
-            QTransform T        = placedFeature->getTransform();
-            FigurePtr fig       = proto->getFigure(feature );
-
-            PlacedDesignElement rpf(feature,fig,T);
-            rpfs.push_back(rpf);
-        }
-    }
     forceRedraw();
 }
 
 void PrototypeView::paint(QPainter *painter)
 {
-    qDebug() << "ProtoFeatureView::paint proto =" << proto.get();
-
     painter->setRenderHint(QPainter::Antialiasing ,true);
     painter->setRenderHint(QPainter::SmoothPixmapTransform,true);
 
@@ -88,8 +57,33 @@ void PrototypeView::paint(QPainter *painter)
 
 void PrototypeView::draw( GeoGraphics * gg )
 {
+    TilingPtr tiling = proto->getTiling();
+    Q_ASSERT(tiling);
+
+    t1 = tiling->getTrans1();
+    t2 = tiling->getTrans2();
+
+    qDebug() << "ProtoFeatureView  proto="  << proto.get();
+    for( auto placedFeature : tiling->getPlacedFeatures())
+    {
+        FeaturePtr feature  = placedFeature->getFeature();
+        QTransform T        = placedFeature->getTransform();
+        FigurePtr fig       = proto->getFigure(feature );
+
+        PlacedDesignElement rpf(feature,fig,T);
+        rpfs.push_back(rpf);
+    }
+
     if (mode & PROTO_DRAW_MAP)
     {
+        MapPtr map = proto->getProtoMap();
+        qDebug() << "ProtoFeatureView  proto="  << proto.get() << "protoMap" << map.get();
+
+        for(auto& edge : map->edges)
+        {
+            edges.push_back(edge);
+        }
+
         layerPen = QPen(QColor(20,150,210),3);
         edges.draw(gg, layerPen);
     }
@@ -97,6 +91,27 @@ void PrototypeView::draw( GeoGraphics * gg )
     if (mode & (PROTO_DRAW_FEATURES | PROTO_DRAW_FIGURES))
     {
         fill(gg);
+    }
+
+    layerPen.setColor(Qt::yellow);
+    for (auto placedDesignElement : rpfs)
+    {
+        QTransform T0 = placedDesignElement.getTransform();
+        gg->pushAndCompose(T0);
+
+        if (mode & PROTO_HIGHLIGHT_FEATURES)
+        {
+            layerPen.setColor(Qt::blue);
+            QColor acolor(Qt::lightGray);
+            acolor.setAlpha(64);
+            ViewerBase::drawFeature(gg,placedDesignElement.getFeature(),QBrush(acolor),layerPen);
+        }
+        if  (mode & PROTO_HIGHLIGHT_FIGURES)
+        {
+            layerPen.setColor(Qt::yellow);
+            ViewerBase::drawFigure(gg,placedDesignElement.getFigure(),layerPen);
+        }
+        gg->pop();
     }
 }
 
@@ -113,7 +128,6 @@ void PrototypeView::receive(GeoGraphics *gg, int h, int v )
 
         if (mode & PROTO_DRAW_FEATURES)
         {
-            //ViewerBase::drawFeature(gg,placedDesignElement.getFeature(),QBrush(feature_interior),QPen(feature_border,3));
             ViewerBase::drawFeature(gg,placedDesignElement.getFeature(),QBrush(),QPen(feature_border,3));
         }
 
