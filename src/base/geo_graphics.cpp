@@ -39,7 +39,7 @@
 // behave like OpenGL's matrix stack.  Makes it easy to execute a
 // bunch of primitives in some pushed graphics state.
 
-#include "viewers/geo_graphics.h"
+#include "base/geo_graphics.h"
 #include "geometry/transform.h"
 #include "geometry/point.h"
 #include "geometry/edge.h"

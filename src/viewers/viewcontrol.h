@@ -29,14 +29,13 @@
 #include "base/filldata.h"
 #include "base/model_settings.h"
 #include "base/configuration.h"
+#include "geometry/xform.h"
 
-enum eProtoViewMode
+enum eModelAlignment
 {
-    PROTO_DRAW_MAP           =  0x01,
-    PROTO_DRAW_FEATURES      =  0x02,
-    PROTO_DRAW_FIGURES       =  0x04,
-    PROTO_HIGHLIGHT_FEATURES =  0x08,
-    PROTO_HIGHLIGHT_FIGURES  =  0x10
+    M_ALIGN_NONE,
+    M_ALIGN_MOSAIC,
+    M_ALIGN_TILING,
 };
 
 class ViewControl : public QObject
@@ -53,14 +52,14 @@ public:
     void    disableAllViews();
 
     // selections
-    void                selectFeature(WeakFeaturePtr fp);
-    FeaturePtr          getSelectedFeature();
+    void        selectFeature(WeakFeaturePtr fp);
+    FeaturePtr  getSelectedFeature();
 
-    void                setProtoViewMode(eProtoViewMode mode, bool enb);
-    int                 getProtoViewMode() {  return  protoViewMode; }
+    void        setFillData(FillData & fd) { fillData = fd; }
+    FillData &  getFillData() { return fillData; }
 
-    void                setFillData(FillData & fd) { fillData = fd; }
-    FillData          & getFillData() { return fillData; }
+    void        setModelAlignment(eModelAlignment mode) { modelAlignment = mode; }
+    const Xform & getCurrentXform();
 
 protected:
     void     setupViewers();
@@ -69,7 +68,6 @@ protected:
     void     viewDesign();
     void     viewMosaic();
     void     viewPrototype();
-    void     viewDesignElement();
     void     viewMotifMaker();
     void     viewTiling();
     void     viewTilingMaker();
@@ -86,6 +84,7 @@ signals:
     void    sig_viewUpdated();
 
 public slots:
+    void    slot_updateView();
     void    slot_refreshView();
     void    slot_clearView();
     void    slot_clearMakers();
@@ -102,15 +101,14 @@ private:
     class   DesignMaker     * designMaker;
     class   DecorationMaker * decorationMaker;
     class   MotifMaker      * motifMaker;
-    class   TilingMaker     * tilingMaker;
+    TilingMakerPtr            tilingMaker;
+    MapEditorPtr              mapEditor;
 
-    bool    enabledViews[VIEW_MAX+1];
-
-    WeakFeaturePtr              selectedFeature;
-
-    FillData                    fillData;
-
-    int                         protoViewMode;
+    bool            enabledViews[VIEW_MAX+1];
+    WeakFeaturePtr  selectedFeature;
+    FillData        fillData;
+    eModelAlignment modelAlignment;
+    const Xform     unityXform;
 };
 
 #endif

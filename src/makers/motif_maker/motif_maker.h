@@ -105,7 +105,7 @@ private:
     ViewControl            * vcontrol;
     TiledPatternMaker      * maker;
     page_motif_maker       * menu;
-    class TilingMaker      * tilingMaker;
+    TilingMakerPtr           tilingMaker;
     class DecorationMaker  * decorationMaker;
 
     UniqueQVector<PrototypePtr> prototypes;

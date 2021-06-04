@@ -78,13 +78,6 @@ private slots:
 
     void slot_tilingSizeChanged(int val);
 
-    void pickBorderColor();
-    void pickBorderColor2();
-    void borderWidthChanged(int width);
-    void borderRowsChanged(int rows);
-    void borderColsChanged(int cols);
-    void borderChanged(int row);
-
     void slot_adjustBackground();
     void slot_saveAdjustedBackground();
 #if 0
@@ -94,14 +87,12 @@ private slots:
     void slot_bkgd_scale(int amount);
 #endif
     void slot_showBkgdsChanged(bool checked);
-    void slot_showBordersChanged(bool checked);
     void slot_showFsetChanged(bool checked);
 
 protected:
     QGroupBox * createTilingSettings();
     QGroupBox * createDesignSettings();
     QGroupBox * createFrameSettings();
-    QGroupBox * createDesignBorderBox();
     QGroupBox * createViewStatus();
 
     QGroupBox * createBackgroundImageGroup(eSettingsGroup group, QString title);
@@ -110,7 +101,6 @@ protected:
     ModelSettingsPtr getMosaicOrDesignSettings();
 
     void displayBkgdImgSettings(BkgdImgPtr bi, eSettingsGroup group);
-    void displayBorder(BorderPtr bp);
 
 private:
     void removeChildren(QTreeWidgetItem * parent);
@@ -133,14 +123,6 @@ private:
     DoubleSpinSet   * startEditX[NUM_SETTINGS];
     DoubleSpinSet   * startEditY[NUM_SETTINGS];
 
-    QComboBox         borderType;
-    SpinSet         * borderWidth;
-    SpinSet         * borderRows;
-    SpinSet         * borderCols;
-    QLabel          * borderColorLabel[NUM_BORDER_COLORS];
-    QLineEdit       * borderColor[NUM_BORDER_COLORS];
-    ClickableLabel  * borderColorPatch[NUM_BORDER_COLORS];
-
     QPushButton     * bkgdImageBtn[NUM_SETTINGS];
     QLineEdit       * bkgdImage[NUM_SETTINGS];
 
@@ -151,7 +133,6 @@ private:
     QGroupBox       * viewBox;
     QGroupBox       * mosaicBkgdBox;
     QGroupBox       * tilingBkgdBox;
-    QGroupBox       * borderBox;
 
     AQTableWidget   * frameTable;
 };

@@ -46,6 +46,7 @@ public:
 
     static void crashMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg);
 
+    static void suspend(bool enable){ _suspend     = enable; }
     void logToStdErr(bool enable)   { _logToStderr = enable; }
     void logToDisk(bool enable)     { _logToDisk   = enable; }
     void logToPanel(bool enable)    { _logToPanel  = enable; }
@@ -57,6 +58,11 @@ public:
 
     QString logDir() { return this->_logDir; }
     static QString currentLogName;
+
+    static void trap(bool start)   { if (start) _trapString.clear(); _trap = start; }
+    static bool trapEnabled()      { return _trap;}
+    static QStringList & getTrap() { return _trapString; }
+    static void forceTrapOutput();
 
 protected:
     qtAppLog();
@@ -75,6 +81,11 @@ private:
     static bool _logLines;
     static bool _logWarningsOnly;
     static bool	_active;
+    static bool _suspend;
+
+    static bool        _trap;
+    static QStringList _trapString;
+
     static eLogTimer _logTimerSetting;
     static QElapsedTimer elapseTimer;
 

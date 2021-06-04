@@ -46,7 +46,6 @@
 #include "panels/panel.h"
 #include "panels/dlg_edgepoly_edit.h"
 
-TilingMaker *  TilingMaker::mpThis = nullptr;
 TilingMakerPtr TilingMaker::spThis;
 
 const bool debugMouse = false;
@@ -70,24 +69,11 @@ static QString strMouseMode[] =
     E2STR(TM_CONSTRUCTION_LINES)
 };
 
-
-TilingMaker * TilingMaker::getInstance()
-{
-    if (!mpThis)
-    {
-        spThis = make_shared<TilingMaker>();
-        mpThis = spThis.get();
-    }
-    return mpThis;
-}
-
-
 TilingMakerPtr TilingMaker::getSharedInstance()
 {
-    if (!mpThis)
+    if (!spThis)
     {
         spThis = make_shared<TilingMaker>();
-        mpThis = spThis.get();
     }
     return spThis;
 }
@@ -103,7 +89,7 @@ void TilingMaker::init()
     view            = View::getInstance();
     motifMaker      = MotifMaker::getInstance();
     decorationMaker = DecorationMaker::getInstance();
-    me              = MapEditor::getInstance();
+    maped           = MapEditor::getSharedInstance();
 
     connect(view, &View::sig_mouseDragged,  this, &TilingMaker::slot_mouseDragged);
     connect(view, &View::sig_mouseReleased, this, &TilingMaker::slot_mouseReleased);
@@ -639,14 +625,14 @@ void TilingMaker::updateVectors()
     updateVisibleVectors();
     refillUsingTranslations();
     sm_take(selectedTiling,SM_TILING_CHANGED);
-    me->reload();
+    maped->reload();
 }
 
 void TilingMaker::updateReps()
 {
    refillUsingTranslations();
    sm_take(selectedTiling,SM_TILING_CHANGED);
-   me->reload();
+   maped->reload();
 }
 
 void TilingMaker::fillUsingTranslations()

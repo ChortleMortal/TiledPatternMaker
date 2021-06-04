@@ -17,31 +17,51 @@ TPMSplash::TPMSplash() : QSplashScreen()
     hide();
 }
 
-void TPMSplash::display(QString txt)
+void TPMSplash::displayMosaic(QString txt)
 {
-    //qDebug()  << "splash:" << txt;
+    design = txt;
+    draw();
+}
 
-    if (!isHidden())
-    {
-        msgStack.push(message());
-    }
+void TPMSplash::displayTiling(QString txt)
+{
+    tiling = txt;
+    draw();
+}
 
+void TPMSplash::draw()
+{
     ControlPanel * p = ControlPanel::getInstance();
     QPoint pos       = p->rect().center();
     pos              = p->mapToGlobal(pos);
     QPoint p2        = pos - QPoint(w/2,h/2);
     move(p2);
+
     show();
+
+    QString txt = design + "\n" + tiling;
     showMessage(txt, Qt::AlignCenter);
 }
 
-void TPMSplash::remove()
+void TPMSplash::removeMosaic()
 {
-    if (msgStack.count())
+    design.clear();
+    if (!tiling.isEmpty())
     {
-        QString str = msgStack.pop();
-        //qDebug() << "redisplay:" << str;
-        showMessage(str, Qt::AlignCenter);
+        draw();
+    }
+    else
+    {
+        hide();
+    }
+}
+
+void TPMSplash::removeTiling()
+{
+    tiling.clear();
+    if (!design.isEmpty())
+    {
+        draw();
     }
     else
     {

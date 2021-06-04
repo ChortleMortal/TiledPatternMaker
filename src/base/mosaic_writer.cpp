@@ -26,7 +26,6 @@
 #include "base/border.h"
 #include "base/fileservices.h"
 #include "base/configuration.h"
-#include "geometry/map_cleanser.h"
 #include "panels/panel.h"
 #include "style/colored.h"
 #include "style/thick.h"
@@ -52,7 +51,8 @@
 //const int currentXMLVersion = 6;  // 26JUL20 includes FillData
 //const int currentXMLVersion = 7;  // 15DEC20 Feature epolys being saved correctly
 //const int currentXMLVersion = 8;  // 31DEC20 Indepedent background image being saved
-  const int currentXMLVersion = 9;  // 03MAR21 Neighbour Map no longer needed
+//const int currentXMLVersion = 9;  // 03MAR21 Neighbour Map no longer needed
+  const int currentXMLVersion = 10; // 07APR21 Border enhancements
 
 
 MosaicWriter::MosaicWriter()
@@ -271,7 +271,7 @@ void MosaicWriter::processDesign(QTextStream &ts)
     ModelSettingsPtr info = _mosaic->getSettings();
     QColor bkgdColor   = info->getBackgroundColor();
     QSizeF size        = info->getSize();
-    BorderPtr border   = info->getBorder();
+    BorderPtr border   = _mosaic->getBorder();
     BkgdImgPtr bip     = info->getBkgdImage();
 
     ts << "<design>" << endl;
@@ -326,8 +326,21 @@ void MosaicWriter::procBorder(QTextStream &ts,BorderPtr border)
     }
 
     eBorderType type = border->getType();
-    QString txt = QString("<border type=\"%1\">").arg(type);
+    QString txt = QString("<border type=\"%1\">") .arg(type);
     ts << txt << endl;
+
+    if (type == BORDER_INTEGRATED)
+    {
+        InnerBorder * ib = dynamic_cast<InnerBorder*>(border.get());
+        Q_ASSERT(ib);
+        CropPtr crop = ib->getInnerBoundary();
+        Q_ASSERT(crop);
+        QRectF r = crop->getRect();
+        if (r.isValid())
+        {
+            ts << "<boundary>" << r.x() << "," << r.y() << "," << r.width() << "," << r.height() << "</boundary>" << endl;
+        }
+    }
 
     if (type == BORDER_PLAIN)
     {
@@ -1273,7 +1286,7 @@ bool MosaicWriter::setMap(QTextStream &ts, MapPtr map)
 {
     qDebug().noquote() << map->summary();
 
-    bool verify = map->verifyMap("XMLWriter");
+    bool verify = map->verify();
     if (!verify)
     {
         QMessageBox box;
@@ -1284,11 +1297,9 @@ bool MosaicWriter::setMap(QTextStream &ts, MapPtr map)
         switch (ret)
         {
         case QMessageBox::Yes :
-        {
-            MapCleanser cleanser(map);
-            verify = cleanser.cleanse(default_cleanse);     // always write a good map
-        }
+            verify = map->cleanse(default_cleanse);     // always write a good map
             break;
+
         case QMessageBox::No :
             verify = true;
             break;
@@ -1317,11 +1328,11 @@ bool MosaicWriter::setMap(QTextStream &ts, MapPtr map)
     ts << "<map" << qsid << ">" << endl;
 
     // vertices
-    const QVector<VertexPtr> & vertices = map->vertices;
+    const QVector<VertexPtr> & vertices = map->getVertices();
     setVertices(ts,vertices);
 
     // Edges
-    const QVector<EdgePtr> & edges = map->edges;
+    const QVector<EdgePtr> & edges = map->getEdges();
     setEdges(ts,edges);
 
     ts << "</map>" << endl;

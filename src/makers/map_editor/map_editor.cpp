@@ -26,41 +26,24 @@
 #include "makers/decoration_maker/decoration_maker.h"
 #include "makers/motif_maker/motif_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
+#include "base/border.h"
 #include "base/configuration.h"
 #include "base/mosaic.h"
 #include "base/shortcuts.h"
 #include "geometry/transform.h"
-#include "geometry/map_cleanser.h"
-#include "tapp/design_element.h"
-#include "tapp/prototype.h"
-#include "viewers/placed_designelement_view.h"
-#include "style/style.h"
-#include "viewers/view.h"
 #include "panels/panel.h"
 
-MapEditor *  MapEditor::mpThis = nullptr;     // once initialised the destructor is never called
 MapEditorPtr MapEditor::spThis;
 
 const bool debugMouse = false;
 
 MapEditorPtr MapEditor::getSharedInstance()
 {
-    if (!mpThis)
+    if (!spThis)
     {
         spThis = make_shared<MapEditor>();
-        mpThis = spThis.get();
     }
     return spThis;
-}
-
-MapEditor * MapEditor::getInstance()
-{
-    if (!mpThis)
-    {
-        spThis = make_shared<MapEditor>();
-        mpThis = spThis.get();
-    }
-    return mpThis;
 }
 
 MapEditor::MapEditor() : MapEditorSelection(), stash(this)
@@ -70,7 +53,7 @@ MapEditor::MapEditor() : MapEditorSelection(), stash(this)
     config          = Configuration::getInstance();
     decorationMaker = DecorationMaker::getInstance();
     motifMaker      = MotifMaker::getInstance();
-    tilingMaker     = TilingMaker::getInstance();
+    tilingMaker     = TilingMaker::getSharedInstance();
     view            = View::getInstance();
     cpanel          = ControlPanel::getInstance();
 
@@ -83,7 +66,8 @@ MapEditor::MapEditor() : MapEditorSelection(), stash(this)
     map_mouse_mode  = MAPED_MOUSE_NONE;
     newCircleRadius = 0.25;
 
-    localMap  =  make_shared<Map>(QString("New local map"));
+    // there is always a local map but the local map may be empty
+    localMap  =  make_shared<Map>(QString("Local map"));
 }
 
 void  MapEditor::reload()
@@ -104,14 +88,22 @@ void  MapEditor::reload()
             feap    = delp->getFeature();
         }
         else
+        {
             unload();
+        }
         break;
     }
     case MAPED_MODE_PROTO:
     {
-        prop = motifMaker->getSelectedPrototype();
-        if (!prop)
+        prototype = motifMaker->getSelectedPrototype();
+        if (prototype)
+        {
+            border = prototype->getBorder();
+        }
+        else
+        {
             unload();
+        }
         break;
     }
     case MAPED_MODE_MOSAIC:
@@ -123,13 +115,20 @@ void  MapEditor::reload()
             if (sset.size())
             {
                 styp  = sset.first();
-                prop  = styp->getPrototype();
+                prototype  = styp->getPrototype();
+                border = prototype->getBorder();
             }
             else
+            {
+                qDebug() << "mosaic has no style set";
                 unload();
+            }
         }
         else
+        {
+            qDebug() << "no mosaic";
             unload();
+        }
         break;
     }
 
@@ -138,11 +137,25 @@ void  MapEditor::reload()
 
     case MAPED_MODE_TILING:
         tiling = tilingMaker->getSelected();
+        if (!tiling)
+            qDebug() << "no tiling";
+        break;
+
+    case MAPED_MODE_FILLED_TILING:
+        tiling = tilingMaker->getSelected();
+        if (!tiling)
+            qDebug() << "no tiling";
         break;
 
     case MAPED_MODE_DCEL:
-        dcel = config->dcel;
-        map.reset();
+        if (map)
+        {
+            dcel = map->getDCEL();
+            if (!dcel)
+                qDebug() << "no DCEL";
+        }
+        else
+            qDebug() << "No map so no DCEL: either";
         break;
 
     case MAPED_MODE_NONE:
@@ -160,6 +173,10 @@ void MapEditor::slot_view_synch(int id, int enb)
     if (enb && id == VIEW_MAP_EDITOR)
     {
         reload();
+    }
+    else if (enb && id != VIEW_MAP_EDITOR)
+    {
+        mouse_interaction.reset();
     }
 }
 
@@ -179,17 +196,17 @@ void MapEditor::draw(QPainter *painter )
         break;
 
     case MAPED_MODE_PROTO:
-        if (prop)
+        if (prototype)
         {
-            map = prop->getProtoMap();
+            map = prototype->getProtoMap();
             buildEditorDB();
         }
         break;
 
     case MAPED_MODE_MOSAIC:
-        if (prop)
+        if (prototype)
         {
-            map = prop->getProtoMap();
+            map = prototype->getProtoMap();
             buildEditorDB();
         }
         break;
@@ -200,8 +217,21 @@ void MapEditor::draw(QPainter *painter )
         break;
 
     case MAPED_MODE_TILING:
-        map = createFromTiling();
-        buildEditorDB();
+        map.reset();
+        if (tiling)
+        {
+            map = tiling->createMap();
+            buildEditorDB();
+        }
+        break;
+
+    case MAPED_MODE_FILLED_TILING:
+        map.reset();
+        if (tiling)
+        {
+            map = tiling->createFilledMap();
+            buildEditorDB();
+        }
         break;
 
     case MAPED_MODE_DCEL:
@@ -216,11 +246,14 @@ void MapEditor::draw(QPainter *painter )
     drawConstructionLines(painter);
     drawConstructionCircles(painter);
 
-    drawMap(painter);
-
-    drawPoints(painter,points);
+    if (mode != MAPED_MODE_DCEL)
+    {
+        drawMap(painter);
+    }
 
     drawCropMap(painter);
+
+    drawPoints(painter,points);
 
     for (auto sel : currentSelections)
     {
@@ -277,21 +310,68 @@ void MapEditor::draw(QPainter *painter )
 void MapEditor::setMouseMode(eMapMouseMode mode)
 {
     map_mouse_mode = mode;
-    forceRedraw();
-}
 
-MapPtr MapEditor::createFromTiling()
-{
-    MapPtr map = make_shared<Map>("tiling map");
-    const QVector<PlacedFeaturePtr> & qlpf = tiling->getPlacedFeatures();
-    for (auto pfp : qlpf)
+    mouse_interaction.reset();      // only needed by border edit
+
+    switch (mode)
     {
-        EdgePoly poly = pfp->getPlacedEdgePoly();
-        MapPtr emap = make_shared<Map>("feature",poly);
-        map->mergeMap(emap);
+    case MAPED_MOUSE_CREATE_CROP:
+        cropRect = make_shared<Crop>();
+        break;
+
+    case MAPED_MOUSE_CREATE_BORDER:
+    {
+        bool finished = false;
+        MosaicPtr mosaic = decorationMaker->getMosaic();
+        if (mosaic)
+        {
+            BorderPtr bp = mosaic->getBorder();
+            if (!bp)
+            {
+                bp = make_shared<InnerBorder>();
+                mosaic->setBorder(bp);
+            }
+            InnerBorder * ib = dynamic_cast<InnerBorder*>(bp.get());
+            if (ib)
+            {
+                cropRect = ib->getInnerBoundary();
+                finished = true;
+            }
+        }
+        if (!finished)
+        {
+            cropRect.reset();
+        }
+        mosaic->resetPrototypeMaps();
+    }
+        break;
+
+    case MAPED_MOUSE_EDIT_BORDER:
+    {
+        MosaicPtr mosaic = decorationMaker->getMosaic();
+        if (mosaic)
+        {
+            BorderPtr bp = mosaic->getBorder();
+            if (!bp)
+            {
+                bp = make_shared<InnerBorder>();
+                mosaic->setBorder(bp);
+            }
+            InnerBorder * ib = dynamic_cast<InnerBorder*>(bp.get());
+            if (ib)
+            {
+                cropRect = ib->getInnerBoundary();
+            }
+            mosaic->resetPrototypeMaps();
+        }
+    }
+        break;
+
+    default:
+        break;
     }
 
-    return map;
+    forceRedraw();
 }
 
 eMapMouseMode MapEditor::getMouseMode()
@@ -378,7 +458,7 @@ void MapEditor::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
             if (sel->getType() == MAP_EDGE)
             {
                 map->removeEdge(sel->getEdge());
-                map->verifyMap("delete edge");
+                map->verify();
                 break;
             }
             else if (sel->getType() == MAP_LINE && sel->isConstructionLine())
@@ -408,7 +488,7 @@ void MapEditor::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
         {
             auto sel = *it;
             map->splitEdge(sel->getEdge());
-            map->verifyMap("split edge");
+            map->verify();
         }
         buildEditorDB();
         forceRedraw();
@@ -469,10 +549,19 @@ void MapEditor::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
         break;
 
     case MAPED_MOUSE_CREATE_CROP:
-    {
+        cropRect->setState(CROP_NONE);
         mouse_interaction = std::make_shared<CreateCrop>(this,mousePos);
         break;
-    }
+
+    case MAPED_MOUSE_CREATE_BORDER:
+        mouse_interaction = std::make_shared<CreateBorder>(this,mousePos);
+        mouse_interaction->updateDragging(spt);
+        break;
+
+    case MAPED_MOUSE_EDIT_BORDER:
+        mouse_interaction = std::make_shared<EditBorder>(this,mousePos);
+        mouse_interaction->updateDragging(spt);
+        break;
     }
 
     if (mouse_interaction)
@@ -516,7 +605,10 @@ void MapEditor::slot_mouseReleased(QPointF spt)
     if (mouse_interaction)
     {
         mouse_interaction->endDragging(mousePos);
-        mouse_interaction.reset();
+        if (map_mouse_mode != MAPED_MOUSE_EDIT_BORDER && map_mouse_mode != MAPED_MOUSE_CREATE_BORDER)
+        {
+            mouse_interaction.reset();
+        }
     }
 }
 
@@ -630,15 +722,89 @@ bool MapEditor::initStashFrom(QString name)
 
 void  MapEditor::applyCrop()
 {
-    qDebug() << "apply crop";
-
-    if (!cropRect.isEmpty())
+    if (cropRect)
     {
-        map->crop(cropRect);
-        buildEditorDB();
-        cropRect = QRectF();    // reset
+        if (cropRect->getState() == CROP_BORDER_PREPARED)
+        {
+            qDebug() << "apply crop to border";
+            map->addCropBorder(cropRect->getRect());
+            cropRect->setState(CROP_APPLIED);
+            setMouseMode(MAPED_MOUSE_NONE);
+            buildEditorDB();
+            forceRedraw();
+        }
+        else
+        {
+            qDebug() << "apply only supported on borders";
+        }
+    }
+}
+
+void  MapEditor::applyMask()
+{
+    qDebug() << "apply mask";
+
+    if (cropRect)
+    {
+        switch(cropRect->getState())
+        {
+            case CROP_APPLIED:
+            case CROP_DEFINED:
+            case CROP_PREPARED:
+            case CROP_BORDER_DEFINED:
+            case CROP_BORDER_PREPARED:
+                map->removeOutisde(cropRect->getRect());
+                cropRect->setState(CROP_MASKED);
+                buildEditorDB();
+                break;
+
+            default:
+                break;
+        }
+
+        setMouseMode(MAPED_MOUSE_NONE);
         forceRedraw();
     }
+}
+
+// called by CreateBorder destructor
+void MapEditor::completeBorder()
+{
+    MosaicPtr mosaic = decorationMaker->getMosaic();
+    if (mosaic)
+    {
+        mosaic->resetPrototypeMaps();
+    }
+    if (cropRect && cropRect->getState() != CROP_NONE)
+    {
+        cropRect->setState(CROP_COMPLETE);
+    }
+    redisplayCurrentMap();
+}
+
+// called by CreateBorder::endDragging()
+void  MapEditor::redisplayCurrentMap()
+{
+    emit view->sig_refreshView();
+
+    buildEditorDB();
+    forceRedraw();
+}
+
+void MapEditor::clearAllMaps()
+{
+    view->dump(true);
+    localMap->wipeout();
+    view->dump(true);
+    if (map)
+    {
+        map->wipeout();
+        view->dump(true);
+    }
+    cropRect.reset();
+
+    buildEditorDB();
+    forceRedraw();
 }
 
 //////////////////////////////////////////////////////////////////
@@ -672,7 +838,7 @@ bool MapEditor::procKeyEvent(QKeyEvent * k)
         break;
     }
 
-    // modes
+        // modes
     case Qt::Key_Escape: setMouseMode(MAPED_MOUSE_NONE);  return false; // propagate
     case Qt::Key_F3:     setMouseMode(MAPED_MOUSE_DRAW_LINE); break;
     case Qt::Key_F4:     setMouseMode(MAPED_MOUSE_CONSTRUCTION_LINES); break;

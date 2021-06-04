@@ -25,7 +25,6 @@
 #include "style/interlace.h"
 #include "geometry/map.h"
 #include "geometry/point.h"
-#include "geometry/map_cleanser.h"
 #include "style/outline.h"
 #include <QPainter>
 
@@ -77,7 +76,8 @@ Interlace:: ~Interlace()
 #ifdef EXPLICIT_DESTRUCTOR
     qDebug() << "deleting interlace";
     pts.clear();
-    shadows.clear();
+    todo.clear();
+    threads.clear();
 #endif
 }
 
@@ -111,7 +111,7 @@ void Interlace::createStyleRepresentation()
     // use the beefy getPoints routine to extract the graphics
     // of the interlacing.
 
-    for (auto edge  : map->edges)
+    for (auto edge  : map->getEdges())
     {
         segment seg;
         if (colors.size() > 1)
@@ -130,13 +130,15 @@ void Interlace::createStyleRepresentation()
 
     annotateEdges(map);
 
-    map->verifyMap("interlace");
+    map->verify();
 }
 
 // Private magic to make it all happen.
 
 void Interlace::getPoints(EdgePtr  edge, VertexPtr from, VertexPtr to, piece * p)
 {
+    MapPtr map = getMap();
+
     bool from_under = (edge->v1 == from ) == edge->start_under;  // methinks ugly code
 
     QPointF pfrom = from->pt;
@@ -148,9 +150,10 @@ void Interlace::getPoints(EdgePtr  edge, VertexPtr from, VertexPtr to, piece * p
     //  - interlace over
     //  - interlace under
 
-    int nn = to->numNeighbours();
+    NeighboursPtr nto = map->getBuiltNeighbours(to);
 
-    if( nn == 1 )
+    int nn = nto->numNeighbours();
+    if (nn == 1)
     {
         // cap
         QPointF dir = pto - pfrom;
@@ -164,10 +167,10 @@ void Interlace::getPoints(EdgePtr  edge, VertexPtr from, VertexPtr to, piece * p
         p->above  = pto + perp;
         p->above += dir;
     }
-    else if( nn == 2 )
+    else if (nn == 2)
     {
         // bend
-        BelowAndAbove jps = Outline::getPoints(edge, from, to, width);
+        BelowAndAbove jps = Outline::getPoints(map, edge, from, to, width);
         p->below = jps.below;
         p->cen   = pto;
         p->above = jps.above;
@@ -180,9 +183,11 @@ void Interlace::getPoints(EdgePtr  edge, VertexPtr from, VertexPtr to, piece * p
             QVector<EdgePtr> ns;
             int index    = 0;
             int edge_idx = -1;
-
-            for (auto& nedge : qAsConst(to->getNeighbours()))
+            std::vector<WeakEdgePtr> * wedges = dynamic_cast<std::vector<WeakEdgePtr>*>(nto.get());
+            for (auto pos = wedges->begin(); pos != wedges->end(); pos++)
             {
+                WeakEdgePtr wedge = *pos;
+                EdgePtr nedge = wedge.lock();
                 ns << nedge;
                 if (nedge == edge)
                 {
@@ -217,7 +222,7 @@ void Interlace::getPoints(EdgePtr  edge, VertexPtr from, VertexPtr to, piece * p
             // now does a reasonable job on well-behaved maps
             // and doesn't dump core on badly-behaved ones.
 
-            BeforeAndAfter ba = to->getBeforeAndAfter(edge);
+            BeforeAndAfter ba = nto->getBeforeAndAfter(edge);
             QPointF before_pt = ba.before->getOtherP(to);
             QPointF after_pt  = ba.after->getOtherP(to);
 
@@ -267,13 +272,13 @@ void Interlace::getPoints(EdgePtr  edge, VertexPtr from, VertexPtr to, piece * p
 void Interlace::initializeMap()
 {
     MapPtr map = getMap();
-    for (auto edge : map->edges)
+    for (auto edge : map->getEdges())
     {
         edge->visited     = false;
         edge->start_under = false;
     }
 
-    for (auto vert : map->vertices)
+    for (auto vert : map->getVertices())
     {
         vert->visited = false;
     }
@@ -287,7 +292,7 @@ void Interlace::assignInterlacing()
     todo.clear();
 
     MapPtr map = getMap();
-    for(auto edge : map->edges)
+    for(auto edge : map->getEdges())
     {
         if (!edge->visited )
         {
@@ -333,11 +338,14 @@ void Interlace::propagate(VertexPtr vertex, EdgePtr edge, bool edge_under_at_ver
 {
     vertex->visited = true;
 
-    int nn = vertex->numNeighbours();
+    MapPtr map = getMap();
 
+    NeighboursPtr n = map->getBuiltNeighbours(vertex);
+
+    int nn = n->numNeighbours();
     if (nn == 2)
     {
-        BeforeAndAfter  ba  = vertex->getBeforeAndAfter(edge);
+        BeforeAndAfter  ba  = n->getBeforeAndAfter(edge);
         EdgePtr oe          = ba.before;
 
         if( !oe->visited )
@@ -360,7 +368,7 @@ void Interlace::propagate(VertexPtr vertex, EdgePtr edge, bool edge_under_at_ver
     }
     else if (nn == 1 && includeTipVertices)
     {
-        EdgePtr oe = vertex->getNeighbour(0);
+        EdgePtr oe = n->getNeighbour(0);
 
         if( !oe->visited )
         {
@@ -386,9 +394,11 @@ void Interlace::propagate(VertexPtr vertex, EdgePtr edge, bool edge_under_at_ver
         QVector<EdgePtr> ns;
         int index = 0;
         int edge_idx = -1;
-
-        for (auto& edge2 : qAsConst(vertex->getNeighbours()))
+        std::vector<WeakEdgePtr> * wedges = dynamic_cast<std::vector<WeakEdgePtr>*>(n.get());
+        for (auto pos = wedges->begin(); pos != wedges->end(); pos++)
         {
+            WeakEdgePtr wedge = *pos;
+            EdgePtr edge2 = wedge.lock();
             ns << edge2;
             if (edge2 == edge)
             {

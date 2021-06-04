@@ -47,7 +47,10 @@
 class TilingView : public FillRegion, public Layer
 {
 public:
-    TilingView(TilingPtr tiling);
+    static TilingViewPtr getSharedInstance();
+    TilingView();   // dont_use this
+
+    void    setTiling(TilingPtr tiling) { this->tiling = tiling; }
 
     void    paint(QPainter *painter) override;
     void    draw(GeoGraphics * g2d);
@@ -57,6 +60,9 @@ protected:
     void drawPlacedFeature(GeoGraphics * g2d, PlacedFeaturePtr pf);
 
 private:
+
+    static TilingViewPtr spThis;
+
     TilingPtr           tiling;
 };
 

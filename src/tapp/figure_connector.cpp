@@ -26,7 +26,6 @@
 #include "tapp/radial_figure.h"
 #include "geometry/intersect.h"
 #include "geometry/loose.h"
-#include "geometry/map_cleanser.h"
 
 FigureConnector::FigureConnector(RadialFigure * rp)
 {
@@ -45,7 +44,7 @@ void FigureConnector::connectFigure(MapPtr unitMap)
     QPointF tip_pos(1.0,0.0);
 
     // Find the tip, i.e. the vertex at (1,0)
-    for (const auto & vert : unitMap->vertices)
+    for (const auto & vert : unitMap->getVertices())
     {
         QPointF pos = vert->pt;
         qDebug() << "test" << pos << tip_pos;
@@ -78,10 +77,12 @@ void FigureConnector::connectFigure(MapPtr unitMap)
 
     QPointF pos = tip->pt;
 
-    const QVector<EdgePtr> & qvep = tip->getNeighbours();
-
-    for (const auto & edge : qvep)
+    NeighboursPtr ntip = unitMap->getBuiltNeighbours(tip);
+    std::vector<WeakEdgePtr> * wedges = dynamic_cast<std::vector<WeakEdgePtr>*>(ntip.get());
+    for (auto it = wedges->begin(); it != wedges->end(); it++)
     {
+        WeakEdgePtr wedge = *it;
+        EdgePtr edge = wedge.lock();
         VertexPtr ov = edge->getOtherV(pos);
         if (ov->pt.y() < 0.0)
         {
@@ -159,7 +160,9 @@ void FigureConnector::connectFigure(MapPtr unitMap)
     // rotate the unit
     unitMap->rotate(rp->getFigureRotate());
 
-    unitMap->verifyMap("RosetteConnectFigure");
+    unitMap->buildNeighbours();
+
+    unitMap->verify();
 }
 
 qreal FigureConnector::computeScale(MapPtr cunit)
@@ -171,14 +174,17 @@ qreal FigureConnector::computeScale(MapPtr cunit)
     QPointF tip_pos( 1.0, 0.0 );
 
     // Find the tip, i.e. the vertex at (1,0)
-    for (const auto & vert : cunit->vertices)
+    for (const auto & vert : cunit->getVertices())
     {
         QPointF pos = vert->pt;
         if (Loose::equalsPt(pos, tip_pos))
         {
-            const QVector<EdgePtr> & qvep = vert->getNeighbours();
-            for (const auto &edge : qvep)
+            NeighboursPtr n = cunit->getBuiltNeighbours(vert);
+            std::vector<WeakEdgePtr> * wedges = dynamic_cast<std::vector<WeakEdgePtr>*>(n.get());
+            for (auto it = wedges->begin(); it != wedges->end(); it++)
             {
+                WeakEdgePtr wedge = *it;
+                EdgePtr edge = wedge.lock();
                 VertexPtr ov = edge->getOtherV(pos);
                 if( ov->pt.y() < 0.0 )
                 {
@@ -236,7 +242,7 @@ void FigureConnector::rotateHalf( MapPtr cunit )
 
     QTransform Tp = QTransform().rotateRadians(-2.0 * M_PI * rp->get_don());
 
-    for (const auto &vert : cunit->vertices)
+    for (const auto &vert : cunit->getVertices())
     {
         if( (vert->pt.y() + Loose::TOL) > 0.0 )
         {
@@ -254,7 +260,7 @@ void FigureConnector::rotateHalf( MapPtr cunit )
 
     QVector<EdgePtr> eadds;
 
-    for (auto edge : cunit->edges)
+    for (auto edge : cunit->getEdges())
     {
         if (   movers.contains(edge->v1)
             && movers.contains(edge->v2))
@@ -280,7 +286,7 @@ void FigureConnector::rotateHalf( MapPtr cunit )
         ++i;
     }
 
-    cunit->verifyMap("rotateHalf end");
+    cunit->verify();
 }
 
 void FigureConnector::scaleToUnit(MapPtr cunit )
@@ -288,7 +294,7 @@ void FigureConnector::scaleToUnit(MapPtr cunit )
     VertexPtr vmax = nullptr;
     qreal xmax = 0.0;
 
-    for (const auto &vert : cunit->vertices)
+    for (const auto &vert : cunit->getVertices())
     {
         if( vmax == nullptr )
         {

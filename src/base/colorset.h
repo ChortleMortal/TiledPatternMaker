@@ -58,6 +58,7 @@ public:
     bool          isHidden(int idx);
 
     void          resetIndex();
+    void          clear() { colorgroup.clear(); }
 
     int           size() { return colorgroup.size(); }
     void          resize(int num) { colorgroup.resize(num); }

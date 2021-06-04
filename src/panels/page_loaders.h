@@ -41,6 +41,8 @@ public:
     void onEnter() override;
     void onExit() override {}
 
+    static int  whereTilingUsed(QString name, QStringList & results);
+
 signals:
     void    sig_loadTiling(QString,eSM_Event);
     void    sig_loadMosaic(QString);
@@ -103,7 +105,6 @@ protected:
     void    setupUI();
     void    refreshPanel();
     void    makeConnections();
-    int     whereTilingUsed(QString name, QStringList & results);
     void    putNewTilingNameIntoDesign(QStringList & designs, QString newName);
     bool    putNewTilingNameIntoTiling(QString filename, QString newName);
 

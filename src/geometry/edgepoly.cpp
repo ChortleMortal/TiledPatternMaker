@@ -3,7 +3,7 @@
 #include "geometry/edgepoly.h"
 #include "geometry/transform.h"
 #include "base/utilities.h"
-#include "viewers/geo_graphics.h"
+#include "base/geo_graphics.h"
 
 EdgePoly::EdgePoly()
 {
@@ -373,6 +373,6 @@ void EdgePoly::dump() const
     qDebug() << "EdgePoly::dump()" << ((isClockwise()) ? "Clockwise" : "Anticlockwise");
     for (auto edge : *this)
     {
-        edge->dump();
+        qDebug() << edge->dump();
     }
 }

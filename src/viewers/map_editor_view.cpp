@@ -23,6 +23,7 @@
  */
 
 #include "viewers/map_editor_view.h"
+#include "base/border.h"
 #include "base/utilities.h"
 #include "viewers/view.h"
 #include "geometry/map.h"
@@ -88,7 +89,7 @@ void MapEditorView::drawMap(QPainter * painter)
         return;
 
     painter->setPen(QPen(Qt::green,mapLineWidth ));
-    for (auto edge : map->edges)
+    for (auto edge : map->getEdges())
     {
         QPointF v1 = edge->v1->pt;
         QPointF v2 = edge->v2->pt;
@@ -117,15 +118,13 @@ void MapEditorView::drawDCEL(QPainter * painter)
     if (hideMap)
         return;
 
-    DCELPtr dp = dcel.lock();
-    if (!dp)
+    if (!dcel)
         return;
 
     painter->setPen(QPen(Qt::green,mapLineWidth ));
 
-    for (auto hedge : qAsConst(dp->edges))
+    for (auto edge : qAsConst(dcel->getEdges()))
     {
-        EdgePtr edge = hedge->edge;
         QPointF v1 = edge->v1->pt;
         QPointF v2 = edge->v2->pt;
         if (edge->getType() == EDGETYPE_LINE)
@@ -153,25 +152,41 @@ void MapEditorView::drawCropMap(QPainter * painter)
     if (hideMap)
         return;
 
-    if (cropRect.isEmpty())
-        return;
+    if (cropRect)
+    {
+        switch(cropRect->getState())
+        {
+        case CROP_NONE:
+        case CROP_APPLIED:
+        case CROP_MASKED:
+        case CROP_CONSTRUCTING:
+        case CROP_EDITING:
+        case CROP_COMPLETE:
+            break;
 
-    painter->setPen(QPen(Qt::red,mapLineWidth ));
-    painter->setBrush(Qt::NoBrush);
+        case CROP_PREPARED:
+        case CROP_BORDER_PREPARED:
+        case CROP_DEFINED:
+        case CROP_BORDER_DEFINED:
+        {
+            painter->setPen(QPen(Qt::red,mapLineWidth ));
+            painter->setBrush(Qt::NoBrush);
 
-    QRectF rect = viewT.mapRect(cropRect);
-    painter->drawRect(rect);
+            QRectF rect = viewT.mapRect(cropRect->getRect());
+            painter->drawRect(rect);
+        }
+            break;
+        }
+    }
 }
-
 
 void MapEditorView::drawFeature(QPainter * painter)
 {
     QPolygonF pts = feap->getPoints();
 
-    painter->setPen(QPen(Qt::magenta,1));
-    painter->drawPolygon(viewT.map(pts)); // not filled
-
-}
+        painter->setPen(QPen(Qt::magenta,1));
+        painter->drawPolygon(viewT.map(pts)); // not filled
+       }
 
 void MapEditorView::drawBoundaries(QPainter *painter)
 {
@@ -293,13 +308,16 @@ void MapEditorView::drawConstructionCircles(QPainter * painter)
 void MapEditorView::unload()
 {
     styp.reset();
-    prop.reset();
+    prototype.reset();
     delp.reset();
     tiling.reset();
     figp.reset();
     feap.reset();
     map.reset();
+    dcel.reset();
+    border.reset();
 
     constructionLines.clear();
     constructionCircles.clear();
+    cropRect.reset();
 }

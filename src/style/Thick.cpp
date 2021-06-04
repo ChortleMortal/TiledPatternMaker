@@ -65,7 +65,7 @@ Thick::~Thick()
 {
 #ifdef EXPLICIT_DESTRUCTOR
     qDebug() << "deleting thick";
-    dpts2.clear();
+    colors.clear();
 #endif
 }
 
@@ -119,14 +119,14 @@ void Thick::draw(GeoGraphics * gg )
     if ( draw_outline )
     {
         QPen pen(Qt::black);
-        for (auto& edge : map->edges)
+        for (auto& edge : map->getEdges())
         {
             gg->drawThickEdge(edge,width * 2 + 0.05, pen);
         }
     }
 
     QPen pen(colors.getNextColor().color);
-    for (auto& edge : map->edges)
+    for (auto& edge : map->getEdges())
     {
         gg->drawThickEdge(edge, width * 2, pen);
     }

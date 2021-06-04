@@ -27,16 +27,17 @@
 
 #include "base/shared.h"
 #include "base/layer.h"
-#include "viewers/geo_graphics.h"
+#include "base/geo_graphics.h"
 #include "tapp/infer.h"
 
 class FigureView : public Layer
 {
 public:
+    static FigureViewPtr getSharedInstance();
     FigureView();
     virtual ~FigureView() override;
 
-    virtual void   paint(QPainter *painter) override;
+    virtual void paint(QPainter *painter) override;
 
     void    setDebugContacts(bool enb, QPolygonF pts, QVector<contact*> contacts);
 
@@ -48,6 +49,8 @@ protected:
     void paintExtendedBoundary(QPainter *painter);
 
 private:
+    static FigureViewPtr spThis;
+
     void paintMap(QPainter * painter, MapPtr map, QPen pen);
 
     class MotifMaker * motifMaker;

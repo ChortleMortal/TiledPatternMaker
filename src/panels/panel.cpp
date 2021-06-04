@@ -23,26 +23,26 @@
  */
 
 #include "panels/panel.h"
-#include "panels/page_decoration_maker.h"
-#include "panels/page_layers.h"
-#include "panels/page_tiling_maker.h"
-#include "panels/page_style_figure_info.h"
-#include "panels/page_design_elements.h"
-#include "panels/page_prototype_info.h"
-#include "panels/page_debug.h"
-#include "panels/page_image_tools.h"
-#include "panels/page_config.h"
-#include "panels/page_log.h"
-#include "panels/page_save.h"
-#include "panels/page_motif_maker.h"
-#include "panels/page_system_info.h"
-#include "panels/page_modelSettings.h"
-#include "panels/page_loaders.h"
-#include "panels/page_map_editor.h"
-#include "panels/view_panel.h"
-#include "designs/design.h"
 #include "base/tiledpatternmaker.h"
 #include "base/version.h"
+#include "designs/design.h"
+#include "panels/page_borders.h"
+#include "panels/page_config.h"
+#include "panels/page_debug.h"
+#include "panels/page_decoration_maker.h"
+#include "panels/page_image_tools.h"
+#include "panels/page_layers.h"
+#include "panels/page_loaders.h"
+#include "panels/page_log.h"
+#include "panels/page_map_editor.h"
+#include "panels/page_modelSettings.h"
+#include "panels/page_motif_maker.h"
+#include "panels/page_prototype_info.h"
+#include "panels/page_save.h"
+#include "panels/page_style_figure_info.h"
+#include "panels/page_system_info.h"
+#include "panels/page_tiling_maker.h"
+#include "panels/view_panel.h"
 #include "viewers/view.h"
 #include "viewers/viewcontrol.h"
 
@@ -188,6 +188,11 @@ void ControlPanel::closePages()
     }
 }
 
+void ControlPanel::setCurrentPage(QString name)
+{
+    panelPageList->setCurrentRow(name);
+}
+
 void ControlPanel::setupGUI()
 {
     // top row
@@ -211,8 +216,8 @@ void ControlPanel::setupGUI()
     if (config->insightMode)
     {
         QPushButton * pbLogEvent      = new QPushButton("Log Event");
-        QPushButton * pbUpdateView    = new QPushButton("Update View");
-        QPushButton * pbRefreshView   = new QPushButton("Refresh Current View");
+        QPushButton * pbUpdateView    = new QPushButton("Repaint View");
+        QPushButton * pbRefreshView   = new QPushButton("Recreate View");
 
         hlayout->addWidget(pbLogEvent);
         hlayout->addStretch();
@@ -390,6 +395,11 @@ void ControlPanel::populatePages()
     panelPages->addWidget(wp);
     panelPageList->addItem(wp->getName());
 
+    wp = new page_borders(this);
+    mPages.push_back(wp);
+    panelPages->addWidget(wp);
+    panelPageList->addItem(wp->getName());
+
     wp = new page_modelSettings(this);
     mPages.push_back(wp);
     panelPages->addWidget(wp);
@@ -408,11 +418,6 @@ void ControlPanel::populatePages()
         panelPageList->addSeparator();
 
         wp = new page_layers(this);
-        mPages.push_back(wp);
-        panelPages->addWidget(wp);
-        panelPageList->addItem(wp->getName());
-
-        wp = new page_design_elements(this);
         mPages.push_back(wp);
         panelPages->addWidget(wp);
         panelPageList->addItem(wp->getName());
@@ -766,13 +771,6 @@ void ControlPanel::delegateView()
             return;
         }
 
-        page_design_elements * pdes = dynamic_cast<page_design_elements*>(currentPage);
-        if (pdes)
-        {
-            selectViewer(VIEW_DESIGN_ELEMENT);
-            return;
-        }
-
         page_prototype_info * ppi = dynamic_cast<page_prototype_info*>(currentPage);
         if (ppi)
         {
@@ -917,7 +915,6 @@ QGroupBox *  ControlPanel::createViewersBox()
 
     cbMosaicView         = new QCheckBox("Mosaic");
     cbPrototypeView      = new QCheckBox("Prototype");
-    cbDELView            = new QCheckBox("Design Elements");
     cbMapEditor          = new QCheckBox("Map Editor");
     cbProtoMaker         = new QCheckBox("Motif Maker");
     cbTilingView         = new QCheckBox("Tiling");
@@ -932,7 +929,6 @@ QGroupBox *  ControlPanel::createViewersBox()
 
     avbox->addWidget(cbMosaicView);
     avbox->addWidget(cbPrototypeView);
-    avbox->addWidget(cbDELView);
     if (config->insightMode)
     {
         avbox->addWidget(cbMapEditor);
@@ -953,7 +949,6 @@ QGroupBox *  ControlPanel::createViewersBox()
     viewerGroup.addButton(cbPrototypeView,VIEW_PROTOTYPE);
     viewerGroup.addButton(cbTilingView,VIEW_TILING);
     viewerGroup.addButton(cbProtoMaker,VIEW_MOTIF_MAKER);
-    viewerGroup.addButton(cbDELView,VIEW_DESIGN_ELEMENT);
     viewerGroup.addButton(cbTilingMakerView,VIEW_TILING_MAKER);
     if (config->insightMode)
     {
@@ -965,7 +960,6 @@ QGroupBox *  ControlPanel::createViewersBox()
 #else
     connect(&viewerGroup,   &QButtonGroup::idToggled,      this, &ControlPanel::slot_Viewer_pressed);
 #endif
-    connect(this, &ControlPanel::sig_view_synch,  this, &ControlPanel::slot_view_synch);
     connect(cbLockView,     &QCheckBox::clicked,  this, &ControlPanel::slot_lockViewClicked);
     connect(cbMultiSelect,  &QCheckBox::clicked,  this, &ControlPanel::slot_multiSelect);
     connect(theApp,         &TiledPatternMaker::sig_lockStatus, this,&ControlPanel::slot_lockStatusChanged);

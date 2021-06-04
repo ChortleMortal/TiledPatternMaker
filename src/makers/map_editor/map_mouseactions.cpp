@@ -2,7 +2,6 @@
 #include "makers/map_editor/map_editor.h"
 #include "geometry/vertex.h"
 #include "geometry/map.h"
-#include "geometry/map_cleanser.h"
 #include "geometry/point.h"
 #include "geometry/transform.h"
 #include "geometry/intersect.h"
@@ -72,18 +71,20 @@ void MoveVertex::endDragging( QPointF spt)
 {
     MapPtr map  = me->map;
 
-    bool edited = false;
-
     // if new vertex is over an old vertex, delete this vertex, and
     // replace old vertex in edges
     MapSelectionPtr  sel = me->findVertex(spt,_vp);
-    SelectionSet     set = me->findEdges(spt,_vp->getNeighbours());
+    NeighboursPtr      n = map->getBuiltNeighbours(_vp);
+    SelectionSet     set = me->findEdges(spt,n);
     MapSelectionPtr sel2 = me->findAnEdge(set);
     if (sel)
     {
         VertexPtr existing = sel->getVertex();
-        for (auto ep : qAsConst(_vp->getNeighbours()))
+        std::vector<WeakEdgePtr> * wedges = dynamic_cast<std::vector<WeakEdgePtr>*>(n.get());
+        for (auto pos = wedges->begin(); pos != wedges->end(); pos++)
         {
+            WeakEdgePtr wedge = *pos;
+            EdgePtr ep = wedge.lock();
             Q_ASSERT(map->contains(ep));
             if (ep->v1 == _vp)
             {
@@ -94,11 +95,9 @@ void MoveVertex::endDragging( QPointF spt)
                 Q_ASSERT(ep->v2 == _vp);
                 ep->setV2(existing);    // substitue
             }
-            existing->insertNeighbour(ep);        // connect
         }
         map->removeVertexSimple(_vp);   // delete
         qDebug() << "SNAPTO vertex";
-        edited = true;
     }
     else if (sel2)
     {
@@ -109,7 +108,6 @@ void MoveVertex::endDragging( QPointF spt)
             QPointF pt = Utils::snapTo(spt,line);
             _vp->setPosition(me->viewTinv.map(pt));
             qDebug() << "SNAPTO edge";
-            edited = true;
         }
     }
     else
@@ -121,7 +119,6 @@ void MoveVertex::endDragging( QPointF spt)
         {
             qDebug() << "end is point";
             _vp->setPosition(endsel->getPoint());
-            edited = true;
         }
         else
         {
@@ -130,7 +127,6 @@ void MoveVertex::endDragging( QPointF spt)
             {
                 qDebug() << "end is on line"  << sMapSelection[endsel->getType()];
                 _vp->setPosition(endsel->getPointNear(endsel,me->viewTinv.map(spt)));
-                edited = true;
             }
             else
             {
@@ -140,18 +136,12 @@ void MoveVertex::endDragging( QPointF spt)
         }
     }
 
-    if (edited)
-    {
-
-        // tidy up
-        MapCleanser cleanser(map);
-        cleanser.cleanse(joinupColinearEdges | divideupIntersectingEdges,false);   // deal with lines crossing existing lines
-
-        map->sortVertices();
-        map->sortEdges();
-        map->buildNeighbours();
-        map->verifyMap("modifed fig map");
-    }
+	// tidy up
+    map->cleanse(joinupColinearEdges | divideupIntersectingEdges,false);   // deal with lines crossing existing lines
+    map->sortVertices();
+    map->sortEdges();
+    map->buildNeighbours();
+    map->verify();
 
     MapMouseAction::endDragging(spt);
     me->buildEditorDB();
@@ -195,9 +185,7 @@ void MoveEdge::endDragging(QPointF spt)
 {
     MapPtr map = me->map;
 
-    MapCleanser cleanser(map);
-    cleanser.cleanse(divideupIntersectingEdges,false);     // deal with lines crossing existing lines
-
+    map->cleanse(divideupIntersectingEdges,false);     // deal with lines crossing existing lines
     map->sortVertices();
     map->sortEdges();
     map->buildNeighbours();
@@ -298,24 +286,24 @@ void DrawLine::endDragging( QPointF spt)
     }
 
     MapPtr map = me->map;
-
-    if (end && (*start != *end))
+    if (map)
     {
-        if (!startv)
+        if (end && (*start != *end))
         {
-            startv = map->insertVertex(*start);
+            if (!startv)
+            {
+                startv = map->insertVertex(*start);
+            }
+            if (!endv)
+            {
+                endv = map->insertVertex(*end);
+            }
+            map->insertEdge(startv,endv);
         }
-        if (!endv)
-        {
-            endv = map->insertVertex(*end);
-        }
-        map->insertEdge(startv,endv);
+
+        // deal with new line crossing existing lines
+        map->cleanse(divideupIntersectingEdges,false);     // deal with lines crossing existing lines
     }
-
-    // deal with new line crossing existing lines
-    MapCleanser cleanser(map);
-    cleanser.cleanse(divideupIntersectingEdges,false);     // deal with lines crossing existing lines
-
     MapMouseAction::endDragging(spt);
     me->buildEditorDB();
 }
@@ -505,12 +493,11 @@ void ExtendLine::endDragging( QPointF spt)
     if (startEdge)
     {
         MapPtr map = me->map;
-        // extending an edge
-        VertexPtr v2 = startEdge->v2;
-        v2->setPosition(currentLine.p2());
+            // extending an edge
+            VertexPtr v2 = startEdge->v2;
+            v2->setPosition(currentLine.p2());
 
-        MapCleanser cleanser(map);
-        cleanser.cleanse(divideupIntersectingEdges,false);     // deal with lines crossing existing lines
+            map->cleanse(divideupIntersectingEdges,false);     // deal with lines crossing existing lines
     }
     else
     {
@@ -623,12 +610,18 @@ CreateCrop::CreateCrop(MapEditor * maped, QPointF spt) : MapMouseAction(maped,sp
 {
     start = nullptr;
     end   = nullptr;
-    desc = "DrawLine";
+    desc = "CreateCrop";
 
-    me->cropRect = QRectF();
-    Q_ASSERT(me->cropRect.isEmpty());
-
-    start = new QPointF(me->viewTinv.map(spt));
+    SelectionSet set     = me->findSelectionsUsingDB(spt);
+    MapSelectionPtr msel = me->findAPoint(set);
+    if (msel)
+    {
+        start = new QPointF(msel->getPoint());
+    }
+    else
+    {
+        start = new QPointF(me->viewTinv.map(spt));
+    }
 }
 
 CreateCrop::~CreateCrop()
@@ -648,29 +641,223 @@ void CreateCrop::updateDragging(QPointF spt)
 
     if (start && end)
     {
-        crop = QRectF(*start,*end);
+        if (me->cropRect)
+        {
+            QRectF rect = QRectF(*start,*end);
+            qDebug() << "updating rect" << rect;
+            me->cropRect->setRect(rect,CROP_CONSTRUCTING);
+        }
     }
 }
 
 void CreateCrop::endDragging( QPointF spt)
 {
-    updateDragging(spt);
+    QPointF endend       = me->viewTinv.map(spt);
+    SelectionSet set     = me->findSelectionsUsingDB(spt);
+    MapSelectionPtr msel = me->findAPoint(set);
+    if (msel)
+    {
+        endend = msel->getPoint();
+    }
 
-    me->cropRect = crop;
-
-    MapMouseAction::endDragging(spt);
-
-    me->setMouseMode(MAPED_MOUSE_NONE);
+    if (start && end)
+    {
+        if (me->cropRect)
+        {
+            QRectF rect = QRectF(*start,endend);
+            me->cropRect->setRect(rect,CROP_PREPARED);
+        }
+    }
 }
 
 void CreateCrop::draw(QPainter * painter)
 {
-    if (!crop.isEmpty())
+    CropPtr crop = me->cropRect;
+    if (crop && (crop->getState() == CROP_CONSTRUCTING || crop->getState() == CROP_EDITING))
     {
-        painter->setPen(QPen(Qt::red,3));
-        painter->setBrush(QBrush(0xff0000,Qt::Dense7Pattern));
+        QRectF rect = crop->getRect();
+        if (!rect.isNull())
+        {
+            painter->setPen(QPen(Qt::red,3));
+            painter->setBrush(QBrush(0xff0000,Qt::Dense7Pattern));
 
-        QRectF rect = me->viewT.mapRect(crop);
-        painter->drawRect(rect);
+            QRectF rect2 = me->viewT.mapRect(rect);
+            painter->drawRect(rect2);
+        }
     }
+}
+
+/////////////////////////////////////////////////////////
+///
+///
+///
+/////////////////////////////////////////////////////////
+
+CreateBorder::CreateBorder(MapEditor * me, QPointF spt) : CreateCrop(me,spt)
+{
+    desc = "CreateBorder";
+    cbmode = CB_READY;
+    CropPtr crop = me->cropRect;
+    if (crop)
+    {
+        crop->setState(CROP_CONSTRUCTING);
+    }
+}
+
+CreateBorder::~CreateBorder()
+{
+    //me->completeBorder();
+}
+
+void CreateBorder::updateDragging(QPointF spt)
+{
+    if (cbmode == CB_READY)
+    {
+        if (start)
+        {
+            delete start;
+        }
+        SelectionSet set     = me->findSelectionsUsingDB(spt);
+        MapSelectionPtr msel = me->findAPoint(set);
+        if (msel)
+        {
+            start = new QPointF(msel->getPoint());
+        }
+        else
+        {
+            start = new QPointF(me->viewTinv.map(spt));
+        }
+        cbmode = CB_STARTED;
+    }
+    else
+    {
+        CreateCrop::updateDragging(spt);
+    }
+}
+
+void CreateBorder::endDragging( QPointF spt)
+{
+    CreateCrop::endDragging(spt);
+
+    CropPtr crop = me->cropRect;
+    if (crop)
+    {
+        crop->setState(CROP_BORDER_PREPARED);
+        me->redisplayCurrentMap();
+    }
+    me->setMouseMode(MAPED_MOUSE_EDIT_BORDER);
+}
+
+/////////////////////////////////////////////////////////
+///
+///
+///
+/////////////////////////////////////////////////////////
+
+
+EditBorder::EditBorder(MapEditor * me, QPointF spt) : CreateBorder(me,spt)
+{
+    desc = "EditBorder";
+    ebmode = EB_READY;
+    if (me->cropRect)
+    {
+        me->cropRect->setState(CROP_EDITING);
+    }
+}
+
+EditBorder::~EditBorder()
+{
+    //me->completeBorder();
+}
+
+void EditBorder::draw(QPainter * painter)
+{
+    CreateCrop::draw(painter);
+    if (me->cropRect && me->cropRect->getState() == CROP_EDITING)
+    {
+        QRectF & rect = me->cropRect->getRect();
+        if (    Point::isNear(me->mousePos,me->viewT.map(rect.bottomRight()))
+             || Point::isNear(me->mousePos,me->viewT.map(rect.topRight()))
+             || Point::isNear(me->mousePos,me->viewT.map(rect.bottomLeft()))
+             || Point::isNear(me->mousePos,me->viewT.map(rect.topLeft())))
+        {
+            qreal radius = 8.0;
+            painter->setPen(QPen(Qt::blue,1));
+            painter->setBrush(Qt::blue);
+            painter->drawEllipse(me->mousePos, radius, radius);
+        }
+    }
+}
+
+void EditBorder::updateDragging(QPointF spt)
+{
+    if (!me->cropRect)
+    {
+        return;
+    }
+    QPointF mpt  = me->viewTinv.map(spt);
+    QRectF & rect = me->cropRect->getRect();
+
+    switch(ebmode)
+    {
+    case EB_READY:
+        if (    Point::isNear(spt,me->viewT.map(rect.topLeft()))
+             || Point::isNear(spt,me->viewT.map(rect.topRight()))
+             || Point::isNear(spt,me->viewT.map(rect.bottomRight()))
+             || Point::isNear(spt,me->viewT.map(rect.bottomLeft())))
+        {
+            qDebug() << "bottom left";
+            start  = new QPointF(mpt);
+            ebmode = EB_RESIZE;
+        }
+        else if (Utils::rectContains(rect,mpt))
+        {
+            start  = new QPointF(mpt);
+            ebmode = EB_MOVE;
+        }
+        break;
+
+    case EB_MOVE:
+    {
+        qDebug() << "move";
+        QPointF delta = mpt - *start;
+        delete start;
+        start  = new QPointF(mpt);
+
+        rect.moveTopLeft(rect.topLeft() + delta);
+        //crop->setRect(rect);    //  causes aspect adjustment
+    }
+    case EB_RESIZE:
+    {
+        QPointF delta = mpt - *start;
+        delete start;
+        start  = new QPointF(mpt);
+
+        QSizeF oldSize = rect.size();
+        QSizeF newSize = QSizeF(oldSize.width() + delta.x(),oldSize.height() + delta.y());
+        qDebug() << "resize: delta" << delta << "old" << oldSize << "new" << newSize;
+        rect.setSize(newSize);
+        //crop->setRect(rect);    //  causes aspect adjustment
+    }
+        break;
+    }
+}
+
+void EditBorder::endDragging( QPointF spt)
+{
+    updateDragging(spt);
+
+    qDebug() << "end dragging";
+
+    if (ebmode != EB_READY)
+    {
+        CropPtr crop = me->cropRect;
+        if (crop)
+        {
+            me->cropRect->setState(CROP_BORDER_PREPARED);
+            me->redisplayCurrentMap();
+        }
+        ebmode = EB_READY;
+    }
+    // else ignore
 }

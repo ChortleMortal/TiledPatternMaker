@@ -25,10 +25,10 @@
 #include "panels/page_debug.h"
 #include "base/fileservices.h"
 #include "base/mosaic_manager.h"
+#include "base/mosaic_loader.h"
 #include "base/qtapplog.h"
 #include "base/shared.h"
 #include "base/tiledpatternmaker.h"
-#include "geometry/map_cleanser.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "panels/dlg_name.h"
 #include "panels/layout_sliderset.h"
@@ -40,6 +40,8 @@
 #include "tile/tiling_manager.h"
 #include "viewers/view.h"
 #include "viewers/viewcontrol.h"
+#include "panels/page_loaders.h"
+#include "style/filled.h"
 
 page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,"Debug Tools")
 {
@@ -60,7 +62,9 @@ QGroupBox * page_debug::createDebugSection()
     QPushButton * pbRender              = new QPushButton("Render");
     QPushButton * pbClearMakers         = new QPushButton("Clear Makers");
     QPushButton * pbClearView           = new QPushButton("Clear View");
-    QPushButton * pbVerifyTiling        = new QPushButton("Verify Tiling");
+    QPushButton * pbVerifyTiling        = new QPushButton("Verify Current Tiling");
+    QPushButton * pbVerifyAllTilings    = new QPushButton("Verify All Tilings");
+    QPushButton * pbExamineAllMosaics   = new QPushButton("Examine AllMosaics");
 
     QGridLayout * grid = new QGridLayout();
     grid->setHorizontalSpacing(51);
@@ -68,17 +72,20 @@ QGroupBox * page_debug::createDebugSection()
     int row = 0;
     grid->addWidget(pbReformatDesXMLBtn,   row,0);
     grid->addWidget(pbReprocessDesXMLBtn,  row,1);
-    grid->addWidget(pbReformatTileXMLBtn,  row,2);
-    grid->addWidget(pbReprocessTileXMLBtn, row,3);
+    grid->addWidget(pbExamineAllMosaics,   row,3);
+
+    row++;
+    grid->addWidget(pbReformatTileXMLBtn,  row,0);
+    grid->addWidget(pbReprocessTileXMLBtn, row,1);
+    grid->addWidget(pbVerifyTileNames,     row,2);
+    grid->addWidget(pbVerifyAllTilings,    row,3);
+    grid->addWidget(pbVerifyTiling,        row,4);
 
     row++;
     grid->addWidget(pbClearMakers,         row,0);
     grid->addWidget(pbClearView,           row,1);
     grid->addWidget(pbRender,              row,2);
-    grid->addWidget(pbVerifyTileNames,     row,3);
 
-    row++;
-    grid->addWidget(pbVerifyTiling,        row,0);
 
     QVBoxLayout * vbox = new QVBoxLayout;;
     vbox->addLayout(grid);
@@ -87,12 +94,17 @@ QGroupBox * page_debug::createDebugSection()
     QGroupBox * debugGroup = new QGroupBox("Debug");
     debugGroup->setLayout(vbox);
 
-    connect(pbVerifyTileNames,        &QPushButton::clicked,     this,   &page_debug::slot_verifyTilingNames);
     connect(pbReformatDesXMLBtn,      &QPushButton::clicked,     this,   &page_debug::slot_reformatDesignXML);
-    connect(pbReformatTileXMLBtn,     &QPushButton::clicked,     this,   &page_debug::slot_reformatTilingXML);
     connect(pbReprocessDesXMLBtn,     &QPushButton::clicked,     this,   &page_debug::slot_reprocessDesignXML);
+    connect(pbExamineAllMosaics,      &QPushButton::clicked,     this,   &page_debug::slot_examineAllMosaics);
+
+    connect(pbReformatTileXMLBtn,     &QPushButton::clicked,     this,   &page_debug::slot_reformatTilingXML);
     connect(pbReprocessTileXMLBtn,    &QPushButton::clicked,     this,   &page_debug::slot_reprocessTilingXML);
+
+    connect(pbVerifyTileNames,        &QPushButton::clicked,     this,   &page_debug::slot_verifyTilingNames);
     connect(pbVerifyTiling,           &QPushButton::clicked,     this,   &page_debug::slot_verifyTiling);
+    connect(pbVerifyAllTilings,       &QPushButton::clicked,     this,   &page_debug::slot_verifyAllTilings);
+
     connect(pbRender,                 &QPushButton::clicked,     this,   &panel_page::sig_render);
     connect(pbClearView,              &QPushButton::clicked,     vcontrol,  &ViewControl::slot_clearView);
     connect(pbClearMakers,            &QPushButton::clicked,     vcontrol,  &ViewControl::slot_clearMakers);
@@ -303,6 +315,7 @@ void page_debug::slot_reprocessTilingXML()
         else
             badTiles++;
     }
+
     qDebug() << "Reformatted" << goodTiles << "good tilings, " << badTiles << "bad tilings";
 
     QMessageBox box2(this);
@@ -329,27 +342,149 @@ void page_debug::slot_verifyVerboseClicked(bool enb)
 
 void page_debug::slot_verifyTiling()
 {
-    TilingMaker * tm = TilingMaker::getInstance();
-    TilingPtr tiling = tm->getTilings().first();
-
     // the strategy is to build a map and then verify that
+    TilingPtr tiling = tilingMaker->getTilings().first();
+    verifyTiling(tiling);
+}
 
-    Prototype proto(tiling);
+void page_debug::verifyTiling(TilingPtr tiling)
+{
+    //qtAppLog::suspend(true);
 
-    QVector<FeaturePtr> uniqueFeatures = tiling->getUniqueFeatures();
+    bool intrinsicOverlaps = tiling->hasIntrinsicOverlaps();
+    bool tiledOverlaps     = tiling->hasTiledOverlaps();
 
-    for (auto feature :  uniqueFeatures)
+    MapPtr map = tiling->createProtoMap();
+    bool protomap_verify   = map->verify(true);
+    bool protomap_overlaps = map->hasIntersectingEdges();
+
+    map = tiling->createFilledMap();
+    bool fillmap_verify   = map->verify(true);
+    bool fillmap_overlaps = map->hasIntersectingEdges();
+
+    qtAppLog::suspend(false);
+
+    QString name = tiling->getName();
+    if (intrinsicOverlaps)
+        qWarning() << name << ": intrinsic overlaps";
+    if (tiledOverlaps)
+        qWarning() << name << ": tiled overlaps";
+    if (!protomap_verify)
+        qWarning() << name << ": proto map verify errors";
+    if (protomap_overlaps)
+        qWarning() << name << ": proto map intersecting edges";
+    if (!fillmap_verify)
+        qWarning() << name << ": fill map verify errors";
+    if (fillmap_overlaps)
+        qWarning() << name << ": fill map intersecting edges";
+}
+
+void page_debug::slot_verifyAllTilings()
+{
+    qDebug() << "Verifying all tilings...";
+
+    QStringList files = FileServices::getTilingNames();
+    for (int i=0; i < files.size(); i++)
     {
-        EdgePoly & ep = feature->getEdgePoly();
-        MapPtr     fm = make_shared<Map>("feature map",ep);
-        FigurePtr fig = make_shared<ExplicitFigure>(fm,FIG_TYPE_EXPLICIT_FEATURE,feature->numSides());
-        DesignElementPtr  dep = make_shared<DesignElement>(feature, fig);
-        proto.addElement(dep);
+        QString name = files[i];
+        qInfo() << "==========" << name << "==========";
+        QStringList used;
+        int uses = page_loaders::whereTilingUsed(name,used);
+        if (uses == 0)
+        {
+            qInfo() << "     not used";
+            //continue;
+        }
+
+        qtAppLog::suspend(true);
+
+        TilingManager tm;
+        TilingPtr tp = tm.loadTiling(name,SM_LOAD_SINGLE);
+        if (!tp)
+        {
+            QMessageBox box(this);
+            box.setIcon(QMessageBox::Warning);
+            box.setText(QString("Error loading tiling: %1").arg(name));
+            box.setStandardButtons(QMessageBox::Ok);
+            box.exec();
+            qtAppLog::suspend(false);
+            continue;
+        }
+
+        verifyTiling(tp);
+
+        qtAppLog::suspend(false);
     }
 
-    MapPtr map = proto.createProtoMap();
-
-    bool rv = map->verifyMap("Tiling map",true);
-
-    qDebug() << "tiling verify:" << rv;
+    QMessageBox box(this);
+    box.setIcon(QMessageBox::Information);
+    box.setText("Done");
+    box.setStandardButtons(QMessageBox::Ok);
+    box.exec();
 }
+
+void page_debug::slot_examineAllMosaics()
+{
+    qDebug() << "Examining all Mosaics...";
+
+    QStringList files = FileServices::getDesignFiles();
+    for (int i=0; i < files.size(); i++)
+    {
+        QString name = files[i];
+        qDebug() << "==========" << name << "==========";
+
+        qtAppLog::suspend(true);
+
+        MosaicLoader loader;
+        MosaicPtr mosaic = loader.loadMosaic(name);
+
+        qtAppLog::suspend(false);
+
+        if (!mosaic)
+        {
+            QString str = QString("Load ERROR - %1").arg(loader.getFailMessage());
+            QMessageBox box(ControlPanel::getInstance());
+            box.setIcon(QMessageBox::Warning);
+            box.setText(str);
+            box.exec();
+            continue;
+        }
+
+        QVector<TilingPtr> tilings = mosaic->getTilings();
+        TilingPtr tiling = tilings.first();     // yeah only one for this exercise
+        qInfo().noquote() << "tiling:" << tiling->getName();
+
+        qtAppLog::suspend(true);
+        verifyTiling(tiling);
+
+        const StyleSet & styles = mosaic->getStyleSet();
+        for (auto style : styles)
+        {
+            FilledPtr fp = std::dynamic_pointer_cast<Filled>(style);
+            if (fp)
+            {
+                qInfo() << fp->getStyleDesc() << "algorithm:" << fp->getAlgorithm() << "cleanse:" << fp->getCleanseLevel();
+            }
+
+            qtAppLog::suspend(true);
+            MapPtr map = style->getMap();
+            qtAppLog::suspend(false);
+
+            if (map->hasIntersectingEdges())
+            {
+                qInfo() << style->getStyleDesc() << "has intersecting edges";
+            }
+            qDebug().noquote() << map->displayVertexEdgeCounts();
+        }
+    }
+
+    QMessageBox box(this);
+    box.setIcon(QMessageBox::Information);
+    box.setText("Done");
+    box.setStandardButtons(QMessageBox::Ok);
+    box.exec();
+}
+
+
+
+

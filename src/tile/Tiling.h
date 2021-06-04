@@ -44,12 +44,6 @@
 
 #define MAX_UNIQUE_FEATURE_INDEX 7
 
-enum eTilingState
-{
-    TILING_EMPTY,
-    TILING_LOADED,
-    TILING_MODIFED
-};
 
 class FeatureGroup : public  QVector<QPair<FeaturePtr,QVector<PlacedFeaturePtr>>>
 {
@@ -62,16 +56,26 @@ public:
 // (Of course, more complex tiling exists with rotations and mirrors.)
 // (They are not supported.)
 
-class Tiling
+class Tiling : public std::enable_shared_from_this<Tiling>
 {
 public:
+
+    enum eTilingState
+    {
+        EMPTY,
+        LOADED,
+        MODIFED
+    };
+
     Tiling();
     Tiling(QString name, QPointF t1, QPointF t2);
     Tiling(Tiling * other);
     ~Tiling();
 
     bool        isEmpty();
-    bool        hasOverlaps();
+
+    bool        hasIntrinsicOverlaps();
+    bool        hasTiledOverlaps();
 
     QString     getName()        const { return name; }
     QString     getDescription() const { return desc; }
@@ -98,6 +102,7 @@ public:
     void        setTrans2(QPointF pt) { t2=pt; }
     QPointF     getTrans1() const { return t1; }
     QPointF     getTrans2() const { return t2; }
+    QVector<QTransform> getFillTranslations();
 
     FeatureGroup regroupFeatures();      // the map was deadly, it reordered
 
@@ -123,6 +128,11 @@ public:
     BkgdImgPtr          getBackground(){ return settings->getBkgdImage(); }
     const FillData    & getFillData()  { return settings->getFillData(); }
 
+    // map operations
+    MapPtr  createMap();
+    MapPtr  createFilledMap();
+    MapPtr  createProtoMap();
+
     static const QString defaultName;
     static int  refs;
 
@@ -135,6 +145,8 @@ private:
     QString         author;
     ModelSettingsPtr settings;
     eTilingState    state;
+    Tristate        intrinsicOverlaps;
+    Tristate        tiledOveraps;
     QPointF         t1;
     QPointF         t2;
     Xform           canvasXform;

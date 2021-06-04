@@ -49,7 +49,7 @@ Plain::~Plain()
 {
 #ifdef EXPLICIT_DESTRUCTOR
     qDebug() << "deleting plain";
-    pts2.clear();
+    colors.clear();
 #endif
 }
 
@@ -82,7 +82,7 @@ void Plain::draw(GeoGraphics *gg)
 
     QPen pen(colors.getNextColor().color);
 
-    for (const auto &edge : map->edges)
+    for (const auto &edge : map->getEdges())
     {
         gg->drawEdge(edge,pen);
     }

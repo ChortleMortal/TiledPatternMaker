@@ -83,6 +83,8 @@ public:
 
     static int      refs;
 
+    BorderPtr         border;
+
 protected:
     Design(eDesign design, QString title);
 

@@ -22,6 +22,7 @@ protected:
 
     // lines
     SelectionSet    findEdges(QPointF spt, const QVector<EdgePtr> &excludes);
+    SelectionSet    findEdges(QPointF spt, const NeighboursPtr excludes);
 
     // circles
     MapSelectionPtr findConstructionCircle(const QPointF &spt);

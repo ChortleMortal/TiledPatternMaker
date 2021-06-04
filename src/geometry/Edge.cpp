@@ -40,6 +40,7 @@ Edge::Edge()
     type          = EDGETYPE_NULL;
     isSwapped     = false;
     visited       = false;
+    dvisited      = false;
     start_under   = false;
     refs++;
 }
@@ -49,6 +50,7 @@ Edge::Edge(VertexPtr v1)
     type          = EDGETYPE_POINT;
     isSwapped     = false;
     visited       = false;
+    dvisited      = false;
     start_under   = false;
     this->v1      = v1;
     this->v2      = v1; // same
@@ -60,6 +62,7 @@ Edge::Edge(VertexPtr v1, VertexPtr v2 )
     type          = EDGETYPE_LINE;
     isSwapped     = false;
     visited       = false;
+    dvisited      = false;
     start_under   = false;
     this->v1      = v1;
     this->v2      = v2;
@@ -68,12 +71,13 @@ Edge::Edge(VertexPtr v1, VertexPtr v2 )
 
 Edge::Edge(VertexPtr v1, VertexPtr v2, QPointF arcCenter, bool convex)
 {
-    type             = EDGETYPE_CURVE;
-    isSwapped        = false;
+    type          = EDGETYPE_CURVE;
+    isSwapped     = false;
     visited       = false;
+    dvisited      = false;
     start_under   = false;
-    this->v1         = v1;
-    this->v2         = v2;
+    this->v1      = v1;
+    this->v2      = v2;
     setArcCenter(arcCenter,convex);
     refs++;
 }
@@ -92,6 +96,7 @@ Edge::Edge(EdgePtr other, QTransform T)
 
     isSwapped      = false;
     visited        = false;
+    dvisited       = false;
     start_under    = false;
     refs++;
 }
@@ -470,4 +475,14 @@ QString Edge::dump()
         deb << "Edge NULL";
     }
     return astring;
+}
+
+// The less-than operator compares the first point, then the order.
+// Thus, two overlapped edges with different second point will not be less than each other,
+// yet they won't be equal. This cannot happen in a map anyway since edges never overlap.
+bool Edge::operator < (const Edge & other) const
+{
+    QPointF point  = v1->pt;
+    QPointF opoint = other.v1->pt;
+    return (Point::lessThan(point, opoint) || (point == opoint  &&  angle() < other.angle() - Point::TOLERANCE));
 }

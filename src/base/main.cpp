@@ -32,6 +32,22 @@
 
 TiledPatternMaker * theApp = nullptr;
 
+#ifdef WIN32
+#include <windows.h>
+#include <psapi.h>
+
+void stackInfo()
+{
+    PROCESS_MEMORY_COUNTERS pmc;
+    GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc));
+    qDebug() << "Stack size:" << (static_cast<double>(pmc.WorkingSetSize) / static_cast<double>(1024 * 1024)) << "MB";
+}
+#else
+void stackInfo()
+{
+}
+#endif
+
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
@@ -52,6 +68,9 @@ int main(int argc, char *argv[])
     qInfo().noquote() << "Log:"  << qtAppLog::currentLogName;
     qInfo().noquote() << "App version :" << tpmVersion;
     qInfo().noquote() << "Qt  version :" << QT_VERSION_STR;
+
+    stackInfo();
+
 #ifdef __linux__
     qDebug().noquote() << "Font:" << QApplication::font().toString();
     QFont afont = QApplication::font();

@@ -57,10 +57,9 @@ class TilingMaker : public TilingMakerView
     Q_OBJECT
 
 public:
-    static TilingMaker *   getInstance();
     static TilingMakerPtr  getSharedInstance();
+    TilingMaker();  // don't call this
 
-    TilingMaker();
     void        init();
 
     void        sm_take(TilingPtr tiling, eSM_Event mode);
@@ -208,7 +207,6 @@ protected:
     void uniqueFeatureDeltaRotate(qreal rotate);
 
 private:
-    static TilingMaker       *  mpThis;
     static TilingMakerPtr       spThis;
 
     MouseActionPtr              mouse_interaction;
@@ -226,7 +224,7 @@ private:
     class View                * view;
     class MotifMaker          * motifMaker;
     class DecorationMaker     * decorationMaker;
-    class MapEditor           * me;
+    MapEditorPtr                maped;
 };
 
 #endif

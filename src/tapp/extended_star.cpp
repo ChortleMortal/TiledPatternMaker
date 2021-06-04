@@ -25,7 +25,6 @@
 #include "tapp/extended_star.h"
 #include "geometry/loose.h"
 #include "geometry/intersect.h"
-#include "geometry/map_cleanser.h"
 #include "tile/feature.h"
 #include "base/utilities.h"
 
@@ -107,7 +106,7 @@ void ExtendedStar::extendPeripheralMap()
     // extendLine and clipLine both assume that p1 is closest to the center
     // and p0 is closest to the edge
 
-    QVector<EdgePtr> ledges = figureMap->edges;    // local copy of vector
+    QVector<EdgePtr> ledges = figureMap->getEdges();    // local copy of vector
     for (auto edge : ledges)
     {
         VertexPtr v1 = edge->v1;   // outer
@@ -173,12 +172,12 @@ void ExtendedStar::extendPeripheralMap()
         }
     }
 
-    figureMap->verifyMap("Extended figure - after");
+    figureMap->verify();
 }
 
 VertexPtr ExtendedStar::findVertex(QPointF pt)
 {
-    const QVector<VertexPtr> & vertices = figureMap->vertices;
+    const QVector<VertexPtr> & vertices = figureMap->getVertices();
     for (auto v : vertices)
     {
         if (v->pt == pt)

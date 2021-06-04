@@ -26,7 +26,6 @@
 #include "tapp/radial_figure.h"
 #include "tile/feature.h"
 #include "base/utilities.h"
-#include "geometry/map_cleanser.h"
 
 ExtendedRosette::ExtendedRosette(const Figure & fig,
                 int nsides, qreal q, int s, qreal k,
@@ -65,7 +64,7 @@ void ExtendedRosette::extendMap()
 {
     qDebug() << "ExtendedRosette::extendMap";
 
-    figureMap->verifyMap("Extended figure - before");
+    figureMap->verify();
 
     qreal radius = getExtBoundaryScale();
     QGraphicsEllipseItem circle(-radius,-radius,radius * 2.0, radius * 2.0);
@@ -77,8 +76,7 @@ void ExtendedRosette::extendMap()
     // the shortest line is the one to insert
     QMap<VertexPtr,VertexPtr> new_edges;    // key is new vertex
 
-
-    QVector<EdgePtr> local_edges = figureMap->edges;    // local copy of vector
+    QVector<EdgePtr> local_edges = figureMap->getEdges();    // local copy of vector
     for (auto & edge  : local_edges)
     {
         VertexPtr v1 = edge->v1;   // outer
@@ -156,7 +154,7 @@ void ExtendedRosette::extendMap()
         connectOuterVertices(figureMap);
     }
 
-    figureMap->verifyMap("Extended figure - after");
+    figureMap->verify();
 }
 
 void ExtendedRosette::connectOuterVertices(MapPtr map)
@@ -167,10 +165,11 @@ void ExtendedRosette::connectOuterVertices(MapPtr map)
 
     QVector<VertexPtr> edgeVerts;
 
-    for (const auto & v : map->vertices)
+    for (const auto & v : map->getVertices())
     {
         //qDebug() << "num neigbours=" << v->numNeighbours();
-        if (v->numNeighbours() < 2)
+        NeighboursPtr n = map->getBuiltNeighbours(v);
+        if (n->numNeighbours() < 2)
         {
             bool doInsert = false;
             for (int i=0; i < blines.size(); i++)
@@ -238,5 +237,5 @@ void ExtendedRosette::connectOuterVertices(MapPtr map)
         }
     }
 
-    map->verifyMap("Extended figure - after2");
+    map->verify();
 }

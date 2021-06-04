@@ -2,20 +2,23 @@
 #include "base/utilities.h"
 #include "geometry/map.h"
 
+#if 0
 Neighbours::Neighbours()
 {
-    parent = nullptr;
+    _built = false;
 }
+#endif
 
-Neighbours::Neighbours(Vertex * vp)
+Neighbours::Neighbours(VertexPtr vp)
 {
     parent = vp;
+    _built = false;
 }
 
 Neighbours::Neighbours(const Neighbours & other)
 {
-    parent      = other.parent;
-    neighbours  = other.neighbours;
+    parent = other.parent;
+    _built = false;
 }
 
 Neighbours::~Neighbours()
@@ -23,29 +26,48 @@ Neighbours::~Neighbours()
     //clear();
 }
 
-// though the original taprats version of this method seemed deceptively simple
-// it has been hard to discern how it was really meant to work
-// for the corener case of when a vertex has 0, 1, or 2, neighbours
-// so this code, while ugly, is a slavish attempt to emulate the original
+bool Neighbours::contains(EdgePtr e) const
+{
+   for (auto pos = begin(); pos != end(); pos++)
+   {
+       WeakEdgePtr wep = *pos;
+       if (e == wep.lock())
+       {
+           return true;
+       }
+   }
+   return false;
+}
+
 BeforeAndAfter Neighbours::getBeforeAndAfter(EdgePtr edge )
 {
-    if (numNeighbours() < 2)
-    {
-        qDebug() << "getBeforeAndAfter - edge:" << edge.get() << "count:" << numNeighbours();
-    }
+    //qDebug() << "getBeforeAndAfter - edge:" << edge.get() << "count:" << numNeighbours();
 
     BeforeAndAfter ret;
 
-    QVector<EdgePtr> list = neighbours;     // local copy
-    list.push_back(list.at(0));
-    list.push_back(list.at(1));
+    int sz = (int)size();
 
-    for (int i=1; i < (list.size()-1); i++)
+    for (int i=0; i < sz; i++)
     {
-        if (list.at(i) == edge)
+        if (at(i).lock() == edge)
         {
-            ret.before = list.at(i-1);
-            ret.after  = list.at(i+1);
+            if (i == 0)
+            {
+                ret.before = back().lock();
+            }
+            else
+            {
+                ret.before = at(i-1).lock();
+            }
+
+            if (i == sz-1)
+            {
+                ret.after = front().lock();
+            }
+            else
+            {
+                ret.after  = at(i+1).lock();
+            }
             return ret;
         }
     }
@@ -64,33 +86,56 @@ void Neighbours::insertNeighbour(EdgePtr e)
 {
     //qDebug() << "insert neighbour: vertex=" << Utils::addr(this) << "edge=" << Utils::addr(e.get());
 
-    if (neighbours.contains(e))
+    if (contains(e))
     {
         qWarning("inserting existing Neighbour");
         return;
     }
 
-    if (neighbours.size() == 0)
+    if (size() == 0)
     {
-        neighbours.push_back(e);
+        push_back(e);
         return;
     }
 
-    qreal a = parent->getAngle(e);
+    qreal a = parent.lock()->getAngle(e);
 
-    for (int i=0; i < neighbours.size(); i++)
+    //for (int i=0; i < (int)neighbours.size(); i++)
+    for (auto pos = begin(); pos != end(); pos++)
     {
-        EdgePtr ep = neighbours.at(i);
-        qreal    b = parent->getAngle(ep);
+        WeakEdgePtr wep = *pos;
+        EdgePtr ep = wep.lock();
+        if (!ep)
+        {
+            qWarning() << "bad neighbour 1";
+            continue;
+        }
+        qreal b = parent.lock()->getAngle(wep.lock());
         if (a > b)
         {
-            neighbours.insert(i,e);
+            insert(pos,e);
             return;
         }
     }
 
-    neighbours.push_back(e);
+    push_back(e);
 }
+
+struct cmpangle
+{
+    cmpangle(VertexPtr parent) { this->parent = parent; }
+
+    bool operator () (WeakEdgePtr ep1, WeakEdgePtr ep2)
+    {
+        EdgePtr edge1 = ep1.lock();
+        qreal    a = parent->getAngle(edge1);
+        EdgePtr  edge2 = ep2.lock();
+        qreal      b = parent->getAngle(edge2);
+        return (a > b);
+    }
+
+    VertexPtr parent;
+};
 
 void Neighbours::sortNeighboursByAngle()
 {
@@ -99,48 +144,31 @@ void Neighbours::sortNeighboursByAngle()
         return;     // returns for 0 or 1
     }
 
-    UniqueQVector<EdgePtr> vec;
-
-    for (const auto & edge : qAsConst(neighbours))
-    {
-        qreal    a = parent->getAngle(edge);
-        bool found = false;
-
-        for (int j = 0; j < vec.size(); j ++)
-        {
-            EdgePtr evec = vec[j];
-            qreal      b = parent->getAngle(evec);
-            if (a > b)
-            {
-                vec.insert(j,edge);
-                found = true;
-                break;
-            }
-        }
-        if (!found)
-        {
-            vec.push_back(edge);
-        }
-    }
-
-    neighbours = vec;    // overwrites
+    std::sort(begin(),end(),cmpangle(parent.lock()));
 }
 
 void Neighbours::dumpNeighbours() const
 {
-    qDebug() << "vertex: " << parent->pt << "neighbours:" << neighbours.size();
-    for (auto edge : neighbours)
+    qDebug() << "vertex: " << parent.lock()->pt << "num neighbour:" << size();
+    for (auto & edge : *this)
     {
-        QPointF v1 = edge->v1->pt;
-        QPointF v2 = edge->v2->pt;
-        qDebug() << "      edge: " << edge.get() << " " << v1 << " " << v2;
+        QPointF v1 = edge.lock()->v1->pt;
+        QPointF v2 = edge.lock()->v2->pt;
+        qDebug() << "      edge: " << edge.lock().get() << " " << v1 << " " << v2;
     }
 }
 
 //Removing is always easier than adding.  Just splice the edge out of the list.
 void Neighbours::removeNeighbour(EdgePtr edge )
 {
-    neighbours.removeAll(edge);
+    const auto pos = std::find_if(begin(), end(), [&edge](const WeakEdgePtr& ptr1) {
+        return ptr1.lock() == edge;
+    });
+
+    if (pos != end())
+    {
+        erase(pos);
+    }
 }
 
 // When an edge is split in the map, this vertex's adjacency list
@@ -152,15 +180,36 @@ void Neighbours::removeNeighbour(EdgePtr edge )
 
 void Neighbours::replaceNeighbour(EdgePtr old_edge, EdgePtr new_edge)
 {
-    for (auto it = neighbours.begin(); it != neighbours.end(); it++)
+    Q_ASSERT(new_edge);
+
+    // replace
+    for (auto it = begin(); it != end(); it++)
     {
-        EdgePtr edge = *it;
-        if  (edge == old_edge)
+        WeakEdgePtr wedge = *it;
+        if  (wedge.lock() == old_edge)
         {
             *it = new_edge;        // this replaces edge
             break;
         }
     }
+
+    // remove dead neighbours
+    std::vector<WeakEdgePtr> new_neighbours;
+    for (auto it = begin(); it != end(); it++)
+    {
+        WeakEdgePtr wedge = *it;
+        if  (wedge.lock())
+        {
+            new_neighbours.push_back(wedge);
+        }
+        else
+            qDebug() <<  "removed wedge";
+    }
+
+    std::vector<WeakEdgePtr> * neighbours = dynamic_cast<std::vector<WeakEdgePtr> *>(this);
+    *neighbours = new_neighbours;
+
+    // resort
     sortNeighboursByAngle();
 }
 
@@ -169,29 +218,29 @@ EdgePtr Neighbours::getFirstNonvisitedNeighbour(EdgePtr home)
     QVector<qreal> angles;
     qreal hangle = home->getAngle();
     angles.push_back(hangle);
-    EdgePtr ep;
-    for (auto edge : qAsConst(neighbours))
+    WeakEdgePtr ep;
+    for (auto & edge : *this)
     {
-        if (edge->visited)
+        if (edge.lock()->visited)
         {
             continue;
         }
-        angles.push_back(edge->getAngle());
-        if (!ep)
+        angles.push_back(edge.lock()->getAngle());
+        if (!ep.lock())
             ep = edge;
     }
     //qDebug() << "Angles:" << angles;
-    return ep;
+    return ep.lock();
 }
 
 bool Neighbours::verify()
 {
     bool rv = true;
-    for (auto e : qAsConst(neighbours))
+    for (auto & e : *this)
     {
-        if (parent != e->v1.get()  && parent != e->v2.get())
+        if (parent.lock() != e.lock()->v1  && parent.lock() != e.lock()->v2)
         {
-            qWarning() << "Neighbours: vertex:" << parent->pt << "has invalid edge:" << e->v1->pt  << e->v2->pt;
+            qWarning() << "Neighbours: vertex:" << parent.lock()->pt << "has invalid edge:" << e.lock()->v1->pt  << e.lock()->v2->pt;
             rv = false;
         }
     }
@@ -200,17 +249,34 @@ bool Neighbours::verify()
 
 void Neighbours::cleanse()
 {
-    QVector<EdgePtr> baddies;
-    for (auto e : qAsConst(neighbours))
+    std::vector<WeakEdgePtr> baddies;
+
+    for (auto & e : *this)
     {
-        if (parent != e->v1.get()  && parent != e->v2.get())
+        if (parent.lock() != e.lock()->v1  && parent.lock() != e.lock()->v2)
         {
             qDebug() << "Neighbours: cleaning invalid edge";
             baddies.push_back(e);
         }
     }
-    for (const auto & e : baddies)
+
+    for (auto & e2 : baddies)
     {
-        neighbours.removeAll(e);
+        EdgePtr ee2 = e2.lock();
+        for (auto pos = begin(); pos != end(); pos++)
+        {
+            WeakEdgePtr wep = *pos;
+            if (ee2 == wep.lock())
+            {
+                erase(pos);
+                break;
+            }
+        }
     }
+}
+
+EdgePtr Neighbours::getNeighbour(int index)
+{
+    WeakEdgePtr wep = (*this)[index];
+    return wep.lock();
 }

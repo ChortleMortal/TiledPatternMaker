@@ -41,19 +41,22 @@ using std::string;
 
 Q_DECLARE_METATYPE(WeakDesignElementPtr);
 Q_DECLARE_METATYPE(WeakPrototypePtr);
+Q_DECLARE_METATYPE(WeakFeaturePtr);
 
 page_prototype_info:: page_prototype_info(ControlPanel * cpanel)  : panel_page(cpanel,"Prototype Info")
 {
     setMouseTracking(true);
 
-
-    QCheckBox * cbDrawMap        = new QCheckBox("DrawFigureMap");
-    QCheckBox * cbDrawFeatures   = new QCheckBox("Draw Features");
-    QCheckBox * cbDrawfigures    = new QCheckBox("Draw Figures");
+    QCheckBox * cbDrawDEL        = new QCheckBox("Design Element");
+    QCheckBox * cbDrawFeatures   = new QCheckBox("Features");
+    QCheckBox * cbDrawfigures    = new QCheckBox("Figures");
     QCheckBox * cbHiliteFeatures = new QCheckBox("Highlight Features");
     QCheckBox * cbHiliteFigures  = new QCheckBox("Highlight Figures");
+    QCheckBox * cbDrawMap        = new QCheckBox("Prototype Map");
 
-    int mode = vcontrol->getProtoViewMode();
+    int mode = config->protoViewMode;
+    if (mode & PROTO_DRAW_DESIGN_ELEMENT)
+        cbDrawDEL->setChecked(true);
     if (mode & PROTO_DRAW_MAP)
         cbDrawMap->setChecked(true);
     if (mode & PROTO_DRAW_FEATURES)
@@ -65,10 +68,10 @@ page_prototype_info:: page_prototype_info(ControlPanel * cpanel)  : panel_page(c
     if (mode & PROTO_HIGHLIGHT_FIGURES)
         cbHiliteFigures->setChecked(true);
 
-
     QPushButton * refreshButton = new QPushButton("Refresh");
     QHBoxLayout * hbox = new QHBoxLayout;
 
+    hbox->addWidget(cbDrawDEL);
     hbox->addWidget(cbDrawFeatures);
     hbox->addWidget(cbDrawfigures);
     hbox->addWidget(cbHiliteFeatures);
@@ -79,11 +82,12 @@ page_prototype_info:: page_prototype_info(ControlPanel * cpanel)  : panel_page(c
     hbox->addStretch();
 
     protoTable = new AQTableWidget(this);
-    protoTable->setRowCount(9);
     QStringList qslV;
     qslV << "Prototype" << "Tiling" << "Design Element" << "Feature" << "Figure" << "Scale" << "Rotate" << "Trans-X" << "Trans-Y";
     protoTable->setVerticalHeaderLabels(qslV);
     protoTable->horizontalHeader()->setVisible(false);
+    protoTable->verticalHeader()->setVisible(false);
+    protoTable->setRowCount(9);
     protoTable->setMaximumWidth(880);
     protoTable->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     protoTable->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -97,12 +101,12 @@ page_prototype_info:: page_prototype_info(ControlPanel * cpanel)  : panel_page(c
 
     connect(refreshButton,    &QPushButton::clicked,        this, &page_prototype_info::onEnter);
     connect(protoTable,       SIGNAL(cellClicked(int,int)), this,   SLOT(slot_prototypeSelected(int,int)));
+    connect(cbDrawDEL,        &QCheckBox::clicked, this, &page_prototype_info::drawDELClicked);
     connect(cbDrawMap,        &QCheckBox::clicked, this, &page_prototype_info::drawMapClicked);
     connect(cbDrawFeatures,   &QCheckBox::clicked, this, &page_prototype_info::drawFeatureClicked);
     connect(cbDrawfigures,    &QCheckBox::clicked, this, &page_prototype_info::drawFigureClicked);
     connect(cbHiliteFeatures, &QCheckBox::clicked, this, &page_prototype_info::hiliteFeatureClicked);
     connect(cbHiliteFigures,  &QCheckBox::clicked, this, &page_prototype_info::hiliteFigureClicked);
-
 }
 
 void  page_prototype_info::refreshPage()
@@ -141,6 +145,7 @@ void page_prototype_info::onEnter()
                 astring += " sides=" + QString::number(fp->numPoints());
             }
             item = new QTableWidgetItem(astring);
+            item->setData(Qt::UserRole,QVariant::fromValue(WeakFeaturePtr(fp)));
             protoTable->setItem(PROTO_ROW_FEATURE,col,item);
 
             FigurePtr figp = del->getFigure();
@@ -200,35 +205,56 @@ void page_prototype_info::slot_prototypeSelected(int row, int col)
         }
     }
 
+    twi = protoTable->item(PROTO_ROW_FEATURE,col);
+    var = twi->data(Qt::UserRole);
+    if (var.canConvert<WeakFeaturePtr>())
+    {
+        WeakFeaturePtr wfp = var.value<WeakFeaturePtr>();
+        vcontrol->selectFeature(wfp);
+    }
+
     emit sig_refreshView();
+}
+
+void  page_prototype_info::drawDELClicked(bool enb)
+{
+    setProtoViewMode(PROTO_DRAW_DESIGN_ELEMENT,enb);
 }
 
 void  page_prototype_info::drawMapClicked(bool enb)
 {
-    vcontrol->setProtoViewMode(PROTO_DRAW_MAP,enb);
-    emit sig_refreshView();
+    setProtoViewMode(PROTO_DRAW_MAP,enb);
 }
 
 void page_prototype_info::drawFigureClicked(bool enb)
 {
-    vcontrol->setProtoViewMode(PROTO_DRAW_FIGURES,enb);
-    emit sig_refreshView();
+    setProtoViewMode(PROTO_DRAW_FIGURES,enb);
 }
 
 void page_prototype_info::drawFeatureClicked(bool enb)
 {
-    vcontrol->setProtoViewMode(PROTO_DRAW_FEATURES,enb);
-    emit sig_refreshView();
+    setProtoViewMode(PROTO_DRAW_FEATURES,enb);
 }
 
 void page_prototype_info::hiliteFigureClicked(bool enb)
 {
-    vcontrol->setProtoViewMode(PROTO_HIGHLIGHT_FIGURES,enb);
-    emit sig_refreshView();
+    setProtoViewMode(PROTO_HIGHLIGHT_FIGURES,enb);
 }
 
 void page_prototype_info::hiliteFeatureClicked(bool enb)
 {
-    vcontrol->setProtoViewMode(PROTO_HIGHLIGHT_FEATURES,enb);
-    emit sig_refreshView();
+    setProtoViewMode(PROTO_HIGHLIGHT_FEATURES,enb);
+}
+
+void  page_prototype_info::setProtoViewMode(eProtoViewMode mode, bool enb)
+{
+    int pvm = config->protoViewMode;
+    if (enb)
+        pvm |= (int)mode;
+    else
+        pvm &= ~mode;
+    config->protoViewMode = pvm;
+
+    //emit sig_refreshView();
+    view->update();
 }

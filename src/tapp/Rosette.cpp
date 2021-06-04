@@ -39,7 +39,6 @@
 #include "geometry/point.h"
 #include "geometry/intersect.h"
 #include "geometry/transform.h"
-#include "geometry/map_cleanser.h"
 #include "designs/shapefactory.h"
 #include "tile/feature.h"
 

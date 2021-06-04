@@ -35,12 +35,22 @@
 #include "viewers/view.h"
 #include "geometry/transform.h"
 
+FigureViewPtr FigureView::spThis;
+
+FigureViewPtr FigureView::getSharedInstance()
+{
+    if (!spThis)
+    {
+        spThis = make_shared<FigureView>();
+    }
+    return spThis;
+}
+
 FigureView::FigureView() : Layer("FigureView",LTYPE_VIEW)
 {
     motifMaker = MotifMaker::getInstance();
 
     debugContacts = false;
-
 
     View * view = View::getInstance();
     _T = FeatureButton::resetViewport(-2,_dep,view->rect());
@@ -194,7 +204,7 @@ void FigureView::paintMap(QPainter * painter, MapPtr map, QPen pen)
 
     painter->setPen(pen);
 
-    for (auto edge : map->edges)
+    for (auto edge : map->getEdges())
     {
         QPointF p1 = _T.map(edge->v1->pt);
         QPointF p2 = _T.map(edge->v2->pt);
@@ -211,7 +221,7 @@ void FigureView::paintMap(QPainter * painter, MapPtr map, QPen pen)
         }
     }
 
-    for (const auto & stxt : qAsConst(map->texts))
+    for (const auto & stxt : map->getTexts())
     {
         painter->save();
         painter->scale(1.0, -1.0);

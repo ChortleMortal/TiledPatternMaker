@@ -27,15 +27,15 @@
 #include "base/mosaic_loader.h"
 #include "base/mosaic_writer.h"
 #include "viewers/view.h"
+#include "viewers/viewcontrol.h"
 #include "panels/panel.h"
-#include "makers/motif_maker/motif_maker.h"
 #include "makers/decoration_maker/decoration_maker.h"
 
 MosaicManager::MosaicManager()
 {
     view            = View::getInstance();
     config          = Configuration::getInstance();
-    motifMaker      = MotifMaker::getInstance();
+    viewControl     = ViewControl::getInstance();
     decorationMaker = DecorationMaker::getInstance();
 }
 
@@ -62,7 +62,9 @@ bool MosaicManager::loadMosaic(QString name)
     }
 
     qDebug().noquote() << "Loading:"  << file;
-
+    LoadUnit & loadunit = view->getLoadUnit();
+    loadunit.name = name;
+    loadunit.loadTimer.restart();
 
     // load
     MosaicLoader loader;
@@ -84,6 +86,7 @@ bool MosaicManager::loadMosaic(QString name)
     decorationMaker->takeDown(mosaic);
 
     // size view to mosaic
+    viewControl->setModelAlignment(M_ALIGN_MOSAIC);
     ModelSettingsPtr settings = mosaic->getSettings();
     QSize size = settings->getSize();
     view->setAllCommonActiveSizes(size);
@@ -162,6 +165,9 @@ bool MosaicManager::saveMosaic(QString name, QString & savedName, bool forceOver
     // write
     MosaicWriter writer;
     bool rv = writer.writeXML(filename,mosaic);
+
+    if (rv)
+        viewControl->setModelAlignment(M_ALIGN_MOSAIC);
 
     if (!forceOverwrite)
     {

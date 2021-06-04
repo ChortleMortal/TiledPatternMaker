@@ -27,7 +27,7 @@
 
 #include "tapp/prototype.h"
 #include "geometry/map.h"
-#include "viewers/geo_graphics.h"
+#include "base/geo_graphics.h"
 #include "base/shared.h"
 #include "base/layer.h"
 
@@ -87,7 +87,7 @@ public:
     virtual eStyleType  getStyleType() const = 0;
 
     virtual void    draw(GeoGraphics * gg) = 0;
-    virtual void    paint(QPainter *painter) override;
+            void    paint(QPainter *painter) override;
             void    paintToSVG();
 
     void    triggerPaintSVG(QSvgGenerator * generator) { this->generator = generator; paintSVG = true; }

@@ -52,13 +52,17 @@ public:
     void    hidePanelStatus()            { panelStatus->hide(); }
     void    reflectCurrentView(eViewType vtype) { panelStatus->setCurrentView(vtype); }
 
-    void    showSplash(QString txt)      { splash->display(txt); }
-    void    hideSplash()                 { splash->remove(); }
+    void    splashMosiac(QString txt)    { splash->displayMosaic(txt); }
+    void    splashTiling(QString txt)    { splash->displayTiling(txt); }
+    void    removeSplashMosaic()         { splash->removeMosaic(); }
+    void    removeSplashTiling()         { splash->removeTiling(); }
 
     void    selectViewer(int id);
 
-    eViewType           getCurrentView() { return panelStatus->getCurrentView(); }
+    void                setCurrentPage(QString name);
     panel_page *        getCurrentPage() { return panelPages->getCurrentPage(); }
+
+    eViewType           getCurrentView() { return panelStatus->getCurrentView(); }
     bool                isVisiblePage(panel_page *);
     static eKbdMode     getValidKbdMode(eKbdMode mode);
 
@@ -148,7 +152,6 @@ private:
     QCheckBox   *cbPrototypeView;
     QCheckBox   *cbTilingView;
     QCheckBox   *cbProtoMaker;
-    QCheckBox   *cbDELView;
     QCheckBox   *cbTilingMakerView;
     QCheckBox   *cbMapEditor;
 

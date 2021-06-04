@@ -25,6 +25,7 @@
 #include "base/mosaic.h"
 #include "style/style.h"
 #include <QDebug>
+#include "makers/decoration_maker/decoration_maker.h"
 
 const QString Mosaic::defaultName =  "The Formless";
 
@@ -34,10 +35,20 @@ Mosaic::Mosaic()
     settings = make_shared<ModelSettings>();
 }
 
+Mosaic::~Mosaic()
+{
+#ifdef EXPLICIT_DESTRUCTOR
+    qDebug() << "deleting mosaic:" << name;
+#endif
+}
+
 void  Mosaic::addStyle(StylePtr style)
 {
     qDebug() << "Mosaic adding style: old count=" << styleSet.size();
     styleSet.push_front(style);
+    BorderPtr bp = style->getPrototype()->getBorder();
+    if (bp)
+        setBorder(bp);
 }
 
 void Mosaic::replaceStyle(StylePtr oldStyle, StylePtr newStyle)
@@ -48,6 +59,10 @@ void Mosaic::replaceStyle(StylePtr oldStyle, StylePtr newStyle)
         if (existingStyle == oldStyle)
         {
             *it = newStyle;
+
+            BorderPtr bp = newStyle->getPrototype()->getBorder();
+            if (bp)
+                setBorder(bp);
             return;
         }
     }
@@ -96,8 +111,22 @@ QVector<TilingPtr> Mosaic::getTilings()
 
 void Mosaic::setPrototype(StylePtr style, PrototypePtr pp)
 {
+    pp->setBorder(border);
     pp->resetProtoMap();
     style->setPrototype(pp);
+}
+
+void Mosaic::setBorder(BorderPtr bp)
+{
+    border = bp;
+
+    QVector<PrototypePtr>vec = getPrototypes();
+    for (auto& proto : getPrototypes())
+    {
+        proto->setBorder(bp);       // resets proto map
+    }
+    DecorationMaker * dm = DecorationMaker::getInstance();
+    dm->sm_takeUp(vec,SM_RENDER);   // resets style representstions
 }
 
 QString Mosaic::getName()
@@ -119,6 +148,15 @@ QVector<PrototypePtr> Mosaic::getPrototypes()
         vec.push_back(pp);
     }
     return static_cast<QVector<PrototypePtr>>(vec);
+}
+
+void Mosaic::resetPrototypeMaps()
+{
+    for (auto& style : styleSet)
+    {
+        PrototypePtr pp = style->getPrototype();
+        pp->resetProtoMap();
+    }
 }
 
 void Mosaic::deleteStyle(StylePtr style)

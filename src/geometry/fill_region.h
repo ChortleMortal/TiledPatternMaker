@@ -49,7 +49,7 @@
 
 #include <QtCore>
 #include <QPainter>
-#include "viewers/geo_graphics.h"
+#include "base/geo_graphics.h"
 
 class FillRegion
 {

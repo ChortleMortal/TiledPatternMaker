@@ -14,7 +14,11 @@ void ListListWidget::mousePressEvent(QMouseEvent * event)
 {
     if (event->button() == Qt::RightButton)
     {
+#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
+        QPoint pt = event->localPos().toPoint();
+#else
         QPoint pt = event->position().toPoint();
+#endif
         QListWidgetItem * qlwi = itemAt(pt);
         index = row(qlwi);
         QString name = qlwi->text();
@@ -24,7 +28,11 @@ void ListListWidget::mousePressEvent(QMouseEvent * event)
         menu.addSection(name);
         menu.addAction("Rename",this,&ListListWidget::slot_editAction);
         menu.addAction("Delete",this,&ListListWidget::slot_deleteAction);
+#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
+        menu.exec(event->screenPos().toPoint());
+#else
         menu.exec(event->globalPosition().toPoint());
+#endif
     }
     else
     {
@@ -112,7 +120,11 @@ void PanelListWidget::mousePressEvent(QMouseEvent * event)
 {
     if (event->button() == Qt::RightButton)
     {
+#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
+        QPoint pt = event->localPos().toPoint();
+#else
         QPoint pt = event->position().toPoint();
+#endif
         QListWidgetItem * qlwi = itemAt(pt);
         bool found = false;
         int index = 0;
@@ -133,7 +145,11 @@ void PanelListWidget::mousePressEvent(QMouseEvent * event)
             QMenu menu(this);
             menu.addSection(name);
             menu.addAction("Float",this,&PanelListWidget::slot_floatAction);
+#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
+            menu.exec(event->screenPos().toPoint());
+#else
             menu.exec(event->globalPosition().toPoint());
+#endif
         }
     }
     else

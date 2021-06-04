@@ -37,7 +37,7 @@
 
 int Vertex::refs = 0;
 
-Vertex::Vertex( QPointF pos ) : Neighbours(this)
+Vertex::Vertex( QPointF pos )
 {
     refs++;
     this->pt        = pos;

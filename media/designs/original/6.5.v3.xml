@@ -1,0 +1,224 @@
+<?xml version="1.0"?>
+<vector id="1" version="10">
+	<design>
+		<size>
+			<width>1500</width>
+			<height>1100</height>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Fill>-3,3,-3,3</Fill>
+	</design>
+	<style.Interlace id="2" serialization="custom">
+		<toolkit.GeoLayer>
+			<left__delta>212</left__delta>
+			<top__delta>222</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3" serialization="custom">
+				<app.Prototype>
+					<string>6.5</string>
+					<entry>
+						<tile.Feature id="4">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">1,0.5773502691896256</Point>
+									<Point id="7">7.070501591499379e-17,1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">-0.9999999999999998,0.5773502691896261</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">-1,-0.5773502691896254</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point id="10">-2.121150477449814e-16,-1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="10" />
+									<Point id="11">0.9999999999999997,-0.5773502691896263</Point>
+								</Line>
+								<Line>
+									<Point reference="11" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.Star id="12">
+							<n>6</n>
+							<d>1.6665</d>
+							<s>1</s>
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.Star>
+					</entry>
+					<entry>
+						<tile.Feature id="13">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="14">
+								<Line>
+									<Point id="15">4.440892098500626e-16,2.309401076758502</Point>
+									<Point id="16">2.074901333220923e-16,1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="16" />
+									<Point id="17">1,0.5773502691896255</Point>
+								</Line>
+								<Line>
+									<Point reference="17" />
+									<Point id="18">2.000000000000001,1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="18" />
+									<Point id="19">1.333333333333334,2.309401076758502</Point>
+								</Line>
+								<Line>
+									<Point reference="19" />
+									<Point reference="15" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFigure id="20" type="FIG_TYPE_EXPLICIT">
+							<map id="21">
+								<vertices id="22">
+									<Vertex id="23">
+										<pos>4.034522267621424e-16,1.732050807568877</pos>
+									</Vertex>
+									<Vertex id="24">
+										<pos>0.4427896759853701,1.410345277003791</pos>
+									</Vertex>
+									<Vertex id="25">
+										<pos>0.5000000000000002,0.8660254037844384</pos>
+									</Vertex>
+									<Vertex id="26">
+										<pos>0.5235719498322924,2.112448095592726</pos>
+									</Vertex>
+									<Vertex id="27">
+										<pos>0.6666666666666673,2.309401076758502</pos>
+									</Vertex>
+									<Vertex id="28">
+										<pos>1.000000000000001,1.088639746438707</pos>
+									</Vertex>
+									<Vertex id="29">
+										<pos>1.038140216009754,1.798111599509421</pos>
+									</Vertex>
+									<Vertex id="30">
+										<pos>1.500000000000001,0.8660254037844383</pos>
+									</Vertex>
+									<Vertex id="31">
+										<pos>1.567647740043215,1.509650657060077</pos>
+									</Vertex>
+									<Vertex id="32">
+										<pos>1.666666666666668,1.732050807568876</pos>
+									</Vertex>
+								</vertices>
+								<edges id="33">
+									<Edge id="34">
+										<v1 reference="23" />
+										<v2 reference="26" />
+									</Edge>
+									<Edge id="35">
+										<v1 reference="23" />
+										<v2 reference="24" />
+									</Edge>
+									<Edge id="36">
+										<v1 reference="25" />
+										<v2 reference="24" />
+									</Edge>
+									<Edge id="37">
+										<v1 reference="25" />
+										<v2 reference="28" />
+									</Edge>
+									<Edge id="38">
+										<v1 reference="27" />
+										<v2 reference="26" />
+									</Edge>
+									<Edge id="39">
+										<v1 reference="27" />
+										<v2 reference="29" />
+									</Edge>
+									<Edge id="40">
+										<v1 reference="30" />
+										<v2 reference="28" />
+									</Edge>
+									<Edge id="41">
+										<v1 reference="32" />
+										<v2 reference="29" />
+									</Edge>
+									<Edge id="42">
+										<v1 reference="30" />
+										<v2 reference="31" />
+									</Edge>
+									<Edge id="43">
+										<v1 reference="32" />
+										<v2 reference="31" />
+									</Edge>
+								</edges>
+							</map>
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFigure>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="t">#ff003366</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.05</width>
+		</style.Thick>
+		<style.Interlace>
+			<gap>0</gap>
+			<shadow>0.05</shadow>
+			<includeTipVerts>false</includeTipVerts>
+		</style.Interlace>
+	</style.Interlace>
+	<style.Filled id="44" serialization="custom">
+		<toolkit.GeoLayer>
+			<left__delta>212</left__delta>
+			<top__delta>222</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<ColorBlacks>
+			<color hide="t">#711496d2</color>
+		</ColorBlacks>
+		<ColorWhites>
+			<color hide="t">#711496d2</color>
+		</ColorWhites>
+		<ColorGroup>
+			<Group hideSet="f">
+				<color hide="t">#711496d2</color>
+			</Group>
+			<Group hideSet="f" />
+		</ColorGroup>
+		<style.Filled>
+			<draw__inside>true</draw__inside>
+			<draw__outside>false</draw__outside>
+			<algorithm>0</algorithm>
+			<cleanse>0</cleanse>
+		</style.Filled>
+	</style.Filled>
+</vector>

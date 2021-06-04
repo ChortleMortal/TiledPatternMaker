@@ -27,6 +27,7 @@
 
 #include <QtWidgets>
 #include <QString>
+#include "base/shared.h"
 
 class panel_page : public QWidget
 {
@@ -81,7 +82,7 @@ protected:
     class Configuration     * config;
     class View              * view;
     class ViewControl       * vcontrol;
-    class TilingMaker       * tilingMaker;
+    TilingMakerPtr            tilingMaker;
     class MotifMaker        * motifMaker;
     class DecorationMaker   * decorationMaker;
 

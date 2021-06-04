@@ -53,6 +53,7 @@ Configuration::Configuration()
     cycleMode           = static_cast<eCycleMode>(s.value("cycleMode",0).toInt());
     cycleInterval       = s.value("cycleInterval",4).toInt();
     polySides           = s.value("polySides",8).toInt();
+    protoViewMode       = s.value("protoViewMode2",0x06).toInt();
 
     lastLoadedTileName  = s.value("lastLoadedTileName","").toString();
     lastLoadedXML       = s.value("lastLoadedXML","").toString();
@@ -107,7 +108,6 @@ Configuration::Configuration()
     highlightUnit       = s.value("highlightUnit",false).toBool();
     insightMode         = s.value("insightMode",false).toBool();
     cs_showBkgds        = s.value("cs_showBkgds",false).toBool();
-    cs_showBorders      = s.value("cs_showBorders",false).toBool();
     cs_showFrameSettings = s.value("cs_showFrameSettings",false).toBool();
     defaultImageRoot    = s.value("defaultImageRoot",true).toBool();
     defaultMediaRoot    = s.value("defaultMediaRoot",true).toBool();
@@ -174,6 +174,7 @@ void Configuration::save()
     QSettings s;
     s.setValue("design2",lastLoadedDesignId);
     s.setValue("cycleMode",cycleMode);
+    s.setValue("protoViewMode2",protoViewMode);
     s.setValue("polySides",polySides);
     s.setValue("cycleInterval",cycleInterval);
     s.setValue("lastLoadedTileName",lastLoadedTileName);
@@ -225,7 +226,6 @@ void Configuration::save()
     s.setValue("xmlTool",xmlTool);
     s.setValue("insightMode",insightMode);
     s.setValue("cs_showBkgds",cs_showBkgds);
-    s.setValue("cs_showBorders",cs_showBorders);
     s.setValue("cs_showFrameSettings",cs_showFrameSettings);
     s.setValue("defaultImageRoot",defaultImageRoot);
     s.setValue("defaultMediaRoot",defaultMediaRoot);

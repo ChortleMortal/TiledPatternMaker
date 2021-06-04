@@ -153,7 +153,7 @@ void DlgEdgePolyEdit::display()
 
 void DlgEdgePolyEdit::slot_ok()
 {
-    TilingMaker * tilingMaker = TilingMaker::getInstance();
+    TilingMakerPtr tilingMaker = TilingMaker::getSharedInstance();
     tilingMaker->sm_take(tilingMaker->getSelected(),SM_FEATURE_CHANGED);
     accept();
 }

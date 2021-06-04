@@ -35,7 +35,7 @@ class Mosaic
 {
 public:
     Mosaic();
-    ~Mosaic() {}
+    ~Mosaic();
 
     bool        hasContent() { return (styleSet.size() > 0); }
     int         numStyles()  { return styleSet.size(); }
@@ -49,12 +49,16 @@ public:
 
     void                  setPrototype(StylePtr style, PrototypePtr pp);
     QVector<PrototypePtr> getPrototypes();
+    void                  resetPrototypeMaps();
 
     ModelSettingsPtr getSettings();
     void             setSettings(ModelSettingsPtr settings);
 
     const StyleSet & getStyleSet() { return styleSet; }
     StylePtr         getFirstStyle();
+
+    BorderPtr   getBorder() { return border; }
+    void        setBorder(BorderPtr bp);
 
     void        setName(QString name);
     QString     getName();
@@ -71,6 +75,7 @@ private:
     QString          name;
     QString          designNotes;
     ModelSettingsPtr settings;
+    BorderPtr        border;
 };
 
 #endif

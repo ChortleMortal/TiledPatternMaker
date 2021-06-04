@@ -4,7 +4,7 @@
 #include <QtWidgets>
 #include "base/shared.h"
 #include "makers/tiling_maker/feature_selection.h"
-#include "viewers/geo_graphics.h"
+#include "base/geo_graphics.h"
 
 enum eTMMouseMode
 {
@@ -73,7 +73,7 @@ public:
     bool    active;
 
 private:
-    TilingMaker * tm;
+    TilingMakerPtr tm;
 
     QPointF wStart;
     QPointF wEnd;

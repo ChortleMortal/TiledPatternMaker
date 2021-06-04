@@ -24,7 +24,6 @@
 
 #include "style/filled.h"
 #include "base/configuration.h"
-#include "geometry/map_cleanser.h"
 #include <QPainter>
 
 ////////////////////////////////////////////////////////////////////////////
@@ -72,8 +71,9 @@ Filled::~Filled()
 {
 #ifdef EXPLICIT_DESTRUCTOR
     qDebug() << "deleting filled";
-    white.clear();
-    black.clear();
+    whiteColorSet.clear();
+    blackColorSet.clear();
+    colorGroup.clear();
 #endif
 }
 
@@ -94,8 +94,11 @@ void  Filled::setCleanseLevel(int val)
 
 void Filled::resetStyleRepresentation()
 {
-    eraseStyleMap();
+    blackFaces.clear();
+    whiteFaces.clear();
+    faceGroup.clear();
     dcel.reset();
+    eraseStyleMap();
     whiteColorSet.resetIndex();
     blackColorSet.resetIndex();
     colorGroup.resetIndex();
@@ -108,19 +111,18 @@ void Filled::createStyleRepresentation()
     {
         MapPtr map = getMap();
 
-        MapCleanser cleanser(map);
         qDebug().noquote() << "Filled pre  map cleanse" << map->summary();
         if (cleanseLevel == 1)
         {
-            cleanser.cleanse(divideupIntersectingEdges | badVertices_0 | badVertices_1);
+            map->cleanse(divideupIntersectingEdges | badVertices_0 | badVertices_1);
         }
         else if (cleanseLevel == 2)
         {
-            cleanser.cleanse(badVertices_0 | badVertices_1);
+            map->cleanse(badVertices_0 | badVertices_1);
         }
         else if (cleanseLevel == 3)
         {
-            cleanser.cleanse(divideupIntersectingEdges);
+            map->cleanse(divideupIntersectingEdges);
         }
         qDebug().noquote() << "Filled post map cleanse" << map->summary();
 
@@ -262,11 +264,11 @@ void Filled::drawDCELNew2(GeoGraphics *gg)
 
 void Filled::drawDCELNew3(GeoGraphics *gg)
 {
-    for (FaceSetPtr fset : faceGroup)
+    for (FaceSetPtr & fset : faceGroup)
     {
         if (fset->selected)
         {
-            for (FacePtr face : *fset)
+            for (FacePtr & face : *fset)
             {
                 gg->fillEdgePoly(face.get(),Qt::red);
             }
@@ -282,7 +284,7 @@ void Filled::drawDCELNew3(GeoGraphics *gg)
 
         cset->resetIndex();
 
-        for (FacePtr face : *fset)
+        for (FacePtr & face : *fset)
         {
             Q_ASSERT(face->isClockwise());
             TPColor tpc = cset->getNextColor();

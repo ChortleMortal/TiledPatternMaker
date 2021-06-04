@@ -61,7 +61,7 @@ bool Design5::build()
     BorderPtr bp = make_shared<BorderTwoColor>(size,QColor(TileGreen),QColor(TileWhite),20.0);
     bp->construct();
 
-    settings->setBorder(bp);
+    border = bp;
 
     qreal d = 150.0;                // diameter
     settings->setStartTile(QPointF(200.0,150.0));
@@ -103,7 +103,7 @@ bool Design6::build()
 
     BorderPtr bp = make_shared<BorderTwoColor>(size,QColor(TileGreen),QColor(TileWhite),20.0);
     bp->construct();
-    settings->setBorder(bp);
+    border = bp;
 
     qreal d = 150.0;                // diameter
     settings->setStartTile(QPointF(170.0,85.0));
@@ -159,7 +159,7 @@ bool Design7::build()
 
     BorderPtr bp = make_shared<BorderBlocks>(size,QColor(TileWhite),diameter,0,cols);
     bp->construct();
-    settings->setBorder(bp);
+    border = bp;
 
     settings->setStartTile(QPointF(diameter/2.0,diameter/2.0 + piece));
     qDebug() << "start tile:" << settings->getStartTile();
@@ -455,7 +455,7 @@ bool Design12::build()
 
     BorderPtr bp = make_shared<BorderTwoColor>(size,QColor(Qt::green),QColor(Qt::red),20.0);
     bp->construct();
-    settings->setBorder(bp);
+    border = bp;
 
     qreal diameter = 400.0;
     settings->setStartTile(settings->getCenter());
@@ -782,7 +782,7 @@ bool DesignKumiko1::build()
 
     BorderPtr bp = make_shared<BorderTwoColor>(size,QColor(0xa2,0x79,0x67),QColor(0xa2,0x79,0x67),20);
     bp->construct();
-    settings->setBorder(bp);
+    border = bp;
 
     qreal diameter = 200.0;
     settings->setStartTile(settings->getCenter());
@@ -864,7 +864,7 @@ bool DesignKumiko2::build()
 
     BorderPtr bp = make_shared<BorderTwoColor>(settings->getSize(),QColor(0xa2,0x79,0x67),QColor(0xa2,0x79,0x67),20.0);
     bp->construct();
-    settings->setBorder(bp);
+    border = bp;
 
     settings->setBackgroundColor((QColor(0x58, 0x39, 0x3e)));
 

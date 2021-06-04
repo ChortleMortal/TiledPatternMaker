@@ -56,10 +56,10 @@ void TiledPatternMaker::startEverything()
 
     vcontrol        = ViewControl::getInstance();
     view            = View::getInstance();
-    tilingMaker     = TilingMaker::getInstance();
+    tilingMaker     = TilingMaker::getSharedInstance();
     motifMaker      = MotifMaker::getInstance();
     decorationMaker = DecorationMaker::getInstance();
-    mapEditor       = MapEditor::getInstance();
+    mapEditor       = MapEditor::getSharedInstance();
 
     vcontrol->init();
     view->init();
@@ -207,13 +207,11 @@ void TiledPatternMaker::slot_loadMosaic(QString name)
     view->dump(true);
 
     config->currentlyLoadedXML.clear();
-    config->currentlyLoadingXML = name;
 
     MosaicManager mm;
     bool rv = mm.loadMosaic(name);
     if (rv)
     {
-        config->currentlyLoadingXML.clear();
         config->lastLoadedXML      = name;
         config->currentlyLoadedXML = name;
         emit sig_refreshView();
@@ -228,13 +226,11 @@ void TiledPatternMaker::slot_cycleLoadMosaic(QString name)
     view->setWindowTitle(QString("Loading: %1").arg(name));
 
     config->currentlyLoadedXML.clear();
-    config->currentlyLoadingXML = name;
 
     MosaicManager mm;
     bool rv = mm.loadMosaic(name);
     if (rv)
     {
-        config->currentlyLoadingXML.clear();
         config->lastLoadedXML      = name;
         config->currentlyLoadedXML = name;
         emit sig_refreshView();
@@ -251,7 +247,7 @@ void TiledPatternMaker::slot_saveMosaic(QString filename)
     bool rv = mm.saveMosaic(filename,savedFile,false);
     if (rv)
     {
-        MapEditor::getInstance()->keepStash(savedFile);
+        mapEditor->keepStash(savedFile);
         config->lastLoadedXML      = savedFile;
         config->currentlyLoadedXML = savedFile;
         emit sig_mosaicWritten();

@@ -23,6 +23,7 @@
  */
 
 #include "panels/page_log.h"
+#include "panels/dlg_textedit.h"
 #include "base/qtapplog.h"
 #include "base/configuration.h"
 
@@ -36,6 +37,7 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel, "Log")
     hbox->addWidget(follow);
 
     QPushButton * btnCopyLog            = new QPushButton("Save Log");
+    QPushButton * btnViewLog            = new QPushButton("View Saved");
     QCheckBox   * cbLogToStderr         = new QCheckBox("Log To stderr");
     QCheckBox   * cbLogToDisk           = new QCheckBox("Log To Disk");
     QCheckBox   * cbLogToPanel          = new QCheckBox("Log To Panel");
@@ -45,7 +47,7 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel, "Log")
                   cbLogIntervalTime     = new QCheckBox("Interval Time");
 
     hbox->addWidget(btnCopyLog);
-    hbox->addSpacing(43);
+    hbox->addWidget(btnViewLog);
     hbox->addWidget(cbLogToDisk);
     hbox->addWidget(cbLogToStderr);
     hbox->addWidget(cbLogToPanel);
@@ -54,7 +56,6 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel, "Log")
     hbox->addWidget(cbLogNumberLines);
     hbox->addWidget(cbLogIntervalTime);
     hbox->addWidget(cbLogElapsedTime);
-    hbox->addStretch();
 
     vbox->addLayout(hbox);
 
@@ -88,6 +89,7 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel, "Log")
     connect(cbLogElapsedTime, &QCheckBox::clicked,    this,   &page_log::slot_elapsedTime);
     connect(cbLogIntervalTime,&QCheckBox::clicked,    this,   &page_log::slot_intervalTime);
     connect(btnCopyLog,       &QPushButton::clicked,  this,   &page_log::slot_copyLog);
+    connect(btnViewLog,       &QPushButton::clicked,  this,   &page_log::slot_viewLog);
 
     ed = qtAppLog::getTextEditor();     // linkage to qtAppLog
     ed->setMinimumWidth(800);
@@ -167,6 +169,19 @@ void page_log::slot_copyLog()
 
     qtAppLog * log = qtAppLog::getInstance();
     log->saveLog(file);
+}
+
+void page_log::slot_viewLog()
+{
+    QString path      = qtAppLog::getInstance()->logDir();
+    QString nameList  = "Log Files (*.txt)";
+
+    QString filename = QFileDialog::getOpenFileName(this, "Load log", path, nameList);
+
+    if (filename.isEmpty()) return;
+
+    DlgLogView * dlg = new DlgLogView(filename,this);
+    dlg->show();
 }
 
 void page_log::slot_logToStdErr(bool enable)

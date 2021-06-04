@@ -38,7 +38,7 @@
 #include "geometry/neighbours.h"
 
 
-class Vertex  : public Neighbours
+class Vertex
 {
 public:
     Vertex(QPointF pos);
@@ -53,6 +53,8 @@ public:
     QPointF     pt;
     bool        visited;    // used by interlace
     VertexPtr   copy;       // Used when cloning the map.
+    QVector<weak_ptr<Vertex>> adjacent_vertices;
+
 };
 
 #endif

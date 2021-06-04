@@ -69,7 +69,7 @@ QGroupBox * page_image_tools::createCycleSection()
     QRadioButton * rSavStyles = new QRadioButton("Save Mosaic BMPs");
     QRadioButton * rSavTiles  = new QRadioButton("Save Tiling BMPs");
     QCheckBox    * skip       = new QCheckBox("Skip Existing");
-    QCheckBox    * use_wlistG = new QCheckBox("Use Work List");
+      use_wlistForGenerateChk = new QCheckBox("Use Work List");
                    directory  = new QLineEdit("");
 #ifdef Q_OS_WINDOWS
     QPushButton  * opendirBtn = new QPushButton("Open/See");
@@ -98,7 +98,7 @@ QGroupBox * page_image_tools::createCycleSection()
 #endif
     hbox00->addWidget(rSavTiles);
     hbox00->addWidget(rSavStyles);
-    hbox00->addWidget(use_wlistG);
+    hbox00->addWidget(use_wlistForGenerateChk);
     hbox00->addWidget(skip);
     hbox00->addStretch();
 
@@ -121,13 +121,15 @@ QGroupBox * page_image_tools::createCycleSection()
     cycleGroupBox->setLayout(hbox22);
 
     spCycleInterval->setValue(config->cycleInterval);
-    use_wlistG->setChecked(config->use_workListForGenerate);
+    use_wlistForGenerateChk->setChecked(config->use_workListForGenerate);
     skip->setChecked(config->skipExisting);
 
     connect(spCycleInterval,    &SpinSet::valueChanged,    this,  &page_image_tools::slot_cycleIntervalChanged);
     connect(generateBtn,        &QPushButton::clicked,     this,  &page_image_tools::slot_cycle);
+#ifdef Q_OS_WINDOWS
     connect(opendirBtn,         &QPushButton::clicked,     this,  &page_image_tools::slot_opendir);
-    connect(use_wlistG,         &QCheckBox::clicked,       this,  &page_image_tools::slot_use_worklist_generate);
+#endif
+    connect(use_wlistForGenerateChk,&QCheckBox::clicked,   this,  &page_image_tools::slot_use_worklist_generate);
     connect(skip,               &QCheckBox::clicked,       this,  &page_image_tools::slot_skipExisting);
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
@@ -140,14 +142,17 @@ QGroupBox * page_image_tools::createCycleSection()
 
 QGroupBox * page_image_tools::createWorklistSection()
 {
-    QPushButton * loadListBtn= new QPushButton("Load Work List");
-    QPushButton * saveListBtn= new QPushButton("Save Work List");
-    QPushButton * editListBtn= new QPushButton("Edit Work List");
+    QPushButton * loadListBtn = new QPushButton("Load Work List");
+    QPushButton * saveListBtn = new QPushButton("Save Work List");
+    QPushButton * editListBtn = new QPushButton("Edit Work List");
+                  wlistStatus = new QLabel();
 
     QHBoxLayout * hbox = new QHBoxLayout;
     hbox->addWidget(loadListBtn);
     hbox->addWidget(saveListBtn);
     hbox->addWidget(editListBtn);
+    hbox->addSpacing(7);
+    hbox->addWidget(wlistStatus);
     hbox->addStretch();
 
     QGroupBox * box = new  QGroupBox("Work List operations");
@@ -188,16 +193,16 @@ QGroupBox * page_image_tools::createCompareSection()
     QCheckBox   * cbStopIfDiff = new QCheckBox("Stop if Diff");
     QCheckBox   * transparent  = new QCheckBox("Transparent");
     QCheckBox   * differences  = new QCheckBox("Display Differences");
-    QCheckBox   * use_wlistC   = new QCheckBox("Use Work List");
-    QCheckBox   * gen_wlist    = new QCheckBox("Generate Work List");
+        use_wlistForCompareChk = new QCheckBox("Use Work List");
+                  gen_wlistChk = new QCheckBox("Generate Work List");
 
     QHBoxLayout * hbox = new QHBoxLayout;
     hbox->addStretch();
     hbox->addWidget(cbStopIfDiff);
     hbox->addWidget(transparent);
     hbox->addWidget(differences);
-    hbox->addWidget(use_wlistC);
-    hbox->addWidget(gen_wlist);
+    hbox->addWidget(use_wlistForCompareChk);
+    hbox->addWidget(gen_wlistChk);
     hbox->addWidget(reviewBtn);
 
     QGridLayout * imageGrid = new QGridLayout();
@@ -242,8 +247,8 @@ QGroupBox * page_image_tools::createCompareSection()
     cbStopIfDiff->setChecked(config->stopIfDiff);
     transparent->setChecked(config->compare_transparent);
     differences->setChecked(config->display_differences);
-    use_wlistC->setChecked(config->use_workListForCompare);
-    gen_wlist->setChecked(config->generate_workList);
+    use_wlistForCompareChk->setChecked(config->use_workListForCompare);
+    gen_wlistChk->setChecked(config->generate_workList);
 
     connect(swapBtn,                &QPushButton::clicked,     this,  &page_image_tools::swapDirs);
     connect(compareDir0Btn,         &QPushButton::clicked,     this,  &page_image_tools::selectDir0);
@@ -260,8 +265,8 @@ QGroupBox * page_image_tools::createCompareSection()
     connect(transparent,            &QCheckBox::clicked,       this,   &page_image_tools::slot_transparentClicked);
     connect(cbStopIfDiff,           &QCheckBox::clicked,       this,   &page_image_tools::slot_stopIfDiffClicked);
     connect(differences,            &QCheckBox::clicked,       this,   &page_image_tools::slot_differencesClicked);
-    connect(use_wlistC,             &QCheckBox::clicked,       this,   &page_image_tools::slot_use_worklist_compare);
-    connect(gen_wlist,              &QCheckBox::clicked,       this,   &page_image_tools::slot_gen_worklist);
+    connect(use_wlistForCompareChk, &QCheckBox::clicked,       this,   &page_image_tools::slot_use_worklist_compare);
+    connect(gen_wlistChk,           &QCheckBox::clicked,       this,   &page_image_tools::slot_gen_worklist);
 
     connect(dir0, &QLineEdit::editingFinished, this, &page_image_tools::slot_dir0Changed);
     connect(dir1, &QLineEdit::editingFinished, this, &page_image_tools::slot_dir1Changed);
@@ -289,6 +294,8 @@ void page_image_tools::onExit()
 
 void  page_image_tools::refreshPage()
 {
+    QString str = QString("Worklist contains %1 entries").arg(config->workList.size());
+    wlistStatus->setText(str);
 }
 
 void page_image_tools::slot_stopIfDiffClicked(bool enb)
@@ -461,12 +468,10 @@ void page_image_tools::saveMosaicBitmaps()
         }
 
         config->currentlyLoadedXML.clear();
-        config->currentlyLoadingXML = name;
 
         MosaicManager mm;
         mm.loadMosaic(name);
 
-        config->currentlyLoadingXML.clear();
         config->lastLoadedXML      = name;
         config->currentlyLoadedXML = name;
 
@@ -543,6 +548,12 @@ void page_image_tools::slot_differencesClicked(bool checked)
 void page_image_tools::slot_use_worklist_compare(bool checked)
 {
     config->use_workListForCompare = checked;
+    if (checked)
+    {
+        config->generate_workList = false;
+        gen_wlistChk->setChecked(false);
+
+    }
     slot_dir0Changed();
     slot_dir1Changed();
 }
@@ -554,16 +565,16 @@ void page_image_tools::slot_use_worklist_generate(bool checked)
     slot_dir1Changed();
 }
 
-void page_image_tools::slot_workList()
-{
-    Q_ASSERT(config->generate_workList);
-    slot_dir0Changed();
-    slot_dir1Changed();
-}
-
 void page_image_tools::slot_gen_worklist(bool checked)
 {
     config->generate_workList = checked;
+    if (checked)
+    {
+        config->use_workListForCompare = false;
+        use_wlistForCompareChk->setChecked(false);
+    }
+    slot_dir0Changed();
+    slot_dir1Changed();
 }
 
 void page_image_tools::slot_compareResult(QString result)
@@ -828,7 +839,7 @@ void page_image_tools::saveWorkListToFile()
     QStringList::const_iterator constIterator;
     for (constIterator = config->workList.constBegin(); constIterator != config->workList.constEnd(); ++constIterator)
     {
-       ts << (*constIterator).toLocal8Bit().constData() << Qt::endl;
+       ts << (*constIterator).toLocal8Bit().constData() << endl;
     }
     file.close();
 

@@ -33,7 +33,7 @@
 
 class Canvas;
 
-class MapEditor : public MapEditorSelection
+class MapEditor : public MapEditorSelection, std::enable_shared_from_this<MapEditor>
 {
     Q_OBJECT
 
@@ -44,18 +44,18 @@ class MapEditor : public MapEditorSelection
     friend class ExtendLine;
     friend class MoveConstructionCircle;
     friend class CreateCrop;
+    friend class CreateBorder;
+    friend class EditBorder;
 
 public:
-    static MapEditor *  getInstance();
     static MapEditorPtr getSharedInstance();
-
-    MapEditor();
+    MapEditor();    // dont call this
 
     void            reload();
     void            setLocalMap(MapPtr map) { localMap = map; }
 
     DesignElementPtr getDesignElement() { return delp; }
-    PrototypePtr     getPrototype() { return prop; }
+    PrototypePtr     getPrototype() { return prototype; }
     StylePtr         getStyle() { return styp; }
     SelectionSet     getCurrentSelections() { return currentSelections; }
 
@@ -76,13 +76,16 @@ public:
     void            flipLineExtension();
 
     void            applyCrop();
+    void            applyMask();
+    void            redisplayCurrentMap();
+    void            completeBorder();
+
+    void            clearAllMaps();
 
     MapMouseActionPtr mouse_interaction;    // used by menu
     QPointF           mousePos;             // used by menu
     qreal             newCircleRadius;      // used by menu
     MapEditorStash    stash;                // stash of construction lines
-
-signals:
 
 public slots:
     void setMouseMode(eMapMouseMode mapType);
@@ -94,21 +97,17 @@ public slots:
     void slot_view_synch(int id, int enb);
 
 protected:
-
     void    setMousePos(QPointF pt);
-    MapPtr  createFromTiling();
 
     MapPtr  localMap;       // for new maps created in the editor
 
 private:
-
-    static MapEditor      * mpThis;
     static MapEditorPtr     spThis;
 
     class View            * view;
     class DecorationMaker * decorationMaker;
     class MotifMaker      * motifMaker;
-    class TilingMaker     * tilingMaker;
+    TilingMakerPtr          tilingMaker;
     class ControlPanel    * cpanel;
 
     SelectionSet currentSelections;

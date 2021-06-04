@@ -49,7 +49,6 @@ public slots:
     void    slot_compareResult(QString result);
     void    slot_setImage0(QString name);
     void    slot_setImage1(QString name);
-    void    slot_workList();
 
 private slots:
     void    slot_stopIfDiffClicked(bool enb);
@@ -109,6 +108,11 @@ private:
     QComboBox   * ibox0;
     QComboBox   * ibox1;
     QLineEdit   * imageCompareResult;
+
+    QCheckBox   * use_wlistForCompareChk;
+    QCheckBox   * use_wlistForGenerateChk;
+    QCheckBox   * gen_wlistChk;
+    QLabel      * wlistStatus;
 };
 
 #endif

@@ -103,6 +103,20 @@ public:
     // Used to sort the edges in the map.
     qreal     getMinX();
 
+
+    // dcel stuff
+    bool operator < (const Edge & other) const;
+
+    double angle() const { return std::atan2(v2->pt.y() - v1->pt.y(), v2->pt.x() - v1->pt.x()); }
+
+    EdgePtr    prev() { return twin.lock()->next.lock(); }
+
+    weak_ptr<Edge>  twin;
+    weak_ptr<Edge>  next;
+    FacePtr         incident_face;
+    bool            dvisited;       // used by dcel
+
+    //
     QString   dump();
 
     static int refs;

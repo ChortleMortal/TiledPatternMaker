@@ -8,6 +8,8 @@ class ColorMaker
 {
 public:
     ColorMaker();
+    ~ColorMaker();
+
 
     void createFacesToDo();
 

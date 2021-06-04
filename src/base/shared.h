@@ -64,8 +64,6 @@ class ColorMaker;
 class Design;
 class DesignElement;
 class DCEL;
-class dcelEdge;
-class dcelVertex;
 class Edge;
 class ExplicitFigure;
 class ExtendedRosette;
@@ -91,6 +89,7 @@ class Pattern;
 class PlacedDesignElement;
 class PlacedFeature;
 class Prototype;
+class PrototypeView;
 class QPolygonF;
 class RadialFigure;
 class Rosette;
@@ -114,8 +113,6 @@ typedef shared_ptr<ColorMaker>      ColorMakerPtr;
 typedef shared_ptr<Design>          DesignPtr;
 typedef shared_ptr<DesignElement>   DesignElementPtr;
 typedef shared_ptr<DCEL>            DCELPtr;
-typedef shared_ptr<dcelEdge>        dcelEdgePtr;
-typedef shared_ptr<dcelVertex>      dcelVertexPtr;
 typedef shared_ptr<Edge>            EdgePtr;
 typedef shared_ptr<ExplicitFigure>  ExplicitPtr;
 typedef shared_ptr<ExtendedRosette> ExtRosettePtr;
@@ -141,6 +138,7 @@ typedef shared_ptr<Pattern>         PatternPtr;
 typedef shared_ptr<PlacedDesignElement> PlacedDesignElementPtr;
 typedef shared_ptr<PlacedFeature>   PlacedFeaturePtr;
 typedef shared_ptr<Prototype>       PrototypePtr;
+typedef shared_ptr<PrototypeView>   PrototypeViewPtr;
 typedef shared_ptr<QPolygonF>       PolyPtr;
 typedef shared_ptr<RadialFigure>    RadialPtr;
 typedef shared_ptr<Rosette>         RosettePtr;
@@ -171,5 +169,28 @@ typedef weak_ptr<PlacedFeature>   WeakPlacedFeaturePtr;
 typedef weak_ptr<Prototype>       WeakPrototypePtr;
 typedef weak_ptr<Style>           WeakStylePtr;
 typedef weak_ptr<Tiling>          WeakTilingPtr;
+typedef weak_ptr<Edge>            WeakEdgePtr;
+typedef weak_ptr<Vertex>          WeakVertexPtr;
+
+class Tristate
+{
+public:
+
+    enum eTristate
+    {
+        False,
+        True,
+        Unknown
+    };
+
+    Tristate() { state = Unknown; }
+
+    void        set(bool b) { if (b) state = True; else state = False; }
+    void        reset() { state = Unknown; }
+    eTristate   get() { return state; }
+
+private:
+    eTristate state;
+};
 
 #endif // SHARED_H

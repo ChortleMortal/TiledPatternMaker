@@ -77,9 +77,12 @@ public:
     QTransform        getTransform(int index);
 
     QVector<DesignElementPtr> &  getDesignElements() { return designElements; }
-    QVector<QTransform>       &  getLocations()      { return locations; }
+    QVector<QTransform>       &  getTranslations()   { return translations; }
 
-    void receive(GeoGraphics *gg, int h, int v );
+    void            setBorder(BorderPtr border);
+    BorderPtr       getBorder() { return _border; }
+
+    void receive(GeoGraphics *gg, int h, int v) override;
 
     static int refs;
 
@@ -88,9 +91,11 @@ protected:
 
 private:
     TilingPtr                   tiling;
+    BorderPtr                   _border;
     QVector<DesignElementPtr>   designElements;
-    QVector<QTransform>         locations;
+    QVector<QTransform>         translations;
     MapPtr                      protoMap;
+
     class ControlPanel        * panel;
 };
 #endif

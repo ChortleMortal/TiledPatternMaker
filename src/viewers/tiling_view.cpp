@@ -41,11 +41,19 @@
 #include "base/configuration.h"
 #include "tile/placed_feature.h"
 
-TilingView::TilingView(TilingPtr tiling) : Layer("TilingView",LTYPE_VIEW)
+TilingViewPtr TilingView::spThis;
+
+TilingViewPtr TilingView::getSharedInstance()
 {
-    Q_ASSERT(tiling);
-    this->tiling = tiling;
-    forceRedraw();
+    if (!spThis)
+    {
+        spThis = make_shared<TilingView>();
+    }
+    return spThis;
+}
+
+TilingView::TilingView() : Layer("TilingView",LTYPE_VIEW)
+{
 }
 
 void TilingView::paint(QPainter *painter)

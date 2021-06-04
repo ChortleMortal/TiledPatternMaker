@@ -44,6 +44,7 @@
 #include "panels/panel.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "base/mosaic_writer.h"
+#include "tapp/explicit_figure.h"
 
 
 const QString Tiling::defaultName = "The Unnamed";
@@ -52,11 +53,11 @@ int Tiling::refs = 0;
 
 Tiling::Tiling()
 {
-    name       = defaultName;
-    settings   = make_shared<ModelSettings>();
+    name        = defaultName;
+    settings    = make_shared<ModelSettings>();
     settings->setSize(QSize(1500,1100));
-    version    = -1;
-    state      = TILING_EMPTY;
+    version     = -1;
+    state       = EMPTY;
     refs++;
 }
 
@@ -71,13 +72,13 @@ Tiling::Tiling(QString name, QPointF t1, QPointF t2)
     }
     else
     {
-        name   = defaultName;
+        name    = defaultName;
     }
 
-    settings   = make_shared<ModelSettings>();
+    settings    = make_shared<ModelSettings>();
     settings->setSize(QSize(1500,1100));
-    version     = -1;
-    state       = TILING_EMPTY;
+    version      = -1;
+    state        = EMPTY;
     refs++;
 }
 
@@ -89,15 +90,15 @@ Tiling::Tiling(Tiling * other)
         placed_features.push_back(pf);
     }
 
-    t1          = other->t1;
-    t2          = other->t2;
-    name        = other->name;
-    desc        = other->desc;
-    author      = other->author;
-    settings    = other->settings;
-    canvasXform = other->canvasXform;
-    version     = -1;
-    state       = TILING_LOADED;
+    t1           = other->t1;
+    t2           = other->t2;
+    name         = other->name;
+    desc         = other->desc;
+    author       = other->author;
+    settings     = other->settings;
+    canvasXform  = other->canvasXform;
+    version      = -1;
+    state        = LOADED;
     refs++;
 }
 
@@ -115,29 +116,150 @@ bool Tiling::isEmpty()
         return false;
 }
 
-bool Tiling::hasOverlaps()
+bool Tiling::hasIntrinsicOverlaps()
 {
-    for (auto pf : qAsConst(placed_features))
+    if (intrinsicOverlaps.get() == Tristate::Unknown)
     {
-        QPolygonF poly = pf->getPlacedPolygon();
-
-        for (auto pf2 : qAsConst(placed_features))
+        for (auto pf : qAsConst(placed_features))
         {
-            if (pf2 == pf) continue;
+            QPolygonF poly = pf->getPlacedPolygon();
 
-            QPolygonF poly2 = pf2->getPlacedPolygon();
-            if (poly2.intersects(poly))
+            for (auto pf2 : qAsConst(placed_features))
             {
-                QPolygonF p3 = poly2.intersected(poly);
-                if (!p3.isEmpty())
+                if (pf2 == pf) continue;
+
+                QPolygonF poly2 = pf2->getPlacedPolygon();
+                if (poly2.intersects(poly))
                 {
-                    //qDebug() << "overlapping";
-                    return true;
+                    QPolygonF p3 = poly2.intersected(poly);
+                    if (!p3.isEmpty())
+                    {
+                        //qDebug() << "overlapping";
+                        intrinsicOverlaps.set(true);
+                    }
                 }
             }
         }
+        intrinsicOverlaps.set(false);
     }
-    return false;
+    return (intrinsicOverlaps.get() == Tristate::True);
+}
+
+bool Tiling::hasTiledOverlaps()
+{
+    if (tiledOveraps.get() == Tristate::Unknown)
+    {
+        MapPtr map = createProtoMap();
+        tiledOveraps.set(map->hasIntersectingEdges());
+    }
+    return (tiledOveraps.get() == Tristate::True);
+}
+
+MapPtr Tiling::createMap()
+{
+    MapPtr map = make_shared<Map>("tiling map");
+    for (auto pfp : placed_features)
+    {
+        EdgePoly poly = pfp->getPlacedEdgePoly();
+        MapPtr emap = make_shared<Map>("feature",poly);
+        map->mergeMap(emap);
+    }
+
+    return map;
+}
+
+MapPtr Tiling::createFilledMap()
+{
+    MapPtr map = make_shared<Map>("tiling map");
+
+    QVector<QTransform> translations = getFillTranslations();
+
+    MapPtr tilingMap = createMap();
+
+    for (auto transform : translations)
+    {
+        MapPtr m  = tilingMap->recreate();
+        m->transformMap(transform);
+        map->mergeMap(m);
+    }
+    return map;
+}
+
+MapPtr Tiling::createProtoMap()
+{
+    // Thios builds a prototype using explicit fewature figures and generates its map
+    Prototype proto(shared_from_this());
+
+    QVector<FeaturePtr> uniqueFeatures = getUniqueFeatures();
+
+    for (auto feature :  uniqueFeatures)
+    {
+        EdgePoly & ep = feature->getEdgePoly();
+        MapPtr     fm = make_shared<Map>("feature map",ep);
+        FigurePtr fig = make_shared<ExplicitFigure>(fm,FIG_TYPE_EXPLICIT_FEATURE,feature->numSides());
+        DesignElementPtr  dep = make_shared<DesignElement>(feature, fig);
+        proto.addElement(dep);
+    }
+
+    // Now, for each different feature, build a submap corresponding
+    // to all translations of that feature.
+
+    QVector<QTransform> translations = getFillTranslations();
+
+    MapPtr testmap = make_shared<Map>("testmap");
+
+    for (auto dep : qAsConst(proto.getDesignElements()))
+    {
+        FeaturePtr feature   = dep->getFeature();
+        FigurePtr figure     = dep->getFigure();
+        MapPtr figmap        = figure->getFigureMap();
+
+        QVector<QTransform> subT;
+        for (auto placed_feature : placed_features)
+        {
+            FeaturePtr       f  = placed_feature->getFeature();
+            if (f == feature)
+            {
+                QTransform t = placed_feature->getTransform();
+                subT.push_back(t);
+            }
+        }
+
+        // Within a single translational unit, assemble the different
+        // transformed figures corresponding to the given feature into a map.
+        MapPtr transmap = make_shared<Map>("proto transmap");
+        if (hasIntrinsicOverlaps())
+            transmap->mergeMany(figmap, subT);
+        else
+            transmap->mergeSimpleMany(figmap, subT);
+
+        // Now put all the translations together into a single map for this feature.
+        MapPtr featuremap = make_shared<Map>("proto featuremap");
+        featuremap->mergeSimpleMany(transmap, translations);
+
+        // And do a slow merge to add this map to the finished design.
+        testmap->mergeMap(featuremap);
+    }
+    return testmap;
+}
+
+
+QVector<QTransform> Tiling::getFillTranslations()
+{
+    QVector<QTransform> translations;
+    FillData & fd = settings->getFillData();
+    int minX,minY,maxX,maxY;
+    fd.get(minX,maxX,minY,maxY);
+    for (int h = minX; h <= maxX; h++)
+    {
+        for (int v = minY; v <= maxY; v++)
+        {
+            QPointF pt   = (t1 * static_cast<qreal>(h)) + (t2 * static_cast<qreal>(v));
+            QTransform T = QTransform::fromTranslate(pt.x(),pt.y());
+            translations << T;
+        }
+    }
+    return translations;
 }
 
 // Feature management.
@@ -145,25 +267,25 @@ bool Tiling::hasOverlaps()
 void Tiling::setPlacedFeatures(QVector<PlacedFeaturePtr> & features)
 {
     placed_features = features;
-    setState(TILING_MODIFED);
+    setState(MODIFED);
 }
 
 void Tiling::add(const PlacedFeaturePtr pf )
 {
     placed_features.push_back(pf);
-    setState(TILING_MODIFED);
+    setState(MODIFED);
 }
 
 void Tiling::add(FeaturePtr f, QTransform  T)
 {
     add(make_shared<PlacedFeature>(f, T));
-    setState(TILING_MODIFED);
+    setState(MODIFED);
 }
 
 void Tiling::remove(PlacedFeaturePtr pf)
 {
     placed_features.removeOne(pf);
-    setState(TILING_MODIFED);
+    setState(MODIFED);
 }
 
 int Tiling::getVersion()
@@ -176,7 +298,7 @@ void Tiling::setVersion(int ver)
     version = ver;
 }
 
-eTilingState Tiling::getState()
+Tiling::eTilingState Tiling::getState()
 {
     return state;
 }
@@ -241,14 +363,15 @@ QString Tiling::dump() const
     QString astring;
     QDebug  deb(&astring);
 
-    deb << "name=" << name  << "t1=" << t1 << "t2=" << t2 << "num features=" << placed_features.size() << endl;
+    deb << "tiling=" << name  << "t1=" << t1 << "t2=" << t2 << "num features=" << placed_features.size();
+#if 0
     for (int i=0; i < placed_features.size(); i++)
     {
         PlacedFeaturePtr  pf = placed_features[i];
-        deb << "poly" << i << "points=" << pf->getFeature()->numPoints()  << "transform= " << Transform::toInfoString(pf->getTransform()) << endl;
-        deb << pf->getFeaturePolygon() << endl;
+        deb << endl << "poly" << i << "points=" << pf->getFeature()->numPoints()  << "transform= " << Transform::toInfoString(pf->getTransform()) << endl;
+        deb << pf->getFeaturePolygon();
     }
-
+#endif
     return astring;
 }
 

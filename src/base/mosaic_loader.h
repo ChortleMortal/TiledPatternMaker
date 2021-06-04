@@ -148,6 +148,8 @@ private:
     void    procBorderPlain(xml_node & n);
     void    procBorderTwoColor(xml_node & n);
     void    procBorderBlocks(xml_node & n);
+    void    procBorderInner(xml_node & n);
+
     [[noreturn]] void fail(QString a, QString b);
     QTransform getQTransform(QString txt);
 

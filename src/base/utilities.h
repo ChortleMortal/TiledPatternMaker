@@ -71,6 +71,8 @@ public:
     static void reverseOrder(QPolygonF & poly);
     static void reverseOrder(EdgePoly & ep);
 
+    static bool rectContains(QRectF & rect, QPointF p);
+
 private:
     static int      findLineCircleLineIntersections(qreal cx, qreal cy, qreal radius, QPointF point1, QPointF point2, QPointF & intersection1, QPointF & intersection2);
     static int      circleIntersects(qreal x1, qreal y1, qreal x2,  qreal y2, qreal r1, qreal r2);

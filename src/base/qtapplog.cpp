@@ -38,7 +38,8 @@ qtAppLog  * qtAppLog::mpThis   = nullptr;
 QMutex    * qtAppLog::pLogLock = nullptr;
 QTextEdit * qtAppLog::ted      = nullptr;
 
-QString qtAppLog::currentLogName;
+QString     qtAppLog::currentLogName;
+QStringList qtAppLog::_trapString;
 
 bool qtAppLog::_logToStderr = true;
 bool qtAppLog::_logToDisk   = true;
@@ -46,6 +47,9 @@ bool qtAppLog::_logToPanel  = true;
 bool qtAppLog::_logLines    = true;
 bool qtAppLog::_logWarningsOnly = false;
 bool qtAppLog::_active      = false;
+bool qtAppLog::_suspend     = false;
+bool qtAppLog::_trap        = false;
+
 eLogTimer qtAppLog::_logTimerSetting = LOGT_NONE;
 
 QElapsedTimer qtAppLog::elapseTimer;
@@ -152,14 +156,14 @@ void qtAppLog::logTimer(eLogTimer val)
 void qtAppLog::log(QString & msg)
 {
     QTextStream str(&mCurrentFile);
-        str << msg;
+    str << msg;
 }
 
 void qtAppLog::crashMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
     static int line = 1;
 
-    if (!_logToStderr && _logToPanel && _logToDisk)
+    if (_suspend)
     {
         return;
     }
@@ -229,6 +233,11 @@ void qtAppLog::crashMessageOutput(QtMsgType type, const QMessageLogContext &cont
         break;
     }
 
+    if (_trap)
+    {
+        _trapString << msg2;
+    }
+
 #if 0
     msg2 += QString(" (%1:%2, %3)\n").arg(context.file).arg(context.line).arg(context.function);
 #else
@@ -284,3 +293,14 @@ void qtAppLog::saveLog(QString to)
     out << log << "\n";
     file.close();
 }
+
+void qtAppLog::forceTrapOutput()
+{
+    bool oldTrap = _trap;
+    if (oldTrap)
+        _trap = false;
+    for (auto str : _trapString)
+        qWarning() << str;
+    _trap = oldTrap;
+}
+

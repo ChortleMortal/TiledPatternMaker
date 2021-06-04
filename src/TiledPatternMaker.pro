@@ -10,6 +10,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 msvc:QMAKE_LFLAGS_WINDOWS += /ignore:4099
 win32:RC_ICONS += dac1.ico
 
+win32:QMAKE_LFLAGS += /STACK:32000000
+
 # Input
 SOURCES += \
     base/border.cpp \
@@ -19,6 +21,7 @@ SOURCES += \
     base/fileservices.cpp \
     base/filldata.cpp \
     base/frame_settings.cpp \
+    base/geo_graphics.cpp \
     base/layer.cpp \
     base/main.cpp \
     base/misc.cpp \
@@ -44,6 +47,7 @@ SOURCES += \
     geometry/bounds.cpp \
     geometry/circle.cpp \
     geometry/colormaker.cpp \
+    geometry/crop.cpp \
     geometry/dcel.cpp \
     geometry/edge.cpp \
     geometry/edgepoly.cpp \
@@ -52,7 +56,8 @@ SOURCES += \
     geometry/intersect.cpp \
     geometry/loose.cpp \
     geometry/map.cpp \
-    geometry/map_cleanser.cpp \
+    geometry/map_cleanse.cpp \
+    geometry/map_verify.cpp \
     geometry/neighbours.cpp \
     geometry/point.cpp \
     geometry/threads.cpp \
@@ -89,13 +94,14 @@ SOURCES += \
     panels/dlg_rename.cpp \
     panels/dlg_textedit.cpp \
     panels/dlg_trim.cpp \
+    panels/layout_qrectf.cpp \
     panels/layout_sliderset.cpp \
     panels/layout_transform.cpp \
     panels/motif_display_widget.cpp \
+    panels/page_borders.cpp \
     panels/page_config.cpp \
     panels/page_debug.cpp \
     panels/page_decoration_maker.cpp \
-    panels/page_design_elements.cpp \
     panels/page_image_tools.cpp \
     panels/page_layers.cpp \
     panels/page_loaders.cpp \
@@ -144,18 +150,17 @@ SOURCES += \
     tile/feature.cpp \
     tile/feature_reader.cpp \
     tile/feature_writer.cpp \
-    tile/grid.cpp \
     tile/placed_feature.cpp \
     tile/tiling.cpp \
     tile/tiling_loader.cpp \
     tile/tiling_manager.cpp \
     tile/tiling_writer.cpp \
     viewers/figure_view.cpp \
-    viewers/geo_graphics.cpp \
+    viewers/grid.cpp \
     viewers/map_editor_view.cpp \
-    viewers/placed_designelement_view.cpp \
     viewers/prototype_view.cpp \
     viewers/shape_view.cpp \
+    viewers/style_set_view.cpp \
     viewers/tiling_maker_view.cpp \
     viewers/tiling_view.cpp \
     viewers/view.cpp \
@@ -170,6 +175,7 @@ HEADERS += \
     base/fileservices.h \
     base/filldata.h \
     base/frame_settings.h \
+    base/geo_graphics.h \
     base/layer.h \
     base/misc.h \
     base/model_settings.h \
@@ -196,6 +202,7 @@ HEADERS += \
     designs/shapes.h \
     geometry/circle.h \
     geometry/colormaker.h \
+    geometry/crop.h \
     geometry/dcel.h \
     geometry/edge.h \
     geometry/edgepoly.h \
@@ -204,7 +211,6 @@ HEADERS += \
     geometry/intersect.h \
     geometry/loose.h \
     geometry/map.h \
-    geometry/map_cleanser.h \
     geometry/neighbours.h \
     geometry/point.h \
     geometry/threads.h \
@@ -241,13 +247,14 @@ HEADERS += \
     panels/dlg_rename.h \
     panels/dlg_textedit.h \
     panels/dlg_trim.h \
+    panels/layout_qrectf.h \
     panels/layout_sliderset.h \
     panels/layout_transform.h \
     panels/motif_display_widget.h \
+    panels/page_borders.h \
     panels/page_config.h \
     panels/page_debug.h \
     panels/page_decoration_maker.h \
-    panels/page_design_elements.h \
     panels/page_image_tools.h \
     panels/page_layers.h \
     panels/page_loaders.h \
@@ -296,18 +303,17 @@ HEADERS += \
     tile/feature.h \
     tile/feature_reader.h \
     tile/feature_writer.h \
-    tile/grid.h \
     tile/placed_feature.h \
     tile/tiling.h \
     tile/tiling_loader.h \
     tile/tiling_manager.h \
     tile/tiling_writer.h \
     viewers/figure_view.h \
-    viewers/geo_graphics.h \
+    viewers/grid.h \
     viewers/map_editor_view.h \
-    viewers/placed_designelement_view.h \
     viewers/prototype_view.h \
     viewers/shape_view.h \
+    viewers/style_set_view.h \
     viewers/tiling_maker_view.h \
     viewers/tiling_view.h \
     viewers/view.h \

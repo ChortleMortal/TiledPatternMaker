@@ -1,5 +1,5 @@
 #include "viewers/viewerbase.h"
-#include "viewers/geo_graphics.h"
+#include "base/geo_graphics.h"
 #include "geometry/edgepoly.h"
 #include "tapp/figure.h"
 #include "tile/feature.h"
@@ -23,7 +23,7 @@ void  ViewerBase ::drawFigure(GeoGraphics * gg, FigurePtr figure, QPen pen)
     MapPtr map = figure->getFigureMap();
     if (!map) return;
 
-    for(auto edge :  map->edges)
+    for(auto edge :  map->getEdges())
     {
         if (edge->getType() == EDGETYPE_LINE)
         {

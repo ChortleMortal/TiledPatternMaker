@@ -214,7 +214,7 @@ void page_loaders::makeConnections()
     connect(mosaicList,     SIGNAL(leftDoubleClick(QPoint)),        this,   SLOT(loadXML()));
     connect(mosaicList,     SIGNAL(listEnter()),                    this,   SLOT(loadXML()));
 
-  //connect(tileList,       &QListWidget::currentItemChanged,       this,   &page_loaders::tilingSelected);
+    connect(tileList,       &QListWidget::currentItemChanged,       this,   &page_loaders::tilingSelected);
     connect(tileList,       &QListWidget::itemClicked,              this,   &page_loaders::tilingClicked);
     connect(tileList,       SIGNAL(rightClick(QPoint)),             this,   SLOT(tileRightClick(QPoint)));
 

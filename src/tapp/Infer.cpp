@@ -48,7 +48,6 @@
 #include "geometry/point.h"
 #include "geometry/intersect.h"
 #include "geometry/transform.h"
-#include "geometry/map_cleanser.h"
 #include "tapp/star.h"
 #include "tile/placed_feature.h"
 #include <algorithm>
@@ -412,7 +411,7 @@ QVector<contact *> Infer::buildContacts( placed_points * pp, QVector<adjacency_i
         MapPtr map = amaps[idx2];
         adjacency_info  * adj = adjs[idx2];
 
-        for (const auto & v : map->vertices)
+        for (const auto & v : map->getVertices())
         {
             QPointF pos = v->pt;
             qreal dist2 = Point::dist2ToLine(pos, a, b );
@@ -421,10 +420,13 @@ QVector<contact *> Infer::buildContacts( placed_points * pp, QVector<adjacency_i
                   &&  ! Loose::Near( pos, b, adj->tolerance ) )
             {
                 // This vertex lies on the edge.  Add all its edges to the contact list.
-                const QVector<EdgePtr> & qvep = v->getNeighbours();
-                for (const auto & edge : qvep)
+                NeighboursPtr n = map->getBuiltNeighbours(v);
+                std::vector<WeakEdgePtr> * wedges = dynamic_cast<std::vector<WeakEdgePtr>*>(n.get());
+                for (auto it = wedges->begin(); it != wedges->end(); it++)
                 {
-                    QPointF opos    = edge->getOtherP(v);
+                    WeakEdgePtr wedge = *it;
+                    EdgePtr edge = wedge.lock();
+                    QPointF opos  = edge->getOtherP(v);
                     ret.push_back(new contact(pos, opos));
                 }
             }
@@ -1466,7 +1468,7 @@ MapPtr Infer::infer( FeaturePtr feature )
 
     ret->transformMap( pmain->T.inverted() );
 
-    ret->verifyMap("infer");
+    ret->verify();
 
     return ret;
 }
@@ -1519,7 +1521,7 @@ MapPtr Infer::inferFeature(FeaturePtr feature)
         }
     }
 
-    map->verifyMap("infer feature-figure");
+    map->verify();
 
     return map;
 }

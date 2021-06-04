@@ -31,7 +31,7 @@ DecorationMaker::DecorationMaker()
 void DecorationMaker::init()
 {
     motifMaker  = MotifMaker::getInstance();
-    tilingMaker = TilingMaker::getInstance();
+    tilingMaker = TilingMaker::getSharedInstance();
     viewControl = ViewControl::getInstance();
 }
 
@@ -87,6 +87,7 @@ void DecorationMaker::sm_addPrototype(const QVector<PrototypePtr> prototypes)
         {
             StylePtr thick = make_shared<Plain>(prototype);
             mosaic->addStyle(thick);
+            prototype->setBorder(mosaic->getBorder());
         }
     }
 }
@@ -98,22 +99,20 @@ void DecorationMaker::sm_replacePrototype(PrototypePtr prototype)
         const StyleSet & sset = mosaic->getStyleSet();
         for (auto style : sset)
         {
-                style->setPrototype(prototype);
+            style->setPrototype(prototype);
+            prototype->setBorder(mosaic->getBorder());
         }
     }
 }
 
-void DecorationMaker::sm_resetStyles(QVector<PrototypePtr> prototypes)
+void DecorationMaker::sm_resetStyles()
 {
     if (mosaic)
     {
         const StyleSet & sset = mosaic->getStyleSet();
         for (auto style : sset)
         {
-            if (prototypes.contains(style->getPrototype()))
-            {
-                style->resetStyleRepresentation();
-            }
+            style->resetStyleRepresentation();
         }
     }
 }
@@ -133,7 +132,7 @@ void DecorationMaker::sm_takeUp(QVector<PrototypePtr> prototypes, eSM_Event mode
         break;
 
     case SM_RELOAD_SINGLE:
-        sm_resetStyles(prototypes);
+        sm_resetStyles();
         break;
 
     case SM_LOAD_MULTI:
@@ -151,7 +150,7 @@ void DecorationMaker::sm_takeUp(QVector<PrototypePtr> prototypes, eSM_Event mode
     case SM_FEATURE_CHANGED:
     case SM_FIGURE_CHANGED:
     case SM_TILING_CHANGED:
-        sm_resetStyles(prototypes);
+        sm_resetStyles();
         break;
 
     case SM_RENDER:
@@ -161,7 +160,7 @@ void DecorationMaker::sm_takeUp(QVector<PrototypePtr> prototypes, eSM_Event mode
         }
         else
         {
-            sm_resetStyles(prototypes);
+            sm_resetStyles();
         }
         break;
     }

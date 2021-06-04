@@ -25,13 +25,13 @@ void  MapEditorSelection::buildEditorDB()
     if (map)
     {
         // add points from map vertices
-        for (const auto & vert : map->vertices)
+        for (const auto & vert : map->getVertices())
         {
             pointInfo pi(PT_VERTEX,vert,"vertex");
             points.push_back(pi);
         }
 
-        for (auto edge : map->edges)
+        for (auto edge : map->getEdges())
         {
             // add lines from map edges
             lineInfo li(LINE_EDGE,edge,"edge");
@@ -169,24 +169,24 @@ void  MapEditorSelection::buildEditorDB()
 
     if (mode == MAPED_MODE_DCEL)
     {
-        DCELPtr dp = dcel.lock();
-        if  (dp)
+        if  (dcel)
         {
             // add points from map vertices
-            for (auto & v : qAsConst(dp->vertices))
+            const QVector<VertexPtr>  & vertices = dcel->getVertices();
+            for (auto & v : qAsConst(vertices))
             {
-                pointInfo pi(PT_VERTEX,v->vert,"vertex");
+                pointInfo pi(PT_VERTEX,v,"vertex");
                 points.push_back(pi);
             }
 
-            for (auto & e : qAsConst(dp->edges))
+            for (auto & e : qAsConst(dcel->getEdges()))
             {
                 // add lines from map edges
-                lineInfo li(LINE_EDGE,e->edge,"edge");
+                lineInfo li(LINE_EDGE,e,"edge");
                 lines.push_back(li);
 
                 // add points from map edges mid-points
-                QPointF midPt = e->edge->getLine().pointAt(0.5);
+                QPointF midPt = e->getLine().pointAt(0.5);
                 pointInfo pi(PT_VERTEX_MID,midPt,"mid-point edge");
                 points.push_back(pi);
             }
@@ -486,7 +486,7 @@ MapSelectionPtr MapEditorSelection::findVertex(QPointF spt , VertexPtr exclude)
     if (config->mapEditorMode == MAPED_MODE_NONE)
         return sel;
 
-    for (auto vp : map->vertices)
+    for (auto vp : map->getVertices())
     {
         if (vp == exclude)
         {
@@ -512,7 +512,7 @@ SelectionSet MapEditorSelection::findEdges(QPointF spt, const QVector<EdgePtr> &
     if (config->mapEditorMode == MAPED_MODE_NONE)
         return set;
 
-    for (auto e : map->edges)
+    for (auto e : map->getEdges())
     {
         if (excludes.contains(e))
         {
@@ -531,11 +531,49 @@ SelectionSet MapEditorSelection::findEdges(QPointF spt, const QVector<EdgePtr> &
     return set;
 }
 
+SelectionSet MapEditorSelection::findEdges(QPointF spt, const NeighboursPtr excludes)
+{
+    SelectionSet set;
+
+    if (config->mapEditorMode == MAPED_MODE_NONE)
+        return set;
+
+    for (auto e : map->getEdges())
+    {
+        bool found = false;
+        for (auto pos = excludes->begin(); pos != excludes->end(); pos++)
+        {
+            WeakEdgePtr wep = *pos;
+            EdgePtr ep= wep.lock();
+            if (e == ep)
+            {
+                found = true;
+                break;
+            }
+        }
+        if (found)
+        {
+            continue;
+        }
+        QPointF a = viewT.map(e->v1->pt);
+        QPointF b = viewT.map(e->v2->pt);
+
+        if (Point::distToLine(spt, a , b) < 7.0)
+        {
+            if (debugSelection) qDebug() << "FOUND EDGE";
+            set.push_back(make_shared<MapSelection>(e));
+        }
+    }
+    //qDebug() << "not edge";
+    return set;
+}
+
+
 bool MapEditorSelection::insideBoundary(QPointF wpt)
 {
     // TODO - optimize me
 
-    if (config->mapEditorMode == MAPED_MODE_NONE)
+    if (config->mapEditorMode != MAPED_MODE_FIGURE)
         return true;    // no boundary
 
     qreal b_area = 0;

@@ -27,6 +27,7 @@
 
 #include "panels/panel_page.h"
 #include "panels/panel_misc.h"
+#include "base/configuration.h"
 
 enum eProtoCol
 {
@@ -57,12 +58,15 @@ public slots:
 
 private slots:
     void    slot_prototypeSelected(int row, int col);
+    void    drawDELClicked(bool enb);
     void    drawMapClicked(bool enb);
     void    drawFigureClicked(bool enb);
     void    drawFeatureClicked(bool enb);
     void    hiliteFigureClicked(bool enb);
     void    hiliteFeatureClicked(bool enb);
+
 protected:
+    void    setProtoViewMode(eProtoViewMode mode, bool enb);
 
 private:
     AQTableWidget * protoTable;

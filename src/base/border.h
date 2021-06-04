@@ -30,28 +30,59 @@
 #include "base/tile.h"
 #include "base/shared.h"
 #include "base/layer.h"
+#include "geometry/crop.h"
 #include "viewers/view.h"
 #include "viewers/viewcontrol.h"
 
 #define LENGTH1        60.0
 #define BORDER_ZLEVEL  10
 
+// these enum numbers are use in xml writer/reader - do not change
 enum eBorderType
 {
-    BORDER_NONE,
-    BORDER_PLAIN,
-    BORDER_TWO_COLOR,
-    BORDER_BLOCKS
+    BORDER_NONE         = 0,
+    BORDER_PLAIN        = 1,
+    BORDER_TWO_COLOR    = 2,
+    BORDER_BLOCKS       = 3,
+    BORDER_INTEGRATED   = 4
 };
 
 class Border : public Layer
 {
-    Q_OBJECT
-
 public:
     virtual void  construct() = 0;
 
     eBorderType getType()  { return type; }
+
+protected:
+    Border();
+
+    eBorderType type;
+};
+
+class InnerBorder : public Border
+{
+public:
+    InnerBorder();
+
+    void    construct() {}
+
+    void    setInnerBoundary(CropPtr crect);
+    CropPtr getInnerBoundary() { return innerBoundary; }
+
+protected:
+    CropPtr innerBoundary;
+};
+
+class OuterBorder : public Border
+{
+    Q_OBJECT
+
+public:
+    OuterBorder(QSize sz);
+
+    void    setOuterBoundary(QRectF rect);
+    QRectF  getOuterBoundary()  { return outerBoundary; }
 
     void    setWidth(qreal width) { this->width = width; construct(); }
     void    setColor(QColor color){ this->color = color; construct(); }
@@ -63,17 +94,15 @@ public slots:
     void    resize(QSize sz);
 
 protected:
-    Border(QSize sz);
-    ~Border();
-
-    eBorderType type;
-    QSizeF      size;
-    QColor      color;
-    qreal       width;
+    QRectF      outerBoundary;
     ShapeFPtr   sp;
+    qreal       width;
+    QColor      color;
+
 };
 
-class BorderPlain : public Border
+
+class BorderPlain : public OuterBorder
 {
 public:
     BorderPlain(QSize sz, qreal width, QColor color);
@@ -82,7 +111,7 @@ public:
     void get(qreal & width, QColor & color);
 };
 
-class BorderTwoColor : public Border
+class BorderTwoColor : public OuterBorder
 {
 public:
     BorderTwoColor(QSize sz, QColor color1, QColor color2, qreal width);
@@ -101,7 +130,7 @@ private:
     QColor      color2;
 };
 
-class BorderBlocks : public Border
+class BorderBlocks : public OuterBorder
 {
 public:
     BorderBlocks(QSize sz, QColor color, qreal diameter, int rows, int cols);

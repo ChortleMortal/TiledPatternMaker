@@ -89,7 +89,7 @@ void ColorSet::setOpacity(qreal val)
     for (auto& tpcolor : colorset)
     {
         QColor c = tpcolor.color;
-        c.setAlpha(int(val));
+        c.setAlphaF(val);
         tpcolor.color = c;
     }
 }

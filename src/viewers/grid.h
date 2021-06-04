@@ -3,8 +3,6 @@
 
 #include "base/layer.h"
 
-
-
 class Grid : public Layer
 {
 public:

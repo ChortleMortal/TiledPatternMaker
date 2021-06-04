@@ -24,6 +24,8 @@
 
 #include "base/border.h"
 #include "designs/shapefactory.h"
+#include "geometry/edgepoly.h"
+#include "geometry/map.h"
 
 ////////////////////////////////////////////////
 ///
@@ -31,27 +33,55 @@
 ///
 ////////////////////////////////////////////////
 
-Border::Border(QSize sz) : Layer("Border",LTYPE_BORDER)
+Border::Border() : Layer("Border",LTYPE_BORDER)
 {
-    size = sz;
-    type = BORDER_NONE;  // undefined
+    type = BORDER_NONE;
+}
+
+////////////////////////////////////////////////
+///
+///  InnerBorder
+///
+////////////////////////////////////////////////
+
+InnerBorder::InnerBorder()
+{
+    type = BORDER_INTEGRATED;
+    innerBoundary = make_shared<Crop>();
+}
+
+void InnerBorder::setInnerBoundary(CropPtr crect)
+{
+    innerBoundary = crect;
+}
+
+////////////////////////////////////////////////
+///
+/// OuterBorder
+///
+////////////////////////////////////////////////
+
+OuterBorder::OuterBorder(QSize sz)
+{
+    outerBoundary  = QRectF(QPointF(),QSizeF(sz));
+
     setZValue(BORDER_ZLEVEL);
     sp = make_shared<ShapeFactory>(2.0);
     addSubLayer(sp);
 
     View * view = View::getInstance();
-    connect(view, &View::sig_viewSizeChanged, this, &Border::resize);
+    connect(view, &View::sig_viewSizeChanged, this, &OuterBorder::resize);
 }
 
-Border::~Border()
+void OuterBorder::resize(QSize sz)
 {
-    //qDebug() << "Border destructor";
-}
-
-void Border::resize(QSize sz)
-{
-    size = sz;
+    outerBoundary = QRectF(QPointF(),QSizeF(sz));
     construct();
+}
+
+void OuterBorder::setOuterBoundary(QRectF rect)
+{
+    outerBoundary = rect;
 }
 
 ////////////////////////////////////////////////
@@ -60,7 +90,7 @@ void Border::resize(QSize sz)
 ///
 ////////////////////////////////////////////////
 
-BorderPlain::BorderPlain(QSize sz, qreal width, QColor color) : Border(sz)
+BorderPlain::BorderPlain(QSize sz, qreal width, QColor color) : OuterBorder(sz)
 {
     type         = BORDER_PLAIN;
     this->width  = width;
@@ -70,11 +100,8 @@ BorderPlain::BorderPlain(QSize sz, qreal width, QColor color) : Border(sz)
 void BorderPlain::construct()
 {
     sp->reset();
-
     QPen pen(color,width);
-
-    QPolygonF poly;
-    poly << QPointF(0,0) << QPointF(size.width(),0) << QPointF(size.width(),size.height()) << QPointF(0,size.height());
+    QPolygonF poly(outerBoundary);
     sp->addPolygon(pen,QBrush(Qt::NoBrush),poly);
 }
 
@@ -91,7 +118,7 @@ void BorderPlain::get(qreal & width, QColor & color)
 ///
 ////////////////////////////////////////////////
 
-BorderTwoColor::BorderTwoColor(QSize sz, QColor color1, QColor color2, qreal width) : Border(sz)
+BorderTwoColor::BorderTwoColor(QSize sz, QColor color1, QColor color2, qreal width) : OuterBorder(sz)
 {
     type         = BORDER_TWO_COLOR;
     color        = color1;
@@ -103,8 +130,8 @@ void BorderTwoColor::construct()
 {
     sp->reset();
 
-    qreal w   = size.width();
-    qreal h  = size.height();
+    qreal w  = outerBoundary.width();
+    qreal h  = outerBoundary.height();
 
     qreal x = 0.0;
     qreal y = 0.0;
@@ -124,8 +151,7 @@ void BorderTwoColor::construct()
             bw = LENGTH1;
         }
         QRectF rect(x,y,bw,bh);
-        QPolygonF poly;
-        poly << rect.topLeft() << rect.topRight() << rect.bottomRight() << rect.bottomLeft();
+        QPolygonF poly(rect);
         sp->addPolygon(nextBorderPen(), nextBorderBrush(), poly);
         x+= LENGTH1;
     }
@@ -146,8 +172,7 @@ void BorderTwoColor::construct()
             bh = LENGTH1;
         }
         QRectF rect(x,y,bw,bh);
-        QPolygonF poly;
-        poly << rect.topLeft() << rect.topRight() << rect.bottomRight() << rect.bottomLeft();
+        QPolygonF poly(rect);
         sp->addPolygon(nextBorderPen(), nextBorderBrush(), poly);
         y += LENGTH1;
     }
@@ -160,15 +185,13 @@ void BorderTwoColor::construct()
         bh = width;
         bw = LENGTH1;
         QRectF rect(x,y,bw,bh);
-        QPolygonF poly;
-        poly << rect.topLeft() << rect.topRight() << rect.bottomRight() << rect.bottomLeft();
+        QPolygonF poly(rect);
         sp->addPolygon(nextBorderPen(), nextBorderBrush(), poly);
         if (x - LENGTH1 < 0.0)
         {
             bw = x;
             QRectF rect(0.0,y,bw,bh);
-            QPolygonF poly;
-            poly << rect.topLeft() << rect.topRight() << rect.bottomRight() << rect.bottomLeft();
+            QPolygonF poly(rect);
             sp->addPolygon(nextBorderPen(), nextBorderBrush(), poly);
         }
         x -= LENGTH1;
@@ -182,15 +205,13 @@ void BorderTwoColor::construct()
         bw = width;
         bh = LENGTH1;
         QRectF rect(x,y,bw,bh);
-        QPolygonF poly;
-        poly << rect.topLeft() << rect.topRight() << rect.bottomRight() << rect.bottomLeft();
+        QPolygonF poly(rect);
         sp->addPolygon(nextBorderPen(), nextBorderBrush(), poly);
         if (y - LENGTH1 < width)
         {
             bh = y - width;
             QRectF rect(0.0,width,bw,bh);
-            QPolygonF poly;
-            poly << rect.topLeft() << rect.topRight() << rect.bottomRight() << rect.bottomLeft();
+            QPolygonF poly(rect);
             sp->addPolygon(nextBorderPen(), nextBorderBrush(), poly);
         }
         y -= LENGTH1;
@@ -240,7 +261,7 @@ QPen BorderTwoColor::nextBorderPen()
 ///
 ////////////////////////////////////////////////
 
-BorderBlocks::BorderBlocks(QSize sz, QColor color, qreal diameter, int rows, int cols) : Border(sz)
+BorderBlocks::BorderBlocks(QSize sz, QColor color, qreal diameter, int rows, int cols) : OuterBorder(sz)
 {
     type        = BORDER_BLOCKS;
     this->color = color;
@@ -253,8 +274,8 @@ void BorderBlocks::construct()
 {
     sp->reset();
 
-    qreal w   = size.width();
-    qreal h  = size.height();
+    qreal w  = outerBoundary.width();
+    qreal h  = outerBoundary.height();
 
     width = w /cols;
 
@@ -263,7 +284,6 @@ void BorderBlocks::construct()
 
     QBrush brush(color);
     QPen   pen(QColor(TileBlack),1.0);
-
 
     // top row
     QPointF start(0.0,0.0);

@@ -28,19 +28,25 @@
 #include "viewers/prototype_view.h"
 #include "viewers/viewcontrol.h"
 #include "viewers/viewerbase.h"
+#include "makers/motif_maker/motif_maker.h"
+#include "base/configuration.h"
 
-PrototypeView::PrototypeView(PrototypePtr proto,int mode) : Layer("ProtoFeatureView",LTYPE_VIEW)
+PrototypeViewPtr PrototypeView::spThis;
+
+PrototypeViewPtr PrototypeView::getSharedInstance()
 {
-    Q_ASSERT(proto);
+    if (!spThis)
+    {
+        spThis = make_shared<PrototypeView>();
+    }
+    return spThis;
+}
 
+PrototypeView::PrototypeView() : Layer("ProtoFeatureView",LTYPE_VIEW)
+{
     feature_interior = QColor(255, 217, 217, 127);
     feature_border   = QColor(140, 140, 140);
     layerPen         = QPen(QColor(20,150,210),3);
-
-    this->proto = proto;
-    this->mode  = mode;
-
-    forceRedraw();
 }
 
 void PrototypeView::paint(QPainter *painter)
@@ -74,12 +80,13 @@ void PrototypeView::draw( GeoGraphics * gg )
         rpfs.push_back(rpf);
     }
 
+    int mode = Layer::config->protoViewMode;
     if (mode & PROTO_DRAW_MAP)
     {
         MapPtr map = proto->getProtoMap();
         qDebug() << "ProtoFeatureView  proto="  << proto.get() << "protoMap" << map.get();
 
-        for(auto& edge : map->edges)
+        for(auto& edge : map->getEdges())
         {
             edges.push_back(edge);
         }
@@ -113,10 +120,57 @@ void PrototypeView::draw( GeoGraphics * gg )
         }
         gg->pop();
     }
+
+    if (mode & PROTO_DRAW_DESIGN_ELEMENT)
+    {
+        const QVector<PlacedFeaturePtr> & placed = tiling->getPlacedFeatures();
+        QVector<DesignElementPtr> &  dels        = proto->getDesignElements();
+        QVector<QTransform>       & tforms       = proto->getTranslations();
+
+        qDebug() << "dels=" << dels.size() << "tforms="  << tforms.size();
+        for (auto delp : dels)
+        {
+            FeaturePtr  feature = delp->getFeature();
+            bool selected = (feature == vcontrol->getSelectedFeature());
+            if (selected)
+            {
+                continue;       // paint these last
+            }
+            for (auto pfp : placed)
+            {
+                if (feature == pfp->getFeature())
+                {
+                    QTransform tr                  = pfp->getTransform();
+                    PlacedDesignElementPtr pdel    = make_shared<PlacedDesignElement>(delp,tr);
+                    drawPlacedDesignElement(gg, pdel, QPen(Qt::blue,3), QBrush(feature_interior), QPen(feature_border,3),selected);
+                }
+            }
+        }
+        for (auto delp : dels)
+        {
+            FeaturePtr  feature = delp->getFeature();
+            bool selected = (feature == vcontrol->getSelectedFeature());
+            if (!selected)
+            {
+                continue;   // already painted
+            }
+            for (auto pfp : placed)
+            {
+                if (feature == pfp->getFeature())
+                {
+                    QTransform tr                  = pfp->getTransform();
+                    PlacedDesignElementPtr pdel    = make_shared<PlacedDesignElement>(delp,tr);
+                    drawPlacedDesignElement(gg, pdel, QPen(Qt::blue,3), QBrush(feature_interior), QPen(feature_border,3),selected);
+                }
+            }
+        }
+    }
 }
 
 void PrototypeView::receive(GeoGraphics *gg, int h, int v )
 {
+    int mode = Layer::config->protoViewMode;
+
     for (auto placedDesignElement : qAsConst(rpfs))
     {
         QPointF pt    = (t1 * static_cast<qreal>(h)) + (t2 * static_cast<qreal>(v));
@@ -136,12 +190,26 @@ void PrototypeView::receive(GeoGraphics *gg, int h, int v )
             ViewerBase::drawFigure(gg,placedDesignElement.getFigure(),QPen(Qt::green,3));
         }
 
-        ViewControl * vcontrol = ViewControl::getInstance();
-        if (vcontrol->getSelectedFeature() == placedDesignElement.getFeature())
-        {
-
-        }
         gg->pop();
     }
 }
 
+void PrototypeView::drawPlacedDesignElement(GeoGraphics * gg, PlacedDesignElementPtr pde, QPen linePen, QBrush interiorBrush, QPen borderPen, bool selected)
+{
+    QTransform T = pde->getTransform();
+    gg->pushAndCompose(T);
+
+    FeaturePtr fp = pde->getFeature();
+    QPen pen;
+    if (selected)
+        pen = QPen(Qt::red,3);
+    else
+        pen = borderPen;
+    ViewerBase::drawFeature(gg,fp,interiorBrush,pen);
+
+    // Draw the figure
+    FigurePtr fig = pde->getFigure();
+    ViewerBase::drawFigure(gg,fig,linePen);
+
+    gg->pop();
+}

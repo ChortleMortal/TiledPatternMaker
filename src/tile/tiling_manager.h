@@ -43,7 +43,7 @@ protected:
 private:
     class View            * view;
     class Configuration   * config;
-    class TilingMaker     * tilingMaker;
+    TilingMakerPtr          tilingMaker;
     class MotifMaker      * motifMaker;
 };
 

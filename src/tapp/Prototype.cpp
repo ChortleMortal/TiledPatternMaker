@@ -26,10 +26,11 @@
 #include "base/tpmsplash.h"
 #include "base/utilities.h"
 #include "geometry/fill_region.h"
-#include "geometry/map_cleanser.h"
+#include "geometry/transform.h"
 #include "panels/panel.h"
 #include "panels/panel_status.h"
 #include "tile/placed_feature.h"
+#include "base/border.h"
 
 int Prototype::refs = 0;
 
@@ -54,8 +55,11 @@ Prototype::Prototype(TilingPtr t)
 
 Prototype::~Prototype()
 {
-    refs--;
+    //qDebug() << "Prototype destructor";
     designElements.clear();
+    resetProtoMap();
+    protoMap.reset();
+    refs--;
 }
 
 bool Prototype::operator==(const Prototype & other)
@@ -208,9 +212,9 @@ DesignElementPtr Prototype::getDesignElement(int index)
 
 QTransform Prototype::getTransform(int index)
 {
-    if (index < locations.size())
+    if (index < translations.size())
     {
-        return locations[index];
+        return translations[index];
     }
 
     QTransform t;
@@ -264,7 +268,7 @@ void Prototype::walk()
     {
         qWarning() << "There are no design elements in the prototype for tiling" << tiling->getName();
     }
-    qDebug() << "num locations      =" << locations.size();
+    qDebug() << "num translations      =" << translations.size();
 
     qDebug() << "start Prototype walk.... num figures=" << designElements.size();
     for (auto element : qAsConst(designElements))
@@ -284,12 +288,12 @@ void Prototype::receive(GeoGraphics *gg, int h, int v )
     //qDebug() << "Prototype::receive:"  << h << v;
     QPointF pt   = (tiling->getTrans1() * static_cast<qreal>(h)) + (tiling->getTrans2() * static_cast<qreal>(v));
     QTransform T = QTransform::fromTranslate(pt.x(),pt.y());
-    locations << T;
+    translations << T;
 }
 
 void Prototype::resetProtoMap()
 {
-    locations.clear();
+    translations.clear();
     if (protoMap)
     {
         protoMap->wipeout();
@@ -298,7 +302,7 @@ void Prototype::resetProtoMap()
 
 MapPtr Prototype::getProtoMap()
 {
-    if (locations.isEmpty() || protoMap->isEmpty())
+    if (translations.isEmpty() || protoMap->isEmpty())
     {
         createProtoMap();
     }
@@ -312,95 +316,97 @@ MapPtr Prototype::createProtoMap()
     QString astring = QString("Constructing prototype map for tiling: %1").arg(tiling->getName());
     panel->showPanelStatus(astring);
 #ifdef TPMSPLASH
-     panel->showSplash(astring);
+    panel->splashTiling(astring);
 #endif
 
     resetProtoMap();
 
     // Use FillRegion to get a list of translations for this tiling.
     fill(nullptr);
-    qDebug() << "locations=" << locations.size();
 
-    walk();
+    //walk();
 
     // Now, for each different feature, build a submap corresponding
     // to all translations of that feature.
-    qDebug() << "designElements count=" << designElements.size();
-    int count = 0;
+
     for (auto dep : qAsConst(designElements))
     {
-        qDebug().noquote() << "merging design element:" << count << "into prototype:" << dep->toString();
-
         FeaturePtr feature   = dep->getFeature();
         FigurePtr figure     = dep->getFigure();
-        qDebug().noquote() << "figure" << figure->getFigureDesc();
+
+        qDebug() << "protomap start: figure - " << figure->getFigureDesc();
+
         MapPtr figmap        = figure->getFigureMap();
 
         QVector<QTransform> subT;
-        for (auto it2 = tiling->getPlacedFeatures().begin(); it2 != tiling->getPlacedFeatures().end(); it2++)
+        for (auto placedFeature : tiling->getPlacedFeatures())
         {
-            PlacedFeaturePtr pf = *it2;
-            FeaturePtr       f  = pf->getFeature();
+            FeaturePtr f  = placedFeature->getFeature();
             if (f == feature)
             {
-                QTransform t = pf->getTransform();
+                QTransform t = placedFeature->getTransform();
                 subT.push_back(t);
             }
         }
-
-        int sz = subT.size();
-        if (sz)
-            qDebug() << "subT count =" << sz;
-        else
-            qWarning() << "subT count = 0";
 
         // Within a single translational unit, assemble the different
         // transformed figures corresponding to the given feature into a map.
         MapPtr transmap = make_shared<Map>("proto transmap");
         transmap->mergeSimpleMany(figmap, subT);
 
-#if 0
-            transmap->buildNeighbours();
-            MapCleanser cleant(transmap);
-            cleant.verifyMap("transmap");
-#endif
-
         // Now put all the translations together into a single map for this feature.
         MapPtr featuremap = make_shared<Map>("proto featuremap");
-        featuremap->mergeSimpleMany(transmap, locations);
-
-#if 0
-            featuremap->buildNeighbours();
-            MapCleanser cleanf(featuremap);
-            cleanf.verifyMap("featuremap");
-#endif
+        featuremap->mergeSimpleMany(transmap, translations);
 
         // And do a slow merge to add this map to the finished design.
         protoMap->mergeMap(featuremap);
 
-#if 0
-            protoMap->buildNeighbours();
-            MapCleanser cleanp(protoMap);
-            cleanp.verifyMap("pmap");
-#endif
-
-        qDebug().noquote() << "merged design element:" << count++;
+        qDebug() << "protomap end: figure - " << figure->getFigureDesc();
     }
 
     qDebug() << "PROTOTYPE merged";
 
-    protoMap->sortEdges();
-    protoMap->sortVertices();
-    protoMap->buildNeighbours();
+    bool finished = false;
+    if (_border)
+    {
+        InnerBorder * ib = dynamic_cast<InnerBorder*>(_border.get());
+        if (ib)
+        {
+            CropPtr crop = ib->getInnerBoundary();
+            if (crop && (crop->getState() == CROP_BORDER_DEFINED  || crop->getState() == CROP_DEFINED))
+            {
+                QRectF rect = crop->getRect();
+                protoMap->addCropBorder(rect);
+                protoMap->removeOutisde(rect);
+                qDebug() << "BORDER merged";
+                finished = true;
+            }
+        }
+    }
 
-    protoMap->verifyMap("protoMap");
+    if (!finished)
+    {
+        protoMap->sortEdges();
+        protoMap->sortVertices();
+        protoMap->buildNeighbours();
+    }
+
+    protoMap->verify();
 
     qDebug() << "PROTOTYPE COMPLETED MAP: vertices=" << protoMap->numVertices() << "edges=" << protoMap->numEdges();
 
     panel->hidePanelStatus();
 #ifdef TPMSPLASH
-     panel->hideSplash();
+    panel->removeSplashTiling();
 #endif
 
     return protoMap;
+}
+
+void Prototype::setBorder(BorderPtr border)
+{
+    _border = border;
+    if (border)
+        qDebug() << "Prototype::setBorder" << border.get() << border->getType();
+    resetProtoMap();
 }

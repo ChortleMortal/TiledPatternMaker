@@ -30,6 +30,8 @@
 
 class AQSpinBox : public QSpinBox
 {
+    Q_OBJECT
+
 public:
     AQSpinBox();
 
@@ -47,6 +49,8 @@ public:
 
 class AQDoubleSpinBox : public QDoubleSpinBox
 {
+    Q_OBJECT
+
 public:
     AQDoubleSpinBox();
 

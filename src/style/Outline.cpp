@@ -53,7 +53,7 @@ Outline::~Outline()
 {
 #ifdef EXPLICIT_DESTRUCTOR
     qDebug() << "deleting outline";
-    pts3.clear();
+    pts4.clear();
 #endif
 }
 
@@ -74,13 +74,13 @@ void Outline::createStyleRepresentation()
 
     MapPtr map = getMap();
 
-    for (auto edge : map->edges)
+    for (auto edge : map->getEdges())
     {
         VertexPtr v1 = edge->v1;
         VertexPtr v2 = edge->v2;
 
-        BelowAndAbove top   = getPoints(edge, v1, v2, width);
-        BelowAndAbove fromp = getPoints(edge, v2, v1, width);
+        BelowAndAbove top   = getPoints(map, edge, v1, v2, width);
+        BelowAndAbove fromp = getPoints(map, edge, v2, v1, width);
 
         BelowAndAboveEdge bae;
         bae.type     = edge->getType();
@@ -203,7 +203,7 @@ QPointF  Outline::getJoinPoint(QPointF joint, QPointF a, QPointF b, qreal qwidth
 // to draw at the edge's 'to' vertex.  Call this twice to get the
 // complete outline of the hexagon to draw for this edge.
 
-BelowAndAbove Outline::getPoints(EdgePtr edge, VertexPtr from, VertexPtr to, qreal qwidth )
+BelowAndAbove Outline::getPoints(MapPtr map, EdgePtr edge, VertexPtr from, VertexPtr to, qreal qwidth )
 {
     QPointF pfrom = from->pt;
     QPointF pto   = to->pt;
@@ -214,7 +214,8 @@ BelowAndAbove Outline::getPoints(EdgePtr edge, VertexPtr from, VertexPtr to, qre
 
     BelowAndAbove ret;
 
-    int nn = to->numNeighbours();
+    NeighboursPtr nto = map->getBuiltNeighbours(to);
+    int nn = nto->numNeighbours();
 
     if( nn == 1 )
     {
@@ -223,7 +224,7 @@ BelowAndAbove Outline::getPoints(EdgePtr edge, VertexPtr from, VertexPtr to, qre
     }
     else if( nn == 2 )
     {
-        BeforeAndAfter ba = to->getBeforeAndAfter(edge);
+        BeforeAndAfter ba = nto->getBeforeAndAfter(edge);
         QPointF       pov = ba.before->getOtherP(to);
         QPointF        jp = getJoinPoint(pto, pfrom, pov, qwidth);
 
@@ -240,7 +241,7 @@ BelowAndAbove Outline::getPoints(EdgePtr edge, VertexPtr from, VertexPtr to, qre
     }
     else
     {
-        BeforeAndAfter ba = to->getBeforeAndAfter(edge);
+        BeforeAndAfter ba = nto->getBeforeAndAfter(edge);
         QPointF before_pt = ba.before->getOtherP(to);
         QPointF after_pt  = ba.after->getOtherP(to);
 

@@ -38,28 +38,18 @@ ModelSettings::ModelSettings(const ModelSettings & other)
     _bkgdColor = other._bkgdColor;
     _startTile = other._startTile;
     _bkgdImage = other._bkgdImage;
-    _border    = other._border;
     _fillData  = other._fillData;
 }
 
 ModelSettings::~ModelSettings()
 {}
 
-
-
 void ModelSettings::clear()
 {
     _size        = QSize(1500,1100);
     _bkgdColor   = QColor(Qt::black);
     _startTile   = QPoint(0,0);
-    _border.reset();
     _bkgdImage.reset();
-}
-
-void ModelSettings::setBorder(BorderPtr border)
-{
-    qDebug() << "CanvasSettings::setBorder" << border.get();
-    _border = border;
 }
 
 void ModelSettings::setSize(QSize size)

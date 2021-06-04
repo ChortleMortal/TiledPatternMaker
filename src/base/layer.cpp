@@ -264,6 +264,12 @@ QPointF Layer::screenToWorld(QPointF pt)
     return qtr_invert.map(pt);
 }
 
+QRectF  Layer::screenToWorld(QRectF rect)
+{
+    getLayerTransform();
+    return qtr_invert.mapRect(rect);
+}
+
 QPointF Layer::screenToWorld(int x, int y)
 {
     qreal xx = static_cast<qreal>(x);
@@ -277,6 +283,12 @@ QPointF Layer::worldToScreen(QPointF pt)
 {
     getLayerTransform();
     return qtr_layer.map(pt);
+}
+
+QRectF Layer::worldToScreen(QRectF rect)
+{
+    getLayerTransform();
+    return qtr_layer.mapRect(rect);
 }
 
 QLineF Layer::worldToScreen(QLineF line)

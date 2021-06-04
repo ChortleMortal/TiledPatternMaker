@@ -538,7 +538,7 @@ void CreatePolygon::draw(GeoGraphics * g2d)
 Measurement::Measurement()
 {
     qDebug() << "Measurement";
-    tm = TilingMaker::getInstance();
+    tm = TilingMaker::getSharedInstance();
     active = false;
 }
 

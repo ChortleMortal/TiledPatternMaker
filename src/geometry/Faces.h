@@ -66,6 +66,7 @@ class Face : public EdgePoly
 {
 public:
     Face();
+    ~Face() { refs--; }
 
     int         getNumSides() { return size(); }
     QPolygonF   getPolygon();
@@ -81,10 +82,12 @@ DAC_DEPRECATED  FaceSet decompose();
     void        dump();
 
     bool        outer;
-    dcelEdgePtr incident_edge;
+    weak_ptr<Edge> incident_edge;
     eFaceColor  color;
     eFaceState  state;
     qreal       area;
+
+    static int refs;
 
 protected:
 DAC_DEPRECATED  bool    decomposeOnce(FacePtr newFace);
@@ -94,6 +97,7 @@ private:
     QPointF     _center;
 
 DAC_DEPRECATED  QPolygonF   sortedShadow;
+
 };
 
 /////////////////////////////////////////////////

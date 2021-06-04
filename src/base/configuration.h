@@ -127,7 +127,6 @@ enum eViewType
     VIEW_START = VIEW_DESIGN,
     VIEW_MOSAIC,
     VIEW_PROTOTYPE,
-    VIEW_DESIGN_ELEMENT,
     VIEW_MOTIF_MAKER,
     VIEW_TILING,
     VIEW_TILING_MAKER,
@@ -142,7 +141,6 @@ static QString sViewerType[]
     E2STR(VIEW_DESIGN),
     E2STR(VIEW_MOSAIC),
     E2STR(VIEW_PROTOTYPE),
-    E2STR(VIEW_DESIGN_ELEMENT),
     E2STR(VIEW_MOTIF_MAKER),
     E2STR(VIEW_TILING),
     E2STR(VIEW_TILING_MAKER),
@@ -157,6 +155,7 @@ enum eMapEditorMode
     MAPED_MODE_FIGURE,
     MAPED_MODE_LOCAL,
     MAPED_MODE_TILING,
+    MAPED_MODE_FILLED_TILING,
     MAPED_MODE_DCEL,
     MAPED_MODE_NONE,
     MAPED_MODE_MAX = MAPED_MODE_NONE
@@ -169,6 +168,7 @@ static QString sMapEditorMode[] =
     E2STR(MAPED_MODE_FIGURE),
     E2STR(MAPED_MODE_LOCAL),
     E2STR(MAPED_MODE_TILING),
+    E2STR(MAPED_MODE_FILLED_TILING),
     E2STR(MAPED_MODE_DCEL),
     E2STR(MAPED_MODE_NONE)
 };
@@ -243,6 +243,30 @@ enum  eGridType
     GRID_RHOMBIC
 };
 
+enum eProtoViewMode
+{
+    PROTO_DRAW_MAP            =  0x01,
+    PROTO_DRAW_FEATURES       =  0x02,
+    PROTO_DRAW_FIGURES        =  0x04,
+    PROTO_HIGHLIGHT_FEATURES  =  0x08,
+    PROTO_HIGHLIGHT_FIGURES   =  0x10,
+    PROTO_DRAW_DESIGN_ELEMENT =  0x20
+};
+
+enum  eAspectRatio
+{
+    ASPECT_UNCONSTRAINED,
+    ASPECT_SQRT_2,
+    ASPECT_SQRT_3,
+    ASPECT_SQRT_4,
+    ASPECT_SQRT_5,
+    ASPECT_SQRT_6,
+    ASPECT_SQRT_7,
+    ASPECT_SQUARE,
+    ASPECT_SD,
+    ASPECT_HD
+};
+
 class Configuration
 {
 public:
@@ -270,6 +294,7 @@ public:
 
     int     cycleInterval;
     int     polySides;    // used by tiling maker
+    int     protoViewMode;
 
     QString compareDir0;
     QString compareDir1;
@@ -284,7 +309,6 @@ public:
     QString lastLoadedTileName; // used on startup
     QString lastLoadedXML;      // used on startup
     QString currentlyLoadedXML; // current status
-    QString currentlyLoadingXML;    // not persistent
 
     bool    autoLoadStyles;
     bool    autoLoadTiling;
@@ -329,7 +353,6 @@ public:
     QStringList workList;
 
     bool    cs_showBkgds;
-    bool    cs_showBorders;
     bool    cs_showFrameSettings;
 
     QString mosaicFilter;
@@ -376,7 +399,6 @@ public:
     bool    debugMapEnable;
 
     eKbdMode    kbdMode;
-    WeakDCELPtr dcel;                           // used by map editor
     QColor      figureViewBkgdColor;            // used by some menus
 
     QMap<eDesign,DesignPtr>  availableDesigns;

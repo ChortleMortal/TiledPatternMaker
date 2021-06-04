@@ -38,7 +38,6 @@
 #include "tapp/radial_figure.h"
 #include "tile/feature.h"
 #include "geometry/map.h"
-#include "geometry/map_cleanser.h"
 #include "base/configuration.h"
 #include "base/utilities.h"
 
@@ -118,7 +117,7 @@ MapPtr  RadialFigure::replicateUnit()
     MapPtr map = make_shared<Map>("radial replicated unit map");
     for( int idx = 0; idx < getN(); ++idx )
     {
-        for (auto & edge : unitMap->edges)
+        for (auto & edge : unitMap->getEdges())
         {
             QPointF v1 = T.map(edge->v1->pt);
             QPointF v2 = T.map(edge->v2->pt);
@@ -129,7 +128,7 @@ MapPtr  RadialFigure::replicateUnit()
         T *= Tr;
     }
 
-    map->verifyMap("Replicated Unit Map");
+    map->verify();
 
     return map;
 }

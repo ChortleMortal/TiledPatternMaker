@@ -32,6 +32,13 @@
 #include "base/misc.h"
 #include "base/frame_settings.h"
 
+class LoadUnit
+{
+public:
+    QString         name;
+    QElapsedTimer   loadTimer;
+};
+
 class View : public QWidget
 {
     Q_OBJECT
@@ -76,9 +83,9 @@ public:
 
     const QMap<eViewType,FrameSettings> & getFrameSettings() { return  frameSettings; }
 
-    void    dump(bool summary);
+    LoadUnit & getLoadUnit() { return loadUnit; }
 
-    QElapsedTimer  loadTimer;
+    void    dump(bool summary);
 
 signals:
     void sig_mousePressed(QPointF pos,Qt::MouseButton);
@@ -146,14 +153,15 @@ private:
     static View * mpThis;
 
     Configuration     * config;
-    TilingMaker       * tilingMaker;
-    MapEditor         * mapEditor;
+    TilingMakerPtr      tilingMaker;
+    MapEditorPtr        mapEditor;
     class DesignMaker * designMaker;
 
     UniqueQVector<LayerPtr> layers;
 
     QMap<eViewType,FrameSettings>    frameSettings;
 
+    LoadUnit          loadUnit;
     bool              canPaint;
     eMouseMode        mouseMode;
     bool              dragging;

@@ -27,6 +27,11 @@
 
 #include <QtWidgets>
 
+static const QChar MathSymbolSquareRoot(0x221A);
+static const QChar MathSymbolPi(0x03A0);
+static const QChar MathSymbolDelta(0x0394);
+static const QChar MathSymbolSigma(0x03A3);
+
 class AQWidget : public QWidget
 {
 public:

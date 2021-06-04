@@ -3,9 +3,18 @@
 
 ColorMaker::ColorMaker()
 {
-
 }
 
+ColorMaker::~ColorMaker()
+{
+#ifdef EXPLICIT_DESTRUCTOR
+    facesToDo.clear();
+    whiteFaces.clear();
+    blackFaces.clear();
+    faceGroup.clear();
+    dcel.reset();
+#endif
+}
 void ColorMaker::createFacesToDo()
 {
     whiteFaces.clear();
@@ -64,11 +73,11 @@ void ColorMaker::assignColorsToFaces(FaceSet &fset)
         aface = st.pop();
 
         //eColor color = C_WHITE;     // seed
-        dcelEdgePtr head = aface->incident_edge;
-        dcelEdgePtr edge = head;
+        EdgePtr head = aface->incident_edge.lock();
+        EdgePtr edge = head;
         do
         {
-            FacePtr nfi = edge->twin->incident_face;
+            FacePtr nfi = edge->twin.lock()->incident_face;
             if (!nfi->outer)
             {
                 switch( nfi->state )
@@ -92,7 +101,7 @@ void ColorMaker::assignColorsToFaces(FaceSet &fset)
                     break;
                 }
             }
-            edge = edge->next;
+            edge = edge->next.lock();
         } while (edge != head);
 
         if (color == C_BLACK)

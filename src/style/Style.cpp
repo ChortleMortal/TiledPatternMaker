@@ -60,7 +60,6 @@ Style::~Style()
 #ifdef EXPLICIT_DESTRUCTOR
     qDebug() << "style destructor";
     prototype.reset();
-    boundary.reset();
     styleMap.reset();
     debugMap.reset();
 #endif
@@ -107,8 +106,9 @@ void Style::annotateEdges(MapPtr map)
         return;
 
     debugMap->wipeout();
+
     int i=0;
-    for (auto edge : map->edges)
+    for (auto edge : map->getEdges())
     {
         QPointF p = edge->getMidPoint();
         debugMap->insertDebugMark(p, QString::number(i++));
@@ -198,21 +198,19 @@ void Style::drawAnnotation(QPainter * painter, QTransform T)
     QPen pen(Qt::white);
     painter->setPen(pen);
 
-    for (auto edge : debugMap->edges)
+    for (auto edge : debugMap->getEdges())
     {
         QPointF p1 = T.map(edge->v1->pt);
         QPointF p2 = T.map(edge->v2->pt);
         painter->drawLine(p1,p2);
     }
 
-    if (debugMap->texts.count())
+    const QVector<sText> & texts = debugMap->getTexts();
+    for (auto t = texts.begin(); t != texts.end(); t++)
     {
-        for (auto t = debugMap->texts.begin(); t != debugMap->texts.end(); t++)
-        {
-            sText stxt = *t;
-            QPointF pt = T.map(stxt.pt);
-            painter->drawText(QPointF(pt.x()+7,pt.y()+13),stxt.txt);
-        }
+        sText stxt = *t;
+        QPointF pt = T.map(stxt.pt);
+        painter->drawText(QPointF(pt.x()+7,pt.y()+13),stxt.txt);
     }
 }
 

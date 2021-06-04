@@ -34,11 +34,10 @@
 
 StyleEditor::StyleEditor()
 {
-
     ViewControl * vcontrol = ViewControl::getInstance();
+
     connect(this, &StyleEditor::sig_refreshView,  vcontrol, &ViewControl::slot_refreshView);
-    View * view = View::getInstance();
-    connect(this, SIGNAL(sig_update()),  view, SLOT(update()));
+    connect(this, &StyleEditor::sig_updateView,   vcontrol, &ViewControl::slot_updateView);
 }
 
 ///////////////////////////////////////////////////////////////
@@ -56,11 +55,12 @@ ColoredEditor::ColoredEditor(Colored * c, AQTableWidget * table)
 
     table->clear();
     table->setColumnCount(3);
-    table->setRowCount(3);
+    table->setRowCount(2);
     table->setColumnWidth(1,301);
     table->horizontalHeader()->setVisible(false);
     table->verticalHeader()->setVisible(false);
-    rows     = 0;
+
+    rows = 0;
 
     QTableWidgetItem * item = new QTableWidgetItem("Color");
     table->setItem(rows,0,item);
@@ -73,24 +73,24 @@ ColoredEditor::ColoredEditor(Colored * c, AQTableWidget * table)
 
     rows++;
 
-    item = new QTableWidgetItem("Transparency");
+    item = new QTableWidgetItem("Opacity");
     table->setItem(rows,0,item);
 
-    transparency = new DoubleSliderSet("", opacity, 0.0, 1.0, 100);
+    opacitySlider = new DoubleSliderSet("", opacity, 0.0, 1.0, 100);
     QWidget * widget = new QWidget();
     widget->setContentsMargins(0,0,0,0);
-    widget->setLayout(transparency);
+    widget->setLayout(opacitySlider);
 
     table->setCellWidget(rows,1,widget);
     table->setRowHeight(rows,41);
 
     rows++;
 
-    connect(color_button,  &QPushButton::clicked, this, &ColoredEditor::slot_pickColor);
-    connect(transparency,  &DoubleSliderSet::valueChanged, this, &ColoredEditor::slot_transparencyChanged);
+    connect(color_button,  &QPushButton::clicked,          this, &ColoredEditor::slot_pickColor);
+    connect(opacitySlider, &DoubleSliderSet::valueChanged, this, &ColoredEditor::slot_opacityChanged);
 }
 
-void ColoredEditor::slot_transparencyChanged(qreal val)
+void ColoredEditor::slot_opacityChanged(qreal val)
 {
     ColorSet * cset = colored->getColorSet();
     cset->setOpacity(val);
@@ -184,6 +184,11 @@ FilledEditor::FilledEditor(FilledPtr f, AQTableWidget * table , QVBoxLayout *par
     fillSet     = nullptr;
     fillGroup   = nullptr;
     view        = View::getInstance();
+
+    if (!filled->dcel)
+    {
+        filled->createStyleRepresentation();   // builds and  cleans the  dcel
+    }
 
     table->clear();
 
@@ -324,8 +329,6 @@ void FilledEditor::displayParms01()
 
 void FilledEditor::displayParms2()
 {
-//    if (!filled->dcel)
-//        return;
 
     fillSet = new StyleColorFillSet(filled,vbox);
     fillSet->display();
@@ -335,8 +338,6 @@ void FilledEditor::displayParms2()
 
 void FilledEditor::displayParms3()
 {
-//    if (!filled->dcel)
-//        return;
 
     fillGroup = new StyleColorFillGroup(filled,vbox);
     connect(fillGroup, &StyleColorFillGroup::sig_colorsChanged,     this, &FilledEditor::slot_colorsChanged,     Qt::UniqueConnection);
@@ -349,8 +350,6 @@ void FilledEditor::slot_insideChanged(int state)
     filled->setDrawInsideBlacks(checked);
 
     slot_colorsChanged();
-    //displayParms();
-    //emit sig_refreshView();
 }
 
 void FilledEditor::slot_outsideChanged(int state)
@@ -359,8 +358,6 @@ void FilledEditor::slot_outsideChanged(int state)
     filled->setDrawOutsideWhites(checked);
 
     slot_colorsChanged();
-    //displayParms();
-    //emit sig_refreshView();
 }
 
 void FilledEditor::slot_algo(int index)
@@ -369,7 +366,7 @@ void FilledEditor::slot_algo(int index)
     filled->resetStyleRepresentation();
     filled->createStyleRepresentation();
     displayParms();
-    emit sig_update();
+    emit sig_updateView();
     emit sig_refreshView();
 }
 
@@ -381,7 +378,7 @@ void FilledEditor::slot_cleanse(int index)
     filled->resetStyleRepresentation();
     filled->createStyleRepresentation();
     displayParms();
-    emit sig_update();
+    emit sig_updateView();
     emit sig_refreshView();
 }
 
@@ -444,7 +441,9 @@ EmbossEditor::EmbossEditor(Emboss * e, AQTableWidget * table) : ThickEditor(e,ta
 
     rows++;
 
-    connect(angle_slider, &SliderSet::valueChanged, this, &EmbossEditor::slot_anlgeChanged);
+    connect(angle_slider, &SliderSet::valueChanged,        this, &EmbossEditor::slot_anlgeChanged);
+    connect(this,         &StyleEditor::sig_colorsChanged, this, &EmbossEditor::slot_colorsChanged);
+
 }
 
 void EmbossEditor::slot_anlgeChanged(int angle)
@@ -452,6 +451,11 @@ void EmbossEditor::slot_anlgeChanged(int angle)
     qDebug() << "angle=" << angle;
     emboss->setAngle( angle * M_PI / 180.0 );
     emit sig_refreshView();
+}
+
+void EmbossEditor::slot_colorsChanged()
+{
+    emboss->resetStyleRepresentation();
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -502,11 +506,10 @@ InterlaceEditor::InterlaceEditor(Interlace * i, AQTableWidget * table) : ThickEd
 
     rows++;
 
-    connect(gap_slider,    &DoubleSliderSet::valueChanged, this, &InterlaceEditor::slot_gapChanged);
-    connect(shadow_slider, &DoubleSliderSet::valueChanged, this, &InterlaceEditor::slot_shadowChanged);
-    connect(tipVert_checkbox, &QCheckBox::stateChanged, this, &InterlaceEditor::slot_includeTipVerticesChanged);
-
-
+    connect(gap_slider,       &DoubleSliderSet::valueChanged,  this, &InterlaceEditor::slot_gapChanged);
+    connect(shadow_slider,    &DoubleSliderSet::valueChanged,  this, &InterlaceEditor::slot_shadowChanged);
+    connect(tipVert_checkbox, &QCheckBox::stateChanged,        this, &InterlaceEditor::slot_includeTipVerticesChanged);
+    connect(this,             &StyleEditor::sig_colorsChanged, this, &InterlaceEditor::slot_colorsChanged);
 }
 
 void InterlaceEditor::slot_gapChanged(qreal gap)
@@ -526,6 +529,11 @@ void InterlaceEditor::slot_includeTipVerticesChanged(int state)
     Q_UNUSED(state)
     interlace->setIncludeTipVertices(tipVert_checkbox->isChecked());
     emit sig_refreshView();
+}
+
+void InterlaceEditor::slot_colorsChanged()
+{
+    interlace->resetStyleRepresentation();
 }
 
 ///////////////////////////////////////////////////////////////

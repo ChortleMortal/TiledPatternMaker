@@ -37,13 +37,13 @@
 #include "makers/tiling_maker/tiling_maker.h"
 #include "panels/panel.h"
 #include "style/style.h"
-#include "tile/grid.h"
+#include "viewers/grid.h"
 #include "tile/backgroundimage.h"
 #include "viewers/view.h"
 #include "viewers/figure_view.h"
-#include "viewers/placed_designelement_view.h"
 #include "viewers/prototype_view.h"
 #include "viewers/tiling_view.h"
+#include "viewers/style_set_view.h"
 
 ViewControl * ViewControl::mpThis = nullptr;
 
@@ -67,7 +67,7 @@ void ViewControl::releaseInstance()
 
 ViewControl::ViewControl()
 {
-    protoViewMode = PROTO_DRAW_FIGURES | PROTO_DRAW_FEATURES | PROTO_HIGHLIGHT_FEATURES | PROTO_HIGHLIGHT_FIGURES;
+    modelAlignment = M_ALIGN_TILING;  // default
 }
 
 void ViewControl::init()
@@ -77,8 +77,9 @@ void ViewControl::init()
     designMaker     = DesignMaker::getInstance();
     decorationMaker = DecorationMaker::getInstance();
     motifMaker      = MotifMaker::getInstance();
-    tilingMaker     = TilingMaker::getInstance();
     view            = View::getInstance();
+    mapEditor       = MapEditor::getSharedInstance();
+    tilingMaker     = TilingMaker::getSharedInstance();
 
     disableAllViews();
     viewEnable(config->getViewerType(),true);
@@ -114,15 +115,6 @@ FeaturePtr ViewControl::getSelectedFeature()
     return selectedFeature.lock();
 }
 
-// figures
-void  ViewControl::setProtoViewMode(eProtoViewMode mode, bool enb)
-{
-    if (enb)
-       protoViewMode |= mode;
-    else
-       protoViewMode &= ~mode;
-}
-
 void ViewControl::resetAllMakers()
 {
     DesignMaker * designMaker = DesignMaker::getInstance();
@@ -134,7 +126,7 @@ void ViewControl::resetAllMakers()
     MotifMaker * motifMaker = MotifMaker::getInstance();
     motifMaker->erasePrototypes();
 
-    TilingMaker * tilingMaker = TilingMaker::getInstance();
+    mapEditor->unload();
     tilingMaker->unload();
 
     selectedFeature.reset();
@@ -154,6 +146,11 @@ void ViewControl::disableAllViews()
     {
         enabledViews[i] = false;
     }
+}
+
+void ViewControl::slot_updateView()
+{
+    view->update();
 }
 
 void ViewControl::slot_refreshView()
@@ -213,7 +210,6 @@ void ViewControl::refreshView()
     }
 
     // trigger repaint
-
     view->paintEnable(true);
 
     view->update();
@@ -242,10 +238,6 @@ void ViewControl::setupViewers()
 
             case VIEW_PROTOTYPE:
                 viewPrototype();
-                break;
-
-            case VIEW_DESIGN_ELEMENT:
-                viewDesignElement();
                 break;
 
             case VIEW_MOTIF_MAKER:
@@ -288,7 +280,7 @@ void ViewControl::viewDesign()
         DesignPtr dp = designs.first();
         ModelSettingsPtr settings = dp->getDesignInfo();
         view->setBackgroundColor(settings->getBackgroundColor());
-        setBorder(settings->getBorder());
+        setBorder(dp->border);
         setBackgroundImg(settings->getBkgdImage());
     }
     view->setWindowTitle(designMaker->getDesignName());
@@ -302,37 +294,44 @@ void ViewControl::viewMosaic()
         QString name = mosaic->getName();
         qDebug() << "ViewController::viewMosaic" << name;
 
-        ControlPanel * panel  = ControlPanel::getInstance();
         QString astring = QString("Preparing design: %1").arg(name);
         panel->showPanelStatus(astring);
 
 #ifdef TPMSPLASH
-        panel->showSplash(astring);
+        panel->splashMosiac(astring);
 #endif
+
         const StyleSet & sset = mosaic->getStyleSet();
         for (auto style : sset)
         {
             qDebug().noquote() << "Adding Style:" << style.get() << "  " << style->getDescription();
+            if (modelAlignment != M_ALIGN_MOSAIC)
+            {
+                style->setCanvasXform(getCurrentXform());
+            }
             style->createStyleRepresentation();   // important to do this here
             view->addLayer(style);
         }
+        view->setWindowTitle(name);
+
+        ModelSettingsPtr settings = decorationMaker->getMosaicSettings();
+        if (settings)
+        {
+            view->setBackgroundColor(settings->getBackgroundColor());
+            setBackgroundImg(settings->getBkgdImage());
+        }
+        setBorder(mosaic->getBorder());
 
         panel->hidePanelStatus();
 #ifdef TPMSPLASH
-        panel->hideSplash();
+        panel->removeSplashMosaic();
 #endif
-        view->setWindowTitle(name);
     }
     else
     {
         qDebug() << "ViewController::viewMosaic - no mosaic";
         view->setWindowTitle("");
     }
-
-    ModelSettingsPtr settings = decorationMaker->getMosaicSettings();
-    view->setBackgroundColor(settings->getBackgroundColor());
-    setBorder(settings->getBorder());
-    setBackgroundImg(settings->getBkgdImage());
 }
 
 void ViewControl::viewPrototype()
@@ -348,96 +347,10 @@ void ViewControl::viewPrototype()
 
     view->setWindowTitle("WS Proto Feature");
 
-    LayerPtr pfview = make_shared<PrototypeView>(pp,getProtoViewMode());
-
-    MosaicPtr mosaic = decorationMaker->getMosaic();
-    if (mosaic && mosaic->hasContent())
-    {
-        StylePtr style = mosaic->getFirstStyle();
-        Q_ASSERT(style);
-        const Xform & xf = style->getCanvasXform();
-        pfview->setCanvasXform(xf);
-    }
-    else
-    {
-        TilingPtr tiling = pp->getTiling();
-        const Xform & xf = tiling->getCanvasXform();
-        pfview->setCanvasXform(xf);
-
-        setTitle(tiling);
-    }
-
+    PrototypeViewPtr pfview = PrototypeView::getSharedInstance();
+    pfview->setPrototype(pp);
+    pfview->setCanvasXform(getCurrentXform());
     view->addLayer(pfview);
-
-    view->setBackgroundColor(Qt::white);
-
-    ModelSettingsPtr settings = ViewControl::getMosaicOrTilingSettings();
-    setBackgroundImg(settings->getBkgdImage());
-}
-
-void ViewControl::viewDesignElement()
-{
-    qDebug() << "++ViewController::viewDesignElement";
-
-    PrototypePtr pp = motifMaker->getSelectedPrototype();
-    if (!pp)
-    {
-        qWarning("viewDesignElement - no seleected protype");
-        return;
-    }
-
-    StylePtr style;
-    MosaicPtr mosaic = decorationMaker->getMosaic();
-    if (mosaic && mosaic->hasContent())
-    {
-        style = mosaic->getFirstStyle();
-        Q_ASSERT(style);
-    }
-
-    TilingPtr tiling                         = pp->getTiling();
-    const QVector<PlacedFeaturePtr> & placed = tiling->getPlacedFeatures();
-    QVector<DesignElementPtr> &  dels        = pp->getDesignElements();
-    QVector<QTransform>       & tforms       = pp->getLocations();
-
-    qDebug() << "dels=" << dels.size() << "tforms="  << tforms.size();
-    for (auto delp : dels)
-    {
-        FeaturePtr  feature = delp->getFeature();
-        bool selected = (feature == getSelectedFeature());
-        for (auto pfp : placed)
-        {
-            if (feature == pfp->getFeature())
-            {
-                QTransform tr                  = pfp->getTransform();
-                PlacedDesignElementPtr pdel    = make_shared<PlacedDesignElement>(delp,tr);
-                LayerPtr delView               = make_shared<PlacedDesignElementView>(pdel,selected);
-                if (style)
-                {
-                    // use settings from design
-                    const Xform & xf = style->getCanvasXform();
-                    delView->setCanvasXform(xf);
-                }
-                else
-                {
-                    // use settings from prototypes tiling
-                    const Xform & xf = tiling->getCanvasXform();
-                    delView->setCanvasXform(xf);
-                }
-
-                if (selected)
-                {
-                    view->addLayer(delView);
-                }
-                else
-                {
-                    view->addTopLayer(delView);
-                }
-            }
-        }
-    }
-
-    QString astring = QString("Design elements for tiling: %1").arg(tiling->getName());
-    view->setWindowTitle(astring);
 
     view->setBackgroundColor(Qt::white);
 
@@ -449,7 +362,8 @@ void ViewControl::viewMotifMaker()
 {
     qDebug() << "++ViewController::viewFigure";
 
-    LayerPtr figView = make_shared<FigureView>();
+    FigureViewPtr  figView = FigureView::getSharedInstance();
+    // dont set canvas xform
     view->addLayer(figView);
 
     QString astring = QString("Motif Maker Figure");
@@ -472,22 +386,9 @@ void ViewControl::viewTiling()
 
     qDebug() << "++ViewController::viewTiling (tiling)"  << tiling->getName();
 
-    TilingViewPtr tilingView = make_shared<TilingView>(tiling);
-
-    MosaicPtr mosaic = decorationMaker->getMosaic();
-    if (mosaic  && mosaic->hasContent())
-    {
-        StylePtr style = mosaic->getFirstStyle();
-        Q_ASSERT(style);
-        StylePtr sp = mosaic->getFirstStyle();
-        const Xform & xf = sp->getCanvasXform();
-        tilingView->setCanvasXform(xf);
-    }
-    else
-    {
-        const Xform & xf = tiling->getCanvasXform();
-        tilingView->setCanvasXform(xf);
-    }
+    TilingViewPtr tilingView = TilingView::getSharedInstance();
+    tilingView->setTiling(tiling);
+    tilingView->setCanvasXform(getCurrentXform());
     view->addLayer(tilingView);
 
     view->setBackgroundColor(Qt::white);
@@ -502,25 +403,10 @@ void ViewControl::viewTiling()
 
 void ViewControl::viewTilingMaker()
 {
-    TilingMakerPtr tilingMaker = TilingMaker::getSharedInstance();
-    TilingPtr tiling           = tilingMaker->getSelected();
     qDebug() << "++ViewController::viewTilingMaker";
 
-    MosaicPtr mosaic = decorationMaker->getMosaic();
-    if (mosaic  && mosaic->hasContent())
-    {
-        StylePtr style = mosaic->getFirstStyle();
-        Q_ASSERT(style);
-        const Xform & xf = style->getCanvasXform();
-        tilingMaker->setCanvasXform(xf);
-    }
-    else if (tiling)
-    {
-        const Xform & xf = tiling->getCanvasXform();
-        tilingMaker->setCanvasXform(xf);
-    }
-
-    view->addLayer(tilingMaker);  // since this is a shared pointer it does not get deleted
+    // dont set canvas xform
+    view->addLayer(tilingMaker);
 
     view->setBackgroundColor(Qt::white);
 
@@ -533,20 +419,19 @@ void ViewControl::viewTilingMaker()
 
 void ViewControl::viewMapEditor()
 {
-    qDebug() << "++ViewController::viewFigMapEditor";
+    qDebug() << "++ViewController::viewMapEditor";
 
-    MapEditorPtr ed  = MapEditor::getSharedInstance();
+    mapEditor->setCanvasXform(getCurrentXform());
+    view->addLayer(mapEditor);
 
-    view->addLayer(ed);           // since this is a shared pointer it does not get deleted
-
-    ed->forceLayerRecalc();
+    mapEditor->forceLayerRecalc();
 
     view->setWindowTitle("Map Editor");
 
     view->setBackgroundColor(config->figureViewBkgdColor);
 
     QSize sz = view->getActiveFrameSize(VIEW_MAP_EDITOR);
-    ed->setCenterScreen(QRect(QPoint(0,0),sz).center());
+    mapEditor->setCenterScreen(QRect(QPoint(0,0),sz).center());
 }
 
 void ViewControl::setTitle(TilingPtr tp)
@@ -570,7 +455,11 @@ void  ViewControl::setBorder(BorderPtr bp)
 {
     if (bp)
     {
-        view->addLayer(bp);
+        OuterBorder * ob = dynamic_cast<OuterBorder*>(bp.get());
+        if (ob)
+        {
+            view->addLayer(bp);
+        }
     }
 }
 
@@ -584,11 +473,36 @@ ModelSettingsPtr ViewControl::getMosaicOrTilingSettings()
     }
     else
     {
+        TilingMakerPtr tilingMaker = TilingMaker::getSharedInstance();
         TilingPtr tp = tilingMaker->getSelected();
         Q_ASSERT(tp);
         settings = tp->getSettings();
     }
     return settings;
+}
+
+const Xform &ViewControl::getCurrentXform()
+{
+    if (modelAlignment == M_ALIGN_MOSAIC)
+    {
+        MosaicPtr mosaic = decorationMaker->getMosaic();
+        Q_ASSERT(mosaic);
+        StylePtr style = mosaic->getFirstStyle();
+        Q_ASSERT(style);
+        return style->getCanvasXform();
+    }
+    else if (modelAlignment == M_ALIGN_TILING)
+    {
+        PrototypePtr pp = motifMaker->getSelectedPrototype();
+        Q_ASSERT(pp);
+        TilingPtr tiling = pp->getTiling();
+        Q_ASSERT(tiling);
+        return tiling->getCanvasXform();
+    }
+    else
+    {
+        return unityXform;
+    }
 }
 
 

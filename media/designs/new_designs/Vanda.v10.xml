@@ -1,0 +1,134 @@
+<?xml version="1.0"?>
+<vector id="1" version="10">
+	<designNotes>has integrated border</designNotes>
+	<design>
+		<size>
+			<width>1920</width>
+			<height>1025</height>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<border type="4">
+			<boundary>-16.78048780487806,-11.47967479674799,34.40775159702566,19.85087392014705</boundary>
+		</border>
+		<Fill>-4,4,-4,4</Fill>
+		<BackgroundImage name="IMG_0066ADJ.JPG">
+			<Scale>0.55</Scale>
+			<Rot>1.553343034274953</Rot>
+			<X>0</X>
+			<Y>0</Y>
+		</BackgroundImage>
+	</design>
+	<style.Thick id="2" serialization="custom">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>0.4099999999999995</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3" serialization="custom">
+				<app.Prototype>
+					<string>vanda_base.v4</string>
+					<entry>
+						<tile.Feature id="4">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">-3.866666666666667,-4.053780462367758</Point>
+									<Point id="7">-1.718536440178674,-0.3331097688161198</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">-6.014796893154656,-0.3331097688161173</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="9" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="10">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="11">
+								<Line>
+									<Point id="12">1,0.5773502691896256</Point>
+									<Point id="13">7.070501591499379e-17,1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point id="14">-0.9999999999999998,0.5773502691896261</Point>
+								</Line>
+								<Line>
+									<Point reference="14" />
+									<Point id="15">-1,-0.5773502691896254</Point>
+								</Line>
+								<Line>
+									<Point reference="15" />
+									<Point id="16">-2.121150477449814e-16,-1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="16" />
+									<Point id="17">0.9999999999999997,-0.5773502691896263</Point>
+								</Line>
+								<Line>
+									<Point reference="17" />
+									<Point reference="12" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<ExtendedStar id="18" extendPeripherals="f" extendFreeVertices="t">
+							<n>6</n>
+							<d>2</d>
+							<s>1</s>
+							<boundarySides>6</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>0.5</figureScale>
+							<r>0</r>
+						</ExtendedStar>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ffa35807</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>true</draw__outline>
+			<width>0.07000000000000001</width>
+		</style.Thick>
+	</style.Thick>
+	<style.Thick id="19" serialization="custom">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>0.4099999999999995</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ffc59c0c</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>true</draw__outline>
+			<width>0.13</width>
+		</style.Thick>
+	</style.Thick>
+</vector>

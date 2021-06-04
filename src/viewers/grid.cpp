@@ -1,8 +1,8 @@
-#include "grid.h"
+#include "viewers/grid.h"
 #include "base/configuration.h"
 #include "viewers/view.h"
 #include "geometry/transform.h"
-#include "viewers/geo_graphics.h"
+#include "base/geo_graphics.h"
 
 Grid::Grid() : Layer("Grid",LTYPE_GRID)
 {
@@ -10,7 +10,6 @@ Grid::Grid() : Layer("Grid",LTYPE_GRID)
     view    = View::getInstance();
 
     gridPen.setColor(QColor(Qt::red));
-
 }
 
 void Grid::paint(QPainter * painter)

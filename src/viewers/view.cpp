@@ -28,11 +28,12 @@
 #include "base/tiledpatternmaker.h"
 #include "base/transparentwidget.h"
 #include "base/utilities.h"
-#include "panels/panel.h"
+#include "designs/design_maker.h"
+#include "geometry/dcel.h"
 #include "makers/map_editor/map_editor.h"
 #include "makers/tiling_maker/tiling_maker.h"
+#include "panels/panel.h"
 #include "style/style.h"
-#include "designs/design_maker.h"
 
 View * View::mpThis = nullptr;
 
@@ -74,11 +75,10 @@ View::View()
     addFrameSetting(VIEW_DESIGN,            Bounds(-10.0,10.0,20.0), QSize(1500,1100));
     addFrameSetting(VIEW_MOSAIC,            Bounds(-10.0,10.0,20.0), QSize(1500,1100));
     addFrameSetting(VIEW_PROTOTYPE,         Bounds(-10.0,10.0,20.0), QSize(1500,1100));
-    addFrameSetting(VIEW_DESIGN_ELEMENT,    Bounds(-10.0,10.0,20.0), QSize(1500,1100));
-    addFrameSetting(VIEW_MOTIF_MAKER,       Bounds(-10.0,10.0,20.0), QSize( 900, 900));
+    addFrameSetting(VIEW_MOTIF_MAKER,       Bounds(-10.0,10.0,20.0), QSize(1500,1100));
     addFrameSetting(VIEW_TILING,            Bounds(-10.0,10.0,20.0), QSize(1500,1100));
-    addFrameSetting(VIEW_TILING_MAKER,      Bounds(-10.0,10.0,20.0), QSize(1000,1000));
-    addFrameSetting(VIEW_MAP_EDITOR,        Bounds(-10.0,10.0,20.0), QSize( 900, 900));
+    addFrameSetting(VIEW_TILING_MAKER,      Bounds(-10.0,10.0,20.0), QSize(1500,1100));
+    addFrameSetting(VIEW_MAP_EDITOR,        Bounds(-10.0,10.0,20.0), QSize(1500,1100));
 }
 
 View::~View()
@@ -93,8 +93,8 @@ View::~View()
 void View::init()
 {
     config      = Configuration::getInstance();
-    mapEditor   = MapEditor::getInstance();
-    tilingMaker = TilingMaker::getInstance();
+    mapEditor   = MapEditor::getSharedInstance();
+    tilingMaker = TilingMaker::getSharedInstance();
     designMaker = DesignMaker::getInstance();
 
     setKbdMode(KBD_MODE_UNDEFINED);
@@ -154,7 +154,6 @@ void  View::reInitFrameSettings()
     reInitFrameSetting(VIEW_DESIGN);
     reInitFrameSetting(VIEW_MOSAIC);
     reInitFrameSetting(VIEW_PROTOTYPE);
-    reInitFrameSetting(VIEW_DESIGN_ELEMENT);
     reInitFrameSetting(VIEW_MOTIF_MAKER);
     reInitFrameSetting(VIEW_TILING);
     reInitFrameSetting(VIEW_TILING_MAKER);
@@ -245,14 +244,15 @@ void View::paintEvent(QPaintEvent *event)
         }
     }
 
-    if (loadTimer.isValid())
+    if (loadUnit.loadTimer.isValid())
     {
-        qint64 delta = loadTimer.elapsed();
+        qint64 delta = loadUnit.loadTimer.elapsed();
         double qdelta = delta /1000.0;
-        QString str = QString("%1  ").arg(qdelta, 8, 'f', 3, QChar(' '));
+        QString str = QString("%1").arg(qdelta, 8, 'f', 3, QChar(' '));
 
-        qInfo().noquote() << "The load operation took" << str << "seconds";
-        loadTimer.invalidate();
+        qInfo().noquote() << "Load operation for" << loadUnit.name << "took" << str << "seconds";
+        loadUnit.loadTimer.invalidate();
+        loadUnit.name.clear();
     }
 
     //qDebug() << "++++END PAINT";
@@ -293,16 +293,15 @@ void View::resizeEvent(QResizeEvent *event)
     switch(config->getViewerType())
     {
     case VIEW_MOTIF_MAKER:
-    case VIEW_MAP_EDITOR:
+    case VIEW_TILING_MAKER:
+    case VIEW_DESIGN:
     case VIEW_UNDEFINED:
         break;
 
-    case VIEW_DESIGN:
     case VIEW_MOSAIC:
     case VIEW_PROTOTYPE:
-    case VIEW_DESIGN_ELEMENT:
     case VIEW_TILING:
-    case VIEW_TILING_MAKER:
+    case VIEW_MAP_EDITOR:
         setAllCommonActiveSizes(newSize);
         break;
     }
@@ -313,16 +312,15 @@ void View::resizeEvent(QResizeEvent *event)
         switch (config->getViewerType())
         {
         case VIEW_MOTIF_MAKER:
-        case VIEW_MAP_EDITOR:
+        case VIEW_TILING_MAKER:
+        case VIEW_DESIGN:
         case VIEW_UNDEFINED:
             break;
 
-        case VIEW_DESIGN:
         case VIEW_MOSAIC:
         case VIEW_PROTOTYPE:
-        case VIEW_DESIGN_ELEMENT:
         case VIEW_TILING:
-        case VIEW_TILING_MAKER:
+        case VIEW_MAP_EDITOR:
             setAllCommonDefinedSizes(newSize);
             break;
         }
@@ -333,22 +331,20 @@ void View::resizeEvent(QResizeEvent *event)
 
 void  View::setAllCommonDefinedSizes(QSize sz)
 {
-    // list does not include the tiling maker
-    frameSettings[VIEW_DESIGN].setDefinedFrameSize(sz);
+    // list does not include the tiling maker, motif maker, and design
     frameSettings[VIEW_MOSAIC].setDefinedFrameSize(sz);
     frameSettings[VIEW_PROTOTYPE].setDefinedFrameSize(sz);
-    frameSettings[VIEW_DESIGN_ELEMENT].setDefinedFrameSize(sz);
     frameSettings[VIEW_TILING].setDefinedFrameSize(sz);
+    frameSettings[VIEW_MAP_EDITOR].setDefinedFrameSize(sz);
 }
 
 void  View::setAllCommonActiveSizes(QSize sz)
 {
-    // list does not include the tiling maker
-    frameSettings[VIEW_DESIGN].setActiveFrameSize(sz);
+    // list does not include the tiling maker, motif maker, and design
     frameSettings[VIEW_MOSAIC].setActiveFrameSize(sz);
     frameSettings[VIEW_PROTOTYPE].setActiveFrameSize(sz);
-    frameSettings[VIEW_DESIGN_ELEMENT].setActiveFrameSize(sz);
     frameSettings[VIEW_TILING].setActiveFrameSize(sz);
+    frameSettings[VIEW_MAP_EDITOR].setActiveFrameSize(sz);
 }
 
 void View::keyPressEvent( QKeyEvent *k )
@@ -546,7 +542,20 @@ void View::dump(bool summary)
         }
     }
 
-    qDebug() << "Tilings:" << Tiling::refs << "Layers:" << Layer::refs  << "Styles:" << Style::refs << "Maps:" << Map::refs << "Protos:" << Prototype::refs << "DELs:" << DesignElement::refs  << "PDELs:" << PlacedDesignElement::refs2 << "Figures:" << Figure::refs << "Features:" << Feature::refs << "Edges:" << Edge::refs << "Vertices:"  << Vertex::refs;
+    qDebug() << "Tilings:"  << Tiling::refs
+             << "Layers:"   << Layer::refs
+             << "Styles:"   << Style::refs
+             << "Maps:"     << Map::refs
+             << "Protos:"   << Prototype::refs
+             << "DELs:"     << DesignElement::refs
+             << "PDELs:"    << PlacedDesignElement::refs2
+             << "Figures:"  << Figure::refs
+             << "Features:" << Feature::refs
+             << "Edges:"    << Edge::refs
+             << "Vertices:" << Vertex::refs
+             << "DCELs"     << DCEL::refs
+             << "faces"     << Face::refs;
+
 }
 
 void View::setKbdMode(eKbdMode mode)

@@ -35,7 +35,6 @@
 
 #include "tapp/star_connect_figure.h"
 #include "geometry/loose.h"
-#include "geometry/map_cleanser.h"
 
 StarConnectFigure::StarConnectFigure(int nsides, qreal d, int s, qreal r)
     : Star(nsides,d,s,r), FigureConnector(this)
@@ -103,7 +102,7 @@ MapPtr StarConnectFigure::buildUnit()
 
     scaleToUnit(unitMap);
 
-    unitMap->verifyMap("StarConnectFigure");
+    unitMap->verify();
 
     return unitMap;
 }

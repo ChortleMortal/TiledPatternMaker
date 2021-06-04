@@ -156,7 +156,7 @@ TilingPtr TilingLoader::readTilingXML(QString file )
 
     xml_node tiling_node = doc.first_child();
     TilingPtr tp = readTilingXML(tiling_node);
-    if (tp->hasOverlaps())
+    if (tp->hasIntrinsicOverlaps())
         qInfo() << tiling->getName() << "HAS OVERLAPS";
     return tp;
 }

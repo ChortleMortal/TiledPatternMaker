@@ -22,7 +22,7 @@ public:
     StylePtr       makeStyle(eStyleType type, StylePtr oldStyle);
 
 protected:
-    void sm_resetStyles(QVector<PrototypePtr> prototypes);
+    void sm_resetStyles();
     void sm_createMosaic(const QVector<PrototypePtr> prototypes);
     void sm_addPrototype(const QVector<PrototypePtr> prototypes);
     void sm_replacePrototype(PrototypePtr prototype);
@@ -32,7 +32,7 @@ private:
     static DecorationMaker * mpThis;
 
     class MotifMaker  * motifMaker;
-    class TilingMaker * tilingMaker;
+    TilingMakerPtr      tilingMaker;
     class ViewControl * viewControl;
 
     MosaicPtr       mosaic;

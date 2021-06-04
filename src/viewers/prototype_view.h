@@ -33,16 +33,19 @@
 class PrototypeView : public FillRegion, public Layer
 {
 public:
-    PrototypeView(PrototypePtr proto, int mode);
+    static PrototypeViewPtr getSharedInstance();
+    PrototypeView();        // don't use this
 
+    void setPrototype(PrototypePtr proto) { this->proto = proto; }
     PrototypePtr getPrototype() {return proto; }
 
-    virtual void   paint(QPainter *painter) override;
-    void           receive(GeoGraphics * gg,int h, int v ) override;
-    virtual void   draw( GeoGraphics * gg );
-
 protected:
-    int             mode;
+    void   paint(QPainter *painter) override;
+    void   receive(GeoGraphics * gg,int h, int v ) override;
+    void   draw(GeoGraphics * gg);
+
+    void   drawPlacedDesignElement(GeoGraphics * gg, PlacedDesignElementPtr pde, QPen linePen, QBrush interiorBrush, QPen borderPen,bool selected);
+
     QPointF         t1;
     QPointF         t2;
 
@@ -53,5 +56,9 @@ protected:
     QColor          feature_border;
 
     QVector<PlacedDesignElement> rpfs;
+
+private:
+
+    static PrototypeViewPtr spThis;
 };
 #endif

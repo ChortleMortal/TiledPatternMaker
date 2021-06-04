@@ -45,7 +45,6 @@
 #include "geometry/dcel.h"
 #include "geometry/point.h"
 #include "geometry/loose.h"
-#include "geometry/map_cleanser.h"
 #include "geometry/intersect.h"
 #include "base/utilities.h"
 #include <QPolygonF>
@@ -64,6 +63,8 @@ static QString sFaceState[]
     E2STR(FACE_REMOVE)
 };
 
+int Face::refs = 0;
+
 ////////////////////////////////////////
 ///
 /// Face
@@ -75,9 +76,8 @@ Face::Face()
     state   = FACE_UNDONE;
     outer   = false;
     color   = UNDEFINED;
-
-    incident_edge   = nullptr;
-    area            = -1;
+    area    = -1;
+    refs++;
 }
 
 QPolygonF Face::getPolygon()
@@ -157,7 +157,7 @@ bool  Face::overlaps(FacePtr other)
 bool Face::containsCrossover()
 {
     QVector<VertexPtr> qvec;
-    for (auto edge : qAsConst(*this))
+    for (auto & edge : qAsConst(*this))
     {
         VertexPtr vp = edge->v1;
         if (!qvec.contains(vp))
@@ -202,7 +202,7 @@ bool Face::decomposeOnce(FacePtr newFace)
     };
 
     QVector<VertexPtr> qvec;
-    for (auto edge : qAsConst(*this))
+    for (auto & edge : qAsConst(*this))
     {
         VertexPtr vp = edge->v1;
         if (!qvec.contains(vp))
@@ -215,7 +215,7 @@ bool Face::decomposeOnce(FacePtr newFace)
             //qDebug() << "Crossover vertex detected" << vp->getTmpVertexIndex();
             Face master;
             eState state = NOT_STARTED;
-            for (auto edge : qAsConst(*this))
+            for (auto & edge : qAsConst(*this))
             {
                 switch(state)
                 {
@@ -383,18 +383,18 @@ void FaceSet::dump(DCELPtr dcel)
 
         deb << " size = " << aface->area << "\t";
 
-        dcelEdgePtr head = aface->incident_edge;
+        EdgePtr head = aface->incident_edge.lock();
         if (!head)
         {
             deb << "NULL edge";
         }
         else
         {
-            dcelEdgePtr e = head;
+            EdgePtr e = head;
             do
             {
                 dcel->print_edge(e,deb);
-                e = e->next;
+                e = e->next.lock();
             } while (e != head);
         }
         deb << endl;

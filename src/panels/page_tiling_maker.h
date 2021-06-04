@@ -136,11 +136,9 @@ protected:
     PlacedFeaturePtr getFeatureColumn(int col);
 
 private:
-    class TilingMaker * tilingMaker;
+    QComboBox     * tilingCombo;
 
-    QComboBox * tilingCombo;
-
-    QButtonGroup * mouseModeBtnGroup;
+    QButtonGroup  * mouseModeBtnGroup;
 
     DoubleSpinSet * t1x;
     DoubleSpinSet * t1y;
@@ -159,6 +157,7 @@ private:
     QTextEdit    * featureInfo;
     QLabel       * debugLabel1;
     QLabel       * debugLabel2;
+    QLabel       * overlapStatus;
 
     AQSpinBox    * xRepMin;
     AQSpinBox    * xRepMax;

@@ -100,8 +100,8 @@ private:
     class ControlPanel     * controlPanel;
     class DecorationMaker  * decorationMaker;
     class MotifMaker       * motifMaker;
-    TilingMaker            * tilingMaker;
-    MapEditor              * mapEditor;
+    TilingMakerPtr           tilingMaker;
+    MapEditorPtr             mapEditor;
     Cycler                 * cycler;
 
     bool                    showFirst;

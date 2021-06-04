@@ -3,6 +3,7 @@
 
 #include <QtWidgets>
 #include "base/shared.h"
+#include "base/configuration.h"
 #include "makers/map_editor/map_selection.h"
 
 enum eMapMouseMode
@@ -14,7 +15,9 @@ enum eMapMouseMode
     MAPED_MOUSE_CONSTRUCTION_LINES,
     MAPED_MOUSE_EXTEND_LINE,
     MAPED_MOUSE_CONSTRUCTION_CIRCLES,
-    MAPED_MOUSE_CREATE_CROP
+    MAPED_MOUSE_CREATE_CROP,
+    MAPED_MOUSE_CREATE_BORDER,
+    MAPED_MOUSE_EDIT_BORDER,
 };
 
 #define E2STR(x) #x
@@ -28,7 +31,9 @@ static QString sMapMouseMode[]
     E2STR(MAPED_MOUSE_CONSTRUCTION_LINES),
     E2STR(MAPED_MOUSE_EXTEND_LINE),
     E2STR(MAPED_MOUSE_CONSTRUCTION_CIRCLES),
-    E2STR(MAPED_MOUSE_CREATE_CROP)
+    E2STR(MAPED_MOUSE_CREATE_CROP),
+    E2STR(MAPED_MOUSE_CREATE_BORDER),
+    E2STR(MAPED_MOUSE_EDIT_BORDER)
 };
 
 class MapEditor;
@@ -151,10 +156,48 @@ public:
     virtual void draw(QPainter * painter) override;
 
 protected:
-    QRectF    crop;
-
     QPointF * start;
     QPointF * end;
 };
 
+class CreateBorder : public CreateCrop
+{
+    enum eCreateBorderMode
+    {
+        CB_READY,
+        CB_STARTED,
+    };
+
+public:
+    CreateBorder(MapEditor * me, QPointF spt);
+    ~CreateBorder();
+
+    virtual void updateDragging(QPointF spt) override;
+    virtual void endDragging( QPointF spt) override;
+
+private:
+    eCreateBorderMode cbmode;
+};
+
+
+class EditBorder : public CreateBorder
+{
+    enum eEditBorderMode
+    {
+        EB_READY,
+        EB_MOVE,
+        EB_RESIZE,
+    };
+
+public:
+    EditBorder(MapEditor * me, QPointF spt);
+    ~EditBorder() override;
+
+    virtual void updateDragging(QPointF spt) override;
+    virtual void endDragging( QPointF spt) override;
+    virtual void draw(QPainter * painter) override;
+
+protected:
+    eEditBorderMode ebmode;
+};
 #endif

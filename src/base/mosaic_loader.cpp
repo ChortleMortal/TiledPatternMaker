@@ -27,7 +27,6 @@
 #include "base/configuration.h"
 #include "base/tiledpatternmaker.h"
 #include "base/utilities.h"
-#include "geometry/map_cleanser.h"
 #include "style/colored.h"
 #include "style/thick.h"
 #include "style/filled.h"
@@ -59,7 +58,7 @@ MosaicLoader::MosaicLoader()
 
 MosaicLoader::~MosaicLoader()
 {
-    qDebug() << "MosaicLoader: destructor";
+    //qDebug() << "MosaicLoader: destructor";
 }
 
 QString MosaicLoader::getLoadedFilename()
@@ -69,8 +68,6 @@ QString MosaicLoader::getLoadedFilename()
 
 MosaicPtr MosaicLoader::loadMosaic(QString fileName)
 {
-    view->loadTimer.restart();
-
     view->dump(true);
 
     qDebug().noquote() << "MosaicLoader load" << fileName << " : start";
@@ -234,7 +231,6 @@ void MosaicLoader::processVector(xml_node & node)
     ModelSettingsPtr settings = make_shared<ModelSettings>();
     settings->setBackgroundColor(_background);
     settings->setSize(QSize(_width,_height));
-    settings->setBorder(_border);
 
     if (!_bip)
     {
@@ -256,6 +252,10 @@ void MosaicLoader::processVector(xml_node & node)
     }
 
     _mosaic->setSettings(settings);
+    if (_border)
+    {
+        _mosaic->setBorder(_border);
+    }
 }
 
 void MosaicLoader::processDesign(xml_node & node)
@@ -1181,7 +1181,7 @@ PrototypePtr MosaicLoader::getPrototype(xml_node & node)
             map->sortVertices();
             map->sortEdges();
             map->buildNeighbours();
-            map->verifyMap("Explicit map",true);
+            map->verify(true);
         }
     }
 
@@ -1744,7 +1744,7 @@ MapPtr MosaicLoader::getMap(xml_node &node)
         for (xml_node edge = edges.child("Edge"); edge; edge = edge.next_sibling("Edge"))
         {
             EdgePtr e = getEdge(edge);
-            _currentMap->edges.push_back(e);
+            _currentMap->insertDirect(e);
         }
     }
     else
@@ -1754,16 +1754,18 @@ MapPtr MosaicLoader::getMap(xml_node &node)
         for (xml_node e = edges.first_child(); e; e= e.next_sibling())
         {
             QString name = e.name();
+            EdgePtr ep;
             if (name == "Edge")
             {
-                EdgePtr ep = getEdge(e);
-                _currentMap->insertEdge(ep);
+                ep = getEdge(e);
             }
             else if (name == "curve")
             {
-                EdgePtr ep = getCurve(e);
-                _currentMap->insertEdge(ep);
+                ep = getCurve(e);
             }
+            Q_ASSERT(ep);
+            //_currentMap->insertEdge(ep);
+            _currentMap->insertDirect(ep);
         }
     }
 
@@ -1771,11 +1773,10 @@ MapPtr MosaicLoader::getMap(xml_node &node)
     _currentMap->sortVertices();
     _currentMap->buildNeighbours();
 
-    if (!_currentMap->verifyMap("XML Loader"))
+    if (!_currentMap->verify())
     {
-        MapCleanser cleanser(_currentMap);
-        cleanser.cleanse(default_cleanse);
-        if (!_currentMap->verifyMap("XML Loader - cleanse"))
+        _currentMap->cleanse(default_cleanse);
+        if (!_currentMap->verify())
         {
             QMessageBox box;
             box.setIcon(QMessageBox::Warning);
@@ -1816,7 +1817,7 @@ VertexPtr MosaicLoader::getVertex(xml_node & node)
     VertexPtr v = make_shared<Vertex>(pt);
     setVertexReference(node,v);
 
-     _currentMap->vertices.push_back(v);
+     _currentMap->insertDirect(v);
 
     if (_version >= 5)
     {
@@ -1841,7 +1842,7 @@ VertexPtr MosaicLoader::getVertex(xml_node & node)
             {
                 ep = getCurve(e);
             }
-            _currentMap->edges.push_back(ep);
+            _currentMap->insertDirect(ep);
         }
     }
     else
@@ -1998,12 +1999,46 @@ void MosaicLoader::procBorder(xml_node & node)
     case BORDER_BLOCKS:
         procBorderBlocks(node);
         break;
+    case BORDER_INTEGRATED:
+        procBorderInner(node);
+        break;
     case BORDER_NONE:
         break;
     }
 }
 
+void MosaicLoader::procBorderInner(xml_node & node)
+{
+    QRectF rect;
+    xml_node bdry = node.child("boundary");
+    if (bdry)
+    {
+        QString str = bdry.child_value();
+        QStringList blist = str.split(",");
 
+        QString s = blist[0];
+        qreal   x = s.toDouble();
+
+        s = blist[1];
+        qreal y = s.toDouble();
+
+        s= blist[2];
+        qreal w = s.toDouble();
+
+        s = blist[3];
+        qreal h = s.toDouble();
+
+        rect = QRectF(x,y,w,h);
+    }
+
+    CropPtr crop = make_shared<Crop>();
+    crop->setRect(rect,CROP_BORDER_DEFINED);
+
+    _border = make_shared<InnerBorder>();
+    InnerBorder * ib = dynamic_cast<InnerBorder*>(_border.get());
+    Q_ASSERT(ib);
+    ib->setInnerBoundary(crop);
+}
 
 void MosaicLoader::procBorderPlain(xml_node & node)
 {

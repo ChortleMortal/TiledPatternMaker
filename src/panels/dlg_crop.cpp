@@ -2,7 +2,7 @@
 
 #include <QtWidgets>
 
-DlgCrop::DlgCrop(MapEditor * me, QWidget *parent) : QDialog(parent)
+DlgCrop::DlgCrop(MapEditorPtr me, QWidget *parent) : QDialog(parent)
 {
     mapeditor = me;
     entered   = false;
@@ -86,7 +86,13 @@ void DlgCrop::slot_timeout()
         return;
     }
 
-    QRectF rect  = mapeditor->getCropRect();
+    CropPtr crop = mapeditor->getCrop();
+    if (!crop)
+    {
+        return;
+    }
+
+    QRectF rect  = crop->getRect();
     if (rect.isEmpty())
     {
         return;
@@ -130,11 +136,17 @@ void DlgCrop::leaveEvent(QEvent *event)
 
 void DlgCrop::slot_setCrop(qreal)
 {
+    CropPtr crop = mapeditor->getCrop();
+    if (!crop)
+    {
+        return;
+    }
+
     QRectF rect;
     QPointF pos = QPointF(startX->value(), startY->value());
     rect.setTopLeft(pos);
     rect.setWidth(width->value());
     rect.setHeight(height->value());
-    mapeditor->setCropRect(rect);
+    crop->setRect(rect,CROP_EDITING);
     mapeditor->forceRedraw();
 }

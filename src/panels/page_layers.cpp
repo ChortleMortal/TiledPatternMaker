@@ -114,7 +114,7 @@ void page_layers::populateLayer(LayerPtr layer, int col)
     zBox->setValue(z);
     zBox->setAlignment(Qt::AlignCenter);
     layerTable->setCellWidget(LAYER_Z,col,zBox);
-    connect(zBox, &AQDoubleSpinBox::valueChanged, [this,zBox,col] { zChanged(zBox,col); });
+    connect(zBox, static_cast<void (AQDoubleSpinBox::*)(double)>(&AQDoubleSpinBox::valueChanged), [this,zBox,col] { zChanged(zBox,col); });
 
     // align
     QPushButton * abtn = new QPushButton("Align-to-this");
@@ -185,22 +185,22 @@ void page_layers::populateLayer(LayerPtr layer, int col)
     dcenY->setSingleStep(0.001);
 
     layerTable->setCellWidget(CANVAS_SCALE,col,dwidth);
-    connect(dwidth, &AQDoubleSpinBox::valueChanged, [this,col] { slot_set_deltas(col); });
+    connect(dwidth, static_cast<void (AQDoubleSpinBox::*)(double)>(&AQDoubleSpinBox::valueChanged), [this,col] { slot_set_deltas(col); });
 
     layerTable->setCellWidget(CANVAS_ROT,col,drot);
-    connect(drot, &AQDoubleSpinBox::valueChanged, [this,col] { slot_set_deltas(col); });
+    connect(drot, static_cast<void (AQDoubleSpinBox::*)(double)>(&AQDoubleSpinBox::valueChanged), [this,col] { slot_set_deltas(col); });
 
     layerTable->setCellWidget(CANVAS_X,col,dleft);
-    connect(dleft, &AQDoubleSpinBox::valueChanged, [this,col] { slot_set_deltas(col); });
+    connect(dleft,static_cast<void (AQDoubleSpinBox::*)(double)>(&AQDoubleSpinBox::valueChanged), [this,col] { slot_set_deltas(col); });
 
     layerTable->setCellWidget(CANVAS_Y,col,dtop);
-    connect(dtop, &AQDoubleSpinBox::valueChanged, [this,col] { slot_set_deltas(col); });
+    connect(dtop, static_cast<void (AQDoubleSpinBox::*)(double)>(&AQDoubleSpinBox::valueChanged), [this,col] { slot_set_deltas(col); });
 
     layerTable->setCellWidget(CANVAS_CENTER_X,col,dcenX);
-    connect(dcenX, &AQDoubleSpinBox::valueChanged, [this,col] { slot_set_deltas(col); });
+    connect(dcenX,static_cast<void (AQDoubleSpinBox::*)(double)>(&AQDoubleSpinBox::valueChanged), [this,col] { slot_set_deltas(col); });
 
     layerTable->setCellWidget(CANVAS_CENTER_Y,col,dcenY);
-    connect(dcenY, &AQDoubleSpinBox::valueChanged, [this,col] { slot_set_deltas(col); });
+    connect(dcenY, static_cast<void (AQDoubleSpinBox::*)(double)>(&AQDoubleSpinBox::valueChanged), [this,col] { slot_set_deltas(col); });
 
     // layer transform
     twi = new QTableWidgetItem();

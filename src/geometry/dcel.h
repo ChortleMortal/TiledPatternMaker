@@ -32,102 +32,59 @@ Taken from:  https://github.com/AnkurRyder/DCEL.git
 #include "geometry/map.h"
 #include "geometry/faces.h"
 
-enum eVstate
-{
-    ES_UNDEFINED,
-    ES_BOUNDED,
-    ES_UNBOUNDED
-};
-
 enum eColor
 {
     C_WHITE = 0,
     C_BLACK = 1
 };
 
-class dcelVertex
-{
-public:
-    dcelVertex(VertexPtr v)  { vert = v; bstate = ES_UNDEFINED; incident_edge = nullptr; }
-
-    QVector<dcelVertexPtr> adjacent_vertices;
-    dcelEdgePtr      incident_edge;
-    eVstate          bstate;
-    VertexPtr        vert;  // the source
-};
-
-
-class dcelEdge
-{
-public:
-    dcelEdge(EdgePtr ep) {edge = ep;  visited = false; }
-
-    bool operator < (const dcelEdge & other) const;
-
-    double angle() const { return std::atan2(v2->vert->pt.y() - v1->vert->pt.y(),
-                                             v2->vert->pt.x() - v1->vert->pt.x()); }
-
-    dcelVertexPtr  v1;
-    dcelVertexPtr  v2;
-    dcelEdgePtr    twin;
-    dcelEdgePtr    next;
-    dcelEdgePtr    prev() { return twin->next; }
-    FacePtr        incident_face;
-    EdgePtr        edge; // the source
-    bool           visited;
-};
-
-class DCEL
+class DCEL : public Map
 {
     friend class ColorMaker;
     friend class FaceSet;
 
 public:
-    DCEL(Map * map);
+    DCEL(MapPtr map);
     ~DCEL();
 
-    void    buildDCEL(Map * map);
+    void    buildDCEL();
     void    displayDCEL(int val);
     void    clean();
 
-    QVector<dcelVertexPtr>  vertices;
-    QVector<dcelEdgePtr>    edges;
     FaceSet                 faces;
 
+    static int refs;
 
 protected:
-    void    fill_vertex_table();
-    bool    fill_vertex_table2();
     void    fill_half_edge_table();
     void    fill_face_table_inner_components();
     void    fill_half_edge_faces();
 
-    void    createFace(dcelEdgePtr head);
+    void    createFace(EdgePtr head);
 
     void    print_vertices();
     void    print_edges();
     void    print_ordered_edges();
     void    print_faces();
     void    print_adj();
-    void    print_edge(dcelEdgePtr edge, QDebug & deb);
-    void    print_edge_detail(dcelEdgePtr e, QString name, QDebug & deb);
+    void    print_edge(EdgePtr edge, QDebug & deb);
+    void    print_edge_detail(EdgePtr e, QString name, QDebug & deb);
 
-    void    print_neighbouring_faces(dcelEdgePtr edge);
+    void    print_neighbouring_faces(EdgePtr edge);
     void    print_faces_with_area_lessthan_threshhold(double threshhold_area);
 
-    int     vertexIndex(dcelVertexPtr v);
+    int     vertexIndex(VertexPtr v);
     int     faceIndex(FacePtr face);
-    int     edgeIndex(dcelEdgePtr edge);
+    int     edgeIndex(EdgePtr edge);
 
-    dcelVertexPtr validAdjacent(dcelVertexPtr vert);
-    dcelEdgePtr   next_half_edge(dcelEdgePtr current);
+    VertexPtr     validAdjacent(VertexPtr vert);
+    EdgePtr       next_half_edge(EdgePtr current);
 
-    dcelVertexPtr findVertex(VertexPtr v);
-    dcelEdgePtr   findEdge(dcelVertexPtr start, dcelVertexPtr end, bool expected = true);
+    EdgePtr       findEdge(VertexPtr start, VertexPtr end, bool expected = true);
     FacePtr       findOuterFace();
 
-    FacePtr check_if_inside(QVector<dcelVertexPtr> & verts);
-    bool    check_if_point_is_inside(dcelVertexPtr ver, QVector<dcelVertexPtr> & key);
+    FacePtr check_if_inside(QVector<VertexPtr> & verts);
+    bool    check_if_point_is_inside(VertexPtr ver, QVector<VertexPtr> & key);
     bool    isInside(QPolygonF & polygon, QPointF p);
 
     bool    doIntersect(QPointF p1, QPointF q1, QPointF p2, QPointF q2);
@@ -135,7 +92,9 @@ protected:
 
     bool    onSegment(QPointF p, QPointF q, QPointF r);
     double  angle(QPointF p1, QPointF p2, QPointF p3);
-    double  area_poly(QVector<dcelVertexPtr> & key);
+    double  area_poly(QVector<VertexPtr> & key);
+
+private:
 
 };
 

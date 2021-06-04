@@ -47,8 +47,8 @@ public:
 
 signals:
     void    sig_refreshView();
+    void    sig_updateView();
     void    sig_colorsChanged();
-    void    sig_update();
 
 protected:
 };
@@ -66,20 +66,20 @@ public slots:
     void slot_colorsChanged();
 
 private slots:
-    void slot_transparencyChanged(qreal val);
+    void slot_opacityChanged(qreal val);
     void slot_pickColor();
 
 protected:
     int             rows;
 
 private:
-    void updateTransparency();
+    void updateOpacity();
 
     Colored         * colored;
     AQTableWidget   * table;
     AQWidget        * colorwidget;
     QPushButton     * color_button;
-    DoubleSliderSet * transparency;
+    DoubleSliderSet * opacitySlider;
 };
 
 // Editor for the thick style.
@@ -155,8 +155,9 @@ class EmbossEditor : public ThickEditor
 public:
     EmbossEditor(Emboss * e, AQTableWidget *table);
 
-public slots:
+private slots:
     void slot_anlgeChanged(int angle);
+    void slot_colorsChanged();
 
 private:
     Emboss      * emboss;
@@ -175,6 +176,7 @@ private slots :
     void slot_gapChanged(qreal gap);
     void slot_shadowChanged(qreal shadow);
     void slot_includeTipVerticesChanged(int state);
+    void slot_colorsChanged();
 
 private:
     Interlace * interlace;

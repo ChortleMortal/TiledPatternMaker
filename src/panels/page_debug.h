@@ -40,19 +40,23 @@ public:
     void    onExit() override;
 
 private slots:
-    void    slot_verifyTilingNames();
     void    slot_reformatDesignXML();
-    void    slot_reformatTilingXML();
     void    slot_reprocessDesignXML();
-    void    slot_reprocessTilingXML();
+    void    slot_examineAllMosaics();
 
     void    slot_verifyMapsClicked(bool enb);
     void    slot_verifyDumpClicked(bool enb);
     void    slot_verifyVerboseClicked(bool enb);
 
+    void    slot_reprocessTilingXML();
+    void    slot_reformatTilingXML();
+    void    slot_verifyTilingNames();
     void    slot_verifyTiling();
+    void    slot_verifyAllTilings();
 
 protected:
+    void    verifyTiling(TilingPtr tiling);
+
     QGroupBox   * createDebugSection();
     QGroupBox   * createVerifyMaps();
 

@@ -41,7 +41,7 @@ panel_page::panel_page(ControlPanel * panel,  QString name) : QWidget()
     vcontrol        = ViewControl::getInstance();
     view            = View::getInstance();
     motifMaker      = MotifMaker::getInstance();
-    tilingMaker     = TilingMaker::getInstance();
+    tilingMaker     = TilingMaker::getSharedInstance();
     decorationMaker = DecorationMaker::getInstance();
 
     vbox = new QVBoxLayout;

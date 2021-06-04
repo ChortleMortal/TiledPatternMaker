@@ -173,7 +173,7 @@ void page_save::refreshPage()
 {
     TilingPtr tiling =  tilingMaker->getSelected();
 
-    if (tiling && (tiling->getState() == TILING_MODIFED))
+    if (tiling && (tiling->getState() == Tiling::MODIFED))
         requiresSave->setText("HAS CHANGED");
     else
         requiresSave->setText("");
@@ -209,8 +209,8 @@ void page_save::slot_saveMosaic()
     QVector<TilingPtr> tilings = mosaic->getTilings();
     for (auto tiling : tilings)
     {
-        if   (tiling->getState() == TILING_MODIFED
-           || tiling->getState() == TILING_EMPTY
+        if   (tiling->getState() == Tiling::MODIFED
+           || tiling->getState() == Tiling::EMPTY
            || tiling->getName()  == Tiling::defaultName)
         {
             QMessageBox box(panel);
@@ -257,7 +257,7 @@ void page_save::slot_saveTiling()
     TilingPtr tiling = tilingMaker->getSelected();
     QString name = tile_name->text();
 
-    if (!tiling || tiling->getState() == TILING_EMPTY)
+    if (!tiling || tiling->getState() == Tiling::EMPTY)
     {
         QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);

@@ -90,7 +90,7 @@ public:
     // Look at a given edge and construct a plausible set of points
     // to draw at the edge's 'to' vertex.  Call this twice to get the
     // complete outline of the hexagon to draw for this edge.
-    static BelowAndAbove getPoints(EdgePtr edge, VertexPtr from, VertexPtr to, qreal qwidth);
+    static BelowAndAbove getPoints(MapPtr map, EdgePtr edge, VertexPtr from, VertexPtr to, qreal qwidth);
 
 protected:
     QVector<BelowAndAboveEdge> pts4; // Internal representations of the rendering.

@@ -28,6 +28,7 @@
 #include "makers/map_editor/map_selection.h"
 #include "tile/placed_feature.h"
 #include "base/layer.h"
+#include "geometry/crop.h"
 
 class MapEditorView : public Layer
 {
@@ -38,12 +39,12 @@ public:
     virtual void    draw(QPainter *) = 0;
 
     void            unload();
+    TilingPtr       getTiling()  { return tiling; }
     MapPtr          getMap()     { return map; }
     FigurePtr       getFigure()  { return figp; }
-    WeakDCELPtr     getDCEL()    { return dcel; }
+    DCELPtr         getDCEL()    { return dcel; }
 
-    QRectF          getCropRect(){ return cropRect; }
-    void            setCropRect(QRectF & rect) { cropRect = rect; }
+    CropPtr         getCrop(){ return cropRect; }
 
     void            drawMap(QPainter * painer);
     void            drawDCEL(QPainter * painer);
@@ -65,20 +66,21 @@ public:
     QVector<CirclePtr> constructionCircles;
 
 protected:
-    StylePtr          styp;     // set
-    PrototypePtr      prop;     // set
-    DesignElementPtr  delp;     // set
-    TilingPtr         tiling;   // set
-    WeakDCELPtr       dcel;     // set
+    StylePtr          styp;      // set
+    PrototypePtr      prototype; // set
+    DesignElementPtr  delp;      // set
+    TilingPtr         tiling;    // set
+    DCELPtr           dcel;      // set
+    BorderPtr         border;    // set
 
-    FigurePtr         figp;     // derived
-    FeaturePtr        feap;     // derived
+    FigurePtr         figp;      // derived
+    FeaturePtr        feap;      // derived
 
-    MapPtr             map;     // derived
-    QRectF             cropRect;
+    MapPtr            map;       // derived
+    CropPtr           cropRect;
 
     QTransform        viewT;
-    QTransform        viewTinv; // inverted
+    QTransform        viewTinv;  // inverted
 
     qreal             selectionWidth;
 };

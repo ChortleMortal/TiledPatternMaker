@@ -719,3 +719,25 @@ qreal Utils::angle(const QLineF &l0,const QLineF &l)
     if (cos_line >= -1.0 && cos_line <= 1.0) rad = qAcos( cos_line );
     return rad * 360 / M_2PI;
 }
+
+inline QPointF vec(QPointF a, QPointF b )
+{
+    return QPointF(b.x() - a.x(), b.y()-a.y());
+}
+
+bool Utils::rectContains(QRectF & rect, QPointF p)
+{
+    QPointF a = rect.topLeft();
+    QPointF b = rect.bottomRight();
+
+    qreal x = p.x();
+    qreal y = p.y();
+
+    if (  (Loose::greaterThan(x,a.x()) ||  Loose::equals(x,a.x()))
+        &&(Loose::lessThan   (x,b.x()) ||  Loose::equals(x,b.x()))
+        &&(Loose::greaterThan(y,a.y()) ||  Loose::equals(y,a.y()))
+        &&(Loose::lessThan   (y,b.y()) ||  Loose::equals(y,b.y())))
+        return true;
+
+    return false;
+}

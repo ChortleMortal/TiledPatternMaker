@@ -39,9 +39,6 @@ public:
 
     void            clear();
 
-    void            setBorder(BorderPtr border);
-    BorderPtr       getBorder() { return _border; }
-
     QColor          getBackgroundColor();
     void            setBackgroundColor(QColor color);
 
@@ -66,7 +63,6 @@ private:
     QColor          _bkgdColor;
     QPointF         _startTile;
     BkgdImgPtr      _bkgdImage;
-    BorderPtr       _border;
     FillData        _fillData;
 };
 

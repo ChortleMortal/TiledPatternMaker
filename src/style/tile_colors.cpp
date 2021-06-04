@@ -75,10 +75,10 @@ void TileColors::createStyleRepresentation()
         bkgdColors->resetIndex();
     }
 
-    QVector<QTransform> & locations  = pp->getLocations();
+    QVector<QTransform> & translations  = pp->getTranslations();
     const QVector<PlacedFeaturePtr> & qlfp   = tp->getPlacedFeatures();
     qDebug() << "num placed features=" << qlfp.size();
-    qDebug() << "num locs=" << locations.size();
+    qDebug() << "num translations   =" << translations.size();
 
     for (auto it = qlfp.begin(); it != qlfp.end(); it++)
     {
@@ -88,7 +88,7 @@ void TileColors::createStyleRepresentation()
         QTransform T1       = fp->getTransform();
 
         ColorSet * bkgdColors = f->getBkgdColors();
-        for (auto& T2 : locations)
+        for (auto& T2 : translations)
         {
             QTransform T3  = T1 * T2;
             EdgePoly  ep2  =  ep.map(T3);

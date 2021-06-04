@@ -35,7 +35,7 @@
 #ifndef TILING_MAKER_VIEW_H
 #define TILING_MAKER_VIEW_H
 
-#include "viewers/geo_graphics.h"
+#include "base/geo_graphics.h"
 #include "makers/tiling_maker/feature_selection.h"
 #include "makers/tiling_maker/tiling_mouseactions.h"
 #include "tile/placed_feature.h"

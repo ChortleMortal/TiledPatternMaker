@@ -14,36 +14,37 @@ struct BeforeAndAfter
 // DAC: OMG  in taprats this was a forward linked list of neigbour classes
 // IMHO this added complexity but no value and is replaced by a vector of edges
 // The vector needs to be sorted by angle
-class Neighbours
+class Neighbours : public std::vector<WeakEdgePtr>
 {
 public:
-    Neighbours();
-    Neighbours(Vertex * vp);
+    //Neighbours();
+    Neighbours(VertexPtr vp);
     Neighbours(const Neighbours & other);
     ~Neighbours();
 
-    int numNeighbours()  { return neighbours.size(); }
+    void setParent(VertexPtr v) { parent = v; }
+
+    int numNeighbours()  { return (int)size(); }
 
     void sortNeighboursByAngle();
     void insertNeighbour(EdgePtr np);
     void removeNeighbour(EdgePtr edge );
-    bool contains(EdgePtr e) { return  neighbours.contains(e); }
+    bool contains(EdgePtr e) const;
     void replaceNeighbour(EdgePtr old_edge, EdgePtr new_edge);
-    void eraseNeighbours() { neighbours.clear(); }
+    void eraseNeighbours() { clear(); }
 
     BeforeAndAfter getBeforeAndAfter(EdgePtr edge);
-    EdgePtr        getNeighbour(int index) { return neighbours[index]; }
+    EdgePtr        getNeighbour(int index);
     EdgePtr        getFirstNonvisitedNeighbour(EdgePtr home);
-
-    const QVector<EdgePtr> & getNeighbours() { return neighbours; }
 
     bool verify();
     void cleanse();
     void dumpNeighbours() const;
 
+    bool _built;
+
 private:
-    Vertex *               parent;
-    UniqueQVector<EdgePtr> neighbours;
+    WeakVertexPtr parent;
 };
 
 #endif // NEIGHBOURS_H

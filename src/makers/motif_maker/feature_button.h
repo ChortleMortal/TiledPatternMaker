@@ -26,7 +26,7 @@
 #define FEATURE_BUTTON
 
 #include "tapp/design_element.h"
-#include "viewers/geo_graphics.h"
+#include "base/geo_graphics.h"
 #include <QtWidgets>
 
 ////////////////////////////////////////////////////////////////////////////

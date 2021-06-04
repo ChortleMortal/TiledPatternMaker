@@ -54,15 +54,18 @@ public:
 
     void    addSubLayer(LayerPtr item);
     void    removeSubLayer(LayerPtr item);
+    void    clearSubLayers() { subLayers.clear(); }
 
     void    forceLayerRecalc(bool update = true);
     void    forceRedraw() ;
 
     QPointF screenToWorld(QPointF pt) ;
     QPointF screenToWorld(int x, int y);
+    QRectF  screenToWorld(QRectF rect) ;
 
     QPointF worldToScreen(QPointF pt);
     QLineF  worldToScreen(QLineF line);
+    QRectF  worldToScreen(QRectF rect);
 
     void        setCenterScreen(QPointF spt);
     void        setCenterModel(QPointF mpt);

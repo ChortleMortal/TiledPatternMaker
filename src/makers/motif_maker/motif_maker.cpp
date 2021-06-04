@@ -56,7 +56,7 @@ void MotifMaker::init()
 {
     config          = Configuration::getInstance();
     vcontrol        = ViewControl::getInstance();
-    tilingMaker     = TilingMaker::getInstance();
+    tilingMaker     = TilingMaker::getSharedInstance();
     decorationMaker = DecorationMaker::getInstance();
 }
 

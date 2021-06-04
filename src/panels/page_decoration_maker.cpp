@@ -225,8 +225,8 @@ void page_decoration_maker::displayStyles()
             Q_ASSERT(index != -1);
             qcb->setCurrentIndex(index);
 
-            connect(qcb, &QComboBox::currentIndexChanged, [this,row] { page_decoration_maker::styleChanged(row); });
-            connect(qcb2,&QComboBox::currentIndexChanged, [this,row] { page_decoration_maker::tilingChanged(row); });
+            connect(qcb, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), [this,row] { page_decoration_maker::styleChanged(row); });
+            connect(qcb2,static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), [this,row] { page_decoration_maker::tilingChanged(row); });
             connect(cb,  &QCheckBox::toggled,             [this,row] { page_decoration_maker::styleVisibilityChanged(row); });
 
             row++;
@@ -295,15 +295,7 @@ void page_decoration_maker::setCurrentEditor(StylePtr style)
         currentStyleEditor = make_shared<ThickEditor>(dynamic_cast<Thick*>(style.get()),parmsTable);
         break;
     case STYLE_FILLED:
-    {
-        FilledPtr fp = std::dynamic_pointer_cast<Filled>(style);
-        if (!fp->getDCEL())
-        {
-            fp->createStyleRepresentation();
-            Q_ASSERT(fp->getDCEL());            // FIXME - not nice the view is modifying the data for the menu
-        }
-        currentStyleEditor = make_shared<FilledEditor>(fp,parmsTable,parmsLayout);
-    }
+        currentStyleEditor = make_shared<FilledEditor>(std::dynamic_pointer_cast<Filled>(style),parmsTable,parmsLayout);
         break;
     case STYLE_EMBOSSED:
         currentStyleEditor = make_shared<EmbossEditor>(dynamic_cast<Emboss*>(style.get()),parmsTable);
@@ -501,7 +493,7 @@ void  page_decoration_maker::slot_analyzeStyleMap()
     MapPtr map = style->getMap();
     if (map)
     {
-        qDebug().noquote() << map->calcVertexEdgeCounts();
+        qDebug().noquote() << map->displayVertexEdgeCounts();
     }
 }
 

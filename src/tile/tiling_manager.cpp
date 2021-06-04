@@ -39,7 +39,7 @@ TilingManager::TilingManager()
 {
     view         = View::getInstance();
     config       = Configuration::getInstance();
-    tilingMaker  = TilingMaker::getInstance();
+    tilingMaker  = TilingMaker::getSharedInstance();
     motifMaker   = MotifMaker::getInstance();
 }
 
@@ -63,7 +63,9 @@ TilingPtr TilingManager::loadTiling(QString name, eSM_Event mode)
     }
 
     qDebug().noquote() << "Loaded tiling:" << filename << loadedTiling->getName();
-    loadedTiling->setState(TILING_LOADED);
+    loadedTiling->setState(Tiling::LOADED);
+    ViewControl * viewControl = ViewControl::getInstance();
+    viewControl->setModelAlignment(M_ALIGN_TILING);
 
     // tiling is loaded, now use it
     QSize sz = loadedTiling->getSize();
@@ -117,11 +119,10 @@ bool TilingManager::saveTiling(QString name, TilingPtr tiling)
     QSize size  = view->size();
     tiling->setSize(size);
 
-    TilingMaker * maker = TilingMaker::getInstance();
-    if (maker->getSelected() == tiling)
+    if (tilingMaker->getSelected() == tiling)
     {
         // FIXME : this is the transform of the TilingMaker view which may no be the same as  what is currently being viewed
-        Xform xf = maker->getCanvasXform();
+        Xform xf = tilingMaker->getCanvasXform();
         tiling->setCanvasXform(xf);
     }
 
@@ -130,7 +131,7 @@ bool TilingManager::saveTiling(QString name, TilingPtr tiling)
     bool rv = writer.writeTilingXML();   // uses the name in the tiling
     if (rv)
     {
-        tiling->setState(TILING_LOADED);
+        tiling->setState(Tiling::LOADED);
     }
     return rv;
 }

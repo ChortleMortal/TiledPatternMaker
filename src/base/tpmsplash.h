@@ -14,16 +14,19 @@ class TPMSplash : public QSplashScreen
 public:
     TPMSplash();
 
-    void display(QString txt);
-    void remove();
+    void displayMosaic(QString txt);
+    void displayTiling(QString txt);
+    void removeMosaic();
+    void removeTiling();
 
 protected:
+    void draw();
 
 private:
-    QStack<QString>  msgStack;
+    QString design;
+    QString tiling;
     int     w;
     int     h;
-
 };
 
 #endif

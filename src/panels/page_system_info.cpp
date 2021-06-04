@@ -295,8 +295,8 @@ void page_system_info::populateMap(QTreeWidgetItem *parent, MapPtr mp)
         return;
     }
 
-    const QVector<VertexPtr> & vertices = mp->vertices;
-    const QVector<EdgePtr>   & edges    = mp->edges;
+    const QVector<VertexPtr> & vertices = mp->getVertices();
+    const QVector<EdgePtr>   & edges    = mp->getEdges();
 
     QTreeWidgetItem * item2;
     item2 = new QTreeWidgetItem;
@@ -315,9 +315,12 @@ void page_system_info::populateMap(QTreeWidgetItem *parent, MapPtr mp)
         item3->setText(2,QString::number(pos.y()));
         item2->addChild(item3);
 
-        const QVector<EdgePtr> & qvep = v->getNeighbours();
-        for (auto& edge : qvep)
+        const NeighboursPtr n = mp->getRawNeighbours(v);
+        std::vector<WeakEdgePtr> * wedges = dynamic_cast<std::vector<WeakEdgePtr>*>(n.get());
+        for (auto pos = wedges->begin(); pos != wedges->end(); pos++)
         {
+            WeakEdgePtr wedge = *pos;
+            EdgePtr edge = wedge.lock();
             QTreeWidgetItem * item4 = new QTreeWidgetItem;
             item4->setText(0,"Edge");
             item4->setText(1,QString::number(edges.indexOf(edge)));
@@ -347,13 +350,13 @@ void page_system_info::populatePrototype(QTreeWidgetItem *parent, PrototypePtr p
 
     TilingPtr tiling                 = pp->getTiling();
     QVector<DesignElementPtr> & dels = pp->getDesignElements();
-    QVector<QTransform> & tforms     = pp->getLocations();
+    QVector<QTransform> & tforms     = pp->getTranslations();
 
     // summary
     QTreeWidgetItem * pitem = new QTreeWidgetItem;
     pitem->setText(0,name);
     pitem->setText(1,addr(pp.get()));
-    QString astring = "Locations: " + QString::number(pp->getLocations().size()) + "  Design Elements: " + QString::number(dels.size());
+    QString astring = "Translations: " + QString::number(pp->getTranslations().size()) + "  Design Elements: " + QString::number(dels.size());
     pitem->setText(2,astring);
     parent->addChild(pitem);
 

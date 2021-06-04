@@ -43,16 +43,13 @@ page_modelSettings::page_modelSettings(ControlPanel * apanel)  : panel_page(apan
 {
     QPushButton  *pbRefresh       = new QPushButton("Refresh");
     QCheckBox    * chkShowBkgds   = new QCheckBox("Show Backgrounds");
-    QCheckBox    * chkShowBorders = new QCheckBox("Show Borders");
     chkShowBkgds->setChecked(config->cs_showBkgds);
-    chkShowBorders->setChecked(config->cs_showBorders);
 
     QHBoxLayout * sourcebox = new QHBoxLayout();
     sourcebox->addStretch();
     sourcebox->addWidget(pbRefresh);
     sourcebox->addStretch();
     sourcebox->addWidget(chkShowBkgds);
-    sourcebox->addWidget(chkShowBorders);
 
     if (config->insightMode)
     {
@@ -87,14 +84,12 @@ page_modelSettings::page_modelSettings(ControlPanel * apanel)  : panel_page(apan
     //  background image
     mosaicBkgdBox = createBackgroundImageGroup(DESIGN_SETTINGS,"Design Background Image");
     tilingBkgdBox = createBackgroundImageGroup(TILING_SETTINGS,"Tiling Background Image");
-    borderBox     = createDesignBorderBox();
 
     // putting it all together
     vbox->addLayout(sourcebox);
     vbox->addLayout(pgrid);
     vbox->addWidget(mosaicBkgdBox);
     vbox->addWidget(tilingBkgdBox);
-    vbox->addWidget(borderBox);
 
     if (config->insightMode)
     {
@@ -118,7 +113,6 @@ page_modelSettings::page_modelSettings(ControlPanel * apanel)  : panel_page(apan
     // connections
     connect(pbRefresh,        &QPushButton::clicked,            this,   &page_modelSettings::display);
     connect(chkShowBkgds,     &QCheckBox::clicked,              this,   &page_modelSettings::slot_showBkgdsChanged);
-    connect(chkShowBorders,   &QCheckBox::clicked,              this,   &page_modelSettings::slot_showBordersChanged);
 
     connect(vcontrol,         &ViewControl::sig_viewUpdated,    this,   &page_modelSettings::slot_viewUpated);
 
@@ -340,57 +334,6 @@ QGridLayout * page_modelSettings::createFillDataRow(eSettingsGroup group)
     return grid;
 }
 
-QGroupBox *page_modelSettings::createDesignBorderBox()
-{
-    QGroupBox * bbox = new QGroupBox("Design Border Settings");
-
-    QGridLayout * bgrid  = new QGridLayout();
-    bbox->setLayout(bgrid);
-
-    // border
-    QLabel * label = new QLabel("Border");
-    bgrid->addWidget(label,0,0);
-
-    borderType.addItem("No border",BORDER_NONE);
-    borderType.addItem("Solid border",BORDER_PLAIN);
-    borderType.addItem("Two color border",BORDER_TWO_COLOR);
-    borderType.addItem("Block border",BORDER_BLOCKS);
-    bgrid->addWidget(&borderType,0,1);
-
-    borderWidth = new SpinSet("Width",10,1,999);
-    bgrid->addLayout(borderWidth,1,0,1,2);
-
-    borderColorLabel[0] = new QLabel("Border Color");
-    bgrid->addWidget(borderColorLabel[0],2,0);
-    borderColor[0] = new QLineEdit();
-    bgrid->addWidget(borderColor[0],2,1);
-    borderColorPatch[0] = new ClickableLabel;
-    borderColorPatch[0]->setMinimumWidth(50);
-    bgrid->addWidget(borderColorPatch[0],2,2);
-
-    borderColorLabel[1] = new QLabel("Border Color 2");
-    bgrid->addWidget(borderColorLabel[1],3,0);
-    borderColor[1] = new QLineEdit();
-    bgrid->addWidget(borderColor[1],3,1);
-    borderColorPatch[1] = new ClickableLabel;
-    borderColorPatch[1]->setMinimumWidth(50);
-    bgrid->addWidget(borderColorPatch[1],3,2);
-
-    borderRows = new SpinSet("Rows",5,0,99);
-    borderCols = new SpinSet("Cols",5,0,99);
-
-    bgrid->addLayout(borderRows,4,0,1,2);
-    bgrid->addLayout(borderCols,5,0,1,2);
-
-    connect(borderColorPatch[0],&ClickableLabel::clicked,         this, &page_modelSettings::pickBorderColor);
-    connect(borderColorPatch[1],&ClickableLabel::clicked,         this, &page_modelSettings::pickBorderColor2);
-    connect(borderWidth,        &SpinSet::valueChanged,           this, &page_modelSettings::borderWidthChanged);
-    connect(borderRows,         &SpinSet::valueChanged,           this, &page_modelSettings::borderRowsChanged);
-    connect(borderCols,         &SpinSet::valueChanged,           this, &page_modelSettings::borderColsChanged);
-    connect(&borderType,        SIGNAL(currentIndexChanged(int)), this, SLOT(borderChanged(int)));
-
-    return bbox;
-}
 
 void  page_modelSettings::refreshPage()
 {
@@ -555,18 +498,6 @@ void page_modelSettings::display()
     {
         mosaicBkgdBox->hide();
         tilingBkgdBox->hide();
-    }
-
-    if (config->cs_showBorders)
-    {
-        // border
-        BorderPtr bp = mosaicSettings->getBorder();
-        displayBorder(bp);
-        borderBox->show();
-    }
-    else
-    {
-        borderBox->hide();
     }
 
     if (config->cs_showFrameSettings)
@@ -960,235 +891,10 @@ void page_canvasSettings::slot_bkgd_scale(int amount)
 }
 
 #endif
-void page_modelSettings::displayBorder(BorderPtr bp)
-{
-    if (bp)
-    {
-        // common
-        int index = borderType.findData(bp->getType());
-        borderType.blockSignals(true);
-        borderType.setCurrentIndex(index);
-        borderType.blockSignals(false);
-
-        borderWidth->show();
-        qreal w = bp->getWidth();
-        borderWidth->setValue(w);
-
-        borderColorLabel[0]->show();
-
-        QColor qc = bp->getColor();
-        borderColor[0]->setText(qc.name(QColor::HexArgb));
-        borderColor[0]->show();
-
-        QVariant variant = qc;
-        QString colcode  = variant.toString();
-        borderColorPatch[0]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
-        borderColorPatch[0]->show();
-
-        if (bp->getType() == BORDER_TWO_COLOR)
-        {
-            borderColorLabel[1]->show();
-
-            BorderTwoColor * bp2 = dynamic_cast<BorderTwoColor*>(bp.get());
-            Q_ASSERT(bp2);
-            qc = bp2->getColor2();
-            borderColor[1]->setText(qc.name(QColor::HexArgb));
-            borderColor[1]->show();
-
-            variant = qc;
-            colcode  = variant.toString();
-            borderColorPatch[1]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
-            borderColorPatch[1]->show();
-
-            borderRows->hide();
-            borderCols->hide();
-        }
-        else if (bp->getType() == BORDER_BLOCKS)
-        {
-            borderColorLabel[1]->hide();
-            borderColor[1]->hide();
-            borderColorPatch[1]->hide();
-
-            borderRows->show();
-            borderCols->show();
-
-            BorderBlocks * bp3 = dynamic_cast<BorderBlocks*>(bp.get());
-
-            QColor c;
-            qreal  d;
-            int  rows;
-            int cols;
-            bp3->get(c, d, rows, cols);
-            borderRows->setValue(rows);
-            borderCols->setValue(cols);
-        }
-        else
-        {
-            Q_ASSERT(bp->getType() == BORDER_PLAIN);
-            borderColorLabel[1]->hide();
-            borderColor[1]->hide();
-            borderColorPatch[1]->hide();
-
-            borderRows->hide();
-            borderCols->hide();
-        }
-    }
-    else
-    {
-        int index = borderType.findData(BORDER_NONE);
-        borderType.blockSignals(true);
-        borderType.setCurrentIndex(index);
-        borderType.blockSignals(false);
-
-        borderWidth->hide();
-
-        borderColorLabel[0]->hide();
-        borderColor[0]->hide();
-        borderColorPatch[0]->hide();
-
-        borderColorLabel[1]->hide();
-        borderColor[1]->hide();
-        borderColorPatch[1]->hide();
-
-        borderRows->hide();
-        borderCols->hide();
-
-    }
-}
-
-void page_modelSettings::borderWidthChanged(int width)
-{
-    ModelSettingsPtr settings = getMosaicOrDesignSettings();
-    BorderPtr bp = settings->getBorder();
-    if (!bp) return;
-
-    bp->setWidth(width);
-    emit sig_refreshView();
-}
-
-void page_modelSettings::borderRowsChanged(int rows)
-{
-    ModelSettingsPtr settings = getMosaicOrDesignSettings();
-    BorderPtr bp = settings->getBorder();
-    if (!bp) return;
-
-    BorderBlocks * bp3 = dynamic_cast<BorderBlocks*>(bp.get());
-    if (bp3)
-    {
-        bp3->setRows(rows);
-        emit sig_refreshView();
-    }
-}
-
-void page_modelSettings::borderColsChanged(int cols)
-{
-    ModelSettingsPtr settings = getMosaicOrDesignSettings();
-    BorderPtr bp = settings->getBorder();
-    if (!bp) return;
-
-    BorderBlocks * bp3 = dynamic_cast<BorderBlocks*>(bp.get());
-    if (bp3)
-    {
-        bp3->setCols(cols);
-        emit sig_refreshView();
-    }
-}
-
-void page_modelSettings::pickBorderColor()
-{
-    ModelSettingsPtr settings = getMosaicOrDesignSettings();
-    BorderPtr bp = settings->getBorder();
-    if (!bp) return;
-
-    QColor color = bp->getColor();
-
-    AQColorDialog dlg(color,this);
-    dlg.setCurrentColor(color);
-    int rv = dlg.exec();
-    if (rv != QDialog::Accepted) return;
-
-    color = dlg.selectedColor();
-    if (color.isValid())
-    {
-        borderColor[0]->setText(color.name(QColor::HexArgb));
-
-        QVariant variant = color;
-        QString colcode  = variant.toString();
-        borderColorPatch[0]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
-        bp->setColor(color);
-        emit sig_refreshView();
-    }
-}
-
-void page_modelSettings::pickBorderColor2()
-{
-    ModelSettingsPtr settings = getMosaicOrDesignSettings();
-    BorderPtr bp = settings->getBorder();
-    if (!bp) return;
-
-    BorderTwoColor * bp2 = dynamic_cast<BorderTwoColor*>(bp.get());
-    if (!bp2) return;
-
-    QColor color = bp2->getColor2();
-
-    AQColorDialog dlg(color,this);
-    dlg.setCurrentColor(color);
-    int rv = dlg.exec();
-    if (rv != QDialog::Accepted) return;
-
-    color = dlg.selectedColor();
-    if (color.isValid())
-    {
-        borderColor[1]->setText(color.name(QColor::HexArgb));
-
-        QVariant variant = color;
-        QString colcode  = variant.toString();
-        borderColorPatch[1]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
-        bp2->setColor2(color);
-        emit sig_refreshView();
-    }
-}
-
-void page_modelSettings::borderChanged(int row)
-{
-    Q_UNUSED(row)
-
-    ModelSettingsPtr settings = getMosaicOrDesignSettings();
-    QSize sz = settings->getSize();
-
-    eBorderType type = static_cast<eBorderType>(borderType.currentData().toInt());
-
-    BorderPtr bp;
-    switch(type)
-    {
-    case BORDER_NONE:
-        break;
-    case BORDER_PLAIN:
-        bp = make_shared<BorderPlain>(sz,20,Qt::blue);
-        bp->construct();
-        break;
-    case BORDER_TWO_COLOR:
-        bp = make_shared<BorderTwoColor>(sz,QColor(0xa2,0x79,0x67),QColor(TileWhite),20);
-        bp->construct();
-        break;
-    case BORDER_BLOCKS:
-        bp = make_shared<BorderBlocks>(sz,QColor(0xa2,0x79,0x67),150,11,6);
-        bp->construct();
-        break;
-    }
-    settings->setBorder(bp);
-    emit sig_refreshView();
-}
 
 void page_modelSettings::slot_showBkgdsChanged(bool checked)
 {
     config->cs_showBkgds = checked;
-    display();
-}
-
-void page_modelSettings::slot_showBordersChanged(bool checked)
-{
-    config->cs_showBorders = checked;
     display();
 }
 

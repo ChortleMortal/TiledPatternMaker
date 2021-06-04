@@ -37,13 +37,15 @@ public:
 
     void refreshPage() override;
     void onEnter() override;
-    void onExit() override {}
+    void onExit() override;
 
 public slots:
     void slot_reload();
     void slot_selected_dele_changed();
     void slot_mosaicLoaded(QString name);
     void slot_tilingLoaded (QString name);
+    void slot_setModes(int mode, bool checked);
+    void slot_mapEdMode_pressed(int id, bool checked);
 
 private slots:
     void slot_convertToExplicit();
@@ -68,9 +70,9 @@ private slots:
     void slot_pushToTiling();
     void slot_dumpMap();
     void slot_applyCrop();
+    void slot_applyMask();
     void slot_cleanseMap();
-    void slot_setModes(int mode);
-    void slot_mapEdMode_pressed(int id);
+    void slot_createDCEL();
     void slot_saveTemplate();
     void slot_loadTemplate();
     void slot_hideCons(bool hide);
@@ -84,26 +86,20 @@ private slots:
     void slot_consWidthChanged(qreal r);
 
 private:
-    MapEditor       * me;
+    MapEditorPtr    maped;
 
-    QGroupBox       * editorStatusBox;
-    QVBoxLayout     * dummyStatusBox;
-    QVBoxLayout     * statusBox;
-
-    QLabel          * line0;
-    QLabel          * line1;
-    QLabel          * line2;
-    QLabel          * line3;
-    QLabel          * line4;
-    QLabel          * line5;
-    QTextEdit       * line6;
-
+    QGroupBox     * editorStatusBox;
+    QTextEdit       statusBox;
     QButtonGroup    mapEdModeGroup;
     QButtonGroup    modeGroup;
-
     QCheckBox     * animateChk;
-
     QString         lastNamedTemplate;
+
+    QToolButton * pbCropMap;
+    QToolButton * pbMaskMap;
+    QPalette pal;
+    QPalette palPink;
+    QPalette palYellow;
 };
 
 #endif
