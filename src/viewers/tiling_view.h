@@ -39,10 +39,13 @@
 #ifndef TILING_VIEWER_H
 #define TILING_VIEWER_H
 
-#include "tile/tiling.h"
 #include "geometry/fill_region.h"
 #include "base/layer.h"
 #include <QColor>
+
+typedef std::shared_ptr<class TilingView>      TilingViewPtr;
+typedef std::shared_ptr<class Tiling>          TilingPtr;
+typedef std::shared_ptr<class PlacedFeature>   PlacedFeaturePtr;
 
 class TilingView : public FillRegion, public Layer
 {
@@ -55,6 +58,22 @@ public:
     void    paint(QPainter *painter) override;
     void    draw(GeoGraphics * g2d);
     void    receive(GeoGraphics *gg, int h, int v ) override;
+
+public slots:
+    virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
+    virtual void slot_mouseDragged(QPointF spt)       override;
+    virtual void slot_mouseTranslate(QPointF spt)      override;
+    virtual void slot_mouseMoved(QPointF spt)         override;
+    virtual void slot_mouseReleased(QPointF spt)      override;
+    virtual void slot_mouseDoublePressed(QPointF spt) override;
+
+    virtual void slot_wheel_scale(qreal delta)  override;
+    virtual void slot_wheel_rotate(qreal delta) override;
+
+    virtual void slot_scale(int amount)  override;
+    virtual void slot_rotate(int amount) override;
+    virtual void slot_moveX(int amount)  override;
+    virtual void slot_moveY(int amount)  override;
 
 protected:
     void drawPlacedFeature(GeoGraphics * g2d, PlacedFeaturePtr pf);

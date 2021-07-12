@@ -25,7 +25,7 @@
 #include "panels/page_log.h"
 #include "panels/dlg_textedit.h"
 #include "base/qtapplog.h"
-#include "base/configuration.h"
+#include "settings/configuration.h"
 
 
 page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel, "Log")

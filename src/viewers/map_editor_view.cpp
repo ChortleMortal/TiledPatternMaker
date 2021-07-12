@@ -23,19 +23,20 @@
  */
 
 #include "viewers/map_editor_view.h"
-#include "base/border.h"
-#include "base/utilities.h"
-#include "viewers/view.h"
-#include "geometry/map.h"
-#include "geometry/point.h"
-#include "geometry/intersect.h"
-#include "geometry/transform.h"
+#include "geometry/crop.h"
 #include "geometry/dcel.h"
-#include "tapp/figure.h"
-#include "viewers/viewcontrol.h"
+#include "geometry/edge.h"
+#include "geometry/map.h"
+#include "geometry/transform.h"
+#include "geometry/vertex.h"
+#include "makers/map_editor/map_selection.h"
 #include "makers/motif_maker/feature_button.h"
+#include "tapp/figure.h"
+#include "tile/feature.h"
+#include "viewers/view.h"
+#include "geometry/circle.h"
 
-MapEditorView::MapEditorView() : Layer("MapEditorView",LTYPE_MAP_EDITOR)
+MapEditorView::MapEditorView() : Layer("MapEditorView")
 {
     hideConstructionLines = false;
     hideMap               = false;

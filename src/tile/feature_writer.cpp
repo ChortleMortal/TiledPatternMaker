@@ -1,7 +1,8 @@
 #include "feature_writer.h"
 #include "geometry/xform.h"
 #include <QTransform>
-
+#include "geometry/edge.h"
+#include "base/shared.h"
 
 FeatureWriter::FeatureWriter()
 {

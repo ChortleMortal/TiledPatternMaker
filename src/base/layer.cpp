@@ -25,30 +25,17 @@
 #include "base/layer.h"
 #include "geometry/transform.h"
 #include "viewers/view.h"
+#include "settings/configuration.h"
+#include "viewers/viewcontrol.h"
 
 int Layer::refs = 0;
 
-Layer::Layer(QString name, eLayerType ltype) : QObject()
+Layer::Layer(QString name) : QObject()
 {
-    view   = View::getInstance();
-    config = Configuration::getInstance();
-
-    connect(view, &View::sig_deltaScale,    this, &Layer::slot_scale);
-    connect(view, &View::sig_deltaRotate,   this, &Layer::slot_rotate);
-    connect(view, &View::sig_deltaMoveY,    this, &Layer::slot_moveY);
-    connect(view, &View::sig_deltaMoveX,    this, &Layer::slot_moveX);
-
-    connect(view, &View::sig_mousePressed,  this, &Layer::slot_mousePressed);
-    connect(view, &View::sig_mouseTranslate,this, &Layer::slot_mouseTranslate);
-    connect(view, &View::sig_wheel_scale,   this, &Layer::slot_wheel_scale);
-    connect(view, &View::sig_wheel_rotate,  this, &Layer::slot_wheel_rotate);
-    connect(view, &View::sig_setCenter,     this, &Layer::slot_setCenterScreen);
-
     this->name = name;
-    layerType  = ltype;
-    visible = true;
-    zlevel  = 0;
-
+    visible    = true;
+    zlevel     = 0;
+    connectSignals();
     refs++;
 }
 
@@ -57,7 +44,6 @@ Layer::Layer(const Layer & other) : QObject()
     view    =  View::getInstance();
     config  = Configuration::getInstance();
 
-    layerType   = other.layerType;
     visible     = other.visible;
     xf_canvas   = other.xf_canvas;
     name        = other.name;
@@ -68,18 +54,7 @@ Layer::Layer(const Layer & other) : QObject()
     visible     = other.visible;
     subLayers   = other.subLayers;
     zlevel      = other.zlevel;
-
-    connect(view, &View::sig_deltaScale,    this, &Layer::slot_scale,  Qt::UniqueConnection);
-    connect(view, &View::sig_deltaRotate,   this, &Layer::slot_rotate, Qt::UniqueConnection);
-    connect(view, &View::sig_deltaMoveY,    this, &Layer::slot_moveY,  Qt::UniqueConnection);
-    connect(view, &View::sig_deltaMoveX,    this, &Layer::slot_moveX,  Qt::UniqueConnection);
-
-    connect(view, &View::sig_mousePressed,      this, &Layer::slot_mousePressed);
-    connect(view, &View::sig_mouseTranslate,    this, &Layer::slot_mouseTranslate);
-    connect(view, &View::sig_wheel_scale,       this, &Layer::slot_wheel_scale);
-    connect(view, &View::sig_wheel_rotate,      this, &Layer::slot_wheel_rotate);
-    connect(view, &View::sig_setCenter,         this, &Layer::slot_setCenterScreen);
-
+    connectSignals();
     refs++;
 }
 
@@ -88,7 +63,6 @@ Layer::Layer(LayerPtr other) : QObject()
     view    =  View::getInstance();
     config  = Configuration::getInstance();
 
-    layerType   = other->layerType;
     visible     = other->visible;
     xf_canvas   = other->xf_canvas;
     name        = other->name;
@@ -99,24 +73,38 @@ Layer::Layer(LayerPtr other) : QObject()
     visible     = other->visible;
     subLayers   = other->subLayers;
     zlevel      = other->zlevel;
-
-    connect(view, &View::sig_deltaScale,    this, &Layer::slot_scale,  Qt::UniqueConnection);
-    connect(view, &View::sig_deltaRotate,   this, &Layer::slot_rotate, Qt::UniqueConnection);
-    connect(view, &View::sig_deltaMoveY,    this, &Layer::slot_moveY,  Qt::UniqueConnection);
-    connect(view, &View::sig_deltaMoveX,    this, &Layer::slot_moveX,  Qt::UniqueConnection);
-
-    connect(view, &View::sig_mousePressed,      this, &Layer::slot_mousePressed);
-    connect(view, &View::sig_mouseTranslate,    this, &Layer::slot_mouseTranslate);
-    connect(view, &View::sig_wheel_scale,       this, &Layer::slot_wheel_scale);
-    connect(view, &View::sig_wheel_rotate,      this, &Layer::slot_wheel_rotate);
-    connect(view, &View::sig_setCenter,         this, &Layer::slot_setCenterScreen);
-
+    connectSignals();
     refs++;
 }
 
 Layer::~Layer()
 {
     refs--;
+}
+
+void Layer::connectSignals()
+{
+    view    =  View::getInstance();
+    config  = Configuration::getInstance();
+
+    connect(view, &View::sig_mousePressed,          this, &Layer::slot_mousePressed);
+    connect(view, &View::sig_mouseDragged,          this, &Layer::slot_mouseDragged);
+    connect(view, &View::sig_mouseTranslate,        this, &Layer::slot_mouseTranslate);
+    connect(view, &View::sig_mouseMoved,            this, &Layer::slot_mouseMoved);
+    connect(view, &View::sig_mouseReleased,         this, &Layer::slot_mouseReleased);
+    connect(view, &View::sig_mouseDoublePressed,    this, &Layer::slot_mouseDoublePressed);
+
+    connect(view, &View::sig_wheel_scale,       this, &Layer::slot_wheel_scale);
+    connect(view, &View::sig_wheel_rotate,      this, &Layer::slot_wheel_rotate);
+
+    connect(view, &View::sig_deltaScale,    this, &Layer::slot_scale,  Qt::UniqueConnection);
+    connect(view, &View::sig_deltaRotate,   this, &Layer::slot_rotate, Qt::UniqueConnection);
+    connect(view, &View::sig_deltaMoveX,    this, &Layer::slot_moveX,  Qt::UniqueConnection);
+    connect(view, &View::sig_deltaMoveY,    this, &Layer::slot_moveY,  Qt::UniqueConnection);
+
+    ViewControl * vcontrol = ViewControl::getInstance();
+    connect(this, &Layer::sig_refreshView, vcontrol, &ViewControl::slot_refreshView);
+
 }
 
 void Layer::paint(QPainter * painter)
@@ -171,14 +159,36 @@ void Layer::forceRedraw()
     view->update();
 }
 
+bool Layer::isSelected()
+{
+    LayerPtr lp = config->selectedLayer.lock();
+    if (lp)
+    {
+        Layer * layer = lp.get();
+        if (layer == this)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 QTransform  Layer::getFrameTransform()
 {
-    return view->getDefinedFrameTransform(config->getViewerType());
+    QTransform t = view->frameSettings.getTransform(config->getViewerType());
+
+    //qDebug().noquote() << "Frame transform:" << Transform::toInfoString(t);
+
+    return t;
 }
 
 QTransform  Layer::getCanvasTransform()
 {
-    return xf_canvas.toQTransform(getFrameTransform());
+    QTransform t =  xf_canvas.toQTransform(getFrameTransform());
+
+    //qDebug().noquote() << "Canvas transform:" << Transform::toInfoString(t);
+
+    return t;
 }
 
 QTransform Layer::getLayerTransform()
@@ -197,23 +207,23 @@ void Layer::computeLayerTransform()
     //qDebug().noquote() << "frame:" << Transform::toInfoString(getFrameTransform()) << "canvas" << Transform::toInfoString(getCanvasTransform());
     qtr_layer   = getFrameTransform() * getCanvasTransform();
     qtr_invert  = qtr_layer.inverted();
-    //qDebug().noquote() << "qtr_layer:" << name << Transform::toInfoString(qtr_layer);
+    //qDebug().noquote() << "computed qtr_layer:" << name << Transform::toInfoString(qtr_layer);
 }
 
-void Layer::setCenterScreen(QPointF spt)
+void Layer::setCenterScreenUnits(QPointF spt)
 {
-    qDebug().noquote() << "Layer::setCenterScreen new=" << spt << "old=" << getCenterScreen()  << "diff = " << (spt - getCenterScreen());
     if (qtr_invert.isIdentity())
     {
         computeLayerTransform();
-        qDebug().noquote() << "Layer::setCenterScreen" << Transform::toInfoString(qtr_layer);
     }
-    qDebug().noquote() << "Layer::setCenterScreen" << getName() << Transform::toInfoString(qtr_layer);
 
-    xf_canvas.setCenter(qtr_invert.map(spt));
+    // save in model units
+    QPointF mpt = qtr_invert.map(spt);
+    xf_canvas.setCenter(mpt);
     computeLayerTransform();
 
-    QPointF diff = spt - getCenterScreen();
+    QPointF diff = spt - getCenterScreenUnits();
+    qDebug() << "diff" << diff;
     xf_canvas.setTranslateX(xf_canvas.getTranslateX() + diff.x());
     xf_canvas.setTranslateY(xf_canvas.getTranslateY() + diff.y());
     computeLayerTransform();
@@ -221,18 +231,7 @@ void Layer::setCenterScreen(QPointF spt)
     emit sig_center();
 }
 
-void Layer::setCenterModel(QPointF mpt)
-{
-    xf_canvas.setCenter(mpt);
-    emit sig_center();
-
-}
-void Layer::slot_setCenterScreen(QPointF spt)
-{
-    setCenterScreen(spt);
-}
-
-QPointF Layer::getCenterScreen()
+QPointF Layer::getCenterScreenUnits()
 {
     if (qtr_invert.isIdentity())
     {
@@ -242,7 +241,7 @@ QPointF Layer::getCenterScreen()
     return qtr_layer.map(xf_canvas.getCenter());
 }
 
-QPointF Layer::getCenterModel()
+QPointF Layer::getCenterModelUnits()
 {
     return xf_canvas.getCenter();
 }
@@ -256,6 +255,14 @@ void Layer::setCanvasXform(const Xform & xf)
 const Xform & Layer::getCanvasXform()
 {
     return xf_canvas;
+}
+
+
+qreal Layer::screenToWorld(qreal val)
+{
+    getLayerTransform();
+    qreal scale = Transform::scalex(qtr_invert);
+    return val * scale;
 }
 
 QPointF Layer::screenToWorld(QPointF pt)
@@ -300,59 +307,6 @@ QLineF Layer::worldToScreen(QLineF line)
     return aline;
 }
 
-void Layer::slot_mouseTranslate(QPointF pt)
-{
-    xf_canvas.setTranslateX(xf_canvas.getTranslateX() + pt.x());
-    xf_canvas.setTranslateY(xf_canvas.getTranslateY() + pt.y());
-    forceLayerRecalc();
-}
-
-void Layer::slot_moveX(int amount)
-{
-    xf_canvas.setTranslateX(xf_canvas.getTranslateX() + amount);
-    forceLayerRecalc();
-}
-
-void Layer::slot_moveY(int amount)
-{
-    xf_canvas.setTranslateY(xf_canvas.getTranslateY() + amount);
-    forceLayerRecalc();
-}
-
-void Layer::slot_rotate(int amount)
-{
-    xf_canvas.setRotateRadians(xf_canvas.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
-    forceLayerRecalc();
-}
-
-void Layer::slot_wheel_rotate(qreal delta)
-{
-    xf_canvas.setRotateDegrees(xf_canvas.getRotateDegrees() + delta);
-    forceLayerRecalc();
-}
-
-void Layer::slot_scale(int amount)
-{
-    xf_canvas.setScale(xf_canvas.getScale() + static_cast<qreal>(amount)/100.0);
-    forceLayerRecalc();
-}
-
-void Layer::slot_wheel_scale(qreal delta)
-{
-    xf_canvas.setScale(xf_canvas.getScale() + delta);
-    forceLayerRecalc();
-}
-
-void Layer::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
-{
-    qDebug() << getName() << config->kbdMode;
-
-    if (config->kbdMode == KBD_MODE_CENTER && btn == Qt::LeftButton)
-    {
-        setCenterScreen(spt);
-        forceLayerRecalc();
-    }
-}
 
 void Layer::setLoc(QPointF loc)
 {
@@ -369,7 +323,7 @@ void  Layer::drawCenter(QPainter * painter)
 {
     if (config->showCenterDebug || config->showCenterMouse)
     {
-        QPointF pt = getCenterScreen();
+        QPointF pt = getCenterScreenUnits();
         //qDebug() << "Layer::drawCenter:" << pt;
         qreal len = 13;
         QColor green(Qt::green);

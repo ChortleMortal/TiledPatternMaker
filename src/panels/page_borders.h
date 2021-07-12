@@ -26,9 +26,12 @@
 #define PAGE_BORDERS_H
 
 #include "panels/panel_page.h"
-#include "base/shared.h"
-#include "panels/panel_misc.h"
-#include "panels/layout_qrectf.h"
+
+class SpinSet;
+class ClickableLabel;
+class LayoutQRectF;
+
+typedef std::shared_ptr<class Border>           BorderPtr;
 
 class page_borders : public panel_page
 {

@@ -1,7 +1,7 @@
 #include "makers/map_editor/map_editor_stash.h"
 #include "makers/map_editor/map_editor.h"
 #include "base/fileservices.h"
-#include "base/configuration.h"
+#include "settings/configuration.h"
 
 #include <QTimer>
 
@@ -132,7 +132,7 @@ bool MapEditorStash::readStashTo(QString name, QVector<QLineF>  & lines, QVector
         for (auto it = tmp.begin(); it != tmp.end(); it++)
         {
             Circle c = *it;
-            CirclePtr p = make_shared<Circle>(c);
+            CirclePtr p = std::make_shared<Circle>(c);
             circs.push_back(p);
         }
     }
@@ -158,6 +158,10 @@ bool  MapEditorStash::initStash(QString stashname)
     }
 
     QString designfile = FileServices::getDesignTemplateFile(stashname);
+    if (designfile.isEmpty())
+    {
+        return false;
+    }
     QFile bfile(designfile);
     bool rv = bfile.copy(nextName);
     if (rv)

@@ -22,8 +22,10 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "style/plain.h"
 #include <QPainter>
+#include "style/plain.h"
+#include "geometry/map.h"
+#include "base/geo_graphics.h"
 
 ////////////////////////////////////////////////////////////////////////////
 //

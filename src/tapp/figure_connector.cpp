@@ -23,6 +23,10 @@
  */
 
 #include "tapp/figure_connector.h"
+#include "geometry/map.h"
+#include "geometry/vertex.h"
+#include "geometry/edge.h"
+#include "geometry/neighbours.h"
 #include "tapp/radial_figure.h"
 #include "geometry/intersect.h"
 #include "geometry/loose.h"

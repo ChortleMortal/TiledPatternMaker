@@ -25,9 +25,12 @@
 #ifndef STYLE_COLOR_FILL_SET_H
 #define STYLE_COLOR_FILL_SET_H
 
-#include <QtWidgets>
-#include "tile/feature.h"
-#include "makers/decoration_maker/style_editors.h"
+#include <QVBoxLayout>
+#include "base/colorset.h"
+
+class AQTableWidget;
+
+typedef std::shared_ptr<class Filled>       FilledPtr;
 
 class StyleColorFillSet : public QObject
 {

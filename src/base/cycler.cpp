@@ -23,7 +23,7 @@
  */
 
 #include "base/cycler.h"
-#include "base/configuration.h"
+#include "settings/configuration.h"
 #include "base/tiledpatternmaker.h"
 #include "base/fileservices.h"
 #include "panels/versioned_list_widget.h"
@@ -31,17 +31,6 @@
 
 Q_DECLARE_METATYPE(QTextCharFormat)
 Q_DECLARE_METATYPE(QTextCursor)
-
-static QString sCycleMode[] = {
-    E2STR(CYCLE_NONE),
-    E2STR(CYCLE_STYLES),
-    E2STR(CYCLE_TILINGS),
-    E2STR(CYCLE_ORIGINAL_PNGS),
-    E2STR(CYCLE_SAVE_STYLE_BMPS),
-    E2STR(CYCLE_SAVE_TILING_BMPS),
-    E2STR(CYCLE_COMPARE_ALL_IMAGES),
-    E2STR(CYCLE_COMPARE_WORKLIST_IMAGES)
-};
 
 Cycler * Cycler::mpThis = nullptr;
 

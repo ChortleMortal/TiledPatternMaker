@@ -41,10 +41,13 @@
 #include "tile/feature.h"
 #include "geometry/point.h"
 #include "geometry/edge.h"
+#include "geometry/vertex.h"
 #include "geometry/loose.h"
 #include "base/utilities.h"
 
 int Feature::refs = 0;
+
+using std::make_shared;
 
 Feature::Feature(EdgePoly ep, qreal rotate, qreal scale)
 {
@@ -62,15 +65,15 @@ Feature::Feature(EdgePoly ep, qreal rotate, qreal scale)
 Feature::Feature(int n, qreal rotate, qreal scale)
 {
     // Create an n-sided regular polygon with a vertex at (1,0).
-    this->n   = n;
-    rotation  = rotate;
+    this->n     = n;
+    rotation    = rotate;
     this->scale = scale;
-    regular   = true;
+    regular     = true;
     refs++;
 
-    int idx  = 0;
+    int idx     = 0;
     qreal angle = (M_PI / static_cast<qreal>(n)) * (static_cast<qreal>(2.0 * idx) + 1.0);
-    qreal sc = 1.0 / qCos( M_PI / static_cast<qreal>(n) );
+    qreal sc    = 1.0 / qCos( M_PI / static_cast<qreal>(n) );
 
     VertexPtr v  = make_shared<Vertex>(QPointF(sc * qCos(angle), sc * qSin(angle)));
     VertexPtr v1 = v;

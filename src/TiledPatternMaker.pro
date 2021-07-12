@@ -16,16 +16,12 @@ win32:QMAKE_LFLAGS += /STACK:32000000
 SOURCES += \
     base/border.cpp \
     base/colorset.cpp \
-    base/configuration.cpp \
     base/cycler.cpp \
     base/fileservices.cpp \
-    base/filldata.cpp \
-    base/frame_settings.cpp \
     base/geo_graphics.cpp \
     base/layer.cpp \
     base/main.cpp \
     base/misc.cpp \
-    base/model_settings.cpp \
     base/mosaic.cpp \
     base/mosaic_loader.cpp \
     base/mosaic_manager.cpp \
@@ -33,7 +29,6 @@ SOURCES += \
     base/pugixml.cpp \
     base/qtapplog.cpp \
     base/shortcuts.cpp \
-    base/tile.cpp \
     base/tiledpatternmaker.cpp \
     base/tpmsplash.cpp \
     base/transparentwidget.cpp \
@@ -44,6 +39,14 @@ SOURCES += \
     designs/patterns.cpp \
     designs/shapefactory.cpp \
     designs/shapes.cpp \
+    designs/tile.cpp \
+    enums/ecyclemode.cpp \
+    enums/edesign.cpp \
+    enums/efigtype.cpp \
+    enums/ekeyboardmode.cpp \
+    enums/estatemachineevent.cpp \
+    enums/etilingmakermousemode.cpp \
+    enums/eviewtype.cpp \
     geometry/bounds.cpp \
     geometry/circle.cpp \
     geometry/colormaker.cpp \
@@ -65,19 +68,19 @@ SOURCES += \
     geometry/vertex.cpp \
     geometry/xform.cpp \
     makers/decoration_maker/decoration_maker.cpp \
-    makers/motif_maker/explicit_figure_editors.cpp \
-    makers/motif_maker/feature_button.cpp \
-    makers/motif_maker/feature_launcher.cpp \
-    makers/motif_maker/figure_editors.cpp \
-    makers/motif_maker/master_figure_editor.cpp \
+    makers/decoration_maker/style_color_fill_group.cpp \
+    makers/decoration_maker/style_color_fill_set.cpp \
+    makers/decoration_maker/style_editors.cpp \
     makers/map_editor/map_editor.cpp \
     makers/map_editor/map_editor_selection.cpp \
     makers/map_editor/map_editor_stash.cpp \
     makers/map_editor/map_mouseactions.cpp \
     makers/map_editor/map_selection.cpp \
-    makers/decoration_maker/style_color_fill_group.cpp \
-    makers/decoration_maker/style_color_fill_set.cpp \
-    makers/decoration_maker/style_editors.cpp \
+    makers/motif_maker/explicit_figure_editors.cpp \
+    makers/motif_maker/feature_button.cpp \
+    makers/motif_maker/feature_launcher.cpp \
+    makers/motif_maker/figure_editors.cpp \
+    makers/motif_maker/master_figure_editor.cpp \
     makers/motif_maker/motif_maker.cpp \
     makers/tiling_maker/feature_selection.cpp \
     makers/tiling_maker/tiling_maker.cpp \
@@ -98,10 +101,12 @@ SOURCES += \
     panels/layout_sliderset.cpp \
     panels/layout_transform.cpp \
     panels/motif_display_widget.cpp \
+    panels/page_background_image.cpp \
     panels/page_borders.cpp \
     panels/page_config.cpp \
     panels/page_debug.cpp \
     panels/page_decoration_maker.cpp \
+    panels/page_grid.cpp \
     panels/page_image_tools.cpp \
     panels/page_layers.cpp \
     panels/page_loaders.cpp \
@@ -123,6 +128,10 @@ SOURCES += \
     panels/splitscreen.cpp \
     panels/versioned_list_widget.cpp \
     panels/view_panel.cpp \
+    settings/configuration.cpp \
+    settings/filldata.cpp \
+    settings/frame_settings.cpp \
+    settings/model_settings.cpp \
     style/colored.cpp \
     style/emboss.cpp \
     style/filled.cpp \
@@ -160,7 +169,6 @@ SOURCES += \
     viewers/map_editor_view.cpp \
     viewers/prototype_view.cpp \
     viewers/shape_view.cpp \
-    viewers/style_set_view.cpp \
     viewers/tiling_maker_view.cpp \
     viewers/tiling_view.cpp \
     viewers/view.cpp \
@@ -170,15 +178,11 @@ SOURCES += \
 HEADERS += \
     base/border.h \
     base/colorset.h \
-    base/configuration.h \
     base/cycler.h \
     base/fileservices.h \
-    base/filldata.h \
-    base/frame_settings.h \
     base/geo_graphics.h \
     base/layer.h \
     base/misc.h \
-    base/model_settings.h \
     base/mosaic.h \
     base/mosaic_loader.h \
     base/mosaic_manager.h \
@@ -188,7 +192,6 @@ HEADERS += \
     base/qtapplog.h \
     base/shared.h \
     base/shortcuts.h \
-    base/tile.h \
     base/tiledpatternmaker.h \
     base/tpmsplash.h \
     base/transparentwidget.h \
@@ -200,6 +203,16 @@ HEADERS += \
     designs/patterns.h \
     designs/shapefactory.h \
     designs/shapes.h \
+    designs/tile.h \
+    enums/ecyclemode.h \
+    enums/edesign.h \
+    enums/efigtype.h \
+    enums/ekeyboardmode.h \
+    enums/emousemode.h \
+    enums/estatemachineevent.h \
+    enums/estyletype.h \
+    enums/etilingmakermousemode.h \
+    enums/eviewtype.h \
     geometry/circle.h \
     geometry/colormaker.h \
     geometry/crop.h \
@@ -218,19 +231,19 @@ HEADERS += \
     geometry/vertex.h \
     geometry/xform.h \
     makers/decoration_maker/decoration_maker.h \
-    makers/motif_maker/explicit_figure_editors.h \
-    makers/motif_maker/feature_button.h \
-    makers/motif_maker/feature_launcher.h \
-    makers/motif_maker/figure_editors.h \
-    makers/motif_maker/master_figure_editor.h \
+    makers/decoration_maker/style_color_fill_group.h \
+    makers/decoration_maker/style_color_fill_set.h \
+    makers/decoration_maker/style_editors.h \
     makers/map_editor/map_editor.h \
     makers/map_editor/map_editor_selection.h \
     makers/map_editor/map_editor_stash.h \
     makers/map_editor/map_mouseactions.h \
     makers/map_editor/map_selection.h \
-    makers/decoration_maker/style_color_fill_group.h \
-    makers/decoration_maker/style_color_fill_set.h \
-    makers/decoration_maker/style_editors.h \
+    makers/motif_maker/explicit_figure_editors.h \
+    makers/motif_maker/feature_button.h \
+    makers/motif_maker/feature_launcher.h \
+    makers/motif_maker/figure_editors.h \
+    makers/motif_maker/master_figure_editor.h \
     makers/motif_maker/motif_maker.h \
     makers/tiling_maker/feature_selection.h \
     makers/tiling_maker/tiling_maker.h \
@@ -251,10 +264,12 @@ HEADERS += \
     panels/layout_sliderset.h \
     panels/layout_transform.h \
     panels/motif_display_widget.h \
+    panels/page_background_image.h \
     panels/page_borders.h \
     panels/page_config.h \
     panels/page_debug.h \
     panels/page_decoration_maker.h \
+    panels/page_grid.h \
     panels/page_image_tools.h \
     panels/page_layers.h \
     panels/page_loaders.h \
@@ -276,6 +291,11 @@ HEADERS += \
     panels/splitscreen.h \
     panels/versioned_list_widget.h \
     panels/view_panel.h \
+    settings/configuration.h \
+    settings/filldata.h \
+    settings/frame_settings.h \
+    settings/model_settings.h \
+    settings/tristate.h \
     style/colored.h \
     style/emboss.h \
     style/filled.h \
@@ -313,7 +333,6 @@ HEADERS += \
     viewers/map_editor_view.h \
     viewers/prototype_view.h \
     viewers/shape_view.h \
-    viewers/style_set_view.h \
     viewers/tiling_maker_view.h \
     viewers/tiling_view.h \
     viewers/view.h \

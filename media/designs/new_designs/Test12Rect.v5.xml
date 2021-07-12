@@ -4,29 +4,31 @@
 Plus a boder/boundary</designNotes>
 	<design>
 		<size>
-			<width>1899</width>
-			<height>1061</height>
+			<width>1063</width>
+			<height>697</height>
+			<zwidth>1899</zwidth>
+			<zheight>1061</zheight>
 		</size>
 		<background>
 			<color>#ffffffff</color>
 		</background>
 		<border type="4">
 			<boundary>-3.66666667,-0.33333333,9.977777700000001,6.22222222</boundary>
-	    </border>
+		</border>
 		<Fill>-2,5,-4,6</Fill>
 	</design>
 	<style.Thick id="2" serialization="custom">
 		<toolkit.GeoLayer>
-			<left__delta>0</left__delta>
-			<top__delta>0</top__delta>
-			<width__delta>1</width__delta>
+			<left__delta>-485</left__delta>
+			<top__delta>-391</top__delta>
+			<width__delta>0.7699999999999998</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>0,0</center>
 		</toolkit.GeoLayer>
 		<style.Style>
 			<prototype id="3" serialization="custom">
 				<app.Prototype>
-					<string>4^4</string>
+					<string>regular-4</string>
 					<entry>
 						<tile.Feature id="4">
 							<regular>true</regular>
@@ -105,9 +107,9 @@ Plus a boder/boundary</designNotes>
 	</style.Thick>
 	<style.Filled id="22" serialization="custom">
 		<toolkit.GeoLayer>
-			<left__delta>0</left__delta>
-			<top__delta>0</top__delta>
-			<width__delta>1</width__delta>
+			<left__delta>-485</left__delta>
+			<top__delta>-391</top__delta>
+			<width__delta>0.7699999999999998</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>0,0</center>
 		</toolkit.GeoLayer>

@@ -25,9 +25,9 @@
 #ifndef FEATURE_BUTTON
 #define FEATURE_BUTTON
 
-#include "tapp/design_element.h"
-#include "base/geo_graphics.h"
 #include <QtWidgets>
+
+typedef std::shared_ptr<class DesignElement>    DesignElementPtr;
 
 ////////////////////////////////////////////////////////////////////////////
 //

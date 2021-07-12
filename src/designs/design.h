@@ -27,12 +27,13 @@
 
 #include <QtCore>
 #include <QtGui>
-#include "base/shared.h"
-#include "base/model_settings.h"
-#include "base/configuration.h"
+#include "enums/edesign.h"
 
-class Pattern;
-class Border;
+class Configuration;
+
+typedef std::shared_ptr<class ModelSettings> ModelSettingsPtr;
+typedef std::shared_ptr<class Pattern>       PatternPtr;
+typedef std::shared_ptr<class Border>        BorderPtr;
 
 class Design
 {

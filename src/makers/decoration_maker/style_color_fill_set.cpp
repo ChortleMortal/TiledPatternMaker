@@ -25,6 +25,7 @@
 #include "makers/decoration_maker/style_color_fill_set.h"
 #include "base/utilities.h"
 #include "viewers/view.h"
+#include "style/filled.h"
 
 StyleColorFillSet::StyleColorFillSet(FilledPtr style, QVBoxLayout * vbox)  : filled(style)
 {
@@ -83,23 +84,26 @@ void StyleColorFillSet::display()
     table->clearContents();
     filled->getWhiteColorSet()->resetIndex();
 
-    table->setRowCount(filled->getFaceGroup()->size());
+    FaceGroup * faceGroup = filled->getFaceGroup();
+
+    table->setRowCount(faceGroup->size());
 
     int row = 0;
-    for (const auto & face : qAsConst(*filled->getFaceGroup()))
+    for (FaceSetPtr & faceSet : *faceGroup)
     {
         QTableWidgetItem * item = new QTableWidgetItem(QString::number(row));
         table->setItem(row,COL_ROW,item);
 
-        item = new QTableWidgetItem(QString::number(face->size()));
+        item = new QTableWidgetItem(QString::number(faceSet->size()));
         table->setItem(row,COL_FACES,item);
 
-        item = new QTableWidgetItem(QString::number(face->sides));
+        item = new QTableWidgetItem(QString::number(faceSet->sides));
         table->setItem(row,COL_SIDES,item);
 
-        item = new QTableWidgetItem(QString::number(face->area));
+        item = new QTableWidgetItem(QString::number(faceSet->area));
         table->setItem(row,COL_AREA,item);
 
+        // take color from whiteColorSet
         TPColor tpcolor  = filled->getWhiteColorSet()->getColor(row);
         QColor color     = tpcolor.color;
         QColor fullColor = color;
@@ -123,7 +127,7 @@ void StyleColorFillSet::display()
         connect(cb, &QCheckBox::clicked, [this, row] { colorVisibilityChanged(row); });
 
         QString astring;
-        if (face->selected) astring = "X";
+        if (faceSet->selected) astring = "X";
         item = new QTableWidgetItem(astring);
         table->setItem(row,COL_SEL,item);
 

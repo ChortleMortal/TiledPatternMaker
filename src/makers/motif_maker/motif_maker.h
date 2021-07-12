@@ -26,9 +26,19 @@
 #define MOTIF_MAKER_H
 
 #include <QtWidgets>
-#include "panels/page_motif_maker.h"
 #include "base/misc.h"
-#include "base/configuration.h"
+#include "enums/estatemachineevent.h"
+
+class page_motif_maker;
+class ViewControl;
+class TiledPatternMaker;
+
+typedef std::shared_ptr<class Tiling>           TilingPtr;
+typedef std::shared_ptr<class TilingMaker>      TilingMakerPtr;
+typedef std::shared_ptr<class DesignElement>    DesignElementPtr;
+typedef std::shared_ptr<class Prototype>        PrototypePtr;
+typedef std::shared_ptr<class Map>              MapPtr;
+typedef std::shared_ptr<class Feature>          FeaturePtr;
 
 enum eMMState
 {
@@ -37,12 +47,6 @@ enum eMMState
     MM_MULTI
 };
 
-static QString mm_states[]
-{
-    E2STR(MM_EMPTY),
-    E2STR(MM_SINGLE),
-    E2STR(MM_MULTI)
-};
 
 class MotifMaker
 {

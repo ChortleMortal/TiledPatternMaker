@@ -25,13 +25,18 @@
 #ifndef MAP_EDITOR_H
 #define MAP_EDITOR_H
 
+#include "makers/map_editor/map_editor_selection.h"
 #include "viewers/map_editor_view.h"
 #include "tile/tiling.h"
 #include "makers/map_editor/map_mouseactions.h"
-#include "makers/map_editor/map_editor_selection.h"
 #include "makers/map_editor/map_editor_stash.h"
 
 class Canvas;
+
+typedef std::shared_ptr<class MapEditor>     MapEditorPtr;
+typedef std::shared_ptr<class Tiling>        TilingPtr;
+typedef std::shared_ptr<class TilingMaker>   TilingMakerPtr;
+
 
 class MapEditor : public MapEditorSelection, std::enable_shared_from_this<MapEditor>
 {
@@ -88,13 +93,24 @@ public:
     MapEditorStash    stash;                // stash of construction lines
 
 public slots:
-    void setMouseMode(eMapMouseMode mapType);
-
-    void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
-    void slot_mouseDragged(QPointF spt);
-    void slot_mouseReleased(QPointF spt);
-    void slot_mouseMoved(QPointF spt);
+    void setMapedMouseMode(eMapMouseMode mapType);
     void slot_view_synch(int id, int enb);
+
+public slots:
+    virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
+    virtual void slot_mouseDragged(QPointF spt)       override;
+    virtual void slot_mouseTranslate(QPointF pt)      override;
+    virtual void slot_mouseMoved(QPointF spt)         override;
+    virtual void slot_mouseReleased(QPointF spt)      override;
+    virtual void slot_mouseDoublePressed(QPointF spt) override;
+
+    virtual void slot_wheel_scale(qreal delta)  override;
+    virtual void slot_wheel_rotate(qreal delta) override;
+
+    virtual void slot_scale(int amount)  override;
+    virtual void slot_rotate(int amount) override;
+    virtual void slot_moveX(int amount)  override;
+    virtual void slot_moveY(int amount)  override;
 
 protected:
     void    setMousePos(QPointF pt);

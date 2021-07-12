@@ -1,7 +1,8 @@
 #include "design_maker.h"
-#include "base/shared.h"
-#include "viewers/view.h"
 #include "designs/design.h"
+#include "viewers/view.h"
+#include "settings/model_settings.h"
+#include "settings/configuration.h"
 
 #ifdef __linux__
 #define ALT_MODIFIER Qt::MetaModifier
@@ -42,14 +43,6 @@ DesignMaker::DesignMaker()
     connect(view, &View::sig_deltaRotate,   this, &DesignMaker::designRotate);
     connect(view, &View::sig_deltaMoveY,    this, &DesignMaker::designMoveY);
     connect(view, &View::sig_deltaMoveX,    this, &DesignMaker::designMoveX);
-
-#if 0
-    connect(view, &View::sig_mousePressed,      this, &Layer::slot_mousePressed);
-    connect(view, &View::sig_mouseTranslate,    this, &Layer::slot_mouseTranslate);
-    connect(view, &View::sig_wheel_scale,       this, &Layer::slot_wheel_scale);
-    connect(view, &View::sig_wheel_rotate,      this, &Layer::slot_wheel_rotate);
-    connect(view, &View::sig_setCenter,         this, &Layer::slot_setCenterScreen);
-#endif
 }
 
 
@@ -222,19 +215,19 @@ void DesignMaker::ProcKeyUp()
     // up arrow
     switch (config->kbdMode)
     {
-    case KBD_MODE_ZLEVEL:
+    case KBD_MODE_DES_ZLEVEL:
         designLayerZPlus();
         break;
-    case KBD_MODE_STEP:
+    case KBD_MODE_DES_STEP:
         step(1);
         break;
-    case KBD_MODE_SEPARATION:
+    case KBD_MODE_DES_SEPARATION:
         designReposition(0,-1);
         break;
-    case KBD_MODE_OFFSET:
+    case KBD_MODE_DES_OFFSET:
         designOffset(0,-1);
         break;
-    case KBD_MODE_ORIGIN:
+    case KBD_MODE_DES_ORIGIN:
     {
         Qt::KeyboardModifiers mod = QApplication::keyboardModifiers();
         if ((mod & ALT_MODIFIER) == ALT_MODIFIER)
@@ -243,8 +236,8 @@ void DesignMaker::ProcKeyUp()
             designOrigin(0,-1);
     }
         break;
-    case KBD_MODE_POS:
-    case KBD_MODE_LAYER:
+    case KBD_MODE_DES_POS:
+    case KBD_MODE_DES_LAYER_SELECT:
         qCritical("Should not happen");
         break;
     default:
@@ -257,19 +250,19 @@ void DesignMaker::ProcKeyDown()
     // down arrrow
     switch (config->kbdMode)
     {
-    case KBD_MODE_ZLEVEL:
+    case KBD_MODE_DES_ZLEVEL:
         designLayerZMinus();
         break;
-    case KBD_MODE_STEP:
+    case KBD_MODE_DES_STEP:
         step(-1);
         break;
-    case KBD_MODE_SEPARATION:
+    case KBD_MODE_DES_SEPARATION:
         designReposition(0,1);
         break;
-    case KBD_MODE_OFFSET:
+    case KBD_MODE_DES_OFFSET:
         designOffset(0,1);
         break;
-    case KBD_MODE_ORIGIN:
+    case KBD_MODE_DES_ORIGIN:
     {
         Qt::KeyboardModifiers mod = QApplication::keyboardModifiers();
         if ((mod & ALT_MODIFIER) == ALT_MODIFIER)
@@ -278,8 +271,8 @@ void DesignMaker::ProcKeyDown()
             designOrigin(0,1);
     }
         break;
-    case KBD_MODE_POS:
-    case KBD_MODE_LAYER:
+    case KBD_MODE_DES_POS:
+    case KBD_MODE_DES_LAYER_SELECT:
         qCritical("Should not happen");
         break;
     default:
@@ -291,13 +284,13 @@ void DesignMaker::ProcKeyLeft()
 {
     switch (config->kbdMode)
     {
-    case KBD_MODE_SEPARATION:
+    case KBD_MODE_DES_SEPARATION:
         designReposition(-1,0);
         break;
-    case KBD_MODE_OFFSET:
+    case KBD_MODE_DES_OFFSET:
         designOffset(-1,0);
         break;
-    case KBD_MODE_ORIGIN:
+    case KBD_MODE_DES_ORIGIN:
     {   Qt::KeyboardModifiers mod = QApplication::keyboardModifiers();
         if ((mod & ALT_MODIFIER) == ALT_MODIFIER)
             designOrigin(-100,0);
@@ -305,12 +298,12 @@ void DesignMaker::ProcKeyLeft()
             designOrigin(-1,0);
     }
         break;
-    case KBD_MODE_POS:
-    case KBD_MODE_LAYER:
+    case KBD_MODE_DES_POS:
+    case KBD_MODE_DES_LAYER_SELECT:
         qCritical("Should not happen");
         break;
-    case KBD_MODE_ZLEVEL:
-    case KBD_MODE_STEP:
+    case KBD_MODE_DES_ZLEVEL:
+    case KBD_MODE_DES_STEP:
     default:
         break;
     }
@@ -320,13 +313,13 @@ void DesignMaker::ProcKeyRight()
 {
     switch (config->kbdMode)
     {
-    case KBD_MODE_SEPARATION:
+    case KBD_MODE_DES_SEPARATION:
         designReposition(1,0);
         break;
-    case KBD_MODE_OFFSET:
+    case KBD_MODE_DES_OFFSET:
         designOffset(1,0);
         break;
-    case KBD_MODE_ORIGIN:
+    case KBD_MODE_DES_ORIGIN:
     {
         Qt::KeyboardModifiers mod = QApplication::keyboardModifiers();
         if ((mod & ALT_MODIFIER) == ALT_MODIFIER)
@@ -335,12 +328,12 @@ void DesignMaker::ProcKeyRight()
             designOrigin(1,0);
     }
         break;
-    case KBD_MODE_POS:
-    case KBD_MODE_LAYER:
+    case KBD_MODE_DES_POS:
+    case KBD_MODE_DES_LAYER_SELECT:
         qCritical("Should not happen");
         break;
-    case KBD_MODE_ZLEVEL:
-    case KBD_MODE_STEP:
+    case KBD_MODE_DES_ZLEVEL:
+    case KBD_MODE_DES_STEP:
     default:
         break;
     }
@@ -369,7 +362,7 @@ void DesignMaker::designRotate(int delta)
 
 void DesignMaker::designMoveY(int delta)
 {
-    if (config->kbdMode == KBD_MODE_POS || config->kbdMode == KBD_MODE_LAYER )
+    if (config->kbdMode == KBD_MODE_DES_POS || config->kbdMode == KBD_MODE_DES_LAYER_SELECT )
     {
         for (auto design : qAsConst(activeDesigns))
         {
@@ -394,7 +387,7 @@ void DesignMaker::designMoveY(int delta)
 
 void DesignMaker::designMoveX(int delta)
 {
-    if (config->kbdMode == KBD_MODE_POS || config->kbdMode == KBD_MODE_LAYER )
+    if (config->kbdMode == KBD_MODE_DES_POS || config->kbdMode == KBD_MODE_DES_LAYER_SELECT )
     {
         for (auto design : qAsConst(activeDesigns))
         {

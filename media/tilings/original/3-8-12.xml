@@ -1,42 +1,155 @@
 <?xml version="1.0"?>
-<Tiling>
+<Tiling version="6">
 	<Name>3-8-12</Name>
 	<Fill>0,1,0,1</Fill>
 	<T1>23.74077407376281,13.706742302257</T1>
 	<T2>-7.105427357601002e-15,27.41348460451404</T2>
-	<Feature type="regular" sides="12">
-		<Placement>5.598076211353311,3.232050807568877,-7.913591357920938,-3.232050807568877,5.598076211353311,-13.70674230225703</Placement>
+	<ViewSettings>
+		<width>1500</width>
+		<height>1100</height>
+		<zwidth>1500</zwidth>
+		<zheight>1100</zheight>
+		<left__delta>572.1428571428596</left__delta>
+		<top__delta>959.5714285714326</top__delta>
+		<width__delta>0.2099999999999993</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>-7.988571428571461,-13.8876190476191</center>
+	</ViewSettings>
+	<Feature type="regular" sides="12" rotation="0" scale="1">
+		<Placement>
+			<scale>6.46410161513775</scale>
+			<rot>-30.00000000000002</rot>
+			<tranX>-7.913591357920938</tranX>
+			<tranY>-13.70674230225703</tranY>
+		</Placement>
 	</Feature>
-	<Feature type="regular" sides="3">
-		<Placement>1,0,0,0,1,0</Placement>
-		<Placement>0.4999999999999996,-0.866025403784437,7.913591357920951,0.866025403784437,0.4999999999999996,-13.70674230225702</Placement>
+	<Feature type="regular" sides="3" rotation="0" scale="1">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+		<Placement>
+			<scale>0.9999999999999984</scale>
+			<rot>59.99999999999997</rot>
+			<tranX>7.913591357920951</tranX>
+			<tranY>-13.70674230225702</tranY>
+		</Placement>
 	</Feature>
-	<Feature type="regular" sides="8">
-		<Placement>4.039058011260054,-1.082262332299586,-2.59077027517603,1.082262332299586,4.039058011260054,-4.487345747344079</Placement>
-		<Placement>4.039058011260046,1.082262332299589,-13.23641244066585,-1.082262332299589,4.039058011260046,-4.487345747344056</Placement>
-		<Placement>3.621320343559631,2.090770275176025,-13.23641244066584,-2.090770275176025,3.621320343559631,-22.92613885716995</Placement>
-		<Placement>4.181540550352059,8.881784197001252e-16,2.732050807568892,-8.881784197001252e-16,4.181540550352059,-13.70674230225702</Placement>
-		<Placement>4.181540550352055,7.554360501969756e-16,-18.55923352341076,-7.554360501969756e-16,4.181540550352055,-13.706742302257</Placement>
-		<Placement>4.039058011260057,1.082262332299589,-2.590770275176022,-1.082262332299589,4.039058011260057,-22.92613885716996</Placement>
+	<Feature type="regular" sides="8" rotation="0" scale="1">
+		<Placement>
+			<scale>4.181540550352055</scale>
+			<rot>14.99999999999997</rot>
+			<tranX>-2.59077027517603</tranX>
+			<tranY>-4.487345747344079</tranY>
+		</Placement>
+		<Placement>
+			<scale>4.181540550352048</scale>
+			<rot>-15.00000000000004</rot>
+			<tranX>-13.23641244066585</tranX>
+			<tranY>-4.487345747344056</tranY>
+		</Placement>
+		<Placement>
+			<scale>4.181540550352044</scale>
+			<rot>-30.00000000000004</rot>
+			<tranX>-13.23641244066584</tranX>
+			<tranY>-22.92613885716995</tranY>
+		</Placement>
+		<Placement>
+			<scale>4.181540550352059</scale>
+			<rot>-2.910383528536853e-15</rot>
+			<tranX>2.732050807568892</tranX>
+			<tranY>-13.70674230225702</tranY>
+		</Placement>
+		<Placement>
+			<scale>4.181540550352055</scale>
+			<rot>-2.475413259982759e-15</rot>
+			<tranX>-18.55923352341076</tranX>
+			<tranY>-13.706742302257</tranY>
+		</Placement>
+		<Placement>
+			<scale>4.181540550352056</scale>
+			<rot>-15.00000000000001</rot>
+			<tranX>-2.590770275176022</tranX>
+			<tranY>-22.92613885716996</tranY>
+		</Placement>
 	</Feature>
-	<Feature type="polygon">
-		<Point>-1.449489742783176,11.97469149468814</Point>
-		<Point>-3.181540550352011,8.974691494688157</Point>
-		<Point>0.1645246645991763,8.078116022520113</Point>
-		<Point>1.896575472168054,5.078116022520113</Point>
-		<Point>1,1.732050807568877</Point>
-		<Point>3.449489742783178,4.181540550352053</Point>
-		<Point>6.913591357920932,4.181540550352053</Point>
-		<Point>9.363081100704111,1.732050807568875</Point>
-		<Point>11.09513190827299,4.732050807568875</Point>
-		<Point>7.749066693321759,5.628626279736925</Point>
-		<Point>6.017015885752889,8.628626279736919</Point>
-		<Point>6.913591357920945,11.97469149468814</Point>
-		<Point>4.464101615137764,9.525201751904966</Point>
-		<Point>1.000000000000002,9.525201751904966</Point>
-		<Placement>-0.4999999999999995,0.8660254037844367,2.664535259100376e-15,-0.8660254037844367,-0.4999999999999995,-3.403681997562399e-15</Placement>
-		<Placement>1,0,7.105427357601002e-15,0,1,-27.41348460451404</Placement>
-		<Placement>-0.4999999999999989,-0.8660254037844376,-3.996802888650564e-15,0.8660254037844376,-0.4999999999999989,-8.881784197001252e-16</Placement>
+	<Feature type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="1">-1.449489742783176,11.97469149468814</Point>
+			<Point id="2">-3.181540550352011,8.974691494688157</Point>
+		</Line>
+		<Line>
+			<Point reference="2" />
+			<Point id="3">0.1645246645991763,8.078116022520113</Point>
+		</Line>
+		<Line>
+			<Point reference="3" />
+			<Point id="4">1.896575472168054,5.078116022520113</Point>
+		</Line>
+		<Line>
+			<Point reference="4" />
+			<Point id="5">1,1.732050807568877</Point>
+		</Line>
+		<Line>
+			<Point reference="5" />
+			<Point id="6">3.449489742783178,4.181540550352053</Point>
+		</Line>
+		<Line>
+			<Point reference="6" />
+			<Point id="7">6.913591357920932,4.181540550352053</Point>
+		</Line>
+		<Line>
+			<Point reference="7" />
+			<Point id="8">9.363081100704111,1.732050807568875</Point>
+		</Line>
+		<Line>
+			<Point reference="8" />
+			<Point id="9">11.09513190827299,4.732050807568875</Point>
+		</Line>
+		<Line>
+			<Point reference="9" />
+			<Point id="10">7.749066693321759,5.628626279736925</Point>
+		</Line>
+		<Line>
+			<Point reference="10" />
+			<Point id="11">6.017015885752889,8.628626279736919</Point>
+		</Line>
+		<Line>
+			<Point reference="11" />
+			<Point id="12">6.913591357920945,11.97469149468814</Point>
+		</Line>
+		<Line>
+			<Point reference="12" />
+			<Point id="13">4.464101615137764,9.525201751904966</Point>
+		</Line>
+		<Line>
+			<Point reference="13" />
+			<Point id="14">1.000000000000002,9.525201751904966</Point>
+		</Line>
+		<Line>
+			<Point reference="14" />
+			<Point reference="1" />
+		</Line>
+		<Placement>
+			<scale>0.999999999999998</scale>
+			<rot>-120</rot>
+			<tranX>2.664535259100376e-15</tranX>
+			<tranY>-3.403681997562399e-15</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>7.105427357601002e-15</tranX>
+			<tranY>-27.41348460451404</tranY>
+		</Placement>
+		<Placement>
+			<scale>0.9999999999999986</scale>
+			<rot>120</rot>
+			<tranX>-3.996802888650564e-15</tranX>
+			<tranY>-8.881784197001252e-16</tranY>
+		</Placement>
 	</Feature>
 	<Desc>Yet another variation of the Alcazar of Seville.</Desc>
 	<Auth>Pierre Baillargeon</Auth>

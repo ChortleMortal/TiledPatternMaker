@@ -27,25 +27,15 @@
 
 #include <QPen>
 #include "geometry/xform.h"
-#include "base/shared.h"
 
-enum eLayerType
-{
-    LTYPE_VIEW,
-    LTYPE_BACKGROUND,
-    LTYPE_MARK,
-    LTYPE_BORDER,
-    LTYPE_MAP_EDITOR,
-    LTYPE_TILING_MAKER,
-    LTYPE_GRID
-};
+typedef std::shared_ptr<class Layer> LayerPtr;
 
 class Layer : public QObject
 {
     Q_OBJECT
 
 public:
-    Layer(QString name, eLayerType ltype);
+    Layer(QString name);
     Layer(const Layer & other);
     Layer(LayerPtr other);
     ~Layer();
@@ -59,18 +49,20 @@ public:
     void    forceLayerRecalc(bool update = true);
     void    forceRedraw() ;
 
+    bool    isSelected();
+
     QPointF screenToWorld(QPointF pt) ;
     QPointF screenToWorld(int x, int y);
     QRectF  screenToWorld(QRectF rect) ;
+    qreal   screenToWorld(qreal val);
 
     QPointF worldToScreen(QPointF pt);
     QLineF  worldToScreen(QLineF line);
     QRectF  worldToScreen(QRectF rect);
 
-    void        setCenterScreen(QPointF spt);
-    void        setCenterModel(QPointF mpt);
-    QPointF     getCenterScreen();
-    QPointF     getCenterModel();
+    void        setCenterScreenUnits(QPointF spt);
+    QPointF     getCenterScreenUnits();
+    QPointF     getCenterModelUnits();
 
     const Xform & getCanvasXform();
     void        setCanvasXform(const Xform & xf);
@@ -101,35 +93,38 @@ public:
 
 signals:
     void sig_center();
+    void sig_refreshView();
 
 public slots:
-    virtual void slot_moveX(int amount);
-    virtual void slot_moveY(int amount);
-    virtual void slot_rotate(int amount);
-    virtual void slot_scale(int amount);
+    virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) = 0;
+    virtual void slot_mouseDragged(QPointF spt)       = 0;
+    virtual void slot_mouseTranslate(QPointF pt)      = 0;
+    virtual void slot_mouseMoved(QPointF spt)         = 0;
+    virtual void slot_mouseReleased(QPointF spt)      = 0;
+    virtual void slot_mouseDoublePressed(QPointF spt) = 0;
 
-    virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn);
+    virtual void slot_wheel_scale(qreal delta)  = 0;
+    virtual void slot_wheel_rotate(qreal delta) = 0;
 
-    virtual void slot_mouseTranslate(QPointF pt);
-    virtual void slot_wheel_rotate(qreal delta);
-    virtual void slot_wheel_scale(qreal delta);
-    virtual void slot_setCenterScreen(QPointF spt);
+    virtual void slot_scale(int amount)  = 0;
+    virtual void slot_rotate(int amount) = 0;
+    virtual void slot_moveX(int amount)  = 0;
+    virtual void slot_moveY(int amount)  = 0;
 
 protected:
     virtual void drawCenter(QPainter * painter);
 
-    QPen              layerPen;
+    Xform      xf_canvas;
+    QPen       layerPen;
 
     class Configuration   * config;
     class View            * view;
 
 private:
+    void connectSignals();
     void computeLayerTransform();
     void deltaLoc(QPointF loc);
 
-    eLayerType  layerType;
-
-    Xform      xf_canvas;
     QTransform qtr_layer;       // calculated
     QTransform qtr_invert;      // calculated
 
@@ -140,5 +135,6 @@ private:
     int     zlevel;
     QPointF pos;
 };
+
 
 #endif

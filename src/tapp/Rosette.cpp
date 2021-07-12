@@ -41,6 +41,11 @@
 #include "geometry/transform.h"
 #include "designs/shapefactory.h"
 #include "tile/feature.h"
+#include "geometry/map.h"
+
+typedef std::shared_ptr<Rosette>          RosettePtr;
+
+using std::make_shared;
 
 Rosette::Rosette(const Figure & fig,  int nsides, qreal qq, int ss, qreal kk, qreal rr)
     : RadialFigure(fig, nsides, rr)

@@ -36,6 +36,10 @@
 
 #include "tapp/figure.h"
 #include "tile/feature.h"
+#include "geometry/map.h"
+#include "geometry/edge.h"
+
+using std::make_shared;
 
 int Figure::refs = 0;
 
@@ -164,6 +168,39 @@ void Figure::buildExtBoundary()
         extBoundary = qTrans.map(extBoundary);
         //qDebug() << "Ext boundary:" << extBoundary;
         hasCircleBoundary = false;
+#if 0
+        if (extBoundarySides == 4)
+        {
+            // test code
+            QTransform t;
+            t.rotate(30);
+
+            QTransform t2;
+            t2.rotate(90 + 30);
+
+            extBoundary[0] = t.map(extBoundary[0]);
+            extBoundary[1] = t2.map(extBoundary[1]);
+            extBoundary[2] = t.map(extBoundary[2]);
+            extBoundary[3] = t2.map(extBoundary[3]);
+#if 0
+            QLineF l0(extBoundary[0],extBoundary[1]);
+            QLineF l1(extBoundary[1],extBoundary[2]);
+            QLineF l2(extBoundary[2],extBoundary[3]);
+            QLineF l3(extBoundary[3],extBoundary[0]);
+
+            l0 = t.map(l0);
+            l2 = t.map(l2);
+            QTransform t2;
+            t2.rotate(-30);
+            l1 = t2.map(l1);
+            l3 = t2.map(l3);
+            extBoundary[0] = l0.p1();
+            extBoundary[1] = l1.p1();
+            extBoundary[2] = l2.p1();
+            extBoundary[3] = l3.p1();
+#endif
+        }
+#endif
     }
     else
     {
@@ -171,7 +208,33 @@ void Figure::buildExtBoundary()
         hasCircleBoundary = true;
     }
 }
+#if 0
+Rhombus::Rhombus(Vertex point, int radius) : Shape(point)
+{
+    if((radius>centroid.getX()/2) || (radius>centroid.getY()/2)) // Inteded to be a y?
+    {
+        cout << "Object must fit on screen." << endl;
+        system("pause");
+        exit(0);
+    }
 
+    // create vertices for a rhombus with horizontal and vertical diagonals
+    vertices.push_back(Vertex(point.getX() - radius, point.getY()));
+    vertices.push_back(Vertex(point.getX(), point.getY() - radius));
+    vertices.push_back(Vertex(point.getX() + radius, point.getY()));
+    vertices.push_back(Vertex(point.getX(), point.getY() + radius));
+}
+
+QPainterPath path;
+QRectF rect(0, 0 , 100, 100);
+path.moveTo(rect.center().x(), rect.top());
+path.lineTo(rect.right(), rect.center().y());
+path.lineTo(rect.center().x(), rect.bottom());
+path.lineTo(rect.left(), rect.center().y());
+path.lineTo(rect.center().x(), rect.top());
+QGraphicsPathItem* itemR = ui->graphicsView->scene()->addPath(path);
+itemR->setFlag(QGraphicsItem::ItemIsMovable);
+#endif
 // uses existing tmpIndices
 void Figure::annotateEdges()
 {

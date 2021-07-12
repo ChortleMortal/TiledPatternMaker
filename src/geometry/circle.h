@@ -1,10 +1,10 @@
 #ifndef CIRCLE_H
 #define CIRCLE_H
 
-#include <QPointF>
-#include "geometry/loose.h"
+#include <QtCore>
 
 class Circle;
+
 typedef std::shared_ptr<Circle> CirclePtr;
 
 class Circle

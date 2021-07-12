@@ -1,9 +1,11 @@
 #ifndef VIEWPANEL_H
 #define VIEWPANEL_H
 
-#include "panels/panel_page.h"
+#include <QWidget>
+#include <QPushButton>
+#include "panels/panel_misc.h"
 
-class ViewPanel : public QWidget
+class ViewPanel : public AQWidget
 {
     Q_OBJECT
 
@@ -13,17 +15,18 @@ public:
 
     void    setButtonSize(QSize(size));
 
-protected:
+    void    setSetCenterMode(bool checked);
     void    setTranslateMode(bool checked);
     void    setRotateMode(bool checked);
     void    setScaleMode(bool checked);
 
+    QPushButton * btnCenter;
+    QPushButton * btnPan;
+    QPushButton * btnRot;
+    QPushButton * btnZoom;
+
 private:
     class View * view;
-
-    QPushButton * btn1;
-    QPushButton * btn2;
-    QPushButton * btn3;
 };
 
 #endif // VIEWPANEL_H

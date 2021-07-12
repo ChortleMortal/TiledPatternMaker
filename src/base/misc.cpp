@@ -25,7 +25,7 @@
 #include "base/misc.h"
 #include "base/layer.h"
 
-MarkX::MarkX(QPointF a, QPen pen, int index) : Layer("MarkX",LTYPE_MARK)
+MarkX::MarkX(QPointF a, QPen pen, int index) : Layer("MarkX")
 {
     _a     = a;
     _pen   = pen;
@@ -34,7 +34,7 @@ MarkX::MarkX(QPointF a, QPen pen, int index) : Layer("MarkX",LTYPE_MARK)
 
 }
 
-MarkX::MarkX(QPointF a, QPen pen, QString txt) : Layer("MarkX",LTYPE_MARK)
+MarkX::MarkX(QPointF a, QPen pen, QString txt) : Layer("MarkX")
 {
     _a     = a;
     _pen   = pen;
@@ -66,3 +66,28 @@ void MarkX::paint(QPainter *painter)
         painter->drawText(arect,_txt);
     }
 }
+
+void MarkX::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
+{ Q_UNUSED(spt); Q_UNUSED(btn);}
+void MarkX::slot_mouseDragged(QPointF spt)
+{ Q_UNUSED(spt)}
+void MarkX::slot_mouseTranslate(QPointF pt)
+{ Q_UNUSED(pt)}
+void MarkX::slot_mouseMoved(QPointF spt)
+{ Q_UNUSED(spt)}
+void MarkX::slot_mouseReleased(QPointF spt)
+{ Q_UNUSED(spt)}
+void MarkX::slot_mouseDoublePressed(QPointF spt)
+{ Q_UNUSED(spt)}
+void MarkX::slot_wheel_scale(qreal delta)
+{ Q_UNUSED(delta);}
+void MarkX::slot_wheel_rotate(qreal delta)
+{ Q_UNUSED(delta);}
+void MarkX::slot_scale(int amount)
+{ Q_UNUSED(amount);}
+void MarkX::slot_rotate(int amount)
+{ Q_UNUSED(amount);}
+void MarkX:: slot_moveX(int amount)
+{ Q_UNUSED(amount);}
+void MarkX::slot_moveY(int amount)
+{ Q_UNUSED(amount);}

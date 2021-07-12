@@ -26,8 +26,7 @@
 #define PAGE_PROTOS_H
 
 #include "panels/panel_page.h"
-#include "panels/panel_misc.h"
-#include "base/configuration.h"
+#include "settings/configuration.h"
 
 enum eProtoCol
 {
@@ -69,7 +68,7 @@ protected:
     void    setProtoViewMode(eProtoViewMode mode, bool enb);
 
 private:
-    AQTableWidget * protoTable;
+    class AQTableWidget * protoTable;
 };
 
 #endif

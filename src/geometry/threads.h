@@ -3,8 +3,13 @@
 
 #include <QtCore>
 #include <QColor>
-#include "geometry/edge.h"
 #include "base/colorset.h"
+
+typedef std::shared_ptr<class Map>              MapPtr;
+typedef std::shared_ptr<class Edge>             EdgePtr;
+typedef std::shared_ptr<class Vertex>           VertexPtr;
+typedef std::shared_ptr<class Thread>           ThreadPtr;
+
 
 class Thread : public QVector<EdgePtr>
 {

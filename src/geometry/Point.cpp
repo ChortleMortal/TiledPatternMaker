@@ -25,7 +25,8 @@
 #include "geometry/point.h"
 #include "geometry/edgepoly.h"
 #include "geometry/loose.h"
-#include "base/shared.h"
+#include "geometry/edge.h"
+#include "geometry/vertex.h"
 
 // Point in a geometrical map.
 

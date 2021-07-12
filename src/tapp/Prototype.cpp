@@ -23,12 +23,13 @@
  */
 
 #include "tapp/prototype.h"
-#include "base/tpmsplash.h"
-#include "base/utilities.h"
-#include "geometry/fill_region.h"
-#include "geometry/transform.h"
+#include "tile/tiling.h"
+#include "tile/feature.h"
+#include "tapp/figure.h"
+#include "tapp/design_element.h"
+#include "geometry/crop.h"
+#include "geometry/map.h"
 #include "panels/panel.h"
-#include "panels/panel_status.h"
 #include "tile/placed_feature.h"
 #include "base/border.h"
 
@@ -46,7 +47,7 @@ Prototype::Prototype(TilingPtr t)
 {
     Q_ASSERT(t);
     tiling = t;
-    protoMap = make_shared<Map>("proto map");
+    protoMap = std::make_shared<Map>("proto map");
 
     panel = ControlPanel::getInstance();
 
@@ -142,10 +143,10 @@ void Prototype::setTiling(TilingPtr newTiling)
         removeElement(element);
     }
 
-    // create new elements
+    // create new elementsN
     for (auto feature : unusedFeatures)
     {
-        DesignElementPtr del = make_shared<DesignElement>(feature);
+        DesignElementPtr del = std::make_shared<DesignElement>(feature);
         addElement(del);
     }
 }
@@ -351,11 +352,11 @@ MapPtr Prototype::createProtoMap()
 
         // Within a single translational unit, assemble the different
         // transformed figures corresponding to the given feature into a map.
-        MapPtr transmap = make_shared<Map>("proto transmap");
+        MapPtr transmap = std::make_shared<Map>("proto transmap");
         transmap->mergeSimpleMany(figmap, subT);
 
         // Now put all the translations together into a single map for this feature.
-        MapPtr featuremap = make_shared<Map>("proto featuremap");
+        MapPtr featuremap = std::make_shared<Map>("proto featuremap");
         featuremap->mergeSimpleMany(transmap, translations);
 
         // And do a slow merge to add this map to the finished design.

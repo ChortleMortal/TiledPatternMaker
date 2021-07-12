@@ -27,6 +27,9 @@
 #include "geometry/intersect.h"
 #include "tile/feature.h"
 #include "base/utilities.h"
+#include "geometry/map.h"
+#include "geometry/edge.h"
+#include "geometry/vertex.h"
 
 ExtendedStar::ExtendedStar(const Figure & fig,
                            int nn, qreal d, int s, qreal r,

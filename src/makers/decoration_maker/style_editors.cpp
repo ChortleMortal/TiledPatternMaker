@@ -29,8 +29,16 @@
 #include "panels/dlg_colorSet.h"
 #include "makers/decoration_maker/style_color_fill_group.h"
 #include "makers/decoration_maker//style_color_fill_set.h"
-#include "base/configuration.h"
+#include "settings/configuration.h"
 #include "panels/panel.h"
+#include "tile/tiling.h"
+#include "tile/feature.h"
+#include "panels/layout_sliderset.h"
+#include "style/colored.h"
+#include "style/emboss.h"
+#include "style/filled.h"
+#include "style/interlace.h"
+#include "style/tile_colors.h"
 
 StyleEditor::StyleEditor()
 {
@@ -331,8 +339,8 @@ void FilledEditor::displayParms2()
 {
 
     fillSet = new StyleColorFillSet(filled,vbox);
-    fillSet->display();
     connect(fillSet, &StyleColorFillSet::sig_colorsChanged,     this, &FilledEditor::slot_colorsChanged,     Qt::UniqueConnection);
+    fillSet->display();
 }
 
 
@@ -340,7 +348,7 @@ void FilledEditor::displayParms3()
 {
 
     fillGroup = new StyleColorFillGroup(filled,vbox);
-    connect(fillGroup, &StyleColorFillGroup::sig_colorsChanged,     this, &FilledEditor::slot_colorsChanged,     Qt::UniqueConnection);
+    connect(fillGroup, &StyleColorFillGroup::sig_colorsChanged,  this, &FilledEditor::slot_colorsChanged,     Qt::UniqueConnection);
     fillGroup->display();
 }
 

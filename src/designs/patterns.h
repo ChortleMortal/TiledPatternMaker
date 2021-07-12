@@ -25,10 +25,11 @@
 #ifndef TILE_PATTERNS_H
 #define TILE_PATTERNS_H
 
-#include "base/tile.h"
-#include "designs/shapefactory.h"
-#include "base/shared.h"
-#include "base/filldata.h"
+#include "designs/tile.h"
+#include "settings/filldata.h"
+
+typedef std::shared_ptr<class ShapeFactory>    ShapeFPtr;
+
 
 enum eDirection
 {
@@ -178,7 +179,7 @@ public:
 protected:
     qreal Rotation;
     eDirection Direction;
-    Polygon2 * hexagon;
+    class Polygon2 * hexagon;
 private:
     LayerPtr layer1;
     LayerPtr layer2;

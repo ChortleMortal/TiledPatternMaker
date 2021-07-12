@@ -1,0 +1,128 @@
+<?xml version="1.0"?>
+<vector id="1" version="10">
+	<design>
+		<size>
+			<width>1500</width>
+			<height>1100</height>
+			<zwidth>1500</zwidth>
+			<zheight>1100</zheight>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Fill>-4,4,-4,4</Fill>
+	</design>
+	<style.Plain id="2" serialization="custom">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,-1.77635683940025e-15</center>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3" serialization="custom">
+				<app.Prototype>
+					<string>Rhombus.v2</string>
+					<entry>
+						<tile.Feature id="4">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">-4.440892098500626e-16,-3.254676046355114</Point>
+									<Point id="7">2.321537862115536,-4.440892098500626e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">0,3.254676046355116</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">-2.321537862115536,4.440892098500626e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFigure id="10" type="FIG_TYPE_EXPLICIT">
+							<map id="11">
+								<vertices id="12" />
+								<edges id="13" />
+							</map>
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFigure>
+					</entry>
+					<entry>
+						<tile.Feature id="14">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1.900000000000001</scale>
+							<edges id="15">
+								<Line>
+									<Point id="16">0.9999999999999999,0.3249196962329063</Point>
+									<Point id="17">0.6180339887498948,0.85065080835204</Point>
+								</Line>
+								<Line>
+									<Point reference="17" />
+									<Point id="18">6.438349236688752e-17,1.051462224238267</Point>
+								</Line>
+								<Line>
+									<Point reference="18" />
+									<Point id="19">-0.6180339887498947,0.85065080835204</Point>
+								</Line>
+								<Line>
+									<Point reference="19" />
+									<Point id="20">-0.9999999999999999,0.3249196962329064</Point>
+								</Line>
+								<Line>
+									<Point reference="20" />
+									<Point id="21">-1,-0.3249196962329062</Point>
+								</Line>
+								<Line>
+									<Point reference="21" />
+									<Point id="22">-0.6180339887498949,-0.8506508083520398</Point>
+								</Line>
+								<Line>
+									<Point reference="22" />
+									<Point id="23">-1.931504771006626e-16,-1.051462224238267</Point>
+								</Line>
+								<Line>
+									<Point reference="23" />
+									<Point id="24">0.6180339887498946,-0.8506508083520401</Point>
+								</Line>
+								<Line>
+									<Point reference="24" />
+									<Point id="25">0.9999999999999999,-0.3249196962329066</Point>
+								</Line>
+								<Line>
+									<Point reference="25" />
+									<Point reference="16" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<ExtendedRosette id="26" extendPeripherals="f" extendFreeVertices="t" connectBoundaryVertices="f">
+							<n>10</n>
+							<q>0</q>
+							<s>3</s>
+							<k>0</k>
+							<boundarySides>4</boundarySides>
+							<boundaryScale>1.81</boundaryScale>
+							<figureScale>1.9</figureScale>
+							<r>-17.5</r>
+						</ExtendedRosette>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff1496d2</color>
+		</style.Colored>
+	</style.Plain>
+</vector>

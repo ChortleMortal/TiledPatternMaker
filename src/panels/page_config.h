@@ -52,25 +52,12 @@ private slots:
 
     void    slot_mode(int id);
 
-    void    slot_showGridChanged(bool checked);
-    void    slot_gridTypeSelected(int);
-    void    slot_gridUnitsChanged(int idx);
-    void    slot_gridScreenSpacingChanged(int value);
-    void    slot_gridModelSpacingChanged(qreal value);
-    void    slot_gridScreenWidthChanged(int value);
-    void    slot_gridModelWidthChanged(int value);
-    void    slot_gridScreenCenteredChanged(int state);
-    void    slot_gridModelCenteredChanged(int state);
-    void    slot_gridAngleChanged(qreal angle);
-
     void    slot_showCenterChanged(int state);
 
 protected:
     void    updatePaths();
 
     QGroupBox   * createViewControl();
-    QVBoxLayout * createGridSection();
-    QHBoxLayout * createGridTypeLayout();
 
 private:
     QPushButton * rootDesignsBtn;
@@ -83,10 +70,6 @@ private:
 
     QCheckBox   * defaultDesigns;
     QCheckBox   * defaultImages;
-
-    QGroupBox   * gridBox;
-    QButtonGroup  gridUnitGroup;
-    QButtonGroup  gridTypeGroup;
 };
 
 #endif

@@ -24,6 +24,8 @@
 
 #include "makers/map_editor/map_selection.h"
 #include "geometry/map.h"
+#include "geometry/edge.h"
+#include "geometry/vertex.h"
 #include "base/utilities.h"
 
 static bool debugInfoSelection = false;

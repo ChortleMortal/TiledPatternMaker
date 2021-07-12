@@ -25,11 +25,12 @@
 #ifndef STYLE_COLOR_FILL_GROUP_H
 #define STYLE_COLOR_FILL_GROUP_H
 
-#include <QtWidgets>
-#include "base/shared.h"
-#include "tile/feature.h"
-#include "makers/decoration_maker/style_editors.h"
+#include <QObject>
+#include "base/colorset.h"
 
+class AQTableWidget;
+
+typedef std::shared_ptr<class Filled>       FilledPtr;
 
 class StyleColorFillGroup : public QObject
 {

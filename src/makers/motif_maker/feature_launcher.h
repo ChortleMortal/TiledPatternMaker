@@ -29,8 +29,11 @@
 #include <QVector>
 #include <QtWidgets>
 #include <QWidget>
-#include "tile/tiling.h"
-#include "makers/motif_maker/feature_button.h"
+
+typedef std::shared_ptr<class FeatureButton>       FeatureBtnPtr;
+typedef std::weak_ptr<class FeatureButton>         WeakFeatureBtnPtr;
+typedef std::shared_ptr<class Prototype>        PrototypePtr;
+typedef std::shared_ptr<class DesignElement>    DesignElementPtr;
 
 ////////////////////////////////////////////////////////////////////////////
 //

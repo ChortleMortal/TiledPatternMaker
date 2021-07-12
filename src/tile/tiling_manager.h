@@ -25,8 +25,12 @@
 #ifndef TILINGMANAGER_H
 #define TILINGMANAGER_H
 
-#include "base/shared.h"
-#include "base/configuration.h"
+#include <memory>
+#include <QString>
+#include "enums/estatemachineevent.h"
+
+typedef std::shared_ptr<class Tiling>           TilingPtr;
+typedef std::shared_ptr<class TilingMaker>      TilingMakerPtr;
 
 class TilingManager
 {

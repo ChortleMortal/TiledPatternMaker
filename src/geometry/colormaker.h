@@ -1,8 +1,10 @@
 #ifndef COLORMAKER_H
 #define COLORMAKER_H
 
-#include "geometry/dcel.h"
-#include "base/shared.h"
+#include "base/colorset.h"
+#include "geometry/faces.h"
+
+typedef std::shared_ptr<class DCEL>            DCELPtr;
 
 class ColorMaker
 {

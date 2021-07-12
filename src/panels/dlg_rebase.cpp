@@ -23,6 +23,7 @@
  */
 
 #include "panels/dlg_rebase.h"
+#include "panels/layout_sliderset.h"
 
 DlgRebase::DlgRebase(QWidget * parent) : QDialog(parent)
 {

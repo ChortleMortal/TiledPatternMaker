@@ -33,18 +33,24 @@
 // interaction with features.
 
 #include "viewers/tiling_maker_view.h"
-#include "viewers/view.h"
+#include "base/geo_graphics.h"
 #include "geometry/transform.h"
 #include "geometry/point.h"
 #include "makers/tiling_maker/tiling_maker.h"
+#include "makers/tiling_maker/tiling_mouseactions.h"
+#include "makers/tiling_maker/feature_selection.h"
+#include "tile/placed_feature.h"
+#include "geometry/edge.h"
+#include "geometry/vertex.h"
+#include "tile/feature.h"
+#include "viewers/grid.h"
 
-TilingMakerView::TilingMakerView(TilingMaker * maker) : Layer("TilingMakerView",LTYPE_TILING_MAKER)
+TilingMakerView::TilingMakerView(TilingMaker * maker) : Layer("TilingMakerView")
 {
     tilingMaker         = maker;
     config              = Configuration::getInstance();
 
     _hideTiling         = false;
-    _snapToGrid         = false;
 }
 
 TilingMakerView::~TilingMakerView()
@@ -305,7 +311,7 @@ TilingSelectorPtr TilingMakerView::findFeature(QPointF spt, TilingSelectorPtr ig
         QPolygonF pgon = placedFeature->getPlacedPolygon();
         if (pgon.containsPoint(wpt,Qt::OddEvenFill))
         {
-            return make_shared<InteriorTilingSelector>(placedFeature);
+            return std::make_shared<InteriorTilingSelector>(placedFeature);
         }
     }
 
@@ -337,7 +343,7 @@ TilingSelectorPtr TilingMakerView::findVertex(QPointF spt,TilingSelectorPtr igno
             QPointF c = worldToScreen(b);
             if (Point::dist2(spt,c) < 49.0 )
             {
-                return make_shared<VertexTilingSelector>(pf,a);
+                return std::make_shared<VertexTilingSelector>(pf,a);
             }
         }
     }
@@ -385,7 +391,7 @@ TilingSelectorPtr TilingMakerView::findMidPoint(QPointF spt, TilingSelectorPtr i
                     qDebug() << "Screen dist too small = " << screenDist;
                     return sel;
                 }
-                return make_shared<MidPointTilingSelector>(pf, edge, mid);
+                return std::make_shared<MidPointTilingSelector>(pf, edge, mid);
             }
         }
     }
@@ -411,7 +417,7 @@ TilingSelectorPtr TilingMakerView::findArcPoint(QPointF spt)
                 QPointF aad  = worldToScreen(aa);
                 if (Point::dist2(spt,aad) < 49.0)
                 {
-                    return make_shared<ArcPointTilingSelector>(pf, ep, a);
+                    return std::make_shared<ArcPointTilingSelector>(pf, ep, a);
                 }
             }
         }
@@ -447,7 +453,7 @@ TilingSelectorPtr TilingMakerView::findEdge(QPointF spt, TilingSelectorPtr ignor
 
             if (Point::distToLine(spt, LineS) < 7.0)
             {
-                return make_shared<EdgeTilingSelector>(pf,edge);
+                return std::make_shared<EdgeTilingSelector>(pf,edge);
             }
         }
     }
@@ -526,7 +532,7 @@ TilingSelectorPtr TilingMakerView::findCenter(PlacedFeaturePtr pf, QPointF spt)
     {
         FeaturePtr feature = pf->getFeature();
         QPointF mpt = feature->getCenter();
-        return make_shared<CenterTilingSelector>(pf, mpt);
+        return std::make_shared<CenterTilingSelector>(pf, mpt);
     }
 
     TilingSelectorPtr sel;
@@ -593,31 +599,10 @@ TilingSelectorPtr TilingMakerView::findNearGridPoint(QPointF spt)
 {
     TilingSelectorPtr tsp;
     QPointF p;
-    if (nearGridPoint(spt,p))
+
+    if (Grid::getSharedInstance()->nearGridPoint(spt,p))
     {
-        tsp = make_shared<ScreenTilingSelector>(p);  // not really a vertex, but good enough
+        tsp = std::make_shared<ScreenTilingSelector>(p);  // not really a vertex, but good enough
     }
     return tsp;
-}
-
-bool  TilingMakerView::nearGridPoint(QPointF spt, QPointF & foundGridPoint)
-{
-    if (_snapToGrid)
-    {
-        qreal step  = config->gridModelSpacing;
-
-        for (qreal x = (-20.0 * step); x < (20 * step); x += step)
-        {
-            for (qreal y = (-20.0 * step); y < (20 * step); y += step)
-            {
-                if (Point::isNear(spt,worldToScreen(QPointF(x,y))))
-                {
-                    foundGridPoint = QPointF(x,y);
-                    qDebug() << "foundGridPoint"  << foundGridPoint;
-                    return true;
-                }
-            }
-        }
-    }
-    return false;
 }

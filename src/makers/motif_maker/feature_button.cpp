@@ -23,11 +23,11 @@
  */
 
 #include "makers/motif_maker/feature_button.h"
-#include "base/utilities.h"
+#include "tile/feature.h"
 #include "geometry/transform.h"
 #include "base/geo_graphics.h"
 #include "viewers/viewerbase.h"
-#include "panels/panel_page.h"
+#include "tapp/design_element.h"
 
 ////////////////////////////////////////////////////////////////////////////
 //

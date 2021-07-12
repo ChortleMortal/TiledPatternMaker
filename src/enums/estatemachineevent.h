@@ -1,0 +1,22 @@
+#ifndef ESTATEMACHINEEVENT_H
+#define ESTATEMACHINEEVENT_H
+
+#include <QString>
+
+extern const QString sSM_Events[];
+
+enum eSM_Event
+{
+    SM_LOAD_EMPTY,
+    SM_LOAD_FROM_MOSAIC,
+    SM_LOAD_SINGLE,
+    SM_RELOAD_SINGLE,
+    SM_LOAD_MULTI,
+    SM_RELOAD_MULTI,
+    SM_FEATURE_CHANGED,
+    SM_TILING_CHANGED,
+    SM_FIGURE_CHANGED,
+    SM_RENDER
+};
+
+#endif // ESTATEMACHINEEVENT_H

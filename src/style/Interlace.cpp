@@ -27,6 +27,11 @@
 #include "geometry/point.h"
 #include "style/outline.h"
 #include <QPainter>
+#include "base/geo_graphics.h"
+#include "geometry/vertex.h"
+#include "geometry/neighbours.h"
+
+using std::make_shared;
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -56,7 +61,7 @@ Interlace::Interlace(PrototypePtr proto) : Thick(proto)
 
 Interlace::Interlace(StylePtr other) : Thick(other)
 {
-    shared_ptr<Interlace> intl = std::dynamic_pointer_cast<Interlace>(other);
+    std::shared_ptr<Interlace> intl = std::dynamic_pointer_cast<Interlace>(other);
     if (intl)
     {
         gap     = intl->gap;

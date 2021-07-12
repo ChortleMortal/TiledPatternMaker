@@ -24,10 +24,12 @@
 
 #include "base/utilities.h"
 #include "base/misc.h"
-#include "geometry/loose.h"
-#include "geometry/point.h"
 #include "geometry/edgepoly.h"
+#include "geometry/edge.h"
+#include "geometry/loose.h"
 #include <QPainter>
+
+typedef std::shared_ptr<MarkX>           MarkXPtr;
 
 QString Utils::addr(void * address)
 {
@@ -56,7 +58,7 @@ void Utils::identify(Layer * layer, QPolygonF * poly)
         QPointF p   = poly->at(i);
         QString txt = QString("%1: %2 %3").arg(i).arg(p.x()).arg(p.y());
         qDebug() << txt;
-        MarkXPtr m   = make_shared<MarkX>(p, QPen(QColor(Qt::green),3), txt);
+        MarkXPtr m   = std::make_shared<MarkX>(p, QPen(QColor(Qt::green),3), txt);
         layer->addSubLayer(m);
     }
 }

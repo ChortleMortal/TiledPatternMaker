@@ -25,18 +25,23 @@
 #ifndef STYLED_EDITORS_H
 #define STYLED_EDITORS_H
 
-#include "base/configuration.h"
-#include "panels/panel.h"
-#include "panels/layout_sliderset.h"
-#include "panels/panel_misc.h"
-#include "style/colored.h"
-#include "style/plain.h"
-#include "style/emboss.h"
-#include "style/filled.h"
-#include "style/interlace.h"
-#include "style/sketch.h"
-#include "style/thick.h"
-#include "style/tile_colors.h"
+#include <QtWidgets>
+
+class DoubleSliderSet;
+class SliderSet;
+class Emboss;
+class TileColors;
+class EdgePoly;
+class Interlace;
+class Colored;
+class Thick;
+class AQTableWidget;
+class AQWidget;
+class View;
+
+typedef std::shared_ptr<class Filled>       FilledPtr;
+typedef std::shared_ptr<class Feature>          FeaturePtr;
+typedef std::shared_ptr<class Tiling>           TilingPtr;
 
 class StyleEditor : public QObject
 {
@@ -215,18 +220,18 @@ protected:
     void    buildTable();
 
 private:
-    Configuration   * config;
-    ControlPanel    * panel;
-    TilingPtr         tiling;
-    TileColors      * colored;
-    AQTableWidget   * table;
+    class Configuration     * config;
+    class ControlPanel      * panel;
+    TilingPtr                 tiling;
+    TileColors              * colored;
+    AQTableWidget           * table;
 
-    SliderSet       * width_slider;
-    QCheckBox       * outline_checkbox;
-    AQWidget        * colorwidget;
-    QPushButton     * color_button;
-    DoubleSliderSet * transparency;
-    QTableWidgetItem * colorItem;
+    SliderSet               * width_slider;
+    QCheckBox               * outline_checkbox;
+    AQWidget                * colorwidget;
+    QPushButton             * color_button;
+    DoubleSliderSet         * transparency;
+    QTableWidgetItem        * colorItem;
 
     QVector<FeaturePtr> qlfp;
 

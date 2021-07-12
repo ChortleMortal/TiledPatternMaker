@@ -25,18 +25,23 @@
 #ifndef VIEW_CONTROL_H
 #define VIEW_CONTROL_H
 
-#include "base/shared.h"
-#include "base/filldata.h"
-#include "base/model_settings.h"
-#include "base/configuration.h"
+#include "settings/filldata.h"
 #include "geometry/xform.h"
+#include "enums/eviewtype.h"
 
-enum eModelAlignment
-{
-    M_ALIGN_NONE,
-    M_ALIGN_MOSAIC,
-    M_ALIGN_TILING,
-};
+typedef std::weak_ptr<class Feature>            WeakFeaturePtr;
+typedef std::shared_ptr<class BackgroundImage>  BkgdImgPtr;
+typedef std::shared_ptr<class Border>           BorderPtr;
+typedef std::shared_ptr<class Feature>          FeaturePtr;
+typedef std::shared_ptr<class MapEditor>        MapEditorPtr;
+typedef std::shared_ptr<class ModelSettings>    ModelSettingsPtr;
+typedef std::shared_ptr<class Tiling>           TilingPtr;
+typedef std::shared_ptr<class TilingView>       TilingViewPtr;
+typedef std::shared_ptr<class FigureView>       FigureViewPtr;
+typedef std::shared_ptr<class PrototypeView>    PrototypeViewPtr;
+typedef std::shared_ptr<class TilingMaker>      TilingMakerPtr;
+typedef std::shared_ptr<class Grid>             GridPtr;
+typedef std::shared_ptr<class ImageLayer>       ImgLayerPtr;
 
 class ViewControl : public QObject
 {
@@ -51,6 +56,10 @@ public:
     void    viewEnable(eViewType view, bool enable);
     void    disableAllViews();
 
+    void    addImage(ImgLayerPtr image) { images.push_back(image); }
+    void    removeAllImages()           { images.clear(); }
+    void    removeImage(ImageLayer * img);
+
     // selections
     void        selectFeature(WeakFeaturePtr fp);
     FeaturePtr  getSelectedFeature();
@@ -58,7 +67,6 @@ public:
     void        setFillData(FillData & fd) { fillData = fd; }
     FillData &  getFillData() { return fillData; }
 
-    void        setModelAlignment(eModelAlignment mode) { modelAlignment = mode; }
     const Xform & getCurrentXform();
 
 protected:
@@ -74,7 +82,6 @@ protected:
     void     viewMapEditor();
 
     void     setTitle(TilingPtr tp);
-    void     setBackgroundImg(BkgdImgPtr bkgd);
     void     setBorder(BorderPtr bp);
 
     ModelSettingsPtr getMosaicOrTilingSettings();
@@ -101,14 +108,20 @@ private:
     class   DesignMaker     * designMaker;
     class   DecorationMaker * decorationMaker;
     class   MotifMaker      * motifMaker;
+
     TilingMakerPtr            tilingMaker;
     MapEditorPtr              mapEditor;
+    TilingViewPtr             tilingView;
+    PrototypeViewPtr          pfview;
+    FigureViewPtr             figView;
+    GridPtr                   gridView;
+    BkgdImgPtr                imageView;
 
-    bool            enabledViews[VIEW_MAX+1];
-    WeakFeaturePtr  selectedFeature;
-    FillData        fillData;
-    eModelAlignment modelAlignment;
-    const Xform     unityXform;
+    bool                    enabledViews[VIEW_MAX+1];
+    QVector<ImgLayerPtr>    images;
+    WeakFeaturePtr          selectedFeature;
+    FillData                fillData;
+    const Xform             unityXform;
 };
 
 #endif

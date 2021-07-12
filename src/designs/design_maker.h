@@ -2,7 +2,8 @@
 #define DESIGNCONTROL_H
 
 #include <QtCore>
-#include <base/shared.h>
+
+typedef std::shared_ptr<class Design> DesignPtr;
 
 class DesignMaker : public QObject
 {

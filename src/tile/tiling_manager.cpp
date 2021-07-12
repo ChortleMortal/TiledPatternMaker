@@ -34,6 +34,7 @@
 #include "base/fileservices.h"
 #include "viewers/view.h"
 #include "viewers/viewcontrol.h"
+#include "settings/model_settings.h"
 
 TilingManager::TilingManager()
 {
@@ -64,28 +65,27 @@ TilingPtr TilingManager::loadTiling(QString name, eSM_Event mode)
 
     qDebug().noquote() << "Loaded tiling:" << filename << loadedTiling->getName();
     loadedTiling->setState(Tiling::LOADED);
-    ViewControl * viewControl = ViewControl::getInstance();
-    viewControl->setModelAlignment(M_ALIGN_TILING);
+    view->frameSettings.setModelAlignment(M_ALIGN_TILING);
 
     // tiling is loaded, now use it
-    QSize sz = loadedTiling->getSize();
+    QSize size  = loadedTiling->getSize();
+    QSize zsize = loadedTiling->getZoomSize();
     switch(mode)
     {
     case SM_LOAD_SINGLE:
     case SM_RELOAD_SINGLE:
     case SM_LOAD_MULTI:
     case SM_RELOAD_MULTI:
-        view->setActiveFrameSize(VIEW_TILING_MAKER,sz);
-        view->setAllCommonActiveSizes(sz);
-        view->setDefinedFrameSize(VIEW_TILING_MAKER,sz);
-        view->setAllCommonDefinedSizes(sz);
+        view->frameSettings.initialise(VIEW_TILING_MAKER,size,zsize);
+        view->frameSettings.initialiseCommon(size,zsize);
+
         setVCFillData(loadedTiling);
         tilingMaker->sm_take(loadedTiling, mode);
         break;
 
     case SM_LOAD_FROM_MOSAIC:
-        view->setActiveFrameSize(VIEW_TILING_MAKER,sz);
-        view->setDefinedFrameSize(VIEW_TILING_MAKER,sz);
+        view->frameSettings.initialise(VIEW_TILING_MAKER,size,zsize);
+
         setVCFillData(loadedTiling);
         break;
 
@@ -115,13 +115,13 @@ bool TilingManager::saveTiling(QString name, TilingPtr tiling)
     }
 
     // match size to current view
-    // FIXME :  this takes the size of the current view which may not be the same as the tiling maker or the tiling view
-    QSize size  = view->size();
+    QSize size  = view->frameSettings.getCropSize(config->getViewerType());
     tiling->setSize(size);
+    QSize zsize = view->frameSettings.getZoomSize(config->getViewerType());
+    tiling->setZoomSize(zsize);
 
     if (tilingMaker->getSelected() == tiling)
     {
-        // FIXME : this is the transform of the TilingMaker view which may no be the same as  what is currently being viewed
         Xform xf = tilingMaker->getCanvasXform();
         tiling->setCanvasXform(xf);
     }

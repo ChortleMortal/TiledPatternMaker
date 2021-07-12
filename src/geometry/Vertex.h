@@ -34,9 +34,10 @@
 #define VERTEX_H
 
 #include <QtCore>
-#include "base/shared.h"
-#include "geometry/neighbours.h"
 
+typedef std::weak_ptr<class Vertex>         WeakVertexPtr;
+typedef std::shared_ptr<class Edge>         EdgePtr;
+typedef std::shared_ptr<class Vertex>       VertexPtr;
 
 class Vertex
 {
@@ -53,7 +54,7 @@ public:
     QPointF     pt;
     bool        visited;    // used by interlace
     VertexPtr   copy;       // Used when cloning the map.
-    QVector<weak_ptr<Vertex>> adjacent_vertices;
+    QVector<WeakVertexPtr> adjacent_vertices;
 
 };
 

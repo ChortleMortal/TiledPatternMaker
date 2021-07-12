@@ -41,13 +41,11 @@
 // about the faces, just the coordinates of their corners.
 
 #include "geometry/faces.h"
-#include "base/configuration.h"
+#include "geometry/edge.h"
 #include "geometry/dcel.h"
 #include "geometry/point.h"
 #include "geometry/loose.h"
 #include "geometry/intersect.h"
-#include "base/utilities.h"
-#include <QPolygonF>
 
 #undef  DELETE_LARGEST
 
@@ -180,7 +178,7 @@ FaceSet Face::decompose()
     bool rv = false;
     do
     {
-        FacePtr face = make_shared<Face>();
+        FacePtr face = std::make_shared<Face>();
         rv = decomposeOnce(face);
         if (rv)
         {

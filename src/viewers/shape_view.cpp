@@ -24,10 +24,10 @@
 
 #include <QPainter>
 #include "viewers/shape_view.h"
-#include "base/configuration.h"
+#include "settings/configuration.h"
 #include "designs/shapes.h"
 
-ShapeViewer::ShapeViewer() : Layer("ShapeViewer",LTYPE_VIEW)
+ShapeViewer::ShapeViewer() : Layer("ShapeViewer")
 {
     config = Configuration::getInstance();
 
@@ -170,3 +170,27 @@ void ShapeViewer::paint(QPainter *painter)
     painter->restore();
 }
 
+void ShapeViewer::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
+{ Q_UNUSED(spt); Q_UNUSED(btn);}
+void ShapeViewer::slot_mouseDragged(QPointF spt)
+{ Q_UNUSED(spt)}
+void ShapeViewer::slot_mouseTranslate(QPointF pt)
+{ Q_UNUSED(pt)}
+void ShapeViewer::slot_mouseMoved(QPointF spt)
+{ Q_UNUSED(spt)}
+void ShapeViewer::slot_mouseReleased(QPointF spt)
+{ Q_UNUSED(spt)}
+void ShapeViewer::slot_mouseDoublePressed(QPointF spt)
+{ Q_UNUSED(spt)}
+void ShapeViewer::slot_wheel_scale(qreal delta)
+{ Q_UNUSED(delta);}
+void ShapeViewer::slot_wheel_rotate(qreal delta)
+{ Q_UNUSED(delta);}
+void ShapeViewer::slot_scale(int amount)
+{ Q_UNUSED(amount);}
+void ShapeViewer::slot_rotate(int amount)
+{ Q_UNUSED(amount);}
+void ShapeViewer:: slot_moveX(int amount)
+{ Q_UNUSED(amount);}
+void ShapeViewer::slot_moveY(int amount)
+{ Q_UNUSED(amount);}

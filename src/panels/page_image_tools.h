@@ -26,7 +26,7 @@
 #define PAGE_IMAGETOOLS_H
 
 #include "panels/panel_page.h"
-#include "base/configuration.h"
+#include "settings/configuration.h"
 
 class page_image_tools : public panel_page
 {
@@ -41,7 +41,7 @@ public:
 
 signals:
     void    sig_compareImageFiles(QString,QString,bool);
-    void    sig_view_image(QString file,QString file2);
+    void    sig_view_image(QString file,QString file2,bool transparent,bool popup);
     void    sig_cyclerStart(eCycleMode);
     void    sig_loadMosaic(QString);
 
@@ -60,16 +60,21 @@ private slots:
     void    slot_previous();
     void    slot_next();
     void    slot_load();
+    void    slot_colorEdit();
 
     void    slot_ibox0_changed(int index);
     void    slot_ibox1_changed(int index);
-    void    slot_viewImage0();
-    void    slot_viewImage1();
+    void    slot_viewImage();
+    void    slot_viewImageLeft();
+    void    slot_viewImageRight();
     void    slot_cycle();
     void    slot_opendir();
     void    slot_compareImages();
     void    slot_compareCycle();
     void    slot_transparentClicked(bool checked);
+    void    slot_view_transparentClicked(bool checked);
+    void    slot_view_popupClicked(bool checked);
+    void    slot_popupClicked(bool checked);
     void    slot_differencesClicked(bool checked);
     void    slot_use_worklist_compare(bool checked);
     void    slot_use_worklist_generate(bool checked);
@@ -79,16 +84,20 @@ private slots:
     void    slot_dir0Changed();
     void    slot_dir1Changed();
 
+    void    slot_selectImage();
+
     void    loadWorkListFromFile();
     void    saveWorkListToFile();
     void    editWorkList();
 
 protected:
     QGroupBox   * createCycleSection();
-    QGroupBox   * createCompareSection();
     QGroupBox   * createWorklistSection();
+    QGroupBox   * createCompareSection();
+    QGroupBox   * createViewSection();
+    QGroupBox   * createTransparencySection();
 
-    void viewImage(QString file);
+    void viewImage(QString file, bool transparent, bool popup);
 
     void loadCombo(QComboBox * box, QString dir);
     void setCombo(QComboBox * box,QString name);
@@ -101,18 +110,20 @@ protected:
 
 
 private:
-    QLineEdit   * dir0;
-    QLineEdit   * dir1;
+    QLineEdit   * leftDir;
+    QLineEdit   * rightDir;
     QLineEdit   * directory;
+    QLineEdit   * viewFile;
 
-    QComboBox   * ibox0;
-    QComboBox   * ibox1;
+    QComboBox   * leftFile;
+    QComboBox   * rightFile;
     QLineEdit   * imageCompareResult;
 
     QCheckBox   * use_wlistForCompareChk;
     QCheckBox   * use_wlistForGenerateChk;
     QCheckBox   * gen_wlistChk;
     QLabel      * wlistStatus;
+    QLabel      * colorLabel;
 };
 
 #endif

@@ -33,13 +33,21 @@
 #include "makers/decoration_maker/decoration_maker.h"
 #include "makers/motif_maker/motif_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
+#include "makers/map_editor/map_mouseactions.h"
 #include "panels/panel.h"
 #include "panels/page_map_editor.h"
 #include "tapp/prototype.h"
 #include "tile/backgroundimage.h"
 #include "tile/tiling.h"
+#include "base/shared.h"
+#include "panels/layout_sliderset.h"
+#include "panels/layout_qrectf.h"
+#include "viewers/viewcontrol.h"
+#include "viewers/view.h"
+#include "geometry/crop.h"
 
 using std::string;
+using std::make_shared;
 
 page_borders::page_borders(ControlPanel * apanel)  : panel_page(apanel,"Borders")
 {

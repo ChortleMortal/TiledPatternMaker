@@ -30,7 +30,9 @@
 // Probably not used in the applet at all.
 
 #include "makers/tiling_maker/feature_selection.h"
-#include "viewers/tiling_maker_view.h"
+#include "tile/placed_feature.h"
+#include "tile/feature.h"
+#include "geometry/edge.h"
 
 InteriorTilingSelector::InteriorTilingSelector(PlacedFeaturePtr pfp) : TilingSelector(pfp)
 {
@@ -96,4 +98,34 @@ TilingSelector::TilingSelector(PlacedFeaturePtr pfp, EdgePtr edge, QPointF pt)
     this->pfp  = pfp;
     this->edge = edge;
     this->pt   = pt;
+}
+
+QLineF TilingSelector::getModelLine()
+{
+    return edge->getLine();
+}
+
+QLineF TilingSelector::getPlacedLine()
+{
+    return pfp->getTransform().map(edge->getLine());
+}
+
+EdgePtr TilingSelector::getPlacedEdge()
+{
+    return std::make_shared<Edge>(edge,pfp->getTransform());
+}
+
+QPointF TilingSelector::getPlacedPoint()
+{
+    return pfp->getTransform().map(pt);
+}
+
+QPolygonF TilingSelector::getPlacedPolygon()
+{
+    return pfp->getPlacedPolygon();
+}
+
+QPolygonF TilingSelector::getModelPolygon()
+{
+    return pfp->getFeaturePolygon();
 }

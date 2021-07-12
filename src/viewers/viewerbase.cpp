@@ -3,6 +3,9 @@
 #include "geometry/edgepoly.h"
 #include "tapp/figure.h"
 #include "tile/feature.h"
+#include "geometry/map.h"
+#include "geometry/edge.h"
+#include "geometry/vertex.h"
 
 void  ViewerBase::drawFeature(GeoGraphics * gg, FeaturePtr feature, QBrush brush, QPen pen)
 {

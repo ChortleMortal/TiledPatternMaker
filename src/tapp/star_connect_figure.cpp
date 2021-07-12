@@ -35,6 +35,7 @@
 
 #include "tapp/star_connect_figure.h"
 #include "geometry/loose.h"
+#include "geometry/map.h"
 
 StarConnectFigure::StarConnectFigure(int nsides, qreal d, int s, qreal r)
     : Star(nsides,d,s,r), FigureConnector(this)

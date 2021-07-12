@@ -1,46 +1,21 @@
 #ifndef TILING_MOUSEACTIONS_H
 #define TILING_MOUSEACTIONS_H
 
-#include <QtWidgets>
-#include "base/shared.h"
-#include "makers/tiling_maker/feature_selection.h"
-#include "base/geo_graphics.h"
+#include <QString>
+#include <QPointF>
+#include <QColor>
+#include <QPen>
+#include <QTransform>
 
-enum eTMMouseMode
-{
-    TM_NO_MOUSE_MODE,
-    TM_COPY_MODE,
-    TM_DELETE_MODE,
-    TM_TRANSLATION_VECTOR_MODE,
-    TM_DRAW_POLY_MODE,
-    TM_INCLUSION_MODE,
-    TM_POSITION_MODE,
-    TM_MEASURE_MODE,
-    TM_BKGD_SKEW_MODE,
-    TM_EDIT_FEATURE_MODE,
-    TM_EDGE_CURVE_MODE,
-    TM_MIRROR_X_MODE,
-    TM_MIRROR_Y_MODE,
-    TM_CONSTRUCTION_LINES
-};
+class GeoGraphics;
 
-static QString sTMMouseMode[] =
-{
-    E2STR(TM_NO_MOUSE_MODE),
-    E2STR(TM_COPY_MODE),
-    E2STR(TM_DELETE_MODE),
-    E2STR(TM_TRANSLATION_VECTOR_MODE),
-    E2STR(TM_DRAW_POLY_MODE),
-    E2STR(TM_INCLUSION_MODE),
-    E2STR(TM_POSITION_MODE),
-    E2STR(TM_MEASURE_MODE),
-    E2STR(TM_BKGD_SKEW_MODE),
-    E2STR(TM_EDIT_FEATURE_MODE),
-    E2STR(TM_EDGE_CURVE_MODE),
-    E2STR(TM_MIRROR_X_MODE),
-    E2STR(TM_MIRROR_Y_MODE),
-    E2STR(TM_CONSTRUCTION_LINES)
-};
+typedef std::shared_ptr<class TilingMaker>      TilingMakerPtr;
+typedef std::shared_ptr<class TilingSelector>   TilingSelectorPtr;
+typedef std::shared_ptr<class PlacedFeature>    PlacedFeaturePtr;
+typedef std::shared_ptr<class Edge>             EdgePtr;
+typedef std::shared_ptr<class Vertex>           VertexPtr;
+
+
 
 enum eAddToTranslate
 {
@@ -100,7 +75,7 @@ protected:
 private:
 };
 
-typedef shared_ptr<TilingMouseAction> MouseActionPtr;
+typedef std::shared_ptr<TilingMouseAction> MouseActionPtr;
 
 class MovePolygon : public TilingMouseAction
 {
@@ -194,6 +169,8 @@ private:
 
 class CreatePolygon : public TilingMouseAction
 {
+    typedef std::shared_ptr<class Grid> GridPtr;
+
 public:
     CreatePolygon(TilingMaker * tilingMaker, QPointF spt );
     void updateDragging(QPointF spt );
@@ -203,6 +180,8 @@ public:
 private:
     void addVertex(QPointF wpt);
     QPointF underneath;
+
+    GridPtr grid;
 };
 
 class Measure : public TilingMouseAction
@@ -233,21 +212,7 @@ private:
     QPointF spt;
 };
 
-class Perspective : public TilingMouseAction
-{
-public:
-    Perspective(TilingMaker * tilingMaker, QPointF spt);
-    void updateDragging(QPointF spt );
-    void draw( GeoGraphics * g2d );
-    void endDragging(QPointF spt );
-    void addPoint(QPointF spt);
 
-private:
-    QPointF spt;
-    QPolygonF poly;
-};
-
-typedef shared_ptr<Perspective> PerspectivePtr;
 
 class EditFeature : public TilingMouseAction
 {

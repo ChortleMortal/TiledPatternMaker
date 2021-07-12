@@ -23,8 +23,11 @@
  */
 
 #include "tapp/extended_rosette.h"
-#include "tapp/radial_figure.h"
-#include "tile/feature.h"
+#include "geometry/map.h"
+#include "geometry/edge.h"
+#include "geometry/vertex.h"
+#include "geometry/neighbours.h"
+#include "geometry/point.h"
 #include "base/utilities.h"
 
 ExtendedRosette::ExtendedRosette(const Figure & fig,
@@ -238,4 +241,9 @@ void ExtendedRosette::connectOuterVertices(MapPtr map)
     }
 
     map->verify();
+}
+
+qreal ExtendedRosette::len(VertexPtr v1, VertexPtr v2)
+{
+    return QLineF(v1->pt,v2->pt).length();
 }

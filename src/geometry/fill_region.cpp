@@ -43,7 +43,7 @@
 // callback that gets a sequence of calls, one for each translate.
 
 #include "geometry/fill_region.h"
-#include "base/configuration.h"
+#include "settings/configuration.h"
 #include "viewers/viewcontrol.h"
 #include "tapp/prototype.h"
 #include "viewers/tiling_view.h"

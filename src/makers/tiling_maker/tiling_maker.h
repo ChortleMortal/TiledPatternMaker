@@ -35,8 +35,16 @@
 #ifndef TILING_MAKER_H
 #define TILING_MAKER_H
 
+#include <QString>
 #include "viewers/tiling_maker_view.h"
-#include "base/misc.h"
+#include "enums/etilingmakermousemode.h"
+#include "enums/estatemachineevent.h"
+
+typedef std::shared_ptr<class Tiling>           TilingPtr;
+typedef std::shared_ptr<class Prototype>        PrototypePtr;
+typedef std::shared_ptr<class MapEditor>        MapEditorPtr;
+typedef std::shared_ptr<class TilingMaker>      TilingMakerPtr;
+typedef std::shared_ptr<class TilingMouseAction>MouseActionPtr;
 
 enum eTMState
 {
@@ -90,7 +98,7 @@ public:
     void        deleteFeature(PlacedFeaturePtr pf);
     bool        accumHasPoint(QPointF wpt);
 
-    eTMMouseMode getTilingMakerMouseMode();
+    eTilingMakerMouseMode getTilingMakerMouseMode();
     QString    getStatus();
     int        getPolygonSides() { return poly_side_count; }
 
@@ -116,7 +124,7 @@ signals:
 public slots:
     void updatePolygonSides(int number);
     void updatePolygonRot(qreal angle);
-    void setTilingMakerMouseMode(eTMMouseMode mode);
+    void setTilingMakerMouseMode(eTilingMakerMouseMode mode);
     void addRegularPolygon();
     void fillUsingTranslations();
     void removeExcluded();
@@ -126,19 +134,21 @@ public slots:
     void slot_showOverlaps(bool checked);
     void slot_snapTo(bool checked);
 
-    void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
-    void slot_mouseDragged(QPointF spt);
-    void slot_mouseReleased(QPointF spt);
-    void slot_mouseMoved(QPointF spt);
+public slots:
+    virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
+    virtual void slot_mouseDragged(QPointF spt)       override;
+    virtual void slot_mouseTranslate(QPointF pt)      override;
+    virtual void slot_mouseMoved(QPointF spt)         override;
+    virtual void slot_mouseReleased(QPointF spt)      override;
+    virtual void slot_mouseDoublePressed(QPointF spt) override;
 
-    void slot_moveX(int amount) override;
-    void slot_moveY(int amount) override;
-    void slot_rotate(int amount) override;
-    void slot_scale(int amount) override;
+    virtual void slot_wheel_scale(qreal delta)  override;
+    virtual void slot_wheel_rotate(qreal delta) override;
 
-    void slot_mouseTranslate(QPointF spt) override;
-    void slot_wheel_rotate(qreal delta) override;
-    void slot_wheel_scale(qreal delta) override;
+    virtual void slot_scale(int amount)  override;
+    virtual void slot_rotate(int amount) override;
+    virtual void slot_moveX(int amount)  override;
+    virtual void slot_moveY(int amount)  override;
 
 protected slots:
     void slot_deleteFeature();

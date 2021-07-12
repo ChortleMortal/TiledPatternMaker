@@ -6,7 +6,13 @@
 #include "base/utilities.h"
 #include "tapp/figure.h"
 #include "geometry/loose.h"
-#include "base/configuration.h"
+#include "geometry/edge.h"
+#include "geometry/vertex.h"
+#include "geometry/neighbours.h"
+#include "settings/configuration.h"
+#include "tile/feature.h"
+
+using std::make_shared;
 
 const bool debugSelection = false;
 

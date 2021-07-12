@@ -33,6 +33,13 @@
 #include "makers/tiling_maker/tiling_maker.h"
 #include "makers/decoration_maker/decoration_maker.h"
 #include "style/style.h"
+#include "panels/motif_display_widget.h"
+#include "tapp/prototype.h"
+#include "tile/tiling.h"
+#include "tapp/design_element.h"
+#include "tapp/figure.h"
+
+typedef std::weak_ptr<Prototype>       WeakPrototypePtr;
 
 Q_DECLARE_METATYPE(WeakPrototypePtr)
 

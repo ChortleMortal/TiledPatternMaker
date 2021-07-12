@@ -26,11 +26,13 @@
 #define MASTER_FIGURE_EDITOR_H
 
 #include <QtWidgets>
-#include "base/shared.h"
-#include "makers/motif_maker/feature_button.h"
-#include "makers/motif_maker/figure_editors.h"
-#include "makers/motif_maker/explicit_figure_editors.h"
 #include "panels/panel_misc.h"
+#include "enums/efigtype.h"
+
+class FigureEditor;
+class Configuration;
+
+typedef std::shared_ptr<class Figure>           FigurePtr;
 
 class MasterFigureWidget : public AQWidget
 {
@@ -76,7 +78,7 @@ class MasterFigureEditor : public QWidget
     Q_OBJECT
 
 public:
-    MasterFigureEditor(page_motif_maker * menu);
+    MasterFigureEditor(class page_motif_maker * menu);
 
     void  masterResetWithFigure(FigurePtr figure);
 
@@ -95,22 +97,22 @@ private:
     Configuration           * config;
 
     // Explicit figure editors.
-    ExplicitEditor          * explicit_edit;
-    ExplicitInferEditor     * explcit_infer_edit;
-    ExplicitStarEditor      * explict_star_edit;
-    ExplicitRosetteEditor   * explicit_rosette_edit;
-    ExplicitHourglassEditor * explicit_hourglass_edit;
-    ExplicitGirihEditor     * explicit_girih_edit;
-    ExplicitIntersectEditor * explicit_intersect_edit;
-    ExplicitFeatureEditor   * explicit_feature_edit;
+    class ExplicitEditor          * explicit_edit;
+    class ExplicitInferEditor     * explcit_infer_edit;
+    class ExplicitStarEditor      * explict_star_edit;
+    class ExplicitRosetteEditor   * explicit_rosette_edit;
+    class ExplicitHourglassEditor * explicit_hourglass_edit;
+    class ExplicitGirihEditor     * explicit_girih_edit;
+    class ExplicitIntersectEditor * explicit_intersect_edit;
+    class ExplicitFeatureEditor   * explicit_feature_edit;
 
     // Radial figure editors.
-    StarEditor	            * radial_star_edit;
-    RosetteEditor           * radial_rosette_edit;
-    ConnectRosetteEditor    * connect_rosette_edit;
-    ConnectStarEditor       * connect_star_edit;
-    ExtendedStarEditor      * ex_star_edit;
-    ExtendedRosetteEditor   * ex_rosette_edit;
+    class StarEditor	          * radial_star_edit;
+    class RosetteEditor           * radial_rosette_edit;
+    class ConnectRosetteEditor    * connect_rosette_edit;
+    class ConnectStarEditor       * connect_star_edit;
+    class ExtendedStarEditor      * ex_star_edit;
+    class ExtendedRosetteEditor   * ex_rosette_edit;
 
     QHBoxLayout             * comboLayout;
     FigTypeChoiceCombo      * choiceCombo2;

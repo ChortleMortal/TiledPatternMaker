@@ -38,8 +38,13 @@
 #include "tapp/radial_figure.h"
 #include "tile/feature.h"
 #include "geometry/map.h"
-#include "base/configuration.h"
+#include "settings/configuration.h"
 #include "base/utilities.h"
+#include "geometry/map.h"
+#include "geometry/edge.h"
+#include "geometry/vertex.h"
+
+using std::make_shared;
 
 RadialFigure::RadialFigure(const Figure & fig, int n, qreal rotate)
     : Figure(fig)

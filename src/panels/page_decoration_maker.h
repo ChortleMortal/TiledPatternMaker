@@ -26,8 +26,15 @@
 #define PAGE_DECORATION_MAKER_H
 
 #include "panels/panel_page.h"
-#include "makers/decoration_maker/decoration_maker.h"
-#include "panels/layout_sliderset.h"
+//#include "makers/decoration_maker/decoration_maker.h"
+//#include "panels/layout_sliderset.h"
+
+class AQTableWidget;
+class SpinSet;
+
+typedef std::shared_ptr<class StyleEditor>     StyleEditorPtr;
+typedef std::shared_ptr<class Style>           StylePtr;
+typedef std::weak_ptr<class Style>             WeakStylePtr;
 
 class page_decoration_maker : public panel_page
 {

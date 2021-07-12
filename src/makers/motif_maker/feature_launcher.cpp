@@ -22,10 +22,13 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <QtWidgets>
 #include "makers/motif_maker/feature_launcher.h"
 #include "makers/motif_maker/master_figure_editor.h"
+#include "makers/motif_maker/feature_button.h"
 #include "style/style.h"
-#include <QtWidgets>
+#include "tapp/prototype.h"
+#include "tile/tiling.h"
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -79,7 +82,7 @@ void FeatureLauncher::populateFeatureButtons(QVector<DesignElementPtr> & dels)
     int idx = 0;
     for (auto del : dels)
     {
-        FeatureBtnPtr fb = make_shared<FeatureButton>(del,idx);
+        FeatureBtnPtr fb = std::make_shared<FeatureButton>(del,idx);
         buttons.push_back(fb);
         fb->setSize( QSize( 130, 130 ) );
         fb->QFrame::installEventFilter(this);

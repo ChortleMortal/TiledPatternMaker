@@ -1,5 +1,7 @@
 #include "colormaker.h"
 #include "geometry/loose.h"
+#include "geometry/dcel.h"
+#include "geometry/edge.h"
 
 ColorMaker::ColorMaker()
 {
@@ -219,7 +221,7 @@ void ColorMaker::buildFaceGroups()
 
         fp->state      = FACE_DONE;
 
-        FaceSetPtr fsp = make_shared<FaceSet>();
+        FaceSetPtr fsp = std::make_shared<FaceSet>();
         fsp->area      = fp->area;
         fsp->sides     = fp->getNumSides();
         fsp->push_back(fp);

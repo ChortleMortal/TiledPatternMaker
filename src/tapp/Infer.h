@@ -46,9 +46,12 @@
 #define INFER_H
 
 #include <QtCore>
+#include <QTransform>
 
-#include "tile/tiling.h"
-#include "base/tile.h"
+typedef std::shared_ptr<class Prototype>       PrototypePtr;
+typedef std::shared_ptr<class Tiling>          TilingPtr;
+typedef std::shared_ptr<class Feature>         FeaturePtr;
+typedef std::shared_ptr<class Map>             MapPtr;
 
 class Map;
 

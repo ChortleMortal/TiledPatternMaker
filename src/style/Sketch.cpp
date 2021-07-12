@@ -26,6 +26,12 @@
 #include "geometry/transform.h"
 #include <QPainter>
 #include <QtGlobal>
+#include "base/geo_graphics.h"
+#include "geometry/map.h"
+#include "geometry/edge.h"
+#include "geometry/vertex.h"
+
+using std::make_shared;
 
 ////////////////////////////////////////////////////////////////////////////
 //

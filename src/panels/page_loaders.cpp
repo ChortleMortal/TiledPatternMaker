@@ -31,6 +31,9 @@
 #include "designs/design.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "tile/tiling.h"
+#include "base/pugixml.hpp"
+#include "base/shared.h"
+#include "panels/layout_sliderset.h"
 
 using namespace pugi;
 
@@ -280,12 +283,14 @@ void page_loaders::loadXML()
     {
        panel->selectViewer(VIEW_MOSAIC);
     }
+    //view->setMouseMode
     emit sig_refreshView();
 }
 
 void page_loaders::loadTiling()
 {
-    if (panel->getCurrentView() != VIEW_TILING_MAKER)
+
+    if (config->getViewerType() != VIEW_TILING_MAKER)
     {
         // delegate the view
         panel->selectViewer(VIEW_TILING);

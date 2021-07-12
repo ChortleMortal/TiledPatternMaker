@@ -28,8 +28,8 @@
 #include <QLineF>
 #include <QString>
 #include <QVector>
-#include "base/shared.h"
-#include "geometry/circle.h"
+
+typedef std::shared_ptr<class Circle>  CirclePtr;
 
 enum eMapSelection
 {
@@ -50,9 +50,11 @@ static QString sMapSelection[]
     E2STR(MAP_CIRCLE)
 };
 
-class MapSelection;
-typedef shared_ptr<MapSelection> MapSelectionPtr;
+
+typedef std::shared_ptr<class MapSelection> MapSelectionPtr;
 typedef QVector<MapSelectionPtr> SelectionSet;
+typedef std::shared_ptr<class Vertex>           VertexPtr;
+typedef std::shared_ptr<class Edge>             EdgePtr;
 
 class MapSelection
 {

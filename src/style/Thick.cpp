@@ -23,12 +23,10 @@
  */
 
 #include "style/thick.h"
+#include "geometry/map.h"
 #include "style/colored.h"
-#include "style/interlace.h"
-#include "style/outline.h"
-#include "style/plain.h"
-#include "style/emboss.h"
 #include <QPainter>
+#include "base/geo_graphics.h"
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -48,7 +46,7 @@ Thick::Thick(PrototypePtr proto): Colored(proto)
 
 Thick::Thick(StylePtr other ) : Colored(other)
 {
-    shared_ptr<Thick> thick  = std::dynamic_pointer_cast<Thick>(other);
+    std::shared_ptr<Thick> thick  = std::dynamic_pointer_cast<Thick>(other);
     if (thick)
     {
         width        = thick->width;

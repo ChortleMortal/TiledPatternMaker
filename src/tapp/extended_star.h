@@ -27,6 +27,8 @@
 
 #include "tapp/star.h"
 
+typedef std::shared_ptr<class Vertex>           VertexPtr;
+
 class ExtendedStar : public Star
 {
     friend class FigureView;

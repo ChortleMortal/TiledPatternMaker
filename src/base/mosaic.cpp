@@ -24,15 +24,17 @@
 
 #include "base/mosaic.h"
 #include "style/style.h"
-#include <QDebug>
 #include "makers/decoration_maker/decoration_maker.h"
+#include "settings/model_settings.h"
+#include "tapp/prototype.h"
+#include "base/misc.h"
 
 const QString Mosaic::defaultName =  "The Formless";
 
 Mosaic::Mosaic()
 {
     name     = defaultName;
-    settings = make_shared<ModelSettings>();
+    settings = std::make_shared<ModelSettings>();
 }
 
 Mosaic::~Mosaic()

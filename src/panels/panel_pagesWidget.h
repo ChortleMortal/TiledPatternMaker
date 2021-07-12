@@ -27,10 +27,9 @@
 
 #include <QtGui>
 #include <QtWidgets>
-
-#include "panels/panel_page.h"
 #include "panels/panel_misc.h"
 
+class panel_page;
 
 class PanelPagesWidget : public AQWidget
 {

@@ -32,6 +32,18 @@
 #include "makers/decoration_maker/decoration_maker.h"
 #include "viewers/viewcontrol.h"
 #include "style/filled.h"
+#include "geometry/edge.h"
+#include "geometry/vertex.h"
+#include "geometry/neighbours.h"
+#include "tapp/prototype.h"
+#include "tapp/design_element.h"
+#include "geometry/map.h"
+#include "tapp/figure.h"
+#include "tile/tiling.h"
+#include "tile/feature.h"
+#include "tile/placed_feature.h"
+
+typedef std::shared_ptr<class Filled>       FilledPtr;
 
 page_system_info::page_system_info(ControlPanel * cpanel)  : panel_page(cpanel,"System Info")
 {
@@ -268,9 +280,33 @@ void page_system_info::populateStyles(QTreeWidgetItem * parent, MosaicPtr mosaic
             item->setText(2,astring);  // overwrites
         }
 
+        Layer * layer = dynamic_cast<Layer*>(style.get());
+        Q_ASSERT(layer);
+        populateLayer(item,layer);
         populateMap(item,style->getExistingMap());
         populatePrototype(item,style->getPrototype(),"Prototype");
     }
+}
+
+void page_system_info::populateLayer(QTreeWidgetItem * parent, Layer * layer)
+{
+    QTransform tr = layer->getFrameTransform();
+    QTreeWidgetItem * item = new QTreeWidgetItem;
+    item->setText(0,"Frame Transform");
+    item->setText(2,Transform::toInfoString(tr));
+    parent->addChild(item);
+
+    tr = layer->getCanvasTransform();
+    item = new QTreeWidgetItem;
+    item->setText(0,"Canvas Transform");
+    item->setText(2,Transform::toInfoString(tr));
+    parent->addChild(item);
+
+    tr = layer->getLayerTransform();
+    item = new QTreeWidgetItem;
+    item->setText(0,"Layer Transform");
+    item->setText(2,Transform::toInfoString(tr));
+    parent->addChild(item);
 }
 
 void page_system_info::populateMap(QTreeWidgetItem *parent, MapPtr mp)

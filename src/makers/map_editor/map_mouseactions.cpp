@@ -1,12 +1,17 @@
 #include "makers/map_editor/map_mouseactions.h"
 #include "makers/map_editor/map_editor.h"
 #include "geometry/vertex.h"
+#include "geometry/edge.h"
 #include "geometry/map.h"
 #include "geometry/point.h"
 #include "geometry/transform.h"
 #include "geometry/intersect.h"
+#include "geometry/neighbours.h"
 #include "base/utilities.h"
+#include "geometry/crop.h"
 #include "tapp/figure.h"
+
+typedef std::weak_ptr<class Edge>   WeakEdgePtr;
 
 MapMouseAction::MapMouseAction(MapEditor * me, QPointF spt)
 {
@@ -421,7 +426,7 @@ void ExtendLine::updateDragging(QPointF spt)
         qDebug() << "Extend line - cancelled";
         currentLine = startLine;
         MapMouseAction::endDragging(spt);
-        me->setMouseMode(MAPED_MOUSE_NONE);
+        me->setMapedMouseMode(MAPED_MOUSE_NONE);
         return;
     }
 
@@ -454,7 +459,7 @@ void ExtendLine::endDragging( QPointF spt)
     {
         qDebug() << "Extend line - cancelled";
         MapMouseAction::endDragging(spt);
-        me->setMouseMode(MAPED_MOUSE_NONE);
+        me->setMapedMouseMode(MAPED_MOUSE_NONE);
         return;
     }
 
@@ -509,7 +514,7 @@ void ExtendLine::endDragging( QPointF spt)
 
     MapMouseAction::endDragging(spt);
     me->buildEditorDB();
-    me->setMouseMode(MAPED_MOUSE_NONE);
+    me->setMapedMouseMode(MAPED_MOUSE_NONE);
 }
 
 void ExtendLine::draw(QPainter * painter)
@@ -745,7 +750,7 @@ void CreateBorder::endDragging( QPointF spt)
         crop->setState(CROP_BORDER_PREPARED);
         me->redisplayCurrentMap();
     }
-    me->setMouseMode(MAPED_MOUSE_EDIT_BORDER);
+    me->setMapedMouseMode(MAPED_MOUSE_EDIT_BORDER);
 }
 
 /////////////////////////////////////////////////////////

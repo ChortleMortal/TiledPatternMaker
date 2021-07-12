@@ -26,7 +26,6 @@
 #define PAGE_FIGURES_H
 
 #include "panels/panel_page.h"
-#include "panels/panel_misc.h"
 
 class page_style_figure_info : public panel_page
 {
@@ -48,7 +47,7 @@ protected:
     void showFiguresFromStyles();
 
 private:
-    AQTableWidget * figureTable;
+    class AQTableWidget * figureTable;
 };
 
 #endif

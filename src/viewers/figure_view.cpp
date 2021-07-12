@@ -23,7 +23,7 @@
  */
 
 #include "figure_view.h"
-#include "base/configuration.h"
+#include "settings/configuration.h"
 #include "tapp/design_element.h"
 #include "tapp/figure.h"
 #include "tapp/radial_figure.h"
@@ -34,6 +34,15 @@
 #include "base/utilities.h"
 #include "viewers/view.h"
 #include "geometry/transform.h"
+#include "geometry/map.h"
+#include "geometry/edge.h"
+#include "geometry/vertex.h"
+#include "tapp/infer.h"
+#include "tile/feature.h"
+
+using std::make_shared;
+
+typedef std::shared_ptr<RadialFigure>    RadialPtr;
 
 FigureViewPtr FigureView::spThis;
 
@@ -46,7 +55,7 @@ FigureViewPtr FigureView::getSharedInstance()
     return spThis;
 }
 
-FigureView::FigureView() : Layer("FigureView",LTYPE_VIEW)
+FigureView::FigureView() : Layer("FigureView")
 {
     motifMaker = MotifMaker::getInstance();
 
@@ -239,3 +248,65 @@ void FigureView::setDebugContacts(bool enb, QPolygonF pts, QVector<contact*> con
     debugContactPts = contacts;
 }
 
+void FigureView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
+{
+    if (view->getMouseMode() == MOUSE_MODE_CENTER && btn == Qt::LeftButton)
+    {
+        setCenterScreenUnits(spt);
+        forceLayerRecalc();
+        emit sig_refreshView();
+    }
+}
+
+void FigureView::slot_mouseDragged(QPointF spt)
+{ Q_UNUSED(spt); }
+
+void FigureView::slot_mouseTranslate(QPointF pt)
+{
+    xf_canvas.setTranslateX(xf_canvas.getTranslateX() + pt.x());
+    xf_canvas.setTranslateY(xf_canvas.getTranslateY() + pt.y());
+    forceLayerRecalc();
+}
+
+void FigureView::slot_mouseMoved(QPointF spt)
+{ Q_UNUSED(spt); }
+void FigureView::slot_mouseReleased(QPointF spt)
+{ Q_UNUSED(spt); }
+void FigureView::slot_mouseDoublePressed(QPointF spt)
+{ Q_UNUSED(spt); }
+
+void FigureView::slot_wheel_scale(qreal delta)
+{
+    xf_canvas.setScale(xf_canvas.getScale() + delta);
+    forceLayerRecalc();
+}
+
+void FigureView::slot_wheel_rotate(qreal delta)
+{
+    xf_canvas.setRotateDegrees(xf_canvas.getRotateDegrees() + delta);
+    forceLayerRecalc();
+}
+
+void FigureView::slot_scale(int amount)
+{
+    xf_canvas.setScale(xf_canvas.getScale() + static_cast<qreal>(amount)/100.0);
+    forceLayerRecalc();
+}
+
+void FigureView::slot_rotate(int amount)
+{
+    xf_canvas.setRotateRadians(xf_canvas.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
+    forceLayerRecalc();
+}
+
+void FigureView:: slot_moveX(int amount)
+{
+    xf_canvas.setTranslateX(xf_canvas.getTranslateX() + amount);
+    forceLayerRecalc();
+}
+
+void FigureView::slot_moveY(int amount)
+{
+    xf_canvas.setTranslateY(xf_canvas.getTranslateY() + amount);
+    forceLayerRecalc();
+}

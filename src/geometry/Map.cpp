@@ -38,11 +38,17 @@
 // DCELs.
 
 #include "geometry/map.h"
-#include "base/configuration.h"
+#include "settings/configuration.h"
 #include "base/utilities.h"
 #include "designs/shapefactory.h"
 #include "geometry/intersect.h"
 #include "geometry/dcel.h"
+#include "geometry/edge.h"
+#include "geometry/vertex.h"
+#include "geometry/neighbours.h"
+#include "geometry/loose.h"
+
+using std::make_shared;
 
 int Map::refs;
 
@@ -1247,4 +1253,12 @@ bool Map::edgeLessThan( EdgePtr  a,  EdgePtr  b )
         return true;
     else
         return false;
+}
+
+void Map::draw(QPainter * painter)
+{
+    for (EdgePtr edge : edges)
+    {
+        painter->drawLine(edge->getLine());
+    }
 }

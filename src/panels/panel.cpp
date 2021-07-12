@@ -23,11 +23,14 @@
  */
 
 #include "panels/panel.h"
+#include "panels/panel_pagesWidget.h"
 #include "base/tiledpatternmaker.h"
 #include "base/version.h"
-#include "designs/design.h"
+#include "base/shared.h"
+#include "panels/page_background_image.h"
 #include "panels/page_borders.h"
 #include "panels/page_config.h"
+#include "panels/page_grid.h"
 #include "panels/page_debug.h"
 #include "panels/page_decoration_maker.h"
 #include "panels/page_image_tools.h"
@@ -43,9 +46,9 @@
 #include "panels/page_system_info.h"
 #include "panels/page_tiling_maker.h"
 #include "panels/view_panel.h"
+#include "viewers/grid.h"
 #include "viewers/view.h"
 #include "viewers/viewcontrol.h"
-
 
 ControlPanel * ControlPanel::mpThis = nullptr;
 
@@ -193,6 +196,11 @@ void ControlPanel::setCurrentPage(QString name)
     panelPageList->setCurrentRow(name);
 }
 
+panel_page *  ControlPanel::getCurrentPage()
+{
+    return panelPages->getCurrentPage();
+}
+
 void ControlPanel::setupGUI()
 {
     // top row
@@ -210,8 +218,6 @@ void ControlPanel::setupGUI()
 
     QPushButton * pbShowMosaic    = new QPushButton("Show Mosaic");
     QPushButton * pbShowTiling    = new QPushButton("Show Tiling");
-    QCheckBox   * chkScaleToView  = new QCheckBox("Scale to View");
-    QCheckBox   * showBackImage   = new QCheckBox("Show Background Images");
 
     if (config->insightMode)
     {
@@ -219,13 +225,15 @@ void ControlPanel::setupGUI()
         QPushButton * pbUpdateView    = new QPushButton("Repaint View");
         QPushButton * pbRefreshView   = new QPushButton("Recreate View");
 
+        cbUpdate = new QCheckBox("Update Pages");
+        cbUpdate->setChecked(config->updatePanel);
+
         hlayout->addWidget(pbLogEvent);
         hlayout->addStretch();
         hlayout->addWidget(pbRefreshView  );
         hlayout->addWidget(pbUpdateView);
         hlayout->addStretch();
-        hlayout->addWidget(chkScaleToView);
-        hlayout->addWidget(showBackImage);
+        hlayout->addWidget(cbUpdate);
         hlayout->addStretch();
         hlayout->addWidget(radioDefined);
         hlayout->addWidget(radioPack);
@@ -237,11 +245,10 @@ void ControlPanel::setupGUI()
         connect(pbUpdateView,       &QPushButton::clicked,  this,     &ControlPanel::updateView);
         connect(pbLogEvent,         &QPushButton::clicked,  this,     &ControlPanel::slot_logEvent);
         connect(pbRefreshView  ,    &QPushButton::clicked,  vcontrol, &ViewControl::slot_refreshView);
+        connect(cbUpdate,           &QCheckBox::clicked,    this,     &ControlPanel::updateClicked);
     }
     else
     {
-        hlayout->addWidget(chkScaleToView);
-        hlayout->addWidget(showBackImage);
         hlayout->addStretch();
         hlayout->addWidget(radioDefined);
         hlayout->addWidget(radioPack);
@@ -259,45 +266,54 @@ void ControlPanel::setupGUI()
     // hbox - third row
     kbdModeCombo = new QComboBox();
     kbdModeCombo->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Ignored);
-    kbdModeCombo->setFixedHeight(29);
+    kbdModeCombo->setFixedHeight(25);
     delegateKeyboardMouse(config->getViewerType());
 
-    ViewPanel * vpanel = new ViewPanel;
-    vpanel->setButtonSize(QSize(79,29));
+    vpanel = new ViewPanel;
+    vpanel->setButtonSize(QSize(71,25));
     vpanel->setContentsMargins(0,0,0,0);
 
-    QPushButton *pbRaise    = new QPushButton("Raise Picture to Top");
-    pbRaise->setFixedHeight(29);
+    QPushButton *pbRaise    = new QPushButton("Raise View");
+    pbRaise->setFixedHeight(25);
     pbRaise->setStyleSheet("QPushButton{ background-color: white; border: 1px solid black; border-radius: 3px; padding-left: 9px; padding-right: 9px; }");
 
     QPushButton *pbExit     = new QPushButton("QUIT");
-    pbExit->setFixedSize(QSize(79,29));
+    pbExit->setFixedSize(QSize(71,25));
     pbExit->setStyleSheet("QPushButton{ background-color: white; border: 1px solid black; border-radius: 3px; }");
+
+    QCheckBox * chkScaleToView  = new QCheckBox("Scale to View");
+
+    QLabel    * l_kbdModes      = new QLabel("Keyboard control:");
+
+    QFrame    * line           = new QFrame();
+    line->setFrameShape(QFrame::VLine);
+    line->setFrameShadow(QFrame::Sunken);
+    line->setLineWidth(1);
+    QFrame    * line1           = new QFrame();
+    line1->setFrameShape(QFrame::VLine);
+    line1->setFrameShadow(QFrame::Sunken);
+    line1->setLineWidth(1);
+    QFrame    * line2           = new QFrame();
+    line2->setFrameShape(QFrame::VLine);
+    line2->setFrameShadow(QFrame::Sunken);
+    line2->setLineWidth(1);
 
     QHBoxLayout * hbox = new QHBoxLayout;
     hbox->addWidget(pbRaise);
-    hbox->addStretch();
-
-    if (config->insightMode)
-    {
-        cbUpdate    = new QCheckBox("Update Pages");
-        cbUpdate->setChecked(config->updatePanel);
-
-        hbox->addWidget(cbUpdate);
-        hbox->addWidget(kbdModeCombo);
-        hbox->addStretch();
-        hbox->addWidget(vpanel);
-
-        connect(cbUpdate, SIGNAL(clicked(bool)), this, SLOT(updateClicked(bool)));
-    }
-    else
-    {
-        hbox->addWidget(kbdModeCombo);
-        hbox->addStretch();
-        hbox->addWidget(vpanel);
-    }
-
-    hbox->addStretch();
+    hbox->addSpacing(2);
+    hbox->addWidget(chkScaleToView);
+    //hbox->addSpacing(2);
+    hbox->addWidget(line);
+    hbox->addSpacing(2);
+    hbox->addWidget(l_kbdModes);
+    hbox->addWidget(kbdModeCombo);
+    hbox->addSpacing(2);
+    hbox->addWidget(line1);
+    hbox->addSpacing(2);
+    hbox->addWidget(vpanel);
+    hbox->addSpacing(2);
+    hbox->addWidget(line2);
+    hbox->addSpacing(2);
     hbox->addWidget(pbExit);
 
     // common group box
@@ -346,7 +362,6 @@ void ControlPanel::setupGUI()
 
     // initial values
     chkScaleToView->setChecked(config->scaleToView);
-    showBackImage->setChecked(config->showBackgroundImage);
 
     // connections
     connect(pbExit,             &QPushButton::clicked,              this,     &ControlPanel::slot_exit);
@@ -359,7 +374,6 @@ void ControlPanel::setupGUI()
     connect(kbdModeCombo,       SIGNAL(currentIndexChanged(int)),   this,     SLOT(slot_kbdModeChanged(int)));
     connect(view,               &View::sig_kbdMode,                 this,     &ControlPanel::slot_kbdMode);
     connect(chkScaleToView,     &QCheckBox::clicked,                this,     &ControlPanel::slot_scaleToView);
-    connect(showBackImage,      &QCheckBox::clicked,                this,     &ControlPanel::slot_showBackChanged);
 
 }
 
@@ -401,6 +415,16 @@ void ControlPanel::populatePages()
     panelPageList->addItem(wp->getName());
 
     wp = new page_modelSettings(this);
+    mPages.push_back(wp);
+    panelPages->addWidget(wp);
+    panelPageList->addItem(wp->getName());
+
+    wp = new page_background_image(this);
+    mPages.push_back(wp);
+    panelPages->addWidget(wp);
+    panelPageList->addItem(wp->getName());
+
+    wp = new page_grid(this);
     mPages.push_back(wp);
     panelPages->addWidget(wp);
     panelPageList->addItem(wp->getName());
@@ -624,6 +648,12 @@ void ControlPanel::slot_poll()
 {
     static volatile bool updateLocked = false;
 
+    // refresh panel
+    cbGrid->setChecked(config->showGrid);
+    cbCenter->setChecked(config->showCenterDebug);
+    cbBackgroundImage->setChecked(config->showBackgroundImage);
+
+    // refresh pages
     if (config->insightMode && !config->updatePanel)
     {
         return;
@@ -786,22 +816,22 @@ void ControlPanel::delegateKeyboardMouse(eViewType viewType)
     kbdModeCombo->clear();
     if (viewType == VIEW_DESIGN)
     {
-        kbdModeCombo->insertItem(100,"Mode Position",   QVariant(KBD_MODE_POS));
-        kbdModeCombo->insertItem(100,"Mode Layer",      QVariant(KBD_MODE_LAYER));
-        kbdModeCombo->insertItem(100,"Mode Z-level",    QVariant(KBD_MODE_ZLEVEL));
-        kbdModeCombo->insertItem(100,"Mode Step",       QVariant(KBD_MODE_STEP));
-        kbdModeCombo->insertItem(100,"Mode Separation", QVariant(KBD_MODE_SEPARATION));
-        kbdModeCombo->insertItem(100,"Mode Origin",     QVariant(KBD_MODE_ORIGIN));
-        kbdModeCombo->insertItem(100,"Mode Offset",     QVariant(KBD_MODE_OFFSET));
+        kbdModeCombo->insertItem(100,"Mode Position",   QVariant(KBD_MODE_DES_POS));
+        kbdModeCombo->insertItem(100,"Mode Layer",      QVariant(KBD_MODE_DES_LAYER_SELECT));
+        kbdModeCombo->insertItem(100,"Mode Z-level",    QVariant(KBD_MODE_DES_ZLEVEL));
+        kbdModeCombo->insertItem(100,"Mode Step",       QVariant(KBD_MODE_DES_STEP));
+        kbdModeCombo->insertItem(100,"Mode Separation", QVariant(KBD_MODE_DES_SEPARATION));
+        kbdModeCombo->insertItem(100,"Mode Origin",     QVariant(KBD_MODE_DES_ORIGIN));
+        kbdModeCombo->insertItem(100,"Mode Offset",     QVariant(KBD_MODE_DES_OFFSET));
     }
     else
     {
         kbdModeCombo->insertItem(100,"Adjust View",      QVariant(KBD_MODE_XFORM_VIEW));
+        kbdModeCombo->insertItem(100,"Adjust Selected",  QVariant(KBD_MODE_XFORM_SELECTED));
         kbdModeCombo->insertItem(100,"Adjust Background",QVariant(KBD_MODE_XFORM_BKGD));
         kbdModeCombo->insertItem(100,"Adjust Tiling",    QVariant(KBD_MODE_XFORM_TILING));
         kbdModeCombo->insertItem(100,"Adjust Unique Feature", QVariant(KBD_MODE_XFORM_UNIQUE_FEATURE));
         kbdModeCombo->insertItem(100,"Adjust Placed Feature", QVariant(KBD_MODE_XFORM_PLACED_FEATURE));
-        kbdModeCombo->insertItem(100,"Set Center",       QVariant(KBD_MODE_CENTER));
     }
 
     view->setKbdMode(config->kbdMode); // converts if necessry
@@ -829,16 +859,23 @@ eKbdMode ControlPanel::getValidDesignMode(eKbdMode mode)
 {
     switch (mode)
     {
-    case KBD_MODE_LAYER:
-    case KBD_MODE_ZLEVEL:
-    case KBD_MODE_STEP:
-    case KBD_MODE_SEPARATION:
-    case KBD_MODE_ORIGIN:
-    case KBD_MODE_OFFSET:
+    case KBD_MODE_DES_POS:
+    case KBD_MODE_DES_LAYER_SELECT:
+    case KBD_MODE_DES_ZLEVEL:
+    case KBD_MODE_DES_STEP:
+    case KBD_MODE_DES_SEPARATION:
+    case KBD_MODE_DES_ORIGIN:
+    case KBD_MODE_DES_OFFSET:
         return mode;
-    default:
-        return KBD_MODE_LAYER;
+    case KBD_MODE_XFORM_VIEW:
+    case KBD_MODE_XFORM_SELECTED:
+    case KBD_MODE_XFORM_BKGD:
+    case KBD_MODE_XFORM_TILING:
+    case KBD_MODE_XFORM_UNIQUE_FEATURE:
+    case KBD_MODE_XFORM_PLACED_FEATURE:
+        break;
     }
+    return KBD_MODE_DES_LAYER_SELECT;
 }
 
 eKbdMode ControlPanel::getValidMosaicMode(eKbdMode mode)
@@ -846,15 +883,22 @@ eKbdMode ControlPanel::getValidMosaicMode(eKbdMode mode)
     switch (mode)
     {
     case KBD_MODE_XFORM_VIEW:
+    case KBD_MODE_XFORM_SELECTED:
     case KBD_MODE_XFORM_BKGD:
     case KBD_MODE_XFORM_TILING:
     case KBD_MODE_XFORM_UNIQUE_FEATURE:
     case KBD_MODE_XFORM_PLACED_FEATURE:
-    case KBD_MODE_CENTER:
         return mode;
-    default:
-        return KBD_MODE_XFORM_VIEW;
+    case KBD_MODE_DES_POS:
+    case KBD_MODE_DES_LAYER_SELECT:
+    case KBD_MODE_DES_ZLEVEL:
+    case KBD_MODE_DES_STEP:
+    case KBD_MODE_DES_SEPARATION:
+    case KBD_MODE_DES_ORIGIN:
+    case KBD_MODE_DES_OFFSET:
+        break;
     }
+    return KBD_MODE_XFORM_VIEW;
 }
 
 // kbdModeCombo selection
@@ -908,6 +952,21 @@ void ControlPanel::slot_showBackChanged(bool enb)
     emit sig_refreshView();
 }
 
+void ControlPanel::slot_showGridChanged(bool enb)
+{
+    config->showGrid = enb;
+    if (enb)
+    {
+        Grid::getSharedInstance()->create();
+    }
+    emit sig_refreshView();
+}
+
+void ControlPanel::slot_showCenterChanged(bool enb)
+{
+    config->showCenterDebug = enb;
+    emit sig_refreshView();
+}
 
 QGroupBox *  ControlPanel::createViewersBox()
 {
@@ -920,6 +979,10 @@ QGroupBox *  ControlPanel::createViewersBox()
     cbTilingView         = new QCheckBox("Tiling");
     cbTilingMakerView    = new QCheckBox("Tiling Maker");
     cbRawDesignView      = new QCheckBox("Fixed Design");
+
+    cbBackgroundImage    = new QCheckBox("Background Image");
+    cbGrid               = new QCheckBox("Grid");
+    cbCenter             = new QCheckBox("Center");
 
     cbMultiSelect        = new QCheckBox("Multi View");    // defaults to off - not persisted
     cbLockView           = new QCheckBox("Lock View");
@@ -937,7 +1000,11 @@ QGroupBox *  ControlPanel::createViewersBox()
     avbox->addWidget(cbTilingView);
     avbox->addWidget(cbTilingMakerView);
     avbox->addWidget(cbRawDesignView);
-    avbox->addSpacing(13);
+    avbox->addSpacing(11);
+    avbox->addWidget(cbBackgroundImage);
+    avbox->addWidget(cbGrid);
+    avbox->addWidget(cbCenter);
+    avbox->addSpacing(11);
     avbox->addWidget(cbLockView);
     avbox->addWidget(cbMultiSelect);
 
@@ -956,13 +1023,16 @@ QGroupBox *  ControlPanel::createViewersBox()
     }
     viewerGroup.button(config->getViewerType())->setChecked(true);
 #if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
-    connect(&viewerGroup,   SIGNAL(buttonToggled(int, bool)),  this, SLOT(slot_Viewer_pressed(int,bool)));
+    connect(&viewerGroup,       SIGNAL(buttonToggled(int, bool)),  this, SLOT(slot_Viewer_pressed(int,bool)));
 #else
-    connect(&viewerGroup,   &QButtonGroup::idToggled,      this, &ControlPanel::slot_Viewer_pressed);
+    connect(&viewerGroup,       &QButtonGroup::idToggled,       this, &ControlPanel::slot_Viewer_pressed);
 #endif
-    connect(cbLockView,     &QCheckBox::clicked,  this, &ControlPanel::slot_lockViewClicked);
-    connect(cbMultiSelect,  &QCheckBox::clicked,  this, &ControlPanel::slot_multiSelect);
-    connect(theApp,         &TiledPatternMaker::sig_lockStatus, this,&ControlPanel::slot_lockStatusChanged);
+    connect(cbLockView,         &QCheckBox::clicked,  this, &ControlPanel::slot_lockViewClicked);
+    connect(cbMultiSelect,      &QCheckBox::clicked,  this, &ControlPanel::slot_multiSelect);
+    connect(cbBackgroundImage,  &QCheckBox::clicked,  this, &ControlPanel::slot_showBackChanged);
+    connect(cbGrid,             &QCheckBox::clicked,  this, &ControlPanel::slot_showGridChanged);
+    connect(cbCenter,           &QCheckBox::clicked,  this, &ControlPanel::slot_showCenterChanged);
+    connect(theApp,             &TiledPatternMaker::sig_lockStatus, this,&ControlPanel::slot_lockStatusChanged);
 
     return viewersBox;
 }
@@ -1017,7 +1087,7 @@ void ControlPanel::slot_multiSelect(bool enb)
     if (!enb)
     {
         viewerGroup.blockSignals(true);
-        for (int i=0; i <= VIEW_MAX; i++ )
+        for (int i=0; i <= VIEW_DESIGNER_MAX; i++ )
         {
             if (i == config->getViewerType())
             {

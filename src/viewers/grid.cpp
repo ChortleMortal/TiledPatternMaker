@@ -1,220 +1,309 @@
 #include "viewers/grid.h"
-#include "base/configuration.h"
+#include "settings/configuration.h"
 #include "viewers/view.h"
 #include "geometry/transform.h"
 #include "base/geo_graphics.h"
+#include "geometry/map.h"
+#include "geometry/vertex.h"
+#include "geometry/point.h"
 
-Grid::Grid() : Layer("Grid",LTYPE_GRID)
+typedef std::shared_ptr<class Vertex>       VertexPtr;
+
+GridPtr Grid::spThis;
+
+GridPtr Grid::getSharedInstance()
+{
+    if (!spThis)
+    {
+        PrototypePtr pp;
+        spThis = std::make_shared<Grid>(pp);
+    }
+    return spThis;
+}
+
+Grid::Grid(PrototypePtr pp) : Thick(pp)
 {
     config  = Configuration::getInstance();
     view    = View::getInstance();
 
-    gridPen.setColor(QColor(Qt::red));
+    setColor(Qt::red);
+
+    gridMap = std::make_shared<Map>("Grid");
+    setMap(gridMap);
+
+    create();
 }
 
-void Grid::paint(QPainter * painter)
+void Grid::draw(GeoGraphics * gg)
 {
+    switch (config->gridUnits)
+    {
+    case GRID_UNITS_MODEL:
+        Thick::draw(gg);
+        gg->drawLine(corners[0],QPen(Qt::green,3));
+        gg->drawLine(corners[1],QPen(Qt::green,3));
+        break;
+
+    case GRID_UNITS_SCREEN:
+        QPainter * painter = gg->getPainter();
+        painter->save();
+        painter->setPen(QPen(Qt::red,config->gridScreenWidth));
+        gridMap->draw(painter);
+        painter->restore();
+
+        painter->setPen(QPen(Qt::blue,3));
+        painter->drawLine(corners[0]);
+        painter->drawLine(corners[1]);
+        break;
+    }
+}
+
+void Grid::create()
+{
+    gridMap->wipeout();
+
     if (!config->showGrid)
     {
         return;
     }
 
-    QRectF rect = view->rect();
-
-    painter->save();
+    QRectF rect;
 
     // draw a grid
-    if (config->gridUnits == GRID_UNITS_SCREEN)
+    switch (config->gridUnits)
     {
-        gridPen.setWidth(config->gridScreenWidth);
-        painter->setPen(gridPen);
+    case GRID_UNITS_SCREEN:
+        rect = view->rect();
+
+        setLineWidth(config->gridScreenWidth);
         if (config->gridScreenCenter)
         {
-            drawGridSceneUnitsCentered(painter,rect);
+            createGridSceneUnitsCentered(rect);
         }
         else
         {
-            drawGridSceneUnits(painter,rect);
+            createGridSceneUnits(rect);
         }
-    }
-    else
-    {
-        Q_ASSERT(config->gridUnits == GRID_UNITS_MODEL);
-        gridPen.setWidth(config->gridModelWidth);
-        painter->setPen(gridPen);
+
+        corners[0] = QLineF(rect.topLeft(),rect.bottomRight());
+        corners[1] = QLineF(rect.bottomLeft(),rect.topRight());
+        break;
+
+    case GRID_UNITS_MODEL:;
+        rect = QRectF(-10,10,20,20);
+        qreal lwidth = screenToWorld(qreal(config->gridModelWidth)) / 2.0; // for some reason Thick multiplies by 2
+        setLineWidth(lwidth);
+
         if (config->gridModelCenter)
         {
-            drawGridModelUnitsCentered(painter,rect);
+            createGridModelUnitsCentered(rect);
         }
         else
         {
-            drawGridModelUnits(painter,rect);
+            createGridModelUnits(rect);
         }
+        corners[0] = QLineF(QPointF(-10,10),QPointF(10,-10));
+        corners[1] = QLineF(QPointF(-10,-10),QPointF(10,10));
+        break;
     }
 
-    painter->restore();
-    rect = view->rect();   // restores rect
-
-#if 0
-    // draw X and center
-    painter->drawLine(rect.topLeft(),   rect.bottomRight());
-    painter->drawLine(rect.bottomLeft(),rect.topRight());
-#endif
-
-    QPointF center = rect.center();
-    painter->drawEllipse(center,10,10);
+    if (config->getViewerType() == VIEW_TILING_MAKER)
+    {
+        // makes each intersection a vertex for alignment
+        gridMap->cleanse(divideupIntersectingEdges);
+    }
 }
 
 
 // this is relative to model(0,0)
-void Grid::drawGridModelUnits(QPainter *painter, const QRectF &r)
+void Grid::createGridModelUnits(const QRectF &r)
 {
     // this centers on scene
     qreal step   = config->gridModelSpacing;
-    QTransform T = getLayerTransform();
+    qreal min    = -20.0 * step;
+    qreal max    =  20.0 * step;
 
-    GeoGraphics gg(painter,T);
-
+    // vertical
     if (config->gridType != GRID_RHOMBIC)
     {
-        // vertical
-        for (qreal j = (-20.0 * step); j < (20 * step); j += step)
+        qreal j = min;
+        while (j < max)
         {
-            gg.drawLine(j, -r.height()/2, j, r.height()/2,gridPen);
+            VertexPtr v1 = gridMap->insertVertex(QPointF(j, -r.height()/2));
+            VertexPtr v2 = gridMap->insertVertex(QPointF(j,  r.height()/2));
+            gridMap->insertEdge(v1,v2);
+            j += step;
         }
     }
 
-    if (config->gridType == GRID_ORTHOGONAL)
+    // horizontal
+    switch (config->gridType)
     {
-        // horizontal
-        for (qreal i = (-20.0 * step); i < (20 * step); i += step)
+    case GRID_ORTHOGONAL:
+    {
+        qreal i = min;
+        while (i < max)
         {
-            gg.drawLine(-r.width()/2, i, r.width()/2, i,gridPen);
+            VertexPtr v1 = gridMap->insertVertex(QPointF(-r.width()/2,i));
+            VertexPtr v2 = gridMap->insertVertex(QPointF( r.width()/2,i));
+            gridMap->insertEdge(v1,v2);
+            i += step;
         }
     }
-    else if (config->gridType ==  GRID_ISOMETRIC)
+        break;
+
+    case GRID_ISOMETRIC:
     {
         QTransform t;
         t.rotate(30);
-        gg.pushAndCompose(t);
-        for (qreal i = (-20.0 * step); i < (20 * step); i += step)
+        qreal j = min;
+        while (j < max)
         {
-            gg.drawLine(-r.width()/2, i, r.width()/2, i,gridPen);
+            VertexPtr v1 = gridMap->insertVertex(t.map(QPointF(-r.width()/2,j)));
+            VertexPtr v2 = gridMap->insertVertex(t.map(QPointF( r.width()/2,j)));
+            gridMap->insertEdge(v1,v2);
+            j += step;
         }
-
-        gg.pop();
 
         QTransform t2;
         t2.rotate(-30);
-        gg.pushAndCompose(t2);
-
-        for (qreal i = (-20.0 * step); i < (20 * step); i += step)
+        j = min;
+        while (j < max)
         {
-            gg.drawLine(-r.width()/2, i, r.width()/2, i,gridPen);
+            VertexPtr v1 = gridMap->insertVertex(t2.map(QPointF(-r.width()/2,j)));
+            VertexPtr v2 = gridMap->insertVertex(t2.map(QPointF( r.width()/2,j)));
+            gridMap->insertEdge(v1,v2);
+            j += step;
         }
     }
-    else
-    {
-        Q_ASSERT(config->gridType == GRID_RHOMBIC);
+        break;
 
+    case GRID_RHOMBIC:
+    {
         qreal angle = config->gridAngle;
 
         QTransform t;
         t.rotate(angle);
-        gg.pushAndCompose(t);
-        for (qreal i = (-20.0 * step); i < (20 * step); i += step)
+        qreal j = min;
+        while (j < max)
         {
-            gg.drawLine(-r.width()/2, i, r.width()/2, i,gridPen);
+            VertexPtr v1 = gridMap->insertVertex(t.map(QPointF(-r.width()/2,j)));
+            VertexPtr v2 = gridMap->insertVertex(t.map(QPointF( r.width()/2,j)));
+            gridMap->insertEdge(v1,v2);
+            j += step;
         }
-
-        gg.pop();
 
         QTransform t2;
         t2.rotate(-angle);
-        gg.pushAndCompose(t2);
-
-        for (qreal i = (-20.0 * step); i < (20 * step); i += step)
+        j = min;
+        while (j < max)
         {
-            gg.drawLine(-r.width()/2, i, r.width()/2, i,gridPen);
+            VertexPtr v1 = gridMap->insertVertex(t2.map(QPointF(-r.width()/2,j)));
+            VertexPtr v2 = gridMap->insertVertex(t2.map(QPointF( r.width()/2,j)));
+            gridMap->insertEdge(v1,v2);
+            j += step;
         }
     }
+        break;
+    }
 }
-
 
 // this is relative to layer center
-void Grid::drawGridModelUnitsCentered(QPainter *painter, QRectF &r)
+void Grid::createGridModelUnitsCentered(QRectF &r)
 {
     // this centers on layer center
-    QTransform T    = getLayerTransform();
-    QPointF center  = getCenterModel();
-    qreal step      = config->gridModelSpacing;
-
+    QPointF center  = getCenterModelUnits();
     r.moveCenter(center);
 
-    GeoGraphics gg(painter,T);
+    qreal step    = config->gridModelSpacing;
+    qreal minmax  = 20.0 * step;
 
     if (config->gridType != GRID_RHOMBIC)
     {
         // vertical
-        for (qreal x = center.x() + (-20.0 * step); x <  (center.x() +(20 * step)); x += step)
+        qreal  x = center.x() - minmax;
+        while (x < center.x() + minmax)
         {
-            gg.drawLine(QPointF(x, r.topLeft().y()),QPointF(x,r.bottomLeft().y()), gridPen);
+            VertexPtr v1 = gridMap->insertVertex(QPointF(x,r.top()));
+            VertexPtr v2 = gridMap->insertVertex(QPointF(x,r.bottom()));
+            gridMap->insertEdge(v1,v2);
+            x += step;
         }
     }
 
-    if (config->gridType == GRID_ORTHOGONAL)
+    // horizontal
+    switch (config->gridType)
     {
-        // horizontal
-        for (qreal y = center.y() + (-20.0 * step); y < (center.y() + (20 * step)); y += step)
+    case GRID_ORTHOGONAL:
+    {
+        qreal  y = center.y() - minmax;
+        while (y < center.y() + minmax)
         {
-            gg.drawLine( QPointF(r.topLeft().x(), y),  QPointF(r.topRight().x(), y), gridPen);
+            VertexPtr v1 = gridMap->insertVertex(QPointF(r.left(),  y));
+            VertexPtr v2 = gridMap->insertVertex(QPointF(r.right(), y));
+            gridMap->insertEdge(v1,v2);
+            y += step;
         }
     }
-    else if (config->gridType ==  GRID_ISOMETRIC)
+        break;
+
+    case GRID_ISOMETRIC:
     {
         QTransform t;
         t.rotate(30);
-        gg.pushAndCompose(t);
-        for (qreal y = center.y() + (-20.0 * step); y < (center.y() + (20 * step)); y += step)
+        qreal  y = center.y() - minmax;
+        while (y < center.y() + minmax)
         {
-            gg.drawLine( QPointF(r.topLeft().x(), y),  QPointF(r.topRight().x(), y), gridPen);
+            VertexPtr v1 = gridMap->insertVertex(t.map(QPointF(r.left(), y)));
+            VertexPtr v2 = gridMap->insertVertex(t.map(QPointF(r.right(),y)));
+            gridMap->insertEdge(v1,v2);
+            y += step;
         }
-        gg.pop();
 
         QTransform t2;
         t2.rotate(-30);
-        gg.pushAndCompose(t2);
-        for (qreal y = center.y() + (-20.0 * step); y < (center.y() + (20 * step)); y += step)
+        y = center.y() - minmax;
+        while (y < center.y() + minmax)
         {
-            gg.drawLine( QPointF(r.topLeft().x(), y),  QPointF(r.topRight().x(), y), gridPen);
+            VertexPtr v1 = gridMap->insertVertex(t2.map(QPointF(r.left(), y)));
+            VertexPtr v2 = gridMap->insertVertex(t2.map(QPointF(r.right(),y)));
+            gridMap->insertEdge(v1,v2);
+            y += step;
         }
     }
-    else
-    {
-        Q_ASSERT(config->gridType == GRID_RHOMBIC);
+        break;
 
+    case GRID_RHOMBIC:
+    {
         qreal angle = config->gridAngle;
 
         QTransform t;
         t.rotate(angle);
-        gg.pushAndCompose(t);
-        for (qreal y = center.y() + (-20.0 * step); y < (center.y() + (20 * step)); y += step)
+        qreal  y = center.y() - minmax;
+        while (y < center.y() + minmax)
         {
-            gg.drawLine( QPointF(r.topLeft().x(), y),  QPointF(r.topRight().x(), y), gridPen);
+            VertexPtr v1 = gridMap->insertVertex(t.map(QPointF(r.left(), y)));
+            VertexPtr v2 = gridMap->insertVertex(t.map(QPointF(r.right(),y)));
+            gridMap->insertEdge(v1,v2);
+            y += step;
         }
-        gg.pop();
 
         QTransform t2;
         t2.rotate(-angle);
-        gg.pushAndCompose(t2);
-        for (qreal y = center.y() + (-20.0 * step); y < (center.y() + (20 * step)); y += step)
+        y = center.y() - minmax;
+        while (y < center.y() + minmax)
         {
-            gg.drawLine( QPointF(r.topLeft().x(), y),  QPointF(r.topRight().x(), y), gridPen);
+            VertexPtr v1 = gridMap->insertVertex(t2.map(QPointF(r.left(), y)));
+            VertexPtr v2 = gridMap->insertVertex(t2.map(QPointF(r.right(),y)));
+            gridMap->insertEdge(v1,v2);
+            y += step;
         }
+    }
+        break;
     }
 }
 
-void Grid::drawGridSceneUnits(QPainter *painter, const QRectF &r)
+void Grid::createGridSceneUnits(const QRectF &r)
 {
     QPointF center = r.center();
     qreal step = config->gridScreenSpacing;
@@ -230,36 +319,48 @@ void Grid::drawGridSceneUnits(QPainter *painter, const QRectF &r)
         qreal x = center.x() - ((r.width()/2) * step);
         while (x < r.width())
         {
-            painter->drawLine(QPointF(x,r.topLeft().y()),QPointF(x,r.bottomLeft().y()));
+            VertexPtr v1 = gridMap->insertVertex(QPointF(x,r.top()));
+
+            VertexPtr v2 = gridMap->insertVertex(QPointF(x,r.bottom()));
+            gridMap->insertEdge(v1,v2);
             x += step;
         }
     }
 
-    if (config->gridType == GRID_ORTHOGONAL)
+    // draw horizontal lines
+    switch (config->gridType)
     {
-        // draw horizontal lines
+    case GRID_ORTHOGONAL:
+    {
         qreal y = center.y() - ((r.height()/2) * step);
         while (y < r.height())
         {
-            painter->drawLine(QPointF(r.topLeft().x(),y),QPointF(r.topRight().x(),y));
+            VertexPtr v1 = gridMap->insertVertex(QPointF(r.left(),y));
+            VertexPtr v2 = gridMap->insertVertex(QPointF(r.right(),y));
+            gridMap->insertEdge(v1,v2);
             y += step;
         }
     }
-    else if (config->gridType ==  GRID_ISOMETRIC)
+        break;
+
+    case GRID_ISOMETRIC:
     {
         qreal y = center.y() - r.height();
         while (y < (center.y() + r.height()))
         {
-            QLineF line(QPointF(r.topLeft().x(),y),QPointF(r.topRight().x(),y));
+            QLineF line(QPointF(r.left(),y),QPointF(r.right(),y));
             QPointF mid = line.center();
 
             QTransform t;
             t.translate(mid.x(),mid.y());
+
             t.rotate(30);
             t.translate(-mid.x(),-mid.y());
 
             QLineF line2 = t.map(line);
-            painter->drawLine(line2);
+            VertexPtr v1 = gridMap->insertVertex(line2.p1());
+            VertexPtr v2 = gridMap->insertVertex(line2.p2());
+            gridMap->insertEdge(v1,v2);
 
             QTransform t2;
             t2.translate(mid.x(),mid.y());
@@ -267,21 +368,23 @@ void Grid::drawGridSceneUnits(QPainter *painter, const QRectF &r)
             t2.translate(-mid.x(),-mid.y());
 
             QLineF line3 = t2.map(line);
-            painter->drawLine(line3);
+            v1 = gridMap->insertVertex(line3.p1());
+            v2 = gridMap->insertVertex(line3.p2());
+            gridMap->insertEdge(v1,v2);
 
             y += step;
         }
     }
-    else
-    {
-        Q_ASSERT(config->gridType == GRID_RHOMBIC);
+        break;
 
+    case GRID_RHOMBIC:
+    {
         qreal angle = config->gridAngle;
 
         qreal y = center.y() - r.height();
         while (y < (center.y() + r.height()))
         {
-            QLineF line(QPointF(r.topLeft().x(),y),QPointF(r.topRight().x(),y));
+            QLineF line(QPointF(r.left(),y),QPointF(r.right(),y));
             QPointF mid = line.center();
 
             QTransform t;
@@ -290,7 +393,9 @@ void Grid::drawGridSceneUnits(QPainter *painter, const QRectF &r)
             t.translate(-mid.x(),-mid.y());
 
             QLineF line2 = t.map(line);
-            painter->drawLine(line2);
+            VertexPtr v1 = gridMap->insertVertex(line2.p1());
+            VertexPtr v2 = gridMap->insertVertex(line2.p2());
+            gridMap->insertEdge(v1,v2);
 
             QTransform t2;
             t2.translate(mid.x(),mid.y());
@@ -298,16 +403,20 @@ void Grid::drawGridSceneUnits(QPainter *painter, const QRectF &r)
             t2.translate(-mid.x(),-mid.y());
 
             QLineF line3 = t2.map(line);
-            painter->drawLine(line3);
+            v1 = gridMap->insertVertex(line3.p1());
+            v2 = gridMap->insertVertex(line3.p2());
+            gridMap->insertEdge(v1,v2);
 
             y += step;
         }
     }
+        break;
+    }
 }
 
-void Grid::drawGridSceneUnitsCentered(QPainter *painter, QRectF & r)
+void Grid::createGridSceneUnitsCentered(QRectF &r)
 {
-    QPointF center = getCenterScreen();
+    QPointF center = getCenterScreenUnits();
     r.moveCenter(center);
 
     qreal step = config->gridScreenSpacing;
@@ -323,27 +432,35 @@ void Grid::drawGridSceneUnitsCentered(QPainter *painter, QRectF & r)
         qreal x = center.x() - ((r.width()/2) * step);
         while (x < r.width())
         {
-            painter->drawLine(QPointF(x,r.topLeft().y()),QPointF(x,r.bottomLeft().y()));
+            VertexPtr v1 = gridMap->insertVertex(QPointF(x,r.top()));
+            VertexPtr v2 = gridMap->insertVertex(QPointF(x,r.bottom()));
+            gridMap->insertEdge(v1,v2);
             x += step;
         }
     }
 
-    if (config->gridType == GRID_ORTHOGONAL)
+    switch (config->gridType)
+    {
+    case GRID_ORTHOGONAL:
     {
         // draw horizontal lines
         qreal y = center.y() - ((r.height()/2) * step);
         while (y < r.height())
         {
-            painter->drawLine(QPointF(r.topLeft().x(),y),QPointF(r.topRight().x(),y));
+            VertexPtr v1 = gridMap->insertVertex(QPointF(r.left(),y));
+            VertexPtr v2 = gridMap->insertVertex(QPointF(r.right(),y));
+            gridMap->insertEdge(v1,v2);
             y += step;
         }
     }
-    else if (config->gridType ==  GRID_ISOMETRIC)
+        break;
+
+    case GRID_ISOMETRIC:
     {
         qreal y = center.y() - r.height();
         while (y < (center.y() + r.height()))
         {
-            QLineF line(QPointF(r.topLeft().x(),y),QPointF(r.topRight().x(),y));
+            QLineF line(QPointF(r.left(),y),QPointF(r.right(),y));
             QPointF mid = line.center();
 
             QTransform t;
@@ -352,7 +469,9 @@ void Grid::drawGridSceneUnitsCentered(QPainter *painter, QRectF & r)
             t.translate(-mid.x(),-mid.y());
 
             QLineF line2 = t.map(line);
-            painter->drawLine(line2);
+            VertexPtr v1 = gridMap->insertVertex(line2.p1());
+            VertexPtr v2 = gridMap->insertVertex(line2.p2());
+            gridMap->insertEdge(v1,v2);
 
             QTransform t2;
             t2.translate(mid.x(),mid.y());
@@ -360,21 +479,23 @@ void Grid::drawGridSceneUnitsCentered(QPainter *painter, QRectF & r)
             t2.translate(-mid.x(),-mid.y());
 
             QLineF line3 = t2.map(line);
-            painter->drawLine(line3);
+            v1 = gridMap->insertVertex(line3.p1());
+            v2 = gridMap->insertVertex(line3.p2());
+            gridMap->insertEdge(v1,v2);
 
             y += step;
         }
     }
-    else
-    {
-        Q_ASSERT(config->gridType == GRID_RHOMBIC);
+        break;
 
+    case GRID_RHOMBIC:
+    {
         qreal angle = config->gridAngle;
 
         qreal y = center.y() - r.height();
         while (y < (center.y() + r.height()))
         {
-            QLineF line(QPointF(r.topLeft().x(),y),QPointF(r.topRight().x(),y));
+            QLineF line(QPointF(r.left(),y),QPointF(r.right(),y));
             QPointF mid = line.center();
 
             QTransform t;
@@ -383,7 +504,9 @@ void Grid::drawGridSceneUnitsCentered(QPainter *painter, QRectF & r)
             t.translate(-mid.x(),-mid.y());
 
             QLineF line2 = t.map(line);
-            painter->drawLine(line2);
+            VertexPtr v1 = gridMap->insertVertex(line2.p1());
+            VertexPtr v2 = gridMap->insertVertex(line2.p2());
+            gridMap->insertEdge(v1,v2);
 
             QTransform t2;
             t2.translate(mid.x(),mid.y());
@@ -391,9 +514,43 @@ void Grid::drawGridSceneUnitsCentered(QPainter *painter, QRectF & r)
             t2.translate(-mid.x(),-mid.y());
 
             QLineF line3 = t2.map(line);
-            painter->drawLine(line3);
+            v1 = gridMap->insertVertex(line3.p1());
+            v2 = gridMap->insertVertex(line3.p2());
+            gridMap->insertEdge(v1,v2);
 
             y += step;
         }
     }
+        break;
+    }
+}
+
+bool Grid::nearGridPoint(QPointF spt, QPointF & foundGridPoint)
+{
+    if (!config->showGrid || !config->snapToGrid)
+    {
+        return false;
+    }
+    for (const VertexPtr & v : qAsConst(gridMap->getVertices()))
+    {
+        QPointF a = v->pt;
+        QPointF b = a;
+        if (config->gridUnits == GRID_UNITS_MODEL)
+        {
+            b = worldToScreen(a);
+        }
+        if (Point::isNear(spt,b))
+        {
+            if (config->gridUnits == GRID_UNITS_MODEL)
+            {
+                foundGridPoint = a;
+            }
+            else
+            {
+                foundGridPoint = screenToWorld(a);
+            }
+            return true;
+        }
+    }
+    return false;
 }

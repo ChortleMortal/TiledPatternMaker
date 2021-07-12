@@ -2,8 +2,10 @@
 #define DLGCROP_H
 
 #include <QDialog>
-#include "panels/layout_sliderset.h"
-#include "makers/map_editor/map_editor.h"
+
+class AQDoubleSpinBox;
+
+typedef std::shared_ptr<class MapEditor>   MapEditorPtr;
 
 class DlgCrop : public QDialog
 {

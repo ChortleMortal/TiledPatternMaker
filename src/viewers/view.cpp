@@ -24,16 +24,26 @@
 
 #include "viewers/view.h"
 #include "viewers/viewcontrol.h"
+#include "viewers/grid.h"
+#include "base/cycler.h"
 #include "base/shortcuts.h"
 #include "base/tiledpatternmaker.h"
 #include "base/transparentwidget.h"
 #include "base/utilities.h"
 #include "designs/design_maker.h"
 #include "geometry/dcel.h"
+#include "geometry/edge.h"
+#include "geometry/transform.h"
+#include "geometry/vertex.h"
 #include "makers/map_editor/map_editor.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "panels/panel.h"
+#include "panels/view_panel.h"
 #include "style/style.h"
+#include "tapp/design_element.h"
+#include "tapp/figure.h"
+#include "tapp/prototype.h"
+#include "tile/feature.h"
 
 View * View::mpThis = nullptr;
 
@@ -71,14 +81,6 @@ View::View()
 
     QGridLayout * grid = new QGridLayout();
     setLayout(grid);
-
-    addFrameSetting(VIEW_DESIGN,            Bounds(-10.0,10.0,20.0), QSize(1500,1100));
-    addFrameSetting(VIEW_MOSAIC,            Bounds(-10.0,10.0,20.0), QSize(1500,1100));
-    addFrameSetting(VIEW_PROTOTYPE,         Bounds(-10.0,10.0,20.0), QSize(1500,1100));
-    addFrameSetting(VIEW_MOTIF_MAKER,       Bounds(-10.0,10.0,20.0), QSize(1500,1100));
-    addFrameSetting(VIEW_TILING,            Bounds(-10.0,10.0,20.0), QSize(1500,1100));
-    addFrameSetting(VIEW_TILING_MAKER,      Bounds(-10.0,10.0,20.0), QSize(1500,1100));
-    addFrameSetting(VIEW_MAP_EDITOR,        Bounds(-10.0,10.0,20.0), QSize(1500,1100));
 }
 
 View::~View()
@@ -96,8 +98,9 @@ void View::init()
     mapEditor   = MapEditor::getSharedInstance();
     tilingMaker = TilingMaker::getSharedInstance();
     designMaker = DesignMaker::getInstance();
+    panel       = ControlPanel::getInstance();
 
-    setKbdMode(KBD_MODE_UNDEFINED);
+    setKbdMode(KBD_MODE_XFORM_VIEW);
 
     ViewControl  * vcontrol = ViewControl::getInstance();
     connect(this,     &View::sig_refreshView,     vcontrol, &ViewControl::slot_refreshView);
@@ -106,25 +109,11 @@ void View::init()
     connect(this,     &View::sig_cyclerQuit,   cycler,  &Cycler::slot_stopCycle);
     connect(this,     &View::sig_cyclerKey,    cycler,  &Cycler::slot_psuedoKey);
 
-    resize(QSize(1500,1000));
+    resize(QSize(DEFAULT_WIDTH,DEFAULT_HEIGHT));
 
     show();
 }
 
-void View::closeEvent(QCloseEvent *event)
-{
-    if (!config->splitScreen && !closed)
-    {
-        QSettings s;
-        s.setValue("viewPos", pos());
-        qDebug() <<  "closeEvent pos" << pos();
-        closed = true;
-    }
-
-    QWidget::closeEvent(event);
-
-    qApp->quit();
-}
 
 void View::addLayer(LayerPtr layer)
 {
@@ -149,68 +138,6 @@ QVector<LayerPtr> View::getActiveLayers()
     return layers;
 }
 
-void  View::reInitFrameSettings()
-{
-    reInitFrameSetting(VIEW_DESIGN);
-    reInitFrameSetting(VIEW_MOSAIC);
-    reInitFrameSetting(VIEW_PROTOTYPE);
-    reInitFrameSetting(VIEW_MOTIF_MAKER);
-    reInitFrameSetting(VIEW_TILING);
-    reInitFrameSetting(VIEW_TILING_MAKER);
-    reInitFrameSetting(VIEW_MAP_EDITOR);
-}
-
-void  View::addFrameSetting(eViewType evt, Bounds bounds, QSize size)
-{
-    frameSettings.insert(evt, FrameSettings(bounds,size));
-}
-
-void  View::reInitFrameSetting(eViewType evt)
-{
-    frameSettings[evt].reInit();
-}
-
-QTransform View::getDefinedFrameTransform(eViewType e)
-{
-    QTransform t = frameSettings[e].getDefinedFrameTransform();
-    //qDebug().noquote() << "View::getDefinedFrameTransform" << sViewerType[e] << Transform::toInfoString(t);
-    return t;
-}
-
-QTransform View::getActiveFrameTransform(eViewType e)
-{
-    QTransform t = frameSettings[e].getActiveFrameTransform();
-    //qDebug().noquote() << "View::getActiveFrameTransform" << sViewerType[e] << Transform::toInfoString(t);
-    return t;
-}
-
-
-QSize View::getDefinedFrameSize(eViewType e)
-{
-    QSize sz =  frameSettings[e].getDefinedFrameSize();
-    //qDebug().noquote() << "View::getDefinedFrameSize()" << sViewerType[e] << sz;
-    return sz;
-}
-
-void View::setDefinedFrameSize(eViewType e, QSize sz)
-{
-    qDebug().noquote() << "View::setDefinedFrameSize()" << sViewerType[e] << sz;
-    frameSettings[e].setDefinedFrameSize(sz);
-}
-
-QSize View::getActiveFrameSize(eViewType e)
-{
-    QSize sz =  frameSettings[e].getActiveFrameSize();
-    //qDebug().noquote() << "View::getActiveFrameSize()" << sViewerType[e] << sz;
-    return sz;
-}
-
-void View::setActiveFrameSize(eViewType e, QSize sz)
-{
-    qDebug().noquote() << "View::setActiveFrameSize()" << sViewerType[e] << sz;
-    frameSettings[e].setActiveFrameSize(sz);
-}
-
 void  View::paintEnable(bool enable)
 {
     setAttribute(Qt::WA_NoSystemBackground,!enable);
@@ -218,150 +145,11 @@ void  View::paintEnable(bool enable)
     canPaint = enable;
 }
 
-void View::paintEvent(QPaintEvent *event)
-{
-    if (!canPaint)
-    {
-        qDebug() << "View::paintEvent() - discarded";
-        QWidget::paintEvent(event);
-        return;
-    }
-
-    //qDebug() << "++++START VIEW PAINT - Scene: items=" << layers.size() << "viewRect" << rect();
-
-    QWidget::paintEvent(event);
-
-    QPainter painter(this);
-
-    std::stable_sort(layers.begin(),layers.end(),Layer::sortByZlevel);  // tempting to move this to addLayer, but if zlevel changed would not be picked up
-
-    for (auto layer : qAsConst(layers))
-    {
-        if (layer->isVisible())
-        {
-            layer->forceLayerRecalc(false);
-            layer->paint(&painter);
-        }
-    }
-
-    if (loadUnit.loadTimer.isValid())
-    {
-        qint64 delta = loadUnit.loadTimer.elapsed();
-        double qdelta = delta /1000.0;
-        QString str = QString("%1").arg(qdelta, 8, 'f', 3, QChar(' '));
-
-        qInfo().noquote() << "Load operation for" << loadUnit.name << "took" << str << "seconds";
-        loadUnit.loadTimer.invalidate();
-        loadUnit.name.clear();
-    }
-
-    //qDebug() << "++++END PAINT";
-}
-
 void View::resize(QSize sz)
 {
     QWidget::resize(sz);
 }
 
-void View::moveEvent(QMoveEvent *event)
-{
-    deltaPos = event->oldPos() - event->pos();
-    //qDebug() << "View::moveEvent: deltaPos" << deltaPos;
-}
-
-void View::resizeEvent(QResizeEvent *event)
-{
-    Q_UNUSED(event);
-
-    QSize oldSize   = getActiveFrameSize(config->getViewerType());
-    QSize newSize   = size();
-    QPointF diffPos = deltaPos;
-    deltaPos        = QPointF();
-    qDebug() << "View::resizeEvent: old" << oldSize << "new" << newSize << "delta" << diffPos;
-
-    if (oldSize == newSize)
-    {
-        return;
-    }
-
-    if (!diffPos.isNull())
-    {
-        emit sig_mouseTranslate(diffPos);
-    }
-
-    frameSettings[config->getViewerType()].setActiveFrameSize(newSize);
-    switch(config->getViewerType())
-    {
-    case VIEW_MOTIF_MAKER:
-    case VIEW_TILING_MAKER:
-    case VIEW_DESIGN:
-    case VIEW_UNDEFINED:
-        break;
-
-    case VIEW_MOSAIC:
-    case VIEW_PROTOTYPE:
-    case VIEW_TILING:
-    case VIEW_MAP_EDITOR:
-        setAllCommonActiveSizes(newSize);
-        break;
-    }
-
-    if (config->scaleToView)
-    {
-        frameSettings[config->getViewerType()].setDefinedFrameSize(newSize);
-        switch (config->getViewerType())
-        {
-        case VIEW_MOTIF_MAKER:
-        case VIEW_TILING_MAKER:
-        case VIEW_DESIGN:
-        case VIEW_UNDEFINED:
-            break;
-
-        case VIEW_MOSAIC:
-        case VIEW_PROTOTYPE:
-        case VIEW_TILING:
-        case VIEW_MAP_EDITOR:
-            setAllCommonDefinedSizes(newSize);
-            break;
-        }
-    }
-
-    emit sig_viewSizeChanged(newSize);
-}
-
-void  View::setAllCommonDefinedSizes(QSize sz)
-{
-    // list does not include the tiling maker, motif maker, and design
-    frameSettings[VIEW_MOSAIC].setDefinedFrameSize(sz);
-    frameSettings[VIEW_PROTOTYPE].setDefinedFrameSize(sz);
-    frameSettings[VIEW_TILING].setDefinedFrameSize(sz);
-    frameSettings[VIEW_MAP_EDITOR].setDefinedFrameSize(sz);
-}
-
-void  View::setAllCommonActiveSizes(QSize sz)
-{
-    // list does not include the tiling maker, motif maker, and design
-    frameSettings[VIEW_MOSAIC].setActiveFrameSize(sz);
-    frameSettings[VIEW_PROTOTYPE].setActiveFrameSize(sz);
-    frameSettings[VIEW_TILING].setActiveFrameSize(sz);
-    frameSettings[VIEW_MAP_EDITOR].setActiveFrameSize(sz);
-}
-
-void View::keyPressEvent( QKeyEvent *k )
-{
-    if (tilingMaker->procKeyEvent(k))        // tiling maker
-    {
-        return;
-    }
-    else if (mapEditor->procKeyEvent(k))    // map editor
-    {
-        return;
-    }
-    else
-    {
-        procKeyEvent(k);
-    }
-}
 
 void View::duplicateView()
 {
@@ -377,13 +165,11 @@ void View::duplicateView()
     tw->show();
 }
 
-void View::setMouseMode(eMouseMode mode)
+void View::setMouseMode(eMouseMode newMode)
 {
-    qDebug() << "MouseMode:" << mode;
+    qDebug() << "MouseMode:" << newMode;
 
-    mouseMode = mode;
-
-    if (mouseMode == MOUSE_MODE_NONE)
+    if (newMode == MOUSE_MODE_NONE)
     {
         config->showCenterMouse = false;
     }
@@ -391,108 +177,41 @@ void View::setMouseMode(eMouseMode mode)
     {
         config->showCenterMouse = true;
     }
+
+    ViewPanel * vp = panel->getViewPanel();
+
+    if (mouseMode == MOUSE_MODE_CENTER && newMode == MOUSE_MODE_NONE)
+    {
+        switch (lastMouseMode)
+        {
+        case MOUSE_MODE_ROTATE:
+            vp->btnRot->setChecked(true);
+            vp->setRotateMode(true);
+            return;
+
+        case MOUSE_MODE_SCALE:
+            vp->btnZoom->setChecked(true);
+            panel->getViewPanel()->setScaleMode(true);
+            return;
+
+        case MOUSE_MODE_TRANSLATE:
+            vp->btnPan->setChecked(true);
+            panel->getViewPanel()->setTranslateMode(true);
+            return;
+
+        case MOUSE_MODE_CENTER:
+            break;
+
+        case MOUSE_MODE_NONE:
+            break;
+        }
+    }
+
+    lastMouseMode = mouseMode;
+    mouseMode     = newMode;
+
+
     update();
-}
-
-
-void View::mousePressEvent(QMouseEvent *event)
-{
-    if (event->button() == Qt::MiddleButton)
-    {
-        return; // discards middle button on wheel
-    }
-
-    dragging = true;
-
-    emit sig_mousePressed(event->localPos(),event->button());
-
-    switch (mouseMode)
-    {
-    case MOUSE_MODE_TRANSLATE:
-        sLast = event->globalPos();
-        break;
-
-    case MOUSE_MODE_SCALE:
-    case MOUSE_MODE_ROTATE:
-        emit sig_setCenter(event->localPos());
-        break;
-
-    case MOUSE_MODE_NONE:
-        break;
-    }
-    update();
-}
-
-void View::mouseDoubleClickEvent(QMouseEvent * event)
-{
-    dragging = false;
-
-    emit sig_mouseDoublePressed(event->localPos(),event->button());
-}
-
-void View::mouseMoveEvent(QMouseEvent *event)
-{
-    if (dragging)
-    {
-        emit sig_mouseDragged(event->localPos());
-        if (mouseMode ==  MOUSE_MODE_TRANSLATE)
-        {
-            QPointF spt  = event->globalPos();
-            QPointF translate = spt - sLast;
-            sLast = spt;
-            qDebug() << "dragged" << translate;
-            emit sig_mouseTranslate(translate);
-        }
-    }
-    else
-    {
-        emit sig_mouseMoved(event->localPos());
-    }
-}
-
-void View::mouseReleaseEvent(QMouseEvent *event)
-{
-    dragging = false;
-
-    emit sig_mouseReleased(event->localPos());
-}
-
-void View::wheelEvent(QWheelEvent *event)
-{
-
-    if (event->buttons() != 0)
-    {
-        return;  // discards middle button on wheel
-    }
-
-    Qt::KeyboardModifiers kms = event->modifiers();
-    bool shift = (kms & Qt::SHIFT);
-
-
-    if (mouseMode == MOUSE_MODE_SCALE)
-    {
-        qreal delta = 0.01;
-        if (shift)
-        {
-            delta = 0.1;
-        }
-        if (event->angleDelta().y() >=  0)
-            emit sig_wheel_scale(delta);
-        else
-            emit sig_wheel_scale(-delta);
-    }
-    else if (mouseMode == MOUSE_MODE_ROTATE)
-    {
-        qreal delta = 0.5;
-        if (shift)
-        {
-            delta = 5.0;
-        }
-        if (event->angleDelta().y() >=  0)
-            emit sig_wheel_rotate(delta); // degrees
-        else
-            emit sig_wheel_rotate(-delta); // degrees
-    }
 }
 
 void View::setBackgroundColor(QColor color)
@@ -622,35 +341,35 @@ bool View::ProcKey(QKeyEvent *k)
     int key = k->key();
     switch (key)
     {
-    case 'A':  setKbdMode(KBD_MODE_ORIGIN); break;
-    case 'B':  setKbdMode(KBD_MODE_OFFSET); break;
+    case 'A':  setKbdMode(KBD_MODE_DES_ORIGIN); break;
+    case 'B':  setKbdMode(KBD_MODE_DES_OFFSET); break;
     case 'D':  duplicateView(); break;
     case 'E':  emit sig_refreshView(); break;    // just for debug
     case 'F':  config->debugReplicate = !config->debugReplicate; emit sig_figure_changed(); break;
-    case 'G':  config->showGrid = !config->showGrid; emit sig_refreshView(); break;
+    case 'G':  config->showGrid = !config->showGrid; Grid::getSharedInstance()->create(); emit sig_refreshView(); break;
     case 'H':  config->hideCircles = !config->hideCircles; config->showCenterDebug = !config->showCenterDebug; update(); break;
     case 'I':  designMaker->designLayerShow(); break;  // I=in
     case 'K':  config->debugMapEnable = !config->debugMapEnable; emit sig_figure_changed(); break;
-    case 'L':  setKbdMode(KBD_MODE_LAYER); break;
+    case 'L':  setKbdMode(KBD_MODE_DES_LAYER_SELECT); break;
     case 'M':  emit sig_raiseMenu(); break;
     case 'N':  theApp->slot_bringToPrimaryScreen(); break;
     case 'O':  designMaker->designLayerHide(); break; // o=out
     case 'P':  emit sig_saveImage(); break;
     case 'Q':  if (Cycler::getInstance()->getMode() != CYCLE_NONE) { emit sig_cyclerQuit(); }
-               else { QApplication::quit(); }
-               break;
+        else { QApplication::quit(); }
+        break;
     case 'R':  break;
-    case 'S':  setKbdMode(KBD_MODE_SEPARATION); break;
+    case 'S':  setKbdMode(KBD_MODE_DES_SEPARATION); break;
     case 'T':  setKbdMode(KBD_MODE_XFORM_TILING); break;
     case 'U':  setKbdMode(KBD_MODE_XFORM_BKGD); break;
     case 'V':  setKbdMode(KBD_MODE_XFORM_VIEW); break;
     case 'W':  setKbdMode(KBD_MODE_XFORM_UNIQUE_FEATURE);break;
     case 'X':  config->circleX = !config->circleX; emit sig_refreshView(); update(); break;
     case 'Y':  emit sig_saveSVG(); break;
-    case 'Z':  setKbdMode(KBD_MODE_ZLEVEL); break;
+    case 'Z':  setKbdMode(KBD_MODE_DES_ZLEVEL); break;
 
-    case Qt::Key_Return: if (config->kbdMode == KBD_MODE_STEP) designMaker->setStep(val); val = 0; break; // always val=0
-    case Qt::Key_Escape: setKbdMode(KBD_MODE_UNDEFINED); break;
+    case Qt::Key_Return: if (config->kbdMode == KBD_MODE_DES_STEP) designMaker->setStep(val); val = 0; break; // always val=0
+    case Qt::Key_Escape: setKbdMode(KBD_MODE_XFORM_VIEW); break;
     case Qt::Key_F1:
     {
         QMessageBox  * box = new QMessageBox();
@@ -666,7 +385,7 @@ bool View::ProcKey(QKeyEvent *k)
         box->setModal(false);
         box->show();
     }
-        break;
+    break;
     case Qt::Key_F2: setKbdMode(KBD_MODE_XFORM_VIEW); break;
     case Qt::Key_F3: break;
     case Qt::Key_F4: dump(true); break;
@@ -683,11 +402,11 @@ bool View::ProcKey(QKeyEvent *k)
     case '8':
     case '9':
         // keys 0-9
-        if (config->kbdMode == KBD_MODE_LAYER)
+        if (config->kbdMode == KBD_MODE_DES_LAYER_SELECT)
         {
-           designMaker->designLayerSelect(key-'0');
+            designMaker->designLayerSelect(key-'0');
         }
-        else if (config->kbdMode == KBD_MODE_STEP)
+        else if (config->kbdMode == KBD_MODE_DES_STEP)
         {
             val *= 10;
             val += (key - '0');
@@ -723,3 +442,288 @@ void View::ProcKeyRight(int delta)
     emit sig_deltaMoveX( delta);
 }
 
+
+
+//////////////////////////////////////////////////
+///
+/// Events
+///
+//////////////////////////////////////////////////
+
+void View::closeEvent(QCloseEvent *event)
+{
+    if (!config->splitScreen && !closed)
+    {
+        QSettings s;
+        s.setValue("viewPos", pos());
+        qDebug() <<  "closeEvent pos" << pos();
+        closed = true;
+    }
+
+    QWidget::closeEvent(event);
+
+    qApp->quit();
+}
+
+
+void View::paintEvent(QPaintEvent *event)
+{
+    Q_UNUSED(event);
+
+    if (!canPaint)
+    {
+        qDebug() << "View::paintEvent() - discarded";
+        //QWidget::paintEvent(event);
+        return;
+    }
+
+    //qDebug() << "++++START VIEW PAINT - Scene: items=" << layers.size() << "viewRect" << rect();
+
+    qDebug() << "View::paintEvent()";
+    //QWidget::paintEvent(event);
+
+    QPainter painter(this);
+
+    std::stable_sort(layers.begin(),layers.end(),Layer::sortByZlevel);  // tempting to move this to addLayer, but if zlevel changed would not be picked up
+
+    for (auto layer : qAsConst(layers))
+    {
+        if (layer->isVisible())
+        {
+            layer->forceLayerRecalc(false);
+            layer->paint(&painter);
+        }
+    }
+
+    if (loadUnit.loadTimer.isValid())
+    {
+        qint64 delta = loadUnit.loadTimer.elapsed();
+        double qdelta = delta /1000.0;
+        QString str = QString("%1").arg(qdelta, 8, 'f', 3, QChar(' '));
+
+        qInfo().noquote() << "Load operation for" << loadUnit.name << "took" << str << "seconds";
+        loadUnit.loadTimer.invalidate();
+        loadUnit.name.clear();
+    }
+
+    //qDebug() << "++++END PAINT";
+}
+
+#if 0
+// every resize event has a move event afterwards
+// but every move event does not necessarily have a resize eventy
+void View::moveEvent(QMoveEvent *event)
+{
+    Q_UNUSED(event);
+}
+#endif
+
+void View::resizeEvent(QResizeEvent *event)
+{
+    Q_UNUSED(event);
+
+    QSize oldSize   = frameSettings.getCropSize(config->getViewerType());
+    QSize newSize   = size();
+    QSize deltaSize = newSize - oldSize;
+
+    qDebug() << "View::resizeEvent: old" << oldSize << "new" << newSize << "delta-size" << deltaSize;
+
+    if (oldSize == newSize)
+    {
+        return;
+    }
+
+    switch(config->getViewerType())
+    {
+    case VIEW_MOTIF_MAKER:
+    case VIEW_DESIGN:
+        frameSettings.setDeltaSize(config->getViewerType(),deltaSize);
+        break;
+
+    case VIEW_TILING_MAKER:
+    case VIEW_TILING:
+    case VIEW_MOSAIC:
+    case VIEW_PROTOTYPE:
+    case VIEW_MAP_EDITOR:
+        frameSettings.setCommonDeltaSizes(deltaSize);
+        break;
+
+    default:
+        break;
+    }
+
+    emit sig_viewSizeChanged(newSize);      // for outer border (if any)
+    Grid::getSharedInstance()->create();    // re-create
+}
+
+void View::keyPressEvent( QKeyEvent *k )
+{
+    if (tilingMaker->procKeyEvent(k))        // tiling maker
+    {
+        return;
+    }
+    else if (mapEditor->procKeyEvent(k))    // map editor
+    {
+        return;
+    }
+    else
+    {
+        procKeyEvent(k);
+    }
+}
+
+void View::mousePressEvent(QMouseEvent *event)
+{
+    qDebug() << "View::mousePressEvent";
+    if (event->button() == Qt::MiddleButton)
+    {
+        return; // discards middle button on wheel
+    }
+
+    dragging = true;
+
+#if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
+    switch (mouseMode)
+    {
+    case MOUSE_MODE_CENTER:
+        emit sig_mousePressed(event->position(),event->button());
+        panel->getViewPanel()->btnCenter->setChecked(false);
+        setMouseMode(MOUSE_MODE_NONE);
+        break;
+
+    case MOUSE_MODE_TRANSLATE:
+        sLast = event->globalPosition();
+        break;
+
+    case MOUSE_MODE_ROTATE:
+    case MOUSE_MODE_SCALE:
+    case MOUSE_MODE_NONE:
+        emit sig_mousePressed(event->position(),event->button());
+        break;
+    }
+#else
+    switch (mouseMode)
+    {
+    case MOUSE_MODE_CENTER:
+        emit sig_mousePressed(event->localPos(),event->button());
+        panel->getViewPanel()->btnCenter->setChecked(false);
+        setMouseMode(MOUSE_MODE_NONE);
+        break;
+
+    case MOUSE_MODE_TRANSLATE:
+        sLast = event->globalPos();
+        break;
+
+    case MOUSE_MODE_SCALE:
+    case MOUSE_MODE_ROTATE:
+    case MOUSE_MODE_NONE:
+        emit sig_mousePressed(event->localPos(),event->button());
+        break;
+    }
+#endif
+    update();
+}
+
+void View::mouseMoveEvent(QMouseEvent *event)
+{
+    //qDebug() << "View::mouseMoveEvent";
+
+#if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
+    if (dragging)
+    {
+        emit sig_mouseDragged(event->position());
+
+        if (mouseMode ==  MOUSE_MODE_TRANSLATE)
+        {
+            QPointF spt  = event->globalPosition();
+            QPointF translate = spt - sLast;
+            sLast = spt;
+            qDebug() << "dragged" << translate;
+            emit sig_mouseTranslate(translate);
+        }
+    }
+    else
+    {
+        emit sig_mouseMoved(event->position());
+    }
+#else
+    if (dragging)
+    {
+        emit sig_mouseDragged(event->pos());
+
+        if (mouseMode ==  MOUSE_MODE_TRANSLATE)
+        {
+            QPointF spt  = event->globalPos();
+            QPointF translate = spt - sLast;
+            sLast = spt;
+            qDebug() << "dragged" << translate;
+            emit sig_mouseTranslate(translate);
+        }
+    }
+    else
+    {
+        emit sig_mouseMoved(event->pos());
+    }
+
+#endif
+}
+
+void View::mouseReleaseEvent(QMouseEvent *event)
+{
+    qDebug() << "View::mouseReleaseEvent";
+    dragging = false;
+#if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
+    emit sig_mouseReleased(event->position());
+#else
+    emit sig_mouseReleased(event->localPos());
+#endif
+}
+
+void View::mouseDoubleClickEvent(QMouseEvent * event)
+{
+    dragging = false;
+
+#if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
+    emit sig_mouseDoublePressed(event->position(),event->button());
+#else
+    emit sig_mouseDoublePressed(event->localPos(),event->button());
+#endif
+}
+
+void View::wheelEvent(QWheelEvent *event)
+{
+
+    if (event->buttons() != 0)
+    {
+        return;  // discards middle button on wheel
+    }
+
+    Qt::KeyboardModifiers kms = event->modifiers();
+    bool shift = (kms & Qt::SHIFT);
+
+
+    if (mouseMode == MOUSE_MODE_SCALE)
+    {
+        qreal delta = 0.01;
+        if (shift)
+        {
+            delta = 0.1;
+        }
+        if (event->angleDelta().y() >=  0)
+            emit sig_wheel_scale(delta);
+        else
+            emit sig_wheel_scale(-delta);
+    }
+    else if (mouseMode == MOUSE_MODE_ROTATE)
+    {
+        qreal delta = 0.5;
+        if (shift)
+        {
+            delta = 5.0;
+        }
+        if (event->angleDelta().y() >=  0)
+            emit sig_wheel_rotate(delta); // degrees
+        else
+            emit sig_wheel_rotate(-delta); // degrees
+    }
+}

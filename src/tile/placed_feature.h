@@ -35,9 +35,14 @@
 #ifndef PLACED
 #define PLACED
 
-#include "tile/feature.h"
-#include "base/shared.h"
+#include <QString>
+#include <QTransform>
+#include <QTextStream>
 #include "base/pugixml.hpp"
+#include "geometry/edgepoly.h"
+
+typedef std::shared_ptr<class PlacedFeature>   PlacedFeaturePtr;
+typedef std::shared_ptr<class Feature>         FeaturePtr;
 
 class PlacedFeature
 {
@@ -53,10 +58,10 @@ public:
     void             setFeature(FeaturePtr feature);
     FeaturePtr       getFeature();
     QTransform       getTransform();
-    EdgePoly         getFeatureEdgePoly(){ return feature->getEdgePoly(); }
-    QPolygonF        getFeaturePolygon() { return feature->getPolygon(); }
+    EdgePoly         getFeatureEdgePoly();
+    QPolygonF        getFeaturePolygon();
     EdgePoly         getPlacedEdgePoly();
-    QPolygonF        getPlacedPolygon()  { return T.map(feature->getPolygon()); }
+    QPolygonF        getPlacedPolygon();
 
     bool saveAsGirihShape(QString name);
     bool loadFromGirihShape(QString name);

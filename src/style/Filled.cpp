@@ -22,9 +22,13 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "style/filled.h"
-#include "base/configuration.h"
 #include <QPainter>
+#include "style/filled.h"
+#include "settings/configuration.h"
+#include "geometry/map.h"
+#include "base/geo_graphics.h"
+
+using std::shared_ptr;
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -243,27 +247,36 @@ void Filled::drawDCEL(GeoGraphics * gg)
 
 void Filled::drawDCELNew2(GeoGraphics *gg)
 {
-    // not selected
-    for (auto& fset : qAsConst(faceGroup))
+    // each face set has a single color in whiteColorSet
+    int row = 0;
+    for (FaceSetPtr & fset : faceGroup)
     {
-        if (fset->tpcolor.hidden && !fset->selected)
-            continue;
-
-        QColor color = fset->tpcolor.color;
         if (fset->selected)
         {
-            color = Qt::red;
+            for (FacePtr & face : *fset)
+            {
+                gg->fillEdgePoly(face.get(),Qt::red);
+            }
         }
-
-        for (auto & face : qAsConst(*fset))
+        else
         {
-            gg->fillEdgePoly(face.get(),color);
+            TPColor tpcolor =  whiteColorSet.getColor(row);
+            if (!tpcolor.hidden)
+            {
+                QColor color = tpcolor.color;
+                for (FacePtr & face : *fset)
+                {
+                    gg->fillEdgePoly(face.get(),color);
+                }
+            }
         }
+        row++;
     }
 }
 
 void Filled::drawDCELNew3(GeoGraphics *gg)
 {
+    // each face set has a set of colors
     for (FaceSetPtr & fset : faceGroup)
     {
         if (fset->selected)

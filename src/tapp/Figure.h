@@ -37,55 +37,13 @@
 #ifndef FIGURE_H
 #define FIGURE_H
 
-#include "geometry/map.h"
-#include "base/shared.h"
 #include <QPolygonF>
 #include <QGraphicsItem>
 #include <QPainter>
+#include "enums/efigtype.h"
 
-#define E2STR(x) #x
-
-// these are the types of figure which can be made
-enum eFigType
-{
-    FIG_TYPE_UNDEFINED,
-    FIG_TYPE_RADIAL,
-    FIG_TYPE_ROSETTE,
-    FIG_TYPE_STAR,
-    FIG_TYPE_CONNECT_STAR,
-    FIG_TYPE_CONNECT_ROSETTE,
-    FIG_TYPE_EXTENDED_ROSETTE,
-    FIG_TYPE_EXTENDED_STAR,
-    FIG_TYPE_EXPLICIT,
-    FIG_TYPE_EXPLICIT_INFER,
-    FIG_TYPE_EXPLICIT_ROSETTE,
-    FIG_TYPE_EXPLICIT_HOURGLASS,
-    FIG_TYPE_EXPLICIT_INTERSECT,
-    FIG_TYPE_EXPLICIT_GIRIH,
-    FIG_TYPE_EXPLICIT_STAR,
-    FIG_TYPE_EXPLICIT_FEATURE
-};
-
-static QString sFigType[] =
-{
-    E2STR(FIG_TYPE_UNDEFINED),
-    E2STR(FIG_TYPE_RADIAL),
-    E2STR(FIG_TYPE_ROSETTE),
-    E2STR(FIG_TYPE_STAR),
-    E2STR(FIG_TYPE_CONNECT_STAR),
-    E2STR(FIG_TYPE_CONNECT_ROSETTE),
-    E2STR(FIG_TYPE_EXTENDED_ROSETTE),
-    E2STR(FIG_TYPE_EXTENDED_STAR),
-    E2STR(FIG_TYPE_EXPLICIT),
-    E2STR(FIG_TYPE_EXPLICIT_INFER),
-    E2STR(FIG_TYPE_EXPLICIT_ROSETTE),
-    E2STR(FIG_TYPE_EXPLICIT_HOURGLASS),
-    E2STR(FIG_TYPE_EXPLICIT_INTERSECT),
-    E2STR(FIG_TYPE_EXPLICIT_GIRIH),
-    E2STR(FIG_TYPE_EXPLICIT_STAR),
-    E2STR(FIG_TYPE_EXPLICIT_FEATURE)
-};
-
+typedef std::shared_ptr<class Figure>       FigurePtr;
+typedef std::shared_ptr<class Map>          MapPtr;
 
 class Figure
 {

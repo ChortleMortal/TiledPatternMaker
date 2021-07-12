@@ -30,6 +30,7 @@
 #include "makers/decoration_maker/decoration_maker.h"
 #include "makers/motif_maker/motif_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
+#include "makers/tiling_maker/feature_selection.h"
 #include "panels/dlg_edgepoly_edit.h"
 #include "panels/dlg_listnameselect.h"
 #include "panels/dlg_listselect.h"
@@ -37,14 +38,33 @@
 #include "panels/dlg_trim.h"
 #include "panels/panel.h"
 #include "style/style.h"
-#include "tile/backgroundimage.h"
 #include "tile/tiling_manager.h"
 #include "viewers/view.h"
 #include "viewers/viewcontrol.h"
+#include "base/shared.h"
+#include "tile/tiling.h"
+#include "tile/feature.h"
+#include "tile/placed_feature.h"
+#include "geometry/edge.h"
+#include "geometry/vertex.h"
+
+typedef std::weak_ptr<Tiling>          WeakTilingPtr;
+
+using std::make_shared;
 
 Q_DECLARE_METATYPE(WeakPlacedFeaturePtr)
 
-page_tiling_maker:: page_tiling_maker(ControlPanel * cpanel)  : panel_page(cpanel,"Tiling Maker"), bkgdLayout("Bkgd Xform")
+#if 0
+
+    chk_hideTiling   = new QCheckBox("Hide Tiling");
+
+    bkh2->addWidget(chk_hideTiling);
+
+    connect(chk_hideTiling, &QCheckBox::clicked,       tilingMaker.get(),    &TilingMaker::hideTiling);
+
+#endif
+
+page_tiling_maker:: page_tiling_maker(ControlPanel * cpanel)  : panel_page(cpanel,"Tiling Maker")
 {
     QHBoxLayout * controlLayout = createControlRow();
     vbox->addLayout(controlLayout);
@@ -69,9 +89,6 @@ page_tiling_maker:: page_tiling_maker(ControlPanel * cpanel)  : panel_page(cpane
 
     debugWidget = createDebugInfo();
     vbox->addWidget(debugWidget);
-
-    bkgdGroup = createBackgroundGroup();
-    vbox->addWidget(bkgdGroup);
 
     connect(theApp,  &TiledPatternMaker::sig_mosaicLoaded,  this, &page_tiling_maker::onEnter);
     connect(tilingMaker.get(),  &TilingMaker::sig_buildMenu,      this, &page_tiling_maker::slot_buildMenu);
@@ -410,7 +427,6 @@ QGroupBox * page_tiling_maker::createModesGroup()
     AQPushButton * includePoly  = new AQPushButton("Include/Exclude (F7)");
     AQPushButton * position     = new AQPushButton("Show Position (F8)");
     AQPushButton * measure      = new AQPushButton("Measure (F9)");
-    AQPushButton * perspective  = new AQPushButton("Bkgd Perspective (F10)");
     AQPushButton * editPoly     = new AQPushButton("Edit Feature (F11)");
     AQPushButton * mirrorX      = new AQPushButton("Mirror X");
     AQPushButton * mirrorY      = new AQPushButton("Mirror Y");
@@ -431,7 +447,6 @@ QGroupBox * page_tiling_maker::createModesGroup()
     modeBox->addWidget(includePoly,row,0);
     modeBox->addWidget(position,row,1);
     modeBox->addWidget(measure,row,2);
-    modeBox->addWidget(perspective,row,3);
     modeBox->addWidget(editPoly,row,4);
 
     row++;
@@ -458,12 +473,13 @@ QGroupBox * page_tiling_maker::createModesGroup()
     mouseModeBtnGroup->addButton(nomode,        TM_NO_MOUSE_MODE);
     mouseModeBtnGroup->addButton(position,      TM_POSITION_MODE);
     mouseModeBtnGroup->addButton(measure,       TM_MEASURE_MODE);
-    mouseModeBtnGroup->addButton(perspective,   TM_BKGD_SKEW_MODE);
     mouseModeBtnGroup->addButton(editPoly,      TM_EDIT_FEATURE_MODE);
     mouseModeBtnGroup->addButton(curveEdge,     TM_EDGE_CURVE_MODE);
     mouseModeBtnGroup->addButton(mirrorX,       TM_MIRROR_X_MODE);
     mouseModeBtnGroup->addButton(mirrorY,       TM_MIRROR_Y_MODE);
     mouseModeBtnGroup->addButton(drawConst,     TM_CONSTRUCTION_LINES);
+
+    chkSnapTo->setChecked(config->snapToGrid);
 
     connect(chkSnapTo, &QCheckBox::clicked, tilingMaker.get(), &TilingMaker::slot_snapTo);
     connect(mouseModeBtnGroup, QOverload<QAbstractButton*>::of(&QButtonGroup::buttonClicked), this, &page_tiling_maker::slot_setModes);
@@ -471,44 +487,7 @@ QGroupBox * page_tiling_maker::createModesGroup()
     return modeGroup;
 }
 
-QGroupBox * page_tiling_maker::createBackgroundGroup()
-{
-    QPushButton * loadBkgdBtn     = new QPushButton("Load Background");
-    QPushButton * adjustBtn       = new QPushButton("Adjust perspective");
-    QPushButton * saveAdjustedBtn = new QPushButton("Save Adjusted");
-    QPushButton * clearBtn        = new QPushButton("Clear");
 
-    chk_useAdjusted  = new QCheckBox("Use Perspective");
-    chk_hideTiling   = new QCheckBox("Hide Tiling");
-
-    QHBoxLayout * bkh2 = new QHBoxLayout();
-    bkh2->addWidget(loadBkgdBtn);
-    bkh2->addWidget(chk_useAdjusted);
-    bkh2->addWidget(chk_hideTiling);
-    bkh2->addWidget(clearBtn);
-    bkh2->addWidget(adjustBtn);
-    bkh2->addWidget(saveAdjustedBtn);
-    bkh2->addStretch();
-
-    QVBoxLayout * bkg = new QVBoxLayout();
-    bkg->addLayout(&bkgdLayout);
-    bkg->addLayout(bkh2);
-
-    QGroupBox * bkgdGroup  = new QGroupBox("Background Image");
-    bkgdGroup->setLayout(bkg);
-
-    connect(loadBkgdBtn,    &QPushButton::clicked,            this,    &page_tiling_maker::slot_loadBackground);
-    connect(adjustBtn,      &QPushButton::clicked,            this,    &page_tiling_maker::slot_adjustBackground);
-    connect(saveAdjustedBtn,&QPushButton::clicked,            this,    &page_tiling_maker::slot_saveAdjustedBackground);
-    connect(clearBtn,       &QPushButton::clicked,            this,    &page_tiling_maker::slot_clearBackground);
-
-    connect(&bkgdLayout,    &LayoutTransform::xformChanged,   this,    &page_tiling_maker::slot_setBkgdXform);
-    connect(chk_useAdjusted,&QAbstractButton::clicked,        this,    &page_tiling_maker::slot_useAdjustedClicked);
-
-    connect(chk_hideTiling, &QCheckBox::clicked,       tilingMaker.get(),    &TilingMaker::hideTiling);
-
-    return bkgdGroup;
-}
 
 /////////////////////////////////////
 ///
@@ -535,7 +514,6 @@ void  page_tiling_maker::onEnter()
     blockPage(false);
 
     TilingPtr tiling = tilingMaker->getSelected();
-    displayBackgroundStatus(tiling,true);
     loadTilingCombo(tiling);
     buildMenu();
 
@@ -571,8 +549,6 @@ void  page_tiling_maker::refreshPage()
     QString astring;
     QTextStream ts(&astring);
     ts << "pos: (" << b.x() << ", " << b.y() << ")";
-
-    displayBackgroundStatus(tp,false);
 
     TilingSelectorPtr tsp = tilingMaker->getCurrentSelection();
     if (tsp)
@@ -619,7 +595,7 @@ bool page_tiling_maker::canExit()
     }
     if (!txt.isEmpty())
     {
-        QMessageBox msgBox;
+        QMessageBox msgBox(this);
         msgBox.setIcon(QMessageBox::Warning);
         msgBox.setText(txt);
         msgBox.setInformativeText(info);
@@ -650,6 +626,7 @@ void page_tiling_maker::slot_clearMakers()
 {
     // clears everything
     vcontrol->resetAllMakers();
+    emit sig_refreshView();
 
     onEnter();
     //view->dump(true);
@@ -1269,8 +1246,8 @@ void page_tiling_maker::slot_currentTilingChanged(int index)
 void page_tiling_maker::slot_setModes(QAbstractButton * btn)
 {
     int mode = mouseModeBtnGroup->id(btn);
-    eTMMouseMode mm = static_cast<eTMMouseMode>(mode);
-    qDebug() << sTMMouseMode[mm] << btn->isChecked();
+    eTilingMakerMouseMode mm = static_cast<eTilingMakerMouseMode>(mode);
+    qDebug() << sTilingMakerMouseMode[mm] << btn->isChecked();
 
     if (btn->isChecked())
         tilingMaker->setTilingMakerMouseMode(mm);
@@ -1292,7 +1269,7 @@ void page_tiling_maker::tallyMouseMode()
         lastChecked->blockSignals(false);
     }
 
-    eTMMouseMode mmode = tilingMaker->getTilingMakerMouseMode();
+    eTilingMakerMouseMode mmode = tilingMaker->getTilingMakerMouseMode();
     QAbstractButton * current = mouseModeBtnGroup->button(mmode);
 
     if (current == lastChecked)
@@ -1325,10 +1302,6 @@ void page_tiling_maker::tallyMouseMode()
         break;
     case TM_TRANSLATION_VECTOR_MODE:
         txt = "Use mouse, left-click on a polygon center or vertex, drag to the repititon point. Do this twice for two directions.";
-        panel->showPanelStatus(txt);
-        break;
-    case TM_BKGD_SKEW_MODE:
-        txt = "Click to select four points on background image. Then press 'Adjust Perspective' to fix camera skew.";
         panel->showPanelStatus(txt);
         break;
     case TM_NO_MOUSE_MODE:
@@ -1507,212 +1480,7 @@ void page_tiling_maker::slot_currentFeature(int index)
     }
 }
 
-void page_tiling_maker::displayBackgroundStatus(TilingPtr tiling, bool force)
-{
-    if (!tiling)
-    {
-        return;
-    }
 
-    if (!refresh && !force)
-    {
-        return;
-    }
-
-    BkgdImgPtr bi = tiling->getBackground();
-    if (bi)
-    {
-        Xform xform = bi->getBkgdXform();
-        bkgdLayout.blockSignals(true);
-        bkgdLayout.setTransform(xform);
-        bkgdLayout.blockSignals(false);
-
-        chk_useAdjusted->blockSignals(true);
-        chk_useAdjusted->setChecked(bi->useAdjusted());
-        chk_useAdjusted->blockSignals(false);
-
-        QString name = bi->getName();
-        if (name.isEmpty()) name = "none";
-        bkgdGroup->setTitle(QString("Background Image:  %1").arg(name));
-    }
-    else
-    {
-        bkgdGroup->setTitle(QString("Background Image:  none"));
-        bkgdLayout.init();
-    }
-}
-
-void page_tiling_maker::slot_loadBackground()
-{
-    TilingPtr tiling = tilingMaker->getSelected();
-
-    QString bkgdDir = config->rootMediaDir + "bkgd_photos/";
-    QString filename = QFileDialog::getOpenFileName(nullptr,"Select image file",bkgdDir, "Image Files (*.png *.jpg *.bmp *.heic)");
-    if (filename.isEmpty()) return;
-
-    bool rv = BackgroundImage::import(filename);
-    if (rv)
-    {
-        QFileInfo info(filename);
-        QString name = info.fileName();
-        BkgdImgPtr bi = make_shared<BackgroundImage>(name);
-        if (bi->isLoaded())
-        {
-            config->showBackgroundImage = true;     // since we loaded it, might as well see it
-            tiling->setBackground(bi);
-
-            setupBackground(bi);
-
-            displayBackgroundStatus(tiling,true);
-
-            emit sig_refreshView();
-        }
-    }
-}
-
-void page_tiling_maker::slot_useAdjustedClicked(bool checked)
-{
-    TilingPtr tiling = tilingMaker->getSelected();
-    if (tiling)
-    {
-        BkgdImgPtr bi = tiling->getBackground();
-        if (bi)
-        {
-            bi->setUseAdjusted(checked);
-            setupBackground(bi);
-        }
-    }
-}
-
-void page_tiling_maker::setupBackground(BkgdImgPtr bi)
-{
-    if (bi)
-    {
-        Xform xform = bi->getBkgdXform();
-        xform.setTransform(bkgdLayout.getQTransform());
-        bi->updateBkgdXform(xform);
-
-        bi->createPixmap();
-    }
-}
-
-void page_tiling_maker::slot_clearBackground ()
-{
-    TilingPtr tiling = tilingMaker->getSelected();
-
-    BkgdImgPtr bi;
-    tiling->setBackground(bi);
-
-    emit sig_refreshView();
-}
-
-void page_tiling_maker::slot_setBkgdXform()
-{
-    TilingPtr tiling = tilingMaker->getSelected();
-
-    BkgdImgPtr bi = tiling->getBackground();
-    if (bi)
-    {
-        Xform xform = bi->getBkgdXform();
-        xform.setTransform(bkgdLayout.getQTransform());
-        bi->updateBkgdXform(xform);
-    }
-
-    if (config->getViewerType() == VIEW_TILING_MAKER)
-    {
-        emit sig_refreshView();
-    }
-}
-
-void page_tiling_maker::slot_adjustBackground()
-{
-    if (tilingMaker->getTilingMakerMouseMode() != TM_BKGD_SKEW_MODE)
-    {
-        QMessageBox box(this);
-        box.setIcon(QMessageBox::Warning);
-        box.setText("Please press F10 or select Bkgd perspective");
-        box.exec();
-        return;
-    }
-
-    EdgePoly & waccum = tilingMaker->getAccumW();
-    if (waccum.size() != 4)
-    {
-        QMessageBox box(this);
-        box.setIcon(QMessageBox::Warning);
-        box.setText("Please select four points to skew perspective");
-        box.exec();
-        return;
-    }
-
-
-    TilingPtr tiling = tilingMaker->getSelected();
-
-    BkgdImgPtr bi = tiling->getBackground();
-    bi->createBackgroundAdjustment(
-        tilingMaker->worldToScreen(waccum[0]->v1->pt),
-        tilingMaker->worldToScreen(waccum[1]->v1->pt),
-        tilingMaker->worldToScreen(waccum[2]->v1->pt),
-        tilingMaker->worldToScreen(waccum[3]->v1->pt));
-
-    bi->createPixmap();
-
-    displayBackgroundStatus(tiling,true);
-
-    tilingMaker->setTilingMakerMouseMode(TM_NO_MOUSE_MODE);
-}
-
-void page_tiling_maker::slot_saveAdjustedBackground()
-{
-    TilingPtr tiling  = tilingMaker->getSelected();
-
-    BkgdImgPtr bi   = tiling->getBackground();
-    QString oldname = bi->getName();
-
-    DlgName dlg;
-    dlg.newEdit->setText(oldname);
-    int retval = dlg.exec();
-    if (retval == QDialog::Rejected)
-    {
-        qDebug() << "Canceled";
-        return;
-    }
-
-    Q_ASSERT(retval == QDialog::Accepted);
-    QString newName = dlg.newEdit->text();
-
-    // save
-    bool rv = bi->saveAdjusted(newName);
-
-    QMessageBox box(this);
-    if (rv)
-    {
-        box.setIcon(QMessageBox::Information);
-        box.setText("OK");
-    }
-    else
-    {
-        box.setIcon(QMessageBox::Warning);
-        box.setText("FAILED");
-    }
-    box.exec();
-
-    if (rv)
-    {
-        // re-load
-        BkgdImgPtr bip = make_shared<BackgroundImage>(newName);
-        if (bip->isLoaded())
-        {
-            config->showBackgroundImage = true;     // since we loaded it, might as well see it
-
-            displayBackgroundStatus(tiling,true);
-
-            setupBackground(bip);
-
-            emit sig_refreshView();
-        }
-    }
-}
 
 void page_tiling_maker::slot_exportPoly()
 {

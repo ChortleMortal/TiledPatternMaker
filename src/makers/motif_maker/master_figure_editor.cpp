@@ -28,6 +28,8 @@
 #include "tapp/star.h"
 #include "tapp/extended_star.h"
 #include "tapp/extended_rosette.h"
+#include "makers/motif_maker/explicit_figure_editors.h"
+#include "settings/configuration.h"
 
 Q_DECLARE_METATYPE(FigureEditor *)
 

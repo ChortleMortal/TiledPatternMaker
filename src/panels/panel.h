@@ -25,12 +25,15 @@
 #ifndef PANEL_H
 #define PANEL_H
 
-#include "panels/panel_page.h"
+#include "panels/panel_misc.h"
 #include "panels/panel_list_widget.h"
 #include "panels/panel_status.h"
-#include "panels/panel_pagesWidget.h"
-#include "base/configuration.h"
 #include "base/tpmsplash.h"
+#include "enums/ekeyboardmode.h"
+
+class panel_page;
+class PanelPagesWidget;
+class TiledPatternMaker;
 
 class ControlPanel : public AQWidget
 {
@@ -60,9 +63,8 @@ public:
     void    selectViewer(int id);
 
     void                setCurrentPage(QString name);
-    panel_page *        getCurrentPage() { return panelPages->getCurrentPage(); }
-
-    eViewType           getCurrentView() { return panelStatus->getCurrentView(); }
+    panel_page *        getCurrentPage();
+    class ViewPanel  *  getViewPanel() { return vpanel;}
     bool                isVisiblePage(panel_page *);
     static eKbdMode     getValidKbdMode(eKbdMode mode);
 
@@ -97,6 +99,8 @@ private slots:
     void    showTilingPressed();
     void    showMosaicPressed();
     void    slot_showBackChanged(bool state);
+    void    slot_showGridChanged(bool state);
+    void    slot_showCenterChanged(bool state);
     void    slot_view_synch(int id, int enb);
 
     void    slot_lockViewClicked(bool enb);
@@ -121,15 +125,15 @@ private:
 private:
     static ControlPanel * mpThis;
 
-    Configuration        * config;
-    TiledPatternMaker    * maker;
-    class View           * view;
-    class ViewControl    * vcontrol;
+    Configuration        *  config;
+    TiledPatternMaker    *  maker;
+    class View           *  view;
+    class ViewControl    *  vcontrol;
+    class ViewPanel      *  vpanel;
 
-    PanelStatus          * panelStatus;
-    TPMSplash            * splash;
-
-    QTimer               *	mpTimer;
+    PanelStatus          *  panelStatus;
+    TPMSplash            *  splash;
+    QTimer               *  mpTimer;
     volatile bool           updateLocked;
 
     bool                    closed;
@@ -154,6 +158,9 @@ private:
     QCheckBox   *cbProtoMaker;
     QCheckBox   *cbTilingMakerView;
     QCheckBox   *cbMapEditor;
+    QCheckBox   *cbBackgroundImage;
+    QCheckBox   *cbGrid;
+    QCheckBox   *cbCenter;
 
     QCheckBox   *cbLockView;
     QCheckBox   *cbMultiSelect;

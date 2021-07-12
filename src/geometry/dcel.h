@@ -28,9 +28,10 @@ Taken from:  https://github.com/AnkurRyder/DCEL.git
 #define DCEL_H
 
 #include <QtCore>
-#include <base/shared.h>
 #include "geometry/map.h"
 #include "geometry/faces.h"
+
+typedef std::shared_ptr<class Face>         FacePtr;
 
 enum eColor
 {

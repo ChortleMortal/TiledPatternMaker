@@ -22,14 +22,20 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "base/configuration.h"
+#include "settings/configuration.h"
 #include "geometry/point.h"
 #include "tile/placed_feature.h"
 #include "viewers/prototype_view.h"
 #include "viewers/viewcontrol.h"
 #include "viewers/viewerbase.h"
+#include "viewers/view.h"
 #include "makers/motif_maker/motif_maker.h"
-#include "base/configuration.h"
+#include "settings/configuration.h"
+#include "tapp/prototype.h"
+#include "base/geo_graphics.h"
+#include "geometry/map.h"
+#include "tile/tiling.h"
+#include "tapp/design_element.h"
 
 PrototypeViewPtr PrototypeView::spThis;
 
@@ -37,12 +43,12 @@ PrototypeViewPtr PrototypeView::getSharedInstance()
 {
     if (!spThis)
     {
-        spThis = make_shared<PrototypeView>();
+        spThis = std::make_shared<PrototypeView>();
     }
     return spThis;
 }
 
-PrototypeView::PrototypeView() : Layer("ProtoFeatureView",LTYPE_VIEW)
+PrototypeView::PrototypeView() : Layer("ProtoFeatureView")
 {
     feature_interior = QColor(255, 217, 217, 127);
     feature_border   = QColor(140, 140, 140);
@@ -141,7 +147,7 @@ void PrototypeView::draw( GeoGraphics * gg )
                 if (feature == pfp->getFeature())
                 {
                     QTransform tr                  = pfp->getTransform();
-                    PlacedDesignElementPtr pdel    = make_shared<PlacedDesignElement>(delp,tr);
+                    PlacedDesignElementPtr pdel    = std::make_shared<PlacedDesignElement>(delp,tr);
                     drawPlacedDesignElement(gg, pdel, QPen(Qt::blue,3), QBrush(feature_interior), QPen(feature_border,3),selected);
                 }
             }
@@ -159,7 +165,7 @@ void PrototypeView::draw( GeoGraphics * gg )
                 if (feature == pfp->getFeature())
                 {
                     QTransform tr                  = pfp->getTransform();
-                    PlacedDesignElementPtr pdel    = make_shared<PlacedDesignElement>(delp,tr);
+                    PlacedDesignElementPtr pdel    = std::make_shared<PlacedDesignElement>(delp,tr);
                     drawPlacedDesignElement(gg, pdel, QPen(Qt::blue,3), QBrush(feature_interior), QPen(feature_border,3),selected);
                 }
             }
@@ -212,4 +218,67 @@ void PrototypeView::drawPlacedDesignElement(GeoGraphics * gg, PlacedDesignElemen
     ViewerBase::drawFigure(gg,fig,linePen);
 
     gg->pop();
+}
+
+void PrototypeView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
+{
+    if (view->getMouseMode() == MOUSE_MODE_CENTER && btn == Qt::LeftButton)
+    {
+        setCenterScreenUnits(spt);
+        forceLayerRecalc();
+        emit sig_refreshView();
+    }
+}
+
+void PrototypeView::slot_mouseDragged(QPointF spt)
+{ Q_UNUSED(spt); }
+
+void PrototypeView::slot_mouseTranslate(QPointF pt)
+{
+    xf_canvas.setTranslateX(xf_canvas.getTranslateX() + pt.x());
+    xf_canvas.setTranslateY(xf_canvas.getTranslateY() + pt.y());
+    forceLayerRecalc();
+}
+
+void PrototypeView::slot_mouseMoved(QPointF spt)
+{ Q_UNUSED(spt); }
+void PrototypeView::slot_mouseReleased(QPointF spt)
+{ Q_UNUSED(spt); }
+void PrototypeView::slot_mouseDoublePressed(QPointF spt)
+{ Q_UNUSED(spt); }
+
+void PrototypeView::slot_wheel_scale(qreal delta)
+{
+    xf_canvas.setScale(xf_canvas.getScale() + delta);
+    forceLayerRecalc();
+}
+
+void PrototypeView::slot_wheel_rotate(qreal delta)
+{
+    xf_canvas.setRotateDegrees(xf_canvas.getRotateDegrees() + delta);
+    forceLayerRecalc();
+}
+
+void PrototypeView::slot_scale(int amount)
+{
+    xf_canvas.setScale(xf_canvas.getScale() + static_cast<qreal>(amount)/100.0);
+    forceLayerRecalc();
+}
+
+void PrototypeView::slot_rotate(int amount)
+{
+    xf_canvas.setRotateRadians(xf_canvas.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
+    forceLayerRecalc();
+}
+
+void PrototypeView:: slot_moveX(int amount)
+{
+    xf_canvas.setTranslateX(xf_canvas.getTranslateX() + amount);
+    forceLayerRecalc();
+}
+
+void PrototypeView::slot_moveY(int amount)
+{
+    xf_canvas.setTranslateY(xf_canvas.getTranslateY() + amount);
+    forceLayerRecalc();
 }

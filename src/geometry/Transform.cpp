@@ -65,6 +65,9 @@ qreal Transform::distFromZero(QTransform t, qreal v)
 
 QString Transform::toString(QTransform t)
 {
+    if (!t.isAffine())
+        return "Not affine!";
+
     QString s = QString::number(t.m11(),'g',16) + "," + QString::number(t.m12(),'g',16) + "," + QString::number(t.m13(),'g',16) + ","
               + QString::number(t.m21(),'g',16) + "," + QString::number(t.m22(),'g',16) + "," + QString::number(t.m23(),'g',16) + ","
               + QString::number(t.m31(),'g',16) + "," + QString::number(t.m32(),'g',16) + "," + QString::number(t.m33(),'g',16);
@@ -73,6 +76,9 @@ QString Transform::toString(QTransform t)
 
 QString Transform::toInfoString(QTransform t, int decimals)
 {
+    if (!t.isAffine())
+        return "Not affine!";
+
     QString s =  "scale=" + QString::number(scalex(t),'f',decimals) + " rot=" + QString::number(qRadiansToDegrees(rotation(t)),'f',decimals)
               + " trans=" + QString::number(transx(t),'f',decimals) + " " + QString::number(transy(t),'f',decimals);
     return s;

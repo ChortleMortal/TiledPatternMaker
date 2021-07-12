@@ -32,6 +32,12 @@
 #include "geometry/loose.h"
 #include "geometry/intersect.h"
 #include "tile/feature.h"
+#include "geometry/map.h"
+#include "geometry/vertex.h"
+
+typedef std::shared_ptr<Star>             StarPtr;
+
+using std::make_shared;
 
 Star::Star( int nsides, qreal dd, int ss, qreal rr ) : RadialFigure(nsides, rr)
 {

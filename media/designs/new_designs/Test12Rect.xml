@@ -1,10 +1,12 @@
 <?xml version="1.0"?>
-<vector id="1" version="8">
+<vector id="1" version="10">
 	<designNotes>Working on getting faces right</designNotes>
 	<design>
 		<size>
 			<width>1500</width>
 			<height>1061</height>
+			<zwidth>1500</zwidth>
+			<zheight>1061</zheight>
 		</size>
 		<background>
 			<color>#ffffffff</color>
@@ -14,7 +16,7 @@
 	<style.Thick id="2" serialization="custom">
 		<toolkit.GeoLayer>
 			<left__delta>32</left__delta>
-			<top__delta>-84</top__delta>
+			<top__delta>-9</top__delta>
 			<width__delta>0.6299999999999997</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>0,0</center>
@@ -22,7 +24,7 @@
 		<style.Style>
 			<prototype id="3" serialization="custom">
 				<app.Prototype>
-					<string>4^4</string>
+					<string>regular-4</string>
 					<entry>
 						<tile.Feature id="4">
 							<regular>true</regular>
@@ -81,12 +83,6 @@
 										<v2 reference="16" />
 									</Edge>
 								</edges>
-								<neighbours>
-									<neighbourset reference="14">18,19</neighbourset>
-									<neighbourset reference="15">21,20</neighbourset>
-									<neighbourset reference="16">18,21</neighbourset>
-									<neighbourset reference="13">20,19</neighbourset>
-								</neighbours>
 							</map>
 							<boundarySides>1</boundarySides>
 							<boundaryScale>1</boundaryScale>
@@ -108,7 +104,7 @@
 	<style.Filled id="22" serialization="custom">
 		<toolkit.GeoLayer>
 			<left__delta>32</left__delta>
-			<top__delta>-84</top__delta>
+			<top__delta>-9</top__delta>
 			<width__delta>0.6299999999999997</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>0,0</center>
@@ -132,6 +128,7 @@
 			<draw__inside>true</draw__inside>
 			<draw__outside>true</draw__outside>
 			<algorithm>0</algorithm>
+			<cleanse>0</cleanse>
 		</style.Filled>
 	</style.Filled>
 </vector>

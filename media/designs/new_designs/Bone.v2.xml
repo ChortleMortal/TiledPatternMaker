@@ -1,10 +1,12 @@
 <?xml version="1.0"?>
-<vector id="1" version="6">
+<vector id="1" version="10">
 	<designNotes>Bone pattern (Alhambra)</designNotes>
 	<design>
 		<size>
 			<width>1744</width>
 			<height>1280</height>
+			<zwidth>1744</zwidth>
+			<zheight>1280</zheight>
 		</size>
 		<background>
 			<color>#ff000000</color>
@@ -13,152 +15,136 @@
 	</design>
 	<style.TileColors id="2" serialization="custom">
 		<toolkit.GeoLayer>
-			<left__delta>106.89</left__delta>
-			<top__delta>84.89</top__delta>
-			<width__delta>0.6099999999999997</width__delta>
+			<left__delta>33.89</left__delta>
+			<top__delta>7.890000000000001</top__delta>
+			<width__delta>0.5199999999999996</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>-4.013333333333333,-1.346666666666668</center>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<boundary id="3">
-				<pts id="4">
-					<Point id="5">
-						<x>-10</x>
-						<y>-10</y>
-					</Point>
-					<Point id="6">
-						<x>-10</x>
-						<y>10</y>
-					</Point>
-					<Point id="7">
-						<x>10</x>
-						<y>10</y>
-					</Point>
-					<Point id="8">
-						<x>10</x>
-						<y>-10</y>
-					</Point>
-				</pts>
-			</boundary>
-			<prototype id="9" serialization="custom">
+			<prototype id="3" serialization="custom">
 				<app.Prototype>
 					<string>bone.v2</string>
 					<entry>
-						<tile.Feature id="10">
+						<tile.Feature id="4">
 							<regular>false</regular>
-							<edges id="11">
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
 								<Line>
-									<Point id="12">-1,-1</Point>
-									<Point id="13">-1,1</Point>
+									<Point id="6">-1,-1</Point>
+									<Point id="7">-1,1</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">-2,2</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">-1,3</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point id="10">1,3</Point>
+								</Line>
+								<Line>
+									<Point reference="10" />
+									<Point id="11">2,2</Point>
+								</Line>
+								<Line>
+									<Point reference="11" />
+									<Point id="12">1,1</Point>
+								</Line>
+								<Line>
+									<Point reference="12" />
+									<Point id="13">1,-1</Point>
 								</Line>
 								<Line>
 									<Point reference="13" />
-									<Point id="14">-2,2</Point>
+									<Point id="14">2,-2</Point>
 								</Line>
 								<Line>
 									<Point reference="14" />
-									<Point id="15">-1,3</Point>
+									<Point id="15">1,-3</Point>
 								</Line>
 								<Line>
 									<Point reference="15" />
-									<Point id="16">1,3</Point>
+									<Point id="16">-1,-3</Point>
 								</Line>
 								<Line>
 									<Point reference="16" />
-									<Point id="17">2,2</Point>
+									<Point id="17">-2,-2</Point>
 								</Line>
 								<Line>
 									<Point reference="17" />
-									<Point id="18">1,1</Point>
+									<Point reference="6" />
 								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="18" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="19">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="20">
 								<Line>
-									<Point reference="18" />
-									<Point id="19">1,-1</Point>
-								</Line>
-								<Line>
-									<Point reference="19" />
-									<Point id="20">2,-2</Point>
-								</Line>
-								<Line>
-									<Point reference="20" />
-									<Point id="21">1,-3</Point>
-								</Line>
-								<Line>
-									<Point reference="21" />
-									<Point id="22">-1,-3</Point>
+									<Point id="21">-1,-1</Point>
+									<Point id="22">-1,1</Point>
 								</Line>
 								<Line>
 									<Point reference="22" />
-									<Point id="23">-2,-2</Point>
+									<Point id="23">-2,2</Point>
 								</Line>
 								<Line>
 									<Point reference="23" />
-									<Point reference="12" />
+									<Point id="24">-1,3</Point>
 								</Line>
-							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="24" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
-							<boundaryScale>1</boundaryScale>
-							<figureScale>1</figureScale>
-							<r>0</r>
-						</app.ExplicitFeature>
-					</entry>
-					<entry>
-						<tile.Feature id="25">
-							<regular>false</regular>
-							<edges id="26">
 								<Line>
-									<Point id="27">-1,-1</Point>
-									<Point id="28">-1,1</Point>
+									<Point reference="24" />
+									<Point id="25">1,3</Point>
+								</Line>
+								<Line>
+									<Point reference="25" />
+									<Point id="26">2,2</Point>
+								</Line>
+								<Line>
+									<Point reference="26" />
+									<Point id="27">1,1</Point>
+								</Line>
+								<Line>
+									<Point reference="27" />
+									<Point id="28">1,-1</Point>
 								</Line>
 								<Line>
 									<Point reference="28" />
-									<Point id="29">-2,2</Point>
+									<Point id="29">2,-2</Point>
 								</Line>
 								<Line>
 									<Point reference="29" />
-									<Point id="30">-1,3</Point>
+									<Point id="30">1,-3</Point>
 								</Line>
 								<Line>
 									<Point reference="30" />
-									<Point id="31">1,3</Point>
+									<Point id="31">-1,-3</Point>
 								</Line>
 								<Line>
 									<Point reference="31" />
-									<Point id="32">2,2</Point>
+									<Point id="32">-2,-2</Point>
 								</Line>
 								<Line>
 									<Point reference="32" />
-									<Point id="33">1,1</Point>
-								</Line>
-								<Line>
-									<Point reference="33" />
-									<Point id="34">1,-1</Point>
-								</Line>
-								<Line>
-									<Point reference="34" />
-									<Point id="35">2,-2</Point>
-								</Line>
-								<Line>
-									<Point reference="35" />
-									<Point id="36">1,-3</Point>
-								</Line>
-								<Line>
-									<Point reference="36" />
-									<Point id="37">-1,-3</Point>
-								</Line>
-								<Line>
-									<Point reference="37" />
-									<Point id="38">-2,-2</Point>
-								</Line>
-								<Line>
-									<Point reference="38" />
-									<Point reference="27" />
+									<Point reference="21" />
 								</Line>
 							</edges>
 						</tile.Feature>
-						<app.ExplicitFeature id="39" type="FIG_TYPE_EXPLICIT_FEATURE">
+						<app.ExplicitFeature id="33" type="FIG_TYPE_EXPLICIT_FEATURE">
 							<boundarySides>1</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
@@ -166,64 +152,65 @@
 						</app.ExplicitFeature>
 					</entry>
 					<entry>
-						<tile.Feature id="40">
+						<tile.Feature id="34">
 							<regular>false</regular>
-							<edges id="41">
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="35">
 								<Line>
-									<Point id="42">-1,-1</Point>
-									<Point id="43">-1,1</Point>
+									<Point id="36">-1,-1</Point>
+									<Point id="37">-1,1</Point>
+								</Line>
+								<Line>
+									<Point reference="37" />
+									<Point id="38">-2,2</Point>
+								</Line>
+								<Line>
+									<Point reference="38" />
+									<Point id="39">-1,3</Point>
+								</Line>
+								<Line>
+									<Point reference="39" />
+									<Point id="40">1,3</Point>
+								</Line>
+								<Line>
+									<Point reference="40" />
+									<Point id="41">2,2</Point>
+								</Line>
+								<Line>
+									<Point reference="41" />
+									<Point id="42">1,1</Point>
+								</Line>
+								<Line>
+									<Point reference="42" />
+									<Point id="43">1,-1</Point>
 								</Line>
 								<Line>
 									<Point reference="43" />
-									<Point id="44">-2,2</Point>
+									<Point id="44">2,-2</Point>
 								</Line>
 								<Line>
 									<Point reference="44" />
-									<Point id="45">-1,3</Point>
+									<Point id="45">1,-3</Point>
 								</Line>
 								<Line>
 									<Point reference="45" />
-									<Point id="46">1,3</Point>
+									<Point id="46">-1,-3</Point>
 								</Line>
 								<Line>
 									<Point reference="46" />
-									<Point id="47">2,2</Point>
+									<Point id="47">-2,-2</Point>
 								</Line>
 								<Line>
 									<Point reference="47" />
-									<Point id="48">1,1</Point>
-								</Line>
-								<Line>
-									<Point reference="48" />
-									<Point id="49">1,-1</Point>
-								</Line>
-								<Line>
-									<Point reference="49" />
-									<Point id="50">2,-2</Point>
-								</Line>
-								<Line>
-									<Point reference="50" />
-									<Point id="51">1,-3</Point>
-								</Line>
-								<Line>
-									<Point reference="51" />
-									<Point id="52">-1,-3</Point>
-								</Line>
-								<Line>
-									<Point reference="52" />
-									<Point id="53">-2,-2</Point>
-								</Line>
-								<Line>
-									<Point reference="53" />
-									<Point reference="42" />
+									<Point reference="36" />
 								</Line>
 							</edges>
 						</tile.Feature>
-						<app.ExplicitFigure id="54" type="FIG_TYPE_EXPLICIT">
-							<map id="55">
-								<vertices id="56" />
-								<edges id="57" />
-								<neighbours />
+						<app.ExplicitFigure id="48" type="FIG_TYPE_EXPLICIT">
+							<map id="49">
+								<vertices id="50" />
+								<edges id="51" />
 							</map>
 							<boundarySides>1</boundarySides>
 							<boundaryScale>1</boundaryScale>
@@ -232,64 +219,65 @@
 						</app.ExplicitFigure>
 					</entry>
 					<entry>
-						<tile.Feature id="58">
+						<tile.Feature id="52">
 							<regular>false</regular>
-							<edges id="59">
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="53">
 								<Line>
-									<Point id="60">-1,-1</Point>
-									<Point id="61">-1,1</Point>
+									<Point id="54">-1,-1</Point>
+									<Point id="55">-1,1</Point>
+								</Line>
+								<Line>
+									<Point reference="55" />
+									<Point id="56">-2,2</Point>
+								</Line>
+								<Line>
+									<Point reference="56" />
+									<Point id="57">-1,3</Point>
+								</Line>
+								<Line>
+									<Point reference="57" />
+									<Point id="58">1,3</Point>
+								</Line>
+								<Line>
+									<Point reference="58" />
+									<Point id="59">2,2</Point>
+								</Line>
+								<Line>
+									<Point reference="59" />
+									<Point id="60">1,1</Point>
+								</Line>
+								<Line>
+									<Point reference="60" />
+									<Point id="61">1,-1</Point>
 								</Line>
 								<Line>
 									<Point reference="61" />
-									<Point id="62">-2,2</Point>
+									<Point id="62">2,-2</Point>
 								</Line>
 								<Line>
 									<Point reference="62" />
-									<Point id="63">-1,3</Point>
+									<Point id="63">1,-3</Point>
 								</Line>
 								<Line>
 									<Point reference="63" />
-									<Point id="64">1,3</Point>
+									<Point id="64">-1,-3</Point>
 								</Line>
 								<Line>
 									<Point reference="64" />
-									<Point id="65">2,2</Point>
+									<Point id="65">-2,-2</Point>
 								</Line>
 								<Line>
 									<Point reference="65" />
-									<Point id="66">1,1</Point>
-								</Line>
-								<Line>
-									<Point reference="66" />
-									<Point id="67">1,-1</Point>
-								</Line>
-								<Line>
-									<Point reference="67" />
-									<Point id="68">2,-2</Point>
-								</Line>
-								<Line>
-									<Point reference="68" />
-									<Point id="69">1,-3</Point>
-								</Line>
-								<Line>
-									<Point reference="69" />
-									<Point id="70">-1,-3</Point>
-								</Line>
-								<Line>
-									<Point reference="70" />
-									<Point id="71">-2,-2</Point>
-								</Line>
-								<Line>
-									<Point reference="71" />
-									<Point reference="60" />
+									<Point reference="54" />
 								</Line>
 							</edges>
 						</tile.Feature>
-						<app.ExplicitFigure id="72" type="FIG_TYPE_EXPLICIT">
-							<map id="73">
-								<vertices id="74" />
-								<edges id="75" />
-								<neighbours />
+						<app.ExplicitFigure id="66" type="FIG_TYPE_EXPLICIT">
+							<map id="67">
+								<vertices id="68" />
+								<edges id="69" />
 							</map>
 							<boundarySides>1</boundarySides>
 							<boundaryScale>1</boundaryScale>

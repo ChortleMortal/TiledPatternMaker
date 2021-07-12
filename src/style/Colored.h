@@ -28,6 +28,8 @@
 #include <QColor>
 
 #include "style/style.h"
+#include "base/colorset.h"
+
 ////////////////////////////////////////////////////////////////////////////
 //
 // A style encapsulates drawing a map with colors.

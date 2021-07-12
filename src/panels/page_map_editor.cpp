@@ -23,11 +23,11 @@
  */
 
 #include "panels/page_map_editor.h"
+#include "makers/map_editor/map_editor.h"
 #include "panels/layout_sliderset.h"
 #include "panels/dlg_listselect.h"
 #include "panels/dlg_crop.h"
 #include "panels/dlg_name.h"
-#include "panels/panel.h"
 #include "base/border.h"
 #include "base/fileservices.h"
 #include "base/mosaic_loader.h"
@@ -35,13 +35,20 @@
 #include "base/tiledpatternmaker.h"
 #include "base/utilities.h"
 #include "geometry/dcel.h"
-#include "makers/decoration_maker/decoration_maker.h"
-#include "makers/motif_maker/motif_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
-#include "style/style.h"
 #include "tapp/explicit_figure.h"
 #include "tapp/radial_figure.h"
 #include "viewers/viewcontrol.h"
+#include "tapp/prototype.h"
+#include "tapp/design_element.h"
+#include "geometry/crop.h"
+#include "tile/feature.h"
+#include "tile/placed_feature.h"
+
+using std::make_shared;
+
+typedef std::shared_ptr<RadialFigure>    RadialPtr;
+
 
 page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Map Editor")
 {
@@ -544,7 +551,7 @@ void page_map_editor::refreshPage()
             {
                 QPointF pt   = sel->getPoint();
                 CirclePtr c  = sel->getCircle();
-                str += QString(" (%1,%2) centre=(%4,%5) radius=%3\n").arg(pt.x()).arg(pt.y()).arg(c->radius).arg(c->centre.x()).arg(c->centre.y());
+                str += QString(" (%1,%2) center=(%4,%5) radius=%3\n").arg(pt.x()).arg(pt.y()).arg(c->radius).arg(c->centre.x()).arg(c->centre.y());
                 break;
             }
             case MAP_EDGE:
@@ -757,7 +764,7 @@ void page_map_editor::slot_setModes(int mode, bool checked)
             break;
         }
 
-        maped->setMouseMode(mm);
+        maped->setMapedMouseMode(mm);
     }
 }
 

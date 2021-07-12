@@ -28,6 +28,7 @@
 #include <QWidget>
 #include <QLabel>
 #include <QMouseEvent>
+#include "base/layer.h"
 
 class ImageWidget : public QLabel
 {
@@ -58,5 +59,52 @@ private:
     QPoint oldPos;
     bool onTop;
 };
+
+
+class ImageLayer : public Layer
+{
+    Q_OBJECT
+
+public:
+    ImageLayer();
+
+    void setPixmap(QPixmap & pm) { this->pixmap = pm; }
+
+    void paint(QPainter *painter) override;
+
+signals:
+    void sig_refreshView();
+
+public slots:
+    virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
+    virtual void slot_mouseDragged(QPointF spt)       override;
+    virtual void slot_mouseTranslate(QPointF pt)      override;
+    virtual void slot_mouseMoved(QPointF spt)         override;
+    virtual void slot_mouseReleased(QPointF spt)      override;
+    virtual void slot_mouseDoublePressed(QPointF spt) override;
+
+    virtual void slot_wheel_scale(qreal delta)  override;
+    virtual void slot_wheel_rotate(qreal delta) override;
+
+    virtual void slot_scale(int amount)  override;
+    virtual void slot_rotate(int amount) override;
+    virtual void slot_moveX(int amount)  override;
+    virtual void slot_moveY(int amount)  override;
+
+private slots:
+    void slot_deleteAction();
+
+protected:
+
+
+private:
+    QPixmap pixmap;
+
+    class Configuration * config;
+    class View          * view;
+    class ViewControl   * vcontrol;
+};
+
+typedef std::shared_ptr<ImageLayer> ImgLayerPtr;
 
 #endif // TRANSPARENTWIDGET_H

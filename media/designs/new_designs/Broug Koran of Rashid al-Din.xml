@@ -41,7 +41,7 @@
 			</boundary>
 			<prototype id="9" serialization="custom">
 				<app.Prototype>
-					<string>4^4.v1</string>
+					<string>regular-4.v1</string>
 					<entry>
 						<tile.Feature id="10">
 							<regular>true</regular>

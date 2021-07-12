@@ -23,6 +23,7 @@
  */
 
 #include "designs/patterns.h"
+#include "designs/shapefactory.h"
 #include "base/border.h"
 #include "base/utilities.h"
 #include "tapp/rosette.h"
@@ -34,8 +35,19 @@
 #include "style/interlace.h"
 #include "tile/tiling_manager.h"
 #include "tile/placed_feature.h"
+#include "tile/tiling.h"
+#include "geometry/map.h"
+#include "tapp/prototype.h"
+#include "tapp/design_element.h"
+#include "style/thick.h"
+#include "tile/feature.h"
+#include "settings/configuration.h"
 
 int Pattern::refs = 0;
+
+using std::make_shared;
+
+typedef std::shared_ptr<Thick> ThickPtr;
 
 /////////////////////////////////////////////////////////////
 //	  Pattern
@@ -78,9 +90,12 @@ Pattern::~Pattern()
 
 Pattern5::Pattern5(qreal Diameter, QBrush Brush)  : Pattern(Diameter, Brush)
 {
-    layer1 = addLayer(1);
-    layer2 = addLayer(2);
-    layer3 = addLayer(3);
+    layer1 = make_shared<Tile>();
+    addLayer(layer1,1);
+    layer2 = make_shared<Tile>();
+    addLayer(layer2,2);
+    layer3 = make_shared<Tile>();
+    addLayer(layer3,3);
 }
 
 void Pattern5::build()
@@ -111,8 +126,10 @@ void Pattern5::build()
 Pattern6::Pattern6(qreal Diameter, QBrush Brush) : Pattern(Diameter, Brush)
 
 {
-    layer1 = addLayer(1);
-    layer2 = addLayer(2);
+    layer1 = make_shared<Tile>();
+    addLayer(layer1,1);
+    layer2 = make_shared<Tile>();
+    addLayer(layer2,2);
 }
 
 void Pattern6::build()
@@ -141,7 +158,8 @@ void Pattern6::build()
 /////////////////////////////////////////////////////////////
 Pattern7::Pattern7(qreal Diameter, QBrush Brush) : Pattern(Diameter, Brush)
 {
-    layer1 = addLayer(1);
+    layer1 = make_shared<Tile>();
+    addLayer(layer1,1);
 }
 
 void Pattern7::build()
@@ -198,8 +216,10 @@ bool Pattern7::doStep(int Index)
 PatternHuSymbol::PatternHuSymbol(int gridWidth, QPen GridPen, QPen InnerPen, QColor CanvasColor, qreal Diameter, QBrush Brush)
     : Pattern(Diameter, Brush)
 {
-    layer1 = addLayer(1);
-    layer3 = addLayer(3);
+    layer1 = make_shared<Tile>();
+    addLayer(layer1,1);
+    layer3 = make_shared<Tile>();
+    addLayer(layer3,3);
 
     // 21 rows cols
     width = qreal(gridWidth);
@@ -533,11 +553,14 @@ bool PatternHuSymbol::doStep(int Index)
 PatternHuInterlace::PatternHuInterlace(int gridWidth, QPen GridPen, QPen InnerPen, QColor CanvasColor, qreal Diameter, QBrush Brush)
     : Pattern(Diameter, Brush)
 {
-    layer1 = addLayer(1);
-    layer2 = addLayer(2);
-    layer3 = addLayer(3);
-    layer4 = addLayer(4);
-
+    layer1 = make_shared<Tile>();
+    addLayer(layer1,1);
+    layer2 = make_shared<Tile>();
+    addLayer(layer2,2);
+    layer3 = make_shared<Tile>();
+    addLayer(layer3,3);
+    layer4 = make_shared<Tile>();
+    addLayer(layer4,4);
 
     // 21 rows cols
     width = qreal(gridWidth);
@@ -898,9 +921,11 @@ bool PatternHuInterlace::doStep(int Index)
 /////////////////////////////////////////////////////////////
 //	  Pattern 10
 /////////////////////////////////////////////////////////////
+
 Pattern10::Pattern10(qreal Diameter, QBrush Brush) : Pattern(Diameter, Brush)
 {
-    layer1 = addLayer(1);
+    layer1 = make_shared<Tile>();
+    addLayer(layer1,1);
 }
 
 void Pattern10::build()
@@ -947,8 +972,10 @@ bool Pattern10::doStep(int Index)
 /////////////////////////////////////////////////////////////
 Pattern11::Pattern11(qreal Diameter, QBrush Brush, qreal rotation, eDirection direction)  : Pattern(Diameter, Brush)
 {
-    layer1 = addLayer(1);
-    layer2 = addLayer(2);
+    layer1 = make_shared<Tile>();
+    addLayer(layer1,1);
+    layer2 = make_shared<Tile>();
+    addLayer(layer2,2);
 
     Rotation  = rotation;
     Direction = direction;
@@ -1037,9 +1064,12 @@ void Pattern11::build()
 /////////////////////////////////////////////////////////////
 Pattern12::Pattern12(qreal Diameter, QBrush Brush, qreal rotation, eDirection direction, int Row, int Col) : Pattern(Diameter, Brush, Row, Col)
 {
-    layer1 = addLayer(1);
-    layer2 = addLayer(2);
-    layer3 = addLayer(3);
+    layer1 = make_shared<Tile>();
+    addLayer(layer1,1);
+    layer2 = make_shared<Tile>();
+    addLayer(layer2,2);
+    layer3 = make_shared<Tile>();
+    addLayer(layer3,3);
 
     Rotation  = rotation;
     Direction = direction;
@@ -1179,10 +1209,14 @@ void Pattern12::build()
 
 PatternIncompleteA::PatternIncompleteA(qreal Diameter, QBrush Brush) : Pattern(Diameter, Brush)
 {
-    layer1 = addLayer(1);
-    layer2 = addLayer(2);
-    layer3 = addLayer(3);
-    layer4 = addLayer(4);
+    layer1 = make_shared<Tile>();
+    addLayer(layer1,1);
+    layer2 = make_shared<Tile>();
+    addLayer(layer2,2);
+    layer3 = make_shared<Tile>();
+    addLayer(layer3,3);
+    layer4 = make_shared<Tile>();
+    addLayer(layer4,4);
 }
 
 void PatternIncompleteA::build()
@@ -1325,7 +1359,8 @@ Pattern14::Pattern14(qreal Diameter, QBrush Brush) : Pattern(Diameter, Brush)
 
 void Pattern14::build()
 {
-    LayerPtr layer1 = addLayer(1);
+    LayerPtr layer1 = make_shared<Tile>();
+    addLayer(layer1,1);
 
     ShapeFPtr s1 = make_shared<ShapeFactory>(diameter);
     layer1->addSubLayer(s1);
@@ -1349,7 +1384,9 @@ Pattern15::Pattern15(qreal Diameter, QBrush Brush) : Pattern(Diameter, Brush)
 
 void Pattern15::build()
 {
-    LayerPtr layer1 = addLayer(1);
+    LayerPtr layer1 = make_shared<Tile>();
+    addLayer(layer1,1);
+
     ShapeFPtr s1 = make_shared<ShapeFactory>(diameter);
     layer1->addSubLayer(s1);
 
@@ -1367,11 +1404,13 @@ Pattern16::Pattern16(qreal Diameter, QBrush Brush) : Pattern(Diameter, Brush)
 
 void Pattern16::build()
 {
-    LayerPtr layer1 = addLayer(1);
+    LayerPtr layer1 = make_shared<Tile>();
+    addLayer(layer1,1);;
     ShapeFPtr s1 = make_shared<ShapeFactory>(diameter);
     layer1->addSubLayer(s1);
 
-    LayerPtr layer4 = addLayer(4);
+    LayerPtr layer4 = make_shared<Tile>();
+    addLayer(layer4,4);
     ShapeFPtr s4 = make_shared<ShapeFactory>(diameter);
     layer4->addSubLayer(s4);
 
@@ -1405,8 +1444,8 @@ void PatternKumiko1::build()
 #endif
 
     s2 = make_shared<ShapeFactory>(diameter);
-    LayerPtr layer2 = addLayer(2);
-    layer2->addSubLayer(s2);
+    LayerPtr layer2 = make_shared<Tile>();
+    addLayer(layer2,2);;
 
     QPointF a(-radius,-ypos);
     QPointF b( radius,-ypos);
@@ -1421,7 +1460,8 @@ void PatternKumiko1::build()
     s2->addLine(woodPen,e,f);
 
     s3 = make_shared<ShapeFactory>(diameter);
-    LayerPtr layer3 = addLayer(3);
+    LayerPtr layer3 = make_shared<Tile>();
+    addLayer(layer3,3);;
     layer3->addSubLayer(s3);
 
     QPointF a1(0,ypos);
@@ -1442,14 +1482,16 @@ void PatternKumiko1::build()
 
 
     s4 = make_shared<ShapeFactory>(diameter);
-    LayerPtr layer4 = addLayer(4);
+    LayerPtr layer4 = make_shared<Tile>();
+    addLayer(layer4,4);;
     layer4->addSubLayer(s4);
 
     Polygon2 * p1 = s4->addStretchedExternalHexagon(woodPen, nobrush,90.0);
     Q_UNUSED(p1)
 
     s5 = make_shared<ShapeFactory>(diameter);
-    LayerPtr layer5 = addLayer(5);
+    LayerPtr layer5 = make_shared<Tile>();
+    addLayer(layer5,5);;
     layer5->addSubLayer(s5);
 
     Polygon2 * p2 = s5->addStretchedExternalHexagon(woodPen, nobrush,90.0);
@@ -1468,7 +1510,8 @@ void PatternKumiko1::build()
 
 PatternKumiko2::PatternKumiko2(qreal Diameter, QBrush Brush) : Pattern(Diameter, Brush)
 {
-   layer2 = addLayer(2);
+    layer2 = make_shared<Tile>();
+    addLayer(layer2,2);;
 }
 
 void PatternKumiko2::build()

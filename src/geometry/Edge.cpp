@@ -28,6 +28,7 @@
 // Edge.java
 //
 #include "geometry/edge.h"
+#include "geometry/vertex.h"
 #include "geometry/map.h"
 #include "geometry/loose.h"
 #include "style/interlace.h"
@@ -85,8 +86,8 @@ Edge::Edge(VertexPtr v1, VertexPtr v2, QPointF arcCenter, bool convex)
 Edge::Edge(EdgePtr other, QTransform T)
 {
     type = other->type;
-    v1 = make_shared<Vertex>(T.map(other->v1->pt));
-    v2 = make_shared<Vertex>(T.map(other->v2->pt));
+    v1 = std::make_shared<Vertex>(T.map(other->v1->pt));
+    v2 = std::make_shared<Vertex>(T.map(other->v2->pt));
     if (type == EDGETYPE_CURVE)
     {
         arcCenter    = T.map(other->arcCenter);
@@ -107,6 +108,11 @@ Edge::~Edge()
     //qDebug() << "Edge destructor";
     //v1.reset();
     //v2.reset();
+}
+
+double Edge::angle() const
+{
+    return std::atan2(v2->pt.y() - v1->pt.y(), v2->pt.x() - v1->pt.x());
 }
 
 bool Edge::sameAs(EdgePtr other)
@@ -433,7 +439,7 @@ qreal Edge::getAngle()
 EdgePtr Edge::getSwappedEdge()
 {
     // has same edge index as original
-    EdgePtr ep = make_shared<Edge>();
+    EdgePtr ep = std::make_shared<Edge>();
     ep->setV1(v2);
     ep->setV2(v1);
     ep->type          = type;

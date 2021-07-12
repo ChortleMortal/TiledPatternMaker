@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<Tiling version="6">
+	<Name>rhombus-10</Name>
+	<Fill>-4,4,-4,4</Fill>
+	<T1>2.337801852108602,-3.296300611473129</T1>
+	<T2>2.337801852108602,3.296300611473129</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>1100</height>
+		<zwidth>1500</zwidth>
+		<zheight>1100</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,-1.77635683940025e-15</center>
+	</ViewSettings>
+	<Feature type="regular" sides="10" rotation="0" scale="1">
+		<Placement>
+			<scale>1.91</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="1">0,-3.29</Point>
+			<Point id="2">2.346666666666668,0</Point>
+		</Line>
+		<Line>
+			<Point reference="2" />
+			<Point id="3">0,3.29</Point>
+		</Line>
+		<Line>
+			<Point reference="3" />
+			<Point id="4">-2.333333333333333,0</Point>
+		</Line>
+		<Line>
+			<Point reference="4" />
+			<Point reference="1" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Feature>
+	<Desc>Pomerantz</Desc>
+	<Auth>David Casper</Auth>
+</Tiling>

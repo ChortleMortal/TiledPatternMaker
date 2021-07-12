@@ -1,5 +1,9 @@
 #include "geometry/map.h"
+#include "geometry/edge.h"
+#include "geometry/vertex.h"
+#include "geometry/neighbours.h"
 #include "geometry/intersect.h"
+#include "geometry/loose.h"
 #include "base/utilities.h"
 
 bool Map::cleanse(unsigned int options, bool forceVerify)

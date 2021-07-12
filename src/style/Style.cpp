@@ -24,18 +24,22 @@
 
 #include <QSvgGenerator>
 #include "style/style.h"
-#include "base/configuration.h"
-#include "viewers/viewcontrol.h"
+
+#include "geometry/map.h"
+#include "geometry/edge.h"
+#include "geometry/vertex.h"
+#include "tapp/prototype.h"
+#include "tile/tiling.h"
+#include "settings/configuration.h"
 #include "viewers/view.h"
-#include "base/tiledpatternmaker.h"
-#include "base/utilities.h"
+#include "base/geo_graphics.h"
 
 int Style::refs = 0;
 
-Style::Style(PrototypePtr proto) : Layer("Style",LTYPE_VIEW)
+Style::Style(PrototypePtr proto) : Layer("Style")
 {
     prototype = proto;
-    debugMap = make_shared<Map>("Style debug map");
+    debugMap = std::make_shared<Map>("Style debug map");
     paintSVG = false;
     generator = nullptr;
     refs++;
@@ -89,6 +93,11 @@ void Style::eraseStyleMap()
     }
 }
 
+void Style::eraseProtoMap()
+{
+    prototype->resetProtoMap();
+}
+
 MapPtr Style::getMap()
 {
     if (!styleMap)
@@ -98,6 +107,10 @@ MapPtr Style::getMap()
     return styleMap;
 }
 
+MapPtr Style::getExistingMap()
+{
+    return prototype->getExistingProtoMap();
+}
 
 // uses existing tmpIndices
 void Style::annotateEdges(MapPtr map)
@@ -119,7 +132,8 @@ void Style::annotateEdges(MapPtr map)
 // Retrieve a name describing this style and map.
 QString Style::getDescription() const
 {
-    return prototype->getTiling()->getName() + " : " + getStyleDesc();
+    //return prototype->getTiling()->getName() + " : " + getStyleDesc();
+    return getStyleDesc();
 }
 
 QString Style::getInfo() const
@@ -214,3 +228,108 @@ void Style::drawAnnotation(QPainter * painter, QTransform T)
     }
 }
 
+void Style::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
+{
+    if (    config->kbdMode == KBD_MODE_XFORM_VIEW
+        || (config->kbdMode == KBD_MODE_XFORM_SELECTED && isSelected()))
+    {
+        qDebug() << getName() << config->kbdMode;
+        if (view->getMouseMode() == MOUSE_MODE_CENTER && btn == Qt::LeftButton)
+        {
+            setCenterScreenUnits(spt);
+            forceLayerRecalc();
+            emit sig_refreshView();
+        }
+    }
+}
+
+void Style::slot_mouseDragged(QPointF spt)
+{
+    Q_UNUSED(spt);
+}
+
+void Style::slot_mouseTranslate(QPointF pt)
+{
+    if (    config->kbdMode == KBD_MODE_XFORM_VIEW
+        || (config->kbdMode == KBD_MODE_XFORM_SELECTED && isSelected()))
+    {
+        xf_canvas.setTranslateX(xf_canvas.getTranslateX() + pt.x());
+        xf_canvas.setTranslateY(xf_canvas.getTranslateY() + pt.y());
+        forceLayerRecalc();
+    }
+}
+
+void Style::slot_mouseMoved(QPointF spt)
+{
+    Q_UNUSED(spt);
+}
+
+void Style::slot_mouseReleased(QPointF spt)
+{
+    Q_UNUSED(spt);
+}
+
+void Style::slot_mouseDoublePressed(QPointF spt)
+{
+    Q_UNUSED(spt);
+}
+
+void Style::slot_wheel_scale(qreal delta)
+{
+    if (    config->kbdMode == KBD_MODE_XFORM_VIEW
+        || (config->kbdMode == KBD_MODE_XFORM_SELECTED && isSelected()))
+    {
+        xf_canvas.setScale(xf_canvas.getScale() + delta);
+        forceLayerRecalc();
+    }
+}
+
+void Style::slot_wheel_rotate(qreal delta)
+{
+    if (    config->kbdMode == KBD_MODE_XFORM_VIEW
+        || (config->kbdMode == KBD_MODE_XFORM_SELECTED && isSelected()))
+    {
+        xf_canvas.setRotateDegrees(xf_canvas.getRotateDegrees() + delta);
+        forceLayerRecalc();
+    }
+}
+
+void Style::slot_scale(int amount)
+{
+    if (    config->kbdMode == KBD_MODE_XFORM_VIEW
+        || (config->kbdMode == KBD_MODE_XFORM_SELECTED && isSelected()))
+    {
+        xf_canvas.setScale(xf_canvas.getScale() + static_cast<qreal>(amount)/100.0);
+        forceLayerRecalc();
+    }
+}
+
+void Style::slot_rotate(int amount)
+{
+    if (    config->kbdMode == KBD_MODE_XFORM_VIEW
+        || (config->kbdMode == KBD_MODE_XFORM_SELECTED && isSelected()))
+    {
+        xf_canvas.setRotateRadians(xf_canvas.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
+        forceLayerRecalc();
+    }
+}
+
+void Style:: slot_moveX(int amount)
+{
+    if (    config->kbdMode == KBD_MODE_XFORM_VIEW
+        || (config->kbdMode == KBD_MODE_XFORM_SELECTED && isSelected()))
+    {
+        xf_canvas.setTranslateX(xf_canvas.getTranslateX() + amount);
+        forceLayerRecalc();
+    }
+}
+
+void Style::slot_moveY(int amount)
+{
+    if (    config->kbdMode == KBD_MODE_XFORM_VIEW
+        || (config->kbdMode == KBD_MODE_XFORM_SELECTED && isSelected()))
+    {
+        xf_canvas.setTranslateY(xf_canvas.getTranslateY() + amount);
+        forceLayerRecalc();
+    }
+}

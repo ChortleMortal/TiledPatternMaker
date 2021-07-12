@@ -28,9 +28,13 @@
 #include "tile/backgroundimage.h"
 #include "base/mosaic_loader.h"
 #include "makers/tiling_maker/tiling_maker.h"
+#include "tile/placed_feature.h"
+#include "tile/feature.h"
+#include "base/shared.h"
 
 using namespace pugi;
 using std::string;
+using std::make_shared;
 
 // Tiling I/O.
 //
@@ -146,6 +150,8 @@ TilingPtr TilingLoader::readTiling(QTextStream & st)
 
 TilingPtr TilingLoader::readTilingXML(QString file )
 {
+    qDebug().noquote() << "Loading:" << file;
+
     xml_document doc;
     xml_parse_result result = doc.load_file(file.toStdString().c_str());
     if (result == false)
@@ -211,6 +217,14 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
     // create the tiling
     tiling = make_shared<Tiling>(name, ptt1, ptt2);
     tiling->setVersion(version);
+
+	xml_node view = tiling_node.child("View");
+    if (view)
+    {
+        Xform xf = getXform(view);
+        tiling->setCanvasXform(xf);
+        qDebug().noquote() << "tiling canvas xform" << xf.toInfoString();
+    }
 
     // view settings
     getViewSettings(tiling_node);
@@ -371,26 +385,23 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
     xml_node bkImage = tiling_node.child("BackgroundImage");
     if (bkImage)
     {
-       BkgdImgPtr bip = getBackgroundImage(bkImage);
-       if (bip && bip->isLoaded())
-       {
-           tiling->setBackground(bip);
-       }
+        getBackgroundImage(bkImage);
     }
 
     // tiling->dump();
     return tiling;
 }
 
-BkgdImgPtr TilingLoader::getBackgroundImage(xml_node & node)
+void TilingLoader::getBackgroundImage(xml_node & node)
 {
     xml_attribute attr = node.attribute("name");
     QString name       = attr.value();
 
-    BkgdImgPtr bi = make_shared<BackgroundImage>(name);
-    if (bi->isLoaded())
+    BkgdImgPtr bip = BackgroundImage::getSharedInstance();
+    bip->load(name);
+    if (bip->isLoaded())
     {
-        Xform xf = bi->getCanvasXform();
+        Xform xf = bip->getCanvasXform();
 
         xml_node n = node.child("Scale");
         if (n)
@@ -420,28 +431,23 @@ BkgdImgPtr TilingLoader::getBackgroundImage(xml_node & node)
             xf.setTranslateY(str.toDouble());
         }
 
-        bi->updateBkgdXform(xf);  // does not set center
+        bip->updateImageXform(xf);  // does not set center
+        qDebug() << "baczkground image xform:" << xf.toInfoString();
 
         n= node.child("Perspective");
         if (n)
         {
             QString str = n.child_value();
-            bi->perspective = getQTransform(str);
+            bip->perspective = getQTransform(str);
 
-            if (!bi->perspective.isIdentity())
+            if (!bip->perspective.isIdentity())
             {
-                bi->createAdjustedImage();
+                bip->createAdjustedImage();
             }
         }
 
-        bi->createPixmap();
+        bip->createPixmap();
     }
-    else
-    {
-        bi.reset();
-    }
-
-    return bi;
 }
 
 Xform  TilingLoader::getXform(xml_node & node)
@@ -579,8 +585,8 @@ void TilingLoader::getViewSettings(xml_node & node)
         return;
     }
 
-    int width  = 1500;   // default
-    int height = 1100;   // default
+    int width  = DEFAULT_WIDTH;
+    int height = DEFAULT_HEIGHT;
     xml_node n = view.child("width");
     if (n)
     {
@@ -595,7 +601,29 @@ void TilingLoader::getViewSettings(xml_node & node)
         height = str.toInt();
     }
 
-    tiling->setSize(QSize(width,height));
+    QSize size(width,height);
+    tiling->setSize(size);
+    qDebug() << "tiling size:" << size;
+
+    int zwidth  = width;
+    int zheight = height;
+    xml_node n2 = view.child("zwidth");
+    if (n2)
+    {
+        QString str = n2.child_value();
+        zwidth = str.toInt();
+    }
+
+    n2 = view.child("zheight");
+    if (n2)
+    {
+        QString str = n2.child_value();
+        zheight = str.toInt();
+    }
+
+    QSize zsize(zwidth,zheight);
+    tiling->setZoomSize(zsize);
+    qDebug() << "tiling zoom size:" << zsize;
 
     Xform xf;
     QString val;
@@ -644,5 +672,6 @@ void TilingLoader::getViewSettings(xml_node & node)
     }
 
     tiling->setCanvasXform(xf);
+    qDebug().noquote() << "tiling canvas xform:" << xf.toInfoString();
 }
 

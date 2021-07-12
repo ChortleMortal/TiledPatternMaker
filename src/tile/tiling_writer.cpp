@@ -1,11 +1,16 @@
 #include "tile/tiling_writer.h"
 #include "tile/backgroundimage.h"
 #include "geometry/transform.h"
-#include "base/configuration.h"
+#include "geometry/edge.h"
+#include "settings/configuration.h"
 #include "base/fileservices.h"
 #include "base/tiledpatternmaker.h"
 #include "panels/panel.h"
 #include "base/mosaic_writer.h"
+#include "tile/tiling.h"
+#include "tile/placed_feature.h"
+#include "tile/feature.h"
+#include "base/shared.h"
 
 using namespace pugi;
 using std::string;
@@ -183,7 +188,7 @@ void TilingWriter::writeTilingXML(QTextStream & out)
     out << "<Desc>" << tiling->getDescription() << "</Desc>" << endl;
     out << "<Auth>" << tiling->getAuthor() << "</Auth>" << endl;
 
-    BkgdImgPtr bkgd = tiling->getBackground();
+    BkgdImgPtr bkgd = BackgroundImage::getSharedInstance();
     writeBackgroundImage(out,bkgd);
 
     out << "</Tiling>" << endl;
@@ -191,12 +196,12 @@ void TilingWriter::writeTilingXML(QTextStream & out)
 
 void TilingWriter::writeBackgroundImage(QTextStream & out, BkgdImgPtr bkgd)
 {
-    if (bkgd && bkgd->isLoaded())
+    if (bkgd->isLoaded())
     {
         QString astring = QString("<BackgroundImage name=\"%1\">").arg(bkgd->getName());
         out << astring << endl;
 
-        Xform xform = bkgd->getBkgdXform();
+        Xform xform = bkgd->getImageXform();
         out << "<Scale>" << xform.getScale()           << "</Scale>" << endl;
         out << "<Rot>"   << xform.getRotateRadians()   << "</Rot>"  << endl;
         out << "<X>"     << xform.getTranslateX()      << "</X>" << endl;
@@ -220,6 +225,10 @@ void TilingWriter::writeViewSettings(QTextStream & out)
     QSize size = tiling->getSize();
     out << "<width>"  << size.width()  << "</width>" << endl;
     out << "<height>" << size.height() << "</height>" << endl;
+
+    QSize zsize = tiling->getZoomSize();
+    out << "<zwidth>"  << zsize.width()  << "</zwidth>" << endl;
+    out << "<zheight>" << zsize.height() << "</zheight>" << endl;
 
     MosaicWriter::procesToolkitGeoLayer(out,tiling->getCanvasXform());
 

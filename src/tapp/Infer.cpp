@@ -43,14 +43,19 @@
 // when you started using Taprats (sorry -- couldn't resist the pun).
 
 #include "tapp/infer.h"
-#include "tapp/prototype.h"
-#include "geometry/loose.h"
-#include "geometry/point.h"
+#include "geometry/edge.h"
 #include "geometry/intersect.h"
+#include "geometry/loose.h"
+#include "geometry/map.h"
+#include "geometry/neighbours.h"
+#include "geometry/point.h"
 #include "geometry/transform.h"
-#include "tapp/star.h"
+#include "geometry/vertex.h"
+#include "tapp/figure.h"
+#include "tapp/prototype.h"
 #include "tile/placed_feature.h"
-#include <algorithm>
+#include "tile/tiling.h"
+#include "tile/feature.h"
 
 using std::max;
 using std::min;
@@ -365,7 +370,7 @@ QVector<contact *> Infer::buildContacts( placed_points * pp, QVector<adjacency_i
     {
         if (adjs[ idx ] == nullptr)
         {
-            amaps.push_back(make_shared<Map>("infer amaps 1"));
+            amaps.push_back(std::make_shared<Map>("infer amaps 1"));
         }
         else
         {
@@ -378,7 +383,7 @@ QVector<contact *> Infer::buildContacts( placed_points * pp, QVector<adjacency_i
             }
             else
             {
-                amaps.push_back(make_shared<Map>("infer amaps 2"));    // DAC bugfix
+                amaps.push_back(std::make_shared<Map>("infer amaps 2"));    // DAC bugfix
             }
         }
     }
@@ -506,7 +511,7 @@ QPolygonF  Infer::buildStarBranchPoints( qreal d, int s, qreal side_frac, qreal 
 
 MapPtr Infer::buildStarHalfBranch( qreal d, int s, qreal side_frac, qreal sign, QPolygonF mid_points )
 {
-    MapPtr map = make_shared<Map>("star half branch map");
+    MapPtr map = std::make_shared<Map>("star half branch map");
     QPolygonF points = buildStarBranchPoints( d, s, side_frac, sign, mid_points );
 
     VertexPtr vt   = map->insertVertex( points[0] );
@@ -562,7 +567,7 @@ MapPtr Infer::inferStar( FeaturePtr feature, qreal d, int s )
     placed_points * pmain = placed[ cur ];
     QPolygonF mid_points  = pmain->mids;
 
-    MapPtr map = make_shared<Map>("infer star map");
+    MapPtr map = std::make_shared<Map>("infer star map");
 
     int side_count = mid_points.size();
     for ( int side = 0; side < side_count; ++side )
@@ -651,7 +656,7 @@ intersection_info Infer::FindClosestIntersection(int side, QPointF sideHalf, boo
 
 MapPtr Infer::buildGirihBranch(int side, qreal requiredRotation, QPolygonF points, QPolygonF midPoints )
 {
-    MapPtr map = make_shared<Map>("buildGirihBranch map");
+    MapPtr map = std::make_shared<Map>("buildGirihBranch map");
 
     // Mid-point of this side is always included in the map.
     VertexPtr midVertex  = map->insertVertex( midPoints[side] );
@@ -697,7 +702,7 @@ MapPtr Infer::inferGirih( FeaturePtr feature, int starSides, qreal starSkip )
         points <<  pmain->T.map( pmain->feature->getPoints()[i] );
     }
 
-    MapPtr map = make_shared<Map>("inferGirih map");
+    MapPtr map = std::make_shared<Map>("inferGirih map");
 
     int side_count = mid_points.size();
     for ( int side = 0; side < side_count; ++side )
@@ -828,7 +833,7 @@ MapPtr Infer::inferIntersect( FeaturePtr feature, int starSides, qreal starSkip,
     }
     infos = sortMap.values();
 
-    MapPtr map = make_shared<Map>("inferIntersect map");
+    MapPtr map = std::make_shared<Map>("inferIntersect map");
 
     // Record the starting point of each edge. As we grow the edge,
     // when we want more than one intersection (s > 1), we will update
@@ -954,7 +959,7 @@ MapPtr Infer::inferIntersectProgressive( FeaturePtr feature, int starSides, qrea
         points << pmain->T.map( pmain->feature->getPoints()[i] );
     }
 
-    MapPtr map = make_shared<Map>("inferIntersectProgressive map");
+    MapPtr map = std::make_shared<Map>("inferIntersectProgressive map");
 
     int side_count = mid_points.size();
     for ( int side = 0; side < side_count; ++side )
@@ -1004,7 +1009,7 @@ MapPtr Infer::inferHourglass( FeaturePtr feature, qreal d, int s )
     placed_points * pmain = placed[ cur ];
     QPolygonF mid_points = pmain->mids;
 
-    MapPtr map = make_shared<Map>("inferHourglass map");
+    MapPtr map = std::make_shared<Map>("inferHourglass map");
 
     int side_count = mid_points.size();
 
@@ -1141,7 +1146,7 @@ MapPtr Infer::buildRosetteHalfBranch(qreal q, int s, qreal r,
     QPolygonF points        = buildRosetteBranchPoints( q, s, r, side_frac, sign, mid_points, corner_points);
     QPolygonF intersections = buildRosetteIntersections(q, s, r, side_frac, sign, mid_points, corner_points, points);
 
-    MapPtr from = make_shared<Map>("infer buildRosetteHalfBranch map");
+    MapPtr from = std::make_shared<Map>("infer buildRosetteHalfBranch map");
 
     VertexPtr prev;
     for(int idx = 0; idx < points.size() - 1; ++idx)      // DAC why -1 ?
@@ -1175,7 +1180,7 @@ MapPtr Infer::inferRosette(FeaturePtr feature, qreal q, int s, qreal r)
     QPolygonF mid_points    = pmain->mids;
     QPolygonF corner_points = pmain->T.map(feature->getPolygon());
 
-    MapPtr map = make_shared<Map>("inferRosette map");
+    MapPtr map = std::make_shared<Map>("inferRosette map");
 
     int side_count = mid_points.size();
     for ( int side = 0; side < side_count; ++side )
@@ -1384,7 +1389,7 @@ MapPtr Infer::infer( FeaturePtr feature )
     // Using the stored intersections in the contacts,
     // build a  inferred map.
 
-    MapPtr ret = make_shared<Map>("infer map");
+    MapPtr ret = std::make_shared<Map>("infer map");
 
     for( int idx = 0; idx < cons.size(); ++idx )
     {
@@ -1393,7 +1398,7 @@ MapPtr Infer::infer( FeaturePtr feature )
         {
             if ( con->colinear == COLINEAR_MASTER )
             {
-                MapPtr tmap = make_shared<Map>("infer map 2");
+                MapPtr tmap = std::make_shared<Map>("infer map 2");
                 VertexPtr v1 = tmap->insertVertex( con->position );
                 VertexPtr v2 = tmap->insertVertex( cons.at( con->isect_idx)->position );
                 tmap->insertEdge( v1, v2 );
@@ -1402,7 +1407,7 @@ MapPtr Infer::infer( FeaturePtr feature )
         }
         else
         {
-            MapPtr tmap = make_shared<Map>("infer map 3");
+            MapPtr tmap = std::make_shared<Map>("infer map 3");
             VertexPtr v1 = tmap->insertVertex( con->position );
             VertexPtr v2 = tmap->insertVertex( con->isect );
             tmap->insertEdge( v1, v2 );
@@ -1436,7 +1441,7 @@ MapPtr Infer::infer( FeaturePtr feature )
                 }
 
                 // Two unmatched edges.  match them up.
-                MapPtr t = make_shared<Map>("infer map 4");
+                MapPtr t = std::make_shared<Map>("infer map 4");
 
                 QPointF tmp  = con->position - con->other;
                 tmp = Point::normalize(tmp);
@@ -1502,7 +1507,7 @@ int Infer::lexCompareDistances( int kind1, qreal dist1, int kind2, qreal dist2 )
 
 MapPtr Infer::inferFeature(FeaturePtr feature)
 {
-    MapPtr map = make_shared<Map>("inferFeature map");
+    MapPtr map = std::make_shared<Map>("inferFeature map");
 
     EdgePoly epoly = feature->getEdgePoly();
 

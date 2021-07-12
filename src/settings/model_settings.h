@@ -1,4 +1,4 @@
-﻿/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
+/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
  *
  *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
  *
@@ -28,7 +28,7 @@
 #include <QtCore>
 #include <QColor>
 #include "base/shared.h"
-#include "base/filldata.h"
+#include "settings/filldata.h"
 
 class ModelSettings
 {
@@ -42,11 +42,11 @@ public:
     QColor          getBackgroundColor();
     void            setBackgroundColor(QColor color);
 
-    void            setBkgdImage(BkgdImgPtr bkImage);
-    BkgdImgPtr      getBkgdImage() { return  _bkgdImage; }
-
     void            setSize(QSize size);
     QSize           getSize() { return _size; }
+
+    void            setZSize(QSize size) { _zsize = size; }
+    QSize           getZSize() { return _zsize; }
 
     QPointF         getStartTile();
     void            setStartTile(QPointF pt);
@@ -59,10 +59,10 @@ public:
 protected:
 
 private:
-    QSize           _size;
+    QSize           _size;          // crop size
+    QSize           _zsize;         // zoom size
     QColor          _bkgdColor;
     QPointF         _startTile;
-    BkgdImgPtr      _bkgdImage;
     FillData        _fillData;
 };
 

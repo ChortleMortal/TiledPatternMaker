@@ -25,11 +25,19 @@
 #ifndef TILEDPATTERNMAKER_H
 #define TILEDPATTERNMAKER_H
 
-#include "base/configuration.h"
+#include <QObject>
+#include <QKeyEvent>
+#include "enums/estatemachineevent.h"
+#include "enums/edesign.h"
 
 class SplitScreen;
 class ImageWidget;
 class TransparentWidget;
+class Configuration;
+class Cycler;
+
+typedef std::shared_ptr<class TilingMaker>      TilingMakerPtr;
+typedef std::shared_ptr<class MapEditor>        MapEditorPtr;
 
 class TiledPatternMaker : public QObject
 {
@@ -82,16 +90,16 @@ public slots:
 
     void slot_compareImages(QString nameLeft, QString nameRight, bool autoMode);
     void slot_cyclerFinished();
-    void slot_view_image(QString left, QString right);
+    void slot_view_image(QString left, QString right, bool transparent, bool popup);
     void slot_show_png(QString file, int row, int col);
 
 protected:
     void init();
 
-    ImageWidget       * showPixmap(QPixmap & pixmap,QString title);
-    TransparentWidget * showTransparentPixmap(QPixmap & pixmap,QString title);
-
-    QPixmap makeTextPixmap(QString txt,QString txt2=QString(),QString txt3=QString());
+    ImageWidget       * popupPixmap(QPixmap & pixmap,QString title);
+    TransparentWidget * popupTransparentPixmap(QPixmap & pixmap,QString title);
+    QPixmap             createTransparentPixmap(QString file);
+    QPixmap             makeTextPixmap(QString txt,QString txt2=QString(),QString txt3=QString());
 
 private:
     Configuration          * config;

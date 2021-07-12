@@ -25,25 +25,15 @@
 #ifndef STYLE_H
 #define STYLE_H
 
-#include "tapp/prototype.h"
-#include "geometry/map.h"
-#include "base/geo_graphics.h"
-#include "base/shared.h"
 #include "base/layer.h"
+#include "enums/estyletype.h"
 
-enum eStyleType
-{
-    STYLE_FILLED,
-    STYLE_EMBOSSED,
-    STYLE_INTERLACED,
-    STYLE_OUTLINED,
-    STYLE_PLAIN,
-    STYLE_SKETCHED,
-    STYLE_STYLE,
-    STYLE_THICK,
-    STYLE_TILECOLORS,
-};
+class GeoGraphics;
 
+typedef std::shared_ptr<class Style>        StylePtr;
+typedef std::shared_ptr<class Prototype>    PrototypePtr;
+typedef std::shared_ptr<class Map>          MapPtr;
+typedef std::shared_ptr<class Tiling>       TilingPtr;
 
 
 ////////////////////////////////////////////////////////////////////////////
@@ -70,7 +60,8 @@ public:
     void         setPrototype(PrototypePtr pp);
 
     MapPtr       getMap();
-    MapPtr       getExistingMap() { return prototype->getExistingProtoMap(); }
+    MapPtr       getExistingMap();
+    void         setMap(MapPtr map) {styleMap = map; }
 
     TilingPtr    getTiling();
 
@@ -94,9 +85,25 @@ public:
 
     static int refs;
 
+public slots:
+    virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
+    virtual void slot_mouseDragged(QPointF spt)       override;
+    virtual void slot_mouseTranslate(QPointF pt)      override;
+    virtual void slot_mouseMoved(QPointF spt)         override;
+    virtual void slot_mouseReleased(QPointF spt)      override;
+    virtual void slot_mouseDoublePressed(QPointF spt) override;
+
+    virtual void slot_wheel_scale(qreal delta)  override;
+    virtual void slot_wheel_rotate(qreal delta) override;
+
+    virtual void slot_scale(int amount)  override;
+    virtual void slot_rotate(int amount) override;
+    virtual void slot_moveX(int amount)  override;
+    virtual void slot_moveY(int amount)  override;
+
 protected:
     void   eraseStyleMap();
-    void   eraseProtoMap() { prototype->resetProtoMap(); }
+    void   eraseProtoMap();
 
     void   annotateEdges(MapPtr map);
     void   drawAnnotation(QPainter *painter, QTransform T);

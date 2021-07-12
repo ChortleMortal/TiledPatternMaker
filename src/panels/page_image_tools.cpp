@@ -36,6 +36,7 @@
 #include "tile/tiling.h"
 #include "tile/tiling_manager.h"
 #include "viewers/viewcontrol.h"
+#include "base/cycler.h"
 
 page_image_tools:: page_image_tools(ControlPanel * cpanel)  : panel_page(cpanel,"Image Tools")
 {
@@ -45,6 +46,10 @@ page_image_tools:: page_image_tools(ControlPanel * cpanel)  : panel_page(cpanel,
     gbox = createWorklistSection();
     vbox->addWidget(gbox);
     gbox = createCompareSection();
+    vbox->addWidget(gbox);
+    gbox = createViewSection();
+    vbox->addWidget(gbox);
+    gbox = createTransparencySection();
     vbox->addWidget(gbox);
 
     connect(theApp,&TiledPatternMaker::sig_compareResult,       this,   &page_image_tools::slot_compareResult);
@@ -167,16 +172,16 @@ QGroupBox * page_image_tools::createWorklistSection()
 
 QGroupBox * page_image_tools::createCompareSection()
 {
-    ibox0      = new QComboBox();
-    ibox0->setMinimumWidth(461);
-    ibox1      = new QComboBox();
+    leftFile      = new QComboBox();
+    leftFile->setMinimumWidth(461);
+    rightFile     = new QComboBox();
     imageCompareResult = new QLineEdit();
     imageCompareResult->setReadOnly(true);
 
-    QPushButton * compareDir0Btn = new QPushButton("Compare Dir");
-    QPushButton * compareDir1Btn = new QPushButton("Compare Dir");
-    dir0                         = new QLineEdit();
-    dir1                         = new QLineEdit();
+    QPushButton * compareDirLeftBtn  = new QPushButton("Compare Dir");
+    QPushButton * compareDirRightBtn = new QPushButton("Compare Dir");
+    leftDir                          = new QLineEdit();
+    rightDir                         = new QLineEdit();
 
     QPushButton * viewImage0   = new QPushButton("View");
     QPushButton * viewImage1   = new QPushButton("View");
@@ -184,23 +189,25 @@ QGroupBox * page_image_tools::createCompareSection()
     QPushButton * reviewBtn    = new QPushButton("Cycle");
     QPushButton * previousBtn  = new QPushButton("Previous");
     QPushButton * nextBtn      = new QPushButton("Next");
-    QPushButton * loadBtn      = new QPushButton("Load");
+    QPushButton * loadBtn      = new QPushButton("Load Mosaic");
 
     reviewBtn->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
     compareBtn->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
 
     QPushButton * swapBtn      = new QPushButton("Swap");
     QCheckBox   * cbStopIfDiff = new QCheckBox("Stop if Diff");
-    QCheckBox   * transparent  = new QCheckBox("Transparent");
     QCheckBox   * differences  = new QCheckBox("Display Differences");
-        use_wlistForCompareChk = new QCheckBox("Use Work List");
-                  gen_wlistChk = new QCheckBox("Generate Work List");
+    use_wlistForCompareChk     = new QCheckBox("Use Work List");
+    gen_wlistChk               = new QCheckBox("Generate Work List");
+    QCheckBox   * transparent  = new QCheckBox("Transparent");
+    QCheckBox   * chkPopup     = new QCheckBox("Pop up");
 
     QHBoxLayout * hbox = new QHBoxLayout;
-    hbox->addStretch();
     hbox->addWidget(cbStopIfDiff);
-    hbox->addWidget(transparent);
     hbox->addWidget(differences);
+    hbox->addWidget(chkPopup);
+    hbox->addWidget(transparent);
+    hbox->addStretch();
     hbox->addWidget(use_wlistForCompareChk);
     hbox->addWidget(gen_wlistChk);
     hbox->addWidget(reviewBtn);
@@ -211,22 +218,22 @@ QGroupBox * page_image_tools::createCompareSection()
     imageGrid->addLayout(hbox,row,0,1,3);
 
     row++;
-    imageGrid->addWidget(compareDir0Btn,row,0);
-    imageGrid->addWidget(dir0,row,1);
+    imageGrid->addWidget(compareDirLeftBtn,row,0);
+    imageGrid->addWidget(leftDir,row,1);
     imageGrid->addWidget(swapBtn,row,2);
 
     row++;
-    imageGrid->addWidget(compareDir1Btn,row,0);
-    imageGrid->addWidget(dir1,row,1);
+    imageGrid->addWidget(compareDirRightBtn,row,0);
+    imageGrid->addWidget(rightDir,row,1);
 
     row++;
     imageGrid->addWidget(previousBtn,row,0);
-    imageGrid->addWidget(ibox0,row,1);
+    imageGrid->addWidget(leftFile,row,1);
     imageGrid->addWidget(viewImage0,row,2);
 
     row++;
     imageGrid->addWidget(nextBtn,row,0);
-    imageGrid->addWidget(ibox1,row,1);
+    imageGrid->addWidget(rightFile,row,1);
     imageGrid->addWidget(viewImage1,row,2);
 
     row++;
@@ -234,28 +241,29 @@ QGroupBox * page_image_tools::createCompareSection()
     imageGrid->addWidget(imageCompareResult,row,1);
     imageGrid->addWidget(compareBtn,row,2);
 
-    QGroupBox * imageGroup = new QGroupBox("View/Compare Images");
+    QGroupBox * imageGroup = new QGroupBox("Compare Images");
     imageGroup->setLayout(imageGrid);
 
     QString dir = config->compareDir0;
-    dir0->setText(dir);
-    loadCombo(ibox0,dir);
+    leftDir->setText(dir);
+    loadCombo(leftFile,dir);
     dir = config->compareDir1;
-    dir1->setText(dir);
-    loadCombo(ibox1,dir);
+    rightDir->setText(dir);
+    loadCombo(rightFile,dir);
 
     cbStopIfDiff->setChecked(config->stopIfDiff);
     transparent->setChecked(config->compare_transparent);
+    chkPopup->setChecked(config->compare_popup);
     differences->setChecked(config->display_differences);
     use_wlistForCompareChk->setChecked(config->use_workListForCompare);
     gen_wlistChk->setChecked(config->generate_workList);
 
     connect(swapBtn,                &QPushButton::clicked,     this,  &page_image_tools::swapDirs);
-    connect(compareDir0Btn,         &QPushButton::clicked,     this,  &page_image_tools::selectDir0);
-    connect(compareDir1Btn,         &QPushButton::clicked,     this,  &page_image_tools::selectDir1);
+    connect(compareDirLeftBtn,      &QPushButton::clicked,     this,  &page_image_tools::selectDir0);
+    connect(compareDirRightBtn,     &QPushButton::clicked,     this,  &page_image_tools::selectDir1);
 
-    connect(viewImage0,             &QPushButton::clicked,     this,   &page_image_tools::slot_viewImage0);
-    connect(viewImage1,             &QPushButton::clicked,     this,   &page_image_tools::slot_viewImage1);
+    connect(viewImage0,             &QPushButton::clicked,     this,   &page_image_tools::slot_viewImageLeft);
+    connect(viewImage1,             &QPushButton::clicked,     this,   &page_image_tools::slot_viewImageRight);
     connect(compareBtn,             &QPushButton::clicked,     this,   &page_image_tools::slot_compareImages);
     connect(reviewBtn,              &QPushButton::clicked,     this,   &page_image_tools::slot_compareCycle);
     connect(previousBtn,            &QPushButton::clicked,     this,   &page_image_tools::slot_previous);
@@ -263,18 +271,83 @@ QGroupBox * page_image_tools::createCompareSection()
     connect(loadBtn,                &QPushButton::clicked,     this,   &page_image_tools::slot_load);
 
     connect(transparent,            &QCheckBox::clicked,       this,   &page_image_tools::slot_transparentClicked);
+    connect(chkPopup,               &QCheckBox::clicked,       this,   &page_image_tools::slot_popupClicked);
     connect(cbStopIfDiff,           &QCheckBox::clicked,       this,   &page_image_tools::slot_stopIfDiffClicked);
     connect(differences,            &QCheckBox::clicked,       this,   &page_image_tools::slot_differencesClicked);
     connect(use_wlistForCompareChk, &QCheckBox::clicked,       this,   &page_image_tools::slot_use_worklist_compare);
     connect(gen_wlistChk,           &QCheckBox::clicked,       this,   &page_image_tools::slot_gen_worklist);
 
-    connect(dir0, &QLineEdit::editingFinished, this, &page_image_tools::slot_dir0Changed);
-    connect(dir1, &QLineEdit::editingFinished, this, &page_image_tools::slot_dir1Changed);
-    connect(ibox0, SIGNAL(currentIndexChanged(int)),  this, SLOT(slot_ibox0_changed(int)));
-    connect(ibox1, SIGNAL(currentIndexChanged(int)),  this, SLOT(slot_ibox1_changed(int)));
+    connect(leftDir,   &QLineEdit::editingFinished,       this, &page_image_tools::slot_dir0Changed);
+    connect(rightDir,  &QLineEdit::editingFinished,       this, &page_image_tools::slot_dir1Changed);
+    connect(leftFile,  SIGNAL(currentIndexChanged(int)),  this, SLOT(slot_ibox0_changed(int)));
+    connect(rightFile, SIGNAL(currentIndexChanged(int)),  this, SLOT(slot_ibox1_changed(int)));
 
-    setCombo(ibox0,config->image0);
-    setCombo(ibox1,config->image1);
+    setCombo(leftFile,config->image0);
+    setCombo(rightFile,config->image1);
+
+    return  imageGroup;
+}
+
+QGroupBox * page_image_tools::createViewSection()
+{
+    QPushButton * selectImgBtn   = new QPushButton("Select Image File");
+    QPushButton * viewImageBtn   = new QPushButton("View");
+    QCheckBox   * chkTransparent = new QCheckBox("Transparent");
+    QCheckBox   * chkPopup       = new QCheckBox("Pop up");
+                  viewFile       = new QLineEdit("File");
+
+    QHBoxLayout * hbox = new QHBoxLayout();
+    hbox->addWidget(chkPopup);
+    hbox->addWidget(chkTransparent);
+    hbox->addStretch();
+
+    QHBoxLayout * hbox2 = new QHBoxLayout();
+    hbox2->addWidget(selectImgBtn);
+    hbox2->addWidget(viewFile);
+    hbox2->addWidget(viewImageBtn);
+
+    QVBoxLayout * vbox = new QVBoxLayout;
+    vbox->addLayout(hbox);
+    vbox->addLayout(hbox2);
+
+    QGroupBox * imageGroup = new QGroupBox("View Images");
+    imageGroup->setLayout(vbox);
+
+    viewFile->setText(config->viewImage);
+    chkTransparent->setChecked(config->view_transparent);
+    chkPopup->setChecked(config->view_popup);
+
+    connect(selectImgBtn,             &QPushButton::clicked,   this,   &page_image_tools::slot_selectImage);
+    connect(viewImageBtn,             &QPushButton::clicked,   this,   &page_image_tools::slot_viewImage);
+    connect(chkTransparent,           &QCheckBox::clicked,     this,   &page_image_tools::slot_view_transparentClicked);
+    connect(chkPopup,                 &QCheckBox::clicked,     this,   &page_image_tools::slot_view_popupClicked);
+
+    return  imageGroup;
+}
+
+QGroupBox * page_image_tools::createTransparencySection()
+{
+    colorLabel   = new QLabel();
+    colorLabel->setFixedWidth(121);
+
+    QPushButton * colorEdit     = new QPushButton("Set Filter Color");
+    QCheckBox   * chkUseFilter  = new QCheckBox("Use Color Filter");
+
+    QHBoxLayout * hbox = new QHBoxLayout();
+
+    hbox->addWidget(chkUseFilter);
+    hbox->addWidget(colorLabel);
+    hbox->addWidget(colorEdit);
+    hbox->addStretch();
+
+    QGroupBox * imageGroup = new QGroupBox("Transparency Filter");
+    imageGroup->setLayout(hbox);
+
+    QVariant variant = config->transparentColor;
+    QString colcode  = variant.toString();
+    colorLabel->setStyleSheet("QLabel { background-color : "+colcode+" ;}");
+
+    connect(colorEdit,              &QPushButton::clicked,     this,   &page_image_tools::slot_colorEdit);
 
     return  imageGroup;
 }
@@ -315,41 +388,41 @@ void page_image_tools::slot_cycleModeChanged(int id)
 
 void page_image_tools::slot_dir0Changed()
 {
-    QString dir = dir0->text();
+    QString dir = leftDir->text();
     config->compareDir0 = dir;
-    loadCombo(ibox0,dir);
+    loadCombo(leftFile,dir);
 }
 
 void page_image_tools::slot_dir1Changed()
 {
-    QString dir = dir1->text();
+    QString dir = rightDir->text();
     config->compareDir1 = dir;
-    loadCombo(ibox1,dir);
+    loadCombo(rightFile,dir);
 }
 
 void page_image_tools::selectDir0()
 {
-    QString  dir = dir0->text();
+    QString  dir = leftDir->text();
     QString fdir = QFileDialog::getExistingDirectory(this, tr("Open Directory"), dir,
                                                  QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
     if (fdir.isEmpty())
             return;
 
     config->compareDir0 = fdir;
-    dir0->setText(fdir);
+    leftDir->setText(fdir);
     slot_dir0Changed();
 }
 
 void page_image_tools::selectDir1()
 {
-    QString  dir = dir1->text();
+    QString  dir = rightDir->text();
     QString fdir = QFileDialog::getExistingDirectory(this, tr("Open Directory"), dir,
                                                  QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
     if (fdir.isEmpty())
             return;
 
     config->compareDir1 = fdir;
-    dir1->setText(fdir);
+    rightDir->setText(fdir);
     slot_dir1Changed();
 }
 
@@ -359,29 +432,38 @@ void page_image_tools::swapDirs()
     QString b = config->compareDir1;
     config->compareDir0 = b;
     config->compareDir1 = a;
-    dir0->setText(b);
-    dir1->setText(a);
+    leftDir->setText(b);
+    rightDir->setText(a);
 }
 
-void page_image_tools::slot_viewImage0()
+
+void page_image_tools::slot_viewImage()
 {
-    qDebug() << "slot_viewImage0";
-    QString file = ibox0->currentText();
+    qDebug() << "slot_viewImage";
+    QString file = viewFile->text();
+    config->viewImage = file;
+    viewImage(file,config->view_transparent,config->view_popup);
+}
+
+void page_image_tools::slot_viewImageLeft()
+{
+    qDebug() << "slot_viewImageLeft";
+    QString file = leftFile->currentText();
     config->image0 = file;
-    QString path = dir0->text() + "/" + file + ".bmp";
-    viewImage(path);
+    QString path = leftDir->text() + "/" + file + ".bmp";
+    viewImage(path,config->compare_transparent,config->compare_popup);
 }
 
-void page_image_tools::slot_viewImage1()
+void page_image_tools::slot_viewImageRight()
 {
-    qDebug() << "slot_viewImage1";
-    QString file = ibox1->currentText();
+    qDebug() << "slot_viewImageRight";
+    QString file = rightFile->currentText();
     config->image1 = file;
-    QString path = dir1->text() + "/" + file + ".bmp";
-    viewImage(path);
+    QString path = rightDir->text() + "/" + file + ".bmp";
+    viewImage(path,config->compare_transparent,config->compare_popup);
 }
 
-void page_image_tools::viewImage(QString file)
+void page_image_tools::viewImage(QString file, bool transparent, bool popup)
 {
     imageCompareResult->setText("");
 
@@ -389,12 +471,12 @@ void page_image_tools::viewImage(QString file)
     if (pixmap.isNull())
     {
         QMessageBox box(this);
-        box.setText("Image not found");
+        box.setText("Image not found or not valid");
         box.exec();
         return;
     }
 
-    emit sig_view_image(file,file);     // use same file
+    emit sig_view_image(file,file,transparent,popup);     // use same file
 }
 
 void page_image_tools::slot_cycle()
@@ -522,7 +604,7 @@ void page_image_tools::slot_compareImages()
     panel->showPanelStatus("Spacebar=next P=ping-pong S=side-by-side L=log Q=quit");
 
     imageCompareResult->setText("");
-    emit sig_compareImageFiles(ibox0->currentText(),ibox1->currentText(),false);
+    emit sig_compareImageFiles(leftFile->currentText(),rightFile->currentText(),false);
 }
 
 void page_image_tools::slot_compareCycle()
@@ -538,6 +620,21 @@ void page_image_tools::slot_compareCycle()
 void page_image_tools::slot_transparentClicked(bool checked)
 {
     config->compare_transparent = checked;
+}
+
+void page_image_tools::slot_view_transparentClicked(bool checked)
+{
+    config->view_transparent = checked;
+}
+
+void page_image_tools::slot_view_popupClicked(bool checked)
+{
+    config->view_popup = checked;
+}
+
+void page_image_tools::slot_popupClicked(bool checked)
+{
+    config->compare_popup = checked;
 }
 
 void page_image_tools::slot_differencesClicked(bool checked)
@@ -623,20 +720,20 @@ void page_image_tools::setCombo(QComboBox * box, QString name)
 
 void page_image_tools::slot_setImage0(QString name)
 {
-    int index = ibox0->findText(name);
-    ibox0->setCurrentIndex(index);
+    int index = leftFile->findText(name);
+    leftFile->setCurrentIndex(index);
 }
 
 void page_image_tools::slot_setImage1(QString name)
 {
-    int index = ibox1->findText(name);
-    ibox1->setCurrentIndex(index);
+    int index = rightFile->findText(name);
+    rightFile->setCurrentIndex(index);
 }
 
 void page_image_tools::slot_ibox0_changed(int index)
 {
     Q_UNUSED(index);
-    config->image0 = ibox0->currentText();
+    config->image0 = leftFile->currentText();
 
     // special case for ibox1 - not symmetric
     slot_setImage1(config->image0);  // makes it the same
@@ -645,34 +742,34 @@ void page_image_tools::slot_ibox0_changed(int index)
 void page_image_tools::slot_ibox1_changed(int index)
 {
     Q_UNUSED(index);
-    config->image1 = ibox1->currentText();
+    config->image1 = rightFile->currentText();
 }
 
 void page_image_tools::slot_previous()
 {
-    int index = ibox0->currentIndex();
+    int index = leftFile->currentIndex();
     if (index == 0) return;
     index--;
-    ibox0->setCurrentIndex(index);
+    leftFile->setCurrentIndex(index);
     imageCompareResult->setText("");
     emit theApp->sig_closeAllImageViewers();
-    emit sig_compareImageFiles(ibox0->currentText(),ibox1->currentText(),false);
+    emit sig_compareImageFiles(leftFile->currentText(),rightFile->currentText(),false);
 }
 
 void page_image_tools::slot_next()
 {
-    int index = ibox0->currentIndex();
-    if (index >= ibox0->count()-1) return;
+    int index = leftFile->currentIndex();
+    if (index >= leftFile->count()-1) return;
     index++;
-    ibox0->setCurrentIndex(index);
+    leftFile->setCurrentIndex(index);
     imageCompareResult->setText("");
     emit theApp->sig_closeAllImageViewers();
-    emit sig_compareImageFiles(ibox0->currentText(),ibox1->currentText(),false);
+    emit sig_compareImageFiles(leftFile->currentText(),rightFile->currentText(),false);
 }
 
 void page_image_tools::slot_load()
 {
-    QString mos = ibox0->currentText();
+    QString mos = leftFile->currentText();
     emit sig_loadMosaic(mos);
 }
 
@@ -796,7 +893,6 @@ void page_image_tools::loadWorkListFromFile()
     slot_use_worklist_compare(true);
 }
 
-
 void page_image_tools::saveWorkListToFile()
 {
     if (config->workList.isEmpty())
@@ -864,4 +960,37 @@ void page_image_tools::editWorkList()
 
     ewl->exec();
 
+}
+
+void page_image_tools::slot_colorEdit()
+{
+    AQColorDialog dlg(config->transparentColor);
+    int rv = dlg.exec();
+    if (rv != QDialog::Accepted) return;
+
+    QColor newColor = dlg.selectedColor();
+    if (newColor.isValid())
+    {
+        config->transparentColor = newColor;
+
+        QVariant variant = config->transparentColor;
+        QString colcode  = variant.toString();
+        colorLabel->setStyleSheet("QLabel { background-color : "+colcode+" ;}");
+    }
+}
+
+void page_image_tools::slot_selectImage()
+{
+    QString dir = config->rootMediaDir;
+    QString fileName = QFileDialog::getOpenFileName(nullptr,"Select image file",dir, "Image Files (*.png *.jpg *.bmp *.heic)");
+    if (fileName.isEmpty())
+    {
+        QMessageBox box;
+        box.setIcon(QMessageBox::Warning);
+        box.setText("FILE NOT FOUND");
+        box.exec();
+        return;
+    }
+    config->viewImage = fileName;
+    viewFile->setText(config->viewImage);
 }

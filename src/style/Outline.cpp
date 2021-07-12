@@ -23,9 +23,13 @@
  */
 
 #include "style/outline.h"
+#include "geometry/map.h"
+#include "geometry/vertex.h"
+#include "geometry/neighbours.h"
 #include "geometry/point.h"
 #include "viewers/view.h"
 #include <QPainter>
+#include "base/geo_graphics.h"
 
 ////////////////////////////////////////////////////////////////////////////
 //

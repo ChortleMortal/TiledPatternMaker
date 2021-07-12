@@ -1,5 +1,5 @@
 #include "dlg_textedit.h"
-#include "base/configuration.h"
+#include "settings/configuration.h"
 #include "viewers/view.h"
 
 DlgTextEdit::DlgTextEdit(QWidget *parent) : QDialog(parent)

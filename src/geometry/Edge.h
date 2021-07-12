@@ -32,8 +32,13 @@
 #define EDGE_H
 
 #include <QtCore>
-#include "base/shared.h"
-#include "geometry/vertex.h"
+
+typedef std::weak_ptr<class Vertex>         WeakVertexPtr;
+typedef std::shared_ptr<class Vertex>       VertexPtr;
+typedef std::shared_ptr<class Edge>         EdgePtr;
+typedef std::weak_ptr<class Edge>           WeakEdgePtr;
+typedef std::shared_ptr<class Thread>       ThreadPtr;
+typedef std::shared_ptr<class Face>         FacePtr;
 
 enum eEdgeType
 {
@@ -61,6 +66,8 @@ public:
     Edge(VertexPtr V1, VertexPtr V2, QPointF arcCenter, bool convex);
     Edge(EdgePtr other, QTransform T);
     ~Edge();
+
+    double    angle() const;
 
     VertexPtr getOtherV(VertexPtr vert) const;
     VertexPtr getOtherV(QPointF pos) const;
@@ -107,12 +114,10 @@ public:
     // dcel stuff
     bool operator < (const Edge & other) const;
 
-    double angle() const { return std::atan2(v2->pt.y() - v1->pt.y(), v2->pt.x() - v1->pt.x()); }
-
     EdgePtr    prev() { return twin.lock()->next.lock(); }
 
-    weak_ptr<Edge>  twin;
-    weak_ptr<Edge>  next;
+    WeakEdgePtr     twin;
+    WeakEdgePtr     next;
     FacePtr         incident_face;
     bool            dvisited;       // used by dcel
 

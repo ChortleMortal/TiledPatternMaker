@@ -27,6 +27,8 @@
 #include "viewers/viewcontrol.h"
 #include "designs/designs.h"
 #include "designs/patterns.h"
+#include "settings/model_settings.h"
+#include "settings/configuration.h"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -58,7 +60,7 @@ bool Design5::build()
     settings->setSize(size);
     settings->setBackgroundColor(QColor(TileBlue));
 
-    BorderPtr bp = make_shared<BorderTwoColor>(size,QColor(TileGreen),QColor(TileWhite),20.0);
+    BorderPtr bp = std::make_shared<BorderTwoColor>(size,QColor(TileGreen),QColor(TileWhite),20.0);
     bp->construct();
 
     border = bp;
@@ -83,9 +85,9 @@ bool Design5::build()
         for (int col = 0; col < cols; col++)
         {
             if (!toggle)
-                pat = make_shared<Pattern5>(d,brush1);
+                pat = std::make_shared<Pattern5>(d,brush1);
             else
-                pat = make_shared<Pattern5>(d,brush2);
+                pat = std::make_shared<Pattern5>(d,brush2);
             toggle=!toggle;
             pat->setTilePosition(row,col);
             pat->build();
@@ -101,7 +103,7 @@ bool Design6::build()
     settings->setSize(size);
     settings->setBackgroundColor((QColor(TileWhite)));
 
-    BorderPtr bp = make_shared<BorderTwoColor>(size,QColor(TileGreen),QColor(TileWhite),20.0);
+    BorderPtr bp = std::make_shared<BorderTwoColor>(size,QColor(TileGreen),QColor(TileWhite),20.0);
     bp->construct();
     border = bp;
 
@@ -131,9 +133,9 @@ bool Design6::build()
         for (int col = 0; col < cols; col++)
         {
             if (!toggle)
-                pat = make_shared<Pattern6>(d,brush1);
+                pat = std::make_shared<Pattern6>(d,brush1);
             else
-                pat = make_shared<Pattern6>(d,brush2);
+                pat = std::make_shared<Pattern6>(d,brush2);
             toggle=!toggle;
             pat->setTilePosition(row,col);
             patterns.push_back(pat);
@@ -157,7 +159,7 @@ bool Design7::build()
     settings->setSize(size);
     settings->setBackgroundColor((QColor(TileGreen)));
 
-    BorderPtr bp = make_shared<BorderBlocks>(size,QColor(TileWhite),diameter,0,cols);
+    BorderPtr bp = std::make_shared<BorderBlocks>(size,QColor(TileWhite),diameter,0,cols);
     bp->construct();
     border = bp;
 
@@ -177,7 +179,7 @@ bool Design7::build()
     {
         for (int col = 0; col < cols; col++)
         {
-            pat = make_shared<Pattern7>(diameter,brush1);
+            pat = std::make_shared<Pattern7>(diameter,brush1);
             pat->setTilePosition(row,col);
             patterns.push_back(pat);
             pat->setLoc(QPointF(pt.x() + (xSeparation * col), pt.y() + (ySeparation * row)));
@@ -216,7 +218,7 @@ bool Design8::build()
     innerPen.setWidthF((qreal)gridWidth - 4.0);
     innerPen.setColor(QColor(Qt::red));
 
-    PatternPtr pat = make_shared<PatternHuSymbol>(gridWidth,gridPen,innerPen, canvasColor,diameter,QBrush(Qt::NoBrush));
+    PatternPtr pat = std::make_shared<PatternHuSymbol>(gridWidth,gridPen,innerPen, canvasColor,diameter,QBrush(Qt::NoBrush));
     patterns.push_back(pat);
     pat->setTilePosition(0,0);
     pat->setLoc(settings->getStartTile());
@@ -276,7 +278,7 @@ bool Design9::build()
     {
         for (int col=0; col < cols; col++)
         {
-            PatternPtr pat = make_shared<PatternHuSymbol>(gridWidth,gridPen,innerPen, canvasColor,diameter,QBrush(Qt::NoBrush));
+            PatternPtr pat = std::make_shared<PatternHuSymbol>(gridWidth,gridPen,innerPen, canvasColor,diameter,QBrush(Qt::NoBrush));
             pat->setTilePosition(row,col);
             patterns.push_back(pat);
             pat->setLoc(QPointF(pt.x() + (xSeparation * col), pt.y() + (ySeparation * row)));
@@ -328,7 +330,7 @@ bool DesignHuPacked::build()
         {
             gridPen.setWidthF(gridWidth);
             innerPen.setWidthF(gridWidth - 4.0);
-            PatternPtr pat = make_shared<PatternHuSymbol>(gridWidth,gridPen,innerPen, canvasColor,diameter,QBrush(Qt::NoBrush));
+            PatternPtr pat = std::make_shared<PatternHuSymbol>(gridWidth,gridPen,innerPen, canvasColor,diameter,QBrush(Qt::NoBrush));
             pat->build();
             pat->setTilePosition(row,col);
             patterns.push_back(pat);
@@ -386,7 +388,7 @@ bool DesignHuInsert::build()
             gridWidth = 11.0;
             gridPen.setWidthF(gridWidth);
             innerPen.setWidthF(gridWidth - 4.0);
-            PatternPtr pat = make_shared<PatternHuSymbol>(gridWidth,gridPen,innerPen, canvasColor,diameter/2.0,QBrush(Qt::NoBrush));
+            PatternPtr pat = std::make_shared<PatternHuSymbol>(gridWidth,gridPen,innerPen, canvasColor,diameter/2.0,QBrush(Qt::NoBrush));
             pat->build();
             pat->setTilePosition(row,col);
             patterns.push_back(pat);
@@ -425,7 +427,7 @@ bool Design11::build()
     innerPen.setWidthF((qreal)gridWidth - 4.0);
     innerPen.setColor(QColor(Qt::red));
 
-    PatternPtr pat = make_shared<PatternHuInterlace>(gridWidth,gridPen,innerPen, canvasColor,diameter,QBrush(Qt::NoBrush));
+    PatternPtr pat = std::make_shared<PatternHuInterlace>(gridWidth,gridPen,innerPen, canvasColor,diameter,QBrush(Qt::NoBrush));
     pat->setTilePosition(0,0);
     pat->build();
     patterns.push_back(pat);
@@ -453,13 +455,13 @@ bool Design12::build()
     settings->setSize(size);
     settings->setBackgroundColor((TileBlack));
 
-    BorderPtr bp = make_shared<BorderTwoColor>(size,QColor(Qt::green),QColor(Qt::red),20.0);
+    BorderPtr bp = std::make_shared<BorderTwoColor>(size,QColor(Qt::green),QColor(Qt::red),20.0);
     bp->construct();
     border = bp;
 
     qreal diameter = 400.0;
     settings->setStartTile(settings->getCenter());
-    PatternPtr pat = make_shared<Pattern10>(diameter, QBrush(Qt::NoBrush));
+    PatternPtr pat = std::make_shared<Pattern10>(diameter, QBrush(Qt::NoBrush));
     patterns.push_back(pat);
     pat->setTilePosition(0,0);
     pat->setLoc(settings->getStartTile());
@@ -522,7 +524,7 @@ bool Design13::build()
     {
         for (int col=0; col < cols; col++)
         {
-            PatternPtr pat = make_shared<Pattern11>(diameter,  QBrush(Qt::NoBrush), rotation, turn);
+            PatternPtr pat = std::make_shared<Pattern11>(diameter,  QBrush(Qt::NoBrush), rotation, turn);
             pat->setTilePosition(row,col);
             pat->build();
             patterns.push_back(pat);
@@ -592,7 +594,7 @@ bool Design14::build()
     {
         for (int col=0; col < cols; col++)
         {
-            PatternPtr pat = make_shared<Pattern12>(diameter,  QBrush(Qt::NoBrush), rotation, turn, row, col);
+            PatternPtr pat = std::make_shared<Pattern12>(diameter,  QBrush(Qt::NoBrush), rotation, turn, row, col);
             pat->setTilePosition(row,col);
             pat->build();
             patterns.push_back(pat);
@@ -633,7 +635,7 @@ bool Design16::build()
         for (int col=0; col < cols; col++)
         {
             QColor c = ((row+col)&1) ? c1 : c2;
-            PatternPtr pat = make_shared<Pattern14>(diameter, QBrush(c));
+            PatternPtr pat = std::make_shared<Pattern14>(diameter, QBrush(c));
             pat->build();
             pat->setTilePosition(row,col);
             patterns.push_back(pat);
@@ -680,7 +682,7 @@ bool Design17::build()
             }
 
             QColor c = ((row+col)&3) ? c1 : c2;
-            PatternPtr pat = make_shared<Pattern14>(diameter, QBrush(c));
+            PatternPtr pat = std::make_shared<Pattern14>(diameter, QBrush(c));
             pat->setTilePosition(row,col);
             pat->build();
             patterns.push_back(pat);
@@ -724,7 +726,7 @@ bool Design18::build()
         for (int col=0; col < cols; col++)
         {
             QColor c = ((row+col)& 1) ? c1 : c2;
-            PatternPtr pat = make_shared<Pattern15>(diameter, QBrush(c));
+            PatternPtr pat = std::make_shared<Pattern15>(diameter, QBrush(c));
             pat->build();
             pat->setTilePosition(row,col);
             patterns.push_back(pat);
@@ -765,7 +767,7 @@ bool Design19::build()
         for (int col=0; col < cols; col++)
         {
             QColor c = ((row+col)& 1) ? c1 : c2;
-            PatternPtr pat = make_shared<Pattern16>(diameter, QBrush(c));
+            PatternPtr pat = std::make_shared<Pattern16>(diameter, QBrush(c));
             pat->build();
             pat->setTilePosition(row,col);
             patterns.push_back(pat);
@@ -780,7 +782,7 @@ bool DesignKumiko1::build()
     settings->setSize(size);
     settings->setBackgroundColor((QColor(0x58, 0x39, 0x3e)));
 
-    BorderPtr bp = make_shared<BorderTwoColor>(size,QColor(0xa2,0x79,0x67),QColor(0xa2,0x79,0x67),20);
+    BorderPtr bp = std::make_shared<BorderTwoColor>(size,QColor(0xa2,0x79,0x67),QColor(0xa2,0x79,0x67),20);
     bp->construct();
     border = bp;
 
@@ -808,7 +810,7 @@ bool DesignKumiko1::build()
     {
         for (int col=0; col < cols; col++)
         {
-            PatternPtr pat = make_shared<PatternKumiko1>(diameter, QBrush());
+            PatternPtr pat = std::make_shared<PatternKumiko1>(diameter, QBrush());
             pat->build();
             pat->setTilePosition(row,col);
             patterns.push_back(pat);
@@ -828,7 +830,7 @@ void DesignKumiko2::init()
 
     settings->setBackgroundColor((QColor(0x58, 0x39, 0x3e)));
 
-    //BorderPtr bp = make_shared<BorderTwoColor>(QColor(0xa2,0x79,0x67),QColor(0xa2,0x79,0x67),20.0);
+    //BorderPtr bp = std::make_shared<BorderTwoColor>(QColor(0xa2,0x79,0x67),QColor(0xa2,0x79,0x67),20.0);
     //info->setBorder(bp);
 
     xSeparation = 200.0/100.0;
@@ -853,7 +855,7 @@ void DesignKumiko2::init()
 
 bool DesignKumiko2::build()
 {
-    PatternPtr pat = make_shared<PatternKumiko2>(2.0, QBrush());
+    PatternPtr pat = std::make_shared<PatternKumiko2>(2.0, QBrush());
     pat->setLoc(settings->getStartTile());        // needs to be done here since repeat is called after the map is created
     pat->fd.set(-5,5,-5,5);
     pat->trans1 = QPointF(2.0,0);
@@ -862,7 +864,7 @@ bool DesignKumiko2::build()
     //pat->setTilePosition(row,col);
     patterns.push_back(pat);
 
-    BorderPtr bp = make_shared<BorderTwoColor>(settings->getSize(),QColor(0xa2,0x79,0x67),QColor(0xa2,0x79,0x67),20.0);
+    BorderPtr bp = std::make_shared<BorderTwoColor>(settings->getSize(),QColor(0xa2,0x79,0x67),QColor(0xa2,0x79,0x67),20.0);
     bp->construct();
     border = bp;
 

@@ -1,7 +1,9 @@
 #include <QTransform>
 #include <QPainter>
 #include "geometry/edgepoly.h"
-#include "geometry/transform.h"
+#include "geometry/edge.h"
+#include "geometry/vertex.h"
+#include "geometry/point.h"
 #include "base/utilities.h"
 #include "base/geo_graphics.h"
 
@@ -25,16 +27,16 @@ void EdgePoly::init(QPolygonF & poly)
 {
     Q_ASSERT(!poly.isClosed());
 
-    VertexPtr v  = make_shared<Vertex>(poly[0]);
+    VertexPtr v  = std::make_shared<Vertex>(poly[0]);
     VertexPtr v1 = v;
     for (int i=1; i < poly.size(); i++)
     {
-        VertexPtr v2 = make_shared<Vertex>(poly[i]);
-        EdgePtr e = make_shared<Edge>(v1,v2);
+        VertexPtr v2 = std::make_shared<Vertex>(poly[i]);
+        EdgePtr e = std::make_shared<Edge>(v1,v2);
         push_back(e);
         v1 = v2;
     }
-    EdgePtr e = make_shared<Edge>(v1,v);
+    EdgePtr e = std::make_shared<Edge>(v1,v);
     push_back(e);
 }
 
@@ -55,7 +57,7 @@ EdgePoly EdgePoly::recreate() const
         }
         else
         {
-            newv1 = make_shared<Vertex>(oldv1->pt);
+            newv1 = std::make_shared<Vertex>(oldv1->pt);
             vmap[oldv1] = newv1;
         }
         if (vmap.contains(oldv2))
@@ -64,10 +66,10 @@ EdgePoly EdgePoly::recreate() const
         }
         else
         {
-            newv2 = make_shared<Vertex>(oldv2->pt);
+            newv2 = std::make_shared<Vertex>(oldv2->pt);
             vmap[oldv2] = newv2;
         }
-        EdgePtr edge2 = make_shared<Edge>(newv1,newv2);
+        EdgePtr edge2 = std::make_shared<Edge>(newv1,newv2);
         if  (edge->getType() == EDGETYPE_CURVE)
         {
             edge2->setArcCenter(edge->getArcCenter(),edge->isConvex());
@@ -143,16 +145,16 @@ EdgePoly EdgePoly::map(QTransform T) const
 
     EdgePtr efirst = edges[0];
     pt = efirst->v1->pt;
-    first = make_shared<Vertex>(T.map(pt));
+    first = std::make_shared<Vertex>(T.map(pt));
     v1 = first;
 
     for (auto i = 0; i < (edges.size()-1); i++)
     {
         EdgePtr e = edges[i];
         pt = e->v2->pt;
-        VertexPtr v2 = make_shared<Vertex>(T.map(pt));
+        VertexPtr v2 = std::make_shared<Vertex>(T.map(pt));
 
-        EdgePtr ne = make_shared<Edge>(v1,v2);
+        EdgePtr ne = std::make_shared<Edge>(v1,v2);
         ne->setSwapState(e->getSwapState());
         if (e->getType() == EDGETYPE_CURVE)
         {
@@ -164,7 +166,7 @@ EdgePoly EdgePoly::map(QTransform T) const
     }
 
     EdgePtr e = edges.last();
-    EdgePtr ne = make_shared<Edge>(v1,first);
+    EdgePtr ne = std::make_shared<Edge>(v1,first);
     ne->setSwapState(e->getSwapState());
     if (e->getType() == EDGETYPE_CURVE)
     {

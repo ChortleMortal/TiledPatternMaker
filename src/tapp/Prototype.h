@@ -25,11 +25,16 @@
 #ifndef PROTOTYPE_H
 #define PROTOTYPE_H
 
-#include "tile/tiling.h"
-#include "tile/feature.h"
-#include "tapp/figure.h"
-#include "tapp/design_element.h"
+#include <QString>
 #include "geometry/fill_region.h"
+
+typedef std::shared_ptr<class Border>           BorderPtr;
+typedef std::shared_ptr<class Tiling>           TilingPtr;
+typedef std::shared_ptr<class Map>              MapPtr;
+typedef std::shared_ptr<class Feature>          FeaturePtr;
+typedef std::shared_ptr<class Figure>           FigurePtr;
+typedef std::shared_ptr<class DesignElement>    DesignElementPtr;
+
 
 ////////////////////////////////////////////////////////////////////////////
 //

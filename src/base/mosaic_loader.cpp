@@ -24,33 +24,49 @@
 
 #include "base/mosaic_loader.h"
 #include "base/border.h"
-#include "base/configuration.h"
-#include "base/tiledpatternmaker.h"
-#include "base/utilities.h"
+#include "base/mosaic.h"
+#include "geometry/crop.h"
+#include "geometry/faces.h"
+#include "geometry/loose.h"
+#include "geometry/map.h"
+#include "settings/model_settings.h"
 #include "style/colored.h"
-#include "style/thick.h"
+#include "style/emboss.h"
 #include "style/filled.h"
 #include "style/interlace.h"
 #include "style/outline.h"
 #include "style/plain.h"
 #include "style/sketch.h"
-#include "style/emboss.h"
+#include "style/thick.h"
 #include "style/tile_colors.h"
-#include "tapp/extended_star.h"
-#include "tapp/infer.h"
+#include "tapp/design_element.h"
 #include "tapp/explicit_figure.h"
+#include "tapp/extended_rosette.h"
+#include "tapp/extended_star.h"
+#include "tapp/figure.h"
+#include "tapp/infer.h"
+#include "tapp/prototype.h"
+#include "tapp/rosette.h"
+#include "tapp/rosette_connect_figure.h"
+#include "tapp/star.h"
+#include "tapp/star_connect_figure.h"
+#include "tile/feature.h"
 #include "tile/feature_reader.h"
+#include "tile/tiling.h"
 #include "tile/tiling_loader.h"
 #include "tile/tiling_manager.h"
+#include "viewers/view.h"
 
 #undef  DEBUG_REFERENCES
+
+typedef std::shared_ptr<Infer>           InferPtr;
 
 MosaicLoader::MosaicLoader()
 {
     // defaults
     _background = QColor(Qt::white);
-    _width      = 1500;
-    _height     = 1100;
+    _width      = DEFAULT_WIDTH;
+    _height     = DEFAULT_HEIGHT;
     _version    = 0;
     _debug      = false;
     view        = View::getInstance();
@@ -86,7 +102,7 @@ MosaicPtr MosaicLoader::loadMosaic(QString fileName)
 
     try
     {
-        _mosaic = make_shared<Mosaic>();
+        _mosaic = std::make_shared<Mosaic>();
 
         parseXML(doc);
 
@@ -191,7 +207,6 @@ void MosaicLoader::processDesignNotes(xml_node & node)
 
 void MosaicLoader::processVector(xml_node & node)
 {
-
     xml_attribute attr = node.attribute("version");
     if (attr)
     {
@@ -228,15 +243,10 @@ void MosaicLoader::processVector(xml_node & node)
     }
     if (_debug) qDebug() << "end vector";
 
-    ModelSettingsPtr settings = make_shared<ModelSettings>();
+    ModelSettingsPtr settings = std::make_shared<ModelSettings>();
     settings->setBackgroundColor(_background);
     settings->setSize(QSize(_width,_height));
-
-    if (!_bip)
-    {
-        _bip = getFirstTiling()->getBackground();
-    }
-    settings->setBkgdImage(_bip);
+    settings->setZSize(QSize(_zwidth,_zheight));
 
     // Canvas Settings fill data defaults to FillData defaults, loader can  override these
     if (_fillData.isSet())
@@ -267,7 +277,7 @@ void MosaicLoader::processDesign(xml_node & node)
         if (str == "scale")
             continue;       // scale deprecated 30DEC19
         else if (str == "size")
-            procSize(n, _width, _height);
+            procSize(n, _width, _height,_zwidth, _zheight);
         else if (str == "background")
             _background = procBackgroundColor(n);
         else if (str == "border")
@@ -275,7 +285,7 @@ void MosaicLoader::processDesign(xml_node & node)
         else if (str == "Fill")
             procFill(n);
         else if (str == "BackgroundImage")
-            _bip = TilingLoader::getBackgroundImage(n);
+            TilingLoader::getBackgroundImage(n);
         else
             fail("Unexpected", str.c_str());
     }
@@ -884,7 +894,7 @@ PolyPtr MosaicLoader::getBoundary(xml_node & node)
 
 PolyPtr MosaicLoader::getPolygon(xml_node & node)
 {
-    PolyPtr poly = make_shared<QPolygonF>();
+    PolyPtr poly = std::make_shared<QPolygonF>();
     xml_node point;
     for (point = node.child("Point"); point; point = point.next_sibling("Point"))
     {
@@ -935,7 +945,7 @@ PrototypePtr MosaicLoader::getPrototype(xml_node & node)
 
     if (_debug) qDebug() << "Creating new prototype";
 
-    PrototypePtr proto = make_shared<Prototype>(tp);
+    PrototypePtr proto = std::make_shared<Prototype>(tp);
     setProtoReference(node,proto);
 
     QVector<FeaturePtr> uniqueFeatures = tp->getUniqueFeatures();
@@ -1068,7 +1078,7 @@ PrototypePtr MosaicLoader::getPrototype(xml_node & node)
                     usedFeatures.push_back(tilingFeature);
                     feature = tilingFeature;
                     if (_debug) qDebug().noquote() << "adding to Proto" << figure->getFigureDesc();
-                    DesignElementPtr  dep = make_shared<DesignElement>(feature, figure);
+                    DesignElementPtr  dep = std::make_shared<DesignElement>(feature, figure);
                     proto->addElement(dep);
                     if (_debug) qDebug().noquote() << "design element:" << dep->toString();
                     found2 = true;
@@ -1119,7 +1129,7 @@ PrototypePtr MosaicLoader::getPrototype(xml_node & node)
 
         case FIG_TYPE_EXPLICIT_INFER:
         {
-            InferPtr inf = make_shared<Infer>(proto);
+            InferPtr inf = std::make_shared<Infer>(proto);
             map =  inf->infer(featp);
             ep->setExplicitMap(map);
             break;
@@ -1127,7 +1137,7 @@ PrototypePtr MosaicLoader::getPrototype(xml_node & node)
 
         case FIG_TYPE_EXPLICIT_ROSETTE:
         {
-            InferPtr inf = make_shared<Infer>(proto);
+            InferPtr inf = std::make_shared<Infer>(proto);
             map =  inf->inferRosette(featp, ep->q, ep->s, ep->r_flexPt);
             ep->setExplicitMap(map);
             break;
@@ -1135,7 +1145,7 @@ PrototypePtr MosaicLoader::getPrototype(xml_node & node)
 
         case FIG_TYPE_EXPLICIT_HOURGLASS:
         {
-            InferPtr inf = make_shared<Infer>(proto);
+            InferPtr inf = std::make_shared<Infer>(proto);
             map =  inf->inferHourglass(featp, ep->d, ep->s);
             ep->setExplicitMap(map);
             break;
@@ -1143,7 +1153,7 @@ PrototypePtr MosaicLoader::getPrototype(xml_node & node)
 
         case FIG_TYPE_EXPLICIT_INTERSECT:
         {
-            InferPtr inf = make_shared<Infer>(proto);
+            InferPtr inf = std::make_shared<Infer>(proto);
             if (ep->progressive)
                 map =  inf->inferIntersectProgressive(featp, ep->getN(), ep->skip,ep->s);
             else
@@ -1154,7 +1164,7 @@ PrototypePtr MosaicLoader::getPrototype(xml_node & node)
 
         case FIG_TYPE_EXPLICIT_STAR:
         {
-            InferPtr inf = make_shared<Infer>(proto);
+            InferPtr inf = std::make_shared<Infer>(proto);
             map =  inf->inferStar(featp, ep->d, ep->s);
             ep->setExplicitMap(map);
             break;
@@ -1162,7 +1172,7 @@ PrototypePtr MosaicLoader::getPrototype(xml_node & node)
 
         case FIG_TYPE_EXPLICIT_FEATURE:
         {
-            InferPtr inf = make_shared<Infer>(proto);
+            InferPtr inf = std::make_shared<Infer>(proto);
             map =  inf->inferFeature(featp);
             ep->setExplicitMap(map);
             break;
@@ -1170,7 +1180,7 @@ PrototypePtr MosaicLoader::getPrototype(xml_node & node)
 
         case FIG_TYPE_EXPLICIT_GIRIH:
         {
-            InferPtr inf = make_shared<Infer>(proto);
+            InferPtr inf = std::make_shared<Infer>(proto);
             map =  inf->inferGirih(featp, ep->getN(), ep->skip);
             ep->setExplicitMap(map);
         }
@@ -1226,7 +1236,7 @@ FeaturePtr MosaicLoader::getFeature(xml_node & node)
         PolyPtr b    = getPolygon(poly);
         EdgePoly ep(b);
 
-        f = make_shared<Feature>(ep,rotation,scale);
+        f = std::make_shared<Feature>(ep,rotation,scale);
         setFeatureReference(node,f);
         f->setRegular(regular);
         return f;
@@ -1236,7 +1246,7 @@ FeaturePtr MosaicLoader::getFeature(xml_node & node)
     {
         FeatureReader fr;
         EdgePoly ep = fr.getEdgePoly(poly);
-        f = make_shared<Feature>(ep,rotation,scale);
+        f = std::make_shared<Feature>(ep,rotation,scale);
         f->setRegular(regular);
         if (((_version == 5) || (_version ==6)) && (!Loose::zero(rotation) || !Loose::equals(scale,1.0)))
         {
@@ -1286,7 +1296,7 @@ ExplicitPtr MosaicLoader::getExplicitFigure(xml_node & node, eFigType figType)
 
     if (_debug) qDebug() << "getExplicitFigure";
 
-    ep = make_shared<ExplicitFigure>(_currentMap,figType,10);
+    ep = std::make_shared<ExplicitFigure>(_currentMap,figType,10);
 
     switch (figType)
     {
@@ -1423,7 +1433,7 @@ StarPtr MosaicLoader::getStarFigure(xml_node & node)
     if (!str.isEmpty())
         r = str.toDouble();
 
-    StarPtr star = make_shared<Star>(n, d, s,r);
+    StarPtr star = std::make_shared<Star>(n, d, s,r);
     setStarReference(node,star);
 
     getFigureCommon(node,star);
@@ -1476,7 +1486,7 @@ ExtStarPtr  MosaicLoader::getExtendedStarFigure(xml_node & node)
     if (!str.isEmpty())
         r = str.toDouble();
 
-    ExtStarPtr star = make_shared<ExtendedStar>(n, d, s, r, extendPeripherals, extendFreeVertices);
+    ExtStarPtr star = std::make_shared<ExtendedStar>(n, d, s, r, extendPeripherals, extendFreeVertices);
     setExtStarReference(node,star);
 
     getFigureCommon(node,star);
@@ -1512,7 +1522,7 @@ RosettePtr MosaicLoader::getRosetteFigure(xml_node & node)
     if (!str.isEmpty())
         k = str.toDouble();
 
-    RosettePtr rosette = make_shared<Rosette>(n, q, s, k, r);
+    RosettePtr rosette = std::make_shared<Rosette>(n, q, s, k, r);
     setRosetteReference(node,rosette);
 
     getFigureCommon(node,rosette);
@@ -1578,7 +1588,7 @@ ExtRosettePtr  MosaicLoader::getExtendedRosetteFigure(xml_node & node)
     if (!str.isEmpty())
         k = str.toDouble();
 
-    ExtRosettePtr rosette = make_shared<ExtendedRosette>(n, q, s, k, r, extendPeripherals, extendFreeVertices, connectBoundaryVertices);
+    ExtRosettePtr rosette = std::make_shared<ExtendedRosette>(n, q, s, k, r, extendPeripherals, extendFreeVertices, connectBoundaryVertices);
     setExtRosetteReference(node,rosette);
 
     getFigureCommon(node,rosette);
@@ -1648,7 +1658,7 @@ RosetteConnectPtr MosaicLoader::getRosetteConnectFigure(xml_node & node)
         {
             fail("Rosette Connect figure not based on Rosette","");
         }
-        rcp = make_shared<RosetteConnectFigure>(rp->getN(),
+        rcp = std::make_shared<RosetteConnectFigure>(rp->getN(),
                                                 rp->getQ(),
                                                 rp->getS(),
                                                 rp->getK(),
@@ -1698,7 +1708,7 @@ StarConnectPtr MosaicLoader::getStarConnectFigure(xml_node & node)
         {
             fail("Connect figure not based on Star","");
         }
-        scp = make_shared<StarConnectFigure>(sp->getN(),
+        scp = std::make_shared<StarConnectFigure>(sp->getN(),
                                              sp->getD(),
                                              sp->getS(),
                                              sp->getFigureRotate());
@@ -1725,7 +1735,7 @@ MapPtr MosaicLoader::getMap(xml_node &node)
     }
     else
     {
-        _currentMap = make_shared<Map>("currentMap");
+        _currentMap = std::make_shared<Map>("currentMap");
         //qDebug() << "use count=" << map.use_count();
         setMapReference(xmlmap,_currentMap);
     }
@@ -1814,7 +1824,7 @@ VertexPtr MosaicLoader::getVertex(xml_node & node)
         pt = getPos(pos);
     }
     vOrigCnt++;
-    VertexPtr v = make_shared<Vertex>(pt);
+    VertexPtr v = std::make_shared<Vertex>(pt);
     setVertexReference(node,v);
 
      _currentMap->insertDirect(v);
@@ -1864,7 +1874,7 @@ EdgePtr MosaicLoader::getEdge(xml_node & node)
     }
 
     eOrigCnt++;
-    EdgePtr edge = make_shared<Edge>();
+    EdgePtr edge = std::make_shared<Edge>();
     setEdgeReference(node,edge);        // early for recursion
     //qDebug() << "created Edge" << edge.get();
 
@@ -1903,7 +1913,7 @@ EdgePtr MosaicLoader::getCurve(xml_node & node)
     }
 
     eOrigCnt++;
-    EdgePtr edge = make_shared<Edge>();
+    EdgePtr edge = std::make_shared<Edge>();
     setEdgeReference(node,edge);        // early for recursion
     //qDebug() << "created Edge" << edge.get();
 
@@ -1932,7 +1942,7 @@ EdgePtr MosaicLoader::getCurve(xml_node & node)
     return edge;
 }
 
-void MosaicLoader::procSize(xml_node & node, int & width, int & height)
+void MosaicLoader::procSize(xml_node & node, int & width, int & height, int & zwidth, int & zheight)
 {
     QString val;
     xml_node w = node.child("width");
@@ -1946,6 +1956,21 @@ void MosaicLoader::procSize(xml_node & node, int & width, int & height)
     {
         val = h.child_value();
         height = val.toInt();
+    }
+
+    zwidth  = width;
+    zheight = height;
+    xml_node w2 = node.child("zwidth");
+    if (w2)
+    {
+        val = w2.child_value();
+        zwidth = val.toInt();
+    }
+    xml_node h2 = node.child("zheight");
+    if (h2)
+    {
+        val = h2.child_value();
+        zheight = val.toInt();
     }
 }
 
@@ -2031,10 +2056,10 @@ void MosaicLoader::procBorderInner(xml_node & node)
         rect = QRectF(x,y,w,h);
     }
 
-    CropPtr crop = make_shared<Crop>();
+    CropPtr crop = std::make_shared<Crop>();
     crop->setRect(rect,CROP_BORDER_DEFINED);
 
-    _border = make_shared<InnerBorder>();
+    _border = std::make_shared<InnerBorder>();
     InnerBorder * ib = dynamic_cast<InnerBorder*>(_border.get());
     Q_ASSERT(ib);
     ib->setInnerBoundary(crop);
@@ -2050,7 +2075,7 @@ void MosaicLoader::procBorderPlain(xml_node & node)
     if (wnode)
         bwidth = procWidth(wnode);
 
-    _border = make_shared<BorderPlain>(QSize(_width,_height),bwidth, col1);
+    _border = std::make_shared<BorderPlain>(QSize(_width,_height),bwidth, col1);
     _border->construct();
 }
 
@@ -2068,7 +2093,7 @@ void MosaicLoader::procBorderTwoColor(xml_node & node)
         bwidth = procWidth(wnode);
 
 
-    _border = make_shared<BorderTwoColor>(QSize(_width,_height),col1, col2, bwidth);
+    _border = std::make_shared<BorderTwoColor>(QSize(_width,_height),col1, col2, bwidth);
     _border->construct();
 }
 
@@ -2098,7 +2123,7 @@ void MosaicLoader::procBorderBlocks(xml_node & node)
         cols =  str.toInt();
     }
 
-    _border = make_shared<BorderBlocks>(QSize(_width,_height),col1, bwidth, rows, cols);
+    _border = std::make_shared<BorderBlocks>(QSize(_width,_height),col1, bwidth, rows, cols);
     _border->construct();
 }
 

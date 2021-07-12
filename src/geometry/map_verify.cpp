@@ -38,10 +38,14 @@
 // DCELs.
 
 #include "geometry/map.h"
-#include "base/configuration.h"
+#include "settings/configuration.h"
 #include "geometry/loose.h"
 #include "panels/dlg_textedit.h"
 #include "panels/panel.h"
+#include "geometry/neighbours.h"
+#include "geometry/vertex.h"
+#include "geometry/edge.h"
+
 
 // A big 'ole sanity check for maps.  Throw together a whole collection
 // of consistency checks.  When debugging maps, call early and call often.

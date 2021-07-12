@@ -22,12 +22,12 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "base/tile.h"
-#include "base/configuration.h"
+#include "designs/tile.h"
+#include "settings/configuration.h"
 
 int Tile::refs = 0;
 
-Tile::Tile(int Row, int Col) : Layer("Master Tile",LTYPE_VIEW)
+Tile::Tile(int Row, int Col) : Layer("Master Tile")
 {
     row = Row;
     col = Col;
@@ -38,14 +38,6 @@ Tile::Tile(int Row, int Col) : Layer("Master Tile",LTYPE_VIEW)
 Tile::~Tile()
 {
     refs--;
-}
-
-LayerPtr Tile::addLayer(int zLevel)
-{
-    LayerPtr layer = make_shared<Layer>("Tile Layer",LTYPE_VIEW);
-    layer->setZValue(zLevel);
-    addSubLayer(layer);
-    return layer;
 }
 
 void Tile::addLayer(LayerPtr layer, int zlevel)
@@ -75,3 +67,33 @@ qreal Tile::getSLinearPos(int step, int duration)
     qreal normalizedValue = 1.0 / (1 + exp(-x));
     return normalizedValue;
 }
+
+void Tile::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
+{ Q_UNUSED(spt); Q_UNUSED(btn);}
+void Tile::slot_mouseDragged(QPointF spt)
+{ Q_UNUSED(spt)}
+void Tile::slot_mouseTranslate(QPointF pt)
+{ Q_UNUSED(pt)}
+void Tile::slot_mouseMoved(QPointF spt)
+{ Q_UNUSED(spt)}
+void Tile::slot_mouseReleased(QPointF spt)
+{ Q_UNUSED(spt)}
+void Tile::slot_mouseDoublePressed(QPointF spt)
+{ Q_UNUSED(spt)}
+void Tile::slot_wheel_scale(qreal delta)
+{ Q_UNUSED(delta);}
+void Tile::slot_wheel_rotate(qreal delta)
+{ Q_UNUSED(delta);}
+void Tile::slot_scale(int amount)
+{ Q_UNUSED(amount);}
+
+void Tile::slot_rotate(int amount)
+{
+    xf_canvas.setRotateRadians(xf_canvas.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
+    forceLayerRecalc();
+}
+
+void Tile:: slot_moveX(int amount)
+{ Q_UNUSED(amount);}
+void Tile::slot_moveY(int amount)
+{ Q_UNUSED(amount);}

@@ -24,8 +24,10 @@
 
 #include "base/border.h"
 #include "designs/shapefactory.h"
+#include "geometry/crop.h"
 #include "geometry/edgepoly.h"
 #include "geometry/map.h"
+#include "viewers/view.h"
 
 ////////////////////////////////////////////////
 ///
@@ -33,10 +35,36 @@
 ///
 ////////////////////////////////////////////////
 
-Border::Border() : Layer("Border",LTYPE_BORDER)
+Border::Border() : Layer("Border")
 {
     type = BORDER_NONE;
 }
+
+void Border::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
+{ Q_UNUSED(spt); Q_UNUSED(btn);}
+void Border::slot_mouseDragged(QPointF spt)
+{ Q_UNUSED(spt)}
+void Border::slot_mouseTranslate(QPointF pt)
+{ Q_UNUSED(pt)}
+void Border::slot_mouseMoved(QPointF spt)
+{ Q_UNUSED(spt)}
+void Border::slot_mouseReleased(QPointF spt)
+{ Q_UNUSED(spt)}
+void Border::slot_mouseDoublePressed(QPointF spt)
+{ Q_UNUSED(spt)}
+void Border::slot_wheel_scale(qreal delta)
+{ Q_UNUSED(delta);}
+void Border::slot_wheel_rotate(qreal delta)
+{ Q_UNUSED(delta);}
+void Border::slot_scale(int amount)
+{ Q_UNUSED(amount);}
+void Border::slot_rotate(int amount)
+{ Q_UNUSED(amount);}
+void Border:: slot_moveX(int amount)
+{ Q_UNUSED(amount);}
+void Border::slot_moveY(int amount)
+{ Q_UNUSED(amount);}
+
 
 ////////////////////////////////////////////////
 ///
@@ -47,7 +75,7 @@ Border::Border() : Layer("Border",LTYPE_BORDER)
 InnerBorder::InnerBorder()
 {
     type = BORDER_INTEGRATED;
-    innerBoundary = make_shared<Crop>();
+    innerBoundary = std::make_shared<Crop>();
 }
 
 void InnerBorder::setInnerBoundary(CropPtr crect)
@@ -66,7 +94,7 @@ OuterBorder::OuterBorder(QSize sz)
     outerBoundary  = QRectF(QPointF(),QSizeF(sz));
 
     setZValue(BORDER_ZLEVEL);
-    sp = make_shared<ShapeFactory>(2.0);
+    sp = std::make_shared<ShapeFactory>(2.0);
     addSubLayer(sp);
 
     View * view = View::getInstance();

@@ -40,7 +40,7 @@ Colored::Colored(PrototypePtr proto) : Style(proto)
 
 Colored::Colored(StylePtr other) : Style(other)
 {
-    shared_ptr<Colored> otherColored = std::dynamic_pointer_cast<Colored>(other);
+    std::shared_ptr<Colored> otherColored = std::dynamic_pointer_cast<Colored>(other);
     if (otherColored)
     {
         colors.setColors(otherColored->colors);

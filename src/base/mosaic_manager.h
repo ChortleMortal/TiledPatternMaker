@@ -38,7 +38,6 @@ public:
 private:
     class View            * view;
     class Configuration   * config;
-    class ViewControl     * viewControl;
     class DecorationMaker * decorationMaker;
 };
 

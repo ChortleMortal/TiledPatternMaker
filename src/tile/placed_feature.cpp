@@ -33,13 +33,12 @@
 // make up a translational unit.
 
 #include "tile/placed_feature.h"
-#include "geometry/transform.h"
-#include "base/configuration.h"
+#include "tile/feature.h"
+#include "settings/configuration.h"
 #include "tile/feature_writer.h"
 #include "tile/feature_reader.h"
-#include "base/utilities.h"
 #include "base/fileservices.h"
-
+#include "base/shared.h"
 
 PlacedFeature::PlacedFeature()
 {
@@ -202,14 +201,14 @@ void PlacedFeature::loadGirihShape(xml_node & poly_node)
 {
     FeatureReader fr;
     EdgePoly ep = fr.getEdgePoly(poly_node);
-    feature     = make_shared<Feature>(ep,0);
+    feature     = std::make_shared<Feature>(ep,0);
     T           = fr.getTransform(poly_node);
 }
 
 void PlacedFeature::loadGirihShape(int sides, pugi::xml_node & poly_node)
 {
     FeatureReader fr;
-    feature     = make_shared<Feature>(sides,0);
+    feature     = std::make_shared<Feature>(sides,0);
     T           = fr.getTransform(poly_node);
 }
 
@@ -228,5 +227,20 @@ void PlacedFeature::loadGirihShapeOld(xml_node & poly_node)
     }
 
     EdgePoly epoly(poly);
-    feature = make_shared<Feature>(epoly,0);
+    feature = std::make_shared<Feature>(epoly,0);
+}
+
+EdgePoly   PlacedFeature::getFeatureEdgePoly()
+{
+    return feature->getEdgePoly();
+}
+
+QPolygonF  PlacedFeature::getFeaturePolygon()
+{
+    return feature->getPolygon();
+}
+
+QPolygonF  PlacedFeature::getPlacedPolygon()
+{
+    return T.map(feature->getPolygon());
 }

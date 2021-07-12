@@ -2,10 +2,9 @@
 #define DLG_EDGE_POLY_EDIT_H
 
 #include <QtWidgets>
-#include "base/shared.h"
-#include "panels/layout_sliderset.h"
 #include "panels/panel_misc.h"
-#include "geometry/edgepoly.h"
+
+class EdgePoly;
 
 class DlgEdgePolyEdit : public QDialog
 {
@@ -36,9 +35,9 @@ private:
     QTransform    T;
     AQTableWidget  table;
 
-    DoubleSpinSet * deltaX;
-    DoubleSpinSet * deltaY;
-    QLabel        * label;
+    class DoubleSpinSet * deltaX;
+    class DoubleSpinSet * deltaY;
+    QLabel              * label;
 };
 
 #endif // DLG_EDGE_POLY_EDIT_H

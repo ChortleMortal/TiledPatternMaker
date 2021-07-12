@@ -26,10 +26,13 @@
 #define PAGE_LAYERS_H
 
 #include "panels/panel_page.h"
-#include "base/shared.h"
-#include "panels/panel_misc.h"
+
+typedef std::shared_ptr<class Layer>   LayerPtr;
+typedef std::weak_ptr<class Layer>     WeakLayerPtr;
 
 class AQDoubleSpinBox;
+class EdgePoly;
+class AQTableWidget;
 
 class page_layers : public panel_page
 {
@@ -70,6 +73,7 @@ public:
 
 private slots:
     void refreshCanvas();
+    void slot_selectLayer();
 
 protected:
     void populateLayers();
@@ -81,7 +85,6 @@ protected:
     void alignPressed(int col);
     void slot_set_deltas(int col);
     void clear_deltas(int col);
-
 
 private:
     AQTableWidget * layerTable;

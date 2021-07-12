@@ -26,7 +26,7 @@
 #include <QtWidgets>
 
 #include "base/qtapplog.h"
-#include "base/configuration.h"
+#include "settings/configuration.h"
 #include "base/tiledpatternmaker.h"
 #include "base/version.h"
 

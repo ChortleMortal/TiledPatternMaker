@@ -27,7 +27,10 @@
 #include "tapp/explicit_figure.h"
 #include "tile/feature.h"
 #include "makers/motif_maker/motif_maker.h"
+#include "panels/layout_sliderset.h"
+#include "panels/page_motif_maker.h"
 
+typedef std::shared_ptr<RadialFigure>    RadialPtr;
 
 ExplicitEditor::ExplicitEditor(page_motif_maker *ed, QString aname) : FigureEditor(ed, aname)
 {
@@ -70,7 +73,7 @@ ExplicitPtr ExplicitEditor::resetFigure(FigurePtr fig, eFigType figType)
             sides = rp->getN();
         }
         MapPtr map = fig->getFigureMap();
-        ep = make_shared<ExplicitFigure>(*fig.get(),map,figType, sides);
+        ep = std::make_shared<ExplicitFigure>(*fig.get(),map,figType, sides);
     }
 
     Q_ASSERT(ep);

@@ -1,8 +1,11 @@
 #include "panels/dlg_listselect.h"
 #include "base/fileservices.h"
 #include "base/pugixml.hpp"
+#include "panels/layout_sliderset.h"
+#include "tile/placed_feature.h"
 
 using namespace pugi;
+using std::make_shared;
 
 ///////////////////////////////////////////////////////////////////
 //

@@ -35,9 +35,11 @@
 #include <QPointF>
 #include <QLineF>
 #include <QString>
-#include "tile/feature.h"
-#include "tile/placed_feature.h"
-#include "base/shared.h"
+#include <QPolygonF>
+
+typedef std::shared_ptr<class Feature>          FeaturePtr;
+typedef std::shared_ptr<class PlacedFeature>    PlacedFeaturePtr;
+typedef std::shared_ptr<class Edge>             EdgePtr;
 
 #define E2STR(x) #x
 
@@ -71,19 +73,19 @@ public:
     eSelection       getType()          { return type; }
     QString          getTypeString()    { return strTiliingSelection[type]; }
 
-    PlacedFeaturePtr getPlacedFeature() { return pfp; }
     //QTransform       getTransform()     { return pfp->getTransform(); }
     //FeaturePtr       getFeature()       { return pfp->getFeature(); }
 
-    QPolygonF        getModelPolygon()  { return pfp->getFeaturePolygon(); }
     EdgePtr          getModelEdge()     { return edge; }
-    QLineF           getModelLine()     { return edge->getLine(); }
+    QLineF           getModelLine();
     QPointF          getModelPoint()    { return pt; }
+    QPolygonF        getModelPolygon();
 
-    EdgePtr          getPlacedEdge()    { return make_shared<Edge>(edge,pfp->getTransform()); }
-    QPolygonF        getPlacedPolygon() { return pfp->getPlacedPolygon(); }
-    QLineF           getPlacedLine()    { return pfp->getTransform().map(edge->getLine()); }
-    QPointF          getPlacedPoint()   { return pfp->getTransform().map(pt); }
+    PlacedFeaturePtr getPlacedFeature() { return pfp; }
+    QLineF           getPlacedLine();
+    QPointF          getPlacedPoint();
+    QPolygonF        getPlacedPolygon();
+    EdgePtr          getPlacedEdge();
 
 protected:
     TilingSelector(QPointF pt);

@@ -26,11 +26,20 @@
 #define FIGURE_EDITORS_H
 
 #include <QtWidgets>
-#include "base/shared.h"
-#include "panels/layout_sliderset.h"
 #include "panels/panel_misc.h"
 
 class page_motif_maker;
+class SliderSet;
+class DoubleSliderSet;
+class AQWidget;
+
+typedef std::shared_ptr<class Figure>           FigurePtr;
+typedef std::shared_ptr<class Star>             StarPtr;
+typedef std::shared_ptr<class Rosette>          RosettePtr;
+typedef std::shared_ptr<class StarConnectFigure>    StarConnectPtr;
+typedef std::shared_ptr<class RosetteConnectFigure> RosetteConnectPtr;
+typedef std::shared_ptr<class ExtendedStar>     ExtStarPtr;
+typedef std::shared_ptr<class ExtendedRosette>  ExtRosettePtr;
 
 // An abstract class for containing the controls related to the editing
 // of one kind of figure.  A complex hierarchy of FigureEditors gets built

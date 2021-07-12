@@ -1,9 +1,11 @@
 <?xml version="1.0"?>
-<vector id="1" version="8">
+<vector id="1" version="10">
 	<design>
 		<size>
 			<width>2128</width>
 			<height>1695</height>
+			<zwidth>2128</zwidth>
+			<zheight>1695</zheight>
 		</size>
 		<background>
 			<color>#ffffffff</color>
@@ -18,7 +20,7 @@
 	</design>
 	<style.Thick id="2" serialization="custom">
 		<toolkit.GeoLayer>
-			<left__delta>0</left__delta>
+			<left__delta>100</left__delta>
 			<top__delta>0</top__delta>
 			<width__delta>1</width__delta>
 			<theta__delta>0</theta__delta>
@@ -111,7 +113,7 @@
 	</style.Thick>
 	<style.Thick id="19" serialization="custom">
 		<toolkit.GeoLayer>
-			<left__delta>0</left__delta>
+			<left__delta>100</left__delta>
 			<top__delta>0</top__delta>
 			<width__delta>1</width__delta>
 			<theta__delta>0</theta__delta>
@@ -130,7 +132,7 @@
 	</style.Thick>
 	<style.TileColors id="20" serialization="custom">
 		<toolkit.GeoLayer>
-			<left__delta>0</left__delta>
+			<left__delta>100</left__delta>
 			<top__delta>0</top__delta>
 			<width__delta>1</width__delta>
 			<theta__delta>0</theta__delta>

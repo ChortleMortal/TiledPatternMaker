@@ -27,11 +27,19 @@
 #include "makers/motif_maker/motif_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "base/border.h"
-#include "base/configuration.h"
 #include "base/mosaic.h"
 #include "base/shortcuts.h"
 #include "geometry/transform.h"
 #include "panels/panel.h"
+#include "geometry/crop.h"
+#include "tapp/figure.h"
+#include "viewers/view.h"
+#include "tapp/prototype.h"
+#include "geometry/map.h"
+#include "tapp/design_element.h"
+#include "style/style.h"
+
+using std::make_shared;
 
 MapEditorPtr MapEditor::spThis;
 
@@ -56,10 +64,6 @@ MapEditor::MapEditor() : MapEditorSelection(), stash(this)
     tilingMaker     = TilingMaker::getSharedInstance();
     view            = View::getInstance();
     cpanel          = ControlPanel::getInstance();
-
-    connect(view, &View::sig_mouseDragged,  this, &MapEditor::slot_mouseDragged);
-    connect(view, &View::sig_mouseReleased, this, &MapEditor::slot_mouseReleased);
-    connect(view, &View::sig_mouseMoved,    this, &MapEditor::slot_mouseMoved);
 
     connect(cpanel, &ControlPanel::sig_view_synch, this, &MapEditor::slot_view_synch);
 
@@ -307,7 +311,7 @@ void MapEditor::draw(QPainter *painter )
     }
 }
 
-void MapEditor::setMouseMode(eMapMouseMode mode)
+void MapEditor::setMapedMouseMode(eMapMouseMode mode)
 {
     map_mouse_mode = mode;
 
@@ -412,219 +416,7 @@ void MapEditor::startMouseInteraction(QPointF spt, enum Qt::MouseButton mouseBut
 }
 
 
-void MapEditor::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
-{
-    if (config->getViewerType() != VIEW_MAP_EDITOR)
-        return;
 
-    setMousePos(spt);
-
-    if (debugMouse)
-    {
-        if (mouse_interaction)
-            qDebug() << "press start:" << mousePos << screenToWorld(mousePos) << mouse_interaction->desc;
-        else
-            qDebug() << "press start:" << mousePos << screenToWorld(mousePos) << "no mouse interaction";
-    }
-
-    SelectionSet set;
-
-    switch (map_mouse_mode)
-    {
-    case MAPED_MOUSE_NONE:
-        startMouseInteraction(mousePos,btn);
-        break;
-
-    case MAPED_MOUSE_DRAW_LINE:
-    {
-        set = findSelectionsUsingDB(spt);
-        mouse_interaction = std::make_shared<DrawLine>(this,set,mousePos);
-        break;
-    }
-
-    case MAPED_MOUSE_CONSTRUCTION_LINES:
-    {
-        set = findSelectionsUsingDB(spt);
-        mouse_interaction = std::make_shared<ConstructionLine>(this,set,mousePos);
-        break;
-    }
-
-    case MAPED_MOUSE_DELETE:
-        set = findSelectionsUsingDB(spt);
-        // only delete one line
-        for (auto it = set.begin(); it != set.end(); it++)
-        {
-            auto sel = *it;
-            if (sel->getType() == MAP_EDGE)
-            {
-                map->removeEdge(sel->getEdge());
-                map->verify();
-                break;
-            }
-            else if (sel->getType() == MAP_LINE && sel->isConstructionLine())
-            {
-                QLineF line = sel->getLine();
-                constructionLines.removeAll(line);
-                stash.stash();
-                break;
-            }
-            else if (sel->getType() == MAP_CIRCLE)
-            {
-                CirclePtr c = sel->getCircle();
-                constructionCircles.removeOne(c);
-                break;
-            }
-        }
-        buildEditorDB();
-        forceRedraw();
-        setMouseMode(MAPED_MOUSE_NONE);
-        break;
-
-    case MAPED_MOUSE_SPLIT_LINE:
-    {
-        QVector<EdgePtr> qvep;
-        set = findEdges(spt, qvep);
-        for (auto it = set.begin(); it != set.end(); it++)
-        {
-            auto sel = *it;
-            map->splitEdge(sel->getEdge());
-            map->verify();
-        }
-        buildEditorDB();
-        forceRedraw();
-        setMouseMode(MAPED_MOUSE_NONE);
-    }
-        break;
-
-    case MAPED_MOUSE_EXTEND_LINE:
-        set = findSelectionsUsingDB(spt);
-        mouse_interaction = std::make_shared<ExtendLine>(this,set,mousePos);
-        break;
-
-    case MAPED_MOUSE_CONSTRUCTION_CIRCLES:
-        if (btn == Qt::RightButton)
-        {
-            // add circle
-            SelectionSet endset    = findSelectionsUsingDB(spt);
-            MapSelectionPtr endsel = findAPoint(endset);
-            QPointF center;
-            if (endsel)
-            {
-                center = QPointF(endsel->getPoint());
-            }
-            else
-            {
-                center = viewTinv.map(spt);
-            }
-            constructionCircles.push_back(std::make_shared<Circle>(center, newCircleRadius));
-            saveStash();
-            buildEditorDB();
-            forceRedraw();
-        }
-        else if (btn == Qt::LeftButton)
-        {
-            MapSelectionPtr sel = findConstructionCircle(spt);
-            if (sel)
-            {
-                CirclePtr c = sel->getCircle();
-                if (c)
-                {
-                    Qt::KeyboardModifiers kms =  QApplication::keyboardModifiers();
-                    if (kms == Qt::SHIFT)
-                    {
-                        // resize circle
-                        c->radius = newCircleRadius;
-                        saveStash();
-                        buildEditorDB();
-                        forceRedraw();
-                    }
-                    else
-                    {
-                        // move circle
-                        mouse_interaction = std::make_shared<MoveConstructionCircle>(this,c,mousePos);
-                    }
-                }
-            }
-        }
-        break;
-
-    case MAPED_MOUSE_CREATE_CROP:
-        cropRect->setState(CROP_NONE);
-        mouse_interaction = std::make_shared<CreateCrop>(this,mousePos);
-        break;
-
-    case MAPED_MOUSE_CREATE_BORDER:
-        mouse_interaction = std::make_shared<CreateBorder>(this,mousePos);
-        mouse_interaction->updateDragging(spt);
-        break;
-
-    case MAPED_MOUSE_EDIT_BORDER:
-        mouse_interaction = std::make_shared<EditBorder>(this,mousePos);
-        mouse_interaction->updateDragging(spt);
-        break;
-    }
-
-    if (mouse_interaction)
-    {
-        qDebug().noquote() << "press end:"  << mouse_interaction->desc;
-    }
-    else
-    {
-        qDebug() << "press end: no mouse_interaction";
-    }
-}
-
-void MapEditor::slot_mouseDragged(QPointF spt)
-{
-    if (config->getViewerType() != VIEW_MAP_EDITOR)
-        return;
-
-    setMousePos(spt);
-
-    if (debugMouse) qDebug().noquote() << "drag" << mousePos << screenToWorld(mousePos)  << sMapMouseMode[map_mouse_mode];
-
-    currentSelections = findSelectionsUsingDB(spt);
-
-    if (mouse_interaction)
-    {
-        mouse_interaction->updateDragging(mousePos);
-    }
-
-    forceRedraw();
-}
-
-void MapEditor::slot_mouseReleased(QPointF spt)
-{
-    if (config->getViewerType() != VIEW_MAP_EDITOR)
-        return;
-
-    setMousePos(spt);
-
-    if (debugMouse) qDebug() << "release" << mousePos << screenToWorld(mousePos);
-
-    if (mouse_interaction)
-    {
-        mouse_interaction->endDragging(mousePos);
-        if (map_mouse_mode != MAPED_MOUSE_EDIT_BORDER && map_mouse_mode != MAPED_MOUSE_CREATE_BORDER)
-        {
-            mouse_interaction.reset();
-        }
-    }
-}
-
-void MapEditor::slot_mouseMoved(QPointF spt)
-{
-    if (config->getViewerType() != VIEW_MAP_EDITOR)
-        return;
-
-    setMousePos(spt);
-
-    if (debugMouse) qDebug() << "move" << mousePos;
-
-    currentSelections = findSelectionsUsingDB(spt);
-
-    forceRedraw();
-}
 
 
 void MapEditor::setMousePos(QPointF pt)
@@ -729,7 +521,7 @@ void  MapEditor::applyCrop()
             qDebug() << "apply crop to border";
             map->addCropBorder(cropRect->getRect());
             cropRect->setState(CROP_APPLIED);
-            setMouseMode(MAPED_MOUSE_NONE);
+            setMapedMouseMode(MAPED_MOUSE_NONE);
             buildEditorDB();
             forceRedraw();
         }
@@ -762,7 +554,7 @@ void  MapEditor::applyMask()
                 break;
         }
 
-        setMouseMode(MAPED_MOUSE_NONE);
+        setMapedMouseMode(MAPED_MOUSE_NONE);
         forceRedraw();
     }
 }
@@ -809,6 +601,311 @@ void MapEditor::clearAllMaps()
 
 //////////////////////////////////////////////////////////////////
 ///
+/// Layer slotsevents
+///
+//////////////////////////////////////////////////////////////////
+
+void MapEditor::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
+{
+    if (    config->kbdMode == KBD_MODE_XFORM_VIEW
+        || (config->kbdMode == KBD_MODE_XFORM_SELECTED && isSelected()))
+    {
+        qDebug() << getName() << config->kbdMode;
+        if (view->getMouseMode() == MOUSE_MODE_CENTER && btn == Qt::LeftButton)
+        {
+            setCenterScreenUnits(spt);
+            forceLayerRecalc();
+            emit sig_refreshView();
+            return;
+        }
+    }
+
+    if (config->getViewerType() != VIEW_MAP_EDITOR)
+        return;
+
+    setMousePos(spt);
+
+    if (debugMouse)
+    {
+        if (mouse_interaction)
+            qDebug() << "press start:" << mousePos << screenToWorld(mousePos) << mouse_interaction->desc;
+        else
+            qDebug() << "press start:" << mousePos << screenToWorld(mousePos) << "no mouse interaction";
+    }
+
+    SelectionSet set;
+
+    switch (map_mouse_mode)
+    {
+    case MAPED_MOUSE_NONE:
+        startMouseInteraction(mousePos,btn);
+        break;
+
+    case MAPED_MOUSE_DRAW_LINE:
+    {
+        set = findSelectionsUsingDB(spt);
+        mouse_interaction = std::make_shared<DrawLine>(this,set,mousePos);
+        break;
+    }
+
+    case MAPED_MOUSE_CONSTRUCTION_LINES:
+    {
+        set = findSelectionsUsingDB(spt);
+        mouse_interaction = std::make_shared<ConstructionLine>(this,set,mousePos);
+        break;
+    }
+
+    case MAPED_MOUSE_DELETE:
+        set = findSelectionsUsingDB(spt);
+        // only delete one line
+        for (auto it = set.begin(); it != set.end(); it++)
+        {
+            auto sel = *it;
+            if (sel->getType() == MAP_EDGE)
+            {
+                map->removeEdge(sel->getEdge());
+                map->verify();
+                break;
+            }
+            else if (sel->getType() == MAP_LINE && sel->isConstructionLine())
+            {
+                QLineF line = sel->getLine();
+                constructionLines.removeAll(line);
+                stash.stash();
+                break;
+            }
+            else if (sel->getType() == MAP_CIRCLE)
+            {
+                CirclePtr c = sel->getCircle();
+                constructionCircles.removeOne(c);
+                break;
+            }
+        }
+        buildEditorDB();
+        forceRedraw();
+        setMapedMouseMode(MAPED_MOUSE_NONE);
+        break;
+
+    case MAPED_MOUSE_SPLIT_LINE:
+    {
+        QVector<EdgePtr> qvep;
+        set = findEdges(spt, qvep);
+        for (auto it = set.begin(); it != set.end(); it++)
+        {
+            auto sel = *it;
+            map->splitEdge(sel->getEdge());
+            map->verify();
+        }
+        buildEditorDB();
+        forceRedraw();
+        setMapedMouseMode(MAPED_MOUSE_NONE);
+    }
+    break;
+
+    case MAPED_MOUSE_EXTEND_LINE:
+        set = findSelectionsUsingDB(spt);
+        mouse_interaction = std::make_shared<ExtendLine>(this,set,mousePos);
+        break;
+
+    case MAPED_MOUSE_CONSTRUCTION_CIRCLES:
+        if (btn == Qt::RightButton)
+        {
+            // add circle
+            SelectionSet endset    = findSelectionsUsingDB(spt);
+            MapSelectionPtr endsel = findAPoint(endset);
+            QPointF center;
+            if (endsel)
+            {
+                center = QPointF(endsel->getPoint());
+            }
+            else
+            {
+                center = viewTinv.map(spt);
+            }
+            constructionCircles.push_back(std::make_shared<Circle>(center, newCircleRadius));
+            saveStash();
+            buildEditorDB();
+            forceRedraw();
+        }
+        else if (btn == Qt::LeftButton)
+        {
+            MapSelectionPtr sel = findConstructionCircle(spt);
+            if (sel)
+            {
+                CirclePtr c = sel->getCircle();
+                if (c)
+                {
+                    Qt::KeyboardModifiers kms =  QApplication::keyboardModifiers();
+                    if (kms == Qt::SHIFT)
+                    {
+                        // resize circle
+                        c->radius = newCircleRadius;
+                        saveStash();
+                        buildEditorDB();
+                        forceRedraw();
+                    }
+                    else
+                    {
+                        // move circle
+                        mouse_interaction = std::make_shared<MoveConstructionCircle>(this,c,mousePos);
+                    }
+                }
+            }
+        }
+        break;
+
+    case MAPED_MOUSE_CREATE_CROP:
+        cropRect->setState(CROP_NONE);
+        mouse_interaction = std::make_shared<CreateCrop>(this,mousePos);
+        break;
+
+    case MAPED_MOUSE_CREATE_BORDER:
+        mouse_interaction = std::make_shared<CreateBorder>(this,mousePos);
+        mouse_interaction->updateDragging(spt);
+        break;
+
+    case MAPED_MOUSE_EDIT_BORDER:
+        mouse_interaction = std::make_shared<EditBorder>(this,mousePos);
+        mouse_interaction->updateDragging(spt);
+        break;
+    }
+
+    if (mouse_interaction)
+    {
+        qDebug().noquote() << "press end:"  << mouse_interaction->desc;
+    }
+    else
+    {
+        qDebug() << "press end: no mouse_interaction";
+    }
+
+    if (config->getViewerType() == VIEW_MAP_EDITOR)
+    {
+        setCenterScreenUnits(spt);
+    }
+}
+
+void MapEditor::slot_mouseDragged(QPointF spt)
+{
+    if (config->getViewerType() != VIEW_MAP_EDITOR)
+        return;
+
+    setMousePos(spt);
+
+    if (debugMouse) qDebug().noquote() << "drag" << mousePos << screenToWorld(mousePos)  << sMapMouseMode[map_mouse_mode];
+
+    currentSelections = findSelectionsUsingDB(spt);
+
+    if (mouse_interaction)
+    {
+        mouse_interaction->updateDragging(mousePos);
+    }
+
+    forceRedraw();
+}
+
+void MapEditor::slot_mouseTranslate(QPointF pt)
+{
+    if (config->getViewerType() != VIEW_MAP_EDITOR && Layer::config->kbdMode == KBD_MODE_XFORM_VIEW)
+    {
+        xf_canvas.setTranslateX(xf_canvas.getTranslateX() + pt.x());
+        xf_canvas.setTranslateY(xf_canvas.getTranslateY() + pt.y());
+        forceLayerRecalc();
+    }
+}
+
+void MapEditor::slot_mouseMoved(QPointF spt)
+{
+    if (config->getViewerType() != VIEW_MAP_EDITOR)
+        return;
+
+    setMousePos(spt);
+
+    if (debugMouse) qDebug() << "move" << mousePos;
+
+    currentSelections = findSelectionsUsingDB(spt);
+
+    forceRedraw();
+}
+
+void MapEditor::slot_mouseReleased(QPointF spt)
+{
+    if (config->getViewerType() != VIEW_MAP_EDITOR)
+        return;
+
+    setMousePos(spt);
+
+    if (debugMouse) qDebug() << "release" << mousePos << screenToWorld(mousePos);
+
+    if (mouse_interaction)
+    {
+        mouse_interaction->endDragging(mousePos);
+        if (map_mouse_mode != MAPED_MOUSE_EDIT_BORDER && map_mouse_mode != MAPED_MOUSE_CREATE_BORDER)
+        {
+            mouse_interaction.reset();
+        }
+    }
+}
+
+void MapEditor::slot_mouseDoublePressed(QPointF spt)
+{ Q_UNUSED(spt); }
+
+void MapEditor::slot_wheel_scale(qreal delta)
+{
+    if (config->getViewerType() == VIEW_MAP_EDITOR && Layer::config->kbdMode == KBD_MODE_XFORM_VIEW)
+    {
+        xf_canvas.setScale(xf_canvas.getScale() + delta);
+        forceLayerRecalc();
+    }
+}
+
+void MapEditor::slot_wheel_rotate(qreal delta)
+{
+    if (config->getViewerType() == VIEW_MAP_EDITOR && Layer::config->kbdMode == KBD_MODE_XFORM_VIEW)
+    {
+        xf_canvas.setRotateDegrees(xf_canvas.getRotateDegrees() + delta);
+        forceLayerRecalc();
+    }
+}
+
+void MapEditor::slot_scale(int amount)
+{
+    if (config->getViewerType() == VIEW_MAP_EDITOR && Layer::config->kbdMode == KBD_MODE_XFORM_VIEW)
+    {
+        xf_canvas.setScale(xf_canvas.getScale() + static_cast<qreal>(amount)/100.0);
+        forceLayerRecalc();
+    }
+}
+
+void MapEditor::slot_rotate(int amount)
+{
+    if (config->getViewerType() == VIEW_MAP_EDITOR && Layer::config->kbdMode == KBD_MODE_XFORM_VIEW)
+    {
+        xf_canvas.setRotateRadians(xf_canvas.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
+        forceLayerRecalc();
+    }
+}
+
+void MapEditor:: slot_moveX(int amount)
+{
+    if (config->getViewerType() == VIEW_MAP_EDITOR && Layer::config->kbdMode == KBD_MODE_XFORM_VIEW)
+    {
+        xf_canvas.setTranslateX(xf_canvas.getTranslateX() + amount);
+        forceLayerRecalc();
+    }
+}
+
+void MapEditor::slot_moveY(int amount)
+{
+    if (config->getViewerType() == VIEW_MAP_EDITOR && Layer::config->kbdMode == KBD_MODE_XFORM_VIEW)
+    {
+        xf_canvas.setTranslateY(xf_canvas.getTranslateY() + amount);
+        forceLayerRecalc();
+    }
+}
+
+//////////////////////////////////////////////////////////////////
+///
 /// Keyboard events
 ///
 //////////////////////////////////////////////////////////////////
@@ -839,14 +936,14 @@ bool MapEditor::procKeyEvent(QKeyEvent * k)
     }
 
         // modes
-    case Qt::Key_Escape: setMouseMode(MAPED_MOUSE_NONE);  return false; // propagate
-    case Qt::Key_F3:     setMouseMode(MAPED_MOUSE_DRAW_LINE); break;
-    case Qt::Key_F4:     setMouseMode(MAPED_MOUSE_CONSTRUCTION_LINES); break;
-    case Qt::Key_F5:     setMouseMode(MAPED_MOUSE_DELETE); break;
-    case Qt::Key_F6:     setMouseMode(MAPED_MOUSE_SPLIT_LINE); break;
-    case Qt::Key_F7:     setMouseMode(MAPED_MOUSE_EXTEND_LINE); break;
-    case Qt::Key_F8:     setMouseMode(MAPED_MOUSE_CREATE_CROP); break;
-    case Qt::Key_F9:     setMouseMode(MAPED_MOUSE_CONSTRUCTION_CIRCLES); break;
+    case Qt::Key_Escape: setMapedMouseMode(MAPED_MOUSE_NONE);  return false; // propagate
+    case Qt::Key_F3:     setMapedMouseMode(MAPED_MOUSE_DRAW_LINE); break;
+    case Qt::Key_F4:     setMapedMouseMode(MAPED_MOUSE_CONSTRUCTION_LINES); break;
+    case Qt::Key_F5:     setMapedMouseMode(MAPED_MOUSE_DELETE); break;
+    case Qt::Key_F6:     setMapedMouseMode(MAPED_MOUSE_SPLIT_LINE); break;
+    case Qt::Key_F7:     setMapedMouseMode(MAPED_MOUSE_EXTEND_LINE); break;
+    case Qt::Key_F8:     setMapedMouseMode(MAPED_MOUSE_CREATE_CROP); break;
+    case Qt::Key_F9:     setMapedMouseMode(MAPED_MOUSE_CONSTRUCTION_CIRCLES); break;
 
     default: return false;
     }

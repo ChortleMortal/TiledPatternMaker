@@ -1,6 +1,8 @@
 #include "geometry/neighbours.h"
 #include "base/utilities.h"
 #include "geometry/map.h"
+#include "geometry/vertex.h"
+#include "geometry/edge.h"
 
 #if 0
 Neighbours::Neighbours()

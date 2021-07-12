@@ -25,10 +25,15 @@
 #ifndef FIGUREVIEW_H
 #define FIGUREVIEW_H
 
-#include "base/shared.h"
+//#include "base/shared.h"
 #include "base/layer.h"
-#include "base/geo_graphics.h"
-#include "tapp/infer.h"
+//#include "tapp/infer.h"
+
+typedef std::shared_ptr<class FigureView>       FigureViewPtr;
+typedef std::shared_ptr<class Figure>           FigurePtr;
+typedef std::shared_ptr<class DesignElement>    DesignElementPtr;
+typedef std::shared_ptr<class Map>              MapPtr;
+typedef std::shared_ptr<class Feature>          FeaturePtr;
 
 class FigureView : public Layer
 {
@@ -39,7 +44,23 @@ public:
 
     virtual void paint(QPainter *painter) override;
 
-    void    setDebugContacts(bool enb, QPolygonF pts, QVector<contact*> contacts);
+    void    setDebugContacts(bool enb, QPolygonF pts, QVector<class contact*> contacts);
+
+public slots:
+    virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
+    virtual void slot_mouseDragged(QPointF spt)       override;
+    virtual void slot_mouseTranslate(QPointF pt)      override;
+    virtual void slot_mouseMoved(QPointF spt)         override;
+    virtual void slot_mouseReleased(QPointF spt)      override;
+    virtual void slot_mouseDoublePressed(QPointF spt) override;
+
+    virtual void slot_wheel_scale(qreal delta)  override;
+    virtual void slot_wheel_rotate(qreal delta) override;
+
+    virtual void slot_scale(int amount)  override;
+    virtual void slot_rotate(int amount) override;
+    virtual void slot_moveX(int amount)  override;
+    virtual void slot_moveY(int amount)  override;
 
 protected:
     void paintExplicitFigureMap(QPainter *painter, QPen pen);

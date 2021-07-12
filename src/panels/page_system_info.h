@@ -26,7 +26,13 @@
 #define PAGE_SYSTEM_INFO_H
 
 #include "panels/panel_page.h"
-#include "base/shared.h"
+
+typedef std::shared_ptr<class Mosaic>           MosaicPtr;
+typedef std::shared_ptr<class Map>              MapPtr;
+typedef std::shared_ptr<class Prototype>        PrototypePtr;
+typedef std::shared_ptr<class Tiling>           TilingPtr;
+typedef std::shared_ptr<class Layer>            LayerPtr;
+typedef std::shared_ptr<class DesignElement>    DesignElementPtr;
 
 class page_system_info : public panel_page
 {
@@ -47,6 +53,7 @@ private slots:
 
 protected:
     void populateStyles(QTreeWidgetItem * parent, MosaicPtr mosaic);
+    void populateLayer(QTreeWidgetItem * parent, Layer * layer);
     void populateMap(QTreeWidgetItem *parent, MapPtr mp);
     void populatePrototype(QTreeWidgetItem * parent, PrototypePtr pp, QString name);
     void populateTiling(QTreeWidgetItem * parent, TilingPtr tp, QString name);

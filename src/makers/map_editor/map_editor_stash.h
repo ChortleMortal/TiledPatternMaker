@@ -2,7 +2,8 @@
 #define MAPEDITORSTASH_H
 
 #include <QtCore>
-#include "geometry/circle.h"
+
+typedef std::shared_ptr<class Circle>  CirclePtr;
 
 class MapEditor;
 

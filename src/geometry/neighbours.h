@@ -2,8 +2,11 @@
 #define NEIGHBOURS_H
 
 #include <QtCore>
-#include "base/shared.h"
-#include "base/misc.h"
+
+typedef std::shared_ptr<class Edge>         EdgePtr;
+typedef std::weak_ptr<class Edge>           WeakEdgePtr;
+typedef std::shared_ptr<class Vertex>       VertexPtr;
+typedef std::weak_ptr<class Vertex>         WeakVertexPtr;
 
 struct BeforeAndAfter
 {

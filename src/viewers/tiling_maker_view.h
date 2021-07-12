@@ -35,13 +35,17 @@
 #ifndef TILING_MAKER_VIEW_H
 #define TILING_MAKER_VIEW_H
 
-#include "base/geo_graphics.h"
-#include "makers/tiling_maker/feature_selection.h"
-#include "makers/tiling_maker/tiling_mouseactions.h"
-#include "tile/placed_feature.h"
 #include "base/layer.h"
-#include "base/configuration.h"
+#include "enums/etilingmakermousemode.h"
+#include "geometry/edgepoly.h"
+#include "settings/configuration.h"
 #include "base/misc.h"
+
+class GeoGraphics;
+class Measurement;
+
+typedef std::shared_ptr<class TilingSelector>  TilingSelectorPtr;
+typedef std::shared_ptr<class PlacedFeature>   PlacedFeaturePtr;
 
 class TilingMakerView : public Layer
 {
@@ -77,7 +81,6 @@ public:
     QPointF            findSelectionPointOrPoint(QPointF spt);
 
     TilingSelectorPtr findNearGridPoint(QPointF spt);
-    bool               nearGridPoint(QPointF spt, QPointF & foundGridPoint );
 
     QVector<PlacedFeaturePtr> & getAllFeatures()   { return allPlacedFeatures; }
     QVector<PlacedFeaturePtr> & getInTiling()      { return in_tiling; } // DAC was hash
@@ -103,7 +106,7 @@ protected:
     static constexpr QColor drag_color          = QColor(206,179,102,128);
     static constexpr QColor circle_color        = QColor(202,200,  0,128);
 
-    eTMMouseMode                tilingMakerMouseMode;     // set by tiling designer menu
+    eTilingMakerMouseMode                tilingMakerMouseMode;     // set by tiling designer menu
     QVector<PlacedFeaturePtr>   allPlacedFeatures;
     QVector<PlacedFeaturePtr>   in_tiling;
 
@@ -111,7 +114,6 @@ protected:
     QVector<Measurement>        wMeasurements;
 
     bool                        _hideTiling;
-    bool                        _snapToGrid;
 
     UniqueQVector<PlacedFeaturePtr>   overlapping;  // calculated DAC was hash
     UniqueQVector<PlacedFeaturePtr>   touching;     // calculated

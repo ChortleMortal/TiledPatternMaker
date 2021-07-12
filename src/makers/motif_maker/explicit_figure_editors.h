@@ -26,10 +26,10 @@
 #define EXPLICIT_FIGURE_EDITORS_H
 
 #include <QtWidgets>
-#include "base/shared.h"
 #include "figure_editors.h"
-#include "panels/layout_sliderset.h"
-#include "tapp/figure.h"
+#include "enums/efigtype.h"
+
+typedef std::shared_ptr<class ExplicitFigure>   ExplicitPtr;
 
 class ExplicitEditor : public  FigureEditor
 {

@@ -26,6 +26,7 @@
 #include "panels/dlg_colorSet.h"
 #include "base/utilities.h"
 #include "viewers/view.h"
+#include "style/filled.h"
 
 StyleColorFillGroup::StyleColorFillGroup(FilledPtr style, QVBoxLayout *vbox) : filled(style)
 {

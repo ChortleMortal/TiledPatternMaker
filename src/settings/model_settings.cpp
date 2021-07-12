@@ -22,12 +22,13 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "base/model_settings.h"
+#include "settings/model_settings.h"
 #include "tile/backgroundimage.h"
 
 ModelSettings::ModelSettings()
 {
-    _size       = QSize(1500,1100);   // default
+    _size       = QSize(DEFAULT_WIDTH,DEFAULT_HEIGHT);   // default
+    _zsize      = QSize(DEFAULT_WIDTH,DEFAULT_HEIGHT);   // default
     _bkgdColor  = QColor(Qt::white);
     _startTile  = QPoint(0,0);
 }
@@ -35,9 +36,9 @@ ModelSettings::ModelSettings()
 ModelSettings::ModelSettings(const ModelSettings & other)
 {
     _size      = other._size;
+    _zsize     = other._zsize;
     _bkgdColor = other._bkgdColor;
     _startTile = other._startTile;
-    _bkgdImage = other._bkgdImage;
     _fillData  = other._fillData;
 }
 
@@ -46,10 +47,10 @@ ModelSettings::~ModelSettings()
 
 void ModelSettings::clear()
 {
-    _size        = QSize(1500,1100);
+    _size        = QSize(DEFAULT_WIDTH,DEFAULT_HEIGHT);
+    _zsize       = QSize(DEFAULT_WIDTH,DEFAULT_HEIGHT);
     _bkgdColor   = QColor(Qt::black);
     _startTile   = QPoint(0,0);
-    _bkgdImage.reset();
 }
 
 void ModelSettings::setSize(QSize size)
@@ -92,18 +93,6 @@ void  ModelSettings::setFillData(FillData & fd)
 FillData & ModelSettings::getFillData()
 {
     return _fillData;
-}
-void ModelSettings::setBkgdImage(BkgdImgPtr bkImage)
-{
-    _bkgdImage = bkImage;
-    if (_bkgdImage)
-    {
-        qDebug() << "ModelSetings: image ="  << _bkgdImage->getName();
-    }
-    else
-    {
-        qDebug() << "ModelSettings: image = null";
-    }
 }
 
 

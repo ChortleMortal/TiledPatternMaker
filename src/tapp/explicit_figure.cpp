@@ -22,7 +22,11 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <QDebug>
 #include "tapp/explicit_figure.h"
+
+
+typedef std::shared_ptr<class ExplicitFigure>   ExplicitPtr;
 
 ExplicitFigure::ExplicitFigure(MapPtr map, eFigType figType, int sides)
     : Figure()

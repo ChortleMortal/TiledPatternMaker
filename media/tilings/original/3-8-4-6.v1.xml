@@ -1,0 +1,230 @@
+<?xml version="1.0"?>
+<Tiling version="6">
+	<Name>3-8-4-6.v1</Name>
+	<Fill>-1,1,-1,0</Fill>
+	<T1>-23.74077407376281,-13.706742302257</T1>
+	<T2>23.7407740737628,41.12022690677104</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>1100</height>
+		<zwidth>1500</zwidth>
+		<zheight>1100</zheight>
+		<left__delta>75</left__delta>
+		<top__delta>155</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+	</ViewSettings>
+	<Feature type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="1">-1.449489742783176,11.97469149468814</Point>
+			<Point id="2">-3.181540550352011,8.974691494688157</Point>
+		</Line>
+		<Line>
+			<Point reference="2" />
+			<Point id="3">0.1645246645991763,8.078116022520113</Point>
+		</Line>
+		<Line>
+			<Point reference="3" />
+			<Point id="4">1.896575472168054,5.078116022520113</Point>
+		</Line>
+		<Line>
+			<Point reference="4" />
+			<Point id="5">1,1.732050807568877</Point>
+		</Line>
+		<Line>
+			<Point reference="5" />
+			<Point id="6">3.449489742783178,4.181540550352053</Point>
+		</Line>
+		<Line>
+			<Point reference="6" />
+			<Point id="7">6.913591357920932,4.181540550352053</Point>
+		</Line>
+		<Line>
+			<Point reference="7" />
+			<Point id="8">9.363081100704111,1.732050807568875</Point>
+		</Line>
+		<Line>
+			<Point reference="8" />
+			<Point id="9">11.09513190827299,4.732050807568875</Point>
+		</Line>
+		<Line>
+			<Point reference="9" />
+			<Point id="10">7.749066693321759,5.628626279736925</Point>
+		</Line>
+		<Line>
+			<Point reference="10" />
+			<Point id="11">6.017015885752889,8.628626279736919</Point>
+		</Line>
+		<Line>
+			<Point reference="11" />
+			<Point id="12">6.913591357920945,11.97469149468814</Point>
+		</Line>
+		<Line>
+			<Point reference="12" />
+			<Point id="13">4.464101615137764,9.525201751904966</Point>
+		</Line>
+		<Line>
+			<Point reference="13" />
+			<Point id="14">1.000000000000002,9.525201751904966</Point>
+		</Line>
+		<Line>
+			<Point reference="14" />
+			<Point reference="1" />
+		</Line>
+		<Placement>
+			<scale>0.9999999999999986</scale>
+			<rot>120</rot>
+			<tranX>-3.996802888650564e-15</tranX>
+			<tranY>-8.881784197001252e-16</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+		<Placement>
+			<scale>0.9999999999999981</scale>
+			<rot>-120</rot>
+			<tranX>2.664535259100376e-15</tranX>
+			<tranY>-3.403681997562399e-15</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="regular" sides="4" rotation="0" scale="1">
+		<Placement>
+			<scale>1.732050807568873</scale>
+			<rot>-120</rot>
+			<tranX>13.46115731205743</tranX>
+			<tranY>23.31540839316071</tranY>
+		</Placement>
+		<Placement>
+			<scale>1.732050807568875</scale>
+			<rot>-60.00000000000001</rot>
+			<tranX>-5.547565954136446</tranX>
+			<tranY>9.608666090903718</tranY>
+		</Placement>
+		<Placement>
+			<scale>1.732050807568877</scale>
+			<rot>59.99999999999997</rot>
+			<tranX>-5.547565954136498</tranX>
+			<tranY>-9.608666090903718</tranY>
+		</Placement>
+		<Placement>
+			<scale>1.732050807568879</scale>
+			<rot>-1.798529919297994e-14</rot>
+			<tranX>-3.181540550352054</tranX>
+			<tranY>13.70674230225702</tranY>
+		</Placement>
+		<Placement>
+			<scale>1.732050807568872</scale>
+			<rot>120</rot>
+			<tranX>13.46115731205742</tranX>
+			<tranY>4.098076211353307</tranY>
+		</Placement>
+		<Placement>
+			<scale>1.732050807568879</scale>
+			<rot>180</rot>
+			<tranX>11.09513190827299</tranX>
+			<tranY>-4.479637181131185e-15</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="regular" sides="8" rotation="0" scale="1">
+		<Placement>
+			<scale>4.181540550352055</scale>
+			<rot>14.99999999999997</rot>
+			<tranX>-2.59077027517603</tranX>
+			<tranY>-4.487345747344079</tranY>
+		</Placement>
+		<Placement>
+			<scale>4.181540550352055</scale>
+			<rot>-1.035104092549708e-14</rot>
+			<tranX>5.181540550352055</tranX>
+			<tranY>-1.554312234475219e-15</tranY>
+		</Placement>
+		<Placement>
+			<scale>4.181540550352048</scale>
+			<rot>-15.00000000000004</rot>
+			<tranX>10.50436163309696</tranX>
+			<tranY>9.219396554912942</tranY>
+		</Placement>
+		<Placement>
+			<scale>4.181540550352057</scale>
+			<rot>-15.00000000000001</rot>
+			<tranX>-2.59077027517603</tranX>
+			<tranY>4.487345747344084</tranY>
+		</Placement>
+		<Placement>
+			<scale>4.181540550352044</scale>
+			<rot>-30.00000000000005</rot>
+			<tranX>10.50436163309697</tranX>
+			<tranY>18.19408804960108</tranY>
+		</Placement>
+		<Placement>
+			<scale>4.181540550352059</scale>
+			<rot>-1.216988674165356e-14</rot>
+			<tranX>2.732050807568885</tranX>
+			<tranY>13.70674230225702</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="regular" sides="6" rotation="0" scale="1">
+		<Placement>
+			<scale>2.999999999999998</scale>
+			<rot>-3.392591660227753e-14</rot>
+			<tranX>-7.913591357920938</tranX>
+			<tranY>-13.70674230225703</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="regular" sides="3" rotation="0" scale="1">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+		<Placement>
+			<scale>0.9999999999999984</scale>
+			<rot>59.99999999999997</rot>
+			<tranX>7.913591357920944</tranX>
+			<tranY>13.70674230225702</tranY>
+		</Placement>
+		<Placement>
+			<scale>0.9999999999999893</scale>
+			<rot>-29.99999999999951</rot>
+			<tranX>11.09513190827293</tranX>
+			<tranY>-2.732050807568893</tranY>
+		</Placement>
+		<Placement>
+			<scale>0.9999999999999898</scale>
+			<rot>-149.9999999999995</rot>
+			<tranX>-7.913591357920922</tranX>
+			<tranY>-8.242640687119234</tranY>
+		</Placement>
+		<Placement>
+			<scale>1.000000000000001</scale>
+			<rot>-90.00000000000001</rot>
+			<tranX>11.09513190827299</tranX>
+			<tranY>2.732050807568874</tranY>
+		</Placement>
+		<Placement>
+			<scale>0.9999999999999987</scale>
+			<rot>150</rot>
+			<tranX>-3.181540550352056</tranX>
+			<tranY>-10.97469149468814</tranY>
+		</Placement>
+		<Placement>
+			<scale>0.9999999999999912</scale>
+			<rot>90.00000000000053</rot>
+			<tranX>-3.181540550352029</tranX>
+			<tranY>10.97469149468814</tranY>
+		</Placement>
+		<Placement>
+			<scale>0.9999999999999992</scale>
+			<rot>29.99999999999998</rot>
+			<tranX>-7.91359135792092</tranX>
+			<tranY>8.24264068711928</tranY>
+		</Placement>
+	</Feature>
+	<Desc>A third variation of the Real Alcazar of Seville pattern.</Desc>
+	<Auth>Pierre Baillargeon</Auth>
+</Tiling>

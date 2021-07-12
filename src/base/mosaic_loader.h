@@ -28,14 +28,30 @@
 #include <QtCore>
 #include <string>
 #include "base/pugixml.hpp"
-#include "style/style.h"
-#include "base/shared.h"
+#include "base/colorset.h"
+#include "settings/filldata.h"
 #include "geometry/xform.h"
-#include "tapp/star.h"
-#include "tapp/rosette_connect_figure.h"
-#include "tapp/star_connect_figure.h"
-#include "tapp/extended_rosette.h"
-#include "base/mosaic.h"
+#include "enums/efigtype.h"
+
+
+typedef std::shared_ptr<QPolygonF>              PolyPtr;
+typedef std::shared_ptr<class BackgroundImage>   BkgdImgPtr;
+typedef std::shared_ptr<class Border>           BorderPtr;
+typedef std::shared_ptr<class Edge>             EdgePtr;
+typedef std::shared_ptr<class ExplicitFigure>   ExplicitPtr;
+typedef std::shared_ptr<class ExtendedRosette>  ExtRosettePtr;
+typedef std::shared_ptr<class ExtendedStar>     ExtStarPtr;
+typedef std::shared_ptr<class Feature>          FeaturePtr;
+typedef std::shared_ptr<class Figure>           FigurePtr;
+typedef std::shared_ptr<class Map>              MapPtr;
+typedef std::shared_ptr<class Mosaic>           MosaicPtr;
+typedef std::shared_ptr<class Prototype>        PrototypePtr;
+typedef std::shared_ptr<class Rosette>          RosettePtr;
+typedef std::shared_ptr<class RosetteConnectFigure> RosetteConnectPtr;
+typedef std::shared_ptr<class Star>             StarPtr;
+typedef std::shared_ptr<class StarConnectFigure>    StarConnectPtr;
+typedef std::shared_ptr<class Tiling>           TilingPtr;
+typedef std::shared_ptr<class Vertex>           VertexPtr;
 
 using std::string;
 using namespace pugi;
@@ -68,7 +84,7 @@ protected:
     void processTileColors(xml_node & node);
 
     // design
-    void    procSize(xml_node & node, int &width, int &height);
+    void    procSize(xml_node & node, int &width, int &height, int &zwidth, int &zheight);
     QColor  procBackgroundColor(xml_node & node);
     void    procBorder(xml_node & node);
     void    procFill(xml_node & node);
@@ -178,10 +194,11 @@ private:
     QColor                  _background;
     int                     _width;
     int                     _height;
+    int                     _zwidth;
+    int                     _zheight;
     BorderPtr               _border;
     unsigned int            _version;
     FillData                _fillData;
-    BkgdImgPtr              _bip;
 
     int vOrigCnt;
     int vRefrCnt;

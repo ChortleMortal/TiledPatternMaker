@@ -2,46 +2,57 @@
 #include "panels/panel_misc.h"
 #include "viewers/view.h"
 
-ViewPanel::ViewPanel() : QWidget()
+ViewPanel::ViewPanel() : AQWidget()
 {
     view = View::getInstance();
 
-    btn1 = new QPushButton("Pan");
-    btn2 = new QPushButton("Rotate");
-    btn3 = new QPushButton("Zoom");
+    btnCenter = new QPushButton("Set Center");
+    btnPan = new QPushButton("Pan");
+    btnRot = new QPushButton("Rotate");
+    btnZoom = new QPushButton("Zoom");
 
-    btn1->setCheckable(true);
-    btn2->setCheckable(true);
-    btn3->setCheckable(true);
+    btnCenter->setCheckable(true);
+    btnPan->setCheckable(true);
+    btnRot->setCheckable(true);
+    btnZoom->setCheckable(true);
 
-    btn1->setStyleSheet("QPushButton{ background-color: white; border: 1px solid black; border-radius: 3px; } QPushButton:checked { background-color: yellow; color: red;}");
-    btn2->setStyleSheet("QPushButton{ background-color: white; border: 1px solid black; border-radius: 3px; } QPushButton:checked { background-color: yellow; color: red;}");
-    btn3->setStyleSheet("QPushButton{ background-color: white; border: 1px solid black; border-radius: 3px; } QPushButton:checked { background-color: yellow; color: red;}");
+    btnCenter->setStyleSheet("QPushButton{ background-color: white; border: 1px solid black; border-radius: 3px; } QPushButton:checked { background-color: yellow; color: red;}");
+    btnPan->setStyleSheet("QPushButton{ background-color: white; border: 1px solid black; border-radius: 3px; } QPushButton:checked { background-color: yellow; color: red;}");
+    btnRot->setStyleSheet("QPushButton{ background-color: white; border: 1px solid black; border-radius: 3px; } QPushButton:checked { background-color: yellow; color: red;}");
+    btnZoom->setStyleSheet("QPushButton{ background-color: white; border: 1px solid black; border-radius: 3px; } QPushButton:checked { background-color: yellow; color: red;}");
+
+    QLabel    * l_mouseModes    = new QLabel("Mouse control:");
 
     AQHBoxLayout * layout = new AQHBoxLayout;
-    layout->addWidget(btn1);
-    layout->addSpacing(5);
-    layout->addWidget(btn2);
-    layout->addSpacing(5);
-    layout->addWidget(btn3);
+    layout->addWidget(l_mouseModes);
+    layout->addSpacing(4);
+    layout->addWidget(btnCenter);
+    layout->addSpacing(4);
+    layout->addWidget(btnPan);
+    layout->addSpacing(4);
+    layout->addWidget(btnRot);
+    layout->addSpacing(4);
+    layout->addWidget(btnZoom);
     setLayout(layout);
 
-    connect (btn1, &QPushButton::clicked, this, &ViewPanel::setTranslateMode);
-    connect (btn2, &QPushButton::clicked, this, &ViewPanel::setRotateMode);
-    connect (btn3, &QPushButton::clicked, this, &ViewPanel::setScaleMode);
+    connect (btnCenter, &QPushButton::clicked, this, &ViewPanel::setSetCenterMode);
+    connect (btnPan,    &QPushButton::clicked, this, &ViewPanel::setTranslateMode);
+    connect (btnRot,    &QPushButton::clicked, this, &ViewPanel::setRotateMode);
+    connect (btnZoom,   &QPushButton::clicked, this, &ViewPanel::setScaleMode);
 }
 
 ViewPanel::~ViewPanel()
 {
 }
 
-void  ViewPanel::setTranslateMode(bool checked)
+void ViewPanel::setTranslateMode(bool checked)
 {
     if (checked)
     {
         blockSignals(true);
-        btn2->setChecked(false);
-        btn3->setChecked(false);
+        btnCenter->setChecked(false);
+        btnRot->setChecked(false);
+        btnZoom->setChecked(false);
         blockSignals(false);
         view->setMouseMode(MOUSE_MODE_TRANSLATE);
     }
@@ -51,13 +62,14 @@ void  ViewPanel::setTranslateMode(bool checked)
     }
 }
 
-void  ViewPanel::setRotateMode(bool checked)
+void ViewPanel::setRotateMode(bool checked)
 {
     if (checked)
     {
         blockSignals(true);
-        btn1->setChecked(false);
-        btn3->setChecked(false);
+        btnCenter->setChecked(false);
+        btnPan->setChecked(false);
+        btnZoom->setChecked(false);
         blockSignals(false);
         view->setMouseMode(MOUSE_MODE_ROTATE);
     }
@@ -67,13 +79,14 @@ void  ViewPanel::setRotateMode(bool checked)
     }
 }
 
-void  ViewPanel::setScaleMode(bool checked)
+void ViewPanel::setScaleMode(bool checked)
 {
     if (checked)
     {
         blockSignals(true);
-        btn1->setChecked(false);
-        btn2->setChecked(false);
+        btnCenter->setChecked(false);
+        btnPan->setChecked(false);
+        btnRot->setChecked(false);
         blockSignals(false);
         view->setMouseMode(MOUSE_MODE_SCALE);
     }
@@ -84,9 +97,27 @@ void  ViewPanel::setScaleMode(bool checked)
 }
 
 
-void  ViewPanel::setButtonSize(QSize size)
+void ViewPanel::setButtonSize(QSize size)
 {
-    btn1->setFixedSize(size);
-    btn2->setFixedSize(size);
-    btn3->setFixedSize(size);
+    btnCenter->setFixedSize(size);
+    btnPan->setFixedSize(size);
+    btnRot->setFixedSize(size);
+    btnZoom->setFixedSize(size);
+}
+
+void ViewPanel::setSetCenterMode(bool checked)
+{
+    if (checked)
+    {
+        blockSignals(true);
+        btnPan->setChecked(false);
+        btnRot->setChecked(false);
+        btnZoom->setChecked(false);
+        blockSignals(false);
+        view->setMouseMode(MOUSE_MODE_CENTER);
+    }
+    else
+    {
+        view->setMouseMode(MOUSE_MODE_NONE);
+    }
 }

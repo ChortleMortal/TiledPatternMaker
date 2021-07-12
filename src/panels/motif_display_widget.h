@@ -1,8 +1,10 @@
 #ifndef MOTIFDISPLAYWIDGET_H
 #define MOTIFDISPLAYWIDGET_H
 
+#include <QObject>
 #include "panels/panel_misc.h"
-#include "base/shared.h"
+
+typedef std::shared_ptr<class FeatureButton>  FeatureBtnPtr;
 
 class MotifDisplayWidget : public AQWidget
 {

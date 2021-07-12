@@ -27,7 +27,8 @@
 
 #include <QtWidgets>
 #include <QString>
-#include "base/shared.h"
+
+typedef std::shared_ptr<class TilingMaker> TilingMakerPtr;
 
 class panel_page : public QWidget
 {

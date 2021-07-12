@@ -26,7 +26,8 @@
 #define PAGE_DEBUG_H
 
 #include "panels/panel_page.h"
-#include "base/configuration.h"
+
+typedef std::shared_ptr<class Tiling>           TilingPtr;
 
 class page_debug : public panel_page
 {
@@ -53,6 +54,9 @@ private slots:
     void    slot_verifyTilingNames();
     void    slot_verifyTiling();
     void    slot_verifyAllTilings();
+
+    void    slot_testA();
+    void    slot_testB();
 
 protected:
     void    verifyTiling(TilingPtr tiling);

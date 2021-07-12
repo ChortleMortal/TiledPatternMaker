@@ -23,10 +23,13 @@
  */
 
 #include "tapp/design_element.h"
+#include "tapp/figure.h"
+#include "tile/feature.h"
 #include "base/utilities.h"
 #include "tapp/rosette.h"
 #include "tapp/explicit_figure.h"
 #include "geometry/transform.h"
+#include "geometry/map.h"
 
 int DesignElement::refs = 0;
 int PlacedDesignElement::refs2 = 0;
@@ -93,11 +96,11 @@ void DesignElement::createFigure()
 {
     if (feature->isRegular())
     {
-        figure = make_shared<Rosette>(feature->numPoints(), 0.0, 3, 0, feature->getRotation() );
+        figure = std::make_shared<Rosette>(feature->numPoints(), 0.0, 3, 0, feature->getRotation() );
     }
     else
     {
-        figure = make_shared<ExplicitFigure>(make_shared<Map>("FIG_TYPE_EXPLICIT map"),FIG_TYPE_EXPLICIT, feature->numPoints());
+        figure = std::make_shared<ExplicitFigure>(std::make_shared<Map>("FIG_TYPE_EXPLICIT map"),FIG_TYPE_EXPLICIT, feature->numPoints());
     }
 }
 

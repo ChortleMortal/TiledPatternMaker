@@ -1,9 +1,19 @@
 #include "makers/tiling_maker/tiling_mouseactions.h"
 #include "makers/tiling_maker/tiling_maker.h"
+#include "makers/tiling_maker/feature_selection.h"
 #include "geometry/point.h"
 #include "geometry/transform.h"
+#include "geometry/edge.h"
+#include "geometry/vertex.h"
 #include "base/utilities.h"
-#include "base/configuration.h"
+#include "settings/configuration.h"
+#include "base/geo_graphics.h"
+#include "tile/placed_feature.h"
+#include "tile/feature.h"
+#include "viewers/grid.h"
+
+
+using std::make_shared;
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -410,8 +420,9 @@ CreatePolygon::CreatePolygon(TilingMaker * tilingMaker, QPointF spt )
 {
     qDebug() << "CreatePolygon";
     qDebug() << desc;
+    grid = Grid::getSharedInstance();
     QPointF wpt = tilingMaker->findSelectionPointOrPoint(spt);
-    tm->nearGridPoint(spt,wpt);
+    grid->nearGridPoint(spt,wpt);
     addVertex(wpt);
     desc = "CreatePolygon";
 }
@@ -476,7 +487,7 @@ void CreatePolygon::updateDragging(QPointF spt)
     underneath = QPointF();
 
     EdgePoly & wAccum = tm->getAccumW();
-    for (auto edge : wAccum)
+    for (auto & edge : wAccum)
     {
         QPointF p1 = tm->worldToScreen(edge->v1->pt);
         QPointF p2 = tm->worldToScreen(edge->v2->pt);
@@ -490,7 +501,7 @@ void CreatePolygon::updateDragging(QPointF spt)
             underneath = edge->v2->pt;
             return;
         }
-        else if (tm->nearGridPoint(spt,underneath))
+        else if (grid->nearGridPoint(spt,underneath))
         {
             return;
         }
@@ -504,7 +515,7 @@ void CreatePolygon::endDragging(QPointF spt )
     if (wAccum.size() != 0)
     {
         QPointF wpt = tm->findSelectionPointOrPoint(spt);
-        tm->nearGridPoint(spt,wpt);
+        grid->nearGridPoint(spt,wpt);
 
         addVertex(wpt);
     }
@@ -716,93 +727,6 @@ void Position::draw(GeoGraphics * g2d)
     g2d->drawCircle(mpt,3,QPen(Qt::magenta),QBrush(Qt::magenta));
     g2d->drawText(spt + QPointF(10,0),msg);
  }
-
-/////////
-///
-///  Perspective
-///
-/////////
-
-Perspective::Perspective(TilingMaker * tilingMaker, QPointF spt )
-    : TilingMouseAction(tilingMaker,nullptr,spt)
-{
-    desc = "Perspective";
-    qDebug() << desc;
-    EdgePoly & waccum = tilingMaker->getAccumW();
-    qDebug() << "click size=" << waccum.size();
-    if (waccum.size() == 0)
-    {
-        addPoint(spt);
-    }
-}
-
-void Perspective::addPoint(QPointF spos)
-{
-    qDebug("Perspective::addPoint");
-
-    VertexPtr vnew = make_shared<Vertex>(tm->screenToWorld(spos));
-
-    EdgePoly & accum = tm->getAccumW();
-    int size = accum.size();
-
-    if (size == 0)
-    {
-        accum.push_back(make_shared<Edge>(vnew));
-        qDebug() << "point count = 1";
-    }
-    else if (size == 1)
-    {
-        EdgePtr last = accum.last();
-        if (last->getType() == EDGETYPE_POINT)
-        {
-            last->setV2(vnew);
-            qDebug() << "edge count =" << accum.size();
-        }
-        else
-        {
-            accum.push_back(make_shared<Edge>(last->v2,vnew));
-            qDebug() << "edge count =" << accum.size();
-        }
-    }
-    else if (size == 2)
-    {
-        EdgePtr last = accum.last();
-        accum.push_back(make_shared<Edge>(last->v2,vnew));
-        qDebug() << "edge count = " << accum.size();
-        accum.push_back(make_shared<Edge>(vnew,accum.first()->v1));
-        qDebug() << "completed with edge count =" << accum.size();
-        TilingMouseAction::endDragging(spt);
-    }
-}
-
-void Perspective::updateDragging(QPointF spt)
-{
-    TilingMouseAction::updateDragging(spt);
-}
-
-void Perspective::endDragging(QPointF spt )
-{
-    EdgePoly & waccum = tm->getAccumW();
-    if (!Point::isNear(spt,tm->worldToScreen(waccum.first()->v1->pt)))
-    {
-        addPoint(spt);
-    }
-    TilingMouseAction::endDragging(spt);
-}
-
-void Perspective::draw(GeoGraphics * g2d)
-{
-    EdgePoly & waccum = tm->getAccumW();
-    if (waccum.size() > 0)
-    {
-        if (!wLastDrag.isNull())
-        {
-            QPen pen(drag_color);
-            g2d->drawLine(waccum.last()->v2->pt,wLastDrag,pen);
-            g2d->drawCircle(wLastDrag,10,pen,QBrush(drag_color));
-        }
-    }
-}
 
 
 /////////

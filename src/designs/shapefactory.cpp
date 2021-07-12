@@ -25,7 +25,7 @@
 #include "designs/shapes.h"
 #include "designs/shapefactory.h"
 #include "designs/patterns.h"
-#include "base/configuration.h"
+#include "settings/configuration.h"
 #include "viewers/view.h"
 #include <QDebug>
 

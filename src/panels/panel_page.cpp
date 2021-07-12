@@ -31,6 +31,7 @@
 #include "makers/motif_maker/motif_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "makers/decoration_maker/decoration_maker.h"
+#include "base/shared.h"
 
 panel_page::panel_page(ControlPanel * panel,  QString name) : QWidget()
 {

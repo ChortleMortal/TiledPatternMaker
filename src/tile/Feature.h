@@ -43,10 +43,10 @@
 
 #include <QtCore>
 #include <QPolygonF>
-#include "base/shared.h"
 #include "base/colorset.h"
-#include "geometry/edge.h"
 #include "geometry/edgepoly.h"
+
+typedef std::shared_ptr<class Feature>         FeaturePtr;
 
 class Feature
 {

@@ -26,9 +26,11 @@
 #define PAGE_MOTIF_MAKER_H
 
 #include "panels/panel_page.h"
-#include "panels/motif_display_widget.h"
-#include "makers/motif_maker/figure_editors.h"
-#include "tapp/figure.h"
+#include "enums/efigtype.h"
+
+typedef std::shared_ptr<class Prototype>        PrototypePtr;
+typedef std::shared_ptr<class Feature>          FeaturePtr;
+typedef std::shared_ptr<class Figure>           FigurePtr;
 
 class page_motif_maker : public panel_page
 {
@@ -68,7 +70,7 @@ private:
     QCheckBox   * hiliteUnit;
     QComboBox   * tilingListBox;
 
-    MotifDisplayWidget  * motifWidget;
+    class MotifDisplayWidget  * motifWidget;
 };
 
 #endif

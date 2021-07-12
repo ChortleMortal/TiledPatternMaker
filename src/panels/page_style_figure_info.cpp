@@ -23,12 +23,15 @@
  */
 
 #include "panels/page_style_figure_info.h"
+#include "panels/panel_misc.h"
 #include "base/shared.h"
 #include "base/mosaic.h"
 #include "makers/decoration_maker/decoration_maker.h"
-
-using std::string;
-
+#include "tapp/design_element.h"
+#include "tapp/prototype.h"
+#include "tile/tiling.h"
+#include "tapp/figure.h"
+#include "style/style.h"
 
 page_style_figure_info:: page_style_figure_info(ControlPanel *panel)  : panel_page(panel, "Mosaic Info")
 {

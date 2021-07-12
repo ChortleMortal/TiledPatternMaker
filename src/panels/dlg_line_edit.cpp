@@ -1,9 +1,9 @@
 #include "panels/dlg_line_edit.h"
-#include "panels/panel_page.h"
 #include "panels/layout_sliderset.h"
 #include "tile/feature.h"
-#include "base/utilities.h"
 #include "viewers/view.h"
+#include "geometry/edge.h"
+#include "geometry/vertex.h"
 
 DlgLineEdit::DlgLineEdit(EdgePoly & epoly, int row, int col) : QLineEdit(),
   _poly(epoly)

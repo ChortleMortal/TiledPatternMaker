@@ -18,23 +18,26 @@ public:
     void        addTransform(QTransform t);
 
     QTransform  toQTransform(QTransform transform) const;
+    QTransform  toQTransform(QPointF rotCenter) const;
+    QTransform  toQTransform() const;
+
     QTransform  getTransform() const;
     QPointF     getTranslate() { return QPointF(translateX,translateY); }
     QString     toInfoString() const;
 
-    qreal       getScale();
-    qreal       getRotateRadians();
+    qreal       getScale() const;
+    qreal       getRotateRadians() const;
     qreal       getRotateDegrees() const;
-    qreal       getTranslateX();
-    qreal       getTranslateY();
-    QPointF     getCenter() const;
+    qreal       getTranslateX() const;
+    qreal       getTranslateY() const;
+    QPointF     getCenter() const { return center; }
 
     void        setScale(qreal s);
     void        setRotateRadians(qreal rr);
     void        setRotateDegrees(qreal deg);
     void        setTranslateX(qreal x);
     void        setTranslateY(qreal y);
-    void        setCenter(QPointF mpt);  // model units
+    void        setCenter(QPointF mpt) { center = mpt; }  // model units
 
 protected:
     QTransform  rotateAroundPoint(QPointF pt);
@@ -45,7 +48,7 @@ private:
     qreal       rotRadians;     // radians
     qreal       translateX;
     qreal       translateY;
-    QPointF     mCenter;             // model units so (0,0) is valid
+    QPointF     center;         // model units so (0,0) is valid
 };
 
 #endif // XFORM_H

@@ -1,0 +1,62 @@
+<?xml version="1.0"?>
+<Tiling version="6">
+	<Name>uniform-12-6-3</Name>
+	<Fill>-4,4,-4,4</Fill>
+	<T1>4.732050807568879,2.732050807568878</T1>
+	<T2>4.732050807568879,-2.732050807568879</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>1100</height>
+		<zwidth>1500</zwidth>
+		<zheight>1100</zheight>
+		<left__delta>-1.13686837721616e-13</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0.8133333333333344,-0.8533333333333353</center>
+	</ViewSettings>
+	<Feature type="regular" sides="6" rotation="0" scale="1">
+		<Placement>
+			<scale>1.732050807568878</scale>
+			<rot>150</rot>
+			<tranX>-7.771561172376096e-16</tranX>
+			<tranY>-2.732050807568879</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="regular" sides="4" rotation="0" scale="1">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>30.00000000000002</rot>
+			<tranX>2.366025403784439</tranX>
+			<tranY>-1.366025403784439</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>-30.00000000000002</rot>
+			<tranX>2.366025403784439</tranX>
+			<tranY>-4.098076211353318</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="regular" sides="3" rotation="0" scale="1">
+		<Placement>
+			<scale>0.5773502691896263</scale>
+			<rot>60.00000000000005</rot>
+			<tranX>1.577350269189626</tranX>
+			<tranY>4.440892098500626e-16</tranY>
+		</Placement>
+		<Placement>
+			<scale>0.5773502691896261</scale>
+			<rot>2.754441152272927e-15</rot>
+			<tranX>3.154700538379252</tranX>
+			<tranY>-2.732050807568879</tranY>
+		</Placement>
+	</Feature>
+	<Desc>Pomerantz</Desc>
+	<Auth>David Casper</Auth>
+</Tiling>

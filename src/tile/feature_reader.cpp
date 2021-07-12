@@ -1,6 +1,9 @@
 #include "tile/feature_reader.h"
 #include "geometry/xform.h"
+#include "geometry/edge.h"
 #include <QTransform>
+
+using std::make_shared;
 
 FeatureReader::FeatureReader()
 {

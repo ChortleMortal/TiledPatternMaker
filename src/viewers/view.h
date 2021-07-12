@@ -28,9 +28,14 @@
 #include <QtCore>
 #include <QtWidgets>
 
-#include "base/configuration.h"
 #include "base/misc.h"
-#include "base/frame_settings.h"
+#include "settings/frame_settings.h"
+#include "enums/ekeyboardmode.h"
+#include "enums/emousemode.h"
+
+typedef std::shared_ptr<class TilingMaker> TilingMakerPtr;
+typedef std::shared_ptr<class MapEditor>   MapEditorPtr;
+typedef std::shared_ptr<class Layer> LayerPtr;
 
 class LoadUnit
 {
@@ -59,52 +64,40 @@ public:
     int     numLayers()             { return layers.size(); }
     QVector<LayerPtr> getActiveLayers();
 
-    void    setMouseMode(eMouseMode mode);
+    void    setMouseMode(eMouseMode newMode);
     eMouseMode getMouseMode() { return mouseMode; }
 
     void    setBackgroundColor(QColor color);
     QColor  getBackgroundColor();
 
-    void    setAllCommonDefinedSizes(QSize sz);
-    void    setAllCommonActiveSizes(QSize sz);
-
-    void    reInitFrameSettings();
-
-    QTransform getDefinedFrameTransform(eViewType e);
-    QTransform getActiveFrameTransform(eViewType e);
-    void    setDefinedFrameSize(eViewType e, QSize sz);
-    QSize   getDefinedFrameSize(eViewType e);
-    void    setActiveFrameSize(eViewType e, QSize sz);
-    QSize   getActiveFrameSize(eViewType e);
-
     void    clearLayout(); // only used by cycler for pngs
     void    setKbdMode(eKbdMode mode);
     QString getKbdModeStr();
-
-    const QMap<eViewType,FrameSettings> & getFrameSettings() { return  frameSettings; }
 
     LoadUnit & getLoadUnit() { return loadUnit; }
 
     void    dump(bool summary);
 
+    FrameSettings frameSettings;
+
 signals:
+    void sig_viewSizeChanged(QSize sz);
+
     void sig_mousePressed(QPointF pos,Qt::MouseButton);
-    void sig_mouseDoublePressed(QPointF pos,Qt::MouseButton);
     void sig_mouseDragged(QPointF pos);
-    void sig_mouseReleased(QPointF pos);
+    void sig_mouseTranslate(QPointF pt);
     void sig_mouseMoved(QPointF pos);
+    void sig_mouseReleased(QPointF pos);
+    void sig_mouseDoublePressed(QPointF pos,Qt::MouseButton);
 
     void sig_wheel_scale(qreal angle);
     void sig_wheel_rotate(qreal angle);
-    void sig_mouseTranslate(QPointF pt);
+
 
     void sig_deltaRotate(int amount);
     void sig_deltaMoveY(int amount);
     void sig_deltaMoveX(int amount);
     void sig_deltaScale(int amount);
-
-    void sig_setCenter(QPointF sPos);
-    void sig_viewSizeChanged(QSize sz);
 
     void sig_kbdMode(eKbdMode);
 
@@ -117,12 +110,13 @@ signals:
     void sig_saveImage();
     void sig_saveSVG();
 
-
 protected:
     void closeEvent(QCloseEvent *event) override;
     void paintEvent(QPaintEvent *event) override;
-    void resizeEvent(QResizeEvent *event) override;
+#if 0
     void moveEvent(QMoveEvent *event) override;
+#endif
+    void resizeEvent(QResizeEvent *event) override;
     void keyPressEvent( QKeyEvent *k ) override;
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
@@ -143,9 +137,6 @@ protected:
 
     void duplicateView();
 
-    void  addFrameSetting(eViewType evt, Bounds bounds, QSize size);
-    void  reInitFrameSetting(eViewType evt);
-
 private:
     View();
     ~View() override;
@@ -156,20 +147,19 @@ private:
     TilingMakerPtr      tilingMaker;
     MapEditorPtr        mapEditor;
     class DesignMaker * designMaker;
+    class ControlPanel* panel;
 
     UniqueQVector<LayerPtr> layers;
-
-    QMap<eViewType,FrameSettings>    frameSettings;
 
     LoadUnit          loadUnit;
     bool              canPaint;
     eMouseMode        mouseMode;
+    eMouseMode        lastMouseMode;
     bool              dragging;
     QColor            backgroundColor;
 
     QPointF           sLast;    // used by pan
     bool              closed;
-    QPointF           deltaPos;
 };
 
 #endif // VIEW_H

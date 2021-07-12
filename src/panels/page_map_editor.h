@@ -26,7 +26,7 @@
 #define PAGE_FIGURE_EDITOR_H
 
 #include "panels/panel_page.h"
-#include "makers/map_editor/map_editor.h"
+typedef std::shared_ptr<class MapEditor>              MapEditorPtr;
 
 class page_map_editor : public panel_page
 {

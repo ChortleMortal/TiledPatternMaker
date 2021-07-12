@@ -26,8 +26,9 @@
 #define DLG_MAGNITUDE_H
 
 #include <QtWidgets>
-#include "panels/layout_sliderset.h"
-#include "makers/tiling_maker/feature_selection.h"
+
+typedef std::shared_ptr<class TilingSelector>   TilingSelectorPtr;
+typedef std::shared_ptr<class Edge>             EdgePtr;
 
 class DlgMagnitude : public QDialog
 {
@@ -45,7 +46,7 @@ private slots:
 
 
 private:
-    DoubleSliderSet   * magWidget;
+    class DoubleSliderSet   * magWidget;
     TilingSelectorPtr   sel;
     EdgePtr             edge;
 };

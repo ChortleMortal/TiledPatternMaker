@@ -1,8 +1,13 @@
 #ifndef TILING_WRITER
 #define TILING_WRITER
 
-#include "tile/placed_feature.h"
-#include "geometry/xform.h"
+#include "geometry/vertex.h"
+
+typedef std::shared_ptr<class Tiling>           TilingPtr;
+typedef std::shared_ptr<class BackgroundImage>  BkgdImgPtr;
+typedef std::shared_ptr<class Vertex>           VertexPtr;
+
+class EdgePoly;
 
 class TilingWriter
 {

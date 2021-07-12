@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<Tiling version="6">
+	<Name>uniform-8-4</Name>
+	<Fill>-4,4,-4,4</Fill>
+	<T1>4.828427124746185,4.828427124746185</T1>
+	<T2>7.216449660063518e-16,4.828427124746186</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>1100</height>
+		<zwidth>1500</zwidth>
+		<zheight>1100</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,-1.77635683940025e-15</center>
+	</ViewSettings>
+	<Feature type="regular" sides="8" rotation="0" scale="1">
+		<Placement>
+			<scale>2.414213562373094</scale>
+			<rot>0</rot>
+			<tranX>-0.1066666666666657</tranX>
+			<tranY>-4.120880229039761</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="regular" sides="4" rotation="0" scale="1">
+		<Placement>
+			<scale>0.9999999999999977</scale>
+			<rot>-45.00000000000001</rot>
+			<tranX>2.307546895706426</tranX>
+			<tranY>-1.706666666666667</tranY>
+		</Placement>
+	</Feature>
+	<Desc>Pomerantz</Desc>
+	<Auth>David Casper</Auth>
+</Tiling>

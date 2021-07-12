@@ -25,25 +25,33 @@
 #include "base/mosaic_writer.h"
 #include "base/border.h"
 #include "base/fileservices.h"
-#include "base/configuration.h"
-#include "panels/panel.h"
+#include "base/mosaic.h"
+#include "geometry/crop.h"
+#include "geometry/edge.h"
+#include "geometry/map.h"
+#include "geometry/vertex.h"
+#include "settings/model_settings.h"
 #include "style/colored.h"
-#include "style/thick.h"
+#include "style/emboss.h"
 #include "style/filled.h"
 #include "style/interlace.h"
 #include "style/outline.h"
 #include "style/plain.h"
 #include "style/sketch.h"
-#include "style/emboss.h"
+#include "style/thick.h"
 #include "style/tile_colors.h"
-#include "tapp/star.h"
-#include "tapp/extended_star.h"
-#include "tapp/extended_rosette.h"
-#include "tapp/rosette_connect_figure.h"
-#include "tapp/star_connect_figure.h"
+#include "tapp/design_element.h"
 #include "tapp/explicit_figure.h"
+#include "tapp/extended_rosette.h"
+#include "tapp/extended_star.h"
+#include "tapp/prototype.h"
+#include "tapp/rosette_connect_figure.h"
+#include "tapp/star.h"
+#include "tapp/star_connect_figure.h"
+#include "tile/backgroundimage.h"
+#include "tile/feature.h"
+#include "tile/tiling.h"
 #include "tile/tiling_writer.h"
-#include "viewers/viewcontrol.h"
 
 //const int currentXMLVersion = 3;
 //const int currentXMLVersion = 4;  // 05OCT19 use ColorSets in Colored
@@ -269,13 +277,14 @@ bool MosaicWriter::processVector(QTextStream &ts)
 void MosaicWriter::processDesign(QTextStream &ts)
 {
     ModelSettingsPtr info = _mosaic->getSettings();
-    QColor bkgdColor   = info->getBackgroundColor();
-    QSizeF size        = info->getSize();
-    BorderPtr border   = _mosaic->getBorder();
-    BkgdImgPtr bip     = info->getBkgdImage();
+    QColor bkgdColor      = info->getBackgroundColor();
+    QSize  size           = info->getSize();
+    QSize  zsize          = info->getZSize();
+    BorderPtr border      = _mosaic->getBorder();
+    BkgdImgPtr bip        = BackgroundImage::getSharedInstance();
 
     ts << "<design>" << endl;
-    procSize(ts,size);
+    procSize(ts,size,zsize);
     procBackground(ts,bkgdColor);
     procBorder(ts,border);
     int minX,minY,maxX,maxY;
@@ -290,12 +299,14 @@ void MosaicWriter::procWidth(QTextStream &ts,qreal width)
     ts << "<width>" << width << "</width>" << endl;
 }
 
-void MosaicWriter::procSize(QTextStream &ts,QSizeF size)
+void MosaicWriter::procSize(QTextStream &ts,QSizeF size, QSize zsize)
 {
-    ts << "<size>"   << endl;
-    ts << "<width>"  << size.width()  << "</width>" << endl;
-    ts << "<height>" << size.height() << "</height>" << endl;
-    ts << "</size>"  << endl;
+    ts << "<size>"    << endl;
+    ts << "<width>"   << size.width()   << "</width>" << endl;
+    ts << "<height>"  << size.height()  << "</height>" << endl;
+    ts << "<zwidth>"  << zsize.width()  << "</zwidth>" << endl;
+    ts << "<zheight>" << zsize.height() << "</zheight>" << endl;
+    ts << "</size>"   << endl;
 }
 
 void MosaicWriter::procBackground(QTextStream &ts,QColor color)

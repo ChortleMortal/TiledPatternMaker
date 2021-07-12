@@ -47,13 +47,13 @@
 #include "geometry/vertex.h"
 #include <QPainterPath>
 
-GeoGraphics::GeoGraphics(QPainter * painter, QTransform & transform) : transform(transform)
+GeoGraphics::GeoGraphics(QPainter * painter, QTransform  transform)
 {
     this->painter   = painter;
+    this->transform = transform;
 }
 
-
-void GeoGraphics::drawLine( qreal x1, qreal y1, qreal x2, qreal y2, QPen pen )
+void GeoGraphics::drawLine( QPointF p1, QPointF p2, QPen pen)
 {
 #if 0
     QPen pen = painter->pen();
@@ -61,29 +61,18 @@ void GeoGraphics::drawLine( qreal x1, qreal y1, qreal x2, qreal y2, QPen pen )
     pen.setCapStyle(Qt::RoundCap);
     painter->setPen(pen);
 #endif
-    QPointF a = transform.map(QPointF(x1, y1));
-    QPointF b = transform.map(QPointF(x2, y2));
+    QPointF a = transform.map(p1);
+    QPointF b = transform.map(p2);
 
     painter->setPen(pen);
     painter->drawLine(a,b); // DAC - taprats uses int not qreal - why???
-    //qDebug() << "GeoGraphics::drawLine2" << a << b << Transform::toInfoString(transform);
 }
 
-void GeoGraphics::drawLine( QPointF v1, QPointF v2, QPen pen)
-{
-    drawLine( v1.x(), v1.y(), v2.x(), v2.y(), pen);
-}
-
-
-// Draw a thick like as a rectangle.
-void GeoGraphics::drawThickLine(qreal x1, qreal y1, qreal x2, qreal y2, qreal width, QPen pen)
-{
-    drawThickLine( QPointF( x1, y1 ), QPointF( x2, y2 ), width, pen);
-}
 
 void GeoGraphics::drawThickLine(QPointF v1, QPointF v2, qreal width, QPen pen)
 {
-    qreal widthF = Transform::distFromZero(transform,width);
+    //qreal widthF = Transform::distFromZero(transform,width);
+    qreal widthF = Transform::scalex(transform) * width;
 
     pen.setWidthF(widthF);
     pen.setJoinStyle(Qt::RoundJoin);
@@ -364,7 +353,8 @@ void GeoGraphics::drawPie(QPointF V1, QPointF V2, QPointF ArcCenter, QPen pen, Q
 
 void GeoGraphics::drawThickChord(QPointF V1, QPointF V2, QPointF ArcCenter, QPen pen, QBrush brush, bool Convex, qreal width)
 {
-    qreal widthF = Transform::distFromZero(transform,width);
+    //qreal widthF = Transform::distFromZero(transform,width);
+    qreal widthF = Transform::scalex(transform) * width;
 
     painter->save();
 

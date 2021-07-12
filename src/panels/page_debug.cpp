@@ -22,26 +22,25 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
 #include "panels/page_debug.h"
 #include "base/fileservices.h"
 #include "base/mosaic_manager.h"
 #include "base/mosaic_loader.h"
-#include "base/qtapplog.h"
-#include "base/shared.h"
-#include "base/tiledpatternmaker.h"
 #include "makers/tiling_maker/tiling_maker.h"
-#include "panels/dlg_name.h"
 #include "panels/layout_sliderset.h"
 #include "panels/panel.h"
-#include "panels/versioned_list_widget.h"
-#include "tapp/explicit_figure.h"
-#include "tapp/prototype.h"
 #include "tile/tiling.h"
 #include "tile/tiling_manager.h"
 #include "viewers/view.h"
 #include "viewers/viewcontrol.h"
 #include "panels/page_loaders.h"
 #include "style/filled.h"
+#include "geometry/map.h"
+#include "base/mosaic.h"
+#include "base/transparentwidget.h"
+
+typedef std::shared_ptr<class Filled>       FilledPtr;
 
 page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,"Debug Tools")
 {
@@ -65,6 +64,8 @@ QGroupBox * page_debug::createDebugSection()
     QPushButton * pbVerifyTiling        = new QPushButton("Verify Current Tiling");
     QPushButton * pbVerifyAllTilings    = new QPushButton("Verify All Tilings");
     QPushButton * pbExamineAllMosaics   = new QPushButton("Examine AllMosaics");
+    QPushButton * pTestA                = new QPushButton("Test A");
+    QPushButton * pTestB                = new QPushButton("Test B");
 
     QGridLayout * grid = new QGridLayout();
     grid->setHorizontalSpacing(51);
@@ -85,6 +86,8 @@ QGroupBox * page_debug::createDebugSection()
     grid->addWidget(pbClearMakers,         row,0);
     grid->addWidget(pbClearView,           row,1);
     grid->addWidget(pbRender,              row,2);
+    grid->addWidget(pTestA,                row,3);
+    grid->addWidget(pTestB,                row,4);
 
 
     QVBoxLayout * vbox = new QVBoxLayout;;
@@ -105,7 +108,10 @@ QGroupBox * page_debug::createDebugSection()
     connect(pbVerifyTiling,           &QPushButton::clicked,     this,   &page_debug::slot_verifyTiling);
     connect(pbVerifyAllTilings,       &QPushButton::clicked,     this,   &page_debug::slot_verifyAllTilings);
 
-    connect(pbRender,                 &QPushButton::clicked,     this,   &panel_page::sig_render);
+    connect(pTestA,                   &QPushButton::clicked,     this,   &page_debug::slot_testA);
+    connect(pTestB,                   &QPushButton::clicked,     this,   &page_debug::slot_testB);
+
+    connect(pbRender,                 &QPushButton::clicked,     this,      &panel_page::sig_render);
     connect(pbClearView,              &QPushButton::clicked,     vcontrol,  &ViewControl::slot_clearView);
     connect(pbClearMakers,            &QPushButton::clicked,     vcontrol,  &ViewControl::slot_clearMakers);
 
@@ -485,6 +491,10 @@ void page_debug::slot_examineAllMosaics()
     box.exec();
 }
 
+void  page_debug::slot_testA()
+{
+}
 
-
-
+void  page_debug::slot_testB()
+{
+}

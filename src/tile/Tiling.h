@@ -38,12 +38,16 @@
 #define TILING
 
 #include <QtCore>
-#include "base/shared.h"
-#include "base/model_settings.h"
 #include "geometry/xform.h"
+#include "settings/filldata.h"
+#include "settings/tristate.h"
 
 #define MAX_UNIQUE_FEATURE_INDEX 7
 
+typedef std::shared_ptr<class Feature>          FeaturePtr;
+typedef std::shared_ptr<class PlacedFeature>    PlacedFeaturePtr;
+typedef std::shared_ptr<class ModelSettings>    ModelSettingsPtr;
+typedef std::shared_ptr<class Map>              MapPtr;
 
 class FeatureGroup : public  QVector<QPair<FeaturePtr,QVector<PlacedFeaturePtr>>>
 {
@@ -118,15 +122,15 @@ public:
     void         setState(eTilingState state);
 
     // settings
-    void        setSettings(ModelSettingsPtr settings) { this->settings = settings; }
-    void        setSize(QSize sz)             { settings->setSize(sz); }
-    void        setBackground(BkgdImgPtr bip) { settings->setBkgdImage(bip); }
-    void        setFillData(FillData & fdata) { settings->setFillData(fdata); }
+    void        setSettings(ModelSettingsPtr settings);
+    void        setSize(QSize sz);
+    void        setZoomSize(QSize sz);
+    void        setFillData(FillData & fdata);
 
-    ModelSettingsPtr    getSettings()  { return settings; }
-    QSize               getSize()      { return settings->getSize(); }
-    BkgdImgPtr          getBackground(){ return settings->getBkgdImage(); }
-    const FillData    & getFillData()  { return settings->getFillData(); }
+    ModelSettingsPtr    getSettings();
+    QSize               getSize();
+    QSize               getZoomSize();
+    const FillData    & getFillData();
 
     // map operations
     MapPtr  createMap();

@@ -1,26 +1,43 @@
 #ifndef GRID_H
 #define GRID_H
 
-#include "base/layer.h"
+#include "style/thick.h"
 
-class Grid : public Layer
+typedef std::shared_ptr<class Grid> GridPtr;
+typedef std::shared_ptr<class TilingSelector>   TilingSelectorPtr;
+
+class Grid : public Thick
 {
 public:
-    Grid();
+    static GridPtr getSharedInstance();
+    Grid(PrototypePtr pp);  // don't use this
 
-    void paint(QPainter * painter);
+    void draw(GeoGraphics * gg ) override;
+
+    void create();
+
+    void resetStyleRepresentation()  override {};
+    void createStyleRepresentation() override {};
+
+    virtual QString getStyleDesc() const override {return("Grid");}
+
+    bool nearGridPoint(QPointF spt, QPointF & foundGridPoint);
 
 protected:
-    void drawGridModelUnits(QPainter *painter, const QRectF &r);
-    void drawGridModelUnitsCentered(QPainter *painter, QRectF &r);
-    void drawGridSceneUnits(QPainter *painter, const QRectF &r);
-    void drawGridSceneUnitsCentered(QPainter *painter, QRectF & r);
+    void createGridModelUnits(const QRectF &r);
+    void createGridModelUnitsCentered(QRectF &r);
+    void createGridSceneUnits(const QRectF &r);
+    void createGridSceneUnitsCentered(QRectF & r);
 
 private:
+    static GridPtr spThis;
+
     Configuration * config;
     View          * view;
 
-    QPen gridPen;
+    MapPtr      gridMap;
+
+    QLineF      corners[2];
 };
 
 #endif // GRID_H

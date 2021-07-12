@@ -31,7 +31,7 @@ public:
     QString getName(){ return name;}
 
     void  setTransform(QTransform T);
-    void  setTransform(Xform & xf);
+    void  setTransform(const Xform &xf);
 
     QTransform getQTransform();
 

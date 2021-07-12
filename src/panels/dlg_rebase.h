@@ -28,15 +28,13 @@
 #include <QtGui>
 #include <QtWidgets>
 
-#include "panels/layout_sliderset.h"
-
 class DlgRebase : public QDialog
 {
 public:
     DlgRebase(QWidget * parent = nullptr);
 
-    SpinSet * oldVersion;
-    SpinSet * newVersion;
+    class SpinSet * oldVersion;
+    class SpinSet * newVersion;
 };
 
 #endif // DLG_REBASE_H

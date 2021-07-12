@@ -33,41 +33,30 @@
 
 #include "makers/tiling_maker/tiling_maker.h"
 #include "makers/tiling_maker/feature_selection.h"
+#include "makers/tiling_maker/tiling_mouseactions.h"
 #include "makers/motif_maker/motif_maker.h"
 #include "makers/decoration_maker/decoration_maker.h"
 #include "makers/map_editor/map_editor.h"
-#include "base/configuration.h"
 #include "base/shortcuts.h"
 #include "viewers/view.h"
 #include "geometry/point.h"
 #include "geometry/transform.h"
+#include "geometry/edge.h"
+#include "geometry/vertex.h"
 #include "style/style.h"
 #include "panels/dlg_magnitude.h"
 #include "panels/panel.h"
 #include "panels/dlg_edgepoly_edit.h"
+#include "tapp/prototype.h"
+#include "tile/feature.h"
+#include "tile/placed_feature.h"
+#include "tile/tiling.h"
+
+using std::make_shared;
 
 TilingMakerPtr TilingMaker::spThis;
 
 const bool debugMouse = false;
-
-static QString strMouseMode[] =
-{
-    E2STR(TM_NO_MOUSE_MODE),
-    E2STR(TM_COPY_MODE),
-    E2STR(TM_DELETE_MODE),
-    E2STR(TM_TRANSLATION_VECTOR_MODE),
-    E2STR(TM_DRAW_POLY_MODE),
-    E2STR(TM_INCLUSION_MODE),
-    E2STR(TM_POSITION_MODE),
-    E2STR(TM_MEASURE_MODE),
-    E2STR(TM_BKGD_SKEW_MODE),
-    E2STR(TM_EDIT_FEATURE_MODE),
-    E2STR(CURVE_EDGE_MODE),
-    E2STR(FLATTEN_EDGE_MODE),
-    E2STR(TM_MIRROR_X_MODE),
-    E2STR(TM_MIRROR_Y_MODE),
-    E2STR(TM_CONSTRUCTION_LINES)
-};
 
 TilingMakerPtr TilingMaker::getSharedInstance()
 {
@@ -90,10 +79,6 @@ void TilingMaker::init()
     motifMaker      = MotifMaker::getInstance();
     decorationMaker = DecorationMaker::getInstance();
     maped           = MapEditor::getSharedInstance();
-
-    connect(view, &View::sig_mouseDragged,  this, &TilingMaker::slot_mouseDragged);
-    connect(view, &View::sig_mouseReleased, this, &TilingMaker::slot_mouseReleased);
-    connect(view, &View::sig_mouseMoved,    this, &TilingMaker::slot_mouseMoved);
 
     tilingMakerMouseMode = TM_NO_MOUSE_MODE;
     poly_side_count = config->polySides;
@@ -205,6 +190,7 @@ void TilingMaker::sm_take(TilingPtr tiling, eSM_Event event)
     case SM_LOAD_EMPTY:
         filled = false;
         clearConstructionLines();
+        sm_title(tiling);
         sm_resetAllAndAdd(tiling);
         motifMaker->sm_take(tiling, event);
         break;
@@ -465,8 +451,7 @@ void TilingMaker::setupMaker(TilingPtr tiling)
     visibleT2.setP2(trans_origin + tiling->getTrans2());
 
     // set the layer transform and the view size
-    view->setDefinedFrameSize(VIEW_TILING_MAKER,tiling->getSize());
-
+    view->frameSettings.initialise(VIEW_TILING_MAKER,tiling->getSize(),tiling->getZoomSize());
     Layer::setCanvasXform(tiling->getCanvasXform());
 }
 
@@ -500,7 +485,7 @@ bool TilingMaker::verifyTiling()
     return true;
 }
 
-void TilingMaker::setTilingMakerMouseMode(eTMMouseMode mode)
+void TilingMaker::setTilingMakerMouseMode(eTilingMakerMouseMode mode)
 {
     tilingMakerMouseMode = mode;
 
@@ -518,7 +503,7 @@ void TilingMaker::setTilingMakerMouseMode(eTMMouseMode mode)
     forceRedraw();
 }
 
-eTMMouseMode TilingMaker::getTilingMakerMouseMode()
+eTilingMakerMouseMode TilingMaker::getTilingMakerMouseMode()
 {
     return tilingMakerMouseMode;
 }
@@ -528,6 +513,7 @@ eTMMouseMode TilingMaker::getTilingMakerMouseMode()
 void TilingMaker::addNewPlacedFeature(PlacedFeaturePtr pf)
 {
     allPlacedFeatures.push_front(pf);   // push_front so it (the new) becomes selected for move
+    forceRedraw();
     emit sig_buildMenu();
 }
 
@@ -774,7 +760,7 @@ void TilingMaker::slot_uniquifyFeature()
 
 void TilingMaker::slot_snapTo(bool checked)
 {
-    _snapToGrid = checked;
+    config->snapToGrid = checked;
 }
 
 void TilingMaker::createFillCopies()
@@ -1175,247 +1161,7 @@ TilingSelectorPtr TilingMaker::findFeatureUnderMouse()
     return findFeature(sMousePos);
 }
 
-////////////////////////////////////////////////////////////////////////////
-//
-// Mouse events.
-//
-////////////////////////////////////////////////////////////////////////////
 
-void  TilingMaker::drawMouseInteraction(GeoGraphics * g2d)
-{
-    if (mouse_interaction)
-    {
-        mouse_interaction->draw(g2d);
-    }
-}
-
-void TilingMaker::slot_mouseMoved(QPointF spt)
-{
-    if (config->getViewerType() != VIEW_TILING_MAKER)
-        return;
-
-    setMousePos(spt);
-
-    if (debugMouse) qDebug() << "move" << sMousePos;
-
-    updateUnderMouse(sMousePos);
-}
-
-void TilingMaker::slot_mouseDragged(QPointF spt)
-{
-    if (config->getViewerType() != VIEW_TILING_MAKER)
-        return;
-
-    setMousePos(spt);
-
-    if (debugMouse) qDebug().noquote() << "drag" << sMousePos << screenToWorld(sMousePos)  << strMouseMode[tilingMakerMouseMode];
-
-    updateUnderMouse(sMousePos);
-
-    switch (tilingMakerMouseMode)
-    {
-    case TM_NO_MOUSE_MODE:
-    case TM_COPY_MODE:
-    case TM_TRANSLATION_VECTOR_MODE:
-    case TM_DRAW_POLY_MODE:
-    case TM_MEASURE_MODE:
-    case TM_POSITION_MODE:
-    case TM_BKGD_SKEW_MODE:
-    case TM_EDIT_FEATURE_MODE:
-    case TM_EDGE_CURVE_MODE:
-    case TM_CONSTRUCTION_LINES:
-        if (mouse_interaction)
-            mouse_interaction->updateDragging(sMousePos);
-        break;
-    case TM_DELETE_MODE:
-    case TM_MIRROR_X_MODE:
-    case TM_MIRROR_Y_MODE:
-    case TM_INCLUSION_MODE:
-        break;
-    }
-}
-
-void TilingMaker::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
-{
-    if (config->getViewerType() != VIEW_TILING_MAKER)
-        return;
-
-    sMousePos = spt;
-
-    if (debugMouse) qDebug() << "slot_mousePressed:" << sMousePos << screenToWorld(sMousePos);
-
-    TilingSelectorPtr sel;
-
-    switch (tilingMakerMouseMode)
-    {
-    case TM_NO_MOUSE_MODE:
-        if (view->getMouseMode() == MOUSE_MODE_NONE)
-        {
-            startMouseInteraction(sMousePos,btn);
-        }
-        break;
-
-    case TM_COPY_MODE:
-        sel = findFeatureUnderMouse();
-        if (sel)
-            mouse_interaction = make_shared<CopyMovePolygon>(this, sel, sMousePos);
-        break;
-
-    case TM_DELETE_MODE:
-        deleteFeature( findFeatureUnderMouse() );
-        setTilingMakerMouseMode(TM_NO_MOUSE_MODE);
-        break;
-
-    case TM_TRANSLATION_VECTOR_MODE:
-        sel = findSelection(sMousePos);
-        if (sel)
-            mouse_interaction = make_shared<DrawTranslation>(this, sel, sMousePos, layerPen);
-        break;
-
-    case TM_DRAW_POLY_MODE:
-        mouse_interaction = make_shared<CreatePolygon>(this, sMousePos);
-        break;
-
-    case TM_INCLUSION_MODE:
-        toggleInclusion(findFeatureUnderMouse());
-        break;
-
-    case TM_MEASURE_MODE:
-    {
-        Qt::KeyboardModifiers kms =  QApplication::keyboardModifiers();
-        if (kms == (Qt::CTRL | Qt::SHIFT))
-        {
-            TilingSelectorPtr nothingToIgnore;
-            sel = findEdge(spt,nothingToIgnore);
-            if (sel)
-            {
-                // FIXME  - this looks like incomplete code
-                QLineF line = sel->getPlacedLine();
-                qreal dist = Point::distToLine(screenToWorld(spt),line);
-                qDebug() << "dist" << dist << "line" << line;
-                mouse_interaction = make_shared<Measure>(this, sMousePos,sel);
-            }
-        }
-        else
-        {
-            mouse_interaction = make_shared<Measure>(this, sMousePos,sel);
-        }
-        break;
-    }
-
-    case TM_POSITION_MODE:
-        setCenterScreen(spt);
-        break;
-
-    case TM_BKGD_SKEW_MODE:
-        if (mouse_interaction)
-        {
-            PerspectivePtr pp = std::dynamic_pointer_cast<Perspective>(mouse_interaction);
-            if (pp)
-            {
-                pp->addPoint(sMousePos);
-            }
-        }
-        else
-        {
-            mouse_interaction = make_shared<Perspective>(this, sMousePos);
-        }
-        break;
-
-    case TM_EDIT_FEATURE_MODE:
-        sel = findSelection(spt);
-        if (sel)
-        {
-            if (!editPlacedFeature && sel->getType() == INTERIOR)
-            {
-                editPlacedFeature = sel->getPlacedFeature();
-            }
-            else if (editPlacedFeature && sel->getType() == VERTEX )
-            {
-                mouse_interaction = make_shared<EditFeature>(this, sel, editPlacedFeature, sMousePos);
-            }
-        }
-        break;
-    case TM_EDGE_CURVE_MODE:
-        sel = findArcPoint(spt);
-        if (sel)
-        {
-            featureSelector = sel;
-            QMenu myMenu;
-            myMenu.addAction("Use Cursor to change curve", this, SLOT(slot_moveArcCenter()));
-            myMenu.addAction("Edit Magnitude", this, SLOT(slot_editMagnitude()));
-            myMenu.exec(view->mapToGlobal(spt.toPoint()));
-        }
-        else
-        {
-            sel = findEdge(spt);
-            if (sel)
-            {
-                EdgePtr edge =  sel->getModelEdge();
-                if (edge->getType() == EDGETYPE_LINE)
-                {
-                    PlacedFeaturePtr pfp = sel->getPlacedFeature();
-                    FeaturePtr fp = pfp->getFeature();
-                    fp->setRegular(false);
-                    edge->calcArcCenter(true);  // default to convex
-                    qDebug() << "edge converted to curve";
-                }
-                else if (edge->getType() == EDGETYPE_CURVE)
-                {
-                    featureSelector = sel;
-                    QMenu myMenu;
-                    myMenu.addAction("Flatten Edge",  this, SLOT(slot_flatenCurve()));
-                    if (edge->isConvex())
-                        myMenu.addAction("Make Concave",  this, SLOT(slot_makeConcave()));
-                    else
-                        myMenu.addAction("Make Convex",  this, SLOT(slot_makeConvex()));
-                    myMenu.exec(view->mapToGlobal(spt.toPoint()));
-                }
-            }
-        }
-        break;
-
-    case TM_MIRROR_X_MODE:
-        mirrorPolygonX(findFeatureUnderMouse());
-        break;
-
-    case TM_MIRROR_Y_MODE:
-        mirrorPolygonY(findFeatureUnderMouse());
-        break;
-
-    case TM_CONSTRUCTION_LINES:
-        mouse_interaction = make_shared<TilingConstructionLine>(this, sel, sMousePos);
-        break;
-    }
-
-    if (debugMouse)
-    {
-        if (mouse_interaction)
-            qDebug().noquote() << "press end:"  << mouse_interaction->desc;
-        else
-            qDebug() << "press end: no mouse_interaction";
-    }
-
-    Layer::slot_mousePressed(spt,btn);  // handles centering
-}
-
-void TilingMaker::slot_mouseReleased(QPointF spt)
-{
-
-    if (config->getViewerType() != VIEW_TILING_MAKER)
-        return;
-
-    setMousePos(spt);
-
-    if (debugMouse) qDebug() << "release" << sMousePos << screenToWorld(sMousePos);
-
-    if (mouse_interaction)
-    {
-        mouse_interaction->endDragging(spt);
-        mouse_interaction.reset();
-    }
-    forceRedraw();
-}
 
 void TilingMaker::updateUnderMouse(QPointF spt)
 {
@@ -1486,9 +1232,6 @@ void TilingMaker::updateUnderMouse(QPointF spt)
         }
         forceRedraw();
         break;
-
-    case TM_BKGD_SKEW_MODE:
-        break;  // do nothing
     }
 }
 
@@ -1605,6 +1348,15 @@ void TilingMaker::setMousePos(QPointF spt)
     }
 }
 
+void  TilingMaker::drawMouseInteraction(GeoGraphics * g2d)
+{
+    if (mouse_interaction)
+    {
+        mouse_interaction->draw(g2d);
+    }
+}
+
+
 void TilingMaker::setFeatureEditPoint(QPointF pt)
 {
     featureEditPoint = pt;
@@ -1629,7 +1381,7 @@ bool TilingMaker::accumHasPoint(QPointF wpt)
 
 QString TilingMaker::getStatus()
 {
-    QString s = strMouseMode[tilingMakerMouseMode];
+    QString s = sTilingMakerMouseMode[tilingMakerMouseMode];
     if (mouse_interaction)
     {
         s += " ";
@@ -1674,25 +1426,345 @@ void TilingMaker::slot_editMagnitude()
     dlg.exec();
 }
 
-void TilingMaker::slot_moveX(int amount)
+//////////////////////////////////////////////////////////////////
+///
+/// Layer slots
+///
+//////////////////////////////////////////////////////////////////
+
+void TilingMaker::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
 {
-    qDebug() << "TilingMaker::slot_moveX" << amount;
+    if (view->getMouseMode() == MOUSE_MODE_CENTER && btn == Qt::LeftButton)
+    {
+        setCenterScreenUnits(spt);
+        forceLayerRecalc();
+        emit sig_refreshView();
+        return;
+    }
+
+    if (config->getViewerType() != VIEW_TILING_MAKER)
+        return;
+
+    sMousePos = spt;
+
+    if (debugMouse) qDebug() << "slot_mousePressed:" << sMousePos << screenToWorld(sMousePos);
+
+    TilingSelectorPtr sel;
+
+    switch (tilingMakerMouseMode)
+    {
+    case TM_NO_MOUSE_MODE:
+        if (view->getMouseMode() == MOUSE_MODE_NONE)
+        {
+            startMouseInteraction(sMousePos,btn);
+        }
+        break;
+
+    case TM_COPY_MODE:
+        sel = findFeatureUnderMouse();
+        if (sel)
+            mouse_interaction = make_shared<CopyMovePolygon>(this, sel, sMousePos);
+        break;
+
+    case TM_DELETE_MODE:
+        deleteFeature( findFeatureUnderMouse() );
+        setTilingMakerMouseMode(TM_NO_MOUSE_MODE);
+        break;
+
+    case TM_TRANSLATION_VECTOR_MODE:
+        sel = findSelection(sMousePos);
+        if (sel)
+            mouse_interaction = make_shared<DrawTranslation>(this, sel, sMousePos, layerPen);
+        break;
+
+    case TM_DRAW_POLY_MODE:
+        mouse_interaction = make_shared<CreatePolygon>(this, sMousePos);
+        break;
+
+    case TM_INCLUSION_MODE:
+        toggleInclusion(findFeatureUnderMouse());
+        break;
+
+    case TM_MEASURE_MODE:
+    {
+        Qt::KeyboardModifiers kms =  QApplication::keyboardModifiers();
+        if (kms == (Qt::CTRL | Qt::SHIFT))
+        {
+            TilingSelectorPtr nothingToIgnore;
+            sel = findEdge(spt,nothingToIgnore);
+            if (sel)
+            {
+                // FIXME  - this looks like incomplete code
+                QLineF line = sel->getPlacedLine();
+                qreal dist = Point::distToLine(screenToWorld(spt),line);
+                qDebug() << "dist" << dist << "line" << line;
+                mouse_interaction = make_shared<Measure>(this, sMousePos,sel);
+            }
+        }
+        else
+        {
+            mouse_interaction = make_shared<Measure>(this, sMousePos,sel);
+        }
+        break;
+    }
+
+    case TM_POSITION_MODE:
+        setCenterScreenUnits(spt);
+        break;
+
+    case TM_EDIT_FEATURE_MODE:
+        sel = findSelection(spt);
+        if (sel)
+        {
+            if (!editPlacedFeature && sel->getType() == INTERIOR)
+            {
+                editPlacedFeature = sel->getPlacedFeature();
+            }
+            else if (editPlacedFeature && sel->getType() == VERTEX )
+            {
+                mouse_interaction = make_shared<EditFeature>(this, sel, editPlacedFeature, sMousePos);
+            }
+        }
+        break;
+    case TM_EDGE_CURVE_MODE:
+        sel = findArcPoint(spt);
+        if (sel)
+        {
+            featureSelector = sel;
+            QMenu myMenu;
+            myMenu.addAction("Use Cursor to change curve", this, SLOT(slot_moveArcCenter()));
+            myMenu.addAction("Edit Magnitude", this, SLOT(slot_editMagnitude()));
+            myMenu.exec(view->mapToGlobal(spt.toPoint()));
+        }
+        else
+        {
+            sel = findEdge(spt);
+            if (sel)
+            {
+                EdgePtr edge =  sel->getModelEdge();
+                if (edge->getType() == EDGETYPE_LINE)
+                {
+                    PlacedFeaturePtr pfp = sel->getPlacedFeature();
+                    FeaturePtr fp = pfp->getFeature();
+                    fp->setRegular(false);
+                    edge->calcArcCenter(true);  // default to convex
+                    qDebug() << "edge converted to curve";
+                }
+                else if (edge->getType() == EDGETYPE_CURVE)
+                {
+                    featureSelector = sel;
+                    QMenu myMenu;
+                    myMenu.addAction("Flatten Edge",  this, SLOT(slot_flatenCurve()));
+                    if (edge->isConvex())
+                        myMenu.addAction("Make Concave",  this, SLOT(slot_makeConcave()));
+                    else
+                        myMenu.addAction("Make Convex",  this, SLOT(slot_makeConvex()));
+                    myMenu.exec(view->mapToGlobal(spt.toPoint()));
+                }
+            }
+        }
+        break;
+
+    case TM_MIRROR_X_MODE:
+        mirrorPolygonX(findFeatureUnderMouse());
+        break;
+
+    case TM_MIRROR_Y_MODE:
+        mirrorPolygonY(findFeatureUnderMouse());
+        break;
+
+    case TM_CONSTRUCTION_LINES:
+        mouse_interaction = make_shared<TilingConstructionLine>(this, sel, sMousePos);
+        break;
+    }
+
+    if (debugMouse)
+    {
+        if (mouse_interaction)
+            qDebug().noquote() << "press end:"  << mouse_interaction->desc;
+        else
+            qDebug() << "press end: no mouse_interaction";
+    }
+}
+
+void TilingMaker::slot_mouseDragged(QPointF spt)
+{
+    if (config->getViewerType() != VIEW_TILING_MAKER)
+        return;
+
+    setMousePos(spt);
+
+    if (debugMouse) qDebug().noquote() << "drag" << sMousePos << screenToWorld(sMousePos)  << sTilingMakerMouseMode[tilingMakerMouseMode];
+
+    updateUnderMouse(sMousePos);
+
+    switch (tilingMakerMouseMode)
+    {
+    case TM_NO_MOUSE_MODE:
+    case TM_COPY_MODE:
+    case TM_TRANSLATION_VECTOR_MODE:
+    case TM_DRAW_POLY_MODE:
+    case TM_MEASURE_MODE:
+    case TM_POSITION_MODE:
+    case TM_EDIT_FEATURE_MODE:
+    case TM_EDGE_CURVE_MODE:
+    case TM_CONSTRUCTION_LINES:
+        if (mouse_interaction)
+            mouse_interaction->updateDragging(sMousePos);
+        break;
+    case TM_DELETE_MODE:
+    case TM_MIRROR_X_MODE:
+    case TM_MIRROR_Y_MODE:
+    case TM_INCLUSION_MODE:
+        break;
+    }
+}
+
+void TilingMaker::slot_mouseTranslate(QPointF spt)
+{
     switch (config->kbdMode)
     {
+    case KBD_MODE_XFORM_TILING:
+    {
+        QTransform T = getFrameTransform();
+        qreal scale = Transform::scalex(T);
+        QPointF mpt = spt/scale;
+        QTransform tt = QTransform::fromTranslate(mpt.x(),mpt.y());
+        for (auto pfp : qAsConst(allPlacedFeatures))
+        {
+            QTransform t = pfp->getTransform();
+            t *= tt;
+            pfp->setTransform(t);
+        }
+
+        sm_take(selectedTiling,SM_FEATURE_CHANGED);
+        forceRedraw();
+        emit sig_refreshMenu();
+    }
+    break;
+
+    case KBD_MODE_XFORM_PLACED_FEATURE:
+    {
+        if (!currentPlacedFeature)
+            return;
+
+        QTransform T = getFrameTransform();
+        qreal scale = Transform::scalex(T);
+        QPointF mpt = spt/scale;
+        QTransform tt = QTransform::fromTranslate(mpt.x(),mpt.y());
+
+        QTransform t = currentPlacedFeature->getTransform();
+        t *= tt;
+        currentPlacedFeature->setTransform(t);
+
+        forceRedraw();
+        emit sig_refreshMenu();
+    }
+    break;
+
+    case KBD_MODE_XFORM_UNIQUE_FEATURE:
+        // do nothing
+        break;
+
+    case KBD_MODE_XFORM_VIEW:
+        xf_canvas.setTranslateX(xf_canvas.getTranslateX() + spt.x());
+        xf_canvas.setTranslateY(xf_canvas.getTranslateY() + spt.y());
+        forceLayerRecalc();
+        break;
+
+    case KBD_MODE_XFORM_SELECTED:
+        if (isSelected())
+        {
+            xf_canvas.setTranslateX(xf_canvas.getTranslateX() + spt.x());
+            xf_canvas.setTranslateY(xf_canvas.getTranslateY() + spt.y());
+            forceLayerRecalc();
+        }
+        break;
+    case KBD_MODE_XFORM_BKGD:
+        break;
+
+    default:
+        qWarning() << "TilingMaker: Unexpected keyboard mode" << view->getKbdModeStr();
+        break;
+    }
+}
+
+
+void TilingMaker::slot_mouseMoved(QPointF spt)
+{
+    if (config->getViewerType() != VIEW_TILING_MAKER)
+        return;
+
+    setMousePos(spt);
+
+    if (debugMouse) qDebug() << "move" << sMousePos;
+
+    updateUnderMouse(sMousePos);
+}
+
+
+void TilingMaker::slot_mouseReleased(QPointF spt)
+{
+
+    if (config->getViewerType() != VIEW_TILING_MAKER)
+        return;
+
+    setMousePos(spt);
+
+    if (debugMouse) qDebug() << "release" << sMousePos << screenToWorld(sMousePos);
+
+    if (mouse_interaction)
+    {
+        mouse_interaction->endDragging(spt);
+        mouse_interaction.reset();
+    }
+    forceRedraw();
+}
+
+void TilingMaker::slot_mouseDoublePressed(QPointF spt)
+{ Q_UNUSED(spt); }
+
+void TilingMaker::slot_wheel_scale(qreal delta)
+{
+    switch (config->kbdMode)
+    {
+    case KBD_MODE_XFORM_TILING:
+    {
+        qreal sc = 1.0 + delta;
+        QTransform ts;
+        ts.scale(sc,sc);
+        for (auto pfp : qAsConst(allPlacedFeatures))
+        {
+            QTransform t = pfp->getTransform();
+            t *= ts;
+            pfp->setTransform(t);
+        }
+
+        sm_take(selectedTiling,SM_FEATURE_CHANGED);
+        forceRedraw();
+        emit sig_refreshMenu();
+    }
+    break;
+
     case  KBD_MODE_XFORM_PLACED_FEATURE:
-        placedFeatureDeltaX(amount);
+        placedFeatureDeltaScale(1.0 + delta);
         break;
 
     case  KBD_MODE_XFORM_UNIQUE_FEATURE:
-        // do nothing
-        break;
-
-    case  KBD_MODE_XFORM_TILING:
-        tilingDeltaX(amount);
+        uniqueFeatureDeltaScale(delta);
         break;
 
     case KBD_MODE_XFORM_VIEW:
-        Layer::slot_moveX(amount);
+        xf_canvas.setScale(xf_canvas.getScale() + delta);
+        forceLayerRecalc();
+        break;
+
+    case KBD_MODE_XFORM_SELECTED:
+        if (isSelected())
+        {
+            xf_canvas.setScale(xf_canvas.getScale() + delta);
+            forceLayerRecalc();
+        }
         break;
 
     case KBD_MODE_XFORM_BKGD:
@@ -1704,58 +1776,51 @@ void TilingMaker::slot_moveX(int amount)
     }
 }
 
-void TilingMaker::slot_moveY(int amount)
+void TilingMaker::slot_wheel_rotate(qreal delta)
 {
-    qDebug() << "TilingMaker::slot_moveY" << amount;
     switch (config->kbdMode)
     {
-    case KBD_MODE_XFORM_PLACED_FEATURE:
-        placedFeatureDeltaY(amount);
-        break;
-
-    case KBD_MODE_XFORM_UNIQUE_FEATURE:
-        // do nothing
-        break;
-
     case KBD_MODE_XFORM_TILING:
-        tilingDeltaY(amount);
-        break;
+    {
+        QTransform tr;
+        tr.rotate(delta);
+        Xform xf(tr);
+        xf.setCenter(getCenterModelUnits());
+        QTransform tr2 = xf.toQTransform(QTransform());
+        qDebug() << Transform::toInfoString(tr);
+        qDebug() << Transform::toInfoString(tr2);
+        for (auto pfp : qAsConst(allPlacedFeatures))
+        {
+            QTransform t = pfp->getTransform();
+            t *= tr2;
+            pfp->setTransform(t);
+        }
 
-    case KBD_MODE_XFORM_VIEW:
-        Layer::slot_moveY(amount);
-        break;
-
-    case KBD_MODE_XFORM_BKGD:
-        break;
-
-    default:
-        qWarning() << "TilingMaker: Unexpected keyboard mode" << view->getKbdModeStr();
-        break;
+        sm_take(selectedTiling,SM_FEATURE_CHANGED);
+        forceRedraw();
+        emit sig_refreshMenu();
     }
-}
+    break;
 
-void TilingMaker::slot_rotate(int amount)
-{
-    qDebug() << "TilingMaker::slot_rotate" << amount;
-    switch (config->kbdMode)
-    {
     case KBD_MODE_XFORM_PLACED_FEATURE:
-        placedFeatureDeltaRotate(amount);
-        emit sig_refreshMenu();
+        placedFeatureDeltaRotate(0.5 * delta);
         break;
 
     case KBD_MODE_XFORM_UNIQUE_FEATURE:
-        uniqueFeatureDeltaRotate(amount);
-        emit sig_refreshMenu();
-        break;
-
-    case KBD_MODE_XFORM_TILING:
-        tilingDeltaRotate(amount);
-        emit sig_refreshMenu();
+        uniqueFeatureDeltaRotate(0.5 * delta);
         break;
 
     case KBD_MODE_XFORM_VIEW:
-        Layer::slot_rotate(amount);
+        xf_canvas.setRotateDegrees(xf_canvas.getRotateDegrees() + delta);
+        forceLayerRecalc();
+        break;
+
+    case KBD_MODE_XFORM_SELECTED:
+        if (isSelected())
+        {
+            xf_canvas.setRotateDegrees(xf_canvas.getRotateDegrees() + delta);
+            forceLayerRecalc();
+        }
         break;
 
     case KBD_MODE_XFORM_BKGD:
@@ -1788,7 +1853,16 @@ void TilingMaker::slot_scale(int amount)
         break;
 
     case KBD_MODE_XFORM_VIEW:
-        Layer::slot_scale(amount);
+        xf_canvas.setScale(xf_canvas.getScale() + static_cast<qreal>(amount)/100.0);
+        forceLayerRecalc();
+        break;
+
+    case KBD_MODE_XFORM_SELECTED:
+        if (isSelected())
+        {
+            xf_canvas.setScale(xf_canvas.getScale() + static_cast<qreal>(amount)/100.0);
+            forceLayerRecalc();
+        }
         break;
 
     case KBD_MODE_XFORM_BKGD:
@@ -1800,42 +1874,37 @@ void TilingMaker::slot_scale(int amount)
     }
 }
 
-void TilingMaker::slot_wheel_rotate(qreal delta)
+void TilingMaker::slot_rotate(int amount)
 {
+    qDebug() << "TilingMaker::slot_rotate" << amount;
     switch (config->kbdMode)
     {
-    case KBD_MODE_XFORM_TILING:
-    {
-        QTransform tr;
-        tr.rotate(delta);
-        Xform xf(tr);
-        xf.setCenter(getCenterModel());
-        QTransform tr2 = xf.toQTransform(QTransform());
-        qDebug() << Transform::toInfoString(tr);
-        qDebug() << Transform::toInfoString(tr2);
-        for (auto pfp : qAsConst(allPlacedFeatures))
-        {
-            QTransform t = pfp->getTransform();
-            t *= tr2;
-            pfp->setTransform(t);
-        }
-
-        sm_take(selectedTiling,SM_FEATURE_CHANGED);
-        forceRedraw();
-        emit sig_refreshMenu();
-    }
-        break;
-
     case KBD_MODE_XFORM_PLACED_FEATURE:
-        placedFeatureDeltaRotate(0.5 * delta);
+        placedFeatureDeltaRotate(amount);
+        emit sig_refreshMenu();
         break;
 
     case KBD_MODE_XFORM_UNIQUE_FEATURE:
-        uniqueFeatureDeltaRotate(0.5 * delta);
+        uniqueFeatureDeltaRotate(amount);
+        emit sig_refreshMenu();
+        break;
+
+    case KBD_MODE_XFORM_TILING:
+        tilingDeltaRotate(amount);
+        emit sig_refreshMenu();
         break;
 
     case KBD_MODE_XFORM_VIEW:
-        Layer::slot_wheel_rotate(delta);
+        xf_canvas.setRotateRadians(xf_canvas.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
+        forceLayerRecalc();
+        break;
+
+    case KBD_MODE_XFORM_SELECTED:
+        if (isSelected())
+        {
+            xf_canvas.setRotateRadians(xf_canvas.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
+            forceLayerRecalc();
+        }
         break;
 
     case KBD_MODE_XFORM_BKGD:
@@ -1847,38 +1916,35 @@ void TilingMaker::slot_wheel_rotate(qreal delta)
     }
 }
 
-void TilingMaker::slot_wheel_scale(qreal delta)
+
+void TilingMaker::slot_moveX(int amount)
 {
+    qDebug() << "TilingMaker::slot_moveX" << amount;
     switch (config->kbdMode)
     {
-    case KBD_MODE_XFORM_TILING:
-    {
-        qreal sc = 1.0 + delta;
-        QTransform ts;
-        ts.scale(sc,sc);
-        for (auto pfp : qAsConst(allPlacedFeatures))
-        {
-            QTransform t = pfp->getTransform();
-            t *= ts;
-            pfp->setTransform(t);
-        }
-
-        sm_take(selectedTiling,SM_FEATURE_CHANGED);
-        forceRedraw();
-        emit sig_refreshMenu();
-    }
-        break;
-
     case  KBD_MODE_XFORM_PLACED_FEATURE:
-        placedFeatureDeltaScale(1.0 + delta);
+        placedFeatureDeltaX(amount);
         break;
 
     case  KBD_MODE_XFORM_UNIQUE_FEATURE:
-        uniqueFeatureDeltaScale(delta);
+        // do nothing
+        break;
+
+    case  KBD_MODE_XFORM_TILING:
+        tilingDeltaX(amount);
         break;
 
     case KBD_MODE_XFORM_VIEW:
-        Layer::slot_wheel_scale(delta);
+        xf_canvas.setTranslateX(xf_canvas.getTranslateX() + amount);
+        forceLayerRecalc();
+        break;
+
+    case KBD_MODE_XFORM_SELECTED:
+        if (isSelected())
+        {
+            xf_canvas.setTranslateX(xf_canvas.getTranslateX() + amount);
+            forceLayerRecalc();
+        }
         break;
 
     case KBD_MODE_XFORM_BKGD:
@@ -1890,54 +1956,34 @@ void TilingMaker::slot_wheel_scale(qreal delta)
     }
 }
 
-void TilingMaker::slot_mouseTranslate(QPointF spt)
+void TilingMaker::slot_moveY(int amount)
 {
+    qDebug() << "TilingMaker::slot_moveY" << amount;
     switch (config->kbdMode)
     {
-    case KBD_MODE_XFORM_TILING:
-    {
-        QTransform T = getFrameTransform();
-        qreal scale = Transform::scalex(T);
-        QPointF mpt = spt/scale;
-        QTransform tt = QTransform::fromTranslate(mpt.x(),mpt.y());
-        for (auto pfp : qAsConst(allPlacedFeatures))
-        {
-            QTransform t = pfp->getTransform();
-            t *= tt;
-            pfp->setTransform(t);
-        }
-
-        sm_take(selectedTiling,SM_FEATURE_CHANGED);
-        forceRedraw();
-        emit sig_refreshMenu();
-    }
-        break;
-
     case KBD_MODE_XFORM_PLACED_FEATURE:
-    {
-        if (!currentPlacedFeature)
-            return;
-
-        QTransform T = getFrameTransform();
-        qreal scale = Transform::scalex(T);
-        QPointF mpt = spt/scale;
-        QTransform tt = QTransform::fromTranslate(mpt.x(),mpt.y());
-
-        QTransform t = currentPlacedFeature->getTransform();
-        t *= tt;
-        currentPlacedFeature->setTransform(t);
-
-        forceRedraw();
-        emit sig_refreshMenu();
-    }
+        placedFeatureDeltaY(amount);
         break;
 
     case KBD_MODE_XFORM_UNIQUE_FEATURE:
         // do nothing
         break;
 
+    case KBD_MODE_XFORM_TILING:
+        tilingDeltaY(amount);
+        break;
+
     case KBD_MODE_XFORM_VIEW:
-        Layer::slot_mouseTranslate(spt);
+        xf_canvas.setTranslateY(xf_canvas.getTranslateY() + amount);
+        forceLayerRecalc();
+        break;
+
+    case KBD_MODE_XFORM_SELECTED:
+        if (isSelected())
+        {
+            xf_canvas.setTranslateY(xf_canvas.getTranslateY() + amount);
+            forceLayerRecalc();
+        }
         break;
 
     case KBD_MODE_XFORM_BKGD:
@@ -2003,7 +2049,6 @@ bool TilingMaker::procKeyEvent(QKeyEvent * k)
         case Qt::Key_F6: setTilingMakerMouseMode(TM_DELETE_MODE); break;
         case Qt::Key_F7: setTilingMakerMouseMode(TM_INCLUSION_MODE); break;
         case Qt::Key_F9: setTilingMakerMouseMode(TM_MEASURE_MODE); break;
-        case Qt::Key_F10: setTilingMakerMouseMode(TM_BKGD_SKEW_MODE); break;
         case Qt::Key_F11: setTilingMakerMouseMode(TM_EDIT_FEATURE_MODE); break;
         case Qt::Key_F12: setTilingMakerMouseMode(TM_EDGE_CURVE_MODE); break;
 

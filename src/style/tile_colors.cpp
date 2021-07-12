@@ -24,6 +24,11 @@
 
 #include "style/tile_colors.h"
 #include "tile/placed_feature.h"
+#include "tapp/prototype.h"
+#include "tile/tiling.h"
+#include "base/colorset.h"
+#include "tile/feature.h"
+#include "base/geo_graphics.h"
 
 TileColors::TileColors(PrototypePtr proto) : Style(proto)
 {

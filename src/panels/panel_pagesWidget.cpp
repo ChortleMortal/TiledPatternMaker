@@ -23,7 +23,7 @@
  */
 
 #include "panels/panel_pagesWidget.h"
-
+#include "panels/panel_page.h"
 
 PanelPagesWidget::PanelPagesWidget()
 {

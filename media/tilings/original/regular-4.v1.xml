@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <Tiling>
-	<Name>4^4.v1</Name>
+	<Name>regular-4.v1</Name>
 	<Fill>-4,4,-5,5</Fill>
 	<T1>4,0</T1>
 	<T2>2,2</T2>

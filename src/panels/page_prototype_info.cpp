@@ -36,8 +36,16 @@
 #include "viewers/viewcontrol.h"
 #include "geometry/transform.h"
 #include "viewers/view.h"
+#include "tapp/prototype.h"
+#include "tapp/design_element.h"
+#include "tile/tiling.h"
+#include "tile/feature.h"
+#include "tapp/figure.h"
 
 using std::string;
+
+typedef std::weak_ptr<DesignElement>   WeakDesignElementPtr;
+typedef std::weak_ptr<Prototype>       WeakPrototypePtr;
 
 Q_DECLARE_METATYPE(WeakDesignElementPtr);
 Q_DECLARE_METATYPE(WeakPrototypePtr);

@@ -26,8 +26,8 @@
 #define DLG_COLOR_SET_H
 
 #include <QtWidgets>
-#include "tile/feature.h"
-#include "makers/decoration_maker/style_editors.h"
+
+class ColorSet;
 
 class DlgColorSet : public QDialog
 {

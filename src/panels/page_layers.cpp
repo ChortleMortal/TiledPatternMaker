@@ -25,14 +25,13 @@
 #include "panels/page_layers.h"
 #include "panels/layout_sliderset.h"
 #include "viewers/view.h"
-#include "designs/patterns.h"
-#include "base/utilities.h"
-#include "viewers/view.h"
 #include "geometry/transform.h"
-
+#include "style/style.h"
+#include "panels/panel_misc.h"
+#include "settings/configuration.h"
 using std::string;
 
-Q_DECLARE_METATYPE(WeakLayerPtr)
+//Q_DECLARE_METATYPE(WeakLayerPtr)
 
 page_layers:: page_layers(ControlPanel * cpanel)  : panel_page(cpanel,"Layer Info")
 {
@@ -45,15 +44,17 @@ page_layers:: page_layers(ControlPanel * cpanel)  : panel_page(cpanel,"Layer Inf
 
     QStringList qslV;
     qslV << "Layer" << "Visible" << "Z-level" << ""
-         << "View Scale"  << "View Rot"  << "View Left (X)"  << "View Top (Y)" << ""
-         << "Canvas Scale" << "Canvas Rot" << "Canvas Left (X)" << "Canvas Top (Y)" << "Canvas CentreX" << "Canvas CentreY"
-         << "Layer Centre" << "Layer Scale" << "Layer Rot" << "Layer X" << "Layer Y" << "Sub-layers";
+         << "Frame Scale"  << "Frame Rot"  << "Frame Left (X)"  << "Frame Top (Y)" << ""
+         << "Canvas Scale" << "Canvas Rot" << "Canvas Left (X)" << "Canvas Top (Y)" << "Canvas CenterX" << "Canvas CenterY"
+         << "Layer Center" << "Layer Scale" << "Layer Rot" << "Layer X" << "Layer Y" << "Sub-layers";
 
     layerTable->setVerticalHeaderLabels(qslV);
     layerTable->horizontalHeader()->setVisible(false);
     layerTable->setMaximumWidth(880);
     layerTable->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     layerTable->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+    connect(layerTable, &QTableWidget::itemSelectionChanged, this, &page_layers::slot_selectLayer);
 
     connect(view, &View::sig_deltaScale,    this, &page_layers::refreshCanvas);
     connect(view, &View::sig_deltaRotate,   this, &page_layers::refreshCanvas);
@@ -73,6 +74,7 @@ void page_layers::onEnter()
 void page_layers::populateLayers()
 {
     layerTable->clearContents();
+    config->selectedLayer.reset();
 
     QVector<LayerPtr> layers = view->getActiveLayers();
     layerTable->setColumnCount(layers.size());
@@ -254,7 +256,16 @@ void  page_layers::refreshPage()
     {
         // design number
         QTableWidgetItem * twi = layerTable->item(LAYER_NAME,col);
-        twi->setText(QString("%1 %2").arg(layer->getName()).arg(Utils::addr(layer.get())));
+        QString str = layer->getName();
+        if (layer->getName() == "Style")
+        {
+            StylePtr style = std::dynamic_pointer_cast<Style>(layer);
+            if (style)
+            {
+                str = QString("Style: %1").arg(style->getStyleDesc());
+            }
+        }
+        twi->setText(str);
 
         // layer number and visibility
         QWidget * w = layerTable->cellWidget(LAYER_VISIBILITY,col);
@@ -293,7 +304,7 @@ void  page_layers::refreshPage()
         t = layer->getLayerTransform();
 
         twi = layerTable->item(LAYER_CENTER,col);
-        QPointF center = layer->getCenterScreen();
+        QPointF center = layer->getCenterScreenUnits();
         twi->setText(QString("%1 : %2").arg(QString::number(center.x(),'f',4)).arg(QString::number(center.y(),'f',4)));
 
         item = layerTable->item(LAYER_SCALE,col);
@@ -509,4 +520,21 @@ LayerPtr page_layers::getLayer(int col)
 
     layer = views[col];
     return layer;
+}
+
+void page_layers::slot_selectLayer()
+{
+    QList<QTableWidgetItem *> selected = layerTable->selectedItems();
+    if (selected.size())
+    {
+        int column = selected.first()->column();
+        qDebug() << selected.size() << "selected layer" << column;
+        LayerPtr layer = getLayer(column);
+        config->selectedLayer = layer;
+    }
+    else
+    {
+        qDebug() << "no selection";
+        config->selectedLayer.reset();
+    }
 }

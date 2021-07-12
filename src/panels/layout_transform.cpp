@@ -57,7 +57,7 @@ void LayoutTransform::setTransform(QTransform T)
     blockSignals(false);
 }
 
-void LayoutTransform::setTransform(Xform & xf)
+void LayoutTransform::setTransform(const Xform & xf)
 {
     blockSignals(true);
     scale->setValue(xf.getScale());

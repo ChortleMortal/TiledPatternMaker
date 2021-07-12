@@ -26,9 +26,15 @@
 #define PAGE_MODEL_SETTINGS_H
 
 #include "panels/panel_page.h"
-#include "panels/panel_misc.h"
-#include "panels/layout_transform.h"
-#include "base/model_settings.h"
+
+class AQSpinBox;
+class SpinSet;
+class DoubleSpinSet;
+
+class ClickableLabel;
+class AQTableWidget;
+
+typedef std::shared_ptr<class ModelSettings> ModelSettingsPtr;
 
 class page_modelSettings : public panel_page
 {
@@ -52,42 +58,20 @@ public:
     void onEnter() override;
     void onExit() override {}
 
-public slots:
-    void slot_viewUpated();
-
 private slots:
-    void display();
-
     void slot_set_repsDesign(int val);
     void slot_set_repsTiling(int val);
 
     void designSizeChanged(int);
-    void frameSizeChanged(int);
+    void cropSizeChanged(int);
     void viewSizeChanged(int);
 
     void backgroundColorDesignPick();
     void backgroundColorDesignChanged(const QString & str);
 
-    void slot_setBkgdMosaicXform();
-    void slot_setBkgdTilingXform();
-    void slot_setBkgdMosaic();
-    void slot_setBkgdTiling();
-
-    void slot_loadMosaicBackground();
-    void slot_loadTilingBackground();
-
     void slot_tilingSizeChanged(int val);
-
-    void slot_adjustBackground();
-    void slot_saveAdjustedBackground();
-#if 0
-    void slot_bkgd_moveX(int amount);
-    void slot_bkgd_moveY(int amount);
-    void slot_bkgd_rotate(int amount);
-    void slot_bkgd_scale(int amount);
-#endif
-    void slot_showBkgdsChanged(bool checked);
-    void slot_showFsetChanged(bool checked);
+    void slot_showFrameInfoChanged(bool checked);
+    void slot_boundsChanged();
 
 protected:
     QGroupBox * createTilingSettings();
@@ -95,12 +79,9 @@ protected:
     QGroupBox * createFrameSettings();
     QGroupBox * createViewStatus();
 
-    QGroupBox * createBackgroundImageGroup(eSettingsGroup group, QString title);
     QGridLayout * createFillDataRow(eSettingsGroup group);
 
     ModelSettingsPtr getMosaicOrDesignSettings();
-
-    void displayBkgdImgSettings(BkgdImgPtr bi, eSettingsGroup group);
 
 private:
     void removeChildren(QTreeWidgetItem * parent);
@@ -115,7 +96,12 @@ private:
 
     SpinSet         * sizeW2;
     SpinSet         * sizeH2;
-    QLabel          * frameXform;
+
+    DoubleSpinSet   * ds_left;
+    DoubleSpinSet   * ds_top;
+    DoubleSpinSet   * ds_width;
+
+    QLabel          * l_xform;
 
     QLineEdit       * bkColorEdit[NUM_SETTINGS];
     ClickableLabel  * bkgdColorPatch[NUM_SETTINGS];
@@ -126,13 +112,10 @@ private:
     QPushButton     * bkgdImageBtn[NUM_SETTINGS];
     QLineEdit       * bkgdImage[NUM_SETTINGS];
 
-    LayoutTransform * bkgdLayout[NUM_SETTINGS];
-
     QCheckBox       * chk_adjustBkgd[NUM_SETTINGS];
 
     QGroupBox       * viewBox;
-    QGroupBox       * mosaicBkgdBox;
-    QGroupBox       * tilingBkgdBox;
+    QGroupBox       * frameBox;
 
     AQTableWidget   * frameTable;
 };

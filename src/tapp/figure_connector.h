@@ -25,8 +25,13 @@
 #ifndef FIGURECONNECTOR_H
 #define FIGURECONNECTOR_H
 
-#include "base/shared.h"
-#include <QtCore>
+#include <memory>
+#include <QString>
+
+class RadialFigure;
+
+typedef std::shared_ptr<class Map>        MapPtr;
+typedef std::shared_ptr<class Vertex>     VertexPtr;
 
 class FigureConnector
 {

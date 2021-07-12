@@ -25,9 +25,11 @@
 #ifndef PAGE_LOADERS_H
 #define PAGE_LOADERS_H
 
-#include "base/configuration.h"
 #include "panels/panel_page.h"
+//#include "settings/configuration.h"
 #include "panels/versioned_list_widget.h"
+#include "enums/estatemachineevent.h"
+#include "enums/edesign.h"
 
 
 class page_loaders : public panel_page
@@ -72,6 +74,7 @@ private slots:
     void    slot_itemEnteredToolTip(QListWidgetItem * item);
 
     void    loadShapes();
+    void    loadTiling();
 
     void    loadXML();
     void    openXML();
@@ -101,7 +104,6 @@ private slots:
     void    autoLoadDesignsClicked(bool enb);
 
 protected:
-    void    loadTiling();
     void    setupUI();
     void    refreshPanel();
     void    makeConnections();

@@ -26,6 +26,8 @@
 #include "viewers/view.h"
 #include "designs/design.h"
 #include "designs/patterns.h"
+#include "settings/model_settings.h"
+#include "settings/configuration.h"
 
 #define Enum2Str(e)  {QString(#e)}
 
@@ -72,7 +74,7 @@ void Design::init()
 
     destoryPatterns();
 
-    settings = make_shared<ModelSettings>();
+    settings = std::make_shared<ModelSettings>();
 
     //qDebug().noquote() << "Desgin::init" << sDesign2[_design];
 }

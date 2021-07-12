@@ -2,8 +2,8 @@
 #define DLG_LINE_EDIT_H
 
 #include <QtWidgets>
-#include "base/shared.h"
-#include "geometry/edgepoly.h"
+
+class EdgePoly;
 
 class DlgLineEdit : public QLineEdit
 {

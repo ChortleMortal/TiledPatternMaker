@@ -23,6 +23,9 @@
  */
 
 #include "panels/dlg_magnitude.h"
+#include "panels/layout_sliderset.h"
+#include "geometry/edge.h"
+#include "makers/tiling_maker/feature_selection.h"
 
 DlgMagnitude::DlgMagnitude(TilingSelectorPtr sel, QWidget * parent) :  QDialog(parent)
 {

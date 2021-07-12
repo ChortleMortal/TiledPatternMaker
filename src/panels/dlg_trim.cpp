@@ -24,6 +24,7 @@
 
 #include "panels/dlg_trim.h"
 #include "base/utilities.h"
+#include "panels/layout_sliderset.h"
 
 DlgTrim::DlgTrim(QWidget * parent) :  QDialog(parent)
 {

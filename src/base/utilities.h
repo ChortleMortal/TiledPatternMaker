@@ -26,9 +26,10 @@
 #define UTILITIES_H
 
 #include <QtCore>
-#include "base/layer.h"
 #include "geometry/circle.h"
 
+class Layer;
+class EdgePoly;
 class QGraphicsItem;
 
 class Utils

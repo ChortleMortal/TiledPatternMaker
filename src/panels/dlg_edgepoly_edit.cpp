@@ -1,11 +1,10 @@
 #include "panels/dlg_edgepoly_edit.h"
-#include "panels/panel_page.h"
 #include "panels/layout_sliderset.h"
 #include "panels/dlg_line_edit.h"
-#include "tile/feature.h"
-#include "base/utilities.h"
 #include "viewers/view.h"
 #include "makers/tiling_maker/tiling_maker.h"
+#include "geometry/edge.h"
+#include "geometry/vertex.h"
 
 /////////////////////////////////////////////////////////////////
 ///

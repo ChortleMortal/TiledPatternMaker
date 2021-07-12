@@ -2,7 +2,7 @@
 #define CROP_H
 
 #include <QRectF>
-#include "base/configuration.h"
+#include "settings/configuration.h"
 
 enum eCropState
 {
@@ -49,8 +49,5 @@ private:
     eAspectRatio aspect;
     bool         aspectVertical;
 };
-
-typedef shared_ptr<Crop> CropPtr;
-typedef weak_ptr<Crop>   WeakCropPtr;
 
 #endif // CROP_H

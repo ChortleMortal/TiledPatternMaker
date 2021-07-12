@@ -2,7 +2,13 @@
 #include "makers/motif_maker/feature_launcher.h"
 #include "makers/motif_maker/master_figure_editor.h"
 #include "makers/motif_maker/motif_maker.h"
+#include "makers/motif_maker/feature_button.h"
 #include "viewers/view.h"
+#include "tapp/design_element.h"
+#include "panels/page_motif_maker.h"
+#include "tapp/figure.h"
+
+using std::make_shared;
 
 MotifDisplayWidget::MotifDisplayWidget(page_motif_maker * menu)
 {

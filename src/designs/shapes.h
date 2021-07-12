@@ -26,10 +26,8 @@
 #define SHAPES_H
 
 #include <QtWidgets>
-#include "base/layer.h"
 
 #define DEGREES_360     (360 * 16)
-
 
 enum eForm
 {

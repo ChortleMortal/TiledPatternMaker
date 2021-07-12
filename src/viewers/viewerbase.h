@@ -2,9 +2,11 @@
 #define VIEWERBASE_H
 
 #include <QtCore>
-#include "base/shared.h"
 
 class GeoGraphics;
+
+typedef std::shared_ptr<class Feature>          FeaturePtr;
+typedef std::shared_ptr<class Figure>           FigurePtr;
 
 class ViewerBase
 {

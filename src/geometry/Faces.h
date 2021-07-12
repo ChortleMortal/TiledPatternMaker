@@ -25,13 +25,17 @@
 #ifndef FACES_H
 #define FACES_H
 
-#include "geometry/vertex.h"
-#include "geometry/map.h"
-#include "base/shared.h"
-#include "base/colorset.h"
 #include <QtCore>
+#include "base/shared.h"
+#include "geometry/edgepoly.h"
+#include "base/colorset.h"
 
-class Face;
+typedef std::shared_ptr<class Face>         FacePtr;
+typedef std::shared_ptr<class FaceSet>      FaceSetPtr;
+typedef std::weak_ptr<class Edge>           WeakEdgePtr;
+typedef std::shared_ptr<class DCEL>         DCELPtr;
+
+
 class FaceSet;
 class FaceGroup;
 
@@ -82,7 +86,7 @@ DAC_DEPRECATED  FaceSet decompose();
     void        dump();
 
     bool        outer;
-    weak_ptr<Edge> incident_edge;
+    WeakEdgePtr incident_edge;
     eFaceColor  color;
     eFaceState  state;
     qreal       area;

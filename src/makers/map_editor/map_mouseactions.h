@@ -2,9 +2,11 @@
 #define MAP_MOUSEACTIONS_H
 
 #include <QtWidgets>
-#include "base/shared.h"
-#include "base/configuration.h"
 #include "makers/map_editor/map_selection.h"
+#include "geometry/circle.h"
+
+typedef std::shared_ptr<class Vertex>           VertexPtr;
+typedef std::shared_ptr<class Edge>             EdgePtr;
 
 enum eMapMouseMode
 {
@@ -55,7 +57,7 @@ protected:
     MapEditor * me;
 };
 
-typedef shared_ptr<MapMouseAction> MapMouseActionPtr;
+typedef std::shared_ptr<MapMouseAction> MapMouseActionPtr;
 
 class MoveVertex : public MapMouseAction
 {

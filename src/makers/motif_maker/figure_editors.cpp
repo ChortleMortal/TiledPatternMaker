@@ -32,8 +32,12 @@
 #include "tapp/extended_rosette.h"
 #include "makers/motif_maker/feature_button.h"
 #include "panels/page_motif_maker.h"
+#include "panels/layout_sliderset.h"
 
 using std::dynamic_pointer_cast;
+using std::make_shared;
+
+typedef std::shared_ptr<RadialFigure>    RadialPtr;
 
 // An abstract class for containing the controls related to the editing
 // of one kind of figure.  A complex hierarchy of FigureEditors gets built

@@ -44,21 +44,22 @@
 
 #include <QtCore>
 #include <QPainter>
-#include "base/shared.h"
 
 class EdgePoly;
+
+typedef std::shared_ptr<class Edge> EdgePtr;
 
 class GeoGraphics
 {
 public:
-    GeoGraphics(QPainter * painter, QTransform  & transform);
+    GeoGraphics(QPainter * painter, QTransform  transform);
+    void set(QTransform t) {transform = t;}
 
     // Drawing functions.
     void drawEdge(EdgePtr e, QPen pen);                         // no brush
     void drawThickEdge(EdgePtr e, qreal width,  QPen pen);      // no brush
 
-    void drawLine( qreal x1, qreal y1, qreal x2, qreal y2, QPen pen);
-    void drawLine( QPointF v1, QPointF v2, QPen pen);
+    void drawLine(QPointF p1, QPointF p2, QPen pen);
     void drawLine( QLineF line, QPen pen);
     void drawLineDirect( QPointF v1, QPointF v2, QPen pen);
 
@@ -66,7 +67,6 @@ public:
     void drawPie(QPointF V1, QPointF V2, QPointF ArcCenter, QPen pen, QBrush brush, bool Convex);
 
     // Draw a thick like as a rectangle.
-    void drawThickLine(qreal x1, qreal y1, qreal x2, qreal y2, qreal width, QPen pen);
     void drawThickLine(QPointF v1, QPointF v2, qreal width, QPen pen);
     void drawThickLine(QLineF line, qreal width, QPen pen);
 
@@ -90,16 +90,19 @@ public:
     void   save()    { painter->save(); }
     void   restore() { painter->restore(); }
 
+    QPainter *  getPainter() { return painter; }
+
     // Transform functions.
     QTransform  getTransform();
     void        push(QTransform T );
     void        pushAndCompose(QTransform T );
     QTransform  pop();
 
-private:
+protected:
 
-    QPainter        * painter;
-    QTransform      &  transform;   // reference to layer transform which can change
+private:
+    QPainter         * painter;
+    QTransform         transform;
     QStack<QTransform> pushed;
 };
 #endif

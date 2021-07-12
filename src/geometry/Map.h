@@ -44,13 +44,16 @@
 #define MAP_H
 
 #include <QtCore>
-#include "base/shared.h"
+
 #include "base/misc.h"
-#include "designs/shapes.h"
-#include "geometry/edge.h"
 #include "geometry/edgepoly.h"
-#include "geometry/vertex.h"
-#include "geometry/neighbours.h"
+#include "designs/shapes.h"
+
+typedef std::shared_ptr<class Map>          MapPtr;
+typedef std::shared_ptr<const class Map>    constMapPtr;
+typedef std::shared_ptr<class ShapeFactory> ShapeFPtr;
+typedef std::shared_ptr<class Neighbours>   NeighboursPtr;
+typedef std::shared_ptr<class DCEL>         DCELPtr;
 
 struct sText
 {
@@ -160,6 +163,8 @@ public:
     bool        contains (VertexPtr v) const { return vertices.contains(v); }
     bool        contains (EdgePtr e)  const  { return edges.contains(e); }
     bool        hasIntersectingEdges() const;
+
+    void        draw(QPainter * painter);
 
     //debug
     bool        verify(bool force = false);

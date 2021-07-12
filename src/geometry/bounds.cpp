@@ -37,10 +37,3 @@ Bounds  Bounds::operator+(const Bounds & other)
     b.width += other.width;
     return b;
 }
-
-void Bounds::reset()
-{
-    left  = 0.0;
-    top   = 0.0;
-    width = 0.0;
-}

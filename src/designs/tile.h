@@ -29,21 +29,10 @@
 #include <QtWidgets>
 #include "base/layer.h"
 
-
-#define TileBlue    "#39426d"
-#define TileGreen   "#34554a"
-#define TileBlack   "#10100e"
-#define TileWhite   "#c2bcb0"
-#define TileBrown   "#382310"
-#define TileBrown2  "#632E1C"
-#define TileGold    "#ffe05b"
-#define AlhambraBrown "#a35807"
-#define AlhambraBlue  "#1840b2"
-#define AlhambraGreen "#234b30"
-#define AlhambraGold  "#c59c0c"
-
 class Tile : public Layer
 {
+    Q_OBJECT
+
 public:
     Tile(int Row = 0, int Col = 0);
     ~Tile();
@@ -53,13 +42,28 @@ public:
     int getRow() { return row;}
     int getCol() { return col;}
 
-    LayerPtr addLayer(int zLevel = 0);
     void     addLayer(LayerPtr layer, int zlevel = 0);
 
     virtual bool doStep(int index);
     virtual void reset() {}
 
     static int refs;
+
+public slots:
+    virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
+    virtual void slot_mouseDragged(QPointF spt)       override;
+    virtual void slot_mouseTranslate(QPointF pt)      override;
+    virtual void slot_mouseMoved(QPointF spt)         override;
+    virtual void slot_mouseReleased(QPointF spt)      override;
+    virtual void slot_mouseDoublePressed(QPointF spt) override;
+
+    virtual void slot_wheel_scale(qreal delta)  override;
+    virtual void slot_wheel_rotate(qreal delta) override;
+
+    virtual void slot_scale(int amount)  override;
+    virtual void slot_rotate(int amount) override;
+    virtual void slot_moveX(int amount)  override;
+    virtual void slot_moveY(int amount)  override;
 
 protected:
     qreal getSLinearPos(int step, int duration);

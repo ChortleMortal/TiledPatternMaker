@@ -49,7 +49,8 @@
 
 #include <QtCore>
 #include <QPainter>
-#include "base/geo_graphics.h"
+
+class GeoGraphics;
 
 class FillRegion
 {
@@ -61,10 +62,10 @@ public:
     virtual void receive(class GeoGraphics * gg, int h, int v ) = 0;
 
 protected:
-    class Configuration * config;
     class ViewControl   * vcontrol;
 
 private:
+    class Configuration * config;
 
 };
 #endif

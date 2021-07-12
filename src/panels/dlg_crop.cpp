@@ -1,6 +1,10 @@
 #include "panels/dlg_crop.h"
-
 #include <QtWidgets>
+#include "panels/layout_sliderset.h"
+#include "makers/map_editor/map_editor.h"
+#include "geometry/crop.h"
+
+typedef std::shared_ptr<class Crop>             CropPtr;
 
 DlgCrop::DlgCrop(MapEditorPtr me, QWidget *parent) : QDialog(parent)
 {

@@ -1,9 +1,16 @@
 #ifndef DECORATIONMAKER_H
 #define DECORATIONMAKER_H
 
-#include "base/shared.h"
-#include "base/configuration.h"
-#include "style/style.h"
+#include <memory>
+#include "enums/estyletype.h"
+#include "enums/estatemachineevent.h"
+
+typedef std::shared_ptr<class TilingMaker>      TilingMakerPtr;
+typedef std::shared_ptr<class Mosaic>           MosaicPtr;
+typedef std::shared_ptr<class Prototype>        PrototypePtr;
+typedef std::shared_ptr<class Style>            StylePtr;
+typedef std::shared_ptr<class ModelSettings>    ModelSettingsPtr;
+
 
 class DecorationMaker
 {

@@ -41,19 +41,18 @@ public:
     ~Thick() override;
 
     virtual eStyleType getStyleType() const  override { return STYLE_THICK; }
-    QString getStyleDesc() const override {return("Thick Lines");}
+    virtual QString getStyleDesc() const override {return("Thick Lines");}
 
     void  setLineWidth(qreal width );
     qreal getLineWidth() { return width; }
 
     void  setOutlineWidth(qreal width );
 
-
     bool getDrawOutline() {return draw_outline;}
     void setDrawOutline(bool draw_outline) { this->draw_outline = draw_outline; }
 
-    void resetStyleRepresentation() override;
-    void createStyleRepresentation() override;
+    virtual void resetStyleRepresentation() override;
+    virtual void createStyleRepresentation() override;
     void draw(GeoGraphics *gg) override;
 
 protected:

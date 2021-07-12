@@ -26,8 +26,8 @@
 #define TILE_COLOR_H
 
 #include <QColor>
-
 #include "style/style.h"
+#include "geometry/edgepoly.h"
 
 struct bkgdEPolyColor
 {

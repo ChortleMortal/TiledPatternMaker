@@ -26,8 +26,6 @@
 #define DLG_TRIM_H
 
 #include <QtWidgets>
-#include "panels/layout_sliderset.h"
-
 
 class DlgTrim : public QDialog
 {
@@ -46,8 +44,8 @@ private slots:
     void slot_apply();
 
 private:
-    DoubleSpinSet * trimmerX;
-    DoubleSpinSet * trimmerY;
+    class DoubleSpinSet * trimmerX;
+    class DoubleSpinSet * trimmerY;
 };
 
 #endif

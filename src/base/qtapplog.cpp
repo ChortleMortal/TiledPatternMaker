@@ -242,22 +242,47 @@ void qtAppLog::crashMessageOutput(QtMsgType type, const QMessageLogContext &cont
     msg2 += QString(" (%1:%2, %3)\n").arg(context.file).arg(context.line).arg(context.function);
 #else
     Q_UNUSED(context)
-    msg2 += "\n";
 #endif
-
-    if (_logToPanel)
-    {
-        ted->insertPlainText(msg2);
-    }
 
     if (_logToStderr)
     {
-        QByteArray localMsg = msg2.toLocal8Bit();
+        std::string s1;
+        std::string s2;
+        std::string str;
+        switch (type)
+        {
+        case QtDebugMsg:
+            str = msg2.toStdString();
+            break;
+        case QtInfoMsg:
+            s1 = "\033[32m";
+            s2 = "\033[0m";
+            str = s1 + msg2.toStdString() + s2;
+            break;
+        case QtWarningMsg:
+            s1 = "\033[35;1m";
+            s2 = "\033[0m";
+            str = s1 + msg2.toStdString() + s2;
+            break;
+        case QtCriticalMsg:
+            str = msg2.toStdString();
+            break;
+        case QtFatalMsg:
+            str = msg2.toStdString();
+            break;
+        }
+        str += '\n';
 #ifdef WIN32
-        OutputDebugStringA(localMsg.constData());
+        OutputDebugStringA(str.c_str());
 #else
-        fprintf(stderr,"%s",localMsg.constData());
+        fprintf(stderr,"%s\n",str.c_str());
 #endif
+    }
+
+    msg2 += "\n";
+    if (_logToPanel)
+    {
+        ted->insertPlainText(msg2);
     }
 
     if (_active && _logToDisk)

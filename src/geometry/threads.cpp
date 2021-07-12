@@ -1,5 +1,7 @@
 #include "geometry/threads.h"
 #include "geometry/map.h"
+#include "geometry/edge.h"
+#include "geometry/neighbours.h"
 
 extern void stackInfo();
 
@@ -25,7 +27,7 @@ void Threads::findThreads(MapPtr map)
     {
         if (edge->visited)
             continue;
-        ThreadPtr thread = make_shared<Thread>();
+        ThreadPtr thread = std::make_shared<Thread>();
         this->push_back(thread);
         findThread(thread,map,edge,edge->v2);
     }

@@ -13,8 +13,6 @@ public:
     Bounds & operator=(const Bounds & other);
     Bounds   operator+(const Bounds & other);
 
-    void reset();
-
     qreal left;
     qreal top;
     qreal width;

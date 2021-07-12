@@ -27,25 +27,10 @@
 
 #include <QtCore>
 #include <QtWidgets>
+#include <enums/ecyclemode.h>
 
 class Configuration;
 class Canvas;
-
-#define E2STR(x) #x
-
-enum eCycleMode
-{
-    CYCLE_NONE,
-    CYCLE_STYLES,
-    CYCLE_MIN = CYCLE_STYLES,
-    CYCLE_TILINGS,
-    CYCLE_ORIGINAL_PNGS,
-    CYCLE_SAVE_STYLE_BMPS,
-    CYCLE_SAVE_TILING_BMPS,
-    CYCLE_MAX = CYCLE_SAVE_TILING_BMPS,
-    CYCLE_COMPARE_ALL_IMAGES,
-    CYCLE_COMPARE_WORKLIST_IMAGES
-};
 
 Q_DECLARE_METATYPE(eCycleMode)
 

@@ -1,6 +1,6 @@
 #include "panels/panel_list_widget.h"
 #include "panels/dlg_name.h"
-#include "base/configuration.h"
+#include "settings/configuration.h"
 
 //////////////////////////////////////////////////////////
 ///  ListListWidget

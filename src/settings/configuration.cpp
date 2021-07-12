@@ -22,7 +22,7 @@
  *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "base/configuration.h"
+#include "settings/configuration.h"
 
 Configuration * Configuration::mpThis = nullptr;
 
@@ -62,6 +62,7 @@ Configuration::Configuration()
     rootImageDir        = s.value("rootImageDir",getImageRoot()).toString();
     image0              = s.value("image0","").toString();
     image1              = s.value("image1","").toString();
+    viewImage           = s.value("viewImage","").toString();
     compareDir0         = s.value("compareDir0","").toString();
     compareDir1         = s.value("compareDir1","").toString();
     panelName           = s.value("panelName","Control").toString();
@@ -98,7 +99,11 @@ Configuration::Configuration()
     tm_showOverlaps     = s.value("tm_showOverlaps",true).toBool();
     lockView            = s.value("lockView",false).toBool();
     splitScreen         = s.value("screenIsSplit",false).toBool();
+    compare_popup       = s.value("compare_popup",true).toBool();
+    view_popup          = s.value("view_popup",true).toBool();
     compare_transparent = s.value("compare_transparent",false).toBool();
+    view_transparent    = s.value("view_transparent",false).toBool();
+    filter_transparent  = s.value("filter_transparent",false).toBool();
     display_differences = s.value("compare_differences",true).toBool();
     use_workListForCompare  = s.value("use_workListForCompare",false).toBool();
     use_workListForGenerate = s.value("use_workListForGenerate",false).toBool();
@@ -116,6 +121,7 @@ Configuration::Configuration()
     mapEditorMode       = static_cast<eMapEditorMode>(s.value("mapEditorMode",MAPED_MODE_NONE).toUInt());
     repeatMode          = static_cast<eRepeatType>(s.value("repeat",REPEAT_DEFINED).toUInt());
 
+    showCenterDebug     = s.value("showCenterDebug",false).toBool();
     showGrid            = s.value("showGrid",false).toBool();
     gridUnits           = static_cast<eGridUnits>(s.value("gridUnits",GRID_UNITS_SCREEN).toUInt());
     gridType            = static_cast<eGridType>(s.value("gridType2",GRID_ORTHOGONAL).toUInt());
@@ -125,7 +131,10 @@ Configuration::Configuration()
     gridScreenWidth     = s.value("gridScreenWidth",3).toInt();
     gridScreenSpacing   = s.value("gridScreenSpacing",100).toInt();
     gridScreenCenter    = s.value("gridScreenCenter",false).toBool();
+    snapToGrid          = s.value("snapToGrid",true).toBool();
     gridAngle           = s.value("gridAngle",30.0).toDouble();
+
+    transparentColor    =  QString(s.value("transparentColor","black").toString());
 
     // ensures indices are in range
     if (viewerType > VIEW_MAX)          viewerType      = VIEW_MAX;
@@ -137,12 +146,11 @@ Configuration::Configuration()
     circleX         = false;
     hideCircles     = false;
     updatePanel     = true;
-    showCenterDebug = false;
     showCenterMouse = false;
     enableDetachedPages = true;
 
     figureViewBkgdColor = QColor(Qt::black);
-    kbdMode         = KBD_MODE_UNDEFINED;
+    kbdMode         = KBD_MODE_XFORM_VIEW;
     debugReplicate  = false;
     debugMapEnable  = false;
 
@@ -181,6 +189,7 @@ void Configuration::save()
     s.setValue("lastLoadedXML",lastLoadedXML);
     s.setValue("image0",image0);
     s.setValue("image1",image1);
+    s.setValue("viewImage",viewImage);
     s.setValue("compareDir0",compareDir0);
     s.setValue("compareDir1",compareDir1);
     s.setValue("viewerType",viewerType);
@@ -216,6 +225,11 @@ void Configuration::save()
     s.setValue("lockView",lockView);
     s.setValue("screenIsSplit",splitScreen);
     s.setValue("compare_transparent",compare_transparent);
+    s.setValue("compare_popup",compare_popup);
+    s.setValue("view_popup",view_popup);
+    s.setValue("compare_transparent",compare_transparent);
+    s.setValue("view_transparent",view_transparent);
+    s.setValue("filter_transparent",filter_transparent);
     s.setValue("compare_differences",display_differences);
     s.setValue("use_workListForCompare",use_workListForCompare);
     s.setValue("use_workListForGenerate",use_workListForGenerate);
@@ -234,6 +248,7 @@ void Configuration::save()
 
     s.setValue("workList",workList);
 
+    s.setValue("showCenterDebug",showCenterDebug);
     s.setValue("showGrid",showGrid);
     s.setValue("gridUnits",gridUnits);
     s.setValue("gridType2",gridType);
@@ -242,8 +257,11 @@ void Configuration::save()
     s.setValue("gridModelSpacing",gridModelSpacing);
     s.setValue("gridScreenWidth",gridScreenWidth);
     s.setValue("gridScreenCenter",gridScreenCenter);
+    s.setValue("snapToGrid",snapToGrid);
     s.setValue("gridScreenSpacing",gridScreenSpacing);
     s.setValue("gridAngle",gridAngle);
+
+    s.setValue("transparentColor",transparentColor.name(QColor::HexRgb));
 }
 
 void Configuration::setViewerType(eViewType  viewerType)

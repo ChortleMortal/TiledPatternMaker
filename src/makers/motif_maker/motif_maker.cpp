@@ -35,8 +35,28 @@
 #include "tapp/explicit_figure.h"
 #include "tapp/infer.h"
 #include "panels/panel.h"
+#include "tile/tiling.h"
+#include "tapp/prototype.h"
+#include "tile/feature.h"
+#include "panels/page_motif_maker.h"
+#include "tapp/design_element.h"
+#include "tile/placed_feature.h"
+
+using std::make_shared;
+
+typedef std::shared_ptr<class ExplicitFigure>   ExplicitPtr;
+typedef std::shared_ptr<Infer>                  InferPtr;
 
 MotifMaker * MotifMaker::mpThis = nullptr;
+
+#define E2STR(x) #x
+
+static QString mm_states[]
+{
+    E2STR(MM_EMPTY),
+    E2STR(MM_SINGLE),
+    E2STR(MM_MULTI)
+ };
 
 MotifMaker * MotifMaker::getInstance()
 {
@@ -62,7 +82,7 @@ void MotifMaker::init()
 
 PrototypePtr MotifMaker::createPrototype(TilingPtr tiling)
 {
-    PrototypePtr prototype = make_shared<Prototype>(tiling);
+    PrototypePtr prototype = std::make_shared<Prototype>(tiling);
 
     QVector<FeaturePtr> uniqueFeatures = tiling->getUniqueFeatures();
     qDebug() << "Create new design elements";
@@ -72,7 +92,7 @@ PrototypePtr MotifMaker::createPrototype(TilingPtr tiling)
         // NOTE this takes order from order of unique features
         if (++count <= MAX_UNIQUE_FEATURE_INDEX)
         {
-            DesignElementPtr dep = make_shared<DesignElement>(feature);
+            DesignElementPtr dep = std::make_shared<DesignElement>(feature);
             prototype->addElement(dep);
         }
         else
@@ -109,7 +129,7 @@ void MotifMaker::recreatePrototype(TilingPtr tiling)
             }
             if (!found)
             {
-                DesignElementPtr dep = make_shared<DesignElement>(feature);
+                DesignElementPtr dep = std::make_shared<DesignElement>(feature);
                 prototype->addElement(dep);
             }
         }
@@ -460,11 +480,11 @@ void MotifMaker::duplicateActiveFeature()
     FeaturePtr newFeature;
     if (fp->isRegular())
     {
-        newFeature = make_shared<Feature>(fp->numPoints(),fp->getRotation());
+        newFeature = std::make_shared<Feature>(fp->numPoints(),fp->getRotation());
     }
     else
     {
-        newFeature = make_shared<Feature>(fp->getEdgePoly(),fp->getRotation());
+        newFeature = std::make_shared<Feature>(fp->getEdgePoly(),fp->getRotation());
     }
 
     TilingPtr tiling = getSelectedPrototype()->getTiling();
@@ -473,11 +493,11 @@ void MotifMaker::duplicateActiveFeature()
     {
         if (pfp->getFeature() == fp)
         {
-            PlacedFeaturePtr newPlacedFeature = make_shared<PlacedFeature>(newFeature,pfp->getTransform());
+            PlacedFeaturePtr newPlacedFeature = std::make_shared<PlacedFeature>(newFeature,pfp->getTransform());
             // put placed feature in the tiling
             tiling->add(newPlacedFeature);
 
-            DesignElementPtr newDesignElement = make_shared<DesignElement>(newFeature);
+            DesignElementPtr newDesignElement = std::make_shared<DesignElement>(newFeature);
             // put design element in the prototype
             getSelectedPrototype()->addElement(newDesignElement);
             getSelectedPrototype()->resetProtoMap();
@@ -552,7 +572,7 @@ MapPtr MotifMaker::createExplicitInferredMap()
 {
     try
     {
-        InferPtr inf = make_shared<Infer>(getSelectedPrototype());
+        InferPtr inf = std::make_shared<Infer>(getSelectedPrototype());
         return inf->infer( getActiveFeature() );
     }
     catch(...)
@@ -564,7 +584,7 @@ MapPtr MotifMaker::createExplicitInferredMap()
 
 MapPtr MotifMaker::createExplicitFeatureMap()
 {
-    InferPtr inf = make_shared<Infer>(getSelectedPrototype());
+    InferPtr inf = std::make_shared<Infer>(getSelectedPrototype());
     return inf->inferFeature(getActiveFeature());
 }
 
@@ -572,7 +592,7 @@ MapPtr MotifMaker::createExplicitStarMap( qreal d, int s )
 {
     try
     {
-        InferPtr inf = make_shared<Infer>(getSelectedPrototype());
+        InferPtr inf = std::make_shared<Infer>(getSelectedPrototype());
         return inf->inferStar( getActiveFeature(), d, s );
     }
     catch(...)
@@ -586,7 +606,7 @@ MapPtr MotifMaker::createExplicitHourglassMap( qreal d, int s )
 {
     try
     {
-        InferPtr inf = make_shared<Infer>(getSelectedPrototype());
+        InferPtr inf = std::make_shared<Infer>(getSelectedPrototype());
         return inf->inferHourglass( getActiveFeature(), d, s );
     }
     catch(...)
@@ -600,7 +620,7 @@ MapPtr MotifMaker::createExplicitGirihMap( int starSides, qreal starSkip )
 {
     try
     {
-        InferPtr inf = make_shared<Infer>(getSelectedPrototype());
+        InferPtr inf = std::make_shared<Infer>(getSelectedPrototype());
         return inf->inferGirih( getActiveFeature(), starSides, starSkip );
     }
     catch(...)
@@ -614,7 +634,7 @@ MapPtr MotifMaker::createExplicitIntersectMap(int starSides, qreal starSkip, int
 {
     try
     {
-        InferPtr inf = make_shared<Infer>(getSelectedPrototype());
+        InferPtr inf = std::make_shared<Infer>(getSelectedPrototype());
         if ( progressive )
         {
             return inf->inferIntersectProgressive( getActiveFeature(), starSides, starSkip, s );
@@ -635,7 +655,7 @@ MapPtr MotifMaker::createExplicitRosetteMap( qreal q, int s, qreal r )
 {
     try
     {
-        InferPtr inf = make_shared<Infer>(getSelectedPrototype());
+        InferPtr inf = std::make_shared<Infer>(getSelectedPrototype());
         return inf->inferRosette( getActiveFeature(), q, s, r );
     }
     catch(...)

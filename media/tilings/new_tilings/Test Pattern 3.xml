@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<Tiling version="6">
+	<Name>Test Pattern 3</Name>
+	<Fill>-4,4,-4,4</Fill>
+	<T1>0,0</T1>
+	<T2>0,0</T2>
+	<ViewSettings>
+		<width>996</width>
+		<height>765</height>
+		<zwidth>1180</zwidth>
+		<zheight>1026</zheight>
+		<left__delta>-119</left__delta>
+		<top__delta>-140.5000000000001</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0.2599999999999998</center>
+	</ViewSettings>
+	<Feature type="regular" sides="3" rotation="30" scale="3">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>3.169485756039964</tranX>
+			<tranY>-1.160000000000002</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>180</rot>
+			<tranX>-2.026666666666666</tranX>
+			<tranY>1.839999999999999</tranY>
+		</Placement>
+	</Feature>
+	<Desc />
+	<Auth>David Casper</Auth>
+</Tiling>

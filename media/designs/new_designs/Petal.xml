@@ -1,9 +1,11 @@
 <?xml version="1.0"?>
-<vector id="1" version="6">
+<vector id="1" version="10">
 	<design>
 		<size>
 			<width>1838</width>
 			<height>1147</height>
+			<zwidth>1838</zwidth>
+			<zheight>1147</zheight>
 		</size>
 		<background>
 			<color>#ffffffff</color>
@@ -12,63 +14,45 @@
 	</design>
 	<style.Thick id="2" serialization="custom">
 		<toolkit.GeoLayer>
-			<left__delta>0</left__delta>
-			<top__delta>0</top__delta>
-			<width__delta>1</width__delta>
+			<left__delta>-78</left__delta>
+			<top__delta>12</top__delta>
+			<width__delta>0.7899999999999998</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>-4.013333333333333,-1.346666666666668</center>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<boundary id="3">
-				<pts id="4">
-					<Point id="5">
-						<x>-10</x>
-						<y>-10</y>
-					</Point>
-					<Point id="6">
-						<x>-10</x>
-						<y>10</y>
-					</Point>
-					<Point id="7">
-						<x>10</x>
-						<y>10</y>
-					</Point>
-					<Point id="8">
-						<x>10</x>
-						<y>-10</y>
-					</Point>
-				</pts>
-			</boundary>
-			<prototype id="9" serialization="custom">
+			<prototype id="3" serialization="custom">
 				<app.Prototype>
 					<string>petal.v3</string>
 					<entry>
-						<tile.Feature id="10">
+						<tile.Feature id="4">
 							<regular>false</regular>
-							<edges id="11">
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
 								<Curve convex="f">
-									<Point id="12">-1.216245299353273e-16,3.999999999999998</Point>
-									<Point id="13">-1.732050807568877,1</Point>
+									<Point id="6">-1.216245299353273e-16,3.999999999999998</Point>
+									<Point id="7">-1.732050807568877,1</Point>
 									<Center>2.133974596215559,0.7679491924311224</Center>
 								</Curve>
 								<Curve convex="t">
-									<Point reference="13" />
-									<Point id="14">-1.332267629550188e-15,-2</Point>
+									<Point reference="7" />
+									<Point id="8">-1.332267629550188e-15,-2</Point>
 									<Center>2.13397459621556,1.232050807568876</Center>
 								</Curve>
 								<Curve convex="t">
-									<Point reference="14" />
-									<Point id="15">1.732050807568877,0.9999999999999993</Point>
+									<Point reference="8" />
+									<Point id="9">1.732050807568877,0.9999999999999993</Point>
 									<Center>-2.133974596215562,1.232050807568878</Center>
 								</Curve>
 								<Curve convex="f">
-									<Point reference="15" />
-									<Point reference="12" />
+									<Point reference="9" />
+									<Point reference="6" />
 									<Center>-2.13397459621556,0.767949192431121</Center>
 								</Curve>
 							</edges>
 						</tile.Feature>
-						<app.ExplicitFeature id="16" type="FIG_TYPE_EXPLICIT_FEATURE">
+						<app.ExplicitFeature id="10" type="FIG_TYPE_EXPLICIT_FEATURE">
 							<boundarySides>1</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
@@ -86,17 +70,16 @@
 			<width>0.03</width>
 		</style.Thick>
 	</style.Thick>
-	<style.Filled id="17" serialization="custom">
+	<style.Filled id="11" serialization="custom">
 		<toolkit.GeoLayer>
-			<left__delta>0</left__delta>
-			<top__delta>0</top__delta>
-			<width__delta>1</width__delta>
+			<left__delta>-78</left__delta>
+			<top__delta>12</top__delta>
+			<width__delta>0.7899999999999998</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>-4.013333333333333,-1.346666666666668</center>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<boundary reference="3" />
-			<prototype reference="9" />
+			<prototype reference="3" />
 		</style.Style>
 		<ColorBlacks>
 			<color hide="f">#ffc2bcb0</color>
@@ -114,6 +97,7 @@
 			<draw__inside>true</draw__inside>
 			<draw__outside>true</draw__outside>
 			<algorithm>0</algorithm>
+			<cleanse>0</cleanse>
 		</style.Filled>
 	</style.Filled>
 </vector>

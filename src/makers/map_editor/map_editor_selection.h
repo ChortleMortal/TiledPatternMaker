@@ -3,6 +3,13 @@
 
 #include "viewers/map_editor_view.h"
 
+class lineInfo;
+
+typedef std::shared_ptr<class MapSelection> MapSelectionPtr;
+typedef QVector<MapSelectionPtr> SelectionSet;
+typedef std::shared_ptr<class Vertex>           VertexPtr;
+typedef std::shared_ptr<class Edge>             EdgePtr;
+typedef std::shared_ptr<class Neighbours>       NeighboursPtr;
 
 class MapEditorSelection : public MapEditorView
 {

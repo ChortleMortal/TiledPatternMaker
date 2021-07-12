@@ -25,10 +25,19 @@
 #ifndef FIGURE_EDITOR_VIEW_H
 #define FIGURE_EDITOR_VIEW_H
 
-#include "makers/map_editor/map_selection.h"
-#include "tile/placed_feature.h"
 #include "base/layer.h"
-#include "geometry/crop.h"
+
+typedef std::shared_ptr<class Tiling>           TilingPtr;
+typedef std::shared_ptr<class Map>              MapPtr;
+typedef std::shared_ptr<class Figure>           FigurePtr;
+typedef std::shared_ptr<class Prototype>        PrototypePtr;
+typedef std::shared_ptr<class Border>           BorderPtr;
+typedef std::shared_ptr<class Feature>          FeaturePtr;
+typedef std::shared_ptr<class DCEL>             DCELPtr;
+typedef std::shared_ptr<class Crop>             CropPtr;
+typedef std::shared_ptr<class Circle>           CirclePtr;
+typedef std::shared_ptr<class DesignElement>    DesignElementPtr;
+typedef std::shared_ptr<class Style>            StylePtr;
 
 class MapEditorView : public Layer
 {
@@ -51,7 +60,7 @@ public:
     void            drawCropMap(QPainter * painer);
     void            drawFeature(QPainter * painter);
     void            drawBoundaries(QPainter * painter);
-    void            drawPoints(QPainter * painter, QVector<pointInfo> & points);
+    void            drawPoints(QPainter * painter, QVector<class pointInfo> & points);
     void            drawConstructionLines(QPainter * painter);
     void            drawConstructionCircles(QPainter * painter);
 

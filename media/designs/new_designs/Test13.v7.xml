@@ -22,7 +22,7 @@
 		<style.Style>
 			<prototype id="3" serialization="custom">
 				<app.Prototype>
-					<string>4^4</string>
+					<string>regular-4</string>
 					<entry>
 						<tile.Feature id="4">
 							<regular>true</regular>

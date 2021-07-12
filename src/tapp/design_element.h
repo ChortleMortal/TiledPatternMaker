@@ -25,9 +25,12 @@
 #ifndef DESIGN_ELEMENT_H
 #define DESIGN_ELEMENT_H
 
-#include "tapp/figure.h"
-#include "tile/feature.h"
-#include "base/shared.h"
+#include <QString>
+#include <QTransform>
+
+typedef std::shared_ptr<class Figure>          FigurePtr;
+typedef std::shared_ptr<class Feature>         FeaturePtr;
+typedef std::shared_ptr<class DesignElement>   DesignElementPtr;
 
 ////////////////////////////////////////////////////////////////////////////
 //

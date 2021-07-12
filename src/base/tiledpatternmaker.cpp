@@ -23,8 +23,7 @@
  */
 
 #include "base/tiledpatternmaker.h"
-#include "base/fileservices.h"
-#include "base/mosaic.h"
+#include "base/cycler.h"
 #include "base/mosaic_manager.h"
 #include "base/transparentwidget.h"
 #include "designs/design_maker.h"
@@ -36,10 +35,13 @@
 #include "panels/panel.h"
 #include "panels/splitscreen.h"
 #include "panels/view_panel.h"
-#include "style/style.h"
 #include "tile/tiling_manager.h"
 #include "viewers/view.h"
 #include "viewers/viewcontrol.h"
+#include "settings/model_settings.h"
+#include <QColor>
+
+using std::make_shared;
 
 TiledPatternMaker::TiledPatternMaker() : QObject()
 {
@@ -190,11 +192,10 @@ void TiledPatternMaker::slot_buildDesign(eDesign design)
 
     // size view to design
     QSize size = d->getDesignInfo()->getSize();
-    view->setAllCommonActiveSizes(size);
-    if (config->scaleToView)
-    {
-        view->setAllCommonDefinedSizes(size);
-    }
+    view->frameSettings.initialiseCommon(size,size);
+    view->frameSettings.initialise(VIEW_DESIGN,size,size);
+
+    vcontrol->removeAllImages();
 
     emit sig_refreshView();
     emit sig_loadedDesign(design);
@@ -214,6 +215,9 @@ void TiledPatternMaker::slot_loadMosaic(QString name)
     {
         config->lastLoadedXML      = name;
         config->currentlyLoadedXML = name;
+
+        vcontrol->removeAllImages();
+
         emit sig_refreshView();
         emit sig_ready();
         emit sig_mosaicLoaded(name);
@@ -233,6 +237,9 @@ void TiledPatternMaker::slot_cycleLoadMosaic(QString name)
     {
         config->lastLoadedXML      = name;
         config->currentlyLoadedXML = name;
+
+        vcontrol->removeAllImages();
+
         emit sig_refreshView();
         emit sig_ready();
     }
@@ -250,6 +257,7 @@ void TiledPatternMaker::slot_saveMosaic(QString filename)
         mapEditor->keepStash(savedFile);
         config->lastLoadedXML      = savedFile;
         config->currentlyLoadedXML = savedFile;
+
         emit sig_mosaicWritten();
         emit sig_mosaicLoaded(savedFile);
     }
@@ -262,6 +270,9 @@ void TiledPatternMaker::slot_loadTiling(QString name, eSM_Event mode)
     if (tm.loadTiling(name,mode))
     {
         config->lastLoadedTileName = name;
+
+        vcontrol->removeAllImages();
+
         emit sig_ready();
         emit sig_tilingLoaded(name);
         emit sig_refreshView();
@@ -282,6 +293,9 @@ void TiledPatternMaker::slot_cyclerLoadTiling(QString name)
     if (tm.loadTiling(name,SM_LOAD_SINGLE))
     {
         config->lastLoadedTileName = name;
+
+        vcontrol->removeAllImages();
+
         emit sig_refreshView();
         emit sig_ready();
     }
@@ -429,7 +443,7 @@ void TiledPatternMaker::slot_compareImages(QString nameLeft, QString nameRight, 
         QPixmap  pm = makeTextPixmap(str,nameLeft);
         if (!autoMode || config->stopIfDiff)
         {
-            showPixmap(pm,str);
+            popupPixmap(pm,str);
         }
         else
         {
@@ -452,7 +466,7 @@ void TiledPatternMaker::slot_compareImages(QString nameLeft, QString nameRight, 
         QPixmap  pm = makeTextPixmap(str,pathLeft,pathRight);
         if (!autoMode)
         {
-            showPixmap(pm,str);
+            popupPixmap(pm,str);
         }
         else
         {
@@ -469,7 +483,7 @@ void TiledPatternMaker::slot_compareImages(QString nameLeft, QString nameRight, 
         QPixmap  pm = makeTextPixmap(str,nameLeft);
         if (!autoMode || config->stopIfDiff)
         {
-            showPixmap(pm,str);
+            popupPixmap(pm,str);
         }
         else
         {
@@ -505,7 +519,7 @@ void TiledPatternMaker::slot_compareImages(QString nameLeft, QString nameRight, 
             QPixmap  pm = makeTextPixmap("Images different sizes:",str1,str2);
             QString str = "Images are different sizes";
             emit sig_compareResult(str);    // sets page_debug status
-            showPixmap(pm, QString("Image Differences (%1) (%2").arg(pathLeft).arg(pathRight));
+            popupPixmap(pm, QString("Image Differences (%1) (%2").arg(pathLeft).arg(pathRight));
         }
         else
         {
@@ -529,11 +543,11 @@ void TiledPatternMaker::slot_compareImages(QString nameLeft, QString nameRight, 
 
             if (config->compare_transparent)
             {
-                showTransparentPixmap(pixmap, QString("Image Differences (%1) (%2").arg(pathLeft).arg(pathRight));
+                popupTransparentPixmap(pixmap, QString("Image Differences (%1) (%2").arg(pathLeft).arg(pathRight));
             }
             else
             {
-               showPixmap(pixmap, QString("Image Differences (%1) (%2").arg(pathLeft).arg(pathRight));
+               popupPixmap(pixmap, QString("Image Differences (%1) (%2").arg(pathLeft).arg(pathRight));
             }
         }
     }
@@ -576,16 +590,16 @@ void TiledPatternMaker::imageKeyPressed(QKeyEvent * k)
     {
         // ping-pong
         emit sig_closeAllImageViewers();
-        slot_view_image(pathLeft,pathRight);
+        slot_view_image(pathLeft,pathRight,config->compare_transparent,true);
     }
     else if (key == 'S')
     {
         QPixmap pm(pathLeft);
-        ImageWidget * widget = showPixmap(pm,pathLeft);
+        ImageWidget * widget = popupPixmap(pm,pathLeft);
         widget->move(widget->pos().x()-100,widget->pos().y());
 
         QPixmap pm2(pathRight);
-        widget = showPixmap(pm2,pathRight);
+        widget = popupPixmap(pm2,pathRight);
         widget->move(widget->pos().x()+100,widget->pos().y());
     }
     else if (key == 'L')
@@ -596,28 +610,91 @@ void TiledPatternMaker::imageKeyPressed(QKeyEvent * k)
     }
 }
 
-void TiledPatternMaker::slot_view_image(QString left, QString right)
+void TiledPatternMaker::slot_view_image(QString left, QString right, bool transparent, bool popup)
 {
     showFirst = !showFirst;
-    if (showFirst)
+    QString file =  (showFirst) ? left : right;
+
+    QPixmap pm;
+    if (popup)
     {
-        QPixmap pm(left);
-        if (!config->compare_transparent)
-            showPixmap(pm,left);
+        if (!transparent)
+        {
+            pm.load(file);
+            popupPixmap(pm,file);
+        }
         else
-            showTransparentPixmap(pm,left);
+        {
+            if (config->filter_transparent)
+            {
+                pm = createTransparentPixmap(file);
+            }
+            else
+            {
+                pm.load(file);
+            }
+            popupTransparentPixmap(pm,file);
+        }
     }
     else
     {
-        QPixmap pm(right);
-        if (!config->compare_transparent)
-            showPixmap(pm,right);
+        if (config->filter_transparent)
+        {
+            pm = createTransparentPixmap(file);
+        }
         else
-            showTransparentPixmap(pm,right);
+        {
+            pm.load(file);
+        }
+        ImgLayerPtr ilp = make_shared<ImageLayer>();
+        ilp->setPixmap(pm);
+        vcontrol->addImage(ilp);
+        emit sig_refreshView();
     }
 }
 
-ImageWidget *  TiledPatternMaker::showPixmap(QPixmap & pixmap,QString title)
+QPixmap  TiledPatternMaker::createTransparentPixmap(QString file)
+{
+    QColor transparentColor = config->transparentColor;
+    int r,g,b,a;
+    transparentColor.getRgb(&r,&g,&b,&a);
+    qint32 color = (r << 16) + (g << 8) + b;
+
+    // create image from bitmap
+    QImage img(file);
+    qDebug() << img.width() << img.height() << img.format();
+
+    // add alpha
+    QImage img2 = img.convertToFormat(QImage::Format_ARGB32);
+    qDebug() << img2.width() << img2.height() << img2.format();
+
+    // make color black transparent
+    int w = img2.width();
+    int h = img2.height();
+    for(int i=0; i<h; i++)
+    {
+        QRgb *rgb   = reinterpret_cast<QRgb*>(img2.scanLine(i));
+        for( int j=0; j<w; j++)
+        {
+            qint32 pixel = rgb[j];
+            //if ((pixel & 0x00ffffff) == 0)
+            if ((pixel & 0x00ffffff) == color)
+            {
+                rgb[j] = 0x00000000;
+            }
+        }
+    }
+
+    // create pixmap
+    QPixmap pixmap;
+    pixmap.convertFromImage(img2, Qt::NoFormatConversion);
+    qDebug() << pixmap.width() << pixmap.height() << pixmap.depth() << pixmap.hasAlpha() << pixmap.hasAlphaChannel();
+
+    return pixmap;
+}
+
+
+ImageWidget *  TiledPatternMaker::popupPixmap(QPixmap & pixmap,QString title)
 {
     ImageWidget * widget = new ImageWidget;
     widget->resize(pixmap.size());
@@ -628,7 +705,7 @@ ImageWidget *  TiledPatternMaker::showPixmap(QPixmap & pixmap,QString title)
     return widget;
 }
 
-TransparentWidget * TiledPatternMaker::showTransparentPixmap(QPixmap & pixmap,QString title)
+TransparentWidget * TiledPatternMaker::popupTransparentPixmap(QPixmap & pixmap,QString title)
 {
     TransparentWidget * widget = new TransparentWidget;
     widget->resize(pixmap.size());

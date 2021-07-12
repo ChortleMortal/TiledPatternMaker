@@ -1,5 +1,8 @@
 #include <deque>
 #include "geometry/dcel.h"
+#include "geometry/edge.h"
+#include "geometry/vertex.h"
+#include "geometry/neighbours.h"
 #include "geometry/loose.h"
 #include "base/utilities.h"
 #include <assert.h>

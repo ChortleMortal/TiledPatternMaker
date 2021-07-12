@@ -23,8 +23,11 @@
  */
 
 #include "style/emboss.h"
-#include "geometry/point.h"
 #include <QPainter>
+#include "geometry/point.h"
+#include "base/geo_graphics.h"
+
+using std::make_shared;
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -52,7 +55,7 @@ Emboss::Emboss(PrototypePtr proto) : Outline(proto)
 
 Emboss::Emboss(StylePtr other) : Outline(other)
 {
-    shared_ptr<Emboss> emb = std::dynamic_pointer_cast<Emboss>(other);
+    std::shared_ptr<Emboss> emb = std::dynamic_pointer_cast<Emboss>(other);
     if (emb)
     {
         angle   = emb->angle;

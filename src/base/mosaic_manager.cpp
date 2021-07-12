@@ -30,12 +30,14 @@
 #include "viewers/viewcontrol.h"
 #include "panels/panel.h"
 #include "makers/decoration_maker/decoration_maker.h"
+#include "settings/model_settings.h"
+#include "base/mosaic.h"
+#include "settings/configuration.h"
 
 MosaicManager::MosaicManager()
 {
     view            = View::getInstance();
     config          = Configuration::getInstance();
-    viewControl     = ViewControl::getInstance();
     decorationMaker = DecorationMaker::getInstance();
 }
 
@@ -86,14 +88,11 @@ bool MosaicManager::loadMosaic(QString name)
     decorationMaker->takeDown(mosaic);
 
     // size view to mosaic
-    viewControl->setModelAlignment(M_ALIGN_MOSAIC);
-    ModelSettingsPtr settings = mosaic->getSettings();
-    QSize size = settings->getSize();
-    view->setAllCommonActiveSizes(size);
-    if (config->scaleToView)
-    {
-        view->setAllCommonDefinedSizes(size);
-    }
+    view->frameSettings.reInit();
+    view->frameSettings.setModelAlignment(M_ALIGN_MOSAIC);
+
+    ModelSettingsPtr model = mosaic->getSettings();
+    view->frameSettings.initialiseCommon(model->getSize(),model->getZSize());
 
     return true;
 }
@@ -159,15 +158,17 @@ bool MosaicManager::saveMosaic(QString name, QString & savedName, bool forceOver
     qDebug() << "Saving XML to:"  << filename;
 
     // match size of mosaic view
-    QSize size  = view->getActiveFrameSize(VIEW_MOSAIC);
+    QSize size  = view->frameSettings.getCropSize(VIEW_MOSAIC);
+    QSize zsize = view->frameSettings.getZoomSize(VIEW_MOSAIC);
     mosaic->getSettings()->setSize(size);
+    mosaic->getSettings()->setZSize(zsize);
 
     // write
     MosaicWriter writer;
     bool rv = writer.writeXML(filename,mosaic);
 
     if (rv)
-        viewControl->setModelAlignment(M_ALIGN_MOSAIC);
+        view->frameSettings.setModelAlignment(M_ALIGN_MOSAIC);
 
     if (!forceOverwrite)
     {

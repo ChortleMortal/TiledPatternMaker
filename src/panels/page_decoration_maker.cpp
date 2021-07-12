@@ -23,23 +23,30 @@
  */
 
 #include "panels/page_decoration_maker.h"
-#include "base/tiledpatternmaker.h"
 #include "base/mosaic.h"
-#include "style/style.h"
-#include "style/colored.h"
 #include "style/thick.h"
 #include "style/filled.h"
 #include "style/interlace.h"
-#include "style/outline.h"
 #include "style/plain.h"
 #include "style/sketch.h"
 #include "style/emboss.h"
 #include "makers/decoration_maker/style_editors.h"
-#include "makers/motif_maker/motif_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
+#include "makers/decoration_maker/decoration_maker.h"
 #include "viewers/viewcontrol.h"
+#include "panels/layout_sliderset.h"
+#include "settings/model_settings.h"
+#include "tile/tiling.h"
+#include "tapp/prototype.h"
+#include "style/tile_colors.h"
+#include "geometry/map.h"
+#include "panels/panel_misc.h"
 
 Q_DECLARE_METATYPE(WeakStylePtr)
+
+typedef std::weak_ptr<Mosaic>          WeakMosaicPtr;
+
+using std::make_shared;
 
 page_decoration_maker:: page_decoration_maker(ControlPanel * apanel)  : panel_page(apanel,"Decoration Maker")
 {

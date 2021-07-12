@@ -24,6 +24,7 @@
 
 #include "panels/dlg_colorSet.h"
 #include "base/utilities.h"
+#include "base/colorset.h"
 
 DlgColorSet::DlgColorSet(ColorSet *cset, QWidget * parent) :  QDialog(parent), colorSet(cset)
 {

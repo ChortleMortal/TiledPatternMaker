@@ -27,12 +27,10 @@
 
 #include <QtCore>
 #include <QtWidgets>
-#include "base/tile.h"
-#include "base/shared.h"
 #include "base/layer.h"
-#include "geometry/crop.h"
-#include "viewers/view.h"
-#include "viewers/viewcontrol.h"
+
+typedef std::shared_ptr<class Crop>         CropPtr;
+typedef std::shared_ptr<class ShapeFactory> ShapeFPtr;
 
 #define LENGTH1        60.0
 #define BORDER_ZLEVEL  10
@@ -49,10 +47,28 @@ enum eBorderType
 
 class Border : public Layer
 {
+    Q_OBJECT
+
 public:
     virtual void  construct() = 0;
 
     eBorderType getType()  { return type; }
+
+public slots:
+    virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
+    virtual void slot_mouseDragged(QPointF spt)       override;
+    virtual void slot_mouseTranslate(QPointF pt)      override;
+    virtual void slot_mouseMoved(QPointF spt)         override;
+    virtual void slot_mouseReleased(QPointF spt)      override;
+    virtual void slot_mouseDoublePressed(QPointF spt) override;
+
+    virtual void slot_wheel_scale(qreal delta)  override;
+    virtual void slot_wheel_rotate(qreal delta) override;
+
+    virtual void slot_scale(int amount)  override;
+    virtual void slot_rotate(int amount) override;
+    virtual void slot_moveX(int amount)  override;
+    virtual void slot_moveY(int amount)  override;
 
 protected:
     Border();

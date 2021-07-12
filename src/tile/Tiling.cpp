@@ -37,7 +37,7 @@
 #include <QtWidgets>
 #include "tile/tiling.h"
 #include "tile/backgroundimage.h"
-#include "base/configuration.h"
+#include "settings/configuration.h"
 #include "base/fileservices.h"
 #include "base/misc.h"
 #include "geometry/transform.h"
@@ -45,7 +45,14 @@
 #include "makers/tiling_maker/tiling_maker.h"
 #include "base/mosaic_writer.h"
 #include "tapp/explicit_figure.h"
+#include "settings/model_settings.h"
+#include "geometry/map.h"
+#include "tile/placed_feature.h"
+#include "tapp/prototype.h"
+#include "tile/feature.h"
+#include "tapp/design_element.h"
 
+using std::make_shared;
 
 const QString Tiling::defaultName = "The Unnamed";
 
@@ -55,7 +62,7 @@ Tiling::Tiling()
 {
     name        = defaultName;
     settings    = make_shared<ModelSettings>();
-    settings->setSize(QSize(1500,1100));
+    settings->setSize(QSize(DEFAULT_WIDTH,DEFAULT_HEIGHT));
     version     = -1;
     state       = EMPTY;
     refs++;
@@ -76,7 +83,7 @@ Tiling::Tiling(QString name, QPointF t1, QPointF t2)
     }
 
     settings    = make_shared<ModelSettings>();
-    settings->setSize(QSize(1500,1100));
+    settings->setSize(QSize(DEFAULT_WIDTH,DEFAULT_HEIGHT));
     version      = -1;
     state        = EMPTY;
     refs++;
@@ -374,6 +381,18 @@ QString Tiling::dump() const
 #endif
     return astring;
 }
+
+
+void   Tiling::setSettings(ModelSettingsPtr settings) { this->settings = settings; }
+void   Tiling::setSize(QSize sz)             { settings->setSize(sz); }
+void   Tiling::setZoomSize(QSize sz)         { settings->setZSize(sz); }
+void   Tiling::setFillData(FillData & fdata) { settings->setFillData(fdata); }
+
+ModelSettingsPtr    Tiling::getSettings()  { return settings; }
+QSize               Tiling::getSize()      { return settings->getSize(); }
+QSize               Tiling::getZoomSize()  { return settings->getZSize(); }
+const FillData    & Tiling::getFillData()  { return settings->getFillData(); }
+
 
 ///
 /// class Feature Group

@@ -3,8 +3,8 @@
 
 #include <QDialog>
 #include "panels/versioned_list_widget.h"
-#include "panels/layout_sliderset.h"
-#include "tile/placed_feature.h"
+
+typedef std::shared_ptr<class PlacedFeature>    PlacedFeaturePtr;
 
 
 class DlgListSelect : public QDialog
@@ -57,7 +57,7 @@ protected:
 
 private:
     AQFrame * frame;
-    SliderSet * magSlider;
+    class SliderSet * magSlider;
 };
 
 

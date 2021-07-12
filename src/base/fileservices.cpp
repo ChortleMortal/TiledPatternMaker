@@ -24,7 +24,7 @@
 
 #include "base/fileservices.h"
 #include "base/pugixml.hpp"
-#include "base/configuration.h"
+#include "settings/configuration.h"
 #include <QMessageBox>
 
 using namespace pugi;

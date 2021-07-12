@@ -30,6 +30,9 @@
 #include "makers/tiling_maker/tiling_maker.h"
 #include "makers/decoration_maker/decoration_maker.h"
 #include <QSvgGenerator>
+#include "base/shared.h"
+#include "tile/tiling.h"
+#include "style/style.h"
 
 page_save::page_save(ControlPanel * cpanel)  : panel_page(cpanel, "Save")
 {

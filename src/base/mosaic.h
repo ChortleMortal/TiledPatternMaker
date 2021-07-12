@@ -25,9 +25,14 @@
 #ifndef MOSAIC_H
 #define MOSAIC_H
 
-#include "base/shared.h"
-#include "base/model_settings.h"
-#include "base/misc.h"
+#include <QVector>
+
+typedef std::shared_ptr<class Style>            StylePtr;
+typedef std::shared_ptr<class ModelSettings>    ModelSettingsPtr;
+typedef std::shared_ptr<class Tiling>           TilingPtr;
+typedef std::shared_ptr<class Border>           BorderPtr;
+typedef std::shared_ptr<class Prototype>        PrototypePtr;
+
 
 typedef QVector<StylePtr>  StyleSet;
 

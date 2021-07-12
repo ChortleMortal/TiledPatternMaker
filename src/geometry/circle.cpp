@@ -1,4 +1,5 @@
 #include "geometry/circle.h"
+#include "geometry/loose.h"
 
 Circle::Circle()
 {

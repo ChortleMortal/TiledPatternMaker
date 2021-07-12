@@ -1,11 +1,16 @@
 #ifndef EDGEPOLY_H
 #define EDGEPOLY_H
 
-#include "base/shared.h"
-#include "geometry/edge.h"
+#include <QPolygonF>
+#include <QPen>
 
 class QPainter;
 class GeoGraphics;
+
+typedef std::shared_ptr<QPolygonF>       PolyPtr;
+typedef std::shared_ptr<class Edge>      EdgePtr;
+typedef std::shared_ptr<class Vertex>    VertexPtr;
+
 
 class EdgePoly : public QVector<EdgePtr>
 {

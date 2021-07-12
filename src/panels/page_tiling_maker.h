@@ -26,11 +26,20 @@
 #define PAGE_TILING_MAKER_H
 
 #include "panels/panel_page.h"
-#include "panels/layout_sliderset.h"
 #include "panels/layout_transform.h"
-#include "base/shared.h"
 #include "panels/panel_misc.h"
-#include "base/configuration.h"
+#include "enums/estatemachineevent.h"
+
+typedef std::shared_ptr<class BackgroundImage>  BkgdImgPtr;
+typedef std::shared_ptr<class Tiling>           TilingPtr;
+typedef std::shared_ptr<class PlacedFeature>    PlacedFeaturePtr;
+typedef std::weak_ptr<class   PlacedFeature>    WeakPlacedFeaturePtr;
+typedef std::weak_ptr<class   Feature>          WeakFeaturePtr;
+
+class EdgePoly;
+class DoubleSpinSet;
+class AQSpinBox;
+class AQDoubleSpinBox;
 
 enum epageTi
 {
@@ -89,7 +98,6 @@ private slots:
     void slot_swapTrans();
     void slot_delete_clicked();
     void slot_make_irregular_clicked();
-    void slot_useAdjustedClicked(bool checked);
     void slot_uniquify_clicked();
     void slot_setModes(QAbstractButton *btn);
     void slot_set_reps(int val);
@@ -103,16 +111,9 @@ private slots:
     void tableHeaderClicked(int index);
     void slot_trim(qreal valX, qreal valY);
 
-    void slot_loadBackground();
-    void slot_adjustBackground();
-    void slot_saveAdjustedBackground();
-    void slot_setBkgdXform();
-    void slot_clearBackground();
-
 protected:
     AQTableWidget * createTilingTable();
     AQWidget      * createDebugInfo();
-    QGroupBox     * createBackgroundGroup();
     QGroupBox     * createModesGroup();
     QGroupBox     * createActionsGroup();
     QHBoxLayout   * createControlRow();
@@ -120,9 +121,6 @@ protected:
     AQWidget      * createTranslationsRow();
     QHBoxLayout   * createFillDataRow();
 
-    void setupBackground(BkgdImgPtr bi);
-
-    void displayBackgroundStatus(TilingPtr tiling,bool force);
     void refreshMenuData();
     void buildTableEntry(PlacedFeaturePtr pf, int col, QString inclusion);
     void refreshTableEntry(PlacedFeaturePtr pf, int col, QString inclusion);
@@ -168,13 +166,7 @@ private:
     AQDoubleSpinBox* featRot;
     QComboBox      * girihShapes;
 
-    LayoutTransform bkgdLayout;
-
     QCheckBox     * chk_hideTiling;
-    QCheckBox     * chk_useAdjusted;
-
-    QGroupBox     * bkgdGroup;
-
 };
 
 #endif

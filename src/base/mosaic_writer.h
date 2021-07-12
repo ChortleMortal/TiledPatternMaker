@@ -27,19 +27,34 @@
 
 #include <QtCore>
 #include <string>
-#include "style/style.h"
-#include "tapp/star.h"
-#include "tapp/extended_rosette.h"
+
 #include "base/pugixml.hpp"
-#include "base/shared.h"
-#include "base/mosaic.h"
+#include "geometry/edgepoly.h"
 #include "geometry/xform.h"
+#include "base/colorset.h"
 
 using std::string;
 using namespace pugi;
 
 class ViewControl;
 class Configuration;
+
+typedef std::shared_ptr<class BackgroundImage>   BkgdImgPtr;
+typedef std::shared_ptr<class Border>           BorderPtr;
+typedef std::shared_ptr<class ExplicitFigure>   ExplicitPtr;
+typedef std::shared_ptr<class ExtendedRosette>  ExtRosettePtr;
+typedef std::shared_ptr<class ExtendedStar>     ExtStarPtr;
+typedef std::shared_ptr<class Feature>          FeaturePtr;
+typedef std::shared_ptr<class Figure>           FigurePtr;
+typedef std::shared_ptr<class Map>              MapPtr;
+typedef std::shared_ptr<class Mosaic>           MosaicPtr;
+typedef std::shared_ptr<class Prototype>        PrototypePtr;
+typedef std::shared_ptr<class Rosette>          RosettePtr;
+typedef std::shared_ptr<class RosetteConnectFigure> RosetteConnectPtr;
+typedef std::shared_ptr<class Star>             StarPtr;
+typedef std::shared_ptr<class StarConnectFigure>    StarConnectPtr;
+typedef std::shared_ptr<class Style>            StylePtr;
+
 
 class MosaicWriter
 {
@@ -60,7 +75,7 @@ protected:
     bool generateDesignNotes(QTextStream & ts);
 
     void processDesign(QTextStream & ts);
-    void procSize(QTextStream &ts,QSizeF size);
+    void procSize(QTextStream &ts, QSizeF size, QSize zsize);
     void procWidth(QTextStream &ts,qreal width);
     void procBackground(QTextStream &ts, QColor color);
     void procBorder(QTextStream &ts, BorderPtr border);

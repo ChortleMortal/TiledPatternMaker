@@ -26,11 +26,12 @@
 #define TILING_LOADER_H
 
 #include <QtCore>
-#include "geometry/transform.h"
 #include "geometry/xform.h"
-#include "tile/placed_feature.h"
 #include "base/pugixml.hpp"
-#include "base/filldata.h"
+#include "settings/filldata.h"
+
+typedef std::shared_ptr<class Tiling>           TilingPtr;
+typedef std::shared_ptr<class BackgroundImage>   BkgdImgPtr;
 
 class TilingLoader
 {
@@ -42,7 +43,7 @@ public:
     TilingPtr   readTilingXML(QString file);
     TilingPtr   readTilingXML(pugi::xml_node & tiling_node);
 
-    static BkgdImgPtr  getBackgroundImage(pugi::xml_node & node);
+    static void getBackgroundImage(pugi::xml_node & node);
 
 protected:
 

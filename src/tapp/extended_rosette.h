@@ -27,6 +27,8 @@
 
 #include "tapp/rosette.h"
 
+typedef std::shared_ptr<class Vertex>     VertexPtr;
+
 class ExtendedRosette : public Rosette
 {
     friend class FigureView;
@@ -66,7 +68,7 @@ protected:
     bool    extendPeripheralVertices;
     bool    connectBoundaryVertices;
 
-    qreal   len(VertexPtr v1, VertexPtr v2) { return QLineF(v1->pt,v2->pt).length(); }
+    qreal   len(VertexPtr v1, VertexPtr v2);
 
 private:
 

@@ -12,6 +12,11 @@
 #include "style/tile_colors.h"
 #include "base/mosaic.h"
 #include "viewers/viewcontrol.h"
+#include "settings/model_settings.h"
+#include "tapp/prototype.h"
+#include "tile/tiling.h"
+
+using std::make_shared;
 
 DecorationMaker * DecorationMaker::mpThis = nullptr;
 
