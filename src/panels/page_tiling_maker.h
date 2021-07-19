@@ -72,7 +72,6 @@ public:
     void buildMenu();
 
 private slots:
-    void slot_clearMakers();
     void slot_clearTiling();
     void slot_reloadTiling();
 

@@ -12,7 +12,6 @@
 #include "style/tile_colors.h"
 #include "base/mosaic.h"
 #include "viewers/viewcontrol.h"
-#include "settings/model_settings.h"
 #include "tapp/prototype.h"
 #include "tile/tiling.h"
 
@@ -31,6 +30,7 @@ DecorationMaker * DecorationMaker::getInstance()
 
 DecorationMaker::DecorationMaker()
 {
+    _mosaic = make_shared<Mosaic>();
 }
 
 void DecorationMaker::init()
@@ -42,9 +42,9 @@ void DecorationMaker::init()
 
 void DecorationMaker::takeDown(MosaicPtr mosaic)
 {
-    this->mosaic = mosaic;
+    _mosaic = mosaic;
 
-    viewControl->setFillData(mosaic->getSettings()->getFillData());
+    viewControl->setFillData(mosaic->getSettings().getFillData());
 
     // setup prototypes
     tilingMaker->eraseTilings();
@@ -70,55 +70,52 @@ void DecorationMaker::takeDown(MosaicPtr mosaic)
 
 void DecorationMaker::sm_createMosaic(const QVector<PrototypePtr> prototypes)
 {
+    QColor oldColor = _mosaic->getSettings().getBackgroundColor();
+
     // This is a new mosaic
-    mosaic = make_shared<Mosaic>();
+    _mosaic = make_shared<Mosaic>();
+    ModelSettings & mosaicSettings = _mosaic->getSettings();
 
     for (auto prototype : prototypes)
     {
         StylePtr thick = make_shared<Plain>(prototype);
-        mosaic->addStyle(thick);
+        _mosaic->addStyle(thick);
 
         TilingPtr tp = prototype->getTiling();
-        ModelSettingsPtr settings = tp->getSettings();
-        mosaic->setSettings(settings);
+        ModelSettings & tilingSettings = tp->getSettings();
+        mosaicSettings = tilingSettings;
     }
+
+    // tiling has no intrinsic background color
+    mosaicSettings.setBackgroundColor(oldColor);
 }
 
 void DecorationMaker::sm_addPrototype(const QVector<PrototypePtr> prototypes)
 {
-    if (mosaic)
+    for (auto prototype : prototypes)
     {
-        for (auto prototype : prototypes)
-        {
-            StylePtr thick = make_shared<Plain>(prototype);
-            mosaic->addStyle(thick);
-            prototype->setBorder(mosaic->getBorder());
-        }
+        StylePtr thick = make_shared<Plain>(prototype);
+        _mosaic->addStyle(thick);
+        prototype->setBorder(_mosaic->getBorder());
     }
 }
 
 void DecorationMaker::sm_replacePrototype(PrototypePtr prototype)
 {
-    if (mosaic)
+    const StyleSet & sset = _mosaic->getStyleSet();
+    for (auto style : sset)
     {
-        const StyleSet & sset = mosaic->getStyleSet();
-        for (auto style : sset)
-        {
-            style->setPrototype(prototype);
-            prototype->setBorder(mosaic->getBorder());
-        }
+        style->setPrototype(prototype);
+        prototype->setBorder(_mosaic->getBorder());
     }
 }
 
 void DecorationMaker::sm_resetStyles()
 {
-    if (mosaic)
+    const StyleSet & sset = _mosaic->getStyleSet();
+    for (auto style : sset)
     {
-        const StyleSet & sset = mosaic->getStyleSet();
-        for (auto style : sset)
-        {
-            style->resetStyleRepresentation();
-        }
+        style->resetStyleRepresentation();
     }
 }
 
@@ -159,7 +156,7 @@ void DecorationMaker::sm_takeUp(QVector<PrototypePtr> prototypes, eSM_Event mode
         break;
 
     case SM_RENDER:
-        if (!mosaic)
+        if (!_mosaic->hasContent())
         {
             sm_createMosaic(prototypes);
         }
@@ -173,29 +170,18 @@ void DecorationMaker::sm_takeUp(QVector<PrototypePtr> prototypes, eSM_Event mode
 
 MosaicPtr DecorationMaker::getMosaic()
 {
-    return mosaic;
+    return _mosaic;
 }
 
-ModelSettingsPtr DecorationMaker::getMosaicSettings()
+ModelSettings & DecorationMaker::getMosaicSettings()
 {
-    if (mosaic)
-    {
-        return mosaic->getSettings();
-    }
-    else
-    {
-        ModelSettingsPtr settings = make_shared<ModelSettings>();
-        return settings;
-    }
+    return _mosaic->getSettings();
 }
 
 void DecorationMaker::resetMosaic()
 {
-    mosaic.reset();
+    _mosaic = make_shared<Mosaic>();
 }
-
-
-
 
 StylePtr DecorationMaker::makeStyle(eStyleType type, StylePtr oldStyle)
 {

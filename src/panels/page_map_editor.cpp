@@ -862,6 +862,8 @@ void page_map_editor::slot_createMap()
 
 void page_map_editor::slot_loadMap()
 {
+    qDebug() << "page_map_editor::slot_loadMap";
+
     QString dir = config->rootMediaDir + "maps/";
     QString filename = QFileDialog::getOpenFileName(nullptr,"Select Map File",dir, "Map Files (*.xml)");
     if (filename.isEmpty()) return;
@@ -882,6 +884,8 @@ void page_map_editor::slot_loadMap()
 
     maped->setLocalMap(map);
     maped->reload();
+
+    qDebug() << "page_map_editor::slot_loadMap - completed";
 
     QMessageBox box(this);
     box.setIcon(QMessageBox::Information);

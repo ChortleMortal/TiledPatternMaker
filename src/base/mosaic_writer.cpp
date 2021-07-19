@@ -276,10 +276,10 @@ bool MosaicWriter::processVector(QTextStream &ts)
 
 void MosaicWriter::processDesign(QTextStream &ts)
 {
-    ModelSettingsPtr info = _mosaic->getSettings();
-    QColor bkgdColor      = info->getBackgroundColor();
-    QSize  size           = info->getSize();
-    QSize  zsize          = info->getZSize();
+    ModelSettings & info  = _mosaic->getSettings();
+    QColor bkgdColor      = info.getBackgroundColor();
+    QSize  size           = info.getSize();
+    QSize  zsize          = info.getZSize();
     BorderPtr border      = _mosaic->getBorder();
     BkgdImgPtr bip        = BackgroundImage::getSharedInstance();
 
@@ -288,7 +288,7 @@ void MosaicWriter::processDesign(QTextStream &ts)
     procBackground(ts,bkgdColor);
     procBorder(ts,border);
     int minX,minY,maxX,maxY;
-    info->getFillData().get(minX,maxX,minY,maxY);
+    info.getFillData().get(minX,maxX,minY,maxY);
     ts << "<Fill>" << minX << "," << maxX << "," << minY << "," << maxY << "</Fill>" << endl;
     TilingWriter::writeBackgroundImage(ts,bip);
     ts << "</design>" << endl;

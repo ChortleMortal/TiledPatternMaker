@@ -478,8 +478,8 @@ void View::paintEvent(QPaintEvent *event)
     }
 
     //qDebug() << "++++START VIEW PAINT - Scene: items=" << layers.size() << "viewRect" << rect();
+    //qDebug() << "View::paintEvent()";
 
-    qDebug() << "View::paintEvent()";
     //QWidget::paintEvent(event);
 
     QPainter painter(this);

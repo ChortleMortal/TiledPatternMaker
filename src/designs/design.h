@@ -28,10 +28,10 @@
 #include <QtCore>
 #include <QtGui>
 #include "enums/edesign.h"
+#include "settings/model_settings.h"
 
 class Configuration;
 
-typedef std::shared_ptr<class ModelSettings> ModelSettingsPtr;
 typedef std::shared_ptr<class Pattern>       PatternPtr;
 typedef std::shared_ptr<class Border>        BorderPtr;
 
@@ -48,7 +48,7 @@ public:
     void            updateDesign();
 
     QString          getTitle() { return title; }
-    ModelSettingsPtr getDesignInfo() { return settings; }
+    ModelSettings &  getDesignInfo() { return settings; }
 
     QVector<PatternPtr> &      getPatterns()      { return patterns; }
 
@@ -117,7 +117,7 @@ protected:
 
     bool            visible;
 
-    ModelSettingsPtr  settings;
+    ModelSettings  settings;
 };
 
 

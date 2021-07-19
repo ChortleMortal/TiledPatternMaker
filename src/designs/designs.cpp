@@ -57,8 +57,8 @@ DesignKumiko2::DesignKumiko2(eDesign design, QString atitle) : Design(design,ati
 bool Design5::build()
 {
     QSize size(1800,1100);
-    settings->setSize(size);
-    settings->setBackgroundColor(QColor(TileBlue));
+    settings.setSize(size);
+    settings.setBackgroundColor(QColor(TileBlue));
 
     BorderPtr bp = std::make_shared<BorderTwoColor>(size,QColor(TileGreen),QColor(TileWhite),20.0);
     bp->construct();
@@ -66,7 +66,7 @@ bool Design5::build()
     border = bp;
 
     qreal d = 150.0;                // diameter
-    settings->setStartTile(QPointF(200.0,150.0));
+    settings.setStartTile(QPointF(200.0,150.0));
     xSeparation = 260.0;
     ySeparation = 453.0;
 
@@ -100,15 +100,15 @@ bool Design5::build()
 bool Design6::build()
 {
     QSize size(1800,1100);
-    settings->setSize(size);
-    settings->setBackgroundColor((QColor(TileWhite)));
+    settings.setSize(size);
+    settings.setBackgroundColor((QColor(TileWhite)));
 
     BorderPtr bp = std::make_shared<BorderTwoColor>(size,QColor(TileGreen),QColor(TileWhite),20.0);
     bp->construct();
     border = bp;
 
     qreal d = 150.0;                // diameter
-    settings->setStartTile(QPointF(170.0,85.0));
+    settings.setStartTile(QPointF(170.0,85.0));
     xSeparation = 300.0;
     ySeparation = 260.0;
 
@@ -127,7 +127,7 @@ bool Design6::build()
     PatternPtr pat;
 
     // repeat
-    QPointF pt = settings->getStartTile();
+    QPointF pt = settings.getStartTile();
     for (int row = 0; row < rows; row++)
     {
         for (int col = 0; col < cols; col++)
@@ -156,15 +156,15 @@ bool Design7::build()
 
     QSize size((diameter*cols),(diameter*rows)+(piece*2.0));
     qDebug() << "pat 7 size:" << size;
-    settings->setSize(size);
-    settings->setBackgroundColor((QColor(TileGreen)));
+    settings.setSize(size);
+    settings.setBackgroundColor((QColor(TileGreen)));
 
     BorderPtr bp = std::make_shared<BorderBlocks>(size,QColor(TileWhite),diameter,0,cols);
     bp->construct();
     border = bp;
 
-    settings->setStartTile(QPointF(diameter/2.0,diameter/2.0 + piece));
-    qDebug() << "start tile:" << settings->getStartTile();
+    settings.setStartTile(QPointF(diameter/2.0,diameter/2.0 + piece));
+    qDebug() << "start tile:" << settings.getStartTile();
 
     xSeparation = diameter;
     ySeparation = diameter;
@@ -174,7 +174,7 @@ bool Design7::build()
     brush1.setStyle(Qt::SolidPattern);
 
     PatternPtr  pat;
-    QPointF pt = settings->getStartTile();
+    QPointF pt = settings.getStartTile();
     for (int row = 0; row < rows; row++)
     {
         for (int col = 0; col < cols; col++)
@@ -194,8 +194,8 @@ bool Design8::build()
 {
     // canvas
     QColor canvasColor = QColor(TileBlack);
-    settings->setBackgroundColor((canvasColor));
-    settings->setSize(QSize(1800,1100));
+    settings.setBackgroundColor((canvasColor));
+    settings.setSize(QSize(1800,1100));
 
     // patern
     int gridWidth = 41;
@@ -204,8 +204,8 @@ bool Design8::build()
 
     // positioning
     //startTile = sceneRect().center();
-    settings->setStartTile(QPointF(901.0,533));
-    qDebug() << "start tile:" << settings->getStartTile();
+    settings.setStartTile(QPointF(901.0,533));
+    qDebug() << "start tile:" << settings.getStartTile();
     xSeparation = diameter;
     ySeparation = diameter;
 
@@ -221,7 +221,7 @@ bool Design8::build()
     PatternPtr pat = std::make_shared<PatternHuSymbol>(gridWidth,gridPen,innerPen, canvasColor,diameter,QBrush(Qt::NoBrush));
     patterns.push_back(pat);
     pat->setTilePosition(0,0);
-    pat->setLoc(settings->getStartTile());
+    pat->setLoc(settings.getStartTile());
     pat->build();
 
 
@@ -245,8 +245,8 @@ bool Design8::build()
 bool Design9::build()
 {
     QColor canvasColor = QColor(TileBlack);
-    settings->setBackgroundColor((canvasColor));
-    settings->setSize(QSize(1776,1100));
+    settings.setBackgroundColor((canvasColor));
+    settings.setSize(QSize(1776,1100));
 
     // patern
     int gridWidth = 21;
@@ -255,8 +255,8 @@ bool Design9::build()
 
     // positioning
     //startTile = sceneRect().center();
-    settings->setStartTile(QPointF(222,222));
-    qDebug() << "start tile:" << settings->getStartTile();
+    settings.setStartTile(QPointF(222,222));
+    qDebug() << "start tile:" << settings.getStartTile();
     xSeparation = 444;
     ySeparation = 444;
 
@@ -273,7 +273,7 @@ bool Design9::build()
     cols = 6;
 
     // repeat
-    QPointF pt = settings->getStartTile();
+    QPointF pt = settings.getStartTile();
     for (int row = 0; row < rows; row++)
     {
         for (int col=0; col < cols; col++)
@@ -292,8 +292,8 @@ bool Design9::build()
 bool DesignHuPacked::build()
 {
     QColor canvasColor = QColor(TileBlack);
-    settings->setBackgroundColor((canvasColor));
-    settings->setSize(QSize(1794,1100));
+    settings.setBackgroundColor((canvasColor));
+    settings.setSize(QSize(1794,1100));
 
     // patern
     int igridWidth = 21;
@@ -304,8 +304,8 @@ bool DesignHuPacked::build()
 
     // positioning
     //startTile = sceneRect().center();
-    settings->setStartTile(QPointF(224,224));
-    qDebug() << "start tile:" << settings->getStartTile();
+    settings.setStartTile(QPointF(224,224));
+    qDebug() << "start tile:" << settings.getStartTile();
     xSeparation = 448;
     ySeparation = 448;
 
@@ -351,8 +351,8 @@ bool DesignHuPacked::build()
 bool DesignHuInsert::build()
 {
     QColor canvasColor = QColor(TileBlack);
-    settings->setBackgroundColor((canvasColor));
-    settings->setSize(QSize(1794,1100));
+    settings.setBackgroundColor((canvasColor));
+    settings.setSize(QSize(1794,1100));
 
     // patern
     int igridWidth = 21;
@@ -363,8 +363,8 @@ bool DesignHuInsert::build()
 
     // positioning
     //startTile = sceneRect().center();
-    settings->setStartTile(QPointF(224,224));
-    qDebug() << "start tile:" << settings->getStartTile();
+    settings.setStartTile(QPointF(224,224));
+    qDebug() << "start tile:" << settings.getStartTile();
     xSeparation = 448;
     ySeparation = 448;
 
@@ -403,8 +403,8 @@ bool DesignHuInsert::build()
 bool Design11::build()
 {
     QColor canvasColor = QColor(TileBlack);
-    settings->setBackgroundColor((canvasColor));
-    settings->setSize(QSize(1800,1100));
+    settings.setBackgroundColor((canvasColor));
+    settings.setSize(QSize(1800,1100));
 
     // patern
     int gridWidth = 41;
@@ -413,8 +413,8 @@ bool Design11::build()
 
     // positioning
     //startTile = sceneRect().center();
-    settings->setStartTile(QPointF(901.0,533));
-    qDebug() << "start tile:" << settings->getStartTile();
+    settings.setStartTile(QPointF(901.0,533));
+    qDebug() << "start tile:" << settings.getStartTile();
     xSeparation = diameter;
     ySeparation = diameter;
 
@@ -452,19 +452,19 @@ bool Design11::build()
 bool Design12::build()
 {
     QSize size(1000,1100);
-    settings->setSize(size);
-    settings->setBackgroundColor((TileBlack));
+    settings.setSize(size);
+    settings.setBackgroundColor((TileBlack));
 
     BorderPtr bp = std::make_shared<BorderTwoColor>(size,QColor(Qt::green),QColor(Qt::red),20.0);
     bp->construct();
     border = bp;
 
     qreal diameter = 400.0;
-    settings->setStartTile(settings->getCenter());
+    settings.setStartTile(settings.getCenter());
     PatternPtr pat = std::make_shared<Pattern10>(diameter, QBrush(Qt::NoBrush));
     patterns.push_back(pat);
     pat->setTilePosition(0,0);
-    pat->setLoc(settings->getStartTile());
+    pat->setLoc(settings.getStartTile());
     pat->build();
     return true;
 }
@@ -483,12 +483,12 @@ bool Design13::build()
     qreal rotation   = 90.0;
     eDirection turn  = CW;
 
-    settings->setSize(QSize(1800,1100));
-    settings->setBackgroundColor((TileBlack));
+    settings.setSize(QSize(1800,1100));
+    settings.setBackgroundColor((TileBlack));
     qreal diameter = 400.0;
-    settings->setStartTile(settings->getCenter());
+    settings.setStartTile(settings.getCenter());
 
-    settings->setStartTile(QPointF(0,75));
+    settings.setStartTile(QPointF(0,75));
 
     if (rotation == 0.0)
     {
@@ -516,7 +516,7 @@ bool Design13::build()
     {
         rows = 1;
         cols = 1;
-        settings->setStartTile(settings->getStartTile() + QPointF(200,200));
+        settings.setStartTile(settings.getStartTile() + QPointF(200,200));
     }
 
     // create Patterns
@@ -547,13 +547,13 @@ bool Design14::build()
     qreal rotation   = 90.0;
     eDirection turn  = CW;
 
-    settings->setSize(QSize(1800,1100));
-    settings->setBackgroundColor((Qt::yellow));
+    settings.setSize(QSize(1800,1100));
+    settings.setBackgroundColor((Qt::yellow));
     qreal diameter = 400.0 / 2.0;
-    settings->setStartTile(settings->getCenter());
+    settings.setStartTile(settings.getCenter());
 
   //startTile = QPointF(0,75);  // for full-size (400)
-    settings->setStartTile(QPointF(0,50));  // for half-size (200)
+    settings.setStartTile(QPointF(0,50));  // for half-size (200)
   //startTile = QPointF(115,172);
 
     if (rotation == 0.0)
@@ -586,7 +586,7 @@ bool Design14::build()
     {
         rows = 1;
         cols = 1;
-        settings->setStartTile(settings->getStartTile() + QPointF(200,200));
+        settings.setStartTile(settings.getStartTile() + QPointF(200,200));
     }
 
     // create Patterns
@@ -605,15 +605,15 @@ bool Design14::build()
 
 bool Design16::build()
 {
-    settings->setSize(QSize(1800,1100));
-    settings->setBackgroundColor((QColor(TileBlack)));
+    settings.setSize(QSize(1800,1100));
+    settings.setBackgroundColor((QColor(TileBlack)));
 
     qreal diameter = 200.0;
-    settings->setStartTile(settings->getCenter());
+    settings.setStartTile(settings.getCenter());
 
     xSeparation = 206;
     ySeparation = 206;
-    settings->setStartTile(QPointF(126,126));
+    settings.setStartTile(QPointF(126,126));
 
     if (config->repeatMode != REPEAT_SINGLE)
     {
@@ -624,7 +624,7 @@ bool Design16::build()
     {
         rows = 1;
         cols = 1;
-        settings->setStartTile(settings->getStartTile() + QPointF(600,300));
+        settings.setStartTile(settings.getStartTile() + QPointF(600,300));
     }
 
     // create Patterns
@@ -647,15 +647,15 @@ bool Design16::build()
 
 bool Design17::build()
 {
-    settings->setSize(QSize(1800,1100));
-    settings->setBackgroundColor((QColor(TileBlack)));
+    settings.setSize(QSize(1800,1100));
+    settings.setBackgroundColor((QColor(TileBlack)));
 
     qreal diameter = 200.0;
-    settings->setStartTile(settings->getCenter());
+    settings.setStartTile(settings.getCenter());
 
     xSeparation = 145;
     ySeparation = 145;
-    settings->setStartTile(QPointF(-16,-16));
+    settings.setStartTile(QPointF(-16,-16));
 
      if (config->repeatMode != REPEAT_SINGLE)
     {
@@ -666,7 +666,7 @@ bool Design17::build()
     {
         rows = 1;
         cols = 1;
-        settings->setStartTile(settings->getStartTile() + QPointF(600,300));
+        settings.setStartTile(settings.getStartTile() + QPointF(600,300));
     }
 
     // create Patterns
@@ -696,15 +696,15 @@ bool Design17::build()
 
 bool Design18::build()
 {
-    settings->setSize(QSize(1800,1100));
-    settings->setBackgroundColor((QColor(TileBlack)));
+    settings.setSize(QSize(1800,1100));
+    settings.setBackgroundColor((QColor(TileBlack)));
 
     qreal diameter = 200.0;
-    settings->setStartTile(settings->getCenter());
+    settings.setStartTile(settings.getCenter());
 
     xSeparation = 136;
     ySeparation = 117;
-    settings->setStartTile(QPointF(-24,33));
+    settings.setStartTile(QPointF(-24,33));
 
      if (config->repeatMode != REPEAT_SINGLE)
     {
@@ -715,7 +715,7 @@ bool Design18::build()
     {
         rows = 1;
         cols = 1;
-        settings->setStartTile(settings->getStartTile() + QPointF(600,300));
+        settings.setStartTile(settings.getStartTile() + QPointF(600,300));
     }
 
     // create Patterns
@@ -737,15 +737,15 @@ bool Design18::build()
 
 bool Design19::build()
 {
-    settings->setSize(QSize(1800,1100));
-    settings->setBackgroundColor((QColor(TileBlack)));
+    settings.setSize(QSize(1800,1100));
+    settings.setBackgroundColor((QColor(TileBlack)));
 
     qreal diameter = 400.0;
-    settings->setStartTile(settings->getCenter());
+    settings.setStartTile(settings.getCenter());
 
     xSeparation = 400.0;
     ySeparation = 400.0;
-    settings->setStartTile(QPointF(222,24));
+    settings.setStartTile(QPointF(222,24));
 
      if (config->repeatMode != REPEAT_SINGLE)
     {
@@ -756,7 +756,7 @@ bool Design19::build()
     {
         rows = 1;
         cols = 1;
-        settings->setStartTile(settings->getStartTile() + QPointF(600,300));
+        settings.setStartTile(settings.getStartTile() + QPointF(600,300));
     }
 
     // create Patterns
@@ -779,22 +779,22 @@ bool Design19::build()
 bool DesignKumiko1::build()
 {
     QSize size(1395,1000);
-    settings->setSize(size);
-    settings->setBackgroundColor((QColor(0x58, 0x39, 0x3e)));
+    settings.setSize(size);
+    settings.setBackgroundColor((QColor(0x58, 0x39, 0x3e)));
 
     BorderPtr bp = std::make_shared<BorderTwoColor>(size,QColor(0xa2,0x79,0x67),QColor(0xa2,0x79,0x67),20);
     bp->construct();
     border = bp;
 
     qreal diameter = 200.0;
-    settings->setStartTile(settings->getCenter());
+    settings.setStartTile(settings.getCenter());
 
     xSeparation = 200.0;
     ySeparation = 346.41;   // ypos * 2
 
     if (config->repeatMode != REPEAT_SINGLE)
     {
-        settings->setStartTile(QPointF(-2.0,-197.0));
+        settings.setStartTile(QPointF(-2.0,-197.0));
         rows = 6;
         cols = 9;
     }
@@ -802,7 +802,7 @@ bool DesignKumiko1::build()
     {
         rows = 1;
         cols = 1;
-        settings->setStartTile(QPointF(400,400));
+        settings.setStartTile(QPointF(400,400));
     }
 
     // create Patterns
@@ -826,9 +826,9 @@ void DesignKumiko2::init()
     Design::init();
 
     QSize size(1395,1000);
-    settings->setSize(size);
+    settings.setSize(size);
 
-    settings->setBackgroundColor((QColor(0x58, 0x39, 0x3e)));
+    settings.setBackgroundColor((QColor(0x58, 0x39, 0x3e)));
 
     //BorderPtr bp = std::make_shared<BorderTwoColor>(QColor(0xa2,0x79,0x67),QColor(0xa2,0x79,0x67),20.0);
     //info->setBorder(bp);
@@ -840,7 +840,7 @@ void DesignKumiko2::init()
     {
         //info->setStartTile(QPointF(-2.0,-197.0));
         //info->setStartTile(QPointF(-2.0,282.0));
-        settings->setStartTile(QPointF(0.0,0.0));
+        settings.setStartTile(QPointF(0.0,0.0));
 
         rows = 6;
         cols = 9;
@@ -849,14 +849,14 @@ void DesignKumiko2::init()
     {
         rows = 1;
         cols = 1;
-        settings->setStartTile(QPointF(400,400));
+        settings.setStartTile(QPointF(400,400));
     }
 }
 
 bool DesignKumiko2::build()
 {
     PatternPtr pat = std::make_shared<PatternKumiko2>(2.0, QBrush());
-    pat->setLoc(settings->getStartTile());        // needs to be done here since repeat is called after the map is created
+    pat->setLoc(settings.getStartTile());        // needs to be done here since repeat is called after the map is created
     pat->fd.set(-5,5,-5,5);
     pat->trans1 = QPointF(2.0,0);
     pat->trans2 = QPointF(0,3.4641);
@@ -864,11 +864,11 @@ bool DesignKumiko2::build()
     //pat->setTilePosition(row,col);
     patterns.push_back(pat);
 
-    BorderPtr bp = std::make_shared<BorderTwoColor>(settings->getSize(),QColor(0xa2,0x79,0x67),QColor(0xa2,0x79,0x67),20.0);
+    BorderPtr bp = std::make_shared<BorderTwoColor>(settings.getSize(),QColor(0xa2,0x79,0x67),QColor(0xa2,0x79,0x67),20.0);
     bp->construct();
     border = bp;
 
-    settings->setBackgroundColor((QColor(0x58, 0x39, 0x3e)));
+    settings.setBackgroundColor((QColor(0x58, 0x39, 0x3e)));
 
     return true;
 }

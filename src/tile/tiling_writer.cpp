@@ -116,7 +116,7 @@ void TilingWriter::writeTilingXML(QTextStream & out)
 
     // fill paratmeters not part of original taprats
     int minX,minY,maxX,maxY;
-    tiling->getFillData().get(minX,maxX,minY,maxY);
+    tiling->getSettings().getFillData().get(minX,maxX,minY,maxY);
     out << "<Fill>" << minX << "," << maxX << ","
                     << minY << "," << maxY << "</Fill>" << endl;
     QPointF t1 = tiling->getTrans1();
@@ -153,18 +153,18 @@ void TilingWriter::writeTilingXML(QTextStream & out)
         }
 
         // background colors
-        ColorSet * bkgdColors  = feature->getBkgdColors();
-        int sz = bkgdColors->size();
+        ColorSet * featureColors  = feature->getFeatureColors();
+        int sz = featureColors->size();
         if (sz)
         {
             QString s = "<BkgdColors>";
             for (int i = 0; i < (sz-1); i++)
             {
-                QColor color = bkgdColors->getColor(i).color;
+                QColor color = featureColors->getColor(i).color;
                 s += color.name();
                 s += ",";
             }
-            QColor color = bkgdColors->getColor(sz-1).color;
+            QColor color = featureColors->getColor(sz-1).color;
             s += color.name();
             s += "</BkgdColors>";
             out << s << endl;
@@ -222,11 +222,11 @@ void TilingWriter::writeViewSettings(QTextStream & out)
 {
     out << "<ViewSettings>" <<  endl;
 
-    QSize size = tiling->getSize();
+    QSize size = tiling->getSettings().getSize();
     out << "<width>"  << size.width()  << "</width>" << endl;
     out << "<height>" << size.height() << "</height>" << endl;
 
-    QSize zsize = tiling->getZoomSize();
+    QSize zsize = tiling->getSettings().getZSize();
     out << "<zwidth>"  << zsize.width()  << "</zwidth>" << endl;
     out << "<zheight>" << zsize.height() << "</zheight>" << endl;
 

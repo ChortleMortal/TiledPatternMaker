@@ -98,6 +98,7 @@ private slots:
     void    slot_scaleToView(bool enb);
     void    showTilingPressed();
     void    showMosaicPressed();
+    void    slot_clearAll();
     void    slot_showBackChanged(bool state);
     void    slot_showGridChanged(bool state);
     void    slot_showCenterChanged(bool state);

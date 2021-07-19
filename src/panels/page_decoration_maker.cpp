@@ -118,7 +118,7 @@ void  page_decoration_maker::refreshPage()
     if (mosaic)
     {
         int xMin,xMax,yMin,yMax;
-        const FillData & fd = mosaic->getSettings()->getFillData();
+        const FillData & fd = mosaic->getSettings().getFillData();
         fd.get(xMin ,xMax,yMin,yMax);
         xRepMin->setValue(xMin);
         xRepMax->setValue(xMax);
@@ -555,7 +555,7 @@ void page_decoration_maker::slot_set_reps()
     FillData fd;
     fd.set(xRepMin->value(), xRepMax->value(), yRepMin->value(), yRepMax->value());
 
-    mosaic->getSettings()->setFillData(fd);
+    mosaic->getSettings().setFillData(fd);
     vcontrol->setFillData(fd);
 
     emit sig_render();

@@ -36,7 +36,6 @@
 #include "makers/tiling_maker/tiling_maker.h"
 #include "panels/layout_sliderset.h"
 #include "panels/layout_transform.h"
-#include "settings/model_settings.h"
 #include "tapp/prototype.h"
 #include "tile/backgroundimage.h"
 #include "tile/tiling.h"
@@ -313,11 +312,11 @@ void  page_modelSettings::refreshPage()
     if (tiling)
     {
         qDebug() << "Tiling" << tiling->getName();
-        QSize size  = tiling->getSize();
+        QSize size  = tiling->getSettings().getSize();
         sizeW[TILING_SETTINGS]->setValue(size.width());
         sizeH[TILING_SETTINGS]->setValue(size.height());
 
-        FillData fd = tiling->getFillData();
+        FillData fd = tiling->getSettings().getFillData();
         int xMin,xMax,yMin,yMax;
         fd.get(xMin,xMax,yMin,yMax);
 
@@ -328,28 +327,28 @@ void  page_modelSettings::refreshPage()
     }
 
     // mosaic/design settings;
-    ModelSettingsPtr mosaicSettings = getMosaicOrDesignSettings();
+    ModelSettings & mosaicSettings = getMosaicOrDesignSettings();
 
     // size
-    QSizeF sz = mosaicSettings->getSize();
+    QSizeF sz = mosaicSettings.getSize();
     sizeW[DESIGN_SETTINGS]->setValue(sz.width());
     sizeH[DESIGN_SETTINGS]->setValue(sz.height());
 
     // background color
-    QColor qc = mosaicSettings->getBackgroundColor();
+    QColor qc = mosaicSettings.getBackgroundColor();
     bkColorEdit[DESIGN_SETTINGS]->setText(qc.name(QColor::HexArgb));
     QVariant variant = qc;
     QString colcode  = variant.toString();
     bkgdColorPatch[DESIGN_SETTINGS]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
 
     // start tile
-    QPointF  pt = mosaicSettings->getStartTile();
+    QPointF  pt = mosaicSettings.getStartTile();
     startEditX[DESIGN_SETTINGS]->setValue(pt.x());
     startEditY[DESIGN_SETTINGS]->setValue(pt.y());
 
     // repeats
     int xMin,xMax,yMin,yMax;
-    mosaicSettings->getFillData().get(xMin ,xMax,yMin,yMax);
+    mosaicSettings.getFillData().get(xMin ,xMax,yMin,yMax);
     xRepMin[DESIGN_SETTINGS]->setValue(xMin);
     xRepMax[DESIGN_SETTINGS]->setValue(xMax);
     yRepMin[DESIGN_SETTINGS]->setValue(yMin);
@@ -453,8 +452,8 @@ void page_modelSettings::designSizeChanged(int)
 
     QSize sz = QSize(sizeW[DESIGN_SETTINGS]->value(),sizeH[DESIGN_SETTINGS]->value());
 
-    ModelSettingsPtr settings = getMosaicOrDesignSettings();
-    settings->setSize(sz);
+    ModelSettings & settings = getMosaicOrDesignSettings();
+    settings.setSize(sz);
 
     emit sig_refreshView();
 }
@@ -478,7 +477,7 @@ void page_modelSettings::viewSizeChanged(int)
     emit sig_refreshView();
 }
 
-ModelSettingsPtr page_modelSettings::getMosaicOrDesignSettings()
+ModelSettings & page_modelSettings::getMosaicOrDesignSettings()
 {
     if (config->getViewerType() == VIEW_DESIGN)
     {
@@ -489,16 +488,10 @@ ModelSettingsPtr page_modelSettings::getMosaicOrDesignSettings()
             DesignPtr dp = designs.first();
             return dp->getDesignInfo();
         }
-        else
-        {
-            ModelSettingsPtr settings = make_shared<ModelSettings>();
-            return settings;
-        }
     }
-    else
-    {
-        return decorationMaker->getMosaicSettings();
-    }
+
+    // drops thru
+    return decorationMaker->getMosaicSettings();
 }
 
 void page_modelSettings::slot_set_repsDesign(int val)
@@ -510,8 +503,8 @@ void page_modelSettings::slot_set_repsDesign(int val)
     FillData fd;
     fd.set(xRepMin[DESIGN_SETTINGS]->value(), xRepMax[DESIGN_SETTINGS]->value(), yRepMin[DESIGN_SETTINGS]->value(), yRepMax[DESIGN_SETTINGS]->value());
 
-    ModelSettingsPtr settings = getMosaicOrDesignSettings();
-    settings->setFillData(fd);
+    ModelSettings & settings = getMosaicOrDesignSettings();
+    settings.setFillData(fd);
 
     vcontrol->setFillData(fd);
 
@@ -530,7 +523,7 @@ void page_modelSettings::slot_set_repsTiling(int val)
     TilingPtr tiling = tilingMaker->getSelected();
     Q_ASSERT(tiling);
 
-    tiling->setFillData(fd);
+    tiling->getSettings().setFillData(fd);
     vcontrol->setFillData(fd);
 
     emit sig_render();
@@ -538,8 +531,8 @@ void page_modelSettings::slot_set_repsTiling(int val)
 
 void page_modelSettings::backgroundColorDesignPick()
 {
-    ModelSettingsPtr settings = getMosaicOrDesignSettings();
-    QColor color = settings->getBackgroundColor();
+    ModelSettings & settings = getMosaicOrDesignSettings();
+    QColor color = settings.getBackgroundColor();
 
     AQColorDialog dlg(color,this);
     dlg.setCurrentColor(color);
@@ -562,12 +555,10 @@ void page_modelSettings::backgroundColorDesignChanged(const QString & str)
     if (pageBlocked()) return;
 
     QColor color = QColor(str);
-    ModelSettingsPtr settings = getMosaicOrDesignSettings();
-    settings->setBackgroundColor(color);
+    ModelSettings & settings = getMosaicOrDesignSettings();
+    settings.setBackgroundColor(color);
     emit sig_refreshView();
 }
-
-
 
 void page_modelSettings::slot_tilingSizeChanged(int val)
 {
@@ -576,7 +567,7 @@ void page_modelSettings::slot_tilingSizeChanged(int val)
     if (pageBlocked()) return;
 
     TilingPtr tiling = tilingMaker->getSelected();
-    tiling->setSize(QSize(sizeW[TILING_SETTINGS]->value(),sizeH[TILING_SETTINGS]->value()));
+    tiling->getSettings().setSize(QSize(sizeW[TILING_SETTINGS]->value(),sizeH[TILING_SETTINGS]->value()));
 
     emit sig_refreshView();
 }

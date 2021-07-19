@@ -218,6 +218,7 @@ void ControlPanel::setupGUI()
 
     QPushButton * pbShowMosaic    = new QPushButton("Show Mosaic");
     QPushButton * pbShowTiling    = new QPushButton("Show Tiling");
+    QPushButton * pbClearAll      = new QPushButton("Clear All");
 
     if (config->insightMode)
     {
@@ -234,29 +235,22 @@ void ControlPanel::setupGUI()
         hlayout->addWidget(pbUpdateView);
         hlayout->addStretch();
         hlayout->addWidget(cbUpdate);
-        hlayout->addStretch();
-        hlayout->addWidget(radioDefined);
-        hlayout->addWidget(radioPack);
-        hlayout->addWidget(radioSingle);
-        hlayout->addStretch();
-        hlayout->addWidget(pbShowTiling);
-        hlayout->addWidget(pbShowMosaic);
 
         connect(pbUpdateView,       &QPushButton::clicked,  this,     &ControlPanel::updateView);
         connect(pbLogEvent,         &QPushButton::clicked,  this,     &ControlPanel::slot_logEvent);
         connect(pbRefreshView  ,    &QPushButton::clicked,  vcontrol, &ViewControl::slot_refreshView);
         connect(cbUpdate,           &QCheckBox::clicked,    this,     &ControlPanel::updateClicked);
     }
-    else
-    {
-        hlayout->addStretch();
-        hlayout->addWidget(radioDefined);
-        hlayout->addWidget(radioPack);
-        hlayout->addWidget(radioSingle);
-        hlayout->addStretch();
-        hlayout->addWidget(pbShowTiling);
-        hlayout->addWidget(pbShowMosaic);
-    }
+
+    hlayout->addStretch();
+    hlayout->addWidget(radioDefined);
+    hlayout->addWidget(radioPack);
+    hlayout->addWidget(radioSingle);
+    hlayout->addStretch();
+    hlayout->addWidget(pbClearAll);
+    hlayout->addStretch();
+    hlayout->addWidget(pbShowTiling);
+    hlayout->addWidget(pbShowMosaic);
 
     repeatRadioGroup.addButton(radioDefined,REPEAT_DEFINED);
     repeatRadioGroup.addButton(radioPack,REPEAT_PACK);
@@ -367,6 +361,7 @@ void ControlPanel::setupGUI()
     connect(pbExit,             &QPushButton::clicked,              this,     &ControlPanel::slot_exit);
     connect(pbRaise,            &QPushButton::clicked,              this,     &ControlPanel::slot_raise);
     connect(pbShowTiling,       &QPushButton::pressed,              this,     &ControlPanel::showTilingPressed);
+    connect(pbClearAll,         &QPushButton::pressed,              this,     &ControlPanel::slot_clearAll);
     connect(pbShowMosaic,       &QPushButton::pressed,              this,     &ControlPanel::showMosaicPressed);
     connect(&repeatRadioGroup,  &QButtonGroup::idClicked,           this,     &ControlPanel::repeatChanged);
     connect(this,               &ControlPanel::sig_refreshView,     vcontrol, &ViewControl::slot_refreshView);
@@ -1112,4 +1107,11 @@ void ControlPanel::slot_lockStatusChanged()
     cbLockView->blockSignals(true);
     cbLockView->setChecked(config->lockView);
     cbLockView->blockSignals(false);
+}
+
+void ControlPanel::slot_clearAll()
+{
+    // clears everything
+    vcontrol->resetAll();
+    emit sig_refreshView();
 }

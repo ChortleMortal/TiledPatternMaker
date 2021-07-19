@@ -1593,7 +1593,7 @@ void PatternKumiko2::build()
     if (!t)
     {
         t = make_shared<Tiling>(tileName, trans1, trans2);
-        t->setFillData(fd);
+        t->getSettings().setFillData(fd);
         FeaturePtr fp = make_shared<Feature>(4,0.0);
         PlacedFeaturePtr pfp = make_shared<PlacedFeature>(fp,QTransform());
         t->add(pfp);

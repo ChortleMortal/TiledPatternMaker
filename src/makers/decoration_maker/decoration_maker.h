@@ -4,13 +4,12 @@
 #include <memory>
 #include "enums/estyletype.h"
 #include "enums/estatemachineevent.h"
+#include "settings/model_settings.h"
 
 typedef std::shared_ptr<class TilingMaker>      TilingMakerPtr;
 typedef std::shared_ptr<class Mosaic>           MosaicPtr;
 typedef std::shared_ptr<class Prototype>        PrototypePtr;
 typedef std::shared_ptr<class Style>            StylePtr;
-typedef std::shared_ptr<class ModelSettings>    ModelSettingsPtr;
-
 
 class DecorationMaker
 {
@@ -24,7 +23,7 @@ public:
 
     MosaicPtr      getMosaic();
     void           resetMosaic();
-    ModelSettingsPtr getMosaicSettings();
+    ModelSettings& getMosaicSettings();
 
     StylePtr       makeStyle(eStyleType type, StylePtr oldStyle);
 
@@ -39,11 +38,11 @@ private:
     static DecorationMaker * mpThis;
 
     class MotifMaker  * motifMaker;
-    TilingMakerPtr      tilingMaker;
     class ViewControl * viewControl;
 
-    MosaicPtr       mosaic;
+    TilingMakerPtr      tilingMaker;
 
+    MosaicPtr           _mosaic;
 };
 
 #endif

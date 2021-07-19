@@ -191,7 +191,7 @@ void TiledPatternMaker::slot_buildDesign(eDesign design)
     config->lastLoadedDesignId = design;
 
     // size view to design
-    QSize size = d->getDesignInfo()->getSize();
+    QSize size = d->getDesignInfo().getSize();
     view->frameSettings.initialiseCommon(size,size);
     view->frameSettings.initialise(VIEW_DESIGN,size,size);
 

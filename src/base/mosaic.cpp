@@ -25,7 +25,6 @@
 #include "base/mosaic.h"
 #include "style/style.h"
 #include "makers/decoration_maker/decoration_maker.h"
-#include "settings/model_settings.h"
 #include "tapp/prototype.h"
 #include "base/misc.h"
 
@@ -34,7 +33,6 @@ const QString Mosaic::defaultName =  "The Formless";
 Mosaic::Mosaic()
 {
     name     = defaultName;
-    settings = std::make_shared<ModelSettings>();
 }
 
 Mosaic::~Mosaic()
@@ -78,16 +76,6 @@ void Mosaic::setName(QString name)
 void Mosaic::setNotes(QString notes)
 {
      designNotes = notes;
-}
-
-ModelSettingsPtr Mosaic::getSettings()
-{
-    return settings;
-}
-
-void Mosaic::setSettings(ModelSettingsPtr settings)
-{
-    this->settings = settings;
 }
 
 StylePtr  Mosaic::getFirstStyle()

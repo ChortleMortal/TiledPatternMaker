@@ -128,7 +128,7 @@ void DesignMaker::designReposition(qreal x, qreal y)
             design->setXseparation(design->getXseparation() + x);
             design->setYseparation(design->getYseparation() + y);
 
-            qDebug() << "origin=" << design->getDesignInfo()->getStartTile() << "xSep=" << design->getXseparation() << "ySep=" << design->getYseparation();
+            qDebug() << "origin=" << design->getDesignInfo().getStartTile() << "xSep=" << design->getXseparation() << "ySep=" << design->getYseparation();
 
             design->repeat();
         }
@@ -165,10 +165,10 @@ void DesignMaker::designOrigin(int x, int y)
     {
         if (design->isVisible())
         {
-            QPointF pt = design->getDesignInfo()->getStartTile();
+            QPointF pt = design->getDesignInfo().getStartTile();
             pt.setX(pt.x() + x);
             pt.setY(pt.y()+ y);
-            design->getDesignInfo()->setStartTile(pt);
+            design->getDesignInfo().setStartTile(pt);
         }
     }
     designReposition(0,0);
@@ -343,13 +343,13 @@ void DesignMaker::designScale(int delta)
 {
     for (auto design : qAsConst(activeDesigns))
     {
-        QSize sz =  design->getDesignInfo()->getSize();
+        QSize sz =  design->getDesignInfo().getSize();
         qDebug() << "design: size=" << sz;
         if (delta > 0)
             sz +=  QSize(delta,delta);
         else
             sz -=  QSize(delta,delta);
-        design->getDesignInfo()->setSize(sz);
+        design->getDesignInfo().setSize(sz);
     }
     view->update();
 }

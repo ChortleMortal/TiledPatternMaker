@@ -451,7 +451,7 @@ void TilingMaker::setupMaker(TilingPtr tiling)
     visibleT2.setP2(trans_origin + tiling->getTrans2());
 
     // set the layer transform and the view size
-    view->frameSettings.initialise(VIEW_TILING_MAKER,tiling->getSize(),tiling->getZoomSize());
+    view->frameSettings.initialise(VIEW_TILING_MAKER,tiling->getSettings().getSize(),tiling->getSettings().getZSize());
     Layer::setCanvasXform(tiling->getCanvasXform());
 }
 
@@ -773,7 +773,7 @@ void TilingMaker::createFillCopies()
     QPointF t1    = getSelected()->getTrans1();
     QPointF t2    = getSelected()->getTrans2();
 
-    const FillData & fd = getSelected()->getFillData();
+    const FillData & fd = getSelected()->getSettings().getFillData();
     int minX, maxX, minY, maxY;
     fd.get(minX, maxX, minY, maxY);
 

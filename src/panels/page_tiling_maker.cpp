@@ -106,7 +106,6 @@ QHBoxLayout * page_tiling_maker::createControlRow()
     tilingCombo                   = new QComboBox();
     tilingCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     QPushButton * reloadTilingBtn = new QPushButton("Re-load Tiling");
-    QPushButton * pbClearMakers   = new QPushButton("Clear Makers");
     QPushButton * pbClearTiling   = new QPushButton("Clear Tiling");
 
     QHBoxLayout * hbox = new QHBoxLayout;
@@ -115,12 +114,10 @@ QHBoxLayout * page_tiling_maker::createControlRow()
     hbox->addStretch();
     hbox->addWidget(reloadTilingBtn);
     hbox->addWidget(pbClearTiling);
-    hbox->addWidget(pbClearMakers);
     hbox->addStretch();
     hbox->addStretch();
 
     connect(tilingCombo,       SIGNAL(currentIndexChanged(int)),  this, SLOT(slot_currentTilingChanged(int)));
-    connect(pbClearMakers,     &QPushButton::clicked,  this, &page_tiling_maker::slot_clearMakers);
     connect(pbClearTiling,     &QPushButton::clicked,  this, &page_tiling_maker::slot_clearTiling);
     connect(reloadTilingBtn,   &QPushButton::clicked,  this, &page_tiling_maker::slot_reloadTiling);
 
@@ -622,19 +619,11 @@ bool page_tiling_maker::canExit()
 ///
 ////////////////////////////////////////////////
 
-void page_tiling_maker::slot_clearMakers()
-{
-    // clears everything
-    vcontrol->resetAllMakers();
-    emit sig_refreshView();
-
-    onEnter();
-    //view->dump(true);
-}
-
 void page_tiling_maker::slot_clearTiling()
 {
     // clears current tiling
+    vcontrol->removeAllImages();
+
     TilingPtr tp = tilingMaker->getSelected();
     tilingMaker->removeTiling(tp);  // re-creates if becomes empty
     emit sig_refreshView();
@@ -735,7 +724,7 @@ void page_tiling_maker::refreshMenuData()
     QLineF tl2(QPointF(0.0,0.0),t2);
 
     int xMin,xMax,yMin,yMax;
-    const FillData & fd = tiling->getFillData();
+    const FillData & fd = tiling->getSettings().getFillData();
     fd.get(xMin ,xMax,yMin,yMax);
 
     blockSignals(true);
@@ -1109,7 +1098,7 @@ void page_tiling_maker::slot_set_reps(int val)
     FillData fd;
     fd.set(xRepMin->value(), xRepMax->value(), yRepMin->value(), yRepMax->value());
 
-    tiling->setFillData(fd);
+    tiling->getSettings().setFillData(fd);
     vcontrol->setFillData(fd);
 
     tilingMaker->updateReps();

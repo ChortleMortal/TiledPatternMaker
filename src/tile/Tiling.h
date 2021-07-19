@@ -41,12 +41,12 @@
 #include "geometry/xform.h"
 #include "settings/filldata.h"
 #include "settings/tristate.h"
+#include "settings/model_settings.h"
 
 #define MAX_UNIQUE_FEATURE_INDEX 7
 
 typedef std::shared_ptr<class Feature>          FeaturePtr;
 typedef std::shared_ptr<class PlacedFeature>    PlacedFeaturePtr;
-typedef std::shared_ptr<class ModelSettings>    ModelSettingsPtr;
 typedef std::shared_ptr<class Map>              MapPtr;
 
 class FeatureGroup : public  QVector<QPair<FeaturePtr,QVector<PlacedFeaturePtr>>>
@@ -122,15 +122,7 @@ public:
     void         setState(eTilingState state);
 
     // settings
-    void        setSettings(ModelSettingsPtr settings);
-    void        setSize(QSize sz);
-    void        setZoomSize(QSize sz);
-    void        setFillData(FillData & fdata);
-
-    ModelSettingsPtr    getSettings();
-    QSize               getSize();
-    QSize               getZoomSize();
-    const FillData    & getFillData();
+    ModelSettings & getSettings() { return settings; }
 
     // map operations
     MapPtr  createMap();
@@ -147,7 +139,7 @@ private:
     QString         name;
     QString         desc;
     QString         author;
-    ModelSettingsPtr settings;
+    ModelSettings   settings;
     eTilingState    state;
     Tristate        intrinsicOverlaps;
     Tristate        tiledOveraps;

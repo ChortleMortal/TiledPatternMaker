@@ -26,13 +26,12 @@
 #define MOSAIC_H
 
 #include <QVector>
+#include "settings/model_settings.h"
 
 typedef std::shared_ptr<class Style>            StylePtr;
-typedef std::shared_ptr<class ModelSettings>    ModelSettingsPtr;
 typedef std::shared_ptr<class Tiling>           TilingPtr;
 typedef std::shared_ptr<class Border>           BorderPtr;
 typedef std::shared_ptr<class Prototype>        PrototypePtr;
-
 
 typedef QVector<StylePtr>  StyleSet;
 
@@ -56,8 +55,7 @@ public:
     QVector<PrototypePtr> getPrototypes();
     void                  resetPrototypeMaps();
 
-    ModelSettingsPtr getSettings();
-    void             setSettings(ModelSettingsPtr settings);
+    ModelSettings & getSettings() { return settings; };
 
     const StyleSet & getStyleSet() { return styleSet; }
     StylePtr         getFirstStyle();
@@ -79,7 +77,7 @@ private:
     StyleSet         styleSet;
     QString          name;
     QString          designNotes;
-    ModelSettingsPtr settings;
+    ModelSettings    settings;
     BorderPtr        border;
 };
 

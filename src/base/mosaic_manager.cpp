@@ -49,6 +49,7 @@ bool MosaicManager::loadMosaic(QString name)
     if (file.isEmpty())
     {
         QMessageBox box(ControlPanel::getInstance());
+        box.setIcon(QMessageBox::Critical);
         box.setText(QString("File <%1>not found").arg(name));
         box.exec();
         return false;
@@ -58,6 +59,7 @@ bool MosaicManager::loadMosaic(QString name)
     if (!afile.exists())
     {
         QMessageBox box(ControlPanel::getInstance());
+        box.setIcon(QMessageBox::Critical);
         box.setText(QString("File <%1>not found").arg(file));
         box.exec();
         return false;
@@ -76,7 +78,7 @@ bool MosaicManager::loadMosaic(QString name)
     {
         QString str = QString("Load ERROR - %1").arg(loader.getFailMessage());
         QMessageBox box(ControlPanel::getInstance());
-        box.setIcon(QMessageBox::Warning);
+        box.setIcon(QMessageBox::Critical);
         box.setText(str);
         box.exec();
         return false;
@@ -91,8 +93,8 @@ bool MosaicManager::loadMosaic(QString name)
     view->frameSettings.reInit();
     view->frameSettings.setModelAlignment(M_ALIGN_MOSAIC);
 
-    ModelSettingsPtr model = mosaic->getSettings();
-    view->frameSettings.initialiseCommon(model->getSize(),model->getZSize());
+    ModelSettings & model = mosaic->getSettings();
+    view->frameSettings.initialiseCommon(model.getSize(),model.getZSize());
 
     return true;
 }
@@ -103,7 +105,7 @@ bool MosaicManager::saveMosaic(QString name, QString & savedName, bool forceOver
     if (!mosaic)
     {
         QMessageBox box(ControlPanel::getInstance());
-        box.setIcon(QMessageBox::Warning);
+        box.setIcon(QMessageBox::Critical);
         box.setText("Save FAILED: There is no mosaic to save");
         box.exec();
         return false;
@@ -160,8 +162,8 @@ bool MosaicManager::saveMosaic(QString name, QString & savedName, bool forceOver
     // match size of mosaic view
     QSize size  = view->frameSettings.getCropSize(VIEW_MOSAIC);
     QSize zsize = view->frameSettings.getZoomSize(VIEW_MOSAIC);
-    mosaic->getSettings()->setSize(size);
-    mosaic->getSettings()->setZSize(zsize);
+    mosaic->getSettings().setSize(size);
+    mosaic->getSettings().setZSize(zsize);
 
     // write
     MosaicWriter writer;
@@ -183,7 +185,7 @@ bool MosaicManager::saveMosaic(QString name, QString & savedName, bool forceOver
         {
             QString str = writer.getFailMsg();
             astring = QString("Save File (%1) FAILED %2").arg(filename).arg(str);
-            box.setIcon(QMessageBox::Warning);
+            box.setIcon(QMessageBox::Critical);
         }
         box.setText(astring);
         box.exec();

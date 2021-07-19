@@ -101,7 +101,7 @@ void ViewControl::init()
 
 ViewControl::~ViewControl()
 {
-    resetAllMakers();
+    resetAll();
 }
 
 void ViewControl::slot_clearView()
@@ -114,7 +114,7 @@ void ViewControl::slot_clearMakers()
 {
     view->dump(true);
 
-    resetAllMakers();
+    resetAll();
 
     view->dump(true);
 }
@@ -129,8 +129,12 @@ FeaturePtr ViewControl::getSelectedFeature()
     return selectedFeature.lock();
 }
 
-void ViewControl::resetAllMakers()
+void ViewControl::resetAll()
 {
+    qDebug() << "ViewControl::resetAll()";
+
+    removeAllImages();
+
     DesignMaker * designMaker = DesignMaker::getInstance();
     designMaker->clearDesigns();
 
@@ -140,12 +144,15 @@ void ViewControl::resetAllMakers()
     MotifMaker * motifMaker = MotifMaker::getInstance();
     motifMaker->erasePrototypes();
 
+    mapEditor->wipeoutLocal();
     mapEditor->unload();
+
     tilingMaker->unload();
 
     selectedFeature.reset();
 
     view->clearView();
+
     view->frameSettings.reInit();
 }
 
@@ -307,8 +314,8 @@ void ViewControl::viewDesign()
     if (designs.count())
     {
         DesignPtr dp = designs.first();
-        ModelSettingsPtr settings = dp->getDesignInfo();
-        view->setBackgroundColor(settings->getBackgroundColor());
+        ModelSettings & settings = dp->getDesignInfo();
+        view->setBackgroundColor(settings.getBackgroundColor());
         setBorder(dp->border);
     }
     view->setWindowTitle(designMaker->getDesignName());
@@ -342,11 +349,6 @@ void ViewControl::viewMosaic()
         }
         view->setWindowTitle(name);
 
-        ModelSettingsPtr settings = decorationMaker->getMosaicSettings();
-        if (settings)
-        {
-            view->setBackgroundColor(settings->getBackgroundColor());
-        }
         setBorder(mosaic->getBorder());
 
         panel->hidePanelStatus();
@@ -359,6 +361,9 @@ void ViewControl::viewMosaic()
         qDebug() << "ViewController::viewMosaic - no mosaic";
         view->setWindowTitle("");
     }
+
+    ModelSettings & settings = decorationMaker->getMosaicSettings();
+    view->setBackgroundColor(settings.getBackgroundColor());
 }
 
 void ViewControl::viewPrototype()
@@ -462,25 +467,6 @@ void  ViewControl::setBorder(BorderPtr bp)
             view->addLayer(bp);
         }
     }
-}
-
-ModelSettingsPtr ViewControl::getMosaicOrTilingSettings()
-{
-    ModelSettingsPtr settings;
-    MosaicPtr mosaic = decorationMaker->getMosaic();
-    if (mosaic && mosaic->hasContent())
-    {
-        settings = mosaic->getSettings();
-    }
-    else
-    {
-        TilingPtr tp = tilingMaker->getSelected();
-        if (tp)
-        {
-            settings = tp->getSettings();
-        }
-    }
-    return settings;
 }
 
 const Xform &ViewControl::getCurrentXform()

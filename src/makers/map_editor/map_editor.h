@@ -86,6 +86,7 @@ public:
     void            completeBorder();
 
     void            clearAllMaps();
+    void            wipeoutLocal();
 
     MapMouseActionPtr mouse_interaction;    // used by menu
     QPointF           mousePos;             // used by menu
@@ -115,8 +116,6 @@ public slots:
 protected:
     void    setMousePos(QPointF pt);
 
-    MapPtr  localMap;       // for new maps created in the editor
-
 private:
     static MapEditorPtr     spThis;
 
@@ -125,6 +124,8 @@ private:
     class MotifMaker      * motifMaker;
     TilingMakerPtr          tilingMaker;
     class ControlPanel    * cpanel;
+
+    MapPtr  localMap;       // for new maps created in the editor
 
     SelectionSet currentSelections;
 

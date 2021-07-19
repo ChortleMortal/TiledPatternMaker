@@ -71,7 +71,7 @@ public:
     void        decompose();       // makes base from epoly (should not be needed except to fix historical files)
     FeaturePtr  recreate();
 
-    bool        isRegular() { return regular; }
+    bool        isRegular()   { return regular; }
     bool        isClockwise() { return  epoly.isClockwise(); }
     bool        equals(const FeaturePtr other);
     bool        isSimilar(const FeaturePtr other);
@@ -83,7 +83,7 @@ public:
     QPolygonF   getPoints()         { return epoly.getPoly(); }
     int         numPoints()         { return epoly.size(); }
     int         numSides()          { return epoly.size(); }
-    ColorSet *  getBkgdColors()     { return &bkgdColors; }
+    ColorSet *  getFeatureColors()  { return &featureColors; }
 
     QPointF     getCenter();
     qreal       edgeLen(int side = 0);
@@ -103,7 +103,7 @@ protected:
     qreal       scale;
 
     EdgePoly    epoly;
-    ColorSet    bkgdColors;    // backgrounds
+    ColorSet    featureColors;    // backgrounds
 };
 
 #endif

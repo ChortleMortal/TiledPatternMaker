@@ -76,8 +76,7 @@ void TileColors::createStyleRepresentation()
     QVector<FeaturePtr> uniques  = tp->getUniqueFeatures();
     for (auto feature : uniques)
     {
-        ColorSet * bkgdColors = feature->getBkgdColors();
-        bkgdColors->resetIndex();
+        feature->getFeatureColors()->resetIndex();
     }
 
     QVector<QTransform> & translations  = pp->getTranslations();
@@ -92,7 +91,7 @@ void TileColors::createStyleRepresentation()
         const EdgePoly & ep = f->getEdgePoly();
         QTransform T1       = fp->getTransform();
 
-        ColorSet * bkgdColors = f->getBkgdColors();
+        ColorSet * featureColors = f->getFeatureColors();
         for (auto& T2 : translations)
         {
             QTransform T3  = T1 * T2;
@@ -100,7 +99,7 @@ void TileColors::createStyleRepresentation()
 
             bkgdEPolyColor bpc;
             bpc.epoly  = ep2;
-            bpc.color  = bkgdColors->getNextColor().color;
+            bpc.color  = featureColors->getNextColor().color;
             epolys << bpc;
         }
     }

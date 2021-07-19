@@ -345,9 +345,12 @@ QGroupBox * page_image_tools::createTransparencySection()
 
     QVariant variant = config->transparentColor;
     QString colcode  = variant.toString();
-    colorLabel->setStyleSheet("QLabel { background-color : "+colcode+" ;}");
+    colorLabel->setStyleSheet("QLabel { background-color : "+colcode+" ; border : 1px solid black; }");
 
-    connect(colorEdit,              &QPushButton::clicked,     this,   &page_image_tools::slot_colorEdit);
+    chkUseFilter->setChecked(config->filter_transparent);
+
+    connect(colorEdit,              &QPushButton::clicked,   this,   &page_image_tools::slot_colorEdit);
+    connect(chkUseFilter,           &QCheckBox::clicked,     this,   &page_image_tools::slot_useFilter);
 
     return  imageGroup;
 }
@@ -960,6 +963,11 @@ void page_image_tools::editWorkList()
 
     ewl->exec();
 
+}
+
+void page_image_tools::slot_useFilter(bool checked)
+{
+    config->filter_transparent = checked;
 }
 
 void page_image_tools::slot_colorEdit()

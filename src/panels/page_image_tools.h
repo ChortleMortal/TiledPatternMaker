@@ -61,6 +61,7 @@ private slots:
     void    slot_next();
     void    slot_load();
     void    slot_colorEdit();
+    void    slot_useFilter(bool checked);
 
     void    slot_ibox0_changed(int index);
     void    slot_ibox1_changed(int index);

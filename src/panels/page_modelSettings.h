@@ -26,6 +26,7 @@
 #define PAGE_MODEL_SETTINGS_H
 
 #include "panels/panel_page.h"
+#include "settings/model_settings.h"
 
 class AQSpinBox;
 class SpinSet;
@@ -33,8 +34,6 @@ class DoubleSpinSet;
 
 class ClickableLabel;
 class AQTableWidget;
-
-typedef std::shared_ptr<class ModelSettings> ModelSettingsPtr;
 
 class page_modelSettings : public panel_page
 {
@@ -81,7 +80,7 @@ protected:
 
     QGridLayout * createFillDataRow(eSettingsGroup group);
 
-    ModelSettingsPtr getMosaicOrDesignSettings();
+    ModelSettings & getMosaicOrDesignSettings();
 
 private:
     void removeChildren(QTreeWidgetItem * parent);

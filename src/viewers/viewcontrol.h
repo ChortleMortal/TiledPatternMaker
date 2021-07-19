@@ -34,7 +34,6 @@ typedef std::shared_ptr<class BackgroundImage>  BkgdImgPtr;
 typedef std::shared_ptr<class Border>           BorderPtr;
 typedef std::shared_ptr<class Feature>          FeaturePtr;
 typedef std::shared_ptr<class MapEditor>        MapEditorPtr;
-typedef std::shared_ptr<class ModelSettings>    ModelSettingsPtr;
 typedef std::shared_ptr<class Tiling>           TilingPtr;
 typedef std::shared_ptr<class TilingView>       TilingViewPtr;
 typedef std::shared_ptr<class FigureView>       FigureViewPtr;
@@ -52,7 +51,7 @@ public:
     static void         releaseInstance();
 
     void    init();
-    void    resetAllMakers();
+    void    resetAll();
     void    viewEnable(eViewType view, bool enable);
     void    disableAllViews();
 
@@ -83,8 +82,6 @@ protected:
 
     void     setTitle(TilingPtr tp);
     void     setBorder(BorderPtr bp);
-
-    ModelSettingsPtr getMosaicOrTilingSettings();
 
 signals:
     void    sig_selected_dele_changed();

@@ -23,25 +23,26 @@
  */
 
 #include "page_system_info.h"
+#include "base/mosaic.h"
 #include "base/qtapplog.h"
 #include "base/utilities.h"
-#include "base/mosaic.h"
-#include "geometry/transform.h"
-#include "makers/tiling_maker/tiling_maker.h"
-#include "makers/motif_maker/motif_maker.h"
-#include "makers/decoration_maker/decoration_maker.h"
-#include "viewers/viewcontrol.h"
-#include "style/filled.h"
 #include "geometry/edge.h"
-#include "geometry/vertex.h"
-#include "geometry/neighbours.h"
-#include "tapp/prototype.h"
-#include "tapp/design_element.h"
 #include "geometry/map.h"
+#include "geometry/neighbours.h"
+#include "geometry/transform.h"
+#include "geometry/vertex.h"
+#include "makers/decoration_maker/decoration_maker.h"
+#include "makers/motif_maker/motif_maker.h"
+#include "makers/tiling_maker/tiling_maker.h"
+#include "style/filled.h"
+#include "tapp/design_element.h"
 #include "tapp/figure.h"
-#include "tile/tiling.h"
+#include "tapp/prototype.h"
+#include "tile/backgroundimage.h"
 #include "tile/feature.h"
 #include "tile/placed_feature.h"
+#include "tile/tiling.h"
+#include "viewers/viewcontrol.h"
 
 typedef std::shared_ptr<class Filled>       FilledPtr;
 
@@ -203,14 +204,28 @@ void page_system_info::populateTree()
 
     qDebug() << "page_system_info::populateTree() - tilings done";
 
+    // background image
+    item = new QTreeWidgetItem;
+    item->setText(0,"Background Image");
+    BkgdImgPtr bip = BackgroundImage::getSharedInstance();
+    if (bip->isLoaded())
+        item->setText(2, bip->getName());
+    else
+        item->setText(2, "none");
+    tree->addTopLevelItem(item);
+
     // selected feature
     item = new QTreeWidgetItem;
     item->setText(0,"Selected Feature");
     fp = vcontrol->getSelectedFeature();
-    item->setText(1,addr(fp.get()));
     if (fp)
     {
+        item->setText(1,addr(fp.get()));
         item->setText(2, QString("Points: %1 Rot: %2").arg(fp->numPoints()).arg(fp->getRotation()));
+    }
+    else
+    {
+        item->setText(2, "none");
     }
     tree->addTopLevelItem(item);
 
@@ -474,7 +489,7 @@ void page_system_info::populateTiling(QTreeWidgetItem * parent, TilingPtr tp, QS
     QTreeWidgetItem * pitem = new QTreeWidgetItem;
     pitem->setText(0,name);
     pitem->setText(1,addr(tp.get()));
-    QString astring = tp->getName() + " Features: " + QString::number(qlpf.size());
+    QString astring = tp->getName() + " - Features: " + QString::number(qlpf.size());
     astring += " T1" + Utils::str(tp->getTrans1()) + " T2" + Utils::str(tp->getTrans2());
     pitem->setText(2,astring);
     parent->addChild(pitem);

@@ -29,6 +29,7 @@
 #include "geometry/faces.h"
 #include "geometry/loose.h"
 #include "geometry/map.h"
+#include "panels/panel.h"
 #include "settings/model_settings.h"
 #include "style/colored.h"
 #include "style/emboss.h"
@@ -243,25 +244,25 @@ void MosaicLoader::processVector(xml_node & node)
     }
     if (_debug) qDebug() << "end vector";
 
-    ModelSettingsPtr settings = std::make_shared<ModelSettings>();
-    settings->setBackgroundColor(_background);
-    settings->setSize(QSize(_width,_height));
-    settings->setZSize(QSize(_zwidth,_zheight));
+    ModelSettings & settings = _mosaic->getSettings();
+
+    settings.setBackgroundColor(_background);
+    settings.setSize(QSize(_width,_height));
+    settings.setZSize(QSize(_zwidth,_zheight));
 
     // Canvas Settings fill data defaults to FillData defaults, loader can  override these
     if (_fillData.isSet())
     {
         if (_debug) qDebug() << "Using Mosaic FiilData";
-        settings->setFillData(_fillData);
+        settings.setFillData(_fillData);
     }
     else
     {
         if (_debug) qDebug() << "Using Tiling FiilData";
-        FillData fd =  getFirstTiling()->getFillData();
-        settings->setFillData(fd);
+        FillData fd =  getFirstTiling()->getSettings().getFillData();
+        settings.setFillData(fd);
     }
 
-    _mosaic->setSettings(settings);
     if (_border)
     {
         _mosaic->setBorder(_border);
@@ -1062,9 +1063,8 @@ PrototypePtr MosaicLoader::getPrototype(xml_node & node)
 
         if (found)
         {
-            // if the found feature is identical to the one in the known tiling
-            // then use that
-            // DAC 27MAY17 - imprtant that this code not removed or Design View will fail
+            // if the found feature is identical to the one in the known tiling then use that
+            // DAC 27MAY17 - imprtant that this code not removed or Mosaic View will fail
             bool found2 = false;
             for (auto tilingFeature :  uniqueFeatures)
             {
@@ -1088,6 +1088,7 @@ PrototypePtr MosaicLoader::getPrototype(xml_node & node)
             if (!found2)
             {
                 qWarning() << "Design feature not matching tiling feature" << _fileName;
+                qWarning() << "design feature" << feature->info();
             }
         }
         //p->walk();
@@ -1097,10 +1098,26 @@ PrototypePtr MosaicLoader::getPrototype(xml_node & node)
     int numDesignElements = designElements.size();
     if (numFeatures != numDesignElements)
     {
-        qWarning() <<  "Num unqiue features = " << numFeatures << "num DesignElements = " << numDesignElements;
-        qWarning("Feature/DesignElement MISMATCH");
+        QString str1 = "Feature/DesignElement MISMATCH";
+        QString str2;
+        QDebug  deb(&str2);
+        deb <<  "Num Unqiue Features =" << numFeatures << endl << "Num DesignElements =" << numDesignElements;
+        qWarning() << str1;
+        qWarning() << str2;
+        QMessageBox box(ControlPanel::getInstance());
+        box.setWindowTitle(_fileName);
+        int len = _fileName.length();
+        box.setIcon(QMessageBox::Critical);
+        int len2 = str1.length();
+        if (len2 < len)
+        {
+            int diff = len-len2;
+            str1.resize(len + (diff*2),' ');
+        }
+        box.setText(str1);
+        box.setInformativeText(str2);
+        box.exec();
     }
-
 
     // create explicit maps
     for (auto del : designElements)

@@ -599,6 +599,11 @@ void MapEditor::clearAllMaps()
     forceRedraw();
 }
 
+void MapEditor::wipeoutLocal()
+{
+    localMap->wipeout();
+}
+
 //////////////////////////////////////////////////////////////////
 ///
 /// Layer slotsevents

@@ -619,8 +619,7 @@ void TileColorsEditor::buildTable()
         table->setCellWidget(row,TILE_COLORS_BTN,btn);
         connect(btn, &QPushButton::clicked, this, &TileColorsEditor::slot_edit);
 
-        ColorSet * bkgdColors = fp->getBkgdColors();
-        AQWidget * widget = bkgdColors->createWidget();
+        AQWidget * widget = fp->getFeatureColors()->createWidget();
         table->setCellWidget(row,TILE_COLORS_COLORS,widget);
 
         row++;
@@ -638,8 +637,7 @@ void TileColorsEditor::slot_edit()
         return;
 
     FeaturePtr fp = qlfp[row];
-    ColorSet * colorSet = fp->getBkgdColors();
-    DlgColorSet dlg(colorSet,table);
+    DlgColorSet dlg(fp->getFeatureColors(),table);
 
     connect(&dlg, &DlgColorSet::sig_colorsChanged, this, &TileColorsEditor::slot_colors_changed);
 

@@ -253,7 +253,7 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
     {
         QString strt0 = t0.child_value();
         FillData fd = getFill(strt0);
-        tiling->setFillData(fd);
+        tiling->getSettings().setFillData(fd);
     }
 
     FeatureReader fr;   // must be located here to bw used for all features
@@ -377,8 +377,7 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
                 tpcolors.push_back(TPColor(acolor,false));
 
             }
-            ColorSet * bkgds = bf->getBkgdColors();
-            bkgds->setColors(tpcolors);
+            bf->getFeatureColors()->setColors(tpcolors);
         }
     }
 
@@ -602,7 +601,7 @@ void TilingLoader::getViewSettings(xml_node & node)
     }
 
     QSize size(width,height);
-    tiling->setSize(size);
+    tiling->getSettings().setSize(size);
     qDebug() << "tiling size:" << size;
 
     int zwidth  = width;
@@ -622,7 +621,7 @@ void TilingLoader::getViewSettings(xml_node & node)
     }
 
     QSize zsize(zwidth,zheight);
-    tiling->setZoomSize(zsize);
+    tiling->getSettings().setZSize(zsize);
     qDebug() << "tiling zoom size:" << zsize;
 
     Xform xf;
