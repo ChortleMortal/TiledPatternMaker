@@ -14,4 +14,11 @@ enum eStyleType
     STYLE_TILECOLORS,
 };
 
+enum eDrawOutline
+{
+    OUTLINE_NONE,
+    OUTLINE_DEFAULT,    // backwards compatible
+    OUTLINE_SET
+};
+
 #endif // ESTYLETYPE_H

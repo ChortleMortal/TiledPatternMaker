@@ -1,27 +1,3 @@
-/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 ////////////////////////////////////////////////////////////////////////////
 //
 // FillRegion.java
@@ -44,26 +20,33 @@
 
 #include "geometry/fill_region.h"
 #include "settings/configuration.h"
-#include "viewers/viewcontrol.h"
-#include "tapp/prototype.h"
-#include "viewers/tiling_view.h"
-#include "viewers/prototype_view.h"
 #include "tile/tiling.h"
 #include <QPolygonF>
 
-FillRegion::FillRegion()
+FillRegion::FillRegion(TilingPtr tiling, FillData *fd)
 {
-    config   = Configuration::getInstance();
-    vcontrol = ViewControl::getInstance();
+    this->tiling = tiling;
+    fillData     = fd;
+    config       = Configuration::getInstance();
 }
 
-void FillRegion::fill(GeoGraphics *gg)
+QVector<QTransform> FillRegion::getTransforms()
 {
+    int minX,minY,maxX,maxY;
+    bool singleton;
+    fillData->get(singleton,minX,maxX,minY,maxY);
+
+    if (singleton)
+    {
+        transforms.push_back(receive(0,0));
+        return transforms;
+    }
+
     switch(config->repeatMode)
     {
     case REPEAT_SINGLE:
         //qDebug() << "REPEAT_SINGLE";
-        receive(gg,0,0);
+        transforms.push_back(receive(0,0));
         break;
 
     case REPEAT_PACK:
@@ -73,25 +56,33 @@ void FillRegion::fill(GeoGraphics *gg)
         {
             for (int v = 0; v <= 1; v++)
             {
-                 receive(gg,h,v);
+                 transforms.push_back(receive(h,v));
             }
         }
         break;
 
     case REPEAT_DEFINED:
-    {
-        FillData fd = vcontrol->getFillData();
-        int minX,minY,maxX,maxY;
-        fd.get(minX,maxX,minY,maxY);
         //qDebug().noquote() << "REPEAT_DEFINED"  << minX << maxX << minY << maxY;
         for (int h = minX; h <= maxX; h++)
         {
             for (int v = minY; v <= maxY; v++)
             {
-                receive(gg,h,v);
+                transforms.push_back(receive(h,v));
             }
         }
+        break;
     }
-    break;
-    }
+
+    return transforms;
+}
+
+
+
+
+QTransform FillRegion::receive(int h, int v)
+{
+    //qDebug() << "Prototype::receive:"  << h << v;
+    QPointF pt   = (tiling->getTrans1() * static_cast<qreal>(h)) + (tiling->getTrans2() * static_cast<qreal>(v));
+    QTransform T = QTransform::fromTranslate(pt.x(),pt.y());
+    return T;
 }

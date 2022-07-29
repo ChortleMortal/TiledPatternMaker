@@ -614,6 +614,7 @@
 			<gap>0</gap>
 			<shadow>0.08</shadow>
 			<includeTipVerts>false</includeTipVerts>
+			<startUnder>true</startUnder>
 		</style.Interlace>
 	</style.Interlace>
 	<style.Outline id="160" serialization="custom">
@@ -662,7 +663,6 @@
 			<draw__inside>true</draw__inside>
 			<draw__outside>false</draw__outside>
 			<algorithm>0</algorithm>
-			<cleanse>0</cleanse>
 		</style.Filled>
 	</style.Filled>
 </vector>

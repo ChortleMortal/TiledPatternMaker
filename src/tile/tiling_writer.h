@@ -1,6 +1,8 @@
 #ifndef TILING_WRITER
 #define TILING_WRITER
 
+#include <QTextStream>
+#include <QMap>
 #include "geometry/vertex.h"
 
 typedef std::shared_ptr<class Tiling>           TilingPtr;

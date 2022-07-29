@@ -1,97 +1,91 @@
-﻿/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
+﻿#ifndef MAP_EDITOR_VIEW_H
+#define MAP_EDITOR_VIEW_H
 
-#ifndef FIGURE_EDITOR_VIEW_H
-#define FIGURE_EDITOR_VIEW_H
+#include "misc/layer_controller.h"
 
-#include "base/layer.h"
-
-typedef std::shared_ptr<class Tiling>           TilingPtr;
-typedef std::shared_ptr<class Map>              MapPtr;
-typedef std::shared_ptr<class Figure>           FigurePtr;
-typedef std::shared_ptr<class Prototype>        PrototypePtr;
-typedef std::shared_ptr<class Border>           BorderPtr;
-typedef std::shared_ptr<class Feature>          FeaturePtr;
-typedef std::shared_ptr<class DCEL>             DCELPtr;
-typedef std::shared_ptr<class Crop>             CropPtr;
-typedef std::shared_ptr<class Circle>           CirclePtr;
 typedef std::shared_ptr<class DesignElement>    DesignElementPtr;
-typedef std::shared_ptr<class Style>            StylePtr;
+typedef std::shared_ptr<class Map>              MapPtr;
+typedef std::shared_ptr<class MapEditorView>    MapedViewPtr;
+typedef std::shared_ptr<class Feature>          FeaturePtr;
 
-class MapEditorView : public Layer
+typedef std::weak_ptr<class DesignElement>      WeakDELPtr;
+typedef std::weak_ptr<class Map>                WeakMapPtr;
+
+class MapEditorDb;
+class MapEditorSelection;
+
+class MapEditorView : public LayerController
 {
 public:
-    MapEditorView();
+    static MapedViewPtr getSharedInstance();
 
-    virtual void    paint(QPainter * painter) override;
-    virtual void    draw(QPainter *) = 0;
+    MapEditorView(int ignore);  // dont use this
+    ~MapEditorView() {}
 
-    void            unload();
-    TilingPtr       getTiling()  { return tiling; }
-    MapPtr          getMap()     { return map; }
-    FigurePtr       getFigure()  { return figp; }
-    DCELPtr         getDCEL()    { return dcel; }
+    void                init(MapEditorDb * maped_db, MapEditorSelection * selector);
 
-    CropPtr         getCrop(){ return cropRect; }
+    virtual void        paint(QPainter * painter) override;
+    virtual void        draw(QPainter *);
 
-    void            drawMap(QPainter * painer);
-    void            drawDCEL(QPainter * painer);
-    void            drawCropMap(QPainter * painer);
-    void            drawFeature(QPainter * painter);
-    void            drawBoundaries(QPainter * painter);
-    void            drawPoints(QPainter * painter, QVector<class pointInfo> & points);
-    void            drawConstructionLines(QPainter * painter);
-    void            drawConstructionCircles(QPainter * painter);
+    void                drawMap(QPainter * painter, eLayer layer, QColor color);
+    void                drawDCEL(QPainter * painter);
+    void                drawFeature(QPainter * painter, DesignElementPtr del);
+    void                drawBoundaries(QPainter * painter, DesignElementPtr del);
+    void                drawPoints(QPainter * painter, QVector<class pointInfo> & points);
+    void                drawConstructionLines(QPainter * painter);
+    void                drawConstructionCircles(QPainter * painter);
 
-    bool              hideConstructionLines;
-    bool              hideMap;
-    bool              hidePoints;
-    bool              hideMidPoints;
-    qreal             mapLineWidth;
-    qreal             constructionLineWidth;
+    void                startMouseInteraction(QPointF spt, enum Qt::MouseButton mouseButton);
 
-    QVector<QLineF>    constructionLines;
-    QVector<CirclePtr> constructionCircles;
+    QTransform          getPlacement(FeaturePtr feature);
+
+    virtual const Xform  & getCanvasXform() override;
+    virtual void           setCanvasXform(const Xform & xf) override;
+
+    MapEditorSelection * getSelector() { return selector; }
+    MapEditorDb        * getDb() { return db; }
+
+    qreal               mapLineWidth;
+    qreal               constructionLineWidth;
+    qreal               selectionWidth;
+
+public slots:
+    virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
+    virtual void slot_mouseDragged(QPointF spt)       override;
+    virtual void slot_mouseTranslate(QPointF pt)      override;
+    virtual void slot_mouseMoved(QPointF spt)         override;
+    virtual void slot_mouseReleased(QPointF spt)      override;
+    virtual void slot_mouseDoublePressed(QPointF spt) override;
+    virtual void slot_setCenter(QPointF spt) override;
+
+    virtual void slot_wheel_scale(qreal delta)  override;
+    virtual void slot_wheel_rotate(qreal delta) override;
+
+    virtual void slot_scale(int amount)  override;
+    virtual void slot_rotate(int amount) override;
+    virtual void slot_moveX(int amount)  override;
+    virtual void slot_moveY(int amount)  override;
+
+    virtual void iamaLayer() override {}
+    virtual void iamaLayerController() override {}
+
+    void    setMousePos(QPointF pt);
+    QPointF getMousePos() { return mousePos; }
+
+    QTransform          viewT;
+    QTransform          viewTinv;  // inverted
 
 protected:
-    StylePtr          styp;      // set
-    PrototypePtr      prototype; // set
-    DesignElementPtr  delp;      // set
-    TilingPtr         tiling;    // set
-    DCELPtr           dcel;      // set
-    BorderPtr         border;    // set
 
-    FigurePtr         figp;      // derived
-    FeaturePtr        feap;      // derived
+private:
 
-    MapPtr            map;       // derived
-    CropPtr           cropRect;
+    static MapedViewPtr spThis;
+    Xform               xf_canvas;
+    QPointF             mousePos;             // used by menu
 
-    QTransform        viewT;
-    QTransform        viewTinv;  // inverted
-
-    qreal             selectionWidth;
+    MapEditorDb        * db;
+    MapEditorSelection * selector;
+    Configuration      * config;
 };
 
 #endif

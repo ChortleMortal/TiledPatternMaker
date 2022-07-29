@@ -1,12 +1,15 @@
 #ifndef NEIGHBOURS_H
 #define NEIGHBOURS_H
 
-#include <QtCore>
+#include <memory>
+#include <QVector>
+#include <QMap>
 
 typedef std::shared_ptr<class Edge>         EdgePtr;
 typedef std::weak_ptr<class Edge>           WeakEdgePtr;
 typedef std::shared_ptr<class Vertex>       VertexPtr;
 typedef std::weak_ptr<class Vertex>         WeakVertexPtr;
+typedef std::shared_ptr<class Neighbours>   NeighboursPtr;
 
 struct BeforeAndAfter
 {
@@ -17,37 +20,30 @@ struct BeforeAndAfter
 // DAC: OMG  in taprats this was a forward linked list of neigbour classes
 // IMHO this added complexity but no value and is replaced by a vector of edges
 // The vector needs to be sorted by angle
-class Neighbours : public std::vector<WeakEdgePtr>
+class Neighbours : public QVector<WeakEdgePtr>
 {
 public:
-    //Neighbours();
-    Neighbours(VertexPtr vp);
+    Neighbours(const VertexPtr & vp);
     Neighbours(const Neighbours & other);
     ~Neighbours();
 
-    void setParent(VertexPtr v) { parent = v; }
+    void insertNeighbour(const EdgePtr &np);
 
     int numNeighbours()  { return (int)size(); }
 
-    void sortNeighboursByAngle();
-    void insertNeighbour(EdgePtr np);
-    void removeNeighbour(EdgePtr edge );
-    bool contains(EdgePtr e) const;
-    void replaceNeighbour(EdgePtr old_edge, EdgePtr new_edge);
-    void eraseNeighbours() { clear(); }
-
-    BeforeAndAfter getBeforeAndAfter(EdgePtr edge);
+    BeforeAndAfter getBeforeAndAfter(const EdgePtr & edge);
     EdgePtr        getNeighbour(int index);
-    EdgePtr        getFirstNonvisitedNeighbour(EdgePtr home);
+    EdgePtr        getFirstNonvisitedNeighbour(const EdgePtr & home);
 
     bool verify();
     void cleanse();
     void dumpNeighbours() const;
 
-    bool _built;
+protected:
+    bool contains(const EdgePtr & e) const;
 
 private:
-    WeakVertexPtr parent;
+    WeakVertexPtr vertex;
 };
 
 #endif // NEIGHBOURS_H

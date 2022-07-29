@@ -159,7 +159,6 @@
 			<draw__inside>true</draw__inside>
 			<draw__outside>true</draw__outside>
 			<algorithm>1</algorithm>
-			<cleanse>0</cleanse>
 		</style.Filled>
 	</style.Filled>
 </vector>

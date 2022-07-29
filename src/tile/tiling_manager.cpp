@@ -1,44 +1,19 @@
-/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #include "tile/tiling_manager.h"
+#include "misc/fileservices.h"
+#include "makers/mosaic_maker/mosaic_maker.h"
+#include "makers/motif_maker/motif_maker.h"
+#include "makers/tiling_maker/tiling_maker.h"
+#include "settings/model_settings.h"
+#include "settings/configuration.h"
+#include "misc/backgroundimage.h"
 #include "tile/tiling.h"
 #include "tile/tiling_loader.h"
 #include "tile/tiling_writer.h"
-#include "makers/tiling_maker/tiling_maker.h"
-#include "makers/motif_maker/motif_maker.h"
-#include "makers/decoration_maker/decoration_maker.h"
-#include "geometry/point.h"
-#include "base/shared.h"
-#include "base/fileservices.h"
-#include "viewers/view.h"
 #include "viewers/viewcontrol.h"
-#include "settings/model_settings.h"
 
 TilingManager::TilingManager()
 {
-    view         = View::getInstance();
+    view         = ViewControl::getInstance();
     config       = Configuration::getInstance();
     tilingMaker  = TilingMaker::getSharedInstance();
     motifMaker   = MotifMaker::getInstance();
@@ -55,6 +30,11 @@ TilingPtr TilingManager::loadTiling(QString name, eSM_Event mode)
         return loadedTiling;
     }
 
+    BkgdImgPtr bip = BackgroundImage::getSharedInstance();
+    bip->unload();
+
+    qInfo().noquote() << "TilingManager::loadTiling" << filename << sSM_Events[mode];
+
     TilingLoader tm;
     loadedTiling  = tm.readTilingXML(filename);
     if (!loadedTiling)
@@ -63,7 +43,8 @@ TilingPtr TilingManager::loadTiling(QString name, eSM_Event mode)
         return loadedTiling;
     }
 
-    qDebug().noquote() << "Loaded tiling:" << filename << loadedTiling->getName();
+    qInfo().noquote() << "Loaded  tiling:" << filename << loadedTiling->getName();
+
     loadedTiling->setState(Tiling::LOADED);
     view->frameSettings.setModelAlignment(M_ALIGN_TILING);
 
@@ -139,7 +120,7 @@ bool TilingManager::saveTiling(QString name, TilingPtr tiling)
 bool TilingManager::verifyNameFiles()
 {
     bool rv = true;
-    QStringList files = FileServices::getTilingNames();
+    QStringList files = FileServices::getTilingNames(LOAD_ALL);
     for (int i=0; i < files.size(); i++)
     {
         QString name = files[i];

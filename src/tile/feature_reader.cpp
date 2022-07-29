@@ -1,14 +1,13 @@
 #include "tile/feature_reader.h"
 #include "geometry/xform.h"
 #include "geometry/edge.h"
+#include "mosaic/mosaic_reader_base.h"
 #include <QTransform>
 
 using std::make_shared;
 
-FeatureReader::FeatureReader()
+FeatureReader::FeatureReader() : MosaicReaderBase()
 {
-    vOrigCnt = 0;
-    vRefrCnt = 0;
 }
 
 EdgePoly FeatureReader::getEdgePoly(xml_node & node)
@@ -40,9 +39,28 @@ EdgePoly FeatureReader::getEdgePoly(xml_node & node)
                 QString val = conv.value();
                 convex = (val == "t") ? true : false;
             }
-            EdgePtr eptr = make_shared<Edge>(v1,v2,c0,convex);
+            EdgePtr eptr = make_shared<Edge>(v1,v2,c0,convex,false);
             ep.push_back(eptr);
         }
+        else if (name == "Chord")
+        {
+            xml_node n2  = n.child("Point");
+            xml_node n3  = n2.next_sibling("Point");
+            xml_node n4  = n.child("Center");
+            VertexPtr v1 = getVertex(n2);
+            VertexPtr v2 = getVertex(n3);
+            QPointF   c0 = getPoint(n4);
+            bool convex = true; // default
+            xml_attribute conv = n.attribute("convex");
+            if (conv)
+            {
+                QString val = conv.value();
+                convex = (val == "t") ? true : false;
+            }
+            EdgePtr eptr = make_shared<Edge>(v1,v2,c0,convex,true);
+            ep.push_back(eptr);
+        }
+
     }
     return ep;
 }
@@ -87,7 +105,6 @@ VertexPtr FeatureReader::getVertex(xml_node & node)
 {
     if (hasReference(node))
     {
-        vRefrCnt++;
         return getVertexReferencedPtr(node);
     }
 
@@ -99,7 +116,6 @@ VertexPtr FeatureReader::getVertex(xml_node & node)
     qreal x = qsl[0].toDouble();
     qreal y = qsl[1].toDouble();
 
-    vOrigCnt++;
     VertexPtr v = make_shared<Vertex>(QPointF(x,y));
     setVertexReference(node,v);
 
@@ -114,45 +130,4 @@ QPointF FeatureReader::getPoint(xml_node & node)
     qreal x = qsl[0].toDouble();
     qreal y = qsl[1].toDouble();
     return QPointF(x,y);
-}
-
-bool FeatureReader::hasReference(xml_node & node)
-{
-    xml_attribute ref;
-    ref = node.attribute("reference");
-    return (ref);
-}
-
-void FeatureReader::setVertexReference(xml_node & node, VertexPtr ptr)
-{
-    xml_attribute id;
-    id = node.attribute("id");
-    if (id)
-    {
-        int i = id.as_int();
-        vertex_ids[i] = ptr;
-#ifdef DEBUG_REFERENCES
-        qDebug() << "set ref vertex:" << i;
-#endif
-    }
-}
-
-VertexPtr FeatureReader::getVertexReferencedPtr(xml_node & node)
-{
-    VertexPtr retval;
-    xml_attribute ref;
-    ref = node.attribute("reference");
-    if (ref)
-    {
-        int id = ref.as_int();
-#ifdef DEBUG_REFERENCES
-        qDebug() << "using reference" << id;
-#endif
-        retval = VertexPtr(vertex_ids[id]);
-        if (retval == NULL)
-        {
-            qWarning() << "FeatureReader::getVertexReferencedPtr reference:" << id << "- NOT FOUND";
-        }
-    }
-    return retval;
 }

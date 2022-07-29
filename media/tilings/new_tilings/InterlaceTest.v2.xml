@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<Tiling version="6">
+	<!-- Written Sat Feb 19 2022 16:59:00 -->
+	<Name>InterlaceTest.v2</Name>
+	<Fill singleton="t">0,0,0,0</Fill>
+	<T1>0,0</T1>
+	<T2>0,0</T2>
+	<ViewSettings>
+		<width>1396</width>
+		<height>933</height>
+		<zwidth>1500</zwidth>
+		<zheight>1100</zheight>
+		<left__delta>-140</left__delta>
+		<top__delta>-249</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Feature type="regular" sides="4" rotation="0" scale="1">
+		<Placement>
+			<scale>0.9999999999999997</scale>
+			<rot>-6.000000000000001</rot>
+			<tranX>-3.453333333333332</tranX>
+			<tranY>1.306666666666668</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>20</rot>
+			<tranX>-4.133333333333333</tranX>
+			<tranY>0.1600000000000019</tranY>
+		</Placement>
+	</Feature>
+	<Desc />
+	<Auth>DAC</Auth>
+</Tiling>

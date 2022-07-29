@@ -1,11 +1,13 @@
 #include "viewers/grid.h"
 #include "settings/configuration.h"
-#include "viewers/view.h"
+#include "viewers/viewcontrol.h"
 #include "geometry/transform.h"
-#include "base/geo_graphics.h"
+#include "misc/geo_graphics.h"
 #include "geometry/map.h"
 #include "geometry/vertex.h"
 #include "geometry/point.h"
+
+using std::make_shared;
 
 typedef std::shared_ptr<class Vertex>       VertexPtr;
 
@@ -16,7 +18,7 @@ GridPtr Grid::getSharedInstance()
     if (!spThis)
     {
         PrototypePtr pp;
-        spThis = std::make_shared<Grid>(pp);
+        spThis = make_shared<Grid>(pp);
     }
     return spThis;
 }
@@ -24,11 +26,12 @@ GridPtr Grid::getSharedInstance()
 Grid::Grid(PrototypePtr pp) : Thick(pp)
 {
     config  = Configuration::getInstance();
-    view    = View::getInstance();
+    view    = ViewControl::getInstance();
 
     setColor(Qt::red);
+    setZValue(-5);
 
-    gridMap = std::make_shared<Map>("Grid");
+    gridMap = make_shared<Map>("Grid");
     setMap(gridMap);
 
     create();
@@ -116,7 +119,7 @@ void Grid::create()
 
 
 // this is relative to model(0,0)
-void Grid::createGridModelUnits(const QRectF &r)
+void Grid::createGridModelUnits(QRectF r)
 {
     // this centers on scene
     qreal step   = config->gridModelSpacing;
@@ -209,11 +212,12 @@ void Grid::createGridModelUnits(const QRectF &r)
 }
 
 // this is relative to layer center
-void Grid::createGridModelUnitsCentered(QRectF &r)
+void Grid::createGridModelUnitsCentered(QRectF r)
 {
     // this centers on layer center
     QPointF center  = getCenterModelUnits();
     r.moveCenter(center);
+    qDebug() << "grid model center" << center;
 
     qreal step    = config->gridModelSpacing;
     qreal minmax  = 20.0 * step;
@@ -303,7 +307,7 @@ void Grid::createGridModelUnitsCentered(QRectF &r)
     }
 }
 
-void Grid::createGridSceneUnits(const QRectF &r)
+void Grid::createGridSceneUnits(const QRectF r)
 {
     QPointF center = r.center();
     qreal step = config->gridScreenSpacing;
@@ -414,7 +418,7 @@ void Grid::createGridSceneUnits(const QRectF &r)
     }
 }
 
-void Grid::createGridSceneUnitsCentered(QRectF &r)
+void Grid::createGridSceneUnitsCentered(QRectF r)
 {
     QPointF center = getCenterScreenUnits();
     r.moveCenter(center);

@@ -7,12 +7,13 @@ public:
     FillData();
 
     bool isSet() { return _set; }
-    void set(int minX, int minY, int maxX, int maxY);
+    void set(bool singleton, int minX, int minY, int maxX, int maxY);
     void set(FillData & fdata);
-    void get(int & minX, int & maxX, int & minY, int & maxY) const;
+    void get(bool & singleton, int & minX, int & maxX, int & minY, int & maxY) const;
 
 protected:
     bool _set;
+    bool singleton;
     int minX;
     int minY;
     int maxX;

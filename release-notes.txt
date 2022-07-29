@@ -1,0 +1,160 @@
+Version 2.6.0
+=============
+
+- Another round of menu improvements
+- Improvements to crops and borders - but this is still really just a placeholder for
+  implementation of more complex borders
+- Map Editor improvements
+        ○ Load/save of map in XML
+        ○ Loading of tiling maps
+        ○ Push from map to tiling
+        ○ Loading from motif (single or multiple)
+        ○ Switch between map and DCEL for prototypes
+        ○ Introduces layers and composites
+- Use of worklists for loading, generating and comparing images
+- Adds multi-view
+- Irregular features default to Explicit Feature rather then Infer
+- Motifs displayed actual size or enlarged
+- Multi-select of motifs support superposition of figures which can be made into a composite figure
+- Maps merging improved support overlapping in tiles (this deviates from the concept of just using
+  PICs (polygons in contact))
+- Fill Region definition improvements
+
+BugFixes:
+- Style duplication
+- Linux build repaired
+
+Builds:
+    Both cmake and qmake builds supported
+    Qt versions 5.15.2 and 6.3.1 supported
+
+
+Version 2.5.1
+=============
+
+Bug Fixes:
+- transparency filter when loading images was not working
+- background colors were not being set correctly
+- Clear All moved to top line of control panel and improved
+- Improved text in control panel top lines
+- background images missing from system info
+
+Version 2.5
+===========
+
+- Improved alignment and resizing of layers in view.
+- Layers can be adjusted separately by selecting layer in 'Layer info' and selecting "Adjust Selected Layer"
+  in keyboard controls
+- Grid re-implemented as a map so points can be selected in tiling maker.
+  Now has its own menu and view select
+- Improvements to Backgrounds. Now has its own menu and view select
+- Better way of setting centers
+
+Bug Fixes:
+- 'Scale to View' now working without any pops
+- Filled style algorithm 2 modification were not immediately displayed
+
+Version 2.4
+===========
+
+Changes:
+- Adds integration of borders into Mosaic design
+- Adds definition of borders from border menu using the map editor in prototype mode
+- Borders functionality has been removed from the Model Settings menu tab and placed into its own new Borders tab.
+- The Design Element View and its associated menu tab have been removed.
+  The functionality has been added to the Prototype View and menu
+- All views now have same default size making alignment of views better
+
+Bug Fixes:
+- Major memory leak present from version 1.1 fixed
+- The introduction of using a DCEL (Doubly Connected Edge List) in version 2.2 substantially slowed down loading of
+  mosaics which had the Fill Style. This code has now been optimized and loading speeds are similar to versions 2.1 and previous
+- Reset of style representations did not completely reset Filled styles
+- Changing colors for Interlaced and Emboss did not update immediately
+- Map Editor: push to tiling fixed
+- Map Editor: fixed crashes when no map loaded
+
+Builds:
+Now recommend building with Qt6. (Qt5.15 is still supported)
+
+Version 2.3.1
+=============
+
+Changes:
+- Tiling loader has modify/replace option
+- Adds worklist operations save and edit to Image Tools (designer mode)
+- Prototype View: adds highlighting
+- Map editor: bugfix - now does not build maps unless required
+- Image Tools: next and prev now close existing image windows
+- Media: several versions of Test10 and Test11 deleted
+- Face Set view removed, uses face selection instead
+
+Bug fixes:
+- Editing of filled style colors repaired
+- Improved propagation of tiling changes into existing design
+- Fill mode 2 was not selecting correctly
+- Fixes non-responsiveness of Prototype View to tiling and motif changes
+
+Version 2.3.0
+=============
+
+Contains numerous bug fixes and the following changes
+
+Tiling Maker:
+- Refactor of decorative class filled with options to cleanse the design
+- Adds clear background image
+- Improved loading and saving of background images
+- Improved perspective adjustment (camera skew correction) for backgrounds
+- Additional control of Repetition points using angle and length
+- Fill is adjusted automatically as repetition points and repetition counts are changed
+- Highlighting of spin boxes
+
+Mosaics:
+- Background image is independent of tiling Background Image
+
+GUI:
+- Highlighting of all spin boxes
+- improves consistency of view sizes
+- Improved resizing of mosaics
+- default view sizes adjusted to better fit on 1920x1080 monitors
+- adds interval timing/elapsed timing in logger (Insight Mode)
+
+Designer Mode:
+- Map Editor reloads map when tiling changes
+- Map Editor removes unnecessary rebuild of Prototype by map editor
+- Image Tools now a separate menu
+- Simplification of media directory configuration
+
+Source Code:
+- This version is built using Qt Version 6.0.2
+
+Version 2.2.0
+==============
+
+The emphasis of this release has been on smoothing out the workflow from creating tilings,
+to applying motifs (figures) to tile features, to decorating the design to product a finished mosaic.
+
+Version 2.1.0
+=============
+
+- New functions and increased usability.
+- Many bugs fixed.
+
+Version 1.8.1
+=============
+
+- Introduces 'Designer Mode' and 'Insight Mode".
+- Major revision of control panel for usability improvements.
+
+Version 1.7.1
+=============
+
+Menu usability improvements
+
+Version 1.7.0
+=============
+
+- More user friendly menu system plus
+- Cleanup of media files.
+- More support for curved lines.
+

@@ -1,27 +1,3 @@
-/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 ////////////////////////////////////////////////////////////////////////////
 //
 // Faces.java
@@ -40,12 +16,15 @@
 // the only code that cares about faces doesn't need graph information
 // about the faces, just the coordinates of their corners.
 
+#include <QDebug>
+
 #include "geometry/faces.h"
 #include "geometry/edge.h"
 #include "geometry/dcel.h"
 #include "geometry/point.h"
 #include "geometry/loose.h"
 #include "geometry/intersect.h"
+#include "misc/tpm_io.h"
 
 #undef  DELETE_LARGEST
 
@@ -73,7 +52,14 @@ Face::Face()
 {
     state   = FACE_UNDONE;
     outer   = false;
-    color   = UNDEFINED;
+    area    = -1;
+    refs++;
+}
+
+Face::Face(EdgePoly & ep) : EdgePoly(ep)
+{
+    state   = FACE_UNDONE;
+    outer   = false;
     area    = -1;
     refs++;
 }
@@ -107,24 +93,6 @@ bool lessThanPoint(const QPointF &p1, const QPointF & p2)
     return ( p1.manhattanLength() < p2.manhattanLength());
 }
 
-bool Face::equals(FacePtr other)
-{
-    return getSorted() == other->getSorted();
-}
-
-QPolygonF & Face::getSorted()
-{
-    Q_ASSERT(sortedShadow.size() != 0);
-    return sortedShadow;
-}
-
-void Face::sortForComparison()
-{
-    sortedShadow = getPoly();
-    QVector<QPointF> & vec = sortedShadow;
-    std::sort(vec.begin(),vec.end(),lessThanPoint);
-}
-
 bool  Face::overlaps(FacePtr other)
 {
 #if 0
@@ -152,108 +120,6 @@ bool  Face::overlaps(FacePtr other)
 #endif
 }
 
-bool Face::containsCrossover()
-{
-    QVector<VertexPtr> qvec;
-    for (auto & edge : qAsConst(*this))
-    {
-        VertexPtr vp = edge->v1;
-        if (!qvec.contains(vp))
-        {
-            qvec.push_back(vp);
-        }
-        else
-        {
-            //qDebug() << "crossover detected";
-            return true;
-        }
-    }
-    return false;
-}
-
-FaceSet Face::decompose()
-{
-    FaceSet fset;
-
-    bool rv = false;
-    do
-    {
-        FacePtr face = std::make_shared<Face>();
-        rv = decomposeOnce(face);
-        if (rv)
-        {
-            fset.push_back(face);
-        }
-    } while (rv);
-
-    return fset;
-}
-
-
-bool Face::decomposeOnce(FacePtr newFace)
-{
-    enum eState
-    {
-        NOT_STARTED,
-        STARTED,
-        ENDED
-    };
-
-    QVector<VertexPtr> qvec;
-    for (auto & edge : qAsConst(*this))
-    {
-        VertexPtr vp = edge->v1;
-        if (!qvec.contains(vp))
-        {
-            qvec.push_back(vp);
-        }
-        else
-        {
-            // create a good face and take it out of this face
-            //qDebug() << "Crossover vertex detected" << vp->getTmpVertexIndex();
-            Face master;
-            eState state = NOT_STARTED;
-            for (auto & edge : qAsConst(*this))
-            {
-                switch(state)
-                {
-                case NOT_STARTED:
-                    if (edge->v1 != vp)
-                    {
-                        master.push_back(edge);
-                    }
-                    else
-                    {
-                        state = STARTED;
-                        newFace->push_back(edge);
-                    }
-                    break;
-                case STARTED:
-                    if (edge->v1 != vp)
-                    {
-                        newFace->push_back(edge);
-                    }
-                    else
-                    {
-                        state = ENDED;
-                        master.push_back(edge);
-                    }
-                    break;
-                case ENDED:
-                    master.push_back(edge);
-                    break;
-                }
-            }
-
-            Q_ASSERT(newFace->isValid());
-            Q_ASSERT(master.isValid());
-            *this = master;
-            return true;
-        }
-    }
-    return false;
-}
-
 ////////////////////////////////////////
 ///
 /// Face Set
@@ -262,7 +128,7 @@ bool Face::decomposeOnce(FacePtr newFace)
 
 void FaceSet::sortByPositon()
 {
-    newSet.clear();
+    QVector<FacePtr> newSet;
 
     for (auto it = begin(); it != end(); it++)
     {
@@ -273,7 +139,7 @@ void FaceSet::sortByPositon()
         }
         else
         {
-            sortByPositon(fp);
+            sortByPositon(fp,newSet);
         }
     }
 
@@ -283,7 +149,7 @@ void FaceSet::sortByPositon()
     faces = newSet;
 }
 
-void FaceSet::sortByPositon(FacePtr fp)
+void FaceSet::sortByPositon(FacePtr fp, QVector<FacePtr> & newSet)
 {
 #if 1
     // sort by y-axis then x-axis
@@ -400,7 +266,7 @@ void FaceSet::dump(DCELPtr dcel)
     qDebug().noquote() << astring;
 }
 
-void FaceGroup::select(int idx)
+void FaceGroups::select(int idx)
 {
     if (idx >= 0 && idx < size())
     {
@@ -417,7 +283,7 @@ void FaceGroup::select(int idx)
     }
 }
 
-void FaceGroup::deselect()
+void FaceGroups::deselect()
 {
     QVector<FaceSetPtr> & self = *this;
     for (int i=0; i < size(); i++)
@@ -427,7 +293,7 @@ void FaceGroup::deselect()
     }
 }
 
-void FaceGroup::deselect(int idx)
+void FaceGroups::deselect(int idx)
 {
     if (idx >= 0 && idx < size())
     {
@@ -437,7 +303,7 @@ void FaceGroup::deselect(int idx)
     }
 }
 
-bool FaceGroup::isSelected(int idx)
+bool FaceGroups::isSelected(int idx)
 {
     if (idx >= 0 && idx < size())
     {
@@ -448,7 +314,7 @@ bool FaceGroup::isSelected(int idx)
     return false;
 }
 
-int FaceGroup::totalSize()
+int FaceGroups::totalSize()
 {
     int tot = 0;
     for (const auto & fset : qAsConst(*this))

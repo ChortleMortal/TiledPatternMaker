@@ -1,0 +1,131 @@
+<?xml version="1.0"?>
+<vector id="1" version="10">
+	<design>
+		<size>
+			<width>1500</width>
+			<height>1100</height>
+			<zwidth>1500</zwidth>
+			<zheight>1100</zheight>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Fill singleton="f">-4,3,-4,3</Fill>
+	</design>
+	<style.Thick id="2" serialization="custom">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3" serialization="custom">
+				<app.Prototype>
+					<string>DAC 4 Design Name</string>
+					<entry>
+						<tile.Feature id="4">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">1,1</Point>
+									<Point id="7">-0.9999999999999998,1</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">-1,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">0.9999999999999997,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFigure id="10" type="FIG_TYPE_EXPLICIT">
+							<map id="11">
+								<vertices id="12">
+									<Vertex id="13">
+										<pos>-1,0</pos>
+									</Vertex>
+									<Vertex id="14">
+										<pos>-0.1732732373289567,-0.1732732373289565</pos>
+									</Vertex>
+									<Vertex id="15">
+										<pos>-0.1732732373289565,0.1732732373289565</pos>
+									</Vertex>
+									<Vertex id="16">
+										<pos>-4.440892098500626e-16,-1</pos>
+									</Vertex>
+									<Vertex id="17">
+										<pos>0,1</pos>
+									</Vertex>
+									<Vertex id="18">
+										<pos>0.1732732373289561,-0.1732732373289565</pos>
+									</Vertex>
+									<Vertex id="19">
+										<pos>0.1732732373289569,0.1732732373289565</pos>
+									</Vertex>
+									<Vertex id="20">
+										<pos>1,0</pos>
+									</Vertex>
+								</vertices>
+								<edges id="21">
+									<Edge id="22">
+										<v1 reference="13" />
+										<v2 reference="15" />
+									</Edge>
+									<Edge id="23">
+										<v1 reference="13" />
+										<v2 reference="14" />
+									</Edge>
+									<Edge id="24">
+										<v1 reference="17" />
+										<v2 reference="15" />
+									</Edge>
+									<Edge id="25">
+										<v1 reference="16" />
+										<v2 reference="14" />
+									</Edge>
+									<Edge id="26">
+										<v1 reference="17" />
+										<v2 reference="19" />
+									</Edge>
+									<Edge id="27">
+										<v1 reference="16" />
+										<v2 reference="18" />
+									</Edge>
+									<Edge id="28">
+										<v1 reference="20" />
+										<v2 reference="19" />
+									</Edge>
+									<Edge id="29">
+										<v1 reference="20" />
+										<v2 reference="18" />
+									</Edge>
+								</edges>
+							</map>
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFigure>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ffff9999</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.05</width>
+		</style.Thick>
+	</style.Thick>
+</vector>

@@ -1,7 +1,7 @@
 #ifndef VIEWERBASE_H
 #define VIEWERBASE_H
 
-#include <QtCore>
+#include <QBrush>
 
 class GeoGraphics;
 

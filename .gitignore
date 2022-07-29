@@ -18,3 +18,4 @@ release
 /src/tiledpatternmaker_plugin_import.cpp
 /src/tiledpatternmakerd_plugin_import.cpp
 /src/uic_wrapper.bat
+/src/build/*

@@ -1,3 +1,6 @@
+#include <QFrame>
+#include <QGridLayout>
+
 #include "panels/splitscreen.h"
 #include "panels/panel.h"
 #include "viewers/view.h"

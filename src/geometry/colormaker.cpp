@@ -1,3 +1,6 @@
+#include <QDebug>
+#include <QStack>
+
 #include "colormaker.h"
 #include "geometry/loose.h"
 #include "geometry/dcel.h"
@@ -10,11 +13,12 @@ ColorMaker::ColorMaker()
 ColorMaker::~ColorMaker()
 {
 #ifdef EXPLICIT_DESTRUCTOR
+   qDebug() << "deleting ColorMaker";
+    dcel.reset();
     facesToDo.clear();
     whiteFaces.clear();
     blackFaces.clear();
-    faceGroup.clear();
-    dcel.reset();
+    faceGroups.clear();
 #endif
 }
 void ColorMaker::createFacesToDo()
@@ -76,35 +80,41 @@ void ColorMaker::assignColorsToFaces(FaceSet &fset)
 
         //eColor color = C_WHITE;     // seed
         EdgePtr head = aface->incident_edge.lock();
-        EdgePtr edge = head;
-        do
+        if (head)
         {
-            FacePtr nfi = edge->twin.lock()->incident_face;
-            if (!nfi->outer)
+            EdgePtr edge = head;
+            do
             {
-                switch( nfi->state )
+                FacePtr nfi = edge->twin.lock()->incident_face.lock();
+                if (nfi)
                 {
-                case FACE_UNDONE:
-                    nfi->state = FACE_PROCESSING;
-                    st.push(nfi);
-                    break;
+                    if (!nfi->outer)
+                    {
+                        switch( nfi->state )
+                        {
+                        case FACE_UNDONE:
+                            nfi->state = FACE_PROCESSING;
+                            st.push(nfi);
+                            break;
 
-                case FACE_PROCESSING:
-                case FACE_DONE:
-                case FACE_REMOVE:
-                    break;
+                        case FACE_PROCESSING:
+                        case FACE_DONE:
+                        case FACE_REMOVE:
+                            break;
 
-                case FACE_BLACK:
-                    color = C_BLACK;
-                    break;
+                        case FACE_BLACK:
+                            color = C_BLACK;
+                            break;
 
-                case FACE_WHITE:
-                    color = C_WHITE;
-                    break;
+                        case FACE_WHITE:
+                            color = C_WHITE;
+                            break;
+                        }
+                    }
                 }
-            }
-            edge = edge->next.lock();
-        } while (edge != head);
+                edge = edge->next.lock();
+            } while (edge != head);
+        }
 
         if (color == C_BLACK)
         {
@@ -185,8 +195,8 @@ void ColorMaker::assignColorsNew1()
         }
     }
 
-    whiteFaces.sortByPositon();
-    blackFaces.sortByPositon();
+    //whiteFaces.sortByPositon();
+    //blackFaces.sortByPositon();
 }
 
 void ColorMaker::buildFaceGroups()
@@ -194,7 +204,7 @@ void ColorMaker::buildFaceGroups()
     qDebug() << "ColorMaker::buildFaceGroups ........";
 
     createFacesToDo();
-    faceGroup.clear();
+    faceGroups.clear();
 
 #if 0
     for (auto face : qAsConst(facesToDo))
@@ -225,7 +235,7 @@ void ColorMaker::buildFaceGroups()
         fsp->area      = fp->area;
         fsp->sides     = fp->getNumSides();
         fsp->push_back(fp);
-        faceGroup.push_back(fsp);
+        faceGroups.push_back(fsp);
 
         for (auto it2 = (it + 1); it2 != facesToDo.end(); it2++)
         {
@@ -242,20 +252,20 @@ void ColorMaker::buildFaceGroups()
     }
 
     //dumpFaceGroup("algorithm 23");
-    std::sort(faceGroup.begin(), faceGroup.end(), FaceSet::sort);    // largest first
+    std::sort(faceGroups.begin(), faceGroups.end(), FaceSet::sort);    // largest first
     //dumpFaceGroup("algorithm 23 post sort");
-    qDebug() << "Num face groups=" << faceGroup.size();
+    qDebug() << "Num face groups=" << faceGroups.size();
 }
 
 void ColorMaker::assignColorSets(ColorSet & colorSet)
 {
-    qDebug() << "ColorMaker::assignColorsNew2" << faceGroup.size() << faceGroup.totalSize();;
+    qDebug() << "ColorMaker::assignColorsNew2" << faceGroups.size() << faceGroups.totalSize();;
 
     // first make the color set size the same as the face group size
-    if (colorSet.size() < faceGroup.size())
+    if (colorSet.size() < faceGroups.size())
     {
-        qWarning() <<  "less colors than faces: faces=" << faceGroup.size() << "colors=" << colorSet.size();
-        int diff = faceGroup.size() - colorSet.size();
+        qWarning() <<  "less colors than faces: faces=" << faceGroups.size() << "colors=" << colorSet.size();
+        int diff = faceGroups.size() - colorSet.size();
         for (int i = 0; i < diff; i++)
         {
             TPColor tpc(Qt::yellow);
@@ -263,16 +273,16 @@ void ColorMaker::assignColorSets(ColorSet & colorSet)
             colorSet.addColor(tpc);
         }
     }
-    else if (colorSet.size() > faceGroup.size())
+    else if (colorSet.size() > faceGroups.size())
     {
-        qWarning() <<  "more colors than faces: faces=" << faceGroup.size() << "colors=" << colorSet.size();
-        colorSet.resize(faceGroup.size());
+        qWarning() <<  "more colors than faces: faces=" << faceGroups.size() << "colors=" << colorSet.size();
+        colorSet.resize(faceGroups.size());
     }
-    Q_ASSERT(colorSet.size() == faceGroup.size());
+    Q_ASSERT(colorSet.size() == faceGroups.size());
 
     // assign the color set to the sorted group
     colorSet.resetIndex();
-    for (FaceSetPtr face : faceGroup)
+    for (FaceSetPtr & face : faceGroups)
     {
         face->tpcolor = colorSet.getNextColor();
     }
@@ -280,13 +290,13 @@ void ColorMaker::assignColorSets(ColorSet & colorSet)
 
 void  ColorMaker::assignColorGroups(ColorGroup & colorGroup)
 {
-    qDebug() << "ColorMaker::assignColorGroups" << faceGroup.size() << faceGroup.totalSize();
+    qDebug() << "ColorMaker::assignColorGroups" << faceGroups.size() << faceGroups.totalSize();
 
     // first make the color set size the same as the face group size
-    if (colorGroup.size() < faceGroup.size())
+    if (colorGroup.size() < faceGroups.size())
     {
-        qWarning() <<  "less color groups than face groups: facegroup=" << faceGroup.size() << "colorgroup=" << colorGroup.size();
-        int diff = faceGroup.size() - colorGroup.size();
+        qWarning() <<  "less color groups than face groups: facegroup=" << faceGroups.size() << "colorgroup=" << colorGroup.size();
+        int diff = faceGroups.size() - colorGroup.size();
         for (int i = 0; i < diff; i++)
         {
             ColorSet cset;
@@ -296,13 +306,13 @@ void  ColorMaker::assignColorGroups(ColorGroup & colorGroup)
             colorGroup.addColorSet(cset);
         }
     }
-    else if (colorGroup.size() > faceGroup.size())
+    else if (colorGroup.size() > faceGroups.size())
     {
-        qWarning() <<  "more  color groups than face  groups: facegroup" << faceGroup.size() << "colorgroup=" << colorGroup.size();
-        colorGroup.resize(faceGroup.size());
+        qWarning() <<  "more  color groups than face  groups: facegroup" << faceGroups.size() << "colorgroup=" << colorGroup.size();
+        colorGroup.resize(faceGroups.size());
     }
 
-    Q_ASSERT(colorGroup.size() == faceGroup.size());
+    Q_ASSERT(colorGroup.size() == faceGroups.size());
 #if 0
     // this is  helpful for consistency
     qDebug() << "sorting...";
@@ -322,10 +332,10 @@ void  ColorMaker::assignColorGroups(ColorGroup & colorGroup)
 #else
     colorGroup.resetIndex();
     int i=0;
-    for (FaceSetPtr fsp  : faceGroup)
+    for (FaceSetPtr fsp  : faceGroups)
     {
-        qDebug() << "sorting..." << i;
-        fsp->sortByPositon();
+        //qDebug() << "sorting..." << i;
+        //fsp->sortByPositon();
         qDebug() << "assigning..." << i;
         fsp->pColorSet  = colorGroup.getNextColorSet();
         i++;
@@ -396,69 +406,3 @@ void ColorMaker::removeOverlappingFaces()
         qWarning() << "ColorMaker::removeOverlappingFaces start =" << start << "end =" << end;
     }
 }
-
-void ColorMaker::decomposeCrossoverFaces()
-{
-    qDebug() << "decomposeCrossoverFaces start:" << facesToDo.size();
-    FaceSet fset = facesToDo;
-    facesToDo.clear();
-    for (auto face : fset)
-    {
-        if (face->containsCrossover())
-        {
-            //qWarning() <<  "need to break into smaller faces << size=" << face->size();
-            Q_ASSERT(face->isValid());
-            FaceSet fset = face->decompose();
-            //qDebug() << "decomposed faces=" << fset.size();
-            for (auto face2 : fset)
-            {
-                face2->sortForComparison();
-                facesToDo.push_back(face2);
-            }
-            //qDebug() << "Face size now" << face->size();
-            if (face->size())
-            {
-                face->sortForComparison();
-                facesToDo.push_back(face);
-            }
-        }
-        else
-        {
-           facesToDo.push_back(face);
-        }
-    }
-    qDebug() << "decomposeCrossoverFaces end:" << facesToDo.size();
-}
-
-void ColorMaker::removeDuplicateFaces()
-{
-    FaceSet qvfp;
-
-    qDebug() << "ColorMaker::removeDuplicateFaces - start count="  << facesToDo.size();
-    for (auto face : qAsConst(facesToDo))
-    {
-        if (face->getNumSides() == 0)
-        {
-            qDebug() << "empty face";
-            continue;
-        }
-        bool found = false;
-        for (auto & face2 : qvfp)
-        {
-            if (face->equals(face2))
-            {
-                found = true;
-                break;
-            }
-        }
-        if (!found)
-        {
-            qvfp.push_back(face);
-        }
-    }
-
-    facesToDo = qvfp; // replace
-
-    qDebug() << "ColorMaker::removeDuplicateFaces - end   count="  << facesToDo.size();
-}
-

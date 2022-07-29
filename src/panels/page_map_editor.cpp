@@ -1,260 +1,263 @@
-/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
+#include <QGroupBox>
+#include <QTextEdit>
+#include <QCheckBox>
+#include <QToolButton>
+#include <QRadioButton>
+#include <QButtonGroup>
+#include <QApplication>
+#include <QMessageBox>
+#include <QFileDialog>
 
+#include "makers/crop_maker/crop_maker.h"
 #include "panels/page_map_editor.h"
-#include "makers/map_editor/map_editor.h"
-#include "panels/layout_sliderset.h"
-#include "panels/dlg_listselect.h"
-#include "panels/dlg_crop.h"
-#include "panels/dlg_name.h"
-#include "base/border.h"
-#include "base/fileservices.h"
-#include "base/mosaic_loader.h"
-#include "base/mosaic_writer.h"
-#include "base/tiledpatternmaker.h"
-#include "base/utilities.h"
-#include "geometry/dcel.h"
-#include "makers/tiling_maker/tiling_maker.h"
-#include "tapp/explicit_figure.h"
-#include "tapp/radial_figure.h"
-#include "viewers/viewcontrol.h"
-#include "tapp/prototype.h"
-#include "tapp/design_element.h"
+#include "figures/explicit_figure.h"
+#include "figures/radial_figure.h"
 #include "geometry/crop.h"
-#include "tile/feature.h"
-#include "tile/placed_feature.h"
+#include "geometry/dcel.h"
+#include "geometry/fill_region.h"
+#include "makers/mosaic_maker/mosaic_maker.h"
+#include "makers/map_editor/map_editor.h"
+#include "makers/map_editor/map_editor_db.h"
+#include "makers/map_editor/map_editor_map_loader.h"
+#include "makers/map_editor/map_editor_map_writer.h"
+#include "makers/map_editor/map_selection.h"
+#include "makers/motif_maker/motif_maker.h"
+#include "makers/tiling_maker/tiling_maker.h"
+#include "misc/fileservices.h"
+#include "misc/utilities.h"
+#include "mosaic/design_element.h"
+#include "mosaic/prototype.h"
+#include "panels/panel.h"
+#include "qlabel.h"
+#include "settings/configuration.h"
+#include "tiledpatternmaker.h"
+#include "viewers/map_editor_view.h"
+#include "viewers/viewcontrol.h"
+#include "widgets/crop_widget.h"
+#include "widgets/dlg_listselect.h"
+#include "widgets/dlg_push_select.h"
+#include "widgets/dlg_name.h"
+#include "widgets/layout_sliderset.h"
 
 using std::make_shared;
 
 typedef std::shared_ptr<RadialFigure>    RadialPtr;
 
-
 page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Map Editor")
 {
-    maped = MapEditor::getSharedInstance();
+    maped  = MapEditor::getInstance();
+    cropMaker = CropMaker::getInstance();
 
-    QRadioButton * mapEdNone   = new QRadioButton("None");
-    QRadioButton * mapEdMosaic = new QRadioButton("Mosaic");
-    QRadioButton * mapEdProto  = new QRadioButton("Prototype");
-    QRadioButton * mapEdFigure = new QRadioButton("Figure");
-    QRadioButton * mapEdLocal  = new QRadioButton("Local");
-    QRadioButton * mapEdTiling = new QRadioButton("Tiling");
-    QRadioButton * mapEdDCEL   = new QRadioButton("DCEL");
-    QRadioButton * mapEdFilledTiling = new QRadioButton("Filled Tiling");
+    // create group boxes
+    editorStatusBox             = createStatusGroup();
+    QGroupBox * selectBox       = createMapSelects();
+    QGroupBox * mapBox          = createMapGroup();
+    QGroupBox * editBox         = createEditGroup();
+    QGroupBox * loadBox         = createLoadGroup();
+    QGroupBox * viewBox         = createViewGroup();
+    QGroupBox * pushBox         = createPushGroup();
+    QGroupBox * configBox       = createSettingsGroup();
+    QGroupBox * constructionBox = createConstructionGroup();
 
-    // map editor group
-    mapEdModeGroup.addButton(mapEdNone,         MAPED_MODE_NONE);
-    mapEdModeGroup.addButton(mapEdMosaic,       MAPED_MODE_MOSAIC);
-    mapEdModeGroup.addButton(mapEdProto,        MAPED_MODE_PROTO);
-    mapEdModeGroup.addButton(mapEdFigure,       MAPED_MODE_FIGURE);
-    mapEdModeGroup.addButton(mapEdLocal,        MAPED_MODE_LOCAL);
-    mapEdModeGroup.addButton(mapEdFilledTiling, MAPED_MODE_FILLED_TILING);
-    mapEdModeGroup.addButton(mapEdTiling,       MAPED_MODE_TILING);
-    mapEdModeGroup.addButton(mapEdDCEL,         MAPED_MODE_DCEL);
-    mapEdModeGroup.button(config->mapEditorMode)->setChecked(true);
+    // arranging the boxes
+    QVBoxLayout * left  = new QVBoxLayout;
+    QVBoxLayout * mid   = new QVBoxLayout;
+    QVBoxLayout * right = new QVBoxLayout;
 
-    editorStatusBox = new QGroupBox("Map Editor Status");
-    editorStatusBox->setMinimumWidth(531);
-    editorStatusBox->setCheckable(true);
-    editorStatusBox->setChecked(config->mapedStatusBox);
+    left->addWidget(editBox);
+    left->addWidget(configBox);
+    left->addStretch();
+
+    mid->addWidget(selectBox);
+    mid->addWidget(mapBox);
+    mid->addWidget(constructionBox);
+    mid->addWidget(pushBox);
+    mid->addStretch();
+
+    right->addWidget(loadBox);
+    right->addWidget(viewBox);
+    right->addStretch();
+
+    QHBoxLayout * hbox = new QHBoxLayout();
+    hbox->addLayout(left);
+    hbox->addLayout(mid);
+    hbox->addLayout(right);
+
+    // putting it together
+    vbox->addLayout(hbox);
+    vbox->addWidget(editorStatusBox);
+
+    connect(theApp,  &TiledPatternMaker::sig_tilingLoaded,   this,   &page_map_editor::slot_tilingLoaded);
+    connect(theApp,  &TiledPatternMaker::sig_mosaicLoaded,   this,   &page_map_editor::slot_mosaicLoaded);
+
+    slot_debugChk(config->mapedStatusBox);
+
+    setMaximumWidth(600);
+
+    slot_editLayer(LAYER_1,true);
+}
+
+QGroupBox * page_map_editor::createMapSelects()
+{
+    QGridLayout * grid = new QGridLayout;
+    grid->setVerticalSpacing(0);
+    grid->setColumnMinimumWidth(1,300);
+
+    QLabel * editL    = new QLabel("Edit");
+    compositeEChk     = new QCheckBox("  Composite");
+    layer1EChk        = new QCheckBox("  Layer 1");
+    layer2EChk        = new QCheckBox("  Layer 2");
+    layer3EChk        = new QCheckBox("  Layer 3");
+
+    editGroup = new QButtonGroup();
+    editGroup->addButton(compositeEChk,COMPOSITE);
+    editGroup->addButton(layer1EChk,LAYER_1);
+    editGroup->addButton(layer2EChk,LAYER_2);
+    editGroup->addButton(layer3EChk,LAYER_3);
+
+    QLabel * viewL    = new QLabel("View");
+    compositeVChk     = new QCheckBox;
+    layer1VChk        = new QCheckBox;
+    layer2VChk        = new QCheckBox;
+    layer3VChk        = new QCheckBox;
+
+    viewGroup = new QButtonGroup();
+    viewGroup->setExclusive(false);
+    viewGroup->addButton(compositeVChk,COMPOSITE);
+    viewGroup->addButton(layer1VChk,LAYER_1);
+    viewGroup->addButton(layer2VChk,LAYER_2);
+    viewGroup->addButton(layer3VChk,LAYER_3);
+
+    int col = 0;
+    grid->setColumnStretch(col,0);
+    grid->addWidget(editL,0,col);
+    grid->addWidget(compositeEChk,1,col);
+    grid->addWidget(layer1EChk,2,col);
+    grid->addWidget(layer2EChk,3,col);
+    grid->addWidget(layer3EChk,4,col);
+
+    col = 1;
+    grid->setColumnStretch(col,0);
+    grid->addWidget(viewL,0,col);
+    grid->addWidget(compositeVChk,1,col);
+    grid->addWidget(layer1VChk,2,col);
+    grid->addWidget(layer2VChk,3,col);
+    grid->addWidget(layer3VChk,4,col);
+
+    connect(editGroup,     &QButtonGroup::idToggled, this, &page_map_editor::slot_editLayer);
+    connect(viewGroup,     &QButtonGroup::idToggled, this, &page_map_editor::slot_viewLayer);
+
+    QGroupBox * gb = new QGroupBox("Map Selects");
+    gb->setLayout(grid);
+    return gb;
+}
+
+QGroupBox   * page_map_editor::createStatusGroup()
+{
+    statusBox = new QTextEdit();
 
     QVBoxLayout * qvbox = new QVBoxLayout();
-    qvbox->addWidget(&statusBox);
-    editorStatusBox->setLayout(qvbox);
+    qvbox->addWidget(statusBox);
 
+    QGroupBox * gBox = new QGroupBox();
+    //gBox->setMinimumWidth(531);
+    gBox->setMaximumHeight(181);
+    gBox->setLayout(qvbox);
+
+    return gBox;
+}
+
+QGroupBox   * page_map_editor::createSettingsGroup()
+{
+    DoubleSpinSet * sensitivity = new DoubleSpinSet("Snap-to", config->mapedMergeSensitivity,1e-8, 100.0);
+    sensitivity->setPrecision(8);
+    sensitivity->setSingleStep(1e-4);
+    sensitivity->setValue(config->mapedMergeSensitivity); //dunno why needs to be done again
+
+    connect(sensitivity, &DoubleSpinSet::valueChanged, this, &page_map_editor::slot_mergeSensitivityA);
+
+    chkWhiteBkgd = new QCheckBox("White background");
+    chkWhiteBkgd->setChecked(config->motifBkgdWhite);
+
+
+
+    DoubleSpinSet * lineWidthSpin = new DoubleSpinSet("Line Width",3.0,1.0,10.0);
+    DoubleSpinSet * consWidthSpin = new DoubleSpinSet("Cons Width",1.0,1.0,10.0);
+
+    QVBoxLayout * qvbox = new QVBoxLayout();
+    qvbox->addLayout(sensitivity);
+    qvbox->addWidget(chkWhiteBkgd);
+    qvbox->addLayout(lineWidthSpin);
+    qvbox->addLayout(consWidthSpin);
+
+    connect(lineWidthSpin,  &DoubleSpinSet::valueChanged, this, &page_map_editor::slot_lineWidthChanged);
+    connect(consWidthSpin,  &DoubleSpinSet::valueChanged, this, &page_map_editor::slot_consWidthChanged);
+
+    QGroupBox * gBox = new QGroupBox("Settings");
+    gBox->setLayout(qvbox);
+
+    connect(chkWhiteBkgd,   &QCheckBox::clicked,    this,   &page_map_editor::slot_whiteClicked);
+
+    return gBox;
+}
+
+QGroupBox * page_map_editor::createMapGroup()
+{
     QToolButton * pbVerifyMap = new QToolButton();
     QToolButton * pbMakeExplicit = new QToolButton();
-    QToolButton * pbClearMap= new QToolButton();
     QToolButton * pbDivideEdges = new QToolButton();
     QToolButton * pbJoinEdges = new QToolButton();
     QToolButton * pbCleanNeighbours = new QToolButton();
     QToolButton * pbRemoveFloatingVerts = new QToolButton();
     QToolButton * pbRemoveSingleVerts = new QToolButton();
     QToolButton * pbRemoveZombieEdges = new QToolButton();
+                  pbCleanseVertices = new QToolButton();
     QToolButton * pbRebuildNeigbours = new QToolButton();
-    QToolButton * pbSortVertices = new QToolButton();
-    QToolButton * pbSortEdges = new QToolButton();
-    QToolButton * pbDumpMap = new QToolButton();
-    QToolButton * pbCreateMap = new QToolButton();
-    QToolButton * pbLoadMap = new QToolButton();
-    QToolButton * pbSaveMap = new QToolButton();
-                  pbCropMap = new QToolButton();
-                  pbMaskMap = new QToolButton();
-
-    QToolButton * pbRestoreConstructs= new QToolButton();
-    QToolButton * pbUndoConstructs= new QToolButton();
-    QToolButton * pbRedoConstructs= new QToolButton();
-    QToolButton * pbClearConstructs = new QToolButton();
     QToolButton * pbCleanseMap = new QToolButton();
-    QToolButton * pbCreateDCEL = new QToolButton();
-    QToolButton * pbSaveTemplate= new QToolButton();
-    QToolButton * pbLoadTemplate= new QToolButton();
+    QToolButton * pbDumpMap = new QToolButton();
+    QToolButton * pbEditCrop = new QToolButton();
+                  pbEmbedCrop = new QToolButton();
+                  pbApplyCrop = new QToolButton();
 
-    pal = pbVerifyMap->palette();
-    palPink = pal;
-    palPink.setColor(QPalette::Button, QColor(0xffb6c1));
-    palYellow = palPink;
-    palYellow.setColor(QPalette::Button, QColor(Qt::yellow));
-    pbClearMap->setPalette(palPink);
 
-    pbCreateMap->setPalette(palPink);
-    pbLoadMap->setPalette(palPink);
-    pbSaveMap->setPalette(palPink);
-    //pbCropMap->setPalette(palYellow);
-    //pbMaskMap->setPalette(palYellow);
+    defaultStyle = pbVerifyMap->styleSheet();
 
-    pbMakeExplicit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    pbVerifyMap->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    pbDivideEdges->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    pbJoinEdges->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    pbCleanNeighbours->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    pbRebuildNeigbours->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    pbSortVertices->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    pbSortEdges->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    pbRemoveFloatingVerts->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    pbRemoveSingleVerts->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    pbRemoveZombieEdges->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    pbVerifyMap->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    pbMakeExplicit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    pbDumpMap->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
-    pbRestoreConstructs->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    pbUndoConstructs->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    pbRedoConstructs->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    pbClearConstructs->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    pbSaveTemplate->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    pbLoadTemplate->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    pbDivideEdges->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
+    pbJoinEdges->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
+    pbCleanNeighbours->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
 
-    pbCleanseMap->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    pbCreateDCEL->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    pbClearMap->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    pbDumpMap->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    pbCropMap->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    pbMaskMap->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    pbCreateMap->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    pbLoadMap->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    pbSaveMap->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    pbCleanseVertices->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    pbRebuildNeigbours->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+    pbRemoveFloatingVerts->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
+    pbRemoveSingleVerts->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
+    pbRemoveZombieEdges->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
+
+    pbCleanseMap->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    pbEditCrop->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    pbEmbedCrop->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    pbApplyCrop->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
     pbMakeExplicit->setText("Make Explicit");
     pbVerifyMap->setText("Verify Map");
     pbDivideEdges->setText("Divide\nIntersecting Edges");
     pbJoinEdges->setText("Join\nColinear Edges");
-    pbCleanNeighbours->setText("Clean Neighbours");
+    pbCleanNeighbours->setText("Clean\nNeighbours");
     pbRebuildNeigbours->setText("Rebuild Neighbours");
-    pbSortVertices->setText("Sort Vertices");
-    pbSortEdges->setText("Sort Edges");
+    pbCleanseVertices->setText("Cleanse Vertices");
     pbRemoveFloatingVerts->setText("Remove\nFloating Vertices");
     pbRemoveSingleVerts->setText("Remove\nSingle Vertices");
     pbRemoveZombieEdges->setText("Remove\nZombie Edges");
-    pbRestoreConstructs->setText("Restore\nConstruct Lines");
-    pbUndoConstructs->setText("Undo\nConstruct Lines");
-    pbRedoConstructs->setText("Redo\nConstruct Lines");
-    pbClearConstructs->setText("Clear\nConstruct Lines");
-    pbSaveTemplate->setText("Save Template");
-    pbLoadTemplate->setText("Load Template");
-    pbClearMap->setText("Clear Map");
+
     pbCleanseMap->setText("Cleanse Map");
-    pbCreateDCEL->setText("Create DCEL");
     pbDumpMap->setText("Dump Map");
-    pbCropMap->setText("Apply Border");
-    pbMaskMap->setText("Apply Mask");
-    pbCreateMap->setText("Create Map");
-    pbLoadMap->setText("Load Map");
-    pbSaveMap->setText("Save Map");
-
-    pbUndoConstructs->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    pbRedoConstructs->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    pbUndoConstructs->setIcon(QApplication::style()->standardIcon(QStyle::SP_ArrowLeft));
-    pbRedoConstructs->setIcon(QApplication::style()->standardIcon(QStyle::SP_ArrowRight));
-
-    //QToolButton * pbReplaceInStyle  = new QToolButton();
-    QToolButton * pbRender          = new QToolButton();
-    QToolButton * pbPushToTiling    = new QToolButton();
-
-    //pbReplaceInStyle->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    pbRender->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    pbPushToTiling->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-
-    //pbReplaceInStyle->setText("Push Proto to Mosaic");
-    pbRender->setText("Render");
-    pbPushToTiling->setText("Push to Tiling");
-
-    QRadioButton * modeNone         = new QRadioButton("No Mode (ESC)");
-    QRadioButton * modeDrawLine     = new QRadioButton("Draw Lines (F3)");
-    QRadioButton * modeConstruction = new QRadioButton("Construct Lines (F4)");
-    QRadioButton * modeDelLine      = new QRadioButton("Delete Selected (F5)");
-    QRadioButton * modeSplitLine    = new QRadioButton("Split Edges (F6)");
-    QRadioButton * modeExtendLine   = new QRadioButton("Extend Line (F7)");
-    QRadioButton * modeCrop         = new QRadioButton("Create Crop (F8)");
-    QRadioButton * modeConstrCicle  = new QRadioButton("Construct Circles (F9)");
-    QRadioButton * modeConstrBorder = new QRadioButton("Create Border (F10)");
-    QRadioButton * modeEditBorder   = new QRadioButton("Edit Border");
-
-    modeGroup.addButton(modeNone,           MAPED_MOUSE_NONE);
-    modeGroup.addButton(modeDrawLine,       MAPED_MOUSE_DRAW_LINE);
-    modeGroup.addButton(modeConstrCicle,    MAPED_MOUSE_CONSTRUCTION_CIRCLES);
-    modeGroup.addButton(modeDelLine,        MAPED_MOUSE_DELETE);
-    modeGroup.addButton(modeSplitLine,      MAPED_MOUSE_SPLIT_LINE);
-    modeGroup.addButton(modeConstruction,   MAPED_MOUSE_CONSTRUCTION_LINES);
-    modeGroup.addButton(modeExtendLine,     MAPED_MOUSE_EXTEND_LINE);
-    modeGroup.addButton(modeCrop,           MAPED_MOUSE_CREATE_CROP);
-    modeGroup.addButton(modeConstrBorder,   MAPED_MOUSE_CREATE_BORDER);
-    modeGroup.addButton(modeEditBorder,     MAPED_MOUSE_EDIT_BORDER);
-
-    modeGroup.button(maped->getMouseMode())->setChecked(true);
-
-    QCheckBox * hideConsChk     = new QCheckBox("Hide construct lines");
-    QCheckBox * hideMapChk      = new QCheckBox("Hide map");
-    QCheckBox * hidePtsChk      = new QCheckBox("Hide points");
-    QCheckBox * hideMidPtsChk   = new QCheckBox("Hide mid-points");
-    animateChk                  = new QCheckBox("Animate Load");
-
-    DoubleSpinSet * lineWidthSpin = new DoubleSpinSet("Line Width",3.0,1.0,10.0);
-    DoubleSpinSet * consWidthSpin = new DoubleSpinSet("Cons Width",1.0,1.0,10.0);
-    DoubleSpinSet * radiusSpin    = new DoubleSpinSet("Radius",0.25,0.0,2.0);
-    radiusSpin->setPrecision(8);
-    radiusSpin->setSingleStep(0.05);
-
-    // View Box
-    QVBoxLayout * vbox2 = new QVBoxLayout;
-    vbox2->addWidget(mapEdNone);
-    vbox2->addWidget(mapEdMosaic);
-    vbox2->addWidget(mapEdProto);
-    vbox2->addWidget(mapEdFigure);
-    vbox2->addWidget(mapEdFilledTiling);
-    vbox2->addWidget(mapEdTiling);
-    vbox2->addWidget(mapEdLocal);
-    vbox2->addWidget(mapEdDCEL);
-    vbox2->addSpacing(9);
-    vbox2->addWidget(hideConsChk);
-    vbox2->addWidget(hideMapChk);
-    vbox2->addWidget(hidePtsChk);
-    vbox2->addWidget(hideMidPtsChk);
-    vbox2->addWidget(animateChk);
-    vbox2->addLayout(lineWidthSpin);
-    vbox2->addLayout(consWidthSpin);
-    vbox2->addStretch();
-
-    QGroupBox * viewBox = new QGroupBox("View");
-    viewBox->setLayout(vbox2);
+    pbEditCrop->setText("Edit Crop");
+    pbEmbedCrop->setText("Embed Crop");
+    pbApplyCrop->setText("Crop Outside");
 
     // Map Box
     QGridLayout * mapGrid = new QGridLayout;
@@ -274,30 +277,271 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     mapGrid->addWidget(pbCleanNeighbours,row,2);
 
     row++;
-    mapGrid->addWidget(pbSortVertices,row,0);
-    mapGrid->addWidget(pbSortEdges,row,1);
     mapGrid->addWidget(pbRebuildNeigbours,row,2);
 
     row++;
-    mapGrid->addWidget(pbCleanseMap,row,1);
-    mapGrid->addWidget(pbCreateDCEL,row,2);
+    mapGrid->addWidget(pbCleanseVertices,row,0,1,2);
+    mapGrid->addWidget(pbCleanseMap,row,2);
 
     row++;
-    mapGrid->addWidget(pbClearMap,row,0);
-    mapGrid->addWidget(pbCreateMap,row,1);
-    mapGrid->addWidget(pbLoadMap,row,2);
-
-    row++;
-    mapGrid->addWidget(pbCropMap,row,0);
-    mapGrid->addWidget(pbMaskMap,row,1);
-    mapGrid->addWidget(pbSaveMap,row,2);
+    mapGrid->addWidget(pbEditCrop,row,0);
+    mapGrid->addWidget(pbEmbedCrop,row,1);
+    mapGrid->addWidget(pbApplyCrop,row,2);
 
     QGroupBox * mapBox  = new QGroupBox("Map");
     mapBox->setLayout(mapGrid);
 
-    // Template box
+    connect(pbVerifyMap,            &QToolButton::clicked,  this,   &page_map_editor::slot_verify);
+    connect(pbMakeExplicit,         &QToolButton::clicked,  this,   &page_map_editor::slot_convertToExplicit);
+    connect(pbDivideEdges,          &QToolButton::clicked,  this,   &page_map_editor::slot_divideIntersectingEdges);
+    connect(pbJoinEdges,            &QToolButton::clicked,  this,   &page_map_editor::slot_joinColinearEdges);
+    connect(pbCleanNeighbours,      &QToolButton::clicked,  this,   &page_map_editor::slot_cleanNeighbours);
+    connect(pbCleanseVertices,      &QToolButton::clicked,  this,   &page_map_editor::slot_cleanVertices);
+    connect(pbRebuildNeigbours,     &QToolButton::clicked,  this,   &page_map_editor::slot_rebuildNeighbours);
+    connect(pbCleanseMap,           &QToolButton::clicked,  this,   &page_map_editor::slot_cleanseMap);
+    connect(pbRemoveFloatingVerts,  &QToolButton::clicked,  this,   &page_map_editor::slot_removeUnconnectedVertices);
+    connect(pbRemoveSingleVerts,    &QToolButton::clicked,  this,   &page_map_editor::slot_removeSingleConnectVertices);
+    connect(pbRemoveZombieEdges,    &QToolButton::clicked,  this,   &page_map_editor::slot_removeZombieEdges);
+    connect(pbDumpMap,              &QToolButton::clicked,  this,   &page_map_editor::slot_dumpMap);
+    connect(pbEditCrop,             &QToolButton::clicked,  this,   &page_map_editor::slot_editCrop);
+    connect(pbEmbedCrop,            &QToolButton::clicked,  this,   &page_map_editor::slot_embedCrop);
+    connect(pbApplyCrop,            &QToolButton::clicked,  this,   &page_map_editor::slot_applyCrop);
+
+    return mapBox;
+}
+
+QGroupBox * page_map_editor::createEditGroup()
+{
+    DoubleSpinSet * radiusSpin    = new DoubleSpinSet("Radius",0.25,0.0,2.0);
+    radiusSpin->setPrecision(8);
+    radiusSpin->setSingleStep(0.05);
+
+    DoubleSpinSet * angleSpin    = new DoubleSpinSet("Angle",30,-360.0,360.0);
+    angleSpin->setPrecision(4);
+    angleSpin->setSingleStep(0.5);
+
+    DoubleSpinSet * lenSpin    = new DoubleSpinSet("lLngth",1.0,0.01,9.0);
+    angleSpin->setPrecision(2);
+    angleSpin->setSingleStep(0.1);
+
+    QRadioButton * modeNone         = new QRadioButton("No Mode (ESC)");
+    QRadioButton * modeDrawLine     = new QRadioButton("Draw Lines (F3)");
+    QRadioButton * modeConstruction = new QRadioButton("Construct Lines (F4)");
+    QRadioButton * modeDelLine      = new QRadioButton("Delete Selected (F5)");
+    QRadioButton * modeSplitLine    = new QRadioButton("Split Edges (F6)");
+    QRadioButton * modeExtendLineP1 = new QRadioButton("Extend Line P1 (F7)");
+    QRadioButton * modeExtendLineP2 = new QRadioButton("Extend Line P2");
+    QRadioButton * modeConstrCicle  = new QRadioButton("Construct Circles (F9)");
+    QRadioButton * modeCreateLine   = new QRadioButton("CreateLine");
+
+    modeGroup = new QButtonGroup();
+    modeGroup->addButton(modeNone,           MAPED_MOUSE_NONE);
+    modeGroup->addButton(modeDrawLine,       MAPED_MOUSE_DRAW_LINE);
+    modeGroup->addButton(modeConstrCicle,    MAPED_MOUSE_CONSTRUCTION_CIRCLES);
+    modeGroup->addButton(modeDelLine,        MAPED_MOUSE_DELETE);
+    modeGroup->addButton(modeSplitLine,      MAPED_MOUSE_SPLIT_LINE);
+    modeGroup->addButton(modeConstruction,   MAPED_MOUSE_CONSTRUCTION_LINES);
+    modeGroup->addButton(modeExtendLineP1,   MAPED_MOUSE_EXTEND_LINE_P1);
+    modeGroup->addButton(modeExtendLineP2,   MAPED_MOUSE_EXTEND_LINE_P2);
+    modeGroup->addButton(modeCreateLine,     MAPED_MOUSE_CREATE_LINE);
+
+    modeGroup->button(maped->getMouseMode())->setChecked(true);
+
+    // Edit Box
+    QVBoxLayout * editBox = new QVBoxLayout;
+
+    editBox->addWidget(modeNone);
+    editBox->addWidget(modeDrawLine);
+    editBox->addWidget(modeConstrCicle);
+    editBox->addLayout(radiusSpin);
+    editBox->addSpacing(3);
+    editBox->addWidget(modeConstruction);
+    editBox->addWidget(modeDelLine);
+
+    editBox->addWidget(modeSplitLine);
+    editBox->addWidget(modeExtendLineP1);
+    editBox->addWidget(modeExtendLineP2);
+
+    editBox->addWidget(modeCreateLine);
+    editBox->addLayout(angleSpin);
+    editBox->addLayout(lenSpin);
+
+    editBox->addStretch();
+
+    QGroupBox * editGBox = new QGroupBox("Edit");
+    editGBox->setLayout(editBox);
+
+    radiusSpin->setValue(config->mapedRadius);
+    angleSpin->setValue(config->mapedAngle);
+    lenSpin->setValue(config->mapedLen);
+
+    connect(radiusSpin,     &DoubleSpinSet::valueChanged, this, &page_map_editor::slot_radiusChanged);
+    connect(angleSpin,      &DoubleSpinSet::valueChanged, this, &page_map_editor::slot_createAngleChanged);
+    connect(lenSpin,        &DoubleSpinSet::valueChanged, this, &page_map_editor::slot_createLenChanged);
+    connect(modeGroup,      &QButtonGroup::idToggled,     this, &page_map_editor::slot_setMouseMode);
+
+    return editGBox;
+}
+
+QGroupBox * page_map_editor::createViewGroup()
+{
+    QCheckBox * showBoundsChk   = new QCheckBox("Show boundaries");
+                showConsChk     = new QCheckBox("Show construct lines");
+    QCheckBox * showMapChk      = new QCheckBox("Show map");
+    QCheckBox * showPtsChk      = new QCheckBox("Show points");
+    QCheckBox * showMidPtsChk   = new QCheckBox("Show mid-points");
+    QCheckBox * showDirPtsChk   = new QCheckBox("Show dirn (green)");
+    QCheckBox * showArcCtrChk   = new QCheckBox("Show arc centre");
+    animateChk                  = new QCheckBox("Animate Load");
+    QCheckBox * showStatusChk   = new QCheckBox("Show Status");
+
+
+    QRadioButton * viewMap      = new QRadioButton("Map");
+                   viewDCEL     = new QRadioButton("DCEL");
+
+    showMidPtsChk->setStyleSheet("padding-left:15px");
+    showDirPtsChk->setStyleSheet("padding-left:15px");
+    showArcCtrChk->setStyleSheet("padding-left:15px");
+
+    QHBoxLayout * hbox = new QHBoxLayout;
+    hbox->addWidget(viewMap);
+    hbox->addWidget(viewDCEL);
+
+    QFrame    * line1 = new QFrame();
+    line1->setFrameShape(QFrame::HLine);
+    line1->setFrameShadow(QFrame::Sunken);
+    line1->setLineWidth(1);
+
+    QFrame    * line2 = new QFrame();
+    line2->setFrameShape(QFrame::HLine);
+    line2->setFrameShadow(QFrame::Sunken);
+    line2->setLineWidth(1);
+
+    QVBoxLayout * vbox = new QVBoxLayout;
+    vbox->addLayout(hbox);
+    vbox->addWidget(line2);
+    vbox->addWidget(showMapChk);
+    vbox->addWidget(showPtsChk);
+    vbox->addWidget(showMidPtsChk);
+    vbox->addWidget(showDirPtsChk);
+    vbox->addWidget(showArcCtrChk);
+    vbox->addWidget(showBoundsChk);
+    vbox->addWidget(showConsChk);
+    vbox->addWidget(animateChk);
+    vbox->addWidget(showStatusChk);
+    vbox->addStretch();
+
+    QGroupBox * gbox = new QGroupBox("View");
+    gbox->setLayout(vbox);
+
+    auto db = maped->getDb();
+
+    showMapChk->setChecked(db->showMap);
+    showBoundsChk->setChecked(db->showBoundaries);
+    showConsChk->setChecked(db->showConstructionLines);
+    showPtsChk->setChecked(db->showPoints);
+    showMidPtsChk->setChecked(db->showMidPoints);
+    showDirPtsChk->setChecked(db->showDirnPoints);
+    showArcCtrChk->setChecked(db->showArcCentre);
+    animateChk->setChecked(false);
+    showStatusChk->setChecked(config->mapedStatusBox);
+
+    if (config->mapEditorMode == MAPED_MODE_MAP)
+        viewMap->setChecked(true);
+    else
+        viewDCEL->setChecked(true);
+
+    connect(showBoundsChk,  &QCheckBox::clicked,    this, &page_map_editor::slot_showBounds);
+    connect(showConsChk,    &QCheckBox::clicked,    this, &page_map_editor::slot_showCons);
+    connect(showMapChk,     &QCheckBox::clicked,    this, &page_map_editor::slot_showMap);
+    connect(showPtsChk,     &QCheckBox::clicked,    this, &page_map_editor::slot_showPoints);
+    connect(showMidPtsChk,  &QCheckBox::clicked,    this, &page_map_editor::slot_showMidPoints);
+    connect(showDirPtsChk,  &QCheckBox::clicked,    this, &page_map_editor::slot_showDirPoints);
+    connect(showArcCtrChk,  &QCheckBox::clicked,    this, &page_map_editor::slot_showArcCentre);
+    connect(showStatusChk,  &QCheckBox::clicked,    this, &page_map_editor::slot_debugChk);
+    connect(viewMap,        &QRadioButton::clicked, this, &page_map_editor::slot_chkViewMap);
+    connect(viewDCEL,       &QRadioButton::clicked, this, &page_map_editor::slot_chkViewDCEL);
+
+    return gbox;
+}
+
+QGroupBox * page_map_editor::createLoadGroup()
+{
+    QPushButton * unload       = new QPushButton("Unload");
+    QPushButton * loadMosaic   = new QPushButton("Load Mosaic Prototype");
+    QPushButton * loadProto    = new QPushButton("Load Motif Prototype");
+    QPushButton * loadMotif    = new QPushButton("Load Selected Motifs");
+    QPushButton * loadTileUnit = new QPushButton("Load Unit Tiling");
+    QPushButton * loadTileRep  = new QPushButton("Load Repeated Tiling");
+    QPushButton * loadFile     = new QPushButton("Load Map File");
+    QPushButton * createMap    = new QPushButton("Create New Map");
+
+    QVBoxLayout * vbox = new QVBoxLayout;
+    vbox->addWidget(unload);
+    vbox->addWidget(loadMosaic);
+    vbox->addWidget(loadProto);
+    vbox->addWidget(loadMotif);
+    vbox->addWidget(loadTileUnit);
+    vbox->addWidget(loadTileRep);
+    vbox->addWidget(loadFile);
+    vbox->addWidget(createMap);
+
+    QGroupBox * gbox = new QGroupBox("Load");
+    gbox->setLayout(vbox);
+
+    connect(loadMosaic, &QPushButton::clicked, this, &page_map_editor::slot_loadMosaicPrototype);
+    connect(loadProto,  &QPushButton::clicked, this, &page_map_editor::slot_loadMotifPrototype);
+    connect(loadMotif,  &QPushButton::clicked, this, &page_map_editor::slot_loadMotif);
+    connect(loadTileUnit,&QPushButton::clicked,this, &page_map_editor::slot_loadTileUnit);
+    connect(loadTileRep,&QPushButton::clicked, this, &page_map_editor::slot_loadTileRep);
+    connect(loadFile,   &QPushButton::clicked, this, &page_map_editor::slot_loadMapFile);
+    connect(createMap,  &QPushButton::clicked, this, &page_map_editor::slot_createMap);
+    connect(unload,     &QPushButton::clicked, this, &page_map_editor::slot_unloadMaps);
+
+    return gbox;
+}
+
+QGroupBox * page_map_editor::createPushGroup()
+{
+    QPushButton * pbPushMap  = new QPushButton("Push Map");
+    QPushButton * pbSaveMap  = new QPushButton("Save Edit Map");
+    QLabel      * dummy1     = new QLabel;
+
+    QGridLayout * pushLayout = new QGridLayout;
+    pushLayout->addWidget(pbPushMap,0,0);
+    pushLayout->addWidget(dummy1,0,1);
+    pushLayout->addWidget(pbSaveMap,0,2);
+
+    QGroupBox * pushBox = new QGroupBox("Push");
+    pushBox->setLayout(pushLayout);
+
+    connect(pbPushMap, &QPushButton::clicked,  this,   &page_map_editor::slot_pushMap);
+    connect(pbSaveMap, &QPushButton::clicked,  this,   &page_map_editor::slot_saveMapToFile);
+
+    return pushBox;
+}
+
+QGroupBox * page_map_editor::createConstructionGroup()
+{
+    QPushButton * pbRestoreConstructs   = new QPushButton();
+    QPushButton * pbUndoConstructs      = new QPushButton();
+    QPushButton * pbRedoConstructs      = new QPushButton();
+    QPushButton * pbClearConstructs     = new QPushButton();
+    QPushButton * pbSaveTemplate        = new QPushButton();
+    QPushButton * pbLoadTemplate        = new QPushButton();
+
+    pbRestoreConstructs->setText("Restore C-Lines");
+    pbUndoConstructs->setText("  Undo C-Lines");
+    pbRedoConstructs->setText("  Redo C-Lines");
+    pbClearConstructs->setText("Clear C-Lines");
+    pbSaveTemplate->setText("Save C-Line Template");
+    pbLoadTemplate->setText("Load C-Line Template");
+
+    pbUndoConstructs->setIcon(QApplication::style()->standardIcon(QStyle::SP_ArrowLeft));
+    pbRedoConstructs->setIcon(QApplication::style()->standardIcon(QStyle::SP_ArrowRight));
+
     QGridLayout * templateGrid = new QGridLayout;
-    row = 0;
+    int row = 0;
     templateGrid->addWidget(pbRestoreConstructs,row,0);
     templateGrid->addWidget(pbUndoConstructs,row,1);
     templateGrid->addWidget(pbRedoConstructs,row,2);
@@ -307,229 +551,253 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     templateGrid->addWidget(pbLoadTemplate,row,1);
     templateGrid->addWidget(pbClearConstructs,row,2);
 
-    QGroupBox * templateBox = new QGroupBox("Construction Line Templates");
+    QGroupBox * templateBox = new QGroupBox("Construction Lines");
     templateBox->setLayout(templateGrid);
 
-    // Edit Box
-    QVBoxLayout * editBox = new QVBoxLayout;
+    connect(pbRestoreConstructs,    &QPushButton::clicked,  this,   &page_map_editor::slot_popstash);
+    connect(pbUndoConstructs,       &QPushButton::clicked,  this,   &page_map_editor::slot_undoConstructionLines);
+    connect(pbRedoConstructs,       &QPushButton::clicked,  this,   &page_map_editor::slot_redoConstructionLines);
+    connect(pbClearConstructs,      &QPushButton::clicked,  this,   &page_map_editor::slot_clearConstructionLines);
+    connect(pbSaveTemplate,         &QPushButton::clicked,  this,   &page_map_editor::slot_saveTemplate);
+    connect(pbLoadTemplate,         &QPushButton::clicked,  this,   &page_map_editor::slot_loadTemplate);
 
-    editBox->addWidget(modeNone);
-    editBox->addWidget(modeDrawLine);
-    editBox->addWidget(modeConstrCicle);
-    editBox->addLayout(radiusSpin);
-    editBox->addWidget(modeConstruction);
-    editBox->addWidget(modeDelLine);
-
-    editBox->addWidget(modeSplitLine);
-    editBox->addWidget(modeExtendLine);
-    editBox->addWidget(modeCrop);
-    editBox->addWidget(modeConstrBorder);
-    editBox->addWidget(modeEditBorder);
-
-    editBox->addStretch();
-
-    QGroupBox * editGBox = new QGroupBox("Edit");
-    editGBox->setLayout(editBox);
-
-    // Push Box
-    QHBoxLayout * pushLayout = new QHBoxLayout;
-
-    //pushLayout->addWidget(pbReplaceInStyle);
-    pushLayout->addWidget(pbRender);
-    pushLayout->addWidget(pbPushToTiling);
-
-    QGroupBox * pushBox = new QGroupBox("Push");
-    pushBox->setLayout(pushLayout);
-
-    // arranging the boxes
-    QGridLayout * boxLayout = new QGridLayout();
-
-    boxLayout->addWidget(editGBox,   0,0,3,1);
-    boxLayout->addWidget(mapBox,     0,1);
-    boxLayout->addWidget(viewBox,    0,2,3,1);
-    boxLayout->addWidget(templateBox,1,1);
-    boxLayout->addWidget(pushBox,    2,1);
-
-    // putting it together
-    vbox->addWidget(editorStatusBox);
-    vbox->addLayout(boxLayout);
-
-    connect(vcontrol, &ViewControl::sig_selected_dele_changed, this, &page_map_editor::slot_selected_dele_changed);
-
-    connect(theApp,  &TiledPatternMaker::sig_tilingLoaded,   this,   &page_map_editor::slot_tilingLoaded);
-    connect(theApp,  &TiledPatternMaker::sig_mosaicLoaded,   this,   &page_map_editor::slot_mosaicLoaded);
-
-    connect(pbVerifyMap,            &QToolButton::clicked,  this,   &page_map_editor::slot_verify);
-    connect(pbMakeExplicit,         &QToolButton::clicked,  this,   &page_map_editor::slot_convertToExplicit);
-    connect(pbClearMap,             &QToolButton::clicked,  this,   &page_map_editor::slot_clearMap);
-    connect(pbDivideEdges,          &QToolButton::clicked,  this,   &page_map_editor::slot_divideIntersectingEdges);
-    connect(pbJoinEdges,            &QToolButton::clicked,  this,   &page_map_editor::slot_joinColinearEdges);
-    connect(pbCleanNeighbours,      &QToolButton::clicked,  this,   &page_map_editor::slot_cleanNeighbours);
-    connect(pbRebuildNeigbours,     &QToolButton::clicked,  this,   &page_map_editor::slot_rebuildNeighbours);
-    connect(pbSortVertices,         &QToolButton::clicked,  this,   &page_map_editor::slot_sortVertices);
-    connect(pbSortEdges,            &QToolButton::clicked,  this,   &page_map_editor::slot_sortEdges);
-    connect(pbCleanseMap,           &QToolButton::clicked,  this,   &page_map_editor::slot_cleanseMap);
-    connect(pbCreateDCEL,           &QToolButton::clicked,  this,   &page_map_editor::slot_createDCEL);
-    connect(pbRemoveFloatingVerts,  &QToolButton::clicked,  this,   &page_map_editor::slot_removeUnconnectedVertices);
-    connect(pbRemoveSingleVerts,    &QToolButton::clicked,  this,   &page_map_editor::slot_removeSingleConnectVertices);
-    connect(pbRemoveZombieEdges,    &QToolButton::clicked,  this,   &page_map_editor::slot_removeZombieEdges);
-    connect(pbDumpMap,              &QToolButton::clicked,  this,   &page_map_editor::slot_dumpMap);
-    connect(pbCropMap,              &QToolButton::clicked,  this,   &page_map_editor::slot_applyCrop);
-    connect(pbMaskMap,              &QToolButton::clicked,  this,   &page_map_editor::slot_applyMask);
-    connect(pbCreateMap,            &QToolButton::clicked,  this,   &page_map_editor::slot_createMap);
-    connect(pbLoadMap,              &QToolButton::clicked,  this,   &page_map_editor::slot_loadMap);
-    connect(pbSaveMap,              &QToolButton::clicked,  this,   &page_map_editor::slot_saveMap);
-    connect(pbPushToTiling,         &QToolButton::clicked,  this,   &page_map_editor::slot_pushToTiling);
-
-    connect(pbRestoreConstructs,    &QToolButton::clicked,  this,   &page_map_editor::slot_popstash);
-    connect(pbUndoConstructs,       &QToolButton::clicked,  this,   &page_map_editor::slot_undoConstructionLines);
-    connect(pbRedoConstructs,       &QToolButton::clicked,  this,   &page_map_editor::slot_redoConstructionLines);
-    connect(pbClearConstructs,      &QToolButton::clicked,  this,   &page_map_editor::slot_clearConstructionLines);
-    connect(pbSaveTemplate,         &QToolButton::clicked,  this,   &page_map_editor::slot_saveTemplate);
-    connect(pbLoadTemplate,         &QToolButton::clicked,  this,   &page_map_editor::slot_loadTemplate);
-
-    connect(hideConsChk,    &QCheckBox::clicked,  this,   &page_map_editor::slot_hideCons);
-    connect(hideMapChk,     &QCheckBox::clicked,  this,   &page_map_editor::slot_hideMap);
-    connect(hidePtsChk,     &QCheckBox::clicked,  this,   &page_map_editor::slot_hidePoints);
-    connect(hideMidPtsChk,  &QCheckBox::clicked,  this,   &page_map_editor::slot_hideMidPoints);
-
-    connect(&mapEdModeGroup,    &QButtonGroup::idToggled, this,   &page_map_editor::slot_mapEdMode_pressed);
-    connect(&modeGroup,         &QButtonGroup::idToggled, this,   &page_map_editor::slot_setModes);
-    connect(pbRender,           &QToolButton::clicked,    this,   &panel_page::sig_render);
-
-    connect(radiusSpin,     &DoubleSpinSet::sig_valueChanged, this, &page_map_editor::slot_radiusChanged);
-    connect(lineWidthSpin,  &DoubleSpinSet::sig_valueChanged, this, &page_map_editor::slot_lineWidthChanged);
-    connect(consWidthSpin,  &DoubleSpinSet::sig_valueChanged, this, &page_map_editor::slot_consWidthChanged);
-
-    slot_debugChk(config->mapedStatusBox);
-    connect(editorStatusBox, &QGroupBox::toggled, this, &page_map_editor::slot_debugChk);
-
-    hideMidPtsChk->setChecked(true);    // start hidden
+    return templateBox;
 }
 
 void  page_map_editor::onEnter()
 {
-    mapEdModeGroup.blockSignals(true);
-    mapEdModeGroup.button(config->mapEditorMode)->setChecked(true);
-    mapEdModeGroup.blockSignals(false);
+static QString msg("<body>"
+                   "<font color=magenta>feature</font>  |  "
+                   "<span style=\"color:rgb(255,127,0)\">fig boundary</span>  |  "
+                   "<font color=yellow>ext boundary</font>  |  "
+                   "<font color=blue>vertex</font>  |  "
+                   "<font color=yellow>pt</font>  |  "
+                   "<font color=#800000>mid-edge</font>  |  "  // dark red
+                   "<font color=#808000>mid-line</font>  |  "  // dark yellow
+                    "</body>");
 
-    maped->reload();
+    panel->pushPanelStatus(msg);
 
-    modeGroup.button(maped->getMouseMode())->setChecked(true);
-
-    maped->buildEditorDB();
-    emit sig_refreshView();
+    modeGroup->blockSignals(true);
+    modeGroup->button(maped->getMouseMode())->setChecked(true);
+    modeGroup->blockSignals(false);
 }
 
 void  page_map_editor::onExit()
 {
-    maped->mouse_interaction.reset();
+    panel->popPanelStatus();
+
+    maped->getDb()->resetMouseInteraction();
 }
 
-void page_map_editor::refreshPage()
+void page_map_editor::onRefresh()
+{
+    static eCropMakerState oldState = CROPMAKER_STATE_INACTIVE;
+
+    eCropMakerState currentState = cropMaker->getState();
+    if (currentState != oldState)
+    {
+        if (currentState == CROPMAKER_STATE_ACTIVE)
+        {
+            panel->pushPanelStatus("Left Click on corner and drag to create crop rectangle");
+        }
+        else
+        {
+            panel->popPanelStatus();
+        }
+        oldState = currentState;
+    }
+
+    tallySelects();
+    //tallyMapButtons();
+
+    if (config->mapedStatusBox)
+    {
+        refreshStatusBox();
+    }
+
+    MapEditorDb * db = maped->getDb();
+    MapPtr map = db->getMap(COMPOSITE);
+    if (map)
+        compositeVChk->setText(map->summary());
+    else
+        compositeVChk->setText("No Map");
+
+    map = db->getMap(LAYER_1);
+    if (map)
+        layer1VChk->setText(QString("%1 %2").arg(sMapEditorMapType[db->getMapType(map)]).arg(map->summary2()));
+    else
+        layer1VChk->setText("No map");
+
+    map = db->getMap(LAYER_2);
+    if (map)
+        layer2VChk->setText(QString("%1 %2").arg(sMapEditorMapType[db->getMapType(map)]).arg(map->summary2()));
+    else
+        layer2VChk->setText("No map");
+
+    map = db->getMap(LAYER_3);
+    if (map)
+        layer3VChk->setText(QString("%1 %2").arg(sMapEditorMapType[db->getMapType(map)]).arg(map->summary2()));
+    else
+        layer3VChk->setText("No map");
+
+    modeGroup->button(maped->getMouseMode())->setChecked(true);
+
+    pbCleanseVertices->setText(QString("Cleanse Vertices Sensitivity : %1").arg(config->mapedMergeSensitivity));
+    chkWhiteBkgd->blockSignals(true);
+    chkWhiteBkgd->setChecked(config->motifBkgdWhite);
+    chkWhiteBkgd->blockSignals(false);
+
+    maped->updateStatus();
+
+    if (viewDCEL->isChecked())
+        viewDCEL->setStyleSheet("background-color:yellow; color:red;");
+    else
+        viewDCEL->setStyleSheet("");
+
+    showConsChk->setChecked(db->showConstructionLines);
+
+}
+
+void page_map_editor::refreshStatusBox()
 {
     QStringList txt;
     QString     str;
 
     eMapEditorMode mode = config->mapEditorMode;
-    txt << QString("Editor mode: %1").arg(sMapEditorMode[mode]);
-    switch (mode)
+
+    CropPtr crop = cropMaker->getCrop();
+    if (crop)
     {
-    case MAPED_MODE_FIGURE:
-    {
-        DesignElementPtr delp = maped->getDesignElement();
-        if (delp)
-        {
-            FigurePtr        figp = delp->getFigure();
-            FeaturePtr       feap = delp->getFeature();
-
-            txt << QString("DesignElement = %1").arg(Utils::addr(delp.get()));
-            txt << QString("Feature = %1").arg(Utils::addr(feap.get()));
-            txt << QString("Figure = %1 %2").arg(Utils::addr(figp.get())).arg(figp->getFigTypeString());
-        }
-        else
-        {
-            txt << "No DesignElement from WS";
-        }
+        QString emb = (crop->isEmbedded()) ? "Embedded" : QString();
+        QString app = (crop->isApplied())  ? "Applied" : QString();
+        txt << QString("Editor mode: %1  Crop Mode: %2 %3 %4").arg(sMapEditorMode[mode]).arg(crop->getCropString()).arg(emb).arg(app);
     }
-        break;
-
-    case MAPED_MODE_PROTO:
-    {
-        PrototypePtr pp = maped->getPrototype();
-        InnerBorder * ibp;
-        CropPtr cr;
-        if (pp)
-        {
-            BorderPtr bp = pp->getBorder();
-            ibp = dynamic_cast<InnerBorder*>(bp.get());
-            if (ibp) cr = ibp->getInnerBoundary();
-        }
-        txt << QString("Protoype = %1 Crop = %2").arg(Utils::addr(pp.get())).arg(Utils::addr(cr.get()));
-    }
-        break;
-
-    case MAPED_MODE_MOSAIC:
-    {
-        StylePtr sp = maped->getStyle();
-        txt << QString("Style = %1").arg(Utils::addr(sp.get()));
-    }
-        break;
-
-    case MAPED_MODE_TILING:
-    case MAPED_MODE_FILLED_TILING:
-    {
-        TilingPtr tp =  maped->getTiling();
-        txt << tp->dump();
-    }
-        break;
-
-    case MAPED_MODE_DCEL:
-    case MAPED_MODE_LOCAL:
-    case MAPED_MODE_NONE:
-        break;
-    }
-
-    MapPtr map = maped->getMap();
-    if (map)
-        txt << QString("Map: %1  [%2] %3").arg(Utils::addr(map.get())).arg(map->name()).arg(map->summary());
     else
-        txt <<  "NO MAP";
+    {
+        txt << QString("Editor mode: %1  Crop Mode: NONE").arg(sMapEditorMode[mode]);
+    }
+
+    auto db    = maped->getDb();
+    MapPtr map = db->getEditMap();
+    eMapEditorMapType mapType = db->getMapType(map);
+    txt << QString("Map status: %1").arg(sMapEditorMapType[mapType]);
+
+    if (map)
+        txt << QString("Map: %1  %2 ").arg(Utils::addr(map.get())).arg(map->summary());
+    else
+        txt <<  "No edit map";
 
     if (mode == MAPED_MODE_DCEL)
     {
-        DCELPtr dp = maped->getDCEL();
+        DCELPtr dp = db->getActiveDCEL();
         if (dp)
-            txt << QString("DCEL: vertices = %1 half-edges = %2 faces = %3").arg(dp->getVertices().size()).arg(dp->getEdges().size()).arg(dp->faces.size());
+            txt << QString("DCEL: vertices = %1 half-edges = %2 faces = %3").arg(dp->getVertices().size()).arg(dp->getEdges().size()).arg(dp->getFaceSet().size());
         else
             txt <<  "DCEL: NONE";
     }
 
+    switch (mapType)
+    {
+    case MAPED_TYPE_COMPOSITE:
+    case MAPED_TYPE_COMPOSITE_MOTIF:
+        break;
+
+    case MAPED_LOADED_FROM_MOTIF:
+    {
+        for (auto & wdelp : db->getDesignElements())
+        {
+            DesignElementPtr delp = wdelp.lock();
+            if (delp)
+            {
+                FigurePtr   figp = delp->getFigure();
+                FeaturePtr  feap = delp->getFeature();
+
+                txt << QString("DesignElement = %1").arg(Utils::addr(delp.get()));
+                txt << QString("Feature = %1").arg(Utils::addr(feap.get()));
+                txt << QString("Figure = %1 %2").arg(Utils::addr(figp.get())).arg(figp->getFigTypeString());
+            }
+            else
+            {
+                txt << "No DesignElement from WS";
+            }
+        }
+    }
+        break;
+
+    case MAPED_LOADED_FROM_MOTIF_PROTOTYPE:
+    {
+        PrototypePtr pp = db->getMotifPrototype();
+        if (pp)
+        {
+            CropPtr cr;
+            if (pp)
+            {
+                cr = pp->getCrop();
+            }
+            txt << QString("Protoype = %1 Crop = %2").arg(Utils::addr(pp.get())).arg(Utils::addr(cr.get()));
+        }
+    }
+        break;
+
+    case MAPED_LOADED_FROM_MOSAIC:
+        txt << "Mosaic";
+        break;
+
+    case MAPED_LOADED_FROM_TILING_UNIT:
+    case MAPED_LOADED_FROM_TILING_REPEATED:
+    {
+        TilingPtr tp =  db->getTiling();
+        if (tp)
+        {
+            txt << tp->dump();
+        }
+    }
+        break;
+
+    case MAPED_LOADED_FROM_FILE:
+    case MAPED_LOADED_FROM_FILE_MOTIF:
+    case MAPED_TYPE_CREATED:
+    case MAPED_TYPE_CROP:
+    case MAPED_TYPE_UNKNOWN:
+        break;
+    }
+
     QString mi;
-    if (maped->mouse_interaction)
-        mi = maped->mouse_interaction->desc;
+    MapMouseActionPtr mma = db->getMouseInteraction();
+    if (mma)
+        mi = mma->desc;
     else
         mi = "no interaction";
 
-    QPointF a = maped->mousePos;
-    QPointF b = maped->screenToWorld(a);
+    MapedViewPtr  view = maped->getMapedView();
+    QPointF a = view->getMousePos();
+    QPointF b = view->screenToWorld(a);
     QString astring;
     QTextStream ts(&astring);
     ts << "   pos: (" << a.x() << ", " << a.y() << ") ("
                       << b.x() << ", " << b.y() << ")";
     mi += astring;
 
-    txt << QString("%1 : %2").arg(sMapMouseMode[maped->getMouseMode()]).arg(mi);
+    txt << QString("%1 : %2").arg(sMapEditorMouseMode[maped->getMouseMode()]).arg(mi);
 
-    CropPtr crop = maped->getCrop();
     if (crop)
     {
-        QRectF rect = crop->getRect();
-        txt <<  QString("Crop  Rect: %1 %2 %3 %4 vert=%5 aspect=%6 state=%7").arg(rect.x()).arg(rect.y()).arg(rect.width()).arg(rect.height())
-                   .arg(crop->getAspectVertical()).arg(crop->getAspect()).arg(crop->getStateStr());
+        if (crop->getCropType() == CROP_RECTANGLE)
+        {
+            QRectF rect = crop->getRect();
+            txt <<  QString("Crop  Rect: %1 %2 %3 %4 vert=%5 aspect=%6")
+                .arg(rect.x()).arg(rect.y()).arg(rect.width()).arg(rect.height())
+                .arg(crop->getAspectVertical()).arg(crop->getAspect());
+        }
+        else
+        {
+            txt << crop->getCropString();
+        }
     }
 
-    SelectionSet set = maped->getCurrentSelections();
+    MapEditorSelection * selector = maped->getSelector();
+    SelectionSet set = selector->getCurrentSelections();
     if (set.size())
     {
         str.clear();
@@ -549,8 +817,8 @@ void page_map_editor::refreshPage()
             }
             case MAP_CIRCLE:
             {
-                QPointF pt   = sel->getPoint();
-                CirclePtr c  = sel->getCircle();
+                QPointF pt  = sel->getPoint();
+                auto c      = sel->getCircle();
                 str += QString(" (%1,%2) center=(%4,%5) radius=%3\n").arg(pt.x()).arg(pt.y()).arg(c->radius).arg(c->centre.x()).arg(c->centre.y());
                 break;
             }
@@ -570,85 +838,168 @@ void page_map_editor::refreshPage()
     }
     txt << str;
 
-    statusBox.setText(txt.join("\n"));
+    statusBox->setText(txt.join("\n"));
+}
 
-    modeGroup.button(maped->getMouseMode())->setChecked(true);
+void page_map_editor::slot_chkViewMap(bool checked)
+{
+    config->mapEditorMode = (checked) ? MAPED_MODE_MAP : MAPED_MODE_DCEL;
+    if (config->mapEditorMode == MAPED_MODE_DCEL)
+    {
+        auto map = maped->getDb()->getEditMap();
+        bool rv = maped->useExistingDCEL(map);
+        if (!rv)
+        {
+            rv = maped->createLocalDCEL(map);
+            if (!rv)
+            {
+                QMessageBox box(this);
+                box.setIcon(QMessageBox::Warning);
+                box.setText("There is no map = cannot view DCEL");
+                box.exec();
+            }
+        }
+    }
+    updateView();
+}
 
-    maped->updateStatus();
+void page_map_editor::slot_chkViewDCEL(bool checked)
+{
+    config->mapEditorMode = (checked) ? MAPED_MODE_DCEL : MAPED_MODE_MAP;
+    if (config->mapEditorMode == MAPED_MODE_DCEL)
+    {
+        auto map = maped->getDb()->getEditMap();
+        bool rv = maped->useExistingDCEL(map);
+        if (!rv)
+        {
+            rv = maped->createLocalDCEL(map);
+            if (!rv)
+            {
+                QMessageBox box(this);
+                box.setIcon(QMessageBox::Warning);
+                box.setText("There is no map = cannot view DCEL");
+                box.exec();
+            }
+        }
+    }
+    updateView();
 }
 
 void page_map_editor::slot_mosaicLoaded(QString name)
 {
     qDebug() << "page_map_editor: loaded -" << name;
     maped->initStashFrom(name);
-    if (config->getViewerType() == VIEW_MAP_EDITOR)
-    {
-        maped->reload();
-    }
+    slot_mosaicChanged();
 }
 
-void page_map_editor::slot_selected_dele_changed()
+void page_map_editor::slot_mosaicChanged()
 {
-    if (config->mapEditorMode == MAPED_MODE_FIGURE)
+    if (config->getViewerType() == VIEW_MAP_EDITOR)
     {
-        maped->reload();
+        MapEditorDb * db = maped->getDb();
+        eMapEditorMapType mtype = db->getMapType(db->getEditMap());
+        switch (mtype)
+        {
+        case MAPED_LOADED_FROM_MOSAIC:
+            maped->loadMosaicPrototype();
+            break;
+
+        case MAPED_LOADED_FROM_MOTIF_PROTOTYPE:
+            maped->loadMotifPrototype();
+            break;
+
+        case MAPED_LOADED_FROM_TILING_UNIT:
+            maped->loadTilingUnit();
+            break;
+
+        case MAPED_LOADED_FROM_TILING_REPEATED:
+            maped->loadTilingRepeated();
+            break;
+
+        case MAPED_LOADED_FROM_MOTIF:
+            maped->loadSelectedMotifs();
+            break;
+
+        case MAPED_LOADED_FROM_FILE:
+        case MAPED_LOADED_FROM_FILE_MOTIF:
+        case MAPED_TYPE_UNKNOWN:
+        case MAPED_TYPE_COMPOSITE:
+        case MAPED_TYPE_COMPOSITE_MOTIF:
+        case MAPED_TYPE_CREATED:
+        case MAPED_TYPE_CROP:
+            break;
+        }
     }
 }
 
 void page_map_editor::slot_tilingLoaded (QString name)
 {
-    Q_UNUSED(name)
-    if (config->getViewerType() == VIEW_MAP_EDITOR)
-    {
-        maped->reload();
-    }
-}
+    Q_UNUSED(name);
 
-void page_map_editor::slot_reload()
-{
-    maped->reload();
+    MapEditorDb * db = maped->getDb();
+    if (db->getMapType(db->getEditMap()) == MAPED_LOADED_FROM_TILING_UNIT)
+    {
+        maped->loadTilingUnit();
+    }
+    else if (db->getMapType(db->getEditMap()) == MAPED_LOADED_FROM_TILING_REPEATED)
+    {
+        maped->loadTilingRepeated();
+    }
 }
 
 void page_map_editor::slot_convertToExplicit()
 {
-    if (config->mapEditorMode == MAPED_MODE_FIGURE)
+    MapEditorDb * db      = maped->getDb();
+    MapEditorLayer layer  = db->getEditLayer();
+    DesignElementPtr delp = layer.wdel.lock();
+    if (delp)
     {
-        DesignElementPtr delp = maped->getDesignElement();
-        FigurePtr        figp = delp->getFigure();
-
-        ExplicitPtr        ep = std::dynamic_pointer_cast<ExplicitFigure>(figp);
-        if (ep)
+        Q_ASSERT(db->isMotif(layer.type));
+        FigurePtr figp = delp->getFigure();
+        if (figp)
         {
-            QMessageBox box(this);
-            box.setIcon(QMessageBox::Warning);
-            box.setText("Ignoring - Figure is already explicit");
-            box.exec();
-            return;
-        }
+            ExplicitPtr ep = std::dynamic_pointer_cast<ExplicitFigure>(figp);
+            if (ep)
+            {
+                QMessageBox box(this);
+                box.setIcon(QMessageBox::Warning);
+                box.setText("Ignoring - Figure is already explicit");
+                box.exec();
+                return;
+            }
 
-        int sides = 10;
-        RadialPtr rp = std::dynamic_pointer_cast<RadialFigure>(figp);
-        if (rp)
-        {
-            sides = rp->getN();
+            int sides = 10;
+            RadialPtr rp = std::dynamic_pointer_cast<RadialFigure>(figp);
+            if (rp)
+            {
+                sides = rp->getN();
+            }
+            MapPtr map = layer.getMap();
+            if (map)
+            {
+                ep = make_shared<ExplicitFigure>(map,FIG_TYPE_EXPLICIT,sides);
+                delp->setFigure(ep);
+            }
         }
-        MapPtr map = maped->getMap();
-        ep = make_shared<ExplicitFigure>(map,FIG_TYPE_EXPLICIT,sides);
-        delp->setFigure(ep);
+    }
+    else
+    {
+        // TODO - this was not a design element - so lets make one from scratch and push to to the
+        // mpotif maker
+        qWarning("Not yet implemented");
     }
 }
 
 void page_map_editor::slot_verify()
 {
-    MapPtr map = maped->getMap();
+    MapEditorDb * db  = maped->getDb();
+    MapPtr map = db->getEditMap();
     if (!map) return;
 
     bool oldConf = config->verifyMaps;
     config->verifyMaps = true;
 
-    bool verified = map->verify(true);
-
-    if (verified)
+    if (map->verify(true))
     {
         QMessageBox box(this);
         box.setIcon(QMessageBox::Information);
@@ -668,7 +1019,8 @@ void page_map_editor::slot_verify()
 
 void page_map_editor::slot_divideIntersectingEdges()
 {
-    MapPtr map = maped->getMap();
+    MapEditorDb * db  = maped->getDb();
+    MapPtr map = db->getEditMap();
     if (!map) return;
     map->cleanse(divideupIntersectingEdges);
     updateView();
@@ -676,7 +1028,7 @@ void page_map_editor::slot_divideIntersectingEdges()
 
 void page_map_editor::slot_joinColinearEdges()
 {
-    MapPtr map = maped->getMap();
+    MapPtr map = maped->getDb()->getEditMap();
     if (!map) return;
     map->cleanse(joinupColinearEdges);
     updateView();
@@ -684,15 +1036,22 @@ void page_map_editor::slot_joinColinearEdges()
 
 void page_map_editor::slot_cleanNeighbours()
 {
-    MapPtr map = maped->getMap();
+    MapPtr map = maped->getDb()->getEditMap();
     if (!map) return;
     map->cleanse(cleanupNeighbours);
     updateView();
 }
 
+void page_map_editor::slot_cleanVertices()
+{
+    // this is not a general cleanse operation since it uses the tolernace defined here
+    maped->cleanupMapPoints();
+    updateView();
+}
+
 void page_map_editor::slot_removeUnconnectedVertices()
 {
-    MapPtr map = maped->getMap();
+    MapPtr map = maped->getDb()->getEditMap();
     if (!map) return;
     map->cleanse(badVertices_0);
     updateView();
@@ -700,7 +1059,7 @@ void page_map_editor::slot_removeUnconnectedVertices()
 
 void page_map_editor::slot_removeSingleConnectVertices()
 {
-    MapPtr map = maped->getMap();
+    MapPtr map = maped->getDb()->getEditMap();
     if (!map) return;
     map->cleanse(badVertices_1);
     updateView();
@@ -709,7 +1068,7 @@ void page_map_editor::slot_removeSingleConnectVertices()
 
 void page_map_editor::slot_removeZombieEdges()
 {
-    MapPtr map = maped->getMap();
+    MapPtr map = maped->getDb()->getEditMap();
     if (!map) return;
     map->cleanse(badEdges);
     updateView();
@@ -717,87 +1076,61 @@ void page_map_editor::slot_removeZombieEdges()
 
 void page_map_editor::slot_rebuildNeighbours()
 {
-    MapPtr map = maped->getMap();
+    MapPtr map = maped->getDb()->getEditMap();
     if (!map) return;
-    map->buildNeighbours();
+    map->resetNeighbourMap();
+    map->getNeighbourMap(); // rebuilds
     updateView();
 }
 
-void page_map_editor::slot_sortVertices()
-{
-    MapPtr map = maped->getMap();
-    if (!map) return;
-    map->sortVertices();
-    updateView();
-}
-
-void page_map_editor::slot_sortEdges()
-{
-    MapPtr map = maped->getMap();
-    if (!map) return;
-    map->sortEdges();
-    updateView();
-}
-
-void page_map_editor::slot_setModes(int mode, bool checked)
+void page_map_editor::slot_setMouseMode(int mode, bool checked)
 {
     if (checked)
     {
-        eMapMouseMode mm = static_cast<eMapMouseMode>(mode);
-
-        switch (mm)
-        {
-        case MAPED_MOUSE_CREATE_CROP:
-            pbCropMap->setPalette(pal);
-            pbMaskMap->setPalette(palYellow);
-            break;
-
-        case MAPED_MOUSE_CREATE_BORDER:
-        case MAPED_MOUSE_EDIT_BORDER:
-            pbCropMap->setPalette(palYellow);
-            pbMaskMap->setPalette(palYellow);
-            break;
-
-        default:
-            pbCropMap->setPalette(pal);
-            pbMaskMap->setPalette(pal);
-            break;
-        }
-
+        eMapEditorMouseMode mm = static_cast<eMapEditorMouseMode>(mode);
         maped->setMapedMouseMode(mm);
     }
 }
 
-void page_map_editor::slot_mapEdMode_pressed(int id, bool checked)
+void page_map_editor::slot_showBounds(bool show)
 {
-    if (checked)
-    {
-        config->mapEditorMode = eMapEditorMode(id);
-        maped->reload();
-    }
-}
-
-void page_map_editor::slot_hideCons(bool hide)
-{
-    maped->hideConstructionLines = hide;
+    maped->getDb()->showBoundaries = show;
     updateView();
 }
 
-void page_map_editor::slot_hideMap(bool hide)
+void page_map_editor::slot_showCons(bool show)
 {
-    maped->hideMap = hide;
+    maped->getDb()->showConstructionLines = show;
     updateView();
 }
 
-void page_map_editor::slot_hidePoints(bool hide)
+void page_map_editor::slot_showMap(bool show)
 {
-    maped->hidePoints = hide;
+    maped->getDb()->showMap = show;
     updateView();
 }
 
-void page_map_editor::slot_hideMidPoints(bool hide)
+void page_map_editor::slot_showPoints(bool show)
 {
-    maped->hideMidPoints = hide;
+    maped->getDb()->showPoints = show;
+    updateView();
+}
+
+void page_map_editor::slot_showMidPoints(bool show)
+{
+    maped->getDb()->showMidPoints = show;
+    updateView();
+}
+
+void page_map_editor::slot_showDirPoints(bool show)
+{
+    maped->getDb()->showDirnPoints = show;
+    updateView();
+}
+
+void page_map_editor::slot_showArcCentre(bool show)
+{
+    maped->getDb()->showArcCentre = show;
     updateView();
 }
 
@@ -806,11 +1139,11 @@ void page_map_editor::slot_debugChk(bool on)
     config->mapedStatusBox = on;
     if (!on)
     {
-        statusBox.hide();
+        statusBox->hide();
     }
     else
     {
-        statusBox.show();
+        statusBox->show();
     }
 }
 
@@ -822,14 +1155,14 @@ void page_map_editor::slot_popstash()
 
 void page_map_editor::slot_undoConstructionLines()
 {
-    maped->stash.getPrev();
+    maped->getDb()->getStash()->getPrev();
     maped->loadCurrentStash();
     updateView();
 }
 
 void page_map_editor::slot_redoConstructionLines()
 {
-    maped->stash.getNext();
+    maped->getDb()->getStash()->getNext();
     maped->loadCurrentStash();
     updateView();
 }
@@ -837,107 +1170,14 @@ void page_map_editor::slot_redoConstructionLines()
 void page_map_editor::slot_clearConstructionLines()
 {
     // this does not affect the stash
-    maped->constructionLines.clear();
-    maped->constructionCircles.clear();
+    maped->getDb()->constructionLines.clear();
+    maped->getDb()->constructionCircles.clear();
     updateView();
-}
-
-void page_map_editor::slot_clearMap()
-{
-    maped->clearAllMaps();
-}
-
-void page_map_editor::slot_createMap()
-{
-    maped->setLocalMap(make_shared<Map>(QString("New local map")));
-    if (config->mapEditorMode == MAPED_MODE_LOCAL)
-    {
-        maped->reload();
-    }
-    else
-    {
-        mapEdModeGroup.button(MAPED_MODE_LOCAL)->setChecked(true);
-    }
-}
-
-void page_map_editor::slot_loadMap()
-{
-    qDebug() << "page_map_editor::slot_loadMap";
-
-    QString dir = config->rootMediaDir + "maps/";
-    QString filename = QFileDialog::getOpenFileName(nullptr,"Select Map File",dir, "Map Files (*.xml)");
-    if (filename.isEmpty()) return;
-
-    MosaicLoader loader;
-    MapPtr map  = loader.loadMosaicMap(filename);
-    if (!map)
-    {
-        QMessageBox box(this);
-        box.setIcon(QMessageBox::Warning);
-        box.setText("Map NOT loaded");
-        box.exec();
-        return;
-    }
-
-    mapEdModeGroup.button(MAPED_MODE_LOCAL)->setChecked(true);
-    Q_ASSERT(config->mapEditorMode == MAPED_MODE_LOCAL);
-
-    maped->setLocalMap(map);
-    maped->reload();
-
-    qDebug() << "page_map_editor::slot_loadMap - completed";
-
-    QMessageBox box(this);
-    box.setIcon(QMessageBox::Information);
-    box.setText("Local map loaded OK");
-    box.exec();
-}
-
-void page_map_editor::slot_saveMap()
-{
-    MapPtr map = maped->getMap();
-    if (!map) return;
-
-    QString dir = config->rootMediaDir + "maps/";
-    QString filename = QFileDialog::getSaveFileName(this, "Save Map File",dir,"Map (*.xml)");
-    if (filename.isEmpty()) return;
-
-    MosaicWriter writer;
-    bool rv = writer.writeXML(filename,map);
-    if (rv)
-    {
-        QMessageBox box(this);
-        box.setIcon(QMessageBox::Information);
-        box.setText("Map saved OK");
-        box.exec();
-    }
-    else
-    {
-        QMessageBox box(this);
-        box.setIcon(QMessageBox::Warning);
-        box.setText("Map NOT saved");
-        box.exec();
-    }
-}
-
-void page_map_editor::slot_pushToTiling()
-{
-    MapPtr map           = maped->getMap();
-    if (!map) return;
-    EdgePoly ep          = map->getEdgePoly();
-    FeaturePtr fp        = make_shared<Feature>(ep);
-    PlacedFeaturePtr pfp = make_shared<PlacedFeature>(fp,QTransform());
-    tilingMaker->addNewPlacedFeature(pfp);
-
-    QMessageBox box(this);
-    box.setIcon(QMessageBox::Information);
-    box.setText("Pushed OK");
-    box.exec();
 }
 
 void page_map_editor::slot_dumpMap()
 {
-    MapPtr m = maped->getMap();
+    MapPtr m = maped->getDb()->getEditMap();
     if (m)
     {
         m->dumpMap(true);
@@ -948,70 +1188,153 @@ void page_map_editor::slot_dumpMap()
     }
 }
 
-void page_map_editor::slot_applyCrop()
+void page_map_editor::slot_editCrop()
 {
-#if 1
-    maped->applyCrop();
-#else
-    DlgCrop dlg(maped);
-    int rv = dlg.exec();
-    if (rv == QDialog::Accepted)
+    CropPtr crop = cropMaker->loadCrop();
+    if (!crop)
     {
-        maped->applyCrop();
+        crop = cropMaker->createCrop();
     }
-#endif
+    Q_ASSERT(crop);
+    crop->unuse();     // this triggers
+
+    CropDlg * dlg = new CropDlg(crop);
+    dlg->show();
+
+    connect(dlg->cw, &CropWidget::sig_cropModified, this, [this]() { view->update(); } );
+    connect(dlg->cw, &CropWidget::sig_cropChanged,  this, [this]() { emit sig_refreshView(); } );
+    connect(dlg,     &CropDlg::sig_dlg_done,        this,  &page_map_editor::slot_completeCrop);
+
+    emit sig_refreshView();
 }
 
-void page_map_editor::slot_applyMask()
+void page_map_editor::slot_embedCrop()
 {
-    maped->applyMask();
-}
-
-void page_map_editor::slot_cleanseMap()
-{
-    MapPtr map = maped->getMap();
-    if (!map) return;
-    map->cleanse(default_cleanse);
-    maped->buildEditorDB();
-    updateView();
-}
-
-void page_map_editor::slot_createDCEL()
-{
-    MapPtr map = maped->getMap();
+    // merges the crop rectangle into the map
+    MapEditorLayer layer = maped->getDb()->getEditLayer();
+    MapPtr map = layer.getMap();
     if (!map)
+    {
+        map = make_shared<Map>("Crop Map");
+        maped->getDb()->insertLayer(MapEditorLayer(map,MAPED_TYPE_CROP,layer.wdel));
+    }
+
+    if (cropMaker->getState() != CROPMAKER_STATE_ACTIVE)
     {
         QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
-        box.setText("Select a map before creating DCEL");
+        box.setText("Embed Crop : FAILED\n\nPress 'Edit Crop' before embedding");
         box.exec();
         return;
     }
 
-    DCELPtr dcel = map->getDCEL();
-    maped->buildEditorDB();
+    bool rv = cropMaker->embedCrop(map);
+
+    emit sig_refreshView();
 
     QMessageBox box(this);
-    box.setIcon(QMessageBox::Information);
-    box.setText("DCEL created");
+    if (rv)
+    {
+        box.setIcon(QMessageBox::Information);
+        box.setText("Embed Crop : OK");
+    }
+    else
+    {
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Embed Crop : FAILED");
+    }
     box.exec();
+}
+
+void page_map_editor::slot_applyCrop()
+{
+    // deletes everything outside of the crop rectangle
+    MapPtr map = maped->getDb()->getEditMap();
+
+    if (cropMaker->getState() != CROPMAKER_STATE_ACTIVE)
+    {
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Apply Crop : FAILED\n\nPress 'Edit Crop' before embedding");
+        box.exec();
+        return;
+    }
+
+    bool rv = cropMaker->cropMap(map);
+
+    emit sig_refreshView();
+
+    QMessageBox box(this);
+    if (rv)
+    {
+        box.setIcon(QMessageBox::Information);
+        box.setText("Crop Map: OK");
+    }
+    else
+    {
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Crop Map : FAILED");
+    }
+    box.exec();
+}
+
+void page_map_editor::slot_completeCrop()
+{
+    cropMaker->setState(CROPMAKER_STATE_COMPLETE);
+    updateView();
+}
+
+void page_map_editor::slot_cleanseMap()
+{
+    MapPtr map = maped->getDb()->getEditMap();
+    if (!map) return;
+    map->cleanse(default_cleanse);
+    updateView();
 }
 
 void page_map_editor::slot_radiusChanged(qreal r)
 {
-    maped->newCircleRadius = r;
+    config->mapedRadius = r;
+}
+
+void page_map_editor::slot_createAngleChanged(qreal angle)
+{
+    config->mapedAngle = angle;
+}
+
+void page_map_editor::slot_createLenChanged(qreal len)
+{
+    config->mapedLen = len;
 }
 
 void page_map_editor::slot_lineWidthChanged(qreal r)
 {
-    maped->mapLineWidth = r;
+    maped->getMapedView()->mapLineWidth = r;
     updateView();
 }
 
 void page_map_editor::slot_consWidthChanged(qreal r)
 {
-    maped->constructionLineWidth = r;
+    maped->getMapedView()->constructionLineWidth = r;
     updateView();
+}
+
+void page_map_editor::slot_mergeSensitivityA(qreal r)
+{
+    config->mapedMergeSensitivity = r;
+}
+
+void page_map_editor::slot_mergeSensitivityB(int sens)
+{
+    static qreal rvals[] = {1e-2,1e-1,1e-2,1e-3,1e-4,1e-5,1e-6,1e-7,1e-8,1e-9,1e-10,1e-11,1e-12,1e-13,1e-14,1e-15,1e-16};
+
+    qreal r = 1e-2;
+    if (sens >0 && sens <=16)
+    {
+        r = rvals[sens];
+    }
+
+   config->mapedMergeSensitivity = r;
 }
 
 void page_map_editor::slot_saveTemplate()
@@ -1029,7 +1352,7 @@ void page_map_editor::slot_saveTemplate()
     if (!name.isEmpty())
     {
         lastNamedTemplate = name;
-        maped->stash.saveTemplate(name);
+        maped->getDb()->getStash()->saveTemplate(name);
     }
     else
         qInfo() << "No template selected";
@@ -1039,7 +1362,7 @@ void page_map_editor::slot_loadTemplate()
 {
     QStringList ts = FileServices::getTemplates();
 
-    DlgListSelect dlg(ts);
+    DlgListSelect dlg(ts,this);
     int retval = dlg.exec();
     if (retval == QDialog::Rejected)
     {
@@ -1061,4 +1384,367 @@ void page_map_editor::slot_loadTemplate()
 
     QFileInfo fi(name);
     lastNamedTemplate = fi.baseName();
+}
+
+void page_map_editor::slot_loadMosaicPrototype()
+{
+    maped->loadMosaicPrototype();
+}
+
+void page_map_editor::slot_loadMotifPrototype()
+{
+    maped->loadMotifPrototype();
+}
+
+void page_map_editor::slot_loadMotif()
+{
+    maped->loadSelectedMotifs();
+}
+
+void page_map_editor::slot_loadTileUnit()
+{
+    maped->loadTilingUnit();
+}
+
+void page_map_editor::slot_loadTileRep()
+{
+    maped->loadTilingRepeated();
+}
+
+void page_map_editor::slot_loadMapFile()
+{
+    qDebug() << "page_map_editor::slot_loadMap";
+
+    QStringList ts = FileServices::getMaps();
+
+    VersionList vList;
+    vList.create(ts);
+    QStringList ts2 = vList.recompose();
+
+    DlgListSelect dlg(ts2,this);
+    if (!lastNamedMap.isEmpty())
+    {
+        dlg.list->selectItemByName(lastNamedMap);
+    }
+    int retval = dlg.exec();
+    if (retval == QDialog::Rejected)
+    {
+        qDebug() << "Canceled";
+        return;
+    }
+    Q_ASSERT(retval == QDialog::Accepted);
+    QString filename = dlg.selectedFile;
+    if (filename.isEmpty())
+    {
+        qInfo() << "No map selected";
+        return;
+    }
+
+    lastNamedMap = filename;
+
+    filename.prepend(config->mapsDir);
+    filename.append(".xml");
+    MapEditorMapLoader loader;
+    MapPtr loadedMap  = loader.loadMosaicMap(filename);
+    if (!loadedMap)
+    {
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Map NOT loaded");
+        box.exec();
+        return;
+    }
+    eMapEditorMapType maptype = loader.getType();
+
+    Xform xf = loader.getXform();
+
+    qDebug().noquote() << loadedMap->summary();
+
+    maped->loadFromMap(loadedMap,maptype);
+    maped->getMapedView()->setCanvasXform(xf);
+
+    tallySelects();
+
+    QMessageBox box(this);
+    box.setIcon(QMessageBox::Information);
+    box.setText("Map loaded OK");
+    box.exec();
+}
+
+void page_map_editor::slot_createMap()
+{
+    MapPtr amap = make_shared<Map>(QString("New local map"));
+    maped->loadFromMap(amap,MAPED_TYPE_CREATED);
+}
+
+void page_map_editor::slot_unloadMaps()
+{
+    maped->unload();
+
+    //maped->setCanvasXform(vcontrol->getCurrentXform());
+    //QSize sz = view->frameSettings.getCropSize(VIEW_MAP_EDITOR);
+    //maped->getMapedView()->setCenterScreenUnits(QRect(QPoint(0,0),sz).center());
+
+    updateView();
+}
+
+void page_map_editor::slot_pushMap()
+{
+    qDebug() << "page_map_editor::slot_pushMap()";
+
+    bool rv = false;
+
+    auto layer = maped->getDb()->getEditLayer();
+    auto map   = layer.getMap();
+    if (!map || map->isEmpty())
+    {
+        rv = false;
+    }
+    else
+    {
+        switch (maped->getDb()->getMapType(map))
+        {
+        case MAPED_LOADED_FROM_MOSAIC:
+            rv= maped->pushToMosaic(layer);
+            break;
+
+        case MAPED_LOADED_FROM_MOTIF_PROTOTYPE:
+        case MAPED_LOADED_FROM_MOTIF:
+        case MAPED_LOADED_FROM_FILE_MOTIF:
+        case MAPED_TYPE_COMPOSITE_MOTIF:
+            rv =  maped->convertToMotif(map);
+            break;
+
+        case MAPED_LOADED_FROM_TILING_UNIT:
+        case MAPED_LOADED_FROM_TILING_REPEATED:
+            rv = maped->convertToTiling(map,false);
+            break;
+
+        case MAPED_TYPE_UNKNOWN:
+        case MAPED_TYPE_CROP:
+            break;
+
+        case MAPED_LOADED_FROM_FILE:
+        case MAPED_TYPE_CREATED:
+        case MAPED_TYPE_COMPOSITE:
+        {
+            DlgPushSelect dlg(this);
+            int rv2 = dlg.exec();
+            if (rv2 == QDialog::Accepted)
+            {
+                switch (dlg.retval)
+                {
+                case 1:
+                    rv= maped->pushToMosaic(layer);
+                    break;
+                case 2:
+                    rv =  maped->convertToMotif(map);
+                    break;
+                case 3:
+                    rv = maped->convertToTiling(map,false);
+                    break;
+                }
+            }
+            else
+            {
+                Q_ASSERT(rv2 == QDialog::Rejected);
+                rv = false;
+            }
+        }
+            break;
+        }
+    }
+
+    QMessageBox box(this);
+    if (rv)
+    {
+        box.setIcon(QMessageBox::Information);
+        box.setText("Pushed OK");
+    }
+    else
+    {
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Push FAILED");
+    }
+    box.exec();
+}
+
+void page_map_editor::slot_saveMapToFile()
+{
+    MapPtr map = maped->getDb()->getEditMap();
+    if (!map)
+    {
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Warning);
+        box.setText("There is no map. Map NOT saved");
+        box.exec();
+        return;
+    }
+
+    if (map->isEmpty())
+    {
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Map is empty. Map NOT saved");
+        box.exec();
+        return;
+    }
+
+    QString dir = config->mapsDir;
+    QString defaultFile = dir;
+    if (!lastNamedMap.isEmpty())
+    {
+        defaultFile = dir + lastNamedMap + ".xml";
+    }
+    QString filename = QFileDialog::getSaveFileName(this, "Save Map File",defaultFile,"Map (*.xml)",nullptr,QFileDialog::DontConfirmOverwrite);
+    if (filename.isEmpty()) return;
+
+    if (QFile::exists(filename))
+    {
+        // file already exists
+        QString name = filename.remove(dir);
+        name = name.remove(".xml");
+        lastNamedMap = name;
+
+        QMessageBox msgBox(ControlPanel::getInstance());
+        msgBox.setText(QString("The map %1 already exists").arg(name));
+        msgBox.setInformativeText("Do you want to bump version (Bump) or overwrite (Save)?");
+        QPushButton * bump   = msgBox.addButton("Bump",QMessageBox::ApplyRole);
+        QPushButton * save   = msgBox.addButton(QMessageBox::Save);
+        QPushButton * cancel = msgBox.addButton(QMessageBox::Cancel);
+        msgBox.setDefaultButton(bump);
+        msgBox.exec();
+
+        if (msgBox.clickedButton() == cancel)
+        {
+            return;
+        }
+        else if (msgBox.clickedButton() == bump)
+        {
+            name = FileServices::getNextVersion(FILE_MAP,name); // appends a version
+        }
+        else
+        {
+            Q_UNUSED(save)
+        }
+
+        lastNamedMap = name;
+        filename = dir + name + ".xml";
+    }
+
+    MapEditorMapWriter writer(maped->getMapedView());
+    bool rv = writer.writeXML(filename,map,maped->getDb()->getMapType(maped->getDb()->getEditMap()));
+    if (rv)
+    {
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Information);
+        box.setText("Map saved OK");
+        box.exec();
+    }
+    else
+    {
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Map NOT saved");
+        box.exec();
+    }
+}
+
+
+void page_map_editor::slot_viewLayer(int id, bool checked)
+{
+    eLayer eid = eLayer(id);
+    maped->getDb()->setViewSelect(eid,checked);
+    if (checked)
+        maped->getDb()->setEditSelect(eid);
+    updateView();
+}
+
+void page_map_editor::slot_editLayer(int id, bool checked)
+{
+    if (checked)
+        maped->getDb()->setEditSelect(eLayer(id));
+    else
+        maped->getDb()->setEditSelect(NO_MAP);
+    updateView();
+}
+
+void page_map_editor::tallySelects()
+{
+    MapEditorDb * db = maped->getDb();
+
+    viewGroup->blockSignals(true);
+
+    if (db->isViewSelected(COMPOSITE))
+    {
+        compositeVChk->setChecked(true);
+        layer1VChk->setChecked(false);
+        layer2VChk->setChecked(false);
+        layer3VChk->setChecked(false);
+    }
+    else
+    {
+        compositeVChk->setChecked(false);
+        bool chk = db->isViewSelected(LAYER_1);
+        layer1VChk->setChecked(chk);
+        chk = db->isViewSelected(LAYER_2);
+        layer2VChk->setChecked(chk);
+        chk = db->isViewSelected(LAYER_3);
+        layer3VChk->setChecked(chk);
+    }
+
+    viewGroup->blockSignals(false);
+
+    // this is needed
+    editGroup->blockSignals(true);
+
+    compositeEChk->setChecked(false);
+    layer1EChk->setChecked(false);
+    layer2EChk->setChecked(false);
+    layer3EChk->setChecked(false);
+
+    switch (db->getEditSelect())
+    {
+    case NO_MAP:
+        break;
+
+    case LAYER_1:
+        layer1EChk->setChecked(true);
+        break;
+
+    case LAYER_2:
+        layer2EChk->setChecked(true);
+        break;
+
+    case LAYER_3:
+        layer3EChk->setChecked(true);
+        break;
+
+    case COMPOSITE:
+        compositeEChk->setChecked(true);
+        break;
+    }
+
+    editGroup->blockSignals(false);
+}
+
+void page_map_editor::tallyMapButtons()
+{
+    eCropMakerState state = cropMaker->getState();
+    if (state == CROPMAKER_STATE_ACTIVE)
+    {
+        pbEmbedCrop->setStyleSheet("QToolButton { background-color: yellow; color: red;}");
+        pbApplyCrop->setStyleSheet("QToolButton { background-color: yellow; color: red;}");
+    }
+    else
+    {
+        pbEmbedCrop->setStyleSheet(defaultStyle);
+        pbApplyCrop->setStyleSheet(defaultStyle);
+    }
+}
+
+void  page_map_editor::slot_whiteClicked(bool state)
+{
+    config->motifBkgdWhite = state;
+    emit sig_refreshView();
 }

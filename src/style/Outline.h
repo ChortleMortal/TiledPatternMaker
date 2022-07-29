@@ -1,32 +1,9 @@
-/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #ifndef OUTLINE_H
 #define OUTLINE_H
 
 #include "style/thick.h"
 #include "geometry/edge.h"
+#include "geometry/belowandaboveedge.h"
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -39,39 +16,12 @@
 // The same code that computes the draw elements for Outline can
 // be used by other "fat" styles, such as Emboss.
 
-struct BelowAndAbove
-{
-    QPointF below;
-    QPointF above;
-};
-
-
-struct BelowAndAbovePoint
-{
-    QPointF below;
-    QPointF v;
-    QPointF above;
-};
-
-class BelowAndAboveEdge
-{
-public:
-    BelowAndAbovePoint v2;
-    BelowAndAbovePoint v1;
-
-    QPolygonF getPoly();
-
-    eEdgeType   type;
-    QPointF     arcCenter;
-    bool        convex;
-};
-
 
 class Outline : public Thick
 {
 public:
-    Outline(PrototypePtr proto);
-    Outline(StylePtr other);
+    Outline(const PrototypePtr & proto);
+    Outline(const StylePtr & other);
     virtual ~Outline() override;
 
     void resetStyleRepresentation() override;
@@ -81,20 +31,11 @@ public:
     virtual eStyleType getStyleType() const override { return STYLE_OUTLINED; }
     QString getStyleDesc() const override { return "Outlined"; }
 
-    // Static Helpers
-
-    // Do a mitered join of the two fat lines (a la postscript, for example).
-    // The join point on the other side of the joint can be computed by
-    // reflecting the point returned by this function through the joint.
-    static QPointF getJoinPoint(QPointF joint, QPointF a, QPointF b, qreal qwidth);
-
-    // Look at a given edge and construct a plausible set of points
-    // to draw at the edge's 'to' vertex.  Call this twice to get the
-    // complete outline of the hexagon to draw for this edge.
-    static BelowAndAbove getPoints(MapPtr map, EdgePtr edge, VertexPtr from, VertexPtr to, qreal qwidth);
+    static BelowAndAbove getPoints(const MapPtr & map, const EdgePtr & edge, const VertexPtr & fromV, const VertexPtr & toV, qreal qwidth);
+    static QPointF       getJoinPoint(QPointF joint, QPointF from, QPointF to, qreal qwidth);
 
 protected:
-    QVector<BelowAndAboveEdge> pts4; // Internal representations of the rendering.
+    QVector<BelowAndAboveEdge> pts4; // Internal representation of the rendering.
 
 };
 #endif

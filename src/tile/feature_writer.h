@@ -1,16 +1,16 @@
 #ifndef FEATUREWRITER_H
 #define FEATUREWRITER_H
 
-#include <QtCore>
-#include <string>
-#include "base/pugixml.hpp"
+#include <QTextStream>
+#include "mosaic/mosaic_writer_base.h"
+#include "misc/pugixml.hpp"
 #include "geometry/vertex.h"
 #include "geometry/edgepoly.h"
 
 using std::string;
 using namespace pugi;
 
-class FeatureWriter
+class FeatureWriter : public MosaicWriterBase
 {
 public:
     FeatureWriter();
@@ -21,18 +21,6 @@ public:
 protected:
     void setVertex(QTextStream & ts,VertexPtr v, QString name);
     void setPoint(QTextStream & ts, QPointF pt, QString name);
-
-    QString  id(int id);
-    QString  nextId();
-    int      getRef()  { return refId; }
-    int      nextRef() { return ++refId; }
-    QString  getVertexReference(VertexPtr ptr);
-    void     setVertexReference(int id, VertexPtr ptr);
-    bool     hasReference(VertexPtr map);
-
-private:
-    QMap<VertexPtr,int>   vertex_ids;
-    int refId;
 };
 
 #endif // FEATUREWRITER_H

@@ -1,20 +1,23 @@
+#include <QMessageBox>
+
 #include "tile/tiling_writer.h"
-#include "tile/backgroundimage.h"
+#include "misc/backgroundimage.h"
 #include "geometry/transform.h"
 #include "geometry/edge.h"
 #include "settings/configuration.h"
-#include "base/fileservices.h"
-#include "base/tiledpatternmaker.h"
+#include "misc/fileservices.h"
+#include "tiledpatternmaker.h"
 #include "panels/panel.h"
-#include "base/mosaic_writer.h"
+#include "mosaic/mosaic_writer.h"
 #include "tile/tiling.h"
 #include "tile/placed_feature.h"
 #include "tile/feature.h"
-#include "base/shared.h"
+#include "misc/tpm_io.h"
 
 using namespace pugi;
 using std::string;
 
+extern class TiledPatternMaker * theApp;
 
 //const int currentTilingXMLVersion = 3;  // 26JUL20 excludes FillData
 //const int currentTilingXMLVersion = 4;  // 13SEP20 restore FillData
@@ -50,7 +53,7 @@ bool TilingWriter::writeTilingXML()
         else if (msgBox.clickedButton() == bump)
         {
             // appends a version
-            name = FileServices::getNextVersion(name,true);
+            name = FileServices::getNextVersion(FILE_TILING,name);
             tiling->setName(name);
             if (isOriginal)
             {
@@ -87,7 +90,7 @@ bool TilingWriter::writeTilingXML()
             box.setText(QString("Saved: %1 - OK").arg(data.fileName()));
             box.exec();
 
-            emit theApp->sig_tilingLoaded(name);
+            emit theApp->sig_tilingWritten(name);
             return true;
         }
     }
@@ -112,13 +115,21 @@ void TilingWriter::writeTilingXML(QTextStream & out)
     out << "<?xml version=\"1.0\"?>" << endl;
     QString qs = QString("<Tiling version=\"%1\">").arg(currentTilingXMLVersion);
     out << qs << endl;
+
     out << "<Name>" << tiling->getName() << "</Name>" << endl;
 
     // fill paratmeters not part of original taprats
     int minX,minY,maxX,maxY;
-    tiling->getSettings().getFillData().get(minX,maxX,minY,maxY);
-    out << "<Fill>" << minX << "," << maxX << ","
-                    << minY << "," << maxY << "</Fill>" << endl;
+    bool singleton;
+    tiling->getSettings().getFillData()->get(singleton,minX,maxX,minY,maxY);
+    if (!singleton)
+    {
+        out << "<Fill singleton = \"f\">" << minX << "," << maxX << "," << minY << "," << maxY << "</Fill>" << endl;
+    }
+    else
+    {
+        out << "<Fill singleton = \"t\">0,0,0,0</Fill>";
+    }
     QPointF t1 = tiling->getTrans1();
     QPointF t2 = tiling->getTrans2();
     out << "<T1>" <<  t1.x() << "," << t1.y() << "</T1>" << endl;
@@ -201,11 +212,13 @@ void TilingWriter::writeBackgroundImage(QTextStream & out, BkgdImgPtr bkgd)
         QString astring = QString("<BackgroundImage name=\"%1\">").arg(bkgd->getName());
         out << astring << endl;
 
-        Xform xform = bkgd->getImageXform();
+        const Xform & xform = bkgd->getCanvasXform();
         out << "<Scale>" << xform.getScale()           << "</Scale>" << endl;
         out << "<Rot>"   << xform.getRotateRadians()   << "</Rot>"  << endl;
         out << "<X>"     << xform.getTranslateX()      << "</X>" << endl;
         out << "<Y>"     << xform.getTranslateY()      << "</Y>" << endl;
+        QPointF center = xform.getModelCenter();
+        out << "<Center>" << center.x() << "," << center.y() << "</Center>"<< endl;
 
         if (!bkgd->perspective.isIdentity())
         {
@@ -230,7 +243,7 @@ void TilingWriter::writeViewSettings(QTextStream & out)
     out << "<zwidth>"  << zsize.width()  << "</zwidth>" << endl;
     out << "<zheight>" << zsize.height() << "</zheight>" << endl;
 
-    MosaicWriter::procesToolkitGeoLayer(out,tiling->getCanvasXform());
+    MosaicWriter::procesToolkitGeoLayer(out,tiling->getCanvasXform(),0);
 
     out << "</ViewSettings>" <<  endl;
 }
@@ -260,6 +273,16 @@ void TilingWriter::setEdgePoly(QTextStream & ts, EdgePoly & epoly)
             setVertex(ts,v2,"Point");
             setPoint(ts,p3,"Center");
             ts << "</Curve>" << endl;
+        }
+        else if (ep->getType() == EDGETYPE_CHORD)
+        {
+            QString str = QString("<Chord convex=\"%1\">").arg(ep->isConvex() ? "t" : "f");
+            ts << str << endl;
+            QPointF p3 = ep->getArcCenter();
+            setVertex(ts,v1,"Point");
+            setVertex(ts,v2,"Point");
+            setPoint(ts,p3,"Center");
+            ts << "</Chord>" << endl;
         }
     }
 }

@@ -4,19 +4,21 @@
 FillData::FillData()
 {
     _set = false;
-    minX = -4;
-    minY = -4;
-    maxX = 4;
-    maxY = 4;
+    minX = -3;
+    minY = -3;
+    maxX = 3;
+    maxY = 3;
+    singleton = false;
 }
 
-void FillData::set(int minX, int maxX, int minY, int maxY)
+void FillData::set(bool singleton, int minX, int maxX, int minY, int maxY)
 {
     _set = true;
     this->minX = minX;
     this->minY = minY;
     this->maxX = maxX;
     this->maxY = maxY;
+    this->singleton = singleton;
 }
 
 void FillData::set(FillData & fdata)
@@ -26,10 +28,12 @@ void FillData::set(FillData & fdata)
     minY = fdata.minY;
     maxX = fdata.maxX;
     maxY = fdata.maxY;
+    singleton = fdata.singleton;
 }
 
-void FillData::get(int & minX, int & maxX, int & minY, int & maxY) const
+void FillData::get(bool & singleton, int & minX, int & maxX, int & minY, int & maxY) const
 {
+    singleton = this->singleton;
     minX = this->minX;
     minY = this->minY;
     maxX = this->maxX;

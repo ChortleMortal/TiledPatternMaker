@@ -1,45 +1,31 @@
-﻿/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-#ifndef FIGURE_EDITORS_H
+﻿#ifndef FIGURE_EDITORS_H
 #define FIGURE_EDITORS_H
 
-#include <QtWidgets>
-#include "panels/panel_misc.h"
+#include "widgets/panel_misc.h"
+
+class QCheckBox;
 
 class page_motif_maker;
 class SliderSet;
 class DoubleSliderSet;
 class AQWidget;
 
-typedef std::shared_ptr<class Figure>           FigurePtr;
-typedef std::shared_ptr<class Star>             StarPtr;
-typedef std::shared_ptr<class Rosette>          RosettePtr;
+typedef std::shared_ptr<class Figure>               FigurePtr;
+typedef std::shared_ptr<class Star>                 StarPtr;
+typedef std::shared_ptr<class Rosette>              RosettePtr;
 typedef std::shared_ptr<class StarConnectFigure>    StarConnectPtr;
 typedef std::shared_ptr<class RosetteConnectFigure> RosetteConnectPtr;
-typedef std::shared_ptr<class ExtendedStar>     ExtStarPtr;
-typedef std::shared_ptr<class ExtendedRosette>  ExtRosettePtr;
+typedef std::shared_ptr<class ExtendedStar>         ExtStarPtr;
+typedef std::shared_ptr<class ExtendedRosette>      ExtRosettePtr;
+typedef std::shared_ptr<class DesignElement>        DesignElementPtr;
+
+typedef std::weak_ptr<class Figure>                 WeakFigurePtr;
+typedef std::weak_ptr<class Star>                   WeakStarPtr;
+typedef std::weak_ptr<class Rosette>                WeakRosettePtr;
+typedef std::weak_ptr<class StarConnectFigure>      WeakStarConnectPtr;
+typedef std::weak_ptr<class RosetteConnectFigure>   WeakRosetteConnectPtr;
+typedef std::weak_ptr<class ExtendedStar>           WeakExtStarPtr;
+typedef std::weak_ptr<class ExtendedRosette>        WeakExtRosettePtr;
 
 // An abstract class for containing the controls related to the editing
 // of one kind of figure.  A complex hierarchy of FigureEditors gets built
@@ -51,20 +37,20 @@ class FigureEditor : public AQWidget
 public:
     FigureEditor(page_motif_maker * fm, QString figname);
 
-    virtual FigurePtr getFigure()  { return figure; }
-    virtual void      resetWithFigure(FigurePtr fig, bool doEmit);
+    void    setFigure(FigurePtr fig, bool doEmit);
+    virtual void  setFigure(DesignElementPtr del, bool doEmit) = 0;
 
     void    addLayout(QBoxLayout * layout) { vbox->addLayout(layout);}
     void    addWidget(QWidget    * widget) { vbox->addWidget(widget);}
 
 signals:
-    void sig_figure_changed(FigurePtr fig);
+    void sig_figure_modified(FigurePtr fig);
 
 protected:
-    virtual void updateFigure(bool doEmit);
-    virtual void updateEditor();
+    virtual void editorToFigure(bool doEmit);
+    virtual void figureToEditor();
 
-    FigurePtr       figure;
+    WeakFigurePtr   wfigure;
     QString         name;
 
     page_motif_maker * menu;
@@ -83,19 +69,18 @@ class StarEditor : public FigureEditor
 public:
     StarEditor(page_motif_maker * fm, QString figname);
 
-    virtual FigurePtr getFigure() override;
-    virtual void      resetWithFigure(FigurePtr fig, bool doEmit) override;
+    virtual void setFigure(DesignElementPtr del, bool doEmit) override;
 
 protected:
-    virtual void updateFigure(bool doEmit) override;
-    virtual void updateEditor() override;
+    virtual void editorToFigure(bool doEmit) override;
+    virtual void figureToEditor() override;
 
     SliderSet       *   n_slider;
     DoubleSliderSet	*	d_slider;
     SliderSet		*	s_slider;
 
 private:
-    StarPtr			star;
+    WeakStarPtr			wstar;
 };
 
 
@@ -106,12 +91,11 @@ class RosetteEditor : public FigureEditor
 public:
     RosetteEditor(page_motif_maker *fm, QString figname);
 
-    virtual FigurePtr getFigure() override;
-    virtual void      resetWithFigure(FigurePtr fig, bool doEmit) override;
+    virtual void setFigure(DesignElementPtr del, bool doEmit) override;
 
 protected:
-    virtual void updateFigure(bool doEmit) override;
-    virtual void updateEditor() override;
+    virtual void editorToFigure(bool doEmit) override;
+    virtual void figureToEditor() override;
 
     SliderSet       *   n_slider;
     DoubleSliderSet	*	q_slider;
@@ -119,7 +103,7 @@ protected:
     SliderSet       *   s_slider;
 
 private:
-    RosettePtr rosette;
+    WeakRosettePtr      wrosette;
 };
 
 class ConnectStarEditor : public StarEditor
@@ -129,18 +113,17 @@ class ConnectStarEditor : public StarEditor
 public:
     ConnectStarEditor(page_motif_maker * fm, QString figname);
 
-    FigurePtr getFigure() override;
-    virtual void resetWithFigure(FigurePtr fig, bool doEmit) override;
+    virtual void setFigure(DesignElementPtr del, bool doEmit) override;
 
 public slots:
 
 protected:
     void calcScale();
 
-    QPushButton     *   defaultBtn;
+    QPushButton * defaultBtn;
 
 private:
-    StarConnectPtr starConnect;
+    WeakStarConnectPtr wstarConnect;
 };
 
 class ConnectRosetteEditor : public RosetteEditor
@@ -150,8 +133,7 @@ class ConnectRosetteEditor : public RosetteEditor
 public:
     ConnectRosetteEditor(page_motif_maker *fm, QString figname);
 
-    FigurePtr getFigure() override;
-    virtual void  resetWithFigure(FigurePtr fig, bool doEmit) override;
+    virtual void setFigure(DesignElementPtr del, bool doEmit) override;
 
 protected:
     void    calcScale();
@@ -159,7 +141,7 @@ protected:
     QPushButton * defaultBtn;
 
 private:
-    RosetteConnectPtr rosetteConnect;
+    WeakRosetteConnectPtr wrosetteConnect;
 };
 
 class ExtendedStarEditor : public StarEditor
@@ -169,15 +151,14 @@ class ExtendedStarEditor : public StarEditor
 public:
     ExtendedStarEditor(page_motif_maker * fm, QString figname);
 
-    FigurePtr getFigure() override;
-    virtual void resetWithFigure(FigurePtr fig, bool doEmit) override;
+    virtual void setFigure(DesignElementPtr del, bool doEmit) override;
 
 protected:
-    virtual void updateFigure(bool doEmit) override;
-    virtual void updateEditor() override;
+    virtual void editorToFigure(bool doEmit) override;
+    virtual void figureToEditor() override;
 
 private:
-    ExtStarPtr      extended;
+    WeakExtStarPtr    wextended;
 
     QCheckBox       * extendBox1;
     QCheckBox       * extendBox2;
@@ -191,15 +172,14 @@ class ExtendedRosetteEditor : public RosetteEditor
 public:
     ExtendedRosetteEditor(page_motif_maker *fm, QString figname);
 
-    FigurePtr getFigure() override;
-    virtual void resetWithFigure(FigurePtr fig, bool doEmit) override;
+    virtual void setFigure(DesignElementPtr del, bool doEmit) override;
 
 protected:
-    virtual void updateFigure(bool doEmit) override;
-    virtual void updateEditor() override;
+    virtual void editorToFigure(bool doEmit) override;
+    virtual void figureToEditor() override;
 
 private:
-    ExtRosettePtr   extended;
+    WeakExtRosettePtr wextended;
 
     QCheckBox       * extendPeriphBox;
     QCheckBox       * extendFreeBox;

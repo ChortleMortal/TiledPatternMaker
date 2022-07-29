@@ -1,3 +1,5 @@
+#include <QDebug>
+
 #include "geometry/threads.h"
 #include "geometry/map.h"
 #include "geometry/edge.h"
@@ -5,22 +7,15 @@
 
 extern void stackInfo();
 
-Thread::Thread()
+void Threads::createThreads(MapPtr map)
 {
+    this->map = map;
 
-}
-
-Threads::Threads()
-{
-
-}
-
-void Threads::findThreads(MapPtr map)
-{
     // reset visited
     for (auto & edge : map->getEdges())
     {
         edge->thread.reset();
+        edge->visited = false;
     }
 
     for (auto & edge : map->getEdges())
@@ -29,13 +24,14 @@ void Threads::findThreads(MapPtr map)
             continue;
         ThreadPtr thread = std::make_shared<Thread>();
         this->push_back(thread);
-        findThread(thread,map,edge,edge->v2);
+        createThread(thread,edge,edge->v2);
     }
     qDebug() << "interlace: num threads =" << size();
 }
 
-void Threads::findThread(ThreadPtr thread, MapPtr map, EdgePtr edge, VertexPtr touchPt)
+void Threads::createThread(ThreadPtr thread, EdgePtr edge, VertexPtr touchPt)
 {
+    Q_ASSERT(thread);
     //static int count = 0;
     //qDebug().noquote() << count++ << "Threads::findThread Edge" << edge->dump() << "Thread" << thread.get();
     //stackInfo();
@@ -45,11 +41,9 @@ void Threads::findThread(ThreadPtr thread, MapPtr map, EdgePtr edge, VertexPtr t
     thread->push_back(edge);
 
     // first pass looking for colinear
-    NeighboursPtr n = map->getBuiltNeighbours(touchPt);
-    std::vector<WeakEdgePtr> * wedges = dynamic_cast<std::vector<WeakEdgePtr>*>(n.get());
-    for (auto pos = wedges->begin(); pos != wedges->end(); pos++)
+    NeighboursPtr n = map->getNeighbours(touchPt);
+    for (auto & wedge : *n)
     {
-        WeakEdgePtr wedge = *pos;
         EdgePtr edge2 = wedge.lock();
         Q_ASSERT(edge2);
         //qDebug() << "Edge2" << map->edgeIndex(edge2.lock()) << "visited"  << edge2.lock()->visited;
@@ -57,7 +51,7 @@ void Threads::findThread(ThreadPtr thread, MapPtr map, EdgePtr edge, VertexPtr t
             continue;
         if (edge->isColinearAndTouching(edge2))
         {
-            findThread(thread, map,edge2,edge2->getOtherV(touchPt));       // recurse
+            createThread(thread,edge2,edge2->getOtherV(touchPt));       // recurse
             return;
         }
     }
@@ -66,7 +60,7 @@ void Threads::findThread(ThreadPtr thread, MapPtr map, EdgePtr edge, VertexPtr t
     auto edge3 = n->getFirstNonvisitedNeighbour(edge);
     if (edge3)
     {
-        findThread(thread, map,edge3,edge3->getOtherV(touchPt));           // recurse
+        createThread(thread,edge3,edge3->getOtherV(touchPt));           // recurse
     }
 }
 

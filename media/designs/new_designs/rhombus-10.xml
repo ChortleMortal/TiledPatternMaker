@@ -90,16 +90,16 @@
 							<scale>1</scale>
 							<edges id="18">
 								<Line>
-									<Point id="19">0,-3.48</Point>
-									<Point id="20">2.44,0</Point>
+									<Point id="19">0,-3.29</Point>
+									<Point id="20">2.346666666666668,0</Point>
 								</Line>
 								<Line>
 									<Point reference="20" />
-									<Point id="21">0,3.48</Point>
+									<Point id="21">0,3.29</Point>
 								</Line>
 								<Line>
 									<Point reference="21" />
-									<Point id="22">-2.44,0</Point>
+									<Point id="22">-2.333333333333333,0</Point>
 								</Line>
 								<Line>
 									<Point reference="22" />
@@ -107,16 +107,12 @@
 								</Line>
 							</edges>
 						</tile.Feature>
-						<app.ExplicitFigure id="23" type="FIG_TYPE_EXPLICIT">
-							<map id="24">
-								<vertices id="25" />
-								<edges id="26" />
-							</map>
+						<app.ExplicitFeature id="23" type="FIG_TYPE_EXPLICIT_FEATURE">
 							<boundarySides>1</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFigure>
+						</app.ExplicitFeature>
 					</entry>
 				</app.Prototype>
 			</prototype>

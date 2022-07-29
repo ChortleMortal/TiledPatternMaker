@@ -1,7 +1,11 @@
+#include <QGroupBox>
+#include <QCheckBox>
+#include <QFileDialog>
+#include <QMessageBox>
 #include "panels/page_background_image.h"
-#include "panels/dlg_name.h"
+#include "widgets/dlg_name.h"
 #include "settings/configuration.h"
-#include "tile/backgroundimage.h"
+#include "misc/backgroundimage.h"
 #include "panels/panel.h"
 #include "geometry/edge.h"
 #include "geometry/vertex.h"
@@ -19,7 +23,7 @@ void page_background_image::onEnter()
     displayBackgroundStatus(true);
 }
 
-void page_background_image::refreshPage()
+void page_background_image::onRefresh()
 {
     displayBackgroundStatus(false);
 }
@@ -31,6 +35,7 @@ QGroupBox * page_background_image::createBackgroundGroup()
     QPushButton * completeAdjustBtn  = new QPushButton("Complete Perspective Adjustment");
     QPushButton * saveAdjustedBtn    = new QPushButton("Save Adjusted");
     QPushButton * clearBtn           = new QPushButton("Clear");
+    QPushButton * resetBtn           = new QPushButton("Reset Xform");
 
     chk_useAdjusted  = new QCheckBox("Use Perspective");
     imageName        = new QLineEdit("Image name");
@@ -47,9 +52,13 @@ QGroupBox * page_background_image::createBackgroundGroup()
     box2->addStretch();
     box2->addWidget(chk_useAdjusted);
 
+    QHBoxLayout * box3 = new QHBoxLayout();
+    box3->addLayout(&bkgdLayout);
+    box3->addWidget(resetBtn);
+
     QVBoxLayout * bkg = new QVBoxLayout();
     bkg->addLayout(box);
-    bkg->addLayout(&bkgdLayout);
+    bkg->addLayout(box3);
     bkg->addLayout(box2);
 
     QGroupBox * bkgdGroup  = new QGroupBox("Background Image");
@@ -60,6 +69,7 @@ QGroupBox * page_background_image::createBackgroundGroup()
     connect(saveAdjustedBtn,   &QPushButton::clicked,         this,    &page_background_image::slot_saveAdjustedBackground);
     connect(clearBtn,          &QPushButton::clicked,         this,    &page_background_image::slot_clearBackground);
     connect(startAdjustBtn,    &QPushButton::clicked,         this,    &page_background_image::slot_startSkewAdjustment);
+    connect(resetBtn,          &QPushButton::clicked,         this,    &page_background_image::slot_resetXform);
 
     connect(&bkgdLayout,    &LayoutTransform::xformChanged,   this,    &page_background_image::slot_setBkgdXform);
     connect(chk_useAdjusted,&QAbstractButton::clicked,        this,    &page_background_image::slot_useAdjustedClicked);
@@ -76,7 +86,7 @@ void page_background_image::displayBackgroundStatus(bool force)
 
     if (bip->isLoaded())
     {
-        const Xform & xform = bip->getImageXform();
+        const Xform & xform = bip->getCanvasXform();
         bkgdLayout.blockSignals(true);
         bkgdLayout.setTransform(xform);
         bkgdLayout.blockSignals(false);
@@ -97,8 +107,17 @@ void page_background_image::displayBackgroundStatus(bool force)
 void page_background_image::slot_loadBackground()
 {
     QString bkgdDir = config->rootMediaDir + "bkgd_photos/";
-    QString filename = QFileDialog::getOpenFileName(nullptr,"Select image file",bkgdDir, "Image Files (*.png *.jpg *.bmp *.heic)");
+    QString filename = QFileDialog::getOpenFileName(nullptr,"Select image file",bkgdDir, "Image Files (*.png *.jpg *.bmp *.jpeg)");
     if (filename.isEmpty()) return;
+
+    if (filename.contains(".heic"))
+    {
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Warning);
+        box.setText(QString("HEIC files not supported: %1").arg(filename));
+        box.exec();
+        return;
+    }
 
     bool rv = bip->import(filename);
     if (rv)
@@ -110,7 +129,7 @@ void page_background_image::slot_loadBackground()
         {
             config->showBackgroundImage = true;     // since we loaded it, might as well see it
 
-            setupBackground();
+            setupBackground(bkgdLayout.getXform());
 
             displayBackgroundStatus(true);
 
@@ -122,14 +141,12 @@ void page_background_image::slot_loadBackground()
 void page_background_image::slot_useAdjustedClicked(bool checked)
 {
     bip->setUseAdjusted(checked);
-    setupBackground();
+    setupBackground(bkgdLayout.getXform());
 }
 
-void page_background_image::setupBackground()
+void page_background_image::setupBackground(Xform xform)
 {
-    Xform xform = bip->getImageXform();
-    xform.setTransform(bkgdLayout.getQTransform());
-    bip->updateImageXform(xform);
+    bip->setCanvasXform(xform);
 
     bip->createPixmap();
 }
@@ -143,9 +160,9 @@ void page_background_image::slot_clearBackground ()
 
 void page_background_image::slot_setBkgdXform()
 {
-    Xform xform = bip->getImageXform();
+    Xform xform = bip->getCanvasXform();
     xform.setTransform(bkgdLayout.getQTransform());
-    bip->updateImageXform(xform);
+    bip->setCanvasXform(xform);
     bip->createPixmap();
     emit sig_refreshView();
 }
@@ -155,15 +172,21 @@ void page_background_image::slot_startSkewAdjustment(bool checked)
     if (checked)
     {
         QString txt = "Click to select four points on background image. Then press 'Adjust Perspective' to fix camera skew.";
-        panel->showPanelStatus(txt);
+        panel->pushPanelStatus(txt);
 
         bip->setSkewMode(true);
     }
     else
     {
-        panel->hidePanelStatus();
+        panel->popPanelStatus();
         bip->setSkewMode(false);    // also stops mouse interaction
     }
+}
+
+void page_background_image::slot_resetXform()
+{
+    bkgdLayout.init();
+    setupBackground(bkgdLayout.getXform());
 }
 
 void page_background_image::slot_adjustBackground()
@@ -199,7 +222,7 @@ void page_background_image::slot_adjustBackground()
 
     bip->setSkewMode(false);
 
-    panel->hidePanelStatus();
+    panel->popPanelStatus();
 
     startAdjustBtn->setChecked(false);
 
@@ -248,7 +271,7 @@ void page_background_image::slot_saveAdjustedBackground()
 
             displayBackgroundStatus(true);
 
-            setupBackground();
+            setupBackground(bkgdLayout.getXform());
 
             emit sig_refreshView();
         }

@@ -1,40 +1,14 @@
-﻿/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #ifndef VIEW_H
 #define VIEW_H
 
-#include <QtCore>
-#include <QtWidgets>
+#include <QWidget>
 
-#include "base/misc.h"
+#include "misc/unique_qvector.h"
 #include "settings/frame_settings.h"
 #include "enums/ekeyboardmode.h"
 #include "enums/emousemode.h"
 
 typedef std::shared_ptr<class TilingMaker> TilingMakerPtr;
-typedef std::shared_ptr<class MapEditor>   MapEditorPtr;
 typedef std::shared_ptr<class Layer> LayerPtr;
 
 class LoadUnit
@@ -49,11 +23,11 @@ class View : public QWidget
     Q_OBJECT
 
 public:
-    static View *  getInstance();
-    static void    releaseInstance();
+    View();
+    ~View() override;
 
     void    init();
-    void    clearView();
+    void    unloadView();
     void    paintEnable(bool enable);
 
     void    resize(QSize sz);
@@ -62,17 +36,24 @@ public:
     void    addTopLayer(LayerPtr layer);
     void    clearLayers()           { layers.clear(); }
     int     numLayers()             { return layers.size(); }
+
+    bool    isActiveLayer(Layer * l);
     QVector<LayerPtr> getActiveLayers();
 
-    void    setMouseMode(eMouseMode newMode);
-    eMouseMode getMouseMode() { return mouseMode; }
+    void    setKbdMode(eKbdMode mode);
+    bool    getKbdMode(eKbdMode mode);
+    QString getKbdModeStr();
+    void    resetKbdMode();
+
+    void    setMouseMode(eMouseMode newMode, bool set);
+    bool    getMouseMode(eMouseMode mode);
 
     void    setBackgroundColor(QColor color);
     QColor  getBackgroundColor();
 
+    void    setWindowTitle(const QString & s);
+
     void    clearLayout(); // only used by cycler for pngs
-    void    setKbdMode(eKbdMode mode);
-    QString getKbdModeStr();
 
     LoadUnit & getLoadUnit() { return loadUnit; }
 
@@ -81,7 +62,7 @@ public:
     FrameSettings frameSettings;
 
 signals:
-    void sig_viewSizeChanged(QSize sz);
+    void sig_viewSizeChanged(QSize oldSize, QSize newSize);
 
     void sig_mousePressed(QPointF pos,Qt::MouseButton);
     void sig_mouseDragged(QPointF pos);
@@ -93,22 +74,24 @@ signals:
     void sig_wheel_scale(qreal angle);
     void sig_wheel_rotate(qreal angle);
 
-
     void sig_deltaRotate(int amount);
     void sig_deltaMoveY(int amount);
     void sig_deltaMoveX(int amount);
     void sig_deltaScale(int amount);
 
+    void sig_setCenter(QPointF pos);
+
     void sig_kbdMode(eKbdMode);
 
-    void sig_refreshView();
     void sig_raiseMenu();
-    void sig_figure_changed();
     void sig_cyclerQuit();
     void sig_cyclerKey(int key);
 
     void sig_saveImage();
     void sig_saveSVG();
+
+public slots:
+    virtual void slot_refreshView() {}
 
 protected:
     void closeEvent(QCloseEvent *event) override;
@@ -138,14 +121,8 @@ protected:
     void duplicateView();
 
 private:
-    View();
-    ~View() override;
-
-    static View * mpThis;
-
     Configuration     * config;
     TilingMakerPtr      tilingMaker;
-    MapEditorPtr        mapEditor;
     class DesignMaker * designMaker;
     class ControlPanel* panel;
 
@@ -153,13 +130,17 @@ private:
 
     LoadUnit          loadUnit;
     bool              canPaint;
-    eMouseMode        mouseMode;
-    eMouseMode        lastMouseMode;
+    unsigned int      iMouseMode;
+    unsigned int      iLastMouseMode;
+    eKbdMode          keyboardMode;
+
     bool              dragging;
     QColor            backgroundColor;
 
     QPointF           sLast;    // used by pan
     bool              closed;
+
+    QRect             _geometry;
 };
 
 #endif // VIEW_H

@@ -1,27 +1,3 @@
-/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 ////////////////////////////////////////////////////////////////////////////
 //
 // Tiling.java
@@ -37,9 +13,7 @@
 #ifndef TILING
 #define TILING
 
-#include <QtCore>
 #include "geometry/xform.h"
-#include "settings/filldata.h"
 #include "settings/tristate.h"
 #include "settings/model_settings.h"
 
@@ -96,24 +70,25 @@ public:
     void        remove(PlacedFeaturePtr pf);
 
     void                      setPlacedFeatures(QVector<PlacedFeaturePtr> & features);
-    const PlacedFeaturePtr    getPlacedFeature(int idx)   { return placed_features[idx]; }
     const QVector<PlacedFeaturePtr> & getPlacedFeatures() { return placed_features; }
     int                       countPlacedFeatures() const { return placed_features.size(); }
     int                       numPlacements(FeaturePtr fp);
+    QVector<QTransform>       getPlacements(FeaturePtr fp);
+    QTransform                getPlacement(FeaturePtr fp, int index);
+
     QVector<FeaturePtr>       getUniqueFeatures();
 
     void        setTrans1(QPointF pt) { t1=pt; }
     void        setTrans2(QPointF pt) { t2=pt; }
     QPointF     getTrans1() const { return t1; }
     QPointF     getTrans2() const { return t2; }
-    QVector<QTransform> getFillTranslations();
 
     FeatureGroup regroupFeatures();      // the map was deadly, it reordered
 
     QString     dump() const;
 
-    void        setCanvasXform(Xform & xf) { canvasXform = xf; }
-    Xform &     getCanvasXform()           { return canvasXform; }
+    void        setCanvasXform(const Xform & xf) { canvasXform = xf; }
+    Xform &     getCanvasXform()                 { return canvasXform; }
 
     int         getVersion();
     void        setVersion(int ver);
@@ -125,14 +100,15 @@ public:
     ModelSettings & getSettings() { return settings; }
 
     // map operations
-    MapPtr  createMap();
-    MapPtr  createFilledMap();
-    MapPtr  createProtoMap();
+    MapPtr  createMapSingle();
+    MapPtr  createMapFullSimple();
+    MapPtr  createMapFull();
 
     static const QString defaultName;
     static int  refs;
 
 protected:
+    QVector<QTransform> getFillTranslations();
 
 private:
     int             version;
@@ -140,13 +116,14 @@ private:
     QString         desc;
     QString         author;
     ModelSettings   settings;
+    QPointF         t1;
+    QPointF         t2;
+    QVector<PlacedFeaturePtr> placed_features;
+    Xform           canvasXform;
+
     eTilingState    state;
     Tristate        intrinsicOverlaps;
     Tristate        tiledOveraps;
-    QPointF         t1;
-    QPointF         t2;
-    Xform           canvasXform;
-    QVector<PlacedFeaturePtr> placed_features;
 };
 
 #endif

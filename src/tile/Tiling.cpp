@@ -1,27 +1,3 @@
-/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 ////////////////////////////////////////////////////////////////////////////
 //
 // Tiling.java
@@ -36,20 +12,15 @@
 
 #include <QtWidgets>
 #include "tile/tiling.h"
-#include "tile/backgroundimage.h"
-#include "settings/configuration.h"
-#include "base/fileservices.h"
-#include "base/misc.h"
-#include "geometry/transform.h"
-#include "panels/panel.h"
-#include "makers/tiling_maker/tiling_maker.h"
-#include "base/mosaic_writer.h"
-#include "tapp/explicit_figure.h"
+#include "figures/explicit_figure.h"
 #include "geometry/map.h"
-#include "tile/placed_feature.h"
-#include "tapp/prototype.h"
+#include "makers/tiling_maker/tiling_maker.h"
+#include "misc/defaults.h"
+#include "mosaic/design_element.h"
+#include "mosaic/mosaic_writer.h"
+#include "mosaic/prototype.h"
 #include "tile/feature.h"
-#include "tapp/design_element.h"
+#include "tile/placed_feature.h"
 
 using std::make_shared;
 
@@ -108,7 +79,9 @@ Tiling::Tiling(Tiling * other)
 
 Tiling::~Tiling()
 {
+#ifdef EXPLICIT_DESTRUCTOR
     placed_features.clear();
+#endif
     refs--;
 }
 
@@ -153,15 +126,15 @@ bool Tiling::hasTiledOverlaps()
 {
     if (tiledOveraps.get() == Tristate::Unknown)
     {
-        MapPtr map = createProtoMap();
+        MapPtr map = createMapFull();
         tiledOveraps.set(map->hasIntersectingEdges());
     }
     return (tiledOveraps.get() == Tristate::True);
 }
 
-MapPtr Tiling::createMap()
+MapPtr Tiling::createMapSingle()
 {
-    MapPtr map = make_shared<Map>("tiling map");
+    MapPtr map = make_shared<Map>("tiling map single");
     for (auto pfp : placed_features)
     {
         EdgePoly poly = pfp->getPlacedEdgePoly();
@@ -172,13 +145,13 @@ MapPtr Tiling::createMap()
     return map;
 }
 
-MapPtr Tiling::createFilledMap()
+MapPtr Tiling::createMapFullSimple()
 {
-    MapPtr map = make_shared<Map>("tiling map");
+    MapPtr map = make_shared<Map>("tiling map full simple");
 
     QVector<QTransform> translations = getFillTranslations();
 
-    MapPtr tilingMap = createMap();
+    MapPtr tilingMap = createMapSingle();
 
     for (auto transform : translations)
     {
@@ -189,9 +162,9 @@ MapPtr Tiling::createFilledMap()
     return map;
 }
 
-MapPtr Tiling::createProtoMap()
+MapPtr Tiling::createMapFull()
 {
-    // Thios builds a prototype using explicit fewature figures and generates its map
+    // This builds a prototype using explicit feature figures and generates its map
     Prototype proto(shared_from_this());
 
     QVector<FeaturePtr> uniqueFeatures = getUniqueFeatures();
@@ -232,14 +205,11 @@ MapPtr Tiling::createProtoMap()
         // Within a single translational unit, assemble the different
         // transformed figures corresponding to the given feature into a map.
         MapPtr transmap = make_shared<Map>("proto transmap");
-        if (hasIntrinsicOverlaps())
-            transmap->mergeMany(figmap, subT);
-        else
-            transmap->mergeSimpleMany(figmap, subT);
+        transmap->mergeMany(figmap, subT);
 
         // Now put all the translations together into a single map for this feature.
         MapPtr featuremap = make_shared<Map>("proto featuremap");
-        featuremap->mergeSimpleMany(transmap, translations);
+        featuremap->mergeMany(transmap, translations);
 
         // And do a slow merge to add this map to the finished design.
         testmap->mergeMap(featuremap);
@@ -247,21 +217,28 @@ MapPtr Tiling::createProtoMap()
     return testmap;
 }
 
-
 QVector<QTransform> Tiling::getFillTranslations()
 {
     QVector<QTransform> translations;
-    FillData & fd = settings.getFillData();
+    FillData * fd = settings.getFillData();
     int minX,minY,maxX,maxY;
-    fd.get(minX,maxX,minY,maxY);
-    for (int h = minX; h <= maxX; h++)
+    bool singleton;
+    fd->get(singleton,minX,maxX,minY,maxY);
+    if (!singleton)
     {
-        for (int v = minY; v <= maxY; v++)
+        for (int h = minX; h <= maxX; h++)
         {
-            QPointF pt   = (t1 * static_cast<qreal>(h)) + (t2 * static_cast<qreal>(v));
-            QTransform T = QTransform::fromTranslate(pt.x(),pt.y());
-            translations << T;
+            for (int v = minY; v <= maxY; v++)
+            {
+                QPointF pt   = (t1 * static_cast<qreal>(h)) + (t2 * static_cast<qreal>(v));
+                QTransform T = QTransform::fromTranslate(pt.x(),pt.y());
+                translations << T;
+            }
         }
+    }
+    else
+    {
+        translations << QTransform();
     }
     return translations;
 }
@@ -336,8 +313,41 @@ int Tiling::numPlacements(FeaturePtr fp)
             count++;
         }
     }
-
     return count;
+}
+
+QVector<QTransform> Tiling::getPlacements(FeaturePtr fp)
+{
+    QVector<QTransform> placements;
+    for (auto pfp : qAsConst(placed_features))
+    {
+        FeaturePtr fp2 = pfp->getFeature();
+        if (fp2 == fp)
+        {
+            placements.push_back(pfp->getTransform());
+        }
+    }
+    return placements;
+}
+
+QTransform Tiling::getPlacement(FeaturePtr fp, int index)
+{
+    QTransform placement;
+    int i = 0;
+    for (auto pfp : qAsConst(placed_features))
+    {
+        FeaturePtr fp2 = pfp->getFeature();
+        if (fp2 == fp)
+        {
+            placement = pfp->getTransform();
+            if (i == index)
+            {
+                return placement;
+            }
+            i++;
+        }
+    }
+    return placement;
 }
 
 // Regroup features by their translation so that we write each feature only once.
@@ -397,10 +407,8 @@ bool FeatureGroup::containsFeature(FeaturePtr fp)
     return false;
 }
 
-
 QVector<PlacedFeaturePtr> & FeatureGroup::getPlacements(FeaturePtr fp)
 {
-
     Q_ASSERT(containsFeature(fp));
 
     for (auto& apair : *this)

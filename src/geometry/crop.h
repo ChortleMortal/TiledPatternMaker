@@ -2,52 +2,68 @@
 #define CROP_H
 
 #include <QRectF>
-#include "settings/configuration.h"
+#include "enums/eborder.h"
+#include "geometry/circle.h"
+#include "geometry/edgepoly.h"
 
-enum eCropState
+typedef std::shared_ptr<class Crop>     CropPtr;
+typedef std::shared_ptr<class Feature>  FeaturePtr;
+
+class Crop
 {
-    CROP_NONE,
-    CROP_CONSTRUCTING,
-    CROP_PREPARED,
-    CROP_BORDER_PREPARED,
-    CROP_EDITING,
-    CROP_DEFINED,
-    CROP_BORDER_DEFINED,
-    CROP_APPLIED,
-    CROP_MASKED,
-    CROP_COMPLETE
-};
-
-class Crop : protected QRectF
-{
-    friend class CreateCrop;
-
 public:
     Crop();
+    Crop(CropPtr other);
 
-    void         reset();
+    virtual void  draw(QPainter * painter, QTransform t, bool active);
 
-    void         setRect(QRectF & rect, eCropState cstate);
-    QRectF &     getRect() { return rect; }
+    QPointF      getCenter();
 
-    void         setState(eCropState s) { state = s; }
-    eCropState   getState() { return state; }
-    QString      getStateStr();
+    void         setRect(QRectF & rect);
+    QRectF       getRect();
 
-    void         setAspect(eAspectRatio ar) { aspect = ar; adjust(); }
-    eAspectRatio getAspect() { return aspect; }
+    void         setCircle(CirclePtr c);
+    CirclePtr    getCircle() { return circle; }
 
-    void         setAspectVertical(bool set) { aspectVertical = set; adjust(); }
-    bool         getAspectVertical() { return aspectVertical; }
+    void         setPolygon(int sides, qreal scale = 1.0, qreal rotDegrees = 0.0);
+    void         setPolygon(QPolygonF & p);
+    QPolygonF    getPolygon();
+    FeaturePtr   getFeature() { return poly; }
+
+    void         setType(eCropType type) { _cropType = type; }
+    eCropType    getCropType() { return _cropType; }
+    QString      getCropString();
+
+    void         setAspect(eAspectRatio ar) { _aspect = ar; adjust(); }
+    eAspectRatio getAspect() { return _aspect; }
+
+    void         setAspectVertical(bool set) { _vAspect = set; adjust(); }
+    bool         getAspectVertical() { return _vAspect; }
+
+    void        transform(QTransform t);
+
+    void        embed() { _embed = true; }
+    void        apply() { _apply = true; }
+    void        use()   { _embed = true;  _apply = true; }
+    void        unuse() { _embed = false; _apply = false;}
+    bool        isEmbedded() { return _embed; }
+    bool        isApplied()  { return _apply; }
+    bool        isUsed()     { if (_embed && _apply) return true; else return false; }
 
 protected:
     void        adjust();
 
+    bool         _embed;
+    bool         _apply;
+    eCropType    _cropType;
+    eAspectRatio _aspect;
+    bool         _vAspect;
+
+    FeaturePtr    poly;          // model units
+    CirclePtr     circle;        // model units
+    QRectF       _rect;          // model units
+
 private:
-    QRectF       rect;
-    eCropState   state;
-    eAspectRatio aspect;
-    bool         aspectVertical;
 };
 
 #endif // CROP_H

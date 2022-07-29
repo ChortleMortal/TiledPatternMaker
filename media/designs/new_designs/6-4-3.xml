@@ -1,0 +1,1440 @@
+<?xml version="1.0"?>
+<vector id="1" version="10">
+	<design>
+		<size>
+			<width>805</width>
+			<height>959</height>
+			<zwidth>1671</zwidth>
+			<zheight>1100</zheight>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Fill singleton="f">-3,3,-3,3</Fill>
+		<BackgroundImage name="Pomerantz4.png">
+			<Scale>2.600433100310029</Scale>
+			<Rot>2.081668171172169e-17</Rot>
+			<X>-1713</X>
+			<Y>-203</Y>
+			<Center>-2.568481782610872,-0.001932124716177874</Center>
+		</BackgroundImage>
+	</design>
+	<style.Filled id="2" serialization="custom">
+		<toolkit.GeoLayer>
+			<left__delta>-426</left__delta>
+			<top__delta>-70</top__delta>
+			<width__delta>1.73845907420625</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3" serialization="custom">
+				<app.Prototype>
+					<string>6-4-3.v6</string>
+					<entry>
+						<tile.Feature id="4">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">-0.6089550096003365,2.786965028801012</Point>
+									<Point id="7">-1.629055009600339,2.786965028801012</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">-1.629055009600338,2.141372735442464</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">-1.119005009600337,1.903532514400506</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point id="10">-1.069955683064378,2.464168882121737</Point>
+								</Line>
+								<Line>
+									<Point reference="10" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="11" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="12">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="13">
+								<Line>
+									<Point id="14">-1.119005009600337,1.903532514400506</Point>
+									<Point id="15">-1.629055009600338,2.141372735442464</Point>
+								</Line>
+								<Line>
+									<Point reference="15" />
+									<Point id="16">-1.629055009600338,1.124768452933754</Point>
+								</Line>
+								<Line>
+									<Point reference="16" />
+									<Point id="17">-1.334577504800169,1.099005009600337</Point>
+								</Line>
+								<Line>
+									<Point reference="17" />
+									<Point id="18">-1.155861304291089,1.482263138399232</Point>
+								</Line>
+								<Line>
+									<Point reference="18" />
+									<Point reference="14" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="19" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="20">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="21">
+								<Line>
+									<Point id="22">-1.33457750480017,-1.099005009600336</Point>
+									<Point id="23">-1.629055009600338,-1.124768452933751</Point>
+								</Line>
+								<Line>
+									<Point reference="23" />
+									<Point id="24">-1.629055009600337,-2.141372735442461</Point>
+								</Line>
+								<Line>
+									<Point reference="24" />
+									<Point id="25">-1.119005009600338,-1.903532514400506</Point>
+								</Line>
+								<Line>
+									<Point reference="25" />
+									<Point id="26">-1.155861304291088,-1.482263138399235</Point>
+								</Line>
+								<Line>
+									<Point reference="26" />
+									<Point reference="22" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="27" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="28">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="29">
+								<Line>
+									<Point id="30">-1.629055009600337,-2.786965028801012</Point>
+									<Point id="31">-0.6089550096003387,-2.786965028801012</Point>
+								</Line>
+								<Line>
+									<Point reference="31" />
+									<Point id="32">-1.06995568306438,-2.464168882121736</Point>
+								</Line>
+								<Line>
+									<Point reference="32" />
+									<Point id="33">-1.119005009600338,-1.903532514400506</Point>
+								</Line>
+								<Line>
+									<Point reference="33" />
+									<Point id="34">-1.629055009600337,-2.141372735442461</Point>
+								</Line>
+								<Line>
+									<Point reference="34" />
+									<Point reference="30" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="35" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="36">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="37">
+								<Line>
+									<Point id="38">-1.459504460784555,0.8310982879336298</Point>
+									<Point id="39">-1.629055009600338,0.5889550096003374</Point>
+								</Line>
+								<Line>
+									<Point reference="39" />
+									<Point id="40">-1.386501834108146,0.2425531754921933</Point>
+								</Line>
+								<Line>
+									<Point reference="40" />
+									<Point id="41">-1.0401,6.938893903907228e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="41" />
+									<Point id="42">-0.5790993265359596,0.3227961466792753</Point>
+								</Line>
+								<Line>
+									<Point reference="42" />
+									<Point id="43">-0.5300500000000002,0.8834325144005059</Point>
+								</Line>
+								<Line>
+									<Point reference="43" />
+									<Point id="44">-0.913308128798895,1.062148714909586</Point>
+								</Line>
+								<Line>
+									<Point reference="44" />
+									<Point id="45">-1.275531336120824,1.093839139216255</Point>
+								</Line>
+								<Line>
+									<Point reference="45" />
+									<Point id="46">-1.334577504800169,1.099005009600337</Point>
+								</Line>
+								<Line>
+									<Point reference="46" />
+									<Point reference="38" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="47" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="48">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="49">
+								<Line>
+									<Point id="50">-1.629055009600338,-0.5889550096003365</Point>
+									<Point id="51">-1.459504460784556,-0.8310982879336271</Point>
+								</Line>
+								<Line>
+									<Point reference="51" />
+									<Point id="52">-1.33457750480017,-1.099005009600336</Point>
+								</Line>
+								<Line>
+									<Point reference="52" />
+									<Point id="53">-0.9133081287988982,-1.062148714909585</Point>
+								</Line>
+								<Line>
+									<Point reference="53" />
+									<Point id="54">-0.5300500000000001,-0.8834325144005046</Point>
+								</Line>
+								<Line>
+									<Point reference="54" />
+									<Point id="55">-0.5790993265359592,-0.3227961466792735</Point>
+								</Line>
+								<Line>
+									<Point reference="55" />
+									<Point id="56">-1.0401,6.938893903907228e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="56" />
+									<Point id="57">-1.386501834108146,-0.2425531754921923</Point>
+								</Line>
+								<Line>
+									<Point reference="57" />
+									<Point reference="50" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="58" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="59">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="60">
+								<Line>
+									<Point id="61">-1.386501834108146,0.2425531754921933</Point>
+									<Point id="62">-1.629055009600338,0.5889550096003374</Point>
+								</Line>
+								<Line>
+									<Point reference="62" />
+									<Point id="63">-1.629055009600338,-0.5889550096003365</Point>
+								</Line>
+								<Line>
+									<Point reference="63" />
+									<Point id="64">-1.386501834108146,-0.2425531754921923</Point>
+								</Line>
+								<Line>
+									<Point reference="64" />
+									<Point id="65">-1.0401,6.938893903907228e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="65" />
+									<Point reference="61" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="66" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="67">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="68">
+								<Line>
+									<Point id="69">-1.155861304291089,1.482263138399232</Point>
+									<Point id="70">-1.334577504800169,1.099005009600337</Point>
+								</Line>
+								<Line>
+									<Point reference="70" />
+									<Point id="71">-1.275531336120824,1.093839139216255</Point>
+								</Line>
+								<Line>
+									<Point reference="71" />
+									<Point id="72">-0.913308128798895,1.062148714909586</Point>
+								</Line>
+								<Line>
+									<Point reference="72" />
+									<Point id="73">-0.5300500000000002,0.8834325144005059</Point>
+								</Line>
+								<Line>
+									<Point reference="73" />
+									<Point id="74">-0.4931937053092486,1.30470189040178</Point>
+								</Line>
+								<Line>
+									<Point reference="74" />
+									<Point id="75">-0.3144775048001687,1.687960019200675</Point>
+								</Line>
+								<Line>
+									<Point reference="75" />
+									<Point id="76">-0.735746880801442,1.724816313891426</Point>
+								</Line>
+								<Line>
+									<Point reference="76" />
+									<Point id="77">-1.119005009600337,1.903532514400506</Point>
+								</Line>
+								<Line>
+									<Point reference="77" />
+									<Point reference="69" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="78" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="79">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="80">
+								<Line>
+									<Point id="81">-1.33457750480017,-1.099005009600336</Point>
+									<Point id="82">-1.155861304291088,-1.482263138399235</Point>
+								</Line>
+								<Line>
+									<Point reference="82" />
+									<Point id="83">-1.119005009600338,-1.903532514400506</Point>
+								</Line>
+								<Line>
+									<Point reference="83" />
+									<Point id="84">-0.7357468808014394,-1.724816313891425</Point>
+								</Line>
+								<Line>
+									<Point reference="84" />
+									<Point id="85">-0.3144775048001698,-1.687960019200674</Point>
+								</Line>
+								<Line>
+									<Point reference="85" />
+									<Point id="86">-0.3395268141545696,-1.634241601936179</Point>
+								</Line>
+								<Line>
+									<Point reference="86" />
+									<Point id="87">-0.4931937053092491,-1.304701890401779</Point>
+								</Line>
+								<Line>
+									<Point reference="87" />
+									<Point id="88">-0.5300500000000001,-0.8834325144005046</Point>
+								</Line>
+								<Line>
+									<Point reference="88" />
+									<Point id="89">-0.9133081287988982,-1.062148714909585</Point>
+								</Line>
+								<Line>
+									<Point reference="89" />
+									<Point reference="81" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="90" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="91">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="92">
+								<Line>
+									<Point id="93">-1.069955683064378,2.464168882121737</Point>
+									<Point id="94">-1.119005009600337,1.903532514400506</Point>
+								</Line>
+								<Line>
+									<Point reference="94" />
+									<Point id="95">-0.735746880801442,1.724816313891426</Point>
+								</Line>
+								<Line>
+									<Point reference="95" />
+									<Point id="96">-0.3144775048001687,1.687960019200675</Point>
+								</Line>
+								<Line>
+									<Point reference="96" />
+									<Point id="97">-0.1895505488157825,1.955866740867383</Point>
+								</Line>
+								<Line>
+									<Point reference="97" />
+									<Point id="98">-0.0199999999999998,2.198010019200674</Point>
+								</Line>
+								<Line>
+									<Point reference="98" />
+									<Point id="99">-0.05399685932494526,2.246562566081086</Point>
+								</Line>
+								<Line>
+									<Point reference="99" />
+									<Point id="100">-0.2625531754921919,2.544411853308819</Point>
+								</Line>
+								<Line>
+									<Point reference="100" />
+									<Point id="101">-0.6089550096003365,2.786965028801012</Point>
+								</Line>
+								<Line>
+									<Point reference="101" />
+									<Point reference="93" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="102" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="103">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="104">
+								<Line>
+									<Point id="105">-1.119005009600338,-1.903532514400506</Point>
+									<Point id="106">-1.06995568306438,-2.464168882121736</Point>
+								</Line>
+								<Line>
+									<Point reference="106" />
+									<Point id="107">-0.6089550096003387,-2.786965028801012</Point>
+								</Line>
+								<Line>
+									<Point reference="107" />
+									<Point id="108">-0.2625531754921939,-2.544411853308819</Point>
+								</Line>
+								<Line>
+									<Point reference="108" />
+									<Point id="109">-0.02000000000000124,-2.198010019200674</Point>
+								</Line>
+								<Line>
+									<Point reference="109" />
+									<Point id="110">-0.1895505488157831,-1.955866740867384</Point>
+								</Line>
+								<Line>
+									<Point reference="110" />
+									<Point id="111">-0.3144775048001698,-1.687960019200674</Point>
+								</Line>
+								<Line>
+									<Point reference="111" />
+									<Point id="112">-0.7357468808014394,-1.724816313891425</Point>
+								</Line>
+								<Line>
+									<Point reference="112" />
+									<Point reference="105" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="113" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="114">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="115">
+								<Line>
+									<Point id="116">-0.2625531754921939,-2.544411853308819</Point>
+									<Point id="117">-0.6089550096003387,-2.786965028801012</Point>
+								</Line>
+								<Line>
+									<Point reference="117" />
+									<Point id="118">0.5689550096003362,-2.786965028801012</Point>
+								</Line>
+								<Line>
+									<Point reference="118" />
+									<Point id="119">0.2225531754921914,-2.54441185330882</Point>
+								</Line>
+								<Line>
+									<Point reference="119" />
+									<Point id="120">-0.02000000000000124,-2.198010019200674</Point>
+								</Line>
+								<Line>
+									<Point reference="120" />
+									<Point reference="116" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="121" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="122">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="123">
+								<Line>
+									<Point id="124">-0.6089550096003365,2.786965028801012</Point>
+									<Point id="125">-0.2625531754921919,2.544411853308819</Point>
+								</Line>
+								<Line>
+									<Point reference="125" />
+									<Point id="126">-0.05399685932494526,2.246562566081086</Point>
+								</Line>
+								<Line>
+									<Point reference="126" />
+									<Point id="127">-0.0199999999999998,2.198010019200674</Point>
+								</Line>
+								<Line>
+									<Point reference="127" />
+									<Point id="128">0.2225531754921938,2.54441185330882</Point>
+								</Line>
+								<Line>
+									<Point reference="128" />
+									<Point id="129">0.5689550096003375,2.786965028801011</Point>
+								</Line>
+								<Line>
+									<Point reference="129" />
+									<Point reference="124" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="130" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="131">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="132">
+								<Line>
+									<Point id="133">-0.0199999999999999,-0.6455922933585481</Point>
+									<Point id="134">-0.5300500000000001,-0.8834325144005046</Point>
+								</Line>
+								<Line>
+									<Point reference="134" />
+									<Point id="135">-0.4931937053092491,-1.304701890401779</Point>
+								</Line>
+								<Line>
+									<Point reference="135" />
+									<Point id="136">-0.3395268141545696,-1.634241601936179</Point>
+								</Line>
+								<Line>
+									<Point reference="136" />
+									<Point id="137">-0.3144775048001698,-1.687960019200674</Point>
+								</Line>
+								<Line>
+									<Point reference="137" />
+									<Point id="138">-0.02000000000000257,-1.662196575867259</Point>
+								</Line>
+								<Line>
+									<Point reference="138" />
+									<Point id="139">0.274477504800168,-1.687960019200675</Point>
+								</Line>
+								<Line>
+									<Point reference="139" />
+									<Point id="140">0.4531937053092481,-1.304701890401779</Point>
+								</Line>
+								<Line>
+									<Point reference="140" />
+									<Point id="141">0.4900499999999999,-0.8834325144005056</Point>
+								</Line>
+								<Line>
+									<Point reference="141" />
+									<Point reference="133" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="142" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="143">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="144">
+								<Line>
+									<Point id="145">-0.5300500000000002,0.8834325144005059</Point>
+									<Point id="146">-0.02000000000000007,0.6455922933585485</Point>
+								</Line>
+								<Line>
+									<Point reference="146" />
+									<Point id="147">0.4900499999999998,0.8834325144005053</Point>
+								</Line>
+								<Line>
+									<Point reference="147" />
+									<Point id="148">0.4531937053092491,1.304701890401776</Point>
+								</Line>
+								<Line>
+									<Point reference="148" />
+									<Point id="149">0.2744775048001688,1.687960019200674</Point>
+								</Line>
+								<Line>
+									<Point reference="149" />
+									<Point id="150">-0.01999999999999824,1.662196575867258</Point>
+								</Line>
+								<Line>
+									<Point reference="150" />
+									<Point id="151">-0.3144775048001687,1.687960019200675</Point>
+								</Line>
+								<Line>
+									<Point reference="151" />
+									<Point id="152">-0.4931937053092486,1.30470189040178</Point>
+								</Line>
+								<Line>
+									<Point reference="152" />
+									<Point reference="145" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="153" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="154">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="155">
+								<Line>
+									<Point id="156">-0.0199999999999998,2.198010019200674</Point>
+									<Point id="157">0.1495505488157836,1.955866740867381</Point>
+								</Line>
+								<Line>
+									<Point reference="157" />
+									<Point id="158">0.2744775048001688,1.687960019200674</Point>
+								</Line>
+								<Line>
+									<Point reference="158" />
+									<Point id="159">0.3335236734795132,1.693125889584756</Point>
+								</Line>
+								<Line>
+									<Point reference="159" />
+									<Point id="160">0.6957468808014429,1.724816313891425</Point>
+								</Line>
+								<Line>
+									<Point reference="160" />
+									<Point id="161">1.079005009600337,1.903532514400505</Point>
+								</Line>
+								<Line>
+									<Point reference="161" />
+									<Point id="162">1.029955683064378,2.464168882121737</Point>
+								</Line>
+								<Line>
+									<Point reference="162" />
+									<Point id="163">0.5689550096003375,2.786965028801011</Point>
+								</Line>
+								<Line>
+									<Point reference="163" />
+									<Point id="164">0.2225531754921938,2.54441185330882</Point>
+								</Line>
+								<Line>
+									<Point reference="164" />
+									<Point reference="156" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="165" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="166">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="167">
+								<Line>
+									<Point id="168">0.1495505488157818,-1.955866740867382</Point>
+									<Point id="169">-0.02000000000000124,-2.198010019200674</Point>
+								</Line>
+								<Line>
+									<Point reference="169" />
+									<Point id="170">0.2225531754921914,-2.54441185330882</Point>
+								</Line>
+								<Line>
+									<Point reference="170" />
+									<Point id="171">0.5689550096003362,-2.786965028801012</Point>
+								</Line>
+								<Line>
+									<Point reference="171" />
+									<Point id="172">1.029955683064377,-2.464168882121737</Point>
+								</Line>
+								<Line>
+									<Point reference="172" />
+									<Point id="173">1.079005009600337,-1.903532514400507</Point>
+								</Line>
+								<Line>
+									<Point reference="173" />
+									<Point id="174">0.6957468808014395,-1.724816313891426</Point>
+								</Line>
+								<Line>
+									<Point reference="174" />
+									<Point id="175">0.3335236734795129,-1.693125889584757</Point>
+								</Line>
+								<Line>
+									<Point reference="175" />
+									<Point id="176">0.274477504800168,-1.687960019200675</Point>
+								</Line>
+								<Line>
+									<Point reference="176" />
+									<Point reference="168" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="177" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="178">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="179">
+								<Line>
+									<Point id="180">0.274477504800168,-1.687960019200675</Point>
+									<Point id="181">0.3335236734795129,-1.693125889584757</Point>
+								</Line>
+								<Line>
+									<Point reference="181" />
+									<Point id="182">0.6957468808014395,-1.724816313891426</Point>
+								</Line>
+								<Line>
+									<Point reference="182" />
+									<Point id="183">1.079005009600337,-1.903532514400507</Point>
+								</Line>
+								<Line>
+									<Point reference="183" />
+									<Point id="184">1.115861304291088,-1.482263138399234</Point>
+								</Line>
+								<Line>
+									<Point reference="184" />
+									<Point id="185">1.294577504800169,-1.099005009600337</Point>
+								</Line>
+								<Line>
+									<Point reference="185" />
+									<Point id="186">1.235531336120824,-1.093839139216255</Point>
+								</Line>
+								<Line>
+									<Point reference="186" />
+									<Point id="187">0.8733081287988945,-1.062148714909586</Point>
+								</Line>
+								<Line>
+									<Point reference="187" />
+									<Point id="188">0.4900499999999999,-0.8834325144005056</Point>
+								</Line>
+								<Line>
+									<Point reference="188" />
+									<Point id="189">0.4531937053092481,-1.304701890401779</Point>
+								</Line>
+								<Line>
+									<Point reference="189" />
+									<Point reference="180" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="190" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="191">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="192">
+								<Line>
+									<Point id="193">0.3335236734795132,1.693125889584756</Point>
+									<Point id="194">0.2744775048001688,1.687960019200674</Point>
+								</Line>
+								<Line>
+									<Point reference="194" />
+									<Point id="195">0.4531937053092491,1.304701890401776</Point>
+								</Line>
+								<Line>
+									<Point reference="195" />
+									<Point id="196">0.4900499999999998,0.8834325144005053</Point>
+								</Line>
+								<Line>
+									<Point reference="196" />
+									<Point id="197">0.8733081287988942,1.062148714909585</Point>
+								</Line>
+								<Line>
+									<Point reference="197" />
+									<Point id="198">1.294577504800169,1.099005009600336</Point>
+								</Line>
+								<Line>
+									<Point reference="198" />
+									<Point id="199">1.115861304291088,1.482263138399233</Point>
+								</Line>
+								<Line>
+									<Point reference="199" />
+									<Point id="200">1.079005009600337,1.903532514400505</Point>
+								</Line>
+								<Line>
+									<Point reference="200" />
+									<Point id="201">0.6957468808014429,1.724816313891425</Point>
+								</Line>
+								<Line>
+									<Point reference="201" />
+									<Point reference="193" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="202" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="203">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="204">
+								<Line>
+									<Point id="205">0.5390993265359597,-0.322796146679275</Point>
+									<Point id="206">0.4900499999999999,-0.8834325144005056</Point>
+								</Line>
+								<Line>
+									<Point reference="206" />
+									<Point id="207">0.8733081287988945,-1.062148714909586</Point>
+								</Line>
+								<Line>
+									<Point reference="207" />
+									<Point id="208">1.235531336120824,-1.093839139216255</Point>
+								</Line>
+								<Line>
+									<Point reference="208" />
+									<Point id="209">1.294577504800169,-1.099005009600337</Point>
+								</Line>
+								<Line>
+									<Point reference="209" />
+									<Point id="210">1.419504460784555,-0.8310982879336298</Point>
+								</Line>
+								<Line>
+									<Point reference="210" />
+									<Point id="211">1.589055009600338,-0.5889550096003375</Point>
+								</Line>
+								<Line>
+									<Point reference="211" />
+									<Point id="212">1.346501834108146,-0.2425531754921933</Point>
+								</Line>
+								<Line>
+									<Point reference="212" />
+									<Point id="213">1.0001,-6.938893903907228e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="213" />
+									<Point reference="205" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="214" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="215">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="216">
+								<Line>
+									<Point id="217">0.4900499999999998,0.8834325144005053</Point>
+									<Point id="218">0.5390993265359587,0.3227961466792738</Point>
+								</Line>
+								<Line>
+									<Point reference="218" />
+									<Point id="219">1.0001,-6.938893903907228e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="219" />
+									<Point id="220">1.346501834108146,0.2425531754921925</Point>
+								</Line>
+								<Line>
+									<Point reference="220" />
+									<Point id="221">1.589055009600337,0.5889550096003365</Point>
+								</Line>
+								<Line>
+									<Point reference="221" />
+									<Point id="222">1.419504460784553,0.8310982879336301</Point>
+								</Line>
+								<Line>
+									<Point reference="222" />
+									<Point id="223">1.294577504800169,1.099005009600336</Point>
+								</Line>
+								<Line>
+									<Point reference="223" />
+									<Point id="224">0.8733081287988942,1.062148714909585</Point>
+								</Line>
+								<Line>
+									<Point reference="224" />
+									<Point reference="217" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="225" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="226">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="227">
+								<Line>
+									<Point id="228">1.0001,-6.938893903907228e-16</Point>
+									<Point id="229">1.346501834108146,-0.2425531754921933</Point>
+								</Line>
+								<Line>
+									<Point reference="229" />
+									<Point id="230">1.589055009600338,-0.5889550096003375</Point>
+								</Line>
+								<Line>
+									<Point reference="230" />
+									<Point id="231">1.589055009600337,0.5889550096003365</Point>
+								</Line>
+								<Line>
+									<Point reference="231" />
+									<Point id="232">1.346501834108146,0.2425531754921925</Point>
+								</Line>
+								<Line>
+									<Point reference="232" />
+									<Point reference="228" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="233" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="234">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="235">
+								<Line>
+									<Point id="236">1.079005009600337,-1.903532514400507</Point>
+									<Point id="237">1.589055009600339,-2.141372735442465</Point>
+								</Line>
+								<Line>
+									<Point reference="237" />
+									<Point id="238">1.589055009600338,-1.124768452933753</Point>
+								</Line>
+								<Line>
+									<Point reference="238" />
+									<Point id="239">1.294577504800169,-1.099005009600337</Point>
+								</Line>
+								<Line>
+									<Point reference="239" />
+									<Point id="240">1.115861304291088,-1.482263138399234</Point>
+								</Line>
+								<Line>
+									<Point reference="240" />
+									<Point reference="236" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="241" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="242">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="243">
+								<Line>
+									<Point id="244">1.589055009600336,2.141372735442462</Point>
+									<Point id="245">1.079005009600337,1.903532514400505</Point>
+								</Line>
+								<Line>
+									<Point reference="245" />
+									<Point id="246">1.115861304291088,1.482263138399233</Point>
+								</Line>
+								<Line>
+									<Point reference="246" />
+									<Point id="247">1.294577504800169,1.099005009600336</Point>
+								</Line>
+								<Line>
+									<Point reference="247" />
+									<Point id="248">1.589055009600337,1.124768452933752</Point>
+								</Line>
+								<Line>
+									<Point reference="248" />
+									<Point reference="244" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="249" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="250">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="251">
+								<Line>
+									<Point id="252">1.589055009600337,0.5889550096003365</Point>
+									<Point id="253">1.589055009600337,1.124768452933752</Point>
+								</Line>
+								<Line>
+									<Point reference="253" />
+									<Point id="254">1.294577504800169,1.099005009600336</Point>
+								</Line>
+								<Line>
+									<Point reference="254" />
+									<Point id="255">1.419504460784553,0.8310982879336301</Point>
+								</Line>
+								<Line>
+									<Point reference="255" />
+									<Point reference="252" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="256" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="257">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="258">
+								<Line>
+									<Point id="259">1.589055009600336,2.141372735442462</Point>
+									<Point id="260">1.589055009600336,2.786965028801011</Point>
+								</Line>
+								<Line>
+									<Point reference="260" />
+									<Point id="261">0.5689550096003375,2.786965028801011</Point>
+								</Line>
+								<Line>
+									<Point reference="261" />
+									<Point id="262">1.029955683064378,2.464168882121737</Point>
+								</Line>
+								<Line>
+									<Point reference="262" />
+									<Point id="263">1.079005009600337,1.903532514400505</Point>
+								</Line>
+								<Line>
+									<Point reference="263" />
+									<Point reference="259" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="264" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="265">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="266">
+								<Line>
+									<Point id="267">-1.629055009600338,-1.124768452933751</Point>
+									<Point id="268">-1.33457750480017,-1.099005009600336</Point>
+								</Line>
+								<Line>
+									<Point reference="268" />
+									<Point id="269">-1.459504460784556,-0.8310982879336271</Point>
+								</Line>
+								<Line>
+									<Point reference="269" />
+									<Point id="270">-1.629055009600338,-0.5889550096003365</Point>
+								</Line>
+								<Line>
+									<Point reference="270" />
+									<Point reference="267" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="271" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="272">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="273">
+								<Line>
+									<Point id="274">-1.629055009600338,0.5889550096003374</Point>
+									<Point id="275">-1.459504460784555,0.8310982879336298</Point>
+								</Line>
+								<Line>
+									<Point reference="275" />
+									<Point id="276">-1.334577504800169,1.099005009600337</Point>
+								</Line>
+								<Line>
+									<Point reference="276" />
+									<Point id="277">-1.629055009600338,1.124768452933754</Point>
+								</Line>
+								<Line>
+									<Point reference="277" />
+									<Point reference="274" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="278" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="279">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="280">
+								<Line>
+									<Point id="281">-0.5790993265359596,0.3227961466792753</Point>
+									<Point id="282">-1.0401,6.938893903907228e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="282" />
+									<Point id="283">-0.5790993265359592,-0.3227961466792735</Point>
+								</Line>
+								<Line>
+									<Point reference="283" />
+									<Point id="284">-0.5300500000000001,-0.8834325144005046</Point>
+								</Line>
+								<Line>
+									<Point reference="284" />
+									<Point id="285">-0.0199999999999999,-0.6455922933585481</Point>
+								</Line>
+								<Line>
+									<Point reference="285" />
+									<Point id="286">0.4900499999999999,-0.8834325144005056</Point>
+								</Line>
+								<Line>
+									<Point reference="286" />
+									<Point id="287">0.5390993265359597,-0.322796146679275</Point>
+								</Line>
+								<Line>
+									<Point reference="287" />
+									<Point id="288">1.0001,-6.938893903907228e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="288" />
+									<Point id="289">0.5390993265359587,0.3227961466792738</Point>
+								</Line>
+								<Line>
+									<Point reference="289" />
+									<Point id="290">0.4900499999999998,0.8834325144005053</Point>
+								</Line>
+								<Line>
+									<Point reference="290" />
+									<Point id="291">-0.02000000000000007,0.6455922933585485</Point>
+								</Line>
+								<Line>
+									<Point reference="291" />
+									<Point id="292">-0.5300500000000002,0.8834325144005059</Point>
+								</Line>
+								<Line>
+									<Point reference="292" />
+									<Point reference="281" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="293" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="294">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="295">
+								<Line>
+									<Point id="296">-0.3144775048001687,1.687960019200675</Point>
+									<Point id="297">-0.01999999999999824,1.662196575867258</Point>
+								</Line>
+								<Line>
+									<Point reference="297" />
+									<Point id="298">0.2744775048001688,1.687960019200674</Point>
+								</Line>
+								<Line>
+									<Point reference="298" />
+									<Point id="299">0.1495505488157836,1.955866740867381</Point>
+								</Line>
+								<Line>
+									<Point reference="299" />
+									<Point id="300">-0.0199999999999998,2.198010019200674</Point>
+								</Line>
+								<Line>
+									<Point reference="300" />
+									<Point id="301">-0.1895505488157825,1.955866740867383</Point>
+								</Line>
+								<Line>
+									<Point reference="301" />
+									<Point reference="296" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="302" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="303">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="304">
+								<Line>
+									<Point id="305">-0.02000000000000257,-1.662196575867259</Point>
+									<Point id="306">-0.3144775048001698,-1.687960019200674</Point>
+								</Line>
+								<Line>
+									<Point reference="306" />
+									<Point id="307">-0.1895505488157831,-1.955866740867384</Point>
+								</Line>
+								<Line>
+									<Point reference="307" />
+									<Point id="308">-0.02000000000000124,-2.198010019200674</Point>
+								</Line>
+								<Line>
+									<Point reference="308" />
+									<Point id="309">0.1495505488157818,-1.955866740867382</Point>
+								</Line>
+								<Line>
+									<Point reference="309" />
+									<Point id="310">0.274477504800168,-1.687960019200675</Point>
+								</Line>
+								<Line>
+									<Point reference="310" />
+									<Point reference="305" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="311" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="312">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="313">
+								<Line>
+									<Point id="314">1.029955683064377,-2.464168882121737</Point>
+									<Point id="315">0.5689550096003362,-2.786965028801012</Point>
+								</Line>
+								<Line>
+									<Point reference="315" />
+									<Point id="316">1.589055009600339,-2.786965028801012</Point>
+								</Line>
+								<Line>
+									<Point reference="316" />
+									<Point id="317">1.589055009600339,-2.141372735442465</Point>
+								</Line>
+								<Line>
+									<Point reference="317" />
+									<Point id="318">1.079005009600337,-1.903532514400507</Point>
+								</Line>
+								<Line>
+									<Point reference="318" />
+									<Point reference="314" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="319" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+					<entry>
+						<tile.Feature id="320">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="321">
+								<Line>
+									<Point id="322">1.419504460784555,-0.8310982879336298</Point>
+									<Point id="323">1.294577504800169,-1.099005009600337</Point>
+								</Line>
+								<Line>
+									<Point reference="323" />
+									<Point id="324">1.589055009600338,-1.124768452933753</Point>
+								</Line>
+								<Line>
+									<Point reference="324" />
+									<Point id="325">1.589055009600338,-0.5889550096003375</Point>
+								</Line>
+								<Line>
+									<Point reference="325" />
+									<Point reference="322" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFeature id="326" type="FIG_TYPE_EXPLICIT_FEATURE">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitFeature>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<ColorBlacks>
+			<color hide="f">#ffffff00</color>
+		</ColorBlacks>
+		<ColorWhites>
+			<color hide="f">#ff1840b2</color>
+		</ColorWhites>
+		<style.Filled>
+			<draw__inside>true</draw__inside>
+			<draw__outside>true</draw__outside>
+			<algorithm>0</algorithm>
+		</style.Filled>
+	</style.Filled>
+</vector>

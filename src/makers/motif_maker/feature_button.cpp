@@ -1,33 +1,13 @@
-/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
+#include <QDebug>
 
 #include "makers/motif_maker/feature_button.h"
-#include "tile/feature.h"
 #include "geometry/transform.h"
-#include "base/geo_graphics.h"
+#include "geometry/map.h"
+#include "geometry/vertex.h"
+#include "misc/geo_graphics.h"
+#include "mosaic/design_element.h"
+#include "tile/feature.h"
 #include "viewers/viewerbase.h"
-#include "tapp/design_element.h"
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -66,6 +46,7 @@ FeatureButton::~FeatureButton()
 
 void FeatureButton::construct(DesignElementPtr del, int index)
 {
+    selected            = false;
     this->designElement = del;
     this->index         = index;
 
@@ -79,7 +60,6 @@ void FeatureButton::construct(DesignElementPtr del, int index)
         qDebug().noquote() << "FeatureButton::construct() index:" << index << "del: 0";
     }
 
-    selected = false;
     setSize(300,300);
     setStyleSheet("background-color: white;");
     setFrameStyle(QFrame::Box | QFrame::Plain);
@@ -94,26 +74,25 @@ QSizeF FeatureButton::getMinimumSize()
 void FeatureButton::setSize(QSize d )
 {
     setFixedSize(d);
-    transform = resetViewport(index, designElement, frameRect());
+    transform = resetViewport(index, designElement.lock(), frameRect());
 }
 
 void FeatureButton::setSize( int w, int h )
 {
     setFixedSize(w,h);
-    transform = resetViewport(index, designElement,frameRect());
+    transform = resetViewport(index, designElement.lock(),frameRect());
 }
 
 DesignElementPtr FeatureButton::getDesignElement()
 {
-    return designElement;
+    return designElement.lock();
 }
 
 void FeatureButton::setDesignElement(DesignElementPtr del)
 {
-    if (del == designElement)
-    {
+    if (del == designElement.lock())
         return;
-    }
+
     designElement = del;
     if (del)
     {
@@ -125,12 +104,12 @@ void FeatureButton::setDesignElement(DesignElementPtr del)
         qDebug().noquote() << "FeatureButton::setDesignElement() index:" << index << "del:0";
     }
 
-    designElementChanged();
+    setViewTransform();
 }
 
-void FeatureButton::designElementChanged()
+void FeatureButton::setViewTransform()
 {
-    transform = resetViewport(index, designElement,frameRect());
+    transform = resetViewport(index, designElement.lock(),frameRect());
     update();
 }
 
@@ -213,6 +192,49 @@ QTransform FeatureButton::resetViewport(int index, DesignElementPtr dep, QRect f
     return transform;
 }
 
+QTransform FeatureButton::resetViewport(int index, MapPtr map, QRect frameRect)
+{
+    //qDebug() << "reset viewport" << index;
+
+    // Reset the viewport to look at the design element.
+    // We can't do this until the Component is mapped and
+    // the design element is set.  So we do it really lazily --
+    // set a flag to reset the viewport whenever the current
+    // DesignElement changes and recompute the viewport from
+    // the paint function when the flag is set.
+
+    QTransform transform;
+
+    if(!map)  return transform;
+
+    // Get the bounding box of all the figure's vertices and all the
+    // feature's vertices.  Then show that region in the viewport.
+    // In other words, scale the view to show the DesignElement.
+
+    double xmin = 999.0;
+    double xmax = -999.0;
+    double ymin = 999.0;
+    double ymax = -999.0;
+
+    // This is a cheesy way to string together two streams of points.
+
+    for (auto& vert : map->getVertices())
+    {
+        QPointF p = vert->pt;
+        qreal x = p.x();
+        qreal y = p.y();
+
+        xmin = qMin( xmin, x );
+        xmax = qMax( xmax, x );
+        ymin = qMin( ymin, y );
+        ymax = qMax( ymax, y );
+    }
+
+    transform = lookAt(index,QRectF(xmin, ymin, xmax-xmin, ymax-ymin),frameRect);
+
+    return transform;
+}
+
 QTransform FeatureButton::lookAt(int index, QRectF rect, QRect frameRect)
 {
     // Leave some breathing room around the rectangle to look at.
@@ -260,18 +282,23 @@ QTransform FeatureButton::centerInside(int index, QRectF first, QRectF other)
     return res;
 }
 
-void FeatureButton::setSelected( bool selected )
+void FeatureButton::tally(bool select)
 {
-    if ( this->selected != selected )
-    {
-        this->selected = selected;
-        //forceRedraw();
-    }
+    if (selected == select)
+        return;
+
+    selected = select;
+
+    if (selected)
+        setStyleSheet("background-color: rgb(255,240,240);");
+    else
+        setStyleSheet("background-color: white;");
 }
 
 void FeatureButton::paintEvent(QPaintEvent * event)
 {
-    if (!designElement)
+    auto del = designElement.lock();
+    if (!del)
     {
         QFrame::paintEvent(event);
         return;
@@ -280,15 +307,14 @@ void FeatureButton::paintEvent(QPaintEvent * event)
     //qDebug() << "FeatureButton::paintEvent() index ="  << index;
     QPainter painter(this);
 
-    painter.setRenderHint(QPainter::Antialiasing ,true);
-    painter.setRenderHint(QPainter::SmoothPixmapTransform,true);
+    painter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
 
     //qDebug().noquote() << "paint btn:" << index << Transform::toInfoString(transform);
     GeoGraphics gg(&painter, transform);
 
-    ViewerBase::drawFeature(&gg,designElement->getFeature(),QBrush(feature_interior),QPen(feature_border,3));
+    ViewerBase::drawFeature(&gg,del->getFeature(),QBrush(feature_interior),QPen(feature_border,3));
 
-    ViewerBase::drawFigure(&gg,designElement->getFigure(),QPen(Qt::black,3));
+    ViewerBase::drawFigure(&gg,del->getFigure(),QPen(Qt::black,3));
 
 #if 0
     QString tempLabel;

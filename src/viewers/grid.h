@@ -19,21 +19,21 @@ public:
     void resetStyleRepresentation()  override {};
     void createStyleRepresentation() override {};
 
-    virtual QString getStyleDesc() const override {return("Grid");}
+    virtual QString getStyleDesc() const override { return "Grid" ;}
 
     bool nearGridPoint(QPointF spt, QPointF & foundGridPoint);
 
 protected:
-    void createGridModelUnits(const QRectF &r);
-    void createGridModelUnitsCentered(QRectF &r);
-    void createGridSceneUnits(const QRectF &r);
-    void createGridSceneUnitsCentered(QRectF & r);
+    void createGridModelUnits(QRectF r);
+    void createGridModelUnitsCentered(QRectF r);
+    void createGridSceneUnits(const QRectF r);
+    void createGridSceneUnitsCentered(QRectF r);
 
 private:
     static GridPtr spThis;
 
     Configuration * config;
-    View          * view;
+    ViewControl   * view;
 
     MapPtr      gridMap;
 

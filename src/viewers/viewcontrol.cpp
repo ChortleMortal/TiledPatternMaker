@@ -1,58 +1,37 @@
-﻿/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-#include "viewers/viewcontrol.h"
-#include "base/border.h"
-#include "base/layer.h"
-#include "base/mosaic.h"
-#include "base/tpmsplash.h"
-#include "base/utilities.h"
-#include "designs/design.h"
-#include "designs/design_maker.h"
-#include "designs/patterns.h"
-#include "makers/decoration_maker/decoration_maker.h"
+﻿#include "viewers/viewcontrol.h"
+#include "legacy/design.h"
+#include "legacy/design_maker.h"
+#include "legacy/legacy_border.h"
+#include "legacy/patterns.h"
+#include "makers/crop_maker/crop_maker.h"
 #include "makers/map_editor/map_editor.h"
+#include "makers/map_editor/map_editor_db.h"
+#include "makers/mosaic_maker/mosaic_maker.h"
 #include "makers/motif_maker/motif_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
+#include "misc/backgroundimage.h"
+#include "misc/border.h"
+#include "misc/layer.h"
+#include "misc/mark_x.h"
+#include "mosaic/mosaic.h"
+#include "mosaic/prototype.h"
 #include "panels/panel.h"
 #include "settings/model_settings.h"
+#include "settings/configuration.h"
 #include "style/style.h"
-#include "tapp/prototype.h"
-#include "tile/backgroundimage.h"
-#include "viewers/figure_view.h"
+#include "tile/tiling.h"
+#include "viewers/border_view.h"
+#include "viewers/motif_view.h"
 #include "viewers/grid.h"
-#include "viewers/grid.h"
+#include "viewers/crop_view.h"
+#include "viewers/map_editor_view.h"
+#include "viewers/measure_view.h"
 #include "viewers/prototype_view.h"
 #include "viewers/tiling_view.h"
 #include "viewers/view.h"
-#include "base/transparentwidget.h"
-
-typedef std::shared_ptr<Grid>            GridPtr;
-typedef std::shared_ptr<MarkX>           MarkXPtr;
+#include "widgets/image_layer.h"
 
 using std::make_shared;
-
 
 ViewControl * ViewControl::mpThis = nullptr;
 
@@ -80,46 +59,46 @@ ViewControl::ViewControl()
 
 void ViewControl::init()
 {
+    View::init();
+
     config          = Configuration::getInstance();
     panel           = ControlPanel::getInstance();
     designMaker     = DesignMaker::getInstance();
-    decorationMaker = DecorationMaker::getInstance();
+    mosaicMaker     = MosaicMaker::getInstance();
     motifMaker      = MotifMaker::getInstance();
-    view            = View::getInstance();
 
-    mapEditor       = MapEditor::getSharedInstance();
-    pfview          = PrototypeView::getSharedInstance();
-    figView         = FigureView::getSharedInstance();
+    prototypeView   = PrototypeView::getSharedInstance();
+    motifView       = MotifView::getSharedInstance();
     tilingView      = TilingView::getSharedInstance();
     tilingMaker     = TilingMaker::getSharedInstance();
     gridView        = Grid::getSharedInstance();
-    imageView       = BackgroundImage::getSharedInstance();
+    bkgdImageView   = BackgroundImage::getSharedInstance();
+    measureView     = MeasureView::getSharedInstance();
+    cropView        = CropView::getSharedInstance();
+    borderView      = BorderView::getSharedInstance();
 
+    dontPaint = false;
     disableAllViews();
     viewEnable(config->getViewerType(),true);
 }
 
 ViewControl::~ViewControl()
 {
-    resetAll();
 }
 
-void ViewControl::slot_clearView()
+void ViewControl::slot_unloadView()
 {
     // remove from scene but does not delete
-    view->clearView();
+    unloadView();
 }
 
-void ViewControl::slot_clearMakers()
+void ViewControl::slot_dontPaint(bool dont)
 {
-    view->dump(true);
-
-    resetAll();
-
-    view->dump(true);
+    qDebug() << "dont paint" << dont;
+    dontPaint = dont;
 }
 
-void ViewControl::selectFeature(WeakFeaturePtr wfp)
+void ViewControl::selectFeature(const FeaturePtr & wfp)
 {
     selectedFeature = wfp;
 }
@@ -129,31 +108,42 @@ FeaturePtr ViewControl::getSelectedFeature()
     return selectedFeature.lock();
 }
 
-void ViewControl::resetAll()
+void ViewControl::slot_unloadAll()
 {
-    qDebug() << "ViewControl::resetAll()";
+    qDebug() << "ViewControl::slot_unloadAll";
+    dump(false);
+
+    unloadView();
+    dump(false);
 
     removeAllImages();
+    dump(false);
 
-    DesignMaker * designMaker = DesignMaker::getInstance();
-    designMaker->clearDesigns();
+    BackgroundImage::getSharedInstance()->unload();
 
-    DecorationMaker * decorationMaker = DecorationMaker::getInstance();
-    decorationMaker->resetMosaic();
+    designMaker->unload();
+    dump(false);
 
-    MotifMaker * motifMaker = MotifMaker::getInstance();
-    motifMaker->erasePrototypes();
+    mosaicMaker->resetMosaic();
+    dump(false);
 
-    mapEditor->wipeoutLocal();
-    mapEditor->unload();
+    motifMaker->unload();
+    dump(false);
+
+    MapEditor::getInstance()->unload();
+    dump(false);
 
     tilingMaker->unload();
+    dump(false);
 
     selectedFeature.reset();
+    dump(false);
 
-    view->clearView();
+    frameSettings.reInit();
+    dump(false);
 
-    view->frameSettings.reInit();
+    slot_refreshView();
+    dump(false);
 }
 
 void ViewControl::viewEnable(eViewType view, bool enable)
@@ -171,13 +161,12 @@ void ViewControl::disableAllViews()
 
 void ViewControl::slot_updateView()
 {
-    view->update();
+    update();
 }
 
 void ViewControl::slot_refreshView()
 {
     // prevent re-entrant call from the same thread
-
     static volatile bool busy   = false;
     static volatile bool review = false;
 
@@ -205,62 +194,95 @@ void ViewControl::refreshView()
 {
     qDebug().noquote() << "+ ViewController::refreshView type=" << sViewerType[config->getViewerType()];
 
-    view->paintEnable(false);
+    paintEnable(false);
 
-    view->clearView();
+    unloadView();
 
     // viewers
     setupViewers();
 
     // background image
-    BkgdImgPtr bip = BackgroundImage::getSharedInstance();
-    if (imageView->isLoaded())
+    if (bkgdImageView->isLoaded())
     {
-        qDebug() << "adding image" << imageView->getName();
-        view->addLayer(imageView);
+        qDebug() << "adding image" << bkgdImageView->getName();
+        addLayer(bkgdImageView);
     }
 
     // other images
-    for (ImgLayerPtr ilp : images)
+    for (ImgLayerPtr & ilp : images)
     {
-        view->addLayer(ilp);
+        addLayer(ilp);
     }
 
     // grid
     if (config->showGrid)
     {
-        Grid::getSharedInstance()->create();    // re-create
-        view->addLayer(gridView);
+        gridView->create();    // re-create
+        addLayer(gridView);
+    }
+
+    if (config->measure)
+    {
+        measureView->setMeasureMode(true);
+        addLayer(measureView);
+    }
+    else
+    {
+        measureView->setMeasureMode(false);
     }
 
     // resize
-    QSize size = view->frameSettings.getCropSize(config->getViewerType());
-    if (size != view->size())
+    QSize sz = frameSettings.getCropSize(config->getViewerType());
+    if (sz != size())
     {
-        view->resize(size);
+        qDebug() << "ViewControl set size :" << sz;
+        QWidget::resize(sz);
+    }
+
+    // crops
+    bool found = false;
+    auto mosaic = mosaicMaker->getMosaic();
+    if (mosaic)
+    {
+        auto crop = mosaic->getCrop();
+        if (crop)
+        {
+            addLayer(cropView);
+            found = true;
+        }
+    }
+    if (!found)
+    {
+        auto crop = CropMaker::getInstance()->getActiveCrop();
+        if (crop)
+        {
+            addLayer(cropView);
+        }
     }
 
     // big blue cross
     if (config->circleX)
     {
-        MarkXPtr item = make_shared<MarkX>(view->rect().center(), QPen(Qt::blue,5), QString("center"));
+        MarkXPtr item = make_shared<MarkX>(rect().center(), QPen(Qt::blue,5), QString("center"));
         item->setHuge();
-        view->addLayer(item);
+        addLayer(item);
     }
 
-    // trigger repaint
-    view->paintEnable(true);
-
-    view->update();
-
-    emit sig_viewUpdated();
+    if (!dontPaint)
+    {
+        // trigger repaint
+        paintEnable(true);
+        update();
+        emit sig_viewUpdated();
+    }
+    else
+    {
+        qWarning() << "Painting disabled";
+    }
 }
 
 void ViewControl::setupViewers()
 {
-    eViewType vtype = config->getViewerType();
-    panel->reflectCurrentView(vtype);
-
     for (int i=0; i <= VIEW_MAX; i++)
     {
         if (enabledViews[i])
@@ -307,7 +329,7 @@ void ViewControl::viewDesign()
         QVector<PatternPtr> & pats = design->getPatterns();
         for (PatternPtr & pat : pats)
         {
-            view->addLayer(pat);
+            addLayer(pat);
         }
     }
 
@@ -315,55 +337,58 @@ void ViewControl::viewDesign()
     {
         DesignPtr dp = designs.first();
         ModelSettings & settings = dp->getDesignInfo();
-        view->setBackgroundColor(settings.getBackgroundColor());
-        setBorder(dp->border);
+        setBackgroundColor(settings.getBackgroundColor());
+        if (dp->border)
+        {
+            addLayer(dp->border);
+        }
     }
-    view->setWindowTitle(designMaker->getDesignName());
+    setWindowTitle(designMaker->getDesignName());
 }
 
 void ViewControl::viewMosaic()
 {
-    MosaicPtr mosaic = decorationMaker->getMosaic();
+    MosaicPtr mosaic = mosaicMaker->getMosaic();
     if (mosaic)
     {
         QString name = mosaic->getName();
         qDebug() << "ViewController::viewMosaic" << name;
 
-        QString astring = QString("Preparing design: %1").arg(name);
-        panel->showPanelStatus(astring);
-
-#ifdef TPMSPLASH
+        QString astring = QString("Preparing Mosaic: %1").arg(name);
         panel->splashMosiac(astring);
-#endif
+        panel->pushPanelStatus(name);
 
         const StyleSet & sset = mosaic->getStyleSet();
         for (StylePtr style : sset)
         {
             qDebug().noquote() << "Adding Style:" << style.get() << "  " << style->getDescription();
-            if (view->frameSettings.getModelAlignment() != M_ALIGN_MOSAIC)
+            if (frameSettings.getModelAlignment() != M_ALIGN_MOSAIC)
             {
-                style->setCanvasXform(getCurrentXform());
+                style->setCanvasXform(getCurrentXform2());
             }
             style->createStyleRepresentation();   // important to do this here
-            view->addLayer(style);
+            addLayer(style);
         }
-        view->setWindowTitle(name);
+        setWindowTitle(name);
 
-        setBorder(mosaic->getBorder());
+        auto border = mosaic->getBorder();
+        if (border)
+        {
+            borderView->setBorder(border);
+            addLayer(borderView);
+        }
 
-        panel->hidePanelStatus();
-#ifdef TPMSPLASH
         panel->removeSplashMosaic();
-#endif
+        panel->popPanelStatus();
     }
     else
     {
         qDebug() << "ViewController::viewMosaic - no mosaic";
-        view->setWindowTitle("");
+        setWindowTitle("");
     }
 
-    ModelSettings & settings = decorationMaker->getMosaicSettings();
-    view->setBackgroundColor(settings.getBackgroundColor());
+    ModelSettings & settings = mosaicMaker->getMosaicSettings();
+    setBackgroundColor(settings.getBackgroundColor());
 }
 
 void ViewControl::viewPrototype()
@@ -377,29 +402,28 @@ void ViewControl::viewPrototype()
         return;
     }
 
-    view->setWindowTitle("WS Proto Feature");
+    setWindowTitle("WS Proto Feature");
 
-    pfview->setPrototype(pp);
-    pfview->setCanvasXform(getCurrentXform());
-    view->addLayer(pfview);
+    prototypeView->setPrototype(pp);
+    addLayer(prototypeView);
 
-    view->setBackgroundColor(Qt::white);
+    setBackgroundColor(Qt::white);
 }
 
 void ViewControl::viewMotifMaker()
 {
-    qDebug() << "++ViewController::viewFigure";
+    qDebug() << "++ViewController::viewMotifMaker";
 
     // dont set canvas xform
-    view->addLayer(figView);
+    addLayer(motifView);
 
-    QString astring = QString("Motif Maker Figure");
-    view->setWindowTitle(astring);
+    QString astring = QString("Motif Maker");
+    setWindowTitle(astring);
 
-    QSize sz = view->frameSettings.getCropSize(VIEW_MOTIF_MAKER);
-    figView->setCenterScreenUnits(QRect(QPoint(0,0),sz).center());
-
-    view->setBackgroundColor(config->figureViewBkgdColor);
+   if (config->motifBkgdWhite)
+        setBackgroundColor(QColor(Qt::white));
+    else
+        setBackgroundColor(QColor(Qt::black));
 }
 
 void ViewControl::viewTiling()
@@ -410,43 +434,43 @@ void ViewControl::viewTiling()
         qDebug() << "++ViewController::viewTiling (tiling)"  << tiling->getName();
 
     tilingView->setTiling(tiling);
-    view->addLayer(tilingView);
+    if (frameSettings.getModelAlignment() != M_ALIGN_TILING)
+    {
+        tilingView->setCanvasXform(getCurrentXform2());
+    }
+    addLayer(tilingView);
 
-    view->setBackgroundColor(Qt::white);
+    setBackgroundColor(Qt::white);
     setTitle(tiling);
-
-    QSize sz = view->frameSettings.getCropSize(VIEW_TILING);
-    tilingView->setCenterScreenUnits(QRect(QPoint(0,0),sz).center());
 }
 
 void ViewControl::viewTilingMaker()
 {
     qDebug() << "++ViewController::viewTilingMaker";
 
-    // dont set canvas xform
-    view->addLayer(tilingMaker);
+    if (frameSettings.getModelAlignment() != M_ALIGN_TILING)
+    {
+        tilingMaker->setCanvasXform(getCurrentXform2());
+    }
+    addLayer(tilingMaker);
 
-    view->setBackgroundColor(Qt::white);
-
-    QSize sz = view->frameSettings.getCropSize(VIEW_TILING_MAKER);
-    tilingMaker->setCenterScreenUnits(QRectF(QPoint(0,0),sz).center());
+    setBackgroundColor(Qt::white);
 }
 
 void ViewControl::viewMapEditor()
 {
     qDebug() << "++ViewController::viewMapEditor";
 
-    mapEditor->setCanvasXform(getCurrentXform());
-    view->addLayer(mapEditor);
+    MapedViewPtr meView = MapEditorView::getSharedInstance();
+    addLayer(meView);
+    meView->forceLayerRecalc();
 
-    mapEditor->forceLayerRecalc();
+    setWindowTitle("Map Editor");
 
-    view->setWindowTitle("Map Editor");
-
-    view->setBackgroundColor(config->figureViewBkgdColor);
-
-    QSize sz = view->frameSettings.getCropSize(VIEW_MAP_EDITOR);
-    mapEditor->setCenterScreenUnits(QRect(QPoint(0,0),sz).center());
+    if (config->motifBkgdWhite)
+        setBackgroundColor(QColor(Qt::white));
+    else
+        setBackgroundColor(QColor(Qt::black));
 }
 
 void ViewControl::setTitle(TilingPtr tp)
@@ -454,28 +478,16 @@ void ViewControl::setTitle(TilingPtr tp)
     if (!tp) return;
 
     QString str = QString("%1 : %2 : %3 : %4").arg(sViewerType[config->getViewerType()]).arg(tp->getName()).arg(tp->getDescription()).arg(tp->getAuthor());
-    view->setWindowTitle(str);
+    setWindowTitle(str);
 }
 
-void  ViewControl::setBorder(BorderPtr bp)
+const Xform & ViewControl::getCurrentXform2()
 {
-    if (bp)
-    {
-        OuterBorder * ob = dynamic_cast<OuterBorder*>(bp.get());
-        if (ob)
-        {
-            view->addLayer(bp);
-        }
-    }
-}
-
-const Xform &ViewControl::getCurrentXform()
-{
-    switch (view->frameSettings.getModelAlignment())
+    switch (frameSettings.getModelAlignment())
     {
     case M_ALIGN_MOSAIC:
     {
-        MosaicPtr mosaic = decorationMaker->getMosaic();
+        MosaicPtr mosaic = mosaicMaker->getMosaic();
         if (mosaic)
         {
             StylePtr style = mosaic->getFirstStyle();
@@ -488,14 +500,10 @@ const Xform &ViewControl::getCurrentXform()
     }
     case M_ALIGN_TILING:
     {
-        PrototypePtr pp = motifMaker->getSelectedPrototype();
-        if (pp)
+        TilingPtr tiling = tilingMaker->getTilings().first();
+        if (tiling)
         {
-            TilingPtr tiling = pp->getTiling();
-            if (tiling)
-            {
-                return tiling->getCanvasXform();
-            }
+            return tiling->getCanvasXform();
         }
         return unityXform;
     }
@@ -505,9 +513,44 @@ const Xform &ViewControl::getCurrentXform()
     }
 }
 
+void ViewControl::setCurrentXform2(const Xform & xf)
+{
+    switch (frameSettings.getModelAlignment())
+    {
+    case M_ALIGN_MOSAIC:
+        if (MosaicPtr mosaic = mosaicMaker->getMosaic())
+        {
+            for (auto & style : mosaic->getStyleSet())
+            {
+                 style->setCanvasXform(xf);
+            }
+        }
+        else
+            qWarning() << "ViewControl::setCurrentXform - nothing to set";
+        break;
+
+    case M_ALIGN_TILING:
+        if (tilingMaker->getTilings().size())
+        {
+            for (auto tiling : tilingMaker->getTilings())
+            {
+                tiling->setCanvasXform(xf);
+            }
+        }
+        else
+            qWarning() << "ViewControl::setCurrentXform - nothing to set";
+        break;
+
+    default:
+    case M_ALIGN_NONE:
+        qWarning() << "ViewControl::setCurrentXform - no alignment";
+        break;
+    }
+}
+
 void  ViewControl::removeImage(ImageLayer * img)
 {
-    for (ImgLayerPtr ilp : images)
+    for (ImgLayerPtr & ilp : images)
     {
         ImageLayer * il = ilp.get();
         if (il == img)

@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<Tiling version="6">
+	<Name>SarahsPlateBase</Name>
+	<Fill singleton="t">0,0,0,0</Fill>
+	<T1>0,0</T1>
+	<T2>0,0</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>1100</height>
+		<zwidth>1500</zwidth>
+		<zheight>1100</zheight>
+		<left__delta>-2</left__delta>
+		<top__delta>15</top__delta>
+		<width__delta>0.314809173180952</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>-0.1918445807945197,0.74745440309621</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Feature type="regular" sides="10" rotation="0" scale="1">
+		<Placement>
+			<scale>16.87994523469878</scale>
+			<rot>0</rot>
+			<tranX>0.209478370347518</tranX>
+			<tranY>-2.743072846479249</tranY>
+		</Placement>
+	</Feature>
+	<Desc>From Sarah's wall</Desc>
+	<Auth>David Casper</Auth>
+	<BackgroundImage name="20210929_085413606_iOS.JPEG">
+		<Scale>0.314809173180952</Scale>
+		<Rot>0</Rot>
+		<X>13</X>
+		<Y>25</Y>
+		<Center>-0.1918445807945197,0.74745440309621</Center>
+	</BackgroundImage>
+</Tiling>

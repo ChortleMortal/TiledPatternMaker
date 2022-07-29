@@ -544,6 +544,7 @@
 			<gap>0.03</gap>
 			<shadow>0</shadow>
 			<includeTipVerts>false</includeTipVerts>
+			<startUnder>true</startUnder>
 		</style.Interlace>
 	</style.Interlace>
 	<style.Interlace id="121" serialization="custom">
@@ -568,6 +569,7 @@
 			<gap>0.03</gap>
 			<shadow>0</shadow>
 			<includeTipVerts>false</includeTipVerts>
+			<startUnder>true</startUnder>
 		</style.Interlace>
 	</style.Interlace>
 	<style.Outline id="122" serialization="custom">

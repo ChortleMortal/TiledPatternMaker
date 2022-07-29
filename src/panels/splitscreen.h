@@ -1,7 +1,9 @@
 #ifndef SPLITSCREEN_H
 #define SPLITSCREEN_H
 
-#include <QtWidgets>
+class QGridLayout;
+
+#include <QFrame>
 
 class ControlPanel;
 class View;

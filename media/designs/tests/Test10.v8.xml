@@ -1,0 +1,136 @@
+<?xml version="1.0"?>
+<vector id="1" version="9">
+	<designNotes>Trying for Salih Talai based on photo, not on Broug - with some coloration 
+	And now color2</designNotes>
+	<design>
+		<size>
+			<width>1500</width>
+			<height>1100</height>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Fill>-5,5,-7,7</Fill>
+	</design>
+	<style.Thick id="2" serialization="custom">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>-0.01333333333333186,-0.01333333333333542</center>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3" serialization="custom">
+				<app.Prototype>
+					<string>DAC8.v8</string>
+					<entry>
+						<tile.Feature id="4">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">1,0.4142135623730951</Point>
+									<Point id="7">0.4142135623730951,1</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">-0.414213562373095,1</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">-1,0.4142135623730952</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point id="10">-1,-0.414213562373095</Point>
+								</Line>
+								<Line>
+									<Point reference="10" />
+									<Point id="11">-0.4142135623730957,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="11" />
+									<Point id="12">0.4142135623730953,-0.9999999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="12" />
+									<Point id="13">0.9999999999999998,-0.4142135623730958</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<ExtendedRosette id="14" extendPeripherals="t" extendFreeVertices="f" connectBoundaryVertices="f">
+							<n>8</n>
+							<q>0</q>
+							<s>3</s>
+							<k>0</k>
+							<boundarySides>4</boundarySides>
+							<boundaryScale>1.71</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</ExtendedRosette>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff1496d2</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>true</draw__outline>
+			<width>0.02</width>
+		</style.Thick>
+	</style.Thick>
+	<style.Filled id="15" serialization="custom">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>-0.01333333333333186,-0.01333333333333542</center>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<ColorBlacks>
+			<color hide="f">#ff8ae234</color>
+		</ColorBlacks>
+		<ColorWhites>
+			<color hide="f">#fff57900</color>
+			<color hide="t">#ffa35807</color>
+			<color hide="f">#ff1840b2</color>
+			<color hide="t">#ffa35807</color>
+			<color hide="f">#fff57900</color>
+			<color hide="t">#ffa35807</color>
+			<color hide="t">#ffa35807</color>
+			<color hide="f">#ffffaa00</color>
+			<color hide="f">#ff234b30</color>
+			<color hide="f">#ffa35807</color>
+			<color hide="t">#ffa35807</color>
+			<color hide="t">#ffa35807</color>
+			<color hide="t">#ffa35807</color>
+			<color hide="f">#ff1840b2</color>
+			<color hide="f">#ffa35807</color>
+			<color hide="t">#ffa35807</color>
+			<color hide="t">#ffa35807</color>
+			<color hide="t">#ffa35807</color>
+			<color hide="t">#ffa35807</color>
+		</ColorWhites>
+		<ColorGroup>
+			<Group hideSet="f">
+				<color hide="f">#fff57900</color>
+			</Group>
+			<Group hideSet="f" />
+		</ColorGroup>
+		<style.Filled>
+			<draw__inside>true</draw__inside>
+			<draw__outside>true</draw__outside>
+			<algorithm>2</algorithm>
+		</style.Filled>
+	</style.Filled>
+</vector>

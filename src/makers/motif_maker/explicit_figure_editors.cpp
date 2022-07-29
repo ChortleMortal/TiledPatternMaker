@@ -1,34 +1,14 @@
-/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
+#include <QDebug>
+#include <QCheckBox>
 
-#include "explicit_figure_editors.h"
-#include "tapp/star.h"
-#include "tapp/explicit_figure.h"
-#include "tile/feature.h"
+#include "makers/motif_maker/explicit_figure_editors.h"
+#include "figures/explicit_figure.h"
+#include "figures/radial_figure.h"
 #include "makers/motif_maker/motif_maker.h"
-#include "panels/layout_sliderset.h"
+#include "mosaic/design_element.h"
 #include "panels/page_motif_maker.h"
+#include "tile/feature.h"
+#include "widgets/layout_sliderset.h"
 
 typedef std::shared_ptr<RadialFigure>    RadialPtr;
 
@@ -36,29 +16,25 @@ ExplicitEditor::ExplicitEditor(page_motif_maker *ed, QString aname) : FigureEdit
 {
 }
 
-FigurePtr ExplicitEditor::getFigure()
+void ExplicitEditor::setFigure(DesignElementPtr del, bool doEmit)
 {
-    return explicitFig;
-}
-
-void ExplicitEditor::resetWithFigure(FigurePtr fig, bool doEmit)
-{
-    if (!fig)
+    if (!del || !del->getFigure())
     {
         explicitFig.reset();
         return;
     }
 
-    qDebug() << "ExplicitEditor::resetWithFigure" << fig.get() << "  " << fig->getFigTypeString();
+    explicitFig = resetFigure(del,FIG_TYPE_EXPLICIT);
 
-    explicitFig = resetFigure(fig,FIG_TYPE_EXPLICIT);
-
-    updateEditor();
-    updateFigure(doEmit);
+    figureToEditor();
+    editorToFigure(doEmit);
 }
 
-ExplicitPtr ExplicitEditor::resetFigure(FigurePtr fig, eFigType figType)
+ExplicitPtr ExplicitEditor::resetFigure(DesignElementPtr del, eFigType figType)
 {
+    FigurePtr fig = del->getFigure();
+    qDebug() << "ExplicitEditor::setFigure" << fig.get() << "  " << fig->getFigTypeString();
+
     ExplicitPtr ep = std::dynamic_pointer_cast<ExplicitFigure>(fig);
     if (ep)
     {
@@ -74,10 +50,11 @@ ExplicitPtr ExplicitEditor::resetFigure(FigurePtr fig, eFigType figType)
         }
         MapPtr map = fig->getFigureMap();
         ep = std::make_shared<ExplicitFigure>(*fig.get(),map,figType, sides);
+        del->setFigure(ep);
     }
 
     Q_ASSERT(ep);
-    FigureEditor::resetWithFigure(ep,false);
+    FigureEditor::setFigure(ep,false);
 
     return ep;
 }
@@ -107,61 +84,61 @@ ExplicitGirihEditor::ExplicitGirihEditor(page_motif_maker * ed, QString aname) :
     addLayout(side);
     addLayout(skip);
 
-    connect(skip, &DoubleSliderSet::valueChanged, this, [this]() { updateFigure(true);});
-    connect(side, &SliderSet::valueChanged,       this, [this]() { updateFigure(true);});
+    connect(skip, &DoubleSliderSet::valueChanged, this, [this]() { editorToFigure(true);});
+    connect(side, &SliderSet::valueChanged,       this, [this]() { editorToFigure(true);});
 }
 
-FigurePtr  ExplicitGirihEditor::getFigure()
+void  ExplicitGirihEditor::setFigure(DesignElementPtr del, bool doEmit)
 {
-    return girihFig;
-}
-
-void  ExplicitGirihEditor::resetWithFigure(FigurePtr fig, bool doEmit)
-{
-    if (!fig)
+    if (!del || !del->getFigure())
     {
         girihFig.reset();
         return;
     }
 
-    girihFig = resetFigure(fig,FIG_TYPE_EXPLICIT_GIRIH);
+    girihFig = resetFigure(del,FIG_TYPE_EXPLICIT_GIRIH);
 
-    updateEditor();
-    updateFigure(doEmit);
+    figureToEditor();
+    editorToFigure(doEmit);
 }
 
-void ExplicitGirihEditor::updateEditor()
+void ExplicitGirihEditor::figureToEditor()
 {
-    if (!girihFig)
+    auto gfig = girihFig.lock();
+    if (!gfig)
         return;
 
-    int sideval   = girihFig->getN();
-    qreal skipval = girihFig->skip;
+    int sideval   = gfig->getN();
+    qreal skipval = gfig->skip;
 
     blockSignals(true);
     side->setValue(sideval);
     skip->setValue(skipval);
     blockSignals(false);
 
-    FigureEditor::updateEditor();
+    FigureEditor::figureToEditor();
 }
 
-void  ExplicitGirihEditor::updateFigure(bool doEmit)
+void  ExplicitGirihEditor::editorToFigure(bool doEmit)
 {
-    int side_val   = side->value();
-    qreal skip_val = skip->value();
+    auto gfig = girihFig.lock();
+    if (gfig)
+    {
+        int side_val   = side->value();
+        qreal skip_val = skip->value();
 
-    girihFig->setN(side_val);
-    girihFig->skip  = skip_val;
+        gfig->setN(side_val);
+        gfig->skip  = skip_val;
 
-    FigureEditor::updateFigure(false);
+        FigureEditor::editorToFigure(false);
 
-    MotifMaker * motifMaker = MotifMaker::getInstance();
-    MapPtr map = motifMaker->createExplicitGirihMap(side_val, skip_val);
-    girihFig->setExplicitMap(map);
+        MotifMaker * motifMaker = MotifMaker::getInstance();
+        MapPtr map = motifMaker->createExplicitGirihMap(side_val, skip_val);
+        gfig->setExplicitMap(map);
 
-    if (doEmit)
-        emit sig_figure_changed(girihFig);
+        if (doEmit)
+            emit sig_figure_modified(gfig);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -187,79 +164,80 @@ ExplicitHourglassEditor::ExplicitHourglassEditor(page_motif_maker *ed, QString a
     addLayout(d);
     addLayout(s);
 
-    connect(d, &DoubleSliderSet::valueChanged, this, [this]() { updateFigure(true);});
-    connect(s, &SliderSet::valueChanged,       this, [this]() { updateFigure(true);});
+    connect(d, &DoubleSliderSet::valueChanged, this, [this]() { editorToFigure(true);});
+    connect(s, &SliderSet::valueChanged,       this, [this]() { editorToFigure(true);});
 }
 
-
-FigurePtr ExplicitHourglassEditor::getFigure()
+void ExplicitHourglassEditor::setFigure(DesignElementPtr del, bool doEmit)
 {
-    return hourglassFig;
-}
-
-void ExplicitHourglassEditor::resetWithFigure(FigurePtr fig, bool doEmit)
-{
-    if (!fig)
+    if (!del || !del->getFigure())
     {
         hourglassFig.reset();
         return;
     }
 
-    hourglassFig = resetFigure(fig,FIG_TYPE_EXPLICIT_HOURGLASS);
+    hourglassFig = resetFigure(del,FIG_TYPE_EXPLICIT_HOURGLASS);
 
-    updateEditor();
-    updateFigure(doEmit);
+    figureToEditor();
+    editorToFigure(doEmit);
 }
 
-void ExplicitHourglassEditor::updateEditor()
+void ExplicitHourglassEditor::figureToEditor()
 {
-    FeaturePtr feature = menu->getActiveFeature();
-    if (feature)
+    auto hfig = hourglassFig.lock();
+    if (hfig)
     {
-        int n = feature->numPoints();
+        FeaturePtr feature = menu->getActiveFeature();
+        if (feature)
+        {
+            int n = feature->numPoints();
 
-        qreal dmin = 1.0;
-        qreal dmax = 0.5 * static_cast<qreal>(n);
-        qreal dcur = d->value();
-        qreal dd   = std::min(dmax - 0.5, std::max(dmin, dcur));
+            qreal dmin = 1.0;
+            qreal dmax = 0.5 * static_cast<qreal>(n);
+            qreal dcur = hfig->d;
+            qreal dd   = std::min(dmax - 0.5, std::max(dmin, dcur));
 
-        qreal smin = 1.0;
-        qreal smax = ceil( 0.5 * static_cast<qreal>(n));
-        qreal scur = s->value();
-        qreal ss   = floor(std::min( smax, std::max(smin, scur)));
+            qreal smin = 1.0;
+            qreal smax = ceil( 0.5 * static_cast<qreal>(n));
+            qreal scur = hfig->s;
+            qreal ss   = floor(std::min( smax, std::max(smin, scur)));
 
-        blockSignals(true);
-        d->setValues(dd, dmin, dmax);
-        s->setValues(static_cast<int>(ss), static_cast<int>(smin), n);
-        blockSignals(false);
+            blockSignals(true);
+            d->setValues(dd, dmin, dmax);
+            s->setValues(static_cast<int>(ss), static_cast<int>(smin), n);
+            blockSignals(false);
+        }
+        else
+        {
+            blockSignals(true);
+            d->setValue(hfig->d);
+            s->setValue(hfig->s);
+            blockSignals(false);
+        }
     }
-    else
-    {
-        blockSignals(true);
-        d->setValue(hourglassFig->d);
-        s->setValue(hourglassFig->s);
-        blockSignals(false);
-    }
-
-    FigureEditor::updateEditor();
+    FigureEditor::figureToEditor();
 }
 
-void ExplicitHourglassEditor::updateFigure(bool doEmit)
+void ExplicitHourglassEditor::editorToFigure(bool doEmit)
 {
-    qreal dval = d->value();
-    int sval   = s->value();
+    auto hfig = hourglassFig.lock();
+    if (hfig)
+    {
+        qreal dval = d->value();
+        int sval   = s->value();
 
-    hourglassFig->d = dval;
-    hourglassFig->s = sval;
+        hfig->d = dval;
+        hfig->s = sval;
 
-    FigureEditor::updateFigure(false);
+        FigureEditor::editorToFigure(false);
 
-    MotifMaker * motifMaker = MotifMaker::getInstance();
-    MapPtr map = motifMaker->createExplicitHourglassMap(dval, sval);
-    hourglassFig->setExplicitMap(map);
+        MotifMaker * motifMaker = MotifMaker::getInstance();
+        MapPtr map = motifMaker->createExplicitHourglassMap(dval, sval);
+        hfig->setExplicitMap(map);
 
-    if  (doEmit)
-        emit sig_figure_changed(hourglassFig);
+        if  (doEmit)
+            emit sig_figure_modified(hfig);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -280,37 +258,34 @@ ExplicitInferEditor::ExplicitInferEditor(page_motif_maker * ed, QString aname) :
 {
 }
 
-FigurePtr ExplicitInferEditor::getFigure()
+void ExplicitInferEditor::setFigure(DesignElementPtr del, bool doEmit)
 {
-    return explicitInferFig;
-}
-
-void ExplicitInferEditor::resetWithFigure(FigurePtr fig, bool doEmit)
-{
-    if (!fig)
+    if (!del || !del->getFigure())
     {
         explicitInferFig.reset();
         return;
     }
 
-    qDebug() << "ExplicitInferEditor::resetWithFigure" << fig.get() << "  " << fig->getFigTypeString();
+    explicitInferFig = resetFigure(del,FIG_TYPE_EXPLICIT_INFER);
 
-    explicitInferFig = resetFigure(fig,FIG_TYPE_EXPLICIT_INFER);
-
-    updateEditor();
-    updateFigure(doEmit);
+    figureToEditor();
+    editorToFigure(doEmit);
 }
 
-void ExplicitInferEditor::updateFigure(bool doEmit)
+void ExplicitInferEditor::editorToFigure(bool doEmit)
 {
-    FigureEditor::updateFigure(false);
+    auto eifig = explicitInferFig.lock();
+    if (eifig)
+    {
+        FigureEditor::editorToFigure(false);
 
-    MotifMaker * motifMaker = MotifMaker::getInstance();
-    MapPtr map  = motifMaker->createExplicitInferredMap();
-    explicitInferFig->setExplicitMap(map);
+        MotifMaker * motifMaker = MotifMaker::getInstance();
+        MapPtr map  = motifMaker->createExplicitInferredMap();
+        eifig->setExplicitMap(map);
 
-    if (doEmit)
-        emit sig_figure_changed(explicitInferFig);
+        if (doEmit)
+            emit sig_figure_modified(eifig);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -339,63 +314,66 @@ ExplicitIntersectEditor::ExplicitIntersectEditor(page_motif_maker *ed, QString a
     addLayout(s);
     addWidget(progressive_box);
 
-    connect(skip, &DoubleSliderSet::valueChanged, this, [this]() { updateFigure(true);});
-    connect(side, &SliderSet::valueChanged,       this, [this]() { updateFigure(true);});
-    connect(s,    &SliderSet::valueChanged,       this, [this]() { updateFigure(true);});
-    connect(progressive_box, &QCheckBox::stateChanged, this, [this]() { updateFigure(true);});
+    connect(skip, &DoubleSliderSet::valueChanged, this, [this]() { editorToFigure(true);});
+    connect(side, &SliderSet::valueChanged,       this, [this]() { editorToFigure(true);});
+    connect(s,    &SliderSet::valueChanged,       this, [this]() { editorToFigure(true);});
+    connect(progressive_box, &QCheckBox::stateChanged, this, [this]() { editorToFigure(true);});
 }
 
-FigurePtr ExplicitIntersectEditor::getFigure()
+void ExplicitIntersectEditor::setFigure(DesignElementPtr del, bool doEmit)
 {
-    return intersect;
-}
-
-void ExplicitIntersectEditor::resetWithFigure(FigurePtr fi, bool doEmit)
-{
-    if (!fi)
+    if (!del || !del->getFigure())
     {
         intersect.reset();
         return;
     }
 
-    intersect = resetFigure(fi, FIG_TYPE_EXPLICIT_INTERSECT);
+    intersect = resetFigure(del, FIG_TYPE_EXPLICIT_INTERSECT);
 
-    updateEditor();
-    updateFigure(doEmit);
+    figureToEditor();
+    editorToFigure(doEmit);
 }
 
-void ExplicitIntersectEditor::updateEditor()
+void ExplicitIntersectEditor::figureToEditor()
 {
-    blockSignals(true);
-    side->setValue(intersect->getN());
-    skip->setValue(intersect->skip);
-    s->setValue(intersect->s);
-    progressive_box->setChecked(intersect->progressive);
-    blockSignals(false);
+    auto isect = intersect.lock();
+    if (isect)
+    {
+        blockSignals(true);
+        side->setValue(isect->getN());
+        skip->setValue(isect->skip);
+        s->setValue(isect->s);
+        progressive_box->setChecked(isect->progressive);
+        blockSignals(false);
 
-    FigureEditor::updateEditor();
+        FigureEditor::figureToEditor();
+    }
 }
 
-void ExplicitIntersectEditor::updateFigure(bool doEmit)
+void ExplicitIntersectEditor::editorToFigure(bool doEmit)
 {
-    int side_val        = side->value();
-    qreal skip_val      = skip->value();
-    int sval            = s->value();
-    bool progressive    = progressive_box->isChecked();
+    auto isect = intersect.lock();
+    if (isect)
+    {
+        int side_val        = side->value();
+        qreal skip_val      = skip->value();
+        int sval            = s->value();
+        bool progressive    = progressive_box->isChecked();
 
-    intersect->setN(side_val);
-    intersect->skip  = skip_val;
-    intersect->s     = sval;
-    intersect->progressive = progressive;
+        isect->setN(side_val);
+        isect->skip  = skip_val;
+        isect->s     = sval;
+        isect->progressive = progressive;
 
-    FigureEditor::updateFigure(false);
+        FigureEditor::editorToFigure(false);
 
-    MotifMaker * motifMaker = MotifMaker::getInstance();
-    MapPtr map = motifMaker->createExplicitIntersectMap(side_val, skip_val, sval, progressive);
-    intersect->setExplicitMap(map);
+        MotifMaker * motifMaker = MotifMaker::getInstance();
+        MapPtr map = motifMaker->createExplicitIntersectMap(side_val, skip_val, sval, progressive);
+        isect->setExplicitMap(map);
 
-    if (doEmit)
-        emit sig_figure_changed(intersect);
+        if (doEmit)
+            emit sig_figure_modified(isect);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -425,90 +403,79 @@ ExplicitRosetteEditor::ExplicitRosetteEditor(page_motif_maker * ed, QString anam
     addLayout(s_slider);
     addLayout(r_slider);
 
-    connect(q_slider, &DoubleSliderSet::valueChanged, this, [this]() { updateFigure(true);});
-    connect(s_slider, &SliderSet::valueChanged,       this, [this]() { updateFigure(true);});
-    connect(r_slider, &DoubleSliderSet::valueChanged, this, [this]() { updateFigure(true);});
+    connect(q_slider, &DoubleSliderSet::valueChanged, this, [this]() { editorToFigure(true);});
+    connect(s_slider, &SliderSet::valueChanged,       this, [this]() { editorToFigure(true);});
+    connect(r_slider, &DoubleSliderSet::valueChanged, this, [this]() { editorToFigure(true);});
 }
 
-FigurePtr ExplicitRosetteEditor::getFigure()
+void ExplicitRosetteEditor::setFigure(DesignElementPtr del, bool doEmit)
 {
-    return expRoseFig;
-}
-
-void ExplicitRosetteEditor::resetWithFigure(FigurePtr fig, bool doEmit)
-{
-    if (!fig)
+    if (!del || !del->getFigure())
     {
         expRoseFig.reset();
         return;
     }
 
-    expRoseFig =resetFigure(fig,FIG_TYPE_EXPLICIT_ROSETTE);
+    expRoseFig =resetFigure(del,FIG_TYPE_EXPLICIT_ROSETTE);
 
-    updateEditor();
-    updateFigure(doEmit);
+    figureToEditor();
+    editorToFigure(doEmit);
 }
 
-void ExplicitRosetteEditor::updateEditor()
+void ExplicitRosetteEditor::figureToEditor()
 {
-    blockSignals(true);
-
-    if (expRoseFig)
+    auto erfig = expRoseFig.lock();
+    if (erfig)
     {
+        blockSignals(true);
+
         FeaturePtr feature = menu->getActiveFeature();
         if (feature)
         {
             int n = feature->numPoints();
             qreal smin = 1.0;
             qreal smax = ceil( 0.5 * static_cast<qreal>(n));
-            qreal scur = s_slider->value();
+            qreal scur = erfig->s;
             qreal ss   = floor(std::min(smax, std::max(smin, scur)));
             s_slider->setValues(static_cast<int>(ss), static_cast<int>(smin), static_cast<int>(smax));
         }
         else
         {
-            int ss = expRoseFig->s;
+            int ss = erfig->s;
             s_slider->setValues(ss, 1.0, 5);
         }
 
-        double qq = expRoseFig->q;
-        qreal  rp = expRoseFig->r_flexPt;
+        q_slider->setValues(erfig->q, -3.0, 3.0);       // DAC was -1.0, 1.0
+        r_slider->setValues(erfig->r_flexPt,0.0,1.0);
 
-        blockSignals(true);
-        q_slider->setValues(qq, -3.0, 3.0);       // DAC was -1.0, 1.0
-        r_slider->setValues(rp,0.0,1.0);
         blockSignals(false);
-    }
-    else
-    {
-        r_slider->setValue(expRoseFig->r_flexPt);
-        q_slider->setValue(expRoseFig->q);
-        s_slider->setValue(expRoseFig->s);
-    }
 
-    blockSignals(false);
-
-    FigureEditor::updateEditor();
+        FigureEditor::figureToEditor();
+    }
 }
 
-void ExplicitRosetteEditor::updateFigure(bool doEmit)
+void ExplicitRosetteEditor::editorToFigure(bool doEmit)
 {
-    qreal qval = q_slider->value();
-    int   sval = s_slider->value();
-    qreal rval = r_slider->value();
+    auto erfig = expRoseFig.lock();
+    if (erfig)
+    {
+        qreal qval = q_slider->value();
+        int   sval = s_slider->value();
+        qreal rval = r_slider->value();
 
-    expRoseFig->q = qval;
-    expRoseFig->s = sval;
-    expRoseFig->r_flexPt = rval;
+        erfig->q = qval;
+        erfig->s = sval;
+        erfig->r_flexPt = rval;
 
-    FigureEditor::updateFigure(false);
+        FigureEditor::editorToFigure(false);
 
-    MotifMaker * motifMaker = MotifMaker::getInstance();
-    MapPtr map = motifMaker->createExplicitRosetteMap(qval, sval, rval);
-    expRoseFig->setExplicitMap(map);
+        MotifMaker * motifMaker = MotifMaker::getInstance();
+        MapPtr map = motifMaker->createExplicitRosetteMap(qval, sval, rval);
+        erfig->setExplicitMap(map);
 
-    if (doEmit)
-        emit sig_figure_changed(expRoseFig);
+        if (doEmit)
+            emit sig_figure_modified(erfig);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -526,115 +493,116 @@ ExplicitStarEditor::ExplicitStarEditor(page_motif_maker *ed, QString aname) : Ex
     addLayout(d_slider);
     addLayout(s_slider);
 
-    connect(d_slider, &DoubleSliderSet::valueChanged, this, [this]() { updateFigure(true);});
-    connect(s_slider, &SliderSet::valueChanged,       this, [this]() { updateFigure(true);});
+    connect(d_slider, &DoubleSliderSet::valueChanged, this, [this]() { editorToFigure(true);});
+    connect(s_slider, &SliderSet::valueChanged,       this, [this]() { editorToFigure(true);});
 }
 
-FigurePtr ExplicitStarEditor::getFigure()
+void ExplicitStarEditor::setFigure(DesignElementPtr del, bool doEmit)
 {
-    return expStarFig;
-}
-
-void ExplicitStarEditor::resetWithFigure(FigurePtr fig, bool doEmit)
-{
-    if (!fig)
+    if (!del || !del->getFigure())
     {
         expStarFig.reset();
         return;
     }
 
-    expStarFig = resetFigure(fig,FIG_TYPE_EXPLICIT_STAR);
+    expStarFig = resetFigure(del,FIG_TYPE_EXPLICIT_STAR);
 
-    updateEditor();
-    updateFigure(doEmit);
+    figureToEditor();
+    editorToFigure(doEmit);
 }
 
-void ExplicitStarEditor::updateEditor()
+void ExplicitStarEditor::figureToEditor()
 {
-    FeaturePtr feature = menu->getActiveFeature();
-    if (feature)
+    auto esfig = expStarFig.lock();
+    if (esfig)
     {
-        int n = feature->numPoints();
+        FeaturePtr feature = menu->getActiveFeature();
+        if (feature)
+        {
+            int n = feature->numPoints();
 
-        qreal dmin = 1.0;
-        qreal dmax = 0.5 * static_cast<qreal>(n);
-        qreal dcur = d_slider->value();
-        qreal dd   = std::min(dmax - 0.5, std::max(dmin, dcur));
+            qreal dmin = 1.0;
+            qreal dmax = 0.5 * static_cast<qreal>(n);
+            qreal dcur = esfig->d;
+            qreal dd   = std::min(dmax - 0.5, std::max(dmin, dcur));
 
-        qreal smin = 1.0;
-        qreal smax = ceil( 0.5 * static_cast<qreal>(n));
-        qreal scur = s_slider->value();
-        qreal ss   = floor(std::min(smax, std::max(smin, scur)));
+            qreal smin = 1.0;
+            qreal smax = ceil( 0.5 * static_cast<qreal>(n));
+            qreal scur = esfig->s;
+            qreal ss   = floor(std::min(smax, std::max(smin, scur)));
 
-        blockSignals(true);
-        d_slider->setValues(dd, dmin, dmax);
-        s_slider->setValues(static_cast<int>(ss), static_cast<int>(smin), static_cast<int>(smax));
-        blockSignals(false);
+            blockSignals(true);
+            d_slider->setValues(dd, dmin, dmax);
+            s_slider->setValues(static_cast<int>(ss), static_cast<int>(smin), static_cast<int>(smax));
+            blockSignals(false);
+        }
+        else
+        {
+            blockSignals(true);
+            d_slider->setValue(esfig->d);
+            s_slider->setValue(esfig->s);
+            blockSignals(false);
+        }
+
+        FigureEditor::figureToEditor();
     }
-    else
-    {
-        blockSignals(true);
-        d_slider->setValue(expStarFig->d);
-        s_slider->setValue(expStarFig->s);
-        blockSignals(false);
-    }
-
-    FigureEditor::updateEditor();
 }
 
-void ExplicitStarEditor::updateFigure(bool doEmit)
+void ExplicitStarEditor::editorToFigure(bool doEmit)
 {
-    qreal dval = d_slider->value();
-    int sval   = s_slider->value();
+    auto esfig = expStarFig.lock();
+    if (esfig)
+    {
+        qreal dval = d_slider->value();
+        int sval   = s_slider->value();
 
-    expStarFig->d = dval;
-    expStarFig->s = sval;
+        esfig->d = dval;
+        esfig->s = sval;
 
-    FigureEditor::updateFigure(false);
+        FigureEditor::editorToFigure(false);
 
-    MotifMaker * motifMaker = MotifMaker::getInstance();
-    MapPtr map = motifMaker->createExplicitStarMap(dval, sval);
-    expStarFig->setExplicitMap(map);
+        MotifMaker * motifMaker = MotifMaker::getInstance();
+        MapPtr map = motifMaker->createExplicitStarMap(dval, sval);
+        esfig->setExplicitMap(map);
 
-    if (doEmit)
-        emit sig_figure_changed(expStarFig);
+        if (doEmit)
+            emit sig_figure_modified(esfig);
+    }
 }
 
 //  Make a figure from a feature
-
 ExplicitFeatureEditor::ExplicitFeatureEditor(page_motif_maker * ed, QString aname) : ExplicitEditor(ed, aname)
 {
 }
 
-FigurePtr ExplicitFeatureEditor::getFigure()
+void ExplicitFeatureEditor::setFigure(DesignElementPtr del, bool doEmit)
 {
-    return featFig;
-}
-
-void ExplicitFeatureEditor::resetWithFigure(FigurePtr fig, bool doEmit)
-{
-    if (!fig)
+    if (!del || !del->getFigure())
     {
         featFig.reset();
         return;
     }
 
-    featFig = resetFigure(fig,FIG_TYPE_EXPLICIT_FEATURE);
+    featFig = resetFigure(del,FIG_TYPE_EXPLICIT_FEATURE);
 
-    updateEditor();
-    updateFigure(doEmit);
+    figureToEditor();
+    editorToFigure(doEmit);
 }
 
-void ExplicitFeatureEditor::updateFigure(bool doEmit)
+void ExplicitFeatureEditor::editorToFigure(bool doEmit)
 {
-    FigureEditor::updateFigure(false);
-
-    MotifMaker * motifMaker = MotifMaker::getInstance();
-    MapPtr map = motifMaker->createExplicitFeatureMap();
-    featFig->setExplicitMap(map);
-
-    if  (doEmit)
+    auto ffig = featFig.lock();
+    if (ffig)
     {
-        emit sig_figure_changed(featFig);
+        FigureEditor::editorToFigure(false);
+
+        MotifMaker * motifMaker = MotifMaker::getInstance();
+        MapPtr map = motifMaker->createExplicitFeatureMap();
+        ffig->setExplicitMap(map);
+
+        if  (doEmit)
+        {
+            emit sig_figure_modified(ffig);
+        }
     }
 }

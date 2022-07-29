@@ -1,0 +1,114 @@
+<?xml version="1.0"?>
+<Tiling version="6">
+	<!-- Written Mon Nov 29 2021 20:44:01 -->
+	<Name>Nonangon.v3</Name>
+	<Fill singleton="f">-4,5,-5,5</Fill>
+	<T1>1.732050807568881,-2.999999999999999</T1>
+	<T2>3.701666313593284,-1.347296355333865</T2>
+	<ViewSettings>
+		<width>1603</width>
+		<height>1061</height>
+		<zwidth>1483</zwidth>
+		<zheight>1061</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0.3141592653589794</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Feature type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="1">-5.240052604587699,-0.923962654520476</Point>
+			<Point id="2">-4.608024925534381,2.660444431189781</Point>
+		</Line>
+		<Line>
+			<Point reference="2" />
+			<Point id="3">-1.819851171331011,4.999999999999999</Point>
+		</Line>
+		<Line>
+			<Point reference="3" />
+			<Point id="4">1.819851171331012,4.999999999999999</Point>
+		</Line>
+		<Line>
+			<Point reference="4" />
+			<Point id="5">4.608024925534381,2.660444431189779</Point>
+		</Line>
+		<Line>
+			<Point reference="5" />
+			<Point id="6">5.240052604587698,-0.9239626545204807</Point>
+		</Line>
+		<Line>
+			<Point reference="6" />
+			<Point id="7">3.420201433256687,-4.076037345479523</Point>
+		</Line>
+		<Line>
+			<Point reference="7" />
+			<Point id="8">-4.418184450743011e-18,-5.320888862379559</Point>
+		</Line>
+		<Line>
+			<Point reference="8" />
+			<Point id="9">-3.420201433256688,-4.076037345479523</Point>
+		</Line>
+		<Line>
+			<Point reference="9" />
+			<Point reference="1" />
+		</Line>
+		<Placement>
+			<scale>0.2</scale>
+			<rot>0</rot>
+			<tranX>-0.2933333333333348</tranX>
+			<tranY>-0.06666666666666643</tranY>
+		</Placement>
+		<Placement>
+			<scale>0.2</scale>
+			<rot>-19.99999999999998</rot>
+			<tranX>-0.2933333333333351</tranX>
+			<tranY>1.933333333333334</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="10">1.438717474235542,-0.002488894190756374</Point>
+			<Point id="11">0.7546771875842049,-0.2514591975707626</Point>
+		</Line>
+		<Line>
+			<Point reference="11" />
+			<Point id="12">0.6282716517735415,0.4654222195712894</Point>
+		</Line>
+		<Line>
+			<Point reference="12" />
+			<Point id="13">0.07063690093286762,0.9333333333333335</Point>
+		</Line>
+		<Line>
+			<Point reference="13" />
+			<Point id="14">0.6282716517735408,1.401244447095378</Point>
+		</Line>
+		<Line>
+			<Point reference="14" />
+			<Point id="15">0.9922418860397434,0.7708295089035673</Point>
+		</Line>
+		<Line>
+			<Point reference="15" />
+			<Point id="16">1.676282172691082,0.5218592055235596</Point>
+		</Line>
+		<Line>
+			<Point reference="16" />
+			<Point reference="10" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>180</rot>
+			<tranX>3.114999646926626</tranX>
+			<tranY>0.5193703113328099</tranY>
+		</Placement>
+	</Feature>
+	<Desc />
+	<Auth />
+</Tiling>

@@ -1,32 +1,16 @@
-/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #ifndef PAGE_PROTOS_H
 #define PAGE_PROTOS_H
 
-#include "panels/panel_page.h"
+#include <QGridLayout>
+#include "widgets/panel_page.h"
 #include "settings/configuration.h"
+#include "mosaic/prototype.h"
+#include "viewers/prototype_view.h"
+
+typedef std::weak_ptr<DesignElement>    WeakDesignElementPtr;
+typedef std::weak_ptr<Prototype>        WeakPrototypePtr;
+typedef std::weak_ptr<Figure>           WeakFigurePtr;
+typedef std::weak_ptr<Feature>          WeakFeaturePtr;
 
 enum eProtoCol
 {
@@ -41,6 +25,14 @@ enum eProtoCol
     PROTO_ROW_Y
 };
 
+struct sColData
+{
+    WeakPrototypePtr     wpp;
+    WeakDesignElementPtr wdel;
+    WeakFeaturePtr       wfeatp;
+    WeakFigurePtr        wfigp;
+};
+
 class page_prototype_info : public panel_page
 {
     Q_OBJECT
@@ -49,9 +41,9 @@ public:
 
     page_prototype_info(ControlPanel * cpanel);
 
-    void refreshPage() override;
+    void onRefresh() override;
     void onEnter() override;
-    void onExit() override {}
+    void onExit() override;
 
 public slots:
 
@@ -63,12 +55,20 @@ private slots:
     void    drawFeatureClicked(bool enb);
     void    hiliteFigureClicked(bool enb);
     void    hiliteFeatureClicked(bool enb);
+    void    setDefaultColors();
+    void    setup();
 
 protected:
+    void    buildColorGrid();
     void    setProtoViewMode(eProtoViewMode mode, bool enb);
+    void    pickColor(QColor & color);
 
 private:
     class AQTableWidget * protoTable;
+    QGridLayout         * showSettings;
+    PrototypeViewPtr      pview;
+
+    QVector<sColData>     data;
 };
 
 #endif

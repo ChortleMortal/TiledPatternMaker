@@ -6,6 +6,7 @@
 #include <QColor>
 #include <QPen>
 #include <QTransform>
+#include "geometry/measurement.h"
 
 class GeoGraphics;
 
@@ -15,43 +16,12 @@ typedef std::shared_ptr<class PlacedFeature>    PlacedFeaturePtr;
 typedef std::shared_ptr<class Edge>             EdgePtr;
 typedef std::shared_ptr<class Vertex>           VertexPtr;
 
-
-
 enum eAddToTranslate
 {
     ADTT_NOSTATE,
     ADTT_STARTED,
     ADTT_DRAGGING,
     ADTT_ENDED,
-};
-
-class TilingMaker;
-
-class Measurement
-{
-public:
-    Measurement();
-
-    void    reset();
-
-    void    setStart(QPointF spt);
-    void    setEnd(QPointF spt);
-
-    QPointF startW();
-    QPointF endW();
-    QPointF startS();
-    QPointF endS();
-
-    qreal   lenS();
-    qreal   lenW();
-
-    bool    active;
-
-private:
-    TilingMakerPtr tm;
-
-    QPointF wStart;
-    QPointF wEnd;
 };
 
 class TilingMouseAction
@@ -197,7 +167,7 @@ protected:
     QLineF normalVectorB(QLineF line);
 
 private:
-    Measurement  m;
+    Measurement  * m;
     QLineF       sPerpLine; // perpendicular line
 };
 

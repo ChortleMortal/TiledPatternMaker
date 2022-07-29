@@ -1,42 +1,17 @@
-﻿/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
+﻿#include <QSvgGenerator>
+#include <QDebug>
 
-#include <QSvgGenerator>
 #include "style/style.h"
-
-#include "geometry/map.h"
 #include "geometry/edge.h"
+#include "geometry/map.h"
 #include "geometry/vertex.h"
-#include "tapp/prototype.h"
+#include "misc/geo_graphics.h"
+#include "mosaic/prototype.h"
 #include "tile/tiling.h"
-#include "settings/configuration.h"
-#include "viewers/view.h"
-#include "base/geo_graphics.h"
 
 int Style::refs = 0;
 
-Style::Style(PrototypePtr proto) : Layer("Style")
+Style::Style(const PrototypePtr & proto) : LayerController("Style")
 {
     prototype = proto;
     debugMap = std::make_shared<Map>("Style debug map");
@@ -45,9 +20,10 @@ Style::Style(PrototypePtr proto) : Layer("Style")
     refs++;
 }
 
-Style::Style(StylePtr other) : Layer(other)
+Style::Style(const StylePtr & other) : LayerController(other)
 {
     prototype = other->prototype;
+    xf_canvas = other->xf_canvas;
 
     if (other->debugMap)
     {
@@ -55,6 +31,7 @@ Style::Style(StylePtr other) : Layer(other)
     }
     paintSVG  = false;
     generator = nullptr;
+
     refs++;
 }
 
@@ -84,18 +61,9 @@ TilingPtr Style::getTiling()
     return tp;
 }
 
-void Style::eraseStyleMap()
+void Style::resetStyleMap()
 {
-    if (styleMap)
-    {
-        styleMap->wipeout();
-        styleMap.reset();
-    }
-}
-
-void Style::eraseProtoMap()
-{
-    prototype->resetProtoMap();
+    styleMap.reset();
 }
 
 MapPtr Style::getMap()
@@ -157,9 +125,8 @@ void Style::paint(QPainter *painter)
         return;
     }
 
-    qDebug() << "Style::paint" << getDescription() << this;
-    painter->setRenderHint(QPainter::Antialiasing ,true);
-    painter->setRenderHint(QPainter::SmoothPixmapTransform,true);
+    //qDebug() << "Style::paint" << getDescription() << this;
+    painter->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
 
     QTransform tr = getLayerTransform();
     GeoGraphics gg(painter,tr);
@@ -194,8 +161,7 @@ void Style::paintToSVG()
     painter.begin(generator);
 
     qDebug() << "Style::paintToSVG" << getDescription() << this;
-    painter.setRenderHint(QPainter::Antialiasing ,true);
-    painter.setRenderHint(QPainter::SmoothPixmapTransform,true);
+    painter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
 
     QTransform tr = getLayerTransform();
     GeoGraphics gg(&painter,tr);
@@ -212,7 +178,7 @@ void Style::drawAnnotation(QPainter * painter, QTransform T)
     QPen pen(Qt::white);
     painter->setPen(pen);
 
-    for (auto edge : debugMap->getEdges())
+    for (auto & edge : debugMap->getEdges())
     {
         QPointF p1 = T.map(edge->v1->pt);
         QPointF p2 = T.map(edge->v2->pt);
@@ -230,33 +196,13 @@ void Style::drawAnnotation(QPainter * painter, QTransform T)
 
 void Style::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
 {
-    if (    config->kbdMode == KBD_MODE_XFORM_VIEW
-        || (config->kbdMode == KBD_MODE_XFORM_SELECTED && isSelected()))
-    {
-        qDebug() << getName() << config->kbdMode;
-        if (view->getMouseMode() == MOUSE_MODE_CENTER && btn == Qt::LeftButton)
-        {
-            setCenterScreenUnits(spt);
-            forceLayerRecalc();
-            emit sig_refreshView();
-        }
-    }
+    Q_UNUSED(spt);
+    Q_UNUSED(btn);
 }
 
 void Style::slot_mouseDragged(QPointF spt)
 {
     Q_UNUSED(spt);
-}
-
-void Style::slot_mouseTranslate(QPointF pt)
-{
-    if (    config->kbdMode == KBD_MODE_XFORM_VIEW
-        || (config->kbdMode == KBD_MODE_XFORM_SELECTED && isSelected()))
-    {
-        xf_canvas.setTranslateX(xf_canvas.getTranslateX() + pt.x());
-        xf_canvas.setTranslateY(xf_canvas.getTranslateY() + pt.y());
-        forceLayerRecalc();
-    }
 }
 
 void Style::slot_mouseMoved(QPointF spt)
@@ -274,62 +220,12 @@ void Style::slot_mouseDoublePressed(QPointF spt)
     Q_UNUSED(spt);
 }
 
-void Style::slot_wheel_scale(qreal delta)
+const Xform  & Style::getCanvasXform()
 {
-    if (    config->kbdMode == KBD_MODE_XFORM_VIEW
-        || (config->kbdMode == KBD_MODE_XFORM_SELECTED && isSelected()))
-    {
-        xf_canvas.setScale(xf_canvas.getScale() + delta);
-        forceLayerRecalc();
-    }
+    return xf_canvas;
 }
 
-void Style::slot_wheel_rotate(qreal delta)
+void Style::setCanvasXform(const Xform & xf)
 {
-    if (    config->kbdMode == KBD_MODE_XFORM_VIEW
-        || (config->kbdMode == KBD_MODE_XFORM_SELECTED && isSelected()))
-    {
-        xf_canvas.setRotateDegrees(xf_canvas.getRotateDegrees() + delta);
-        forceLayerRecalc();
-    }
-}
-
-void Style::slot_scale(int amount)
-{
-    if (    config->kbdMode == KBD_MODE_XFORM_VIEW
-        || (config->kbdMode == KBD_MODE_XFORM_SELECTED && isSelected()))
-    {
-        xf_canvas.setScale(xf_canvas.getScale() + static_cast<qreal>(amount)/100.0);
-        forceLayerRecalc();
-    }
-}
-
-void Style::slot_rotate(int amount)
-{
-    if (    config->kbdMode == KBD_MODE_XFORM_VIEW
-        || (config->kbdMode == KBD_MODE_XFORM_SELECTED && isSelected()))
-    {
-        xf_canvas.setRotateRadians(xf_canvas.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
-        forceLayerRecalc();
-    }
-}
-
-void Style:: slot_moveX(int amount)
-{
-    if (    config->kbdMode == KBD_MODE_XFORM_VIEW
-        || (config->kbdMode == KBD_MODE_XFORM_SELECTED && isSelected()))
-    {
-        xf_canvas.setTranslateX(xf_canvas.getTranslateX() + amount);
-        forceLayerRecalc();
-    }
-}
-
-void Style::slot_moveY(int amount)
-{
-    if (    config->kbdMode == KBD_MODE_XFORM_VIEW
-        || (config->kbdMode == KBD_MODE_XFORM_SELECTED && isSelected()))
-    {
-        xf_canvas.setTranslateY(xf_canvas.getTranslateY() + amount);
-        forceLayerRecalc();
-    }
+    xf_canvas = xf;
 }

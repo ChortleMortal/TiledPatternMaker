@@ -1,11 +1,10 @@
 #ifndef CIRCLE_H
 #define CIRCLE_H
 
-#include <QtCore>
+#include <QDataStream>
+#include "geometry/loose.h"
 
-class Circle;
-
-typedef std::shared_ptr<Circle> CirclePtr;
+typedef std::shared_ptr<class Circle> CirclePtr;
 
 class Circle
 {
@@ -14,13 +13,31 @@ public:
     Circle(const Circle & c);
     Circle(QPointF centre, qreal radius);
 
-    void set(CirclePtr other) { radius = other->radius; centre = other->centre; };
-    void set(Circle & other)  { radius = other.radius;  centre = other.centre; };
+    void init() { radius = 1.0; centre = QPointF(); }
+    void set(Circle & other)  { radius = other.radius;  centre = other.centre; }
+    void set(CirclePtr other) { radius = other->radius; centre = other->centre; }
+
+    void setRadius(qreal r) { radius = r; }
+    void setCenter(QPointF p) { centre = p; }
 
     QRectF  boundingRect();
     qreal   x() { return centre.x(); }
     qreal   y() { return centre.y(); }
-    bool    operator==(const Circle & other);
+
+    friend bool operator==(const Circle & c1, const Circle & c2)
+    {
+        if ((c1.centre == c2.centre) && Loose::equals(c1.radius,c2.radius))
+            return true;
+        else
+            return false;
+    }
+
+    friend bool operator!=(const Circle & c1, const Circle & c2)
+    {
+        return !(c1==c2);
+    }
+
+    Circle & operator=(const Circle & other);
 
     friend QDataStream & operator<< (QDataStream &out, const Circle & c)
     {

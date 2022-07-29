@@ -1,0 +1,556 @@
+<?xml version="1.0"?>
+<Tiling version="6">
+	<Name>MapEdLoaded1</Name>
+	<Fill singleton="t">0,0,0,0</Fill>
+	<T1>0,0</T1>
+	<T2>0,0</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>1061</height>
+		<zwidth>1500</zwidth>
+		<zheight>1100</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,-1.77635683940025e-15</center>
+	</ViewSettings>
+	<Feature type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="1">-2.333333333333333,-0.5773502691896243</Point>
+			<Point id="2">-2.091219689875505,-0.6027974385326457</Point>
+		</Line>
+		<Line>
+			<Point reference="2" />
+			<Point id="3">-1.500000000000001,-0.866025403784438</Point>
+		</Line>
+		<Line>
+			<Point reference="3" />
+			<Point id="4">-1.442789675985369,-0.3217055305650843</Point>
+		</Line>
+		<Line>
+			<Point reference="4" />
+			<Point id="5">-0.9999999999999998,3.885780586188048e-16</Point>
+		</Line>
+		<Line>
+			<Point reference="5" />
+			<Point id="6">-1.44278967598537,0.3217055305650864</Point>
+		</Line>
+		<Line>
+			<Point reference="6" />
+			<Point id="7">-1.5,0.8660254037844389</Point>
+		</Line>
+		<Line>
+			<Point reference="7" />
+			<Point id="8">-2.091219689875504,0.60279743853265</Point>
+		</Line>
+		<Line>
+			<Point reference="8" />
+			<Point id="9">-2.333333333333333,0.5773502691896282</Point>
+		</Line>
+		<Line>
+			<Point reference="9" />
+			<Point id="10">-2.076280432019506,1.554312234475219e-15</Point>
+		</Line>
+		<Line>
+			<Point reference="10" />
+			<Point reference="1" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="11">-1.666666666666668,-1.732050807568876</Point>
+			<Point id="12">-1.038140216009754,-1.798111599509421</Point>
+		</Line>
+		<Line>
+			<Point reference="12" />
+			<Point id="13">-0.666666666666667,-2.309401076758502</Point>
+		</Line>
+		<Line>
+			<Point reference="13" />
+			<Point id="14">-0.523571949832292,-2.112448095592725</Point>
+		</Line>
+		<Line>
+			<Point reference="14" />
+			<Point id="15">-1.110223024625157e-15,-1.732050807568878</Point>
+		</Line>
+		<Line>
+			<Point reference="15" />
+			<Point id="16">-0.4427896759853698,-1.410345277003791</Point>
+		</Line>
+		<Line>
+			<Point reference="16" />
+			<Point id="17">-0.4999999999999999,-0.8660254037844382</Point>
+		</Line>
+		<Line>
+			<Point reference="17" />
+			<Point id="18">-1.000000000000001,-1.088639746438707</Point>
+		</Line>
+		<Line>
+			<Point reference="18" />
+			<Point id="19">-1.500000000000001,-0.866025403784438</Point>
+		</Line>
+		<Line>
+			<Point reference="19" />
+			<Point id="20">-1.567647740043215,-1.509650657060077</Point>
+		</Line>
+		<Line>
+			<Point reference="20" />
+			<Point reference="11" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="21">-1.666666666666665,1.732050807568877</Point>
+			<Point id="22">-1.567647740043213,1.50965065706008</Point>
+		</Line>
+		<Line>
+			<Point reference="22" />
+			<Point id="23">-1.5,0.8660254037844389</Point>
+		</Line>
+		<Line>
+			<Point reference="23" />
+			<Point id="24">-0.9999999999999991,1.088639746438706</Point>
+		</Line>
+		<Line>
+			<Point reference="24" />
+			<Point id="25">-0.4999999999999997,0.8660254037844387</Point>
+		</Line>
+		<Line>
+			<Point reference="25" />
+			<Point id="26">-0.4427896759853697,1.410345277003793</Point>
+		</Line>
+		<Line>
+			<Point reference="26" />
+			<Point id="27">4.034522267621424e-16,1.732050807568877</Point>
+		</Line>
+		<Line>
+			<Point reference="27" />
+			<Point id="28">-0.5235719498322887,2.112448095592727</Point>
+		</Line>
+		<Line>
+			<Point reference="28" />
+			<Point id="29">-0.6666666666666649,2.309401076758504</Point>
+		</Line>
+		<Line>
+			<Point reference="29" />
+			<Point id="30">-1.038140216009752,1.798111599509422</Point>
+		</Line>
+		<Line>
+			<Point reference="30" />
+			<Point reference="21" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="31">-1.500000000000001,-0.866025403784438</Point>
+			<Point id="32">-1.000000000000001,-1.088639746438707</Point>
+		</Line>
+		<Line>
+			<Point reference="32" />
+			<Point id="33">-0.4999999999999999,-0.8660254037844382</Point>
+		</Line>
+		<Line>
+			<Point reference="33" />
+			<Point id="34">-0.5924390574517792,-0.342044849298233</Point>
+		</Line>
+		<Line>
+			<Point reference="34" />
+			<Point id="35">-0.9999999999999998,3.885780586188048e-16</Point>
+		</Line>
+		<Line>
+			<Point reference="35" />
+			<Point id="36">-1.442789675985369,-0.3217055305650843</Point>
+		</Line>
+		<Line>
+			<Point reference="36" />
+			<Point reference="31" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="37">-1.5,0.8660254037844389</Point>
+			<Point id="38">-1.44278967598537,0.3217055305650864</Point>
+		</Line>
+		<Line>
+			<Point reference="38" />
+			<Point id="39">-0.9999999999999998,3.885780586188048e-16</Point>
+		</Line>
+		<Line>
+			<Point reference="39" />
+			<Point id="40">-0.5924390574517793,0.342044849298233</Point>
+		</Line>
+		<Line>
+			<Point reference="40" />
+			<Point id="41">-0.4999999999999997,0.8660254037844387</Point>
+		</Line>
+		<Line>
+			<Point reference="41" />
+			<Point id="42">-0.9999999999999991,1.088639746438706</Point>
+		</Line>
+		<Line>
+			<Point reference="42" />
+			<Point reference="37" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="43">-0.5924390574517793,0.342044849298233</Point>
+			<Point id="44">-0.9999999999999998,3.885780586188048e-16</Point>
+		</Line>
+		<Line>
+			<Point reference="44" />
+			<Point id="45">-0.5924390574517792,-0.342044849298233</Point>
+		</Line>
+		<Line>
+			<Point reference="45" />
+			<Point id="46">-0.4999999999999999,-0.8660254037844382</Point>
+		</Line>
+		<Line>
+			<Point reference="46" />
+			<Point id="47">-2.775557561562891e-16,-0.6840896985964657</Point>
+		</Line>
+		<Line>
+			<Point reference="47" />
+			<Point id="48">0.4999999999999997,-0.8660254037844388</Point>
+		</Line>
+		<Line>
+			<Point reference="48" />
+			<Point id="49">0.592439057451779,-0.3420448492982333</Point>
+		</Line>
+		<Line>
+			<Point reference="49" />
+			<Point id="50">0.9999999999999998,-2.220446049250313e-16</Point>
+		</Line>
+		<Line>
+			<Point reference="50" />
+			<Point id="51">0.5924390574517792,0.342044849298233</Point>
+		</Line>
+		<Line>
+			<Point reference="51" />
+			<Point id="52">0.5000000000000002,0.8660254037844384</Point>
+		</Line>
+		<Line>
+			<Point reference="52" />
+			<Point id="53">0,0.6840896985964658</Point>
+		</Line>
+		<Line>
+			<Point reference="53" />
+			<Point id="54">-0.4999999999999997,0.8660254037844387</Point>
+		</Line>
+		<Line>
+			<Point reference="54" />
+			<Point reference="43" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="55">-0.4999999999999999,-0.8660254037844382</Point>
+			<Point id="56">-0.4427896759853698,-1.410345277003791</Point>
+		</Line>
+		<Line>
+			<Point reference="56" />
+			<Point id="57">-1.110223024625157e-15,-1.732050807568878</Point>
+		</Line>
+		<Line>
+			<Point reference="57" />
+			<Point id="58">0.4427896759853693,-1.410345277003793</Point>
+		</Line>
+		<Line>
+			<Point reference="58" />
+			<Point id="59">0.4999999999999997,-0.8660254037844388</Point>
+		</Line>
+		<Line>
+			<Point reference="59" />
+			<Point id="60">-2.775557561562891e-16,-0.6840896985964657</Point>
+		</Line>
+		<Line>
+			<Point reference="60" />
+			<Point reference="55" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="61">4.034522267621424e-16,1.732050807568877</Point>
+			<Point id="62">-0.4427896759853697,1.410345277003793</Point>
+		</Line>
+		<Line>
+			<Point reference="62" />
+			<Point id="63">-0.4999999999999997,0.8660254037844387</Point>
+		</Line>
+		<Line>
+			<Point reference="63" />
+			<Point id="64">0,0.6840896985964658</Point>
+		</Line>
+		<Line>
+			<Point reference="64" />
+			<Point id="65">0.5000000000000002,0.8660254037844384</Point>
+		</Line>
+		<Line>
+			<Point reference="65" />
+			<Point id="66">0.4427896759853701,1.410345277003791</Point>
+		</Line>
+		<Line>
+			<Point reference="66" />
+			<Point reference="61" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="67">-1.110223024625157e-15,-1.732050807568878</Point>
+			<Point id="68">0.5235719498322883,-2.112448095592726</Point>
+		</Line>
+		<Line>
+			<Point reference="68" />
+			<Point id="69">0.6666666666666644,-2.309401076758504</Point>
+		</Line>
+		<Line>
+			<Point reference="69" />
+			<Point id="70">1.038140216009752,-1.798111599509422</Point>
+		</Line>
+		<Line>
+			<Point reference="70" />
+			<Point id="71">1.666666666666665,-1.732050807568878</Point>
+		</Line>
+		<Line>
+			<Point reference="71" />
+			<Point id="72">1.567647740043213,-1.50965065706008</Point>
+		</Line>
+		<Line>
+			<Point reference="72" />
+			<Point id="73">1.5,-0.8660254037844393</Point>
+		</Line>
+		<Line>
+			<Point reference="73" />
+			<Point id="74">0.999999999999999,-1.088639746438707</Point>
+		</Line>
+		<Line>
+			<Point reference="74" />
+			<Point id="75">0.4999999999999997,-0.8660254037844388</Point>
+		</Line>
+		<Line>
+			<Point reference="75" />
+			<Point id="76">0.4427896759853693,-1.410345277003793</Point>
+		</Line>
+		<Line>
+			<Point reference="76" />
+			<Point reference="67" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="77">4.034522267621424e-16,1.732050807568877</Point>
+			<Point id="78">0.4427896759853701,1.410345277003791</Point>
+		</Line>
+		<Line>
+			<Point reference="78" />
+			<Point id="79">0.5000000000000002,0.8660254037844384</Point>
+		</Line>
+		<Line>
+			<Point reference="79" />
+			<Point id="80">1.000000000000001,1.088639746438707</Point>
+		</Line>
+		<Line>
+			<Point reference="80" />
+			<Point id="81">1.500000000000001,0.8660254037844383</Point>
+		</Line>
+		<Line>
+			<Point reference="81" />
+			<Point id="82">1.567647740043215,1.509650657060077</Point>
+		</Line>
+		<Line>
+			<Point reference="82" />
+			<Point id="83">1.666666666666668,1.732050807568876</Point>
+		</Line>
+		<Line>
+			<Point reference="83" />
+			<Point id="84">1.038140216009754,1.798111599509421</Point>
+		</Line>
+		<Line>
+			<Point reference="84" />
+			<Point id="85">0.6666666666666673,2.309401076758502</Point>
+		</Line>
+		<Line>
+			<Point reference="85" />
+			<Point id="86">0.5235719498322924,2.112448095592726</Point>
+		</Line>
+		<Line>
+			<Point reference="86" />
+			<Point reference="77" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="87">0.4999999999999997,-0.8660254037844388</Point>
+			<Point id="88">0.999999999999999,-1.088639746438707</Point>
+		</Line>
+		<Line>
+			<Point reference="88" />
+			<Point id="89">1.5,-0.8660254037844393</Point>
+		</Line>
+		<Line>
+			<Point reference="89" />
+			<Point id="90">1.442789675985371,-0.3217055305650863</Point>
+		</Line>
+		<Line>
+			<Point reference="90" />
+			<Point id="91">0.9999999999999998,-2.220446049250313e-16</Point>
+		</Line>
+		<Line>
+			<Point reference="91" />
+			<Point id="92">0.592439057451779,-0.3420448492982333</Point>
+		</Line>
+		<Line>
+			<Point reference="92" />
+			<Point reference="87" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="93">1.500000000000001,0.8660254037844383</Point>
+			<Point id="94">1.000000000000001,1.088639746438707</Point>
+		</Line>
+		<Line>
+			<Point reference="94" />
+			<Point id="95">0.5000000000000002,0.8660254037844384</Point>
+		</Line>
+		<Line>
+			<Point reference="95" />
+			<Point id="96">0.5924390574517792,0.342044849298233</Point>
+		</Line>
+		<Line>
+			<Point reference="96" />
+			<Point id="97">0.9999999999999998,-2.220446049250313e-16</Point>
+		</Line>
+		<Line>
+			<Point reference="97" />
+			<Point id="98">1.442789675985369,0.3217055305650847</Point>
+		</Line>
+		<Line>
+			<Point reference="98" />
+			<Point reference="93" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="99">0.9999999999999998,-2.220446049250313e-16</Point>
+			<Point id="100">1.442789675985371,-0.3217055305650863</Point>
+		</Line>
+		<Line>
+			<Point reference="100" />
+			<Point id="101">1.5,-0.8660254037844393</Point>
+		</Line>
+		<Line>
+			<Point reference="101" />
+			<Point id="102">2.091219689875504,-0.6027974385326499</Point>
+		</Line>
+		<Line>
+			<Point reference="102" />
+			<Point id="103">2.333333333333333,-0.5773502691896281</Point>
+		</Line>
+		<Line>
+			<Point reference="103" />
+			<Point id="104">2.076280432019506,-1.110223024625157e-15</Point>
+		</Line>
+		<Line>
+			<Point reference="104" />
+			<Point id="105">2.333333333333333,0.5773502691896248</Point>
+		</Line>
+		<Line>
+			<Point reference="105" />
+			<Point id="106">2.091219689875506,0.6027974385326462</Point>
+		</Line>
+		<Line>
+			<Point reference="106" />
+			<Point id="107">1.500000000000001,0.8660254037844383</Point>
+		</Line>
+		<Line>
+			<Point reference="107" />
+			<Point id="108">1.442789675985369,0.3217055305650847</Point>
+		</Line>
+		<Line>
+			<Point reference="108" />
+			<Point reference="99" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Feature>
+	<Desc />
+	<Auth />
+</Tiling>

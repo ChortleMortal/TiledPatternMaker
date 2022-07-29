@@ -1,31 +1,8 @@
-/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #include <QPainter>
 #include "viewers/shape_view.h"
+#include "viewers/viewcontrol.h"
 #include "settings/configuration.h"
-#include "designs/shapes.h"
+#include "legacy/shapes.h"
 
 ShapeViewer::ShapeViewer() : Layer("ShapeViewer")
 {
@@ -36,7 +13,7 @@ ShapeViewer::ShapeViewer() : Layer("ShapeViewer")
 
 void ShapeViewer::paint(QPainter *painter)
 {
-    qDebug() << "ShapeViewer::paint" << this;
+    //qDebug() << "ShapeViewer::paint" << this;
 
     painter->save();
     painter->translate(getLoc());
@@ -44,11 +21,8 @@ void ShapeViewer::paint(QPainter *painter)
     painter->rotate(rot);
 
     // polyforms
-    QVector<Polyform*>::iterator it;
-    Polyform * p;
-    for (it = polyforms.begin(); it < polyforms.end(); it++)
+    for (auto p : polyforms)
     {
-        p = *it;
         if (p->polytype == POLYGON2)
         {
             // turn off aliasing for polygons and polylines
@@ -56,7 +30,6 @@ void ShapeViewer::paint(QPainter *painter)
             painter->setRenderHint(QPainter::SmoothPixmapTransform,_antiAliasPolys);
 
             // the fill
-
             QPainterPath pp;
             pp.addPolygon(*p);
             painter->fillPath(pp,p->brush);
@@ -135,14 +108,12 @@ void ShapeViewer::paint(QPainter *painter)
                 painter->drawLine( - p->radius, 0.0, p->radius, 0.0);
                 painter->drawLine(0.0,- p->radius, 0.0, p->radius);
             }
-
         }
     }
 
     // inner pen
-    for (it = polyforms.begin(); it < polyforms.end(); it++)
+    for (auto p : polyforms)
     {
-        p = *it;
         painter->setPen(p->innerPen);
         if (p->polytype == POLYGON2)
         {
@@ -153,7 +124,6 @@ void ShapeViewer::paint(QPainter *painter)
             painter->drawPolyline(*p);
         }
     }
-
 
     // painter path
     if (!ppath.isEmpty())
@@ -169,28 +139,3 @@ void ShapeViewer::paint(QPainter *painter)
 
     painter->restore();
 }
-
-void ShapeViewer::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
-{ Q_UNUSED(spt); Q_UNUSED(btn);}
-void ShapeViewer::slot_mouseDragged(QPointF spt)
-{ Q_UNUSED(spt)}
-void ShapeViewer::slot_mouseTranslate(QPointF pt)
-{ Q_UNUSED(pt)}
-void ShapeViewer::slot_mouseMoved(QPointF spt)
-{ Q_UNUSED(spt)}
-void ShapeViewer::slot_mouseReleased(QPointF spt)
-{ Q_UNUSED(spt)}
-void ShapeViewer::slot_mouseDoublePressed(QPointF spt)
-{ Q_UNUSED(spt)}
-void ShapeViewer::slot_wheel_scale(qreal delta)
-{ Q_UNUSED(delta);}
-void ShapeViewer::slot_wheel_rotate(qreal delta)
-{ Q_UNUSED(delta);}
-void ShapeViewer::slot_scale(int amount)
-{ Q_UNUSED(amount);}
-void ShapeViewer::slot_rotate(int amount)
-{ Q_UNUSED(amount);}
-void ShapeViewer:: slot_moveX(int amount)
-{ Q_UNUSED(amount);}
-void ShapeViewer::slot_moveY(int amount)
-{ Q_UNUSED(amount);}

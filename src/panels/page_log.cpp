@@ -1,32 +1,14 @@
-﻿/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
+﻿#include <QCheckBox>
+#include <QTextEdit>
+#include <QDebug>
+#include <QDateTime>
+#include <QFileDialog>
 
 #include "panels/page_log.h"
-#include "panels/dlg_textedit.h"
-#include "base/qtapplog.h"
+#include "panels/panel.h"
+#include "widgets/dlg_textedit.h"
+#include "misc/qtapplog.h"
 #include "settings/configuration.h"
-
 
 page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel, "Log")
 {
@@ -36,26 +18,33 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel, "Log")
     follow->setChecked(true);
     hbox->addWidget(follow);
 
-    QPushButton * btnCopyLog            = new QPushButton("Save Log");
+    QPushButton * btnSaveLog            = new QPushButton("Save Log");
     QPushButton * btnViewLog            = new QPushButton("View Saved");
     QCheckBox   * cbLogToStderr         = new QCheckBox("Log To stderr");
     QCheckBox   * cbLogToDisk           = new QCheckBox("Log To Disk");
     QCheckBox   * cbLogToPanel          = new QCheckBox("Log To Panel");
-    QCheckBox   * cbLogWarningsOnly     = new QCheckBox("Warnings Only");
+    QCheckBox   * cbLogDebug            = new QCheckBox("Log Debug");
     QCheckBox   * cbLogNumberLines      = new QCheckBox("Number Lines");
                   cbLogElapsedTime      = new QCheckBox("Elapsed Time");
                   cbLogIntervalTime     = new QCheckBox("Interval Time");
+    QPushButton * sizePlus              = new QPushButton("+");
+    QPushButton * sizeMinus             = new QPushButton("-");
 
-    hbox->addWidget(btnCopyLog);
+    sizePlus->setMaximumWidth(21);
+    sizeMinus->setMaximumWidth(21);
+
+    hbox->addWidget(btnSaveLog);
     hbox->addWidget(btnViewLog);
     hbox->addWidget(cbLogToDisk);
     hbox->addWidget(cbLogToStderr);
     hbox->addWidget(cbLogToPanel);
     hbox->addStretch();
-    hbox->addWidget(cbLogWarningsOnly);
+    hbox->addWidget(cbLogDebug);
     hbox->addWidget(cbLogNumberLines);
     hbox->addWidget(cbLogIntervalTime);
     hbox->addWidget(cbLogElapsedTime);
+    hbox->addWidget(sizePlus);
+    hbox->addWidget(sizeMinus);
 
     vbox->addLayout(hbox);
 
@@ -63,7 +52,7 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel, "Log")
     cbLogToDisk->setChecked(config->logToDisk);
     cbLogToPanel->setChecked(config->logToPanel);
     cbLogNumberLines->setChecked(config->logNumberLines);
-    cbLogWarningsOnly->setChecked(config->logWarningsOnly);
+    cbLogDebug->setChecked(config->logDebug);
 
     switch (config->logTime)
     {
@@ -84,12 +73,14 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel, "Log")
     connect(cbLogToStderr,    &QCheckBox::clicked,    this,   &page_log::slot_logToStdErr);
     connect(cbLogToDisk,      &QCheckBox::clicked,    this,   &page_log::slot_logToDisk);
     connect(cbLogToPanel,     &QCheckBox::clicked,    this,   &page_log::slot_logToPanel);
-    connect(cbLogWarningsOnly,&QCheckBox::clicked,    this,   &page_log::slot_warningsOnly);
+    connect(cbLogDebug,       &QCheckBox::clicked,    this,   &page_log::slot_logDebug);
     connect(cbLogNumberLines, &QCheckBox::clicked,    this,   &page_log::slot_numberLines);
     connect(cbLogElapsedTime, &QCheckBox::clicked,    this,   &page_log::slot_elapsedTime);
     connect(cbLogIntervalTime,&QCheckBox::clicked,    this,   &page_log::slot_intervalTime);
-    connect(btnCopyLog,       &QPushButton::clicked,  this,   &page_log::slot_copyLog);
+    connect(btnSaveLog,       &QPushButton::clicked,  this,   &page_log::slot_copyLog);
     connect(btnViewLog,       &QPushButton::clicked,  this,   &page_log::slot_viewLog);
+    connect(sizePlus,         &QPushButton::clicked,  this,   &page_log::slot_sizePlus);
+    connect(sizeMinus,        &QPushButton::clicked,  this,   &page_log::slot_sizeMinus);
 
     ed = qtAppLog::getTextEditor();     // linkage to qtAppLog
     ed->setMinimumWidth(800);
@@ -98,7 +89,7 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel, "Log")
     ed->setReadOnly(true);
 
     const QFont font = ed->font();
-    qInfo().noquote() << "log :" << font.toString();
+    qInfo().noquote() << "Log font:" << font.toString();
 
     vbox->addWidget(ed);
 
@@ -114,10 +105,10 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel, "Log")
 
 void page_log::onEnter()
 {
-    refreshPage();
+    onRefresh();
 }
 
-void page_log::refreshPage()
+void page_log::onRefresh()
 {
     if (!follow->isChecked())
     {
@@ -135,8 +126,25 @@ void page_log::slot_actionTriggered()
 
 void page_log::slot_copyLog()
 {
-    QString name = config->currentlyLoadedXML;
-    Q_ASSERT(!name.contains(".xml"));
+    QString cdt    = QDateTime::currentDateTime().toString("yy.MM.dd-hh.mm.ss");
+    QString host   = QSysInfo::machineHostName();
+    QString branch = panel->gitBranch;
+    QString mosaic = config->currentlyLoadedXML;
+    Q_ASSERT(!mosaic.contains(".xml"));
+    QString name   = cdt + "-" + host;
+    if (!branch.isEmpty())
+    {
+        name += "-" + branch;
+    }
+    if (!mosaic.isEmpty())
+    {
+        name += "-" + mosaic;
+    }
+#ifdef QT_DEBUG
+    name += "-DEB";
+#else
+    name += "-REL";
+#endif
 
     QString path      = qtAppLog::getInstance()->logDir();
     QString nameList  = "TXT (*.txt)";
@@ -213,11 +221,11 @@ void page_log::slot_logToPanel(bool enable)
     }
 }
 
-void page_log::slot_warningsOnly(bool enable)
+void page_log::slot_logDebug(bool enable)
 {
     qtAppLog * log = qtAppLog::getInstance();
-    log->logWarningsOnly(enable);
-    config->logWarningsOnly = enable;
+    log->logDebug(enable);
+    config->logDebug = enable;
 }
 
 void page_log::slot_numberLines(bool enable)
@@ -261,6 +269,22 @@ void page_log::slot_intervalTime(bool enable)
         log->logTimer(LOGT_NONE);
         config->logTime = LOGT_NONE;
     }
+}
+
+void page_log::slot_sizePlus()
+{
+    QFont font = ed->font();
+    int size   = font.pointSize();
+    font.setPointSize(++size);
+    ed->setFont(font);
+}
+
+void page_log::slot_sizeMinus()
+{
+    QFont font = ed->font();
+    int size   = font.pointSize();
+    font.setPointSize(--size);
+    ed->setFont(font);
 }
 
 AQScrollBar::AQScrollBar(page_log * plog)

@@ -1,30 +1,5 @@
-﻿/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-#include "settings/frame_settings.h"
-#include "geometry/transform.h"
-#include "base/shared.h"
+﻿#include "settings/frame_settings.h"
+#include "misc/defaults.h"
 #include "settings/configuration.h"
 
 FrameData::FrameData()
@@ -122,7 +97,7 @@ void FrameData::calculateTransform()
     QTransform second = QTransform().scale(scalex,scalex);
     QTransform third  = QTransform().translate(0.0,((w -h)/2.0));
     transform         = first * second * third;
-    qDebug() << Transform::toInfoString(transform);
+    //qDebug().noquote() << Transform::toInfoString(transform);
 }
 
 ///////////////////////////////////////////////////
@@ -141,6 +116,8 @@ FrameSettings::FrameSettings()
     add(VIEW_MOTIF_MAKER,       Bounds(-10.0,10.0,20.0), QSize(DEFAULT_WIDTH,DEFAULT_HEIGHT));
     add(VIEW_TILING,            Bounds(-10.0,10.0,20.0), QSize(DEFAULT_WIDTH,DEFAULT_HEIGHT));
     add(VIEW_TILING_MAKER,      Bounds(-10.0,10.0,20.0), QSize(DEFAULT_WIDTH,DEFAULT_HEIGHT));
+    add(VIEW_BORDER,            Bounds(-10.0,10.0,20.0), QSize(DEFAULT_WIDTH,DEFAULT_HEIGHT));
+    add(VIEW_CROP,              Bounds(-10.0,10.0,20.0), QSize(DEFAULT_WIDTH,DEFAULT_HEIGHT));
     add(VIEW_MAP_EDITOR,        Bounds(-10.0,10.0,20.0), QSize(DEFAULT_WIDTH,DEFAULT_HEIGHT));
     add(VIEW_BKGD_IMG,          Bounds(-10.0,10.0,20.0), QSize(DEFAULT_WIDTH,DEFAULT_HEIGHT));
     add(VIEW_GRID,              Bounds(-10.0,10.0,20.0), QSize(DEFAULT_WIDTH,DEFAULT_HEIGHT));
@@ -159,6 +136,8 @@ void  FrameSettings::reInit()
     reInit(VIEW_MOTIF_MAKER);
     reInit(VIEW_TILING);
     reInit(VIEW_TILING_MAKER);
+    reInit(VIEW_BORDER);
+    reInit(VIEW_CROP);
     reInit(VIEW_MAP_EDITOR);
     reInit(VIEW_BKGD_IMG);
     reInit(VIEW_GRID);
@@ -171,6 +150,8 @@ void  FrameSettings::initialiseCommon(QSize cropSize, QSize  zoomSize)
     initialise(VIEW_PROTOTYPE,cropSize,zoomSize);
     initialise(VIEW_TILING,cropSize,zoomSize);
     initialise(VIEW_TILING_MAKER,cropSize,zoomSize);
+    initialise(VIEW_BORDER,cropSize,zoomSize);
+    initialise(VIEW_CROP,cropSize,zoomSize);
     initialise(VIEW_MAP_EDITOR,cropSize,zoomSize);
     initialise(VIEW_BKGD_IMG,cropSize,zoomSize);
     initialise(VIEW_GRID,cropSize,zoomSize);
@@ -183,6 +164,8 @@ void  FrameSettings::setCommonDeltaSizes(QSize sz)
     setDeltaSize(VIEW_PROTOTYPE,sz);
     setDeltaSize(VIEW_TILING,sz);
     setDeltaSize(VIEW_TILING_MAKER,sz);
+    setDeltaSize(VIEW_BORDER,sz);
+    setDeltaSize(VIEW_CROP,sz);
     setDeltaSize(VIEW_MAP_EDITOR,sz);
     setDeltaSize(VIEW_BKGD_IMG,sz);
     setDeltaSize(VIEW_GRID,sz);
@@ -195,7 +178,7 @@ void  FrameSettings::reInit(eViewType evt)
 
 void FrameSettings::initialise(eViewType e, QSize cropSize, QSize zoomSize)
 {
-    qDebug().noquote() << "FrameSettings::initialise()" << sViewerType[e] << cropSize << zoomSize;
+    //qDebug().noquote() << "FrameSettings::initialise()" << sViewerType[e] << cropSize << zoomSize;
     settings[e]->setCropSize(cropSize);
     settings[e]->setZoomSize(zoomSize);
     settings[e]->calculateBaseInv();
@@ -216,14 +199,14 @@ void  FrameSettings::setDeltaSize(eViewType e, QSize sz)
 QSize FrameSettings::getCropSize(eViewType e)
 {
     QSize sz =  settings[e]->getCropSize();
-    qDebug().noquote() << "FrameSettings::getCropSize()" << sViewerType[e] << sz;
+    //qDebug().noquote() << "FrameSettings::getCropSize()" << sViewerType[e] << sz;
     return sz;
 }
 
 QSize FrameSettings::getZoomSize(eViewType e)
 {
     QSize sz =  settings[e]->getZoomSize();
-    qDebug().noquote() << "FrameSettings::getZoomSize()" << sViewerType[e] << sz;
+    //qDebug().noquote() << "FrameSettings::getZoomSize()" << sViewerType[e] << sz;
     return sz;
 }
 

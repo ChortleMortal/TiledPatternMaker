@@ -1,14 +1,18 @@
 <?xml version="1.0"?>
-<vector id="1" version="5">
+<vector id="1" version="12">
+	<!-- Written:  Mon Jan 3 2022 14:37:47 -->
 	<designNotes>Colored Girih kitrd</designNotes>
 	<design>
 		<size>
 			<width>1500</width>
 			<height>1100</height>
+			<zwidth>1500</zwidth>
+			<zheight>1100</zheight>
 		</size>
 		<background>
 			<color>#ffffffff</color>
 		</background>
+		<Fill singleton="f">-3,3,-6,6</Fill>
 	</design>
 	<style.Filled id="2" serialization="custom">
 		<toolkit.GeoLayer>
@@ -17,62 +21,45 @@
 			<width__delta>1</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>0,-1.77635683940025e-15</center>
+			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<boundary id="3">
-				<pts id="4">
-					<Point id="5">
-						<x>-10</x>
-						<y>-10</y>
-					</Point>
-					<Point id="6">
-						<x>-10</x>
-						<y>10</y>
-					</Point>
-					<Point id="7">
-						<x>10</x>
-						<y>10</y>
-					</Point>
-					<Point id="8">
-						<x>10</x>
-						<y>-10</y>
-					</Point>
-				</pts>
-			</boundary>
-			<prototype id="9" serialization="custom">
+			<prototype id="3" serialization="custom">
 				<app.Prototype>
 					<string>Alhambra - Golden Room</string>
 					<entry>
-						<tile.Feature id="10">
+						<tile.Feature id="4">
 							<regular>false</regular>
-							<edges id="11">
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
 								<Line>
-									<Point id="12">2.618033988749895,0.8506508083520394</Point>
-									<Point id="13">2.236067977499789,0.3249196962329056</Point>
+									<Point id="6">2.618033988749895,0.8506508083520394</Point>
+									<Point id="7">2.236067977499789,0.3249196962329056</Point>
 								</Line>
 								<Line>
-									<Point reference="13" />
-									<Point id="14">2.236067977499789,-0.3249196962329066</Point>
+									<Point reference="7" />
+									<Point id="8">2.236067977499789,-0.3249196962329066</Point>
 								</Line>
 								<Line>
-									<Point reference="14" />
-									<Point id="15">2.618033988749894,-0.8506508083520405</Point>
+									<Point reference="8" />
+									<Point id="9">2.618033988749894,-0.8506508083520405</Point>
 								</Line>
 								<Line>
-									<Point reference="15" />
-									<Point id="16">3,-0.3249196962329066</Point>
+									<Point reference="9" />
+									<Point id="10">3,-0.3249196962329066</Point>
 								</Line>
 								<Line>
-									<Point reference="16" />
-									<Point id="17">3,0.3249196962329055</Point>
+									<Point reference="10" />
+									<Point id="11">3,0.3249196962329055</Point>
 								</Line>
 								<Line>
-									<Point reference="17" />
-									<Point reference="12" />
+									<Point reference="11" />
+									<Point reference="6" />
 								</Line>
 							</edges>
 						</tile.Feature>
-						<app.ExplicitFeature id="18" type="FIG_TYPE_EXPLICIT_FEATURE">
+						<app.ExplicitFeature id="12" type="FIG_TYPE_EXPLICIT_FEATURE">
 							<boundarySides>1</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
@@ -83,9 +70,12 @@
 			</prototype>
 		</style.Style>
 		<ColorBlacks>
-			<color hide="f">#ffa35807</color>
 			<color hide="f">#ff34554a</color>
+			<color hide="f">#ffa35807</color>
 		</ColorBlacks>
+		<ColorGroup>
+			<Group hideSet="f" />
+		</ColorGroup>
 		<style.Filled>
 			<draw__inside>true</draw__inside>
 			<draw__outside>false</draw__outside>

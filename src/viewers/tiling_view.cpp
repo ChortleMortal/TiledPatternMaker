@@ -1,28 +1,4 @@
-﻿/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //
 // TilingViewer.java
 //
@@ -37,14 +13,14 @@
 // 		java tile.TilingViewer
 
 #include "viewers/tiling_view.h"
+#include "misc/geo_graphics.h"
 #include "geometry/edge.h"
-#include "geometry/vertex.h"
-#include "tile/tiling.h"
-#include "tile/placed_feature.h"
+#include "geometry/fill_region.h"
 #include "geometry/transform.h"
-#include "viewers/view.h"
-#include "base/geo_graphics.h"
-#include "settings/configuration.h"
+#include "geometry/vertex.h"
+#include "tile/placed_feature.h"
+#include "tile/tiling.h"
+#include "viewers/viewcontrol.h"
 
 TilingViewPtr TilingView::spThis;
 
@@ -57,7 +33,7 @@ TilingViewPtr TilingView::getSharedInstance()
     return spThis;
 }
 
-TilingView::TilingView() : Layer("TilingView")
+TilingView::TilingView() : LayerController("TilingView")
 {
 }
 
@@ -70,42 +46,34 @@ void TilingView::paint(QPainter *painter)
     }
     qDebug() << "TilingView::paint";
 
-    painter->setRenderHint(QPainter::Antialiasing ,true);
-    painter->setRenderHint(QPainter::SmoothPixmapTransform,true);
+    painter->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
     layerPen = QPen(Qt::red,3);
 
     QTransform tr = getLayerTransform();
+    //qDebug().noquote() << "Tiling View" << Transform::toInfoString(tr);
     GeoGraphics gg(painter,tr);
     draw(&gg);  // DAC - draw goes to receive which goes to draw placed feature
-                // DAC - receive is really '2draw one tile'
+                // DAC - receive is really '2d draw one tile'
 
    drawCenter(painter);
 }
 
-void TilingView::draw(GeoGraphics *g2d )
+void TilingView::draw(GeoGraphics *gg)
 {
-    fill(g2d);
-}
-
-// The FillRegion algorithm relies on a callback to send information
-// about which translational units to draw.  Here, we get T1 and T2,
-// build a transform and draw the PlacedFeatures in the translational
-// unit at that location.
-void TilingView::receive(GeoGraphics * gg, int h, int v )
-{
-    //qDebug() << "fill TilingView::receive:"  << h << v;
-    QPointF   pt = (tiling->getTrans1() * static_cast<qreal>(h)) + (tiling->getTrans2() * static_cast<qreal>(v));
-    QTransform T = QTransform::fromTranslate(pt.x(),pt.y());
-
-    gg->pushAndCompose(T);
-
-    for (auto it = tiling->getPlacedFeatures().begin(); it != tiling->getPlacedFeatures().end(); it++)
+    FillRegion flood(tiling,tiling->getSettings().getFillData());
+    QVector<QTransform> transforms = flood.getTransforms();
+    for (auto T : transforms)
     {
-        PlacedFeaturePtr pf = *it;
-        drawPlacedFeature(gg, pf);
-    }
+        gg->pushAndCompose(T);
 
-    gg->pop();
+        for (auto it = tiling->getPlacedFeatures().begin(); it != tiling->getPlacedFeatures().end(); it++)
+        {
+            PlacedFeaturePtr pf = *it;
+            drawPlacedFeature(gg, pf);
+        }
+
+        gg->pop();
+    }
 }
 
 void TilingView::drawPlacedFeature(GeoGraphics * g2d, PlacedFeaturePtr pf)
@@ -124,29 +92,27 @@ void TilingView::drawPlacedFeature(GeoGraphics * g2d, PlacedFeaturePtr pf)
         }
         else if (edge->getType() == EDGETYPE_CURVE)
         {
-            g2d->drawChord(edge->v1->pt,edge->v2->pt,edge->getArcCenter(),layerPen,QBrush(),edge->isConvex());
+            g2d->drawArc(edge->v1->pt,edge->v2->pt,edge->getArcCenter(),edge->isConvex(),layerPen);
+        }
+        else if (edge->getType() == EDGETYPE_CHORD)
+        {
+            g2d->drawChord(edge->v1->pt,edge->v2->pt,edge->getArcCenter(),edge->isConvex(),layerPen);
         }
     }
 }
 
 void TilingView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
-{
-    if (view->getMouseMode() == MOUSE_MODE_CENTER && btn == Qt::LeftButton)
-    {
-        setCenterScreenUnits(spt);
-        forceLayerRecalc();
-        emit sig_refreshView();
-    }
-}
+{ Q_UNUSED(spt); Q_UNUSED(btn); }
 
 void TilingView::slot_mouseDragged(QPointF spt)
 { Q_UNUSED(spt); }
 
 void TilingView::slot_mouseTranslate(QPointF spt)
 {
-    switch (Layer::config->kbdMode)
+    if (!view->isActiveLayer(this)) return;
+
+    if (view->getKbdMode(KBD_MODE_XFORM_TILING))
     {
-    case KBD_MODE_XFORM_TILING:
         if (tiling)
         {
             QTransform T = getFrameTransform();
@@ -160,25 +126,23 @@ void TilingView::slot_mouseTranslate(QPointF spt)
                 pfp->setTransform(t);
             }
         }
-       break;
-
-    case KBD_MODE_XFORM_VIEW:
-        xf_canvas.setTranslateX(xf_canvas.getTranslateX() + spt.x());
-        xf_canvas.setTranslateY(xf_canvas.getTranslateY() + spt.y());
-        forceLayerRecalc();
-        break;
-
-    case KBD_MODE_XFORM_SELECTED:
+    }
+    else if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
+    {
+        Xform xf = getCanvasXform();
+        xf.setTranslateX(xf.getTranslateX() + spt.x());
+        xf.setTranslateY(xf.getTranslateY() + spt.y());
+        setCanvasXform(xf);
+    }
+    else if (view->getKbdMode(KBD_MODE_XFORM_SELECTED))
+    {
         if (isSelected())
         {
-            xf_canvas.setTranslateX(xf_canvas.getTranslateX() + spt.x());
-            xf_canvas.setTranslateY(xf_canvas.getTranslateY() + spt.y());
-            forceLayerRecalc();
+            Xform xf = getCanvasXform();
+            xf.setTranslateX(xf.getTranslateX() + spt.x());
+            xf.setTranslateY(xf.getTranslateY() + spt.y());
+            setCanvasXform(xf);
         }
-        break;
-
-    default:
-        break;
     }
 }
 
@@ -191,9 +155,10 @@ void TilingView::slot_mouseDoublePressed(QPointF spt)
 
 void TilingView::slot_wheel_scale(qreal delta)
 {
-    switch (Layer::config->kbdMode)
+    if (!view->isActiveLayer(this)) return;
+
+    if (view->getKbdMode(KBD_MODE_XFORM_TILING))
     {
-    case KBD_MODE_XFORM_TILING:
         if (tiling)
         {
             qreal sc = 1.0 + delta;
@@ -206,40 +171,29 @@ void TilingView::slot_wheel_scale(qreal delta)
                 pfp->setTransform(t);
             }
         }
-        break;
-
-    case KBD_MODE_XFORM_VIEW:
-        xf_canvas.setScale(xf_canvas.getScale() + delta);
-        forceLayerRecalc();
-        break;
-
-    case KBD_MODE_XFORM_SELECTED:
-        if (isSelected())
-        {
-            xf_canvas.setScale(xf_canvas.getScale() + delta);
-            forceLayerRecalc();
-        }
-        break;
-
-    default:
-        break;
+    }
+    else if (view->getKbdMode(KBD_MODE_XFORM_VIEW) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
+    {
+        Xform xf = getCanvasXform();
+        xf.setScale(xf.getScale() * (1.0 + delta));
+        setCanvasXform(xf);
     }
 }
 
 void TilingView::slot_wheel_rotate(qreal delta)
 {
-    switch (Layer::config->kbdMode)
+    if (!view->isActiveLayer(this)) return;
+
+    if (view->getKbdMode(KBD_MODE_XFORM_TILING))
     {
-    case KBD_MODE_XFORM_TILING:
         if (tiling)
         {
             QTransform tr;
             tr.rotate(delta);
             Xform xf(tr);
-            xf.setCenter(getCenterModelUnits());
+            xf.setModelCenter(getCenterModelUnits());
             QTransform tr2 = xf.toQTransform(QTransform());
-            qDebug() << Transform::toInfoString(tr);
-            qDebug() << Transform::toInfoString(tr2);
+
             for (auto pfp : qAsConst(tiling->getPlacedFeatures()))
             {
                 QTransform t = pfp->getTransform();
@@ -247,31 +201,21 @@ void TilingView::slot_wheel_rotate(qreal delta)
                 pfp->setTransform(t);
             }
         }
-        break;
-
-    case KBD_MODE_XFORM_VIEW:
-        xf_canvas.setRotateDegrees(xf_canvas.getRotateDegrees() + delta);
-        forceLayerRecalc();
-        break;
-
-    case KBD_MODE_XFORM_SELECTED:
-        if (isSelected())
-        {
-            xf_canvas.setRotateDegrees(xf_canvas.getRotateDegrees() + delta);
-            forceLayerRecalc();
-        }
-        break;
-
-    default:
-        break;
+    }
+    else if (view->getKbdMode(KBD_MODE_XFORM_VIEW) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
+    {
+        Xform xf = getCanvasXform();
+        xf.setRotateDegrees(xf.getRotateDegrees() + delta);
+        setCanvasXform(xf);
     }
 }
 
 void TilingView::slot_scale(int amount)
 {
-    switch (Layer::config->kbdMode)
+    if (!view->isActiveLayer(this)) return;
+
+    if (view->getKbdMode(KBD_MODE_XFORM_TILING))
     {
-    case KBD_MODE_XFORM_TILING:
         if (tiling)
         {
             qreal scale = 1.0 + (0.01 * amount);
@@ -293,32 +237,22 @@ void TilingView::slot_scale(int amount)
                 pfp->setTransform(t);
             }
         }
-        break;
-
-    case KBD_MODE_XFORM_VIEW:
-        xf_canvas.setScale(xf_canvas.getScale() + static_cast<qreal>(amount)/100.0);
-        forceLayerRecalc();
-        break;
-
-    case KBD_MODE_XFORM_SELECTED:
-        if (isSelected())
-        {
-            xf_canvas.setScale(xf_canvas.getScale() + static_cast<qreal>(amount)/100.0);
-            forceLayerRecalc();
-        }
-        break;
-
-    default:
-        break;
+    }
+    else if (view->getKbdMode(KBD_MODE_XFORM_VIEW) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
+    {
+        Xform xf = getCanvasXform();
+        xf.setScale(xf.getScale() * (1 + static_cast<qreal>(amount)/100.0));
+        setCanvasXform(xf);
     }
 }
 
 void TilingView::slot_rotate(int amount)
 {
+    if (!view->isActiveLayer(this)) return;
+
     qDebug() << "TilingMaker::slot_rotate" << amount;
-    switch (Layer::config->kbdMode)
+    if (view->getKbdMode(KBD_MODE_XFORM_TILING))
     {
-    case KBD_MODE_XFORM_TILING:
         if (tiling)
         {
             qreal qdelta = 0.01 * amount;
@@ -329,31 +263,30 @@ void TilingView::slot_rotate(int amount)
                 pfp->setTransform(t);
             }
         }
-        break;
-
-    case KBD_MODE_XFORM_VIEW:
-        xf_canvas.setRotateRadians(xf_canvas.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
-        forceLayerRecalc();
-        break;
-
-    case KBD_MODE_XFORM_SELECTED:
+    }
+    else if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
+    {
+        Xform xf = getCanvasXform();
+        xf.setRotateRadians(xf.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
+        setCanvasXform(xf);
+    }
+    else if (view->getKbdMode(KBD_MODE_XFORM_SELECTED))
+    {
         if (isSelected())
         {
-            xf_canvas.setRotateRadians(xf_canvas.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
-            forceLayerRecalc();
+            Xform xf = getCanvasXform();
+            xf.setRotateRadians(xf.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
+            setCanvasXform(xf);
         }
-        break;
-
-    default:
-        break;
     }
 }
 
 void TilingView:: slot_moveX(int amount)
 {
-    switch (Layer::config->kbdMode)
+    if (!view->isActiveLayer(this)) return;
+
+    if (view->getKbdMode(KBD_MODE_XFORM_TILING))
     {
-    case  KBD_MODE_XFORM_TILING:
         if (tiling)
         {
             qreal qdelta = 0.01 * amount;
@@ -364,31 +297,30 @@ void TilingView:: slot_moveX(int amount)
                 pfp->setTransform(t);
             }
         }
-        break;
-
-    case KBD_MODE_XFORM_VIEW:
-        xf_canvas.setTranslateX(xf_canvas.getTranslateX() + amount);
-        forceLayerRecalc();
-        break;
-
-    case KBD_MODE_XFORM_SELECTED:
+    }
+    else if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
+    {
+        Xform xf = getCanvasXform();
+        xf.setTranslateX(xf.getTranslateX() + amount);
+        setCanvasXform(xf);
+    }
+    else if (view->getKbdMode(KBD_MODE_XFORM_SELECTED))
+    {
         if (isSelected())
         {
-            xf_canvas.setTranslateX(xf_canvas.getTranslateX() + amount);
-            forceLayerRecalc();
+            Xform xf = getCanvasXform();
+            xf.setTranslateX(xf.getTranslateX() + amount);
+            setCanvasXform(xf);
         }
-        break;
-
-    default:
-        break;
     }
 }
 
 void TilingView::slot_moveY(int amount)
 {
-    switch (Layer::config->kbdMode)
+    if (!view->isActiveLayer(this)) return;
+
+    if (view->getKbdMode(KBD_MODE_XFORM_TILING))
     {
-    case KBD_MODE_XFORM_TILING:
         if (tiling)
         {
             qreal qdelta = 0.01 * amount;
@@ -399,22 +331,20 @@ void TilingView::slot_moveY(int amount)
                 pfp->setTransform(t);
             }
         }
-        break;
-
-    case KBD_MODE_XFORM_VIEW:
-        xf_canvas.setTranslateY(xf_canvas.getTranslateY() + amount);
-        forceLayerRecalc();
-        break;
-
-    case KBD_MODE_XFORM_SELECTED:
+    }
+    else if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
+    {
+        Xform xf = getCanvasXform();
+        xf.setTranslateY(xf.getTranslateY() + amount);
+        setCanvasXform(xf);
+    }
+    else if (view->getKbdMode(KBD_MODE_XFORM_SELECTED))
+    {
         if (isSelected())
         {
-            xf_canvas.setTranslateY(xf_canvas.getTranslateY() + amount);
-            forceLayerRecalc();
+            Xform xf = getCanvasXform();
+            xf.setTranslateY(xf.getTranslateY() + amount);
+            setCanvasXform(xf);
         }
-        break;
-
-    default:
-        break;
     }
 }

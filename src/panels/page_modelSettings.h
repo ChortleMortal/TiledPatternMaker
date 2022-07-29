@@ -1,31 +1,15 @@
-﻿/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-#ifndef PAGE_MODEL_SETTINGS_H
+﻿#ifndef PAGE_MODEL_SETTINGS_H
 #define PAGE_MODEL_SETTINGS_H
 
-#include "panels/panel_page.h"
+class QGroupBox;
+class QGridLayout;
+class QTreeWidgetItem;
+class QCheckBox;
+class QLabel;
+class QLineEdit;
+class QPushButton;
+
+#include "widgets/panel_page.h"
 #include "settings/model_settings.h"
 
 class AQSpinBox;
@@ -53,7 +37,7 @@ enum eSettingsGroup
 public:
     page_modelSettings(ControlPanel * apanel);
 
-    void refreshPage() override;
+    void onRefresh() override;
     void onEnter() override;
     void onExit() override {}
 
@@ -72,6 +56,11 @@ private slots:
     void slot_showFrameInfoChanged(bool checked);
     void slot_boundsChanged();
 
+    void singleton_changed_des(bool checked);
+    void singleton_changed_tile(bool checked);
+
+    void dummySetup();
+
 protected:
     QGroupBox * createTilingSettings();
     QGroupBox * createDesignSettings();
@@ -82,9 +71,12 @@ protected:
 
     ModelSettings & getMosaicOrDesignSettings();
 
+    void displayFillData(FillData *fd, eSettingsGroup group);
+
 private:
     void removeChildren(QTreeWidgetItem * parent);
 
+    QCheckBox       * chkSingle[NUM_SETTINGS];
     AQSpinBox       * xRepMin[NUM_SETTINGS];
     AQSpinBox       * xRepMax[NUM_SETTINGS];
     AQSpinBox       * yRepMin[NUM_SETTINGS];

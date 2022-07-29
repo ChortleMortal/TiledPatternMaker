@@ -1,31 +1,7 @@
-/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #include "style/emboss.h"
-#include <QPainter>
 #include "geometry/point.h"
-#include "base/geo_graphics.h"
+#include "geometry/transform.h"
+#include "misc/geo_graphics.h"
 
 using std::make_shared;
 
@@ -86,20 +62,28 @@ void Emboss::draw(GeoGraphics * gg)
         return;
     }
 
-    if (pts4.size() != 0)
+    for (auto bae : pts4)
     {
-        for( int idx = 0; idx < pts4.size(); idx++)
-        {
-            BelowAndAboveEdge bae = pts4[idx];
-            QPolygonF poly        = bae.getPoly();
-            drawTrap(gg, bae.v2.v, bae.v2.above, bae.v1.below, bae.v1.v);
-            drawTrap(gg, bae.v1.v, bae.v1.above, bae.v2.below, bae.v2.v);
+        QPolygonF poly        = bae.getPoly();
+        drawTrap(gg, bae.v2.v, bae.v2.above, bae.v1.below, bae.v1.v);
+        drawTrap(gg, bae.v1.v, bae.v1.above, bae.v2.below, bae.v2.v);
 
-            if ( draw_outline )
+        if (drawOutline != OUTLINE_NONE)
+        {
+            QPen pen;
+            if (drawOutline == OUTLINE_SET)
             {
-                gg->drawPolygon(poly,Qt::black,1);
-                gg->drawLine(bae.v2.v, bae.v1.v,QPen(Qt::black));
+                pen = QPen(outline_color,Transform::scalex(gg->getTransform() * outline_width * 0.5));
             }
+            else
+            {
+                pen = QPen(Qt::black,1);
+            }
+            pen.setJoinStyle(join_style);
+            pen.setCapStyle(cap_style);
+
+            gg->drawPolygon(poly,pen);
+            gg->drawLine(bae.v2.v, bae.v1.v,pen);
         }
     }
 }
@@ -135,7 +119,6 @@ void Emboss::setAngle(qreal angle )
     this->angle = angle;
     light_x = qCos( angle );
     light_y = qSin( angle );
-    //redraw();
 }
 
 void Emboss::setColorSet(ColorSet & cset)

@@ -1,28 +1,3 @@
-/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
-////////////////////////////////////////////////////////////////////////////
-
 ////////////////////////////////////////////////////////////////////////////
 //
 // DesignerPanel.java
@@ -40,11 +15,15 @@
 #include "enums/etilingmakermousemode.h"
 #include "enums/estatemachineevent.h"
 
+class QKeyEvent;
+
 typedef std::shared_ptr<class Tiling>           TilingPtr;
 typedef std::shared_ptr<class Prototype>        PrototypePtr;
-typedef std::shared_ptr<class MapEditor>        MapEditorPtr;
 typedef std::shared_ptr<class TilingMaker>      TilingMakerPtr;
 typedef std::shared_ptr<class TilingMouseAction>MouseActionPtr;
+typedef std::shared_ptr<class Feature>          FeaturePtr;
+
+#define E2STR(x) #x
 
 enum eTMState
 {
@@ -76,6 +55,7 @@ public:
     void        select(PrototypePtr prototype);
     TilingPtr   getSelected() { return selectedTiling; }
     int         numTilings() { return tilings.size(); }
+    int         numExcluded() { return  allPlacedFeatures.count() - in_tiling.count(); }
 
     void        eraseTilings();
     void        removeTiling(TilingPtr tp);
@@ -92,7 +72,12 @@ public:
     void        updateVectors();
     void        updateReps();
 
-    TilingSelectorPtr getCurrentSelection() { return featureSelector; }
+    void        addInTiling(PlacedFeaturePtr pf);
+    void        addInTilings(QVector<PlacedFeaturePtr> & pfs);
+    void        removeFromInTiling(PlacedFeaturePtr pf);
+
+    QVector<FeaturePtr> getUniqueFeatures();
+    TilingSelectorPtr   getCurrentSelection() { return featureSelector; }
 
     bool        verifyTiling();
     void        deleteFeature(PlacedFeaturePtr pf);
@@ -107,6 +92,7 @@ public:
 
     // Feature management.
     void        addNewPlacedFeature(PlacedFeaturePtr pf);
+    void        addNewPlacedFeatures(QVector<PlacedFeaturePtr> & pfs);
     void        deleteFeature(TilingSelectorPtr sel);
     TilingSelectorPtr addFeatureSelectionPointer(TilingSelectorPtr sel );
     void        addToTranslate(QLineF mLine);
@@ -116,31 +102,34 @@ public:
     bool        procKeyEvent(QKeyEvent * k);
 
     void        clearConstructionLines() { constructionLines.clear(); }
+
+    virtual void iamaLayer() override {}
+    virtual void iamaLayerController() override {}
+
 signals:
-    void sig_buildMenu();
-    void sig_refreshMenu();
-    void sig_current_feature(int fIndex);
+    void        sig_buildMenu();
+    void        sig_refreshMenu();
+    void        sig_current_feature(int fIndex);
 
 public slots:
-    void updatePolygonSides(int number);
-    void updatePolygonRot(qreal angle);
-    void setTilingMakerMouseMode(eTilingMakerMouseMode mode);
-    void addRegularPolygon();
-    void fillUsingTranslations();
-    void removeExcluded();
-    void excludeAll();
-    void clearTranslationVectors();
-    void setFeatureEditPoint(QPointF pt);
-    void slot_showOverlaps(bool checked);
-    void slot_snapTo(bool checked);
+    void        updatePolygonSides(int number);
+    void        updatePolygonRot(qreal angle);
+    void        setTilingMakerMouseMode(eTilingMakerMouseMode mode);
+    void        addRegularPolygon();
+    void        fillUsingTranslations();
+    void        removeExcluded();
+    void        excludeAll();
+    void        clearTranslationVectors();
+    void        setFeatureEditPoint(QPointF pt);
 
-public slots:
     virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
     virtual void slot_mouseDragged(QPointF spt)       override;
     virtual void slot_mouseTranslate(QPointF pt)      override;
     virtual void slot_mouseMoved(QPointF spt)         override;
     virtual void slot_mouseReleased(QPointF spt)      override;
     virtual void slot_mouseDoublePressed(QPointF spt) override;
+
+    virtual void slot_setCenter(QPointF spt) override;
 
     virtual void slot_wheel_scale(qreal delta)  override;
     virtual void slot_wheel_rotate(qreal delta) override;
@@ -166,14 +155,9 @@ protected slots:
 protected:
     void setupMaker(TilingPtr tp);
 
-    void addInTiling(PlacedFeaturePtr pf);
-    void removeFromInTiling(PlacedFeaturePtr pf);
-
     void updateVisibleVectors();
     void createFillCopies();
     void refillUsingTranslations();
-
-    bool isTranslationInvalid();
 
     // state machine
     void     sm_resetAllAndAdd(TilingPtr tiling);
@@ -231,10 +215,9 @@ private:
     qreal                       poly_rotation;              // regular polygon feature rotation
     bool                        filled;                     // state - currently filled or not
 
-    class View                * view;
+    class ViewControl         * view;
     class MotifMaker          * motifMaker;
-    class DecorationMaker     * decorationMaker;
-    MapEditorPtr                maped;
+    class MapEditor           * maped;
 };
 
 #endif

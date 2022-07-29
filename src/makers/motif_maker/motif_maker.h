@@ -1,32 +1,9 @@
-﻿/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-#ifndef MOTIF_MAKER_H
+﻿#ifndef MOTIF_MAKER_H
 #define MOTIF_MAKER_H
 
-#include <QtWidgets>
-#include "base/misc.h"
+#include <QObject>
+#include <QFrame>
+#include "misc/unique_qvector.h"
 #include "enums/estatemachineevent.h"
 
 class page_motif_maker;
@@ -48,30 +25,33 @@ enum eMMState
 };
 
 
-class MotifMaker
+class MotifMaker : public QObject
 {
+    Q_OBJECT
+
 public:
     static MotifMaker * getInstance();
 
     void         init();
-    void         setCallback(page_motif_maker * menu) { this->menu = menu; }
+    void         unload();
 
-    void         takeDown(PrototypePtr prototype);
-    void         sm_take(TilingPtr tiling, eSM_Event event);
+    void         takeDown(const PrototypePtr & prototype);
+    void         sm_take(const TilingPtr & tiling, eSM_Event event);
 
     void         erasePrototypes();
     void         removePrototype(TilingPtr tiling);
 
     const QVector<PrototypePtr> & getPrototypes();
 
-    PrototypePtr findPrototypeByName(TilingPtr tiling);
+    PrototypePtr findPrototypeByName(const TilingPtr & tiling);
     PrototypePtr getSelectedPrototype();
-    void         setSelectedPrototype(PrototypePtr pp);
+    void         setSelectedPrototype(const PrototypePtr & pp);
     void         resetSelectedPrototype() { _selectedPrototype.reset(); _selectedDesignElement.reset(); }
 
-    DesignElementPtr getSelectedDesignElement() { return  _selectedDesignElement; }
-    void         setSelectedDesignElement(DesignElementPtr del) { _selectedDesignElement = del; }
-    void         resetSelectedDesignElement() { _selectedDesignElement.reset(); }
+    QVector<DesignElementPtr> getSelectedDesignElements() { return _selectedDesignElements; }
+
+    DesignElementPtr getSelectedDesignElement() { return _selectedDesignElement; }
+    void             setSelectedDesignElement(const DesignElementPtr & del);
 
     void         duplicateActiveFeature();
     void         deleteActiveFeature();
@@ -84,20 +64,25 @@ public:
     MapPtr createExplicitStarMap(qreal d, int s);
     MapPtr createExplicitFeatureMap();
 
-    void   setActiveFeature(FeaturePtr feature) { _activeFeature = feature; }
+    void   setActiveFeature(const FeaturePtr & feature) { _activeFeature = feature; }
     FeaturePtr getActiveFeature() { return _activeFeature; }
+
+signals:
+    void    sig_tilingChoicesChanged();
+    void    sig_tilingChanged();
+    void    sig_featureChanged();
 
 protected:
     eMMState sm_getState();
-    void     sm_eraseAllCreateAdd(TilingPtr tiling);
-    void     sm_eraseCurrentCreateAdd(TilingPtr tiling);
-    void     sm_createAdd(TilingPtr tiling);
-    void     sm_replaceTiling(PrototypePtr prototype, TilingPtr tiling);
+    void     sm_eraseAllCreateAdd(const TilingPtr & tiling);
+    void     sm_eraseCurrentCreateAdd(const TilingPtr & tiling);
+    void     sm_createAdd(const TilingPtr & tiling);
+    void     sm_replaceTiling(const PrototypePtr & prototype,const TilingPtr & tiling);
     void     sm_resetMaps();
 
-    PrototypePtr createPrototype(TilingPtr tiling);
-    void         recreatePrototype(TilingPtr tiling);
-    void         recreateFigures(TilingPtr tiling);
+    PrototypePtr createPrototype(const TilingPtr & tiling);
+    void         recreatePrototype(const TilingPtr & tiling);
+    void         recreateFigures(const TilingPtr & tiling);
     bool         askNewProto();
 
 private:
@@ -105,19 +90,19 @@ private:
 
     static MotifMaker * mpThis;
 
-    Configuration          * config;
+    class Configuration    * config;
     ViewControl            * vcontrol;
     TiledPatternMaker      * maker;
-    page_motif_maker       * menu;
     TilingMakerPtr           tilingMaker;
-    class DecorationMaker  * decorationMaker;
+    class MosaicMaker      * mosaicMaker;
+    MapPtr                   nullMap;
 
-    UniqueQVector<PrototypePtr> prototypes;
-    PrototypePtr        _selectedPrototype;
-    DesignElementPtr    _selectedDesignElement;
-    FeaturePtr          _activeFeature;
+    UniqueQVector<PrototypePtr>     _prototypes;
+    PrototypePtr                    _selectedPrototype;
+    UniqueQVector<DesignElementPtr> _selectedDesignElements;
+    DesignElementPtr                _selectedDesignElement;
+    FeaturePtr                      _activeFeature;
 
-    MapPtr              nullMap;
 };
 
 #endif

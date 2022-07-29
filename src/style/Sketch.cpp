@@ -1,32 +1,8 @@
-/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #include "style/sketch.h"
 #include "geometry/transform.h"
 #include <QPainter>
 #include <QtGlobal>
-#include "base/geo_graphics.h"
+#include "misc/geo_graphics.h"
 #include "geometry/map.h"
 #include "geometry/edge.h"
 #include "geometry/vertex.h"
@@ -111,7 +87,11 @@ void Sketch::draw(GeoGraphics * gg)
             }
             else if (edge->getType() == EDGETYPE_CURVE)
             {
-                edge2 = make_shared<Edge>(v1,v2, edge->getArcCenter(), edge->isConvex());
+                edge2 = make_shared<Edge>(v1,v2, edge->getArcCenter(), edge->isConvex(),false);
+            }
+            else if (edge->getType() == EDGETYPE_CHORD)
+            {
+                edge2 = make_shared<Edge>(v1,v2, edge->getArcCenter(), edge->isConvex(),true);
             }
             gg->drawEdge(edge2,pen);
         }

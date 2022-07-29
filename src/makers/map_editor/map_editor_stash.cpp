@@ -1,20 +1,20 @@
 #include "makers/map_editor/map_editor_stash.h"
-#include "makers/map_editor/map_editor.h"
-#include "base/fileservices.h"
+#include "makers/map_editor/map_editor_db.h"
+#include "misc/fileservices.h"
 #include "settings/configuration.h"
-
+#include "viewers/viewcontrol.h"
 #include <QTimer>
 
 #define STASH_VERSION 3
 
-MapEditorStash::MapEditorStash(MapEditor * me)
+MapEditorStash::MapEditorStash(MapEditorDb * db)
 {
-    editor  = me;
-    first   = -1;
-    last    = -1;
-    current = -1;
+    this->db = db;
+    first    = -1;
+    last     = -1;
+    current  = -1;
 
-    timer = nullptr;
+    timer    = nullptr;
 }
 
 bool MapEditorStash::stash()
@@ -51,9 +51,9 @@ bool MapEditorStash::writeStash(QString name)
     out << static_cast<qint64>(STASH_VERSION);
 
     // Write the data
-    out << editor->constructionLines;
+    out << db->constructionLines;
 
-    out << editor->constructionCircles;
+    out << db->constructionCircles;
 
     return true;
 }
@@ -84,7 +84,7 @@ bool MapEditorStash::animateReadStash(QString name)
 
 bool MapEditorStash::readStash(QString name)
 {
-    return readStashTo(name,editor->constructionLines, editor->constructionCircles);
+    return readStashTo(name,db->constructionLines, db->constructionCircles);
 }
 
 
@@ -127,13 +127,11 @@ bool MapEditorStash::readStashTo(QString name, QVector<QLineF>  & lines, QVector
 
     if (version == 2)
     {
-        QVector<Circle> tmp;
+        QVector<CirclePtr> tmp;
         in >> tmp;
-        for (auto it = tmp.begin(); it != tmp.end(); it++)
+        for (auto c : tmp)
         {
-            Circle c = *it;
-            CirclePtr p = std::make_shared<Circle>(c);
-            circs.push_back(p);
+            circs.push_back(c);
         }
     }
 
@@ -157,7 +155,7 @@ bool  MapEditorStash::initStash(QString stashname)
         afile.remove(nextName);
     }
 
-    QString designfile = FileServices::getDesignTemplateFile(stashname);
+    QString designfile = FileServices::getMosaicTemplateFile(stashname);
     if (designfile.isEmpty())
     {
         return false;
@@ -181,7 +179,7 @@ bool MapEditorStash::keepStash(QString stashname)
 
     QString currentName = getStashName(current);
 
-    QString designfile = FileServices::getDesignTemplateFile(stashname);
+    QString designfile = FileServices::getMosaicTemplateFile(stashname);
 
     QFile afile(designfile);
     if (afile.exists())
@@ -258,21 +256,21 @@ QString MapEditorStash::getStashName(int index)
 
 void MapEditorStash::slot_nextAnimationStep()
 {
+    ViewControl * view = ViewControl::getInstance();
+
     while (!localLines.isEmpty())
     {
         QLineF line = localLines.takeFirst();
-        editor->constructionLines.push_back(line);
-        editor->buildEditorDB();
-        editor->forceRedraw();
+        db->constructionLines.push_back(line);
+        view->update();
         return;
     }
 
     while (!localCircs.isEmpty())
     {
-        CirclePtr cp = localCircs.takeFirst();
-        editor->constructionCircles.push_back(cp);
-        editor->buildEditorDB();
-        editor->forceRedraw();
+        auto cp = localCircs.takeFirst();
+        db->constructionCircles.push_back(cp);
+        view->update();
         return;
     }
 

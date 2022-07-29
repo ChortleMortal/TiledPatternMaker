@@ -1,48 +1,62 @@
+#include <QPainter>
 #include "geometry/crop.h"
+#include "geometry/transform.h"
+#include "settings/configuration.h"
+#include "tile/feature.h"
+#include <QDebug>
 
-const QString sCropState[] = {
-    E2STR(CROP_NONE),
-    E2STR(CROP_CONSTRUCTING),
-    E2STR(CROP_PREPARED),
-    E2STR(CROP_BORDER_PREPARED),
-    E2STR(CROP_EDITING),
-    E2STR(CROP_DEFINED),
-    E2STR(CROP_BORDER_DEFINED),
-    E2STR(CROP_APPLIED),
-    E2STR(CROP_MASKED),
-    E2STR(CROP_COMPLETE)
-};
+/*
+    A crop is a an adjustable data structure which is used to perform
+    operations on a map.
+
+    The boundary of the crop can be embedded into a map
+    The boundary of the crop can be used to delete everything outside it
+
+    The crop can also draw itself
+*/
 
 Crop::Crop()
 {
-    state  = CROP_NONE;
-    aspect = ASPECT_UNCONSTRAINED;
-    aspectVertical = false;
+    _embed      = false;
+    _apply      = false;
+    _cropType   = CROP_UNDEFINED;
+    _aspect     = ASPECT_UNCONSTRAINED;
+    _vAspect    = false;
 }
 
-void Crop::reset()
+Crop::Crop(CropPtr other)
 {
-    rect    = QRectF() ;
-    state   = CROP_NONE;
-    aspect  = ASPECT_UNCONSTRAINED;
-    aspectVertical = false;
+    _embed      = false;
+    _apply      = false;
+    _cropType   = other->_cropType;
+    _aspect     = other->_aspect;
+    _vAspect    = other->_vAspect;
+
+    poly        = other->poly;
+    circle      = other->circle;
+    _rect       = other->_rect;
 }
 
-void Crop::setRect(QRectF & rect, eCropState cstate)
+void Crop::setRect(QRectF & rect)
 {
-    this->rect = rect.normalized();
-    state = cstate;
+    _cropType = CROP_RECTANGLE;
+    _rect = rect.normalized();
     adjust();
+}
+
+QRectF Crop::getRect()
+{
+    return _rect;
 }
 
 void Crop::adjust()
 {
-    if (state == CROP_NONE)
+    if (_cropType != CROP_RECTANGLE)
         return;
 
     qreal mult;
 
-    switch (aspect)
+    switch (_aspect)
     {
     case ASPECT_UNCONSTRAINED:
     default:
@@ -85,17 +99,159 @@ void Crop::adjust()
         break;
     }
 
-    if (aspectVertical)
+    if (_vAspect)
     {
-        rect.setHeight(rect.width() * mult);
+        _rect.setHeight(_rect.width() * mult);
     }
     else
     {
-        rect.setWidth(rect.height() * mult);
+        _rect.setWidth(_rect.height() * mult);
     }
 }
 
-QString Crop::getStateStr()
+void Crop::setCircle(CirclePtr c)
 {
-    return sCropState[state];
+    circle   = c;
+    _cropType = CROP_CIRCLE;
 }
+
+void Crop::setPolygon(int sides, qreal scale, qreal rotDegrees)
+{
+    // this is a regaul polygon
+    poly = std::make_shared<Feature>(sides,rotDegrees,scale);
+    _cropType = CROP_POLYGON;
+}
+
+
+void Crop::setPolygon(QPolygonF & p)
+{
+    EdgePoly ep(p);
+    poly = std::make_shared<Feature>(ep);
+    _cropType = CROP_POLYGON;
+}
+
+QPolygonF Crop::getPolygon()
+{
+    QPolygonF p;
+    if (poly)
+        p = poly->getPolygon();
+    return p;
+}
+
+QString Crop::getCropString()
+{
+    QString astring = "Undefined";
+    switch(_cropType)
+    {
+    case CROP_RECTANGLE:
+        astring = QString("Rect: %1,%2,%3x%4").arg(_rect.x()).arg(_rect.y()).arg(_rect.width()).arg(_rect.height());
+        break;
+    case CROP_CIRCLE:
+        if (circle)
+            astring =  QString("Circle: %1 %2 %3").arg(circle->radius).arg(circle->centre.x()).arg(circle->centre.y());
+        break;
+    case CROP_POLYGON:
+        if (poly)
+            astring = "Polygon";
+    default:
+    case CROP_UNDEFINED:
+        break;
+    }
+    return astring;
+}
+
+QPointF Crop::getCenter()
+{
+    QPointF center;
+    switch (_cropType)
+    {
+    default:
+    case CROP_UNDEFINED:
+        break;
+    case CROP_RECTANGLE:
+        center = _rect.center();
+        break;
+    case CROP_CIRCLE:
+        if (circle)
+        {
+            center = circle->centre;
+        }
+        break;
+    case CROP_POLYGON:
+        if (poly)
+        {
+            auto pf = poly->getPolygon();
+            center = Point::center(pf);
+        }
+        break;
+    }
+    return center;
+}
+
+// we need this because real crops are in model units
+// but border boundaries are in screen unitw
+void  Crop::transform(QTransform t)
+{
+    _rect = t.mapRect(_rect);
+    if (poly)
+    {
+        EdgePoly &  ep = poly->getEdgePoly();
+        ep.mapD(t);
+    }
+    if (circle)
+    {
+        circle->centre = t.map(circle->centre);
+        circle->radius = Transform::scalex(t) * circle->radius;
+    }
+}
+
+void Crop::draw(QPainter * painter, QTransform t, bool active)
+{
+    painter->save();
+
+    if (active)
+    {
+        painter->setPen(QPen(Qt::red,3));
+        painter->setBrush(QBrush(0xff0000,Qt::Dense7Pattern));
+    }
+    else
+    {
+        painter->setBrush(Qt::NoBrush);
+        painter->setPen(QPen(Qt::red,3));
+    }
+
+    qDebug() << "Crop::draw" << Transform::toInfoString(t);
+    painter->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
+
+    if (_cropType == CROP_RECTANGLE)
+    {
+        QRectF rect = t.mapRect(_rect);
+        painter->drawRect(rect);
+    }
+    else if (_cropType == CROP_POLYGON && poly)
+    {
+        QPolygonF p2 = t.map(poly->getPolygon());
+        painter->drawPolygon(p2);
+    }
+    else if (_cropType == CROP_CIRCLE && circle)
+    {
+        QPointF center = circle->centre;
+        center         = t.map(center);
+        qreal radius   = circle->radius;
+        radius        *= Transform::scalex(t);
+        painter->drawEllipse(center,radius,radius);
+    }
+
+    if (Configuration::getInstance()->showCenterDebug)
+    {
+        // draw center X
+        qreal len = 9.0;
+        QPointF pt = getCenter();
+        pt = t.map(pt);
+        painter->drawLine(QPointF(pt.x()-len,pt.y()),QPointF(pt.x()+len,pt.y()));
+        painter->drawLine(QPointF(pt.x(),pt.y()-len),QPointF(pt.x(),pt.y()+len));
+    }
+
+    painter->restore();
+}
+

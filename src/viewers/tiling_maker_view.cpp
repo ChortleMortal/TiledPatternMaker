@@ -1,27 +1,3 @@
-/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 ////////////////////////////////////////////////////////////////////////////
 //
 // FeatureView.java
@@ -32,20 +8,24 @@
 // and provides a bunch of services to subclasses for mouse-based
 // interaction with features.
 
+#include <QDebug>
+
 #include "viewers/tiling_maker_view.h"
-#include "base/geo_graphics.h"
+#include "misc/geo_graphics.h"
 #include "geometry/transform.h"
-#include "geometry/point.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "makers/tiling_maker/tiling_mouseactions.h"
 #include "makers/tiling_maker/feature_selection.h"
 #include "tile/placed_feature.h"
 #include "geometry/edge.h"
 #include "geometry/vertex.h"
+#include "settings/configuration.h"
 #include "tile/feature.h"
 #include "viewers/grid.h"
 
-TilingMakerView::TilingMakerView(TilingMaker * maker) : Layer("TilingMakerView")
+using std::make_shared;
+
+TilingMakerView::TilingMakerView(TilingMaker * maker) : LayerController("TilingMakerView")
 {
     tilingMaker         = maker;
     config              = Configuration::getInstance();
@@ -55,14 +35,15 @@ TilingMakerView::TilingMakerView(TilingMaker * maker) : Layer("TilingMakerView")
 
 TilingMakerView::~TilingMakerView()
 {
+#ifdef EXPLICIT_DESTRUCTOR
     allPlacedFeatures.clear();
     in_tiling.clear();
+#endif
 }
 
 void TilingMakerView::paint(QPainter *painter)
 {
-    painter->setRenderHint(QPainter::Antialiasing ,true);
-    painter->setRenderHint(QPainter::SmoothPixmapTransform,true);
+    painter->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
     layerPen = QPen(Qt::black,3);
 
     QTransform tr = getLayerTransform();
@@ -76,6 +57,8 @@ void TilingMakerView::paint(QPainter *painter)
 
 void TilingMakerView::draw( GeoGraphics * g2d )
 {
+    qDebug() << "TilingMakerView::draw";
+
     if (!_hideTiling && !editPlacedFeature)
     {
         drawTiling(g2d);
@@ -217,12 +200,12 @@ void TilingMakerView::drawFeature(GeoGraphics * g2d, PlacedFeaturePtr pf, bool d
 
     // fill the polygon
     EdgePoly ep = pf->getPlacedEdgePoly();
-    g2d->fillEdgePoly(&ep,icol);
-    g2d->drawEdgePoly(&ep,Qt::black,3);
+    g2d->fillEdgePoly(ep,icol);
+    g2d->drawEdgePoly(ep,Qt::black,3);
 
     if (tilingMakerMouseMode == TM_EDGE_CURVE_MODE)
     {
-        for (auto edge : qAsConst(ep))
+        for (const auto & edge : qAsConst(ep))
         {
             QPen apen = layerPen;
             apen.setColor(Qt::blue);
@@ -234,9 +217,15 @@ void TilingMakerView::drawFeature(GeoGraphics * g2d, PlacedFeaturePtr pf, bool d
     if( draw_c )
     {
         QPolygonF pts = pf->getPlacedPolygon();
-        QPointF center = Point::center(pts);
+        QPointF pt    = Point::center(pts);
+
         layerPen.setColor(Qt::red);
-        g2d->drawCircle(center,6,layerPen, QBrush());
+        g2d->drawCircle(pt,9,layerPen, QBrush());
+
+        layerPen.setWidth(2);
+        qreal len = screenToWorld(9.0);
+        g2d->drawLine(QPointF(pt.x()-len,pt.y()),QPointF(pt.x()+len,pt.y()),layerPen);
+        g2d->drawLine(QPointF(pt.x(),pt.y()-len),QPointF(pt.x(),pt.y()+len),layerPen);
     }
 }
 
@@ -273,12 +262,11 @@ void TilingMakerView::drawAccum(GeoGraphics * g2d)
 void TilingMakerView::drawMeasurements(GeoGraphics *g2d)
 {
     layerPen.setColor(construction_color);
-    for (auto it = wMeasurements.begin(); it != wMeasurements.end(); it++)
+    for (auto mm : wMeasurements)
     {
-        Measurement & mm = *it;
-        g2d->drawLineDirect(mm.startS(), mm.endS(),layerPen);
-        QString msg = QString("%1 (%2)").arg(QString::number(mm.lenS(),'f',2)).arg(QString::number(mm.lenW(),'f',8));
-        g2d->drawText(mm.endS() + QPointF(10,0),msg);
+        g2d->drawLineDirect(mm->startS(), mm->endS(),layerPen);
+        QString msg = QString("%1 (%2)").arg(QString::number(mm->lenS(),'f',2)).arg(QString::number(mm->lenW(),'f',8));
+        g2d->drawText(mm->endS() + QPointF(10,0),msg);
     }
 }
 
@@ -311,7 +299,7 @@ TilingSelectorPtr TilingMakerView::findFeature(QPointF spt, TilingSelectorPtr ig
         QPolygonF pgon = placedFeature->getPlacedPolygon();
         if (pgon.containsPoint(wpt,Qt::OddEvenFill))
         {
-            return std::make_shared<InteriorTilingSelector>(placedFeature);
+            return make_shared<InteriorTilingSelector>(placedFeature);
         }
     }
 
@@ -343,7 +331,7 @@ TilingSelectorPtr TilingMakerView::findVertex(QPointF spt,TilingSelectorPtr igno
             QPointF c = worldToScreen(b);
             if (Point::dist2(spt,c) < 49.0 )
             {
-                return std::make_shared<VertexTilingSelector>(pf,a);
+                return make_shared<VertexTilingSelector>(pf,a);
             }
         }
     }
@@ -391,7 +379,7 @@ TilingSelectorPtr TilingMakerView::findMidPoint(QPointF spt, TilingSelectorPtr i
                     qDebug() << "Screen dist too small = " << screenDist;
                     return sel;
                 }
-                return std::make_shared<MidPointTilingSelector>(pf, edge, mid);
+                return make_shared<MidPointTilingSelector>(pf, edge, mid);
             }
         }
     }
@@ -410,14 +398,14 @@ TilingSelectorPtr TilingMakerView::findArcPoint(QPointF spt)
 
         for(auto ep : epoly)
         {
-            if (ep->getType() == EDGETYPE_CURVE)
+            if (ep->getType() == EDGETYPE_CURVE || ep->getType() == EDGETYPE_CHORD)
             {
                 QPointF a    = ep->getArcCenter();
                 QPointF aa   = T.map(a);
                 QPointF aad  = worldToScreen(aa);
                 if (Point::dist2(spt,aad) < 49.0)
                 {
-                    return std::make_shared<ArcPointTilingSelector>(pf, ep, a);
+                    return make_shared<ArcPointTilingSelector>(pf, ep, a);
                 }
             }
         }
@@ -453,7 +441,7 @@ TilingSelectorPtr TilingMakerView::findEdge(QPointF spt, TilingSelectorPtr ignor
 
             if (Point::distToLine(spt, LineS) < 7.0)
             {
-                return std::make_shared<EdgeTilingSelector>(pf,edge);
+                return make_shared<EdgeTilingSelector>(pf,edge);
             }
         }
     }
@@ -525,14 +513,14 @@ QPointF TilingMakerView::findSelectionPointOrPoint(QPointF spt)
 TilingSelectorPtr TilingMakerView::findCenter(PlacedFeaturePtr pf, QPointF spt)
 {
     EdgePoly  epoly = pf->getPlacedEdgePoly();
-    QPointF    wpt  = Point::center(epoly);
+    QPointF    wpt  = epoly.calcCenter();
     QPointF    spt2 = worldToScreen(wpt);
 
     if (Point::isNear(spt,spt2))
     {
         FeaturePtr feature = pf->getFeature();
         QPointF mpt = feature->getCenter();
-        return std::make_shared<CenterTilingSelector>(pf, mpt);
+        return make_shared<CenterTilingSelector>(pf, mpt);
     }
 
     TilingSelectorPtr sel;
@@ -602,7 +590,7 @@ TilingSelectorPtr TilingMakerView::findNearGridPoint(QPointF spt)
 
     if (Grid::getSharedInstance()->nearGridPoint(spt,p))
     {
-        tsp = std::make_shared<ScreenTilingSelector>(p);  // not really a vertex, but good enough
+        tsp = make_shared<ScreenTilingSelector>(p);  // not really a vertex, but good enough
     }
     return tsp;
 }

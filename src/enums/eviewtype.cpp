@@ -10,6 +10,8 @@ const QString sViewerType[]
         E2STR(VIEW_MOTIF_MAKER),
         E2STR(VIEW_TILING),
         E2STR(VIEW_TILING_MAKER),
+        E2STR(VIEW_BORDER),
+        E2STR(VIEW_CROP),
         E2STR(VIEW_MAP_EDITOR),
         E2STR(VIEW_BKGD_IMG),
         E2STR(VIEW_GRID),

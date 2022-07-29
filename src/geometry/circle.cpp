@@ -1,12 +1,10 @@
+#include <QDebug>
 #include "geometry/circle.h"
-#include "geometry/loose.h"
 
 Circle::Circle()
 {
-    centre = QPointF(0,0);
-    radius = 0.25;
+    init();
 }
-
 Circle::Circle(QPointF centre, qreal radius)
 {
     this->centre = centre;
@@ -25,6 +23,14 @@ QRectF  Circle::boundingRect()
     return rect;
 }
 
+Circle & Circle::operator=(const Circle & other)
+{
+    centre = other.centre;
+    radius = other.radius;
+    return *this;
+}
+
+#if 0
 bool Circle::operator==(const Circle & other)
 {
     if ((centre == other.centre) && Loose::equals(radius,other.radius))
@@ -32,6 +38,15 @@ bool Circle::operator==(const Circle & other)
     else
         return false;
 }
+
+bool Circle::operator==(const Circle other)
+{
+    if ((centre == other.centre) && Loose::equals(radius,other.radius))
+        return true;
+    else
+        return false;
+}
+#endif
 
 void Circle::dump()
 {

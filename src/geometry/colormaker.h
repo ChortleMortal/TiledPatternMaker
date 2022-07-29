@@ -1,10 +1,10 @@
 #ifndef COLORMAKER_H
 #define COLORMAKER_H
 
-#include "base/colorset.h"
+#include "misc/colorset.h"
 #include "geometry/faces.h"
 
-typedef std::shared_ptr<class DCEL>            DCELPtr;
+typedef std::shared_ptr<class DCEL> DCELPtr;
 
 class ColorMaker
 {
@@ -12,10 +12,8 @@ public:
     ColorMaker();
     ~ColorMaker();
 
-
-    void createFacesToDo();
-
     void buildFaceGroups();
+    void createFacesToDo();
 
     void assignColorsOriginal();
     void assignColorsNew1();
@@ -25,20 +23,17 @@ public:
     void assignColorsToFaces(FaceSet & fset);
     void addFaceResults(FaceSet & fset);
 
-    FaceGroup  * getFaceGroup() { return &faceGroup; }
-
     DCELPtr getDCEL() { return dcel; }
+    FaceGroups & getFaceGroups() { return faceGroups; }
 
 protected:
-    DAC_DEPRECATED void removeDuplicateFaces();
-    DAC_DEPRECATED void decomposeCrossoverFaces();
-                   void removeOverlappingFaces();
+    void removeOverlappingFaces();
 
     FaceSet     facesToDo;
     FaceSet     whiteFaces;
     FaceSet     blackFaces;
 
-    FaceGroup   faceGroup;
+    FaceGroups  faceGroups;
 
     DCELPtr     dcel;
 

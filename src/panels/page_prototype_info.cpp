@@ -1,65 +1,32 @@
-﻿/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
+#include <QCheckBox>
+#include <QHeaderView>
+#include <QPushButton>
+#include <QHBoxLayout>
 
+#include "figures/figure.h"
+#include "panels/panel.h"
 #include "panels/page_prototype_info.h"
-#include "designs/patterns.h"
-#include "style/colored.h"
-#include "style/thick.h"
-#include "style/filled.h"
-#include "style/interlace.h"
-#include "style/outline.h"
-#include "style/plain.h"
-#include "style/sketch.h"
-#include "style/emboss.h"
 #include "makers/motif_maker/motif_maker.h"
-#include "viewers/viewcontrol.h"
-#include "geometry/transform.h"
-#include "viewers/view.h"
-#include "tapp/prototype.h"
-#include "tapp/design_element.h"
-#include "tile/tiling.h"
+#include "mosaic/design_element.h"
 #include "tile/feature.h"
-#include "tapp/figure.h"
+#include "tile/tiling.h"
+#include "viewers/viewcontrol.h"
+#include "widgets/panel_misc.h"
 
 using std::string;
 
-typedef std::weak_ptr<DesignElement>   WeakDesignElementPtr;
-typedef std::weak_ptr<Prototype>       WeakPrototypePtr;
-
-Q_DECLARE_METATYPE(WeakDesignElementPtr);
-Q_DECLARE_METATYPE(WeakPrototypePtr);
-Q_DECLARE_METATYPE(WeakFeaturePtr);
 
 page_prototype_info:: page_prototype_info(ControlPanel * cpanel)  : panel_page(cpanel,"Prototype Info")
 {
+    pview = PrototypeView::getSharedInstance();
+
     setMouseTracking(true);
 
+    QCheckBox * cbDrawFeatures   = new QCheckBox("All Features");
+    QCheckBox * cbDrawfigures    = new QCheckBox("All Figures");
     QCheckBox * cbDrawDEL        = new QCheckBox("Design Element");
-    QCheckBox * cbDrawFeatures   = new QCheckBox("Features");
-    QCheckBox * cbDrawfigures    = new QCheckBox("Figures");
-    QCheckBox * cbHiliteFeatures = new QCheckBox("Highlight Features");
-    QCheckBox * cbHiliteFigures  = new QCheckBox("Highlight Figures");
+    QCheckBox * cbHiliteFeatures = new QCheckBox("DEL Features");
+    QCheckBox * cbHiliteFigures  = new QCheckBox("DEL Figures");
     QCheckBox * cbDrawMap        = new QCheckBox("Prototype Map");
 
     int mode = config->protoViewMode;
@@ -71,96 +38,171 @@ page_prototype_info:: page_prototype_info(ControlPanel * cpanel)  : panel_page(c
         cbDrawFeatures->setChecked(true);
     if (mode & PROTO_DRAW_FIGURES)
         cbDrawfigures->setChecked(true);
-    if (mode & PROTO_HIGHLIGHT_FEATURES)
+    if (mode & PROTO_DEL_FEATURES)
         cbHiliteFeatures->setChecked(true);
-    if (mode & PROTO_HIGHLIGHT_FIGURES)
+    if (mode & PROTO_DEL_FIGURES)
         cbHiliteFigures->setChecked(true);
 
     QPushButton * refreshButton = new QPushButton("Refresh");
-    QHBoxLayout * hbox = new QHBoxLayout;
+    QPushButton * defaultButton = new QPushButton("Default Colors");
 
-    hbox->addWidget(cbDrawDEL);
-    hbox->addWidget(cbDrawFeatures);
-    hbox->addWidget(cbDrawfigures);
-    hbox->addWidget(cbHiliteFeatures);
-    hbox->addWidget(cbHiliteFigures);
-    hbox->addWidget(cbDrawMap);
-    hbox->addStretch();
-    hbox->addWidget(refreshButton);
-    hbox->addStretch();
+    showSettings = new QGridLayout;
+    int row = 0;
+    int col = 0;
+    showSettings->addWidget(cbDrawMap,row,col++);
+    showSettings->addWidget(cbDrawFeatures,row,col++);
+    showSettings->addWidget(cbDrawfigures,row,col++);
+    showSettings->addWidget(cbDrawDEL,row,col++);
+    showSettings->addWidget(cbHiliteFeatures,row,col++);
+    showSettings->addWidget(cbHiliteFigures,row,col++);
+    showSettings->addWidget(defaultButton,row,col++);
+    showSettings->addWidget(refreshButton,row,col++);
+
+    buildColorGrid();
 
     protoTable = new AQTableWidget(this);
+    protoTable->setRowCount(9);
     QStringList qslV;
     qslV << "Prototype" << "Tiling" << "Design Element" << "Feature" << "Figure" << "Scale" << "Rotate" << "Trans-X" << "Trans-Y";
+    //protoTable->verticalHeader()->setVisible(true);
     protoTable->setVerticalHeaderLabels(qslV);
     protoTable->horizontalHeader()->setVisible(false);
-    protoTable->verticalHeader()->setVisible(false);
-    protoTable->setRowCount(9);
     protoTable->setMaximumWidth(880);
     protoTable->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     protoTable->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     protoTable->setSelectionBehavior(QAbstractItemView::SelectColumns);
     protoTable->setSelectionMode(QAbstractItemView::SingleSelection);
-    vbox->addLayout(hbox);
+    vbox->addLayout(showSettings);
     vbox->addSpacing(7);
     vbox->addWidget(protoTable);
     vbox->addStretch();
 
-    connect(refreshButton,    &QPushButton::clicked,        this, &page_prototype_info::onEnter);
+    connect(refreshButton,    &QPushButton::clicked,    this, &page_prototype_info::setup);
+    connect(defaultButton,    &QPushButton::clicked,    this, &page_prototype_info::setDefaultColors);
     connect(protoTable,       SIGNAL(cellClicked(int,int)), this,   SLOT(slot_prototypeSelected(int,int)));
-    connect(cbDrawDEL,        &QCheckBox::clicked, this, &page_prototype_info::drawDELClicked);
-    connect(cbDrawMap,        &QCheckBox::clicked, this, &page_prototype_info::drawMapClicked);
-    connect(cbDrawFeatures,   &QCheckBox::clicked, this, &page_prototype_info::drawFeatureClicked);
-    connect(cbDrawfigures,    &QCheckBox::clicked, this, &page_prototype_info::drawFigureClicked);
-    connect(cbHiliteFeatures, &QCheckBox::clicked, this, &page_prototype_info::hiliteFeatureClicked);
-    connect(cbHiliteFigures,  &QCheckBox::clicked, this, &page_prototype_info::hiliteFigureClicked);
+    connect(cbDrawDEL,        &QCheckBox::clicked,      this, &page_prototype_info::drawDELClicked);
+    connect(cbDrawMap,        &QCheckBox::clicked,      this, &page_prototype_info::drawMapClicked);
+    connect(cbDrawFeatures,   &QCheckBox::clicked,      this, &page_prototype_info::drawFeatureClicked);
+    connect(cbDrawfigures,    &QCheckBox::clicked,      this, &page_prototype_info::drawFigureClicked);
+    connect(cbHiliteFeatures, &QCheckBox::clicked,      this, &page_prototype_info::hiliteFeatureClicked);
+    connect(cbHiliteFigures,  &QCheckBox::clicked,      this, &page_prototype_info::hiliteFigureClicked);
 }
 
-void  page_prototype_info::refreshPage()
+void page_prototype_info::buildColorGrid()
+{
+    int row = 1;
+    int col = 0;
+    ProtoViewColors & colors = pview->getColors();
+
+    ClickableLabel * label = new ClickableLabel();
+    QVariant variant = colors.mapColor;
+    QString colcode  = variant.toString();
+    label->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+    showSettings->addWidget(label,row,col++);
+    connect(label,&ClickableLabel::clicked, this, [this, &colors] { pickColor(colors.mapColor); });
+
+    label = new ClickableLabel();
+    variant = colors.featureColor;
+    colcode  = variant.toString();
+    label->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+    showSettings->addWidget(label,row,col++);
+    connect(label,&ClickableLabel::clicked, this, [this, &colors] { pickColor(colors.featureColor); });
+
+    label = new ClickableLabel();
+    variant = colors.figureColor;
+    colcode  = variant.toString();
+    label->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+    showSettings->addWidget(label,row,col++);
+    connect(label,&ClickableLabel::clicked, this, [this, &colors] { pickColor(colors.figureColor); });
+
+    label = new ClickableLabel();
+    variant = colors.featureBrushColor;
+    colcode  = variant.toString();
+    label->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+    showSettings->addWidget(label,row,col++);
+    connect(label,&ClickableLabel::clicked, this, [this, &colors] { pickColor(colors.featureBrushColor); });
+
+    label = new ClickableLabel();
+    variant = colors.delFeatureColor;
+    colcode  = variant.toString();
+    label->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+    showSettings->addWidget(label,row,col++);
+    connect(label,&ClickableLabel::clicked, this, [this, &colors] { pickColor(colors.delFeatureColor); });
+
+    label = new ClickableLabel();
+    variant = colors.delFigureColor;
+    colcode  = variant.toString();
+    label->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+    showSettings->addWidget(label,row,col++);
+    connect(label,&ClickableLabel::clicked, this, [this, &colors] { pickColor(colors.delFigureColor); });
+}
+
+void  page_prototype_info::onRefresh()
 {
 }
 
 void page_prototype_info::onEnter()
 {
+    static QString msg("<body>"
+                       "<span>Click on column to select feature  &nbsp;&nbsp; | &nbsp;&nbsp; Click on color to change</span>"
+                       "</body>");
+
+    panel->pushPanelStatus(msg);
+
+    setup();
+}
+
+void page_prototype_info::onExit()
+{
+    panel->popPanelStatus();
+}
+
+void page_prototype_info::setup()
+{
+    data.clear();
     protoTable->clearContents();
 
     const QVector<PrototypePtr> & prototypes = motifMaker->getPrototypes();
     int col = 0;
     QTableWidgetItem * item;
-    for (auto proto : prototypes)
+    for (const auto & proto : qAsConst(prototypes))
     {
-        QVector<DesignElementPtr> dels = proto->getDesignElements();
-        for (auto del :  dels)
+        const QVector<DesignElementPtr> & dels = proto->getDesignElements();
+        for (const auto & del :  qAsConst(dels))
         {
+            sColData colData;
             protoTable->setColumnCount(col + 1);
 
             item = new QTableWidgetItem(addr(proto.get()));
-            item->setData(Qt::UserRole,QVariant::fromValue(WeakPrototypePtr(proto)));
             protoTable->setItem(PROTO_ROW_PROTO,col,item);
+            colData.wpp = proto;
 
             item = new QTableWidgetItem(proto->getTiling()->getName());
             protoTable->setItem(PROTO_ROW_TILING,col,item);
 
             item = new QTableWidgetItem(addr(del.get()));
-            item->setData(Qt::UserRole,QVariant::fromValue(WeakDesignElementPtr(del)));
             protoTable->setItem(PROTO_ROW_DEL,col,item);
+            colData.wdel = del;
 
             FeaturePtr fp = del->getFeature();
+            Q_ASSERT(fp);
             QString astring = addr(fp.get());
             if (fp->isRegular())
             {
                 astring += " sides=" + QString::number(fp->numPoints());
             }
             item = new QTableWidgetItem(astring);
-            item->setData(Qt::UserRole,QVariant::fromValue(WeakFeaturePtr(fp)));
             protoTable->setItem(PROTO_ROW_FEATURE,col,item);
+            colData.wfeatp = fp;
 
             FigurePtr figp = del->getFigure();
+            Q_ASSERT(figp);
             astring = addr(figp.get()) + "  " + figp->getFigureDesc();
             item = new QTableWidgetItem(astring);
             protoTable->setItem(PROTO_ROW_FIGURE,col,item);
-
+            colData.wfigp = figp;
+#if 0
             QTransform t = proto->getTransform(col);
 
             item = new QTableWidgetItem(QString::number(Transform::scalex(t),'f',6));
@@ -176,7 +218,8 @@ void page_prototype_info::onEnter()
 
             item = new QTableWidgetItem(QString::number(Transform::transy(t),'f',6));
             protoTable->setItem(PROTO_ROW_Y,col,item);
-
+#endif
+            data.push_back(colData);
             col++;
         }
     }
@@ -190,35 +233,24 @@ void page_prototype_info::slot_prototypeSelected(int row, int col)
 {
     Q_UNUSED(row);
 
-    QTableWidgetItem * twi = protoTable->item(PROTO_ROW_PROTO,col);
-    QVariant var = twi->data(Qt::UserRole);
-    if (var.canConvert<WeakPrototypePtr>())
+    const sColData & colData = data.at(col);
+
+    PrototypePtr pp = colData.wpp.lock();
+    if (pp)
     {
-        WeakPrototypePtr wpp = var.value<WeakPrototypePtr>();
-        PrototypePtr pp = wpp.lock();
-        if (pp)
-        {
-            motifMaker->setSelectedPrototype(pp);
-        }
+        motifMaker->setSelectedPrototype(pp);
     }
 
-    twi = protoTable->item(PROTO_ROW_DEL,col);
-    var = twi->data(Qt::UserRole);
-    if (var.canConvert<WeakDesignElementPtr>())
+    auto del = colData.wdel.lock();
+    if (del)
     {
-        WeakDesignElementPtr wdp = var.value<WeakDesignElementPtr>();
-        if (wdp.lock())
-        {
-            motifMaker->setSelectedDesignElement(wdp.lock());
-        }
+        motifMaker->setSelectedDesignElement(del);
     }
 
-    twi = protoTable->item(PROTO_ROW_FEATURE,col);
-    var = twi->data(Qt::UserRole);
-    if (var.canConvert<WeakFeaturePtr>())
+    auto fp = colData.wfeatp.lock();
+    if (fp)
     {
-        WeakFeaturePtr wfp = var.value<WeakFeaturePtr>();
-        vcontrol->selectFeature(wfp);
+        view->selectFeature(fp);
     }
 
     emit sig_refreshView();
@@ -246,12 +278,12 @@ void page_prototype_info::drawFeatureClicked(bool enb)
 
 void page_prototype_info::hiliteFigureClicked(bool enb)
 {
-    setProtoViewMode(PROTO_HIGHLIGHT_FIGURES,enb);
+    setProtoViewMode(PROTO_DEL_FIGURES,enb);
 }
 
 void page_prototype_info::hiliteFeatureClicked(bool enb)
 {
-    setProtoViewMode(PROTO_HIGHLIGHT_FEATURES,enb);
+    setProtoViewMode(PROTO_DEL_FEATURES,enb);
 }
 
 void  page_prototype_info::setProtoViewMode(eProtoViewMode mode, bool enb)
@@ -265,4 +297,40 @@ void  page_prototype_info::setProtoViewMode(eProtoViewMode mode, bool enb)
 
     //emit sig_refreshView();
     view->update();
+}
+
+void page_prototype_info::pickColor(QColor & color)
+{
+    AQColorDialog dlg(color,this);
+    dlg.setCurrentColor(color);
+    int rv = dlg.exec();
+    if (rv != QDialog::Accepted)
+        return;
+
+    QColor acolor = dlg.selectedColor();
+    if (acolor.isValid())
+    {
+        color = acolor;
+
+        config->protoViewColors = pview->getColors().getColors();
+        buildColorGrid();
+        emit sig_refreshView();
+    }
+}
+
+void page_prototype_info::setDefaultColors()
+{
+    ProtoViewColors colors;
+    colors.mapColor             = QColor(20,150,210);
+    colors.featureColor         = QColor(0, 108, 0);
+    colors.figureColor          = QColor(214,0,0);
+    colors.delFigureColor       = QColor(Qt::blue);
+    colors.delFeatureColor      = QColor(Qt::yellow);
+    colors.featureBrushColor    = QColor(255, 217, 217, 32);
+    ProtoViewColors & viewColors = pview->getColors();
+    viewColors = colors;
+
+    config->protoViewColors = pview->getColors().getColors();
+    buildColorGrid();
+    emit sig_refreshView();
 }

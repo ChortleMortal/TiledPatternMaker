@@ -1,63 +1,66 @@
 #include "geometry/map.h"
+#include <QDebug>
+
 #include "geometry/edge.h"
 #include "geometry/vertex.h"
 #include "geometry/neighbours.h"
 #include "geometry/intersect.h"
 #include "geometry/loose.h"
-#include "base/utilities.h"
+#include "misc/utilities.h"
 
-bool Map::cleanse(unsigned int options, bool forceVerify)
+// cleanse just cleanses - it does not verify
+void Map::cleanse(unsigned int options)
 {
     qDebug() << "cleanse......";
     const bool debug = false;
 
     qDebug() << "Map::cleanse - start";
 
-    verify();
-
     if (options & joinupColinearEdges)
     {
         joinColinearEdges();
-        if (debug) verify();
     }
 
     if (options & divideupIntersectingEdges)
     {
         divideIntersectingEdges();
         deDuplicateNeighbours();
-        sortVertices();
-        sortEdges();
-        buildNeighbours();
-        if (debug) verify();
+        //sortVertices();
+        //sortEdges();
+        nMap.reset();
+    }
+
+    // do this first, before badVertices_0
+    if (options & badVertices_1)
+    {
+        removeVerticesWithEdgeCount(1);
     }
 
     if (options & badVertices_0)
     {
         removeVerticesWithEdgeCount(0);
-        if (debug) verify();
-    }
-
-    if (options & badVertices_1)
-    {
-        removeVerticesWithEdgeCount(1);
-        if (debug) verify();
     }
 
     if (options & badEdges)
     {
         removeBadEdges();
-        if (debug) verify();
+    }
+
+    if (options & BuildNeighbours)
+    {
+        nMap.reset();
     }
 
     if (options & cleanupNeighbours)
     {
         deDuplicateNeighbours();
-        if (debug) verify();
     }
 
-    bool rv = verify(forceVerify);
-    qDebug() << "Map::cleanse - end";
-    return rv;
+    if (debug)
+    {
+        nMap = std::make_shared<NeighbourMap>(edges);
+        verify();
+    }
 }
 
 void Map::removeBadEdges()
@@ -105,7 +108,7 @@ void Map::divideIntersectingEdges()
     qDebug().noquote() << summary();
 
     UniqueQVector<QPointF> intersects;
-    for(auto edge : qAsConst(edges))
+    for(const auto & edge : qAsConst(edges))
     {
         // To check all intersections of this edge with edges in
         // the current map, we can use the optimization that
@@ -152,18 +155,13 @@ void Map::joinColinearEdges()
         changed = joinOneColinearEdge();
         //verifyMap("joinColinearEdges",false,true);
     } while (changed);
-
 }
 
 bool Map::joinOneColinearEdge()
 {
-    if (!status.neighboursBuilt)
+    for (const auto & vp : qAsConst(vertices))
     {
-        buildNeighbours();
-    }
-    for (auto& vp : vertices)
-    {
-        NeighboursPtr n = getBuiltNeighbours(vp);
+        NeighboursPtr n = getNeighbours(vp);
         int count = n->numNeighbours();
         if (count == 2)
         {
@@ -174,6 +172,7 @@ bool Map::joinOneColinearEdge()
             {
                 // need to remove one edge, extend the other, and remove vertex
                 combineLinearEdges(n->getNeighbour(0),n->getNeighbour(1),vp);
+                nMap.reset();
                 return true;
             }
         }
@@ -182,7 +181,7 @@ bool Map::joinOneColinearEdge()
 }
 
 // combine two edges which are in a straight line with common vertex
-void Map::combineLinearEdges(EdgePtr a, EdgePtr b,VertexPtr common)
+void Map::combineLinearEdges(const EdgePtr & a, const EdgePtr & b, const VertexPtr & common)
 {
     VertexPtr newV1 = a->getOtherV(common);
     VertexPtr newV2 = b->getOtherV(common);
@@ -191,28 +190,119 @@ void Map::combineLinearEdges(EdgePtr a, EdgePtr b,VertexPtr common)
     removeEdge(a);
     removeEdge(b);
 
-    status.neighboursBuilt = false;
+    nMap.reset();
+}
+
+// coalesce identical vertices to eliminate duplicates.
+bool Map::coalesceVertices(qreal tolerance)
+{
+    qDebug().noquote() << "coalesceVertices-start" <<  summary2() << "Tolerance = " << tolerance;
+    qsizetype start = vertices.size();
+
+    QMap<VertexPtr,VertexPtr> replacements;
+    qsizetype size = vertices.size();
+    for (int i = 0; i < size; i++)
+    {
+        for (int j = i+1 ;  j < size; j++)
+        {
+            if (Point::dist2(vertices[i]->pt,vertices[j]->pt) < tolerance)
+            {
+                replacements[vertices[i]] = vertices[j];
+            }
+        }
+    }
+    qDebug() << "Replacements =" << replacements.size();
+    if (replacements.size() == 0)
+    {
+        qDebug().noquote() << "coalesceVertices-end  " <<  summary2();
+        return false;
+    }
+
+    UniqueQVector<EdgePtr> changedEdges;
+    for (const auto & edge : qAsConst(edges))
+    {
+        QMap<VertexPtr,VertexPtr>::iterator it1;
+        QMap<VertexPtr,VertexPtr>::iterator it2;
+        it1 = replacements.find(edge->v1);
+        if (it1 != replacements.end())
+        {
+            auto oldv = edge->v1;
+            edge->v1 = *it1;
+            changedEdges.push_back(edge);
+            vertices.removeOne(oldv);
+        }
+        it2 = replacements.find(edge->v2);
+        if (it2 != replacements.end())
+        {
+            auto oldv = edge->v2;
+            edge->v2 = *it2;
+            changedEdges.push_back(edge);
+            vertices.removeOne(oldv);
+        }
+    }
+
+    QVector<EdgePtr> edgesToDelete;
+    for (const auto & edge : qAsConst(changedEdges))
+    {
+        if (edge->isTrivial(tolerance))
+        {
+            //qDebug() << "deleting trivial edge";
+            edgesToDelete.push_back(edge);
+            continue;
+        }
+        for (auto & existingEdge : edges)
+        {
+            if (existingEdge == edge)
+            {
+                //qDebug() << "SKIPPED: changed" << edge->v1->pt  << edge->v2->pt << "existing" << existingEdge->v1->pt << existingEdge->v2->pt;
+                continue;
+            }
+            //qDebug() << "changed" << edge->v1->pt  << edge->v2->pt << "existing" << existingEdge->v1->pt << existingEdge->v2->pt;
+            if (edge->sameAs(existingEdge))
+            {
+                //qDebug() << "deleting duplicate edge";
+                edgesToDelete.push_back(edge);
+            }
+        }
+    }
+
+    for (auto & edge : edgesToDelete)
+    {
+        edges.removeOne(edge);
+    }
+
+    nMap.reset();
+    _cleanseVertices();
+
+    qDebug().noquote() << "coalesceVertices-end  " <<  summary2();
+
+    if (vertices.size() != start)
+    {
+        return true;    // has coalesced
+    }
+    return false;
+}
+
+void Map::deDuplicateVertices(qreal tolerance)
+{
+    while (coalesceVertices(tolerance))
+        ;
 }
 
 void Map::deDuplicateNeighbours()
 {
-    qDebug() << "deDuplicateNeighbours BEGIN edges=" << edges.size()  << "vertices=" << vertices.size();
+    qDebug() << "deDuplicateNeighbours BEGIN" << "vertices =" << vertices.size() << "edges =" << edges.size();
 
-    if (!status.neighboursBuilt)
-    {
-        buildNeighbours();
-    }
-
-    for (auto & v :  vertices)
+    for (const auto & v :  qAsConst(vertices))
     {
         // examining a vertex
-        NeighboursPtr n = getBuiltNeighbours(v);
+        NeighboursPtr n = getNeighbours(v);
         deDuplicateEdges(n);
     }
-    qDebug() << "deDuplicateNeighbours END   edges=" << edges.size()  << "vertices=" << vertices.size();
+    qDebug() << "deDuplicateNeighbours END  "  << "vertices =" << vertices.size() << "edges =" << edges.size();
 }
 
-void Map::deDuplicateEdges(const NeighboursPtr vec)
+void Map::deDuplicateEdges(const NeighboursPtr & vec)
 {
     // examining the positions edges of associated with the vertex
     QVector<EdgePtr> duplicateEdges;
@@ -241,15 +331,11 @@ void Map::deDuplicateEdges(const NeighboursPtr vec)
 void Map::removeVerticesWithEdgeCount(int edgeCount)
 {
     qDebug() << "removeVerticesWithEdgeCount" << edgeCount << "......";
-    if (!status.neighboursBuilt)
-    {
-        buildNeighbours();
-    }
 
     QVector<VertexPtr> verts;
-    for (auto & v : vertices)
+    for (const auto & v : qAsConst(vertices))
     {
-        NeighboursPtr n = getBuiltNeighbours(v);
+        NeighboursPtr n = getNeighbours(v);
         if (n->numNeighbours() == edgeCount)
         {
             verts.push_back(v);

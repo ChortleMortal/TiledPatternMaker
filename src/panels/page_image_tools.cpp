@@ -1,47 +1,33 @@
-/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
+#include <QGroupBox>
+#include <QComboBox>
+#include <QCheckBox>
+#include <QLabel>
+#include <QRadioButton>
+#include <QFileDialog>
+#include <QMessageBox>
 
+#include "misc/cycler.h"
+#include "misc/fileservices.h"
+#include "misc/tpm_io.h"
+#include "mosaic/mosaic_manager.h"
 #include "panels/page_image_tools.h"
-#include "panels/dlg_name.h"
-#include "base/qtapplog.h"
-#include "base/fileservices.h"
-#include "base/mosaic_manager.h"
-#include "base/tiledpatternmaker.h"
-#include "viewers/view.h"
-#include "panels/layout_sliderset.h"
-#include "panels/versioned_list_widget.h"
 #include "panels/panel.h"
-#include "base/shared.h"
-#include "tile/tiling.h"
+#include "settings/configuration.h"
 #include "tile/tiling_manager.h"
+#include "tiledpatternmaker.h"
 #include "viewers/viewcontrol.h"
-#include "base/cycler.h"
+#include "widgets/layout_sliderset.h"
+#include "widgets/memory_combo.h"
+#include "widgets/versioned_list_widget.h"
 
 page_image_tools:: page_image_tools(ControlPanel * cpanel)  : panel_page(cpanel,"Image Tools")
 {
+    localCycle = false;
+
     QGroupBox * gbox;
-    gbox = createCycleSection();
+    gbox = createCycleGenSection();
+    vbox->addWidget(gbox);
+    gbox = createCycleViewSection();
     vbox->addWidget(gbox);
     gbox = createWorklistSection();
     vbox->addWidget(gbox);
@@ -60,89 +46,110 @@ page_image_tools:: page_image_tools(ControlPanel * cpanel)  : panel_page(cpanel,
     Cycler * cycler = Cycler::getInstance();
     connect(this,  &page_image_tools::sig_cyclerStart,          cycler,  &Cycler::slot_startCycle, Qt::QueuedConnection);
     connect(cycler, &Cycler::sig_workList,                      this,   &page_image_tools::slot_dir0Changed, Qt::QueuedConnection);
+
+    ViewControl * vc = ViewControl::getInstance();
+    connect(vc, &ViewControl::sig_cyclerQuit,                   this, [this] { localCycle = false; });
 }
 
-QGroupBox * page_image_tools::createCycleSection()
+QGroupBox * page_image_tools::createCycleGenSection()
 {
     SpinSet     * spCycleInterval       = new SpinSet("Cycle Interval",0,0,9);
     QPushButton * generateBtn           = new QPushButton("Generate");
     generateBtn->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
 
-    QRadioButton * rStyles    = new QRadioButton("Mosaics");
-    QRadioButton * rTiles     = new QRadioButton("Tilings");
-    QRadioButton * rPngs      = new QRadioButton("PNGS");
-    QRadioButton * rSavStyles = new QRadioButton("Save Mosaic BMPs");
-    QRadioButton * rSavTiles  = new QRadioButton("Save Tiling BMPs");
+    QRadioButton * rSavStyles = new QRadioButton("Mosaic BMPs");
+    QRadioButton * rSavTiles  = new QRadioButton("Tiling BMPs");
     QCheckBox    * skip       = new QCheckBox("Skip Existing");
-      use_wlistForGenerateChk = new QCheckBox("Use Work List");
+              fileFilterCombo = new QComboBox();
                    directory  = new QLineEdit("");
 #ifdef Q_OS_WINDOWS
     QPushButton  * opendirBtn = new QPushButton("Open/See");
 #endif
+
     QDateTime d = QDateTime::currentDateTime();
     QString date = d.toString("yyyy-MM-dd");
     directory->setText(date);
     directory->setMinimumWidth(132);
 
-    QButtonGroup * cycleGroup = new QButtonGroup;
-    cycleGroup->addButton(rStyles,CYCLE_STYLES);
-    cycleGroup->addButton(rTiles,CYCLE_TILINGS);
-    cycleGroup->addButton(rPngs,CYCLE_ORIGINAL_PNGS);
-    cycleGroup->addButton(rSavStyles,CYCLE_SAVE_STYLE_BMPS);
-    cycleGroup->addButton(rSavTiles,CYCLE_SAVE_TILING_BMPS);
+    fileFilterCombo->addItem("All files",LOAD_ALL);
+    fileFilterCombo->addItem("Worklist",LOAD_WORKLIST);
+    fileFilterCombo->addItem("Load filtered",LOAD_FILTERED);
 
-    if (config->cycleMode >= CYCLE_MIN && config->cycleMode <= CYCLE_MAX)
-    {
-        cycleGroup->button(config->cycleMode)->setChecked(true);
-    }
+    int index = fileFilterCombo->findData(config->fileFilter);
+    fileFilterCombo->setCurrentIndex(index);
 
-    QHBoxLayout * hbox00 = new QHBoxLayout;
-    hbox00->addWidget(directory);
+    cycleGenBtnGroup = new QButtonGroup;
+    cycleGenBtnGroup->addButton(rSavStyles,CYCLE_SAVE_STYLE_BMPS);
+    cycleGenBtnGroup->addButton(rSavTiles,CYCLE_SAVE_TILING_BMPS);
+
+    cycleGenBtnGroup->button(config->genCycle)->setChecked(true);
+
+    QHBoxLayout * hboxGen = new QHBoxLayout;
+    hboxGen->addWidget(directory);
 #ifdef Q_OS_WINDOWS
-    hbox00->addWidget(opendirBtn);
+    hboxGen->addWidget(opendirBtn);
 #endif
-    hbox00->addWidget(rSavTiles);
-    hbox00->addWidget(rSavStyles);
-    hbox00->addWidget(use_wlistForGenerateChk);
-    hbox00->addWidget(skip);
-    hbox00->addStretch();
+    hboxGen->addWidget(rSavStyles);
+    hboxGen->addWidget(rSavTiles);
+    hboxGen->addWidget(fileFilterCombo);
+    hboxGen->addWidget(skip);
+    hboxGen->addStretch();
+    hboxGen->addWidget(generateBtn,0,Qt::AlignTop);
 
-    AQHBoxLayout * hbox11 = new AQHBoxLayout;
-    hbox11->addLayout(spCycleInterval);
-    hbox11->addWidget(rPngs);
-    hbox11->addWidget(rStyles);
-    hbox11->addWidget(rTiles);
-    hbox11->addStretch();
-
-    QVBoxLayout * cycleLayout = new QVBoxLayout;
-    cycleLayout->addLayout(hbox00);
-    cycleLayout->addLayout(hbox11);
-
-    QHBoxLayout * hbox22 = new QHBoxLayout;
-    hbox22->addLayout(cycleLayout);
-    hbox22->addWidget(generateBtn,0,Qt::AlignTop);
-
-    QGroupBox * cycleGroupBox = new  QGroupBox("Generate Images");
-    cycleGroupBox->setLayout(hbox22);
+    QGroupBox * cycleGenBox = new  QGroupBox("Generate Images");
+    cycleGenBox->setLayout(hboxGen);
 
     spCycleInterval->setValue(config->cycleInterval);
-    use_wlistForGenerateChk->setChecked(config->use_workListForGenerate);
     skip->setChecked(config->skipExisting);
 
     connect(spCycleInterval,    &SpinSet::valueChanged,    this,  &page_image_tools::slot_cycleIntervalChanged);
-    connect(generateBtn,        &QPushButton::clicked,     this,  &page_image_tools::slot_cycle);
+    connect(generateBtn,        &QPushButton::clicked,     this,  &page_image_tools::slot_cycleGen);
 #ifdef Q_OS_WINDOWS
     connect(opendirBtn,         &QPushButton::clicked,     this,  &page_image_tools::slot_opendir);
 #endif
-    connect(use_wlistForGenerateChk,&QCheckBox::clicked,   this,  &page_image_tools::slot_use_worklist_generate);
     connect(skip,               &QCheckBox::clicked,       this,  &page_image_tools::slot_skipExisting);
+    connect(cycleGenBtnGroup,   &QButtonGroup::idClicked,  this, [this](int id) { config->genCycle = static_cast<eCycleMode>(id); } );
+    connect(fileFilterCombo,   QOverload<int>::of(&QComboBox::currentIndexChanged), [=]()
+                                { config->fileFilter = static_cast<eLoadType>(fileFilterCombo->currentData().toInt()); } );
 
-#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
-    connect(cycleGroup,         SIGNAL(buttonClicked(int)), this, SLOT(slot_cycleModeChanged(int)));
-#else
-    connect(cycleGroup,          &QButtonGroup::idClicked,  this,  &page_image_tools::slot_cycleModeChanged);
-#endif
-    return cycleGroupBox;
+    return cycleGenBox;
+}
+
+QGroupBox * page_image_tools::createCycleViewSection()
+{
+    SpinSet     * spCycleInterval       = new SpinSet("Cycle Interval",0,0,9);
+    QPushButton * generateBtn           = new QPushButton("View");
+    generateBtn->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
+
+    QRadioButton * rStyles    = new QRadioButton("Mosaics");
+    QRadioButton * rTiles     = new QRadioButton("Tilings");
+    QRadioButton * rPngs      = new QRadioButton("Original PNGs");
+
+    cycleViewBtnGroup = new QButtonGroup;
+    cycleViewBtnGroup->addButton(rStyles,CYCLE_STYLES);
+    cycleViewBtnGroup->addButton(rTiles,CYCLE_TILINGS);
+    cycleViewBtnGroup->addButton(rPngs,CYCLE_ORIGINAL_PNGS);
+
+    cycleViewBtnGroup->button(config->viewCycle)->setChecked(true);
+
+    QHBoxLayout * hboxView = new QHBoxLayout;
+    hboxView->addLayout(spCycleInterval);
+    hboxView->addWidget(rStyles);
+    hboxView->addWidget(rTiles);
+    hboxView->addWidget(rPngs);
+    hboxView->addStretch();
+    hboxView->addWidget(generateBtn,0,Qt::AlignTop);
+
+    QGroupBox * cycleViewBox = new  QGroupBox("View Images");
+    cycleViewBox->setLayout(hboxView);
+
+    spCycleInterval->setValue(config->cycleInterval);
+
+    connect(spCycleInterval,    &SpinSet::valueChanged,    this,  &page_image_tools::slot_cycleIntervalChanged);
+    connect(generateBtn,        &QPushButton::clicked,     this,  &page_image_tools::slot_cycleView);
+    connect(cycleViewBtnGroup,  &QButtonGroup::idClicked, [=](int id) { config->viewCycle = static_cast<eCycleMode>(id); } );
+
+    return cycleViewBox;
 }
 
 QGroupBox * page_image_tools::createWorklistSection()
@@ -151,14 +158,20 @@ QGroupBox * page_image_tools::createWorklistSection()
     QPushButton * saveListBtn = new QPushButton("Save Work List");
     QPushButton * editListBtn = new QPushButton("Edit Work List");
                   wlistStatus = new QLabel();
+    QPushButton * delBtn        = new QPushButton("Delete Current");
+    QPushButton * replBtn       = new QPushButton("Replace Current");
+    QPushButton * loadBtn       = new QPushButton("Load Current");
 
     QHBoxLayout * hbox = new QHBoxLayout;
     hbox->addWidget(loadListBtn);
     hbox->addWidget(saveListBtn);
     hbox->addWidget(editListBtn);
-    hbox->addSpacing(7);
+    hbox->addStretch();
     hbox->addWidget(wlistStatus);
     hbox->addStretch();
+    hbox->addWidget(delBtn);
+    hbox->addWidget(replBtn);
+    hbox->addWidget(loadBtn);
 
     QGroupBox * box = new  QGroupBox("Work List operations");
     box->setLayout(hbox);
@@ -166,6 +179,10 @@ QGroupBox * page_image_tools::createWorklistSection()
     connect(loadListBtn,  &QPushButton::clicked,     this,  &page_image_tools::loadWorkListFromFile);
     connect(saveListBtn,  &QPushButton::clicked,     this,  &page_image_tools::saveWorkListToFile);
     connect(editListBtn,  &QPushButton::clicked,     this,  &page_image_tools::editWorkList);
+    connect(delBtn,       &QPushButton::clicked,     this,  &page_image_tools::slot_deleteCurrent);
+    connect(replBtn,      &QPushButton::clicked,     this,  &page_image_tools::replaceCurrent);
+    connect(loadBtn,      &QPushButton::clicked,     this,  &page_image_tools::loadCurrent);
+    connect(theApp,&TiledPatternMaker::sig_deleteCurrentInWorklist, this, &page_image_tools::slot_deleteCurrent);
 
     return box;
 }
@@ -195,6 +212,7 @@ QGroupBox * page_image_tools::createCompareSection()
     compareBtn->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
 
     QPushButton * swapBtn      = new QPushButton("Swap");
+    QPushButton * continueBtn  = new QPushButton("Continue");
     QCheckBox   * cbStopIfDiff = new QCheckBox("Stop if Diff");
     QCheckBox   * differences  = new QCheckBox("Display Differences");
     use_wlistForCompareChk     = new QCheckBox("Use Work List");
@@ -225,6 +243,7 @@ QGroupBox * page_image_tools::createCompareSection()
     row++;
     imageGrid->addWidget(compareDirRightBtn,row,0);
     imageGrid->addWidget(rightDir,row,1);
+    imageGrid->addWidget(continueBtn,row,2);
 
     row++;
     imageGrid->addWidget(previousBtn,row,0);
@@ -259,6 +278,7 @@ QGroupBox * page_image_tools::createCompareSection()
     gen_wlistChk->setChecked(config->generate_workList);
 
     connect(swapBtn,                &QPushButton::clicked,     this,  &page_image_tools::swapDirs);
+    connect(continueBtn,            &QPushButton::clicked,     this,  &page_image_tools::continueCycle);
     connect(compareDirLeftBtn,      &QPushButton::clicked,     this,  &page_image_tools::selectDir0);
     connect(compareDirRightBtn,     &QPushButton::clicked,     this,  &page_image_tools::selectDir1);
 
@@ -275,7 +295,7 @@ QGroupBox * page_image_tools::createCompareSection()
     connect(cbStopIfDiff,           &QCheckBox::clicked,       this,   &page_image_tools::slot_stopIfDiffClicked);
     connect(differences,            &QCheckBox::clicked,       this,   &page_image_tools::slot_differencesClicked);
     connect(use_wlistForCompareChk, &QCheckBox::clicked,       this,   &page_image_tools::slot_use_worklist_compare);
-    connect(gen_wlistChk,           &QCheckBox::clicked,       this,   &page_image_tools::slot_gen_worklist);
+    connect(gen_wlistChk,           &QCheckBox::clicked,       this,   &page_image_tools::slot_gen_worklist_compare);
 
     connect(leftDir,   &QLineEdit::editingFinished,       this, &page_image_tools::slot_dir0Changed);
     connect(rightDir,  &QLineEdit::editingFinished,       this, &page_image_tools::slot_dir1Changed);
@@ -290,11 +310,13 @@ QGroupBox * page_image_tools::createCompareSection()
 
 QGroupBox * page_image_tools::createViewSection()
 {
-    QPushButton * selectImgBtn   = new QPushButton("Select Image File");
+    //QPushButton * selectImgBtn   = new QPushButton("Select Image File");
+    QPushButton * selectImgBtn   = new QPushButton("Select");
     QPushButton * viewImageBtn   = new QPushButton("View");
     QCheckBox   * chkTransparent = new QCheckBox("Transparent");
     QCheckBox   * chkPopup       = new QCheckBox("Pop up");
-                  viewFile       = new QLineEdit("File");
+                  viewFileCombo  = new MemoryCombo("ViewImageCombo");
+                  viewFileCombo->setMinimumWidth(561);
 
     QHBoxLayout * hbox = new QHBoxLayout();
     hbox->addWidget(chkPopup);
@@ -303,17 +325,23 @@ QGroupBox * page_image_tools::createViewSection()
 
     QHBoxLayout * hbox2 = new QHBoxLayout();
     hbox2->addWidget(selectImgBtn);
-    hbox2->addWidget(viewFile);
+    hbox2->addWidget(viewFileCombo);
     hbox2->addWidget(viewImageBtn);
 
     QVBoxLayout * vbox = new QVBoxLayout;
     vbox->addLayout(hbox);
     vbox->addLayout(hbox2);
 
-    QGroupBox * imageGroup = new QGroupBox("View Images");
+    QGroupBox * imageGroup = new QGroupBox("View Image File");
     imageGroup->setLayout(vbox);
 
-    viewFile->setText(config->viewImage);
+    unsigned int index =0;
+    for (auto file : config->viewImages)
+    {
+        if (!file.isEmpty())
+            viewFileCombo->insertItem(index++,file);
+    }
+    viewFileCombo->setCurrentIndex(0);
     chkTransparent->setChecked(config->view_transparent);
     chkPopup->setChecked(config->view_popup);
 
@@ -321,6 +349,7 @@ QGroupBox * page_image_tools::createViewSection()
     connect(viewImageBtn,             &QPushButton::clicked,   this,   &page_image_tools::slot_viewImage);
     connect(chkTransparent,           &QCheckBox::clicked,     this,   &page_image_tools::slot_view_transparentClicked);
     connect(chkPopup,                 &QCheckBox::clicked,     this,   &page_image_tools::slot_view_popupClicked);
+    connect(viewFileCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &page_image_tools::slot_imageSelectionChanged);
 
     return  imageGroup;
 }
@@ -362,13 +391,13 @@ void  page_image_tools::onEnter()
 
 void page_image_tools::onExit()
 {
-    panel->hidePanelStatus();
+    panel->popPanelStatus();
 
     view->clearLayout();   // removes any cler pngs
     view->show();
 }
 
-void  page_image_tools::refreshPage()
+void  page_image_tools::onRefresh()
 {
     QString str = QString("Worklist contains %1 entries").arg(config->workList.size());
     wlistStatus->setText(str);
@@ -382,11 +411,6 @@ void page_image_tools::slot_stopIfDiffClicked(bool enb)
 void page_image_tools::slot_cycleIntervalChanged(int value)
 {
     config->cycleInterval = value;
-}
-
-void page_image_tools::slot_cycleModeChanged(int id)
-{
-    config->cycleMode = static_cast<eCycleMode>(id);
 }
 
 void page_image_tools::slot_dir0Changed()
@@ -443,8 +467,7 @@ void page_image_tools::swapDirs()
 void page_image_tools::slot_viewImage()
 {
     qDebug() << "slot_viewImage";
-    QString file = viewFile->text();
-    config->viewImage = file;
+    QString file = viewFileCombo->currentText();
     viewImage(file,config->view_transparent,config->view_popup);
 }
 
@@ -482,9 +505,17 @@ void page_image_tools::viewImage(QString file, bool transparent, bool popup)
     emit sig_view_image(file,file,transparent,popup);     // use same file
 }
 
-void page_image_tools::slot_cycle()
+void page_image_tools::slot_cycleGen()
 {
-    switch (config->cycleMode)
+    if (localCycle)
+    {
+        localCycle = false;
+        return;
+    }
+
+    localCycle = true;
+
+    switch (config->genCycle)
     {
     case CYCLE_SAVE_STYLE_BMPS:
         panel->selectViewer(VIEW_MOSAIC);
@@ -496,50 +527,57 @@ void page_image_tools::slot_cycle()
         saveTilingBitmaps();
         break;
 
-    case CYCLE_STYLES:
-        panel->selectViewer(VIEW_MOSAIC);
-        emit sig_cyclerStart(config->cycleMode);
-        break;
-
-    case CYCLE_TILINGS:
-        panel->selectViewer(VIEW_TILING);
-        emit sig_cyclerStart(config->cycleMode);
-        break;
-
-    case CYCLE_ORIGINAL_PNGS:
-    case CYCLE_COMPARE_ALL_IMAGES:
-    case CYCLE_COMPARE_WORKLIST_IMAGES:
-        emit sig_cyclerStart(config->cycleMode);
-        break;
-
-    case CYCLE_NONE:
+    default:
+        localCycle = false;
         break;
     }
 }
 
+void page_image_tools::slot_cycleView()
+{
+    switch (config->viewCycle)
+    {
+    case CYCLE_STYLES:
+        panel->selectViewer(VIEW_MOSAIC);
+        emit sig_cyclerStart(CYCLE_STYLES);
+        break;
+
+    case CYCLE_TILINGS:
+        panel->selectViewer(VIEW_TILING);
+        emit sig_cyclerStart(CYCLE_TILINGS);
+        break;
+
+    case CYCLE_ORIGINAL_PNGS:
+        emit sig_cyclerStart(CYCLE_ORIGINAL_PNGS);
+        break;
+
+    default:
+        break;
+    }
+}
+
+void page_image_tools::continueCycle()
+{
+    emit theApp->sig_closeAllImageViewers();
+    emit theApp->sig_ready();
+}
+
 void page_image_tools::saveMosaicBitmaps()
 {
-    QStringList files;
-
-    if (!config->use_workListForGenerate)
-    {
-        if (config->mosaicFilterCheck &&  !config->mosaicFilter.isEmpty())
-        {
-            files = FileServices::getFilteredDesignNames(config->mosaicFilter);
-        }
-        else
-        {
-            files = FileServices::getDesignNames();
-        }
-    }
-    else
-    {
-        files = config->workList;
-    }
+    auto id = config->fileFilter;
+    auto files = FileServices::getMosaicNames(id);
 
     for (const auto & name : qAsConst(files))
     {
-        // this forces immediate action
+        if (!localCycle)
+        {
+            QMessageBox box(this);
+            box.setIcon(QMessageBox::Warning);
+            box.setText("Cycle terminated");
+            box.exec();
+            return;
+        }
+
         if (config->skipExisting)
         {
             Q_ASSERT(!name.contains(".xml"));
@@ -552,18 +590,14 @@ void page_image_tools::saveMosaicBitmaps()
             }
         }
 
-        config->currentlyLoadedXML.clear();
-
-        MosaicManager mm;
-        mm.loadMosaic(name);
-
-        config->lastLoadedXML      = name;
-        config->currentlyLoadedXML = name;
-
-        vcontrol->slot_refreshView();
-        view->repaint();
-        savePixmap(name);
+        if (loadMosaic(name))
+        {
+            savePixmap(name);
+        }
+        qApp->processEvents();
     }
+
+    localCycle = false;
 
     QMessageBox box(this);
     box.setIcon(QMessageBox::Information);
@@ -571,30 +605,63 @@ void page_image_tools::saveMosaicBitmaps()
     box.exec();
 }
 
+bool page_image_tools::loadMosaic(QString name)
+{
+    config->currentlyLoadedXML.clear();
+
+    MosaicManager mm;
+    if (mm.loadMosaic(name))
+    {
+        config->lastLoadedXML      = name;
+        config->currentlyLoadedXML = name;
+
+        view->slot_refreshView();
+        view->repaint();
+        return true;
+    }
+    return false;
+}
+
 void page_image_tools::saveTilingBitmaps()
 {
-    QStringList files;
-    if (config->tileFilterCheck && !config->tileFilter.isEmpty())
-    {
-        files = FileServices::getFilteredTilingNames(config->tileFilter);
-    }
-    else
-    {
-        files = FileServices::getTilingNames();
-    }
+    auto id = config->fileFilter;
+    auto files = FileServices::getTilingNames(id);
 
     for (const auto & name : qAsConst(files))
     {
-        // this forces immediate action
+        if (!localCycle)
+        {
+            QMessageBox box(this);
+            box.setIcon(QMessageBox::Warning);
+            box.setText("Cycle terminated");
+            box.exec();
+            return;
+        }
+
+        if (config->skipExisting)
+        {
+            Q_ASSERT(!name.contains(".xml"));
+            QString path = getPixmapPath();
+            QString file = path + "/" + name + ".bmp";
+            QFile afile(file);
+            if (afile.exists())
+            {
+               continue;
+            }
+        }
+
         TilingManager tm;
         TilingPtr tp = tm.loadTiling(name,SM_LOAD_SINGLE);
         if (tp)
         {
-            vcontrol->slot_refreshView();
+            view->slot_refreshView();
             view->repaint();
             savePixmap(name);
         }
+        qApp->processEvents();
     }
+
+    localCycle = false;
 
     QMessageBox box(this);
     box.setIcon(QMessageBox::Information);
@@ -604,7 +671,7 @@ void page_image_tools::saveTilingBitmaps()
 
 void page_image_tools::slot_compareImages()
 {
-    panel->showPanelStatus("Spacebar=next P=ping-pong S=side-by-side L=log Q=quit");
+    panel->pushPanelStatus("Spacebar=next C=compare P=ping-pong S=side-by-side L=log Q=quit D=delete-from-worklist");
 
     imageCompareResult->setText("");
     emit sig_compareImageFiles(leftFile->currentText(),rightFile->currentText(),false);
@@ -612,7 +679,7 @@ void page_image_tools::slot_compareImages()
 
 void page_image_tools::slot_compareCycle()
 {
-    panel->showPanelStatus("Spacebar=next P=ping-pong S=side-by-side L=log Q=quit");
+    panel->pushPanelStatus("Spacebar=next C=compare P=ping-pong S=side-by-side L=log Q=quit D=delete-from-worklist");
 
     if (config->use_workListForCompare)
         emit sig_cyclerStart(CYCLE_COMPARE_WORKLIST_IMAGES);
@@ -651,27 +718,20 @@ void page_image_tools::slot_use_worklist_compare(bool checked)
     if (checked)
     {
         config->generate_workList = false;
-        gen_wlistChk->setChecked(false);
+        gen_wlistChk->setChecked(false);    // do both
 
     }
     slot_dir0Changed();
     slot_dir1Changed();
 }
 
-void page_image_tools::slot_use_worklist_generate(bool checked)
-{
-    config->use_workListForGenerate = checked;
-    slot_dir0Changed();
-    slot_dir1Changed();
-}
-
-void page_image_tools::slot_gen_worklist(bool checked)
+void page_image_tools::slot_gen_worklist_compare(bool checked)
 {
     config->generate_workList = checked;
     if (checked)
     {
         config->use_workListForCompare = false;
-        use_wlistForCompareChk->setChecked(false);
+        use_wlistForCompareChk->setChecked(false); // do both
     }
     slot_dir0Changed();
     slot_dir1Changed();
@@ -773,7 +833,13 @@ void page_image_tools::slot_next()
 void page_image_tools::slot_load()
 {
     QString mos = leftFile->currentText();
-    emit sig_loadMosaic(mos);
+    emit sig_loadMosaic(mos,true);
+}
+
+void page_image_tools::loadCurrent()
+{
+    QString mos = rightFile->currentText();
+    emit sig_loadMosaic(mos,false);
 }
 
 QString page_image_tools::getPixmapPath()
@@ -816,10 +882,8 @@ void page_image_tools::savePixmap(QString name)
     Q_ASSERT(!name.contains(".xml"));
 
     QPixmap pixmap = view->grab();
-
-    QString path = getPixmapPath();
-
-    QString file = path + "/" + name + ".bmp";
+    QString path   = getPixmapPath();
+    QString file   = path + "/" + name + ".bmp";
     qDebug() << "saving" << file;
 
     bool rv = pixmap.save(file);
@@ -833,8 +897,11 @@ void page_image_tools::slot_opendir()
     QString path = getPixmapPath();
     qDebug() <<  "Path:" << path;
 
+    QString path2 = QDir::toNativeSeparators(path);
+    qDebug() <<  "Path2:" << path2;
+
     QStringList args;
-    args << "/select," << QDir::toNativeSeparators(path);
+    args << path2;
 
     QProcess::startDetached("explorer",args);
 #endif
@@ -842,13 +909,13 @@ void page_image_tools::slot_opendir()
 
 void page_image_tools::loadWorkListFromFile()
 {
-    QString dir = config->rootMediaDir;
-    QString fileName = QFileDialog::getOpenFileName(nullptr,"Select text file",dir, "All  files (*)");
+    QString dir = config->worklistsDir;
+    QString fileName = QFileDialog::getOpenFileName(this,"Select text file",dir, "All  files (*)");
     if (fileName.isEmpty())
     {
-        QMessageBox box;
+        QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
-        box.setText("FILE NOT FOUND");
+        box.setText("Not loaded");
         box.exec();
         return;
     }
@@ -856,20 +923,20 @@ void page_image_tools::loadWorkListFromFile()
     QFile file(fileName);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        QMessageBox box;
+        QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
         box.setText(QString("Text file <%1> failed to open").arg(fileName));
         box.exec();
-
         return;
-
     }
+
     QTextStream textStream(&file);
 
     QStringList stringList;
     while (!textStream.atEnd())
     {
         QString name = textStream.readLine();
+        name = name.trimmed();
         name.remove(".xml");
         stringList << name;
     }
@@ -878,7 +945,7 @@ void page_image_tools::loadWorkListFromFile()
     qDebug() << "file list: " << stringList;
     if (stringList.empty())
     {
-        QMessageBox box;
+        QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
         box.setText(QString("No filenames found in %1").arg(fileName));
         box.exec();
@@ -888,32 +955,33 @@ void page_image_tools::loadWorkListFromFile()
 
     int sz = stringList.size();
 
-    QMessageBox box;
+    QMessageBox box(this);
     box.setIcon(QMessageBox::Information);
     box.setText(QString("%1 filenames loaded into Work List - OK").arg(sz));
     box.exec();
 
-    slot_use_worklist_compare(true);
+    use_wlistForCompareChk->setChecked(true);
+    slot_use_worklist_compare(true);    // do both
 }
 
 void page_image_tools::saveWorkListToFile()
 {
     if (config->workList.isEmpty())
     {
-        QMessageBox box;
+        QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
         box.setText("Empty Work List - nothing to save");
         box.exec();
         return;
     }
 
-    QString dir = config->rootMediaDir;
-    QString fileName = QFileDialog::getSaveFileName(nullptr,"Select text file",dir, "All  files (*)");
+    QString dir = config->worklistsDir;
+    QString fileName = QFileDialog::getSaveFileName(this,"Select text file",dir, "All  files (*)");
     if (fileName.isEmpty())
     {
-        QMessageBox box;
+        QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
-        box.setText("FILE NOT FOUND");
+        box.setText("Worklist not saved");
         box.exec();
         return;
     }
@@ -926,7 +994,7 @@ void page_image_tools::saveWorkListToFile()
     QFile file(fileName);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text))
     {
-        QMessageBox box;
+        QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
         box.setText(QString("Text file <%1> failed to open").arg(fileName));
         box.exec();
@@ -942,7 +1010,7 @@ void page_image_tools::saveWorkListToFile()
     }
     file.close();
 
-    QMessageBox box;
+    QMessageBox box(this);
     box.setIcon(QMessageBox::Information);
     box.setText("Work List saved - OK");
     box.exec();
@@ -950,9 +1018,8 @@ void page_image_tools::saveWorkListToFile()
 
 void page_image_tools::editWorkList()
 {
-    ListListWidget * plw = new ListListWidget(this);
+    WorklistWidget * plw = new WorklistWidget(this);
     plw->addItems(config->workList);
-    plw->establishSize();
 
     QVBoxLayout * vbox = new QVBoxLayout;
     vbox->addWidget(plw);
@@ -962,7 +1029,76 @@ void page_image_tools::editWorkList()
     ewl->setLayout(vbox);
 
     ewl->exec();
+}
 
+void page_image_tools::replaceCurrent()
+{
+    qDebug() << "slot_replaceCurrent";
+    if (!config->use_workListForCompare)
+    {
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Worklist not in use");
+        box.exec();
+        return;
+    }
+
+    QString name = rightFile->currentText();
+    bool rv = loadMosaic(name);
+    if (rv)
+    {
+        QPixmap pixmap = view->grab();
+        QString path   = rightDir->text();
+        QString file   = path + "/" + name + ".bmp";
+        qDebug() << "saving" << file;
+
+        rv = pixmap.save(file);
+    }
+    if (rv)
+    {
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Information );
+        box.setText("Bitmap replacement : OK");
+        box.exec();
+    }
+    else
+    {
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Bitmap replacement : FAILED");
+        box.exec();
+    }
+
+    // recompare newly saved
+    emit theApp->sig_closeAllImageViewers();
+    emit sig_compareImageFiles(leftFile->currentText(),rightFile->currentText(),false);
+}
+
+void page_image_tools::slot_deleteCurrent()
+{
+    qDebug() << "slot_deleteCurrent";
+    if (!config->use_workListForCompare)
+    {
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Worklist not in use");
+        box.exec();
+        return;
+    }
+
+    QString name = rightFile->currentText();
+    QStringList newList;
+    for (int i = 0; i < config->workList.size(); ++i)
+    {
+        if (config->workList.at(i) != name)
+        {
+            newList << config->workList.at(i);
+        }
+        else
+            qDebug() << name << ": deleted";
+    }
+    config->workList = newList;
+    emit theApp->sig_ready();
 }
 
 void page_image_tools::slot_useFilter(bool checked)
@@ -972,7 +1108,7 @@ void page_image_tools::slot_useFilter(bool checked)
 
 void page_image_tools::slot_colorEdit()
 {
-    AQColorDialog dlg(config->transparentColor);
+    AQColorDialog dlg(config->transparentColor,this);
     int rv = dlg.exec();
     if (rv != QDialog::Accepted) return;
 
@@ -990,15 +1126,19 @@ void page_image_tools::slot_colorEdit()
 void page_image_tools::slot_selectImage()
 {
     QString dir = config->rootMediaDir;
-    QString fileName = QFileDialog::getOpenFileName(nullptr,"Select image file",dir, "Image Files (*.png *.jpg *.bmp *.heic)");
+    QString fileName = QFileDialog::getOpenFileName(this,"Select image file",dir, "Image Files (*.png *.jpg *.bmp *.heic)");
     if (fileName.isEmpty())
     {
-        QMessageBox box;
+        QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
         box.setText("FILE NOT FOUND");
         box.exec();
         return;
     }
-    config->viewImage = fileName;
-    viewFile->setText(config->viewImage);
+    viewFileCombo->setCurrentText(fileName);
+}
+
+void page_image_tools::slot_imageSelectionChanged()
+{
+    viewFileCombo->select(viewFileCombo->currentIndex());
 }

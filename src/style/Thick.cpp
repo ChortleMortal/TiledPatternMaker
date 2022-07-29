@@ -1,32 +1,10 @@
-/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
+#include <QDebug>
 
 #include "style/thick.h"
 #include "geometry/map.h"
 #include "style/colored.h"
 #include <QPainter>
-#include "base/geo_graphics.h"
+#include "misc/geo_graphics.h"
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -38,10 +16,14 @@
 //
 // Creation.
 
-Thick::Thick(PrototypePtr proto): Colored(proto)
+Thick::Thick(const PrototypePtr &  proto): Colored(proto)
 {
-    width = 0.05;
-    draw_outline = false;           // DAC added
+    width         = 0.05;
+    drawOutline   = OUTLINE_NONE;           // DAC added
+    outline_width = 0.05;
+    outline_color = Qt::black;
+    join_style    = Qt::RoundJoin;
+    cap_style     = Qt::RoundCap;
 }
 
 Thick::Thick(StylePtr other ) : Colored(other)
@@ -49,13 +31,21 @@ Thick::Thick(StylePtr other ) : Colored(other)
     std::shared_ptr<Thick> thick  = std::dynamic_pointer_cast<Thick>(other);
     if (thick)
     {
-        width        = thick->width;
-        draw_outline = thick->draw_outline;
+        width         = thick->width;
+        drawOutline   = thick->drawOutline;
+        outline_width = thick->outline_width;
+        outline_color = thick->outline_color;
+        join_style    = thick->join_style;
+        cap_style     = thick->cap_style;
     }
     else
     {
-        width = 0.05;
-        draw_outline = false;           // DAC added
+        width         = 0.05;
+        drawOutline   = OUTLINE_NONE;           // DAC added
+        outline_width = 0.05;
+        outline_color = Qt::black;
+        join_style    = Qt::RoundJoin;
+        cap_style     = Qt::RoundCap;
     }
 }
 
@@ -67,25 +57,9 @@ Thick::~Thick()
 #endif
 }
 
-void Thick::setLineWidth(qreal width )
-{
-    this->width = width;
-    resetStyleRepresentation();
-}
-
-void Thick::setOutlineWidth(qreal width )
-{
-    this->outline_width = width;
-    if (width != 0)
-    {
-        draw_outline = true;
-    }
-    resetStyleRepresentation();
-}
-
 void Thick::resetStyleRepresentation()
 {
-    eraseStyleMap();
+    resetStyleMap();
 }
 
 void Thick::createStyleRepresentation()
@@ -93,10 +67,9 @@ void Thick::createStyleRepresentation()
     getMap();
 }
 
-
 void Thick::draw(GeoGraphics * gg )
 {
-    qDebug() << "Thick::draw";
+    //qDebug() << "Thick::draw";
 
     if (!isVisible())
     {
@@ -114,17 +87,23 @@ void Thick::draw(GeoGraphics * gg )
     //       the width actully widen the drawing in both perpendicular
     //       directions by that width.
 
-    if ( draw_outline )
+    // paint wider first
+    if  (drawOutline != OUTLINE_NONE)
     {
-        QPen pen(Qt::black);
-        for (auto& edge : map->getEdges())
+        qreal pwidth = (drawOutline == OUTLINE_SET) ? width * 2 + outline_width : width * 2 + 0.05;
+        QPen pen(outline_color);
+        pen.setJoinStyle(join_style);
+        pen.setCapStyle(cap_style);
+        for (const auto& edge : qAsConst(map->getEdges()))
         {
-            gg->drawThickEdge(edge,width * 2 + 0.05, pen);
+            gg->drawThickEdge(edge,pwidth, pen);
         }
     }
 
     QPen pen(colors.getNextColor().color);
-    for (auto& edge : map->getEdges())
+    pen.setJoinStyle(join_style);
+    pen.setCapStyle(cap_style);
+    for (const auto& edge : qAsConst(map->getEdges()))
     {
         gg->drawThickEdge(edge, width * 2, pen);
     }

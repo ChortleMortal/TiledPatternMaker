@@ -1,0 +1,117 @@
+<?xml version="1.0"?>
+<Tiling version="6">
+	<!-- Written Tue Nov 9 2021 17:05:24 -->
+	<Name>SarahsPlate</Name>
+	<Fill singleton="t">0,0,0,0</Fill>
+	<T1>0,0</T1>
+	<T2>0,0</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>1100</height>
+		<zwidth>1500</zwidth>
+		<zheight>1100</zheight>
+		<left__delta>23</left__delta>
+		<top__delta>55</top__delta>
+		<width__delta>0.380095642574716</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>-0.1918445807945197,0.74745440309621</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Feature type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="1">-16.67046686435126,-2.743072846479249</Point>
+			<Point id="2">-11.45427692271093,1.046710980276254</Point>
+		</Line>
+		<Line>
+			<Point reference="2" />
+			<Point id="3">-13.44668418864221,7.178710021981303</Point>
+		</Line>
+		<Line>
+			<Point reference="3" />
+			<Point id="4">-6.999118837224092,7.178710021981304</Point>
+		</Line>
+		<Line>
+			<Point reference="4" />
+			<Point id="5">-5.006711571292815,13.31070906368635</Point>
+		</Line>
+		<Line>
+			<Point reference="5" />
+			<Point id="6">0.209478370347518,9.52092523693085</Point>
+		</Line>
+		<Line>
+			<Point reference="6" />
+			<Point id="7">5.425668311987852,13.31070906368635</Point>
+		</Line>
+		<Line>
+			<Point reference="7" />
+			<Point id="8">7.418075577919129,7.178710021981303</Point>
+		</Line>
+		<Line>
+			<Point reference="8" />
+			<Point id="9">13.86564092933724,7.178710021981303</Point>
+		</Line>
+		<Line>
+			<Point reference="9" />
+			<Point id="10">11.87323366340597,1.046710980276254</Point>
+		</Line>
+		<Line>
+			<Point reference="10" />
+			<Point id="11">17.0894236050463,-2.743072846479249</Point>
+		</Line>
+		<Line>
+			<Point reference="11" />
+			<Point id="12">11.87323366340597,-6.532856673234752</Point>
+		</Line>
+		<Line>
+			<Point reference="12" />
+			<Point id="13">13.86564092933724,-12.6648557149398</Point>
+		</Line>
+		<Line>
+			<Point reference="13" />
+			<Point id="14">7.418075577919128,-12.6648557149398</Point>
+		</Line>
+		<Line>
+			<Point reference="14" />
+			<Point id="15">5.425668311987851,-18.79685475664485</Point>
+		</Line>
+		<Line>
+			<Point reference="15" />
+			<Point id="16">0.209478370347518,-15.00707092988935</Point>
+		</Line>
+		<Line>
+			<Point reference="16" />
+			<Point id="17">-5.006711571292817,-18.79685475664485</Point>
+		</Line>
+		<Line>
+			<Point reference="17" />
+			<Point id="18">-6.999118837224093,-12.6648557149398</Point>
+		</Line>
+		<Line>
+			<Point reference="18" />
+			<Point id="19">-13.44668418864221,-12.6648557149398</Point>
+		</Line>
+		<Line>
+			<Point reference="19" />
+			<Point id="20">-11.45427692271093,-6.532856673234753</Point>
+		</Line>
+		<Line>
+			<Point reference="20" />
+			<Point reference="1" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Feature>
+	<Desc>Created from map S2,v1,xml</Desc>
+	<Auth>David Casper</Auth>
+	<BackgroundImage name="20210929_085413606_iOS.JPEG">
+		<Scale>0.380095642574716</Scale>
+		<Rot>0</Rot>
+		<X>38</X>
+		<Y>-4</Y>
+		<Center>-0.1918445807945197,0.74745440309621</Center>
+	</BackgroundImage>
+</Tiling>

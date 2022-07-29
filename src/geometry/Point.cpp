@@ -1,32 +1,8 @@
-/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
+#include <QDebug>
+#include <QtMath>
 
 #include "geometry/point.h"
-#include "geometry/edgepoly.h"
 #include "geometry/loose.h"
-#include "geometry/edge.h"
-#include "geometry/vertex.h"
 
 // Point in a geometrical map.
 
@@ -35,9 +11,7 @@ qreal Point::TOLERANCE2 = TOLERANCE * TOLERANCE;
 
 QPointF Point::ORIGIN = QPointF(0.0,0.0);
 
-
 // Equality.
-
 bool Point::isNear(const QPointF &pt,  const QPointF & other )
 {
     return (dist2(pt,other) < 49.0);
@@ -148,10 +122,26 @@ QLineF Point::clipLine(QLineF line,QPolygonF bounds)
     return line;
 }
 
+QLineF Point::createLine(QLineF line, QPointF mid, qreal angle, qreal length)
+{
+    QPointF p1 = line.p1();
+    QPointF p2 = line.p2();
+    qreal angle2 = Point::getAngleRadians(p1,p2);
+
+    qreal new_angle = angle2 - angle;
+    qreal x2 = mid.x() + (length * qCos(new_angle));
+    qreal y2 = mid.y() + (length * qSin(new_angle));
+
+    qreal x1 = mid.x() - (length * qCos(new_angle));
+    qreal y1 = mid.y() - (length * qSin(new_angle));
+
+    return QLineF(QPointF(x1,y1), QPointF(x2,y2));
+}
+
 QPointF Point::normalize(QPointF & pt)
 {
     qreal m = mag(pt);
-    if( m != 0.0 )
+    if (m != 0.0)
     {
         qreal mult = 1.0 / m;
         QPointF apt = pt * mult;
@@ -166,7 +156,7 @@ QPointF Point::normalize(QPointF & pt)
 void Point::normalizeD(QPointF & pt)
 {
     double m = mag(pt);
-    if( m != 0.0 )
+    if (m != 0.0)
     {
         pt *= ( 1.0 / m );
     }
@@ -179,18 +169,24 @@ qreal Point::dot(QPointF & pt, QPointF & other )
 
 // Return the absolute angle of the edge from this to other, in the
 // range -PI to PI.
-qreal Point::getAngle(QPointF & pt, QPointF & other )
+qreal Point::getAngleRadians(QPointF pt, QPointF other )
 {
-    return qAtan2( other.y() - pt.y(), other.x() - pt.x() );
+    return qAtan2(other.y() - pt.y(), other.x() - pt.x());
+}
+
+qreal Point::getAngleDegrees(QPointF pt, QPointF other )
+{
+    qreal angle = qRadiansToDegrees(qAtan2(-(other.y() - pt.y()), other.x() - pt.x()));
+    return (angle < 0 ? angle + 360.0 : angle);
 }
 
 // Angle wrt the origin.
-qreal Point::getAngle(QPointF & pt)
+qreal Point::getAngle(QPointF pt)
 {
     return qAtan2( pt.y(), pt.x() );
 }
 
-QPointF Point::perp(QPointF & pt)
+QPointF Point::perp(QPointF pt)
 {
     // Return a vector ccw-perpendicular to this.libglu1-mesa-dev
     return QPointF( -pt.y(), pt.x() );
@@ -218,14 +214,13 @@ qreal Point::cross(QPointF & pt, QPointF & other )
 
 // Get the section of arc swept out between the edges this ==> from
 // and this ==> to.
-qreal Point::sweep(QPointF joint, QPointF from, QPointF to )
+qreal Point::sweep(QPointF joint, QPointF from, QPointF to)
 {
-    qreal afrom = getAngle(joint, from );
-    qreal ato = getAngle( joint,  to );
+    qreal afrom = getAngleRadians(joint, from);
+    qreal ato   = getAngleRadians(joint, to);
+    qreal res   = ato - afrom;
 
-    qreal res = ato - afrom;
-
-    while( res < 0.0 )
+    while (res < 0.0)
     {
         res += 2.0 * M_PI;
     }
@@ -264,6 +259,12 @@ qreal Point::dist2ToLine(QPointF pt,  QPointF p, QPointF q )
     }
 }
 
+bool Point::isOnLine(QPointF pt, QLineF line)
+{
+    qreal d2 = dist2ToLine(pt, line.p1(), line.p2());
+    return Loose::zero(d2);
+}
+
 QPointF Point::center(QPolygonF & pts )
 {
     QPointF cent;
@@ -281,16 +282,35 @@ QPointF Point::center(QPolygonF & pts )
     return cent;
 }
 
-QPointF Point::center(EdgePoly & epoly)
+QPointF Point::irregularCenter(QPolygonF & poly)
 {
-    QPointF accum;
-    int count = epoly.size();
-    for( int i = 0; i < count; ++i )
+    QPointF centroid;
+    double signedArea = 0.0;
+    double x0 = 0.0; // Current vertex X
+    double y0 = 0.0; // Current vertex Y
+    double x1 = 0.0; // Next vertex X
+    double y1 = 0.0; // Next vertex Y
+    double a  = 0.0;  // Partial signed area
+
+    // For all vertices in a loop
+    auto prev = poly.constLast();
+    for (const auto & next : poly)
     {
-        accum += epoly[i]->v1->pt;
+        x0 = prev.x();
+        y0 = prev.y();
+        x1 = next.x();
+        y1 = next.y();
+        a = x0*y1 - x1*y0;
+        signedArea += a;
+        centroid.setX(centroid.x() + ((x0 + x1)*a));
+        centroid.setY(centroid.y() + ((y0 + y1)*a));
+        prev = next;
     }
-    QPointF cent = accum / static_cast<qreal>(count);
-    return cent;
+
+    signedArea *= 0.5;
+    centroid /= (6.0*signedArea);
+
+    return centroid;
 }
 
 QPolygonF Point::recenter( QPolygonF pts, QPointF center )
@@ -313,3 +333,52 @@ QPolygonF Point::recenter( QPolygonF pts, QPointF center )
     return new_pts;
 }
 
+/*
+Uing: https://stackoverflow.com/questions/3306838/algorithm-for-reflecting-a-point-across-a-line
+Given point (x1, y1) and a line that passes through (x2,y2) and (x3,y3), we can first define the line as y = mx + c, where:
+slope m is (y3-y2)/(x3-x2)
+y-intercept c is (x3*y2-x2*y3)/(x3-x2)
+If we want the point (x1,y1) reflected through that line, as (x4, y4), then:
+set d = (x1 + (y1 - c)*m)/(1 + m^2) and then:
+x4 = 2*d - x1
+y4 = 2*d*m - y1 + 2*c
+*/
+
+QPointF Point::reflectPoint(QPointF p, QLineF line)
+{
+    qreal x1 = p.x();
+    qreal x2 = line.x1();
+    qreal x3 = line.x2();
+    qreal x4 = 0;
+    qreal y1 = p.y();
+    qreal y2 = line.y1();
+    qreal y3 = line.y2();
+    qreal y4 = 0;
+    if (Loose::equals(x3,x2))
+    {
+        // reflect accross vertical line
+        if (x1 < x2)
+        {
+            x4 = x2 + (x2-x1);
+        }
+        else
+        {
+            x4 = x2 - (x1-x2);
+        }
+        y4 =  y1;
+    }
+    else
+    {
+        qreal  m = (y3 - y2) / (x3 -x2);     // slope
+        qreal  c = ((x3*y2) - (x2*y3)) / (x3-x2);
+        qreal  d =( x1 + ((y1-c)*m)) / (1.0 + (m*m));
+
+        x4 = (2*d) - x1;
+        y4 = (2*d*m) - y1 + (2*c);
+    }
+
+    QPointF p4(x4,y4);
+
+    qDebug() << p << line << p4;
+    return p4;
+}

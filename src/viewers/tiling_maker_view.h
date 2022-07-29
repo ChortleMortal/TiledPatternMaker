@@ -1,28 +1,4 @@
-﻿/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////
 //
 // FeatureView.java
 //
@@ -35,19 +11,19 @@
 #ifndef TILING_MAKER_VIEW_H
 #define TILING_MAKER_VIEW_H
 
-#include "base/layer.h"
+#include "misc/layer_controller.h"
 #include "enums/etilingmakermousemode.h"
 #include "geometry/edgepoly.h"
-#include "settings/configuration.h"
-#include "base/misc.h"
+#include "misc/unique_qvector.h"
+#include "makers/tiling_maker/tiling_mouseactions.h"
 
 class GeoGraphics;
-class Measurement;
+
 
 typedef std::shared_ptr<class TilingSelector>  TilingSelectorPtr;
 typedef std::shared_ptr<class PlacedFeature>   PlacedFeaturePtr;
 
-class TilingMakerView : public Layer
+class TilingMakerView : public LayerController
 {
 public:
     TilingMakerView(class TilingMaker * maker);
@@ -78,14 +54,14 @@ public:
 
     TilingSelectorPtr findCenter(PlacedFeaturePtr feature, QPointF spt);
 
-    QPointF            findSelectionPointOrPoint(QPointF spt);
+    QPointF           findSelectionPointOrPoint(QPointF spt);
 
     TilingSelectorPtr findNearGridPoint(QPointF spt);
 
     QVector<PlacedFeaturePtr> & getAllFeatures()   { return allPlacedFeatures; }
     QVector<PlacedFeaturePtr> & getInTiling()      { return in_tiling; } // DAC was hash
     EdgePoly                  & getAccumW()        { return wAccum; }
-    QVector<Measurement>      & getMeasurementsS() { return wMeasurements; }
+    QVector<Measurement*>     & getMeasurementsS() { return wMeasurements; }
 
     QPointF getMousePos() { return sMousePos; }
     QVector<QLineF> & getConstructionLines() { return constructionLines; }
@@ -106,12 +82,12 @@ protected:
     static constexpr QColor drag_color          = QColor(206,179,102,128);
     static constexpr QColor circle_color        = QColor(202,200,  0,128);
 
-    eTilingMakerMouseMode                tilingMakerMouseMode;     // set by tiling designer menu
+    eTilingMakerMouseMode       tilingMakerMouseMode;     // set by tiling designer menu
     QVector<PlacedFeaturePtr>   allPlacedFeatures;
     QVector<PlacedFeaturePtr>   in_tiling;
 
     EdgePoly                    wAccum;       // world points
-    QVector<Measurement>        wMeasurements;
+    QVector<Measurement*>       wMeasurements;
 
     bool                        _hideTiling;
 

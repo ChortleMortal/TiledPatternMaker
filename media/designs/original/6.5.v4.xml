@@ -1,18 +1,21 @@
 <?xml version="1.0"?>
-<vector id="1" version="10">
+<vector id="1" version="12">
+	<!-- Written Mon Jan 3 2022 12:55:49 -->
 	<designNotes>integrated border</designNotes>
 	<design>
 		<size>
 			<width>1500</width>
 			<height>1100</height>
+			<zwidth>1500</zwidth>
+			<zheight>1100</zheight>
 		</size>
 		<background>
 			<color>#ffffffff</color>
 		</background>
-		<border type="4">
+		<Crop>
 			<boundary>-8.013333333333335,-4.746666666666668,8.226666666666668,4.76</boundary>
-		</border>
-		<Fill>-3,3,-3,3</Fill>
+		</Crop>
+		<Fill singleton="f">-3,3,-3,3</Fill>
 	</design>
 	<style.Thick id="2" serialization="custom">
 		<toolkit.GeoLayer>
@@ -21,6 +24,7 @@
 			<width__delta>1</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>0,0</center>
+			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
 			<prototype id="3" serialization="custom">
@@ -197,6 +201,7 @@
 			<width__delta>1</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>0,0</center>
+			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
 			<prototype reference="3" />
@@ -214,10 +219,9 @@
 			<Group hideSet="f" />
 		</ColorGroup>
 		<style.Filled>
-			<draw__inside>true</draw__inside>
-			<draw__outside>false</draw__outside>
+			<draw__inside>false</draw__inside>
+			<draw__outside>true</draw__outside>
 			<algorithm>0</algorithm>
-			<cleanse>0</cleanse>
 		</style.Filled>
 	</style.Filled>
 </vector>

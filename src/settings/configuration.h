@@ -1,44 +1,21 @@
-/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #ifndef CONFIGURATION_H
 #define CONFIGURATION_H
 
-#include <QtCore>
+#include <QMap>
 #include <QColor>
+#include <QRectF>
+#include "enums/eborder.h"
 #include "enums/ecyclemode.h"
 #include "enums/edesign.h"
+#include "enums/efilesystem.h"
+#include "enums/elogmode.h"
+#include "enums/emapeditor.h"
 #include "enums/eviewtype.h"
-#include "enums/ekeyboardmode.h"
-#include "base/qtapplog.h"
 
 typedef std::shared_ptr<class Design> DesignPtr;
 typedef std::weak_ptr<class Layer>    WeakLayerPtr;
 
 #define NUM_DESIGNS 30
-
-
 
 #define FPS    60     // frames per second
 #define SECONDS(x)  (x * FPS)
@@ -59,31 +36,6 @@ typedef std::weak_ptr<class Layer>    WeakLayerPtr;
 #define AlhambraGold  "#c59c0c"
 
 #define E2STR(x) #x
-
-enum eMapEditorMode
-{
-    MAPED_MODE_MOSAIC,
-    MAPED_MODE_PROTO,
-    MAPED_MODE_FIGURE,
-    MAPED_MODE_LOCAL,
-    MAPED_MODE_TILING,
-    MAPED_MODE_FILLED_TILING,
-    MAPED_MODE_DCEL,
-    MAPED_MODE_NONE,
-    MAPED_MODE_MAX = MAPED_MODE_NONE
-};
-
-static QString sMapEditorMode[] =
-{
-    E2STR(MAPED_MODE_MOSAIC),
-    E2STR(MAPED_MODE_PROTO),
-    E2STR(MAPED_MODE_FIGURE),
-    E2STR(MAPED_MODE_LOCAL),
-    E2STR(MAPED_MODE_TILING),
-    E2STR(MAPED_MODE_FILLED_TILING),
-    E2STR(MAPED_MODE_DCEL),
-    E2STR(MAPED_MODE_NONE)
-};
 
 enum eRepeatType
 {
@@ -114,26 +66,12 @@ enum  eGridType
 
 enum eProtoViewMode
 {
-    PROTO_DRAW_MAP            =  0x01,
-    PROTO_DRAW_FEATURES       =  0x02,
-    PROTO_DRAW_FIGURES        =  0x04,
-    PROTO_HIGHLIGHT_FEATURES  =  0x08,
-    PROTO_HIGHLIGHT_FIGURES   =  0x10,
+    PROTO_DRAW_MAP      =  0x01,
+    PROTO_DRAW_FEATURES =  0x02,
+    PROTO_DRAW_FIGURES  =  0x04,
+    PROTO_DEL_FEATURES  =  0x08,
+    PROTO_DEL_FIGURES   =  0x10,
     PROTO_DRAW_DESIGN_ELEMENT =  0x20
-};
-
-enum  eAspectRatio
-{
-    ASPECT_UNCONSTRAINED,
-    ASPECT_SQRT_2,
-    ASPECT_SQRT_3,
-    ASPECT_SQRT_4,
-    ASPECT_SQRT_5,
-    ASPECT_SQRT_6,
-    ASPECT_SQRT_7,
-    ASPECT_SQUARE,
-    ASPECT_SD,
-    ASPECT_HD
 };
 
 class Configuration
@@ -156,55 +94,87 @@ public:
 //
 ////////////////////////////////////////////////////////////////
 
-    eRepeatType     repeatMode;
-    eMapEditorMode  mapEditorMode;
-    eCycleMode      cycleMode;
-    eLogTimer       logTime;
+    qreal   gridAngle;
+    qreal   gridModelSpacing;
+    qreal   mapedAngle;     // degrees
+    qreal   mapedRadius;
 
-    int     cycleInterval;
-    int     polySides;    // used by tiling maker
-    int     protoViewMode;
+    qreal   mapedLen;
+    qreal   mapedMergeSensitivity;
 
     QString xmlTool;
-
     QString compareDir0;
     QString compareDir1;
     QString image0;
     QString image1;
-    QString viewImage;
-
     QString panelName;
-
-    eDesign lastLoadedDesignId; // used on startup
     QString lastLoadedTileName; // used on startup
     QString lastLoadedXML;      // used on startup
     QString currentlyLoadedXML; // current status
+    QString mosaicFilter;
+    QString tileFilter;
+    QString rootImageDir;
+    QString rootMediaDir;
 
+    QStringList viewImages;
+    QStringList workList;
+    QStringList protoViewColors;
+
+    eRepeatType     repeatMode;
+    eMapEditorMode  mapEditorMode;
+    eLogTimer       logTime;
+    eDesign         lastLoadedDesignId; // used on startup
+    eGridUnits      gridUnits;
+    eGridType       gridType;
+    eCycleMode      genCycle;
+    eCycleMode      viewCycle;
+    eLoadType       fileFilter;
+
+    int     cycleInterval;
+    int     polySides;    // used by tiling maker
+    int     protoViewMode;
+    int     gridModelWidth;
+    int     gridScreenWidth;
+    int     gridScreenSpacing;
+
+    bool    darkTheme;
     bool    autoLoadStyles;
     bool    autoLoadTiling;
     bool    autoLoadDesigns;
     bool    loadTilingMulti;
     bool    loadTilingModify;
     bool    scaleToView;
-    bool    stopIfDiff;
     bool    logToStderr;
     bool    logToDisk;
     bool    logToPanel;
     bool    logNumberLines;
-    bool    logWarningsOnly;
+    bool    logDebug;
     bool    mapedStatusBox;
     bool    showBackgroundImage;
-    bool    highlightUnit;
+    bool    stopIfDiff;
     bool    insightMode;
+    bool    motifMultiView;
+    bool    motifBkgdWhite;
+    bool    motifEnlarge;
 
+    bool    verifyPopup;     // false pops up errors
+    bool    verifyProtos;
     bool    verifyMaps;
     bool    verifyDump;     // TODO - make sure this flag work
     bool    verifyVerbose;  // TODO - make sure this flga works
 
     bool    mosaicFilterCheck;
+    bool    mosaicWorklistCheck;
+    bool    mosaicOrigCheck;
+    bool    mosaicNewCheck;
+    bool    mosaicTestCheck;
     bool    tileFilterCheck;
     bool    lockView;
     bool    splitScreen;
+
+    bool    showFeatureBoundary;
+    bool    showFigureBoundary;
+    bool    showExtendedBoundary;
 
     bool    tm_showAllFeatures;
     bool    tm_hideTable;
@@ -220,37 +190,21 @@ public:
     bool    display_differences;
 
     bool    use_workListForCompare;
-    bool    use_workListForGenerate;
     bool    generate_workList;
     bool    skipExisting;
-
-    QStringList workList;
-
     bool    cs_showBkgds;
     bool    cs_showFrameSettings;
+    bool    showCenterDebug;
+    bool    showGrid;
+    bool    measure;
 
-    QString mosaicFilter;
-    QString tileFilter;
+    bool    gridModelCenter;
+    bool    gridScreenCenter;
+    bool    snapToGrid;
+    bool    defaultImageRoot;
+    bool    defaultMediaRoot;
 
-    bool        showCenterDebug;
-    bool        showGrid;
-    eGridUnits  gridUnits;
-    eGridType   gridType;
-    int         gridModelWidth;
-    bool        gridModelCenter;
-    qreal       gridModelSpacing;
-    int         gridScreenWidth;
-    bool        gridScreenCenter;
-    int         gridScreenSpacing;
-    qreal       gridAngle;
-    bool        snapToGrid;
-
-    QString     rootImageDir;
-    QString     rootMediaDir;
-    bool        defaultMediaRoot;
-    bool        defaultImageRoot;
-
-    QColor      transparentColor;            // used by some menus
+    QColor  transparentColor;            // used by some menus
 
 ////////////////////////////////////////////////////////////////
 //
@@ -258,31 +212,33 @@ public:
 //
 ////////////////////////////////////////////////////////////////
 
+    QMap<eDesign,DesignPtr> availableDesigns;
+    WeakLayerPtr            selectedLayer;
+
     QString rootTileDir;
     QString originalTileDir;
     QString newTileDir;
     QString rootDesignDir;
     QString originalDesignDir;
     QString newDesignDir;
+    QString testDesignDir;
     QString templateDir;
     QString examplesDir;
+    QString mapsDir;
+    QString worklistsDir;
 
+    bool    primaryDisplay;
     bool    circleX;
     bool    hideCircles;
     bool    enableDetachedPages;
     bool    showCenterMouse;
     bool    updatePanel;
-    bool    debugReplicate;
+    bool    dontReplicate;
+    bool    highlightUnit;
+
     bool    debugMapEnable;
+    bool    dontTrapLog;
 
-    WeakLayerPtr selectedLayer;
-
-    eKbdMode    kbdMode;
-    QColor      figureViewBkgdColor;            // used by some menus
-
-    QMap<eDesign,DesignPtr>  availableDesigns;
-
-protected:
     QString getMediaRoot();
     QString getMediaRootLocal();
     QString getMediaRootAppdata();

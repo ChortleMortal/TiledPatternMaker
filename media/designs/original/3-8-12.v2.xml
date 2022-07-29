@@ -546,7 +546,6 @@
 			<draw__inside>false</draw__inside>
 			<draw__outside>true</draw__outside>
 			<algorithm>0</algorithm>
-			<cleanse>0</cleanse>
 		</style.Filled>
 	</style.Filled>
 	<style.Filled id="129" serialization="custom">
@@ -576,7 +575,6 @@
 			<draw__inside>true</draw__inside>
 			<draw__outside>false</draw__outside>
 			<algorithm>0</algorithm>
-			<cleanse>0</cleanse>
 		</style.Filled>
 	</style.Filled>
 </vector>

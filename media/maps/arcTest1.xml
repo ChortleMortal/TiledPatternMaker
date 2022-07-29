@@ -1,0 +1,254 @@
+<?xml version="1.0"?>
+<vector id="1" version="12">
+	<size>
+		<width>1500</width>
+		<height>1100</height>
+		<zwidth>1500</zwidth>
+		<zheight>1100</zheight>
+	</size>
+	<ModelSettings>
+		<left__delta>-10.62803905747955</left__delta>
+		<top__delta>205.7317755664569</top__delta>
+		<width__delta>0.314809173180952</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0.1317254069449838,-2.750000000000004</center>
+		<Z>0</Z>
+	</ModelSettings>
+	<BackgroundImage name="20210929_085413606_iOS.JPEG">
+		<Scale>0.314809173180952</Scale>
+		<Rot>0</Rot>
+		<X>43.39045215002284</X>
+		<Y>299.6057812758227</Y>
+		<Center>-0.4718726953336372,-4.168077083677638</Center>
+	</BackgroundImage>
+	<map id="2">
+		<vertices id="3">
+			<Vertex id="4">
+				<pos>-3.014304305361542,-12.6648557149398</pos>
+			</Vertex>
+			<Vertex id="5">
+				<pos>-2.970863055021013,-12.69641763078192</pos>
+			</Vertex>
+			<Vertex id="6">
+				<pos>-3.024559393469489,-12.69641763078192</pos>
+			</Vertex>
+			<Vertex id="7">
+				<pos>-0.553974383714705,-12.69641763078192</pos>
+			</Vertex>
+			<Vertex id="8">
+				<pos>-3.068000643810018,-12.6648557149398</pos>
+			</Vertex>
+			<Vertex id="9">
+				<pos>3.433261046056573,-12.6648557149398</pos>
+			</Vertex>
+			<Vertex id="10">
+				<pos>3.486957384505052,-12.6648557149398</pos>
+			</Vertex>
+			<Vertex id="11">
+				<pos>3.443516134164524,-12.69641763078192</pos>
+			</Vertex>
+			<Vertex id="12">
+				<pos>3.389819795716045,-12.69641763078192</pos>
+			</Vertex>
+			<Vertex id="13">
+				<pos>0.9729311244097406,-12.69641763078192</pos>
+			</Vertex>
+			<Vertex id="14">
+				<pos>-1.015559046421926,-14.11702914820852</pos>
+			</Vertex>
+			<Vertex id="15">
+				<pos>0.209478370347518,-15.00707092988935</pos>
+			</Vertex>
+			<Vertex id="16">
+				<pos>-1.772673807475816,-16.44718878405644</pos>
+			</Vertex>
+			<Vertex id="17">
+				<pos>2.191630548170853,-16.44718878405644</pos>
+			</Vertex>
+			<Vertex id="18">
+				<pos>1.434515787116962,-14.11702914820852</pos>
+			</Vertex>
+			<Vertex id="19">
+				<pos>5.903846055811358,-12.6648557149398</pos>
+			</Vertex>
+			<Vertex id="20">
+				<pos>7.418075577919128,-12.6648557149398</pos>
+			</Vertex>
+			<Vertex id="21">
+				<pos>6.660960816865243,-14.99501535078772</pos>
+			</Vertex>
+			<Vertex id="22">
+				<pos>9.868150411458016,-12.6648557149398</pos>
+			</Vertex>
+			<Vertex id="23">
+				<pos>5.440095549812309,-18.7524522843056</pos>
+			</Vertex>
+			<Vertex id="24">
+				<pos>5.387900973399226,-18.76941517899063</pos>
+			</Vertex>
+			<Vertex id="25">
+				<pos>13.85153396174915,-12.62143893303446</pos>
+			</Vertex>
+			<Vertex id="26">
+				<pos>13.81997532654993,-12.6648557149398</pos>
+			</Vertex>
+			<Vertex id="27">
+				<pos>-2.709933506194647,-19.33177752886121</pos>
+			</Vertex>
+			<Vertex id="28">
+				<pos>3.128514125738027,-19.33061994698477</pos>
+			</Vertex>
+			<Vertex id="29">
+				<pos>7.597746700442526,-17.8781458425317</pos>
+			</Vertex>
+			<Vertex id="30">
+				<pos>12.32106793192891,-14.44700461125136</pos>
+			</Vertex>
+		</vertices>
+		<edges id="31">
+			<Edge id="32">
+				<v1 reference="5" />
+				<v2 reference="4" />
+			</Edge>
+			<Edge id="33">
+				<v1 reference="6" />
+				<v2 reference="5" />
+			</Edge>
+			<Edge id="34">
+				<v1 reference="5" />
+				<v2 reference="7" />
+			</Edge>
+			<Edge id="35">
+				<v1 reference="8" />
+				<v2 reference="4" />
+			</Edge>
+			<Edge id="36">
+				<v1 reference="6" />
+				<v2 reference="8" />
+			</Edge>
+			<Edge id="37">
+				<v1 reference="10" />
+				<v2 reference="9" />
+			</Edge>
+			<Edge id="38">
+				<v1 reference="11" />
+				<v2 reference="10" />
+			</Edge>
+			<Edge id="39">
+				<v1 reference="12" />
+				<v2 reference="9" />
+			</Edge>
+			<Edge id="40">
+				<v1 reference="11" />
+				<v2 reference="12" />
+			</Edge>
+			<Edge id="41">
+				<v1 reference="12" />
+				<v2 reference="13" />
+			</Edge>
+			<Edge id="42">
+				<v1 reference="14" />
+				<v2 reference="5" />
+			</Edge>
+			<Edge id="43">
+				<v1 reference="16" />
+				<v2 reference="15" />
+			</Edge>
+			<Edge id="44">
+				<v1 reference="16" />
+				<v2 reference="14" />
+			</Edge>
+			<Edge id="45">
+				<v1 reference="17" />
+				<v2 reference="15" />
+			</Edge>
+			<Edge id="46">
+				<v1 reference="17" />
+				<v2 reference="18" />
+			</Edge>
+			<Edge id="47">
+				<v1 reference="18" />
+				<v2 reference="12" />
+			</Edge>
+			<Edge id="48">
+				<v1 reference="19" />
+				<v2 reference="10" />
+			</Edge>
+			<Edge id="49">
+				<v1 reference="21" />
+				<v2 reference="20" />
+			</Edge>
+			<Edge id="50">
+				<v1 reference="21" />
+				<v2 reference="19" />
+			</Edge>
+			<Edge id="51">
+				<v1 reference="22" />
+				<v2 reference="20" />
+			</Edge>
+			<Edge id="52">
+				<v1 reference="23" />
+				<v2 reference="21" />
+			</Edge>
+			<Edge id="53">
+				<v1 reference="24" />
+				<v2 reference="17" />
+			</Edge>
+			<Edge id="54">
+				<v1 reference="26" />
+				<v2 reference="22" />
+			</Edge>
+			<Edge id="55">
+				<v1 reference="27" />
+				<v2 reference="16" />
+			</Edge>
+			<Edge id="56">
+				<v1 reference="28" />
+				<v2 reference="17" />
+			</Edge>
+			<Edge id="57">
+				<v1 reference="29" />
+				<v2 reference="21" />
+			</Edge>
+			<Edge id="58">
+				<v1 reference="30" />
+				<v2 reference="22" />
+			</Edge>
+			<curve id="59" convex="t">
+                <v1 reference="26" />
+                <v2 reference="25" />
+				<pos>0.2059999999999855,-2.736000000000001</pos>
+			</curve>
+			<curve id="60" convex="t">
+                <v1 reference="30" />
+                <v2 reference="26" />
+				<pos>0.2059999999999855,-2.736000000000001</pos>
+			</curve>
+			<curve id="61" convex="t">
+                <v1 reference="29" />
+                <v2 reference="30" />
+				<pos>0.2059999999999855,-2.736000000000001</pos>
+			</curve>
+			<curve id="62" convex="t">
+                <v1 reference="23" />
+                <v2 reference="29" />
+				<pos>0.2059999999999855,-2.736000000000001</pos>
+			</curve>
+			<curve id="63" convex="t">
+                <v1 reference="24" />
+                <v2 reference="23" />
+				<pos>0.2059999999999855,-2.736000000000001</pos>
+			</curve>
+			<curve id="64" convex="t">
+                <v1 reference="28" />
+                <v2 reference="24" />
+				<pos>0.2059999999999855,-2.736000000000001</pos>
+			</curve>
+			<curve id="65" convex="t">
+                <v1 reference="27" />
+                <v2 reference="28" />
+				<pos>0.2059999999999855,-2.736000000000001</pos>
+			</curve>
+		</edges>
+	</map>
+</vector>

@@ -1,7 +1,7 @@
 #include "viewers/viewerbase.h"
-#include "base/geo_graphics.h"
+#include "misc/geo_graphics.h"
 #include "geometry/edgepoly.h"
-#include "tapp/figure.h"
+#include "figures/figure.h"
 #include "tile/feature.h"
 #include "geometry/map.h"
 #include "geometry/edge.h"
@@ -14,11 +14,11 @@ void  ViewerBase::drawFeature(GeoGraphics * gg, FeaturePtr feature, QBrush brush
     // Fill the feature.
     if (brush.style() != Qt::NoBrush)
     {
-        gg->fillEdgePoly(&ep, brush.color());
+        gg->fillEdgePoly(ep, brush.color());
     }
 
     // Outline the feature.
-    gg->drawEdgePoly(&ep,pen.color(), pen.width());
+    gg->drawEdgePoly(ep,pen.color(), pen.width());
 }
 
 void  ViewerBase ::drawFigure(GeoGraphics * gg, FigurePtr figure, QPen pen)
@@ -34,7 +34,11 @@ void  ViewerBase ::drawFigure(GeoGraphics * gg, FigurePtr figure, QPen pen)
         }
         else if (edge->getType() == EDGETYPE_CURVE)
         {
-            gg->drawChord(edge->v1->pt,edge->v2->pt,edge->getArcCenter(),pen,QBrush(),edge->isConvex());
+            gg->drawArc(edge->v1->pt,edge->v2->pt,edge->getArcCenter(),edge->isConvex(),pen);
+        }
+        else if (edge->getType() == EDGETYPE_CHORD)
+        {
+            gg->drawChord(edge->v1->pt,edge->v2->pt,edge->getArcCenter(),edge->isConvex(),pen);
         }
     }
 }

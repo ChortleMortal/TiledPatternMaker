@@ -1,52 +1,41 @@
-/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
+#include <QGroupBox>
+#include <QCheckBox>
+#include <QMessageBox>
 
-
-#include "panels/page_debug.h"
-#include "base/fileservices.h"
-#include "base/mosaic_manager.h"
-#include "base/mosaic_loader.h"
+#include "geometry/map.h"
+#include "makers/map_editor/map_editor.h"
+#include "makers/mosaic_maker/mosaic_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
-#include "panels/layout_sliderset.h"
+#include "misc/fileservices.h"
+#include "misc/qtapplog.h"
+#include "mosaic/mosaic.h"
+#include "mosaic/mosaic_reader.h"
+#include "mosaic/mosaic_manager.h"
+#include "panels/page_debug.h"
+#include "panels/page_loaders.h"
 #include "panels/panel.h"
+#include "settings/configuration.h"
+#include "style/filled.h"
+#include "tile/feature.h"
+#include "tile/placed_feature.h"
 #include "tile/tiling.h"
 #include "tile/tiling_manager.h"
-#include "viewers/view.h"
 #include "viewers/viewcontrol.h"
-#include "panels/page_loaders.h"
-#include "style/filled.h"
-#include "geometry/map.h"
-#include "base/mosaic.h"
-#include "base/transparentwidget.h"
+#include "widgets/dlg_textedit.h"
+#include "widgets/transparentwidget.h"
+
+using std::make_shared;
 
 typedef std::shared_ptr<class Filled>       FilledPtr;
 
 page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,"Debug Tools")
 {
-     QGroupBox   * debug = createDebugSection();
+    log = qtAppLog::getInstance();
 
-     vbox->addWidget(debug);
+    QGroupBox   * debug = createDebugSection();
+    vbox->addWidget(debug);
+
+    setMaximumWidth(700);
 }
 
 QGroupBox * page_debug::createDebugSection()
@@ -63,17 +52,21 @@ QGroupBox * page_debug::createDebugSection()
     QPushButton * pbClearView           = new QPushButton("Clear View");
     QPushButton * pbVerifyTiling        = new QPushButton("Verify Current Tiling");
     QPushButton * pbVerifyAllTilings    = new QPushButton("Verify All Tilings");
+    QPushButton * pbExamineMosaic       = new QPushButton("Examine Current Mosaic");
     QPushButton * pbExamineAllMosaics   = new QPushButton("Examine AllMosaics");
     QPushButton * pTestA                = new QPushButton("Test A");
     QPushButton * pTestB                = new QPushButton("Test B");
+    QCheckBox   * pDontPaint            = new QCheckBox("Dont't Paint");
+    QCheckBox   * pDontTrap             = new QCheckBox("Dont't Trap Log");
 
     QGridLayout * grid = new QGridLayout();
-    grid->setHorizontalSpacing(51);
+    grid->setHorizontalSpacing(11);
 
     int row = 0;
     grid->addWidget(pbReformatDesXMLBtn,   row,0);
     grid->addWidget(pbReprocessDesXMLBtn,  row,1);
     grid->addWidget(pbExamineAllMosaics,   row,3);
+    grid->addWidget(pbExamineMosaic,       row,4);
 
     row++;
     grid->addWidget(pbReformatTileXMLBtn,  row,0);
@@ -89,6 +82,9 @@ QGroupBox * page_debug::createDebugSection()
     grid->addWidget(pTestA,                row,3);
     grid->addWidget(pTestB,                row,4);
 
+    row++;
+    grid->addWidget(pDontPaint,            row,0);
+    grid->addWidget(pDontTrap,             row,1);
 
     QVBoxLayout * vbox = new QVBoxLayout;;
     vbox->addLayout(grid);
@@ -100,6 +96,7 @@ QGroupBox * page_debug::createDebugSection()
     connect(pbReformatDesXMLBtn,      &QPushButton::clicked,     this,   &page_debug::slot_reformatDesignXML);
     connect(pbReprocessDesXMLBtn,     &QPushButton::clicked,     this,   &page_debug::slot_reprocessDesignXML);
     connect(pbExamineAllMosaics,      &QPushButton::clicked,     this,   &page_debug::slot_examineAllMosaics);
+    connect(pbExamineMosaic,          &QPushButton::clicked,     this,   &page_debug::slot_examineMosaic);
 
     connect(pbReformatTileXMLBtn,     &QPushButton::clicked,     this,   &page_debug::slot_reformatTilingXML);
     connect(pbReprocessTileXMLBtn,    &QPushButton::clicked,     this,   &page_debug::slot_reprocessTilingXML);
@@ -111,34 +108,45 @@ QGroupBox * page_debug::createDebugSection()
     connect(pTestA,                   &QPushButton::clicked,     this,   &page_debug::slot_testA);
     connect(pTestB,                   &QPushButton::clicked,     this,   &page_debug::slot_testB);
 
-    connect(pbRender,                 &QPushButton::clicked,     this,      &panel_page::sig_render);
-    connect(pbClearView,              &QPushButton::clicked,     vcontrol,  &ViewControl::slot_clearView);
-    connect(pbClearMakers,            &QPushButton::clicked,     vcontrol,  &ViewControl::slot_clearMakers);
+    connect(pbRender,                 &QPushButton::clicked,     this,   &panel_page::sig_render);
+    connect(pbClearView,              &QPushButton::clicked,     view,   &ViewControl::slot_unloadView);
+    connect(pbClearMakers,            &QPushButton::clicked,     view,   &ViewControl::slot_unloadAll);
+
+    connect(pDontPaint,               &QCheckBox::clicked,       view,   &ViewControl::slot_dontPaint);
+    connect(pDontTrap,                &QCheckBox::clicked,       this,   &page_debug::slot_dontTrapLog);
 
     return debugGroup;
 }
 
 QGroupBox * page_debug::createVerifyMaps()
 {
-    QGroupBox * gbVerifyMaps = new QGroupBox("Verify Maps");
-    gbVerifyMaps->setCheckable(true);
-
-    QCheckBox * cbVerifyDump    = new QCheckBox("Dump Map");
+    QCheckBox * cbPopupErrors   = new QCheckBox("Pop-up Map Errors");
+    QCheckBox * cbVerifyMaps    = new QCheckBox("Verify All Maps");
+    QCheckBox * cbVerifyDump    = new QCheckBox("Dump Maps");
     QCheckBox * cbVerifyVerbose = new QCheckBox("Verbose");
+    QCheckBox * cbVerifyProtos  = new QCheckBox("Verify Protos");
 
-    QHBoxLayout * hverBox = new QHBoxLayout();
-    hverBox->addSpacing(15);
-    hverBox->addWidget(cbVerifyDump);
-    hverBox->addWidget(cbVerifyVerbose);
-    hverBox->addStretch();
+    QGridLayout * gbox = new QGridLayout();
+    gbox->setColumnStretch(2,1);
+    gbox->addWidget(cbVerifyProtos,0,0);
+    gbox->addWidget(cbVerifyMaps,0,1);
+    gbox->addWidget(cbPopupErrors,1,0);
+    gbox->addWidget(cbVerifyDump,1,1);
+    gbox->addWidget(cbVerifyVerbose,1,2);
 
-    gbVerifyMaps->setLayout(hverBox);
+    QGroupBox * gbVerifyMaps = new QGroupBox("Map Verification");
+    gbVerifyMaps->setLayout(gbox);
 
-    gbVerifyMaps->setChecked(config->verifyMaps);
+    cbPopupErrors->setChecked(config->verifyPopup);
+    cbVerifyMaps->setChecked(config->verifyMaps);
     cbVerifyDump->setChecked(config->verifyDump);
     cbVerifyVerbose->setChecked(config->verifyVerbose);
 
-    connect(gbVerifyMaps,   &QGroupBox::clicked,    this,   &page_debug::slot_verifyMapsClicked);
+    cbVerifyProtos->setChecked(config->verifyProtos);
+
+    connect(cbVerifyProtos, &QCheckBox::clicked,    this,   &page_debug::slot_verifyProtosClicked);
+    connect(cbVerifyMaps,   &QCheckBox::clicked,    this,   &page_debug::slot_verifyMapsClicked);
+    connect(cbPopupErrors,  &QCheckBox::clicked,    this,   &page_debug::slot_verifypopupClicked);
     connect(cbVerifyDump,   &QCheckBox::clicked,    this,   &page_debug::slot_verifyDumpClicked);
     connect(cbVerifyVerbose,&QCheckBox::clicked,    this,   &page_debug::slot_verifyVerboseClicked);
 
@@ -153,7 +161,7 @@ void page_debug::onExit()
 {
 }
 
-void  page_debug::refreshPage()
+void  page_debug::onRefresh()
 {
 }
 
@@ -192,7 +200,7 @@ void page_debug::slot_reformatDesignXML()
 
     int goodDes = 0;
     int badDes  = 0;
-    QStringList files = FileServices::getDesignFiles();
+    QStringList files = FileServices::getMosaicFiles();
     for (int i=0; i < files.size(); i++)
     {
         bool rv =  FileServices::reformatXML(files[i]);
@@ -260,7 +268,7 @@ void page_debug::slot_reprocessDesignXML()
 
     int goodDes = 0;
     int badDes  = 0;
-    QStringList files = FileServices::getDesignNames();
+    QStringList files = FileServices::getMosaicNames(LOAD_ALL);
     for (int i=0; i < files.size(); i++)
     {
         QString name = files[i];
@@ -269,7 +277,7 @@ void page_debug::slot_reprocessDesignXML()
         if (rv)
         {
             QString outfile;
-            rv = mm.saveMosaic(name,outfile,true);
+            rv = mm.saveMosaic(name,outfile,true,false);
         }
         if (rv)
             goodDes++;
@@ -302,7 +310,7 @@ void page_debug::slot_reprocessTilingXML()
 
     qDebug() << "Reprocessing tilings...";
 
-    QStringList files = FileServices::getTilingNames();
+    QStringList files = FileServices::getTilingNames(LOAD_ALL);
     for (int i=0; i < files.size(); i++)
     {
         bool rv = false;
@@ -331,6 +339,11 @@ void page_debug::slot_reprocessTilingXML()
     box2.exec();
 }
 
+void page_debug::slot_verifyProtosClicked(bool enb)
+{
+    config->verifyProtos = enb;
+}
+
 void page_debug::slot_verifyMapsClicked(bool enb)
 {
     config->verifyMaps = enb;
@@ -339,6 +352,11 @@ void page_debug::slot_verifyMapsClicked(bool enb)
 void page_debug::slot_verifyDumpClicked(bool enb)
 {
     config->verifyDump = enb;
+}
+
+void page_debug::slot_verifypopupClicked(bool enb)
+{
+    config->verifyPopup = enb;
 }
 
 void page_debug::slot_verifyVerboseClicked(bool enb)
@@ -353,43 +371,89 @@ void page_debug::slot_verifyTiling()
     verifyTiling(tiling);
 }
 
-void page_debug::verifyTiling(TilingPtr tiling)
+bool page_debug::verifyTiling(TilingPtr tiling)
 {
-    //qtAppLog::suspend(true);
+    log->trap(true);
+    qInfo().noquote() << "Verifying tiling :" << tiling->getName();
+    bool rv = true;
+    for (auto pfp : tiling->getPlacedFeatures() )
+    {
+        auto feature = pfp->getFeature();
+        if (!feature->isClockwise())
+        {
+            qWarning() << "Clockwise Feature";
+            rv = false;
+        }
+    }
+
+    log->suspend(true);
 
     bool intrinsicOverlaps = tiling->hasIntrinsicOverlaps();
     bool tiledOverlaps     = tiling->hasTiledOverlaps();
 
-    MapPtr map = tiling->createProtoMap();
+    MapPtr map = tiling->createMapFull();
+ 	log->suspend(false);
+
     bool protomap_verify   = map->verify(true);
     bool protomap_overlaps = map->hasIntersectingEdges();
 
-    map = tiling->createFilledMap();
+    log->suspend(true);
+
+    map = tiling->createMapFull();
+
+    log->suspend(false);
+
     bool fillmap_verify   = map->verify(true);
     bool fillmap_overlaps = map->hasIntersectingEdges();
-
-    qtAppLog::suspend(false);
-
     QString name = tiling->getName();
     if (intrinsicOverlaps)
+    {
         qWarning() << name << ": intrinsic overlaps";
+        rv = false;
+    }
     if (tiledOverlaps)
+    {
         qWarning() << name << ": tiled overlaps";
+        rv = false;
+    }
     if (!protomap_verify)
+    {
         qWarning() << name << ": proto map verify errors";
+        rv = false;
+    }
     if (protomap_overlaps)
+    {
         qWarning() << name << ": proto map intersecting edges";
+        rv = false;
+    }
     if (!fillmap_verify)
+    {
         qWarning() << name << ": fill map verify errors";
+        rv = false;
+    }
     if (fillmap_overlaps)
+    {
         qWarning() << name << ": fill map intersecting edges";
+        rv = false;
+    }
+
+    if (!rv)
+    {
+        DlgTextEdit dlg(this);
+        const QStringList & qsl = qtAppLog::getTrap();
+        dlg.set(qsl);
+        dlg.exec();
+    }
+    log->trap(false);
+    log->trapClear();
+    return rv;
 }
 
 void page_debug::slot_verifyAllTilings()
 {
     qDebug() << "Verifying all tilings...";
 
-    QStringList files = FileServices::getTilingNames();
+    QStringList files = FileServices::getTilingNames(LOAD_ALL);
     for (int i=0; i < files.size(); i++)
     {
         QString name = files[i];
@@ -399,10 +463,9 @@ void page_debug::slot_verifyAllTilings()
         if (uses == 0)
         {
             qInfo() << "     not used";
-            //continue;
+            continue;
         }
 
-        qtAppLog::suspend(true);
 
         TilingManager tm;
         TilingPtr tp = tm.loadTiling(name,SM_LOAD_SINGLE);
@@ -413,18 +476,16 @@ void page_debug::slot_verifyAllTilings()
             box.setText(QString("Error loading tiling: %1").arg(name));
             box.setStandardButtons(QMessageBox::Ok);
             box.exec();
-            qtAppLog::suspend(false);
             continue;
         }
 
         verifyTiling(tp);
 
-        qtAppLog::suspend(false);
     }
 
     QMessageBox box(this);
     box.setIcon(QMessageBox::Information);
-    box.setText("Done");
+    box.setText("All tilings verification complete");
     box.setStandardButtons(QMessageBox::Ok);
     box.exec();
 }
@@ -433,18 +494,16 @@ void page_debug::slot_examineAllMosaics()
 {
     qDebug() << "Examining all Mosaics...";
 
-    QStringList files = FileServices::getDesignFiles();
+    QStringList files = FileServices::getMosaicFiles();
     for (int i=0; i < files.size(); i++)
     {
         QString name = files[i];
         qDebug() << "==========" << name << "==========";
 
-        qtAppLog::suspend(true);
 
-        MosaicLoader loader;
-        MosaicPtr mosaic = loader.loadMosaic(name);
+        MosaicReader loader;
+        MosaicPtr mosaic = loader.readXML(name);
 
-        qtAppLog::suspend(false);
 
         if (!mosaic)
         {
@@ -456,45 +515,114 @@ void page_debug::slot_examineAllMosaics()
             continue;
         }
 
-        QVector<TilingPtr> tilings = mosaic->getTilings();
-        TilingPtr tiling = tilings.first();     // yeah only one for this exercise
-        qInfo().noquote() << "tiling:" << tiling->getName();
-
-        qtAppLog::suspend(true);
-        verifyTiling(tiling);
-
-        const StyleSet & styles = mosaic->getStyleSet();
-        for (auto style : styles)
-        {
-            FilledPtr fp = std::dynamic_pointer_cast<Filled>(style);
-            if (fp)
-            {
-                qInfo() << fp->getStyleDesc() << "algorithm:" << fp->getAlgorithm() << "cleanse:" << fp->getCleanseLevel();
-            }
-
-            qtAppLog::suspend(true);
-            MapPtr map = style->getMap();
-            qtAppLog::suspend(false);
-
-            if (map->hasIntersectingEdges())
-            {
-                qInfo() << style->getStyleDesc() << "has intersecting edges";
-            }
-            qDebug().noquote() << map->displayVertexEdgeCounts();
+        examineMosaic(mosaic);
         }
-    }
 
     QMessageBox box(this);
     box.setIcon(QMessageBox::Information);
-    box.setText("Done");
+    box.setText("All Mosaics examined");
     box.setStandardButtons(QMessageBox::Ok);
     box.exec();
 }
 
+void page_debug::slot_examineMosaic()
+{
+    MosaicPtr mosaic = mosaicMaker->getMosaic();
+    examineMosaic(mosaic);
+}
+
+void page_debug::examineMosaic(MosaicPtr mosaic)
+{
+    QVector<TilingPtr> tilings = mosaic->getTilings();
+    TilingPtr tiling = tilings.first();     // yeah only one for this exercise
+    qInfo().noquote() << "tiling:" << tiling->getName();
+
+    verifyTiling(tiling);
+
+    const StyleSet & styles = mosaic->getStyleSet();
+    for (auto style : styles)
+    {
+        FilledPtr fp = std::dynamic_pointer_cast<Filled>(style);
+        if (fp)
+        {
+            qInfo() << fp->getStyleDesc() << "algorithm:" << fp->getAlgorithm();
+        }
+
+        log->suspend(true);
+        MapPtr map = style->getMap();
+        log->suspend(false);
+
+        map->verify(true);
+
+        if (map->hasIntersectingEdges())
+        {
+            qInfo() << style->getStyleDesc() << "has intersecting edges";
+        }
+        qDebug().noquote() << map->displayVertexEdgeCounts();
+    }
+}
+
+void page_debug::slot_dontTrapLog(bool dont)
+{
+    config->dontTrapLog = dont;
+}
+
 void  page_debug::slot_testA()
 {
+    MapEditor * mep = MapEditor::getInstance();
+
+    MapPtr map1 = make_shared<Map>("map1");
+    VertexPtr v0 = map1->insertVertex(QPointF(0,0));
+    VertexPtr v1 = map1->insertVertex(QPointF(0,1));
+    VertexPtr v2 = map1->insertVertex(QPointF(1,1));
+    VertexPtr v3 = map1->insertVertex(QPointF(1,0));
+    map1->insertEdge(v0,v1);
+    map1->insertEdge(v1,v2);
+    map1->insertEdge(v2,v3);
+    map1->insertEdge(v3,v0);
+    map1->dumpMap(true);
+
+    MapPtr map2 = make_shared<Map>("map2");
+    v0 = map2->insertVertex(QPointF(1,0));
+    v1 = map2->insertVertex(QPointF(1,1.0001));
+    v2 = map2->insertVertex(QPointF(2,1));
+    v3 = map2->insertVertex(QPointF(2,0));
+    map2->insertEdge(v0,v1);
+    map2->insertEdge(v1,v2);
+    map2->insertEdge(v2,v3);
+    map2->insertEdge(v3,v0);
+    map2->dumpMap(true);
+    mep->loadFromMap(map2,MAPED_TYPE_CREATED);
+
+    mep->loadFromMap(map1,MAPED_TYPE_CREATED);
 }
 
 void  page_debug::slot_testB()
 {
+    MapEditor * mep = MapEditor::getInstance();
+
+    MapPtr map1 = make_shared<Map>("map1");
+    VertexPtr v0 = map1->insertVertex(QPointF(0,0));
+    VertexPtr v1 = map1->insertVertex(QPointF(0,2));
+    VertexPtr v2 = map1->insertVertex(QPointF(2.00005,2));
+    VertexPtr v3 = map1->insertVertex(QPointF(2,0));
+    map1->insertEdge(v0,v1);
+    map1->insertEdge(v1,v2);
+    map1->insertEdge(v2,v3);
+    map1->insertEdge(v3,v0);
+    qDebug().noquote() << map1->summary();
+
+    MapPtr map2 = make_shared<Map>("map2");
+    v0 = map2->insertVertex(QPointF(1,1));
+    v1 = map2->insertVertex(QPointF(1,3));
+    v2 = map2->insertVertex(QPointF(3,3.00005));
+    v3 = map2->insertVertex(QPointF(3,1));
+    map2->insertEdge(v0,v1);
+    map2->insertEdge(v1,v2);
+    map2->insertEdge(v2,v3);
+    map2->insertEdge(v3,v0);
+    qDebug().noquote() << map2->summary();
+
+    mep->loadFromMap(map1,MAPED_TYPE_CREATED);
+    mep->loadFromMap(map2,MAPED_TYPE_CREATED);
 }

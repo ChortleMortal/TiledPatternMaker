@@ -1,8 +1,8 @@
+#include <QTransform>
 #include "feature_writer.h"
 #include "geometry/xform.h"
-#include <QTransform>
 #include "geometry/edge.h"
-#include "base/shared.h"
+#include "misc/tpm_io.h"
 
 FeatureWriter::FeatureWriter()
 {
@@ -34,6 +34,16 @@ void FeatureWriter::setEdgePoly(QTextStream & ts, const EdgePoly & epoly)
             setVertex(ts,v2,"Point");
             setPoint(ts,p3,"Center");
             ts << "</Curve>" << endl;
+        }
+        else if (ep->getType() == EDGETYPE_CHORD)
+        {
+            QString str = QString("<Chord convex=\"%1\">").arg(ep->isConvex() ? "t" : "f");
+            ts << str << endl;
+            QPointF p3 = ep->getArcCenter();
+            setVertex(ts,v1,"Point");
+            setVertex(ts,v2,"Point");
+            setPoint(ts,p3,"Center");
+            ts << "</Chord>" << endl;
         }
     }
 }
@@ -74,35 +84,4 @@ void FeatureWriter::setPoint(QTextStream & ts, QPointF pt, QString name)
     ts << "<" << name << ">";
     ts << pt.x() << "," << pt.y();
     ts << "</" << name << ">" << endl;
-}
-
-QString  FeatureWriter::id(int id)
-{
-    //qDebug() << "id=" << id;
-    QString qs = QString(" id=\"%1\"").arg(id);
-    return qs;
-}
-
-
-QString  FeatureWriter::nextId()
-{
-    return id(++refId);
-}
-
-QString FeatureWriter::getVertexReference(VertexPtr ptr)
-{
-    int id =  vertex_ids.value(ptr);
-    QString qs = QString(" reference=\"%1\"").arg(id);
-    return qs;
-}
-
-void FeatureWriter::setVertexReference(int id, VertexPtr ptr)
-{
-    vertex_ids[ptr] = id;
-}
-
-
-bool FeatureWriter::hasReference(VertexPtr v)
-{
-    return vertex_ids.contains(v);
 }

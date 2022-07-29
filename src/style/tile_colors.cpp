@@ -1,34 +1,12 @@
-/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #include "style/tile_colors.h"
-#include "tile/placed_feature.h"
-#include "tapp/prototype.h"
-#include "tile/tiling.h"
-#include "base/colorset.h"
+#include "geometry/fill_region.h"
+#include "misc/colorset.h"
+#include "misc/geo_graphics.h"
+#include "mosaic/prototype.h"
 #include "tile/feature.h"
-#include "base/geo_graphics.h"
+#include "tile/placed_feature.h"
+#include "tile/tiling.h"
+#include "viewers/viewcontrol.h"
 
 TileColors::TileColors(PrototypePtr proto) : Style(proto)
 {
@@ -79,10 +57,12 @@ void TileColors::createStyleRepresentation()
         feature->getFeatureColors()->resetIndex();
     }
 
-    QVector<QTransform> & translations  = pp->getTranslations();
+    FillRegion flood(tp,ViewControl::getInstance()->getFillData());
+    QVector<QTransform> translations = flood.getTransforms();
+    qDebug() << "num translations   =" << translations.size();
+
     const QVector<PlacedFeaturePtr> & qlfp   = tp->getPlacedFeatures();
     qDebug() << "num placed features=" << qlfp.size();
-    qDebug() << "num translations   =" << translations.size();
 
     for (auto it = qlfp.begin(); it != qlfp.end(); it++)
     {
@@ -108,7 +88,7 @@ void TileColors::createStyleRepresentation()
 void TileColors::resetStyleRepresentation()
 {
     epolys.clear();
-    eraseStyleMap();
+    resetStyleMap();
 }
 
 eStyleType TileColors::getStyleType() const
@@ -130,13 +110,13 @@ void TileColors::draw(GeoGraphics * gg)
         return;
     }
 
-    for (auto bpc : epolys)
+    for (const auto & bpc : qAsConst(epolys))
     {
         EdgePoly ep = bpc.epoly;
-        gg->fillEdgePoly(&ep,bpc.color);
+        gg->fillEdgePoly(ep,bpc.color);
         if (outlineEnb)
         {
-            gg->drawEdgePoly(&ep,outlineColor,outlineWidth);
+            gg->drawEdgePoly(ep,outlineColor,outlineWidth);
         }
     }
 }

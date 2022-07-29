@@ -1,32 +1,9 @@
-/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #include <QPainter>
+#include <QDebug>
 #include "style/filled.h"
-#include "settings/configuration.h"
+#include "geometry/dcel.h"
 #include "geometry/map.h"
-#include "base/geo_graphics.h"
+#include "misc/geo_graphics.h"
 
 using std::shared_ptr;
 
@@ -42,15 +19,14 @@ using std::shared_ptr;
 // The code to build the faces from the map is contained in
 // geometry.Faces.
 
-Filled::Filled(PrototypePtr proto, int algorithm ) : Style(proto)
+Filled::Filled(const PrototypePtr & proto, int algorithm ) : Style(proto)
 {
     draw_inside_blacks    = true;
     draw_outside_whites   = true;
     this->algorithm       = algorithm;
-    cleanseLevel          = 0;
 }
 
-Filled::Filled(StylePtr other) : Style(other)
+Filled::Filled(const StylePtr & other) : Style(other)
 {
     shared_ptr<Filled> filled = std::dynamic_pointer_cast<Filled>(other);
     if (filled)
@@ -60,21 +36,19 @@ Filled::Filled(StylePtr other) : Style(other)
         whiteColorSet         = filled->whiteColorSet;
         blackColorSet         = filled->blackColorSet;
         algorithm             = filled->algorithm;
-        cleanseLevel          = filled->cleanseLevel;
     }
     else
     {
         draw_inside_blacks    = true;
         draw_outside_whites   = true;
         algorithm             = 0;
-        cleanseLevel          = 0;
     }
 }
 
 Filled::~Filled()
 {
 #ifdef EXPLICIT_DESTRUCTOR
-    qDebug() << "deleting filled";
+    qDebug() << "deleting Filled";
     whiteColorSet.clear();
     blackColorSet.clear();
     colorGroup.clear();
@@ -88,21 +62,15 @@ void  Filled::setAlgorithm(int val)
     resetStyleRepresentation();
 }
 
-void  Filled::setCleanseLevel(int val)
-{
-    cleanseLevel = val;
-    resetStyleRepresentation();
-}
-
 // Style overrides.
 
 void Filled::resetStyleRepresentation()
 {
+    dcel.reset();
+    resetStyleMap();
     blackFaces.clear();
     whiteFaces.clear();
-    faceGroup.clear();
-    dcel.reset();
-    eraseStyleMap();
+    faceGroups.clear();
     whiteColorSet.resetIndex();
     blackColorSet.resetIndex();
     colorGroup.resetIndex();
@@ -116,24 +84,20 @@ void Filled::createStyleRepresentation()
         MapPtr map = getMap();
 
         qDebug().noquote() << "Filled pre  map cleanse" << map->summary();
-        if (cleanseLevel == 1)
-        {
-            map->cleanse(divideupIntersectingEdges | badVertices_0 | badVertices_1);
-        }
-        else if (cleanseLevel == 2)
-        {
-            map->cleanse(badVertices_0 | badVertices_1);
-        }
-        else if (cleanseLevel == 3)
-        {
-            map->cleanse(divideupIntersectingEdges);
-        }
+        map->cleanse(badVertices_1);
         qDebug().noquote() << "Filled post map cleanse" << map->summary();
 
-        dcel = map->getDCEL();
+        dcel = map->getDerivedDCEL();
+        if (!dcel)
+        {
+            dcel = std::make_shared<DCEL>(map);
+            map->setDerivedDCEL(dcel);
+        }
     }
 
     Q_ASSERT(dcel);
+    dcel->getFaceSet().sortByPositon();
+
     switch (algorithm)
     {
     case 0:
@@ -151,7 +115,7 @@ void Filled::createStyleRepresentation()
         break;
 
     case 2:
-        if (faceGroup.size() == 0)
+        if (faceGroups.size() == 0)
         {
             buildFaceGroups();
             assignColorSets(whiteColorSet);
@@ -159,7 +123,7 @@ void Filled::createStyleRepresentation()
         break;
 
     case 3:
-        if (faceGroup.size() == 0)
+        if (faceGroups.size() == 0)
         {
             buildFaceGroups();
             assignColorGroups(colorGroup);
@@ -171,6 +135,7 @@ void Filled::createStyleRepresentation()
 void Filled::updateStyleRepresentation()
 {
     Q_ASSERT(dcel);
+
     switch (algorithm)
     {
     case 0:
@@ -201,22 +166,22 @@ void Filled::draw(GeoGraphics * gg)
     switch (algorithm)
     {
     case 0:
-        qDebug() << "Filled::draw() algorithm=" << algorithm;
+        //qDebug() << "Filled::draw() algorithm=" << algorithm;
         drawDCEL(gg);
         break;
 
     case 1:
-        qDebug() << "Filled::draw() algorithm=" << algorithm;
+        //qDebug() << "Filled::draw() algorithm=" << algorithm;
         drawDCEL(gg);
         break;
 
     case 2:
-        qDebug() << "Filled::draw() algorithm 2 :" << faceGroup.size() << faceGroup.totalSize();
+        //qDebug() << "Filled::draw() algorithm 2 :" << faceGroups.size() << faceGroups.totalSize();
         drawDCELNew2(gg);
         break;
 
     case 3:
-        qDebug() << "Filled::draw() algorithm 3 :" << faceGroup.size() << faceGroup.totalSize();
+        //qDebug() << "Filled::draw() algorithm 3 :" << faceGroups.size() << faceGroups.totalSize();
         drawDCELNew3(gg);
         break;
     }
@@ -229,7 +194,8 @@ void Filled::drawDCEL(GeoGraphics * gg)
         QColor color = whiteColorSet.getFirstColor().color;
         for (auto & face : qAsConst(whiteFaces))
         {
-            gg->fillEdgePoly(face.get(), color);
+            const EdgePoly & ep = *face.get();
+            gg->fillEdgePoly(ep, color);
             color = whiteColorSet.getNextColor().color;
         }
     }
@@ -239,7 +205,8 @@ void Filled::drawDCEL(GeoGraphics * gg)
         QColor color = blackColorSet.getFirstColor().color;
         for (auto & face : qAsConst(blackFaces))
         {
-            gg->fillEdgePoly(face.get(), color);
+            const EdgePoly & ep = *face.get();
+            gg->fillEdgePoly(ep, color);
             color = blackColorSet.getNextColor().color;
         }
     }
@@ -249,13 +216,14 @@ void Filled::drawDCELNew2(GeoGraphics *gg)
 {
     // each face set has a single color in whiteColorSet
     int row = 0;
-    for (FaceSetPtr & fset : faceGroup)
+    for (FaceSetPtr & fset : faceGroups)
     {
         if (fset->selected)
         {
-            for (FacePtr & face : *fset)
+            for (const FacePtr & face : qAsConst(*fset))
             {
-                gg->fillEdgePoly(face.get(),Qt::red);
+                EdgePoly & ep = *face.get();
+                gg->fillEdgePoly(ep,Qt::red);
             }
         }
         else
@@ -264,9 +232,10 @@ void Filled::drawDCELNew2(GeoGraphics *gg)
             if (!tpcolor.hidden)
             {
                 QColor color = tpcolor.color;
-                for (FacePtr & face : *fset)
+                for (const FacePtr & face : qAsConst(*fset))
                 {
-                    gg->fillEdgePoly(face.get(),color);
+                    EdgePoly & ep = *face.get();
+                    gg->fillEdgePoly(ep,color);
                 }
             }
         }
@@ -277,13 +246,14 @@ void Filled::drawDCELNew2(GeoGraphics *gg)
 void Filled::drawDCELNew3(GeoGraphics *gg)
 {
     // each face set has a set of colors
-    for (FaceSetPtr & fset : faceGroup)
+    for (const FaceSetPtr & fset : qAsConst(faceGroups))
     {
         if (fset->selected)
         {
             for (FacePtr & face : *fset)
             {
-                gg->fillEdgePoly(face.get(),Qt::red);
+                EdgePoly & ep = *face.get();
+                gg->fillEdgePoly(ep,Qt::red);
             }
             continue;
         }
@@ -297,7 +267,7 @@ void Filled::drawDCELNew3(GeoGraphics *gg)
 
         cset->resetIndex();
 
-        for (FacePtr & face : *fset)
+        for (const FacePtr & face :qAsConst(*fset))
         {
             Q_ASSERT(face->isClockwise());
             TPColor tpc = cset->getNextColor();
@@ -307,7 +277,8 @@ void Filled::drawDCELNew3(GeoGraphics *gg)
                 continue;
             }
             QColor color = tpc.color;
-            gg->fillEdgePoly(face.get(),color);
+            EdgePoly & ep = *face.get();
+            gg->fillEdgePoly(ep,color);
         }
     }
 }

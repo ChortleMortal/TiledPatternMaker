@@ -1,39 +1,16 @@
-﻿/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
+﻿#include <QHeaderView>
 
 #include "panels/page_style_figure_info.h"
-#include "panels/panel_misc.h"
-#include "base/shared.h"
-#include "base/mosaic.h"
-#include "makers/decoration_maker/decoration_maker.h"
-#include "tapp/design_element.h"
-#include "tapp/prototype.h"
-#include "tile/tiling.h"
-#include "tapp/figure.h"
+#include "figures/figure.h"
+#include "makers/mosaic_maker/mosaic_maker.h"
+#include "mosaic/design_element.h"
+#include "mosaic/mosaic.h"
+#include "mosaic/prototype.h"
 #include "style/style.h"
+#include "tile/tiling.h"
+#include "widgets/panel_misc.h"
 
-page_style_figure_info:: page_style_figure_info(ControlPanel *panel)  : panel_page(panel, "Mosaic Info")
+page_mosaic_info:: page_mosaic_info(ControlPanel *panel)  : panel_page(panel, "Mosaic Info")
 {
     figureTable = new AQTableWidget(this);
     figureTable->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -50,7 +27,7 @@ page_style_figure_info:: page_style_figure_info(ControlPanel *panel)  : panel_pa
     vbox->addStretch();
 }
 
-void  page_style_figure_info::onEnter()
+void  page_mosaic_info::onEnter()
 {
     figureTable->clearContents();
 
@@ -61,14 +38,14 @@ void  page_style_figure_info::onEnter()
     updateGeometry();
 }
 
-void  page_style_figure_info::refreshPage()
+void  page_mosaic_info::onRefresh()
 {
 }
 
-void page_style_figure_info::showFiguresFromStyles()
+void page_mosaic_info::showFiguresFromStyles()
 {
     int row = 0;
-    MosaicPtr mosaic = decorationMaker->getMosaic();
+    MosaicPtr mosaic = mosaicMaker->getMosaic();
     if (mosaic)
     {
         const StyleSet sset = mosaic->getStyleSet();

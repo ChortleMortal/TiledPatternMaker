@@ -1,27 +1,3 @@
-﻿/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 ////////////////////////////////////////////////////////////////////////////
 //
 // Map.java
@@ -39,26 +15,38 @@
 // tricky later.  But it's more tractable than computing overlays of
 // DCELs.
 
-
 #ifndef MAP_H
 #define MAP_H
 
-#include <QtCore>
-
-#include "base/misc.h"
+#include "misc/unique_qvector.h"
+#include "geometry/circle.h"
 #include "geometry/edgepoly.h"
-#include "designs/shapes.h"
+#include "geometry/loose.h"
+#include "legacy/shapes.h"
+#include "geometry/neighbours.h"
+#include "geometry/neighbour_map.h"
 
 typedef std::shared_ptr<class Map>          MapPtr;
+typedef std::shared_ptr<class NeighbourMap> NeighbourMapPtr;
 typedef std::shared_ptr<const class Map>    constMapPtr;
 typedef std::shared_ptr<class ShapeFactory> ShapeFPtr;
 typedef std::shared_ptr<class Neighbours>   NeighboursPtr;
 typedef std::shared_ptr<class DCEL>         DCELPtr;
+typedef std::weak_ptr<class Edge>           WeakEdgePtr;
+
+typedef std::weak_ptr<class DCEL>           WeakDCELPtr;
 
 struct sText
 {
     QPointF pt;
     QString txt;
+};
+
+enum eCompare
+{
+    COMP_LESS    = -1,
+    COMP_EQUAL   = 0,
+    COMP_GREATER = 1
 };
 
 enum eMCOptions
@@ -69,62 +57,88 @@ enum eMCOptions
     joinupColinearEdges         = 0x10,
     divideupIntersectingEdges   = 0x20,
     cleanupNeighbours           = 0x40,
+    BuildNeighbours             = 0x80,
 };
 
 #define default_cleanse (badEdges | badVertices_0| cleanupNeighbours)
 
-class MapStatus
+enum eMapError
 {
-public:
-    MapStatus()  { reset(); }
+    MAP_EMPTY,
+    MAP_NO_EDGES,
+    MAP_NO_VERTICES,
 
-    void reset() { verticesSorted = false; edgesSorted = false; neighboursBuilt = false; }
+    EDGE_TRIVIAL_VERTICES,
+    EDGE_TRIVIAL_POINTS,
+    EDGE_VERTEX_UNKNOWN,
+    EDGE_DUPLICATED,
 
-    bool fullyBuilt() { return neighboursBuilt && edgesSorted && verticesSorted; }
+    VERTEX_DUPLICATED,
 
-    bool neighboursBuilt;
-    bool verticesSorted;
-    bool edgesSorted;
+    NEIGHBOUR_NO_EDGE,
+    NEIGHBOUR_INVALID_EDGE,
+    NEIGHBOUR_EXPIRED,
+    NEIGHBOUR_BAD,
+
+    MERR_EDGES_INTERSECTING
 };
 
+class Isect
+{
+public:
+    Isect() {}
+    Isect(EdgePtr e, EdgePtr c, VertexPtr v) { vertex=v; edge=e; cutter = c; }
+    WeakEdgePtr edge;    // the interseted edge
+    WeakEdgePtr cutter;  // the cutting edge
+    VertexPtr vertex;    // the vertex for the intersection point
+};
 
-class Map : public std::enable_shared_from_this<Map>
+class Map
 {
     #define MAP_EDGECOUNT_MAX 16
 
     friend class DCEL;
 
 public:
-    Map(QString Name);
-    Map(QString Name, QPolygonF & poly);
-    Map(QString Name, EdgePoly & poly);
-    Map(const Map & map);     // duplictes the contents
-
+    Map(const QString & name);
+    Map(const QString & name, const QPolygonF & poly);
+    Map(QString Name, const EdgePoly & poly);
     ~Map();
-    void        wipeout();     // reclaim memory
 
-    // make a new map with similar content
-    MapPtr      recreate() const;
+    void        draw(QPainter * painter);
 
-    // cleanse
-    bool        cleanse(unsigned int options, bool forceVerify = true);
+    void        wipeout();          // reclaim memory
+    void        set(const constMapPtr & other);  // replace contents
+    MapPtr      copy() const;       // duplictes the contents
+    MapPtr      recreate() const;   // make a new map with similar content
+    MapPtr      getTransformed(const QTransform & T) const;
 
-    // insertions
-    void        insertDirect(VertexPtr v);
-    void        insertDirect(EdgePtr e);
-    VertexPtr   insertVertex(QPointF pt);
-    EdgePtr     insertEdge(VertexPtr  v1, VertexPtr v2, bool debug = false);
+    // neighours
+    NeighboursPtr getNeighbours(const VertexPtr & vert);
+
+    //  verify/cleanse
+    bool        verify(bool force = false);
+    bool        verifyAndFix(bool force = false, bool confirm = false);
+    void        cleanse(unsigned int options);
+
+    VertexPtr   insertVertex(const QPointF & pt);
+    EdgePtr     insertEdge(const VertexPtr & v1, const VertexPtr & v2, bool debug = false);
+    void        insertEdge(const EdgePtr & cutter);
 
     void        addShapeFactory(ShapeFPtr sf);
 
     // deletions
-    void        removeVertex(VertexPtr v);
-    void        removeVertexSimple(VertexPtr v);
-    void        removeEdge(EdgePtr e);
+    void        removeVertex(const VertexPtr & v);
+    void        removeVertexSimple(const VertexPtr & v);
+    void        removeEdge(const EdgePtr & e);
 
     // modifications
-    void        addCropBorder(QRectF rect);
-    void        removeOutisde(QRectF rect);
+    void        embedCrop(const QRectF & rect);
+    void        embedCrop(const CirclePtr & c);
+
+    void        cropOutside(const QRectF & rect);
+    void        cropOutside(const QPolygonF & poly);
+    void        cropOutside(const CirclePtr & c);
 
     void        scale(qreal s);
     void        rotate(qreal r);
@@ -133,42 +147,47 @@ public:
 
     void        splitEdge(EdgePtr e);
 
-    void        mergeMap(MapPtr other);
-    void        mergeSimpleMany(constMapPtr other, const QVector<QTransform> & transforms);
-    void        mergeMany(constMapPtr other, const QVector<QTransform> & transforms);
+    void        mergeMap(const constMapPtr & other, qreal tolerance = Loose::TOL);
+    void        mergeMany(const constMapPtr & other, const QVector<QTransform> & transforms);
+    EdgePtr     makeCopy(const EdgePtr & e);
+    EdgePtr     makeCopy(const EdgePtr & e, QTransform T);
 
-    void        sortVertices();
-    void        sortEdges();
-    void        buildNeighbours();
+    void        removeMap(MapPtr other);
+
+    // back-door
+    void        XmlInsertDirect(VertexPtr v);
+    void        XmlInsertDirect(EdgePtr e);
 
     // getters
     const QVector<VertexPtr> & getVertices() { return vertices; }
     const QVector<EdgePtr>   & getEdges()    { return edges; }
     const QVector<sText>     & getTexts()    { return texts; }
 
-    NeighboursPtr getBuiltNeighbours(VertexPtr v);
-    NeighboursPtr getRawNeighbours(VertexPtr v);
-
-    DCELPtr     getDCEL();
-    EdgePoly    getEdgePoly() const;
+    void            resetNeighbourMap() { nMap.reset(); }
+    NeighbourMapPtr getNeighbourMap();
+    void            setDerivedDCEL(DCELPtr dcel) { derivedDCEL = dcel; }
+    DCELPtr         getDerivedDCEL()             { return derivedDCEL.lock(); }
+    EdgePoly        getEdgePoly() const;
 
     // info
     QString     name() const { return mname; }
     QString     summary() const;
+    QString     summary2() const;
     QString     displayVertexEdgeCounts();
 
     bool        isEmpty() const;
     int         numEdges() const;
     int         numVertices() const;
-    bool        contains (VertexPtr v) const { return vertices.contains(v); }
-    bool        contains (EdgePtr e)  const  { return edges.contains(e); }
+    bool        contains (const VertexPtr & v) const { return vertices.contains(v); }
+    bool        contains (const EdgePtr & e)  const  { return edges.contains(e); }
     bool        hasIntersectingEdges() const;
-
-    void        draw(QPainter * painter);
+    EdgePtr     edgeExists(const EdgePtr & edge) const;
+    EdgePtr     edgeExists(const VertexPtr &  v1, const VertexPtr & v2) const;
 
     //debug
-    bool        verify(bool force = false);
+    QVector<eMapError> _verify(bool force = false);
     void        dumpMap(bool full=true);
+    void        dumpErrors(const QVector<eMapError> &theErrors);
 
     void        insertDebugMark(QPointF m, QString txt, qreal size = 0.05 , QPointF offset = QPointF());
     void        insertDebugLine(EdgePtr edge);
@@ -178,34 +197,35 @@ public:
 
     static int  refs;
 
+    void        deDuplicateEdges(const NeighboursPtr & vec);
+    void        deDuplicateNeighbours();
+    void        deDuplicateVertices(qreal tolerance);
+
 protected:
     UniqueQVector<VertexPtr>    vertices;
     UniqueQVector<EdgePtr>      edges;
 
 private:
     // insertions
-    void        _insertEdge(EdgePtr e, bool debug = false);
-    EdgePtr     _insertCurvedEdge(VertexPtr  v1, VertexPtr v2, QPointF center, bool isConvex, bool debug = false);
-    void        _insertEdge_Simple(EdgePtr edge );
+    void        _insertEdge(const EdgePtr & e, bool debug = false);
+    EdgePtr     _insertCurvedEdge(const VertexPtr & v1, const VertexPtr & v2, const QPointF & center, bool isConvex, bool isChord, bool debug);
+    void        _insertEdge_Simple(const EdgePtr & edge );
     void        _insertPolygon(Polyform  * poly);
     void        _insertPolyline(Polyform * poly);
 
     // modifications
-    void        _applyGeneralRigidMotion(QTransform T );
+    void        _applyGeneralRigidMotion(QTransform T);
     void        _applyTrivialRigidMotion(QTransform T);
 
-    void        _splitEdgesByVertex(VertexPtr vert);
-    bool        _splitTwoEdgesByVertex(VertexPtr vert);
+    void        _splitEdgesByVertex(const VertexPtr & vert);
+    bool        _splitTwoEdgesByVertex(const VertexPtr & vert);
 
-    void        _mergeVertices(MapPtr other);
-    void        _joinEdges(EdgePtr e1, EdgePtr e2);
+    void        _mergeVertices(const constMapPtr & other, qreal tolerance = Loose::TOL);
+    void        _joinEdges(const EdgePtr & e1, const EdgePtr & e2);
 
     // getters
-    VertexPtr   _getOrCreateVertex(QPointF pt);
-    VertexPtr   _getVertex(QPointF pt) const;
-
-    // info
-    bool        _edgeExists(VertexPtr v1, VertexPtr v2) const;
+    VertexPtr   _getOrCreateVertex(const QPointF &pt);
+    VertexPtr   _getVertex(const QPointF & pt) const;
 
     // debug
     void        _dumpVertices(bool full);
@@ -217,35 +237,33 @@ private:
 
     // cleanse operations
     void        joinColinearEdges();       // if two lines are straight but have a vertex, then combine lines and delete vertex
-    void        divideIntersectingEdges(); // if two edges cross, make a new vertex and have four edges
-    void        removeVerticesWithEdgeCount(int edgeCount);
-    void        deDuplicateNeighbours();
-    void        removeBadEdges();
     bool        joinOneColinearEdge();
-    void        combineLinearEdges(EdgePtr a, EdgePtr b,VertexPtr common);
-    void        deDuplicateEdges(const NeighboursPtr vec);
+    void        divideIntersectingEdges(); // if two edges cross, make a new vertex and have four edges
+    void        combineLinearEdges(const EdgePtr & a, const EdgePtr & b, const VertexPtr & common);
+    void        removeVerticesWithEdgeCount(int edgeCount);
+    bool        coalesceVertices(qreal tolerance = Loose::TOL);
+    void        removeBadEdges();
 
     // debug verify operations
-    bool        verifyVertices();
-    bool        verifyEdges();
-    bool        verifyNeighbours();
+    void        verifyEdges();
+    void        verifyNeighbours();
+    bool        isSevereError(eMapError err);
+    bool        isMinorError(eMapError err);
 
     // utilities
-    static int  lexCompareEdges(qreal a, qreal b);
-    static int  lexComparePoints(QPointF a, QPointF b);
-    static bool edgeLessThan(EdgePtr a, EdgePtr b);
-    static bool vertexLessThan( VertexPtr  a, VertexPtr b );
+    static eCompare  comparePoints(const QPointF &a, const QPointF &b, qreal tolerance = Loose::TOL);
+    static bool      vertexAngleGreaterThan(const VertexPtr & a, const VertexPtr & b);
 
-    int         vertexIndex(VertexPtr v) const { return vertices.indexOf(v); }
-    int         edgeIndex(EdgePtr e)     const { return edges.indexOf(e); }
+    int         vertexIndex(const VertexPtr & v) const { return vertices.indexOf(v); }
+    int         edgeIndex(const EdgePtr & e)     const { return edges.indexOf(e); }
 
-    Configuration                   * config;
-    QString                           mname;
-
-    std::map<VertexPtr,NeighboursPtr> neighbours;
-    DCELPtr                           dcel;
-    QVector<sText>                    texts;
-    MapStatus                         status;
+    class Configuration       * config;
+    QString                     mname;
+    WeakDCELPtr                 derivedDCEL;
+    QVector<sText>              texts;
+    UniqueQVector<eMapError>    errors;
+    static QPointF              tmpCenter;
+    NeighbourMapPtr             nMap;
 };
 
 #endif

@@ -1,38 +1,19 @@
-/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
+#include <QRadioButton>
+#include <QCheckBox>
+#include <QGroupBox>
+#include <QComboBox>
 
 #include "panels/panel.h"
-#include "panels/panel_pagesWidget.h"
-#include "base/tiledpatternmaker.h"
-#include "base/version.h"
-#include "base/shared.h"
+#include "widgets/panel_pagesWidget.h"
+#include "tiledpatternmaker.h"
+#include "misc/version.h"
 #include "panels/page_background_image.h"
 #include "panels/page_borders.h"
 #include "panels/page_config.h"
+#include "panels/page_crop.h"
 #include "panels/page_grid.h"
 #include "panels/page_debug.h"
-#include "panels/page_decoration_maker.h"
+#include "panels/page_mosaic_maker.h"
 #include "panels/page_image_tools.h"
 #include "panels/page_layers.h"
 #include "panels/page_loaders.h"
@@ -45,10 +26,11 @@
 #include "panels/page_style_figure_info.h"
 #include "panels/page_system_info.h"
 #include "panels/page_tiling_maker.h"
-#include "panels/view_panel.h"
+#include "widgets/mouse_mode_widget.h"
 #include "viewers/grid.h"
-#include "viewers/view.h"
 #include "viewers/viewcontrol.h"
+
+extern void closeHandle();
 
 ControlPanel * ControlPanel::mpThis = nullptr;
 
@@ -75,39 +57,40 @@ ControlPanel::ControlPanel() : AQWidget()
     setObjectName("ControlPanel");
 
     QProcess process;
+#if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
+    process.startCommand("git branch --show-current");
+#else
     QStringList qsl;
     qsl << "branch" << "--show-current";
     process.start("git",qsl);
+#endif
     process.waitForFinished(-1); // will wait forever until finished
 
     QByteArray sout  = process.readAllStandardOutput();
-    QString branch(sout);
-    QString br = branch.trimmed();
-    qDebug().noquote() << QDir::currentPath() <<  "branch =" << br;
+    QString br(sout);
+    this->gitBranch = br.trimmed();
+    qInfo().noquote() << "git branch      :" << gitBranch;
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5,9,0))
     setWindowFlag(Qt::WindowMinimizeButtonHint,true);
 #endif
 
-#ifdef TPMSPLASH
     splash = new TPMSplash();
-#endif
 
     QString title;
 #ifdef QT_DEBUG
     title  = "Control Panel - Debug - Version ";
-    title += tpmVersion;
-    if  (!br.isEmpty())
-    {
-        title += " [";
-        title += branch.trimmed();
-        title += "]  ";
-    }
 #else
     title = "Control Panel - Release - Version ";
-    title  += tpmVersion;
-    title  += "  ";
 #endif
+    title += tpmVersion;
+    if  (!gitBranch.isEmpty())
+    {
+        title += " [";
+        title += gitBranch;
+        title += "]";
+    }
+    title  += "  ";
     config  = Configuration::getInstance();
     title  += config->rootMediaDir;
     setWindowTitle(title);
@@ -120,10 +103,10 @@ void ControlPanel::init(TiledPatternMaker * parent)
 {
     maker   = parent;
     closed  = false;
-    view    = View::getInstance();
-    vcontrol = ViewControl::getInstance();
+    view    = ViewControl::getInstance();
 
-    updateLocked = false;
+    exclusiveViews = true;
+    updateLocked   = false;
 
     setupGUI();
 
@@ -172,8 +155,8 @@ void ControlPanel::closeEvent(QCloseEvent *event)
         closed =  true;
     }
 
+    closeHandle();
     QWidget::closeEvent(event);
-
     qApp->quit();
 }
 
@@ -182,6 +165,16 @@ void ControlPanel::resizeEvent(QResizeEvent *event)
     QWidget::resizeEvent(event);
     emit sig_panelResized();
 }
+
+#if 0
+// every resize event has a move event afterwards
+// but every move event does not necessarily have a resize event
+void ControlPanel::moveEvent(QMoveEvent *event)
+{
+    qDebug().noquote() << "ControlPanel::move from =" << event->oldPos() << "to =" << event->pos();
+    QWidget::moveEvent(event);
+}
+#endif
 
 void ControlPanel::closePages()
 {
@@ -205,7 +198,6 @@ void ControlPanel::setupGUI()
 {
     // top row
     panelStatus = new PanelStatus();
-    panelStatus->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
 
     // hlayout - second row
     QHBoxLayout * hlayout = new QHBoxLayout();
@@ -238,7 +230,7 @@ void ControlPanel::setupGUI()
 
         connect(pbUpdateView,       &QPushButton::clicked,  this,     &ControlPanel::updateView);
         connect(pbLogEvent,         &QPushButton::clicked,  this,     &ControlPanel::slot_logEvent);
-        connect(pbRefreshView  ,    &QPushButton::clicked,  vcontrol, &ViewControl::slot_refreshView);
+        connect(pbRefreshView  ,    &QPushButton::clicked,  view,     &ViewControl::slot_refreshView);
         connect(cbUpdate,           &QCheckBox::clicked,    this,     &ControlPanel::updateClicked);
     }
 
@@ -263,17 +255,15 @@ void ControlPanel::setupGUI()
     kbdModeCombo->setFixedHeight(25);
     delegateKeyboardMouse(config->getViewerType());
 
-    vpanel = new ViewPanel;
-    vpanel->setButtonSize(QSize(71,25));
-    vpanel->setContentsMargins(0,0,0,0);
+    mouseModeWidget = new MouseModeWidget;
 
     QPushButton *pbRaise    = new QPushButton("Raise View");
     pbRaise->setFixedHeight(25);
-    pbRaise->setStyleSheet("QPushButton{ background-color: white; border: 1px solid black; border-radius: 3px; padding-left: 9px; padding-right: 9px; }");
+    //pbRaise->setStyleSheet("QPushButton{ border-radius: 3px; padding-left: 9px; padding-right: 9px; }");
 
     QPushButton *pbExit     = new QPushButton("QUIT");
     pbExit->setFixedSize(QSize(71,25));
-    pbExit->setStyleSheet("QPushButton{ background-color: white; border: 1px solid black; border-radius: 3px; }");
+    //pbExit->setStyleSheet("QPushButton{ border-radius: 3px; }");
 
     QCheckBox * chkScaleToView  = new QCheckBox("Scale to View");
 
@@ -304,7 +294,7 @@ void ControlPanel::setupGUI()
     hbox->addSpacing(2);
     hbox->addWidget(line1);
     hbox->addSpacing(2);
-    hbox->addWidget(vpanel);
+    hbox->addWidget(mouseModeWidget);
     hbox->addSpacing(2);
     hbox->addWidget(line2);
     hbox->addSpacing(2);
@@ -320,18 +310,16 @@ void ControlPanel::setupGUI()
     commonGroup->setContentsMargins(3,3,3,3);
 
     // left widget
-    panelPageList                 = new PanelListWidget;
-    QHBoxLayout * panelPageLayout = new QHBoxLayout();
-    panelPageLayout->addWidget(panelPageList, Qt::AlignTop);
-    QGroupBox * menuSelectGroup   = new QGroupBox("Menu select");
-    menuSelectGroup->setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
-    menuSelectGroup->setLayout(panelPageLayout);
+    panelPageList = new PanelListWidget;
+
+    QLabel * menuSelect = new QLabel("Menu Select");
 
     QGroupBox * viewersGroup = createViewersBox();
 
     QVBoxLayout * leftBox = new QVBoxLayout;
     leftBox->addSpacing(7);
-    leftBox->addWidget(menuSelectGroup);
+    leftBox->addWidget(menuSelect);
+    leftBox->addWidget(panelPageList);
     leftBox->addWidget(viewersGroup);
     leftBox->addStretch();
 
@@ -361,10 +349,10 @@ void ControlPanel::setupGUI()
     connect(pbExit,             &QPushButton::clicked,              this,     &ControlPanel::slot_exit);
     connect(pbRaise,            &QPushButton::clicked,              this,     &ControlPanel::slot_raise);
     connect(pbShowTiling,       &QPushButton::pressed,              this,     &ControlPanel::showTilingPressed);
-    connect(pbClearAll,         &QPushButton::pressed,              this,     &ControlPanel::slot_clearAll);
+    connect(pbClearAll,         &QPushButton::pressed,              view,     &ViewControl::slot_unloadAll, Qt::QueuedConnection);
     connect(pbShowMosaic,       &QPushButton::pressed,              this,     &ControlPanel::showMosaicPressed);
     connect(&repeatRadioGroup,  &QButtonGroup::idClicked,           this,     &ControlPanel::repeatChanged);
-    connect(this,               &ControlPanel::sig_refreshView,     vcontrol, &ViewControl::slot_refreshView);
+    connect(this,               &ControlPanel::sig_refreshView,     view,     &ViewControl::slot_refreshView);
     connect(this,               &ControlPanel::sig_render,          theApp,   &TiledPatternMaker::slot_render);
     connect(kbdModeCombo,       SIGNAL(currentIndexChanged(int)),   this,     SLOT(slot_kbdModeChanged(int)));
     connect(view,               &View::sig_kbdMode,                 this,     &ControlPanel::slot_kbdMode);
@@ -389,32 +377,43 @@ void ControlPanel::populatePages()
 
     panelPageList->addSeparator();
 
-    wp = new page_tiling_maker(this);
+    wp = new page_mosaic_maker(this);
     mPages.push_back(wp);
     panelPages->addWidget(wp);
     panelPageList->addItem(wp->getName());
+
+    panelPageList->addSeparator();
 
     wp = new page_motif_maker(this);
     mPages.push_back(wp);
     panelPages->addWidget(wp);
     panelPageList->addItem(wp->getName());
 
-    wp = new page_decoration_maker(this);
+    panelPageList->addSeparator();
+
+    wp = new page_tiling_maker(this);
     mPages.push_back(wp);
     panelPages->addWidget(wp);
     panelPageList->addItem(wp->getName());
+
+    panelPageList->addSeparator();
 
     wp = new page_borders(this);
     mPages.push_back(wp);
     panelPages->addWidget(wp);
     panelPageList->addItem(wp->getName());
 
-    wp = new page_modelSettings(this);
+    wp = new page_crop(this);
     mPages.push_back(wp);
     panelPages->addWidget(wp);
     panelPageList->addItem(wp->getName());
 
     wp = new page_background_image(this);
+    mPages.push_back(wp);
+    panelPages->addWidget(wp);
+    panelPageList->addItem(wp->getName());
+
+    wp = new page_modelSettings(this);
     mPages.push_back(wp);
     panelPages->addWidget(wp);
     panelPageList->addItem(wp->getName());
@@ -432,11 +431,13 @@ void ControlPanel::populatePages()
         mPages.push_back(wp);
         panelPages->addWidget(wp);
         panelPageList->addItem(wp->getName());
+
         page_map_editor * wp_med = dynamic_cast<page_map_editor*>(wp);
+        connect(this,   &ControlPanel::sig_reload,  wp_med,    &page_map_editor::slot_mosaicChanged);
 
         panelPageList->addSeparator();
 
-        wp = new page_layers(this);
+        wp = new page_mosaic_info(this);
         mPages.push_back(wp);
         panelPages->addWidget(wp);
         panelPageList->addItem(wp->getName());
@@ -446,7 +447,7 @@ void ControlPanel::populatePages()
         panelPages->addWidget(wp);
         panelPageList->addItem(wp->getName());
 
-        wp = new page_style_figure_info(this);
+        wp = new page_layers(this);
         mPages.push_back(wp);
         panelPages->addWidget(wp);
         panelPageList->addItem(wp->getName());
@@ -455,9 +456,6 @@ void ControlPanel::populatePages()
         mPages.push_back(wp);
         panelPages->addWidget(wp);
         panelPageList->addItem(wp->getName());
-
-        // make inter-page connections
-        connect(this,   &ControlPanel::sig_reload,               wp_med, &page_map_editor::slot_reload);
     }
 
     panelPageList->addSeparator();
@@ -469,24 +467,24 @@ void ControlPanel::populatePages()
 
     if (config->insightMode)
     {
-        wp = new page_debug(this);
-        mPages.push_back(wp);
-        panelPages->addWidget(wp);
-        panelPageList->addItem(wp->getName());
-
         wp = new page_image_tools(this);
         mPages.push_back(wp);
         panelPages->addWidget(wp);
         panelPageList->addItem(wp->getName());
+
         page_image_tools * wp_im = dynamic_cast<page_image_tools*>(wp);
+        connect(maker, &TiledPatternMaker::sig_image0, wp_im, &page_image_tools::slot_setImage0);
+        connect(maker, &TiledPatternMaker::sig_image1, wp_im, &page_image_tools::slot_setImage1);
 
         wp = new page_log(this);
         mPages.push_back(wp);
         panelPages->addWidget(wp);
         panelPageList->addItem(wp->getName());
 
-        connect(maker, &TiledPatternMaker::sig_image0, wp_im, &page_image_tools::slot_setImage0);
-        connect(maker, &TiledPatternMaker::sig_image1, wp_im, &page_image_tools::slot_setImage1);
+        wp = new page_debug(this);
+        mPages.push_back(wp);
+        panelPages->addWidget(wp);
+        panelPageList->addItem(wp->getName());
     }
 
     panelPageList->adjustSize();
@@ -516,8 +514,9 @@ void ControlPanel::floatPages()
 
 void ControlPanel::slot_selectPanelPage(int index)
 {
-    qDebug() << "ControlPanel::slot_selectPanelPage:" << index;
     if (index == -1)  return;
+
+    qDebug() << "ControlPanel::slot_selectPanelPage:" << index;
 
     // exiting previous page
     panel_page * currentPage = panelPages->getCurrentPage();
@@ -570,7 +569,6 @@ void  ControlPanel::slot_itemPanelPage(QListWidgetItem * item)
 void ControlPanel::slot_detachWidget(QString name)
 {
     qDebug() << "slot_detachWidget" << name;
-
 
     panel_page * page = nullptr;
 
@@ -641,10 +639,9 @@ void ControlPanel::slot_attachWidget(QString name)
 // called by mpTimer
 void ControlPanel::slot_poll()
 {
-    static volatile bool updateLocked = false;
-
     // refresh panel
     cbGrid->setChecked(config->showGrid);
+    cbMeasure->setChecked(config->measure);
     cbCenter->setChecked(config->showCenterDebug);
     cbBackgroundImage->setChecked(config->showBackgroundImage);
 
@@ -660,16 +657,18 @@ void ControlPanel::slot_poll()
     }
 
     updateLocked = true;
+
     //	Update pages
     for (auto page : qAsConst(mPages))
     {
-        if (isVisiblePage(page))
+        if (isVisiblePage(page) && !page->pageBlocked())
         {
             refreshPage(page);
         }
     }
 
     updateGeometry();
+
     updateLocked = false;
 }
 
@@ -697,7 +696,7 @@ void ControlPanel::refreshPage(panel_page * wp)
         wp->repaint();
     }
 
-    wp->refreshPage();
+    wp->onRefresh();
     wp->show();
 }
 
@@ -752,6 +751,13 @@ void ControlPanel::delegateView()
 
     qDebug() << "delegate view based on:" << currentPage->getName();
 
+    page_prototype_info * ppi = dynamic_cast<page_prototype_info*>(currentPage);
+    if (ppi)
+    {
+        selectViewer(VIEW_PROTOTYPE);
+        return;
+    }
+
     page_map_editor * pfe = dynamic_cast<page_map_editor*>(currentPage);
     if (pfe)
     {
@@ -773,35 +779,11 @@ void ControlPanel::delegateView()
         return;
     }
 
-    page_decoration_maker * psm = dynamic_cast<page_decoration_maker*>(currentPage);
+    page_mosaic_maker * psm = dynamic_cast<page_mosaic_maker*>(currentPage);
     if (psm)
     {
         selectViewer(VIEW_MOSAIC);
         return;
-    }
-
-    page_modelSettings * pcs = dynamic_cast<page_modelSettings*>(currentPage);
-    if (pcs)
-    {
-        //selectViewer(VIEW_MOSAIC);
-        return;
-    }
-
-    if (config->insightMode)
-    {
-        page_style_figure_info * sfi = dynamic_cast<page_style_figure_info*>(currentPage);
-        if (sfi)
-        {
-            //selectViewer(VIEW_DESIGN_ELEMENT);
-            return;
-        }
-
-        page_prototype_info * ppi = dynamic_cast<page_prototype_info*>(currentPage);
-        if (ppi)
-        {
-            selectViewer(VIEW_PROTOTYPE);
-            return;
-        }
     }
 }
 
@@ -829,13 +811,10 @@ void ControlPanel::delegateKeyboardMouse(eViewType viewType)
         kbdModeCombo->insertItem(100,"Adjust Placed Feature", QVariant(KBD_MODE_XFORM_PLACED_FEATURE));
     }
 
-    view->setKbdMode(config->kbdMode); // converts if necessry
-
     kbdModeCombo->blockSignals(false);
 
-    slot_kbdMode(config->kbdMode);  // selects
+    view->resetKbdMode(); // converts if necessry
 }
-
 
 eKbdMode ControlPanel::getValidKbdMode(eKbdMode mode)
 {
@@ -944,7 +923,7 @@ void ControlPanel::slot_scaleToView(bool enb)
 void ControlPanel::slot_showBackChanged(bool enb)
 {
     config->showBackgroundImage = enb;
-    emit sig_refreshView();
+    view->update();
 }
 
 void ControlPanel::slot_showGridChanged(bool enb)
@@ -957,10 +936,16 @@ void ControlPanel::slot_showGridChanged(bool enb)
     emit sig_refreshView();
 }
 
+void ControlPanel::slot_showMeasureChanged(bool enb)
+{
+    config->measure = enb;
+    emit sig_refreshView();
+}
+
 void ControlPanel::slot_showCenterChanged(bool enb)
 {
     config->showCenterDebug = enb;
-    emit sig_refreshView();
+    view->update();
 }
 
 QGroupBox *  ControlPanel::createViewersBox()
@@ -977,6 +962,7 @@ QGroupBox *  ControlPanel::createViewersBox()
 
     cbBackgroundImage    = new QCheckBox("Background Image");
     cbGrid               = new QCheckBox("Grid");
+    cbMeasure            = new QCheckBox("Measure");
     cbCenter             = new QCheckBox("Center");
 
     cbMultiSelect        = new QCheckBox("Multi View");    // defaults to off - not persisted
@@ -995,11 +981,12 @@ QGroupBox *  ControlPanel::createViewersBox()
     avbox->addWidget(cbTilingView);
     avbox->addWidget(cbTilingMakerView);
     avbox->addWidget(cbRawDesignView);
-    avbox->addSpacing(11);
+    avbox->addSpacing(7);
     avbox->addWidget(cbBackgroundImage);
     avbox->addWidget(cbGrid);
+    avbox->addWidget(cbMeasure);
     avbox->addWidget(cbCenter);
-    avbox->addSpacing(11);
+    avbox->addSpacing(7);
     avbox->addWidget(cbLockView);
     avbox->addWidget(cbMultiSelect);
 
@@ -1016,7 +1003,19 @@ QGroupBox *  ControlPanel::createViewersBox()
     {
         viewerGroup.addButton(cbMapEditor,VIEW_MAP_EDITOR);
     }
+    else
+    {
+        // designer mode
+        if (config->getViewerType() == VIEW_MAP_EDITOR)
+        {
+            config->setViewerType(VIEW_DESIGN);
+        }
+    }
+
+    viewerGroup.setExclusive(false); // always false
+
     viewerGroup.button(config->getViewerType())->setChecked(true);
+
 #if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
     connect(&viewerGroup,       SIGNAL(buttonToggled(int, bool)),  this, SLOT(slot_Viewer_pressed(int,bool)));
 #else
@@ -1026,6 +1025,7 @@ QGroupBox *  ControlPanel::createViewersBox()
     connect(cbMultiSelect,      &QCheckBox::clicked,  this, &ControlPanel::slot_multiSelect);
     connect(cbBackgroundImage,  &QCheckBox::clicked,  this, &ControlPanel::slot_showBackChanged);
     connect(cbGrid,             &QCheckBox::clicked,  this, &ControlPanel::slot_showGridChanged);
+    connect(cbMeasure,          &QCheckBox::clicked,  this, &ControlPanel::slot_showMeasureChanged);
     connect(cbCenter,           &QCheckBox::clicked,  this, &ControlPanel::slot_showCenterChanged);
     connect(theApp,             &TiledPatternMaker::sig_lockStatus, this,&ControlPanel::slot_lockStatusChanged);
 
@@ -1052,37 +1052,37 @@ void  ControlPanel::slot_Viewer_pressed(int id, bool enable)
     eViewType viewType = static_cast<eViewType>(id);
     if (enable)
     {
+        if (exclusiveViews)
+        {
+            viewerGroup.blockSignals(true);
+            viewerGroup.button(config->getViewerType())->setChecked(false);
+            viewerGroup.button(id)->setChecked(true);
+            viewerGroup.blockSignals(false);
+        }
+
         // allways do this - the user has asked for it
         config->setViewerType(viewType);
         delegateKeyboardMouse(viewType);
     }
 
-    if (viewerGroup.exclusive())
+    if (exclusiveViews)
     {
-        vcontrol->disableAllViews();
+        view->disableAllViews();
     }
-    vcontrol->viewEnable(viewType,enable);
-
-    emit sig_view_synch(id, enable);
+    view->viewEnable(viewType,enable);
 
     emit sig_refreshView();
 }
 
-void ControlPanel::slot_view_synch(int id, int enb)
-{
-    viewerGroup.blockSignals(true);
-    viewerGroup.button(id)->setChecked(enb);
-    viewerGroup.blockSignals(false);
-}
-
 void ControlPanel::slot_multiSelect(bool enb)
 {
+    int max = (config->insightMode) ? VIEW_MAX : VIEW_DESIGNER_MAX;
     // this is a mirror of the page views control
-    viewerGroup.setExclusive(!enb);
+    exclusiveViews = !enb;
     if (!enb)
     {
         viewerGroup.blockSignals(true);
-        for (int i=0; i <= VIEW_DESIGNER_MAX; i++ )
+        for (int i=0; i <= max; i++ )
         {
             if (i == config->getViewerType())
             {
@@ -1092,8 +1092,8 @@ void ControlPanel::slot_multiSelect(bool enb)
         }
         viewerGroup.blockSignals(false);
     }
-    vcontrol->disableAllViews();
-    vcontrol->viewEnable(config->getViewerType(),true);
+    view->disableAllViews();
+    view->viewEnable(config->getViewerType(),true);
     emit sig_refreshView();
 }
 
@@ -1107,11 +1107,4 @@ void ControlPanel::slot_lockStatusChanged()
     cbLockView->blockSignals(true);
     cbLockView->setChecked(config->lockView);
     cbLockView->blockSignals(false);
-}
-
-void ControlPanel::slot_clearAll()
-{
-    // clears everything
-    vcontrol->resetAll();
-    emit sig_refreshView();
 }

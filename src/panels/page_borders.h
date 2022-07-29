@@ -1,103 +1,92 @@
-﻿/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-#ifndef PAGE_BORDERS_H
+﻿#ifndef PAGE_BORDERS_H
 #define PAGE_BORDERS_H
 
-#include "panels/panel_page.h"
+#include "widgets/panel_page.h"
+#include "widgets/layout_qrectf.h"
+
+class AQComboBox;
+class QGroupBox;
+class QStackedLayout;
 
 class SpinSet;
 class ClickableLabel;
-class LayoutQRectF;
 
-typedef std::shared_ptr<class Border>           BorderPtr;
+typedef std::shared_ptr<class Border>  BorderPtr;
+typedef std::shared_ptr<class Crop>    CropPtr;
+typedef std::shared_ptr<class BorderView>   BorderViewPtr;
 
 class page_borders : public panel_page
 {
     Q_OBJECT
 
-#define NUM_BORDER_COLORS 2
-
 public:
     page_borders(ControlPanel * apanel);
 
-    void refreshPage() override;
+    void onRefresh() override;
     void onEnter() override;
     void onExit() override {}
 
-public slots:
-    void slot_viewUpated();
-
 private slots:
-    void display();
+    void slot_removeBorder();
+    void slot_loadFromCrop();
 
-    void pickBorderColor();
-    void pickBorderColor2();
-    void borderWidthChanged(int width);
-    void borderRowsChanged(int rows);
-    void borderColsChanged(int cols);
-    void borderChanged(int row);
-
-    void slot_defineBorder();
-    void slot_editBorder();
-    void slot_innerBoundryChanged();
-    void slot_outerBoundryChanged();
-
-    void slot_cropAspect(int id);
-    void slot_verticalAspect(bool checked);
+    void slot_borderTypeChanged(int row);
+    void slot_cropTypeChanged(int row);
+    void slot_pickBorderColor();
+    void slot_pickBorderColor2();
+    void slot_borderColorChanged(QLineEdit * le);
+    void slot_borderColor2Changed(QLineEdit * le);
+    void slot_borderWidthChanged(qreal width);
+    void slot_borderRowsChanged(int rows);
+    void slot_borderColsChanged(int cols);
+    void slot_rectBoundaryChanged();
+    void slot_centreChanged();
+    void slot_radiusChanged(qreal r);
 
 protected:
-    QWidget     * createOuterBorderWidget();
-    QWidget     * createInnerBorderWidget();
-    QHBoxLayout * createAspectLayout();
+    void        createBorder();
+    void        displayRectShape(BorderPtr bp);
+    void        refreshBorderType(BorderPtr border);
+    void        refreshBorderCrop(BorderPtr border);
 
-    void displayBorder(BorderPtr bp);
+    BorderPtr   getMosaicBorder();
 
-    BorderPtr getMosaicOrDesignBorder();
+    QWidget   * createBorderTypeWidget();
+    QWidget   * createUndefinedShapeWidget();
+    QWidget   * createRectShapeWidget();
+    QWidget   * createCircleShapeWidget();
+    QWidget   * createPolyShapeWidget();
+    QWidget   * createBorderTypeNone();
+    QWidget   * createBorderTypePlain();
+    QWidget   * createBorderType2Color();
+    QWidget   * createBorderTypeBlocks();
 
 private:
-    QComboBox         borderType;
+    BorderViewPtr      brview;
+    AQComboBox      *  borderTypes;
+    AQComboBox      *  cropTypes;
 
-    QGroupBox       * borderbox;
-    QStackedLayout  * stack;
+    QGroupBox       * borderTypeBox;
+    QGroupBox       * cropTypeBox;
 
-    QWidget         * innerBorderWidget;
     QWidget         * outerBorderWidget;
     QWidget         * nullBorderWidget;
+    QWidget         * nullBorderWidget2;
 
-    SpinSet         * borderWidth;
+    QStackedLayout  * borderTypeStack;
+    QStackedLayout  * cropTypeStack;
+
+    DoubleSpinSet   * borderWidth[3];
+    DoubleSpinSet   * radius;
     SpinSet         * borderRows;
     SpinSet         * borderCols;
-    QLabel          * borderColorLabel[NUM_BORDER_COLORS];
-    QLineEdit       * borderColor[NUM_BORDER_COLORS];
-    ClickableLabel  * borderColorPatch[NUM_BORDER_COLORS];
+    QLabel          * borderColorLabel[4];
+    QLineEdit       * borderColor[4];
+    ClickableLabel  * borderColorPatch[4];
 
-    LayoutQRectF    * innerBoundaryLayout;
-    LayoutQRectF    * outerBoundaryLayout;
+    LayoutQRectF    * rectBoundaryLayout;
+    LayoutQPointF   * centre;
 
-    QButtonGroup      aspects;
-    QCheckBox      *  chkVert;
 };
 
 #endif

@@ -1,46 +1,28 @@
-/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
+#include <QGroupBox>
+#include <QGridLayout>
+#include <QTreeWidgetItem>
+#include <QCheckBox>
+#include <QLabel>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QHeaderView>
 
-#include "panels/page_modelSettings.h"
-#include "panels/panel.h"
-#include "base/border.h"
-#include "base/shared.h"
-#include "base/tiledpatternmaker.h"
-#include "base/utilities.h"
-#include "designs/design.h"
-#include "designs/design_maker.h"
 #include "geometry/transform.h"
-#include "makers/decoration_maker/decoration_maker.h"
+#include "legacy/design.h"
+#include "legacy/design_maker.h"
+#include "makers/mosaic_maker/mosaic_maker.h"
 #include "makers/motif_maker/motif_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
-#include "panels/layout_sliderset.h"
-#include "panels/layout_transform.h"
-#include "tapp/prototype.h"
-#include "tile/backgroundimage.h"
+#include "misc/qtapplog.h"
+#include "misc/utilities.h"
+#include "mosaic/prototype.h"
+#include "panels/page_modelSettings.h"
+#include "panels/panel.h"
+#include "settings/configuration.h"
 #include "tile/tiling.h"
-#include "viewers/view.h"
+#include "tiledpatternmaker.h"
 #include "viewers/viewcontrol.h"
+#include "widgets/layout_sliderset.h"
 
 using std::string;
 using std::make_shared;
@@ -109,9 +91,9 @@ page_modelSettings::page_modelSettings(ControlPanel * apanel)  : panel_page(apan
     adjustSize();
 
     // connections
-    connect(theApp,  &TiledPatternMaker::sig_tilingLoaded,      this,   &page_modelSettings::onEnter);
-    connect(theApp,  &TiledPatternMaker::sig_mosaicLoaded,      this,   &page_modelSettings::onEnter);
-    connect(theApp,  &TiledPatternMaker::sig_loadedDesign,      this,   &page_modelSettings::onEnter);
+    connect(theApp,  &TiledPatternMaker::sig_tilingLoaded,      this,   &page_modelSettings::dummySetup);
+    connect(theApp,  &TiledPatternMaker::sig_mosaicLoaded,      this,   &page_modelSettings::dummySetup);
+    connect(theApp,  &TiledPatternMaker::sig_loadedDesign,      this,   &page_modelSettings::dummySetup);
 }
 
 QGroupBox *page_modelSettings::createTilingSettings()
@@ -161,7 +143,7 @@ QGroupBox *page_modelSettings::createDesignSettings()
     grid->addWidget(bkgdColorPatch[DESIGN_SETTINGS],2,1);
     grid->addLayout(fillGrid,3,0,2,2);
 
-    QGroupBox * box = new QGroupBox("Design Settings");
+    QGroupBox * box = new QGroupBox("Mosaic Settings");
     box->setLayout(grid);
     return box;
 }
@@ -187,9 +169,9 @@ QGroupBox *page_modelSettings::createFrameSettings()
 
     connect(sizeW[FRAME_SETTINGS], &SpinSet::valueChanged,           this, &page_modelSettings::cropSizeChanged);
     connect(sizeH[FRAME_SETTINGS], &SpinSet::valueChanged,           this, &page_modelSettings::cropSizeChanged);
-    connect(ds_left,               &DoubleSpinSet::sig_valueChanged, this, &page_modelSettings::slot_boundsChanged);
-    connect(ds_top,                &DoubleSpinSet::sig_valueChanged, this, &page_modelSettings::slot_boundsChanged);
-    connect(ds_width,              &DoubleSpinSet::sig_valueChanged, this, &page_modelSettings::slot_boundsChanged);
+    connect(ds_left,               &DoubleSpinSet::valueChanged, this, &page_modelSettings::slot_boundsChanged);
+    connect(ds_top,                &DoubleSpinSet::valueChanged, this, &page_modelSettings::slot_boundsChanged);
+    connect(ds_width,              &DoubleSpinSet::valueChanged, this, &page_modelSettings::slot_boundsChanged);
 
     QLabel * l1 = new QLabel("Crop: ");
     QLabel * l2 = new QLabel("Zoom: ");
@@ -211,7 +193,10 @@ QGroupBox *page_modelSettings::createFrameSettings()
     vb->addStretch();
 
     viewBox = new QGroupBox("Frame Size");
-    viewBox->setStyleSheet("QGroupBox:title {color: red;}");
+    if (config->darkTheme)
+        viewBox->setStyleSheet("QGroupBox:title {color: yellow;}");
+    else
+        viewBox->setStyleSheet("QGroupBox:title {color: red;}");
     viewBox->setLayout(vb);
 
     return viewBox;
@@ -258,6 +243,7 @@ QGridLayout * page_modelSettings::createFillDataRow(eSettingsGroup group)
     const int rmin = -99;
     const int rmax =  99;
 
+    chkSingle[group] = new QCheckBox("Singleton");
     xRepMin[group] = new AQSpinBox();
     xRepMax[group] = new AQSpinBox();
     yRepMin[group] = new AQSpinBox();
@@ -268,18 +254,22 @@ QGridLayout * page_modelSettings::createFillDataRow(eSettingsGroup group)
     yRepMin[group]->setRange(rmin,rmax);
     yRepMax[group]->setRange(rmin,rmax);
 
-    grid->addWidget(new QLabel("xMin"),0,0);
-    grid->addWidget(new QLabel("xMax"),0,1);
-    grid->addWidget(new QLabel("yMin"),0,2);
-    grid->addWidget(new QLabel("yMax"),0,3);
+    grid->addWidget(chkSingle[group],0,0,1,2);
 
-    grid->addWidget(xRepMin[group],1,0);
-    grid->addWidget(xRepMax[group],1,1);
-    grid->addWidget(yRepMin[group],1,2);
-    grid->addWidget(yRepMax[group],1,3);
+    grid->addWidget(new QLabel("xMin"),1,0);
+    grid->addWidget(new QLabel("xMax"),1,1);
+    grid->addWidget(new QLabel("yMin"),1,2);
+    grid->addWidget(new QLabel("yMax"),1,3);
+
+    grid->addWidget(xRepMin[group],2,0);
+    grid->addWidget(xRepMax[group],2,1);
+    grid->addWidget(yRepMin[group],2,2);
+    grid->addWidget(yRepMax[group],2,3);
 
     if (group == DESIGN_SETTINGS)
     {
+        connect(chkSingle[group], &QCheckBox::clicked, this, &page_modelSettings::singleton_changed_des);
+
         connect(xRepMin[group], SIGNAL(valueChanged(int)), this,  SLOT(slot_set_repsDesign(int)));
         connect(xRepMax[group], SIGNAL(valueChanged(int)), this,  SLOT(slot_set_repsDesign(int)));
         connect(yRepMin[group], SIGNAL(valueChanged(int)), this,  SLOT(slot_set_repsDesign(int)));
@@ -287,6 +277,7 @@ QGridLayout * page_modelSettings::createFillDataRow(eSettingsGroup group)
     }
     else if (group == TILING_SETTINGS)
     {
+        connect(chkSingle[group], &QCheckBox::clicked, this, &page_modelSettings::singleton_changed_tile);
         connect(xRepMin[group], SIGNAL(valueChanged(int)), this,  SLOT(slot_set_repsTiling(int)));
         connect(xRepMax[group], SIGNAL(valueChanged(int)), this,  SLOT(slot_set_repsTiling(int)));
         connect(yRepMin[group], SIGNAL(valueChanged(int)), this,  SLOT(slot_set_repsTiling(int)));
@@ -294,6 +285,7 @@ QGridLayout * page_modelSettings::createFillDataRow(eSettingsGroup group)
     }
     else
     {
+        chkSingle[group]->setEnabled(false);
         xRepMin[group]->setReadOnly(true);
         xRepMax[group]->setReadOnly(true);
         yRepMin[group]->setReadOnly(true);
@@ -303,9 +295,9 @@ QGridLayout * page_modelSettings::createFillDataRow(eSettingsGroup group)
 }
 
 
-void  page_modelSettings::refreshPage()
+void  page_modelSettings::onRefresh()
 {
-    qtAppLog::suspend(true);
+    qtAppLog::getInstance()->suspend(true);
 
     // tiling settings
     TilingPtr tiling = tilingMaker->getSelected();
@@ -316,14 +308,8 @@ void  page_modelSettings::refreshPage()
         sizeW[TILING_SETTINGS]->setValue(size.width());
         sizeH[TILING_SETTINGS]->setValue(size.height());
 
-        FillData fd = tiling->getSettings().getFillData();
-        int xMin,xMax,yMin,yMax;
-        fd.get(xMin,xMax,yMin,yMax);
-
-        xRepMin[TILING_SETTINGS]->setValue(xMin);
-        xRepMax[TILING_SETTINGS]->setValue(xMax);
-        yRepMin[TILING_SETTINGS]->setValue(yMin);
-        yRepMax[TILING_SETTINGS]->setValue(yMax);
+        FillData * fd = tiling->getSettings().getFillData();
+        displayFillData(fd,TILING_SETTINGS);
     }
 
     // mosaic/design settings;
@@ -347,12 +333,8 @@ void  page_modelSettings::refreshPage()
     startEditY[DESIGN_SETTINGS]->setValue(pt.y());
 
     // repeats
-    int xMin,xMax,yMin,yMax;
-    mosaicSettings.getFillData().get(xMin ,xMax,yMin,yMax);
-    xRepMin[DESIGN_SETTINGS]->setValue(xMin);
-    xRepMax[DESIGN_SETTINGS]->setValue(xMax);
-    yRepMin[DESIGN_SETTINGS]->setValue(yMin);
-    yRepMax[DESIGN_SETTINGS]->setValue(yMax);
+    FillData * fd = mosaicSettings.getFillData();
+    displayFillData(fd,DESIGN_SETTINGS);
 
     // View Status
     // size
@@ -363,17 +345,13 @@ void  page_modelSettings::refreshPage()
     // background color
     qc = view->getBackgroundColor();
     bkColorEdit[VIEW_STATUS]->setText(qc.name(QColor::HexArgb));
-    variant = qc;
-    colcode  = variant.toString();
+    QVariant qv = qc;  // FIXME for qt6
+    colcode  = qv.toString();
     bkgdColorPatch[VIEW_STATUS]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
 
     // fill data
-    FillData & fd = vcontrol->getFillData();
-    fd.get(xMin ,xMax,yMin,yMax);
-    xRepMin[VIEW_STATUS]->setValue(xMin);
-    xRepMax[VIEW_STATUS]->setValue(xMax);
-    yRepMin[VIEW_STATUS]->setValue(yMin);
-    yRepMax[VIEW_STATUS]->setValue(yMax);
+    fd = view->getFillData();
+    displayFillData(fd,VIEW_STATUS);
 
     // frameTable
     if (config->insightMode && config->cs_showFrameSettings)
@@ -406,6 +384,12 @@ void  page_modelSettings::refreshPage()
         }
 
         int row = 0;
+        QBrush brush;
+        if (config->darkTheme)
+            brush = QBrush(QColor("#777777"));
+        else
+            brush  = QBrush(Qt::yellow);
+
         QMap<eViewType,FrameData*> ::const_iterator i = fset.constBegin();
         while (i != fset.constEnd())
         {
@@ -414,16 +398,19 @@ void  page_modelSettings::refreshPage()
             ++i;
 
             QTableWidgetItem * item =  new QTableWidgetItem(sViewerType[type]);
-            if (type == config->getViewerType()) item->setBackground(QBrush("yellow"));
+            if (type == config->getViewerType())
+                item->setBackground(brush);
             frameTable->setItem(row,0,item);
 
             item = new QTableWidgetItem(Utils::str(s->getCropSize()));
-            if (type == config->getViewerType()) item->setBackground(QBrush("yellow"));
+            if (type == config->getViewerType())
+                item->setBackground(brush);
             item->setTextAlignment(Qt::AlignRight);
             frameTable->setItem(row,1,item);
 
             item = new QTableWidgetItem(Utils::str(s->getZoomSize()));
-            if (type == config->getViewerType()) item->setBackground(QBrush("yellow"));
+            if (type == config->getViewerType())
+                item->setBackground(brush);
             item->setTextAlignment(Qt::AlignRight);
             frameTable->setItem(row,2,item);
 
@@ -439,12 +426,16 @@ void  page_modelSettings::refreshPage()
         frameTable->hide();
     }
 
-    qtAppLog::suspend(false);
+    qtAppLog::getInstance()->suspend(false);
 }
 
 void page_modelSettings::onEnter()
 {
+    dummySetup();
 }
+
+void page_modelSettings::dummySetup()
+{}
 
 void page_modelSettings::designSizeChanged(int)
 {
@@ -491,7 +482,7 @@ ModelSettings & page_modelSettings::getMosaicOrDesignSettings()
     }
 
     // drops thru
-    return decorationMaker->getMosaicSettings();
+    return mosaicMaker->getMosaicSettings();
 }
 
 void page_modelSettings::slot_set_repsDesign(int val)
@@ -501,12 +492,28 @@ void page_modelSettings::slot_set_repsDesign(int val)
     if (pageBlocked()) return;
 
     FillData fd;
-    fd.set(xRepMin[DESIGN_SETTINGS]->value(), xRepMax[DESIGN_SETTINGS]->value(), yRepMin[DESIGN_SETTINGS]->value(), yRepMax[DESIGN_SETTINGS]->value());
+    fd.set(chkSingle[DESIGN_SETTINGS]->isChecked(),xRepMin[DESIGN_SETTINGS]->value(), xRepMax[DESIGN_SETTINGS]->value(), yRepMin[DESIGN_SETTINGS]->value(), yRepMax[DESIGN_SETTINGS]->value());
 
     ModelSettings & settings = getMosaicOrDesignSettings();
-    settings.setFillData(fd);
+    settings.setFillData(&fd);
 
-    vcontrol->setFillData(fd);
+    view->setFillData(&fd);
+
+    emit sig_render();
+}
+
+void page_modelSettings::singleton_changed_des(bool checked)
+{
+    FillData fd;
+    if (!checked)
+        fd.set(false,-3, 3, -3, 3);
+    else
+        fd.set(true,0,0,0,0);
+
+    ModelSettings & settings = getMosaicOrDesignSettings();
+    settings.setFillData(&fd);
+
+    view->setFillData(&fd);
 
     emit sig_render();
 }
@@ -518,17 +525,39 @@ void page_modelSettings::slot_set_repsTiling(int val)
     if (pageBlocked()) return;
 
     FillData fd;
-    fd.set(xRepMin[TILING_SETTINGS]->value(), xRepMax[TILING_SETTINGS]->value(), yRepMin[TILING_SETTINGS]->value(), yRepMax[TILING_SETTINGS]->value());
+    fd.set(chkSingle[TILING_SETTINGS]->isChecked(),xRepMin[TILING_SETTINGS]->value(), xRepMax[TILING_SETTINGS]->value(), yRepMin[TILING_SETTINGS]->value(), yRepMax[TILING_SETTINGS]->value());
 
     TilingPtr tiling = tilingMaker->getSelected();
-    Q_ASSERT(tiling);
+    if (!tiling) return;
 
-    tiling->getSettings().setFillData(fd);
-    vcontrol->setFillData(fd);
+    tiling->getSettings().setFillData(&fd);
+    view->setFillData(&fd);
 
-    emit sig_render();
+    if (view->isEnabled(VIEW_TILING_MAKER)
+     || view->isEnabled(VIEW_TILING)
+     || view->isEnabled(VIEW_MAP_EDITOR))
+        emit sig_refreshView();
+    else
+        emit sig_render();
 }
 
+void page_modelSettings::singleton_changed_tile(bool checked)
+{
+    FillData fd;
+    if (!checked)
+        fd.set(false,-3, 3, -3, 3);
+    else
+        fd.set(true,0,0,0,0);
+
+    TilingPtr tiling = tilingMaker->getSelected();
+    if (!tiling) return;
+
+    tiling->getSettings().setFillData(&fd);
+    view->setFillData(&fd);
+
+    emit sig_render();
+
+}
 void page_modelSettings::backgroundColorDesignPick()
 {
     ModelSettings & settings = getMosaicOrDesignSettings();
@@ -592,3 +621,44 @@ void page_modelSettings::slot_boundsChanged()
         layer->forceLayerRecalc(true);
     }
 }
+
+void page_modelSettings::displayFillData(FillData *fd, eSettingsGroup group)
+{
+    blockSignals(true);
+
+    int xMin,xMax,yMin,yMax;
+    bool singleton;
+    fd->get(singleton,xMin,xMax,yMin,yMax);
+
+    chkSingle[group]->setChecked(singleton);
+
+    if (!singleton)
+    {
+        xRepMin[group]->setDisabled(false);
+        xRepMax[group]->setDisabled(false);
+        yRepMin[group]->setDisabled(false);
+        yRepMax[group]->setDisabled(false);
+
+        xRepMin[group]->setValue(xMin);
+        xRepMax[group]->setValue(xMax);
+        yRepMin[group]->setValue(yMin);
+        yRepMax[group]->setValue(yMax);
+    }
+    else
+    {
+        xRepMin[group]->setValue(0);
+        xRepMax[group]->setValue(0);
+        yRepMin[group]->setValue(0);
+        yRepMax[group]->setValue(0);
+
+        xRepMin[group]->setDisabled(true);
+        xRepMax[group]->setDisabled(true);
+        yRepMin[group]->setDisabled(true);
+        yRepMax[group]->setDisabled(true);
+    }
+
+    blockSignals(false);
+}
+
+
+

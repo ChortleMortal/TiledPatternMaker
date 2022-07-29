@@ -183,7 +183,6 @@
 			<draw__inside>true</draw__inside>
 			<draw__outside>true</draw__outside>
 			<algorithm>0</algorithm>
-			<cleanse>3</cleanse>
 		</style.Filled>
 	</style.Filled>
 </vector>

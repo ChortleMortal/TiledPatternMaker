@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
-<vector id="1" version="10">
+<vector id="1" version="12">
+	<!-- Written Tue Jan 4 2022 13:24:44 -->
 	<designNotes>test</designNotes>
 	<design>
 		<size>
@@ -11,12 +12,13 @@
 		<background>
 			<color>#ffffffff</color>
 		</background>
-		<Fill>-2,3,-3,1</Fill>
+		<Fill singleton="f">-2,3,-3,1</Fill>
 		<BackgroundImage name="vanda_base2.JPG">
 			<Scale>0.5</Scale>
 			<Rot>0</Rot>
 			<X>0</X>
 			<Y>0</Y>
+			<Center>0,0</Center>
 		</BackgroundImage>
 	</design>
 	<style.Thick id="2" serialization="custom">
@@ -26,6 +28,7 @@
 			<width__delta>1</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>0,0</center>
+			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
 			<prototype id="3" serialization="custom">
@@ -119,6 +122,7 @@
 			<width__delta>1</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>0,0</center>
+			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
 			<prototype reference="3" />
@@ -138,16 +142,17 @@
 			<width__delta>1</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>0,0</center>
+			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
 			<prototype reference="3" />
 		</style.Style>
 		<ColorBlacks>
-			<color hide="f">#ffffff00</color>
-			<color hide="f">#ff55aaff</color>
+			<color hide="f">#ffff0000</color>
 		</ColorBlacks>
 		<ColorWhites>
-			<color hide="f">#ffff0000</color>
+			<color hide="f">#ffffff00</color>
+			<color hide="f">#ff55aaff</color>
 		</ColorWhites>
 		<ColorGroup>
 			<Group hideSet="f">
@@ -159,7 +164,6 @@
 			<draw__inside>true</draw__inside>
 			<draw__outside>true</draw__outside>
 			<algorithm>0</algorithm>
-			<cleanse>0</cleanse>
 		</style.Filled>
 	</style.Filled>
 </vector>

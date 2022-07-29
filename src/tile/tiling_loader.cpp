@@ -1,36 +1,12 @@
-/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #include "tile/tiling.h"
 #include "tile/tiling_loader.h"
 #include "tile/feature_reader.h"
-#include "tile/backgroundimage.h"
-#include "base/mosaic_loader.h"
+#include "misc/backgroundimage.h"
+#include "mosaic/mosaic_reader.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "tile/placed_feature.h"
 #include "tile/feature.h"
-#include "base/shared.h"
+#include "misc/defaults.h"
 
 using namespace pugi;
 using std::string;
@@ -150,7 +126,7 @@ TilingPtr TilingLoader::readTiling(QTextStream & st)
 
 TilingPtr TilingLoader::readTilingXML(QString file )
 {
-    qDebug().noquote() << "Loading:" << file;
+    qDebug().noquote() << "TilingLoader::readTilingXML" << file;
 
     xml_document doc;
     xml_parse_result result = doc.load_file(file.toStdString().c_str());
@@ -248,12 +224,22 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
     // fills - not part of taprats and not necessarily found
     // 26JUL2020 fillData moved to Mosaic
     // 13SEP2020 fillData can be in both Mosaic and tiling
+    // 03AUG2020 fillData can be singleton
     xml_node t0 = tiling_node.child("Fill");
     if (t0)
     {
+        bool isSingle = false;
+        xml_attribute single = t0.attribute("singleton");
+        if (single)
+        {
+            if (single.as_string() == QString("t"))
+            {
+                isSingle = true;
+            }
+        }
         QString strt0 = t0.child_value();
-        FillData fd = getFill(strt0);
-        tiling->getSettings().setFillData(fd);
+        FillData fd = getFill(strt0,isSingle);
+        tiling->getSettings().setFillData(&fd);
     }
 
     FeatureReader fr;   // must be located here to bw used for all features
@@ -430,8 +416,18 @@ void TilingLoader::getBackgroundImage(xml_node & node)
             xf.setTranslateY(str.toDouble());
         }
 
-        bip->updateImageXform(xf);  // does not set center
-        qDebug() << "baczkground image xform:" << xf.toInfoString();
+        n = node.child("Center");
+        if (n)
+        {
+            QString str = n.child_value();
+            QStringList qsl = str.split(",");
+            qreal x = qsl[0].toDouble();
+            qreal y = qsl[1].toDouble();
+            xf.setModelCenter(QPointF(x,y));
+        }
+
+        bip->setCanvasXform(xf);
+        qDebug().noquote() << "background image xform:" << xf.toInfoString();
 
         n= node.child("Perspective");
         if (n)
@@ -467,17 +463,17 @@ Xform  TilingLoader::getXform(xml_node & node)
     xf.setTranslateY(str.toDouble());
 
     str = node.child_value("Center");
-    xf.setCenter(getPoint(str));
+    xf.setModelCenter(getPoint(str));
 
     return  xf;
 }
 
-FillData TilingLoader::getFill(QString txt)
+FillData TilingLoader::getFill(QString txt,bool isSingle)
 {
     FillData fd;
     QStringList qsl;
     qsl = txt.split(',');
-    fd.set(qsl[0].toInt(),qsl[1].toInt(),qsl[2].toInt(),qsl[3].toInt());
+    fd.set(isSingle,qsl[0].toInt(),qsl[1].toInt(),qsl[2].toInt(),qsl[3].toInt());
     return fd;
 }
 
@@ -667,7 +663,7 @@ void TilingLoader::getViewSettings(xml_node & node)
         QStringList qsl = val.split(",");
         qreal x = qsl[0].toDouble();
         qreal y = qsl[1].toDouble();
-        xf.setCenter(QPointF(x,y));
+        xf.setModelCenter(QPointF(x,y));
     }
 
     tiling->setCanvasXform(xf);

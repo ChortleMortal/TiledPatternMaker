@@ -1,20 +1,32 @@
 #include <QTransform>
 #include <QPainter>
+#include "geometry/arcdata.h"
 #include "geometry/edgepoly.h"
 #include "geometry/edge.h"
 #include "geometry/vertex.h"
-#include "geometry/point.h"
-#include "base/utilities.h"
-#include "base/geo_graphics.h"
+#include "misc/utilities.h"
+#include "misc/geo_graphics.h"
+
+using std::make_shared;
 
 EdgePoly::EdgePoly()
 {
-
 }
 
 EdgePoly::EdgePoly(QPolygonF & poly)
 {
     init(poly);
+}
+
+EdgePoly::EdgePoly(QRectF & rect)
+{
+    QPolygonF apoly(rect);
+    init(apoly);
+}
+
+EdgePoly::EdgePoly(Circle & circle)
+{
+    set(circle);
 }
 
 EdgePoly::EdgePoly(PolyPtr pp)
@@ -23,20 +35,62 @@ EdgePoly::EdgePoly(PolyPtr pp)
     init(p);
 }
 
+void EdgePoly::set(QPolygonF & poly)
+{
+    init(poly);
+}
+
+EdgePoly::EdgePoly(const QVector<EdgePtr> & qvep)
+{
+    for (auto edge : qvep)
+    {
+        push_back(edge);
+    }
+}
+
+void EdgePoly::set(QRectF & rect)
+{
+    QPolygonF poly(rect);
+    init(poly);
+}
+
+void EdgePoly::set(Circle & c)
+{
+    QPointF centre = c.centre;
+    qreal   radius = c.radius;
+
+    auto v1 = make_shared<Vertex>(centre + QPointF(-radius,0));
+    auto v2 = make_shared<Vertex>(centre + QPointF(0,radius));
+    auto v3 = make_shared<Vertex>(centre + QPointF(radius,0));
+    auto v4 = make_shared<Vertex>(centre + QPointF(0,-radius));
+
+    auto e1 = make_shared<Edge>(v1,v2,centre,true,false);
+    auto e2 = make_shared<Edge>(v2,v3,centre,true,false);
+    auto e3 = make_shared<Edge>(v3,v4,centre,true,false);
+    auto e4 = make_shared<Edge>(v4,v1,centre,true,false);
+
+    push_back(e1);
+    push_back(e2);
+    push_back(e3);
+    push_back(e4);
+}
+
 void EdgePoly::init(QPolygonF & poly)
 {
-    Q_ASSERT(!poly.isClosed());
+    auto size = poly.size();
+    if (size && poly.isClosed())
+        size--;
 
-    VertexPtr v  = std::make_shared<Vertex>(poly[0]);
+    VertexPtr v  = make_shared<Vertex>(poly[0]);
     VertexPtr v1 = v;
-    for (int i=1; i < poly.size(); i++)
+    for (int i=1; i < size; i++)
     {
-        VertexPtr v2 = std::make_shared<Vertex>(poly[i]);
-        EdgePtr e = std::make_shared<Edge>(v1,v2);
+        VertexPtr v2 = make_shared<Vertex>(poly[i]);
+        EdgePtr e = make_shared<Edge>(v1,v2);
         push_back(e);
         v1 = v2;
     }
-    EdgePtr e = std::make_shared<Edge>(v1,v);
+    EdgePtr e = make_shared<Edge>(v1,v);
     push_back(e);
 }
 
@@ -57,7 +111,7 @@ EdgePoly EdgePoly::recreate() const
         }
         else
         {
-            newv1 = std::make_shared<Vertex>(oldv1->pt);
+            newv1 = make_shared<Vertex>(oldv1->pt);
             vmap[oldv1] = newv1;
         }
         if (vmap.contains(oldv2))
@@ -66,13 +120,13 @@ EdgePoly EdgePoly::recreate() const
         }
         else
         {
-            newv2 = std::make_shared<Vertex>(oldv2->pt);
+            newv2 = make_shared<Vertex>(oldv2->pt);
             vmap[oldv2] = newv2;
         }
-        EdgePtr edge2 = std::make_shared<Edge>(newv1,newv2);
-        if  (edge->getType() == EDGETYPE_CURVE)
+        EdgePtr edge2 = make_shared<Edge>(newv1,newv2);
+        if  (edge->getType() == EDGETYPE_CURVE || edge->getType() == EDGETYPE_CHORD)
         {
-            edge2->setArcCenter(edge->getArcCenter(),edge->isConvex());
+            edge2->setArcCenter(edge->getArcCenter(),edge->isConvex(),(edge->getType()==EDGETYPE_CHORD));
         }
         epoly.push_back(edge2);
     }
@@ -81,7 +135,7 @@ EdgePoly EdgePoly::recreate() const
 
 void EdgePoly::rotate(qreal angle)
 {
-    QPointF center = Point::center(*this);
+    QPointF center = calcCenter();
     QTransform t;
     t.translate(center.x(), center.y());
     t.rotate(angle);
@@ -91,7 +145,7 @@ void EdgePoly::rotate(qreal angle)
 
 void EdgePoly::scale(qreal delta)
 {
-    QPointF center = Point::center(*this);
+    QPointF center = calcCenter();
     QTransform t;
     t.translate(center.x(), center.y());
     t.scale(delta,delta);
@@ -103,31 +157,30 @@ void EdgePoly::mapD(QTransform T)
 {
     // Can't assume is regular poly
     QVector<VertexPtr> mapped;
-    for (auto it = begin(); it != end(); it++)
+    for (auto edge : *this)
     {
-        EdgePtr e = *it;
         QPointF pt;
 
-        VertexPtr v = e->v1;
+        VertexPtr v = edge->v1;
         if (!mapped.contains(v))
         {
             pt = v->pt;
-            v->setPosition(T.map(pt));
+            v->pt = T.map(pt);
             mapped.push_back(v);
         }
 
-        v = e->v2;
+        v = edge->v2;
         if (!mapped.contains(v))
         {
             pt = v->pt;
-            v->setPosition(T.map(pt));
+            v->pt = T.map(pt);
             mapped.push_back(v);
         }
 
-        if (e->getType() == EDGETYPE_CURVE)
+        if (edge->getType() == EDGETYPE_CURVE || edge->getType() == EDGETYPE_CHORD)
         {
-            QPointF p3 = e->getArcCenter();
-            e->setArcCenter(T.map(p3),e->isConvex());
+            QPointF p3 = edge->getArcCenter();
+            edge->setArcCenter(T.map(p3),edge->isConvex(),(edge->getType()==EDGETYPE_CHORD));
         }
     }
 }
@@ -145,33 +198,33 @@ EdgePoly EdgePoly::map(QTransform T) const
 
     EdgePtr efirst = edges[0];
     pt = efirst->v1->pt;
-    first = std::make_shared<Vertex>(T.map(pt));
+    first = make_shared<Vertex>(T.map(pt));
     v1 = first;
 
     for (auto i = 0; i < (edges.size()-1); i++)
     {
         EdgePtr e = edges[i];
         pt = e->v2->pt;
-        VertexPtr v2 = std::make_shared<Vertex>(T.map(pt));
+        VertexPtr v2 = make_shared<Vertex>(T.map(pt));
 
-        EdgePtr ne = std::make_shared<Edge>(v1,v2);
+        EdgePtr ne = make_shared<Edge>(v1,v2);
         ne->setSwapState(e->getSwapState());
-        if (e->getType() == EDGETYPE_CURVE)
+        if (e->getType() == EDGETYPE_CURVE || e->getType() == EDGETYPE_CHORD)
         {
             QPointF p3 = e->getArcCenter();
-            ne->setArcCenter(T.map(p3),e->isConvex());
+            ne->setArcCenter(T.map(p3),e->isConvex(),(e->getType()==EDGETYPE_CHORD));
         }
         ep.push_back(ne);
         v1 = v2;
     }
 
     EdgePtr e = edges.last();
-    EdgePtr ne = std::make_shared<Edge>(v1,first);
+    EdgePtr ne = make_shared<Edge>(v1,first);
     ne->setSwapState(e->getSwapState());
-    if (e->getType() == EDGETYPE_CURVE)
+    if (e->getType() == EDGETYPE_CURVE || e->getType() == EDGETYPE_CHORD)
     {
         QPointF p3 = e->getArcCenter();
-        ne->setArcCenter(T.map(p3),e->isConvex());
+        ne->setArcCenter(T.map(p3),e->isConvex(),(e->getType()==EDGETYPE_CHORD));
     }
     ep.push_back(ne);
 
@@ -199,6 +252,17 @@ bool EdgePoly::isClockwise() const
     return Utils::isClockwise(poly);
 }
 
+bool EdgePoly::isClockwiseK()
+{
+    QPolygonF poly = getPoly();
+    return Utils::isClockwiseKaplan(poly);
+}
+
+bool EdgePoly::isClosed()
+{
+    return (first()->v1 == last()->v2);
+}
+
 bool EdgePoly::isValid(bool rigorous)
 {
     if (size() == 0)
@@ -210,7 +274,7 @@ bool EdgePoly::isValid(bool rigorous)
     QVector<VertexPtr> v2s;
 
     VertexPtr v0 = last()->v2;
-    for (auto edge : qAsConst(*this))
+    for (auto & edge : qAsConst(*this))
     {
         VertexPtr v1 = edge->v1;
         VertexPtr v2 = edge->v2;
@@ -245,12 +309,23 @@ bool EdgePoly::isValid(bool rigorous)
 QPolygonF EdgePoly::getPoly() const
 {
     QPolygonF poly;
-    for (auto edge : *this)
+    for (auto & edge : qAsConst(*this))
     {
         QPointF pt = edge->v1->pt;
         poly << pt;
     }
     return poly;
+}
+
+QRectF EdgePoly::getRect() const
+{
+    QRectF rect;
+    QPolygonF poly = getPoly();
+    if (poly.size() >= 3)
+    {
+        rect = QRectF(poly[0],poly[2]);
+    }
+    return rect;
 }
 
 qreal EdgePoly::getAngle(int edge)
@@ -278,10 +353,8 @@ qreal EdgePoly::getAngle(int edge)
 
 void EdgePoly::paint(QPainter * painter, QTransform T)
 {
-    for(auto e = begin(); e != end(); e++)
+    for(auto edge : *this)
     {
-        EdgePtr edge = *e;
-
         QPointF p1 = T.map(edge->v1->pt);
         QPointF p2 = T.map(edge->v2->pt);
 
@@ -291,26 +364,44 @@ void EdgePoly::paint(QPainter * painter, QTransform T)
         }
         else if (edge->getType() == EDGETYPE_CURVE)
         {
-            QPointF ArcCenter = T.map(edge->getArcCenter());
-            arcData ad = edge->calcArcData(p1,p2,ArcCenter,edge->isConvex());
+            QPointF arcCenter = T.map(edge->getArcCenter());
+            ArcData ad(p1,p2,arcCenter,edge->isConvex());
             painter->drawArc(ad.rect, qRound(ad.start * 16.0),qRound(ad.span * 16.0));
+        }
+        else if (edge->getType() == EDGETYPE_CHORD)
+        {
+            QPointF arcCenter = T.map(edge->getArcCenter());
+            ArcData ad(p1,p2,arcCenter,edge->isConvex());
+            painter->drawChord(ad.rect, qRound(ad.start * 16.0),qRound(ad.span * 16.0));
         }
     }
 }
 
-void EdgePoly::draw(GeoGraphics * gg, QPen pen)
+void EdgePoly::draw(GeoGraphics * gg, QPen & pen)
 {
-    for (auto it = begin(); it != end(); it++)
+    for (auto & edge : qAsConst(*this))
     {
-        EdgePtr edge = *it;
         if (edge->getType() == EDGETYPE_LINE)
         {
             gg->drawLine(edge->getLine(),pen);
         }
         else if (edge->getType() == EDGETYPE_CURVE)
         {
-            gg->drawChord(edge->v1->pt,edge->v2->pt,edge->getArcCenter(),pen,QBrush(),edge->isConvex());
+            gg->drawArc(edge->v1->pt,edge->v2->pt,edge->getArcCenter(),edge->isConvex(),pen);
         }
+        else if (edge->getType() == EDGETYPE_CHORD)
+        {
+            gg->drawChord(edge->v1->pt,edge->v2->pt,edge->getArcCenter(),edge->isConvex(),pen);
+        }
+        gg->drawCircle(edge->v1->pt,5,QPen(Qt::red),QBrush(Qt::red));
+    }
+}
+
+void EdgePoly::drawPts(GeoGraphics * gg, QPen &pen)
+{
+    for (auto & edge : qAsConst(*this))
+    {
+        gg->drawCircle(edge->v1->pt,3,pen, QBrush(pen.color()));
     }
 }
 
@@ -328,18 +419,17 @@ void EdgePoly::reverseWindingOrder()
 
 void EdgePoly::relink()
 {
-    QVector<EdgePtr> & epoly = *this;
-    for (auto it = epoly.begin(); it != epoly.end(); it++)
+    for (auto it = begin(); it != end(); it++)
     {
         EdgePtr edge = *it;
         EdgePtr next;
-        if ((it + 1) != epoly.end())
+        if ((it + 1) != end())
         {
             next = *(it+1);
         }
         else
         {
-            next = epoly.first();
+            next = first();
         }
         VertexPtr v = next->v1;
         edge->setV2(v);
@@ -349,9 +439,8 @@ void EdgePoly::relink()
 QVector<VertexPtr> EdgePoly::getVertices()
 {
     QVector<VertexPtr> vec;
-    for (auto it = begin(); it != end(); it++)
+    for (auto edge : *this)
     {
-        EdgePtr edge = *it;
         vec.push_back(edge->v1);
     }
     return vec;
@@ -375,6 +464,48 @@ void EdgePoly::dump() const
     qDebug() << "EdgePoly::dump()" << ((isClockwise()) ? "Clockwise" : "Anticlockwise");
     for (auto edge : *this)
     {
-        qDebug() << edge->dump();
+        qDebug().noquote() << edge->dump();
     }
+}
+
+QPointF EdgePoly::calcCenter()
+{
+    QPointF accum;
+    for (auto edge : *this)
+    {
+        accum += edge->v1->pt;
+    }
+    QPointF cent = accum / static_cast<qreal>(size());
+    return cent;
+}
+
+QPointF EdgePoly::calcIrregularCenter()
+{
+    QPointF centroid;
+    double signedArea = 0.0;
+    double x0 = 0.0; // Current vertex X
+    double y0 = 0.0; // Current vertex Y
+    double x1 = 0.0; // Next vertex X
+    double y1 = 0.0; // Next vertex Y
+    double a  = 0.0;  // Partial signed area
+
+    // For all vertices in a loop
+    VertexPtr prev = getVertices().last();
+    for (auto & next :getVertices())
+    {
+        x0 = prev->pt.x();
+        y0 = prev->pt.y();
+        x1 = next->pt.x();
+        y1 = next->pt.y();
+        a = x0*y1 - x1*y0;
+        signedArea += a;
+        centroid.setX(centroid.x() + ((x0 + x1)*a));
+        centroid.setY(centroid.y() + ((y0 + y1)*a));
+        prev = next;
+    }
+
+    signedArea *= 0.5;
+    centroid /= (6.0*signedArea);
+
+    return centroid;
 }

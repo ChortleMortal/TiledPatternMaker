@@ -1,3 +1,6 @@
+#include <QDebug>
+#include <QApplication>
+
 #include "makers/tiling_maker/tiling_mouseactions.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "makers/tiling_maker/feature_selection.h"
@@ -5,13 +8,11 @@
 #include "geometry/transform.h"
 #include "geometry/edge.h"
 #include "geometry/vertex.h"
-#include "base/utilities.h"
-#include "settings/configuration.h"
-#include "base/geo_graphics.h"
+#include "misc/utilities.h"
+#include "misc/geo_graphics.h"
 #include "tile/placed_feature.h"
 #include "tile/feature.h"
 #include "viewers/grid.h"
-
 
 using std::make_shared;
 
@@ -540,65 +541,6 @@ void CreatePolygon::draw(GeoGraphics * g2d)
     }
 }
 
-/////////
-///
-///  Measurement
-///
-/////////
-
-Measurement::Measurement()
-{
-    qDebug() << "Measurement";
-    tm = TilingMaker::getSharedInstance();
-    active = false;
-}
-
-void Measurement::reset()
-{
-    wStart = QPointF();
-    wEnd   = QPointF();
-    active = false;
-}
-void Measurement::setStart(QPointF spt)
-{
-    wStart = tm->screenToWorld(spt);
-}
-
-void Measurement::setEnd(QPointF spt)
-{
-    wEnd = tm->screenToWorld(spt);
-
-}
-
-QPointF Measurement::startW()
-{
-    return wStart;
-}
-
-QPointF Measurement::endW()
-{
-    return wEnd;
-}
-
-QPointF Measurement::startS()
-{
-    return tm->worldToScreen(wStart);
-}
-
-QPointF Measurement::endS()
-{
-      return tm->worldToScreen(wEnd);
-}
-
-qreal Measurement::lenS()
-{
-    return QLineF(startS(),endS()).length();
-}
-
-qreal Measurement::lenW()
-{
-    return QLineF(wStart,wEnd).length();
-}
 
 /////////
 ///
@@ -608,75 +550,76 @@ qreal Measurement::lenW()
 
 Measure::Measure(TilingMaker * tilingMaker, QPointF spt, TilingSelectorPtr sel) : TilingMouseAction(tilingMaker,sel,spt)
 {
+    m = new Measurement(tilingMaker);
     desc = "Measure";
     qDebug() << desc;
 
     Qt::KeyboardModifiers kms =  QApplication::keyboardModifiers();
     if (sel && (kms == (Qt::CTRL | Qt::SHIFT)))
     {
-        qreal len = QLineF(m.startS(),spt).length();    // approx len
+        qreal len = QLineF(m->startS(),spt).length();    // approx len
         QLineF line = sel->getPlacedLine();
         sPerpLine = QLineF(spt, tilingMaker->worldToScreen(line.p2()));
         sPerpLine = normalVectorB(sPerpLine);
         sPerpLine.setLength(len);
 
-        m.setStart(spt);
-        m.setEnd(sPerpLine.p2());
+        m->setStart(spt);
+        m->setEnd(sPerpLine.p2());
     }
     else
     {
-        m.setStart(spt);
-        m.setEnd(spt);
+        m->setStart(spt);
+        m->setEnd(spt);
     }
 }
 
 void Measure::updateDragging(QPointF spt)
 {
-    if (spt != m.startS())
+    if (spt != m->startS())
     {
         Qt::KeyboardModifiers kms =  QApplication::keyboardModifiers();
         if (selection && (kms == (Qt::CTRL | Qt::SHIFT)))
         {
-            qreal len = QLineF(m.startS(),spt).length();    // approx len
+            qreal len = QLineF(m->startS(),spt).length();    // approx len
             sPerpLine.setLength(len);
-            m.setEnd(sPerpLine.p2());
+            m->setEnd(sPerpLine.p2());
         }
         else
         {
-            m.setEnd(spt);
+            m->setEnd(spt);
         }
-        m.active = true;
+        m->active = true;
         tm->forceRedraw();
     }
 }
 
 void Measure::draw(GeoGraphics * g2d)
 {
-    if (m.active)
+    if (m->active)
     {
-        g2d->drawLineDirect(m.startS(),m.endS(),QPen(drag_color));
-        QString msg = QString("%1 (%2)").arg(QString::number(m.lenS(),'f',2),QString::number(m.lenW(),'f',8));
-        g2d->drawText(m.endS() + QPointF(10,0),msg);
+        g2d->drawLineDirect(m->startS(),m->endS(),QPen(drag_color));
+        QString msg = QString("%1 (%2)").arg(QString::number(m->lenS(),'f',2),QString::number(m->lenW(),'f',8));
+        g2d->drawText(m->endS() + QPointF(10,0),msg);
     }
 }
 
 void Measure::endDragging(QPointF spt)
 {
-    if (m.active)
+    if (m->active)
     {
         Qt::KeyboardModifiers kms =  QApplication::keyboardModifiers();
         if (selection && (kms == (Qt::CTRL | Qt::SHIFT)))
         {
-            qreal len = QLineF(m.startS(),spt).length();    // approx len
+            qreal len = QLineF(m->startS(),spt).length();    // approx len
             sPerpLine.setLength(len);
-            m.setEnd(sPerpLine.p2());
+            m->setEnd(sPerpLine.p2());
         }
         else
         {
-            m.setEnd(spt);
+            m->setEnd(spt);
         }
         tm->getMeasurementsS().push_back(m);
-        m.reset();
+        //m->reset();
     }
     TilingMouseAction::endDragging(spt);
 }
@@ -771,7 +714,7 @@ void EditFeature::updateDragging(QPointF spt)
     wpt = T.map(wpt);
     const EdgePoly & ep = pfp->getFeature()->getEdgePoly();
     VertexPtr v = ep[vertexIndex]->v1;
-    v->setPosition(wpt);
+    v->pt = wpt;
 
     TilingMouseAction::updateDragging(tm->screenToWorld(spt));
     emit tm->sig_refreshMenu();
@@ -784,7 +727,7 @@ void EditFeature::endDragging(QPointF spt )
     wpt = T.map(wpt);
     const EdgePoly & ep = pfp->getFeature()->getEdgePoly();
     VertexPtr v = ep[vertexIndex]->v1;
-    v->setPosition(wpt);
+    v->pt = wpt;
 
     TilingMouseAction::endDragging(spt);
     emit tm->sig_refreshMenu();
@@ -837,7 +780,7 @@ void EditEdge::updateDragging(QPointF spt)
     QTransform inv = pfp->getTransform().inverted();
     pt             = inv.map(pt);
     bool convex    = edge->isConvex();
-    edge->setArcCenter(pt, convex);
+    edge->setArcCenter(pt, convex,(edge->getType()==EDGETYPE_CHORD));
     TilingMouseAction::updateDragging(tm->screenToWorld(spt));
     emit tm->sig_refreshMenu();
 }
@@ -875,6 +818,7 @@ void TilingConstructionLine::updateDragging(QPointF spt)
     {
         delete end;
     }
+
 
     end = new QPointF(tm->getLayerTransform().inverted().map(spt));
 

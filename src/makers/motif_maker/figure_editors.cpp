@@ -1,38 +1,17 @@
-﻿/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
- *
- *  Copyright 2019 David A. Casper  email: david.casper@gmail.com
- *
- *  This file is part of TiledPatternMaker
- *
- *  TiledPatternMaker is based on the Java application taprats, which is:
- *  Copyright 2000 Craig S. Kaplan.      email: csk at cs.washington.edu
- *  Copyright 2010 Pierre Baillargeon.   email: pierrebai at hotmail.com
- *
- *  TiledPatternMaker is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  TiledPatternMaker is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with TiledPatternMaker.  If not, see <http://www.gnu.org/licenses/>.
- */
+﻿#include <QCheckBox>
 
+#include "figures/extended_rosette.h"
+#include "figures/extended_star.h"
+#include "figures/rosette_connect_figure.h"
+#include "figures/star.h"
+#include "figures/star_connect_figure.h"
+#include "makers/motif_maker/feature_button.h"
 #include "makers/motif_maker/figure_editors.h"
 #include "makers/motif_maker/motif_maker.h"
-#include "base/tiledpatternmaker.h"
-#include "tapp/star.h"
-#include "tapp/extended_star.h"
-#include "tapp/star_connect_figure.h"
-#include "tapp/rosette_connect_figure.h"
-#include "tapp/extended_rosette.h"
-#include "makers/motif_maker/feature_button.h"
+#include "mosaic/design_element.h"
 #include "panels/page_motif_maker.h"
-#include "panels/layout_sliderset.h"
+#include "tiledpatternmaker.h"
+#include "widgets/layout_sliderset.h"
 
 using std::dynamic_pointer_cast;
 using std::make_shared;
@@ -64,29 +43,30 @@ FigureEditor::FigureEditor(page_motif_maker * fm, QString figname)
     addLayout(figureScale);
     addLayout(figureRotate);
 
-    connect(this,          &FigureEditor::sig_figure_changed, menu, &page_motif_maker::slot_figureChanged); //, Qt::QueuedConnection);
+    connect(this,          &FigureEditor::sig_figure_modified, menu, &page_motif_maker::slot_figureModified); //, Qt::QueuedConnection);
 
-    connect(boundaryScale, &DoubleSliderSet::valueChanged, this, [this]() { updateFigure(true);});
-    connect(boundarySides, &SliderSet::valueChanged,       this, [this]() { updateFigure(true);});
-    connect(figureScale,   &DoubleSliderSet::valueChanged, this, [this]() { updateFigure(true);});
-    connect(figureRotate,  &DoubleSliderSet::valueChanged, this, [this]() { updateFigure(true);});
+    connect(boundaryScale, &DoubleSliderSet::valueChanged, this, [this]() { editorToFigure(true);});
+    connect(boundarySides, &SliderSet::valueChanged,       this, [this]() { editorToFigure(true);});
+    connect(figureScale,   &DoubleSliderSet::valueChanged, this, [this]() { editorToFigure(true);});
+    connect(figureRotate,  &DoubleSliderSet::valueChanged, this, [this]() { editorToFigure(true);});
 }
 
-void FigureEditor::resetWithFigure(FigurePtr fig, bool doEmit)
+void FigureEditor::setFigure(FigurePtr fig, bool doEmit)
 {
     Q_UNUSED(doEmit);
-    figure = fig;
+    wfigure = fig;
 }
 
-void FigureEditor::updateEditor()
+void FigureEditor::figureToEditor()
 {
-    if (!figure)
+    auto fig = wfigure.lock();
+    if (!fig)
         return;
 
-    int    bs = figure->getExtBoundarySides();
-    qreal  sc = figure->getExtBoundaryScale();
-    qreal  fs = figure->getFigureScale();
-    qreal  rr = figure->getFigureRotate();
+    int    bs = fig->getExtBoundarySides();
+    qreal  sc = fig->getExtBoundaryScale();
+    qreal  fs = fig->getFigureScale();
+    qreal  rr = fig->getFigureRotate();
 
     blockSignals(true);
     boundarySides->setValues(bs, 1, 64);
@@ -96,9 +76,10 @@ void FigureEditor::updateEditor()
     blockSignals(false);
 }
 
-void FigureEditor::updateFigure(bool doEmit)
+void FigureEditor::editorToFigure(bool doEmit)
 {
-    if (!figure)
+    auto fig = wfigure.lock();
+    if (!fig)
         return;
 
     int sides     = boundarySides->value();
@@ -107,14 +88,14 @@ void FigureEditor::updateFigure(bool doEmit)
     qreal  rot    = figureRotate->value();
 
     blockSignals(true);
-    figure->setExtBoundarySides(sides);
-    figure->setExtBoundaryScale(bscale);
-    figure->setFigureScale(fscale);
-    figure->setFigureRotate(rot);
+    fig->setExtBoundarySides(sides);
+    fig->setExtBoundaryScale(bscale);
+    fig->setFigureScale(fscale);
+    fig->setFigureRotate(rot);
     blockSignals(false);
 
     if (doEmit)
-        emit sig_figure_changed(figure);
+        emit sig_figure_modified(fig);
 }
 
 StarEditor::StarEditor(page_motif_maker *fm, QString figname) : FigureEditor(fm,figname)
@@ -127,54 +108,46 @@ StarEditor::StarEditor(page_motif_maker *fm, QString figname) : FigureEditor(fm,
     addLayout(d_slider);
     addLayout(s_slider);
 
-    connect(n_slider, &SliderSet::valueChanged,       this, [this]() { updateFigure(true);});
-    connect(d_slider, &DoubleSliderSet::valueChanged, this, [this]() { updateFigure(true);});
-    connect(s_slider, &SliderSet::valueChanged,       this, [this]() { updateFigure(true);});
+    connect(n_slider, &SliderSet::valueChanged,       this, [this]() { editorToFigure(true);});
+    connect(d_slider, &DoubleSliderSet::valueChanged, this, [this]() { editorToFigure(true);});
+    connect(s_slider, &SliderSet::valueChanged,       this, [this]() { editorToFigure(true);});
 }
 
-FigurePtr StarEditor::getFigure()
+void StarEditor::setFigure(DesignElementPtr del, bool doEmit)
 {
-    return star;
-}
-
-void StarEditor::resetWithFigure(FigurePtr fig, bool doEmit)
-{
-    if (!fig)
+    if (!del || !del->getFigure())
     {
-        star.reset();
+        wstar.reset();
         return;
     }
 
-    star = dynamic_pointer_cast<Star>(fig);
-    if (!star)
+    FigurePtr fig = del->getFigure();
+    wstar = dynamic_pointer_cast<Star>(fig);
+    if (!wstar.lock())
     {
-        int n = 6;  // default
-        qreal rotate = 0.0;
-        RadialPtr rp = dynamic_pointer_cast<RadialFigure>(fig);
-        if (rp)
-        {
-            n = rp->getN();
-            rotate = rp->getFigureRotate();
-        }
-        star = make_shared<Star>(*fig.get(), n, n <=6 ? n / 3.0 : 3.0, 2, rotate);
+        int n = fig->getN();
+        auto star = make_shared<Star>(*fig.get(), n, n <=6 ? n / 3.0 : 3.0, 2);
+        del->setFigure(star);
+        wstar = star;
     }
 
-    Q_ASSERT(star);
-    FigureEditor::resetWithFigure(star,false);
+    Q_ASSERT(wstar.lock());
+    FigureEditor::setFigure(wstar.lock(),false);
 
-    updateEditor();
-    updateFigure(doEmit);
+    figureToEditor();
+    editorToFigure(doEmit);
 }
 
-void StarEditor::updateEditor()
+void StarEditor::figureToEditor()
 {
-    if (star)
+    auto starfig = wstar.lock();
+    if (starfig)
     {
-        FigureEditor::updateEditor();
+        FigureEditor::figureToEditor();
 
-        int    nn = star->getN();
-        qreal  dd = star->getD();
-        int    ss = star->getS();
+        int    nn = starfig->getN();
+        qreal  dd = starfig->getD();
+        int    ss = starfig->getS();
 
         //double dmax = 0.5 * (double)nn;
         blockSignals(true);
@@ -185,25 +158,26 @@ void StarEditor::updateEditor()
     }
 }
 
-void StarEditor::updateFigure(bool doEmit)
+void StarEditor::editorToFigure(bool doEmit)
 {
-    if (star)
+    auto starfig = wstar.lock();
+    if (starfig)
     {
-        FigureEditor::updateFigure(false);
+        FigureEditor::editorToFigure(false);
 
         int nval      = n_slider->value();
         qreal dval    = d_slider->value();
         int sval      = s_slider->value();
 
         blockSignals(true);
-        star->setN(nval);
-        star->setD(dval);
-        star->setS(sval);
-        star->resetMaps();
+        starfig->setN(nval);
+        starfig->setD(dval);
+        starfig->setS(sval);
+        starfig->resetMaps();
         blockSignals(false);
 
         if (doEmit)
-            emit sig_figure_changed(star);
+            emit sig_figure_modified(starfig);
     }
 }
 
@@ -223,56 +197,47 @@ RosetteEditor::RosetteEditor(page_motif_maker * fm, QString figname) : FigureEdi
     addLayout(k_slider);
     addLayout(s_slider);
 
-    connect(n_slider, &SliderSet::valueChanged,       this, [this]() { updateFigure(true);});
-    connect(q_slider, &DoubleSliderSet::valueChanged, this, [this]() { updateFigure(true);});
-    connect(k_slider, &DoubleSliderSet::valueChanged, this, [this]() { updateFigure(true);});
-    connect(s_slider, &SliderSet::valueChanged,       this, [this]() { updateFigure(true);});
+    connect(n_slider, &SliderSet::valueChanged,       this, [this]() { editorToFigure(true);});
+    connect(q_slider, &DoubleSliderSet::valueChanged, this, [this]() { editorToFigure(true);});
+    connect(k_slider, &DoubleSliderSet::valueChanged, this, [this]() { editorToFigure(true);});
+    connect(s_slider, &SliderSet::valueChanged,       this, [this]() { editorToFigure(true);});
 }
 
-FigurePtr RosetteEditor::getFigure()
+void RosetteEditor::setFigure(DesignElementPtr del, bool doEmit)
 {
-    return rosette;
-}
-
-void RosetteEditor::resetWithFigure(FigurePtr fig, bool doEmit)
-{
-
-    if (!fig)
+    if (!del || !del->getFigure())
     {
-        rosette.reset();
+        wrosette.reset();
         return;
     }
 
-    rosette = dynamic_pointer_cast<Rosette>(fig);
-    if (!rosette)
+    FigurePtr fig = del->getFigure();
+    wrosette = dynamic_pointer_cast<Rosette>(fig);
+    if (!wrosette.lock())
     {
-        int n = 6;  // default
-        qreal rotate = 0.0;
-        RadialPtr rp = dynamic_pointer_cast<RadialFigure>(fig);
-        if (rp)
-        {
-            n = rp->getN();
-            rotate = rp->getFigureRotate();
-        }
-        rosette = make_shared<Rosette>(*fig.get(), n, 0.0, 3, 0.0, rotate);
+        int n = fig->getN();
+        auto rosette  = make_shared<Rosette>(*fig.get(), n, 0.0, 3, 0.0);
+        del->setFigure(rosette);
+        wrosette = rosette;
     }
 
-    Q_ASSERT(rosette);
-    FigureEditor::resetWithFigure(rosette,false);
-    updateEditor();
-    updateFigure(doEmit);
+    Q_ASSERT(wrosette.lock());
+    FigureEditor::setFigure(wrosette.lock(),false);
+    figureToEditor();
+    editorToFigure(doEmit);
 }
 
-void RosetteEditor::updateEditor()
+void RosetteEditor::figureToEditor()
 {
-    if( rosette)
+    auto rose = wrosette.lock();
+    if (rose)
     {
-        FigureEditor::updateEditor();
+        FigureEditor::figureToEditor();
 
-        int    nn = rosette->getN();
-        double qq = rosette->getQ();
-        double kk = rosette->getK();
-        int    ss = rosette->getS();
+        int    nn = rose->getN();
+        double qq = rose->getQ();
+        double kk = rose->getK();
+        int    ss = rose->getS();
 
         blockSignals(true);
         n_slider->setValues(nn,3,64);
@@ -283,11 +248,12 @@ void RosetteEditor::updateEditor()
     }
 }
 
-void RosetteEditor::updateFigure(bool doEmit)
+void RosetteEditor::editorToFigure(bool doEmit)
 {
-    if(rosette)
+    auto rose = wrosette.lock();
+    if (rose)
     {
-        FigureEditor::updateFigure(false);
+        FigureEditor::editorToFigure(false);
 
         qreal  qval = q_slider->value();
         qreal  kval = k_slider->value();
@@ -295,15 +261,15 @@ void RosetteEditor::updateFigure(bool doEmit)
         int    nval = n_slider->value();
 
         blockSignals(true);
-        rosette->setN(nval);
-        rosette->setQ(qval);
-        rosette->setS(sval);
-        rosette->setK(kval);
-        rosette->resetMaps();
+        rose->setN(nval);
+        rose->setQ(qval);
+        rose->setS(sval);
+        rose->setK(kval);
+        rose->resetMaps();
         blockSignals(false);
 
         if (doEmit)
-            emit sig_figure_changed(rosette);
+            emit sig_figure_modified(rose);
     }
 }
 
@@ -318,55 +284,52 @@ ConnectStarEditor::ConnectStarEditor(page_motif_maker *fm, QString figname) : St
     QObject::connect(defaultBtn, &QPushButton::clicked,  this, &ConnectStarEditor::calcScale);
 }
 
-FigurePtr ConnectStarEditor::getFigure()
+void ConnectStarEditor::setFigure(DesignElementPtr del, bool doEmit)
 {
-    return starConnect;
-}
-
-void ConnectStarEditor::resetWithFigure(FigurePtr fig, bool doEmit)
-{
-    if (!fig)
+    if (!del || !del->getFigure())
     {
-        starConnect.reset();
+        wstarConnect.reset();
         return;
     }
 
-    starConnect = dynamic_pointer_cast<StarConnectFigure>(fig);
-    if (!starConnect)
+    FigurePtr fig = del->getFigure();
+    wstarConnect = dynamic_pointer_cast<StarConnectFigure>(fig);
+    if (!wstarConnect.lock())
     {
         StarPtr sp = dynamic_pointer_cast<Star>(fig);
         if (sp)
         {
-            starConnect = make_shared<StarConnectFigure>(*fig.get(),sp->getN(),sp->getD(),sp->getS(),sp->getFigureRotate());
+            auto starConnect = make_shared<StarConnectFigure>(*fig.get(),sp->getN(),sp->getD(),sp->getS());
+            del->setFigure(starConnect);
+            wstarConnect = starConnect;
         }
         else
         {
-            int n = 6;  // default
-            qreal rotate = 0.0;
-            RadialPtr rp = dynamic_pointer_cast<RadialFigure>(fig);
-            if (rp)
-            {
-                n = rp->getN();
-                rotate = rp->getFigureRotate();
-            }
-            starConnect = make_shared<StarConnectFigure>(*fig.get(),n, n <= 6 ? n / 3.0 : 3.0, 2, rotate);
+            int n = fig->getN();
+            auto starConnect = make_shared<StarConnectFigure>(*fig.get(),n, n <= 6 ? n / 3.0 : 3.0, 2);
+            del->setFigure(starConnect);
+            wstarConnect = starConnect;
         }
     }
 
-    Q_ASSERT(starConnect);
-    StarEditor::resetWithFigure(starConnect,false);
+    Q_ASSERT(wstarConnect.lock());
+    StarEditor::setFigure(del,false);
 
-    starConnect->setFigureScale(starConnect->computeConnectScale());
+    wstarConnect.lock()->setFigureScale(wstarConnect.lock()->computeConnectScale());
 
-    updateEditor();
-    updateFigure(doEmit);
+    figureToEditor();
+    editorToFigure(doEmit);
 }
 
 void ConnectStarEditor::calcScale()
 {
-    qreal scale = starConnect->computeConnectScale();
-    figureScale->setValue(scale);
-    updateFigure(true);
+    auto starcon = wstarConnect.lock();
+    if (starcon)
+    {
+        qreal scale = starcon->computeConnectScale();
+        figureScale->setValue(scale);
+        editorToFigure(true);
+    }
 }
 
 // ConnectRosetteEditor
@@ -381,59 +344,53 @@ ConnectRosetteEditor::ConnectRosetteEditor(page_motif_maker * fm, QString fignam
     QObject::connect(defaultBtn, &QPushButton::clicked,  this, &ConnectRosetteEditor::calcScale);
 }
 
-FigurePtr ConnectRosetteEditor::getFigure()
+void ConnectRosetteEditor::setFigure(DesignElementPtr del, bool doEmit)
 {
-    return rosetteConnect;
-}
-
-void ConnectRosetteEditor::resetWithFigure(FigurePtr fig, bool doEmit)
-{
-    if (!fig)
+    if (!del || !del->getFigure())
     {
-        rosetteConnect.reset();
+        wrosetteConnect.reset();
         return;
     }
 
-    rosetteConnect = dynamic_pointer_cast<RosetteConnectFigure>(fig);
-    if (!rosetteConnect)
+    FigurePtr fig = del->getFigure();
+    wrosetteConnect = dynamic_pointer_cast<RosetteConnectFigure>(fig);
+    if (!wrosetteConnect.lock())
     {
 
         RosettePtr rsp = dynamic_pointer_cast<Rosette>(fig);
         if (rsp)
         {
-            rosetteConnect = make_shared<RosetteConnectFigure>(*fig.get(),rsp->getN(),rsp->getQ(),
-                                                    rsp->getS(),rsp->getK(), rsp->getFigureRotate());
+            auto rosetteConnect = make_shared<RosetteConnectFigure>(*fig.get(),rsp->getN(),rsp->getQ(),
+                                                    rsp->getS(),rsp->getK());
+            del->setFigure(rosetteConnect);
+            wrosetteConnect = rosetteConnect;
         }
         else
         {
-            int n = 6;  // default
-            qreal rotate = 0.0;
-            RadialPtr rp = dynamic_pointer_cast<RadialFigure>(fig);
-            if (rp)
-            {
-                n = rp->getN();
-                rotate = rp->getFigureRotate();
-            }
-            rosetteConnect = make_shared<RosetteConnectFigure>(* fig.get(), n, 0.0, 3, 0.0, rotate);
+            int n = fig->getN();
+            auto rosetteConnect = make_shared<RosetteConnectFigure>(* fig.get(), n, 0.0, 3, 0.0);
+            del->setFigure(rosetteConnect);
+            wrosetteConnect = rosetteConnect;
         }
     }
 
-    Q_ASSERT(rosetteConnect);
-    RosetteEditor::resetWithFigure(rosetteConnect,false);
+    Q_ASSERT(wrosetteConnect.lock());
+    RosetteEditor::setFigure(del,false);
 
-    rosetteConnect->setFigureScale(rosetteConnect->computeConnectScale());
+    wrosetteConnect.lock()->setFigureScale(wrosetteConnect.lock()->computeConnectScale());
 
-    updateEditor();
-    updateFigure(doEmit);
+    figureToEditor();
+    editorToFigure(doEmit);
 }
 
 void ConnectRosetteEditor::calcScale()
 {
-    if (rosetteConnect)
+    auto rosecon = wrosetteConnect.lock();
+    if (rosecon)
     {
-        qreal scale = rosetteConnect->computeConnectScale();
+        qreal scale = rosecon->computeConnectScale();
         figureScale->setValue(scale);
-        updateFigure(true);
+        editorToFigure(true);
     }
 }
 
@@ -446,84 +403,79 @@ ExtendedStarEditor::ExtendedStarEditor(page_motif_maker *fm, QString figname) : 
     addWidget(extendBox1);
     addWidget(extendBox2);
 
-    connect(extendBox1,    &QCheckBox::clicked,  this, [this]() { updateFigure(true);});
-    connect(extendBox2,    &QCheckBox::clicked,  this, [this]() { updateFigure(true);});
+    connect(extendBox1,    &QCheckBox::clicked,  this, [this]() { editorToFigure(true);});
+    connect(extendBox2,    &QCheckBox::clicked,  this, [this]() { editorToFigure(true);});
 }
 
-FigurePtr ExtendedStarEditor::getFigure()
+void ExtendedStarEditor::setFigure(DesignElementPtr del, bool doEmit)
 {
-    return extended;
-}
-
-void ExtendedStarEditor::resetWithFigure(FigurePtr fig, bool doEmit)
-{
-    if (!fig)
+    if (!del || !del->getFigure())
     {
-        extended.reset();
+        wextended.reset();
         return;
     }
 
-    extended = dynamic_pointer_cast<ExtendedStar>(fig);
-    if (!extended)
+    FigurePtr fig = del->getFigure();
+    wextended = dynamic_pointer_cast<ExtendedStar>(fig);
+    if (!wextended.lock())
     {
         StarPtr sp = dynamic_pointer_cast<Star>(fig);
         if (sp)
         {
-            extended = make_shared<ExtendedStar>(*fig.get(),sp->getN(),sp->getD(),sp->getS(),sp->getFigureRotate());
+            auto extended = make_shared<ExtendedStar>(*fig.get(),sp->getN(),sp->getD(),sp->getS());
+            del->setFigure(extended);
+            wextended = extended;
         }
         else
         {
-            int  n = 6;  // default
-            qreal rotate = 0.0;
-            RadialPtr rp = dynamic_pointer_cast<RadialFigure>(fig);
-            if (rp)
-            {
-                n = rp->getN();
-                rotate = rp->getFigureRotate();
-            }
-            extended = make_shared<ExtendedStar>(*fig.get(), n, n <= 6 ? n / 3.0 : 3.0, 2, rotate);
+            int  n = fig->getN();
+            auto extended = make_shared<ExtendedStar>(*fig.get(), n, n <= 6 ? n / 3.0 : 3.0, 2);
+            del->setFigure(extended);
+            wextended = extended;
         }
     }
 
-    Q_ASSERT(extended);
-    StarEditor::resetWithFigure(extended,false);
+    Q_ASSERT(wextended.lock());
+    StarEditor::setFigure(del,false);
 
-    updateEditor();
-    updateFigure(doEmit);
+    figureToEditor();
+    editorToFigure(doEmit);
 }
 
-void ExtendedStarEditor::updateEditor()
+void ExtendedStarEditor::figureToEditor()
 {
-    if (extended)
+    auto estar = wextended.lock();
+    if (estar)
     {
-        bool ext_t   = extended->getExtendPeripheralVertices();
-        bool ext_nt  = extended->getExtendFreeVertices();
+        bool ext_t   = estar->getExtendPeripheralVertices();
+        bool ext_nt  = estar->getExtendFreeVertices();
 
         blockSignals(true);
         extendBox1->setChecked(ext_t);
         extendBox2->setChecked(ext_nt);
         blockSignals(false);
 
-        StarEditor::updateEditor();
+        StarEditor::figureToEditor();
     }
 }
 
-void ExtendedStarEditor::updateFigure(bool doEmit)
+void ExtendedStarEditor::editorToFigure(bool doEmit)
 {
-    if (extended)
+    auto estar = wextended.lock();
+    if (estar)
     {
         bool extendPeripheralVertices = extendBox1->isChecked();
         bool extendFreeVertices       = extendBox2->isChecked();
 
         blockSignals(true);
-        extended->setExtendPeripheralVertices(extendPeripheralVertices);
-        extended->setExtendFreeVertices(extendFreeVertices);
+        estar->setExtendPeripheralVertices(extendPeripheralVertices);
+        estar->setExtendFreeVertices(extendFreeVertices);
         blockSignals(false);
 
-        StarEditor::updateFigure(false);
+        StarEditor::editorToFigure(false);
 
         if (doEmit)
-            emit sig_figure_changed(extended);
+            emit sig_figure_modified(estar);
     }
 }
 
@@ -539,62 +491,56 @@ ExtendedRosetteEditor::ExtendedRosetteEditor(page_motif_maker * fm, QString fign
     addWidget(extendFreeBox);
     addWidget(connectBoundaryBox);
 
-    connect(extendPeriphBox,    &QCheckBox::clicked,       this, [this]() { updateFigure(true);});
-    connect(extendFreeBox,      &QCheckBox::clicked,       this, [this]() { updateFigure(true);});
-    connect(connectBoundaryBox, &QCheckBox::clicked,       this, [this]() { updateFigure(true);});
+    connect(extendPeriphBox,    &QCheckBox::clicked,       this, [this]() { editorToFigure(true);});
+    connect(extendFreeBox,      &QCheckBox::clicked,       this, [this]() { editorToFigure(true);});
+    connect(connectBoundaryBox, &QCheckBox::clicked,       this, [this]() { editorToFigure(true);});
 }
 
-FigurePtr ExtendedRosetteEditor::getFigure()
+void ExtendedRosetteEditor::setFigure(DesignElementPtr del, bool doEmit)
 {
-    return extended;
-}
-
-void ExtendedRosetteEditor::resetWithFigure(FigurePtr fig, bool doEmit)
-{
-    if (!fig)
+    if (!del || !del->getFigure())
     {
-        extended.reset();
+        wextended.reset();
         return;
     }
 
-    extended = dynamic_pointer_cast<ExtendedRosette>(fig);
-    if (!extended)
+    FigurePtr fig = del->getFigure();
+    wextended = dynamic_pointer_cast<ExtendedRosette>(fig);
+    if (!wextended.lock())
     {
         RosettePtr rsp = dynamic_pointer_cast<Rosette>(fig);
         if (rsp)
         {
-            extended = make_shared<ExtendedRosette>(*fig.get(),rsp->getN(),rsp->getQ(),
-                                                    rsp->getS(),rsp->getK(), rsp->getFigureRotate());
+            auto extended = make_shared<ExtendedRosette>(*fig.get(),rsp->getN(),rsp->getQ(),
+                                                    rsp->getS(),rsp->getK());
+            del->setFigure(extended);
+            wextended = extended;
         }
         else
         {
-            int n = 6;  // default
-            qreal rotate = 0.0;
-            RadialPtr rp = std::dynamic_pointer_cast<RadialFigure>(fig);
-            if (rp)
-            {
-                n = rp->getN();
-                rotate = rp->getFigureRotate();
-            }
-            extended = make_shared<ExtendedRosette>(*fig.get(), n, 0.0, 3, 0, rotate);
+            int n = fig->getN();
+            auto extended = make_shared<ExtendedRosette>(*fig.get(), n, 0.0, 3, 0);
+            del->setFigure(extended);
+            wextended = extended;
         }
     }
 
-    Q_ASSERT(extended);
-    RosetteEditor::resetWithFigure(extended,false);
+    Q_ASSERT(wextended.lock());
+    RosetteEditor::setFigure(del,false);
 
-    updateEditor();
-    updateFigure(doEmit);
+    figureToEditor();
+    editorToFigure(doEmit);
 }
 
 
-void ExtendedRosetteEditor::updateEditor()
+void ExtendedRosetteEditor::figureToEditor()
 {
-    if (extended)
+    auto erose = wextended.lock();
+    if (erose)
     {
-        bool ext_t   = extended->getExtendPeripheralVertices();
-        bool ext_nt  = extended->getExtendFreeVertices();
-        bool con_bd  = extended->getConnectBoundaryVertices();
+        bool ext_t   = erose->getExtendPeripheralVertices();
+        bool ext_nt  = erose->getExtendFreeVertices();
+        bool con_bd  = erose->getConnectBoundaryVertices();
 
         blockSignals(true);
         extendPeriphBox->setChecked(ext_t);
@@ -602,30 +548,28 @@ void ExtendedRosetteEditor::updateEditor()
         connectBoundaryBox->setChecked(con_bd);
         blockSignals(false);
 
-        RosetteEditor::updateEditor();
+        RosetteEditor::figureToEditor();
     }
 }
 
-void ExtendedRosetteEditor::updateFigure(bool doEmit)
+void ExtendedRosetteEditor::editorToFigure(bool doEmit)
 {
-    if (extended)
+    auto erose = wextended.lock();
+    if (erose)
     {
         bool extendPeripherals  = extendPeriphBox->isChecked();
         bool extendFreeVertices = extendFreeBox->isChecked();
         bool connectBoundary    = connectBoundaryBox->isChecked();
 
         blockSignals(true);
-        extended->setExtendPeripheralVertices(extendPeripherals);
-        extended->setExtendFreeVertices(extendFreeVertices);
-        extended->setConnectBoundaryVertices(connectBoundary);
+        erose->setExtendPeripheralVertices(extendPeripherals);
+        erose->setExtendFreeVertices(extendFreeVertices);
+        erose->setConnectBoundaryVertices(connectBoundary);
         blockSignals(false);
 
-        RosetteEditor::updateFigure(false);
+        RosetteEditor::editorToFigure(false);
 
         if (doEmit)
-            emit sig_figure_changed(extended);
+            emit sig_figure_modified(erose);
     }
 }
-
-
-

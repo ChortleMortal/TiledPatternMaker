@@ -1,11 +1,11 @@
 #ifndef MAPEDITORSTASH_H
 #define MAPEDITORSTASH_H
 
-#include <QtCore>
+#include <QObject>
 
-typedef std::shared_ptr<class Circle>  CirclePtr;
+class MapEditorDb;
 
-class MapEditor;
+typedef std::shared_ptr<class Circle>   CirclePtr;
 
 #define MAX_STASH 9
 
@@ -15,7 +15,7 @@ class MapEditorStash : public QObject
 
 public:
 
-    MapEditorStash(MapEditor * me);
+    MapEditorStash(MapEditorDb * db);
 
     bool         stash();
     bool         destash();
@@ -38,17 +38,17 @@ public:
     QString      getStashName(int index);
 
 protected slots:
-    void        slot_nextAnimationStep();
+    void         slot_nextAnimationStep();
 
 protected:
     bool         readStashTo(QString name, QVector<QLineF>  & lines, QVector<CirclePtr> & circs);
 
 private:
-    MapEditor * editor;
     int first;
     int last;
     int current;
 
+    MapEditorDb      * db;
     QTimer           * timer;
     QVector<QLineF>    localLines;
     QVector<CirclePtr> localCircs;
