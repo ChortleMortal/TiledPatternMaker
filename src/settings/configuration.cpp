@@ -375,8 +375,6 @@ void Configuration::configurePaths()
         root += "/";
     }
 
-    qInfo().noquote() << "App Media root:" << root;
-
     rootMediaDir        = root;
     rootTileDir         = root + "tilings/";
     originalTileDir     = root + "tilings/original/";
