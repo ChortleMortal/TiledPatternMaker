@@ -25,9 +25,11 @@ public:
 
 signals:
     void    sig_compareImageFiles(QString,QString,bool);
+    void    sig_compareImageLoaded(QString,bool);
     void    sig_view_image(QString file,QString file2,bool transparent,bool popup);
     void    sig_cyclerStart(eCycleMode);
     void    sig_loadMosaic(QString,bool ready);
+    void    sig_worklistChanged();
 
 public slots:
     void    slot_compareResult(QString result);
@@ -108,16 +110,17 @@ private:
     QLineEdit   * leftDir;
     QLineEdit   * rightDir;
     QLineEdit   * directory;
-
-    MemoryCombo * viewFileCombo;
-
-    QComboBox   * leftFile;
-    QComboBox   * rightFile;
     QLineEdit   * imageCompareResult;
 
+    MemoryCombo * viewFileCombo;
+    QComboBox   * leftFile;
+    QComboBox   * rightFile;
     QComboBox   * fileFilterCombo;
+
     QCheckBox   * use_wlistForCompareChk;
     QCheckBox   * gen_wlistChk;
+    QCheckBox   * compareView;
+
     QLabel      * wlistStatus;
     QLabel      * colorLabel;
 };

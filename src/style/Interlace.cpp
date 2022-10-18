@@ -203,7 +203,7 @@ void Interlace::createStyleRepresentation()
     // use the beefy getPoints routine to extract the graphics
     // of the interlacing.
 
-    for (auto & edge  : map->getEdges())
+    for (auto & edge  : qAsConst(map->getEdges()))
     {
         Segment seg;
         ThreadPtr thread;
@@ -235,12 +235,12 @@ void Interlace::createStyleRepresentation()
 
 void Interlace::assignInterlacing()
 {
-    for (auto & edge : map->getEdges())
+    for (auto & edge : qAsConst(map->getEdges()))
     {
         edge->visited = false;
     }
 
-    for (auto & vert : map->getVertices())
+    for (auto & vert : qAsConst(map->getVertices()))
     {
         vert->visited = false;
     }
@@ -248,7 +248,7 @@ void Interlace::assignInterlacing()
     // Stack of edge to be processed.
     todo.clear();
 
-    for(auto & edge : map->getEdges())
+    for(auto & edge : qAsConst(map->getEdges()))
     {
         if (!edge->visited )
         {
@@ -349,9 +349,6 @@ void Interlace::propagate(VertexPtr vertex, EdgePtr edge, bool edge_under_at_ver
     }
     else
     {
-        if (nn == 3 || nn > 4)
-            qInfo() << "Interlace Edge Count" << nn;
-
         QVector<EdgePtr> ns;
         int index    = 0;
         int edge_idx = -1;  // index of edge in ns

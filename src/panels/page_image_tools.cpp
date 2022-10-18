@@ -41,6 +41,7 @@ page_image_tools:: page_image_tools(ControlPanel * cpanel)  : panel_page(cpanel,
     connect(theApp,&TiledPatternMaker::sig_compareResult,       this,   &page_image_tools::slot_compareResult);
     connect(this,  &page_image_tools::sig_view_image,           theApp, &TiledPatternMaker::slot_view_image);
     connect(this,  &page_image_tools::sig_compareImageFiles,    theApp, &TiledPatternMaker::slot_compareImages, Qt::QueuedConnection);
+    connect(this,  &page_image_tools::sig_compareImageLoaded,   theApp, &TiledPatternMaker::slot_compareLoaded, Qt::QueuedConnection);
     connect(this,  &page_image_tools::sig_loadMosaic,           theApp, &TiledPatternMaker::slot_loadMosaic);
 
     Cycler * cycler = Cycler::getInstance();
@@ -109,7 +110,7 @@ QGroupBox * page_image_tools::createCycleGenSection()
 #endif
     connect(skip,               &QCheckBox::clicked,       this,  &page_image_tools::slot_skipExisting);
     connect(cycleGenBtnGroup,   &QButtonGroup::idClicked,  this, [this](int id) { config->genCycle = static_cast<eCycleMode>(id); } );
-    connect(fileFilterCombo,   QOverload<int>::of(&QComboBox::currentIndexChanged), [=]()
+    connect(fileFilterCombo,   QOverload<int>::of(&QComboBox::currentIndexChanged), this, [=]()
                                 { config->fileFilter = static_cast<eLoadType>(fileFilterCombo->currentData().toInt()); } );
 
     return cycleGenBox;
@@ -203,28 +204,31 @@ QGroupBox * page_image_tools::createCompareSection()
     QPushButton * viewImage0   = new QPushButton("View");
     QPushButton * viewImage1   = new QPushButton("View");
     QPushButton * compareBtn   = new QPushButton("Compare");
-    QPushButton * reviewBtn    = new QPushButton("Cycle");
     QPushButton * previousBtn  = new QPushButton("Previous");
     QPushButton * nextBtn      = new QPushButton("Next");
     QPushButton * loadBtn      = new QPushButton("Load Mosaic");
+    QPushButton * reviewBtn    = new QPushButton("Cycle");
 
     reviewBtn->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
     compareBtn->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
 
     QPushButton * swapBtn      = new QPushButton("Swap");
     QPushButton * continueBtn  = new QPushButton("Continue");
+
     QCheckBox   * cbStopIfDiff = new QCheckBox("Stop if Diff");
-    QCheckBox   * differences  = new QCheckBox("Display Differences");
-    use_wlistForCompareChk     = new QCheckBox("Use Work List");
-    gen_wlistChk               = new QCheckBox("Generate Work List");
+    QCheckBox   * differences  = new QCheckBox("Show Diffs");
+    QCheckBox   * chkPopup     = new QCheckBox("Pop-up");
     QCheckBox   * transparent  = new QCheckBox("Transparent");
-    QCheckBox   * chkPopup     = new QCheckBox("Pop up");
+    compareView                = new QCheckBox("Compare View");
+    use_wlistForCompareChk     = new QCheckBox("Use Work List");
+    gen_wlistChk               = new QCheckBox("Gen Work List");
 
     QHBoxLayout * hbox = new QHBoxLayout;
     hbox->addWidget(cbStopIfDiff);
     hbox->addWidget(differences);
     hbox->addWidget(chkPopup);
     hbox->addWidget(transparent);
+    hbox->addWidget(compareView);
     hbox->addStretch();
     hbox->addWidget(use_wlistForCompareChk);
     hbox->addWidget(gen_wlistChk);
@@ -310,7 +314,6 @@ QGroupBox * page_image_tools::createCompareSection()
 
 QGroupBox * page_image_tools::createViewSection()
 {
-    //QPushButton * selectImgBtn   = new QPushButton("Select Image File");
     QPushButton * selectImgBtn   = new QPushButton("Select");
     QPushButton * viewImageBtn   = new QPushButton("View");
     QCheckBox   * chkTransparent = new QCheckBox("Transparent");
@@ -399,7 +402,7 @@ void page_image_tools::onExit()
 
 void  page_image_tools::onRefresh()
 {
-    QString str = QString("Worklist contains %1 entries").arg(config->workList.size());
+    QString str = QString("Worklist contains %1 entries").arg(config->getWorkList().size());
     wlistStatus->setText(str);
 }
 
@@ -674,7 +677,14 @@ void page_image_tools::slot_compareImages()
     panel->pushPanelStatus("Spacebar=next C=compare P=ping-pong S=side-by-side L=log Q=quit D=delete-from-worklist");
 
     imageCompareResult->setText("");
-    emit sig_compareImageFiles(leftFile->currentText(),rightFile->currentText(),false);
+    if (!compareView->isChecked())
+    {
+        emit sig_compareImageFiles(leftFile->currentText(),rightFile->currentText(),false);
+    }
+    else
+    {
+        emit sig_compareImageLoaded(leftFile->currentText(),true);
+    }
 }
 
 void page_image_tools::slot_compareCycle()
@@ -764,7 +774,7 @@ void page_image_tools::loadCombo(QComboBox * box,QString dir)
     }
     else
     {
-        names2 = config->workList;
+        names2 = config->getWorkList();
     }
 
     box->clear();
@@ -951,7 +961,7 @@ void page_image_tools::loadWorkListFromFile()
         box.exec();
     }
 
-    config->workList = stringList;
+    config->setWorkList(stringList);
 
     int sz = stringList.size();
 
@@ -966,7 +976,8 @@ void page_image_tools::loadWorkListFromFile()
 
 void page_image_tools::saveWorkListToFile()
 {
-    if (config->workList.isEmpty())
+    const QStringList & list = config->getWorkList();
+    if (list.isEmpty())
     {
         QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
@@ -1004,7 +1015,7 @@ void page_image_tools::saveWorkListToFile()
     QTextStream ts(&file);
 
     QStringList::const_iterator constIterator;
-    for (constIterator = config->workList.constBegin(); constIterator != config->workList.constEnd(); ++constIterator)
+    for (constIterator = list.constBegin(); constIterator != list.constEnd(); ++constIterator)
     {
        ts << (*constIterator).toLocal8Bit().constData() << endl;
     }
@@ -1019,7 +1030,7 @@ void page_image_tools::saveWorkListToFile()
 void page_image_tools::editWorkList()
 {
     WorklistWidget * plw = new WorklistWidget(this);
-    plw->addItems(config->workList);
+    plw->addItems(config->getWorkList());
 
     QVBoxLayout * vbox = new QVBoxLayout;
     vbox->addWidget(plw);
@@ -1088,16 +1099,18 @@ void page_image_tools::slot_deleteCurrent()
 
     QString name = rightFile->currentText();
     QStringList newList;
-    for (int i = 0; i < config->workList.size(); ++i)
+    const QStringList & list = config->getWorkList();
+    for (int i = 0; i < list.size(); ++i)
     {
-        if (config->workList.at(i) != name)
+        if (list.at(i) != name)
         {
-            newList << config->workList.at(i);
+            newList << list.at(i);
         }
         else
             qDebug() << name << ": deleted";
     }
-    config->workList = newList;
+
+    config->setWorkList(newList);
     emit theApp->sig_ready();
 }
 
@@ -1125,7 +1138,18 @@ void page_image_tools::slot_colorEdit()
 
 void page_image_tools::slot_selectImage()
 {
-    QString dir = config->rootMediaDir;
+    QString dir;
+    auto filename = viewFileCombo->getCurrentText();
+    if (filename.isEmpty())
+    {
+        dir = config->rootMediaDir;
+    }
+    else
+    {
+        QFileInfo info(filename);
+        dir = info.absolutePath();
+    }
+
     QString fileName = QFileDialog::getOpenFileName(this,"Select image file",dir, "Image Files (*.png *.jpg *.bmp *.heic)");
     if (fileName.isEmpty())
     {

@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+<!-- Written: Fri Oct 7 2022 14:23:49 -->
+<Tiling version="6">
+	<Name>TestBasicShapes</Name>
+	<Fill singleton="t">0,0,0,0</Fill>
+	<T1>0,0</T1>
+	<T2>0,0</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Feature type="regular" sides="3" rotation="0" scale="1">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-4.133333333333333</tranX>
+			<tranY>0.3533333333333346</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="regular" sides="4" rotation="0" scale="1">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-2.133333333333334</tranX>
+			<tranY>0.353333333333334</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="regular" sides="5" rotation="0" scale="1">
+		<Placement>
+			<scale>1.376381920471174</scale>
+			<rot>23.99999999999999</rot>
+			<tranX>2.15293383825557</tranX>
+			<tranY>3.045315041770962</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="regular" sides="6" rotation="0" scale="1">
+		<Placement>
+			<scale>1.732050807568878</scale>
+			<rot>0</rot>
+			<tranX>0.5987174742355437</tranX>
+			<tranY>0.3533333333333334</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="regular" sides="7" rotation="0" scale="1">
+		<Placement>
+			<scale>2.076521396572336</scale>
+			<rot>-59.99999999999999</rot>
+			<tranX>-1.305568627835064</tranX>
+			<tranY>3.651653614266897</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="regular" sides="8" rotation="0" scale="1">
+		<Placement>
+			<scale>2.414213562373096</scale>
+			<rot>-105</rot>
+			<tranX>2.67184965920653</tranX>
+			<tranY>-3.237436941842718</tranY>
+		</Placement>
+	</Feature>
+	<Desc />
+	<Auth />
+</Tiling>

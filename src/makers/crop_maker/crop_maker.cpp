@@ -61,6 +61,14 @@ CropPtr CropMaker::loadCrop()
     return crop;
 }
 
+void CropMaker::unloadCrop()
+{
+    CropPtr nocrop;
+    setActiveCrop(nocrop);
+    setState(CROPMAKER_STATE_INACTIVE);
+}
+
+
 CropPtr CropMaker::createCrop()
 {
     // this sets up a default crop

@@ -16,6 +16,7 @@ public:
 
 public slots:
     void setCurrentText(const QString &text);
+    QString getCurrentText();
 
 protected:
     QStringList getItems();

@@ -20,10 +20,11 @@
 
 #include "geometry/fill_region.h"
 #include "settings/configuration.h"
+#include "tile/tiling_data.h"
 #include "tile/tiling.h"
 #include <QPolygonF>
 
-FillRegion::FillRegion(TilingPtr tiling, FillData *fd)
+FillRegion::FillRegion(TilingPtr tiling, const FillData &fd)
 {
     this->tiling = tiling;
     fillData     = fd;
@@ -34,11 +35,11 @@ QVector<QTransform> FillRegion::getTransforms()
 {
     int minX,minY,maxX,maxY;
     bool singleton;
-    fillData->get(singleton,minX,maxX,minY,maxY);
+    fillData.get(singleton,minX,maxX,minY,maxY);
 
     if (singleton)
     {
-        transforms.push_back(receive(0,0));
+        transforms.push_back(calcTransform(0,0));
         return transforms;
     }
 
@@ -46,7 +47,7 @@ QVector<QTransform> FillRegion::getTransforms()
     {
     case REPEAT_SINGLE:
         //qDebug() << "REPEAT_SINGLE";
-        transforms.push_back(receive(0,0));
+        transforms.push_back(calcTransform(0,0));
         break;
 
     case REPEAT_PACK:
@@ -56,7 +57,7 @@ QVector<QTransform> FillRegion::getTransforms()
         {
             for (int v = 0; v <= 1; v++)
             {
-                 transforms.push_back(receive(h,v));
+                 transforms.push_back(calcTransform(h,v));
             }
         }
         break;
@@ -67,7 +68,7 @@ QVector<QTransform> FillRegion::getTransforms()
         {
             for (int v = minY; v <= maxY; v++)
             {
-                transforms.push_back(receive(h,v));
+                transforms.push_back(calcTransform(h,v));
             }
         }
         break;
@@ -76,13 +77,10 @@ QVector<QTransform> FillRegion::getTransforms()
     return transforms;
 }
 
-
-
-
-QTransform FillRegion::receive(int h, int v)
+QTransform FillRegion::calcTransform(int h, int v)
 {
-    //qDebug() << "Prototype::receive:"  << h << v;
-    QPointF pt   = (tiling->getTrans1() * static_cast<qreal>(h)) + (tiling->getTrans2() * static_cast<qreal>(v));
+    //qDebug() << "Prototype::calcTransform:"  << h << v;
+    QPointF pt   = (tiling->getData().getTrans1() * static_cast<qreal>(h)) + (tiling->getData().getTrans2() * static_cast<qreal>(v));
     QTransform T = QTransform::fromTranslate(pt.x(),pt.y());
     return T;
 }

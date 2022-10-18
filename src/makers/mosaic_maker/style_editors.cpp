@@ -11,7 +11,7 @@
 #include "settings/configuration.h"
 #include "panels/panel.h"
 #include "tile/tiling.h"
-#include "tile/feature.h"
+#include "tile/tile.h"
 #include "widgets/layout_sliderset.h"
 #include "style/colored.h"
 #include "style/emboss.h"
@@ -645,11 +645,11 @@ void TileColorsEditor::buildTable()
     table->setColumnWidth(TILE_COLORS_COLORS,400);
 
     QStringList qslH;
-    qslH << "Feature" << "Sides" << "Btn" << "Colors" ;
+    qslH << "Tile" << "Sides" << "Btn" << "Colors" ;
     table->setHorizontalHeaderLabels(qslH);
     table->verticalHeader()->setVisible(false);
 
-    qlfp = tiling->getUniqueFeatures();
+    qlfp = tiling->getUniqueTiles();
     table->setRowCount(qlfp.size() + 1);
 
     QColor color;
@@ -685,7 +685,7 @@ void TileColorsEditor::buildTable()
 
     for (auto it = qlfp.begin(); it != qlfp.end(); it++)
     {
-        FeaturePtr fp = *it;
+        TilePtr fp = *it;
 
         QTableWidgetItem * twi = new QTableWidgetItem(Utils::addr(fp.get()));
         table->setItem(row,TILE_COLORS_ADDR,twi);
@@ -698,7 +698,7 @@ void TileColorsEditor::buildTable()
         table->setCellWidget(row,TILE_COLORS_BTN,btn);
         connect(btn, &QPushButton::clicked, this, &TileColorsEditor::slot_edit);
 
-        AQWidget * widget = fp->getFeatureColors()->createWidget();
+        AQWidget * widget = fp->getTileColors()->createWidget();
         table->setCellWidget(row,TILE_COLORS_COLORS,widget);
 
         row++;
@@ -715,8 +715,8 @@ void TileColorsEditor::slot_edit()
     if (row < 0 || row >= (qlfp.size() ))
         return;
 
-    FeaturePtr fp = qlfp[row];
-    DlgColorSet dlg(fp->getFeatureColors(),table);
+    TilePtr fp = qlfp[row];
+    DlgColorSet dlg(fp->getTileColors(),table);
 
     connect(&dlg, &DlgColorSet::sig_colorsChanged, this, &TileColorsEditor::slot_colors_changed);
 

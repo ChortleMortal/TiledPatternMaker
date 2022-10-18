@@ -4,34 +4,21 @@
 #include <QGridLayout>
 #include "widgets/panel_page.h"
 #include "settings/configuration.h"
-#include "mosaic/prototype.h"
 #include "viewers/prototype_view.h"
 
-typedef std::weak_ptr<DesignElement>    WeakDesignElementPtr;
-typedef std::weak_ptr<Prototype>        WeakPrototypePtr;
-typedef std::weak_ptr<Figure>           WeakFigurePtr;
-typedef std::weak_ptr<Feature>          WeakFeaturePtr;
+
 
 enum eProtoCol
 {
     PROTO_ROW_PROTO,
+    PROTO_ROW_SHOW,
     PROTO_ROW_TILING,
     PROTO_ROW_DEL,
-    PROTO_ROW_FEATURE,
-    PROTO_ROW_FIGURE,
-    PROTO_ROW_SCALE,
-    PROTO_ROW_ROT,
-    PROTO_ROW_X,
-    PROTO_ROW_Y
+    PROTO_ROW_TILE,
+    PROTO_ROW_MOTIF
 };
 
-struct sColData
-{
-    WeakPrototypePtr     wpp;
-    WeakDesignElementPtr wdel;
-    WeakFeaturePtr       wfeatp;
-    WeakFigurePtr        wfigp;
-};
+
 
 class page_prototype_info : public panel_page
 {
@@ -49,14 +36,17 @@ public slots:
 
 private slots:
     void    slot_prototypeSelected(int row, int col);
+    void    slot_showMotifChanged(int col, bool checked);
+    void    slot_widthChanged(int val);
     void    drawDELClicked(bool enb);
     void    drawMapClicked(bool enb);
-    void    drawFigureClicked(bool enb);
-    void    drawFeatureClicked(bool enb);
-    void    hiliteFigureClicked(bool enb);
-    void    hiliteFeatureClicked(bool enb);
+    void    drawMotifClicked(bool enb);
+    void    drawTileClicked(bool enb);
+    void    hiliteMotifClicked(bool enb);
+    void    hiliteTileClicked(bool enb);
     void    setDefaultColors();
     void    setup();
+    void    slot_deselect();
 
 protected:
     void    buildColorGrid();
@@ -69,6 +59,7 @@ private:
     PrototypeViewPtr      pview;
 
     QVector<sColData>     data;
+
 };
 
 #endif

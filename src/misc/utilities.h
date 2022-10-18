@@ -36,7 +36,7 @@ public:
     static qreal   angle(const QLineF &l0,const QLineF &l);
 
     static QVector<QLineF> rectToLines(QRectF & box);
-    static QVector<QLineF> polyToLines(QPolygonF & poly);
+    static QVector<QLineF> polyToLines(const QPolygonF &poly);
     static bool            pointOnLine(QLineF l, QPointF p);
     static bool            pointAtEndOfLine(QLineF l, QPointF p);
     static QPointF         snapTo(QPointF to, QPointF from, int precision = 2);

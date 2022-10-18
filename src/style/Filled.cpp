@@ -83,9 +83,9 @@ void Filled::createStyleRepresentation()
     {
         MapPtr map = getMap();
 
-        qDebug().noquote() << "Filled pre  map cleanse" << map->summary();
+        qDebug().noquote() << "Filled pre  map cleanse" << map->namedSummary();
         map->cleanse(badVertices_1);
-        qDebug().noquote() << "Filled post map cleanse" << map->summary();
+        qDebug().noquote() << "Filled post map cleanse" << map->namedSummary();
 
         dcel = map->getDerivedDCEL();
         if (!dcel)

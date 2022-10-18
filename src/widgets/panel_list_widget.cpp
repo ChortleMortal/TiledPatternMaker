@@ -70,11 +70,12 @@ void WorklistWidget::slot_editAction()
 
     QStringList newList;
     Configuration * config = Configuration::getInstance();
-    for (int i = 0; i < config->workList.size(); ++i)
+    const QStringList & list = config->getWorkList();
+    for (int i = 0; i < list.size(); ++i)
     {
-        if (config->workList.at(i) != name)
+        if (list.at(i) != name)
         {
-            newList << config->workList.at(i);
+            newList << list.at(i);
         }
         else
         {
@@ -83,10 +84,10 @@ void WorklistWidget::slot_editAction()
     }
 
     newList.sort();
-    config->workList = newList;
+    config->setWorkList(newList);
 
     clear();
-    addItems(config->workList);
+    addItems(newList);
     setCurrentRow(row);
     update();
 
@@ -103,19 +104,20 @@ void WorklistWidget::slot_deleteAction()
     qDebug() << "trigger delete" << row << name;
 
     Configuration * config = Configuration::getInstance();
+    const QStringList & list = config->getWorkList();
 
     QStringList newList;
-    for (int i = 0; i < config->workList.size(); ++i)
+    for (int i = 0; i < list.size(); ++i)
     {
-        if (config->workList.at(i) != name)
+        if (list.at(i) != name)
         {
-            newList << config->workList.at(i);
+            newList << list.at(i);
         }
     }
-    config->workList = newList;
+    config->setWorkList(newList);
 
     clear();
-    addItems(config->workList);
+    addItems(newList);
     setCurrentRow(row);
     update();
 }

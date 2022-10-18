@@ -15,9 +15,17 @@ using std::string;
 page_layers:: page_layers(ControlPanel * cpanel)  : panel_page(cpanel,"Layer Info")
 {
     refreshLabel = new QLabel("Refresh: OFF");
+    QPushButton * pbDeselect = new QPushButton("De-select");
+
     layerTable   = new AQTableWidget(this);
 
-    vbox->addWidget(refreshLabel);
+    QHBoxLayout * hbox =  new QHBoxLayout;
+    hbox->addWidget(refreshLabel);
+    hbox->addSpacing(21);
+    hbox->addWidget(pbDeselect);
+    hbox->addStretch();
+
+    vbox->addLayout(hbox);
     vbox->addWidget(layerTable);
     vbox->addStretch();
 
@@ -34,8 +42,11 @@ page_layers:: page_layers(ControlPanel * cpanel)  : panel_page(cpanel,"Layer Inf
     layerTable->setMaximumWidth(880);
     layerTable->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     layerTable->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    layerTable->setSelectionBehavior(QAbstractItemView::SelectColumns);
+    layerTable->setStyleSheet("QTableWidget::item:selected { background:yellow; color:red; }");
 
     connect(layerTable, &QTableWidget::itemSelectionChanged, this, &page_layers::slot_selectLayer);
+    connect(pbDeselect, &QPushButton::clicked, this, [this]() { layerTable->setCurrentIndex(QModelIndex()); config->selectedLayer.reset(); layerTable->update();} );
 }
 
 void page_layers::onEnter()
@@ -116,7 +127,7 @@ void page_layers::populateLayer(LayerPtr layer, int col)
 
     QColor bcolor;
     if (config->darkTheme)
-        bcolor = QColor("#777777");
+        bcolor = QColor(0x777777);
     else
         bcolor = QColor(Qt::yellow);
 

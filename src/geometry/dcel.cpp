@@ -81,7 +81,7 @@ void DCEL::buildDCEL()
     double qdelta = time /1000.0;
     QString sDelta = QString("%1").arg(qdelta, 8, 'f', 3);
 
-    qDebug().noquote() << "DCEL complete time =" << sDelta;;
+    qDebug().noquote() << "DCEL complete time:" << sDelta << summary();
 }
 
 void DCEL::displayDCEL(int  val)
@@ -777,5 +777,5 @@ void DCEL::print_edge(const EdgePtr & edge, QDebug & deb)
 
 QString DCEL::summary() const
 {
-    return QString("vertices=%1 edges=%2").arg(vertices.size()).arg(edges.size());
+    return QString("vertices=%1 edges=%2 faces=%3").arg(vertices.size()).arg(edges.size()).arg(faces.size());
 }

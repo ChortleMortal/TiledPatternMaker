@@ -36,12 +36,6 @@ typedef std::weak_ptr<class Edge>           WeakEdgePtr;
 
 typedef std::weak_ptr<class DCEL>           WeakDCELPtr;
 
-struct sText
-{
-    QPointF pt;
-    QString txt;
-};
-
 enum eCompare
 {
     COMP_LESS    = -1,
@@ -122,7 +116,11 @@ public:
     void        cleanse(unsigned int options);
 
     VertexPtr   insertVertex(const QPointF & pt);
-    EdgePtr     insertEdge(const VertexPtr & v1, const VertexPtr & v2, bool debug = false);
+    VertexPtr   getVertex(const QPointF & pt) const;
+
+    EdgePtr     insertEdge(const QLineF & line);
+    EdgePtr     insertEdge(const QPointF   & p1, const QPointF   & p2);
+    EdgePtr     insertEdge(const VertexPtr & v1, const VertexPtr & v2);
     void        insertEdge(const EdgePtr & cutter);
 
     void        addShapeFactory(ShapeFPtr sf);
@@ -159,9 +157,9 @@ public:
     void        XmlInsertDirect(EdgePtr e);
 
     // getters
-    const QVector<VertexPtr> & getVertices() { return vertices; }
-    const QVector<EdgePtr>   & getEdges()    { return edges; }
-    const QVector<sText>     & getTexts()    { return texts; }
+    const QVector<VertexPtr>    & getVertices() { return vertices; }
+    const QVector<EdgePtr>      & getEdges()    { return edges; }
+    const QVector<QPair<QPointF,QString>> & getTexts()    { return debugTexts; }
 
     void            resetNeighbourMap() { nMap.reset(); }
     NeighbourMapPtr getNeighbourMap();
@@ -171,8 +169,8 @@ public:
 
     // info
     QString     name() const { return mname; }
+    QString     namedSummary() const;
     QString     summary() const;
-    QString     summary2() const;
     QString     displayVertexEdgeCounts();
 
     bool        isEmpty() const;
@@ -189,12 +187,6 @@ public:
     void        dumpMap(bool full=true);
     void        dumpErrors(const QVector<eMapError> &theErrors);
 
-    void        insertDebugMark(QPointF m, QString txt, qreal size = 0.05 , QPointF offset = QPointF());
-    void        insertDebugLine(EdgePtr edge);
-    void        insertDebugLine(QPointF p1, QPointF p2);
-    void        insertDebugLine(QLineF l1);
-    void        insertDebugPolygon(QPolygonF & poly);
-
     static int  refs;
 
     void        deDuplicateEdges(const NeighboursPtr & vec);
@@ -202,12 +194,15 @@ public:
     void        deDuplicateVertices(qreal tolerance);
 
 protected:
-    UniqueQVector<VertexPtr>    vertices;
-    UniqueQVector<EdgePtr>      edges;
+    class Configuration       * config;
+
+    UniqueQVector<VertexPtr>         vertices;
+    UniqueQVector<EdgePtr>           edges;
+    QVector<QPair<QPointF,QString>>  debugTexts;
 
 private:
     // insertions
-    void        _insertEdge(const EdgePtr & e, bool debug = false);
+    void        _insertEdge(const EdgePtr & e);
     EdgePtr     _insertCurvedEdge(const VertexPtr & v1, const VertexPtr & v2, const QPointF & center, bool isConvex, bool isChord, bool debug);
     void        _insertEdge_Simple(const EdgePtr & edge );
     void        _insertPolygon(Polyform  * poly);
@@ -225,7 +220,6 @@ private:
 
     // getters
     VertexPtr   _getOrCreateVertex(const QPointF &pt);
-    VertexPtr   _getVertex(const QPointF & pt) const;
 
     // debug
     void        _dumpVertices(bool full);
@@ -247,6 +241,7 @@ private:
     // debug verify operations
     void        verifyEdges();
     void        verifyNeighbours();
+    bool        procErrors(const QVector<eMapError> &errors);
     bool        isSevereError(eMapError err);
     bool        isMinorError(eMapError err);
 
@@ -257,13 +252,25 @@ private:
     int         vertexIndex(const VertexPtr & v) const { return vertices.indexOf(v); }
     int         edgeIndex(const EdgePtr & e)     const { return edges.indexOf(e); }
 
-    class Configuration       * config;
     QString                     mname;
     WeakDCELPtr                 derivedDCEL;
-    QVector<sText>              texts;
     UniqueQVector<eMapError>    errors;
     static QPointF              tmpCenter;
     NeighbourMapPtr             nMap;
+};
+
+class DebugMap : public Map
+{
+public:
+    DebugMap(const QString & name);
+//    DebugMap(const QString & name, const QPolygonF & poly);
+//    DebugMap(QString Name, const EdgePoly & poly);
+
+    void        insertDebugMark(QPointF m, QString txt);
+    void        insertDebugLine(EdgePtr edge);
+    void        insertDebugLine(QPointF p1, QPointF p2);
+    void        insertDebugLine(QLineF l1);
+    void        insertDebugPolygon(QPolygonF & poly);
 };
 
 #endif

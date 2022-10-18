@@ -61,6 +61,9 @@ page_config:: page_config(ControlPanel * cpanel)  : panel_page(cpanel,"Configura
     btnGroup->addButton(insightMode,1);
 
     QCheckBox * chkDarkTheme = new QCheckBox("Dark Theme");
+    QCheckBox * cbUpdate = new QCheckBox("Update Pages");
+    cbUpdate->setChecked(config->updatePanel);
+
     QPushButton * pbAbout    = new QPushButton("About TiledPatternMaker");
 
     int button  = (config->insightMode) ? 1 : 0;
@@ -72,6 +75,7 @@ page_config:: page_config(ControlPanel * cpanel)  : panel_page(cpanel,"Configura
     hbox->addWidget(insightMode);
     hbox->addStretch();
     hbox->addWidget(chkDarkTheme);
+    hbox->addWidget(cbUpdate);
     hbox->addStretch();
     hbox->addWidget(pbAbout);
 
@@ -98,6 +102,8 @@ page_config:: page_config(ControlPanel * cpanel)  : panel_page(cpanel,"Configura
     connect(defaultDesigns, &QCheckBox::clicked, this, &page_config::slot_designDefaultChanged);
     connect(defaultImages,  &QCheckBox::clicked, this, &page_config::slot_imageDefaultChanged);
     connect(chkDarkTheme,   &QCheckBox::clicked, this, &page_config::slot_darkThemeChanged);
+    connect(cbUpdate,       &QCheckBox::clicked, this, &page_config::slot_updateClicked);
+
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
     connect(btnGroup,      SIGNAL(buttonClicked(int)), this, SLOT(slot_mode(int)));
@@ -284,4 +290,9 @@ void page_config::slot_about()
 {
     DlgAbout dlg;
     dlg.exec();
+}
+
+void page_config::slot_updateClicked(bool enb)
+{
+    config->updatePanel = enb;
 }

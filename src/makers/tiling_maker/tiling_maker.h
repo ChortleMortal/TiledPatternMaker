@@ -21,7 +21,7 @@ typedef std::shared_ptr<class Tiling>           TilingPtr;
 typedef std::shared_ptr<class Prototype>        PrototypePtr;
 typedef std::shared_ptr<class TilingMaker>      TilingMakerPtr;
 typedef std::shared_ptr<class TilingMouseAction>MouseActionPtr;
-typedef std::shared_ptr<class Feature>          FeaturePtr;
+typedef std::shared_ptr<class Tile>              TilePtr;
 
 #define E2STR(x) #x
 
@@ -51,11 +51,12 @@ public:
 
     void        sm_take(TilingPtr tiling, eSM_Event mode);
 
-    void        select(TilingPtr tiling);
+    void        select(TilingPtr tiling, bool force = false);
     void        select(PrototypePtr prototype);
     TilingPtr   getSelected() { return selectedTiling; }
     int         numTilings() { return tilings.size(); }
-    int         numExcluded() { return  allPlacedFeatures.count() - in_tiling.count(); }
+    int         numExcluded() { return  allPlacedTiles.count() - in_tiling.count(); }
+    void        setupMaker(TilingPtr tp);   // caution = generally use select()
 
     void        eraseTilings();
     void        removeTiling(TilingPtr tp);
@@ -68,19 +69,19 @@ public:
     const QVector<TilingPtr> & getTilings() { return tilings; }
 
     void        clearMakerData();
-    void        updateTilingPlacedFeatures();
+    void        updateTilingplacedTiles();
     void        updateVectors();
     void        updateReps();
 
-    void        addInTiling(PlacedFeaturePtr pf);
-    void        addInTilings(QVector<PlacedFeaturePtr> & pfs);
-    void        removeFromInTiling(PlacedFeaturePtr pf);
+    void        addInTiling(PlacedTilePtr pf);
+    void        addInTilings(QVector<PlacedTilePtr> & pfs);
+    void        removeFromInTiling(PlacedTilePtr pf);
 
-    QVector<FeaturePtr> getUniqueFeatures();
-    TilingSelectorPtr   getCurrentSelection() { return featureSelector; }
+    QVector<TilePtr>   getUniqueTiles();
+    TilingSelectorPtr  getCurrentSelection() { return tileSelector; }
 
     bool        verifyTiling();
-    void        deleteFeature(PlacedFeaturePtr pf);
+    void        deleteTile(PlacedTilePtr pf);
     bool        accumHasPoint(QPointF wpt);
 
     eTilingMakerMouseMode getTilingMakerMouseMode();
@@ -91,14 +92,15 @@ public:
     void       drawMouseInteraction(GeoGraphics * g2d);
 
     // Feature management.
-    void        addNewPlacedFeature(PlacedFeaturePtr pf);
-    void        addNewPlacedFeatures(QVector<PlacedFeaturePtr> & pfs);
-    void        deleteFeature(TilingSelectorPtr sel);
-    TilingSelectorPtr addFeatureSelectionPointer(TilingSelectorPtr sel );
+    void        addNewPlacedTile(PlacedTilePtr pf);
+    void        addNewPlacedTiles(QVector<PlacedTilePtr> & pfs);
+    void        deleteTile(TilingSelectorPtr sel);
+    TilingSelectorPtr addTileSelectionPointer(TilingSelectorPtr sel );
     void        addToTranslate(QLineF mLine);
-    void        setCurrentFeature(PlacedFeaturePtr pfp) { currentPlacedFeature = pfp; }
+    void        setCurrentPlacedTile(PlacedTilePtr pfp) { currentPlacedTile = pfp;  emit sig_current_tile(pfp); }
+    void        resetCurrentPlacedTile() { currentPlacedTile.reset();  emit sig_current_tile(currentPlacedTile); }
     void        toggleInclusion(TilingSelectorPtr sel);
-    bool        isIncluded(PlacedFeaturePtr pfp)  { return in_tiling.contains(pfp); }
+    bool        isIncluded(PlacedTilePtr pfp)  { return in_tiling.contains(pfp); }
     bool        procKeyEvent(QKeyEvent * k);
 
     void        clearConstructionLines() { constructionLines.clear(); }
@@ -109,7 +111,7 @@ public:
 signals:
     void        sig_buildMenu();
     void        sig_refreshMenu();
-    void        sig_current_feature(int fIndex);
+    void        sig_current_tile(PlacedTilePtr pfp);
 
 public slots:
     void        updatePolygonSides(int number);
@@ -120,7 +122,7 @@ public slots:
     void        removeExcluded();
     void        excludeAll();
     void        clearTranslationVectors();
-    void        setFeatureEditPoint(QPointF pt);
+    void        setTileEditPoint(QPointF pt);
 
     virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
     virtual void slot_mouseDragged(QPointF spt)       override;
@@ -140,12 +142,12 @@ public slots:
     virtual void slot_moveY(int amount)  override;
 
 protected slots:
-    void slot_deleteFeature();
-    void slot_includeFeature();
-    void slot_excludeFeature();
-    void slot_editFeature();
-    void slot_copyMoveFeature();
-    void slot_uniquifyFeature();
+    void slot_deleteTile();
+    void slot_includeTile();
+    void slot_excludeTile();
+    void slot_editTile();
+    void slot_copyMoveTile();
+    void slot_uniquifyTile();
     void slot_flatenCurve();
     void slot_makeConvex();
     void slot_makeConcave();
@@ -153,7 +155,6 @@ protected slots:
     void slot_editMagnitude();
 
 protected:
-    void setupMaker(TilingPtr tp);
 
     void updateVisibleVectors();
     void createFillCopies();
@@ -165,7 +166,6 @@ protected:
     void     sm_add(TilingPtr tiling);
     eTMState sm_getState();
     bool     sm_askAdd();
-    void     sm_title(TilingPtr tiling);
 
     // Mouse mode handling.
     void setMousePos(QPointF spt);
@@ -175,9 +175,10 @@ protected:
     void copyPolygon(TilingSelectorPtr sel );
     void mirrorPolygonX(TilingSelectorPtr sel);
     void mirrorPolygonY(TilingSelectorPtr sel);
+    bool reflectPolygon(TilingSelectorPtr sel);
 
     // Mouse tracking.
-    TilingSelectorPtr findFeatureUnderMouse();
+    TilingSelectorPtr findTileUnderMouse();
 
     // Mouse interactions.
     void startMouseInteraction(QPointF spt, enum Qt::MouseButton mouseButton);
@@ -188,32 +189,31 @@ protected:
     void tilingDeltaScale(int delta);
     void tilingDeltaRotate(int delta);
 
-    void placedFeatureDeltaX(int delta);
-    void placedFeatureDeltaY(int delta);
-    void placedFeatureDeltaScale(int delta);
-    void placedFeatureDeltaScale(qreal scale);
-    void placedFeatureDeltaRotate(int delta);
-    void placedFeatureDeltaRotate(qreal rotate);
+    void placedTileDeltaX(int delta);
+    void placedTileDeltaY(int delta);
+    void placedTileDeltaScale(int delta);
+    void placedTileDeltaScale(qreal scale);
+    void placedTileDeltaRotate(int delta);
+    void placedTileDeltaRotate(qreal rotate);
 
-    void uniqueFeatureDeltaScale(int delta);
-    void uniqueFeatureDeltaScale(qreal scale);
-    void uniqueFeatureDeltaRotate(int delta);
-    void uniqueFeatureDeltaRotate(qreal rotate);
+    void uniqueTileDeltaScale(int delta);
+    void uniqueTileDeltaScale(qreal scale);
+    void uniqueTileDeltaRotate(int delta);
+    void uniqueTileDeltaRotate(qreal rotate);
 
 private:
     static TilingMakerPtr       spThis;
 
-    MouseActionPtr              mouse_interaction;
-
     UniqueQVector<TilingPtr>    tilings;
     TilingPtr                   selectedTiling;
 
+    MouseActionPtr              mouse_interaction;
     TilingSelectorPtr           clickedSelector;
     QPointF                     clickedSpt;
 
-    int                         poly_side_count;            // number of selected vertices when drawing polygons.
-    qreal                       poly_rotation;              // regular polygon feature rotation
     bool                        filled;                     // state - currently filled or not
+    int                         poly_side_count;            // number of selected vertices when drawing polygons.
+    qreal                       poly_rotation;              // regular polygon tile rotation
 
     class ViewControl         * view;
     class MotifMaker          * motifMaker;

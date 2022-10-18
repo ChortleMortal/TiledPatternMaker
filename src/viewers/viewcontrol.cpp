@@ -98,16 +98,6 @@ void ViewControl::slot_dontPaint(bool dont)
     dontPaint = dont;
 }
 
-void ViewControl::selectFeature(const FeaturePtr & wfp)
-{
-    selectedFeature = wfp;
-}
-
-FeaturePtr ViewControl::getSelectedFeature()
-{
-    return selectedFeature.lock();
-}
-
 void ViewControl::slot_unloadAll()
 {
     qDebug() << "ViewControl::slot_unloadAll";
@@ -134,9 +124,6 @@ void ViewControl::slot_unloadAll()
     dump(false);
 
     tilingMaker->unload();
-    dump(false);
-
-    selectedFeature.reset();
     dump(false);
 
     frameSettings.reInit();
@@ -217,7 +204,6 @@ void ViewControl::refreshView()
     // grid
     if (config->showGrid)
     {
-        gridView->create();    // re-create
         addLayer(gridView);
     }
 
@@ -343,7 +329,6 @@ void ViewControl::viewDesign()
             addLayer(dp->border);
         }
     }
-    setWindowTitle(designMaker->getDesignName());
 }
 
 void ViewControl::viewMosaic()
@@ -369,7 +354,6 @@ void ViewControl::viewMosaic()
             style->createStyleRepresentation();   // important to do this here
             addLayer(style);
         }
-        setWindowTitle(name);
 
         auto border = mosaic->getBorder();
         if (border)
@@ -384,7 +368,6 @@ void ViewControl::viewMosaic()
     else
     {
         qDebug() << "ViewController::viewMosaic - no mosaic";
-        setWindowTitle("");
     }
 
     ModelSettings & settings = mosaicMaker->getMosaicSettings();
@@ -398,11 +381,9 @@ void ViewControl::viewPrototype()
     PrototypePtr pp = motifMaker->getSelectedPrototype();
     if (!pp)
     {
-        qWarning() << "viewProtoFeature: no selected prototype";
+        qWarning() << "ViewControl::viewPrototype - no selected prototype";
         return;
     }
-
-    setWindowTitle("WS Proto Feature");
 
     prototypeView->setPrototype(pp);
     addLayer(prototypeView);
@@ -416,9 +397,6 @@ void ViewControl::viewMotifMaker()
 
     // dont set canvas xform
     addLayer(motifView);
-
-    QString astring = QString("Motif Maker");
-    setWindowTitle(astring);
 
    if (config->motifBkgdWhite)
         setBackgroundColor(QColor(Qt::white));
@@ -441,7 +419,6 @@ void ViewControl::viewTiling()
     addLayer(tilingView);
 
     setBackgroundColor(Qt::white);
-    setTitle(tiling);
 }
 
 void ViewControl::viewTilingMaker()
@@ -465,20 +442,10 @@ void ViewControl::viewMapEditor()
     addLayer(meView);
     meView->forceLayerRecalc();
 
-    setWindowTitle("Map Editor");
-
     if (config->motifBkgdWhite)
         setBackgroundColor(QColor(Qt::white));
     else
         setBackgroundColor(QColor(Qt::black));
-}
-
-void ViewControl::setTitle(TilingPtr tp)
-{
-    if (!tp) return;
-
-    QString str = QString("%1 : %2 : %3 : %4").arg(sViewerType[config->getViewerType()]).arg(tp->getName()).arg(tp->getDescription()).arg(tp->getAuthor());
-    setWindowTitle(str);
 }
 
 const Xform & ViewControl::getCurrentXform2()

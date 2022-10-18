@@ -8,7 +8,7 @@
 #include "misc/fileservices.h"
 #include "misc/pugixml.hpp"
 #include "widgets/layout_sliderset.h"
-#include "tile/placed_feature.h"
+#include "tile/placed_tile.h"
 
 using namespace pugi;
 using std::make_shared;
@@ -228,8 +228,8 @@ void GirihListSelect::selectAction()
 {
     qDebug() << "file:" << selectedFile;
 
-    frame->feature = make_shared<PlacedFeature>();
-    bool rv = frame->feature->loadFromGirihShape(selectedFile);
+    frame->tile = make_shared<PlacedTile>(nullptr);
+    bool rv = frame->tile->loadFromGirihShape(selectedFile);
     Q_ASSERT(rv);
 
     frame->update();
@@ -253,7 +253,7 @@ void AQFrame::paintEvent(QPaintEvent *event)
     painter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
 
     painter.setPen(QPen(Qt::black,3));
-    EdgePoly ep = feature->getFeatureEdgePoly();
+    EdgePoly ep = tile->getTileEdgePoly();
     QTransform tr = QTransform::fromTranslate(150,150);
     QTransform t2 = QTransform::fromScale(scale,scale);
     QTransform t3 = t2 * tr;

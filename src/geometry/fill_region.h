@@ -25,6 +25,7 @@
 
 #include <QTransform>
 #include "misc/unique_qvector.h"
+#include "settings/filldata.h"
 
 class FillData;
 
@@ -33,18 +34,18 @@ typedef std::shared_ptr<class Tiling> TilingPtr;
 class FillRegion
 {
 public:
-    FillRegion(TilingPtr tiling, FillData * fd);
+    FillRegion(TilingPtr tiling, const FillData & fd);
 
     QVector<QTransform> getTransforms();
 
 protected:
-    QTransform receive(int h, int v);
+    QTransform calcTransform(int h, int v);
 
 private:
     class Configuration * config;
 
     TilingPtr             tiling;
-    FillData *            fillData;
+    FillData              fillData;
 
     UniqueQVector<QTransform>   transforms;
 };

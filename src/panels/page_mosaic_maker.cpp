@@ -91,8 +91,8 @@ void  page_mosaic_maker::onRefresh()
 
         int xMin,xMax,yMin,yMax;
         bool singleton;
-        const FillData * fd = mosaic->getSettings().getFillData();
-        fd->get(singleton,xMin ,xMax,yMin,yMax);
+        const FillData & fd = mosaic->getSettings().getFillData();
+        fd.get(singleton,xMin ,xMax,yMin,yMax);
 
         chkSingle->setChecked(singleton);
         if (!singleton)
@@ -573,8 +573,8 @@ void page_mosaic_maker::slot_set_reps()
     FillData fd;
     fd.set(chkSingle->isChecked(),xRepMin->value(), xRepMax->value(), yRepMin->value(), yRepMax->value());
 
-    mosaic->getSettings().setFillData(&fd);
-    view->setFillData(&fd);
+    mosaic->getSettings().setFillData(fd);
+    view->setFillData(fd);
 
     emit sig_render();
 }
@@ -591,8 +591,8 @@ void page_mosaic_maker::singleton_changed(bool checked)
     if (!mosaic) return;
 
     ModelSettings & settings = mosaic->getSettings();
-    settings.setFillData(&fd);
-    view->setFillData(&fd);
+    settings.setFillData(fd);
+    view->setFillData(fd);
 
     emit sig_render();
 }

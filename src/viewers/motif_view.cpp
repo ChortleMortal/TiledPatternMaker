@@ -1,27 +1,27 @@
 #include "viewers/motif_view.h"
-#include "figures/extended_rosette.h"
-#include "figures/extended_star.h"
-#include "figures/figure.h"
-#include "figures/infer.h"
-#include "figures/radial_figure.h"
+#include "motifs/extended_rosette.h"
+#include "motifs/extended_star.h"
+#include "motifs/motif.h"
+#include "motifs/inference_engine.h"
+#include "motifs/radial_motif.h"
 #include "geometry/arcdata.h"
 #include "geometry/edge.h"
 #include "geometry/map.h"
 #include "geometry/transform.h"
 #include "geometry/vertex.h"
-#include "makers/motif_maker/feature_button.h"
+#include "makers/motif_maker/motif_button.h"
 #include "makers/motif_maker/motif_maker.h"
 #include "mosaic/design_element.h"
 #include "mosaic/prototype.h"
 #include "settings/configuration.h"
-#include "tile/feature.h"
-#include "tile/placed_feature.h"
+#include "tile/tile.h"
+#include "tile/placed_tile.h"
 #include "tile/tiling.h"
 #include "viewers/viewcontrol.h"
 
 using std::make_shared;
 
-typedef std::shared_ptr<RadialFigure>    RadialPtr;
+typedef std::shared_ptr<RadialMotif>    RadialPtr;
 
 MotifViewPtr MotifView::spThis;
 
@@ -59,15 +59,18 @@ void MotifView::paint(QPainter *painter)
 
     painter->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
 
-    //painter->translate(0,view->height());
-    //painter->scale(1.0, -1.0);
+#ifdef INVERT_MAP
+    // invert
+    painter->translate(0,view->height());
+    painter->scale(1.0, -1.0);
+#endif
 
     QTransform baseT;
 
     if (config->motifEnlarge)
     {
         ViewControl * view = ViewControl::getInstance();
-        baseT = FeatureButton::resetViewport(-2,del,view->rect());
+        baseT = MotifButton::resetViewport(-2,del,view->rect()) * getCanvasTransform();
     }
     else
     {
@@ -78,14 +81,14 @@ void MotifView::paint(QPainter *painter)
     auto tiling = proto->getTiling();
     for (auto del : motifMaker->getSelectedDesignElements())
     {
-        auto fig    = del->getFigure();     // for now just a single figure
-        auto feat   = del->getFeature();
+        auto motif  = del->getMotif();     // for now just a single motif
+        auto tile   = del->getTile();
         //qDebug() << "MotifView  this=" << this << "del:" << _dep.get() << "fig:" << _fig.get();
 
         QTransform placement;
         if (!config->motifEnlarge)
         {
-            placement = tiling->getPlacement(feat,0);
+            placement = tiling->getPlacement(tile,0);
         }
 
         _T = placement * baseT;
@@ -97,29 +100,33 @@ void MotifView::paint(QPainter *painter)
         if (config->showExtendedBoundary)
         {
             painter->setPen(QPen(Qt::yellow,3.0));
-            paintExtendedBoundary(painter,fig,feat);
+            paintExtendedBoundary(painter,motif);
         }
 
-        if (config->showFeatureBoundary)
+        if (config->showTileBoundary)
         {
             painter->setPen(QPen(Qt::magenta,2.0));
-            paintFeatureBoundary(painter,feat);
+            paintTileBoundary(painter,tile);
         }
 
-        if (config->showFigureBoundary)
+        if (config->showMotifBoundary)
         {
             painter->setPen(QPen(Qt::red,1.0));
-            paintRadialFigureBoundary(painter,fig);
+            paintMotifBoundary(painter,motif);
         }
 
         // paint figure
-        if (fig->isRadial())
+        if (config->showMotif)
         {
-            paintRadialFigureMap(painter,fig, QPen(Qt::blue, 2.0));
-        }
-        else
-        {
-            paintExplicitFigureMap(painter, fig, QPen(Qt::blue, 2.0));
+            painter->setPen(QPen(Qt::blue,2.0));
+            if (motif->isRadial())
+            {
+                paintRadialMotifMap(painter,motif);
+            }
+            else
+            {
+                paintExplicitMotifMap(painter, motif);
+            }
         }
 
         drawCenter(painter);
@@ -135,57 +142,67 @@ void MotifView::paint(QPainter *painter)
             painter->setPen(Qt::blue);
             for( int idx = 0; idx < debugContactPts.size(); ++idx )
             {
-                contact * c = debugContactPts.at(idx);
+                ContactPtr c = debugContactPts.at(idx);
                 painter->drawLine(_T.map(c->other), _T.map(c->position));
             }
         }
     }
 }
 
-void MotifView::paintExplicitFigureMap(QPainter *painter, FigurePtr fig, QPen pen)
+void MotifView::paintExplicitMotifMap(QPainter *painter, MotifPtr fig)
 {
-    qDebug() << "paintExplicitFigure" << fig->getFigureDesc();
+    qDebug() << "paintExplicitMotif<ap" << fig->getMotifDesc();
 
-    MapPtr map = fig->getFigureMap();
+    MapPtr map = fig->getMap();
     if (map)
     {
         //map->verifyMap( "paintExplicitFigure");
-        paintMap(painter,map,pen);
+        paintMap(painter,map);
+    }
+
+    DebugMapPtr dmap = fig->getDebugMap();
+    {
+        map = std::dynamic_pointer_cast<Map>(dmap);
+        if (map)
+        {
+            QColor color = (config->motifBkgdWhite) ? Qt::black : Qt::white;
+            painter->setPen(QPen(color,1.0));
+            paintMap(painter,map);
+        }
     }
 }
 
-void MotifView::paintRadialFigureMap(QPainter *painter, FigurePtr fig, QPen pen)
+void MotifView::paintRadialMotifMap(QPainter *painter, MotifPtr fig)
 {
-    qDebug() << "paintRadialFigure" << fig->getFigureDesc();
+    qDebug() << "paintRadialMotifMap" << fig->getMotifDesc();
 
     // Optimize for the case of a RadialFigure.
-    RadialPtr rp = std::dynamic_pointer_cast<RadialFigure>(fig);
+    RadialPtr rp = std::dynamic_pointer_cast<RadialMotif>(fig);
 
-    MapPtr map = rp->useBuiltMap();
-    if (!map || map->isEmpty())
-    {
-        map = rp->getFigureMap();
-    }
+    MapPtr map = rp->getMap();
+    paintMap(painter,map);
 
-    if (map)
+    DebugMapPtr dmap = rp->getDebugMap();
+    if (dmap)
     {
-        paintMap(painter,map,pen);
-    }
-
-    map = rp->useDebugMap();
-    if (map)
-    {
-        paintMap(painter,map,QPen(Qt::white,1.0));
+        map = std::dynamic_pointer_cast<Map>(dmap);
+        if (map)
+        {
+            QColor color = (config->motifBkgdWhite) ? Qt::black : Qt::white;
+            painter->setPen(QPen(color,1.0));
+            paintMap(painter,map);
+        }
     }
 
     if (config->highlightUnit)
     {
-        map = rp->useUnitMap();
-        paintMap(painter,map,QPen(Qt::red,3.0));
+        map = rp->getUnitMap();
+        painter->setPen(QPen(Qt::red,3.0));
+        paintMap(painter,map);
     }
 }
 
-void MotifView::paintFeatureBoundary(QPainter *painter,FeaturePtr feat)
+void MotifView::paintTileBoundary(QPainter *painter,TilePtr feat)
 {
     // draw feature
     // qDebug() << "scale" << feat->getScale();
@@ -195,41 +212,34 @@ void MotifView::paintFeatureBoundary(QPainter *painter,FeaturePtr feat)
     ep.paint(painter,_T);
 }
 
-void MotifView::paintRadialFigureBoundary(QPainter *painter, FigurePtr fig)
+void MotifView::paintMotifBoundary(QPainter *painter, MotifPtr fig)
 {
     // show boundaries
-    QPolygonF p1        = fig->getRadialFigBoundary();
-    painter->drawPolygon(_T.map(p1));
+    QPolygonF p = fig->getMotifBoundary();
+    painter->drawPolygon(_T.map(p));
 }
 
-void MotifView::paintExtendedBoundary(QPainter *painter,FigurePtr fig, FeaturePtr feat)
+void MotifView::paintExtendedBoundary(QPainter *painter,MotifPtr fig)
 {
-    QPolygonF p2        = fig->getExtBoundary();
-    bool drawCircle     = fig->hasExtCircleBoundary();
-    qreal boundaryScale = fig->getExtBoundaryScale();
+    const ExtendedBoundary & eb = fig->getExtendedBoundary();
 
-    QPointF center      = feat->getCenter();
-    QTransform ft       = QTransform::fromTranslate(center.x(), center.y());
-    p2                  = ft.map(p2);
-
-    if (!drawCircle)
+    if (!eb.isCircle())
     {
-        painter->drawPolygon(_T.map(p2));
+        const QPolygonF & p = eb.get();
+        painter->drawPolygon(_T.map(p));
     }
     else
     {
-        qreal scale = Transform::scalex(_T);
-        painter->drawEllipse(_T.map(QPointF(0,0)),boundaryScale*scale,boundaryScale*scale);
+        qreal radius = eb.scale * Transform::scalex(_T);
+        painter->drawEllipse(_T.map(QPointF(0,0)),radius,radius);
     }
 }
 
-void MotifView::paintMap(QPainter * painter, MapPtr map, QPen pen)
+void MotifView::paintMap(QPainter * painter, MapPtr map)
 {
     //map->verify("figure", true, true, true);
-
-    painter->setPen(pen);
-
-    for (auto edge : map->getEdges())
+    qDebug() << "MotifView::paintMap" <<  map->namedSummary();
+    for (auto & edge : qAsConst(map->getEdges()))
     {
         QPointF p1 = _T.map(edge->v1->pt);
         QPointF p2 = _T.map(edge->v2->pt);
@@ -252,18 +262,30 @@ void MotifView::paintMap(QPainter * painter, MapPtr map, QPen pen)
         }
     }
 
-    for (const auto & stxt : map->getTexts())
+    QFont font = painter->font();
+    font.setPixelSize(14);
+    painter->setFont(font);
+    const QVector<QPair<QPointF,QString>> & texts = map->getTexts();
+    for (auto & pair : texts)
     {
+
+        QPointF pt  = pair.first;
+        QString txt = pair.second;
+#ifdef INVERT_VIEW
         painter->save();
         painter->scale(1.0, -1.0);
         QTransform t2 = _T * QTransform().scale(1.0,-1.0);
-        QPointF pt = t2.map(stxt.pt);
-        painter->drawText(QPointF(pt.x()+7,pt.y()+13),stxt.txt);
+        pt = t2.map(pt);
+        painter->drawText(QPointF(pt.x()+7,pt.y()+13),txt);
         painter->restore();
+#else
+        pt = _T.map(pt);
+        painter->drawText(QPointF(pt.x()+7,pt.y()+13),txt);
+#endif
     }
 }
 
-void MotifView::setDebugContacts(bool enb, QPolygonF pts, QVector<contact*> contacts)
+void MotifView::setDebugContacts(bool enb, QPolygonF pts, QVector<ContactPtr> contacts)
 {
     debugContacts   = enb;
     debugPts        = pts;

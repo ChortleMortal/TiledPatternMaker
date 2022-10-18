@@ -45,7 +45,7 @@ public:
     bool    convertToMotif(MapPtr map);
     bool    convertToTiling(MapPtr map, bool outer);
 
-    void    updateStatus();
+    QString  getStatus();
 
     bool    procKeyEvent(QKeyEvent *k);
 

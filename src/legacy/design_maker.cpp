@@ -295,7 +295,7 @@ void DesignMaker::designScale(int delta)
 void DesignMaker::designRotate(int delta)
 {
     Q_UNUSED(delta);
-    qWarning("DesignMaker::designRotate - not implemented");
+    //qWarning("DesignMaker::designRotate - not implemented");
 }
 
 void DesignMaker::designMoveY(int delta)

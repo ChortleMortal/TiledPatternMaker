@@ -1,26 +1,30 @@
 <?xml version="1.0"?>
-<vector id="1" version="8">
+<!-- Written: Mon Oct 17 2022 15:19:27 -->
+<vector id="1" version="13">
 	<designNotes>algo 3 colors</designNotes>
 	<design>
 		<size>
 			<width>1500</width>
 			<height>1100</height>
+			<zwidth>1500</zwidth>
+			<zheight>1100</zheight>
 		</size>
 		<background>
 			<color>#ff000000</color>
 		</background>
-		<Fill>-4,4,-5,5</Fill>
+		<Fill singleton="f">-4,4,-5,5</Fill>
 	</design>
-	<style.Thick id="2" serialization="custom">
+	<style.Thick id="2">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
 			<top__delta>0</top__delta>
 			<width__delta>1</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>0,0</center>
+			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<prototype id="3" serialization="custom">
+			<prototype id="3">
 				<app.Prototype>
 					<string>regular-4</string>
 					<entry>
@@ -47,7 +51,7 @@
 								</Line>
 							</edges>
 						</tile.Feature>
-						<app.ExplicitFigure id="10" type="FIG_TYPE_EXPLICIT">
+						<app.ExplicitFigure id="10" type="MOTIF_TYPE_EXPLICIT">
 							<map id="11">
 								<vertices id="12">
 									<Vertex id="13">
@@ -753,92 +757,6 @@
 										<v2 reference="91" />
 									</Edge>
 								</edges>
-								<neighbours>
-									<neighbourset reference="27">117,115</neighbourset>
-									<neighbourset reference="35">131,125</neighbourset>
-									<neighbourset reference="49">150,149,147,138</neighbourset>
-									<neighbourset reference="50">151,150</neighbourset>
-									<neighbourset reference="55">158,151</neighbourset>
-									<neighbourset reference="59">162,158</neighbourset>
-									<neighbourset reference="60">164,163,156,162</neighbourset>
-									<neighbourset reference="69">178,164</neighbourset>
-									<neighbourset reference="74">186,178</neighbourset>
-									<neighbourset reference="88">192</neighbourset>
-									<neighbourset reference="81">198,193</neighbourset>
-									<neighbourset reference="78">192,193,191,186</neighbourset>
-									<neighbourset reference="31">125,124,117,109</neighbourset>
-									<neighbourset reference="39">138,131</neighbourset>
-									<neighbourset reference="92">199</neighbourset>
-									<neighbourset reference="83">201,200</neighbourset>
-									<neighbourset reference="93">202,201</neighbourset>
-									<neighbourset reference="82">199,200,190,198</neighbourset>
-									<neighbourset reference="84">202,203,185,181</neighbourset>
-									<neighbourset reference="13">104</neighbourset>
-									<neighbourset reference="26">115,116,114,104</neighbourset>
-									<neighbourset reference="94">209,208</neighbourset>
-									<neighbourset reference="91">209,196</neighbourset>
-									<neighbourset reference="90">208,203</neighbourset>
-									<neighbourset reference="80">196,197,183,184</neighbourset>
-									<neighbourset reference="95">204,197</neighbourset>
-									<neighbourset reference="85">204,205</neighbourset>
-									<neighbourset reference="96">206</neighbourset>
-									<neighbourset reference="87">195,207</neighbourset>
-									<neighbourset reference="79">195,194,187,188</neighbourset>
-									<neighbourset reference="89">194</neighbourset>
-									<neighbourset reference="75">187,179</neighbourset>
-									<neighbourset reference="86">206,207,189,205</neighbourset>
-									<neighbourset reference="52">153,148</neighbourset>
-									<neighbourset reference="28">118,119,106,99</neighbourset>
-									<neighbourset reference="23">113,112,110,102</neighbourset>
-									<neighbourset reference="30">123,122,108,111</neighbourset>
-									<neighbourset reference="44">143,142,140,139</neighbourset>
-									<neighbourset reference="33">129,128,123,112</neighbourset>
-									<neighbourset reference="15">103,101</neighbourset>
-									<neighbourset reference="42">132,137</neighbourset>
-									<neighbourset reference="61">165,166,161,163</neighbourset>
-									<neighbourset reference="63">169,168</neighbourset>
-									<neighbourset reference="48">147,148,146,126</neighbourset>
-									<neighbourset reference="19">107,101</neighbourset>
-									<neighbourset reference="34">130,122</neighbourset>
-									<neighbourset reference="37">135,134,129,121</neighbourset>
-									<neighbourset reference="77">191,190,180,165</neighbourset>
-									<neighbourset reference="51">152,144</neighbourset>
-									<neighbourset reference="73">185,184,176,175</neighbourset>
-									<neighbourset reference="68">176,177</neighbourset>
-									<neighbourset reference="29">120,121,100,107</neighbourset>
-									<neighbourset reference="17">102</neighbourset>
-									<neighbourset reference="14">105,99</neighbourset>
-									<neighbourset reference="57">160,155</neighbourset>
-									<neighbourset reference="45">145,144,143,128</neighbourset>
-									<neighbourset reference="36">132,133,120,119</neighbourset>
-									<neighbourset reference="18">106,103</neighbourset>
-									<neighbourset reference="38">136,137,118,127</neighbourset>
-									<neighbourset reference="46">145,134</neighbourset>
-									<neighbourset reference="67">174,175</neighbourset>
-									<neighbourset reference="22">110,111</neighbourset>
-									<neighbourset reference="41">135,133</neighbourset>
-									<neighbourset reference="25">114,105</neighbourset>
-									<neighbourset reference="54">156,157,153,149</neighbourset>
-									<neighbourset reference="62">167,166</neighbourset>
-									<neighbourset reference="65">172,173,154,170</neighbourset>
-									<neighbourset reference="64">171,170,160,168</neighbourset>
-									<neighbourset reference="43">140,141</neighbourset>
-									<neighbourset reference="53">155,154,142,152</neighbourset>
-									<neighbourset reference="21">109</neighbourset>
-									<neighbourset reference="70">179,172</neighbourset>
-									<neighbourset reference="66">159,173</neighbourset>
-									<neighbourset reference="72">183,182,169,177</neighbourset>
-									<neighbourset reference="32">126,127,116,124</neighbourset>
-									<neighbourset reference="56">159,141</neighbourset>
-									<neighbourset reference="58">161,157</neighbourset>
-									<neighbourset reference="76">189,188,171,182</neighbourset>
-									<neighbourset reference="24">113,98</neighbourset>
-									<neighbourset reference="47">146,136</neighbourset>
-									<neighbourset reference="20">108</neighbourset>
-									<neighbourset reference="40">139,130</neighbourset>
-									<neighbourset reference="71">180,181,174,167</neighbourset>
-									<neighbourset reference="16">100,98</neighbourset>
-								</neighbours>
 							</map>
 							<boundarySides>4</boundarySides>
 							<boundaryScale>1</boundaryScale>
@@ -855,15 +773,18 @@
 		<style.Thick>
 			<draw__outline>false</draw__outline>
 			<width>0.02</width>
+			<join>round</join>
+			<cap>round</cap>
 		</style.Thick>
 	</style.Thick>
-	<style.Filled id="210" serialization="custom">
+	<style.Filled id="210">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
 			<top__delta>0</top__delta>
 			<width__delta>1</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>0,0</center>
+			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
 			<prototype reference="3" />
@@ -965,8 +886,8 @@
 				<color hide="f">#ff1840b2</color>
 			</Group>
 			<Group hideSet="f">
-				<color hide="f">#ffa35807</color>
-				<color hide="f">#ff1840b2</color>
+				<color hide="f">#ffffff00</color>
+				<color hide="f">#ffffffff</color>
 			</Group>
 			<Group hideSet="f">
 				<color hide="f">#ffa35807</color>
@@ -1005,12 +926,24 @@
 				<color hide="f">#ff1840b2</color>
 			</Group>
 			<Group hideSet="f">
+				<color hide="f">#ff1840b2</color>
+				<color hide="f">#ffa35807</color>
+			</Group>
+			<Group hideSet="f">
 				<color hide="f">#ffa35807</color>
 				<color hide="f">#ff1840b2</color>
 			</Group>
 			<Group hideSet="f">
 				<color hide="f">#ffa35807</color>
 				<color hide="f">#ff1840b2</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ffa35807</color>
+				<color hide="f">#ff1840b2</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+				<color hide="f">#ffffffff</color>
 			</Group>
 			<Group hideSet="f">
 				<color hide="f">#ffa35807</color>

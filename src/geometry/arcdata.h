@@ -34,8 +34,6 @@ protected:
     QRectF  getRect(QPointF center, qreal radius);
     QPointF getCenterNew(QPointF p1, QPointF p2, qreal radius, bool convex);
 
-    QPointF reflectPoint(QPointF p, QLineF line);
-
     void calcConvex(QPointF p1, QPointF p2, QPointF c);
     void calcConcave(QPointF p1, QPointF p2, QPointF c);
 

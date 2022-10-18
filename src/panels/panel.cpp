@@ -7,10 +7,12 @@
 #include "widgets/panel_pagesWidget.h"
 #include "tiledpatternmaker.h"
 #include "misc/version.h"
+#include "makers/mosaic_maker/mosaic_maker.h"
+#include "makers/tiling_maker/tiling_maker.h"
 #include "panels/page_background_image.h"
 #include "panels/page_borders.h"
 #include "panels/page_config.h"
-#include "panels/page_crop.h"
+#include "panels/page_crop_maker.h"
 #include "panels/page_grid.h"
 #include "panels/page_debug.h"
 #include "panels/page_mosaic_maker.h"
@@ -23,12 +25,16 @@
 #include "panels/page_motif_maker.h"
 #include "panels/page_prototype_info.h"
 #include "panels/page_save.h"
-#include "panels/page_style_figure_info.h"
+#include "panels/page_mosaic_info.h"
 #include "panels/page_system_info.h"
 #include "panels/page_tiling_maker.h"
 #include "widgets/mouse_mode_widget.h"
 #include "viewers/grid.h"
 #include "viewers/viewcontrol.h"
+#include "mosaic/mosaic.h"
+#include "tile/tiling.h"
+#include "legacy/design_maker.h"
+#include "makers/map_editor/map_editor.h"
 
 extern void closeHandle();
 
@@ -75,25 +81,13 @@ ControlPanel::ControlPanel() : AQWidget()
     setWindowFlag(Qt::WindowMinimizeButtonHint,true);
 #endif
 
-    splash = new TPMSplash();
+    loadState = LOADING_NONE;
 
-    QString title;
-#ifdef QT_DEBUG
-    title  = "Control Panel - Debug - Version ";
-#else
-    title = "Control Panel - Release - Version ";
-#endif
-    title += tpmVersion;
-    if  (!gitBranch.isEmpty())
-    {
-        title += " [";
-        title += gitBranch;
-        title += "]";
-    }
-    title  += "  ";
     config  = Configuration::getInstance();
-    title  += config->rootMediaDir;
-    setWindowTitle(title);
+
+    getPanelInfo();
+
+    splash = new TPMSplash();
 
     QSettings s;
     move(s.value("panelPos").toPoint());
@@ -104,6 +98,8 @@ void ControlPanel::init(TiledPatternMaker * parent)
     maker   = parent;
     closed  = false;
     view    = ViewControl::getInstance();
+    mosaicMaker = MosaicMaker::getInstance();
+    tilingMaker = TilingMaker::getSharedInstance();
 
     exclusiveViews = true;
     updateLocked   = false;
@@ -217,21 +213,20 @@ void ControlPanel::setupGUI()
         QPushButton * pbLogEvent      = new QPushButton("Log Event");
         QPushButton * pbUpdateView    = new QPushButton("Repaint View");
         QPushButton * pbRefreshView   = new QPushButton("Recreate View");
+        QPushButton * pbSaveLog       = new QPushButton("Save Log");
 
-        cbUpdate = new QCheckBox("Update Pages");
-        cbUpdate->setChecked(config->updatePanel);
 
+        hlayout->addWidget(pbSaveLog);
         hlayout->addWidget(pbLogEvent);
         hlayout->addStretch();
         hlayout->addWidget(pbRefreshView  );
         hlayout->addWidget(pbUpdateView);
         hlayout->addStretch();
-        hlayout->addWidget(cbUpdate);
 
         connect(pbUpdateView,       &QPushButton::clicked,  this,     &ControlPanel::updateView);
         connect(pbLogEvent,         &QPushButton::clicked,  this,     &ControlPanel::slot_logEvent);
-        connect(pbRefreshView  ,    &QPushButton::clicked,  view,     &ViewControl::slot_refreshView);
-        connect(cbUpdate,           &QCheckBox::clicked,    this,     &ControlPanel::updateClicked);
+        connect(pbRefreshView,      &QPushButton::clicked,  view,     &ViewControl::slot_refreshView);
+        connect(pbSaveLog,          &QPushButton::clicked,  this,     &ControlPanel::sig_saveLog);
     }
 
     hlayout->addStretch();
@@ -403,7 +398,7 @@ void ControlPanel::populatePages()
     panelPages->addWidget(wp);
     panelPageList->addItem(wp->getName());
 
-    wp = new page_crop(this);
+    wp = new page_crop_maker(this);
     mPages.push_back(wp);
     panelPages->addWidget(wp);
     panelPageList->addItem(wp->getName());
@@ -480,6 +475,9 @@ void ControlPanel::populatePages()
         mPages.push_back(wp);
         panelPages->addWidget(wp);
         panelPageList->addItem(wp->getName());
+
+        page_log * pageLog = dynamic_cast<page_log*>(wp);
+        connect(this, &ControlPanel::sig_saveLog, pageLog, &page_log::slot_copyLog);
 
         wp = new page_debug(this);
         mPages.push_back(wp);
@@ -669,6 +667,8 @@ void ControlPanel::slot_poll()
 
     updateGeometry();
 
+    setWindowTitles();
+
     updateLocked = false;
 }
 
@@ -728,11 +728,6 @@ void ControlPanel::slot_raise()
 void ControlPanel::slot_exit()
 {
     qApp->exit();
-}
-
-void  ControlPanel::updateClicked(bool enb)
-{
-    config->updatePanel = enb;
 }
 
 void  ControlPanel::updateView(bool enb)
@@ -807,8 +802,8 @@ void ControlPanel::delegateKeyboardMouse(eViewType viewType)
         kbdModeCombo->insertItem(100,"Adjust Selected",  QVariant(KBD_MODE_XFORM_SELECTED));
         kbdModeCombo->insertItem(100,"Adjust Background",QVariant(KBD_MODE_XFORM_BKGD));
         kbdModeCombo->insertItem(100,"Adjust Tiling",    QVariant(KBD_MODE_XFORM_TILING));
-        kbdModeCombo->insertItem(100,"Adjust Unique Feature", QVariant(KBD_MODE_XFORM_UNIQUE_FEATURE));
-        kbdModeCombo->insertItem(100,"Adjust Placed Feature", QVariant(KBD_MODE_XFORM_PLACED_FEATURE));
+        kbdModeCombo->insertItem(100,"Adjust Unique Tile", QVariant(KBD_MODE_XFORM_UNIQUE_TILE));
+        kbdModeCombo->insertItem(100,"Adjust Placed Tile", QVariant(KBD_MODE_XFORM_PLACED_TILE));
     }
 
     kbdModeCombo->blockSignals(false);
@@ -845,8 +840,8 @@ eKbdMode ControlPanel::getValidDesignMode(eKbdMode mode)
     case KBD_MODE_XFORM_SELECTED:
     case KBD_MODE_XFORM_BKGD:
     case KBD_MODE_XFORM_TILING:
-    case KBD_MODE_XFORM_UNIQUE_FEATURE:
-    case KBD_MODE_XFORM_PLACED_FEATURE:
+    case KBD_MODE_XFORM_UNIQUE_TILE:
+    case KBD_MODE_XFORM_PLACED_TILE:
         break;
     }
     return KBD_MODE_DES_LAYER_SELECT;
@@ -860,8 +855,8 @@ eKbdMode ControlPanel::getValidMosaicMode(eKbdMode mode)
     case KBD_MODE_XFORM_SELECTED:
     case KBD_MODE_XFORM_BKGD:
     case KBD_MODE_XFORM_TILING:
-    case KBD_MODE_XFORM_UNIQUE_FEATURE:
-    case KBD_MODE_XFORM_PLACED_FEATURE:
+    case KBD_MODE_XFORM_UNIQUE_TILE:
+    case KBD_MODE_XFORM_PLACED_TILE:
         return mode;
     case KBD_MODE_DES_POS:
     case KBD_MODE_DES_LAYER_SELECT:
@@ -929,10 +924,6 @@ void ControlPanel::slot_showBackChanged(bool enb)
 void ControlPanel::slot_showGridChanged(bool enb)
 {
     config->showGrid = enb;
-    if (enb)
-    {
-        Grid::getSharedInstance()->create();
-    }
     emit sig_refreshView();
 }
 
@@ -1047,6 +1038,87 @@ void  ControlPanel::selectViewer(int id)
 #endif
 }
 
+void ControlPanel::getPanelInfo()
+{
+#ifdef QT_DEBUG
+    panelInfo  = "Control Panel - Debug - Version ";
+#else
+    panelInfo = "Control Panel - Release - Version ";
+#endif
+    panelInfo += tpmVersion;
+    if  (!gitBranch.isEmpty())
+    {
+        panelInfo += " [";
+        panelInfo += gitBranch;
+        panelInfo += "]";
+    }
+    panelInfo  += "  ";
+    config  = Configuration::getInstance();
+    panelInfo  += config->rootMediaDir;
+}
+
+void ControlPanel::setWindowTitles()
+{
+    // The control panel show transient status. The view shows whats loaded
+    QString sLoading;
+    switch (loadState)
+    {
+    case LOADING_NONE:
+        break;
+
+    case LOADING_MOSAIC:
+        sLoading = QString("  Loading Mosaic: %1").arg(loadName);
+        break;
+
+    case LOADING_TILING:
+        sLoading = QString("  Loading Tiling: %1").arg(loadName);
+        break;
+    }
+    QString title = panelInfo + sLoading;
+    setWindowTitle(title);
+
+    // The view
+    if (!view->isEnabled(VIEW_DESIGN))
+    {
+        // regular case
+        QString sMosaic;
+        auto mosaic = mosaicMaker->getMosaic();
+        if (mosaic)
+        {
+            sMosaic = mosaic->getName();
+        }
+
+        QString sTiling;
+        auto tiling = tilingMaker->getSelected();
+        if (tiling)
+        {
+            sTiling = tiling->getName();
+        }
+
+        QString title  = QString("Mosaic: %1   Tiling: %2  ").arg(sMosaic).arg(sTiling);
+
+        if (view->isEnabled(VIEW_MAP_EDITOR))
+        {
+            title += MapEditor::getInstance()->getStatus();
+        }
+
+        view->setViewTitle(title);
+    }
+    else
+    {
+        // legacy case
+        QString sDesign = DesignMaker::getInstance()->getDesignName();
+        QString title   = QString("Design: %1").arg(sDesign);
+        view->setViewTitle(title);
+    }
+}
+
+void ControlPanel::setLoadState(eLoadState state, QString name)
+{
+    loadState = state;
+    loadName  = name;
+}
+
 void  ControlPanel::slot_Viewer_pressed(int id, bool enable)
 {
     eViewType viewType = static_cast<eViewType>(id);
@@ -1076,19 +1148,19 @@ void  ControlPanel::slot_Viewer_pressed(int id, bool enable)
 
 void ControlPanel::slot_multiSelect(bool enb)
 {
-    int max = (config->insightMode) ? VIEW_MAX : VIEW_DESIGNER_MAX;
+    auto vbuttons = viewerGroup.buttons();
     // this is a mirror of the page views control
     exclusiveViews = !enb;
     if (!enb)
     {
         viewerGroup.blockSignals(true);
-        for (int i=0; i <= max; i++ )
+        for (auto button : vbuttons)
         {
-            if (i == config->getViewerType())
+            if (viewerGroup.id(button) == config->getViewerType())
             {
                 continue;
             }
-            viewerGroup.button(i)->setChecked(false);
+            button->setChecked(false);
         }
         viewerGroup.blockSignals(false);
     }

@@ -10,8 +10,8 @@
 #include "makers/mosaic_maker/mosaic_maker.h"
 #include "makers/motif_maker/motif_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
-#include "figures/figure.h"
-#include "figures/explicit_figure.h"
+#include "motifs/motif.h"
+#include "motifs/explicit_motif.h"
 #include "geometry/crop.h"
 #include "geometry/dcel.h"
 #include "geometry/edge.h"
@@ -24,8 +24,8 @@
 #include "panels/panel.h"
 #include "settings/configuration.h"
 #include "style/style.h"
-#include "tile/feature.h"
-#include "tile/placed_feature.h"
+#include "tile/tile.h"
+#include "tile/placed_tile.h"
 #include "viewers/viewcontrol.h"
 
 using std::make_shared;
@@ -165,12 +165,12 @@ bool  MapEditor::loadSelectedMotifs()
     {
         db->getDesignElements().push_back(delp);
 
-        auto figure  = delp->getFigure();
-        if (figure)
+        auto motif  = delp->getMotif();
+        if (motif)
         {
-            MapPtr map  = figure->getFigureMap();
-            auto feature = delp->getFeature();
-            QTransform placement = meView->getPlacement(feature);
+            MapPtr map  = motif->getMap();
+            auto tile = delp->getTile();
+            QTransform placement = meView->getPlacement(tile);
             MapPtr tmap = map->getTransformed(placement);
 
             db->insertLayer(MapEditorLayer(tmap,MAPED_LOADED_FROM_MOTIF,delp));
@@ -323,13 +323,13 @@ bool MapEditor::pushToMosaic(MapEditorLayer & layer)
 
         // the mosaic needs to be fed a map in to prototype whichi it can style
         // we could use passing a prortype which has a map but no tiling
-        // but lets fake it out by creating an explicit figure from the feature
+        // but lets fake it out by creating an explicit motif from the tile
         // the real issue is having a prototype disconnected from a tiling !
 
         EdgePoly ep(map->getEdges());
-        auto feature = make_shared<Feature>(ep);
-        auto figure  = make_shared<ExplicitFigure>(map,FIG_TYPE_EXPLICIT,10);   // FIXME 10 is arbitrary
-        auto del = make_shared<DesignElement>(feature,figure);
+        auto tile = make_shared<Tile>(ep);
+        auto motif  = make_shared<ExplicitMotif>(map,MOTIF_TYPE_EXPLICIT,10);   // FIXME 10 is arbitrary
+        auto del = make_shared<DesignElement>(tile,motif);
 
         auto proto = make_shared<Prototype>(map);
         proto->addElement(del);
@@ -369,8 +369,8 @@ bool MapEditor::convertToMotif(MapPtr map)
     if (!delp)
         return false;
 
-    FigurePtr fig = make_shared<ExplicitFigure>(map,FIG_TYPE_EXPLICIT,10); // todo - specify number of sides
-    delp->setFigure(fig);
+    MotifPtr fig = make_shared<ExplicitMotif>(map,MOTIF_TYPE_EXPLICIT,10); // todo - specify number of sides
+    delp->setMotif(fig);
 
     return true;
 }
@@ -382,33 +382,34 @@ bool MapEditor::convertToTiling(MapPtr map, bool outer)
     // if a tiling map has been modified, this backs out the map, leaving just the additions.
     if (mapType == MAPED_LOADED_FROM_TILING_UNIT && db->getTiling())
     {
-        qDebug() << map->summary();
+        qDebug() << map->namedSummary();
         map->removeMap(db->createdTilingMap);
-        qDebug() << map->summary();
+        qDebug() << map->namedSummary();
         forceRedraw();
     }
 
-    // converts the remaining map to DCELs so that featurees can be made
+    // converts the remaining map to DCELs so that tiles can be made
     createLocalDCEL(map);
     DCELPtr dcel = db->getLocaldDCEL();
 
     const FaceSet & faces = dcel->getFaceSet();
     qDebug() << "num new faces =" << faces.size();
 
-    QVector<PlacedFeaturePtr> qvec_pf;
+    auto tiling = tilingMaker->getSelected();
+    QVector<PlacedTilePtr> qvec_pf;
     for (auto & face : qAsConst(faces))
     {
         if (  (!outer && !face->outer)
             ||( outer &&  face->outer))
         {
             EdgePoly ep = *face;
-            FeaturePtr fp        = make_shared<Feature>(ep);
-            PlacedFeaturePtr pfp = make_shared<PlacedFeature>(fp,QTransform());
+            TilePtr fp        = make_shared<Tile>(ep);
+            PlacedTilePtr pfp = make_shared<PlacedTile>(tiling.get(),fp,QTransform());
             qvec_pf.push_back(pfp);
         }
     }
 
-    tilingMaker->addNewPlacedFeatures(qvec_pf);
+    tilingMaker->addNewPlacedTiles(qvec_pf);
 
     // aligns the tiling maker to the map editor
     const Xform & xf = meView->getCanvasXform();
@@ -425,9 +426,9 @@ void MapEditor::cleanupMapPoints()
     qreal tolerance = Configuration::getInstance()->mapedMergeSensitivity;
 
     MapPtr cleaned = std::make_shared<Map>("Cleanup map");
-    qDebug() << map->summary();
+    qDebug() << map->namedSummary();
     cleaned->mergeMap(map,tolerance);
-    qDebug() << cleaned->summary();
+    qDebug() << cleaned->namedSummary();
     cleaned->deDuplicateVertices(tolerance);
 
     map->set(cleaned);
@@ -478,7 +479,7 @@ void MapEditor::flipLineExtension()
     }
 }
 
-void MapEditor::updateStatus()
+QString MapEditor::getStatus()
 {
     QString s("Map Editor:: ");
     s += sMapEditorMouseMode[db->getMouseMode()];
@@ -488,7 +489,7 @@ void MapEditor::updateStatus()
         s += "  ";
         s += mma->desc;
     }
-    view->setWindowTitle(s);
+    return s;
 }
 
 bool MapEditor::loadCurrentStash()

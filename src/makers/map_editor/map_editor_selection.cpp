@@ -1,7 +1,7 @@
 #include <QDebug>
 
 #include "makers/map_editor/map_editor_selection.h"
-#include "figures/figure.h"
+#include "motifs/motif.h"
 #include "geometry/circle.h"
 #include "geometry/crop.h"
 #include "geometry/dcel.h"
@@ -17,7 +17,7 @@
 #include "misc/utilities.h"
 #include "mosaic/design_element.h"
 #include "settings/configuration.h"
-#include "tile/feature.h"
+#include "tile/tile.h"
 #include "viewers/map_editor_view.h"
 
 using std::make_shared;
@@ -52,13 +52,13 @@ void  MapEditorSelection::buildEditorDB()
             for (auto map : db->getDrawMaps())
 	        {
 	            // add points from map vertices
-	            for (const auto & vert : map->getVertices())
+                for (const auto & vert : qAsConst(map->getVertices()))
 	            {
 	                pointInfo pi(PT_VERTEX,vert,"vertex");
 	                points.push_back(pi);
 	            }
 
-	            for (auto edge : map->getEdges())
+                for (auto & edge :qAsConst(map->getEdges()))
 	            {
 	                // add lines from map edges
 	                lineInfo li(LINE_EDGE,edge,"edge");
@@ -237,22 +237,22 @@ void MapEditorSelection::buildMotifDB(DesignElementPtr delp)
 {
     Q_ASSERT(delp);
 
-    FigurePtr  figure = delp->getFigure();
-    FeaturePtr feature = delp->getFeature();
+    MotifPtr  motif = delp->getMotif();
+    TilePtr tile = delp->getTile();
 
-    QTransform placement = meView->getPlacement(feature);
-
+    QTransform placement  = meView->getPlacement(tile);
+    const ExtendedBoundary & eb = motif->getExtendedBoundary();
     if (db->showBoundaries)
     {
         // add points from ext boundary
-        QPolygonF rextBoundary  =  figure->getExtBoundary();
-        QPolygonF extBoundary   =  placement.map(rextBoundary);
+        const QPolygonF & rextBoundary = eb.get();
+        QPolygonF extBoundary  = placement.map(rextBoundary);
 
         if (extBoundary.size())
         {
-            if (feature)
+            if (tile)
             {
-                QPointF center = feature->getCenter();
+                QPointF center = tile->getCenter();
                 QTransform t0  = QTransform::fromTranslate(center.x(),center.y());
                 extBoundary    = t0.map(extBoundary);
             }
@@ -288,9 +288,9 @@ void MapEditorSelection::buildMotifDB(DesignElementPtr delp)
             }
         }
 
-        // add points from radial figure boundary
-        QPolygonF rfigBoundary = figure->getRadialFigBoundary();
-        QPolygonF figBoundary  = placement.map(rfigBoundary);
+        // add points from radial motif boundary
+        QPolygonF figBoundary = motif->getMotifBoundary();
+        figBoundary            = placement.map(figBoundary);
         if (figBoundary.size())
         {
             for (auto apt : figBoundary)
@@ -302,11 +302,11 @@ void MapEditorSelection::buildMotifDB(DesignElementPtr delp)
             QVector<QLineF> edges = Utils::polyToLines(figBoundary);
             for (auto line : edges)
             {
-                // add line from radial figure boundary
+                // add line from radial motif boundary
                 lineInfo li(LINE_FIXED,line,"radial fig boundary line");
                 lines.push_back(li);
 
-                // add point from raidal figure boundary
+                // add point from raidal motif boundary
                 QPointF midPt = line.pointAt(0.5);
                 pointInfo pi(PT_LINE_MID,midPt,"mid-point radial fig boundary");
                 points.push_back(pi);
@@ -325,39 +325,39 @@ void MapEditorSelection::buildMotifDB(DesignElementPtr delp)
         }
 
         // add external boundary circle
-        if (figure->hasExtCircleBoundary())
+        if (eb.isCircle())
         {
-            auto c = make_shared<Circle>(QPointF(0,0), figure->getExtBoundaryScale());
+            auto c = make_shared<Circle>(QPointF(0,0), eb.scale);
             circles.push_back(c);
         }
     }
 
-    // add points from feature
-    if (feature)
+    // add points from tile
+    if (tile)
     {
-        QPolygonF poly = feature->getPoints();
+        QPolygonF poly = tile->getPolygon();
         if (poly.size())
         {
             poly = placement.map(poly);
 
             for (auto apt : poly)
             {
-                pointInfo pi(PT_LINE,apt,"feature point");
+                pointInfo pi(PT_LINE,apt,"tile point");
                 points.push_back(pi);
             }
 
-            EdgePoly edges0 = feature->getEdgePoly();
+            EdgePoly edges0 = tile->getEdgePoly();
             EdgePoly edges  = edges0.map(placement);
             for (auto edge : edges)
             {
-                // add lines from feature edges
+                // add lines from tile edges
                 QLineF line = edge->getLine();
-                lineInfo li(LINE_FIXED,line,"feature line");
+                lineInfo li(LINE_FIXED,line,"tile line");
                 lines.push_back(li);
 
-                // add point from feature edge mid-points
+                // add point from tile edge mid-points
                 QPointF midPt = line.pointAt(0.5);
-                pointInfo pi(PT_LINE_MID,midPt,"mid-point feature");
+                pointInfo pi(PT_LINE_MID,midPt,"mid-point tile");
                 points.push_back(pi);
             }
 
@@ -434,10 +434,11 @@ SelectionSet  MapEditorSelection::findSelectionsUsingDB(const QPointF & spt)
         if (delp)
         {
             Q_ASSERT (db->isMotif(layer.type));
-            FigurePtr figp = delp->getFigure();
-            if (figp && figp->hasExtCircleBoundary())
+            MotifPtr figp = delp->getMotif();
+            const ExtendedBoundary & eb = figp->getExtendedBoundary();
+            if (eb.isCircle())
             {
-                qreal bscale    = figp->getExtBoundaryScale();
+                qreal bscale    = eb.scale;
                 qreal scale     = Transform::scalex(meView->viewT) * bscale;
                 qreal radius    = 1.0 * scale;
                 QPointF center  = QPointF(0.0,0.0);
@@ -543,7 +544,7 @@ MapSelectionPtr MapEditorSelection::findVertex(QPointF spt , VertexPtr exclude)
     if (!map)
         return sel;
 
-    for (auto vp : map->getVertices())
+    for (auto & vp :qAsConst(map->getVertices()))
     {
         if (vp == exclude)
         {
@@ -567,7 +568,7 @@ void MapEditorSelection::findEdges(MapPtr map, QPointF spt, const QVector<EdgePt
     if (!map)
         return;
 
-    for (auto e : map->getEdges())
+    for (auto  & e : qAsConst(map->getEdges()))
     {
         if (excludes.contains(e))
         {
@@ -592,7 +593,7 @@ SelectionSet MapEditorSelection::findEdges(QPointF spt, const NeighboursPtr excl
     if (!map)
         return set;
 
-    for (auto e : map->getEdges())
+    for (auto & e : map->getEdges())
     {
         bool found = false;
         for (auto pos = excludes->begin(); pos != excludes->end(); pos++)
@@ -636,15 +637,16 @@ bool MapEditorSelection::insideBoundary(QPointF wpt)
 
     Q_ASSERT(db->isMotif(layer.type));
 
-    FigurePtr figp  = delp->getFigure();
-    FeaturePtr feap = delp->getFeature();
+    MotifPtr figp  = delp->getMotif();
+    TilePtr feap = delp->getTile();
 
     if (!figp || !feap)
         return true;
 
-    if (figp->hasExtCircleBoundary())
+    const ExtendedBoundary & eb = figp->getExtendedBoundary();
+    if (eb.isCircle())
     {
-        qreal radius = figp->getExtBoundaryScale();
+        qreal radius = eb.scale;
         QGraphicsEllipseItem circle(-radius,-radius,radius * 2.0, radius * 2.0);
         if (circle.contains(wpt))
         {
@@ -652,7 +654,7 @@ bool MapEditorSelection::insideBoundary(QPointF wpt)
         }
     }
 
-    QPolygonF boundary = figp->getExtBoundary();
+    QPolygonF boundary = eb.get();
     if (boundary.size())
     {
         QPointF center = feap->getCenter();
@@ -661,17 +663,17 @@ bool MapEditorSelection::insideBoundary(QPointF wpt)
         b_area = Utils::calcArea(boundary);
     }
 
-    QPolygonF feature = feap->getPolygon();
-    if (feature.size())
+    QPolygonF tile = feap->getPolygon();
+    if (tile.size())
     {
-        f_area = Utils::calcArea(feature);
+        f_area = Utils::calcArea(tile);
     }
 
     if (Loose::zero(b_area) && Loose::zero(f_area))
     {
         return true;
     }
-    QPolygonF & poly = (b_area > f_area) ? boundary : feature;
+    QPolygonF & poly = (b_area > f_area) ? boundary : tile;
 
     if (poly.contains(wpt) || poly.containsPoint(wpt, Qt::OddEvenFill))
     {

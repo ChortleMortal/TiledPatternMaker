@@ -65,14 +65,8 @@ QLineF Point::extendLine(QLineF line, qreal scale)
     return line;
 }
 
-bool Point::intersectPoly(QLineF line, QPolygonF bounds, QPointF & intersect)
+bool Point::intersectPoly(QLineF line, const QPolygonF & bounds, QPointF & intersect)
 {
-    if (!bounds.isClosed())
-    {
-        bounds << bounds[0];
-    }
-    Q_ASSERT(bounds.isClosed());
-
     for (int i=0; i < (bounds.size()-1); i++)
     {
         QLineF l2(bounds[i],bounds[i+1]);
@@ -200,7 +194,7 @@ void Point::perpD(QPointF & pt)
     pt.setY(x);
 }
 
-QPointF Point::convexSum(QPointF pt, QPointF other, double t )
+QPointF Point::convexSum(const QPointF &pt, const QPointF &other, double t )
 {
     qreal mt = 1.0 - t;
     return QPointF( (mt * pt.x()) + (t * other.x()), (mt * pt.y()) + (t * other.y()) );
@@ -265,17 +259,13 @@ bool Point::isOnLine(QPointF pt, QLineF line)
     return Loose::zero(d2);
 }
 
-QPointF Point::center(QPolygonF & pts )
+QPointF Point::center(const QPolygonF & pts)
 {
     QPointF cent;
-    int count = 0;
-    for( int i = 0; i < pts.size(); ++i )
+    int count = (pts.isClosed()) ? pts.size() -1 : pts.size();
+    for (int i = 0; i < count; i++)
     {
-        if ( !pts[i].isNull())
-        {
-            cent += pts[i];
-            count++;
-        }
+        cent += pts[i];
     }
 
     cent = cent / static_cast<qreal>(count);
@@ -313,26 +303,6 @@ QPointF Point::irregularCenter(QPolygonF & poly)
     return centroid;
 }
 
-QPolygonF Point::recenter( QPolygonF pts, QPointF center )
-{
-    QPolygonF new_pts(pts.size());
-
-    if ( pts.isEmpty() )
-        return new_pts;
-
-    if ( center.isNull() )
-        return pts;
-
-    for( int i = 0; i < pts.size(); ++i )
-    {
-        if ( !pts[i].isNull() )
-        {
-            new_pts[i] = pts[i] - center;
-        }
-    }
-    return new_pts;
-}
-
 /*
 Uing: https://stackoverflow.com/questions/3306838/algorithm-for-reflecting-a-point-across-a-line
 Given point (x1, y1) and a line that passes through (x2,y2) and (x3,y3), we can first define the line as y = mx + c, where:
@@ -344,7 +314,7 @@ x4 = 2*d - x1
 y4 = 2*d*m - y1 + 2*c
 */
 
-QPointF Point::reflectPoint(QPointF p, QLineF line)
+QPointF Point::reflectPoint(QPointF & p, QLineF & line)
 {
     qreal x1 = p.x();
     qreal x2 = line.x1();
@@ -381,4 +351,53 @@ QPointF Point::reflectPoint(QPointF p, QLineF line)
 
     qDebug() << p << line << p4;
     return p4;
+}
+
+
+QPolygonF Point::reflectPolygon(QPolygonF & p, QLineF & line)
+{
+    QPolygonF poly;
+    for (auto pt : p)
+    {
+        auto pt2 = reflectPoint(pt,line);
+        poly << pt2;
+    }
+    qDebug() << "Polygon reflected about" << line;
+    return poly;
+}
+
+QPointF Point::perpPt(QPointF &A, QPointF &B, QPointF &C)
+{
+    // https://stackoverflow.com/questions/1811549/perpendicular-on-a-line-from-a-given-point
+    qreal x1 = A.x();
+    qreal y1 = A.y();
+    qreal x2 = B.x();
+    qreal y2 = B.y();
+    qreal x3 = C.x();
+    qreal y3 = C.y();
+    qreal k = ((y2-y1) * (x3-x1) - (x2-x1) * (y3-y1)) / ( qPow((y2-y1),2.0) + qPow((x2-x1),2.0) );
+    qreal x4 = x3 - k * (y2-y1);
+    qreal y4 = y3 + k * (x2-x1);
+    return QPointF(x4,y4);
+}
+
+QLineF Point::reversed(QLineF & line)
+{
+    return QLineF(line.p2(),line.p1());
+}
+
+QLineF Point::shiftParallel(QLineF bline, qreal offset)
+{
+    //https://stackoverflow.com/questions/2825412/draw-a-parallel-line
+    qreal x1 = bline.p1().x();
+    qreal y1 = bline.p1().y();
+    qreal x2 = bline.p2().x();
+    qreal y2 = bline.p2().y();
+    qreal L = qSqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
+    // This is the second line
+    qreal x1p = x1 + offset * (y2-y1) / L;
+    qreal x2p = x2 + offset * (y2-y1) / L;
+    qreal y1p = y1 + offset * (x1-x2) / L;
+    qreal y2p = y2 + offset * (x1-x2) / L;
+    return QLineF(x1p,y1p,x2p,y2p);
 }

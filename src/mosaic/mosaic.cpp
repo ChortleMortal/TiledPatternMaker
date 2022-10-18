@@ -232,7 +232,7 @@ void Mosaic::dump()
               map = proto->getExistingProtoMap();
               if (map)
               {
-                  str = map->summary2();
+                  str = map->summary();
               }
         }
         qDebug().noquote() << "Style" << style->getStyleDesc() << str;

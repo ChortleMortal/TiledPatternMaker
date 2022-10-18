@@ -1,28 +1,28 @@
 #include <QDebug>
 
-#include "figures/figure.h"
-#include "makers/motif_maker/explicit_figure_editors.h"
+#include "motifs/motif.h"
+#include "makers/motif_maker/explicit_motif_editors.h"
 #include "makers/motif_maker/motif_editor.h"
 #include "makers/motif_maker/motif_maker.h"
 #include "mosaic/design_element.h"
 #include "settings/configuration.h"
 #include "tiledpatternmaker.h"
 
-Q_DECLARE_METATYPE(FigureEditor *)
+Q_DECLARE_METATYPE(NamedMotifEditor *)
 
 ////////////////////////////////////////////////////////////////////////////
 //
 // MasterFigureEditor.java
 //
-// The top-level figure editor that understands the complete range of
-// figure editors available in the applet and branches out to the right
+// The top-level motif editor that understands the complete range of
+// motif editors available in the applet and branches out to the right
 // kind of editor as the DesignElement being edited is changed.
 
 MotifEditor::MotifEditor(page_motif_maker * menu)
 {
     config = Configuration::getInstance();
 
-    // Explicit figure editors.
+    // Explicit motif editors.
     explicit_edit           = new ExplicitEditor(menu,"explcit_edit");
     explcit_infer_edit      = new ExplicitInferEditor(menu,"explcit_infer_edit");
     explict_star_edit       = new ExplicitStarEditor(menu,"explict_star_edit");
@@ -30,9 +30,9 @@ MotifEditor::MotifEditor(page_motif_maker * menu)
     explicit_hourglass_edit = new ExplicitHourglassEditor(menu,"explicit_hourglass_edit");
     explicit_girih_edit     = new ExplicitGirihEditor(menu,"explicit_girih_edit");
     explicit_intersect_edit = new ExplicitIntersectEditor(menu,"explicit_intersect_edit");
-    explicit_feature_edit   = new ExplicitFeatureEditor(menu,"explicit_feature_edit");
+    explicit_tile_edit      = new ExplicitTileEditor(menu,"explicit_tile_edit");
 
-    // Radial figure editors.
+    // Radial motif editors.
     radial_star_edit       = new StarEditor(menu,"radial_star_edit");
     radial_rosette_edit    = new RosetteEditor(menu,"radial_rosette_edit");
     connect_rosette_edit   = new ConnectRosetteEditor(menu,"connect_rosette_edit");
@@ -41,9 +41,9 @@ MotifEditor::MotifEditor(page_motif_maker * menu)
     ex_rosette_edit        = new ExtendedRosetteEditor(menu,"ex_rosette_edit");
 
     // Panel containing the editors.
-    mfw = new MotifFigureWidget();
+    mfw = new MotifWidget();
 
-    choiceCombo = new FigTypeChoiceCombo(this);
+    choiceCombo = new MotifTypeChoiceCombo(this);
 
     QHBoxLayout * hbox = new QHBoxLayout();
     hbox->addStretch();
@@ -56,174 +56,174 @@ MotifEditor::MotifEditor(page_motif_maker * menu)
     setLayout(layout);
 }
 
-void MotifEditor::selectFigure(DesignElementPtr del)
+void MotifEditor::selectMotif(DesignElementPtr del)
 {
     currentDesignElement = del;
-    FigurePtr figure = del->getFigure();
-    if (!figure)
+    MotifPtr motif = del->getMotif();
+    if (!motif)
     {
-        explicit_edit->setFigure(del,false);
-        explcit_infer_edit->setFigure(del,false);
-        explict_star_edit->setFigure(del,false);
-        explicit_rosette_edit->setFigure(del,false);
-        explicit_hourglass_edit->setFigure(del,false);
-        explicit_girih_edit->setFigure(del,false);
-        explicit_intersect_edit->setFigure(del,false);
-        explicit_feature_edit->setFigure(del,false);
+        explicit_edit->setMotif(del,false);
+        explcit_infer_edit->setMotif(del,false);
+        explict_star_edit->setMotif(del,false);
+        explicit_rosette_edit->setMotif(del,false);
+        explicit_hourglass_edit->setMotif(del,false);
+        explicit_girih_edit->setMotif(del,false);
+        explicit_intersect_edit->setMotif(del,false);
+        explicit_tile_edit->setMotif(del,false);
 
-        radial_star_edit->setFigure(del,false);
-        radial_rosette_edit->setFigure(del,false);
-        connect_rosette_edit->setFigure(del,false);
-        connect_star_edit->setFigure(del,false);
-        ex_star_edit->setFigure(del,false);
-        ex_rosette_edit->setFigure(del,false);
+        radial_star_edit->setMotif(del,false);
+        radial_rosette_edit->setMotif(del,false);
+        connect_rosette_edit->setMotif(del,false);
+        connect_star_edit->setMotif(del,false);
+        ex_star_edit->setMotif(del,false);
+        ex_rosette_edit->setMotif(del,false);
         return;
     }
 
-    // DAC note:  When a design element is creeated from a feature in the tiling it defaults to a rosette
+    // DAC note:  When a design element is creeated from a tile in the tiling it defaults to a rosette
     // So everything starts as a rosette (except for explicit)
 
-    qDebug() << "MotifEditor::selectFigure :" << figure->getFigureDesc();
+    qDebug() << "MotifEditor::selectMotif :" << motif->getMotifDesc();
 
-    choiceCombo->updateChoices(figure);
+    choiceCombo->updateChoices(motif);
 
-    eFigType figType = figure->getFigType();
-    switch (figType)
+    eMotifType motiofType = motif->getMotifType();
+    switch (motiofType)
     {
-    case FIG_TYPE_UNDEFINED:
-    case FIG_TYPE_RADIAL:
-        qCritical("unexpected figure type");
+    case MOTIF_TYPE_UNDEFINED:
+    case MOTIF_TYPE_RADIAL:
+        qCritical("unexpected motif type");
         break;
-    case FIG_TYPE_EXTENDED_STAR:
+    case MOTIF_TYPE_EXTENDED_STAR:
         selectCurrentEditor(ex_star_edit);
-        ex_star_edit->setFigure(del,false);
+        ex_star_edit->setMotif(del,false);
         break;
-    case FIG_TYPE_EXTENDED_ROSETTE:
+    case MOTIF_TYPE_EXTENDED_ROSETTE:
         selectCurrentEditor(ex_rosette_edit);
-        ex_rosette_edit->setFigure(del,false);
+        ex_rosette_edit->setMotif(del,false);
         break;
-    case FIG_TYPE_STAR:
+    case MOTIF_TYPE_STAR:
         selectCurrentEditor(radial_star_edit);
-        radial_star_edit->setFigure(del,false);
+        radial_star_edit->setMotif(del,false);
         break;
-    case FIG_TYPE_ROSETTE:
+    case MOTIF_TYPE_ROSETTE:
         selectCurrentEditor(radial_rosette_edit);
-        radial_rosette_edit->setFigure(del,false);
+        radial_rosette_edit->setMotif(del,false);
         break;
-    case FIG_TYPE_CONNECT_ROSETTE:
+    case MOTIF_TYPE_CONNECT_ROSETTE:
         selectCurrentEditor(connect_rosette_edit);
-        connect_rosette_edit->setFigure(del,false);
+        connect_rosette_edit->setMotif(del,false);
         break;
-    case FIG_TYPE_CONNECT_STAR:
+    case MOTIF_TYPE_CONNECT_STAR:
         selectCurrentEditor(connect_star_edit);
-        connect_star_edit->setFigure(del,false);
+        connect_star_edit->setMotif(del,false);
         break;
-    case FIG_TYPE_EXPLICIT:
+    case MOTIF_TYPE_EXPLICIT:
         selectCurrentEditor(explicit_edit);
-        explicit_edit->setFigure(del,false);
+        explicit_edit->setMotif(del,false);
         break;
-    case FIG_TYPE_EXPLICIT_INFER:
+    case MOTIF_TYPE_EXPLICIT_INFER:
         selectCurrentEditor(explcit_infer_edit);
-        explcit_infer_edit->setFigure(del,false);
+        explcit_infer_edit->setMotif(del,false);
         break;
-    case FIG_TYPE_EXPLICIT_ROSETTE:
+    case MOTIF_TYPE_EXPLICIT_ROSETTE:
         selectCurrentEditor(explicit_rosette_edit);
-        explicit_rosette_edit->setFigure(del,false);
+        explicit_rosette_edit->setMotif(del,false);
         break;
-    case FIG_TYPE_EXPLICIT_HOURGLASS:
+    case MOTIF_TYPE_EXPLICIT_HOURGLASS:
         selectCurrentEditor(explicit_hourglass_edit);
-        explicit_hourglass_edit->setFigure(del,false);
+        explicit_hourglass_edit->setMotif(del,false);
         break;
-    case FIG_TYPE_EXPLICIT_INTERSECT:
+    case MOTIF_TYPE_EXPLICIT_INTERSECT:
         selectCurrentEditor(explicit_intersect_edit);
-        explicit_intersect_edit->setFigure(del,false);
+        explicit_intersect_edit->setMotif(del,false);
         break;
-    case FIG_TYPE_EXPLICIT_GIRIH:
+    case MOTIF_TYPE_EXPLICIT_GIRIH:
         selectCurrentEditor(explicit_girih_edit);
-        explicit_girih_edit->setFigure(del,false);
+        explicit_girih_edit->setMotif(del,false);
         break;
-    case FIG_TYPE_EXPLICIT_STAR:
+    case MOTIF_TYPE_EXPLICIT_STAR:
         selectCurrentEditor(explict_star_edit);
-        explict_star_edit->setFigure(del,false);
+        explict_star_edit->setMotif(del,false);
         break;
-    case FIG_TYPE_EXPLICIT_FEATURE:
-        selectCurrentEditor(explicit_feature_edit);
-        explicit_feature_edit->setFigure(del,false);
+    case MOTIF_TYPE_EXPLICIT_TILE:
+        selectCurrentEditor(explicit_tile_edit);
+        explicit_tile_edit->setMotif(del,false);
         break;
     }
 }
 
-void MotifEditor::selectCurrentEditor(FigureEditor* fe)
+void MotifEditor::selectCurrentEditor(NamedMotifEditor* fe)
 {
     mfw->setEditor(fe);
     adjustSize();
 }
 
-void MotifEditor::slot_figureTypeChanged(eFigType type)
+void MotifEditor::slot_motifTypeChanged(eMotifType type)
 {
     if (!currentDesignElement.lock())
     {
-        qWarning("MotifEditor::figureChoiceSelected - no design element");
+        qWarning("MotifEditor::motifChoiceSelected - no design element");
         return;
     }
 
-    FigureEditor * editor = getEditor(type);
+    NamedMotifEditor * editor = getEditor(type);
     if (editor)
     {
         selectCurrentEditor(editor);
-        editor->setFigure(currentDesignElement.lock(),true);
+        editor->setMotif(currentDesignElement.lock(),true);
     }
 }
 
-FigureEditor * MotifEditor::getEditor(eFigType type)
+NamedMotifEditor * MotifEditor ::getEditor(eMotifType type)
 {
     switch (type)
     {
-    case FIG_TYPE_RADIAL:
+    case MOTIF_TYPE_RADIAL:
         break;
-    case FIG_TYPE_UNDEFINED:
-    case FIG_TYPE_ROSETTE:
+    case MOTIF_TYPE_UNDEFINED:
+    case MOTIF_TYPE_ROSETTE:
         return radial_rosette_edit;
-    case FIG_TYPE_STAR:
+    case MOTIF_TYPE_STAR:
         return radial_star_edit;
-    case FIG_TYPE_CONNECT_STAR:
+    case MOTIF_TYPE_CONNECT_STAR:
         return connect_star_edit;
-    case FIG_TYPE_CONNECT_ROSETTE:
+    case MOTIF_TYPE_CONNECT_ROSETTE:
         return connect_rosette_edit;
-    case FIG_TYPE_EXTENDED_ROSETTE:
+    case MOTIF_TYPE_EXTENDED_ROSETTE:
         return ex_rosette_edit;
-    case FIG_TYPE_EXTENDED_STAR:
+    case MOTIF_TYPE_EXTENDED_STAR:
         return ex_star_edit;
-    case FIG_TYPE_EXPLICIT:
+    case MOTIF_TYPE_EXPLICIT:
         return explicit_edit;
-    case FIG_TYPE_EXPLICIT_INFER:
+    case MOTIF_TYPE_EXPLICIT_INFER:
         return explcit_infer_edit;
-    case FIG_TYPE_EXPLICIT_ROSETTE:
+    case MOTIF_TYPE_EXPLICIT_ROSETTE:
         return explicit_rosette_edit;
-    case FIG_TYPE_EXPLICIT_HOURGLASS:
+    case MOTIF_TYPE_EXPLICIT_HOURGLASS:
         return explicit_hourglass_edit;
-    case FIG_TYPE_EXPLICIT_INTERSECT:
+    case MOTIF_TYPE_EXPLICIT_INTERSECT:
         return explicit_intersect_edit;
-    case FIG_TYPE_EXPLICIT_GIRIH:
+    case MOTIF_TYPE_EXPLICIT_GIRIH:
         return  explicit_girih_edit;
-    case FIG_TYPE_EXPLICIT_STAR:
+    case MOTIF_TYPE_EXPLICIT_STAR:
         return explict_star_edit;
-    case FIG_TYPE_EXPLICIT_FEATURE:
-        return explicit_feature_edit;
+    case MOTIF_TYPE_EXPLICIT_TILE:
+        return explicit_tile_edit;
     }
-    qCritical("Unexpected figure type (2");
+    qCritical("Unexpected motif type (2");
     return nullptr;
 }
 
 /////////////////////////////////////////////////////////
-/// MotifFigureWidget
+/// MotifmotifWidget
 ////////////////////////////////////////////////////////
 
-MotifFigureWidget::MotifFigureWidget()
+MotifWidget::MotifWidget()
 {
 }
 
-MotifFigureWidget::MotifFigureWidget(FigureEditor * fe)
+MotifWidget::MotifWidget(NamedMotifEditor * fe)
 {
     setFixedWidth(600);
     AQVBoxLayout * aLayout = new AQVBoxLayout();
@@ -231,7 +231,7 @@ MotifFigureWidget::MotifFigureWidget(FigureEditor * fe)
     setLayout(aLayout);
 }
 
-void MotifFigureWidget::setEditor(FigureEditor * fe)
+void MotifWidget::setEditor(NamedMotifEditor * fe)
 {
     AQVBoxLayout * aLayout = new AQVBoxLayout();
     aLayout->addWidget(fe);
@@ -259,43 +259,43 @@ void MotifFigureWidget::setEditor(FigureEditor * fe)
 /// FigTypeChoiceCombo
 ////////////////////////////////////////////////////////
 
-FigTypeChoiceCombo:: FigTypeChoiceCombo(MotifEditor *editor)
+MotifTypeChoiceCombo:: MotifTypeChoiceCombo(MotifEditor *editor)
 {
     setFixedWidth(221);
 
-    connect(this, QOverload<int>::of(&QComboBox::currentIndexChanged), this,  &FigTypeChoiceCombo::slot_figureTypeSelected);
-    connect(this, &FigTypeChoiceCombo::sig_figureTypeChanged,          editor, &MotifEditor::slot_figureTypeChanged);
+    connect(this, QOverload<int>::of(&QComboBox::currentIndexChanged), this,   &MotifTypeChoiceCombo::slot_motifTypeSelected);
+    connect(this, &MotifTypeChoiceCombo::sig_motifTypeChanged,          editor, &MotifEditor::slot_motifTypeChanged);
 }
 
-void FigTypeChoiceCombo::updateChoices(FigurePtr figure)
+void MotifTypeChoiceCombo::updateChoices(MotifPtr motif)
 {
     blockSignals(true);
 
     clear();
 
-    if (figure->isRadial())
+    if (motif->isRadial())
     {
-        addChoice(FIG_TYPE_STAR,                "Star");
-        addChoice(FIG_TYPE_CONNECT_STAR,        "Star Connect");
-        addChoice(FIG_TYPE_EXTENDED_STAR,       "Star Extended");
-        addChoice(FIG_TYPE_ROSETTE,             "Rosette");
-        addChoice(FIG_TYPE_CONNECT_ROSETTE,     "Rosette Connect");
-        addChoice(FIG_TYPE_EXTENDED_ROSETTE,    "Rosette Extended");
-        addChoice(FIG_TYPE_EXPLICIT_FEATURE,    "Explicit Feature");
+        addChoice(MOTIF_TYPE_STAR,                "Star");
+        addChoice(MOTIF_TYPE_CONNECT_STAR,        "Star Connect");
+        addChoice(MOTIF_TYPE_EXTENDED_STAR,       "Star Extended");
+        addChoice(MOTIF_TYPE_ROSETTE,             "Rosette");
+        addChoice(MOTIF_TYPE_CONNECT_ROSETTE,     "Rosette Connect");
+        addChoice(MOTIF_TYPE_EXTENDED_ROSETTE,    "Rosette Extended");
+        addChoice(MOTIF_TYPE_EXPLICIT_TILE,    "Explicit Tile");
     }
     else
     {
-        addChoice(FIG_TYPE_EXPLICIT,            "Explicit");
-        addChoice(FIG_TYPE_EXPLICIT_INFER,      "Infer Explicit");
-        addChoice(FIG_TYPE_EXPLICIT_STAR,       "Star Explicit");
-        addChoice(FIG_TYPE_EXPLICIT_ROSETTE,    "Rosette Explicit");
-        addChoice(FIG_TYPE_EXPLICIT_HOURGLASS,  "Hourglass Explicit");
-        addChoice(FIG_TYPE_EXPLICIT_GIRIH,      "Girih Tiles Explicit");
-        addChoice(FIG_TYPE_EXPLICIT_INTERSECT,  "Intersect Explicit");
-        addChoice(FIG_TYPE_EXPLICIT_FEATURE,    "Explicit Feature");
+        addChoice(MOTIF_TYPE_EXPLICIT,            "Explicit");
+        addChoice(MOTIF_TYPE_EXPLICIT_INFER,      "Infer Explicit");
+        addChoice(MOTIF_TYPE_EXPLICIT_STAR,       "Star Explicit");
+        addChoice(MOTIF_TYPE_EXPLICIT_ROSETTE,    "Rosette Explicit");
+        addChoice(MOTIF_TYPE_EXPLICIT_HOURGLASS,  "Hourglass Explicit");
+        addChoice(MOTIF_TYPE_EXPLICIT_GIRIH,      "Girih Tiles Explicit");
+        addChoice(MOTIF_TYPE_EXPLICIT_INTERSECT,  "Intersect Explicit");
+        addChoice(MOTIF_TYPE_EXPLICIT_TILE,    "Explicit Tile");
     }
 
-    int index = getChoiceIndex(figure->getFigType());
+    int index = getChoiceIndex(motif->getMotifType());
     if (index >= 0)
     {
         setCurrentIndex(index);
@@ -310,25 +310,25 @@ void FigTypeChoiceCombo::updateChoices(FigurePtr figure)
     blockSignals(false);
 }
 
-void FigTypeChoiceCombo::addChoice(eFigType type, QString name)
+void MotifTypeChoiceCombo::addChoice(eMotifType type, QString name)
 {
     addItem(name,QVariant(type));
 }
 
-int FigTypeChoiceCombo::getChoiceIndex(eFigType type)
+int MotifTypeChoiceCombo::getChoiceIndex(eMotifType type)
 {
-    qDebug().noquote()  << "type is" << Figure::getTypeString(type);
+    qDebug().noquote()  << "type is" << Motif::getTypeString(type);
 
     return findData(QVariant(type));
 }
 
-void FigTypeChoiceCombo::slot_figureTypeSelected(int index)
+void MotifTypeChoiceCombo::slot_motifTypeSelected(int index)
 {
     Q_UNUSED(index);
 
     QVariant qv = currentData();
-    eFigType type = static_cast<eFigType>(qv.toInt());
-    qDebug() << "MotifEditor type="  << sFigType[type];
+    eMotifType type = static_cast<eMotifType>(qv.toInt());
+    qDebug() << "MotifEditor type="  << sTileType[type];
 
-    emit sig_figureTypeChanged(type);
+    emit sig_motifTypeChanged(type);
 }

@@ -26,8 +26,9 @@ BkgdImgPtr BackgroundImage::getSharedInstance()
 
 BackgroundImage::BackgroundImage() : LayerController("Bkgd Image")
 {
-    view   = ViewControl::getInstance();
-    config = Configuration::getInstance();
+    view     = ViewControl::getInstance();
+    config   = Configuration::getInstance();
+    bkgdName = "Bkgd Image";
 
     frameData = view->frameSettings.getFrameData(VIEW_BKGD_IMG);
 
@@ -35,6 +36,11 @@ BackgroundImage::BackgroundImage() : LayerController("Bkgd Image")
 
     _loaded     = false;
     skewMode    = false;
+}
+
+QString BackgroundImage::getName()
+{
+    return bkgdName;
 }
 
 void BackgroundImage::paint(QPainter *painter)
@@ -147,7 +153,7 @@ void BackgroundImage::unload()
     bUseAdjusted    = false;
     skewMode        = false;
     mouse_interaction.reset();
-    bkgdName.clear();
+    bkgdName = "Bkgd Image";
 
     Xform xf;
     setCanvasXform(xf);

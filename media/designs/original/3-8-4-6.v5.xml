@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
-<vector id="1" version="12">
+<!-- Written: Mon Oct 17 2022 14:40:11 -->
+<vector id="1" version="13">
 	<design>
 		<size>
 			<width>1500</width>
@@ -12,7 +13,7 @@
 		</background>
 		<Fill singleton="f">-1,1,-1,0</Fill>
 	</design>
-	<style.Interlace id="2" serialization="custom">
+	<style.Interlace id="2">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
 			<top__delta>0</top__delta>
@@ -22,7 +23,7 @@
 			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<prototype id="3" serialization="custom">
+			<prototype id="3">
 				<app.Prototype>
 					<string>3-8-4-6</string>
 					<entry>
@@ -140,7 +141,7 @@
 								</Line>
 							</edges>
 						</tile.Feature>
-						<app.ExplicitFigure id="31" type="FIG_TYPE_EXPLICIT">
+						<app.ExplicitFigure id="31" type="MOTIF_TYPE_EXPLICIT">
 							<map id="32">
 								<vertices id="33">
 									<Vertex id="34">
@@ -369,7 +370,7 @@
 								</Line>
 							</edges>
 						</tile.Feature>
-						<app.ExplicitFigure id="96" type="FIG_TYPE_EXPLICIT">
+						<app.ExplicitFigure id="96" type="MOTIF_TYPE_EXPLICIT">
 							<map id="97">
 								<vertices id="98">
 									<Vertex id="99">
@@ -491,7 +492,7 @@
 								</Line>
 							</edges>
 						</tile.Feature>
-						<app.ExplicitFigure id="127" type="FIG_TYPE_EXPLICIT">
+						<app.ExplicitFigure id="127" type="MOTIF_TYPE_EXPLICIT">
 							<map id="128">
 								<vertices id="129">
 									<Vertex id="130">
@@ -569,6 +570,8 @@
 		<style.Thick>
 			<draw__outline>false</draw__outline>
 			<width>0.2</width>
+			<join>bevel</join>
+			<cap>square</cap>
 		</style.Thick>
 		<style.Interlace>
 			<gap>0.2</gap>
@@ -577,7 +580,7 @@
 			<startUnder>true</startUnder>
 		</style.Interlace>
 	</style.Interlace>
-	<style.Interlace id="147" serialization="custom">
+	<style.Interlace id="147">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
 			<top__delta>0</top__delta>
@@ -595,6 +598,8 @@
 		<style.Thick>
 			<draw__outline>false</draw__outline>
 			<width>0.2</width>
+			<join>bevel</join>
+			<cap>square</cap>
 		</style.Thick>
 		<style.Interlace>
 			<gap>0.2</gap>
@@ -603,7 +608,7 @@
 			<startUnder>true</startUnder>
 		</style.Interlace>
 	</style.Interlace>
-	<style.Outline id="148" serialization="custom">
+	<style.Outline id="148">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
 			<top__delta>0</top__delta>
@@ -621,9 +626,11 @@
 		<style.Thick>
 			<draw__outline>false</draw__outline>
 			<width>0.4</width>
+			<join>bevel</join>
+			<cap>square</cap>
 		</style.Thick>
 	</style.Outline>
-	<style.Filled id="149" serialization="custom">
+	<style.Filled id="149">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
 			<top__delta>0</top__delta>
@@ -653,7 +660,7 @@
 			<algorithm>0</algorithm>
 		</style.Filled>
 	</style.Filled>
-	<style.Filled id="150" serialization="custom">
+	<style.Filled id="150">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
 			<top__delta>0</top__delta>

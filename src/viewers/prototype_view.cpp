@@ -1,6 +1,7 @@
 #include "viewers/prototype_view.h"
 #include "viewers/viewcontrol.h"
 #include "viewers/viewerbase.h"
+#include "motifs/motif.h"
 #include "geometry/map.h"
 #include "geometry/fill_region.h"
 #include "makers/motif_maker/motif_maker.h"
@@ -9,7 +10,7 @@
 #include "mosaic/prototype.h"
 #include "settings/configuration.h"
 #include "settings/configuration.h"
-#include "tile/placed_feature.h"
+#include "tile/placed_tile.h"
 #include "tile/tiling.h"
 
 using std::make_shared;
@@ -25,13 +26,15 @@ PrototypeViewPtr PrototypeView::getSharedInstance()
     return spThis;
 }
 
-PrototypeView::PrototypeView() : LayerController("ProtoFeatureView")
+PrototypeView::PrototypeView() : LayerController("PrototypeView")
 {
     colors.setColors(config->protoViewColors);
 }
 
 void PrototypeView::paint(QPainter *painter)
 {
+    lineWidth = config->protoviewWidth;
+
     painter->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
 
     QTransform tr = getLayerTransform();
@@ -47,16 +50,16 @@ void PrototypeView::draw( GeoGraphics * gg )
     if (!tiling)
         return;
 
-    qDebug() << "ProtoFeatureView  proto="  << proto.get();
+    qDebug() << "PrototypeView  proto="  << proto.get();
 
     QVector<PlacedDesignElement> pdels;
-    for (auto & placedFeature : qAsConst(tiling->getPlacedFeatures()))
+    for (auto & placedTile : qAsConst(tiling->getData().getPlacedTiles()))
     {
-        FeaturePtr feature  = placedFeature->getFeature();
-        QTransform T        = placedFeature->getTransform();
-        FigurePtr fig       = proto->getFigure(feature );
+        TilePtr tile   = placedTile->getTile();
+        QTransform T   = placedTile->getTransform();
+        MotifPtr motif = proto->getMotif(tile);
 
-        PlacedDesignElement pdel(feature,fig,T);
+        PlacedDesignElement pdel(tile,motif,T);
         pdels.push_back(pdel);
     }
 
@@ -64,19 +67,19 @@ void PrototypeView::draw( GeoGraphics * gg )
     if (mode & PROTO_DRAW_MAP)
     {
         MapPtr map = proto->getProtoMap();
-        qDebug() << "ProtoFeatureView  proto="  << proto.get() << "protoMap" << map.get();
+        qDebug() << "PrototypeView  proto="  << proto.get() << "protoMap" << map.get();
 
         for(auto & edge : qAsConst(map->getEdges()))
         {
             edges.push_back(edge);
         }
 
-        QPen pen(colors.mapColor,3);
+        QPen pen(colors.mapColor,lineWidth);
         edges.draw(gg, pen);
         edges.drawPts(gg, pen);
     }
 
-    if (mode & (PROTO_DRAW_FEATURES | PROTO_DRAW_FIGURES))
+    if (mode & (PROTO_DRAW_TILES | PROTO_DRAW_MOTIFS))
     {
         FillRegion flood(proto->getTiling(),ViewControl::getInstance()->getFillData());
         QVector<QTransform> transforms = flood.getTransforms();
@@ -89,14 +92,18 @@ void PrototypeView::draw( GeoGraphics * gg )
 
                 gg->pushAndCompose(T2);
 
-                if (mode & PROTO_DRAW_FEATURES)
+                if (mode & PROTO_DRAW_TILES)
                 {
-                    ViewerBase::drawFeature(gg,placedDesignElement.getFeature(),QBrush(),QPen(colors.featureColor,3));
+                    ViewerBase::drawTile(gg,placedDesignElement.getTile(),QBrush(),QPen(colors.tileColor,lineWidth));
                 }
 
-                if (mode & PROTO_DRAW_FIGURES)
+                if (mode & PROTO_DRAW_MOTIFS)
                 {
-                    ViewerBase::drawFigure(gg,placedDesignElement.getFigure(),QPen(colors.figureColor,3));
+                    auto motif = placedDesignElement.getMotif();
+                    if (motif->getDisplay())
+                    {
+                        ViewerBase::drawMotif(gg,motif,QPen(colors.motifColor,lineWidth));
+                    }
                 }
 
                 gg->pop();
@@ -106,68 +113,73 @@ void PrototypeView::draw( GeoGraphics * gg )
 
     if (mode & PROTO_DRAW_DESIGN_ELEMENT)
     {
-        // do two passes so selected writees over
+        // do two passes so selected writes over
         for (auto & placedDesignElement : qAsConst(pdels))
         {
-            FeaturePtr  feature = placedDesignElement.getFeature();
-            bool selected = (feature == ViewControl::getInstance()->getSelectedFeature());
-            if (!selected)
+            TilePtr  tile = placedDesignElement.getTile();
+            if (tile != selectedDEL.wtilep.lock())
             {
-                drawPlacedDesignElement(gg, placedDesignElement, QPen(colors.delFigureColor,3), QBrush(colors.featureBrushColor), QPen(colors.delFeatureColor,3),selected);
+                drawPlacedDesignElement(gg, placedDesignElement, QPen(colors.delMotifColor,lineWidth), QBrush(colors.tileBrushColor), QPen(colors.delTileColor,lineWidth),false);
             }
         }
     }
 
-    if (mode & (PROTO_DEL_FEATURES | PROTO_DEL_FIGURES))
+    if (mode & (PROTO_DEL_TILES | PROTO_DEL_MOTIFS))
     {
-        for (auto placedDesignElement : pdels)
+        for (auto & placedDesignElement : qAsConst(pdels))
         {
             QTransform T0 = placedDesignElement.getTransform();
             gg->pushAndCompose(T0);
 
-            if (mode & PROTO_DEL_FEATURES)
+            if (mode & PROTO_DEL_TILES)
             {
-                QPen pen(colors.delFeatureColor,3);
-                ViewerBase::drawFeature(gg,placedDesignElement.getFeature(),QBrush(),pen);
+                QPen pen(colors.delTileColor,lineWidth);
+                ViewerBase::drawTile(gg,placedDesignElement.getTile(),QBrush(),pen);
             }
-            if  (mode & PROTO_DEL_FIGURES)
+            if  (mode & PROTO_DEL_MOTIFS)
             {
-                QPen pen(colors.delFigureColor,3);
-                ViewerBase::drawFigure(gg,placedDesignElement.getFigure(),pen);
+
+                auto figure = placedDesignElement.getMotif();
+                if (figure->getDisplay())
+                {
+                    QPen pen(colors.delMotifColor,lineWidth);
+                    ViewerBase::drawMotif(gg,placedDesignElement.getMotif(),pen);
+                }
             }
             gg->pop();
         }
     }
 
     // always do this
-    for (auto placed : qAsConst(pdels))
+    for (auto & placed : qAsConst(pdels))
     {
-        FeaturePtr  feature = placed.getFeature();
-        bool selected = (feature == ViewControl::getInstance()->getSelectedFeature());
-        if (selected)
+        TilePtr  tile = placed.getTile();
+        if (tile == selectedDEL.wtilep.lock())
         {
-            drawPlacedDesignElement(gg, placed, QPen(colors.delFigureColor,3), QBrush(), QPen(colors.delFeatureColor,3),selected);
+            drawPlacedDesignElement(gg, placed, QPen(colors.delMotifColor,lineWidth), QBrush(), QPen(colors.delTileColor,lineWidth),true);
         }
     }
 }
 
-void PrototypeView::drawPlacedDesignElement(GeoGraphics * gg, const PlacedDesignElement &  pde, QPen figurePen, QBrush featureBrush, QPen featurePen, bool selected)
+void PrototypeView::drawPlacedDesignElement(GeoGraphics * gg, const PlacedDesignElement &  pde, QPen motifPen, QBrush tileBrush, QPen tilePen, bool selected)
 {
     QTransform T = pde.getTransform();
     gg->pushAndCompose(T);
 
-    FeaturePtr fp = pde.getFeature();
+    TilePtr fp = pde.getTile();
     QPen pen;
     if (selected)
-        pen = QPen(Qt::red,3);
+        pen = QPen(Qt::red,lineWidth);
     else
-        pen = featurePen;
-    ViewerBase::drawFeature(gg,fp,featureBrush,pen);
+        pen = tilePen;
+    ViewerBase::drawTile(gg,fp,tileBrush,pen);
 
     // Draw the figure
-    FigurePtr fig = pde.getFigure();
-    ViewerBase::drawFigure(gg,fig,figurePen);
-
+    MotifPtr fig = pde.getMotif();
+    if (fig->getDisplay())
+    {
+        ViewerBase::drawMotif(gg,fig,motifPen);
+    }
     gg->pop();
 }
 
@@ -187,11 +199,11 @@ QStringList ProtoViewColors::getColors()
 {
     QStringList qsl;
     qsl << mapColor.name(QColor::HexArgb);
-    qsl << featureColor.name(QColor::HexArgb);
-    qsl << figureColor.name(QColor::HexArgb);
-    qsl << delFeatureColor.name(QColor::HexArgb);
-    qsl << delFigureColor.name(QColor::HexArgb);
-    qsl << featureBrushColor.name(QColor::HexArgb);
+    qsl << tileColor.name(QColor::HexArgb);
+    qsl << motifColor.name(QColor::HexArgb);
+    qsl << delTileColor.name(QColor::HexArgb);
+    qsl << delMotifColor.name(QColor::HexArgb);
+    qsl << tileBrushColor.name(QColor::HexArgb);
     return qsl;
 }
 
@@ -199,9 +211,9 @@ void ProtoViewColors::setColors(QStringList & colors)
 {
     int index = 0;
     mapColor            = QColor(colors.at(index++));
-    featureColor        = QColor(colors.at(index++));
-    figureColor         = QColor(colors.at(index++));
-    delFeatureColor     = QColor(colors.at(index++));
-    delFigureColor      = QColor(colors.at(index++));
-    featureBrushColor   = QColor(colors.at(index++));
+    tileColor        = QColor(colors.at(index++));
+    motifColor         = QColor(colors.at(index++));
+    delTileColor     = QColor(colors.at(index++));
+    delMotifColor      = QColor(colors.at(index++));
+    tileBrushColor   = QColor(colors.at(index++));
 }

@@ -71,25 +71,27 @@ void Map::removeBadEdges()
 
     for (const auto & e : qAsConst(edges))
     {
-        // examining a vertex
-        if (e->v1 == e->v2)
+        auto v1 = e->v1;
+        auto v2 = e->v2;
+
+        if (!v1 || !vertices.contains(v1))
         {
-            qDebug() << "removing null edge (1)" << edgeIndex(e);
+            qDebug() << "not really an edge (1)" << edgeIndex(e);
             baddies.push_back(e);
         }
-        else if (e->v1->pt == e->v2->pt)
+        else if (!v2 || !vertices.contains(v2))
         {
-            qDebug() << "removing null edge (2)" << edgeIndex(e);
+            qDebug() << "not really an edge (2)" << edgeIndex(e);
             baddies.push_back(e);
         }
-        if (!e->v1)
+        else if (v1 == v2)
         {
-            qDebug() << "not really an edge (3)" << edgeIndex(e);
+            qDebug() << "removing null edge (3)" << edgeIndex(e);
             baddies.push_back(e);
         }
-        if (!e->v2)
+        else if (v1->pt == v2->pt)
         {
-            qDebug() << "not really an edge (4)" << edgeIndex(e);
+            qDebug() << "removing null edge (4)" << edgeIndex(e);
             baddies.push_back(e);
         }
     }
@@ -105,7 +107,7 @@ void Map::removeBadEdges()
 void Map::divideIntersectingEdges()
 {
     qDebug() << "divideIntersectingEdges......";
-    qDebug().noquote() << summary();
+    qDebug().noquote() << namedSummary();
 
     UniqueQVector<QPointF> intersects;
     for(const auto & edge : qAsConst(edges))
@@ -141,7 +143,7 @@ void Map::divideIntersectingEdges()
         insertVertex(pt);
     }
 
-    qDebug().noquote() << summary();
+    qDebug().noquote() << namedSummary();
     qDebug() << "divideIntersectingEdges - done";
 }
 
@@ -196,7 +198,7 @@ void Map::combineLinearEdges(const EdgePtr & a, const EdgePtr & b, const VertexP
 // coalesce identical vertices to eliminate duplicates.
 bool Map::coalesceVertices(qreal tolerance)
 {
-    qDebug().noquote() << "coalesceVertices-start" <<  summary2() << "Tolerance = " << tolerance;
+    qDebug().noquote() << "coalesceVertices-start" <<  summary() << "Tolerance = " << tolerance;
     qsizetype start = vertices.size();
 
     QMap<VertexPtr,VertexPtr> replacements;
@@ -211,31 +213,30 @@ bool Map::coalesceVertices(qreal tolerance)
             }
         }
     }
-    qDebug() << "Replacements =" << replacements.size();
+    qDebug() << "Vertices to replace =" << replacements.size();
     if (replacements.size() == 0)
     {
-        qDebug().noquote() << "coalesceVertices-end  " <<  summary2();
+        qDebug().noquote() << "coalesceVertices-end  " <<  summary();
         return false;
     }
 
+    QMap<VertexPtr,VertexPtr>::iterator it;
     UniqueQVector<EdgePtr> changedEdges;
     for (const auto & edge : qAsConst(edges))
     {
-        QMap<VertexPtr,VertexPtr>::iterator it1;
-        QMap<VertexPtr,VertexPtr>::iterator it2;
-        it1 = replacements.find(edge->v1);
-        if (it1 != replacements.end())
+        it = replacements.find(edge->v1);
+        if (it != replacements.end())
         {
             auto oldv = edge->v1;
-            edge->v1 = *it1;
+            edge->v1 = it.value();
             changedEdges.push_back(edge);
             vertices.removeOne(oldv);
         }
-        it2 = replacements.find(edge->v2);
-        if (it2 != replacements.end())
+        it = replacements.find(edge->v2);
+        if (it != replacements.end())
         {
             auto oldv = edge->v2;
-            edge->v2 = *it2;
+            edge->v2 = it.value();
             changedEdges.push_back(edge);
             vertices.removeOne(oldv);
         }
@@ -266,6 +267,7 @@ bool Map::coalesceVertices(qreal tolerance)
         }
     }
 
+    qDebug() << "Edges to delete:" << edgesToDelete.size();
     for (auto & edge : edgesToDelete)
     {
         edges.removeOne(edge);
@@ -274,7 +276,7 @@ bool Map::coalesceVertices(qreal tolerance)
     nMap.reset();
     _cleanseVertices();
 
-    qDebug().noquote() << "coalesceVertices-end  " <<  summary2();
+    qDebug().noquote() << "coalesceVertices-end  " <<  summary();
 
     if (vertices.size() != start)
     {

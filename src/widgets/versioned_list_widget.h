@@ -33,7 +33,7 @@ class VersionList
 public:
     VersionList() {}
 
-    void create(QStringList list);
+    void create(const QStringList & list);
 
     QStringList recompose();
 

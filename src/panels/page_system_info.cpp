@@ -4,7 +4,7 @@
 #include <QMessageBox>
 
 #include "page_system_info.h"
-#include "figures/figure.h"
+#include "motifs/motif.h"
 #include "geometry/crop.h"
 #include "geometry/edge.h"
 #include "geometry/map.h"
@@ -26,8 +26,8 @@
 #include "mosaic/mosaic.h"
 #include "mosaic/prototype.h"
 #include "style/filled.h"
-#include "tile/feature.h"
-#include "tile/placed_feature.h"
+#include "tile/tile.h"
+#include "tile/placed_tile.h"
 #include "tile/tiling.h"
 #include "viewers/motif_view.h"
 #include "viewers/grid.h"
@@ -174,8 +174,8 @@ void page_system_info::populateTree()
     }
 
     item2 = new QTreeWidgetItem;
-    item2->setText(0,"Active Feature");
-    FeaturePtr fp = motifMaker->getActiveFeature();
+    item2->setText(0,"Active Tile");
+    TilePtr fp = motifMaker->getActiveTile();
     item2->setText(1,addr(fp.get()));
     if (fp)
     {
@@ -191,12 +191,12 @@ void page_system_info::populateTree()
     item = new QTreeWidgetItem;
     item->setText(0,"Tiling Maker");
     item->setText(1,QString("Tilings: %1").arg(tilings.size()));
-    int features = 0;
+    int tiles = 0;
     for (auto& tiling : tilings)
     {
-        features += tiling->countPlacedFeatures();
+        tiles += tiling->getData().countPlacedTiles();
     }
-    item->setText(2,QString("Placed Features: %1").arg(features));
+    item->setText(2,QString("Placed Tiles: %1").arg(tiles));
     tree->addTopLevelItem(item);
 
     TilingPtr tp = tilingMaker->getSelected();
@@ -223,10 +223,11 @@ void page_system_info::populateTree()
     item2->setText(2,Transform::toInfoString(bip->getCanvasXform().toQTransform()));
     item->addChild(item2);
 
-    // selected feature
+#if 0
+    // selected tile
     item = new QTreeWidgetItem;
-    item->setText(0,"Selected Feature");
-    fp = view->getSelectedFeature();
+    item->setText(0,"ProtoView Selected Tile");
+    fp = PrototypeView::getSharedInstance()->getSelectedTile();
     if (fp)
     {
         item->setText(1,addr(fp.get()));
@@ -237,7 +238,7 @@ void page_system_info::populateTree()
         item->setText(2, "none");
     }
     tree->addTopLevelItem(item);
-
+#endif
     // views
     item = new QTreeWidgetItem;
     item->setText(0,"Views");
@@ -523,33 +524,34 @@ void page_system_info::populateDEL(QTreeWidgetItem * parent, DesignElementPtr de
     tree->expandItem(item2);
 
     QTreeWidgetItem * item = new QTreeWidgetItem;
-    FeaturePtr feature = de->getFeature();
-    item->setText(0,"Feature");
-    item->setText(1, addr(feature.get()));
-    item->setText(2, QString("Points: %1 Rot: %2 %3").arg(feature->numPoints())
-                                                     .arg(feature->getRotation())
-                                                     .arg((feature->isRegular()) ? "Regular" : "Irregular"));
+    TilePtr tile = de->getTile();
+    item->setText(0,"Tile");
+    item->setText(1, addr(tile.get()));
+    item->setText(2, QString("Points: %1 Rot: %2 %3").arg(tile->numPoints())
+                                                     .arg(tile->getRotation())
+                                                     .arg((tile->isRegular()) ? "Regular" : "Irregular"));
     item2->addChild(item);
     tree->expandItem(item);
 
     item = new QTreeWidgetItem;
-    FigurePtr figure = de->getFigure();
-    item->setText(0,"Figure");
-    item->setText(1,addr(figure.get()));
-    QString astring = figure->getFigureDesc() + " " + figure->getFigTypeString();
+    MotifPtr motif = de->getMotif();
+    item->setText(0,"Motif");
+    item->setText(1,addr(motif.get()));
+    QString astring = motif->getMotifDesc() + " " + motif->getMotifTypeString();
     item->setText(2,astring);
     item2->addChild(item);
     tree->expandItem(item);
 
-    switch (figure->getFigType())
-    {
-    case FIG_TYPE_EXPLICIT_FEATURE:
-    case FIG_TYPE_EXPLICIT:
-        populateMap(parent,figure->getFigureMap(),"Figure Map");
-        break;
+    item = new QTreeWidgetItem();
+    auto eb = motif->getExtendedBoundary();
+    astring = QString("scale:%1 rot:%2 escale:%3 erot:%4").arg(motif->getMotifScale()).arg(motif->getMotifRotate()).arg(eb.scale).arg(eb.rotate);
+    item->setText(2,astring);
+    item2->addChild(item);
+    tree->expandItem(item);
 
-    default:
-        break;
+    if (motif->isExplicit())
+    {
+        populateMap(item2,motif->getMap(),"Tile Map");
     }
 }
 
@@ -557,34 +559,35 @@ void page_system_info::populateTiling(QTreeWidgetItem * parent, TilingPtr tp, QS
 {
     if (!tp) return;
 
-    const QVector<PlacedFeaturePtr> & qlpf = tp->getPlacedFeatures();
+    const QVector<PlacedTilePtr> & qlpf = tp->getData().getPlacedTiles();
 
     // summary
     QTreeWidgetItem * pitem = new QTreeWidgetItem;
     pitem->setText(0,name);
     pitem->setText(1,addr(tp.get()));
-    QString astring = tp->getName() + " - Features: " + QString::number(qlpf.size());
-    astring += " T1" + Utils::str(tp->getTrans1()) + " T2" + Utils::str(tp->getTrans2());
+    QString astring = tp->getName() + " - Tiles: " + QString::number(qlpf.size());
+    astring += " T1" + Utils::str(tp->getData().getTrans1()) + " T2" + Utils::str(tp->getData().getTrans2());
     pitem->setText(2,astring);
     parent->addChild(pitem);
 
     for (auto pfp : qlpf)
     {
         QTransform tr  = pfp->getTransform();
-        FeaturePtr fp  = pfp->getFeature();
+        TilePtr tile  = pfp->getTile();
 
         QTreeWidgetItem * item = new QTreeWidgetItem;
-        item->setText(0,"Placed Feature");
+        item->setText(0,"Placed Tile");
         item->setText(1,addr(pfp.get()));
         item->setText(2,Transform::toInfoString(tr));
         pitem->addChild(item);
 
         QTreeWidgetItem * item2 = new QTreeWidgetItem;
-        item2->setText(0,"Feature");
-        item2->setText(1, addr(fp.get()));
-        item->setText(2, QString("Points: %1 Rot: %2 %3").arg(fp->numPoints())
-                                                         .arg(fp->getRotation())
-                                                         .arg((fp->isRegular()) ? "Regular" : "Irregular"));
+        item2->setText(0,"Tile");
+        item2->setText(1, addr(tile.get()));
+        item2->setText(2, QString("Points: %1 Rot: %2  scale: %3  %4").arg(tile->numPoints())
+                                                         .arg(tile->getRotation())
+                                                         .arg(tile->getScale())
+                                                         .arg((tile->isRegular()) ? "Regular" : "Irregular"));
         item->addChild(item2);
     }
 }

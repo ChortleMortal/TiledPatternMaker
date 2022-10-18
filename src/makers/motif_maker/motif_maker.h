@@ -15,7 +15,7 @@ typedef std::shared_ptr<class TilingMaker>      TilingMakerPtr;
 typedef std::shared_ptr<class DesignElement>    DesignElementPtr;
 typedef std::shared_ptr<class Prototype>        PrototypePtr;
 typedef std::shared_ptr<class Map>              MapPtr;
-typedef std::shared_ptr<class Feature>          FeaturePtr;
+typedef std::shared_ptr<class Tile>             TilePtr;
 
 enum eMMState
 {
@@ -35,55 +35,50 @@ public:
     void         init();
     void         unload();
 
-    void         takeDown(const PrototypePtr & prototype);
-    void         sm_take(const TilingPtr & tiling, eSM_Event event);
+    // state machine
+    void         sm_takeDown(const PrototypePtr & prototype);
+    void         sm_takeUp(const TilingPtr & tiling, eSM_Event event);
 
-    void         erasePrototypes();
-    void         removePrototype(TilingPtr tiling);
-
+    // setters.getters
     const QVector<PrototypePtr> & getPrototypes();
-
-    PrototypePtr findPrototypeByName(const TilingPtr & tiling);
-    PrototypePtr getSelectedPrototype();
-    void         setSelectedPrototype(const PrototypePtr & pp);
-    void         resetSelectedPrototype() { _selectedPrototype.reset(); _selectedDesignElement.reset(); }
+    PrototypePtr        findPrototypeByName(const TilingPtr & tiling);
+    PrototypePtr        getSelectedPrototype();
+    void                setSelectedPrototype(const PrototypePtr & pp);
+    void                resetSelectedPrototype() { _selectedPrototype.reset(); _selectedDesignElement.reset(); }
 
     QVector<DesignElementPtr> getSelectedDesignElements() { return _selectedDesignElements; }
+    DesignElementPtr    getSelectedDesignElement() { return _selectedDesignElement; }
+    void                setSelectedDesignElement(const DesignElementPtr & del);
 
-    DesignElementPtr getSelectedDesignElement() { return _selectedDesignElement; }
-    void             setSelectedDesignElement(const DesignElementPtr & del);
+    void                setActiveTile(const TilePtr & tile) { _activeTile = tile; }
+    TilePtr             getActiveTile() { return _activeTile; }
 
-    void         duplicateActiveFeature();
-    void         deleteActiveFeature();
+    void                setPropagate(bool val) { propagate = val; }
 
-    MapPtr createExplicitGirihMap(int starSides, qreal starSkip);
-    MapPtr createExplicitHourglassMap(qreal d, int s);
-    MapPtr createExplicitInferredMap();
-    MapPtr createExplicitIntersectMap(int starSides, qreal starSkip, int s, bool progressive);
-    MapPtr createExplicitRosetteMap(qreal q, int s, qreal r);
-    MapPtr createExplicitStarMap(qreal d, int s);
-    MapPtr createExplicitFeatureMap();
+    // operations
+    bool                dupolicateMotif();
 
-    void   setActiveFeature(const FeaturePtr & feature) { _activeFeature = feature; }
-    FeaturePtr getActiveFeature() { return _activeFeature; }
+    void                erasePrototypes();
+    void                removePrototype(TilingPtr tiling);
+    void                deleteActiveTile();
 
 signals:
-    void    sig_tilingChoicesChanged();
-    void    sig_tilingChanged();
-    void    sig_featureChanged();
+    void                sig_tilingChoicesChanged();
+    void                sig_tilingChanged();
+    void                sig_tileChanged();
 
 protected:
-    eMMState sm_getState();
-    void     sm_eraseAllCreateAdd(const TilingPtr & tiling);
-    void     sm_eraseCurrentCreateAdd(const TilingPtr & tiling);
-    void     sm_createAdd(const TilingPtr & tiling);
-    void     sm_replaceTiling(const PrototypePtr & prototype,const TilingPtr & tiling);
-    void     sm_resetMaps();
+    eMMState            sm_getState();
+    void                sm_eraseAllCreateAdd(const TilingPtr & tiling);
+    void                sm_eraseCurrentCreateAdd(const TilingPtr & tiling);
+    void                sm_createAdd(const TilingPtr & tiling);
+    void                sm_replaceTiling(const PrototypePtr & prototype,const TilingPtr & tiling);
+    void                sm_resetMaps();
 
-    PrototypePtr createPrototype(const TilingPtr & tiling);
-    void         recreatePrototype(const TilingPtr & tiling);
-    void         recreateFigures(const TilingPtr & tiling);
-    bool         askNewProto();
+    PrototypePtr        createPrototype(const TilingPtr & tiling);
+    void                recreatePrototype(const TilingPtr & tiling);
+    void                recreateMotifs(const TilingPtr & tiling);
+    bool                askNewProto();
 
 private:
     MotifMaker();
@@ -95,14 +90,14 @@ private:
     TiledPatternMaker      * maker;
     TilingMakerPtr           tilingMaker;
     class MosaicMaker      * mosaicMaker;
-    MapPtr                   nullMap;
 
     UniqueQVector<PrototypePtr>     _prototypes;
     PrototypePtr                    _selectedPrototype;
     UniqueQVector<DesignElementPtr> _selectedDesignElements;
     DesignElementPtr                _selectedDesignElement;
-    FeaturePtr                      _activeFeature;
+    TilePtr                         _activeTile;
 
+    bool                    propagate;
 };
 
 #endif

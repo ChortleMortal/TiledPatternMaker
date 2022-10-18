@@ -5,7 +5,7 @@
 #include "viewers/viewcontrol.h"
 #include "viewers/grid.h"
 #include "legacy/design_maker.h"
-#include "figures/figure.h"
+#include "motifs/motif.h"
 #include "geometry/dcel.h"
 #include "geometry/edge.h"
 #include "geometry/vertex.h"
@@ -19,7 +19,7 @@
 #include "panels/panel.h"
 #include "settings/configuration.h"
 #include "style/style.h"
-#include "tile/feature.h"
+#include "tile/tile.h"
 #include "tiledpatternmaker.h"
 #include "widgets/transparentwidget.h"
 #include "widgets/mouse_mode_widget.h"
@@ -273,9 +273,8 @@ void View::dump(bool summary)
              << "Maps:"     << Map::refs
              << "Protos:"   << Prototype::refs
              << "DELs:"     << DesignElement::refs
-             << "PDELs:"    << PlacedDesignElement::refs2
-             << "Figures:"  << Figure::refs
-             << "Features:" << Feature::refs
+             << "Motifs:"   << Motif::refs
+             << "Tiles:"    << Tile::refs
              << "Edges:"    << Edge::refs
              << "Vertices:" << Vertex::refs
              << "DCELs"     << DCEL::refs
@@ -362,11 +361,12 @@ bool View::ProcKey(QKeyEvent *k)
     case 'B':  setKbdMode(KBD_MODE_DES_OFFSET); break;
     case 'D':  duplicateView(); break;
     case 'E':  slot_refreshView(); break;    // just for debug
-    case 'F':  config->dontReplicate = !config->dontReplicate; break;
-    case 'G':  config->showGrid = !config->showGrid; Grid::getSharedInstance()->create(); slot_refreshView(); break;
+    case 'F':  break;
+    case 'G':  config->showGrid = !config->showGrid; slot_refreshView(); break;
     case 'H':  config->hideCircles = !config->hideCircles; config->showCenterDebug = !config->showCenterDebug; update(); break;
     case 'I':  designMaker->designLayerShow(); break;  // I=in
-    case 'K':  config->debugMapEnable = !config->debugMapEnable; break;
+    case 'J':  emit sig_saveMenu();
+    case 'K':  config->debugMapEnable = !config->debugMapEnable; emit sig_refreshMotifMenu(); break;
     case 'L':  setKbdMode(KBD_MODE_DES_LAYER_SELECT); break;
     case 'M':  emit sig_raiseMenu(); break;
     case 'N':  theApp->slot_bringToPrimaryScreen(); break;
@@ -377,12 +377,12 @@ bool View::ProcKey(QKeyEvent *k)
                else
                     QApplication::quit();
                break;
-    case 'R':  break;
+    case 'R':  config->dontReplicate = !config->dontReplicate; emit sig_refreshMotifMenu(); break;
     case 'S':  setKbdMode(KBD_MODE_DES_SEPARATION); break;
     case 'T':  setKbdMode(KBD_MODE_XFORM_TILING); break;
     case 'U':  setKbdMode(KBD_MODE_XFORM_BKGD); break;
     case 'V':  setKbdMode(KBD_MODE_XFORM_VIEW); break;
-    case 'W':  setKbdMode(KBD_MODE_XFORM_UNIQUE_FEATURE);break;
+    case 'W':  setKbdMode(KBD_MODE_XFORM_UNIQUE_TILE);break;
     case 'X':  config->circleX = !config->circleX; slot_refreshView(); update(); break;
     case 'Y':  emit sig_saveSVG(); break;
     case 'Z':  setKbdMode(KBD_MODE_DES_ZLEVEL); break;
@@ -591,7 +591,6 @@ void View::resizeEvent(QResizeEvent *event)
     }
 
     emit sig_viewSizeChanged(oldSize,newSize);      // for outer border (if any)
-    Grid::getSharedInstance()->create();    // re-create
 }
 
 void View::keyPressEvent( QKeyEvent *k )
@@ -760,7 +759,7 @@ void View::wheelEvent(QWheelEvent *event)
     }
 }
 
-void View::setWindowTitle(const QString & s)
+void View::setViewTitle(const QString & s)
 {
     QWidget::setWindowTitle(s);
 }

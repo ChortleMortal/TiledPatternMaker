@@ -2,9 +2,9 @@
 
 #include "legacy/patterns.h"
 #include "legacy/shapefactory.h"
-#include "figures/explicit_figure.h"
-#include "figures/infer.h"
-#include "figures/star.h"
+#include "motifs/explicit_motif.h"
+#include "motifs/inference_engine.h"
+#include "motifs/star.h"
 #include "geometry/map.h"
 #include "misc/border.h"
 #include "misc/utilities.h"
@@ -13,8 +13,8 @@
 #include "settings/configuration.h"
 #include "style/thick.h"
 #include "style/thick.h"
-#include "tile/feature.h"
-#include "tile/placed_feature.h"
+#include "tile/tile.h"
+#include "tile/placed_tile.h"
 #include "tile/tiling.h"
 #include "tile/tiling_manager.h"
 
@@ -1319,9 +1319,9 @@ void PatternIncompleteA::build()
     //DesignViewerPtr m3 = make_shared<DesignViewer>(diameter);
     //tileLayers[3].addToGroup(m3.get());
     //layers[2].setFlag(ItemClipsChildrenToShape);
-    FigurePtr fp = make_shared<Star>(8,3.0,2.0);
-    FeaturePtr nullFeature = make_shared<Feature>(8,0);
-    DesignElementPtr dep   = make_shared<DesignElement>(nullFeature,fp);
+    MotifPtr fp = make_shared<Star>(8,3.0,2.0);
+    TilePtr nullTile = make_shared<Tile>(8,0);
+    DesignElementPtr dep   = make_shared<DesignElement>(nullTile,fp);
 #if 0 // TODO
     Viewer * viewer = new Viewer;
     FigureView * figView   = viewer->viewFigure(dep, QPointF(0,0),height);
@@ -1577,9 +1577,10 @@ void PatternKumiko2::build()
     if (!t)
     {
         t = make_shared<Tiling>(tileName, trans1, trans2);
-        t->getSettings().setFillData(&fd);
-        FeaturePtr fp = make_shared<Feature>(4,0.0);
-        PlacedFeaturePtr pfp = make_shared<PlacedFeature>(fp,QTransform());
+        FillData & fdata = t->getDataAccess().getFillDataAccess();
+        fdata = fd;
+        TilePtr fp = make_shared<Tile>(4,0.0);
+        PlacedTilePtr pfp = make_shared<PlacedTile>(t.get(),fp,QTransform());
         t->add(pfp);
         t->setDescription("Kumiko2 translation vectors");
         t->setAuthor("David A. Casper");
@@ -1589,10 +1590,10 @@ void PatternKumiko2::build()
 
     PrototypePtr proto = make_shared<Prototype>(t);
 
-    FigurePtr fp = make_shared<ExplicitFigure>(map,FIG_TYPE_EXPLICIT,10);
-    const QVector<PlacedFeaturePtr> qlfp = t->getPlacedFeatures();
+    MotifPtr fp = make_shared<ExplicitMotif>(map,MOTIF_TYPE_EXPLICIT,10);
+    const QVector<PlacedTilePtr> qlfp = t->getData().getPlacedTiles();
 
-    DesignElementPtr dep = make_shared<DesignElement>(qlfp[0]->getFeature(),fp);
+    DesignElementPtr dep = make_shared<DesignElement>(qlfp[0]->getTile(),fp);
     proto->addElement(dep);
     proto->createProtoMap();
 

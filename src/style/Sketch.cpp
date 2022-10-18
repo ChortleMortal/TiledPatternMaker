@@ -67,7 +67,7 @@ void Sketch::draw(GeoGraphics * gg)
 
     qreal jitter = Transform::distFromInvertedZero(gg->getTransform(),5.0);
     qreal halfjit = jitter / 2.0;
-    for (auto edge : map->getEdges())
+    for (auto & edge : qAsConst(map->getEdges()))
     {
         QPointF a = edge->v1->pt - QPointF(halfjit,halfjit);
         QPointF b = edge->v2->pt - QPointF(halfjit,halfjit);

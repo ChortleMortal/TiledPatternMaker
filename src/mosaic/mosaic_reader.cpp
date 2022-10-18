@@ -5,15 +5,15 @@
 #include "mosaic/mosaic.h"
 #include "mosaic/mosaic_reader_base.h"
 #include "mosaic/prototype.h"
-#include "figures/explicit_figure.h"
-#include "figures/extended_rosette.h"
-#include "figures/extended_star.h"
-#include "figures/figure.h"
-#include "figures/infer.h"
-#include "figures/rosette.h"
-#include "figures/rosette_connect_figure.h"
-#include "figures/star.h"
-#include "figures/star_connect_figure.h"
+#include "motifs/explicit_motif.h"
+#include "motifs/extended_rosette.h"
+#include "motifs/extended_star.h"
+#include "motifs/motif.h"
+#include "motifs/inference_engine.h"
+#include "motifs/rosette.h"
+#include "motifs/rosette_connect.h"
+#include "motifs/star.h"
+#include "motifs/star_connect.h"
 #include "geometry/loose.h"
 #include "geometry/map.h"
 #include "misc/border.h"
@@ -30,8 +30,8 @@
 #include "style/sketch.h"
 #include "style/thick.h"
 #include "style/tile_colors.h"
-#include "tile/feature.h"
-#include "tile/feature_reader.h"
+#include "tile/tile.h"
+#include "tile/tile_reader.h"
 #include "tile/tiling.h"
 #include "tile/tiling_loader.h"
 #include "tile/tiling_manager.h"
@@ -204,19 +204,19 @@ void MosaicReader::processVector(xml_node & node)
     if (_fillData.isSet())
     {
         if (_debug) qDebug() << "Using Mosaic FiilData";
-        settings.setFillData(&_fillData);
+        settings.setFillData(_fillData);
     }
     else if (_tilings.size() > 0)
     {
         if (_debug) qDebug() << "Using Tiling FiilData";
-        FillData * fd =  getFirstTiling()->getSettings().getFillData();
+        const FillData & fd =  getFirstTiling()->getData().getFillData();
         settings.setFillData(fd);
     }
     else
     {
         if (_debug) qDebug() << "Using Default FiilData";
         FillData fd;    // default
-        settings.setFillData(&fd);
+        settings.setFillData(fd);
     }
 
     if (_border)
@@ -1086,135 +1086,137 @@ PrototypePtr MosaicReader::getPrototype(xml_node & node)
     PrototypePtr proto = make_shared<Prototype>(tp);
     setProtoReference(node,proto);
 
-    QVector<FeaturePtr> uniqueFeatures = tp->getUniqueFeatures();
-    int numFeatures = uniqueFeatures.size();
+    QVector<TilePtr> uniqueTiles = tp->getUniqueTiles();
+    int numTiles = uniqueTiles.size();
 
-    QVector<FeaturePtr> usedFeatures;
-    FeatureReader fr;
+    QVector<TilePtr> usedTiles;
+    TileReader tr;
     xml_node entry;
     for (entry = protonode.child("entry"); entry; entry = entry.next_sibling("entry"))
     {
         bool found = false;
 
-        FeaturePtr feature;
-        FigurePtr  figure;
-        QString name;
+        TilePtr  tile;
+        MotifPtr motif;
+        QString  name;
 
-        xml_node xmlfeature = entry.first_child();
-        name = xmlfeature.name();
+        xml_node xmlTile = entry.first_child();
+        name = xmlTile.name();
         qDebug().noquote() << name;
-        if ( name == "tile.Feature")
+        if (name == "tile.Feature")
         {
-            if (_debug) qDebug() << "adding Feature";
-            feature = getFeature(fr,xmlfeature);
+            if (_debug) qDebug() << "adding Tile";
+            tile = getTile(tr,xmlTile);
         }
         else
         {
-           fail("feature not found", "");
+           fail("tile not found", "");
         }
 
-        xml_node xmlfigure  = xmlfeature.next_sibling();
-        name = xmlfigure.name();
+        int fsides = tile->numSides();
+
+        xml_node xmlMotif  = xmlTile.next_sibling();
+        name = xmlMotif.name();
         if (_debug) qDebug().noquote() << name;
         if (name == "app.ExplicitFigure")
         {
-            if (_debug) qDebug() << "adding ExplicitFigure";
-            figure = getExplicitFigure(xmlfigure, FIG_TYPE_EXPLICIT);
+            if (_debug) qDebug() << "adding ExplicitMotif";
+            motif = getExplicitMotif(xmlMotif, fsides,MOTIF_TYPE_EXPLICIT);
             found = true;
         }
         else if (name == "app.Star")
         {
-            if (_debug) qDebug() << "adding Star Figure";
-            figure =  getStarFigure(xmlfigure);
+            if (_debug) qDebug() << "adding Star Motif";
+            motif =  getStar(xmlMotif,fsides);
             found = true;
         }
         else if (name == "ExtendedStar")
         {
-            if (_debug) qDebug() << "adding ExtendedStar Figure";
-            figure =  getExtendedStarFigure(xmlfigure);
+            if (_debug) qDebug() << "adding ExtendedStar Motif";
+            motif =  getExtendedStar(xmlMotif,fsides);
             found = true;
         }
         else if (name == "app.Rosette")
         {
-            if (_debug) qDebug() << "adding Rosette Figure";
-            figure =  getRosetteFigure(xmlfigure);
+            if (_debug) qDebug() << "adding Rosette Motif";
+            motif =  getRosette(xmlMotif,fsides);
             found = true;
         }
         else if (name == "ExtendedRosette")
         {
-            if (_debug) qDebug() << "adding ExtendedRosette Figure";
-            figure =  getExtendedRosetteFigure(xmlfigure);
+            if (_debug) qDebug() << "adding ExtendedRosette Motif";
+            motif =  getExtendedRosette(xmlMotif,fsides);
             found = true;
         }
         else if (name == "app.ConnectFigure")
         {
-            if (_debug) qDebug() << "adding Connect Figure";
-            figure =  getConnectFigure(xmlfigure);
+            if (_debug) qDebug() << "adding Connect Motif";
+            motif =  getConnectMotif(xmlMotif,fsides);
             found = true;
         }
         else if (name == "app.Infer")
         {
             if (_debug) qDebug() << "adding Infer";
-            figure = getExplicitFigure(xmlfigure,FIG_TYPE_EXPLICIT_INFER);
+            motif = getExplicitMotif(xmlMotif,fsides,MOTIF_TYPE_EXPLICIT_INFER);
             found = true;
         }
         else if (name == "app.ExplicitFeature")
         {
-            if (_debug) qDebug() << "adding Explicit Feature";
-            figure = getExplicitFigure(xmlfigure,FIG_TYPE_EXPLICIT_FEATURE);
+            if (_debug) qDebug() << "adding Explicit Tile";
+            motif = getExplicitMotif(xmlMotif,fsides,MOTIF_TYPE_EXPLICIT_TILE);
             found = true;
         }
         else if (name == "app.ExplicitGirih")
         {
             if (_debug) qDebug() << "adding ExplicitGirih";
-            figure = getExplicitFigure(xmlfigure,FIG_TYPE_EXPLICIT_GIRIH);
+            motif = getExplicitMotif(xmlMotif,fsides,MOTIF_TYPE_EXPLICIT_GIRIH);
             found = true;
         }
         else if (name == "app.ExplicitStar")
         {
             if (_debug) qDebug() << "adding ExplicitStar";
-            figure = getExplicitFigure(xmlfigure,FIG_TYPE_EXPLICIT_STAR);
+            motif = getExplicitMotif(xmlMotif,fsides,MOTIF_TYPE_EXPLICIT_STAR);
             found = true;
         }
         else if (name == "app.ExplicitRosette")
         {
             if (_debug) qDebug() << "adding ExplicitRosette";
-            figure = getExplicitFigure(xmlfigure,FIG_TYPE_EXPLICIT_ROSETTE);
+            motif = getExplicitMotif(xmlMotif,fsides,MOTIF_TYPE_EXPLICIT_ROSETTE);
             found = true;
         }
         else if (name == "app.ExplicitHourglass")
         {
             if (_debug) qDebug() << "adding ExplicitHourglass";
-            figure = getExplicitFigure(xmlfigure,FIG_TYPE_EXPLICIT_HOURGLASS);
+            motif = getExplicitMotif(xmlMotif,fsides,MOTIF_TYPE_EXPLICIT_HOURGLASS);
             found = true;
         }
         else if (name == "app.ExplicitIntersect")
         {
             if (_debug) qDebug() << "adding ExplicitIntersect";
-            figure = getExplicitFigure(xmlfigure,FIG_TYPE_EXPLICIT_INTERSECT);
+            motif = getExplicitMotif(xmlMotif,fsides,MOTIF_TYPE_EXPLICIT_INTERSECT);
             found = true;
         }
         else
         {
-            fail("Figure not found:", name);
+            fail("MOtif not found:", name);
         }
 
         if (found)
         {
-            // if the found feature is identical to the one in the known tiling then use that
+            // if the found tile is identical to the one in the known tiling then use that
             // DAC 27MAY17 - imprtant that this code not removed or Mosaic View will fail
             bool found2 = false;
-            for (auto tilingFeature :  uniqueFeatures)
+            for (auto & utile :  qAsConst(uniqueTiles))
             {
-                if (usedFeatures.contains(tilingFeature))
+                if (usedTiles.contains(utile))
                     continue;
 
-                if (tilingFeature->equals(feature))
+                if (utile->equals(tile))
                 {
-                    usedFeatures.push_back(tilingFeature);
-                    feature = tilingFeature;
-                    if (_debug) qDebug().noquote() << "adding to Proto" << figure->getFigureDesc();
-                    DesignElementPtr  dep = make_shared<DesignElement>(feature, figure);
+                    usedTiles.push_back(utile);
+                    tile = utile;
+                    if (_debug) qDebug().noquote() << "adding to Proto" << motif->getMotifDesc();
+                    DesignElementPtr  dep = make_shared<DesignElement>(tile, motif);
                     proto->addElement(dep);
                     if (_debug) qDebug().noquote() << "design element:" << dep->toString();
                     found2 = true;
@@ -1223,9 +1225,9 @@ PrototypePtr MosaicReader::getPrototype(xml_node & node)
             }
             if (!found2)
             {
-                qWarning().noquote() << "No match for Mosaic feature in tiling" << _fileName << figure->getFigureDesc();
-                if (_debug) qDebug().noquote() << "adding to Proto" << figure->getFigureDesc();
-                DesignElementPtr  del = make_shared<DesignElement>(feature, figure);
+                qWarning().noquote() << "No match for Mosaic tile in tiling" << _fileName << motif->getMotifDesc();
+                if (_debug) qDebug().noquote() << "adding to Proto" << motif->getMotifDesc();
+                DesignElementPtr  del = make_shared<DesignElement>(tile, motif);
                 proto->addElement(del);
                 if (_debug) qDebug().noquote() << "design element:" << del->toString();
             }
@@ -1234,12 +1236,12 @@ PrototypePtr MosaicReader::getPrototype(xml_node & node)
 
     QVector<DesignElementPtr>  & designElements = proto->getDesignElements();
     int numDesignElements = designElements.size();
-    if (numFeatures && (numFeatures != numDesignElements))
+    if (numTiles && (numTiles != numDesignElements))
     {
-        QString str1 = "Feature/DesignElement MISMATCH";
+        QString str1 = "Tile/DesignElement MISMATCH";
         QString str2;
         QDebug  deb(&str2);
-        deb <<  "Num Unqiue Features =" << numFeatures << endl << "Num DesignElements =" << numDesignElements;
+        deb <<  "Num Unqiue Tiles =" << numTiles << endl << "Num DesignElements =" << numDesignElements;
         qWarning() << str1;
         qWarning() << str2;
         QMessageBox box(ControlPanel::getInstance());
@@ -1258,98 +1260,96 @@ PrototypePtr MosaicReader::getPrototype(xml_node & node)
     }
 
     // create explicit maps
-    for (auto del : designElements)
+    for (auto & del : qAsConst(designElements))
     {
-        FigurePtr   figp  = del->getFigure();
-        FeaturePtr  featp = del->getFeature();
-        ExplicitPtr ep    = std::dynamic_pointer_cast<ExplicitFigure>(figp);
-        MapPtr      map;
+        MotifPtr motif = del->getMotif();
+        TilePtr tile   = del->getTile();
+        QPolygonF poly = tile->getPolygon();
 
-        switch (figp->getFigType())
+        if (motif->isExplicit())
         {
-        case FIG_TYPE_UNDEFINED:
-        case FIG_TYPE_RADIAL:
-        case FIG_TYPE_ROSETTE:
-        case FIG_TYPE_STAR:
-        case FIG_TYPE_CONNECT_STAR:
-        case FIG_TYPE_CONNECT_ROSETTE:
-        case FIG_TYPE_EXTENDED_ROSETTE:
-        case FIG_TYPE_EXTENDED_STAR:
-            // not explicit
-            break;
+            ExplicitPtr exp = std::dynamic_pointer_cast<ExplicitMotif>(motif);
+            Q_ASSERT(exp);
 
-        case FIG_TYPE_EXPLICIT:
-            // already has a map
-            break;
+            ExtendedBoundary & eb = exp->getRWExtendedBoundary();
 
-        case FIG_TYPE_EXPLICIT_INFER:
-        {
-            auto inf = make_shared<Infer>(proto);
-            map =  inf->infer(featp);
-            ep->setExplicitMap(map);
-            break;
-        }
+            MapPtr map;
+            exp->setupInfer(proto);
 
-        case FIG_TYPE_EXPLICIT_ROSETTE:
-        {
-            auto inf = make_shared<Infer>(proto);
-            map =  inf->inferRosette(featp, ep->q, ep->s, ep->r_flexPt);
-            ep->setExplicitMap(map);
-            break;
-        }
+            switch (motif->getMotifType())
+            {
+            case MOTIF_TYPE_EXPLICIT:
+                // already has a map
+                exp->setMotifBoundary(poly);
+                eb.set(poly);
+                break;
 
-        case FIG_TYPE_EXPLICIT_HOURGLASS:
-        {
-            auto inf = make_shared<Infer>(proto);
-            map =  inf->inferHourglass(featp, ep->d, ep->s);
-            ep->setExplicitMap(map);
-            break;
-        }
+            case MOTIF_TYPE_EXPLICIT_INFER:
+                map = exp->newExplicitMap();
+                exp->infer(tile);
+                exp->setMotifBoundary(poly);
+                eb.set(poly);
+                break;
 
-        case FIG_TYPE_EXPLICIT_INTERSECT:
-        {
-            auto inf = make_shared<Infer>(proto);
-            if (ep->progressive)
-                map =  inf->inferIntersectProgressive(featp, ep->getN(), ep->skip,ep->s);
+            case MOTIF_TYPE_EXPLICIT_ROSETTE:
+                map = exp->newExplicitMap();
+                exp->inferRosette(tile, exp->q, exp->s, exp->r_flexPt);
+                exp->setMotifBoundary(poly);
+                eb.set(poly);
+                break;
+
+            case MOTIF_TYPE_EXPLICIT_HOURGLASS:
+                map = exp->newExplicitMap();
+                exp->inferHourglass(tile, exp->d, exp->s);
+                exp->setMotifBoundary(poly);
+                eb.set(poly);
+                break;
+
+            case MOTIF_TYPE_EXPLICIT_INTERSECT:
+                map = exp->newExplicitMap();
+                if (exp->progressive)
+                    exp->inferIntersectProgressive(tile, exp->getN(), exp->skip,exp->s);
+                else
+                    exp->inferIntersect(tile, exp->getN(), exp->skip, exp->s);
+                exp->setMotifBoundary(poly);
+                eb.set(poly);
+                break;
+
+            case MOTIF_TYPE_EXPLICIT_STAR:
+                map = exp->newExplicitMap();
+                exp->inferStar(tile, exp->d, exp->s);
+                exp->setMotifBoundary(poly);
+                eb.set(poly);
+                break;
+
+            case MOTIF_TYPE_EXPLICIT_TILE:
+                map = exp->newExplicitMap();
+                exp->inferMotif(tile);
+                exp->setMotifBoundary(poly);
+                eb.set(poly);
+                break;
+
+            case MOTIF_TYPE_EXPLICIT_GIRIH:
+                map = exp->newExplicitMap();
+                exp->inferGirih(tile, exp->getN(), exp->skip);
+                exp->setMotifBoundary(poly);
+                eb.set(poly);
+                break;
+
+            default:
+                qFatal("Unxpected explicit type");
+            }
+
+            if (map && !map->isEmpty())
+            {
+                map->resetNeighbourMap();
+                map->getNeighbourMap();
+                map->verifyAndFix();
+            }
             else
-                map =  inf->inferIntersect(featp, ep->getN(), ep->skip, ep->s);
-            ep->setExplicitMap(map);
-            break;
-        }
-
-        case FIG_TYPE_EXPLICIT_STAR:
-        {
-            auto inf = make_shared<Infer>(proto);
-            map =  inf->inferStar(featp, ep->d, ep->s);
-            ep->setExplicitMap(map);
-            break;
-        }
-
-        case FIG_TYPE_EXPLICIT_FEATURE:
-        {
-            auto inf = make_shared<Infer>(proto);
-            map =  inf->inferFeature(featp);
-            ep->setExplicitMap(map);
-            break;
-        }
-
-        case FIG_TYPE_EXPLICIT_GIRIH:
-        {
-            auto inf = make_shared<Infer>(proto);
-            map =  inf->inferGirih(featp, ep->getN(), ep->skip);
-            ep->setExplicitMap(map);
-        }
-        }
-
-        if (map && !map->isEmpty())
-        {
-            map->resetNeighbourMap();
-            map->getNeighbourMap();
-            map->verifyAndFix();
-        }
-        else
-        {
-            qWarning() << "Empty Map";
+            {
+                qWarning() << "Empty Map";
+            }
         }
     }
 
@@ -1358,11 +1358,11 @@ PrototypePtr MosaicReader::getPrototype(xml_node & node)
     return proto;
 }
 
-FeaturePtr MosaicReader::getFeature(FeatureReader & fr, xml_node & node)
+TilePtr MosaicReader::getTile(TileReader & fr, xml_node & node)
 {
     if (hasReference(node))
     {
-        FeaturePtr f = getFeatureReferencedPtr(node);
+        TilePtr f = getTileReferencedPtr(node);
         return f;
     }
 
@@ -1387,14 +1387,14 @@ FeaturePtr MosaicReader::getFeature(FeatureReader & fr, xml_node & node)
     }
 
     xml_node poly = node.child("points");
-    FeaturePtr f;
+    TilePtr f;
     if (poly)
     {
         PolyPtr b    = getPolygon(poly);
         EdgePoly ep(b);
 
-        f = make_shared<Feature>(ep,rotation,scale);
-        setFeatureReference(node,f);
+        f = make_shared<Tile>(ep,rotation,scale);
+        setTileReference(node,f);
         f->setRegular(regular);
         return f;
     }
@@ -1402,53 +1402,58 @@ FeaturePtr MosaicReader::getFeature(FeatureReader & fr, xml_node & node)
     if (poly)
     {
         EdgePoly ep = fr.getEdgePoly(poly);
-        f = make_shared<Feature>(ep,rotation,scale);
+        f = make_shared<Tile>(ep,rotation,scale);
         f->setRegular(regular);
         if (((_version == 5) || (_version ==6)) && (!Loose::zero(rotation) || !Loose::equals(scale,1.0)))
         {
-            qWarning() << "Decomposing Feature for backwards compatability"  << _fileName;
+            qWarning() << "Decomposing Tile for backwards compatability"  << _fileName;
             f->decompose();
         }
 
-        setFeatureReference(node,f);
+        setTileReference(node,f);
         return f;
     }
     return f;
 }
 
-void MosaicReader::getFigureCommon(xml_node & node, FigurePtr fig)
+void MosaicReader::getMotifCommon(xml_node & node, MotifPtr fig)
 {
     QString str;
+    ExtendedBoundary & eb = fig->getRWExtendedBoundary();
+
     if (node.child("boundarySides"))
     {
         str = node.child_value("boundarySides");
         int bsides = str.toInt();
-        fig->setExtBoundarySides(bsides);
+        eb.sides = bsides;
     }
 
     if (node.child("boundaryScale"))
     {
         str = node.child_value("boundaryScale");
         qreal bscale = str.toDouble();
-        fig->setExtBoundaryScale(bscale);
+        eb.scale = bscale;
     }
 
-    if (node.child("figureScale"))
+    if (fig->isRadial() || _version >= 13)
     {
-        str = node.child_value("figureScale");
-        qreal fscale = str.toDouble();
-        fig->setFigureScale(fscale);
-    }
+        if (node.child("figureScale"))
+        {
+            str = node.child_value("figureScale");
+            qreal fscale = str.toDouble();
+            fig->setMotifScale(fscale);
+        }
 
-    if (node.child("r"))
-    {
-        str = node.child_value("r");
-        qreal r = str.toDouble();
-        fig->setFigureRotate(r);
+        if (node.child("r"))
+        {
+            str = node.child_value("r");
+            qreal r = str.toDouble();
+            fig->setMotifRotate(r);
+        }
     }
 }
 
-ExplicitPtr MosaicReader::getExplicitFigure(xml_node & node, eFigType figType)
+ExplicitPtr MosaicReader::getExplicitMotif(xml_node & node, int tile_sides, eMotifType figType)
 {
     ExplicitPtr ep;
     if (hasReference(node))
@@ -1457,34 +1462,36 @@ ExplicitPtr MosaicReader::getExplicitFigure(xml_node & node, eFigType figType)
         return ep;
     }
 
-    if (_debug) qDebug() << "getExplicitFigure";
+    if (_debug) qDebug() << "getExplicitMotif";
 
-    ep = make_shared<ExplicitFigure>(_currentMap,figType,10);
+    ep = make_shared<ExplicitMotif>(_currentMap,figType,10);
+    auto & eb = ep->getRWExtendedBoundary();
+    eb.sides = tile_sides;     // default - may be overwritten by xml
 
     switch (figType)
     {
-    case FIG_TYPE_UNDEFINED:
-    case FIG_TYPE_RADIAL:
-    case FIG_TYPE_ROSETTE:
-    case FIG_TYPE_STAR:
-    case FIG_TYPE_CONNECT_STAR:
-    case FIG_TYPE_CONNECT_ROSETTE:
-    case FIG_TYPE_EXTENDED_ROSETTE:
-    case FIG_TYPE_EXTENDED_STAR:
+    case MOTIF_TYPE_UNDEFINED:
+    case MOTIF_TYPE_RADIAL:
+    case MOTIF_TYPE_ROSETTE:
+    case MOTIF_TYPE_STAR:
+    case MOTIF_TYPE_CONNECT_STAR:
+    case MOTIF_TYPE_CONNECT_ROSETTE:
+    case MOTIF_TYPE_EXTENDED_ROSETTE:
+    case MOTIF_TYPE_EXTENDED_STAR:
         qFatal("Not an explicit figure");
 
-    case FIG_TYPE_EXPLICIT:
+    case MOTIF_TYPE_EXPLICIT:
         // only the old original taprats formats have maps
         _currentMap = getMap(node);
         ep->setExplicitMap(_currentMap);
         break;
 
-    case FIG_TYPE_EXPLICIT_INFER:
-    case FIG_TYPE_EXPLICIT_FEATURE:
+    case MOTIF_TYPE_EXPLICIT_INFER:
+    case MOTIF_TYPE_EXPLICIT_TILE:
         // these have no parameters
         break;
 
-    case FIG_TYPE_EXPLICIT_GIRIH:
+    case MOTIF_TYPE_EXPLICIT_GIRIH:
     {
         QString str;
         str = node.child_value("sides");
@@ -1497,7 +1504,7 @@ ExplicitPtr MosaicReader::getExplicitFigure(xml_node & node, eFigType figType)
         ep->skip  = skip;
         break;
     }
-    case FIG_TYPE_EXPLICIT_STAR:
+    case MOTIF_TYPE_EXPLICIT_STAR:
     {
         QString str;
         str = node.child_value("s");
@@ -1510,7 +1517,7 @@ ExplicitPtr MosaicReader::getExplicitFigure(xml_node & node, eFigType figType)
 
         break;
     }
-    case FIG_TYPE_EXPLICIT_ROSETTE:
+    case MOTIF_TYPE_EXPLICIT_ROSETTE:
     {
         QString str;
         str = node.child_value("s");
@@ -1531,7 +1538,7 @@ ExplicitPtr MosaicReader::getExplicitFigure(xml_node & node, eFigType figType)
         }
         break;
     }
-    case FIG_TYPE_EXPLICIT_HOURGLASS:
+    case MOTIF_TYPE_EXPLICIT_HOURGLASS:
     {
         QString str;
         str = node.child_value("s");
@@ -1544,7 +1551,7 @@ ExplicitPtr MosaicReader::getExplicitFigure(xml_node & node, eFigType figType)
         ep->d = d;
         break;
     }
-    case FIG_TYPE_EXPLICIT_INTERSECT:
+    case MOTIF_TYPE_EXPLICIT_INTERSECT:
     {
         QString str;
         str = node.child_value("s");
@@ -1567,14 +1574,16 @@ ExplicitPtr MosaicReader::getExplicitFigure(xml_node & node, eFigType figType)
     }
     }
 
-    getFigureCommon(node,ep);
+    getMotifCommon(node,ep);
+
+    //ep->buildBoundaries();
 
     setExplicitReference(node,ep);
 
     return(ep);
 }
 
-StarPtr MosaicReader::getStarFigure(xml_node & node)
+StarPtr MosaicReader::getStar(xml_node & node, int tile_sides)
 {
     if (hasReference(node))
     {
@@ -1582,7 +1591,7 @@ StarPtr MosaicReader::getStarFigure(xml_node & node)
         return f;
     }
 
-    if (_debug) qDebug() << "getStarFigure";
+    if (_debug) qDebug() << "getStar";
 
     _currentMap = getMap(node);
 
@@ -1599,12 +1608,15 @@ StarPtr MosaicReader::getStarFigure(xml_node & node)
     StarPtr star = make_shared<Star>(n, d, s);
     setStarReference(node,star);
 
-    getFigureCommon(node,star);
+    auto & eb = star->getRWExtendedBoundary();
+    eb.sides = tile_sides;      // default
+
+    getMotifCommon(node,star);
 
     return star;
 }
 
-ExtStarPtr  MosaicReader::getExtendedStarFigure(xml_node & node)
+ExtStarPtr  MosaicReader::getExtendedStar(xml_node & node, int tile_sides)
 {
     if (hasReference(node))
     {
@@ -1612,12 +1624,13 @@ ExtStarPtr  MosaicReader::getExtendedStarFigure(xml_node & node)
         return f;
     }
 
-    if (_debug) qDebug() << "getExtendedStarFigure";
+    if (_debug) qDebug() << "getExtendedStar";
 
     _currentMap = getMap(node);
 
-    bool extendPeripherals   = false;   // default
-    bool extendFreeVertices  = true;    // default
+    bool extendPeripherals       = false;   // default
+    bool extendFreeVertices      = false;   // default
+    bool connectBoundaryVertices = false;   // default
 
     QString str;
 
@@ -1635,6 +1648,16 @@ ExtStarPtr  MosaicReader::getExtendedStarFigure(xml_node & node)
         extendFreeVertices = (str == "t");
     }
 
+    if (_version >= 13)
+    {
+        xml_attribute con_bnd_v = node.attribute("connectBoundaryVertices");
+        if (con_bnd_v)
+        {
+            str = (con_bnd_v.value());
+            connectBoundaryVertices = (str == "t");
+        }
+    }
+
     str = node.child_value("n");
     int n = str.toInt();
 
@@ -1644,15 +1667,24 @@ ExtStarPtr  MosaicReader::getExtendedStarFigure(xml_node & node)
     str = node.child_value("s");
     int s = str.toInt();
 
-    ExtStarPtr star = make_shared<ExtendedStar>(n, d, s, extendPeripherals, extendFreeVertices);
-    getFigureCommon(node,star);
+    ExtStarPtr star = make_shared<ExtendedStar>(n, d, s);
+
+    auto & extender = star->getExtender();
+    extender.setExtendPeripheralVertices(extendPeripherals);
+    extender.setExtendFreeVertices(extendFreeVertices);
+    extender.setConnectBoundaryVertices(connectBoundaryVertices);
+
+    auto & eb = star->getRWExtendedBoundary();
+    eb.sides = tile_sides;      // default
+
+    getMotifCommon(node,star);
 
     setExtStarReference(node,star);
 
     return star;
 }
 
-RosettePtr MosaicReader::getRosetteFigure(xml_node & node)
+RosettePtr MosaicReader::getRosette(xml_node & node, int tile_sides)
 {
     if (hasReference(node))
     {
@@ -1676,14 +1708,18 @@ RosettePtr MosaicReader::getRosetteFigure(xml_node & node)
         k = str.toDouble();
 
     RosettePtr rosette = make_shared<Rosette>(n, q, s, k);
-    getFigureCommon(node,rosette);
+
+    auto & eb = rosette->getRWExtendedBoundary();
+    eb.sides = tile_sides;      // default
+
+    getMotifCommon(node,rosette);
 
     setRosetteReference(node,rosette);
 
     return rosette;
 }
 
-ExtRosettePtr  MosaicReader::getExtendedRosetteFigure(xml_node & node)
+ExtRosettePtr  MosaicReader::getExtendedRosette(xml_node & node, int tile_sides)
 {
     if (hasReference(node))
     {
@@ -1691,12 +1727,12 @@ ExtRosettePtr  MosaicReader::getExtendedRosetteFigure(xml_node & node)
         return f;
     }
 
-    if (_debug) qDebug() << "getExtendedRosetteFigure";
+    if (_debug) qDebug() << "getExtendedRosette";
 
     _currentMap = getMap(node);
 
-    bool extendPeripherals       = false;     // default
-    bool extendFreeVertices      = true;    // default
+    bool extendPeripherals       = false;    // default
+    bool extendFreeVertices      = false;     // default
     bool connectBoundaryVertices = false;    // default
 
     QString str;
@@ -1736,16 +1772,24 @@ ExtRosettePtr  MosaicReader::getExtendedRosetteFigure(xml_node & node)
     if (!str.isEmpty())
         k = str.toDouble();
 
-    ExtRosettePtr rosette = make_shared<ExtendedRosette>(n, q, s, k, extendPeripherals, extendFreeVertices, connectBoundaryVertices);
+    ExtRosettePtr rosette = make_shared<ExtendedRosette>(n, q, s, k);
     setExtRosetteReference(node,rosette);
 
-    getFigureCommon(node,rosette);
+    auto & extender = rosette->getExtender();
+    extender.setExtendPeripheralVertices(extendPeripherals);
+    extender.setExtendFreeVertices(extendFreeVertices);
+    extender.setConnectBoundaryVertices(connectBoundaryVertices);
+
+    auto & eb = rosette->getRWExtendedBoundary();
+    eb.sides = tile_sides;      // default
+
+    getMotifCommon(node,rosette);
     return rosette;
 }
 
-FigurePtr MosaicReader::getConnectFigure(xml_node & node)
+MotifPtr MosaicReader::getConnectMotif(xml_node & node, int tile_sides)
 {
-    FigurePtr fp;
+    MotifPtr fp;
     xml_node child = node.child("child");
     if (child)
     {
@@ -1753,25 +1797,25 @@ FigurePtr MosaicReader::getConnectFigure(xml_node & node)
         //qDebug() << class1.value();
         if (QString(class1.value()) == "app.Rosette")
         {
-            fp = getRosetteConnectFigure(node);
+            fp = getRosetteConnect(node,tile_sides);
         }
         else if (QString(class1.value()) == "app.Star")
         {
-            fp = getStarConnectFigure(node);
+            fp = getStarConnect(node,tile_sides);
         }
         else
         {
-            fail("Connect Figure child","");
+            fail("Connect Motif child","");
         }
     }
     else
     {
-        fail("Connect Figure","");
+        fail("Connect Motifz","");
     }
     return fp;
 }
 
-RosetteConnectPtr MosaicReader::getRosetteConnectFigure(xml_node & node)
+RosetteConnectPtr MosaicReader::getRosetteConnect(xml_node & node, int tile_sides)
 {
     if (hasReference(node))
     {
@@ -1779,11 +1823,11 @@ RosetteConnectPtr MosaicReader::getRosetteConnectFigure(xml_node & node)
         return f;
     }
 
+#if 0
     QString str;
     str = node.child_value("n");
     int n = str.toInt();
 
-#if 0
     str = node.child_value("s");
     qreal s = str.toDouble();
 #endif
@@ -1797,31 +1841,35 @@ RosetteConnectPtr MosaicReader::getRosetteConnectFigure(xml_node & node)
         //qDebug() << class1.value();
         if (QString(class1.value()) == "app.Rosette")
         {
-            rp = getRosetteFigure(child);
-            Q_ASSERT(rp->getN() == n);
-            //Q_ASSERT(r->getS() == s);
+            rp = getRosette(child,tile_sides);
+            //Q_ASSERT(rp->getN() == n);
+            //Q_ASSERT(rp->getS() == s);
             //qDebug() << "connect s:" <<  rp->getS() << s;
         }
         else
         {
             fail("Rosette Connect figure not based on Rosette","");
         }
-        rcp = make_shared<RosetteConnectFigure>(rp->getN(),
+
+        rcp = make_shared<RosetteConnect>(rp->getN(),
                                                 rp->getQ(),
                                                 rp->getS(),
                                                 rp->getK());
-        getFigureCommon(node,rcp);
+        auto & eb = rcp->getRWExtendedBoundary();
+        eb.sides = tile_sides;      // default
+
+        getMotifCommon(node,rcp);
         setRosetteConnectReference(node,rcp);
         //qDebug() << rcp->getFigureDesc();
     }
     else
     {
-        fail("Connect Figure","");
+        fail("Connect MOtif","");
     }
     return rcp;
 }
 
-StarConnectPtr MosaicReader::getStarConnectFigure(xml_node & node)
+StarConnectPtr MosaicReader::getStarConnect(xml_node & node, int tile_sides)
 {
     if (hasReference(node))
     {
@@ -1829,11 +1877,11 @@ StarConnectPtr MosaicReader::getStarConnectFigure(xml_node & node)
         return f;
     }
 
+#if 0
     QString str;
     str = node.child_value("n");
     int n = str.toInt();
 
-#if 0
     str = node.child_value("s");
     qreal s = str.toDouble();
 #endif
@@ -1847,25 +1895,27 @@ StarConnectPtr MosaicReader::getStarConnectFigure(xml_node & node)
         //qDebug() << class1.value();
         if (QString(class1.value()) == "app.Star")
         {
-            sp = getStarFigure(child);
-            Q_ASSERT(sp->getN() == n);
-            //Q_ASSERT(r->getS() == s);
+            sp = getStar(child,tile_sides);
+            //Q_ASSERT(sp->getN() == n);
+            //Q_ASSERT(sp->getS() == s);
             //qDebug() << "connect s:" <<  sp->getS() << s;
         }
         else
         {
             fail("Connect figure not based on Star","");
         }
-        scp = make_shared<StarConnectFigure>(sp->getN(),
-                                             sp->getD(),
-                                             sp->getS());
-        getFigureCommon(node,scp);
+        scp = make_shared<StarConnect>(sp->getN(), sp->getD(), sp->getS());
+
+        auto & eb = scp->getRWExtendedBoundary();
+        eb.sides = tile_sides;      // default
+
+        getMotifCommon(node,scp);
         setStarConnectReference(node,scp);
         //qDebug() << scp->getFigureDesc();
     }
     else
     {
-        fail("Connect Figure","");
+        fail("Connect MOtif","");
     }
     return scp;
 }
@@ -1936,7 +1986,7 @@ MapPtr MosaicReader::getMap(xml_node & node)
     _currentMap->getNeighbourMap();     // rebuilds
     _currentMap->verifyAndFix();
 
-    qDebug().noquote() << _currentMap->summary();
+    qDebug().noquote() << _currentMap->namedSummary();
 
     return _currentMap;
 }
@@ -2417,29 +2467,29 @@ void   MosaicReader::setPolyReference(xml_node & node, PolyPtr ptr)
     }
 }
 
-void   MosaicReader::setFeatureReference(xml_node & node, FeaturePtr ptr)
+void   MosaicReader::setTileReference(xml_node & node, TilePtr ptr)
 {
     xml_attribute id;
     id = node.attribute("id");
     if (id)
     {
         int i = id.as_int();
-        feature_ids[i] = ptr;
+        tile_ids[i] = ptr;
 #ifdef DEBUG_REFERENCES
-        qDebug() << "set ref feature:" << i;
+        qDebug() << "set ref tile:" << i;
 #endif
     }
 }
-void   MosaicReader::setFigureReference(xml_node & node, FigurePtr ptr)
+void   MosaicReader::setFMotifReference(xml_node & node, MotifPtr ptr)
 {
     xml_attribute id;
     id = node.attribute("id");
     if (id)
     {
         int i = id.as_int();
-        figure_ids[i] = ptr;
+        motif_ids[i] = ptr;
 #ifdef DEBUG_REFERENCES
-        qDebug() << "set ref figure:" << i;
+        qDebug() << "set ref motif:" << i;
 #endif
     }
 }
@@ -2573,9 +2623,9 @@ PolyPtr MosaicReader::getPolyReferencedPtr(xml_node & node)
     return retval;
 }
 
-FeaturePtr MosaicReader::getFeatureReferencedPtr(xml_node & node)
+TilePtr MosaicReader::getTileReferencedPtr(xml_node & node)
 {
-    FeaturePtr retval;
+    TilePtr retval;
     xml_attribute ref;
     ref = node.attribute("reference");
     if (ref)
@@ -2584,16 +2634,16 @@ FeaturePtr MosaicReader::getFeatureReferencedPtr(xml_node & node)
 #ifdef DEBUG_REFERENCES
         qDebug() << "using reference" << id;
 #endif
-        retval = FeaturePtr(feature_ids[id]);
+        retval = TilePtr(tile_ids[id]);
         if (!retval)
             fail("reference NOT FOUND:",QString::number(id));
     }
     return retval;
 }
 
-FigurePtr MosaicReader::getFigureReferencedPtr(xml_node & node)
+MotifPtr MosaicReader::getMotifReferencedPtr(xml_node & node)
 {
-    FigurePtr retval;
+    MotifPtr retval;
     xml_attribute ref;
     ref = node.attribute("reference");
     if (ref)
@@ -2602,7 +2652,7 @@ FigurePtr MosaicReader::getFigureReferencedPtr(xml_node & node)
 #ifdef DEBUG_REFERENCES
         qDebug() << "using reference" << id;
 #endif
-        retval = FigurePtr(figure_ids[id]);
+        retval = MotifPtr(motif_ids[id]);
         if (!retval)
             fail("reference NOT FOUND:",QString::number(id));
     }

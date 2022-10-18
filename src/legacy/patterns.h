@@ -5,7 +5,7 @@
 #include "settings/filldata.h"
 
 typedef std::shared_ptr<class ShapeFactory>    ShapeFPtr;
-typedef std::shared_ptr<class LegacyTile>      TilePtr;
+typedef std::shared_ptr<class LegacyTile>      LegacyTilePtr;
 
 
 enum eDirection
@@ -57,7 +57,7 @@ public:
 private:
     LayerPtr layer1;
     LayerPtr layer2;
-    TilePtr layer3;
+    LegacyTilePtr layer3;
 };
 
 class Pattern6: public Pattern

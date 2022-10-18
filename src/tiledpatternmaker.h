@@ -28,7 +28,7 @@ class MapEditor;
 class CropMaker;
 
 typedef std::shared_ptr<class TilingMaker>      TilingMakerPtr;
-typedef std::shared_ptr<class Figure>           FigurePtr;
+typedef std::shared_ptr<class Motif>           MotifPtr;
 
 class TiledPatternMaker : public QObject
 {
@@ -54,6 +54,7 @@ signals:
     void sig_image1(QString name);
     void sig_deleteCurrentInWorklist();
     void sig_lockStatus();
+    void sig_workListChanged();
 
     void sig_takeNext();
     void sig_cyclerQuit();
@@ -81,6 +82,7 @@ public slots:
     void slot_splitScreen(bool checked);
 
     void slot_compareImages(QString leftName, QString rightName, bool autoMode);
+    void slot_compareLoaded(QString leftName, bool autoMode);
     void slot_cyclerFinished();
     void slot_view_image(QString left, QString right, bool transparent, bool popup);
     void slot_show_png(QString file, int row, int col);
@@ -90,6 +92,7 @@ public slots:
 protected:
     void init();
     void setDarkTheme(bool enb);
+    void compare(QImage & img_left, QImage & img_right, bool autoMode);
 
     ImageWidget       * popupPixmap(QPixmap & pixmap,QString title);
     TransparentWidget * popupTransparentPixmap(QPixmap & pixmap,QString title);

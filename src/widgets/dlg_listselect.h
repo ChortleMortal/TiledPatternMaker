@@ -6,7 +6,7 @@ class QHBoxLayout;
 #include <QDialog>
 #include "widgets/versioned_list_widget.h"
 
-typedef std::shared_ptr<class PlacedFeature>    PlacedFeaturePtr;
+typedef std::shared_ptr<class PlacedTile>    PlacedTilePtr;
 
 class DlgListSelect : public QDialog
 {
@@ -33,7 +33,7 @@ class AQFrame : public QFrame
 public:
     void paintEvent(QPaintEvent *event) Q_DECL_OVERRIDE;
 
-    PlacedFeaturePtr feature;
+    PlacedTilePtr tile;
     int scale;
 };
 

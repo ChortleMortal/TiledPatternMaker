@@ -239,10 +239,10 @@ int AQTableWidget::getTableHeight(int maxHeight)
 AQPushButton::AQPushButton(const QString &text, QWidget * parent) : QPushButton(text,parent)
 {
     setCheckable(true);
-    setStyleSheet("QPushButton:checked{background-color:LightGreen}");
+    setStyleSheet("QPushButton:checked{background-color:LightGreen; color:black; }");
 }
 
 BQPushButton::BQPushButton(const QString &text, QWidget * parent) : QPushButton(text,parent)
 {
-    setStyleSheet("QPushButton:pressed{background-color:LightGreen}");
+    setStyleSheet("QPushButton:pressed{background-color:LightGreen; color:black;}");
 }

@@ -1,5 +1,5 @@
 #include "mosaic/prototype.h"
-#include "figures/figure.h"
+#include "motifs/motif.h"
 #include "geometry/crop.h"
 #include "geometry/fill_region.h"
 #include "geometry/map.h"
@@ -7,8 +7,8 @@
 #include "mosaic/design_element.h"
 #include "panels/panel.h"
 #include "settings/configuration.h"
-#include "tile/feature.h"
-#include "tile/placed_feature.h"
+#include "tile/tile.h"
+#include "tile/placed_tile.h"
 #include "tile/tiling.h"
 #include "viewers/viewcontrol.h"
 
@@ -21,7 +21,7 @@ int Prototype::refs = 0;
 // Prototype.java
 //
 // The complete information needed to build a pattern: the tiling and
-// a mapping from features to figures.  Prototype knows how to turn
+// a mapping from tiles to motifs.  Prototype knows how to turn
 // this information into a finished design, returned as a Map.
 
 Prototype::Prototype(TilingPtr t)
@@ -71,10 +71,10 @@ bool Prototype::operator==(const Prototype & other)
         DesignElementPtr ele  = designElements[i];
         DesignElementPtr eleo = other.designElements[i];
 
-        if ( !(ele->getFeature()->equals(eleo->getFeature())))
+        if ( !(ele->getTile()->equals(eleo->getTile())))
             return  false;
 
-        if ( !(ele->getFigure()->equals(eleo->getFigure())))
+        if ( !(ele->getMotif()->equals(eleo->getMotif())))
             return  false;
     }
     return  true;
@@ -82,8 +82,8 @@ bool Prototype::operator==(const Prototype & other)
 
 void Prototype::setTiling(const TilingPtr & newTiling)
 {
-    // replace the features (keeping the figures) where possible
-    // make sure every feature in the new tiling has a design element
+    // replace the tiles (keeping the motifs) where possible
+    // make sure every tile in the new tiling has a design element
     // delete redundant design element
 
     Q_ASSERT(newTiling);
@@ -93,12 +93,12 @@ void Prototype::setTiling(const TilingPtr & newTiling)
 
     wipeoutProtoMap();
 
-    QVector<FeaturePtr>       unusedFeatures;
+    QVector<TilePtr>       unusedTiles;
     QVector<DesignElementPtr> usedElements;
 
-    // match elements to features
-    const QVector<FeaturePtr> uniqueFeatures = newTiling->getUniqueFeatures();
-    for (auto & newFeature : qAsConst(uniqueFeatures))
+    // match elements to tiles
+    const QVector<TilePtr> uniqueTiless = newTiling->getUniqueTiles();
+    for (auto & newTile : qAsConst(uniqueTiless))
     {
         bool used = false;
         for (auto element : qAsConst(designElements))
@@ -107,10 +107,10 @@ void Prototype::setTiling(const TilingPtr & newTiling)
             {
                 continue;
             }
-            if (newFeature->equals(element->getFeature()))
+            if (newTile->equals(element->getTile()))
             {
                 // replace
-                element->replaceFeature(newFeature);
+                element->replaceTile(newTile);
                 usedElements.push_back(element);
                 used = true;
                 break;
@@ -118,7 +118,7 @@ void Prototype::setTiling(const TilingPtr & newTiling)
         }
         if (!used)
         {
-            unusedFeatures.push_back(newFeature);
+            unusedTiles.push_back(newTile);
         }
     }
 
@@ -138,27 +138,27 @@ void Prototype::setTiling(const TilingPtr & newTiling)
     }
 
     // create new elementsN
-    for (const auto & feature : qAsConst(unusedFeatures))
+    for (const auto & tile : qAsConst(unusedTiles))
     {
-        DesignElementPtr del = make_shared<DesignElement>(feature);
+        DesignElementPtr del = make_shared<DesignElement>(tile);
         addElement(del);
     }
 }
 
 void Prototype::analyze(TilingPtr newTiling)
 {
-    QVector<FeaturePtr> features = newTiling->getUniqueFeatures();
+    QVector<TilePtr> tiles = newTiling->getUniqueTiles();
     QString line = "elements: ";
     for (const auto & designElement : qAsConst(designElements))
     {
-        FeaturePtr feature = designElement->getFeature();
-        line += feature->summary();
+        TilePtr tile = designElement->getTile();
+        line += tile->summary();
     }
     qDebug().noquote() <<  line;
-    line = "features: ";
-    for (const auto & feature : qAsConst(features))
+    line = "tiles: ";
+    for (const auto & tile : qAsConst(tiles))
     {
-        line += feature->summary();
+        line += tile->summary();
     }
     qDebug().noquote() <<  line;
 }
@@ -178,11 +178,11 @@ QString Prototype::getInfo() const
     return QString("elements=%1 tiling=%2").arg(designElements.size()).arg(tiling->getName());
 }
 
-DesignElementPtr Prototype::getDesignElement(const FeaturePtr & feature)
+DesignElementPtr Prototype::getDesignElement(const TilePtr & tile)
 {
     for (const auto & designElement : qAsConst(designElements))
     {
-        if (designElement->getFeature() == feature)
+        if (designElement->getTile() == tile)
         {
             return designElement;
         }
@@ -205,42 +205,42 @@ DesignElementPtr Prototype::getDesignElement(int index)
     return del;
 }
 
-FeaturePtr  Prototype::getFeature(const FigurePtr & figure)
+TilePtr  Prototype::getTile(const MotifPtr & motif)
 {
     for (const auto & designElement: qAsConst(designElements))
     {
-        if (designElement->getFigure() == figure)
+        if (designElement->getMotif() == motif)
         {
-            return designElement->getFeature();
+            return designElement->getTile();
         }
     }
 
-    qWarning() << "FEATURE NOT FOUND";
-    FeaturePtr f;
+    qWarning() << "TILE NOT FOUND";
+    TilePtr f;
     return f;
 }
 
-FigurePtr Prototype::getFigure(const FeaturePtr & feature)
+MotifPtr Prototype::getMotif(const TilePtr & tile)
 {
     for (const auto & designElement: qAsConst(designElements))
     {
-        if (designElement->getFeature() == feature)
+        if (designElement->getTile() == tile)
         {
-            return designElement->getFigure();
+            return designElement->getMotif();
         }
     }
 
-    qWarning() << "FIGURE IS NOT FOUND";
-    FigurePtr f;
+    qWarning() << "MOTIF IS NOT FOUND";
+    MotifPtr f;
     return f;
 }
 
-QList<FeaturePtr> Prototype::getFeatures()
+QList<TilePtr> Prototype::getTiles()
 {
-    QList<FeaturePtr> ql;
+    QList<TilePtr> ql;
     for (const auto & designElement: qAsConst(designElements))
     {
-        ql.append(designElement->getFeature());
+        ql.append(designElement->getTile());
     }
     return ql;
 }
@@ -253,12 +253,12 @@ void Prototype::walk()
         qWarning() << "There are no design elements in the prototype for tiling" << tiling->getName();
     }
 
-    qDebug() << "start Prototype walk.... num figures=" << designElements.size();
+    qDebug() << "start Prototype walk.... num motifs=" << designElements.size();
     for (const auto & element : qAsConst(designElements))
     {
-        FeaturePtr feature = element->getFeature();
-        FigurePtr  figure  = element->getFigure();
-        qDebug().noquote() << "figure:" << figure->getFigureDesc() << " feature:" << feature->summary();
+        TilePtr tile = element->getTile();
+        MotifPtr  motif  = element->getMotif();
+        qDebug().noquote() << "motif:" << motif->getMotifDesc() << " tile:" << tile->summary();
     }
     qDebug() << "....end Prototype walk";
 }
@@ -268,7 +268,7 @@ void Prototype::dump()
     auto map = getExistingProtoMap();
     if (map)
     {
-        qDebug().noquote() << "Prototype:" << map->summary2();
+        qDebug().noquote() << "Prototype:" << map->summary();
     }
     else
     {
@@ -307,18 +307,18 @@ void Prototype::createProtoMap()
     // Use FillRegion to get a list of translations for this tiling.
     // Note that the fill data could be from the mosaic rather than the tiling
     // this is where the locations for the replicated styles are put
-    // each figure point is placed with a relative transform from the tiling when the map is constructed
+    // each motif point is placed with a relative transform from the tiling when the map is constructed
     FillRegion flood(tiling,vcontrol->getFillData());
     QVector<QTransform> translations = flood.getTransforms();
 
     if (designElements.size() == 1 && translations.size() == 1 && translations[0].isIdentity())
     {
-        auto feature = designElements[0]->getFeature();
-        auto placements = tiling->getPlacements(feature);
+        auto tile = designElements[0]->getTile();
+        auto placements = tiling->getPlacements(tile);
         if (placements.size() == 0)
         {
-            auto figure = designElements[0]->getFigure();
-            protoMap = figure->getFigureMap();
+            auto motif = designElements[0]->getMotif();
+            protoMap = motif->getMap();
             qDebug() << "PROTOTYPE  is figure map";
             // This is a special edge case and seems a kludge, fighting the system.
             // With more thought a better implementation of this idea could be made
@@ -329,36 +329,36 @@ void Prototype::createProtoMap()
     {
         for (const auto & designElement : designElements)
         {
-            // Now, for each different feature, build a submap corresponding
-            // to all translations of that feature.
-            FeaturePtr feature        = designElement->getFeature();
-            FigurePtr  figure         = designElement->getFigure();
+            // Now, for each different tile, build a submap corresponding
+            // to all translations of that tile.
+            TilePtr tile   = designElement->getTile();
+            MotifPtr motif = designElement->getMotif();
 
-            QVector<QTransform> subT  = tiling->getPlacements(feature);
+            QVector<QTransform> subT  = tiling->getPlacements(tile);
             if (!subT.size())
                 subT.push_back(QTransform());   // dummy tilings have no placements
             qDebug() << "transforms =" << subT.size();
 
-            MapPtr     figmap         = figure->getFigureMap();
-            qDebug().noquote() << "protomap figure :" << figure->getFigureDesc() << figmap->summary();
+            MapPtr motifmap = motif->getMap();
+            qDebug().noquote() << "protomap motif:" << motif->getMotifDesc() << motifmap->namedSummary();
 
             // Within a single translational unit, assemble the different
             // transformed figures corresponding to the given feature into a map.
             MapPtr unitmap = make_shared<Map>("proto transmap");
-            unitmap->mergeMany(figmap, subT);
-            qDebug().noquote() << "unitmap" << unitmap->summary2();
+            unitmap->mergeMany(motifmap, subT);
+            qDebug().noquote() << "unitmap" << unitmap->summary();
 
             // Now put all the translations together into a single map for this feature.
-            MapPtr featuremap = make_shared<Map>("proto featuremap");
+            MapPtr tilemap = make_shared<Map>("proto  tile emap");
             qDebug() << "translations =" << translations.size();
-            featuremap->mergeMany(unitmap, translations);
-            qDebug().noquote() << "featuremap" << featuremap->summary2();
+            tilemap->mergeMany(unitmap, translations);
+            qDebug().noquote() << "tile emap" << tilemap->summary();
 
             // And do a slow merge to add this map to the finished design.
-            qDebug().noquote() << "protomap before:" << protoMap->summary2();
-            protoMap->mergeMap(featuremap);
+            qDebug().noquote() << "protomap before:" << protoMap->summary();
+            protoMap->mergeMap(tilemap);
 
-            qDebug().noquote() << "protomap end: figure - " << figure->getFigureDesc() << protoMap->summary2();
+            qDebug().noquote() << "protomap end: figure - " << motif->getMotifDesc() << protoMap->summary();
         }
         qDebug() << "PROTOTYPE merged";
     }

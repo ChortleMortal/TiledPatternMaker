@@ -2,7 +2,7 @@
 #include "geometry/crop.h"
 #include "geometry/map.h"
 #include "settings/configuration.h"
-#include "tile/feature.h"
+#include "tile/tile.h"
 #include "viewers/viewcontrol.h"
 #include "misc/geo_graphics.h"
 #include<QPainter>

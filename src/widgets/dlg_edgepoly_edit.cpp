@@ -10,7 +10,7 @@
 
 /////////////////////////////////////////////////////////////////
 ///
-/// DlgFeatureEdit::DlgFeatureEdit
+/// DlgEdgePolyEdit
 ///
 /////////////////////////////////////////////////////////////////
 
@@ -18,7 +18,7 @@
 DlgEdgePolyEdit::DlgEdgePolyEdit(EdgePoly & epoly, QTransform t, QWidget *parent) : QDialog(parent), epoly(epoly)
 {
     T = t;
-    original = epoly.getPoly();    // for undo
+    original2 = epoly;    // for undo
 
     setAttribute(Qt::WA_DeleteOnClose);
 
@@ -155,13 +155,13 @@ void DlgEdgePolyEdit::display()
 void DlgEdgePolyEdit::slot_ok()
 {
     TilingMakerPtr tilingMaker = TilingMaker::getSharedInstance();
-    tilingMaker->sm_take(tilingMaker->getSelected(),SM_FEATURE_CHANGED);
+    tilingMaker->sm_take(tilingMaker->getSelected(),SM_TILE_CHANGED);
     accept();
 }
 
 void DlgEdgePolyEdit::slot_undo()
 {
-    epoly = original;
+    epoly = original2;
 
     ViewControl * view = ViewControl::getInstance();
     view->update();

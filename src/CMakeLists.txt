@@ -23,14 +23,14 @@ set(PROJECT_SOURCES
     enums/ecyclemode.h
     enums/edesign.cpp
     enums/edesign.h
-    enums/efigtype.cpp
-    enums/efigtype.h
     enums/efilesystem.h
     enums/ekeyboardmode.cpp
     enums/ekeyboardmode.h
     enums/elogmode.h
     enums/emapeditor.cpp
     enums/emapeditor.h
+    enums/emotiftype.cpp
+    enums/emotiftype.h
     enums/emousemode.h
     enums/estatemachineevent.cpp
     enums/estatemachineevent.h
@@ -39,28 +39,30 @@ set(PROJECT_SOURCES
     enums/etilingmakermousemode.h
     enums/eviewtype.cpp
     enums/eviewtype.h
-    figures/explicit_figure.cpp
-    figures/explicit_figure.h
-    figures/extended_rosette.cpp
-    figures/extended_rosette.h
-    figures/extended_star.cpp
-    figures/extended_star.h
-    figures/figure.cpp
-    figures/figure.h
-    figures/figure_connector.cpp
-    figures/figure_connector.h
-    figures/infer.cpp
-    figures/infer.h
-    figures/radial_figure.cpp
-    figures/radial_figure.h
-    figures/rosette.cpp
-    figures/rosette.h
-    figures/rosette_connect_figure.cpp
-    figures/rosette_connect_figure.h
-    figures/star.cpp
-    figures/star.h
-    figures/star_connect_figure.cpp
-    figures/star_connect_figure.h
+    motifs/explicit_motif.cpp
+    motifs/explicit_motif.h
+    motifs/extended_rosette.cpp
+    motifs/extended_rosette.h
+    motifs/extended_star.cpp
+    motifs/extended_star.h
+    motifs/extender.cpp
+    motifs/extender.h
+    motifs/inference_engine.cpp
+    motifs/inference_engine.h
+    motifs/motif.cpp
+    motifs/motif.h
+    motifs/motif_connector.cpp
+    motifs/motif_connector.h
+    motifs/radial_motif.cpp
+    motifs/radial_motif.h
+    motifs/rosette.cpp
+    motifs/rosette.h
+    motifs/rosette_connect.cpp
+    motifs/rosette_connect.h
+    motifs/star.cpp
+    motifs/star.h
+    motifs/star_connect.cpp
+    motifs/star_connect.h
     geometry/arcdata.cpp
     geometry/arcdata.h
     geometry/belowandaboveedge.cpp
@@ -93,10 +95,10 @@ set(PROJECT_SOURCES
     geometry/map_verify.cpp
     geometry/measurement.cpp
     geometry/measurement.h
-    geometry/neighbours.cpp
-    geometry/neighbours.h
     geometry/neighbour_map.cpp
     geometry/neighbour_map.h
+    geometry/neighbours.cpp
+    geometry/neighbours.h
     geometry/point.cpp
     geometry/point.h
     geometry/threads.cpp
@@ -154,20 +156,20 @@ set(PROJECT_SOURCES
     makers/mosaic_maker/style_color_fill_set.h
     makers/mosaic_maker/style_editors.cpp
     makers/mosaic_maker/style_editors.h
-    makers/motif_maker/explicit_figure_editors.cpp
-    makers/motif_maker/explicit_figure_editors.h
-    makers/motif_maker/feature_button.cpp
-    makers/motif_maker/feature_button.h
-    makers/motif_maker/feature_selector.cpp
-    makers/motif_maker/feature_selector.h
-    makers/motif_maker/figure_editors.cpp
-    makers/motif_maker/figure_editors.h
+    makers/motif_maker/explicit_motif_editors.cpp
+    makers/motif_maker/explicit_motif_editors.h
+    makers/motif_maker/motif_button.cpp
+    makers/motif_maker/motif_button.h
     makers/motif_maker/motif_editor.cpp
     makers/motif_maker/motif_editor.h
     makers/motif_maker/motif_maker.cpp
     makers/motif_maker/motif_maker.h
-    makers/tiling_maker/feature_selection.cpp
-    makers/tiling_maker/feature_selection.h
+    makers/motif_maker/motif_selector.cpp
+    makers/motif_maker/motif_selector.h
+    makers/motif_maker/regular_motif_editors.cpp
+    makers/motif_maker/regular_motif_editors.h
+    makers/tiling_maker/tile_selection.cpp
+    makers/tiling_maker/tile_selection.h
     makers/tiling_maker/tiling_maker.cpp
     makers/tiling_maker/tiling_maker.h
     makers/tiling_maker/tiling_mouseactions.cpp
@@ -199,10 +201,10 @@ set(PROJECT_SOURCES
     misc/shortcuts.cpp
     misc/shortcuts.h
     misc/signal_blocker.h
-    misc/tpm_io.h
-    misc/tpmsplash.cpp
     misc/timers.cpp
     misc/timers.h
+    misc/tpm_io.h
+    misc/tpmsplash.cpp
     misc/unique_qvector.h
     misc/utilities.cpp
     misc/utilities.h
@@ -229,8 +231,8 @@ set(PROJECT_SOURCES
     panels/page_borders.h
     panels/page_config.cpp
     panels/page_config.h
-    panels/page_crop.cpp
-    panels/page_crop.h
+    panels/page_crop_maker.cpp
+    panels/page_crop_maker.h
     panels/page_debug.cpp
     panels/page_debug.h
     panels/page_grid.cpp
@@ -247,6 +249,8 @@ set(PROJECT_SOURCES
     panels/page_map_editor.h
     panels/page_modelSettings.cpp
     panels/page_modelSettings.h
+    panels/page_mosaic_info.cpp
+    panels/page_mosaic_info.h
     panels/page_mosaic_maker.cpp
     panels/page_mosaic_maker.h
     panels/page_motif_maker.cpp
@@ -255,8 +259,6 @@ set(PROJECT_SOURCES
     panels/page_prototype_info.h
     panels/page_save.cpp
     panels/page_save.h
-    panels/page_style_figure_info.cpp
-    panels/page_style_figure_info.h
     panels/page_system_info.cpp
     panels/page_system_info.h
     panels/page_tiling_maker.cpp
@@ -294,16 +296,18 @@ set(PROJECT_SOURCES
     style/thick.h
     style/tile_colors.cpp
     style/tile_colors.h
-    tile/feature.cpp
-    tile/feature.h
-    tile/feature_reader.cpp
-    tile/feature_reader.h
-    tile/feature_writer.cpp
-    tile/feature_writer.h
-    tile/placed_feature.cpp
-    tile/placed_feature.h
+    tile/placed_tile.cpp
+    tile/placed_tile.h
+    tile/tile.cpp
+    tile/tile.h
+    tile/tile_reader.cpp
+    tile/tile_reader.h
+    tile/tile_writer.cpp
+    tile/tile_writer.h
     tile/tiling.cpp
     tile/tiling.h
+    tile/tiling_data.cpp
+    tile/tiling_data.h
     tile/tiling_loader.cpp
     tile/tiling_loader.h
     tile/tiling_manager.cpp
@@ -312,18 +316,18 @@ set(PROJECT_SOURCES
     tile/tiling_writer.h
     tiledpatternmaker.cpp
     tiledpatternmaker.h
-    viewers/grid.cpp
-    viewers/grid.h
     viewers/border_view.cpp
     viewers/border_view.h
     viewers/crop_view.cpp
     viewers/crop_view.h
+    viewers/grid.cpp
+    viewers/grid.h
     viewers/map_editor_view.cpp
     viewers/map_editor_view.h
-    viewers/motif_view.cpp
-    viewers/motif_view.h
     viewers/measure_view.cpp
     viewers/measure_view.h
+    viewers/motif_view.cpp
+    viewers/motif_view.h
     viewers/prototype_view.cpp
     viewers/prototype_view.h
     viewers/shape_view.cpp
@@ -338,8 +342,8 @@ set(PROJECT_SOURCES
     viewers/viewcontrol.h
     viewers/viewerbase.cpp
     viewers/viewerbase.h
-    widgets/crop_widget.h
     widgets/crop_widget.cpp
+    widgets/crop_widget.h
     widgets/dlg_colorSet.cpp
     widgets/dlg_colorSet.h
     widgets/dlg_edgepoly_edit.cpp
@@ -354,8 +358,8 @@ set(PROJECT_SOURCES
     widgets/dlg_magnitude.h
     widgets/dlg_name.cpp
     widgets/dlg_name.h
-    widgets/dlg_push_select.h
     widgets/dlg_push_select.cpp
+    widgets/dlg_push_select.h
     widgets/dlg_rebase.cpp
     widgets/dlg_rebase.h
     widgets/dlg_rename.cpp
@@ -393,6 +397,12 @@ set(PROJECT_SOURCES
     widgets/versioned_list_widget.cpp
     widgets/versioned_list_widget.h
 )
+
+set (OTHER_FILES
+    ../release-notes.txt
+)
+
+add_custom_target(Xtra-files SOURCES ${OTHER_FILES})
 
 qt_add_resources(PROJECT_SOURCES tpm.qrc)
 

@@ -1,0 +1,125 @@
+<?xml version="1.0"?>
+<!-- Written: Tue Aug 23 2022 17:48:27 -->
+<Tiling version="6">
+	<Name>pint1.v1</Name>
+	<Fill singleton="f">-1,2,-1,1</Fill>
+	<T1>2.881849859518391,-2.881849859518392</T1>
+	<T2>-1.77635683940025e-15,-5.763699719036784</T2>
+	<ViewSettings>
+		<width>774</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Feature type="regular" sides="12" rotation="0" scale="1.54">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-5.186666666666667</tranX>
+			<tranY>2.786666666666666</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="regular" sides="4" rotation="0" scale="4.38999999999995">
+		<Placement>
+			<scale>0.3056605602547625</scale>
+			<rot>0</rot>
+			<tranX>-5.186666666666667</tranX>
+			<tranY>-0.09518319285172572</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="1">-3.646666666666669,-2.564391296026189</Point>
+			<Point id="2">-3.646666666666668,-1.635183192851726</Point>
+		</Line>
+		<Line>
+			<Point reference="2" />
+			<Point id="3">-2.717458563492206,-1.635183192851725</Point>
+		</Line>
+		<Line>
+			<Point reference="3" />
+			<Point id="4">-3.432175050804348,-1.222541436507796</Point>
+		</Line>
+		<Line>
+			<Point reference="4" />
+			<Point id="5">-3.844816807148276,-0.507824949195654</Point>
+		</Line>
+		<Line>
+			<Point reference="5" />
+			<Point id="6">-3.844816807148276,-1.437033052370118</Point>
+		</Line>
+		<Line>
+			<Point reference="6" />
+			<Point id="7">-4.77402491032274,-1.437033052370118</Point>
+		</Line>
+		<Line>
+			<Point reference="7" />
+			<Point id="8">-4.059308423010598,-1.849674808714046</Point>
+		</Line>
+		<Line>
+			<Point reference="8" />
+			<Point reference="1" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="9">-3.844816807148276,0.3174585634922037</Point>
+			<Point id="10">-3.432175050804347,1.032175050804345</Point>
+		</Line>
+		<Line>
+			<Point reference="10" />
+			<Point id="11">-2.717458563492205,1.444816807148274</Point>
+		</Line>
+		<Line>
+			<Point reference="11" />
+			<Point id="12">-3.646666666666667,1.444816807148274</Point>
+		</Line>
+		<Line>
+			<Point reference="12" />
+			<Point id="13">-3.666666666666666,2.273333333333333</Point>
+		</Line>
+		<Line>
+			<Point reference="13" />
+			<Point id="14">-4.059308423010597,1.659308423010595</Point>
+		</Line>
+		<Line>
+			<Point reference="14" />
+			<Point id="15">-4.774024910322739,1.246666666666666</Point>
+		</Line>
+		<Line>
+			<Point reference="15" />
+			<Point id="16">-3.844816807148275,1.246666666666666</Point>
+		</Line>
+		<Line>
+			<Point reference="16" />
+			<Point reference="9" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Feature>
+	<Desc />
+	<Auth>David A Casper</Auth>
+	<BackgroundImage name="72da177006c3b480f28af437e0d9b708.jpg">
+		<Scale>1</Scale>
+		<Rot>3.141592653589793</Rot>
+		<X>-388</X>
+		<Y>-8</Y>
+		<Center>0,0</Center>
+	</BackgroundImage>
+</Tiling>

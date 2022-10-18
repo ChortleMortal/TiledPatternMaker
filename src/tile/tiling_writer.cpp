@@ -10,8 +10,8 @@
 #include "panels/panel.h"
 #include "mosaic/mosaic_writer.h"
 #include "tile/tiling.h"
-#include "tile/placed_feature.h"
-#include "tile/feature.h"
+#include "tile/placed_tile.h"
+#include "tile/tile.h"
 #include "misc/tpm_io.h"
 
 using namespace pugi;
@@ -109,8 +109,8 @@ void TilingWriter::writeTilingXML(QTextStream & out)
     refId    = 0;
     vertex_ids.clear();
 
-    // Regroup features by their translation so that we write each feature only once.
-    FeatureGroup fgroup = tiling->regroupFeatures();
+    // Regroup tiles by their translation so that we write each tile only once.
+    TileGroup fgroup = tiling->regroupTiles();
 
     out << "<?xml version=\"1.0\"?>" << endl;
     QString qs = QString("<Tiling version=\"%1\">").arg(currentTilingXMLVersion);
@@ -121,7 +121,7 @@ void TilingWriter::writeTilingXML(QTextStream & out)
     // fill paratmeters not part of original taprats
     int minX,minY,maxX,maxY;
     bool singleton;
-    tiling->getSettings().getFillData()->get(singleton,minX,maxX,minY,maxY);
+    tiling->getData().getFillData().get(singleton,minX,maxX,minY,maxY);
     if (!singleton)
     {
         out << "<Fill singleton = \"f\">" << minX << "," << maxX << "," << minY << "," << maxY << "</Fill>" << endl;
@@ -130,52 +130,52 @@ void TilingWriter::writeTilingXML(QTextStream & out)
     {
         out << "<Fill singleton = \"t\">0,0,0,0</Fill>";
     }
-    QPointF t1 = tiling->getTrans1();
-    QPointF t2 = tiling->getTrans2();
+    QPointF t1 = tiling->getData().getTrans1();
+    QPointF t2 = tiling->getData().getTrans2();
     out << "<T1>" <<  t1.x() << "," << t1.y() << "</T1>" << endl;
     out << "<T2>" <<  t2.x() << "," << t2.y() << "</T2>" << endl;
 
     writeViewSettings(out);
 
-    //structure is feature then placements. so feature is not duplicated. I dont know if this adds any value
+    //structure is tile then placements. so tile is not duplicated. I dont know if this adds any value
     for (auto& apair : fgroup)
     {
-        FeaturePtr feature                = apair.first;
-        QVector<PlacedFeaturePtr> & qvpfp = apair.second;
-        PlacedFeaturePtr placedFeature    = qvpfp.first();
+        TilePtr tile                    = apair.first;
+        QVector<PlacedTilePtr> & qvpfp = apair.second;
+        PlacedTilePtr placedTile        = qvpfp.first();
 
-        if (placedFeature->isGirihShape())    // TODO verify this code works
+        if (placedTile->isGirihShape())    // TODO verify this code works
         {
             // saved girih shapesd have a translation
-            out << "<Feature type=\"girih\" name=\"" << placedFeature->getGirihShapeName() << "\">" << endl;
+            out << "<Feature type=\"girih\" name=\"" << placedTile->getGirihShapeName() << "\">" << endl;
 
         }
-        else if (feature->isRegular())
+        else if (tile->isRegular())
         {
             // regular features have sides and rotation
-            out << "<Feature type=\"regular\" sides=\"" << feature->numPoints() << "\" rotation=\"" << feature->getRotation() << "\" scale=\"" << feature->getScale() << "\">" << endl;
+            out << "<Feature type=\"regular\" sides=\"" << tile->numPoints() << "\" rotation=\"" << tile->getRotation() << "\" scale=\"" << tile->getScale() << "\">" << endl;
         }
         else
         {
             // edge polys have rotation, numSides can be calculated
-            out << "<Feature type=\"edgepoly\" rotation=\"" << feature->getRotation() << "\" scale=\"" << feature->getScale() << "\">" << endl;
-            EdgePoly epoly = feature->getEdgePoly();
+            out << "<Feature type=\"edgepoly\" rotation=\"" << tile->getRotation() << "\" scale=\"" << tile->getScale() << "\">" << endl;
+            EdgePoly epoly = tile->getEdgePoly();
             setEdgePoly(out,epoly);
         }
 
         // background colors
-        ColorSet * featureColors  = feature->getFeatureColors();
-        int sz = featureColors->size();
+        ColorSet * tileColors  = tile->getTileColors();
+        int sz = tileColors->size();
         if (sz)
         {
             QString s = "<BkgdColors>";
             for (int i = 0; i < (sz-1); i++)
             {
-                QColor color = featureColors->getColor(i).color;
+                QColor color = tileColors->getColor(i).color;
                 s += color.name();
                 s += ",";
             }
-            QColor color = featureColors->getColor(sz-1).color;
+            QColor color = tileColors->getColor(sz-1).color;
             s += color.name();
             s += "</BkgdColors>";
             out << s << endl;
@@ -183,7 +183,7 @@ void TilingWriter::writeTilingXML(QTextStream & out)
 
         for(auto it= qvpfp.begin(); it != qvpfp.end(); it++ )
         {
-            PlacedFeaturePtr & pf = *it;
+            PlacedTilePtr & pf = *it;
             QTransform t = pf->getTransform();
             out << "<Placement>";
             out << "<scale>" << Transform::scalex(t) << "</scale>";
@@ -235,11 +235,11 @@ void TilingWriter::writeViewSettings(QTextStream & out)
 {
     out << "<ViewSettings>" <<  endl;
 
-    QSize size = tiling->getSettings().getSize();
+    QSize size = tiling->getData().getSettings().getSize();
     out << "<width>"  << size.width()  << "</width>" << endl;
     out << "<height>" << size.height() << "</height>" << endl;
 
-    QSize zsize = tiling->getSettings().getZSize();
+    QSize zsize = tiling->getData().getSettings().getZSize();
     out << "<zwidth>"  << zsize.width()  << "</zwidth>" << endl;
     out << "<zheight>" << zsize.height() << "</zheight>" << endl;
 

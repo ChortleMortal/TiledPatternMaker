@@ -28,19 +28,21 @@ public:
     static CropMaker * getInstance();
 
     CropPtr loadCrop();
+    void    unloadCrop();
+
     CropPtr createCrop();
     CropPtr getCrop();
     void    removeCrop();
     bool    embedCrop(MapPtr map);
     bool    cropMap(MapPtr map);
 
-    void                setActiveCrop(CropPtr crop) { activeCrop = crop;  localCrop.reset(); }
-    CropPtr             getActiveCrop()             { return activeCrop; }
-    void                setLocalCrop(CropPtr crop)  { localCrop = crop; activeCrop = crop; }
-    CropPtr             getLocalCrop()              { return localCrop; }
+    void    setActiveCrop(CropPtr crop) { activeCrop = crop;  localCrop.reset(); }
+    CropPtr getActiveCrop()             { return activeCrop; }
+    void    setLocalCrop(CropPtr crop)  { localCrop = crop; activeCrop = crop; }
+    CropPtr getLocalCrop()              { return localCrop; }
 
-    eCropMakerState     getState() { return _state; }
-    void                setState(eCropMakerState state);
+    eCropMakerState getState() { return _state; }
+    void            setState(eCropMakerState state);
 
 protected:
     CropMaker();

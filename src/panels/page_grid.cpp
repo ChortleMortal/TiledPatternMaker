@@ -7,7 +7,6 @@
 #include "panels/page_grid.h"
 #include "widgets/layout_sliderset.h"
 #include "settings/configuration.h"
-#include "viewers/view.h"
 #include "panels/panel.h"
 #include "viewers/grid.h"
 
@@ -34,6 +33,8 @@ QGroupBox *  page_grid::createGridSection()
     DoubleSpinSet* gridModelSpacing    = new DoubleSpinSet("Spacing",1.0,0.0001,900);
     SpinSet      * gridModelWidth      = new SpinSet("Width",config->gridModelWidth,1,9);
 
+    QRadioButton * gridTiling          = new QRadioButton("Tiling Repeat Units");
+
     gridScreen->setFixedWidth(91);
     gridScreenCentered->setFixedWidth(111);
     gridModel->setFixedWidth(91);
@@ -45,6 +46,7 @@ QGroupBox *  page_grid::createGridSection()
     gridUnitGroup = new QButtonGroup;
     gridUnitGroup->addButton(gridScreen,GRID_UNITS_SCREEN);
     gridUnitGroup->addButton(gridModel,GRID_UNITS_MODEL);
+    gridUnitGroup->addButton(gridTiling,GRID_UNITS_TILE);
 
     // initial values
 
@@ -58,6 +60,8 @@ QGroupBox *  page_grid::createGridSection()
     gridModelSpacing->setValue(config->gridModelSpacing);
     gridModelWidth->setValue(config->gridModelWidth);
 
+
+
     connect(gridUnitGroup ,     &QButtonGroup::idClicked,     this, &page_grid::slot_gridUnitsChanged);
     connect(gridBox,            &QGroupBox::clicked,          this, &page_grid::slot_showGridChanged);
     connect(gridScreenSpacing,  &SpinSet::valueChanged,       this, &page_grid::slot_gridScreenSpacingChanged);
@@ -67,7 +71,6 @@ QGroupBox *  page_grid::createGridSection()
     connect(gridScreenCentered, &QCheckBox::stateChanged,     this, &page_grid::slot_gridScreenCenteredChanged);
     connect(gridModelCentered,  &QCheckBox::stateChanged,     this, &page_grid::slot_gridModelCenteredChanged);
 
-    QVBoxLayout * vboxG = new QVBoxLayout();
 
     QHBoxLayout * hbox = new QHBoxLayout();
     hbox->addWidget(gridScreen);
@@ -76,17 +79,24 @@ QGroupBox *  page_grid::createGridSection()
     hbox->addSpacing(7);
     hbox->addLayout(gridScreenSpacing);
     hbox->addStretch();
-    vboxG->addLayout(hbox);
 
-    hbox = new QHBoxLayout();
-    hbox->addWidget(gridModel);
-    hbox->addWidget(gridModelCentered);
-    hbox->addLayout(gridModelWidth);
-    hbox->addSpacing(7);
-    hbox->addLayout(gridModelSpacing);
-    hbox->addStretch();
-    vboxG->addLayout(hbox);
+    QHBoxLayout * hbox2 = new QHBoxLayout();
+    hbox2->addWidget(gridModel);
+    hbox2->addWidget(gridModelCentered);
+    hbox2->addLayout(gridModelWidth);
+    hbox2->addSpacing(7);
+    hbox2->addLayout(gridModelSpacing);
+    hbox2->addStretch();
 
+    QHBoxLayout * hbox3 = new QHBoxLayout();
+    hbox3->addWidget(gridTiling);
+    hbox3->addStretch();
+
+    QVBoxLayout * vboxG = new QVBoxLayout();
+    vboxG->addLayout(hbox3);
+    vboxG->addLayout(hbox);
+    vboxG->addLayout(hbox2);
+    vboxG->addSpacing(10);
     vboxG->addLayout(gridTypeLayout);
 
     gridBox->setLayout(vboxG);
@@ -135,10 +145,6 @@ void  page_grid::onRefresh()
 void page_grid::slot_showGridChanged(bool checked)
 {
     config->showGrid = checked;
-    if (checked)
-    {
-        Grid::getSharedInstance()->create();
-    }
     emit sig_refreshView();
 }
 
@@ -146,7 +152,6 @@ void page_grid::slot_gridModelSpacingChanged(qreal value)
 {
     config->gridModelSpacing = value;
     emit sig_refreshView();
-
 }
 
 void page_grid::slot_gridScreenSpacingChanged(int value)

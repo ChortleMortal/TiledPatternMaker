@@ -1,3 +1,29 @@
+Version 2.7
+===========
+
+Version 2.7 is a stabilization release with many bug fixes.  The overall workflow
+from creating tilings to adding motifs which are decorated to make mosaics is working well.
+
+In this version the terminology is streamlined under the hood to match the visible control
+panel menus.
+- Instead of tilings containing features, tilings now contain tiles
+- Instead of prototypes containing figures (and features) they now contain motifs (and tiles)
+- The resultaant mosaic decorates the prototype with styles
+
+The original taprats/starpat embraced the concept of Polygons in Contact (PIC) and this remains the
+central thrust of the program.  However, this constraint is relaxed in making tilings, so that tiles
+can now be separated, and even overrlapped.  Articulation of these relaxed constraints is still a
+work-in-progress.  But additionally tiles need not be repeated to flood the visible region. These
+tilings are provisionally termed singletons.
+
+Changes:
+- Adds UNDO for Tiling Maker
+
+Known Problems:
+- The explicit/inferred rosette needs improvement. As it currently is it cannot reproduce all the
+orignal taprats/starpat designs.
+
+
 Version 2.6.0
 =============
 

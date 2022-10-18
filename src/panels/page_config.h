@@ -34,6 +34,7 @@ private slots:
     void    slot_mode(int id);
     void    slot_about();
     void    slot_showCenterChanged(int state);
+    void    slot_updateClicked(bool enb);
 
 protected:
     void    updatePaths();
@@ -52,6 +53,8 @@ private:
 
     QCheckBox   * defaultDesigns;
     QCheckBox   * defaultImages;
+
+
 };
 
 #endif

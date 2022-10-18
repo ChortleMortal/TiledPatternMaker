@@ -4,7 +4,7 @@
 //
 // The representation of a tiling, which will serve as the skeleton for
 // Islamic designs.  A Tiling has two translation vectors and a set of
-// PlacedFeatures that make up a translational unit.  The idea is that
+// placedTiles that make up a translational unit.  The idea is that
 // the whole tiling can be replicated across the plane by placing
 // a copy of the translational unit at every integer linear combination
 // of the translation vectors.  In practice, we only draw at those
@@ -13,21 +13,23 @@
 #ifndef TILING
 #define TILING
 
+#include <QStack>
 #include "geometry/xform.h"
 #include "settings/tristate.h"
-#include "settings/model_settings.h"
+#include "tile/tiling_data.h"
 
-#define MAX_UNIQUE_FEATURE_INDEX 7
+#define MAX_UNIQUE_TILE_INDEX 7
 
-typedef std::shared_ptr<class Feature>          FeaturePtr;
-typedef std::shared_ptr<class PlacedFeature>    PlacedFeaturePtr;
-typedef std::shared_ptr<class Map>              MapPtr;
+typedef std::shared_ptr<class Tile>          TilePtr;
+typedef std::shared_ptr<class PlacedTile>    PlacedTilePtr;
+typedef std::shared_ptr<class Map>           MapPtr;
 
-class FeatureGroup : public  QVector<QPair<FeaturePtr,QVector<PlacedFeaturePtr>>>
+
+class TileGroup : public  QVector<QPair<TilePtr,QVector<PlacedTilePtr>>>
 {
 public:
-    bool containsFeature(FeaturePtr fp);
-    QVector<PlacedFeaturePtr> & getPlacements(FeaturePtr fp);
+    bool containsTile(TilePtr fp);
+    QVector<PlacedTilePtr> & getPlacements(TilePtr fp);
 };
 
 // Translations to tile the plane. Two needed for two-dimensional plane.
@@ -42,12 +44,11 @@ public:
     {
         EMPTY,
         LOADED,
-        MODIFED
+        MODIFIED
     };
 
     Tiling();
     Tiling(QString name, QPointF t1, QPointF t2);
-    Tiling(Tiling * other);
     ~Tiling();
 
     bool        isEmpty();
@@ -64,28 +65,23 @@ public:
     void        setAuthor(QString auth)          { author = auth; }
 
     // Feature management.
-    // Added features are embedded into a PlacedFeature.
-    void        add(const PlacedFeaturePtr pf );
-    void        add(FeaturePtr f, QTransform T );
-    void        remove(PlacedFeaturePtr pf);
+    // Added features are embedded into a placedTile.
+    void        add(const PlacedTilePtr pf );
+    void        add(TilePtr f, QTransform T );
+    void        remove(PlacedTilePtr pf);
 
-    void                      setPlacedFeatures(QVector<PlacedFeaturePtr> & features);
-    const QVector<PlacedFeaturePtr> & getPlacedFeatures() { return placed_features; }
-    int                       countPlacedFeatures() const { return placed_features.size(); }
-    int                       numPlacements(FeaturePtr fp);
-    QVector<QTransform>       getPlacements(FeaturePtr fp);
-    QTransform                getPlacement(FeaturePtr fp, int index);
+    // undo stack
+    void        pushStack();
+    bool        popStack();
+    void        purgeStack() { undoStack.clear(); }
+    int         stackSize()  { return undoStack.size(); }
 
-    QVector<FeaturePtr>       getUniqueFeatures();
+    int                       numPlacements(TilePtr fp);
+    QVector<QTransform>       getPlacements(TilePtr fp);
+    QTransform                getPlacement(TilePtr fp, int index);
 
-    void        setTrans1(QPointF pt) { t1=pt; }
-    void        setTrans2(QPointF pt) { t2=pt; }
-    QPointF     getTrans1() const { return t1; }
-    QPointF     getTrans2() const { return t2; }
-
-    FeatureGroup regroupFeatures();      // the map was deadly, it reordered
-
-    QString     dump() const;
+    QVector<TilePtr>          getUniqueTiles();
+    TileGroup                 regroupTiles();      // the map was deadly, it reordered
 
     void        setCanvasXform(const Xform & xf) { canvasXform = xf; }
     Xform &     getCanvasXform()                 { return canvasXform; }
@@ -96,29 +92,32 @@ public:
     eTilingState getState();
     void         setState(eTilingState state);
 
-    // settings
-    ModelSettings & getSettings() { return settings; }
+    // Data
+
+    const TilingData & getData() { return db; }
+    TilingData & getDataAccess() { pushStack(); state = MODIFIED; return db; }
 
     // map operations
     MapPtr  createMapSingle();
     MapPtr  createMapFullSimple();
     MapPtr  createMapFull();
 
+    QString     dump() const;
+
     static const QString defaultName;
     static int  refs;
 
 protected:
-    QVector<QTransform> getFillTranslations();
 
 private:
     int             version;
     QString         name;
     QString         desc;
     QString         author;
-    ModelSettings   settings;
-    QPointF         t1;
-    QPointF         t2;
-    QVector<PlacedFeaturePtr> placed_features;
+    TilingData      db;
+
+    QStack<TilingData> undoStack;
+
     Xform           canvasXform;
 
     eTilingState    state;

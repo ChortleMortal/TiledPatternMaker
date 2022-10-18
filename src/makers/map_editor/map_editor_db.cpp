@@ -125,9 +125,9 @@ void MapEditorDb::createComposite()
             mtype = MAPED_TYPE_COMPOSITE;
         }
         MapPtr map = layer.getMap();
-        qDebug() << map->summary();
+        qDebug() << map->namedSummary();
         compositeMap->mergeMap(map,tolerance);
-        qDebug() << compositeMap->summary();
+        qDebug() << compositeMap->namedSummary();
     }
 
     compositeMap->deDuplicateVertices(tolerance);

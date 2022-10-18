@@ -4,6 +4,9 @@
 #include <QStandardPaths>
 #include <QApplication>
 #include "settings/configuration.h"
+#include "tiledpatternmaker.h"
+
+extern TiledPatternMaker * theApp;
 
 Configuration * Configuration::mpThis = nullptr;
 
@@ -74,16 +77,20 @@ Configuration::Configuration()
     mosaicOrigCheck     = s.value("mosaicOrigCheck",true).toBool();
     mosaicNewCheck      = s.value("mosaicNewCheck",true).toBool();
     mosaicTestCheck     = s.value("mosaicTestCheck",true).toBool();
+    tilingOrigCheck     = s.value("tilingOrigCheck",true).toBool();
+    tilingNewCheck      = s.value("tilingNewCheck",true).toBool();
+    tilingTestCheck     = s.value("tilingTestCheck",true).toBool();
     tileFilterCheck     = s.value("tileFilterCheck",false).toBool();
-    tm_showAllFeatures  = s.value("tm_showAllFeatures",false).toBool();
+    tm_showAllTiles     = s.value("tm_showAllTiles",false).toBool();
     tm_hideTable        = s.value("tm_hideTable",true).toBool();
     tm_showDebug        = s.value("tm_showDebug",false).toBool();
     tm_autofill         = s.value("tm_autofill",false).toBool();
     tm_showOverlaps     = s.value("tm_showOverlaps",true).toBool();
     lockView            = s.value("lockView",false).toBool();
     splitScreen         = s.value("screenIsSplit",false).toBool();
-    showFeatureBoundary = s.value("showFeatureBoundary",true).toBool();
-    showFigureBoundary  = s.value("showFigureBoundary",true).toBool();
+    showTileBoundary    = s.value("showTileBoundary",true).toBool();
+    showMotifBoundary  = s.value("showMotifBoundary",true).toBool();
+    showMotif          = s.value("showMotif",true).toBool();
     showExtendedBoundary= s.value("showExtendedBoundary",true).toBool();;
 
     compare_popup       = s.value("compare_popup",true).toBool();
@@ -125,17 +132,18 @@ Configuration::Configuration()
     mapedRadius         = s.value("mapedRadius",0.25).toDouble();
     mapedLen            = s.value("mapedLen",1.0).toDouble();
     mapedMergeSensitivity = s.value("mapedMergeSensitivity",1e-2).toDouble();
+    protoviewWidth      = s.value("protoviewWidth",3.0).toDouble();
     genCycle            = static_cast<eCycleMode>(s.value("genCycle",CYCLE_SAVE_STYLE_BMPS).toInt());
     viewCycle           = static_cast<eCycleMode>(s.value("viewCycle",CYCLE_STYLES).toInt());
     fileFilter          = static_cast<eLoadType>(s.value("fileFilter",LOAD_ALL).toInt());
 
     QStringList qsl;
     qsl << "#ff1496d2"   // map
-        << "#ff006c00"   // feature
-        << "#ffd60000"   // figure
-        << "#ffffff00"   // del feature
-        << "#ff0000ff"   // del figure
-        << "#ffffd9d9";  // feature brush
+        << "#ff006c00"   // tile
+        << "#ffd60000"   // motif
+        << "#ffffff00"   // del tile
+        << "#ff0000ff"   // del motif
+        << "#80ffd9d9";  // tile brush
     protoViewColors     = s.value("protoViewColors",qsl).toStringList();
 
     // ensures indices are in range
@@ -147,18 +155,18 @@ Configuration::Configuration()
     primaryDisplay  = false;
     circleX         = false;
     hideCircles     = false;
-    updatePanel     = true;
     showCenterMouse = false;
-    enableDetachedPages = true;
     dontReplicate   = false;
     highlightUnit   = false;
     debugMapEnable  = false;
     dontTrapLog     = false;
     measure         = false;
 
+    updatePanel     = true;
+    motifPropagate  = true;
+    enableDetachedPages = true;
+
     configurePaths();
-
-
 }
 
 void Configuration::save()
@@ -204,18 +212,22 @@ void Configuration::save()
     s.setValue("mosaicOrigCheck",mosaicOrigCheck);
     s.setValue("mosaicNewCheck",mosaicNewCheck);
     s.setValue("mosaicTestCheck",mosaicTestCheck);
+    s.setValue("tilingOrigCheck",tilingOrigCheck);
+    s.setValue("tilingNewCheck",tilingNewCheck);
+    s.setValue("tilingTestCheck",tilingTestCheck);
     s.setValue("tileFilterCheck",tileFilterCheck);
     s.setValue("designFilter",mosaicFilter);
     s.setValue("tileFilter",tileFilter);
-    s.setValue("tm_showAllFeatures",tm_showAllFeatures);
+    s.setValue("tm_showAllTiles",tm_showAllTiles);
     s.setValue("tm_hideTable",tm_hideTable);
     s.setValue("tm_showDebug",tm_showDebug);
     s.setValue("tm_autofill",tm_autofill);
     s.setValue("tm_showOverlaps",tm_showOverlaps);
     s.setValue("lockView",lockView);
     s.setValue("screenIsSplit",splitScreen);
-    s.setValue("showFeatureBoundary",showFeatureBoundary);
-    s.setValue("showFigureBoundary",showFigureBoundary);
+    s.setValue("showTileBoundary",showTileBoundary);
+    s.setValue("showMotifBoundary",showMotifBoundary);
+    s.setValue("showMotif",showMotif);
     s.setValue("showExtendedBoundary",showExtendedBoundary);
     s.setValue("compare_transparent",compare_transparent);
     s.setValue("compare_popup",compare_popup);
@@ -258,10 +270,29 @@ void Configuration::save()
     s.setValue("mapedRadius",mapedRadius);
     s.setValue("mapedLen",mapedLen);
     s.setValue("mapedMergeSensitivity",mapedMergeSensitivity);
+    s.setValue("protoviewWidth",protoviewWidth);
     s.setValue("transparentColor",transparentColor.name(QColor::HexRgb));
     s.setValue("genCycle",genCycle);
     s.setValue("viewCycle",viewCycle);
     s.setValue("fileFilter",fileFilter);
+}
+
+void Configuration::setWorkList (QStringList & list)
+{
+    workList = list;
+    emit theApp->sig_workListChanged();
+}
+
+void Configuration::addWorkList(QString name)
+{
+    workList << name;
+    emit theApp->sig_workListChanged();
+}
+
+void Configuration::clearWorkList()
+{
+    workList.clear();
+    emit theApp->sig_workListChanged();
 }
 
 void Configuration::setViewerType(eViewType  viewerType)
@@ -379,6 +410,7 @@ void Configuration::configurePaths()
     rootTileDir         = root + "tilings/";
     originalTileDir     = root + "tilings/original/";
     newTileDir          = root + "tilings/new_tilings/";
+    testTileDir         = root + "tilings/tests/";
     rootDesignDir       = root + "designs/";
     originalDesignDir   = root + "designs/original/";
     newDesignDir        = root + "designs/new_designs/";

@@ -111,48 +111,6 @@ void ArcData::calcConcave(QPointF p1, QPointF p2, QPointF c)
     Q_ASSERT(span >= 0);
 }
 
-/*
-Uing: https://stackoverflow.com/questions/3306838/algorithm-for-reflecting-a-point-across-a-line
-Given point (x1, y1) and a line that passes through (x2,y2) and (x3,y3), we can first define the line as y = mx + c, where:
-slope m is (y3-y2)/(x3-x2)
-y-intercept c is (x3*y2-x2*y3)/(x3-x2)
-If we want the point (x1,y1) reflected through that line, as (x4, y4), then:
-set d = (x1 + (y1 - c)*m)/(1 + m^2) and then:
-x4 = 2*d - x1
-y4 = 2*d*m - y1 + 2*c
-*/
-
-QPointF ArcData::reflectPoint(QPointF p, QLineF line)
-{
-    qreal x1 = p.x();
-    qreal x2 = line.x1();
-    qreal x3 = line.x2();
-    qreal x4 = 0;
-    qreal y1 = p.y();
-    qreal y2 = line.y1();
-    qreal y3 = line.y2();
-    qreal y4 = 0;
-    if (equals(x3,x2,1e-7))
-    {
-        y4 =  y1;
-        x4 += (x2-x1);
-    }
-    else
-    {
-        qreal  m = (y3 - y2) / (x3 -x2);     // slope
-        qreal  c = ((x3*y2) - (x2*y3)) / (x3-x2);
-        qreal  d =( x1 + ((y1-c)*m)) / (1.0 + (m*m));
-
-        x4 = (2*d) - x1;
-        y4 = (2*d*m) - y1 + (2*c);
-    }
-
-    QPointF p4(x4,y4);
-
-    //qDebug() << p << line << p4;
-    return p4;
-}
-
 void ArcData::dump()
 {
     qInfo() << "ArcData" << rect << start << end << "span=" << span;

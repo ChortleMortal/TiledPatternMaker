@@ -15,23 +15,24 @@ SOURCES += \
     enums/ecyclemode.cpp \
     enums/edesign.cpp \
     enums/edgetype.cpp \
-    enums/efigtype.cpp \
     enums/ekeyboardmode.cpp \
     enums/emapeditor.cpp \
+    enums/emotiftype.cpp \
     enums/estatemachineevent.cpp \
     enums/etilingmakermousemode.cpp \
     enums/eviewtype.cpp \
-    figures/explicit_figure.cpp \
-    figures/extended_rosette.cpp \
-    figures/extended_star.cpp \
-    figures/figure.cpp \
-    figures/figure_connector.cpp \
-    figures/infer.cpp \
-    figures/radial_figure.cpp \
-    figures/rosette.cpp \
-    figures/rosette_connect_figure.cpp \
-    figures/star.cpp \
-    figures/star_connect_figure.cpp \
+    motifs/explicit_motif.cpp \
+    motifs/extended_rosette.cpp \
+    motifs/extended_star.cpp \
+    motifs/extender.cpp \
+    motifs/inference_engine.cpp \
+    motifs/motif.cpp \
+    motifs/motif_connector.cpp \
+    motifs/radial_motif.cpp \
+    motifs/rosette.cpp \
+    motifs/rosette_connect.cpp \
+    motifs/star.cpp \
+    motifs/star_connect.cpp \
     geometry/arcdata.cpp \
     geometry/belowandaboveedge.cpp \
     geometry/bounds.cpp \
@@ -80,13 +81,13 @@ SOURCES += \
     makers/mosaic_maker/style_color_fill_group.cpp \
     makers/mosaic_maker/style_color_fill_set.cpp \
     makers/mosaic_maker/style_editors.cpp \
-    makers/motif_maker/explicit_figure_editors.cpp \
-    makers/motif_maker/feature_button.cpp \
-    makers/motif_maker/feature_selector.cpp \
-    makers/motif_maker/figure_editors.cpp \
+    makers/motif_maker/explicit_motif_editors.cpp \
+    makers/motif_maker/motif_button.cpp \
     makers/motif_maker/motif_editor.cpp \
     makers/motif_maker/motif_maker.cpp \
-    makers/tiling_maker/feature_selection.cpp \
+    makers/motif_maker/motif_selector.cpp \
+    makers/motif_maker/regular_motif_editors.cpp \
+    makers/tiling_maker/tile_selection.cpp \
     makers/tiling_maker/tiling_maker.cpp \
     makers/tiling_maker/tiling_mouseactions.cpp \
     misc/backgroundimage.cpp \
@@ -115,7 +116,7 @@ SOURCES += \
     panels/page_background_image.cpp \
     panels/page_borders.cpp \
     panels/page_config.cpp \
-    panels/page_crop.cpp \
+    panels/page_crop_maker.cpp \
     panels/page_debug.cpp \
     panels/page_grid.cpp \
     panels/page_image_tools.cpp \
@@ -124,11 +125,11 @@ SOURCES += \
     panels/page_log.cpp \
     panels/page_map_editor.cpp \
     panels/page_modelSettings.cpp \
+    panels/page_mosaic_info.cpp \
     panels/page_mosaic_maker.cpp \
     panels/page_motif_maker.cpp \
     panels/page_prototype_info.cpp \
     panels/page_save.cpp \
-    panels/page_style_figure_info.cpp \
     panels/page_system_info.cpp \
     panels/page_tiling_maker.cpp \
     panels/panel.cpp \
@@ -147,11 +148,12 @@ SOURCES += \
     style/style.cpp \
     style/thick.cpp \
     style/tile_colors.cpp \
-    tile/feature.cpp \
-    tile/feature_reader.cpp \
-    tile/feature_writer.cpp \
-    tile/placed_feature.cpp \
+    tile/placed_tile.cpp \
+    tile/tile.cpp \
+    tile/tile_reader.cpp \
+    tile/tile_writer.cpp \
     tile/tiling.cpp \
+    tile/tiling_data.cpp \
     tile/tiling_loader.cpp \
     tile/tiling_manager.cpp \
     tile/tiling_writer.cpp \
@@ -202,27 +204,28 @@ HEADERS += \
     enums/ecyclemode.h \
     enums/edesign.h \
     enums/edgetype.h \
-    enums/efigtype.h \
     enums/efilesystem.h \
     enums/ekeyboardmode.h \
     enums/elogmode.h \
     enums/emapeditor.h \
+    enums/emotiftype.h \
     enums/emousemode.h \
     enums/estatemachineevent.h \
     enums/estyletype.h \
     enums/etilingmakermousemode.h \
     enums/eviewtype.h \
-    figures/explicit_figure.h \
-    figures/extended_rosette.h \
-    figures/extended_star.h \
-    figures/figure.h \
-    figures/figure_connector.h \
-    figures/infer.h \
-    figures/radial_figure.h \
-    figures/rosette.h \
-    figures/rosette_connect_figure.h \
-    figures/star.h \
-    figures/star_connect_figure.h \
+    motifs/explicit_motif.h \
+    motifs/extended_rosette.h \
+    motifs/extended_star.h \
+    motifs/extender.h \
+    motifs/inference_engine.h \
+    motifs/motif.h \
+    motifs/motif_connector.h \
+    motifs/radial_motif.h \
+    motifs/rosette.h \
+    motifs/rosette_connect.h \
+    motifs/star.h \
+    motifs/star_connect.h \
     geometry/arcdata.h \
     geometry/belowandaboveedge.h \
     geometry/circle.h \
@@ -267,13 +270,13 @@ HEADERS += \
     makers/mosaic_maker/style_color_fill_group.h \
     makers/mosaic_maker/style_color_fill_set.h \
     makers/mosaic_maker/style_editors.h \
-    makers/motif_maker/explicit_figure_editors.h \
-    makers/motif_maker/feature_button.h \
-    makers/motif_maker/feature_selector.h \
-    makers/motif_maker/figure_editors.h \
+    makers/motif_maker/explicit_motif_editors.h \
+    makers/motif_maker/motif_button.h \
     makers/motif_maker/motif_editor.h \
     makers/motif_maker/motif_maker.h \
-    makers/tiling_maker/feature_selection.h \
+    makers/motif_maker/motif_selector.h \
+    makers/motif_maker/regular_motif_editors.h \
+    makers/tiling_maker/tile_selection.h \
     makers/tiling_maker/tiling_maker.h \
     makers/tiling_maker/tiling_mouseactions.h \
     misc/backgroundimage.h \
@@ -307,7 +310,7 @@ HEADERS += \
     panels/page_background_image.h \
     panels/page_borders.h \
     panels/page_config.h \
-    panels/page_crop.h \
+    panels/page_crop_maker.h \
     panels/page_debug.h \
     panels/page_grid.h \
     panels/page_image_tools.h \
@@ -316,11 +319,11 @@ HEADERS += \
     panels/page_log.h \
     panels/page_map_editor.h \
     panels/page_modelSettings.h \
+    panels/page_mosaic_info.h \
     panels/page_mosaic_maker.h \
     panels/page_motif_maker.h \
     panels/page_prototype_info.h \
     panels/page_save.h \
-    panels/page_style_figure_info.h \
     panels/page_system_info.h \
     panels/page_tiling_maker.h \
     panels/panel.h \
@@ -340,11 +343,12 @@ HEADERS += \
     style/style.h \
     style/thick.h \
     style/tile_colors.h \
-    tile/feature.h \
-    tile/feature_reader.h \
-    tile/feature_writer.h \
-    tile/placed_feature.h \
+    tile/placed_tile.h \
+    tile/tile.h \
+    tile/tile_reader.h \
+    tile/tile_writer.h \
     tile/tiling.h \
+    tile/tiling_data.h \
     tile/tiling_loader.h \
     tile/tiling_manager.h \
     tile/tiling_writer.h \
@@ -392,6 +396,7 @@ HEADERS += \
 
 FORMS +=
 
-DISTFILES +=
+DISTFILES += \
+    ../release-notes.txt
 
 RESOURCES += tpm.qrc

@@ -4,7 +4,7 @@
 #include <memory>
 #include <QDialog>
 
-typedef std::shared_ptr<class TilingSelector>   TilingSelectorPtr;
+typedef std::shared_ptr<class TileSelector>   TilingSelectorPtr;
 typedef std::shared_ptr<class Edge>             EdgePtr;
 
 class DlgMagnitude : public QDialog

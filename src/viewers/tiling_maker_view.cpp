@@ -2,9 +2,9 @@
 //
 // FeatureView.java
 //
-// It's unlikely this file will get used in the applet.  A FeatureView
+// It's unlikely this file will get used in the applet.  A TilingMakerView
 // is a special kind of GeoView that assumes a subclass will maintain
-// a collection of Features.  It knows how to draw Features quickly,
+// a collection of Tiles.  It knows how to draw Tiles quickly,
 // and provides a bunch of services to subclasses for mouse-based
 // interaction with features.
 
@@ -15,12 +15,12 @@
 #include "geometry/transform.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "makers/tiling_maker/tiling_mouseactions.h"
-#include "makers/tiling_maker/feature_selection.h"
-#include "tile/placed_feature.h"
+#include "makers/tiling_maker/tile_selection.h"
+#include "tile/placed_tile.h"
 #include "geometry/edge.h"
 #include "geometry/vertex.h"
 #include "settings/configuration.h"
-#include "tile/feature.h"
+#include "tile/tile.h"
 #include "viewers/grid.h"
 
 using std::make_shared;
@@ -36,7 +36,7 @@ TilingMakerView::TilingMakerView(TilingMaker * maker) : LayerController("TilingM
 TilingMakerView::~TilingMakerView()
 {
 #ifdef EXPLICIT_DESTRUCTOR
-    allPlacedFeatures.clear();
+    allplacedTiles.clear();
     in_tiling.clear();
 #endif
 }
@@ -57,9 +57,9 @@ void TilingMakerView::paint(QPainter *painter)
 
 void TilingMakerView::draw( GeoGraphics * g2d )
 {
-    qDebug() << "TilingMakerView::draw";
+    //qDebug() << "TilingMakerView::draw";
 
-    if (!_hideTiling && !editPlacedFeature)
+    if (!_hideTiling && !editPlacedTile)
     {
         drawTiling(g2d);
 
@@ -72,47 +72,47 @@ void TilingMakerView::draw( GeoGraphics * g2d )
         }
     }
 
-    if (featureSelector && !editPlacedFeature)
+    if (tileSelector && !editPlacedTile)
     {
         //qDebug() << "current selection:"  << strTiliingSelection[currentSelection->getType()];
-        switch (featureSelector->getType())
+        switch (tileSelector->getType())
         {
         case INTERIOR:
-            // nothing - handled by currentFeature
+            // nothing - handled by currentTile
             break;
 
         case EDGE:
-            g2d->drawEdge(featureSelector->getPlacedEdge(), QPen(QColor(Qt::green),3));
+            g2d->drawEdge(tileSelector->getPlacedEdge(), QPen(QColor(Qt::green),3));
             break;
 
         case VERTEX:
         case MID_POINT:
         case FEAT_CENTER:
-            g2d->drawCircle(featureSelector->getPlacedPoint(), 12, QPen(circle_color),QBrush(circle_color));
+            g2d->drawCircle(tileSelector->getPlacedPoint(), 12, QPen(circle_color),QBrush(circle_color));
             break;
 
         case ARC_POINT:
-            g2d->drawCircle(featureSelector->getPlacedPoint(), 12, QPen(circle_color), QBrush(circle_color));
-            g2d->drawEdge(featureSelector->getPlacedEdge(), QPen(QColor(Qt::red),3));
+            g2d->drawCircle(tileSelector->getPlacedPoint(), 12, QPen(circle_color), QBrush(circle_color));
+            g2d->drawEdge(tileSelector->getPlacedEdge(), QPen(QColor(Qt::red),3));
             break;
 
         case SCREEN_POINT:
-            g2d->drawCircle(featureSelector->getModelPoint(), 14, QPen(Qt::red), QBrush(Qt::red));
+            g2d->drawCircle(tileSelector->getModelPoint(), 14, QPen(Qt::red), QBrush(Qt::red));
             break;
         }
     }
 
-    if (tilingMakerMouseMode == TM_EDIT_FEATURE_MODE)
+    if (tilingMakerMouseMode == TM_EDIT_TILE_MODE)
     {
         QPolygonF p;
-        if (editPlacedFeature)
+        if (editPlacedTile)
         {
-            p = editPlacedFeature->getPlacedPolygon();
-            drawFeature(g2d, editPlacedFeature, true, normal_color);
+            p = editPlacedTile->getPlacedPolygon();
+            drawTile(g2d, editPlacedTile, true, normal_color);
         }
-        else if (featureSelector && featureSelector->getType() == INTERIOR)
+        else if (tileSelector && tileSelector->getType() == INTERIOR)
         {
-            p = featureSelector->getPlacedPolygon();
+            p = tileSelector->getPlacedPolygon();
         }
         if (p.size())
         {
@@ -131,9 +131,9 @@ void TilingMakerView::draw( GeoGraphics * g2d )
 
     tilingMaker->drawMouseInteraction(g2d);
 
-    if (!featureEditPoint.isNull())
+    if (!tileEditPoint.isNull())
     {
-        g2d->drawCircle(featureEditPoint,10,QPen(Qt::red),QBrush());
+        g2d->drawCircle(tileEditPoint,10,QPen(Qt::red),QBrush());
     }
 }
 
@@ -141,33 +141,33 @@ void TilingMakerView::drawTiling( GeoGraphics * g2d )
 {
     determineOverlapsAndTouching();
 
-    for (auto& pf : allPlacedFeatures)
+    for (auto& pf : allPlacedTiles)
     {
-        if (pf == currentPlacedFeature)
+        if (pf == currentPlacedTile)
         {
-            drawFeature(g2d, pf, true, under_mouse_color);
+            drawTile(g2d, pf, true, under_mouse_color);
         }
-        else if (featureSelector
-             && ((featureSelector->getType() == INTERIOR) || (featureSelector->getType() == FEAT_CENTER))
-             && featureSelector->getPlacedFeature() == pf)
+        else if (tileSelector
+             && ((tileSelector->getType() == INTERIOR) || (tileSelector->getType() == FEAT_CENTER))
+             && tileSelector->getPlacedTile() == pf)
         {
-            drawFeature(g2d, pf, true, selected_color);
+            drawTile(g2d, pf, true, selected_color);
         }
         else if (overlapping.contains(pf))
         {
-            drawFeature(g2d, pf, true, overlapping_color);
+            drawTile(g2d, pf, true, overlapping_color);
         }
         else if (touching.contains(pf))
         {
-            drawFeature(g2d, pf, true, touching_color);
+            drawTile(g2d, pf, true, touching_color);
         }
         else if (in_tiling.contains(pf))
         {
-            drawFeature(g2d, pf, true, in_tiling_color);
+            drawTile(g2d, pf, true, in_tiling_color);
         }
         else
         {
-            drawFeature(g2d, pf, true, normal_color);
+            drawTile(g2d, pf, true, normal_color);
         }
     }
 }
@@ -194,7 +194,7 @@ void TilingMakerView::drawTranslationVectors(GeoGraphics * g2d, QPointF t1_start
     }
 }
 
-void TilingMakerView::drawFeature(GeoGraphics * g2d, PlacedFeaturePtr pf, bool draw_c, QColor icol )
+void TilingMakerView::drawTile(GeoGraphics * g2d, PlacedTilePtr pf, bool draw_c, QColor icol )
 {
     if (!pf->show()) return;
 
@@ -243,7 +243,7 @@ void TilingMakerView::drawAccum(GeoGraphics * g2d)
         EdgePtr edge = *it;
         if (edge->getType() == EDGETYPE_LINE)
         {
-            qDebug() << "draw accum edge";
+            //qDebug() << "draw accum edge";
             QPointF p1 = edge->v1->pt;
             QPointF p2 = edge->v2->pt;
             g2d->drawCircle(p1,6,layerPen,brush);
@@ -252,7 +252,7 @@ void TilingMakerView::drawAccum(GeoGraphics * g2d)
         }
         else if (edge->getType() == EDGETYPE_POINT)
         {
-            qDebug() << "draw accum point";
+            //qDebug() << "draw accum point";
             QPointF p = edge->v1->pt;
             g2d->drawCircle(p,6,layerPen,brush);
         }
@@ -279,27 +279,27 @@ void TilingMakerView::hideTiling(bool state)
 
 
 //
-// Feature, edge and vertex finding.
+// Tile, edge and vertex finding.
 //
-TilingSelectorPtr TilingMakerView::findFeature(QPointF spt)
+TilingSelectorPtr TilingMakerView::findTile(QPointF spt)
 {
     TilingSelectorPtr nothingToIgnore;
-    return findFeature(spt, nothingToIgnore);
+    return findTile(spt, nothingToIgnore);
 }
 
-TilingSelectorPtr TilingMakerView::findFeature(QPointF spt, TilingSelectorPtr ignore)
+TilingSelectorPtr TilingMakerView::findTile(QPointF spt, TilingSelectorPtr ignore)
 {
     QPointF wpt = screenToWorld(spt);
 
-    for(auto placedFeature : qAsConst(allPlacedFeatures))
+    for(auto placedTile : qAsConst(allPlacedTiles))
     {
-        if (ignore && (ignore->getPlacedFeature() == placedFeature))
+        if (ignore && (ignore->getPlacedTile() == placedTile))
             continue;
 
-        QPolygonF pgon = placedFeature->getPlacedPolygon();
+        QPolygonF pgon = placedTile->getPlacedPolygon();
         if (pgon.containsPoint(wpt,Qt::OddEvenFill))
         {
-            return make_shared<InteriorTilingSelector>(placedFeature);
+            return make_shared<InteriorTilingSelector>(placedTile);
         }
     }
 
@@ -315,14 +315,14 @@ TilingSelectorPtr TilingMakerView::findVertex(QPointF spt)
 
 TilingSelectorPtr TilingMakerView::findVertex(QPointF spt,TilingSelectorPtr ignore)
 {
-    for(auto it = allPlacedFeatures.begin(); it != allPlacedFeatures.end(); it++ )
+    for(auto it = allPlacedTiles.begin(); it != allPlacedTiles.end(); it++ )
     {
-        PlacedFeaturePtr pf = *it;
+        PlacedTilePtr pf = *it;
 
-        if (ignore && (ignore->getPlacedFeature() == pf))
+        if (ignore && (ignore->getPlacedTile() == pf))
             continue;
 
-        QPolygonF pgon = pf->getFeaturePolygon();
+        QPolygonF pgon = pf->getTilePolygon();
         QTransform   T = pf->getTransform();
         for( int v = 0; v < pgon.size(); ++v )
         {
@@ -350,15 +350,15 @@ TilingSelectorPtr TilingMakerView::findMidPoint(QPointF spt, TilingSelectorPtr i
 {
     TilingSelectorPtr sel;
 
-    for(auto it = allPlacedFeatures.begin(); it != allPlacedFeatures.end(); it++ )
+    for(auto it = allPlacedTiles.begin(); it != allPlacedTiles.end(); it++ )
     {
-        PlacedFeaturePtr pf = *it;
+        PlacedTilePtr pf = *it;
 
-        if (ignore && (ignore->getPlacedFeature() == pf))
+        if (ignore && (ignore->getPlacedTile() == pf))
             continue;
 
         QTransform T = pf->getTransform();
-        EdgePoly ep  = pf->getFeatureEdgePoly();
+        EdgePoly ep  = pf->getTileEdgePoly();
         for (auto edge : ep)
         {
             QPointF a    = edge->v1->pt;
@@ -391,10 +391,10 @@ TilingSelectorPtr TilingMakerView::findArcPoint(QPointF spt)
 {
     TilingSelectorPtr sel;
 
-    for(auto& pf : allPlacedFeatures)
+    for(auto& pf : allPlacedTiles)
     {
         QTransform T   = pf->getTransform();
-        EdgePoly epoly = pf->getFeatureEdgePoly();
+        EdgePoly epoly = pf->getTileEdgePoly();
 
         for(auto ep : epoly)
         {
@@ -422,14 +422,14 @@ TilingSelectorPtr TilingMakerView::findEdge(QPointF spt)
 
 TilingSelectorPtr TilingMakerView::findEdge(QPointF spt, TilingSelectorPtr ignore )
 {
-    for(auto it = allPlacedFeatures.begin(); it != allPlacedFeatures.end(); it++ )
+    for(auto it = allPlacedTiles.begin(); it != allPlacedTiles.end(); it++ )
     {
-        PlacedFeaturePtr pf = *it;
+        PlacedTilePtr pf = *it;
 
-        if (ignore && (ignore->getPlacedFeature() == pf))
+        if (ignore && (ignore->getPlacedTile() == pf))
             continue;
 
-        EdgePoly epoly = pf->getFeatureEdgePoly();
+        EdgePoly epoly = pf->getTileEdgePoly();
         QTransform T   = pf->getTransform();
 
         for( int v = 0; v < epoly.size(); ++v)
@@ -462,10 +462,10 @@ TilingSelectorPtr TilingMakerView::findSelection(QPointF spt)
         return sel;
     else
     {
-        TilingSelectorPtr sel2 = findFeature(spt);
+        TilingSelectorPtr sel2 = findTile(spt);
         if (sel2)
         {
-            sel = findCenter(sel2->getPlacedFeature(),spt);
+            sel = findCenter(sel2->getPlacedTile(),spt);
             if (!sel)
                 sel = sel2;
         }
@@ -488,10 +488,10 @@ TilingSelectorPtr TilingMakerView::findPoint(QPointF spt, TilingSelectorPtr igno
     }
     if (!sel)
     {
-        TilingSelectorPtr sel2 = findFeature(spt,ignore);
+        TilingSelectorPtr sel2 = findTile(spt,ignore);
         if (sel2)
         {
-            sel = findCenter(sel2->getPlacedFeature(),spt);
+            sel = findCenter(sel2->getPlacedTile(),spt);
         }
     }
     if (sel)
@@ -510,7 +510,7 @@ QPointF TilingMakerView::findSelectionPointOrPoint(QPointF spt)
     return sel->getPlacedPoint();
 }
 
-TilingSelectorPtr TilingMakerView::findCenter(PlacedFeaturePtr pf, QPointF spt)
+TilingSelectorPtr TilingMakerView::findCenter(PlacedTilePtr pf, QPointF spt)
 {
     EdgePoly  epoly = pf->getPlacedEdgePoly();
     QPointF    wpt  = epoly.calcCenter();
@@ -518,8 +518,8 @@ TilingSelectorPtr TilingMakerView::findCenter(PlacedFeaturePtr pf, QPointF spt)
 
     if (Point::isNear(spt,spt2))
     {
-        FeaturePtr feature = pf->getFeature();
-        QPointF mpt = feature->getCenter();
+        TilePtr tile = pf->getTile();
+        QPointF mpt  = tile->getCenter();
         return make_shared<CenterTilingSelector>(pf, mpt);
     }
 
@@ -551,15 +551,15 @@ void TilingMakerView::determineOverlapsAndTouching()
         return;
     }
 
-    for (auto pf : qAsConst(allPlacedFeatures))
+    for (auto pf : qAsConst(allPlacedTiles))
     {
         if (!pf->show()) continue;
 
         QPolygonF poly = pf->getPlacedPolygon();
 
-        for (auto pf2 : qAsConst(allPlacedFeatures))
+        for (auto pf2 : qAsConst(allPlacedTiles))
         {
-            if  (!pf2->show()) continue;
+            if (!pf2->show()) continue;
             if (pf2 == pf) continue;
 
             QPolygonF poly2 = pf2->getPlacedPolygon();

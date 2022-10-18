@@ -112,7 +112,7 @@ bool VersionList::ComparePair(const VersionSet & a, VersionSet &b)
     return CompareNoCase(a.first,b.first);
 }
 
-void VersionList::create(QStringList list)
+void VersionList::create(const QStringList & list)
 {
     for (const auto & file : list)
     {

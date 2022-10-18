@@ -75,16 +75,20 @@ QPointF ModelSettings::getCenter()
     return r.center();
 }
 
-void  ModelSettings::setFillData(FillData * fd)
+void  ModelSettings::setFillData(const FillData & fd)
 {
-    _fillData = *fd;
+    _fillData = fd;
 }
 
-FillData * ModelSettings::getFillData()
+const FillData & ModelSettings::getFillDataAccess() const
 {
-    return &_fillData;
+    return _fillData;
 }
 
+FillData & ModelSettings::getFillData()
+{
+    return _fillData;
+}
 
 
 

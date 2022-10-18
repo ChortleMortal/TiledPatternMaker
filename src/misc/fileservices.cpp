@@ -43,7 +43,7 @@ QStringList FileServices::getMosaicNames(eLoadType loadType)
     }
     else if (config->mosaicWorklistCheck || loadType == LOAD_WORKLIST)
     {
-        names = config->workList;
+        names = config->getWorkList();
     }
     else
     {
@@ -166,15 +166,29 @@ QStringList FileServices::getTilingNames(eLoadType loadType)
     {
         addNames(names,config->rootTileDir);
     }
-    if (config->tileFilterCheck && !config->tileFilter.isEmpty())
-    {
-        names = getFilteredTilingNames(config->tileFilter);
-    }
     else
     {
-        addNames(names,config->rootTileDir);    // yes I know, a bit daft
+        Q_ASSERT(loadType == LOAD_FILTERED);
+        if (config->tileFilterCheck && !config->tileFilter.isEmpty())
+        {
+            names = getFilteredTilingNames(config->tileFilter);
+        }
+        else
+        {
+            if (config->tilingOrigCheck)
+            {
+                addNames(names,config->originalTileDir);
+            }
+            if (config->tilingNewCheck)
+            {
+                addNames(names,config->newTileDir);
+            }
+            if (config->tilingTestCheck)
+            {
+                addNames(names,config->testTileDir);
+            }
+        }
     }
-
     names.replaceInStrings(".xml","");
 
     names.sort(Qt::CaseInsensitive);

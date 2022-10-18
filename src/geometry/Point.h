@@ -32,14 +32,15 @@ public:
     static QLineF   clipLine(QLineF line,QPolygonF bounds);
     static QLineF   createLine(QLineF line, QPointF mid, qreal angle, qreal length);
 
-    static bool     intersectPoly(QLineF line, QPolygonF bounds, QPointF &intersect);
+    static bool     intersectPoly(QLineF line, const QPolygonF &bounds, QPointF &intersect);
  
     static QPointF  normalize(QPointF & pt);
     static void     normalizeD(QPointF & pt);
 
     static qreal    dot(QPointF & pt, QPointF & other );
 
-    static QPointF  reflectPoint(QPointF p, QLineF line);
+    static QPointF   reflectPoint(QPointF & p, QLineF & line);
+    static QPolygonF reflectPolygon(QPolygonF &p, QLineF &line);
 
     // Return the absolute angle of the edge from this to other, in the
     // range -PI to PI.
@@ -54,7 +55,7 @@ public:
     static void     perpD(QPointF & pt);
 
     // Returns a point which is on a line between the two points at fraction t
-    static QPointF  convexSum(QPointF pt, QPointF other, double t);
+    static QPointF  convexSum(const QPointF &pt, const QPointF &other, double t);
 
     static qreal    cross(QPointF & pt, QPointF & other);
 
@@ -67,10 +68,16 @@ public:
     static qreal    dist2ToLine(QPointF pt,  QPointF p, QPointF q);
     static bool     isOnLine(QPointF pt, QLineF line);
 
-    static QPointF  center(QPolygonF & pts);
+    static QPointF  center(const QPolygonF & pts);
     static QPointF  irregularCenter(QPolygonF & poly);
-    static QPolygonF recenter(QPolygonF pts, QPointF center);
+
+    static QPointF  perpPt(QPointF & A, QPointF & B, QPointF &C);
+
+    // some line operations
+    static QLineF   reversed(QLineF & line);
+    static QLineF   shiftParallel(QLineF bline, qreal offset);
 };
+
 #endif
 
 

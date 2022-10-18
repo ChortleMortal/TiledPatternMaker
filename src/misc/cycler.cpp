@@ -215,7 +215,7 @@ void Cycler::slot_psuedoKey(int key )
 
 void Cycler::startCycleStyles()
 {
-    files = FileServices::getMosaicNames(LOAD_ALL);
+    files = FileServices::getMosaicNames( config->fileFilter);
 
     cIndex = -1;
     cCount = config->cycleInterval;     // start now
@@ -242,21 +242,21 @@ void Cycler::startCycleCompareAllImages()
 
     if  (config->generate_workList)
     {
-        config->workList.clear();
+        config->clearWorkList();
     }
 }
 
 void Cycler::startCycleCompareWorklistImages()
 {
     VersionList vlist;
-    vlist.create(config->workList);
+    vlist.create(config->getWorkList());
 
     imgList    = vlist.recompose();
     imgList_it = imgList.begin();
 
     if  (config->generate_workList)
     {
-        config->workList.clear();
+        config->clearWorkList();
     }
 }
 

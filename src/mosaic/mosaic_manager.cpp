@@ -64,7 +64,7 @@ bool MosaicManager::loadMosaic(QString name)
     mosaic->setName(name);
 
     // starts the chain reaction
-    mosaicMaker->takeDown(mosaic);
+    mosaicMaker->sm_takeDown(mosaic);
 
     // size view to mosaic
     view->frameSettings.reInit();

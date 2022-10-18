@@ -3,8 +3,8 @@
 #include "misc/colorset.h"
 #include "misc/geo_graphics.h"
 #include "mosaic/prototype.h"
-#include "tile/feature.h"
-#include "tile/placed_feature.h"
+#include "tile/tile.h"
+#include "tile/placed_tile.h"
 #include "tile/tiling.h"
 #include "viewers/viewcontrol.h"
 
@@ -51,27 +51,27 @@ void TileColors::createStyleRepresentation()
     PrototypePtr pp  = getPrototype();
     TilingPtr    tp  = pp->getTiling();
 
-    QVector<FeaturePtr> uniques  = tp->getUniqueFeatures();
-    for (auto feature : uniques)
+    QVector<TilePtr> uniques  = tp->getUniqueTiles();
+    for (auto tile : uniques)
     {
-        feature->getFeatureColors()->resetIndex();
+        tile->getTileColors()->resetIndex();
     }
 
     FillRegion flood(tp,ViewControl::getInstance()->getFillData());
     QVector<QTransform> translations = flood.getTransforms();
     qDebug() << "num translations   =" << translations.size();
 
-    const QVector<PlacedFeaturePtr> & qlfp   = tp->getPlacedFeatures();
-    qDebug() << "num placed features=" << qlfp.size();
+    auto & placed = tp->getData().getPlacedTiles();
+    qDebug() << "num placed tiles=" << placed.size();
 
-    for (auto it = qlfp.begin(); it != qlfp.end(); it++)
+    for (auto it = placed.begin(); it != placed.end(); it++)
     {
-        PlacedFeaturePtr fp = *it;
-        FeaturePtr        f = fp->getFeature();
+        PlacedTilePtr fp = *it;
+        TilePtr        f = fp->getTile();
         const EdgePoly & ep = f->getEdgePoly();
         QTransform T1       = fp->getTransform();
 
-        ColorSet * featureColors = f->getFeatureColors();
+        ColorSet * tileColors = f->getTileColors();
         for (auto& T2 : translations)
         {
             QTransform T3  = T1 * T2;
@@ -79,7 +79,7 @@ void TileColors::createStyleRepresentation()
 
             bkgdEPolyColor bpc;
             bpc.epoly  = ep2;
-            bpc.color  = featureColors->getNextColor().color;
+            bpc.color  = tileColors->getNextColor().color;
             epolys << bpc;
         }
     }

@@ -19,18 +19,18 @@ typedef std::shared_ptr<class BackgroundImage>  BkgdImgPtr;
 typedef std::shared_ptr<class Border>           BorderPtr;
 typedef std::shared_ptr<class Circle>           CirclePtr;
 typedef std::shared_ptr<class Crop>             CropPtr;
-typedef std::shared_ptr<class ExplicitFigure>   ExplicitPtr;
+typedef std::shared_ptr<class ExplicitMotif>   ExplicitPtr;
 typedef std::shared_ptr<class ExtendedRosette>  ExtRosettePtr;
 typedef std::shared_ptr<class ExtendedStar>     ExtStarPtr;
-typedef std::shared_ptr<class Feature>          FeaturePtr;
-typedef std::shared_ptr<class Figure>           FigurePtr;
+typedef std::shared_ptr<class Tile>             TilePtr;
+typedef std::shared_ptr<class Motif>            MotifPtr;
 typedef std::shared_ptr<class Map>              MapPtr;
 typedef std::shared_ptr<class Mosaic>           MosaicPtr;
 typedef std::shared_ptr<class Prototype>        PrototypePtr;
 typedef std::shared_ptr<class Rosette>          RosettePtr;
-typedef std::shared_ptr<class RosetteConnectFigure> RosetteConnectPtr;
+typedef std::shared_ptr<class RosetteConnect> RosetteConnectPtr;
 typedef std::shared_ptr<class Star>             StarPtr;
-typedef std::shared_ptr<class StarConnectFigure>    StarConnectPtr;
+typedef std::shared_ptr<class StarConnect>    StarConnectPtr;
 typedef std::shared_ptr<class Style>            StylePtr;
 
 class MosaicWriter : public MosaicWriterBase
@@ -81,17 +81,17 @@ protected:
     void    processsStyleEmboss(QTextStream &ts, qreal angle);
 
     // features
-    void    setFeature(QTextStream & ts,FeaturePtr fp);
+    void    setTile(QTextStream & ts,TilePtr fp);
 
     // figures
-    void    setFigureCommon(QTextStream & ts, FigurePtr fp);
-    void    setExplicitFigure(QTextStream & ts,QString name, FigurePtr fp);
-    void    setStarFigure(QTextStream & ts,QString name, FigurePtr fp, bool childEnd=false);
-    void    setRosetteFigure(QTextStream & ts, QString name, FigurePtr fp, bool childEnd=false);
-    void    setExtendedStarFigure(QTextStream & ts,QString name, FigurePtr fp);
-    void    setExtendedRosetteFigure(QTextStream & ts,QString name, FigurePtr fp);
-    void    setRosetteConnectFigure(QTextStream & ts,QString name, FigurePtr fp);
-    void    setStarConnectFigure(QTextStream & ts,QString name, FigurePtr fp);
+    void    setMotifCommon(QTextStream & ts, MotifPtr fp);
+    void    setExplicitMotif(QTextStream & ts,QString name, MotifPtr fp);
+    void    setStar(QTextStream & ts,QString name, MotifPtr fp, bool childEnd=false);
+    void    setRosette(QTextStream & ts, QString name, MotifPtr fp, bool childEnd=false);
+    void    setExtendedStar(QTextStream & ts,QString name, MotifPtr fp);
+    void    setExtendedRosette(QTextStream & ts,QString name, MotifPtr fp);
+    void    setRosetteConnect(QTextStream & ts,QString name, MotifPtr fp);
+    void    setStarConnect(QTextStream & ts,QString name, MotifPtr fp);
 
     bool    setMap(QTextStream & ts, MapPtr map);
     void    setVertices(QTextStream & ts, const QVector<VertexPtr> & vertices);
@@ -113,8 +113,8 @@ protected:
     // references
     bool   hasReference(PolyPtr pp);
     bool   hasReference(PrototypePtr pp);
-    bool   hasReference(FeaturePtr fp);
-    bool   hasReference(FigurePtr fp);
+    bool   hasReference(TilePtr fp);
+    bool   hasReference(MotifPtr fp);
     bool   hasReference(ExplicitPtr ep);
     bool   hasReference(RosettePtr ep);
     bool   hasReference(StarPtr ep);
@@ -127,8 +127,8 @@ protected:
 
     void   setProtoReference(int id, PrototypePtr ptr);
     void   setPolyReference(int id, PolyPtr ptr);
-    void   setFeatureReference(int id, FeaturePtr ptr);
-    void   setFigureReference(int id, FigurePtr ptr);
+    void   setTileReference(int id, TilePtr ptr);
+    void   setMotifReference(int id, MotifPtr ptr);
     void   setExplicitReference(int id, ExplicitPtr ptr);
     void   setMapReference(int id, MapPtr ptr);
     void   setEdgeReference(int id, EdgePtr ptr);
@@ -141,8 +141,8 @@ protected:
 
     QString getPolyReference(PolyPtr ptr);
     QString getProtoReference(PrototypePtr ptr);
-    QString getFeatureReference(FeaturePtr ptr);
-    QString getFigureReference(FigurePtr ptr);
+    QString getTileReference(TilePtr ptr);
+    QString getFMotifReference(MotifPtr ptr);
     QString getExplicitReference(ExplicitPtr ptr);
     QString getMapReference(MapPtr ptr);
     QString getEdgeReference(EdgePtr ptr);
@@ -162,8 +162,8 @@ private:
 
     QMap<PrototypePtr,int>  proto_ids;
     QMap<PolyPtr,int>       poly_ids;
-    QMap<FeaturePtr,int>    feature_ids;
-    QMap<FigurePtr,int>     figure_ids;
+    QMap<TilePtr,int>       tile_ids;
+    QMap<MotifPtr,int>      motif_ids;
     QMap<MapPtr,int>        map_ids;
     QMap<EdgePtr,int>       edge_ids;
     QMap<ExplicitPtr,int>   explicit_ids;

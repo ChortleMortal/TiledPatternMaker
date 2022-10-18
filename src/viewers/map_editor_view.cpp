@@ -1,6 +1,6 @@
 #include <QApplication>
 
-#include "figures/figure.h"
+#include "motifs/motif.h"
 #include "geometry/circle.h"
 #include "geometry/arcdata.h"
 #include "geometry/crop.h"
@@ -12,12 +12,12 @@
 #include "makers/crop_maker/crop_maker.h"
 #include "makers/map_editor/map_editor_db.h"
 #include "makers/map_editor/map_selection.h"
-#include "makers/motif_maker/feature_button.h"
+#include "makers/motif_maker/motif_button.h"
 #include "misc/geo_graphics.h"
 #include "mosaic/design_element.h"
 #include "mosaic/prototype.h"
 #include "settings/configuration.h"
-#include "tile/feature.h"
+#include "tile/tile.h"
 #include "tile/tiling.h"
 #include "viewers/crop_view.h"
 #include "viewers/map_editor_view.h"
@@ -84,7 +84,7 @@ void MapEditorView::draw(QPainter *painter )
         if (del)
         {
             Q_ASSERT(db->isMotif(layer.type));
-            drawFeature(painter,del);
+            drawTile(painter,del);
             drawBoundaries(painter,del);
         }
     }
@@ -213,7 +213,7 @@ void MapEditorView::drawMap(QPainter * painter, eLayer layer, QColor color)
     QPen pen(color,mapLineWidth);
     painter->setPen(pen);
 
-    for (auto edge : map->getEdges())
+    for (auto & edge : qAsConst(map->getEdges()))
     {
         QPointF v1 = t.map(edge->v1->pt);
         QPointF v2 = t.map(edge->v2->pt);
@@ -313,7 +313,7 @@ void MapEditorView::drawDCEL(QPainter * painter)
     }
 }
 
-void MapEditorView::drawFeature(QPainter * painter, DesignElementPtr del)
+void MapEditorView::drawTile(QPainter * painter, DesignElementPtr del)
 {
     if (!del)
         return;
@@ -321,12 +321,12 @@ void MapEditorView::drawFeature(QPainter * painter, DesignElementPtr del)
     if (!db->showBoundaries)
         return;
 
-    FeaturePtr feature = del->getFeature();
-    if (feature)
+    TilePtr tile = del->getTile();
+    if (tile)
     {
-        QTransform placement = getPlacement(feature);
+        QTransform placement = getPlacement(tile);
 
-        QPolygonF poly = feature->getPoints();
+        QPolygonF poly = tile->getPoints();
         poly = placement.map(poly);
         poly = viewT.map(poly);
 
@@ -344,22 +344,24 @@ void MapEditorView::drawBoundaries(QPainter *painter,  DesignElementPtr del)
     if (!db->showBoundaries)
         return;
 
-    FeaturePtr feature = del->getFeature();
-    FigurePtr  figure = del->getFigure();
-    if (!figure || !feature)
+    TilePtr tile = del->getTile();
+    MotifPtr  motif = del->getMotif();
+    if (!motif || !tile)
         return;
 
-    QTransform placement = getPlacement(feature);
+    const ExtendedBoundary & eb = motif->getExtendedBoundary();
 
-    QPolygonF rfigBoundary = figure->getRadialFigBoundary();
-    QPolygonF figBoundary  = placement.map(rfigBoundary);
+    QTransform placement = getPlacement(tile);
+
+    QPolygonF figBoundary = motif->getMotifBoundary();
+    figBoundary  = placement.map(figBoundary);
 
     //figure->buildExtBoundary();
-    QPolygonF rextBoundary   = figure->getExtBoundary();
-    QPolygonF extBoundary    = placement.map(rextBoundary);
+    QPolygonF extBoundary = eb.get();
+    extBoundary           = placement.map(extBoundary);
 
-    qreal  boundaryScale     = figure->getExtBoundaryScale();
-    boundaryScale           *= Transform::scalex(placement);
+    qreal  boundaryScale  = eb.scale;
+    boundaryScale        *= Transform::scalex(placement);
 
     // paint figure boundary
     painter->setPen(QPen(QColor(255,127,0),3));   // orange
@@ -367,7 +369,7 @@ void MapEditorView::drawBoundaries(QPainter *painter,  DesignElementPtr del)
 
     // paint external boundary
     painter->setPen(QPen(Qt::yellow,1));
-    if (!figure->hasExtCircleBoundary())
+    if (!eb.isCircle())
     {
         painter->drawPolygon(viewT.map(extBoundary));
     }
@@ -476,14 +478,14 @@ void MapEditorView::drawConstructionCircles(QPainter * painter)
     }
 }
 
-QTransform MapEditorView::getPlacement(FeaturePtr feature)
+QTransform MapEditorView::getPlacement(TilePtr tile)
 {
     QTransform t;
     auto proto = db->getMotifPrototype();
     if (proto)
     {
         auto tiling = proto->getTiling();
-        t = tiling->getPlacement(feature,0);
+        t = tiling->getPlacement(tile,0);
     }
     return t;
 }
@@ -945,14 +947,14 @@ MapEditorLayer::MapEditorLayer()
 
 MapEditorLayer::MapEditorLayer(MapPtr map, eMapEditorMapType type)
 {
-    qDebug() << "Inserting map" << map->summary2();
+    qDebug() << "Inserting map" << map->summary();
     this->map = map;
     this->type = type;
 }
 
 MapEditorLayer::MapEditorLayer(MapPtr map, eMapEditorMapType type, WeakDELPtr wdel)
 {
-    qDebug() << "Inserting map" << map->summary2();
+    qDebug() << "Inserting map" << map->summary();
     this->map = map;
     this->type = type;
     this->wdel = wdel;

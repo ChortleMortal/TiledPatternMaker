@@ -6,7 +6,7 @@
 typedef std::shared_ptr<class DesignElement>    DesignElementPtr;
 typedef std::shared_ptr<class Map>              MapPtr;
 typedef std::shared_ptr<class MapEditorView>    MapedViewPtr;
-typedef std::shared_ptr<class Feature>          FeaturePtr;
+typedef std::shared_ptr<class Tile>          TilePtr;
 
 typedef std::weak_ptr<class DesignElement>      WeakDELPtr;
 typedef std::weak_ptr<class Map>                WeakMapPtr;
@@ -29,7 +29,7 @@ public:
 
     void                drawMap(QPainter * painter, eLayer layer, QColor color);
     void                drawDCEL(QPainter * painter);
-    void                drawFeature(QPainter * painter, DesignElementPtr del);
+    void                drawTile(QPainter * painter, DesignElementPtr del);
     void                drawBoundaries(QPainter * painter, DesignElementPtr del);
     void                drawPoints(QPainter * painter, QVector<class pointInfo> & points);
     void                drawConstructionLines(QPainter * painter);
@@ -37,7 +37,7 @@ public:
 
     void                startMouseInteraction(QPointF spt, enum Qt::MouseButton mouseButton);
 
-    QTransform          getPlacement(FeaturePtr feature);
+    QTransform          getPlacement(TilePtr tile);
 
     virtual const Xform  & getCanvasXform() override;
     virtual void           setCanvasXform(const Xform & xf) override;

@@ -124,7 +124,7 @@ void GeoGraphics::fillPolygon(const QPolygonF & pgon, QColor color)
 void GeoGraphics::fillEdgePoly(const EdgePoly & epoly, QColor color)
 {
     EdgePoly ep = epoly.map(transform);
-    Q_ASSERT(ep.isClosed());
+    Q_ASSERT(ep.isCorrect());
 
     QPainterPath path;
 

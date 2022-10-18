@@ -30,9 +30,9 @@ public:
 
 public slots:
     void slot_actionTriggered();
+    void slot_copyLog();
 
 private slots:
-    void    slot_copyLog();
     void    slot_viewLog();
     void    slot_logToStdErr(bool enable);
     void    slot_logToDisk(bool enable);

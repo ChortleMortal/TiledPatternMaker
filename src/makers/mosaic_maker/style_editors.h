@@ -23,7 +23,7 @@ class AQWidget;
 class View;
 
 typedef std::shared_ptr<class Filled>       FilledPtr;
-typedef std::shared_ptr<class Feature>      FeaturePtr;
+typedef std::shared_ptr<class Tile>      TilePtr;
 typedef std::shared_ptr<class Tiling>       TilingPtr;
 
 class StyleEditor : public QObject
@@ -223,7 +223,7 @@ private:
     DoubleSliderSet         * transparency;
     QTableWidgetItem        * colorItem;
 
-    QVector<FeaturePtr> qlfp;
+    QVector<TilePtr> qlfp;
 
 };
 #endif

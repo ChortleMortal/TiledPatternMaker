@@ -7,8 +7,8 @@
 typedef std::shared_ptr<class Crop>             CropPtr;
 typedef std::shared_ptr<class Tiling>           TilingPtr;
 typedef std::shared_ptr<class Map>              MapPtr;
-typedef std::shared_ptr<class Feature>          FeaturePtr;
-typedef std::shared_ptr<class Figure>           FigurePtr;
+typedef std::shared_ptr<class Tile>             TilePtr;
+typedef std::shared_ptr<class Motif>            MotifPtr;
 typedef std::shared_ptr<class DesignElement>    DesignElementPtr;
 
 ////////////////////////////////////////////////////////////////////////////
@@ -49,10 +49,10 @@ public:
     QString getInfo() const;
 
     TilingPtr         getTiling()   { return tiling; }
-    QList<FeaturePtr> getFeatures();
-    FeaturePtr        getFeature(const FigurePtr & figure);
-    FigurePtr         getFigure(const FeaturePtr & feature);
-    DesignElementPtr  getDesignElement(const FeaturePtr & feature);
+    QList<TilePtr>    getTiles();
+    TilePtr           getTile(const MotifPtr & motif);
+    MotifPtr          getMotif(const TilePtr & tile);
+    DesignElementPtr  getDesignElement(const TilePtr & tile);
     DesignElementPtr  getDesignElement(int index);
 
     QVector<DesignElementPtr> &  getDesignElements() { return designElements; }
@@ -71,9 +71,9 @@ protected:
 
 private:
     TilingPtr                   tiling;
-    CropPtr                     _crop;
     QVector<DesignElementPtr>   designElements;
     MapPtr                      protoMap;
+    CropPtr                     _crop;
 
     class ControlPanel        * panel;
     class ViewControl         * vcontrol;

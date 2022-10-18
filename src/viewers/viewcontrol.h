@@ -6,12 +6,11 @@
 #include "enums/eviewtype.h"
 #include "viewers/view.h"
 
-typedef std::weak_ptr<class Feature>            WeakFeaturePtr;
 typedef std::shared_ptr<class BackgroundImage>  BkgdImgPtr;
 typedef std::shared_ptr<class Border>           BorderPtr;
 typedef std::shared_ptr<class BorderView>       BorderViewPtr;
 typedef std::shared_ptr<class LegacyBorder>     LegacyBorderPtr;
-typedef std::shared_ptr<class Feature>          FeaturePtr;
+typedef std::shared_ptr<class Tile>             TilePtr;
 typedef std::shared_ptr<class Tiling>           TilingPtr;
 typedef std::shared_ptr<class TilingView>       TilingViewPtr;
 typedef std::shared_ptr<class MotifView>        MotifViewPtr;
@@ -20,7 +19,7 @@ typedef std::shared_ptr<class TilingMaker>      TilingMakerPtr;
 typedef std::shared_ptr<class Grid>             GridPtr;
 typedef std::shared_ptr<class ImageLayer>       ImgLayerPtr;
 typedef std::shared_ptr<class MeasureView>      MeasViewPtr;
-typedef std::shared_ptr<class CropView>   CropViewPtr;
+typedef std::shared_ptr<class CropView>         CropViewPtr;
 
 class ViewControl : public View
 {
@@ -39,12 +38,8 @@ public:
     void    removeAllImages()           { images.clear(); }
     void    removeImage(ImageLayer * img);
 
-    // selections
-    void        selectFeature(const FeaturePtr &fp);
-    FeaturePtr  getSelectedFeature();
-
-    void        setFillData(FillData * fd) { fillData = *fd; }
-    FillData *  getFillData() { return &fillData; }
+    void        setFillData(const FillData & fd) { fillData = fd; }
+    const FillData &  getFillData() { return fillData; }
 
     const Xform & getCurrentXform2();
     void          setCurrentXform2(const Xform & xform);     // use with care
@@ -60,8 +55,6 @@ protected:
     void     viewTiling();
     void     viewTilingMaker();
     void     viewMapEditor();
-
-    void     setTitle(TilingPtr tp);
 
 signals:
     void    sig_viewUpdated();
@@ -98,7 +91,6 @@ private:
     bool                    dontPaint;
     bool                    enabledViews[VIEW_MAX+1];
     QVector<ImgLayerPtr>    images;
-    WeakFeaturePtr          selectedFeature;
     FillData                fillData;
     const Xform             unityXform;
 };

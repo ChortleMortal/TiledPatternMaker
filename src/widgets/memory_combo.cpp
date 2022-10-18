@@ -10,6 +10,11 @@ MemoryCombo::MemoryCombo(QString name)
     config = Configuration::getInstance();
 }
 
+QString MemoryCombo::getCurrentText()
+{
+    return itemText(0);
+}
+
 void MemoryCombo::setCurrentText(const QString &text)
 {
     blockSignals(true);

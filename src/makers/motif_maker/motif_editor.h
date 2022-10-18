@@ -1,52 +1,51 @@
-﻿#ifndef MOTIF_EDITOR_H
+#ifndef MOTIF_EDITOR_H
 #define MOTIF_EDITOR_H
 
 #include <QComboBox>
 #include "widgets/panel_misc.h"
-#include "enums/efigtype.h"
+#include "enums/emotiftype.h"
 
-class FigureEditor;
 class Configuration;
 
-typedef std::shared_ptr<class Figure>           FigurePtr;
-typedef std::shared_ptr<class DesignElement>    DesignElementPtr;
-typedef std::weak_ptr<class DesignElement>      WeakDesignElementPtr;
+typedef std::shared_ptr<class Motif>           MotifPtr;
+typedef std::shared_ptr<class DesignElement>   DesignElementPtr;
+typedef std::weak_ptr<class DesignElement>     WeakDesignElementPtr;
 
-class MotifFigureWidget : public AQWidget
+class MotifWidget : public AQWidget
 {
 public:
-    MotifFigureWidget();
-    MotifFigureWidget(FigureEditor * fe);
+    MotifWidget();
+    MotifWidget(class NamedMotifEditor * fe);
 
-    void setEditor(FigureEditor * fe);
+    void setEditor(class NamedMotifEditor * fe);
 };
 
 
-class FigTypeChoiceCombo : public QComboBox
+class MotifTypeChoiceCombo : public QComboBox
 {
     Q_OBJECT
 
 public:
-    FigTypeChoiceCombo(class MotifEditor * editor);
+    MotifTypeChoiceCombo(class MotifEditor * editor);
 
-    void updateChoices(FigurePtr figure);
-    void addChoice(eFigType type, QString name);
-    int  getChoiceIndex(eFigType type);
+    void updateChoices(MotifPtr motif);
+    void addChoice(eMotifType type, QString name);
+    int  getChoiceIndex(eMotifType type);
 
 
 signals:
-    void sig_figureTypeChanged(eFigType);
+    void sig_motifTypeChanged(eMotifType);
 
 private slots:
-    void slot_figureTypeSelected(int index);
+    void slot_motifTypeSelected(int index);
 };
 
 ////////////////////////////////////////////////////////////////////////////
 //
 // MasterFigureEditor.java
 //
-// The top-level figure editor that understands the complete range of
-// figure editors available in the applet and branches out to the right
+// The top-level motif editor that understands the complete range of
+// motif editors available in the applet and branches out to the right
 // kind of editor as the DesignElement being edited is changed.
 
 class MotifEditor : public QWidget
@@ -56,14 +55,14 @@ class MotifEditor : public QWidget
 public:
     MotifEditor(class page_motif_maker * menu);
 
-    void  selectFigure(DesignElementPtr del);
+    void  selectMotif(DesignElementPtr del);
 
 public slots:
-    void slot_figureTypeChanged(eFigType type);
+    void slot_motifTypeChanged(eMotifType type);
 
 protected:
-    void  selectCurrentEditor(FigureEditor* fe);
-    FigureEditor * getEditor(eFigType type);
+    void  selectCurrentEditor(NamedMotifEditor* fe);
+    NamedMotifEditor * getEditor(eMotifType type);
 
 private:
     WeakDesignElementPtr            currentDesignElement;
@@ -78,7 +77,7 @@ private:
     class ExplicitHourglassEditor * explicit_hourglass_edit;
     class ExplicitGirihEditor     * explicit_girih_edit;
     class ExplicitIntersectEditor * explicit_intersect_edit;
-    class ExplicitFeatureEditor   * explicit_feature_edit;
+    class ExplicitTileEditor      * explicit_tile_edit;
 
     // Radial figure editors.
     class StarEditor	          * radial_star_edit;
@@ -88,9 +87,9 @@ private:
     class ExtendedStarEditor      * ex_star_edit;
     class ExtendedRosetteEditor   * ex_rosette_edit;
 
-    QHBoxLayout             * comboLayout;
-    FigTypeChoiceCombo      * choiceCombo;
-    MotifFigureWidget       * mfw;
+    QHBoxLayout                   * comboLayout;
+    MotifTypeChoiceCombo          * choiceCombo;
+    MotifWidget                   * mfw;
 };
 
 #endif

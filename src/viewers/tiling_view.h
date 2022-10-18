@@ -18,9 +18,9 @@
 #include "misc/layer_controller.h"
 #include <QColor>
 
-typedef std::shared_ptr<class TilingView>      TilingViewPtr;
-typedef std::shared_ptr<class Tiling>          TilingPtr;
-typedef std::shared_ptr<class PlacedFeature>   PlacedFeaturePtr;
+typedef std::shared_ptr<class TilingView>   TilingViewPtr;
+typedef std::shared_ptr<class Tiling>       TilingPtr;
+typedef std::shared_ptr<class PlacedTile>   PlacedTilePtr;
 
 class GeoGraphics;
 
@@ -55,7 +55,7 @@ public slots:
     virtual void slot_moveY(int amount)  override;
 
 protected:
-    void drawPlacedFeature(GeoGraphics * g2d, PlacedFeaturePtr pf);
+    void    drawPlacedYTile(GeoGraphics * g2d, PlacedTilePtr pf);
 
 private:
 

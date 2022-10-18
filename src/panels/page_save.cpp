@@ -21,14 +21,19 @@ page_save::page_save(ControlPanel * cpanel)  : panel_page(cpanel, "Save")
     createMosaicSave();
     createTilingSave();
 
-    QPushButton * pbSaveImage = new QPushButton("Save BMP");
+    QPushButton * pbSaveMenu = new QPushButton("Save Menu BMP (J)");
+    pbSaveMenu->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
+
+    QPushButton * pbSaveImage = new QPushButton("Save Image BMP (P)");
     pbSaveImage->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
 
-    QPushButton * pbSaveSVG   = new QPushButton("Save SVG");
+    QPushButton * pbSaveSVG   = new QPushButton("Save Image SVG (Y)");
     pbSaveSVG->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
 
     QHBoxLayout * hbox = new QHBoxLayout;
     hbox->addStretch();
+    hbox->addWidget(pbSaveMenu);
+    hbox->addSpacing(17);
     hbox->addWidget(pbSaveImage);
     hbox->addSpacing(17);
     hbox->addWidget(pbSaveSVG);
@@ -41,6 +46,8 @@ page_save::page_save(ControlPanel * cpanel)  : panel_page(cpanel, "Save")
 
     connect(theApp,     &TiledPatternMaker::sig_mosaicLoaded,   this,   &page_save::setup);
     connect(theApp,     &TiledPatternMaker::sig_tilingLoaded,   this,   &page_save::setup);
+    connect(pbSaveMenu, &QPushButton::clicked,                  this,   &page_save::slot_saveMenu);
+    connect(view,       &View::sig_saveMenu,                    this,   &page_save::slot_saveMenu);
     connect(pbSaveImage,&QPushButton::clicked,                  this,   &page_save::slot_saveImage);
     connect(view,       &View::sig_saveImage,                   this,   &page_save::slot_saveImage);
     connect(pbSaveSVG,  &QPushButton::clicked,                  this,   &page_save::slot_saveSvg);
@@ -170,7 +177,7 @@ void page_save::onRefresh()
 {
     TilingPtr tiling =  tilingMaker->getSelected();
 
-    if (tiling && (tiling->getState() == Tiling::MODIFED))
+    if (tiling && (tiling->getState() == Tiling::MODIFIED))
         requiresSave->setText("HAS CHANGED");
     else
         requiresSave->setText("");
@@ -206,7 +213,7 @@ void page_save::slot_saveMosaic()
     QVector<TilingPtr> tilings = mosaic->getTilings();
     for (auto tiling : tilings)
     {
-        if   (tiling->getState() == Tiling::MODIFED
+        if   (tiling->getState() == Tiling::MODIFIED
            || tiling->getState() == Tiling::EMPTY
            || tiling->getName()  == Tiling::defaultName)
         {
@@ -264,29 +271,29 @@ void page_save::slot_saveTiling()
         QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
         box.setWindowTitle("Save Tiling");
-        box.setText("There is no tiling to save. Please add some features");
+        box.setText("There is no tiling to save. Please add some tiles");
         box.exec();
         return;
     }
 
-    if (tiling->countPlacedFeatures() == 0)
+    if (tiling->getData().countPlacedTiles() == 0)
     {
         QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
         box.setWindowTitle("Save Tiling");
-        box.setText("There are no placed features.  Please add some features.");
+        box.setText("There are no placed tiles.  Please add some tiles.");
         box.exec();
         return;
     }
 
-    int count = tiling->getUniqueFeatures().count();
-    if (count >= MAX_UNIQUE_FEATURE_INDEX)
+    int count = tiling->getUniqueTiles().count();
+    if (count >= MAX_UNIQUE_TILE_INDEX)
     {
         QMessageBox box(this);
         box.setIcon(QMessageBox::Critical);
         box.setWindowTitle("Save Tiling");
         box.setText("There could be something wrong with this tiling");
-        box.setInformativeText(QString("There are too many unique features (count=%1)").arg(count));
+        box.setInformativeText(QString("There are too many unique tiles (count=%1)").arg(count));
         box.setStandardButtons(QMessageBox::Ignore | QMessageBox::Cancel);
         box.setDefaultButton(QMessageBox::Cancel);
         int rv = box.exec();
@@ -316,13 +323,28 @@ void page_save::slot_saveTiling()
 
 void page_save::slot_saveImage()
 {
-    static bool firstTime = true;
-    static QString path;
+    QString name = config->lastLoadedXML;
+    Q_ASSERT(!name.contains(".xml"));
 
     QPixmap pixmap = view->grab();
 
-    QString name = config->lastLoadedXML;
-    Q_ASSERT(!name.contains(".xml"));
+    savePixmap(pixmap, name);
+}
+
+void page_save::slot_saveMenu()
+{
+    auto page      = panel->getCurrentPage();
+    QString name   = page->getName();
+
+    QPixmap pixmap = panel->grab();
+
+    savePixmap(pixmap,name);
+}
+
+void page_save::savePixmap(QPixmap & pixmap, QString name)
+{
+    static bool firstTime = true;
+    static QString path;
 
     QSettings s;
     if (firstTime)

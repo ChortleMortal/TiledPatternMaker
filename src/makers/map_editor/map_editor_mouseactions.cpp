@@ -10,7 +10,7 @@
 #include "geometry/neighbours.h"
 #include "misc/utilities.h"
 #include "geometry/crop.h"
-#include "figures/figure.h"
+#include "motifs/motif.h"
 #include "mosaic/design_element.h"
 #include "viewers/map_editor_view.h"
 #include "viewers/viewcontrol.h"
@@ -54,11 +54,11 @@ void MapMouseAction::endDragging(QPointF spt)
     if (delp)
     {
         Q_ASSERT(db->isMotif(layer.type));
-        FigurePtr figp = delp->getFigure();
+        MotifPtr figp = delp->getMotif();
         if (figp)
         {
             //map has been changed
-            figp->setFigType(FIG_TYPE_EXPLICIT);
+            figp->setMotifType(MOTIF_TYPE_EXPLICIT);
         }
     }
 

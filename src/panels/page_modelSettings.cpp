@@ -304,11 +304,11 @@ void  page_modelSettings::onRefresh()
     if (tiling)
     {
         qDebug() << "Tiling" << tiling->getName();
-        QSize size  = tiling->getSettings().getSize();
+        QSize size  = tiling->getData().getSettings().getSize();
         sizeW[TILING_SETTINGS]->setValue(size.width());
         sizeH[TILING_SETTINGS]->setValue(size.height());
 
-        FillData * fd = tiling->getSettings().getFillData();
+        const FillData & fd = tiling->getData().getFillData();
         displayFillData(fd,TILING_SETTINGS);
     }
 
@@ -333,7 +333,7 @@ void  page_modelSettings::onRefresh()
     startEditY[DESIGN_SETTINGS]->setValue(pt.y());
 
     // repeats
-    FillData * fd = mosaicSettings.getFillData();
+    const FillData & fd = mosaicSettings.getFillData();
     displayFillData(fd,DESIGN_SETTINGS);
 
     // View Status
@@ -350,8 +350,8 @@ void  page_modelSettings::onRefresh()
     bkgdColorPatch[VIEW_STATUS]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
 
     // fill data
-    fd = view->getFillData();
-    displayFillData(fd,VIEW_STATUS);
+    const FillData & fd2 = view->getFillData();
+    displayFillData(fd2,VIEW_STATUS);
 
     // frameTable
     if (config->insightMode && config->cs_showFrameSettings)
@@ -386,7 +386,7 @@ void  page_modelSettings::onRefresh()
         int row = 0;
         QBrush brush;
         if (config->darkTheme)
-            brush = QBrush(QColor("#777777"));
+            brush = QBrush(QColor(0x777777));
         else
             brush  = QBrush(Qt::yellow);
 
@@ -495,9 +495,9 @@ void page_modelSettings::slot_set_repsDesign(int val)
     fd.set(chkSingle[DESIGN_SETTINGS]->isChecked(),xRepMin[DESIGN_SETTINGS]->value(), xRepMax[DESIGN_SETTINGS]->value(), yRepMin[DESIGN_SETTINGS]->value(), yRepMax[DESIGN_SETTINGS]->value());
 
     ModelSettings & settings = getMosaicOrDesignSettings();
-    settings.setFillData(&fd);
+    settings.setFillData(fd);
 
-    view->setFillData(&fd);
+    view->setFillData(fd);
 
     emit sig_render();
 }
@@ -511,9 +511,9 @@ void page_modelSettings::singleton_changed_des(bool checked)
         fd.set(true,0,0,0,0);
 
     ModelSettings & settings = getMosaicOrDesignSettings();
-    settings.setFillData(&fd);
+    settings.setFillData(fd);
 
-    view->setFillData(&fd);
+    view->setFillData(fd);
 
     emit sig_render();
 }
@@ -530,8 +530,10 @@ void page_modelSettings::slot_set_repsTiling(int val)
     TilingPtr tiling = tilingMaker->getSelected();
     if (!tiling) return;
 
-    tiling->getSettings().setFillData(&fd);
-    view->setFillData(&fd);
+    FillData & fdata = tiling->getDataAccess().getFillDataAccess();
+    fdata = fd;
+
+    view->setFillData(fd);
 
     if (view->isEnabled(VIEW_TILING_MAKER)
      || view->isEnabled(VIEW_TILING)
@@ -552,8 +554,10 @@ void page_modelSettings::singleton_changed_tile(bool checked)
     TilingPtr tiling = tilingMaker->getSelected();
     if (!tiling) return;
 
-    tiling->getSettings().setFillData(&fd);
-    view->setFillData(&fd);
+    FillData & fdata = tiling->getDataAccess().getFillDataAccess();
+    fdata = fd;
+
+    view->setFillData(fd);
 
     emit sig_render();
 
@@ -596,7 +600,8 @@ void page_modelSettings::slot_tilingSizeChanged(int val)
     if (pageBlocked()) return;
 
     TilingPtr tiling = tilingMaker->getSelected();
-    tiling->getSettings().setSize(QSize(sizeW[TILING_SETTINGS]->value(),sizeH[TILING_SETTINGS]->value()));
+    ModelSettings & ms  = tiling->getDataAccess().getSettingsAccess();
+    ms.setSize(QSize(sizeW[TILING_SETTINGS]->value(),sizeH[TILING_SETTINGS]->value()));
 
     emit sig_refreshView();
 }
@@ -622,13 +627,13 @@ void page_modelSettings::slot_boundsChanged()
     }
 }
 
-void page_modelSettings::displayFillData(FillData *fd, eSettingsGroup group)
+void page_modelSettings::displayFillData(const FillData & fd, eSettingsGroup group)
 {
     blockSignals(true);
 
     int xMin,xMax,yMin,yMax;
     bool singleton;
-    fd->get(singleton,xMin,xMax,yMin,yMax);
+    fd.get(singleton,xMin,xMax,yMin,yMax);
 
     chkSingle[group]->setChecked(singleton);
 

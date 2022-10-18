@@ -51,7 +51,7 @@ public:
     void    setBackgroundColor(QColor color);
     QColor  getBackgroundColor();
 
-    void    setWindowTitle(const QString & s);
+    void    setViewTitle(const QString & s);
 
     void    clearLayout(); // only used by cycler for pngs
 
@@ -86,8 +86,10 @@ signals:
     void sig_raiseMenu();
     void sig_cyclerQuit();
     void sig_cyclerKey(int key);
+    void sig_refreshMotifMenu();
 
     void sig_saveImage();
+    void sig_saveMenu();
     void sig_saveSVG();
 
 public slots:

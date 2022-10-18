@@ -22,16 +22,17 @@ public:
     void            setBackgroundColor(QColor color);
 
     void            setSize(QSize size);
-    QSize           getSize() { return _size; }
+    QSize           getSize() const { return _size; }
 
     void            setZSize(QSize size) { _zsize = size; }
-    QSize           getZSize() { return _zsize; }
+    QSize           getZSize() const { return _zsize; }
 
     QPointF         getStartTile();
     void            setStartTile(QPointF pt);
 
-    void            setFillData(FillData *fd);
-    FillData *      getFillData();
+    void             setFillData(const FillData &fd);
+    FillData &       getFillData();
+    const FillData & getFillDataAccess() const;
 
     QPointF         getCenter();
 

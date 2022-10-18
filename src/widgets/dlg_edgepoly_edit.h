@@ -2,8 +2,7 @@
 #define DLG_EDGE_POLY_EDIT_H
 
 #include "widgets/panel_misc.h"
-
-class EdgePoly;
+#include "geometry/edgepoly.h"
 
 class DlgEdgePolyEdit : public QDialog
 {
@@ -30,7 +29,7 @@ protected slots:
 
 private:
     EdgePoly &    epoly;
-    QPolygonF     original;
+    EdgePoly      original2;
     QTransform    T;
     AQTableWidget  table;
 

@@ -49,8 +49,8 @@ TilingPtr TilingManager::loadTiling(QString name, eSM_Event mode)
     view->frameSettings.setModelAlignment(M_ALIGN_TILING);
 
     // tiling is loaded, now use it
-    QSize size  = loadedTiling->getSettings().getSize();
-    QSize zsize = loadedTiling->getSettings().getZSize();
+    QSize size  = loadedTiling->getData().getSettings().getSize();
+    QSize zsize = loadedTiling->getData().getSettings().getZSize();
     switch(mode)
     {
     case SM_LOAD_SINGLE:
@@ -72,8 +72,8 @@ TilingPtr TilingManager::loadTiling(QString name, eSM_Event mode)
 
     case SM_LOAD_EMPTY:
     case SM_RENDER:
-    case SM_FEATURE_CHANGED:
-    case SM_FIGURE_CHANGED:
+    case SM_TILE_CHANGED:
+    case SM_MOTIF_CHANGED:
     case SM_TILING_CHANGED:
         break;
     }
@@ -83,9 +83,9 @@ TilingPtr TilingManager::loadTiling(QString name, eSM_Event mode)
 
 void  TilingManager::setVCFillData(TilingPtr tiling)
 {
-    ModelSettings & settings = tiling->getSettings();
+    const FillData & fd = tiling->getData().getFillData();
     ViewControl * vcontrol = ViewControl::getInstance();
-    vcontrol->setFillData(settings.getFillData());
+    vcontrol->setFillData(fd);
 }
 
 bool TilingManager::saveTiling(QString name, TilingPtr tiling)
@@ -97,9 +97,15 @@ bool TilingManager::saveTiling(QString name, TilingPtr tiling)
 
     // match size to current view
     QSize size  = view->frameSettings.getCropSize(config->getViewerType());
-    tiling->getSettings().setSize(size);
     QSize zsize = view->frameSettings.getZoomSize(config->getViewerType());
-    tiling->getSettings().setZSize(zsize);
+
+    const ModelSettings & ms = tiling->getData().getSettings();
+    if (ms.getSize() != size || ms.getZSize() != zsize)
+    {
+        ModelSettings & settings = tiling->getDataAccess().getSettingsAccess();
+        settings.setSize(size);
+        settings.setZSize(zsize);
+    }
 
     if (tilingMaker->getSelected() == tiling)
     {

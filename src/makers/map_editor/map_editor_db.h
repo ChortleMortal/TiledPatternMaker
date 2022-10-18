@@ -8,10 +8,10 @@
 
 typedef std::shared_ptr<class Tiling>           TilingPtr;
 typedef std::shared_ptr<class Map>              MapPtr;
-typedef std::shared_ptr<class Figure>           FigurePtr;
+typedef std::shared_ptr<class Motif>            MotifPtr;
 typedef std::shared_ptr<class Prototype>        PrototypePtr;
 typedef std::shared_ptr<class Border>           BorderPtr;
-typedef std::shared_ptr<class Feature>          FeaturePtr;
+typedef std::shared_ptr<class Tile>             TilePtr;
 typedef std::shared_ptr<class DCEL>             DCELPtr;
 typedef std::shared_ptr<class Crop>             CropPtr;
 typedef std::shared_ptr<class Circle>           CirclePtr;
@@ -25,8 +25,6 @@ typedef std::weak_ptr<class DCEL>               WeakDCELPtr;
 typedef std::weak_ptr<class Crop>               WeakCropPtr;
 typedef std::weak_ptr<class Prototype>          WeakProtoPtr;
 typedef std::weak_ptr<class DesignElement>      WeakDELPtr;
-typedef std::weak_ptr<class Feature>            WeakFeaturePtr;
-typedef std::weak_ptr<class Figure>             WeakFigurePtr;
 typedef std::weak_ptr<class Tiling>             WeakTilingPtr;
 typedef std::weak_ptr<class Map>                WeakMapPtr;
 

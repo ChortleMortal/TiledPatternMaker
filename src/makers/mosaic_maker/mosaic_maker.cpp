@@ -3,7 +3,6 @@
 #include "makers/tiling_maker/tiling_maker.h"
 #include "mosaic/mosaic.h"
 #include "mosaic/prototype.h"
-#include "style/colored.h"
 #include "style/emboss.h"
 #include "style/filled.h"
 #include "style/interlace.h"
@@ -40,11 +39,12 @@ void MosaicMaker::init()
     viewControl = ViewControl::getInstance();
 }
 
-void MosaicMaker::takeDown(MosaicPtr mosaic)
+void MosaicMaker::sm_takeDown(MosaicPtr mosaic)
 {
     _mosaic = mosaic;
 
-    viewControl->setFillData(mosaic->getSettings().getFillData());
+    FillData fd = mosaic->getSettings().getFillData();
+    viewControl->setFillData(fd);
 
     // setup prototypes
     tilingMaker->eraseTilings();
@@ -53,7 +53,7 @@ void MosaicMaker::takeDown(MosaicPtr mosaic)
     QVector<PrototypePtr> protos = mosaic->getPrototypes();
     for (auto& proto : protos)
     {
-        motifMaker->takeDown(proto);
+        motifMaker->sm_takeDown(proto);
     }
 #if 0
     PrototypePtr pp = protos.first();
@@ -71,7 +71,8 @@ void MosaicMaker::takeDown(MosaicPtr mosaic)
 void MosaicMaker::sm_createMosaic(const QVector<PrototypePtr> prototypes)
 {
     QColor oldColor = _mosaic->getSettings().getBackgroundColor();
-    Xform  xf = viewControl->getCurrentXform2();
+    Xform  xf       = viewControl->getCurrentXform2();
+
     // This is a new mosaic
     _mosaic = make_shared<Mosaic>();
     ModelSettings & mosaicSettings = _mosaic->getSettings();
@@ -85,7 +86,7 @@ void MosaicMaker::sm_createMosaic(const QVector<PrototypePtr> prototypes)
         if (tp)
         {
             thick->setCanvasXform(tp->getCanvasXform());
-            mosaicSettings = tp->getSettings();
+            mosaicSettings = tp->getData().getSettings();
         }
         else
         {
@@ -157,8 +158,8 @@ void MosaicMaker::sm_takeUp(QVector<PrototypePtr> prototypes, eSM_Event mode)
         qWarning("Invalid mode");
         break;
 
-    case SM_FEATURE_CHANGED:
-    case SM_FIGURE_CHANGED:
+    case SM_TILE_CHANGED:
+    case SM_MOTIF_CHANGED:
     case SM_TILING_CHANGED:
         sm_resetStyles();
         break;
@@ -174,6 +175,9 @@ void MosaicMaker::sm_takeUp(QVector<PrototypePtr> prototypes, eSM_Event mode)
         }
         break;
     }
+
+    if (viewControl->isEnabled(VIEW_MOSAIC))
+        viewControl->update();
 }
 
 MosaicPtr MosaicMaker::getMosaic()

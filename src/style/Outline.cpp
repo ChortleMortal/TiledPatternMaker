@@ -138,7 +138,7 @@ void Outline::createStyleRepresentation()
     auto iBad = 0;
 #endif
 
-    for (auto edge : map->getEdges())
+    for (auto & edge : qAsConst(map->getEdges()))
     {
 #ifdef DEBUG_BAE
         qDebug().noquote() << iEdge << edge->dump();

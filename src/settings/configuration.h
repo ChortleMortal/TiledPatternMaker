@@ -4,7 +4,6 @@
 #include <QMap>
 #include <QColor>
 #include <QRectF>
-#include "enums/eborder.h"
 #include "enums/ecyclemode.h"
 #include "enums/edesign.h"
 #include "enums/efilesystem.h"
@@ -54,23 +53,24 @@ static QString sRepeatType[4]  = {
 enum eGridUnits
 {
     GRID_UNITS_SCREEN,
-    GRID_UNITS_MODEL
+    GRID_UNITS_MODEL,
+    GRID_UNITS_TILE
 };
 
 enum  eGridType
 {
     GRID_ORTHOGONAL,
     GRID_ISOMETRIC,
-    GRID_RHOMBIC
+    GRID_RHOMBIC,
 };
 
 enum eProtoViewMode
 {
-    PROTO_DRAW_MAP      =  0x01,
-    PROTO_DRAW_FEATURES =  0x02,
-    PROTO_DRAW_FIGURES  =  0x04,
-    PROTO_DEL_FEATURES  =  0x08,
-    PROTO_DEL_FIGURES   =  0x10,
+    PROTO_DRAW_MAP     =  0x01,
+    PROTO_DRAW_TILES   =  0x02,
+    PROTO_DRAW_MOTIFS  =  0x04,
+    PROTO_DEL_TILES    =  0x08,
+    PROTO_DEL_MOTIFS   =  0x10,
     PROTO_DRAW_DESIGN_ELEMENT =  0x20
 };
 
@@ -84,6 +84,11 @@ public:
     void    save();
 
     DesignPtr getDesign(eDesign design) { return availableDesigns.value(design); }
+
+    void setWorkList (QStringList & list);
+    void addWorkList(QString name);
+    void clearWorkList();
+    const QStringList & getWorkList() { return workList; }
 
     void setViewerType(eViewType  viewerType);
     inline eViewType getViewerType() { return viewerType; }
@@ -101,6 +106,7 @@ public:
 
     qreal   mapedLen;
     qreal   mapedMergeSensitivity;
+    qreal   protoviewWidth;
 
     QString xmlTool;
     QString compareDir0;
@@ -117,7 +123,6 @@ public:
     QString rootMediaDir;
 
     QStringList viewImages;
-    QStringList workList;
     QStringList protoViewColors;
 
     eRepeatType     repeatMode;
@@ -168,15 +173,19 @@ public:
     bool    mosaicOrigCheck;
     bool    mosaicNewCheck;
     bool    mosaicTestCheck;
+    bool    tilingOrigCheck;
+    bool    tilingNewCheck;
+    bool    tilingTestCheck;
     bool    tileFilterCheck;
     bool    lockView;
     bool    splitScreen;
 
-    bool    showFeatureBoundary;
-    bool    showFigureBoundary;
+    bool    showMotif;
+    bool    showTileBoundary;
+    bool    showMotifBoundary;
     bool    showExtendedBoundary;
 
-    bool    tm_showAllFeatures;
+    bool    tm_showAllTiles;
     bool    tm_hideTable;
     bool    tm_showDebug;
     bool    tm_autofill;
@@ -218,6 +227,7 @@ public:
     QString rootTileDir;
     QString originalTileDir;
     QString newTileDir;
+    QString testTileDir;
     QString rootDesignDir;
     QString originalDesignDir;
     QString newDesignDir;
@@ -235,7 +245,7 @@ public:
     bool    updatePanel;
     bool    dontReplicate;
     bool    highlightUnit;
-
+    bool    motifPropagate;
     bool    debugMapEnable;
     bool    dontTrapLog;
 
@@ -251,6 +261,7 @@ private:
     static Configuration * mpThis;
 
     eViewType   viewerType;
+    QStringList workList;
 };
 
 #endif // CONFIGURATION_H

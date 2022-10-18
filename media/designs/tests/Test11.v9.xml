@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<vector id="1" version="12">
-	<!-- Written:  Tue Jan 4 2022 13:10:11 -->
+<!-- Written: Mon Oct 17 2022 14:46:05 -->
+<vector id="1" version="13">
 	<designNotes>using algo=2</designNotes>
 	<design>
 		<size>
@@ -14,7 +14,7 @@
 		</background>
 		<Fill singleton="f">-2,2,-5,5</Fill>
 	</design>
-	<style.Filled id="2" serialization="custom">
+	<style.Filled id="2">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
 			<top__delta>0</top__delta>
@@ -24,7 +24,7 @@
 			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<prototype id="3" serialization="custom">
+			<prototype id="3">
 				<app.Prototype>
 					<string>DAC8.v6</string>
 					<entry>
@@ -89,11 +89,11 @@
 			<color hide="f">#ff00aaff</color>
 			<color hide="f">#fff57900</color>
 			<color hide="t">#fff57900</color>
-			<color hide="t">#ff00aaff</color>
+			<color hide="t">#fff57900</color>
 			<color hide="f">#ff00aaff</color>
 			<color hide="f">#fff57900</color>
 			<color hide="f">#ff000000</color>
-			<color hide="t">#ffffff00</color>
+			<color hide="t">#ff00aaff</color>
 		</ColorWhites>
 		<ColorGroup>
 			<Group hideSet="f">

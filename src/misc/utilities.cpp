@@ -416,7 +416,7 @@ QVector<QLineF> Utils::rectToLines(QRectF &box)
     return res;
 }
 
-QVector<QLineF> Utils::polyToLines(QPolygonF & poly)
+QVector<QLineF> Utils::polyToLines(const QPolygonF & poly)
 {
     QVector<QLineF> lines;
     for (int i=0; i < (poly.size()-1); i++)
@@ -522,13 +522,14 @@ QPointF Utils::snapTo(QPointF pt, QLineF trackLine)
 qreal Utils::calcArea(QPolygonF &poly)
 {
     // taken from https://www.geeksforgeeks.org/area-of-a-polygon-with-given-n-ordered-vertices/
-
-    if (poly.isClosed())
-        qWarning() << "calculating area on closed polygon";
-
     qreal area = 0.0;
-    int j = poly.size() - 1;
-    for (int i = 0; i < poly.size(); i++)
+    int size = poly.size();
+    if (poly.isClosed())
+    {
+        size--;
+    }
+    int j = size - 1;
+    for (int i = 0; i < size; i++)
     {
         area += (poly[j].x() + poly[i].x())  * (poly[j].y() - poly[i].y());
         j = i;  // j is previous vertex to i
@@ -604,7 +605,7 @@ QPointF Utils::getClosestPoint(QLineF line, QPointF p)
 
 bool Utils::isClockwise(const QPolygonF & poly)
 {
-    Q_ASSERT(!poly.isClosed());
+ //   Q_ASSERT(poly.isClosed());
 
     double sum = 0.0;
     for (int i = 0; i < poly.count(); i++)

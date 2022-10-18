@@ -77,6 +77,8 @@ void EdgePoly::set(Circle & c)
 
 void EdgePoly::init(QPolygonF & poly)
 {
+    clear();
+
     auto size = poly.size();
     if (size && poly.isClosed())
         size--;
@@ -248,17 +250,17 @@ bool EdgePoly::equals(const EdgePoly & other)
 
 bool EdgePoly::isClockwise() const
 {
-    const QPolygonF poly = getPoly();
+    const QPolygonF poly = getPoints();
     return Utils::isClockwise(poly);
 }
 
 bool EdgePoly::isClockwiseK()
 {
-    QPolygonF poly = getPoly();
+    QPolygonF poly = getPoints();
     return Utils::isClockwiseKaplan(poly);
 }
 
-bool EdgePoly::isClosed()
+bool EdgePoly::isCorrect()
 {
     return (first()->v1 == last()->v2);
 }
@@ -266,6 +268,11 @@ bool EdgePoly::isClosed()
 bool EdgePoly::isValid(bool rigorous)
 {
     if (size() == 0)
+    {
+        return false;
+    }
+
+    if (!isCorrect())
     {
         return false;
     }
@@ -307,6 +314,14 @@ bool EdgePoly::isValid(bool rigorous)
 }
 
 QPolygonF EdgePoly::getPoly() const
+{
+    QPolygonF poly = getPoints();
+    Q_ASSERT(!poly.isClosed());
+    poly << poly[0];
+    return poly;
+}
+
+QPolygonF EdgePoly::getPoints() const
 {
     QPolygonF poly;
     for (auto & edge : qAsConst(*this))
@@ -442,6 +457,16 @@ QVector<VertexPtr> EdgePoly::getVertices()
     for (auto edge : *this)
     {
         vec.push_back(edge->v1);
+    }
+    return vec;
+}
+
+QVector<QLineF> EdgePoly::getLines()
+{
+    QVector<QLineF> vec;
+    for (auto edge : *this)
+    {
+        vec.push_back(QLineF(edge->v1->pt,edge->v2->pt));
     }
     return vec;
 }

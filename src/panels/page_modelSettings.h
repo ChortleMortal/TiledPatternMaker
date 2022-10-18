@@ -71,7 +71,7 @@ protected:
 
     ModelSettings & getMosaicOrDesignSettings();
 
-    void displayFillData(FillData *fd, eSettingsGroup group);
+    void displayFillData(const FillData &fd, eSettingsGroup group);
 
 private:
     void removeChildren(QTreeWidgetItem * parent);

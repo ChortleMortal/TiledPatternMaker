@@ -2,7 +2,7 @@
 #include "geometry/crop.h"
 #include "geometry/transform.h"
 #include "settings/configuration.h"
-#include "tile/feature.h"
+#include "tile/tile.h"
 #include <QDebug>
 
 /*
@@ -118,7 +118,7 @@ void Crop::setCircle(CirclePtr c)
 void Crop::setPolygon(int sides, qreal scale, qreal rotDegrees)
 {
     // this is a regaul polygon
-    poly = std::make_shared<Feature>(sides,rotDegrees,scale);
+    poly = std::make_shared<Tile>(sides,rotDegrees,scale);
     _cropType = CROP_POLYGON;
 }
 
@@ -126,7 +126,7 @@ void Crop::setPolygon(int sides, qreal scale, qreal rotDegrees)
 void Crop::setPolygon(QPolygonF & p)
 {
     EdgePoly ep(p);
-    poly = std::make_shared<Feature>(ep);
+    poly = std::make_shared<Tile>(ep);
     _cropType = CROP_POLYGON;
 }
 
@@ -134,7 +134,9 @@ QPolygonF Crop::getPolygon()
 {
     QPolygonF p;
     if (poly)
+    {
         p = poly->getPolygon();
+    }
     return p;
 }
 

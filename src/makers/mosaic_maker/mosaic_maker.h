@@ -18,13 +18,16 @@ public:
 
     void           init();
 
-    void           takeDown(MosaicPtr mosaic);
+    // state machine
+    void           sm_takeDown(MosaicPtr mosaic);
     void           sm_takeUp(QVector<PrototypePtr> prototypes, eSM_Event mode);
 
+    // setters/getters
     MosaicPtr      getMosaic();
     void           resetMosaic();
     ModelSettings& getMosaicSettings();
 
+    // operations
     StylePtr       makeStyle(eStyleType type, StylePtr oldStyle);
 
 protected:

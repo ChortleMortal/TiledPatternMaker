@@ -1,32 +1,32 @@
 #include "viewers/viewerbase.h"
 #include "misc/geo_graphics.h"
 #include "geometry/edgepoly.h"
-#include "figures/figure.h"
-#include "tile/feature.h"
+#include "motifs/motif.h"
+#include "tile/tile.h"
 #include "geometry/map.h"
 #include "geometry/edge.h"
 #include "geometry/vertex.h"
 
-void  ViewerBase::drawFeature(GeoGraphics * gg, FeaturePtr feature, QBrush brush, QPen pen)
+void  ViewerBase::drawTile(GeoGraphics * gg, TilePtr tile, QBrush brush, QPen pen)
 {
-    EdgePoly ep   = feature->getEdgePoly();
+    EdgePoly ep   = tile->getEdgePoly();
 
-    // Fill the feature.
+    // Fill the tile.
     if (brush.style() != Qt::NoBrush)
     {
         gg->fillEdgePoly(ep, brush.color());
     }
 
-    // Outline the feature.
+    // Outline the tile.
     gg->drawEdgePoly(ep,pen.color(), pen.width());
 }
 
-void  ViewerBase ::drawFigure(GeoGraphics * gg, FigurePtr figure, QPen pen)
+void  ViewerBase ::drawMotif(GeoGraphics * gg, MotifPtr motif, QPen pen)
 {
-    MapPtr map = figure->getFigureMap();
+    MapPtr map = motif->getMap();
     if (!map) return;
 
-    for(auto edge :  map->getEdges())
+    for(auto & edge :  qAsConst(map->getEdges()))
     {
         if (edge->getType() == EDGETYPE_LINE)
         {

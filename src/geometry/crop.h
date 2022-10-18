@@ -7,7 +7,7 @@
 #include "geometry/edgepoly.h"
 
 typedef std::shared_ptr<class Crop>     CropPtr;
-typedef std::shared_ptr<class Feature>  FeaturePtr;
+typedef std::shared_ptr<class Tile>  TilePtr;
 
 class Crop
 {
@@ -28,7 +28,7 @@ public:
     void         setPolygon(int sides, qreal scale = 1.0, qreal rotDegrees = 0.0);
     void         setPolygon(QPolygonF & p);
     QPolygonF    getPolygon();
-    FeaturePtr   getFeature() { return poly; }
+    TilePtr      getTile() { return poly; }
 
     void         setType(eCropType type) { _cropType = type; }
     eCropType    getCropType() { return _cropType; }
@@ -59,7 +59,7 @@ protected:
     eAspectRatio _aspect;
     bool         _vAspect;
 
-    FeaturePtr    poly;          // model units
+    TilePtr    poly;          // model units
     CirclePtr     circle;        // model units
     QRectF       _rect;          // model units
 

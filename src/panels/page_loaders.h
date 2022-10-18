@@ -78,6 +78,9 @@ private slots:
     void    slot_mosOrigCheck(bool check);
     void    slot_mosNewCheck(bool check);
     void    slot_mosTestCheck(bool check);
+    void    slot_tilingOrigCheck(bool check);
+    void    slot_tilingNewCheck(bool check);
+    void    slot_tilingTestCheck(bool check);
     void    slot_tilingCheck(bool check);
 
     void    autoLoadStylesClicked(bool enb);
@@ -100,28 +103,31 @@ private:
 	QPushButton * pbLoadTiling;
     QPushButton * pbLoadXML;
 
-    QCheckBox   * cbLoadMulti;
-    QCheckBox   * cbLoadModify;
+    QCheckBox   * tilingFilterCheck;
+    QLineEdit   * tilingFilter;
+
+    QCheckBox   * cbTilingLoadMulti;
+    QCheckBox   * cbTilingLoadModify;
+
+    QCheckBox   * tilingOrigChk;
+    QCheckBox   * tilingNewChk;
+    QCheckBox   * tilingTestChk;
 
     QCheckBox   * mosaicFilterCheck;
     QCheckBox   * mosaicWorklistCheck;
     QLineEdit   * mosaicFilter;
 
-    QCheckBox   * mosOrigChk;
-    QCheckBox   * mosNewChk;
-    QCheckBox   * mosTestChk;
+    QCheckBox   * mosaicOrigChk;
+    QCheckBox   * mosaicNewChk;
+    QCheckBox   * mosaicTestChk;
 
-    QCheckBox   * tilingFilterCheck;
+    eDesign       selectedDesign;
+    QString       selectedXMLName;
+    QString       selectedTilingName;
 
-    QLineEdit   * tilingFilter;
-
-    eDesign     selectedDesign;
-    QString     selectedXMLName;
-    QString     selectedTilingName;
-
-    QCheckBox    * cbAutoLoadMosaics;
-    QCheckBox    * cbAutoLoadTiling;
-    QCheckBox    * cbAutoLoadDesigns;
+    QCheckBox   * cbAutoLoadMosaics;
+    QCheckBox   * cbAutoLoadTiling;
+    QCheckBox   * cbAutoLoadDesigns;
 };
 
 #endif

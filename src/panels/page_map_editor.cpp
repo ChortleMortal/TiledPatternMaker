@@ -10,8 +10,8 @@
 
 #include "makers/crop_maker/crop_maker.h"
 #include "panels/page_map_editor.h"
-#include "figures/explicit_figure.h"
-#include "figures/radial_figure.h"
+#include "motifs/explicit_motif.h"
+#include "motifs/radial_motif.h"
 #include "geometry/crop.h"
 #include "geometry/dcel.h"
 #include "geometry/fill_region.h"
@@ -41,7 +41,7 @@
 
 using std::make_shared;
 
-typedef std::shared_ptr<RadialFigure>    RadialPtr;
+typedef std::shared_ptr<RadialMotif>    RadialPtr;
 
 page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Map Editor")
 {
@@ -567,7 +567,7 @@ QGroupBox * page_map_editor::createConstructionGroup()
 void  page_map_editor::onEnter()
 {
 static QString msg("<body>"
-                   "<font color=magenta>feature</font>  |  "
+                   "<font color=magenta>tile</font>  |  "
                    "<span style=\"color:rgb(255,127,0)\">fig boundary</span>  |  "
                    "<font color=yellow>ext boundary</font>  |  "
                    "<font color=blue>vertex</font>  |  "
@@ -619,25 +619,25 @@ void page_map_editor::onRefresh()
     MapEditorDb * db = maped->getDb();
     MapPtr map = db->getMap(COMPOSITE);
     if (map)
-        compositeVChk->setText(map->summary());
+        compositeVChk->setText(map->namedSummary());
     else
         compositeVChk->setText("No Map");
 
     map = db->getMap(LAYER_1);
     if (map)
-        layer1VChk->setText(QString("%1 %2").arg(sMapEditorMapType[db->getMapType(map)]).arg(map->summary2()));
+        layer1VChk->setText(QString("%1 %2").arg(sMapEditorMapType[db->getMapType(map)]).arg(map->summary()));
     else
         layer1VChk->setText("No map");
 
     map = db->getMap(LAYER_2);
     if (map)
-        layer2VChk->setText(QString("%1 %2").arg(sMapEditorMapType[db->getMapType(map)]).arg(map->summary2()));
+        layer2VChk->setText(QString("%1 %2").arg(sMapEditorMapType[db->getMapType(map)]).arg(map->summary()));
     else
         layer2VChk->setText("No map");
 
     map = db->getMap(LAYER_3);
     if (map)
-        layer3VChk->setText(QString("%1 %2").arg(sMapEditorMapType[db->getMapType(map)]).arg(map->summary2()));
+        layer3VChk->setText(QString("%1 %2").arg(sMapEditorMapType[db->getMapType(map)]).arg(map->summary()));
     else
         layer3VChk->setText("No map");
 
@@ -647,8 +647,6 @@ void page_map_editor::onRefresh()
     chkWhiteBkgd->blockSignals(true);
     chkWhiteBkgd->setChecked(config->motifBkgdWhite);
     chkWhiteBkgd->blockSignals(false);
-
-    maped->updateStatus();
 
     if (viewDCEL->isChecked())
         viewDCEL->setStyleSheet("background-color:yellow; color:red;");
@@ -684,7 +682,7 @@ void page_map_editor::refreshStatusBox()
     txt << QString("Map status: %1").arg(sMapEditorMapType[mapType]);
 
     if (map)
-        txt << QString("Map: %1  %2 ").arg(Utils::addr(map.get())).arg(map->summary());
+        txt << QString("Map: %1  %2 ").arg(Utils::addr(map.get())).arg(map->namedSummary());
     else
         txt <<  "No edit map";
 
@@ -710,12 +708,12 @@ void page_map_editor::refreshStatusBox()
             DesignElementPtr delp = wdelp.lock();
             if (delp)
             {
-                FigurePtr   figp = delp->getFigure();
-                FeaturePtr  feap = delp->getFeature();
+                MotifPtr motif = delp->getMotif();
+                TilePtr  tile  = delp->getTile();
 
                 txt << QString("DesignElement = %1").arg(Utils::addr(delp.get()));
-                txt << QString("Feature = %1").arg(Utils::addr(feap.get()));
-                txt << QString("Figure = %1 %2").arg(Utils::addr(figp.get())).arg(figp->getFigTypeString());
+                txt << QString("Tile = %1").arg(Utils::addr(tile.get()));
+                txt << QString("Motif = %1 %2").arg(Utils::addr(motif.get())).arg(motif->getMotifTypeString());
             }
             else
             {
@@ -955,21 +953,21 @@ void page_map_editor::slot_convertToExplicit()
     if (delp)
     {
         Q_ASSERT(db->isMotif(layer.type));
-        FigurePtr figp = delp->getFigure();
+        MotifPtr figp = delp->getMotif();
         if (figp)
         {
-            ExplicitPtr ep = std::dynamic_pointer_cast<ExplicitFigure>(figp);
+            ExplicitPtr ep = std::dynamic_pointer_cast<ExplicitMotif>(figp);
             if (ep)
             {
                 QMessageBox box(this);
                 box.setIcon(QMessageBox::Warning);
-                box.setText("Ignoring - Figure is already explicit");
+                box.setText("Ignoring - Motif is already explicit");
                 box.exec();
                 return;
             }
 
             int sides = 10;
-            RadialPtr rp = std::dynamic_pointer_cast<RadialFigure>(figp);
+            RadialPtr rp = std::dynamic_pointer_cast<RadialMotif>(figp);
             if (rp)
             {
                 sides = rp->getN();
@@ -977,8 +975,8 @@ void page_map_editor::slot_convertToExplicit()
             MapPtr map = layer.getMap();
             if (map)
             {
-                ep = make_shared<ExplicitFigure>(map,FIG_TYPE_EXPLICIT,sides);
-                delp->setFigure(ep);
+                ep = make_shared<ExplicitMotif>(map,MOTIF_TYPE_EXPLICIT,sides);
+                delp->setMotif(ep);
             }
         }
     }
@@ -1458,7 +1456,7 @@ void page_map_editor::slot_loadMapFile()
 
     Xform xf = loader.getXform();
 
-    qDebug().noquote() << loadedMap->summary();
+    qDebug().noquote() << loadedMap->namedSummary();
 
     maped->loadFromMap(loadedMap,maptype);
     maped->getMapedView()->setCanvasXform(xf);

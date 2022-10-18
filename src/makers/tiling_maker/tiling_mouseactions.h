@@ -11,8 +11,8 @@
 class GeoGraphics;
 
 typedef std::shared_ptr<class TilingMaker>      TilingMakerPtr;
-typedef std::shared_ptr<class TilingSelector>   TilingSelectorPtr;
-typedef std::shared_ptr<class PlacedFeature>    PlacedFeaturePtr;
+typedef std::shared_ptr<class TileSelector>   TilingSelectorPtr;
+typedef std::shared_ptr<class PlacedTile>       PlacedTilePtr;
 typedef std::shared_ptr<class Edge>             EdgePtr;
 typedef std::shared_ptr<class Vertex>           VertexPtr;
 
@@ -96,6 +96,9 @@ class JoinMidPoint : public JoinEdge
 {
 public:
     JoinMidPoint(TilingMaker * tilingMaker, TilingSelectorPtr sel, QPointF spt );
+
+protected:
+    virtual bool snapTo(QPointF spt) override;
 };
 
 class JoinPoint : public JoinEdge
@@ -103,7 +106,7 @@ class JoinPoint : public JoinEdge
 public:
     JoinPoint(TilingMaker * tilingMaker, TilingSelectorPtr sel, QPointF spt );
 
-private:
+protected:
     virtual bool snapTo(QPointF spt) override;
 };
 
@@ -184,15 +187,15 @@ private:
 
 
 
-class EditFeature : public TilingMouseAction
+class EditTile : public TilingMouseAction
 {
 public:
-    EditFeature(TilingMaker * tilingMaker,  TilingSelectorPtr sel, PlacedFeaturePtr pfp, QPointF spt );
+    EditTile(TilingMaker * tilingMaker,  TilingSelectorPtr sel, PlacedTilePtr pfp, QPointF spt );
     void updateDragging( QPointF spt );
     void endDragging(QPointF spt);
 
 private:
-    PlacedFeaturePtr pfp;
+    PlacedTilePtr pfp;
     int              vertexIndex;
 };
 
@@ -208,7 +211,7 @@ private:
     QPointF start;
     EdgePtr edge;
     QLineF  perp;
-    PlacedFeaturePtr pfp;
+    PlacedTilePtr pfp;
 };
 
 class TilingConstructionLine : public TilingMouseAction

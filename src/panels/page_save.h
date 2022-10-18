@@ -26,6 +26,7 @@ signals:
 public slots:
     void slot_saveTiling();
     void slot_saveImage();
+    void slot_saveMenu();
     void slot_saveSvg();
 
 private slots:
@@ -37,6 +38,7 @@ private slots:
 protected:
     void createMosaicSave();
     void createTilingSave();
+    void savePixmap(QPixmap & pixmap, QString name);
 
 private:
     QTextEdit   * designNotes;

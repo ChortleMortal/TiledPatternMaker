@@ -2,12 +2,12 @@
 #include "mosaic/design_element.h"
 #include "mosaic/mosaic.h"
 #include "mosaic/prototype.h"
-#include "figures/explicit_figure.h"
-#include "figures/extended_rosette.h"
-#include "figures/extended_star.h"
-#include "figures/rosette_connect_figure.h"
-#include "figures/star.h"
-#include "figures/star_connect_figure.h"
+#include "motifs/explicit_motif.h"
+#include "motifs/extended_rosette.h"
+#include "motifs/extended_star.h"
+#include "motifs/rosette_connect.h"
+#include "motifs/star.h"
+#include "motifs/star_connect.h"
 #include "geometry/crop.h"
 #include "geometry/edge.h"
 #include "geometry/map.h"
@@ -28,7 +28,7 @@
 #include "style/sketch.h"
 #include "style/thick.h"
 #include "style/tile_colors.h"
-#include "tile/feature.h"
+#include "tile/tile.h"
 #include "tile/tiling.h"
 #include "tile/tiling_writer.h"
 #include "viewers/viewcontrol.h"
@@ -46,7 +46,8 @@ MosaicWriter::MosaicWriter() : MosaicWriterBase()
     //currentXMLVersion = 9;  // 03MAR21 Neighbour Map no longer needed
     //currentXMLVersion = 10; // 07APR21 Border enhancements
     //currentXMLVersion = 11; // 13NOV21 Crop separated from Border
-      currentXMLVersion = 12; // 24NOV21 Reworked border definitions
+    //currentXMLVersion = 12; // 24NOV21 Reworked border definitions
+      currentXMLVersion = 13; // 16SEP22 Extended Boundary scale/rot used
 }
 
 MosaicWriter::~MosaicWriter()
@@ -159,42 +160,42 @@ bool MosaicWriter::processVector(QTextStream &ts)
         {
         case STYLE_THICK:
             str = "style.Thick";
-            ts << "<" << str << nextId() << " serialization=\"custom\">" << endl;
+            ts << "<" << str << nextId() << " >" << endl;
             processThick(ts,s);
             break;
         case STYLE_FILLED:
             str = "style.Filled";
-            ts << "<" << str << nextId() << " serialization=\"custom\">" << endl;
+            ts << "<" << str << nextId() << " >" << endl;
             processFilled(ts,s);
             break;
         case STYLE_INTERLACED:
             str = "style.Interlace";
-            ts << "<" << str << nextId() << " serialization=\"custom\">" << endl;
+            ts << "<" << str << nextId() << ">" << endl;
             processInterlace(ts,s);
             break;
         case STYLE_OUTLINED:
             str = "style.Outline";
-            ts << "<" << str << nextId() << " serialization=\"custom\">" << endl;
+            ts << "<" << str << nextId() << ">" << endl;
             processOutline(ts,s);
             break;
         case STYLE_EMBOSSED:
             str = "style.Emboss";
-            ts << "<" << str << nextId() << " serialization=\"custom\">" << endl;
+            ts << "<" << str << nextId() << ">" << endl;
             processEmboss(ts,s);
             break;
         case STYLE_PLAIN:
             str = "style.Plain";
-            ts << "<" << str << nextId() << " serialization=\"custom\">" << endl;
+            ts << "<" << str << nextId() << ">" << endl;
             processPlain(ts,s);
             break;
         case STYLE_SKETCHED:
             str = "style.Sketch";
-            ts << "<" << str << nextId() << " serialization=\"custom\">" << endl;
+            ts << "<" << str << nextId() << " >" << endl;
             processSketch(ts,s);
             break;
         case STYLE_TILECOLORS:
             str = "style.TileColors";
-            ts << "<" << str << nextId() << " serialization=\"custom\">" << endl;
+            ts << "<" << str << nextId() << " >" << endl;
             processTileColors(ts,s);
             break;
         case STYLE_STYLE:
@@ -224,7 +225,7 @@ void MosaicWriter::processDesign(QTextStream &ts)
     procCrop(ts,crop);
     int minX,minY,maxX,maxY;
     bool singleton;
-    info.getFillData()->get(singleton,minX,maxX,minY,maxY);
+    info.getFillData().get(singleton,minX,maxX,minY,maxY);
     if (!singleton)
     {
         ts << "<Fill singleton = \"f\">" << minX << "," << maxX << "," << minY << "," << maxY << "</Fill>" << endl;
@@ -875,7 +876,7 @@ void MosaicWriter::setPrototype(QTextStream & ts, PrototypePtr pp)
 
     qsid = nextId();
     setProtoReference(getRef(),pp);
-    ts << "<prototype" << qsid << " serialization=\"custom\">" << endl;
+    ts << "<prototype" << qsid << " >" << endl;
 
     QString str = "app.Prototype";
     ts << "<" << str << ">" << endl;
@@ -895,94 +896,94 @@ void MosaicWriter::setPrototype(QTextStream & ts, PrototypePtr pp)
     for (it = dels.rbegin(); it != dels.rend(); it++)
     {
         DesignElementPtr de = *it;
-        FeaturePtr feature = de->getFeature();
-        FigurePtr  figure  = de->getFigure();
+        TilePtr tile = de->getTile();
+        MotifPtr  motif  = de->getMotif();
 
-        if (!feature)
-            fail("Feature not found in prototype","");
-        if (!figure)
-            fail("Figure not found in prototype", "");
+        if (!tile)
+            fail("Tile not found in prototype","");
+        if (!motif)
+            fail("Moitf not found in prototype", "");
 
         ts << "<entry>" << endl;
 
-        setFeature(ts,feature);
+        setTile(ts,tile);
 
         QString name;
-        eFigType figType = figure->getFigType();
+        eMotifType figType = motif->getMotifType();
         switch (figType)
         {
-        case FIG_TYPE_EXPLICIT:
+        case MOTIF_TYPE_EXPLICIT:
             name = "app.ExplicitFigure";
-            setExplicitFigure(ts,name,figure);
+            setExplicitMotif(ts,name,motif);
             break;
 
-        case FIG_TYPE_STAR:
+        case MOTIF_TYPE_STAR:
             name = "app.Star";
-            setStarFigure(ts,name,figure);
+            setStar(ts,name,motif);
             break;
 
-        case FIG_TYPE_EXTENDED_STAR:
+        case MOTIF_TYPE_EXTENDED_STAR:
             name = "ExtendedStar";
-            setExtendedStarFigure(ts,name,figure);
+            setExtendedStar(ts,name,motif);
             break;
 
-        case FIG_TYPE_EXTENDED_ROSETTE:
+        case MOTIF_TYPE_EXTENDED_ROSETTE:
             name = "ExtendedRosette";
-            setExtendedRosetteFigure(ts,name,figure);
+            setExtendedRosette(ts,name,motif);
             break;
 
-        case FIG_TYPE_ROSETTE:
+        case MOTIF_TYPE_ROSETTE:
             name = "app.Rosette";
-            setRosetteFigure(ts,name,figure);
+            setRosette(ts,name,motif);
             break;
 
-        case FIG_TYPE_CONNECT_STAR:
+        case MOTIF_TYPE_CONNECT_STAR:
             name = "app.ConnectFigure";
-            setStarConnectFigure(ts,name,figure);
+            setStarConnect(ts,name,motif);
             break;
 
-        case FIG_TYPE_CONNECT_ROSETTE:
+        case MOTIF_TYPE_CONNECT_ROSETTE:
             name = "app.ConnectFigure";
-            setRosetteConnectFigure(ts,name,figure);
+            setRosetteConnect(ts,name,motif);
             break;
 
-        case FIG_TYPE_RADIAL:
-        case FIG_TYPE_UNDEFINED:
-            fail("Unexpected figure type:", sFigType[figType]);
+        case MOTIF_TYPE_RADIAL:
+        case MOTIF_TYPE_UNDEFINED:
+            fail("Unexpected figure type:", sTileType[figType]);
 
-        case FIG_TYPE_EXPLICIT_INFER:
+        case MOTIF_TYPE_EXPLICIT_INFER:
             name = "app.Infer";
-            setExplicitFigure(ts,name,figure);
+            setExplicitMotif(ts,name,motif);
             break;
 
-        case FIG_TYPE_EXPLICIT_ROSETTE:
+        case MOTIF_TYPE_EXPLICIT_ROSETTE:
             name = "app.ExplicitRosette";
-            setExplicitFigure(ts,name,figure);
+            setExplicitMotif(ts,name,motif);
             break;
 
-        case FIG_TYPE_EXPLICIT_HOURGLASS:
+        case MOTIF_TYPE_EXPLICIT_HOURGLASS:
             name = "app.ExplicitHourglass";
-            setExplicitFigure(ts,name,figure);
+            setExplicitMotif(ts,name,motif);
             break;
 
-        case FIG_TYPE_EXPLICIT_INTERSECT:
+        case MOTIF_TYPE_EXPLICIT_INTERSECT:
             name = "app.ExplicitIntersect";
-            setExplicitFigure(ts,name,figure);
+            setExplicitMotif(ts,name,motif);
             break;
 
-        case FIG_TYPE_EXPLICIT_GIRIH:
+        case MOTIF_TYPE_EXPLICIT_GIRIH:
             name = "app.ExplicitGirih";
-            setExplicitFigure(ts,name,figure);
+            setExplicitMotif(ts,name,motif);
             break;
 
-        case FIG_TYPE_EXPLICIT_STAR:
+        case MOTIF_TYPE_EXPLICIT_STAR:
             name = "app.ExplicitStar";
-            setExplicitFigure(ts,name,figure);
+            setExplicitMotif(ts,name,motif);
             break;
 
-        case FIG_TYPE_EXPLICIT_FEATURE:
+        case MOTIF_TYPE_EXPLICIT_TILE:
             name = "app.ExplicitFeature";
-            setExplicitFigure(ts,name,figure);
+            setExplicitMotif(ts,name,motif);
             break;
         }
         ts << "</entry>" << endl;
@@ -993,19 +994,19 @@ void MosaicWriter::setPrototype(QTextStream & ts, PrototypePtr pp)
     qDebug() << "Proto created";
 }
 
-void MosaicWriter::setFeature(QTextStream & ts,FeaturePtr fp)
+void MosaicWriter::setTile(QTextStream & ts,TilePtr fp)
 {
     QString str = "tile.Feature";
 
     QString qsid;
     if (hasReference(fp))
     {
-        qsid = getFeatureReference(fp);
+        qsid = getTileReference(fp);
     }
     else
     {
         qsid = nextId();
-        setFeatureReference(getRef(),fp);
+        setTileReference(getRef(),fp);
     }
 
     ts << "<" << str << qsid << ">" << endl;
@@ -1031,12 +1032,14 @@ void MosaicWriter::setFeature(QTextStream & ts,FeaturePtr fp)
 
 }
 
-void MosaicWriter::setFigureCommon(QTextStream & ts, FigurePtr fp)
+void MosaicWriter::setMotifCommon(QTextStream & ts, MotifPtr fp)
 {
-    int    bs = fp->getExtBoundarySides();
-    qreal bsc = fp->getExtBoundaryScale();
-    qreal fsc = fp->getFigureScale();
-    qreal   r = fp->getFigureRotate();
+    const ExtendedBoundary & eb = fp->getExtendedBoundary();
+
+    int    bs = eb.sides;
+    qreal bsc = eb.scale;
+    qreal fsc = fp->getMotifScale();
+    qreal   r = fp->getMotifRotate();
 
     ts << "<boundarySides>" << bs  <<"</boundarySides>"  << endl;
     ts << "<boundaryScale>" << bsc << "</boundaryScale>" << endl;
@@ -1044,12 +1047,12 @@ void MosaicWriter::setFigureCommon(QTextStream & ts, FigurePtr fp)
     ts << "<r>"             << r   << "</r>"             << endl;
 }
 
-void MosaicWriter::setExplicitFigure(QTextStream & ts,QString name, FigurePtr fp)
+void MosaicWriter::setExplicitMotif(QTextStream & ts,QString name, MotifPtr fp)
 {
-    ExplicitPtr ep = std::dynamic_pointer_cast<ExplicitFigure>(fp);
+    ExplicitPtr ep = std::dynamic_pointer_cast<ExplicitMotif>(fp);
     if (!ep)
     {
-        fail("Style error","dynamic cast of Explicit Figure");
+        fail("Style error","dynamic cast of Explicit Motif");
     }
 
     QString qsid;
@@ -1062,50 +1065,50 @@ void MosaicWriter::setExplicitFigure(QTextStream & ts,QString name, FigurePtr fp
 
     qsid = nextId();
     setExplicitReference(getRef(),ep);
-    ts << "<" << name << qsid << " type=\"" << fp->getFigTypeString() << "\"" << ">" << endl;
+    ts << "<" << name << qsid << " type=\"" << fp->getMotifTypeString() << "\"" << ">" << endl;
 
-    switch(ep->getFigType())
+    switch(ep->getMotifType())
     {
-    case FIG_TYPE_UNDEFINED:
-    case FIG_TYPE_RADIAL:
-    case FIG_TYPE_ROSETTE:
-    case FIG_TYPE_STAR:
-    case FIG_TYPE_CONNECT_STAR:
-    case FIG_TYPE_CONNECT_ROSETTE:
-    case FIG_TYPE_EXTENDED_ROSETTE:
-    case FIG_TYPE_EXTENDED_STAR:
-        fail("Code Error","Not an explicit figure");
+    case MOTIF_TYPE_UNDEFINED:
+    case MOTIF_TYPE_RADIAL:
+    case MOTIF_TYPE_ROSETTE:
+    case MOTIF_TYPE_STAR:
+    case MOTIF_TYPE_CONNECT_STAR:
+    case MOTIF_TYPE_CONNECT_ROSETTE:
+    case MOTIF_TYPE_EXTENDED_ROSETTE:
+    case MOTIF_TYPE_EXTENDED_STAR:
+        fail("Code Error","Not an explicit motif");
 
-    case FIG_TYPE_EXPLICIT:
+    case MOTIF_TYPE_EXPLICIT:
     {
-        MapPtr map = ep->getFigureMap();
+        MapPtr map = ep->getMap();
         setMap(ts,map);
         break;
     }
 
-    case FIG_TYPE_EXPLICIT_INFER:
-    case FIG_TYPE_EXPLICIT_FEATURE:
+    case MOTIF_TYPE_EXPLICIT_INFER:
+    case MOTIF_TYPE_EXPLICIT_TILE:
         // these have no parameters
         break;
 
-    case FIG_TYPE_EXPLICIT_GIRIH:
+    case MOTIF_TYPE_EXPLICIT_GIRIH:
         ts << "<sides>" << ep->getN() << "</sides>" << endl;
         ts << "<skip>"  << ep->skip  << "</skip>"  << endl;
         break;
 
-    case FIG_TYPE_EXPLICIT_STAR:
-    case FIG_TYPE_EXPLICIT_HOURGLASS:
+    case MOTIF_TYPE_EXPLICIT_STAR:
+    case MOTIF_TYPE_EXPLICIT_HOURGLASS:
         ts << "<s>" << ep->s << "</s>" << endl;
         ts << "<d>" << ep->d << "</d>"  << endl;
         break;
 
-    case FIG_TYPE_EXPLICIT_ROSETTE:
+    case MOTIF_TYPE_EXPLICIT_ROSETTE:
         ts << "<s>" << ep->s << "</s>" << endl;
         ts << "<q>" << ep->q << "</q>"  << endl;
         ts << "<rFlexPt>" << ep->r_flexPt << "</rFlexPt>"  << endl;
         break;
 
-    case FIG_TYPE_EXPLICIT_INTERSECT:
+    case MOTIF_TYPE_EXPLICIT_INTERSECT:
         ts << "<s>" << ep->s << "</s>" << endl;
         ts << "<sides>" << ep->getN() << "</sides>" << endl;
         ts << "<skip>"  << ep->skip  << "</skip>"  << endl;
@@ -1113,12 +1116,12 @@ void MosaicWriter::setExplicitFigure(QTextStream & ts,QString name, FigurePtr fp
         break;
     }
 
-    setFigureCommon(ts,fp);
+    setMotifCommon(ts,fp);
 
     ts << "</" << name << ">" << endl;
 }
 
-void MosaicWriter::setStarFigure(QTextStream & ts, QString name, FigurePtr fp, bool childEnd)
+void MosaicWriter::setStar(QTextStream & ts, QString name, MotifPtr fp, bool childEnd)
 {
     StarPtr sp = std::dynamic_pointer_cast<Star>(fp);
     if (!sp)
@@ -1146,7 +1149,7 @@ void MosaicWriter::setStarFigure(QTextStream & ts, QString name, FigurePtr fp, b
     ts << "<d>" << d << "</d>" << endl;
     ts << "<s>" << s << "</s>" << endl;
 
-    setFigureCommon(ts, fp);
+    setMotifCommon(ts, fp);
 
     if (childEnd)
         ts << "</child>" << endl;
@@ -1154,7 +1157,7 @@ void MosaicWriter::setStarFigure(QTextStream & ts, QString name, FigurePtr fp, b
         ts << "</" << name << ">" << endl;
 }
 
-void MosaicWriter::setExtendedStarFigure(QTextStream & ts,QString name, FigurePtr fp)
+void MosaicWriter::setExtendedStar(QTextStream & ts,QString name, MotifPtr fp)
 {
     ExtStarPtr sp = std::dynamic_pointer_cast<ExtendedStar>(fp);
     if (!sp)
@@ -1176,20 +1179,23 @@ void MosaicWriter::setExtendedStarFigure(QTextStream & ts,QString name, FigurePt
     int        n = sp->getN();
     qreal      d = sp->getD();
     int        s = sp->getS();
-    QString  ext_t     = (sp->getExtendPeripheralVertices())    ? "\"t\"" : "\"f\"";
-    QString  ext_not_t = (sp->getExtendFreeVertices()) ? "\"t\"" : "\"f\"";
 
-    ts << "<" << name << qsid << "  extendPeripherals=" << ext_t << "  extendFreeVertices=" << ext_not_t << ">" << endl;
+    auto & extender = sp->getExtender();
+    QString  ext_t     = (extender.getExtendPeripheralVertices())    ? "\"t\"" : "\"f\"";
+    QString  ext_not_t = (extender.getExtendFreeVertices()) ? "\"t\"" : "\"f\"";
+    QString  con_bnd_v = (extender.getConnectBoundaryVertices()) ? "\"t\"" : "\"f\"";
+
+    ts << "<" << name << qsid << "  extendPeripherals=" << ext_t << "  extendFreeVertices=" << ext_not_t << "  connectBoundaryVertices=" << con_bnd_v << ">" << endl;
     ts << "<n>" << n << "</n>" << endl;
     ts << "<d>" << d << "</d>" << endl;
     ts << "<s>" << s << "</s>" << endl;
 
-    setFigureCommon(ts, fp);
+    setMotifCommon(ts, fp);
 
     ts << "</" << name << ">" << endl;
 }
 
-void MosaicWriter::setRosetteFigure(QTextStream & ts,QString name, FigurePtr fp, bool childEnd)
+void MosaicWriter::setRosette(QTextStream & ts,QString name, MotifPtr fp, bool childEnd)
 {
     RosettePtr rp = std::dynamic_pointer_cast<Rosette>(fp);
     if (!rp)
@@ -1219,7 +1225,7 @@ void MosaicWriter::setRosetteFigure(QTextStream & ts,QString name, FigurePtr fp,
     ts << "<s>" << s << "</s>" << endl;
     ts << "<k>" << k << "</k>" << endl;
 
-    setFigureCommon(ts,fp);
+    setMotifCommon(ts,fp);
 
     if (childEnd)
         ts << "</child>" << endl;
@@ -1227,7 +1233,7 @@ void MosaicWriter::setRosetteFigure(QTextStream & ts,QString name, FigurePtr fp,
         ts << "</" << name << ">" << endl;
 }
 
-void MosaicWriter::setExtendedRosetteFigure(QTextStream & ts,QString name, FigurePtr fp)
+void MosaicWriter::setExtendedRosette(QTextStream & ts,QString name, MotifPtr fp)
 {
     ExtRosettePtr rp = std::dynamic_pointer_cast<ExtendedRosette>(fp);
     if (!rp)
@@ -1250,9 +1256,11 @@ void MosaicWriter::setExtendedRosetteFigure(QTextStream & ts,QString name, Figur
     qreal      q = rp->getQ();
     qreal      k = rp->getK();
     int        s = rp->getS();
-    QString  ext_t     = (rp->getExtendPeripheralVertices())    ? "\"t\"" : "\"f\"";
-    QString  ext_not_t = (rp->getExtendFreeVertices()) ? "\"t\"" : "\"f\"";
-    QString  con_bnd_v = (rp->getConnectBoundaryVertices()) ? "\"t\"" : "\"f\"";
+
+    auto & extender = rp->getExtender();
+    QString  ext_t     = (extender.getExtendPeripheralVertices())    ? "\"t\"" : "\"f\"";
+    QString  ext_not_t = (extender.getExtendFreeVertices()) ? "\"t\"" : "\"f\"";
+    QString  con_bnd_v = (extender.getConnectBoundaryVertices()) ? "\"t\"" : "\"f\"";
 
     ts << "<" << name << qsid << "  extendPeripherals=" << ext_t << "  extendFreeVertices=" << ext_not_t << "  connectBoundaryVertices=" << con_bnd_v << ">" << endl;
     ts << "<n>" << n << "</n>" << endl;
@@ -1260,18 +1268,18 @@ void MosaicWriter::setExtendedRosetteFigure(QTextStream & ts,QString name, Figur
     ts << "<s>" << s << "</s>" << endl;
     ts << "<k>" << k << "</k>" << endl;
 
-    setFigureCommon(ts,fp);
+    setMotifCommon(ts,fp);
 
     ts << "</" << name << ">" << endl;
 }
 
-void MosaicWriter::setRosetteConnectFigure(QTextStream & ts,QString name, FigurePtr fp)
+void MosaicWriter::setRosetteConnect(QTextStream & ts,QString name, MotifPtr fp)
 {
-    qDebug() << fp->getFigureDesc();
-    RosetteConnectPtr rcp = std::dynamic_pointer_cast<RosetteConnectFigure>(fp);
+    qDebug() << fp->getMotifDesc();
+    RosetteConnectPtr rcp = std::dynamic_pointer_cast<RosetteConnect>(fp);
     if (!rcp)
     {
-        fail("Style error","dynamic cast of RosetteConnectFigure");
+        fail("Style error","dynamic cast of RosetteConnect");
     }
 
     QString qsid;
@@ -1291,20 +1299,20 @@ void MosaicWriter::setRosetteConnectFigure(QTextStream & ts,QString name, Figure
 
     ts << "<n>" << n << "</n>" << endl;
 
-    setRosetteFigure(ts,QString("child class=\"app.Rosette\""),rcp,true);
+    setRosette(ts,QString("child class=\"app.Rosette\""),rcp,true);
 
-    qreal s2 = rcp->getFigureScale();
+    qreal s2 = rcp->getMotifScale();
     ts << "<s>" << s2 << "</s>" << endl;
     ts << "</" << name << ">" << endl;
 }
 
-void MosaicWriter::setStarConnectFigure(QTextStream & ts,QString name, FigurePtr fp)
+void MosaicWriter::setStarConnect(QTextStream & ts,QString name, MotifPtr fp)
 {
-    qDebug() << fp->getFigureDesc();
-    StarConnectPtr scp = std::dynamic_pointer_cast<StarConnectFigure>(fp);
+    qDebug() << fp->getMotifDesc();
+    StarConnectPtr scp = std::dynamic_pointer_cast<StarConnect>(fp);
     if (!scp)
     {
-        fail("Style error","dynamic cast StarConnectFigure");
+        fail("Style error","dynamic cast StarConnect");
     }
 
     QString qsid;
@@ -1324,22 +1332,22 @@ void MosaicWriter::setStarConnectFigure(QTextStream & ts,QString name, FigurePtr
 
     ts << "<n>" << n << "</n>" << endl;
 
-    setStarFigure(ts,QString("child class=\"app.Star\""),scp,true);
+    setStar(ts,QString("child class=\"app.Star\""),scp,true);
 
-    qreal s2 = scp->getFigureScale();
+    qreal s2 = scp->getMotifScale();
     ts << "<s>" << s2 << "</s>" << endl;
     ts << "</" << name << ">" << endl;
 }
 
 bool MosaicWriter::setMap(QTextStream &ts, MapPtr map)
 {
-    qDebug().noquote() << "Writing map" << map->summary();
+    qDebug().noquote() << "Writing map" << map->namedSummary();
 
     bool rv = map->verifyAndFix(true,true);
     if (!rv)
         return false;
 
-    qDebug().noquote() << "Writing map" << map->summary();
+    qDebug().noquote() << "Writing map" << map->namedSummary();
 
     QString qsid;
 
@@ -1562,14 +1570,14 @@ bool MosaicWriter::hasReference(PrototypePtr pp)
     return proto_ids.contains(pp);
 }
 
-bool MosaicWriter::hasReference(FeaturePtr fp)
+bool MosaicWriter::hasReference(TilePtr fp)
 {
-    return feature_ids.contains(fp);
+    return tile_ids.contains(fp);
 }
 
-bool MosaicWriter::hasReference(FigurePtr fp)
+bool MosaicWriter::hasReference(MotifPtr fp)
 {
-    return figure_ids.contains(fp);
+    return motif_ids.contains(fp);
 }
 
 bool MosaicWriter::hasReference(ExplicitPtr ep)
@@ -1627,14 +1635,14 @@ void MosaicWriter::setPolyReference(int id, PolyPtr ptr)
     poly_ids[ptr] = id;
 }
 
-void MosaicWriter::setFigureReference(int id, FigurePtr ptr)
+void MosaicWriter::setMotifReference(int id, MotifPtr ptr)
 {
-   figure_ids[ptr] = id;
+   motif_ids[ptr] = id;
 }
 
-void MosaicWriter::setFeatureReference(int id,FeaturePtr ptr)
+void MosaicWriter::setTileReference(int id,TilePtr ptr)
 {
-    feature_ids[ptr] = id;
+    tile_ids[ptr] = id;
 }
 
 void MosaicWriter::setExplicitReference(int id,ExplicitPtr ptr)
@@ -1696,16 +1704,16 @@ QString MosaicWriter::getProtoReference(PrototypePtr ptr)
     return qs;
 }
 
-QString MosaicWriter::getFeatureReference(FeaturePtr ptr)
+QString MosaicWriter::getTileReference(TilePtr ptr)
 {
-    int id =  feature_ids.value(ptr);
+    int id =  tile_ids.value(ptr);
     QString qs = QString(" reference=\"%1\"").arg(id);
     return qs;
 }
 
-QString MosaicWriter::getFigureReference(FigurePtr ptr)
+QString MosaicWriter::getFMotifReference(MotifPtr ptr)
 {
-    int id =  figure_ids.value(ptr);
+    int id =  motif_ids.value(ptr);
     QString qs = QString(" reference=\"%1\"").arg(id);
     return qs;
 }

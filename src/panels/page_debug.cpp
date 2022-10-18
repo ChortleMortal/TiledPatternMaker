@@ -16,8 +16,8 @@
 #include "panels/panel.h"
 #include "settings/configuration.h"
 #include "style/filled.h"
-#include "tile/feature.h"
-#include "tile/placed_feature.h"
+#include "tile/tile.h"
+#include "tile/placed_tile.h"
 #include "tile/tiling.h"
 #include "tile/tiling_manager.h"
 #include "viewers/viewcontrol.h"
@@ -376,12 +376,12 @@ bool page_debug::verifyTiling(TilingPtr tiling)
     log->trap(true);
     qInfo().noquote() << "Verifying tiling :" << tiling->getName();
     bool rv = true;
-    for (auto pfp : tiling->getPlacedFeatures() )
+    for (auto pfp : tiling->getData().getPlacedTiles())
     {
-        auto feature = pfp->getFeature();
-        if (!feature->isClockwise())
+        auto tile = pfp->getTile();
+        if (!tile->isClockwise())
         {
-            qWarning() << "Clockwise Feature";
+            qWarning() << "Clockwise Tile";
             rv = false;
         }
     }
@@ -571,57 +571,120 @@ void  page_debug::slot_testA()
 {
     MapEditor * mep = MapEditor::getInstance();
 
+#if 1
+    QPointF p0(0,0);
+    QPointF p1(0,1);
+    QPointF p2(1,1);
+    QPointF p3(1,0);
+#else
+    QPointF p0(0,0.25);
+    QPointF p1(0,0.75);
+    QPointF p2(1,0.75);
+    QPointF p3(1,0.25);
+#endif
+
+    QPointF q0(1,0);
+    QPointF q1(1,1.0001);
+    QPointF q2(2,1);
+    QPointF q3(2,0);
+
+#if 0
+
+#if 1
     MapPtr map1 = make_shared<Map>("map1");
-    VertexPtr v0 = map1->insertVertex(QPointF(0,0));
-    VertexPtr v1 = map1->insertVertex(QPointF(0,1));
-    VertexPtr v2 = map1->insertVertex(QPointF(1,1));
-    VertexPtr v3 = map1->insertVertex(QPointF(1,0));
+    VertexPtr v0 = map1->insertVertex(p0);
+    VertexPtr v1 = map1->insertVertex(p1);
+    VertexPtr v2 = map1->insertVertex(p2);
+    VertexPtr v3 = map1->insertVertex(p3);
     map1->insertEdge(v0,v1);
     map1->insertEdge(v1,v2);
     map1->insertEdge(v2,v3);
     map1->insertEdge(v3,v0);
     map1->dumpMap(true);
-
+    mep->loadFromMap(map1,MAPED_TYPE_CREATED);
+#endif
+#if 0
     MapPtr map2 = make_shared<Map>("map2");
-    v0 = map2->insertVertex(QPointF(1,0));
-    v1 = map2->insertVertex(QPointF(1,1.0001));
-    v2 = map2->insertVertex(QPointF(2,1));
-    v3 = map2->insertVertex(QPointF(2,0));
+    v0 = map2->insertVertex(q0);
+    v1 = map2->insertVertex(q1);
+    v2 = map2->insertVertex(q2);
+    v3 = map2->insertVertex(q3);
     map2->insertEdge(v0,v1);
     map2->insertEdge(v1,v2);
     map2->insertEdge(v2,v3);
     map2->insertEdge(v3,v0);
     map2->dumpMap(true);
     mep->loadFromMap(map2,MAPED_TYPE_CREATED);
+#endif
+#else
+    QPolygonF poly1;
+    poly1 << p0 << p1 << p2 << p3 << p0;
+    MapPtr map3 = make_shared<Map>("map3",poly1);
+    mep->loadFromMap(map3,MAPED_TYPE_CREATED);
 
-    mep->loadFromMap(map1,MAPED_TYPE_CREATED);
+    //QLineF rline(QPointF(0.5,-3),QPointF(2,0));
+    QLineF rline(QPointF(2,0),QPointF(2,1));
+
+    QPolygonF poly2 = Point::reflectPolygon(poly1,rline);
+    MapPtr map4 = make_shared<Map>("map4",poly2);
+    mep->loadFromMap(map4,MAPED_TYPE_CREATED);
+#if 0
+    QPolygonF poly2;
+    poly2 << q0 << q1 << q2 << q3 << q0;
+
+    if (poly2.intersects(poly1))
+    {
+        QPolygonF p3 = poly2.intersected(poly1);
+        if (!p3.isEmpty())
+        {
+            qDebug() << "overlapping";
+        }
+        else
+        {
+            qDebug() << "touching";
+        }
+    }
+    else
+        qDebug() << "no intersect";
+#endif
+#endif
 }
 
 void  page_debug::slot_testB()
 {
+    QPointF p0(0,0);
+    QPointF p1(0,2);
+    QPointF p2(2.00005,2);
+    QPointF p3(2,0);
+
+    QPointF q0(1,1);
+    QPointF q1(1,3);
+    QPointF q2(3,3.00005);
+    QPointF q3(3,1);
+
     MapEditor * mep = MapEditor::getInstance();
 
     MapPtr map1 = make_shared<Map>("map1");
-    VertexPtr v0 = map1->insertVertex(QPointF(0,0));
-    VertexPtr v1 = map1->insertVertex(QPointF(0,2));
-    VertexPtr v2 = map1->insertVertex(QPointF(2.00005,2));
-    VertexPtr v3 = map1->insertVertex(QPointF(2,0));
+    VertexPtr v0 = map1->insertVertex(p0);
+    VertexPtr v1 = map1->insertVertex(p1);
+    VertexPtr v2 = map1->insertVertex(p2);
+    VertexPtr v3 = map1->insertVertex(p3);
     map1->insertEdge(v0,v1);
     map1->insertEdge(v1,v2);
     map1->insertEdge(v2,v3);
     map1->insertEdge(v3,v0);
-    qDebug().noquote() << map1->summary();
+    qDebug().noquote() << map1->namedSummary();
 
     MapPtr map2 = make_shared<Map>("map2");
-    v0 = map2->insertVertex(QPointF(1,1));
-    v1 = map2->insertVertex(QPointF(1,3));
-    v2 = map2->insertVertex(QPointF(3,3.00005));
-    v3 = map2->insertVertex(QPointF(3,1));
+    v0 = map2->insertVertex(q0);
+    v1 = map2->insertVertex(q1);
+    v2 = map2->insertVertex(q2);
+    v3 = map2->insertVertex(q3);
     map2->insertEdge(v0,v1);
     map2->insertEdge(v1,v2);
     map2->insertEdge(v2,v3);
     map2->insertEdge(v3,v0);
-    qDebug().noquote() << map2->summary();
+    qDebug().noquote() << map2->namedSummary();
 
     mep->loadFromMap(map1,MAPED_TYPE_CREATED);
     mep->loadFromMap(map2,MAPED_TYPE_CREATED);

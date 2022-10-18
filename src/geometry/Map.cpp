@@ -100,7 +100,6 @@ void Map::wipeout()
     derivedDCEL.reset();
     edges.clear();          // unnecessary from destructor but not elsewhere
     vertices.clear();       // unneccesary from destructor but not elsewhere
-    texts.clear();
 }
 
 void Map::set(const constMapPtr & other)
@@ -180,15 +179,41 @@ VertexPtr Map::insertVertex(const QPointF & pt)
     return vert;
 }
 
+VertexPtr Map:: getVertex(const QPointF & pt) const
+{
+    for (auto v : vertices)
+    {
+        if (Loose::equalsPt(v->pt,pt))
+        {
+            return v;
+        }
+    }
+    VertexPtr vp;
+    return vp;
+}
+
+EdgePtr Map::insertEdge(const QLineF & line)
+{
+    return insertEdge(line.p1(),line.p2());
+}
+
+EdgePtr Map::insertEdge(const QPointF & p1, const QPointF & p2)
+{
+    VertexPtr v1 = insertVertex(p1);
+    VertexPtr v2 = insertVertex(p2);
+
+    return insertEdge(v1,v2);
+}
+
 // Insert the edge connecting two vertices
-EdgePtr Map::insertEdge(const VertexPtr & v1, const VertexPtr & v2, bool debug)
+EdgePtr Map::insertEdge(const VertexPtr & v1, const VertexPtr & v2)
 {
     Q_ASSERT(vertices.contains(v1));
     Q_ASSERT(vertices.contains(v2));
 
     EdgePtr e = make_shared<Edge>(v1, v2);
 
-    _insertEdge(e,debug);
+    insertEdge(e);
 
     return e;
 }
@@ -216,18 +241,12 @@ EdgePtr Map::makeCopy(const EdgePtr & e, QTransform T)
     return ep;
 }
 
-void Map::_insertEdge(const EdgePtr & e, bool debug)
+void Map::_insertEdge(const EdgePtr & e)
 {
     Q_ASSERT(vertices.contains(e->v1));
     Q_ASSERT(vertices.contains(e->v2));
 
     _insertEdge_Simple(e);
-
-    if (debug)
-    {
-        insertDebugMark(e->v1->pt,QString());
-        insertDebugMark(e->v2->pt,QString());
-    }
 }
 
 EdgePtr Map::_insertCurvedEdge(const VertexPtr & v1, const VertexPtr & v2, const QPointF & center, bool isConvex, bool isChord, bool debug)
@@ -241,8 +260,8 @@ EdgePtr Map::_insertCurvedEdge(const VertexPtr & v1, const VertexPtr & v2, const
 
     if (debug)
     {
-        insertDebugMark(v1->pt,QString());
-        insertDebugMark(v2->pt,QString());
+        //insertDebugMark(v1->pt,QString());
+        //insertDebugMark(v2->pt,QString());
     }
 
     return e;
@@ -1006,7 +1025,8 @@ VertexPtr Map::_getOrCreateVertex(const QPointF & pt)
     for (auto & v : vertices)
     {
         QPointF  cur = v->pt;
-        if (comparePoints(pt, cur) == COMP_EQUAL)
+        if (Point::dist2(pt,cur) < Loose::TOL)
+        //if (comparePoints(pt, cur) == COMP_EQUAL)
         {
             return v;
         }
@@ -1024,12 +1044,12 @@ VertexPtr Map::_getOrCreateVertex(const QPointF & pt)
 ///
 //////////////////////////////////////////
 
-QString Map::summary() const
+QString Map::namedSummary() const
 {
     return QString("%1 : vertices=%2 edges=%3").arg(mname).arg(vertices.size()).arg(edges.size());
 }
 
-QString Map::summary2() const
+QString Map::summary() const
 {
     return QString("vertices=%1 edges=%2").arg(vertices.size()).arg(edges.size());
 }
@@ -1151,86 +1171,6 @@ EdgePtr Map::edgeExists(const VertexPtr & v1, const VertexPtr & v2) const
     return rv;
 }
 
-//////////////////////////////////////////
-///
-/// Debug
-///
-//////////////////////////////////////////
-
-void Map::insertDebugMark(QPointF m, QString txt, qreal size, QPointF offset)
-{
-    if (!config->debugMapEnable)
-        return;
-
-    qreal x = m.x();
-    qreal y = m.y();
-
-    QPointF p1(x-size,y);
-    QPointF p2(x+size,y);
-    QPointF p3(x,y+size);
-    QPointF p4(x,y-size);
-
-    VertexPtr v1 = insertVertex(p1);
-    VertexPtr v2 = insertVertex(p2);
-    insertEdge(v1,v2);
-
-    v1 = insertVertex(p3);
-    v2 = insertVertex(p4);
-    insertEdge(v1,v2);
-
-    if (!txt.isEmpty())
-    {
-        sText stxt;
-        stxt.pt  = m + offset;
-        stxt.txt = txt;
-        texts.push_back(stxt);
-    }
-}
-
-void Map::insertDebugLine(QLineF l1)
-{
-    insertDebugLine(l1.p1(),l1.p2());
-}
-
-void Map::insertDebugLine(EdgePtr edge)
-{
-    if (!config->debugMapEnable)
-        return;
-    insertEdge(edge->v1,edge->v2,true);
-}
-
-void Map::insertDebugLine(QPointF p1, QPointF p2)
-{
-    if (!config->debugMapEnable)
-        return;
-
-    VertexPtr v1 = insertVertex(p1);
-    VertexPtr v2 = insertVertex(p2);
-    insertEdge(v1,v2);
-}
-
-void Map::insertDebugPolygon(QPolygonF & poly)
-{
-    if (!config->debugMapEnable)
-        return;
-
-    for (int i=0; i < poly.size() -1; i++)
-    {
-        QPointF p1 = poly.at(i);
-        QPointF p2 = poly.at(i+1);
-        VertexPtr v1 = insertVertex(p1);
-        VertexPtr v2 = insertVertex(p2);
-        insertEdge(v1,v2);
-    }
-    if (!poly.isClosed())
-    {
-        QPointF p1 = poly.at(poly.size()-1);
-        QPointF p2 = poly.at(0);
-        VertexPtr v1 = insertVertex(p1);
-        VertexPtr v2 = insertVertex(p2);
-        insertEdge(v1,v2);
-    }
-}
 
 void Map::_dumpVertices(bool full)
 {
@@ -1296,6 +1236,7 @@ void Map::_cleanseVertices()
             baddies.push_back(v);
         }
     }
+    qDebug() << "Bad verztices to delelte:" << baddies.size();
     for (auto & v  : baddies)
     {
         vertices.removeOne(v);
@@ -1354,5 +1295,98 @@ void Map::draw(QPainter * painter)
     for (EdgePtr edge : edges)
     {
         painter->drawLine(edge->getLine());
+    }
+}
+
+
+//////////////////////////////////////////
+///
+/// DebugMap
+///
+//////////////////////////////////////////
+
+DebugMap::DebugMap(const QString & name) : Map(name)
+{}
+
+
+void DebugMap::insertDebugMark(QPointF m, QString txt)
+{
+    if (!config->debugMapEnable)
+        return;
+
+    qreal x = m.x();
+    qreal y = m.y();
+
+    qreal size = 0.05;
+    QPointF p1(x-size,y);
+    QPointF p2(x+size,y);
+    QPointF p3(x,y+size);
+    QPointF p4(x,y-size);
+
+    VertexPtr v1 = insertVertex(p1);
+    VertexPtr v2 = insertVertex(p2);
+    insertEdge(v1,v2);
+
+    v1 = insertVertex(p3);
+    v2 = insertVertex(p4);
+    insertEdge(v1,v2);
+
+    if (txt.isEmpty())
+        return;
+
+    for (auto & pair : debugTexts)
+    {
+        if (Loose::equalsPt(pair.first,m))
+        {
+            pair.second += "  ";
+            pair.second += txt;
+            return;
+        }
+    }
+    debugTexts.push_back(QPair<QPointF,QString>(m,txt));
+}
+
+void DebugMap::insertDebugLine(QLineF l1)
+{
+    insertDebugLine(l1.p1(),l1.p2());
+}
+
+void DebugMap::insertDebugLine(EdgePtr edge)
+{
+    if (!config->debugMapEnable)
+        return;
+    insertEdge(edge->v1,edge->v2);
+}
+
+void DebugMap::insertDebugLine(QPointF p1, QPointF p2)
+{
+    if (!config->debugMapEnable)
+        return;
+
+    VertexPtr v1 = insertVertex(p1);
+    VertexPtr v2 = insertVertex(p2);
+    insertEdge(v1,v2);
+}
+
+void DebugMap::insertDebugPolygon(QPolygonF & poly)
+{
+    if (!config->debugMapEnable)
+        return;
+
+    for (int i=0; i < poly.size() -1; i++)
+    {
+        QPointF p1 = poly.at(i);
+        QPointF p2 = poly.at(i+1);
+        VertexPtr v1 = insertVertex(p1);
+        VertexPtr v2 = insertVertex(p2);
+        insertEdge(v1,v2);
+    }
+    if (!poly.isClosed())
+    {
+        QPointF p1 = poly.at(poly.size()-1);
+        QPointF p2 = poly.at(0);
+        VertexPtr v1 = insertVertex(p1);
+        VertexPtr v2 = insertVertex(p2);
+        insertEdge(v1,v2);
     }
 }

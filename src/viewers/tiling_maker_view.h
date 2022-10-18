@@ -2,9 +2,9 @@
 //
 // FeatureView.java
 //
-// It's unlikely this file will get used in the applet.  A FeatureView
+// It's unlikely this file will get used in the applet.  A TilingMakerView
 // is a special kind of GeoView that assumes a subclass will maintain
-// a collection of Features.  It knows how to draw Features quickly,
+// a collection of Tiles.  It knows how to draw Tiles quickly,
 // and provides a bunch of services to subclasses for mouse-based
 // interaction with features.
 
@@ -19,9 +19,10 @@
 
 class GeoGraphics;
 
+typedef std::shared_ptr<class TileSelector>  TilingSelectorPtr;
+typedef std::shared_ptr<class PlacedTile>    PlacedTilePtr;
 
-typedef std::shared_ptr<class TilingSelector>  TilingSelectorPtr;
-typedef std::shared_ptr<class PlacedFeature>   PlacedFeaturePtr;
+Q_DECLARE_METATYPE(PlacedTilePtr)
 
 class TilingMakerView : public LayerController
 {
@@ -31,7 +32,7 @@ public:
 
     virtual void    paint(QPainter * painter) override;
 
-    void drawFeature(GeoGraphics * g2d, PlacedFeaturePtr pf, bool draw_c, QColor icol );
+    void drawTile(GeoGraphics * g2d, PlacedTilePtr pf, bool draw_c, QColor icol );
     void drawTranslationVectors(GeoGraphics * g2d, QPointF t1_start, QPointF t1_end, QPointF t2_start, QPointF t2_end);
     void drawAccum(GeoGraphics * g2d);
     void drawMeasurements(GeoGraphics * g2d);
@@ -39,32 +40,34 @@ public:
     void hideTiling(bool state);
 
     TilingSelectorPtr findSelection(QPointF spt);
-    TilingSelectorPtr findFeature(QPointF spt);
+    TilingSelectorPtr findTile(QPointF spt);
     TilingSelectorPtr findEdge(QPointF spt);
     TilingSelectorPtr findPoint(QPointF spt);
     TilingSelectorPtr findVertex(QPointF spt);
     TilingSelectorPtr findMidPoint(QPointF spt);
     TilingSelectorPtr findArcPoint(QPointF spt);
 
-    TilingSelectorPtr findFeature(QPointF spt, TilingSelectorPtr ignore);
+    TilingSelectorPtr findTile(QPointF spt, TilingSelectorPtr ignore);
     TilingSelectorPtr findEdge(QPointF spt, TilingSelectorPtr ignore );
     TilingSelectorPtr findPoint(QPointF spt, TilingSelectorPtr ignore);
     TilingSelectorPtr findVertex(QPointF spt, TilingSelectorPtr ignore);
     TilingSelectorPtr findMidPoint(QPointF spt, TilingSelectorPtr ignore);
 
-    TilingSelectorPtr findCenter(PlacedFeaturePtr feature, QPointF spt);
+    TilingSelectorPtr findCenter(PlacedTilePtr feature, QPointF spt);
 
     QPointF           findSelectionPointOrPoint(QPointF spt);
 
     TilingSelectorPtr findNearGridPoint(QPointF spt);
 
-    QVector<PlacedFeaturePtr> & getAllFeatures()   { return allPlacedFeatures; }
-    QVector<PlacedFeaturePtr> & getInTiling()      { return in_tiling; } // DAC was hash
-    EdgePoly                  & getAccumW()        { return wAccum; }
-    QVector<Measurement*>     & getMeasurementsS() { return wMeasurements; }
+    QVector<PlacedTilePtr> & getAllTiles()     { return allPlacedTiles; }
+    QVector<PlacedTilePtr> & getInTiling()      { return in_tiling; } // DAC was hash
+    EdgePoly               & getAccumW()        { return wAccum; }
+    QVector<Measurement*>  & getMeasurementsS() { return wMeasurements; }
+    QVector<QLineF>    & getConstructionLines() { return constructionLines; }
+    QPointF                  getMousePos()      { return sMousePos; }
 
-    QPointF getMousePos() { return sMousePos; }
-    QVector<QLineF> & getConstructionLines() { return constructionLines; }
+    QLineF getVisT1() { return visibleT1; }
+    QLineF getVisT2() { return visibleT2; }
 
 protected:
     void draw(GeoGraphics * g2d);
@@ -82,31 +85,31 @@ protected:
     static constexpr QColor drag_color          = QColor(206,179,102,128);
     static constexpr QColor circle_color        = QColor(202,200,  0,128);
 
-    eTilingMakerMouseMode       tilingMakerMouseMode;     // set by tiling designer menu
-    QVector<PlacedFeaturePtr>   allPlacedFeatures;
-    QVector<PlacedFeaturePtr>   in_tiling;
+    eTilingMakerMouseMode   tilingMakerMouseMode;     // set by tiling designer menu
+    QVector<PlacedTilePtr>  allPlacedTiles;
+    QVector<PlacedTilePtr>  in_tiling;
 
-    EdgePoly                    wAccum;       // world points
-    QVector<Measurement*>       wMeasurements;
+    EdgePoly                wAccum;             // world points
+    QVector<Measurement*>   wMeasurements;
 
-    bool                        _hideTiling;
+    bool                    _hideTiling;
 
-    UniqueQVector<PlacedFeaturePtr>   overlapping;  // calculated DAC was hash
-    UniqueQVector<PlacedFeaturePtr>   touching;     // calculated
+    UniqueQVector<PlacedTilePtr>   overlapping; // calculated DAC was hash
+    UniqueQVector<PlacedTilePtr>   touching;    // calculated
 
-    TilingSelectorPtr           featureSelector;        // Current mouse selection.
-    PlacedFeaturePtr            currentPlacedFeature;   // current menu row selection too
-    PlacedFeaturePtr            editPlacedFeature;      // Feature in DlgFeatureEdit
+    TilingSelectorPtr       tileSelector;       // Current mouse selection.
+    PlacedTilePtr           currentPlacedTile;  // current menu row selection too
+    PlacedTilePtr           editPlacedTile;     // Tile in DlgTileEdit
 
-    QLineF                      visibleT1;                  // Translation vector so that the tiling tiles the plane.
-    QLineF                      visibleT2;
+    QLineF                  visibleT1;          // Translation vector so that the tiling tiles the plane.
+    QLineF                  visibleT2;
 
-    QPointF                     sMousePos;                  // screen points DAC added
-    QPointF                     featureEditPoint;
-    QVector<QLineF>             constructionLines;
+    QPointF                 sMousePos;          // screen points DAC added
+    QPointF                 tileEditPoint;
+    QVector<QLineF>         constructionLines;
 
 private:
-    class TilingMaker *         tilingMaker;
+    class TilingMaker *     tilingMaker;
 };
 
 #endif

@@ -54,6 +54,8 @@ public:
     void    displayDCEL(int val);
 
     FaceSet & getFaceSet() { return faces; }
+    FacePtr   findOuterFace();
+
     const QVector<VertexPtr> & getVertices() { return vertices; }
     const QVector<EdgePtr>   & getEdges()    { return edges; }
 
@@ -87,7 +89,6 @@ protected:
     EdgePtr       next_half_edge(const EdgePtr & current);
 
     EdgePtr       findEdge(const VertexPtr & start, const VertexPtr &end, bool expected = true);
-    FacePtr       findOuterFace();
 
     FacePtr check_if_inside(const QVector<VertexPtr> & verts);
     bool    check_if_point_is_inside(const VertexPtr & ver, const QVector<VertexPtr> & key);

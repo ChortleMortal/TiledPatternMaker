@@ -8,7 +8,7 @@
 #include "settings/filldata.h"
 #include "geometry/circle.h"
 #include "geometry/xform.h"
-#include "enums/efigtype.h"
+#include "enums/emotiftype.h"
 #include "enums/estyletype.h"
 
 typedef std::shared_ptr<QPolygonF>              PolyPtr;
@@ -16,22 +16,22 @@ typedef std::shared_ptr<class BackgroundImage>  BkgdImgPtr;
 typedef std::shared_ptr<class Border>           BorderPtr;
 typedef std::shared_ptr<class Crop>             CropPtr;
 typedef std::shared_ptr<class Edge>             EdgePtr;
-typedef std::shared_ptr<class ExplicitFigure>   ExplicitPtr;
+typedef std::shared_ptr<class ExplicitMotif>    ExplicitPtr;
 typedef std::shared_ptr<class ExtendedRosette>  ExtRosettePtr;
 typedef std::shared_ptr<class ExtendedStar>     ExtStarPtr;
-typedef std::shared_ptr<class Feature>          FeaturePtr;
-typedef std::shared_ptr<class Figure>           FigurePtr;
+typedef std::shared_ptr<class Tile>             TilePtr;
+typedef std::shared_ptr<class Motif>            MotifPtr;
 typedef std::shared_ptr<class Map>              MapPtr;
 typedef std::shared_ptr<class Mosaic>           MosaicPtr;
 typedef std::shared_ptr<class Prototype>        PrototypePtr;
 typedef std::shared_ptr<class Rosette>          RosettePtr;
 typedef std::shared_ptr<class Star>             StarPtr;
-typedef std::shared_ptr<class RosetteConnectFigure> RosetteConnectPtr;
-typedef std::shared_ptr<class StarConnectFigure>    StarConnectPtr;
+typedef std::shared_ptr<class RosetteConnect> RosetteConnectPtr;
+typedef std::shared_ptr<class StarConnect>    StarConnectPtr;
 typedef std::shared_ptr<class Tiling>           TilingPtr;
 typedef std::shared_ptr<class Vertex>           VertexPtr;
 
-class FeatureReader;
+class TileReader;
 
 using std::string;
 using namespace pugi;
@@ -79,19 +79,19 @@ protected:
     void    processsStyleEmboss(xml_node & node, qreal & angle);
     void    processStyleStyle(xml_node & node, PrototypePtr &proto);
 
-    // features
-    FeaturePtr  getFeature(FeatureReader & fr, xml_node & node);
+    // tiles
+    TilePtr  getTile(TileReader & fr, xml_node & node);
 
-    // figures
-    void                getFigureCommon(xml_node & node, FigurePtr fig);
-    ExplicitPtr         getExplicitFigure(xml_node & node, eFigType figType);
-    StarPtr             getStarFigure(xml_node & node);
-    ExtStarPtr          getExtendedStarFigure(xml_node & node);
-    ExtRosettePtr       getExtendedRosetteFigure(xml_node & node);
-    RosettePtr          getRosetteFigure(xml_node & node);
-    FigurePtr           getConnectFigure(xml_node & node);
-    RosetteConnectPtr   getRosetteConnectFigure(xml_node & node);
-    StarConnectPtr      getStarConnectFigure(xml_node & node);
+    // motrifs
+    void                getMotifCommon(xml_node & node, MotifPtr fig);
+    ExplicitPtr         getExplicitMotif(xml_node & node, int tile_sides, eMotifType figType);
+    StarPtr             getStar(xml_node & node, int tile_sides);
+    ExtStarPtr          getExtendedStar(xml_node & node, int tile_sides);
+    ExtRosettePtr       getExtendedRosette(xml_node & node, int tile_sides);
+    RosettePtr          getRosette(xml_node & node, int tile_sides);
+    MotifPtr            getConnectMotif(xml_node & node, int tile_sides);
+    RosetteConnectPtr   getRosetteConnect(xml_node & node, int tile_sides);
+    StarConnectPtr      getStarConnect(xml_node & node, int tile_sides);
 
     PolyPtr         getPolygon(xml_node & node);
     VertexPtr       getVertex(xml_node & node);
@@ -109,8 +109,8 @@ protected:
     void   setProtoReference(xml_node & node, PrototypePtr ptr);
     void   setEdgeReference(xml_node & node, EdgePtr ptr);
     void   setPolyReference(xml_node & node, PolyPtr ptr);
-    void   setFeatureReference(xml_node & node, FeaturePtr ptr);
-    void   setFigureReference(xml_node & node, FigurePtr ptr);
+    void   setTileReference(xml_node & node, TilePtr ptr);
+    void   setFMotifReference(xml_node & node, MotifPtr ptr);
     void   setExplicitReference(xml_node & node, ExplicitPtr ptr);
     void   setStarReference(xml_node & node, StarPtr ptr);
     void   setExtStarReference(xml_node & node, ExtStarPtr ptr);
@@ -123,8 +123,8 @@ protected:
     PrototypePtr    getProtoReferencedPtr(xml_node & node);
     EdgePtr         getEdgeReferencedPtr(xml_node & node);
     PolyPtr         getPolyReferencedPtr(xml_node & node);
-    FeaturePtr      getFeatureReferencedPtr(xml_node & node);
-    FigurePtr       getFigureReferencedPtr(xml_node & node);
+    TilePtr         getTileReferencedPtr(xml_node & node);
+    MotifPtr        getMotifReferencedPtr(xml_node & node);
     ExplicitPtr     getExplicitReferencedPtr(xml_node & node);
     StarPtr         getStarReferencedPtr(xml_node & node);
     ExtStarPtr      getExtStarReferencedPtr(xml_node & node);
@@ -150,8 +150,8 @@ protected:
     QMap<int,PrototypePtr>  proto_ids;
     QMap<int,EdgePtr>       edge_ids;
     QMap<int,PolyPtr>       poly_ids;
-    QMap<int,FeaturePtr>    feature_ids;
-    QMap<int,FigurePtr>     figure_ids;
+    QMap<int,TilePtr>       tile_ids;
+    QMap<int,MotifPtr>      motif_ids;
     QMap<int,ExplicitPtr>   explicit_ids;
     QMap<int,StarPtr>       star_ids;
     QMap<int,ExtStarPtr>    ext_star_ids;

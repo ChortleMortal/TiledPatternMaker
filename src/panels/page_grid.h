@@ -4,6 +4,7 @@
 class QGroupBox;
 class QHBoxLayout;
 class QButtonGroup;
+class QCheckBox;
 
 #include "widgets/panel_page.h"
 

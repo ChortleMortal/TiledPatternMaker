@@ -103,7 +103,7 @@ bool Map::verifyAndFix(bool force, bool confirm)
         qDebug(). noquote() << "cleanse :" << timer.getElapsed();
 
         errors = _verify(force);
-        if (errors.size())
+        if (procErrors(errors))
         {
             QString msg = "Map verify failed after cleanse";
             qWarning().noquote() << msg;
@@ -182,15 +182,8 @@ QVector<eMapError> Map::_verify(bool force)
     qDebug() << "$$$$ Verify end";
 
 windup:
-    if (errors.size())
+    if (procErrors(errors))
     {
-        for (auto err : errors)
-        {
-            if (isSevereError(err))
-            {
-                qWarning().noquote() << sMapErrors[err];
-            }
-        }
         qWarning().noquote() << "Verify ERROR" << mname << "did NOT verify!"  <<  "Vertices:" << vertices.size() << "Edges:" << edges.size();
 
         if (config->verifyPopup)
@@ -368,6 +361,25 @@ void Map::verifyNeighbours()
             }
         }
     }
+}
+
+
+bool Map::procErrors(const QVector<eMapError> & errors)
+{
+    bool severe = false;
+    for (auto err : errors)
+    {
+        if (isSevereError(err))
+        {
+            qWarning().noquote() << "Error:" <<sMapErrors[err];
+            severe = true;
+        }
+        else
+        {
+            qInfo().noquote() << "Ignoring:" <<sMapErrors[err];
+        }
+    }
+    return severe;
 }
 
 bool Map::isMinorError(eMapError err)

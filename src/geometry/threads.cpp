@@ -12,13 +12,13 @@ void Threads::createThreads(MapPtr map)
     this->map = map;
 
     // reset visited
-    for (auto & edge : map->getEdges())
+    for (auto & edge : qAsConst(map->getEdges()))
     {
         edge->thread.reset();
         edge->visited = false;
     }
 
-    for (auto & edge : map->getEdges())
+    for (auto & edge : qAsConst(map->getEdges()))
     {
         if (edge->visited)
             continue;

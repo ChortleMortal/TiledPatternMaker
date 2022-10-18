@@ -7,9 +7,8 @@
 
 typedef std::shared_ptr<class BackgroundImage>  BkgdImgPtr;
 typedef std::shared_ptr<class Tiling>           TilingPtr;
-typedef std::shared_ptr<class PlacedFeature>    PlacedFeaturePtr;
-typedef std::weak_ptr<class   PlacedFeature>    WeakPlacedFeaturePtr;
-typedef std::weak_ptr<class   Feature>          WeakFeaturePtr;
+typedef std::shared_ptr<class PlacedTile>       PlacedTilePtr;
+typedef std::weak_ptr<class   PlacedTile>       WeakPlacedTilePtr;
 
 class QGroupBox;
 class QTextEdit;
@@ -25,9 +24,9 @@ enum epageTi
     TI_LOCATION,
     TI_SHOW,
     TI_TYPE_PFP,    // regular, poly, or girih
-    TI_FEAT_SIDES,
     TI_FEAT_ROT,
     TI_FEAT_SCALE,
+    TI_SIDES,
     TI_SCALE,
     TI_ROT,
     TI_X,
@@ -53,24 +52,25 @@ public:
 private slots:
     void slot_clearTiling();
     void slot_reloadTiling();
+    void slot_undo();
 
     void slot_buildMenu();
     void slot_refreshMenuData();
-    void slot_currentFeature(int index);
+    void slot_currentTile(PlacedTilePtr pfp);
 
     void slot_currentTilingChanged(int index);
     void slot_sidesChanged(int col);
     void slot_f_rotChanged(int col);
     void slot_f_scaleChanged(int col);
     void slot_transformChanged(int col);
-    void slot_showFeatureChanged(int col);
+    void slot_showTileChanged(int col);
     void slot_t1t2Changed(double val);
     void slot_t1t2LenChanged(double val);
     void slot_t1t2AngleChanged(double val);
 
     void slot_cellSelected(int row, int col);
     void slot_showTable(bool checked);
-    void slot_all_features(bool checked);
+    void slot_all_tiles(bool checked);
     void slot_showDebug(bool checked);
     void slot_autofill(bool checked);
     void slot_swapTrans();
@@ -80,7 +80,7 @@ private slots:
     void slot_setModes(QAbstractButton *btn);
     void slot_set_reps(int val);
     void slot_menu(QPointF spt);
-    void slot_menu_edit_feature();
+    void slot_menu_edit_tile();
     void slot_menu_includePlaced();
     void slot_exportPoly();
     void slot_importPoly();
@@ -103,16 +103,17 @@ protected:
 
     void setup();
     void refreshMenuData();
-    void buildTableEntry(PlacedFeaturePtr pf, int col, QString inclusion);
-    void refreshTableEntry(PlacedFeaturePtr pf, int col, QString inclusion);
+    void buildTableEntry(PlacedTilePtr pf, int col, QString inclusion);
+    void refreshTableEntry(PlacedTilePtr pf, int col, QString inclusion);
 
     void loadTilingCombo(TilingPtr selected);
     void tallyMouseMode();
 
-    void updateFeaturePointInfo(PlacedFeaturePtr pfp);
+    void updateTilePointInfo(PlacedTilePtr pfp);
     void pushTilingToMotifMaker(eSM_Event event);
 
-    PlacedFeaturePtr getFeatureColumn(int col);
+    PlacedTilePtr getTileColumn(int col);
+    int              getColumn(PlacedTilePtr pfp);
 
 private:
     QComboBox     * tilingCombo;
@@ -133,11 +134,12 @@ private:
     AQTableWidget * tileInfoTable;
     AQWidget      * debugWidget;
 
-    QTextEdit    * featureInfo;
+    QTextEdit    * tileInfo;
     QLabel       * statusLabel;
     QLabel       * debugLabel1;
     QLabel       * debugLabel2;
     QLabel       * overlapStatus;
+    QLabel       * undoStatus;
 
     AQSpinBox    * xRepMin;
     AQSpinBox    * xRepMax;

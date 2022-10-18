@@ -21,7 +21,7 @@ public:
     void    unload();
 
     bool    isLoaded() { return _loaded; }
-    QString getName() override { return bkgdName; }
+    QString getName() override;
 
     void    paint(QPainter *painter) override;
 

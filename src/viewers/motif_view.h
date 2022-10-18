@@ -3,14 +3,13 @@
 
 #include "misc/layer_controller.h"
 
-typedef std::shared_ptr<class MotifView>        MotifViewPtr;
-typedef std::shared_ptr<class Figure>           FigurePtr;
-typedef std::shared_ptr<class DesignElement>    DesignElementPtr;
-typedef std::shared_ptr<class Map>              MapPtr;
-typedef std::shared_ptr<class Feature>          FeaturePtr;
-typedef std::weak_ptr<class DesignElement>      WeakDesignElementPtr;
-typedef std::weak_ptr<class Figure>             WeakFigurePtr;
-typedef std::weak_ptr<class Feature>            WeakFeaturePtr;
+typedef std::shared_ptr<class MotifView>       MotifViewPtr;
+typedef std::shared_ptr<class Motif>           MotifPtr;
+typedef std::shared_ptr<class DesignElement>   DesignElementPtr;
+typedef std::shared_ptr<class Map>             MapPtr;
+typedef std::shared_ptr<class Tile>            TilePtr;
+typedef std::shared_ptr<class Contact>         ContactPtr;
+
 
 class MotifView : public LayerController
 {
@@ -21,7 +20,7 @@ public:
 
     virtual void paint(QPainter *painter) override;
 
-    void    setDebugContacts(bool enb, QPolygonF pts, QVector<class contact*> contacts);
+    void    setDebugContacts(bool enb, QPolygonF pts, QVector<ContactPtr> contacts);    // not currently used
 
     virtual void iamaLayer() override {}
     virtual void iamaLayerController() override {}
@@ -35,29 +34,24 @@ public slots:
     virtual void slot_setCenter(QPointF spt)          override;
 
 protected:
-    void paintExplicitFigureMap(QPainter *painter, FigurePtr fig, QPen pen);
-    void paintRadialFigureMap(QPainter *painter, FigurePtr fig, QPen pen);
-    void paintFeatureBoundary(QPainter *painter, FeaturePtr feat);
-    void paintRadialFigureBoundary(QPainter *painter,FigurePtr fig);
-    void paintExtendedBoundary(QPainter *painter, FigurePtr fig, FeaturePtr feat);
+    void paintExplicitMotifMap( QPainter *painter, MotifPtr fig);
+    void paintRadialMotifMap(   QPainter *painter, MotifPtr fig);
+    void paintMotifBoundary(    QPainter *painter, MotifPtr fig);
+    void paintExtendedBoundary( QPainter *painter, MotifPtr fig);
+    void paintTileBoundary(     QPainter *painter, TilePtr feat);
 
 private:
     static MotifViewPtr spThis;
 
-    void paintMap(QPainter * painter, MapPtr map, QPen pen);
+    void paintMap(QPainter * painter, MapPtr map);
 
     class MotifMaker * motifMaker;
 
     QTransform           _T;
 
-    QTransform          lt;
-    QPointF             pt_lt;
-    qreal               scale_lt;
-    qreal               rot_lt;
-
     bool                debugContacts;
     QPolygonF           debugPts;
-    QVector<contact *>  debugContactPts;
+    QVector<ContactPtr> debugContactPts;
 };
 
-#endif // FIGUREVIEW_H
+#endif

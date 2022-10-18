@@ -14,7 +14,6 @@ int Style::refs = 0;
 Style::Style(const PrototypePtr & proto) : LayerController("Style")
 {
     prototype = proto;
-    debugMap = std::make_shared<Map>("Style debug map");
     paintSVG = false;
     generator = nullptr;
     refs++;
@@ -86,15 +85,14 @@ void Style::annotateEdges(MapPtr map)
     if (!map)
         return;
 
-    debugMap->wipeout();
+    debugMap = std::make_shared<DebugMap>("Style Debug Map");
 
     int i=0;
-    for (auto edge : map->getEdges())
+    for (auto & edge : qAsConst(map->getEdges()))
     {
         QPointF p = edge->getMidPoint();
         debugMap->insertDebugMark(p, QString::number(i++));
     }
-    //debugMap->dumpMap(false);
 }
 
 // Retrieve a name describing this style and map.
@@ -133,15 +131,8 @@ void Style::paint(QPainter *painter)
 
     draw(&gg);
 
-    if (!debugMap)
+    if (debugMap)
     {
-        qWarning() << "Style::paint - no debug map";
-        return;
-    }
-
-    if (!debugMap->isEmpty())
-    {
-        debugMap->dumpMap(false);
         drawAnnotation(painter,tr);
     }
 
@@ -178,19 +169,19 @@ void Style::drawAnnotation(QPainter * painter, QTransform T)
     QPen pen(Qt::white);
     painter->setPen(pen);
 
-    for (auto & edge : debugMap->getEdges())
+    for (auto & edge : qAsConst(debugMap->getEdges()))
     {
         QPointF p1 = T.map(edge->v1->pt);
         QPointF p2 = T.map(edge->v2->pt);
         painter->drawLine(p1,p2);
     }
 
-    const QVector<sText> & texts = debugMap->getTexts();
-    for (auto t = texts.begin(); t != texts.end(); t++)
+    const QVector<QPair<QPointF,QString>> & texts = debugMap->getTexts();
+    for (auto & pair : texts)
     {
-        sText stxt = *t;
-        QPointF pt = T.map(stxt.pt);
-        painter->drawText(QPointF(pt.x()+7,pt.y()+13),stxt.txt);
+        QPointF pt  = T.map(pair.first);
+        QString txt = pair.second;
+        painter->drawText(QPointF(pt.x()+7,pt.y()+13),txt);
     }
 }
 

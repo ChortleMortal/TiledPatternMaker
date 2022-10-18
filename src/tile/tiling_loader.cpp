@@ -1,11 +1,11 @@
 #include "tile/tiling.h"
 #include "tile/tiling_loader.h"
-#include "tile/feature_reader.h"
+#include "tile/tile_reader.h"
 #include "misc/backgroundimage.h"
 #include "mosaic/mosaic_reader.h"
 #include "makers/tiling_maker/tiling_maker.h"
-#include "tile/placed_feature.h"
-#include "tile/feature.h"
+#include "tile/placed_tile.h"
+#include "tile/tile.h"
 #include "misc/defaults.h"
 
 using namespace pugi;
@@ -53,7 +53,7 @@ TilingPtr TilingLoader::readTiling(QTextStream & st)
 
     QString name = qsl[1];
 
-    int nf = qsl[2].toInt();    // number of features
+    int nf = qsl[2].toInt();    // number of tiles
 
     st.skipWhiteSpace();
     qreal x1,y1,x2,y2;
@@ -67,7 +67,7 @@ TilingPtr TilingLoader::readTiling(QTextStream & st)
 
     for( int idx = 0; idx < nf; ++idx )
     {
-        FeaturePtr bf;
+        TilePtr bf;
 
         st >> astring;
         bool reg = false;
@@ -83,7 +83,7 @@ TilingPtr TilingLoader::readTiling(QTextStream & st)
 
         if (reg)
         {
-            bf = make_shared<Feature>(num_sides,0);
+            bf = make_shared<Tile>(num_sides,0);
         }
         else
         {
@@ -95,7 +95,7 @@ TilingPtr TilingLoader::readTiling(QTextStream & st)
                 pts << QPointF(x1, y1);
             }
             EdgePoly ep(pts);
-            bf = make_shared<Feature>(ep,0);
+            bf = make_shared<Tile>(ep,0);
         }
 
         for( int jdx = 0; jdx < num_xforms; ++jdx )
@@ -110,7 +110,7 @@ TilingPtr TilingLoader::readTiling(QTextStream & st)
             QTransform t(a,d,
                          b,e,
                          c,f);
-            PlacedFeaturePtr pfp = make_shared<PlacedFeature>(bf,t);
+            PlacedTilePtr pfp = make_shared<PlacedTile>(tiling.get(),bf,t);
             tiling->add(pfp);
         }
     }
@@ -239,16 +239,17 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
         }
         QString strt0 = t0.child_value();
         FillData fd = getFill(strt0,isSingle);
-        tiling->getSettings().setFillData(&fd);
+        FillData & fdata = tiling->getDataAccess().getFillDataAccess();
+        fdata = fd;
     }
 
-    FeatureReader fr;   // must be located here to bw used for all features
+    TileReader tr;   // must be located here to bw used for all tiles
 
-    for (xml_node feature = tiling_node.child("Feature"); feature; feature = feature.next_sibling("Feature"))
+    for (xml_node tile = tiling_node.child("Feature"); tile; tile = tile.next_sibling("Feature"))
     {
-        FeaturePtr bf;
+        TilePtr bf;
 
-        xml_attribute fatt = feature.attribute("type");
+        xml_attribute fatt = tile.attribute("type");
         if (!fatt)
         {
             qWarning("missing type attribute");
@@ -259,23 +260,23 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
 
         if (strtype == "girih")
         {
-            xml_attribute nameattr = feature.attribute("name");
+            xml_attribute nameattr = tile.attribute("name");
             if (!nameattr)
             {
                 qWarning("missing name attribute for girih shape");
                 continue;
             }
             QString name = nameattr.value();
-            PlacedFeaturePtr pfp = make_shared<PlacedFeature>();
+            PlacedTilePtr pfp = make_shared<PlacedTile>(tiling.get());
             if (pfp->loadFromGirihShape(name))
             {
-                bf = pfp->getFeature();
+                bf = pfp->getTile();
             }
         }
         else if (strtype == "regular")
         {
             int sides      = 0;
-            xml_attribute sidesatt = feature.attribute("sides");
+            xml_attribute sidesatt = tile.attribute("sides");
             if (!sidesatt)
             {
                 qWarning("missing sides attribute");
@@ -284,56 +285,56 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
             sides = sidesatt.as_int();
 
             qreal rotation = 0.0;
-            xml_attribute rotatt = feature.attribute("rotation");
+            xml_attribute rotatt = tile.attribute("rotation");
             if (rotatt)
             {
                 rotation = rotatt.as_double();
             }
 
             qreal scale = 1.0;
-            xml_attribute scaleatt = feature.attribute("scale");
+            xml_attribute scaleatt = tile.attribute("scale");
             if (scaleatt)
             {
                 scale = scaleatt.as_double();
             }
 
-            bf = make_shared<Feature>(sides,rotation,scale);
+            bf = make_shared<Tile>(sides,rotation,scale);
         }
         else if (strtype == "polygon")
         {
             // older tilings have this, newer tilings use edgepoly
             QPolygonF pts;
-            for (xml_node pnode = feature.child("Point"); pnode; pnode = pnode.next_sibling("Point"))
+            for (xml_node pnode = tile.child("Point"); pnode; pnode = pnode.next_sibling("Point"))
             {
                 string txt = pnode.child_value();
                 QPointF pt = getPoint(txt.c_str());
                 pts << pt;
             }
             EdgePoly ep(pts);
-            bf = make_shared<Feature>(ep);
+            bf = make_shared<Tile>(ep);
         }
         else if (strtype == "edgepoly")
         {
-            EdgePoly ep = fr.getEdgePoly(feature);
+            EdgePoly ep = tr.getEdgePoly(tile);
 
             qreal rotation = 0.0;
-            xml_attribute rotatt = feature.attribute("rotation");
+            xml_attribute rotatt = tile.attribute("rotation");
             if (rotatt)
             {
                 rotation = rotatt.as_double();
             }
 
             qreal scale = 1.0;
-            xml_attribute scaleatt = feature.attribute("scale");
+            xml_attribute scaleatt = tile.attribute("scale");
             if (scaleatt)
             {
                 scale = scaleatt.as_double();
             }
 
-            bf = make_shared<Feature>(ep,rotation,scale);
+            bf = make_shared<Tile>(ep,rotation,scale);
         }
 
-        for (xml_node plnode = feature.child("Placement"); plnode; plnode = plnode.next_sibling("Placement"))
+        for (xml_node plnode = tile.child("Placement"); plnode; plnode = plnode.next_sibling("Placement"))
         {
             QTransform T;
             if (version <= 5)
@@ -347,11 +348,11 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
                 T = getAffineTransform(plnode);
             }
 
-            PlacedFeaturePtr pfp = make_shared<PlacedFeature>(bf,T);
+            PlacedTilePtr pfp = make_shared<PlacedTile>(tiling.get(),bf,T);
             tiling->add(pfp);
         }
 
-        xml_node bcolor = feature.child("BkgdColors");
+        xml_node bcolor = tile.child("BkgdColors");
         if (bcolor)
         {
             QVector<TPColor> tpcolors;
@@ -363,7 +364,7 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
                 tpcolors.push_back(TPColor(acolor,false));
 
             }
-            bf->getFeatureColors()->setColors(tpcolors);
+            bf->getTileColors()->setColors(tpcolors);
         }
     }
 
@@ -372,6 +373,8 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
     {
         getBackgroundImage(bkImage);
     }
+
+    tiling->purgeStack();   // always start clean
 
     // tiling->dump();
     return tiling;
@@ -596,8 +599,10 @@ void TilingLoader::getViewSettings(xml_node & node)
         height = str.toInt();
     }
 
+    ModelSettings & ms = tiling->getDataAccess().getSettingsAccess();
+
     QSize size(width,height);
-    tiling->getSettings().setSize(size);
+    ms.setSize(size);
     qDebug() << "tiling size:" << size;
 
     int zwidth  = width;
@@ -617,7 +622,7 @@ void TilingLoader::getViewSettings(xml_node & node)
     }
 
     QSize zsize(zwidth,zheight);
-    tiling->getSettings().setZSize(zsize);
+    ms.setZSize(zsize);
     qDebug() << "tiling zoom size:" << zsize;
 
     Xform xf;

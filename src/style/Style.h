@@ -9,6 +9,7 @@ class GeoGraphics;
 typedef std::shared_ptr<class Style>        StylePtr;
 typedef std::shared_ptr<class Prototype>    PrototypePtr;
 typedef std::shared_ptr<class Map>          MapPtr;
+typedef std::shared_ptr<class DebugMap>     DebugMapPtr;
 typedef std::shared_ptr<class Tiling>       TilingPtr;
 
 
@@ -81,11 +82,10 @@ protected:
     void   annotateEdges(MapPtr map);
     void   drawAnnotation(QPainter *painter, QTransform T);
 
-    PrototypePtr  prototype; // The input geometry to be rendered
-
 private:
+    PrototypePtr  prototype; // The input geometry to be rendered
     MapPtr        styleMap;
-    MapPtr        debugMap;
+    DebugMapPtr   debugMap;
 
     bool          paintSVG;
     QSvgGenerator * generator;

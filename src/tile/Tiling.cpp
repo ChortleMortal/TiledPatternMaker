@@ -4,7 +4,7 @@
 //
 // The representation of a tiling, which will serve as the skeleton for
 // Islamic designs.  A Tiling has two translation vectors and a set of
-// PlacedFeatures that make up a translational unit.  The idea is that
+// placedTiles that make up a translational unit.  The idea is that
 // the whole tiling can be replicated across the plane by placing
 // a copy of the translational unit at every integer linear combination
 // of the translation vectors.  In practice, we only draw at those
@@ -12,15 +12,15 @@
 
 #include <QtWidgets>
 #include "tile/tiling.h"
-#include "figures/explicit_figure.h"
+#include "motifs/explicit_motif.h"
 #include "geometry/map.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "misc/defaults.h"
 #include "mosaic/design_element.h"
 #include "mosaic/mosaic_writer.h"
 #include "mosaic/prototype.h"
-#include "tile/feature.h"
-#include "tile/placed_feature.h"
+#include "tile/tile.h"
+#include "tile/placed_tile.h"
 
 using std::make_shared;
 
@@ -30,8 +30,8 @@ int Tiling::refs = 0;
 
 Tiling::Tiling()
 {
+    db.init(this,QSize(DEFAULT_WIDTH,DEFAULT_HEIGHT));
     name        = defaultName;
-    settings.setSize(QSize(DEFAULT_WIDTH,DEFAULT_HEIGHT));
     version     = -1;
     state       = EMPTY;
     refs++;
@@ -39,8 +39,7 @@ Tiling::Tiling()
 
 Tiling::Tiling(QString name, QPointF t1, QPointF t2)
 {
-    this->t1 = t1;
-    this->t2 = t2;
+    db.init(this,QSize(DEFAULT_WIDTH,DEFAULT_HEIGHT),t1,t2);
 
     if (!name.isEmpty())
     {
@@ -51,57 +50,53 @@ Tiling::Tiling(QString name, QPointF t1, QPointF t2)
         name    = defaultName;
     }
 
-    settings.setSize(QSize(DEFAULT_WIDTH,DEFAULT_HEIGHT));
     version      = -1;
     state        = EMPTY;
-    refs++;
-}
-
-Tiling::Tiling(Tiling * other)
-{
-    for (auto it = other->placed_features.begin(); it != other->placed_features.end(); it++)
-    {
-        PlacedFeaturePtr pf = make_shared<PlacedFeature>(*it);
-        placed_features.push_back(pf);
-    }
-
-    t1           = other->t1;
-    t2           = other->t2;
-    name         = other->name;
-    desc         = other->desc;
-    author       = other->author;
-    settings     = other->settings;
-    canvasXform  = other->canvasXform;
-    version      = -1;
-    state        = LOADED;
     refs++;
 }
 
 Tiling::~Tiling()
 {
 #ifdef EXPLICIT_DESTRUCTOR
-    placed_features.clear();
+    placed_tiloes.clear();
 #endif
     refs--;
 }
 
 bool Tiling::isEmpty()
 {
-    if (name == "The Unnamed" && placed_features.isEmpty() && t1.isNull() && t2.isNull())
+    if (name == "The Unnamed" && db.isEmpty())
         return true;
     else
         return false;
+}
+
+bool Tiling::popStack()
+{
+    if (!undoStack.isEmpty())
+    {
+        db = undoStack.pop();
+        return true;
+    }
+    return false;
+}
+
+
+void Tiling::pushStack()
+{
+    undoStack.push(db.copy());
 }
 
 bool Tiling::hasIntrinsicOverlaps()
 {
     if (intrinsicOverlaps.get() == Tristate::Unknown)
     {
-        for (auto pf : qAsConst(placed_features))
+        auto placed = db.getPlacedTiles();
+        for (auto pf : qAsConst(placed))
         {
             QPolygonF poly = pf->getPlacedPolygon();
 
-            for (auto pf2 : qAsConst(placed_features))
+            for (auto pf2 : qAsConst(placed))
             {
                 if (pf2 == pf) continue;
 
@@ -135,10 +130,10 @@ bool Tiling::hasTiledOverlaps()
 MapPtr Tiling::createMapSingle()
 {
     MapPtr map = make_shared<Map>("tiling map single");
-    for (auto pfp : placed_features)
+    for (auto pfp : db.getPlacedTiles())
     {
         EdgePoly poly = pfp->getPlacedEdgePoly();
-        MapPtr emap = make_shared<Map>("feature",poly);
+        MapPtr emap = make_shared<Map>("tile",poly);
         map->mergeMap(emap);
     }
 
@@ -149,7 +144,7 @@ MapPtr Tiling::createMapFullSimple()
 {
     MapPtr map = make_shared<Map>("tiling map full simple");
 
-    QVector<QTransform> translations = getFillTranslations();
+    QVector<QTransform> translations = db.getFillTranslations();
 
     MapPtr tilingMap = createMapSingle();
 
@@ -164,109 +159,78 @@ MapPtr Tiling::createMapFullSimple()
 
 MapPtr Tiling::createMapFull()
 {
-    // This builds a prototype using explicit feature figures and generates its map
+    // This builds a prototype using explicit tile figures and generates its map
     Prototype proto(shared_from_this());
 
-    QVector<FeaturePtr> uniqueFeatures = getUniqueFeatures();
+    QVector<TilePtr> uniqueTiles = getUniqueTiles();
 
-    for (auto feature :  uniqueFeatures)
+    for (auto  & tile : qAsConst(uniqueTiles))
     {
-        EdgePoly & ep = feature->getEdgePoly();
-        MapPtr     fm = make_shared<Map>("feature map",ep);
-        FigurePtr fig = make_shared<ExplicitFigure>(fm,FIG_TYPE_EXPLICIT_FEATURE,feature->numSides());
-        DesignElementPtr  dep = make_shared<DesignElement>(feature, fig);
+        EdgePoly & ep = tile->getEdgePoly();
+        MapPtr     fm = make_shared<Map>("tile map",ep);
+        MotifPtr fig = make_shared<ExplicitMotif>(fm,MOTIF_TYPE_EXPLICIT_TILE,tile->numSides());
+        DesignElementPtr  dep = make_shared<DesignElement>(tile, fig);
         proto.addElement(dep);
     }
 
-    // Now, for each different feature, build a submap corresponding
-    // to all translations of that feature.
+    // Now, for each different tile, build a submap corresponding
+    // to all translations of that tile.
 
-    QVector<QTransform> translations = getFillTranslations();
+    QVector<QTransform> translations = db.getFillTranslations();
 
     MapPtr testmap = make_shared<Map>("testmap");
 
-    for (auto dep : qAsConst(proto.getDesignElements()))
+    for (auto & dep : qAsConst(proto.getDesignElements()))
     {
-        FeaturePtr feature   = dep->getFeature();
-        FigurePtr figure     = dep->getFigure();
-        MapPtr figmap        = figure->getFigureMap();
+        TilePtr tile    = dep->getTile();
+        MotifPtr motif  = dep->getMotif();
+        MapPtr motifmap = motif->getMap();
 
         QVector<QTransform> subT;
-        for (auto placed_feature : placed_features)
+        for (auto placed_tile : db.getPlacedTiles())
         {
-            FeaturePtr       f  = placed_feature->getFeature();
-            if (f == feature)
+            TilePtr f  = placed_tile->getTile();
+            if (f == tile)
             {
-                QTransform t = placed_feature->getTransform();
+                QTransform t = placed_tile->getTransform();
                 subT.push_back(t);
             }
         }
 
         // Within a single translational unit, assemble the different
-        // transformed figures corresponding to the given feature into a map.
+        // transformed figures corresponding to the given tile into a map.
         MapPtr transmap = make_shared<Map>("proto transmap");
-        transmap->mergeMany(figmap, subT);
+        transmap->mergeMany(motifmap, subT);
 
-        // Now put all the translations together into a single map for this feature.
-        MapPtr featuremap = make_shared<Map>("proto featuremap");
-        featuremap->mergeMany(transmap, translations);
+        // Now put all the translations together into a single map for this tile.
+        MapPtr tilemap = make_shared<Map>("proto tile map");
+        tilemap->mergeMany(transmap, translations);
 
         // And do a slow merge to add this map to the finished design.
-        testmap->mergeMap(featuremap);
+        testmap->mergeMap(tilemap);
     }
     return testmap;
 }
 
-QVector<QTransform> Tiling::getFillTranslations()
+
+// tile management.
+// Added tile are embedded into a placedTile.
+
+void Tiling::add(const PlacedTilePtr pf )
 {
-    QVector<QTransform> translations;
-    FillData * fd = settings.getFillData();
-    int minX,minY,maxX,maxY;
-    bool singleton;
-    fd->get(singleton,minX,maxX,minY,maxY);
-    if (!singleton)
-    {
-        for (int h = minX; h <= maxX; h++)
-        {
-            for (int v = minY; v <= maxY; v++)
-            {
-                QPointF pt   = (t1 * static_cast<qreal>(h)) + (t2 * static_cast<qreal>(v));
-                QTransform T = QTransform::fromTranslate(pt.x(),pt.y());
-                translations << T;
-            }
-        }
-    }
-    else
-    {
-        translations << QTransform();
-    }
-    return translations;
+    auto & placed = getDataAccess().getPlacedTileAccess();
+    placed.push_back(pf);
 }
 
-// Feature management.
-// Added feature are embedded into a PlacedFeature.
-void Tiling::setPlacedFeatures(QVector<PlacedFeaturePtr> & features)
+void Tiling::add(TilePtr f, QTransform  T)
 {
-    placed_features = features;
-    setState(MODIFED);
+    add(make_shared<PlacedTile>(this,f, T));
 }
 
-void Tiling::add(const PlacedFeaturePtr pf )
+void Tiling::remove(PlacedTilePtr pf)
 {
-    placed_features.push_back(pf);
-    setState(MODIFED);
-}
-
-void Tiling::add(FeaturePtr f, QTransform  T)
-{
-    add(make_shared<PlacedFeature>(f, T));
-    setState(MODIFED);
-}
-
-void Tiling::remove(PlacedFeaturePtr pf)
-{
-    placed_features.removeOne(pf);
-    setState(MODIFED);
+    auto & placed = getDataAccess().getPlacedTileAccess();
+    placed.removeOne(pf);
 }
 
 int Tiling::getVersion()
@@ -289,25 +253,25 @@ void Tiling::setState(eTilingState state)
     this->state = state;
 }
 
-QVector<FeaturePtr> Tiling::getUniqueFeatures()
+QVector<TilePtr> Tiling::getUniqueTiles()
 {
-    UniqueQVector<FeaturePtr> fs;
+    UniqueQVector<TilePtr> fs;
 
-    for (auto pfp : qAsConst(placed_features))
+    for (auto pfp : qAsConst(getData().getPlacedTiles()))
     {
-        FeaturePtr fp = pfp->getFeature();
+        TilePtr fp = pfp->getTile();
         fs.push_back(fp);
     }
 
-    return static_cast<QVector<FeaturePtr>>(fs);
+    return static_cast<QVector<TilePtr>>(fs);
 }
 
-int Tiling::numPlacements(FeaturePtr fp)
+int Tiling::numPlacements(TilePtr fp)
 {
     int count = 0;
-    for (auto pfp : qAsConst(placed_features))
+    for (auto pfp : qAsConst(getData().getPlacedTiles()))
     {
-        FeaturePtr fp2 = pfp->getFeature();
+        TilePtr fp2 = pfp->getTile();
         if (fp2 == fp)
         {
             count++;
@@ -316,12 +280,12 @@ int Tiling::numPlacements(FeaturePtr fp)
     return count;
 }
 
-QVector<QTransform> Tiling::getPlacements(FeaturePtr fp)
+QVector<QTransform> Tiling::getPlacements(TilePtr fp)
 {
     QVector<QTransform> placements;
-    for (auto pfp : qAsConst(placed_features))
+    for (auto pfp : qAsConst(getData().getPlacedTiles()))
     {
-        FeaturePtr fp2 = pfp->getFeature();
+        TilePtr fp2 = pfp->getTile();
         if (fp2 == fp)
         {
             placements.push_back(pfp->getTransform());
@@ -330,13 +294,13 @@ QVector<QTransform> Tiling::getPlacements(FeaturePtr fp)
     return placements;
 }
 
-QTransform Tiling::getPlacement(FeaturePtr fp, int index)
+QTransform Tiling::getPlacement(TilePtr fp, int index)
 {
     QTransform placement;
     int i = 0;
-    for (auto pfp : qAsConst(placed_features))
+    for (auto pfp : qAsConst(getData().getPlacedTiles()))
     {
-        FeaturePtr fp2 = pfp->getFeature();
+        TilePtr fp2 = pfp->getTile();
         if (fp2 == fp)
         {
             placement = pfp->getTransform();
@@ -350,26 +314,26 @@ QTransform Tiling::getPlacement(FeaturePtr fp, int index)
     return placement;
 }
 
-// Regroup features by their translation so that we write each feature only once.
-FeatureGroup Tiling::regroupFeatures()
+// Regroup tiles by their translation so that we write each tile only once.
+TileGroup Tiling::regroupTiles()
 {
-    FeatureGroup featureGroup;
-    for(auto placedFeature : qAsConst(placed_features))
+    TileGroup tileGroup;
+    for(auto placedTile : qAsConst(getData().getPlacedTiles()))
     {
-        FeaturePtr feature = placedFeature->getFeature();
-        if (featureGroup.containsFeature(feature))
+        TilePtr tile = placedTile->getTile();
+        if (tileGroup.containsTile(tile))
         {
-            QVector<PlacedFeaturePtr>  & v = featureGroup.getPlacements(feature);
-            v.push_back(placedFeature);
+            QVector<PlacedTilePtr>  & v = tileGroup.getPlacements(tile);
+            v.push_back(placedTile);
         }
         else
         {
-            QVector<PlacedFeaturePtr> v;
-            v.push_back(placedFeature);
-            featureGroup.push_back(qMakePair(feature,v));
+            QVector<PlacedTilePtr> v;
+            v.push_back(placedTile);
+            tileGroup.push_back(qMakePair(tile,v));
         }
     }
-    return featureGroup;
+    return tileGroup;
 }
 
 QString Tiling::dump() const
@@ -377,15 +341,7 @@ QString Tiling::dump() const
     QString astring;
     QDebug  deb(&astring);
 
-    deb << "tiling=" << name  << "t1=" << t1 << "t2=" << t2 << "num features=" << placed_features.size();
-#if 0
-    for (int i=0; i < placed_features.size(); i++)
-    {
-        PlacedFeaturePtr  pf = placed_features[i];
-        deb << endl << "poly" << i << "points=" << pf->getFeature()->numPoints()  << "transform= " << Transform::toInfoString(pf->getTransform()) << endl;
-        deb << pf->getFeaturePolygon();
-    }
-#endif
+    deb << "tiling=" << name  << db.dump();
     return astring;
 }
 
@@ -394,11 +350,11 @@ QString Tiling::dump() const
 /// class Feature Group
 ///
 
-bool FeatureGroup::containsFeature(FeaturePtr fp)
+bool TileGroup::containsTile(TilePtr fp)
 {
     for (auto& apair : *this)
     {
-        FeaturePtr f = apair.first;
+        TilePtr f = apair.first;
         if (f == fp)
         {
             return true;
@@ -407,13 +363,13 @@ bool FeatureGroup::containsFeature(FeaturePtr fp)
     return false;
 }
 
-QVector<PlacedFeaturePtr> & FeatureGroup::getPlacements(FeaturePtr fp)
+QVector<PlacedTilePtr> & TileGroup::getPlacements(TilePtr fp)
 {
-    Q_ASSERT(containsFeature(fp));
+    Q_ASSERT(containsTile(fp));
 
     for (auto& apair : *this)
     {
-        FeaturePtr f = apair.first;
+        TilePtr f = apair.first;
         if (f == fp)
         {
             return apair.second;
@@ -421,9 +377,6 @@ QVector<PlacedFeaturePtr> & FeatureGroup::getPlacements(FeaturePtr fp)
     }
 
     qWarning("should never reach here");
-    static QVector <PlacedFeaturePtr> v;
+    static QVector <PlacedTilePtr> v;
     return v;
 }
-
-
-

@@ -35,7 +35,7 @@ public:
 
     bool equals(const EdgePoly & other);
 
-    bool isClosed();
+    bool isCorrect();
     bool isValid(bool rigorous = false);
     bool isClockwise() const;
     bool isClockwiseK();
@@ -43,7 +43,9 @@ public:
     void relink();
 
     QVector<VertexPtr> getVertices();
-    QPolygonF   getPoly() const;
+    QVector<QLineF>    getLines();
+    QPolygonF   getPoly() const;        // closed
+    QPolygonF   getPoints() const;      // not closed
     QRectF      getRect() const;
     qreal       getAngle(int edge);
     QPointF     calcCenter();
