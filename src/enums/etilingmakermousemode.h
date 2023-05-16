@@ -1,3 +1,4 @@
+#pragma once
 #ifndef ETILINGMAKERMOUSEMODE_H
 #define ETILINGMAKERMOUSEMODE_H
 

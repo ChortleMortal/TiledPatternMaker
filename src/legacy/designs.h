@@ -1,3 +1,4 @@
+#pragma once
 #ifndef TPM_DESIGN_H
 #define TPM_DESIGN_H
 

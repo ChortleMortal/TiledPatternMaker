@@ -1,3 +1,4 @@
+#pragma once
 #ifndef DLG_RENAME_H
 #define DLG_RENAME_H
 

@@ -4,29 +4,29 @@
 #include "misc/layer_controller.h"
 #include "geometry/edgepoly.h"
 #include "mosaic/design_element.h"
+#include "makers/prototype_maker/prototype_maker.h"
 
 typedef std::shared_ptr<class PrototypeView>        PrototypeViewPtr;
-typedef std::shared_ptr<class Prototype>            PrototypePtr;
-typedef std::shared_ptr<class PlacedDesignElement>  PlacedDesignElementPtr;
+typedef std::shared_ptr<class Prototype>            ProtoPtr;
 
-typedef std::weak_ptr<class DesignElement>    WeakDesignElementPtr;
-typedef std::weak_ptr<class Prototype>        WeakPrototypePtr;
-typedef std::weak_ptr<class Motif>            WeakMotifPtr;
-typedef std::weak_ptr<class Tile>             WeakTilePtr;
-
-class sColData
+enum eProtoViewMode
 {
-public:
-    void reset() { wpp.reset(); wdel.reset(); wtilep.reset(); wmotifp.reset(); }
-    WeakPrototypePtr     wpp;
-    WeakDesignElementPtr wdel;
-    WeakTilePtr          wtilep;
-    WeakMotifPtr         wmotifp;
+    PROTO_DRAW_MAP      =  0x01,
+    PROTO_ALL_TILES     =  0x02,
+    PROTO_ALL_MOTIFS    =  0x04,
+    PROTO_DEL_TILES     =  0x08,
+    PROTO_DEL_MOTIFS    =  0x10,
+    PROTO_DRAW_PROTO    =  0x20,
+    PROTO_ALL_VISIBLE   =  0x40,
+    PROTO_VISIBLE_TILE  =  0x80,
+    PROTO_VISIBLE_MOTIF =  0x100
 };
 
 class ProtoViewColors
 {
 public:
+    ProtoViewColors();
+
     QStringList     getColors();
     void            setColors(QStringList & colors);
 
@@ -36,18 +36,8 @@ public:
     QColor          delMotifColor;
     QColor          delTileColor;
     QColor          tileBrushColor;
-};
-
-class PlacedDesignElement : public DesignElement
-{
-public:
-    PlacedDesignElement(const TilePtr & featp, const MotifPtr & figp, QTransform T)
-    { tile = featp; motif  = figp; trans   = T; }
-
-    QTransform  getTransform() const { return trans; }
-
-protected:
-    QTransform  trans;
+    QColor          visibleTileColor;
+    QColor          visibleMotifColor;
 };
 
 class PrototypeView : public LayerController
@@ -56,13 +46,7 @@ public:
     static PrototypeViewPtr getSharedInstance();
     PrototypeView();        // don't use this
 
-    void setPrototype(PrototypePtr proto) { this->proto = proto; }
-    PrototypePtr getPrototype() {return proto; }
-
-    void selectDEL(sColData sdata) { selectedDEL = sdata; }
-    sColData & getSelectedDEL() { return selectedDEL; }
-
-    ProtoViewColors & getColors() { return colors; }
+    ProtoViewColors & getColors()                    { return colors; }
 
     virtual void iamaLayer() override {}
     virtual void iamaLayerController() override {}
@@ -76,18 +60,20 @@ public slots:
 
 protected:
     void   paint(QPainter *painter) override;
-    void   draw(GeoGraphics * gg);
 
-    void   drawPlacedDesignElement(GeoGraphics * gg, const PlacedDesignElement &pde, QPen motifPen, QBrush tileBrush, QPen tilePen, bool selected);
+private:
+    void   draw();
+    void   drawProto(ProtoPtr proto);
 
-    PrototypePtr    proto;
+    static PrototypeViewPtr spThis;
+
+    PrototypeMaker * protoMaker;
+    GeoGraphics    * gg;
+
     EdgePoly        edges;              // this is not really an EdgePoly it is a vector of Edges
     ProtoViewColors colors;
     qreal           lineWidth;
-
-    sColData        selectedDEL;
-
-private:
-    static PrototypeViewPtr spThis;
+    int             mode;
 };
+
 #endif

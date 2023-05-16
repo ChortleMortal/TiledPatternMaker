@@ -1,0 +1,102 @@
+<?xml version="1.0"?>
+<!-- Written: Sat Jan 28 2023 13:13:20 -->
+<Tiling version="6">
+	<Name>Test Stars</Name>
+	<Fill singleton="t">0,0,0,0</Fill>
+	<T1>0,0</T1>
+	<T2>0,0</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Feature type="regular" sides="4" rotation="0" scale="1">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-5.933333333333333</tranX>
+			<tranY>-2.920000000000001</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="regular" sides="4" rotation="0" scale="1">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-2.706666666666667</tranX>
+			<tranY>-2.866666666666667</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="regular" sides="5" rotation="0" scale="1">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0.5466666666666669</tranX>
+			<tranY>-2.826666666666667</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="regular" sides="5" rotation="0" scale="1">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>3.893333333333333</tranX>
+			<tranY>-2.733333333333333</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="regular" sides="6" rotation="0" scale="1">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-5.746666666666667</tranX>
+			<tranY>0.4533333333333331</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="regular" sides="6" rotation="0" scale="1">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-2.453333333333334</tranX>
+			<tranY>0.5066666666666668</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="regular" sides="7" rotation="0" scale="1">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0.6133333333333351</tranX>
+			<tranY>0.4400000000000004</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="regular" sides="7" rotation="0" scale="1">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>3.586666666666666</tranX>
+			<tranY>0.706666666666667</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="regular" sides="8" rotation="0" scale="1">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-5.733333333333334</tranX>
+			<tranY>3.306666666666667</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="regular" sides="8" rotation="0" scale="1">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-2.346666666666668</tranX>
+			<tranY>3.306666666666666</tranY>
+		</Placement>
+	</Feature>
+	<Desc />
+	<Auth />
+</Tiling>

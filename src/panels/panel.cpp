@@ -4,39 +4,40 @@
 #include <QComboBox>
 
 #include "panels/panel.h"
-#include "widgets/panel_pagesWidget.h"
-#include "tiledpatternmaker.h"
-#include "misc/version.h"
+#include "legacy/design_maker.h"
+#include "makers/map_editor/map_editor.h"
 #include "makers/mosaic_maker/mosaic_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
+#include "misc/runguard.h"
+#include "misc/version.h"
+#include "mosaic/mosaic.h"
 #include "panels/page_background_image.h"
 #include "panels/page_borders.h"
 #include "panels/page_config.h"
 #include "panels/page_crop_maker.h"
-#include "panels/page_grid.h"
 #include "panels/page_debug.h"
-#include "panels/page_mosaic_maker.h"
+#include "panels/page_grid.h"
 #include "panels/page_image_tools.h"
 #include "panels/page_layers.h"
 #include "panels/page_loaders.h"
 #include "panels/page_log.h"
 #include "panels/page_map_editor.h"
 #include "panels/page_modelSettings.h"
+#include "panels/page_mosaic_info.h"
+#include "panels/page_mosaic_maker.h"
 #include "panels/page_motif_maker.h"
 #include "panels/page_prototype_info.h"
 #include "panels/page_save.h"
-#include "panels/page_mosaic_info.h"
 #include "panels/page_system_info.h"
 #include "panels/page_tiling_maker.h"
-#include "widgets/mouse_mode_widget.h"
-#include "viewers/grid.h"
-#include "viewers/viewcontrol.h"
-#include "mosaic/mosaic.h"
+#include "settings/configuration.h"
 #include "tile/tiling.h"
-#include "legacy/design_maker.h"
-#include "makers/map_editor/map_editor.h"
+#include "tiledpatternmaker.h"
+#include "viewers/viewcontrol.h"
+#include "widgets/mouse_mode_widget.h"
+#include "widgets/panel_pagesWidget.h"
 
-extern void closeHandle();
+extern RunGuard * guard;
 
 ControlPanel * ControlPanel::mpThis = nullptr;
 
@@ -90,7 +91,7 @@ ControlPanel::ControlPanel() : AQWidget()
     splash = new TPMSplash();
 
     QSettings s;
-    move(s.value("panelPos").toPoint());
+    move(s.value((QString("panelPos/%1").arg(config->appInstance))).toPoint());
 }
 
 void ControlPanel::init(TiledPatternMaker * parent)
@@ -133,7 +134,7 @@ ControlPanel::~ControlPanel()
     if (!config->splitScreen && !closed)
     {
         QSettings s;
-        s.setValue("panelPos", pos());
+        s.setValue(QString("panelPos/%1").arg(config->appInstance), pos());
         closed =  true;
     }
 
@@ -147,11 +148,11 @@ void ControlPanel::closeEvent(QCloseEvent *event)
     if (!config->splitScreen && !closed)
     {
         QSettings s;
-        s.setValue("panelPos", pos());
+        s.setValue(QString("panelPos/%1").arg(config->appInstance), pos());
         closed =  true;
     }
 
-    closeHandle();
+    guard->release();
     QWidget::closeEvent(event);
     qApp->quit();
 }
@@ -200,9 +201,9 @@ void ControlPanel::setupGUI()
     hlayout->setContentsMargins(0, 0, 0, 0);
     hlayout->setSizeConstraint(QLayout::SetFixedSize);
 
-    radioDefined = new QRadioButton("Full Mosiac");
-    radioPack    = new QRadioButton("Packed Mosiac");
-    radioSingle  = new QRadioButton("Simple Mosaic");
+    radioDefined = new QRadioButton("Full");
+    radioPack    = new QRadioButton("Packed");
+    radioSingle  = new QRadioButton("Simple");
 
     QPushButton * pbShowMosaic    = new QPushButton("Show Mosaic");
     QPushButton * pbShowTiling    = new QPushButton("Show Tiling");
@@ -216,8 +217,8 @@ void ControlPanel::setupGUI()
         QPushButton * pbSaveLog       = new QPushButton("Save Log");
 
 
-        hlayout->addWidget(pbSaveLog);
         hlayout->addWidget(pbLogEvent);
+        hlayout->addWidget(pbSaveLog);
         hlayout->addStretch();
         hlayout->addWidget(pbRefreshView  );
         hlayout->addWidget(pbUpdateView);
@@ -352,7 +353,6 @@ void ControlPanel::setupGUI()
     connect(kbdModeCombo,       SIGNAL(currentIndexChanged(int)),   this,     SLOT(slot_kbdModeChanged(int)));
     connect(view,               &View::sig_kbdMode,                 this,     &ControlPanel::slot_kbdMode);
     connect(chkScaleToView,     &QCheckBox::clicked,                this,     &ControlPanel::slot_scaleToView);
-
 }
 
 void ControlPanel::populatePages()
@@ -468,8 +468,8 @@ void ControlPanel::populatePages()
         panelPageList->addItem(wp->getName());
 
         page_image_tools * wp_im = dynamic_cast<page_image_tools*>(wp);
-        connect(maker, &TiledPatternMaker::sig_image0, wp_im, &page_image_tools::slot_setImage0);
-        connect(maker, &TiledPatternMaker::sig_image1, wp_im, &page_image_tools::slot_setImage1);
+        connect(maker, &TiledPatternMaker::sig_image0, wp_im, &page_image_tools::slot_setImageLeftCombo);
+        connect(maker, &TiledPatternMaker::sig_image1, wp_im, &page_image_tools::slot_setImageRightCombo);
 
         wp = new page_log(this);
         mPages.push_back(wp);
@@ -596,20 +596,13 @@ void ControlPanel::slot_detachWidget(QString name)
     page->setNewlySelected(true);
 
     // deal with the page
-    page->setParent(this,Qt::Window);
-    page->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Minimum);
+    QDialog * dlg = new QDialog(this);
+    dlg->setAttribute(Qt::WA_DeleteOnClose);
+
+    page->setParent(dlg,Qt::Window);
     page->setWindowTitle(name);
-    if (page->wasFloated())
-    {
-        page->floatMe();
-    }
-    else
-    {
-        QPoint pt = QCursor::pos();
-        qDebug() << "floating to cursor pos =" << pt;
-        page->move(pt);
-    }
-    page->adjustSize();
+    page->floatMe();
+    //page->adjustSize();
     refreshPage(page);
 
     updateLocked = false;
@@ -631,6 +624,9 @@ void ControlPanel::slot_attachWidget(QString name)
             break;
         }
     }
+
+    panelPageList->setCurrentRow(name);
+
     updateLocked = false;
 }
 
@@ -715,7 +711,7 @@ void ControlPanel::repeatChanged(int id)
 void ControlPanel::slot_logEvent()
 {
     qInfo() << "** EVENT MARK **";
-    view->dump(true);
+    view->dumpRefs();
 }
 
 void ControlPanel::slot_raise()
@@ -1059,25 +1055,8 @@ void ControlPanel::getPanelInfo()
 
 void ControlPanel::setWindowTitles()
 {
-    // The control panel show transient status. The view shows whats loaded
-    QString sLoading;
-    switch (loadState)
-    {
-    case LOADING_NONE:
-        break;
-
-    case LOADING_MOSAIC:
-        sLoading = QString("  Loading Mosaic: %1").arg(loadName);
-        break;
-
-    case LOADING_TILING:
-        sLoading = QString("  Loading Tiling: %1").arg(loadName);
-        break;
-    }
-    QString title = panelInfo + sLoading;
-    setWindowTitle(title);
-
     // The view
+    QString viewTitle;
     if (!view->isEnabled(VIEW_DESIGN))
     {
         // regular case
@@ -1095,22 +1074,41 @@ void ControlPanel::setWindowTitles()
             sTiling = tiling->getName();
         }
 
-        QString title  = QString("Mosaic: %1   Tiling: %2  ").arg(sMosaic).arg(sTiling);
+        viewTitle  = QString("  Mosaic <%1>  Tiling <%2>  ").arg(sMosaic).arg(sTiling);
 
         if (view->isEnabled(VIEW_MAP_EDITOR))
         {
-            title += MapEditor::getInstance()->getStatus();
+            viewTitle += MapEditor::getInstance()->getStatus();
         }
-
-        view->setViewTitle(title);
     }
     else
     {
         // legacy case
         QString sDesign = DesignMaker::getInstance()->getDesignName();
-        QString title   = QString("Design: %1").arg(sDesign);
-        view->setViewTitle(title);
+        viewTitle       = QString("  Design: %1").arg(sDesign);
     }
+
+    // The control panel show transient status. The view shows whats loaded
+    QString transient;
+    switch (loadState)
+    {
+    case LOADING_NONE:
+        transient = viewTitle;
+        break;
+
+    case LOADING_MOSAIC:
+        transient = QString("  Loading Mosaic: %1").arg(loadName);
+        break;
+
+    case LOADING_TILING:
+        transient = QString("  Loading Tiling: %1").arg(loadName);
+        break;
+    }
+
+    QString panelTitle = panelInfo + transient;
+
+    this->setWindowTitle(panelTitle);
+    view->setViewTitle(viewTitle);
 }
 
 void ControlPanel::setLoadState(eLoadState state, QString name)

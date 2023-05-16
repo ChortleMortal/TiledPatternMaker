@@ -1,3 +1,7 @@
+#pragma once
+#ifndef EMBOSS_H
+#define EMBOSS_H
+
 ////////////////////////////////////////////////////////////////////////////
 //
 // Emboss.java
@@ -14,20 +18,19 @@
 // same pre-computed point array, and just add one parameter and overloads
 // the draw function.
 
-#ifndef EMBOSS_H
-#define EMBOSS_H
-
 #include "style/outline.h"
 
 class Emboss : public Outline
 {
 public:
-    Emboss(PrototypePtr proto);
+    Emboss(ProtoPtr proto);
     Emboss(StylePtr other);
     virtual ~Emboss() override;
 
     virtual eStyleType getStyleType() const override { return STYLE_EMBOSSED; }
-    QString  getStyleDesc() const override {return "Embossed";}
+    QString getStyleDesc() const override { return "Embossed";}
+    virtual void report()  const override { qDebug().noquote() << getStyleDesc()  << "angle" << angle << "light" << light_x << light_y
+                                     << "width:" << width << "outline:" << drawOutline << outline_width << "outlineColor" << outline_color  << colors.colorsString(); }
 
     qreal   getAngle();
     void    setAngle(qreal angle );

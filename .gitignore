@@ -22,3 +22,4 @@ release
 /src/tiledpatternmakerd_plugin_import.cpp
 /src/uic_wrapper.bat
 /src/build/*
+/logs/*

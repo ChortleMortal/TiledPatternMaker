@@ -1,3 +1,7 @@
+#pragma once
+#ifndef ROSETTE_H
+#define ROSETTE_H
+
 ////////////////////////////////////////////////////////////////////////////
 //
 // Rosette.java
@@ -9,9 +13,6 @@
 // geometric construction given in Lee [1].
 //
 // [1] A.J. Lee, _Islamic Star Patterns_.  Muqarnas 4.
-
-#ifndef ROSETTE_H
-#define ROSETTE_H
 
 #include "motifs/radial_motif.h"
 
@@ -35,6 +36,7 @@ public:
     void    setN(int n) override;
 
     virtual QString getMotifDesc() override { return "Rosette";}
+    virtual void    report()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "q:" << q << "s" << s << "k" << k; }
 
     bool equals(const MotifPtr other) override;
 
@@ -42,11 +44,6 @@ protected:
     inline int     s_clamp(int s);
     inline qreal   q_clamp(qreal q);
 
-private:
-    int     count;
-    qreal   q;
-    qreal   k;
-    int     s;
 };
 
 #endif

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef COLORSET_H
 #define COLORSET_H
 
@@ -62,7 +63,7 @@ public:
     TPColor         getFirstColor();
     TPColor         getNextColor();
     TPColor         getColor(int index) { return colorset[index % colorset.size()]; }
-    QString         colorsString();
+    QString         colorsString() const;
 
     void            resetIndex() { pos = colorset.begin(); }
     void            clear();

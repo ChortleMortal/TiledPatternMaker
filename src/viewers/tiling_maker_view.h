@@ -1,4 +1,8 @@
-﻿////////////////////////////////////////////////////////////////////////////
+#pragma once
+#ifndef TILING_MAKER_VIEW_H
+#define TILING_MAKER_VIEW_H
+
+////////////////////////////////////////////////////////////////////////////
 //
 // FeatureView.java
 //
@@ -8,9 +12,6 @@
 // and provides a bunch of services to subclasses for mouse-based
 // interaction with features.
 
-#ifndef TILING_MAKER_VIEW_H
-#define TILING_MAKER_VIEW_H
-
 #include "misc/layer_controller.h"
 #include "enums/etilingmakermousemode.h"
 #include "geometry/edgepoly.h"
@@ -19,8 +20,11 @@
 
 class GeoGraphics;
 
-typedef std::shared_ptr<class TileSelector>  TilingSelectorPtr;
-typedef std::shared_ptr<class PlacedTile>    PlacedTilePtr;
+typedef std::shared_ptr<class TileSelector> TileSelectorPtr;
+typedef std::shared_ptr<class PlacedTile>   PlacedTilePtr;
+
+typedef QVector<PlacedTilePtr>              PlacedTiles;
+typedef UniqueQVector<PlacedTilePtr>        UPlacedTiles;
 
 Q_DECLARE_METATYPE(PlacedTilePtr)
 
@@ -39,28 +43,28 @@ public:
 
     void hideTiling(bool state);
 
-    TilingSelectorPtr findSelection(QPointF spt);
-    TilingSelectorPtr findTile(QPointF spt);
-    TilingSelectorPtr findEdge(QPointF spt);
-    TilingSelectorPtr findPoint(QPointF spt);
-    TilingSelectorPtr findVertex(QPointF spt);
-    TilingSelectorPtr findMidPoint(QPointF spt);
-    TilingSelectorPtr findArcPoint(QPointF spt);
+    TileSelectorPtr findSelection(QPointF spt);
+    TileSelectorPtr findTile(QPointF spt);
+    TileSelectorPtr findEdge(QPointF spt);
+    TileSelectorPtr findPoint(QPointF spt);
+    TileSelectorPtr findVertex(QPointF spt);
+    TileSelectorPtr findMidPoint(QPointF spt);
+    TileSelectorPtr findArcPoint(QPointF spt);
 
-    TilingSelectorPtr findTile(QPointF spt, TilingSelectorPtr ignore);
-    TilingSelectorPtr findEdge(QPointF spt, TilingSelectorPtr ignore );
-    TilingSelectorPtr findPoint(QPointF spt, TilingSelectorPtr ignore);
-    TilingSelectorPtr findVertex(QPointF spt, TilingSelectorPtr ignore);
-    TilingSelectorPtr findMidPoint(QPointF spt, TilingSelectorPtr ignore);
+    TileSelectorPtr findTile(QPointF spt, TileSelectorPtr ignore);
+    TileSelectorPtr findEdge(QPointF spt, TileSelectorPtr ignore );
+    TileSelectorPtr findPoint(QPointF spt, TileSelectorPtr ignore);
+    TileSelectorPtr findVertex(QPointF spt, TileSelectorPtr ignore);
+    TileSelectorPtr findMidPoint(QPointF spt, TileSelectorPtr ignore);
 
-    TilingSelectorPtr findCenter(PlacedTilePtr feature, QPointF spt);
+    TileSelectorPtr findCenter(PlacedTilePtr feature, QPointF spt);
 
     QPointF           findSelectionPointOrPoint(QPointF spt);
 
-    TilingSelectorPtr findNearGridPoint(QPointF spt);
+    TileSelectorPtr findNearGridPoint(QPointF spt);
 
-    QVector<PlacedTilePtr> & getAllTiles()     { return allPlacedTiles; }
-    QVector<PlacedTilePtr> & getInTiling()      { return in_tiling; } // DAC was hash
+    PlacedTiles            & getAllTiles()      { return allPlacedTiles; }
+    PlacedTiles            & getInTiling()      { return in_tiling; } // DAC was hash
     EdgePoly               & getAccumW()        { return wAccum; }
     QVector<Measurement*>  & getMeasurementsS() { return wMeasurements; }
     QVector<QLineF>    & getConstructionLines() { return constructionLines; }
@@ -86,18 +90,18 @@ protected:
     static constexpr QColor circle_color        = QColor(202,200,  0,128);
 
     eTilingMakerMouseMode   tilingMakerMouseMode;     // set by tiling designer menu
-    QVector<PlacedTilePtr>  allPlacedTiles;
-    QVector<PlacedTilePtr>  in_tiling;
+    PlacedTiles             allPlacedTiles;
+    PlacedTiles             in_tiling;
 
     EdgePoly                wAccum;             // world points
     QVector<Measurement*>   wMeasurements;
 
     bool                    _hideTiling;
 
-    UniqueQVector<PlacedTilePtr>   overlapping; // calculated DAC was hash
-    UniqueQVector<PlacedTilePtr>   touching;    // calculated
+    UPlacedTiles            overlapping;        // calculated DAC was hash
+    UPlacedTiles            touching;           // calculated
 
-    TilingSelectorPtr       tileSelector;       // Current mouse selection.
+    TileSelectorPtr         tileSelector;       // Current mouse selection.
     PlacedTilePtr           currentPlacedTile;  // current menu row selection too
     PlacedTilePtr           editPlacedTile;     // Tile in DlgTileEdit
 

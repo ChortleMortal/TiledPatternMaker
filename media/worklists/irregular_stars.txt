@@ -1,0 +1,19 @@
+8 6 almost 5 -- starred
+8 6 almost 5 -- starred.v1
+8-6-5.v1
+8.5
+8.5.v1
+9-6 Losange.v1
+9.6 almost 5.v1
+Abbasid Al-Mustansiriyya Madrasa.v1
+African Birds Migration.v1
+Nonagon.v1
+Nonagon.v2
+Test Stars.v1
+Test Stars.v2
+Test Stars.v3
+Test Stars.v4
+Test Stars.v5
+Test15.v1
+Test15.v3
+TestTmp1

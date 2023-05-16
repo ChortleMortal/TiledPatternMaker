@@ -1,3 +1,4 @@
+#pragma once
 #ifndef MAP_EDITOR_MOUSEACTIONS_H
 #define MAP_EDITOR_MOUSEACTIONS_H
 

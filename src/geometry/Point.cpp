@@ -1,6 +1,8 @@
 #include <QDebug>
 #include <QtMath>
-
+#ifdef __linux__
+#include <cfloat>
+#endif
 #include "geometry/point.h"
 #include "geometry/loose.h"
 
@@ -10,6 +12,23 @@ qreal Point::TOLERANCE = 1.0E-7;
 qreal Point::TOLERANCE2 = TOLERANCE * TOLERANCE;
 
 QPointF Point::ORIGIN = QPointF(0.0,0.0);
+
+bool Point::isValid(QPointF &pt)
+{
+    qreal x = pt.x();
+    bool is_nan = (x != x);
+    bool is_inf = (x < -DBL_MAX || x > DBL_MAX);
+    if (is_nan || is_inf)
+        return false;
+
+    qreal y = pt.y();
+    is_nan = (y != y);
+    is_inf = (y < -DBL_MAX || y > DBL_MAX);
+    if (is_nan || is_inf)
+        return false;
+
+    return true;
+}
 
 // Equality.
 bool Point::isNear(const QPointF &pt,  const QPointF & other )
@@ -60,13 +79,22 @@ qreal Point::dist( QPointF pt, QPointF other )
 // DAC - this is probably same as Kaplan's convex sum
 QLineF Point::extendLine(QLineF line, qreal scale)
 {
-    qreal len = line.length() * scale;
-    line.setLength(len);
+    line.setLength(line.length() * scale);
     return line;
+}
+
+QLineF Point::extendAsRay(QLineF line, qreal scale)
+{
+    qreal len = line.length();
+    line.setLength(len * scale);
+    QLineF l = reversed(line);
+    l.setLength(2 * len * scale);
+    return reversed(l);
 }
 
 bool Point::intersectPoly(QLineF line, const QPolygonF & bounds, QPointF & intersect)
 {
+    Q_ASSERT(bounds.isClosed());
     for (int i=0; i < (bounds.size()-1); i++)
     {
         QLineF l2(bounds[i],bounds[i+1]);
@@ -272,8 +300,9 @@ QPointF Point::center(const QPolygonF & pts)
     return cent;
 }
 
-QPointF Point::irregularCenter(QPolygonF & poly)
+QPointF Point::irregularCenter(const QPolygonF & poly)
 {
+    Q_ASSERT(!poly.isClosed());
     QPointF centroid;
     double signedArea = 0.0;
     double x0 = 0.0; // Current vertex X
@@ -366,7 +395,7 @@ QPolygonF Point::reflectPolygon(QPolygonF & p, QLineF & line)
     return poly;
 }
 
-QPointF Point::perpPt(QPointF &A, QPointF &B, QPointF &C)
+QPointF Point::perpPt(QPointF A, QPointF B, QPointF C)
 {
     // https://stackoverflow.com/questions/1811549/perpendicular-on-a-line-from-a-given-point
     qreal x1 = A.x();
@@ -395,9 +424,9 @@ QLineF Point::shiftParallel(QLineF bline, qreal offset)
     qreal y2 = bline.p2().y();
     qreal L = qSqrt((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2));
     // This is the second line
-    qreal x1p = x1 + offset * (y2-y1) / L;
-    qreal x2p = x2 + offset * (y2-y1) / L;
-    qreal y1p = y1 + offset * (x1-x2) / L;
-    qreal y2p = y2 + offset * (x1-x2) / L;
+    qreal x1p = x1 + ((offset * (y2-y1)) / L);
+    qreal x2p = x2 + ((offset * (y2-y1)) / L);
+    qreal y1p = y1 + ((offset * (x1-x2)) / L);
+    qreal y2p = y2 + ((offset * (x1-x2)) / L);
     return QLineF(x1p,y1p,x2p,y2p);
 }

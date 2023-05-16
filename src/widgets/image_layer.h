@@ -1,3 +1,4 @@
+#pragma once
 #ifndef IMAGE_LAYER_H
 #define IMAGE_LAYER_H
 

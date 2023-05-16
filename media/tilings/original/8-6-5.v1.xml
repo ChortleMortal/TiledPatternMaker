@@ -1,0 +1,71 @@
+<?xml version="1.0"?>
+<!-- Written: Sun Jan 22 2023 16:54:51 -->
+<Tiling version="6">
+	<Name>8-6-5.v1</Name>
+	<Fill singleton="f">-3,4,-5,4</Fill>
+	<T1>9e-16,4.857650869455345</T1>
+	<T2>2.428825434727671,2.428825434727671</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>1100</height>
+		<zwidth>1500</zwidth>
+		<zheight>1100</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Feature type="regular" sides="8" rotation="0" scale="1">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="regular" sides="5" rotation="0" scale="1">
+		<Placement>
+			<scale>0.5701160584642863</scale>
+			<rot>-162</rot>
+			<tranX>2.42882543472767</tranX>
+			<tranY>-0.8587093762633851</tranY>
+		</Placement>
+		<Placement>
+			<scale>0.5701160584642868</scale>
+			<rot>72.00000000000001</rot>
+			<tranX>3.287534810991056</tranX>
+			<tranY>6.583493685247924e-16</tranY>
+		</Placement>
+		<Placement>
+			<scale>0.5701160584642875</scale>
+			<rot>90.00000000000003</rot>
+			<tranX>2.428825434727672</tranX>
+			<tranY>0.8587093762633839</tranY>
+		</Placement>
+		<Placement>
+			<scale>0.5701160584642873</scale>
+			<rot>108</rot>
+			<tranX>1.570116058464287</tranX>
+			<tranY>-3.885780586188048e-16</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="regular" sides="6" rotation="0" scale="1">
+		<Placement>
+			<scale>0.7174389352143006</scale>
+			<rot>45.00000000000003</rot>
+			<tranX>1.214412717363836</tranX>
+			<tranY>1.214412717363836</tranY>
+		</Placement>
+		<Placement>
+			<scale>0.7174389352143</scale>
+			<rot>74.99999999999999</rot>
+			<tranX>1.214412717363835</tranX>
+			<tranY>-1.214412717363835</tranY>
+		</Placement>
+	</Feature>
+	<Desc>An octogon surrounded by hexagons and pentagons. The pentagons slightly overlap the hexagons. The additional star shape fills the voids, but is not necessary and can be left blank.
+Removes unused tile</Desc>
+	<Auth>Pierre Baillargeon</Auth>
+</Tiling>

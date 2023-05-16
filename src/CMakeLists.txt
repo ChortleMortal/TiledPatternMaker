@@ -8,7 +8,8 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-set(CMAKE_CXX_STANDARD 17)
+
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
@@ -23,6 +24,8 @@ set(PROJECT_SOURCES
     enums/ecyclemode.h
     enums/edesign.cpp
     enums/edesign.h
+    enums/efillmode.cpp
+    enums/efillmode.h
     enums/efilesystem.h
     enums/ekeyboardmode.cpp
     enums/ekeyboardmode.h
@@ -39,30 +42,6 @@ set(PROJECT_SOURCES
     enums/etilingmakermousemode.h
     enums/eviewtype.cpp
     enums/eviewtype.h
-    motifs/explicit_motif.cpp
-    motifs/explicit_motif.h
-    motifs/extended_rosette.cpp
-    motifs/extended_rosette.h
-    motifs/extended_star.cpp
-    motifs/extended_star.h
-    motifs/extender.cpp
-    motifs/extender.h
-    motifs/inference_engine.cpp
-    motifs/inference_engine.h
-    motifs/motif.cpp
-    motifs/motif.h
-    motifs/motif_connector.cpp
-    motifs/motif_connector.h
-    motifs/radial_motif.cpp
-    motifs/radial_motif.h
-    motifs/rosette.cpp
-    motifs/rosette.h
-    motifs/rosette_connect.cpp
-    motifs/rosette_connect.h
-    motifs/star.cpp
-    motifs/star.h
-    motifs/star_connect.cpp
-    motifs/star_connect.h
     geometry/arcdata.cpp
     geometry/arcdata.h
     geometry/belowandaboveedge.cpp
@@ -156,18 +135,26 @@ set(PROJECT_SOURCES
     makers/mosaic_maker/style_color_fill_set.h
     makers/mosaic_maker/style_editors.cpp
     makers/mosaic_maker/style_editors.h
-    makers/motif_maker/explicit_motif_editors.cpp
-    makers/motif_maker/explicit_motif_editors.h
-    makers/motif_maker/motif_button.cpp
-    makers/motif_maker/motif_button.h
-    makers/motif_maker/motif_editor.cpp
-    makers/motif_maker/motif_editor.h
-    makers/motif_maker/motif_maker.cpp
-    makers/motif_maker/motif_maker.h
+    makers/motif_maker/design_element_button.cpp
+    makers/motif_maker/design_element_button.h
+    makers/motif_maker/irregular_motif_editors.cpp
+    makers/motif_maker/irregular_motif_editors.h
+    makers/motif_maker/motif_editor_widget.cpp
+    makers/motif_maker/motif_editor_widget.h
+    makers/motif_maker/motif_maker_widget.cpp
+    makers/motif_maker/motif_maker_widget.h
     makers/motif_maker/motif_selector.cpp
     makers/motif_maker/motif_selector.h
+    makers/motif_maker/motif_widgets.cpp
+    makers/motif_maker/motif_widgets.h
     makers/motif_maker/regular_motif_editors.cpp
     makers/motif_maker/regular_motif_editors.h
+    makers/prototype_maker/prototype.cpp
+    makers/prototype_maker/prototype.h
+    makers/prototype_maker/prototype_data.cpp
+    makers/prototype_maker/prototype_data.h
+    makers/prototype_maker/prototype_maker.cpp
+    makers/prototype_maker/prototype_maker.h
     makers/tiling_maker/tile_selection.cpp
     makers/tiling_maker/tile_selection.h
     makers/tiling_maker/tiling_maker.cpp
@@ -198,6 +185,8 @@ set(PROJECT_SOURCES
     misc/pugixml.hpp
     misc/qtapplog.cpp
     misc/qtapplog.h
+    misc/runguard.cpp
+    misc/runguard.h
     misc/shortcuts.cpp
     misc/shortcuts.h
     misc/signal_blocker.h
@@ -211,8 +200,12 @@ set(PROJECT_SOURCES
     misc/version.h
     mosaic/design_element.cpp
     mosaic/design_element.h
+    mosaic/legacy_loader.cpp
+    mosaic/legacy_loader.h
     mosaic/mosaic.cpp
     mosaic/mosaic.h
+    mosaic/mosaic_io_base.cpp
+    mosaic/mosaic_io_base.h
     mosaic/mosaic_manager.cpp
     mosaic/mosaic_manager.h
     mosaic/mosaic_reader.cpp
@@ -223,8 +216,52 @@ set(PROJECT_SOURCES
     mosaic/mosaic_writer.h
     mosaic/mosaic_writer_base.cpp
     mosaic/mosaic_writer_base.h
-    mosaic/prototype.cpp
-    mosaic/prototype.h
+    motifs/extended_boundary.cpp
+    motifs/extended_boundary.h
+    motifs/extended_rosette.cpp
+    motifs/extended_rosette.h
+    motifs/extended_star.cpp
+    motifs/extended_star.h
+    motifs/extender.cpp
+    motifs/extender.h
+    motifs/girih_motif.cpp
+    motifs/girih_motif.h
+    motifs/hourglass_motif.cpp
+    motifs/hourglass_motif.h
+    motifs/inferred_motif.cpp
+    motifs/inferred_motif.h
+    motifs/intersect_motif.cpp
+    motifs/intersect_motif.h
+    motifs/irregular_girih_branches.cpp
+    motifs/irregular_girih_branches.h
+    motifs/irregular_motif.cpp
+    motifs/irregular_motif.h
+    motifs/irregular_rosette.cpp
+    motifs/irregular_rosette.h
+    motifs/irregular_star.cpp
+    motifs/irregular_star.h
+    motifs/irregular_star_branches.cpp
+    motifs/irregular_star_branches.h
+    motifs/irregular_tools.cpp
+    motifs/irregular_tools.h
+    motifs/explicit_map_motif.cpp
+    motifs/explicit_map_motif.h
+    motifs/motif.cpp
+    motifs/motif.h
+    motifs/motif_connector.cpp
+    motifs/motif_connector.h
+    motifs/radial_motif.cpp
+    motifs/radial_motif.h
+    motifs/rosette.cpp
+    motifs/rosette.h
+    motifs/rosette_connect.cpp
+    motifs/rosette_connect.h
+    motifs/star.cpp
+    motifs/star.h
+    motifs/star_connect.cpp
+    motifs/star_connect.h
+    motifs/tile_motif.cpp
+    motifs/tile_motif.h
     panels/page_background_image.cpp
     panels/page_background_image.h
     panels/page_borders.cpp
@@ -354,6 +391,8 @@ set(PROJECT_SOURCES
     widgets/dlg_listnameselect.h
     widgets/dlg_listselect.cpp
     widgets/dlg_listselect.h
+    widgets/dlg_cleanse.cpp
+    widgets/dlg_cleanse.h
     widgets/dlg_magnitude.cpp
     widgets/dlg_magnitude.h
     widgets/dlg_name.cpp
@@ -368,6 +407,8 @@ set(PROJECT_SOURCES
     widgets/dlg_textedit.h
     widgets/dlg_trim.cpp
     widgets/dlg_trim.h
+    widgets/dlg_wlist_create.cpp
+    widgets/dlg_wlist_create.h
     widgets/image_layer.cpp
     widgets/image_layer.h
     widgets/layout_qrectf.cpp
@@ -394,11 +435,30 @@ set(PROJECT_SOURCES
     widgets/rounded_polygon.h
     widgets/transparentwidget.cpp
     widgets/transparentwidget.h
+    widgets/version_dialog.cpp
+    widgets/version_dialog.h
     widgets/versioned_list_widget.cpp
     widgets/versioned_list_widget.h
 )
 
 set (OTHER_FILES
+    ../etc/build-install.md
+    ../etc/build-install-qt6.md
+    ../etc/configure-local.bat
+    ../etc/qt5.bat
+    ../etc/qt6.bat
+    ../etc/TiledPatternMaker.nsi
+    ../etc/models/Components.qmodel
+    ../etc/models/designeditor.qmodel
+    ../etc/models/Designs.qmodel
+    ../etc/models/figure_editors.qmodel
+    ../etc/models/figures.qmodel
+    ../etc/models/makers.qmodel
+    ../etc/models/makers2.qmodel
+    ../etc/models/mosaic.qmodel
+    ../etc/models/shapes.qmodel
+    ../etc/models/styles.qmodel
+    ../etc/models/Viewers.qmodel
     ../release-notes.txt
 )
 
@@ -407,6 +467,7 @@ add_custom_target(Xtra-files SOURCES ${OTHER_FILES})
 qt_add_resources(PROJECT_SOURCES tpm.qrc)
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
+    set(CMAKE_UNITY_BUILD ON)
     if (WIN32)
         qt_add_executable(TiledPatternMaker WIN32 MANUAL_FINALIZATION ${PROJECT_SOURCES} icon.rc)
     else()
@@ -423,6 +484,6 @@ endif()
 target_link_libraries(TiledPatternMaker PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
 target_link_libraries(TiledPatternMaker PRIVATE Qt${QT_VERSION_MAJOR}::Svg)
 
-if(QT_VERSION_MAJOR EQUAL 6)
+if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_finalize_executable(TiledPatternMaker)
 endif()

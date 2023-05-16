@@ -1,4 +1,5 @@
-﻿#ifndef TILE_PATTERNS_H
+﻿#pragma once
+#ifndef TILE_PATTERNS_H
 #define TILE_PATTERNS_H
 
 #include "legacy/legacy_tile.h"

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef MOUSEEDITBORDER_H
 #define MOUSEEDITBORDER_H
 

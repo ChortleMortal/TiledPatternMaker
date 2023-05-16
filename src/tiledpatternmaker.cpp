@@ -1,6 +1,6 @@
 /* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
  *
- *  Copyright (c) 2016-2022 David A. Casper  email: david.casper@gmail.com
+ *  Copyright (c) 2016-2023 David A. Casper  email: david.casper@gmail.com
  *
  *  This file is part of TiledPatternMaker
  *
@@ -19,28 +19,47 @@
 
 #include "tiledpatternmaker.h"
 #include "legacy/design_maker.h"
-#include "legacy/designs.h"
+
 #include "makers/crop_maker/crop_maker.h"
 #include "makers/map_editor/map_editor.h"
 #include "makers/mosaic_maker/mosaic_maker.h"
-#include "makers/motif_maker/motif_maker.h"
+#include "makers/prototype_maker/prototype_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "misc/cycler.h"
-#include "mosaic/mosaic_manager.h"
+
 #include "panels/panel.h"
 #include "panels/splitscreen.h"
 #include "settings/configuration.h"
-#include "settings/model_settings.h"
 #include "tile/tiling_manager.h"
 #include "viewers/viewcontrol.h"
 #include "widgets/image_layer.h"
+#include "widgets/memory_combo.h"
 #include "widgets/transparentwidget.h"
+
+#ifdef QT_DEBUG
+#ifdef Q_OS_WINDOWS
+#include <Windows.h>
+#else
+#include <signal.h>
+#endif
+#endif
 
 using std::make_shared;
 
-TiledPatternMaker::TiledPatternMaker() : QObject()
+#undef TEST_MEMORY_LEAKS
+#ifdef TEST_MEMORY_LEAKS
+#include "mosaic/mosaic.h"
+#include "mosaic/mosaic_reader.h"
+#include "misc/fileservices.h"
+#endif
+
+
+TiledPatternMaker::TiledPatternMaker(int instance) : QObject()
 {
+    this->instance = instance;
     connect(this,&TiledPatternMaker::sig_start, this, &TiledPatternMaker::startEverything, Qt::QueuedConnection);
+
+    _showA = false;
 }
 
 void TiledPatternMaker::startEverything()
@@ -49,39 +68,28 @@ void TiledPatternMaker::startEverything()
     config            = Configuration::getInstance();
     bool oldPanelLock = config->lockView;
     config->lockView  = true;    // disables view switching during init
-    originalPalette   = QApplication::palette();
+
+    config->appInstance = instance;
 
     if (config->darkTheme)
     {
         setDarkTheme(true);
     }
 
+#ifdef TEST_MEMORY_LEAKS
+    qDebug() << "testing memory management";
+    testMemoryManagement();
+    qDebug() << "memory management test complete";
+#endif
+
     view            = ViewControl::getInstance();
     tilingMaker     = TilingMaker::getSharedInstance();
-    motifMaker      = MotifMaker::getInstance();
+    prototypeMaker  = PrototypeMaker::getInstance();
     mosaicMaker     = MosaicMaker::getInstance();
     mapEditor       = MapEditor::getInstance();
-    cropMaker      = CropMaker::getInstance();
+    cropMaker       = CropMaker::getInstance();
 
     view->init();
-
-    config->availableDesigns.insert(DESIGN_5,make_shared<Design5>(DESIGN_5,"Pattern 1 (created)"));
-    config->availableDesigns.insert(DESIGN_6,make_shared<Design6>(DESIGN_6,"Pattern 2 (re-ceated)"));
-    config->availableDesigns.insert(DESIGN_7,make_shared<Design7>(DESIGN_7,"Pattern 3 (re-ceated)"));
-    config->availableDesigns.insert(DESIGN_8,make_shared<Design8>(DESIGN_8,"The Hu Symbol"));
-    config->availableDesigns.insert(DESIGN_9,make_shared<Design9>(DESIGN_9,"A packing of Hu symbols"));
-    config->availableDesigns.insert(DESIGN_HU_INSERT,make_shared<DesignHuInsert>(DESIGN_HU_INSERT,"Hu Insert"));
-    config->availableDesigns.insert(DESIGN_10,make_shared<DesignHuPacked>(DESIGN_10,"Fully packed Hu symbols"));
-    config->availableDesigns.insert(DESIGN_11,make_shared<Design11>(DESIGN_11,"Woven Hu (unsuccessful)"));
-    config->availableDesigns.insert(DESIGN_12,make_shared<Design12>(DESIGN_12,"Enneagram"));
-    config->availableDesigns.insert(DESIGN_13,make_shared<Design13>(DESIGN_13,"Alhambra 1"));
-    config->availableDesigns.insert(DESIGN_14,make_shared<Design14>(DESIGN_14,"Alhambra 2"));
-    config->availableDesigns.insert(DESIGN_16,make_shared<Design16>(DESIGN_16,"Broug: Capella Palatina, Palermo"));
-    config->availableDesigns.insert(DESIGN_17,make_shared<Design17>(DESIGN_17,"Broug: The Koran of Rashid al-Din"));
-    config->availableDesigns.insert(DESIGN_18,make_shared<Design18>(DESIGN_18,"Broug: Mustansiriya Madrasa"));
-    config->availableDesigns.insert(DESIGN_19,make_shared<Design19>(DESIGN_19,"NOT Broug: Esrefogulu Mosque"));
-    config->availableDesigns.insert(DESIGN_KUMIKO1,make_shared<DesignKumiko1>(DESIGN_KUMIKO1,"Kumiko 1"));
-    config->availableDesigns.insert(DESIGN_KUMIKO2,make_shared<DesignKumiko2>(DESIGN_KUMIKO2,"Kumiko 2"));
 
     qRegisterMetaType<MapPtr>("MapPtr");
     qRegisterMetaType<PolyPtr>("PolyPtr");
@@ -103,16 +111,9 @@ void TiledPatternMaker::startEverything()
     connect(this,  &TiledPatternMaker::sig_cyclerQuit,   cycler, &Cycler::slot_stopCycle);
     connect(this,  &TiledPatternMaker::sig_primaryDisplay,this,  &TiledPatternMaker::slot_bringToPrimaryScreen, Qt::QueuedConnection);
 
-    connect(cycler,    &Cycler::sig_cycleLoadMosaic,this,  &TiledPatternMaker::slot_cycleLoadMosaic);
-    connect(cycler,    &Cycler::sig_cycleLoadTiling,this,  &TiledPatternMaker::slot_cyclerLoadTiling);
     connect(cycler,    &Cycler::sig_finished,       this,  &TiledPatternMaker::slot_cyclerFinished);
-    connect(cycler,    &Cycler::sig_compare,        this,  &TiledPatternMaker::slot_compareImages);
+    connect(cycler,    &Cycler::sig_compare,        this,  &TiledPatternMaker::slot_compareBMPs);
     connect(cycler,    &Cycler::sig_show_png,       this,  &TiledPatternMaker::slot_show_png);
-
-    // init makers
-    mosaicMaker->init();
-    motifMaker->init();
-    tilingMaker->init();
 
     // pop-up control panel
     controlPanel = ControlPanel::getInstance();
@@ -121,6 +122,11 @@ void TiledPatternMaker::startEverything()
     controlPanel->setWindowState((controlPanel->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
     controlPanel->raise();
     controlPanel->activateWindow();
+
+    // init makers
+    mosaicMaker->init();
+    prototypeMaker->init();
+    tilingMaker->init();
 
     // split-screen
     if (config->splitScreen)
@@ -133,19 +139,20 @@ void TiledPatternMaker::startEverything()
     {
         if (!config->lastLoadedXML.isEmpty())
         {
-            slot_loadMosaic(config->lastLoadedXML,false);
+            mosaicMaker->slot_loadMosaic(config->lastLoadedXML,false);
         }
     }
     else if (config->autoLoadTiling)
     {
         if (!config->lastLoadedTileName.isEmpty())
         {
-            slot_loadTiling(config->lastLoadedTileName,SM_LOAD_SINGLE);
+            tilingMaker->slot_loadTiling(config->lastLoadedTileName,TILM_LOAD_SINGLE);
         }
     }
     else if (config->autoLoadDesigns)
     {
-        slot_loadDesign(config->lastLoadedDesignId);
+        auto designMaker = DesignMaker::getInstance();
+        designMaker->slot_loadDesign(config->lastLoadedDesignId);
     }
 
     config->lockView = oldPanelLock;    // restore
@@ -193,183 +200,10 @@ void TiledPatternMaker::setDarkTheme(bool enb)
     }
 }
 
-void TiledPatternMaker::slot_loadDesign(eDesign design)
-{
-    DesignPtr d = config->availableDesigns.value(design);
-    if (!d)
-    {
-        return;
-    }
-
-    slot_buildDesign(design);
-
-    if (!config->lockView)
-    {
-        controlPanel->selectViewer(VIEW_DESIGN);
-    }
-
-    emit sig_refreshView();
-}
-
-void TiledPatternMaker::slot_buildDesign(eDesign design)
-{
-    qDebug().noquote() << "TiledPatternMaker::slot_buildDesign" << Design::getDesignName(design);
-
-    DesignMaker * designMaker = DesignMaker::getInstance();
-
-    view->dump(true);
-    designMaker->unload();
-    view->dump(true);
-
-    DesignPtr d = config->availableDesigns.value(design);
-
-    designMaker->addDesign(d);
-
-    config->lastLoadedDesignId = design;
-
-    // size view to design
-    QSize size = d->getDesignInfo().getSize();
-    view->frameSettings.initialiseCommon(size,size);
-    view->frameSettings.initialise(VIEW_DESIGN,size,size);
-    view->frameSettings.setModelAlignment(M_ALIGN_NONE);
-
-    view->removeAllImages();
-
-    emit sig_refreshView();
-
-    QCoreApplication::processEvents();
-
-    d->build();
-    d->repeat();
-
-    emit sig_loadedDesign(design);
-}
-
-void TiledPatternMaker::slot_loadMosaic(QString name,bool ready)
-{
-    qDebug().noquote() << "TiledPatternMaker::slot_loadXML() <" << name << ">";
-
-    controlPanel->setLoadState(ControlPanel::LOADING_MOSAIC,name);
-    view->dump(true);
-
-    config->currentlyLoadedXML.clear();
-
-    MosaicManager mm;
-    bool rv = mm.loadMosaic(name);
-    if (rv)
-    {
-        config->lastLoadedXML      = name;
-        config->currentlyLoadedXML = name;
-
-        view->removeAllImages();
-
-        emit sig_refreshView();
-        if (ready)
-        {
-            emit sig_ready();
-        }
-        emit sig_mosaicLoaded(name);
-    }
-    controlPanel->setLoadState(ControlPanel::LOADING_NONE);
-}
-
-void TiledPatternMaker::slot_cycleLoadMosaic(QString name)
-{
-    qDebug().noquote() << "TiledPatternMaker::slot_cycleLoadMosaic() <" << name << ">";
-
-    controlPanel->setLoadState(ControlPanel::LOADING_MOSAIC,name);
-
-    config->currentlyLoadedXML.clear();
-
-    MosaicManager mm;
-    bool rv = mm.loadMosaic(name);
-    if (rv)
-    {
-        config->lastLoadedXML      = name;
-        config->currentlyLoadedXML = name;
-
-        view->removeAllImages();
-
-        emit sig_refreshView();
-        emit sig_ready();
-    }
-    controlPanel->setLoadState(ControlPanel::LOADING_NONE);
-}
-
-void TiledPatternMaker::slot_saveMosaic(QString filename,bool test)
-{
-    qDebug() << "TiledPatternMaker::slot_saveMosaic()";
-
-    QString savedFile;
-    MosaicManager mm;
-    bool rv = mm.saveMosaic(filename,savedFile,false,test);
-    if (rv)
-    {
-        mapEditor->keepStash(savedFile);
-        config->lastLoadedXML      = savedFile;
-        config->currentlyLoadedXML = savedFile;
-
-        emit sig_mosaicWritten();
-        emit sig_mosaicLoaded(savedFile);
-    }
-}
-
-void TiledPatternMaker::slot_loadTiling(QString name, eSM_Event mode)
-{
-    controlPanel->setLoadState(ControlPanel::LOADING_TILING,name);
-
-    TilingManager tm;
-    if (tm.loadTiling(name,mode))
-    {
-        config->lastLoadedTileName = name;
-
-        view->removeAllImages();
-
-        emit sig_ready();
-        emit sig_tilingLoaded(name);
-        emit sig_refreshView();
-    }
-    else
-    {
-        QMessageBox box;
-        box.setIcon(QMessageBox::Critical);
-        box.setText(QString("Tile <%1> NOT FOUND").arg(name));
-        box.exec();
-    }
-    controlPanel->setLoadState(ControlPanel::LOADING_NONE);
-}
-
-void TiledPatternMaker::slot_cyclerLoadTiling(QString name)
-{
-    controlPanel->setLoadState(ControlPanel::LOADING_TILING,name);
-
-    TilingManager tm;
-    if (tm.loadTiling(name,SM_LOAD_SINGLE))
-    {
-        config->lastLoadedTileName = name;
-
-        view->removeAllImages();
-
-        emit sig_refreshView();
-        emit sig_ready();
-    }
-    controlPanel->setLoadState(ControlPanel::LOADING_NONE);
-}
-
-void TiledPatternMaker::slot_saveTiling(QString name)
-{
-    TilingPtr tiling = tilingMaker->getSelected();
-
-    TilingManager tm;
-    tm.saveTiling(name,tiling); // Tiling Manager haandles OK/FAIL status
-}
-
 void TiledPatternMaker::slot_render()
 {
     TilingPtr dummy;
-    motifMaker->sm_takeUp(dummy, SM_RENDER);
-    QVector<PrototypePtr> dummy2;
-    mosaicMaker->sm_takeUp(dummy2,SM_RENDER);
+    prototypeMaker->sm_takeUp(dummy, PROM_RENDER);
 
     if (!config->lockView)
     {
@@ -421,8 +255,8 @@ void TiledPatternMaker::slot_splitScreen(bool checked)
             splitter = new SplitScreen();
         }
 
-        s.setValue("viewPos",view->pos());
-        s.setValue("panelPos", controlPanel->pos());
+        s.setValue((QString("viewPos/%1").arg(config->appInstance)),view->pos());
+        s.setValue(QString("panelPos/%1").arg(config->appInstance), controlPanel->pos());
 
         QScreen * sc = qApp->screenAt(controlPanel->pos());
         splitter->addWidgets(controlPanel,view);
@@ -442,11 +276,11 @@ void TiledPatternMaker::slot_splitScreen(bool checked)
         view->setParent(nullptr);
 
         controlPanel->show();
-        controlPanel->move(s.value("panelPos").toPoint());
+        controlPanel->move(s.value(QString("panelPos/%1").arg(config->appInstance)).toPoint());
         controlPanel->adjustSize();
 
         view->show();
-        view->move(s.value("viewPos").toPoint());
+        view->move(s.value((QString("viewPos/%1").arg(config->appInstance))).toPoint());
 
         if (splitter)
         {
@@ -480,14 +314,15 @@ void TiledPatternMaker::slot_show_png(QString file, int row, int col)
     view->show();
 }
 
-void TiledPatternMaker::slot_compareLoaded(QString leftName, bool autoMode)
+void TiledPatternMaker::slot_compareBMMPandLoaded(QString leftName, bool autoMode)
 {
-    nameLeft  = leftName;
-    //nameRight = "Loaded Mosaic";
-    emit sig_image0(nameLeft);      // sets page_debug status
-    //emit sig_image1(nameRight);      // sets page_debug status
+    emit sig_closeAllImageViewers();
 
-    pathLeft  = config->compareDir0 + "/" + nameLeft  + ".bmp";
+    nameLeft  = leftName;
+    emit sig_image0(nameLeft);      // sets page_debug status
+    //emit sig_image1(nameRight);   // sets page_debug status
+
+    pathLeft  = MemoryCombo::getTextFor("leftDir") + "/" + nameLeft  + ".bmp";
     pathRight.clear();
 
     QImage img_left(pathLeft);
@@ -495,10 +330,10 @@ void TiledPatternMaker::slot_compareLoaded(QString leftName, bool autoMode)
     QPixmap pixmap    = view->grab();
     QImage  img_right = pixmap.toImage();
 
-    compare(img_left,img_right,autoMode);
+    compareImages(img_left,img_right,leftName, "Loaded Mosaic",autoMode);
 }
 
-void TiledPatternMaker::slot_compareImages(QString leftName, QString rightName, bool autoMode)
+void TiledPatternMaker::slot_compareBMPs(QString leftName, QString rightName, bool autoMode)
 {
     nameLeft  = leftName;
     nameRight = rightName;
@@ -525,18 +360,49 @@ void TiledPatternMaker::slot_compareImages(QString leftName, QString rightName, 
         return;
     }
 
-    pathLeft  = config->compareDir0 + "/" + nameLeft  + ".bmp";
-    pathRight = config->compareDir1 + "/" + nameRight + ".bmp";
+    pathLeft  = MemoryCombo::getTextFor("leftDir")  + "/" + nameLeft  + ".bmp";
+    pathRight = MemoryCombo::getTextFor("rightDir") + "/" + nameRight + ".bmp";
 
     QImage img_left(pathLeft);
     QImage img_right(pathRight);
 
-    compare(img_left,img_right,autoMode);
+    compareImages(img_left,img_right,pathLeft,pathRight,autoMode);
 }
 
-void TiledPatternMaker::compare(QImage & img_left, QImage & img_right, bool autoMode)
+void TiledPatternMaker::slot_compareBMPsPath(QString file1, QString file2)
 {
-    if (img_left.isNull())
+    qDebug().noquote() << file1;
+    qDebug().noquote() << file2;
+
+    if (file1.isEmpty() || file2.isEmpty())
+    {
+        QString str = "No matching image found ";
+        QPixmap  pm = makeTextPixmap(str,nameLeft);
+        popupPixmap(pm,str);
+        return;
+    }
+
+    pathLeft = file1;
+    pathRight = file2;
+
+    QImage img_left(file1);
+    QImage img_right(file2);
+
+    compareImages(img_left,img_right,file1,file2,false);
+}
+
+void TiledPatternMaker::compareImages(QImage & img_left, QImage & img_right, QString title_left, QString title_right, bool autoMode)
+{
+    _imageA = img_left;
+    _imageB = img_right;
+    _titleA = title_left;
+    _titleB = title_right;
+    compareImages(autoMode);
+}
+
+void TiledPatternMaker::compareImages(bool autoMode)
+{
+    if (_imageA.isNull())
     {
         qWarning() << "Image not found" << nameLeft;
         QString str = "Image not found";
@@ -553,7 +419,7 @@ void TiledPatternMaker::compare(QImage & img_left, QImage & img_right, bool auto
         return;
     }
 
-    if (img_left == img_right)
+    if (_imageA == _imageB)
     {
         qInfo() << "same     " << pathLeft;
         QString str = "Images are the same";
@@ -570,7 +436,7 @@ void TiledPatternMaker::compare(QImage & img_left, QImage & img_right, bool auto
         return;
     }
 
-    if (img_right.isNull())
+    if (_imageB.isNull())
     {
         qWarning() << "different (no match)" << nameLeft;
         QString str = "No matching image found";
@@ -589,10 +455,13 @@ void TiledPatternMaker::compare(QImage & img_left, QImage & img_right, bool auto
 
     qWarning() << "different" << pathLeft;
 
+    //
     // files are different
-    if ( (cycler->getMode() == CYCLE_COMPARE_ALL_IMAGES || cycler->getMode() == CYCLE_COMPARE_WORKLIST_IMAGES) && config->generate_workList)
+    //
+
+    if ( (cycler->getMode() == CYCLE_COMPARE_ALL_BMPS || cycler->getMode() == CYCLE_COMPARE_WORKLIST_BMPS) && config->generate_workList)
     {
-        config->addWorkList(nameLeft);
+        config->worklist.add(nameLeft);
     }
 
     QString str = "Images are different";
@@ -607,10 +476,10 @@ void TiledPatternMaker::compare(QImage & img_left, QImage & img_right, bool auto
     if  (config->display_differences)
     {
         // display differences
-        if (img_left.size() != img_right.size())
+        if (_imageA.size() != _imageB.size())
         {
-            QString str1 = QString("%1 = %2 x %3").arg(pathLeft).arg(img_left.width()).arg(img_left.height());
-            QString str2 = QString("%1 = %2 x %3").arg(pathRight).arg(img_right.width()).arg(img_right.height());
+            QString str1 = QString("%1 = %2 x %3").arg(pathLeft).arg(_imageA.width()).arg(_imageA.height());
+            QString str2 = QString("%1 = %2 x %3").arg(pathRight).arg(_imageB.width()).arg(_imageB.height());
             QPixmap  pm = makeTextPixmap("Images different sizes:",str1,str2);
             QString str = "Images are different sizes";
             emit sig_compareResult(str);    // sets page_debug status
@@ -618,14 +487,14 @@ void TiledPatternMaker::compare(QImage & img_left, QImage & img_right, bool auto
         }
         else
         {
-            int w = qMin(img_left.width(),img_right.width());
-            int h = qMin(img_left.height(),img_right.height());
-            QImage result(QSize(w,h),img_left.format());
+            int w = qMin(_imageA.width(),_imageB.width());
+            int h = qMin(_imageA.height(),_imageB.height());
+            QImage result(QSize(w,h),_imageA.format());
 
             for(int i=0; i<h; i++)
             {
-                QRgb *rgbLeft   = reinterpret_cast<QRgb*>(img_left.scanLine(i));
-                QRgb *rgbRigth  = reinterpret_cast<QRgb*>(img_right.scanLine(i));
+                QRgb *rgbLeft   = reinterpret_cast<QRgb*>(_imageA.scanLine(i));
+                QRgb *rgbRigth  = reinterpret_cast<QRgb*>(_imageB.scanLine(i));
                 QRgb *rgbResult = reinterpret_cast<QRgb*>(result.scanLine(i));
                 for( int j=0; j<w; j++)
                 {
@@ -671,7 +540,7 @@ void TiledPatternMaker::compare(QImage & img_left, QImage & img_right, bool auto
 
 QPixmap TiledPatternMaker::makeTextPixmap(QString txt,QString txt2,QString txt3)
 {
-    QPixmap pixmap(1200,500);
+    QPixmap pixmap(1600,500);
     pixmap.fill(Qt::white);
 
     QPainter painter(&pixmap);
@@ -697,16 +566,19 @@ void TiledPatternMaker::imageKeyPressed(QKeyEvent * k)
     }
     else if (key == 'C')
     {
+        // compare
         emit sig_closeAllImageViewers();
-        slot_compareImages(nameLeft,nameRight,false);
+        compareImages(false);
     }
     else if (key == 'D')
     {
+        // delete (from current worklist)
         emit sig_closeAllImageViewers();
-        emit sig_deleteCurrentInWorklist();
+        emit sig_deleteCurrentInWorklist(false);  // this sends a sig_ready()
     }
     else if (key == 'Q')
     {
+        // quit
         emit sig_closeAllImageViewers();
         emit sig_cyclerQuit();
     }
@@ -714,10 +586,11 @@ void TiledPatternMaker::imageKeyPressed(QKeyEvent * k)
     {
         // ping-pong
         emit sig_closeAllImageViewers();
-        slot_view_image(pathLeft,pathRight,config->compare_transparent,true);
+        ping_pong_images(config->compare_transparent,true);
     }
     else if (key == 'S')
     {
+        // side-by-side
         QPixmap pm(pathLeft);
         ImageWidget * widget = popupPixmap(pm,pathLeft);
         widget->move(widget->pos().x()-100,widget->pos().y());
@@ -736,6 +609,7 @@ void TiledPatternMaker::imageKeyPressed(QKeyEvent * k)
     }
     else if (key == 'L')
     {
+        // log
         qWarning() << "FILE LOGGED (needs attention)";
         emit sig_closeAllImageViewers();
         emit sig_takeNext();
@@ -824,6 +698,44 @@ void TiledPatternMaker::slot_view_image(QString left, QString right, bool transp
     }
 }
 
+void TiledPatternMaker::ping_pong_images(bool transparent, bool popup)
+{
+    _showA = !_showA;
+
+    QImage & img  =  (_showA) ? _imageA : _imageB;
+    QString title =  (_showA) ? _titleA : _titleB;
+
+    QPixmap pm;
+    if (config->filter_transparent)
+    {
+        pm = createTransparentPixmap(img);
+    }
+    else
+    {
+        pm   = QPixmap::fromImage(img);
+    }
+
+    if (popup)
+    {
+        if (!transparent)
+        {
+            popupPixmap(pm,title);
+        }
+        else
+        {
+            popupTransparentPixmap(pm,title);
+        }
+    }
+    else
+    {
+        ImgLayerPtr ilp = make_shared<ImageLayer>(title);
+        ilp->setPixmap(pm);
+        view->addImage(ilp);
+        emit sig_refreshView();
+    }
+}
+
+
 QPixmap  TiledPatternMaker::createTransparentPixmap(QImage img)
 {
     Configuration * config = Configuration::getInstance();
@@ -864,6 +776,17 @@ QPixmap  TiledPatternMaker::createTransparentPixmap(QImage img)
     return pixmap;
 }
 
+void TiledPatternMaker::appDebugBreak()
+{
+#ifdef QT_DEBUG
+    qWarning() << "appDebugBreak";
+#ifdef Q_OS_WINDOWS
+        DebugBreak();
+#else
+        raise(SIGTRAP);
+#endif
+#endif
+}
 
 ImageWidget *  TiledPatternMaker::popupPixmap(QPixmap & pixmap,QString title)
 {
@@ -871,6 +794,14 @@ ImageWidget *  TiledPatternMaker::popupPixmap(QPixmap & pixmap,QString title)
     widget->resize(pixmap.size());
     widget->setPixmap(pixmap);
     widget->setWindowTitle(title);
+
+    QSettings s;
+    QPoint pos = s.value("imageWidgetPos").toPoint();
+    if (!pos.isNull())
+    {
+        widget->move(pos);
+    }
+
     widget->show();
 
     return widget;
@@ -881,7 +812,53 @@ TransparentWidget * TiledPatternMaker::popupTransparentPixmap(QPixmap & pixmap,Q
     TransparentWidget * widget = new TransparentWidget(title);
     widget->resize(pixmap.size());
     widget->setPixmap(pixmap);
+
+    QSettings s;
+    QPoint pos = s.value("imageWidgetPos").toPoint();
+    if (!pos.isNull())
+    {
+        widget->move(pos);
+    }
+
     widget->show();
 
     return widget;
 }
+
+#ifdef TEST_MEMORY_LEAKS
+
+void TiledPatternMaker::testMemoryManagement()
+{
+    view = ViewControl::getInstance();
+
+    view->dumpRefs();
+
+    // test tiling
+    TilingManager  * tm = new TilingManager;
+    TilingPtr tp = tm->loadTiling("12-6-Trigon",TILM_LOAD_FROM_MOSAIC);
+    view->dumpRefs();
+
+    delete tm;
+    view->dumpRefs();
+
+    tp.reset();
+    view->dumpRefs();
+
+    // test motif
+    QString name = "12-6-trigon.v4";
+    QString file = FileServices::getMosaicXMLFile(name);
+    QFile afile(file);
+    MosaicReader * loader = new MosaicReader;
+    auto mosaic = loader->readXML(file);
+    view->dumpRefs();
+
+    delete loader;
+    view->dumpRefs();
+
+    mosaic.reset();
+    view->dumpRefs();
+
+    emit view->sig_identifyYourself();
+}
+
+#endif

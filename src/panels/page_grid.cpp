@@ -12,16 +12,6 @@
 
 page_grid:: page_grid(ControlPanel * cpanel)  : panel_page(cpanel,"Grid")
 {
-    QGroupBox * gbox  = createGridSection();
-    vbox->addWidget(gbox);
-}
-
-QGroupBox *  page_grid::createGridSection()
-{
-    gridBox = new QGroupBox("Show Grid");
-    gridBox->setCheckable(true);
-
-    QHBoxLayout  * gridTypeLayout      = createGridTypeLayout();
 
     QRadioButton * gridScreen          = new QRadioButton("Screen Units");
     QCheckBox    * gridScreenCentered  = new QCheckBox("Model Centered");
@@ -34,6 +24,15 @@ QGroupBox *  page_grid::createGridSection()
     SpinSet      * gridModelWidth      = new SpinSet("Width",config->gridModelWidth,1,9);
 
     QRadioButton * gridTiling          = new QRadioButton("Tiling Repeat Units");
+    QRadioButton * gridTilingAlgo1     = new QRadioButton("Flood");
+    QRadioButton * gridTilingAlgo2     = new QRadioButton("Fill Region ");
+    SpinSet      * gridTilingWidth     = new SpinSet("Width",config->gridTilingWidth,1,9);
+
+    QCheckBox    * gridTilingCenter    = new QCheckBox("Show Center");
+    QCheckBox    * chkDrawModelCenter  = new QCheckBox("Show Model Center");
+    QCheckBox    * chkDrawViewCenter   = new QCheckBox("Show View Center");
+
+
 
     gridScreen->setFixedWidth(91);
     gridScreenCentered->setFixedWidth(111);
@@ -48,64 +47,6 @@ QGroupBox *  page_grid::createGridSection()
     gridUnitGroup->addButton(gridModel,GRID_UNITS_MODEL);
     gridUnitGroup->addButton(gridTiling,GRID_UNITS_TILE);
 
-    // initial values
-
-    gridBox->setChecked(config->showGrid);
-    gridUnitGroup->button(config->gridUnits)->setChecked(true);
-
-    gridScreenCentered->setChecked(config->gridScreenCenter);
-    gridScreenSpacing->setValue(config->gridScreenSpacing);
-    gridScreenWidth->setValue(config->gridScreenWidth);
-    gridModelCentered->setChecked(config->gridModelCenter);
-    gridModelSpacing->setValue(config->gridModelSpacing);
-    gridModelWidth->setValue(config->gridModelWidth);
-
-
-
-    connect(gridUnitGroup ,     &QButtonGroup::idClicked,     this, &page_grid::slot_gridUnitsChanged);
-    connect(gridBox,            &QGroupBox::clicked,          this, &page_grid::slot_showGridChanged);
-    connect(gridScreenSpacing,  &SpinSet::valueChanged,       this, &page_grid::slot_gridScreenSpacingChanged);
-    connect(gridModelSpacing,   &DoubleSpinSet::valueChanged, this, &page_grid::slot_gridModelSpacingChanged);
-    connect(gridScreenWidth,    &SpinSet::valueChanged,       this, &page_grid::slot_gridScreenWidthChanged);
-    connect(gridModelWidth,     &SpinSet::valueChanged,       this, &page_grid::slot_gridModelWidthChanged);
-    connect(gridScreenCentered, &QCheckBox::stateChanged,     this, &page_grid::slot_gridScreenCenteredChanged);
-    connect(gridModelCentered,  &QCheckBox::stateChanged,     this, &page_grid::slot_gridModelCenteredChanged);
-
-
-    QHBoxLayout * hbox = new QHBoxLayout();
-    hbox->addWidget(gridScreen);
-    hbox->addWidget(gridScreenCentered);
-    hbox->addLayout(gridScreenWidth);
-    hbox->addSpacing(7);
-    hbox->addLayout(gridScreenSpacing);
-    hbox->addStretch();
-
-    QHBoxLayout * hbox2 = new QHBoxLayout();
-    hbox2->addWidget(gridModel);
-    hbox2->addWidget(gridModelCentered);
-    hbox2->addLayout(gridModelWidth);
-    hbox2->addSpacing(7);
-    hbox2->addLayout(gridModelSpacing);
-    hbox2->addStretch();
-
-    QHBoxLayout * hbox3 = new QHBoxLayout();
-    hbox3->addWidget(gridTiling);
-    hbox3->addStretch();
-
-    QVBoxLayout * vboxG = new QVBoxLayout();
-    vboxG->addLayout(hbox3);
-    vboxG->addLayout(hbox);
-    vboxG->addLayout(hbox2);
-    vboxG->addSpacing(10);
-    vboxG->addLayout(gridTypeLayout);
-
-    gridBox->setLayout(vboxG);
-
-    return gridBox;
-}
-
-QHBoxLayout * page_grid::createGridTypeLayout()
-{
     QLabel       * glabel    = new QLabel("Grid Type:");
     QRadioButton * btnOrthog = new QRadioButton("Orthogonal");
     QRadioButton * btnIso    = new QRadioButton("Isometric");
@@ -117,20 +58,112 @@ QHBoxLayout * page_grid::createGridTypeLayout()
     gridTypeGroup->addButton(btnIso,GRID_ISOMETRIC);
     gridTypeGroup->addButton(btnRhom,GRID_RHOMBIC);
 
+    SpinSet * gridZLevel = new SpinSet("Z-level",config->gridZLevel,-10,10);
+
+    // initial values
     gridTypeGroup->button(config->gridType)->setChecked(true);
+    gridUnitGroup->button(config->gridUnits)->setChecked(true);
+    gridScreenCentered->setChecked(config->gridScreenCenter);
+    gridScreenSpacing->setValue(config->gridScreenSpacing);
+    gridScreenWidth->setValue(config->gridScreenWidth);
+    gridTilingWidth->setValue(config->gridTilingWidth);
+    gridModelCentered->setChecked(config->gridModelCenter);
+    gridModelSpacing->setValue(config->gridModelSpacing);
+    gridModelWidth->setValue(config->gridModelWidth);
     angleSpin->setValue(config->gridAngle);
+    if (config->gridTilingAlgo == FLOOD)
+        gridTilingAlgo1->setChecked(true);
+    else
+        gridTilingAlgo2->setChecked(true);
 
-    connect(gridTypeGroup,  &QButtonGroup::idClicked,     this, &page_grid::slot_gridTypeSelected);
-    connect(angleSpin,      &DoubleSpinSet::valueChanged, this, &page_grid::slot_gridAngleChanged);
+    gridTilingCenter->setChecked(config->showGridTilingCenter);
+    chkDrawModelCenter->setChecked(config->showGridModelCenter);
+    chkDrawViewCenter->setChecked(config->showGridViewCenter);
 
+    // connections
+    connect(gridUnitGroup ,     &QButtonGroup::idClicked,     this, &page_grid::slot_gridUnitsChanged);
+    connect(gridScreenSpacing,  &SpinSet::valueChanged,       this, &page_grid::slot_gridScreenSpacingChanged);
+    connect(gridModelSpacing,   &DoubleSpinSet::valueChanged, this, &page_grid::slot_gridModelSpacingChanged);
+    connect(gridScreenWidth,    &SpinSet::valueChanged,       this, &page_grid::slot_gridScreenWidthChanged);
+    connect(gridTilingWidth,    &SpinSet::valueChanged,       this, &page_grid::slot_gridTilingWidthChanged);
+    connect(gridModelWidth,     &SpinSet::valueChanged,       this, &page_grid::slot_gridModelWidthChanged);
+    connect(gridZLevel,         &SpinSet::valueChanged,       this, &page_grid::slot_zValueChanged);
+    connect(gridScreenCentered, &QCheckBox::stateChanged,     this, &page_grid::slot_gridScreenCenteredChanged);
+    connect(gridModelCentered,  &QCheckBox::stateChanged,     this, &page_grid::slot_gridModelCenteredChanged);
+    connect(gridTilingAlgo1,    &QRadioButton::clicked,       this, [this]() {config->gridTilingAlgo = FLOOD;  emit sig_refreshView(); });
+    connect(gridTilingAlgo2,    &QRadioButton::clicked,       this, [this]() {config->gridTilingAlgo = REGION; emit sig_refreshView(); });
+    connect(gridTypeGroup,      &QButtonGroup::idClicked,     this, &page_grid::slot_gridTypeSelected);
+    connect(angleSpin,          &DoubleSpinSet::valueChanged, this, &page_grid::slot_gridAngleChanged);
+
+    connect(gridTilingCenter,   &QCheckBox::stateChanged,     this, &page_grid::slot_gridTilingCenterChanged);
+    connect(chkDrawModelCenter, &QCheckBox::stateChanged,     this, &page_grid::slot_drawModelCenterChanged);
+    connect(chkDrawViewCenter,  &QCheckBox::stateChanged,     this, &page_grid::slot_dawViewCenterChanged);
+
+    labelT = new ClickableLabel();
+    QVariant variant = QColor(config->gridColorTiling);
+    QString colcode  = variant.toString();
+    labelT->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+    connect(labelT,&ClickableLabel::clicked, this, &page_grid::slot_pickColorTiling);
+
+    labelM = new ClickableLabel();
+    variant = QColor(config->gridColorModel);
+    colcode  = variant.toString();
+    labelM->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+    connect(labelM,&ClickableLabel::clicked, this, &page_grid::slot_pickColorModel);
+
+    labelS = new ClickableLabel();
+    variant = QColor(config->gridColorScreen);
+    colcode  = variant.toString();
+    labelS->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+    connect(labelS,&ClickableLabel::clicked, this, &page_grid::slot_pickColorScreen);
+
+    // fill the layout
+    QGridLayout * layout = new QGridLayout();
+    int row = 0;
+
+    layout->addWidget(gridTiling,row,0);
+    layout->addWidget(gridTilingCenter,row,1);
+    layout->addWidget(labelT,row,2);
+    layout->addLayout(gridTilingWidth,row,3);
     QHBoxLayout * hbox = new QHBoxLayout;
-    hbox->addWidget(glabel);
-    hbox->addWidget(btnOrthog);
-    hbox->addWidget(btnIso);
-    hbox->addWidget(btnRhom);
-    hbox->addLayout(angleSpin);
+    hbox->addWidget(gridTilingAlgo1);
+    hbox->addWidget(gridTilingAlgo2);
+    layout->addLayout(hbox,row,4);
+    row++;
 
-    return hbox;
+    layout->addWidget(gridScreen,row,0);
+    layout->addWidget(gridScreenCentered,row,1);
+    layout->addWidget(labelS,row,2);
+    layout->addLayout(gridScreenWidth,row,3);
+    layout->addLayout(gridScreenSpacing,row,4);
+    row++;
+
+    layout->addWidget(gridModel,row,0);
+    layout->addWidget(gridModelCentered,row,1);
+    layout->addWidget(labelM,row,2);
+    layout->addLayout(gridModelWidth,row,3);
+    layout->addLayout(gridModelSpacing,row,4);
+    row++;
+
+    layout->addWidget(glabel,row,0);
+    layout->addWidget(btnIso,row,1);
+    layout->addWidget(btnOrthog,row,2);
+    layout->addWidget(btnRhom,row,3);
+    layout->addLayout(angleSpin,row,4);
+    row++;
+
+    layout->addLayout(gridZLevel,row,0);
+    layout->addWidget(chkDrawModelCenter,row,1);
+    layout->addWidget(chkDrawViewCenter,row,2);
+
+    gridBox = new QGroupBox("Show Grid");
+    gridBox->setCheckable(true);
+    gridBox->setLayout(layout);
+    gridBox->setChecked(config->showGrid);
+
+    vbox->addWidget(gridBox);
+
+    connect(gridBox, &QGroupBox::clicked, this, &page_grid::slot_showGridChanged);
 }
 
 void  page_grid::onEnter()
@@ -167,6 +200,12 @@ void page_grid::slot_gridScreenWidthChanged(int value)
     emit sig_refreshView();
 }
 
+void page_grid::slot_gridTilingWidthChanged(int value)
+{
+    config->gridTilingWidth = value;
+    emit sig_refreshView();
+}
+
 void page_grid::slot_gridModelWidthChanged(int value)
 {
     config->gridModelWidth = value;
@@ -191,6 +230,25 @@ void page_grid::slot_gridModelCenteredChanged(int id)
     emit sig_refreshView();
 }
 
+void page_grid::slot_gridTilingCenterChanged(int id)
+{
+    config->showGridTilingCenter = (id == Qt::Checked);
+    emit sig_refreshView();
+}
+
+void page_grid::slot_drawModelCenterChanged(int id)
+{
+    config->showGridModelCenter = (id == Qt::Checked);
+    emit sig_refreshView();
+}
+
+void page_grid::slot_dawViewCenterChanged(int id)
+{
+    config->showGridViewCenter = (id == Qt::Checked);
+    emit sig_refreshView();
+}
+
+
 void page_grid::slot_gridTypeSelected(int type)
 {
     config->gridType = eGridType(type);
@@ -201,4 +259,71 @@ void page_grid::slot_gridAngleChanged(qreal angle)
 {
     config->gridAngle = angle;
     emit sig_refreshView();
+}
+
+void page_grid::slot_zValueChanged(int value)
+{
+    config->gridZLevel = value;
+    auto grid = Grid::getSharedInstance();
+    grid->setZValue(value);
+    emit sig_refreshView();
+}
+
+void  page_grid::slot_pickColorTiling()
+{
+    QColor color(config->gridColorTiling);
+    AQColorDialog dlg(color,this);
+    dlg.setCurrentColor(color);
+    int rv = dlg.exec();
+    if (rv != QDialog::Accepted)
+        return;
+
+    QColor acolor = dlg.selectedColor();
+    if (acolor.isValid())
+    {
+        config->gridColorTiling = acolor.name(QColor::HexArgb);
+        QVariant variant = QColor(config->gridColorTiling);
+        QString colcode  = variant.toString();
+        labelT->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+        emit sig_refreshView();
+    }
+}
+
+void  page_grid::slot_pickColorModel()
+{
+    QColor color(config->gridColorModel);
+    AQColorDialog dlg(color,this);
+    dlg.setCurrentColor(color);
+    int rv = dlg.exec();
+    if (rv != QDialog::Accepted)
+        return;
+
+    QColor acolor = dlg.selectedColor();
+    if (acolor.isValid())
+    {
+        config->gridColorModel = acolor.name(QColor::HexArgb);
+        QVariant variant = QColor(config->gridColorModel);
+        QString colcode  = variant.toString();
+        labelM->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+        emit sig_refreshView();
+    }
+}
+void page_grid::slot_pickColorScreen()
+{
+    QColor color(config->gridColorScreen);
+    AQColorDialog dlg(color,this);
+    dlg.setCurrentColor(color);
+    int rv = dlg.exec();
+    if (rv != QDialog::Accepted)
+        return;
+
+    QColor acolor = dlg.selectedColor();
+    if (acolor.isValid())
+    {
+        config->gridColorScreen = acolor.name(QColor::HexArgb);
+        QVariant variant = QColor(config->gridColorScreen);
+        QString colcode  = variant.toString();
+        labelS->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+        emit sig_refreshView();
+    }
 }

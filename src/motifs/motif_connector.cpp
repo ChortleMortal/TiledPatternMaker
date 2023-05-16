@@ -153,9 +153,9 @@ void MotifConnector::connectMotif(RadialMotif * fig)
     map->verify();
 }
 
-qreal MotifConnector::computeScale(RadialMotif * fig)
+qreal MotifConnector::computeScale(RadialMotif * motif)
 {
-    Q_ASSERT(fig);
+    Q_ASSERT(motif);
 
     // Find the vertex at (1,0), extend its incoming edges, intersect
     // with rotations of same, and use the location of the intersection
@@ -164,7 +164,7 @@ qreal MotifConnector::computeScale(RadialMotif * fig)
     QPointF tip_pos( 1.0, 0.0 );
 
     // Find the tip, i.e. the vertex at (1,0)
-    auto map = fig->getUnitMap();
+    auto map = motif->getUnitMap();
     for (const auto & vert : qAsConst(map->getVertices()))
     {
         QPointF pos = vert->pt;
@@ -184,8 +184,8 @@ qreal MotifConnector::computeScale(RadialMotif * fig)
                     QPointF seg_end = tip_pos + tmp;
                     QPointF neg_seg(seg_end.x(), -seg_end.y());
 
-                    QPointF ra = fig->getTransform().map( tip_pos );
-                    QPointF rb = fig->getTransform().map( neg_seg );
+                    QPointF ra = motif->getTransform().map( tip_pos );
+                    QPointF rb = motif->getTransform().map( neg_seg );
 
                     QPointF isect;
                     if (!Intersect::getIntersection(tip_pos, seg_end, ra, rb, isect))
@@ -195,7 +195,7 @@ qreal MotifConnector::computeScale(RadialMotif * fig)
                     }
                     else
                     {
-                        qreal alpha = qCos(M_PI / fig->get_dn()) / Point::mag(isect);
+                        qreal alpha = qCos(M_PI / qreal(motif->getN())) / Point::mag(isect);
                         qDebug() << "computeConnectScale =" << alpha;
                         return alpha;
                     }

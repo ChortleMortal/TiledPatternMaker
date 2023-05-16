@@ -1,0 +1,188 @@
+<?xml version="1.0"?>
+<!-- Written: Mon Feb 13 2023 18:40:35 -->
+<vector id="1" version="14">
+	<design>
+		<size>
+			<width>1500</width>
+			<height>927</height>
+			<zwidth>1500</zwidth>
+			<zheight>927</zheight>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Fill singleton="t">0,0,0,0</Fill>
+	</design>
+	<style.Plain id="2">
+		<toolkit.GeoLayer>
+			<left__delta>39</left__delta>
+			<top__delta>-1</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<string>Test Stars.v2</string>
+					<entry>
+						<tile.Feature id="4">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">1,0.4142135623730951</Point>
+									<Point id="7">0.4142135623730951,1</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">-0.414213562373095,1</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">-1,0.4142135623730952</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point id="10">-1,-0.414213562373095</Point>
+								</Line>
+								<Line>
+									<Point reference="10" />
+									<Point id="11">-0.4142135623730957,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="11" />
+									<Point id="12">0.4142135623730953,-0.9999999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="12" />
+									<Point id="13">0.9999999999999998,-0.4142135623730958</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.Star id="14">
+							<boundarySides>8</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>8</n>
+							<d>3</d>
+							<s>2</s>
+						</app.Star>
+					</entry>
+					<entry>
+						<tile.Feature id="15">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="16">
+								<Line>
+									<Point id="17">1,0.4142135623730951</Point>
+									<Point id="18">0.4142135623730951,1</Point>
+								</Line>
+								<Line>
+									<Point reference="18" />
+									<Point id="19">-0.414213562373095,1</Point>
+								</Line>
+								<Line>
+									<Point reference="19" />
+									<Point id="20">-1,0.4142135623730952</Point>
+								</Line>
+								<Line>
+									<Point reference="20" />
+									<Point id="21">-1,-0.414213562373095</Point>
+								</Line>
+								<Line>
+									<Point reference="21" />
+									<Point id="22">-0.4142135623730957,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="22" />
+									<Point id="23">0.4142135623730953,-0.9999999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="23" />
+									<Point id="24">0.9999999999999998,-0.4142135623730958</Point>
+								</Line>
+								<Line>
+									<Point reference="24" />
+									<Point reference="17" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitStar id="25" type="MOTIF_TYPE_INFERRED_STAR">
+							<boundarySides>4</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>8</n>
+							<s>2</s>
+							<d>3</d>
+							<version>1</version>
+						</app.ExplicitStar>
+					</entry>
+					<entry>
+						<tile.Feature id="26">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="27">
+								<Line>
+									<Point id="28">1,0.4142135623730951</Point>
+									<Point id="29">0.4142135623730951,1</Point>
+								</Line>
+								<Line>
+									<Point reference="29" />
+									<Point id="30">-0.414213562373095,1</Point>
+								</Line>
+								<Line>
+									<Point reference="30" />
+									<Point id="31">-1,0.4142135623730952</Point>
+								</Line>
+								<Line>
+									<Point reference="31" />
+									<Point id="32">-1,-0.414213562373095</Point>
+								</Line>
+								<Line>
+									<Point reference="32" />
+									<Point id="33">-0.4142135623730957,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="33" />
+									<Point id="34">0.4142135623730953,-0.9999999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="34" />
+									<Point id="35">0.9999999999999998,-0.4142135623730958</Point>
+								</Line>
+								<Line>
+									<Point reference="35" />
+									<Point reference="28" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitStar id="36" type="MOTIF_TYPE_INFERRED_STAR">
+							<boundarySides>4</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>8</n>
+							<s>2</s>
+							<d>3</d>
+							<version>2</version>
+						</app.ExplicitStar>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff1496d2</color>
+		</style.Colored>
+	</style.Plain>
+</vector>

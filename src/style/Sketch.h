@@ -1,7 +1,9 @@
+#pragma once
 #ifndef SKETCH_H
 #define SKETCH_H
 
 #include "style/plain.h"
+
 ////////////////////////////////////////////////////////////////////////////
 //
 // Sketch.java
@@ -25,15 +27,15 @@ class Sketch : public Plain
 protected:
 
 public:
-    Sketch(PrototypePtr proto);
+    Sketch(ProtoPtr proto);
     Sketch(StylePtr other);
     virtual ~Sketch() override;
 
     void draw(GeoGraphics *gg) override;
 
     virtual eStyleType getStyleType() const override { return STYLE_SKETCHED; }
-    QString getStyleDesc() const override { return "Sketched"; }
-
+    QString            getStyleDesc() const override { return "Sketched"; }
+    virtual void       report()       const override { qDebug().noquote() << getStyleDesc() << colors.colorsString(); }
 };
 #endif
 

@@ -36,7 +36,7 @@
 						<tile.Feature id="4">
 							<regular>true</regular>
 							<rotation>0</rotation>
-							<scale>2.50999999999999</scale>
+							<scale>1</scale>
 							<edges id="5">
 								<Line>
 									<Point id="6">0.9999999999999999,0.2679491924311226</Point>
@@ -94,7 +94,7 @@
 							<s>2</s>
 							<boundarySides>12</boundarySides>
 							<boundaryScale>1</boundaryScale>
-							<figureScale>1.990000000000001</figureScale>
+							<figureScale>0.8099999999999998</figureScale>
 							<r>0</r>
 						</app.Star>
 					</entry>

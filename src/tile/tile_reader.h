@@ -1,3 +1,4 @@
+#pragma once
 #ifndef TILE_READER_H
 #define TILE_READER_H
 

@@ -5,7 +5,7 @@
 #include "makers/mosaic_maker/mosaic_maker.h"
 #include "mosaic/design_element.h"
 #include "mosaic/mosaic.h"
-#include "mosaic/prototype.h"
+#include "makers/prototype_maker/prototype.h"
 #include "style/style.h"
 #include "tile/tiling.h"
 #include "widgets/panel_misc.h"
@@ -14,11 +14,11 @@ page_mosaic_info:: page_mosaic_info(ControlPanel *panel)  : panel_page(panel, "M
 {
     motifTable = new AQTableWidget(this);
     motifTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-    motifTable->setColumnCount(3);
+    motifTable->setColumnCount(4);
     motifTable->setColumnWidth(0,40);
 
     QStringList qslH;
-    qslH << "Style" << "Tiling" << "Motif";
+    qslH << "Style" << "Prototype" <<"Tiling" << "Motif";
     motifTable->setHorizontalHeaderLabels(qslH);
     motifTable->verticalHeader()->setVisible(false);
 
@@ -51,13 +51,13 @@ void page_mosaic_info::showMotifsFromStyles()
         const StyleSet sset = mosaic->getStyleSet();
         for (auto& style : sset)
         {
-            PrototypePtr pp = style->getPrototype();
+            ProtoPtr pp = style->getPrototype();
 
             QVector<DesignElementPtr>  dels = pp->getDesignElements();
             for (int i=0; i < dels.size(); i++)
             {
                 DesignElementPtr del = dels[i];
-                MotifPtr  figp = del->getMotif();
+                MotifPtr motif = del->getMotif();
 
                 motifTable->setRowCount(row+1);
 
@@ -65,11 +65,15 @@ void page_mosaic_info::showMotifsFromStyles()
                 QTableWidgetItem * item =  new QTableWidgetItem(stylename);
                 motifTable->setItem(row,COL_STYLE_NAME,item);
 
+                QString pinfo = addr(pp.get());
+                item =  new QTableWidgetItem(pinfo);
+                motifTable->setItem(row,COL_PROTO,item);
+
                 QString tileName = pp->getTiling()->getName() + "  " + addr(pp->getTiling().get());
                 item =  new QTableWidgetItem(tileName);
                 motifTable->setItem(row,COL_TILING_NAME,item);
 
-                QString figName = figp->getMotifDesc() + "  " + addr(figp.get());
+                QString figName = motif->getMotifDesc() + "  " + addr(motif.get());
                 item =  new QTableWidgetItem(figName);
                 motifTable->setItem(row,COL_TILE_TYPE,item);
 

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef MOTIF_CONNECTOR_H
 #define MOTIF_CONNECTOR_H
 

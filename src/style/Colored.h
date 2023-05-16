@@ -1,3 +1,4 @@
+#pragma once
 #ifndef COLORED_H
 #define COLORED_H
 
@@ -20,7 +21,7 @@ public:
     ColorSet * getColorSet() { return &colors; }
 
 protected:
-    Colored(const PrototypePtr & proto);
+    Colored(const ProtoPtr & proto);
     Colored(const StylePtr &other);
     ~Colored();
 

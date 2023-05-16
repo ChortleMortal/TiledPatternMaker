@@ -1,0 +1,232 @@
+<?xml version="1.0"?>
+<!-- Written: Fri Apr 7 2023 20:50:32 -->
+<vector id="1" version="14">
+	<design>
+		<size>
+			<width>1500</width>
+			<height>1100</height>
+			<zwidth>1500</zwidth>
+			<zheight>1100</zheight>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Fill singleton="f">-2,2,-2,2</Fill>
+	</design>
+	<style.Plain id="2">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<string>6 Losange</string>
+					<entry>
+						<tile.Feature id="4">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">-2.931851652578139,1.517638090205038</Point>
+									<Point id="7">-1,0.9999999999999982</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">-1.517638090205043,2.931851652578133</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">-3.44948974278318,3.44948974278318</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitGirih id="10" type="MOTIF_TYPE_GIRIH">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+							<skip>2.43</skip>
+						</app.ExplicitGirih>
+					</entry>
+					<entry>
+						<tile.Feature id="11">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="12">
+								<Line>
+									<Point id="13">0.9999999999999996,1</Point>
+									<Point id="14">4.440892098500626e-16,0</Point>
+								</Line>
+								<Line>
+									<Point reference="14" />
+									<Point id="15">1,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="15" />
+									<Point id="16">2.931851652578139,-1.517638090205043</Point>
+								</Line>
+								<Line>
+									<Point reference="16" />
+									<Point id="17">4.449489742783177,-8.881784197001252e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="17" />
+									<Point id="18">2.931851652578135,1.517638090205041</Point>
+								</Line>
+								<Line>
+									<Point reference="18" />
+									<Point reference="13" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitGirih id="19" type="MOTIF_TYPE_GIRIH">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>6</n>
+							<skip>2.360000000000014</skip>
+						</app.ExplicitGirih>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ffffffff</color>
+		</style.Colored>
+	</style.Plain>
+	<style.Thick id="20">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff006633</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.13332</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+	</style.Thick>
+	<style.Thick id="21">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="22">
+				<app.Prototype>
+					<string>6 Losange</string>
+					<entry>
+						<tile.Feature reference="4">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="23">
+								<Line>
+									<Point reference="6" />
+									<Point reference="7" />
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point reference="8" />
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point reference="9" />
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitGirih id="24" type="MOTIF_TYPE_GIRIH">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+							<skip>2.16</skip>
+						</app.ExplicitGirih>
+					</entry>
+					<entry>
+						<tile.Feature reference="11">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="25">
+								<Line>
+									<Point reference="13" />
+									<Point reference="14" />
+								</Line>
+								<Line>
+									<Point reference="14" />
+									<Point reference="15" />
+								</Line>
+								<Line>
+									<Point reference="15" />
+									<Point reference="16" />
+								</Line>
+								<Line>
+									<Point reference="16" />
+									<Point reference="17" />
+								</Line>
+								<Line>
+									<Point reference="17" />
+									<Point reference="18" />
+								</Line>
+								<Line>
+									<Point reference="18" />
+									<Point reference="13" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitGirih id="26" type="MOTIF_TYPE_GIRIH">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>6</n>
+							<skip>3.24</skip>
+						</app.ExplicitGirih>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff009900</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.17636</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+	</style.Thick>
+</vector>

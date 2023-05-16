@@ -1,7 +1,6 @@
 <?xml version="1.0"?>
-<!-- Written: Tue Oct 18 2022 10:37:18 -->
-<vector id="1" version="13">
-	<designNotes>This vezrsion differs from the taprats version becuase using the inferred rosett does not give the same result as uing the original explicit map.  This indicates that it was origtinally developed with sdifferent infer rosette code than was released in the java taprats.</designNotes>
+<!-- Written: Tue Mar 7 2023 12:50:21 -->
+<vector id="1" version="14">
 	<design>
 		<size>
 			<width>1500</width>
@@ -72,14 +71,14 @@
 							</edges>
 						</tile.Feature>
 						<app.Rosette id="15">
-							<n>9</n>
-							<q>0</q>
-							<s>3</s>
-							<k>0</k>
 							<boundarySides>9</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
+							<n>9</n>
+							<q>0</q>
+							<s>3</s>
+							<k>0</k>
 						</app.Rosette>
 					</entry>
 					<entry>
@@ -110,14 +109,16 @@
 								</Line>
 							</edges>
 						</tile.Feature>
-						<app.ExplicitRosette id="23" type="MOTIF_TYPE_EXPLICIT_ROSETTE">
-							<s>2</s>
-							<q>0</q>
-							<rFlexPt>0.37</rFlexPt>
+						<app.ExplicitRosette id="23" type="MOTIF_TYPE_INFERRED_ROSETTE">
+							<version>2</version>
 							<boundarySides>5</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
+							<n>5</n>
+							<s>2</s>
+							<q>0.19</q>
+							<rFlexPt>0.2799999999999998</rFlexPt>
 						</app.ExplicitRosette>
 					</entry>
 					<entry>
@@ -153,14 +154,14 @@
 							</edges>
 						</tile.Feature>
 						<app.Rosette id="32">
-							<n>6</n>
-							<q>0</q>
-							<s>2</s>
-							<k>0</k>
 							<boundarySides>6</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
+							<n>6</n>
+							<q>0</q>
+							<s>2</s>
+							<k>0</k>
 						</app.Rosette>
 					</entry>
 				</app.Prototype>

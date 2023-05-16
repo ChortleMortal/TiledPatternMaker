@@ -1,4 +1,5 @@
-﻿#ifndef PANEL_PAGES_WIDGET_H
+﻿#pragma once
+#ifndef PANEL_PAGES_WIDGET_H
 #define PANEL_PAGES_WIDGET_H
 
 #include "widgets/panel_misc.h"

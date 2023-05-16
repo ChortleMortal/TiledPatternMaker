@@ -21,6 +21,7 @@
 #include "tile/placed_tile.h"
 #include "tile/tiling.h"
 #include "viewers/viewcontrol.h"
+#include "settings/configuration.h"
 
 TilingViewPtr TilingView::spThis;
 
@@ -61,10 +62,10 @@ void TilingView::paint(QPainter *painter)
 void TilingView::draw(GeoGraphics *gg)
 {
     FillRegion flood(tiling,tiling->getData().getFillData());
-    QVector<QTransform> transforms = flood.getTransforms();
+    Placements placements = flood.getPlacements(config->repeatMode);
 
     auto placed = tiling->getData().getPlacedTiles();
-    for (auto T : transforms)
+    for (auto T : placements)
     {
         gg->pushAndCompose(T);
 
@@ -225,7 +226,7 @@ void TilingView::slot_scale(int amount)
         if (tiling)
         {
             qreal scale = 1.0 + (0.01 * amount);
-            auto & placed = tiling->getDataAccess().getPlacedTiles();
+            auto & placed = tiling->getDataAccess(true).getPlacedTiles();
             for (auto pfp : qAsConst(placed))
             {
                 QTransform t = pfp->getTransform();
@@ -263,7 +264,7 @@ void TilingView::slot_rotate(int amount)
         if (tiling)
         {
             qreal qdelta = 0.01 * amount;
-            auto & placed = tiling->getDataAccess().getPlacedTiles();
+            auto & placed = tiling->getDataAccess(true).getPlacedTiles();
             for (auto pfp : qAsConst(placed))
             {
                 QTransform t = pfp->getTransform();
@@ -298,7 +299,7 @@ void TilingView:: slot_moveX(int amount)
         if (tiling)
         {
             qreal qdelta = 0.01 * amount;
-            auto & placed = tiling->getDataAccess().getPlacedTiles();
+            auto & placed = tiling->getDataAccess(true).getPlacedTiles();
             for (auto pfp : qAsConst(placed))
             {
                 QTransform t = pfp->getTransform();
@@ -333,7 +334,7 @@ void TilingView::slot_moveY(int amount)
         if (tiling)
         {
             qreal qdelta = 0.01 * amount;
-            auto & placed = tiling->getDataAccess().getPlacedTiles();
+            auto & placed = tiling->getDataAccess(true).getPlacedTiles();
             for (auto pfp : qAsConst(placed))
             {
                 QTransform t = pfp->getTransform();

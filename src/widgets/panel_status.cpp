@@ -1,8 +1,5 @@
 #include "widgets/panel_status.h"
 
-static const QString preamble("<span style=\"color:rgb(0,240,0)\">");
-static const QString postamble("</span>");
-
 PanelStatus::PanelStatus()
 {
     QFont f = font();
@@ -15,6 +12,9 @@ PanelStatus::PanelStatus()
     setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
 
     setStyleSheet("QLabel { background-color : black; }");
+
+    preamble  = "<span style=\"color:rgb(0,240,0)\">";
+    postamble = "</span>";
 }
 
 void PanelStatus::pushStack(QString & txt)
@@ -46,5 +46,3 @@ void PanelStatus::popStack()
     }
     repaint();
 }
-
-

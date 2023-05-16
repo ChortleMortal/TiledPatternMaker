@@ -1,3 +1,4 @@
+#pragma once
 #ifndef UNIQUE_QVECTOR_H
 #define UNIQUE_QVECTOR_H
 
@@ -7,6 +8,7 @@ template <class T> class UniqueQVector : public QVector<T>
 {
 public:
     UniqueQVector();
+    UniqueQVector(const QVector<T> & other);
 
     void push_back(const T &value);
     void push_front(const T &value);
@@ -15,6 +17,14 @@ public:
 
 template <class T> UniqueQVector<T>::UniqueQVector() : QVector<T>()
 {}
+
+template <class T> UniqueQVector<T>::UniqueQVector(const QVector<T> & other) : QVector<T>()
+{
+    for (const auto & t : other)
+    {
+        push_back(t);
+    }
+}
 
 template <class T> void UniqueQVector<T>::push_back(const T & value)
 {

@@ -1,15 +1,18 @@
+#pragma once
 #ifndef DLG_EDGE_POLY_EDIT_H
 #define DLG_EDGE_POLY_EDIT_H
 
 #include "widgets/panel_misc.h"
 #include "geometry/edgepoly.h"
 
+typedef std::shared_ptr<class Tile>  TilePtr;
+
 class DlgEdgePolyEdit : public QDialog
 {
     Q_OBJECT
 
 public:
-    DlgEdgePolyEdit(EdgePoly & epoly, QTransform t, QWidget * parent = nullptr);
+    DlgEdgePolyEdit(TilePtr tile, QTransform t, QWidget * parent = nullptr);
     ~DlgEdgePolyEdit();
 
 signals:
@@ -28,6 +31,7 @@ protected slots:
     void slot_currentPoint(QPointF pt);
 
 private:
+    TilePtr       tile;
     EdgePoly &    epoly;
     EdgePoly      original2;
     QTransform    T;

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef CROPWIDGET_H
 #define CROPWIDGET_H
 

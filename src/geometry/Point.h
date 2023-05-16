@@ -1,7 +1,4 @@
-////////////////////////////////////////////////////////////////////////////
-//
-// Point a geometrical map.
-
+#pragma once
 #ifndef POINT_DAC_H
 #define POINT_DAC_H
 
@@ -16,6 +13,8 @@ public:
     static qreal TOLERANCE2;
     static QPointF ORIGIN;
 
+    static bool     isValid(QPointF & pt);
+
     // Equality.
     static bool     isNear(const QPointF &pt, const QPointF &other);
 
@@ -28,7 +27,11 @@ public:
     static qreal    dist2(const QPointF &pt, const QPointF &other );
     static qreal    dist( QPointF pt, QPointF other );
 
+    // some line operations
+    static QLineF   reversed(QLineF & line);
+    static QLineF   shiftParallel(QLineF bline, qreal offset);
     static QLineF   extendLine(QLineF line, qreal scale);
+    static QLineF   extendAsRay(QLineF line, qreal scale);
     static QLineF   clipLine(QLineF line,QPolygonF bounds);
     static QLineF   createLine(QLineF line, QPointF mid, qreal angle, qreal length);
 
@@ -69,13 +72,11 @@ public:
     static bool     isOnLine(QPointF pt, QLineF line);
 
     static QPointF  center(const QPolygonF & pts);
-    static QPointF  irregularCenter(QPolygonF & poly);
+    static QPointF  irregularCenter(const QPolygonF &poly);
 
-    static QPointF  perpPt(QPointF & A, QPointF & B, QPointF &C);
+    static QPointF  perpPt(QPointF A, QPointF B, QPointF C);
 
-    // some line operations
-    static QLineF   reversed(QLineF & line);
-    static QLineF   shiftParallel(QLineF bline, qreal offset);
+
 };
 
 #endif

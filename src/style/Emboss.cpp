@@ -24,7 +24,7 @@ using std::make_shared;
 
 // Creation.
 
-Emboss::Emboss(PrototypePtr proto) : Outline(proto)
+Emboss::Emboss(ProtoPtr proto) : Outline(proto)
 {
     setAngle(M_PI * 0.25 );
 }
@@ -67,7 +67,7 @@ void Emboss::draw(GeoGraphics * gg)
         QPolygonF poly        = bae.getPoly();
         drawTrap(gg, bae.v2.v, bae.v2.above, bae.v1.below, bae.v1.v);
         drawTrap(gg, bae.v1.v, bae.v1.above, bae.v2.below, bae.v2.v);
-
+        
         if (drawOutline != OUTLINE_NONE)
         {
             QPen pen;
@@ -77,6 +77,7 @@ void Emboss::draw(GeoGraphics * gg)
             }
             else
             {
+                Q_ASSERT(drawOutline == OUTLINE_DEFAULT);
                 pen = QPen(Qt::black,1);
             }
             pen.setJoinStyle(join_style);

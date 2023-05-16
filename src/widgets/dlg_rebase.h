@@ -1,3 +1,4 @@
+#pragma once
 #ifndef DLG_REBASE_H
 #define DLG_REBASE_H
 

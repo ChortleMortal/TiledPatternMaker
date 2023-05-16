@@ -1,3 +1,7 @@
+#pragma once
+#ifndef TILING
+#define TILING
+
 ////////////////////////////////////////////////////////////////////////////
 //
 // Tiling.java
@@ -10,9 +14,6 @@
 // of the translation vectors.  In practice, we only draw at those
 // linear combinations within some viewport.
 
-#ifndef TILING
-#define TILING
-
 #include <QStack>
 #include "geometry/xform.h"
 #include "settings/tristate.h"
@@ -24,12 +25,13 @@ typedef std::shared_ptr<class Tile>          TilePtr;
 typedef std::shared_ptr<class PlacedTile>    PlacedTilePtr;
 typedef std::shared_ptr<class Map>           MapPtr;
 
+typedef QVector<QTransform> Placements;
 
-class TileGroup : public  QVector<QPair<TilePtr,QVector<PlacedTilePtr>>>
+class TileGroup : public  QVector<QPair<TilePtr,PlacedTiles>>
 {
 public:
     bool containsTile(TilePtr fp);
-    QVector<PlacedTilePtr> & getPlacements(TilePtr fp);
+    PlacedTiles & getTilePlacements(TilePtr fp);
 };
 
 // Translations to tile the plane. Two needed for two-dimensional plane.
@@ -76,12 +78,11 @@ public:
     void        purgeStack() { undoStack.clear(); }
     int         stackSize()  { return undoStack.size(); }
 
-    int                       numPlacements(TilePtr fp);
-    QVector<QTransform>       getPlacements(TilePtr fp);
-    QTransform                getPlacement(TilePtr fp, int index);
-
-    QVector<TilePtr>          getUniqueTiles();
-    TileGroup                 regroupTiles();      // the map was deadly, it reordered
+    int              numPlacements(TilePtr tile);
+    Placements       getPlacements(TilePtr tile);
+    QTransform       getFirstPlacement(TilePtr tile);
+    QVector<TilePtr> getUniqueTiles();
+    TileGroup        regroupTiles();      // the map was deadly, it reordered
 
     void        setCanvasXform(const Xform & xf) { canvasXform = xf; }
     Xform &     getCanvasXform()                 { return canvasXform; }
@@ -95,7 +96,7 @@ public:
     // Data
 
     const TilingData & getData() { return db; }
-    TilingData & getDataAccess() { pushStack(); state = MODIFIED; return db; }
+    TilingData & getDataAccess(bool push) { if (push) pushStack(); return db; }
 
     // map operations
     MapPtr  createMapSingle();

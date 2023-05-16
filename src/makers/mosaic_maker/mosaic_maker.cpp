@@ -1,8 +1,13 @@
 #include "makers/mosaic_maker/mosaic_maker.h"
-#include "makers/motif_maker/motif_maker.h"
+#include "makers/prototype_maker/prototype_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
+#include "misc/cycler.h"
 #include "mosaic/mosaic.h"
-#include "mosaic/prototype.h"
+#include "mosaic/mosaic_manager.h"
+#include "makers/map_editor/map_editor.h"
+#include "makers/prototype_maker/prototype.h"
+#include "panels/panel.h"
+#include "settings/configuration.h"
 #include "style/emboss.h"
 #include "style/filled.h"
 #include "style/interlace.h"
@@ -34,10 +39,87 @@ MosaicMaker::MosaicMaker()
 
 void MosaicMaker::init()
 {
-    motifMaker  = MotifMaker::getInstance();
-    tilingMaker = TilingMaker::getSharedInstance();
-    viewControl = ViewControl::getInstance();
+    prototypeMaker = PrototypeMaker::getInstance();
+    config         = Configuration::getInstance();
+    controlPanel   = ControlPanel::getInstance();
+    viewControl    = ViewControl::getInstance();
+    tilingMaker    = TilingMaker::getSharedInstance();
+    auto cycler    = Cycler::getInstance();
+
+    connect(cycler,&Cycler::sig_cycleLoadMosaic,    this,   &MosaicMaker::slot_cycleLoadMosaic);
+    connect(this,  &MosaicMaker::sig_cycler_ready,  cycler, &Cycler::slot_ready);
+
 }
+
+void MosaicMaker::slot_loadMosaic(QString name,bool ready)
+{
+    qDebug().noquote() << "TiledPatternMaker::slot_loadXML() <" << name << ">";
+
+    controlPanel->setLoadState(ControlPanel::LOADING_MOSAIC,name);
+
+    config->currentlyLoadedXML.clear();
+
+    MosaicManager mm;
+    bool rv = mm.loadMosaic(name);
+    if (rv)
+    {
+        config->lastLoadedXML      = name;
+        config->currentlyLoadedXML = name;
+
+        viewControl->removeAllImages();
+
+        viewControl->slot_refreshView();
+        if (ready)
+        {
+            emit sig_cycler_ready();
+        }
+        emit sig_mosaicLoaded(name);
+    }
+    controlPanel->setLoadState(ControlPanel::LOADING_NONE);
+}
+
+void MosaicMaker::slot_cycleLoadMosaic(QString name)
+{
+    qDebug().noquote() << "TiledPatternMaker::slot_cycleLoadMosaic() <" << name << ">";
+
+    controlPanel->setLoadState(ControlPanel::LOADING_MOSAIC,name);
+
+    config->currentlyLoadedXML.clear();
+
+    MosaicManager mm;
+    bool rv = mm.loadMosaic(name);
+    if (rv)
+    {
+        config->lastLoadedXML      = name;
+        config->currentlyLoadedXML = name;
+
+        viewControl->removeAllImages();
+
+        viewControl->slot_refreshView();
+        emit sig_cycler_ready();
+    }
+    controlPanel->setLoadState(ControlPanel::LOADING_NONE);
+}
+
+void MosaicMaker::slot_saveMosaic(QString filename)
+{
+    qDebug() << "TiledPatternMaker::slot_saveMosaic()";
+
+    QString savedFile;
+    MosaicManager mm;
+    bool rv = mm.saveMosaic(filename,savedFile,false);
+    if (rv)
+    {
+        auto mapEditor = MapEditor::getInstance();
+        mapEditor->keepStash(savedFile);
+        config->lastLoadedXML      = savedFile;
+        config->currentlyLoadedXML = savedFile;
+
+        emit sig_mosaicWritten();
+        emit sig_mosaicLoaded(savedFile);
+    }
+}
+
 
 void MosaicMaker::sm_takeDown(MosaicPtr mosaic)
 {
@@ -46,20 +128,8 @@ void MosaicMaker::sm_takeDown(MosaicPtr mosaic)
     FillData fd = mosaic->getSettings().getFillData();
     viewControl->setFillData(fd);
 
-    // setup prototypes
-    tilingMaker->eraseTilings();
-    motifMaker->erasePrototypes();
-
-    QVector<PrototypePtr> protos = mosaic->getPrototypes();
-    for (auto& proto : protos)
-    {
-        motifMaker->sm_takeDown(proto);
-    }
-#if 0
-    PrototypePtr pp = protos.first();
-    DesignElementPtr dp = pp->getDesignElement(0);
-    viewControl->setSelectedDesignElement(dp);
-#endif
+    QVector<ProtoPtr> protos = mosaic->getPrototypes();
+    prototypeMaker->sm_takeDown(protos);
 }
 
 /* actions are
@@ -68,7 +138,7 @@ void MosaicMaker::sm_takeDown(MosaicPtr mosaic)
     3. add prototype to existing mosaic
 */
 
-void MosaicMaker::sm_createMosaic(const QVector<PrototypePtr> prototypes)
+void MosaicMaker::sm_createMosaic(const QVector<ProtoPtr> prototypes)
 {
     QColor oldColor = _mosaic->getSettings().getBackgroundColor();
     Xform  xf       = viewControl->getCurrentXform2();
@@ -99,7 +169,7 @@ void MosaicMaker::sm_createMosaic(const QVector<PrototypePtr> prototypes)
     mosaicSettings.setBackgroundColor(oldColor);
 }
 
-void MosaicMaker::sm_addPrototype(const QVector<PrototypePtr> prototypes)
+void MosaicMaker::sm_addPrototype(const QVector<ProtoPtr> prototypes)
 {
     for (auto prototype : prototypes)
     {
@@ -109,7 +179,7 @@ void MosaicMaker::sm_addPrototype(const QVector<PrototypePtr> prototypes)
     }
 }
 
-void MosaicMaker::sm_replacePrototype(PrototypePtr prototype)
+void MosaicMaker::sm_replacePrototype(ProtoPtr prototype)
 {
     const StyleSet & sset = _mosaic->getStyleSet();
     for (auto style : sset)
@@ -128,43 +198,40 @@ void MosaicMaker::sm_resetStyles()
     }
 }
 
-void MosaicMaker::sm_takeUp(QVector<PrototypePtr> prototypes, eSM_Event mode)
+void MosaicMaker::sm_takeUp(QVector<ProtoPtr> prototypes, eMOSM_Event event)
 {
-    qDebug().noquote() << "MosaicMaker::takeUp()" << sSM_Events[mode];
+    // note - passing the prototypes themselves, not references, so that prototype maker weak pointers remain good.
 
-    switch (mode)
+    qInfo().noquote() << "MosaicMaker::takeUp()" << sMOSM_Events[event] << "protos" << prototypes.count();
+    switch (event)
     {
-    case SM_LOAD_EMPTY:
-        resetMosaic();
-        break;
-
-    case SM_LOAD_SINGLE:
+    case MOSM_LOAD_EMPTY:
         sm_createMosaic(prototypes);
         break;
 
-    case SM_RELOAD_SINGLE:
+    case MOSM_LOAD_SINGLE:
+        sm_createMosaic(prototypes);
+        break;
+
+    case MOSM_RELOAD_SINGLE:
         sm_resetStyles();
         break;
 
-    case SM_LOAD_MULTI:
+    case MOSM_LOAD_MULTI:
         sm_addPrototype(prototypes);
         break;
 
-    case SM_RELOAD_MULTI:
+    case MOSM_RELOAD_MULTI:
         sm_replacePrototype(prototypes.first());
         break;
 
-    case SM_LOAD_FROM_MOSAIC:
-        qWarning("Invalid mode");
-        break;
-
-    case SM_TILE_CHANGED:
-    case SM_MOTIF_CHANGED:
-    case SM_TILING_CHANGED:
+    case MOSM_TILE_CHANGED:
+    case MOSM_MOTIF_CHANGED:
+    case MOSM_TILING_CHANGED:
         sm_resetStyles();
         break;
 
-    case SM_RENDER:
+    case MOSM_RENDER:
         if (!_mosaic->hasContent())
         {
             sm_createMosaic(prototypes);

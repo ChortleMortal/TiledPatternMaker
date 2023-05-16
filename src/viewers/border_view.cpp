@@ -8,7 +8,6 @@
 
 using std::make_shared;
 
-const bool debugMouse = false;
 
 BorderViewPtr BorderView::spThis;
 
@@ -23,7 +22,8 @@ BorderViewPtr BorderView::getSharedInstance()
 
 BorderView::BorderView() : LayerController("Border")
 {
-    config = Configuration::getInstance();
+    config      = Configuration::getInstance();
+    debugMouse  = false;
     setZValue(BORDER_ZLEVEL);
 }
 

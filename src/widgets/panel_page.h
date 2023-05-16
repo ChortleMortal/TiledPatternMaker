@@ -1,4 +1,5 @@
-﻿#ifndef PANELPAGE_H
+#pragma once
+#ifndef PANELPAGE_H
 #define PANELPAGE_H
 
 #include <memory>
@@ -65,8 +66,9 @@ protected:
     class Configuration     * config;
     class ViewControl       * view;
     TilingMakerPtr            tilingMaker;
-    class MotifMaker        * motifMaker;
+    class PrototypeMaker    * prototypeMaker;
     class MosaicMaker       * mosaicMaker;
+    class DesignMaker       * designMaker;
 
     bool                refresh;
 

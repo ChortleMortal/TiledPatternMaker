@@ -1,3 +1,4 @@
+#pragma once
 #ifndef THICK_H
 #define THICK_H
 
@@ -12,16 +13,13 @@
 class Thick : public Colored
 {
 public:
-    Thick(const PrototypePtr &proto);
+    Thick(const ProtoPtr &proto);
     Thick(StylePtr other);
     ~Thick() override;
 
-    virtual eStyleType getStyleType() const  override { return STYLE_THICK; }
-    virtual QString getStyleDesc() const override { return "Thick Lines"; }
-
     qreal   getLineWidth()          { return width; }
     qreal   getOutlineWidth()       { return outline_width; }
-    eDrawOutline getDrawOutline()    { return drawOutline; }
+    eDrawOutline getDrawOutline()   { return drawOutline; }
     QColor  getOutlineColor()       { return outline_color; }
     Qt::PenJoinStyle getJoinStyle() { return join_style; }
     Qt::PenCapStyle getCapStyle()   { return cap_style;}
@@ -37,6 +35,10 @@ public:
     virtual void createStyleRepresentation() override;
 
     void    draw(GeoGraphics *gg) override;
+
+    virtual eStyleType getStyleType() const override { return STYLE_THICK; }
+    virtual QString    getStyleDesc() const override { return "Thick Lines"; }
+    virtual void       report()       const override { qDebug().noquote() << getStyleDesc() << "width:" << width << "outline:" << drawOutline << outline_width << "outlineColor" << outline_color  << colors.colorsString(); }
 
 protected:
     // Parameters of the rendering.

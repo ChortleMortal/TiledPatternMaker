@@ -1,3 +1,4 @@
+#pragma once
 #ifndef BACKGROUNDIMAGE_H
 #define BACKGROUNDIMAGE_H
 

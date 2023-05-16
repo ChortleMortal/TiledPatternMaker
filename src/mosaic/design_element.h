@@ -1,12 +1,14 @@
-﻿#ifndef DESIGN_ELEMENT_H
+#pragma once
+#ifndef DESIGN_ELEMENT_H
 #define DESIGN_ELEMENT_H
 
 #include <QString>
 #include <QTransform>
 
-typedef std::shared_ptr<class Motif>          MotifPtr;
-typedef std::shared_ptr<class Tile>         TilePtr;
-typedef std::shared_ptr<class DesignElement>   DesignElementPtr;
+typedef std::shared_ptr<class Motif>         MotifPtr;
+typedef std::shared_ptr<class Tile>          TilePtr;
+typedef std::shared_ptr<class DesignElement> DesignElementPtr;
+typedef std::shared_ptr<class Prototype>     ProtoPtr;
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -28,14 +30,21 @@ public:
     DesignElement(const DesignElement & other);
     ~DesignElement();
 
+    DesignElement& operator=(const DesignElement& rhs) {
+        tile     = rhs.tile;
+        motif    = rhs.motif;
+        refs++;
+        return *this;}
+
     TilePtr     getTile() const;
     void        replaceTile(const TilePtr & tile);
 
-
     MotifPtr    getMotif() const;
     void        setMotif(const MotifPtr & motif);
-    bool        validMotif();
-    void        createMotif();
+    bool        validMotifRegularity();
+    void        createMotifFromTile();
+    void        recreateMotifUsingTile();
+    void        recreateMotifFromChangedTile();
 
     QString     toString();
     void        describe();

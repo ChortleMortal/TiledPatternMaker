@@ -23,7 +23,7 @@ void  ViewerBase::drawTile(GeoGraphics * gg, TilePtr tile, QBrush brush, QPen pe
 
 void  ViewerBase ::drawMotif(GeoGraphics * gg, MotifPtr motif, QPen pen)
 {
-    MapPtr map = motif->getMap();
+    MapPtr map = motif->getMotifMap();
     if (!map) return;
 
     for(auto & edge :  qAsConst(map->getEdges()))

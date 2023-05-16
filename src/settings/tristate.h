@@ -1,3 +1,4 @@
+#pragma once
 #ifndef TRISTATE_H
 #define TRISTATE_H
 

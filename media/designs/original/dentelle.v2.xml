@@ -1,0 +1,221 @@
+<?xml version="1.0"?>
+<!-- Written: Wed Apr 5 2023 08:29:08 -->
+<vector id="1" version="14">
+	<design>
+		<size>
+			<width>1500</width>
+			<height>1100</height>
+			<zwidth>1500</zwidth>
+			<zheight>1100</zheight>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Fill singleton="f">-6,6,-6,5</Fill>
+	</design>
+	<style.Thick id="2">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<string>Square 12.4.3</string>
+					<entry>
+						<tile.Feature id="4">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">1,1.732050807568877</Point>
+									<Point id="7">-2,2.449293598294706e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">0.9999999999999984,-1.732050807568878</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.Infer id="9" type="MOTIF_TYPE_INFERRED">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>3</n>
+						</app.Infer>
+					</entry>
+					<entry>
+						<tile.Feature id="10">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="11">
+								<Line>
+									<Point id="12">0.9999999999999999,0.2679491924311226</Point>
+									<Point id="13">0.7320508075688773,0.7320508075688773</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point id="14">0.2679491924311229,0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="14" />
+									<Point id="15">-0.2679491924311225,0.9999999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="15" />
+									<Point id="16">-0.7320508075688772,0.7320508075688773</Point>
+								</Line>
+								<Line>
+									<Point reference="16" />
+									<Point id="17">-0.9999999999999998,0.267949192431123</Point>
+								</Line>
+								<Line>
+									<Point reference="17" />
+									<Point id="18">-1,-0.2679491924311223</Point>
+								</Line>
+								<Line>
+									<Point reference="18" />
+									<Point id="19">-0.7320508075688776,-0.7320508075688769</Point>
+								</Line>
+								<Line>
+									<Point reference="19" />
+									<Point id="20">-0.2679491924311235,-0.9999999999999997</Point>
+								</Line>
+								<Line>
+									<Point reference="20" />
+									<Point id="21">0.2679491924311222,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="21" />
+									<Point id="22">0.7320508075688771,-0.7320508075688774</Point>
+								</Line>
+								<Line>
+									<Point reference="22" />
+									<Point id="23">0.9999999999999997,-0.2679491924311235</Point>
+								</Line>
+								<Line>
+									<Point reference="23" />
+									<Point reference="12" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.Star id="24">
+							<boundarySides>12</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>12</n>
+							<d>3</d>
+							<s>2</s>
+						</app.Star>
+					</entry>
+					<entry>
+						<tile.Feature id="25">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="26">
+								<Line>
+									<Point id="27">1,1</Point>
+									<Point id="28">-0.9999999999999998,1</Point>
+								</Line>
+								<Line>
+									<Point reference="28" />
+									<Point id="29">-1,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="29" />
+									<Point id="30">0.9999999999999997,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="30" />
+									<Point reference="27" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitGirih id="31" type="MOTIF_TYPE_GIRIH">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+							<skip>3</skip>
+						</app.ExplicitGirih>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ffffffff</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>true</draw__outline>
+			<width>0.04</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+	</style.Thick>
+	<style.Filled id="32">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<ColorBlacks>
+			<color hide="f">#ff0099ff</color>
+		</ColorBlacks>
+		<ColorWhites>
+			<color hide="f">#ff0099ff</color>
+		</ColorWhites>
+		<ColorGroup>
+			<Group hideSet="f">
+				<color hide="f">#ff0099ff</color>
+			</Group>
+			<Group hideSet="f" />
+		</ColorGroup>
+		<style.Filled>
+			<draw__inside>true</draw__inside>
+			<draw__outside>false</draw__outside>
+			<algorithm>0</algorithm>
+		</style.Filled>
+	</style.Filled>
+	<style.Thick id="33">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff1496d2</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>true</draw__outline>
+			<width>0.08</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+	</style.Thick>
+</vector>

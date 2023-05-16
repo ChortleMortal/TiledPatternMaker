@@ -1,3 +1,4 @@
+#pragma once
 #ifndef TPM_IO_H
 #define TPM_IO_H
 

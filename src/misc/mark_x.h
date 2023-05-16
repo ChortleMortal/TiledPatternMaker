@@ -1,3 +1,4 @@
+#pragma once
 #ifndef MARK_X_H
 #define MARK_X_H
 

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef DLG_LINE_EDIT_H
 #define DLG_LINE_EDIT_H
 

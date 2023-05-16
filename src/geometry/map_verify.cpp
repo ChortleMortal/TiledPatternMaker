@@ -62,7 +62,17 @@ bool Map::verifyAndFix(bool force, bool confirm)
     {
         if (confirm)
         {
-            QMessageBox box;
+            if (errors.contains(MAP_EMPTY))
+            {
+                qWarning("Empty map");
+                QMessageBox box(ControlPanel::getInstance());
+                box.setIcon(QMessageBox::Warning);
+                box.setText("XML Writer: Map is empty");
+                box.exec();
+                return true;
+            }
+
+            QMessageBox box(ControlPanel::getInstance());
             box.setIcon(QMessageBox::Warning);
             box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
             box.setText("XML Writer: Map verify failed\n\nProceed to cleanse ?");
@@ -84,7 +94,7 @@ bool Map::verifyAndFix(bool force, bool confirm)
         }
         if (errors.contains(NEIGHBOUR_NO_EDGE))
         {
-            options |= BuildNeighbours;
+            options |= buildNeighbours;
         }
         if (errors.contains(EDGE_DUPLICATED))
         {
@@ -107,7 +117,7 @@ bool Map::verifyAndFix(bool force, bool confirm)
         {
             QString msg = "Map verify failed after cleanse";
             qWarning().noquote() << msg;
-            QMessageBox box;
+            QMessageBox box(ControlPanel::getInstance());
             box.setIcon(QMessageBox::Warning);
             box.setText(msg);
             box.exec();

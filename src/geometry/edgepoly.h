@@ -1,3 +1,4 @@
+#pragma once
 #ifndef EDGEPOLY_H
 #define EDGEPOLY_H
 
@@ -46,14 +47,16 @@ public:
     QVector<QLineF>    getLines();
     QPolygonF   getPoly() const;        // closed
     QPolygonF   getPoints() const;      // not closed
+    QPolygonF   getMids() const;        // not closed
     QRectF      getRect() const;
-    qreal       getAngle(int edge);
     QPointF     calcCenter();
     QPointF     calcIrregularCenter();
+    QLineF      getEdge(int edge);
+    qreal       getAngle(int edge);
 
     int         numSwapped();
 
-    void    paint(QPainter *painter, QTransform T);
+    void    paint(QPainter *painter, QTransform T, bool annotate=false);
     void    draw(GeoGraphics * gg, QPen & pen);
     void    drawPts(GeoGraphics * gg, QPen & pen);
 

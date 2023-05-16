@@ -101,7 +101,7 @@ void page_layers::populateLayer(LayerPtr layer, int col)
     cbBox->setContentsMargins(0,0,0,0);
     layerTable->setCellWidget(LAYER_VISIBILITY,col,cbWidget);
     cb->setChecked(layer->isVisible());
-    connect(cb, &QCheckBox::toggled, [this, col] { visibilityChanged(col); });
+    connect(cb, &QCheckBox::toggled, this, [this, col] { visibilityChanged(col); });
 
     // z-level
     qreal z = layer->zValue();
@@ -110,17 +110,17 @@ void page_layers::populateLayer(LayerPtr layer, int col)
     zBox->setValue(z);
     zBox->setAlignment(Qt::AlignCenter);
     layerTable->setCellWidget(LAYER_Z,col,zBox);
-    connect(zBox, static_cast<void (AQDoubleSpinBox::*)(double)>(&AQDoubleSpinBox::valueChanged), [this,zBox,col] { zChanged(zBox,col); });
+    connect(zBox, static_cast<void (AQDoubleSpinBox::*)(double)>(&AQDoubleSpinBox::valueChanged), this, [this,zBox,col] { zChanged(zBox,col); });
 
     // align
     QPushButton * align_btn = new QPushButton("Align-to-Selected");
     layerTable->setCellWidget(LAYER_ALIGN,col,align_btn);
-    connect(align_btn, &QPushButton::clicked, [this,col] { alignPressed(col); });
+    connect(align_btn, &QPushButton::clicked, this, [this,col] { alignPressed(col); });
 
     // align
     QPushButton * align_center_btn = new QPushButton("Align-to-selected-Center");
     layerTable->setCellWidget(LAYER_ALIGN_CENTER,col,align_center_btn);
-    connect(align_center_btn, &QPushButton::clicked, [this,col] { alignCenterPressed(col); });
+    connect(align_center_btn, &QPushButton::clicked, this, [this,col] { alignCenterPressed(col); });
 
     // view transform
     QTransform t = layer->getLayerTransform();
@@ -192,22 +192,22 @@ void page_layers::populateLayer(LayerPtr layer, int col)
     dcenY->setSingleStep(0.001);
 
     layerTable->setCellWidget(CANVAS_SCALE,col,dwidth);
-    connect(dwidth, static_cast<void (AQDoubleSpinBox::*)(double)>(&AQDoubleSpinBox::valueChanged), [this,col] { slot_set_deltas(col); });
+    connect(dwidth, static_cast<void (AQDoubleSpinBox::*)(double)>(&AQDoubleSpinBox::valueChanged), this, [this,col] { slot_set_deltas(col); });
 
     layerTable->setCellWidget(CANVAS_ROT,col,drot);
-    connect(drot, static_cast<void (AQDoubleSpinBox::*)(double)>(&AQDoubleSpinBox::valueChanged), [this,col] { slot_set_deltas(col); });
+    connect(drot, static_cast<void (AQDoubleSpinBox::*)(double)>(&AQDoubleSpinBox::valueChanged), this, [this,col] { slot_set_deltas(col); });
 
     layerTable->setCellWidget(CANVAS_X,col,dleft);
-    connect(dleft,static_cast<void (AQDoubleSpinBox::*)(double)>(&AQDoubleSpinBox::valueChanged), [this,col] { slot_set_deltas(col); });
+    connect(dleft,static_cast<void (AQDoubleSpinBox::*)(double)>(&AQDoubleSpinBox::valueChanged), this, [this,col] { slot_set_deltas(col); });
 
     layerTable->setCellWidget(CANVAS_Y,col,dtop);
-    connect(dtop, static_cast<void (AQDoubleSpinBox::*)(double)>(&AQDoubleSpinBox::valueChanged), [this,col] { slot_set_deltas(col); });
+    connect(dtop, static_cast<void (AQDoubleSpinBox::*)(double)>(&AQDoubleSpinBox::valueChanged), this, [this,col] { slot_set_deltas(col); });
 
     layerTable->setCellWidget(CANVAS_CENTER_X,col,dcenX);
-    connect(dcenX,static_cast<void (AQDoubleSpinBox::*)(double)>(&AQDoubleSpinBox::valueChanged), [this,col] { slot_set_center(col); });
+    connect(dcenX,static_cast<void (AQDoubleSpinBox::*)(double)>(&AQDoubleSpinBox::valueChanged), this, [this,col] { slot_set_center(col); });
 
     layerTable->setCellWidget(CANVAS_CENTER_Y,col,dcenY);
-    connect(dcenY, static_cast<void (AQDoubleSpinBox::*)(double)>(&AQDoubleSpinBox::valueChanged), [this,col] { slot_set_center(col); });
+    connect(dcenY, static_cast<void (AQDoubleSpinBox::*)(double)>(&AQDoubleSpinBox::valueChanged), this, [this,col] { slot_set_center(col); });
 
     // layer transform
     twi = new QTableWidgetItem();
@@ -239,7 +239,7 @@ void page_layers::populateLayer(LayerPtr layer, int col)
 
     QPushButton * clearD = new QPushButton("Clear Canvas");
     layerTable->setCellWidget(CANVAS_CLEAR,col,clearD);
-    connect(clearD, &QPushButton::clicked, [this,col] { clear_deltas(col); });
+    connect(clearD, &QPushButton::clicked, this, [this,col] { clear_deltas(col); });
 
     item = new QTableWidgetItem(QString::number(layer->numSubLayers()));
     item->setBackground(bcolor);

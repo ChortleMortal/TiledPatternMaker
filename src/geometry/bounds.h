@@ -1,3 +1,4 @@
+#pragma once
 #ifndef BOUNDS_H
 #define BOUNDS_H
 

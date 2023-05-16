@@ -2,6 +2,9 @@
 #include <QApplication>
 #include "design_maker.h"
 #include "legacy/design.h"
+#include "legacy/designs.h"
+#include "panels/panel.h"
+#include "settings/configuration.h"
 #include "viewers/viewcontrol.h"
 #include "settings/model_settings.h"
 
@@ -10,6 +13,8 @@
 #else
 #define ALT_MODIFIER Qt::AltModifier
 #endif
+
+using std::make_shared;
 
 DesignMaker * DesignMaker::mpThis = nullptr;
 
@@ -36,14 +41,32 @@ DesignMaker::DesignMaker()
     selectedLayer   = 0;
     stepsTaken      = 0;
 
+    availableDesigns.insert(DESIGN_5,make_shared<Design5>(DESIGN_5,"Pattern 1 (created)"));
+    availableDesigns.insert(DESIGN_6,make_shared<Design6>(DESIGN_6,"Pattern 2 (re-ceated)"));
+    availableDesigns.insert(DESIGN_7,make_shared<Design7>(DESIGN_7,"Pattern 3 (re-ceated)"));
+    availableDesigns.insert(DESIGN_8,make_shared<Design8>(DESIGN_8,"The Hu Symbol"));
+    availableDesigns.insert(DESIGN_9,make_shared<Design9>(DESIGN_9,"A packing of Hu symbols"));
+    availableDesigns.insert(DESIGN_HU_INSERT,make_shared<DesignHuInsert>(DESIGN_HU_INSERT,"Hu Insert"));
+    availableDesigns.insert(DESIGN_10,make_shared<DesignHuPacked>(DESIGN_10,"Fully packed Hu symbols"));
+    availableDesigns.insert(DESIGN_11,make_shared<Design11>(DESIGN_11,"Woven Hu (unsuccessful)"));
+    availableDesigns.insert(DESIGN_12,make_shared<Design12>(DESIGN_12,"Enneagram"));
+    availableDesigns.insert(DESIGN_13,make_shared<Design13>(DESIGN_13,"Alhambra 1"));
+    availableDesigns.insert(DESIGN_14,make_shared<Design14>(DESIGN_14,"Alhambra 2"));
+    availableDesigns.insert(DESIGN_16,make_shared<Design16>(DESIGN_16,"Broug: Capella Palatina, Palermo"));
+    availableDesigns.insert(DESIGN_17,make_shared<Design17>(DESIGN_17,"Broug: The Koran of Rashid al-Din"));
+    availableDesigns.insert(DESIGN_18,make_shared<Design18>(DESIGN_18,"Broug: Mustansiriya Madrasa"));
+    availableDesigns.insert(DESIGN_19,make_shared<Design19>(DESIGN_19,"NOT Broug: Esrefogulu Mosque"));
+    availableDesigns.insert(DESIGN_KUMIKO1,make_shared<DesignKumiko1>(DESIGN_KUMIKO1,"Kumiko 1"));
+    availableDesigns.insert(DESIGN_KUMIKO2,make_shared<DesignKumiko2>(DESIGN_KUMIKO2,"Kumiko 2"));
+
     view   = ViewControl::getInstance();
+    config = Configuration::getInstance();
 
     connect(view, &View::sig_deltaScale,    this, &DesignMaker::designScale);
     connect(view, &View::sig_deltaRotate,   this, &DesignMaker::designRotate);
     connect(view, &View::sig_deltaMoveY,    this, &DesignMaker::designMoveY);
     connect(view, &View::sig_deltaMoveX,    this, &DesignMaker::designMoveX);
 }
-
 
 void DesignMaker::addDesign(DesignPtr d)
 {
@@ -53,11 +76,6 @@ void DesignMaker::addDesign(DesignPtr d)
     qDebug() << designName << "addded";
 }
 
-QVector<DesignPtr> & DesignMaker::getDesigns()
-{
-    return activeDesigns;
-}
-
 void DesignMaker::unload()
 {
     for (auto design : qAsConst(activeDesigns))
@@ -65,6 +83,53 @@ void DesignMaker::unload()
         design->destoryPatterns();
     }
     activeDesigns.clear();
+}
+
+void DesignMaker::slot_loadDesign(eDesign design)
+{
+    DesignPtr d = availableDesigns.value(design);
+    if (!d)
+    {
+        return;
+    }
+
+    slot_buildDesign(design);
+
+    if (!config->lockView)
+    {
+        auto panel = ControlPanel::getInstance();
+        panel->selectViewer(VIEW_DESIGN);
+    }
+
+    view->slot_refreshView();
+}
+
+void DesignMaker::slot_buildDesign(eDesign design)
+{
+    qInfo().noquote() << "TiledPatternMaker::slot_buildDesign" << Design::getDesignName(design);
+
+    DesignMaker * designMaker = DesignMaker::getInstance();
+
+    view->dumpRefs();
+    designMaker->unload();
+    view->dumpRefs();
+
+    DesignPtr d = availableDesigns.value(design);
+    designMaker->addDesign(d);
+    config->lastLoadedDesignId = design;
+
+    d->build();
+    d->repeat();
+
+    // size view to design
+    QSize size = d->getDesignInfo().getSize();
+    view->frameSettings.initialiseCommon(size,size);
+    view->frameSettings.initialise(VIEW_DESIGN,size,size);
+    view->frameSettings.setModelAlignment(M_ALIGN_NONE);
+
+    view->removeAllImages();
+    view->slot_refreshView();
+    emit sig_loadedDesign(design);
 }
 
 void DesignMaker::designLayerSelect(int layer)

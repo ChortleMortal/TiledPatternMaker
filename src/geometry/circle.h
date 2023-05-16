@@ -1,8 +1,20 @@
+#pragma once
 #ifndef CIRCLE_H
 #define CIRCLE_H
 
 #include <QDataStream>
+#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
+#include <memory>
+#endif
 #include "geometry/loose.h"
+
+enum eQuad
+{
+    QUAD_1,
+    QUAD_2,
+    QUAD_3,
+    QUAD_4
+};
 
 typedef std::shared_ptr<class Circle> CirclePtr;
 
@@ -69,6 +81,9 @@ public:
         c = std::make_shared<Circle>(center, radius);
         return in;
     }
+
+    static eQuad   getQuadrant(qreal radians);
+    static QString getQuadrantString(qreal radians);
 
     void        dump();
 

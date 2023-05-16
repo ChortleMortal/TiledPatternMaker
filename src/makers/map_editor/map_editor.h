@@ -1,3 +1,4 @@
+#pragma once
 #ifndef MAP_EDITOR_H
 #define MAP_EDITOR_H
 
@@ -82,7 +83,7 @@ private:
     class Configuration   * config;
     class ViewControl     * view;
     class MosaicMaker     * mosaicMaker;
-    class MotifMaker      * motifMaker;
+    class PrototypeMaker  * prototypeMaker;
     TilingMakerPtr          tilingMaker;
     class ControlPanel    * cpanel;
 };

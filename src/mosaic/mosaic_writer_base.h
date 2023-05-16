@@ -1,13 +1,17 @@
+#pragma once
 #ifndef MOSAICWRITERBASE_H
 #define MOSAICWRITERBASE_H
 
-#include <memory>
 #include <QString>
 #include <QMap>
+#if (QT_VERSION < QT_VERSION_CHECK(6,5,0))
+#include <memory>
+#endif
 
+#include "mosaic/mosaic_io_base.h"
 typedef std::shared_ptr<class Vertex> VertexPtr;
 
-class MosaicWriterBase
+class MosaicWriterBase : public MosaicIOBase
 {
 public:
     MosaicWriterBase();

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef MOUSEMODEWIDGET_H
 #define MOUSEMODEWIDGET_H
 

@@ -1,4 +1,5 @@
-﻿#ifndef VIEW_CONTROL_H
+﻿#pragma once
+#ifndef VIEW_CONTROL_H
 #define VIEW_CONTROL_H
 
 #include "settings/filldata.h"
@@ -58,6 +59,7 @@ protected:
 
 signals:
     void    sig_viewUpdated();
+    void    sig_identifyYourself();
 
 public slots:
     void    slot_refreshView() override;
@@ -76,7 +78,7 @@ private:
     class   ControlPanel    * panel;
     class   DesignMaker     * designMaker;
     class   MosaicMaker     * mosaicMaker;
-    class   MotifMaker      * motifMaker;
+    class   PrototypeMaker  * prototypeMaker;
 
     TilingMakerPtr            tilingMaker;
     TilingViewPtr             tilingView;

@@ -1,9 +1,11 @@
-// The classic [n/d]s star construction.  See the paper for moredetails.
-
+#pragma once
 #ifndef STAR_H
 #define STAR_H
 
+// The classic [n/d]s star construction.  See the paper for moredetails.
+
 #include "motifs/radial_motif.h"
+#include "tile/tile.h"
 
 class Star : public RadialMotif
 {
@@ -15,23 +17,32 @@ public:
 
     virtual void buildUnitMap() override;
 
-    qreal   getD()  {return d;}
-    int     getS()  {return s;}
-
-    void    setD(qreal dd);
     void    setS(int ss);
+    void    setD(qreal dd);
+    virtual void setN(int n) override;
+
+    int     getS()  {return s;}
+    qreal   getD()  {return d;}
+
+    bool    equals(const MotifPtr other) override;
 
     virtual QString getMotifDesc() override { return "Star"; }
-
-    bool equals(const MotifPtr other) override;
+    virtual void    report()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "d:" << d << "s" << s; }
 
 protected:
-    qreal clamp_d(qreal d);
-    int   clamp_s(int s);
+    void    buildV1();
+    void    buildV2();
+
+    qreal   clamp_d(qreal d);
+    int     clamp_s(int s);
+
+    QLineF  getRay(int side, qreal d, int sign);
 
 private:
-    qreal 	d;
-    int		s;
+    Points      mids;
+    TilePtr     tile;
+    EdgePoly    placedTile;
+    QPolygonF   points;
 };
 
 #endif

@@ -1,5 +1,6 @@
-#ifndef TPM_LAYER__CONTROLLER_H
-#define TPM_LAYER__CONTROLLER_H
+#pragma once
+#ifndef TPM_LAYER_CONTROLLER_H
+#define TPM_LAYER_CONTROLLER_H
 
 #include <QPen>
 #include "misc/layer.h"

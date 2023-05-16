@@ -1,0 +1,281 @@
+<?xml version="1.0"?>
+<!-- Written: Sat Mar 11 2023 22:45:06 -->
+<vector id="1" version="14">
+	<designNotes>Interesting how the rosette is formed from the Girih shapes</designNotes>
+	<design>
+		<size>
+			<width>1500</width>
+			<height>1100</height>
+			<zwidth>1500</zwidth>
+			<zheight>1100</zheight>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Fill singleton="f">-2,3,-2,2</Fill>
+	</design>
+	<style.Plain id="2">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<string>Curvy Hex</string>
+					<entry>
+						<tile.Feature id="4">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">1,1.732050807568877</Point>
+									<Point id="7">-2,2.449293598294706e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">0.9999999999999984,-1.732050807568878</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.Infer id="9" type="MOTIF_TYPE_INFERRED">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>3</n>
+						</app.Infer>
+					</entry>
+					<entry>
+						<tile.Feature id="10">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="11">
+								<Line>
+									<Point id="12">0.9999999999999999,0.7265425280053608</Point>
+									<Point id="13">-0.381966011250105,1.175570504584946</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point id="14">-1.23606797749979,1.51374669217366e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="14" />
+									<Point id="15">-0.3819660112501053,-1.175570504584946</Point>
+								</Line>
+								<Line>
+									<Point reference="15" />
+									<Point id="16">0.9999999999999998,-0.7265425280053611</Point>
+								</Line>
+								<Line>
+									<Point reference="16" />
+									<Point reference="12" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.Star id="17">
+							<boundarySides>5</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>5</n>
+							<d>2</d>
+							<s>2</s>
+						</app.Star>
+					</entry>
+					<entry>
+						<tile.Feature id="18">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="19">
+								<Line>
+									<Point id="20">-3.233181476887363,2.445013417881989</Point>
+									<Point id="21">-3.535294847784564,1.023681756682953</Point>
+								</Line>
+								<Line>
+									<Point reference="21" />
+									<Point id="22">-2.153328836534466,0.5746537801033692</Point>
+								</Line>
+								<Line>
+									<Point reference="22" />
+									<Point id="23">-1.851215465637257,1.995985441302398</Point>
+								</Line>
+								<Line>
+									<Point reference="23" />
+									<Point reference="20" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.Infer id="24" type="MOTIF_TYPE_INFERRED">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+						</app.Infer>
+					</entry>
+					<entry>
+						<tile.Feature id="25">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="26">
+								<Line>
+									<Point id="27">-0.9971134993875739,3.171555945887348</Point>
+									<Point id="28">-1.851215465637257,1.995985441302398</Point>
+								</Line>
+								<Line>
+									<Point reference="28" />
+									<Point id="29">-0.4060905616021637,2.147874189204397</Point>
+								</Line>
+								<Line>
+									<Point reference="29" />
+									<Point id="30">0.1849323761832435,3.171555945887346</Point>
+								</Line>
+								<Line>
+									<Point reference="30" />
+									<Point reference="27" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitFigure id="31" type="MOTIF_TYPE_EXPLICIT_MAP">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+							<map id="32">
+								<vertices id="33">
+									<Vertex id="34">
+										<pos>-1.424164482512407,2.583770693594842</pos>
+									</Vertex>
+									<Vertex id="35">
+										<pos>-1.24951042601816,2.343380007899219</pos>
+									</Vertex>
+									<Vertex id="36">
+										<pos>-1.128653013619711,2.071929815253397</pos>
+									</Vertex>
+									<Vertex id="37">
+										<pos>-1.045976949618257,2.46089011528781</pos>
+									</Vertex>
+									<Vertex id="38">
+										<pos>-0.6031732723109076,2.716542937579383</pos>
+									</Vertex>
+									<Vertex id="39">
+										<pos>-0.1105790927094601,2.659715067545871</pos>
+									</Vertex>
+									<Vertex id="40">
+										<pos>-0.1203644452270938,2.995292743863352</pos>
+									</Vertex>
+									<Vertex id="41">
+										<pos>-0.4060905616021651,3.171555945887346</pos>
+									</Vertex>
+								</vertices>
+								<edges id="42">
+									<Edge id="43">
+										<v1 reference="34" />
+										<v2 reference="37" />
+									</Edge>
+									<Edge id="44">
+										<v1 reference="36" />
+										<v2 reference="37" />
+									</Edge>
+									<Edge id="45">
+										<v1 reference="36" />
+										<v2 reference="35" />
+									</Edge>
+									<Edge id="46">
+										<v1 reference="34" />
+										<v2 reference="35" />
+									</Edge>
+									<Edge id="47">
+										<v1 reference="39" />
+										<v2 reference="40" />
+									</Edge>
+									<Edge id="48">
+										<v1 reference="41" />
+										<v2 reference="40" />
+									</Edge>
+									<Edge id="49">
+										<v1 reference="41" />
+										<v2 reference="38" />
+									</Edge>
+									<Edge id="50">
+										<v1 reference="39" />
+										<v2 reference="38" />
+									</Edge>
+								</edges>
+							</map>
+						</app.ExplicitFigure>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ffffffff</color>
+		</style.Colored>
+	</style.Plain>
+	<style.Thick id="51">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff006699</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.1204</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+	</style.Thick>
+	<style.Filled id="52">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<ColorBlacks>
+			<color hide="f">#ff006699</color>
+		</ColorBlacks>
+		<ColorWhites>
+			<color hide="f">#ff006699</color>
+		</ColorWhites>
+		<ColorGroup>
+			<Group hideSet="f">
+				<color hide="f">#ff006699</color>
+			</Group>
+			<Group hideSet="f" />
+		</ColorGroup>
+		<style.Filled>
+			<draw__inside>true</draw__inside>
+			<draw__outside>false</draw__outside>
+			<algorithm>0</algorithm>
+		</style.Filled>
+	</style.Filled>
+</vector>

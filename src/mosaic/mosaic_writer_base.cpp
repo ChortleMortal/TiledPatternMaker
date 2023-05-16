@@ -4,7 +4,7 @@ int MosaicWriterBase::refId = 0;
 
 QMap<VertexPtr,int> MosaicWriterBase::vertex_ids;
 
-MosaicWriterBase::MosaicWriterBase()
+MosaicWriterBase::MosaicWriterBase() : MosaicIOBase()
 {
     refId = 0;
     vertex_ids.clear();

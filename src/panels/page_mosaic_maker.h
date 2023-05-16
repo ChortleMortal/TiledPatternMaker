@@ -1,3 +1,4 @@
+#pragma once
 #ifndef PAGE_MOSAIC_MAKER_H
 #define PAGE_MOSAIC_MAKER_H
 
@@ -9,6 +10,7 @@ class SpinSet;
 class QHBoxLayout;
 class QPushButton;
 class QCheckBox;
+class QLineEdit;
 
 typedef std::shared_ptr<class StyleEditor>     StyleEditorPtr;
 typedef std::shared_ptr<class Style>           StylePtr;
@@ -44,6 +46,7 @@ private slots:
     void    slot_duplicateStyle();
     void    slot_analyzeStyleMap();
     void    slot_set_reps();
+    void    slot_setCleanse();
     void    singleton_changed(bool checked);
 
 protected:
@@ -80,6 +83,8 @@ private:
     SpinSet    * xRepMax;
     SpinSet    * yRepMin;
     SpinSet    * yRepMax;
+
+    QLineEdit * cleanseLevel;
 };
 
 #endif

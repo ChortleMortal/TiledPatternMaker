@@ -90,7 +90,7 @@ void DlgColorSet::displayTable()
         cb->setStyleSheet("padding-left:11px;");
         table->setCellWidget(row,3,cb);
         cb->setChecked(tpcolor.hidden);
-        connect(cb, &QCheckBox::toggled, [this,row] { colorVisibilityChanged(row); });
+        connect(cb, &QCheckBox::toggled, this, [this,row] { colorVisibilityChanged(row); });
 
         row++;
     }

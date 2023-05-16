@@ -1,12 +1,13 @@
+#pragma once
+#ifndef LOOSE_H
+#define LOOSE_H
+
 ////////////////////////////////////////////////////////////////////////////
 //
 // Loose.java
 //
 // A bunch of fuzzy comparisons that have a margin of error.
 // Useful whenever you're doing computational geometry.
-
-#ifndef LOOSE_H
-#define LOOSE_H
 
 #include "geometry/point.h"
 #include <QPointF>

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef AQELAPSEDTIMER_H
 #define AQELAPSEDTIMER_H
 

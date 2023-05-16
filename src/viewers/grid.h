@@ -1,3 +1,4 @@
+#pragma once
 #ifndef GRID_H
 #define GRID_H
 
@@ -5,7 +6,7 @@
 #include "misc/geo_graphics.h"
 
 typedef std::shared_ptr<class Grid>           GridPtr;
-typedef std::shared_ptr<class TileSelector>   TilingSelectorPtr;
+typedef std::shared_ptr<class TileSelector>   TileSelectorPtr;
 typedef std::shared_ptr<class Map>            MapPtr;
 
 class Grid : public LayerController
@@ -18,11 +19,14 @@ public:
 
     bool nearGridPoint(QPointF spt, QPointF & foundGridPoint);
 
+    virtual const Xform  & getCanvasXform() override;
+    virtual void           setCanvasXform(const Xform & xf) override;
+
 protected:
     void draw(QPainter * pp);
-    void createMap(QPainter * pp);
 
-    void drawFromTiling();
+    void drawFromTilingFlood();
+    void drawFromTilingRegion();
     void drawModelUnits();
     void drawModelUnitsCentered();
     void drawScreenUnits();
@@ -32,9 +36,6 @@ protected:
     void iamaLayerController() override {}
 
     static int refs;
-
-    virtual const Xform  & getCanvasXform() override;
-    virtual void           setCanvasXform(const Xform & xf) override;
 
 public slots:
     virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
@@ -46,6 +47,7 @@ public slots:
 private:
     void ggdrawLine(QLineF line, QPen pen);
     void ggdrawLine(QPointF p1, QPointF p2, QPen  pen);
+    void ggdrawPoly(QPolygonF & poly, QPen  pen);
     void ppdrawLine(QLineF line);
     void ppdrawLine(QPointF p1, QPointF p2);
 

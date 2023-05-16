@@ -1,3 +1,4 @@
+#pragma once
 #ifndef FILESERVICES_H
 #define FILESERVICES_H
 
@@ -13,10 +14,12 @@ public:
     FileServices();
 
     static QStringList getMosaicFiles();                        // full path
-    static QStringList getMosaicNames(eLoadType loadType);      // names only, no extension
+    static QStringList getMosaicNames(eLoadType loadType);      // names and version only, no extension
+    static QStringList getMosaicRootNames(eLoadType loadType);  // names only, no version, no extension
     static QString     getMosaicXMLFile(QString name);          // full path
     static QString     getMosaicTemplateFile(QString name);     // full path
     static dirInfo     getMosaicDirInfo();
+    static QString     getMosaicNameOnly(QString name);
 
     static QStringList getTilingFiles();                        // full path
     static QStringList getTilingNames(eLoadType loadType);      // names only, not extension
@@ -24,6 +27,7 @@ public:
     static QString     getTileNameFromDesignName(QString designName);
 
     static QString     getNextVersion(eFileType type, QString name);
+    static QStringList getFileVersions(QString name, QString rootPath);
     static bool        reformatXML(QString filename);
 
     static bool        verifyTilingName(QString name);
@@ -38,10 +42,8 @@ public:
 
 private:
     static QString     getTileNameFromDesignFile(QString designFile);
-    static QStringList getFileVersions(QString name, QString rootPath);
     static QString     getRoot(QString name);
     static QString     getVersion(QString name);
-    static QStringList getFilteredTilingNames(QString filter);      // names only, filtered
     static void        addNames(QStringList & names,QString path);  // names only, no extension
 
 };

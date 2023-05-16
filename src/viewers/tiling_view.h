@@ -1,3 +1,7 @@
+#pragma once
+#ifndef TILING_VIEWER_H
+#define TILING_VIEWER_H
+
 ////////////////////////////////////////////////////////////////////////////
 //
 // TilingViewer.java
@@ -11,9 +15,6 @@
 // a built-in tiling on the command line or the specification of a tiling
 // on System.in and displays that tiling.  Access it using
 // 		java tile.TilingViewer
-
-#ifndef TILING_VIEWER_H
-#define TILING_VIEWER_H
 
 #include "misc/layer_controller.h"
 #include <QColor>

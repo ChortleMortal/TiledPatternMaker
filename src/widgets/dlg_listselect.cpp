@@ -228,7 +228,7 @@ void GirihListSelect::selectAction()
 {
     qDebug() << "file:" << selectedFile;
 
-    frame->tile = make_shared<PlacedTile>(nullptr);
+    frame->tile = make_shared<PlacedTile>();
     bool rv = frame->tile->loadFromGirihShape(selectedFile);
     Q_ASSERT(rv);
 

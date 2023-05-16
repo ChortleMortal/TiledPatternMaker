@@ -1,3 +1,4 @@
+#pragma once
 #ifndef ROUNDED_POLYGON_H
 #define ROUNDED_POLYGON_H
 

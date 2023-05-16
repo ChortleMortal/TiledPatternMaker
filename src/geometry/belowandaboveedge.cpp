@@ -1,7 +1,20 @@
+#ifdef __linux__
+#include <cfloat>
+#endif
 #include <QPolygonF>
 #include "geometry/belowandaboveedge.h"
 #include "geometry/arcdata.h"
+#include "geometry/point.h"
 #include "misc/utilities.h"
+
+bool BelowAndAbove::validate()
+{
+   if (!Point::isValid(above) || !Point::isValid(below))
+   {
+       return false;
+   }
+   return true;
+}
 
 QPolygonF BelowAndAboveEdge::getPoly()
 {
@@ -114,22 +127,10 @@ bool BelowAndAboveEdge::validate(int idx)
 
 bool BelowAndAbovePoint::validate()
 {
-    if (!isReal(above.x()))
+    if (!Point::isValid(above))
         return false;
-    if (!isReal(above.y()))
-        return false;
-    if (!isReal(below.x()))
-        return false;
-    if (!isReal(below.y()))
+    if (!Point::isValid(below))
         return false;
     return true;
 }
 
-bool BelowAndAbovePoint::isReal(qreal x)
-{
-    bool is_nan = (x != x);
-    bool is_inf = (x < -DBL_MAX || x > DBL_MAX);
-    if (is_nan || is_inf)
-        return false;
-    return true;
-}

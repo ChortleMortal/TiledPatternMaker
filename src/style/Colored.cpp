@@ -9,7 +9,7 @@
 //
 // Creation.
 
-Colored::Colored(const PrototypePtr & proto) : Style(proto)
+Colored::Colored(const ProtoPtr & proto) : Style(proto)
 {
     colors.addColor(QColor( 20, 150, 210 ));
 }

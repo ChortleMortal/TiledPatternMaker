@@ -3,14 +3,13 @@
 #include "geometry/crop.h"
 #include "makers/crop_maker/crop_maker.h"
 #include "makers/crop_maker/mouse_edit_crop.h"
-#include "mosaic/prototype.h"
+#include "makers/prototype_maker/prototype.h"
 #include "settings/configuration.h"
 #include "viewers/crop_view.h"
 #include "viewers/viewcontrol.h"
 
 using std::make_shared;
 
-const bool debugMouse = false;
 
 CropViewPtr CropView::spThis;
 
@@ -25,7 +24,8 @@ CropViewPtr CropView::getSharedInstance()
 
 CropView::CropView() : LayerController("Crop")
 {
-    config = Configuration::getInstance();
+    config      = Configuration::getInstance();
+    debugMouse  = false;
 }
 
 void CropView::init(CropMaker *ed)

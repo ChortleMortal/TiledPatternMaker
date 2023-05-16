@@ -31,7 +31,7 @@ using std::make_shared;
 // just a pain when crossing edges don't cross in a perfect X.  I
 // might get this wrong.
 
-Interlace::Interlace(PrototypePtr proto) : Thick(proto)
+Interlace::Interlace(ProtoPtr proto) : Thick(proto)
 {
     outline_width         = 0.03;
     join_style            = Qt::BevelJoin;
@@ -149,6 +149,7 @@ void Interlace::draw(GeoGraphics * gg)
         }
         else
         {
+            Q_ASSERT(drawOutline == OUTLINE_DEFAULT);
             pen = QPen(Qt::black,1);
         }
         pen.setJoinStyle(join_style);

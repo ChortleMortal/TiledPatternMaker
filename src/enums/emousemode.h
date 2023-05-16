@@ -1,3 +1,4 @@
+#pragma once
 #ifndef EMOUSEMODE_H
 #define EMOUSEMODE_H
 

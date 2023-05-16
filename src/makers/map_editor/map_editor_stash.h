@@ -1,7 +1,13 @@
+#pragma once
 #ifndef MAPEDITORSTASH_H
 #define MAPEDITORSTASH_H
 
 #include <QObject>
+#include <QTimer>
+#include <QLineF>
+#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
+#include <memory>
+#endif
 
 class MapEditorDb;
 

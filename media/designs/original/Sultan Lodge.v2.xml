@@ -1,0 +1,252 @@
+<?xml version="1.0"?>
+<!-- Written: Fri Apr 7 2023 19:38:36 -->
+<vector id="1" version="14">
+	<design>
+		<size>
+			<width>1500</width>
+			<height>1100</height>
+			<zwidth>1500</zwidth>
+			<zheight>1100</zheight>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Fill singleton="f">-3,6,-3,7</Fill>
+	</design>
+	<style.Thick id="2">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<string>Sultan Lodge</string>
+					<entry>
+						<tile.Feature id="4">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">-0.3819660112501051,-3.278494953061481</Point>
+									<Point id="7">0.2360679774997898,-3.479306368947708</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">0.6180339887498951,-2.953575256828574</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">1.110223024625157e-16,-2.752763840942347</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.Infer id="10" type="MOTIF_TYPE_INFERRED">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+						</app.Infer>
+					</entry>
+					<entry>
+						<tile.Feature id="11">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="12">
+								<Line>
+									<Point id="13">0.9999999999999999,0.3249196962329063</Point>
+									<Point id="14">0.6180339887498948,0.85065080835204</Point>
+								</Line>
+								<Line>
+									<Point reference="14" />
+									<Point id="15">6.438349236688752e-17,1.051462224238267</Point>
+								</Line>
+								<Line>
+									<Point reference="15" />
+									<Point id="16">-0.6180339887498947,0.85065080835204</Point>
+								</Line>
+								<Line>
+									<Point reference="16" />
+									<Point id="17">-0.9999999999999999,0.3249196962329064</Point>
+								</Line>
+								<Line>
+									<Point reference="17" />
+									<Point id="18">-1,-0.3249196962329062</Point>
+								</Line>
+								<Line>
+									<Point reference="18" />
+									<Point id="19">-0.6180339887498949,-0.8506508083520398</Point>
+								</Line>
+								<Line>
+									<Point reference="19" />
+									<Point id="20">-1.931504771006626e-16,-1.051462224238267</Point>
+								</Line>
+								<Line>
+									<Point reference="20" />
+									<Point id="21">0.6180339887498946,-0.8506508083520401</Point>
+								</Line>
+								<Line>
+									<Point reference="21" />
+									<Point id="22">0.9999999999999999,-0.3249196962329066</Point>
+								</Line>
+								<Line>
+									<Point reference="22" />
+									<Point reference="13" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.Star id="23">
+							<boundarySides>10</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>10</n>
+							<d>3</d>
+							<s>2</s>
+						</app.Star>
+					</entry>
+					<entry>
+						<tile.Feature id="24">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="25">
+								<Line>
+									<Point id="26">0.9999999999999999,0.7265425280053608</Point>
+									<Point id="27">-0.381966011250105,1.175570504584946</Point>
+								</Line>
+								<Line>
+									<Point reference="27" />
+									<Point id="28">-1.23606797749979,1.51374669217366e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="28" />
+									<Point id="29">-0.3819660112501053,-1.175570504584946</Point>
+								</Line>
+								<Line>
+									<Point reference="29" />
+									<Point id="30">0.9999999999999998,-0.7265425280053611</Point>
+								</Line>
+								<Line>
+									<Point reference="30" />
+									<Point reference="26" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.Star id="31">
+							<boundarySides>5</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>5</n>
+							<d>1.5</d>
+							<s>1</s>
+						</app.Star>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ffffffff</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.05</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+	</style.Thick>
+	<style.Thick id="32">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff000000</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.08544921875</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+	</style.Thick>
+	<style.Filled id="33">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<ColorBlacks>
+			<color hide="f">#ff3399ff</color>
+		</ColorBlacks>
+		<ColorWhites>
+			<color hide="f">#ff3399ff</color>
+		</ColorWhites>
+		<ColorGroup>
+			<Group hideSet="f">
+				<color hide="f">#ff3399ff</color>
+			</Group>
+			<Group hideSet="f" />
+		</ColorGroup>
+		<style.Filled>
+			<draw__inside>false</draw__inside>
+			<draw__outside>true</draw__outside>
+			<algorithm>0</algorithm>
+		</style.Filled>
+	</style.Filled>
+	<style.Filled id="34">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<ColorBlacks>
+			<color hide="f">#ff006699</color>
+		</ColorBlacks>
+		<ColorWhites>
+			<color hide="f">#ff006699</color>
+		</ColorWhites>
+		<ColorGroup>
+			<Group hideSet="f">
+				<color hide="f">#ff006699</color>
+			</Group>
+			<Group hideSet="f" />
+		</ColorGroup>
+		<style.Filled>
+			<draw__inside>true</draw__inside>
+			<draw__outside>false</draw__outside>
+			<algorithm>0</algorithm>
+		</style.Filled>
+	</style.Filled>
+</vector>

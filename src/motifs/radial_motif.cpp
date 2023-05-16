@@ -25,38 +25,32 @@ using std::make_shared;
 
 RadialMotif::RadialMotif(const Motif & motif, int n) : Motif(motif)
 {
-    this->n = n;
-
-    dn      = qreal(n);
-    don     = 1.0 / dn;
-    Tr      = QTransform().rotateRadians(2.0 * M_PI * don);
+    _n = n;
+    setupRadialTransform();
     setMotifType(MOTIF_TYPE_RADIAL);
-
-    //unitMap = make_shared<Map>("radial unit map1");
 }
 
 RadialMotif::RadialMotif(int n) : Motif()
 {
-    this->n = n;
-
-    dn      = qreal(n);
-    don     = 1.0 / dn;
-    Tr      = QTransform().rotateRadians(2.0 * M_PI * don);
+    _n = n;
+    setupRadialTransform();
     setMotifType(MOTIF_TYPE_RADIAL);
-
-    //unitMap = make_shared<Map>("raidal unit map2");
 }
 
 RadialMotif::RadialMotif(const RadialMotif & motif) : Motif(motif)
 {
-    dn      = qreal(n);
-    don     = 1.0 / dn;
-    Tr      = QTransform().rotateRadians(2.0 * M_PI * don);
+    setupRadialTransform();
 
     if (motif.unitMap)
     {
         unitMap = motif.unitMap->copy();
     }
+}
+
+void RadialMotif::setN(int n)
+{
+    _n = n;
+    setupRadialTransform();
 }
 
 // Get the point frac of the way around the unit circle.
@@ -66,7 +60,7 @@ QPointF RadialMotif::getArc( qreal frac )
     return QPointF( qCos( ang ), qSin( ang ) );
 }
 
-void RadialMotif::resetMaps()
+void RadialMotif::resetMotifMaps()
 {
     unitMap.reset();
     motifMap.reset();
@@ -74,17 +68,17 @@ void RadialMotif::resetMaps()
 }
 
 // Get a complete map from unit.
-MapPtr RadialMotif::getMap()
+MapPtr RadialMotif::getMotifMap()
 {
     //qDebug() << "RadialMotif::getMap";
     if (!unitMap)
     {
-        buildMaps();
+        buildMotifMaps();
     }
     return motifMap;
 }
 
-void RadialMotif::buildMaps()
+void RadialMotif::buildMotifMaps()
 {
     buildUnitMap();
 
@@ -121,11 +115,9 @@ void RadialMotif::replicate()
     motifMap->verify();
 }
 
-void RadialMotif::setN(int n)
+void RadialMotif::setupRadialTransform()
 {
-    this->n = n;
-    dn      = qreal(n);
-    don     = 1.0 / dn;
+    don     = 1.0 / qreal(getN());
     Tr      = QTransform().rotateRadians( 2.0 * M_PI * don );
 }
 
@@ -135,7 +127,10 @@ void RadialMotif::buildRadialBoundaries()
     buildExtendedRadialBoundary();
 
     // build figure boundary
-    Tile f(getN(),getMotifRotate(), getMotifScale());
-    QPolygonF p = f.getPolygon();
-    setMotifBoundary(p);
+    if (getN() >=3)
+    {
+        Tile f(getN(),getMotifRotate(), getMotifScale());
+        QPolygonF p = f.getPolygon();
+        setMotifBoundary(p);
+    }
 }

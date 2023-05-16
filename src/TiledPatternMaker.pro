@@ -1,6 +1,6 @@
 QT += core gui widgets svg
 TEMPLATE = app
-CONFIG += c++17
+CONFIG += c++20
 
 DEFINES += QT_DEPRECATED_WARNINGS
 
@@ -21,18 +21,6 @@ SOURCES += \
     enums/estatemachineevent.cpp \
     enums/etilingmakermousemode.cpp \
     enums/eviewtype.cpp \
-    motifs/explicit_motif.cpp \
-    motifs/extended_rosette.cpp \
-    motifs/extended_star.cpp \
-    motifs/extender.cpp \
-    motifs/inference_engine.cpp \
-    motifs/motif.cpp \
-    motifs/motif_connector.cpp \
-    motifs/radial_motif.cpp \
-    motifs/rosette.cpp \
-    motifs/rosette_connect.cpp \
-    motifs/star.cpp \
-    motifs/star_connect.cpp \
     geometry/arcdata.cpp \
     geometry/belowandaboveedge.cpp \
     geometry/bounds.cpp \
@@ -81,12 +69,16 @@ SOURCES += \
     makers/mosaic_maker/style_color_fill_group.cpp \
     makers/mosaic_maker/style_color_fill_set.cpp \
     makers/mosaic_maker/style_editors.cpp \
-    makers/motif_maker/explicit_motif_editors.cpp \
-    makers/motif_maker/motif_button.cpp \
-    makers/motif_maker/motif_editor.cpp \
-    makers/motif_maker/motif_maker.cpp \
+    makers/motif_maker/design_element_button.cpp \
+    makers/motif_maker/irregular_motif_editors.cpp \
+    makers/motif_maker/motif_editor_widget.cpp \
+    makers/motif_maker/motif_maker_widget.cpp \
     makers/motif_maker/motif_selector.cpp \
+    makers/motif_maker/motif_widgets.cpp \
     makers/motif_maker/regular_motif_editors.cpp \
+    makers/prototype_maker/prototype.cpp \
+    makers/prototype_maker/prototype_data.cpp \
+    makers/prototype_maker/prototype_maker.cpp \
     makers/tiling_maker/tile_selection.cpp \
     makers/tiling_maker/tiling_maker.cpp \
     makers/tiling_maker/tiling_mouseactions.cpp \
@@ -101,18 +93,43 @@ SOURCES += \
     misc/mark_x.cpp \
     misc/pugixml.cpp \
     misc/qtapplog.cpp \
+    misc/runguard.cpp \
     misc/shortcuts.cpp \
     misc/timers.cpp \
     misc/tpmsplash.cpp \
     misc/utilities.cpp \
     mosaic/design_element.cpp \
+    mosaic/legacy_loader.cpp \
     mosaic/mosaic.cpp \
+    mosaic/mosaic_io_base.cpp \
     mosaic/mosaic_manager.cpp \
     mosaic/mosaic_reader.cpp \
     mosaic/mosaic_reader_base.cpp \
     mosaic/mosaic_writer.cpp \
     mosaic/mosaic_writer_base.cpp \
-    mosaic/prototype.cpp \
+    motifs/explicit_map_motif.cpp \
+    motifs/extended_boundary.cpp \
+    motifs/extended_rosette.cpp \
+    motifs/extended_star.cpp \
+    motifs/extender.cpp \
+    motifs/girih_motif.cpp \
+    motifs/hourglass_motif.cpp \
+    motifs/inferred_motif.cpp \
+    motifs/intersect_motif.cpp \
+    motifs/irregular_girih_branches.cpp \
+    motifs/irregular_motif.cpp \
+    motifs/irregular_rosette.cpp \
+    motifs/irregular_star.cpp \
+    motifs/irregular_star_branches.cpp \
+    motifs/irregular_tools.cpp \
+    motifs/motif.cpp \
+    motifs/motif_connector.cpp \
+    motifs/radial_motif.cpp \
+    motifs/rosette.cpp \
+    motifs/rosette_connect.cpp \
+    motifs/star.cpp \
+    motifs/star_connect.cpp \
+    motifs/tile_motif.cpp \
     panels/page_background_image.cpp \
     panels/page_borders.cpp \
     panels/page_config.cpp \
@@ -172,6 +189,7 @@ SOURCES += \
     viewers/viewcontrol.cpp \
     viewers/viewerbase.cpp \
     widgets/crop_widget.cpp \
+    widgets/dlg_cleanse.cpp \
     widgets/dlg_colorSet.cpp \
     widgets/dlg_edgepoly_edit.cpp \
     widgets/dlg_line_edit.cpp \
@@ -184,6 +202,7 @@ SOURCES += \
     widgets/dlg_rename.cpp \
     widgets/dlg_textedit.cpp \
     widgets/dlg_trim.cpp \
+    widgets/dlg_wlist_create.cpp \
     widgets/image_layer.cpp \
     widgets/layout_qrectf.cpp \
     widgets/layout_sliderset.cpp \
@@ -197,6 +216,7 @@ SOURCES += \
     widgets/panel_status.cpp \
     widgets/rounded_polygon.cpp \
     widgets/transparentwidget.cpp \
+    widgets/version_dialog.cpp \
     widgets/versioned_list_widget.cpp
 
 HEADERS += \
@@ -214,18 +234,6 @@ HEADERS += \
     enums/estyletype.h \
     enums/etilingmakermousemode.h \
     enums/eviewtype.h \
-    motifs/explicit_motif.h \
-    motifs/extended_rosette.h \
-    motifs/extended_star.h \
-    motifs/extender.h \
-    motifs/inference_engine.h \
-    motifs/motif.h \
-    motifs/motif_connector.h \
-    motifs/radial_motif.h \
-    motifs/rosette.h \
-    motifs/rosette_connect.h \
-    motifs/star.h \
-    motifs/star_connect.h \
     geometry/arcdata.h \
     geometry/belowandaboveedge.h \
     geometry/circle.h \
@@ -270,12 +278,16 @@ HEADERS += \
     makers/mosaic_maker/style_color_fill_group.h \
     makers/mosaic_maker/style_color_fill_set.h \
     makers/mosaic_maker/style_editors.h \
-    makers/motif_maker/explicit_motif_editors.h \
-    makers/motif_maker/motif_button.h \
-    makers/motif_maker/motif_editor.h \
-    makers/motif_maker/motif_maker.h \
+    makers/motif_maker/design_element_button.h \
+    makers/motif_maker/irregular_motif_editors.h \
+    makers/motif_maker/motif_editor_widget.h \
+    makers/motif_maker/motif_maker_widget.h \
     makers/motif_maker/motif_selector.h \
+    makers/motif_maker/motif_widgets.h \
     makers/motif_maker/regular_motif_editors.h \
+    makers/prototype_maker/prototype.h \
+    makers/prototype_maker/prototype_data.h \
+    makers/prototype_maker/prototype_maker.h \
     makers/tiling_maker/tile_selection.h \
     makers/tiling_maker/tiling_maker.h \
     makers/tiling_maker/tiling_mouseactions.h \
@@ -291,6 +303,7 @@ HEADERS += \
     misc/pugiconfig.hpp \
     misc/pugixml.hpp \
     misc/qtapplog.h \
+    misc/runguard.h \
     misc/shortcuts.h \
     misc/signal_blocker.h \
     misc/timers.h \
@@ -300,13 +313,37 @@ HEADERS += \
     misc/utilities.h \
     misc/version.h \
     mosaic/design_element.h \
+    mosaic/legacy_loader.h \
     mosaic/mosaic.h \
+    mosaic/mosaic_io_base.h \
     mosaic/mosaic_manager.h \
     mosaic/mosaic_reader.h \
     mosaic/mosaic_reader_base.h \
     mosaic/mosaic_writer.h \
     mosaic/mosaic_writer_base.h \
-    mosaic/prototype.h \
+    motifs/explicit_map_motif.h \
+    motifs/extended_boundary.h \
+    motifs/extended_rosette.h \
+    motifs/extended_star.h \
+    motifs/extender.h \
+    motifs/girih_motif.h \
+    motifs/hourglass_motif.h \
+    motifs/inferred_motif.h \
+    motifs/intersect_motif.h \
+    motifs/irregular_girih_branches.h \
+    motifs/irregular_motif.h \
+    motifs/irregular_rosette.h \
+    motifs/irregular_star.h \
+    motifs/irregular_star_branches.h \
+    motifs/irregular_tools.h \
+    motifs/motif.h \
+    motifs/motif_connector.h \
+    motifs/radial_motif.h \
+    motifs/rosette.h \
+    motifs/rosette_connect.h \
+    motifs/star.h \
+    motifs/star_connect.h \
+    motifs/tile_motif.h \
     panels/page_background_image.h \
     panels/page_borders.h \
     panels/page_config.h \
@@ -367,6 +404,7 @@ HEADERS += \
     viewers/viewcontrol.h \
     viewers/viewerbase.h \
     widgets/crop_widget.h \
+    widgets/dlg_cleanse.h \
     widgets/dlg_colorSet.h \
     widgets/dlg_edgepoly_edit.h \
     widgets/dlg_line_edit.h \
@@ -379,6 +417,7 @@ HEADERS += \
     widgets/dlg_rename.h \
     widgets/dlg_textedit.h \
     widgets/dlg_trim.h \
+    widgets/dlg_wlist_create.h \
     widgets/image_layer.h \
     widgets/layout_qrectf.h \
     widgets/layout_sliderset.h \
@@ -392,11 +431,23 @@ HEADERS += \
     widgets/panel_status.h \
     widgets/rounded_polygon.h \
     widgets/transparentwidget.h \
+    widgets/version_dialog.h \
     widgets/versioned_list_widget.h
 
 FORMS +=
 
 DISTFILES += \
+    ../etc/TIledPatternMaker.nsi \
+    ../etc/models/Components.qmodel \
+    ../etc/models/Designs.qmodel \
+    ../etc/models/Viewers.qmodel \
+    ../etc/models/designeditor.qmodel \
+    ../etc/models/figure_editors.qmodel \
+    ../etc/models/figures.qmodel \
+    ../etc/models/makers.qmodel \
+    ../etc/models/mosaic.qmodel \
+    ../etc/models/shapes.qmodel \
+    ../etc/models/styles.qmodel \
     ../release-notes.txt
 
 RESOURCES += tpm.qrc

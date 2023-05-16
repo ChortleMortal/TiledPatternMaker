@@ -1,4 +1,5 @@
-﻿#ifndef PAGE_LOADERS_H
+#pragma once
+#ifndef PAGE_LOADERS_H
 #define PAGE_LOADERS_H
 
 class QCheckBox;
@@ -23,7 +24,7 @@ public:
     static int  whereTilingUsed(QString name, QStringList & results);
 
 signals:
-    void    sig_loadTiling(QString,eSM_Event);
+    void    sig_loadTiling(QString,eTILM_Event);
     void    sig_loadMosaic(QString name, bool ready);
     void    sig_loadDesign(eDesign id);
     void    sig_buildDesign(eDesign id);
@@ -48,16 +49,17 @@ private slots:
     void    tilingClicked(QListWidgetItem * item);
     void    mosaicClicked(QListWidgetItem *item);
 
-    void    slot_itemEnteredToolTip(QListWidgetItem * item);
+    void    slot_mosaicItemEnteredToolTip(QListWidgetItem * item);
 
     void    loadShapes();
-    void    loadTiling();
+
 
     void    loadXML();
     void    openXML();
     void    rebaseXML();
     void    renameXML();
     void    deleteXML();
+    void    addToWorklist();
     void    showTilings();
 
     //void    tilingLoadChanged(int id);
@@ -75,6 +77,7 @@ private slots:
     void    slot_tilingFilter(const QString & filter);
     void    slot_mosaicCheck(bool check);
     void    slot_mosaicWorklistCheck(bool check);
+    void    slot_tilingWorklistCheck(bool check);
     void    slot_mosOrigCheck(bool check);
     void    slot_mosNewCheck(bool check);
     void    slot_mosTestCheck(bool check);
@@ -91,6 +94,9 @@ protected:
     void    setupUI();
     void    refreshPanel();
     void    makeConnections();
+
+    void    loadTiling(eTILM_Event event);
+
     void    putNewTilingNameIntoDesign(QStringList & designs, QString newName);
     bool    putNewTilingNameIntoTiling(QString filename, QString newName);
 
@@ -102,16 +108,16 @@ private:
     QPushButton * pbLoadShapes;
 	QPushButton * pbLoadTiling;
     QPushButton * pbLoadXML;
+    QPushButton * pbTilingLoadMulti;
+    QPushButton * pbTilingLoadModify;
 
     QCheckBox   * tilingFilterCheck;
     QLineEdit   * tilingFilter;
 
-    QCheckBox   * cbTilingLoadMulti;
-    QCheckBox   * cbTilingLoadModify;
-
     QCheckBox   * tilingOrigChk;
     QCheckBox   * tilingNewChk;
     QCheckBox   * tilingTestChk;
+    QCheckBox   * tilingWorklistCheck;
 
     QCheckBox   * mosaicFilterCheck;
     QCheckBox   * mosaicWorklistCheck;

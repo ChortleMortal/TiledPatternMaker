@@ -1,7 +1,9 @@
+#pragma once
 #ifndef XMLWRITER_H
 #define XMLWRITER_H
 
 #include <string>
+#include "enums/emotiftype.h"
 #include "mosaic/mosaic_writer_base.h"
 #include "misc/pugixml.hpp"
 #include "geometry/edgepoly.h"
@@ -10,28 +12,29 @@
 #include "enums/estyletype.h"
 
 using std::string;
+using std::shared_ptr;
 using namespace pugi;
 
 class ViewControl;
 class Configuration;
 
-typedef std::shared_ptr<class BackgroundImage>  BkgdImgPtr;
-typedef std::shared_ptr<class Border>           BorderPtr;
-typedef std::shared_ptr<class Circle>           CirclePtr;
-typedef std::shared_ptr<class Crop>             CropPtr;
-typedef std::shared_ptr<class ExplicitMotif>   ExplicitPtr;
-typedef std::shared_ptr<class ExtendedRosette>  ExtRosettePtr;
-typedef std::shared_ptr<class ExtendedStar>     ExtStarPtr;
-typedef std::shared_ptr<class Tile>             TilePtr;
-typedef std::shared_ptr<class Motif>            MotifPtr;
-typedef std::shared_ptr<class Map>              MapPtr;
-typedef std::shared_ptr<class Mosaic>           MosaicPtr;
-typedef std::shared_ptr<class Prototype>        PrototypePtr;
-typedef std::shared_ptr<class Rosette>          RosettePtr;
-typedef std::shared_ptr<class RosetteConnect> RosetteConnectPtr;
-typedef std::shared_ptr<class Star>             StarPtr;
-typedef std::shared_ptr<class StarConnect>    StarConnectPtr;
-typedef std::shared_ptr<class Style>            StylePtr;
+typedef shared_ptr<class BackgroundImage>  BkgdImgPtr;
+typedef shared_ptr<class Border>           BorderPtr;
+typedef shared_ptr<class Circle>           CirclePtr;
+typedef shared_ptr<class Crop>             CropPtr;
+typedef shared_ptr<class IrregularMotif>   ExplicitPtr;
+typedef shared_ptr<class ExtendedRosette>  ExtRosettePtr;
+typedef shared_ptr<class ExtendedStar>     ExtStarPtr;
+typedef shared_ptr<class Tile>             TilePtr;
+typedef shared_ptr<class Motif>            MotifPtr;
+typedef shared_ptr<class Map>              MapPtr;
+typedef shared_ptr<class Mosaic>           MosaicPtr;
+typedef shared_ptr<class Prototype>        ProtoPtr;
+typedef shared_ptr<class Rosette>          RosettePtr;
+typedef shared_ptr<class RosetteConnect>   RosetteConnectPtr;
+typedef shared_ptr<class Star>             StarPtr;
+typedef shared_ptr<class StarConnect>      StarConnectPtr;
+typedef shared_ptr<class Style>            StylePtr;
 
 class MosaicWriter : public MosaicWriterBase
 {
@@ -81,24 +84,24 @@ protected:
     void    processsStyleEmboss(QTextStream &ts, qreal angle);
 
     // features
-    void    setTile(QTextStream & ts,TilePtr fp);
+    void    setTile(QTextStream & ts,TilePtr tile);
 
     // figures
-    void    setMotifCommon(QTextStream & ts, MotifPtr fp);
-    void    setExplicitMotif(QTextStream & ts,QString name, MotifPtr fp);
-    void    setStar(QTextStream & ts,QString name, MotifPtr fp, bool childEnd=false);
-    void    setRosette(QTextStream & ts, QString name, MotifPtr fp, bool childEnd=false);
-    void    setExtendedStar(QTextStream & ts,QString name, MotifPtr fp);
-    void    setExtendedRosette(QTextStream & ts,QString name, MotifPtr fp);
-    void    setRosetteConnect(QTextStream & ts,QString name, MotifPtr fp);
-    void    setStarConnect(QTextStream & ts,QString name, MotifPtr fp);
+    void    setMotifCommon(QTextStream & ts, MotifPtr motif);
+    void    setExplicitMotif(QTextStream & ts,QString name, MotifPtr motif);
+    void    setStar(QTextStream & ts,QString name, MotifPtr motif, bool childEnd=false);
+    void    setRosette(QTextStream & ts, QString name, MotifPtr motif, bool childEnd=false);
+    void    setExtendedStar(QTextStream & ts,QString name, MotifPtr motif);
+    void    setExtendedRosette(QTextStream & ts,QString name, MotifPtr motif);
+    void    setRosetteConnect(QTextStream & ts,QString name, MotifPtr motif);
+    void    setStarConnect(QTextStream & ts,QString name, MotifPtr motif);
 
     bool    setMap(QTextStream & ts, MapPtr map);
     void    setVertices(QTextStream & ts, const QVector<VertexPtr> & vertices);
     void    setEdges(QTextStream & ts, const QVector<EdgePtr> & edges );
 
     void    setBoundary(QTextStream & ts, PolyPtr p);
-    void    setPrototype(QTextStream & ts, PrototypePtr pp);
+    void    setPrototype(QTextStream & ts, ProtoPtr pp);
     void    setPolygon(QTextStream & ts,PolyPtr pp);    // deprecated
 
     void    setEdgePoly(QTextStream & ts, const EdgePoly & epoly);
@@ -112,7 +115,7 @@ protected:
 
     // references
     bool   hasReference(PolyPtr pp);
-    bool   hasReference(PrototypePtr pp);
+    bool   hasReference(ProtoPtr pp);
     bool   hasReference(TilePtr fp);
     bool   hasReference(MotifPtr fp);
     bool   hasReference(ExplicitPtr ep);
@@ -125,7 +128,7 @@ protected:
     bool   hasReference(MapPtr map);
     bool   hasReference(EdgePtr map);
 
-    void   setProtoReference(int id, PrototypePtr ptr);
+    void   setProtoReference(int id, ProtoPtr ptr);
     void   setPolyReference(int id, PolyPtr ptr);
     void   setTileReference(int id, TilePtr ptr);
     void   setMotifReference(int id, MotifPtr ptr);
@@ -140,7 +143,7 @@ protected:
     void   setStarConnectReference(int id, StarConnectPtr ptr);
 
     QString getPolyReference(PolyPtr ptr);
-    QString getProtoReference(PrototypePtr ptr);
+    QString getProtoReference(ProtoPtr ptr);
     QString getTileReference(TilePtr ptr);
     QString getFMotifReference(MotifPtr ptr);
     QString getExplicitReference(ExplicitPtr ptr);
@@ -160,7 +163,7 @@ protected:
 private:
     [[noreturn]] void fail(QString a, QString b);
 
-    QMap<PrototypePtr,int>  proto_ids;
+    QMap<ProtoPtr,int>      proto_ids;
     QMap<PolyPtr,int>       poly_ids;
     QMap<TilePtr,int>       tile_ids;
     QMap<MotifPtr,int>      motif_ids;
@@ -176,8 +179,6 @@ private:
 
     Configuration         * config;
     MosaicPtr               _mosaic;
-
-
 };
 
 #endif

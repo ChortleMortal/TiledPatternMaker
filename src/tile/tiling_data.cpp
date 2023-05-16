@@ -47,9 +47,9 @@ bool TilingData::isEmpty()
         return false;
 }
 
-QVector<QTransform> TilingData::getFillTranslations()
+Placements TilingData::getFillPlacemenets()
 {
-    QVector<QTransform> translations;
+    Placements placements;
     const FillData & fd = settings.getFillData();
     int minX,minY,maxX,maxY;
     bool singleton;
@@ -62,15 +62,15 @@ QVector<QTransform> TilingData::getFillTranslations()
             {
                 QPointF pt   = (t1 * static_cast<qreal>(h)) + (t2 * static_cast<qreal>(v));
                 QTransform T = QTransform::fromTranslate(pt.x(),pt.y());
-                translations << T;
+                placements << T;
             }
         }
     }
     else
     {
-        translations << QTransform();
+        placements << QTransform();
     }
-    return translations;
+    return placements;
 }
 
 

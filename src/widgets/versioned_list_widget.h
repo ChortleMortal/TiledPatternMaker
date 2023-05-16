@@ -1,7 +1,9 @@
+#pragma once
 #ifndef VERSIONED_LIST_WIDGET_H
 #define VERSIONED_LIST_WIDGET_H
 
 #include <QListWidget>
+#include "misc/unique_qvector.h"
 
 class LoaderListWidget : public QListWidget
 {
@@ -26,7 +28,7 @@ signals:
     void listEnter();
 };
 
-typedef  std::pair<std::string,QVector<int>> VersionSet;
+typedef  std::pair<std::string,UniqueQVector<int>> VersionSet;
 
 class VersionList
 {

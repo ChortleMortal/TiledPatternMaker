@@ -1,3 +1,4 @@
+#pragma once
 #ifndef EBORDER_H
 #define EBORDER_H
 

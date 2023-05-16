@@ -23,32 +23,22 @@
 
 using std::make_shared;
 
-PlacedTile::PlacedTile(Tiling * parent)
+PlacedTile::PlacedTile()
 {
-    this->parent = parent;
     _show = true;
 } // default
 
-PlacedTile::PlacedTile(Tiling * parent, TilePtr tile, QTransform T )
+PlacedTile::PlacedTile(TilePtr tile, QTransform T)
 {
-    this->parent  = parent;
     this->tile = tile;
     this->T       = T;
     _show = true;
     //qDebug() << "setTransform1=" << Transform::toInfoString(T);
 }
 
-PlacedTile::PlacedTile(PlacedTilePtr other)
-{
-    tile = other->tile;
-    T       = other->T;
-    _show = true;
-    //qDebug() << "setTransform2=" << Transform::toInfoString(T);
-}
-
 PlacedTilePtr PlacedTile::copy()
 {
-    PlacedTilePtr pfp    = make_shared<PlacedTile>(parent);
+    PlacedTilePtr pfp    = make_shared<PlacedTile>();
     pfp->girihShapeName  = girihShapeName;
     pfp->T               = T;
     pfp->tile            = tile->copy();
@@ -231,12 +221,12 @@ EdgePoly   PlacedTile::getTileEdgePoly()
     return tile->getEdgePoly();
 }
 
-QPolygonF  PlacedTile::getTilePolygon()
+QPolygonF  PlacedTile::getTilePoints()
 {
     return tile->getPoints();
 }
 
-QPolygonF  PlacedTile::getPlacedPolygon()
+QPolygonF  PlacedTile::getPlacedPoints()
 {
     return T.map(tile->getPoints());
 }

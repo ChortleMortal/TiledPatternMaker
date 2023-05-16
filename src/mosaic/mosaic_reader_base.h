@@ -1,15 +1,19 @@
+#pragma once
 #ifndef MOSAICREADERBASE_H
 #define MOSAICREADERBASE_H
 
-#include <memory>
 #include <QMap>
+#if QT_VERSION < QT_VERSION_CHECK(6,5,0)
+#include <memory>
+#endif
 #include "misc/pugixml.hpp"
+#include "mosaic/mosaic_io_base.h"
 
 using namespace pugi;
 
 typedef std::shared_ptr<class Vertex> VertexPtr;
 
-class MosaicReaderBase
+class MosaicReaderBase : public MosaicIOBase
 {
 public:
     MosaicReaderBase();

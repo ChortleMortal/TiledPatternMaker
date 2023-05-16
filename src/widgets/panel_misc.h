@@ -1,3 +1,4 @@
+#pragma once
 #ifndef PANEL_MISC_H
 #define PANEL_MISC_H
 
@@ -11,6 +12,7 @@ class QWidget;
 #include <QLabel>
 #include <QPushButton>
 #include <QComboBox>
+#include <QCheckBox>
 
 class AQWidget : public QWidget
 {
@@ -55,7 +57,7 @@ public:
     void    adjustTableSize(int maxWidth = 0, int maxHeight = 0);
     void    selectRow(int row);
 
-protected:
+private:
     void    adjustTableWidth(int maxWidth = 0);
     void    adjustTableHeight(int maxHeight = 0);
 
@@ -107,6 +109,14 @@ class BQPushButton : public QPushButton
 {
 public:
     BQPushButton(const QString &text, QWidget * parent = nullptr);
+};
+
+
+class AQCheckBox : public QCheckBox
+{
+public:
+    AQCheckBox();
+    AQCheckBox(QString string);
 };
 
 #endif // MISC_H

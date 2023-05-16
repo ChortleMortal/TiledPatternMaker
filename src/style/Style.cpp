@@ -6,12 +6,12 @@
 #include "geometry/map.h"
 #include "geometry/vertex.h"
 #include "misc/geo_graphics.h"
-#include "mosaic/prototype.h"
+#include "makers/prototype_maker/prototype.h"
 #include "tile/tiling.h"
 
 int Style::refs = 0;
 
-Style::Style(const PrototypePtr & proto) : LayerController("Style")
+Style::Style(const ProtoPtr & proto) : LayerController("Style")
 {
     prototype = proto;
     paintSVG = false;
@@ -45,7 +45,7 @@ Style::~Style()
 #endif
 }
 
-void Style::setPrototype(PrototypePtr pp)
+void Style::setPrototype(ProtoPtr pp)
 {
     prototype = pp;
 }
@@ -85,7 +85,9 @@ void Style::annotateEdges(MapPtr map)
     if (!map)
         return;
 
+#if 1
     debugMap = std::make_shared<DebugMap>("Style Debug Map");
+#endif
 
     int i=0;
     for (auto & edge : qAsConst(map->getEdges()))

@@ -29,3 +29,16 @@ NeighboursPtr  NeighbourMap::getRawNeighbours(const VertexPtr & v)
     return np;
 }
 
+uint NeighbourMap::rawSize()
+{
+    uint ncount = 0;
+
+    QMapIterator<VertexPtr, NeighboursPtr> i(nmap);
+    while (i.hasNext())
+    {
+        i.next();
+        auto neighbours = i.value();
+        ncount += neighbours->numNeighbours();
+    }
+    return ncount;
+}

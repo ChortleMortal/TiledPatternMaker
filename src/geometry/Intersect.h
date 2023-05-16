@@ -1,3 +1,4 @@
+#pragma once
 #ifndef INTERSECT_H
 #define INTERSECT_H
 

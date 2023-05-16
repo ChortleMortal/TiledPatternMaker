@@ -1,3 +1,4 @@
+#pragma once
 #ifndef MOSAIC_MANAGER_H
 #define MOSAIC_MANAGER_H
 
@@ -9,7 +10,7 @@ public:
     MosaicManager();
 
     bool loadMosaic(QString name);
-    bool saveMosaic(QString name, QString &savedName, bool forceOverwrite, bool forceTest);
+    bool saveMosaic(QString name, QString &savedName, bool forceOverwrite);
 
 private:
     class ViewControl     * view;

@@ -1,0 +1,172 @@
+<?xml version="1.0"?>
+<!-- Written: Wed Apr 26 2023 16:24:50 -->
+<vector id="1" version="14">
+	<design>
+		<size>
+			<width>1500</width>
+			<height>1100</height>
+			<zwidth>1500</zwidth>
+			<zheight>1100</zheight>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Fill singleton="f">-1,1,-2,0</Fill>
+	</design>
+	<style.Thick id="2">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<string>Angel</string>
+					<entry>
+						<tile.Feature id="4">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">1.243092481911836,3.615983794491512</Point>
+									<Point id="7">1.243092481911815,-0.1345161074869239</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">1.243092481911777,-3.885016009465356</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">4.491120673916168,-2.009766058476168</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point id="10">7.739148865920569,-0.1345161074869955</Point>
+								</Line>
+								<Line>
+									<Point reference="10" />
+									<Point id="11">4.491120673916146,1.740733843502291</Point>
+								</Line>
+								<Line>
+									<Point reference="11" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitGirih id="12" type="MOTIF_TYPE_GIRIH">
+							<boundarySides>6</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>3</n>
+							<skip>2.1</skip>
+						</app.ExplicitGirih>
+					</entry>
+					<entry>
+						<tile.Feature id="13">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="14">
+								<Line>
+									<Point id="15">1,1.732050807568877</Point>
+									<Point id="16">-2,2.449293598294706e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="16" />
+									<Point id="17">0.9999999999999984,-1.732050807568878</Point>
+								</Line>
+								<Line>
+									<Point reference="17" />
+									<Point reference="15" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitGirih id="18" type="MOTIF_TYPE_GIRIH">
+							<boundarySides>3</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>3</n>
+							<skip>2.1</skip>
+						</app.ExplicitGirih>
+					</entry>
+					<entry>
+						<tile.Feature id="19">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="20">
+								<Line>
+									<Point id="21">-2.000000000000016,-1.154631945610163e-14</Point>
+									<Point id="22">-5.248028192004393,-1.875249950989227</Point>
+								</Line>
+								<Line>
+									<Point reference="22" />
+									<Point id="23">-3.165352128002924,-5.482550709547317</Point>
+								</Line>
+								<Line>
+									<Point reference="23" />
+									<Point id="24">0.9999999999999954,-5.48255070954732</Point>
+								</Line>
+								<Line>
+									<Point reference="24" />
+									<Point id="25">0.9999999999999976,-1.732050807568879</Point>
+								</Line>
+								<Line>
+									<Point reference="25" />
+									<Point reference="21" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitStar id="26" type="MOTIF_TYPE_IRREGULAR_STAR">
+							<boundarySides>5</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>5</n>
+							<s>1</s>
+							<d>1.269999999999999</d>
+						</app.ExplicitStar>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ffffffff</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.17144</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+	</style.Thick>
+	<style.Thick id="27">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff1496d2</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.2198</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+	</style.Thick>
+</vector>

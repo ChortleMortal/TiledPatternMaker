@@ -1,3 +1,4 @@
+#pragma once
 #ifndef COLORMAKER_H
 #define COLORMAKER_H
 

@@ -6,14 +6,18 @@
 #include "makers/mosaic_maker/mosaic_maker.h"
 #include "misc/border.h"
 #include "misc/unique_qvector.h"
-#include "mosaic/prototype.h"
+#include "makers/prototype_maker/prototype.h"
 #include "style/style.h"
 
 const QString Mosaic::defaultName =  "The Formless";
 
+int Mosaic::refs = 0;
+
 Mosaic::Mosaic()
 {
-    name = defaultName;
+    name         = defaultName;
+    cleanseLevel = 0;
+    refs++;
 }
 
 Mosaic::~Mosaic()
@@ -21,6 +25,7 @@ Mosaic::~Mosaic()
 #ifdef EXPLICIT_DESTRUCTOR
     qDebug() << "deleting mosaic:" << name;
 #endif
+    refs--;
 }
 
 void  Mosaic::addStyle(StylePtr style)
@@ -138,15 +143,15 @@ QString Mosaic::getNotes()
     return designNotes;
 }
 
-QVector<PrototypePtr> Mosaic::getPrototypes()
+QVector<ProtoPtr> Mosaic::getPrototypes()
 {
-    UniqueQVector<PrototypePtr> vec;
+    UniqueQVector<ProtoPtr> vec;
     for (auto& style : styleSet)
     {
-        PrototypePtr pp = style->getPrototype();
+        ProtoPtr pp = style->getPrototype();
         vec.push_back(pp);
     }
-    return static_cast<QVector<PrototypePtr>>(vec);
+    return static_cast<QVector<ProtoPtr>>(vec);
 }
 
 MapPtr Mosaic::getPrototypeMap()
@@ -174,7 +179,7 @@ void Mosaic::resetStyleMaps()
 
 void Mosaic::resetProtoMaps()
 {
-    PrototypePtr nullProto;
+    ProtoPtr nullProto;
     for (auto & style : styleSet)
     {
         auto proto = style->getPrototype();
@@ -237,4 +242,26 @@ void Mosaic::dump()
         }
         qDebug().noquote() << "Style" << style->getStyleDesc() << str;
     }
+}
+
+void Mosaic::reportMotifs()
+{
+    qDebug() << "==== Mosaic Motifs" << name;
+    auto protos = getPrototypes();
+    for (auto proto : protos)
+    {
+        proto->reportMotifs();
+    }
+    qDebug() << "=====";
+}
+
+
+void Mosaic::reportStyles()
+{
+    qDebug() << "==== Mosaic Styles" << name;
+    for (auto style : styleSet)
+    {
+        style->report();
+    }
+    qDebug() << "=====";
 }

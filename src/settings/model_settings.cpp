@@ -2,13 +2,14 @@
 #include <QRectF>
 
 #include "settings/model_settings.h"
+#include "settings/configuration.h"
 #include "misc/defaults.h"
 
 ModelSettings::ModelSettings()
 {
     _size       = QSize(DEFAULT_WIDTH,DEFAULT_HEIGHT);   // default
     _zsize      = QSize(DEFAULT_WIDTH,DEFAULT_HEIGHT);   // default
-    _bkgdColor  = QColor(Qt::white);
+    _bkgdColor  = (Configuration::getInstance()->darkTheme) ? QColor(Qt::black) : QColor(Qt::white);
     _startTile  = QPoint(0,0);
 }
 
@@ -33,14 +34,6 @@ ModelSettings & ModelSettings::operator=(const ModelSettings & other)
     _fillData  = other._fillData;
 
    return *this;
-}
-
-void ModelSettings::clear()
-{
-    _size        = QSize(DEFAULT_WIDTH,DEFAULT_HEIGHT);
-    _zsize       = QSize(DEFAULT_WIDTH,DEFAULT_HEIGHT);
-    _bkgdColor   = QColor(Qt::black);
-    _startTile   = QPoint(0,0);
 }
 
 void ModelSettings::setSize(QSize size)

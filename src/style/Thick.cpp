@@ -16,7 +16,7 @@
 //
 // Creation.
 
-Thick::Thick(const PrototypePtr &  proto): Colored(proto)
+Thick::Thick(const ProtoPtr &  proto): Colored(proto)
 {
     width         = 0.05;
     drawOutline   = OUTLINE_NONE;           // DAC added
@@ -90,7 +90,19 @@ void Thick::draw(GeoGraphics * gg )
     // paint wider first
     if  (drawOutline != OUTLINE_NONE)
     {
-        qreal pwidth = (drawOutline == OUTLINE_SET) ? width * 2 + outline_width : width * 2 + 0.05;
+        qreal pwidth;
+
+        if (drawOutline == OUTLINE_SET)
+        {
+            pwidth = width * 2 + outline_width;
+        }
+        else
+        {
+            Q_ASSERT(drawOutline == OUTLINE_DEFAULT);
+            pwidth = width * 2 + 0.05;
+        }
+        //qreal pwidth = (drawOutline == OUTLINE_SET) ? width * 2 + outline_width : width * 2 + 0.05;
+        //qreal pwidth = (drawOutline == OUTLINE_SET) ? width * 2 + outline_width : width * 2 + 0.05;
         QPen pen(outline_color);
         pen.setJoinStyle(join_style);
         pen.setCapStyle(cap_style);

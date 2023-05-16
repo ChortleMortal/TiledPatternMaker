@@ -1,3 +1,4 @@
+#pragma once
 #ifndef EXTENDER_H
 #define EXTENDER_H
 
@@ -14,8 +15,13 @@ class Extender
     friend class MotifView;
 public:
     Extender();
-
     Extender(const Extender & other);
+
+    Extender& operator=(const Extender& rhs)  {
+        extendPeripheralVertices = rhs.extendPeripheralVertices;
+        extendFreeVertices       = rhs.extendFreeVertices;
+        connectBoundaryVertices  = rhs.connectBoundaryVertices;
+        return *this; }
 
     void    extend(Motif * fig, QTransform Tr);
 

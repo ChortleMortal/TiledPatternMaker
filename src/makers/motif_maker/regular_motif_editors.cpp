@@ -5,9 +5,9 @@
 #include "motifs/rosette_connect.h"
 #include "motifs/star.h"
 #include "motifs/star_connect.h"
-#include "makers/motif_maker/motif_button.h"
+#include "makers/motif_maker/design_element_button.h"
 #include "makers/motif_maker/regular_motif_editors.h"
-#include "makers/motif_maker/motif_maker.h"
+#include "makers/prototype_maker/prototype_maker.h"
 #include "mosaic/design_element.h"
 #include "panels/page_motif_maker.h"
 #include "tiledpatternmaker.h"
@@ -18,106 +18,32 @@ using std::make_shared;
 
 typedef std::shared_ptr<RadialMotif>    RadialPtr;
 
-// An abstract class for containing the controls related to the editing
-// of one kind of figure.  A complex hierarchy of FigureEditors gets built
-// up to become the changeable controls for editing figures in FigureMaker.
-
-NamedMotifEditor::NamedMotifEditor(page_motif_maker * fm, QString motifName)
+StarEditor::StarEditor(QString figname) : NamedMotifEditor(figname)
 {
-    menu = fm;
-    name     = motifName;
-
-    vbox = new AQVBoxLayout();
-    setLayout(vbox);
-
-    boundarySides = new SliderSet("Boundary sides", 4, 1, 64);
-    boundaryScale = new DoubleSliderSet("Boundary Scale", 1.0, 0.1, 4.0, 100 );
-    motifScale   = new DoubleSliderSet("Motif Scale", 1.0, 0.1, 4.0, 100 );
-    motifRotate  = new DoubleSliderSet("Motif Rotation",0.0, -360.0, 360.0, 1);
-
-    boundaryScale->setPrecision(8);
-    motifScale->setPrecision(8);
-
-    addLayout(boundarySides);
-    addLayout(boundaryScale);
-    addLayout(motifScale);
-    addLayout(motifRotate);
-
-    connect(this,          &NamedMotifEditor::sig_motif_modified, menu, &page_motif_maker::slot_motifModified); //, Qt::QueuedConnection);
-
-    connect(boundaryScale, &DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
-    connect(boundarySides, &SliderSet::valueChanged,       this, [this]() { editorToMotif(true);});
-    connect(motifScale,    &DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
-    connect(motifRotate,   &DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
-}
-
-void NamedMotifEditor::setMotif(MotifPtr fig, bool doEmit)
-{
-    Q_UNUSED(doEmit);
-    wMotif = fig;
-}
-
-void NamedMotifEditor::motifToEditor()
-{
-    auto fig = wMotif.lock();
-    if (!fig)
-        return;
-
-    const ExtendedBoundary & eb = fig->getExtendedBoundary();
-    int    bs = eb.sides;
-    qreal  sc = eb.scale;
-    qreal  fs = fig->getMotifScale();
-    qreal  rr = fig->getMotifRotate();
-
-    blockSignals(true);
-    boundarySides->setValues(bs, 1, 64);
-    boundaryScale->setValues(sc, 0.1, 4.0);
-    motifScale->setValues(fs, 0.1, 4.0);
-    motifRotate->setValues(rr,-360.0,360.0);
-    blockSignals(false);
-}
-
-void NamedMotifEditor::editorToMotif(bool doEmit)
-{
-    auto fig = wMotif.lock();
-    if (!fig)
-        return;
-
-    int sides     = boundarySides->value();
-    qreal bscale  = boundaryScale->value();
-    qreal fscale  = motifScale->value();
-    qreal  rot    = motifRotate->value();
-
-    ExtendedBoundary & eb = fig->getRWExtendedBoundary();
-
-    blockSignals(true);
-    eb.sides = sides;
-    eb.scale = bscale;
-    fig->setMotifScale(fscale);
-    fig->setMotifRotate(rot);
-    blockSignals(false);
-
-    if (doEmit)
-        emit sig_motif_modified(fig);
-}
-
-StarEditor::StarEditor(page_motif_maker *fm, QString figname) : NamedMotifEditor(fm,figname)
-{
-    n_slider = new SliderSet("Radial Points N", 8, 3, 64);
     d_slider = new DoubleSliderSet("Star Editor Hops D", 3.0, 1.0, 10.0, 100 );
     s_slider = new SliderSet("Star Editor Intersects S", 2, 1, 5);
+    version_combo = new QComboBox();
+    version_combo->addItem("Version 1",1);
+    version_combo->addItem("Version 2",2);
+    version_combo->setFixedWidth(91);
 
-    addLayout(n_slider);
     addLayout(d_slider);
     addLayout(s_slider);
 
-    connect(n_slider, &SliderSet::valueChanged,       this, [this]() { editorToMotif(true);});
+    QHBoxLayout * hbox = new QHBoxLayout;
+    hbox->addStretch();
+    hbox->addWidget(version_combo);
+    hbox->addStretch();
+    addLayout(hbox);
+
     connect(d_slider, &DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
     connect(s_slider, &SliderSet::valueChanged,       this, [this]() { editorToMotif(true);});
+    connect(version_combo,  QOverload<int>::of(&QComboBox::currentIndexChanged), this,[this]() { editorToMotif(true);});
 }
 
 void StarEditor::setMotif(DesignElementPtr del, bool doEmit)
 {
+    wDel = del;
     if (!del || !del->getMotif())
     {
         wstar.reset();
@@ -154,64 +80,63 @@ void StarEditor::setMotif(std::shared_ptr<Star>(star), bool doEmit)
 
 void StarEditor::motifToEditor()
 {
-    auto starfig = wstar.lock();
-    if (starfig)
+    auto star = wstar.lock();
+    if (star)
     {
         NamedMotifEditor::motifToEditor();
 
-        int    nn = starfig->getN();
-        qreal  dd = starfig->getD();
-        int    ss = starfig->getS();
+        qreal  dd = star->getD();
+        int    ss = star->getS();
 
         //double dmax = 0.5 * (double)nn;
         blockSignals(true);
-        n_slider->setValues(nn,3,64);
-        d_slider->setValues( dd, 1.0, static_cast<qreal>(nn) * 2.0);
-        s_slider->setValues( ss, 1.0, nn * 2);
+        d_slider->setValues( dd, 1.0, static_cast<qreal>(star->getN()) * 2.0);
+        s_slider->setValues( ss, 1.0, star->getN() * 2);
         blockSignals(false);
+
+        int ver = star->getVersion();
+        version_combo->blockSignals(true);
+        version_combo->setCurrentIndex(ver -1);
+        version_combo->blockSignals(false);
     }
 }
 
 void StarEditor::editorToMotif(bool doEmit)
 {
-    auto starfig = wstar.lock();
-    if (starfig)
+    auto star = wstar.lock();
+    if (star)
     {
         NamedMotifEditor::editorToMotif(false);
 
-        int nval      = n_slider->value();
-        qreal dval    = d_slider->value();
-        int sval      = s_slider->value();
+        qreal dval = d_slider->value();
+        int sval   = s_slider->value();
+        int ver    = version_combo->currentIndex() + 1;
 
         blockSignals(true);
-        starfig->setN(nval);
-        starfig->setD(dval);
-        starfig->setS(sval);
-        starfig->resetMaps();
+        star->setD(dval);
+        star->setS(sval);
+        star->setVersion(ver);
+        star->resetMotifMaps();
         blockSignals(false);
 
         if (doEmit)
-            emit sig_motif_modified(starfig);
+            emit sig_motif_modified(star);
     }
 }
 
 // The controls for editing a Star.  Glue code, just like RosetteEditor.
 // DAC - Actually the comment above is not true
 
-RosetteEditor::RosetteEditor(page_motif_maker * fm, QString figname) : NamedMotifEditor(fm,figname)
+RosetteEditor::RosetteEditor(QString figname) : NamedMotifEditor(figname)
 {
-    n_slider = new SliderSet("Radial Points N", 8, 3, 64);
     q_slider = new DoubleSliderSet("RosetteEditor Q (Tip Angle)", 0.0, -3.0, 3.0, 100 );
     k_slider = new DoubleSliderSet("RosetteEditor K (Neck Angle)", 0.0, -3.0, 3.0, 1000 );
-    k_slider->setPrecision(4);
     s_slider = new SliderSet("RosetteEditor S (Sides Intersections)", 1, 1, 5);
 
-    addLayout(n_slider);
     addLayout(q_slider);
     addLayout(k_slider);
     addLayout(s_slider);
 
-    connect(n_slider, &SliderSet::valueChanged,       this, [this]() { editorToMotif(true);});
     connect(q_slider, &DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
     connect(k_slider, &DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
     connect(s_slider, &SliderSet::valueChanged,       this, [this]() { editorToMotif(true);});
@@ -219,6 +144,7 @@ RosetteEditor::RosetteEditor(page_motif_maker * fm, QString figname) : NamedMoti
 
 void RosetteEditor::setMotif(DesignElementPtr del, bool doEmit)
 {
+    wDel = del;
     if (!del || !del->getMotif())
     {
         wrosette.reset();
@@ -261,13 +187,11 @@ void RosetteEditor::motifToEditor()
     {
         NamedMotifEditor::motifToEditor();
 
-        int    nn = rose->getN();
         double qq = rose->getQ();
         double kk = rose->getK();
         int    ss = rose->getS();
 
         blockSignals(true);
-        n_slider->setValues(nn,3,64);
         q_slider->setValues(qq, -3.0, 3.0);       // DAC was -1.0, 1.0
         s_slider->setValues(ss, 1.0, 5);
         k_slider->setValues(kk,-3.0, 3.0);
@@ -285,14 +209,12 @@ void RosetteEditor::editorToMotif(bool doEmit)
         qreal  qval = q_slider->value();
         qreal  kval = k_slider->value();
         int    sval = s_slider->value();
-        int    nval = n_slider->value();
 
         blockSignals(true);
-        rose->setN(nval);
         rose->setQ(qval);
         rose->setS(sval);
         rose->setK(kval);
-        rose->resetMaps();
+        rose->resetMotifMaps();
         blockSignals(false);
 
         if (doEmit)
@@ -301,7 +223,7 @@ void RosetteEditor::editorToMotif(bool doEmit)
 }
 
 // ConnectStarEditor
-ConnectStarEditor::ConnectStarEditor(page_motif_maker *fm, QString figname) : StarEditor(fm,figname)
+ConnectStarEditor::ConnectStarEditor(QString figname) : StarEditor(figname)
 {
     defaultBtn = new QPushButton("Calc Scale");
     defaultBtn->setFixedWidth(131);
@@ -313,6 +235,7 @@ ConnectStarEditor::ConnectStarEditor(page_motif_maker *fm, QString figname) : St
 
 void ConnectStarEditor::setMotif(DesignElementPtr del, bool doEmit)
 {
+    wDel = del;
     if (!del || !del->getMotif())
     {
         wstarConnect.reset();
@@ -369,7 +292,7 @@ void ConnectStarEditor::calcScale()
 
 // ConnectRosetteEditor
 
-ConnectRosetteEditor::ConnectRosetteEditor(page_motif_maker * fm, QString figname) : RosetteEditor(fm,figname)
+ConnectRosetteEditor::ConnectRosetteEditor(QString figname) : RosetteEditor(figname)
 {
     defaultBtn = new QPushButton("Calc Scale");
     defaultBtn->setFixedWidth(131);
@@ -381,6 +304,7 @@ ConnectRosetteEditor::ConnectRosetteEditor(page_motif_maker * fm, QString fignam
 
 void ConnectRosetteEditor::setMotif(DesignElementPtr del, bool doEmit)
 {
+    wDel = del;
     if (!del || !del->getMotif())
     {
         wrosetteConnect.reset();
@@ -439,7 +363,7 @@ void ConnectRosetteEditor::calcScale()
 }
 
 // ExtendedStarEditor
-ExtendedStarEditor::ExtendedStarEditor(page_motif_maker *fm, QString figname) : StarEditor(fm,figname)
+ExtendedStarEditor::ExtendedStarEditor(QString figname) : StarEditor(figname)
 {
     extendPeriphBox    = new QCheckBox("Extend Peripheral Vertices");
     extendFreeBox      = new QCheckBox("Extend Free Vertices");
@@ -457,6 +381,7 @@ ExtendedStarEditor::ExtendedStarEditor(page_motif_maker *fm, QString figname) : 
 
 void ExtendedStarEditor::setMotif(DesignElementPtr del, bool doEmit)
 {
+    wDel = del;
     if (!del || !del->getMotif())
     {
         wextended.reset();
@@ -546,7 +471,7 @@ void ExtendedStarEditor::editorToMotif(bool doEmit)
 
 // ExtendedRosetteEditor
 
-ExtendedRosetteEditor::ExtendedRosetteEditor(page_motif_maker * fm, QString figname) : RosetteEditor(fm,figname)
+ExtendedRosetteEditor::ExtendedRosetteEditor(QString figname) : RosetteEditor(figname)
 {
     extendPeriphBox    = new QCheckBox("Extend PeripheralVertices");
     extendFreeBox      = new QCheckBox("Extend Free Vertices");
@@ -563,6 +488,7 @@ ExtendedRosetteEditor::ExtendedRosetteEditor(page_motif_maker * fm, QString fign
 
 void ExtendedRosetteEditor::setMotif(DesignElementPtr del, bool doEmit)
 {
+    wDel = del;
     if (!del || !del->getMotif())
     {
         wextended.reset();

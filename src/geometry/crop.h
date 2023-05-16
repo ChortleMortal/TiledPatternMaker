@@ -1,3 +1,4 @@
+#pragma once
 #ifndef CROP_H
 #define CROP_H
 

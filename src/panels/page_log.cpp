@@ -1,8 +1,10 @@
-﻿#include <QCheckBox>
+#include <QCheckBox>
 #include <QTextEdit>
 #include <QDebug>
 #include <QDateTime>
 #include <QFileDialog>
+#include <QFontDatabase>
+#include <QApplication>
 
 #include "panels/page_log.h"
 #include "panels/panel.h"
@@ -12,95 +14,77 @@
 
 page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel, "Log")
 {
+    viewingLog = true;
+
+    savedText = new QTextEdit();
+    savedText->setMinimumWidth(750);
+    savedText->setMinimumHeight(690);
+    savedText->setLineWrapMode(QTextEdit::NoWrap);
+    savedText->setReadOnly(true);
+    const QFont fixedFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    savedText->setFont(fixedFont);
+    AQScrollBar * abar = new AQScrollBar(this);
+    savedText->setVerticalScrollBar(abar);
+    savedText->setStyleSheet("selection-color: rgb(170, 255, 0);  selection-background-color: rgb(255, 0, 0);");
+
     QHBoxLayout * hbox = new QHBoxLayout();
 
     follow = new QCheckBox("Follow tail");
     follow->setChecked(true);
     hbox->addWidget(follow);
 
-    QPushButton * btnSaveLog            = new QPushButton("Save Log");
-    QPushButton * btnViewLog            = new QPushButton("View Saved");
-    QCheckBox   * cbLogToStderr         = new QCheckBox("Log To stderr");
-    QCheckBox   * cbLogToDisk           = new QCheckBox("Log To Disk");
-    QCheckBox   * cbLogToPanel          = new QCheckBox("Log To Panel");
-    QCheckBox   * cbLogDebug            = new QCheckBox("Log Debug");
-    QCheckBox   * cbLogNumberLines      = new QCheckBox("Number Lines");
-                  cbLogElapsedTime      = new QCheckBox("Elapsed Time");
-                  cbLogIntervalTime     = new QCheckBox("Interval Time");
-    QPushButton * sizePlus              = new QPushButton("+");
-    QPushButton * sizeMinus             = new QPushButton("-");
+    QPushButton * btnSaveLog    = new QPushButton("Save Log");
+                  btnViewLog    = new QPushButton("View Saved");
+    QPushButton * btnOptions    = new QPushButton("Options");
+    QPushButton * sizePlus      = new QPushButton("+");
+    QPushButton * sizeMinus     = new QPushButton("-");
+                  search        = new QLineEdit();
+                  reverseSearch = new QCheckBox("Reverse:");
+    QLabel      * sLabel        = new QLabel("Search:");
 
-    sizePlus->setMaximumWidth(21);
-    sizeMinus->setMaximumWidth(21);
+    sizePlus->setMaximumWidth(25);
+    sizeMinus->setMaximumWidth(25);
 
     hbox->addWidget(btnSaveLog);
     hbox->addWidget(btnViewLog);
-    hbox->addWidget(cbLogToDisk);
-    hbox->addWidget(cbLogToStderr);
-    hbox->addWidget(cbLogToPanel);
     hbox->addStretch();
-    hbox->addWidget(cbLogDebug);
-    hbox->addWidget(cbLogNumberLines);
-    hbox->addWidget(cbLogIntervalTime);
-    hbox->addWidget(cbLogElapsedTime);
-    hbox->addWidget(sizePlus);
+    hbox->addWidget(sLabel);
+    hbox->addWidget(search);
+    hbox->addWidget(reverseSearch);
+    hbox->addStretch();
+    hbox->addWidget(btnOptions);
     hbox->addWidget(sizeMinus);
-
+    hbox->addWidget(sizePlus);
     vbox->addLayout(hbox);
 
-    cbLogToStderr->setChecked(config->logToStderr);
-    cbLogToDisk->setChecked(config->logToDisk);
-    cbLogToPanel->setChecked(config->logToPanel);
-    cbLogNumberLines->setChecked(config->logNumberLines);
-    cbLogDebug->setChecked(config->logDebug);
-
-    switch (config->logTime)
-    {
-    case LOGT_NONE:
-        cbLogElapsedTime->setChecked(false);
-        cbLogIntervalTime->setChecked(false);
-        break;
-    case LOGT_ELAPSED:
-        cbLogElapsedTime->setChecked(true);
-        cbLogIntervalTime->setChecked(false);
-        break;
-    case LOGT_INTERVAL:
-        cbLogElapsedTime->setChecked(false);
-        cbLogIntervalTime->setChecked(true);
-        break;
-    }
-
-    connect(cbLogToStderr,    &QCheckBox::clicked,    this,   &page_log::slot_logToStdErr);
-    connect(cbLogToDisk,      &QCheckBox::clicked,    this,   &page_log::slot_logToDisk);
-    connect(cbLogToPanel,     &QCheckBox::clicked,    this,   &page_log::slot_logToPanel);
-    connect(cbLogDebug,       &QCheckBox::clicked,    this,   &page_log::slot_logDebug);
-    connect(cbLogNumberLines, &QCheckBox::clicked,    this,   &page_log::slot_numberLines);
-    connect(cbLogElapsedTime, &QCheckBox::clicked,    this,   &page_log::slot_elapsedTime);
-    connect(cbLogIntervalTime,&QCheckBox::clicked,    this,   &page_log::slot_intervalTime);
     connect(btnSaveLog,       &QPushButton::clicked,  this,   &page_log::slot_copyLog);
     connect(btnViewLog,       &QPushButton::clicked,  this,   &page_log::slot_viewLog);
+    connect(btnOptions,       &QPushButton::clicked,  this,   &page_log::slot_options);
     connect(sizePlus,         &QPushButton::clicked,  this,   &page_log::slot_sizePlus);
     connect(sizeMinus,        &QPushButton::clicked,  this,   &page_log::slot_sizeMinus);
+    connect(search,           &QLineEdit::returnPressed, this,&page_log::slot_search);
 
-    ed = qtAppLog::getTextEditor();     // linkage to qtAppLog
-    ed->setMinimumWidth(800);
-    ed->setMinimumHeight(750);
-    ed->setLineWrapMode(QTextEdit::NoWrap);
-    ed->setReadOnly(true);
+    logText = qtAppLog::getTextEditor();     // linkage to qtAppLog
+    logText->setMinimumWidth(750);
+    logText->setMinimumHeight(690);
+    logText->setLineWrapMode(QTextEdit::NoWrap);
+    logText->setReadOnly(true);
+    logText->setStyleSheet("selection-color: rgb(170, 255, 0);  selection-background-color: rgb(255, 0, 0);");
 
-    const QFont font = ed->font();
+    const QFont font = logText->font();
     qInfo().noquote() << "Log font:" << font.toString();
 
-    vbox->addWidget(ed);
+    tew = new TextEditorWidget();
+    vbox->addWidget(tew);
 
-    sbar = new AQScrollBar(this);
-    ed->setVerticalScrollBar(sbar);
+    tew->set(logText);
 
-    QTextCursor cursor = ed->textCursor();
+    AQScrollBar * sbar = new AQScrollBar(this);
+    logText->setVerticalScrollBar(sbar);
+
+    QTextCursor cursor = logText->textCursor();
     cursor.movePosition(QTextCursor::End);
-    ed->setTextCursor(cursor);
-
-    vbox->addStretch();
+    logText->setTextCursor(cursor);
 }
 
 void page_log::onEnter()
@@ -114,9 +98,9 @@ void page_log::onRefresh()
     {
         return;
     }
-    QTextCursor cursor = ed->textCursor();
+    QTextCursor cursor = logText->textCursor();
     cursor.movePosition(QTextCursor::End);
-    ed->setTextCursor(cursor);
+    logText->setTextCursor(cursor);
 }
 
 void page_log::slot_actionTriggered()
@@ -181,32 +165,254 @@ void page_log::slot_copyLog()
 
 void page_log::slot_viewLog()
 {
+    if (viewingLog)
+        viewSaved();
+    else
+        viewLog();
+}
+
+void page_log::viewSaved()
+{
+    qDebug() << "view saved - start";
+
     QString path      = qtAppLog::getInstance()->logDir();
     QString nameList  = "Log Files (*.txt)";
 
     QString filename = QFileDialog::getOpenFileName(this, "Load log", path, nameList);
 
-    if (filename.isEmpty()) return;
+    if (filename.isEmpty())
+        return;
 
-    DlgLogView * dlg = new DlgLogView(filename,this);
-    dlg->show();
+    QFile data(filename);
+    if (!data.open(QFile::ReadOnly))
+    {
+        qDebug() << "error opening" << filename;
+        return;
+    }
+
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+
+    viewingLog = false;
+
+    // populate
+    savedText->clear();
+    QTextCursor  c = savedText->textCursor();
+    c.setPosition(0);
+    savedText->setTextCursor(c);
+
+    QTextStream str(&data);
+    while (!str.atEnd())
+    {
+        QString line = str.readLine();
+        if (config->darkTheme)
+        {
+            if (line.contains("Debug"))
+                savedText->setTextColor(Qt::white);
+            else  if (line.contains("Info"))
+                savedText->setTextColor(Qt::green);
+            else  if (line.contains("Warning"))
+                savedText->setTextColor(Qt::red);
+            else
+                savedText->setTextColor(Qt::white);
+        }
+        else
+        {
+            if (line.contains("Debug"))
+                savedText->setTextColor(Qt::black);
+            else  if (line.contains("Info"))
+                savedText->setTextColor(Qt::darkGreen);
+            else  if (line.contains("Warning"))
+                savedText->setTextColor(Qt::darkRed);
+            else
+                savedText->setTextColor(Qt::black);
+        }
+
+        savedText->append(line);
+    }
+    data.close();
+
+    c = savedText->textCursor();
+    c.setPosition(0);
+    savedText->setTextCursor(c);
+
+    // use it
+    tew->set(savedText);
+    repaint();
+
+    QApplication::restoreOverrideCursor();
+
+    btnViewLog->setText("View Log");
+
+    qDebug() << "view saved - end";
 }
 
-void page_log::slot_logToStdErr(bool enable)
+void page_log::viewLog()
+{
+    qDebug() << "view log - start";
+    viewingLog = true;
+
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+
+    tew->set(logText);
+
+    QTextCursor  c = logText->textCursor();
+    c.setPosition(0);
+    logText->setTextCursor(c);
+
+    repaint();
+
+    QApplication::restoreOverrideCursor();
+
+    btnViewLog->setText("View Saved");
+
+    qDebug() << "view the log - end";
+}
+
+void page_log::slot_sizePlus()
+{
+    auto ed   = tew->get();
+    auto font = ed->font();
+    int size  = font.pointSize();
+    font.setPointSize(++size);
+    ed->setFont(font);
+}
+
+void page_log::slot_sizeMinus()
+{
+    auto ed   = tew->get();
+    auto font = ed->font();
+    int size  = font.pointSize();
+    font.setPointSize(--size);
+    ed->setFont(font);
+}
+
+void page_log::slot_options()
+{
+    LogOptionsDlg dlg(this);
+    dlg.exec();
+}
+
+void page_log::slot_search()
+{
+    QString sstr = search->text();
+    if (sstr.isEmpty())
+    {
+        return;
+    }
+
+    auto ted = tew->get();
+    if (!reverseSearch->isChecked())
+    {
+        ted->find(sstr);
+    }
+    else
+    {
+        ted->find(sstr,QTextDocument::FindBackward);
+    }
+}
+
+/////////////////////////////////////////////////
+/// \brief AQScrollBar::AQScrollBar
+/// \param plog
+///
+//////////////////////////////////////////////////
+
+AQScrollBar::AQScrollBar(page_log * plog)
+{
+    connect(this, &AQScrollBar::actionTriggered, plog, &page_log::slot_actionTriggered);
+}
+
+///////////////////////////////////////////////////
+/// \brief LogOptionsDlg::LogOptionsDlg
+/// \param parent
+///
+///////////////////////////////////////////////////
+
+LogOptionsDlg::LogOptionsDlg(QWidget * parent) : QDialog(parent)
+{
+    config = Configuration::getInstance();
+
+    setWindowTitle("Log Options");
+
+    QCheckBox   * cbLogToStderr         = new QCheckBox("Log To stderr");
+    QCheckBox   * cbLogToDisk           = new QCheckBox("Log To Disk");
+    QCheckBox   * cbLogToPanel          = new QCheckBox("Log To Panel");
+    QCheckBox   * cbLogDebug            = new QCheckBox("Log Debug");
+    QCheckBox   * cbLogNumberLines      = new QCheckBox("Number Lines");
+                  cbLogElapsedTime      = new QCheckBox("Elapsed Time");
+                  cbLogIntervalTime     = new QCheckBox("Interval Time");
+    QPushButton * pbOK                  = new QPushButton("OK");
+
+    QHBoxLayout * hbox1 = new QHBoxLayout();
+    hbox1->addWidget(cbLogToDisk);
+    hbox1->addWidget(cbLogToStderr);
+    hbox1->addWidget(cbLogToPanel);
+    hbox1->addWidget(cbLogDebug);
+
+    QHBoxLayout * hbox2 = new QHBoxLayout();
+    hbox2->addWidget(cbLogNumberLines);
+    hbox2->addWidget(cbLogIntervalTime);
+    hbox2->addWidget(cbLogElapsedTime);
+    hbox2->addStretch();
+
+    QHBoxLayout * hbox3 = new QHBoxLayout();
+    hbox3->addStretch();
+    hbox3->addWidget(pbOK);
+
+    QVBoxLayout * vbox = new QVBoxLayout();
+    vbox->addLayout(hbox1);
+    vbox->addLayout(hbox2);
+    vbox->addLayout(hbox3);
+
+    setLayout(vbox);
+
+    cbLogToStderr->setChecked(config->logToStderr);
+    cbLogToDisk->setChecked(config->logToDisk);
+    cbLogToPanel->setChecked(config->logToPanel);
+    cbLogNumberLines->setChecked(config->logNumberLines);
+    cbLogDebug->setChecked(config->logDebug);
+
+    switch (config->logTime)
+    {
+    case LOGT_NONE:
+        cbLogElapsedTime->setChecked(false);
+        cbLogIntervalTime->setChecked(false);
+        break;
+    case LOGT_ELAPSED:
+        cbLogElapsedTime->setChecked(true);
+        cbLogIntervalTime->setChecked(false);
+        break;
+    case LOGT_INTERVAL:
+        cbLogElapsedTime->setChecked(false);
+        cbLogIntervalTime->setChecked(true);
+        break;
+    }
+
+    connect(cbLogToStderr,    &QCheckBox::clicked,    this,   &LogOptionsDlg::slot_logToStdErr);
+    connect(cbLogToDisk,      &QCheckBox::clicked,    this,   &LogOptionsDlg::slot_logToDisk);
+    connect(cbLogToPanel,     &QCheckBox::clicked,    this,   &LogOptionsDlg::slot_logToPanel);
+    connect(cbLogDebug,       &QCheckBox::clicked,    this,   &LogOptionsDlg::slot_logDebug);
+    connect(cbLogNumberLines, &QCheckBox::clicked,    this,   &LogOptionsDlg::slot_numberLines);
+    connect(cbLogElapsedTime, &QCheckBox::clicked,    this,   &LogOptionsDlg::slot_elapsedTime);
+    connect(cbLogIntervalTime,&QCheckBox::clicked,    this,   &LogOptionsDlg::slot_intervalTime);
+    connect(pbOK,             &QPushButton::clicked,  this,   [this] { accept(); });
+}
+
+void LogOptionsDlg::slot_logToStdErr(bool enable)
 {
     qtAppLog * log = qtAppLog::getInstance();
     log->logToStdErr(enable);
     config->logToStderr = enable;
 }
 
-void page_log::slot_logToDisk(bool enable)
+void LogOptionsDlg::slot_logToDisk(bool enable)
 {
     qtAppLog * log = qtAppLog::getInstance();
     log->logToDisk(enable);
     config->logToDisk = enable;
 }
 
-void page_log::slot_logToPanel(bool enable)
+void LogOptionsDlg::slot_logToPanel(bool enable)
 {
     if (!enable)
     {
@@ -221,21 +427,21 @@ void page_log::slot_logToPanel(bool enable)
     }
 }
 
-void page_log::slot_logDebug(bool enable)
+void LogOptionsDlg::slot_logDebug(bool enable)
 {
     qtAppLog * log = qtAppLog::getInstance();
     log->logDebug(enable);
     config->logDebug = enable;
 }
 
-void page_log::slot_numberLines(bool enable)
+void LogOptionsDlg::slot_numberLines(bool enable)
 {
     qtAppLog * log = qtAppLog::getInstance();
     log->logLines(enable);
     config->logNumberLines = enable;
 }
 
-void page_log::slot_elapsedTime(bool enable)
+void LogOptionsDlg::slot_elapsedTime(bool enable)
 {
     qtAppLog * log = qtAppLog::getInstance();
     if (enable)
@@ -253,7 +459,7 @@ void page_log::slot_elapsedTime(bool enable)
     }
 }
 
-void page_log::slot_intervalTime(bool enable)
+void LogOptionsDlg::slot_intervalTime(bool enable)
 {
     qtAppLog * log = qtAppLog::getInstance();
     if (enable)
@@ -269,25 +475,4 @@ void page_log::slot_intervalTime(bool enable)
         log->logTimer(LOGT_NONE);
         config->logTime = LOGT_NONE;
     }
-}
-
-void page_log::slot_sizePlus()
-{
-    QFont font = ed->font();
-    int size   = font.pointSize();
-    font.setPointSize(++size);
-    ed->setFont(font);
-}
-
-void page_log::slot_sizeMinus()
-{
-    QFont font = ed->font();
-    int size   = font.pointSize();
-    font.setPointSize(--size);
-    ed->setFont(font);
-}
-
-AQScrollBar::AQScrollBar(page_log * plog)
-{
-    connect(this, &AQScrollBar::actionTriggered, plog, &page_log::slot_actionTriggered);
 }

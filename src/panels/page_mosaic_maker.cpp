@@ -8,7 +8,7 @@
 #include "makers/mosaic_maker/style_editors.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "mosaic/mosaic.h"
-#include "mosaic/prototype.h"
+#include "makers/prototype_maker/prototype.h"
 #include "settings/model_settings.h"
 #include "style/emboss.h"
 #include "style/filled.h"
@@ -21,6 +21,7 @@
 #include "viewers/viewcontrol.h"
 #include "widgets/layout_sliderset.h"
 #include "widgets/panel_misc.h"
+#include "widgets/dlg_cleanse.h"
 
 Q_DECLARE_METATYPE(WeakStylePtr)
 
@@ -87,6 +88,11 @@ void  page_mosaic_maker::onRefresh()
 
     if (mosaic)
     {
+        auto protos = mosaic->getPrototypes();
+        for (auto & proto : protos)
+        {
+            qDebug() << "proto" << proto.get() << "use-count:" << proto.use_count();
+        }
         blockSignals(true);
 
         int xMin,xMax,yMin,yMax;
@@ -121,6 +127,9 @@ void  page_mosaic_maker::onRefresh()
         }
 
         blockSignals(false);
+
+        uint level = mosaic->getCleanseLevel();
+        cleanseLevel->setText(QString::number(level,16).toUpper());
 
         if (mosaic == wmp.lock())
         {
@@ -168,7 +177,7 @@ void  page_mosaic_maker::reEnter()
     parmsTable->adjustTableSize();
     parmsTable->selectRow(0);
 
-    styleTable->setFocus();
+    //styleTable->setFocus();  // 26FEB23 - this line causes linux crash
     parmsTable->setFocus();
 
     updateGeometry();
@@ -244,9 +253,9 @@ void page_mosaic_maker::displayStyles()
             xftext->setText(xf.toInfoString(8));
 
             // these three connects all pas the row not the index
-            connect(qcbStyle,  QOverload<int>::of(&QComboBox::currentIndexChanged),  [this,row] { styleChanged(row); });
-            connect(qcbTiling, QOverload<int>::of(&QComboBox::currentIndexChanged),  [this,row] { tilingChanged(row); });
-            connect(cbShow,    &QCheckBox::toggled,                                  [this,row] { styleVisibilityChanged(row); });
+            connect(qcbStyle,  QOverload<int>::of(&QComboBox::currentIndexChanged), this,  [this,row] { styleChanged(row); });
+            connect(qcbTiling, QOverload<int>::of(&QComboBox::currentIndexChanged), this,  [this,row] { tilingChanged(row); });
+            connect(cbShow,    &QCheckBox::toggled,                                 this,  [this,row] { styleVisibilityChanged(row); });
 
             row++;
         }
@@ -305,6 +314,11 @@ void page_mosaic_maker::setCurrentEditor(StylePtr style)
         return;
     }
 
+    if (currentStyleEditor)
+    {
+       currentStyleEditor->onExit();
+    }
+
     switch (style->getStyleType())
     {
     case STYLE_PLAIN:
@@ -335,6 +349,8 @@ void page_mosaic_maker::setCurrentEditor(StylePtr style)
         qCritical("unexpected style");
         break;
     }
+
+    currentStyleEditor->onEnter();
 }
 
 void page_mosaic_maker::tilingChanged(int row)
@@ -346,8 +362,8 @@ void page_mosaic_maker::tilingChanged(int row)
         return;
 
     StylePtr style  = getStyleRow(row);
-    PrototypePtr pp = style->getPrototype();
-    pp->setTiling(tp);
+    ProtoPtr pp = style->getPrototype();
+    pp->replaceTiling(tp);
 
     emit sig_refreshView();
 
@@ -529,7 +545,7 @@ QHBoxLayout * page_mosaic_maker::createFillDataRow()
     const int rmin = -1000;
     const int rmax =  1000;
 
-    QLabel * replabel = new QLabel("Repititons:");
+    QLabel * replabel = new QLabel("Fill:");
 
     chkSingle = new QCheckBox("Singleton");
 
@@ -541,8 +557,6 @@ QHBoxLayout * page_mosaic_maker::createFillDataRow()
     QPushButton * pbRender = new QPushButton("Render");
     pbRender->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
 
-    hbox->addWidget(pbRender);
-    hbox->addSpacing(13);
     hbox->addWidget(chkSingle);
     hbox->addSpacing(3);
     hbox->addWidget(replabel);
@@ -554,6 +568,7 @@ QHBoxLayout * page_mosaic_maker::createFillDataRow()
     hbox->addLayout(yRepMin);
     hbox->addSpacing(3);
     hbox->addLayout(yRepMax);
+    hbox->addSpacing(11);
 
     connect(chkSingle,&QCheckBox::clicked,   this, &page_mosaic_maker::singleton_changed);
     connect(xRepMin, &SpinSet::valueChanged, this, &page_mosaic_maker::slot_set_reps);
@@ -562,6 +577,18 @@ QHBoxLayout * page_mosaic_maker::createFillDataRow()
     connect(yRepMax, &SpinSet::valueChanged, this, &page_mosaic_maker::slot_set_reps);
     connect(pbRender,&QPushButton::clicked,  this, &panel_page::sig_render);
 
+    QPushButton * pbCleanse = new QPushButton("Set cleanse");
+
+    cleanseLevel = new QLineEdit();
+    cleanseLevel->setFixedWidth(23);
+    hbox->addSpacing(13);
+    hbox->addWidget(pbRender);
+
+    connect(pbCleanse,&QPushButton::clicked,  this, &page_mosaic_maker::slot_setCleanse);
+
+    hbox->addStretch();
+    hbox->addWidget(cleanseLevel);
+    hbox->addWidget(pbCleanse);
     return hbox;
 }
 
@@ -578,6 +605,26 @@ void page_mosaic_maker::slot_set_reps()
 
     emit sig_render();
 }
+
+void page_mosaic_maker::slot_setCleanse()
+{
+    MosaicPtr mosaic = mosaicMaker->getMosaic();
+    if (!mosaic) return;
+
+    uint clevel = mosaic->getCleanseLevel();
+    DlgCleanse dlg(mosaic,clevel,this);
+    int rv = dlg.exec();
+    if (rv != QDialog::Accepted)
+        return;
+
+    int level = dlg.getLevel();
+    mosaic->setCleanseLevel(level);
+
+    mosaic->resetProtoMaps();
+
+    emit sig_render();
+}
+
 
 void page_mosaic_maker::singleton_changed(bool checked)
 {

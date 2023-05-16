@@ -1,3 +1,4 @@
+#pragma once
 #ifndef PAGE_MOSAIC_INFO_H
 #define PAGE_MOSAIC_INFO_H
 
@@ -8,6 +9,7 @@ class page_mosaic_info : public panel_page
     enum eCols
     {
         COL_STYLE_NAME,
+        COL_PROTO,
         COL_TILING_NAME,
         COL_TILE_TYPE
     };

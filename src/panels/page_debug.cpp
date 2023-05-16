@@ -35,7 +35,7 @@ page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,"Debug Tools
     QGroupBox   * debug = createDebugSection();
     vbox->addWidget(debug);
 
-    setMaximumWidth(700);
+    //setMaximumWidth(700);
 }
 
 QGroupBox * page_debug::createDebugSection()
@@ -53,7 +53,7 @@ QGroupBox * page_debug::createDebugSection()
     QPushButton * pbVerifyTiling        = new QPushButton("Verify Current Tiling");
     QPushButton * pbVerifyAllTilings    = new QPushButton("Verify All Tilings");
     QPushButton * pbExamineMosaic       = new QPushButton("Examine Current Mosaic");
-    QPushButton * pbExamineAllMosaics   = new QPushButton("Examine AllMosaics");
+    QPushButton * pbExamineAllMosaics   = new QPushButton("Examine All Mosaics");
     QPushButton * pTestA                = new QPushButton("Test A");
     QPushButton * pTestB                = new QPushButton("Test B");
     QCheckBox   * pDontPaint            = new QCheckBox("Dont't Paint");
@@ -121,7 +121,7 @@ QGroupBox * page_debug::createDebugSection()
 QGroupBox * page_debug::createVerifyMaps()
 {
     QCheckBox * cbPopupErrors   = new QCheckBox("Pop-up Map Errors");
-    QCheckBox * cbVerifyMaps    = new QCheckBox("Verify All Maps");
+    QCheckBox * cbVerifyMaps    = new QCheckBox("Verify Maps");
     QCheckBox * cbVerifyDump    = new QCheckBox("Dump Maps");
     QCheckBox * cbVerifyVerbose = new QCheckBox("Verbose");
     QCheckBox * cbVerifyProtos  = new QCheckBox("Verify Protos");
@@ -268,7 +268,7 @@ void page_debug::slot_reprocessDesignXML()
 
     int goodDes = 0;
     int badDes  = 0;
-    QStringList files = FileServices::getMosaicNames(LOAD_ALL);
+    QStringList files = FileServices::getMosaicNames(ALL_MOSAICS);
     for (int i=0; i < files.size(); i++)
     {
         QString name = files[i];
@@ -277,7 +277,7 @@ void page_debug::slot_reprocessDesignXML()
         if (rv)
         {
             QString outfile;
-            rv = mm.saveMosaic(name,outfile,true,false);
+            rv = mm.saveMosaic(name,outfile,true);
         }
         if (rv)
             goodDes++;
@@ -310,7 +310,7 @@ void page_debug::slot_reprocessTilingXML()
 
     qDebug() << "Reprocessing tilings...";
 
-    QStringList files = FileServices::getTilingNames(LOAD_ALL);
+    QStringList files = FileServices::getTilingNames(ALL_TILINGS);
     for (int i=0; i < files.size(); i++)
     {
         bool rv = false;
@@ -318,7 +318,7 @@ void page_debug::slot_reprocessTilingXML()
         QString name = files[i];
 
         TilingManager tm;
-        TilingPtr tp = tm.loadTiling(name,SM_LOAD_SINGLE);
+        TilingPtr tp = tm.loadTiling(name,TILM_LOAD_SINGLE);
         if (tp)
         {
             Q_ASSERT(tp->getName() == name);
@@ -376,9 +376,9 @@ bool page_debug::verifyTiling(TilingPtr tiling)
     log->trap(true);
     qInfo().noquote() << "Verifying tiling :" << tiling->getName();
     bool rv = true;
-    for (auto pfp : tiling->getData().getPlacedTiles())
+    for (auto placedTile : tiling->getData().getPlacedTiles())
     {
-        auto tile = pfp->getTile();
+        auto tile = placedTile->getTile();
         if (!tile->isClockwise())
         {
             qWarning() << "Clockwise Tile";
@@ -449,11 +449,29 @@ bool page_debug::verifyTiling(TilingPtr tiling)
     return rv;
 }
 
+void page_debug::identifyDuplicateTiles(TilingPtr tiling)
+{
+    qDebug() << "Looking for duplicates -" << tiling->getName();
+    for (auto tile1 : tiling->getUniqueTiles())
+    {
+        for (auto tile2 : tiling->getUniqueTiles())
+        {
+            if (tile1 == tile2)
+                continue;
+            if (tile1->equals(tile2))
+            {
+                qInfo() << "DUP:" << tiling->getName() << tile1.get() << "equals" << tile2.get();
+            }
+        }
+    }
+    qDebug() << "Looking for duplicates - end";
+}
+
 void page_debug::slot_verifyAllTilings()
 {
     qDebug() << "Verifying all tilings...";
 
-    QStringList files = FileServices::getTilingNames(LOAD_ALL);
+    QStringList files = FileServices::getTilingNames(ALL_TILINGS);
     for (int i=0; i < files.size(); i++)
     {
         QString name = files[i];
@@ -468,7 +486,7 @@ void page_debug::slot_verifyAllTilings()
 
 
         TilingManager tm;
-        TilingPtr tp = tm.loadTiling(name,SM_LOAD_SINGLE);
+        TilingPtr tp = tm.loadTiling(name,TILM_LOAD_SINGLE);
         if (!tp)
         {
             QMessageBox box(this);
@@ -479,7 +497,8 @@ void page_debug::slot_verifyAllTilings()
             continue;
         }
 
-        verifyTiling(tp);
+        //verifyTiling(tp);
+        identifyDuplicateTiles(tp);
 
     }
 
@@ -583,10 +602,10 @@ void  page_debug::slot_testA()
     QPointF p3(1,0.25);
 #endif
 
-    QPointF q0(1,0);
-    QPointF q1(1,1.0001);
-    QPointF q2(2,1);
-    QPointF q3(2,0);
+    //QPointF q0(1,0);
+    //QPointF q1(1,1.0001);
+    //QPointF q2(2,1);
+    //QPointF q3(2,0);
 
 #if 0
 
@@ -652,6 +671,7 @@ void  page_debug::slot_testA()
 
 void  page_debug::slot_testB()
 {
+#if 0
     QPointF p0(0,0);
     QPointF p1(0,2);
     QPointF p2(2.00005,2);
@@ -688,4 +708,23 @@ void  page_debug::slot_testB()
 
     mep->loadFromMap(map1,MAPED_TYPE_CREATED);
     mep->loadFromMap(map2,MAPED_TYPE_CREATED);
+#endif
+#if 1
+    qDebug() << "Looking for duplicates - start";
+    auto tiling = tilingMaker->getTilings().first();
+    Q_ASSERT(tiling);
+    for (auto tile1 : tiling->getUniqueTiles())
+    {
+        for (auto tile2 : tiling->getUniqueTiles())
+        {
+            if (tile1 == tile2)
+                continue;
+            if (tile1->equals(tile2))
+            {
+                qDebug() << tile1.get() << "equals" << tile2.get();
+			}
+        }
+    }
+    qDebug() << "Looking for duplicates - end";
+#endif
 }

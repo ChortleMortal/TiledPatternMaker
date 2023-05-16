@@ -1,3 +1,4 @@
+#pragma once
 #ifndef CROPMAKER_H
 #define CROPMAKER_H
 

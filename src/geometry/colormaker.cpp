@@ -85,7 +85,12 @@ void ColorMaker::assignColorsToFaces(FaceSet &fset)
             EdgePtr edge = head;
             do
             {
-                FacePtr nfi = edge->twin.lock()->incident_face.lock();
+                auto twin = edge->twin.lock();
+                FacePtr nfi;
+                if (twin)
+                {
+                    nfi = twin->incident_face.lock();
+                }
                 if (nfi)
                 {
                     if (!nfi->outer)

@@ -142,7 +142,7 @@ void VersionList::create(const QStringList & list)
         }
         else
         {
-            QVector<int> qv;
+            UniqueQVector<int> qv;
             qv.push_back(version);
             VersionSet v = std::make_pair(name.toStdString(),qv);
             versionList.push_back(v);

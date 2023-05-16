@@ -22,7 +22,7 @@
 // The same code that computes the draw elements for Outline can
 // be used by other "fat" styles, such as Emboss.
 
-Outline::Outline(const PrototypePtr &proto) : Thick (proto)
+Outline::Outline(const ProtoPtr &proto) : Thick (proto)
 {
     outline_width   = 0.03;
     join_style      = Qt::BevelJoin;
@@ -89,6 +89,7 @@ void Outline::draw(GeoGraphics *gg)
             }
             else
             {
+                Q_ASSERT(drawOutline == OUTLINE_DEFAULT);
                 pen = QPen(Qt::black,1);
             }
             pen.setJoinStyle(join_style);
@@ -203,7 +204,7 @@ BelowAndAbove Outline::getPoints(const MapPtr & map, const EdgePtr & edge, const
 
     NeighboursPtr nto = map->getNeighbours(toV);
     int nn = nto->numNeighbours();
-#if DEBUG_BAE2
+#ifdef DEBUG_BAE2
     qDebug() << "nn = " << nn;
 #endif
     if( nn == 1 )
@@ -246,6 +247,13 @@ BelowAndAbove Outline::getPoints(const MapPtr & map, const EdgePtr & edge, const
         }
     }
 
+#ifdef DEBUG_BAE2
+    if (!ret.validate())
+    {
+        qWarning() << "Bad below and above" << ret.below << ret.above;
+        //qCritical("Bad BelowAndAbove");
+    }
+#endif
     return ret;
 }
 
@@ -256,7 +264,7 @@ QPointF  Outline::getJoinPoint(QPointF joint, QPointF from, QPointF to, qreal qw
 {
     qreal theta = Point::sweep(joint, from, to);
 
-    if (qAbs(theta - M_PI) < 1e-7)
+    if (Loose::zero(theta) ||qAbs(theta - M_PI) < 1e-7)
     {
         return QPointF(0,0);
     }

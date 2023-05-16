@@ -1,10 +1,15 @@
-﻿#ifndef PAGE_LOG_H
+﻿#pragma once
+#ifndef PAGE_LOG_H
 #define PAGE_LOG_H
 
 class QCheckBox;
 class QTextEdit;
+class QPushButton;
+class TextEditorWidget;
+class QLineEdit;
 
 #include <QScrollBar>
+#include <QDialog>
 #include "widgets/panel_page.h"
 
 class page_log;
@@ -34,6 +39,43 @@ public slots:
 
 private slots:
     void    slot_viewLog();
+    void    slot_options();
+    void    slot_sizePlus();
+    void    slot_sizeMinus();
+    void    slot_search();
+
+protected:
+    void    viewSaved();
+    void    viewLog();
+
+private:
+    QCheckBox   * follow;
+    QCheckBox   * reverseSearch;
+    QTextEdit   * logText;
+    QTextEdit   * savedText;
+    QLineEdit   * search;
+
+    TextEditorWidget * tew;
+
+    QPushButton * btnViewLog;
+
+    bool          viewingLog;
+};
+
+class LogOptionsDlg : public QDialog
+{
+    Q_OBJECT
+
+public:
+    LogOptionsDlg(QWidget * parent);
+
+private:
+    QCheckBox   * cbLogElapsedTime;
+    QCheckBox   * cbLogIntervalTime;
+
+    Configuration * config;
+
+private slots:
     void    slot_logToStdErr(bool enable);
     void    slot_logToDisk(bool enable);
     void    slot_logToPanel(bool enable);
@@ -41,17 +83,6 @@ private slots:
     void    slot_logDebug(bool enable);
     void    slot_elapsedTime(bool enable);
     void    slot_intervalTime(bool enable);
-    void    slot_sizePlus();
-    void    slot_sizeMinus();
-
-protected:
-
-private:
-    QCheckBox   * follow;
-    QTextEdit   * ed;
-    AQScrollBar * sbar;
-    QCheckBox   * cbLogElapsedTime;
-    QCheckBox   * cbLogIntervalTime;
 };
 
 #endif

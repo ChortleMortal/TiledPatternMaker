@@ -1,4 +1,5 @@
-﻿#ifndef PAGE_FIGURE_EDITOR_H
+﻿#pragma once
+#ifndef PAGE_FIGURE_EDITOR_H
 #define PAGE_FIGURE_EDITOR_H
 
 class QGroupBox;

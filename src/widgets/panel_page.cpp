@@ -1,12 +1,13 @@
 #include "widgets/panel_page.h"
-#include "panels/panel.h"
-#include "tiledpatternmaker.h"
-#include "misc/utilities.h"
-#include "viewers/viewcontrol.h"
-#include "makers/motif_maker/motif_maker.h"
-#include "makers/tiling_maker/tiling_maker.h"
+#include "legacy/design_maker.h"
 #include "makers/mosaic_maker/mosaic_maker.h"
+#include "makers/prototype_maker/prototype_maker.h"
+#include "makers/tiling_maker/tiling_maker.h"
+#include "misc/utilities.h"
+#include "panels/panel.h"
 #include "settings/configuration.h"
+#include "tiledpatternmaker.h"
+#include "viewers/viewcontrol.h"
 
 panel_page::panel_page(ControlPanel * panel,  QString name) : QWidget()
 {
@@ -15,18 +16,17 @@ panel_page::panel_page(ControlPanel * panel,  QString name) : QWidget()
     this->panel     = panel;
     config          = Configuration::getInstance();
     view            = ViewControl::getInstance();
-    motifMaker      = MotifMaker::getInstance();
+    prototypeMaker  = PrototypeMaker::getInstance();
     tilingMaker     = TilingMaker::getSharedInstance();
     mosaicMaker     = MosaicMaker::getInstance();
-
-    vbox = new QVBoxLayout;
-    vbox->setSizeConstraint(QLayout::SetFixedSize);
+    designMaker     = DesignMaker::getInstance();
 
     newlySelected   = false;
     floated         = false;
     refresh         = true;
     blockCount      = 0;
 
+    vbox            = new QVBoxLayout;
     setLayout (vbox);
 
     connect(this,   &panel_page::sig_render,     theApp,   &TiledPatternMaker::slot_render);
@@ -40,10 +40,16 @@ void panel_page::closeEvent(QCloseEvent *event)
     setParent(nullptr);
 
     QSettings s;
+
     QString name = QString("panel2/%1/pagePos").arg(pageName);
     QPoint pt = pos();
-    //qDebug() << "panel_page close event pos = " << pt;
+    qDebug() << "panel_page closeEvent pos = " << pt;
     s.setValue(name,pt);
+
+    name = QString("panel2/%1/pageSize").arg(pageName);
+    QSize sz = size();
+    qDebug() << "panel_page closeEvent size = " << sz;
+    s.setValue(name,sz);
 
     event->setAccepted(false);
 
@@ -64,9 +70,13 @@ void panel_page::closePage()
 
         name = QString("panel2/%1/pagePos").arg(pageName);
         QPoint pt = pos();
-        //qDebug() << "panel_page close event pos = " << pt;
+        qDebug() << "panel_page closePage pos = " << pt;
         s.setValue(name,pt);
 
+        name = QString("panel2/%1/pageSize").arg(pageName);
+        QSize sz = size();
+        qDebug() << "panel_page closePage size = " << sz;
+        s.setValue(name,sz);
     }
     else
     {
@@ -77,6 +87,7 @@ void panel_page::closePage()
 bool panel_page::wasFloated()
 {
     QSettings s;
+
     QString name = QString("panel2/%1/floated").arg(pageName);
     bool wasFloated = s.value(name,false).toBool();
     return wasFloated;
@@ -85,10 +96,27 @@ bool panel_page::wasFloated()
 void panel_page::floatMe()
 {
     QSettings s;
+
     QString name = QString("panel2/%1/pagePos").arg(pageName);
-    QPoint pt    = s.value(name).toPoint();
-    qDebug() << "panel_page::floatMe()" << pageName << pt;
+    QPoint pt    = s.value(name,QPointF()).toPoint();
+    if (!pt.isNull())
+    {
+        qDebug() << "panel_page::floatMe()" << pageName << pt;
+    }
+    else
+    {
+        pt = QCursor::pos();
+        qDebug() << "floating to cursor pos =" << pt;
+    }
     move(pt);
+
+    name = QString("panel2/%1/pageSize").arg(pageName);
+    QSize sz = s.value(name,QSize()).toSize();
+    if (sz.isValid())
+    {
+        qDebug() << "resizing to" << sz;
+        resize(sz);
+    }
 }
 
 QString panel_page::addr(void * address)

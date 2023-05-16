@@ -1,3 +1,4 @@
+#pragma once
 #ifndef BORDER_VIEW_H
 #define BORDER_VIEW_H
 
@@ -52,6 +53,7 @@ private:
 
     static BorderViewPtr spThis;
     QPointF             mousePos;             // used by menu
+    bool                debugMouse;
 
     BorderMouseActionPtr   mouse_interaction;    // used by menu
 

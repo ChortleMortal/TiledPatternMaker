@@ -1,3 +1,4 @@
+#pragma once
 #ifndef INTERLACE_H
 #define INTERLACE_H
 
@@ -45,16 +46,13 @@ public:
 class Interlace : public Thick
 {
 public:
-    Interlace(PrototypePtr proto);
+    Interlace(ProtoPtr proto);
     Interlace(StylePtr other);
     virtual ~Interlace() override;
 
     void    resetStyleRepresentation() override;
     void    createStyleRepresentation() override;
     void    draw(GeoGraphics *gg) override;
-
-    virtual eStyleType getStyleType() const override { return STYLE_INTERLACED; }
-    QString getStyleDesc() const override {return "Interlaced";}
 
     qreal   getGap()                { return gap; }
     qreal   getShadow()             { return shadow; }
@@ -65,6 +63,12 @@ public:
     void    setShadow(qreal Shadow)             { shadow = Shadow; }
     void    setInitialStartUnder(bool sunder)   { interlace_start_under = sunder; }
     void    setIncludeTipVertices(bool include) { includeTipVertices = include; }
+
+    virtual eStyleType getStyleType() const override { return STYLE_INTERLACED; }
+    QString            getStyleDesc() const override { return "Interlaced"; }
+    virtual void       report()       const override { qDebug().noquote() << getStyleDesc() << "gap" << gap << "shadow" << shadow << "tipVerts" << includeTipVertices
+                           << "start_under" << interlace_start_under
+                           << "width:" << width << "outline:" << drawOutline << outline_width << "outlineColor" << outline_color << colors.colorsString(); }
 
 protected:
     void    assignInterlacing();
@@ -80,12 +84,12 @@ private:
     qreal  gap;
     qreal  shadow;
     bool   includeTipVertices;
+    bool   interlace_start_under;
 
     // Internal representations of the rendering.
     QVector<Segment>    segments;
     QStack<EdgePtr>     todo;
     Threads             threads;
-    bool                interlace_start_under;
 };
 #endif
 

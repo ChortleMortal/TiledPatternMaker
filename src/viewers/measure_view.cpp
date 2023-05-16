@@ -18,13 +18,13 @@ MeasViewPtr MeasureView::getSharedInstance()
 {
     if (!spThis)
     {
-        PrototypePtr pp;
+        ProtoPtr pp;
         spThis = make_shared<MeasureView>(pp);
     }
     return spThis;
 }
 
-MeasureView::MeasureView(PrototypePtr pp) : Thick(pp)
+MeasureView::MeasureView(ProtoPtr pp) : Thick(pp)
 {
     config  = Configuration::getInstance();
     view    = ViewControl::getInstance();

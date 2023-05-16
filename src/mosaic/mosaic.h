@@ -1,4 +1,5 @@
-﻿#ifndef MOSAIC_H
+﻿#pragma once
+#ifndef MOSAIC_H
 #define MOSAIC_H
 
 #include <QVector>
@@ -8,7 +9,7 @@ typedef std::shared_ptr<class Style>        StylePtr;
 typedef std::shared_ptr<class Tiling>       TilingPtr;
 typedef std::shared_ptr<class Border>       BorderPtr;
 typedef std::shared_ptr<class Crop>         CropPtr;
-typedef std::shared_ptr<class Prototype>    PrototypePtr;
+typedef std::shared_ptr<class Prototype>    ProtoPtr;
 typedef std::shared_ptr<class Map>          MapPtr;
 
 typedef QVector<StylePtr>  StyleSet;
@@ -29,12 +30,12 @@ public:
     int         moveDown(StylePtr style);
     void        deleteStyle(StylePtr style);
 
-    QVector<PrototypePtr> getPrototypes();
-    MapPtr                getPrototypeMap();
-    void                  resetStyleMaps();
-    void                  resetProtoMaps();
+    QVector<ProtoPtr> getPrototypes();
+    MapPtr            getPrototypeMap();
+    void              resetStyleMaps();
+    void              resetProtoMaps();
 
-    ModelSettings & getSettings() { return settings; };
+    ModelSettings &  getSettings() { return settings; };
 
     const StyleSet & getStyleSet() { return styleSet; }
     StylePtr         getFirstStyle();
@@ -55,9 +56,16 @@ public:
 
     QVector<TilingPtr> getTilings();
 
+    void        setCleanseLevel(uint level) { cleanseLevel = level; }
+    uint        getCleanseLevel()           { return cleanseLevel; }
+
     void        dump();
+    void        reportMotifs();
+    void        reportStyles();
 
     static const QString defaultName;
+
+    static int  refs;
 
 protected:
     void        _eraseCrop();
@@ -69,6 +77,7 @@ private:
     ModelSettings    settings;
     BorderPtr        border;
     CropPtr          crop;
+    uint             cleanseLevel;
 };
 
 #endif

@@ -24,15 +24,15 @@ enum epageTi
     TI_LOCATION,
     TI_SHOW,
     TI_TYPE_PFP,    // regular, poly, or girih
-    TI_FEAT_ROT,
-    TI_FEAT_SCALE,
-    TI_SIDES,
-    TI_SCALE,
-    TI_ROT,
-    TI_X,
-    TI_Y,
-    TI_CW,
-    TI_FEAT_ADDR
+    TI_TILE_ROT,
+    TI_TILE_SCALE,
+    TI_TILE_SIDES,
+    TI_PLACEMENT_SCALE,
+    TI_PLACEMENT_ROT,
+    TI_PLACEMENT_X,
+    TI_PLACEMENT_Y,
+    TI_INFO_CW,
+    TI_TILE_ADDR
 };
 
 class page_tiling_maker : public panel_page
@@ -60,8 +60,8 @@ private slots:
 
     void slot_currentTilingChanged(int index);
     void slot_sidesChanged(int col);
-    void slot_f_rotChanged(int col);
-    void slot_f_scaleChanged(int col);
+    void slot_tileRotChanged(int col);
+    void slot_tileScaleChanged(int col);
     void slot_transformChanged(int col);
     void slot_showTileChanged(int col);
     void slot_t1t2Changed(double val);
@@ -75,7 +75,7 @@ private slots:
     void slot_autofill(bool checked);
     void slot_swapTrans();
     void slot_delete_clicked();
-    void slot_make_irregular_clicked();
+    void slot_convert_tile_regularity();
     void slot_uniquify_clicked();
     void slot_setModes(QAbstractButton *btn);
     void slot_set_reps(int val);
@@ -110,7 +110,6 @@ protected:
     void tallyMouseMode();
 
     void updateTilePointInfo(PlacedTilePtr pfp);
-    void pushTilingToMotifMaker(eSM_Event event);
 
     PlacedTilePtr getTileColumn(int col);
     int              getColumn(PlacedTilePtr pfp);
@@ -140,6 +139,7 @@ private:
     QLabel       * debugLabel2;
     QLabel       * overlapStatus;
     QLabel       * undoStatus;
+    QLabel       * loadedLabel;
 
     AQSpinBox    * xRepMin;
     AQSpinBox    * xRepMax;

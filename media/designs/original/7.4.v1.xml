@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!-- Written: Tue Sep 27 2022 13:29:56 -->
-<vector id="1" version="13">
+<!-- Written: Mon Apr 24 2023 09:33:19 -->
+<vector id="1" version="14">
 	<design>
 		<size>
 			<width>1500</width>
@@ -59,13 +59,13 @@
 							</edges>
 						</tile.Feature>
 						<app.Star id="12">
-							<n>6</n>
-							<d>2.3203125</d>
-							<s>1</s>
 							<boundarySides>6</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
+							<n>6</n>
+							<d>2.3203125</d>
+							<s>1</s>
 						</app.Star>
 					</entry>
 					<entry>
@@ -140,57 +140,508 @@
 								</Line>
 							</edges>
 						</tile.Feature>
-						<app.Infer id="31" type="FIG_TYPE_EXPLICIT_INFER">
-							<boundarySides>16</boundarySides>
+						<app.ExplicitFigure id="31" type="MOTIF_TYPE_EXPLICIT_MAP">
+							<boundarySides>1</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.Infer>
+							<n>16</n>
+							<map id="32">
+								<vertices id="33">
+									<Vertex id="34">
+										<pos>-3.511221528057703,-2.012005439599448</pos>
+									</Vertex>
+									<Vertex id="35">
+										<pos>-3.070596975727522,-2.363391794570989</pos>
+									</Vertex>
+									<Vertex id="36">
+										<pos>-2.683639332843395,-2.671980217395741</pos>
+									</Vertex>
+									<Vertex id="37">
+										<pos>-2.413901319993915,-2.887089104613222</pos>
+									</Vertex>
+									<Vertex id="38">
+										<pos>-2.144163307144435,-2.671980217395742</pos>
+									</Vertex>
+									<Vertex id="39">
+										<pos>-1.45877613160109,-2.955407753545292</pos>
+									</Vertex>
+									<Vertex id="40">
+										<pos>-1.757205664260309,-2.36339179457099</pos>
+									</Vertex>
+									<Vertex id="41">
+										<pos>-1.316581111930129,-2.012005439599449</pos>
+									</Vertex>
+									<Vertex id="42">
+										<pos>-1.870593998138565,-2.138455265604577</pos>
+									</Vertex>
+									<Vertex id="43">
+										<pos>-2.196551141403148,-1.491830821184515</pos>
+									</Vertex>
+									<Vertex id="44">
+										<pos>-1.870593998138564,-0.8452063767644514</pos>
+									</Vertex>
+									<Vertex id="45">
+										<pos>-1.316581111930129,-0.9716562027695796</pos>
+									</Vertex>
+									<Vertex id="46">
+										<pos>-1.757205664260309,-0.6202698477980386</pos>
+									</Vertex>
+									<Vertex id="47">
+										<pos>-1.45877613160109,-0.02825388882373647</pos>
+									</Vertex>
+									<Vertex id="48">
+										<pos>-2.144163307144435,-0.3116814249732875</pos>
+									</Vertex>
+									<Vertex id="49">
+										<pos>-2.413901319993916,-0.09657253775580676</pos>
+									</Vertex>
+									<Vertex id="50">
+										<pos>-2.683639332843397,-0.3116814249732873</pos>
+									</Vertex>
+									<Vertex id="51">
+										<pos>-2.413901319993915,-0.4232259404177105</pos>
+									</Vertex>
+									<Vertex id="52">
+										<pos>-3.369026508386741,-0.02825388882373714</pos>
+									</Vertex>
+									<Vertex id="53">
+										<pos>-3.070596975727522,-0.6202698477980382</pos>
+									</Vertex>
+									<Vertex id="54">
+										<pos>-2.957208641849267,-0.8452063767644515</pos>
+									</Vertex>
+									<Vertex id="55">
+										<pos>-2.631251498584683,-1.491830821184514</pos>
+									</Vertex>
+									<Vertex id="56">
+										<pos>-2.957208641849267,-2.138455265604576</pos>
+									</Vertex>
+									<Vertex id="57">
+										<pos>-2.413901319993912,-2.262461616406449</pos>
+									</Vertex>
+									<Vertex id="58">
+										<pos>-2.413901319993916,-0.7212000259625788</pos>
+									</Vertex>
+									<Vertex id="59">
+										<pos>-3.511221528057703,-0.97165620276958</pos>
+									</Vertex>
+									<Vertex id="60">
+										<pos>-2.413901319993916,-2.560435701951318</pos>
+									</Vertex>
+									<Vertex id="61">
+										<pos>-3.369026508386741,-2.955407753545292</pos>
+									</Vertex>
+									<Vertex id="62">
+										<pos>-3.146505574430427,-3.930335665727115</pos>
+									</Vertex>
+									<Vertex id="63">
+										<pos>-2.620763758344765,-4.334239892571069</pos>
+									</Vertex>
+									<Vertex id="64">
+										<pos>-2.42100809728506,-4.487703348148431</pos>
+									</Vertex>
+									<Vertex id="65">
+										<pos>-2.413901319993914,-4.493163171391147</pos>
+									</Vertex>
+									<Vertex id="66">
+										<pos>-2.40679454270277,-4.487703348148432</pos>
+									</Vertex>
+									<Vertex id="67">
+										<pos>-1.962510703130075,-4.842007887318156</pos>
+									</Vertex>
+									<Vertex id="68">
+										<pos>-2.207038881643065,-4.334239892571071</pos>
+									</Vertex>
+									<Vertex id="69">
+										<pos>-1.681297065557404,-3.930335665727116</pos>
+									</Vertex>
+									<Vertex id="70">
+										<pos>-2.413901319993927,-3.888764014339427</pos>
+									</Vertex>
+									<Vertex id="71">
+										<pos>-2.413901319993916,-3.904685613188404</pos>
+									</Vertex>
+									<Vertex id="72">
+										<pos>-2.413901319993916,-4.48203588237803</pos>
+									</Vertex>
+									<Vertex id="73">
+										<pos>-2.865291936857757,-4.842007887318156</pos>
+									</Vertex>
+									<Vertex id="74">
+										<pos>-3.146505574430427,0.9466740233580868</pos>
+									</Vertex>
+									<Vertex id="75">
+										<pos>-2.413901319993923,0.9051023719703992</pos>
+									</Vertex>
+									<Vertex id="76">
+										<pos>-1.681297065557404,0.9466740233580876</pos>
+									</Vertex>
+									<Vertex id="77">
+										<pos>-2.207038881643064,1.350578250202042</pos>
+									</Vertex>
+									<Vertex id="78">
+										<pos>-1.962510703130075,1.858346244949125</pos>
+									</Vertex>
+									<Vertex id="79">
+										<pos>-2.406794542702769,1.504041705779403</pos>
+									</Vertex>
+									<Vertex id="80">
+										<pos>-2.413901319993914,1.509501529022119</pos>
+									</Vertex>
+									<Vertex id="81">
+										<pos>-2.42100809728506,1.504041705779402</pos>
+									</Vertex>
+									<Vertex id="82">
+										<pos>-2.413901319993915,1.498374240009</pos>
+									</Vertex>
+									<Vertex id="83">
+										<pos>-2.865291936857756,1.858346244949126</pos>
+									</Vertex>
+									<Vertex id="84">
+										<pos>-2.620763758344765,1.350578250202041</pos>
+									</Vertex>
+									<Vertex id="85">
+										<pos>-2.413901319993915,0.9210239708193743</pos>
+									</Vertex>
+								</vertices>
+								<edges id="86">
+									<Edge id="87">
+										<v1 reference="39" />
+										<v2 reference="40" />
+									</Edge>
+									<Edge id="88">
+										<v1 reference="40" />
+										<v2 reference="42" />
+									</Edge>
+									<Edge id="89">
+										<v1 reference="41" />
+										<v2 reference="42" />
+									</Edge>
+									<Edge id="90">
+										<v1 reference="42" />
+										<v2 reference="43" />
+									</Edge>
+									<Edge id="91">
+										<v1 reference="45" />
+										<v2 reference="46" />
+									</Edge>
+									<Edge id="92">
+										<v1 reference="46" />
+										<v2 reference="48" />
+									</Edge>
+									<Edge id="93">
+										<v1 reference="47" />
+										<v2 reference="48" />
+									</Edge>
+									<Edge id="94">
+										<v1 reference="48" />
+										<v2 reference="49" />
+									</Edge>
+									<Edge id="95">
+										<v1 reference="48" />
+										<v2 reference="51" />
+									</Edge>
+									<Edge id="96">
+										<v1 reference="50" />
+										<v2 reference="51" />
+									</Edge>
+									<Edge id="97">
+										<v1 reference="50" />
+										<v2 reference="49" />
+									</Edge>
+									<Edge id="98">
+										<v1 reference="54" />
+										<v2 reference="55" />
+									</Edge>
+									<Edge id="99">
+										<v1 reference="42" />
+										<v2 reference="57" />
+									</Edge>
+									<Edge id="100">
+										<v1 reference="56" />
+										<v2 reference="57" />
+									</Edge>
+									<Edge id="101">
+										<v1 reference="56" />
+										<v2 reference="55" />
+									</Edge>
+									<Edge id="102">
+										<v1 reference="34" />
+										<v2 reference="56" />
+									</Edge>
+									<Edge id="103">
+										<v1 reference="35" />
+										<v2 reference="56" />
+									</Edge>
+									<Edge id="104">
+										<v1 reference="44" />
+										<v2 reference="58" />
+									</Edge>
+									<Edge id="105">
+										<v1 reference="54" />
+										<v2 reference="58" />
+									</Edge>
+									<Edge id="106">
+										<v1 reference="53" />
+										<v2 reference="54" />
+									</Edge>
+									<Edge id="107">
+										<v1 reference="59" />
+										<v2 reference="54" />
+									</Edge>
+									<Edge id="108">
+										<v1 reference="59" />
+										<v2 reference="53" />
+									</Edge>
+									<Edge id="109">
+										<v1 reference="53" />
+										<v2 reference="50" />
+									</Edge>
+									<Edge id="110">
+										<v1 reference="52" />
+										<v2 reference="53" />
+									</Edge>
+									<Edge id="111">
+										<v1 reference="52" />
+										<v2 reference="50" />
+									</Edge>
+									<Edge id="112">
+										<v1 reference="47" />
+										<v2 reference="46" />
+									</Edge>
+									<Edge id="113">
+										<v1 reference="46" />
+										<v2 reference="44" />
+									</Edge>
+									<Edge id="114">
+										<v1 reference="45" />
+										<v2 reference="44" />
+									</Edge>
+									<Edge id="115">
+										<v1 reference="44" />
+										<v2 reference="43" />
+									</Edge>
+									<Edge id="116">
+										<v1 reference="41" />
+										<v2 reference="40" />
+									</Edge>
+									<Edge id="117">
+										<v1 reference="40" />
+										<v2 reference="38" />
+									</Edge>
+									<Edge id="118">
+										<v1 reference="39" />
+										<v2 reference="38" />
+									</Edge>
+									<Edge id="119">
+										<v1 reference="38" />
+										<v2 reference="60" />
+									</Edge>
+									<Edge id="120">
+										<v1 reference="36" />
+										<v2 reference="60" />
+									</Edge>
+									<Edge id="121">
+										<v1 reference="38" />
+										<v2 reference="37" />
+									</Edge>
+									<Edge id="122">
+										<v1 reference="36" />
+										<v2 reference="37" />
+									</Edge>
+									<Edge id="123">
+										<v1 reference="35" />
+										<v2 reference="36" />
+									</Edge>
+									<Edge id="124">
+										<v1 reference="61" />
+										<v2 reference="36" />
+									</Edge>
+									<Edge id="125">
+										<v1 reference="61" />
+										<v2 reference="35" />
+									</Edge>
+									<Edge id="126">
+										<v1 reference="34" />
+										<v2 reference="35" />
+									</Edge>
+									<Edge id="127">
+										<v1 reference="67" />
+										<v2 reference="68" />
+									</Edge>
+									<Edge id="128">
+										<v1 reference="69" />
+										<v2 reference="70" />
+									</Edge>
+									<Edge id="129">
+										<v1 reference="62" />
+										<v2 reference="70" />
+									</Edge>
+									<Edge id="130">
+										<v1 reference="69" />
+										<v2 reference="68" />
+									</Edge>
+									<Edge id="131">
+										<v1 reference="68" />
+										<v2 reference="71" />
+									</Edge>
+									<Edge id="132">
+										<v1 reference="63" />
+										<v2 reference="71" />
+									</Edge>
+									<Edge id="133">
+										<v1 reference="68" />
+										<v2 reference="66" />
+									</Edge>
+									<Edge id="134">
+										<v1 reference="67" />
+										<v2 reference="66" />
+									</Edge>
+									<Edge id="135">
+										<v1 reference="66" />
+										<v2 reference="72" />
+									</Edge>
+									<Edge id="136">
+										<v1 reference="64" />
+										<v2 reference="72" />
+									</Edge>
+									<Edge id="137">
+										<v1 reference="66" />
+										<v2 reference="65" />
+									</Edge>
+									<Edge id="138">
+										<v1 reference="64" />
+										<v2 reference="65" />
+									</Edge>
+									<Edge id="139">
+										<v1 reference="63" />
+										<v2 reference="64" />
+									</Edge>
+									<Edge id="140">
+										<v1 reference="73" />
+										<v2 reference="64" />
+									</Edge>
+									<Edge id="141">
+										<v1 reference="73" />
+										<v2 reference="63" />
+									</Edge>
+									<Edge id="142">
+										<v1 reference="62" />
+										<v2 reference="63" />
+									</Edge>
+									<Edge id="143">
+										<v1 reference="76" />
+										<v2 reference="77" />
+									</Edge>
+									<Edge id="144">
+										<v1 reference="77" />
+										<v2 reference="79" />
+									</Edge>
+									<Edge id="145">
+										<v1 reference="78" />
+										<v2 reference="79" />
+									</Edge>
+									<Edge id="146">
+										<v1 reference="79" />
+										<v2 reference="80" />
+									</Edge>
+									<Edge id="147">
+										<v1 reference="79" />
+										<v2 reference="82" />
+									</Edge>
+									<Edge id="148">
+										<v1 reference="81" />
+										<v2 reference="82" />
+									</Edge>
+									<Edge id="149">
+										<v1 reference="81" />
+										<v2 reference="80" />
+									</Edge>
+									<Edge id="150">
+										<v1 reference="77" />
+										<v2 reference="85" />
+									</Edge>
+									<Edge id="151">
+										<v1 reference="84" />
+										<v2 reference="85" />
+									</Edge>
+									<Edge id="152">
+										<v1 reference="84" />
+										<v2 reference="81" />
+									</Edge>
+									<Edge id="153">
+										<v1 reference="83" />
+										<v2 reference="84" />
+									</Edge>
+									<Edge id="154">
+										<v1 reference="74" />
+										<v2 reference="84" />
+									</Edge>
+									<Edge id="155">
+										<v1 reference="83" />
+										<v2 reference="81" />
+									</Edge>
+									<Edge id="156">
+										<v1 reference="78" />
+										<v2 reference="77" />
+									</Edge>
+									<Edge id="157">
+										<v1 reference="76" />
+										<v2 reference="75" />
+									</Edge>
+									<Edge id="158">
+										<v1 reference="74" />
+										<v2 reference="75" />
+									</Edge>
+								</edges>
+							</map>
+						</app.ExplicitFigure>
 					</entry>
 					<entry>
-						<tile.Feature id="32">
+						<tile.Feature id="159">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
-							<edges id="33">
+							<edges id="160">
 								<Line>
-									<Point id="34">1,0.4815746188075287</Point>
-									<Point id="35">0.2469796037174671,1.082088346128531</Point>
+									<Point id="161">1,0.4815746188075287</Point>
+									<Point id="162">0.2469796037174671,1.082088346128531</Point>
 								</Line>
 								<Line>
-									<Point reference="35" />
-									<Point id="36">-0.6920214716300959,0.8677674782351164</Point>
+									<Point reference="162" />
+									<Point id="163">-0.6920214716300959,0.8677674782351164</Point>
 								</Line>
 								<Line>
-									<Point reference="36" />
-									<Point id="37">-1.109916264174742,1.359255400243186e-16</Point>
+									<Point reference="163" />
+									<Point id="164">-1.109916264174742,1.359255400243186e-16</Point>
 								</Line>
 								<Line>
-									<Point reference="37" />
-									<Point id="38">-0.6920214716300961,-0.8677674782351161</Point>
+									<Point reference="164" />
+									<Point id="165">-0.6920214716300961,-0.8677674782351161</Point>
 								</Line>
 								<Line>
-									<Point reference="38" />
-									<Point id="39">0.2469796037174669,-1.082088346128531</Point>
+									<Point reference="165" />
+									<Point id="166">0.2469796037174669,-1.082088346128531</Point>
 								</Line>
 								<Line>
-									<Point reference="39" />
-									<Point id="40">0.9999999999999999,-0.4815746188075289</Point>
+									<Point reference="166" />
+									<Point id="167">0.9999999999999999,-0.4815746188075289</Point>
 								</Line>
 								<Line>
-									<Point reference="40" />
-									<Point reference="34" />
+									<Point reference="167" />
+									<Point reference="161" />
 								</Line>
 							</edges>
 						</tile.Feature>
-						<app.Star id="41">
-							<n>7</n>
-							<d>3</d>
-							<s>2</s>
+						<app.Star id="168">
 							<boundarySides>7</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
+							<n>7</n>
+							<d>3</d>
+							<s>2</s>
 						</app.Star>
 					</entry>
 				</app.Prototype>
@@ -212,7 +663,7 @@
 			<startUnder>false</startUnder>
 		</style.Interlace>
 	</style.Interlace>
-	<style.Interlace id="42">
+	<style.Interlace id="169">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
 			<top__delta>0</top__delta>
@@ -240,7 +691,7 @@
 			<startUnder>false</startUnder>
 		</style.Interlace>
 	</style.Interlace>
-	<style.Outline id="43">
+	<style.Outline id="170">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
 			<top__delta>0</top__delta>
@@ -262,7 +713,7 @@
 			<cap>square</cap>
 		</style.Thick>
 	</style.Outline>
-	<style.Filled id="44">
+	<style.Filled id="171">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
 			<top__delta>0</top__delta>
@@ -292,7 +743,7 @@
 			<algorithm>0</algorithm>
 		</style.Filled>
 	</style.Filled>
-	<style.Filled id="45">
+	<style.Filled id="172">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
 			<top__delta>0</top__delta>

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef PAGE_CROP_MAKER_H
 #define PAGE_CROP_MAKER_H
 

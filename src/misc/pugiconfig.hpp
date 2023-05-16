@@ -1,5 +1,5 @@
 /**
- * pugixml parser - version 1.12
+ * pugixml parser - version 1.13
  * --------------------------------------------------------
  * Copyright (C) 2006-2022, by Arseny Kapoulkine (arseny.kapoulkine@gmail.com)
  * Report bugs and download new versions at https://pugixml.org/
@@ -11,6 +11,7 @@
  * Copyright (C) 2003, by Kristen Wegner (kristen@tima.net)
  */
 
+#pragma once
 #ifndef HEADER_PUGICONFIG_HPP
 #define HEADER_PUGICONFIG_HPP
 

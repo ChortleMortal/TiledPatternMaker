@@ -1,3 +1,4 @@
+#pragma once
 #ifndef XFORM_H
 #define XFORM_H
 

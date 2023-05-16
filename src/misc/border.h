@@ -1,3 +1,4 @@
+#pragma once
 #ifndef BORDER_H
 #define BORDER_H
 

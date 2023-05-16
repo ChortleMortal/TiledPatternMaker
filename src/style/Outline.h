@@ -1,3 +1,4 @@
+#pragma once
 #ifndef OUTLINE_H
 #define OUTLINE_H
 
@@ -20,7 +21,7 @@
 class Outline : public Thick
 {
 public:
-    Outline(const PrototypePtr & proto);
+    Outline(const ProtoPtr & proto);
     Outline(const StylePtr & other);
     virtual ~Outline() override;
 
@@ -29,7 +30,8 @@ public:
     void draw(GeoGraphics *gg ) override;
 
     virtual eStyleType getStyleType() const override { return STYLE_OUTLINED; }
-    QString getStyleDesc() const override { return "Outlined"; }
+    QString            getStyleDesc() const override { return "Outlined"; }
+    virtual void       report()       const override { qDebug().noquote() << getStyleDesc() << "width:" << width << "outline:" << drawOutline << outline_width << "outlineColor" << outline_color << colors.colorsString(); }
 
     static BelowAndAbove getPoints(const MapPtr & map, const EdgePtr & edge, const VertexPtr & fromV, const VertexPtr & toV, qreal qwidth);
     static QPointF       getJoinPoint(QPointF joint, QPointF from, QPointF to, qreal qwidth);

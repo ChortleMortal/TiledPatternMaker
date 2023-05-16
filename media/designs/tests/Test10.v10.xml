@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<vector id="1" version="12">
-	<!-- Written Tue Jan 4 2022 11:57:34 -->
+<!-- Written: Sun Jan 15 2023 22:36:40 -->
+<vector id="1" version="14">
 	<designNotes>Tring for Salih Talai based on photo, not on Broug</designNotes>
 	<design>
 		<size>
@@ -14,7 +14,7 @@
 		</background>
 		<Fill singleton="f">-5,5,-7,7</Fill>
 	</design>
-	<style.Thick id="2" serialization="custom">
+	<style.Thick id="2">
 		<toolkit.GeoLayer>
 			<left__delta>-285.4761904761767</left__delta>
 			<top__delta>-203.3809523809407</top__delta>
@@ -24,7 +24,7 @@
 			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<prototype id="3" serialization="custom">
+			<prototype id="3">
 				<app.Prototype>
 					<string>DAC8.v9</string>
 					<entry>
@@ -68,14 +68,14 @@
 							</edges>
 						</tile.Feature>
 						<ExtendedRosette id="14" extendPeripherals="t" extendFreeVertices="f" connectBoundaryVertices="f">
-							<n>8</n>
-							<q>0</q>
-							<s>3</s>
-							<k>0</k>
 							<boundarySides>4</boundarySides>
 							<boundaryScale>1.71</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
+							<n>8</n>
+							<q>0</q>
+							<s>3</s>
+							<k>0</k>
 						</ExtendedRosette>
 					</entry>
 					<entry>
@@ -103,13 +103,13 @@
 							</edges>
 						</tile.Feature>
 						<app.Star id="21">
-							<n>4</n>
-							<d>1.33</d>
-							<s>1</s>
 							<boundarySides>1</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
+							<n>4</n>
+							<d>1.33</d>
+							<s>1</s>
 						</app.Star>
 					</entry>
 				</app.Prototype>
@@ -121,9 +121,11 @@
 		<style.Thick>
 			<draw__outline>true</draw__outline>
 			<width>0.02</width>
+			<join>round</join>
+			<cap>round</cap>
 		</style.Thick>
 	</style.Thick>
-	<style.Filled id="22" serialization="custom">
+	<style.Filled id="22">
 		<toolkit.GeoLayer>
 			<left__delta>-285.4761904761767</left__delta>
 			<top__delta>-203.3809523809407</top__delta>
@@ -159,8 +161,100 @@
 			<color hide="f">#ffaaaa00</color>
 			<color hide="f">#ffaaaa00</color>
 			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffc59c0c</color>
+			<color hide="f">#ffc59c0c</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffc59c0c</color>
 			<color hide="t">#ffffff00</color>
 			<color hide="f">#ffc59c0c</color>
+			<color hide="f">#ffc59c0c</color>
+			<color hide="f">#ffc59c0c</color>
+			<color hide="f">#ffc59c0c</color>
+			<color hide="f">#ffc59c0c</color>
+			<color hide="f">#ffc59c0c</color>
+			<color hide="f">#ffc59c0c</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="t">#ffffff00</color>
+			<color hide="f">#ffc59c0c</color>
+			<color hide="f">#ffc59c0c</color>
+			<color hide="f">#ffc59c0c</color>
+			<color hide="f">#ffc59c0c</color>
+			<color hide="f">#ffc59c0c</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffc59c0c</color>
+			<color hide="f">#ffc59c0c</color>
+			<color hide="f">#ffc59c0c</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffc59c0c</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="t">#ffffff00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffc59c0c</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="t">#ffffff00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffc59c0c</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffc59c0c</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="t">#ffffff00</color>
+			<color hide="t">#ffffff00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="t">#ffffff00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="t">#ffffff00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffc59c0c</color>
+			<color hide="t">#ffffff00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="t">#ffffff00</color>
+			<color hide="t">#ffffff00</color>
+			<color hide="f">#ffaaaa00</color>
+			<color hide="t">#ffffff00</color>
+			<color hide="t">#ffffff00</color>
+			<color hide="t">#ffffff00</color>
 			<color hide="f">#ffaaaa00</color>
 			<color hide="t">#ffffff00</color>
 			<color hide="t">#ffffff00</color>
@@ -169,10 +263,6 @@
 			<color hide="t">#ffffff00</color>
 			<color hide="t">#ffffff00</color>
 			<color hide="t">#ffffff00</color>
-			<color hide="f">#ffaaaa00</color>
-			<color hide="f">#ffaaaa00</color>
-			<color hide="f">#ffaaaa00</color>
-			<color hide="t">#ffffff00</color>
 			<color hide="t">#ffffff00</color>
 			<color hide="t">#ffffff00</color>
 			<color hide="t">#ffffff00</color>
@@ -190,7 +280,7 @@
 			<color hide="t">#ffffff00</color>
 			<color hide="t">#ffffff00</color>
 			<color hide="f">#ffc59c0c</color>
-			<color hide="f">#ffc59c0c</color>
+			<color hide="t">#ffffff00</color>
 			<color hide="f">#ffc59c0c</color>
 			<color hide="f">#ffc59c0c</color>
 			<color hide="f">#ffc59c0c</color>

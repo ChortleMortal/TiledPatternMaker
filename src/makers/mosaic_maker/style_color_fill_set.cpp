@@ -67,7 +67,7 @@ void StyleColorFillSet::display()
     table->setRowCount(faceGroups.size());
 
     int row = 0;
-    for (FaceSetPtr & faceSet : faceGroups)
+    for (const FaceSetPtr & faceSet : faceGroups)
     {
         QTableWidgetItem * item = new QTableWidgetItem(QString::number(row));
         table->setItem(row,COL_ROW,item);
@@ -90,7 +90,7 @@ void StyleColorFillSet::display()
         QLineEdit * le = new QLineEdit();
         table->setCellWidget(row,COL_COLOR_TEXT,le);
         le->setText(color.name());
-        connect(le, &QLineEdit::textEdited, [this,row] { colorChanged(row); });
+        connect(le, &QLineEdit::textEdited, this, [this,row] { colorChanged(row); });
 
         QLabel * label   = new QLabel;
         QVariant variant = fullColor;
@@ -98,11 +98,10 @@ void StyleColorFillSet::display()
         label->setStyleSheet("QLabel { background-color :"+colcode+" ;}");
         table->setCellWidget(row,COL_COLOR_PATCH,label);
 
-        QCheckBox * cb = new QCheckBox("Hide");
-        cb->setStyleSheet("padding-left:11px;");
+        QCheckBox * cb = new AQCheckBox("Hide");
         table->setCellWidget(row,COL_HIDE,cb);
         cb->setChecked(tpcolor.hidden);
-        connect(cb, &QCheckBox::clicked, [this, row] { colorVisibilityChanged(row); });
+        connect(cb, &QCheckBox::clicked, this, [this, row] { colorVisibilityChanged(row); });
 
         QString astring;
         if (faceSet->selected) astring = "X";
@@ -221,6 +220,20 @@ void StyleColorFillSet::pasteColor()
     display();
 }
 
+void StyleColorFillSet::setColor(QColor color)
+{
+    int currentRow = table->currentRow();
+    if (currentRow < 0 || currentRow >= filled->getWhiteColorSet()->size())
+        return;
+
+    qDebug() << "row" << currentRow  << "color" << color;
+    filled->getWhiteColorSet()->setColor(currentRow,color);
+
+    emit sig_colorsChanged();
+
+    display();
+}
+
 void StyleColorFillSet::colorVisibilityChanged(int row)
 {
     qDebug() << "colorVisibilityChanged row=" << row;
@@ -289,4 +302,23 @@ void StyleColorFillSet::slot_double_click(int row, int col)
     Q_UNUSED(col);
 
     modify();
+}
+
+void StyleColorFillSet::select(QPointF mpt)
+{
+    FaceGroups & faceGroups = filled->getFaceGroups();
+    int row = 0;
+    for (const FaceSetPtr & faceSet : faceGroups)
+    {
+        for (const FacePtr & face : *faceSet)
+        {
+            if (face->getPolygon().containsPoint(mpt,Qt::OddEvenFill))
+            {
+                qDebug() << "select row" << row;
+                table->setCurrentCell(row,0);
+                return;
+            }
+        }
+        row++;
+    }
 }

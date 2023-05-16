@@ -1,3 +1,4 @@
+#pragma once
 #ifndef VIEWERBASE_H
 #define VIEWERBASE_H
 

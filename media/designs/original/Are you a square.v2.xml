@@ -1,0 +1,191 @@
+<?xml version="1.0"?>
+<!-- Written: Fri Mar 10 2023 13:47:21 -->
+<vector id="1" version="14">
+	<design>
+		<size>
+			<width>1500</width>
+			<height>1100</height>
+			<zwidth>1500</zwidth>
+			<zheight>1100</zheight>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Fill singleton="f">-3,3,-2,2</Fill>
+	</design>
+	<style.Plain id="2">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<string>4.5</string>
+					<entry>
+						<tile.Feature id="4">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">0.9999999999999994,1</Point>
+									<Point id="7">0.9999999999999991,-0.9999999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">2.902113032590306,-1.618033988749894</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">4.5201470213402,1.720845688168993e-15</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point id="10">2.902113032590305,1.618033988749894</Point>
+								</Line>
+								<Line>
+									<Point reference="10" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitGirih id="11" type="MOTIF_TYPE_INFERRED_GIRIH">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>5</n>
+							<skip>2.870000000000003</skip>
+						</app.ExplicitGirih>
+					</entry>
+					<entry>
+						<tile.Feature id="12">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="13">
+								<Line>
+									<Point id="14">1.618033988749893,2.902113032590306</Point>
+									<Point id="15">0.9999999999999998,0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="15" />
+									<Point id="16">2.902113032590306,1.618033988749895</Point>
+								</Line>
+								<Line>
+									<Point reference="16" />
+									<Point id="17">3.5201470213402,3.520147021340201</Point>
+								</Line>
+								<Line>
+									<Point reference="17" />
+									<Point reference="14" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitGirih id="18" type="MOTIF_TYPE_INFERRED_GIRIH">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+							<skip>2.28</skip>
+						</app.ExplicitGirih>
+					</entry>
+					<entry>
+						<tile.Feature id="19">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="20">
+								<Line>
+									<Point id="21">1,1</Point>
+									<Point id="22">-0.9999999999999998,1</Point>
+								</Line>
+								<Line>
+									<Point reference="22" />
+									<Point id="23">-1,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="23" />
+									<Point id="24">0.9999999999999997,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="24" />
+									<Point reference="21" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitGirih id="25" type="MOTIF_TYPE_INFERRED_GIRIH">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+							<skip>2.280000000000015</skip>
+						</app.ExplicitGirih>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ffffffff</color>
+		</style.Colored>
+	</style.Plain>
+	<style.Thick id="26">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff1496d2</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.15</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+	</style.Thick>
+	<style.Filled id="27">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<ColorBlacks>
+			<color hide="f">#ff1496d2</color>
+		</ColorBlacks>
+		<ColorWhites>
+			<color hide="f">#ff1496d2</color>
+		</ColorWhites>
+		<ColorGroup>
+			<Group hideSet="f">
+				<color hide="f">#ff1496d2</color>
+			</Group>
+			<Group hideSet="f" />
+		</ColorGroup>
+		<style.Filled>
+			<draw__inside>true</draw__inside>
+			<draw__outside>false</draw__outside>
+			<algorithm>0</algorithm>
+		</style.Filled>
+	</style.Filled>
+</vector>

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef SHORTCUTS_H
 #define SHORTCUTS_H
 

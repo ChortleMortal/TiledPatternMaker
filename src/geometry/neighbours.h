@@ -1,3 +1,4 @@
+#pragma once
 #ifndef NEIGHBOURS_H
 #define NEIGHBOURS_H
 
@@ -29,7 +30,7 @@ public:
 
     void insertNeighbour(const EdgePtr &np);
 
-    int numNeighbours()  { return (int)size(); }
+    uint numNeighbours()  { return (uint)size(); }
 
     BeforeAndAfter getBeforeAndAfter(const EdgePtr & edge);
     EdgePtr        getNeighbour(int index);

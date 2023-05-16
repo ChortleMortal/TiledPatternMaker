@@ -17,15 +17,11 @@ ExtendedRosette::ExtendedRosette(const ExtendedRosette & other) : Rosette(other)
     extender = other.extender;
 }
 
-void ExtendedRosette::buildMaps()
+void ExtendedRosette::buildMotifMaps()
 {
-    Rosette::buildMaps();
+    Rosette::buildMotifMaps();
 
-    RadialMotif * rf = dynamic_cast<RadialMotif*>(this);
-    QTransform Tr = rf->getTransform();
-
-    Motif * fig = dynamic_cast<Motif*>(this);
-    extender.extend(fig,Tr);
+    extender.extend(this,getTransform());
 }
 
 

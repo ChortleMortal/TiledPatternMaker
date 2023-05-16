@@ -6,12 +6,13 @@
 #include "makers/map_editor/map_editor_db.h"
 #include "makers/map_editor/map_selection.h"
 #include "makers/map_editor/map_editor_selection.h"
+#include "motifs/explicit_map_motif.h"
 #include "viewers/map_editor_view.h"
 #include "makers/mosaic_maker/mosaic_maker.h"
-#include "makers/motif_maker/motif_maker.h"
+#include "makers/prototype_maker/prototype_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "motifs/motif.h"
-#include "motifs/explicit_motif.h"
+#include "motifs/irregular_motif.h"
 #include "geometry/crop.h"
 #include "geometry/dcel.h"
 #include "geometry/edge.h"
@@ -19,7 +20,7 @@
 #include "geometry/transform.h"
 #include "misc/shortcuts.h"
 #include "mosaic/design_element.h"
-#include "mosaic/prototype.h"
+#include "makers/prototype_maker/prototype.h"
 #include "mosaic/mosaic.h"
 #include "panels/panel.h"
 #include "settings/configuration.h"
@@ -52,7 +53,7 @@ MapEditor::MapEditor()
 
     config          = Configuration::getInstance();
     mosaicMaker     = MosaicMaker::getInstance();
-    motifMaker      = MotifMaker::getInstance();
+    prototypeMaker  = PrototypeMaker::getInstance();
     tilingMaker     = TilingMaker::getSharedInstance();
     view            = ViewControl::getInstance();
     cpanel          = ControlPanel::getInstance();
@@ -105,7 +106,8 @@ bool MapEditor::loadMosaicPrototype()
 
 void  MapEditor::loadMotifPrototype()
 {
-    PrototypePtr proto = motifMaker->getSelectedPrototype();
+    auto data  = prototypeMaker->getProtoMakerData();
+    auto proto = data->getSelectedPrototype();
     if (!proto)
     {
         QMessageBox box(ControlPanel::getInstance());
@@ -139,7 +141,8 @@ void  MapEditor::loadMotifPrototype()
 
 bool  MapEditor::loadSelectedMotifs()
 {
-    auto proto = motifMaker->getSelectedPrototype();
+    auto data  = prototypeMaker->getProtoMakerData();
+    auto proto = data->getSelectedPrototype();
     if (!proto)
     {
         QMessageBox box(ControlPanel::getInstance());
@@ -151,8 +154,8 @@ bool  MapEditor::loadSelectedMotifs()
 
     db->setMotfiPrototype(proto);
 
-    auto delps = motifMaker->getSelectedDesignElements();
-    if (delps.size() ==0)
+    auto dels = data->getSelectedDELs(MVD_DELEM);
+    if (dels.size() ==0)
     {
         QMessageBox box(ControlPanel::getInstance());
         box.setIcon(QMessageBox::Warning);
@@ -161,19 +164,19 @@ bool  MapEditor::loadSelectedMotifs()
         return false;
     }
 
-    for (auto delp : delps)
+    for (auto del : dels)
     {
-        db->getDesignElements().push_back(delp);
+        db->getDesignElements().push_back(del);
 
-        auto motif  = delp->getMotif();
+        auto motif  = del->getMotif();
         if (motif)
         {
-            MapPtr map  = motif->getMap();
-            auto tile = delp->getTile();
+            MapPtr map  = motif->getMotifMap();
+            auto tile = del->getTile();
             QTransform placement = meView->getPlacement(tile);
             MapPtr tmap = map->getTransformed(placement);
 
-            db->insertLayer(MapEditorLayer(tmap,MAPED_LOADED_FROM_MOTIF,delp));
+            db->insertLayer(MapEditorLayer(tmap,MAPED_LOADED_FROM_MOTIF,del));
 
             if (config->mapEditorMode == MAPED_MODE_DCEL)
             {
@@ -280,7 +283,7 @@ bool MapEditor::createLocalDCEL(MapPtr map)
 bool MapEditor::pushToMosaic(MapEditorLayer & layer)
 {
     qDebug().noquote() << "MapEditor::pushToMosaic" << Transform::toInfoString(meView->getLayerTransform());
-    QVector<PrototypePtr> protos;
+    QVector<ProtoPtr> protos;
 
     if (layer.type == MAPED_LOADED_FROM_MOTIF_PROTOTYPE)
     {
@@ -293,7 +296,7 @@ bool MapEditor::pushToMosaic(MapEditorLayer & layer)
     else
     {
         // is there an existing prototype?
-        auto map = layer.getMap();
+        auto map = layer.getMapedLayerMap();
 
         auto mosaic = mosaicMaker->getMosaic();
         if (mosaic)
@@ -321,14 +324,15 @@ bool MapEditor::pushToMosaic(MapEditorLayer & layer)
             return true;     // done
         }
 
-        // the mosaic needs to be fed a map in to prototype whichi it can style
-        // we could use passing a prortype which has a map but no tiling
+        // the mosaic needs to be fed a map in to prototype which it can style
+        // we could use passing a prototype which has a map but no tiling
         // but lets fake it out by creating an explicit motif from the tile
         // the real issue is having a prototype disconnected from a tiling !
 
         EdgePoly ep(map->getEdges());
         auto tile = make_shared<Tile>(ep);
-        auto motif  = make_shared<ExplicitMotif>(map,MOTIF_TYPE_EXPLICIT,10);   // FIXME 10 is arbitrary
+        auto motif  = make_shared<ExplicitMapMotif>(map);
+        motif->setN(tile->numSides());
         auto del = make_shared<DesignElement>(tile,motif);
 
         auto proto = make_shared<Prototype>(map);
@@ -342,7 +346,7 @@ bool MapEditor::pushToMosaic(MapEditorLayer & layer)
 
         // This makes a new mosaic which is a representation of the new map
         // which in turn was derived from old mosaic
-        mosaicMaker->sm_takeUp(protos, SM_LOAD_SINGLE);
+        mosaicMaker->sm_takeUp(protos, MOSM_LOAD_SINGLE);
 
         mosaicMaker->getMosaic()->setName(oldname);
 
@@ -365,12 +369,13 @@ bool MapEditor::convertToMotif(MapPtr map)
     if (!convertToTiling(map,true))
         return false;
 
-    DesignElementPtr delp = motifMaker->getSelectedDesignElement();
-    if (!delp)
+    auto data  = prototypeMaker->getProtoMakerData();
+    auto del   = data->getSelectedDEL();
+    if (!del)
         return false;
 
-    MotifPtr fig = make_shared<ExplicitMotif>(map,MOTIF_TYPE_EXPLICIT,10); // todo - specify number of sides
-    delp->setMotif(fig);
+    auto motif = make_shared<ExplicitMapMotif>(map);
+    del->setMotif(motif);
 
     return true;
 }
@@ -396,7 +401,7 @@ bool MapEditor::convertToTiling(MapPtr map, bool outer)
     qDebug() << "num new faces =" << faces.size();
 
     auto tiling = tilingMaker->getSelected();
-    QVector<PlacedTilePtr> qvec_pf;
+    PlacedTiles placedTiles;
     for (auto & face : qAsConst(faces))
     {
         if (  (!outer && !face->outer)
@@ -404,12 +409,12 @@ bool MapEditor::convertToTiling(MapPtr map, bool outer)
         {
             EdgePoly ep = *face;
             TilePtr fp        = make_shared<Tile>(ep);
-            PlacedTilePtr pfp = make_shared<PlacedTile>(tiling.get(),fp,QTransform());
-            qvec_pf.push_back(pfp);
+            auto placedTile = make_shared<PlacedTile>(fp,QTransform());
+            placedTiles.push_back(placedTile);
         }
     }
 
-    tilingMaker->addNewPlacedTiles(qvec_pf);
+    tilingMaker->addNewPlacedTiles(placedTiles);
 
     // aligns the tiling maker to the map editor
     const Xform & xf = meView->getCanvasXform();

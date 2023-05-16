@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
-<vector id="1" version="12">
+<!-- Written: Sun Apr 16 2023 23:10:01 -->
+<vector id="1" version="14">
 	<design>
 		<size>
 			<width>1500</width>
@@ -12,17 +13,17 @@
 		</background>
 		<Fill singleton="f">-4,4,-5,5</Fill>
 	</design>
-	<style.Outline id="2" serialization="custom">
+	<style.Outline id="2">
 		<toolkit.GeoLayer>
-			<left__delta>1.796554809425044</left__delta>
-			<top__delta>-1.681378076229678</top__delta>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
 			<width__delta>1</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>0,0</center>
 			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<prototype id="3" serialization="custom">
+			<prototype id="3">
 				<app.Prototype>
 					<string>square_12</string>
 					<entry>
@@ -65,12 +66,13 @@
 								</Line>
 							</edges>
 						</tile.Feature>
-						<app.ExplicitFigure id="14" type="FIG_TYPE_EXPLICIT">
+						<IrregularNoMotif id="14" type="MOTIF_TYPE_IRREGULAR_NO_MOTIF">
 							<boundarySides>1</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFigure>
+							<n>10</n>
+						</IrregularNoMotif>
 					</entry>
 					<entry>
 						<tile.Feature id="15">
@@ -129,18 +131,62 @@
 							</edges>
 						</tile.Feature>
 						<app.Rosette id="29">
+							<boundarySides>12</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
 							<n>12</n>
 							<q>0</q>
 							<s>3</s>
 							<k>0</k>
-							<boundarySides>1</boundarySides>
-							<boundaryScale>1</boundaryScale>
-							<figureScale>1</figureScale>
-							<r>0</r>
 						</app.Rosette>
 					</entry>
 				</app.Prototype>
 			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ffffcc00</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.05</width>
+			<join>bevel</join>
+			<cap>square</cap>
+		</style.Thick>
+	</style.Outline>
+	<style.Outline id="30">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ffffcc00</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.05</width>
+			<join>bevel</join>
+			<cap>square</cap>
+		</style.Thick>
+	</style.Outline>
+	<style.Outline id="31">
+		<toolkit.GeoLayer>
+			<left__delta>1.796554809425044</left__delta>
+			<top__delta>-1.681378076229678</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
 		</style.Style>
 		<style.Colored>
 			<color hide="t">#63000000</color>
@@ -148,6 +194,68 @@
 		<style.Thick>
 			<draw__outline>true</draw__outline>
 			<width>0.05</width>
+			<join>bevel</join>
+			<cap>square</cap>
 		</style.Thick>
 	</style.Outline>
+	<style.Filled id="32">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<ColorBlacks>
+			<color hide="f">#ff339900</color>
+		</ColorBlacks>
+		<ColorWhites>
+			<color hide="f">#ff339900</color>
+		</ColorWhites>
+		<ColorGroup>
+			<Group hideSet="f">
+				<color hide="f">#ff339900</color>
+			</Group>
+			<Group hideSet="f" />
+		</ColorGroup>
+		<style.Filled>
+			<draw__inside>true</draw__inside>
+			<draw__outside>false</draw__outside>
+			<algorithm>0</algorithm>
+		</style.Filled>
+	</style.Filled>
+	<style.Filled id="33">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<ColorBlacks>
+			<color hide="f">#ffcc3300</color>
+		</ColorBlacks>
+		<ColorWhites>
+			<color hide="f">#ffcc3300</color>
+		</ColorWhites>
+		<ColorGroup>
+			<Group hideSet="f">
+				<color hide="f">#ffcc3300</color>
+			</Group>
+			<Group hideSet="f" />
+		</ColorGroup>
+		<style.Filled>
+			<draw__inside>false</draw__inside>
+			<draw__outside>true</draw__outside>
+			<algorithm>0</algorithm>
+		</style.Filled>
+	</style.Filled>
 </vector>

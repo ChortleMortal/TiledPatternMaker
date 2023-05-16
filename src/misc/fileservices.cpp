@@ -18,7 +18,7 @@ QStringList FileServices::getMosaicFiles()
     Configuration * config = Configuration::getInstance();
 
     QStringList files;
-    QString path(config->rootDesignDir);
+    QString path(config->rootMosaicDir);
     QDirIterator it(path, QStringList() << "*.xml", QDir::Files, QDirIterator::Subdirectories);
     while (it.hasNext())
     {
@@ -32,36 +32,44 @@ QStringList FileServices::getMosaicFiles()
 
 QStringList FileServices::getMosaicNames(eLoadType loadType)
 {
+    // names and version only, no extension
+
     Configuration * config = Configuration::getInstance();
 
     QStringList names;
-    if (loadType == LOAD_ALL)
+    switch (loadType)
     {
-        addNames(names,config->originalDesignDir);
-        addNames(names,config->newDesignDir);
-        addNames(names,config->testDesignDir);
-    }
-    else if (config->mosaicWorklistCheck || loadType == LOAD_WORKLIST)
-    {
-        names = config->getWorkList();
-    }
-    else
-    {
+    case ALL_MOSAICS:
+        addNames(names,config->originalMosaicDir);
+        addNames(names,config->newMosaicDir);
+        addNames(names,config->testMosiacDir);
+        break;
+
+    case WORKLIST:
+        names = config->worklist.get();
+        break;
+
+    case SELECTED_MOSAICS:
         if (config->mosaicOrigCheck)
         {
-            addNames(names,config->originalDesignDir);
+            addNames(names,config->originalMosaicDir);
         }
         if (config->mosaicNewCheck)
         {
-            addNames(names,config->newDesignDir);
+            addNames(names,config->newMosaicDir);
         }
         if (config->mosaicTestCheck)
         {
-            addNames(names,config->testDesignDir);
+            addNames(names,config->testMosiacDir);
         }
+        break;
+
+    case ALL_TILINGS:
+    case SELECTED_TILINGS:
+        qCritical("Selecting tilings - should be mosaic");
     }
 
-    if (loadType != LOAD_ALL && config->mosaicFilterCheck &&  !config->mosaicFilter.isEmpty())
+    if (loadType != ALL_MOSAICS && config->mosaicFilterCheck &&  !config->mosaicFilter.isEmpty())
     {
         QString filter_lc = config->mosaicFilter.toLower();
 
@@ -84,6 +92,20 @@ QStringList FileServices::getMosaicNames(eLoadType loadType)
     return names;
 }
 
+QStringList FileServices::getMosaicRootNames(eLoadType loadType)
+{
+    // names only, no version, no extension
+    auto slist = getMosaicNames(loadType);
+    QStringList mosaicNames;
+    for (auto & name : slist)
+    {
+        auto nameRoot = getMosaicNameOnly(name);
+        mosaicNames.push_back(nameRoot);
+    }
+    mosaicNames.removeDuplicates();
+    return mosaicNames;
+}
+
 void FileServices::addNames(QStringList & names, QString path)
 {
     QDirIterator it(path, QStringList() << "*.xml", QDir::Files, QDirIterator::Subdirectories);
@@ -102,7 +124,7 @@ QString FileServices::getMosaicXMLFile(QString name)
     Configuration * config = Configuration::getInstance();
 
     QString file;
-    QString root(config->rootDesignDir);
+    QString root(config->rootMosaicDir);
     QDirIterator it(root, QStringList() << "*.xml", QDir::Files, QDirIterator::Subdirectories);
     while (it.hasNext())
     {
@@ -162,55 +184,58 @@ QStringList FileServices::getTilingNames(eLoadType loadType)
     Configuration * config = Configuration::getInstance();
 
     QStringList names;
-    if (loadType == LOAD_ALL)
+    switch (loadType)
     {
+    case ALL_TILINGS:
         addNames(names,config->rootTileDir);
+        break;
+
+    case WORKLIST:
+        if (config->tilingWorklistCheck)
+        {
+            names = config->worklist.get();
+        }
+        break;
+
+    case SELECTED_TILINGS:
+        if (config->tilingOrigCheck)
+        {
+            addNames(names,config->originalTileDir);
+        }
+        if (config->tilingNewCheck)
+        {
+            addNames(names,config->newTileDir);
+        }
+        if (config->tilingTestCheck)
+        {
+            addNames(names,config->testTileDir);
+        }
+        break;
+
+    case ALL_MOSAICS:
+    case SELECTED_MOSAICS:
+        qCritical("Selecting mosaics - should be tiling");
     }
-    else
+
+    if (loadType != ALL_TILINGS &&  config->tileFilterCheck && !config->tileFilter.isEmpty())
     {
-        Q_ASSERT(loadType == LOAD_FILTERED);
-        if (config->tileFilterCheck && !config->tileFilter.isEmpty())
+        QString filter_lc = config->tileFilter.toLower();
+
+        QStringList filtered;
+        for (const auto & file : qAsConst(names))
         {
-            names = getFilteredTilingNames(config->tileFilter);
-        }
-        else
-        {
-            if (config->tilingOrigCheck)
+            QString file_lc = file.toLower();
+            if (file_lc.contains(filter_lc))
             {
-                addNames(names,config->originalTileDir);
-            }
-            if (config->tilingNewCheck)
-            {
-                addNames(names,config->newTileDir);
-            }
-            if (config->tilingTestCheck)
-            {
-                addNames(names,config->testTileDir);
+                filtered << file;
             }
         }
+        names = filtered;
     }
+
     names.replaceInStrings(".xml","");
 
     names.sort(Qt::CaseInsensitive);
-
-    return names;
-}
-
-QStringList FileServices::getFilteredTilingNames(QString filter)
-{
-    Configuration * config = Configuration::getInstance();
-
-    QStringList names;
-    QString path(config->rootTileDir);
-    QDirIterator it(path, QStringList() << "*.xml", QDir::Files, QDirIterator::Subdirectories);
-    while (it.hasNext())
-    {
-        QString path = it.next();
-        if (path.contains(filter))
-        {
-            names << it.fileName();
-        }
-    }
 
     return names;
 }
@@ -252,7 +277,7 @@ QString FileServices::getNextVersion(eFileType type, QString name)
         path = config->rootTileDir;
         break;
     case FILE_MOSAIC:
-        path = config->rootDesignDir;
+        path = config->rootMosaicDir;
         break;
     case FILE_MAP:
         path = config->mapsDir;
@@ -286,32 +311,24 @@ QStringList FileServices::getFileVersions(QString name, QString rootPath)
     Q_ASSERT(!name.contains(".xml"));
 
     QStringList versions;
-    //QString file;
     QString root(rootPath);
     QDirIterator it(root, QStringList() << "*.xml", QDir::Files, QDirIterator::Subdirectories);
     while (it.hasNext())
     {
         it.next();
-        if (it.fileName().contains(name))
+        auto fileName = it.fileName();
+        fileName.remove(".xml");
+        if (fileName.contains(name))
         {
-            QString candidate = it.fileName();
-#if 0
-            QStringList parts = candidate.split('.');
-            QString root = parts[0];
-            for (int i=1; i < parts.size()-2; i++)  // name contains .xml
-            {
-                root += ".";
-                root += parts[i];
-            }
-#else
+            QString candidate = fileName;
             QString root = getRoot(candidate);
-#endif
             if (root == name)
             {
                 versions << candidate;
             }
         }
     }
+    versions.sort();
     return versions;
 }
 
@@ -340,11 +357,25 @@ QString FileServices::getVersion(QString name)
     QString str       = name.remove(".xml");
     QStringList parts = str.split('.');
 
-    QString old_ver;
-    if (parts.last().contains('v'))
-        old_ver = parts.last();
+    QString ver;
+    if (parts.size() > 1 && parts.last().contains('v'))
+        ver = parts.last();
 
-    return old_ver;
+    return ver;
+}
+
+QString FileServices::getMosaicNameOnly(QString name)
+{
+    QString str       = name.remove(".xml");
+    QStringList parts = str.split('.');
+
+    if (parts.size() > 1 && parts.last().contains('v'))
+    {
+        str.remove(parts.last());
+        str.chop(1);
+    }
+
+    return str;
 }
 
 bool FileServices::reformatXML(QString filename)
@@ -466,7 +497,7 @@ dirInfo  FileServices::getMosaicDirInfo()
     dirInfo info;
 
     Configuration * config = Configuration::getInstance();
-    QString path(config->rootDesignDir);
+    QString path(config->rootMosaicDir);
     QDirIterator it(path, QStringList() << "*.xml", QDir::Files, QDirIterator::Subdirectories);
     while (it.hasNext())
     {

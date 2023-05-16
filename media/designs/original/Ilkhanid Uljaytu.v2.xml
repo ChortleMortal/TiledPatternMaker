@@ -1,0 +1,296 @@
+<?xml version="1.0"?>
+<!-- Written: Fri Apr 7 2023 14:07:24 -->
+<vector id="1" version="14">
+	<design>
+		<size>
+			<width>1500</width>
+			<height>1100</height>
+			<zwidth>1500</zwidth>
+			<zheight>1100</zheight>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Fill singleton="f">-3,3,-2,6</Fill>
+	</design>
+	<style.Thick id="2">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<string>Ilkhanid Uljaytu</string>
+					<entry>
+						<tile.Feature id="4">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">0.9999999999999999,0.3249196962329063</Point>
+									<Point id="7">0.6180339887498948,0.85065080835204</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">6.438349236688752e-17,1.051462224238267</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">-0.6180339887498947,0.85065080835204</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point id="10">-0.9999999999999999,0.3249196962329064</Point>
+								</Line>
+								<Line>
+									<Point reference="10" />
+									<Point id="11">-1,-0.3249196962329062</Point>
+								</Line>
+								<Line>
+									<Point reference="11" />
+									<Point id="12">-0.6180339887498949,-0.8506508083520398</Point>
+								</Line>
+								<Line>
+									<Point reference="12" />
+									<Point id="13">-1.931504771006626e-16,-1.051462224238267</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point id="14">0.6180339887498946,-0.8506508083520401</Point>
+								</Line>
+								<Line>
+									<Point reference="14" />
+									<Point id="15">0.9999999999999999,-0.3249196962329066</Point>
+								</Line>
+								<Line>
+									<Point reference="15" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.Star id="16">
+							<boundarySides>10</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>10</n>
+							<d>3</d>
+							<s>2</s>
+						</app.Star>
+					</entry>
+					<entry>
+						<tile.Feature id="17">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="18">
+								<Line>
+									<Point id="19">0.9999999999999999,0.7265425280053608</Point>
+									<Point id="20">-0.381966011250105,1.175570504584946</Point>
+								</Line>
+								<Line>
+									<Point reference="20" />
+									<Point id="21">-1.23606797749979,1.51374669217366e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="21" />
+									<Point id="22">-0.3819660112501053,-1.175570504584946</Point>
+								</Line>
+								<Line>
+									<Point reference="22" />
+									<Point id="23">0.9999999999999998,-0.7265425280053611</Point>
+								</Line>
+								<Line>
+									<Point reference="23" />
+									<Point reference="19" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.Star id="24">
+							<boundarySides>5</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>5</n>
+							<d>1.5</d>
+							<s>1</s>
+						</app.Star>
+					</entry>
+					<entry>
+						<tile.Feature id="25">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="26">
+								<Line>
+									<Point id="27">2.000000000000001,1.051462224238267</Point>
+									<Point id="28">1.381966011250106,0.8506508083520397</Point>
+								</Line>
+								<Line>
+									<Point reference="28" />
+									<Point id="29">0.9999999999999998,0.3249196962329063</Point>
+								</Line>
+								<Line>
+									<Point reference="29" />
+									<Point id="30">1,-0.3249196962329064</Point>
+								</Line>
+								<Line>
+									<Point reference="30" />
+									<Point id="31">1.618033988749895,-0.1241082803466788</Point>
+								</Line>
+								<Line>
+									<Point reference="31" />
+									<Point id="32">2.000000000000001,0.4016228317724545</Point>
+								</Line>
+								<Line>
+									<Point reference="32" />
+									<Point reference="27" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitHourglass id="33" type="MOTIF_TYPE_HOURGLASS">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>6</n>
+							<s>2</s>
+							<d>2.5</d>
+						</app.ExplicitHourglass>
+					</entry>
+					<entry>
+						<tile.Feature id="34">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="35">
+								<Line>
+									<Point id="36">2.818033988749896,-0.1545901029492422</Point>
+									<Point id="37">2.436067977499791,-0.6803212150683756</Point>
+								</Line>
+								<Line>
+									<Point reference="37" />
+									<Point id="38">2.818033988749896,-1.206052327187509</Point>
+								</Line>
+								<Line>
+									<Point reference="38" />
+									<Point id="39">3.199999999999999,-0.6803212150683748</Point>
+								</Line>
+								<Line>
+									<Point reference="39" />
+									<Point reference="36" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitHourglass id="40" type="MOTIF_TYPE_HOURGLASS">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+							<s>1</s>
+							<d>1.5</d>
+						</app.ExplicitHourglass>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ffffffff</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.03</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+	</style.Thick>
+	<style.Thick id="41">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff333333</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.06</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+	</style.Thick>
+	<style.Filled id="42">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<ColorBlacks>
+			<color hide="f">#ff0099ff</color>
+		</ColorBlacks>
+		<ColorWhites>
+			<color hide="f">#ff0099ff</color>
+		</ColorWhites>
+		<ColorGroup>
+			<Group hideSet="f">
+				<color hide="f">#ff0099ff</color>
+			</Group>
+			<Group hideSet="f" />
+		</ColorGroup>
+		<style.Filled>
+			<draw__inside>false</draw__inside>
+			<draw__outside>true</draw__outside>
+			<algorithm>0</algorithm>
+		</style.Filled>
+	</style.Filled>
+	<style.Filled id="43">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<ColorBlacks>
+			<color hide="f">#ff006699</color>
+		</ColorBlacks>
+		<ColorWhites>
+			<color hide="f">#ff006699</color>
+		</ColorWhites>
+		<ColorGroup>
+			<Group hideSet="f">
+				<color hide="f">#ff006699</color>
+			</Group>
+			<Group hideSet="f" />
+		</ColorGroup>
+		<style.Filled>
+			<draw__inside>true</draw__inside>
+			<draw__outside>false</draw__outside>
+			<algorithm>0</algorithm>
+		</style.Filled>
+	</style.Filled>
+</vector>

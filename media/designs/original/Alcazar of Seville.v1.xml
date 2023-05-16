@@ -1,531 +1,405 @@
 <?xml version="1.0"?>
-<vector id="1">
+<!-- Written: Tue Apr 25 2023 16:57:59 -->
+<vector id="1" version="14">
 	<design>
-		<scale>1</scale>
 		<size>
 			<width>1500</width>
 			<height>1100</height>
+			<zwidth>1500</zwidth>
+			<zheight>1100</zheight>
 		</size>
 		<background>
 			<color>#ffffffff</color>
 		</background>
+		<Fill singleton="f">-2,2,-1,2</Fill>
 	</design>
-	<style.Interlace id="2" serialization="custom">
+	<style.Interlace id="2">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
-			<theta__delta>0</theta__delta>
 			<top__delta>0</top__delta>
-			<width__delta>0</width__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<boundary id="3">
-				<pts id="4">
-					<Point id="5">
-						<x>-9.900000000000002</x>
-						<y>9.900000000000002</y>
-					</Point>
-					<Point id="6">
-						<x>9.900000000000002</x>
-						<y>9.900000000000002</y>
-					</Point>
-					<Point id="7">
-						<x>9.900000000000002</x>
-						<y>-12.42857142857143</y>
-					</Point>
-					<Point id="8">
-						<x>-9.900000000000002</x>
-						<y>-12.42857142857143</y>
-					</Point>
-				</pts>
-			</boundary>
-			<prototype id="9" serialization="custom">
+			<prototype id="3">
 				<app.Prototype>
 					<string>Seville Alcazar 12.8.6</string>
 					<entry>
-						<tile.Feature id="10">
+						<tile.Feature id="4">
 							<regular>true</regular>
-							<points id="11">
-								<Point id="12">
-									<x>1</x>
-									<y>0.4142135623730951</y>
-								</Point>
-								<Point id="13">
-									<x>0.4142135623730951</x>
-									<y>1</y>
-								</Point>
-								<Point id="14">
-									<x>-0.414213562373095</x>
-									<y>1</y>
-								</Point>
-								<Point id="15">
-									<x>-1</x>
-									<y>0.4142135623730952</y>
-								</Point>
-								<Point id="16">
-									<x>-1</x>
-									<y>-0.4142135623730949</y>
-								</Point>
-								<Point id="17">
-									<x>-0.4142135623730957</x>
-									<y>-0.9999999999999998</y>
-								</Point>
-								<Point id="18">
-									<x>0.4142135623730953</x>
-									<y>-0.9999999999999999</y>
-								</Point>
-								<Point id="19">
-									<x>0.9999999999999998</x>
-									<y>-0.4142135623730958</y>
-								</Point>
-							</points>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">1,0.4142135623730951</Point>
+									<Point id="7">0.4142135623730951,1</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">-0.414213562373095,1</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">-1,0.4142135623730952</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point id="10">-1,-0.414213562373095</Point>
+								</Line>
+								<Line>
+									<Point reference="10" />
+									<Point id="11">-0.4142135623730957,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="11" />
+									<Point id="12">0.4142135623730953,-0.9999999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="12" />
+									<Point id="13">0.9999999999999998,-0.4142135623730958</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point reference="6" />
+								</Line>
+							</edges>
 						</tile.Feature>
-						<app.ConnectFigure id="20">
-							<n>8</n>
-							<child class="app.Rosette" id="21">
+						<app.ConnectFigure id="14">
+							<child class="app.Rosette" id="15">
+								<boundarySides>8</boundarySides>
+								<boundaryScale>1</boundaryScale>
+								<figureScale>0.5068747300000001</figureScale>
+								<r>0</r>
 								<n>8</n>
 								<q>-0.65</q>
 								<s>2</s>
-								<r>0</r>
+								<k>0</k>
 							</child>
-							<s>0.5068747329283904</s>
+							<s>0.5068747300000001</s>
 						</app.ConnectFigure>
 					</entry>
 					<entry>
-						<tile.Feature id="22">
+						<tile.Feature id="16">
 							<regular>false</regular>
-							<points id="23">
-								<Point id="24">
-									<x>4.5485473884966</x>
-									<y>-3.56891410075235</y>
-								</Point>
-								<Point id="25">
-									<x>4.548547388496599</x>
-									<y>-4.723614639131604</y>
-								</Point>
-								<Point id="26">
-									<x>5.066185478701644</x>
-									<y>-5.022473129854292</y>
-								</Point>
-								<Point id="27">
-									<x>6.181540550352052</x>
-									<y>-4.723614639131609</y>
-								</Point>
-								<Point id="28">
-									<x>6.181540550352054</x>
-									<y>-3.56891410075236</y>
-								</Point>
-								<Point id="29">
-									<x>5.066185478701646</x>
-									<y>-3.270055610029663</y>
-								</Point>
-							</points>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="17">
+								<Line>
+									<Point id="18">4.5485473884966,-3.56891410075235</Point>
+									<Point id="19">4.548547388496599,-4.723614639131604</Point>
+								</Line>
+								<Line>
+									<Point reference="19" />
+									<Point id="20">5.066185478701644,-5.022473129854292</Point>
+								</Line>
+								<Line>
+									<Point reference="20" />
+									<Point id="21">6.181540550352052,-4.723614639131609</Point>
+								</Line>
+								<Line>
+									<Point reference="21" />
+									<Point id="22">6.181540550352054,-3.56891410075236</Point>
+								</Line>
+								<Line>
+									<Point reference="22" />
+									<Point id="23">5.066185478701646,-3.270055610029663</Point>
+								</Line>
+								<Line>
+									<Point reference="23" />
+									<Point reference="18" />
+								</Line>
+							</edges>
 						</tile.Feature>
-						<app.ExplicitFigure id="30" type="FIG_TYPE_EXPLICIT">
-							<map id="31">
-								<vertices id="32">
-									<Vertex id="33">
-										<pos id="34">
-											<x>4.548547388496599</x>
-											<y>-4.146264369941978</y>
-										</pos>
-										<edges2>
-											<edge id="35">
-												<map reference="31" />
-												<v1 reference="33" />
-												<v2 id="36">
-													<pos id="37">
-														<x>5.146264369941988</x>
-														<y>-4.743981351387368</y>
-													</pos>
-													<edges2>
-														<edge id="38">
-															<map reference="31" />
-															<v1 id="39">
-																<pos id="40">
-																	<x>5.405571219983643</x>
-																	<y>-4.594270471713105</y>
-																</pos>
-																<edges2>
-																	<edge id="41">
-																		<map reference="31" />
-																		<v1 id="42">
-																			<pos id="43">
-																				<x>5.623863014526854</x>
-																				<y>-4.873043884492951</y>
-																			</pos>
-																			<edges2>
-																				<edge id="44">
-																					<map reference="31" />
-																					<v1 reference="42" />
-																					<v2 id="45">
-																						<pos id="46">
-																							<x>5.686312226695438</x>
-																							<y>-4.432184575915484</y>
-																						</pos>
-																						<edges2>
-																							<edge id="47">
-																								<map reference="31" />
-																								<v1 id="48">
-																									<pos id="49">
-																										<x>6.181540550352097</x>
-																										<y>-4.146264369941986</y>
-																									</pos>
-																									<edges2>
-																										<edge id="50">
-																											<map reference="31" />
-																											<v1 reference="48" />
-																											<v2 id="51">
-																												<pos id="52">
-																													<x>5.686312226695437</x>
-																													<y>-3.860344163968485</y>
-																												</pos>
-																												<edges2>
-																													<edge id="53">
-																														<map reference="31" />
-																														<v1 reference="51" />
-																														<v2 id="54">
-																															<pos id="55">
-																																<x>5.726813790933106</x>
-																																<y>-4.14626436994199</y>
-																															</pos>
-																															<edges2>
-																																<edge reference="53" />
-																																<edge id="56">
-																																	<map reference="31" />
-																																	<v1 reference="45" />
-																																	<v2 reference="54" />
-																																</edge>
-																															</edges2>
-																														</v2>
-																													</edge>
-																													<edge reference="50" />
-																													<edge id="57">
-																														<map reference="31" />
-																														<v1 id="58">
-																															<pos id="59">
-																																<x>5.623863014526853</x>
-																																<y>-3.419484855391008</y>
-																															</pos>
-																															<edges2>
-																																<edge reference="57" />
-																																<edge id="60">
-																																	<map reference="31" />
-																																	<v1 reference="58" />
-																																	<v2 id="61">
-																																		<pos id="62">
-																																			<x>5.405571219983637</x>
-																																			<y>-3.698258268170859</y>
-																																		</pos>
-																																		<edges2>
-																																			<edge id="63">
-																																				<map reference="31" />
-																																				<v1 reference="51" />
-																																				<v2 reference="61" />
-																																			</edge>
-																																			<edge reference="60" />
-																																			<edge id="64">
-																																				<map reference="31" />
-																																				<v1 reference="61" />
-																																				<v2 id="65">
-																																					<pos id="66">
-																																						<x>5.146264369941983</x>
-																																						<y>-3.548547388496596</y>
-																																					</pos>
-																																					<edges2>
-																																						<edge reference="64" />
-																																						<edge id="67">
-																																							<map reference="31" />
-																																							<v1 reference="33" />
-																																							<v2 reference="65" />
-																																						</edge>
-																																					</edges2>
-																																				</v2>
-																																			</edge>
-																																			<edge id="68">
-																																				<map reference="31" />
-																																				<v1 reference="61" />
-																																				<v2 id="69">
-																																					<pos id="70">
-																																						<x>5.054762816317259</x>
-																																						<y>-4.146264369941977</y>
-																																					</pos>
-																																					<edges2>
-																																						<edge id="71">
-																																							<map reference="31" />
-																																							<v1 reference="39" />
-																																							<v2 reference="69" />
-																																						</edge>
-																																						<edge reference="68" />
-																																					</edges2>
-																																				</v2>
-																																			</edge>
-																																		</edges2>
-																																	</v2>
-																																</edge>
-																															</edges2>
-																														</v1>
-																														<v2 reference="51" />
-																													</edge>
-																													<edge reference="63" />
-																												</edges2>
-																											</v2>
-																										</edge>
-																										<edge reference="47" />
-																									</edges2>
-																								</v1>
-																								<v2 reference="45" />
-																							</edge>
-																							<edge reference="56" />
-																							<edge id="72">
-																								<map reference="31" />
-																								<v1 reference="45" />
-																								<v2 reference="39" />
-																							</edge>
-																							<edge reference="44" />
-																						</edges2>
-																					</v2>
-																				</edge>
-																				<edge reference="41" />
-																			</edges2>
-																		</v1>
-																		<v2 reference="39" />
-																	</edge>
-																	<edge reference="72" />
-																	<edge reference="71" />
-																	<edge reference="38" />
-																</edges2>
-															</v1>
-															<v2 reference="36" />
-														</edge>
-														<edge reference="35" />
-													</edges2>
-												</v2>
-											</edge>
-											<edge reference="67" />
-										</edges2>
+						<app.ExplicitFigure id="24" type="MOTIF_TYPE_EXPLICIT_MAP">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>6</n>
+							<map id="25">
+								<vertices id="26">
+									<Vertex id="27">
+										<pos>4.548547388496599,-4.146264369941978</pos>
 									</Vertex>
-									<Vertex reference="69" />
-									<Vertex reference="36" />
-									<Vertex reference="65" />
-									<Vertex reference="39" />
-									<Vertex reference="61" />
-									<Vertex reference="42" />
-									<Vertex reference="58" />
-									<Vertex reference="45" />
-									<Vertex reference="51" />
-									<Vertex reference="54" />
-									<Vertex reference="48" />
+									<Vertex id="28">
+										<pos>5.146264369941988,-4.743981351387368</pos>
+									</Vertex>
+									<Vertex id="29">
+										<pos>5.405571219983643,-4.594270471713105</pos>
+									</Vertex>
+									<Vertex id="30">
+										<pos>5.623863014526854,-4.873043884492951</pos>
+									</Vertex>
+									<Vertex id="31">
+										<pos>5.686312226695438,-4.432184575915484</pos>
+									</Vertex>
+									<Vertex id="32">
+										<pos>6.181540550352097,-4.146264369941986</pos>
+									</Vertex>
+									<Vertex id="33">
+										<pos>5.686312226695437,-3.860344163968485</pos>
+									</Vertex>
+									<Vertex id="34">
+										<pos>5.726813790933106,-4.14626436994199</pos>
+									</Vertex>
+									<Vertex id="35">
+										<pos>5.623863014526853,-3.419484855391008</pos>
+									</Vertex>
+									<Vertex id="36">
+										<pos>5.405571219983637,-3.698258268170859</pos>
+									</Vertex>
+									<Vertex id="37">
+										<pos>5.146264369941983,-3.548547388496596</pos>
+									</Vertex>
+									<Vertex id="38">
+										<pos>5.054762816317259,-4.146264369941977</pos>
+									</Vertex>
 								</vertices>
-								<edges id="73">
-									<Edge reference="67" />
-									<Edge reference="35" />
-									<Edge reference="71" />
-									<Edge reference="68" />
-									<Edge reference="38" />
-									<Edge reference="64" />
-									<Edge reference="72" />
-									<Edge reference="41" />
-									<Edge reference="60" />
-									<Edge reference="63" />
-									<Edge reference="44" />
-									<Edge reference="57" />
-									<Edge reference="53" />
-									<Edge reference="50" />
-									<Edge reference="56" />
-									<Edge reference="47" />
+								<edges id="39">
+									<Edge id="40">
+										<v1 reference="33" />
+										<v2 reference="34" />
+									</Edge>
+									<Edge id="41">
+										<v1 reference="31" />
+										<v2 reference="34" />
+									</Edge>
+									<Edge id="42">
+										<v1 reference="32" />
+										<v2 reference="33" />
+									</Edge>
+									<Edge id="43">
+										<v1 reference="35" />
+										<v2 reference="33" />
+									</Edge>
+									<Edge id="44">
+										<v1 reference="33" />
+										<v2 reference="36" />
+									</Edge>
+									<Edge id="45">
+										<v1 reference="35" />
+										<v2 reference="36" />
+									</Edge>
+									<Edge id="46">
+										<v1 reference="36" />
+										<v2 reference="37" />
+									</Edge>
+									<Edge id="47">
+										<v1 reference="27" />
+										<v2 reference="37" />
+									</Edge>
+									<Edge id="48">
+										<v1 reference="29" />
+										<v2 reference="38" />
+									</Edge>
+									<Edge id="49">
+										<v1 reference="36" />
+										<v2 reference="38" />
+									</Edge>
+									<Edge id="50">
+										<v1 reference="32" />
+										<v2 reference="31" />
+									</Edge>
+									<Edge id="51">
+										<v1 reference="31" />
+										<v2 reference="29" />
+									</Edge>
+									<Edge id="52">
+										<v1 reference="30" />
+										<v2 reference="31" />
+									</Edge>
+									<Edge id="53">
+										<v1 reference="30" />
+										<v2 reference="29" />
+									</Edge>
+									<Edge id="54">
+										<v1 reference="29" />
+										<v2 reference="28" />
+									</Edge>
+									<Edge id="55">
+										<v1 reference="27" />
+										<v2 reference="28" />
+									</Edge>
 								</edges>
 							</map>
 						</app.ExplicitFigure>
 					</entry>
 					<entry>
-						<tile.Feature id="74">
+						<tile.Feature id="56">
 							<regular>true</regular>
-							<points id="75">
-								<Point id="76">
-									<x>0.9999999999999999</x>
-									<y>0.2679491924311226</y>
-								</Point>
-								<Point id="77">
-									<x>0.7320508075688773</x>
-									<y>0.7320508075688773</y>
-								</Point>
-								<Point id="78">
-									<x>0.2679491924311229</x>
-									<y>0.9999999999999998</y>
-								</Point>
-								<Point id="79">
-									<x>-0.2679491924311225</x>
-									<y>0.9999999999999999</y>
-								</Point>
-								<Point id="80">
-									<x>-0.7320508075688772</x>
-									<y>0.7320508075688773</y>
-								</Point>
-								<Point id="81">
-									<x>-0.9999999999999998</x>
-									<y>0.267949192431123</y>
-								</Point>
-								<Point id="82">
-									<x>-1</x>
-									<y>-0.2679491924311223</y>
-								</Point>
-								<Point id="83">
-									<x>-0.7320508075688776</x>
-									<y>-0.7320508075688769</y>
-								</Point>
-								<Point id="84">
-									<x>-0.2679491924311235</x>
-									<y>-0.9999999999999997</y>
-								</Point>
-								<Point id="85">
-									<x>0.2679491924311222</x>
-									<y>-1</y>
-								</Point>
-								<Point id="86">
-									<x>0.7320508075688771</x>
-									<y>-0.7320508075688774</y>
-								</Point>
-								<Point id="87">
-									<x>0.9999999999999997</x>
-									<y>-0.2679491924311235</y>
-								</Point>
-							</points>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="57">
+								<Line>
+									<Point id="58">0.9999999999999999,0.2679491924311226</Point>
+									<Point id="59">0.7320508075688773,0.7320508075688773</Point>
+								</Line>
+								<Line>
+									<Point reference="59" />
+									<Point id="60">0.2679491924311229,0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="60" />
+									<Point id="61">-0.2679491924311225,0.9999999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="61" />
+									<Point id="62">-0.7320508075688772,0.7320508075688773</Point>
+								</Line>
+								<Line>
+									<Point reference="62" />
+									<Point id="63">-0.9999999999999998,0.267949192431123</Point>
+								</Line>
+								<Line>
+									<Point reference="63" />
+									<Point id="64">-1,-0.2679491924311223</Point>
+								</Line>
+								<Line>
+									<Point reference="64" />
+									<Point id="65">-0.7320508075688776,-0.7320508075688769</Point>
+								</Line>
+								<Line>
+									<Point reference="65" />
+									<Point id="66">-0.2679491924311235,-0.9999999999999997</Point>
+								</Line>
+								<Line>
+									<Point reference="66" />
+									<Point id="67">0.2679491924311222,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="67" />
+									<Point id="68">0.7320508075688771,-0.7320508075688774</Point>
+								</Line>
+								<Line>
+									<Point reference="68" />
+									<Point id="69">0.9999999999999997,-0.2679491924311235</Point>
+								</Line>
+								<Line>
+									<Point reference="69" />
+									<Point reference="58" />
+								</Line>
+							</edges>
 						</tile.Feature>
-						<app.ConnectFigure id="88">
-							<n>12</n>
-							<child class="app.Rosette" id="89">
+						<app.ConnectFigure id="70">
+							<child class="app.Rosette" id="71">
+								<boundarySides>12</boundarySides>
+								<boundaryScale>1</boundaryScale>
+								<figureScale>0.7886751345948129</figureScale>
+								<r>0</r>
 								<n>12</n>
 								<q>-0.4</q>
 								<s>3</s>
-								<r>0</r>
+								<k>0</k>
 							</child>
 							<s>0.7886751345948129</s>
 						</app.ConnectFigure>
 					</entry>
 					<entry>
-						<tile.Feature id="90">
+						<tile.Feature id="72">
 							<regular>true</regular>
-							<points id="91">
-								<Point id="92">
-									<x>1</x>
-									<y>0.5773502691896256</y>
-								</Point>
-								<Point id="93">
-									<x>7.070501591499379e-17</x>
-									<y>1.154700538379251</y>
-								</Point>
-								<Point id="94">
-									<x>-0.9999999999999998</x>
-									<y>0.5773502691896261</y>
-								</Point>
-								<Point id="95">
-									<x>-1</x>
-									<y>-0.5773502691896254</y>
-								</Point>
-								<Point id="96">
-									<x>-2.121150477449814e-16</x>
-									<y>-1.154700538379251</y>
-								</Point>
-								<Point id="97">
-									<x>0.9999999999999997</x>
-									<y>-0.5773502691896263</y>
-								</Point>
-							</points>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="73">
+								<Line>
+									<Point id="74">1,0.5773502691896256</Point>
+									<Point id="75">7.070501591499379e-17,1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="75" />
+									<Point id="76">-0.9999999999999998,0.5773502691896261</Point>
+								</Line>
+								<Line>
+									<Point reference="76" />
+									<Point id="77">-1,-0.5773502691896254</Point>
+								</Line>
+								<Line>
+									<Point reference="77" />
+									<Point id="78">-2.121150477449814e-16,-1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="78" />
+									<Point id="79">0.9999999999999997,-0.5773502691896263</Point>
+								</Line>
+								<Line>
+									<Point reference="79" />
+									<Point reference="74" />
+								</Line>
+							</edges>
 						</tile.Feature>
-						<app.Star id="98">
+						<app.Star id="80">
+							<boundarySides>6</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
 							<n>6</n>
 							<d>2</d>
 							<s>2</s>
-							<r>0</r>
 						</app.Star>
 					</entry>
 					<entry>
-						<tile.Feature id="99">
+						<tile.Feature id="81">
 							<regular>false</regular>
-							<points id="100">
-								<Point id="101">
-									<x>1.816496580927724</x>
-									<y>-1.39384685011735</y>
-								</Point>
-								<Point id="102">
-									<x>1.816496580927723</x>
-									<y>-1.991563831562725</y>
-								</Point>
-								<Point id="103">
-									<x>2.971197119306975</x>
-									<y>-1.991563831562725</y>
-								</Point>
-								<Point id="104">
-									<x>2.971197119306975</x>
-									<y>-1.393846850117351</y>
-								</Point>
-							</points>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="82">
+								<Line>
+									<Point id="83">1.816496580927724,-1.39384685011735</Point>
+									<Point id="84">1.816496580927723,-1.991563831562725</Point>
+								</Line>
+								<Line>
+									<Point reference="84" />
+									<Point id="85">2.971197119306975,-1.991563831562725</Point>
+								</Line>
+								<Line>
+									<Point reference="85" />
+									<Point id="86">2.971197119306975,-1.393846850117351</Point>
+								</Line>
+								<Line>
+									<Point reference="86" />
+									<Point reference="83" />
+								</Line>
+							</edges>
 						</tile.Feature>
-						<app.ExplicitFigure id="105" type="FIG_TYPE_EXPLICIT">
-							<map id="106">
-								<vertices id="107">
-									<Vertex id="108">
-										<pos id="109">
-											<x>2.2153559743424</x>
-											<y>-1.813072955787764</y>
-										</pos>
-										<edges2>
-											<edge id="110">
-												<map reference="106" />
-												<v1 id="111">
-													<pos id="112">
-														<x>2.393846850117357</x>
-														<y>-1.99156383156272</y>
-													</pos>
-													<edges2>
-														<edge id="113">
-															<map reference="106" />
-															<v1 reference="111" />
-															<v2 id="114">
-																<pos id="115">
-																	<x>2.572337725892316</x>
-																	<y>-1.813072955787761</y>
-																</pos>
-																<edges2>
-																	<edge id="116">
-																		<map reference="106" />
-																		<v1 id="117">
-																			<pos id="118">
-																				<x>2.393846850117358</x>
-																				<y>-1.393846850117336</y>
-																			</pos>
-																			<edges2>
-																				<edge reference="116" />
-																				<edge id="119">
-																					<map reference="106" />
-																					<v1 reference="117" />
-																					<v2 reference="108" />
-																				</edge>
-																			</edges2>
-																		</v1>
-																		<v2 reference="114" />
-																	</edge>
-																	<edge reference="113" />
-																</edges2>
-															</v2>
-														</edge>
-														<edge reference="110" />
-													</edges2>
-												</v1>
-												<v2 reference="108" />
-											</edge>
-											<edge reference="119" />
-										</edges2>
+						<app.ExplicitFigure id="87" type="MOTIF_TYPE_EXPLICIT_MAP">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+							<map id="88">
+								<vertices id="89">
+									<Vertex id="90">
+										<pos>2.2153559743424,-1.813072955787764</pos>
 									</Vertex>
-									<Vertex reference="111" />
-									<Vertex reference="117" />
-									<Vertex reference="114" />
+									<Vertex id="91">
+										<pos>2.393846850117357,-1.99156383156272</pos>
+									</Vertex>
+									<Vertex id="92">
+										<pos>2.572337725892316,-1.813072955787761</pos>
+									</Vertex>
+									<Vertex id="93">
+										<pos>2.393846850117358,-1.393846850117336</pos>
+									</Vertex>
 								</vertices>
-								<edges id="120">
-									<Edge reference="110" />
-									<Edge reference="119" />
-									<Edge reference="116" />
-									<Edge reference="113" />
+								<edges id="94">
+									<Edge id="95">
+										<v1 reference="93" />
+										<v2 reference="92" />
+									</Edge>
+									<Edge id="96">
+										<v1 reference="93" />
+										<v2 reference="90" />
+									</Edge>
+									<Edge id="97">
+										<v1 reference="91" />
+										<v2 reference="92" />
+									</Edge>
+									<Edge id="98">
+										<v1 reference="91" />
+										<v2 reference="90" />
+									</Edge>
 								</edges>
 							</map>
 						</app.ExplicitFigure>
@@ -534,85 +408,94 @@
 			</prototype>
 		</style.Style>
 		<style.Colored>
-			<color>#ffffffff</color>
+			<color hide="f">#ffffffff</color>
 		</style.Colored>
 		<style.Thick>
 			<draw__outline>false</draw__outline>
 			<width>0.07000000000000001</width>
+			<join>bevel</join>
+			<cap>square</cap>
 		</style.Thick>
 		<style.Interlace>
 			<gap>0.03</gap>
 			<shadow>0</shadow>
 			<includeTipVerts>false</includeTipVerts>
-			<startUnder>true</startUnder>
+			<startUnder>false</startUnder>
 		</style.Interlace>
 	</style.Interlace>
-	<style.Interlace id="121" serialization="custom">
+	<style.Interlace id="99">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
-			<theta__delta>0</theta__delta>
 			<top__delta>0</top__delta>
-			<width__delta>0</width__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<boundary reference="3" />
-			<prototype reference="9" />
+			<prototype reference="3" />
 		</style.Style>
 		<style.Colored>
-			<color>#ffffffff</color>
+			<color hide="f">#ffffffff</color>
 		</style.Colored>
 		<style.Thick>
 			<draw__outline>false</draw__outline>
 			<width>0.07000000000000001</width>
+			<join>bevel</join>
+			<cap>square</cap>
 		</style.Thick>
 		<style.Interlace>
 			<gap>0.03</gap>
 			<shadow>0</shadow>
 			<includeTipVerts>false</includeTipVerts>
-			<startUnder>true</startUnder>
+			<startUnder>false</startUnder>
 		</style.Interlace>
 	</style.Interlace>
-	<style.Outline id="122" serialization="custom">
+	<style.Outline id="100">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
-			<theta__delta>0</theta__delta>
 			<top__delta>0</top__delta>
-			<width__delta>0</width__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<boundary reference="3" />
-			<prototype reference="9" />
+			<prototype reference="3" />
 		</style.Style>
 		<style.Colored>
-			<color>#ff999999</color>
+			<color hide="f">#ff999999</color>
 		</style.Colored>
 		<style.Thick>
 			<draw__outline>false</draw__outline>
 			<width>0.1</width>
+			<join>bevel</join>
+			<cap>square</cap>
 		</style.Thick>
 	</style.Outline>
-	<style.Filled id="123" serialization="custom">
+	<style.Filled id="101">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
-			<theta__delta>0</theta__delta>
 			<top__delta>0</top__delta>
-			<width__delta>0</width__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<boundary reference="3" />
-			<prototype reference="9" />
+			<prototype reference="3" />
 		</style.Style>
 		<ColorBlacks>
-			<color>#ff0099cc</color>
+			<color hide="f">#ff0099cc</color>
 		</ColorBlacks>
 		<ColorWhites>
-			<color>#ff0099cc</color>
+			<color hide="f">#ff0099cc</color>
 		</ColorWhites>
 		<ColorGroup>
-			<Group>
-				<color>#ff0099cc</color>
+			<Group hideSet="f">
+				<color hide="f">#ff0099cc</color>
 			</Group>
-			<Group />
+			<Group hideSet="f" />
 		</ColorGroup>
 		<style.Filled>
 			<draw__inside>false</draw__inside>
@@ -620,28 +503,29 @@
 			<algorithm>0</algorithm>
 		</style.Filled>
 	</style.Filled>
-	<style.Filled id="124" serialization="custom">
+	<style.Filled id="102">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
-			<theta__delta>0</theta__delta>
 			<top__delta>0</top__delta>
-			<width__delta>0</width__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<boundary reference="3" />
-			<prototype reference="9" />
+			<prototype reference="3" />
 		</style.Style>
 		<ColorBlacks>
-			<color>#ff000000</color>
+			<color hide="f">#ff000000</color>
 		</ColorBlacks>
 		<ColorWhites>
-			<color>#ff000000</color>
+			<color hide="f">#ff000000</color>
 		</ColorWhites>
 		<ColorGroup>
-			<Group>
-				<color>#ff000000</color>
+			<Group hideSet="f">
+				<color hide="f">#ff000000</color>
 			</Group>
-			<Group />
+			<Group hideSet="f" />
 		</ColorGroup>
 		<style.Filled>
 			<draw__inside>true</draw__inside>

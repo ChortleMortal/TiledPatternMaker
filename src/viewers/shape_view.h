@@ -1,3 +1,4 @@
+#pragma once
 #ifndef SHAPEVIEWER_H
 #define SHAPEVIEWER_H
 

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef FILLDATA_H
 #define FILLDATA_H
 
@@ -6,6 +7,8 @@ class FillData
 public:
     FillData();
     FillData(const FillData & fdata);
+
+    FillData& operator=(const FillData& rhs);
 
     bool isSet() { return _set; }
     void set(bool singleton, int minX, int minY, int maxX, int maxY);
@@ -21,3 +24,6 @@ protected:
 };
 
 #endif // FILLDATA_H
+
+
+

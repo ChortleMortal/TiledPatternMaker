@@ -1,3 +1,4 @@
+#pragma once
 #ifndef PAGE_GRID_H
 #define PAGE_GRID_H
 
@@ -5,6 +6,7 @@ class QGroupBox;
 class QHBoxLayout;
 class QButtonGroup;
 class QCheckBox;
+class ClickableLabel;
 
 #include "widgets/panel_page.h"
 
@@ -26,21 +28,33 @@ private slots:
     void    slot_gridScreenSpacingChanged(int value);
     void    slot_gridModelSpacingChanged(qreal value);
     void    slot_gridScreenWidthChanged(int value);
+    void    slot_gridTilingWidthChanged(int value);
     void    slot_gridModelWidthChanged(int value);
     void    slot_gridScreenCenteredChanged(int state);
     void    slot_gridModelCenteredChanged(int state);
     void    slot_gridAngleChanged(qreal angle);
+    void    slot_zValueChanged(int value);
+
+    void    slot_gridTilingCenterChanged(int state);
+    void    slot_drawModelCenterChanged(int state);
+    void    slot_dawViewCenterChanged(int state);
+
+    void    slot_pickColorTiling();
+    void    slot_pickColorModel();
+    void    slot_pickColorScreen();
 
 //    void    slot_showCenterChanged(int state);
 
 protected:
-    QGroupBox   * createGridSection();
-    QHBoxLayout * createGridTypeLayout();
 
 private:
     QGroupBox    * gridBox;
     QButtonGroup * gridUnitGroup;
     QButtonGroup * gridTypeGroup;
+
+    ClickableLabel * labelT;
+    ClickableLabel * labelM;
+    ClickableLabel * labelS;
 };
 
 #endif

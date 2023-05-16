@@ -1,4 +1,5 @@
-﻿#ifndef MAP_SELECTION_H
+﻿#pragma once
+#ifndef MAP_SELECTION_H
 #define MAP_SELECTION_H
 
 #include <QLineF>

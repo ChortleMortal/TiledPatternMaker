@@ -1,0 +1,206 @@
+<?xml version="1.0"?>
+<!-- Written: Fri Oct 28 2022 09:49:11 -->
+<vector id="1" version="13">
+	<designNotes>testing propagation of tiling changes</designNotes>
+	<design>
+		<size>
+			<width>1500</width>
+			<height>1061</height>
+			<zwidth>1500</zwidth>
+			<zheight>1061</zheight>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Fill singleton="f">-2,1,-3,2</Fill>
+	</design>
+	<style.Thick id="2">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<string>12-6-Trigon</string>
+					<entry>
+						<tile.Feature id="4">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">0.9999999999999999,0.2679491924311226</Point>
+									<Point id="7">0.7320508075688773,0.7320508075688773</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">0.2679491924311229,0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">-0.2679491924311225,0.9999999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point id="10">-0.7320508075688772,0.7320508075688773</Point>
+								</Line>
+								<Line>
+									<Point reference="10" />
+									<Point id="11">-0.9999999999999998,0.267949192431123</Point>
+								</Line>
+								<Line>
+									<Point reference="11" />
+									<Point id="12">-1,-0.2679491924311223</Point>
+								</Line>
+								<Line>
+									<Point reference="12" />
+									<Point id="13">-0.7320508075688776,-0.7320508075688769</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point id="14">-0.2679491924311235,-0.9999999999999997</Point>
+								</Line>
+								<Line>
+									<Point reference="14" />
+									<Point id="15">0.2679491924311222,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="15" />
+									<Point id="16">0.7320508075688771,-0.7320508075688774</Point>
+								</Line>
+								<Line>
+									<Point reference="16" />
+									<Point id="17">0.9999999999999997,-0.2679491924311235</Point>
+								</Line>
+								<Line>
+									<Point reference="17" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.Star id="18">
+							<n>12</n>
+							<d>5.09</d>
+							<s>3</s>
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.Star>
+					</entry>
+					<entry>
+						<tile.Feature id="19">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="20">
+								<Line>
+									<Point id="21">-1.577350269189625,-1.577350269189622</Point>
+									<Point id="22">-0.5773502691896256,-2.154700538379248</Point>
+								</Line>
+								<Line>
+									<Point reference="22" />
+									<Point id="23">-0.5773502691896267,-3.309401076758503</Point>
+								</Line>
+								<Line>
+									<Point reference="23" />
+									<Point id="24">0.5773502691896251,-3.309401076758504</Point>
+								</Line>
+								<Line>
+									<Point reference="24" />
+									<Point id="25">0.5773502691896257,-2.154700538379252</Point>
+								</Line>
+								<Line>
+									<Point reference="25" />
+									<Point id="26">1.577350269189626,-1.577350269189627</Point>
+								</Line>
+								<Line>
+									<Point reference="26" />
+									<Point id="27">0.9999999999999997,-0.5773502691896263</Point>
+								</Line>
+								<Line>
+									<Point reference="27" />
+									<Point id="28">-2.121150477449814e-16,-1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="28" />
+									<Point id="29">-1,-0.5773502691896254</Point>
+								</Line>
+								<Line>
+									<Point reference="29" />
+									<Point reference="21" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitIntersect id="30" type="MOTIF_TYPE_EXPLICIT_INTERSECT">
+							<s>1</s>
+							<sides>10</sides>
+							<skip>3</skip>
+							<progressive>f</progressive>
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.ExplicitIntersect>
+					</entry>
+					<entry>
+						<tile.Feature id="31">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="32">
+								<Line>
+									<Point id="33">1,0.5773502691896256</Point>
+									<Point id="34">7.070501591499379e-17,1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="34" />
+									<Point id="35">-0.9999999999999998,0.5773502691896261</Point>
+								</Line>
+								<Line>
+									<Point reference="35" />
+									<Point id="36">-1,-0.5773502691896254</Point>
+								</Line>
+								<Line>
+									<Point reference="36" />
+									<Point id="37">-2.121150477449814e-16,-1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="37" />
+									<Point id="38">0.9999999999999997,-0.5773502691896263</Point>
+								</Line>
+								<Line>
+									<Point reference="38" />
+									<Point reference="33" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.Star id="39">
+							<n>8</n>
+							<d>2</d>
+							<s>1</s>
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+						</app.Star>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff1496d2</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>true</draw__outline>
+			<width>0.05</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+	</style.Thick>
+</vector>

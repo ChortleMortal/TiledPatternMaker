@@ -13,12 +13,20 @@ FillData::FillData()
 
 FillData::FillData(const FillData & fdata)
 {
+    *this = fdata;
     _set = true;
+}
+
+FillData & FillData::operator=(const FillData & fdata)
+{
     minX = fdata.minX;
     minY = fdata.minY;
     maxX = fdata.maxX;
     maxY = fdata.maxY;
     singleton = fdata.singleton;
+    _set = fdata._set;
+
+    return *this;
 }
 
 void FillData::set(bool singleton, int minX, int maxX, int minY, int maxY)

@@ -11,11 +11,11 @@
 #include "legacy/design.h"
 #include "legacy/design_maker.h"
 #include "makers/mosaic_maker/mosaic_maker.h"
-#include "makers/motif_maker/motif_maker.h"
+#include "makers/prototype_maker/prototype_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "misc/qtapplog.h"
 #include "misc/utilities.h"
-#include "mosaic/prototype.h"
+#include "makers/prototype_maker/prototype.h"
 #include "panels/page_modelSettings.h"
 #include "panels/panel.h"
 #include "settings/configuration.h"
@@ -91,9 +91,9 @@ page_modelSettings::page_modelSettings(ControlPanel * apanel)  : panel_page(apan
     adjustSize();
 
     // connections
-    connect(theApp,  &TiledPatternMaker::sig_tilingLoaded,      this,   &page_modelSettings::dummySetup);
-    connect(theApp,  &TiledPatternMaker::sig_mosaicLoaded,      this,   &page_modelSettings::dummySetup);
-    connect(theApp,  &TiledPatternMaker::sig_loadedDesign,      this,   &page_modelSettings::dummySetup);
+    connect(tilingMaker.get(),  &TilingMaker::sig_tilingLoaded, this,   &page_modelSettings::dummySetup);
+    connect(mosaicMaker,   &MosaicMaker::sig_mosaicLoaded,      this,   &page_modelSettings::dummySetup);
+    connect(designMaker,   &DesignMaker::sig_loadedDesign,      this,   &page_modelSettings::dummySetup);
 }
 
 QGroupBox *page_modelSettings::createTilingSettings()
@@ -473,7 +473,7 @@ ModelSettings & page_modelSettings::getMosaicOrDesignSettings()
     if (config->getViewerType() == VIEW_DESIGN)
     {
         DesignMaker * designMaker = DesignMaker::getInstance();
-        QVector<DesignPtr> & designs = designMaker->getDesigns();
+        QVector<DesignPtr> & designs = designMaker->getActiveDesigns();
         if (designs.count())
         {
             DesignPtr dp = designs.first();
@@ -530,7 +530,7 @@ void page_modelSettings::slot_set_repsTiling(int val)
     TilingPtr tiling = tilingMaker->getSelected();
     if (!tiling) return;
 
-    FillData & fdata = tiling->getDataAccess().getFillDataAccess();
+    FillData & fdata = tiling->getDataAccess(true).getFillDataAccess();
     fdata = fd;
 
     view->setFillData(fd);
@@ -554,7 +554,7 @@ void page_modelSettings::singleton_changed_tile(bool checked)
     TilingPtr tiling = tilingMaker->getSelected();
     if (!tiling) return;
 
-    FillData & fdata = tiling->getDataAccess().getFillDataAccess();
+    FillData & fdata = tiling->getDataAccess(true).getFillDataAccess();
     fdata = fd;
 
     view->setFillData(fd);
@@ -600,7 +600,7 @@ void page_modelSettings::slot_tilingSizeChanged(int val)
     if (pageBlocked()) return;
 
     TilingPtr tiling = tilingMaker->getSelected();
-    ModelSettings & ms  = tiling->getDataAccess().getSettingsAccess();
+    ModelSettings & ms  = tiling->getDataAccess(true).getSettingsAccess();
     ms.setSize(QSize(sizeW[TILING_SETTINGS]->value(),sizeH[TILING_SETTINGS]->value()));
 
     emit sig_refreshView();

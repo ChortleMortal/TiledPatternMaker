@@ -1,3 +1,4 @@
+#pragma once
 #ifndef MAP_EDITOR_MAP_WRITER
 #define MAP_EDITOR_MAP_WRITER
 

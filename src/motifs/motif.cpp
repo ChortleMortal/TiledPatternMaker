@@ -11,45 +11,53 @@
 // of being parameterizable at a high level.
 
 #include "motifs/motif.h"
-#include "tile/tile.h"
-#include "geometry/map.h"
 #include "geometry/edge.h"
-//#include "geometry/transform.h"
+#include "geometry/map.h"
 
 using std::make_shared;
 
 int Motif::refs = 0;
 
+//////////////////////////////////////////////////////////////////
+///
+/// Motif
+///
+//////////////////////////////////////////////////////////////////
+
 Motif::Motif()
 {
     refs++;
-    motifType           = MOTIF_TYPE_UNDEFINED;
-    motifScale       = 1.0;
-    motifRotate      = 0.0;
-    display           = true;
-
-    //figureMap = make_shared<Map>("figureMap");
+    motifType     = MOTIF_TYPE_UNDEFINED;
+    motifScale    = 1.0;
+    motifRotate   = 0.0;
+    _n            = 10;
+    version       = -1;
 }
 
 Motif::Motif(const Motif & other)
 {
     refs++;
 
-    motifType           = other.motifType;
-    n                 = other.n;
+    motifType         = other.motifType;
+    _n                = other._n;
+    motifRotate       = other.motifRotate;
+    motifScale        = other.motifScale;
+    motifBoundary     = other.motifBoundary;
+    extendedBoundary  = other.extendedBoundary;
+    version           = other.version;
+}
 
-    motifScale       = other.motifScale;
-    motifRotate      = other.motifRotate;
+Motif::Motif(MotifPtr other)
+{
+    refs++;
 
-    motifBoundary   = other.motifBoundary;
-    extendedBoundary = other.extendedBoundary;
-
-    if (other.motifMap)
-    {
-        motifMap    = other.motifMap->copy();
-    }
-
-    display           = true;
+    motifType         = other->motifType;
+    _n                = other->_n;
+    motifRotate       = other->motifRotate;
+    motifScale        = other->motifScale;
+    motifBoundary     = other->motifBoundary;
+    extendedBoundary  = other->extendedBoundary;
+    version           = other->version;
 }
 
 Motif::~Motif()
@@ -58,9 +66,17 @@ Motif::~Motif()
     refs--;
 }
 
+//////////////////////////////////////////////////////////////////
+///
+/// MotifData
+///
+//////////////////////////////////////////////////////////////////
+
 bool Motif::equals(const  MotifPtr other)
 {
-    if (motifType != other->motifType)
+    if (motifType      != other->motifType)
+        return false;
+    if (_n             != other->_n)
         return false;
     if (motifScale     != other->motifScale)
         return false;
@@ -73,25 +89,26 @@ bool Motif::equals(const  MotifPtr other)
     return true;
 }
 
-bool Motif::isExplicit()
+bool Motif::isExplicit() const
 {
     switch (motifType)
     {
-    case MOTIF_TYPE_EXPLICIT:
-    case MOTIF_TYPE_EXPLICIT_INFER:
-    case MOTIF_TYPE_EXPLICIT_ROSETTE:
-    case MOTIF_TYPE_EXPLICIT_HOURGLASS:
-    case MOTIF_TYPE_EXPLICIT_INTERSECT:
-    case MOTIF_TYPE_EXPLICIT_GIRIH:
-    case MOTIF_TYPE_EXPLICIT_STAR:
-    case MOTIF_TYPE_EXPLICIT_TILE:
+    case MOTIF_TYPE_EXPLICIT_MAP:
+    case MOTIF_TYPE_INFERRED:
+    case MOTIF_TYPE_IRREGULAR_ROSETTE:
+    case MOTIF_TYPE_HOURGLASS:
+    case MOTIF_TYPE_INTERSECT:
+    case MOTIF_TYPE_GIRIH:
+    case MOTIF_TYPE_IRREGULAR_STAR:
+    case MOTIF_TYPE_EXPLCIT_TILE:
+    case MOTIF_TYPE_IRREGULAR_NO_MAP:
         return true;
     default:
         return false;
     }
 }
 
-bool Motif::isRadial()
+bool Motif::isRadial() const
 {
     switch (motifType)
     {
@@ -108,11 +125,6 @@ bool Motif::isRadial()
     }
 }
 
-int Motif::getN()
-{
-    return n;
-}
-
 // uses existing tmpIndices
 void Motif::annotateEdges()
 {
@@ -125,65 +137,49 @@ void Motif::annotateEdges()
     for (auto & edge : qAsConst(motifMap->getEdges()))
     {
         QPointF p = edge->getMidPoint();
-        debugMap->insertDebugMark(p, QString::number(i++));
+        if (debugMap)
+            debugMap->insertDebugMark(p, QString::number(i++));
     }
-    //debugMap->dumpMap(false);
 }
 
-ExtendedBoundary::ExtendedBoundary()
+int Motif::modulo(int i, int sz)
 {
-    sides    = 1;   // defaults to a circle
-    scale    = 1.0;
-    rotate   = 0;
-}
-
-ExtendedBoundary::ExtendedBoundary(const ExtendedBoundary & other)
-{
-    sides    = other.sides;
-    scale    = other.scale;
-    rotate   = other.rotate;
-    boundary2 = other.boundary2;
-}
-
-void ExtendedBoundary::set(const QPolygonF & p)
-{
-    Q_ASSERT(p.isClosed());
-    boundary2 = p;
-    //qDebug() << "set ext b" << boundary2;
-}
-
-const QPolygonF &ExtendedBoundary::get() const
-{
-    if (!boundary2.isEmpty())
-    {
-        Q_ASSERT(boundary2.isClosed());
-    }
-    //qDebug() << "get ext b" << boundary2;
-    return boundary2;
-}
-
-bool ExtendedBoundary::equals(const ExtendedBoundary & other)
-{
-    return (sides == other.sides
-            && scale == other.scale
-            && rotate == other.rotate
-            && boundary2 == other.boundary2);
-}
-
-void ExtendedBoundary::buildRadial()
-{
-    if (sides >= 3)
-    {
-        Tile f2(sides,rotate,scale);
-        set(f2.getPolygon());
-    }
+    if (i >= 0)
+        return i % sz;
     else
+        return (sz >= 0 ? sz : -sz) - 1 + (i + 1) % sz;
+}
+
+
+
+///////////////////////////////////////////////////////////
+///
+/// Points
+///
+///////////////////////////////////////////////////////////
+
+Points::Points(const QPolygonF & other)
+{
+    for (auto i = 0; i < other.size(); i++)
     {
-        boundary2.clear();
+        *this << other[i];
     }
 }
 
-void ExtendedBoundary::buildExplicit(TilePtr tile)
+void Points::translate(QPointF p)
 {
-    set(tile->getPolygon());
+    for (auto it = begin(); it != end(); it++)
+    {
+        *it += p;
+    }
+}
+
+void Points::transform(QTransform t)
+{
+    for (auto it = begin(); it != end(); it++)
+    {
+        auto pt = *it;
+        pt = t.map(pt);
+        *it = pt;
+    }
 }

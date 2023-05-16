@@ -15,8 +15,8 @@ MapEditorMapLoader::~MapEditorMapLoader()
 MapPtr MapEditorMapLoader::loadMosaicMap(QString fileName)
 {
     MapPtr map;
-
-    view->dump(true);
+    
+    view->dumpRefs();
 
     qInfo().noquote() << "MosaicLoader loading map from:" << fileName;
     _fileName = fileName;
@@ -89,8 +89,8 @@ MapPtr MapEditorMapLoader::loadMosaicMap(QString fileName)
         {
             map = getMap(node);
         }
-
-        view->dump(true);
+        
+        view->dumpRefs();
     }
     catch (...)
     {

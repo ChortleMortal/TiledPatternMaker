@@ -42,7 +42,7 @@ void EdgePoly::set(QPolygonF & poly)
 
 EdgePoly::EdgePoly(const QVector<EdgePtr> & qvep)
 {
-    for (auto edge : qvep)
+    for (auto & edge : qvep)
     {
         push_back(edge);
     }
@@ -332,6 +332,16 @@ QPolygonF EdgePoly::getPoints() const
     return poly;
 }
 
+QPolygonF EdgePoly::getMids() const
+{
+    QPolygonF  mids;    // mid-points
+    for (auto & edge : qAsConst(*this))
+    {
+        mids <<  edge->getMidPoint();
+    }
+    return mids;
+}
+
 QRectF EdgePoly::getRect() const
 {
     QRectF rect;
@@ -341,6 +351,13 @@ QRectF EdgePoly::getRect() const
         rect = QRectF(poly[0],poly[2]);
     }
     return rect;
+}
+
+QLineF EdgePoly::getEdge(int edge)
+{
+    QVector<EdgePtr> & edges = *this;
+    EdgePtr e = edges[edge % edges.size()];
+    return e->getLine();
 }
 
 qreal EdgePoly::getAngle(int edge)
@@ -366,8 +383,14 @@ qreal EdgePoly::getAngle(int edge)
     return qRadiansToDegrees(theta);
 }
 
-void EdgePoly::paint(QPainter * painter, QTransform T)
+void EdgePoly::paint(QPainter * painter, QTransform T, bool annotate)
 {
+    painter->save();
+    QFont font = painter->font();
+    font.setPixelSize(14);
+    painter->setFont(font);
+    int edgenum = 0;
+
     for(auto edge : *this)
     {
         QPointF p1 = T.map(edge->v1->pt);
@@ -389,7 +412,15 @@ void EdgePoly::paint(QPainter * painter, QTransform T)
             ArcData ad(p1,p2,arcCenter,edge->isConvex());
             painter->drawChord(ad.rect, qRound(ad.start * 16.0),qRound(ad.span * 16.0));
         }
+
+        if (annotate)
+        {
+            QPointF mid = (p1+p2)/2.0;
+            painter->drawText(QPointF(mid.x()+13,mid.y()+13),QString::number(edgenum));
+            edgenum++;
+        }
     }
+    painter->restore();
 }
 
 void EdgePoly::draw(GeoGraphics * gg, QPen & pen)
@@ -515,8 +546,9 @@ QPointF EdgePoly::calcIrregularCenter()
     double a  = 0.0;  // Partial signed area
 
     // For all vertices in a loop
-    VertexPtr prev = getVertices().last();
-    for (auto & next :getVertices())
+    const auto vertices = getVertices();
+    VertexPtr prev = vertices.last();
+    for (auto & next : vertices)
     {
         x0 = prev->pt.x();
         y0 = prev->pt.y();

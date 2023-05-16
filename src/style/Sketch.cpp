@@ -31,7 +31,7 @@ using std::make_shared;
 
 // Creation.
 
-Sketch::Sketch(PrototypePtr proto) : Plain(proto)
+Sketch::Sketch(ProtoPtr proto) : Plain(proto)
 {
     srand(279401L);    // FIXME depecated
 }

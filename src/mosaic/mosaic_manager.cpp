@@ -1,15 +1,16 @@
 #include <QMessageBox>
 
 #include "mosaic/mosaic_manager.h"
+#include "makers/mosaic_maker/mosaic_maker.h"
 #include "misc/fileservices.h"
+#include "mosaic/mosaic.h"
 #include "mosaic/mosaic_reader.h"
 #include "mosaic/mosaic_writer.h"
-#include "viewers/viewcontrol.h"
 #include "panels/panel.h"
-#include "makers/mosaic_maker/mosaic_maker.h"
-#include "settings/model_settings.h"
-#include "mosaic/mosaic.h"
 #include "settings/configuration.h"
+#include "settings/model_settings.h"
+#include "viewers/viewcontrol.h"
+#include "widgets/version_dialog.h"
 
 MosaicManager::MosaicManager()
 {
@@ -76,7 +77,7 @@ bool MosaicManager::loadMosaic(QString name)
     return true;
 }
 
-bool MosaicManager::saveMosaic(QString name, QString & savedName, bool forceOverwrite, bool forceTest)
+bool MosaicManager::saveMosaic(QString name, QString & savedName, bool forceOverwrite)
 {
     MosaicPtr mosaic = mosaicMaker->getMosaic();
     if (!mosaic)
@@ -97,46 +98,46 @@ bool MosaicManager::saveMosaic(QString name, QString & savedName, bool forceOver
             bool isNew      = filename.contains("new_");
             bool isTest     = filename.contains("tests");
 
-            QMessageBox msgBox(ControlPanel::getInstance());
-            QString str = QString("The XML design file <%1> already exists").arg(filename);
-            msgBox.setText(str);
-            msgBox.setInformativeText("Do you want to bump version (Bump) or overwrite (Save)?");
-            QPushButton * bump   = msgBox.addButton("Bump",QMessageBox::ApplyRole);
-            QPushButton * save   = msgBox.addButton(QMessageBox::Save);
-            QPushButton * cancel = msgBox.addButton(QMessageBox::Cancel);
-            msgBox.setDefaultButton(bump);
+            VersionDialog msgBox(ControlPanel::getInstance());
+            QString str = QString("The XML design file <%1> already exists.").arg(filename);
+            msgBox.setText1(str);
 
-            msgBox.exec();
-
-            if (msgBox.clickedButton() == cancel)
+            int rv = msgBox.exec();
+            switch (rv)
             {
+            case QDialog::Rejected:
                 return false;
-            }
-            else if (msgBox.clickedButton() == bump)
+
+            case QDialog::Accepted:
+                break;
+
+            default:
             {
-                // appends a version
-                name = FileServices::getNextVersion(FILE_MOSAIC,name);
-                if (forceTest)
-                    filename = config->testDesignDir + name + ".xml";
-                else if (isOriginal)
-                    filename = config->originalDesignDir + name + ".xml";
-                else if (isNew)
-                    filename = config->newDesignDir + name + ".xml";
+                // bumps version
+                int ver = msgBox.combo->currentIndex();
+                if (ver == 0)
+                {
+                    name = FileServices::getNextVersion(FILE_MOSAIC,name);
+                }
                 else
                 {
-                    Q_ASSERT(isTest);
-                    filename = config->testDesignDir + name + ".xml";
+                    name = name + ".v" + QString::number(ver);
                 }
+                if (isOriginal)
+                    filename = config->originalMosaicDir + name + ".xml";
+                else if (isNew)
+                    filename = config->newMosaicDir + name + ".xml";
+                else if (isTest)
+                    filename = config->testMosiacDir + name + ".xml";
+            } break;
             }
-            // save drops thru
-            Q_UNUSED(save)
         }
         else
         {
-            if (forceTest)
-                filename = config->testDesignDir + name + ".xml";
+            if (config->saveMosaicTest)
+                filename = config->testMosiacDir + name + ".xml";
             else
-                filename = config->newDesignDir + name + ".xml";
+                filename = config->newMosaicDir + name + ".xml";
         }
     }
 

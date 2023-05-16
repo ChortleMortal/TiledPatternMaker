@@ -20,6 +20,7 @@ QTransform Transform::rotateAroundPoint(QPointF pt, qreal t)
 
 QTransform Transform::rotate(qreal t)
 {
+    // t is in radians
     // qCos( t ), -qSin( t ), 0,
     // qSin( t ), qCos( t ), 0 );
     return QTransform(qCos(t),qSin(t),-qSin(t),qCos(t),0.0,0.0);

@@ -110,6 +110,8 @@ page_borders::page_borders(ControlPanel * apanel)  : panel_page(apanel,"Border M
     borderTypeBox->setMinimumWidth(400);
     borderTypeBox->setLayout(borderTypeStack);
 
+    setMaximumWidth(762);
+
     // assembly
     vbox->addLayout(hbox);
     vbox->addWidget(borderTypeBox);

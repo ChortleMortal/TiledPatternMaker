@@ -1,3 +1,7 @@
+#pragma once
+#ifndef RADIAL_MOTIF_H
+#define RADIAL_MOTIF_H
+
 ////////////////////////////////////////////////////////////////////////////
 //
 // RadialFigure.java
@@ -11,9 +15,6 @@
 // action of c_n (just the rotations; the reflections are factored in
 // by subclasses).
 
-#ifndef RADIAL_MOTIF_H
-#define RADIAL_MOTIF_H
-
 #include "motifs/motif.h"
 
 class RadialMotif : public Motif
@@ -21,39 +22,43 @@ class RadialMotif : public Motif
 public:
     virtual ~RadialMotif() override {}
 
-    virtual MapPtr  getMap() override; // Get a complete map from unit.
-    virtual void    resetMaps() override;
-    virtual void    buildMaps() override;
+    virtual MapPtr  getMotifMap() override; // Get a complete map from unit.
+    virtual void    resetMotifMaps() override;
+    virtual void    buildMotifMaps() override;
 
     virtual void    buildUnitMap() = 0;
     virtual MapPtr  getUnitMap() const { return unitMap; }
 
-    virtual QString getMotifDesc() override { return "Radial Motif"; }
-
-    void buildRadialBoundaries();
+    void            buildRadialBoundaries();
 
     virtual void    setN(int n) override;
 
-    qreal   get_dn()  { return dn; }
-    qreal   get_don() { return don; }
-    QTransform getTransform() {return Tr;}
+    qreal           get_don()       { return don; }
+    QTransform      getTransform()  {return Tr;}
 
+    static QPointF  getArc( qreal frac );    // Get the point frac of the way around the unit circle.
 
-    // Get the point frac of the way around the unit circle.
-    static QPointF getArc( qreal frac );
+    virtual QString getMotifDesc() override { return "RadialMotif"; }
+    virtual void    report() override = 0;
 
 protected:
     RadialMotif(int n);
     RadialMotif(const Motif & motif, int n);
     RadialMotif(const RadialMotif & motif);
 
-    void         replicate();
+    void        setupRadialTransform();      // Transform for eachradial popint/branch
+    void        replicate();
 
-    qreal         dn;
-    qreal         don;
-    QTransform    Tr;
+    // data
+    qreal       d;  // used by star
+    int         s;  // used by star + rosette
+    qreal       q;  // used by rosette
+    qreal       k;  // used by rosette
 
-    MapPtr        unitMap;
+    // generated
+    qreal       don;
+    QTransform  Tr;
+    MapPtr      unitMap;
 };
 
 #endif

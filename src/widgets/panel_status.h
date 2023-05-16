@@ -1,3 +1,4 @@
+#pragma once
 #ifndef PANEL_STATUS_H
 #define PANEL_STATUS_H
 
@@ -14,6 +15,8 @@ public:
 
 private:
     QStack<QString>  msgStack;
+    QString          preamble;
+    QString          postamble;
 };
 
 #endif

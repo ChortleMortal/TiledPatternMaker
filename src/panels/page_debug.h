@@ -1,3 +1,4 @@
+#pragma once
 #ifndef PAGE_DEBUG_H
 #define PAGE_DEBUG_H
 
@@ -44,6 +45,7 @@ private slots:
 
 protected:
     bool    verifyTiling(TilingPtr tiling);
+    void    identifyDuplicateTiles(TilingPtr tiling);
     void    examineMosaic(MosaicPtr mosaic);
 
     QGroupBox   * createDebugSection();

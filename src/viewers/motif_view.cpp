@@ -1,18 +1,19 @@
 #include "viewers/motif_view.h"
 #include "motifs/extended_rosette.h"
 #include "motifs/extended_star.h"
+#include "motifs/inferred_motif.h"
 #include "motifs/motif.h"
-#include "motifs/inference_engine.h"
 #include "motifs/radial_motif.h"
+#include "motifs/irregular_tools.h"
 #include "geometry/arcdata.h"
 #include "geometry/edge.h"
 #include "geometry/map.h"
 #include "geometry/transform.h"
 #include "geometry/vertex.h"
-#include "makers/motif_maker/motif_button.h"
-#include "makers/motif_maker/motif_maker.h"
+#include "makers/motif_maker/design_element_button.h"
+#include "makers/prototype_maker/prototype.h"
+#include "makers/prototype_maker/prototype_maker.h"
 #include "mosaic/design_element.h"
-#include "mosaic/prototype.h"
 #include "settings/configuration.h"
 #include "tile/tile.h"
 #include "tile/placed_tile.h"
@@ -36,9 +37,9 @@ MotifViewPtr MotifView::getSharedInstance()
 
 MotifView::MotifView() : LayerController("Motif View")
 {
-    motifMaker = MotifMaker::getInstance();
+    protoMakerData = PrototypeMaker::getInstance()->getProtoMakerData();
+    lineWidth     = config->motifViewWidth;
 
-    debugContacts = false;
 }
 
 MotifView::~MotifView()
@@ -50,7 +51,9 @@ void MotifView::paint(QPainter *painter)
 {
     qDebug() << "MotifView::paint";
 
-    DesignElementPtr del = motifMaker->getSelectedDesignElement();
+    lineWidth = config->motifViewWidth;
+
+    DesignElementPtr del = protoMakerData->getSelectedDEL();
     if (!del)
     {
         qDebug() << "MotifView - no design element";
@@ -70,16 +73,18 @@ void MotifView::paint(QPainter *painter)
     if (config->motifEnlarge)
     {
         ViewControl * view = ViewControl::getInstance();
-        baseT = MotifButton::resetViewport(-2,del,view->rect()) * getCanvasTransform();
+        baseT = DesignElementButton::resetViewport(-2,del,view->rect()) * getCanvasTransform();
     }
     else
     {
         baseT  = getLayerTransform();
     }
 
-    auto proto  = motifMaker->getSelectedPrototype();
+    auto proto  = protoMakerData->getSelectedPrototype();
+    if (!proto) return;
+
     auto tiling = proto->getTiling();
-    for (auto del : motifMaker->getSelectedDesignElements())
+    for (const auto & del : protoMakerData->getSelectedDELs(MVD_DELEM))
     {
         auto motif  = del->getMotif();     // for now just a single motif
         auto tile   = del->getTile();
@@ -88,7 +93,7 @@ void MotifView::paint(QPainter *painter)
         QTransform placement;
         if (!config->motifEnlarge)
         {
-            placement = tiling->getPlacement(tile,0);
+            placement = tiling->getFirstPlacement(tile);
         }
 
         _T = placement * baseT;
@@ -99,26 +104,26 @@ void MotifView::paint(QPainter *painter)
         // paint boundaries
         if (config->showExtendedBoundary)
         {
-            painter->setPen(QPen(Qt::yellow,3.0));
+            painter->setPen(QPen(Qt::yellow,lineWidth));
             paintExtendedBoundary(painter,motif);
         }
 
         if (config->showTileBoundary)
         {
-            painter->setPen(QPen(Qt::magenta,2.0));
+            painter->setPen(QPen(Qt::magenta,lineWidth));
             paintTileBoundary(painter,tile);
         }
 
         if (config->showMotifBoundary)
         {
-            painter->setPen(QPen(Qt::red,1.0));
+            painter->setPen(QPen(Qt::red,lineWidth));
             paintMotifBoundary(painter,motif);
         }
 
         // paint figure
         if (config->showMotif)
         {
-            painter->setPen(QPen(Qt::blue,2.0));
+            painter->setPen(QPen(Qt::blue,lineWidth));
             if (motif->isRadial())
             {
                 paintRadialMotifMap(painter,motif);
@@ -129,67 +134,81 @@ void MotifView::paint(QPainter *painter)
             }
         }
 
+        DebugMapPtr dmap = motif->getDebugMap();
+        if (dmap)
+        {
+            auto map = std::dynamic_pointer_cast<Map>(dmap);
+            if (map)
+            {
+                QColor color = (config->motifBkgdWhite) ? Qt::black : Qt::white;
+                painter->setPen(QPen(color,lineWidth));
+                paintMap(painter,map);
+            }
+        }
+
         drawCenter(painter);
 
-        if (debugContacts)
+        if (motif->getMotifType() == MOTIF_TYPE_INFERRED)
         {
-            painter->setPen(Qt::white);
-            for( int idx = 0; idx < debugPts.size(); ++idx )
+            auto exp = std::dynamic_pointer_cast<InferredMotif>(motif);
+            if (exp->hasDebugContacts())
             {
-                painter->drawLine( _T.map(debugPts[idx]), _T.map(debugPts[ (idx+1) % debugPts.size()]) );
-            }
-
-            painter->setPen(Qt::blue);
-            for( int idx = 0; idx < debugContactPts.size(); ++idx )
-            {
-                ContactPtr c = debugContactPts.at(idx);
-                painter->drawLine(_T.map(c->other), _T.map(c->position));
+                painter->save();
+                painter->setPen(QPen(Qt::yellow,lineWidth));
+                for (auto & c : exp->getDebugContacts())
+                {
+                    painter->drawLine(baseT.map(c->other), baseT.map(c->position));
+                }
+                painter->restore();
             }
         }
     }
 }
 
-void MotifView::paintExplicitMotifMap(QPainter *painter, MotifPtr fig)
+void MotifView::paintExplicitMotifMap(QPainter *painter, MotifPtr motif)
 {
-    qDebug() << "paintExplicitMotif<ap" << fig->getMotifDesc();
+    qDebug() << "paintExplicitMotifMap" << motif->getMotifDesc();
 
-    MapPtr map = fig->getMap();
+    MapPtr map = motif->getMotifMap();
     if (map)
     {
         //map->verifyMap( "paintExplicitFigure");
         paintMap(painter,map);
     }
 
-    DebugMapPtr dmap = fig->getDebugMap();
+    DebugMapPtr dmap = motif->getDebugMap();
     {
-        map = std::dynamic_pointer_cast<Map>(dmap);
-        if (map)
+        if (dmap && !dmap->isEmpty())
         {
-            QColor color = (config->motifBkgdWhite) ? Qt::black : Qt::white;
-            painter->setPen(QPen(color,1.0));
-            paintMap(painter,map);
+            map = std::dynamic_pointer_cast<Map>(dmap);
+            if (map)
+            {
+                QColor color = (config->motifBkgdWhite) ? Qt::black : Qt::white;
+                painter->setPen(QPen(color,lineWidth));
+                paintMap(painter,map);
+            }
         }
     }
 }
 
-void MotifView::paintRadialMotifMap(QPainter *painter, MotifPtr fig)
+void MotifView::paintRadialMotifMap(QPainter *painter, MotifPtr motif)
 {
-    qDebug() << "paintRadialMotifMap" << fig->getMotifDesc();
+    qDebug() << "paintRadialMotifMap" << motif->getMotifDesc();
 
     // Optimize for the case of a RadialFigure.
-    RadialPtr rp = std::dynamic_pointer_cast<RadialMotif>(fig);
+    RadialPtr rp = std::dynamic_pointer_cast<RadialMotif>(motif);
 
-    MapPtr map = rp->getMap();
+    MapPtr map = rp->getMotifMap();
     paintMap(painter,map);
 
     DebugMapPtr dmap = rp->getDebugMap();
-    if (dmap)
+    if (dmap && !dmap->isEmpty())
     {
         map = std::dynamic_pointer_cast<Map>(dmap);
         if (map)
         {
             QColor color = (config->motifBkgdWhite) ? Qt::black : Qt::white;
-            painter->setPen(QPen(color,1.0));
+            painter->setPen(QPen(color,lineWidth));
             paintMap(painter,map);
         }
     }
@@ -197,31 +216,31 @@ void MotifView::paintRadialMotifMap(QPainter *painter, MotifPtr fig)
     if (config->highlightUnit)
     {
         map = rp->getUnitMap();
-        painter->setPen(QPen(Qt::red,3.0));
+        painter->setPen(QPen(Qt::red,lineWidth+1.0));
         paintMap(painter,map);
     }
 }
 
-void MotifView::paintTileBoundary(QPainter *painter,TilePtr feat)
+void MotifView::paintTileBoundary(QPainter *painter,TilePtr tile)
 {
-    // draw feature
+    // draw tile
     // qDebug() << "scale" << feat->getScale();
     //qDebug().noquote() << feat->toBaseString();
     //qDebug().noquote() << feat->toString();
-    EdgePoly  ep = feat->getEdgePoly();
-    ep.paint(painter,_T);
+    EdgePoly  ep = tile->getEdgePoly();
+    ep.paint(painter,_T,true);
 }
 
-void MotifView::paintMotifBoundary(QPainter *painter, MotifPtr fig)
+void MotifView::paintMotifBoundary(QPainter *painter, MotifPtr motif)
 {
     // show boundaries
-    QPolygonF p = fig->getMotifBoundary();
+    QPolygonF p = motif->getMotifBoundary();
     painter->drawPolygon(_T.map(p));
 }
 
-void MotifView::paintExtendedBoundary(QPainter *painter,MotifPtr fig)
+void MotifView::paintExtendedBoundary(QPainter *painter, MotifPtr motif)
 {
-    const ExtendedBoundary & eb = fig->getExtendedBoundary();
+    const ExtendedBoundary & eb = motif->getExtendedBoundary();
 
     if (!eb.isCircle())
     {
@@ -243,6 +262,8 @@ void MotifView::paintMap(QPainter * painter, MapPtr map)
     {
         QPointF p1 = _T.map(edge->v1->pt);
         QPointF p2 = _T.map(edge->v2->pt);
+
+        //qDebug() << "edge" << p1 << p2;
 
         if (edge->getType() == EDGETYPE_LINE)
         {
@@ -283,13 +304,6 @@ void MotifView::paintMap(QPainter * painter, MapPtr map)
         painter->drawText(QPointF(pt.x()+7,pt.y()+13),txt);
 #endif
     }
-}
-
-void MotifView::setDebugContacts(bool enb, QPolygonF pts, QVector<ContactPtr> contacts)
-{
-    debugContacts   = enb;
-    debugPts        = pts;
-    debugContactPts = contacts;
 }
 
 void MotifView::slot_setCenter(QPointF spt)

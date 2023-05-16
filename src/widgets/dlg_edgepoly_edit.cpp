@@ -7,6 +7,7 @@
 #include "geometry/vertex.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "viewers/viewcontrol.h"
+#include "tile/tile.h"
 
 /////////////////////////////////////////////////////////////////
 ///
@@ -15,8 +16,9 @@
 /////////////////////////////////////////////////////////////////
 
 
-DlgEdgePolyEdit::DlgEdgePolyEdit(EdgePoly & epoly, QTransform t, QWidget *parent) : QDialog(parent), epoly(epoly)
+DlgEdgePolyEdit::DlgEdgePolyEdit(TilePtr tile, QTransform t, QWidget *parent) : QDialog(parent), epoly(tile->getEdgePoly())
 {
+    this->tile = tile;
     T = t;
     original2 = epoly;    // for undo
 
@@ -155,7 +157,7 @@ void DlgEdgePolyEdit::display()
 void DlgEdgePolyEdit::slot_ok()
 {
     TilingMakerPtr tilingMaker = TilingMaker::getSharedInstance();
-    tilingMaker->sm_take(tilingMaker->getSelected(),SM_TILE_CHANGED);
+    tilingMaker->pushTileToPrototypeMaker(PROM_TILE_EDGES_CHANGED,tile);
     accept();
 }
 

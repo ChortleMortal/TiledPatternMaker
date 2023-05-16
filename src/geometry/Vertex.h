@@ -1,3 +1,7 @@
+#pragma once
+#ifndef VERTEX_H
+#define VERTEX_H
+
 ////////////////////////////////////////////////////////////////////////////
 //
 // Vertex.java
@@ -6,12 +10,10 @@
 // component, a list of adjacent edges.  It also has the planar component,
 // a position.  Finally, there's a user data field for applications.
 
-#ifndef VERTEX_H
-#define VERTEX_H
-
 #include <memory>
 #include <QPointF>
 #include <QVector>
+#include <QTransform>
 
 typedef std::weak_ptr<class Vertex>         WeakVertexPtr;
 typedef std::shared_ptr<class Edge>         EdgePtr;
@@ -30,7 +32,7 @@ public:
 
     QPointF     pt;
     bool        visited;    // used by interlace
-    VertexPtr   copy;       // Used when cloning the map.
+    WeakVertexPtr   copy;       // Used when cloning the map.
     QVector<WeakVertexPtr> adjacent_vertices;
 
 };

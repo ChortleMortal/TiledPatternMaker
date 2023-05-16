@@ -712,7 +712,6 @@
 			<gap>0.3021</gap>
 			<shadow>0.05</shadow>
 			<includeTipVerts>false</includeTipVerts>
-			<startUnder>true</startUnder>
 		</style.Interlace>
 	</style.Interlace>
 	<style.Interlace id="154" serialization="custom">
@@ -737,7 +736,6 @@
 			<gap>0</gap>
 			<shadow>0.11668</shadow>
 			<includeTipVerts>false</includeTipVerts>
-			<startUnder>true</startUnder>
 		</style.Interlace>
 	</style.Interlace>
 	<style.Interlace id="155" serialization="custom">
@@ -762,7 +760,6 @@
 			<gap>0</gap>
 			<shadow>0.05</shadow>
 			<includeTipVerts>false</includeTipVerts>
-			<startUnder>true</startUnder>
 		</style.Interlace>
 	</style.Interlace>
 	<style.Filled id="156" serialization="custom">

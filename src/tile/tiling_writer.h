@@ -1,3 +1,4 @@
+#pragma once
 #ifndef TILING_WRITER
 #define TILING_WRITER
 

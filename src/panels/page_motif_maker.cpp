@@ -1,40 +1,44 @@
 #include <QCheckBox>
 #include <QRadioButton>
 #include <QMessageBox>
+#include <QComboBox>
 
+#include "motifs/explicit_map_motif.h"
 #include "panels/page_motif_maker.h"
 #include "motifs/motif.h"
-#include "motifs/explicit_motif.h"
-#include "motifs/radial_motif.h"
+#include "motifs/irregular_motif.h"
 #include "geometry/map.h"
 #include "makers/map_editor/map_editor.h"
 #include "makers/mosaic_maker/mosaic_maker.h"
-#include "makers/motif_maker/motif_button.h"
+#include "makers/motif_maker/design_element_button.h"
 #include "makers/motif_maker/motif_selector.h"
-#include "makers/motif_maker/motif_editor.h"
-#include "makers/motif_maker/motif_maker.h"
+#include "makers/motif_maker/motif_maker_widget.h"
+#include "makers/motif_maker/motif_editor_widget.h"
+#include "makers/prototype_maker/prototype.h"
+#include "makers/prototype_maker/prototype_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "mosaic/design_element.h"
-#include "mosaic/prototype.h"
 #include "panels/panel.h"
 #include "settings/configuration.h"
 #include "style/style.h"
+#include "tile/placed_tile.h"
 #include "tile/tiling.h"
 #include "tile/tile.h"
-#include "tiledpatternmaker.h"
 #include "viewers/view.h"
 #include "viewers/viewcontrol.h"
+#include "widgets/layout_sliderset.h"
 
 using std::make_shared;
 
-typedef std::weak_ptr<Prototype> WeakPrototypePtr;
-
-Q_DECLARE_METATYPE(WeakPrototypePtr)
-
 page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,"Motif Maker")
 {
+    protoMakerData = PrototypeMaker::getInstance()->getProtoMakerData();
+
     QRadioButton * rEnlarge  = new QRadioButton("Enlarge to fill");
     QRadioButton * rActual   = new QRadioButton("Actual size");
+
+    SpinSet * widthSpin = new SpinSet("Line Width",3,1,9);
+    widthSpin->setValue((int)config->protoviewWidth);
 
     whiteBackground          = new QCheckBox("White background");
     QCheckBox * chkMulti     = new QCheckBox("Multi-Select Motifs");
@@ -43,38 +47,28 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,"M
     QPushButton * pbDel      = new QPushButton("Delete Motif");
     QPushButton * pbEdit     = new QPushButton("Edit Map");
     QPushButton * pbCombine  = new QPushButton("Combine Motifs");
+    QPushButton * pbSwapReg  = new QPushButton("Swap Tile Regularity");
     QPushButton * pbRender   = new QPushButton("Render");
     pbRender->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
 
     QCheckBox   * pbPropagate = new QCheckBox("Propagate Changes");
     pbPropagate->setChecked(config->motifPropagate);
-    connect(pbPropagate,         &QCheckBox::clicked, [this](bool checked) { config->motifPropagate = checked; motifMaker->setPropagate(checked); } );
+    connect(pbPropagate, &QCheckBox::clicked, this, [this](bool checked) { config->motifPropagate = checked; prototypeMaker->setPropagate(checked); } );    // OK
 
-    QLabel * tlabel          = new QLabel("Loaded tilings");
-    tilingListBox            = new QComboBox();
-    tilingListBox->setMinimumWidth(131);
+    protoLabel              = new QLabel("Prototypes");
+    prototypeCombo          = new QComboBox();
+    prototypeCombo->setMinimumWidth(131);
 
-    AQWidget * motifWidget  =  createMotifWidget();
-
-    QHBoxLayout * hbox = new QHBoxLayout;
-    hbox->addWidget(tlabel);
-    hbox->addWidget(tilingListBox);
+    QHBoxLayout * hbox      = new QHBoxLayout;
+    hbox->addWidget(protoLabel);
+    hbox->addWidget(prototypeCombo);
     hbox->addStretch();
     hbox->addWidget(rEnlarge);
     hbox->addWidget(rActual);
     hbox->addStretch();
-    hbox->addWidget(chkMulti);
-    hbox->addWidget(whiteBackground);
-    vbox->addLayout(hbox);
-
-    hbox = new QHBoxLayout;
-    hbox->addWidget(pbPropagate);
+    hbox->addLayout(widthSpin);
     hbox->addStretch();
-    hbox->addWidget(pbCombine);
-    hbox->addWidget(pbDel);
-    hbox->addWidget(pbDup);
-    hbox->addWidget(pbEdit);
-    hbox->addWidget(pbRender);
+    hbox->addWidget(chkMulti);
     vbox->addLayout(hbox);
 
     if (config->insightMode)
@@ -85,7 +79,6 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,"M
         QCheckBox * showTile     = new QCheckBox("Tile Boundary");
         QCheckBox * showMotifB   = new QCheckBox("Motif Boundary");
         QCheckBox * showExt      = new QCheckBox("Extended Boundary");
-        QPushButton * pbSwap     = new QPushButton("Swap Type");
 
         hbox = new QHBoxLayout;
         hbox->addWidget(showMotif);
@@ -94,7 +87,7 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,"M
         hbox->addWidget(showExt);
         hbox->addWidget(hiliteUnit);
         hbox->addWidget(replicate);
-        hbox->addWidget(pbSwap);
+        hbox->addWidget(whiteBackground);
         vbox->addLayout(hbox);
 
         replicate->setChecked(!config->dontReplicate);
@@ -104,20 +97,46 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,"M
         showMotif->setChecked(config->showMotif);
         showExt->setChecked(config->showExtendedBoundary);
 
-        connect(replicate,          &QCheckBox::clicked, this,  &page_motif_maker::replicateClicked);
-        connect(hiliteUnit,         &QCheckBox::clicked, [this](bool checked) { config->highlightUnit        = checked; view->update(); } );
-        connect(showTile,           &QCheckBox::clicked, [this](bool checked) { config->showTileBoundary     = checked; view->update(); } );
-        connect(showMotifB,         &QCheckBox::clicked, [this](bool checked) { config->showMotifBoundary   = checked; view->update(); } );
-        connect(showMotif,          &QCheckBox::clicked, [this](bool checked) { config->showMotif           = checked; view->update(); } );
-        connect(showExt,            &QCheckBox::clicked, [this](bool checked) { config->showExtendedBoundary = checked; view->update(); } );
-        connect(pbSwap,             &QPushButton::clicked,      this, &page_motif_maker::slot_swapFeatureType);
-        connect(view,               &View::sig_refreshMotifMenu,this, &page_motif_maker::slot_rebuildCurrentFigure);
+        connect(replicate,          &QCheckBox::clicked,     this, &page_motif_maker::replicateClicked);
+        connect(view,               &View::sig_rebuildMotif, this, &page_motif_maker::slot_rebuildMotif);
+        connect(hiliteUnit,         &QCheckBox::clicked, this, [this](bool checked) { config->highlightUnit        = checked; view->update(); } );
+        connect(showTile,           &QCheckBox::clicked, this, [this](bool checked) { config->showTileBoundary     = checked; view->update(); } );
+        connect(showMotifB,         &QCheckBox::clicked, this, [this](bool checked) { config->showMotifBoundary    = checked; view->update(); } );
+        connect(showMotif,          &QCheckBox::clicked, this, [this](bool checked) { config->showMotif            = checked; view->update(); } );
+        connect(showExt,            &QCheckBox::clicked, this, [this](bool checked) { config->showExtendedBoundary = checked; view->update(); } );
     }
+    else
+    {
+        config->dontReplicate           = false;
+        config->highlightUnit           = false;
+        config->showTileBoundary        = true;
+        config->showMotifBoundary       = true;
+        config->showMotif               = true;
+        config->showExtendedBoundary    = true;
+    }
+
+    hbox = new QHBoxLayout;
+    hbox->addWidget(pbPropagate);
+    hbox->addStretch();
+    hbox->addWidget(pbCombine);
+    hbox->addWidget(pbDel);
+    hbox->addWidget(pbDup);
+    hbox->addWidget(pbEdit);
+    hbox->addWidget(pbSwapReg);
+    hbox->addStretch();
+    hbox->addWidget(pbRender);
+    vbox->addLayout(hbox);
+
+    // the Motif maker widget
+    auto motifMakerWidget  =  new MotifMakerWidget();
+    protoMakerData->setWidget(motifMakerWidget);
 
     // putting it together
     vbox->addSpacing(7);
-    vbox->addWidget(motifWidget);
+    vbox->addWidget(motifMakerWidget);
     vbox->addStretch();
+
+    setFixedWidth(762);
 
     whiteBackground->setChecked(config->motifBkgdWhite);
     chkMulti->setChecked(config->motifMultiView);
@@ -127,51 +146,17 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,"M
         rActual->setChecked(true);
 
     connect(pbRender,           &QPushButton::clicked,                  this,   &panel_page::sig_render);
+    connect(pbSwapReg,          &QPushButton::clicked,                  this,   &page_motif_maker::slot_swapTileRegularity);
     connect(pbDup,              &QPushButton::clicked,                  this,   &page_motif_maker::slot_duplicateCurrent);
     connect(pbDel,              &QPushButton::clicked,                  this,   &page_motif_maker::slot_deleteCurrent);
     connect(pbEdit,             &QPushButton::clicked,                  this,   &page_motif_maker::slot_editCurrent);
     connect(pbCombine,          &QPushButton::clicked,                  this,   &page_motif_maker::slot_combine);
     connect(whiteBackground,    &QCheckBox::clicked,                    this,   &page_motif_maker::whiteClicked);
     connect(chkMulti,           &QCheckBox::clicked,                    this,   &page_motif_maker::multiClicked);
-    connect(tilingListBox,      SIGNAL(currentIndexChanged(int)),       this,   SLOT(slot_prototypeSelected(int)));
+    connect(prototypeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &page_motif_maker::slot_prototypeSelected);
     connect(rEnlarge,           &QRadioButton::clicked,                 this,   [=] { config->motifEnlarge = true;  view->update(); });
     connect(rActual ,           &QRadioButton::clicked,                 this,   [=] { config->motifEnlarge = false; view->update(); });
-
-    connect(motifMaker,         &MotifMaker::sig_tilingChoicesChanged,  this,   &page_motif_maker::slot_tilingChoicesChanged, Qt::QueuedConnection);
-    connect(motifMaker,         &MotifMaker::sig_tilingChanged,         this,   &page_motif_maker::slot_tilingChanged, Qt::QueuedConnection);
-    connect(motifMaker,         &MotifMaker::sig_tileChanged,           this,   &page_motif_maker::slot_tileChanged, Qt::QueuedConnection);
-}
-
-AQWidget * page_motif_maker::createMotifWidget()
-{
-    motifMaker = MotifMaker::getInstance();
-
-    // Motif buttons
-    motifSelector    = new MotifSelector();
-
-    // larger slected feature button
-    viewerBtn  = make_shared<MotifButton>(-1);
-
-    // top row
-    QHBoxLayout * btnBox = new QHBoxLayout();
-    btnBox->addWidget(motifSelector);
-    btnBox->addWidget(viewerBtn.get());
-    btnBox->addStretch();
-
-    // Editors
-    motifEditor  = new MotifEditor(this);
-
-    AQVBoxLayout * motifBox = new AQVBoxLayout;
-    motifBox->addLayout(btnBox);
-    motifBox->addWidget(motifEditor);
-
-    AQWidget * w = new AQWidget();
-    w->setLayout(motifBox);
-    w->setMinimumWidth(610);
-
-    connect(motifSelector,  &MotifSelector::sig_launcherButton, this, &page_motif_maker::slot_selectMotifButton);
-
-    return w;
+    connect(widthSpin,          &SpinSet::valueChanged,                 this,   &page_motif_maker::slot_widthChanged);
 }
 
 void page_motif_maker::onEnter()
@@ -194,19 +179,7 @@ void page_motif_maker::onExit()
 
 void page_motif_maker::onRefresh(void)
 {
-    static WeakPrototypePtr wpp;
-
-    if (wpp.lock() != motifMaker->getSelectedPrototype())
-    {
-        auto pp = motifMaker->getSelectedPrototype();
-        wpp     = pp;
-        // it is possible that there is a new tiling for the prototype
-        slot_tilingChoicesChanged();
-        // setup the menu widget for the new prototype
-        setPrototype(pp);
-    }
-
-    motifSelector->tallyButtons();
+    loadProtoCombo();
 
     whiteBackground->blockSignals(true);
     whiteBackground->setChecked(config->motifBkgdWhite);
@@ -220,92 +193,92 @@ void page_motif_maker::onRefresh(void)
     }
 }
 
-// this sets up the whole shebang
-void page_motif_maker::setPrototype(PrototypePtr proto)
+void page_motif_maker::loadProtoCombo()
 {
-    motifSelector->setup(proto);
-    update();
-}
+    // determine if needs to be loaded
+    QVector<ProtoPtr> loadedProtos;
 
-void page_motif_maker::motifModified(MotifPtr fp)
-{
-    DesignElementPtr dep = motifMaker->getSelectedDesignElement();
-    dep->setMotif(fp);
-
-    setButtonTransforms();
-
-    // notify motif maker
-    motifMaker->setSelectedDesignElement(dep);     // if this is the samne design element this does nothing
-    auto tiling = motifMaker->getSelectedPrototype()->getTiling();
-    motifMaker->sm_takeUp(tiling,SM_MOTIF_CHANGED);
-
-}
-
-// this is called when the figure type changes, say from Star to Rosette, etc
-// but it's only effect is to change the transform of the buttons
-void page_motif_maker::setButtonTransforms()
-{
-    viewerBtn->setViewTransform();
-    MotifBtnPtr btn = motifSelector->getCurrentButton();
-    if (btn)
+    for (int i=0; i < prototypeCombo->count(); i++)
     {
-        btn->setViewTransform();
-    }
-    update();
-}
-
-// when a motif button is selected, this sets the motif in bot the motif maker and the motif editor
-void page_motif_maker::slot_selectMotifButton(MotifBtnPtr fb)
-{
-    if (!fb) return;
-    qDebug() << "MotifWidget::slot_selectMotifButton btn=" << fb->getIndex() << fb.get();
-
-    DesignElementPtr designElement = fb->getDesignElement(); // DAC taprats cloned here
-    if (!designElement) return;
-
-    motifMaker->setSelectedDesignElement(designElement);
-    auto tile = designElement->getTile();
-    motifMaker->setActiveTile(tile);
-    viewerBtn->setDesignElement(designElement);
-    motifEditor->selectMotif(designElement);
-
-    ViewControl * view = ViewControl::getInstance();
-    view->update();
-    update();
-}
-
-void page_motif_maker::slot_tileChanged()
-{
-    setButtonTransforms();
-}
-
-void page_motif_maker::slot_tilingChanged()
-{
-    setPrototype(motifMaker->getSelectedPrototype());
-}
-
-void page_motif_maker::slot_tilingChoicesChanged()
-{
-    tilingListBox->blockSignals(true);
-
-    tilingListBox->clear();
-
-    const QVector<PrototypePtr> & protos = motifMaker->getPrototypes();
-    for (auto proto : protos)
-    {
-        tilingListBox->addItem(proto->getTiling()->getName(),QVariant::fromValue(WeakPrototypePtr(proto)));
+        auto v = prototypeCombo->itemData(i);
+        WeakProtoPtr wproto = v.value<WeakProtoPtr>();
+        auto proto  = wproto.lock();
+        if (proto)
+        {
+            loadedProtos.push_back(proto);
+        }
     }
 
-    PrototypePtr pp = motifMaker->getSelectedPrototype();
-    if (pp)
+    QVector<ProtoPtr> currentProtos = protoMakerData->getPrototypes();
+
+    bool rebuild = false;
+    if (loadedProtos.count() != currentProtos.count())
     {
-        QString name = pp->getTiling()->getName();
+        rebuild = true;
+    }
+    else
+    {
+        for (auto & current : currentProtos)
+        {
+            if (!loadedProtos.contains(current))
+            {
+                rebuild = true;
+                break;
+            }
+        }
+    }
+
+    if (rebuild == false)
+    {
+        return;
+    }
+
+    // rebuild the combo
+    prototypeCombo->blockSignals(true);
+
+    prototypeCombo->clear();
+
+    for (auto & proto : currentProtos)
+    {
+        prototypeCombo->addItem(proto->getTiling()->getName(),QVariant::fromValue(WeakProtoPtr(proto)));
+    }
+
+    protoLabel->setText(QString("Prototypes (%1)").arg(prototypeCombo->count()));
+
+    if (prototypeCombo->count() == 0)
+    {
+        return;
+    }
+
+    ProtoPtr selected = protoMakerData->getSelectedPrototype();
+    if (selected)
+    {
+        QString name = selected->getTiling()->getName();
         qDebug() << "page_motif_maker::reload() selected tiling:" << name;
-        int index = tilingListBox->findText(name);
-        tilingListBox->setCurrentIndex(index);
+        int index = prototypeCombo->findText(name);
+        if (index >= 0)
+        {
+            prototypeCombo->setCurrentIndex(index);
+        }
+        else
+        {
+            prototypeCombo->setCurrentIndex(0);
+            auto v = prototypeCombo->itemData(0);
+            WeakProtoPtr wproto = v.value<WeakProtoPtr>();
+            auto proto = wproto.lock();
+            protoMakerData->select(MVD_DELEM,proto,false);
+        }
+    }
+    else
+    {
+        prototypeCombo->setCurrentIndex(0);
+        auto v = prototypeCombo->itemData(0);
+        WeakProtoPtr wproto = v.value<WeakProtoPtr>();
+        auto proto = wproto.lock();
+        protoMakerData->select(MVD_DELEM,proto,false);
     }
 
-    tilingListBox->blockSignals(false);
+    prototypeCombo->blockSignals(false);
 }
 
 void  page_motif_maker::whiteClicked(bool state)
@@ -317,21 +290,14 @@ void  page_motif_maker::whiteClicked(bool state)
 void  page_motif_maker::replicateClicked(bool state)
 {
     config->dontReplicate = !state;
-    slot_rebuildCurrentFigure();
+    slot_rebuildMotif();
 }
 
-void page_motif_maker::slot_rebuildCurrentFigure()
+void page_motif_maker::slot_rebuildMotif()
 {
-    auto del    = motifMaker->getSelectedDesignElement();
-    auto motif  = del->getMotif();
-    motif->resetMaps();
+    // this is triggered when toggling debug of motif or unusually when regularity is changed
+    protoMakerData->rebuildCurrentMotif();
     emit sig_refreshView();
-
-    auto btn = motifSelector->getCurrentButton();
-    if (btn)
-    {
-        slot_selectMotifButton(btn);
-    }
 }
 
 void  page_motif_maker::multiClicked(bool state)
@@ -340,9 +306,19 @@ void  page_motif_maker::multiClicked(bool state)
     emit sig_refreshView();
 }
 
+void page_motif_maker::slot_editCurrent()
+{
+    MapEditor * maped = MapEditor::getInstance();
+
+    if (maped->loadSelectedMotifs())
+    {
+        panel->setCurrentPage("Map Editor");
+    }
+}
+
 void page_motif_maker::slot_combine()
 {
-    auto delps = motifMaker->getSelectedDesignElements();
+    auto delps = protoMakerData->getSelectedDELs(MVD_DELEM);
     if (delps.size() < 2)
     {
         QMessageBox box(this);
@@ -356,7 +332,7 @@ void page_motif_maker::slot_combine()
     qDebug() << "combining" << delps.size() << "maps, tolerance =" << tolerance;
 
     qsizetype sides = 0;
-    TilePtr fp;
+    TilePtr tp;
 
     MapPtr compositeMap = make_shared<Map>("Composite map");
     for (auto & delp : delps)
@@ -365,13 +341,14 @@ void page_motif_maker::slot_combine()
         if (tile->numSides() > sides)
         {
             sides = tile->numSides();
-            fp    = tile;
+            tp    = tile;
         }
 
         auto motif = delp->getMotif();
-        MapPtr map = motif->getMap();
+        MapPtr map = motif->getMotifMap();
         compositeMap->mergeMap(map,tolerance);
     }
+    Q_ASSERT(tp);
 
     compositeMap->deDuplicateVertices(tolerance);
 
@@ -379,18 +356,20 @@ void page_motif_maker::slot_combine()
 
     compositeMap->verify(true);
 
-    auto ef = make_shared<ExplicitMotif>(compositeMap,MOTIF_TYPE_EXPLICIT,sides);
-    auto delp = make_shared<DesignElement>(fp,ef);
-    auto prototype = motifMaker->getSelectedPrototype();
+    auto emm = make_shared<ExplicitMapMotif>(compositeMap);
+    emm->setN(sides);
+    auto delp = make_shared<DesignElement>(tp,emm);
+    auto prototype = protoMakerData->getSelectedPrototype();
     prototype->addElement(delp);
-    setPrototype(prototype);
+    protoMakerData->select(MVD_DELEM,prototype,false);
 }
 
 void page_motif_maker::slot_duplicateCurrent()
 {
-    motifMaker->dupolicateMotif();
+    prototypeMaker->duplicateDesignElement();
 
-    setPrototype(motifMaker->getSelectedPrototype());
+    //prototypeMaker->setSelectedPrototype(prototypeMaker->getSelectedPrototype());
+    protoMakerData->select(MVD_DELEM,protoMakerData->getSelectedPrototype(),false);
 }
 
 void page_motif_maker::slot_deleteCurrent()
@@ -405,68 +384,66 @@ void page_motif_maker::slot_deleteCurrent()
         return;
     }
 
-    motifMaker->deleteActiveTile();
+    auto proto = protoMakerData->getSelectedPrototype();
+    if (!proto) return;
 
-    setPrototype(motifMaker->getSelectedPrototype());
+    auto del = protoMakerData->getSelectedDEL();
+    if (!del) return;
+
+    TilePtr tile = del->getTile();
+    if (!tile) return;
+
+    PlacedTiles deletions;
+    TilingPtr tiling = proto->getTiling();
+    const PlacedTiles & placedTiles = tiling->getData().getPlacedTiles();
+    for (auto placedTile : placedTiles)
+    {
+        if (placedTile->getTile() == tile)
+        {
+            deletions.push_back(placedTile);
+        }
+    }
+    for (auto & pfp : deletions)
+    {
+        tiling->remove(pfp);
+    }
+    proto->removeElement(del);
+    proto->wipeoutProtoMap();
+
+    protoMakerData->select(MVD_DELEM,proto,false);
+
+    emit sig_render();
 }
 
-void page_motif_maker::slot_editCurrent()
+void page_motif_maker::slot_swapTileRegularity()
 {
-    MapEditor * maped = MapEditor::getInstance();
+    auto proto = protoMakerData->getSelectedPrototype();
+    if (!proto) return;
 
-    if (maped->loadSelectedMotifs())
-    {
-        panel->setCurrentPage("Map Editor");
-    }
+    auto del   = protoMakerData->getSelectedDEL();
+    if (!del) return;
+
+    auto tile  = del->getTile();
+    tile->flipRegularity();
+
+    prototypeMaker->sm_takeUp(proto->getTiling(),PROM_TILE_REGULARITY_CHANGED,tile);
+
+    emit sig_render();
 }
 
 void page_motif_maker::slot_prototypeSelected(int row)
 {
-    QVariant var = tilingListBox->itemData(row);
-    if (var.canConvert<WeakPrototypePtr>())
+    QVariant var = prototypeCombo->itemData(row);
+    if (var.canConvert<WeakProtoPtr>())
     {
-        WeakPrototypePtr wpp = var.value<WeakPrototypePtr>();
-        PrototypePtr pp      = wpp.lock();
-        select(pp);
+        WeakProtoPtr wpp = var.value<WeakProtoPtr>();
+        ProtoPtr pp      = wpp.lock();
+        protoMakerData->select(MVD_DELEM,pp,false);
     }
 }
 
-TilePtr page_motif_maker::getActiveTile()
+void page_motif_maker::slot_widthChanged(int val)
 {
-    return motifMaker->getActiveTile();
-}
-
-void page_motif_maker::select(PrototypePtr prototype)
-{
-    qDebug() << "MotifMaker::select prototype="  << prototype.get();
-
-    motifMaker->setSelectedPrototype(prototype);
-
-    tilingMaker->select(prototype->getTiling());
-}
-
-// this is a change in the motif
-void page_motif_maker::slot_motifModified(MotifPtr motif)
-{
-    motifModified(motif);
-    emit sig_refreshView();
-}
-
-void page_motif_maker::slot_motifTypeChanged(eMotifType type)
-{
-    // placeholder if anything else needs to be  done here
-    Q_UNUSED(type);
-
-    emit sig_refreshView();
-}
-
-void page_motif_maker::slot_swapFeatureType()
-{
-    auto del   = motifMaker->getSelectedDesignElement();
-    auto tile  = del->getTile();
-    tile->setRegular(!tile->isRegular());
-
-    motifMaker->sm_takeUp(tilingMaker->getSelected(),SM_TILE_CHANGED);
-
-    slot_rebuildCurrentFigure();
+    config->motifViewWidth = qreal(val);
+    view->update();
 }

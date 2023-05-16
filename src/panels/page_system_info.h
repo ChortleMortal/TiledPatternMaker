@@ -1,18 +1,21 @@
-﻿#ifndef PAGE_SYSTEM_INFO_H
+﻿#pragma once
+#ifndef PAGE_SYSTEM_INFO_H
 #define PAGE_SYSTEM_INFO_H
+
+#include "widgets/panel_page.h"
+#include "makers/prototype_maker/prototype_data.h"
 
 class QTreeWidgetItem;
 class QTextStream;
 class QTreeWidget;
 class QCheckBox;
 class QPushButton;
-
-#include "widgets/panel_page.h"
+class PrototypeData;
 
 typedef std::shared_ptr<class Mosaic>           MosaicPtr;
 typedef std::shared_ptr<class Map>              MapPtr;
 typedef std::shared_ptr<class Crop>             CropPtr;
-typedef std::shared_ptr<class Prototype>        PrototypePtr;
+typedef std::shared_ptr<class Prototype>        ProtoPtr;
 typedef std::shared_ptr<class Tiling>           TilingPtr;
 typedef std::shared_ptr<class Layer>            LayerPtr;
 typedef std::shared_ptr<class DesignElement>    DesignElementPtr;
@@ -35,22 +38,34 @@ private slots:
     void slot_itemClicked(QTreeWidgetItem * item, int col);
 
 protected:
+    void doMosaicMaker();
+    void doProtoypeMaker(eMVDType type, QString name);
+    void doTilingMaker();
+    void doBackgroundImage();
+    void doViews();
+    void doMapEditor();
+    void doCropEdfitor();
+
     void populateStyles(QTreeWidgetItem * parent, MosaicPtr mosaic);
     void populateBorder(QTreeWidgetItem * parent, MosaicPtr mosaic);
     void populateCrop(QTreeWidgetItem * parent, CropPtr crop);
     void populateLayer(QTreeWidgetItem * parent, Layer * layer);
     void populateMap(QTreeWidgetItem *parent, MapPtr mp, QString name);
-    void populatePrototype(QTreeWidgetItem * parent, PrototypePtr pp, QString name);
+    void populatePrototype(QTreeWidgetItem * parent, ProtoPtr pp, QString name, QString state);
     void populateTiling(QTreeWidgetItem * parent, TilingPtr tp, QString name);
-    void populateDEL(QTreeWidgetItem * parent, DesignElementPtr de);
+    void populateDEL(QTreeWidgetItem * parent, DesignElementPtr de, QString name, QString state);
     void populateViews(QTreeWidgetItem * parent);
 
     void dumpWalkTree(QTextStream &ts, QTreeWidgetItem *item );
 
 private:
     QTreeWidget     * tree;
-    QPushButton     * pbPopulate();
+    QTreeWidgetItem * item;
+    QTreeWidgetItem * item2;
+    QPushButton     * pbPopulate;
     QCheckBox       * lockCheck;
+    CropPtr         crop;
+
 };
 
 #endif

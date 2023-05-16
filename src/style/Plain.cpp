@@ -17,7 +17,7 @@
 
 // Creation.
 
-Plain::Plain(PrototypePtr proto) : Colored(proto)
+Plain::Plain(ProtoPtr proto) : Colored(proto)
 {
 }
 

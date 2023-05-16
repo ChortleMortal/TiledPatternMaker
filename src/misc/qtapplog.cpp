@@ -6,21 +6,25 @@
 #include <QDir>
 #include <QTextStream>
 
-#ifdef WIN32
+#if defined(Q_OS_WINDOWS)
 #include <stdio.h>
 #include <stdlib.h>
 #include <Windows.h>
+#include "settings/configuration.h"
 #endif
+
 
 qtAppLog  * qtAppLog::mpThis   = nullptr;
 QMutex    * qtAppLog::pLogLock = nullptr;
 QTextEdit * qtAppLog::ted      = nullptr;
 
 QString     qtAppLog::currentLogName;
+QString     qtAppLog::baseLogName;
 QStringList qtAppLog::_trapStringList;
 
 bool qtAppLog::_logToStderr = true;
 bool qtAppLog::_logToDisk   = true;
+bool qtAppLog::_logToAppDir = false;
 bool qtAppLog::_logToPanel  = true;
 bool qtAppLog::_logLines    = false;
 bool qtAppLog::_logDebug    = false;
@@ -28,6 +32,12 @@ bool qtAppLog::_logDarkMode = false;
 bool qtAppLog::_active      = false;
 bool qtAppLog::_suspended   = false;
 bool qtAppLog::_trapping    = false;
+
+
+std::string qtAppLog::str1 = "\033[32m";
+std::string qtAppLog::str2 = "\033[0m";
+std::string qtAppLog::str3 = "\033[35;1m";
+std::string qtAppLog::str4 = "\033[37m";
 
 eLogTimer qtAppLog::_logTimerSetting = LOGT_NONE;
 
@@ -57,12 +67,23 @@ qtAppLog::qtAppLog()
     ted = new QTextEdit();
     const QFont fixedFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
     ted->setFont(fixedFont);
+}
 
-#ifdef WIN32
+void qtAppLog:: init()
+{
+#if defined(Q_OS_WINDOWS)
     QString root = qApp->applicationDirPath();
     QStringList rootpath = root.split("/");
-    _logDir  = rootpath[0] + "/logs/";
+    if (!_logToAppDir)
+    {
+        _logDir  = rootpath[0] + "/logs/";
+    }
+    else
+    {
+        _logDir = Configuration::getInstance()->getMediaRoot();
+        _logDir.replace("/media", "/logs/");
 
+    }
     QDir adir(_logDir);
     if (!adir.exists())
     {
@@ -75,12 +96,11 @@ qtAppLog::qtAppLog()
         }
     }
 #else
-    _logDir = "./logs/";
+    _logDir = QDir::homePath() + "/logs/";
     QDir adir(_logDir);
     if (!adir.exists())
     {
-        QDir adir2(".");
-        if (!adir2.mkdir("logs"))
+        if (!adir.mkpath(_logDir))
         {
             QMessageBox box;
             box.setText(QString("Failed to create logfile directory: %1").arg(_logDir));
@@ -88,13 +108,12 @@ qtAppLog::qtAppLog()
             return;
         }
     }
-    qDebug().noquote() << "log  :"  << adir.canonicalPath();
 #endif
 
 #ifdef QT_DEBUG
-    currentLogName = _logDir + "patternLogD.txt";
+    currentLogName = _logDir + baseLogName + "D.txt";
 #else
-    currentLogName = _logDir + "patternLogR.txt";
+    currentLogName = _logDir + baseLogName + "R.txt";
 #endif
 
     mCurrentFile.setFileName(currentLogName);
@@ -236,32 +255,26 @@ void qtAppLog::crashMessageOutput(QtMsgType type, const QMessageLogContext &cont
 
     if (_logToStderr)
     {
-        std::string s1;
-        std::string s2;
         std::string str;
         switch (type)
         {
         case QtDebugMsg:
+#if defined(Q_OS_WINDOWS)
             str = msg2.toStdString();
+#else
+            str = str4 + msg2.toStdString() + str2;
+#endif
             break;
         case QtInfoMsg:
-            s1 = "\033[32m";
-            s2 = "\033[0m";
-            str = s1 + msg2.toStdString() + s2;
+            str = str1 + msg2.toStdString() + str2;
             break;
         case QtWarningMsg:
-            s1 = "\033[35;1m";
-            s2 = "\033[0m";
-            str = s1 + msg2.toStdString() + s2;
-            break;
         case QtCriticalMsg:
-            str = msg2.toStdString();
-            break;
         case QtFatalMsg:
-            str = msg2.toStdString();
+            str = str3 + msg2.toStdString() + str2;
             break;
         }
-#ifdef WIN32
+#if defined(Q_OS_WINDOWS)
         str += '\n';
         OutputDebugStringA(str.c_str());
 #else
@@ -282,7 +295,7 @@ void qtAppLog::crashMessageOutput(QtMsgType type, const QMessageLogContext &cont
 
     pLogLock->unlock();
 
-#if defined(WIN32) && defined(QT_DEBUG)
+#if defined(Q_OS_WINDOWS) && defined(QT_DEBUG)
     if (type == QtCriticalMsg || type == QtFatalMsg)
     {
         DebugBreak();

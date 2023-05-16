@@ -3,7 +3,6 @@
 
 #include "viewers/view.h"
 #include "viewers/viewcontrol.h"
-#include "viewers/grid.h"
 #include "legacy/design_maker.h"
 #include "motifs/motif.h"
 #include "geometry/dcel.h"
@@ -13,9 +12,11 @@
 #include "makers/tiling_maker/tiling_maker.h"
 #include "misc/cycler.h"
 #include "misc/defaults.h"
+#include "misc/runguard.h"
 #include "misc/shortcuts.h"
+#include "mosaic/mosaic.h"
 #include "mosaic/design_element.h"
-#include "mosaic/prototype.h"
+#include "makers/prototype_maker/prototype.h"
 #include "panels/panel.h"
 #include "settings/configuration.h"
 #include "style/style.h"
@@ -25,10 +26,12 @@
 #include "widgets/mouse_mode_widget.h"
 
 extern class TiledPatternMaker * theApp;
-extern void closeHandle();
+extern RunGuard * guard;
 
 View::View()
 {
+    config       = Configuration::getInstance();
+
     canPaint     = true;
     closed       = false;
     dragging     = false;
@@ -40,7 +43,7 @@ View::View()
     setMaximumSize(MAX_WIDTH,MAX_HEIGHT);
 
     QSettings s;
-    QPoint pt = s.value("viewPos").toPoint();
+    QPoint pt = s.value(QString("viewPos/%1").arg(config->appInstance)).toPoint();
     setGeometry(pt.x(),pt.y(),DEFAULT_WIDTH,DEFAULT_HEIGHT);
     move(pt);
     QGridLayout * grid = new QGridLayout();
@@ -54,15 +57,14 @@ View::~View()
     if (!config->splitScreen && !closed)
     {
         QSettings s;
-        QPointF pt = pos();
-        qDebug(). noquote() << "View destructor pos =" << pt;
-        s.setValue("viewPos", pos());
+        //QPointF pt = pos();
+        //qDebug(). noquote() << "View destructor pos =" << pt;
+        s.setValue((QString("viewPos/%1").arg(config->appInstance)), pos());
     }
 }
 
 void View::init()
 {
-    config      = Configuration::getInstance();
     tilingMaker = TilingMaker::getSharedInstance();
     designMaker = DesignMaker::getInstance();
     panel       = ControlPanel::getInstance();
@@ -82,12 +84,12 @@ void View::init()
 
 void View::addLayer(LayerPtr layer)
 {
-    layers.push_back(layer);
+    activeLayers.push_back(layer);
 }
 
 void View::addTopLayer(LayerPtr layer)
 {
-    layers.push_front(layer);
+    activeLayers.push_front(layer);
 }
 
 void View::unloadView()
@@ -98,7 +100,7 @@ void View::unloadView()
 
 bool View::isActiveLayer(Layer * l)
 {
-    for (auto & layer : layers)
+    for (auto & layer : activeLayers)
     {
         if (layer.get() == l)
         {
@@ -110,7 +112,7 @@ bool View::isActiveLayer(Layer * l)
 
 QVector<LayerPtr> View::getActiveLayers()
 {
-    return layers;
+    return activeLayers;
 }
 
 void  View::paintEnable(bool enable)
@@ -255,31 +257,20 @@ void View::clearLayout(QLayout* layout, bool deleteWidgets)
     }
 }
 
-void View::dump(bool summary)
+void View::dumpRefs()
 {
-    qDebug() << "View: layers =" << numLayers();
-
-    if (!summary)
-    {
-        for (auto layer : qAsConst(layers))
-        {
-            qDebug() << "Layer:" << layer->getName() << layer.get();
-        }
-    }
-
-    qDebug() << "Tilings:"  << Tiling::refs
-             << "Layers:"   << Layer::refs
+    qDebug() << "Mosaics:"  << Mosaic::refs
              << "Styles:"   << Style::refs
-             << "Maps:"     << Map::refs
              << "Protos:"   << Prototype::refs
+             << "Maps:"     << Map::refs
+             << "DCELs"     << DCEL::refs
+             << "faces"     << Face::refs
              << "DELs:"     << DesignElement::refs
              << "Motifs:"   << Motif::refs
+             << "Tilings:"  << Tiling::refs
              << "Tiles:"    << Tile::refs
              << "Edges:"    << Edge::refs
-             << "Vertices:" << Vertex::refs
-             << "DCELs"     << DCEL::refs
-             << "faces"     << Face::refs;
-
+             << "Vertices:" << Vertex::refs;
 }
 
 void View::setKbdMode(eKbdMode mode)
@@ -365,8 +356,8 @@ bool View::ProcKey(QKeyEvent *k)
     case 'G':  config->showGrid = !config->showGrid; slot_refreshView(); break;
     case 'H':  config->hideCircles = !config->hideCircles; config->showCenterDebug = !config->showCenterDebug; update(); break;
     case 'I':  designMaker->designLayerShow(); break;  // I=in
-    case 'J':  emit sig_saveMenu();
-    case 'K':  config->debugMapEnable = !config->debugMapEnable; emit sig_refreshMotifMenu(); break;
+    case 'J':  emit sig_saveMenu(); break;
+    case 'K':  config->debugMapEnable = !config->debugMapEnable; emit sig_rebuildMotif(); break;
     case 'L':  setKbdMode(KBD_MODE_DES_LAYER_SELECT); break;
     case 'M':  emit sig_raiseMenu(); break;
     case 'N':  theApp->slot_bringToPrimaryScreen(); break;
@@ -377,7 +368,7 @@ bool View::ProcKey(QKeyEvent *k)
                else
                     QApplication::quit();
                break;
-    case 'R':  config->dontReplicate = !config->dontReplicate; emit sig_refreshMotifMenu(); break;
+    case 'R':  config->dontReplicate = !config->dontReplicate; emit sig_rebuildMotif(); break;
     case 'S':  setKbdMode(KBD_MODE_DES_SEPARATION); break;
     case 'T':  setKbdMode(KBD_MODE_XFORM_TILING); break;
     case 'U':  setKbdMode(KBD_MODE_XFORM_BKGD); break;
@@ -407,7 +398,7 @@ bool View::ProcKey(QKeyEvent *k)
     break;
     case Qt::Key_F2: setKbdMode(KBD_MODE_XFORM_VIEW); break;
     case Qt::Key_F3: break;
-    case Qt::Key_F4: dump(true); break;
+    case Qt::Key_F4: dumpRefs(); break;
     case Qt::Key_F5: break;
     case Qt::Key_Space: if (Cycler::getInstance()->getMode() != CYCLE_NONE) emit sig_cyclerKey(key); break;
     case '0':
@@ -476,12 +467,12 @@ void View::closeEvent(QCloseEvent *event)
     if (!config->splitScreen && !closed)
     {
         QSettings s;
-        s.setValue("viewPos", pos());
+        s.setValue((QString("viewPos/%1").arg(config->appInstance)), pos());
         qDebug() <<  "closeEvent pos" << pos();
         closed = true;
     }
 
-    closeHandle();
+    guard->release();
     QWidget::closeEvent(event);
     qApp->quit();
 }
@@ -505,9 +496,9 @@ void View::paintEvent(QPaintEvent *event)
     QPainter painter(this);
     painter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
 
-    std::stable_sort(layers.begin(),layers.end(),Layer::sortByZlevel);  // tempting to move this to addLayer, but if zlevel changed would not be picked up
+    std::stable_sort(activeLayers.begin(),activeLayers.end(),Layer::sortByZlevel);  // tempting to move this to addLayer, but if zlevel changed would not be picked up
 
-    for (auto layer : qAsConst(layers))
+    for (auto layer : qAsConst(activeLayers))
     {
         if (layer->isVisible())
         {

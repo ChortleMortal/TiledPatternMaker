@@ -1,6 +1,10 @@
-﻿/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
+﻿#pragma once
+#ifndef TILEDPATTERNMAKER_H
+#define TILEDPATTERNMAKER_H
+
+/* TiledPatternMaker - a tool for exploring geometric patterns as found in Andalusian and Islamic art
  *
- *  Copyright (c) 2016-2022 David A. Casper  email: david.casper@gmail.com
+ *  Copyright (c) 2016-2023 David A. Casper  email: david.casper@gmail.com
  *
  *  This file is part of TiledPatternMaker
  *
@@ -10,14 +14,9 @@
  *
  */
 
-#ifndef TILEDPATTERNMAKER_H
-#define TILEDPATTERNMAKER_H
-
 #include <QObject>
 #include <QKeyEvent>
 #include <QPalette>
-#include "enums/estatemachineevent.h"
-#include "enums/edesign.h"
 
 class SplitScreen;
 class ImageWidget;
@@ -35,26 +34,28 @@ class TiledPatternMaker : public QObject
     Q_OBJECT
 
 public:
-    TiledPatternMaker();
+    TiledPatternMaker(int instance);
     ~TiledPatternMaker();
 
     void imageKeyPressed(QKeyEvent * k);
+    void compareImages(QImage & img_left, QImage & img_right, QString title_left, QString title_right, bool autoMode);
+
+    void testMemoryManagement();
+
+    static QPixmap createTransparentPixmap(QImage img);
+    static void    appDebugBreak();
 
 signals:
     void sig_start();
-    void sig_mosaicWritten();
-    void sig_tilingWritten(QString name);
-    void sig_mosaicLoaded(QString name);
-    void sig_tilingLoaded(QString name);
-    void sig_loadedDesign(eDesign design);
     void sig_ready();
     void sig_refreshView();
     void sig_compareResult(QString);
     void sig_image0(QString name);
     void sig_image1(QString name);
-    void sig_deleteCurrentInWorklist();
+    void sig_deleteCurrentInWorklist(bool confirm);
     void sig_lockStatus();
     void sig_workListChanged();
+    void sig_colorPick(QColor color);
 
     void sig_takeNext();
     void sig_cyclerQuit();
@@ -63,36 +64,26 @@ signals:
 
 public slots:
     void startEverything();
-    void slot_loadDesign(eDesign design);
-    void slot_buildDesign(eDesign design);
 
-    void slot_loadMosaic(QString name, bool ready);
-    void slot_cycleLoadMosaic(QString name);
-    void slot_saveMosaic(QString name, bool test);
-
-    void slot_loadTiling(QString name,eSM_Event mode);
-    void slot_cyclerLoadTiling(QString name);
-    void slot_saveTiling(QString name);
-
-    //  resets protos and syles
     void slot_render();
 
     void slot_raiseMenu();
     void slot_bringToPrimaryScreen();
     void slot_splitScreen(bool checked);
-
-    void slot_compareImages(QString leftName, QString rightName, bool autoMode);
-    void slot_compareLoaded(QString leftName, bool autoMode);
+    
+    void slot_compareBMPs(QString leftName, QString rightName, bool autoMode);
+    void slot_compareBMPsPath(QString file1, QString file2);
+    void slot_compareBMMPandLoaded(QString leftName, bool autoMode);
     void slot_cyclerFinished();
     void slot_view_image(QString left, QString right, bool transparent, bool popup);
     void slot_show_png(QString file, int row, int col);
 
-    static QPixmap createTransparentPixmap(QImage img);
-
 protected:
     void init();
     void setDarkTheme(bool enb);
-    void compare(QImage & img_left, QImage & img_right, bool autoMode);
+
+    void compareImages(bool automode);
+    void ping_pong_images(bool transparent, bool popup);
 
     ImageWidget       * popupPixmap(QPixmap & pixmap,QString title);
     TransparentWidget * popupTransparentPixmap(QPixmap & pixmap,QString title);
@@ -103,19 +94,24 @@ private:
     class ViewControl      * view;
     class ControlPanel     * controlPanel;
     class MosaicMaker      * mosaicMaker;
-    class MotifMaker       * motifMaker;
+    class PrototypeMaker   * prototypeMaker;
     TilingMakerPtr           tilingMaker;
     MapEditor              * mapEditor;
     CropMaker              * cropMaker;
     Cycler                 * cycler;
 
+    int                     instance;
     bool                    showFirst;
     QString                 pathLeft;
     QString                 pathRight;
     QString                 nameLeft;
     QString                 nameRight;
-    QPalette                originalPalette;
 
+    QImage                  _imageA;
+    QImage                  _imageB;
+    bool                    _showA;
+    QString                 _titleA;
+    QString                 _titleB;
 };
 
 #endif // TILEDPATTERNMAKER_H

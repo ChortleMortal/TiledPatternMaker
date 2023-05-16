@@ -1,3 +1,4 @@
+#pragma once
 #ifndef MAP_EDITOR_MAP_LOADER_H
 #define MAP_EDITOR_MAP_LOADER_H
 

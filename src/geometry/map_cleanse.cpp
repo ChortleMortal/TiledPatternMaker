@@ -30,6 +30,11 @@ void Map::cleanse(unsigned int options)
         nMap.reset();
     }
 
+    if (options & badEdges)
+    {
+        removeBadEdges();
+    }
+
     // do this first, before badVertices_0
     if (options & badVertices_1)
     {
@@ -41,12 +46,7 @@ void Map::cleanse(unsigned int options)
         removeVerticesWithEdgeCount(0);
     }
 
-    if (options & badEdges)
-    {
-        removeBadEdges();
-    }
-
-    if (options & BuildNeighbours)
+    if (options & buildNeighbours)
     {
         nMap.reset();
     }
@@ -61,6 +61,80 @@ void Map::cleanse(unsigned int options)
         nMap = std::make_shared<NeighbourMap>(edges);
         verify();
     }
+}
+
+uint Map::cleanseAnalysis()
+{
+    uint level = 0;
+
+    uint vcount = vertices.size();
+    uint ecount = edges.size();
+
+    joinColinearEdges();
+    if (vcount != vertices.size() || ecount != edges.size() )
+    {
+        vcount = vertices.size();
+        ecount = edges.size();
+        level |= joinupColinearEdges;
+    }
+
+    divideIntersectingEdges();
+    deDuplicateNeighbours();
+    nMap.reset();
+    if (vcount != vertices.size() || ecount != edges.size() )
+    {
+        vcount = vertices.size();
+        ecount = edges.size();
+        level |= divideupIntersectingEdges;
+    }
+
+    removeBadEdges();
+    if (vcount != vertices.size() || ecount != edges.size() )
+    {
+        vcount = vertices.size();
+        ecount = edges.size();
+        level |= badEdges;
+    }
+
+    // do this first, before badVertices_0
+    removeVerticesWithEdgeCount(1);
+    if (vcount != vertices.size() || ecount != edges.size() )
+    {
+        vcount = vertices.size();
+        ecount = edges.size();
+        level |= badVertices_1;
+    }
+
+    removeVerticesWithEdgeCount(0);
+    if (vcount != vertices.size() || ecount != edges.size() )
+    {
+        vcount = vertices.size();
+        ecount = edges.size();
+        level |= badVertices_0;
+    }
+
+    uint ncount = 0;
+    if (nMap)
+    {
+        ncount = nMap->rawSize();
+    }
+    nMap = std::make_shared<NeighbourMap>(edges);
+    if (nMap->rawSize() != ncount)
+    {
+        ncount = nMap->rawSize();
+        level |= buildNeighbours;
+    }
+
+    deDuplicateNeighbours();
+    if (nMap->rawSize() != ncount)
+    {
+        ncount = nMap->rawSize();
+        level |= cleanupNeighbours;
+    }
+
+    //verify();
+
+    return level;
 }
 
 void Map::removeBadEdges()
@@ -330,7 +404,7 @@ void Map::deDuplicateEdges(const NeighboursPtr & vec)
     }
 }
 
-void Map::removeVerticesWithEdgeCount(int edgeCount)
+void Map::removeVerticesWithEdgeCount(uint edgeCount)
 {
     qDebug() << "removeVerticesWithEdgeCount" << edgeCount << "......";
 

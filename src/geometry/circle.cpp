@@ -1,5 +1,14 @@
 #include <QDebug>
+#include <QtMath>
 #include "geometry/circle.h"
+
+QString sQuad[] =
+{
+    "Q1",
+    "Q2",
+    "Q3",
+    "Q4"
+};
 
 Circle::Circle()
 {
@@ -47,6 +56,24 @@ bool Circle::operator==(const Circle other)
         return false;
 }
 #endif
+
+eQuad Circle::getQuadrant(qreal radians)
+{
+    Q_ASSERT(radians >= 0);
+    if (radians < M_PI_2)
+        return QUAD_1;
+    if (radians < M_PI)
+        return QUAD_2;
+    if (radians < (M_PI_2 * 3.0))
+        return QUAD_3;
+    return QUAD_4;
+}
+
+QString Circle::getQuadrantString(qreal radians)
+{
+    eQuad quadrant = getQuadrant(radians);
+    return sQuad[quadrant];
+}
 
 void Circle::dump()
 {

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef PAGE_IMAGETOOLS_H
 #define PAGE_IMAGETOOLS_H
 
@@ -8,7 +9,11 @@ class QLabel;
 class QLineEdit;
 class MemoryCombo;
 class QButtonGroup;
+class QHBoxLayout;
+class QPushButton;
+class QRadioButton;
 
+#include <QImage>
 #include "widgets/panel_page.h"
 #include "enums/ecyclemode.h"
 
@@ -24,8 +29,9 @@ public:
     void    onExit() override;
 
 signals:
-    void    sig_compareImageFiles(QString,QString,bool);
-    void    sig_compareImageLoaded(QString,bool);
+    void    sig_compareBMPFiles(QString,QString,bool);
+    void    sig_compareBMPFilesPath(QString,QString);
+    void    sig_compareBMPandLoaded(QString,bool);
     void    sig_view_image(QString file,QString file2,bool transparent,bool popup);
     void    sig_cyclerStart(eCycleMode);
     void    sig_loadMosaic(QString,bool ready);
@@ -33,9 +39,9 @@ signals:
 
 public slots:
     void    slot_compareResult(QString result);
-    void    slot_setImage0(QString name);
-    void    slot_setImage1(QString name);
-    void    slot_deleteCurrent();
+    void    slot_setImageLeftCombo(QString name);
+    void    slot_setImageRightCombo(QString name);
+    void    slot_deleteCurrentWLEntry(bool confirm);
 
 private slots:
     void    slot_stopIfDiffClicked(bool enb);
@@ -46,13 +52,13 @@ private slots:
     void    continueCycle();
     void    slot_previous();
     void    slot_next();
-    void    slot_load();
+    void    slot_loadFirst();
     void    slot_colorEdit();
     void    slot_useFilter(bool checked);
 
     void    slot_ibox0_changed(int index);
     void    slot_ibox1_changed(int index);
-    void    slot_viewImage();
+
     void    slot_viewImageLeft();
     void    slot_viewImageRight();
     void    slot_cycleGen();
@@ -67,62 +73,112 @@ private slots:
     void    slot_differencesClicked(bool checked);
     void    slot_use_worklist_compare(bool checked);
     void    slot_gen_worklist_compare(bool checked);
+    void    slot_compareView(bool checked);
     void    slot_skipExisting(bool checked);
+    
+    void    slot_firstDirChanged();
+    void    slot_secondDirChanged();
 
-    void    slot_dir0Changed();
-    void    slot_dir1Changed();
-
-    void    slot_selectImage();
-    void    slot_imageSelectionChanged();
+    void    slot_selectImage1();
+    void    slot_selectImage2 ();
+    void    slot_viewImage1();
+    void    slot_viewImage2();
+    void    slot_viewImage3();
+    void    slot_viewImage4();
+    void    slot_imageSelectionChanged1();
+    void    slot_imageSelectionChanged2();
+    void    slot_compareImages2();
 
     void    loadWorkListFromFile();
     void    saveWorkListToFile();
     void    editWorkList();
-    void    replaceCurrent();
-    void    loadCurrent();
+    void    replaceBMP();
+    void    slot_loadSecond();
+    void    slot_createList();
+
+    void    slot_genTypeChanged(int id);
+    void    slot_gen_selectionChanged();
+
+    void    slot_compareVersions();
+    void    slot_cycleVersions();
+    void    slot_mosaicAChanged();
+    void    slot_mosaicBChanged();
+    void    slot_nextImage();
+    void    slot_quitImageCycle();
 
 protected:
-    QGroupBox   * createCycleGenSection();
-    QGroupBox   * createCycleViewSection();
-    QGroupBox   * createWorklistSection();
-    QGroupBox   * createCompareSection();
-    QGroupBox   * createViewSection();
-    QGroupBox   * createTransparencySection();
+    QGroupBox   * createCycleGenBox();
+    QHBoxLayout * createWorklistBox();
+    QGroupBox   * createCompareImagesBox();
+    QGroupBox   * createCompareVersionsBox();
+    QGroupBox   * createViewImageBox();
+    QGroupBox   * createTransparencyBox();
 
-    void viewImage(QString file, bool transparent, bool popup);
+    bool viewImage(QString file, bool transparent, bool popup);
 
+    void loadVersionCombos();
     void loadCombo(QComboBox * box, QString dir);
     void setCombo(QComboBox * box,QString name);
 
+    void loadFileFilterCombo();
     bool loadMosaic(QString name);
     void saveMosaicBitmaps();
     void saveTilingBitmaps();
     void savePixmap(QString name);
+    void setImageDirectory();
+    void compareNextVersions();
 
     QString getPixmapPath();
 
 private:
-    bool         localCycle;
+    bool          created;
 
-    QButtonGroup * cycleGenBtnGroup;
-    QButtonGroup * cycleViewBtnGroup;
+    QButtonGroup* cycleGenBtnGroup;
+    QButtonGroup* cycleViewBtnGroup;
 
-    QLineEdit   * leftDir;
-    QLineEdit   * rightDir;
+    QGroupBox   * wlistGroupBox;
+    
+    MemoryCombo * firstDir;
+    MemoryCombo * secondDir;
     QLineEdit   * directory;
     QLineEdit   * imageCompareResult;
 
-    MemoryCombo * viewFileCombo;
-    QComboBox   * leftFile;
-    QComboBox   * rightFile;
+    MemoryCombo * viewFileCombo1;
+    MemoryCombo * viewFileCombo2;
+
+    QComboBox   * firstFileCombo;
+    QComboBox   * secondFileCombo;
     QComboBox   * fileFilterCombo;
 
     QCheckBox   * use_wlistForCompareChk;
     QCheckBox   * gen_wlistChk;
     QCheckBox   * compareView;
 
-    QLabel      * wlistStatus;
     QLabel      * colorLabel;
+
+    QPushButton * loadFirstBtn;
+    QPushButton * loadSecondBtn;
+
+    QComboBox   * mosaicA;
+    QComboBox   * mosaicB;
+    QComboBox   * versionsA;
+    QComboBox   * versionsB;
+
+    QCheckBox   * chkLock;
+    QRadioButton* radImg;
+    QRadioButton* radXML;
+
+    bool                  comparingVersions;
+    QStringList           mosNames;
+    QString               mosName;
+    QStringList           versions;
+    QStringList           mosVerA;
+    QStringList           mosVerB;
+    QStringList::iterator imgList_it;
+    QStringList::iterator imgListVerA_it;
+    QStringList::iterator imgListVerB_it;
+    QImage                imgA;
+    QImage                imgB;
 };
 
 #endif

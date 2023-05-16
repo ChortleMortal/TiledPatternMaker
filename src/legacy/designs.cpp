@@ -319,7 +319,7 @@ bool DesignHuPacked::build()
     }
     doSteps();
 
-    DesignPtr dp = config->getDesign(DESIGN_HU_INSERT);
+    DesignPtr dp = designMaker->getDesign(DESIGN_HU_INSERT);
     dp->build();
     dp->repeat();
     designMaker->addDesign(dp);

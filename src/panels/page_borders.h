@@ -1,4 +1,5 @@
-﻿#ifndef PAGE_BORDERS_H
+﻿#pragma once
+#ifndef PAGE_BORDERS_H
 #define PAGE_BORDERS_H
 
 #include "widgets/panel_page.h"

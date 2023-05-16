@@ -124,7 +124,7 @@ void MapEditorDb::createComposite()
         {
             mtype = MAPED_TYPE_COMPOSITE;
         }
-        MapPtr map = layer.getMap();
+        MapPtr map = layer.getMapedLayerMap();
         qDebug() << map->namedSummary();
         compositeMap->mergeMap(map,tolerance);
         qDebug() << compositeMap->namedSummary();
@@ -178,19 +178,19 @@ MapPtr MapEditorDb::getEditMap()
     switch (getEditSelect())
     {
     case COMPOSITE:
-        m = _compositeLayer.getMap();
+        m = _compositeLayer.getMapedLayerMap();
         break;
     case LAYER_1:
         if (_layer1.type != MAPED_TYPE_UNKNOWN)
-            m = _layer1.getMap();
+            m = _layer1.getMapedLayerMap();
         break;
     case LAYER_2:
         if (_layer2.type != MAPED_TYPE_UNKNOWN)
-            m = _layer2.getMap();
+            m = _layer2.getMapedLayerMap();
         break;
     case LAYER_3:
         if (_layer3.type != MAPED_TYPE_UNKNOWN)
-            m = _layer3.getMap();
+            m = _layer3.getMapedLayerMap();
         break;
 
     case NO_MAP:
@@ -240,7 +240,7 @@ QVector<MapPtr>  MapEditorDb::getDrawMaps()
     {
         if (_compositeLayer.type != MAPED_TYPE_UNKNOWN)
         {
-            maps.push_back(_compositeLayer.getMap());
+            maps.push_back(_compositeLayer.getMapedLayerMap());
         }
     }
     else
@@ -249,21 +249,21 @@ QVector<MapPtr>  MapEditorDb::getDrawMaps()
         {
             if (_layer1.type != MAPED_TYPE_UNKNOWN)
             {
-                maps.push_back(_layer1.getMap());
+                maps.push_back(_layer1.getMapedLayerMap());
             }
         }
         if (isViewSelected(LAYER_2))
         {
             if (_layer2.type != MAPED_TYPE_UNKNOWN)
             {
-                maps.push_back(_layer2.getMap());
+                maps.push_back(_layer2.getMapedLayerMap());
             }
         }
         if (isViewSelected(LAYER_3))
         {
             if (_layer3.type != MAPED_TYPE_UNKNOWN)
             {
-                maps.push_back(_layer3.getMap());
+                maps.push_back(_layer3.getMapedLayerMap());
             }
         }
     }
@@ -276,15 +276,15 @@ QVector<MapPtr> MapEditorDb::getMapLayerMaps()
 
     if (_layer1.type != MAPED_TYPE_UNKNOWN)
     {
-        maps.push_back(_layer1.getMap());
+        maps.push_back(_layer1.getMapedLayerMap());
     }
     if (_layer2.type != MAPED_TYPE_UNKNOWN)
     {
-        maps.push_back(_layer2.getMap());
+        maps.push_back(_layer2.getMapedLayerMap());
     }
     if (_layer3.type != MAPED_TYPE_UNKNOWN)
     {
-        maps.push_back(_layer3.getMap());
+        maps.push_back(_layer3.getMapedLayerMap());
     }
 
     return maps;
@@ -347,13 +347,13 @@ QVector<MapEditorLayer> MapEditorDb::getComposableLayers()
 
 eMapEditorMapType MapEditorDb::getMapType(MapPtr map)
 {
-    if (map == _compositeLayer.getMap())
+    if (map == _compositeLayer.getMapedLayerMap())
         return _compositeLayer.type;
-    if (map == _layer1.getMap())
+    if (map == _layer1.getMapedLayerMap())
         return _layer1.type;
-    if (map == _layer2.getMap())
+    if (map == _layer2.getMapedLayerMap())
         return _layer2.type;
-    if (map == _layer3.getMap())
+    if (map == _layer3.getMapedLayerMap())
         return _layer3.type;
     return MAPED_TYPE_UNKNOWN;
 }
@@ -365,19 +365,19 @@ MapPtr  MapEditorDb::getMap(eLayer mode)
     {
     case COMPOSITE:
         if (_compositeLayer.type != MAPED_TYPE_UNKNOWN)
-            m = _compositeLayer.getMap();
+            m = _compositeLayer.getMapedLayerMap();
         break;
     case LAYER_1:
         if (_layer1.type != MAPED_TYPE_UNKNOWN)
-            m = _layer1.getMap();
+            m = _layer1.getMapedLayerMap();
         break;
     case LAYER_2:
         if (_layer2.type != MAPED_TYPE_UNKNOWN)
-            m = _layer2.getMap();
+            m = _layer2.getMapedLayerMap();
         break;
     case LAYER_3:
         if (_layer3.type != MAPED_TYPE_UNKNOWN)
-            m = _layer3.getMap();
+            m = _layer3.getMapedLayerMap();
         break;
     case NO_MAP:
         break;

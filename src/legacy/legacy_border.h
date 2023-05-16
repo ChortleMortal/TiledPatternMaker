@@ -1,3 +1,4 @@
+#pragma once
 #ifndef LEGACY_BORDER_H
 #define LEGACY_BORDER_H
 

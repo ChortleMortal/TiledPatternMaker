@@ -1,4 +1,5 @@
-﻿#ifndef VIEW_SETTINGS_H
+﻿#pragma once
+#ifndef VIEW_SETTINGS_H
 #define VIEW_SETTINGS_H
 
 #include "geometry/bounds.h"

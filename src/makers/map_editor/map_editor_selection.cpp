@@ -434,8 +434,8 @@ SelectionSet  MapEditorSelection::findSelectionsUsingDB(const QPointF & spt)
         if (delp)
         {
             Q_ASSERT (db->isMotif(layer.type));
-            MotifPtr figp = delp->getMotif();
-            const ExtendedBoundary & eb = figp->getExtendedBoundary();
+            MotifPtr motif = delp->getMotif();
+            const ExtendedBoundary & eb = motif->getExtendedBoundary();
             if (eb.isCircle())
             {
                 qreal bscale    = eb.scale;
@@ -637,13 +637,13 @@ bool MapEditorSelection::insideBoundary(QPointF wpt)
 
     Q_ASSERT(db->isMotif(layer.type));
 
-    MotifPtr figp  = delp->getMotif();
-    TilePtr feap = delp->getTile();
+    MotifPtr motif = delp->getMotif();
+    TilePtr tilep  = delp->getTile();
 
-    if (!figp || !feap)
+    if (!motif || !tilep)
         return true;
 
-    const ExtendedBoundary & eb = figp->getExtendedBoundary();
+    const ExtendedBoundary & eb = motif->getExtendedBoundary();
     if (eb.isCircle())
     {
         qreal radius = eb.scale;
@@ -657,13 +657,13 @@ bool MapEditorSelection::insideBoundary(QPointF wpt)
     QPolygonF boundary = eb.get();
     if (boundary.size())
     {
-        QPointF center = feap->getCenter();
+        QPointF center = tilep->getCenter();
         QTransform t   = QTransform::fromTranslate(center.x(),center.y());
         boundary       = t.map(boundary);
         b_area = Utils::calcArea(boundary);
     }
 
-    QPolygonF tile = feap->getPolygon();
+    QPolygonF tile = tilep->getPolygon();
     if (tile.size())
     {
         f_area = Utils::calcArea(tile);

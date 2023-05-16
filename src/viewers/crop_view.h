@@ -1,3 +1,4 @@
+#pragma once
 #ifndef CROP_VIEW_H
 #define CROP_VIEW_H
 
@@ -52,6 +53,7 @@ protected:
 private:
     static CropViewPtr  spThis;
     QPointF             mousePos;             // used by menu
+    bool                debugMouse;
 
     CropMouseActionPtr  mouse_interaction;    // used by menu
 

@@ -2,22 +2,26 @@
 #include <QComboBox>
 #include <QCheckBox>
 
+#include "makers/mosaic_maker//style_color_fill_set.h"
+#include "makers/mosaic_maker/style_color_fill_group.h"
 #include "makers/mosaic_maker/style_editors.h"
 #include "misc/utilities.h"
-#include "viewers/viewcontrol.h"
-#include "widgets/dlg_colorSet.h"
-#include "makers/mosaic_maker/style_color_fill_group.h"
-#include "makers/mosaic_maker//style_color_fill_set.h"
-#include "settings/configuration.h"
 #include "panels/panel.h"
-#include "tile/tiling.h"
-#include "tile/tile.h"
-#include "widgets/layout_sliderset.h"
+#include "settings/configuration.h"
 #include "style/colored.h"
 #include "style/emboss.h"
 #include "style/filled.h"
 #include "style/interlace.h"
 #include "style/tile_colors.h"
+#include "tile/tile.h"
+#include "tile/tiling.h"
+#include "viewers/motif_view.h"
+#include "viewers/viewcontrol.h"
+#include "widgets/dlg_colorSet.h"
+#include "widgets/layout_sliderset.h"
+#include "tiledpatternmaker.h"
+
+extern TiledPatternMaker * theApp;
 
 #define ROW_HEIGHT 39
 
@@ -161,13 +165,17 @@ ThickEditor::ThickEditor(Thick * thick, AQTableWidget * table) : ColoredEditor(t
     item = new QTableWidgetItem("Outline");
     table->setItem(rows,0,item);
 
-    outline_checkbox = new QCheckBox();
-    outline_checkbox->setStyleSheet("padding-left:21px;");
-    auto outline = thick->getDrawOutline();
-    if (outline == OUTLINE_NONE)
+    outline_checkbox = new AQCheckBox();
+    switch (thick->getDrawOutline())
+    {
+    case OUTLINE_NONE:
         outline_checkbox->setChecked(false);
-    else
+        break;
+    case OUTLINE_DEFAULT:
+    case OUTLINE_SET:
         outline_checkbox->setChecked(true);
+        break;
+    }
     table->setCellWidget(rows,1,outline_checkbox);
 
     rows++;
@@ -204,9 +212,9 @@ ThickEditor::ThickEditor(Thick * thick, AQTableWidget * table) : ColoredEditor(t
     connect(width_slider,         &SliderSet::valueChanged, this, &ThickEditor::slot_widthChanged);
     connect(outline_width_slider, &SliderSet::valueChanged, this, &ThickEditor::slot_outlineWidthChanged);
     connect(outline_color_button, &QPushButton::clicked,    this, &ThickEditor::slot_outlineColor);
-    connect(join_style, QOverload<int>::of(&QComboBox::currentIndexChanged), [=]()
+    connect(join_style, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [=]()
             { thick->setJoinStyle(static_cast<Qt::PenJoinStyle>(join_style->currentData().toInt())); emit sig_refreshView(); } );
-    connect(cap_style,  QOverload<int>::of(&QComboBox::currentIndexChanged), [=]()
+    connect(cap_style,  QOverload<int>::of(&QComboBox::currentIndexChanged), this, [=]()
             { thick->setCapStyle(static_cast<Qt::PenCapStyle>(cap_style->currentData().toInt())); emit sig_refreshView(); } );
 }
 
@@ -318,7 +326,7 @@ void FilledEditor::displayParms()
     QTableWidgetItem * item = new QTableWidgetItem("Algorithm");
     table->setItem(row,0,item);
 
-    QComboBox * algoBox = new QComboBox();
+    algoBox = new QComboBox();
     algoBox->addItem("Original: two face sets, two color sets",0);
     algoBox->addItem("New 1: two face sets, two color sets",1);
     algoBox->addItem("New 2: multi face sets, one color each",2);
@@ -327,7 +335,7 @@ void FilledEditor::displayParms()
 
     int index = algoBox->findData(algo);
     algoBox->setCurrentIndex(index);
-    connect(algoBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index){ slot_algo(index);} );
+    connect(algoBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [=](int index){ slot_algo(index);} );
 
     switch (algo)
     {
@@ -359,8 +367,7 @@ void FilledEditor::displayParms01()
     row++;
 
     // whites
-    outside_checkbox = new QCheckBox("Inside (Whites)");   // is truth but does not match code
-    outside_checkbox->setStyleSheet("padding-left:3px;");
+    outside_checkbox = new AQCheckBox("Inside (Whites)");   // is truth but does not match code
     outside_checkbox->setChecked(filled->getDrawOutsideWhites());
     table->setCellWidget(row,0,outside_checkbox);
 
@@ -377,8 +384,7 @@ void FilledEditor::displayParms01()
     row++;
 
     // blacks
-    inside_checkbox = new QCheckBox("Outside (Blacks)");   // is truth but does not match code
-    inside_checkbox->setStyleSheet("padding-left:3px;");
+    inside_checkbox = new AQCheckBox("Outside (Blacks)");   // is truth but does not match code
     inside_checkbox->setChecked(filled->getDrawInsideBlacks());
     table->setCellWidget(row,0,inside_checkbox);
 
@@ -477,7 +483,58 @@ void FilledEditor::slot_colorsChanged()
     view->update();     // that's all
 }
 
+void FilledEditor::onEnter()
+{
+    connect(view, &View::sig_mousePressed, this, &FilledEditor::slot_mousePressed);
+    connect(theApp, &TiledPatternMaker::sig_colorPick, this, &FilledEditor::slot_colorPick, Qt::QueuedConnection);
+}
 
+void FilledEditor::onExit()
+{
+    disconnect(view, &View::sig_mousePressed, this, &FilledEditor::slot_mousePressed);
+    disconnect(theApp, &TiledPatternMaker::sig_colorPick, this, &FilledEditor::slot_colorPick);
+}
+
+void FilledEditor::slot_mousePressed(QPointF spt, Qt::MouseButton btn)
+{
+    Q_UNUSED(btn);
+
+    auto motifView = MotifView::getSharedInstance();
+    QPointF mpt = motifView->screenToWorld(spt);
+    qDebug() << "FilledEditor" << spt << mpt;
+
+    switch ( algoBox->currentIndex())
+    {
+    case 0:
+    case 1:
+        break;
+    case 2:
+        fillSet->select(mpt);
+        break;
+    case 3:
+        fillGroup->select(mpt);
+        break;
+    }
+}
+
+void FilledEditor::slot_colorPick(QColor color)
+{
+    qDebug() << "slot_colorPick" << color;
+
+    switch ( algoBox->currentIndex())
+    {
+    case 0:
+    case 1:
+        break;
+    case 2:
+        fillSet->setColor(color);
+        break;
+    case 3:
+        fillGroup->setColor(color);
+        break;
+    }
+
+}
 ////////////////////////////////////////////////////////////////////////////
 // Embossed
 ////////////////////////////////////////////////////////////////////////////
@@ -559,8 +616,7 @@ InterlaceEditor::InterlaceEditor(Interlace * i, AQTableWidget * table) : ThickEd
     item = new QTableWidgetItem("Start Under");
     table->setItem(rows,0,item);
 
-    sunder_checkbox = new QCheckBox();
-    sunder_checkbox->setStyleSheet("padding-left:21px;");
+    sunder_checkbox = new AQCheckBox();
     sunder_checkbox->setChecked(i->getInitialStartUnder());
     table->setCellWidget(rows,1,sunder_checkbox);
     table->resizeColumnToContents(0);
@@ -570,8 +626,7 @@ InterlaceEditor::InterlaceEditor(Interlace * i, AQTableWidget * table) : ThickEd
     item = new QTableWidgetItem("Include Tip Vertices");
     table->setItem(rows,0,item);
 
-    tipVert_checkbox = new QCheckBox();
-    tipVert_checkbox->setStyleSheet("padding-left:21px;");
+    tipVert_checkbox = new AQCheckBox();
     tipVert_checkbox->setChecked(i->getIncludeTipVertices());
     table->setCellWidget(rows,1,tipVert_checkbox);
     table->resizeColumnToContents(0);
@@ -658,8 +713,7 @@ void TileColorsEditor::buildTable()
 
     int row = 0;
 
-    outline_checkbox = new QCheckBox("Outline");
-    outline_checkbox->setStyleSheet("padding-left:21px;");
+    outline_checkbox = new AQCheckBox("Outline");
     outline_checkbox->setChecked(outline);
     table->setCellWidget(row,0,outline_checkbox);
 

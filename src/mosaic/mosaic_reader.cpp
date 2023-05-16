@@ -1,25 +1,37 @@
 #include <QMessageBox>
 
 #include "mosaic/mosaic_reader.h"
+#include "mosaic_reader_base.h"
 #include "mosaic/design_element.h"
 #include "mosaic/mosaic.h"
 #include "mosaic/mosaic_reader_base.h"
-#include "mosaic/prototype.h"
-#include "motifs/explicit_motif.h"
+#include "mosaic/legacy_loader.h"
+#include "makers/prototype_maker/prototype.h"
+#include "motifs/explicit_map_motif.h"
+#include "motifs/irregular_motif.h"
 #include "motifs/extended_rosette.h"
 #include "motifs/extended_star.h"
+#include "motifs/extender.h"
+#include "motifs/girih_motif.h"
+#include "motifs/hourglass_motif.h"
+#include "motifs/inferred_motif.h"
+#include "motifs/intersect_motif.h"
+#include "motifs/irregular_rosette.h"
+#include "motifs/irregular_star.h"
 #include "motifs/motif.h"
-#include "motifs/inference_engine.h"
+#include "motifs/motif_connector.h"
 #include "motifs/rosette.h"
 #include "motifs/rosette_connect.h"
 #include "motifs/star.h"
 #include "motifs/star_connect.h"
+#include "motifs/tile_motif.h"
 #include "geometry/loose.h"
 #include "geometry/map.h"
 #include "misc/border.h"
 #include "misc/defaults.h"
 #include "misc/tpm_io.h"
 #include "panels/panel.h"
+#include "settings/configuration.h"
 #include "settings/model_settings.h"
 #include "style/colored.h"
 #include "style/emboss.h"
@@ -44,12 +56,13 @@ using std::make_shared;
 MosaicReader::MosaicReader() : MosaicReaderBase()
 {
     // defaults
-    _background = QColor(Qt::white);
-    _width      = DEFAULT_WIDTH;
-    _height     = DEFAULT_HEIGHT;
-    _version    = 0;
-    _debug      = false;
-    view        = ViewControl::getInstance();
+    _background   = QColor(Qt::white);
+    _width        = DEFAULT_WIDTH;
+    _height       = DEFAULT_HEIGHT;
+    _version      = 0;
+    _debug        = true;
+    _cleanseLevel = 0;
+    view          = ViewControl::getInstance();
 }
 
 MosaicReader::~MosaicReader()
@@ -64,14 +77,13 @@ QString MosaicReader::getLoadedFilename()
 
 MosaicPtr MosaicReader::readXML(QString fileName)
 {
-    view->dump(true);
+    view->dumpRefs();
 
     qInfo().noquote() << "MosaicLoader::loadMosaic()" << fileName << " : start";
     _fileName = fileName;
 
     xml_document doc;
     xml_parse_result result = doc.load_file(fileName.toStdString().c_str());
-
     if (result == false)
     {
         _failMessage = result.description();
@@ -82,11 +94,39 @@ MosaicPtr MosaicReader::readXML(QString fileName)
 
     try
     {
+        // load the Mosaic
         _mosaic = make_shared<Mosaic>();
-
         parseXML(doc);
 
-        view->dump(true);
+        // The InferredMotif type is dependant on its surrounding motifs.
+        // So these need to be prepared before the prototype map
+        // can be built
+
+        // pass 1 - build all motif maps
+        for (auto & proto : _mosaic->getPrototypes())
+        {
+            for (const auto & del : proto->getDesignElements())
+            {
+                auto motif = del->getMotif();
+                motif->buildMotifMaps();
+            }
+        }
+
+        // pass 2 - rebuild InferredMotifs
+        for (auto & proto : _mosaic->getPrototypes())
+        {
+            for (const auto & del : proto->getDesignElements())
+            {
+                auto motif = del->getMotif();
+                if (motif->getMotifType() == MOTIF_TYPE_INFERRED)
+                {
+                    qDebug() << motif->getMotifTypeString();
+                    motif->buildMotifMaps();
+                }
+            }
+        }
+        
+        view->dumpRefs();
 
         qInfo().noquote() << "MosaicLoader load" << fileName << " : complete";
 
@@ -94,7 +134,9 @@ MosaicPtr MosaicReader::readXML(QString fileName)
     }
     catch (...)
     {
-        qWarning() << "ERROR processing XML file"  << fileName;
+        QString str =  "ERROR loading XML file"  +  fileName;
+        qWarning() << str;
+        _failMessage += "\n" + str;
         _mosaic.reset();
         return _mosaic;
     }
@@ -105,17 +147,33 @@ void MosaicReader::parseXML(xml_document & doc)
     nRefrCnt = 0;
     if (_debug) qDebug() << "MosaicLoader - start parsing";
 
-    for (xml_node n = doc.first_child(); n; n = n.next_sibling())
+    for (xml_node node = doc.first_child(); node; node = node.next_sibling())
     {
-        string str = n.name();
+        string str = node.name();
         if (_debug) qDebug().noquote() << str.c_str();
         if (str  == "vector")
-            processVector(n);
+        {
+            xml_attribute attr = node.attribute("version");
+            if (attr)
+            {
+                QString str = attr.value();
+                _version = str.toUInt();
+            }
+            if (_version > 0 || node.child("design"))
+            {
+                processVector(node);
+            }
+            else
+            {
+                LegacyLoader ll;
+                ll.processTapratsVector(node,_mosaic);
+            }
+        }
         else
             fail("Unexpected", str.c_str());
     }
-
-    view->dump(true);
+    
+    view->dumpRefs();
 
     if (_debug) qDebug() << "MosaicLoader - end parsing";
 }
@@ -128,13 +186,6 @@ void MosaicReader::processDesignNotes(xml_node & node)
 
 void MosaicReader::processVector(xml_node & node)
 {
-    xml_attribute attr = node.attribute("version");
-    if (attr)
-    {
-        QString str = attr.value();
-        _version = str.toUInt();
-    }
-
     // pass 1
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
@@ -228,6 +279,11 @@ void MosaicReader::processVector(xml_node & node)
     {
         _mosaic->initCrop(_crop);
     }
+
+    if (_cleanseLevel > 0)
+    {
+        _mosaic->setCleanseLevel(_cleanseLevel);
+    }
 }
 
 void MosaicReader::processDesign(xml_node & node)
@@ -261,6 +317,13 @@ void MosaicReader::processDesign(xml_node & node)
         }
         else if (str == "BackgroundImage")
             TilingLoader::getBackgroundImage(n);
+        else if (str == "Cleanse")
+        {
+            str = n.child_value();
+            bool bStatus;
+            QString str2 = str.c_str();
+            _cleanseLevel = str2.toUInt(&bStatus,16);
+        }
         else
             fail("Unexpected", str.c_str());
     }
@@ -275,7 +338,7 @@ void MosaicReader::processThick(xml_node & node)
     Qt::PenCapStyle pcs       = Qt::RoundCap;
     qreal        outlineWidth = 0.05;
     QColor       outlineColor = Qt::black;
-    PrototypePtr proto;
+    ProtoPtr proto;
     Xform        xf;
     int          zlevel        = 0;
 
@@ -287,7 +350,7 @@ void MosaicReader::processThick(xml_node & node)
         if (str == "toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf,zlevel);
         else if (str == "style.Style")
-            processStyleStyle(n,proto);
+            processStylePrototype(n,proto);
         else if (str == "style.Colored")
             processColorSet(n,colorset);
         else if (str == "style.Thick")
@@ -321,7 +384,7 @@ void MosaicReader::processThick(xml_node & node)
 void MosaicReader::processInterlace(xml_node & node)
 {
     ColorSet     colorset;
-    PrototypePtr proto;
+    ProtoPtr proto;
     eDrawOutline draw_outline    = OUTLINE_NONE;
     bool         includeTipVerts = false;
     bool         start_under     = false;
@@ -343,7 +406,7 @@ void MosaicReader::processInterlace(xml_node & node)
         if (str == "toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf,zlevel);
         else if (str == "style.Style")
-            processStyleStyle(n,proto);
+            processStylePrototype(n,proto);
         else if (str == "style.Colored")
             processColorSet(n,colorset);
         else if (str == "style.Thick")
@@ -389,7 +452,7 @@ void MosaicReader::processOutline(xml_node & node)
     qreal        outlineWidth = 0.03;
     QColor       outlineColor = Qt::black;
     int          zlevel       = 0;
-    PrototypePtr proto;
+    ProtoPtr proto;
     Xform        xf;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
@@ -400,7 +463,7 @@ void MosaicReader::processOutline(xml_node & node)
         if (str == "toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf,zlevel);
         else if (str == "style.Style")
-            processStyleStyle(n,proto);
+            processStylePrototype(n,proto);
         else if (str == "style.Colored")
             processColorSet(n,colorset);
         else if (str == "style.Thick")
@@ -444,7 +507,7 @@ void MosaicReader::processFilled(xml_node & node)
     ColorSet     l_colorsW;
     ColorGroup   l_colorGroup;
 
-    PrototypePtr l_proto;
+    ProtoPtr l_proto;
     Xform        l_xf;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
@@ -458,7 +521,7 @@ void MosaicReader::processFilled(xml_node & node)
         }
         else if (str == "style.Style")
         {
-            processStyleStyle(n,l_proto);
+            processStylePrototype(n,l_proto);
         }
         else if (str == "style.Colored")
         {
@@ -555,7 +618,7 @@ void MosaicReader::processFilled(xml_node & node)
 void MosaicReader::processPlain(xml_node & node)
 {
     ColorSet     colorset;
-    PrototypePtr proto;
+    ProtoPtr proto;
     Xform        xf;
     int          zlevel = 0;
 
@@ -567,7 +630,7 @@ void MosaicReader::processPlain(xml_node & node)
         if (str == "toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf,zlevel);
         else if (str == "style.Style")
-            processStyleStyle(n,proto);
+            processStylePrototype(n,proto);
         else if (str == "style.Colored")
             processColorSet(n,colorset);
         else
@@ -589,7 +652,7 @@ void MosaicReader::processPlain(xml_node & node)
 void MosaicReader::processSketch(xml_node & node)
 {
     ColorSet     colorset;
-    PrototypePtr proto;
+    ProtoPtr proto;
     Xform        xf;
     int          zlevel = 0;
 
@@ -601,7 +664,7 @@ void MosaicReader::processSketch(xml_node & node)
         if (str == "toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf,zlevel);
         else if (str == "style.Style")
-            processStyleStyle(n,proto);
+            processStylePrototype(n,proto);
         else if (str == "style.Colored")
             processColorSet(n,colorset);
         else
@@ -631,7 +694,7 @@ void MosaicReader::processEmboss(xml_node & node)
     QColor       outlineColor = Qt::black;
     qreal        angle        = 0.0;
     int          zlevel       = 0;
-    PrototypePtr proto;
+    ProtoPtr proto;
     Xform        xf;
 
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
@@ -642,7 +705,7 @@ void MosaicReader::processEmboss(xml_node & node)
         if (str == "toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf,zlevel);
         else if (str == "style.Style")
-            processStyleStyle(n,proto);
+            processStylePrototype(n,proto);
         else if (str == "style.Colored")
             processColorSet(n,colorset);
         else if (str == "style.Thick")
@@ -678,7 +741,7 @@ void MosaicReader::processEmboss(xml_node & node)
 
 void MosaicReader::processTileColors(xml_node & node)
 {
-    PrototypePtr proto;
+    ProtoPtr proto;
     Xform        xf;
     bool         outline = false;
     int          width   = 3;
@@ -693,7 +756,7 @@ void MosaicReader::processTileColors(xml_node & node)
         if (str == "toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf,zlevel);
         else if (str == "style.Style")
-            processStyleStyle(n,proto);
+            processStylePrototype(n,proto);
         else if (str == "outline")
         {
             outline = true;
@@ -787,13 +850,13 @@ void MosaicReader::procesToolkitGeoLayer(xml_node & node, Xform & xf, int & zlev
     }
 }
 
-void MosaicReader::processStyleStyle(xml_node & node, PrototypePtr & proto)
+void MosaicReader::processStylePrototype(xml_node & node, ProtoPtr & proto)
 {
     xml_node n = node.child("prototype");
     if (_debug) qDebug().noquote() << n.name();
-    view->dump(true);
+    view->dumpRefs();
     proto = getPrototype(n);
-    view->dump(true);
+    view->dumpRefs();
     if (_debug) qDebug().noquote() << proto->getInfo();
 }
 
@@ -876,7 +939,7 @@ void MosaicReader::processsStyleThick(xml_node & node, eDrawOutline & draw_outli
     QString str  = node.child_value("draw__outline");
     if (str == "true")
     {
-        draw_outline = OUTLINE_DEFAULT;
+        draw_outline = OUTLINE_DEFAULT;    // black, width 1
 
         auto cnode = node.child("outline_width");
         if (cnode)
@@ -1038,7 +1101,7 @@ CirclePtr  MosaicReader::getCircle(xml_node node)
     return make_shared<Circle>(QPointF(x.toDouble(),y.toDouble()),radius.toDouble());
 }
 
-PrototypePtr MosaicReader::getPrototype(xml_node & node)
+ProtoPtr MosaicReader::getPrototype(xml_node & node)
 {
     if (_debug) qDebug().noquote() << node.name();
     if (hasReference(node))
@@ -1050,21 +1113,22 @@ PrototypePtr MosaicReader::getPrototype(xml_node & node)
     if (_debug) qDebug().noquote() << protonode.name();
 
     // load tiling
+    bool localTiling = false;     // indicates whether there is an associated tiling
     TilingPtr tp;
     xml_node tnode = protonode.child("string");
     if (tnode)
     {
         QString tilingName = tnode.child_value();
         qDebug().noquote() << "Tiling Name:" << tilingName;
-
+#if 0
         // has tiling been already loaded by another prototype
         tp = findTiling(tilingName);
         if (!tp)
         {
             // load tiling
-            qDebug().noquote() << "loading named tiling" << tilingName;
+            qDebug().noquote() << "Loading tiling" << tilingName;
             TilingManager tm;
-            tp = tm.loadTiling(tilingName,SM_LOAD_FROM_MOSAIC);
+            tp = tm.loadTiling(tilingName,TILM_LOAD_FROM_MOSAIC);
             if (tp)
             {
                 _tilings.push_back(tp);
@@ -1074,16 +1138,33 @@ PrototypePtr MosaicReader::getPrototype(xml_node & node)
                 qInfo() << "Tiling not loaded :" << tilingName;
             }
         }
+#else
+        // load tiling
+        qDebug().noquote() << "Loading tiling" << tilingName;
+        TilingManager tm;
+        tp = tm.loadTiling(tilingName,TILM_LOAD_FROM_MOSAIC);
+        if (tp)
+        {
+            _tilings.push_back(tp);
+        }
+        else
+        {
+            qInfo() << "Tiling not loaded :" << tilingName;
+        }
+#endif
     }
+
     if (!tp)
     {
         // 18JAN2022 - adds this case for mosaics with maps but no tiling
         tp = make_shared<Tiling>();
+        _tilings.push_back(tp);
+        localTiling = true;
     }
 
     if (_debug) qDebug() << "Creating new prototype";
 
-    PrototypePtr proto = make_shared<Prototype>(tp);
+    ProtoPtr proto = make_shared<Prototype>(tp);
     setProtoReference(node,proto);
 
     QVector<TilePtr> uniqueTiles = tp->getUniqueTiles();
@@ -1118,13 +1199,8 @@ PrototypePtr MosaicReader::getPrototype(xml_node & node)
         xml_node xmlMotif  = xmlTile.next_sibling();
         name = xmlMotif.name();
         if (_debug) qDebug().noquote() << name;
-        if (name == "app.ExplicitFigure")
-        {
-            if (_debug) qDebug() << "adding ExplicitMotif";
-            motif = getExplicitMotif(xmlMotif, fsides,MOTIF_TYPE_EXPLICIT);
-            found = true;
-        }
-        else if (name == "app.Star")
+
+        if (name == "app.Star")
         {
             if (_debug) qDebug() << "adding Star Motif";
             motif =  getStar(xmlMotif,fsides);
@@ -1154,51 +1230,19 @@ PrototypePtr MosaicReader::getPrototype(xml_node & node)
             motif =  getConnectMotif(xmlMotif,fsides);
             found = true;
         }
-        else if (name == "app.Infer")
+        else if (  name == "app.ExplicitFigure" || name == "app.Infer"           || name == "app.ExplicitFeature"    || name == "app.ExplicitGirih"
+                || name == "app.ExplicitStar"   || name == "app.ExplicitRosette" || name == "app.ExplicitHourglass"  || name ==  "app.ExplicitIntersect"
+                || name == "IrregularNoMotif")
         {
-            if (_debug) qDebug() << "adding Infer";
-            motif = getExplicitMotif(xmlMotif,fsides,MOTIF_TYPE_EXPLICIT_INFER);
-            found = true;
-        }
-        else if (name == "app.ExplicitFeature")
-        {
-            if (_debug) qDebug() << "adding Explicit Tile";
-            motif = getExplicitMotif(xmlMotif,fsides,MOTIF_TYPE_EXPLICIT_TILE);
-            found = true;
-        }
-        else if (name == "app.ExplicitGirih")
-        {
-            if (_debug) qDebug() << "adding ExplicitGirih";
-            motif = getExplicitMotif(xmlMotif,fsides,MOTIF_TYPE_EXPLICIT_GIRIH);
-            found = true;
-        }
-        else if (name == "app.ExplicitStar")
-        {
-            if (_debug) qDebug() << "adding ExplicitStar";
-            motif = getExplicitMotif(xmlMotif,fsides,MOTIF_TYPE_EXPLICIT_STAR);
-            found = true;
-        }
-        else if (name == "app.ExplicitRosette")
-        {
-            if (_debug) qDebug() << "adding ExplicitRosette";
-            motif = getExplicitMotif(xmlMotif,fsides,MOTIF_TYPE_EXPLICIT_ROSETTE);
-            found = true;
-        }
-        else if (name == "app.ExplicitHourglass")
-        {
-            if (_debug) qDebug() << "adding ExplicitHourglass";
-            motif = getExplicitMotif(xmlMotif,fsides,MOTIF_TYPE_EXPLICIT_HOURGLASS);
-            found = true;
-        }
-        else if (name == "app.ExplicitIntersect")
-        {
-            if (_debug) qDebug() << "adding ExplicitIntersect";
-            motif = getExplicitMotif(xmlMotif,fsides,MOTIF_TYPE_EXPLICIT_INTERSECT);
+            if (_debug) qDebug() << "adding Irregular Motif";
+            motif = getIrregularMotif(xmlMotif, fsides,motifRepresentation.key(name));
             found = true;
         }
         else
         {
-            fail("MOtif not found:", name);
+            _failMessage = "Motif type not found: " + name;
+            qWarning() << _failMessage;
+            throw(_failMessage);
         }
 
         if (found)
@@ -1225,18 +1269,36 @@ PrototypePtr MosaicReader::getPrototype(xml_node & node)
             }
             if (!found2)
             {
-                qWarning().noquote() << "No match for Mosaic tile in tiling" << _fileName << motif->getMotifDesc();
-                if (_debug) qDebug().noquote() << "adding to Proto" << motif->getMotifDesc();
+                if (!localTiling)
+                {
+                    _failMessage = "Mismatch between Design and Tiling";
+                    qWarning() << _failMessage;
+                    qWarning().noquote() << "No match for Mosaic tile in tiling" << _fileName << motif->getMotifDesc();
+
+                    if (!Configuration::getInstance()->localCycle)
+                    {
+                        QMessageBox box(ControlPanel::getInstance());
+                        box.setIcon(QMessageBox::Critical);
+                        box.setText(_failMessage);
+                        box.addButton(new QPushButton("Try to fix"),QMessageBox::AcceptRole);
+                        box.addButton(QMessageBox::Abort);
+                        int rv = box.exec();
+                        if (rv == QMessageBox::Abort)
+                        {
+                            // this mismatch cannot be handled
+                            throw(_failMessage);
+                        }
+                    }
+                }
                 DesignElementPtr  del = make_shared<DesignElement>(tile, motif);
                 proto->addElement(del);
-                if (_debug) qDebug().noquote() << "design element:" << del->toString();
             }
         }
     }
 
     QVector<DesignElementPtr>  & designElements = proto->getDesignElements();
     int numDesignElements = designElements.size();
-    if (numTiles && (numTiles != numDesignElements))
+    if (numTiles && (numTiles != numDesignElements) && !Configuration::getInstance()->localCycle)
     {
         QString str1 = "Tile/DesignElement MISMATCH";
         QString str2;
@@ -1268,87 +1330,93 @@ PrototypePtr MosaicReader::getPrototype(xml_node & node)
 
         if (motif->isExplicit())
         {
-            ExplicitPtr exp = std::dynamic_pointer_cast<ExplicitMotif>(motif);
-            Q_ASSERT(exp);
-
-            ExtendedBoundary & eb = exp->getRWExtendedBoundary();
-
-            MapPtr map;
-            exp->setupInfer(proto);
-
             switch (motif->getMotifType())
             {
-            case MOTIF_TYPE_EXPLICIT:
+            case MOTIF_TYPE_EXPLICIT_MAP:
+            {
                 // already has a map
-                exp->setMotifBoundary(poly);
+                auto exp = std::dynamic_pointer_cast<ExplicitMapMotif>(motif);
+                exp->setup(tile);
+                motif->setMotifBoundary(poly);
+                ExtendedBoundary & eb = exp->getRWExtendedBoundary();
                 eb.set(poly);
-                break;
+            }   break;
 
-            case MOTIF_TYPE_EXPLICIT_INFER:
-                map = exp->newExplicitMap();
-                exp->infer(tile);
-                exp->setMotifBoundary(poly);
+            case MOTIF_TYPE_IRREGULAR_NO_MAP:
+            {
+                auto irr = std::dynamic_pointer_cast<IrregularMotif>(motif);
+                irr->setup(tile);
+                irr->setMotifBoundary(poly);
+                ExtendedBoundary & eb = irr->getRWExtendedBoundary();
                 eb.set(poly);
-                break;
+            }   break;
 
-            case MOTIF_TYPE_EXPLICIT_ROSETTE:
-                map = exp->newExplicitMap();
-                exp->inferRosette(tile, exp->q, exp->s, exp->r_flexPt);
-                exp->setMotifBoundary(poly);
+            case MOTIF_TYPE_INFERRED:
+            {
+                auto infer = std::dynamic_pointer_cast<InferredMotif>(motif);
+                infer->setup(tile);
+                infer->setupInfer(proto);
+                infer->setMotifBoundary(poly);
+                ExtendedBoundary & eb = infer->getRWExtendedBoundary();
                 eb.set(poly);
-                break;
+            }   break;
 
-            case MOTIF_TYPE_EXPLICIT_HOURGLASS:
-                map = exp->newExplicitMap();
-                exp->inferHourglass(tile, exp->d, exp->s);
-                exp->setMotifBoundary(poly);
+            case MOTIF_TYPE_IRREGULAR_ROSETTE:
+            {
+                auto rose = std::dynamic_pointer_cast<IrregularRosette>(motif);
+                rose->setup(tile);
+                rose->setMotifBoundary(poly);
+                ExtendedBoundary & eb = rose->getRWExtendedBoundary();
                 eb.set(poly);
-                break;
+            }   break;
 
-            case MOTIF_TYPE_EXPLICIT_INTERSECT:
-                map = exp->newExplicitMap();
-                if (exp->progressive)
-                    exp->inferIntersectProgressive(tile, exp->getN(), exp->skip,exp->s);
-                else
-                    exp->inferIntersect(tile, exp->getN(), exp->skip, exp->s);
-                exp->setMotifBoundary(poly);
+            case MOTIF_TYPE_HOURGLASS:
+            {
+                auto hour = std::dynamic_pointer_cast<HourglassMotif>(motif);
+                hour->setup(tile);
+                hour->setMotifBoundary(poly);
+                ExtendedBoundary & eb = hour->getRWExtendedBoundary();
                 eb.set(poly);
-                break;
+            }   break;
 
-            case MOTIF_TYPE_EXPLICIT_STAR:
-                map = exp->newExplicitMap();
-                exp->inferStar(tile, exp->d, exp->s);
-                exp->setMotifBoundary(poly);
+            case MOTIF_TYPE_INTERSECT:
+            {
+                auto expl = std::dynamic_pointer_cast<IntersectMotif>(motif);
+                expl->setup(tile);
+                expl->setMotifBoundary(poly);
+                ExtendedBoundary & eb = expl->getRWExtendedBoundary();
                 eb.set(poly);
-                break;
+            }   break;
 
-            case MOTIF_TYPE_EXPLICIT_TILE:
-                map = exp->newExplicitMap();
-                exp->inferMotif(tile);
-                exp->setMotifBoundary(poly);
+            case MOTIF_TYPE_IRREGULAR_STAR:
+            {
+                auto star = std::dynamic_pointer_cast<IrregularStar>(motif);
+                star->setup(tile);
+                star->setMotifBoundary(poly);
+                ExtendedBoundary & eb = star->getRWExtendedBoundary();
                 eb.set(poly);
-                break;
+            }   break;
 
-            case MOTIF_TYPE_EXPLICIT_GIRIH:
-                map = exp->newExplicitMap();
-                exp->inferGirih(tile, exp->getN(), exp->skip);
-                exp->setMotifBoundary(poly);
+            case MOTIF_TYPE_EXPLCIT_TILE:
+            {
+                auto etile = std::dynamic_pointer_cast<TileMotif>(motif);
+                etile->setup(tile);
+                etile->setMotifBoundary(poly);
+                ExtendedBoundary & eb = etile->getRWExtendedBoundary();
                 eb.set(poly);
-                break;
+            }   break;
+
+            case MOTIF_TYPE_GIRIH:
+            {
+                auto girih = std::dynamic_pointer_cast<GirihMotif>(motif);
+                girih->setup(tile);
+                girih->setMotifBoundary(poly);
+                ExtendedBoundary & eb = girih->getRWExtendedBoundary();
+                eb.set(poly);
+            }   break;
 
             default:
                 qFatal("Unxpected explicit type");
-            }
-
-            if (map && !map->isEmpty())
-            {
-                map->resetNeighbourMap();
-                map->getNeighbourMap();
-                map->verifyAndFix();
-            }
-            else
-            {
-                qWarning() << "Empty Map";
             }
         }
     }
@@ -1416,10 +1484,10 @@ TilePtr MosaicReader::getTile(TileReader & fr, xml_node & node)
     return f;
 }
 
-void MosaicReader::getMotifCommon(xml_node & node, MotifPtr fig)
+void MosaicReader::getMotifCommon(xml_node & node, MotifPtr motif, int tile_sides)
 {
     QString str;
-    ExtendedBoundary & eb = fig->getRWExtendedBoundary();
+    ExtendedBoundary & eb = motif->getRWExtendedBoundary();
 
     if (node.child("boundarySides"))
     {
@@ -1435,111 +1503,141 @@ void MosaicReader::getMotifCommon(xml_node & node, MotifPtr fig)
         eb.scale = bscale;
     }
 
-    if (fig->isRadial() || _version >= 13)
+    if (motif->isRadial() || _version >= 13)
     {
         if (node.child("figureScale"))
         {
             str = node.child_value("figureScale");
             qreal fscale = str.toDouble();
-            fig->setMotifScale(fscale);
+            motif->setMotifScale(fscale);
         }
 
         if (node.child("r"))
         {
             str = node.child_value("r");
             qreal r = str.toDouble();
-            fig->setMotifRotate(r);
+            motif->setMotifRotate(r);
         }
     }
+
+    if (node.child("n"))
+    {
+        str = node.child_value("n");
+        int sides = str.toInt();
+        motif->setN(sides);
+    }
+    else
+    {
+        motif->setN(tile_sides);
+    }
+
+    int version = 1;
+    if (node.child("version"))
+    {
+        str = node.child_value("version");
+        version = str.toInt();
+    }
+    motif->setVersion(version);
 }
 
-ExplicitPtr MosaicReader::getExplicitMotif(xml_node & node, int tile_sides, eMotifType figType)
+IrregularPtr MosaicReader::getIrregularMotif(xml_node & node, int tile_sides, eMotifType type)
 {
-    ExplicitPtr ep;
+    IrregularPtr ep;
+
     if (hasReference(node))
     {
         ep = getExplicitReferencedPtr(node);
         return ep;
     }
 
-    if (_debug) qDebug() << "getExplicitMotif";
+    if (_debug) qDebug().noquote() << "getIrregularMotif type:" << sMotifType[type];
 
-    ep = make_shared<ExplicitMotif>(_currentMap,figType,10);
-    auto & eb = ep->getRWExtendedBoundary();
-    eb.sides = tile_sides;     // default - may be overwritten by xml
-
-    switch (figType)
+    if (type == MOTIF_TYPE_EXPLICIT_MAP)
     {
-    case MOTIF_TYPE_UNDEFINED:
-    case MOTIF_TYPE_RADIAL:
-    case MOTIF_TYPE_ROSETTE:
-    case MOTIF_TYPE_STAR:
-    case MOTIF_TYPE_CONNECT_STAR:
-    case MOTIF_TYPE_CONNECT_ROSETTE:
-    case MOTIF_TYPE_EXTENDED_ROSETTE:
-    case MOTIF_TYPE_EXTENDED_STAR:
-        qFatal("Not an explicit figure");
-
-    case MOTIF_TYPE_EXPLICIT:
         // only the old original taprats formats have maps
         _currentMap = getMap(node);
-        ep->setExplicitMap(_currentMap);
-        break;
-
-    case MOTIF_TYPE_EXPLICIT_INFER:
-    case MOTIF_TYPE_EXPLICIT_TILE:
-        // these have no parameters
-        break;
-
-    case MOTIF_TYPE_EXPLICIT_GIRIH:
+        ep = make_shared<ExplicitMapMotif>(_currentMap);
+        getMotifCommon(node,ep,tile_sides);
+    }
+    else if (type == MOTIF_TYPE_IRREGULAR_NO_MAP)
     {
+        ep = make_shared<IrregularMotif>();
+        getMotifCommon(node,ep,tile_sides);
+    }
+    else if (type == MOTIF_TYPE_INFERRED)
+    {
+        ep = make_shared<InferredMotif>();
+        getMotifCommon(node,ep,tile_sides);
+    }
+    else if (type == MOTIF_TYPE_EXPLCIT_TILE)
+    {
+        ep = make_shared<TileMotif>();
+        getMotifCommon(node,ep,tile_sides);
+    }
+    else if  (type == MOTIF_TYPE_GIRIH)
+    {
+        auto exp = make_shared<GirihMotif>();
+        getMotifCommon(node,exp,tile_sides);
+
         QString str;
-        str = node.child_value("sides");
-        int sides = str.toInt();
+        if (node.child("sides"))
+        {
+            Q_ASSERT(_version < 14);
+            str = node.child_value("sides");
+            int sides = str.toInt();
+            exp->setN(sides);
+        }
 
         str = node.child_value("skip");
         qreal skip  = str.toDouble();
 
-        ep->setN(sides);
-        ep->skip  = skip;
-        break;
+        exp->init(skip);
+        ep = exp;
     }
-    case MOTIF_TYPE_EXPLICIT_STAR:
+    else if (type == MOTIF_TYPE_IRREGULAR_STAR)
     {
+        auto star = make_shared<IrregularStar>();
+        getMotifCommon(node,star,tile_sides);
+
         QString str;
         str = node.child_value("s");
         int s = str.toInt();
-        ep->s = s;
 
         str = node.child_value("d");
         qreal d  = str.toDouble();
-        ep->d = d;
 
-        break;
+        star->init(d,s);
+
+        ep = star;
     }
-    case MOTIF_TYPE_EXPLICIT_ROSETTE:
+    else if (type == MOTIF_TYPE_IRREGULAR_ROSETTE)
     {
+        auto rose = make_shared<IrregularRosette>();
+        getMotifCommon(node,rose,tile_sides);
+
         QString str;
         str = node.child_value("s");
         int s = str.toInt();
-        ep->s = s;
 
         str = node.child_value("q");
         qreal q  = str.toDouble();
-        ep->q = q;
 
-        //str = node.child_value("rFlexPt");
-        //qreal pt  = str.toDouble();
+        qreal r_flexPt  = 0.5;
         if (node.child("rFlexPt"))
         {
             str = node.child_value("rFlexPt");
-            qreal pt = str.toDouble();
-            ep->r_flexPt = pt;
+            r_flexPt = str.toDouble();
         }
-        break;
+
+        rose->init(q,r_flexPt,s);
+
+        ep = rose;
     }
-    case MOTIF_TYPE_EXPLICIT_HOURGLASS:
+    else if (type == MOTIF_TYPE_HOURGLASS)
     {
+        auto hour = make_shared<HourglassMotif>();
+        getMotifCommon(node,hour,tile_sides);
+
         QString str;
         str = node.child_value("s");
         int s = str.toInt();
@@ -1547,18 +1645,18 @@ ExplicitPtr MosaicReader::getExplicitMotif(xml_node & node, int tile_sides, eMot
         str = node.child_value("d");
         qreal d  = str.toDouble();
 
-        ep->s = s;
-        ep->d = d;
-        break;
+        hour->init(d,s);
+        ep = hour;
     }
-    case MOTIF_TYPE_EXPLICIT_INTERSECT:
+    else if (type == MOTIF_TYPE_INTERSECT)
     {
+        auto isect = make_shared<IntersectMotif>();
+        getMotifCommon(node,isect,tile_sides);
+
         QString str;
+
         str = node.child_value("s");
         int s = str.toInt();
-
-        str = node.child_value("sides");
-        int sides = str.toInt();
 
         str = node.child_value("skip");
         qreal skip  = str.toDouble();
@@ -1566,18 +1664,19 @@ ExplicitPtr MosaicReader::getExplicitMotif(xml_node & node, int tile_sides, eMot
         str = node.child_value("progressive");
         bool prog = (str == "t");
 
-        ep->s     = s;
-        ep->setN(sides);
-        ep->skip  = skip;
-        ep->progressive = prog;
-        break;
+        if (node.child("sides"))
+        {
+            Q_ASSERT(_version < 14);
+            str = node.child_value("sides");
+            int sides = str.toInt();
+            isect->setN(sides);
+        }
+
+        isect->init(skip,s,prog);
+        ep = isect;
     }
-    }
 
-    getMotifCommon(node,ep);
-
-    //ep->buildBoundaries();
-
+    Q_ASSERT(ep);
     setExplicitReference(node,ep);
 
     return(ep);
@@ -1611,7 +1710,7 @@ StarPtr MosaicReader::getStar(xml_node & node, int tile_sides)
     auto & eb = star->getRWExtendedBoundary();
     eb.sides = tile_sides;      // default
 
-    getMotifCommon(node,star);
+    getMotifCommon(node,star,tile_sides);
 
     return star;
 }
@@ -1677,7 +1776,7 @@ ExtStarPtr  MosaicReader::getExtendedStar(xml_node & node, int tile_sides)
     auto & eb = star->getRWExtendedBoundary();
     eb.sides = tile_sides;      // default
 
-    getMotifCommon(node,star);
+    getMotifCommon(node,star,tile_sides);
 
     setExtStarReference(node,star);
 
@@ -1712,7 +1811,7 @@ RosettePtr MosaicReader::getRosette(xml_node & node, int tile_sides)
     auto & eb = rosette->getRWExtendedBoundary();
     eb.sides = tile_sides;      // default
 
-    getMotifCommon(node,rosette);
+    getMotifCommon(node,rosette,tile_sides);
 
     setRosetteReference(node,rosette);
 
@@ -1783,7 +1882,7 @@ ExtRosettePtr  MosaicReader::getExtendedRosette(xml_node & node, int tile_sides)
     auto & eb = rosette->getRWExtendedBoundary();
     eb.sides = tile_sides;      // default
 
-    getMotifCommon(node,rosette);
+    getMotifCommon(node,rosette,tile_sides);
     return rosette;
 }
 
@@ -1852,19 +1951,19 @@ RosetteConnectPtr MosaicReader::getRosetteConnect(xml_node & node, int tile_side
         }
 
         rcp = make_shared<RosetteConnect>(rp->getN(),
-                                                rp->getQ(),
-                                                rp->getS(),
-                                                rp->getK());
+                                          rp->getQ(),
+                                          rp->getS(),
+                                          rp->getK());
         auto & eb = rcp->getRWExtendedBoundary();
         eb.sides = tile_sides;      // default
 
-        getMotifCommon(node,rcp);
+        getMotifCommon(child,rcp,tile_sides);
         setRosetteConnectReference(node,rcp);
         //qDebug() << rcp->getFigureDesc();
     }
     else
     {
-        fail("Connect MOtif","");
+        fail("Connect Motif","");
     }
     return rcp;
 }
@@ -1909,38 +2008,32 @@ StarConnectPtr MosaicReader::getStarConnect(xml_node & node, int tile_sides)
         auto & eb = scp->getRWExtendedBoundary();
         eb.sides = tile_sides;      // default
 
-        getMotifCommon(node,scp);
+        getMotifCommon(node,scp,tile_sides);
         setStarConnectReference(node,scp);
         //qDebug() << scp->getFigureDesc();
     }
     else
     {
-        fail("Connect MOtif","");
+        fail("Connect Motif","");
     }
     return scp;
 }
 
 MapPtr MosaicReader::getMap(xml_node & node)
 {
-    xml_node xmlmap = node.child("map");
+    xml_node mapnode = node.child("map");
 
-    if (hasReference(xmlmap))
+    if (hasReference(mapnode))
     {
-        _currentMap =  getMapReferencedPtr(xmlmap);
+        _currentMap =  getMapReferencedPtr(mapnode);
         return _currentMap;
     }
 
     _currentMap = make_shared<Map>("loaded map");
-    setMapReference(xmlmap,_currentMap);
-
-    if (xmlmap.empty())
-    {
-        qWarning() << "Empty map";
-        return _currentMap;
-    }
+    setMapReference(mapnode,_currentMap);
 
     // vertices
-    xml_node vertices = xmlmap.child("vertices");
+    xml_node vertices = mapnode.child("vertices");
     for (xml_node vertex = vertices.child("Vertex"); vertex; vertex = vertex.next_sibling("Vertex"))
     {
         VertexPtr v = getVertex(vertex);
@@ -1949,7 +2042,7 @@ MapPtr MosaicReader::getMap(xml_node & node)
     if (_version < 5)
     {
         // Edges
-        xml_node edges = xmlmap.child("edges");
+        xml_node edges = mapnode.child("edges");
         for (xml_node edge = edges.child("Edge"); edge; edge = edge.next_sibling("Edge"))
         {
             EdgePtr e = getEdge(edge);
@@ -1959,7 +2052,7 @@ MapPtr MosaicReader::getMap(xml_node & node)
     else
     {
         // Edges
-        xml_node edges = xmlmap.child("edges");
+        xml_node edges = mapnode.child("edges");
         for (xml_node e = edges.first_child(); e; e= e.next_sibling())
         {
             QString name = e.name();
@@ -2389,7 +2482,7 @@ void MosaicReader::procBorderBlocks(xml_node & node)
 //
 //////////////////////////////////////////////////////////////
 
-void MosaicReader::setProtoReference(xml_node & node, PrototypePtr ptr)
+void MosaicReader::setProtoReference(xml_node & node, ProtoPtr ptr)
 {
     xml_attribute id;
     id = node.attribute("id");
@@ -2403,9 +2496,9 @@ void MosaicReader::setProtoReference(xml_node & node, PrototypePtr ptr)
     }
 }
 
-PrototypePtr MosaicReader::getProtoReferencedPtr(xml_node & node)
+ProtoPtr MosaicReader::getProtoReferencedPtr(xml_node & node)
 {
-    PrototypePtr retval;
+    ProtoPtr retval;
     xml_attribute ref;
     ref = node.attribute("reference");
     if (ref)
@@ -2414,7 +2507,7 @@ PrototypePtr MosaicReader::getProtoReferencedPtr(xml_node & node)
 #ifdef DEBUG_REFERENCES
         qDebug() << "using reference" << id;
 #endif
-        retval = PrototypePtr(proto_ids[id]);
+        retval = ProtoPtr(proto_ids[id]);
         if (!retval)
             fail("reference NOT FOUND:",QString::number(id));
     }
@@ -2493,7 +2586,7 @@ void   MosaicReader::setFMotifReference(xml_node & node, MotifPtr ptr)
 #endif
     }
 }
-void   MosaicReader::setExplicitReference(xml_node & node, ExplicitPtr ptr)
+void   MosaicReader::setExplicitReference(xml_node & node, IrregularPtr ptr)
 {
     xml_attribute id;
     id = node.attribute("id");
@@ -2659,9 +2752,9 @@ MotifPtr MosaicReader::getMotifReferencedPtr(xml_node & node)
     return retval;
 }
 
-ExplicitPtr MosaicReader::getExplicitReferencedPtr(xml_node & node)
+IrregularPtr MosaicReader::getExplicitReferencedPtr(xml_node & node)
 {
-    ExplicitPtr retval;
+    IrregularPtr retval;
     xml_attribute ref;
     ref = node.attribute("reference");
     if (ref)
@@ -2670,7 +2763,7 @@ ExplicitPtr MosaicReader::getExplicitReferencedPtr(xml_node & node)
 #ifdef DEBUG_REFERENCES
         qDebug() << "using reference" << id;
 #endif
-        retval = ExplicitPtr(explicit_ids[id]);
+        retval = IrregularPtr(explicit_ids[id]);
         if (!retval)
             fail("reference NOT FOUND:",QString::number(id));
     }

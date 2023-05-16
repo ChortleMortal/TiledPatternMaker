@@ -33,10 +33,10 @@ Tile::Tile(EdgePoly ep, qreal rotate, qreal scale)
     n           = ep.size();
     rotation    = rotate;
     this->scale = scale;
-    regular     = false;
+    regular    = false;
     refs++;
 
-    create();
+    createEpolyFromBase();
 }
 
 Tile::Tile(int n, qreal rotate, qreal scale)
@@ -45,8 +45,16 @@ Tile::Tile(int n, qreal rotate, qreal scale)
     this->n     = n;
     rotation    = rotate;
     this->scale = scale;
-    regular     = true;
+    regular    = true;
     refs++;
+
+    createRegularBase();
+    createEpolyFromBase();
+}
+
+void Tile::createRegularBase()
+{
+    base.clear();
 
     int idx     = 0;
     qreal angle = (M_PI / static_cast<qreal>(n)) * (static_cast<qreal>(2.0 * idx) + 1.0);
@@ -62,11 +70,9 @@ Tile::Tile(int n, qreal rotate, qreal scale)
         v1 = v2;
     }
     base.push_back(make_shared<Edge>(v1,v));
-
-    create();
 }
 
-void Tile::create()
+void Tile::createEpolyFromBase()
 {
     epoly.clear();
     epoly = base.recreate();
@@ -131,17 +137,18 @@ Tile::~Tile()
 
 void Tile::setN(int n)
 {
+    this->n = n;
     if (regular)
     {
-        this->n = n;
-        create();
+        createRegularBase();
+        createEpolyFromBase();
     }
 }
 
 void Tile::setRotation(qreal rotate)
 {
     rotation = rotate;
-    create();
+    createEpolyFromBase();
 }
 
 qreal Tile::getRotation()
@@ -157,7 +164,7 @@ void Tile::deltaRotation(qreal delta)
 void Tile::setScale(qreal scale)
 {
     this->scale = scale;
-    create();
+    createEpolyFromBase();
 }
 
 qreal Tile::getScale()
@@ -172,17 +179,27 @@ void Tile::deltaScale(qreal delta)
 
 void Tile::setRegular(bool enb)
 {
-    if (enb && !regular)
+    if (enb == regular)
+        return;
+
+    if (enb)
     {
         regular =  true;
-        create();
+        createRegularBase();
+        createEpolyFromBase();
     }
-    else if (!enb && regular)
+    else
     {
-        // convert to irregular
         regular = false;
-        create();
+        createEpolyFromBase();
     }
+}
+
+bool Tile::flipRegularity()
+{
+    bool newreg = !regular;
+    setRegular(newreg);
+    return newreg;
 }
 
 
@@ -231,11 +248,13 @@ QString Tile::toString() const
 {
     QString text;
     QTextStream str(&text);
+    int i=0;
 
     str << "{ ";
     for (auto & edge : qAsConst(epoly))
     {
-        str << "point: " << edge->v1->pt.x() << " " << edge->v1->pt.y() << " , ";
+        str << i+1 << ":" << edge->v1->pt.x() << " " << edge->v1->pt.y() << " , ";
+        i++;
     }
     str << "}";
     return text;
@@ -279,6 +298,14 @@ QString Tile::summary()
 QPointF Tile::getCenter()
 {
     return epoly.calcCenter();
+}
+
+QLineF Tile::getEdge(int side)
+{
+    if (numSides() > side)
+        return epoly[side]->getLine();
+    else
+        return QLineF();
 }
 
 qreal Tile::edgeLen(int side)

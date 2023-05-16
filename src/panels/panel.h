@@ -1,4 +1,5 @@
-﻿#ifndef PANEL_H
+﻿#pragma once
+#ifndef PANEL_H
 #define PANEL_H
 
 #include <QButtonGroup>

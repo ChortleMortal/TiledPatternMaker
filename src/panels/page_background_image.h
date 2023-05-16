@@ -1,3 +1,4 @@
+#pragma once
 #ifndef PAGE_BACKGROUND_IMAGE_H
 #define PAGE_BACKGROUND_IMAGE_H
 

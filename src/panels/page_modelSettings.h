@@ -1,4 +1,5 @@
-﻿#ifndef PAGE_MODEL_SETTINGS_H
+﻿#pragma once
+#ifndef PAGE_MODEL_SETTINGS_H
 #define PAGE_MODEL_SETTINGS_H
 
 class QGroupBox;

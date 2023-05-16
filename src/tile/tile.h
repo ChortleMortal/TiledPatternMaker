@@ -1,4 +1,8 @@
-﻿////////////////////////////////////////////////////////////////////////////
+﻿#pragma once
+#ifndef TILE_H
+#define TILE_H
+
+////////////////////////////////////////////////////////////////////////////
 //
 // Feature.java
 //
@@ -13,9 +17,6 @@
 // We also store whether the Tile was created as a regular polygon.
 // This helps later when deciding what Tiles can have Rosettes
 // in them.
-
-#ifndef TILE_H
-#define TILE_H
 
 #include <QPolygonF>
 #include "misc/colorset.h"
@@ -35,6 +36,7 @@ public:
     TilePtr copy();
 
     void        setRegular(bool enb);
+    bool        flipRegularity();
     void        setN(int n);
     void        setRotation(qreal rot);
     void        setScale(qreal rot);
@@ -45,14 +47,15 @@ public:
     qreal       getRotation();
     qreal       getScale();
 
-    void        create();          // makes epoly from base
+    void        createRegularBase();
+    void        createEpolyFromBase();          // makes epoly from base
     void        decompose();       // makes base from epoly (should not be needed except to fix historical files)
     TilePtr     recreate();
 
-    bool        isRegular()   { return regular; }
-    bool        isClockwise() { return  epoly.isClockwise(); }
     bool        equals(const TilePtr other);
     bool        isSimilar(const TilePtr other);
+    bool        isRegular()         { return regular; }
+    bool        isClockwise()       { return  epoly.isClockwise(); }
 
     EdgePoly &  getEdgePoly()       { return epoly;}             // must be ref so can change
     EdgePoly &  getBase()           { return base; }
@@ -64,6 +67,7 @@ public:
     ColorSet *  getTileColors()     { return &tileColors; }
 
     QPointF     getCenter();
+    QLineF      getEdge(int side);
     qreal       edgeLen(int side = 0);
 
     QString     toString() const;

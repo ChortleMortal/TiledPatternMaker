@@ -10,37 +10,37 @@
 #include "tile/tile.h"
 #include "geometry/edge.h"
 
-InteriorTilingSelector::InteriorTilingSelector(PlacedTilePtr pfp) : TileSelector(pfp)
+InteriorTilleSelector::InteriorTilleSelector(PlacedTilePtr pfp) : TileSelector(pfp)
 {
     type = INTERIOR;
 }
 
-EdgeTilingSelector::EdgeTilingSelector(PlacedTilePtr pfp, EdgePtr edge) : TileSelector(pfp,edge)
+EdgeTileSelector::EdgeTileSelector(PlacedTilePtr pfp, EdgePtr edge) : TileSelector(pfp,edge)
 {
     type = EDGE;
 }
 
-VertexTilingSelector::VertexTilingSelector(PlacedTilePtr pfp, QPointF pt) : TileSelector(pfp,pt)
+VertexTileSelector::VertexTileSelector(PlacedTilePtr pfp, QPointF pt) : TileSelector(pfp,pt)
 {
     type = VERTEX;
 }
 
-MidPointTilingSelector::MidPointTilingSelector(PlacedTilePtr pfp, EdgePtr edge, QPointF pt) : TileSelector(pfp,edge,pt)
+MidPointTileSelector::MidPointTileSelector(PlacedTilePtr pfp, EdgePtr edge, QPointF pt) : TileSelector(pfp,edge,pt)
 {
     type = MID_POINT;
 }
 
-ArcPointTilingSelector::ArcPointTilingSelector(PlacedTilePtr pfp, EdgePtr edge, QPointF pt) : TileSelector(pfp,edge,pt)
+ArcPointTileSelector::ArcPointTileSelector(PlacedTilePtr pfp, EdgePtr edge, QPointF pt) : TileSelector(pfp,edge,pt)
 {
     type = ARC_POINT;
 }
 
-CenterTilingSelector::CenterTilingSelector(PlacedTilePtr pfp, QPointF pt) : TileSelector(pfp,pt)
+CenterTileSelector::CenterTileSelector(PlacedTilePtr pfp, QPointF pt) : TileSelector(pfp,pt)
 {
     type = FEAT_CENTER;
 }
 
-ScreenTilingSelector::ScreenTilingSelector(QPointF pt) : TileSelector(pt)
+ScreenTileSelector::ScreenTileSelector(QPointF pt) : TileSelector(pt)
 {
     type = SCREEN_POINT;
 }
@@ -98,10 +98,10 @@ QPointF TileSelector::getPlacedPoint()
 
 QPolygonF TileSelector::getPlacedPolygon()
 {
-    return pfp->getPlacedPolygon();
+    return pfp->getPlacedPoints();
 }
 
 QPolygonF TileSelector::getModelPolygon()
 {
-    return pfp->getTilePolygon();
+    return pfp->getTilePoints();
 }

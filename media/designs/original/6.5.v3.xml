@@ -1,25 +1,30 @@
 <?xml version="1.0"?>
-<vector id="1" version="10">
+<!-- Written: Sun Sep 25 2022 09:32:20 -->
+<vector id="1" version="13">
+	<designNotes>adds colors</designNotes>
 	<design>
 		<size>
 			<width>1500</width>
 			<height>1100</height>
+			<zwidth>1500</zwidth>
+			<zheight>1100</zheight>
 		</size>
 		<background>
 			<color>#ffffffff</color>
 		</background>
-		<Fill>-3,3,-3,3</Fill>
+		<Fill singleton="f">-3,3,-3,3</Fill>
 	</design>
-	<style.Interlace id="2" serialization="custom">
+	<style.Plain id="2">
 		<toolkit.GeoLayer>
-			<left__delta>212</left__delta>
-			<top__delta>222</top__delta>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
 			<width__delta>1</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>0,0</center>
+			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<prototype id="3" serialization="custom">
+			<prototype id="3">
 				<app.Prototype>
 					<string>6.5</string>
 					<entry>
@@ -58,7 +63,7 @@
 							<n>6</n>
 							<d>1.6665</d>
 							<s>1</s>
-							<boundarySides>1</boundarySides>
+							<boundarySides>6</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
@@ -92,112 +97,32 @@
 								</Line>
 							</edges>
 						</tile.Feature>
-						<app.ExplicitFigure id="20" type="FIG_TYPE_EXPLICIT">
-							<map id="21">
-								<vertices id="22">
-									<Vertex id="23">
-										<pos>4.034522267621424e-16,1.732050807568877</pos>
-									</Vertex>
-									<Vertex id="24">
-										<pos>0.4427896759853701,1.410345277003791</pos>
-									</Vertex>
-									<Vertex id="25">
-										<pos>0.5000000000000002,0.8660254037844384</pos>
-									</Vertex>
-									<Vertex id="26">
-										<pos>0.5235719498322924,2.112448095592726</pos>
-									</Vertex>
-									<Vertex id="27">
-										<pos>0.6666666666666673,2.309401076758502</pos>
-									</Vertex>
-									<Vertex id="28">
-										<pos>1.000000000000001,1.088639746438707</pos>
-									</Vertex>
-									<Vertex id="29">
-										<pos>1.038140216009754,1.798111599509421</pos>
-									</Vertex>
-									<Vertex id="30">
-										<pos>1.500000000000001,0.8660254037844383</pos>
-									</Vertex>
-									<Vertex id="31">
-										<pos>1.567647740043215,1.509650657060077</pos>
-									</Vertex>
-									<Vertex id="32">
-										<pos>1.666666666666668,1.732050807568876</pos>
-									</Vertex>
-								</vertices>
-								<edges id="33">
-									<Edge id="34">
-										<v1 reference="23" />
-										<v2 reference="26" />
-									</Edge>
-									<Edge id="35">
-										<v1 reference="23" />
-										<v2 reference="24" />
-									</Edge>
-									<Edge id="36">
-										<v1 reference="25" />
-										<v2 reference="24" />
-									</Edge>
-									<Edge id="37">
-										<v1 reference="25" />
-										<v2 reference="28" />
-									</Edge>
-									<Edge id="38">
-										<v1 reference="27" />
-										<v2 reference="26" />
-									</Edge>
-									<Edge id="39">
-										<v1 reference="27" />
-										<v2 reference="29" />
-									</Edge>
-									<Edge id="40">
-										<v1 reference="30" />
-										<v2 reference="28" />
-									</Edge>
-									<Edge id="41">
-										<v1 reference="32" />
-										<v2 reference="29" />
-									</Edge>
-									<Edge id="42">
-										<v1 reference="30" />
-										<v2 reference="31" />
-									</Edge>
-									<Edge id="43">
-										<v1 reference="32" />
-										<v2 reference="31" />
-									</Edge>
-								</edges>
-							</map>
-							<boundarySides>1</boundarySides>
+						<app.ExplicitIntersect id="20" type="FIG_TYPE_EXPLICIT_INTERSECT">
+							<s>1</s>
+							<sides>10</sides>
+							<skip>3</skip>
+							<progressive>f</progressive>
+							<boundarySides>5</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFigure>
+						</app.ExplicitIntersect>
 					</entry>
 				</app.Prototype>
 			</prototype>
 		</style.Style>
 		<style.Colored>
-			<color hide="t">#ff003366</color>
+			<color hide="t">#84003366</color>
 		</style.Colored>
-		<style.Thick>
-			<draw__outline>false</draw__outline>
-			<width>0.05</width>
-		</style.Thick>
-		<style.Interlace>
-			<gap>0</gap>
-			<shadow>0.05</shadow>
-			<includeTipVerts>false</includeTipVerts>
-		</style.Interlace>
-	</style.Interlace>
-	<style.Filled id="44" serialization="custom">
+	</style.Plain>
+	<style.Filled id="21">
 		<toolkit.GeoLayer>
-			<left__delta>212</left__delta>
-			<top__delta>222</top__delta>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
 			<width__delta>1</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>0,0</center>
+			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
 			<prototype reference="3" />
@@ -206,7 +131,11 @@
 			<color hide="t">#711496d2</color>
 		</ColorBlacks>
 		<ColorWhites>
+			<color hide="f">#ffc2bcb0</color>
 			<color hide="t">#711496d2</color>
+			<color hide="f">#ffc59c0c</color>
+			<color hide="f">#ffc59c0c</color>
+			<color hide="f">#ff39426d</color>
 		</ColorWhites>
 		<ColorGroup>
 			<Group hideSet="f">
@@ -217,7 +146,7 @@
 		<style.Filled>
 			<draw__inside>true</draw__inside>
 			<draw__outside>false</draw__outside>
-			<algorithm>0</algorithm>
+			<algorithm>2</algorithm>
 		</style.Filled>
 	</style.Filled>
 </vector>

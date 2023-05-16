@@ -7,7 +7,7 @@
 #include "makers/crop_maker/crop_maker.h"
 #include "misc/border.h"
 #include "mosaic/mosaic.h"
-#include "mosaic/prototype.h"
+#include "makers/prototype_maker/prototype.h"
 #include "panels/panel.h"
 #include "viewers/crop_view.h"
 #include "viewers/viewcontrol.h"
@@ -37,6 +37,8 @@ page_crop_maker::page_crop_maker(ControlPanel * apanel)  : panel_page(apanel,"Cr
     layout1->addStretch();
 
     QHBoxLayout * layout2 = createCropControls();
+
+    setMaximumWidth(762);
 
     vbox->addLayout(layout1);
     vbox->addWidget(cropWidget);

@@ -1,7 +1,7 @@
 #include "tile/tiling_manager.h"
 #include "misc/fileservices.h"
 #include "makers/mosaic_maker/mosaic_maker.h"
-#include "makers/motif_maker/motif_maker.h"
+#include "makers/prototype_maker/prototype_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "settings/model_settings.h"
 #include "settings/configuration.h"
@@ -16,10 +16,10 @@ TilingManager::TilingManager()
     view         = ViewControl::getInstance();
     config       = Configuration::getInstance();
     tilingMaker  = TilingMaker::getSharedInstance();
-    motifMaker   = MotifMaker::getInstance();
+    prototypeMaker   = PrototypeMaker::getInstance();
 }
 
-TilingPtr TilingManager::loadTiling(QString name, eSM_Event mode)
+TilingPtr TilingManager::loadTiling(QString name, eTILM_Event event)
 {
     TilingPtr loadedTiling;
 
@@ -33,7 +33,7 @@ TilingPtr TilingManager::loadTiling(QString name, eSM_Event mode)
     BkgdImgPtr bip = BackgroundImage::getSharedInstance();
     bip->unload();
 
-    qInfo().noquote() << "TilingManager::loadTiling" << filename << sSM_Events[mode];
+    qInfo().noquote() << "TilingManager::loadTiling" << filename << sTILM_Events[event];
 
     TilingLoader tm;
     loadedTiling  = tm.readTilingXML(filename);
@@ -51,30 +51,25 @@ TilingPtr TilingManager::loadTiling(QString name, eSM_Event mode)
     // tiling is loaded, now use it
     QSize size  = loadedTiling->getData().getSettings().getSize();
     QSize zsize = loadedTiling->getData().getSettings().getZSize();
-    switch(mode)
+    switch(event)
     {
-    case SM_LOAD_SINGLE:
-    case SM_RELOAD_SINGLE:
-    case SM_LOAD_MULTI:
-    case SM_RELOAD_MULTI:
+    case TILM_LOAD_SINGLE:
+    case TILM_LOAD_MULTI:
+    case TILM_RELOAD:
         view->frameSettings.initialise(VIEW_TILING_MAKER,size,zsize);
         view->frameSettings.initialiseCommon(size,zsize);
 
         setVCFillData(loadedTiling);
-        tilingMaker->sm_take(loadedTiling, mode);
+        tilingMaker->sm_takeUp(loadedTiling, event);
         break;
 
-    case SM_LOAD_FROM_MOSAIC:
+    case TILM_LOAD_FROM_MOSAIC:
         view->frameSettings.initialise(VIEW_TILING_MAKER,size,zsize);
 
         setVCFillData(loadedTiling);
         break;
 
-    case SM_LOAD_EMPTY:
-    case SM_RENDER:
-    case SM_TILE_CHANGED:
-    case SM_MOTIF_CHANGED:
-    case SM_TILING_CHANGED:
+    case TILM_LOAD_EMPTY:
         break;
     }
 
@@ -102,7 +97,7 @@ bool TilingManager::saveTiling(QString name, TilingPtr tiling)
     const ModelSettings & ms = tiling->getData().getSettings();
     if (ms.getSize() != size || ms.getZSize() != zsize)
     {
-        ModelSettings & settings = tiling->getDataAccess().getSettingsAccess();
+        ModelSettings & settings = tiling->getDataAccess(false).getSettingsAccess();
         settings.setSize(size);
         settings.setZSize(zsize);
     }
@@ -126,11 +121,11 @@ bool TilingManager::saveTiling(QString name, TilingPtr tiling)
 bool TilingManager::verifyNameFiles()
 {
     bool rv = true;
-    QStringList files = FileServices::getTilingNames(LOAD_ALL);
+    QStringList files = FileServices::getTilingNames(ALL_TILINGS);
     for (int i=0; i < files.size(); i++)
     {
         QString name = files[i];
-        TilingPtr tiling = loadTiling(name,SM_LOAD_SINGLE);
+        TilingPtr tiling = loadTiling(name,TILM_LOAD_SINGLE);
         if (tiling->getName() != name)
         {
             qWarning() << "Error: name does not match filename =" << name <<"internal name= " << tiling->getName();

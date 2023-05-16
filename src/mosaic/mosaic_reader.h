@@ -1,3 +1,4 @@
+#pragma once
 #ifndef XMLLOADER_H
 #define XMLLOADER_H
 
@@ -11,27 +12,30 @@
 #include "enums/emotiftype.h"
 #include "enums/estyletype.h"
 
-typedef std::shared_ptr<QPolygonF>              PolyPtr;
-typedef std::shared_ptr<class BackgroundImage>  BkgdImgPtr;
-typedef std::shared_ptr<class Border>           BorderPtr;
-typedef std::shared_ptr<class Crop>             CropPtr;
-typedef std::shared_ptr<class Edge>             EdgePtr;
-typedef std::shared_ptr<class ExplicitMotif>    ExplicitPtr;
-typedef std::shared_ptr<class ExtendedRosette>  ExtRosettePtr;
-typedef std::shared_ptr<class ExtendedStar>     ExtStarPtr;
-typedef std::shared_ptr<class Tile>             TilePtr;
-typedef std::shared_ptr<class Motif>            MotifPtr;
-typedef std::shared_ptr<class Map>              MapPtr;
-typedef std::shared_ptr<class Mosaic>           MosaicPtr;
-typedef std::shared_ptr<class Prototype>        PrototypePtr;
-typedef std::shared_ptr<class Rosette>          RosettePtr;
-typedef std::shared_ptr<class Star>             StarPtr;
-typedef std::shared_ptr<class RosetteConnect> RosetteConnectPtr;
-typedef std::shared_ptr<class StarConnect>    StarConnectPtr;
-typedef std::shared_ptr<class Tiling>           TilingPtr;
-typedef std::shared_ptr<class Vertex>           VertexPtr;
+using std::shared_ptr;
+
+typedef shared_ptr<QPolygonF>              PolyPtr;
+typedef shared_ptr<class BackgroundImage>  BkgdImgPtr;
+typedef shared_ptr<class Border>           BorderPtr;
+typedef shared_ptr<class Crop>             CropPtr;
+typedef shared_ptr<class Edge>             EdgePtr;
+typedef shared_ptr<class ExtendedRosette>  ExtRosettePtr;
+typedef shared_ptr<class ExtendedStar>     ExtStarPtr;
+typedef shared_ptr<class Tile>             TilePtr;
+typedef shared_ptr<class Motif>            MotifPtr;
+typedef shared_ptr<class IrregularMotif>   IrregularPtr;
+typedef shared_ptr<class Map>              MapPtr;
+typedef shared_ptr<class Mosaic>           MosaicPtr;
+typedef shared_ptr<class Prototype>        ProtoPtr;
+typedef shared_ptr<class Rosette>          RosettePtr;
+typedef shared_ptr<class Star>             StarPtr;
+typedef shared_ptr<class RosetteConnect>   RosetteConnectPtr;
+typedef shared_ptr<class StarConnect>      StarConnectPtr;
+typedef shared_ptr<class Tiling>           TilingPtr;
+typedef shared_ptr<class Vertex>           VertexPtr;
 
 class TileReader;
+class IrregularMotif;
 
 using std::string;
 using namespace pugi;
@@ -77,14 +81,14 @@ protected:
     void    processsStyleInterlace(xml_node & node, qreal & gap, qreal & shadow, bool & includeSVerts, bool &start_under);
     void    processsStyleFilled(xml_node & node, bool &draw_inside, bool &draw_outside, int &algorithm);
     void    processsStyleEmboss(xml_node & node, qreal & angle);
-    void    processStyleStyle(xml_node & node, PrototypePtr &proto);
+    void    processStylePrototype(xml_node & node, ProtoPtr &proto);
 
     // tiles
     TilePtr  getTile(TileReader & fr, xml_node & node);
 
-    // motrifs
-    void                getMotifCommon(xml_node & node, MotifPtr fig);
-    ExplicitPtr         getExplicitMotif(xml_node & node, int tile_sides, eMotifType figType);
+    // motifs
+    void                getMotifCommon(xml_node & node, MotifPtr motif,int tile_sides);
+    IrregularPtr        getIrregularMotif(xml_node & node, int tile_sides, eMotifType type);
     StarPtr             getStar(xml_node & node, int tile_sides);
     ExtStarPtr          getExtendedStar(xml_node & node, int tile_sides);
     ExtRosettePtr       getExtendedRosette(xml_node & node, int tile_sides);
@@ -99,19 +103,19 @@ protected:
     EdgePtr         getCurve(xml_node & node);
     EdgePtr         getChord(xml_node & node);
     MapPtr          getMap(xml_node & node);
-    PrototypePtr    getPrototype(xml_node & node);
+    ProtoPtr        getPrototype(xml_node & node);
     PolyPtr         getBoundary(xml_node & node);
     QPointF         getPos(xml_node & node);
     QRectF          getRectangle(xml_node node);
     CirclePtr       getCircle(xml_node node);
 
     // references
-    void   setProtoReference(xml_node & node, PrototypePtr ptr);
+    void   setProtoReference(xml_node & node, ProtoPtr ptr);
     void   setEdgeReference(xml_node & node, EdgePtr ptr);
     void   setPolyReference(xml_node & node, PolyPtr ptr);
     void   setTileReference(xml_node & node, TilePtr ptr);
     void   setFMotifReference(xml_node & node, MotifPtr ptr);
-    void   setExplicitReference(xml_node & node, ExplicitPtr ptr);
+    void   setExplicitReference(xml_node & node, IrregularPtr ptr);
     void   setStarReference(xml_node & node, StarPtr ptr);
     void   setExtStarReference(xml_node & node, ExtStarPtr ptr);
     void   setExtRosetteReference(xml_node & node, ExtRosettePtr ptr);
@@ -120,12 +124,12 @@ protected:
     void   setStarConnectReference(xml_node & node, StarConnectPtr ptr);
     void   setMapReference(xml_node & node, MapPtr ptr);
 
-    PrototypePtr    getProtoReferencedPtr(xml_node & node);
+    ProtoPtr        getProtoReferencedPtr(xml_node & node);
     EdgePtr         getEdgeReferencedPtr(xml_node & node);
     PolyPtr         getPolyReferencedPtr(xml_node & node);
     TilePtr         getTileReferencedPtr(xml_node & node);
     MotifPtr        getMotifReferencedPtr(xml_node & node);
-    ExplicitPtr     getExplicitReferencedPtr(xml_node & node);
+    IrregularPtr    getExplicitReferencedPtr(xml_node & node);
     StarPtr         getStarReferencedPtr(xml_node & node);
     ExtStarPtr      getExtStarReferencedPtr(xml_node & node);
     ExtRosettePtr   getExtRosetteReferencedPtr(xml_node & node);
@@ -147,12 +151,12 @@ protected:
     [[noreturn]] void fail(QString a, QString b);
     QTransform getQTransform(QString txt);
 
-    QMap<int,PrototypePtr>  proto_ids;
+    QMap<int,ProtoPtr>      proto_ids;
     QMap<int,EdgePtr>       edge_ids;
     QMap<int,PolyPtr>       poly_ids;
     QMap<int,TilePtr>       tile_ids;
     QMap<int,MotifPtr>      motif_ids;
-    QMap<int,ExplicitPtr>   explicit_ids;
+    QMap<int,IrregularPtr>  explicit_ids;
     QMap<int,StarPtr>       star_ids;
     QMap<int,ExtStarPtr>    ext_star_ids;
     QMap<int,ExtRosettePtr> ext_rosette_ids;
@@ -177,6 +181,7 @@ protected:
     CropPtr                 _crop;
     unsigned int            _version;
     FillData                _fillData;
+    uint                    _cleanseLevel;
 
     bool _debug;
 

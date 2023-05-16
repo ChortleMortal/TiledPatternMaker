@@ -1,4 +1,5 @@
-﻿#ifndef SLIDERSET_H
+﻿#pragma once
+#ifndef SLIDERSET_H
 #define SLIDERSET_H
 
 #include <QSpinBox>

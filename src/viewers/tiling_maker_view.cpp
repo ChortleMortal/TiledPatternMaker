@@ -107,7 +107,7 @@ void TilingMakerView::draw( GeoGraphics * g2d )
         QPolygonF p;
         if (editPlacedTile)
         {
-            p = editPlacedTile->getPlacedPolygon();
+            p = editPlacedTile->getPlacedPoints();
             drawTile(g2d, editPlacedTile, true, normal_color);
         }
         else if (tileSelector && tileSelector->getType() == INTERIOR)
@@ -216,7 +216,7 @@ void TilingMakerView::drawTile(GeoGraphics * g2d, PlacedTilePtr pf, bool draw_c,
     // draw center circle
     if( draw_c )
     {
-        QPolygonF pts = pf->getPlacedPolygon();
+        QPolygonF pts = pf->getPlacedPoints();
         QPointF pt    = Point::center(pts);
 
         layerPen.setColor(Qt::red);
@@ -281,13 +281,13 @@ void TilingMakerView::hideTiling(bool state)
 //
 // Tile, edge and vertex finding.
 //
-TilingSelectorPtr TilingMakerView::findTile(QPointF spt)
+TileSelectorPtr TilingMakerView::findTile(QPointF spt)
 {
-    TilingSelectorPtr nothingToIgnore;
+    TileSelectorPtr nothingToIgnore;
     return findTile(spt, nothingToIgnore);
 }
 
-TilingSelectorPtr TilingMakerView::findTile(QPointF spt, TilingSelectorPtr ignore)
+TileSelectorPtr TilingMakerView::findTile(QPointF spt, TileSelectorPtr ignore)
 {
     QPointF wpt = screenToWorld(spt);
 
@@ -296,24 +296,24 @@ TilingSelectorPtr TilingMakerView::findTile(QPointF spt, TilingSelectorPtr ignor
         if (ignore && (ignore->getPlacedTile() == placedTile))
             continue;
 
-        QPolygonF pgon = placedTile->getPlacedPolygon();
+        QPolygonF pgon = placedTile->getPlacedPoints();
         if (pgon.containsPoint(wpt,Qt::OddEvenFill))
         {
-            return make_shared<InteriorTilingSelector>(placedTile);
+            return make_shared<InteriorTilleSelector>(placedTile);
         }
     }
-
-    TilingSelectorPtr sel;
+    
+    TileSelectorPtr sel;
     return sel;
 }
 
-TilingSelectorPtr TilingMakerView::findVertex(QPointF spt)
+TileSelectorPtr TilingMakerView::findVertex(QPointF spt)
 {
-    TilingSelectorPtr nothingToIgnore;
+    TileSelectorPtr nothingToIgnore;
     return findVertex(spt,nothingToIgnore);
 }
 
-TilingSelectorPtr TilingMakerView::findVertex(QPointF spt,TilingSelectorPtr ignore)
+TileSelectorPtr TilingMakerView::findVertex(QPointF spt,TileSelectorPtr ignore)
 {
     for(auto it = allPlacedTiles.begin(); it != allPlacedTiles.end(); it++ )
     {
@@ -322,7 +322,7 @@ TilingSelectorPtr TilingMakerView::findVertex(QPointF spt,TilingSelectorPtr igno
         if (ignore && (ignore->getPlacedTile() == pf))
             continue;
 
-        QPolygonF pgon = pf->getTilePolygon();
+        QPolygonF pgon = pf->getTilePoints();
         QTransform   T = pf->getTransform();
         for( int v = 0; v < pgon.size(); ++v )
         {
@@ -331,24 +331,24 @@ TilingSelectorPtr TilingMakerView::findVertex(QPointF spt,TilingSelectorPtr igno
             QPointF c = worldToScreen(b);
             if (Point::dist2(spt,c) < 49.0 )
             {
-                return make_shared<VertexTilingSelector>(pf,a);
+                return make_shared<VertexTileSelector>(pf,a);
             }
         }
     }
-
-    TilingSelectorPtr sel;
+    
+    TileSelectorPtr sel;
     return sel;
 }
 
-TilingSelectorPtr TilingMakerView::findMidPoint(QPointF spt)
+TileSelectorPtr TilingMakerView::findMidPoint(QPointF spt)
 {
-    TilingSelectorPtr nothingToIgnore;
+    TileSelectorPtr nothingToIgnore;
     return findMidPoint(spt,nothingToIgnore);
 }
 
-TilingSelectorPtr TilingMakerView::findMidPoint(QPointF spt, TilingSelectorPtr ignore)
+TileSelectorPtr TilingMakerView::findMidPoint(QPointF spt, TileSelectorPtr ignore)
 {
-    TilingSelectorPtr sel;
+    TileSelectorPtr sel;
 
     for(auto it = allPlacedTiles.begin(); it != allPlacedTiles.end(); it++ )
     {
@@ -379,7 +379,7 @@ TilingSelectorPtr TilingMakerView::findMidPoint(QPointF spt, TilingSelectorPtr i
                     qDebug() << "Screen dist too small = " << screenDist;
                     return sel;
                 }
-                return make_shared<MidPointTilingSelector>(pf, edge, mid);
+                return make_shared<MidPointTileSelector>(pf, edge, mid);
             }
         }
     }
@@ -387,9 +387,9 @@ TilingSelectorPtr TilingMakerView::findMidPoint(QPointF spt, TilingSelectorPtr i
     return sel;
 }
 
-TilingSelectorPtr TilingMakerView::findArcPoint(QPointF spt)
+TileSelectorPtr TilingMakerView::findArcPoint(QPointF spt)
 {
-    TilingSelectorPtr sel;
+    TileSelectorPtr sel;
 
     for(auto& pf : allPlacedTiles)
     {
@@ -405,7 +405,7 @@ TilingSelectorPtr TilingMakerView::findArcPoint(QPointF spt)
                 QPointF aad  = worldToScreen(aa);
                 if (Point::dist2(spt,aad) < 49.0)
                 {
-                    return make_shared<ArcPointTilingSelector>(pf, ep, a);
+                    return make_shared<ArcPointTileSelector>(pf, ep, a);
                 }
             }
         }
@@ -414,13 +414,13 @@ TilingSelectorPtr TilingMakerView::findArcPoint(QPointF spt)
     return sel;
 }
 
-TilingSelectorPtr TilingMakerView::findEdge(QPointF spt)
+TileSelectorPtr TilingMakerView::findEdge(QPointF spt)
 {
-    TilingSelectorPtr nothingToIgnore;
+    TileSelectorPtr nothingToIgnore;
     return findEdge(spt, nothingToIgnore);
 }
 
-TilingSelectorPtr TilingMakerView::findEdge(QPointF spt, TilingSelectorPtr ignore )
+TileSelectorPtr TilingMakerView::findEdge(QPointF spt, TileSelectorPtr ignore )
 {
     for(auto it = allPlacedTiles.begin(); it != allPlacedTiles.end(); it++ )
     {
@@ -441,18 +441,18 @@ TilingSelectorPtr TilingMakerView::findEdge(QPointF spt, TilingSelectorPtr ignor
 
             if (Point::distToLine(spt, LineS) < 7.0)
             {
-                return make_shared<EdgeTilingSelector>(pf,edge);
+                return make_shared<EdgeTileSelector>(pf,edge);
             }
         }
     }
-
-    TilingSelectorPtr sel;
+    
+    TileSelectorPtr sel;
     return sel;
 }
 
-TilingSelectorPtr TilingMakerView::findSelection(QPointF spt)
+TileSelectorPtr TilingMakerView::findSelection(QPointF spt)
 {
-    TilingSelectorPtr sel;
+    TileSelectorPtr sel;
 
     if (      (sel = findVertex(spt)) )
         return sel;
@@ -462,7 +462,7 @@ TilingSelectorPtr TilingMakerView::findSelection(QPointF spt)
         return sel;
     else
     {
-        TilingSelectorPtr sel2 = findTile(spt);
+        TileSelectorPtr sel2 = findTile(spt);
         if (sel2)
         {
             sel = findCenter(sel2->getPlacedTile(),spt);
@@ -473,22 +473,22 @@ TilingSelectorPtr TilingMakerView::findSelection(QPointF spt)
     return sel;
 }
 
-TilingSelectorPtr TilingMakerView::findPoint(QPointF spt)
+TileSelectorPtr TilingMakerView::findPoint(QPointF spt)
 {
-    TilingSelectorPtr nothingToIgnore;
+    TileSelectorPtr nothingToIgnore;
     return findPoint(spt,nothingToIgnore);
 }
 
-TilingSelectorPtr TilingMakerView::findPoint(QPointF spt, TilingSelectorPtr ignore)
+TileSelectorPtr TilingMakerView::findPoint(QPointF spt, TileSelectorPtr ignore)
 {
-    TilingSelectorPtr sel = findVertex(spt,ignore);
+    TileSelectorPtr sel = findVertex(spt,ignore);
     if (!sel)
     {
         sel = findMidPoint(spt,ignore);
     }
     if (!sel)
     {
-        TilingSelectorPtr sel2 = findTile(spt,ignore);
+        TileSelectorPtr sel2 = findTile(spt,ignore);
         if (sel2)
         {
             sel = findCenter(sel2->getPlacedTile(),spt);
@@ -501,7 +501,7 @@ TilingSelectorPtr TilingMakerView::findPoint(QPointF spt, TilingSelectorPtr igno
 
 QPointF TilingMakerView::findSelectionPointOrPoint(QPointF spt)
 {
-    TilingSelectorPtr sel = findPoint(spt);
+    TileSelectorPtr sel = findPoint(spt);
     if (!sel)
     {
         return screenToWorld(spt);
@@ -510,7 +510,7 @@ QPointF TilingMakerView::findSelectionPointOrPoint(QPointF spt)
     return sel->getPlacedPoint();
 }
 
-TilingSelectorPtr TilingMakerView::findCenter(PlacedTilePtr pf, QPointF spt)
+TileSelectorPtr TilingMakerView::findCenter(PlacedTilePtr pf, QPointF spt)
 {
     EdgePoly  epoly = pf->getPlacedEdgePoly();
     QPointF    wpt  = epoly.calcCenter();
@@ -520,10 +520,10 @@ TilingSelectorPtr TilingMakerView::findCenter(PlacedTilePtr pf, QPointF spt)
     {
         TilePtr tile = pf->getTile();
         QPointF mpt  = tile->getCenter();
-        return make_shared<CenterTilingSelector>(pf, mpt);
+        return make_shared<CenterTileSelector>(pf, mpt);
     }
-
-    TilingSelectorPtr sel;
+    
+    TileSelectorPtr sel;
     return sel;
 }
 
@@ -555,14 +555,14 @@ void TilingMakerView::determineOverlapsAndTouching()
     {
         if (!pf->show()) continue;
 
-        QPolygonF poly = pf->getPlacedPolygon();
+        QPolygonF poly = pf->getPlacedPoints();
 
         for (auto pf2 : qAsConst(allPlacedTiles))
         {
             if (!pf2->show()) continue;
             if (pf2 == pf) continue;
 
-            QPolygonF poly2 = pf2->getPlacedPolygon();
+            QPolygonF poly2 = pf2->getPlacedPoints();
             if (poly2.intersects(poly))
             {
                 QPolygonF p3 = poly2.intersected(poly);
@@ -583,14 +583,14 @@ void TilingMakerView::determineOverlapsAndTouching()
     }
 }
 
-TilingSelectorPtr TilingMakerView::findNearGridPoint(QPointF spt)
+TileSelectorPtr TilingMakerView::findNearGridPoint(QPointF spt)
 {
-    TilingSelectorPtr tsp;
+    TileSelectorPtr tsp;
     QPointF p;
 
     if (Grid::getSharedInstance()->nearGridPoint(spt,p))
     {
-        tsp = make_shared<ScreenTilingSelector>(p);  // not really a vertex, but good enough
+        tsp = make_shared<ScreenTileSelector>(p);  // not really a vertex, but good enough
     }
     return tsp;
 }

@@ -44,7 +44,7 @@ qreal RosetteConnect::computeConnectScale()
     setMotifRotate(rot);            // restore
     qreal sc = connector.computeScale(this);
 
-    resetMaps();   // so unit can build
+    resetMotifMaps();   // so unit can build
 
     return sc;
 }

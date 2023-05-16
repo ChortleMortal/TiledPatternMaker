@@ -1,6 +1,8 @@
+#pragma once
 #ifndef TPM_LAYER_H
 #define TPM_LAYER_H
 
+#include <QObject>
 #include <QPen>
 #include "geometry/xform.h"
 #include "geometry/circle.h"

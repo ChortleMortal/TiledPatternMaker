@@ -21,34 +21,28 @@ typedef std::shared_ptr<Rosette>          RosettePtr;
 
 using std::make_shared;
 
-Rosette::Rosette(const Motif & fig,  int nsides, qreal qq, int ss, qreal kk)
-    : RadialMotif(fig, nsides)
+Rosette::Rosette(const Motif & fig,  int nsides, qreal qq, int ss, qreal kk) : RadialMotif(fig, nsides)
 {
     q = q_clamp(qq);
     s = s_clamp(ss);
     k = kk;
     setMotifType(MOTIF_TYPE_ROSETTE);
-    count = 0;
 }
 
-Rosette::Rosette(int nsides, qreal qq, int ss, qreal kk)
-    : RadialMotif(nsides)
+Rosette::Rosette(int nsides, qreal qq, int ss, qreal kk) : RadialMotif(nsides)
 {
     q = q_clamp(qq);
     s = s_clamp(ss);
     k = kk;
     setMotifType(MOTIF_TYPE_ROSETTE);
-    count = 0;
 }
 
 Rosette::Rosette(const Rosette & other) : RadialMotif(other)
 {
-    count = other.count;
     q     = other.q;
     k     = other.k;
     s     = other.s;
 }
-
 
 bool Rosette::equals(const MotifPtr other)
 {
@@ -65,14 +59,8 @@ bool Rosette::equals(const MotifPtr other)
     if (k != otherp->k)
         return  false;
 
-    if (n != otherp->n)
-        return  false;
-
-     if (getMotifRotate() != otherp->getMotifRotate())
-         return false;
-
-     if (getMotifScale() != otherp->getMotifScale())
-         return false;
+    if (!Motif::equals(other))
+        return false;
 
      return true;
 }
@@ -101,7 +89,7 @@ void Rosette::setN(int nn)
 int Rosette::s_clamp(int s)
 {
     //return s;
-    return qMin(s, (n-1)/2);
+    return qMin(s, (getN()-1)/2);
 }
 
 qreal Rosette::q_clamp(qreal q)
@@ -112,10 +100,11 @@ qreal Rosette::q_clamp(qreal q)
 
 void Rosette::buildUnitMap()
 {
-    bool debug = true;
-    if (debug) debugMap = make_shared<DebugMap>("rosette debug map");
+#if 1
+    debugMap = make_shared<DebugMap>("rosette debug map");
+#endif
 
-    qDebug().noquote() << "Rosette::buildUnit"  << n << q << s << "Tr:" << Transform::toInfoString(Tr) << "rot" << getMotifRotate();
+    qDebug().noquote() << "Rosette::buildUnit"  << getN() << q << s << "Tr:" << Transform::toInfoString(Tr) << "rot" << getMotifRotate();
 
     buildRadialBoundaries();
 
@@ -132,7 +121,7 @@ void Rosette::buildUnitMap()
     QPointF up_outer    = getArc( 0.5 * don ) * qr_outer;
     QPointF down_outer  = up_outer - r_outer;
     QPointF bisector    = down_outer * 0.5;
-    if (debug)
+    if (debugMap)
     {
         debugMap->insertDebugMark(center,"center");
         debugMap->insertDebugMark(tip,"tip");
@@ -151,7 +140,7 @@ void Rosette::buildUnitMap()
     //qDebug() << "stable_angle:"  << stable_angle  << qRadiansToDegrees(stable_angle);
     stable_isect.setY(stable_isect.y() - k);    // uses k
 
-    if (debug)
+    if (debugMap)
     {
         debugMap->insertDebugMark(norm_up_outer,"norm_up_out");
         debugMap->insertDebugMark(apoint,"apoint");
@@ -184,7 +173,7 @@ void Rosette::buildUnitMap()
     QPointF key_r_point(key_point.x(), -key_point.y());
     QPointF key_r_end(  key_end.x(),   -key_end.y());
 
-    if (debug)
+    if (debugMap)
     {
         debugMap->insertDebugLine(tip, qtip);              // adjusting q adjusts qtip
         debugMap->insertDebugLine(up_outer, bisector);     // this is the line along hich the key_point (aka) shoulder moved
@@ -201,8 +190,9 @@ void Rosette::buildUnitMap()
     unitMap = make_shared<Map>("rosette unit map");
 
     // fill the map
-    points.clear();
-    points.push_back(key_point);
+    QPolygonF epoints;
+
+    epoints.push_back(key_point);
 
     int sclamp = s_clamp(s);
 
@@ -227,8 +217,8 @@ void Rosette::buildUnitMap()
         QPointF isect;
         if (key_line.intersects(key_r_line,&isect) == QLineF::BoundedIntersection)
         {
-            qDebug().noquote() << QString("isect%1").arg(idx) << isect;
-            if (debug && idx == 1)
+            //qDebug().noquote() << QString("isect%1").arg(idx) << isect;
+            if (debugMap && idx == 1)
             {
                 debugMap->insertDebugLine(key_r_point,key_r_end);
 
@@ -237,7 +227,7 @@ void Rosette::buildUnitMap()
                 debugMap->insertDebugMark(isect,QString("isect%1").arg(idx));
             }
 
-            points.push_back(isect);
+            epoints.push_back(isect);
         }
     }
 
@@ -246,10 +236,10 @@ void Rosette::buildUnitMap()
     VertexPtr top_prev = vt;
     VertexPtr bot_prev = vt;
 
-    for( int idx = 0; idx < points.size(); ++idx )
+    for( int idx = 0; idx < epoints.size(); ++idx )
     {
-        VertexPtr top = unitMap->insertVertex( points[idx]);
-        VertexPtr bot = unitMap->insertVertex(QPointF( points[idx].x(), -points[idx].y()));
+        VertexPtr top = unitMap->insertVertex(epoints[idx]);
+        VertexPtr bot = unitMap->insertVertex(QPointF(epoints[idx].x(), - epoints[idx].y()));
 
         unitMap->insertEdge(top_prev, top);
         unitMap->insertEdge(bot_prev, bot);
@@ -258,7 +248,7 @@ void Rosette::buildUnitMap()
         bot_prev = bot;
     }
 
-    //qDebug().noquote() << "Rosette: points =" << points.size() << unitMap->getInfo();
+    //qDebug().noquote() << "Rosette: epoints =" << epoints.size() << unitMap->getInfo();
     //unitMap->verify("Rosette::buildUnit",false);
 
     // rotate and scale

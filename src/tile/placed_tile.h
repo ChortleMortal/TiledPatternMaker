@@ -1,3 +1,7 @@
+#pragma once
+#ifndef PLACED_TILE
+#define PLACED_TILE
+
 ////////////////////////////////////////////////////////////////////////////
 //
 // placedTile.java
@@ -7,9 +11,6 @@
 // copies together into a tiling.  A tiling is represented as a
 // collection of placedTiles (that may share Tiles) that together
 // make up a translational unit.
-
-#ifndef PLACED
-#define PLACED
 
 #include <QString>
 #include <QTransform>
@@ -26,14 +27,11 @@ class PlacedTile
 {
 public:
     // Creation.
-    PlacedTile(Tiling * parent);
-    PlacedTile(Tiling * parent, TilePtr tile, QTransform T);
-    PlacedTile(PlacedTilePtr other);
+    PlacedTile();
+    PlacedTile(TilePtr tile, QTransform T);
     ~PlacedTile() {}
 
     PlacedTilePtr copy();
-
-    Tiling * getParent() { return parent; }
 
     // Data.
     void             setTransform(QTransform newT);
@@ -41,9 +39,9 @@ public:
     TilePtr          getTile();
     QTransform       getTransform();
     EdgePoly         getTileEdgePoly();
-    QPolygonF        getTilePolygon();
+    QPolygonF        getTilePoints();
     EdgePoly         getPlacedEdgePoly();
-    QPolygonF        getPlacedPolygon();
+    QPolygonF        getPlacedPoints();
 
     bool saveAsGirihShape(QString name);
     bool loadFromGirihShape(QString name);
@@ -65,6 +63,5 @@ private:
     TilePtr     tile;
     QTransform  T;
     bool        _show;  // used by tiling maker view
-    Tiling *    parent;
 };
 #endif

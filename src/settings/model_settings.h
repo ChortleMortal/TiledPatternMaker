@@ -1,3 +1,4 @@
+#pragma once
 #ifndef MODEL_SETTINGS_H
 #define MODEL_SETTINGS_H
 
@@ -15,8 +16,6 @@ public:
     ~ModelSettings();
 
     ModelSettings & operator=(const ModelSettings & other);
-
-    void            clear();
 
     QColor          getBackgroundColor();
     void            setBackgroundColor(QColor color);

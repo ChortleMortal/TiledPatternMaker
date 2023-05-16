@@ -9,19 +9,19 @@ QString Shortcuts::getMosaicShortcuts()
     C   <br>\
     D   Duplicate (in new window)<br>\
     E   <br>\
-    F   Toggle Radial replication in Motif View<br>\
+    F   <br>\
     G   Grid (toggle) <br>\
     H   Toggle Show Center/ Toggle Circle<br>\
     I   <br>\
     J   Save Menu BMP<br>\
-    K   Toggle debugMap in Motif View<br>\
+    K   Toggle debugMap in Motif Maker View<br>\
     L   <br>\
     M   Raise Menu<br>\
     N   Bring to center of primary screen<br>\
     O   <br>\
     P   Print Save Image BMP <br>\
     Q   Quit app (or quit cycler)<br>\
-    R   Toggle replication in Motif Maker<br>\
+    R   Toggle replication in Motif Maker View<br>\
     S   <br>\
     T   Xfrom mode MODEL DATA<br>\
     U   Xform mode BKGD<br>\

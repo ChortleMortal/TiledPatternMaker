@@ -1,3 +1,4 @@
+#pragma once
 #ifndef LAYOUT_QRECTF_H
 #define LAYOUT_QRECTF_H
 

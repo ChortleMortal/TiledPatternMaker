@@ -1,3 +1,4 @@
+#pragma once
 #ifndef MOTIFVIEW_H
 #define MOTIFVIEW_H
 
@@ -10,6 +11,7 @@ typedef std::shared_ptr<class Map>             MapPtr;
 typedef std::shared_ptr<class Tile>            TilePtr;
 typedef std::shared_ptr<class Contact>         ContactPtr;
 
+class PrototypeData;
 
 class MotifView : public LayerController
 {
@@ -20,7 +22,6 @@ public:
 
     virtual void paint(QPainter *painter) override;
 
-    void    setDebugContacts(bool enb, QPolygonF pts, QVector<ContactPtr> contacts);    // not currently used
 
     virtual void iamaLayer() override {}
     virtual void iamaLayerController() override {}
@@ -34,24 +35,21 @@ public slots:
     virtual void slot_setCenter(QPointF spt)          override;
 
 protected:
-    void paintExplicitMotifMap( QPainter *painter, MotifPtr fig);
-    void paintRadialMotifMap(   QPainter *painter, MotifPtr fig);
-    void paintMotifBoundary(    QPainter *painter, MotifPtr fig);
-    void paintExtendedBoundary( QPainter *painter, MotifPtr fig);
-    void paintTileBoundary(     QPainter *painter, TilePtr feat);
+    void paintExplicitMotifMap( QPainter *painter, MotifPtr motif);
+    void paintRadialMotifMap(   QPainter *painter, MotifPtr motif);
+    void paintMotifBoundary(    QPainter *painter, MotifPtr motif);
+    void paintExtendedBoundary( QPainter *painter, MotifPtr motif);
+    void paintTileBoundary(     QPainter *painter, TilePtr tile);
+    void paintMap(              QPainter *painter, MapPtr map);
 
 private:
     static MotifViewPtr spThis;
+    
+    PrototypeData *     protoMakerData;
+    QTransform          _T;
+    qreal               lineWidth;
 
-    void paintMap(QPainter * painter, MapPtr map);
 
-    class MotifMaker * motifMaker;
-
-    QTransform           _T;
-
-    bool                debugContacts;
-    QPolygonF           debugPts;
-    QVector<ContactPtr> debugContactPts;
 };
 
 #endif

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef MAPEDITORDB_H
 #define MAPEDITORDB_H
 
@@ -9,7 +10,7 @@
 typedef std::shared_ptr<class Tiling>           TilingPtr;
 typedef std::shared_ptr<class Map>              MapPtr;
 typedef std::shared_ptr<class Motif>            MotifPtr;
-typedef std::shared_ptr<class Prototype>        PrototypePtr;
+typedef std::shared_ptr<class Prototype>        ProtoPtr;
 typedef std::shared_ptr<class Border>           BorderPtr;
 typedef std::shared_ptr<class Tile>             TilePtr;
 typedef std::shared_ptr<class DCEL>             DCELPtr;
@@ -37,7 +38,7 @@ public:
 
     void reset();
 
-    MapPtr getMap() { return map; }
+    MapPtr getMapedLayerMap() { return map; }
 
     eMapEditorMapType type;
     WeakDELPtr        wdel;
@@ -73,8 +74,8 @@ public:
     void                setTiling(TilingPtr tp) { tiling = tp; }
     TilingPtr           getTiling()         { return tiling.lock(); }
 
-    void                setMotfiPrototype(PrototypePtr pp) { motifPrototype = pp; }
-    PrototypePtr        getMotifPrototype() { return motifPrototype.lock(); }
+    void                setMotfiPrototype(ProtoPtr pp) { motifPrototype = pp; }
+    ProtoPtr            getMotifPrototype() { return motifPrototype.lock(); }
 
     QVector<WeakDELPtr> & getDesignElements() { return delps; }
 

@@ -15,7 +15,7 @@
 #include "makers/mosaic_maker/mosaic_maker.h"
 #include "makers/map_editor/map_editor.h"
 #include "makers/map_editor/map_editor_db.h"
-#include "makers/motif_maker/motif_maker.h"
+#include "makers/prototype_maker/prototype_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "misc/backgroundimage.h"
 #include "misc/border.h"
@@ -24,7 +24,7 @@
 #include "misc/utilities.h"
 #include "mosaic/design_element.h"
 #include "mosaic/mosaic.h"
-#include "mosaic/prototype.h"
+#include "makers/prototype_maker/prototype.h"
 #include "style/filled.h"
 #include "tile/tile.h"
 #include "tile/placed_tile.h"
@@ -64,7 +64,7 @@ page_system_info::page_system_info(ControlPanel * cpanel)  : panel_page(cpanel,"
     tree->setColumnCount(3);
     tree->setHeaderHidden(true);
     tree->setMinimumWidth(701);
-    tree->setMinimumHeight(750);
+    tree->setMinimumHeight(690);
     tree->setRootIsDecorated(true);
     tree->setItemsExpandable(true);
 
@@ -85,10 +85,8 @@ page_system_info::page_system_info(ControlPanel * cpanel)  : panel_page(cpanel,"
     connect(tree,      &QTreeWidget::itemClicked, this, &page_system_info::slot_itemClicked);
 }
 
-
 void  page_system_info::onRefresh()
-{
-}
+{ }
 
 void page_system_info::onEnter()
 {
@@ -100,14 +98,38 @@ void page_system_info::onEnter()
 
 void page_system_info::populateTree()
 {
-    qDebug() << "page_system_info::populateTree()";
+    qDebug() << "page_system_info::populateTree() - start";
 
     QApplication::setOverrideCursor(Qt::WaitCursor);
 
     tree->clear();
 
-    QTreeWidgetItem * item;
+    doMosaicMaker();
 
+    doProtoypeMaker(MVD_PROTO,"Prototype Info");
+    doProtoypeMaker(MVD_DELEM,"Design Element Info");
+
+    doTilingMaker();
+
+    doBackgroundImage();
+
+    doViews();
+
+    doMapEditor();
+
+    doCropEdfitor();
+
+    // adjust
+    tree->setColumnWidth(0,201);
+    tree->resizeColumnToContents(2);
+
+    QApplication::restoreOverrideCursor();
+
+    qDebug() << "page_system_info::populateTree() - done";
+}
+
+void page_system_info::doMosaicMaker()
+{
     qDebug() << "page_system_info::populateTree() - mosaics start";
 
     // Mosaic maker
@@ -124,13 +146,12 @@ void page_system_info::populateTree()
     item->setText(1,QString("Styles: %1").arg(numStyles));
     item->setText(2,QString("Mosaic: %1").arg(name));
     tree->addTopLevelItem(item);
-    tree->expandItem(item);
+    //tree->expandItem(item);
 
     populateStyles(item,mosaic);
 
     populateBorder(item,mosaic);
 
-    CropPtr crop;
     if (mosaic)
     {
         crop = mosaic->getCrop();
@@ -138,54 +159,61 @@ void page_system_info::populateTree()
     populateCrop(item,crop);
 
     qDebug() << "page_system_info::populateTree() - mosaics done";
+}
 
-    // Motif Maker
-    const QVector<PrototypePtr> & prototypes = motifMaker->getPrototypes();
-    // selected prototype
+void page_system_info::doProtoypeMaker(eMVDType type, QString name)
+{
+    // Prototype Maker
+    qDebug() << "page_system_info::populateTree() -" << name << "start";
+
+    PrototypeData * data = prototypeMaker->getProtoMakerData();
+
+    auto protos     = data->getPrototypes();
+    auto selectedP  = data->getSelectedPrototype();
+
+    auto dels       = data->getDELs();
+    auto selectedD  = data->getSelectedDEL();
+
+    // summary
     item = new QTreeWidgetItem;
-    item->setText(0,"Motif Maker");
-    item->setText(1,QString("Protos: %1").arg(prototypes.size()));
-    int num = 0;
-    for (auto prototype : prototypes)
+    item->setText(0,name);
+    item->setText(1,QString("Protos: %1").arg(protos.size()));
+    int numD = 0;
+    int numV = data->getSelectedDELs(type).count();
+    for (auto & prototype : protos)
     {
-        num += prototype->numDesignElements();
+        numD += prototype->numDesignElements();
     }
-    item->setText(2,QString("Design Elements: %1").arg(num));
+    item->setText(2,QString("Design Elements: %1 visible: %2").arg(numD).arg(numV));
     tree->addTopLevelItem(item);
 
-    PrototypePtr pp = motifMaker->getSelectedPrototype();
-    populatePrototype(item,pp,"Selected Prototype");
+    // selected prototype
+    populatePrototype(item,selectedP,"Selected Prototype","");
 
-    for (auto & proto : prototypes)
+    // all protos
+    for (auto & proto : protos)
     {
-        populatePrototype(item,proto,"Prototype");
+        QString state = data->isHidden(type,proto) ? "hidden" : "visible";
+        populatePrototype(item,proto,"Prototype",state);
     }
 
     // selected design element
-    QTreeWidgetItem * item2 = new QTreeWidgetItem;
-    item2->setText(0,"Selected Design Elements");
-    auto dels = motifMaker->getSelectedDesignElements();
-    item2->setText(1,QString("Count : %1").arg(dels.size()));
-    item->addChild(item2);
+    populateDEL(item,selectedD,"Selected Design Element","");
 
-    for (auto del : dels)
+    // all dels
+    for (auto & del : dels)
     {
-        populateDEL(item2,del);
+        QString state = data->isHidden(type,del) ? "hidden" : "visible";
+        populateDEL(item, del, "Design Element",state);
     }
+    qDebug() << "page_system_info::populateTree() -" << name <<  "done";
+}
 
-    item2 = new QTreeWidgetItem;
-    item2->setText(0,"Active Tile");
-    TilePtr fp = motifMaker->getActiveTile();
-    item2->setText(1,addr(fp.get()));
-    if (fp)
-    {
-        item->setText(2, QString("Points: %1 Rot: %2").arg(fp->numPoints()).arg(fp->getRotation()));
-    }
-    item->addChild(item2);
-
-    qDebug() << "page_system_info::populateTree() - motifs done";
-
+void page_system_info::doTilingMaker()
+{
     // Tiling Maker
+    qDebug() << "page_system_info::populateTree() - tilings start";
+
     const QVector<TilingPtr> & tilings = tilingMaker->getTilings();
 
     item = new QTreeWidgetItem;
@@ -208,7 +236,9 @@ void page_system_info::populateTree()
     }
 
     qDebug() << "page_system_info::populateTree() - tilings done";
-
+}
+void page_system_info::doBackgroundImage()
+{
     // background image
     item = new QTreeWidgetItem;
     item->setText(0,"Background Image");
@@ -239,12 +269,19 @@ void page_system_info::populateTree()
     }
     tree->addTopLevelItem(item);
 #endif
+}
+
+void page_system_info::doViews()
+{
     // views
     item = new QTreeWidgetItem;
     item->setText(0,"Views");
     populateViews(item);
     tree->addTopLevelItem(item);
+}
 
+void page_system_info::doMapEditor()
+{
     // map editor
     item = new QTreeWidgetItem;
     item->setText(0,"Map Editor");
@@ -259,7 +296,10 @@ void page_system_info::populateTree()
     {
         populateMap(item,map,"Draw Map");
     }
+}
 
+void page_system_info::doCropEdfitor()
+{
     // Crop editor
     item = new QTreeWidgetItem;
     item->setText(0,"Crop Maker");
@@ -268,13 +308,6 @@ void page_system_info::populateTree()
     crop = maker->getCrop();
     populateCrop(item,crop);
     tree->addTopLevelItem(item);
-
-    // adjust
-    tree->setColumnWidth(0,201);
-    tree->resizeColumnToContents(2);
-
-    QApplication::restoreOverrideCursor();
-    qDebug() << "page_system_info::populateTree() - done";
 }
 
 void page_system_info::slot_itemClicked(QTreeWidgetItem * item, int col)
@@ -338,7 +371,7 @@ void page_system_info::populateStyles(QTreeWidgetItem * parent, MosaicPtr mosaic
         Q_ASSERT(layer);
         populateLayer(item,layer);
         populateMap(item,style->getExistingMap(),"Style Map");
-        populatePrototype(item,style->getPrototype(),"Prototype");
+        populatePrototype(item,style->getPrototype(),"Prototype","");
     }
 }
 
@@ -415,7 +448,7 @@ void page_system_info::populateMap(QTreeWidgetItem *parent, MapPtr mp, QString n
     }
     else
     {
-        item->setText(2,"EMPTY Map");
+        item->setText(2,"NO Map");
         return;
     }
 
@@ -469,7 +502,7 @@ void page_system_info::populateMap(QTreeWidgetItem *parent, MapPtr mp, QString n
     }
 }
 
-void page_system_info::populatePrototype(QTreeWidgetItem *parent, PrototypePtr pp, QString name)
+void page_system_info::populatePrototype(QTreeWidgetItem *parent, ProtoPtr pp, QString name, QString state)
 {
     if  (!pp) return;
 
@@ -480,6 +513,7 @@ void page_system_info::populatePrototype(QTreeWidgetItem *parent, PrototypePtr p
     QTreeWidgetItem * pitem = new QTreeWidgetItem;
     pitem->setText(0,name);
     pitem->setText(1,addr(pp.get()));
+    pitem->setText(2,state);
     parent->addChild(pitem);
 
     // tiling
@@ -501,7 +535,7 @@ void page_system_info::populatePrototype(QTreeWidgetItem *parent, PrototypePtr p
     tree->expandItem(item);
     for (auto& del : dels)
     {
-        populateDEL(item,del);
+        populateDEL(item,del,"Design Element","");
     }
 
     auto map = pp->getExistingProtoMap();
@@ -510,18 +544,19 @@ void page_system_info::populatePrototype(QTreeWidgetItem *parent, PrototypePtr p
     auto crop = pp->getCrop();
     populateCrop(pitem,crop);
 
-    tree->expandItem(pitem);
+    //tree->expandItem(pitem);
 }
 
-void page_system_info::populateDEL(QTreeWidgetItem * parent, DesignElementPtr de)
+void page_system_info::populateDEL(QTreeWidgetItem * parent, DesignElementPtr de, QString name, QString state)
 {
     if (!de) return;
 
     QTreeWidgetItem * item2 = new QTreeWidgetItem;
-    item2->setText(0,"DEL");
+    item2->setText(0,name);
     item2->setText(1,addr(de.get()));
+    item2->setText(2,state);
     parent->addChild(item2);
-    tree->expandItem(item2);
+    //tree->expandItem(item2);
 
     QTreeWidgetItem * item = new QTreeWidgetItem;
     TilePtr tile = de->getTile();
@@ -531,7 +566,7 @@ void page_system_info::populateDEL(QTreeWidgetItem * parent, DesignElementPtr de
                                                      .arg(tile->getRotation())
                                                      .arg((tile->isRegular()) ? "Regular" : "Irregular"));
     item2->addChild(item);
-    tree->expandItem(item);
+    //tree->expandItem(item);
 
     item = new QTreeWidgetItem;
     MotifPtr motif = de->getMotif();
@@ -540,18 +575,18 @@ void page_system_info::populateDEL(QTreeWidgetItem * parent, DesignElementPtr de
     QString astring = motif->getMotifDesc() + " " + motif->getMotifTypeString();
     item->setText(2,astring);
     item2->addChild(item);
-    tree->expandItem(item);
+    //tree->expandItem(item);
 
     item = new QTreeWidgetItem();
     auto eb = motif->getExtendedBoundary();
     astring = QString("scale:%1 rot:%2 escale:%3 erot:%4").arg(motif->getMotifScale()).arg(motif->getMotifRotate()).arg(eb.scale).arg(eb.rotate);
     item->setText(2,astring);
     item2->addChild(item);
-    tree->expandItem(item);
+    //tree->expandItem(item);
 
     if (motif->isExplicit())
     {
-        populateMap(item2,motif->getMap(),"Tile Map");
+        populateMap(item2,motif->getMotifMap(),"Tile Map");
     }
 }
 
@@ -559,25 +594,25 @@ void page_system_info::populateTiling(QTreeWidgetItem * parent, TilingPtr tp, QS
 {
     if (!tp) return;
 
-    const QVector<PlacedTilePtr> & qlpf = tp->getData().getPlacedTiles();
+    const PlacedTiles & placedTiles = tp->getData().getPlacedTiles();
 
     // summary
     QTreeWidgetItem * pitem = new QTreeWidgetItem;
     pitem->setText(0,name);
     pitem->setText(1,addr(tp.get()));
-    QString astring = tp->getName() + " - Tiles: " + QString::number(qlpf.size());
+    QString astring = tp->getName() + " - Tiles: " + QString::number(placedTiles.size());
     astring += " T1" + Utils::str(tp->getData().getTrans1()) + " T2" + Utils::str(tp->getData().getTrans2());
     pitem->setText(2,astring);
     parent->addChild(pitem);
 
-    for (auto pfp : qlpf)
+    for (auto placedTile : placedTiles)
     {
-        QTransform tr  = pfp->getTransform();
-        TilePtr tile  = pfp->getTile();
+        QTransform tr = placedTile->getTransform();
+        TilePtr tile  = placedTile->getTile();
 
         QTreeWidgetItem * item = new QTreeWidgetItem;
         item->setText(0,"Placed Tile");
-        item->setText(1,addr(pfp.get()));
+        item->setText(1,addr(placedTile.get()));
         item->setText(2,Transform::toInfoString(tr));
         pitem->addChild(item);
 

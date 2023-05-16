@@ -93,12 +93,11 @@ void ColorSet::removeColor(int idx)
     pos = colorset.begin();
 }
 
-QString ColorSet::colorsString()
+QString ColorSet::colorsString() const
 {
-    QString str;
-    for (auto it = colorset.begin(); it != colorset.end(); it++)
+    QString str("Colors: ");
+    for (auto & tpcolor : colorset)
     {
-        TPColor tpcolor = *it;
         str += tpcolor.color.name(QColor::HexArgb);
         str += " ";
     }

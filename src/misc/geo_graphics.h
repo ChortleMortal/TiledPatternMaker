@@ -1,4 +1,8 @@
-////////////////////////////////////////////////////////////////////////////
+#pragma once
+#ifndef GEOGRAPHICS_H
+#define GEOGRAPHICS_H
+
+///////////////////////////////////////////////////////////////////////////
 //
 // GeoGraphics.java
 //
@@ -14,9 +18,6 @@
 // GeoGraphics maintains a stack of coordinate transforms, meant to
 // behave like OpenGL's matrix stack.  Makes it easy to execute a
 // bunch of primitives in some pushed graphics state.
-
-#ifndef GEOGRAPHICS_H
-#define GEOGRAPHICS_H
 
 #include <QStack>
 #include <QTransform>

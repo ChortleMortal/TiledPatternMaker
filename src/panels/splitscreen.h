@@ -1,3 +1,4 @@
+#pragma once
 #ifndef SPLITSCREEN_H
 #define SPLITSCREEN_H
 

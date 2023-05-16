@@ -1,3 +1,4 @@
+#pragma once
 #ifndef DLG_LISTSELECT_H
 #define DLG_LISTSELECT_H
 

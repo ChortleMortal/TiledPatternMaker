@@ -32,7 +32,7 @@ StyleColorFillGroup::StyleColorFillGroup(FilledPtr style, QVBoxLayout *vbox) : f
     connect(cpyBtn, &QPushButton::clicked, this, &StyleColorFillGroup::copySet);
     connect(pstBtn, &QPushButton::clicked, this, &StyleColorFillGroup::pasteSet);
 
-    table = new AQTableWidget();
+    table = new QTableWidget();
     table->verticalHeader()->setVisible(false);
     table->setColumnCount(8);
     table->setColumnWidth(COL_INDEX,35);
@@ -44,14 +44,11 @@ StyleColorFillGroup::StyleColorFillGroup(FilledPtr style, QVBoxLayout *vbox) : f
     table->setColumnWidth(COL_BTN,70);
     table->setSelectionMode(QAbstractItemView::SingleSelection);
     table->setSelectionBehavior(QAbstractItemView::SelectRows);
+    table->setMinimumHeight(501);
 
     QStringList qslH;
     qslH << "" << "Count" << "Sides" << "Area" << "Hide" << "Sel" << "Edit" << "Colors";
     table->setHorizontalHeaderLabels(qslH);
-    table->setMinimumHeight(501);
-    table->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    table->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-
     connect(table,  &QTableWidget::cellClicked,       this, &StyleColorFillGroup::slot_click);
     connect(table,  &QTableWidget::cellDoubleClicked, this, &StyleColorFillGroup::slot_double_click);
 
@@ -82,16 +79,15 @@ void StyleColorFillGroup::display()
         item = new QTableWidgetItem(QString::number(face->area));
         table->setItem(row,COL_AREA,item);
 
-        QCheckBox * cb = new QCheckBox("Hide");
-        cb->setStyleSheet("padding-left:11px;");
+        QCheckBox * cb = new AQCheckBox("Hide");
         table->setCellWidget(row,COL_HIDE,cb);
         cb->setChecked(filled->getColorGroup()->isHidden(row));
-        connect(cb, &QCheckBox::toggled, [this,row] { colorSetVisibilityChanged(row); });
+        connect(cb, &QCheckBox::toggled, this, [this,row] { colorSetVisibilityChanged(row); });
 
         QPushButton * btn = new QPushButton("Edit");
         btn->setFixedWidth(40);
         table->setCellWidget(row,COL_BTN,btn);
-        connect(btn, &QPushButton::clicked, [this,row] { edit(row); });
+        connect(btn, &QPushButton::clicked, this, [this,row] { edit(row); });
 
         ColorSet * cset = filled->getColorGroup()->getColorSet(row);
         AQWidget * widget = cset->createWidget();
@@ -107,7 +103,6 @@ void StyleColorFillGroup::display()
     table->setColumnWidth(COL_BTN,90);
     table->resizeColumnToContents(5);
     table->resizeColumnToContents(6);
-    table->adjustTableSize();
 
     if (crow < 0)
     {
@@ -264,3 +259,40 @@ void StyleColorFillGroup::slot_double_click(int row, int col)
 
     modify();
 }
+
+void StyleColorFillGroup::select(QPointF mpt)
+{
+    FaceGroups & faceGroups = filled->getFaceGroups();
+    int row = 0;
+    for (const FaceSetPtr & faceSet : faceGroups)
+    {
+        for (const FacePtr & face : *faceSet)
+        {
+            if (face->getPolygon().containsPoint(mpt,Qt::OddEvenFill))
+            {
+                table->setCurrentCell(row,0);
+                return;
+            }
+        }
+        row++;
+    }
+}
+
+void StyleColorFillGroup::setColor(QColor color)
+{
+    qDebug() << "StyleColorFillGroup::setColor" << color;
+
+    int currentRow = table->currentRow();
+    if (currentRow < 0 || currentRow >= filled->getColorGroup()->size())
+        return;
+
+    // this adds a color to the face set
+    ColorSet * cset = filled->getColorGroup()->getColorSet(currentRow);
+    cset->addColor(color,false);
+    filled->getColorGroup()->hide(currentRow, false);
+
+    emit sig_colorsChanged();
+
+    display();
+}
+

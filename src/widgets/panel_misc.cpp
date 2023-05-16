@@ -3,6 +3,7 @@
 #include <QScrollBar>
 #include <QHeaderView>
 
+#include "settings/configuration.h"
 #include "widgets/panel_misc.h"
 
 AQWidget::AQWidget(QWidget * parent) : QWidget(parent)
@@ -148,6 +149,10 @@ void AQTableWidget::selectRow(int row)
 
 void AQTableWidget::adjustTableSize(int maxWidth, int maxHeight)
 {
+    QEvent ev{QEvent::LayoutRequest};
+    QTableWidget::updateGeometries();
+    QTableWidget::event(&ev);
+
     int w = getTableWidth(maxWidth);
     int h = getTableHeight(maxHeight);
     QSize size(w,h);
@@ -245,4 +250,22 @@ AQPushButton::AQPushButton(const QString &text, QWidget * parent) : QPushButton(
 BQPushButton::BQPushButton(const QString &text, QWidget * parent) : QPushButton(text,parent)
 {
     setStyleSheet("QPushButton:pressed{background-color:LightGreen; color:black;}");
+}
+
+AQCheckBox::AQCheckBox() : QCheckBox()
+{
+    auto config = Configuration::getInstance();
+    if (config->darkTheme)
+        setStyleSheet("QCheckBox{padding-left:21px;} QCheckBox::indicator:unchecked{border: 2px solid #909090;}");
+    else
+        setStyleSheet("padding-left:21px;");
+}
+
+AQCheckBox::AQCheckBox(QString string) : QCheckBox(string)
+{
+    auto config = Configuration::getInstance();
+    if (config->darkTheme)
+        setStyleSheet("QCheckBox{padding-left:21px;} QCheckBox::indicator:unchecked{border: 2px solid #909090;}");
+    else
+        setStyleSheet("padding-left:21px;");
 }

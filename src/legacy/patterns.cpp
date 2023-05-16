@@ -1,15 +1,15 @@
-﻿#include <QDebug>
+#include <QDebug>
 
 #include "legacy/patterns.h"
 #include "legacy/shapefactory.h"
-#include "motifs/explicit_motif.h"
-#include "motifs/inference_engine.h"
+#include "motifs/explicit_map_motif.h"
+#include "motifs/irregular_motif.h"
 #include "motifs/star.h"
 #include "geometry/map.h"
 #include "misc/border.h"
 #include "misc/utilities.h"
 #include "mosaic/design_element.h"
-#include "mosaic/prototype.h"
+#include "makers/prototype_maker/prototype.h"
 #include "settings/configuration.h"
 #include "style/thick.h"
 #include "style/thick.h"
@@ -1573,14 +1573,14 @@ void PatternKumiko2::build()
     // make an explicit figure and position it
     QString tileName  = "Kumiko2";
     TilingManager tm;
-    TilingPtr t = tm.loadTiling(tileName,SM_LOAD_FROM_MOSAIC);
+    TilingPtr t = tm.loadTiling(tileName,TILM_LOAD_FROM_MOSAIC);
     if (!t)
     {
         t = make_shared<Tiling>(tileName, trans1, trans2);
-        FillData & fdata = t->getDataAccess().getFillDataAccess();
+        FillData & fdata = t->getDataAccess(false).getFillDataAccess();
         fdata = fd;
         TilePtr fp = make_shared<Tile>(4,0.0);
-        PlacedTilePtr pfp = make_shared<PlacedTile>(t.get(),fp,QTransform());
+        PlacedTilePtr pfp = make_shared<PlacedTile>(fp,QTransform());
         t->add(pfp);
         t->setDescription("Kumiko2 translation vectors");
         t->setAuthor("David A. Casper");
@@ -1588,18 +1588,24 @@ void PatternKumiko2::build()
         tm.saveTiling(tileName,t);
     }
 
-    PrototypePtr proto = make_shared<Prototype>(t);
 
-    MotifPtr fp = make_shared<ExplicitMotif>(map,MOTIF_TYPE_EXPLICIT,10);
-    const QVector<PlacedTilePtr> qlfp = t->getData().getPlacedTiles();
+    const PlacedTiles placedTiles = t->getData().getPlacedTiles();
+    auto tile = placedTiles[0]->getTile();
 
-    DesignElementPtr dep = make_shared<DesignElement>(qlfp[0]->getTile(),fp);
+    auto motif = make_shared<ExplicitMapMotif>(map);
+    motif->setN(10); // default
+    motif->setup(tile);
+    motif->buildMotifMaps();
+
+    DesignElementPtr dep = make_shared<DesignElement>(placedTiles[0]->getTile(),motif);
+
+    ProtoPtr proto = make_shared<Prototype>(t);
     proto->addElement(dep);
     proto->createProtoMap();
 
     ThickPtr thick = make_shared<Thick>(proto);
     thick->setColor(QColor(0xa2,0x79,0x67));
-    thick->setDrawOutline(OUTLINE_DEFAULT);
+    thick->setDrawOutline(OUTLINE_DEFAULT);   // black
     thick->createStyleRepresentation();
 
     layer2->addSubLayer(thick);

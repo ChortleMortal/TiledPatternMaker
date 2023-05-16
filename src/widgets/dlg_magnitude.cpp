@@ -5,7 +5,7 @@
 #include "geometry/edge.h"
 #include "makers/tiling_maker/tile_selection.h"
 
-DlgMagnitude::DlgMagnitude(TilingSelectorPtr sel, QWidget * parent) :  QDialog(parent)
+DlgMagnitude::DlgMagnitude(TileSelectorPtr sel, QWidget * parent) :  QDialog(parent)
 {
     this->sel = sel;
     edge = sel->getModelEdge();
@@ -13,7 +13,6 @@ DlgMagnitude::DlgMagnitude(TilingSelectorPtr sel, QWidget * parent) :  QDialog(p
     qreal mag = edge->getArcMagnitude();
 
     magWidget = new DoubleSliderSet("Magnitude",mag,0.0,5.0,1000);
-    magWidget->setPrecision(4);
 
     QPushButton * doneBtn  = new QPushButton("Quit");
 

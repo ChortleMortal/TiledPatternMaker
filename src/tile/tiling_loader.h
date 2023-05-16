@@ -1,3 +1,4 @@
+#pragma once
 #ifndef TILING_LOADER_H
 #define TILING_LOADER_H
 

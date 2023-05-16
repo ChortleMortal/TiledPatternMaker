@@ -44,8 +44,8 @@ page_save::page_save(ControlPanel * cpanel)  : panel_page(cpanel, "Save")
 
     vbox->addWidget(gbox);
 
-    connect(theApp,     &TiledPatternMaker::sig_mosaicLoaded,   this,   &page_save::setup);
-    connect(theApp,     &TiledPatternMaker::sig_tilingLoaded,   this,   &page_save::setup);
+    connect(mosaicMaker,&MosaicMaker::sig_mosaicLoaded,         this,   &page_save::setup);
+    connect(tilingMaker.get(),&TilingMaker::sig_tilingLoaded,   this,   &page_save::setup);
     connect(pbSaveMenu, &QPushButton::clicked,                  this,   &page_save::slot_saveMenu);
     connect(view,       &View::sig_saveMenu,                    this,   &page_save::slot_saveMenu);
     connect(pbSaveImage,&QPushButton::clicked,                  this,   &page_save::slot_saveImage);
@@ -65,7 +65,8 @@ void page_save::createMosaicSave()
     designNotes->setFixedSize(601,101);
     QLabel * label  = new QLabel("Name");
 
-    chkSaveTest = new QCheckBox("Test");
+    QCheckBox * chkSaveTest = new QCheckBox("Test");
+    chkSaveTest->setChecked(config->saveMosaicTest);
 
     QHBoxLayout * hbox2 = new QHBoxLayout;
     hbox2->addWidget(label);
@@ -85,7 +86,8 @@ void page_save::createMosaicSave()
     vbox->addWidget(saveBox);
 
     connect(saveMosaic, &QPushButton::clicked,      this, &page_save::slot_saveMosaic);
-    connect(this,       &page_save::sig_saveMosaic, theApp,  &TiledPatternMaker::slot_saveMosaic);
+    connect(chkSaveTest,&QCheckBox::clicked,        this, [this](bool checked) {config->saveMosaicTest = checked; });
+    connect(this,       &page_save::sig_saveMosaic, mosaicMaker,  &MosaicMaker::slot_saveMosaic);
 }
 
 void page_save::createTilingSave()
@@ -108,11 +110,15 @@ void page_save::createTilingSave()
     tile_name             = new QLineEdit();
     tile_author           = new QLineEdit();
 
+    QCheckBox * chkSaveTest = new QCheckBox("Test");
+    chkSaveTest->setChecked(config->saveTilingTest);
+
     QHBoxLayout * hbox2 = new QHBoxLayout;
     hbox2->addWidget(label);
     hbox2->addWidget(tile_name);
     hbox2->addWidget(label2);
     hbox2->addWidget(tile_author);
+    hbox2->addWidget(chkSaveTest);
     hbox2->addWidget(pbSave);
 
     tile_desc = new QTextEdit();
@@ -131,8 +137,9 @@ void page_save::createTilingSave()
     saveBox->setLayout(vlayout);
     vbox->addWidget(saveBox);
 
-    connect(pbSave, &QPushButton::clicked,      this, &page_save::slot_saveTiling);
-    connect(this,   &page_save::sig_saveTiling, theApp,  &TiledPatternMaker::slot_saveTiling);
+    connect(pbSave,     &QPushButton::clicked,      this,   &page_save::slot_saveTiling);
+    connect(chkSaveTest,&QCheckBox::clicked,        this,   [this](bool checked) {config->saveTilingTest = checked; });
+    connect(this,       &page_save::sig_saveTiling, tilingMaker.get(), &TilingMaker::slot_saveTiling);
 }
 
 void page_save::onEnter()
@@ -246,7 +253,7 @@ void page_save::slot_saveMosaic()
     }
     Q_ASSERT(!name.contains(".xml"));
 
-    emit sig_saveMosaic(name,chkSaveTest->isChecked());
+    emit sig_saveMosaic(name);
 }
 
 
@@ -268,7 +275,7 @@ void page_save::slot_saveTiling()
 
     if (!tiling || tiling->getState() == Tiling::EMPTY)
     {
-        QMessageBox box(this);
+        QMessageBox box(panel);
         box.setIcon(QMessageBox::Warning);
         box.setWindowTitle("Save Tiling");
         box.setText("There is no tiling to save. Please add some tiles");
@@ -278,7 +285,7 @@ void page_save::slot_saveTiling()
 
     if (tiling->getData().countPlacedTiles() == 0)
     {
-        QMessageBox box(this);
+        QMessageBox box(panel);
         box.setIcon(QMessageBox::Warning);
         box.setWindowTitle("Save Tiling");
         box.setText("There are no placed tiles.  Please add some tiles.");
@@ -289,7 +296,7 @@ void page_save::slot_saveTiling()
     int count = tiling->getUniqueTiles().count();
     if (count >= MAX_UNIQUE_TILE_INDEX)
     {
-        QMessageBox box(this);
+        QMessageBox box(panel);
         box.setIcon(QMessageBox::Critical);
         box.setWindowTitle("Save Tiling");
         box.setText("There could be something wrong with this tiling");
@@ -305,11 +312,10 @@ void page_save::slot_saveTiling()
 
     if (name.isEmpty() || name == Tiling::defaultName)
     {
-        QMessageBox box(this);
+        QMessageBox box(panel);
         box.setIcon(QMessageBox::Warning);
         box.setWindowTitle("Save Tiling");
-        box.setText("There is no tiling name");
-        box.setInformativeText("There is no tiling name. A tiling name is required.");
+        box.setText("There is no tiling name. A tiling name is required.");
         box.exec();
         return;
     }
@@ -421,7 +427,7 @@ void page_save::savePixmap(QPixmap & pixmap, QString name)
         path = fileInfo.path();
         s.setValue("picPath2",path);
 
-        QMessageBox box;
+        QMessageBox box(panel);
         box.setIcon(QMessageBox::Information);
         box.setText(QString("File %1 saved: OK").arg(file));
         box.exec();
@@ -429,7 +435,7 @@ void page_save::savePixmap(QPixmap & pixmap, QString name)
     else
     {
         qDebug() << file << "save ERROR";
-        QMessageBox box;
+        QMessageBox box(panel);
         box.setIcon(QMessageBox::Warning);
         box.setText(QString("ERROR:  File %1 not saved").arg(file));
         box.exec();
@@ -440,7 +446,7 @@ void page_save::slot_saveSvg()
 {
     if (config->getViewerType() != VIEW_MOSAIC)
     {
-        QMessageBox box;
+        QMessageBox box(panel);
         box.setIcon(QMessageBox::Warning);
         box.setText("Please select Mosaic View");
         box.exec();
@@ -450,7 +456,7 @@ void page_save::slot_saveSvg()
     MosaicPtr mosaic = mosaicMaker->getMosaic();
     if (!mosaic)
     {
-        QMessageBox box;
+        QMessageBox box(panel);
         box.setIcon(QMessageBox::Warning);
         box.setText("There is no Mosaic to save");
         box.exec();
@@ -460,7 +466,7 @@ void page_save::slot_saveSvg()
     StylePtr sp = mosaic->getFirstStyle();
     if (!sp)
     {
-        QMessageBox box;
+        QMessageBox box(panel);
         box.setIcon(QMessageBox::Warning);
         box.setText("Styled Image not found");
         box.exec();
@@ -489,7 +495,7 @@ void page_save::slot_saveSvg()
 
     QCoreApplication::processEvents();
 
-    QMessageBox box;
+    QMessageBox box(panel);
     box.setIcon(QMessageBox::Information);
     box.setText(QString("File %1 saved: OK").arg(path));
     box.exec();

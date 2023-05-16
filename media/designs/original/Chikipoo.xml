@@ -1,742 +1,957 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <vector id="1">
-	<design>
-		<scale>1</scale>
-		<size>
-			<width>1500</width>
-			<height>1100</height>
-		</size>
-		<background>
-			<color>#ffffffff</color>
-		</background>
-	</design>
-	<style.Thick id="2" serialization="custom">
-		<toolkit.GeoLayer>
-			<left__delta>0</left__delta>
-			<theta__delta>0</theta__delta>
-			<top__delta>0</top__delta>
-			<width__delta>0</width__delta>
-		</toolkit.GeoLayer>
-		<style.Style>
-			<boundary id="3">
-				<pts id="4">
-					<Point id="5">
-						<x>-9.9</x>
-						<y>9.899999999999999</y>
-					</Point>
-					<Point id="6">
-						<x>9.900000000000004</x>
-						<y>9.899999999999999</y>
-					</Point>
-					<Point id="7">
-						<x>9.900000000000004</x>
-						<y>-10.64642857142857</y>
-					</Point>
-					<Point id="8">
-						<x>-9.9</x>
-						<y>-10.64642857142857</y>
-					</Point>
-				</pts>
-			</boundary>
-			<prototype id="9" serialization="custom">
-				<app.Prototype>
-					<string>Chikipoo</string>
-					<entry>
-						<tile.Feature id="10">
-							<regular>false</regular>
-							<points id="11">
-								<Point id="12">
-									<x>-5.15677473964681</x>
-									<y>-4.193526512433635</y>
-								</Point>
-								<Point id="13">
-									<x>-5.774808728396704</x>
-									<y>-4.394337928319862</y>
-								</Point>
-								<Point id="14">
-									<x>-6.15677473964681</x>
-									<y>-4.920069040438995</y>
-								</Point>
-								<Point id="15">
-									<x>-5.538740750896914</x>
-									<y>-5.120880456325222</y>
-								</Point>
-								<Point id="16">
-									<x>-4.920706762147018</x>
-									<y>-4.920069040438995</y>
-								</Point>
-							</points>
-						</tile.Feature>
-						<app.ExplicitFigure id="17" type="FIG_TYPE_EXPLICIT">
-							<map id="18">
-								<vertices id="19">
-									<Vertex id="20">
-										<pos id="21">
-											<x>-5.965791734021758</x>
-											<y>-4.657203484379428</y>
-										</pos>
-										<edges2>
-											<edge id="22">
-												<map reference="18" />
-												<v1 reference="20" />
-												<v2 id="23">
-													<pos id="24">
-														<x>-5.847757745271864</x>
-														<y>-5.02047474838211</y>
-													</pos>
-													<edges2>
-														<edge id="25">
-															<map reference="18" />
-															<v1 reference="23" />
-															<v2 id="26">
-																<pos id="27">
-																	<x>-5.538740750896917</x>
-																	<y>-4.795960760092315</y>
-																</pos>
-																<edges2>
-																	<edge id="28">
-																		<map reference="18" />
-																		<v1 id="29">
-																			<pos id="30">
-																				<x>-5.229723756521969</x>
-																				<y>-5.020474748382108</y>
-																			</pos>
-																			<edges2>
-																				<edge id="31">
-																					<map reference="18" />
-																					<v1 reference="29" />
-																					<v2 id="32">
-																						<pos id="33">
-																							<x>-5.083825722771653</x>
-																							<y>-4.571446771802521</y>
-																						</pos>
-																						<edges2>
-																							<edge id="34">
-																								<map reference="18" />
-																								<v1 id="35">
-																									<pos id="36">
-																										<x>-5.465791734021759</x>
-																										<y>-4.293932220376747</y>
-																									</pos>
-																									<edges2>
-																										<edge reference="34" />
-																										<edge id="37">
-																											<map reference="18" />
-																											<v1 reference="35" />
-																											<v2 id="38">
-																												<pos id="39">
-																													<x>-5.583825722771653</x>
-																													<y>-4.657203484379426</y>
-																												</pos>
-																												<edges2>
-																													<edge reference="37" />
-																													<edge id="40">
-																														<map reference="18" />
-																														<v1 reference="20" />
-																														<v2 reference="38" />
-																													</edge>
-																												</edges2>
-																											</v2>
-																										</edge>
-																									</edges2>
-																								</v1>
-																								<v2 reference="32" />
-																							</edge>
-																							<edge reference="31" />
-																						</edges2>
-																					</v2>
-																				</edge>
-																				<edge reference="28" />
-																			</edges2>
-																		</v1>
-																		<v2 reference="26" />
-																	</edge>
-																	<edge reference="25" />
-																</edges2>
-															</v2>
-														</edge>
-														<edge reference="22" />
-													</edges2>
-												</v2>
-											</edge>
-											<edge reference="40" />
-										</edges2>
-									</Vertex>
-									<Vertex reference="23" />
-									<Vertex reference="38" />
-									<Vertex reference="26" />
-									<Vertex reference="35" />
-									<Vertex reference="29" />
-									<Vertex reference="32" />
-								</vertices>
-								<edges id="41">
-									<Edge reference="40" />
-									<Edge reference="22" />
-									<Edge reference="25" />
-									<Edge reference="37" />
-									<Edge reference="28" />
-									<Edge reference="34" />
-									<Edge reference="31" />
-								</edges>
-							</map>
-						</app.ExplicitFigure>
-					</entry>
-					<entry>
-						<tile.Feature id="42">
-							<regular>true</regular>
-							<points id="43">
-								<Point id="44">
-									<x>0.9999999999999999</x>
-									<y>0.3249196962329063</y>
-								</Point>
-								<Point id="45">
-									<x>0.6180339887498948</x>
-									<y>0.85065080835204</y>
-								</Point>
-								<Point id="46">
-									<x>6.438349236688752e-17</x>
-									<y>1.051462224238267</y>
-								</Point>
-								<Point id="47">
-									<x>-0.6180339887498947</x>
-									<y>0.85065080835204</y>
-								</Point>
-								<Point id="48">
-									<x>-0.9999999999999999</x>
-									<y>0.3249196962329064</y>
-								</Point>
-								<Point id="49">
-									<x>-1</x>
-									<y>-0.3249196962329062</y>
-								</Point>
-								<Point id="50">
-									<x>-0.6180339887498949</x>
-									<y>-0.8506508083520398</y>
-								</Point>
-								<Point id="51">
-									<x>-1.931504771006626e-16</x>
-									<y>-1.051462224238267</y>
-								</Point>
-								<Point id="52">
-									<x>0.6180339887498946</x>
-									<y>-0.8506508083520401</y>
-								</Point>
-								<Point id="53">
-									<x>0.9999999999999999</x>
-									<y>-0.3249196962329066</y>
-								</Point>
-							</points>
-						</tile.Feature>
-						<app.Star id="54">
-							<n>10</n>
-							<d>3</d>
-							<s>2</s>
-							<r>0</r>
-						</app.Star>
-					</entry>
-					<entry>
-						<tile.Feature id="55">
-							<regular>false</regular>
-							<points id="56">
-								<Point id="57">
-									<x>-5.538740750896915</x>
-									<y>-3.667795400314499</y>
-								</Point>
-								<Point id="58">
-									<x>-5.15677473964681</x>
-									<y>-4.193526512433635</y>
-								</Point>
-								<Point id="59">
-									<x>-4.920706762147018</x>
-									<y>-4.920069040438995</y>
-								</Point>
-								<Point id="60">
-									<x>-4.684638784647229</x>
-									<y>-4.193526512433632</y>
-								</Point>
-								<Point id="61">
-									<x>-4.302672773397126</x>
-									<y>-3.667795400314499</y>
-								</Point>
-								<Point id="62">
-									<x>-4.920706762147021</x>
-									<y>-3.466983984428272</y>
-								</Point>
-							</points>
-						</tile.Feature>
-						<app.ExplicitFigure id="63" type="FIG_TYPE_EXPLICIT">
-							<map id="64">
-								<vertices id="65" />
-								<edges id="66" />
-							</map>
-						</app.ExplicitFigure>
-					</entry>
-					<entry>
-						<tile.Feature id="67">
-							<regular>false</regular>
-							<points id="68">
-								<Point id="69">
-									<x>2.618033988749895</x>
-									<y>0.8506508083520394</y>
-								</Point>
-								<Point id="70">
-									<x>2.236067977499789</x>
-									<y>0.3249196962329056</y>
-								</Point>
-								<Point id="71">
-									<x>2.236067977499789</x>
-									<y>-0.3249196962329066</y>
-								</Point>
-								<Point id="72">
-									<x>2.618033988749894</x>
-									<y>-0.8506508083520405</y>
-								</Point>
-								<Point id="73">
-									<x>3</x>
-									<y>-0.3249196962329066</y>
-								</Point>
-								<Point id="74">
-									<x>3</x>
-									<y>0.3249196962329055</y>
-								</Point>
-							</points>
-						</tile.Feature>
-						<app.ExplicitFigure id="75" type="FIG_TYPE_EXPLICIT">
-							<map id="76">
-								<vertices id="77">
-									<Vertex id="78">
-										<pos id="79">
-											<x>2.236067977499789</x>
-											<y>0</y>
-										</pos>
-										<edges2>
-											<edge id="80">
-												<map reference="76" />
-												<v1 reference="78" />
-												<v2 id="81">
-													<pos id="82">
-														<x>2.545084971874739</x>
-														<y>-0.224513988289794</y>
-													</pos>
-													<edges2>
-														<edge reference="80" />
-														<edge id="83">
-															<map reference="76" />
-															<v1 id="84">
-																<pos id="85">
-																	<x>2.427050983124842</x>
-																	<y>-0.5877852522924725</y>
-																</pos>
-																<edges2>
-																	<edge id="86">
-																		<map reference="76" />
-																		<v1 reference="84" />
-																		<v2 id="87">
-																			<pos id="88">
-																				<x>2.618033988749894</x>
-																				<y>-0.5877852522924725</y>
-																			</pos>
-																			<edges2>
-																				<edge id="89">
-																					<map reference="76" />
-																					<v1 id="90">
-																						<pos id="91">
-																							<x>2.809016994374947</x>
-																							<y>-0.5877852522924725</y>
-																						</pos>
-																						<edges2>
-																							<edge id="92">
-																								<map reference="76" />
-																								<v1 reference="90" />
-																								<v2 id="93">
-																									<pos id="94">
-																										<x>2.690983005625052</x>
-																										<y>-0.224513988289794</y>
-																									</pos>
-																									<edges2>
-																										<edge reference="92" />
-																										<edge id="95">
-																											<map reference="76" />
-																											<v1 id="96">
-																												<pos id="97">
-																													<x>2.999999999999999</x>
-																													<y>8.881784197001252e-16</y>
-																												</pos>
-																												<edges2>
-																													<edge id="98">
-																														<map reference="76" />
-																														<v1 reference="96" />
-																														<v2 id="99">
-																															<pos id="100">
-																																<x>2.690983005625053</x>
-																																<y>0.2245139882897931</y>
-																															</pos>
-																															<edges2>
-																																<edge reference="98" />
-																																<edge id="101">
-																																	<map reference="76" />
-																																	<v1 id="102">
-																																		<pos id="103">
-																																			<x>2.809016994374948</x>
-																																			<y>0.5877852522924742</y>
-																																		</pos>
-																																		<edges2>
-																																			<edge id="104">
-																																				<map reference="76" />
-																																				<v1 reference="102" />
-																																				<v2 id="105">
-																																					<pos id="106">
-																																						<x>2.618033988749895</x>
-																																						<y>0.5877852522924725</y>
-																																					</pos>
-																																					<edges2>
-																																						<edge reference="104" />
-																																						<edge id="107">
-																																							<map reference="76" />
-																																							<v1 id="108">
-																																								<pos id="109">
-																																									<x>2.427050983124842</x>
-																																									<y>0.5877852522924742</y>
-																																								</pos>
-																																								<edges2>
-																																									<edge id="110">
-																																										<map reference="76" />
-																																										<v1 reference="108" />
-																																										<v2 id="111">
-																																											<pos id="112">
-																																												<x>2.545084971874736</x>
-																																												<y>0.2245139882897922</y>
-																																											</pos>
-																																											<edges2>
-																																												<edge reference="110" />
-																																												<edge id="113">
-																																													<map reference="76" />
-																																													<v1 reference="78" />
-																																													<v2 reference="111" />
-																																												</edge>
-																																											</edges2>
-																																										</v2>
-																																									</edge>
-																																									<edge reference="107" />
-																																								</edges2>
-																																							</v1>
-																																							<v2 reference="105" />
-																																						</edge>
-																																					</edges2>
-																																				</v2>
-																																			</edge>
-																																			<edge reference="101" />
-																																		</edges2>
-																																	</v1>
-																																	<v2 reference="99" />
-																																</edge>
-																															</edges2>
-																														</v2>
-																													</edge>
-																													<edge reference="95" />
-																												</edges2>
-																											</v1>
-																											<v2 reference="93" />
-																										</edge>
-																									</edges2>
-																								</v2>
-																							</edge>
-																							<edge reference="89" />
-																						</edges2>
-																					</v1>
-																					<v2 reference="87" />
-																				</edge>
-																				<edge reference="86" />
-																			</edges2>
-																		</v2>
-																	</edge>
-																	<edge reference="83" />
-																</edges2>
-															</v1>
-															<v2 reference="81" />
-														</edge>
-													</edges2>
-												</v2>
-											</edge>
-											<edge reference="113" />
-										</edges2>
-									</Vertex>
-									<Vertex reference="84" />
-									<Vertex reference="108" />
-									<Vertex reference="81" />
-									<Vertex reference="111" />
-									<Vertex reference="87" />
-									<Vertex reference="105" />
-									<Vertex reference="93" />
-									<Vertex reference="99" />
-									<Vertex reference="90" />
-									<Vertex reference="102" />
-									<Vertex reference="96" />
-								</vertices>
-								<edges id="114">
-									<Edge reference="113" />
-									<Edge reference="80" />
-									<Edge reference="107" />
-									<Edge reference="110" />
-									<Edge reference="83" />
-									<Edge reference="86" />
-									<Edge reference="104" />
-									<Edge reference="89" />
-									<Edge reference="101" />
-									<Edge reference="95" />
-									<Edge reference="98" />
-									<Edge reference="92" />
-								</edges>
-							</map>
-						</app.ExplicitFigure>
-					</entry>
-					<entry>
-						<tile.Feature id="115">
-							<regular>false</regular>
-							<points id="116">
-								<Point id="117">
-									<x>0.9999999999999998</x>
-									<y>0.3249196962329062</y>
-								</Point>
-								<Point id="118">
-									<x>0.9999999999999998</x>
-									<y>-0.3249196962329064</y>
-								</Point>
-								<Point id="119">
-									<x>1.618033988749895</x>
-									<y>-0.1241082803466793</y>
-								</Point>
-								<Point id="120">
-									<x>2.236067977499789</x>
-									<y>-0.3249196962329066</y>
-								</Point>
-								<Point id="121">
-									<x>2.236067977499789</x>
-									<y>0.3249196962329056</y>
-								</Point>
-								<Point id="122">
-									<x>1.618033988749895</x>
-									<y>0.1241082803466786</y>
-								</Point>
-							</points>
-						</tile.Feature>
-						<app.ExplicitFigure id="123" type="FIG_TYPE_EXPLICIT">
-							<map id="124">
-								<vertices id="125">
-									<Vertex id="126">
-										<pos id="127">
-											<x>0.9999999999999991</x>
-											<y>-2.775557561562891e-16</y>
-										</pos>
-										<edges2>
-											<edge id="128">
-												<map reference="124" />
-												<v1 reference="126" />
-												<v2 id="129">
-													<pos id="130">
-														<x>1.154508497187472</x>
-														<y>-0.1122569941448966</y>
-													</pos>
-													<edges2>
-														<edge id="131">
-															<map reference="124" />
-															<v1 id="132">
-																<pos id="133">
-																	<x>1.309016994374947</x>
-																	<y>-0.2245139882897927</y>
-																</pos>
-																<edges2>
-																	<edge id="134">
-																		<map reference="124" />
-																		<v1 reference="132" />
-																		<v2 id="135">
-																			<pos id="136">
-																				<x>1.381966011250105</x>
-																				<y>-1.609823385706477e-15</y>
-																			</pos>
-																			<edges2>
-																				<edge id="137">
-																					<map reference="124" />
-																					<v1 id="138">
-																						<pos id="139">
-																							<x>1.309016994374947</x>
-																							<y>0.2245139882897921</y>
-																						</pos>
-																						<edges2>
-																							<edge reference="137" />
-																							<edge id="140">
-																								<map reference="124" />
-																								<v1 reference="138" />
-																								<v2 id="141">
-																									<pos id="142">
-																										<x>1.154508497187472</x>
-																										<y>0.112256994144896</y>
-																									</pos>
-																									<edges2>
-																										<edge reference="140" />
-																										<edge id="143">
-																											<map reference="124" />
-																											<v1 reference="126" />
-																											<v2 reference="141" />
-																										</edge>
-																									</edges2>
-																								</v2>
-																							</edge>
-																						</edges2>
-																					</v1>
-																					<v2 reference="135" />
-																				</edge>
-																				<edge reference="134" />
-																			</edges2>
-																		</v2>
-																	</edge>
-																	<edge reference="131" />
-																</edges2>
-															</v1>
-															<v2 reference="129" />
-														</edge>
-														<edge reference="128" />
-													</edges2>
-												</v2>
-											</edge>
-											<edge reference="143" />
-										</edges2>
-									</Vertex>
-									<Vertex reference="129" />
-									<Vertex reference="141" />
-									<Vertex reference="132" />
-									<Vertex reference="138" />
-									<Vertex reference="135" />
-									<Vertex id="144">
-										<pos id="145">
-											<x>1.854101966249683</x>
-											<y>-5.551115123125783e-17</y>
-										</pos>
-										<edges2>
-											<edge id="146">
-												<map reference="124" />
-												<v1 id="147">
-													<pos id="148">
-														<x>1.927050983124841</x>
-														<y>-0.2245139882897929</y>
-													</pos>
-													<edges2>
-														<edge id="149">
-															<map reference="124" />
-															<v1 reference="147" />
-															<v2 id="150">
-																<pos id="151">
-																	<x>2.081559480312315</x>
-																	<y>-0.1122569941448968</y>
-																</pos>
-																<edges2>
-																	<edge id="152">
-																		<map reference="124" />
-																		<v1 id="153">
-																			<pos id="154">
-																				<x>2.236067977499789</x>
-																				<y>-4.996003610813204e-16</y>
-																			</pos>
-																			<edges2>
-																				<edge id="155">
-																					<map reference="124" />
-																					<v1 reference="153" />
-																					<v2 id="156">
-																						<pos id="157">
-																							<x>2.081559480312315</x>
-																							<y>0.1122569941448956</y>
-																						</pos>
-																						<edges2>
-																							<edge reference="155" />
-																							<edge id="158">
-																								<map reference="124" />
-																								<v1 id="159">
-																									<pos id="160">
-																										<x>1.927050983124841</x>
-																										<y>0.2245139882897921</y>
-																									</pos>
-																									<edges2>
-																										<edge reference="158" />
-																										<edge id="161">
-																											<map reference="124" />
-																											<v1 reference="159" />
-																											<v2 reference="144" />
-																										</edge>
-																									</edges2>
-																								</v1>
-																								<v2 reference="156" />
-																							</edge>
-																						</edges2>
-																					</v2>
-																				</edge>
-																				<edge reference="152" />
-																			</edges2>
-																		</v1>
-																		<v2 reference="150" />
-																	</edge>
-																	<edge reference="149" />
-																</edges2>
-															</v2>
-														</edge>
-														<edge reference="146" />
-													</edges2>
-												</v1>
-												<v2 reference="144" />
-											</edge>
-											<edge reference="161" />
-										</edges2>
-									</Vertex>
-									<Vertex reference="147" />
-									<Vertex reference="159" />
-									<Vertex reference="150" />
-									<Vertex reference="156" />
-									<Vertex reference="153" />
-								</vertices>
-								<edges id="162">
-									<Edge reference="128" />
-									<Edge reference="143" />
-									<Edge reference="131" />
-									<Edge reference="140" />
-									<Edge reference="134" />
-									<Edge reference="137" />
-									<Edge reference="146" />
-									<Edge reference="161" />
-									<Edge reference="149" />
-									<Edge reference="158" />
-									<Edge reference="152" />
-									<Edge reference="155" />
-								</edges>
-							</map>
-						</app.ExplicitFigure>
-					</entry>
-				</app.Prototype>
-			</prototype>
-		</style.Style>
-		<style.Colored>
-			<color>#ffffffff</color>
-		</style.Colored>
-		<style.Thick>
-			<draw__outline>false</draw__outline>
-			<width>0.02152</width>
-		</style.Thick>
-	</style.Thick>
-	<style.Thick id="163" serialization="custom">
-		<toolkit.GeoLayer>
-			<left__delta>0</left__delta>
-			<theta__delta>0</theta__delta>
-			<top__delta>0</top__delta>
-			<width__delta>0</width__delta>
-		</toolkit.GeoLayer>
-		<style.Style>
-			<boundary reference="3" />
-			<prototype reference="9" />
-		</style.Style>
-		<style.Colored>
-			<color>#ff1496d2</color>
-		</style.Colored>
-		<style.Thick>
-			<draw__outline>false</draw__outline>
-			<width>0.07312</width>
-		</style.Thick>
-	</style.Thick>
+  <csk.taprats.style.Thick id="2" serialization="custom">
+    <csk.taprats.toolkit.GeoLayer>
+      <default>
+        <left__delta>0.0</left__delta>
+        <theta__delta>0.0</theta__delta>
+        <top__delta>0.0</top__delta>
+        <width__delta>0.0</width__delta>
+      </default>
+    </csk.taprats.toolkit.GeoLayer>
+    <csk.taprats.style.Style>
+      <default>
+        <boundary id="3">
+          <pts id="4">
+            <Point id="5">
+              <x>-9.9</x>
+              <y>9.899999999999999</y>
+            </Point>
+            <Point id="6">
+              <x>9.900000000000004</x>
+              <y>9.899999999999999</y>
+            </Point>
+            <Point id="7">
+              <x>9.900000000000004</x>
+              <y>-10.646428571428572</y>
+            </Point>
+            <Point id="8">
+              <x>-9.9</x>
+              <y>-10.646428571428572</y>
+            </Point>
+          </pts>
+          <size>4</size>
+          <grow>0</grow>
+        </boundary>
+        <prototype id="9" serialization="custom">
+          <csk.taprats.app.Prototype>
+            <string>Chikipoo</string>
+            <hashtable id="10">
+              <entry>
+                <csk.taprats.tile.Feature id="11">
+                  <regular>false</regular>
+                  <points id="12">
+                    <Point id="13">
+                      <x>-5.15677473964681</x>
+                      <y>-4.1935265124336345</y>
+                    </Point>
+                    <Point id="14">
+                      <x>-5.774808728396704</x>
+                      <y>-4.394337928319862</y>
+                    </Point>
+                    <Point id="15">
+                      <x>-6.15677473964681</x>
+                      <y>-4.920069040438995</y>
+                    </Point>
+                    <Point id="16">
+                      <x>-5.538740750896914</x>
+                      <y>-5.120880456325222</y>
+                    </Point>
+                    <Point id="17">
+                      <x>-4.920706762147018</x>
+                      <y>-4.920069040438995</y>
+                    </Point>
+                  </points>
+                </csk.taprats.tile.Feature>
+                <csk.taprats.app.ExplicitFigure id="18">
+                  <map id="19">
+                    <vertices id="20">
+                      <Vertex id="21">
+                        <pos id="22">
+                          <x>-5.965791734021758</x>
+                          <y>-4.657203484379428</y>
+                        </pos>
+                        <edges id="23">
+                          <edge id="24">
+                            <map reference="19"/>
+                            <v1 reference="21"/>
+                            <v2 id="25">
+                              <pos id="26">
+                                <x>-5.583825722771653</x>
+                                <y>-4.657203484379426</y>
+                              </pos>
+                              <edges id="27">
+                                <edge reference="24"/>
+                                <angle>0.5000000000000011</angle>
+                                <next id="28">
+                                  <edge id="29">
+                                    <map reference="19"/>
+                                    <v1 id="30">
+                                      <pos id="31">
+                                        <x>-5.465791734021759</x>
+                                        <y>-4.293932220376747</y>
+                                      </pos>
+                                      <edges id="32">
+                                        <edge reference="29"/>
+                                        <angle>0.7377641290737884</angle>
+                                        <next id="33">
+                                          <edge id="34">
+                                            <map reference="19"/>
+                                            <v1 reference="30"/>
+                                            <v2 id="35">
+                                              <pos id="36">
+                                                <x>-5.083825722771653</x>
+                                                <y>-4.571446771802521</y>
+                                              </pos>
+                                              <edges id="37">
+                                                <edge reference="34"/>
+                                                <angle>0.3530536869268823</angle>
+                                                <next id="38">
+                                                  <edge id="39">
+                                                    <map reference="19"/>
+                                                    <v1 id="40">
+                                                      <pos id="41">
+                                                        <x>-5.229723756521969</x>
+                                                        <y>-5.020474748382108</y>
+                                                      </pos>
+                                                      <edges id="42">
+                                                        <edge id="43">
+                                                          <map reference="19"/>
+                                                          <v1 reference="40"/>
+                                                          <v2 id="44">
+                                                            <pos id="45">
+                                                              <x>-5.538740750896917</x>
+                                                              <y>-4.795960760092315</y>
+                                                            </pos>
+                                                            <edges id="46">
+                                                              <edge id="47">
+                                                                <map reference="19"/>
+                                                                <v1 id="48">
+                                                                  <pos id="49">
+                                                                    <x>-5.847757745271864</x>
+                                                                    <y>-5.02047474838211</y>
+                                                                  </pos>
+                                                                  <edges id="50">
+                                                                    <edge id="51">
+                                                                      <map reference="19"/>
+                                                                      <v1 reference="21"/>
+                                                                      <v2 reference="48"/>
+                                                                    </edge>
+                                                                    <angle>0.26223587092621137</angle>
+                                                                    <next id="52">
+                                                                      <edge reference="47"/>
+                                                                      <angle>0.14694631307311917</angle>
+                                                                      <next reference="50"/>
+                                                                    </next>
+                                                                  </edges>
+                                                                  <num__edges>2</num__edges>
+                                                                </v1>
+                                                                <v2 reference="44"/>
+                                                              </edge>
+                                                              <angle>0.6469463130731192</angle>
+                                                              <next id="53">
+                                                                <edge reference="43"/>
+                                                                <angle>0.8530536869268815</angle>
+                                                                <next reference="46"/>
+                                                              </next>
+                                                            </edges>
+                                                            <num__edges>2</num__edges>
+                                                          </v2>
+                                                        </edge>
+                                                        <angle>0.35305368692688155</angle>
+                                                        <next id="54">
+                                                          <edge reference="39"/>
+                                                          <angle>0.23776412907378833</angle>
+                                                          <next reference="42"/>
+                                                        </next>
+                                                      </edges>
+                                                      <num__edges>2</num__edges>
+                                                    </v1>
+                                                    <v2 reference="35"/>
+                                                  </edge>
+                                                  <angle>0.7377641290737883</angle>
+                                                  <next reference="37"/>
+                                                </next>
+                                              </edges>
+                                              <num__edges>2</num__edges>
+                                            </v2>
+                                          </edge>
+                                          <angle>0.8530536869268823</angle>
+                                          <next reference="32"/>
+                                        </next>
+                                      </edges>
+                                      <num__edges>2</num__edges>
+                                    </v1>
+                                    <v2 reference="25"/>
+                                  </edge>
+                                  <angle>0.23776412907378847</angle>
+                                  <next reference="27"/>
+                                </next>
+                              </edges>
+                              <num__edges>2</num__edges>
+                            </v2>
+                          </edge>
+                          <angle>1.1626406454245487E-15</angle>
+                          <next id="55">
+                            <edge reference="51"/>
+                            <angle>0.7622358709262114</angle>
+                            <next reference="23"/>
+                          </next>
+                        </edges>
+                        <num__edges>2</num__edges>
+                      </Vertex>
+                      <Vertex reference="48"/>
+                      <Vertex reference="25"/>
+                      <Vertex reference="44"/>
+                      <Vertex reference="30"/>
+                      <Vertex reference="40"/>
+                      <Vertex reference="35"/>
+                    </vertices>
+                    <edges id="56">
+                      <Edge reference="24"/>
+                      <Edge reference="51"/>
+                      <Edge reference="47"/>
+                      <Edge reference="29"/>
+                      <Edge reference="43"/>
+                      <Edge reference="34"/>
+                      <Edge reference="39"/>
+                    </edges>
+                  </map>
+                </csk.taprats.app.ExplicitFigure>
+              </entry>
+              <entry>
+                <csk.taprats.tile.Feature id="57">
+                  <regular>true</regular>
+                  <points id="58">
+                    <Point id="59">
+                      <x>0.9999999999999999</x>
+                      <y>0.3249196962329063</y>
+                    </Point>
+                    <Point id="60">
+                      <x>0.6180339887498948</x>
+                      <y>0.85065080835204</y>
+                    </Point>
+                    <Point id="61">
+                      <x>6.438349236688752E-17</x>
+                      <y>1.0514622242382672</y>
+                    </Point>
+                    <Point id="62">
+                      <x>-0.6180339887498947</x>
+                      <y>0.85065080835204</y>
+                    </Point>
+                    <Point id="63">
+                      <x>-0.9999999999999999</x>
+                      <y>0.3249196962329064</y>
+                    </Point>
+                    <Point id="64">
+                      <x>-1.0</x>
+                      <y>-0.3249196962329062</y>
+                    </Point>
+                    <Point id="65">
+                      <x>-0.6180339887498949</x>
+                      <y>-0.8506508083520398</y>
+                    </Point>
+                    <Point id="66">
+                      <x>-1.9315047710066257E-16</x>
+                      <y>-1.0514622242382672</y>
+                    </Point>
+                    <Point id="67">
+                      <x>0.6180339887498946</x>
+                      <y>-0.8506508083520401</y>
+                    </Point>
+                    <Point id="68">
+                      <x>0.9999999999999999</x>
+                      <y>-0.3249196962329065</y>
+                    </Point>
+                  </points>
+                </csk.taprats.tile.Feature>
+                <csk.taprats.app.Star id="69">
+                  <n>10</n>
+                  <dn>10.0</dn>
+                  <don>0.1</don>
+                  <Tr id="70">
+                    <a>0.8090169943749475</a>
+                    <b>-0.5877852522924731</b>
+                    <c>0.0</c>
+                    <d>0.5877852522924731</d>
+                    <e>0.8090169943749475</e>
+                    <f>0.0</f>
+                  </Tr>
+                  <d>3.0</d>
+                  <s>2</s>
+                </csk.taprats.app.Star>
+              </entry>
+              <entry>
+                <csk.taprats.tile.Feature id="71">
+                  <regular>false</regular>
+                  <points id="72">
+                    <Point id="73">
+                      <x>-5.538740750896915</x>
+                      <y>-3.6677954003144992</y>
+                    </Point>
+                    <Point id="74">
+                      <x>-5.15677473964681</x>
+                      <y>-4.1935265124336345</y>
+                    </Point>
+                    <Point id="75">
+                      <x>-4.920706762147018</x>
+                      <y>-4.920069040438995</y>
+                    </Point>
+                    <Point id="76">
+                      <x>-4.6846387846472295</x>
+                      <y>-4.193526512433632</y>
+                    </Point>
+                    <Point id="77">
+                      <x>-4.302672773397126</x>
+                      <y>-3.6677954003144992</y>
+                    </Point>
+                    <Point id="78">
+                      <x>-4.920706762147021</x>
+                      <y>-3.466983984428272</y>
+                    </Point>
+                  </points>
+                </csk.taprats.tile.Feature>
+                <csk.taprats.app.ExplicitFigure id="79">
+                  <map id="80">
+                    <vertices id="81"/>
+                    <edges id="82"/>
+                  </map>
+                </csk.taprats.app.ExplicitFigure>
+              </entry>
+              <entry>
+                <csk.taprats.tile.Feature id="83">
+                  <regular>false</regular>
+                  <points id="84">
+                    <Point id="85">
+                      <x>2.618033988749895</x>
+                      <y>0.8506508083520394</y>
+                    </Point>
+                    <Point id="86">
+                      <x>2.2360679774997894</x>
+                      <y>0.3249196962329056</y>
+                    </Point>
+                    <Point id="87">
+                      <x>2.2360679774997894</x>
+                      <y>-0.3249196962329066</y>
+                    </Point>
+                    <Point id="88">
+                      <x>2.6180339887498945</x>
+                      <y>-0.8506508083520405</y>
+                    </Point>
+                    <Point id="89">
+                      <x>3.0</x>
+                      <y>-0.3249196962329066</y>
+                    </Point>
+                    <Point id="90">
+                      <x>3.0</x>
+                      <y>0.3249196962329055</y>
+                    </Point>
+                  </points>
+                </csk.taprats.tile.Feature>
+                <csk.taprats.app.ExplicitFigure id="91">
+                  <map id="92">
+                    <vertices id="93">
+                      <Vertex id="94">
+                        <pos id="95">
+                          <x>2.236067977499789</x>
+                          <y>0.0</y>
+                        </pos>
+                        <edges id="96">
+                          <edge id="97">
+                            <map reference="92"/>
+                            <v1 reference="94"/>
+                            <v2 id="98">
+                              <pos id="99">
+                                <x>2.545084971874736</x>
+                                <y>0.2245139882897922</y>
+                              </pos>
+                              <edges id="100">
+                                <edge reference="97"/>
+                                <angle>0.6469463130731182</angle>
+                                <next id="101">
+                                  <edge id="102">
+                                    <map reference="92"/>
+                                    <v1 id="103">
+                                      <pos id="104">
+                                        <x>2.4270509831248424</x>
+                                        <y>0.5877852522924742</y>
+                                      </pos>
+                                      <edges id="105">
+                                        <edge id="106">
+                                          <map reference="92"/>
+                                          <v1 reference="103"/>
+                                          <v2 id="107">
+                                            <pos id="108">
+                                              <x>2.618033988749895</x>
+                                              <y>0.5877852522924725</y>
+                                            </pos>
+                                            <edges id="109">
+                                              <edge reference="106"/>
+                                              <angle>0.49999999999999767</angle>
+                                              <next id="110">
+                                                <edge id="111">
+                                                  <map reference="92"/>
+                                                  <v1 id="112">
+                                                    <pos id="113">
+                                                      <x>2.809016994374948</x>
+                                                      <y>0.5877852522924742</y>
+                                                    </pos>
+                                                    <edges id="114">
+                                                      <edge reference="111"/>
+                                                      <angle>0.5000000000000023</angle>
+                                                      <next id="115">
+                                                        <edge id="116">
+                                                          <map reference="92"/>
+                                                          <v1 reference="112"/>
+                                                          <v2 id="117">
+                                                            <pos id="118">
+                                                              <x>2.6909830056250525</x>
+                                                              <y>0.22451398828979308</y>
+                                                            </pos>
+                                                            <edges id="119">
+                                                              <edge reference="116"/>
+                                                              <angle>0.23776412907378836</angle>
+                                                              <next id="120">
+                                                                <edge id="121">
+                                                                  <map reference="92"/>
+                                                                  <v1 id="122">
+                                                                    <pos id="123">
+                                                                      <x>2.999999999999999</x>
+                                                                      <y>8.881784197001252E-16</y>
+                                                                    </pos>
+                                                                    <edges id="124">
+                                                                      <edge id="125">
+                                                                        <map reference="92"/>
+                                                                        <v1 reference="122"/>
+                                                                        <v2 id="126">
+                                                                          <pos id="127">
+                                                                            <x>2.690983005625052</x>
+                                                                            <y>-0.22451398828979396</y>
+                                                                          </pos>
+                                                                          <edges id="128">
+                                                                            <edge reference="125"/>
+                                                                            <angle>0.14694631307311934</angle>
+                                                                            <next id="129">
+                                                                              <edge id="130">
+                                                                                <map reference="92"/>
+                                                                                <v1 id="131">
+                                                                                  <pos id="132">
+                                                                                    <x>2.809016994374947</x>
+                                                                                    <y>-0.5877852522924725</y>
+                                                                                  </pos>
+                                                                                  <edges id="133">
+                                                                                    <edge id="134">
+                                                                                      <map reference="92"/>
+                                                                                      <v1 reference="131"/>
+                                                                                      <v2 id="135">
+                                                                                        <pos id="136">
+                                                                                          <x>2.618033988749894</x>
+                                                                                          <y>-0.5877852522924725</y>
+                                                                                        </pos>
+                                                                                        <edges id="137">
+                                                                                          <edge id="138">
+                                                                                            <map reference="92"/>
+                                                                                            <v1 id="139">
+                                                                                              <pos id="140">
+                                                                                                <x>2.427050983124842</x>
+                                                                                                <y>-0.5877852522924725</y>
+                                                                                              </pos>
+                                                                                              <edges id="141">
+                                                                                                <edge id="142">
+                                                                                                  <map reference="92"/>
+                                                                                                  <v1 reference="139"/>
+                                                                                                  <v2 id="143">
+                                                                                                    <pos id="144">
+                                                                                                      <x>2.5450849718747386</x>
+                                                                                                      <y>-0.22451398828979396</y>
+                                                                                                    </pos>
+                                                                                                    <edges id="145">
+                                                                                                      <edge id="146">
+                                                                                                        <map reference="92"/>
+                                                                                                        <v1 reference="94"/>
+                                                                                                        <v2 reference="143"/>
+                                                                                                      </edge>
+                                                                                                      <angle>0.3530536869268819</angle>
+                                                                                                      <next id="147">
+                                                                                                        <edge reference="142"/>
+                                                                                                        <angle>0.737764129073788</angle>
+                                                                                                        <next reference="145"/>
+                                                                                                      </next>
+                                                                                                    </edges>
+                                                                                                    <num__edges>2</num__edges>
+                                                                                                  </v2>
+                                                                                                </edge>
+                                                                                                <angle>0.23776412907378794</angle>
+                                                                                                <next id="148">
+                                                                                                  <edge reference="138"/>
+                                                                                                  <angle>0.0</angle>
+                                                                                                  <next reference="141"/>
+                                                                                                </next>
+                                                                                              </edges>
+                                                                                              <num__edges>2</num__edges>
+                                                                                            </v1>
+                                                                                            <v2 reference="135"/>
+                                                                                          </edge>
+                                                                                          <angle>0.5</angle>
+                                                                                          <next id="149">
+                                                                                            <edge reference="134"/>
+                                                                                            <angle>0.0</angle>
+                                                                                            <next reference="137"/>
+                                                                                          </next>
+                                                                                        </edges>
+                                                                                        <num__edges>2</num__edges>
+                                                                                      </v2>
+                                                                                    </edge>
+                                                                                    <angle>0.5</angle>
+                                                                                    <next id="150">
+                                                                                      <edge reference="130"/>
+                                                                                      <angle>0.2622358709262117</angle>
+                                                                                      <next reference="133"/>
+                                                                                    </next>
+                                                                                  </edges>
+                                                                                  <num__edges>2</num__edges>
+                                                                                </v1>
+                                                                                <v2 reference="126"/>
+                                                                              </edge>
+                                                                              <angle>0.7622358709262117</angle>
+                                                                              <next reference="128"/>
+                                                                            </next>
+                                                                          </edges>
+                                                                          <num__edges>2</num__edges>
+                                                                        </v2>
+                                                                      </edge>
+                                                                      <angle>0.6469463130731193</angle>
+                                                                      <next id="151">
+                                                                        <edge reference="121"/>
+                                                                        <angle>0.35305368692688166</angle>
+                                                                        <next reference="124"/>
+                                                                      </next>
+                                                                    </edges>
+                                                                    <num__edges>2</num__edges>
+                                                                  </v1>
+                                                                  <v2 reference="117"/>
+                                                                </edge>
+                                                                <angle>0.8530536869268817</angle>
+                                                                <next reference="119"/>
+                                                              </next>
+                                                            </edges>
+                                                            <num__edges>2</num__edges>
+                                                          </v2>
+                                                        </edge>
+                                                        <angle>0.7377641290737884</angle>
+                                                        <next reference="114"/>
+                                                      </next>
+                                                    </edges>
+                                                    <num__edges>2</num__edges>
+                                                  </v1>
+                                                  <v2 reference="107"/>
+                                                </edge>
+                                                <angle>2.325281290849092E-15</angle>
+                                                <next reference="109"/>
+                                              </next>
+                                            </edges>
+                                            <num__edges>2</num__edges>
+                                          </v2>
+                                        </edge>
+                                        <angle>0.9999999999999977</angle>
+                                        <next id="152">
+                                          <edge reference="102"/>
+                                          <angle>0.7622358709262113</angle>
+                                          <next reference="105"/>
+                                        </next>
+                                      </edges>
+                                      <num__edges>2</num__edges>
+                                    </v1>
+                                    <v2 reference="98"/>
+                                  </edge>
+                                  <angle>0.26223587092621126</angle>
+                                  <next reference="100"/>
+                                </next>
+                              </edges>
+                              <num__edges>2</num__edges>
+                            </v2>
+                          </edge>
+                          <angle>0.1469463130731182</angle>
+                          <next id="153">
+                            <edge reference="146"/>
+                            <angle>0.8530536869268819</angle>
+                            <next reference="96"/>
+                          </next>
+                        </edges>
+                        <num__edges>2</num__edges>
+                      </Vertex>
+                      <Vertex reference="139"/>
+                      <Vertex reference="103"/>
+                      <Vertex reference="143"/>
+                      <Vertex reference="98"/>
+                      <Vertex reference="135"/>
+                      <Vertex reference="107"/>
+                      <Vertex reference="126"/>
+                      <Vertex reference="117"/>
+                      <Vertex reference="131"/>
+                      <Vertex reference="112"/>
+                      <Vertex reference="122"/>
+                    </vertices>
+                    <edges id="154">
+                      <Edge reference="97"/>
+                      <Edge reference="146"/>
+                      <Edge reference="106"/>
+                      <Edge reference="102"/>
+                      <Edge reference="142"/>
+                      <Edge reference="138"/>
+                      <Edge reference="111"/>
+                      <Edge reference="134"/>
+                      <Edge reference="116"/>
+                      <Edge reference="125"/>
+                      <Edge reference="121"/>
+                      <Edge reference="130"/>
+                    </edges>
+                  </map>
+                </csk.taprats.app.ExplicitFigure>
+              </entry>
+              <entry>
+                <csk.taprats.tile.Feature id="155">
+                  <regular>false</regular>
+                  <points id="156">
+                    <Point id="157">
+                      <x>0.9999999999999998</x>
+                      <y>0.3249196962329062</y>
+                    </Point>
+                    <Point id="158">
+                      <x>0.9999999999999998</x>
+                      <y>-0.3249196962329064</y>
+                    </Point>
+                    <Point id="159">
+                      <x>1.6180339887498947</x>
+                      <y>-0.12410828034667931</y>
+                    </Point>
+                    <Point id="160">
+                      <x>2.2360679774997894</x>
+                      <y>-0.3249196962329066</y>
+                    </Point>
+                    <Point id="161">
+                      <x>2.2360679774997894</x>
+                      <y>0.3249196962329056</y>
+                    </Point>
+                    <Point id="162">
+                      <x>1.6180339887498947</x>
+                      <y>0.12410828034667865</y>
+                    </Point>
+                  </points>
+                </csk.taprats.tile.Feature>
+                <csk.taprats.app.ExplicitFigure id="163">
+                  <map id="164">
+                    <vertices id="165">
+                      <Vertex id="166">
+                        <pos id="167">
+                          <x>0.9999999999999991</x>
+                          <y>-2.7755575615628914E-16</y>
+                        </pos>
+                        <edges id="168">
+                          <edge id="169">
+                            <map reference="164"/>
+                            <v1 reference="166"/>
+                            <v2 id="170">
+                              <pos id="171">
+                                <x>1.1545084971874724</x>
+                                <y>-0.1122569941448966</y>
+                              </pos>
+                              <edges id="172">
+                                <edge reference="169"/>
+                                <angle>0.35305368692688144</angle>
+                                <next id="173">
+                                  <edge id="174">
+                                    <map reference="164"/>
+                                    <v1 id="175">
+                                      <pos id="176">
+                                        <x>1.3090169943749466</x>
+                                        <y>-0.2245139882897927</y>
+                                      </pos>
+                                      <edges id="177">
+                                        <edge reference="174"/>
+                                        <angle>0.3530536869268822</angle>
+                                        <next id="178">
+                                          <edge id="179">
+                                            <map reference="164"/>
+                                            <v1 reference="175"/>
+                                            <v2 id="180">
+                                              <pos id="181">
+                                                <x>1.381966011250105</x>
+                                                <y>-1.609823385706477E-15</y>
+                                              </pos>
+                                              <edges id="182">
+                                                <edge reference="179"/>
+                                                <angle>0.737764129073788</angle>
+                                                <next id="183">
+                                                  <edge id="184">
+                                                    <map reference="164"/>
+                                                    <v1 id="185">
+                                                      <pos id="186">
+                                                        <x>1.3090169943749466</x>
+                                                        <y>0.22451398828979213</y>
+                                                      </pos>
+                                                      <edges id="187">
+                                                        <edge id="188">
+                                                          <map reference="164"/>
+                                                          <v1 reference="185"/>
+                                                          <v2 id="189">
+                                                            <pos id="190">
+                                                              <x>1.1545084971874724</x>
+                                                              <y>0.11225699414489604</y>
+                                                            </pos>
+                                                            <edges id="191">
+                                                              <edge id="192">
+                                                                <map reference="164"/>
+                                                                <v1 reference="166"/>
+                                                                <v2 reference="189"/>
+                                                              </edge>
+                                                              <angle>0.6469463130731186</angle>
+                                                              <next id="193">
+                                                                <edge reference="188"/>
+                                                                <angle>0.14694631307311778</angle>
+                                                                <next reference="191"/>
+                                                              </next>
+                                                            </edges>
+                                                            <num__edges>2</num__edges>
+                                                          </v2>
+                                                        </edge>
+                                                        <angle>0.6469463130731178</angle>
+                                                        <next id="194">
+                                                          <edge reference="184"/>
+                                                          <angle>0.7622358709262117</angle>
+                                                          <next reference="187"/>
+                                                        </next>
+                                                      </edges>
+                                                      <num__edges>2</num__edges>
+                                                    </v1>
+                                                    <v2 reference="180"/>
+                                                  </edge>
+                                                  <angle>0.2622358709262117</angle>
+                                                  <next reference="182"/>
+                                                </next>
+                                              </edges>
+                                              <num__edges>2</num__edges>
+                                            </v2>
+                                          </edge>
+                                          <angle>0.237764129073788</angle>
+                                          <next reference="177"/>
+                                        </next>
+                                      </edges>
+                                      <num__edges>2</num__edges>
+                                    </v1>
+                                    <v2 reference="170"/>
+                                  </edge>
+                                  <angle>0.8530536869268822</angle>
+                                  <next reference="172"/>
+                                </next>
+                              </edges>
+                              <num__edges>2</num__edges>
+                            </v2>
+                          </edge>
+                          <angle>0.8530536869268814</angle>
+                          <next id="195">
+                            <edge reference="192"/>
+                            <angle>0.14694631307311853</angle>
+                            <next reference="168"/>
+                          </next>
+                        </edges>
+                        <num__edges>2</num__edges>
+                      </Vertex>
+                      <Vertex reference="170"/>
+                      <Vertex reference="189"/>
+                      <Vertex reference="175"/>
+                      <Vertex reference="185"/>
+                      <Vertex reference="180"/>
+                      <Vertex id="196">
+                        <pos id="197">
+                          <x>1.854101966249683</x>
+                          <y>-5.551115123125783E-17</y>
+                        </pos>
+                        <edges id="198">
+                          <edge id="199">
+                            <map reference="164"/>
+                            <v1 id="200">
+                              <pos id="201">
+                                <x>1.9270509831248415</x>
+                                <y>-0.2245139882897929</y>
+                              </pos>
+                              <edges id="202">
+                                <edge reference="199"/>
+                                <angle>0.2622358709262118</angle>
+                                <next id="203">
+                                  <edge id="204">
+                                    <map reference="164"/>
+                                    <v1 reference="200"/>
+                                    <v2 id="205">
+                                      <pos id="206">
+                                        <x>2.0815594803123147</x>
+                                        <y>-0.11225699414489682</y>
+                                      </pos>
+                                      <edges id="207">
+                                        <edge reference="204"/>
+                                        <angle>0.6469463130731183</angle>
+                                        <next id="208">
+                                          <edge id="209">
+                                            <map reference="164"/>
+                                            <v1 id="210">
+                                              <pos id="211">
+                                                <x>2.236067977499789</x>
+                                                <y>-4.996003610813204E-16</y>
+                                              </pos>
+                                              <edges id="212">
+                                                <edge reference="209"/>
+                                                <angle>0.646946313073118</angle>
+                                                <next id="213">
+                                                  <edge id="214">
+                                                    <map reference="164"/>
+                                                    <v1 reference="210"/>
+                                                    <v2 id="215">
+                                                      <pos id="216">
+                                                        <x>2.0815594803123147</x>
+                                                        <y>0.1122569941448956</y>
+                                                      </pos>
+                                                      <edges id="217">
+                                                        <edge id="218">
+                                                          <map reference="164"/>
+                                                          <v1 id="219">
+                                                            <pos id="220">
+                                                              <x>1.9270509831248415</x>
+                                                              <y>0.22451398828979213</y>
+                                                            </pos>
+                                                            <edges id="221">
+                                                              <edge id="222">
+                                                                <map reference="164"/>
+                                                                <v1 reference="219"/>
+                                                                <v2 reference="196"/>
+                                                              </edge>
+                                                              <angle>0.7377641290737881</angle>
+                                                              <next id="223">
+                                                                <edge reference="218"/>
+                                                                <angle>0.8530536869268812</angle>
+                                                                <next reference="221"/>
+                                                              </next>
+                                                            </edges>
+                                                            <num__edges>2</num__edges>
+                                                          </v1>
+                                                          <v2 reference="215"/>
+                                                        </edge>
+                                                        <angle>0.35305368692688127</angle>
+                                                        <next id="224">
+                                                          <edge reference="214"/>
+                                                          <angle>0.8530536869268822</angle>
+                                                          <next reference="217"/>
+                                                        </next>
+                                                      </edges>
+                                                      <num__edges>2</num__edges>
+                                                    </v2>
+                                                  </edge>
+                                                  <angle>0.3530536869268822</angle>
+                                                  <next reference="212"/>
+                                                </next>
+                                              </edges>
+                                              <num__edges>2</num__edges>
+                                            </v1>
+                                            <v2 reference="205"/>
+                                          </edge>
+                                          <angle>0.14694631307311798</angle>
+                                          <next reference="207"/>
+                                        </next>
+                                      </edges>
+                                      <num__edges>2</num__edges>
+                                    </v2>
+                                  </edge>
+                                  <angle>0.14694631307311834</angle>
+                                  <next reference="202"/>
+                                </next>
+                              </edges>
+                              <num__edges>2</num__edges>
+                            </v1>
+                            <v2 reference="196"/>
+                          </edge>
+                          <angle>0.7622358709262118</angle>
+                          <next id="225">
+                            <edge reference="222"/>
+                            <angle>0.23776412907378808</angle>
+                            <next reference="198"/>
+                          </next>
+                        </edges>
+                        <num__edges>2</num__edges>
+                      </Vertex>
+                      <Vertex reference="200"/>
+                      <Vertex reference="219"/>
+                      <Vertex reference="205"/>
+                      <Vertex reference="215"/>
+                      <Vertex reference="210"/>
+                    </vertices>
+                    <edges id="226">
+                      <Edge reference="169"/>
+                      <Edge reference="192"/>
+                      <Edge reference="174"/>
+                      <Edge reference="188"/>
+                      <Edge reference="179"/>
+                      <Edge reference="184"/>
+                      <Edge reference="199"/>
+                      <Edge reference="222"/>
+                      <Edge reference="204"/>
+                      <Edge reference="218"/>
+                      <Edge reference="209"/>
+                      <Edge reference="214"/>
+                    </edges>
+                  </map>
+                </csk.taprats.app.ExplicitFigure>
+              </entry>
+            </hashtable>
+          </csk.taprats.app.Prototype>
+        </prototype>
+      </default>
+    </csk.taprats.style.Style>
+    <csk.taprats.style.Colored>
+      <default>
+        <color id="227">
+          <red>255</red>
+          <green>255</green>
+          <blue>255</blue>
+          <alpha>255</alpha>
+        </color>
+      </default>
+    </csk.taprats.style.Colored>
+    <csk.taprats.style.Thick>
+      <default>
+        <draw__outline>false</draw__outline>
+        <width>0.02152</width>
+      </default>
+    </csk.taprats.style.Thick>
+  </csk.taprats.style.Thick>
+  <csk.taprats.style.Thick id="228" serialization="custom">
+    <csk.taprats.toolkit.GeoLayer>
+      <default>
+        <left__delta>0.0</left__delta>
+        <theta__delta>0.0</theta__delta>
+        <top__delta>0.0</top__delta>
+        <width__delta>0.0</width__delta>
+      </default>
+    </csk.taprats.toolkit.GeoLayer>
+    <csk.taprats.style.Style>
+      <default>
+        <boundary reference="3"/>
+        <prototype reference="9"/>
+      </default>
+    </csk.taprats.style.Style>
+    <csk.taprats.style.Colored>
+      <default>
+        <color id="229">
+          <red>20</red>
+          <green>150</green>
+          <blue>210</blue>
+          <alpha>255</alpha>
+        </color>
+      </default>
+    </csk.taprats.style.Colored>
+    <csk.taprats.style.Thick>
+      <default>
+        <draw__outline>false</draw__outline>
+        <width>0.07312</width>
+      </default>
+    </csk.taprats.style.Thick>
+  </csk.taprats.style.Thick>
 </vector>

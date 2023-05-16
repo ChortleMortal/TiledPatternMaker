@@ -1,11 +1,12 @@
+#pragma once
+#ifndef EDGE_H
+#define EDGE_H
+
 ////////////////////////////////////////////////////////////////////////////
 //
 // Edge.java
 //
 // The edge component of the planar map abstraction.
-
-#ifndef EDGE_H
-#define EDGE_H
 
 #include "enums/edgetype.h"
 #include "geometry/loose.h"

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef TILINGMANAGER_H
 #define TILINGMANAGER_H
 
@@ -13,7 +14,7 @@ class TilingManager
 public:
     TilingManager();
 
-    TilingPtr loadTiling(QString name, eSM_Event mode);
+    TilingPtr loadTiling(QString name, eTILM_Event event);
     bool      saveTiling(QString name, TilingPtr tiling);
     bool      verifyNameFiles();
 
@@ -24,7 +25,7 @@ private:
     class ViewControl     * view;
     class Configuration   * config;
     TilingMakerPtr          tilingMaker;
-    class MotifMaker      * motifMaker;
+    class PrototypeMaker  * prototypeMaker;
 };
 
 #endif // TILINGMANAGER_H

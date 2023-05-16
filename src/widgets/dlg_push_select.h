@@ -1,3 +1,4 @@
+#pragma once
 #ifndef DLGPUSHSELECT_H
 #define DLGPUSHSELECT_H
 

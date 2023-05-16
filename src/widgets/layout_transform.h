@@ -1,3 +1,4 @@
+#pragma once
 #ifndef LAYOUT_TRANSFORM_H
 #define LAYOUT_TRANSFORM_H
 

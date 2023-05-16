@@ -1,3 +1,4 @@
+#pragma once
 #ifndef EFILESYSTEM_H
 #define EFILESYSTEM_H
 
@@ -10,9 +11,11 @@ enum eFileType
 
 enum eLoadType
 {
-    LOAD_ALL,
-    LOAD_WORKLIST,
-    LOAD_FILTERED
+    ALL_MOSAICS,
+    SELECTED_MOSAICS,
+    WORKLIST,
+    ALL_TILINGS,
+    SELECTED_TILINGS
 };
 
 #endif

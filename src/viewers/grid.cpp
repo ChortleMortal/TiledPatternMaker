@@ -2,6 +2,7 @@
 #include "settings/configuration.h"
 #include "viewers/viewcontrol.h"
 #include "misc/geo_graphics.h"
+#include "geometry/fill_region.h"
 #include "geometry/map.h"
 #include "geometry/vertex.h"
 #include "geometry/point.h"
@@ -28,15 +29,10 @@ Grid::Grid() : LayerController("Grid")
     config  = Configuration::getInstance();
     view    = ViewControl::getInstance();
     genMap  = false;
-    setZValue(-5);
+    setZValue(config->gridZLevel);
 }
 
 void Grid::paint(QPainter * pp)
-{
-    draw(pp);
-}
-
-void Grid::createMap(QPainter *pp)
 {
     draw(pp);
 }
@@ -51,12 +47,20 @@ void Grid::draw(QPainter * pp)
     this->pp = pp;
     gg = new GeoGraphics(pp,getLayerTransform());
 
-    if (config->gridUnits == GRID_UNITS_TILE)
+    switch (config->gridUnits)
     {
-        drawFromTiling();
-    }
-    else if (config->gridUnits == GRID_UNITS_MODEL)
-    {
+    case GRID_UNITS_TILE:
+        if (config->gridTilingAlgo == FLOOD)
+        {
+            drawFromTilingFlood();
+        }
+        else
+        {
+            drawFromTilingRegion();
+        }
+        break;
+
+    case GRID_UNITS_MODEL:
         if (config->gridModelCenter)
         {
             drawModelUnitsCentered();
@@ -65,10 +69,9 @@ void Grid::draw(QPainter * pp)
         {
             drawModelUnits();
         }
-    }
-    else
-    {
-        Q_ASSERT(config->gridUnits == GRID_UNITS_SCREEN);
+        break;
+
+    case GRID_UNITS_SCREEN:
         if (config->gridScreenCenter)
         {
             drawScreenUnitsCentered();
@@ -77,98 +80,194 @@ void Grid::draw(QPainter * pp)
         {
             drawScreenUnits();
         }
+        break;
+    }
+
+    if (config->showGridModelCenter)
+    {
+        corners[0] = QLineF(QPointF(-10,10),QPointF(10,-10));
+        corners[1] = QLineF(QPointF(-10,-10),QPointF(10,10));
+        ggdrawLine(corners[0],QPen(Qt::green,3));
+        ggdrawLine(corners[1],QPen(Qt::green,3));
+    }
+
+    if (config->showGridViewCenter)
+    {
+        auto r = view->rect();
+        corners[0] = QLineF(r.topLeft(),r.bottomRight());
+        corners[1] = QLineF(r.bottomLeft(),r.topRight());
+
+        QPen pen(Qt::blue,3);
+        pp->setPen(pen);
+        ppdrawLine(corners[0]);
+        ppdrawLine(corners[1]);
+    }
+
+    if (genMap)
+    {
+        gridMap->verify();
     }
     delete gg;
 }
 
-void Grid::drawFromTiling()
+void Grid::drawFromTilingFlood()
 {
+    qDebug() << "Grid::drawFromTilingFlood()";
+
     auto r = QRectF(-10,10,20,20);
+    QPen pen(QColor(config->gridColorTiling),config->gridTilingWidth);
 
     QPointF center = getCenterModelUnits();
     r.moveCenter(center);
-    qDebug() << "grid model center" << center;
+    //qDebug() << "grid model center" << center;
 
     auto maker = TilingMaker::getSharedInstance();
     auto tiling = maker->getSelected();
     auto tdata = tiling->getData();
 
-    QPointF p1 = tdata.getTrans1();
-    QPointF p2 = tdata.getTrans2();
-    if (p1.isNull() || p2.isNull())
+    QLineF line1 = maker->getVisT1();
+    QLineF line2 = maker->getVisT2();
+    if (line1.isNull() || line2.isNull())
     {
-        return;
+        QPointF p1 = tdata.getTrans1();
+        QPointF p2 = tdata.getTrans2();
+        if (p1.isNull() || p2.isNull())
+        {
+            return;
+        }
+        line1 = QLineF(QPointF(),p1);
+        line2 = QLineF(QPointF(),p2);
+    }
+    qDebug() << "len1:" << line1.length() << "len2:" << line2.length();
+
+    qreal angle1    = qDegreesToRadians(line1.angle());
+    qreal angle2    = qDegreesToRadians(line2.angle());
+    qreal gridAngle = qAbs(angle1 - angle2);
+    qDebug() << "Line angles:" << angle1 << angle2 << "Grid angle" << gridAngle << "sin" << qAbs(qSin(gridAngle));
+
+    QLineF l1 = Point::extendAsRay(line1,5.0);
+    qreal offset = line2.length() * qAbs(qSin(gridAngle));
+    l1 = Point::shiftParallel(l1,offset * -10.0);
+    for (int i=0; i <20; i++)
+    {
+        l1 = Point::shiftParallel(l1,offset);
+        ggdrawLine(l1,pen);
     }
 
-    // calc T1
-    QLineF line1(QPointF(),p1);
-    qreal angle1 = -line1.angle();
-    qDebug() << "angle T1 =" << angle1;
-    if  (angle1 > 180.0)
+    QLineF l2 = Point::extendAsRay(line2,5.0);
+    qreal offset2 = line1.length() * qAbs(qSin(gridAngle));
+    l2 = Point::shiftParallel(l2,offset2 * -10.0);
+    for (int i=0; i <20; i++)
     {
-        angle1 -= 180.0;
-    }
-    if (angle1 < -180.0)
-    {
-        angle1 += 180.0;
-    }
-    qDebug() << "angle T1 =" << angle1;
-
-    qreal step1 = line1.length();
-    Q_ASSERT(!Loose::zero(step1));
-
-    // calc T2
-    QLineF line2(QPointF(),p2);
-    qreal angle2 = line2.angle();
-    qDebug() << "angle T2 =" << angle2;
-    if  (angle2 > 180.0)
-    {
-        angle2 -= 180.0;
-    }
-    if (angle2 < -180.0)
-    {
-        angle2 += 180.0;
-    }
-    qDebug() << "angle T2 =" << angle2;
-    qreal step2 = line2.length();
-    qDebug() << "step:" << step2;
-    Q_ASSERT(!Loose::zero(step2));
-
-    // T1
-    qreal minmax = 20 * step1;
-    QTransform t1;
-    t1.rotate(angle1);
-    QPen apen(Qt::red,2);
-    qreal  y1 = center.y() - minmax;
-    while (y1 < center.y() + minmax)
-    {
-        ggdrawLine(t1.map(QPointF(r.left(), y1)),t1.map(QPointF(r.right(), y1)),apen);
-        y1 += step1;
+        l2 = Point::shiftParallel(l2,offset2);
+        ggdrawLine(l2,pen);
     }
 
-    // T2
-    minmax = 20 * step2;
-    QTransform t2;
-    t2.rotate(-angle2);
-    QPen bpen(Qt::green,2);
-    qreal  y2 = center.y() - minmax;
-    while (y2 < center.y() + minmax)
+    if (config->showGridTilingCenter)
     {
-        ggdrawLine(t2.map(QPointF(r.left(), y2)),t2.map(QPointF(r.right(), y2)),bpen);
-        y2 += step2;
+    }
+}
+
+void Grid::drawFromTilingRegion()
+{
+    qDebug() << "Grid::drawFromTilingRegion()";
+
+    auto r = QRectF(-10,10,20,20);
+    QPen pen(QColor(config->gridColorTiling),config->gridTilingWidth);
+
+    QPointF center = getCenterModelUnits();
+    r.moveCenter(center);
+    //qDebug() << "grid model center" << center;
+
+    auto maker = TilingMaker::getSharedInstance();
+    auto tiling = maker->getSelected();
+    auto tdata = tiling->getData();
+
+    QLineF lineR = maker->getVisT1();
+    QLineF lineG = maker->getVisT2();
+    if (lineR.isNull() || lineG.isNull())
+    {
+        QPointF p1 = tdata.getTrans1();
+        QPointF p2 = tdata.getTrans2();
+        if (p1.isNull() || p2.isNull())
+        {
+            return;
+        }
+        lineR = QLineF(QPointF(),p1);
+        lineG = QLineF(QPointF(),p2);
+    }
+    qDebug() << "lenR:" << lineR.length() << "len:" << lineG.length();
+
+    qreal angle1    = qDegreesToRadians(lineR.angle());
+    qreal angle2    = qDegreesToRadians(lineG.angle());
+    qreal gridAngle = angle1 - angle2;
+
+    qDebug().noquote()  << "Line angles:"
+                        << angle1    << Circle::getQuadrantString(angle1)
+                        << angle2    << Circle::getQuadrantString(angle2)
+                        <<"Grid angle"
+                        << gridAngle << Circle::getQuadrantString(qAbs(gridAngle))
+                        << "sin" << qAbs(qSin(gridAngle));
+
+
+    qreal offsetG  = lineG.length() * qAbs(qSin(qAbs(gridAngle)));
+    qreal offsetR  = lineR.length() * qAbs(qSin(qAbs(gridAngle)));
+
+    QLineF lr;
+    QLineF lg;
+    if (gridAngle  >= 0)
+    {
+        lr = Point::shiftParallel(lineR,offsetR);
+        lg = Point::shiftParallel(lineG,-offsetG );
+    }
+    else
+    {
+        lr = Point::shiftParallel(lineR,-offsetR);
+        lg = Point::shiftParallel(lineG,offsetG );
     }
 
-    corners[0] = QLineF(QPointF(-10,10),QPointF(10,-10));
-    corners[1] = QLineF(QPointF(-10,-10),QPointF(10,10));
-    ggdrawLine(corners[0],QPen(Qt::green,3));
-    ggdrawLine(corners[1],QPen(Qt::green,3));
+    lr.translate(lineG.p2()-lr.p1());
+    lg.translate(lineR.p2()-lg.p1());
+
+#if 0
+    qDebug() << "lineR" << lineR;
+    qDebug() << "lg   " << lg;
+    qDebug() << "lr   " << lr;
+    qDebug() << "lineG" << lineG;
+#endif
+
+    // Use this when sides are correct
+    QPolygonF p;
+    p << lineR.p1();
+    Q_ASSERT(Loose::equalsPt(lineR.p2(),lg.p1()));
+    p << lg.p1();
+    Q_ASSERT(Loose::equalsPt(lg.p2(),lr.p2()));
+    p << lr.p2();
+    Q_ASSERT(Loose::equalsPt(lr.p1(),lineG.p2()));
+    p << lineG.p2();
+    Q_ASSERT(Loose::equalsPt(lineG.p1(),lineR.p1()));
+
+     FillRegion flood(tiling,view->getFillData());
+     const Placements & placements = flood.getPlacements(config->repeatMode);
+     for (auto t : placements)
+     {
+        auto poly = t.map(p);
+        ggdrawPoly(poly,pen);
+     }
+
+     static constexpr QColor normal_color = QColor(217,217,255,128);
+     gg->fillPolygon(p,normal_color);
+
+    if (config->showGridTilingCenter)
+    {
+    }
 }
 
 // this is relative to model(0,0)
 void Grid::drawModelUnits()
 {
-    auto r     = QRectF(-10,10,20,20);
-    QPen apen(Qt::red,config->gridModelWidth);
+    auto r = QRectF(-10,10,20,20);
+    QPen pen(QColor(config->gridColorModel),config->gridModelWidth);
 
     // this centers on scene
     eGridType type = config->gridType;
@@ -182,7 +281,7 @@ void Grid::drawModelUnits()
         qreal j = min;
         while (j < max)
         {
-            ggdrawLine(QPointF(j, -r.height()/2),QPointF(j, r.height()/2),apen);
+            ggdrawLine(QPointF(j, -r.height()/2),QPointF(j, r.height()/2),pen);
             j += step;
         }
     }
@@ -193,7 +292,7 @@ void Grid::drawModelUnits()
         qreal i = min;
         while (i < max)
         {
-            ggdrawLine(QPointF(-r.width()/2,i),QPointF(r.width()/2,i),apen);
+            ggdrawLine(QPointF(-r.width()/2,i),QPointF(r.width()/2,i),pen);
             i += step;
         }
     }
@@ -206,7 +305,7 @@ void Grid::drawModelUnits()
         qreal j = min;
         while (j < max)
         {
-            ggdrawLine(t.map(QPointF(-r.width()/2,j)),t.map(QPointF(r.width()/2,j)),apen);
+            ggdrawLine(t.map(QPointF(-r.width()/2,j)),t.map(QPointF(r.width()/2,j)),pen);
             j += step;
         }
 
@@ -215,22 +314,17 @@ void Grid::drawModelUnits()
         j = min;
         while (j < max)
         {
-            ggdrawLine(t2.map(QPointF(-r.width()/2,j)),t2.map(QPointF(r.width()/2,j)),apen);
+            ggdrawLine(t2.map(QPointF(-r.width()/2,j)),t2.map(QPointF(r.width()/2,j)),pen);
             j += step;
         }
     }
-
-    corners[0] = QLineF(QPointF(-10,10),QPointF(10,-10));
-    corners[1] = QLineF(QPointF(-10,-10),QPointF(10,10));
-    ggdrawLine(corners[0],QPen(Qt::green,3));
-    ggdrawLine(corners[1],QPen(Qt::green,3));
 }
 
 // this is relative to layer center
 void Grid::drawModelUnitsCentered()
 {
     QRectF r = view->rect();
-    QPen apen(Qt::red,config->gridModelWidth);
+    QPen pen(QColor(config->gridColorModel),config->gridModelWidth);
 
     // this centers on layer center
     eGridType type = config->gridType;
@@ -247,7 +341,7 @@ void Grid::drawModelUnitsCentered()
         qreal  x = center.x() - minmax;
         while (x < center.x() + minmax)
         {
-            ggdrawLine(QPointF(x,r.top()),QPointF(x,r.bottom()),apen);
+            ggdrawLine(QPointF(x,r.top()),QPointF(x,r.bottom()),pen);
             x += step;
         }
     }
@@ -258,7 +352,7 @@ void Grid::drawModelUnitsCentered()
         qreal  y = center.y() - minmax;
         while (y < center.y() + minmax)
         {
-            ggdrawLine(QPointF(r.left(),  y),QPointF(r.right(), y),apen);
+            ggdrawLine(QPointF(r.left(),  y),QPointF(r.right(), y),pen);
             y += step;
         }
     }
@@ -271,7 +365,7 @@ void Grid::drawModelUnitsCentered()
         qreal  y = center.y() - minmax;
         while (y < center.y() + minmax)
         {
-            ggdrawLine(t.map(QPointF(r.left(),  y)),t.map(QPointF(r.right(), y)),apen);
+            ggdrawLine(t.map(QPointF(r.left(),  y)),t.map(QPointF(r.right(), y)),pen);
             y += step;
         }
 
@@ -280,22 +374,17 @@ void Grid::drawModelUnitsCentered()
         y = center.y() - minmax;
         while (y < center.y() + minmax)
         {
-            ggdrawLine(t2.map(QPointF(r.left(),  y)),t2.map(QPointF(r.right(), y)),apen);
+            ggdrawLine(t2.map(QPointF(r.left(),  y)),t2.map(QPointF(r.right(), y)),pen);
             y += step;
         }
     }
-
-    corners[0] = QLineF(QPointF(-10,10),QPointF(10,-10));
-    corners[1] = QLineF(QPointF(-10,-10),QPointF(10,10));
-    ggdrawLine(corners[0],QPen(Qt::green,3));
-    ggdrawLine(corners[1],QPen(Qt::green,3));
 }
 
 void Grid::drawScreenUnits()
 {
     auto r = view->rect();
-    QPen apen(Qt::red,config->gridScreenWidth);
-    pp->setPen(apen);
+    QPen pen(QColor(config->gridColorScreen),config->gridScreenWidth);
+    pp->setPen(pen);
 
     eGridType type = config->gridType;
     QPointF center = r.center();
@@ -355,21 +444,13 @@ void Grid::drawScreenUnits()
             y += step;
         }
     }
-
-    corners[0] = QLineF(r.topLeft(),r.bottomRight());
-    corners[1] = QLineF(r.bottomLeft(),r.topRight());
-
-    apen = QPen(Qt::blue,3);
-    pp->setPen(apen);
-    ppdrawLine(corners[0]);
-    ppdrawLine(corners[1]);
 }
 
 void Grid::drawScreenUnitsCentered()
 {
     QRectF r = view->rect();
-    QPen apen(Qt::red,config->gridScreenWidth);
-    pp->setPen(apen);
+    QPen pen(QColor(config->gridColorScreen),config->gridScreenWidth);
+    pp->setPen(pen);
     eGridType type = config->gridType;
 
     QPointF center = getCenterScreenUnits();
@@ -431,13 +512,6 @@ void Grid::drawScreenUnitsCentered()
             y += step;
         }
     }
-
-    corners[0] = QLineF(r.topLeft(),r.bottomRight());
-    corners[1] = QLineF(r.bottomLeft(),r.topRight());
-    apen = QPen(Qt::blue,3);
-    pp->setPen(apen);
-    ppdrawLine(corners[0]);
-    ppdrawLine(corners[1]);
 }
 
 bool Grid::nearGridPoint(QPointF spt, QPointF & foundGridPoint)
@@ -488,6 +562,20 @@ void Grid::ggdrawLine(QPointF p1, QPointF p2, QPen  pen)
     gg->drawLine(p1, p2, pen);
     if (genMap)
         gridMap->insertEdge(p1,p2);
+}
+
+void Grid::ggdrawPoly(QPolygonF & poly, QPen  pen)
+{
+    gg->drawPolygon(poly,pen);
+    if (genMap)
+    {
+        EdgePoly ep(poly);
+        auto vec = ep.getLines();
+        for (auto & line : qAsConst(vec))
+        {
+            gridMap->insertEdge(line);
+        }
+    }
 }
 
 void Grid::ppdrawLine(QLineF line)

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!-- Written: Mon Oct 17 2022 14:39:58 -->
-<vector id="1" version="13">
+<!-- Written: Mon Apr 3 2023 21:25:03 -->
+<vector id="1" version="14">
 	<design>
 		<size>
 			<width>1500</width>
@@ -67,14 +67,14 @@
 							</edges>
 						</tile.Feature>
 						<app.Rosette id="14">
-							<n>8</n>
-							<q>0</q>
-							<s>3</s>
-							<k>0</k>
 							<boundarySides>8</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
+							<n>8</n>
+							<q>0</q>
+							<s>3</s>
+							<k>0</k>
 						</app.Rosette>
 					</entry>
 					<entry>
@@ -141,7 +141,12 @@
 								</Line>
 							</edges>
 						</tile.Feature>
-						<app.ExplicitFigure id="31" type="MOTIF_TYPE_EXPLICIT">
+						<app.ExplicitFigure id="31" type="MOTIF_TYPE_EXPLICIT_MAP">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>14</n>
 							<map id="32">
 								<vertices id="33">
 									<Vertex id="34">
@@ -344,10 +349,6 @@
 									</Edge>
 								</edges>
 							</map>
-							<boundarySides>14</boundarySides>
-							<boundaryScale>1</boundaryScale>
-							<figureScale>1</figureScale>
-							<r>0</r>
 						</app.ExplicitFigure>
 					</entry>
 					<entry>
@@ -370,7 +371,12 @@
 								</Line>
 							</edges>
 						</tile.Feature>
-						<app.ExplicitFigure id="96" type="MOTIF_TYPE_EXPLICIT">
+						<app.ExplicitFigure id="96" type="MOTIF_TYPE_EXPLICIT_MAP">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>3</n>
 							<map id="97">
 								<vertices id="98">
 									<Vertex id="99">
@@ -419,10 +425,6 @@
 									</Edge>
 								</edges>
 							</map>
-							<boundarySides>3</boundarySides>
-							<boundaryScale>1</boundaryScale>
-							<figureScale>1</figureScale>
-							<r>0</r>
 						</app.ExplicitFigure>
 					</entry>
 					<entry>
@@ -458,14 +460,14 @@
 							</edges>
 						</tile.Feature>
 						<app.Rosette id="120">
-							<n>6</n>
-							<q>0</q>
-							<s>2</s>
-							<k>0</k>
 							<boundarySides>6</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
+							<n>6</n>
+							<q>0</q>
+							<s>2</s>
+							<k>0</k>
 						</app.Rosette>
 					</entry>
 					<entry>
@@ -492,7 +494,12 @@
 								</Line>
 							</edges>
 						</tile.Feature>
-						<app.ExplicitFigure id="127" type="MOTIF_TYPE_EXPLICIT">
+						<app.ExplicitFigure id="127" type="MOTIF_TYPE_EXPLICIT_MAP">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
 							<map id="128">
 								<vertices id="129">
 									<Vertex id="130">
@@ -555,10 +562,6 @@
 									</Edge>
 								</edges>
 							</map>
-							<boundarySides>4</boundarySides>
-							<boundaryScale>1</boundaryScale>
-							<figureScale>1</figureScale>
-							<r>0</r>
 						</app.ExplicitFigure>
 					</entry>
 				</app.Prototype>

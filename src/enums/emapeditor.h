@@ -1,3 +1,4 @@
+#pragma once
 #ifndef EMAPEDITOR_H
 #define EMAPEDITOR_H
 

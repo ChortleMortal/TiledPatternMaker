@@ -1,7 +1,9 @@
-﻿#ifndef MAP_EDITOR_VIEW_H
+﻿#pragma once
+#ifndef MAP_EDITOR_VIEW_H
 #define MAP_EDITOR_VIEW_H
 
 #include "misc/layer_controller.h"
+#include "enums/emapeditor.h"
 
 typedef std::shared_ptr<class DesignElement>    DesignElementPtr;
 typedef std::shared_ptr<class Map>              MapPtr;
@@ -78,10 +80,11 @@ public slots:
 protected:
 
 private:
-
     static MapedViewPtr spThis;
+
     Xform               xf_canvas;
     QPointF             mousePos;             // used by menu
+    bool                debugMouse;
 
     MapEditorDb        * db;
     MapEditorSelection * selector;

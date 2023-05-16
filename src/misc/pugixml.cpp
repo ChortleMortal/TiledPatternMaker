@@ -1,5 +1,5 @@
 /**
- * pugixml parser - version 1.12
+ * pugixml parser - version 1.13
  * --------------------------------------------------------
  * Copyright (C) 2006-2022, by Arseny Kapoulkine (arseny.kapoulkine@gmail.com)
  * Report bugs and download new versions at https://pugixml.org/
@@ -5070,7 +5070,7 @@ PUGI__NS_BEGIN
 		xml_writer_file writer(file);
 		doc.save(writer, indent, flags, encoding);
 
-		return ferror(file) == 0;
+		return fflush(file) == 0 && ferror(file) == 0;
 	}
 
 	struct name_null_sentry
@@ -5370,6 +5370,13 @@ namespace pugi
 		if (!_attr) return false;
 
 		return impl::strcpy_insitu(_attr->name, _attr->header, impl::xml_memory_page_name_allocated_mask, rhs, impl::strlength(rhs));
+	}
+
+	PUGI__FN bool xml_attribute::set_value(const char_t* rhs, size_t sz)
+	{
+		if (!_attr) return false;
+
+		return impl::strcpy_insitu(_attr->value, _attr->header, impl::xml_memory_page_value_allocated_mask, rhs, sz);
 	}
 
 	PUGI__FN bool xml_attribute::set_value(const char_t* rhs)
@@ -5760,6 +5767,16 @@ namespace pugi
 			return false;
 
 		return impl::strcpy_insitu(_root->name, _root->header, impl::xml_memory_page_name_allocated_mask, rhs, impl::strlength(rhs));
+	}
+
+	PUGI__FN bool xml_node::set_value(const char_t* rhs, size_t sz)
+	{
+		xml_node_type type_ = _root ? PUGI__NODETYPE(_root) : node_null;
+
+		if (type_ != node_pcdata && type_ != node_cdata && type_ != node_comment && type_ != node_pi && type_ != node_doctype)
+			return false;
+
+		return impl::strcpy_insitu(_root->value, _root->header, impl::xml_memory_page_value_allocated_mask, rhs, sz);
 	}
 
 	PUGI__FN bool xml_node::set_value(const char_t* rhs)
@@ -6644,6 +6661,13 @@ namespace pugi
 	}
 #endif
 
+	PUGI__FN bool xml_text::set(const char_t* rhs, size_t sz)
+	{
+		xml_node_struct* dn = _data_new();
+
+		return dn ? impl::strcpy_insitu(dn->value, dn->header, impl::xml_memory_page_value_allocated_mask, rhs, sz) : false;
+	}
+
 	PUGI__FN bool xml_text::set(const char_t* rhs)
 	{
 		xml_node_struct* dn = _data_new();
@@ -7399,7 +7423,7 @@ namespace pugi
 		using impl::auto_deleter; // MSVC7 workaround
 		auto_deleter<FILE> file(impl::open_file(path_, (flags & format_save_file_text) ? "w" : "wb"), impl::close_file);
 
-		return impl::save_file_impl(*this, file.data, indent, flags, encoding);
+		return impl::save_file_impl(*this, file.data, indent, flags, encoding) && fclose(file.release()) == 0;
 	}
 
 	PUGI__FN bool xml_document::save_file(const wchar_t* path_, const char_t* indent, unsigned int flags, xml_encoding encoding) const
@@ -7407,7 +7431,7 @@ namespace pugi
 		using impl::auto_deleter; // MSVC7 workaround
 		auto_deleter<FILE> file(impl::open_file_wide(path_, (flags & format_save_file_text) ? L"w" : L"wb"), impl::close_file);
 
-		return impl::save_file_impl(*this, file.data, indent, flags, encoding);
+		return impl::save_file_impl(*this, file.data, indent, flags, encoding) && fclose(file.release()) == 0;
 	}
 
 	PUGI__FN xml_node xml_document::document_element() const

@@ -19,19 +19,16 @@
 // callback that gets a sequence of calls, one for each translate.
 
 #include "geometry/fill_region.h"
-#include "settings/configuration.h"
-#include "tile/tiling_data.h"
 #include "tile/tiling.h"
-#include <QPolygonF>
+
 
 FillRegion::FillRegion(TilingPtr tiling, const FillData &fd)
 {
     this->tiling = tiling;
     fillData     = fd;
-    config       = Configuration::getInstance();
 }
 
-QVector<QTransform> FillRegion::getTransforms()
+Placements FillRegion::getPlacements(eRepeatType mode)
 {
     int minX,minY,maxX,maxY;
     bool singleton;
@@ -43,7 +40,7 @@ QVector<QTransform> FillRegion::getTransforms()
         return transforms;
     }
 
-    switch(config->repeatMode)
+    switch(mode)
     {
     case REPEAT_SINGLE:
         //qDebug() << "REPEAT_SINGLE";
@@ -52,8 +49,7 @@ QVector<QTransform> FillRegion::getTransforms()
 
     case REPEAT_PACK:
         //qDebug() << "REPEAT_PACK";
-      //for (int h = -1; h <= 1; h++)
-        for (int h = 0; h <= 1; h++)
+        for (int h = -1; h <= 1; h++)
         {
             for (int v = 0; v <= 1; v++)
             {
@@ -79,7 +75,7 @@ QVector<QTransform> FillRegion::getTransforms()
 
 QTransform FillRegion::calcTransform(int h, int v)
 {
-    //qDebug() << "Prototype::calcTransform:"  << h << v;
+    //qDebug() << "FillRegion::calcTransform:"  << h << v;
     QPointF pt   = (tiling->getData().getTrans1() * static_cast<qreal>(h)) + (tiling->getData().getTrans2() * static_cast<qreal>(v));
     QTransform T = QTransform::fromTranslate(pt.x(),pt.y());
     return T;

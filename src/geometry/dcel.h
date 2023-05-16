@@ -1,3 +1,7 @@
+#pragma once
+#ifndef DCEL_H
+#define DCEL_H
+
 /*
 MIT License
 
@@ -24,15 +28,12 @@ SOFTWARE.
 Taken from:  https://github.com/AnkurRyder/DCEL.git
 */
 
-#ifndef DCEL_H
-#define DCEL_H
-
 #include "geometry/map.h"
 #include "geometry/faces.h"
 #include "geometry/neighbours.h"
 #include "geometry/neighbour_map.h"
 
-typedef std::shared_ptr<class Face> FacePtr;
+typedef std::shared_ptr<class Face>         FacePtr;
 typedef std::shared_ptr<class NeighbourMap> NeighbourMapPtr;
 
 enum eColor
@@ -40,6 +41,12 @@ enum eColor
     C_WHITE = 0,
     C_BLACK = 1
 };
+
+//////////////////////////////////////////////////////////////////////////////
+///
+///  DCEL
+///
+//////////////////////////////////////////////////////////////////////////////
 
 class DCEL
 {
@@ -50,12 +57,9 @@ public:
     DCEL(MapPtr map);
     ~DCEL();
 
-    void    buildDCEL();
     void    displayDCEL(int val);
 
-    FaceSet & getFaceSet() { return faces; }
-    FacePtr   findOuterFace();
-
+    FaceSet                  & getFaceSet()  { return faces; }
     const QVector<VertexPtr> & getVertices() { return vertices; }
     const QVector<EdgePtr>   & getEdges()    { return edges; }
 
@@ -64,11 +68,27 @@ public:
     static int refs;
 
 protected:
+    void    buildDCEL();
     void    fill_half_edge_table();
     void    fill_face_table_inner_components();
     void    fill_half_edge_faces();
 
+    EdgePtr next_half_edge(const EdgePtr & current);
+    EdgePtr findEdge(const VertexPtr & start, const VertexPtr &end, bool expected = true);
+
     void    createFace(const EdgePtr & head);
+    FacePtr findOuterFace();
+    FacePtr check_if_inside(const QVector<VertexPtr> & verts);
+
+    double  angle(const QPointF & p1, const QPointF & p2, const QPointF & p3);
+    double  area_poly(const QVector<VertexPtr> & key);
+
+    int     orientation(const QPointF & p, const QPointF & q, const QPointF & r);
+
+    bool    check_if_point_is_inside(const VertexPtr & ver, const QVector<VertexPtr> & key);
+    bool    isInside(const QPolygonF & polygon, const QPointF & p);
+    bool    doIntersect(const QPointF & p1, const QPointF & q1, const QPointF & p2, const QPointF & q2);
+    bool    onSegment(const QPointF & p, const QPointF & q, const QPointF & r);
 
     void    print_vertices();
     void    print_edges();
@@ -85,28 +105,14 @@ protected:
     int     faceIndex(const FacePtr & face);
     int     edgeIndex(const EdgePtr & edge);
 
-    VertexPtr     validAdjacent(const VertexPtr & vert);
-    EdgePtr       next_half_edge(const EdgePtr & current);
-
-    EdgePtr       findEdge(const VertexPtr & start, const VertexPtr &end, bool expected = true);
-
-    FacePtr check_if_inside(const QVector<VertexPtr> & verts);
-    bool    check_if_point_is_inside(const VertexPtr & ver, const QVector<VertexPtr> & key);
-    bool    isInside(const QPolygonF & polygon, const QPointF & p);
-
-    bool    doIntersect(const QPointF & p1, const QPointF & q1, const QPointF & p2, const QPointF & q2);
-    int     orientation(const QPointF & p, const QPointF & q, const QPointF & r);
-
-    bool    onSegment(const QPointF & p, const QPointF & q, const QPointF & r);
-    double  angle(const QPointF & p1, const QPointF & p2, const QPointF & p3);
-    double  area_poly(const QVector<VertexPtr> & key);
+    VertexPtr validAdjacent(const VertexPtr & vert);
 
 private:
     FaceSet            faces;
     QVector<VertexPtr> vertices;
     QVector<EdgePtr>   edges;
     NeighbourMapPtr    nMap;
-
 };
+
 
 #endif // DCEL_H

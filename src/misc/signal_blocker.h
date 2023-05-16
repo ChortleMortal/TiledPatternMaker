@@ -1,3 +1,4 @@
+#pragma once
 #ifndef SIGNAL_BLOCKER_H
 #define SIGNAL_BLOCKER_H
 

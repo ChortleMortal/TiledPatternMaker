@@ -1,3 +1,4 @@
+#pragma once
 #ifndef EVIEWTYPE_H
 #define EVIEWTYPE_H
 

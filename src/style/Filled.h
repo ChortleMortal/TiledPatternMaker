@@ -1,3 +1,4 @@
+#pragma once
 #ifndef FILLED_H
 #define FILLED_H
 
@@ -23,13 +24,9 @@ class Filled : public Style, public ColorMaker
     friend class page_system_info;
 
 public:
-    Filled(const PrototypePtr &  proto, int algorithm);
+    Filled(const ProtoPtr &  proto, int algorithm);
     Filled(const StylePtr &other);
     ~Filled();
-
-    virtual eStyleType getStyleType() const override { return STYLE_FILLED; }
-
-    QString getStyleDesc() const override {return "Filled";}
 
     void resetStyleRepresentation()  override;
     void createStyleRepresentation() override;
@@ -48,6 +45,10 @@ public:
 
     void    setAlgorithm(int val);
     int     getAlgorithm() { return algorithm; }
+
+    virtual eStyleType getStyleType() const override { return STYLE_FILLED; }
+    QString            getStyleDesc() const override { return "Filled";}
+    virtual void       report()       const override { qDebug().noquote() << getStyleDesc(); }
 
 protected:
     ColorSet    whiteColorSet;

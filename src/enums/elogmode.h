@@ -1,3 +1,4 @@
+#pragma once
 #ifndef ELOGMODE_H
 #define ELOGMODE_H
 

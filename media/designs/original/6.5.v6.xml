@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
-<!-- Written: Sat Sep 24 2022 22:15:54 -->
-<vector id="1" version="13">
+<!-- Written: Sun Apr 23 2023 18:29:23 -->
+<vector id="1" version="14">
+	<designNotes>integrated border</designNotes>
 	<design>
 		<size>
 			<width>1500</width>
@@ -11,12 +12,15 @@
 		<background>
 			<color>#ffffffff</color>
 		</background>
+		<Crop>
+			<boundary>-8.013333333333335,-4.746666666666668,8.226666666666668,4.76</boundary>
+		</Crop>
 		<Fill singleton="f">-3,3,-3,3</Fill>
 	</design>
-	<style.Plain id="2">
+	<style.Thick id="2">
 		<toolkit.GeoLayer>
-			<left__delta>0</left__delta>
-			<top__delta>0</top__delta>
+			<left__delta>212</left__delta>
+			<top__delta>222</top__delta>
 			<width__delta>1</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>0,0</center>
@@ -59,13 +63,13 @@
 							</edges>
 						</tile.Feature>
 						<app.Star id="12">
-							<n>6</n>
-							<d>1.67</d>
-							<s>1</s>
-							<boundarySides>6</boundarySides>
+							<boundarySides>1</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
+							<n>6</n>
+							<d>1.67</d>
+							<s>1</s>
 						</app.Star>
 					</entry>
 					<entry>
@@ -96,28 +100,34 @@
 								</Line>
 							</edges>
 						</tile.Feature>
-						<app.ExplicitIntersect id="20" type="FIG_TYPE_EXPLICIT_INTERSECT">
-							<s>1</s>
-							<sides>10</sides>
-							<skip>3</skip>
-							<progressive>f</progressive>
-							<boundarySides>5</boundarySides>
+						<app.ExplicitIntersect id="20" type="MOTIF_TYPE_INTERSECT">
+							<boundarySides>1</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
+							<n>10</n>
+							<s>1</s>
+							<skip>3</skip>
+							<progressive>f</progressive>
 						</app.ExplicitIntersect>
 					</entry>
 				</app.Prototype>
 			</prototype>
 		</style.Style>
 		<style.Colored>
-			<color hide="t">#84003366</color>
+			<color hide="t">#ff003366</color>
 		</style.Colored>
-	</style.Plain>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.05</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+	</style.Thick>
 	<style.Filled id="21">
 		<toolkit.GeoLayer>
-			<left__delta>0</left__delta>
-			<top__delta>0</top__delta>
+			<left__delta>212</left__delta>
+			<top__delta>222</top__delta>
 			<width__delta>1</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>0,0</center>
@@ -139,8 +149,8 @@
 			<Group hideSet="f" />
 		</ColorGroup>
 		<style.Filled>
-			<draw__inside>true</draw__inside>
-			<draw__outside>false</draw__outside>
+			<draw__inside>false</draw__inside>
+			<draw__outside>true</draw__outside>
 			<algorithm>0</algorithm>
 		</style.Filled>
 	</style.Filled>

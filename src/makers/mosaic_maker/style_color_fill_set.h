@@ -1,3 +1,4 @@
+#pragma once
 #ifndef STYLE_COLOR_FILL_SET_H
 #define STYLE_COLOR_FILL_SET_H
 
@@ -27,6 +28,8 @@ class StyleColorFillSet : public QObject
 public:
     StyleColorFillSet(FilledPtr style, QVBoxLayout * vbox);
     void display();
+    void select(QPointF mpt);
+    void setColor(QColor color);
 
 signals:
     void sig_colorsChanged();
@@ -46,8 +49,8 @@ protected:
     void colorVisibilityChanged(int row);
 
 private:
-    FilledPtr        filled;
+    FilledPtr       filled;
     QTableWidget  * table;
-    TPColor          copyPasteColor;
+    TPColor         copyPasteColor;
 };
 #endif

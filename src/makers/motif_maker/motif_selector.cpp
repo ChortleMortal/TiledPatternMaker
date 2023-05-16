@@ -1,9 +1,9 @@
-﻿#include <QtWidgets>
-#include "makers/motif_maker/motif_maker.h"
+#include <QtWidgets>
+#include "makers/prototype_maker/prototype_maker.h"
 #include "makers/motif_maker/motif_selector.h"
-#include "makers/motif_maker/motif_editor.h"
-#include "makers/motif_maker/motif_button.h"
-#include "mosaic/prototype.h"
+#include "makers/motif_maker/motif_editor_widget.h"
+#include "makers/motif_maker/design_element_button.h"
+#include "makers/prototype_maker/prototype.h"
 #include "style/style.h"
 #include "tile/tiling.h"
 #include "mosaic/design_element.h"
@@ -26,20 +26,20 @@
 // tilings for now, it's not a big deal, and I can always add the
 // functionality later.
 
-// DAC 06NOV2020 - removes creation of DesignEelements from here
+// DAC 06NOV2020 - removes creation of DesignElements from here
 // This launcher is a view which displays the prototype but does not construct it
 // Construction is performed in the MotifMaker
 
-MotifSelector::MotifSelector()
+DELSelectorWidget::DELSelectorWidget()
 {
-    qRegisterMetaType<MotifButton*>();
+    qRegisterMetaType<DesignElementButton*>();
 
-    config = Configuration::getInstance();
-    motifMaker = MotifMaker::getInstance();
+    config        = Configuration::getInstance();
+    motifViewData = PrototypeMaker::getInstance()->getProtoMakerData();
 
     setWidgetResizable(true);
-    setFixedWidth(400);
-    setFrameShape(QFrame::NoFrame);
+    setFixedWidth(360);
+    //setFrameShape(QFrame::NoFrame);
 
     widget = new QWidget;
     setWidget(widget);
@@ -50,11 +50,12 @@ MotifSelector::MotifSelector()
     grid->setSpacing(9);
 }
 
-void MotifSelector::setup(PrototypePtr proto)
+void DELSelectorWidget::setup(ProtoPtr proto)
 {
     if (!proto || !proto->getTiling() || proto->getTiling()->getData().countPlacedTiles() ==0 || proto->numDesignElements() == 0)
     {
-        MotifBtnPtr dummy;
+        DELBtnPtr dummy;
+        buttons.clear();
         setCurrentButton(dummy,false);
         return;
     }
@@ -66,15 +67,19 @@ void MotifSelector::setup(PrototypePtr proto)
     setCurrentButton(buttons[0],false);
 }
 
-void MotifSelector::populateMotifButtons(QVector<DesignElementPtr> & dels)
+void DELSelectorWidget::populateMotifButtons(QVector<DesignElementPtr> & dels)
 {
     buttons.clear();
     _currentButton.reset();
 
     int idx = 0;
-    for (auto del : dels)
+    auto rit = dels.constEnd();
+
+    // reverse iterate
+    while(rit != dels.constBegin())
     {
-        MotifBtnPtr fb = std::make_shared<MotifButton>(del,idx);
+        rit--;
+        DELBtnPtr fb = std::make_shared<DesignElementButton>(*rit,idx);
         buttons.push_back(fb);
         fb->setSize( QSize( 130, 130 ) );
         fb->QFrame::installEventFilter(this);
@@ -88,17 +93,17 @@ void MotifSelector::populateMotifButtons(QVector<DesignElementPtr> & dels)
     }
 }
 
-bool MotifSelector::eventFilter(QObject *watched, QEvent *event)
+bool DELSelectorWidget::eventFilter(QObject *watched, QEvent *event)
 {
     if (event->type() == QEvent::MouseButtonPress)
     {
-        MotifButton * fb = dynamic_cast<MotifButton*>(watched);
+        DesignElementButton * fb = dynamic_cast<DesignElementButton*>(watched);
         if (fb)
         {
             qDebug() << "MotifSelector::eventFilter - found button";
             for (auto it = buttons.begin(); it != buttons.end(); it++)
             {
-                MotifBtnPtr fbp = *it;
+                DELBtnPtr fbp = *it;
                 if (fbp.get() == fb)
                 {
                     Qt::KeyboardModifiers kms =  QApplication::keyboardModifiers();
@@ -113,7 +118,7 @@ bool MotifSelector::eventFilter(QObject *watched, QEvent *event)
     return QScrollArea::eventFilter(watched, event);
 }
 
-void MotifSelector::setCurrentButton(MotifBtnPtr btn, bool add)
+void DELSelectorWidget::setCurrentButton(DELBtnPtr btn, bool add)
 {
     if (btn)
         qDebug() << "MotifSelector::setCurrent" << btn.get() << "index=" << btn->getIndex();
@@ -123,9 +128,9 @@ void MotifSelector::setCurrentButton(MotifBtnPtr btn, bool add)
     emit sig_launcherButton(btn,add);
 }
 
-void MotifSelector::tallyButtons()
+void DELSelectorWidget::tallyButtons()
 {
-    auto dels =  motifMaker->getSelectedDesignElements();
+    auto dels =  motifViewData->getSelectedDELs(MVD_DELEM);
     for (auto btn : buttons)
     {
         auto del = btn->getDesignElement();
@@ -133,7 +138,7 @@ void MotifSelector::tallyButtons()
     }
 }
 
-void MotifSelector::getNextPosition(int index, int & row, int & col)
+void DELSelectorWidget::getNextPosition(int index, int & row, int & col)
 {
 #if 0
     if (index > MAX_UNIQUE_TILE_INDEX)

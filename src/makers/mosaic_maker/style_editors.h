@@ -1,8 +1,11 @@
+#pragma once
 #ifndef STYLED_EDITORS_H
 #define STYLED_EDITORS_H
 
 #include <memory>
 #include <QObject>
+#include <QPointF>
+#include <QColor>
 
 class QPushButton;
 class QCheckBox;
@@ -32,6 +35,9 @@ class StyleEditor : public QObject
 
 public:
     StyleEditor();
+
+    virtual void onEnter() {};
+    virtual void onExit()  {};
 
 signals:
     void    sig_refreshView();
@@ -109,8 +115,13 @@ public:
 
     FilledPtr getFilled() { return filled; }
 
+    virtual void onEnter();
+    virtual void onExit();
+
 public slots:
     void slot_colorsChanged();
+    void slot_mousePressed(QPointF spt, Qt::MouseButton btn);
+    void slot_colorPick(QColor color);
 
 private slots:
     void slot_insideChanged(int state);
@@ -128,9 +139,13 @@ protected:
 
 private:
     FilledPtr       filled;
+
     AQTableWidget * table;
+
     QCheckBox     * inside_checkbox;
     QCheckBox     * outside_checkbox;
+    QComboBox     * algoBox;
+
     QVBoxLayout   * vbox;
 
     StyleColorFillSet   * fillSet;

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef FACES_H
 #define FACES_H
 

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef EXTENDED_STAR_H
 #define EXTENDED_STAR_H
 
@@ -13,15 +14,19 @@ class ExtendedStar : public Star
 public:
     ExtendedStar(int n, qreal d, int s);
     ExtendedStar(const Motif & fig, int n, qreal d, int s);
-
     ExtendedStar(const ExtendedStar & other);
 
     virtual ~ExtendedStar() override {}
 
-    void    buildMaps() override;
-
-    virtual QString getMotifDesc() override { return "Extended Star";}
     Extender & getExtender() { return extender; }
+
+    void    buildMotifMaps() override;
+
+    virtual QString getMotifDesc() override { return "ExtendedStar";}
+    virtual void    report()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "d:" << d << "s" << s
+                                               << "preipheralVerts:" << extender. getExtendPeripheralVertices()
+                                               << "freeVerts:" << extender.getExtendFreeVertices()
+                                               << "boundaryVerts:" << extender. getConnectBoundaryVertices(); }
 
 private:
     Extender extender;

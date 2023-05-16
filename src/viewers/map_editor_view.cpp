@@ -12,10 +12,10 @@
 #include "makers/crop_maker/crop_maker.h"
 #include "makers/map_editor/map_editor_db.h"
 #include "makers/map_editor/map_selection.h"
-#include "makers/motif_maker/motif_button.h"
+#include "makers/motif_maker/design_element_button.h"
 #include "misc/geo_graphics.h"
 #include "mosaic/design_element.h"
-#include "mosaic/prototype.h"
+#include "makers/prototype_maker/prototype.h"
 #include "settings/configuration.h"
 #include "tile/tile.h"
 #include "tile/tiling.h"
@@ -25,7 +25,6 @@
 
 using std::make_shared;
 
-const bool debugMouse = false;
 
 MapedViewPtr MapEditorView::spThis;
 
@@ -42,7 +41,8 @@ MapEditorView::MapEditorView(int ignore) : LayerController("MapEditorView")
 {
     Q_UNUSED(ignore);
 
-    config = Configuration::getInstance();
+    config      = Configuration::getInstance();
+    debugMouse  = false;
 
     mapLineWidth          = 3.0;
     constructionLineWidth = 1.0;
@@ -449,7 +449,9 @@ void MapEditorView::drawConstructionLines(QPainter * painter)
     if (!db->showConstructionLines)
         return;
 
-    painter->setPen(QPen(Qt::white,constructionLineWidth));
+    QColor color = (view->getBackgroundColor() == Qt::white) ? Qt::black : Qt::white;
+
+    painter->setPen(QPen(color,constructionLineWidth));
     for (auto line : qAsConst(db->constructionLines))
     {
         painter->drawLine(viewT.map(line));
@@ -485,7 +487,7 @@ QTransform MapEditorView::getPlacement(TilePtr tile)
     if (proto)
     {
         auto tiling = proto->getTiling();
-        t = tiling->getPlacement(tile,0);
+        t = tiling->getFirstPlacement(tile);
     }
     return t;
 }

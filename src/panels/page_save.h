@@ -1,4 +1,5 @@
-﻿#ifndef PAGE_SAVE_H
+﻿#pragma once
+#ifndef PAGE_SAVE_H
 #define PAGE_SAVE_H
 
 class QTextEdit;
@@ -20,7 +21,7 @@ public:
     void onRefresh() override;
 
 signals:
-    void sig_saveMosaic(QString name, bool test);
+    void sig_saveMosaic(QString name);
     void sig_saveTiling(QString name);
 
 public slots:
@@ -48,7 +49,6 @@ private:
     QTextEdit   * tile_desc;
     QLineEdit   * tile_author;
     QLabel      * requiresSave;
-    QCheckBox   * chkSaveTest;
 };
 
 #endif

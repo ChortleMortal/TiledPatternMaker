@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
-<!-- Written: Sat Sep 24 2022 23:30:22 -->
+<!-- Written: Sun Nov 13 2022 16:47:15 -->
 <vector id="1" version="13">
-	<designNotes>uses filled algorithm 3</designNotes>
+	<designNotes>using algorithm2</designNotes>
 	<design>
 		<size>
 			<width>1500</width>
@@ -71,7 +71,7 @@
 								</Line>
 							</edges>
 						</tile.Feature>
-						<app.Infer id="15" type="FIG_TYPE_EXPLICIT_INFER">
+						<app.Infer id="15" type="MOTIF_TYPE_EXPLICIT_INFER">
 							<boundarySides>9</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
@@ -135,13 +135,13 @@
 							</edges>
 						</tile.Feature>
 						<app.Star id="30">
-							<n>12</n>
-							<d>4</d>
-							<s>2</s>
 							<boundarySides>12</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
+							<n>12</n>
+							<d>4</d>
+							<s>2</s>
 						</app.Star>
 					</entry>
 					<entry>
@@ -177,13 +177,13 @@
 							</edges>
 						</tile.Feature>
 						<app.Star id="39">
-							<n>6</n>
-							<d>2</d>
-							<s>2</s>
 							<boundarySides>6</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
+							<n>6</n>
+							<d>2</d>
+							<s>2</s>
 						</app.Star>
 					</entry>
 				</app.Prototype>
@@ -202,7 +202,7 @@
 			<gap>0</gap>
 			<shadow>0.05</shadow>
 			<includeTipVerts>false</includeTipVerts>
-			<startUnder>false</startUnder>
+			<startUnder>true</startUnder>
 		</style.Interlace>
 	</style.Interlace>
 	<style.Interlace id="40">
@@ -230,7 +230,7 @@
 			<gap>0</gap>
 			<shadow>0.05</shadow>
 			<includeTipVerts>false</includeTipVerts>
-			<startUnder>false</startUnder>
+			<startUnder>true</startUnder>
 		</style.Interlace>
 	</style.Interlace>
 	<style.Thick id="41">
@@ -271,41 +271,24 @@
 			<color hide="f">#ff000000</color>
 		</ColorBlacks>
 		<ColorWhites>
-			<color hide="f">#ffff00ff</color>
-			<color hide="f">#ffff0000</color>
-			<color hide="f">#ff990099</color>
+			<color hide="t">#00993300</color>
 			<color hide="f">#ff993300</color>
-			<color hide="f">#ff3b2bff</color>
-			<color hide="f">#ff003399</color>
+			<color hide="f">#ff993300</color>
+			<color hide="f">#ff993300</color>
+			<color hide="f">#ff993300</color>
+			<color hide="f">#ff993300</color>
+			<color hide="t">#00ffffff</color>
 		</ColorWhites>
 		<ColorGroup>
 			<Group hideSet="f">
-				<color hide="t">#00ffaa00</color>
-				<color hide="t">#0055aa00</color>
-			</Group>
-			<Group hideSet="f">
-				<color hide="f">#ff870087</color>
-			</Group>
-			<Group hideSet="f">
-				<color hide="f">#ffa80000</color>
-			</Group>
-			<Group hideSet="f">
-				<color hide="f">#ff870087</color>
-			</Group>
-			<Group hideSet="f">
 				<color hide="f">#ff993300</color>
 			</Group>
-			<Group hideSet="f">
-				<color hide="f">#ff3b2bff</color>
-			</Group>
-			<Group hideSet="f">
-				<color hide="f">#ff003399</color>
-			</Group>
+			<Group hideSet="f" />
 		</ColorGroup>
 		<style.Filled>
 			<draw__inside>true</draw__inside>
 			<draw__outside>false</draw__outside>
-			<algorithm>3</algorithm>
+			<algorithm>2</algorithm>
 		</style.Filled>
 	</style.Filled>
 	<style.TileColors id="43">

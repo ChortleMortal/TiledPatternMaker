@@ -1,3 +1,4 @@
+#pragma once
 #ifndef MEMORY_COMBO_H
 #define MEMORY_COMBO_H
 
@@ -12,18 +13,21 @@ class MemoryCombo : public QComboBox
 public:
     MemoryCombo(QString name);
 
+    void initialise();
     void select (int index);
+    void eraseCurrent();
+
+    static QString getTextFor(QString name);
 
 public slots:
-    void setCurrentText(const QString &text);
+    void    setCurrentText(const QString &text);
     QString getCurrentText();
 
 protected:
-    QStringList getItems();
-
+    void            persistItems();
+    QStringList     getItems();
 private:
-    QString name;
-    Configuration * config;
+    QString         name;
 };
 
 #endif // MEMORY_COMBO_H

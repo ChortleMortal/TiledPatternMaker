@@ -1,4 +1,5 @@
-﻿#ifndef LEGACY_TILE_H
+﻿#pragma once
+#ifndef LEGACY_TILE_H
 #define LEGACY_TILE_H
 
 #include "misc/layer.h"

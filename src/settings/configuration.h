@@ -1,11 +1,18 @@
+#pragma once
 #ifndef CONFIGURATION_H
 #define CONFIGURATION_H
 
 #include <QMap>
 #include <QColor>
 #include <QRectF>
+#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
+#include <memory>
+#endif
+#include <QSettings>
+
 #include "enums/ecyclemode.h"
 #include "enums/edesign.h"
+#include "enums/efillmode.h"
 #include "enums/efilesystem.h"
 #include "enums/elogmode.h"
 #include "enums/emapeditor.h"
@@ -36,20 +43,6 @@ typedef std::weak_ptr<class Layer>    WeakLayerPtr;
 
 #define E2STR(x) #x
 
-enum eRepeatType
-{
-    REPEAT_SINGLE,
-    REPEAT_PACK,
-    REPEAT_DEFINED,
-    REPEAT_MAX = REPEAT_DEFINED
-};
-
-static QString sRepeatType[4]  = {
-    E2STR(REPEAT_SINGLE),
-    E2STR(REPEAT_PACK),
-    E2STR(REPEAT_DEFINED)
-};
-
 enum eGridUnits
 {
     GRID_UNITS_SCREEN,
@@ -64,14 +57,33 @@ enum  eGridType
     GRID_RHOMBIC,
 };
 
-enum eProtoViewMode
+enum  eGridTilingAlgo
 {
-    PROTO_DRAW_MAP     =  0x01,
-    PROTO_DRAW_TILES   =  0x02,
-    PROTO_DRAW_MOTIFS  =  0x04,
-    PROTO_DEL_TILES    =  0x08,
-    PROTO_DEL_MOTIFS   =  0x10,
-    PROTO_DRAW_DESIGN_ELEMENT =  0x20
+    FLOOD,
+    REGION
+};
+
+class Worklist : public QStringList
+{
+public:
+    Worklist() {}
+
+    void set(QStringList & list);
+    const QStringList & get() { list.sort(); return list; }
+
+    void setName(QString listName);
+    const QString & name() { return listname; }
+
+    void add(QString designName);
+    void clear();
+    void removeuplicates() { list.removeDuplicates(); }
+
+    void load(QSettings & s);
+    void save(QSettings & s);
+
+private:
+    QString     listname;
+    QStringList list;
 };
 
 class Configuration
@@ -83,12 +95,6 @@ public:
     void    configurePaths();
     void    save();
 
-    DesignPtr getDesign(eDesign design) { return availableDesigns.value(design); }
-
-    void setWorkList (QStringList & list);
-    void addWorkList(QString name);
-    void clearWorkList();
-    const QStringList & getWorkList() { return workList; }
 
     void setViewerType(eViewType  viewerType);
     inline eViewType getViewerType() { return viewerType; }
@@ -107,10 +113,10 @@ public:
     qreal   mapedLen;
     qreal   mapedMergeSensitivity;
     qreal   protoviewWidth;
+    qreal   motifViewWidth;
 
     QString xmlTool;
-    QString compareDir0;
-    QString compareDir1;
+    QString diffTool;
     QString image0;
     QString image1;
     QString panelName;
@@ -121,8 +127,9 @@ public:
     QString tileFilter;
     QString rootImageDir;
     QString rootMediaDir;
+    QString baseLogName;
+    QString lastCompareName;
 
-    QStringList viewImages;
     QStringList protoViewColors;
 
     eRepeatType     repeatMode;
@@ -134,23 +141,25 @@ public:
     eCycleMode      genCycle;
     eCycleMode      viewCycle;
     eLoadType       fileFilter;
+    eGridTilingAlgo gridTilingAlgo;
 
     int     cycleInterval;
     int     polySides;    // used by tiling maker
     int     protoViewMode;
     int     gridModelWidth;
     int     gridScreenWidth;
+    int     gridTilingWidth;
     int     gridScreenSpacing;
+    int     gridZLevel;
 
     bool    darkTheme;
     bool    autoLoadStyles;
     bool    autoLoadTiling;
     bool    autoLoadDesigns;
-    bool    loadTilingMulti;
-    bool    loadTilingModify;
     bool    scaleToView;
     bool    logToStderr;
     bool    logToDisk;
+    bool    logToAppDir;
     bool    logToPanel;
     bool    logNumberLines;
     bool    logDebug;
@@ -177,6 +186,7 @@ public:
     bool    tilingNewCheck;
     bool    tilingTestCheck;
     bool    tileFilterCheck;
+    bool    tilingWorklistCheck;
     bool    lockView;
     bool    splitScreen;
 
@@ -205,6 +215,10 @@ public:
     bool    cs_showFrameSettings;
     bool    showCenterDebug;
     bool    showGrid;
+    bool    showGridTilingCenter;
+    bool    showGridModelCenter;
+    bool    showGridViewCenter;
+
     bool    measure;
 
     bool    gridModelCenter;
@@ -212,8 +226,18 @@ public:
     bool    snapToGrid;
     bool    defaultImageRoot;
     bool    defaultMediaRoot;
+    bool    saveMosaicTest;
+    bool    saveTilingTest;
+
+    bool    vCompLock;
+    bool    vCompXML;
 
     QColor  transparentColor;            // used by some menus
+    QString  gridColorTiling;
+    QString  gridColorModel;
+    QString  gridColorScreen;
+
+    Worklist worklist;
 
 ////////////////////////////////////////////////////////////////
 //
@@ -221,17 +245,18 @@ public:
 //
 ////////////////////////////////////////////////////////////////
 
-    QMap<eDesign,DesignPtr> availableDesigns;
+    int     appInstance;
+
     WeakLayerPtr            selectedLayer;
 
     QString rootTileDir;
     QString originalTileDir;
     QString newTileDir;
     QString testTileDir;
-    QString rootDesignDir;
-    QString originalDesignDir;
-    QString newDesignDir;
-    QString testDesignDir;
+    QString rootMosaicDir;
+    QString originalMosaicDir;
+    QString newMosaicDir;
+    QString testMosiacDir;
     QString templateDir;
     QString examplesDir;
     QString mapsDir;
@@ -248,11 +273,13 @@ public:
     bool    motifPropagate;
     bool    debugMapEnable;
     bool    dontTrapLog;
+    bool    localCycle;
 
     QString getMediaRoot();
     QString getMediaRootLocal();
     QString getMediaRootAppdata();
     QString getImageRoot();
+
 
 private:
     Configuration();
@@ -261,7 +288,6 @@ private:
     static Configuration * mpThis;
 
     eViewType   viewerType;
-    QStringList workList;
 };
 
 #endif // CONFIGURATION_H

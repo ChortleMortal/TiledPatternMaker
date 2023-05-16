@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!-- Written: Mon Oct 17 2022 15:19:27 -->
-<vector id="1" version="13">
+<!-- Written: Mon Jan 16 2023 12:04:30 -->
+<vector id="1" version="14">
 	<designNotes>algo 3 colors</designNotes>
 	<design>
 		<size>
@@ -52,6 +52,11 @@
 							</edges>
 						</tile.Feature>
 						<app.ExplicitFigure id="10" type="MOTIF_TYPE_EXPLICIT">
+							<boundarySides>4</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
 							<map id="11">
 								<vertices id="12">
 									<Vertex id="13">
@@ -758,10 +763,6 @@
 									</Edge>
 								</edges>
 							</map>
-							<boundarySides>4</boundarySides>
-							<boundaryScale>1</boundaryScale>
-							<figureScale>1</figureScale>
-							<r>0</r>
 						</app.ExplicitFigure>
 					</entry>
 				</app.Prototype>
@@ -877,6 +878,208 @@
 			<color hide="f">#ffffffff</color>
 		</ColorWhites>
 		<ColorGroup>
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="f">
+				<color hide="f">#ffa35807</color>
+				<color hide="f">#ff1840b2</color>
+			</Group>
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+				<color hide="f">#ffffffff</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+				<color hide="f">#ffffffff</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+				<color hide="f">#ffffffff</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+				<color hide="f">#ffffffff</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+				<color hide="f">#ffffffff</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+				<color hide="f">#ffffffff</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+				<color hide="f">#ffffffff</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+				<color hide="f">#ffffffff</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+				<color hide="f">#ffffffff</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+				<color hide="f">#ffffffff</color>
+			</Group>
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+				<color hide="f">#ffffffff</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+				<color hide="f">#ffffffff</color>
+			</Group>
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+				<color hide="f">#ffffffff</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+				<color hide="f">#ffffffff</color>
+			</Group>
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+				<color hide="f">#ffffffff</color>
+			</Group>
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+				<color hide="f">#ffffffff</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+				<color hide="f">#ffffffff</color>
+			</Group>
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+				<color hide="f">#ffffffff</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+				<color hide="f">#ffffffff</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+				<color hide="f">#ffffffff</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+				<color hide="f">#ffffffff</color>
+			</Group>
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+				<color hide="f">#ffffffff</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+				<color hide="f">#ffffffff</color>
+			</Group>
+			<Group hideSet="t" />
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+				<color hide="f">#ffffffff</color>
+			</Group>
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+				<color hide="f">#ffffffff</color>
+			</Group>
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+				<color hide="f">#ffffffff</color>
+			</Group>
+			<Group hideSet="t" />
+			<Group hideSet="f">
+				<color hide="f">#ffa35807</color>
+				<color hide="f">#ff1840b2</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ffa35807</color>
+				<color hide="f">#ff1840b2</color>
+			</Group>
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+				<color hide="f">#ffffffff</color>
+			</Group>
+			<Group hideSet="f">
+				<color hide="f">#ffa35807</color>
+				<color hide="f">#ff1840b2</color>
+			</Group>
+			<Group hideSet="t" />
+			<Group hideSet="f">
+				<color hide="f">#ffa35807</color>
+				<color hide="f">#ff1840b2</color>
+			</Group>
+			<Group hideSet="t" />
+			<Group hideSet="t" />
 			<Group hideSet="f">
 				<color hide="f">#ffffff00</color>
 				<color hide="f">#ffffffff</color>
@@ -886,10 +1089,6 @@
 				<color hide="f">#ff1840b2</color>
 			</Group>
 			<Group hideSet="f">
-				<color hide="f">#ffffff00</color>
-				<color hide="f">#ffffffff</color>
-			</Group>
-			<Group hideSet="f">
 				<color hide="f">#ffa35807</color>
 				<color hide="f">#ff1840b2</color>
 			</Group>
@@ -897,26 +1096,8 @@
 				<color hide="f">#ffa35807</color>
 				<color hide="f">#ff1840b2</color>
 			</Group>
-			<Group hideSet="f">
-				<color hide="f">#ffa35807</color>
-				<color hide="f">#ff1840b2</color>
-			</Group>
-			<Group hideSet="f">
-				<color hide="f">#ffa35807</color>
-				<color hide="f">#ff1840b2</color>
-			</Group>
-			<Group hideSet="f">
-				<color hide="f">#ffa35807</color>
-				<color hide="f">#ff1840b2</color>
-			</Group>
-			<Group hideSet="f">
-				<color hide="f">#ffa35807</color>
-				<color hide="f">#ff1840b2</color>
-			</Group>
-			<Group hideSet="f">
-				<color hide="f">#ffa35807</color>
-				<color hide="f">#ff1840b2</color>
-			</Group>
+			<Group hideSet="t" />
+			<Group hideSet="t" />
 			<Group hideSet="f">
 				<color hide="f">#ffa35807</color>
 				<color hide="f">#ff1840b2</color>
@@ -929,6 +1110,7 @@
 				<color hide="f">#ff1840b2</color>
 				<color hide="f">#ffa35807</color>
 			</Group>
+			<Group hideSet="t" />
 			<Group hideSet="f">
 				<color hide="f">#ffa35807</color>
 				<color hide="f">#ff1840b2</color>
@@ -937,14 +1119,24 @@
 				<color hide="f">#ffa35807</color>
 				<color hide="f">#ff1840b2</color>
 			</Group>
-			<Group hideSet="f">
-				<color hide="f">#ffa35807</color>
-				<color hide="f">#ff1840b2</color>
-			</Group>
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
 			<Group hideSet="f">
 				<color hide="f">#ffffff00</color>
 				<color hide="f">#ffffffff</color>
 			</Group>
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
 			<Group hideSet="f">
 				<color hide="f">#ffa35807</color>
 				<color hide="f">#ff1840b2</color>
@@ -969,6 +1161,7 @@
 				<color hide="f">#ffa35807</color>
 				<color hide="f">#ff1840b2</color>
 			</Group>
+			<Group hideSet="t" />
 			<Group hideSet="f">
 				<color hide="f">#ffa35807</color>
 				<color hide="f">#ff1840b2</color>
@@ -985,6 +1178,7 @@
 				<color hide="f">#ffa35807</color>
 				<color hide="f">#ff1840b2</color>
 			</Group>
+			<Group hideSet="t" />
 			<Group hideSet="f">
 				<color hide="f">#ffa35807</color>
 				<color hide="f">#ff1840b2</color>
@@ -993,22 +1187,16 @@
 				<color hide="f">#ffa35807</color>
 				<color hide="f">#ff1840b2</color>
 			</Group>
-			<Group hideSet="f">
-				<color hide="f">#ffa35807</color>
-				<color hide="f">#ff1840b2</color>
-			</Group>
-			<Group hideSet="f">
-				<color hide="f">#ffa35807</color>
-				<color hide="f">#ff1840b2</color>
-			</Group>
-			<Group hideSet="f">
-				<color hide="f">#ffa35807</color>
-				<color hide="f">#ff1840b2</color>
-			</Group>
-			<Group hideSet="f">
-				<color hide="f">#ffa35807</color>
-				<color hide="f">#ff1840b2</color>
-			</Group>
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
+			<Group hideSet="t" />
 		</ColorGroup>
 		<style.Filled>
 			<draw__inside>true</draw__inside>

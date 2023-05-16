@@ -1,3 +1,4 @@
+#pragma once
 #ifndef MAPEDITORSELCTION_H
 #define MAPEDITORSELCTION_H
 

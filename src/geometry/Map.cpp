@@ -131,7 +131,7 @@ MapPtr Map::recreate() const
 
     for(auto edge : qAsConst(edges))
     {
-        EdgePtr ne = make_shared<Edge>(edge->v1->copy, edge->v2->copy);
+        EdgePtr ne = make_shared<Edge>(edge->v1->copy.lock(), edge->v2->copy.lock());
         ne->setSwapState(edge->getSwapState());
         if (edge->getType() == EDGETYPE_CURVE || edge->getType() == EDGETYPE_CHORD)
         {
@@ -548,6 +548,10 @@ void Map::translate(qreal x, qreal y)
 void Map::transformMap(QTransform T)
 {
     _applyGeneralRigidMotion(T);
+    for (auto & mark : debugTexts)
+    {
+        mark.first = T.map(mark.first);
+    }
 }
 
 MapPtr Map::getTransformed(const QTransform &T) const
@@ -805,6 +809,9 @@ void Map::mergeMap(const constMapPtr & other, qreal tolerance)
 
 void Map::insertEdge(const EdgePtr & cutter)
 {
+    Q_ASSERT(contains(cutter->v1));
+    Q_ASSERT(contains(cutter->v2));
+
     auto edge = edgeExists(cutter);
     if (edge)
     {
@@ -951,12 +958,12 @@ void Map::insertEdge(const EdgePtr & cutter)
     }
 }
 
-void Map::mergeMany(const constMapPtr & other, const QVector<QTransform> &transforms)
+void Map::mergeMany(const constMapPtr & other, const Placements & placements)
 {
     // this function is significantly different and SLOWER than Kaplan's
     // becuse Taprats assumed PIC (polygons in contact).  This allows
     // overlapping tiles, hence the need to do a complete merge
-    for (auto & T : transforms)
+    for (auto & T : placements)
     {
 #if 1
         MapPtr mp = other->getTransformed(T);
@@ -1051,7 +1058,7 @@ QString Map::namedSummary() const
 
 QString Map::summary() const
 {
-    return QString("vertices=%1 edges=%2").arg(vertices.size()).arg(edges.size());
+    return QString("<%3> vertices=%1 edges=%2").arg(vertices.size()).arg(edges.size()).arg(mname);
 }
 
 void Map::dumpMap(bool full)
@@ -1146,6 +1153,7 @@ bool Map::hasIntersectingEdges() const
             QPointF apt;
             if (Intersect::getTrueIntersection(e, c, apt))
             {
+                qInfo() << "Map has overlaps (intersecting edges)";
                 return true;
             }
         }
@@ -1236,7 +1244,7 @@ void Map::_cleanseVertices()
             baddies.push_back(v);
         }
     }
-    qDebug() << "Bad verztices to delelte:" << baddies.size();
+    qDebug() << "Bad vertices to delete:" << baddies.size();
     for (auto & v  : baddies)
     {
         vertices.removeOne(v);
@@ -1368,7 +1376,7 @@ void DebugMap::insertDebugLine(QPointF p1, QPointF p2)
     insertEdge(v1,v2);
 }
 
-void DebugMap::insertDebugPolygon(QPolygonF & poly)
+void DebugMap::insertDebugPoints(QPolygonF & poly)
 {
     if (!config->debugMapEnable)
         return;
@@ -1381,6 +1389,11 @@ void DebugMap::insertDebugPolygon(QPolygonF & poly)
         VertexPtr v2 = insertVertex(p2);
         insertEdge(v1,v2);
     }
+}
+
+void DebugMap::insertDebugPolygon(QPolygonF & poly)
+{
+    insertDebugPoints(poly);
     if (!poly.isClosed())
     {
         QPointF p1 = poly.at(poly.size()-1);

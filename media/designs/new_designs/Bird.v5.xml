@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!-- Written: Fri Oct 14 2022 22:14:20 -->
-<vector id="1" version="13">
+<!-- Written: Mon Apr 17 2023 10:52:16 -->
+<vector id="1" version="14">
 	<designNotes>with inserts</designNotes>
 	<design>
 		<size>
@@ -65,12 +65,13 @@
 								</Curve>
 							</edges>
 						</tile.Feature>
-						<app.ExplicitFigure id="12" type="MOTIF_TYPE_EXPLICIT">
+						<IrregularNoMotif id="12" type="MOTIF_TYPE_IRREGULAR_NO_MAP">
 							<boundarySides>1</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFigure>
+							<n>10</n>
+						</IrregularNoMotif>
 					</entry>
 					<entry>
 						<tile.Feature id="13">
@@ -110,100 +111,97 @@
 								</Curve>
 							</edges>
 						</tile.Feature>
-						<app.ExplicitFigure id="21" type="MOTIF_TYPE_EXPLICIT">
-							<map id="22">
-								<vertices id="23" />
-								<edges id="24" />
-							</map>
+						<IrregularNoMotif id="21" type="MOTIF_TYPE_IRREGULAR_NO_MAP">
 							<boundarySides>1</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFigure>
+							<n>10</n>
+						</IrregularNoMotif>
 					</entry>
 					<entry>
-						<tile.Feature id="25">
+						<tile.Feature id="22">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
-							<edges id="26">
+							<edges id="23">
 								<Line>
-									<Point id="27">1,0.5773502691896256</Point>
-									<Point id="28">7.070501591499379e-17,1.154700538379251</Point>
+									<Point id="24">1,0.5773502691896256</Point>
+									<Point id="25">7.070501591499379e-17,1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="25" />
+									<Point id="26">-0.9999999999999998,0.5773502691896261</Point>
+								</Line>
+								<Line>
+									<Point reference="26" />
+									<Point id="27">-1,-0.5773502691896254</Point>
+								</Line>
+								<Line>
+									<Point reference="27" />
+									<Point id="28">-2.121150477449814e-16,-1.154700538379251</Point>
 								</Line>
 								<Line>
 									<Point reference="28" />
-									<Point id="29">-0.9999999999999998,0.5773502691896261</Point>
+									<Point id="29">0.9999999999999997,-0.5773502691896263</Point>
 								</Line>
 								<Line>
 									<Point reference="29" />
-									<Point id="30">-1,-0.5773502691896254</Point>
-								</Line>
-								<Line>
-									<Point reference="30" />
-									<Point id="31">-2.121150477449814e-16,-1.154700538379251</Point>
-								</Line>
-								<Line>
-									<Point reference="31" />
-									<Point id="32">0.9999999999999997,-0.5773502691896263</Point>
-								</Line>
-								<Line>
-									<Point reference="32" />
-									<Point reference="27" />
+									<Point reference="24" />
 								</Line>
 							</edges>
 						</tile.Feature>
-						<app.ConnectFigure id="33">
-							<n>6</n>
-							<child class="app.Star" id="34">
-								<n>6</n>
-								<d>2</d>
-								<s>1</s>
+						<app.ConnectFigure id="30">
+							<child class="app.Star" id="31">
 								<boundarySides>6</boundarySides>
 								<boundaryScale>1</boundaryScale>
 								<figureScale>1</figureScale>
 								<r>0</r>
+								<n>6</n>
+								<d>2</d>
+								<s>1</s>
 							</child>
 							<s>1</s>
 						</app.ConnectFigure>
 					</entry>
 					<entry>
-						<tile.Feature id="35">
+						<tile.Feature id="32">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
-							<edges id="36">
+							<edges id="33">
 								<Line>
-									<Point id="37">1,0.5773502691896256</Point>
-									<Point id="38">7.070501591499379e-17,1.154700538379251</Point>
+									<Point id="34">1,0.5773502691896256</Point>
+									<Point id="35">7.070501591499379e-17,1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="35" />
+									<Point id="36">-0.9999999999999998,0.5773502691896261</Point>
+								</Line>
+								<Line>
+									<Point reference="36" />
+									<Point id="37">-1,-0.5773502691896254</Point>
+								</Line>
+								<Line>
+									<Point reference="37" />
+									<Point id="38">-2.121150477449814e-16,-1.154700538379251</Point>
 								</Line>
 								<Line>
 									<Point reference="38" />
-									<Point id="39">-0.9999999999999998,0.5773502691896261</Point>
+									<Point id="39">0.9999999999999997,-0.5773502691896263</Point>
 								</Line>
 								<Line>
 									<Point reference="39" />
-									<Point id="40">-1,-0.5773502691896254</Point>
-								</Line>
-								<Line>
-									<Point reference="40" />
-									<Point id="41">-2.121150477449814e-16,-1.154700538379251</Point>
-								</Line>
-								<Line>
-									<Point reference="41" />
-									<Point id="42">0.9999999999999997,-0.5773502691896263</Point>
-								</Line>
-								<Line>
-									<Point reference="42" />
-									<Point reference="37" />
+									<Point reference="34" />
 								</Line>
 							</edges>
 						</tile.Feature>
-						<app.ExplicitFeature id="43" type="MOTIF_TYPE_EXPLICIT_TILE">
+						<app.ExplicitFeature id="40" type="MOTIF_TYPE_EXPLCIT_TILE">
 							<boundarySides>1</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
+							<n>6</n>
 						</app.ExplicitFeature>
 					</entry>
 				</app.Prototype>
@@ -232,7 +230,7 @@
 			<algorithm>3</algorithm>
 		</style.Filled>
 	</style.Filled>
-	<style.TileColors id="44">
+	<style.TileColors id="41">
 		<toolkit.GeoLayer>
 			<left__delta>253.72</left__delta>
 			<top__delta>-82.28</top__delta>

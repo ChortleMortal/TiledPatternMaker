@@ -1,3 +1,7 @@
+#pragma once
+#ifndef STAR_CONNECT_H
+#define STAR_CONNECT_H
+
 ////////////////////////////////////////////////////////////////////////////
 //
 // ConnectFigure.java
@@ -8,9 +12,6 @@
 // Extended Rosettes.  To make sure that the resulting figure still lines
 // up with the tile that will eventually contain it, we need to do
 // some fancy reshuffling of the basic unit to move the apex to (1,0).
-
-#ifndef STAR_CONNECT_H
-#define STAR_CONNECT_H
 
 #include "motifs/star.h"
 #include "motifs/motif_connector.h"
@@ -24,7 +25,8 @@ public:
 
     void buildUnitMap() override;
 
-    virtual QString getMotifDesc() override { return "Star Connect motif";}
+    virtual QString getMotifDesc() override { return "StarConnect";}
+    virtual void    report()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "d:" << d << "s" << s; }
 
     qreal computeConnectScale();
 

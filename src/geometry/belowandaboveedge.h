@@ -1,13 +1,17 @@
+#pragma once
 #ifndef BELOWANDABOVEEDGE_H
 #define BELOWANDABOVEEDGE_H
 
 #include <QPainterPath>
 #include "enums/edgetype.h"
 
-struct BelowAndAbove
+class BelowAndAbove
 {
+public:
     QPointF below;
     QPointF above;
+
+    bool validate();
 };
 
 class BelowAndAbovePoint
@@ -18,7 +22,6 @@ public:
     QPointF above;
 
     bool validate();
-    inline bool isReal(qreal x);
 };
 
 class BelowAndAboveEdge

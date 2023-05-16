@@ -1,3 +1,4 @@
+#pragma once
 #ifndef DLG_COLOR_SET_H
 #define DLG_COLOR_SET_H
 

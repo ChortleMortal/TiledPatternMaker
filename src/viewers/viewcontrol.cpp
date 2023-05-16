@@ -7,14 +7,13 @@
 #include "makers/map_editor/map_editor.h"
 #include "makers/map_editor/map_editor_db.h"
 #include "makers/mosaic_maker/mosaic_maker.h"
-#include "makers/motif_maker/motif_maker.h"
+#include "makers/prototype_maker/prototype_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "misc/backgroundimage.h"
-#include "misc/border.h"
 #include "misc/layer.h"
 #include "misc/mark_x.h"
 #include "mosaic/mosaic.h"
-#include "mosaic/prototype.h"
+#include "makers/prototype_maker/prototype.h"
 #include "panels/panel.h"
 #include "settings/model_settings.h"
 #include "settings/configuration.h"
@@ -53,7 +52,7 @@ void ViewControl::releaseInstance()
     }
 }
 
-ViewControl::ViewControl()
+ViewControl::ViewControl() : View()
 {
 }
 
@@ -65,7 +64,7 @@ void ViewControl::init()
     panel           = ControlPanel::getInstance();
     designMaker     = DesignMaker::getInstance();
     mosaicMaker     = MosaicMaker::getInstance();
-    motifMaker      = MotifMaker::getInstance();
+    prototypeMaker  = PrototypeMaker::getInstance();
 
     prototypeView   = PrototypeView::getSharedInstance();
     motifView       = MotifView::getSharedInstance();
@@ -100,37 +99,47 @@ void ViewControl::slot_dontPaint(bool dont)
 
 void ViewControl::slot_unloadAll()
 {
+    emit sig_identifyYourself();
+
     qDebug() << "ViewControl::slot_unloadAll";
-    dump(false);
+    dumpRefs();
 
     unloadView();
-    dump(false);
+    dumpRefs();
 
     removeAllImages();
-    dump(false);
+    dumpRefs();
 
     BackgroundImage::getSharedInstance()->unload();
 
     designMaker->unload();
-    dump(false);
-
-    mosaicMaker->resetMosaic();
-    dump(false);
-
-    motifMaker->unload();
-    dump(false);
+    dumpRefs();
 
     MapEditor::getInstance()->unload();
-    dump(false);
+    dumpRefs();
+
+    mosaicMaker->resetMosaic();
+    dumpRefs();
+
+    prototypeMaker->unload();
+    dumpRefs();
 
     tilingMaker->unload();
-    dump(false);
+    dumpRefs();
 
     frameSettings.reInit();
-    dump(false);
+    dumpRefs();
+
+    emit sig_identifyYourself();
 
     slot_refreshView();
-    dump(false);
+    dumpRefs();
+
+    // there is always at least an emtpy tiling
+    TilingPtr tiling = make_shared<Tiling>();
+    tilingMaker->sm_takeUp(tiling,TILM_LOAD_EMPTY);
+
+    emit sig_identifyYourself();
 }
 
 void ViewControl::viewEnable(eViewType view, bool enable)
@@ -204,6 +213,15 @@ void ViewControl::refreshView()
     // grid
     if (config->showGrid)
     {
+        if (config->gridUnits == GRID_UNITS_TILE)
+        {
+            gridView->setCanvasXform(getCurrentXform2());
+        }
+        else
+        {
+            gridView->setCanvasXform(unityXform);
+        }
+
         addLayer(gridView);
     }
 
@@ -309,7 +327,7 @@ void ViewControl::setupViewers()
 
 void ViewControl::viewDesign()
 {
-    QVector<DesignPtr> &  designs = designMaker->getDesigns();
+    QVector<DesignPtr> &  designs = designMaker->getActiveDesigns();
     for (auto design :  designs)
     {
         QVector<PatternPtr> & pats = design->getPatterns();
@@ -378,14 +396,6 @@ void ViewControl::viewPrototype()
 {
     qDebug() << "++ViewController::viewPrototype";
 
-    PrototypePtr pp = motifMaker->getSelectedPrototype();
-    if (!pp)
-    {
-        qWarning() << "ViewControl::viewPrototype - no selected prototype";
-        return;
-    }
-
-    prototypeView->setPrototype(pp);
     addLayer(prototypeView);
 
     setBackgroundColor(Qt::white);
@@ -467,10 +477,14 @@ const Xform & ViewControl::getCurrentXform2()
     }
     case M_ALIGN_TILING:
     {
-        TilingPtr tiling = tilingMaker->getTilings().first();
-        if (tiling)
+        auto tilings = tilingMaker->getTilings();
+        if (tilings.count() > 0)
         {
-            return tiling->getCanvasXform();
+            TilingPtr tiling = tilings.first();
+            if (tiling)
+            {
+                return tiling->getCanvasXform();
+            }
         }
         return unityXform;
     }

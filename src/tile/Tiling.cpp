@@ -12,13 +12,13 @@
 
 #include <QtWidgets>
 #include "tile/tiling.h"
-#include "motifs/explicit_motif.h"
+#include "motifs/tile_motif.h"
 #include "geometry/map.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "misc/defaults.h"
 #include "mosaic/design_element.h"
 #include "mosaic/mosaic_writer.h"
-#include "mosaic/prototype.h"
+#include "makers/prototype_maker/prototype.h"
 #include "tile/tile.h"
 #include "tile/placed_tile.h"
 
@@ -84,6 +84,7 @@ bool Tiling::popStack()
 
 void Tiling::pushStack()
 {
+    state = MODIFIED;
     undoStack.push(db.copy());
 }
 
@@ -91,16 +92,16 @@ bool Tiling::hasIntrinsicOverlaps()
 {
     if (intrinsicOverlaps.get() == Tristate::Unknown)
     {
-        auto placed = db.getPlacedTiles();
-        for (auto pf : qAsConst(placed))
+        auto placedTiles = db.getPlacedTiles();
+        for (auto pf : qAsConst(placedTiles))
         {
-            QPolygonF poly = pf->getPlacedPolygon();
+            QPolygonF poly = pf->getPlacedPoints();
 
-            for (auto pf2 : qAsConst(placed))
+            for (auto pf2 : qAsConst(placedTiles))
             {
                 if (pf2 == pf) continue;
 
-                QPolygonF poly2 = pf2->getPlacedPolygon();
+                QPolygonF poly2 = pf2->getPlacedPoints();
                 if (poly2.intersects(poly))
                 {
                     QPolygonF p3 = poly2.intersected(poly);
@@ -130,9 +131,9 @@ bool Tiling::hasTiledOverlaps()
 MapPtr Tiling::createMapSingle()
 {
     MapPtr map = make_shared<Map>("tiling map single");
-    for (auto pfp : db.getPlacedTiles())
+    for (auto placedTiles : db.getPlacedTiles())
     {
-        EdgePoly poly = pfp->getPlacedEdgePoly();
+        EdgePoly poly = placedTiles->getPlacedEdgePoly();
         MapPtr emap = make_shared<Map>("tile",poly);
         map->mergeMap(emap);
     }
@@ -144,14 +145,14 @@ MapPtr Tiling::createMapFullSimple()
 {
     MapPtr map = make_shared<Map>("tiling map full simple");
 
-    QVector<QTransform> translations = db.getFillTranslations();
+    Placements fillPlacements = db.getFillPlacemenets();
 
     MapPtr tilingMap = createMapSingle();
 
-    for (auto transform : translations)
+    for (auto placement : fillPlacements)
     {
         MapPtr m  = tilingMap->recreate();
-        m->transformMap(transform);
+        m->transformMap(placement);
         map->mergeMap(m);
     }
     return map;
@@ -160,51 +161,52 @@ MapPtr Tiling::createMapFullSimple()
 MapPtr Tiling::createMapFull()
 {
     // This builds a prototype using explicit tile figures and generates its map
-    Prototype proto(shared_from_this());
+    auto proto = make_shared<Prototype>(shared_from_this());
 
     QVector<TilePtr> uniqueTiles = getUniqueTiles();
 
-    for (auto  & tile : qAsConst(uniqueTiles))
+    for (TilePtr tile : qAsConst(uniqueTiles))
     {
-        EdgePoly & ep = tile->getEdgePoly();
-        MapPtr     fm = make_shared<Map>("tile map",ep);
-        MotifPtr fig = make_shared<ExplicitMotif>(fm,MOTIF_TYPE_EXPLICIT_TILE,tile->numSides());
-        DesignElementPtr  dep = make_shared<DesignElement>(tile, fig);
-        proto.addElement(dep);
+        auto motif = make_shared<TileMotif>();
+        motif->setN(tile->numSides());
+        motif->setup(tile);
+        motif->buildMotifMaps();
+        DesignElementPtr  dep = make_shared<DesignElement>(tile, motif);
+        proto->addElement(dep);
     }
 
     // Now, for each different tile, build a submap corresponding
     // to all translations of that tile.
 
-    QVector<QTransform> translations = db.getFillTranslations();
+    Placements fillPlacements = db.getFillPlacemenets();
 
     MapPtr testmap = make_shared<Map>("testmap");
 
-    for (auto & dep : qAsConst(proto.getDesignElements()))
+    for (auto & dep : qAsConst(proto->getDesignElements()))
     {
         TilePtr tile    = dep->getTile();
         MotifPtr motif  = dep->getMotif();
-        MapPtr motifmap = motif->getMap();
+        MapPtr motifmap = motif->getMotifMap();
 
-        QVector<QTransform> subT;
-        for (auto placed_tile : db.getPlacedTiles())
+        Placements tilePlacements;
+        for (auto placedTiles : db.getPlacedTiles())
         {
-            TilePtr f  = placed_tile->getTile();
+            TilePtr f  = placedTiles->getTile();
             if (f == tile)
             {
-                QTransform t = placed_tile->getTransform();
-                subT.push_back(t);
+                QTransform t = placedTiles->getTransform();
+                tilePlacements.push_back(t);
             }
         }
 
         // Within a single translational unit, assemble the different
         // transformed figures corresponding to the given tile into a map.
-        MapPtr transmap = make_shared<Map>("proto transmap");
-        transmap->mergeMany(motifmap, subT);
+        MapPtr transmap = make_shared<Map>("tile transmap");
+        transmap->mergeMany(motifmap, tilePlacements);
 
         // Now put all the translations together into a single map for this tile.
-        MapPtr tilemap = make_shared<Map>("proto tile map");
-        tilemap->mergeMany(transmap, translations);
+        MapPtr tilemap = make_shared<Map>("single tile map");
+        tilemap->mergeMany(transmap, fillPlacements);
 
         // And do a slow merge to add this map to the finished design.
         testmap->mergeMap(tilemap);
@@ -212,24 +214,23 @@ MapPtr Tiling::createMapFull()
     return testmap;
 }
 
-
 // tile management.
-// Added tile are embedded into a placedTile.
+// Added tiles are embedded into a placedTile.
 
 void Tiling::add(const PlacedTilePtr pf )
 {
-    auto & placed = getDataAccess().getPlacedTileAccess();
+    auto & placed = getDataAccess(true).getPlacedTileAccess();
     placed.push_back(pf);
 }
 
 void Tiling::add(TilePtr f, QTransform  T)
 {
-    add(make_shared<PlacedTile>(this,f, T));
+    add(make_shared<PlacedTile>(f, T));
 }
 
 void Tiling::remove(PlacedTilePtr pf)
 {
-    auto & placed = getDataAccess().getPlacedTileAccess();
+    auto & placed = getDataAccess(true).getPlacedTileAccess();
     placed.removeOne(pf);
 }
 
@@ -255,24 +256,24 @@ void Tiling::setState(eTilingState state)
 
 QVector<TilePtr> Tiling::getUniqueTiles()
 {
-    UniqueQVector<TilePtr> fs;
+    UniqueQVector<TilePtr> tiles;
 
-    for (auto pfp : qAsConst(getData().getPlacedTiles()))
+    for (auto placedTiles : qAsConst(getData().getPlacedTiles()))
     {
-        TilePtr fp = pfp->getTile();
-        fs.push_back(fp);
+        TilePtr tile = placedTiles->getTile();
+        tiles.push_back(tile);
     }
 
-    return static_cast<QVector<TilePtr>>(fs);
+    return static_cast<QVector<TilePtr>>(tiles);
 }
 
-int Tiling::numPlacements(TilePtr fp)
+int Tiling::numPlacements(TilePtr tile)
 {
     int count = 0;
-    for (auto pfp : qAsConst(getData().getPlacedTiles()))
+    for (auto placedTiles : qAsConst(getData().getPlacedTiles()))
     {
-        TilePtr fp2 = pfp->getTile();
-        if (fp2 == fp)
+        TilePtr fp2 = placedTiles->getTile();
+        if (fp2 == tile)
         {
             count++;
         }
@@ -280,37 +281,33 @@ int Tiling::numPlacements(TilePtr fp)
     return count;
 }
 
-QVector<QTransform> Tiling::getPlacements(TilePtr fp)
+Placements Tiling::getPlacements(TilePtr tile)
 {
-    QVector<QTransform> placements;
-    for (auto pfp : qAsConst(getData().getPlacedTiles()))
+    Placements placements;
+    for (auto placedTile : qAsConst(getData().getPlacedTiles()))
     {
-        TilePtr fp2 = pfp->getTile();
-        if (fp2 == fp)
+        if (placedTile->getTile() == tile)
         {
-            placements.push_back(pfp->getTransform());
+            placements.push_back(placedTile->getTransform());
         }
     }
     return placements;
 }
 
-QTransform Tiling::getPlacement(TilePtr fp, int index)
+QTransform Tiling::getFirstPlacement(TilePtr tile)
 {
     QTransform placement;
-    int i = 0;
-    for (auto pfp : qAsConst(getData().getPlacedTiles()))
+    const PlacedTiles & placedTiles = db.getPlacedTiles();
+    for (auto placedTile : placedTiles)
     {
-        TilePtr fp2 = pfp->getTile();
-        if (fp2 == fp)
+        TilePtr atile = placedTile->getTile();
+        if (atile == tile)
         {
-            placement = pfp->getTransform();
-            if (i == index)
-            {
+            placement = placedTile->getTransform();
                 return placement;
             }
-            i++;
         }
-    }
+    // none found
     return placement;
 }
 
@@ -323,12 +320,12 @@ TileGroup Tiling::regroupTiles()
         TilePtr tile = placedTile->getTile();
         if (tileGroup.containsTile(tile))
         {
-            QVector<PlacedTilePtr>  & v = tileGroup.getPlacements(tile);
+            PlacedTiles  & v = tileGroup.getTilePlacements(tile);
             v.push_back(placedTile);
         }
         else
         {
-            QVector<PlacedTilePtr> v;
+            PlacedTiles v;
             v.push_back(placedTile);
             tileGroup.push_back(qMakePair(tile,v));
         }
@@ -363,7 +360,7 @@ bool TileGroup::containsTile(TilePtr fp)
     return false;
 }
 
-QVector<PlacedTilePtr> & TileGroup::getPlacements(TilePtr fp)
+PlacedTiles & TileGroup::getTilePlacements(TilePtr fp)
 {
     Q_ASSERT(containsTile(fp));
 

@@ -1,12 +1,14 @@
 #include <deque>
 #include <QDebug>
 #include <QElapsedTimer>
+#include <QApplication>
 
 #include "geometry/dcel.h"
 #include "geometry/edge.h"
 #include "geometry/vertex.h"
 #include "geometry/neighbours.h"
 #include "misc/tpm_io.h"
+#include "panels/panel.h"
 
 using namespace std;
 
@@ -14,18 +16,31 @@ using namespace std;
 
 int DCEL::refs  = 0;
 
+////////////////////////////////////////////////////////////////////////////////////////////////
+///
+///   DCEL  - doubly connected edge list
+///
+////////////////////////////////////////////////////////////////////////////////////////////////
+
 DCEL::DCEL(MapPtr map)
 {
-    qDebug() << "Constructing DCEL";
+    qDebug() << "Creating DCEL";
 
-    vertices = map->vertices;
-    edges    = map->edges;
+    QElapsedTimer timer;
+    timer.start();
+
+    vertices    = map->vertices;
+    edges       = map->edges;
+    nMap        = map->getNeighbourMap();   // do this first before half-edges are added
     qDebug().noquote() << "DECL imported" << summary();
-
-    nMap = map->getNeighbourMap();   // do this first before half-edges are added
 
     buildDCEL();
 
+    qreal time    = timer.elapsed();
+    double qdelta = time /1000.0;
+    QString sDelta = QString("%1").arg(qdelta, 8, 'f', 3);
+
+    qDebug().noquote() << "DCEL complete time:" << sDelta << summary();
     refs++;
 }
 
@@ -36,52 +51,6 @@ DCEL::~DCEL()
     clean();
 #endif
     refs--;
-}
-
-void DCEL::buildDCEL()
-{
-    QElapsedTimer timer;
-    timer.start();
-
-    // fill half edges
-    QVector<EdgePtr> additions(edges.size());
-    int i=0;
-    for (auto e : edges)
-    {
-        // the map may be used to create many dcels
-        e->dvisited = false;
-        e->twin.reset();
-        e->next.reset();
-        e->incident_face.reset();
-
-        VertexPtr v1 = e->v1;
-        VertexPtr v2 = e->v2;
-        v1->adjacent_vertices.push_back(v2);
-        v2->adjacent_vertices.push_back(v1);
-
-        EdgePtr e2 = e->createTwin();
-        e2->twin   = e;
-        e->twin    = e2;
-
-        additions[i++] = e2;
-    }
-
-    edges.append(additions);
-    qDebug().noquote() << "DCEL loaded" << summary();
-
-    fill_half_edge_table();
-    qDebug() << "DCEL: half edge table filled";
-
-    fill_half_edge_faces();
-    qDebug() << "DCEL: face table filled";
-
-    fill_face_table_inner_components();
-
-    qreal time    = timer.elapsed();
-    double qdelta = time /1000.0;
-    QString sDelta = QString("%1").arg(qdelta, 8, 'f', 3);
-
-    qDebug().noquote() << "DCEL complete time:" << sDelta << summary();
 }
 
 void DCEL::displayDCEL(int  val)
@@ -132,6 +101,315 @@ VertexPtr DCEL::validAdjacent(const VertexPtr & vert)
     }
 }
 
+int DCEL::vertexIndex(const VertexPtr & v)
+{
+    for (int i = 0; i < vertices.size(); i++)
+    {
+        if (vertices[i] == v)
+        {
+            return i;
+        }
+    }
+    qWarning() << "Error in vertexIndex";
+    return -1;
+}
+
+EdgePtr DCEL::findEdge(const VertexPtr &start , const VertexPtr&  end, bool expected)
+{
+    NeighboursPtr np = nMap->getNeighbours(start);
+    for (WeakEdgePtr & wep : *np)
+    {
+        EdgePtr edge = wep.lock();
+        if (edge->v1 == start && edge->v2 == end)
+        {
+            return edge;
+        }
+        edge = edge->twin.lock();
+        if (edge->v1 == start && edge->v2 == end)
+        {
+            return edge;
+        }
+    }
+
+    if (expected)
+        qWarning() << "Error in serching edges";
+    EdgePtr dep;
+    return dep;
+}
+
+int DCEL::edgeIndex(const EdgePtr &edge)
+{
+    for (int i = 0; i < edges.size(); i++)
+    {
+        if (edges[i] == edge)
+        {
+            return i;
+        }
+    }
+    qWarning() << "Error in edgeIndex";
+    return -1;
+}
+
+int DCEL::faceIndex(const FacePtr &aface)
+{
+    for (int i = 0; i < faces.size(); i++)
+    {
+        if (faces[i] == aface)
+        {
+            return i;
+        }
+    }
+    qWarning() << "Error in search_faces";
+    return -1;
+}
+
+void DCEL::print_vertices()
+{
+    QString astring;
+    QDebug  deb(&astring);
+
+    deb << endl << "********** VertexPtrTable ***********" << endl;
+    deb << "Vertex" << " Coordinates " << "Incident Edge " << endl;
+    for (auto & v : qAsConst(vertices))
+    {
+        deb << vertexIndex(v) << "\t(" << v->pt.x() << " , " << v->pt.y() << ")" << endl; ;
+    }
+    qDebug().noquote() << astring;
+}
+
+void DCEL::print_edges()
+{
+    QString astring;
+    QDebug  deb(&astring);
+
+    deb << endl << "********** Edges  **********" << endl;
+    for (auto & edge : qAsConst(edges))
+    {
+        print_edge_detail(edge, "E ", deb);
+    }
+    qDebug().noquote() << astring;
+}
+
+void DCEL::print_ordered_edges()
+{
+    QString astring;
+    QDebug  deb(&astring);
+
+    deb << endl << "********** Ordered Edges  **********" << endl;
+    deb << "Half-edge\tTwin\t\tIncident_Face Next\tPrevious" << endl;
+    for (auto edge : qAsConst(edges))
+    {
+        print_edge(edge,deb);
+        print_edge(edge->twin.lock(),deb);
+        if (edge->incident_face.lock() != nullptr)
+            deb << "   F" << faceIndex(edge->incident_face.lock()) << "\t    ";
+        else
+            deb << "   NULL" << "     ";
+        EdgePtr next = edge->next.lock();
+        if (next)
+            print_edge(next,deb);
+        else
+            deb << "NONE  ";
+        EdgePtr prev = edge->prev();
+        if (prev)
+            print_edge(prev,deb);
+        else
+            deb << "NONE";
+        deb << endl;
+    }
+    qDebug().noquote() << astring;
+}
+
+void DCEL::print_faces()
+{
+    QString astring;
+    QDebug  deb(&astring);
+
+    deb <<endl << "*************** Face_Table **************" << endl;
+    deb << "Face\t Size\t\tEdges" << endl;
+    for (auto & aface : qAsConst(faces))
+    {
+        deb << "F" << faceIndex(aface);
+        if (aface->outer)
+            deb << " OUTER\t";
+        else
+            deb << "      \t";
+
+        deb << " size = " << aface->area << "\t";
+
+        EdgePtr head = aface->incident_edge.lock();
+        if (head == nullptr)
+        {
+            deb << "NULL edge";
+        }
+        else
+        {
+            EdgePtr e = head;
+            do
+            {
+                print_edge(e,deb);
+                e = e->next.lock();
+            } while (e != head);
+        }
+        deb << endl;
+    }
+    qDebug().noquote() << astring;
+}
+
+void DCEL::print_adj()
+{
+    QString astring;
+    QDebug  deb(&astring);
+
+    deb << endl << "************ Adjacent Vertices *****" << endl;
+    for (auto & v : qAsConst(vertices))
+    {
+        deb << "vertex:" << vertexIndex(v) << "count:" << v->adjacent_vertices.size() << " : ";
+        if (v->adjacent_vertices.size())
+        {
+            for (auto & v2 : qAsConst(v->adjacent_vertices))
+            {
+                deb << vertexIndex(v2.lock()) << " ";
+            }
+        }
+        else
+        {
+            deb << "NO adjacent vertices";
+        }
+        deb << endl;
+    }
+    qDebug().noquote() << astring;
+}
+
+void DCEL::print_faces_with_area_lessthan_threshhold(double threshhold_area)
+{
+    QString astring;
+    QDebug  deb(&astring);
+
+    deb << endl << "************ Faces smaller than" << threshhold_area << " *****" << endl;
+    for (auto & face : qAsConst(faces))
+    {
+        double area = face->area;
+        if (area < threshhold_area && area > 0)
+        {
+            deb << "F" << faceIndex(face) << ", less than threshold." <<  endl;
+        }
+    }
+    qDebug().noquote() << astring;
+}
+
+void DCEL::print_neighbouring_faces(const EdgePtr &edge)
+{
+    // cycle through the edges of the face, see which face is the twin is incident to
+    // this also demonstrates the insanity of flipping between the two different edge structures
+
+    QString astring;
+    QDebug  deb(&astring);
+
+    deb << endl << "*******Neighbouring faces to edge " << edgeIndex(edge) << " [" << vertexIndex(edge->v1)
+        << "-" << vertexIndex(edge->v2) << "]" << endl;
+
+    vector<FacePtr> neighbours;
+
+    EdgePtr head = edge;
+    EdgePtr twin = edge->twin.lock();
+
+    FacePtr f = twin->incident_face.lock();
+    if (f)
+    {
+        neighbours.push_back(f);
+    }
+
+    auto nedge = edge->next.lock();
+    while (nedge != head)
+    {
+        twin = edge->twin.lock();
+        f = twin->incident_face.lock();
+        if (f && std::find(neighbours.begin(), neighbours.end(), f) == neighbours.end())
+        {
+            neighbours.push_back(f);
+        }
+        nedge = nedge->next.lock();
+    }
+
+    for (auto & f : neighbours)
+    {
+        deb << "F" << faceIndex(f);
+        if (f->outer)
+            deb << "   OUTER";
+        deb << endl;
+    }
+    qDebug().noquote() << astring;
+
+}
+
+void DCEL::print_edge_detail(const EdgePtr &e, QString && name, QDebug & deb)
+{
+    deb  << name       << edgeIndex(e)
+        << " origin " << vertexIndex(e->v1)
+        << " end "    << vertexIndex(e->v2)
+        << " next "   << (e->next.lock() ? edgeIndex(e->next.lock()) : -1);
+
+    if (e->twin.lock() && e->next.lock())
+    {
+        deb << " prev "   << (e->prev() ? edgeIndex(e->prev()) : -1)
+            << " twin "   << (e->twin.lock() ? edgeIndex(e->twin.lock()) : -1)
+            << " face "   << (e->incident_face.lock() ? faceIndex(e->incident_face.lock()) : -1);
+    }
+
+    deb << endl;
+}
+
+void DCEL::print_edge(const EdgePtr & edge, QDebug & deb)
+{
+    if (edge)
+        deb << edgeIndex(edge) << " [" << vertexIndex(edge->v1) << "-" << vertexIndex(edge->v2) <<"] \t";
+    else
+        deb << " NULL\t";
+}
+
+QString DCEL::summary() const
+{
+    return QString("vertices=%1 edges=%2 faces=%3").arg(vertices.size()).arg(edges.size()).arg(faces.size());
+}
+
+void DCEL::buildDCEL()
+{
+    // fill half edges
+    QVector<EdgePtr> additions(edges.size());
+    int i=0;
+    for (auto e : edges)
+    {
+        // the map may be used to create many dcels
+        e->dvisited = false;
+        e->twin.reset();
+        e->next.reset();
+        e->incident_face.reset();
+
+        VertexPtr v1 = e->v1;
+        VertexPtr v2 = e->v2;
+        v1->adjacent_vertices.push_back(v2);
+        v2->adjacent_vertices.push_back(v1);
+
+        EdgePtr e2 = e->createTwin();
+        e2->twin   = e;
+        e->twin    = e2;
+
+        additions[i++] = e2;
+    }
+
+    edges.append(additions);
+    qDebug().noquote() << "DCEL loaded";
+
+    fill_half_edge_table();
+    qDebug() << "DCEL: half edge table filled";
+
+    fill_half_edge_faces();
+    qDebug() << "DCEL: face table filled";
+
+    fill_face_table_inner_components();
+}
+
 void DCEL::fill_half_edge_table()
 {
     qDebug().noquote() << "start fill_half_edge_table() edges =" << edges.size();
@@ -162,7 +440,7 @@ void DCEL::fill_half_edge_table()
         }
     }
 
-    for (auto&  edge2 : qAsConst(deletions))
+    for (auto &  edge2 : qAsConst(deletions))
     {
         EdgePtr edget = edge2->twin.lock();
         edges.removeAll(edge2);
@@ -312,68 +590,6 @@ void DCEL::fill_face_table_inner_components()
     }
 }
 
-int DCEL::vertexIndex(const VertexPtr & v)
-{
-    for (int i = 0; i < vertices.size(); i++)
-    {
-        if (vertices[i] == v)
-        {
-            return i;
-		}
-    }
-    qWarning() << "Error in vertexIndex";
-    return -1;
-}
-
-EdgePtr DCEL::findEdge(const VertexPtr &start , const VertexPtr&  end, bool expected)
-{
-    NeighboursPtr np = nMap->getNeighbours(start);
-    for (WeakEdgePtr & wep : *np)
-    {
-        EdgePtr edge = wep.lock();
-        if (edge->v1 == start && edge->v2 == end)
-        {
-            return edge;
-        }
-        edge = edge->twin.lock();
-        if (edge->v1 == start && edge->v2 == end)
-        {
-            return edge;
-        }
-    }
-
-    if (expected)
-        qWarning() << "Error in serching edges";
-    EdgePtr dep;
-    return dep;
-}
-
-int DCEL::edgeIndex(const EdgePtr &edge)
-{
-    for (int i = 0; i < edges.size(); i++)
-    {
-        if (edges[i] == edge)
-        {
-            return i;
-        }
-    }
-    qWarning() << "Error in edgeIndex";
-    return -1;
-}
-
-int DCEL::faceIndex(const FacePtr &aface)
-{
-    for (int i = 0; i < faces.size(); i++)
-    {
-        if (faces[i] == aface)
-        {
-            return i;
-        }
-    }
-    qWarning() << "Error in search_faces";
-    return -1;
-}
-
 bool DCEL::check_if_point_is_inside(const VertexPtr & ver, const QVector<VertexPtr> & key)
 {
     const int n = key.size();
@@ -484,7 +700,7 @@ bool DCEL::onSegment(const QPointF &p, const QPointF &q, const QPointF &r)
 int DCEL::orientation(const QPointF & p, const QPointF & q, const QPointF & r)
 {
     double val = (q.y() - p.y()) * (r.x() - q.x()) -
-                (q.x() - p.x()) * (r.y() - q.y());
+                 (q.x() - p.x()) * (r.y() - q.y());
 
     if (val == 0) return 0; // colinear
     return (val > 0) ? 1 : 2; // clock or counterclock wise
@@ -569,213 +785,3 @@ double DCEL::angle(const QPointF &p1, const QPointF &p2, const QPointF &p3)
     return ((result < 0) ? (result * 180 / 3.141592) + 360 : (result * 180 / 3.141592));
 }
 
-void DCEL::print_vertices()
-{
-    QString astring;
-    QDebug  deb(&astring);
-
-    deb << endl << "********** VertexPtrTable ***********" << endl;
-    deb << "Vertex" << " Coordinates " << "Incident Edge " << endl;
-    for (auto & v : qAsConst(vertices))
-    {
-        deb << vertexIndex(v) << "\t(" << v->pt.x() << " , " << v->pt.y() << ")" << endl; ;
-    }
-    qDebug().noquote() << astring;
-}
-
-void DCEL::print_edges()
-{
-    QString astring;
-    QDebug  deb(&astring);
-
-    deb << endl << "********** Edges  **********" << endl;
-    for (auto & edge : qAsConst(edges))
-    {
-        print_edge_detail(edge, "E ", deb);
-    }
-    qDebug().noquote() << astring;
-}
-
-void DCEL::print_ordered_edges()
-{
-    QString astring;
-    QDebug  deb(&astring);
-
-    deb << endl << "********** Ordered Edges  **********" << endl;
-    deb << "Half-edge\tTwin\t\tIncident_Face Next\tPrevious" << endl;
-    for (auto edge : qAsConst(edges))
-    {
-        print_edge(edge,deb);
-        print_edge(edge->twin.lock(),deb);
-        if (edge->incident_face.lock() != nullptr)
-            deb << "   F" << faceIndex(edge->incident_face.lock()) << "\t    ";
-        else
-            deb << "   NULL" << "     ";
-        EdgePtr next = edge->next.lock();
-        if (next)
-            print_edge(next,deb);
-        else
-            deb << "NONE  ";
-        EdgePtr prev = edge->prev();
-        if (prev)
-            print_edge(prev,deb);
-        else
-            deb << "NONE";
-        deb << endl;
-    }
-    qDebug().noquote() << astring;
-}
-
-
-void DCEL::print_faces()
-{
-    QString astring;
-    QDebug  deb(&astring);
-
-    deb <<endl << "*************** Face_Table **************" << endl;
-    deb << "Face\t Size\t\tEdges" << endl;
-    for (auto & aface : qAsConst(faces))
-    {
-        deb << "F" << faceIndex(aface);
-        if (aface->outer)
-            deb << " OUTER\t";
-        else
-            deb << "      \t";
-
-        deb << " size = " << aface->area << "\t";
-
-        EdgePtr head = aface->incident_edge.lock();
-        if (head == nullptr)
-        {
-            deb << "NULL edge";
-        }
-        else
-        {
-            EdgePtr e = head;
-            do
-            {
-                print_edge(e,deb);
-                e = e->next.lock();
-            } while (e != head);
-        }
-        deb << endl;
-    }
-    qDebug().noquote() << astring;
-}
-
-void DCEL::print_adj()
-{
-    QString astring;
-    QDebug  deb(&astring);
-
-    deb << endl << "************ Adjacent Vertices *****" << endl;
-    for (auto & v : qAsConst(vertices))
-    {
-        deb << "vertex:" << vertexIndex(v) << "count:" << v->adjacent_vertices.size() << " : ";
-        if (v->adjacent_vertices.size())
-        {
-            for (auto & v2 : qAsConst(v->adjacent_vertices))
-            {
-                deb << vertexIndex(v2.lock()) << " ";
-            }
-        }
-        else
-        {
-            deb << "NO adjacent vertices";
-        }
-        deb << endl;
-    }
-    qDebug().noquote() << astring;
-}
-
-void DCEL::print_faces_with_area_lessthan_threshhold(double threshhold_area)
-{
-    QString astring;
-    QDebug  deb(&astring);
-
-    deb << endl << "************ Faces smaller than" << threshhold_area << " *****" << endl;
-    for (auto & face : qAsConst(faces))
-    {
-        double area = face->area;
-        if (area < threshhold_area && area > 0)
-        {
-            deb << "F" << faceIndex(face) << ", less than threshold." <<  endl;
-        }
-    }
-    qDebug().noquote() << astring;
-}
-
-void DCEL::print_neighbouring_faces(const EdgePtr &edge)
-{
-    // cycle through the edges of the face, see which face is the twin is incident to
-    // this also demonstrates the insanity of flipping between the two different edge structures
-
-    QString astring;
-    QDebug  deb(&astring);
-
-    deb << endl << "*******Neighbouring faces to edge " << edgeIndex(edge) << " [" << vertexIndex(edge->v1)
-        << "-" << vertexIndex(edge->v2) << "]" << endl;
-
-    vector<FacePtr> neighbours;
-
-    EdgePtr head = edge;
-    EdgePtr twin = edge->twin.lock();
-
-    FacePtr f = twin->incident_face.lock();
-    if (f)
-    {
-        neighbours.push_back(f);
-    }
-
-    auto nedge = edge->next.lock();
-    while (nedge != head)
-    {
-        twin = edge->twin.lock();
-        f = twin->incident_face.lock();
-        if (f && std::find(neighbours.begin(), neighbours.end(), f) == neighbours.end())
-        {
-            neighbours.push_back(f);
-        }
-        nedge = nedge->next.lock();
-    }
-
-    for (auto & f : neighbours)
-    {
-        deb << "F" << faceIndex(f);
-        if (f->outer)
-            deb << "   OUTER";
-        deb << endl;
-    }
-    qDebug().noquote() << astring;
-
-}
-
-void DCEL::print_edge_detail(const EdgePtr &e, QString && name, QDebug & deb)
-{
-    deb  << name       << edgeIndex(e)
-         << " origin " << vertexIndex(e->v1)
-         << " end "    << vertexIndex(e->v2)
-         << " next "   << (e->next.lock() ? edgeIndex(e->next.lock()) : -1);
-
-    if (e->twin.lock() && e->next.lock())
-    {
-        deb << " prev "   << (e->prev() ? edgeIndex(e->prev()) : -1)
-            << " twin "   << (e->twin.lock() ? edgeIndex(e->twin.lock()) : -1)
-            << " face "   << (e->incident_face.lock() ? faceIndex(e->incident_face.lock()) : -1);
-    }
-
-    deb << endl;
-}
-
-void DCEL::print_edge(const EdgePtr & edge, QDebug & deb)
-{
-    if (edge)
-        deb << edgeIndex(edge) << " [" << vertexIndex(edge->v1) << "-" << vertexIndex(edge->v2) <<"] \t";
-    else
-        deb << " NULL\t";
-}
-
-QString DCEL::summary() const
-{
-    return QString("vertices=%1 edges=%2 faces=%3").arg(vertices.size()).arg(edges.size()).arg(faces.size());
-}

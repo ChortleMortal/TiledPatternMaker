@@ -1,3 +1,41 @@
+Version 3.0
+===========
+
+Version 3.0 provides an improved stable platform for creating Mosaic designs.  There have been many code changes
+since version 2.7. The image tools have been improved for creatig images and comparing differences.
+
+Version 3.0 has been built with Qt 6.5.0 and Qt 5.15.2. It supports bot cmake and qmake.
+
+The media directory tree has been revised and versioning of files redone.  The intent has been to fully 
+support the original taprats designs and make additions to that.  In doing so, it became apprarent that the
+original taprats java designs used the class "ExplicitFigure".  This class was to produce motifs (figures)
+for tiles (features) which were irregular polygons.  The ExplicitFigure class could be constructed in a number
+of ways, but its data was persisted (saved) as a map which did not have any indication of how it was made. 
+So for version 3.0, the TPM application was used to re-create the original map using the various supported
+ways of creating the motif map.  This painstaking process has been largely successful, but there are a few
+instances where the ExpicitFigure could not be recreated. The inference is that the design was created with
+taprats code that differed from that which has been released/distributed and the exact way the design was
+created is now lost. Since the development of taprats was exprimental and part of work done for Dr. Kaplan's
+PhD thesis, it is quite understandable that his work on rosettes and stars changed over time as his expertise
+and insights developed.  Nervertheless, the following mosaics still have some motifs built
+with explicit maps (now using the ExplicitMapMotif class).
+- Bloom of May
+- Bluer shade of Sky
+- Penrose Dots
+- Rock the Hive
+- Squoctagon
+- USA
+If an Inferred Motif is not in contact with another Imferred Motif then the app works well. FFor those other
+cases a two-pass process on loading seems to work best.  Looking at the imported taprats code it is surmised
+that the Infer class was created first, and the more specialised ways of creating Hourglass, Girih, etc., were
+derived from that to handle the difficulties associated with multiple inffered motifs. However this is purely
+speculation.  Islamic designs do have these shapes in contact, it is just this software that has difficulties
+with this.
+
+There are still placess where the IrregularMotifMap class (ex Explicitfigure) is used intentionally,
+where maps are created (or modified) using the Map Editor.
+
+
 Version 2.7
 ===========
 

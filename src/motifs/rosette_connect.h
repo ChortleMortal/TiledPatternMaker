@@ -1,3 +1,7 @@
+#pragma once
+#ifndef ROSETTE_CONNECT_H
+#define ROSETTE_CONNECT_H
+
 ////////////////////////////////////////////////////////////////////////////
 //
 // ConnectFigure.java
@@ -8,9 +12,6 @@
 // Extended Rosettes.  To make sure that the resulting figure still lines
 // up with the tile that will eventually contain it, we need to do
 // some fancy reshuffling of the basic unit to move the apex to (1,0).
-
-#ifndef ROSETTE_CONNECT_H
-#define ROSETTE_CONNECT_H
 
 #include "motifs/rosette.h"
 #include "motifs/motif_connector.h"
@@ -24,9 +25,11 @@ public:
 
     void buildUnitMap() override;
 
-    virtual QString getMotifDesc() override { return "Rosette Connect motif";}
-
     qreal computeConnectScale();
+
+    virtual QString getMotifDesc() override { return "RosetteConnect";}
+    virtual void    report()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "q:" << q << "s" << s << "k" << k; }
+
 
 protected:
     MotifConnector     connector;

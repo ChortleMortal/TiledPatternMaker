@@ -1,4 +1,3 @@
-#include <QSettings>
 #include <QDebug>
 #include <QDir>
 #include <QStandardPaths>
@@ -43,21 +42,19 @@ Configuration::Configuration()
     rootImageDir        = s.value("rootImageDir",getImageRoot()).toString();
     image0              = s.value("image0","").toString();
     image1              = s.value("image1","").toString();
-    viewImages          = s.value("viewImages","").toStringList();
-    compareDir0         = s.value("compareDir0","").toString();
-    compareDir1         = s.value("compareDir1","").toString();
     panelName           = s.value("panelName","Control").toString();
     mosaicFilter        = s.value("designFilter","").toString();
     tileFilter          = s.value("tileFilter","").toString();
     xmlTool             = s.value("xmlTool","").toString();
+    diffTool            = s.value("diffTool","").toString();
     transparentColor    = s.value("transparentColor","black").toString();
-    workList            = s.value("workList","").toStringList();
+    gridColorTiling     = s.value("gridColorTiling2", QColor(Qt::red).name(QColor::HexArgb)).toString();
+    gridColorModel      = s.value("gridColorModel2", QColor(Qt::green).name(QColor::HexArgb)).toString();
+    gridColorScreen     = s.value("gridColorScreen2", QColor(Qt::blue).name(QColor::HexArgb)).toString();
     darkTheme           = s.value("darkTheme",false).toBool();
     autoLoadStyles      = s.value("autoLoadStyles",false).toBool();
     autoLoadTiling      = s.value("autoLoadTiling",false).toBool();
     autoLoadDesigns     = s.value("autoLoadDesigns",false).toBool();
-    loadTilingMulti     = s.value("loadTilingMulti",false).toBool();
-    loadTilingModify    = s.value("loadTilingModify",false).toBool();
     scaleToView         = s.value("scaleToView",true).toBool();
     stopIfDiff          = s.value("stopIfDiff",true).toBool();
     verifyMaps          = s.value("verifyMaps",false).toBool();
@@ -65,8 +62,10 @@ Configuration::Configuration()
     verifyPopup         = s.value("verifyPopup",false).toBool();
     verifyDump          = s.value("verifyDump",false).toBool();
     verifyVerbose       = s.value("verifyVerbose",false).toBool();
+    baseLogName         = s.value("baseLogName","tiledPatternMakerLog").toString();
     logToStderr         = s.value("logToStderr",true).toBool();
     logToDisk           = s.value("logToDisk",true).toBool();
+    logToAppDir         = s.value("logToAppDir",false).toBool();
     logToPanel          = s.value("logToPanel",true).toBool();
     logNumberLines      = s.value("logNumberLines",true).toBool();
     logDebug            = s.value("logDebug",false).toBool();
@@ -81,6 +80,7 @@ Configuration::Configuration()
     tilingNewCheck      = s.value("tilingNewCheck",true).toBool();
     tilingTestCheck     = s.value("tilingTestCheck",true).toBool();
     tileFilterCheck     = s.value("tileFilterCheck",false).toBool();
+    tilingWorklistCheck = s.value("tilingWorklistCheck",false).toBool();
     tm_showAllTiles     = s.value("tm_showAllTiles",false).toBool();
     tm_hideTable        = s.value("tm_hideTable",true).toBool();
     tm_showDebug        = s.value("tm_showDebug",false).toBool();
@@ -111,6 +111,10 @@ Configuration::Configuration()
     cs_showFrameSettings = s.value("cs_showFrameSettings",false).toBool();
     defaultImageRoot    = s.value("defaultImageRoot",true).toBool();
     defaultMediaRoot    = s.value("defaultMediaRoot",true).toBool();
+    saveMosaicTest      = s.value("saveMosaicTest",false).toBool();
+    saveTilingTest      = s.value("saveTilingTest",false).toBool();
+    vCompLock           = s.value("vCompLock",true).toBool();
+    vCompXML            = s.value("vCompXML",true).toBool();
 
     viewerType          = static_cast<eViewType>(s.value("viewerType",VIEW_MOSAIC).toUInt());
     mapEditorMode       = static_cast<eMapEditorMode>(s.value("mapEditorMode",MAPED_MODE_MAP).toUInt());
@@ -118,14 +122,20 @@ Configuration::Configuration()
 
     showCenterDebug     = s.value("showCenterDebug",false).toBool();
     showGrid            = s.value("showGrid",false).toBool();
+    showGridTilingCenter= s.value("showGridTilingCenter",false).toBool();
+    showGridModelCenter = s.value("showGridModelCenter",false).toBool();
+    showGridViewCenter  = s.value("showGridViewCenter",false).toBool();
     gridUnits           = static_cast<eGridUnits>(s.value("gridUnits",GRID_UNITS_SCREEN).toUInt());
     gridType            = static_cast<eGridType>(s.value("gridType2",GRID_ORTHOGONAL).toUInt());
+    gridTilingAlgo      = static_cast<eGridTilingAlgo>(s.value("gridTilingAlgo",REGION).toUInt());
     gridModelWidth      = s.value("gridModelWidth",3).toInt();
     gridModelCenter     = s.value("gridModelCenter",false).toBool();
     gridModelSpacing    = s.value("gridModelSpacing",1.0).toDouble();
     gridScreenWidth     = s.value("gridScreenWidth",3).toInt();
     gridScreenSpacing   = s.value("gridScreenSpacing",100).toInt();
     gridScreenCenter    = s.value("gridScreenCenter",false).toBool();
+    gridTilingWidth     = s.value("gridTilingWidth",3).toInt();
+    gridZLevel          = s.value("gridZLevel",5).toInt();
     snapToGrid          = s.value("snapToGrid",true).toBool();
     gridAngle           = s.value("gridAngle",30.0).toDouble();
     mapedAngle          = s.value("mapedAngle",30.0).toDouble();
@@ -133,9 +143,13 @@ Configuration::Configuration()
     mapedLen            = s.value("mapedLen",1.0).toDouble();
     mapedMergeSensitivity = s.value("mapedMergeSensitivity",1e-2).toDouble();
     protoviewWidth      = s.value("protoviewWidth",3.0).toDouble();
-    genCycle            = static_cast<eCycleMode>(s.value("genCycle",CYCLE_SAVE_STYLE_BMPS).toInt());
-    viewCycle           = static_cast<eCycleMode>(s.value("viewCycle",CYCLE_STYLES).toInt());
-    fileFilter          = static_cast<eLoadType>(s.value("fileFilter",LOAD_ALL).toInt());
+    motifViewWidth      = s.value("motifViewWidth",3.0).toDouble();
+    genCycle            = static_cast<eCycleMode>(s.value("genCycle",CYCLE_SAVE_MOSAIC_BMPS).toInt());
+    viewCycle           = static_cast<eCycleMode>(s.value("viewCycle",CYCLE_MOSAICS).toInt());
+    fileFilter          = static_cast<eLoadType>(s.value("fileFilter",ALL_MOSAICS).toInt());
+    lastCompareName     = s.value("lastCompareName","").toString();
+
+    worklist.load(s);
 
     QStringList qsl;
     qsl << "#ff1496d2"   // map
@@ -152,6 +166,7 @@ Configuration::Configuration()
     if (repeatMode > REPEAT_MAX)        repeatMode      = REPEAT_MAX;
 
     // defaults (volatile)
+    appInstance     = 0;
     primaryDisplay  = false;
     circleX         = false;
     hideCircles     = false;
@@ -161,6 +176,7 @@ Configuration::Configuration()
     debugMapEnable  = false;
     dontTrapLog     = false;
     measure         = false;
+    localCycle      = false;
 
     updatePanel     = true;
     motifPropagate  = true;
@@ -180,9 +196,6 @@ void Configuration::save()
     s.setValue("lastLoadedXML",lastLoadedXML);
     s.setValue("image0",image0);
     s.setValue("image1",image1);
-    s.setValue("viewImages",viewImages);
-    s.setValue("compareDir0",compareDir0);
-    s.setValue("compareDir1",compareDir1);
     s.setValue("viewerType",viewerType);
     s.setValue("mapEditorMode",mapEditorMode);
     s.setValue("repeat",repeatMode);
@@ -194,16 +207,16 @@ void Configuration::save()
     s.setValue("verifyPopup",verifyPopup);
     s.setValue("verifyDump",verifyDump);
     s.setValue("verifyVerbose",verifyVerbose);
+    s.setValue("baseLogName",baseLogName);
     s.setValue("logToStderr",logToStderr);
     s.setValue("logToDisk",logToDisk);
+    s.setValue("logToAppDir",logToAppDir);
     s.setValue("logToPanel",logToPanel);
     s.setValue("logDebug",logDebug);
     s.setValue("logNumberLines",logNumberLines);
     s.setValue("logTimer",logTime);
     s.setValue("mapedStatusBox",mapedStatusBox);
     s.setValue("autoLoadTiling",autoLoadTiling);
-    s.setValue("loadTilingMulti",loadTilingMulti);
-    s.setValue("loadTilingModify",loadTilingModify);
     s.setValue("autoLoadDesigns",autoLoadDesigns);
     s.setValue("scaleToView",scaleToView);
     s.setValue("stopIfDiff",stopIfDiff);
@@ -216,6 +229,7 @@ void Configuration::save()
     s.setValue("tilingNewCheck",tilingNewCheck);
     s.setValue("tilingTestCheck",tilingTestCheck);
     s.setValue("tileFilterCheck",tileFilterCheck);
+    s.setValue("tilingWorklistCheck",tilingWorklistCheck);
     s.setValue("designFilter",mosaicFilter);
     s.setValue("tileFilter",tileFilter);
     s.setValue("tm_showAllTiles",tm_showAllTiles);
@@ -243,6 +257,7 @@ void Configuration::save()
     s.setValue("motifBkgdWhite",motifBkgdWhite);
     s.setValue("motifEnlarge",motifEnlarge);
     s.setValue("xmlTool",xmlTool);
+    s.setValue("diffTool",diffTool);
     s.setValue("insightMode",insightMode);
     s.setValue("cs_showBkgds",cs_showBkgds);
     s.setValue("cs_showFrameSettings",cs_showFrameSettings);
@@ -250,49 +265,47 @@ void Configuration::save()
     s.setValue("defaultMediaRoot",defaultMediaRoot);
     s.setValue("rootImageDir",rootImageDir);
     s.setValue("rootMediaDir",rootMediaDir);
+    s.setValue("saveMosaicTest",saveMosaicTest);
+    s.setValue("saveTilingTest",saveTilingTest);
+    s.setValue("vCompLock",vCompLock);
+    s.setValue("vCompXML",vCompXML);
 
-    s.setValue("workList",workList);
     s.setValue("protoViewColors",protoViewColors);
 
     s.setValue("showCenterDebug",showCenterDebug);
     s.setValue("showGrid",showGrid);
+    s.setValue("showGridTilingCenter",showGridTilingCenter);
+    s.setValue("showGridModelCenter",showGridModelCenter);
+    s.setValue("showGridViewCenter",showGridViewCenter);
     s.setValue("gridUnits",gridUnits);
+    s.setValue("gridTilingAlgo",gridTilingAlgo);
     s.setValue("gridType2",gridType);
     s.setValue("gridModelWidth",gridModelWidth);
     s.setValue("gridModelCenter",gridModelCenter);
     s.setValue("gridModelSpacing",gridModelSpacing);
     s.setValue("gridScreenWidth",gridScreenWidth);
     s.setValue("gridScreenCenter",gridScreenCenter);
+    s.setValue("gridTilingWidth",gridTilingWidth);
     s.setValue("snapToGrid",snapToGrid);
     s.setValue("gridScreenSpacing",gridScreenSpacing);
+    s.setValue("gridZLevel",gridZLevel);
     s.setValue("gridAngle",gridAngle);
     s.setValue("mapedAngle",mapedAngle);
     s.setValue("mapedRadius",mapedRadius);
     s.setValue("mapedLen",mapedLen);
     s.setValue("mapedMergeSensitivity",mapedMergeSensitivity);
     s.setValue("protoviewWidth",protoviewWidth);
+    s.setValue("motifViewWidth",motifViewWidth);
     s.setValue("transparentColor",transparentColor.name(QColor::HexRgb));
+    s.setValue("gridColorTiling2",gridColorTiling);
+    s.setValue("gridColorModel2",gridColorModel);
+    s.setValue("gridColorScreen2",gridColorScreen);
     s.setValue("genCycle",genCycle);
     s.setValue("viewCycle",viewCycle);
     s.setValue("fileFilter",fileFilter);
-}
+    s.setValue("lastCompareName",lastCompareName);
 
-void Configuration::setWorkList (QStringList & list)
-{
-    workList = list;
-    emit theApp->sig_workListChanged();
-}
-
-void Configuration::addWorkList(QString name)
-{
-    workList << name;
-    emit theApp->sig_workListChanged();
-}
-
-void Configuration::clearWorkList()
-{
-    workList.clear();
-    emit theApp->sig_workListChanged();
+    worklist.save(s);
 }
 
 void Configuration::setViewerType(eViewType  viewerType)
@@ -315,8 +328,6 @@ QString Configuration::getMediaRoot()
 
     return root;
 }
-
-
 
 QString Configuration::getMediaRootLocal()
 {
@@ -411,10 +422,10 @@ void Configuration::configurePaths()
     originalTileDir     = root + "tilings/original/";
     newTileDir          = root + "tilings/new_tilings/";
     testTileDir         = root + "tilings/tests/";
-    rootDesignDir       = root + "designs/";
-    originalDesignDir   = root + "designs/original/";
-    newDesignDir        = root + "designs/new_designs/";
-    testDesignDir       = root + "designs/tests/";
+    rootMosaicDir       = root + "designs/";
+    originalMosaicDir   = root + "designs/original/";
+    newMosaicDir        = root + "designs/new_designs/";
+    testMosiacDir       = root + "designs/tests/";
     templateDir         = root + "designs/templates/";
     examplesDir         = root + "history/examples/";
     mapsDir             = root + "maps/";
@@ -428,4 +439,41 @@ void Configuration::configurePaths()
     {
         rootImageDir += "/";
     }
+}
+
+void Worklist::set(QStringList & list)
+{
+    this->list     = list;
+    emit theApp->sig_workListChanged();
+}
+
+void Worklist::setName(QString listName)
+{
+    this->listname = listName;
+    emit theApp->sig_workListChanged();
+}
+
+void Worklist::add(QString designName)
+{
+    list << designName;
+    emit theApp->sig_workListChanged();
+}
+
+void Worklist::clear()
+{
+    listname.clear();
+    list.clear();
+    emit theApp->sig_workListChanged();
+}
+
+void Worklist::load(QSettings & s)
+{
+    list     = s.value("workList","").toStringList();
+    listname = s.value("workListName3","").toString();
+}
+
+void Worklist::save(QSettings & s)
+{
+    s.setValue("workList",list);
+    s.setValue("workListName3",listname);
 }

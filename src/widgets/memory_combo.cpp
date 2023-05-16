@@ -1,5 +1,5 @@
 #include "widgets/memory_combo.h"
-#include "settings/configuration.h"
+#include <QSettings>
 
 MemoryCombo::MemoryCombo(QString name)
 {
@@ -7,8 +7,32 @@ MemoryCombo::MemoryCombo(QString name)
     setEditable(true);
     setDuplicatesEnabled(false);
     setMaxCount(10);
-    config = Configuration::getInstance();
 }
+
+void MemoryCombo::initialise()
+{
+    clear(); // erase the combo
+
+    unsigned int index =0;
+    QSettings s;
+    QStringList itemList = s.value(name,"").toStringList();
+    for (auto & file : itemList)
+    {
+        if (!file.isEmpty())
+        {
+            insertItem(index++,file);
+        }
+    }
+    setCurrentIndex(0);
+}
+
+QString MemoryCombo::getTextFor(QString name)
+{
+    QSettings s;
+    QStringList itemList = s.value(name,"").toStringList();
+    return itemList[0];
+}
+
 
 QString MemoryCombo::getCurrentText()
 {
@@ -22,7 +46,6 @@ void MemoryCombo::setCurrentText(const QString &text)
     if (!items.contains(text))
     {
         insertItem(0,text);
-        config->viewImages = getItems();
     }
     else
     {
@@ -40,8 +63,8 @@ void MemoryCombo::setCurrentText(const QString &text)
         }
         // this could exceed max count
     }
+    persistItems();
     setCurrentIndex(0);
-    config->viewImages = getItems();
     blockSignals(false);
 }
 
@@ -56,6 +79,11 @@ void MemoryCombo::select(int index)
     }
 
     auto items = getItems();
+    if (index < 0 || index >= items.size())
+    {
+        blockSignals(false);
+        return;     // don't need to do anything
+    }
     auto selection = items.at(index);
 
     if (selection.isEmpty())
@@ -77,7 +105,16 @@ void MemoryCombo::select(int index)
         }
     }
     setCurrentIndex(0);
-    config->viewImages = getItems();
+    persistItems();
+    blockSignals(false);
+}
+
+void MemoryCombo::eraseCurrent()
+{
+    blockSignals(true);
+    removeItem(currentIndex());
+    setCurrentIndex(0);
+    persistItems();
     blockSignals(false);
 }
 
@@ -89,4 +126,11 @@ QStringList MemoryCombo::getItems()
         items << itemText(i);
     }
     return items;
+}
+
+void MemoryCombo::persistItems()
+{
+    QStringList items = getItems();
+    QSettings s;
+    s.setValue(name,items);
 }

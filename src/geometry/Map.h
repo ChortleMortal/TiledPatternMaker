@@ -1,3 +1,7 @@
+#pragma once
+#ifndef MAP_H
+#define MAP_H
+
 ////////////////////////////////////////////////////////////////////////////
 //
 // Map.java
@@ -14,9 +18,6 @@
 // faces explicitly, which can make face colouring for islamic patterns
 // tricky later.  But it's more tractable than computing overlays of
 // DCELs.
-
-#ifndef MAP_H
-#define MAP_H
 
 #include "misc/unique_qvector.h"
 #include "geometry/circle.h"
@@ -36,6 +37,7 @@ typedef std::weak_ptr<class Edge>           WeakEdgePtr;
 
 typedef std::weak_ptr<class DCEL>           WeakDCELPtr;
 
+typedef QVector<QTransform>                 Placements;
 enum eCompare
 {
     COMP_LESS    = -1,
@@ -51,7 +53,7 @@ enum eMCOptions
     joinupColinearEdges         = 0x10,
     divideupIntersectingEdges   = 0x20,
     cleanupNeighbours           = 0x40,
-    BuildNeighbours             = 0x80,
+    buildNeighbours             = 0x80,
 };
 
 #define default_cleanse (badEdges | badVertices_0| cleanupNeighbours)
@@ -114,6 +116,7 @@ public:
     bool        verify(bool force = false);
     bool        verifyAndFix(bool force = false, bool confirm = false);
     void        cleanse(unsigned int options);
+    uint        cleanseAnalysis();
 
     VertexPtr   insertVertex(const QPointF & pt);
     VertexPtr   getVertex(const QPointF & pt) const;
@@ -146,7 +149,7 @@ public:
     void        splitEdge(EdgePtr e);
 
     void        mergeMap(const constMapPtr & other, qreal tolerance = Loose::TOL);
-    void        mergeMany(const constMapPtr & other, const QVector<QTransform> & transforms);
+    void        mergeMany(const constMapPtr & other, const Placements & placements);
     EdgePtr     makeCopy(const EdgePtr & e);
     EdgePtr     makeCopy(const EdgePtr & e, QTransform T);
 
@@ -234,7 +237,7 @@ private:
     bool        joinOneColinearEdge();
     void        divideIntersectingEdges(); // if two edges cross, make a new vertex and have four edges
     void        combineLinearEdges(const EdgePtr & a, const EdgePtr & b, const VertexPtr & common);
-    void        removeVerticesWithEdgeCount(int edgeCount);
+    void        removeVerticesWithEdgeCount(uint edgeCount);
     bool        coalesceVertices(qreal tolerance = Loose::TOL);
     void        removeBadEdges();
 
@@ -271,6 +274,7 @@ public:
     void        insertDebugLine(QPointF p1, QPointF p2);
     void        insertDebugLine(QLineF l1);
     void        insertDebugPolygon(QPolygonF & poly);
+    void        insertDebugPoints(QPolygonF & poly);
 };
 
 #endif

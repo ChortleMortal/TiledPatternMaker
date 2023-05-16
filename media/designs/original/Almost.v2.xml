@@ -1,0 +1,195 @@
+<?xml version="1.0"?>
+<!-- Written: Fri Mar 10 2023 13:29:44 -->
+<vector id="1" version="14">
+	<design>
+		<size>
+			<width>1500</width>
+			<height>1100</height>
+			<zwidth>1500</zwidth>
+			<zheight>1100</zheight>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Fill singleton="f">-7,2,-3,9</Fill>
+	</design>
+	<style.Filled id="2">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<string>Almost</string>
+					<entry>
+						<tile.Feature id="4">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">-4.671149643457097,-6.481548447582251</Point>
+									<Point id="7">-5.053115654707199,-7.007279559701381</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">-4.435081665957307,-6.806468143815156</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">-4.053115654707203,-6.280737031696023</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitGirih id="10" type="MOTIF_TYPE_INFERRED_GIRIH">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+							<skip>2.800000000000004</skip>
+						</app.ExplicitGirih>
+					</entry>
+					<entry>
+						<tile.Feature id="11">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="12">
+								<Line>
+									<Point id="13">-3.435081665957309,-4.780246830878163</Point>
+									<Point id="14">-3.435081665957309,-5.430086223343984</Point>
+								</Line>
+								<Line>
+									<Point reference="14" />
+									<Point id="15">-3.053115654707204,-5.955817335463117</Point>
+								</Line>
+								<Line>
+									<Point reference="15" />
+									<Point id="16">-2.435081665957311,-6.156628751349346</Point>
+								</Line>
+								<Line>
+									<Point reference="16" />
+									<Point id="17">-2.435081665957308,-5.506789358883531</Point>
+								</Line>
+								<Line>
+									<Point reference="17" />
+									<Point id="18">-2.817047677207412,-4.981058246764395</Point>
+								</Line>
+								<Line>
+									<Point reference="18" />
+									<Point reference="13" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitGirih id="19" type="MOTIF_TYPE_INFERRED_GIRIH">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>6</n>
+							<skip>1.800000000000021</skip>
+						</app.ExplicitGirih>
+					</entry>
+					<entry>
+						<tile.Feature id="20">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="21">
+								<Line>
+									<Point id="22">0.9999999999999999,0.7265425280053608</Point>
+									<Point id="23">-0.381966011250105,1.175570504584946</Point>
+								</Line>
+								<Line>
+									<Point reference="23" />
+									<Point id="24">-1.23606797749979,1.51374669217366e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="24" />
+									<Point id="25">-0.3819660112501053,-1.175570504584946</Point>
+								</Line>
+								<Line>
+									<Point reference="25" />
+									<Point id="26">0.9999999999999998,-0.7265425280053611</Point>
+								</Line>
+								<Line>
+									<Point reference="26" />
+									<Point reference="22" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.Star id="27">
+							<boundarySides>5</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>5</n>
+                                                        <d>1.4999</d>
+							<s>1</s>
+						</app.Star>
+					</entry>
+					<entry>
+						<tile.Feature id="28">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="29">
+								<Line>
+									<Point id="30">0,1.70130161670408</Point>
+									<Point id="31">5.551115123125783e-17,1.051462224238267</Point>
+								</Line>
+								<Line>
+									<Point reference="31" />
+									<Point id="32">0.6180339887498947,0.8506508083520399</Point>
+								</Line>
+								<Line>
+									<Point reference="32" />
+									<Point id="33">0.6180339887498949,1.500490200817853</Point>
+								</Line>
+								<Line>
+									<Point reference="33" />
+									<Point reference="30" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitGirih id="34" type="MOTIF_TYPE_INFERRED_GIRIH">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+							<skip>2.8</skip>
+						</app.ExplicitGirih>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<ColorBlacks>
+			<color hide="f">#ff1496d2</color>
+		</ColorBlacks>
+		<ColorWhites>
+			<color hide="f">#ff1496d2</color>
+		</ColorWhites>
+		<ColorGroup>
+			<Group hideSet="f">
+				<color hide="f">#ff1496d2</color>
+			</Group>
+			<Group hideSet="f" />
+		</ColorGroup>
+		<style.Filled>
+			<draw__inside>true</draw__inside>
+			<draw__outside>false</draw__outside>
+			<algorithm>0</algorithm>
+		</style.Filled>
+	</style.Filled>
+</vector>

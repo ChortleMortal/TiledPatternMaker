@@ -1,3 +1,7 @@
+#pragma once
+#ifndef FILLREGION_H
+#define FILLREGION_H
+
 ////////////////////////////////////////////////////////////////////////////
 //
 // FillRegion.java
@@ -20,14 +24,15 @@
 
 // casper 20FEB19 - removed the original fill algorithm
 
-#ifndef FILLREGION_H
-#define FILLREGION_H
-
 #include <QTransform>
+#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
+#include <memory>
+#endif
 #include "misc/unique_qvector.h"
 #include "settings/filldata.h"
+#include "enums/efillmode.h"
 
-class FillData;
+typedef QVector<QTransform> Placements;
 
 typedef std::shared_ptr<class Tiling> TilingPtr;
 
@@ -36,14 +41,12 @@ class FillRegion
 public:
     FillRegion(TilingPtr tiling, const FillData & fd);
 
-    QVector<QTransform> getTransforms();
+    Placements getPlacements(eRepeatType mode);
 
 protected:
     QTransform calcTransform(int h, int v);
 
 private:
-    class Configuration * config;
-
     TilingPtr             tiling;
     FillData              fillData;
 

@@ -25,14 +25,22 @@ void WorklistWidget::mousePressEvent(QMouseEvent * event)
 #else
         QPoint pt = event->position().toPoint();
 #endif
-        QListWidgetItem * qlwi = itemAt(pt);
-        QString name = qlwi->text();
-        qDebug() << "right click=" << name;
-
         QMenu menu(this);
-        menu.addSection(name);
-        menu.addAction("Rename",this,&WorklistWidget::slot_editAction);
-        menu.addAction("Delete",this,&WorklistWidget::slot_deleteAction);
+        QListWidgetItem * qlwi = itemAt(pt);
+        if (qlwi)
+        {
+            QString name = qlwi->text();
+            qDebug() << "right click=" << name;
+
+            menu.addSection(name);
+            menu.addAction("Insert",this,&WorklistWidget::slot_insertAction);
+            menu.addAction("Rename",this,&WorklistWidget::slot_editAction);
+            menu.addAction("Delete",this,&WorklistWidget::slot_deleteAction);
+        }
+        else
+        {
+            menu.addAction("Insert",this,&WorklistWidget::slot_insertAction);
+        }
 #if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
         menu.exec(event->screenPos().toPoint());
 #else
@@ -43,6 +51,30 @@ void WorklistWidget::mousePressEvent(QMouseEvent * event)
     {
         QListWidget::mousePressEvent(event);
     }
+}
+
+void WorklistWidget::slot_insertAction()
+{
+    DlgName dlg(this);
+    dlg.newEdit->setText("No-Name");
+    int retval = dlg.exec();
+    if (retval == QDialog::Rejected)
+    {
+        qDebug() << "Canceled";
+        return;
+    }
+    Q_ASSERT(retval == QDialog::Accepted);
+    QString newName = dlg.newEdit->text();
+    if (newName.isEmpty())
+        return;
+
+    Configuration * config = Configuration::getInstance();
+    config->worklist.add(newName);
+
+    clear();
+    addItems(config->worklist.get());
+    setCurrentRow(config->worklist.get().size()-1);
+    update();
 }
 
 void WorklistWidget::slot_editAction()
@@ -68,9 +100,10 @@ void WorklistWidget::slot_editAction()
     if (newName.isEmpty())
         return;
 
-    QStringList newList;
     Configuration * config = Configuration::getInstance();
-    const QStringList & list = config->getWorkList();
+    const QStringList & list = config->worklist.get();
+
+    QStringList newList;
     for (int i = 0; i < list.size(); ++i)
     {
         if (list.at(i) != name)
@@ -84,13 +117,12 @@ void WorklistWidget::slot_editAction()
     }
 
     newList.sort();
-    config->setWorkList(newList);
+    config->worklist.set(newList);
 
     clear();
     addItems(newList);
     setCurrentRow(row);
     update();
-
 }
 
 void WorklistWidget::slot_deleteAction()
@@ -104,7 +136,7 @@ void WorklistWidget::slot_deleteAction()
     qDebug() << "trigger delete" << row << name;
 
     Configuration * config = Configuration::getInstance();
-    const QStringList & list = config->getWorkList();
+    const QStringList & list = config->worklist.get();
 
     QStringList newList;
     for (int i = 0; i < list.size(); ++i)
@@ -114,7 +146,7 @@ void WorklistWidget::slot_deleteAction()
             newList << list.at(i);
         }
     }
-    config->setWorkList(newList);
+    config->worklist.set(newList);
 
     clear();
     addItems(newList);

@@ -1,13 +1,16 @@
-﻿#include "mosaic/mosaic_writer.h"
+#include "mosaic/mosaic_writer.h"
 #include "mosaic/design_element.h"
 #include "mosaic/mosaic.h"
-#include "mosaic/prototype.h"
-#include "motifs/explicit_motif.h"
+#include "makers/prototype_maker/prototype.h"
+#include "motifs/explicit_map_motif.h"
+#include "motifs/irregular_motif.h"
 #include "motifs/extended_rosette.h"
 #include "motifs/extended_star.h"
 #include "motifs/rosette_connect.h"
 #include "motifs/star.h"
 #include "motifs/star_connect.h"
+#include "motifs/irregular_rosette.h"
+#include "motifs/irregular_star.h"
 #include "geometry/crop.h"
 #include "geometry/edge.h"
 #include "geometry/map.h"
@@ -33,6 +36,8 @@
 #include "tile/tiling_writer.h"
 #include "viewers/viewcontrol.h"
 
+using std::dynamic_pointer_cast;
+
 MosaicWriter::MosaicWriter() : MosaicWriterBase()
 {
     config = Configuration::getInstance();
@@ -47,7 +52,8 @@ MosaicWriter::MosaicWriter() : MosaicWriterBase()
     //currentXMLVersion = 10; // 07APR21 Border enhancements
     //currentXMLVersion = 11; // 13NOV21 Crop separated from Border
     //currentXMLVersion = 12; // 24NOV21 Reworked border definitions
-      currentXMLVersion = 13; // 16SEP22 Extended Boundary scale/rot used
+    //currentXMLVersion = 13; // 16SEP22 Extended Boundary scale/rot used
+      currentXMLVersion = 14; // 23NOV22 <n> is common for all motifs
 }
 
 MosaicWriter::~MosaicWriter()
@@ -136,7 +142,7 @@ bool MosaicWriter::processVector(QTextStream &ts)
 #if 0
     // write tiling
     StylePtr      sp = design.getFirstStyle();
-    PrototypePtr  pp = sp->getPrototype();
+    ProtoPtr  pp = sp->getPrototype();
     TilingPtr tiling = pp->getTiling();
     if (!tiling)
     {
@@ -217,6 +223,7 @@ void MosaicWriter::processDesign(QTextStream &ts)
     BorderPtr border      = _mosaic->getBorder();
     CropPtr crop          = _mosaic->getCrop();
     BkgdImgPtr bip        = BackgroundImage::getSharedInstance();
+    uint cleanseLevel     = _mosaic->getCleanseLevel();
 
     ts << "<design>" << endl;
     procSize(ts,size,zsize);
@@ -235,6 +242,12 @@ void MosaicWriter::processDesign(QTextStream &ts)
         ts << "<Fill singleton = \"t\">0,0,0,0</Fill>";
     }
     TilingWriter::writeBackgroundImage(ts,bip);
+
+    if (cleanseLevel > 0)
+    {
+        ts << "<Cleanse>" << QString::number(cleanseLevel,16) << "</Cleanse>" << endl;
+    }
+
     ts << "</design>" << endl;
 }
 
@@ -389,7 +402,7 @@ bool MosaicWriter::processThick(QTextStream &ts, StylePtr s)
     Qt::PenCapStyle pcs     = th->getCapStyle();
     qreal   outline_width   = th->getOutlineWidth();
     QColor  outline_color   = th->getOutlineColor();
-    PrototypePtr proto      = th->getPrototype();
+    ProtoPtr proto      = th->getPrototype();
     Xform   xf              = th->getCanvasXform();
     QString str;
 
@@ -435,7 +448,7 @@ bool MosaicWriter::processInterlace(QTextStream & ts, StylePtr s)
     QColor  outline_color   = il->getOutlineColor();
     qreal   gap             = il->getGap();
     qreal   shadow          = il->getShadow();
-    PrototypePtr proto      = il->getPrototype();
+    ProtoPtr proto      = il->getPrototype();
     Xform   xf              = il->getCanvasXform();
     bool    startUnder      = il->getInitialStartUnder();
 
@@ -485,7 +498,7 @@ bool MosaicWriter::processOutline(QTextStream &ts, StylePtr s)
     Qt::PenCapStyle pcs   = ol->getCapStyle();
     qreal   outline_width = ol->getOutlineWidth();
     QColor  outline_color = ol->getOutlineColor();
-    PrototypePtr proto    = ol->getPrototype();
+    ProtoPtr proto    = ol->getPrototype();
     Xform   xf            = ol->getCanvasXform();
 
     QString str;
@@ -531,7 +544,7 @@ bool MosaicWriter::processFilled(QTextStream &ts, StylePtr s)
     bool    draw_inside     = fl->getDrawInsideBlacks();
     bool    draw_outside    = fl->getDrawOutsideWhites();
 
-    PrototypePtr proto      = fl->getPrototype();
+    ProtoPtr proto      = fl->getPrototype();
     Xform   xf              = fl->getCanvasXform();
 
     QString str;
@@ -588,7 +601,7 @@ bool MosaicWriter::processPlain(QTextStream &ts, StylePtr s)
     }
 
     ColorSet * cset     = pl->getColorSet();
-    PrototypePtr proto  = pl->getPrototype();
+    ProtoPtr proto  = pl->getPrototype();
     Xform   xf          = pl->getCanvasXform();
 
     QString str;
@@ -621,7 +634,7 @@ bool MosaicWriter::processSketch(QTextStream &ts, StylePtr s)
     }
 
     ColorSet * cset     = sk->getColorSet();
-    PrototypePtr proto  = sk->getPrototype();
+    ProtoPtr proto  = sk->getPrototype();
     Xform   xf          = sk->getCanvasXform();
 
     QString str;
@@ -660,7 +673,7 @@ bool MosaicWriter::processEmboss(QTextStream &ts, StylePtr s)
     qreal   outline_width = em->getOutlineWidth();
     QColor  outline_color = em->getOutlineColor();
     qreal   angle         = em->getAngle();
-    PrototypePtr proto    = em->getPrototype();
+    ProtoPtr proto    = em->getPrototype();
     Xform   xf            = em->getCanvasXform();
 
     QString str;
@@ -702,7 +715,7 @@ bool MosaicWriter::processTileColors(QTextStream &ts, StylePtr s)
         fail("Style error","dynamic cast of Tile Colors");
     }
 
-    PrototypePtr proto  = tc->getPrototype();
+    ProtoPtr proto  = tc->getPrototype();
     Xform   xf          = tc->getCanvasXform();
 
     QString str;
@@ -864,7 +877,7 @@ void MosaicWriter::setPolygon(QTextStream & ts, PolyPtr pp)
     }
 }
 
-void MosaicWriter::setPrototype(QTextStream & ts, PrototypePtr pp)
+void MosaicWriter::setPrototype(QTextStream & ts, ProtoPtr pp)
 {
     QString qsid;
     if (hasReference(pp))
@@ -908,84 +921,50 @@ void MosaicWriter::setPrototype(QTextStream & ts, PrototypePtr pp)
 
         setTile(ts,tile);
 
-        QString name;
-        eMotifType figType = motif->getMotifType();
-        switch (figType)
+        eMotifType motifType = motif->getMotifType();
+        switch (motifType)
         {
-        case MOTIF_TYPE_EXPLICIT:
-            name = "app.ExplicitFigure";
-            setExplicitMotif(ts,name,motif);
-            break;
-
         case MOTIF_TYPE_STAR:
-            name = "app.Star";
-            setStar(ts,name,motif);
+            setStar(ts,motifRepresentation[motifType],motif);
             break;
 
         case MOTIF_TYPE_EXTENDED_STAR:
-            name = "ExtendedStar";
-            setExtendedStar(ts,name,motif);
+            setExtendedStar(ts,motifRepresentation[motifType],motif);
             break;
 
         case MOTIF_TYPE_EXTENDED_ROSETTE:
-            name = "ExtendedRosette";
-            setExtendedRosette(ts,name,motif);
+            setExtendedRosette(ts,motifRepresentation[motifType],motif);
             break;
 
         case MOTIF_TYPE_ROSETTE:
-            name = "app.Rosette";
-            setRosette(ts,name,motif);
+            setRosette(ts,motifRepresentation[motifType],motif);
             break;
 
         case MOTIF_TYPE_CONNECT_STAR:
-            name = "app.ConnectFigure";
-            setStarConnect(ts,name,motif);
+            setStarConnect(ts,motifRepresentation[motifType],motif);
             break;
 
         case MOTIF_TYPE_CONNECT_ROSETTE:
-            name = "app.ConnectFigure";
-            setRosetteConnect(ts,name,motif);
+            setRosetteConnect(ts,motifRepresentation[motifType],motif);
             break;
 
         case MOTIF_TYPE_RADIAL:
         case MOTIF_TYPE_UNDEFINED:
-            fail("Unexpected figure type:", sTileType[figType]);
-
-        case MOTIF_TYPE_EXPLICIT_INFER:
-            name = "app.Infer";
-            setExplicitMotif(ts,name,motif);
-            break;
-
-        case MOTIF_TYPE_EXPLICIT_ROSETTE:
-            name = "app.ExplicitRosette";
-            setExplicitMotif(ts,name,motif);
-            break;
-
-        case MOTIF_TYPE_EXPLICIT_HOURGLASS:
-            name = "app.ExplicitHourglass";
-            setExplicitMotif(ts,name,motif);
-            break;
-
-        case MOTIF_TYPE_EXPLICIT_INTERSECT:
-            name = "app.ExplicitIntersect";
-            setExplicitMotif(ts,name,motif);
-            break;
-
-        case MOTIF_TYPE_EXPLICIT_GIRIH:
-            name = "app.ExplicitGirih";
-            setExplicitMotif(ts,name,motif);
-            break;
-
-        case MOTIF_TYPE_EXPLICIT_STAR:
-            name = "app.ExplicitStar";
-            setExplicitMotif(ts,name,motif);
-            break;
-
-        case MOTIF_TYPE_EXPLICIT_TILE:
-            name = "app.ExplicitFeature";
-            setExplicitMotif(ts,name,motif);
+            fail("Unexpected figure type:", sMotifType[motifType]);
+            
+        case MOTIF_TYPE_EXPLICIT_MAP:
+        case MOTIF_TYPE_IRREGULAR_NO_MAP:
+        case MOTIF_TYPE_INFERRED:
+        case MOTIF_TYPE_IRREGULAR_ROSETTE:
+        case MOTIF_TYPE_HOURGLASS:
+        case MOTIF_TYPE_INTERSECT:
+        case MOTIF_TYPE_GIRIH:
+        case MOTIF_TYPE_IRREGULAR_STAR:
+        case MOTIF_TYPE_EXPLCIT_TILE:
+            setExplicitMotif(ts,motifRepresentation[motifType],motif);
             break;
         }
+
         ts << "</entry>" << endl;
     }
 
@@ -994,23 +973,23 @@ void MosaicWriter::setPrototype(QTextStream & ts, PrototypePtr pp)
     qDebug() << "Proto created";
 }
 
-void MosaicWriter::setTile(QTextStream & ts,TilePtr fp)
+void MosaicWriter::setTile(QTextStream & ts, TilePtr tile)
 {
     QString str = "tile.Feature";
 
     QString qsid;
-    if (hasReference(fp))
+    if (hasReference(tile))
     {
-        qsid = getTileReference(fp);
+        qsid = getTileReference(tile);
     }
     else
     {
         qsid = nextId();
-        setTileReference(getRef(),fp);
+        setTileReference(getRef(),tile);
     }
 
     ts << "<" << str << qsid << ">" << endl;
-    if (fp->isRegular())
+    if (tile->isRegular())
     {
         ts << "<regular>true</regular>" << endl;
     }
@@ -1018,12 +997,12 @@ void MosaicWriter::setTile(QTextStream & ts,TilePtr fp)
     {
         ts << "<regular>false</regular>" << endl;
     }
-    ts << "<rotation>" << fp->getRotation() << "</rotation>" << endl;
-    ts << "<scale>" << fp->getScale() << "</scale>" << endl;
+    ts << "<rotation>" << tile->getRotation() << "</rotation>" << endl;
+    ts << "<scale>" << tile->getScale() << "</scale>" << endl;
 
     ts << "<edges" << nextId() << ">" << endl;
 
-    const EdgePoly & ep  = fp->getBase();
+    const EdgePoly & ep  = tile->getBase();
     setEdgePoly(ts,ep);
 
     ts << "</edges>" << endl;
@@ -1032,27 +1011,32 @@ void MosaicWriter::setTile(QTextStream & ts,TilePtr fp)
 
 }
 
-void MosaicWriter::setMotifCommon(QTextStream & ts, MotifPtr fp)
+void MosaicWriter::setMotifCommon(QTextStream & ts, MotifPtr motif)
 {
-    const ExtendedBoundary & eb = fp->getExtendedBoundary();
+    const ExtendedBoundary & eb = motif->getExtendedBoundary();
 
     int    bs = eb.sides;
     qreal bsc = eb.scale;
-    qreal fsc = fp->getMotifScale();
-    qreal   r = fp->getMotifRotate();
+    qreal fsc = motif->getMotifScale();
+    qreal   r = motif->getMotifRotate();
+    int     n = motif->getN();
+    int ver   = motif->getVersion();
 
+    if (ver > 1)
+        ts << "<version>"       << ver << "</version>"       << endl;
     ts << "<boundarySides>" << bs  <<"</boundarySides>"  << endl;
     ts << "<boundaryScale>" << bsc << "</boundaryScale>" << endl;
     ts << "<figureScale>"   << fsc << "</figureScale>"   << endl;
     ts << "<r>"             << r   << "</r>"             << endl;
+    ts << "<n>"             << n   << "</n>"             << endl;
 }
 
-void MosaicWriter::setExplicitMotif(QTextStream & ts,QString name, MotifPtr fp)
+void MosaicWriter::setExplicitMotif(QTextStream & ts, QString name, MotifPtr motif)
 {
-    ExplicitPtr ep = std::dynamic_pointer_cast<ExplicitMotif>(fp);
+    auto ep = dynamic_pointer_cast<IrregularMotif>(motif);
     if (!ep)
     {
-        fail("Style error","dynamic cast of Explicit Motif");
+        fail("MosaicWriter Style error","dynamic cast of Explicit Motif");
     }
 
     QString qsid;
@@ -1065,7 +1049,9 @@ void MosaicWriter::setExplicitMotif(QTextStream & ts,QString name, MotifPtr fp)
 
     qsid = nextId();
     setExplicitReference(getRef(),ep);
-    ts << "<" << name << qsid << " type=\"" << fp->getMotifTypeString() << "\"" << ">" << endl;
+    ts << "<" << name << qsid << " type=\"" << motif->getMotifTypeString() << "\"" << ">" << endl;
+
+    setMotifCommon(ts,motif);
 
     switch(ep->getMotifType())
     {
@@ -1078,45 +1064,52 @@ void MosaicWriter::setExplicitMotif(QTextStream & ts,QString name, MotifPtr fp)
     case MOTIF_TYPE_EXTENDED_ROSETTE:
     case MOTIF_TYPE_EXTENDED_STAR:
         fail("Code Error","Not an explicit motif");
-
-    case MOTIF_TYPE_EXPLICIT:
+        
+    case MOTIF_TYPE_EXPLICIT_MAP:
     {
-        MapPtr map = ep->getMap();
+        auto emm = dynamic_pointer_cast<ExplicitMapMotif>(motif);
+        MapPtr map = emm->getExplicitMap();
         setMap(ts,map);
         break;
     }
 
-    case MOTIF_TYPE_EXPLICIT_INFER:
-    case MOTIF_TYPE_EXPLICIT_TILE:
+    case MOTIF_TYPE_INFERRED:
+    case MOTIF_TYPE_EXPLCIT_TILE:
+    case MOTIF_TYPE_IRREGULAR_NO_MAP:
         // these have no parameters
         break;
 
-    case MOTIF_TYPE_EXPLICIT_GIRIH:
-        ts << "<sides>" << ep->getN() << "</sides>" << endl;
+    case MOTIF_TYPE_GIRIH:
         ts << "<skip>"  << ep->skip  << "</skip>"  << endl;
         break;
 
-    case MOTIF_TYPE_EXPLICIT_STAR:
-    case MOTIF_TYPE_EXPLICIT_HOURGLASS:
+    case MOTIF_TYPE_IRREGULAR_STAR:
+    {
         ts << "<s>" << ep->s << "</s>" << endl;
         ts << "<d>" << ep->d << "</d>"  << endl;
+        auto star = dynamic_pointer_cast<IrregularStar>(ep);
+    }   break;
+
+    case MOTIF_TYPE_HOURGLASS:
+        ts << "<s>" << ep->s << "</s>" << endl;
+        ts << "<d>" << ep->d << "</d>"  << endl;
+
         break;
 
-    case MOTIF_TYPE_EXPLICIT_ROSETTE:
+    case MOTIF_TYPE_IRREGULAR_ROSETTE:
+    {
         ts << "<s>" << ep->s << "</s>" << endl;
         ts << "<q>" << ep->q << "</q>"  << endl;
-        ts << "<rFlexPt>" << ep->r_flexPt << "</rFlexPt>"  << endl;
-        break;
+        ts << "<rFlexPt>" << ep->r << "</rFlexPt>"  << endl;
+        auto rose = dynamic_pointer_cast<IrregularRosette>(ep);
+    }   break;
 
-    case MOTIF_TYPE_EXPLICIT_INTERSECT:
+    case MOTIF_TYPE_INTERSECT:
         ts << "<s>" << ep->s << "</s>" << endl;
-        ts << "<sides>" << ep->getN() << "</sides>" << endl;
         ts << "<skip>"  << ep->skip  << "</skip>"  << endl;
         ts << "<progressive>" << ((ep->progressive) ? "t" : "f") << "</progressive>" << endl;
         break;
     }
-
-    setMotifCommon(ts,fp);
 
     ts << "</" << name << ">" << endl;
 }
@@ -1139,17 +1132,15 @@ void MosaicWriter::setStar(QTextStream & ts, QString name, MotifPtr fp, bool chi
         qsid = nextId();
         setStarReference(getRef(),sp);
     }
+
     ts << "<" << name << qsid << ">" << endl;
 
-    int        n = sp->getN();
+    setMotifCommon(ts, fp);
+
     qreal      d = sp->getD();
     int        s = sp->getS();
-
-    ts << "<n>" << n << "</n>" << endl;
     ts << "<d>" << d << "</d>" << endl;
     ts << "<s>" << s << "</s>" << endl;
-
-    setMotifCommon(ts, fp);
 
     if (childEnd)
         ts << "</child>" << endl;
@@ -1157,9 +1148,9 @@ void MosaicWriter::setStar(QTextStream & ts, QString name, MotifPtr fp, bool chi
         ts << "</" << name << ">" << endl;
 }
 
-void MosaicWriter::setExtendedStar(QTextStream & ts,QString name, MotifPtr fp)
+void MosaicWriter::setExtendedStar(QTextStream & ts, QString name, MotifPtr motif)
 {
-    ExtStarPtr sp = std::dynamic_pointer_cast<ExtendedStar>(fp);
+    ExtStarPtr sp = std::dynamic_pointer_cast<ExtendedStar>(motif);
     if (!sp)
     {
         fail("Style error","dynamic cast of ExtendedStar");
@@ -1176,7 +1167,6 @@ void MosaicWriter::setExtendedStar(QTextStream & ts,QString name, MotifPtr fp)
         setExtendedStarReference(getRef(),sp);
     }
 
-    int        n = sp->getN();
     qreal      d = sp->getD();
     int        s = sp->getS();
 
@@ -1186,18 +1176,18 @@ void MosaicWriter::setExtendedStar(QTextStream & ts,QString name, MotifPtr fp)
     QString  con_bnd_v = (extender.getConnectBoundaryVertices()) ? "\"t\"" : "\"f\"";
 
     ts << "<" << name << qsid << "  extendPeripherals=" << ext_t << "  extendFreeVertices=" << ext_not_t << "  connectBoundaryVertices=" << con_bnd_v << ">" << endl;
-    ts << "<n>" << n << "</n>" << endl;
+
+    setMotifCommon(ts, motif);
+
     ts << "<d>" << d << "</d>" << endl;
     ts << "<s>" << s << "</s>" << endl;
-
-    setMotifCommon(ts, fp);
 
     ts << "</" << name << ">" << endl;
 }
 
-void MosaicWriter::setRosette(QTextStream & ts,QString name, MotifPtr fp, bool childEnd)
+void MosaicWriter::setRosette(QTextStream & ts, QString name, MotifPtr motif, bool childEnd)
 {
-    RosettePtr rp = std::dynamic_pointer_cast<Rosette>(fp);
+    RosettePtr rp = std::dynamic_pointer_cast<Rosette>(motif);
     if (!rp)
     {
         fail("Style error","dynamic cast of Rosette");
@@ -1215,17 +1205,15 @@ void MosaicWriter::setRosette(QTextStream & ts,QString name, MotifPtr fp, bool c
     }
     ts << "<" << name << qsid << ">" << endl;
 
-    int n       = rp->getN();
+    setMotifCommon(ts,motif);
+
     int s       = rp->getS();
     qreal q     = rp->getQ();
     qreal k     = rp->getK();
 
-    ts << "<n>" << n << "</n>" << endl;
     ts << "<q>" << q << "</q>" << endl;
     ts << "<s>" << s << "</s>" << endl;
     ts << "<k>" << k << "</k>" << endl;
-
-    setMotifCommon(ts,fp);
 
     if (childEnd)
         ts << "</child>" << endl;
@@ -1233,9 +1221,9 @@ void MosaicWriter::setRosette(QTextStream & ts,QString name, MotifPtr fp, bool c
         ts << "</" << name << ">" << endl;
 }
 
-void MosaicWriter::setExtendedRosette(QTextStream & ts,QString name, MotifPtr fp)
+void MosaicWriter::setExtendedRosette(QTextStream & ts, QString name, MotifPtr motif)
 {
-    ExtRosettePtr rp = std::dynamic_pointer_cast<ExtendedRosette>(fp);
+    ExtRosettePtr rp = std::dynamic_pointer_cast<ExtendedRosette>(motif);
     if (!rp)
     {
         fail("Style error","dynamic cast of ExtendedRosette");
@@ -1252,7 +1240,6 @@ void MosaicWriter::setExtendedRosette(QTextStream & ts,QString name, MotifPtr fp
         setExtendedRosetteReference(getRef(),rp);
     }
 
-    int        n = rp->getN();
     qreal      q = rp->getQ();
     qreal      k = rp->getK();
     int        s = rp->getS();
@@ -1263,20 +1250,20 @@ void MosaicWriter::setExtendedRosette(QTextStream & ts,QString name, MotifPtr fp
     QString  con_bnd_v = (extender.getConnectBoundaryVertices()) ? "\"t\"" : "\"f\"";
 
     ts << "<" << name << qsid << "  extendPeripherals=" << ext_t << "  extendFreeVertices=" << ext_not_t << "  connectBoundaryVertices=" << con_bnd_v << ">" << endl;
-    ts << "<n>" << n << "</n>" << endl;
+
+    setMotifCommon(ts,motif);
+
     ts << "<q>" << q << "</q>" << endl;
     ts << "<s>" << s << "</s>" << endl;
     ts << "<k>" << k << "</k>" << endl;
 
-    setMotifCommon(ts,fp);
-
     ts << "</" << name << ">" << endl;
 }
 
-void MosaicWriter::setRosetteConnect(QTextStream & ts,QString name, MotifPtr fp)
+void MosaicWriter::setRosetteConnect(QTextStream & ts, QString name, MotifPtr motif)
 {
-    qDebug() << fp->getMotifDesc();
-    RosetteConnectPtr rcp = std::dynamic_pointer_cast<RosetteConnect>(fp);
+    qDebug() << motif->getMotifDesc();
+    RosetteConnectPtr rcp = std::dynamic_pointer_cast<RosetteConnect>(motif);
     if (!rcp)
     {
         fail("Style error","dynamic cast of RosetteConnect");
@@ -1294,11 +1281,6 @@ void MosaicWriter::setRosetteConnect(QTextStream & ts,QString name, MotifPtr fp)
     }
     ts << "<" << name << qsid << ">" << endl;
 
-
-    int n = rcp->getN();
-
-    ts << "<n>" << n << "</n>" << endl;
-
     setRosette(ts,QString("child class=\"app.Rosette\""),rcp,true);
 
     qreal s2 = rcp->getMotifScale();
@@ -1306,10 +1288,10 @@ void MosaicWriter::setRosetteConnect(QTextStream & ts,QString name, MotifPtr fp)
     ts << "</" << name << ">" << endl;
 }
 
-void MosaicWriter::setStarConnect(QTextStream & ts,QString name, MotifPtr fp)
+void MosaicWriter::setStarConnect(QTextStream & ts, QString name, MotifPtr motif)
 {
-    qDebug() << fp->getMotifDesc();
-    StarConnectPtr scp = std::dynamic_pointer_cast<StarConnect>(fp);
+    qDebug() << motif->getMotifDesc();
+    StarConnectPtr scp = std::dynamic_pointer_cast<StarConnect>(motif);
     if (!scp)
     {
         fail("Style error","dynamic cast StarConnect");
@@ -1326,11 +1308,6 @@ void MosaicWriter::setStarConnect(QTextStream & ts,QString name, MotifPtr fp)
         setStarConnectReference(getRef(),scp);
     }
     ts << "<" << name << qsid << ">" << endl;
-
-
-    int n = scp->getN();
-
-    ts << "<n>" << n << "</n>" << endl;
 
     setStar(ts,QString("child class=\"app.Star\""),scp,true);
 
@@ -1506,7 +1483,6 @@ void MosaicWriter::setEdge(QTextStream & ts, EdgePtr e)
         ts << "<Edge" << qsid << "/>" << endl;
     }
 
-
     auto type = e->getType();
 
     qsid = nextId();
@@ -1565,7 +1541,7 @@ bool MosaicWriter::hasReference(PolyPtr pp)
     return poly_ids.contains(pp);
 }
 
-bool MosaicWriter::hasReference(PrototypePtr pp)
+bool MosaicWriter::hasReference(ProtoPtr pp)
 {
     return proto_ids.contains(pp);
 }
@@ -1625,7 +1601,7 @@ bool MosaicWriter::hasReference(EdgePtr e)
     return edge_ids.contains(e);
 }
 
-void MosaicWriter::setProtoReference(int id, PrototypePtr ptr)
+void MosaicWriter::setProtoReference(int id, ProtoPtr ptr)
 {
     proto_ids[ptr] = id;
 }
@@ -1645,7 +1621,7 @@ void MosaicWriter::setTileReference(int id,TilePtr ptr)
     tile_ids[ptr] = id;
 }
 
-void MosaicWriter::setExplicitReference(int id,ExplicitPtr ptr)
+void MosaicWriter::setExplicitReference(int id, ExplicitPtr ptr)
 {
     explicit_ids[ptr] = id;
 }
@@ -1697,7 +1673,7 @@ QString MosaicWriter::getPolyReference(PolyPtr ptr)
     return qs;
 }
 
-QString MosaicWriter::getProtoReference(PrototypePtr ptr)
+QString MosaicWriter::getProtoReference(ProtoPtr ptr)
 {
     int id =  proto_ids.value(ptr);
     QString qs = QString(" reference=\"%1\"").arg(id);
@@ -1795,4 +1771,3 @@ void MosaicWriter::fail(QString a, QString b)
     qWarning().noquote() << _failMsg;
     throw(_failMsg);
 }
-

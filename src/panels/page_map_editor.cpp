@@ -9,8 +9,9 @@
 #include <QFileDialog>
 
 #include "makers/crop_maker/crop_maker.h"
+#include "motifs/explicit_map_motif.h"
 #include "panels/page_map_editor.h"
-#include "motifs/explicit_motif.h"
+#include "motifs/irregular_motif.h"
 #include "motifs/radial_motif.h"
 #include "geometry/crop.h"
 #include "geometry/dcel.h"
@@ -21,12 +22,12 @@
 #include "makers/map_editor/map_editor_map_loader.h"
 #include "makers/map_editor/map_editor_map_writer.h"
 #include "makers/map_editor/map_selection.h"
-#include "makers/motif_maker/motif_maker.h"
+#include "makers/prototype_maker/prototype_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "misc/fileservices.h"
 #include "misc/utilities.h"
 #include "mosaic/design_element.h"
-#include "mosaic/prototype.h"
+#include "makers/prototype_maker/prototype.h"
 #include "panels/panel.h"
 #include "qlabel.h"
 #include "settings/configuration.h"
@@ -87,12 +88,12 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     vbox->addLayout(hbox);
     vbox->addWidget(editorStatusBox);
 
-    connect(theApp,  &TiledPatternMaker::sig_tilingLoaded,   this,   &page_map_editor::slot_tilingLoaded);
-    connect(theApp,  &TiledPatternMaker::sig_mosaicLoaded,   this,   &page_map_editor::slot_mosaicLoaded);
+    connect(tilingMaker.get(), &TilingMaker::sig_tilingLoaded,   this,   &page_map_editor::slot_tilingLoaded);
+    connect(mosaicMaker,       &MosaicMaker::sig_mosaicLoaded,   this,   &page_map_editor::slot_mosaicLoaded);
 
     slot_debugChk(config->mapedStatusBox);
 
-    setMaximumWidth(600);
+    setMaximumWidth(762);
 
     slot_editLayer(LAYER_1,true);
 }
@@ -170,7 +171,6 @@ QGroupBox   * page_map_editor::createStatusGroup()
 QGroupBox   * page_map_editor::createSettingsGroup()
 {
     DoubleSpinSet * sensitivity = new DoubleSpinSet("Snap-to", config->mapedMergeSensitivity,1e-8, 100.0);
-    sensitivity->setPrecision(8);
     sensitivity->setSingleStep(1e-4);
     sensitivity->setValue(config->mapedMergeSensitivity); //dunno why needs to be done again
 
@@ -313,15 +313,11 @@ QGroupBox * page_map_editor::createMapGroup()
 QGroupBox * page_map_editor::createEditGroup()
 {
     DoubleSpinSet * radiusSpin    = new DoubleSpinSet("Radius",0.25,0.0,2.0);
-    radiusSpin->setPrecision(8);
-    radiusSpin->setSingleStep(0.05);
 
     DoubleSpinSet * angleSpin    = new DoubleSpinSet("Angle",30,-360.0,360.0);
-    angleSpin->setPrecision(4);
     angleSpin->setSingleStep(0.5);
 
     DoubleSpinSet * lenSpin    = new DoubleSpinSet("lLngth",1.0,0.01,9.0);
-    angleSpin->setPrecision(2);
     angleSpin->setSingleStep(0.1);
 
     QRadioButton * modeNone         = new QRadioButton("No Mode (ESC)");
@@ -725,7 +721,7 @@ void page_map_editor::refreshStatusBox()
 
     case MAPED_LOADED_FROM_MOTIF_PROTOTYPE:
     {
-        PrototypePtr pp = db->getMotifPrototype();
+        ProtoPtr pp = db->getMotifPrototype();
         if (pp)
         {
             CropPtr cr;
@@ -953,10 +949,10 @@ void page_map_editor::slot_convertToExplicit()
     if (delp)
     {
         Q_ASSERT(db->isMotif(layer.type));
-        MotifPtr figp = delp->getMotif();
-        if (figp)
+        MotifPtr motif = delp->getMotif();
+        if (motif)
         {
-            ExplicitPtr ep = std::dynamic_pointer_cast<ExplicitMotif>(figp);
+            auto ep = std::dynamic_pointer_cast<IrregularMotif>(motif);
             if (ep)
             {
                 QMessageBox box(this);
@@ -967,15 +963,16 @@ void page_map_editor::slot_convertToExplicit()
             }
 
             int sides = 10;
-            RadialPtr rp = std::dynamic_pointer_cast<RadialMotif>(figp);
+            RadialPtr rp = std::dynamic_pointer_cast<RadialMotif>(motif);
             if (rp)
             {
                 sides = rp->getN();
             }
-            MapPtr map = layer.getMap();
+            MapPtr map = layer.getMapedLayerMap();
             if (map)
             {
-                ep = make_shared<ExplicitMotif>(map,MOTIF_TYPE_EXPLICIT,sides);
+                ep = make_shared<ExplicitMapMotif>(map);
+                ep->setN(sides);
                 delp->setMotif(ep);
             }
         }
@@ -983,7 +980,7 @@ void page_map_editor::slot_convertToExplicit()
     else
     {
         // TODO - this was not a design element - so lets make one from scratch and push to to the
-        // mpotif maker
+        // motif maker
         qWarning("Not yet implemented");
     }
 }
@@ -1210,7 +1207,7 @@ void page_map_editor::slot_embedCrop()
 {
     // merges the crop rectangle into the map
     MapEditorLayer layer = maped->getDb()->getEditLayer();
-    MapPtr map = layer.getMap();
+    MapPtr map = layer.getMapedLayerMap();
     if (!map)
     {
         map = make_shared<Map>("Crop Map");
@@ -1493,7 +1490,7 @@ void page_map_editor::slot_pushMap()
     bool rv = false;
 
     auto layer = maped->getDb()->getEditLayer();
-    auto map   = layer.getMap();
+    auto map   = layer.getMapedLayerMap();
     if (!map || map->isEmpty())
     {
         rv = false;

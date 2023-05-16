@@ -4,6 +4,7 @@
 #include "geometry/dcel.h"
 #include "geometry/map.h"
 #include "misc/geo_graphics.h"
+#include "makers/prototype_maker/prototype.h"
 
 using std::shared_ptr;
 
@@ -19,7 +20,7 @@ using std::shared_ptr;
 // The code to build the faces from the map is contained in
 // geometry.Faces.
 
-Filled::Filled(const PrototypePtr & proto, int algorithm ) : Style(proto)
+Filled::Filled(const ProtoPtr & proto, int algorithm ) : Style(proto)
 {
     draw_inside_blacks    = true;
     draw_outside_whites   = true;
@@ -67,7 +68,6 @@ void  Filled::setAlgorithm(int val)
 void Filled::resetStyleRepresentation()
 {
     dcel.reset();
-    resetStyleMap();
     blackFaces.clear();
     whiteFaces.clear();
     faceGroups.clear();
@@ -76,23 +76,14 @@ void Filled::resetStyleRepresentation()
     colorGroup.resetIndex();
 }
 
-
 void Filled::createStyleRepresentation()
 {
+    // Filled does not use a style map, just a DCEL
     if (!dcel)
     {
-        MapPtr map = getMap();
-
-        qDebug().noquote() << "Filled pre  map cleanse" << map->namedSummary();
-        map->cleanse(badVertices_1);
-        qDebug().noquote() << "Filled post map cleanse" << map->namedSummary();
-
-        dcel = map->getDerivedDCEL();
-        if (!dcel)
-        {
-            dcel = std::make_shared<DCEL>(map);
-            map->setDerivedDCEL(dcel);
-        }
+        MapPtr map = getPrototype()->getProtoMap();
+        dcel = std::make_shared<DCEL>(map);
+        map->setDerivedDCEL(dcel);
     }
 
     Q_ASSERT(dcel);

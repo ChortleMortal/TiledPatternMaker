@@ -1,3 +1,4 @@
+#pragma once
 #ifndef PAGE_LAYERS_H
 #define PAGE_LAYERS_H
 

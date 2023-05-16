@@ -1,3 +1,4 @@
+#pragma once
 #ifndef MEASURE_VIEW_H
 #define MEASURE_VIEW_H
 
@@ -11,7 +12,7 @@ class MeasureView : public Thick
 {
 public:
     static MeasViewPtr getSharedInstance();
-    MeasureView(PrototypePtr pp);  // don't use this
+    MeasureView(ProtoPtr pp);  // don't use this
 
     void setMeasureMode(bool mode);
 

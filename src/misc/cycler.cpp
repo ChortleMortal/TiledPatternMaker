@@ -2,6 +2,7 @@
 #include "settings/configuration.h"
 #include "misc/fileservices.h"
 #include "widgets/versioned_list_widget.h"
+#include "widgets/memory_combo.h"
 #include "viewers/viewcontrol.h"
 
 #include <QTextCharFormat>
@@ -70,7 +71,7 @@ void Cycler::slot_startCycle(eCycleMode mode)
 
     switch(cycleMode)
     {
-    case CYCLE_STYLES:
+    case CYCLE_MOSAICS:
         startCycleStyles();
         break;
     case CYCLE_TILINGS:
@@ -79,15 +80,15 @@ void Cycler::slot_startCycle(eCycleMode mode)
     case CYCLE_ORIGINAL_PNGS:
         startCycleOriginalDesignPngs();
         break;
-    case CYCLE_COMPARE_ALL_IMAGES:
+    case CYCLE_COMPARE_ALL_BMPS:
         startCycleCompareAllImages();
         break;
-    case CYCLE_COMPARE_WORKLIST_IMAGES:
+    case CYCLE_COMPARE_WORKLIST_BMPS:
         startCycleCompareWorklistImages();
         break;
     case CYCLE_NONE:
     case CYCLE_SAVE_TILING_BMPS:
-    case CYCLE_SAVE_STYLE_BMPS:
+    case CYCLE_SAVE_MOSAIC_BMPS:
         qWarning() << "slot_startCycle: unexpeced mode";
     }
 }
@@ -97,7 +98,7 @@ void Cycler::slot_stopCycle()
     eCycleMode oldMode = cycleMode;
     qDebug() << "slot_stopCycle";
 
-    if ((oldMode == CYCLE_COMPARE_ALL_IMAGES || oldMode == CYCLE_COMPARE_WORKLIST_IMAGES) && config->generate_workList)
+    if ((oldMode == CYCLE_COMPARE_ALL_BMPS || oldMode == CYCLE_COMPARE_WORKLIST_BMPS) && config->generate_workList)
     {
         emit sig_workList();
     }
@@ -149,8 +150,8 @@ void Cycler::slot_timeout()
             slot_stopCycle();
         }
         break;
-
-    case CYCLE_STYLES:
+        
+    case CYCLE_MOSAICS:
         if (cCount++ <= config->cycleInterval)
         {
             qDebug() << "Tick";
@@ -171,8 +172,8 @@ void Cycler::slot_timeout()
         break;
 
 
-    case CYCLE_COMPARE_ALL_IMAGES:
-    case CYCLE_COMPARE_WORKLIST_IMAGES:
+    case CYCLE_COMPARE_ALL_BMPS:
+    case CYCLE_COMPARE_WORKLIST_BMPS:
         if (imgList_it == imgList.end())
         {
             slot_stopCycle();
@@ -188,7 +189,7 @@ void Cycler::slot_timeout()
 
     case CYCLE_NONE:
     case CYCLE_ORIGINAL_PNGS:
-    case CYCLE_SAVE_STYLE_BMPS:
+    case CYCLE_SAVE_MOSAIC_BMPS:
     case CYCLE_SAVE_TILING_BMPS:
         break;
     }
@@ -223,7 +224,7 @@ void Cycler::startCycleStyles()
 
 void Cycler::startCycleTilings()
 {
-    files = FileServices::getTilingNames(LOAD_ALL);
+    files = FileServices::getTilingNames(ALL_TILINGS);
 
     cIndex = -1;
     cCount = config->cycleInterval;     // start now
@@ -231,7 +232,7 @@ void Cycler::startCycleTilings()
 
 void Cycler::startCycleCompareAllImages()
 {
-    QMap<QString,QString>  mapa = FileServices::getDirBMPFiles(config->compareDir0);
+    QMap<QString,QString>  mapa = FileServices::getDirBMPFiles(MemoryCombo::getTextFor("leftDir"));
     QStringList names = mapa.keys();
 
     VersionList vlist;
@@ -242,21 +243,21 @@ void Cycler::startCycleCompareAllImages()
 
     if  (config->generate_workList)
     {
-        config->clearWorkList();
+        config->worklist.clear();
     }
 }
 
 void Cycler::startCycleCompareWorklistImages()
 {
     VersionList vlist;
-    vlist.create(config->getWorkList());
+    vlist.create(config->worklist.get());
 
     imgList    = vlist.recompose();
     imgList_it = imgList.begin();
 
     if  (config->generate_workList)
     {
-        config->clearWorkList();
+        config->worklist.clear();
     }
 }
 

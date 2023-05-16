@@ -1,0 +1,152 @@
+<?xml version="1.0"?>
+<!-- Written: Mon May 8 2023 12:58:28 -->
+<vector id="1" version="14">
+	<design>
+		<size>
+			<width>1500</width>
+			<height>1100</height>
+			<zwidth>1500</zwidth>
+			<zheight>1100</zheight>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Fill singleton="f">-2,1,-2,3</Fill>
+	</design>
+	<style.Interlace id="2">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<string>Squoctogon</string>
+					<entry>
+						<tile.Feature id="4">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">1.110223024625157e-16,0.9999999999999999</Point>
+									<Point id="7">-0.9999999999999998,1</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">-1,1.110223024625157e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">-1,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point id="10">-2.775557561562891e-16,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="10" />
+									<Point id="11">0.9999999999999996,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="11" />
+									<Point id="12">0.9999999999999998,-1.110223024625157e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="12" />
+									<Point id="13">0.9999999999999999,0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.ExplicitStar id="14" type="MOTIF_TYPE_IRREGULAR_STAR">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+							<s>1</s>
+							<d>3</d>
+						</app.ExplicitStar>
+					</entry>
+					<entry>
+						<tile.Feature id="15">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="16">
+								<Line>
+									<Point id="17">3.152050807568878,4.032050807568876</Point>
+									<Point id="18">2.652050807568878,3.166025403784438</Point>
+								</Line>
+								<Line>
+									<Point reference="18" />
+									<Point id="19">3.152050807568877,2.877350269189625</Point>
+								</Line>
+								<Line>
+									<Point reference="19" />
+									<Point id="20">3.652050807568878,3.166025403784437</Point>
+								</Line>
+								<Line>
+									<Point reference="20" />
+									<Point reference="17" />
+								</Line>
+							</edges>
+						</tile.Feature>
+						<app.Infer id="21" type="MOTIF_TYPE_INFERRED">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+						</app.Infer>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff0066cc</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.08332000000000001</width>
+			<join>bevel</join>
+			<cap>square</cap>
+		</style.Thick>
+		<style.Interlace>
+			<gap>0.1146</gap>
+			<shadow>0.05</shadow>
+			<includeTipVerts>false</includeTipVerts>
+			<startUnder>false</startUnder>
+		</style.Interlace>
+	</style.Interlace>
+	<style.Thick id="22">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ffcccccc</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.19168</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+	</style.Thick>
+</vector>

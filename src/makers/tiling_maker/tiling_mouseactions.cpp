@@ -22,7 +22,7 @@ using std::make_shared;
 //
 ////////////////////////////////////////////////////////////////////////////
 
-TilingMouseAction::TilingMouseAction(TilingMaker * tilingMaker, TilingSelectorPtr sel, QPointF spt)
+TilingMouseAction::TilingMouseAction(TilingMaker * tilingMaker, TileSelectorPtr sel, QPointF spt)
 {
     desc       = "MouseAction";
     qDebug() << desc;
@@ -58,7 +58,7 @@ void TilingMouseAction::endDragging(QPointF spt)
 ///
 /////////
 
-MovePolygon::MovePolygon(TilingMaker * tilingMaker, TilingSelectorPtr sel, QPointF spt )
+MovePolygon::MovePolygon(TilingMaker * tilingMaker, TileSelectorPtr sel, QPointF spt )
     : TilingMouseAction(tilingMaker,sel,spt)
 {
     desc = "MovePolygon";
@@ -94,7 +94,7 @@ void MovePolygon::updateDragging(QPointF spt)
 ///
 /////////
 
-CopyMovePolygon::CopyMovePolygon(TilingMaker * tilingMaker, TilingSelectorPtr sel, QPointF spt )
+CopyMovePolygon::CopyMovePolygon(TilingMaker * tilingMaker, TileSelectorPtr sel, QPointF spt )
     : MovePolygon(tilingMaker, sel = tilingMaker->addTileSelectionPointer(sel),spt)
 {
     PlacedTilePtr pfp = sel->getPlacedTile();
@@ -122,7 +122,7 @@ void CopyMovePolygon::endDragging(QPointF spt )
 ///
 /////////
 
-DrawTranslation::DrawTranslation(TilingMaker * tilingMaker, TilingSelectorPtr sel, QPointF spt, QPen apen )
+DrawTranslation::DrawTranslation(TilingMaker * tilingMaker, TileSelectorPtr sel, QPointF spt, QPen apen )
     : TilingMouseAction(tilingMaker,sel,spt)
 {
     desc = "DrawTranslation";
@@ -168,7 +168,7 @@ void DrawTranslation::endDragging(QPointF spt)
 {
     if (state == ADTT_DRAGGING)
     {
-        TilingSelectorPtr sel = tm->findSelection(spt);
+        TileSelectorPtr sel = tm->findSelection(spt);
         if (sel)
         {
             vector.setP2(sel->getPlacedPoint());
@@ -185,7 +185,7 @@ void DrawTranslation::endDragging(QPointF spt)
 ///
 /////////
 
-JoinEdge::JoinEdge(TilingMaker * tilingMaker, TilingSelectorPtr sel, QPointF spt ) : TilingMouseAction(tilingMaker,sel,spt)
+JoinEdge::JoinEdge(TilingMaker * tilingMaker, TileSelectorPtr sel, QPointF spt ) : TilingMouseAction(tilingMaker,sel,spt)
 {
     desc = "JoinEdge";
     snapped = false;
@@ -227,8 +227,8 @@ bool JoinEdge::snapTo(QPointF spt)
         qDebug() << "JoinEdge::no snap";
         return false;
     }
-
-    TilingSelectorPtr tosel = tm->findEdge(spt, selection);
+    
+    TileSelectorPtr tosel = tm->findEdge(spt, selection);
     if (!tosel || tosel->getType() != EDGE)
     {
         qDebug() << "JoinEdge::no snap";
@@ -275,7 +275,7 @@ QTransform JoinEdge::matchTwoSegments(QPointF p1, QPointF q1, QPointF p2, QPoint
 ///
 /////////
 
-JoinMidPoint::JoinMidPoint(TilingMaker * tilingMaker, TilingSelectorPtr sel, QPointF spt )
+JoinMidPoint::JoinMidPoint(TilingMaker * tilingMaker, TileSelectorPtr sel, QPointF spt )
     :JoinEdge(tilingMaker,sel,spt)
 {
     desc = "JoinMidPoint";
@@ -291,8 +291,8 @@ bool JoinMidPoint::snapTo(QPointF spt)
         qDebug() << "JoinMidPoint:: no snap - no selection";
         return false;
     }
-
-    TilingSelectorPtr tosel = tm->findMidPoint(spt, selection);
+    
+    TileSelectorPtr tosel = tm->findMidPoint(spt, selection);
     if (!tosel)
     {
         qDebug() << "JoinMidPoint:: no snap - no tosel";
@@ -363,7 +363,7 @@ bool JoinMidPoint::snapTo(QPointF spt)
 ///
 /////////
 
-JoinPoint::JoinPoint(TilingMaker * tilingMaker, TilingSelectorPtr sel, QPointF spt )
+JoinPoint::JoinPoint(TilingMaker * tilingMaker, TileSelectorPtr sel, QPointF spt )
     : JoinEdge(tilingMaker,sel,spt)
 {
     desc = "JoinPoint";
@@ -378,8 +378,8 @@ bool JoinPoint::snapTo(QPointF spt)
     {
         qDebug() << "JoinPoint:: no snap - no selection";
     }
-
-    TilingSelectorPtr tosel = tm->findPoint(spt, selection);
+    
+    TileSelectorPtr tosel = tm->findPoint(spt, selection);
     if (!tosel)
     {
         qDebug() << "JoinPoint:: no snap - no tosel";
@@ -408,7 +408,7 @@ bool JoinPoint::snapTo(QPointF spt)
 ///
 /////////
 
-CopyJoinEdge::CopyJoinEdge(TilingMaker * tilingMaker, TilingSelectorPtr sel, QPointF spt )
+CopyJoinEdge::CopyJoinEdge(TilingMaker * tilingMaker, TileSelectorPtr sel, QPointF spt )
     : JoinEdge(tilingMaker,tilingMaker->addTileSelectionPointer(sel),spt)
 {
     initial_transform = sel->getPlacedTile()->getTransform();
@@ -434,7 +434,7 @@ void CopyJoinEdge::endDragging(QPointF spt)
 ///
 /////////
 
-CopyJoinMidPoint::CopyJoinMidPoint(TilingMaker * tilingMaker, TilingSelectorPtr sel, QPointF spt )
+CopyJoinMidPoint::CopyJoinMidPoint(TilingMaker * tilingMaker, TileSelectorPtr sel, QPointF spt )
     : JoinMidPoint(tilingMaker,tilingMaker->addTileSelectionPointer(sel),spt)
 {
     initial_transform = sel->getPlacedTile()->getTransform();
@@ -460,7 +460,7 @@ void CopyJoinMidPoint::endDragging(QPointF spt)
 ///
 /////////
 
-CopyJoinPoint::CopyJoinPoint(TilingMaker * tilingMaker, TilingSelectorPtr sel, QPointF spt )
+CopyJoinPoint::CopyJoinPoint(TilingMaker * tilingMaker, TileSelectorPtr sel, QPointF spt )
     : JoinPoint(tilingMaker,tilingMaker->addTileSelectionPointer(sel),spt)
 {
     initial_transform = sel->getPlacedTile()->getTransform();
@@ -527,7 +527,7 @@ void CreatePolygon::addVertex(QPointF wpt)
 
         auto tiling = tm->getSelected();
         QTransform t;
-        tm->addNewPlacedTile(make_shared<PlacedTile>(tiling.get(),make_shared<Tile>(wAccum,0), t));
+        tm->addNewPlacedTile(make_shared<PlacedTile>(make_shared<Tile>(wAccum,0), t));
         tm->setTilingMakerMouseMode(TM_NO_MOUSE_MODE);
         emit tm->sig_buildMenu();
         return;
@@ -619,7 +619,7 @@ void CreatePolygon::draw(GeoGraphics * g2d)
 ///
 /////////
 
-Measure::Measure(TilingMaker * tilingMaker, QPointF spt, TilingSelectorPtr sel) : TilingMouseAction(tilingMaker,sel,spt)
+Measure::Measure(TilingMaker * tilingMaker, QPointF spt, TileSelectorPtr sel) : TilingMouseAction(tilingMaker,sel,spt)
 {
     m = new Measurement(tilingMaker);
     desc = "Measure";
@@ -748,8 +748,8 @@ void Position::draw(GeoGraphics * g2d)
 ///  Edit EditTile
 ///
 /////////
-
-EditTile::EditTile(TilingMaker * tilingMaker, TilingSelectorPtr sel, PlacedTilePtr pfp, QPointF spt )
+ 
+ EditTile::EditTile(TilingMaker * tilingMaker, TileSelectorPtr sel, PlacedTilePtr pfp, QPointF spt )
     : TilingMouseAction(tilingMaker,sel,spt)
 {
     desc        = "EditTile";
@@ -760,7 +760,7 @@ EditTile::EditTile(TilingMaker * tilingMaker, TilingSelectorPtr sel, PlacedTileP
 
     QPointF v   = sel->getPlacedPoint();
 
-    QPolygonF poly = pfp->getPlacedPolygon();
+    QPolygonF poly = pfp->getPlacedPoints();
     for (int i=0;  i < poly.size(); i++)
     {
         QPointF v2 = poly[i];
@@ -807,7 +807,7 @@ void EditTile::endDragging(QPointF spt )
 ///
 /////////
 
-EditEdge::EditEdge(TilingMaker * tilingMaker, TilingSelectorPtr sel, QPointF spt)
+EditEdge::EditEdge(TilingMaker * tilingMaker, TileSelectorPtr sel, QPointF spt)
     : TilingMouseAction(tilingMaker,sel,spt)
 {
     desc  = "EditEdge";
@@ -843,7 +843,7 @@ void EditEdge::draw(GeoGraphics * g2d)
 void EditEdge::updateDragging(QPointF spt)
 {
     QPointF wpt    = tm->screenToWorld(spt);
-    QPolygonF poly = pfp->getPlacedPolygon();
+    QPolygonF poly = pfp->getPlacedPoints();
     QPointF pt     = Utils::getClosestPoint(perp,wpt);
     QTransform inv = pfp->getTransform().inverted();
     pt             = inv.map(pt);
@@ -864,7 +864,7 @@ void EditEdge::endDragging(QPointF spt )
 //
 ////////////////////////////////////////
 
-TilingConstructionLine::TilingConstructionLine(TilingMaker * tilingMaker, TilingSelectorPtr sel, QPointF spt) : TilingMouseAction(tilingMaker,sel,spt)
+TilingConstructionLine::TilingConstructionLine(TilingMaker * tilingMaker, TileSelectorPtr sel, QPointF spt) : TilingMouseAction(tilingMaker,sel,spt)
 {
     desc = "ConstructionLine";
     qDebug() << desc;

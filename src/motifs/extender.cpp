@@ -27,7 +27,7 @@ void Extender::extend(Motif * fig, QTransform Tr)
     this->fig = fig;
     newVertices.clear();
 
-    auto map = fig->getMap();
+    auto map = fig->getMotifMap();
 
     map->verify();
 

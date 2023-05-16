@@ -8,6 +8,7 @@
 AQSpinBox::AQSpinBox() : QSpinBox()
 {
     blocked = false;
+    setAlignment(Qt::AlignRight);
     darkTheme = Configuration::getInstance()->darkTheme;
     setKeyboardTracking(false);
 }
@@ -18,6 +19,7 @@ void AQSpinBox::leaveEvent(QEvent *event)
     if (isReadOnly()) return;
     blocked = false;
     setStyleSheet("");
+    QSpinBox::leaveEvent(event);
 }
 
 #if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
@@ -30,6 +32,7 @@ void  AQSpinBox::enterEvent(QEnterEvent *event)
         setStyleSheet("background-color: #22b895");
     else
         setStyleSheet("background-color:yellow");
+    QSpinBox::enterEvent(event);
 }
 #else
 void  AQSpinBox::enterEvent(QEvent *event)
@@ -41,6 +44,7 @@ void  AQSpinBox::enterEvent(QEvent *event)
         setStyleSheet("background-color: #22b895");
     else
         setStyleSheet("background-color:yellow");
+    QSpinBox::enterEvent(event);
 }
 #endif
 
@@ -60,6 +64,8 @@ void AQSpinBox::setValue(int val)
 AQDoubleSpinBox::AQDoubleSpinBox() : QDoubleSpinBox()
 {
     blocked = false;
+    setDecimals(8);
+    setAlignment(Qt::AlignRight);
     darkTheme = Configuration::getInstance()->darkTheme;
     setKeyboardTracking(false);
 }
@@ -71,6 +77,7 @@ void  AQDoubleSpinBox::leaveEvent(QEvent *event)
     blocked = false;
     //qDebug() << "unblocked";
     setStyleSheet("");
+    QDoubleSpinBox::leaveEvent(event);
 }
 
 #if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
@@ -84,6 +91,7 @@ void AQDoubleSpinBox::enterEvent(QEnterEvent *event)
         setStyleSheet("background-color: #22b895");
     else
         setStyleSheet("background-color:yellow");
+    QDoubleSpinBox::enterEvent(event);
 }
 #else
 void  AQDoubleSpinBox::enterEvent(QEvent *event)
@@ -96,6 +104,7 @@ void  AQDoubleSpinBox::enterEvent(QEvent *event)
         setStyleSheet("background-color: #22b895");
     else
         setStyleSheet("background-color:yellow");
+    QDoubleSpinBox::enterEvent(event);
 }
 #endif
 

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef VIEW_H
 #define VIEW_H
 
@@ -34,8 +35,8 @@ public:
 
     void    addLayer(LayerPtr layer);
     void    addTopLayer(LayerPtr layer);
-    void    clearLayers()           { layers.clear(); }
-    int     numLayers()             { return layers.size(); }
+    void    clearLayers()           { activeLayers.clear(); }
+    int     numLayers()             { return activeLayers.size(); }
 
     bool    isActiveLayer(Layer * l);
     QVector<LayerPtr> getActiveLayers();
@@ -57,7 +58,7 @@ public:
 
     LoadUnit & getLoadUnit() { return loadUnit; }
 
-    void    dump(bool summary);
+    void    dumpRefs();
 
     FrameSettings frameSettings;
 
@@ -86,7 +87,7 @@ signals:
     void sig_raiseMenu();
     void sig_cyclerQuit();
     void sig_cyclerKey(int key);
-    void sig_refreshMotifMenu();
+    void sig_rebuildMotif();
 
     void sig_saveImage();
     void sig_saveMenu();
@@ -128,7 +129,7 @@ private:
     class DesignMaker * designMaker;
     class ControlPanel* panel;
 
-    UniqueQVector<LayerPtr> layers;
+    UniqueQVector<LayerPtr> activeLayers;
 
     LoadUnit          loadUnit;
     bool              canPaint;

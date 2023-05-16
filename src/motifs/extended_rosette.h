@@ -1,3 +1,4 @@
+#pragma once
 #ifndef EXTENDED_ROSETTE_H
 #define EXTENDED_ROSETTE_H
 
@@ -18,9 +19,14 @@ public:
 
     virtual ~ExtendedRosette() override {}
 
-    void    buildMaps() override;
+    void    buildMotifMaps() override;
 
-    virtual QString getMotifDesc() override { return "Extended Rosette";}
+    virtual QString getMotifDesc() override { return "ExtendedRosette";}
+    virtual void    report()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "q:" << q << "s" << s << "k" << k
+                                                << "preipheralVerts:" << extender. getExtendPeripheralVertices()
+                                                << "freeVerts:" << extender.getExtendFreeVertices()
+                                                << "boundaryVerts:" << extender. getConnectBoundaryVertices(); }
+
     Extender & getExtender() { return extender; }
 
 private:

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef PANELLISTWIDGET_H
 #define PANELLISTWIDGET_H
 
@@ -45,7 +46,7 @@ protected slots:
 
 private:
 
-    int           floatIndex;
+    int floatIndex;
 };
 
 class WorklistWidget : public QListWidget
@@ -58,6 +59,7 @@ public:
     void mousePressEvent(QMouseEvent * event) override;
 
 protected slots:
+     void slot_insertAction();
      void slot_editAction();
      void slot_deleteAction();
 

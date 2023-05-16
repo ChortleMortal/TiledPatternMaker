@@ -1,13 +1,16 @@
+#pragma once
 #ifndef STYLE_H
 #define STYLE_H
 
 #include "misc/layer_controller.h"
 #include "enums/estyletype.h"
-
+#if (QT_VERSION < QT_VERSION_CHECK(6,5,0))
+#include <QDebug>
+#endif
 class GeoGraphics;
 
 typedef std::shared_ptr<class Style>        StylePtr;
-typedef std::shared_ptr<class Prototype>    PrototypePtr;
+typedef std::shared_ptr<class Prototype>    ProtoPtr;
 typedef std::shared_ptr<class Map>          MapPtr;
 typedef std::shared_ptr<class DebugMap>     DebugMapPtr;
 typedef std::shared_ptr<class Tiling>       TilingPtr;
@@ -27,14 +30,14 @@ class Style : public LayerController
 
 public:
     // Creation.
-    Style(const PrototypePtr & proto);
+    Style(const ProtoPtr & proto);
     Style(const StylePtr & other);
 
     ~Style() override;
 
     // Geometry data.
-    PrototypePtr getPrototype() const {return prototype;}
-    void         setPrototype(PrototypePtr pp);
+    ProtoPtr     getPrototype() const {return prototype;}
+    void         setPrototype(ProtoPtr pp);
 
     MapPtr       getMap();
     MapPtr       getExistingMap();
@@ -57,15 +60,16 @@ public:
 
     virtual QString     getStyleDesc() const = 0; // Retrieve the style description.
     virtual eStyleType  getStyleType() const = 0;
+    virtual void        report()       const = 0;
 
-    virtual void    draw(GeoGraphics * gg) = 0;
+    virtual void    draw(GeoGraphics * gg)   = 0;
             void    paint(QPainter *painter) override;
             void    paintToSVG();
-
-    void    triggerPaintSVG(QSvgGenerator * generator) { this->generator = generator; paintSVG = true; }
+            void    triggerPaintSVG(QSvgGenerator * generator) { this->generator = generator; paintSVG = true; }
 
     void iamaLayer() override {}
     void iamaLayerController() override {}
+    int  protoUseCount() { if (prototype) return prototype.use_count(); else return 0;}
 
     static int refs;
 
@@ -83,7 +87,7 @@ protected:
     void   drawAnnotation(QPainter *painter, QTransform T);
 
 private:
-    PrototypePtr  prototype; // The input geometry to be rendered
+    ProtoPtr      prototype; // The input geometry to be rendered
     MapPtr        styleMap;
     DebugMapPtr   debugMap;
 

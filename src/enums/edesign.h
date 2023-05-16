@@ -1,3 +1,4 @@
+#pragma once
 #ifndef EDESIGN_H
 #define EDESIGN_H
 

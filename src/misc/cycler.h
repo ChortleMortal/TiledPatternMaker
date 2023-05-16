@@ -1,8 +1,10 @@
+#pragma once
 #ifndef CYCLER_H
 #define CYCLER_H
 
 #include <QMetaType>
 #include <QObject>
+#include <QTimer>
 #include <enums/ecyclemode.h>
 
 class Configuration;

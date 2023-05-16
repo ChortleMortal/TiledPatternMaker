@@ -110,7 +110,7 @@ TilingPtr TilingLoader::readTiling(QTextStream & st)
             QTransform t(a,d,
                          b,e,
                          c,f);
-            PlacedTilePtr pfp = make_shared<PlacedTile>(tiling.get(),bf,t);
+            PlacedTilePtr pfp = make_shared<PlacedTile>(bf,t);
             tiling->add(pfp);
         }
     }
@@ -239,7 +239,7 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
         }
         QString strt0 = t0.child_value();
         FillData fd = getFill(strt0,isSingle);
-        FillData & fdata = tiling->getDataAccess().getFillDataAccess();
+        FillData & fdata = tiling->getDataAccess(false).getFillDataAccess();
         fdata = fd;
     }
 
@@ -267,7 +267,7 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
                 continue;
             }
             QString name = nameattr.value();
-            PlacedTilePtr pfp = make_shared<PlacedTile>(tiling.get());
+            PlacedTilePtr pfp = make_shared<PlacedTile>();
             if (pfp->loadFromGirihShape(name))
             {
                 bf = pfp->getTile();
@@ -348,7 +348,7 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
                 T = getAffineTransform(plnode);
             }
 
-            PlacedTilePtr pfp = make_shared<PlacedTile>(tiling.get(),bf,T);
+            PlacedTilePtr pfp = make_shared<PlacedTile>(bf,T);
             tiling->add(pfp);
         }
 
@@ -599,7 +599,7 @@ void TilingLoader::getViewSettings(xml_node & node)
         height = str.toInt();
     }
 
-    ModelSettings & ms = tiling->getDataAccess().getSettingsAccess();
+    ModelSettings & ms = tiling->getDataAccess(false).getSettingsAccess();
 
     QSize size(width,height);
     ms.setSize(size);

@@ -171,7 +171,7 @@ void page_background_image::slot_startSkewAdjustment(bool checked)
 {
     if (checked)
     {
-        QString txt = "Click to select four points on background image. Then press 'Adjust Perspective' to fix camera skew.";
+        QString txt = "Click to select four points on background image. Then press 'Complete Perspective Adjustement' to fix camera skew.";
         panel->pushPanelStatus(txt);
 
         bip->setSkewMode(true);

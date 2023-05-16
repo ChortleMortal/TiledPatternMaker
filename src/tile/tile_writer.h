@@ -1,3 +1,4 @@
+#pragma once
 #ifndef TILE_WRITER_H
 #define TILE_WRITER_H
 

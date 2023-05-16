@@ -1,3 +1,4 @@
+#pragma once
 #ifndef EKEYBOARDMODE_H
 #define EKEYBOARDMODE_H
 

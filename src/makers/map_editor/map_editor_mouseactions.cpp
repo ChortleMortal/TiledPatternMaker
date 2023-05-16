@@ -54,11 +54,11 @@ void MapMouseAction::endDragging(QPointF spt)
     if (delp)
     {
         Q_ASSERT(db->isMotif(layer.type));
-        MotifPtr figp = delp->getMotif();
-        if (figp)
+        MotifPtr motif = delp->getMotif();
+        if (motif)
         {
             //map has been changed
-            figp->setMotifType(MOTIF_TYPE_EXPLICIT);
+            motif->setMotifType(MOTIF_TYPE_EXPLICIT_MAP);
         }
     }
 

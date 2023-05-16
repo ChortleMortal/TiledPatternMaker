@@ -1,3 +1,7 @@
+#pragma once
+#ifndef TILE_SELECTION_H
+#define TILE_SELECTION_H
+
 ////////////////////////////////////////////////////////////////////////////
 //
 // Selection.java
@@ -5,17 +9,17 @@
 // A helper struct that holds information about a selection (see TileView).
 // Probably not used in the applet at all.
 
-#ifndef TILE_SELECTION_H
-#define TILE_SELECTION_H
-
 #include <QPointF>
 #include <QLineF>
 #include <QString>
 #include <QPolygonF>
+#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
+#include <memory>
+#endif
 
 typedef std::shared_ptr<class Tile>          TilePtr;
 typedef std::shared_ptr<class PlacedTile>    PlacedTilePtr;
-typedef std::shared_ptr<class Edge>             EdgePtr;
+typedef std::shared_ptr<class Edge>          EdgePtr;
 
 #define E2STR(x) #x
 
@@ -54,7 +58,7 @@ public:
     QPointF          getModelPoint()    { return pt; }
     QPolygonF        getModelPolygon();
 
-    PlacedTilePtr getPlacedTile() { return pfp; }
+    PlacedTilePtr    getPlacedTile()    { return pfp; }
     QLineF           getPlacedLine();
     QPointF          getPlacedPoint();
     QPolygonF        getPlacedPolygon();
@@ -67,55 +71,55 @@ protected:
     TileSelector(PlacedTilePtr pfp, EdgePtr edge);
     TileSelector(PlacedTilePtr pfp, EdgePtr edge, QPointF pt);
 
-    eSelection       type;
+    eSelection      type;
 
 private:
-    PlacedTilePtr pfp;
-    QPointF          pt;
-    EdgePtr          edge;
+    PlacedTilePtr   pfp;
+    QPointF         pt;
+    EdgePtr         edge;
 };
 
 
-class InteriorTilingSelector : public TileSelector
+class InteriorTilleSelector : public TileSelector
 {
 public:
-    InteriorTilingSelector(PlacedTilePtr pfp);
+    InteriorTilleSelector(PlacedTilePtr pfp);
 };
 
-class EdgeTilingSelector : public TileSelector
+class EdgeTileSelector : public TileSelector
 {
 public:
-    EdgeTilingSelector(PlacedTilePtr pfp, EdgePtr edge);
+    EdgeTileSelector(PlacedTilePtr pfp, EdgePtr edge);
 };
 
-class VertexTilingSelector : public TileSelector
+class VertexTileSelector : public TileSelector
 {
 public:
-    VertexTilingSelector(PlacedTilePtr pfp, QPointF pt);
+    VertexTileSelector(PlacedTilePtr pfp, QPointF pt);
 };
 
-class MidPointTilingSelector : public TileSelector
+class MidPointTileSelector : public TileSelector
 {
 public:
-    MidPointTilingSelector(PlacedTilePtr pfp, EdgePtr edge, QPointF pt);
+    MidPointTileSelector(PlacedTilePtr pfp, EdgePtr edge, QPointF pt);
 };
 
-class ArcPointTilingSelector : public TileSelector
+class ArcPointTileSelector : public TileSelector
 {
 public:
-    ArcPointTilingSelector(PlacedTilePtr pfp, EdgePtr edge, QPointF pt);
+    ArcPointTileSelector(PlacedTilePtr pfp, EdgePtr edge, QPointF pt);
 };
 
-class CenterTilingSelector : public TileSelector
+class CenterTileSelector : public TileSelector
 {
 public:
-    CenterTilingSelector(PlacedTilePtr, QPointF pt);
+    CenterTileSelector(PlacedTilePtr, QPointF pt);
 };
 
-class ScreenTilingSelector : public TileSelector
+class ScreenTileSelector : public TileSelector
 {
 public:
-    ScreenTilingSelector(QPointF pt);
+    ScreenTileSelector(QPointF pt);
 };
 
 

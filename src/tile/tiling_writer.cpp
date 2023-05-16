@@ -1,18 +1,19 @@
 #include <QMessageBox>
 
 #include "tile/tiling_writer.h"
-#include "misc/backgroundimage.h"
-#include "geometry/transform.h"
 #include "geometry/edge.h"
-#include "settings/configuration.h"
+#include "geometry/transform.h"
+#include "makers/tiling_maker/tiling_maker.h"
+#include "misc/backgroundimage.h"
 #include "misc/fileservices.h"
-#include "tiledpatternmaker.h"
-#include "panels/panel.h"
+#include "misc/tpm_io.h"
 #include "mosaic/mosaic_writer.h"
-#include "tile/tiling.h"
+#include "panels/panel.h"
+#include "settings/configuration.h"
 #include "tile/placed_tile.h"
 #include "tile/tile.h"
-#include "misc/tpm_io.h"
+#include "tile/tiling.h"
+#include "tiledpatternmaker.h"
 
 using namespace pugi;
 using std::string;
@@ -35,7 +36,8 @@ bool TilingWriter::writeTilingXML()
     if (!filename.isEmpty())
     {
         // file already exists
-        bool isOriginal = filename.contains("original");
+        bool isOriginal  = filename.contains("original");
+        bool isNewTiling = filename.contains("new_tilings");
         QMessageBox msgBox(ControlPanel::getInstance());
         msgBox.setText(QString("The tiling %1 already exists").arg(name));
         msgBox.setInformativeText("Do you want to bump version (Bump) or overwrite (Save)?");
@@ -59,10 +61,14 @@ bool TilingWriter::writeTilingXML()
             {
                 filename = config->originalTileDir + name + ".xml";
             }
-            else
+            else if (isNewTiling)
             {
                 filename = config->newTileDir + name + ".xml";
-           }
+            }
+            else
+            {
+                filename = config->testTileDir + name + ".xml";
+            }
         }
         // save drops thru
         Q_UNUSED(save)
@@ -70,7 +76,11 @@ bool TilingWriter::writeTilingXML()
     else
     {
         // new file
-        filename = config->newTileDir + name + ".xml";
+        if (config->saveTilingTest)
+            filename = config->testTileDir + name + ".xml";
+        else
+            filename = config->newTileDir + name + ".xml";
+
     }
 
     QFile data(filename);
@@ -90,7 +100,8 @@ bool TilingWriter::writeTilingXML()
             box.setText(QString("Saved: %1 - OK").arg(data.fileName()));
             box.exec();
 
-            emit theApp->sig_tilingWritten(name);
+            auto tilingMaker = TilingMaker::getSharedInstance();
+            emit tilingMaker->sig_tilingWritten(name);
             return true;
         }
     }
@@ -141,8 +152,8 @@ void TilingWriter::writeTilingXML(QTextStream & out)
     for (auto& apair : fgroup)
     {
         TilePtr tile                    = apair.first;
-        QVector<PlacedTilePtr> & qvpfp = apair.second;
-        PlacedTilePtr placedTile        = qvpfp.first();
+        PlacedTiles & placedTiles  = apair.second;
+        PlacedTilePtr placedTile   = placedTiles .first();
 
         if (placedTile->isGirihShape())    // TODO verify this code works
         {
@@ -181,7 +192,7 @@ void TilingWriter::writeTilingXML(QTextStream & out)
             out << s << endl;
         }
 
-        for(auto it= qvpfp.begin(); it != qvpfp.end(); it++ )
+        for(auto it= placedTiles .begin(); it != placedTiles .end(); it++ )
         {
             PlacedTilePtr & pf = *it;
             QTransform t = pf->getTransform();

@@ -1,7 +1,9 @@
+#pragma once
 #ifndef TILE_COLOR_H
 #define TILE_COLOR_H
 
 #include <QColor>
+#include <QDebug>
 #include "style/style.h"
 #include "geometry/edgepoly.h"
 
@@ -14,9 +16,11 @@ struct bkgdEPolyColor
 class TileColors : public Style
 {
 public:
-    TileColors(PrototypePtr proto);
+    TileColors(ProtoPtr proto);
     TileColors(StylePtr other);
     ~TileColors() override;
+
+    void        draw(GeoGraphics * gg) override;
 
     void        createStyleRepresentation() override;
     void        resetStyleRepresentation() override;
@@ -24,9 +28,9 @@ public:
     void        setOutline(bool enable,QColor color = Qt::white, int width = 3);
     bool        getOutline(QColor & color, int & width);
 
-    eStyleType  getStyleType() const override;
-    QString     getStyleDesc() const override;
-    void        draw(GeoGraphics * gg) override;
+    eStyleType    getStyleType() const override;
+    QString       getStyleDesc() const override;
+    virtual void  report()       const override { qDebug().noquote() << getStyleDesc() << "outline:" << outlineEnb  << "width:" << outlineWidth << "color:" << outlineColor; }
 
 protected:
     QVector<bkgdEPolyColor>  epolys;

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef DLGTEXTEDIT_H
 #define DLGTEXTEDIT_H
 
@@ -5,6 +6,20 @@ class QVBoxLayout;
 
 #include <QDialog>
 #include <QTextEdit>
+#include "widgets/panel_misc.h"
+
+class TextEditorWidget : public AQWidget
+{
+public:
+    TextEditorWidget();
+    TextEditorWidget(QTextEdit * ee);
+
+    void        set(QTextEdit * te);
+    QTextEdit * get() { return ed; }
+
+private:
+    QTextEdit * ed;
+};
 
 class DlgTextEdit : public QDialog
 {
@@ -20,6 +35,8 @@ public:
 
 protected:
     QVBoxLayout * vbox;
+
+    class Configuration * config;
 };
 
 class DlgMapVerify : public DlgTextEdit
@@ -27,17 +44,6 @@ class DlgMapVerify : public DlgTextEdit
 public:
     DlgMapVerify(QString name, QWidget * parent = nullptr);
     ~DlgMapVerify();
-};
-
-
-class DlgLogView : public DlgTextEdit
-{
-public:
-    DlgLogView(QString name, QWidget * parent = nullptr);
-    ~DlgLogView();
-
-protected:
-    void slot_save();
 };
 
 class DlgAbout : public DlgTextEdit
