@@ -128,19 +128,36 @@ DlgAbout::DlgAbout(QWidget * parent) : DlgTextEdit(parent)
 
     QString name("../LICENSE");
     QFile data(name);
-    if (!data.open(QFile::ReadOnly))
+    if (data.open(QFile::ReadOnly))
     {
-        qDebug() << "error opening" << name;
-        close();
+        QTextStream str(&data);
+        while (!str.atEnd())
+        {
+            QString line = str.readLine();
+            append(line);
+        }
+        data.close();
     }
-
-    QTextStream str(&data);
-    while (!str.atEnd())
+    else
     {
-        QString line = str.readLine();
-        append(line);
+        QString name = "./LICENSE";
+        QFile data(name);
+        QTextStream str(&data);
+        if (data.open(QFile::ReadOnly))
+        {
+            while (!str.atEnd())
+            {
+                QString line = str.readLine();
+                append(line);
+            }
+        }
+        else
+        {
+            qWarning() << "Coud not open" << name;
+            close();
+        }
+        data.close();
     }
-    data.close();
 
     QTextCursor  c = txt.textCursor();
     c.setPosition(0);
