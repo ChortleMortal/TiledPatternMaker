@@ -96,7 +96,17 @@ int main(int argc, char *argv[])
 
 #if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
     QStyleHints * hints = app.styleHints();
-    config->darkTheme = (hints->colorScheme() == Qt::ColorScheme::Dark);
+    switch (hints->colorScheme())
+    {
+    case Qt::ColorScheme::Dark:
+        config->darkTheme = true;
+        break;
+    case Qt::ColorScheme::Light:
+        config->darkTheme = false;
+        break;
+    case Qt::ColorScheme::Unknown:
+        break;
+    }
 #endif
 
     auto log = qtAppLog::getInstance();
@@ -158,7 +168,7 @@ int main(int argc, char *argv[])
 #ifdef __linux__
     qDebug().noquote() << "Font:" << QApplication::font().toString();
     QFont afont = QApplication::font();
-    afont.setPointSize(8);
+    afont.setPointSize(9);
     QApplication::setFont(afont);
 #endif
     qInfo().noquote() << "App path        :"  << qApp->applicationDirPath();

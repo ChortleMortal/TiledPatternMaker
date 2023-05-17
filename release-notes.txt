@@ -4,7 +4,7 @@ Version 3.0
 Version 3.0 provides an improved stable platform for creating Mosaic designs.  There have been many code changes
 since version 2.7. The image tools have been improved for creatig images and comparing differences.
 
-Version 3.0 has been built with Qt 6.5.0 and Qt 5.15.2. It supports bot cmake and qmake.
+Version 3.0 has been built with Qt 6.5.0 and Qt 5.15.2. It supports both cmake and qmake.
 
 The media directory tree has been revised and versioning of files redone.  The intent has been to fully 
 support the original taprats designs and make additions to that.  In doing so, it became apprarent that the
@@ -25,7 +25,8 @@ with explicit maps (now using the ExplicitMapMotif class).
 - Rock the Hive
 - Squoctagon
 - USA
-If an Inferred Motif is not in contact with another Imferred Motif then the app works well. FFor those other
+
+If an Inferred Motif is not in contact with another Inferred Motif then the app works well. For those other
 cases a two-pass process on loading seems to work best.  Looking at the imported taprats code it is surmised
 that the Infer class was created first, and the more specialised ways of creating Hourglass, Girih, etc., were
 derived from that to handle the difficulties associated with multiple inffered motifs. However this is purely

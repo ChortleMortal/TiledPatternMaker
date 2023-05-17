@@ -5,6 +5,11 @@
 #include <QRadioButton>
 #include <QFileDialog>
 
+#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
+#include <QApplication>
+#include <QStyleHints>
+#endif
+
 #include "panels/page_config.h"
 #include "panels/panel.h"
 #include "settings/configuration.h"
@@ -288,16 +293,22 @@ void page_config::slot_imageDefaultChanged(bool checked)
 
 void page_config::slot_darkThemeChanged(int id)
 {
-    if (QT_VERSION < QT_VERSION_CHECK(6,5,0))
+#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
+    if (QApplication::styleHints()->colorScheme() == Qt::ColorScheme::Unknown)
     {
         config->darkTheme = (id == 0);
         restartApp();
     }
     else
     {
+        // reject change
         int button = (config->darkTheme) ? 0 : 1 ;
         btnGroup2->button(button)->setChecked(true);
     }
+#else
+    config->darkTheme = (id == 0);
+    restartApp();
+#endif
 }
 
 void page_config::slot_reconfigurePaths()
