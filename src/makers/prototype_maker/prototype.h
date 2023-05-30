@@ -68,8 +68,8 @@ public:
     bool              contains(DesignElementPtr del);
     QVector<DesignElementPtr> &  getDesignElements() { return designElements; }
 
-    void    initCrop(CropPtr crop);
-    void    resetCrop(CropPtr crop);
+    void    setCrop(CropPtr crop);
+    void    resetCrop();
     CropPtr getCrop() { return _crop; }
 
     void    walk();

@@ -185,6 +185,11 @@ Configuration::Configuration()
     configurePaths();
 }
 
+Configuration::~Configuration()
+{
+    save();
+}
+
 void Configuration::save()
 {
     QSettings s;

@@ -75,6 +75,8 @@ page_config:: page_config(ControlPanel * cpanel)  : panel_page(cpanel,"Configura
     btnGroup->addButton(designerMode,0);
     btnGroup->addButton(insightMode,1);
 
+    QPushButton  * restartBtn      = new QPushButton("Restart Tiled Pattern Maker");
+
     QRadioButton * darkTheme = new QRadioButton("Dark Theme");
     QRadioButton * liteTheme = new QRadioButton("Light Theme");
                    btnGroup2 = new QButtonGroup;
@@ -100,6 +102,7 @@ page_config:: page_config(ControlPanel * cpanel)  : panel_page(cpanel,"Configura
     hbox->addWidget(designerMode);
     hbox->addWidget(insightMode);
     hbox->addStretch();
+    hbox->addWidget(restartBtn);
 
     QHBoxLayout * hbox2 = new QHBoxLayout;
     hbox2->addWidget(logLabel);
@@ -137,8 +140,9 @@ page_config:: page_config(ControlPanel * cpanel)  : panel_page(cpanel,"Configura
     connect(rootImagesBtn,  &QPushButton::clicked,   this,  &page_config::slot_selectRootImageDir);
     connect(rootMediaBtn,   &QPushButton::clicked,   this,  &page_config::slot_selectRootMediaDir);
     connect(xmlToolBtn,     &QPushButton::clicked,   this,  &page_config::slot_selectXMLTool);
-    connect(diffToolBtn,     &QPushButton::clicked,  this,  &page_config::slot_selectDiffTool);
+    connect(diffToolBtn,    &QPushButton::clicked,   this,  &page_config::slot_selectDiffTool);
     connect(pbAbout,        &QPushButton::clicked,   this,  &page_config::slot_about);
+    connect(restartBtn,     &QPushButton::clicked,   this,  &page_config::restartApp);
 
     connect(le_rootMedia,   &QLineEdit::textChanged,   this, &page_config::slot_rootDesignChanged);
     connect(le_rootImages,  &QLineEdit::textChanged,   this, &page_config::slot_rootImageChanged);
@@ -340,8 +344,9 @@ void page_config::slot_mode(int id)
 void page_config::restartApp()
 {
     // restart the application
-    config->save();
+    view->unloadView();
 
+#if 0
     QString cmd = qApp->arguments()[0];
 
     guard->release();
@@ -349,6 +354,10 @@ void page_config::restartApp()
 
     QStringList empty;
     QProcess::startDetached(cmd,empty);
+#else
+    qDebug() << "Performing application reboot...";
+    qApp->exit(TiledPatternMaker::EXIT_CODE_REBOOT);
+#endif
 }
 
 void page_config::slot_showCenterChanged(int id)

@@ -42,11 +42,20 @@ MapEditor * MapEditor::getInstance()
     return mpThis;
 }
 
+void MapEditor::releaseInstance()
+{
+    if (mpThis != nullptr)
+    {
+        delete mpThis;
+        mpThis = nullptr;
+    }
+}
+
 MapEditor::MapEditor()
 {
     //qDebug() << "MapEditor::MapEditor";
     db              = new MapEditorDb();
-    meView          = MapEditorView::getSharedInstance();
+    meView          = MapEditorView::getInstance();
     selector        = new MapEditorSelection(db);
 
     meView->init(db,selector);
@@ -54,7 +63,7 @@ MapEditor::MapEditor()
     config          = Configuration::getInstance();
     mosaicMaker     = MosaicMaker::getInstance();
     prototypeMaker  = PrototypeMaker::getInstance();
-    tilingMaker     = TilingMaker::getSharedInstance();
+    tilingMaker     = TilingMaker::getInstance();
     view            = ViewControl::getInstance();
     cpanel          = ControlPanel::getInstance();
 
@@ -419,7 +428,7 @@ bool MapEditor::convertToTiling(MapPtr map, bool outer)
     // aligns the tiling maker to the map editor
     const Xform & xf = meView->getCanvasXform();
     view->frameSettings.setModelAlignment(M_ALIGN_TILING);
-    tilingMaker->setCanvasXform(xf);
+    TilingMakerView::getInstance()->setCanvasXform(xf);
 
     return true;
 }
@@ -438,6 +447,7 @@ void MapEditor::cleanupMapPoints()
 
     map->set(cleaned);
 }
+
 
 void MapEditor::setMapedMouseMode(eMapEditorMouseMode mode)
 {

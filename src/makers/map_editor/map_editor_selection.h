@@ -5,6 +5,7 @@
 #include <memory>
 #include <QVector>
 #include <QPointF>
+#include "geometry/circle.h"
 
 class lineInfo;
 class pointInfo;
@@ -18,9 +19,7 @@ typedef std::shared_ptr<class Vertex>           VertexPtr;
 typedef std::shared_ptr<class Edge>             EdgePtr;
 typedef std::shared_ptr<class Neighbours>       NeighboursPtr;
 typedef std::shared_ptr<class Map>              MapPtr;
-typedef std::shared_ptr<class Circle>           CirclePtr;
 typedef std::shared_ptr<class DesignElement>    DesignElementPtr;
-typedef std::shared_ptr<class MapEditorView>    MapedViewPtr;
 
 class MapEditorSelection
 {
@@ -52,14 +51,14 @@ public:
 
     QVector<lineInfo>  lines;   // generated
     QVector<pointInfo> points;  // generated
-    QVector<CirclePtr> circles; // generated
+    QVector<Circle>    circles; // generated
 
 private:
     SelectionSet currentSelections;
 
     Configuration * config;
     MapEditorDb   * db;
-    MapedViewPtr    meView;
+    MapEditorView * meView;
 };
 
 #endif // MAPEDITORSELCTION_H

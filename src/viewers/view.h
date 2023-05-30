@@ -9,7 +9,6 @@
 #include "enums/ekeyboardmode.h"
 #include "enums/emousemode.h"
 
-typedef std::shared_ptr<class TilingMaker> TilingMakerPtr;
 typedef std::shared_ptr<class Layer> LayerPtr;
 
 class LoadUnit
@@ -34,12 +33,13 @@ public:
     void    resize(QSize sz);
 
     void    addLayer(LayerPtr layer);
+    void    addLayer(Layer * layer);
     void    addTopLayer(LayerPtr layer);
     void    clearLayers()           { activeLayers.clear(); }
     int     numLayers()             { return activeLayers.size(); }
 
     bool    isActiveLayer(Layer * l);
-    QVector<LayerPtr> getActiveLayers();
+    QVector<Layer *> getActiveLayers();
 
     void    setKbdMode(eKbdMode mode);
     bool    getKbdMode(eKbdMode mode);
@@ -61,6 +61,7 @@ public:
     void    dumpRefs();
 
     FrameSettings frameSettings;
+
 
 signals:
     void sig_viewSizeChanged(QSize oldSize, QSize newSize);
@@ -97,6 +98,7 @@ public slots:
     virtual void slot_refreshView() {}
 
 protected:
+    void showEvent(QShowEvent * event) override;
     void closeEvent(QCloseEvent *event) override;
     void paintEvent(QPaintEvent *event) override;
 #if 0
@@ -123,16 +125,18 @@ protected:
 
     void duplicateView();
 
+    class TilingMaker * tilingMaker;
+
 private:
     Configuration     * config;
-    TilingMakerPtr      tilingMaker;
     class DesignMaker * designMaker;
     class ControlPanel* panel;
 
-    UniqueQVector<LayerPtr> activeLayers;
+    UniqueQVector<Layer*> activeLayers;
 
     LoadUnit          loadUnit;
     bool              canPaint;
+    bool              isShown;
     unsigned int      iMouseMode;
     unsigned int      iLastMouseMode;
     eKbdMode          keyboardMode;
@@ -141,7 +145,6 @@ private:
     QColor            backgroundColor;
 
     QPointF           sLast;    // used by pan
-    bool              closed;
 
     QRect             _geometry;
 };

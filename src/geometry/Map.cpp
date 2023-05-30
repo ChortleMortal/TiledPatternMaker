@@ -397,7 +397,8 @@ bool Map::vertexAngleGreaterThan(const VertexPtr & a, const VertexPtr & b)
 {
     return (QLineF(tmpCenter,a->pt).angle() > QLineF(tmpCenter,b->pt).angle());
 }
-void Map::embedCrop(const CirclePtr &c)
+
+void Map::embedCrop(const Circle & circle)
 {
     // this assumes buildEditorDB() has been called which has created an array of points
     // some of these points are touhing a circle, whihc is the one we want
@@ -409,7 +410,7 @@ void Map::embedCrop(const CirclePtr &c)
         QLineF line = edge->getLine();
         QPointF a;
         QPointF b;
-        int count = Utils::findLineCircleLineIntersections(c->centre, c->radius, line, a, b);
+        int count = Utils::findLineCircleLineIntersections( circle.centre,  circle.radius, line, a, b);
         if (count == 1)
         {
             // this is a tangent line
@@ -437,7 +438,7 @@ void Map::embedCrop(const CirclePtr &c)
         cverts.push_front(v);
     }
 
-    QPointF center = c->centre;
+    QPointF center =  circle.centre;
 
     // points need to be clockwise around circle
     tmpCenter = center;
@@ -468,8 +469,7 @@ void Map::embedCrop(const CirclePtr &c)
     }
     else
     {
-        EdgePoly ep;
-        ep.set(*c.get());
+        EdgePoly ep(circle);
         auto nmap = make_shared<Map>("Circle",ep);
         mergeMap(nmap);
     }
@@ -503,7 +503,7 @@ void  Map::cropOutside(const QPolygonF & poly)
     qFatal("Not implemented yet");
 }
 
-void Map::cropOutside(const CirclePtr &c)
+void Map::cropOutside(Circle &circle)
 {
     // remove anything outside of circle
     QVector<EdgePtr>  outsideEdges;
@@ -511,11 +511,11 @@ void Map::cropOutside(const CirclePtr &c)
     {
         QPointF p1 = edge->v1->pt;
         QPointF p2 = edge->v2->pt;
-        if (!Utils::pointInCircle(p1,c) && !Utils::pointOnCircle(p1,c))
+        if (!Utils::pointInCircle(p1,circle) && !Utils::pointOnCircle(p1,circle))
         {
             outsideEdges.push_back(edge);
         }
-        else if (!Utils::pointInCircle(p2,c) && !Utils::pointOnCircle(p2,c))
+        else if (!Utils::pointInCircle(p2,circle) && !Utils::pointOnCircle(p2,circle))
         {
             outsideEdges.push_back(edge);
         }
@@ -878,8 +878,8 @@ void Map::insertEdge(const EdgePtr & cutter)
         {
             QPointF isect1;
             QPointF isect2;
-            CirclePtr cutterC = make_shared<Circle>(cutter->getArcCenter(), cutter->getRadius());
-            CirclePtr edgeC   = make_shared<Circle>(edge->getArcCenter(),   edge->getRadius());
+            Circle cutterC(cutter->getArcCenter(), cutter->getRadius());
+            Circle edgeC(edge->getArcCenter(),   edge->getRadius());
             int count = Utils::circleCircleIntersectionPoints(cutterC, edgeC,isect1,isect2);
             if (count == 2)
             {

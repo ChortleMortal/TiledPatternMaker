@@ -29,7 +29,6 @@ static QString sMapSelection[]
 typedef std::shared_ptr<class MapSelection> MapSelectionPtr;
 typedef std::shared_ptr<class Vertex>       VertexPtr;
 typedef std::shared_ptr<class Edge>         EdgePtr;
-typedef std::shared_ptr<class Circle>       CirclePtr;
 
 typedef QVector<MapSelectionPtr>            SelectionSet;
 
@@ -40,14 +39,14 @@ public:
     MapSelection(QPointF p);
     MapSelection(EdgePtr e);
     MapSelection(QLineF  l, bool constructionLine = false);
-    MapSelection(CirclePtr circle, bool constructionLine = false);
-    MapSelection(CirclePtr circle, QPointF intersect, bool constructionLine = false);
+    MapSelection(Circle circle, bool constructionLine = false);
+    MapSelection(Circle circle, QPointF intersect, bool constructionLine = false);
 
     eMapSelection getType() { return _type; }
     VertexPtr     getVertex();
     EdgePtr       getEdge();
     QPointF       getPoint();
-    CirclePtr     getCircle();
+    Circle        getCircle();
     QLineF        getLine();
     bool          isConstructionLine() { return _constructionLine; }
     bool          hasCircleIntersect() { return _hasCircleIntersect; }
@@ -60,7 +59,7 @@ private:
     EdgePtr          _edge;
     QLineF           _line;
     QPointF          _pt;
-    CirclePtr        _circle;
+    Circle           _circle;
     bool             _constructionLine;
     bool             _hasCircleIntersect;
 };

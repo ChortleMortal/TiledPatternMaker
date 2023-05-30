@@ -1,4 +1,4 @@
-#include "viewers/grid.h"
+#include "viewers/grid_view.h"
 #include "settings/configuration.h"
 #include "viewers/viewcontrol.h"
 #include "misc/geo_graphics.h"
@@ -11,20 +11,29 @@
 
 using std::make_shared;
 
-typedef std::shared_ptr<class Vertex>       VertexPtr;
+typedef std::shared_ptr<class Vertex> VertexPtr;
 
-GridPtr Grid::spThis;
+GridView * GridView::mpThis = nullptr;
 
-GridPtr Grid::getSharedInstance()
+GridView * GridView::getInstance()
 {
-    if (!spThis)
+    if (!mpThis)
     {
-        spThis = make_shared<Grid>();
+        mpThis = new GridView();
     }
-    return spThis;
+    return mpThis;
 }
 
-Grid::Grid() : LayerController("Grid")
+void GridView::releaseInstance()
+{
+    if (mpThis != nullptr)
+    {
+        delete mpThis;
+        mpThis = nullptr;
+    }
+}
+
+GridView::GridView() : LayerController("Grid")
 {
     config  = Configuration::getInstance();
     view    = ViewControl::getInstance();
@@ -32,12 +41,15 @@ Grid::Grid() : LayerController("Grid")
     setZValue(config->gridZLevel);
 }
 
-void Grid::paint(QPainter * pp)
+GridView::~GridView()
+{}
+
+void GridView::paint(QPainter * pp)
 {
     draw(pp);
 }
 
-void Grid::draw(QPainter * pp)
+void GridView::draw(QPainter * pp)
 {
     if (genMap)
     {
@@ -110,7 +122,7 @@ void Grid::draw(QPainter * pp)
     delete gg;
 }
 
-void Grid::drawFromTilingFlood()
+void GridView::drawFromTilingFlood()
 {
     qDebug() << "Grid::drawFromTilingFlood()";
 
@@ -121,12 +133,13 @@ void Grid::drawFromTilingFlood()
     r.moveCenter(center);
     //qDebug() << "grid model center" << center;
 
-    auto maker = TilingMaker::getSharedInstance();
+    auto maker = TilingMaker::getInstance();
     auto tiling = maker->getSelected();
     auto tdata = tiling->getData();
 
-    QLineF line1 = maker->getVisT1();
-    QLineF line2 = maker->getVisT2();
+    auto mview = TilingMakerView::getInstance();
+    QLineF line1 = mview->getVisT1();
+    QLineF line2 = mview->getVisT2();
     if (line1.isNull() || line2.isNull())
     {
         QPointF p1 = tdata.getTrans1();
@@ -168,7 +181,7 @@ void Grid::drawFromTilingFlood()
     }
 }
 
-void Grid::drawFromTilingRegion()
+void GridView::drawFromTilingRegion()
 {
     qDebug() << "Grid::drawFromTilingRegion()";
 
@@ -179,12 +192,13 @@ void Grid::drawFromTilingRegion()
     r.moveCenter(center);
     //qDebug() << "grid model center" << center;
 
-    auto maker = TilingMaker::getSharedInstance();
+    auto maker = TilingMaker::getInstance();
     auto tiling = maker->getSelected();
     auto tdata = tiling->getData();
 
-    QLineF lineR = maker->getVisT1();
-    QLineF lineG = maker->getVisT2();
+    auto mview = TilingMakerView::getInstance();
+    QLineF lineR = mview->getVisT1();
+    QLineF lineG = mview->getVisT2();
     if (lineR.isNull() || lineG.isNull())
     {
         QPointF p1 = tdata.getTrans1();
@@ -264,7 +278,7 @@ void Grid::drawFromTilingRegion()
 }
 
 // this is relative to model(0,0)
-void Grid::drawModelUnits()
+void GridView::drawModelUnits()
 {
     auto r = QRectF(-10,10,20,20);
     QPen pen(QColor(config->gridColorModel),config->gridModelWidth);
@@ -321,7 +335,7 @@ void Grid::drawModelUnits()
 }
 
 // this is relative to layer center
-void Grid::drawModelUnitsCentered()
+void GridView::drawModelUnitsCentered()
 {
     QRectF r = view->rect();
     QPen pen(QColor(config->gridColorModel),config->gridModelWidth);
@@ -380,7 +394,7 @@ void Grid::drawModelUnitsCentered()
     }
 }
 
-void Grid::drawScreenUnits()
+void GridView::drawScreenUnits()
 {
     auto r = view->rect();
     QPen pen(QColor(config->gridColorScreen),config->gridScreenWidth);
@@ -446,7 +460,7 @@ void Grid::drawScreenUnits()
     }
 }
 
-void Grid::drawScreenUnitsCentered()
+void GridView::drawScreenUnitsCentered()
 {
     QRectF r = view->rect();
     QPen pen(QColor(config->gridColorScreen),config->gridScreenWidth);
@@ -514,7 +528,7 @@ void Grid::drawScreenUnitsCentered()
     }
 }
 
-bool Grid::nearGridPoint(QPointF spt, QPointF & foundGridPoint)
+bool GridView::nearGridPoint(QPointF spt, QPointF & foundGridPoint)
 {
     if (!config->showGrid || !config->snapToGrid)
     {
@@ -550,21 +564,21 @@ bool Grid::nearGridPoint(QPointF spt, QPointF & foundGridPoint)
     return false;
 }
 
-void Grid::ggdrawLine(QLineF line, QPen pen)
+void GridView::ggdrawLine(QLineF line, QPen pen)
 {
     gg->drawLine(line,pen);
     if (genMap)
         gridMap->insertEdge(line);
 }
 
-void Grid::ggdrawLine(QPointF p1, QPointF p2, QPen  pen)
+void GridView::ggdrawLine(QPointF p1, QPointF p2, QPen  pen)
 {
     gg->drawLine(p1, p2, pen);
     if (genMap)
         gridMap->insertEdge(p1,p2);
 }
 
-void Grid::ggdrawPoly(QPolygonF & poly, QPen  pen)
+void GridView::ggdrawPoly(QPolygonF & poly, QPen  pen)
 {
     gg->drawPolygon(poly,pen);
     if (genMap)
@@ -578,52 +592,52 @@ void Grid::ggdrawPoly(QPolygonF & poly, QPen  pen)
     }
 }
 
-void Grid::ppdrawLine(QLineF line)
+void GridView::ppdrawLine(QLineF line)
 {
     pp->drawLine(line);
     if (genMap)
         gridMap->insertEdge(line);
 }
 
-void Grid::ppdrawLine(QPointF p1, QPointF p2)
+void GridView::ppdrawLine(QPointF p1, QPointF p2)
 {
     pp->drawLine(p1,p2);
     if (genMap)
         gridMap->insertEdge(p1,p2);
 }
 
-void Grid::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
+void GridView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
 {
     Q_UNUSED(spt);
     Q_UNUSED(btn);
 }
 
-void Grid::slot_mouseDragged(QPointF spt)
+void GridView::slot_mouseDragged(QPointF spt)
 {
     Q_UNUSED(spt);
 }
 
-void Grid::slot_mouseMoved(QPointF spt)
+void GridView::slot_mouseMoved(QPointF spt)
 {
     Q_UNUSED(spt);
 }
 
-void Grid::slot_mouseReleased(QPointF spt)
+void GridView::slot_mouseReleased(QPointF spt)
 {
     Q_UNUSED(spt);
 }
 
-void Grid::slot_mouseDoublePressed(QPointF spt)
+void GridView::slot_mouseDoublePressed(QPointF spt)
 {
     Q_UNUSED(spt);
 }
 
-const Xform  & Grid::getCanvasXform()
+const Xform  & GridView::getCanvasXform()
 {
     return xf_canvas;
 }
 
-void Grid::setCanvasXform(const Xform & xf)
+void GridView::setCanvasXform(const Xform & xf)
 {
     xf_canvas = xf;
 }

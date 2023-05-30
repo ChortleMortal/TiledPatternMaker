@@ -7,20 +7,11 @@
 #include "enums/eviewtype.h"
 #include "viewers/view.h"
 
-typedef std::shared_ptr<class BackgroundImage>  BkgdImgPtr;
 typedef std::shared_ptr<class Border>           BorderPtr;
-typedef std::shared_ptr<class BorderView>       BorderViewPtr;
 typedef std::shared_ptr<class LegacyBorder>     LegacyBorderPtr;
 typedef std::shared_ptr<class Tile>             TilePtr;
 typedef std::shared_ptr<class Tiling>           TilingPtr;
-typedef std::shared_ptr<class TilingView>       TilingViewPtr;
-typedef std::shared_ptr<class MotifView>        MotifViewPtr;
-typedef std::shared_ptr<class PrototypeView>    PrototypeViewPtr;
-typedef std::shared_ptr<class TilingMaker>      TilingMakerPtr;
-typedef std::shared_ptr<class Grid>             GridPtr;
 typedef std::shared_ptr<class ImageLayer>       ImgLayerPtr;
-typedef std::shared_ptr<class MeasureView>      MeasViewPtr;
-typedef std::shared_ptr<class CropView>         CropViewPtr;
 
 class ViewControl : public View
 {
@@ -28,22 +19,22 @@ class ViewControl : public View
 
 public:
     static ViewControl  * getInstance();
-    static void         releaseInstance();
+    static void           releaseInstance();
 
     void    init();
     void    viewEnable(eViewType view, bool enable);
-    bool    isEnabled(eViewType view) { return enabledViews[view]; }
+    bool    isEnabled(eViewType view)   { return enabledViews[view]; }
     void    disableAllViews();
 
     void    addImage(ImgLayerPtr image) { images.push_back(image); }
     void    removeAllImages()           { images.clear(); }
     void    removeImage(ImageLayer * img);
 
-    void        setFillData(const FillData & fd) { fillData = fd; }
-    const FillData &  getFillData() { return fillData; }
+    void    setFillData(const FillData & fd) { fillData = fd; }
+    const   FillData &  getFillData()        { return fillData; }
 
-    const Xform & getCurrentXform2();
-    void          setCurrentXform2(const Xform & xform);     // use with care
+    const   Xform & getCurrentXform();
+    void    setCurrentXform(const Xform & xform);     // use with care
 
 protected:
     void     setupViewers();
@@ -69,26 +60,25 @@ public slots:
     void    slot_unloadAll();
 
 private:
-    static ViewControl      * mpThis;
-
     ViewControl();
     ~ViewControl();
 
+    static  ViewControl     * mpThis;
     class   Configuration   * config;
     class   ControlPanel    * panel;
     class   DesignMaker     * designMaker;
     class   MosaicMaker     * mosaicMaker;
     class   PrototypeMaker  * prototypeMaker;
 
-    TilingMakerPtr            tilingMaker;
-    TilingViewPtr             tilingView;
-    PrototypeViewPtr          prototypeView;
-    MotifViewPtr              motifView;
-    GridPtr                   gridView;
-    BkgdImgPtr                bkgdImageView;
-    MeasViewPtr               measureView;
-    CropViewPtr               cropView;
-    BorderViewPtr             borderView;
+    class TilingMakerView   * tilingMakerView;
+    class TilingView        * tilingView;
+    class PrototypeView     * prototypeView;
+    class MotifView         * motifView;
+    class MapEditorView     * mapedView;
+    class MeasureView       * measureView;
+    class GridView          * gridView;
+    class CropViewer        * cropViewer;
+    class BorderView        * borderView;
 
     bool                    dontPaint;
     bool                    enabledViews[VIEW_MAX+1];

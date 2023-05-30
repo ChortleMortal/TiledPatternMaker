@@ -16,8 +16,6 @@ enum eQuad
     QUAD_4
 };
 
-typedef std::shared_ptr<class Circle> CirclePtr;
-
 class Circle
 {
 public:
@@ -27,7 +25,6 @@ public:
 
     void init() { radius = 1.0; centre = QPointF(); }
     void set(Circle & other)  { radius = other.radius;  centre = other.centre; }
-    void set(CirclePtr other) { radius = other->radius; centre = other->centre; }
 
     void setRadius(qreal r) { radius = r; }
     void setCenter(QPointF p) { centre = p; }
@@ -49,7 +46,7 @@ public:
         return !(c1==c2);
     }
 
-    Circle & operator=(const Circle & other);
+    Circle & operator=(const Circle &other);
 
     friend QDataStream & operator<< (QDataStream &out, const Circle & c)
     {
@@ -62,23 +59,6 @@ public:
     {
         in >> c.radius;
         in >> c.centre;
-        return in;
-    }
-
-    friend QDataStream & operator<< (QDataStream &out, const CirclePtr c)
-    {
-        out << c->radius;
-        out << c->centre;
-        return out;
-    }
-
-    friend QDataStream & operator>> (QDataStream &in, CirclePtr & c)
-    {
-        qreal radius;
-        QPointF center;
-        in >> radius;
-        in >> center;
-        c = std::make_shared<Circle>(center, radius);
         return in;
     }
 

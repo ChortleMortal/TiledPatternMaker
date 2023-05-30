@@ -5,15 +5,13 @@
 #include "panels/page_background_image.h"
 #include "widgets/dlg_name.h"
 #include "settings/configuration.h"
-#include "misc/backgroundimage.h"
 #include "panels/panel.h"
 #include "geometry/edge.h"
 #include "geometry/vertex.h"
+#include "viewers/backgroundimageview.h"
 
 page_background_image::page_background_image(ControlPanel * apanel) : panel_page(apanel,"Background Image"),  bkgdLayout("Bkgd Xform")
 {
-    bip = BackgroundImage::getSharedInstance();
-
     bkgdGroup = createBackgroundGroup();
     vbox->addWidget(bkgdGroup);
 }
@@ -70,9 +68,8 @@ QGroupBox * page_background_image::createBackgroundGroup()
     connect(clearBtn,          &QPushButton::clicked,         this,    &page_background_image::slot_clearBackground);
     connect(startAdjustBtn,    &QPushButton::clicked,         this,    &page_background_image::slot_startSkewAdjustment);
     connect(resetBtn,          &QPushButton::clicked,         this,    &page_background_image::slot_resetXform);
-
-    connect(&bkgdLayout,    &LayoutTransform::xformChanged,   this,    &page_background_image::slot_setBkgdXform);
-    connect(chk_useAdjusted,&QAbstractButton::clicked,        this,    &page_background_image::slot_useAdjustedClicked);
+    connect(chk_useAdjusted,   &QCheckBox::clicked,           this,    &page_background_image::slot_useAdjustedClicked);
+    connect(&bkgdLayout,       &LayoutTransform::xformChanged,this,    &page_background_image::slot_setBkgdXform);
 
     return bkgdGroup;
 }
@@ -83,7 +80,8 @@ void page_background_image::displayBackgroundStatus(bool force)
     {
         return;
     }
-
+    
+    auto bip = BackgroundImageView::getInstance();
     if (bip->isLoaded())
     {
         const Xform & xform = bip->getCanvasXform();
@@ -118,7 +116,8 @@ void page_background_image::slot_loadBackground()
         box.exec();
         return;
     }
-
+    
+    auto bip = BackgroundImageView::getInstance();
     bool rv = bip->import(filename);
     if (rv)
     {
@@ -140,19 +139,21 @@ void page_background_image::slot_loadBackground()
 
 void page_background_image::slot_useAdjustedClicked(bool checked)
 {
+    auto bip = BackgroundImageView::getInstance();
     bip->setUseAdjusted(checked);
     setupBackground(bkgdLayout.getXform());
 }
 
 void page_background_image::setupBackground(Xform xform)
 {
+    auto bip = BackgroundImageView::getInstance();
     bip->setCanvasXform(xform);
-
-    bip->createPixmap();
+    bip->showPixmap();
 }
 
 void page_background_image::slot_clearBackground ()
 {
+    auto bip = BackgroundImageView::getInstance();
     bip->unload();
 
     emit sig_refreshView();
@@ -160,15 +161,18 @@ void page_background_image::slot_clearBackground ()
 
 void page_background_image::slot_setBkgdXform()
 {
+    auto bip = BackgroundImageView::getInstance();
     Xform xform = bip->getCanvasXform();
     xform.setTransform(bkgdLayout.getQTransform());
     bip->setCanvasXform(xform);
-    bip->createPixmap();
+    bip->showPixmap();
     emit sig_refreshView();
 }
 
 void page_background_image::slot_startSkewAdjustment(bool checked)
 {
+    auto bip = BackgroundImageView::getInstance();
+
     if (checked)
     {
         QString txt = "Click to select four points on background image. Then press 'Complete Perspective Adjustement' to fix camera skew.";
@@ -191,6 +195,8 @@ void page_background_image::slot_resetXform()
 
 void page_background_image::slot_adjustBackground()
 {
+    auto bip = BackgroundImageView::getInstance();
+
     if (!bip->getSkewMode())
     {
         QMessageBox box(this);
@@ -200,7 +206,7 @@ void page_background_image::slot_adjustBackground()
         return;
     }
 
-    EdgePoly & saccum = bip->sAccum;
+    EdgePoly & saccum = bip->getAccum();
     if (saccum.size() != 4)
     {
         QMessageBox box(this);
@@ -216,7 +222,7 @@ void page_background_image::slot_adjustBackground()
         saccum[2]->v1->pt,
         saccum[3]->v1->pt);
 
-    bip->createPixmap();
+    bip->showPixmap();
 
     displayBackgroundStatus(true);
 
@@ -231,6 +237,8 @@ void page_background_image::slot_adjustBackground()
 
 void page_background_image::slot_saveAdjustedBackground()
 {
+    auto bip = BackgroundImageView::getInstance();
+
     QString oldname = bip->getName();
 
     DlgName dlg;
@@ -252,12 +260,13 @@ void page_background_image::slot_saveAdjustedBackground()
     if (rv)
     {
         box.setIcon(QMessageBox::Information);
-        box.setText("OK");
+        box.setText("Image Save - OK");
     }
     else
     {
         box.setIcon(QMessageBox::Warning);
-        box.setText("FAILED");
+        box.setText("Image - Save - FAILED");
+        box.setInformativeText("Try again with a new name");
     }
     box.exec();
 

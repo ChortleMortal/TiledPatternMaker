@@ -8,7 +8,6 @@
 
 class QVBoxLayout;
 
-typedef std::shared_ptr<class TilingMaker> TilingMakerPtr;
 
 extern class TiledPatternMaker * theApp;
 
@@ -65,7 +64,7 @@ protected:
     class ControlPanel      * panel;
     class Configuration     * config;
     class ViewControl       * view;
-    TilingMakerPtr            tilingMaker;
+    class TilingMaker       * tilingMaker;
     class PrototypeMaker    * prototypeMaker;
     class MosaicMaker       * mosaicMaker;
     class DesignMaker       * designMaker;

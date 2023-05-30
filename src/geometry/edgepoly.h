@@ -19,13 +19,13 @@ public:
     EdgePoly();
     EdgePoly(QPolygonF & poly);
     EdgePoly(QRectF & rect);
-    EdgePoly(Circle & circle);
+    EdgePoly(const Circle & circle);
     EdgePoly(PolyPtr pp);
     EdgePoly(const QVector<EdgePtr> & qvep);
 
     void set(QPolygonF & poly);
     void set(QRectF & rect);
-    void set(Circle & circle);
+    void set(const Circle & circle);
 
     EdgePoly recreate() const;          // makes a new edge poly
 

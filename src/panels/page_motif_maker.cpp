@@ -154,8 +154,8 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,"M
     connect(whiteBackground,    &QCheckBox::clicked,                    this,   &page_motif_maker::whiteClicked);
     connect(chkMulti,           &QCheckBox::clicked,                    this,   &page_motif_maker::multiClicked);
     connect(prototypeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &page_motif_maker::slot_prototypeSelected);
-    connect(rEnlarge,           &QRadioButton::clicked,                 this,   [=] { config->motifEnlarge = true;  view->update(); });
-    connect(rActual ,           &QRadioButton::clicked,                 this,   [=] { config->motifEnlarge = false; view->update(); });
+    connect(rEnlarge,           &QRadioButton::clicked,                 this,   [=,this] { config->motifEnlarge = true;  view->update(); });
+    connect(rActual ,           &QRadioButton::clicked,                 this,   [=,this] { config->motifEnlarge = false; view->update(); });
     connect(widthSpin,          &SpinSet::valueChanged,                 this,   &page_motif_maker::slot_widthChanged);
 }
 

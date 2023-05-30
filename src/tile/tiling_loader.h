@@ -8,7 +8,6 @@
 #include "settings/filldata.h"
 
 typedef std::shared_ptr<class Tiling>           TilingPtr;
-typedef std::shared_ptr<class BackgroundImage>   BkgdImgPtr;
 
 class TilingLoader
 {

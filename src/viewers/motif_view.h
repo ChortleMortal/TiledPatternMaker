@@ -4,7 +4,6 @@
 
 #include "misc/layer_controller.h"
 
-typedef std::shared_ptr<class MotifView>       MotifViewPtr;
 typedef std::shared_ptr<class Motif>           MotifPtr;
 typedef std::shared_ptr<class DesignElement>   DesignElementPtr;
 typedef std::shared_ptr<class Map>             MapPtr;
@@ -16,9 +15,8 @@ class PrototypeData;
 class MotifView : public LayerController
 {
 public:
-    static MotifViewPtr getSharedInstance();
-    MotifView();
-    virtual ~MotifView() override;
+    static MotifView * getInstance();
+    static void        releaseInstance();
 
     virtual void paint(QPainter *painter) override;
 
@@ -43,11 +41,14 @@ protected:
     void paintMap(              QPainter *painter, MapPtr map);
 
 private:
-    static MotifViewPtr spThis;
-    
-    PrototypeData *     protoMakerData;
-    QTransform          _T;
-    qreal               lineWidth;
+    MotifView();
+    virtual ~MotifView() override;
+
+    static MotifView * mpThis;
+
+    PrototypeData    * protoMakerData;
+    QTransform         _T;
+    qreal              lineWidth;
 
 
 };

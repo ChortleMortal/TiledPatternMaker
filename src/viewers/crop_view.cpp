@@ -1,4 +1,4 @@
-#include <QApplication>
+﻿#include <QApplication>
 
 #include "geometry/crop.h"
 #include "makers/crop_maker/crop_maker.h"
@@ -10,32 +10,42 @@
 
 using std::make_shared;
 
+CropViewer * CropViewer::mpThis = nullptr;
 
-CropViewPtr CropView::spThis;
-
-CropViewPtr CropView::getSharedInstance()
+CropViewer * CropViewer::getInstance()
 {
-    if (!spThis)
+    if (!mpThis)
     {
-        spThis = make_shared<CropView>();
+        mpThis = new CropViewer();
     }
-    return spThis;
+    return mpThis;
 }
 
-CropView::CropView() : LayerController("Crop")
+void CropViewer::releaseInstance()
+{
+    if (mpThis != nullptr)
+    {
+        delete mpThis;
+        mpThis = nullptr;
+    }
+}
+
+CropViewer::CropViewer() : LayerController("Crop Viewer")
 {
     config      = Configuration::getInstance();
     debugMouse  = false;
+    setShowCrop(false);
+    cropMaker   = nullptr;
 }
 
-void CropView::init(CropMaker *ed)
+void CropViewer::init(CropMaker *ed)
 {
     cropMaker = ed;
 }
 
-void CropView::paint(QPainter *painter)
+void CropViewer::paint(QPainter *painter)
 {
-    if (cropMaker->getState() == CROPMAKER_STATE_ACTIVE)
+    if (getShowCrop())
     {
         painter->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
         // draw
@@ -43,16 +53,15 @@ void CropView::paint(QPainter *painter)
     }
 }
 
-void CropView::draw(QPainter *painter , QTransform t)
+void CropViewer::draw(QPainter *painter , QTransform t)
 {
-    CropMouseActionPtr cma = getMouseInteraction();
-    if (cma)
+    if (mouseInteraction)
     {
-        cma->draw(painter,mousePos,t);
+        mouseInteraction->draw(painter,mousePos,t);
     }
-    else
+    else if (cropMaker)
     {
-        CropPtr crop = cropMaker->getActiveCrop();
+        CropPtr crop = cropMaker->getCrop();
         if (crop)
         {
             crop->draw(painter,t,false);
@@ -60,7 +69,7 @@ void CropView::draw(QPainter *painter , QTransform t)
     }
 }
 
-void CropView::slot_wheel_rotate(qreal delta)
+void CropViewer::slot_wheel_rotate(qreal delta)
 {
     if (!view->isActiveLayer(this)) return;
 
@@ -72,7 +81,7 @@ void CropView::slot_wheel_rotate(qreal delta)
     }
 }
 
-void CropView::slot_scale(int amount)
+void CropViewer::slot_scale(int amount)
 {
     if (!view->isActiveLayer(this)) return;
 
@@ -84,7 +93,7 @@ void CropView::slot_scale(int amount)
     }
 }
 
-void CropView::slot_rotate(int amount)
+void CropViewer::slot_rotate(int amount)
 {
     if (!view->isActiveLayer(this)) return;
 
@@ -96,7 +105,7 @@ void CropView::slot_rotate(int amount)
     }
 }
 
-void CropView:: slot_moveX(int amount)
+void CropViewer:: slot_moveX(int amount)
 {
     if (!view->isActiveLayer(this)) return;
 
@@ -108,7 +117,7 @@ void CropView:: slot_moveX(int amount)
     }
 }
 
-void CropView::slot_moveY(int amount)
+void CropViewer::slot_moveY(int amount)
 {
     if (!view->isActiveLayer(this)) return;
 
@@ -126,7 +135,7 @@ void CropView::slot_moveY(int amount)
 ///
 //////////////////////////////////////////////////////////////////
 
-void CropView::slot_setCenter(QPointF spt)
+void CropViewer::slot_setCenter(QPointF spt)
 {
     if (!view->isActiveLayer(this)) return;
 
@@ -136,43 +145,51 @@ void CropView::slot_setCenter(QPointF spt)
     }
 }
 
-void CropView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
+void CropViewer::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
 {
     Q_UNUSED(btn);
 
     if (!view->isActiveLayer(this))
         return;
 
-    if (cropMaker->getState() != CROPMAKER_STATE_ACTIVE)
+    if (!getShowCrop())
+        return;
+
+    if (!cropMaker)
+        return;
+
+    auto crop = cropMaker->getCrop();
+    if (!crop)
         return;
 
     setMousePos(spt);
 
     auto t = getLayerTransform();
-    auto mec = make_shared<MouseEditCrop>(mousePos,cropMaker->getCrop(),t);
-    setMouseInteraction(mec);
-    getMouseInteraction()->updateDragging(mousePos,t);
+    mouseInteraction = make_shared<MouseEditCrop>(mousePos,crop,t);
+    mouseInteraction->updateDragging(mousePos,t);
 }
 
-
-void CropView::slot_mouseDragged(QPointF spt)
+void CropViewer::slot_mouseDragged(QPointF spt)
 {
-    if (!view->isActiveLayer(this)) return;
+    if (!view->isActiveLayer(this))
+        return;
+
+    if (!getShowCrop())
+        return;
 
     setMousePos(spt);
 
     if (debugMouse) qDebug().noquote() << "drag" << mousePos << screenToWorld(mousePos);
 
-    CropMouseActionPtr mma = getMouseInteraction();
-    if (mma)
+    if (mouseInteraction)
     {
-        mma->updateDragging(mousePos,getLayerTransform());
+        mouseInteraction->updateDragging(mousePos,getLayerTransform());
     }
 
     forceRedraw();
 }
 
-void CropView::slot_mouseTranslate(QPointF pt)
+void CropViewer::slot_mouseTranslate(QPointF pt)
 {
     if (!view->isActiveLayer(this)) return;
 
@@ -185,7 +202,7 @@ void CropView::slot_mouseTranslate(QPointF pt)
     }
 }
 
-void CropView::slot_mouseMoved(QPointF spt)
+void CropViewer::slot_mouseMoved(QPointF spt)
 {
     if (!view->isActiveLayer(this)) return;
 
@@ -196,7 +213,7 @@ void CropView::slot_mouseMoved(QPointF spt)
     forceRedraw();
 }
 
-void CropView::slot_mouseReleased(QPointF spt)
+void CropViewer::slot_mouseReleased(QPointF spt)
 {
     if (!view->isActiveLayer(this)) return;
 
@@ -204,18 +221,17 @@ void CropView::slot_mouseReleased(QPointF spt)
 
     if (debugMouse) qDebug() << "release" << mousePos << screenToWorld(mousePos);
 
-    CropMouseActionPtr mma = getMouseInteraction();
-    if (mma)
+    if (mouseInteraction)
     {
-        mma->endDragging(mousePos,getLayerTransform());
-        resetMouseInteraction();
+        mouseInteraction->endDragging(mousePos,getLayerTransform());
+        mouseInteraction.reset();
     }
 }
 
-void CropView::slot_mouseDoublePressed(QPointF spt)
+void CropViewer::slot_mouseDoublePressed(QPointF spt)
 { Q_UNUSED(spt); }
 
-void CropView::slot_wheel_scale(qreal delta)
+void CropViewer::slot_wheel_scale(qreal delta)
 {
     if (!view->isActiveLayer(this)) return;
 
@@ -227,7 +243,7 @@ void CropView::slot_wheel_scale(qreal delta)
     }
 }
 
-void CropView::setMousePos(QPointF pt)
+void CropViewer::setMousePos(QPointF pt)
 {
     Qt::KeyboardModifiers km = QApplication::keyboardModifiers();
     if (km & Qt::ControlModifier)

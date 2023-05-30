@@ -7,7 +7,6 @@
 #include "enums/estatemachineevent.h"
 
 typedef std::shared_ptr<class Tiling>           TilingPtr;
-typedef std::shared_ptr<class TilingMaker>      TilingMakerPtr;
 
 class TilingManager
 {
@@ -24,7 +23,7 @@ protected:
 private:
     class ViewControl     * view;
     class Configuration   * config;
-    TilingMakerPtr          tilingMaker;
+    class TilingMaker     * tilingMaker;
     class PrototypeMaker  * prototypeMaker;
 };
 

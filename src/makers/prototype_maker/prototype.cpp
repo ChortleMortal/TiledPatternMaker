@@ -35,7 +35,7 @@ Prototype::Prototype(TilingPtr t)
 {
     Q_ASSERT(t);
     tiling       = t;
-    _protoMap    = make_shared<Map>("Prototype map");
+    _protoMap    = make_shared<Map>("Proto");
     panel        = ControlPanel::getInstance();
     refs++;
 }
@@ -119,11 +119,11 @@ void Prototype::replaceTiling(const TilingPtr & newTiling)
     QVector<DesignElementPtr> usedElements;
 
     // match elements to tiles
-    const QVector<TilePtr> uniqueTiless = newTiling->getUniqueTiles();
-    for (auto & newTile : qAsConst(uniqueTiless))
+    const QVector<TilePtr> uniqueTiles = newTiling->getUniqueTiles();
+    for (auto & newTile : uniqueTiles)
     {
         bool used = false;
-        for (auto del : qAsConst(designElements))
+        for (auto & del : designElements)
         {
             if (usedElements.contains(del))
             {
@@ -331,17 +331,16 @@ MapPtr Prototype::getProtoMap()
     return _protoMap;
 }
 
-void Prototype::initCrop(CropPtr crop)
+void Prototype::setCrop(CropPtr crop)
 {
     _crop = crop;
+    wipeoutProtoMap();
 }
 
-void Prototype::resetCrop(CropPtr crop)
+void Prototype::resetCrop()
 {
-    _crop = crop;
-    qDebug() << "Prototype::resetCrop" << crop.get();
+    _crop.reset();
     wipeoutProtoMap();
-    // dont create the prototype here by calling getProtoMap() - it is too soon and creates problems on loading mosaics
 }
 
 void Prototype::createMap()
@@ -416,11 +415,11 @@ void Prototype::createMap()
             QRectF rect = _crop->getRect();
             if (rect.isValid())
             {
-                if (_crop->isEmbedded())
+                if (_crop->getEmbed())
                 {
                     _protoMap->embedCrop(rect);
                 }
-                if (_crop->isApplied())
+                if (_crop->getApply())
                 {
                     _protoMap->cropOutside(rect);
                 }
@@ -430,11 +429,11 @@ void Prototype::createMap()
         else if (_crop->getCropType() == CROP_CIRCLE)
         {
             auto circle = _crop->getCircle();
-            if (_crop->isEmbedded())
+            if (_crop->getEmbed())
             {
                 _protoMap->embedCrop(circle);
             }
-            if (_crop->isApplied())
+            if (_crop->getApply())
             {
                 _protoMap->cropOutside(circle);
             }

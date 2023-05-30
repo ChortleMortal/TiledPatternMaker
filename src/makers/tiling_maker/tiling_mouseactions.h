@@ -10,9 +10,10 @@
 #include "geometry/measurement.h"
 
 class GeoGraphics;
+class TilingMaker;
+class TilingMakerView;
 
-typedef std::shared_ptr<class TilingMaker>      TilingMakerPtr;
-typedef std::shared_ptr<class TileSelector>   TileSelectorPtr;
+typedef std::shared_ptr<class TileSelector>     TileSelectorPtr;
 typedef std::shared_ptr<class PlacedTile>       PlacedTilePtr;
 typedef std::shared_ptr<class Edge>             EdgePtr;
 typedef std::shared_ptr<class Vertex>           VertexPtr;
@@ -28,7 +29,7 @@ enum eAddToTranslate
 class TilingMouseAction
 {
 public:
-    TilingMouseAction(TilingMaker * tm, TileSelectorPtr sel, QPointF spt );
+    TilingMouseAction(TileSelectorPtr sel, QPointF spt);
     virtual ~TilingMouseAction() {}
     virtual void updateDragging( QPointF spt );
     virtual void draw(GeoGraphics * g2d );
@@ -38,10 +39,11 @@ public:
 
 protected:
     QPointF            wLastDrag;   // screen point
-    TileSelectorPtr selection;
+    TileSelectorPtr    selection;
     QColor             drag_color;
 
-    TilingMaker   * tm;        // DAC added
+    TilingMakerView   * tmv;
+    TilingMaker       * tm;
 
 private:
 };
@@ -51,14 +53,14 @@ typedef std::shared_ptr<TilingMouseAction> MouseActionPtr;
 class MovePolygon : public TilingMouseAction
 {
 public:
-    MovePolygon(TilingMaker * tilingMaker, TileSelectorPtr sel, QPointF spt);
+    MovePolygon( TileSelectorPtr sel, QPointF spt);
     virtual void updateDragging( QPointF spt );
 };
 
 class CopyMovePolygon : public MovePolygon
 {
 public:
-    CopyMovePolygon(TilingMaker * tilingMaker, TileSelectorPtr sel, QPointF spt );
+    CopyMovePolygon( TileSelectorPtr sel, QPointF spt );
     virtual void endDragging( QPointF spt );
 
 private:
@@ -68,20 +70,20 @@ private:
 class DrawTranslation : public TilingMouseAction
 {
 public:
-    DrawTranslation(TilingMaker * tilingMaker,  TileSelectorPtr sel, QPointF spt , QPen apen);
+    DrawTranslation(TileSelectorPtr sel, QPointF spt , QPen apen);
     void updateDragging( QPointF spt );
     void draw( GeoGraphics* g2d );
     void endDragging(QPointF spt);
 
-    eAddToTranslate   state;
-    QLineF vector;
-    QPen apen;
+    eAddToTranslate state;
+    QLineF          vector;
+    QPen            apen;
 };
 
 class JoinEdge : public TilingMouseAction
 {
 public:
-    JoinEdge(TilingMaker * tilingMaker, TileSelectorPtr sel, QPointF spt );
+    JoinEdge(TileSelectorPtr sel, QPointF spt);
     void updateDragging( QPointF spt );
     void endDragging( QPointF spt );
 
@@ -96,7 +98,7 @@ protected:
 class JoinMidPoint : public JoinEdge
 {
 public:
-    JoinMidPoint(TilingMaker * tilingMaker, TileSelectorPtr sel, QPointF spt );
+    JoinMidPoint( TileSelectorPtr sel, QPointF spt );
 
 protected:
     virtual bool snapTo(QPointF spt) override;
@@ -105,7 +107,7 @@ protected:
 class JoinPoint : public JoinEdge
 {
 public:
-    JoinPoint(TilingMaker * tilingMaker, TileSelectorPtr sel, QPointF spt );
+    JoinPoint( TileSelectorPtr sel, QPointF spt );
 
 protected:
     virtual bool snapTo(QPointF spt) override;
@@ -114,7 +116,7 @@ protected:
 class CopyJoinEdge : public JoinEdge
 {
 public:
-    CopyJoinEdge(TilingMaker * tilingMaker, TileSelectorPtr sel, QPointF spt );
+    CopyJoinEdge( TileSelectorPtr sel, QPointF spt );
     void endDragging( QPointF spt );
 
 private:
@@ -124,7 +126,7 @@ private:
 class CopyJoinMidPoint : public JoinMidPoint
 {
 public:
-    CopyJoinMidPoint(TilingMaker * tilingMaker, TileSelectorPtr sel, QPointF spt );
+    CopyJoinMidPoint(TileSelectorPtr sel, QPointF spt );
     void endDragging( QPointF spt );
 
 private:
@@ -134,7 +136,7 @@ private:
 class CopyJoinPoint : public JoinPoint
 {
 public:
-    CopyJoinPoint(TilingMaker * tilingMaker, TileSelectorPtr sel, QPointF spt );
+    CopyJoinPoint(TileSelectorPtr sel, QPointF spt );
     void endDragging( QPointF spt );
 
 private:
@@ -143,10 +145,8 @@ private:
 
 class CreatePolygon : public TilingMouseAction
 {
-    typedef std::shared_ptr<class Grid> GridPtr;
-
 public:
-    CreatePolygon(TilingMaker * tilingMaker, QPointF spt );
+    CreatePolygon( QPointF spt );
     void updateDragging(QPointF spt );
     void draw( GeoGraphics * g2d );
     void endDragging(QPointF spt );
@@ -155,13 +155,13 @@ private:
     void addVertex(QPointF wpt);
     QPointF underneath;
 
-    GridPtr grid;
+    class GridView * gridView;
 };
 
 class Measure : public TilingMouseAction
 {
 public:
-    Measure(TilingMaker * tilingMaker, QPointF spt, TileSelectorPtr sel);
+    Measure(QPointF spt, TileSelectorPtr sel);
     void updateDragging(QPointF spt );
     void draw( GeoGraphics * g2d );
     void endDragging(QPointF spt );
@@ -178,7 +178,7 @@ private:
 class Position : public TilingMouseAction
 {
 public:
-    Position(TilingMaker * tilingMaker, QPointF spt);
+    Position(QPointF spt);
     void updateDragging(QPointF spt );
     void draw( GeoGraphics * g2d );
 
@@ -191,34 +191,34 @@ private:
 class EditTile : public TilingMouseAction
 {
 public:
-    EditTile(TilingMaker * tilingMaker,  TileSelectorPtr sel, PlacedTilePtr pfp, QPointF spt );
+    EditTile(TileSelectorPtr sel, PlacedTilePtr pfp, QPointF spt );
     void updateDragging( QPointF spt );
     void endDragging(QPointF spt);
 
 private:
     PlacedTilePtr pfp;
-    int              vertexIndex;
+    int           vertexIndex;
 };
 
 class EditEdge : public TilingMouseAction
 {
 public:
-    EditEdge(TilingMaker * tilingMaker,  TileSelectorPtr sel, QPointF spt );
+    EditEdge(TileSelectorPtr sel, QPointF spt );
     void draw( GeoGraphics* g2d );
     void updateDragging( QPointF spt );
     void endDragging(QPointF spt);
 
 private:
-    QPointF start;
-    EdgePtr edge;
-    QLineF  perp;
-    PlacedTilePtr pfp;
+    QPointF         start;
+    EdgePtr         edge;
+    QLineF          perp;
+    PlacedTilePtr   pfp;
 };
 
 class TilingConstructionLine : public TilingMouseAction
 {
 public:
-    TilingConstructionLine(TilingMaker * tilingMaker, TileSelectorPtr sel, QPointF spt);
+    TilingConstructionLine(TileSelectorPtr sel, QPointF spt);
     ~TilingConstructionLine() override;
 
     virtual void updateDragging(QPointF spt) override;

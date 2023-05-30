@@ -23,7 +23,7 @@ Q_DECLARE_METATYPE(WeakDesignElementPtr);
 
 page_prototype_info:: page_prototype_info(ControlPanel * cpanel)  : panel_page(cpanel,"Prototype Info")
 {
-    pview           = PrototypeView::getSharedInstance();
+    protoView       = PrototypeView::getInstance();
     protoMaker      = PrototypeMaker::getInstance();
     protoMakerData  = protoMaker->getProtoMakerData();
 
@@ -144,7 +144,7 @@ void page_prototype_info::buildColorGrid()
 {
     int row = 1;
     int col = 0;
-    ProtoViewColors & colors = pview->getColors();
+    ProtoViewColors & colors = protoView->getColors();
 
     ClickableLabel * label = new ClickableLabel();
     QVariant variant = colors.mapColor;
@@ -463,8 +463,8 @@ void page_prototype_info::pickColor(QColor & color)
     if (acolor.isValid())
     {
         color = acolor;
-
-        config->protoViewColors = pview->getColors().getColors();
+        
+        config->protoViewColors = protoView->getColors().getColors();
         buildColorGrid();
         emit sig_refreshView();
     }
@@ -479,10 +479,10 @@ void page_prototype_info::setDefaultColors()
     colors.delMotifColor     = QColor(Qt::blue);
     colors.delTileColor      = QColor(Qt::yellow);
     colors.tileBrushColor    = QColor(255, 217, 217,128);
-    ProtoViewColors & viewColors = pview->getColors();
+    ProtoViewColors & viewColors = protoView->getColors();
     viewColors = colors;
-
-    config->protoViewColors = pview->getColors().getColors();
+    
+    config->protoViewColors = protoView->getColors().getColors();
     buildColorGrid();
     emit sig_refreshView();
 }

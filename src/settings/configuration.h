@@ -247,7 +247,7 @@ public:
 
     int     appInstance;
 
-    WeakLayerPtr            selectedLayer;
+    Layer * selectedLayer;
 
     QString rootTileDir;
     QString originalTileDir;
@@ -283,7 +283,7 @@ public:
 
 private:
     Configuration();
-    ~Configuration() {}
+    ~Configuration();
 
     static Configuration * mpThis;
 

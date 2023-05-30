@@ -20,6 +20,7 @@ class Cycler : public QObject
 
 public:
     static Cycler * getInstance();
+    static void     releaseInstance();
 
     void    init(QThread * thread);
 

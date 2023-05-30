@@ -1,8 +1,11 @@
 #include "style/tile_colors.h"
 #include "geometry/fill_region.h"
+#include "geometry/crop.h"
 #include "misc/colorset.h"
 #include "misc/geo_graphics.h"
 #include "makers/prototype_maker/prototype.h"
+#include "makers/mosaic_maker/mosaic_maker.h"
+#include "mosaic/mosaic.h"
 #include "tile/tile.h"
 #include "tile/placed_tile.h"
 #include "tile/tiling.h"
@@ -71,6 +74,7 @@ void TileColors::createStyleRepresentation()
         const EdgePoly & ep = tile->getEdgePoly();
         QTransform T1       = placedTile->getTransform();
 
+        // fetch tile colors from the tiling
         ColorSet * tileColors = tile->getTileColors();
         for (auto & T2 : qAsConst(placements))
         {
@@ -110,6 +114,21 @@ void TileColors::draw(GeoGraphics * gg)
         return;
     }
 
+    auto painter = gg->getPainter();
+    painter->save();
+
+    auto mosaic = MosaicMaker::getInstance()->getMosaic();
+    auto crop   = mosaic->getCrop();
+    if (crop)
+    {
+        auto rect = crop->getRect();
+        if (rect.isValid())
+        {
+            rect = worldToScreen(rect);
+            painter->setClipRect(rect);
+        }
+    }
+
     for (const auto & bpc : qAsConst(epolys))
     {
         EdgePoly ep = bpc.epoly;
@@ -119,4 +138,6 @@ void TileColors::draw(GeoGraphics * gg)
             gg->drawEdgePoly(ep,outlineColor,outlineWidth);
         }
     }
+
+    painter->restore();
 }

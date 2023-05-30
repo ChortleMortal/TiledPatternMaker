@@ -26,7 +26,6 @@ class Cycler;
 class MapEditor;
 class CropMaker;
 
-typedef std::shared_ptr<class TilingMaker>      TilingMakerPtr;
 typedef std::shared_ptr<class Motif>           MotifPtr;
 
 class TiledPatternMaker : public QObject
@@ -44,6 +43,8 @@ public:
 
     static QPixmap createTransparentPixmap(QImage img);
     static void    appDebugBreak();
+
+    static int const EXIT_CODE_REBOOT;
 
 signals:
     void sig_start();
@@ -95,9 +96,8 @@ private:
     class ControlPanel     * controlPanel;
     class MosaicMaker      * mosaicMaker;
     class PrototypeMaker   * prototypeMaker;
-    TilingMakerPtr           tilingMaker;
+    class TilingMaker      * tilingMaker;
     MapEditor              * mapEditor;
-    CropMaker              * cropMaker;
     Cycler                 * cycler;
 
     int                     instance;

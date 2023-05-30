@@ -8,14 +8,38 @@
 #include "settings/frame_settings.h"
 #include "geometry/edgepoly.h"
 
-typedef std::shared_ptr<class BackgroundImage>   BkgdImgPtr;
-typedef std::shared_ptr<class Perspective>       PerspectivePtr;
-
-class  BackgroundImage : public LayerController
+class Perspective
 {
 public:
-    static BkgdImgPtr getSharedInstance();
-    BackgroundImage();                  // don't use this
+    Perspective();
+    void resetPerspective();
+    void startDragging(QPointF spt);
+    void updateDragging(QPointF spt );
+    void endDragging(QPointF spt );
+    void addPoint(QPointF spt);
+    void drawPerspective(QPainter *painter );
+
+    void       setSkewMode(bool enb);
+    bool       getSkewMode() { return skewMode; }
+    EdgePoly & getAccum()    { return sAccum; }
+
+protected:
+    void forceRedraw();
+
+    EdgePoly    sAccum;       // screen points
+
+private:
+    bool        skewMode;
+    QPointF     spt;
+    QPointF     sLastDrag;   // screen point
+    QPolygonF   poly;
+};
+
+class  BackgroundImageView : public LayerController, public Perspective
+{
+public:
+    static BackgroundImageView * getInstance();
+    static void              releaseInstance();
 
     bool    import(QString filename);   // import into media/bkgds
     bool    load(QString imageName);    // loads from existing imported file
@@ -26,7 +50,7 @@ public:
 
     void    paint(QPainter *painter) override;
 
-    void    createPixmap();
+    void    showPixmap();
     void    createBackgroundAdjustment(QPointF topLeft, QPointF topRight, QPointF botRight, QPointF botLeft);
     void    createAdjustedImage();
 
@@ -34,15 +58,11 @@ public:
     void    setUseAdjusted(bool use);
     bool    saveAdjusted(QString newName);
 
-    void    setSkewMode(bool enb);
-    bool    getSkewMode() { return skewMode; }
-
     virtual const Xform  & getCanvasXform() override;
     virtual void           setCanvasXform(const Xform & xf) override;
 
     // public data
     QTransform perspective;
-    EdgePoly   sAccum;       // screen points
 
 public slots:
     virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
@@ -68,7 +88,10 @@ protected:
     void    correctPerspective(QPointF topLeft, QPointF topRight, QPointF botRight, QPointF botLeft);
 
 private:
-    static BkgdImgPtr spThis;
+    BackgroundImageView();
+    ~BackgroundImageView();
+
+    static BackgroundImageView * mpThis;
 
     ViewControl   * view;
     Configuration * config;
@@ -83,25 +106,8 @@ private:
 
     QString         bkgdName;
     bool            _loaded;
-    bool            skewMode;
-    PerspectivePtr  mouse_interaction;
 };
 
-class Perspective
-{
-public:
-    Perspective(QPointF spt);
-    void updateDragging(QPointF spt );
-    void draw(QPainter *painter );
-    void endDragging(QPointF spt );
-    void addPoint(QPointF spt);
-
-private:
-    BkgdImgPtr  bip;
-    QPointF     spt;
-    QPointF     sLastDrag;   // screen point
-    QPolygonF   poly;
-};
 
 
 #endif // BACKGROUNDIMAGE_H

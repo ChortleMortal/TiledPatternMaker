@@ -1,6 +1,7 @@
 #include <QDebug>
 #include "makers/map_editor/map_editor_db.h"
 #include "geometry/map.h"
+#include "geometry/crop.h"
 #include "panels/panel.h"
 #include "settings/configuration.h"
 
@@ -398,4 +399,72 @@ bool MapEditorDb::isMotif(eMapEditorMapType type)
     default:
         return false;
     }
+}
+
+// merges the crop into the map - called by map editor
+bool MapEditorDb::embedCrop(MapPtr map)
+{
+    if (!map)
+        return false;
+
+    auto crop = getCrop();
+    if (!crop)
+        return false;
+
+    qDebug() << "embed crop in map";
+
+    switch (crop->getCropType())
+    {
+    case CROP_RECTANGLE:
+        map->embedCrop(crop->getRect());
+        break;
+
+    case CROP_CIRCLE:
+        map->embedCrop(crop->getCircle());
+        break;
+
+    case CROP_POLYGON:
+    case CROP_UNDEFINED:
+        qWarning() << "not implemented";
+        return false;
+    }
+
+    return true;
+}
+
+// deletes everything outside of the crop rectangle - called by map editgor
+bool MapEditorDb::cropMap(MapPtr map)
+{
+    if (!map)
+        return false;
+
+    CropPtr crop = getCrop();
+    if (!crop)
+        return false;
+
+    qDebug() << "apply crop to map";
+
+    switch (crop->getCropType())
+    {
+    case CROP_RECTANGLE:
+        map->cropOutside(crop->getRect());
+        break;
+    case CROP_CIRCLE:
+        map->cropOutside(crop->getCircle());
+        break;
+    case CROP_POLYGON:
+        map->cropOutside(crop->getPolygon());
+        break;
+    case CROP_UNDEFINED:
+        qWarning() << "Crop Not defined";
+        return false;
+    }
+
+    return true;
+}
+
+void MapEditorDb::setCrop(CropPtr acrop)
+{
+    // this local crop is unique
+    _crop = std::make_shared<Crop>(acrop);
 }

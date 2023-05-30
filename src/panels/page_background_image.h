@@ -5,7 +5,6 @@
 #include "widgets/panel_page.h"
 #include "widgets/layout_transform.h"
 
-typedef std::shared_ptr<class BackgroundImage>   BkgdImgPtr;
 
 class AQPushButton;
 class QGroupBox;
@@ -39,8 +38,6 @@ protected:
     void displayBackgroundStatus(bool force);
 
 private:
-    BkgdImgPtr      bip;
-
     LayoutTransform bkgdLayout;
     AQPushButton  * startAdjustBtn;
     QCheckBox     * chk_useAdjusted;

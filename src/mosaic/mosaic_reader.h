@@ -13,9 +13,9 @@
 #include "enums/estyletype.h"
 
 using std::shared_ptr;
+using std::weak_ptr;
 
 typedef shared_ptr<QPolygonF>              PolyPtr;
-typedef shared_ptr<class BackgroundImage>  BkgdImgPtr;
 typedef shared_ptr<class Border>           BorderPtr;
 typedef shared_ptr<class Crop>             CropPtr;
 typedef shared_ptr<class Edge>             EdgePtr;
@@ -107,7 +107,7 @@ protected:
     PolyPtr         getBoundary(xml_node & node);
     QPointF         getPos(xml_node & node);
     QRectF          getRectangle(xml_node node);
-    CirclePtr       getCircle(xml_node node);
+    Circle          getCircle(xml_node node);
 
     // references
     void   setProtoReference(xml_node & node, ProtoPtr ptr);

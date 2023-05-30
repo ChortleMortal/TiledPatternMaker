@@ -1,15 +1,15 @@
 ﻿#include "makers/map_editor/map_editor_map_writer.h"
 #include "makers/map_editor/map_editor.h"
 #include "makers/map_editor/map_editor_db.h"
-#include "misc/backgroundimage.h"
+#include "misc/fileservices.h"
 #include "misc/tpm_io.h"
+#include "viewers/backgroundimageview.h"
 #include "viewers/viewcontrol.h"
 #include "viewers/map_editor_view.h"
 #include "tile/tiling_writer.h"
-#include "misc/fileservices.h"
 
 
-MapEditorMapWriter::MapEditorMapWriter(MapedViewPtr view) : MosaicWriter()
+MapEditorMapWriter::MapEditorMapWriter(MapEditorView *view) : MosaicWriter()
 {
     meView = view;
 }
@@ -64,8 +64,7 @@ bool MapEditorMapWriter::writeXML(QString fileName, MapPtr map, eMapEditorMapTyp
         ts << "</" << str << ">" << endl;
 
         // background
-        BkgdImgPtr bip = BackgroundImage::getSharedInstance();
-        TilingWriter::writeBackgroundImage(ts,bip);
+        TilingWriter::writeBackgroundImage(ts);
 
         // map
         rv = setMap(ts,map);

@@ -151,6 +151,8 @@ void CropWidget::slot_verticalAspect(bool checked)
 
 void CropWidget::slot_circleChanged(qreal r)
 {
+    Q_UNUSED(r);
+
     if (blocked || !crop) return;
 
     if (crop->getCropType() != CROP_CIRCLE)
@@ -161,13 +163,15 @@ void CropWidget::slot_circleChanged(qreal r)
     QPointF center(centerX->value(),centerY->value());
 
     auto c = crop->getCircle();
-    c->setRadius(radius->value());
-    c->setCenter(center);
+    c.setRadius(radius->value());
+    c.setCenter(center);
     emit sig_cropModified();
 }
 
 void CropWidget::slot_sidesChanged(int n)
 {
+    Q_UNUSED(n);
+
     if (blocked || !crop) return;
 
     if (crop->getCropType() != CROP_POLYGON)
@@ -211,8 +215,10 @@ void CropWidget::slot_typeSelected(int id)
         break;
 
     case CROP_CIRCLE:
-        crop->setCircle(std::make_shared<Circle>(QPointF(centerX->value(),centerY->value()), radius->value()));
-        break;
+    {
+        Circle ac(QPointF(centerX->value(),centerY->value()), radius->value());
+        crop->setCircle(ac);
+    }   break;
 
     case CROP_UNDEFINED:
         break;
@@ -231,18 +237,9 @@ void CropWidget::refresh()
         aspects->button(crop->getAspect())->setChecked(true);
         chkVert->setChecked(crop->getAspectVertical());
         auto circle = crop->getCircle();
-        if (circle)
-        {
-            radius->setValue(crop->getCircle()->radius);
-            centerX->setValue(crop->getCircle()->centre.x());
-            centerY->setValue(crop->getCircle()->centre.y());
-        }
-        else
-        {
-            radius->setValue(5);
-            centerX->setValue(0);
-            centerX->setValue(0);
-        }
+        radius->setValue(circle.radius);
+        centerX->setValue(circle.centre.x());
+        centerY->setValue(circle.centre.y());
         numSides->setValue(crop->getPolygon().size());
     }
     else
@@ -275,20 +272,12 @@ CropDlg::CropDlg(CropPtr crop)
     cw->setCrop(crop);
     cw->refresh();
 
-    QPushButton * pb = new QPushButton("Finish Editing");
-    QHBoxLayout * hb = new QHBoxLayout;
-    hb->addStretch();
-    hb->addWidget(pb);
-
     QVBoxLayout * vbox = new QVBoxLayout;
     vbox->addWidget(cw);
-    vbox->addLayout(hb);
 
     setLayout(vbox);
 
-    setWindowTitle("Edit Crop");
-
-    connect(pb,  &QPushButton::clicked, this, [this]() { emit sig_dlg_done(); done(QDialog::Accepted); } );
+    setWindowTitle("Crop Geometry");
 }
 
 void CropDlg::setCrop(CropPtr crop)

@@ -16,7 +16,6 @@
 #include "geometry/map.h"
 #include "geometry/vertex.h"
 #include "makers/map_editor/map_editor.h"
-#include "misc/backgroundimage.h"
 #include "misc/border.h"
 #include "misc/tpm_io.h"
 #include "misc/fileservices.h"
@@ -53,7 +52,8 @@ MosaicWriter::MosaicWriter() : MosaicWriterBase()
     //currentXMLVersion = 11; // 13NOV21 Crop separated from Border
     //currentXMLVersion = 12; // 24NOV21 Reworked border definitions
     //currentXMLVersion = 13; // 16SEP22 Extended Boundary scale/rot used
-      currentXMLVersion = 14; // 23NOV22 <n> is common for all motifs
+    //currentXMLVersion = 14; // 23NOV22 <n> is common for all motifs
+      currentXMLVersion = 15; // 26MAY23 add Crop parms
 }
 
 MosaicWriter::~MosaicWriter()
@@ -222,7 +222,6 @@ void MosaicWriter::processDesign(QTextStream &ts)
     QSize  zsize          = info.getZSize();
     BorderPtr border      = _mosaic->getBorder();
     CropPtr crop          = _mosaic->getCrop();
-    BkgdImgPtr bip        = BackgroundImage::getSharedInstance();
     uint cleanseLevel     = _mosaic->getCleanseLevel();
 
     ts << "<design>" << endl;
@@ -241,7 +240,7 @@ void MosaicWriter::processDesign(QTextStream &ts)
     {
         ts << "<Fill singleton = \"t\">0,0,0,0</Fill>";
     }
-    TilingWriter::writeBackgroundImage(ts,bip);
+    TilingWriter::writeBackgroundImage(ts);
 
     if (cleanseLevel > 0)
     {
@@ -276,12 +275,12 @@ void MosaicWriter::procRect(QTextStream &ts, QRectF rect)
     ts << "</rect>"   << endl;
 }
 
-void MosaicWriter::procCircle(QTextStream &ts,CirclePtr c)
+void MosaicWriter::procCircle(QTextStream &ts, Circle c)
 {
     ts << "<circle>"    << endl;
-    ts << "<radius>"    << c->radius     << "</radius>" << endl;
-    ts << "<X>"         << c->centre.x() << "</X>" << endl;
-    ts << "<Y>"         << c->centre.y() << "</Y>" << endl;
+    ts << "<radius>"    << c.radius     << "</radius>" << endl;
+    ts << "<X>"         << c.centre.x() << "</X>" << endl;
+    ts << "<Y>"         << c.centre.y() << "</Y>" << endl;
     ts << "</circle>"   << endl;
 }
 void MosaicWriter::procBackground(QTextStream &ts,QColor color)
@@ -334,7 +333,7 @@ void MosaicWriter::procBorder(QTextStream &ts,BorderPtr border)
         }
         else if (ctype == CROP_CIRCLE)
         {
-            auto c = b0->getCircle();
+            Circle c = b0->getCircle();
             procCircle(ts,c);
         }
     }
@@ -381,7 +380,8 @@ void MosaicWriter::procCrop(QTextStream &ts,CropPtr crop)
     QRectF r = crop->getRect();
     if (r.isValid())
     {
-        ts << "<Crop>" << endl;
+        QString parms = QString("embed=%1 apply=%2").arg((crop->getEmbed()) ? "\"t\"" : "\"f\"").arg((crop->getApply()) ? "\"t\"" : "\"f\"");
+        ts << "<Crop " << parms << " >" << endl;
         ts << "<boundary>" << r.x() << "," << r.y() << "," << r.width() << "," << r.height() << "</boundary>" << endl;
         ts << "</Crop>" << endl;
     }
@@ -709,6 +709,8 @@ bool MosaicWriter::processEmboss(QTextStream &ts, StylePtr s)
 
 bool MosaicWriter::processTileColors(QTextStream &ts, StylePtr s)
 {
+    // Note: tile colors are stored in the tiling
+    // Here we just specifu that those colors are to be used in this tiling
     TileColors * tc = dynamic_cast<TileColors*>(s.get());
     if (tc == nullptr)
     {
@@ -1015,8 +1017,8 @@ void MosaicWriter::setMotifCommon(QTextStream & ts, MotifPtr motif)
 {
     const ExtendedBoundary & eb = motif->getExtendedBoundary();
 
-    int    bs = eb.sides;
-    qreal bsc = eb.scale;
+    int    bs = eb.getSides();
+    qreal bsc = eb.getScale();
     qreal fsc = motif->getMotifScale();
     qreal   r = motif->getMotifRotate();
     int     n = motif->getN();

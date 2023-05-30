@@ -57,14 +57,12 @@ public:
     void            setMotifRotate(qreal rot)       { motifRotate = rot; }
     qreal           getMotifRotate()                { return motifRotate; }
 
-    void            buildExtendedRadialBoundary()   { extendedBoundary.buildRadial(); }
-    void            buildExtendedExplicitBoundary();
-
     void            setMotifBoundary(QPolygonF p)   { motifBoundary = p; }
     QPolygonF &     getMotifBoundary()              { return motifBoundary; }
 
     const ExtendedBoundary& getExtendedBoundary()   { return extendedBoundary; }
     ExtendedBoundary &      getRWExtendedBoundary() { return extendedBoundary; }
+    void            createExtendedBoundary(TilePtr tile);
 
     bool            isExplicit() const;
     bool            isRadial() const;

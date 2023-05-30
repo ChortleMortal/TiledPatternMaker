@@ -16,15 +16,24 @@
 
 using std::make_shared;
 
-PrototypeViewPtr PrototypeView::spThis;
+PrototypeView * PrototypeView::mpThis = nullptr;
 
-PrototypeViewPtr PrototypeView::getSharedInstance()
+PrototypeView * PrototypeView::getInstance()
 {
-    if (!spThis)
+    if (!mpThis)
     {
-        spThis = make_shared<PrototypeView>();
+        mpThis =  new PrototypeView();
     }
-    return spThis;
+    return mpThis;
+}
+
+void PrototypeView::releaseInstance()
+{
+    if (mpThis != nullptr)
+    {
+        delete mpThis;
+        mpThis = nullptr;
+    }
 }
 
 PrototypeView::PrototypeView() : LayerController("PrototypeView")
@@ -33,6 +42,9 @@ PrototypeView::PrototypeView() : LayerController("PrototypeView")
 
     colors.setColors(config->protoViewColors);
 }
+
+PrototypeView::~PrototypeView()
+{}
 
 void PrototypeView::paint(QPainter *painter)
 {

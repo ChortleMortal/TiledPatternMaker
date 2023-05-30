@@ -34,7 +34,7 @@ void  Mosaic::addStyle(StylePtr style)
     styleSet.push_front(style);
     CropPtr cp = style->getPrototype()->getCrop();
     if (cp)
-        resetCrop(cp);
+        setCrop(cp);
 }
 
 void Mosaic::replaceStyle(StylePtr oldStyle, StylePtr newStyle)
@@ -48,7 +48,7 @@ void Mosaic::replaceStyle(StylePtr oldStyle, StylePtr newStyle)
 
             CropPtr cp = newStyle->getPrototype()->getCrop();
             if (cp)
-                resetCrop(cp);
+                setCrop(cp);
             return;
         }
     }
@@ -88,49 +88,36 @@ QVector<TilingPtr> Mosaic::getTilings()
     return static_cast<QVector<TilingPtr>>(tilings);
 }
 
-void Mosaic::initCrop(CropPtr crop)
+void Mosaic::setCrop(CropPtr crop)
 {
-    this->crop = crop;
-    border.reset();
+    Q_ASSERT(crop);
+    _crop = crop;
 
     auto vec = getPrototypes();
     for (auto & proto : vec)
     {
-        proto->initCrop(crop);       // resets proto map
+        proto->setCrop(crop);       // resets proto map
     }
+    resetStyleMaps();
 }
 
-void Mosaic::resetCrop(CropPtr crop)
+void Mosaic::resetCrop()
 {
-    this->crop = crop;
-    border.reset();
+    _crop.reset();
 
     auto vec = getPrototypes();
     for (auto & proto : vec)
     {
-        proto->resetCrop(crop);       // resets proto map
+        proto->resetCrop();       // resets proto map
     }
 
     resetProtoMaps();
-}
-
-void Mosaic::_eraseCrop()
-{
-    CropPtr nullCrop;
-    this->crop = nullCrop;
-
-    auto vec = getPrototypes();
-    for (auto & proto : vec)
-    {
-        proto->resetCrop(nullCrop);       // resets proto map
-    }
+    resetStyleMaps();
 }
 
 void Mosaic::setBorder(BorderPtr border)
 {
-    this->border = border;
-    _eraseCrop();
-    resetStyleMaps();
+    _border = border;
 }
 
 QString Mosaic::getName()

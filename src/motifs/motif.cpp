@@ -125,6 +125,24 @@ bool Motif::isRadial() const
     }
 }
 
+void Motif::createExtendedBoundary(TilePtr tile)
+{
+    extendedBoundary.setSides(getN());
+    if (extendedBoundary.getScale() < getMotifScale())
+    {
+        extendedBoundary.setScale(getMotifScale());
+    }
+
+    if (isRadial())
+    {
+        extendedBoundary.buildRadial();
+    }
+    else
+    {
+        extendedBoundary.buildExplicit(tile);
+    }
+}
+
 // uses existing tmpIndices
 void Motif::annotateEdges()
 {

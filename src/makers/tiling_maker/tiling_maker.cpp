@@ -39,23 +39,33 @@
 
 using std::make_shared;
 
-TilingMakerPtr TilingMaker::spThis;
+TilingMaker * TilingMaker::mpThis = nullptr;
 
-
-TilingMakerPtr TilingMaker::getSharedInstance()
+TilingMaker * TilingMaker::getInstance()
 {
-    if (!spThis)
+    if (!mpThis)
     {
-        spThis = make_shared<TilingMaker>();
+        mpThis = new TilingMaker();
     }
-    return spThis;
+    return mpThis;
 }
 
+void TilingMaker::releaseInstance()
+{
+    if (mpThis != nullptr)
+    {
+        delete mpThis;
+        mpThis = nullptr;
+    }
+}
 
-TilingMaker::TilingMaker() : TilingMakerView(this)
+TilingMaker::TilingMaker()
 {
     //qDebug() << "TilingMaker::TilingMaker";
-    debugMouse = false;
+}
+
+TilingMaker::~TilingMaker()
+{
 }
 
 void TilingMaker::init()
@@ -63,8 +73,12 @@ void TilingMaker::init()
     view            = ViewControl::getInstance();
     prototypeMaker  = PrototypeMaker::getInstance();
     maped           = MapEditor::getInstance();
+    tmView          = TilingMakerView::getInstance();
     controlPanel    = ControlPanel::getInstance();
     auto cycler     = Cycler::getInstance();
+    config          = Configuration::getInstance();
+
+    tmView->setMaker(this);
 
     connect(cycler,    &Cycler::sig_cycleLoadTiling,    this,  &TilingMaker::slot_cyclerLoadTiling);
     connect(this,      &TilingMaker::sig_cycler_ready,  cycler, &Cycler::slot_ready);
@@ -151,7 +165,7 @@ void TilingMaker::slot_loadTiling(QString name, eTILM_Event event)
 
         emit sig_cycler_ready();
         emit sig_tilingLoaded(name);
-        emit sig_refreshView();
+        view->slot_refreshView();
     }
     else
     {
@@ -174,7 +188,7 @@ void TilingMaker::slot_cyclerLoadTiling(QString name)
 
         view->removeAllImages();
 
-        emit sig_refreshView();
+        view->slot_refreshView();
         emit sig_cycler_ready();
     }
     controlPanel->setLoadState(ControlPanel::LOADING_NONE);
@@ -329,7 +343,7 @@ void TilingMaker::select(TilingPtr tiling, bool force)
 
     if (config->getViewerType() == VIEW_TILING_MAKER)
     {
-        forceLayerRecalc();
+        tmView->forceLayerRecalc();
     }
 
     selectedTiling = tiling;
@@ -360,7 +374,7 @@ void TilingMaker::select(ProtoPtr prototype)
 
     if (config->getViewerType() == VIEW_TILING_MAKER)
     {
-        forceLayerRecalc();
+        tmView->forceLayerRecalc();
     }
 
     selectedTiling = tiling;
@@ -401,71 +415,42 @@ bool TilingMaker::sm_askAdd()
 void TilingMaker::clearMakerData()
 {
     qDebug() << "TilingMaker::clearMakerData";
-    allPlacedTiles.clear();
-    in_tiling.clear();
-    for (auto m : wMeasurements)
-    {
-        delete m;
-    }
-    wMeasurements.clear();
-    overlapping.clear();
-    touching.clear();
 
     selectedTiling.reset();
-    tileSelector.reset();
+
     resetCurrentPlacedTile();
-    editPlacedTile.reset();
-    mouse_interaction.reset();
     clickedSelector.reset();
 
     tilingMakerMouseMode    = TM_NO_MOUSE_MODE;
+
+    tmView->clearViewData();
 }
 
 void TilingMaker::setupMaker(TilingPtr tiling)
 {
-    auto & placedTiles = tiling->getData().getPlacedTiles();
-    for(auto it = placedTiles.begin(); it != placedTiles.end(); it++)
-    {
-        PlacedTilePtr pf = *it;
-        allPlacedTiles.push_back(pf);
-        in_tiling.push_back(pf);
-    }
-
-    QPointF trans_origin;
-    if (allPlacedTiles.size() > 0)
-    {
-        PlacedTilePtr pf = allPlacedTiles.first();  // at this time allplacedTile and in_tiling are the same
-        QTransform T        = pf->getTransform();
-        trans_origin        = T.map(pf->getTile()->getCenter());
-    }
-
-    visibleT1.setP1(trans_origin);
-    visibleT1.setP2(trans_origin + tiling->getData().getTrans1());
-
-    visibleT2.setP1(trans_origin);
-    visibleT2.setP2(trans_origin + tiling->getData().getTrans2());
+    tmView->setupView(tiling);
 
     view->frameSettings.initialise(VIEW_TILING_MAKER,tiling->getData().getSettings().getSize(),tiling->getData().getSettings().getZSize());
 }
 
 void TilingMaker::updateTilingplacedTiles()
 {
-    if (in_tiling != selectedTiling->getData().getPlacedTiles())
+    if (tmView->getInTiling() != selectedTiling->getData().getPlacedTiles())
     {
         auto & placed = selectedTiling->getDataAccess(true).getPlacedTileAccess();
-        placed = in_tiling;
+        placed = tmView->getInTiling();
     }
 }
 
 bool TilingMaker::verifyTiling()
 {
-    if (allPlacedTiles.size() <= 0)
+    if (tmView->getAllTiles().size() <= 0)
     {
         qWarning("There are no polygons");
         return false;
     }
 
-    if (in_tiling.size() <= 0)
+    if (tmView->getInTiling().size() <= 0)
     {
         qWarning("No selected tiles");
         return false;
@@ -495,14 +480,14 @@ void TilingMaker::setTilingMakerMouseMode(eTilingMakerMouseMode mode)
 
     if (mode == TM_EDIT_TILE_MODE)
     {
-        editPlacedTile = currentPlacedTile;
+        tmView->setEditPlacedTile(currentPlacedTile);
     }
     else
     {
-        editPlacedTile.reset();
+        tmView->resetEditPlacedTile();
     }
 
-    wAccum.clear();
+    tmView->getAccumW().clear();
 
     forceRedraw();
 }
@@ -516,7 +501,7 @@ eTilingMakerMouseMode TilingMaker::getTilingMakerMouseMode()
 
 void TilingMaker::addNewPlacedTile(PlacedTilePtr placedTile)
 {
-    allPlacedTiles.push_front(placedTile);   // push_front so it (the new) becomes selected for move
+    tmView->getAllTiles().push_front(placedTile);   // push_front so it (the new) becomes selected for move
     addInTiling(placedTile);                    // 03AUG21 - additions are always placed in tiling (they can be removed)
     forceRedraw();
     emit sig_buildMenu();
@@ -524,7 +509,7 @@ void TilingMaker::addNewPlacedTile(PlacedTilePtr placedTile)
 
 void TilingMaker::addNewPlacedTiles(PlacedTiles & placedTiles)
 {
-    allPlacedTiles += placedTiles;
+    tmView->getAllTiles() += placedTiles;
     addInTilings(placedTiles);                    // 03AUG21 - additions are always placed in tiling (they can be removed)
     forceRedraw();
     emit sig_buildMenu();
@@ -566,7 +551,7 @@ QVector<TilePtr> TilingMaker::getUniqueTiles()
 {
     UniqueQVector<TilePtr> fs;
 
-    for (auto pfp : qAsConst(in_tiling))
+    for (auto pfp : qAsConst(tmView->getAllTiles()))
     {
         TilePtr fp = pfp->getTile();
         fs.push_back(fp);
@@ -590,9 +575,10 @@ void TilingMaker::deleteTile(TileSelectorPtr sel)
     if (!sel) return;
 
     PlacedTilePtr tile = sel->getPlacedTile();
-    if (tileSelector &&  tileSelector->getPlacedTile() == tile)
+    auto tselect = tmView->getTileSelector();
+    if (tselect &&  tselect->getPlacedTile() == tile)
     {
-        tileSelector.reset();
+        tmView->resetTileSelector();
     }
 
     if (tile)
@@ -611,8 +597,8 @@ void TilingMaker::deleteTile(PlacedTilePtr pf)
     {
         resetCurrentPlacedTile();
     }
-    allPlacedTiles.removeOne(pf);
-    in_tiling.removeOne(pf);
+    tmView->getAllTiles().removeOne(pf);
+    tmView->getInTiling().removeOne(pf);
     updateTilingplacedTiles();
     forceRedraw();
     pushTilingToPrototypeMaker(PROM_TILING_DELETED);
@@ -620,21 +606,21 @@ void TilingMaker::deleteTile(PlacedTilePtr pf)
 
 void TilingMaker::addInTiling(PlacedTilePtr pf)
 {
-    in_tiling.push_back(pf);
+    tmView->getInTiling().push_back(pf);
     updateTilingplacedTiles();
     pushTilingToPrototypeMaker(PROM_TILING_ADDED);
 }
 
 void TilingMaker::addInTilings(PlacedTiles & placedTiles)
 {
-    in_tiling += placedTiles;
+    tmView->getInTiling() += placedTiles;
     updateTilingplacedTiles();
     pushTilingToPrototypeMaker(PROM_TILING_ADDED);
 }
 
 void TilingMaker::removeFromInTiling(PlacedTilePtr pf)
 {
-    in_tiling.removeOne(pf);
+    tmView->getInTiling().removeOne(pf);
     updateTilingplacedTiles();
     pushTilingToPrototypeMaker(PROM_TILING_DELETED);
 }
@@ -699,9 +685,10 @@ void TilingMaker::removeExcluded()
 {
     PlacedTiles toRemove;
 
-    for (auto& pf : allPlacedTiles)
+    auto allTiles = tmView->getAllTiles();
+    for (auto& pf : allTiles)
     {
-        if (!in_tiling.contains(pf))
+        if (!allTiles.contains(pf))
         {
             toRemove.push_back(pf);
         }
@@ -709,10 +696,10 @@ void TilingMaker::removeExcluded()
 
     for (auto& pf : toRemove)
     {
-        allPlacedTiles.removeAll(pf);
+        allTiles.removeAll(pf);
     }
 
-    tileSelector.reset();
+    tmView->resetTileSelector();
     resetCurrentPlacedTile();
 
     forceRedraw();
@@ -722,7 +709,7 @@ void TilingMaker::removeExcluded()
 
 void TilingMaker::excludeAll()
 {
-    in_tiling.clear();
+    tmView->getInTiling().clear();
     forceRedraw();
     emit sig_buildMenu();
     pushTilingToPrototypeMaker(PROM_TILING_DELETED);
@@ -733,7 +720,7 @@ void TilingMaker::slot_includeTile()
     if (clickedSelector)
     {
         PlacedTilePtr pf = clickedSelector->getPlacedTile();
-        if(!in_tiling.contains(pf))
+        if(!tmView->getInTiling().contains(pf))
         {
             addInTiling( pf );
             emit sig_buildMenu();
@@ -749,7 +736,7 @@ void TilingMaker::slot_excludeTile()
     if (clickedSelector)
     {
         PlacedTilePtr pf = clickedSelector->getPlacedTile();
-        if (in_tiling.contains(pf))
+        if (tmView->getInTiling().contains(pf))
         {
             removeFromInTiling(pf);
             emit sig_buildMenu();
@@ -773,7 +760,7 @@ void TilingMaker::slot_editTile()
         fe->raise();
         fe->activateWindow();
 
-        connect(fe,   &DlgEdgePolyEdit::sig_currentPoint, this, &TilingMaker::setTileEditPoint, Qt::UniqueConnection);
+        connect(fe,   &DlgEdgePolyEdit::sig_currentPoint, tmView, &TilingMakerView::slot_setTileEditPoint, Qt::UniqueConnection);
         connect(this, &TilingMaker::sig_refreshMenu,      fe,   &DlgEdgePolyEdit::display,      Qt::UniqueConnection);
     }
 }
@@ -782,7 +769,7 @@ void TilingMaker::slot_copyMoveTile()
 {
     if (clickedSelector)
     {
-        mouse_interaction = make_shared<CopyMovePolygon>(this, clickedSelector, clickedSpt);
+        tmView->setMouseInteraction(make_shared<CopyMovePolygon>(clickedSelector, clickedSpt));
         clickedSelector.reset();
         clickedSpt = QPointF();
     }
@@ -839,7 +826,7 @@ void TilingMaker::createFillCopies()
         return;
     }
 
-    for (auto pf : qAsConst(in_tiling))
+    for (auto pf : qAsConst(tmView->getInTiling()))
     {
         if (!pf->show())
         {
@@ -857,7 +844,7 @@ void TilingMaker::createFillCopies()
                 QPointF pt = (t1*x) + (t2 * y);
                 QTransform tt = QTransform::fromTranslate(pt.x(),pt.y());
                 QTransform placement= T * tt;
-                allPlacedTiles.push_back(make_shared<PlacedTile>(f, placement));
+                tmView->getAllTiles().push_back(make_shared<PlacedTile>(f, placement));
             }
         }
     }
@@ -867,7 +854,7 @@ void TilingMaker::createFillCopies()
 void TilingMaker::tilingDeltaX(int delta)
 {
     qreal qdelta = 0.01 * delta;
-    for (auto pfp : qAsConst(allPlacedTiles))
+    for (auto pfp : qAsConst(tmView->getAllTiles()))
     {
         QTransform t = pfp->getTransform();
         t *= QTransform::fromTranslate(qdelta,0.0);
@@ -882,7 +869,7 @@ void TilingMaker::tilingDeltaX(int delta)
 void TilingMaker::tilingDeltaY(int delta)
 {
     qreal qdelta = 0.01 * delta;
-    for (auto pfp : qAsConst(allPlacedTiles))
+    for (auto pfp : qAsConst(tmView->getAllTiles()))
     {
         QTransform t = pfp->getTransform();
         t *= QTransform::fromTranslate(0.0,qdelta);
@@ -898,7 +885,7 @@ void TilingMaker::tilingDeltaScale(int delta)
 {
     Q_ASSERT(view->getKbdMode(KBD_MODE_XFORM_TILING));
     qreal scale = 1.0 + (0.01 * delta);
-    for (auto pfp : qAsConst(allPlacedTiles))
+    for (auto pfp : qAsConst(tmView->getAllTiles()))
     {
         QTransform t = pfp->getTransform();
         qDebug() << "t0" << Transform::toInfoString(t);
@@ -924,7 +911,7 @@ void TilingMaker::tilingDeltaScale(int delta)
 void TilingMaker::tilingDeltaRotate(int delta)
 {
     qreal qdelta = 0.01 * delta;
-    for (auto pfp : qAsConst(allPlacedTiles))
+    for (auto pfp : qAsConst(tmView->getAllTiles()))
     {
         QTransform t = pfp->getTransform();
         t *= QTransform().rotateRadians(qdelta);
@@ -1039,6 +1026,7 @@ void TilingMaker::uniqueTileDeltaScale(qreal scale)
         return;
 
     tile->deltaScale(scale);
+    emit sig_refreshMenu();
 }
 
 void TilingMaker::uniqueTileDeltaRotate(int delta)
@@ -1057,6 +1045,7 @@ void TilingMaker::uniqueTileDeltaRotate(qreal rotate)
         return;
 
     tile->deltaRotation(rotate);
+    emit sig_refreshMenu();
 }
 
 
@@ -1079,13 +1068,13 @@ void TilingMaker::addToTranslate(QLineF mLine)
     if (setT1)
     {
         setT1      = false;
-        visibleT1  = mLine;
+        tmView->setVisT1(mLine);
         getSelected()->getDataAccess(true).setTrans1(tran);
     }
     else
     {
         setT1      = true;
-        visibleT2  = mLine;
+        tmView->setVisT2(mLine);
         getSelected()->getDataAccess(true).setTrans2(tran);
     }
     emit sig_refreshMenu();
@@ -1095,8 +1084,10 @@ void TilingMaker::addToTranslate(QLineF mLine)
 void TilingMaker::updateVisibleVectors()
 {
     TilingPtr tp = getSelected();
-    visibleT1 = QLineF(visibleT1.p1(), visibleT1.p1() + tp->getData().getTrans1());
-    visibleT2 = QLineF(visibleT2.p1(), visibleT2.p1() + tp->getData().getTrans2());
+    auto t1 = QLineF(tmView->getVisT1().p1(), tmView->getVisT1().p1() + tp->getData().getTrans1());
+    auto t2 = QLineF(tmView->getVisT2().p1(), tmView->getVisT2().p1() + tp->getData().getTrans1());
+    tmView->setVisT1(t1);
+    tmView->setVisT2(t2);
     forceRedraw();
 }
 
@@ -1106,7 +1097,7 @@ void TilingMaker::toggleInclusion(TileSelectorPtr sel)
     {
         PlacedTilePtr pf = sel->getPlacedTile();
         if (!pf) return;
-        if( in_tiling.contains(pf))
+        if( tmView->getInTiling().contains(pf))
         {
             removeFromInTiling(pf); // pushed
         }
@@ -1122,8 +1113,8 @@ void TilingMaker::toggleInclusion(TileSelectorPtr sel)
 
 void TilingMaker::clearTranslationVectors()
 {
-    visibleT1 = QLineF();
-    visibleT2 = QLineF();
+    tmView->setVisT1(QLineF());
+    tmView->setVisT2(QLineF());
     forceRedraw();
     emit sig_refreshMenu();
 }
@@ -1220,7 +1211,7 @@ bool TilingMaker::reflectPolygon(TileSelectorPtr sel)
 {
     if (sel)
     {
-        TileSelectorPtr sel2 = findEdge(sMousePos);
+        TileSelectorPtr sel2 = tmView->findEdge(tmView->getMousePos());
         if (sel2)
         {
             if (sel2->getType() == MID_POINT || sel2->getType() == EDGE)
@@ -1264,824 +1255,54 @@ void TilingMaker::copyPolygon(TileSelectorPtr sel)
     }
 }
 
-TileSelectorPtr TilingMaker::findTileUnderMouse()
+void TilingMaker::forceRedraw()
 {
-    return findTile(sMousePos);
+    view->update();
 }
-
-void TilingMaker::updateUnderMouse(QPointF spt)
-{
-    switch (tilingMakerMouseMode)
-    {
-    case TM_NO_MOUSE_MODE:
-    case TM_MEASURE_MODE:
-    case TM_COPY_MODE:
-    case TM_DELETE_MODE:
-    case TM_INCLUSION_MODE:
-    case TM_EDIT_TILE_MODE:
-    case TM_MIRROR_X_MODE:
-    case TM_MIRROR_Y_MODE:
-    case TM_REFLECT_EDGE:
-        tileSelector = findSelection(spt);
-        if (tileSelector)
-            forceRedraw();  // NOTE this triggers a lot of repainting
-        break;
-
-    case TM_TRANSLATION_VECTOR_MODE:
-    case TM_CONSTRUCTION_LINES:
-        tileSelector = findSelection(spt);
-        if (tileSelector)
-            forceRedraw();
-        break;
-
-    case TM_DRAW_POLY_MODE:
-        tileSelector = findVertex(spt);
-        if (!tileSelector)
-        {
-            tileSelector = findMidPoint(spt);
-        }
-        if (!tileSelector)
-        {
-            tileSelector = findNearGridPoint(spt);
-        }
-        forceRedraw();
-        break;
-
-    case TM_POSITION_MODE:
-        if (!mouse_interaction)
-        {
-            mouse_interaction = make_shared<Position>(this, spt);
-        }
-        else
-        {
-            // unusual use case
-            mouse_interaction->updateDragging(spt);
-        }
-        break;
-
-    case TM_EDGE_CURVE_MODE:
-        tileSelector = findArcPoint(spt);
-        if (tileSelector)
-        {
-            qDebug() << "updateUnderMouse: found arc center";
-        }
-        else
-        {
-            tileSelector = findEdge(spt);
-            if (tileSelector)
-            {
-                qDebug() << "updateUnderMouse: found edge";
-            }
-            else
-            {
-                tileSelector.reset();
-            }
-        }
-        forceRedraw();
-        break;
-    }
-}
-
-void TilingMaker::startMouseInteraction(QPointF spt, enum Qt::MouseButton mouseButton)
-{
-    Q_ASSERT(tilingMakerMouseMode == TM_NO_MOUSE_MODE);
-    
-    TileSelectorPtr sel = findSelection(spt);
-    if(sel)
-    {
-        // do this first
-        wAccum.clear();
-        mouse_interaction.reset();
-
-        switch (mouseButton)
-        {
-        case Qt::LeftButton:
-            qDebug().noquote() << "left button selection:" << sel->getTypeString();
-            switch (sel->getType())
-            {
-            case VERTEX:
-            case FEAT_CENTER:
-                mouse_interaction = make_shared<JoinPoint>(this,sel, spt);
-                break;
-            case MID_POINT:
-                mouse_interaction = make_shared<JoinMidPoint>(this,sel, spt);
-                break;
-            case EDGE:
-                mouse_interaction = make_shared<JoinEdge>(this, sel, spt);
-                break;
-            case INTERIOR:
-                setCurrentPlacedTile(sel->getPlacedTile());
-                mouse_interaction = make_shared<MovePolygon>(this, sel, spt);
-                break;
-            case ARC_POINT:
-                break;
-            case SCREEN_POINT:
-                break;
-            }
-            break;
-
-        case Qt::MiddleButton:
-            mouse_interaction = make_shared<DrawTranslation>(this, sel, spt, layerPen);
-            break;
-
-        case Qt::RightButton:
-            qDebug().noquote() << "right button selection:" << sel->getTypeString();
-            switch (sel->getType())
-            {
-            case VERTEX:
-            case FEAT_CENTER:
-                mouse_interaction = make_shared<CopyJoinPoint>(this, sel, spt);
-                break;
-            case MID_POINT:
-                mouse_interaction = make_shared<CopyJoinMidPoint>(this, sel, spt);
-                break;
-            case EDGE:
-                mouse_interaction = make_shared<CopyJoinEdge>(this, sel, spt);
-                break;
-            case INTERIOR:
-            {
-                clickedSelector = sel;    // save
-                clickedSpt      = spt;    // save
-                PlacedTilePtr tile = sel->getPlacedTile();
-                QMenu myMenu;
-                myMenu.addSection("Options");
-                myMenu.addSeparator();
-                myMenu.addAction("Copy/Move", this, &TilingMaker::slot_copyMoveTile);
-                myMenu.addAction("Edit Tile", this, &TilingMaker::slot_editTile);
-                if (isIncluded(tile))
-                {
-                    myMenu.addAction("Exclude", this, &TilingMaker::slot_excludeTile);
-                }
-                else
-                {
-                    myMenu.addAction("Include", this, &TilingMaker::slot_includeTile);
-                }
-                myMenu.addAction("Delete", this, &TilingMaker::slot_deleteTile);
-                myMenu.addAction("Uniquify", this, &TilingMaker::slot_uniquifyTile);
-                if (tile->getTile()->isRegular())
-                {
-                    myMenu.addAction("Make irregular", this, &TilingMaker::slot_convertTile);
-                }
-                else
-                {
-                    myMenu.addAction("Make regular", this, &TilingMaker::slot_convertTile);
-                }
-                myMenu.exec(view->mapToGlobal(spt.toPoint()));
-            }
-                break;
-
-            case ARC_POINT:
-            case SCREEN_POINT:
-                break;
-            }
-            break;
-        default:
-            break;
-        }
-    }
-    else
-    {
-        resetCurrentPlacedTile();
-    }
-}
-
-void TilingMaker::setMousePos(QPointF spt)
-{
-    Qt::KeyboardModifiers km = QApplication::keyboardModifiers();
-    if (km == Qt::SHIFT)
-    {
-        sMousePos.setX(spt.x());
-    }
-    else if (km == Qt::CTRL)
-    {
-        sMousePos.setY(spt.y());
-    }
-    else
-    {
-        sMousePos = spt;
-    }
-}
-
-void  TilingMaker::drawMouseInteraction(GeoGraphics * g2d)
-{
-    if (mouse_interaction)
-    {
-        mouse_interaction->draw(g2d);
-    }
-}
-
-
-void TilingMaker::setTileEditPoint(QPointF pt)
-{
-    tileEditPoint = pt;
-    qDebug() << "tile edit point =" << pt;
-    forceRedraw();
-}
-
-bool TilingMaker::accumHasPoint(QPointF wpt)
-{
-    QPointF newpoint = worldToScreen(wpt);
-    for (auto it = wAccum.begin(); it != wAccum.end(); it++)
-    {
-        EdgePtr edge = *it;
-        QPointF existing = worldToScreen(edge->v1->pt);
-        if (Point::isNear(newpoint,existing))
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
-QString TilingMaker::getStatus()
-{
-    QString s = sTilingMakerMouseMode[tilingMakerMouseMode];
-    if (mouse_interaction)
-    {
-        s += " ";
-        s += mouse_interaction->desc;
-    }
-    s+= QString("  in_tiling: %1  all: %2").arg(in_tiling.count()).arg(allPlacedTiles.count());
-    return s;
-}
-
 
 void TilingMaker::slot_flatenCurve()
 {
-    EdgePtr ep = tileSelector->getModelEdge();
+    auto tsel  = tmView->getTileSelector();
+    EdgePtr ep = tsel->getModelEdge();
     ep->resetCurve();
     forceRedraw();
     qDebug() << "edge converted to LINE";
-    pushTileToPrototypeMaker(PROM_TILE_EDGES_CHANGED,tileSelector->getPlacedTile()->getTile());
+    pushTileToPrototypeMaker(PROM_TILE_EDGES_CHANGED,tsel->getPlacedTile()->getTile());
 }
 
 void TilingMaker::slot_makeConvex()
 {
-    EdgePtr ep = tileSelector->getModelEdge();
+    auto tsel  = tmView->getTileSelector();
+    EdgePtr ep = tsel->getModelEdge();
     ep->setConvex(true);
     forceRedraw();
-    pushTileToPrototypeMaker(PROM_TILE_EDGES_CHANGED,tileSelector->getPlacedTile()->getTile());
+    pushTileToPrototypeMaker(PROM_TILE_EDGES_CHANGED,tsel->getPlacedTile()->getTile());
 }
 
 void TilingMaker::slot_makeConcave()
 {
-    EdgePtr ep = tileSelector->getModelEdge();
+    auto tsel  = tmView->getTileSelector();
+    EdgePtr ep = tsel->getModelEdge();
     ep->setConvex(false);
     forceRedraw();
-    pushTileToPrototypeMaker(PROM_TILE_EDGES_CHANGED,tileSelector->getPlacedTile()->getTile());
+    pushTileToPrototypeMaker(PROM_TILE_EDGES_CHANGED,tsel->getPlacedTile()->getTile());
 }
 
 void TilingMaker::slot_moveArcCenter()
 {
-    mouse_interaction = make_shared<EditEdge>(this,tileSelector,QPointF());
-    pushTileToPrototypeMaker(PROM_TILE_EDGES_CHANGED,tileSelector->getPlacedTile()->getTile());
+    auto tsel  = tmView->getTileSelector();
+    tmView->setMouseInteraction(make_shared<EditEdge>(tsel,QPointF()));
+    pushTileToPrototypeMaker(PROM_TILE_EDGES_CHANGED,tsel->getPlacedTile()->getTile());
 }
 
 void TilingMaker::slot_editMagnitude()
 {
-    mouse_interaction.reset();
-    DlgMagnitude dlg(tileSelector);
+    auto tsel  = tmView->getTileSelector();
+    tmView->resetMouseInteraction();
+    DlgMagnitude dlg(tsel);
     connect(&dlg, &DlgMagnitude::sig_magnitudeChanged, this, &TilingMaker::forceRedraw);
     dlg.exec();
-    pushTileToPrototypeMaker(PROM_TILE_EDGES_CHANGED,tileSelector->getPlacedTile()->getTile());
-}
-
-//////////////////////////////////////////////////////////////////
-///
-/// Layer slots
-///
-//////////////////////////////////////////////////////////////////
-
-void TilingMaker::slot_setCenter(QPointF spt)
-{
-    if (!view->isActiveLayer(this)) return;
-
-    if (view->getKbdMode(KBD_MODE_XFORM_VIEW) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
-    {
-        setCenterScreenUnits(spt);
-    }
-    else if (view->getKbdMode(KBD_MODE_XFORM_TILING))
-    {
-
-    }
-    else if (view->getKbdMode(KBD_MODE_XFORM_UNIQUE_TILE))
-    {
-
-    }
-    else if (view->getKbdMode(KBD_MODE_XFORM_PLACED_TILE))
-    {
-
-    }
-}
-
-void TilingMaker::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
-{
-    if (!view->isActiveLayer(this)) return;
-
-    if (config->getViewerType() != VIEW_TILING_MAKER)
-        return;
-
-    sMousePos = spt;
-
-    if (debugMouse) qDebug() << "slot_mousePressed:" << sMousePos << screenToWorld(sMousePos);
-    
-    TileSelectorPtr sel;
-
-    switch (tilingMakerMouseMode)
-    {
-    case TM_NO_MOUSE_MODE:
-        if (view->getMouseMode(MOUSE_MODE_NONE))
-        {
-            startMouseInteraction(sMousePos,btn);
-        }
-        break;
-
-    case TM_COPY_MODE:
-        sel = findTileUnderMouse();
-        if (sel)
-            mouse_interaction = make_shared<CopyMovePolygon>(this, sel, sMousePos);
-        break;
-
-    case TM_DELETE_MODE:
-        deleteTile( findTileUnderMouse() );
-        setTilingMakerMouseMode(TM_NO_MOUSE_MODE);
-        break;
-
-    case TM_TRANSLATION_VECTOR_MODE:
-        sel = findSelection(sMousePos);
-        if (sel)
-            mouse_interaction = make_shared<DrawTranslation>(this, sel, sMousePos, layerPen);
-        break;
-
-    case TM_DRAW_POLY_MODE:
-        mouse_interaction = make_shared<CreatePolygon>(this, sMousePos);
-        break;
-
-    case TM_INCLUSION_MODE:
-        toggleInclusion(findTileUnderMouse());
-        break;
-
-    case TM_MEASURE_MODE:
-    {
-        Qt::KeyboardModifiers kms =  QApplication::keyboardModifiers();
-        if (kms == (Qt::CTRL | Qt::SHIFT))
-        {
-            TileSelectorPtr nothingToIgnore;
-            sel = findEdge(spt,nothingToIgnore);
-            if (sel)
-            {
-                // FIXME  - this looks like incomplete code
-                QLineF line = sel->getPlacedLine();
-                qreal dist = Point::distToLine(screenToWorld(spt),line);
-                qDebug() << "dist" << dist << "line" << line;
-                mouse_interaction = make_shared<Measure>(this, sMousePos,sel);
-            }
-        }
-        else
-        {
-            mouse_interaction = make_shared<Measure>(this, sMousePos,sel);
-        }
-        break;
-    }
-
-    case TM_POSITION_MODE:
-        setCenterScreenUnits(spt);
-        break;
-
-    case TM_EDIT_TILE_MODE:
-        sel = findSelection(spt);
-        if (sel)
-        {
-            if (!editPlacedTile && sel->getType() == INTERIOR)
-            {
-                editPlacedTile = sel->getPlacedTile();
-            }
-            else if (editPlacedTile && sel->getType() == VERTEX )
-            {
-                mouse_interaction = make_shared<EditTile>(this, sel, editPlacedTile, sMousePos);
-            }
-        }
-        break;
-    case TM_EDGE_CURVE_MODE:
-        sel = findArcPoint(spt);
-        if (sel)
-        {
-            tileSelector = sel;
-            QMenu myMenu;
-            myMenu.addAction("Use Cursor to change curve", this, SLOT(slot_moveArcCenter()));
-            myMenu.addAction("Edit Magnitude", this, SLOT(slot_editMagnitude()));
-            myMenu.exec(view->mapToGlobal(spt.toPoint()));
-        }
-        else
-        {
-            sel = findEdge(spt);
-            if (sel)
-            {
-                EdgePtr edge =  sel->getModelEdge();
-                if (edge->getType() == EDGETYPE_LINE)
-                {
-                    PlacedTilePtr ptp = sel->getPlacedTile();
-                    TilePtr tile = ptp->getTile();
-                    if (tile->isRegular())
-                    {
-                        flipTileRegularity(tile);
-                    }
-                    edge->calcArcCenter(true,false);  // default to convex
-                    qDebug() << "edge converted to curve";
-                }
-                else if (edge->getType() == EDGETYPE_CURVE)
-                {
-                    tileSelector = sel;
-                    QMenu myMenu;
-                    myMenu.addAction("Flatten Edge",  this, SLOT(slot_flatenCurve()));
-                    if (edge->isConvex())
-                        myMenu.addAction("Make Concave",  this, SLOT(slot_makeConcave()));
-                    else
-                        myMenu.addAction("Make Convex",  this, SLOT(slot_makeConvex()));
-                    myMenu.exec(view->mapToGlobal(spt.toPoint()));
-                }
-                // Methinks tilings cannot have chords only curves(arcs)
-            }
-        }
-        break;
-
-    case TM_MIRROR_X_MODE:
-        mirrorPolygonX(findTileUnderMouse());
-        break;
-
-    case TM_MIRROR_Y_MODE:
-        mirrorPolygonY(findTileUnderMouse());
-        break;
-
-    case TM_CONSTRUCTION_LINES:
-        mouse_interaction = make_shared<TilingConstructionLine>(this, sel, sMousePos);
-        break;
-
-    case TM_REFLECT_EDGE:
-        auto fsel = findTileUnderMouse();
-        if (fsel)
-        {
-            if (reflectPolygon(findTileUnderMouse()))
-            {
-                tilingMakerMouseMode = TM_NO_MOUSE_MODE;
-            }
-        }
-        break;
-    }
-
-    if (debugMouse)
-    {
-        if (mouse_interaction)
-            qDebug().noquote() << "press end:"  << mouse_interaction->desc;
-        else
-            qDebug() << "press end: no mouse_interaction";
-    }
-}
-
-void TilingMaker::slot_mouseDragged(QPointF spt)
-{
-    if (!view->isActiveLayer(this)) return;
-
-    if (config->getViewerType() != VIEW_TILING_MAKER)
-        return;
-
-    setMousePos(spt);
-
-    if (debugMouse) qDebug().noquote() << "drag" << sMousePos << screenToWorld(sMousePos)  << sTilingMakerMouseMode[tilingMakerMouseMode];
-
-    updateUnderMouse(sMousePos);
-
-    switch (tilingMakerMouseMode)
-    {
-    case TM_NO_MOUSE_MODE:
-    case TM_COPY_MODE:
-    case TM_TRANSLATION_VECTOR_MODE:
-    case TM_DRAW_POLY_MODE:
-    case TM_MEASURE_MODE:
-    case TM_POSITION_MODE:
-    case TM_EDIT_TILE_MODE:
-    case TM_EDGE_CURVE_MODE:
-    case TM_CONSTRUCTION_LINES:
-        if (mouse_interaction)
-            mouse_interaction->updateDragging(sMousePos);
-        break;
-    case TM_DELETE_MODE:
-    case TM_MIRROR_X_MODE:
-    case TM_MIRROR_Y_MODE:
-    case TM_INCLUSION_MODE:
-    case TM_REFLECT_EDGE:
-        break;
-    }
-}
-
-void TilingMaker::slot_mouseTranslate(QPointF spt)
-{
-    if (!view->isActiveLayer(this)) return;
-
-    if (view->getKbdMode(KBD_MODE_XFORM_TILING))
-    {
-        QTransform T = getFrameTransform();
-        qreal scale = Transform::scalex(T);
-        QPointF mpt = spt/scale;
-        QTransform tt = QTransform::fromTranslate(mpt.x(),mpt.y());
-        for (auto placedTile : qAsConst(allPlacedTiles))
-        {
-            QTransform t = placedTile->getTransform();
-            t *= tt;
-            placedTile->setTransform(t);
-        }
-
-        pushTilingToPrototypeMaker(PROM_TILING_CHANGED);
-        forceRedraw();
-        emit sig_refreshMenu();
-    }
-    else if (view->getKbdMode(KBD_MODE_XFORM_PLACED_TILE))
-    {
-        if (!currentPlacedTile)
-            return;
-
-        QTransform T = getFrameTransform();
-        qreal scale = Transform::scalex(T);
-        QPointF mpt = spt/scale;
-        QTransform tt = QTransform::fromTranslate(mpt.x(),mpt.y());
-
-        QTransform t = currentPlacedTile->getTransform();
-        t *= tt;
-        currentPlacedTile->setTransform(t);
-
-        forceRedraw();
-        emit sig_refreshMenu();
-    }
-    else if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
-    {
-        Xform xf = getCanvasXform();
-
-        xf.setTranslateX(xf.getTranslateX() + spt.x());
-        xf.setTranslateY(xf.getTranslateY() + spt.y());
-        setCanvasXform(xf);
-    }
-    else if (view->getKbdMode(KBD_MODE_XFORM_SELECTED))
-    {
-        if (isSelected())
-        {
-            Xform xf = getCanvasXform();
-            xf.setTranslateX(xf.getTranslateX() + spt.x());
-            xf.setTranslateY(xf.getTranslateY() + spt.y());
-            setCanvasXform(xf);
-        }
-    }
-}
-
-
-void TilingMaker::slot_mouseMoved(QPointF spt)
-{
-    if (!view->isActiveLayer(this)) return;
-
-    if (config->getViewerType() != VIEW_TILING_MAKER)
-        return;
-
-    setMousePos(spt);
-
-    if (debugMouse) qDebug() << "move" << sMousePos;
-
-    updateUnderMouse(sMousePos);
-}
-
-
-void TilingMaker::slot_mouseReleased(QPointF spt)
-{
-    if (!view->isActiveLayer(this)) return;
-
-    if (config->getViewerType() != VIEW_TILING_MAKER)
-        return;
-
-    setMousePos(spt);
-
-    if (debugMouse) qDebug() << "release" << sMousePos << screenToWorld(sMousePos);
-
-    if (mouse_interaction)
-    {
-        mouse_interaction->endDragging(spt);
-        mouse_interaction.reset();
-    }
-    forceRedraw();
-}
-
-void TilingMaker::slot_mouseDoublePressed(QPointF spt)
-{ Q_UNUSED(spt); }
-
-void TilingMaker::slot_wheel_scale(qreal delta)
-{
-    if (!view->isActiveLayer(this)) return;
-
-    if (view->getKbdMode(KBD_MODE_XFORM_TILING))
-    {
-        qreal sc = 1.0 + delta;
-        QTransform ts;
-        ts.scale(sc,sc);
-        for (auto pplacedTile : qAsConst(allPlacedTiles))
-        {
-            QTransform t = pplacedTile->getTransform();
-            t *= ts;
-            pplacedTile->setTransform(t);
-        }
-
-        pushTilingToPrototypeMaker(PROM_TILING_CHANGED);
-        forceRedraw();
-        emit sig_refreshMenu();
-    }
-    else if (view->getKbdMode(KBD_MODE_XFORM_PLACED_TILE))
-    {
-        placedTileDeltaScale(1.0 + delta);
-    }
-    else if (view->getKbdMode(KBD_MODE_XFORM_UNIQUE_TILE))
-    {
-        uniqueTileDeltaScale(delta);
-    }
-    else if (view->getKbdMode(KBD_MODE_XFORM_VIEW) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
-    {
-        Xform xf = getCanvasXform();
-        xf.setScale(xf.getScale() * (1.0 + delta));
-        setCanvasXform(xf);
-    }
-}
-
-void TilingMaker::slot_wheel_rotate(qreal delta)
-{
-    if (!view->isActiveLayer(this)) return;
-
-    if (view->getKbdMode(KBD_MODE_XFORM_TILING))
-    {
-        QTransform tr;
-        tr.rotate(delta);
-        Xform xf(tr);
-        xf.setModelCenter(getCenterModelUnits());
-        QTransform tr2 = xf.toQTransform(QTransform());
-
-        for (auto pfp : qAsConst(allPlacedTiles))
-        {
-            QTransform t = pfp->getTransform();
-            t *= tr2;
-            pfp->setTransform(t);
-        }
-
-        pushTilingToPrototypeMaker(PROM_TILING_CHANGED);
-        forceRedraw();
-        emit sig_refreshMenu();
-    }
-    else if (view->getKbdMode(KBD_MODE_XFORM_PLACED_TILE))
-    {
-        placedTileDeltaRotate(0.5 * delta);
-    }
-    else if (view->getKbdMode(KBD_MODE_XFORM_UNIQUE_TILE))
-    {
-        uniqueTileDeltaRotate(0.5 * delta);
-    }
-    else if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
-    {
-        Xform xf = getCanvasXform();
-        xf.setRotateDegrees(xf.getRotateDegrees() + delta);
-        setCanvasXform(xf);
-    }
-    else if (view->getKbdMode(KBD_MODE_XFORM_SELECTED))
-    {
-        if (isSelected())
-        {
-            Xform xf = getCanvasXform();
-            xf.setRotateDegrees(xf.getRotateDegrees() + delta);
-            setCanvasXform(xf);
-        }
-    }
-}
-
-void TilingMaker::slot_scale(int amount)
-{
-    if (!view->isActiveLayer(this)) return;
-
-    //qDebug() << "TilingMaker::slot_scale" << amount;
-
-    if (view->getKbdMode(KBD_MODE_XFORM_PLACED_TILE))
-    {
-        placedTileDeltaScale(amount);
-        emit sig_refreshMenu();
-    }
-    else if (view->getKbdMode(KBD_MODE_XFORM_UNIQUE_TILE))
-    {
-        uniqueTileDeltaScale(amount);
-        emit sig_refreshMenu();
-    }
-    else if (view->getKbdMode(KBD_MODE_XFORM_TILING))
-    {
-        tilingDeltaScale(amount);
-        emit sig_refreshMenu();
-    }
-    else if (view->getKbdMode(KBD_MODE_XFORM_VIEW) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
-    {
-        Xform xf = getCanvasXform();
-        xf.setScale(xf.getScale() * (1.0 + static_cast<qreal>(amount)/100.0));
-        setCanvasXform(xf);
-    }
-}
-
-void TilingMaker::slot_rotate(int amount)
-{
-    if (!view->isActiveLayer(this)) return;
-
-    //qDebug() << "TilingMaker::slot_rotate" << amount;
-
-    if (view->getKbdMode(KBD_MODE_XFORM_PLACED_TILE))
-    {
-        placedTileDeltaRotate(amount);
-        emit sig_refreshMenu();
-    }
-    else if (view->getKbdMode(KBD_MODE_XFORM_UNIQUE_TILE))
-    {
-        uniqueTileDeltaRotate(amount);
-        emit sig_refreshMenu();
-    }
-    else if (view->getKbdMode(KBD_MODE_XFORM_TILING))
-    {
-        tilingDeltaRotate(amount);
-        emit sig_refreshMenu();
-    }
-    else if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
-    {
-        Xform xf = getCanvasXform();
-        xf.setRotateRadians(xf.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
-        setCanvasXform(xf);
-    }
-    else if (view->getKbdMode(KBD_MODE_XFORM_SELECTED))
-    {
-        if (isSelected())
-        {
-            Xform xf = getCanvasXform();
-            xf.setRotateRadians(xf.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
-            setCanvasXform(xf);
-        }
-    }
-}
-
-
-void TilingMaker::slot_moveX(int amount)
-{
-    if (!view->isActiveLayer(this)) return;
-
-    //qDebug() << "TilingMaker::slot_moveX" << amount;
-
-    if (view->getKbdMode(KBD_MODE_XFORM_PLACED_TILE))
-    {
-        placedTileDeltaX(amount);
-    }
-    else if (view->getKbdMode(KBD_MODE_XFORM_TILING))
-    {
-        tilingDeltaX(amount);
-    }
-    else if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
-    {
-        Xform xf = getCanvasXform();
-        xf.setTranslateX(xf.getTranslateX() + amount);
-        setCanvasXform(xf);
-    }
-    else if (view->getKbdMode(KBD_MODE_XFORM_SELECTED))
-    {
-        if (isSelected())
-        {
-            Xform xf = getCanvasXform();
-            xf.setTranslateX(xf.getTranslateX() + amount);
-            setCanvasXform(xf);
-        }
-    }
-}
-
-void TilingMaker::slot_moveY(int amount)
-{
-    if (!view->isActiveLayer(this)) return;
-
-    //qDebug() << "TilingMaker::slot_moveY" << amount;
-
-    if (view->getKbdMode(KBD_MODE_XFORM_PLACED_TILE))
-    {
-        placedTileDeltaY(amount);
-    }
-    else if (view->getKbdMode(KBD_MODE_XFORM_TILING))
-    {
-        tilingDeltaY(amount);
-    }
-    else if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
-    {
-        Xform xf = getCanvasXform();
-        xf.setTranslateY(xf.getTranslateY() + amount);
-        setCanvasXform(xf);
-    }
-    else if (view->getKbdMode(KBD_MODE_XFORM_SELECTED))
-    {
-        if (isSelected())
-        {
-            Xform xf = getCanvasXform();
-            xf.setTranslateY(xf.getTranslateY() + amount);
-            setCanvasXform(xf);
-        }
-    }
+    pushTileToPrototypeMaker(PROM_TILE_EDGES_CHANGED,tsel->getPlacedTile()->getTile());
 }
 
 //////////////////////////////////////////////////////////////////
@@ -2101,11 +1322,11 @@ bool TilingMaker::procKeyEvent(QKeyEvent * k)
     {
         // actions
         case 'A': addRegularPolygon(); break;
-        case 'C': addTileSelectionPointer(findTileUnderMouse()); break;
-        case 'D': deleteTile(findTileUnderMouse()); break;
+        case 'C': addTileSelectionPointer(tmView->findTileUnderMouse()); break;
+        case 'D': deleteTile(tmView->findTileUnderMouse()); break;
         case 'E': excludeAll(); break;
         case 'F': fillUsingTranslations(); break;
-        case 'I': toggleInclusion(findTileUnderMouse()); break;
+        case 'I': toggleInclusion(tmView->findTileUnderMouse()); break;
         case 'M': emit view->sig_raiseMenu(); break;
         case 'R': removeExcluded(); break;
         case 'Q': QApplication::quit(); break;

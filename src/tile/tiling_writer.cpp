@@ -4,7 +4,6 @@
 #include "geometry/edge.h"
 #include "geometry/transform.h"
 #include "makers/tiling_maker/tiling_maker.h"
-#include "misc/backgroundimage.h"
 #include "misc/fileservices.h"
 #include "misc/tpm_io.h"
 #include "mosaic/mosaic_writer.h"
@@ -14,6 +13,7 @@
 #include "tile/tile.h"
 #include "tile/tiling.h"
 #include "tiledpatternmaker.h"
+#include "viewers/backgroundimageview.h"
 
 using namespace pugi;
 using std::string;
@@ -100,7 +100,7 @@ bool TilingWriter::writeTilingXML()
             box.setText(QString("Saved: %1 - OK").arg(data.fileName()));
             box.exec();
 
-            auto tilingMaker = TilingMaker::getSharedInstance();
+            auto tilingMaker = TilingMaker::getInstance();
             emit tilingMaker->sig_tilingWritten(name);
             return true;
         }
@@ -210,14 +210,14 @@ void TilingWriter::writeTilingXML(QTextStream & out)
     out << "<Desc>" << tiling->getDescription() << "</Desc>" << endl;
     out << "<Auth>" << tiling->getAuthor() << "</Auth>" << endl;
 
-    BkgdImgPtr bkgd = BackgroundImage::getSharedInstance();
-    writeBackgroundImage(out,bkgd);
+    writeBackgroundImage(out);
 
     out << "</Tiling>" << endl;
 }
 
-void TilingWriter::writeBackgroundImage(QTextStream & out, BkgdImgPtr bkgd)
+void TilingWriter::writeBackgroundImage(QTextStream & out)
 {
+    auto bkgd = BackgroundImageView::getInstance();
     if (bkgd->isLoaded())
     {
         QString astring = QString("<BackgroundImage name=\"%1\">").arg(bkgd->getName());

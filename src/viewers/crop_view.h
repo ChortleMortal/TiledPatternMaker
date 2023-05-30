@@ -4,20 +4,21 @@
 
 #include "misc/layer_controller.h"
 
-typedef std::shared_ptr<class CropView>   CropViewPtr;
 typedef std::shared_ptr<class MouseEditCrop> CropMouseActionPtr;
 
 class CropMaker;
 
-class CropView : public LayerController
+class CropViewer : public LayerController
 {
 public:
-    static CropViewPtr getSharedInstance();
+    static CropViewer * getInstance();
+    static void         releaseInstance();
 
-    CropView();  // dont use this
-    ~CropView() {}
+    void    init(CropMaker * ed);
+    CropMaker * getMaker() { return cropMaker; }
 
-    void          init(CropMaker * ed);
+    void    setShowCrop(bool state) { _showCrop = state; }
+    bool    getShowCrop()           { return _showCrop; }
 
     virtual void  paint(QPainter * painter) override;
     virtual void  draw(QPainter *, QTransform t);
@@ -46,19 +47,20 @@ public slots:
     QPointF getMousePos() { return mousePos; }
 
 protected:
-    void                setMouseInteraction(CropMouseActionPtr action) { mouse_interaction = action; }
-    void                resetMouseInteraction() { mouse_interaction.reset(); }
-    CropMouseActionPtr  getMouseInteraction() { return mouse_interaction; }
 
 private:
-    static CropViewPtr  spThis;
-    QPointF             mousePos;             // used by menu
-    bool                debugMouse;
+    CropViewer();
+    ~CropViewer() {}
 
-    CropMouseActionPtr  mouse_interaction;    // used by menu
+    static CropViewer * mpThis;
+    CropMaker         * cropMaker;
+    Configuration     * config;
 
-    CropMaker          * cropMaker;
-    Configuration      * config;
+    CropMouseActionPtr mouseInteraction;   // used by menu
+    QPointF            mousePos;            // used by menu
+    bool               debugMouse;
+    bool                _showCrop;
+
 };
 
 #endif

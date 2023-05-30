@@ -20,7 +20,6 @@ class QKeyEvent;
 
 typedef std::shared_ptr<class Tiling>           TilingPtr;
 typedef std::shared_ptr<class Prototype>        ProtoPtr;
-typedef std::shared_ptr<class TilingMaker>      TilingMakerPtr;
 typedef std::shared_ptr<class TilingMouseAction>MouseActionPtr;
 typedef std::shared_ptr<class Tile>              TilePtr;
 
@@ -42,13 +41,13 @@ static QString tm_states[]
     E2STR(TM_MULTI)
 };
 
-class TilingMaker : public TilingMakerView
+class TilingMaker : public QObject
 {
     Q_OBJECT
 
 public:
-    static TilingMakerPtr  getSharedInstance();
-    TilingMaker();  // don't call this
+    static TilingMaker *  getInstance();
+    static void           releaseInstance();
 
     void        init();
 
@@ -59,7 +58,7 @@ public:
     void        select(ProtoPtr prototype);
     TilingPtr   getSelected() { return selectedTiling; }
     int         numTilings() { return tilings.size(); }
-    int         numExcluded() { return  allPlacedTiles.count() - in_tiling.count(); }
+    int         numExcluded() { return  tmView->getAllTiles().count() - tmView->getInTiling().count(); }
     void        setupMaker(TilingPtr tp);   // caution = generally use select()
 
     void        eraseTilings();
@@ -87,18 +86,13 @@ public:
     void        pushTileToPrototypeMaker(ePROM_Event event, TilePtr tile);
 
     QVector<TilePtr>   getUniqueTiles();
-    TileSelectorPtr  getCurrentSelection() { return tileSelector; }
+    TileSelectorPtr  getCurrentSelection() { return tmView->getTileSelector(); }
 
     bool        verifyTiling();
     void        deleteTile(PlacedTilePtr pf);
-    bool        accumHasPoint(QPointF wpt);
 
     eTilingMakerMouseMode getTilingMakerMouseMode();
-    QString    getStatus();
     int        getPolygonSides() { return poly_side_count; }
-
-    // Mouse interaction underway..
-    void       drawMouseInteraction(GeoGraphics * g2d);
 
     // Tile management.
     void        addNewPlacedTile(PlacedTilePtr placedTile);
@@ -106,16 +100,43 @@ public:
     void        deleteTile(TileSelectorPtr sel);
     TileSelectorPtr addTileSelectionPointer(TileSelectorPtr sel );
     void        addToTranslate(QLineF mLine);
+
     void        setCurrentPlacedTile(PlacedTilePtr pfp) { currentPlacedTile = pfp;  emit sig_current_tile(pfp); }
     void        resetCurrentPlacedTile() { currentPlacedTile.reset();  emit sig_current_tile(currentPlacedTile); }
+    PlacedTilePtr getCurrentPlacedTile() { return currentPlacedTile; }
+
     void        toggleInclusion(TileSelectorPtr sel);
-    bool        isIncluded(PlacedTilePtr pfp)  { return in_tiling.contains(pfp); }
+    bool        isIncluded(PlacedTilePtr pfp)  { return tmView->getInTiling().contains(pfp); }
     bool        procKeyEvent(QKeyEvent * k);
 
-    void        clearConstructionLines() { constructionLines.clear(); }
+    void        clearConstructionLines() { tmView->clearConstructionLines(); }
 
-    virtual void iamaLayer() override {}
-    virtual void iamaLayerController() override {}
+    void        setClickedSelector(TileSelectorPtr tsp) { clickedSelector = tsp; }
+    void        setClickedPoint(QPointF pt)             { clickedSpt      = pt; }
+
+    // global modifications to features
+    void tilingDeltaX(int delta);
+    void tilingDeltaY(int delta);
+    void tilingDeltaScale(int delta);
+    void tilingDeltaRotate(int delta);
+
+    void placedTileDeltaX(int delta);
+    void placedTileDeltaY(int delta);
+    void placedTileDeltaScale(int delta);
+    void placedTileDeltaScale(qreal scale);
+    void placedTileDeltaRotate(int delta);
+    void placedTileDeltaRotate(qreal rotate);
+
+    void uniqueTileDeltaScale(int delta);
+    void uniqueTileDeltaScale(qreal scale);
+    void uniqueTileDeltaRotate(int delta);
+    void uniqueTileDeltaRotate(qreal rotate);
+
+    // Possible user actions.
+    void copyPolygon(TileSelectorPtr sel );
+    void mirrorPolygonX(TileSelectorPtr sel);
+    void mirrorPolygonY(TileSelectorPtr sel);
+    bool reflectPolygon(TileSelectorPtr sel);
 
 signals:
     void        sig_tilingLoaded(QString name);
@@ -139,26 +160,8 @@ public slots:
     void        removeExcluded();
     void        excludeAll();
     void        clearTranslationVectors();
-    void        setTileEditPoint(QPointF pt);
 
-    virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
-    virtual void slot_mouseDragged(QPointF spt)       override;
-    virtual void slot_mouseTranslate(QPointF pt)      override;
-    virtual void slot_mouseMoved(QPointF spt)         override;
-    virtual void slot_mouseReleased(QPointF spt)      override;
-    virtual void slot_mouseDoublePressed(QPointF spt) override;
 
-    virtual void slot_setCenter(QPointF spt) override;
-
-    virtual void slot_wheel_scale(qreal delta)  override;
-    virtual void slot_wheel_rotate(qreal delta) override;
-
-    virtual void slot_scale(int amount)  override;
-    virtual void slot_rotate(int amount) override;
-    virtual void slot_moveX(int amount)  override;
-    virtual void slot_moveY(int amount)  override;
-
-protected slots:
     void slot_deleteTile();
     void slot_includeTile();
     void slot_excludeTile();
@@ -185,59 +188,35 @@ protected:
     eTMState sm_getState();
     bool     sm_askAdd();
 
-    // Mouse mode handling.
-    void setMousePos(QPointF spt);
-    void updateUnderMouse(QPointF  spt);
-
-    // Possible user actions.
-    void copyPolygon(TileSelectorPtr sel );
-    void mirrorPolygonX(TileSelectorPtr sel);
-    void mirrorPolygonY(TileSelectorPtr sel);
-    bool reflectPolygon(TileSelectorPtr sel);
-
-    // Mouse tracking.
-    TileSelectorPtr findTileUnderMouse();
-
-    // Mouse interactions.
-    void startMouseInteraction(QPointF spt, enum Qt::MouseButton mouseButton);
-
-    // global modifications to features
-    void tilingDeltaX(int delta);
-    void tilingDeltaY(int delta);
-    void tilingDeltaScale(int delta);
-    void tilingDeltaRotate(int delta);
-
-    void placedTileDeltaX(int delta);
-    void placedTileDeltaY(int delta);
-    void placedTileDeltaScale(int delta);
-    void placedTileDeltaScale(qreal scale);
-    void placedTileDeltaRotate(int delta);
-    void placedTileDeltaRotate(qreal rotate);
-
-    void uniqueTileDeltaScale(int delta);
-    void uniqueTileDeltaScale(qreal scale);
-    void uniqueTileDeltaRotate(int delta);
-    void uniqueTileDeltaRotate(qreal rotate);
+    void forceRedraw();
 
 private:
-    static TilingMakerPtr       spThis;
+    TilingMaker();
+    ~TilingMaker();
+
+    static TilingMaker *        mpThis;
+
+    TilingMakerView *           tmView;
 
     UniqueQVector<TilingPtr>    tilings;
     TilingPtr                   selectedTiling;
 
-    MouseActionPtr              mouse_interaction;
-    TileSelectorPtr           clickedSelector;
+    PlacedTilePtr               currentPlacedTile;  // current menu row selection too
+
+    eTilingMakerMouseMode       tilingMakerMouseMode;     // set by tiling designer menu
+
+    TileSelectorPtr             clickedSelector;
     QPointF                     clickedSpt;
 
     bool                        filled;                     // state - currently filled or not
     int                         poly_side_count;            // number of selected vertices when drawing polygons.
     qreal                       poly_rotation;              // regular polygon tile rotation
-    bool                        debugMouse;
 
     class ViewControl         * view;
     class PrototypeMaker      * prototypeMaker;
     class MapEditor           * maped;
     class ControlPanel        * controlPanel;
+    class Configuration       * config;
 };
 
 #endif

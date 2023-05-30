@@ -4,6 +4,7 @@
 
 #include <QPolygonF>
 #include <memory>
+#include <QDebug>
 
 typedef std::shared_ptr<class Tile>  TilePtr;
 
@@ -14,27 +15,35 @@ public:
     ExtendedBoundary(const ExtendedBoundary & other);
 
     ExtendedBoundary& operator=(const ExtendedBoundary& rhs) {
-        sides   = rhs.sides;
-        scale   = rhs.scale;
-        rotate  = rhs.rotate;
-        boundary2 = rhs.boundary2;
+        sides    = rhs.sides;
+        scale    = rhs.scale;
+        boundary = rhs.boundary;
         return *this;}
 
-    void set(const QPolygonF & p);
-    const QPolygonF & get() const;
+    const QPolygonF getPoly() const;
 
     void buildRadial();
     void buildExplicit(TilePtr tile);
 
+    void setRadial(bool radial)      { this->radial   = radial; }
+    void setSides(int sides)         { this->sides    = sides; }
+    void setScale(qreal scale)       { this->scale    = scale; }
+
+    int   getSides()    const { return sides; }
+    qreal getScale()    const { return scale; }
+
     bool equals(const ExtendedBoundary & other);
     bool isCircle() const { return sides <= 2; }
 
-    int   sides;
-    qreal scale;
-    qreal rotate;
+protected:
+    void set(const QPolygonF & p);
 
 private:
-    QPolygonF boundary2;
+    int   sides;
+    qreal scale;
+    bool  radial;
+
+    QPolygonF boundary;
 };
 
 #endif // EXTENDEDBOUNDARY_H

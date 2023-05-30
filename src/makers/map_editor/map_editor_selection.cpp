@@ -27,7 +27,7 @@ const bool debugSelection = false;
 MapEditorSelection::MapEditorSelection(MapEditorDb * db)
 {
     this->db = db;
-    meView   = MapEditorView::getSharedInstance();
+    meView   = MapEditorView::getInstance();
     config   = Configuration::getInstance();
 }
 
@@ -134,10 +134,10 @@ void  MapEditorSelection::buildEditorDB()
     }
 
     // add crop circle
-    auto crop = CropMaker::getInstance()->getActiveCrop();
+    auto crop = db->getCrop();
     if (crop && crop->getCropType() == CROP_CIRCLE)
     {
-        auto circle = crop->getCircle();
+        Circle circle = crop->getCircle();
         circles.push_back(circle);
     }
 
@@ -156,7 +156,7 @@ void  MapEditorSelection::buildEditorDB()
             // try for circle
             QPointF a;
             QPointF b;
-            int count = Utils::findLineCircleLineIntersections(c->centre, c->radius, line, a, b);
+            int count = Utils::findLineCircleLineIntersections(c.centre, c.radius, line, a, b);
             if (count == 1)
             {
                 // this is a tangent line
@@ -245,7 +245,7 @@ void MapEditorSelection::buildMotifDB(DesignElementPtr delp)
     if (db->showBoundaries)
     {
         // add points from ext boundary
-        const QPolygonF & rextBoundary = eb.get();
+        const QPolygonF & rextBoundary = eb.getPoly();
         QPolygonF extBoundary  = placement.map(rextBoundary);
 
         if (extBoundary.size())
@@ -327,7 +327,7 @@ void MapEditorSelection::buildMotifDB(DesignElementPtr delp)
         // add external boundary circle
         if (eb.isCircle())
         {
-            auto c = make_shared<Circle>(QPointF(0,0), eb.scale);
+            Circle c(QPointF(0,0), eb.getScale());
             circles.push_back(c);
         }
     }
@@ -438,7 +438,7 @@ SelectionSet  MapEditorSelection::findSelectionsUsingDB(const QPointF & spt)
             const ExtendedBoundary & eb = motif->getExtendedBoundary();
             if (eb.isCircle())
             {
-                qreal bscale    = eb.scale;
+                qreal bscale    = eb.getScale();
                 qreal scale     = Transform::scalex(meView->viewT) * bscale;
                 qreal radius    = 1.0 * scale;
                 QPointF center  = QPointF(0.0,0.0);
@@ -448,7 +448,7 @@ SelectionSet  MapEditorSelection::findSelectionsUsingDB(const QPointF & spt)
                 QPointF a;
                 QPointF b;
                 QLineF line(center, spt); // line from center
-                auto c = make_shared<Circle>(center,bscale);
+                Circle c(center,bscale);
                 int count = Utils::findLineCircleLineIntersections(scenter,radius,line,a,b);
 
                 if (count == 1)
@@ -646,7 +646,7 @@ bool MapEditorSelection::insideBoundary(QPointF wpt)
     const ExtendedBoundary & eb = motif->getExtendedBoundary();
     if (eb.isCircle())
     {
-        qreal radius = eb.scale;
+        qreal radius = eb.getScale();
         QGraphicsEllipseItem circle(-radius,-radius,radius * 2.0, radius * 2.0);
         if (circle.contains(wpt))
         {
@@ -654,7 +654,7 @@ bool MapEditorSelection::insideBoundary(QPointF wpt)
         }
     }
 
-    QPolygonF boundary = eb.get();
+    QPolygonF boundary = eb.getPoly();
     if (boundary.size())
     {
         QPointF center = tilep->getCenter();
@@ -688,11 +688,11 @@ MapSelectionPtr MapEditorSelection::findConstructionCircle(const QPointF & spt)
     // if pt is in more than one circle, closes to centre is selected
     MapSelectionPtr sel;
 
-    QVector<CirclePtr> selected;
+    QVector<Circle> selected;
     for (auto & c2 : db->constructionCircles)
     {
-        QPointF center = meView->viewT.map(c2->centre);
-        qreal radius   = Transform::scalex(meView->viewT) * c2->radius;
+        QPointF center = meView->viewT.map(c2.centre);
+        qreal radius   = Transform::scalex(meView->viewT) * c2.radius;
         QGraphicsEllipseItem gcircle(center.x()-radius,center.y()-radius, radius * 2.0, radius * 2.0);
         if (gcircle.contains(spt))
         {
@@ -718,24 +718,24 @@ MapSelectionPtr MapEditorSelection::findConstructionCircle(const QPointF & spt)
     qreal closestDist = 1000000.0;
     for (auto & c4 : selected)
     {
-        QPointF center = meView->viewT.map(c4->centre);
-        c4->tmpDist2   = Point::dist2(spt,center);
-        if (c4->tmpDist2 < closestDist)
+        QPointF center = meView->viewT.map(c4.centre);
+        c4.tmpDist2   = Point::dist2(spt,center);
+        if (c4.tmpDist2 < closestDist)
         {
-            closestDist = c4->tmpDist2;
+            closestDist = c4.tmpDist2;
         }
     }
 
     // if there is more than one (i.e. concentric circles - take the smallest radius)
-    CirclePtr c;
+    Circle c;
     qreal smallestRadius = 1000000.0;
     for (auto & c4 : selected)
     {
-        if (Loose::equals(c4->tmpDist2,closestDist))
+        if (Loose::equals(c4.tmpDist2,closestDist))
         {
-            if (c4->radius < smallestRadius)
+            if (c4.radius < smallestRadius)
             {
-                smallestRadius = c4->radius;
+                smallestRadius = c4.radius;
                 c = c4;
             }
         }

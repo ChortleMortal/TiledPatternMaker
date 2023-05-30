@@ -8,7 +8,7 @@
 #include "widgets/layout_sliderset.h"
 #include "settings/configuration.h"
 #include "panels/panel.h"
-#include "viewers/grid.h"
+#include "viewers/grid_view.h"
 
 page_grid:: page_grid(ControlPanel * cpanel)  : panel_page(cpanel,"Grid")
 {
@@ -264,7 +264,7 @@ void page_grid::slot_gridAngleChanged(qreal angle)
 void page_grid::slot_zValueChanged(int value)
 {
     config->gridZLevel = value;
-    auto grid = Grid::getSharedInstance();
+    auto grid = GridView::getInstance();
     grid->setZValue(value);
     emit sig_refreshView();
 }

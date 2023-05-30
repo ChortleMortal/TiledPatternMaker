@@ -13,6 +13,12 @@ struct bkgdEPolyColor
     QColor    color;
 };
 
+
+///
+///  Tile Colors are stored in the tiling XML not the Mosaic XML
+///
+
+
 class TileColors : public Style
 {
 public:

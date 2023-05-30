@@ -212,9 +212,9 @@ ThickEditor::ThickEditor(Thick * thick, AQTableWidget * table) : ColoredEditor(t
     connect(width_slider,         &SliderSet::valueChanged, this, &ThickEditor::slot_widthChanged);
     connect(outline_width_slider, &SliderSet::valueChanged, this, &ThickEditor::slot_outlineWidthChanged);
     connect(outline_color_button, &QPushButton::clicked,    this, &ThickEditor::slot_outlineColor);
-    connect(join_style, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [=]()
+    connect(join_style, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [=,this]
             { thick->setJoinStyle(static_cast<Qt::PenJoinStyle>(join_style->currentData().toInt())); emit sig_refreshView(); } );
-    connect(cap_style,  QOverload<int>::of(&QComboBox::currentIndexChanged), this, [=]()
+    connect(cap_style,  QOverload<int>::of(&QComboBox::currentIndexChanged), this, [=,this]
             { thick->setCapStyle(static_cast<Qt::PenCapStyle>(cap_style->currentData().toInt())); emit sig_refreshView(); } );
 }
 
@@ -335,7 +335,7 @@ void FilledEditor::displayParms()
 
     int index = algoBox->findData(algo);
     algoBox->setCurrentIndex(index);
-    connect(algoBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [=](int index){ slot_algo(index);} );
+    connect(algoBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index){ slot_algo(index);} );
 
     switch (algo)
     {
@@ -499,7 +499,7 @@ void FilledEditor::slot_mousePressed(QPointF spt, Qt::MouseButton btn)
 {
     Q_UNUSED(btn);
 
-    auto motifView = MotifView::getSharedInstance();
+    auto motifView = MotifView::getInstance();
     QPointF mpt = motifView->screenToWorld(spt);
     qDebug() << "FilledEditor" << spt << mpt;
 

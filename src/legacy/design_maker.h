@@ -15,7 +15,7 @@ class DesignMaker : public QObject
 
 public:
     static DesignMaker * getInstance();
-    static void            releaseInstance();
+    static void          releaseInstance();
 
     // designs
     void                addDesign(DesignPtr d);

@@ -28,7 +28,7 @@ public:
     static qreal   rotation(QTransform T)   { return qAtan2(T.m12(), T.m11()); }    // radians
     static qreal   transx(QTransform T)     { return T.m31(); }
     static qreal   transy(QTransform T)     { return T.m32(); }
-    static QPointF trans(QTransform T)      { return QPointF(transx(T),transy(T)); }
+    static QPointF trans(QTransform T)      { return QPointF(T.m31(),T.m32()); }
 
     static QString toString(QTransform t);
     static QString toInfoString(QTransform t, int decimals = 6);

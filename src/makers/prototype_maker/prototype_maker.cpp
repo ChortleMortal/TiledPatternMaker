@@ -26,7 +26,6 @@
 #include "tile/tile.h"
 #include "tile/tiling.h"
 #include "tiledpatternmaker.h"
-#include "viewers/view.h"
 #include "viewers/viewcontrol.h"
 
 using std::make_shared;
@@ -71,6 +70,15 @@ PrototypeMaker * PrototypeMaker::getInstance()
     return mpThis;
 }
 
+void PrototypeMaker::releaseInstance()
+{
+    if (mpThis != nullptr)
+    {
+        delete mpThis;
+        mpThis = nullptr;
+    }
+}
+
 PrototypeMaker::PrototypeMaker()
 {
 }
@@ -79,7 +87,7 @@ void PrototypeMaker::init()
 {
     config          = Configuration::getInstance();
     vcontrol        = ViewControl::getInstance();
-    tilingMaker     = TilingMaker::getSharedInstance();
+    tilingMaker     = TilingMaker::getInstance();
     mosaicMaker     = MosaicMaker::getInstance();
     propagate       = true;
 }
@@ -355,6 +363,7 @@ void PrototypeMaker::sm_takeUp(const TilingPtr & tiling, ePROM_Event event, cons
                 motif->resetMotifMaps();
                 motif->setMotifScale(tile->getScale());
                 motif->setMotifRotate(tile->getRotation());
+                motif->createExtendedBoundary(tile);
                 sm_resetMaps();
 
                 if (propagate)
@@ -421,9 +430,11 @@ void PrototypeMaker::sm_takeUp(const TilingPtr & tiling, ePROM_Event event, cons
         }
         else
         {
-            auto proto = protoData.getSelectedPrototype();
+            auto protos = protoData.getPrototypes();
+            auto proto  = protoData.getSelectedPrototype();
             proto->wipeoutProtoMap();
             recreatePrototypeFromTiling(tiling,proto);
+            protoData.setPrototypes(protos);          // rebuilds data
             protoData.select(MVD_DELEM,proto,false);  // this updates the menu buttons,etc.
             protoData.select(MVD_PROTO,proto,false);  // this updates the menu buttons,etc.
             if (propagate)
@@ -523,8 +534,10 @@ bool PrototypeMaker::duplicateDesignElement()
     }
 
     // rebuild prototype
+    auto protos = protoData.getPrototypes();
     auto proto = protoData.getSelectedPrototype();
     recreatePrototypeFromTiling(tiling,proto);
+    protoData.setPrototypes(protos);    //  rebuilds data
 
     return true;
 }

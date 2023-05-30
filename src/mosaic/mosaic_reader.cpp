@@ -60,7 +60,7 @@ MosaicReader::MosaicReader() : MosaicReaderBase()
     _width        = DEFAULT_WIDTH;
     _height       = DEFAULT_HEIGHT;
     _version      = 0;
-    _debug        = true;
+    _debug        = false;
     _cleanseLevel = 0;
     view          = ViewControl::getInstance();
 }
@@ -277,7 +277,7 @@ void MosaicReader::processVector(xml_node & node)
 
     if (_crop)
     {
-        _mosaic->initCrop(_crop);
+        _mosaic->setCrop(_crop);
     }
 
     if (_cleanseLevel > 0)
@@ -1088,7 +1088,7 @@ QRectF  MosaicReader::getRectangle(xml_node node)
     return QRectF(x.toDouble(),y.toDouble(),width.toDouble(),height.toDouble());
 }
 
-CirclePtr  MosaicReader::getCircle(xml_node node)
+Circle MosaicReader::getCircle(xml_node node)
 {
     QString x,y,radius;
 
@@ -1098,7 +1098,7 @@ CirclePtr  MosaicReader::getCircle(xml_node node)
     y = n.child_value();
     n = node.child("radius");
     radius = n.child_value();
-    return make_shared<Circle>(QPointF(x.toDouble(),y.toDouble()),radius.toDouble());
+    return Circle(QPointF(x.toDouble(),y.toDouble()),radius.toDouble());
 }
 
 ProtoPtr MosaicReader::getPrototype(xml_node & node)
@@ -1325,7 +1325,7 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
     for (auto & del : qAsConst(designElements))
     {
         MotifPtr motif = del->getMotif();
-        TilePtr tile   = del->getTile();
+        TilePtr  tile  = del->getTile();
         QPolygonF poly = tile->getPolygon();
 
         if (motif->isExplicit())
@@ -1337,9 +1337,8 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
                 // already has a map
                 auto exp = std::dynamic_pointer_cast<ExplicitMapMotif>(motif);
                 exp->setup(tile);
-                motif->setMotifBoundary(poly);
-                ExtendedBoundary & eb = exp->getRWExtendedBoundary();
-                eb.set(poly);
+                exp->setMotifBoundary(poly);
+                exp->createExtendedBoundary(tile);
             }   break;
 
             case MOTIF_TYPE_IRREGULAR_NO_MAP:
@@ -1347,8 +1346,7 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
                 auto irr = std::dynamic_pointer_cast<IrregularMotif>(motif);
                 irr->setup(tile);
                 irr->setMotifBoundary(poly);
-                ExtendedBoundary & eb = irr->getRWExtendedBoundary();
-                eb.set(poly);
+                irr->createExtendedBoundary(tile);
             }   break;
 
             case MOTIF_TYPE_INFERRED:
@@ -1357,8 +1355,7 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
                 infer->setup(tile);
                 infer->setupInfer(proto);
                 infer->setMotifBoundary(poly);
-                ExtendedBoundary & eb = infer->getRWExtendedBoundary();
-                eb.set(poly);
+                infer->createExtendedBoundary(tile);
             }   break;
 
             case MOTIF_TYPE_IRREGULAR_ROSETTE:
@@ -1366,8 +1363,7 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
                 auto rose = std::dynamic_pointer_cast<IrregularRosette>(motif);
                 rose->setup(tile);
                 rose->setMotifBoundary(poly);
-                ExtendedBoundary & eb = rose->getRWExtendedBoundary();
-                eb.set(poly);
+                rose->createExtendedBoundary(tile);
             }   break;
 
             case MOTIF_TYPE_HOURGLASS:
@@ -1375,8 +1371,7 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
                 auto hour = std::dynamic_pointer_cast<HourglassMotif>(motif);
                 hour->setup(tile);
                 hour->setMotifBoundary(poly);
-                ExtendedBoundary & eb = hour->getRWExtendedBoundary();
-                eb.set(poly);
+                hour->createExtendedBoundary(tile);
             }   break;
 
             case MOTIF_TYPE_INTERSECT:
@@ -1384,8 +1379,7 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
                 auto expl = std::dynamic_pointer_cast<IntersectMotif>(motif);
                 expl->setup(tile);
                 expl->setMotifBoundary(poly);
-                ExtendedBoundary & eb = expl->getRWExtendedBoundary();
-                eb.set(poly);
+                expl->createExtendedBoundary(tile);
             }   break;
 
             case MOTIF_TYPE_IRREGULAR_STAR:
@@ -1393,8 +1387,7 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
                 auto star = std::dynamic_pointer_cast<IrregularStar>(motif);
                 star->setup(tile);
                 star->setMotifBoundary(poly);
-                ExtendedBoundary & eb = star->getRWExtendedBoundary();
-                eb.set(poly);
+                star->createExtendedBoundary(tile);
             }   break;
 
             case MOTIF_TYPE_EXPLCIT_TILE:
@@ -1402,8 +1395,7 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
                 auto etile = std::dynamic_pointer_cast<TileMotif>(motif);
                 etile->setup(tile);
                 etile->setMotifBoundary(poly);
-                ExtendedBoundary & eb = etile->getRWExtendedBoundary();
-                eb.set(poly);
+                etile->createExtendedBoundary(tile);
             }   break;
 
             case MOTIF_TYPE_GIRIH:
@@ -1411,12 +1403,11 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
                 auto girih = std::dynamic_pointer_cast<GirihMotif>(motif);
                 girih->setup(tile);
                 girih->setMotifBoundary(poly);
-                ExtendedBoundary & eb = girih->getRWExtendedBoundary();
-                eb.set(poly);
+                girih->createExtendedBoundary(tile);
             }   break;
 
             default:
-                qFatal("Unxpected explicit type");
+                qWarning("Unxpected explicit type");
             }
         }
     }
@@ -1493,14 +1484,14 @@ void MosaicReader::getMotifCommon(xml_node & node, MotifPtr motif, int tile_side
     {
         str = node.child_value("boundarySides");
         int bsides = str.toInt();
-        eb.sides = bsides;
+        eb.setSides(bsides);
     }
 
     if (node.child("boundaryScale"))
     {
         str = node.child_value("boundaryScale");
         qreal bscale = str.toDouble();
-        eb.scale = bscale;
+        eb.setScale(bscale);
     }
 
     if (motif->isRadial() || _version >= 13)
@@ -1708,7 +1699,7 @@ StarPtr MosaicReader::getStar(xml_node & node, int tile_sides)
     setStarReference(node,star);
 
     auto & eb = star->getRWExtendedBoundary();
-    eb.sides = tile_sides;      // default
+    eb.setSides(tile_sides);      // default
 
     getMotifCommon(node,star,tile_sides);
 
@@ -1774,7 +1765,7 @@ ExtStarPtr  MosaicReader::getExtendedStar(xml_node & node, int tile_sides)
     extender.setConnectBoundaryVertices(connectBoundaryVertices);
 
     auto & eb = star->getRWExtendedBoundary();
-    eb.sides = tile_sides;      // default
+    eb.setSides(tile_sides);      // default
 
     getMotifCommon(node,star,tile_sides);
 
@@ -1809,7 +1800,7 @@ RosettePtr MosaicReader::getRosette(xml_node & node, int tile_sides)
     RosettePtr rosette = make_shared<Rosette>(n, q, s, k);
 
     auto & eb = rosette->getRWExtendedBoundary();
-    eb.sides = tile_sides;      // default
+    eb.setSides(tile_sides);      // default
 
     getMotifCommon(node,rosette,tile_sides);
 
@@ -1880,7 +1871,7 @@ ExtRosettePtr  MosaicReader::getExtendedRosette(xml_node & node, int tile_sides)
     extender.setConnectBoundaryVertices(connectBoundaryVertices);
 
     auto & eb = rosette->getRWExtendedBoundary();
-    eb.sides = tile_sides;      // default
+    eb.setSides(tile_sides);      // default
 
     getMotifCommon(node,rosette,tile_sides);
     return rosette;
@@ -1955,7 +1946,7 @@ RosetteConnectPtr MosaicReader::getRosetteConnect(xml_node & node, int tile_side
                                           rp->getS(),
                                           rp->getK());
         auto & eb = rcp->getRWExtendedBoundary();
-        eb.sides = tile_sides;      // default
+        eb.setSides(tile_sides);      // default
 
         getMotifCommon(child,rcp,tile_sides);
         setRosetteConnectReference(node,rcp);
@@ -2006,7 +1997,7 @@ StarConnectPtr MosaicReader::getStarConnect(xml_node & node, int tile_sides)
         scp = make_shared<StarConnect>(sp->getN(), sp->getD(), sp->getS());
 
         auto & eb = scp->getRWExtendedBoundary();
-        eb.sides = tile_sides;      // default
+        eb.setSides(tile_sides);      // default
 
         getMotifCommon(node,scp,tile_sides);
         setStarConnectReference(node,scp);
@@ -2391,7 +2382,31 @@ void MosaicReader::procCrop(xml_node & node)
 
     _crop = make_shared<Crop>();
     _crop->setRect(rect);
-    _crop->use();
+    if (_version < 15)
+    {
+        _crop->setEmbed(true);
+        _crop->setApply(true);
+    }
+    else
+    {
+        bool embed = false;
+        bool apply = false;
+        xml_attribute attr;
+        attr = node.attribute("embed");
+        if (attr)
+        {
+            QString val = attr.value();
+            embed = (val == "t") ? true : false;
+        }
+        attr = node.attribute("apply");
+        if (attr)
+        {
+            QString val = attr.value();
+            apply = (val == "t") ? true : false;
+        }
+        _crop->setEmbed(embed);
+        _crop->setApply(apply);
+    }
 }
 
 void MosaicReader::procBorderPlain(xml_node & node)

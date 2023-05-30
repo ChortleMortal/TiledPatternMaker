@@ -23,15 +23,24 @@
 #include "viewers/viewcontrol.h"
 #include "settings/configuration.h"
 
-TilingViewPtr TilingView::spThis;
+TilingView * TilingView::mpThis = nullptr;
 
-TilingViewPtr TilingView::getSharedInstance()
+TilingView * TilingView::getInstance()
 {
-    if (!spThis)
+    if (!mpThis)
     {
-        spThis = std::make_shared<TilingView>();
+        mpThis = new TilingView();
     }
-    return spThis;
+    return mpThis;
+}
+
+void TilingView::releaseInstance()
+{
+    if (mpThis != nullptr)
+    {
+        delete mpThis;
+        mpThis = nullptr;
+    }
 }
 
 TilingView::TilingView() : LayerController("TilingView")
@@ -359,3 +368,5 @@ void TilingView::slot_moveY(int amount)
         }
     }
 }
+
+

@@ -37,7 +37,7 @@
 #include "tile/tiling_manager.h"
 #include "viewers/viewcontrol.h"
 
-#define DEBUG_REFERENCES
+#undef  DEBUG_REFERENCES
 #define SUPPORT_BUGS
 #define NEIGHBOURS
 
@@ -72,7 +72,7 @@ void LegacyLoader::processTapratsVector(xml_node & node, MosaicPtr mosaic)
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
         string str = n.name();
-        qDebug() << str.c_str();
+        //qDebug() << str.c_str();
         if (str == "csk.taprats.style.Thick")
             processThick(n);
         else if (str == "csk.taprats.style.Filled")
@@ -169,7 +169,7 @@ void LegacyLoader::processInterlace(xml_node & node)
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
         string str = n.name();
-        qDebug() << str.c_str();
+        //qDebug() << str.c_str();
 
         if (str == "csk.taprats.toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf,zlevel);
@@ -211,7 +211,7 @@ void LegacyLoader::processOutline(xml_node & node)
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
         string str = n.name();
-        qDebug() << str.c_str();
+        //qDebug() << str.c_str();
 
         if (str == "csk.taprats.toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf,zlevel);
@@ -251,7 +251,7 @@ void LegacyLoader::processFilled(xml_node & node)
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
         string str = n.name();
-        qDebug() << str.c_str();
+        //qDebug() << str.c_str();
 
         if (str == "csk.taprats.toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf,zlevel);
@@ -293,7 +293,7 @@ void LegacyLoader::processPlain(xml_node & node)
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
         string str = n.name();
-        qDebug() << str.c_str();
+        //qDebug() << str.c_str();
 
         if (str == "csk.taprats.toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf,zlevel);
@@ -358,7 +358,7 @@ void LegacyLoader::processEmboss(xml_node & node)
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
     {
         string str = n.name();
-        qDebug() << str.c_str();
+        //qDebug() << str.c_str();
 
         if (str == "csk.taprats.toolkit.GeoLayer")
             procesToolkitGeoLayer(n,xf,zlevel);
@@ -463,7 +463,7 @@ void LegacyLoader::processStyleStyle(xml_node & node, ProtoPtr & proto)
     n = def.child("prototype");
     qDebug() << n.name();
     proto = getPrototype(n);
-    qDebug() << proto->getInfo();
+    qDebug().noquote() << proto->getInfo();
 }
 
 QColor LegacyLoader::processStyleColored(xml_node & node)

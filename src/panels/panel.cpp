@@ -90,17 +90,19 @@ ControlPanel::ControlPanel() : AQWidget()
 
     splash = new TPMSplash();
 
+    isShown = false;
+#if 0
     QSettings s;
     move(s.value((QString("panelPos/%1").arg(config->appInstance))).toPoint());
+#endif
 }
 
 void ControlPanel::init(TiledPatternMaker * parent)
 {
     maker   = parent;
-    closed  = false;
     view    = ViewControl::getInstance();
     mosaicMaker = MosaicMaker::getInstance();
-    tilingMaker = TilingMaker::getSharedInstance();
+    tilingMaker = TilingMaker::getInstance();
 
     exclusiveViews = true;
     updateLocked   = false;
@@ -129,27 +131,44 @@ void ControlPanel::init(TiledPatternMaker * parent)
 
 ControlPanel::~ControlPanel()
 {
+    qDebug() << "ControlPanel destructor";
     mpTimer->stop();
-
+#if 0
     if (!config->splitScreen && !closed)
     {
         QSettings s;
         s.setValue(QString("panelPos/%1").arg(config->appInstance), pos());
         closed =  true;
     }
-
+#endif
     mPages.clear();
     panelPageList->clear();
     delete panelPages;
 }
 
+void ControlPanel::showEvent(QShowEvent * event)
+{
+    if (!isShown)
+    {
+        // first time only
+        QSettings s;
+        QPoint pt = s.value((QString("panelPos/%1").arg(config->appInstance))).toPoint();
+        qDebug() << "ControlPanel::showEvent moving to:" << pt;
+        move(pt);
+        isShown = true;
+    }
+    QWidget::showEvent(event);
+}
+
 void ControlPanel::closeEvent(QCloseEvent *event)
 {
-    if (!config->splitScreen && !closed)
+    qDebug() << "ControlPanel::closeEvent";
+    if (!config->splitScreen)
     {
+        QPoint pt = pos();
         QSettings s;
-        s.setValue(QString("panelPos/%1").arg(config->appInstance), pos());
-        closed =  true;
+        s.setValue(QString("panelPos/%1").arg(config->appInstance), pt);
+        qDebug() << "ControlPanel::closeEvent pos" << pt;
     }
 
     guard->release();
@@ -723,6 +742,7 @@ void ControlPanel::slot_raise()
 
 void ControlPanel::slot_exit()
 {
+    view->close();
     qApp->exit();
 }
 

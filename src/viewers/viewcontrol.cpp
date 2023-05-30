@@ -9,7 +9,6 @@
 #include "makers/mosaic_maker/mosaic_maker.h"
 #include "makers/prototype_maker/prototype_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
-#include "misc/backgroundimage.h"
 #include "misc/layer.h"
 #include "misc/mark_x.h"
 #include "mosaic/mosaic.h"
@@ -19,9 +18,10 @@
 #include "settings/configuration.h"
 #include "style/style.h"
 #include "tile/tiling.h"
+#include "viewers/backgroundimageview.h"
 #include "viewers/border_view.h"
 #include "viewers/motif_view.h"
-#include "viewers/grid.h"
+#include "viewers/grid_view.h"
 #include "viewers/crop_view.h"
 #include "viewers/map_editor_view.h"
 #include "viewers/measure_view.h"
@@ -53,8 +53,7 @@ void ViewControl::releaseInstance()
 }
 
 ViewControl::ViewControl() : View()
-{
-}
+{}
 
 void ViewControl::init()
 {
@@ -66,15 +65,15 @@ void ViewControl::init()
     mosaicMaker     = MosaicMaker::getInstance();
     prototypeMaker  = PrototypeMaker::getInstance();
 
-    prototypeView   = PrototypeView::getSharedInstance();
-    motifView       = MotifView::getSharedInstance();
-    tilingView      = TilingView::getSharedInstance();
-    tilingMaker     = TilingMaker::getSharedInstance();
-    gridView        = Grid::getSharedInstance();
-    bkgdImageView   = BackgroundImage::getSharedInstance();
-    measureView     = MeasureView::getSharedInstance();
-    cropView        = CropView::getSharedInstance();
-    borderView      = BorderView::getSharedInstance();
+    prototypeView   = PrototypeView::getInstance();
+    motifView       = MotifView::getInstance();
+    tilingView      = TilingView::getInstance();
+    tilingMakerView = TilingMakerView::getInstance();
+    mapedView       = MapEditorView::getInstance();
+    gridView        = GridView::getInstance();
+    measureView     = MeasureView::getInstance();
+    cropViewer      = CropViewer::getInstance();
+    borderView      = BorderView::getInstance();
 
     dontPaint = false;
     disableAllViews();
@@ -83,6 +82,16 @@ void ViewControl::init()
 
 ViewControl::~ViewControl()
 {
+    BackgroundImageView::releaseInstance();
+    TilingView::releaseInstance();
+    TilingMakerView::releaseInstance();
+    PrototypeView::releaseInstance();
+    MotifView::releaseInstance();
+    MapEditorView::releaseInstance();
+    MeasureView::releaseInstance();
+    GridView::releaseInstance();
+    CropViewer::releaseInstance();
+    BorderView::getInstance();
 }
 
 void ViewControl::slot_unloadView()
@@ -109,8 +118,9 @@ void ViewControl::slot_unloadAll()
 
     removeAllImages();
     dumpRefs();
-
-    BackgroundImage::getSharedInstance()->unload();
+    
+    auto bip = BackgroundImageView::getInstance();
+    bip->unload();
 
     designMaker->unload();
     dumpRefs();
@@ -198,10 +208,13 @@ void ViewControl::refreshView()
     setupViewers();
 
     // background image
-    if (bkgdImageView->isLoaded())
+    auto bip = BackgroundImageView::getInstance();
     {
-        qDebug() << "adding image" << bkgdImageView->getName();
-        addLayer(bkgdImageView);
+        if (bip->isLoaded())
+        {
+            qDebug() << "adding image" << bip->getName();
+            addLayer(bip);
+        }
     }
 
     // other images
@@ -215,7 +228,7 @@ void ViewControl::refreshView()
     {
         if (config->gridUnits == GRID_UNITS_TILE)
         {
-            gridView->setCanvasXform(getCurrentXform2());
+            gridView->setCanvasXform(getCurrentXform());
         }
         else
         {
@@ -244,25 +257,22 @@ void ViewControl::refreshView()
     }
 
     // crops
-    bool found = false;
+#if 0
     auto mosaic = mosaicMaker->getMosaic();
     if (mosaic)
     {
         auto crop = mosaic->getCrop();
         if (crop)
         {
-            addLayer(cropView);
-            found = true;
+            addLayer(cropViewer);
         }
     }
-    if (!found)
+#else
+    if (cropViewer->getShowCrop())
     {
-        auto crop = CropMaker::getInstance()->getActiveCrop();
-        if (crop)
-        {
-            addLayer(cropView);
-        }
+        addLayer(cropViewer);
     }
+#endif
 
     // big blue cross
     if (config->circleX)
@@ -367,7 +377,7 @@ void ViewControl::viewMosaic()
             qDebug().noquote() << "Adding Style:" << style.get() << "  " << style->getDescription();
             if (frameSettings.getModelAlignment() != M_ALIGN_MOSAIC)
             {
-                style->setCanvasXform(getCurrentXform2());
+                style->setCanvasXform(getCurrentXform());
             }
             style->createStyleRepresentation();   // important to do this here
             addLayer(style);
@@ -424,7 +434,7 @@ void ViewControl::viewTiling()
     tilingView->setTiling(tiling);
     if (frameSettings.getModelAlignment() != M_ALIGN_TILING)
     {
-        tilingView->setCanvasXform(getCurrentXform2());
+        tilingView->setCanvasXform(getCurrentXform());
     }
     addLayer(tilingView);
 
@@ -437,9 +447,9 @@ void ViewControl::viewTilingMaker()
 
     if (frameSettings.getModelAlignment() != M_ALIGN_TILING)
     {
-        tilingMaker->setCanvasXform(getCurrentXform2());
+        tilingMakerView->setCanvasXform(getCurrentXform());
     }
-    addLayer(tilingMaker);
+    addLayer(tilingMakerView);
 
     setBackgroundColor(Qt::white);
 }
@@ -448,9 +458,8 @@ void ViewControl::viewMapEditor()
 {
     qDebug() << "++ViewController::viewMapEditor";
 
-    MapedViewPtr meView = MapEditorView::getSharedInstance();
-    addLayer(meView);
-    meView->forceLayerRecalc();
+    addLayer(mapedView);
+    mapedView->forceLayerRecalc();
 
     if (config->motifBkgdWhite)
         setBackgroundColor(QColor(Qt::white));
@@ -458,7 +467,7 @@ void ViewControl::viewMapEditor()
         setBackgroundColor(QColor(Qt::black));
 }
 
-const Xform & ViewControl::getCurrentXform2()
+const Xform & ViewControl::getCurrentXform()
 {
     switch (frameSettings.getModelAlignment())
     {
@@ -494,7 +503,7 @@ const Xform & ViewControl::getCurrentXform2()
     }
 }
 
-void ViewControl::setCurrentXform2(const Xform & xf)
+void ViewControl::setCurrentXform(const Xform & xf)
 {
     switch (frameSettings.getModelAlignment())
     {

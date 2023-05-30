@@ -23,6 +23,15 @@ Cycler * Cycler::getInstance()
     return mpThis;
 }
 
+void Cycler::releaseInstance()
+{
+    if (mpThis != nullptr)
+    {
+        delete mpThis;
+        mpThis = nullptr;
+    }
+}
+
 Cycler::Cycler() : QObject()
 {
     busy        = false;
@@ -51,7 +60,6 @@ void Cycler::init(QThread * thread)
 
 Cycler::~Cycler()
 {
-    qDebug() << "Cycler destructor";
 }
 
 void Cycler::slot_startCycle(eCycleMode mode)

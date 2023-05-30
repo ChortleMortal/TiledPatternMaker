@@ -7,7 +7,6 @@
 #include "geometry/vertex.h"
 
 typedef std::shared_ptr<class Tiling>           TilingPtr;
-typedef std::shared_ptr<class BackgroundImage>  BkgdImgPtr;
 typedef std::shared_ptr<class Vertex>           VertexPtr;
 
 class EdgePoly;
@@ -20,7 +19,7 @@ public:
     bool    writeTilingXML();
     void    writeTilingXML(QTextStream & out);     // also called when writing styles
     void    writeViewSettings(QTextStream & out);
-    static void writeBackgroundImage(QTextStream & out, BkgdImgPtr bkgd);
+    static void writeBackgroundImage(QTextStream & out);
 
 protected:
     void    setEdgePoly(QTextStream & ts, EdgePoly & epoly);

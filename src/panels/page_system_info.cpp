@@ -17,7 +17,6 @@
 #include "makers/map_editor/map_editor_db.h"
 #include "makers/prototype_maker/prototype_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
-#include "misc/backgroundimage.h"
 #include "misc/border.h"
 #include "misc/qtapplog.h"
 #include "misc/tpm_io.h"
@@ -29,8 +28,10 @@
 #include "tile/tile.h"
 #include "tile/placed_tile.h"
 #include "tile/tiling.h"
+#include "viewers/backgroundimageview.h"
+#include "viewers/crop_view.h"
 #include "viewers/motif_view.h"
-#include "viewers/grid.h"
+#include "viewers/grid_view.h"
 #include "viewers/map_editor_view.h"
 #include "viewers/prototype_view.h"
 #include "viewers/viewcontrol.h"
@@ -117,7 +118,7 @@ void page_system_info::populateTree()
 
     doMapEditor();
 
-    doCropEdfitor();
+    doCropMaker();
 
     // adjust
     tree->setColumnWidth(0,201);
@@ -242,8 +243,8 @@ void page_system_info::doBackgroundImage()
     // background image
     item = new QTreeWidgetItem;
     item->setText(0,"Background Image");
-    BkgdImgPtr bip = BackgroundImage::getSharedInstance();
-    if (bip->isLoaded())
+    auto bip = BackgroundImageView::getInstance();
+    if (bip && bip->isLoaded())
         item->setText(2, bip->getName());
     else
         item->setText(2, "none");
@@ -292,21 +293,25 @@ void page_system_info::doMapEditor()
     item->setText(1,astring);
     tree->addTopLevelItem(item);
 
-    for (auto map : maps)
+    for (auto & map : maps)
     {
         populateMap(item,map,"Draw Map");
     }
 }
 
-void page_system_info::doCropEdfitor()
+void page_system_info::doCropMaker()
 {
-    // Crop editor
+    // Crop maker
+    auto viewer = CropViewer::getInstance();
     item = new QTreeWidgetItem;
-    item->setText(0,"Crop Maker");
-    auto maker = CropMaker::getInstance();
-    item->setText(2,QString("State = %1").arg(sCropMakerState[maker->getState()]));
-    crop = maker->getCrop();
-    populateCrop(item,crop);
+    item->setText(0,"Crop Viewer");
+    item->setText(2, (viewer->getShowCrop()) ? "active" : "inactive");
+    auto maker  = viewer->getMaker();
+    if (maker)
+    {
+        crop = maker->getCrop();
+        populateCrop(item,crop);
+    }
     tree->addTopLevelItem(item);
 }
 
@@ -402,8 +407,8 @@ void page_system_info::populateCrop(QTreeWidgetItem * parent, CropPtr crop)
     item->setText(1,addr(crop.get()));
     if (crop)
     {
-        QString emb = (crop->isEmbedded()) ? "Embedded" : QString();
-        QString app = (crop->isApplied())  ? "Applied" : QString();
+        QString emb = (crop->getEmbed()) ? "Embed" : QString();
+        QString app = (crop->getApply())  ? "Apply" : QString();
         item->setText(2,QString("%1 %2 %3").arg(crop->getCropString()).arg(emb).arg(app));
     }
     parent->addChild(item);
@@ -579,7 +584,7 @@ void page_system_info::populateDEL(QTreeWidgetItem * parent, DesignElementPtr de
 
     item = new QTreeWidgetItem();
     auto eb = motif->getExtendedBoundary();
-    astring = QString("scale:%1 rot:%2 escale:%3 erot:%4").arg(motif->getMotifScale()).arg(motif->getMotifRotate()).arg(eb.scale).arg(eb.rotate);
+    astring = QString("scale:%1 rot:%2 escale:%3").arg(motif->getMotifScale()).arg(motif->getMotifRotate()).arg(eb.getScale());
     item->setText(2,astring);
     item2->addChild(item);
     //tree->expandItem(item);
@@ -630,38 +635,39 @@ void page_system_info::populateTiling(QTreeWidgetItem * parent, TilingPtr tp, QS
 void page_system_info::populateViews(QTreeWidgetItem * parent)
 {
     QTreeWidgetItem * item = new QTreeWidgetItem;
-    item->setText(0,"Tiling Maker");
-    item->setText(2,Transform::toInfoString(TilingMaker::getSharedInstance()->getLayerTransform()));
+    item->setText(0,"Tiling Maker View");
+    item->setText(2,Transform::toInfoString(TilingMakerView::getInstance()->getLayerTransform()));
     parent->addChild(item);
 
     item = new QTreeWidgetItem;
     item->setText(0,"Tiling View");
-    item->setText(2,Transform::toInfoString(TilingView::getSharedInstance()->getLayerTransform()));
+    item->setText(2,Transform::toInfoString(TilingView::getInstance()->getLayerTransform()));
     parent->addChild(item);
 
     item = new QTreeWidgetItem;
-    item->setText(0,"Map Editor");
-    item->setText(2,Transform::toInfoString(MapEditor::getInstance()->getMapedView()->getLayerTransform()));
+    item->setText(0,"Map Editor View");
+    item->setText(2,Transform::toInfoString(MapEditorView::getInstance()->getLayerTransform()));
     parent->addChild(item);
 
     item = new QTreeWidgetItem;
     item->setText(0,"Prototype View");
-    item->setText(2,Transform::toInfoString(PrototypeView::getSharedInstance()->getLayerTransform()));
+    item->setText(2,Transform::toInfoString(PrototypeView::getInstance()->getLayerTransform()));
     parent->addChild(item);
 
     item = new QTreeWidgetItem;
     item->setText(0,"Motif View");
-    item->setText(2,Transform::toInfoString(MotifView::getSharedInstance()->getLayerTransform()));
+    item->setText(2,Transform::toInfoString(MotifView::getInstance()->getLayerTransform()));
     parent->addChild(item);
 
     item = new QTreeWidgetItem;
-    item->setText(0,"Background Image");
-    item->setText(2,Transform::toInfoString(BackgroundImage::getSharedInstance()->getLayerTransform()));
+    item->setText(0,"Background Image View");
+    auto bip = BackgroundImageView::getInstance();
+    item->setText(2,Transform::toInfoString(bip->getLayerTransform()));
     parent->addChild(item);
 
     item = new QTreeWidgetItem;
-    item->setText(0,"Grid");
-    item->setText(2,Transform::toInfoString(Grid::getSharedInstance()->getLayerTransform()));
+    item->setText(0,"Grid View");
+    item->setText(2,Transform::toInfoString(GridView::getInstance()->getLayerTransform()));
     parent->addChild(item);
 }
 

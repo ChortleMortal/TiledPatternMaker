@@ -72,8 +72,8 @@ NamedMotifEditor::NamedMotifEditor(QString motifName)
     setLayout(vbox);
 
     boundarySides = new SliderSet("Extended Boundary sides", 4, 1, 64);
-    boundaryScale = new DoubleSliderSet("Extended Boundary Scale", 1.0, 0.1, 4.0, 100 );
-    motifScale    = new DoubleSliderSet("Motif Scale", 1.0, 0.1, 4.0, 100 );
+    boundaryScale = new DoubleSliderSet("Extended Boundary Scale", 1.0, 0.1, 9.0, 100 );
+    motifScale    = new DoubleSliderSet("Motif Scale", 1.0, 0.1, 9.0, 100 );
     motifRotate   = new DoubleSliderSet("Motif Rotation",0.0, -360.0, 360.0, 1);
     motifSides    = new SliderSet("Motif sides", 6, 1, 64);
 
@@ -105,16 +105,16 @@ void NamedMotifEditor::motifToEditor()
         return;
 
     const ExtendedBoundary & eb = motif->getExtendedBoundary();
-    int    bs = eb.sides;
-    qreal  sc = eb.scale;
+    int    bs = eb.getSides();
+    qreal  sc = eb.getScale();
     qreal  fs = motif->getMotifScale();
     qreal  rr = motif->getMotifRotate();
     int    nn = motif->getN();
 
     blockSignals(true);
     boundarySides->setValues(bs, 1, 64);
-    boundaryScale->setValues(sc, 0.1, 4.0);
-    motifScale->setValues(fs, 0.1, 4.0);
+    boundaryScale->setValues(sc, 0.1, 9.0);
+    motifScale->setValues(fs, 0.1, 9.0);
     motifRotate->setValues(rr,-360.0,360.0);
     motifSides->setValues(nn, 1, 64);
     blockSignals(false);
@@ -135,8 +135,8 @@ void NamedMotifEditor::editorToMotif(bool doEmit)
     ExtendedBoundary & eb = motif->getRWExtendedBoundary();
 
     blockSignals(true);
-    eb.sides = bsides;
-    eb.scale = bscale;
+    eb.setSides(bsides);
+    eb.setScale(bscale);
     motif->setMotifScale(fscale);
     motif->setMotifRotate(rot);
     motif->setN(sides);

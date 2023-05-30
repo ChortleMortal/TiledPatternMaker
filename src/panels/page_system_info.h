@@ -44,7 +44,7 @@ protected:
     void doBackgroundImage();
     void doViews();
     void doMapEditor();
-    void doCropEdfitor();
+    void doCropMaker();
 
     void populateStyles(QTreeWidgetItem * parent, MosaicPtr mosaic);
     void populateBorder(QTreeWidgetItem * parent, MosaicPtr mosaic);

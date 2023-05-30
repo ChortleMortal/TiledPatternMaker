@@ -91,7 +91,7 @@ page_modelSettings::page_modelSettings(ControlPanel * apanel)  : panel_page(apan
     adjustSize();
 
     // connections
-    connect(tilingMaker.get(),  &TilingMaker::sig_tilingLoaded, this,   &page_modelSettings::dummySetup);
+    connect(tilingMaker,   &TilingMaker::sig_tilingLoaded,      this,   &page_modelSettings::dummySetup);
     connect(mosaicMaker,   &MosaicMaker::sig_mosaicLoaded,      this,   &page_modelSettings::dummySetup);
     connect(designMaker,   &DesignMaker::sig_loadedDesign,      this,   &page_modelSettings::dummySetup);
 }
@@ -620,8 +620,8 @@ void page_modelSettings::slot_boundsChanged()
     bounds.width = ds_width->value();
     frd->calculateTransform();
 
-    QVector<LayerPtr> layers = view->getActiveLayers();
-    for (LayerPtr layer : layers)
+    QVector<Layer*> layers = view->getActiveLayers();
+    for (auto layer : layers)
     {
         layer->forceLayerRecalc(true);
     }

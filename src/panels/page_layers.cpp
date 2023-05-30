@@ -46,7 +46,7 @@ page_layers:: page_layers(ControlPanel * cpanel)  : panel_page(cpanel,"Layer Inf
     layerTable->setStyleSheet("QTableWidget::item:selected { background:yellow; color:red; }");
 
     connect(layerTable, &QTableWidget::itemSelectionChanged, this, &page_layers::slot_selectLayer);
-    connect(pbDeselect, &QPushButton::clicked, this, [this]() { layerTable->setCurrentIndex(QModelIndex()); config->selectedLayer.reset(); layerTable->update();} );
+    connect(pbDeselect, &QPushButton::clicked, this, [this]() { layerTable->setCurrentIndex(QModelIndex()); config->selectedLayer = nullptr; layerTable->update();} );
 }
 
 void page_layers::onEnter()
@@ -69,9 +69,9 @@ void page_layers::populateLayers()
 {
     wlayers.clear();
     layerTable->clearContents();
-    config->selectedLayer.reset();
+    config->selectedLayer = nullptr;
 
-    QVector<LayerPtr> layers = view->getActiveLayers();
+    QVector<Layer *> layers = view->getActiveLayers();
     layerTable->setColumnCount(layers.size());
 
     int col = 0;
@@ -85,7 +85,7 @@ void page_layers::populateLayers()
     updateGeometry();
 }
 
-void page_layers::populateLayer(LayerPtr layer, int col)
+void page_layers::populateLayer(Layer * layer, int col)
 {
     // design number
     QTableWidgetItem * twi = new QTableWidgetItem(layer->getName());
@@ -257,7 +257,7 @@ void  page_layers::onRefresh()
 
     refreshLabel->setText("Refresh: ON");
 
-    QVector<LayerPtr> view_layers = view->getActiveLayers();
+    QVector<Layer*> view_layers = view->getActiveLayers();
     if (view_layers.size() != wlayers.size())
     {
         populateLayers();
@@ -266,7 +266,7 @@ void  page_layers::onRefresh()
     {
         for (int i= 0; i < wlayers.size(); i++)
         {
-            LayerPtr layer = wlayers[i].lock();
+            Layer * layer = wlayers[i];
             if (layer != view_layers[i])
             {
                 populateLayers();
@@ -279,7 +279,7 @@ void  page_layers::onRefresh()
     Q_ASSERT(layerTable->columnCount() == wlayers.size());
     for (int col = 0; col < wlayers.size(); col++)
     {
-        LayerPtr layer = getLayer(col);
+        Layer* layer = getLayer(col);
         if (!layer) continue;
 
         // design number
@@ -287,7 +287,7 @@ void  page_layers::onRefresh()
         QString str = layer->getName();
         if (layer->getName() == "Style")
         {
-            StylePtr style = std::dynamic_pointer_cast<Style>(layer);
+            Style * style = dynamic_cast<Style*>(layer);
             if (style)
             {
                 str = QString("Style: %1").arg(style->getStyleDesc());
@@ -381,7 +381,7 @@ void  page_layers::onRefresh()
         t = layer->getLayerTransform();
 
         twi = layerTable->item(LAYER_CENTER,col);
-        LayerCtrlPtr lp = std::dynamic_pointer_cast<LayerController>(layer);
+        LayerController * lp = dynamic_cast<LayerController*>(layer);
         if (lp)
         {
             center = lp->getCenterScreenUnits();
@@ -418,7 +418,7 @@ void page_layers::visibilityChanged(int col)
     Q_ASSERT(cb);
     bool visible   = cb->isChecked();
 
-    LayerPtr layer = getLayer(col);
+    auto layer = getLayer(col);
     if (!layer) return;
 
     qDebug() << "visibility changed: row=" << col << "layer=" << layer->getName();
@@ -431,7 +431,7 @@ void page_layers::zChanged(AQDoubleSpinBox * dsp, int col)
     Q_ASSERT(dsp);
     qreal z = dsp->value();
 
-    LayerPtr layer = getLayer(col);
+    auto layer = getLayer(col);
     if (!layer) return;
 
     qDebug() << "z-level changed: row=" << col << "layer=" << layer->getName();
@@ -441,7 +441,7 @@ void page_layers::zChanged(AQDoubleSpinBox * dsp, int col)
 
 void page_layers::alignPressed(int col)
 {
-    auto selected = config->selectedLayer.lock();
+    auto selected = config->selectedLayer;
     if (!selected)
         return;
 
@@ -457,7 +457,7 @@ void page_layers::alignPressed(int col)
 
 void page_layers::alignCenterPressed(int col)
 {
-    auto selected = config->selectedLayer.lock();
+    auto selected = config->selectedLayer;
     if (!selected)
         return;
 
@@ -478,7 +478,7 @@ void page_layers::slot_set_deltas(int col)
 {
     qDebug() << "page_layers::slot_set_deltas col =" << col;
 
-    LayerPtr layer = getLayer(col);
+    auto layer = getLayer(col);
     if (!layer) return;
 
     QWidget * w;
@@ -517,7 +517,7 @@ void page_layers::slot_set_center(int col)
 {
     qDebug() << "page_layers::slot_set_deltas col =" << col;
 
-    LayerPtr layer = getLayer(col);
+    auto layer = getLayer(col);
     if (!layer) return;
 
     QWidget * w;
@@ -541,7 +541,7 @@ void page_layers::slot_set_center(int col)
 
 void page_layers::clear_deltas(int col)
 {
-    LayerPtr layer = getLayer(col);
+    auto layer = getLayer(col);
     if (!layer) return;
 
     Xform xf;
@@ -551,9 +551,9 @@ void page_layers::clear_deltas(int col)
     onRefresh();
 }
 
-LayerPtr page_layers::getLayer(int col)
+Layer * page_layers::getLayer(int col)
 {
-    return wlayers[col].lock();
+    return wlayers[col];
 }
 
 void page_layers::slot_selectLayer()
@@ -563,12 +563,12 @@ void page_layers::slot_selectLayer()
     {
         int column = selected.first()->column();
         qDebug() << selected.size() << "selected layer" << column;
-        LayerPtr layer = getLayer(column);
+        auto layer = getLayer(column);
         config->selectedLayer = layer;
     }
     else
     {
         qDebug() << "no selection";
-        config->selectedLayer.reset();
+        config->selectedLayer = nullptr;
     }
 }

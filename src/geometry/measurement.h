@@ -5,8 +5,6 @@
 #include <QPointF>
 #include <memory>
 
-typedef std::shared_ptr<class Measurement>  MeasurementPtr;
-
 class Layer;
 
 class Measurement

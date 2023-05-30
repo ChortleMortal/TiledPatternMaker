@@ -147,7 +147,7 @@ QGroupBox * page_image_tools::createCycleGenBox()
 
     connect(spCycleInterval,    &SpinSet::valueChanged,    this,  &page_image_tools::slot_cycleIntervalChanged);
     connect(viewBtn,            &QPushButton::clicked,     this,  &page_image_tools::slot_cycleView);
-    connect(cycleViewBtnGroup,  &QButtonGroup::idClicked,  this,  [=](int id) { config->viewCycle = static_cast<eCycleMode>(id); } );
+    connect(cycleViewBtnGroup,  &QButtonGroup::idClicked,  this,  [=,this](int id) { config->viewCycle = static_cast<eCycleMode>(id); } );
 
     return cycleViewBox;
 }

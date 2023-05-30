@@ -21,8 +21,7 @@ MouseEditBorder::MouseEditBorder(QPointF spt, CropPtr crop)
 
     if (crop->getCropType() == CROP_CIRCLE)
     {
-        auto circle      = crop->getCircle();
-        auto sc = std::make_shared<Circle>(*circle);
+        auto sc = crop->getCircle();
         if (Utils::pointOnCircle(spt,sc,7))
         {
             start = new QPointF(spt);
@@ -158,8 +157,8 @@ void MouseEditBorder::updateDragging(QPointF spt)
         if (ecCircleMode == CM_EDGE)
         {
             // first find direction
-            qreal s = Point::dist2(*start,c->centre);
-            qreal m = Point::dist2(spt,c->centre);
+            qreal s = Point::dist2(*start,c.centre);
+            qreal m = Point::dist2(spt,c.centre);
             bool sub = (s > m);
             // find delta
             qreal delta = Point::dist(spt,*start);
@@ -167,8 +166,8 @@ void MouseEditBorder::updateDragging(QPointF spt)
             start  = new QPointF(spt);
             if (sub)
                 delta = -delta;
-            qreal radius = c->radius + delta;
-            c->setRadius(radius);
+            qreal radius = c.radius + delta;
+            c.setRadius(radius);
         }
         else if (ecCircleMode == CM_INSIDE)
         {
@@ -176,8 +175,8 @@ void MouseEditBorder::updateDragging(QPointF spt)
             delete start;
             start  = new QPointF(spt);
 
-            QPointF centre = c->centre + delta;
-            c->setCenter(centre);
+            QPointF centre = c.centre + delta;
+            c.setCenter(centre);
         }
     }
 }

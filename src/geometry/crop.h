@@ -8,7 +8,13 @@
 #include "geometry/edgepoly.h"
 
 typedef std::shared_ptr<class Crop>     CropPtr;
-typedef std::shared_ptr<class Tile>  TilePtr;
+
+//
+//  The Crop class defines the parameters of the crop and whether it is to be applied or embeeded or both
+//  The Prototype class uses the crop to modify its map using fucntions in the map class
+//
+//  Borders also use the crop class, but borders form a layer superimposed on top of prototype maps
+//
 
 class Crop
 {
@@ -21,18 +27,17 @@ public:
     QPointF      getCenter();
 
     void         setRect(QRectF & rect);
-    QRectF       getRect();
+    QRectF &     getRect() { return _rect; }
 
-    void         setCircle(CirclePtr c);
-    CirclePtr    getCircle() { return circle; }
+    void         setCircle(Circle & c);
+    Circle &     getCircle() { return _circle; }
 
     void         setPolygon(int sides, qreal scale = 1.0, qreal rotDegrees = 0.0);
     void         setPolygon(QPolygonF & p);
-    QPolygonF    getPolygon();
-    TilePtr      getTile() { return poly; }
+    QPolygonF &  getPolygon() { return _poly; }
 
     void         setType(eCropType type) { _cropType = type; }
-    eCropType    getCropType() { return _cropType; }
+    eCropType    getCropType()           { return _cropType; }
     QString      getCropString();
 
     void         setAspect(eAspectRatio ar) { _aspect = ar; adjust(); }
@@ -43,28 +48,27 @@ public:
 
     void        transform(QTransform t);
 
-    void        embed() { _embed = true; }
-    void        apply() { _apply = true; }
-    void        use()   { _embed = true;  _apply = true; }
-    void        unuse() { _embed = false; _apply = false;}
-    bool        isEmbedded() { return _embed; }
-    bool        isApplied()  { return _apply; }
-    bool        isUsed()     { if (_embed && _apply) return true; else return false; }
+    void        setEmbed(bool embed) { _embed = embed; }
+    void        setApply(bool apply) { _apply = apply; }
+    bool        getEmbed()           { return _embed; }
+    bool        getApply()           { return _apply; }
 
 protected:
     void        adjust();
 
-    bool         _embed;
-    bool         _apply;
     eCropType    _cropType;
+
+private:
+
     eAspectRatio _aspect;
     bool         _vAspect;
 
-    TilePtr    poly;          // model units
-    CirclePtr     circle;        // model units
+    QPolygonF    _poly;          // model units
+    Circle       _circle;        // model units
     QRectF       _rect;          // model units
 
-private:
+    bool         _embed;
+    bool         _apply;
 };
 
 #endif // CROP_H

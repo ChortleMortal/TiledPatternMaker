@@ -135,11 +135,11 @@ public:
 
     // modifications
     void        embedCrop(const QRectF & rect);
-    void        embedCrop(const CirclePtr & c);
+    void        embedCrop(const Circle & circle);
 
     void        cropOutside(const QRectF & rect);
     void        cropOutside(const QPolygonF & poly);
-    void        cropOutside(const CirclePtr & c);
+    void        cropOutside(Circle &circle);
 
     void        scale(qreal s);
     void        rotate(qreal r);

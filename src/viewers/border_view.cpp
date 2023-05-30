@@ -6,18 +6,24 @@
 #include "viewers/border_view.h"
 #include "viewers/viewcontrol.h"
 
-using std::make_shared;
+BorderView * BorderView::mpThis = nullptr;
 
-
-BorderViewPtr BorderView::spThis;
-
-BorderViewPtr BorderView::getSharedInstance()
+BorderView * BorderView::getInstance()
 {
-    if (!spThis)
+    if (!mpThis)
     {
-        spThis = make_shared<BorderView>();
+        mpThis = new BorderView();
     }
-    return spThis;
+    return mpThis;
+}
+
+void BorderView::releaseInstance()
+{
+    if (mpThis != nullptr)
+    {
+        delete mpThis;
+        mpThis = nullptr;
+    }
 }
 
 BorderView::BorderView() : LayerController("Border")
@@ -138,12 +144,11 @@ void BorderView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
     {
         auto b = border.lock();
         auto c = std::dynamic_pointer_cast<Crop>(b);
-        auto mec = make_shared<MouseEditBorder>(mousePos,c);
+        auto mec = std::make_shared<MouseEditBorder>(mousePos,c);
         setMouseInteraction(mec);
         mec->updateDragging(mousePos);
     }
 }
-
 
 void BorderView::slot_mouseDragged(QPointF spt)
 {

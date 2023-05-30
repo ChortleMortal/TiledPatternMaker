@@ -2,7 +2,6 @@
 #include <QMessageBox>
 
 #include "viewers/view.h"
-#include "viewers/viewcontrol.h"
 #include "legacy/design_maker.h"
 #include "motifs/motif.h"
 #include "geometry/dcel.h"
@@ -32,40 +31,23 @@ View::View()
 {
     config       = Configuration::getInstance();
 
+    isShown      = false;
     canPaint     = true;
-    closed       = false;
     dragging     = false;
     iMouseMode   = MOUSE_MODE_NONE;
     keyboardMode = KBD_MODE_XFORM_VIEW;
 
     setMouseTracking(true);
-
-    setMaximumSize(MAX_WIDTH,MAX_HEIGHT);
-
-    QSettings s;
-    QPoint pt = s.value(QString("viewPos/%1").arg(config->appInstance)).toPoint();
-    setGeometry(pt.x(),pt.y(),DEFAULT_WIDTH,DEFAULT_HEIGHT);
-    move(pt);
-    QGridLayout * grid = new QGridLayout();
-    setLayout(grid);
-
-    _geometry = geometry();
 }
 
 View::~View()
 {
-    if (!config->splitScreen && !closed)
-    {
-        QSettings s;
-        //QPointF pt = pos();
-        //qDebug(). noquote() << "View destructor pos =" << pt;
-        s.setValue((QString("viewPos/%1").arg(config->appInstance)), pos());
-    }
+//    qDebug() << "View destructor";
 }
 
 void View::init()
 {
-    tilingMaker = TilingMaker::getSharedInstance();
+    tilingMaker = TilingMaker::getInstance();
     designMaker = DesignMaker::getInstance();
     panel       = ControlPanel::getInstance();
 
@@ -84,25 +66,32 @@ void View::init()
 
 void View::addLayer(LayerPtr layer)
 {
+    activeLayers.push_back(layer.get());
+}
+
+void View::addLayer(Layer * layer)
+{
     activeLayers.push_back(layer);
 }
 
 void View::addTopLayer(LayerPtr layer)
 {
-    activeLayers.push_front(layer);
+    activeLayers.push_front(layer.get());
 }
 
 void View::unloadView()
 {
+    canPaint = false;
     clearLayers();
     clearLayout();
+    canPaint = true;
 }
 
 bool View::isActiveLayer(Layer * l)
 {
     for (auto & layer : activeLayers)
     {
-        if (layer.get() == l)
+        if (layer == l)
         {
             return true;
         }
@@ -110,7 +99,7 @@ bool View::isActiveLayer(Layer * l)
     return false;
 }
 
-QVector<LayerPtr> View::getActiveLayers()
+QVector<Layer*> View::getActiveLayers()
 {
     return activeLayers;
 }
@@ -244,6 +233,9 @@ void View::clearLayout()
 
 void View::clearLayout(QLayout* layout, bool deleteWidgets)
 {
+    if (layout == nullptr)
+        return;
+
     while (QLayoutItem* item = layout->takeAt(0))
     {
         if (deleteWidgets)
@@ -462,14 +454,31 @@ void View::ProcKeyRight(int delta)
 ///
 //////////////////////////////////////////////////
 
+void View::showEvent(QShowEvent *event)
+{
+    if (!isShown)
+    {
+        // first time only
+        QSettings s;
+        QPoint pt = s.value(QString("viewPos/%1").arg(config->appInstance)).toPoint();
+        setGeometry(pt.x(),pt.y(),DEFAULT_WIDTH,DEFAULT_HEIGHT);
+        qDebug() << "View::showEvent moving to:" << pt;
+        move(pt);
+        _geometry = geometry();
+        isShown = true;
+    }
+    QWidget::showEvent(event);
+}
+
 void View::closeEvent(QCloseEvent *event)
 {
-    if (!config->splitScreen && !closed)
+    qDebug() << "View::closeEvent";
+    if (!config->splitScreen)
     {
+        QPoint pt = pos();
         QSettings s;
-        s.setValue((QString("viewPos/%1").arg(config->appInstance)), pos());
-        qDebug() <<  "closeEvent pos" << pos();
-        closed = true;
+        s.setValue((QString("viewPos/%1").arg(config->appInstance)),pt);
+        qDebug() << "View::closeEvent pos" << pt;
     }
 
     guard->release();
@@ -496,7 +505,7 @@ void View::paintEvent(QPaintEvent *event)
     QPainter painter(this);
     painter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
 
-    std::stable_sort(activeLayers.begin(),activeLayers.end(),Layer::sortByZlevel);  // tempting to move this to addLayer, but if zlevel changed would not be picked up
+    std::stable_sort(activeLayers.begin(),activeLayers.end(),Layer::sortByZlevelP);  // tempting to move this to addLayer, but if zlevel changed would not be picked up
 
     for (auto layer : qAsConst(activeLayers))
     {

@@ -40,7 +40,7 @@ protected:
 
     QPointF              last_drag;
     MapEditorDb        * db;
-    MapedViewPtr         meView;
+    MapEditorView      * meView;
     MapEditorSelection * selector;
     ViewControl        * view;
 };
@@ -124,14 +124,14 @@ protected:
 class EditConstructionCircle : public MapMouseAction
 {
 public:
-    EditConstructionCircle(CirclePtr circle, QPointF spt);
+    EditConstructionCircle(Circle circle, QPointF spt);
 
     virtual void updateDragging(QPointF spt) override;
     virtual void endDragging( QPointF spt) override;
     virtual void draw(QPainter * painter) override;
 
 protected:
-    CirclePtr   origCircle;
+    Circle      origCircle;
     Circle      currentCircle;
     eCircleMode ecmode;
     QPointF   * start;

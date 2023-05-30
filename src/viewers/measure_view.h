@@ -5,14 +5,14 @@
 #include "style/thick.h"
 #include "geometry/measurement.h"
 
-typedef std::shared_ptr<class MeasureView>      MeasViewPtr;
-typedef std::shared_ptr<class Measure2>         Measure2Ptr;
+typedef std::shared_ptr<class Measure2> Measure2Ptr;
 
 class MeasureView : public Thick
 {
 public:
-    static MeasViewPtr getSharedInstance();
-    MeasureView(ProtoPtr pp);  // don't use this
+    static MeasureView * getInstance();
+    static void          releaseInstance();
+
 
     void setMeasureMode(bool mode);
 
@@ -32,20 +32,23 @@ public:
 protected:
 
 private:
-    static MeasViewPtr spThis;
+    MeasureView(ProtoPtr pp);
+    ~MeasureView();
+
+    static MeasureView * mpThis;
 
     Configuration * config;
     ViewControl   * view;
 
-    bool                 measureMode;
-    Measure2Ptr          measurement;
-    QVector<MeasurementPtr> measurements;
+    bool                  measureMode;
+    Measure2Ptr           measurement;
+    QVector<Measurement*> measurements;
 };
 
 class Measure2
 {
 public:
-    Measure2(Layer * layer, QPointF spt, MeasurementPtr m);
+    Measure2(Layer * layer, QPointF spt, Measurement * m);
     void updateDragging(QPointF spt );
     void draw( GeoGraphics * g2d );
     void endDragging(QPointF spt );
@@ -55,9 +58,9 @@ protected:
     QLineF normalVectorB(QLineF line);
 
 private:
-    MeasurementPtr m;
-    QLineF       sPerpLine; // perpendicular line
-    Layer *      layer;
+    Measurement * m;
+    Layer       * layer;
+    QLineF        sPerpLine; // perpendicular line
 };
 
 #endif // MEASURE_VIEW_H

@@ -19,8 +19,6 @@ class PanelPagesWidget;
 class TiledPatternMaker;
 class MouseModeWidget;
 
-typedef std::shared_ptr<class TilingMaker> TilingMakerPtr;
-
 class ControlPanel : public AQWidget
 {
     Q_OBJECT
@@ -38,6 +36,7 @@ public:
 
     void    init(TiledPatternMaker * parent);
 
+    void    showEvent(QShowEvent *) override;
     void	closeEvent(QCloseEvent *event) override;
     void    resizeEvent(QResizeEvent *event) override;
     void    populatePages();
@@ -129,17 +128,17 @@ private:
     class Configuration  *  config;
     TiledPatternMaker    *  maker;
     class ViewControl    *  view;
-    class MosaicMaker    * mosaicMaker;
-    TilingMakerPtr         tilingMaker;
+    class MosaicMaker    *  mosaicMaker;
+    class TilingMaker    *  tilingMaker;
     MouseModeWidget      *  mouseModeWidget;
 
+    bool                    isShown;
     PanelStatus          *  panelStatus;
     TPMSplash            *  splash;
     QTimer               *  mpTimer;
     volatile bool           updateLocked;
 
     QString                 panelInfo;
-    bool                    closed;
     bool                    exclusiveViews;
     eLoadState              loadState;
     QString                 loadName;

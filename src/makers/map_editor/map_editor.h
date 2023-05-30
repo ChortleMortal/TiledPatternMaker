@@ -7,9 +7,7 @@
 #include "makers/map_editor/map_editor_mouseactions.h"
 
 typedef std::shared_ptr<class Tiling>        TilingPtr;
-typedef std::shared_ptr<class TilingMaker>   TilingMakerPtr;
 typedef std::shared_ptr<class Mosaic>        MosaicPtr;
-typedef std::shared_ptr<class MapEditorView> MapedViewPtr;
 
 class MapEditorSelection;
 class MapEditorDb;
@@ -23,12 +21,10 @@ class MapEditor
     friend class ConstructionLine;
     friend class ExtendLine;
     friend class EditConstructionCircle;
-    friend class CreateCrop;
-    friend class CreateMosaicCrop;
-    friend class EditCrop;
 
 public:
     static MapEditor * getInstance();
+    static void        releaseInstance();
 
     bool    loadMosaicPrototype();
     void    loadMotifPrototype();
@@ -66,7 +62,6 @@ public:
 
     MapEditorDb        * getDb()        { return db; }
     MapEditorSelection * getSelector()  { return selector; }
-    MapedViewPtr         getMapedView() { return meView; }
 
     void     forceRedraw();
 
@@ -78,13 +73,13 @@ private:
 
     MapEditorDb           * db;
     MapEditorSelection    * selector;
-    MapedViewPtr            meView;
+    MapEditorView         * meView;
 
     class Configuration   * config;
     class ViewControl     * view;
     class MosaicMaker     * mosaicMaker;
     class PrototypeMaker  * prototypeMaker;
-    TilingMakerPtr          tilingMaker;
+    class TilingMaker     * tilingMaker;
     class ControlPanel    * cpanel;
 };
 

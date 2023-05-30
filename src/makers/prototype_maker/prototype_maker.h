@@ -7,8 +7,6 @@
 #include "enums/estatemachineevent.h"
 #include "makers/prototype_maker/prototype_data.h"
 
-typedef std::shared_ptr<class TilingMaker>  TilingMakerPtr;
-
 class PrototypeMaker : public QObject
 {
     Q_OBJECT
@@ -22,6 +20,7 @@ class PrototypeMaker : public QObject
 
 public:
     static PrototypeMaker * getInstance();
+    static void             releaseInstance();
 
     void         init();
     void         unload();
@@ -61,7 +60,7 @@ private:
 
     class Configuration     * config;
     class TiledPatternMaker * maker;
-    TilingMakerPtr            tilingMaker;
+    class TilingMaker       * tilingMaker;
     class MosaicMaker       * mosaicMaker;
     class ViewControl       * vcontrol;
 

@@ -24,7 +24,7 @@ Extender::Extender(const Extender & other)
 
 void Extender::extend(Motif * fig, QTransform Tr)
 {
-    this->fig = fig;
+    this->motif = fig;
     newVertices.clear();
 
     auto map = fig->getMotifMap();
@@ -53,15 +53,15 @@ void Extender::extendPeripheralMap(MapPtr map)  // is same as extend Peripheral 
 {
     qDebug().noquote() << "Extender::extendPeripheralMap" << map->summary();
 
-    const ExtendedBoundary & eb = fig->getExtendedBoundary();
+    const ExtendedBoundary & eb = motif->getExtendedBoundary();
 
-    qreal radius = eb.scale;
+    qreal radius = eb.getScale();
     QGraphicsEllipseItem circle(-radius,-radius,radius * 2.0, radius * 2.0);
 
-    const QPolygonF & eboundary = eb.get();
-    const QPolygonF & fboundary = fig->getMotifBoundary();
+    const QPolygonF & eboundary = eb.getPoly();
+    const QPolygonF & fboundary = motif->getMotifBoundary();
 
-    // extend the lines to exteneded boundary and clip
+    // extend the lines to extended boundary and clip
     // extendLine and clipLine both assume that p1 is closest to the center
     // and p0 is closest to the edge
 
@@ -124,21 +124,21 @@ void Extender::extendPeripheralMap(MapPtr map)  // is same as extend Peripheral 
 
 void Extender::extendFreeMap(MapPtr map, QTransform Tr)
 {
-    const ExtendedBoundary & eb = fig->getExtendedBoundary();
-    int n = fig->getN();
-    if (n != eb.sides)
+    const ExtendedBoundary & eb = motif->getExtendedBoundary();
+    int n = motif->getN();
+    if (n != eb.getSides())
     {
         qWarning("Cannot extend - no matching boundary");
         return;
     }
 
     QPointF tip(1,0);
-    QTransform t = QTransform::fromScale(fig->getMotifScale(),fig->getMotifScale());
+    QTransform t = QTransform::fromScale(motif->getMotifScale(),motif->getMotifScale());
     tip = t.map(tip);
     VertexPtr v1 = map->getVertex(tip);
 
     QPointF e_tip(1,0);
-    QTransform t2 = QTransform::fromScale(eb.scale,eb.scale);
+    QTransform t2 = QTransform::fromScale(eb.getScale(),eb.getScale());
     e_tip = t2.map(e_tip);
     auto newv = map->insertVertex(e_tip);
     newVertices.push_back(newv);
@@ -159,8 +159,8 @@ void Extender::extendFreeMap(MapPtr map, QTransform Tr)
 void Extender::connectOuterVertices(MapPtr map)
 {
     // this algorithm connects vertices on the same edge
-    const ExtendedBoundary & eb = fig->getExtendedBoundary();
-    QVector<QLineF> blines = Utils::polyToLines(eb.get());
+    const ExtendedBoundary & eb = motif->getExtendedBoundary();
+    QVector<QLineF> blines = Utils::polyToLines(eb.getPoly());
 
     for (auto line : blines)
     {

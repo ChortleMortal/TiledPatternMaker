@@ -17,7 +17,7 @@ panel_page::panel_page(ControlPanel * panel,  QString name) : QWidget()
     config          = Configuration::getInstance();
     view            = ViewControl::getInstance();
     prototypeMaker  = PrototypeMaker::getInstance();
-    tilingMaker     = TilingMaker::getSharedInstance();
+    tilingMaker     = TilingMaker::getInstance();
     mosaicMaker     = MosaicMaker::getInstance();
     designMaker     = DesignMaker::getInstance();
 
@@ -29,8 +29,8 @@ panel_page::panel_page(ControlPanel * panel,  QString name) : QWidget()
     vbox            = new QVBoxLayout;
     setLayout (vbox);
 
-    connect(this,   &panel_page::sig_render,     theApp,   &TiledPatternMaker::slot_render);
-    connect(this,   &panel_page::sig_refreshView,view,     &ViewControl::slot_refreshView);
+    connect(this,   &panel_page::sig_render,     theApp,   &TiledPatternMaker::slot_render,  Qt::QueuedConnection);
+    connect(this,   &panel_page::sig_refreshView,view,     &ViewControl::slot_refreshView,   Qt::QueuedConnection);
     connect(this,   &panel_page::sig_attachMe,   panel,    &ControlPanel::slot_attachWidget, Qt::QueuedConnection);
 }
 

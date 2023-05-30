@@ -22,7 +22,6 @@
 #include "makers/map_editor/map_editor_map_loader.h"
 #include "makers/map_editor/map_editor_map_writer.h"
 #include "makers/map_editor/map_selection.h"
-#include "makers/prototype_maker/prototype_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "misc/fileservices.h"
 #include "misc/utilities.h"
@@ -32,6 +31,7 @@
 #include "qlabel.h"
 #include "settings/configuration.h"
 #include "tiledpatternmaker.h"
+#include "viewers/crop_view.h"
 #include "viewers/map_editor_view.h"
 #include "viewers/viewcontrol.h"
 #include "widgets/crop_widget.h"
@@ -46,8 +46,10 @@ typedef std::shared_ptr<RadialMotif>    RadialPtr;
 
 page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Map Editor")
 {
-    maped  = MapEditor::getInstance();
-    cropMaker = CropMaker::getInstance();
+    maped      = MapEditor::getInstance();
+    meView     = MapEditorView::getInstance();
+    cropViewer = CropViewer::getInstance();
+    db         = maped->getDb();
 
     // create group boxes
     editorStatusBox             = createStatusGroup();
@@ -88,14 +90,16 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     vbox->addLayout(hbox);
     vbox->addWidget(editorStatusBox);
 
-    connect(tilingMaker.get(), &TilingMaker::sig_tilingLoaded,   this,   &page_map_editor::slot_tilingLoaded);
-    connect(mosaicMaker,       &MosaicMaker::sig_mosaicLoaded,   this,   &page_map_editor::slot_mosaicLoaded);
+    connect(tilingMaker, &TilingMaker::sig_tilingLoaded,   this,   &page_map_editor::slot_tilingLoaded);
+    connect(mosaicMaker, &MosaicMaker::sig_mosaicLoaded,   this,   &page_map_editor::slot_mosaicLoaded);
 
     slot_debugChk(config->mapedStatusBox);
 
     setMaximumWidth(762);
 
     slot_editLayer(LAYER_1,true);
+
+    cropDlg = nullptr;
 }
 
 QGroupBox * page_map_editor::createMapSelects()
@@ -179,8 +183,6 @@ QGroupBox   * page_map_editor::createSettingsGroup()
     chkWhiteBkgd = new QCheckBox("White background");
     chkWhiteBkgd->setChecked(config->motifBkgdWhite);
 
-
-
     DoubleSpinSet * lineWidthSpin = new DoubleSpinSet("Line Width",3.0,1.0,10.0);
     DoubleSpinSet * consWidthSpin = new DoubleSpinSet("Cons Width",1.0,1.0,10.0);
 
@@ -215,10 +217,11 @@ QGroupBox * page_map_editor::createMapGroup()
     QToolButton * pbRebuildNeigbours = new QToolButton();
     QToolButton * pbCleanseMap = new QToolButton();
     QToolButton * pbDumpMap = new QToolButton();
-    QToolButton * pbEditCrop = new QToolButton();
+                  chkEditCrop = new QCheckBox();
                   pbEmbedCrop = new QToolButton();
                   pbApplyCrop = new QToolButton();
 
+    chkEditCrop->setStyleSheet("padding-left: 17px;");
 
     defaultStyle = pbVerifyMap->styleSheet();
 
@@ -238,7 +241,7 @@ QGroupBox * page_map_editor::createMapGroup()
     pbRemoveZombieEdges->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
 
     pbCleanseMap->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    pbEditCrop->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    chkEditCrop->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     pbEmbedCrop->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     pbApplyCrop->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
@@ -255,7 +258,7 @@ QGroupBox * page_map_editor::createMapGroup()
 
     pbCleanseMap->setText("Cleanse Map");
     pbDumpMap->setText("Dump Map");
-    pbEditCrop->setText("Edit Crop");
+    chkEditCrop->setText("Edit Crop");
     pbEmbedCrop->setText("Embed Crop");
     pbApplyCrop->setText("Crop Outside");
 
@@ -284,7 +287,7 @@ QGroupBox * page_map_editor::createMapGroup()
     mapGrid->addWidget(pbCleanseMap,row,2);
 
     row++;
-    mapGrid->addWidget(pbEditCrop,row,0);
+    mapGrid->addWidget(chkEditCrop,row,0);
     mapGrid->addWidget(pbEmbedCrop,row,1);
     mapGrid->addWidget(pbApplyCrop,row,2);
 
@@ -303,7 +306,7 @@ QGroupBox * page_map_editor::createMapGroup()
     connect(pbRemoveSingleVerts,    &QToolButton::clicked,  this,   &page_map_editor::slot_removeSingleConnectVertices);
     connect(pbRemoveZombieEdges,    &QToolButton::clicked,  this,   &page_map_editor::slot_removeZombieEdges);
     connect(pbDumpMap,              &QToolButton::clicked,  this,   &page_map_editor::slot_dumpMap);
-    connect(pbEditCrop,             &QToolButton::clicked,  this,   &page_map_editor::slot_editCrop);
+    connect(chkEditCrop,            &QCheckBox::clicked,    this,   &page_map_editor::slot_editCrop);
     connect(pbEmbedCrop,            &QToolButton::clicked,  this,   &page_map_editor::slot_embedCrop);
     connect(pbApplyCrop,            &QToolButton::clicked,  this,   &page_map_editor::slot_applyCrop);
 
@@ -577,45 +580,54 @@ static QString msg("<body>"
     modeGroup->blockSignals(true);
     modeGroup->button(maped->getMouseMode())->setChecked(true);
     modeGroup->blockSignals(false);
+
+    cropViewer->init(db);
 }
 
 void  page_map_editor::onExit()
 {
     panel->popPanelStatus();
 
-    maped->getDb()->resetMouseInteraction();
+    db->resetMouseInteraction();
+
+    cropViewer->setShowCrop(false);
+    if (cropDlg)
+    {
+        cropDlg->close();
+        cropDlg = nullptr;
+    }
 }
 
 void page_map_editor::onRefresh()
 {
-    static eCropMakerState oldState = CROPMAKER_STATE_INACTIVE;
+    static bool oldCropEditState = false;
 
-    eCropMakerState currentState = cropMaker->getState();
-    if (currentState != oldState)
+    bool currentCropEditState = cropViewer->getShowCrop();
+    if (currentCropEditState != oldCropEditState)
     {
-        if (currentState == CROPMAKER_STATE_ACTIVE)
+        if (currentCropEditState)
         {
-            panel->pushPanelStatus("Left Click on corner and drag to create crop rectangle");
+            panel->pushPanelStatus("Left Click on corner to resize crop, or drag to move");
         }
         else
         {
             panel->popPanelStatus();
         }
-        oldState = currentState;
+        oldCropEditState = currentCropEditState;
     }
 
     tallySelects();
-    //tallyMapButtons();
+
+    MapPtr map = db->getMap(COMPOSITE);
+    if (map)
+        compositeVChk->setText(map->namedSummary());
+
+    tallyCropButtons();
 
     if (config->mapedStatusBox)
     {
         refreshStatusBox();
     }
-
-    MapEditorDb * db = maped->getDb();
-    MapPtr map = db->getMap(COMPOSITE);
-    if (map)
-        compositeVChk->setText(map->namedSummary());
     else
         compositeVChk->setText("No Map");
 
@@ -660,11 +672,11 @@ void page_map_editor::refreshStatusBox()
 
     eMapEditorMode mode = config->mapEditorMode;
 
-    CropPtr crop = cropMaker->getCrop();
+    CropPtr crop = db->getCrop();
     if (crop)
     {
-        QString emb = (crop->isEmbedded()) ? "Embedded" : QString();
-        QString app = (crop->isApplied())  ? "Applied" : QString();
+        QString emb = (crop->getEmbed()) ? "Embed" : QString();
+        QString app = (crop->getApply()) ? "ApplY" : QString();
         txt << QString("Editor mode: %1  Crop Mode: %2 %3 %4").arg(sMapEditorMode[mode]).arg(crop->getCropString()).arg(emb).arg(app);
     }
     else
@@ -672,7 +684,6 @@ void page_map_editor::refreshStatusBox()
         txt << QString("Editor mode: %1  Crop Mode: NONE").arg(sMapEditorMode[mode]);
     }
 
-    auto db    = maped->getDb();
     MapPtr map = db->getEditMap();
     eMapEditorMapType mapType = db->getMapType(map);
     txt << QString("Map status: %1").arg(sMapEditorMapType[mapType]);
@@ -764,7 +775,7 @@ void page_map_editor::refreshStatusBox()
     else
         mi = "no interaction";
 
-    MapedViewPtr  view = maped->getMapedView();
+    MapEditorView * view = MapEditorView::getInstance();
     QPointF a = view->getMousePos();
     QPointF b = view->screenToWorld(a);
     QString astring;
@@ -813,7 +824,7 @@ void page_map_editor::refreshStatusBox()
             {
                 QPointF pt  = sel->getPoint();
                 auto c      = sel->getCircle();
-                str += QString(" (%1,%2) center=(%4,%5) radius=%3\n").arg(pt.x()).arg(pt.y()).arg(c->radius).arg(c->centre.x()).arg(c->centre.y());
+                str += QString(" (%1,%2) center=(%4,%5) radius=%3\n").arg(pt.x()).arg(pt.y()).arg(c.radius).arg(c.centre.x()).arg(c.centre.y());
                 break;
             }
             case MAP_EDGE:
@@ -840,7 +851,7 @@ void page_map_editor::slot_chkViewMap(bool checked)
     config->mapEditorMode = (checked) ? MAPED_MODE_MAP : MAPED_MODE_DCEL;
     if (config->mapEditorMode == MAPED_MODE_DCEL)
     {
-        auto map = maped->getDb()->getEditMap();
+        auto map = db->getEditMap();
         bool rv = maped->useExistingDCEL(map);
         if (!rv)
         {
@@ -862,8 +873,8 @@ void page_map_editor::slot_chkViewDCEL(bool checked)
     config->mapEditorMode = (checked) ? MAPED_MODE_DCEL : MAPED_MODE_MAP;
     if (config->mapEditorMode == MAPED_MODE_DCEL)
     {
-        auto map = maped->getDb()->getEditMap();
-        bool rv = maped->useExistingDCEL(map);
+        auto map = db->getEditMap();
+        bool rv  = maped->useExistingDCEL(map);
         if (!rv)
         {
             rv = maped->createLocalDCEL(map);
@@ -890,7 +901,6 @@ void page_map_editor::slot_mosaicChanged()
 {
     if (config->getViewerType() == VIEW_MAP_EDITOR)
     {
-        MapEditorDb * db = maped->getDb();
         eMapEditorMapType mtype = db->getMapType(db->getEditMap());
         switch (mtype)
         {
@@ -930,7 +940,6 @@ void page_map_editor::slot_tilingLoaded (QString name)
 {
     Q_UNUSED(name);
 
-    MapEditorDb * db = maped->getDb();
     if (db->getMapType(db->getEditMap()) == MAPED_LOADED_FROM_TILING_UNIT)
     {
         maped->loadTilingUnit();
@@ -943,7 +952,6 @@ void page_map_editor::slot_tilingLoaded (QString name)
 
 void page_map_editor::slot_convertToExplicit()
 {
-    MapEditorDb * db      = maped->getDb();
     MapEditorLayer layer  = db->getEditLayer();
     DesignElementPtr delp = layer.wdel.lock();
     if (delp)
@@ -987,7 +995,6 @@ void page_map_editor::slot_convertToExplicit()
 
 void page_map_editor::slot_verify()
 {
-    MapEditorDb * db  = maped->getDb();
     MapPtr map = db->getEditMap();
     if (!map) return;
 
@@ -1014,7 +1021,6 @@ void page_map_editor::slot_verify()
 
 void page_map_editor::slot_divideIntersectingEdges()
 {
-    MapEditorDb * db  = maped->getDb();
     MapPtr map = db->getEditMap();
     if (!map) return;
     map->cleanse(divideupIntersectingEdges);
@@ -1023,7 +1029,7 @@ void page_map_editor::slot_divideIntersectingEdges()
 
 void page_map_editor::slot_joinColinearEdges()
 {
-    MapPtr map = maped->getDb()->getEditMap();
+    MapPtr map = db->getEditMap();
     if (!map) return;
     map->cleanse(joinupColinearEdges);
     updateView();
@@ -1031,7 +1037,7 @@ void page_map_editor::slot_joinColinearEdges()
 
 void page_map_editor::slot_cleanNeighbours()
 {
-    MapPtr map = maped->getDb()->getEditMap();
+    MapPtr map = db->getEditMap();
     if (!map) return;
     map->cleanse(cleanupNeighbours);
     updateView();
@@ -1046,7 +1052,7 @@ void page_map_editor::slot_cleanVertices()
 
 void page_map_editor::slot_removeUnconnectedVertices()
 {
-    MapPtr map = maped->getDb()->getEditMap();
+    MapPtr map = db->getEditMap();
     if (!map) return;
     map->cleanse(badVertices_0);
     updateView();
@@ -1054,16 +1060,15 @@ void page_map_editor::slot_removeUnconnectedVertices()
 
 void page_map_editor::slot_removeSingleConnectVertices()
 {
-    MapPtr map = maped->getDb()->getEditMap();
+    MapPtr map = db->getEditMap();
     if (!map) return;
     map->cleanse(badVertices_1);
     updateView();
 }
 
-
 void page_map_editor::slot_removeZombieEdges()
 {
-    MapPtr map = maped->getDb()->getEditMap();
+    MapPtr map = db->getEditMap();
     if (!map) return;
     map->cleanse(badEdges);
     updateView();
@@ -1071,7 +1076,7 @@ void page_map_editor::slot_removeZombieEdges()
 
 void page_map_editor::slot_rebuildNeighbours()
 {
-    MapPtr map = maped->getDb()->getEditMap();
+    MapPtr map = db->getEditMap();
     if (!map) return;
     map->resetNeighbourMap();
     map->getNeighbourMap(); // rebuilds
@@ -1089,43 +1094,43 @@ void page_map_editor::slot_setMouseMode(int mode, bool checked)
 
 void page_map_editor::slot_showBounds(bool show)
 {
-    maped->getDb()->showBoundaries = show;
+    db->showBoundaries = show;
     updateView();
 }
 
 void page_map_editor::slot_showCons(bool show)
 {
-    maped->getDb()->showConstructionLines = show;
+    db->showConstructionLines = show;
     updateView();
 }
 
 void page_map_editor::slot_showMap(bool show)
 {
-    maped->getDb()->showMap = show;
+    db->showMap = show;
     updateView();
 }
 
 void page_map_editor::slot_showPoints(bool show)
 {
-    maped->getDb()->showPoints = show;
+    db->showPoints = show;
     updateView();
 }
 
 void page_map_editor::slot_showMidPoints(bool show)
 {
-    maped->getDb()->showMidPoints = show;
+    db->showMidPoints = show;
     updateView();
 }
 
 void page_map_editor::slot_showDirPoints(bool show)
 {
-    maped->getDb()->showDirnPoints = show;
+    db->showDirnPoints = show;
     updateView();
 }
 
 void page_map_editor::slot_showArcCentre(bool show)
 {
-    maped->getDb()->showArcCentre = show;
+    db->showArcCentre = show;
     updateView();
 }
 
@@ -1150,14 +1155,14 @@ void page_map_editor::slot_popstash()
 
 void page_map_editor::slot_undoConstructionLines()
 {
-    maped->getDb()->getStash()->getPrev();
+    db->getStash()->getPrev();
     maped->loadCurrentStash();
     updateView();
 }
 
 void page_map_editor::slot_redoConstructionLines()
 {
-    maped->getDb()->getStash()->getNext();
+    db->getStash()->getNext();
     maped->loadCurrentStash();
     updateView();
 }
@@ -1172,7 +1177,7 @@ void page_map_editor::slot_clearConstructionLines()
 
 void page_map_editor::slot_dumpMap()
 {
-    MapPtr m = maped->getDb()->getEditMap();
+    MapPtr m = db->getEditMap();
     if (m)
     {
         m->dumpMap(true);
@@ -1183,38 +1188,60 @@ void page_map_editor::slot_dumpMap()
     }
 }
 
-void page_map_editor::slot_editCrop()
+void page_map_editor::slot_editCrop(bool checked)
 {
-    CropPtr crop = cropMaker->loadCrop();
-    if (!crop)
+    if (checked)
     {
-        crop = cropMaker->createCrop();
+        CropPtr crop = db->getCrop();
+        if (!crop)
+        {
+            // try to get one from the mosaic
+            crop = db->CropMaker::getCrop();
+            if (!crop)
+            {
+                // creae one
+                crop = db->createCrop();
+            }
+            Q_ASSERT(crop);
+            // make a local copy
+            db->setCrop(crop);
+        }
+
+        cropViewer->setShowCrop(true);
+
+        cropDlg = new CropDlg(db->getCrop());
+        cropDlg->show();
+
+        connect(cropDlg->cw, &CropWidget::sig_cropModified, this, [this]() { view->update(); } );
+        connect(cropDlg->cw, &CropWidget::sig_cropChanged,  this, [this]() { emit sig_refreshView(); } );
+        connect(cropDlg,     &CropDlg::sig_dlg_done,        this,  &page_map_editor::slot_completeCrop);
+
+        emit sig_refreshView();
     }
-    Q_ASSERT(crop);
-    crop->unuse();     // this triggers
+    else
+    {
+        cropViewer->setShowCrop(false);
+        if (cropDlg)
+        {
+            cropDlg->close();
+            cropDlg = nullptr;
+        }
+    }
+}
 
-    CropDlg * dlg = new CropDlg(crop);
-    dlg->show();
-
-    connect(dlg->cw, &CropWidget::sig_cropModified, this, [this]() { view->update(); } );
-    connect(dlg->cw, &CropWidget::sig_cropChanged,  this, [this]() { emit sig_refreshView(); } );
-    connect(dlg,     &CropDlg::sig_dlg_done,        this,  &page_map_editor::slot_completeCrop);
-
+void page_map_editor::slot_completeCrop()
+{
+    cropViewer->setShowCrop(false);
+    cropDlg = nullptr;
+    chkEditCrop->blockSignals(true);
+    chkEditCrop->setChecked(false);
+    chkEditCrop->blockSignals(false);
     emit sig_refreshView();
 }
 
 void page_map_editor::slot_embedCrop()
 {
-    // merges the crop rectangle into the map
-    MapEditorLayer layer = maped->getDb()->getEditLayer();
-    MapPtr map = layer.getMapedLayerMap();
-    if (!map)
-    {
-        map = make_shared<Map>("Crop Map");
-        maped->getDb()->insertLayer(MapEditorLayer(map,MAPED_TYPE_CROP,layer.wdel));
-    }
-
-    if (cropMaker->getState() != CROPMAKER_STATE_ACTIVE)
+    if (!cropViewer->getShowCrop())
     {
         QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
@@ -1223,30 +1250,30 @@ void page_map_editor::slot_embedCrop()
         return;
     }
 
-    bool rv = cropMaker->embedCrop(map);
-
-    emit sig_refreshView();
-
-    QMessageBox box(this);
-    if (rv)
+    // merges the crop rectangle into the map
+    MapEditorLayer layer = db->getEditLayer();
+    MapPtr map = layer.getMapedLayerMap();
+    if (!map)
     {
-        box.setIcon(QMessageBox::Information);
-        box.setText("Embed Crop : OK");
+        map = make_shared<Map>("Crop Map");
+        maped->getDb()->insertLayer(MapEditorLayer(map,MAPED_TYPE_CROP,layer.wdel));
     }
-    else
+
+    bool rv = db->embedCrop(map);
+    if (!rv)
     {
+        QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
         box.setText("Embed Crop : FAILED");
+        box.exec();
     }
-    box.exec();
+
+    emit sig_refreshView();
 }
 
 void page_map_editor::slot_applyCrop()
 {
-    // deletes everything outside of the crop rectangle
-    MapPtr map = maped->getDb()->getEditMap();
-
-    if (cropMaker->getState() != CROPMAKER_STATE_ACTIVE)
+    if (!cropViewer->getShowCrop())
     {
         QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
@@ -1255,28 +1282,19 @@ void page_map_editor::slot_applyCrop()
         return;
     }
 
-    bool rv = cropMaker->cropMap(map);
+    // deletes everything outside of the crop rectangle
+    MapPtr map = db->getEditMap();
 
-    emit sig_refreshView();
-
-    QMessageBox box(this);
-    if (rv)
+    bool rv = db->cropMap(map);
+    if (!rv)
     {
-        box.setIcon(QMessageBox::Information);
-        box.setText("Crop Map: OK");
-    }
-    else
-    {
+        QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
         box.setText("Crop Map : FAILED");
+        box.exec();
     }
-    box.exec();
-}
 
-void page_map_editor::slot_completeCrop()
-{
-    cropMaker->setState(CROPMAKER_STATE_COMPLETE);
-    updateView();
+    emit sig_refreshView();
 }
 
 void page_map_editor::slot_cleanseMap()
@@ -1304,13 +1322,13 @@ void page_map_editor::slot_createLenChanged(qreal len)
 
 void page_map_editor::slot_lineWidthChanged(qreal r)
 {
-    maped->getMapedView()->mapLineWidth = r;
+    meView->mapLineWidth = r;
     updateView();
 }
 
 void page_map_editor::slot_consWidthChanged(qreal r)
 {
-    maped->getMapedView()->constructionLineWidth = r;
+    meView->constructionLineWidth = r;
     updateView();
 }
 
@@ -1456,7 +1474,7 @@ void page_map_editor::slot_loadMapFile()
     qDebug().noquote() << loadedMap->namedSummary();
 
     maped->loadFromMap(loadedMap,maptype);
-    maped->getMapedView()->setCanvasXform(xf);
+    meView->setCanvasXform(xf);
 
     tallySelects();
 
@@ -1489,7 +1507,7 @@ void page_map_editor::slot_pushMap()
 
     bool rv = false;
 
-    auto layer = maped->getDb()->getEditLayer();
+    auto layer = db->getEditLayer();
     auto map   = layer.getMapedLayerMap();
     if (!map || map->isEmpty())
     {
@@ -1566,7 +1584,7 @@ void page_map_editor::slot_pushMap()
 
 void page_map_editor::slot_saveMapToFile()
 {
-    MapPtr map = maped->getDb()->getEditMap();
+    MapPtr map = db->getEditMap();
     if (!map)
     {
         QMessageBox box(this);
@@ -1627,7 +1645,7 @@ void page_map_editor::slot_saveMapToFile()
         filename = dir + name + ".xml";
     }
 
-    MapEditorMapWriter writer(maped->getMapedView());
+    MapEditorMapWriter writer(meView);
     bool rv = writer.writeXML(filename,map,maped->getDb()->getMapType(maped->getDb()->getEditMap()));
     if (rv)
     {
@@ -1649,25 +1667,23 @@ void page_map_editor::slot_saveMapToFile()
 void page_map_editor::slot_viewLayer(int id, bool checked)
 {
     eLayer eid = eLayer(id);
-    maped->getDb()->setViewSelect(eid,checked);
+    db->setViewSelect(eid,checked);
     if (checked)
-        maped->getDb()->setEditSelect(eid);
+        db->setEditSelect(eid);
     updateView();
 }
 
 void page_map_editor::slot_editLayer(int id, bool checked)
 {
     if (checked)
-        maped->getDb()->setEditSelect(eLayer(id));
+        db->setEditSelect(eLayer(id));
     else
-        maped->getDb()->setEditSelect(NO_MAP);
+        db->setEditSelect(NO_MAP);
     updateView();
 }
 
 void page_map_editor::tallySelects()
 {
-    MapEditorDb * db = maped->getDb();
-
     viewGroup->blockSignals(true);
 
     if (db->isViewSelected(COMPOSITE))
@@ -1723,10 +1739,9 @@ void page_map_editor::tallySelects()
     editGroup->blockSignals(false);
 }
 
-void page_map_editor::tallyMapButtons()
+void page_map_editor::tallyCropButtons()
 {
-    eCropMakerState state = cropMaker->getState();
-    if (state == CROPMAKER_STATE_ACTIVE)
+    if (cropViewer->getShowCrop())
     {
         pbEmbedCrop->setStyleSheet("QToolButton { background-color: yellow; color: red;}");
         pbApplyCrop->setStyleSheet("QToolButton { background-color: yellow; color: red;}");

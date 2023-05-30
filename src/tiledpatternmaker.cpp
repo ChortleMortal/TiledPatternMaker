@@ -20,7 +20,6 @@
 #include "tiledpatternmaker.h"
 #include "legacy/design_maker.h"
 
-#include "makers/crop_maker/crop_maker.h"
 #include "makers/map_editor/map_editor.h"
 #include "makers/mosaic_maker/mosaic_maker.h"
 #include "makers/prototype_maker/prototype_maker.h"
@@ -53,6 +52,7 @@ using std::make_shared;
 #include "misc/fileservices.h"
 #endif
 
+int const TiledPatternMaker::EXIT_CODE_REBOOT = -123456789;
 
 TiledPatternMaker::TiledPatternMaker(int instance) : QObject()
 {
@@ -83,11 +83,10 @@ void TiledPatternMaker::startEverything()
 #endif
 
     view            = ViewControl::getInstance();
-    tilingMaker     = TilingMaker::getSharedInstance();
+    tilingMaker     = TilingMaker::getInstance();
     prototypeMaker  = PrototypeMaker::getInstance();
     mosaicMaker     = MosaicMaker::getInstance();
     mapEditor       = MapEditor::getInstance();
-    cropMaker       = CropMaker::getInstance();
 
     view->init();
 
@@ -169,11 +168,20 @@ void TiledPatternMaker::startEverything()
 
 TiledPatternMaker::~TiledPatternMaker()
 {
-    view->releaseInstance();
+    view->releaseInstance();    // releases viewers
+
+    DesignMaker::releaseInstance();
+    cycler->releaseInstance();
+    mapEditor->releaseInstance();
+
+    mosaicMaker->releaseInstance();
+    prototypeMaker->releaseInstance();
+    tilingMaker->releaseInstance();
+
     controlPanel->closePages();
     controlPanel->close();
     controlPanel->releaseInstance();
-    config->save();
+
     config->releaseInstance();      // performed last
 }
 

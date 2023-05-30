@@ -19,7 +19,6 @@
 #include "misc/layer_controller.h"
 #include <QColor>
 
-typedef std::shared_ptr<class TilingView>   TilingViewPtr;
 typedef std::shared_ptr<class Tiling>       TilingPtr;
 typedef std::shared_ptr<class PlacedTile>   PlacedTilePtr;
 
@@ -28,8 +27,8 @@ class GeoGraphics;
 class TilingView : public LayerController
 {
 public:
-    static TilingViewPtr getSharedInstance();
-    TilingView();   // dont_use this
+    static TilingView * getInstance();
+    static void         releaseInstance();
 
     void    setTiling(TilingPtr tiling) { this->tiling = tiling; }
 
@@ -59,8 +58,8 @@ protected:
     void    drawPlacedYTile(GeoGraphics * g2d, PlacedTilePtr pf);
 
 private:
-
-    static TilingViewPtr spThis;
+    TilingView();   // dont_use this
+    static TilingView * mpThis;
 
     TilingPtr           tiling;
 };

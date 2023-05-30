@@ -24,7 +24,7 @@ EdgePoly::EdgePoly(QRectF & rect)
     init(apoly);
 }
 
-EdgePoly::EdgePoly(Circle & circle)
+EdgePoly::EdgePoly(const Circle & circle)
 {
     set(circle);
 }
@@ -54,7 +54,7 @@ void EdgePoly::set(QRectF & rect)
     init(poly);
 }
 
-void EdgePoly::set(Circle & c)
+void EdgePoly::set(const Circle &c)
 {
     QPointF centre = c.centre;
     qreal   radius = c.radius;

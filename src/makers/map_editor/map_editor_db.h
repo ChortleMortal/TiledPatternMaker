@@ -6,6 +6,7 @@
 #include "misc/unique_qvector.h"
 #include "makers/map_editor/map_editor_mouseactions.h"
 #include "makers/map_editor/map_editor_stash.h"
+#include "makers/crop_maker/crop_maker.h"
 
 typedef std::shared_ptr<class Tiling>           TilingPtr;
 typedef std::shared_ptr<class Map>              MapPtr;
@@ -15,7 +16,6 @@ typedef std::shared_ptr<class Border>           BorderPtr;
 typedef std::shared_ptr<class Tile>             TilePtr;
 typedef std::shared_ptr<class DCEL>             DCELPtr;
 typedef std::shared_ptr<class Crop>             CropPtr;
-typedef std::shared_ptr<class Circle>           CirclePtr;
 typedef std::shared_ptr<class DesignElement>    DesignElementPtr;
 typedef std::shared_ptr<class Style>            StylePtr;
 
@@ -47,7 +47,7 @@ private:
     MapPtr            map;
 };
 
-class MapEditorDb
+class MapEditorDb  : public CropMaker
 {
 public:
     MapEditorDb();
@@ -109,11 +109,17 @@ public:
     bool                showDirnPoints;
     bool                showArcCentre;
 
-    UniqueQVector<QLineF>    constructionLines;
-    UniqueQVector<CirclePtr> constructionCircles;
+    UniqueQVector<QLineF> constructionLines;
+    UniqueQVector<Circle> constructionCircles;
 
     MapPtr              createdTilingMap;
     MapPtr              currentTilingMap;
+
+    void                setCrop(CropPtr acrop) override;
+    CropPtr             getCrop()              override { return _crop; }
+    void                removeCrop()           override { _crop.reset(); }
+    bool                embedCrop(MapPtr map);
+    bool                cropMap(MapPtr map);
 
 protected:
     eMapEditorMouseMode  mouseMode; // Mouse mode, triggered by the toolbar.
@@ -127,8 +133,6 @@ protected:
 
     MapMouseActionPtr   mouse_interaction;    // used by menu
 
-
-
 private:
     MapEditorStash    *  stash;                // stash of construction lines
 
@@ -138,6 +142,8 @@ private:
     MapEditorLayer      _layer1;
     MapEditorLayer      _layer2;
     MapEditorLayer      _layer3;
+
+    CropPtr              _crop;
 };
 
 #endif // MAPEDITORDB_H

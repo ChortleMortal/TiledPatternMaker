@@ -32,6 +32,15 @@ MosaicMaker * MosaicMaker::getInstance()
     return mpThis;
 }
 
+void MosaicMaker::releaseInstance()
+{
+    if (mpThis != nullptr)
+    {
+        delete mpThis;
+        mpThis = nullptr;
+    }
+}
+
 MosaicMaker::MosaicMaker()
 {
     _mosaic = make_shared<Mosaic>();
@@ -43,7 +52,7 @@ void MosaicMaker::init()
     config         = Configuration::getInstance();
     controlPanel   = ControlPanel::getInstance();
     viewControl    = ViewControl::getInstance();
-    tilingMaker    = TilingMaker::getSharedInstance();
+    tilingMaker    = TilingMaker::getInstance();
     auto cycler    = Cycler::getInstance();
 
     connect(cycler,&Cycler::sig_cycleLoadMosaic,    this,   &MosaicMaker::slot_cycleLoadMosaic);
@@ -141,7 +150,7 @@ void MosaicMaker::sm_takeDown(MosaicPtr mosaic)
 void MosaicMaker::sm_createMosaic(const QVector<ProtoPtr> prototypes)
 {
     QColor oldColor = _mosaic->getSettings().getBackgroundColor();
-    Xform  xf       = viewControl->getCurrentXform2();
+    Xform  xf       = viewControl->getCurrentXform();
 
     // This is a new mosaic
     _mosaic = make_shared<Mosaic>();
@@ -175,7 +184,9 @@ void MosaicMaker::sm_addPrototype(const QVector<ProtoPtr> prototypes)
     {
         StylePtr thick = make_shared<Plain>(prototype);
         _mosaic->addStyle(thick);
-        prototype->resetCrop(_mosaic->getCrop());
+        auto crop = _mosaic->getCrop();
+        if (crop)
+            prototype->setCrop(crop);
     }
 }
 
@@ -185,7 +196,9 @@ void MosaicMaker::sm_replacePrototype(ProtoPtr prototype)
     for (auto style : sset)
     {
         style->setPrototype(prototype);
-        prototype->resetCrop(_mosaic->getCrop());
+        auto crop = _mosaic->getCrop();
+        if (crop)
+            prototype->setCrop(crop);
     }
 }
 
@@ -214,6 +227,8 @@ void MosaicMaker::sm_takeUp(QVector<ProtoPtr> prototypes, eMOSM_Event event)
         break;
 
     case MOSM_RELOAD_SINGLE:
+        // the prototype remains the same, but may have different content
+        // so just reset the styles so that they may be drawn again
         sm_resetStyles();
         break;
 

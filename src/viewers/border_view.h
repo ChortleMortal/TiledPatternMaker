@@ -4,19 +4,15 @@
 
 #include "misc/layer_controller.h"
 
-typedef std::shared_ptr<class BorderView>   BorderViewPtr;
-typedef std::shared_ptr<class Border>       BorderPtr;
-typedef std::weak_ptr<class Border>         WeakBorderPtr;
-
+typedef std::shared_ptr<class Border>          BorderPtr;
 typedef std::shared_ptr<class MouseEditBorder> BorderMouseActionPtr;
+typedef std::weak_ptr<class Border>            WeakBorderPtr;
 
 class BorderView : public LayerController
 {
 public:
-    static BorderViewPtr getSharedInstance();
-
-    BorderView();  // dont use this
-    ~BorderView() {}
+    static BorderView * getInstance();
+    static void         releaseInstance();
 
     void          setBorder(BorderPtr border) { this->border = border; }
     virtual void  paint(QPainter * painter) override;
@@ -50,15 +46,17 @@ protected:
     BorderMouseActionPtr  getMouseInteraction() { return mouse_interaction; }
 
 private:
+    BorderView();
+    ~BorderView() {}
 
-    static BorderViewPtr spThis;
+    static BorderView * mpThis;
+    Configuration     * config;
+    WeakBorderPtr       border;
     QPointF             mousePos;             // used by menu
     bool                debugMouse;
 
     BorderMouseActionPtr   mouse_interaction;    // used by menu
 
-    WeakBorderPtr       border;
-    Configuration     * config;
 };
 
 #endif

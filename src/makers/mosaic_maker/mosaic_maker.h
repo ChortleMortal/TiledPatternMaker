@@ -8,7 +8,6 @@
 #include "enums/estatemachineevent.h"
 #include "settings/model_settings.h"
 
-typedef std::shared_ptr<class TilingMaker>      TilingMakerPtr;
 typedef std::shared_ptr<class Mosaic>           MosaicPtr;
 typedef std::shared_ptr<class Prototype>        ProtoPtr;
 typedef std::shared_ptr<class Style>            StylePtr;
@@ -18,6 +17,7 @@ class MosaicMaker : public QObject
     Q_OBJECT
 public:
     static MosaicMaker * getInstance();
+    static void          releaseInstance();
 
     void           init();
 
@@ -57,7 +57,7 @@ private:
     class ViewControl    * viewControl;
     class Configuration  * config;
     class ControlPanel   * controlPanel;
-    TilingMakerPtr         tilingMaker;
+    class TilingMaker    * tilingMaker;
 
     MosaicPtr           _mosaic;
 };

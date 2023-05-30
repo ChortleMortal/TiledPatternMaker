@@ -77,7 +77,7 @@ MapSelection::MapSelection(QPointF p)
     _constructionLine = false;
 }
 
-MapSelection::MapSelection(CirclePtr circle, bool constructionLine)
+MapSelection::MapSelection(Circle circle, bool constructionLine)
 {
     _type               = MAP_CIRCLE;
     _circle             = circle;
@@ -85,7 +85,7 @@ MapSelection::MapSelection(CirclePtr circle, bool constructionLine)
     _hasCircleIntersect = false;
 }
 
-MapSelection::MapSelection(CirclePtr circle, QPointF intersect, bool constructionLine)
+MapSelection::MapSelection(Circle circle, QPointF intersect, bool constructionLine)
 {
     _type               = MAP_CIRCLE;
     _circle             = circle;
@@ -142,9 +142,9 @@ QLineF MapSelection::getLine()
     return l;
 }
 
-CirclePtr MapSelection::getCircle()
+Circle MapSelection::getCircle()
 {
-    CirclePtr c;
+    Circle c;
 
     switch (_type)
     {

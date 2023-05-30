@@ -88,7 +88,7 @@ bool MapEditorStash::readStash(QString name)
 }
 
 
-bool MapEditorStash::readStashTo(QString name, QVector<QLineF>  & lines, QVector<CirclePtr> & circs)
+bool MapEditorStash::readStashTo(QString name, QVector<QLineF>  & lines, QVector<Circle> & circs)
 {
     QFile file(name);
     bool rv = file.open(QIODevice::ReadOnly);
@@ -127,7 +127,7 @@ bool MapEditorStash::readStashTo(QString name, QVector<QLineF>  & lines, QVector
 
     if (version == 2)
     {
-        QVector<CirclePtr> tmp;
+        QVector<Circle> tmp;
         in >> tmp;
         for (auto c : tmp)
         {

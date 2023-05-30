@@ -7,8 +7,7 @@
 
 typedef std::shared_ptr<class DesignElement>    DesignElementPtr;
 typedef std::shared_ptr<class Map>              MapPtr;
-typedef std::shared_ptr<class MapEditorView>    MapedViewPtr;
-typedef std::shared_ptr<class Tile>          TilePtr;
+typedef std::shared_ptr<class Tile>             TilePtr;
 
 typedef std::weak_ptr<class DesignElement>      WeakDELPtr;
 typedef std::weak_ptr<class Map>                WeakMapPtr;
@@ -19,10 +18,8 @@ class MapEditorSelection;
 class MapEditorView : public LayerController
 {
 public:
-    static MapedViewPtr getSharedInstance();
-
-    MapEditorView(int ignore);  // dont use this
-    ~MapEditorView() {}
+    static MapEditorView * getInstance();
+    static void            releaseInstance();
 
     void                init(MapEditorDb * maped_db, MapEditorSelection * selector);
 
@@ -74,13 +71,18 @@ public slots:
     void    setMousePos(QPointF pt);
     QPointF getMousePos() { return mousePos; }
 
-    QTransform          viewT;
-    QTransform          viewTinv;  // inverted
+    QTransform  viewT;
+    QTransform  viewTinv;  // inverted
 
 protected:
 
 private:
-    static MapedViewPtr spThis;
+    MapEditorView();
+    ~MapEditorView();
+
+    static MapEditorView * mpThis;
+
+    Configuration      * config;
 
     Xform               xf_canvas;
     QPointF             mousePos;             // used by menu
@@ -88,7 +90,6 @@ private:
 
     MapEditorDb        * db;
     MapEditorSelection * selector;
-    Configuration      * config;
 };
 
 #endif

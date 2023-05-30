@@ -32,8 +32,8 @@ Crop::Crop(CropPtr other)
     _aspect     = other->_aspect;
     _vAspect    = other->_vAspect;
 
-    poly        = other->poly;
-    circle      = other->circle;
+    _poly       = other->_poly;
+    _circle     = other->_circle;
     _rect       = other->_rect;
 }
 
@@ -42,11 +42,6 @@ void Crop::setRect(QRectF & rect)
     _cropType = CROP_RECTANGLE;
     _rect = rect.normalized();
     adjust();
-}
-
-QRectF Crop::getRect()
-{
-    return _rect;
 }
 
 void Crop::adjust()
@@ -109,36 +104,27 @@ void Crop::adjust()
     }
 }
 
-void Crop::setCircle(CirclePtr c)
+void Crop::setCircle(Circle &c)
 {
-    circle   = c;
+    _circle   = c;
     _cropType = CROP_CIRCLE;
 }
 
 void Crop::setPolygon(int sides, qreal scale, qreal rotDegrees)
 {
-    // this is a regaul polygon
-    poly = std::make_shared<Tile>(sides,rotDegrees,scale);
+    // this is a regular polygon
+    Tile atile(sides,rotDegrees,scale);
+    _poly = atile.getPolygon();
     _cropType = CROP_POLYGON;
 }
 
 
 void Crop::setPolygon(QPolygonF & p)
 {
-    EdgePoly ep(p);
-    poly = std::make_shared<Tile>(ep);
+    _poly = p;
     _cropType = CROP_POLYGON;
 }
 
-QPolygonF Crop::getPolygon()
-{
-    QPolygonF p;
-    if (poly)
-    {
-        p = poly->getPolygon();
-    }
-    return p;
-}
 
 QString Crop::getCropString()
 {
@@ -149,11 +135,9 @@ QString Crop::getCropString()
         astring = QString("Rect: %1,%2,%3x%4").arg(_rect.x()).arg(_rect.y()).arg(_rect.width()).arg(_rect.height());
         break;
     case CROP_CIRCLE:
-        if (circle)
-            astring =  QString("Circle: %1 %2 %3").arg(circle->radius).arg(circle->centre.x()).arg(circle->centre.y());
+            astring =  QString("Circle: %1 %2 %3").arg(_circle.radius).arg(_circle.centre.x()).arg(_circle.centre.y());
         break;
     case CROP_POLYGON:
-        if (poly)
             astring = "Polygon";
     default:
     case CROP_UNDEFINED:
@@ -174,17 +158,10 @@ QPointF Crop::getCenter()
         center = _rect.center();
         break;
     case CROP_CIRCLE:
-        if (circle)
-        {
-            center = circle->centre;
-        }
+            center = _circle.centre;
         break;
     case CROP_POLYGON:
-        if (poly)
-        {
-            auto pf = poly->getPolygon();
-            center = Point::center(pf);
-        }
+        center = Point::center(_poly);
         break;
     }
     return center;
@@ -195,16 +172,11 @@ QPointF Crop::getCenter()
 void  Crop::transform(QTransform t)
 {
     _rect = t.mapRect(_rect);
-    if (poly)
-    {
-        EdgePoly &  ep = poly->getEdgePoly();
-        ep.mapD(t);
-    }
-    if (circle)
-    {
-        circle->centre = t.map(circle->centre);
-        circle->radius = Transform::scalex(t) * circle->radius;
-    }
+
+    _poly = t.map(_poly);
+
+    _circle.centre = t.map(_circle.centre);
+    _circle.radius = Transform::scalex(t) * _circle.radius;
 }
 
 void Crop::draw(QPainter * painter, QTransform t, bool active)
@@ -222,7 +194,7 @@ void Crop::draw(QPainter * painter, QTransform t, bool active)
         painter->setPen(QPen(Qt::red,3));
     }
 
-    qDebug() << "Crop::draw" << Transform::toInfoString(t);
+    //qDebug() << "Crop::draw" << Transform::toInfoString(t);
     painter->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
 
     if (_cropType == CROP_RECTANGLE)
@@ -230,16 +202,16 @@ void Crop::draw(QPainter * painter, QTransform t, bool active)
         QRectF rect = t.mapRect(_rect);
         painter->drawRect(rect);
     }
-    else if (_cropType == CROP_POLYGON && poly)
+    else if (_cropType == CROP_POLYGON)
     {
-        QPolygonF p2 = t.map(poly->getPolygon());
+        QPolygonF p2 = t.map(_poly);
         painter->drawPolygon(p2);
     }
-    else if (_cropType == CROP_CIRCLE && circle)
+    else if (_cropType == CROP_CIRCLE)
     {
-        QPointF center = circle->centre;
+        QPointF center = _circle.centre;
         center         = t.map(center);
-        qreal radius   = circle->radius;
+        qreal radius   = _circle.radius;
         radius        *= Transform::scalex(t);
         painter->drawEllipse(center,radius,radius);
     }

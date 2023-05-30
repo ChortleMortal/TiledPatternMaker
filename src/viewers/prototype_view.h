@@ -6,7 +6,6 @@
 #include "mosaic/design_element.h"
 #include "makers/prototype_maker/prototype_maker.h"
 
-typedef std::shared_ptr<class PrototypeView>        PrototypeViewPtr;
 typedef std::shared_ptr<class Prototype>            ProtoPtr;
 
 enum eProtoViewMode
@@ -43,8 +42,8 @@ public:
 class PrototypeView : public LayerController
 {
 public:
-    static PrototypeViewPtr getSharedInstance();
-    PrototypeView();        // don't use this
+    static PrototypeView * getInstance();
+    static void            releaseInstance();
 
     ProtoViewColors & getColors()                    { return colors; }
 
@@ -62,10 +61,14 @@ protected:
     void   paint(QPainter *painter) override;
 
 private:
+    PrototypeView();
+    ~PrototypeView();
+
+    static PrototypeView * mpThis;
+
     void   draw();
     void   drawProto(ProtoPtr proto);
 
-    static PrototypeViewPtr spThis;
 
     PrototypeMaker * protoMaker;
     GeoGraphics    * gg;

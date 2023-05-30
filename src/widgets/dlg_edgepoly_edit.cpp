@@ -156,7 +156,7 @@ void DlgEdgePolyEdit::display()
 
 void DlgEdgePolyEdit::slot_ok()
 {
-    TilingMakerPtr tilingMaker = TilingMaker::getSharedInstance();
+    auto tilingMaker = TilingMaker::getInstance();
     tilingMaker->pushTileToPrototypeMaker(PROM_TILE_EDGES_CHANGED,tile);
     accept();
 }

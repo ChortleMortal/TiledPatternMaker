@@ -50,7 +50,7 @@ class BorderPlain : public Border
 {
 public:
     BorderPlain(CropPtr crop,   qreal width, QColor color);
-    BorderPlain(CirclePtr c,    qreal width, QColor color);
+    BorderPlain(Circle c,       qreal width, QColor color);
     BorderPlain(QRectF rect,    qreal width, QColor color);
     BorderPlain(QPolygonF poly, qreal width, QColor color);
     BorderPlain(QSizeF sz,      qreal width, QColor color);

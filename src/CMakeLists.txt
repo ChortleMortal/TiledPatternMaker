@@ -161,8 +161,6 @@ set(PROJECT_SOURCES
     makers/tiling_maker/tiling_maker.h
     makers/tiling_maker/tiling_mouseactions.cpp
     makers/tiling_maker/tiling_mouseactions.h
-    misc/backgroundimage.cpp
-    misc/backgroundimage.h
     misc/border.cpp
     misc/border.h
     misc/colorset.cpp
@@ -353,12 +351,14 @@ set(PROJECT_SOURCES
     tile/tiling_writer.h
     tiledpatternmaker.cpp
     tiledpatternmaker.h
+    viewers/backgroundimageview.cpp
+    viewers/backgroundimageview.h
     viewers/border_view.cpp
     viewers/border_view.h
     viewers/crop_view.cpp
     viewers/crop_view.h
-    viewers/grid.cpp
-    viewers/grid.h
+    viewers/grid_view.cpp
+    viewers/grid_view.h
     viewers/map_editor_view.cpp
     viewers/map_editor_view.h
     viewers/measure_view.cpp

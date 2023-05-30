@@ -23,24 +23,28 @@
 #include "viewers/map_editor_view.h"
 #include "viewers/viewcontrol.h"
 
-using std::make_shared;
+MapEditorView * MapEditorView::mpThis = nullptr;
 
-
-MapedViewPtr MapEditorView::spThis;
-
-MapedViewPtr MapEditorView::getSharedInstance()
+MapEditorView * MapEditorView::getInstance()
 {
-    if (!spThis)
+    if (!mpThis)
     {
-        spThis = make_shared<MapEditorView>(1);
+        mpThis = new MapEditorView();
     }
-    return spThis;
+    return mpThis;
 }
 
-MapEditorView::MapEditorView(int ignore) : LayerController("MapEditorView")
+void MapEditorView::releaseInstance()
 {
-    Q_UNUSED(ignore);
+    if (mpThis != nullptr)
+    {
+        delete mpThis;
+        mpThis = nullptr;
+    }
+}
 
+MapEditorView::MapEditorView() : LayerController("MapEditorView")
+{
     config      = Configuration::getInstance();
     debugMouse  = false;
 
@@ -49,9 +53,12 @@ MapEditorView::MapEditorView(int ignore) : LayerController("MapEditorView")
     selectionWidth        = 3.0;
 }
 
+MapEditorView::~MapEditorView()
+{}
+
 void MapEditorView::init(MapEditorDb * maped_db, MapEditorSelection * selector)
 {
-    db     = maped_db;
+    db = maped_db;
     this->selector = selector;
 }
 
@@ -157,11 +164,10 @@ void MapEditorView::draw(QPainter *painter )
         else if (type == MAP_CIRCLE)
         {
             auto c = sel->getCircle();
-            Q_ASSERT(c);
             if (!sel->isConstructionLine() || (sel->isConstructionLine() && db->showConstructionLines))
             {
-                qreal radius   = c->radius;
-                QPointF center = c->centre;
+                qreal radius   = c.radius;
+                QPointF center = c.centre;
                 radius = Transform::scalex(viewT) * radius;
                 painter->setPen(QPen(Qt::red,selectionWidth));
                 painter->setBrush(Qt::NoBrush);
@@ -198,12 +204,11 @@ void MapEditorView::drawMap(QPainter * painter, eLayer layer, QColor color)
 
     auto type = db->getMapType(map);
 
-    CropMaker * ced = CropMaker::getInstance();
-    auto crop = ced->getActiveCrop();
+    auto crop = db->getCrop();
     QTransform t;
     if (crop && type == MAPED_TYPE_CROP)
     {
-        t = CropView::getSharedInstance()->getLayerTransform();
+        t = CropViewer::getInstance()->getLayerTransform();
     }
     else
     {
@@ -357,10 +362,10 @@ void MapEditorView::drawBoundaries(QPainter *painter,  DesignElementPtr del)
     figBoundary  = placement.map(figBoundary);
 
     //figure->buildExtBoundary();
-    QPolygonF extBoundary = eb.get();
+    QPolygonF extBoundary = eb.getPoly();
     extBoundary           = placement.map(extBoundary);
 
-    qreal  boundaryScale  = eb.scale;
+    qreal  boundaryScale  = eb.getScale();
     boundaryScale        *= Transform::scalex(placement);
 
     // paint figure boundary
@@ -463,11 +468,11 @@ void MapEditorView::drawConstructionCircles(QPainter * painter)
     if (!db->showConstructionLines)
         return;
 
-    for (const auto &circle : qAsConst(db->constructionCircles))
+    for (const auto & circle : qAsConst(db->constructionCircles))
     {
-        QPointF pt = viewT.map(circle->centre);
+        QPointF pt = viewT.map(circle.centre);
         painter->setPen(QPen(Qt::white,constructionLineWidth));
-        painter->drawEllipse(pt, Transform::scalex(viewT) * circle->radius, Transform::scalex(viewT)  * circle->radius);
+        painter->drawEllipse(pt, Transform::scalex(viewT) * circle.radius, Transform::scalex(viewT)  * circle.radius);
 
         if (db->showPoints)
         {
@@ -494,10 +499,9 @@ QTransform MapEditorView::getPlacement(TilePtr tile)
 
 void MapEditorView::startMouseInteraction(QPointF spt, enum Qt::MouseButton mouseButton)
 {
-    CropMaker * cm = CropMaker::getInstance();
-    if (cm->getState() == CROPMAKER_STATE_ACTIVE)
+    if (CropViewer::getInstance()->getShowCrop())
     {
-        return;     // it will be handled by the CropMaker
+        return;     // it will be handled by the CropMaker - this is right
     }
 
     SelectionSet set = selector->findSelectionsUsingDB(spt);
@@ -510,10 +514,10 @@ void MapEditorView::startMouseInteraction(QPointF spt, enum Qt::MouseButton mous
             switch (sel->getType())
             {
             case MAP_VERTEX:
-                db->setMouseInteraction(make_shared<MoveVertex>(sel->getVertex(), spt));
+                db->setMouseInteraction(std::make_shared<MoveVertex>(sel->getVertex(), spt));
                 return;
             case MAP_EDGE:
-                db->setMouseInteraction(make_shared<MoveEdge>(sel->getEdge(), spt));
+                db->setMouseInteraction(std::make_shared<MoveEdge>(sel->getEdge(), spt));
                 return;
             default:
                 break;
@@ -683,7 +687,7 @@ void MapEditorView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
 
     case MAPED_MOUSE_DRAW_LINE:
         set = selector->findSelectionsUsingDB(mousePos);
-        db->setMouseInteraction(make_shared<DrawLine>(set,mousePos));
+        db->setMouseInteraction(std::make_shared<DrawLine>(set,mousePos));
         break;
 
     case MAPED_MOUSE_CREATE_LINE:
@@ -720,7 +724,7 @@ void MapEditorView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
 
     case MAPED_MOUSE_CONSTRUCTION_LINES:
         set = selector->findSelectionsUsingDB(mousePos);
-        db->setMouseInteraction(make_shared<ConstructionLine>(set,mousePos));
+        db->setMouseInteraction(std::make_shared<ConstructionLine>(set,mousePos));
         break;
 
     case MAPED_MOUSE_DELETE:
@@ -781,12 +785,12 @@ void MapEditorView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
 
     case MAPED_MOUSE_EXTEND_LINE_P1:
         set = selector->findSelectionsUsingDB(mousePos);
-        db->setMouseInteraction(make_shared<ExtendLine>(set,mousePos,true));
+        db->setMouseInteraction(std::make_shared<ExtendLine>(set,mousePos,true));
         break;
 
     case MAPED_MOUSE_EXTEND_LINE_P2:
         set = selector->findSelectionsUsingDB(mousePos);
-        db->setMouseInteraction(make_shared<ExtendLine>(set,mousePos,false));
+        db->setMouseInteraction(std::make_shared<ExtendLine>(set,mousePos,false));
         break;
 
     case MAPED_MOUSE_CONSTRUCTION_CIRCLES:
@@ -804,7 +808,7 @@ void MapEditorView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
             {
                 center = viewTinv.map(mousePos);
             }
-            db->constructionCircles.push_back(make_shared<Circle>(center, config->mapedRadius));
+            db->constructionCircles.push_back(Circle(center, config->mapedRadius));
             db->getStash()->stash();
             forceRedraw();
         }
@@ -814,7 +818,7 @@ void MapEditorView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
             if (sel)
             {
                 auto c = sel->getCircle();
-                db->setMouseInteraction(make_shared<EditConstructionCircle>(c,mousePos));
+                db->setMouseInteraction(std::make_shared<EditConstructionCircle>(c,mousePos));
             }
         }
         break;
@@ -831,7 +835,6 @@ void MapEditorView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
         setCenterScreenUnits(mousePos);
     }
 }
-
 
 void MapEditorView::slot_mouseDragged(QPointF spt)
 {

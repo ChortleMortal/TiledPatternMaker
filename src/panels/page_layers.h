@@ -55,8 +55,8 @@ private slots:
 
 protected:
     void populateLayers();
-    void populateLayer(LayerPtr layer, int col);
-    LayerPtr getLayer(int col);
+    void populateLayer(Layer *layer, int col);
+    Layer *getLayer(int col);
 
     void visibilityChanged(int col);
     void zChanged(AQDoubleSpinBox *dsp, int col);
@@ -69,7 +69,7 @@ protected:
 private:
     AQTableWidget * layerTable;
     QLabel        * refreshLabel;
-    QVector<WeakLayerPtr> wlayers;
+    QVector<Layer *> wlayers;
 };
 
 #endif

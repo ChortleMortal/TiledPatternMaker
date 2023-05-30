@@ -88,11 +88,6 @@ void  page_mosaic_maker::onRefresh()
 
     if (mosaic)
     {
-        auto protos = mosaic->getPrototypes();
-        for (auto & proto : protos)
-        {
-            qDebug() << "proto" << proto.get() << "use-count:" << proto.use_count();
-        }
         blockSignals(true);
 
         int xMin,xMax,yMin,yMax;

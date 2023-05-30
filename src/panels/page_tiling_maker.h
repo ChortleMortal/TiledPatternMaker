@@ -3,9 +3,7 @@
 
 #include "widgets/panel_page.h"
 #include "widgets/panel_misc.h"
-#include "enums/estatemachineevent.h"
 
-typedef std::shared_ptr<class BackgroundImage>  BkgdImgPtr;
 typedef std::shared_ptr<class Tiling>           TilingPtr;
 typedef std::shared_ptr<class PlacedTile>       PlacedTilePtr;
 typedef std::weak_ptr<class   PlacedTile>       WeakPlacedTilePtr;
@@ -18,6 +16,8 @@ class EdgePoly;
 class DoubleSpinSet;
 class AQSpinBox;
 class AQDoubleSpinBox;
+
+class TilingMakerView;
 
 enum epageTi
 {
@@ -62,7 +62,9 @@ private slots:
     void slot_sidesChanged(int col);
     void slot_tileRotChanged(int col);
     void slot_tileScaleChanged(int col);
-    void slot_transformChanged(int col);
+    void slot_placedTranslateChanged(int col);
+    void slot_placedScaleChanged(int col);
+    void slot_placedRotateChanged(int col);
     void slot_showTileChanged(int col);
     void slot_t1t2Changed(double val);
     void slot_t1t2LenChanged(double val);
@@ -115,6 +117,8 @@ protected:
     int              getColumn(PlacedTilePtr pfp);
 
 private:
+    TilingMakerView * tmView;
+
     QComboBox     * tilingCombo;
 
     QButtonGroup  * mouseModeBtnGroup;

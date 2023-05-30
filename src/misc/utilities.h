@@ -9,8 +9,6 @@ class Layer;
 class EdgePoly;
 class QGraphicsItem;
 
-typedef std::shared_ptr<class Circle> CirclePtr;
-
 class Utils
 {
 public:
@@ -24,12 +22,12 @@ public:
     static int  circleLineIntersectionPoints   (QPointF center,            qreal radius, const QLineF & line, QPointF & aa, QPointF & bb);
     static int  findLineCircleLineIntersections(QPointF centre,            qreal radius,       QLineF line, QPointF & intersection1, QPointF & intersection2);
 
-    static bool pointInCircle(QPointF pt, CirclePtr c);
-    static bool pointOnCircle(QPointF pt, CirclePtr c, qreal tolerance = Loose::NEAR_TOL);
+    static bool pointInCircle(QPointF pt, Circle c);
+    static bool pointOnCircle(QPointF pt, Circle c, qreal tolerance = Loose::NEAR_TOL);
 
     static int     circleIntersects(Circle c1, Circle c2);
     static QPointF circleTouchPt(Circle c0, Circle c1);
-    static int     circleCircleIntersectionPoints(CirclePtr c1, CirclePtr c2, QPointF & p1, QPointF & p2);
+    static int     circleCircleIntersectionPoints(Circle c1, Circle c2, QPointF & p1, QPointF & p2);
 
     static QLineF  normalVectorP1(QLineF line);
     static QLineF  normalVectorP2(QLineF line);

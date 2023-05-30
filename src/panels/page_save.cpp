@@ -12,7 +12,6 @@
 #include "settings/configuration.h"
 #include "style/style.h"
 #include "tile/tiling.h"
-#include "tiledpatternmaker.h"
 #include "viewers/viewcontrol.h"
 #include <QSvgGenerator>
 
@@ -45,7 +44,7 @@ page_save::page_save(ControlPanel * cpanel)  : panel_page(cpanel, "Save")
     vbox->addWidget(gbox);
 
     connect(mosaicMaker,&MosaicMaker::sig_mosaicLoaded,         this,   &page_save::setup);
-    connect(tilingMaker.get(),&TilingMaker::sig_tilingLoaded,   this,   &page_save::setup);
+    connect(tilingMaker,&TilingMaker::sig_tilingLoaded,         this,   &page_save::setup);
     connect(pbSaveMenu, &QPushButton::clicked,                  this,   &page_save::slot_saveMenu);
     connect(view,       &View::sig_saveMenu,                    this,   &page_save::slot_saveMenu);
     connect(pbSaveImage,&QPushButton::clicked,                  this,   &page_save::slot_saveImage);
@@ -139,7 +138,7 @@ void page_save::createTilingSave()
 
     connect(pbSave,     &QPushButton::clicked,      this,   &page_save::slot_saveTiling);
     connect(chkSaveTest,&QCheckBox::clicked,        this,   [this](bool checked) {config->saveTilingTest = checked; });
-    connect(this,       &page_save::sig_saveTiling, tilingMaker.get(), &TilingMaker::slot_saveTiling);
+    connect(this,       &page_save::sig_saveTiling, tilingMaker, &TilingMaker::slot_saveTiling);
 }
 
 void page_save::onEnter()

@@ -2,8 +2,6 @@
 #include "geometry/crop.h"
 #include "geometry/map.h"
 #include "settings/configuration.h"
-#include "tile/tile.h"
-#include "viewers/viewcontrol.h"
 #include "misc/geo_graphics.h"
 #include<QPainter>
 
@@ -88,7 +86,7 @@ BorderPlain::BorderPlain(QRectF rect, qreal width, QColor color)
     setRect(rect);
 }
 
-BorderPlain::BorderPlain(CirclePtr c, qreal width, QColor color)
+BorderPlain::BorderPlain(Circle c, qreal width, QColor color)
 {
     borderType   = BORDER_PLAIN;
     this->width  = width;
@@ -124,21 +122,18 @@ void BorderPlain::construct()
     switch (_cropType)
     {
     case CROP_RECTANGLE:
-        bmap = std::make_shared<Map>("Border",QPolygonF(_rect));
+        bmap = std::make_shared<Map>("Border",QPolygonF(getRect()));
         break;
 
     case CROP_POLYGON:
-        if (poly)
-            bmap = std::make_shared<Map>("Border",poly->getPolygon());
+        bmap = std::make_shared<Map>("Border",getPolygon());
         break;
 
     case CROP_CIRCLE:
-        if (circle)
-        {
-            EdgePoly ep(*circle);
-            bmap = std::make_shared<Map>("Border",ep);
-        }
-        break;
+    {
+        EdgePoly ep(getCircle());
+        bmap = std::make_shared<Map>("Border",ep);
+    }   break;
 
     default:
         qWarning("Not implemented yet");
@@ -194,8 +189,8 @@ BorderTwoColor::BorderTwoColor(QRectF rect, QColor color1, QColor color2, qreal 
 
 void BorderTwoColor::construct()
 {
-    qreal w  = _rect.width();
-    qreal h  = _rect.height();
+    qreal w  = getRect().width();
+    qreal h  = getRect().height();
 
     qreal x = 0.0;
     qreal y = 0.0;
@@ -365,8 +360,8 @@ BorderBlocks::BorderBlocks(QRectF rect, QColor color, qreal width, int rows, int
 
 void BorderBlocks::construct()
 {
-    qreal w  = _rect.width();
-    qreal h  = _rect.height();
+    qreal w  = getRect().width();
+    qreal h  = getRect().height();
 
     width = w /cols;
 

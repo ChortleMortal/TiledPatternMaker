@@ -13,14 +13,13 @@
 
 using std::string;
 using std::shared_ptr;
+using std::weak_ptr;
 using namespace pugi;
 
 class ViewControl;
 class Configuration;
 
-typedef shared_ptr<class BackgroundImage>  BkgdImgPtr;
 typedef shared_ptr<class Border>           BorderPtr;
-typedef shared_ptr<class Circle>           CirclePtr;
 typedef shared_ptr<class Crop>             CropPtr;
 typedef shared_ptr<class IrregularMotif>   ExplicitPtr;
 typedef shared_ptr<class ExtendedRosette>  ExtRosettePtr;
@@ -56,7 +55,7 @@ protected:
     void processDesign(QTextStream & ts);
     void procSize(QTextStream &ts, QSizeF size, QSize zsize);
     void procRect(QTextStream &ts, QRectF rect);
-    void procCircle(QTextStream &ts, CirclePtr c);
+    void procCircle(QTextStream &ts, Circle c);
     void procWidth(QTextStream &ts,qreal width);
     void procBackground(QTextStream &ts, QColor color);
     void procBorder(QTextStream &ts, BorderPtr border);

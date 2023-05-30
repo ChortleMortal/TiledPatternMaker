@@ -82,7 +82,6 @@ SOURCES += \
     makers/tiling_maker/tile_selection.cpp \
     makers/tiling_maker/tiling_maker.cpp \
     makers/tiling_maker/tiling_mouseactions.cpp \
-    misc/backgroundimage.cpp \
     misc/border.cpp \
     misc/colorset.cpp \
     misc/cycler.cpp \
@@ -175,9 +174,10 @@ SOURCES += \
     tile/tiling_manager.cpp \
     tile/tiling_writer.cpp \
     tiledpatternmaker.cpp \
+    viewers/backgroundimageview.cpp \
     viewers/border_view.cpp \
     viewers/crop_view.cpp \
-    viewers/grid.cpp \
+    viewers/grid_view.cpp \
     viewers/map_editor_view.cpp \
     viewers/measure_view.cpp \
     viewers/motif_view.cpp \
@@ -291,7 +291,6 @@ HEADERS += \
     makers/tiling_maker/tile_selection.h \
     makers/tiling_maker/tiling_maker.h \
     makers/tiling_maker/tiling_mouseactions.h \
-    misc/backgroundimage.h \
     misc/border.h \
     misc/colorset.h \
     misc/cycler.h \
@@ -390,9 +389,10 @@ HEADERS += \
     tile/tiling_manager.h \
     tile/tiling_writer.h \
     tiledpatternmaker.h \
+    viewers/backgroundimageview.h \
     viewers/border_view.h \
     viewers/crop_view.h \
-    viewers/grid.h \
+    viewers/grid_view.h \
     viewers/map_editor_view.h \
     viewers/measure_view.h \
     viewers/motif_view.h \

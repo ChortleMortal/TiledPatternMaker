@@ -40,13 +40,14 @@ public:
     const StyleSet & getStyleSet() { return styleSet; }
     StylePtr         getFirstStyle();
 
-    // mosaic has a crop or a border (but not both)
-    BorderPtr   getBorder() { return border; }
+    // mosaic can have a crop and/or a border
+    BorderPtr   getBorder()     { return _border; }
     void        setBorder(BorderPtr bp);
+    void        resetBorder()   { _border.reset(); }
 
-    CropPtr     getCrop() { return crop; }
-    void        initCrop(CropPtr crop);     // call this when creating mosaic
-    void        resetCrop(CropPtr crop);    // call this when mosaic is already loaded
+    CropPtr     getCrop()       { return _crop; }
+    void        setCrop(CropPtr crop);
+    void        resetCrop();
 
     void        setName(QString name);
     QString     getName();
@@ -68,15 +69,14 @@ public:
     static int  refs;
 
 protected:
-    void        _eraseCrop();
 
 private:
     StyleSet         styleSet;
     QString          name;
     QString          designNotes;
     ModelSettings    settings;
-    BorderPtr        border;
-    CropPtr          crop;
+    BorderPtr        _border;
+    CropPtr          _crop;
     uint             cleanseLevel;
 };
 

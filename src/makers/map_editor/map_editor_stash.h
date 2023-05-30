@@ -5,13 +5,13 @@
 #include <QObject>
 #include <QTimer>
 #include <QLineF>
+#include "geometry/circle.h"
+
 #if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
 #include <memory>
 #endif
 
 class MapEditorDb;
-
-typedef std::shared_ptr<class Circle>   CirclePtr;
 
 #define MAX_STASH 9
 
@@ -47,7 +47,7 @@ protected slots:
     void         slot_nextAnimationStep();
 
 protected:
-    bool         readStashTo(QString name, QVector<QLineF>  & lines, QVector<CirclePtr> & circs);
+    bool         readStashTo(QString name, QVector<QLineF>  & lines, QVector<Circle> &circs);
 
 private:
     int first;
@@ -57,7 +57,7 @@ private:
     MapEditorDb      * db;
     QTimer           * timer;
     QVector<QLineF>    localLines;
-    QVector<CirclePtr> localCircs;
+    QVector<Circle>    localCircs;
 
 };
 

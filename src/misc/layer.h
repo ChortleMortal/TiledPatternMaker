@@ -74,6 +74,7 @@ public:
     virtual void iamaLayer() = 0;
 
     static bool sortByZlevel(LayerPtr s1, LayerPtr s2);
+    static bool sortByZlevelP(Layer *  s1, Layer  * s2);
 
     static int refs;
 

@@ -83,6 +83,11 @@ bool Layer::sortByZlevel(LayerPtr s1, LayerPtr s2)
     return s1->zlevel < s2->zlevel;
 }
 
+bool Layer::sortByZlevelP(Layer * s1, Layer * s2)
+{
+    return s1->zlevel < s2->zlevel;
+}
+
 void Layer::addSubLayer(LayerPtr item)
 {
     item->setLoc(pos);
@@ -113,16 +118,8 @@ void Layer::forceRedraw()
 
 bool Layer::isSelected()
 {
-    LayerPtr lp = config->selectedLayer.lock();
-    if (lp)
-    {
-        Layer * layer = lp.get();
-        if (layer == this)
-        {
-            return true;
-        }
-    }
-    return false;
+    auto lp = config->selectedLayer;
+    return (lp == this);
 }
 
 QTransform  Layer::getFrameTransform()
@@ -206,13 +203,13 @@ QPointF Layer::getCenterModelUnits()
 
 void Layer::setCanvasXform(const Xform & xf)
 {
-    view->setCurrentXform2(xf);
+    view->setCurrentXform(xf);
     forceLayerRecalc();
 }
 
 const Xform & Layer::getCanvasXform()
 {
-    return view->getCurrentXform2();
+    return view->getCurrentXform();
 }
 
 qreal Layer::screenToWorld(qreal val)

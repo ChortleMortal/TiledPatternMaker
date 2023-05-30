@@ -2,7 +2,7 @@
 #include <QFileDialog>
 #include <QPainter>
 
-#include "misc/backgroundimage.h"
+#include "viewers/backgroundimageview.h"
 #include "geometry/edge.h"
 #include "geometry/point.h"
 #include "geometry/transform.h"
@@ -13,18 +13,27 @@
 
 using std::make_shared;
 
-BkgdImgPtr BackgroundImage::spThis;
+BackgroundImageView * BackgroundImageView::mpThis = nullptr;
 
-BkgdImgPtr BackgroundImage::getSharedInstance()
+BackgroundImageView * BackgroundImageView::getInstance()
 {
-    if (!spThis)
+    if (!mpThis)
     {
-        spThis = make_shared<BackgroundImage>();
+        mpThis = new BackgroundImageView();
     }
-    return spThis;
+    return mpThis;
 }
 
-BackgroundImage::BackgroundImage() : LayerController("Bkgd Image")
+void BackgroundImageView::releaseInstance()
+{
+    if (mpThis)
+    {
+        delete mpThis;
+        mpThis = nullptr;
+    }
+}
+
+BackgroundImageView::BackgroundImageView() : LayerController("Bkgd Image")
 {
     view     = ViewControl::getInstance();
     config   = Configuration::getInstance();
@@ -35,15 +44,18 @@ BackgroundImage::BackgroundImage() : LayerController("Bkgd Image")
     setZValue(-20);
 
     _loaded     = false;
-    skewMode    = false;
 }
 
-QString BackgroundImage::getName()
+BackgroundImageView::~BackgroundImageView()
+{
+}
+
+QString BackgroundImageView::getName()
 {
     return bkgdName;
 }
 
-void BackgroundImage::paint(QPainter *painter)
+void BackgroundImageView::paint(QPainter *painter)
 {
     static constexpr QColor construction_color  = QColor(  0,128,  0,128);
 
@@ -98,15 +110,11 @@ void BackgroundImage::paint(QPainter *painter)
                 painter->drawEllipse(p,6,6);
             }
         }
-    }
-
-    if (mouse_interaction)
-    {
-        mouse_interaction->draw(painter);
+        drawPerspective(painter);
     }
 }
 
-bool BackgroundImage::import(QString filename)
+bool BackgroundImageView::import(QString filename)
 {
     qDebug() << "BackgroundImage::import()" << filename;
     QFileInfo info(filename);
@@ -128,7 +136,7 @@ bool BackgroundImage::import(QString filename)
     return false;
 }
 
-bool BackgroundImage::load(QString imageName)
+bool BackgroundImageView::load(QString imageName)
 {
     unload();
 
@@ -147,12 +155,11 @@ bool BackgroundImage::load(QString imageName)
     return _loaded;
 }
 
-void BackgroundImage::unload()
+void BackgroundImageView::unload()
 {
     _loaded         = false;
     bUseAdjusted    = false;
-    skewMode        = false;
-    mouse_interaction.reset();
+    resetPerspective();
     bkgdName = "Bkgd Image";
 
     Xform xf;
@@ -160,13 +167,13 @@ void BackgroundImage::unload()
     forceLayerRecalc(false);
 }
 
-void  BackgroundImage::setUseAdjusted(bool use)
+void  BackgroundImageView::setUseAdjusted(bool use)
 {
     bUseAdjusted = use;
     qDebug() << "useAdjusted" << bUseAdjusted;
 }
 
-void BackgroundImage::createPixmap()
+void BackgroundImageView::showPixmap()
 {
 
     if (bUseAdjusted && !adjustedImage.isNull())
@@ -185,7 +192,7 @@ void BackgroundImage::createPixmap()
 
 // this is perspective correction
 // for images where camera was not normal to the plane of the tiling
-void BackgroundImage::createBackgroundAdjustment(QPointF topLeft, QPointF topRight, QPointF botRight, QPointF botLeft)
+void BackgroundImageView::createBackgroundAdjustment(QPointF topLeft, QPointF topRight, QPointF botRight, QPointF botLeft)
 {
     QSize sz      = pixmap.size();
     qreal offsetX = (view->width() -  sz.width()) / 2;
@@ -209,7 +216,7 @@ void BackgroundImage::createBackgroundAdjustment(QPointF topLeft, QPointF topRig
     createAdjustedImage();
 }
 
-void BackgroundImage::createAdjustedImage()
+void BackgroundImageView::createAdjustedImage()
 {
     if (!bkgdImage.isNull() && !perspective.isIdentity())
     {
@@ -222,7 +229,7 @@ void BackgroundImage::createAdjustedImage()
     }
 }
 
-bool BackgroundImage::saveAdjusted(QString newName)
+bool BackgroundImageView::saveAdjusted(QString newName)
 {
     QString file = config->rootMediaDir + "bkgd_photos/" +  newName;
     qDebug() << "Saving adjusted:" << file;
@@ -230,7 +237,7 @@ bool BackgroundImage::saveAdjusted(QString newName)
     return rv;
 }
 
-void BackgroundImage::correctPerspective(QPointF topLeft, QPointF topRight, QPointF botRight, QPointF botLeft)
+void BackgroundImageView::correctPerspective(QPointF topLeft, QPointF topRight, QPointF botRight, QPointF botLeft)
 {
     qreal width = 0;
     qreal height = 0;
@@ -290,18 +297,18 @@ void BackgroundImage::correctPerspective(QPointF topLeft, QPointF topRight, QPoi
 ////////////////////////////////////////////////////////
 
 
-const Xform  & BackgroundImage::getCanvasXform()
+const Xform  & BackgroundImageView::getCanvasXform()
 {
     return xf_layer;
 }
 
-void BackgroundImage::setCanvasXform(const Xform & xf)
+void BackgroundImageView::setCanvasXform(const Xform & xf)
 {
     xf_layer = xf;
     forceLayerRecalc();
 }
 
-void BackgroundImage::slot_setCenter(QPointF spt)
+void BackgroundImageView::slot_setCenter(QPointF spt)
 {
     if (!view->isActiveLayer(this)) return;
 
@@ -313,38 +320,23 @@ void BackgroundImage::slot_setCenter(QPointF spt)
     }
 }
 
-void BackgroundImage::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
+void BackgroundImageView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
 {
     Q_UNUSED(btn);
 
     if (!view->isActiveLayer(this)) return;
 
-    if (skewMode)
-    {
-        if (mouse_interaction)
-        {
-            PerspectivePtr pp = std::dynamic_pointer_cast<Perspective>(mouse_interaction);
-            if (pp)
-            {
-                pp->addPoint(spt);
-            }
-        }
-        else
-        {
-            mouse_interaction = make_shared<Perspective>(spt);
-        }
-    }
+    startDragging(spt);
 }
 
-void BackgroundImage::slot_mouseDragged(QPointF spt)
+void BackgroundImageView::slot_mouseDragged(QPointF spt)
 {
     if (!view->isActiveLayer(this)) return;
 
-    if (mouse_interaction)
-        mouse_interaction->updateDragging(spt);
+    updateDragging(spt);
 }
 
-void BackgroundImage::slot_mouseTranslate(QPointF pt)
+void BackgroundImageView::slot_mouseTranslate(QPointF pt)
 {
     if (!view->isActiveLayer(this)) return;
 
@@ -359,25 +351,21 @@ void BackgroundImage::slot_mouseTranslate(QPointF pt)
     }
 }
 
-void BackgroundImage::slot_mouseMoved(QPointF spt)
+void BackgroundImageView::slot_mouseMoved(QPointF spt)
 { Q_UNUSED(spt); }
 
-void BackgroundImage::slot_mouseReleased(QPointF spt)
+void BackgroundImageView::slot_mouseReleased(QPointF spt)
 {
     if (!view->isActiveLayer(this)) return;
 
-    if (mouse_interaction)
-    {
-        mouse_interaction->endDragging(spt);
-        mouse_interaction.reset();
-    }
+    endDragging(spt);
 }
 
-void BackgroundImage::slot_mouseDoublePressed(QPointF spt)
+void BackgroundImageView::slot_mouseDoublePressed(QPointF spt)
 { Q_UNUSED(spt); }
 
 
-void BackgroundImage::slot_wheel_scale(qreal delta)
+void BackgroundImageView::slot_wheel_scale(qreal delta)
 {
     if (!view->isActiveLayer(this)) return;
 
@@ -391,7 +379,7 @@ void BackgroundImage::slot_wheel_scale(qreal delta)
     }
 }
 
-void BackgroundImage::slot_wheel_rotate(qreal delta)
+void BackgroundImageView::slot_wheel_rotate(qreal delta)
 {
     if (!view->isActiveLayer(this)) return;
 
@@ -405,7 +393,7 @@ void BackgroundImage::slot_wheel_rotate(qreal delta)
     }
 }
 
-void BackgroundImage::slot_scale(int amount)
+void BackgroundImageView::slot_scale(int amount)
 {
     if (!view->isActiveLayer(this)) return;
 
@@ -419,7 +407,7 @@ void BackgroundImage::slot_scale(int amount)
     }
 }
 
-void BackgroundImage::slot_rotate(int amount)
+void BackgroundImageView::slot_rotate(int amount)
 {
     if (!view->isActiveLayer(this)) return;
 
@@ -433,7 +421,7 @@ void BackgroundImage::slot_rotate(int amount)
     }
 }
 
-void BackgroundImage::slot_moveX(int amount)
+void BackgroundImageView::slot_moveX(int amount)
 {
     if (!view->isActiveLayer(this)) return;
 
@@ -447,7 +435,7 @@ void BackgroundImage::slot_moveX(int amount)
     }
 }
 
-void BackgroundImage::slot_moveY(int amount)
+void BackgroundImageView::slot_moveY(int amount)
 {
     if (!view->isActiveLayer(this)) return;
 
@@ -461,15 +449,6 @@ void BackgroundImage::slot_moveY(int amount)
     }
 }
 
-void  BackgroundImage::setSkewMode(bool enb)
-{
-    skewMode = enb;
-    if (!enb)
-    {
-        mouse_interaction.reset();
-        sAccum.clear();
-    }
-}
 
 /////////
 ///
@@ -477,86 +456,116 @@ void  BackgroundImage::setSkewMode(bool enb)
 ///
 /////////
 
-Perspective::Perspective(QPointF spt)
+Perspective::Perspective()
 {
-    bip = BackgroundImage::getSharedInstance();
-    EdgePoly & saccum = bip->sAccum;
-    qDebug() << "click size=" << saccum.size();
-    if (saccum.size() == 0)
+    skewMode = false;
+}
+
+void Perspective::resetPerspective()
+{
+    skewMode = false;
+    sAccum.clear();
+}
+
+void Perspective::startDragging(QPointF spos)
+{
+    if (!skewMode)
+        return;
+
+    if (sAccum.size() == 0)
     {
-        addPoint(spt);
+        addPoint(spos);
     }
 }
 
 void Perspective::addPoint(QPointF spos)
 {
+    if (!skewMode)
+        return;
+
     qDebug("Perspective::addPoint");
 
     VertexPtr vnew = make_shared<Vertex>(spos);
 
-    EdgePoly & accum = bip->sAccum;
-    int size = accum.size();
-
+    int size = sAccum.size();
     if (size == 0)
     {
-        accum.push_back(make_shared<Edge>(vnew));
+        sAccum.push_back(make_shared<Edge>(vnew));
         qDebug() << "point count = 1";
     }
     else if (size == 1)
     {
-        EdgePtr last = accum.last();
+        EdgePtr last = sAccum.last();
         if (last->getType() == EDGETYPE_POINT)
         {
             last->setV2(vnew);
-            qDebug() << "edge count =" << accum.size();
+            qDebug() << "edge count =" << sAccum.size();
         }
         else
         {
-            accum.push_back(make_shared<Edge>(last->v2,vnew));
-            qDebug() << "edge count =" << accum.size();
+            sAccum.push_back(make_shared<Edge>(last->v2,vnew));
+            qDebug() << "edge count =" << sAccum.size();
         }
     }
     else if (size == 2)
     {
-        EdgePtr last = accum.last();
-        accum.push_back(make_shared<Edge>(last->v2,vnew));
-        qDebug() << "edge count = " << accum.size();
-        accum.push_back(make_shared<Edge>(vnew,accum.first()->v1));
-        qDebug() << "completed with edge count =" << accum.size();
-        bip->forceRedraw();
+        EdgePtr last = sAccum.last();
+        sAccum.push_back(make_shared<Edge>(last->v2,vnew));
+        qDebug() << "edge count = " << sAccum.size();
+        sAccum.push_back(make_shared<Edge>(vnew,sAccum.first()->v1));
+        qDebug() << "completed with edge count" << sAccum.size();
+        forceRedraw();
     }
+    sLastDrag = QPointF();
 }
 
 void Perspective::updateDragging(QPointF spt)
 {
+    if (!skewMode)
+        return;
+
     sLastDrag = spt;
-    bip->forceRedraw();
+    forceRedraw();
 }
 
 void Perspective::endDragging(QPointF spt )
 {
-    EdgePoly & saccum = bip->sAccum;
-    if (!Point::isNear(spt,saccum.first()->v1->pt))
+    if (!skewMode)
+        return;
+
+    if (!Point::isNear(spt,sAccum.first()->v1->pt))
     {
         addPoint(spt);
     }
-    bip->forceRedraw();
+    sLastDrag = QPointF();
+    forceRedraw();
 }
 
-void Perspective::draw(QPainter * painter)
+void Perspective::drawPerspective(QPainter * painter)
 {
-
-    EdgePoly & saccum = bip->sAccum;
-    if (saccum.size() > 0)
+    if (sAccum.size() > 0 && !sLastDrag.isNull())
     {
-        if (!sLastDrag.isNull())
-        {
-            QColor drag_color = QColor(206,179,102,230);
-            painter->setPen(QPen(drag_color,3));
-            painter->setBrush(QBrush(drag_color));
-            painter->drawLine(saccum.last()->v2->pt,sLastDrag);
-            painter->drawEllipse(sLastDrag,10,10);
-        }
+        // draws line while dragginhg
+        QColor drag_color = QColor(206,179,102,230);
+        painter->setPen(QPen(drag_color,3));
+        painter->setBrush(QBrush(drag_color));
+        painter->drawLine(sAccum.last()->v2->pt,sLastDrag);
+        painter->drawEllipse(sLastDrag,10,10);
     }
 }
 
+void Perspective::forceRedraw()
+{
+    ViewControl::getInstance()->update();
+}
+
+void  Perspective::setSkewMode(bool enb)
+{
+    skewMode = enb;
+    if (enb)
+    {
+        sAccum.clear();
+        sLastDrag = QPointF();
+    }
+    forceRedraw();
+}

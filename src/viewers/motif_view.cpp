@@ -24,15 +24,24 @@ using std::make_shared;
 
 typedef std::shared_ptr<RadialMotif>    RadialPtr;
 
-MotifViewPtr MotifView::spThis;
+MotifView * MotifView::mpThis = nullptr;
 
-MotifViewPtr MotifView::getSharedInstance()
+MotifView * MotifView::getInstance()
 {
-    if (!spThis)
+    if (!mpThis)
     {
-        spThis = make_shared<MotifView>();
+        mpThis = new MotifView();
     }
-    return spThis;
+    return mpThis;
+}
+
+void MotifView::releaseInstance()
+{
+    if (mpThis != nullptr)
+    {
+        delete mpThis;
+        mpThis = nullptr;
+    }
 }
 
 MotifView::MotifView() : LayerController("Motif View")
@@ -244,12 +253,12 @@ void MotifView::paintExtendedBoundary(QPainter *painter, MotifPtr motif)
 
     if (!eb.isCircle())
     {
-        const QPolygonF & p = eb.get();
+        const QPolygonF & p = eb.getPoly();
         painter->drawPolygon(_T.map(p));
     }
     else
     {
-        qreal radius = eb.scale * Transform::scalex(_T);
+        qreal radius = eb.getScale() * Transform::scalex(_T);
         painter->drawEllipse(_T.map(QPointF(0,0)),radius,radius);
     }
 }

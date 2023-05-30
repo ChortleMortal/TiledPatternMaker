@@ -1,22 +1,21 @@
 #include "tile/tiling_manager.h"
 #include "misc/fileservices.h"
-#include "makers/mosaic_maker/mosaic_maker.h"
 #include "makers/prototype_maker/prototype_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "settings/model_settings.h"
 #include "settings/configuration.h"
-#include "misc/backgroundimage.h"
 #include "tile/tiling.h"
 #include "tile/tiling_loader.h"
 #include "tile/tiling_writer.h"
+#include "viewers/backgroundimageview.h"
 #include "viewers/viewcontrol.h"
 
 TilingManager::TilingManager()
 {
-    view         = ViewControl::getInstance();
-    config       = Configuration::getInstance();
-    tilingMaker  = TilingMaker::getSharedInstance();
-    prototypeMaker   = PrototypeMaker::getInstance();
+    view            = ViewControl::getInstance();
+    config          = Configuration::getInstance();
+    tilingMaker     = TilingMaker::getInstance();
+    prototypeMaker  = PrototypeMaker::getInstance();
 }
 
 TilingPtr TilingManager::loadTiling(QString name, eTILM_Event event)
@@ -29,8 +28,8 @@ TilingPtr TilingManager::loadTiling(QString name, eTILM_Event event)
         qWarning() << "No tiling found with name" << name;
         return loadedTiling;
     }
-
-    BkgdImgPtr bip = BackgroundImage::getSharedInstance();
+    
+    auto bip = BackgroundImageView::getInstance();
     bip->unload();
 
     qInfo().noquote() << "TilingManager::loadTiling" << filename << sTILM_Events[event];
@@ -104,7 +103,7 @@ bool TilingManager::saveTiling(QString name, TilingPtr tiling)
 
     if (tilingMaker->getSelected() == tiling)
     {
-        Xform xf = tilingMaker->getCanvasXform();
+        Xform xf = TilingMakerView::getInstance()->getCanvasXform();
         tiling->setCanvasXform(xf);
     }
 

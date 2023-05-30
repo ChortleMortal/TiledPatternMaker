@@ -96,12 +96,7 @@ void DesignElement::createMotifFromTile()
 
     motif->setMotifScale(tile->getScale());
     motif->setMotifRotate(tile->getRotation());
-
-    ExtendedBoundary & eb = motif->getRWExtendedBoundary();
-    eb.sides = tile->numPoints();
-    eb.scale = tile->getScale();
-    QPolygonF poly = tile->getPolygon();
-    eb.set(poly);
+    motif->createExtendedBoundary(tile);
 }
 
 void DesignElement::recreateMotifFromChangedTile()
@@ -117,18 +112,9 @@ void DesignElement::recreateMotifFromChangedTile()
     if (motif->getN() != newsides)
     {
         motif->setN(newsides);  // this should do the trick
-
-        ExtendedBoundary & extended = motif->getRWExtendedBoundary();
-        extended.sides = newsides;
-        if (motif->isRadial())
-        {
-            extended.buildRadial();
-        }
-        else
-        {
-            extended.buildExplicit(tile);
-        }
     }
+
+    motif->createExtendedBoundary(tile);
 }
 
 void DesignElement::recreateMotifUsingTile()
@@ -190,9 +176,6 @@ void DesignElement::recreateMotifUsingTile()
             irose->init(oldMotif->getQ(), oldMotif->getK(), oldMotif->getS());
             irose->setup(tile);
             irose->buildMotifMaps();
-            //rose->setMotifBoundary(tile->getPolygon());
-            //ExtendedBoundary & eb = rose->getRWExtendedBoundary();
-            //eb.set(tile->getPolygon());
             motif = irose;
         }
             break;
@@ -207,9 +190,6 @@ void DesignElement::recreateMotifUsingTile()
             istar->init(oldMotif->getD(), oldMotif->getS());
             istar->setup(tile);
             istar->buildMotifMaps();
-            //star->setMotifBoundary(tile->getPolygon());
-            //ExtendedBoundary & eb = star->getRWExtendedBoundary();
-            //eb.set(tile->getPolygon());
             motif = istar;
         }
             break;
@@ -220,6 +200,7 @@ void DesignElement::recreateMotifUsingTile()
         }
     }
 
+    motif->createExtendedBoundary(tile);
 #if 0 // Methinks not needed any more becaude of export data
     motif->setMotifScale(tile->getScale());
     motif->setMotifRotate(tile->getRotation());

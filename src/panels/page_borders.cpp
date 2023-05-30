@@ -9,7 +9,6 @@
 #include "makers/mosaic_maker/mosaic_maker.h"
 #include "makers/map_editor/map_editor.h"
 #include "misc/border.h"
-#include "misc/utilities.h"
 #include "mosaic/mosaic.h"
 #include "panels/panel.h"
 #include "settings/configuration.h"
@@ -22,7 +21,7 @@ using std::make_shared;
 
 page_borders::page_borders(ControlPanel * apanel)  : panel_page(apanel,"Border Maker")
 {
-    brview = BorderView::getSharedInstance();
+    brview = BorderView::getInstance();
 
     // create button
     QPushButton * pbLoadCrop = new QPushButton("Load from Crop");
@@ -452,9 +451,9 @@ void page_borders::refreshBorderCrop(BorderPtr border)
     else if (ctype == CROP_CIRCLE)
     {
         auto c = border->getCircle();
-        QPointF p = c->centre;
+        QPointF p = c.centre;
         centre->set(p);
-        qreal r = c->radius;
+        qreal r = c.radius;
         radius->setValue(r);
     }
 }
@@ -476,8 +475,8 @@ void page_borders::slot_loadFromCrop()
         return;
     }
 
-   CropPtr crop = mosaic->getCrop();
-    if (!crop)
+   CropPtr mosCrop = mosaic->getCrop();
+    if (!mosCrop)
     {
         QMessageBox box(panel);
         box.setIcon(QMessageBox::Warning);
@@ -488,36 +487,34 @@ void page_borders::slot_loadFromCrop()
     }
 
     // convert crop
-    switch (crop->getCropType())
+    auto newCrop = make_shared<Crop>();
+    switch (mosCrop->getCropType())
     {
     case CROP_RECTANGLE:
     {
-        auto rect = brview->worldToScreen(crop->getRect());
-        crop->setRect(rect);
-    }
-        break;
+        auto rect = brview->worldToScreen(mosCrop->getRect());
+        newCrop->setRect(rect);
+    }   break;
 
     case CROP_CIRCLE:
     {
-        Circle c = *crop->getCircle().get();
+        Circle c = mosCrop->getCircle();
         c = brview->worldToScreen(c);
-        auto circle = make_shared<Circle>(c);
-        crop->setCircle(circle);
-    }
-        break;
+        newCrop->setCircle(c);
+    }   break;
 
     case CROP_POLYGON:
     {
-        auto poly = brview->worldToScreen(crop->getPolygon());
-        crop->setPolygon(poly);
-    }
-        break;
+        auto poly = brview->worldToScreen(mosCrop->getPolygon());
+        newCrop->setPolygon(poly);
+    }   break;
+
     case CROP_UNDEFINED:
         break;
     }
 
     // new border
-    auto border = make_shared<BorderPlain>(crop,7,QColor(Qt::red));     // HACK
+    auto border = make_shared<BorderPlain>(newCrop,7,QColor(Qt::red));     // HACK
     border->construct();
     mosaic->setBorder(border);
 
@@ -564,12 +561,11 @@ void page_borders::createBorder()
 
         case CROP_CIRCLE:
         {
-            qreal width  = borderWidth[0]->value();
             QColor color(borderColor[0]->text());
-            QPointF pt = centre->get();
-            qreal   r   = radius->value();
-            auto c = std::make_shared<Circle>(pt,r);
-
+            qreal width  = borderWidth[0]->value();
+            QPointF pt   = centre->get();
+            qreal   r    = radius->value();
+            Circle c(pt,r);
             auto bp = make_shared<BorderPlain>(c,width,color);
             bp->construct();
             mosaic->setBorder(bp);
@@ -831,7 +827,7 @@ void page_borders::slot_centreChanged()
 
     auto c = bp->getCircle();
     QPointF p = centre->get();
-    c->setCenter(p);
+    c.setCenter(p);
 
     bp->construct();
     view->update();
@@ -846,7 +842,7 @@ void page_borders::slot_radiusChanged(qreal r)
         return;
 
     auto c = bp->getCircle();
-    c->setRadius(r);
+    c.setRadius(r);
 
     bp->construct();
     view->update();

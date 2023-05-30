@@ -24,10 +24,10 @@ MouseEditCrop::MouseEditCrop(QPointF spt, CropPtr crop, QTransform t)
     if (crop->getCropType() == CROP_CIRCLE)
     {
         auto circle      = crop->getCircle();
-        QPointF center   = t.map(circle->centre);
-        qreal radius     = Transform::scalex(t) * circle->radius;
+        QPointF center   = t.map(circle.centre);
+        qreal radius     = Transform::scalex(t) * circle.radius;
 
-        auto sc = std::make_shared<Circle>(center,radius);
+        Circle sc(center,radius);
         if (Utils::pointOnCircle(spt,sc,7))
         {
             start = new QPointF(tinv.map(spt));
@@ -111,7 +111,7 @@ void MouseEditCrop::updateDragging(QPointF spt, QTransform t)
 
         case EC_MOVE:
         {
-            qDebug() << "move";
+            //qDebug() << "move";
             QPointF delta = mpt - *start;
             delete start;
             start  = new QPointF(mpt);
@@ -152,7 +152,7 @@ void MouseEditCrop::updateDragging(QPointF spt, QTransform t)
                 break;
             }
 
-            qDebug() << "resize: delta" << delta << "old" << oldSize << "new" << newSize;
+            //qDebug() << "resize: delta" << delta << "old" << oldSize << "new" << newSize;
         }
         break;
         }
@@ -164,8 +164,8 @@ void MouseEditCrop::updateDragging(QPointF spt, QTransform t)
         if (ecCircleMode == CM_EDGE)
         {
             // first find direction
-            qreal s = Point::dist2(*start,c->centre);
-            qreal m = Point::dist2(mpt,c->centre);
+            qreal s = Point::dist2(*start,c.centre);
+            qreal m = Point::dist2(mpt,c.centre);
             bool sub = (s > m);
             // find delta
             qreal delta = Point::dist(mpt,*start);
@@ -173,8 +173,8 @@ void MouseEditCrop::updateDragging(QPointF spt, QTransform t)
             start  = new QPointF(mpt);
             if (sub)
                 delta = -delta;
-            qreal radius = c->radius + delta;
-            c->setRadius(radius);
+            qreal radius = c.radius + delta;
+            c.setRadius(radius);
         }
         else if (ecCircleMode == CM_INSIDE)
         {
@@ -182,8 +182,8 @@ void MouseEditCrop::updateDragging(QPointF spt, QTransform t)
             delete start;
             start  = new QPointF(mpt);
 
-            QPointF centre = c->centre + delta;
-            c->setCenter(centre);
+            QPointF centre = c.centre + delta;
+            c.setCenter(centre);
         }
     }
 }
@@ -192,7 +192,7 @@ void MouseEditCrop::endDragging( QPointF spt, QTransform t)
 {
     updateDragging(spt,t);
 
-    qDebug() << "end dragging";
+    //qDebug() << "end dragging";
 
     if (ecMode != EC_READY)
     {

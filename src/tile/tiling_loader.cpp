@@ -1,12 +1,12 @@
 #include "tile/tiling.h"
 #include "tile/tiling_loader.h"
 #include "tile/tile_reader.h"
-#include "misc/backgroundimage.h"
+#include "misc/defaults.h"
 #include "mosaic/mosaic_reader.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "tile/placed_tile.h"
 #include "tile/tile.h"
-#include "misc/defaults.h"
+#include "viewers/backgroundimageview.h"
 
 using namespace pugi;
 using std::string;
@@ -384,8 +384,8 @@ void TilingLoader::getBackgroundImage(xml_node & node)
 {
     xml_attribute attr = node.attribute("name");
     QString name       = attr.value();
-
-    BkgdImgPtr bip = BackgroundImage::getSharedInstance();
+    
+    auto bip = BackgroundImageView::getInstance();
     bip->load(name);
     if (bip->isLoaded())
     {
@@ -433,6 +433,7 @@ void TilingLoader::getBackgroundImage(xml_node & node)
         qDebug().noquote() << "background image xform:" << xf.toInfoString();
 
         n= node.child("Perspective");
+        bool usePerspective = false;
         if (n)
         {
             QString str = n.child_value();
@@ -441,10 +442,11 @@ void TilingLoader::getBackgroundImage(xml_node & node)
             if (!bip->perspective.isIdentity())
             {
                 bip->createAdjustedImage();
+                usePerspective = true;
             }
         }
-
-        bip->createPixmap();
+        bip->setUseAdjusted(usePerspective);
+        bip->showPixmap();
     }
 }
 

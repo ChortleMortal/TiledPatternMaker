@@ -1,3 +1,25 @@
+Version 3.1
+===========
+
+Changes
+- Crops and borders refactored (borders still only rudimentary)
+- Linux build and run improvements
+- Restart mechanism improved in general and made to work for linux build
+- All View classes refactored in order to make restart work
+- Numerous debug messages removed from log to make it leaner and cleaner
+
+Fixes
+- Background Image perspective (skew) adjustments were not being saved in tiling
+- Addition of tiles in tiling maker were not immediately propagatd to prototype maker
+- Motif scale and boundary scale were bing throttled by the control panel
+- Tiling Maker table changes to rotation and scale incorrect for placed tiles
+- Crops were being ignored by Tile Color Style
+- Modifications to borders affected Crops and vice versa
+
+Known Problem:
+- Positioning of control panel and view widgets on the display screen are random for Linux.
+- The inferred rosette currently cannot reproduce all the orignal taprats/alhambra designs.
+
 Version 3.0
 ===========
 

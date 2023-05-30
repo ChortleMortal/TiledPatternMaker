@@ -45,7 +45,7 @@ private:
     bool    extendPeripheralVertices;
     bool    connectBoundaryVertices;
 
-    Motif * fig;
+    Motif * motif;
 
     UniqueQVector<VertexPtr> newVertices;
 

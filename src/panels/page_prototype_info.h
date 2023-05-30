@@ -10,8 +10,6 @@ class AQTableWidget;
 class QGridLayout;
 class PrototypeData;
 
-typedef std::shared_ptr<class PrototypeView>  PrototypeViewPtr;
-
 enum eDELCol
 {
     DEL_COL_PROTO,
@@ -75,7 +73,7 @@ private:
     QGridLayout         * showSettings;
     PrototypeMaker      * protoMaker;
     PrototypeData       * protoMakerData;
-    PrototypeViewPtr      pview;
+    PrototypeView       * protoView;
 };
 
 #endif

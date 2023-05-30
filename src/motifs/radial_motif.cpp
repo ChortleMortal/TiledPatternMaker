@@ -124,7 +124,7 @@ void RadialMotif::setupRadialTransform()
 void RadialMotif::buildRadialBoundaries()
 {
     // Build Extended boundaary
-    buildExtendedRadialBoundary();
+    extendedBoundary.buildRadial();
 
     // build figure boundary
     if (getN() >=3)

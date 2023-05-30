@@ -1,27 +1,33 @@
 #include "viewers/measure_view.h"
 #include "settings/configuration.h"
 #include "viewers/viewcontrol.h"
-#include "geometry/transform.h"
 #include "misc/geo_graphics.h"
-#include "geometry/map.h"
 #include "geometry/vertex.h"
-#include "geometry/point.h"
 #include <QDebug>
 
 using std::make_shared;
 
 typedef std::shared_ptr<class Vertex>       VertexPtr;
 
-MeasViewPtr MeasureView::spThis;
+MeasureView * MeasureView::mpThis = nullptr;
 
-MeasViewPtr MeasureView::getSharedInstance()
+MeasureView * MeasureView::getInstance()
 {
-    if (!spThis)
+    if (!mpThis)
     {
         ProtoPtr pp;
-        spThis = make_shared<MeasureView>(pp);
+        mpThis =  new MeasureView(pp);
     }
-    return spThis;
+    return mpThis;
+}
+
+void MeasureView::releaseInstance()
+{
+    if (mpThis != nullptr)
+    {
+        delete mpThis;
+        mpThis = nullptr;
+    }
 }
 
 MeasureView::MeasureView(ProtoPtr pp) : Thick(pp)
@@ -33,17 +39,19 @@ MeasureView::MeasureView(ProtoPtr pp) : Thick(pp)
     setZValue(9);
 }
 
+MeasureView::~MeasureView()
+{}
+
 void MeasureView::draw(GeoGraphics * gg)
 {
     layerPen.setColor(QColor(  0,128,  0,128));
-    for (auto mm : measurements)
+    for (auto && mm : measurements)
     {
         gg->drawLineDirect(mm->startS(), mm->endS(),layerPen);
         QString msg = QString("%1 (%2)").arg(QString::number(mm->lenS(),'f',2)).arg(QString::number(mm->lenW(),'f',8));
         gg->drawText(mm->endS() + QPointF(10,0),msg);
     }
 }
-
 void MeasureView::setMeasureMode(bool mode)
 {
     measureMode = mode;
@@ -62,24 +70,25 @@ void MeasureView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
     if (measureMode)
     {
         auto layers =  view->getActiveLayers();
-        std::stable_sort(layers.begin(),layers.end(),Layer::sortByZlevel);
+        std::stable_sort(layers.begin(),layers.end(),Layer::sortByZlevelP);
         Layer * measuredLayer = nullptr;
         for (auto layer : layers)
         {
-            if (layer.get() != this)
+            if (layer == this)
             {
-                measuredLayer = layer.get();
+                measuredLayer = layer;
                 break;
             }
         }
 
         Q_ASSERT(measuredLayer);
-        auto m = make_shared<Measurement>(measuredLayer);
+        auto m = new Measurement(measuredLayer);
         measurements.push_back(m);
 
         measurement = make_shared<Measure2>(this, spt,m);
     }
 }
+#if 1
 
 void MeasureView::slot_mouseDragged(QPointF spt)
 {
@@ -107,7 +116,7 @@ void MeasureView::slot_mouseReleased(QPointF spt)
 ///
 /////////
 
-Measure2::Measure2(Layer * layer, QPointF spt, MeasurementPtr m)
+Measure2::Measure2(Layer * layer, QPointF spt, Measurement *m)
 {
     this->m = m;
     this->layer = layer;
@@ -153,3 +162,4 @@ QLineF Measure2::normalVectorB(QLineF line)
 {
     return QLineF(line.p1(), line.p1() - QPointF(line.dy(), -line.dx()));
 }
+#endif

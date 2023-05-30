@@ -14,7 +14,6 @@ class ClickableLabel;
 
 typedef std::shared_ptr<class Border>  BorderPtr;
 typedef std::shared_ptr<class Crop>    CropPtr;
-typedef std::shared_ptr<class BorderView>   BorderViewPtr;
 
 class page_borders : public panel_page
 {
@@ -63,7 +62,7 @@ protected:
     QWidget   * createBorderTypeBlocks();
 
 private:
-    BorderViewPtr      brview;
+    class BorderView*  brview;
     AQComboBox      *  borderTypes;
     AQComboBox      *  cropTypes;
 

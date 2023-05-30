@@ -9,60 +9,69 @@
 
 ExtendedBoundary::ExtendedBoundary()
 {
+    radial   = true;
     sides    = 1;   // defaults to a circle
     scale    = 1.0;
-    rotate   = 0;
 }
 
 ExtendedBoundary::ExtendedBoundary(const ExtendedBoundary & other)
 {
+    radial   = other.radial;
     sides    = other.sides;
     scale    = other.scale;
-    rotate   = other.rotate;
-    boundary2 = other.boundary2;
+    boundary = other.boundary;
 }
 
 void ExtendedBoundary::set(const QPolygonF & p)
 {
     Q_ASSERT(p.isClosed());
-    boundary2 = p;
-    //qDebug() << "set ext b" << boundary2;
+    boundary = p;
 }
 
-const QPolygonF &ExtendedBoundary::get() const
+const QPolygonF ExtendedBoundary::getPoly() const
 {
-    if (!boundary2.isEmpty())
+    if (!boundary.isEmpty())
     {
-        Q_ASSERT(boundary2.isClosed());
+        Q_ASSERT(boundary.isClosed());
     }
-    //qDebug() << "get ext b" << boundary2;
-    return boundary2;
+
+    if (radial)
+    {
+        return boundary;
+    }
+    else
+    {
+        QTransform t;
+        t.scale(scale,scale);
+        return t.map(boundary);
+    }
 }
 
 bool ExtendedBoundary::equals(const ExtendedBoundary & other)
 {
-    return (sides == other.sides
-            && scale == other.scale
-            && rotate == other.rotate
-            && boundary2 == other.boundary2);
+    return (   sides      == other.sides
+            && scale      == other.scale
+            && boundary   == other.boundary);
 }
 
 void ExtendedBoundary::buildRadial()
 {
+    radial = true;
     if (sides >= 3)
     {
-        Tile f2(sides,rotate,scale);
+        Tile f2(sides,0.0,scale);
         set(f2.getPolygon());
     }
     else
     {
-        boundary2.clear();
+        boundary.clear();
     }
 }
 
 void ExtendedBoundary::buildExplicit(TilePtr tile)
 {
+    radial    = false;
+    sides      = tile->numSides();
+    scale      = 1.0;
     set(tile->getPolygon());
 }
-
-

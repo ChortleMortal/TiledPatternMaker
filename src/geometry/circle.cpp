@@ -20,7 +20,7 @@ Circle::Circle(QPointF centre, qreal radius)
     this->radius = radius;
 }
 
-Circle::Circle(const Circle & c)
+Circle::Circle(const Circle &c)
 {
     centre = c.centre;
     radius = c.radius;
@@ -32,7 +32,7 @@ QRectF  Circle::boundingRect()
     return rect;
 }
 
-Circle & Circle::operator=(const Circle & other)
+Circle & Circle::operator=(const Circle &other)
 {
     centre = other.centre;
     radius = other.radius;

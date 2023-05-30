@@ -9,7 +9,6 @@
 #include "geometry/transform.h"
 #include "geometry/neighbours.h"
 #include "misc/utilities.h"
-#include "geometry/crop.h"
 #include "motifs/motif.h"
 #include "mosaic/design_element.h"
 #include "viewers/map_editor_view.h"
@@ -20,12 +19,12 @@ typedef std::weak_ptr<class Edge>   WeakEdgePtr;
 MapMouseAction::MapMouseAction(QPointF spt)
 {
     desc      = "MapMouseAction";
-    meView    = MapEditorView::getSharedInstance();
+    meView    = MapEditorView::getInstance();
+    view      = ViewControl::getInstance();
     selector  = meView->getSelector();
     db        = meView->getDb();
     last_drag = spt;
 
-    view = ViewControl::getInstance();
     forceRedraw();
 }
 
@@ -574,7 +573,7 @@ void ExtendLine::flipDirection()
     }
 }
 
-EditConstructionCircle::EditConstructionCircle(CirclePtr circle, QPointF spt) : MapMouseAction(spt)
+EditConstructionCircle::EditConstructionCircle(Circle circle, QPointF spt) : MapMouseAction(spt)
 {
     desc = "MoveConstructionCircle";
     start = nullptr;
@@ -585,7 +584,7 @@ EditConstructionCircle::EditConstructionCircle(CirclePtr circle, QPointF spt) : 
 
     QPointF center = meView->viewT.map(currentCircle.centre);
     qreal radius   = Transform::scalex(meView->viewT) * currentCircle.radius;
-    auto sc = std::make_shared<Circle>(center,radius);
+    Circle sc(center,radius);
     if (Utils::pointOnCircle(spt,sc,7))
     {
         QPointF mpt = meView->viewTinv.map(spt);
@@ -644,7 +643,7 @@ void EditConstructionCircle::updateDragging(QPointF spt)
 void EditConstructionCircle::endDragging( QPointF spt)
 {
     updateDragging(spt);
-    origCircle->set(currentCircle);
+    origCircle.set(currentCircle);
     MapMouseAction::endDragging(spt);
 }
 

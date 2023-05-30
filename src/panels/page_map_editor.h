@@ -1,6 +1,6 @@
-﻿#pragma once
-#ifndef PAGE_FIGURE_EDITOR_H
-#define PAGE_FIGURE_EDITOR_H
+#pragma once
+#ifndef PAGE_MAP_EDITOR_H
+#define PAGE_MAP_EDITOR_H
 
 class QGroupBox;
 class QTextEdit;
@@ -10,11 +10,14 @@ class QRadioButton;
 class QButtonGroup;
 
 class MapEditor;
+class MapEditorDb;
+class MapEditorView;
 class CropMaker;
+class CropViewer;
 
 #include "widgets/panel_page.h"
 
-typedef std::shared_ptr<class Map>       MapPtr;
+typedef std::shared_ptr<class Map> MapPtr;
 
 class ClickableLabel;
 
@@ -63,11 +66,13 @@ private slots:
     void slot_redoConstructionLines();
     void slot_clearConstructionLines();
     void slot_dumpMap();
-    void slot_editCrop();
+    void slot_cleanseMap();
+
+    void slot_editCrop(bool checked);
     void slot_embedCrop();
     void slot_applyCrop();
     void slot_completeCrop();
-    void slot_cleanseMap();
+
     void slot_saveTemplate();
     void slot_loadTemplate();
 
@@ -110,11 +115,14 @@ protected:
 
     void    refreshStatusBox();
     void    tallySelects();
-    void    tallyMapButtons();
+    void    tallyCropButtons();
 
 private:
     MapEditor     * maped;
-    CropMaker     * cropMaker;
+    MapEditorView * meView;
+    MapEditorDb   * db;
+    CropViewer    * cropViewer;
+    class CropDlg * cropDlg;
 
     QGroupBox     * editorStatusBox;
     QTextEdit     * statusBox;
@@ -122,8 +130,10 @@ private:
 
     QRadioButton  * viewDCEL;
 
+    QCheckBox     * chkEditCrop;
     QToolButton   * pbEmbedCrop;
     QToolButton   * pbApplyCrop;
+
     QToolButton   * pbCleanseVertices;
 
     QCheckBox     * compositeEChk;

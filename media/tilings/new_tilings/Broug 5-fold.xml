@@ -1,0 +1,120 @@
+<?xml version="1.0"?>
+<!-- Written: Mon May 29 2023 14:22:44 -->
+<Tiling version="6">
+	<Name>Broug 5-fold</Name>
+	<Fill singleton="f">-1,1,-1,1</Fill>
+	<T1>10.33160294531502,7.565661999325172</T1>
+	<T2>10.41295414960884,-7.585999800398628</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>-8</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>0.6555936546520862</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Feature type="regular" sides="10" rotation="0" scale="4.729999999999943">
+		<BkgdColors>#ffff00</BkgdColors>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0.5694584300567342</tranX>
+			<tranY>0.04067560214691035</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="1">-9.1723482841281,-0.01016890053672626</Point>
+			<Point id="2">-8.27748503689609,-2.471042830424754</Point>
+		</Line>
+		<Line>
+			<Point reference="2" />
+			<Point id="3">-4.779383252261869,-0.05084450268363661</Point>
+		</Line>
+		<Line>
+			<Point reference="3" />
+			<Point id="4">-8.297822837969544,2.49138063149821</Point>
+		</Line>
+		<Line>
+			<Point reference="4" />
+			<Point reference="1" />
+		</Line>
+		<BkgdColors>#c2bcb0</BkgdColors>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>180</rot>
+			<tranX>0.9253699488421887</tranX>
+			<tranY>0.02033780107345459</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="5">-5.165801472657511,3.142190265848763</Point>
+			<Point id="6">-3.681141994295313,3.142190265848763</Point>
+		</Line>
+		<Line>
+			<Point reference="6" />
+			<Point id="7">-4.087898015764408,4.545498539917142</Point>
+		</Line>
+		<Line>
+			<Point reference="7" />
+			<Point id="8">-5.633570897346971,4.525160738843686</Point>
+		</Line>
+		<Line>
+			<Point reference="8" />
+			<Point reference="5" />
+		</Line>
+		<BkgdColors>#ff0000</BkgdColors>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Feature>
+	<Feature type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="9">-5.613233096273515,-4.443809534549866</Point>
+			<Point id="10">-4.047222413617499,-4.484485136696776</Point>
+		</Line>
+		<Line>
+			<Point reference="10" />
+			<Point id="11">-3.620128591074948,-3.081176862628397</Point>
+		</Line>
+		<Line>
+			<Point reference="11" />
+			<Point id="12">-5.165801472657511,-3.060839061554942</Point>
+		</Line>
+		<Line>
+			<Point reference="12" />
+			<Point reference="9" />
+		</Line>
+		<BkgdColors>#ffff00</BkgdColors>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Feature>
+	<Desc />
+	<Auth>David Casper</Auth>
+	<BackgroundImage name="Broug-5-fold.jpg">
+		<Scale>0.6556592205741436</Scale>
+		<Rot>0</Rot>
+		<X>0</X>
+		<Y>0</Y>
+		<Center>0,0</Center>
+		<Perspective>1.015960316643562,0.006931321464339927,5.193277523040559e-06,0.006809385500292009,1.01593368891611,6.867136715433459e-06,-113.0653573794818,-126.5832430157141,0.9985758994145032</Perspective>
+	</BackgroundImage>
+</Tiling>

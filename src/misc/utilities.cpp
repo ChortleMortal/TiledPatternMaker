@@ -244,17 +244,17 @@ int Utils::findLineCircleLineIntersections(QPointF centre, qreal radius, QLineF 
 
 }
 
-bool Utils::pointInCircle(QPointF pt, CirclePtr c)
+bool Utils::pointInCircle(QPointF pt, Circle c)
 {
-    qreal d2  = Point::dist2(pt,c->centre);
-    qreal r2 = c->radius * c->radius;
+    qreal d2  = Point::dist2(pt,c.centre);
+    qreal r2 = c.radius * c.radius;
     return d2 < r2;
 }
 
-bool Utils::pointOnCircle(QPointF pt, CirclePtr c, qreal tolerance)
+bool Utils::pointOnCircle(QPointF pt, Circle c, qreal tolerance)
 {
-    qreal d  = Point::dist(pt,c->centre);
-    qreal r = c->radius;
+    qreal d  = Point::dist(pt,c.centre);
+    qreal r = c.radius;
     qDebug() << d << r << qAbs(d-r) << tolerance;
     return Loose::equals(d,r,tolerance);
 }
@@ -313,22 +313,22 @@ int Utils::circleIntersects(Circle c1, Circle c2)
 // Given two circles this method finds the intersection
 // point(s) of the two circles (if any exists)
 // https://stackoverflow.com/questions/3349125/circle-circle-intersection-points
-int Utils::circleCircleIntersectionPoints(CirclePtr c1, CirclePtr c2, QPointF & p1, QPointF & p2)
+int Utils::circleCircleIntersectionPoints(Circle c1, Circle c2, QPointF & p1, QPointF & p2)
 {
     const qreal EPS = 0.0000001; // Let EPS (epsilon) be a small value
 
     qreal r, R, cx, cy, Cx, Cy;
-    if (c1->radius < c2->radius)
+    if (c1.radius < c2.radius)
     {
-        r  = c1->radius;  R = c2->radius;
-        cx = c1->x();    cy = c1->y();
-        Cx = c2->x();    Cy = c2->y();
+        r  = c1.radius;  R = c2.radius;
+        cx = c1.x();    cy = c1.y();
+        Cx = c2.x();    Cy = c2.y();
     }
     else
     {
-        r  = c2->radius; R  = c1->radius;
-        Cx = c1->x();    Cy = c1->y();
-        cx = c2->x();    cy = c2->y();
+        r  = c2.radius; R  = c1.radius;
+        Cx = c1.x();    Cy = c1.y();
+        cx = c2.x();    cy = c2.y();
     }
 
     // Compute the vector <dx, dy>
