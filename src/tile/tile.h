@@ -24,6 +24,17 @@
 
 typedef std::shared_ptr<class Tile>         TilePtr;
 
+class PreConvert
+{
+public:
+    PreConvert() { converted = false; }
+    bool     converted;
+    bool     wasRegular;
+    EdgePoly ep;
+    qreal    rotate;
+    qreal    scale;
+};
+
 class Tile
 {
 public:
@@ -36,7 +47,7 @@ public:
     TilePtr copy();
 
     void        setRegular(bool enb);
-    bool        flipRegularity();
+    void        flipRegularity();
     void        setN(int n);
     void        setRotation(qreal rot);
     void        setScale(qreal rot);
@@ -87,6 +98,8 @@ protected:
 
     EdgePoly    epoly;
     ColorSet    tileColors;    // backgrounds
+
+    PreConvert  conversion;    // stored when going from regular to irregular and vice versa
 };
 
 #endif

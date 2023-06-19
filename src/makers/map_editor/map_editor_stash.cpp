@@ -129,7 +129,7 @@ bool MapEditorStash::readStashTo(QString name, QVector<QLineF>  & lines, QVector
     {
         QVector<Circle> tmp;
         in >> tmp;
-        for (auto c : tmp)
+        for (const auto & c : tmp)
         {
             circs.push_back(c);
         }

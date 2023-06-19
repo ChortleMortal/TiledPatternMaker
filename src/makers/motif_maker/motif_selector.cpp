@@ -52,7 +52,7 @@ DELSelectorWidget::DELSelectorWidget()
 
 void DELSelectorWidget::setup(ProtoPtr proto)
 {
-    if (!proto || !proto->getTiling() || proto->getTiling()->getData().countPlacedTiles() ==0 || proto->numDesignElements() == 0)
+    if (!proto || !proto->getTiling() || proto->getTiling()->getInTiling().count() == 0 || proto->numDesignElements() == 0)
     {
         DELBtnPtr dummy;
         buttons.clear();

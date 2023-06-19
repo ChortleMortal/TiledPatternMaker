@@ -3,9 +3,7 @@
 
 PanelPagesWidget::PanelPagesWidget()
 {
-    //setMinimumSize(300,400);
-    //setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Ignored);
-
+    setContentsMargins(0,0,0,0);
     currentPage = nullptr;
 }
 

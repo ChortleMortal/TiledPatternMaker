@@ -73,8 +73,8 @@ SOURCES += \
     makers/motif_maker/irregular_motif_editors.cpp \
     makers/motif_maker/motif_editor_widget.cpp \
     makers/motif_maker/motif_maker_widget.cpp \
+    makers/motif_maker/motif_maker_widgets.cpp \
     makers/motif_maker/motif_selector.cpp \
-    makers/motif_maker/motif_widgets.cpp \
     makers/motif_maker/regular_motif_editors.cpp \
     makers/prototype_maker/prototype.cpp \
     makers/prototype_maker/prototype_data.cpp \
@@ -282,8 +282,8 @@ HEADERS += \
     makers/motif_maker/irregular_motif_editors.h \
     makers/motif_maker/motif_editor_widget.h \
     makers/motif_maker/motif_maker_widget.h \
+    makers/motif_maker/motif_maker_widgets.h \
     makers/motif_maker/motif_selector.h \
-    makers/motif_maker/motif_widgets.h \
     makers/motif_maker/regular_motif_editors.h \
     makers/prototype_maker/prototype.h \
     makers/prototype_maker/prototype_data.h \

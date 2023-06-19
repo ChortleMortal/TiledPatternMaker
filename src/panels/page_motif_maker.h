@@ -6,10 +6,7 @@
 
 #include "widgets/panel_page.h"
 
-class QComboBox;
-class QCheckBox;
 class PrototypeData;
-class QLabel;
 
 typedef std::shared_ptr<class Prototype>     ProtoPtr;
 typedef std::shared_ptr<class Tile>          TilePtr;

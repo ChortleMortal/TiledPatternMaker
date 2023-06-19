@@ -8,11 +8,12 @@
 #include "dlg_textedit.h"
 #include "settings/configuration.h"
 #include "viewers/viewcontrol.h"
-#include "misc/qtapplog.h"
+#include "widgets/panel_misc.h"
 #include "misc/version.h"
 
 TextEditorWidget::TextEditorWidget()
 {
+    setContentsMargins(0,0,0,0);
 }
 
 TextEditorWidget::TextEditorWidget(QTextEdit * te)

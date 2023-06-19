@@ -4,7 +4,7 @@
 
 #include <QComboBox>
 #include "enums/emotiftype.h"
-#include "makers/motif_maker/motif_widgets.h"
+#include "makers/motif_maker/motif_maker_widgets.h"
 
 class Configuration;
 class NamedMotifEditor;

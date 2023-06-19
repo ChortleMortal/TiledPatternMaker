@@ -11,8 +11,10 @@
 #include "mosaic/design_element.h"
 #include "settings/configuration.h"
 
-MotifMakerWidget::MotifMakerWidget() : AQWidget()
+MotifMakerWidget::MotifMakerWidget() : QWidget()
 {
+    setContentsMargins(0,0,0,0);
+
     motifViewData = PrototypeMaker::getInstance()->getProtoMakerData();
     config        = Configuration::getInstance();
 

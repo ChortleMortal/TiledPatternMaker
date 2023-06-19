@@ -4,10 +4,10 @@
 
 #include <memory>
 #include <QString>
-#include <QWidget>
+#include <QtWidgets>
+#include "widgets/panel_misc.h"
 
-class QVBoxLayout;
-
+//class QVBoxLayout;
 
 extern class TiledPatternMaker * theApp;
 
@@ -58,8 +58,8 @@ protected:
 
     void    blockPage(bool block);
 
-    QVBoxLayout *		vbox;
-    QString				pageName;
+    QVBoxLayout             * vbox;
+    QString                   pageName;
 
     class ControlPanel      * panel;
     class Configuration     * config;
@@ -69,12 +69,12 @@ protected:
     class MosaicMaker       * mosaicMaker;
     class DesignMaker       * designMaker;
 
-    bool                refresh;
+    bool                      refresh;
 
 private:
-    bool                newlySelected;
-    bool                floated;
-    int                 blockCount;
+    bool                      newlySelected;
+    bool                      floated;
+    int                       blockCount;
 };
 
 #endif

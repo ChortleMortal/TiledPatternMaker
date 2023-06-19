@@ -173,7 +173,7 @@ bool  MapEditor::loadSelectedMotifs()
         return false;
     }
 
-    for (auto del : dels)
+    for (const auto & del : dels)
     {
         db->getDesignElements().push_back(del);
 

@@ -806,7 +806,7 @@ void page_borders::slot_rectBoundaryChanged()
 {
     if (pageBlocked()) return;
 
-    qDebug() << "page_borders::rectBoundryChanged";
+    qDebug() << "page_borders::slot_rectBoundaryChanged";
     BorderPtr bp = getMosaicBorder();
     if (!bp)
         return;

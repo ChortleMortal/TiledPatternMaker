@@ -30,7 +30,10 @@ void IrregularStar::buildMotifMaps()
     Q_ASSERT(tile);
     motifMap = make_shared<Map>("IrregularStar map");
     inferStar(tile);
-    completeMap(motifMap);
+    completeMotif(tile);
+    completeMap();
+    buildMotifBoundary(tile);
+    buildExtendedBoundary();
 }
 
 void IrregularStar::inferStar(TilePtr tile)
@@ -87,7 +90,7 @@ void IrregularStar::inferStarV2(TilePtr tile)
     mids    = tile->getEdgePoly().getMids();
     if (corners.size() != getN())
     {
-        qWarning() << "tile sides:" << corners.size() << "motif sides:" << getN();
+        qDebug() << "tile sides:" << corners.size() << "motif sides:" << getN();
         // need to interpolate mids and placed tile
     }
 
@@ -110,7 +113,7 @@ void IrregularStar::inferStarV3(TilePtr tile)
     mids    = tile->getEdgePoly().getMids();
     if (corners.size() != getN())
     {
-        qWarning() << "tile sides:" << corners.size() << "motif sides:" << getN();
+        qDebug() << "tile sides:" << corners.size() << "motif sides:" << getN();
     }
 
     for (int side = 0; side < getN(); side++)

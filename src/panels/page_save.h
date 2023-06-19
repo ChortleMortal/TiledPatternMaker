@@ -2,11 +2,6 @@
 #ifndef PAGE_SAVE_H
 #define PAGE_SAVE_H
 
-class QTextEdit;
-class QLineEdit;
-class QLabel;
-class QCheckBox;
-
 #include "widgets/panel_page.h"
 
 class page_save : public panel_page

@@ -14,13 +14,6 @@ class QWidget;
 #include <QComboBox>
 #include <QCheckBox>
 
-class AQWidget : public QWidget
-{
-public:
-    AQWidget(QWidget * parent = nullptr);
-
-};
-
 class AQVBoxLayout : public QVBoxLayout
 {
 public:

@@ -7,6 +7,7 @@
 #include <QMessageBox>
 
 #include "makers/mosaic_maker/mosaic_maker.h"
+#include "makers/tiling_maker/tiling_maker.h"
 #include "misc/cycler.h"
 #include "misc/fileservices.h"
 #include "misc/tpm_io.h"
@@ -323,8 +324,20 @@ QGroupBox * page_image_tools::createCompareImagesBox()
 
 QGroupBox * page_image_tools::createCompareVersionsBox()
 {
-    radImg  = new QRadioButton("Images");
-    radXML  = new QRadioButton("XML");
+    versionFilterCombo  = new QComboBox();
+
+    radMosaic  = new QRadioButton("Mosaics");
+    radTile    = new QRadioButton("Tiles");
+    mediaGroup = new QButtonGroup();
+    mediaGroup->addButton(radMosaic);
+    mediaGroup->addButton(radTile);
+
+    radImg    = new QRadioButton("Images");
+    radXML    = new QRadioButton("XML");
+    typeGroup = new QButtonGroup();
+    typeGroup->addButton(radImg);
+    typeGroup->addButton(radXML);
+
     chkLock = new QCheckBox("Lock");
 
     QPushButton  * compareBtn = new QPushButton("Compare");
@@ -332,10 +345,10 @@ QGroupBox * page_image_tools::createCompareVersionsBox()
     compareBtn->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
     cycleBtn->setStyleSheet  ("QPushButton { background-color: yellow; color: red;}");
 
-    mosaicA    = new QComboBox();
-    versionsA  = new QComboBox();
-    mosaicB    = new QComboBox();
-    versionsB  = new QComboBox();
+    mediaA    = new QComboBox();
+    versionsA = new QComboBox();
+    mediaB    = new QComboBox();
+    versionsB = new QComboBox();
 
     QPushButton * viewImageBtn3  = new QPushButton("View");
     QPushButton * viewImageBtn4  = new QPushButton("View");
@@ -346,8 +359,14 @@ QGroupBox * page_image_tools::createCompareVersionsBox()
     container->setMinimumWidth(461);
     AQHBoxLayout * hbox = new AQHBoxLayout();
     hbox->addStretch();
+    hbox->addWidget(radMosaic);
+    hbox->addWidget(radTile);
+    hbox->addSpacing(9);
+    hbox->addWidget(versionFilterCombo);
+    hbox->addSpacing(9);
     hbox->addWidget(radImg);
     hbox->addWidget(radXML);
+    hbox->addSpacing(9);
     hbox->addWidget(chkLock);
     container->setLayout(hbox);
 
@@ -355,7 +374,7 @@ QGroupBox * page_image_tools::createCompareVersionsBox()
     int row = 0;
 
     hbox = new AQHBoxLayout();
-    hbox->addWidget(mosaicA);
+    hbox->addWidget(mediaA);
     hbox->addWidget(versionsA);
     grid->addWidget(viewImageBtn3,row,0);
     grid->addLayout(hbox,row,1);
@@ -363,7 +382,7 @@ QGroupBox * page_image_tools::createCompareVersionsBox()
 
     row++;
     hbox = new AQHBoxLayout();
-    hbox->addWidget(mosaicB);
+    hbox->addWidget(mediaB);
     hbox->addWidget(versionsB);
     grid->addWidget(viewImageBtn4,row,0);
     grid->addLayout(hbox,row,1);
@@ -381,16 +400,27 @@ QGroupBox * page_image_tools::createCompareVersionsBox()
         radXML->setChecked(true);
     else
         radImg->setChecked(true);
+    if (config->vCompTile)
+        radTile->setChecked(true);
+    else
+        radMosaic->setChecked(true);
 
+    loadVersionFilterCombo();
+
+    connect(versionFilterCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &page_image_tools::slot_ver_selectionChanged);
     connect(compareBtn,     &QPushButton::clicked,   this,   &page_image_tools::slot_compareVersions);
     connect(cycleBtn,       &QPushButton::clicked,   this,   &page_image_tools::slot_cycleVersions);
     connect(viewImageBtn3,  &QPushButton::clicked,   this,   &page_image_tools::slot_viewImage3);
     connect(viewImageBtn4,  &QPushButton::clicked,   this,   &page_image_tools::slot_viewImage4);
-    connect(mosaicA,        QOverload<int>::of(&QComboBox::currentIndexChanged), this, &page_image_tools::slot_mosaicAChanged);
-    connect(mosaicB,        QOverload<int>::of(&QComboBox::currentIndexChanged), this, &page_image_tools::slot_mosaicBChanged);
+    connect(mediaA,        QOverload<int>::of(&QComboBox::currentIndexChanged), this, &page_image_tools::slot_mediaAChanged);
+    connect(mediaB,        QOverload<int>::of(&QComboBox::currentIndexChanged), this, &page_image_tools::slot_mediaBChanged);
     connect(chkLock,        &QCheckBox::clicked,     this,   [this](bool checked) { config->vCompLock = checked; });
     connect(radXML,         &QRadioButton::clicked,  this,   [this](bool checked) { config->vCompXML  = checked; });
     connect(radImg,         &QRadioButton::clicked,  this,   [this](bool checked) { config->vCompXML  = !checked; });
+    connect(radMosaic,      &QRadioButton::clicked,  this,   [this](bool checked) { config->vCompTile = !checked;
+                                                                                    loadVersionFilterCombo(); loadVersionCombos(); });
+    connect(radTile,        &QRadioButton::clicked,  this,   [this](bool checked) { config->vCompTile = checked;
+                                                                                    loadVersionFilterCombo(); loadVersionCombos(); });
     connect(theApp,         &TiledPatternMaker::sig_takeNext,   this, &page_image_tools::slot_nextImage);
     connect(theApp,         &TiledPatternMaker::sig_cyclerQuit, this, &page_image_tools::slot_quitImageCycle);
 
@@ -519,11 +549,13 @@ void page_image_tools::loadFileFilterCombo()
     fileFilterCombo->blockSignals(true);
     fileFilterCombo->clear();
 
+    eLoadType defaultType;
     if (config->genCycle == CYCLE_SAVE_TILING_BMPS)
     {
         fileFilterCombo->addItem("All Tilings",     ALL_TILINGS);
         fileFilterCombo->addItem("Selected Tilings",SELECTED_TILINGS);
         fileFilterCombo->addItem("Worklist Tilings",WORKLIST);
+        defaultType = ALL_TILINGS;
     }
     else
     {
@@ -531,14 +563,53 @@ void page_image_tools::loadFileFilterCombo()
         fileFilterCombo->addItem("All Mosaics",     ALL_MOSAICS);
         fileFilterCombo->addItem("Selected mosaics",SELECTED_MOSAICS);
         fileFilterCombo->addItem("Worklist Mosaics",WORKLIST);
+        defaultType = ALL_MOSAICS;
     }
 
     fileFilterCombo->blockSignals(false);
 
     int index = fileFilterCombo->findData(config->fileFilter);
     if (index < 0)
-        index = 0;
+    {
+        config->fileFilter = defaultType;
+        index = fileFilterCombo->findData(defaultType);
+        Q_ASSERT(index >=0);
+    }
     fileFilterCombo->setCurrentIndex(index);
+}
+
+
+void page_image_tools::loadVersionFilterCombo()
+{
+    versionFilterCombo->blockSignals(true);
+    versionFilterCombo->clear();
+
+    eLoadType defaultType;
+    if (config->vCompTile)
+    {
+        versionFilterCombo->addItem("All Tilings",     ALL_TILINGS);
+        versionFilterCombo->addItem("Selected Tilings",SELECTED_TILINGS);
+        versionFilterCombo->addItem("Worklist Tilings",WORKLIST);
+        defaultType = ALL_TILINGS;
+    }
+    else
+    {
+        versionFilterCombo->addItem("All Mosaics",     ALL_MOSAICS);
+        versionFilterCombo->addItem("Selected mosaics",SELECTED_MOSAICS);
+        versionFilterCombo->addItem("Worklist Mosaics",WORKLIST);
+        defaultType = ALL_MOSAICS;
+    }
+
+    versionFilterCombo->blockSignals(false);
+
+    int index = versionFilterCombo->findData(config->versionFilter);
+    if (index < 0)
+    {
+        config->versionFilter = defaultType;
+        index = versionFilterCombo->findData(defaultType);
+        Q_ASSERT(index >=0);
+    }
+    versionFilterCombo->setCurrentIndex(index);
 }
 
 void page_image_tools::slot_stopIfDiffClicked(bool enb)
@@ -1428,39 +1499,80 @@ void page_image_tools::slot_createList()
 
     QStringList list;
     QStringList wlist;
-    if (dlg.chkLoadFilter->isChecked())
+    QString target;
+
+    if (dlg.selMosaic->isChecked())
     {
-        list = FileServices::getMosaicNames(SELECTED_MOSAICS);
+        if (dlg.chkLoadFilter->isChecked())
+        {
+            list = FileServices::getMosaicNames(SELECTED_MOSAICS);
+        }
+        else
+        {
+            list = FileServices::getMosaicNames(ALL_MOSAICS);
+        }
+
+        if (dlg.chkText->isChecked())
+        {
+            target = dlg.text->text();
+        }
+        else if (dlg.chkMotif->isChecked())
+        {
+            target = dlg.motifNames->currentText();
+        }
+        else if (dlg.chkStyle->isChecked())
+        {
+            target = dlg.styleNames->currentText();
+        }
+
+        if (target.isEmpty())
+            return;
+
+        for (auto & name : list)
+        {
+            QString designFile = FileServices::getMosaicXMLFile(name);
+
+            QFile XMLFile(designFile);
+            XMLFile.open(QIODevice::ReadOnly);
+            QTextStream in (&XMLFile);
+            const QString content = in.readAll();
+            if (content.contains(target))
+            {
+               wlist << name;
+            }
+        }
     }
     else
     {
-        list = FileServices::getMosaicNames(ALL_MOSAICS);
-    }
-
-    QString target;
-    if (dlg.chkMotif)
-    {
-        target = dlg.motifNames->currentText();
-    }
-    else if (dlg.chkStyle)
-    {
-        target = dlg.styleNames->currentText();
-    }
-
-    if (target.isEmpty())
-        return;
-
-    for (auto & name : list)
-    {
-        QString designFile = FileServices::getMosaicXMLFile(name);
-
-        QFile XMLFile(designFile);
-        XMLFile.open(QIODevice::ReadOnly);
-        QTextStream in (&XMLFile);
-        const QString content = in.readAll();
-        if (content.contains(target))
+        if (dlg.chkLoadFilter->isChecked())
         {
-            wlist << name;
+            list = FileServices::getTilingNames(SELECTED_TILINGS);
+        }
+        else
+        {
+            list = FileServices::getTilingNames(ALL_TILINGS);
+        }
+
+        if (dlg.chkText->isChecked())
+        {
+            target = dlg.text->text();
+        }
+
+        if (target.isEmpty())
+            return;
+
+        for (auto & name : list)
+        {
+            QString designFile = FileServices::getTilingXMLFile(name);
+
+            QFile XMLFile(designFile);
+            XMLFile.open(QIODevice::ReadOnly);
+            QTextStream in (&XMLFile);
+            const QString content = in.readAll();
+            if (content.contains(target))
+            {
+               wlist << name;
+            }
         }
     }
 
@@ -1479,6 +1591,12 @@ void page_image_tools::slot_gen_selectionChanged()
 {
     config->fileFilter = static_cast<eLoadType>(fileFilterCombo->currentData().toInt());
     qDebug() << "load file filter" << config->fileFilter;
+}
+
+void page_image_tools::slot_ver_selectionChanged()
+{
+    config->versionFilter = static_cast<eLoadType>(versionFilterCombo->currentData().toInt());
+    qDebug() << "load version filter" << config->fileFilter;
     if (created)
     {
         loadVersionCombos();
@@ -1497,41 +1615,58 @@ void page_image_tools::setImageDirectory()
 
 void page_image_tools::loadVersionCombos()
 {
-    eLoadType loadType = (eLoadType)fileFilterCombo->currentData().toInt();
+    eLoadType loadType = (eLoadType)versionFilterCombo->currentData().toInt();
 
-    mosaicA->blockSignals(true);
-    mosaicB->blockSignals(true);
+    mediaA->blockSignals(true);
+    mediaB->blockSignals(true);
 
-    mosaicA->clear();
-    mosaicB->clear();
+    mediaA->clear();
+    mediaB->clear();
 
-    auto mosaicNames = FileServices::getMosaicRootNames(loadType);
+    QStringList names;
+    if (config->vCompTile)
+    {
+        names = FileServices::getTilingRootNames(loadType);
+    }
+    else
+    {
+        names = FileServices::getMosaicRootNames(loadType);
+    }
 
-    mosaicA->addItems(mosaicNames);
-    mosaicB->addItems(mosaicNames);
+    mediaA->addItems(names);
+    mediaB->addItems(names);
 
-    mosaicB->blockSignals(false);
-    mosaicA->blockSignals(false);
+    mediaB->blockSignals(false);
+    mediaA->blockSignals(false);
 
-    int index = mosaicA->findText(config->lastCompareName);
+    int index = mediaA->findText(config->lastCompareName);
     if (index < 0) index = 0;
 
-    mosaicA->setCurrentIndex(index);
-    mosaicB->setCurrentIndex(index);
+    mediaA->setCurrentIndex(index);
+    mediaB->setCurrentIndex(index);
 
-    slot_mosaicAChanged();
-    slot_mosaicBChanged();
+    slot_mediaAChanged();
+    slot_mediaBChanged();
 }
 
-void page_image_tools::slot_mosaicAChanged()
+void page_image_tools::slot_mediaAChanged()
 {
     versionsA->clear();
 
-    auto name = mosaicA->currentText();
+    auto name = mediaA->currentText();
 
     config->lastCompareName = name;
 
-    auto qsl = FileServices::getFileVersions(name,config->rootMosaicDir);
+    QStringList qsl;
+    if (config->vCompTile)
+    {
+        qsl = FileServices::getFileVersions(name,config->rootTileDir);
+    }
+    else
+    {
+        qsl = FileServices::getFileVersions(name,config->rootMosaicDir);
+    }
+
     if (qsl.isEmpty())
         return;
 
@@ -1539,24 +1674,41 @@ void page_image_tools::slot_mosaicAChanged()
 
     if (chkLock->isChecked())
     {
-        mosaicB->blockSignals(true);
-        mosaicB->setCurrentIndex(mosaicA->currentIndex());
-        mosaicB->blockSignals(false);
+        mediaB->blockSignals(true);
+        mediaB->setCurrentIndex(mediaA->currentIndex());
+        mediaB->blockSignals(false);
 
-        auto name = mosaicB->currentText();
-        auto qsl = FileServices::getFileVersions(name,config->rootMosaicDir);
+        auto name = mediaB->currentText();
+        if (config->vCompTile)
+        {
+            qsl = FileServices::getFileVersions(name,config->rootTileDir);
+        }
+        else
+        {
+            qsl = FileServices::getFileVersions(name,config->rootMosaicDir);
+        }
 
         versionsB->clear();
         versionsB->addItems(qsl);
     }
 }
 
-void page_image_tools::slot_mosaicBChanged()
+void page_image_tools::slot_mediaBChanged()
 {
     versionsB->clear();
 
-    auto name = mosaicB->currentText();
-    auto qsl = FileServices::getFileVersions(name,config->rootMosaicDir);
+    auto name = mediaB->currentText();
+
+    QStringList qsl;
+    if (config->vCompTile)
+    {
+        qsl = FileServices::getFileVersions(name,config->rootTileDir);
+    }
+    else
+    {
+        qsl = FileServices::getFileVersions(name,config->rootMosaicDir);
+    }
+
     if (qsl.isEmpty())
         return;
 
@@ -1564,12 +1716,20 @@ void page_image_tools::slot_mosaicBChanged()
 
     if (chkLock->isChecked())
     {
-        mosaicA->blockSignals(true);
-        mosaicA->setCurrentIndex(mosaicB->currentIndex());
-        mosaicA->blockSignals(false);
+        mediaA->blockSignals(true);
+        mediaA->setCurrentIndex(mediaB->currentIndex());
+        mediaA->blockSignals(false);
 
-        auto name = mosaicA->currentText();
-        auto qsl = FileServices::getFileVersions(name,config->rootMosaicDir);
+        auto name = mediaA->currentText();
+
+        if (config->vCompTile)
+        {
+            qsl = FileServices::getFileVersions(name,config->rootTileDir);
+        }
+        else
+        {
+            qsl = FileServices::getFileVersions(name,config->rootMosaicDir);
+        }
 
         versionsA->clear();
         versionsA->addItems(qsl);
@@ -1600,39 +1760,71 @@ void page_image_tools::slot_viewImage4()
 
 void  page_image_tools::slot_compareVersions()
 {
-    auto mosA = versionsA->currentText();
-    auto mosB = versionsB->currentText();
-    if (radXML->isChecked())
+    auto nameA = versionsA->currentText();
+    auto nameB = versionsB->currentText();
+    if (radMosaic->isChecked())
     {
-        auto mosAA = FileServices::getMosaicXMLFile(mosA);
-        auto mosBB = FileServices::getMosaicXMLFile(mosB);
-        QStringList qsl;
-        qsl << mosAA << mosBB;
-        QProcess::startDetached(config->diffTool,qsl);
+        if (radXML->isChecked())
+        {
+            auto mosA = FileServices::getMosaicXMLFile(nameA);
+            auto mosB = FileServices::getMosaicXMLFile(nameB);
+            QStringList qsl;
+            qsl << mosA << mosB;
+            QProcess::startDetached(config->diffTool,qsl);
+        }
+        else
+        {
+            Q_ASSERT(radImg->isChecked());
+
+            panel->selectViewer(VIEW_MOSAIC);
+
+            mosaicMaker->slot_loadMosaic(nameA,false);
+            auto pixA = view->grab();
+            auto mosaicA = mosaicMaker->getMosaic();
+
+            mosaicMaker->slot_loadMosaic(nameB,false);
+            auto pixB = view->grab();
+            auto mosaicB = mosaicMaker->getMosaic();
+
+            mosaicA->reportMotifs();
+            mosaicA->reportStyles();
+            mosaicB->reportMotifs();
+            mosaicB->reportStyles();
+
+            imgA = pixA.toImage();
+            imgB = pixB.toImage();
+            emit theApp->sig_closeAllImageViewers();
+            theApp->appCompareImages(imgA,imgB,nameA,nameB,false);
+        }
     }
     else
     {
-        Q_ASSERT(radImg->isChecked());
+        Q_ASSERT(radTile->isChecked());
+        if (radXML->isChecked())
+        {
+            auto tileA = FileServices::getTilingXMLFile(nameA);
+            auto tileB = FileServices::getTilingXMLFile(nameB);
+            QStringList qsl;
+            qsl << tileA << tileB;
+            QProcess::startDetached(config->diffTool,qsl);
+        }
+        else
+        {
+            Q_ASSERT(radImg->isChecked());
 
-        panel->selectViewer(VIEW_MOSAIC);
+            panel->selectViewer(VIEW_TILING);
 
-        mosaicMaker->slot_loadMosaic(mosA,false);
-        auto pixA = view->grab();
-        auto mosaicA = mosaicMaker->getMosaic();
+            tilingMaker->slot_loadTiling(nameA,TILM_LOAD_SINGLE);
+            auto pixA = view->grab();
 
-        mosaicMaker->slot_loadMosaic(mosB,false);
-        auto pixB = view->grab();
-        auto mosaicB = mosaicMaker->getMosaic();
+            tilingMaker->slot_loadTiling(nameB,TILM_LOAD_SINGLE);
+            auto pixB = view->grab();
 
-        mosaicA->reportMotifs();
-        mosaicA->reportStyles();
-        mosaicB->reportMotifs();
-        mosaicB->reportStyles();
-
-        imgA = pixA.toImage();
-        imgB = pixB.toImage();
-        emit theApp->sig_closeAllImageViewers();
-        theApp->compareImages(imgA,imgB,mosA,mosB,false);
+            imgA = pixA.toImage();
+            imgB = pixB.toImage();
+            emit theApp->sig_closeAllImageViewers();
+            theApp->appCompareImages(imgA,imgB,nameA,nameB,false);
+        }
     }
 }
 
@@ -1659,30 +1851,41 @@ void  page_image_tools::compareNextVersions()
     imgB = pixB.toImage();
 
     emit theApp->sig_closeAllImageViewers();
-    theApp->compareImages(imgA,imgB,mosA,mosB,false);
+    theApp->appCompareImages(imgA,imgB,mosA,mosB,false);
 }
 
 void  page_image_tools::slot_cycleVersions()
 {
     loadVersionCombos();
 
-    panel->selectViewer(VIEW_MOSAIC);
-
-    comparingVersions = true;
+    comparingVersions  = true;
+    eLoadType loadType = (eLoadType)versionFilterCombo->currentData().toInt();
 
     // get root names
-    eLoadType loadType = (eLoadType)fileFilterCombo->currentData().toInt();
-    mosNames = FileServices::getMosaicRootNames(loadType);
-    imgList_it = mosNames.begin();
+    QString rootDir;
+    if (radMosaic->isChecked())
+    {
+        panel->selectViewer(VIEW_MOSAIC);
+        mediaNames = FileServices::getMosaicRootNames(loadType);
+        rootDir    = config->rootMosaicDir;
+    }
+    else
+    {
+        panel->selectViewer(VIEW_TILING);
+        mediaNames = FileServices::getTilingRootNames(loadType);
+        rootDir    = config->rootTileDir;
+    }
+
+    imgList_it = mediaNames.begin();
 
     // get first name
-    mosName = *imgList_it;
-    int index = mosaicA->findText(mosName);
-    mosaicA->setCurrentIndex(index);
-    mosaicB->setCurrentIndex(index);
+    mediaName = *imgList_it;
+    int index = mediaA->findText(mediaName);
+    mediaA->setCurrentIndex(index);
+    mediaB->setCurrentIndex(index);
 
     // get versions
-    versions = FileServices::getFileVersions(mosName,config->rootMosaicDir);
+    versions = FileServices::getFileVersions(mediaName,rootDir);
     imgListVerA_it = versions.begin();
     imgListVerB_it = imgListVerA_it;
     imgListVerB_it++;
@@ -1708,13 +1911,11 @@ void page_image_tools::slot_nextImage()
     if (!comparingVersions)
         return;
 
-    if (++imgListVerB_it == versions.end())
+    if (imgListVerB_it == versions.end() || ++imgListVerB_it == versions.end())
     {
     next_mosaic:
-
         // go to next mosaic
-
-        if (++imgList_it == mosNames.end())
+        if (++imgList_it == mediaNames.end())
         {
             // we are done
             comparingVersions = false;
@@ -1728,12 +1929,19 @@ void page_image_tools::slot_nextImage()
             return;
         }
 
-        mosName = *imgList_it;
-        int index = mosaicA->findText(mosName);
-        mosaicA->setCurrentIndex(index);
-        mosaicB->setCurrentIndex(index);
+        mediaName = *imgList_it;
+        int index = mediaA->findText(mediaName);
+        mediaA->setCurrentIndex(index);
+        mediaB->setCurrentIndex(index);
 
-        versions = FileServices::getFileVersions(mosName,config->rootMosaicDir);
+        if (radMosaic->isChecked())
+        {
+            versions = FileServices::getFileVersions(mediaName,config->rootMosaicDir);
+        }
+        else
+        {
+            versions = FileServices::getFileVersions(mediaName,config->rootTileDir);
+        }
         imgListVerA_it = versions.begin();
         imgListVerB_it = imgListVerA_it;
         imgListVerB_it++;

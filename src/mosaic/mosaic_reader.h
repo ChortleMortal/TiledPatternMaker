@@ -93,7 +93,6 @@ protected:
     ExtStarPtr          getExtendedStar(xml_node & node, int tile_sides);
     ExtRosettePtr       getExtendedRosette(xml_node & node, int tile_sides);
     RosettePtr          getRosette(xml_node & node, int tile_sides);
-    MotifPtr            getConnectMotif(xml_node & node, int tile_sides);
     RosetteConnectPtr   getRosetteConnect(xml_node & node, int tile_sides);
     StarConnectPtr      getStarConnect(xml_node & node, int tile_sides);
 

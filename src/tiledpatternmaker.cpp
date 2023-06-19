@@ -16,6 +16,7 @@
 #include <QScreen>
 #include <QWindow>
 #include <QPainter>
+#include <QGridLayout>
 
 #include "tiledpatternmaker.h"
 #include "legacy/design_maker.h"
@@ -256,29 +257,23 @@ void TiledPatternMaker::slot_splitScreen(bool checked)
 
     if (config->splitScreen)
     {
-        // split the screen
+        // disable splash
+        controlPanel->enableSplash(false);
 
-        if (!splitter)
-        {
-            splitter = new SplitScreen();
-        }
-
+        // save current positions
         s.setValue((QString("viewPos/%1").arg(config->appInstance)),view->pos());
         s.setValue(QString("panelPos/%1").arg(config->appInstance), controlPanel->pos());
 
-        QScreen * sc = qApp->screenAt(controlPanel->pos());
-        splitter->addWidgets(controlPanel,view);
-
-        QRect  rec = sc->geometry();
-
-        splitter->setFixedSize(rec.width(),rec.height());
-        splitter->setMinimumSize(rec.width(),rec.height());
-        splitter->setMaximumSize(rec.width(),rec.height());
-        splitter->move(rec.topLeft());
+        // split the screen
+        Q_ASSERT(!splitter);
+        splitter = new SplitScreen();
         splitter->show();
     }
     else
     {
+        // restore positions
+        controlPanel->enableSplash(true);
+
         // unsplit the screen
         controlPanel->setParent(nullptr);
         view->setParent(nullptr);
@@ -290,11 +285,9 @@ void TiledPatternMaker::slot_splitScreen(bool checked)
         view->show();
         view->move(s.value((QString("viewPos/%1").arg(config->appInstance))).toPoint());
 
-        if (splitter)
-        {
-            delete splitter;
-            splitter = nullptr;
-        }
+        Q_ASSERT(splitter);
+        delete splitter;
+        splitter = nullptr;
     }
 }
 
@@ -399,12 +392,25 @@ void TiledPatternMaker::slot_compareBMPsPath(QString file1, QString file2)
     compareImages(img_left,img_right,file1,file2,false);
 }
 
+void TiledPatternMaker::appCompareImages(QImage & img_left, QImage & img_right, QString title_left, QString title_right, bool autoMode)
+{
+    _imageA   = img_left;
+    _imageB   = img_right;
+    _titleA   = title_left;
+    _titleB   = title_right;
+    pathLeft  = title_left;
+    pathRight = title_right;
+
+    compareImages(autoMode);
+}
+
 void TiledPatternMaker::compareImages(QImage & img_left, QImage & img_right, QString title_left, QString title_right, bool autoMode)
 {
     _imageA = img_left;
     _imageB = img_right;
     _titleA = title_left;
     _titleB = title_right;
+
     compareImages(autoMode);
 }
 
@@ -491,7 +497,7 @@ void TiledPatternMaker::compareImages(bool autoMode)
             QPixmap  pm = makeTextPixmap("Images different sizes:",str1,str2);
             QString str = "Images are different sizes";
             emit sig_compareResult(str);    // sets page_debug status
-            popupPixmap(pm, QString("Image Differences (%1) (%2").arg(pathLeft).arg(pathRight));
+            popupPixmap(pm, QString("Image Differences (%1) (%2)").arg(pathLeft).arg(pathRight));
         }
         else
         {
@@ -515,11 +521,11 @@ void TiledPatternMaker::compareImages(bool autoMode)
 
             if (config->compare_transparent)
             {
-                popupTransparentPixmap(pixmap, QString("Image Differences (%1) (%2").arg(pathLeft).arg(pathRight));
+                popupTransparentPixmap(pixmap, QString("Image Differences (%1) (%2)").arg(pathLeft).arg(pathRight));
             }
             else
             {
-               popupPixmap(pixmap, QString("Image Differences (%1) (%2").arg(pathLeft).arg(pathRight));
+                popupPixmap(pixmap, QString("Image Differences (%1) (%2)").arg(pathLeft).arg(pathRight));
             }
         }
     }
@@ -865,8 +871,6 @@ void TiledPatternMaker::testMemoryManagement()
 
     mosaic.reset();
     view->dumpRefs();
-
-    emit view->sig_identifyYourself();
 }
 
 #endif

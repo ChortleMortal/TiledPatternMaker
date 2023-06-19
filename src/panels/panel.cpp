@@ -1,9 +1,5 @@
-#include <QRadioButton>
-#include <QCheckBox>
-#include <QGroupBox>
-#include <QComboBox>
-
 #include "panels/panel.h"
+#include "enums/eviewtype.h"
 #include "legacy/design_maker.h"
 #include "makers/map_editor/map_editor.h"
 #include "makers/mosaic_maker/mosaic_maker.h"
@@ -59,9 +55,11 @@ void ControlPanel::releaseInstance()
     }
 }
 
-ControlPanel::ControlPanel() : AQWidget()
+ControlPanel::ControlPanel() : QWidget()
 {
     setObjectName("ControlPanel");
+    setFocusPolicy(Qt::ClickFocus);
+    setContentsMargins(0,0,0,0);
 
     QProcess process;
 #if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
@@ -88,19 +86,20 @@ ControlPanel::ControlPanel() : AQWidget()
 
     getPanelInfo();
 
-    splash = new TPMSplash();
+    splash = nullptr;
 
     isShown = false;
 #if 0
     QSettings s;
     move(s.value((QString("panelPos/%1").arg(config->appInstance))).toPoint());
 #endif
+
 }
 
 void ControlPanel::init(TiledPatternMaker * parent)
 {
-    maker   = parent;
-    view    = ViewControl::getInstance();
+    maker       = parent;
+    view        = ViewControl::getInstance();
     mosaicMaker = MosaicMaker::getInstance();
     tilingMaker = TilingMaker::getInstance();
 
@@ -108,6 +107,8 @@ void ControlPanel::init(TiledPatternMaker * parent)
     updateLocked   = false;
 
     setupGUI();
+
+    enableSplash(!config->splitScreen);
 
     mpTimer = new QTimer(this);
     connect(mpTimer, &QTimer::timeout, this, &ControlPanel::slot_poll);
@@ -127,6 +128,21 @@ void ControlPanel::init(TiledPatternMaker * parent)
     }
 
     mpTimer->start(100);    // always runs
+}
+
+void ControlPanel::enableSplash(bool enable)
+{
+    if (splash)
+    {
+        splash->hide();
+        delete splash;
+    }
+    splash = nullptr;
+
+    if (enable)
+    {
+        splash = new TPMSplash();
+    }
 }
 
 ControlPanel::~ControlPanel()
@@ -234,7 +250,6 @@ void ControlPanel::setupGUI()
         QPushButton * pbUpdateView    = new QPushButton("Repaint View");
         QPushButton * pbRefreshView   = new QPushButton("Recreate View");
         QPushButton * pbSaveLog       = new QPushButton("Save Log");
-
 
         hlayout->addWidget(pbLogEvent);
         hlayout->addWidget(pbSaveLog);
@@ -814,12 +829,13 @@ void ControlPanel::delegateKeyboardMouse(eViewType viewType)
     }
     else
     {
-        kbdModeCombo->insertItem(100,"Adjust View",      QVariant(KBD_MODE_XFORM_VIEW));
-        kbdModeCombo->insertItem(100,"Adjust Selected",  QVariant(KBD_MODE_XFORM_SELECTED));
-        kbdModeCombo->insertItem(100,"Adjust Background",QVariant(KBD_MODE_XFORM_BKGD));
-        kbdModeCombo->insertItem(100,"Adjust Tiling",    QVariant(KBD_MODE_XFORM_TILING));
-        kbdModeCombo->insertItem(100,"Adjust Unique Tile", QVariant(KBD_MODE_XFORM_UNIQUE_TILE));
-        kbdModeCombo->insertItem(100,"Adjust Placed Tile", QVariant(KBD_MODE_XFORM_PLACED_TILE));
+        kbdModeCombo->insertItem(100,"Adjust View",             QVariant(KBD_MODE_XFORM_VIEW));
+        kbdModeCombo->insertItem(100,"Adjust Selected Layer",   QVariant(KBD_MODE_XFORM_SELECTED));
+        kbdModeCombo->insertItem(100,"Adjust Background",       QVariant(KBD_MODE_XFORM_BKGD));
+        kbdModeCombo->insertItem(100,"Adjust Tiling",           QVariant(KBD_MODE_XFORM_TILING));
+        kbdModeCombo->insertItem(100,"Adjust Unique Tile",      QVariant(KBD_MODE_XFORM_UNIQUE_TILE));
+        kbdModeCombo->insertItem(100,"Adjust Placed Tile",      QVariant(KBD_MODE_XFORM_PLACED_TILE));
+        kbdModeCombo->insertItem(100,"Adjust Grid",             QVariant(KBD_MODE_XFORM_GRID));
     }
 
     kbdModeCombo->blockSignals(false);
@@ -858,6 +874,7 @@ eKbdMode ControlPanel::getValidDesignMode(eKbdMode mode)
     case KBD_MODE_XFORM_TILING:
     case KBD_MODE_XFORM_UNIQUE_TILE:
     case KBD_MODE_XFORM_PLACED_TILE:
+    case KBD_MODE_XFORM_GRID:
         break;
     }
     return KBD_MODE_DES_LAYER_SELECT;
@@ -873,6 +890,7 @@ eKbdMode ControlPanel::getValidMosaicMode(eKbdMode mode)
     case KBD_MODE_XFORM_TILING:
     case KBD_MODE_XFORM_UNIQUE_TILE:
     case KBD_MODE_XFORM_PLACED_TILE:
+    case KBD_MODE_XFORM_GRID:
         return mode;
     case KBD_MODE_DES_POS:
     case KBD_MODE_DES_LAYER_SELECT:
@@ -929,18 +947,6 @@ void ControlPanel::showTilingPressed()
 void ControlPanel::slot_scaleToView(bool enb)
 {
     config->scaleToView = enb;
-}
-
-void ControlPanel::slot_showBackChanged(bool enb)
-{
-    config->showBackgroundImage = enb;
-    view->update();
-}
-
-void ControlPanel::slot_showGridChanged(bool enb)
-{
-    config->showGrid = enb;
-    emit sig_refreshView();
 }
 
 void ControlPanel::slot_showMeasureChanged(bool enb)
@@ -1000,26 +1006,25 @@ QGroupBox *  ControlPanel::createViewersBox()
     viewersBox->setLayout(avbox);
 
     // viewer group
-    viewerGroup.addButton(cbRawDesignView,VIEW_DESIGN);
-    viewerGroup.addButton(cbMosaicView,VIEW_MOSAIC);
-    viewerGroup.addButton(cbPrototypeView,VIEW_PROTOTYPE);
-    viewerGroup.addButton(cbTilingView,VIEW_TILING);
-    viewerGroup.addButton(cbProtoMaker,VIEW_MOTIF_MAKER);
-    viewerGroup.addButton(cbTilingMakerView,VIEW_TILING_MAKER);
+    viewerGroup.addButton(cbRawDesignView,      VIEW_DESIGN);
+    viewerGroup.addButton(cbMosaicView,         VIEW_MOSAIC);
+    viewerGroup.addButton(cbPrototypeView,      VIEW_PROTOTYPE);
+    viewerGroup.addButton(cbProtoMaker,         VIEW_MOTIF_MAKER);
+    viewerGroup.addButton(cbTilingView,         VIEW_TILING);
+    viewerGroup.addButton(cbTilingMakerView,    VIEW_TILING_MAKER);
     if (config->insightMode)
     {
-        viewerGroup.addButton(cbMapEditor,VIEW_MAP_EDITOR);
+        viewerGroup.addButton(cbMapEditor,      VIEW_MAP_EDITOR);
     }
-    else
-    {
-        // designer mode
-        if (config->getViewerType() == VIEW_MAP_EDITOR)
-        {
-            config->setViewerType(VIEW_DESIGN);
-        }
-    }
+    viewerGroup.addButton(cbBackgroundImage,    VIEW_BKGD_IMG);
+    viewerGroup.addButton(cbGrid,               VIEW_GRID);
 
     viewerGroup.setExclusive(false); // always false
+
+    if (!config->insightMode && config->getViewerType() == VIEW_MAP_EDITOR)
+    {
+        config->setViewerType(VIEW_MOSAIC);
+    }
 
     viewerGroup.button(config->getViewerType())->setChecked(true);
 
@@ -1030,8 +1035,6 @@ QGroupBox *  ControlPanel::createViewersBox()
 #endif
     connect(cbLockView,         &QCheckBox::clicked,  this, &ControlPanel::slot_lockViewClicked);
     connect(cbMultiSelect,      &QCheckBox::clicked,  this, &ControlPanel::slot_multiSelect);
-    connect(cbBackgroundImage,  &QCheckBox::clicked,  this, &ControlPanel::slot_showBackChanged);
-    connect(cbGrid,             &QCheckBox::clicked,  this, &ControlPanel::slot_showGridChanged);
     connect(cbMeasure,          &QCheckBox::clicked,  this, &ControlPanel::slot_showMeasureChanged);
     connect(cbCenter,           &QCheckBox::clicked,  this, &ControlPanel::slot_showCenterChanged);
     connect(theApp,             &TiledPatternMaker::sig_lockStatus, this,&ControlPanel::slot_lockStatusChanged);
@@ -1140,27 +1143,47 @@ void ControlPanel::setLoadState(eLoadState state, QString name)
 void  ControlPanel::slot_Viewer_pressed(int id, bool enable)
 {
     eViewType viewType = static_cast<eViewType>(id);
-    if (enable)
+    qDebug() << sViewerType[viewType] << (enable ? "enabled" : "disabled");
+
+    switch (viewType)
     {
-        if (exclusiveViews)
+    case VIEW_BKGD_IMG:
+        config->showBackgroundImage = enable;
+        break;
+
+    case VIEW_GRID:
+        config->showGrid = enable;
+        break;
+
+    case VIEW_BORDER:
+    case VIEW_CROP:
+        return;
+
+    default:
+    {
+        if (enable)
         {
-            viewerGroup.blockSignals(true);
-            viewerGroup.button(config->getViewerType())->setChecked(false);
-            viewerGroup.button(id)->setChecked(true);
-            viewerGroup.blockSignals(false);
+            if (exclusiveViews)
+            {
+                viewerGroup.blockSignals(true);
+                viewerGroup.button(config->getViewerType())->setChecked(false);
+                viewerGroup.button(id)->setChecked(true);
+                viewerGroup.blockSignals(false);
+            }
+
+            // allways do this - the user has asked for it
+            config->setViewerType(viewType);
+            delegateKeyboardMouse(viewType);
         }
 
-        // allways do this - the user has asked for it
-        config->setViewerType(viewType);
-        delegateKeyboardMouse(viewType);
+        if (exclusiveViews)
+        {
+            view->disableAllViews();
+        }
+    }
     }
 
-    if (exclusiveViews)
-    {
-        view->disableAllViews();
-    }
     view->viewEnable(viewType,enable);
-
     emit sig_refreshView();
 }
 

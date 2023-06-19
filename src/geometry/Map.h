@@ -150,9 +150,12 @@ public:
 
     void        mergeMap(const constMapPtr & other, qreal tolerance = Loose::TOL);
     void        mergeMany(const constMapPtr & other, const Placements & placements);
+    void        mergeSimpleMany(constMapPtr & other, const Placements & transforms);
+
     EdgePtr     makeCopy(const EdgePtr & e);
     EdgePtr     makeCopy(const EdgePtr & e, QTransform T);
 
+    void        addMap(MapPtr other);       // for debug
     void        removeMap(MapPtr other);
 
     // back-door
@@ -163,6 +166,7 @@ public:
     const QVector<VertexPtr>    & getVertices() { return vertices; }
     const QVector<EdgePtr>      & getEdges()    { return edges; }
     const QVector<QPair<QPointF,QString>> & getTexts()    { return debugTexts; }
+    const QVector<QPointF>        getPoints();
 
     void            resetNeighbourMap() { nMap.reset(); }
     NeighbourMapPtr getNeighbourMap();
@@ -189,6 +193,7 @@ public:
     QVector<eMapError> _verify(bool force = false);
     void        dumpMap(bool full=true);
     void        dumpErrors(const QVector<eMapError> &theErrors);
+    void        private_insertEdge(const EdgePtr & e) { _insertEdge(e); }
 
     static int  refs;
 

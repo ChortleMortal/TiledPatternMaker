@@ -567,7 +567,7 @@ void  page_map_editor::onEnter()
 {
 static QString msg("<body>"
                    "<font color=magenta>tile</font>  |  "
-                   "<span style=\"color:rgb(255,127,0)\">fig boundary</span>  |  "
+                   "<span style=\"color:rgb(255,127,0)\">motif boundary</span>  |  "
                    "<font color=yellow>ext boundary</font>  |  "
                    "<font color=blue>vertex</font>  |  "
                    "<font color=yellow>pt</font>  |  "

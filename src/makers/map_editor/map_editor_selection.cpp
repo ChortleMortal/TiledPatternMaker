@@ -289,32 +289,32 @@ void MapEditorSelection::buildMotifDB(DesignElementPtr delp)
         }
 
         // add points from radial motif boundary
-        QPolygonF figBoundary = motif->getMotifBoundary();
-        figBoundary            = placement.map(figBoundary);
-        if (figBoundary.size())
+        QPolygonF motifBoundary = motif->getMotifBoundary();
+        motifBoundary            = placement.map(motifBoundary);
+        if (motifBoundary.size())
         {
-            for (auto apt : figBoundary)
+            for (auto apt : motifBoundary)
             {
-                pointInfo pi(PT_LINE,apt,"radial fig boundary point");
+                pointInfo pi(PT_LINE,apt,"radial motif boundary point");
                 points.push_back(pi);
             }
 
-            QVector<QLineF> edges = Utils::polyToLines(figBoundary);
+            QVector<QLineF> edges = Utils::polyToLines(motifBoundary);
             for (auto line : edges)
             {
                 // add line from radial motif boundary
-                lineInfo li(LINE_FIXED,line,"radial fig boundary line");
+                lineInfo li(LINE_FIXED,line,"radial motif boundary line");
                 lines.push_back(li);
 
                 // add point from raidal motif boundary
                 QPointF midPt = line.pointAt(0.5);
-                pointInfo pi(PT_LINE_MID,midPt,"mid-point radial fig boundary");
+                pointInfo pi(PT_LINE_MID,midPt,"mid-point radial motif boundary");
                 points.push_back(pi);
             }
 
-            if (!figBoundary.isClosed())
+            if (!motifBoundary.isClosed())
             {
-                QLineF line(figBoundary.last(),figBoundary.first());
+                QLineF line(motifBoundary.last(),motifBoundary.first());
                 lineInfo li(LINE_FIXED,line,"boundary line");
                 lines.push_back(li);
 
@@ -660,7 +660,7 @@ bool MapEditorSelection::insideBoundary(QPointF wpt)
         QPointF center = tilep->getCenter();
         QTransform t   = QTransform::fromTranslate(center.x(),center.y());
         boundary       = t.map(boundary);
-        b_area = Utils::calcArea(boundary);
+        b_area         = Utils::calcArea(boundary);
     }
 
     QPolygonF tile = tilep->getPolygon();

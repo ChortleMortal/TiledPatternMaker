@@ -23,7 +23,7 @@ public:
 protected:
     Colored(const ProtoPtr & proto);
     Colored(const StylePtr &other);
-    ~Colored();
+    virtual ~Colored();
 
     ColorSet colors;
 };

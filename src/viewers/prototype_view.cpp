@@ -59,17 +59,17 @@ void PrototypeView::paint(QPainter *painter)
     gg = & geoGraphics;
 
     draw();
-
-    drawCenter(painter);
+    
+    drawLayerModelCenter(painter);
 }
 
 void PrototypeView::draw()
 {
     qDebug() << "PrototypeView::draw";
 
-    auto data = protoMaker->getProtoMakerData();
+    const auto data = protoMaker->getProtoMakerData();
 
-    for (auto & proto : data->getPrototypes())
+    for (const auto & proto : data->getPrototypes())
     {
         if (!data->isHidden(MVD_PROTO,proto))
         {
@@ -98,12 +98,9 @@ void PrototypeView::drawProto(ProtoPtr proto)
         MapPtr map = proto->getProtoMap();
         qDebug() << "PrototypeView  proto="  << proto.get() << "protoMap" << map.get();
 
-        for(auto & edge : qAsConst(map->getEdges()))
-        {
-            edges.push_back(edge);
-        }
-
         QPen pen(colors.mapColor,lineWidth);
+
+        EdgePoly edges(map->getEdges());    // this is not really an EdgePoly it is a vector of Edges
         edges.draw(gg, pen);
         edges.drawPts(gg, pen);
     }
@@ -114,15 +111,15 @@ void PrototypeView::drawProto(ProtoPtr proto)
 
     if (mode & (PROTO_ALL_TILES | PROTO_ALL_MOTIFS))
     {
-        for (auto & T1 : fillPlacements)
+        for (const auto & T1 : fillPlacements)
         {
-            for (auto & del : proto->getDesignElements())
+            for (const auto & del : proto->getDesignElements())
             {
                 auto motif = del->getMotif();
                 auto tile  = del->getTile();
 
                 auto tilePlacements = tiling->getPlacements(tile);
-                for (auto & T0 : tilePlacements)
+                for (const auto & T0 : tilePlacements)
                 {
                     QTransform T2 = T0 * T1;
                     gg->pushAndCompose(T2);
@@ -148,14 +145,14 @@ void PrototypeView::drawProto(ProtoPtr proto)
         QPen motifPen(colors.delMotifColor,lineWidth);
 
         // paint background of each DEL, then its tile edges and motifs
-        for (auto & del : proto->getDesignElements())
+        for (const auto & del : proto->getDesignElements())
         {
             auto motif  = del->getMotif();
             auto tile   = del->getTile();
             EdgePoly ep = tile->getEdgePoly();
 
             auto tilePlacements = tiling->getPlacements(tile);
-            for (auto & T0 : tilePlacements)
+            for (const auto & T0 : tilePlacements)
             {
                 gg->pushAndCompose(T0);
 
@@ -181,14 +178,14 @@ void PrototypeView::drawProto(ProtoPtr proto)
 
     if (mode & PROTO_ALL_VISIBLE)
     {
-        for (auto & del : proto->getDesignElements())
+        for (const auto & del : proto->getDesignElements())
         {
             if (!data->isHidden(MVD_PROTO,del))
             {
                 auto motif = del->getMotif();
                 auto tile  = del->getTile();
                 auto tilePlacements = tiling->getPlacements(tile);
-                for (auto & T0 : tilePlacements)
+                for (const auto & T0 : tilePlacements)
                 {
                     gg->pushAndCompose(T0);
 
@@ -209,15 +206,22 @@ void PrototypeView::drawProto(ProtoPtr proto)
     }
     else
     {
-        for (auto & del : proto->getDesignElements())
+        for (const auto & del : proto->getDesignElements())
         {
             if (!data->isHidden(MVD_PROTO,del))
             {
                 auto motif = del->getMotif();
                 auto tile  = del->getTile();
-                auto T0 = tiling->getPlacements(tile).first();
-                gg->pushAndCompose(T0);
-
+                auto placements = tiling->getPlacements(tile);
+                QTransform T0;
+                if (placements.size())
+                {
+                    T0 = placements.first();
+                    if (!T0.isIdentity())
+                    {
+                        gg->pushAndCompose(T0);
+                    }
+                }
                 if (mode & PROTO_VISIBLE_TILE)
                 {
                     QPen pen(colors.visibleTileColor,lineWidth);
@@ -228,7 +232,10 @@ void PrototypeView::drawProto(ProtoPtr proto)
                     QPen pen(colors.visibleMotifColor,lineWidth);
                     ViewerBase::drawMotif(gg,motif,pen);
                 }
-                gg->pop();
+                if (!T0.isIdentity())
+                {
+                    gg->pop();
+                }
             }
         }
     }

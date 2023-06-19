@@ -13,10 +13,10 @@ public:
         Unknown
     };
 
-    Tristate() { state = Unknown; }
+    Tristate() { state = eTristate::Unknown; }
 
-    void        set(bool b) { if (b) state = True; else state = False; }
-    void        reset() { state = Unknown; }
+    void        set(eTristate state) { this->state = state; }
+    void        reset() { state = eTristate::Unknown; }
     eTristate   get() { return state; }
 
 private:

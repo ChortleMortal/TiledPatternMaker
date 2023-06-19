@@ -2,13 +2,6 @@
 #ifndef PAGE_MAP_EDITOR_H
 #define PAGE_MAP_EDITOR_H
 
-class QGroupBox;
-class QTextEdit;
-class QCheckBox;
-class QToolButton;
-class QRadioButton;
-class QButtonGroup;
-
 class MapEditor;
 class MapEditorDb;
 class MapEditorView;

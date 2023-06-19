@@ -73,7 +73,6 @@ private:
     PrototypeMaker * protoMaker;
     GeoGraphics    * gg;
 
-    EdgePoly        edges;              // this is not really an EdgePoly it is a vector of Edges
     ProtoViewColors colors;
     qreal           lineWidth;
     int             mode;

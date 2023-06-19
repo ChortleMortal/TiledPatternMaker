@@ -75,7 +75,8 @@ page_system_info::page_system_info(ControlPanel * cpanel)  : panel_page(cpanel,"
     box->addSpacing(7);
     box->addWidget(tree);
 
-    AQWidget * widget = new AQWidget();
+    QWidget * widget = new QWidget();
+    widget->setContentsMargins(0,0,0,0);
     widget->setLayout(box);
 
     vbox->addWidget(widget);
@@ -221,9 +222,9 @@ void page_system_info::doTilingMaker()
     item->setText(0,"Tiling Maker");
     item->setText(1,QString("Tilings: %1").arg(tilings.size()));
     int tiles = 0;
-    for (auto& tiling : tilings)
+    for (const auto & tiling : tilings)
     {
-        tiles += tiling->getData().countPlacedTiles();
+        tiles += tiling->getInTiling().count();
     }
     item->setText(2,QString("Placed Tiles: %1").arg(tiles));
     tree->addTopLevelItem(item);
@@ -588,8 +589,8 @@ void page_system_info::populateDEL(QTreeWidgetItem * parent, DesignElementPtr de
     item->setText(2,astring);
     item2->addChild(item);
     //tree->expandItem(item);
-
-    if (motif->isExplicit())
+    
+    if (motif->isIrregular())
     {
         populateMap(item2,motif->getMotifMap(),"Tile Map");
     }
@@ -599,7 +600,7 @@ void page_system_info::populateTiling(QTreeWidgetItem * parent, TilingPtr tp, QS
 {
     if (!tp) return;
 
-    const PlacedTiles & placedTiles = tp->getData().getPlacedTiles();
+    const PlacedTiles & placedTiles = tp->getInTiling();
 
     // summary
     QTreeWidgetItem * pitem = new QTreeWidgetItem;
@@ -610,7 +611,7 @@ void page_system_info::populateTiling(QTreeWidgetItem * parent, TilingPtr tp, QS
     pitem->setText(2,astring);
     parent->addChild(pitem);
 
-    for (auto placedTile : placedTiles)
+    for (const auto & placedTile : placedTiles)
     {
         QTransform tr = placedTile->getTransform();
         TilePtr tile  = placedTile->getTile();

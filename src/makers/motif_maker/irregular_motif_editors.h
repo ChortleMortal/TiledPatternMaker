@@ -4,7 +4,6 @@
 
 #include "enums/emotiftype.h"
 #include "makers/motif_maker/regular_motif_editors.h"
-#include "motifs/explicit_map_motif.h"
 #include "motifs/girih_motif.h"
 #include "motifs/hourglass_motif.h"
 #include "motifs/inferred_motif.h"
@@ -28,7 +27,6 @@ public:
 protected:
     class PrototypeMaker * prototypeMaker;
 
-    weak_ptr<ExplicitMapMotif>  wExplicitMapMotif;
 };
 
 ////////////////////////////////////////////////////////////////////////////

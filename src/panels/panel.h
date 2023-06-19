@@ -1,25 +1,22 @@
-﻿#pragma once
+#pragma once
 #ifndef PANEL_H
 #define PANEL_H
 
 #include <QButtonGroup>
+#include <QtWidgets>
 
-#include "widgets/panel_misc.h"
 #include "widgets/panel_list_widget.h"
 #include "widgets/panel_status.h"
 #include "misc/tpmsplash.h"
 #include "enums/ekeyboardmode.h"
 #include "enums/eviewtype.h"
 
-class QCheckBox;
-class QRadioButton;
-class QGroupBox;
 class panel_page;
 class PanelPagesWidget;
 class TiledPatternMaker;
 class MouseModeWidget;
 
-class ControlPanel : public AQWidget
+class ControlPanel : public QWidget
 {
     Q_OBJECT
 
@@ -47,12 +44,13 @@ public:
     void    pushPanelStatus(QString && txt){ panelStatus->pushStack(txt); }
     void    popPanelStatus()               { panelStatus->popStack(); }
 
-    void    splashMosiac(QString & txt)  { splash->displayMosaic(txt); }
-    void    splashMosiac(QString && txt) { splash->displayMosaic(txt); }
-    void    splashTiling(QString & txt)  { splash->displayTiling(txt); }
-    void    splashTiling(QString && txt) { splash->displayTiling(txt); }
-    void    removeSplashMosaic()         { splash->removeMosaic(); }
-    void    removeSplashTiling()         { splash->removeTiling(); }
+    void    enableSplash(bool enable);
+    void    splashMosiac(QString & txt)  { if (splash) splash->displayMosaic(txt); }
+    void    splashMosiac(QString && txt) { if (splash) splash->displayMosaic(txt); }
+    void    splashTiling(QString & txt)  { if (splash) splash->displayTiling(txt); }
+    void    splashTiling(QString && txt) { if (splash) splash->displayTiling(txt); }
+    void    removeSplashMosaic()         { if (splash) splash->removeMosaic(); }
+    void    removeSplashTiling()         { if (splash) splash->removeTiling(); }
 
     void    selectViewer(int id);
 
@@ -92,8 +90,6 @@ private slots:
     void    slot_scaleToView(bool enb);
     void    showTilingPressed();
     void    showMosaicPressed();
-    void    slot_showBackChanged(bool state);
-    void    slot_showGridChanged(bool state);
     void    slot_showMeasureChanged(bool state);
     void    slot_showCenterChanged(bool state);
     void    slot_lockViewClicked(bool enb);

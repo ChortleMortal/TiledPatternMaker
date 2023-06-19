@@ -2,7 +2,7 @@
 #ifndef MOTIFMAKERWIDGET_H
 #define MOTIFMAKERWIDGET_H
 
-#include "widgets/panel_misc.h"
+#include <QWidget>
 
 typedef std::shared_ptr<class DesignElement>       DesignElementPtr;
 typedef std::shared_ptr<class DesignElementButton> DELBtnPtr;
@@ -18,7 +18,7 @@ typedef std::shared_ptr<class Prototype>           ProtoPtr;
 // refreshed here and the only way to do this is to select
 // the DEL and rebuild the motif
 
-class MotifMakerWidget : public AQWidget
+class MotifMakerWidget : public QWidget
 {
     Q_OBJECT
 

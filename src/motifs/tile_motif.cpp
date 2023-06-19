@@ -14,6 +14,12 @@ TileMotif::TileMotif() : IrregularMotif()
 TileMotif::TileMotif(const Motif &other) : IrregularMotif(other)
 {
     setMotifType(MOTIF_TYPE_EXPLCIT_TILE);
+    if (!other.isIrregular())
+    {
+        // this is used as a conversion from radial to irregular
+        motifScale  = 1.0;
+        motifRotate = 0.0;
+    }
 }
 
 void TileMotif::buildMotifMaps()
@@ -21,7 +27,10 @@ void TileMotif::buildMotifMaps()
     Q_ASSERT(tile);
     motifMap = std::make_shared<Map>("Tile motif map");
     inferTile(tile);
-    completeMap(motifMap);
+    completeMotif(tile);
+    completeMap();
+    buildMotifBoundary(tile);
+    buildExtendedBoundary();
 }
 
 void TileMotif::inferTile(TilePtr tile)

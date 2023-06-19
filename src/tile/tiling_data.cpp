@@ -11,37 +11,26 @@ TilingData::TilingData()
 
 TilingData::~TilingData()
 {
-    placed_tiles.clear();
+    getRWInTiling().clear();
 }
-
-
-void TilingData::init(Tiling * parent,QSize size, QPointF t1, QPointF t2)
-{
-    this->parent = parent;
-    this->t1     = t1;
-    this->t2     = t2;
-    settings.setSize(size);
-}
-
 
 TilingData TilingData::copy()
 {
     TilingData td;
-    td.parent   = parent;
     td.settings = settings;
     td.t1       = t1;
     td.t2       = t2;
-    for (auto & pf : placed_tiles)
+    for (const auto & pf : getInTiling())
     {
         auto pf2 = pf->copy();
-        td.placed_tiles.push_back(pf2);
+        td.getRWInTiling().push_back(pf2);
     }
     return td;
 }
 
 bool TilingData::isEmpty()
 {
-    if (placed_tiles.isEmpty() && t1.isNull() && t2.isNull())
+    if (getInTiling().isEmpty() && t1.isNull() && t2.isNull())
         return true;
     else
         return false;
@@ -79,7 +68,7 @@ QString TilingData::dump() const
     QString astring;
     QDebug  deb(&astring);
 
-    deb << "t1=" << t1 << "t2=" << t2 << "num tiles=" << placed_tiles.size();
+    deb << "t1=" << t1 << "t2=" << t2 << "num tiles=" << getInTiling().size();
     return astring;
 }
 

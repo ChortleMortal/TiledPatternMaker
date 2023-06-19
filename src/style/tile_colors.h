@@ -24,7 +24,7 @@ class TileColors : public Style
 public:
     TileColors(ProtoPtr proto);
     TileColors(StylePtr other);
-    ~TileColors() override;
+    virtual ~TileColors();
 
     void        draw(GeoGraphics * gg) override;
 

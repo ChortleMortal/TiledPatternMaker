@@ -6,16 +6,6 @@
 #include "settings/configuration.h"
 #include "widgets/panel_misc.h"
 
-AQWidget::AQWidget(QWidget * parent) : QWidget(parent)
-{
-    setContentsMargins(0,0,0,0);
-}
-
-AQStackedWidget::AQStackedWidget() : QStackedWidget()
-{
-    setContentsMargins(0,0,0,0);
-}
-
 AQVBoxLayout::AQVBoxLayout() : QVBoxLayout()
 {
     setAlignment(Qt::AlignTop);

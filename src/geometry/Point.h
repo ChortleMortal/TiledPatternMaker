@@ -22,8 +22,8 @@ public:
     static bool     lessThan(const QPointF & a, QPointF & other);
 
     // Useful maths on QPointFs.
-    static qreal    mag2(QPointF & pt);
-    static qreal    mag(QPointF & pt);
+    static qreal    mag2(const QPointF &pt);
+    static qreal    mag(const QPointF & pt);
     static qreal    dist2(const QPointF &pt, const QPointF &other );
     static qreal    dist( QPointF pt, QPointF other );
 
@@ -45,8 +45,7 @@ public:
     static QPointF   reflectPoint(QPointF & p, QLineF & line);
     static QPolygonF reflectPolygon(QPolygonF &p, QLineF &line);
 
-    // Return the absolute angle of the edge from this to other, in the
-    // range -PI to PI.
+    // Return the absolute angle of the edge from this to other, in the range -PI to PI.
     static qreal    getAngleRadians(QPointF pt, QPointF other);
     static qreal    getAngleDegrees(QPointF pt, QPointF other);
 
@@ -62,8 +61,7 @@ public:
 
     static qreal    cross(QPointF & pt, QPointF & other);
 
-    // Get the section of arc swept out between the edges this ==> from
-    // and this ==> to.
+    // Get the section of arc swept out between the edges this ==> from and this ==> to.
     static qreal    sweep(QPointF joint, QPointF from, QPointF to);
 
     static qreal    distToLine(QPointF pt, QLineF line);
@@ -75,10 +73,7 @@ public:
     static QPointF  irregularCenter(const QPolygonF &poly);
 
     static QPointF  perpPt(QPointF A, QPointF B, QPointF C);
-
-
 };
-
 #endif
 
 

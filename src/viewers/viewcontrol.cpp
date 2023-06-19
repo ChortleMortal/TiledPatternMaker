@@ -3,7 +3,6 @@
 #include "legacy/design_maker.h"
 #include "legacy/legacy_border.h"
 #include "legacy/patterns.h"
-#include "makers/crop_maker/crop_maker.h"
 #include "makers/map_editor/map_editor.h"
 #include "makers/map_editor/map_editor_db.h"
 #include "makers/mosaic_maker/mosaic_maker.h"
@@ -74,6 +73,7 @@ void ViewControl::init()
     measureView     = MeasureView::getInstance();
     cropViewer      = CropViewer::getInstance();
     borderView      = BorderView::getInstance();
+    bkgdImageView   = BackgroundImageView::getInstance();
 
     dontPaint = false;
     disableAllViews();
@@ -108,8 +108,6 @@ void ViewControl::slot_dontPaint(bool dont)
 
 void ViewControl::slot_unloadAll()
 {
-    emit sig_identifyYourself();
-
     qDebug() << "ViewControl::slot_unloadAll";
     dumpRefs();
 
@@ -140,29 +138,47 @@ void ViewControl::slot_unloadAll()
     frameSettings.reInit();
     dumpRefs();
 
-    emit sig_identifyYourself();
-
     slot_refreshView();
     dumpRefs();
+
+    qDebug() << "ViewControl::slot_unloadAll - complete";
 
     // there is always at least an emtpy tiling
     TilingPtr tiling = make_shared<Tiling>();
     tilingMaker->sm_takeUp(tiling,TILM_LOAD_EMPTY);
-
-    emit sig_identifyYourself();
+    dumpRefs();
+    qDebug() << "ViewControl::slot_unloadAll - created empty tiling and mosaic";
 }
+
 
 void ViewControl::viewEnable(eViewType view, bool enable)
 {
-    enabledViews[view] = enable;
+    if (enable)
+        enabledViews.push_back(view);
+    else
+        enabledViews.removeOne(view);
 }
 
 void ViewControl::disableAllViews()
 {
-    for (int i=0; i <= VIEW_MAX; i++)
+    QVector<eViewType> tmp = enabledViews;
+    for (auto view : tmp)
     {
-        enabledViews[i] = false;
+        switch (view)
+        {
+        case VIEW_BKGD_IMG:
+        case VIEW_GRID:
+            break;
+
+        default:
+            enabledViews.removeOne(view);
+        }
     }
+}
+
+bool ViewControl::isEnabled(eViewType view)
+{
+    return enabledViews.contains(view);
 }
 
 void ViewControl::slot_updateView()
@@ -205,17 +221,7 @@ void ViewControl::refreshView()
     unloadView();
 
     // viewers
-    setupViewers();
-
-    // background image
-    auto bip = BackgroundImageView::getInstance();
-    {
-        if (bip->isLoaded())
-        {
-            qDebug() << "adding image" << bip->getName();
-            addLayer(bip);
-        }
-    }
+    setupEnabledViewLayers();
 
     // other images
     for (ImgLayerPtr & ilp : images)
@@ -223,21 +229,7 @@ void ViewControl::refreshView()
         addLayer(ilp);
     }
 
-    // grid
-    if (config->showGrid)
-    {
-        if (config->gridUnits == GRID_UNITS_TILE)
-        {
-            gridView->setCanvasXform(getCurrentXform());
-        }
-        else
-        {
-            gridView->setCanvasXform(unityXform);
-        }
-
-        addLayer(gridView);
-    }
-
+    // measure
     if (config->measure)
     {
         measureView->setMeasureMode(true);
@@ -257,22 +249,10 @@ void ViewControl::refreshView()
     }
 
     // crops
-#if 0
-    auto mosaic = mosaicMaker->getMosaic();
-    if (mosaic)
-    {
-        auto crop = mosaic->getCrop();
-        if (crop)
-        {
-            addLayer(cropViewer);
-        }
-    }
-#else
     if (cropViewer->getShowCrop())
     {
         addLayer(cropViewer);
     }
-#endif
 
     // big blue cross
     if (config->circleX)
@@ -295,42 +275,52 @@ void ViewControl::refreshView()
     }
 }
 
-void ViewControl::setupViewers()
+void ViewControl::setupEnabledViewLayers()
 {
-    for (int i=0; i <= VIEW_MAX; i++)
+    for (auto view : enabledViews)
     {
-        if (enabledViews[i])
+        switch (view)
         {
-            switch (i)
-            {
-            case VIEW_DESIGN:
-                viewDesign();
-                break;
+        case VIEW_DESIGN:
+            viewDesign();
+            break;
 
-            case VIEW_MOSAIC:
-                viewMosaic();
-                break;
+        case VIEW_MOSAIC:
+            viewMosaic();
+            break;
 
-            case VIEW_PROTOTYPE:
-                viewPrototype();
-                break;
+        case VIEW_PROTOTYPE:
+            viewPrototype();
+            break;
 
-            case VIEW_MOTIF_MAKER:
-                viewMotifMaker();
-                break;
+        case VIEW_MOTIF_MAKER:
+            viewMotifMaker();
+            break;
 
-            case VIEW_TILING:
-                viewTiling();
-                break;
+        case VIEW_TILING:
+            viewTiling();
+            break;
 
-            case VIEW_TILING_MAKER:
-                viewTilingMaker();
-                break;
+        case VIEW_TILING_MAKER:
+            viewTilingMaker();
+            break;
 
-            case VIEW_MAP_EDITOR:
-                viewMapEditor();
-                break;
-            }
+        case VIEW_MAP_EDITOR:
+            viewMapEditor();
+            break;
+
+        case VIEW_BKGD_IMG:
+            viewBackgroundImage();
+            break;
+
+        case VIEW_GRID:
+            viewGrid();
+            break;
+
+        case VIEW_BORDER:
+        case VIEW_CROP:
+            // these do not have separate enable layer enables
+            break;
         }
     }
 }
@@ -465,6 +455,23 @@ void ViewControl::viewMapEditor()
         setBackgroundColor(QColor(Qt::white));
     else
         setBackgroundColor(QColor(Qt::black));
+}
+
+void ViewControl::viewBackgroundImage()
+{
+    if (bkgdImageView->isLoaded())
+    {
+        qDebug() << "adding image" << bkgdImageView->getName();
+        addLayer(bkgdImageView);
+    }
+}
+
+void ViewControl::viewGrid()
+{
+    if (config->showGrid)
+    {
+        addLayer(gridView);
+    }
 }
 
 const Xform & ViewControl::getCurrentXform()

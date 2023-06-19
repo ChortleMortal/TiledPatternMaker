@@ -50,7 +50,7 @@ QPointF IrregularGirihBranches::buildGirihHalfBranch(int side, bool leftBranch, 
 {
     int side_count = corners.size();
     int next = (side + 1) % side_count;
-    QTransform rot = Transform::rotateAroundPoint(mids[side], leftBranch ? -requiredRotation : requiredRotation);
+    QTransform rot = Transform::rotateRadiansAroundPoint(mids[side], leftBranch ? -requiredRotation : requiredRotation);
 
     QPointF halfBranch = rot.map(corners[ leftBranch ? side : next ]);
     halfBranch -= mids[side];

@@ -8,6 +8,8 @@
 class QCheckBox;
 class QComboBox;
 class QLineEdit;
+class QRadioButton;
+class QLineEdit;
 
 class DlgWorklistCreate : public QDialog, MosaicIOBase
 {
@@ -16,12 +18,18 @@ class DlgWorklistCreate : public QDialog, MosaicIOBase
 public:
     DlgWorklistCreate(QWidget * parent = nullptr);
 
+    QRadioButton * selMosaic;
+    QRadioButton * selTiling;
+
     QCheckBox * chkLoadFilter;
     QCheckBox * chkStyle;
     QCheckBox * chkMotif;
+    QCheckBox * chkText;
 
     QComboBox * styleNames;
     QComboBox * motifNames;
+
+    QLineEdit * text;
 };
 
 #endif

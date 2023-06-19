@@ -6,9 +6,8 @@ class QVBoxLayout;
 
 #include <QDialog>
 #include <QTextEdit>
-#include "widgets/panel_misc.h"
 
-class TextEditorWidget : public AQWidget
+class TextEditorWidget : public QWidget
 {
 public:
     TextEditorWidget();

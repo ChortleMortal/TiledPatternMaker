@@ -2,23 +2,13 @@
 #ifndef PAGE_MODEL_SETTINGS_H
 #define PAGE_MODEL_SETTINGS_H
 
-class QGroupBox;
-class QGridLayout;
-class QTreeWidgetItem;
-class QCheckBox;
-class QLabel;
-class QLineEdit;
-class QPushButton;
-
 #include "widgets/panel_page.h"
 #include "settings/model_settings.h"
 
 class AQSpinBox;
 class SpinSet;
 class DoubleSpinSet;
-
 class ClickableLabel;
-class AQTableWidget;
 
 class page_modelSettings : public panel_page
 {

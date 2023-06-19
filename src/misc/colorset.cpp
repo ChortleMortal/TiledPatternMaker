@@ -104,10 +104,10 @@ QString ColorSet::colorsString() const
     return str;
 }
 
-AQWidget * ColorSet::createWidget()
+QWidget * ColorSet::createWidget()
 {
     AQHBoxLayout * hbox = createLayout();
-    AQWidget   * widget = new AQWidget;
+    QWidget    * widget = new QWidget();
     widget->setLayout(hbox);
     return widget;
 }

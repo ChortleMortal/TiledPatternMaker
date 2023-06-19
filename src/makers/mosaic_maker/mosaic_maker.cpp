@@ -259,7 +259,7 @@ void MosaicMaker::sm_takeUp(QVector<ProtoPtr> prototypes, eMOSM_Event event)
     }
 
     if (viewControl->isEnabled(VIEW_MOSAIC))
-        viewControl->update();
+        viewControl->slot_refreshView();
 }
 
 MosaicPtr MosaicMaker::getMosaic()

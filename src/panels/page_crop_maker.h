@@ -5,14 +5,7 @@
 #include "widgets/panel_page.h"
 #include "makers/crop_maker/crop_maker.h"
 
-class QStackedLayout;
-class QGroupBox;
-class QHBoxLayout;
-class QPushButton;
-class QCheckBox;
 class CropWidget;
-class ClickableLabel;
-class CropViewer;
 
 class page_crop_maker : public panel_page
 {
@@ -43,12 +36,10 @@ private:
     CropMaker    cropMaker;
 
     CropViewer * cropViewer;
+    CropWidget * cropWidget;
 
     QCheckBox  * chkEmbed;
     QCheckBox  * chkApply;
-
-    CropWidget * cropWidget;
-
     QGroupBox  * cropbox2;
 };
 

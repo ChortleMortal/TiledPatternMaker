@@ -23,7 +23,10 @@ void HourglassMotif::buildMotifMaps()
     Q_ASSERT(tile);
     motifMap = std::make_shared<Map>("HourglassMotif map");
     inferHourglass(tile);
-    completeMap(motifMap);
+    completeMotif(tile);
+    completeMap();
+    buildMotifBoundary(tile);
+    buildExtendedBoundary();
 }
 
 // Hourglass inferring.

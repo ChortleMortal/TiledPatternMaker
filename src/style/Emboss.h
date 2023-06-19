@@ -25,7 +25,7 @@ class Emboss : public Outline
 public:
     Emboss(ProtoPtr proto);
     Emboss(StylePtr other);
-    virtual ~Emboss() override;
+    virtual ~Emboss();
 
     virtual eStyleType getStyleType() const override { return STYLE_EMBOSSED; }
     QString getStyleDesc() const override { return "Embossed";}

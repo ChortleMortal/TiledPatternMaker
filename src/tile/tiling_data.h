@@ -1,8 +1,8 @@
 #pragma once
 #ifndef TILING_DATA
 #define TILING_DATA
+#include <QtVersionChecks>
 
-#include <QStack>
 #if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
 #include <memory>
 #endif
@@ -22,37 +22,33 @@ public:
     TilingData();
     ~TilingData();
 
-    void        init(class Tiling * parent, QSize size, QPointF t1 = QPointF(), QPointF t2 = QPointF());
-    TilingData  copy();
-    bool        isEmpty();
+    TilingData          copy();
+    bool                isEmpty();
 
-    const PlacedTiles & getPlacedTiles() const   { return placed_tiles; }
-    PlacedTiles &       getPlacedTileAccess()    { return placed_tiles; }
-    int                 countPlacedTiles() const { return placed_tiles.size(); }
+    const PlacedTiles & getInTiling() const   { return _tilingTiles; }
+    PlacedTiles &       getRWInTiling()       { return _tilingTiles; }
 
-    void        setTrans1(QPointF pt) { t1 = pt; }
-    void        setTrans2(QPointF pt) { t2 = pt; }
-    QPointF     getTrans1() const { return t1; }
-    QPointF     getTrans2() const { return t2; }
+    void                setTranslationVectors(QPointF t1, QPointF t2) { setTrans1(t1); setTrans2(t2); }
+    void                setTrans1(QPointF pt) { t1 = pt; }
+    void                setTrans2(QPointF pt) { t2 = pt; }
+    QPointF             getTrans1() const { return t1; }
+    QPointF             getTrans2() const { return t2; }
 
-    const ModelSettings & getSettings() const { return settings; }
-    ModelSettings       & getSettingsAccess() { return settings ;}
+    const ModelSettings& getSettings() const { return settings; }
+    ModelSettings     & getSettingsAccess() { return settings ;}
 
-    const FillData      & getFillData() const { return settings.getFillDataAccess(); }
-    FillData            & getFillDataAccess() { return settings.getFillData(); }
+    const FillData &    getFillData() const { return settings.getFillDataAccess(); }
+    FillData &          getFillDataAccess() { return settings.getFillData(); }
 
-    Placements            getFillPlacemenets();
+    Placements          getFillPlacemenets();
 
     QString             dump() const;
 
 private:
-    QPointF         t1;
-    QPointF         t2;
-    ModelSettings   settings;
-    PlacedTiles     placed_tiles;
-
-    class Tiling *  parent;
-
+    QPointF             t1;
+    QPointF             t2;
+    ModelSettings       settings;
+    PlacedTiles         _tilingTiles;
 };
 
 #endif

@@ -40,7 +40,7 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,"M
     SpinSet * widthSpin = new SpinSet("Line Width",3,1,9);
     widthSpin->setValue((int)config->protoviewWidth);
 
-    whiteBackground          = new QCheckBox("White background");
+    whiteBackground          = new QCheckBox("White");
     QCheckBox * chkMulti     = new QCheckBox("Multi-Select Motifs");
 
     QPushButton * pbDup      = new QPushButton("Duplicate Motif");
@@ -69,6 +69,7 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,"M
     hbox->addLayout(widthSpin);
     hbox->addStretch();
     hbox->addWidget(chkMulti);
+    hbox->addWidget(whiteBackground);
     vbox->addLayout(hbox);
 
     if (config->insightMode)
@@ -76,18 +77,43 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,"M
         QCheckBox * hiliteUnit   = new QCheckBox("Highlight Unit");
                     replicate    = new QCheckBox("Replicate");
         QCheckBox * showMotif    = new QCheckBox("Motif");
-        QCheckBox * showTile     = new QCheckBox("Tile Boundary");
-        QCheckBox * showMotifB   = new QCheckBox("Motif Boundary");
-        QCheckBox * showExt      = new QCheckBox("Extended Boundary");
+        QCheckBox * showTile     = new QCheckBox("Tile");
+        QCheckBox * showMotifB   = new QCheckBox("Motif");
+        QCheckBox * showTileC    = new QCheckBox("Tile");
+        QCheckBox * showMotifC   = new QCheckBox("Motif");
+
+        QCheckBox * showExt      = new QCheckBox("Extended");
+        QFrame    * line1        = new QFrame();
+        line1->setFrameShape(QFrame::VLine);
+        line1->setFrameShadow(QFrame::Sunken);
+        line1->setLineWidth(1);
+        QFrame    * line2        = new QFrame();
+        line2->setFrameShape(QFrame::VLine);
+        line2->setFrameShadow(QFrame::Sunken);
+        line2->setLineWidth(1);
+        QFrame    * line3        = new QFrame();
+        line3->setFrameShape(QFrame::VLine);
+        line3->setFrameShadow(QFrame::Sunken);
+        line3->setLineWidth(1);
+
+        QLabel    * l_bounds     = new QLabel("Boundaries:");
+        QLabel    * l_cents      = new QLabel("Centres:");
 
         hbox = new QHBoxLayout;
         hbox->addWidget(showMotif);
+        hbox->addWidget(line1);
+        hbox->addWidget(l_bounds);
         hbox->addWidget(showTile);
         hbox->addWidget(showMotifB);
         hbox->addWidget(showExt);
+        hbox->addWidget(line2);
+        hbox->addWidget(l_cents);
+        hbox->addWidget(showTileC);
+        hbox->addWidget(showMotifC);
+        hbox->addWidget(line3);
+        hbox->addStretch();
         hbox->addWidget(hiliteUnit);
         hbox->addWidget(replicate);
-        hbox->addWidget(whiteBackground);
         vbox->addLayout(hbox);
 
         replicate->setChecked(!config->dontReplicate);
@@ -96,6 +122,8 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,"M
         showMotifB->setChecked(config->showMotifBoundary);
         showMotif->setChecked(config->showMotif);
         showExt->setChecked(config->showExtendedBoundary);
+        showTileC->setChecked(config->showTileCenter);
+        showMotifC->setChecked(config->showMotifCenter);
 
         connect(replicate,          &QCheckBox::clicked,     this, &page_motif_maker::replicateClicked);
         connect(view,               &View::sig_rebuildMotif, this, &page_motif_maker::slot_rebuildMotif);
@@ -104,15 +132,19 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,"M
         connect(showMotifB,         &QCheckBox::clicked, this, [this](bool checked) { config->showMotifBoundary    = checked; view->update(); } );
         connect(showMotif,          &QCheckBox::clicked, this, [this](bool checked) { config->showMotif            = checked; view->update(); } );
         connect(showExt,            &QCheckBox::clicked, this, [this](bool checked) { config->showExtendedBoundary = checked; view->update(); } );
+        connect(showTileC,          &QCheckBox::clicked, this, [this](bool checked) { config->showTileCenter       = checked; view->update(); } );
+        connect(showMotifC,         &QCheckBox::clicked, this, [this](bool checked) { config->showMotifCenter      = checked; view->update(); } );
     }
     else
     {
-        config->dontReplicate           = false;
         config->highlightUnit           = false;
+        config->dontReplicate           = false;
         config->showTileBoundary        = true;
         config->showMotifBoundary       = true;
         config->showMotif               = true;
         config->showExtendedBoundary    = true;
+        config->showTileCenter          = false;
+        config->showMotifCenter         = false;
     }
 
     hbox = new QHBoxLayout;
@@ -395,8 +427,8 @@ void page_motif_maker::slot_deleteCurrent()
 
     PlacedTiles deletions;
     TilingPtr tiling = proto->getTiling();
-    const PlacedTiles & placedTiles = tiling->getData().getPlacedTiles();
-    for (auto placedTile : placedTiles)
+    const PlacedTiles & placedTiles = tiling->getInTiling();
+    for (const auto & placedTile : placedTiles)
     {
         if (placedTile->getTile() == tile)
         {
@@ -425,6 +457,9 @@ void page_motif_maker::slot_swapTileRegularity()
 
     auto tile  = del->getTile();
     tile->flipRegularity();
+
+    if (tilingMaker->getSelected())
+        tilingMaker->getSelected()->setState(Tiling::MODIFIED);
 
     prototypeMaker->sm_takeUp(proto->getTiling(),PROM_TILE_REGULARITY_CHANGED,tile);
 

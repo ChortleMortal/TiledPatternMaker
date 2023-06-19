@@ -108,28 +108,7 @@ void MotifView::paint(QPainter *painter)
         _T = placement * baseT;
         //qDebug().noquote() << "MotifView::transform" << Transform::toInfoString(_T);
 
-        //fig->buildExtBoundary();
-
-        // paint boundaries
-        if (config->showExtendedBoundary)
-        {
-            painter->setPen(QPen(Qt::yellow,lineWidth));
-            paintExtendedBoundary(painter,motif);
-        }
-
-        if (config->showTileBoundary)
-        {
-            painter->setPen(QPen(Qt::magenta,lineWidth));
-            paintTileBoundary(painter,tile);
-        }
-
-        if (config->showMotifBoundary)
-        {
-            painter->setPen(QPen(Qt::red,lineWidth));
-            paintMotifBoundary(painter,motif);
-        }
-
-        // paint figure
+        // paint motif
         if (config->showMotif)
         {
             painter->setPen(QPen(Qt::blue,lineWidth));
@@ -155,7 +134,55 @@ void MotifView::paint(QPainter *painter)
             }
         }
 
-        drawCenter(painter);
+        // paint boundaries
+        if (config->showTileBoundary)
+        {
+            painter->setPen(QPen(Qt::magenta,lineWidth));
+            paintTileBoundary(painter,tile);
+        }
+
+        if (config->showMotifBoundary)
+        {
+            painter->setPen(QPen(Qt::red,lineWidth));
+            paintMotifBoundary(painter,motif);
+        }
+
+        if (config->showExtendedBoundary)
+        {
+            painter->setPen(QPen(Qt::yellow,lineWidth));
+            paintExtendedBoundary(painter,motif);
+        }
+
+        drawLayerModelCenter(painter);
+
+        if (config->showTileCenter)
+        {
+            QPointF pt = tile->getCenter();
+            pt = _T.map(pt);
+            drawCenterSymbol(painter,pt,QColor(Qt::red),QColor(Qt::green));
+        }
+
+        if (config->showMotifCenter)
+        {
+            auto map  = motif->getMotifMap();
+            if (map)
+            {
+                auto pts  = map->getPoints();
+
+                QPointF pt;
+                if (motif->isRadial())
+                {
+                    QPolygonF poly(pts);
+                    pt = Point::center(poly);
+                }
+                else
+                {
+                    pt = tile->getCenter();
+                }
+                pt = _T.map(pt);
+                drawCenterSymbol(painter,pt,QColor(Qt::green),QColor(Qt::red));
+            }
+        }
 
         if (motif->getMotifType() == MOTIF_TYPE_INFERRED)
         {
@@ -244,7 +271,15 @@ void MotifView::paintMotifBoundary(QPainter *painter, MotifPtr motif)
 {
     // show boundaries
     QPolygonF p = motif->getMotifBoundary();
-    painter->drawPolygon(_T.map(p));
+    p = _T.map(p);
+    painter->drawPolygon(p);
+    painter->setPen(QPen(Qt::blue,1));
+    painter->setBrush(Qt::blue);
+    for (QPointF pt : p )
+    {
+        painter->drawEllipse(pt,4.0,4.0);
+    }
+    painter->setBrush(Qt::NoBrush);
 }
 
 void MotifView::paintExtendedBoundary(QPainter *painter, MotifPtr motif)

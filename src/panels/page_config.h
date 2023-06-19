@@ -2,12 +2,6 @@
 #ifndef PAGE_CONFIG_H
 #define PAGE_CONFIG_H
 
-class QPushButton;
-class QCheckBox;
-class QGroupBox;
-class QLineEdit;
-class QButtonGroup;
-
 #include "widgets/panel_page.h"
 
 class page_config : public panel_page

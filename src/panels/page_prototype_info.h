@@ -6,8 +6,6 @@
 #include "viewers/prototype_view.h"
 #include "makers/prototype_maker/prototype_maker.h"
 
-class AQTableWidget;
-class QGridLayout;
 class PrototypeData;
 
 enum eDELCol

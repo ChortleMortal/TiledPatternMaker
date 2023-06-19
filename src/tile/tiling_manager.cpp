@@ -21,8 +21,8 @@ TilingManager::TilingManager()
 TilingPtr TilingManager::loadTiling(QString name, eTILM_Event event)
 {
     TilingPtr loadedTiling;
-
-    QString filename = FileServices::getTilingFile(name);
+    
+    QString filename = FileServices::getTilingXMLFile(name);
     if (filename.isEmpty())
     {
         qWarning() << "No tiling found with name" << name;
@@ -96,7 +96,7 @@ bool TilingManager::saveTiling(QString name, TilingPtr tiling)
     const ModelSettings & ms = tiling->getData().getSettings();
     if (ms.getSize() != size || ms.getZSize() != zsize)
     {
-        ModelSettings & settings = tiling->getDataAccess(false).getSettingsAccess();
+        ModelSettings & settings = tiling->getRWData(false).getSettingsAccess();
         settings.setSize(size);
         settings.setZSize(zsize);
     }

@@ -98,6 +98,8 @@ private:
 
     FrameData     * frameData;
 
+    Xform           xf_canvas;
+
     QPixmap         pixmap;         // is painted, created from bkgdImage or adjusted image
     QImage          bkgdImage;      // as loaded
     QImage          adjustedImage;  // as adjusted

@@ -667,11 +667,9 @@ ProtoPtr LegacyLoader::getPrototype(xml_node & node)
             // if the found feature is identical to the one in the known tiling
             // then use that
             // DAC 27MAY17 - imprtant that this code not removed or Design View will fail
-            QVector<PlacedTilePtr>::const_iterator it;
-            const PlacedTiles & placedTiles = tp->getData().getPlacedTiles();
-            for( it = placedTiles.begin(); it != placedTiles.end(); it++)
+            const PlacedTiles & placedTiles = tp->getInTiling();
+            for (const auto & pf : placedTiles )
             {
-                PlacedTilePtr pf = *it;
                 if (pf->getTile()->equals(feature))
                 {
                     feature = pf->getTile();
@@ -723,7 +721,7 @@ ExplicitPtr LegacyLoader::getExplicitFigure(xml_node & node, FeaturePtr tile)
     //map->verify("XML Explicit figure",false);
 
     ExplicitPtr figure = make_shared<ExplicitMapMotif>(map);
-    figure->setup(tile);
+    figure->setTile(tile);
     setExplicitReference(node,figure);
     return(figure);
 }

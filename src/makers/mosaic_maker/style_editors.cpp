@@ -375,7 +375,7 @@ void FilledEditor::displayParms01()
     table->setItem(row,3,item);
 
     ColorSet * colorSetW    = filled->getWhiteColorSet();
-    AQWidget * widget       = colorSetW->createWidget();
+    QWidget * widget        = colorSetW->createWidget();
     table->setCellWidget(row,1,widget);
 
     QPushButton * btnW = new QPushButton("Edit");
@@ -725,7 +725,7 @@ void TileColorsEditor::buildTable()
     table->setItem(row,1,colorItem);
 
     width_slider = new SliderSet("Width", width, 1, 10);
-    AQWidget * widget = new AQWidget();
+    QWidget * widget = new QWidget();
     widget->setContentsMargins(0,0,0,0);
     widget->setLayout(width_slider);
     table->setCellWidget(row,3,widget);
@@ -752,7 +752,7 @@ void TileColorsEditor::buildTable()
         table->setCellWidget(row,TILE_COLORS_BTN,btn);
         connect(btn, &QPushButton::clicked, this, &TileColorsEditor::slot_edit);
 
-        AQWidget * widget = fp->getTileColors()->createWidget();
+        QWidget * widget = fp->getTileColors()->createWidget();
         table->setCellWidget(row,TILE_COLORS_COLORS,widget);
 
         row++;
@@ -781,6 +781,7 @@ void TileColorsEditor::slot_edit()
 
 void  TileColorsEditor::slot_colors_changed()
 {
+    tiling->setState(Tiling::MODIFIED);
     emit panel->sig_render();
     buildTable();
 }

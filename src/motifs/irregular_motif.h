@@ -21,14 +21,15 @@ public:
     IrregularMotif();
     IrregularMotif(const Motif & other);
     IrregularMotif(MotifPtr other);
+    virtual ~IrregularMotif() {}
+
+    virtual void    setTile(TilePtr tile) { this->tile = tile; }
+    virtual void    resetMotifMaps()  override;
+    MapPtr          getMotifMap()     override;
+    virtual void    buildMotifMaps()  override;
+    virtual QString getMotifDesc()    override  { return "IrregularMotif"; }
 
     bool equals(const MotifPtr other) override;
-
-    virtual void    resetMotifMaps() override;
-    MapPtr          getMotifMap()    override;
-    virtual void    buildMotifMaps() override;
-    virtual QString getMotifDesc()   override  { return "IrregularMotif"; }
-    virtual void    setup(TilePtr tile)        { this->tile = tile; }
 
     void dump();
     virtual void    report()         override { qDebug().noquote() << getMotifDesc(); }
@@ -42,15 +43,11 @@ public:
     bool    progressive;    // intersect
 
 protected:
-
-
-    MapPtr          completeMotif(MapPtr map);
-    MapPtr          completeMap(MapPtr map);
-
-    TilePtr         tile;
+    void    completeMotif(TilePtr tile);
+    void    completeMap();
 
 private:
-    void            init();
+    void    init();
 };
 
 #endif

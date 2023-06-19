@@ -71,7 +71,7 @@ private:
     void updateOpacity();
 
     Colored         * colored;
-    AQWidget        * colorwidget;
+    QWidget         * colorwidget;
     QPushButton     * color_button;
     DoubleSliderSet * opacitySlider;
 };

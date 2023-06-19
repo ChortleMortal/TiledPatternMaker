@@ -84,9 +84,11 @@ void BackgroundImageView::paint(QPainter *painter)
     painter->drawPixmap(0,0,pixmap);
 
     painter->restore();
+    
+    drawLayerModelCenter(painter);
 
-    drawCenter(painter);
-
+    if (getSkewMode())
+    {
     // draw accum
     if ( sAccum.size() > 0)
     {
@@ -111,6 +113,7 @@ void BackgroundImageView::paint(QPainter *painter)
             }
         }
         drawPerspective(painter);
+    }
     }
 }
 
@@ -299,12 +302,12 @@ void BackgroundImageView::correctPerspective(QPointF topLeft, QPointF topRight, 
 
 const Xform  & BackgroundImageView::getCanvasXform()
 {
-    return xf_layer;
+    return xf_canvas;
 }
 
 void BackgroundImageView::setCanvasXform(const Xform & xf)
 {
-    xf_layer = xf;
+    xf_canvas = xf;
     forceLayerRecalc();
 }
 
@@ -531,6 +534,9 @@ void Perspective::updateDragging(QPointF spt)
 void Perspective::endDragging(QPointF spt )
 {
     if (!skewMode)
+        return;
+
+    if (sAccum.size() == 0)
         return;
 
     if (!Point::isNear(spt,sAccum.first()->v1->pt))

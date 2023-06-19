@@ -5,11 +5,6 @@
 #include "widgets/panel_page.h"
 #include "widgets/layout_transform.h"
 
-
-class AQPushButton;
-class QGroupBox;
-class QCheckBox;
-
 class page_background_image : public panel_page
 {
     Q_OBJECT
@@ -38,6 +33,8 @@ protected:
     void displayBackgroundStatus(bool force);
 
 private:
+    class BackgroundImageView * bip;
+
     LayoutTransform bkgdLayout;
     AQPushButton  * startAdjustBtn;
     QCheckBox     * chk_useAdjusted;

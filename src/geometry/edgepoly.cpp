@@ -42,7 +42,7 @@ void EdgePoly::set(QPolygonF & poly)
 
 EdgePoly::EdgePoly(const QVector<EdgePtr> & qvep)
 {
-    for (auto & edge : qvep)
+    for (const auto & edge : qvep)
     {
         push_back(edge);
     }
@@ -485,7 +485,7 @@ void EdgePoly::relink()
 QVector<VertexPtr> EdgePoly::getVertices()
 {
     QVector<VertexPtr> vec;
-    for (auto edge : *this)
+    for (const auto & edge : *this)
     {
         vec.push_back(edge->v1);
     }
@@ -495,7 +495,7 @@ QVector<VertexPtr> EdgePoly::getVertices()
 QVector<QLineF> EdgePoly::getLines()
 {
     QVector<QLineF> vec;
-    for (auto edge : *this)
+    for (const auto & edge : *this)
     {
         vec.push_back(QLineF(edge->v1->pt,edge->v2->pt));
     }
@@ -527,7 +527,7 @@ void EdgePoly::dump() const
 QPointF EdgePoly::calcCenter()
 {
     QPointF accum;
-    for (auto edge : *this)
+    for (const auto & edge : *this)
     {
         accum += edge->v1->pt;
     }
@@ -537,32 +537,37 @@ QPointF EdgePoly::calcCenter()
 
 QPointF EdgePoly::calcIrregularCenter()
 {
-    QPointF centroid;
-    double signedArea = 0.0;
-    double x0 = 0.0; // Current vertex X
-    double y0 = 0.0; // Current vertex Y
-    double x1 = 0.0; // Next vertex X
-    double y1 = 0.0; // Next vertex Y
-    double a  = 0.0;  // Partial signed area
+    double area = 0.0;
+    double x0   = 0.0; // Current vertex X
+    double y0   = 0.0; // Current vertex Y
+    double x1   = 0.0; // Next vertex X
+    double y1   = 0.0; // Next vertex Y
+    double a    = 0.0;  // Partial signed area
+    double sumX = 0.0;
+    double sumY = 0.0;
 
     // For all vertices in a loop
     const auto vertices = getVertices();
+    Q_ASSERT(vertices.first()->pt != vertices.last()->pt);
+
     VertexPtr prev = vertices.last();
-    for (auto & next : vertices)
+    for (const VertexPtr &  next : vertices)
     {
         x0 = prev->pt.x();
         y0 = prev->pt.y();
         x1 = next->pt.x();
         y1 = next->pt.y();
-        a = x0*y1 - x1*y0;
-        signedArea += a;
-        centroid.setX(centroid.x() + ((x0 + x1)*a));
-        centroid.setY(centroid.y() + ((y0 + y1)*a));
+        a  = x0*y1 - x1*y0;
+        area += a;
+        sumX += ((x0 + x1)*a);
+        sumY += ((y0 + y1)*a);
         prev = next;
     }
 
-    signedArea *= 0.5;
-    centroid /= (6.0*signedArea);
+    area *= 0.5;
+
+    QPointF centroid(sumX,sumY);
+    centroid /= (6.0 * area);
 
     return centroid;
 }

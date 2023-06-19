@@ -23,7 +23,11 @@ void ExplicitMapMotif::buildMotifMaps()
 {
     Q_ASSERT(tile);
     Q_ASSERT(explicitMap);
-    motifMap = completeMap(explicitMap);
+    motifMap = explicitMap->recreate();
+    completeMotif(tile);
+    completeMap();
+    buildMotifBoundary(tile);
+    buildExtendedBoundary();
 }
 
 void ExplicitMapMotif::resetMotifMaps()

@@ -7,7 +7,6 @@
 #include "motifs/star_connect.h"
 #include "makers/motif_maker/design_element_button.h"
 #include "makers/motif_maker/regular_motif_editors.h"
-#include "makers/prototype_maker/prototype_maker.h"
 #include "mosaic/design_element.h"
 #include "panels/page_motif_maker.h"
 #include "tiledpatternmaker.h"
@@ -18,7 +17,7 @@ using std::make_shared;
 
 typedef std::shared_ptr<RadialMotif>    RadialPtr;
 
-StarEditor::StarEditor(QString figname) : NamedMotifEditor(figname)
+StarEditor::StarEditor(QString name) : NamedMotifEditor(name)
 {
     d_slider = new DoubleSliderSet("Star Editor Hops D", 3.0, 1.0, 10.0, 100 );
     s_slider = new SliderSet("Star Editor Intersects S", 2, 1, 5);
@@ -50,13 +49,13 @@ void StarEditor::setMotif(DesignElementPtr del, bool doEmit)
         return;
     }
 
-    MotifPtr oldfig = del->getMotif();
-    auto oldstar = dynamic_pointer_cast<Star>(oldfig);
+    MotifPtr oldMotif = del->getMotif();
+    auto oldstar = dynamic_pointer_cast<Star>(oldMotif);
     if (!oldstar)
     {
         // create a star with some defaults
-        int n =oldfig->getN();
-        auto newstar = make_shared<Star>(*oldfig,n, n <=6 ? n / 3.0 : 3.0, 2);
+        int n =oldMotif->getN();
+        auto newstar = make_shared<Star>(*oldMotif,n, n <=6 ? n / 3.0 : 3.0, 2);
         del->setMotif(newstar);
         setMotif(newstar,doEmit);
     }
@@ -127,7 +126,7 @@ void StarEditor::editorToMotif(bool doEmit)
 // The controls for editing a Star.  Glue code, just like RosetteEditor.
 // DAC - Actually the comment above is not true
 
-RosetteEditor::RosetteEditor(QString figname) : NamedMotifEditor(figname)
+RosetteEditor::RosetteEditor(QString name) : NamedMotifEditor(name)
 {
     q_slider = new DoubleSliderSet("RosetteEditor Q (Tip Angle)", 0.0, -3.0, 3.0, 100 );
     k_slider = new DoubleSliderSet("RosetteEditor K (Neck Angle)", 0.0, -3.0, 3.0, 1000 );
@@ -151,13 +150,13 @@ void RosetteEditor::setMotif(DesignElementPtr del, bool doEmit)
         return;
     }
 
-    MotifPtr oldfig = del->getMotif();
-    auto oldrosette = dynamic_pointer_cast<Rosette>(oldfig);
+    MotifPtr oldMotif = del->getMotif();
+    auto oldrosette = dynamic_pointer_cast<Rosette>(oldMotif);
     if (!oldrosette)
     {
         // create using defualts
-        int n = oldfig->getN();
-        auto rosette  = make_shared<Rosette>(*oldfig.get(), n, 0.0, 3, 0.0);
+        int n = oldMotif->getN();
+        auto rosette  = make_shared<Rosette>(*oldMotif.get(), n, 0.0, 3, 0.0);
         del->setMotif(rosette);
         setMotif(rosette,doEmit);
     }
@@ -242,25 +241,25 @@ void ConnectStarEditor::setMotif(DesignElementPtr del, bool doEmit)
         return;
     }
 
-    MotifPtr oldfig = del->getMotif();
-    auto starc = dynamic_pointer_cast<StarConnect>(oldfig);
+    MotifPtr oldMotif = del->getMotif();
+    auto starc = dynamic_pointer_cast<StarConnect>(oldMotif);
     if (starc)
     {
         setMotif(starc,doEmit);
     }
     else
     {
-        StarPtr sp = dynamic_pointer_cast<Star>(oldfig);
+        StarPtr sp = dynamic_pointer_cast<Star>(oldMotif);
         if (sp)
         {
-            auto starConnect = make_shared<StarConnect>(*oldfig.get(),sp->getN(),sp->getD(),sp->getS());
+            auto starConnect = make_shared<StarConnect>(*oldMotif.get(),sp->getN(),sp->getD(),sp->getS());
             del->setMotif(starConnect);
             setMotif(starConnect,doEmit);
         }
         else
         {
-            int n = oldfig->getN();
-            auto starConnect = make_shared<StarConnect>(*oldfig.get(),n, n <= 6 ? n / 3.0 : 3.0, 2);
+            int n = oldMotif->getN();
+            auto starConnect = make_shared<StarConnect>(*oldMotif.get(),n, n <= 6 ? n / 3.0 : 3.0, 2);
             del->setMotif(starConnect);
             setMotif(starConnect,doEmit);
         }
@@ -292,7 +291,7 @@ void ConnectStarEditor::calcScale()
 
 // ConnectRosetteEditor
 
-ConnectRosetteEditor::ConnectRosetteEditor(QString figname) : RosetteEditor(figname)
+ConnectRosetteEditor::ConnectRosetteEditor(QString name) : RosetteEditor(name)
 {
     defaultBtn = new QPushButton("Calc Scale");
     defaultBtn->setFixedWidth(131);
@@ -311,26 +310,26 @@ void ConnectRosetteEditor::setMotif(DesignElementPtr del, bool doEmit)
         return;
     }
 
-    MotifPtr oldfig = del->getMotif();
-    auto rosettec = dynamic_pointer_cast<RosetteConnect>(oldfig);
+    MotifPtr oldMotif = del->getMotif();
+    auto rosettec = dynamic_pointer_cast<RosetteConnect>(oldMotif);
     if (rosettec)
     {
         setMotif(rosettec,doEmit);
     }
     else
     {
-        RosettePtr rsp = dynamic_pointer_cast<Rosette>(oldfig);
+        RosettePtr rsp = dynamic_pointer_cast<Rosette>(oldMotif);
         if (rsp)
         {
-            auto rosetteConnect = make_shared<RosetteConnect>(*oldfig.get(),rsp->getN(),rsp->getQ(),
+            auto rosetteConnect = make_shared<RosetteConnect>(*oldMotif.get(),rsp->getN(),rsp->getQ(),
                                                     rsp->getS(),rsp->getK());
             del->setMotif(rosetteConnect);
             setMotif(rosetteConnect,doEmit);
         }
         else
         {
-            int n = oldfig->getN();
-            auto rosetteConnect = make_shared<RosetteConnect>(*oldfig.get(), n, 0.0, 3, 0.0);
+            int n = oldMotif->getN();
+            auto rosetteConnect = make_shared<RosetteConnect>(*oldMotif.get(), n, 0.0, 3, 0.0);
             del->setMotif(rosetteConnect);
             setMotif(rosetteConnect,doEmit);
         }
@@ -363,15 +362,18 @@ void ConnectRosetteEditor::calcScale()
 }
 
 // ExtendedStarEditor
-ExtendedStarEditor::ExtendedStarEditor(QString figname) : StarEditor(figname)
+ExtendedStarEditor::ExtendedStarEditor(QString name) : StarEditor(name)
 {
     extendPeriphBox    = new QCheckBox("Extend Peripheral Vertices");
     extendFreeBox      = new QCheckBox("Extend Free Vertices");
     connectBoundaryBox = new QCheckBox("Connect Boundary Vertices");
 
-    addWidget(extendPeriphBox);
-    addWidget(extendFreeBox);
-    addWidget(connectBoundaryBox);
+    QHBoxLayout * hbox = new QHBoxLayout;
+    hbox->addWidget(extendPeriphBox);
+    hbox->addWidget(extendFreeBox);
+    hbox->addWidget(connectBoundaryBox);
+    hbox->addStretch();
+    addLayout(hbox);
 
     connect(extendPeriphBox,    &QCheckBox::clicked,  this, [this]() { editorToMotif(true);});
     connect(extendFreeBox,      &QCheckBox::clicked,  this, [this]() { editorToMotif(true);});
@@ -388,8 +390,8 @@ void ExtendedStarEditor::setMotif(DesignElementPtr del, bool doEmit)
         return;
     }
 
-    MotifPtr oldfig = del->getMotif();
-    auto extended = dynamic_pointer_cast<ExtendedStar>(oldfig);
+    MotifPtr oldMotif = del->getMotif();
+    auto extended = dynamic_pointer_cast<ExtendedStar>(oldMotif);
     if (extended)
     {
         del->setMotif(extended);
@@ -397,17 +399,17 @@ void ExtendedStarEditor::setMotif(DesignElementPtr del, bool doEmit)
     }
     else
     {
-        StarPtr sp = dynamic_pointer_cast<Star>(oldfig);
+        StarPtr sp = dynamic_pointer_cast<Star>(oldMotif);
         if (sp)
         {
-            auto extended = make_shared<ExtendedStar>(*oldfig.get(),sp->getN(),sp->getD(),sp->getS());
+            auto extended = make_shared<ExtendedStar>(*oldMotif.get(),sp->getN(),sp->getD(),sp->getS());
             del->setMotif(extended);
             setMotif(extended,doEmit);
         }
         else
         {
-            int  n = oldfig->getN();
-            auto extended = make_shared<ExtendedStar>(*oldfig.get(), n, n <= 6 ? n / 3.0 : 3.0, 2);
+            int  n = oldMotif->getN();
+            auto extended = make_shared<ExtendedStar>(*oldMotif.get(), n, n <= 6 ? n / 3.0 : 3.0, 2);
             del->setMotif(extended);
             setMotif(extended,doEmit);
         }
@@ -471,7 +473,7 @@ void ExtendedStarEditor::editorToMotif(bool doEmit)
 
 // ExtendedRosetteEditor
 
-ExtendedRosetteEditor::ExtendedRosetteEditor(QString figname) : RosetteEditor(figname)
+ExtendedRosetteEditor::ExtendedRosetteEditor(QString name) : RosetteEditor(name)
 {
     extendPeriphBox    = new QCheckBox("Extend PeripheralVertices");
     extendFreeBox      = new QCheckBox("Extend Free Vertices");
@@ -495,26 +497,26 @@ void ExtendedRosetteEditor::setMotif(DesignElementPtr del, bool doEmit)
         return;
     }
 
-    MotifPtr oldfig = del->getMotif();
-    auto extended = dynamic_pointer_cast<ExtendedRosette>(oldfig);
+    MotifPtr oldMotif = del->getMotif();
+    auto extended = dynamic_pointer_cast<ExtendedRosette>(oldMotif);
     if (extended)
     {
         setMotif(extended, doEmit);
     }
     else
     {
-        RosettePtr rsp = dynamic_pointer_cast<Rosette>(oldfig);
+        RosettePtr rsp = dynamic_pointer_cast<Rosette>(oldMotif);
         if (rsp)
         {
-            auto extended = make_shared<ExtendedRosette>(*oldfig.get(),rsp->getN(),rsp->getQ(),
+            auto extended = make_shared<ExtendedRosette>(*oldMotif.get(),rsp->getN(),rsp->getQ(),
                                                     rsp->getS(),rsp->getK());
             del->setMotif(extended);
             setMotif(extended, doEmit);
         }
         else
         {
-            int n = oldfig->getN();
-            auto extended = make_shared<ExtendedRosette>(*oldfig.get(), n, 0.0, 3, 0);
+            int n = oldMotif->getN();
+            auto extended = make_shared<ExtendedRosette>(*oldMotif.get(), n, 0.0, 3, 0);
             del->setMotif(extended);
             setMotif(extended, doEmit);
         }

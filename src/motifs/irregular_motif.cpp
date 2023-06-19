@@ -1,7 +1,8 @@
 #include <QDebug>
 #include "motifs/irregular_motif.h"
 #include "geometry/map.h"
-//#include "geometry/loose.h"
+#include "geometry/transform.h"
+#include "tile/tile.h"
 
 // this is protected method used in class hierarchy
 IrregularMotif::IrregularMotif() : Motif()
@@ -13,7 +14,7 @@ IrregularMotif::IrregularMotif() : Motif()
 IrregularMotif::IrregularMotif(const Motif & other) : Motif(other)
 {
     setMotifType(MOTIF_TYPE_IRREGULAR_NO_MAP);
-    if (other.isExplicit())
+    if (other.isIrregular())
     {
         try
         {
@@ -24,7 +25,6 @@ IrregularMotif::IrregularMotif(const Motif & other) : Motif(other)
             q           = e_other.q;
             r           = e_other.r;
             progressive = e_other.progressive;
-            tile        = e_other.tile;
         }
         catch(std::bad_cast &)
         {
@@ -41,7 +41,7 @@ IrregularMotif::IrregularMotif(const Motif & other) : Motif(other)
 IrregularMotif::IrregularMotif(MotifPtr other) : Motif(other)
 {
     setMotifType(MOTIF_TYPE_IRREGULAR_NO_MAP);
-    if (other->isExplicit())
+    if (other->isIrregular())
     {
         try
         {
@@ -52,7 +52,6 @@ IrregularMotif::IrregularMotif(MotifPtr other) : Motif(other)
             q           = e_other->q;
             r           = e_other->r;
             progressive = e_other->progressive;
-            tile        = e_other->tile;
         }
         catch(std::bad_cast &)
         {
@@ -120,38 +119,35 @@ MapPtr IrregularMotif::getMotifMap()
 void IrregularMotif::buildMotifMaps()
 {
     // there is no map to build
+    Q_ASSERT(tile);
+    buildMotifBoundary(tile);
+    buildExtendedBoundary();
 }
 
-// TOODO implement me (complete Motif)
-MapPtr IrregularMotif::completeMotif(MapPtr map)
+void IrregularMotif::completeMotif(TilePtr tile)
 {
-    if (!map)
-        return map;
+    QPointF pt  = tile->getCenter();
 
-    // Note if this is called on motif map it will be double multiplying
-    if (!Loose::equals(motifScale,1.0) || !Loose::zero(motifRotate))
+    QTransform t;
+    if (!Loose::equals(motifScale,1.0))
     {
-        auto completedMap = map->copy();
-        QTransform t = QTransform::fromScale(motifScale,motifScale);
-        t.rotate(motifRotate);
-        completedMap->transformMap(t);
-        return completedMap;
+        t *= Transform::scaleAroundPoint(pt,motifScale);
     }
-    else
+    if (!Loose::zero(motifRotate))
     {
-        return map;
+        t *= Transform::rotateDegreesAroundPoint(pt,motifRotate);
+    }
+    if (!t.isIdentity())
+    {
+        motifMap->transformMap(t);
     }
 }
 
-MapPtr IrregularMotif::completeMap(MapPtr map)
+void IrregularMotif::completeMap()
 {
-    if (!map)
-        return map;
-
-    map->resetNeighbourMap();
-    map->getNeighbourMap();
-    map->verifyAndFix();
-    return map;
+    motifMap->resetNeighbourMap();
+    motifMap->getNeighbourMap();
+    motifMap->verifyAndFix();
 }
 
 void IrregularMotif::resetMotifMaps()

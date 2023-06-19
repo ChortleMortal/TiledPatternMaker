@@ -2,7 +2,7 @@
 
 #include "motifs/motif.h"
 #include "makers/motif_maker/motif_editor_widget.h"
-#include "makers/motif_maker/motif_widgets.h"
+#include "makers/motif_maker/motif_maker_widgets.h"
 #include "makers/motif_maker/irregular_motif_editors.h"
 #include "makers/prototype_maker/prototype_maker.h"
 #include "mosaic/design_element.h"

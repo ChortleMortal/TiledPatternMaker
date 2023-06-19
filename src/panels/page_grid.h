@@ -2,12 +2,6 @@
 #ifndef PAGE_GRID_H
 #define PAGE_GRID_H
 
-class QGroupBox;
-class QHBoxLayout;
-class QButtonGroup;
-class QCheckBox;
-class ClickableLabel;
-
 #include "widgets/panel_page.h"
 
 class page_grid : public panel_page
@@ -35,15 +29,17 @@ private slots:
     void    slot_gridAngleChanged(qreal angle);
     void    slot_zValueChanged(int value);
 
-    void    slot_gridTilingCenterChanged(int state);
+    void    slot_gridLayerCenterChanged(int state);
     void    slot_drawModelCenterChanged(int state);
-    void    slot_dawViewCenterChanged(int state);
+    void    slot_drawScreenCenterChanged(int state);
 
     void    slot_pickColorTiling();
     void    slot_pickColorModel();
     void    slot_pickColorScreen();
 
-//    void    slot_showCenterChanged(int state);
+    void    slot_resetPos();
+    void    slot_reAlign();
+//  void    slot_showCenterChanged(int state);
 
 protected:
 

@@ -19,13 +19,14 @@ public:
     static QString     getMosaicXMLFile(QString name);          // full path
     static QString     getMosaicTemplateFile(QString name);     // full path
     static dirInfo     getMosaicDirInfo();
-    static QString     getMosaicNameOnly(QString name);
 
     static QStringList getTilingFiles();                        // full path
     static QStringList getTilingNames(eLoadType loadType);      // names only, not extension
-    static QString     getTilingFile(QString name);             // full path
+    static QStringList getTilingRootNames(eLoadType loadType);  // names only, no version, no extension
+    static QString     getTilingXMLFile(QString name);             // full path
     static QString     getTileNameFromDesignName(QString designName);
 
+    static QString     getMediaNameOnly(QString name);
     static QString     getNextVersion(eFileType type, QString name);
     static QStringList getFileVersions(QString name, QString rootPath);
     static bool        reformatXML(QString filename);

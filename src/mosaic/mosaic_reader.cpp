@@ -1184,7 +1184,7 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
         xml_node xmlTile = entry.first_child();
         name = xmlTile.name();
         qDebug().noquote() << name;
-        if (name == "tile.Feature")
+        if (name == "Tile" || name == "tile.Feature")
         {
             if (_debug) qDebug() << "adding Tile";
             tile = getTile(tr,xmlTile);
@@ -1198,51 +1198,61 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
 
         xml_node xmlMotif  = xmlTile.next_sibling();
         name = xmlMotif.name();
-        if (_debug) qDebug().noquote() << name;
+        eMotifType type = getMotifType(name);
 
-        if (name == "app.Star")
+        qDebug().noquote() << "name:" << name << "adding type:" << sMotifType[type];
+
+        switch(type)
         {
-            if (_debug) qDebug() << "adding Star Motif";
+        case MOTIF_TYPE_STAR:
             motif =  getStar(xmlMotif,fsides);
             found = true;
-        }
-        else if (name == "ExtendedStar")
-        {
-            if (_debug) qDebug() << "adding ExtendedStar Motif";
+            break;
+
+        case MOTIF_TYPE_EXTENDED_STAR:
             motif =  getExtendedStar(xmlMotif,fsides);
             found = true;
-        }
-        else if (name == "app.Rosette")
-        {
-            if (_debug) qDebug() << "adding Rosette Motif";
+            break;
+
+        case MOTIF_TYPE_ROSETTE:
             motif =  getRosette(xmlMotif,fsides);
             found = true;
-        }
-        else if (name == "ExtendedRosette")
-        {
-            if (_debug) qDebug() << "adding ExtendedRosette Motif";
+            break;
+
+        case MOTIF_TYPE_EXTENDED_ROSETTE:
             motif =  getExtendedRosette(xmlMotif,fsides);
             found = true;
-        }
-        else if (name == "app.ConnectFigure")
-        {
-            if (_debug) qDebug() << "adding Connect Motif";
-            motif =  getConnectMotif(xmlMotif,fsides);
+            break;
+
+        case MOTIF_TYPE_CONNECT_ROSETTE:
+            motif = getRosetteConnect(xmlMotif,fsides);
             found = true;
-        }
-        else if (  name == "app.ExplicitFigure" || name == "app.Infer"           || name == "app.ExplicitFeature"    || name == "app.ExplicitGirih"
-                || name == "app.ExplicitStar"   || name == "app.ExplicitRosette" || name == "app.ExplicitHourglass"  || name ==  "app.ExplicitIntersect"
-                || name == "IrregularNoMotif")
-        {
-            if (_debug) qDebug() << "adding Irregular Motif";
-            motif = getIrregularMotif(xmlMotif, fsides,motifRepresentation.key(name));
+            break;
+
+        case MOTIF_TYPE_CONNECT_STAR:
+            motif =  getStarConnect(xmlMotif,fsides);
             found = true;
-        }
-        else
-        {
+            break;
+
+        case MOTIF_TYPE_EXPLICIT_MAP:
+        case MOTIF_TYPE_INFERRED:
+        case MOTIF_TYPE_IRREGULAR_ROSETTE:
+        case MOTIF_TYPE_HOURGLASS:
+        case MOTIF_TYPE_INTERSECT:
+        case MOTIF_TYPE_GIRIH:
+        case MOTIF_TYPE_IRREGULAR_STAR:
+        case MOTIF_TYPE_EXPLCIT_TILE:
+        case MOTIF_TYPE_IRREGULAR_NO_MAP:
+            motif = getIrregularMotif(xmlMotif, fsides, type);
+            found = true;
+            break;
+
+        case MOTIF_TYPE_UNDEFINED:
+        case MOTIF_TYPE_RADIAL:
             _failMessage = "Motif type not found: " + name;
             qWarning() << _failMessage;
             throw(_failMessage);
+            break;
         }
 
         if (found)
@@ -1327,8 +1337,8 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
         MotifPtr motif = del->getMotif();
         TilePtr  tile  = del->getTile();
         QPolygonF poly = tile->getPolygon();
-
-        if (motif->isExplicit())
+        
+        if (motif->isIrregular())
         {
             switch (motif->getMotifType())
             {
@@ -1336,78 +1346,67 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
             {
                 // already has a map
                 auto exp = std::dynamic_pointer_cast<ExplicitMapMotif>(motif);
-                exp->setup(tile);
-                exp->setMotifBoundary(poly);
-                exp->createExtendedBoundary(tile);
+                exp->setTile(tile);
             }   break;
 
             case MOTIF_TYPE_IRREGULAR_NO_MAP:
             {
                 auto irr = std::dynamic_pointer_cast<IrregularMotif>(motif);
-                irr->setup(tile);
-                irr->setMotifBoundary(poly);
-                irr->createExtendedBoundary(tile);
+                irr->setTile(tile);
             }   break;
 
             case MOTIF_TYPE_INFERRED:
             {
                 auto infer = std::dynamic_pointer_cast<InferredMotif>(motif);
-                infer->setup(tile);
+                infer->setTile(tile);
                 infer->setupInfer(proto);
-                infer->setMotifBoundary(poly);
-                infer->createExtendedBoundary(tile);
             }   break;
 
             case MOTIF_TYPE_IRREGULAR_ROSETTE:
             {
                 auto rose = std::dynamic_pointer_cast<IrregularRosette>(motif);
-                rose->setup(tile);
-                rose->setMotifBoundary(poly);
-                rose->createExtendedBoundary(tile);
+                rose->setTile(tile);
             }   break;
 
             case MOTIF_TYPE_HOURGLASS:
             {
                 auto hour = std::dynamic_pointer_cast<HourglassMotif>(motif);
-                hour->setup(tile);
-                hour->setMotifBoundary(poly);
-                hour->createExtendedBoundary(tile);
+                hour->setTile(tile);
             }   break;
 
             case MOTIF_TYPE_INTERSECT:
             {
                 auto expl = std::dynamic_pointer_cast<IntersectMotif>(motif);
-                expl->setup(tile);
-                expl->setMotifBoundary(poly);
-                expl->createExtendedBoundary(tile);
+                expl->setTile(tile);
             }   break;
 
             case MOTIF_TYPE_IRREGULAR_STAR:
             {
                 auto star = std::dynamic_pointer_cast<IrregularStar>(motif);
-                star->setup(tile);
-                star->setMotifBoundary(poly);
-                star->createExtendedBoundary(tile);
+                star->setTile(tile);
             }   break;
 
             case MOTIF_TYPE_EXPLCIT_TILE:
             {
                 auto etile = std::dynamic_pointer_cast<TileMotif>(motif);
-                etile->setup(tile);
-                etile->setMotifBoundary(poly);
-                etile->createExtendedBoundary(tile);
+                etile->setTile(tile);
             }   break;
 
             case MOTIF_TYPE_GIRIH:
             {
                 auto girih = std::dynamic_pointer_cast<GirihMotif>(motif);
-                girih->setup(tile);
-                girih->setMotifBoundary(poly);
-                girih->createExtendedBoundary(tile);
+                girih->setTile(tile);
             }   break;
 
-            default:
-                qWarning("Unxpected explicit type");
+            case MOTIF_TYPE_UNDEFINED:
+            case MOTIF_TYPE_RADIAL:
+            case MOTIF_TYPE_ROSETTE:
+            case MOTIF_TYPE_CONNECT_ROSETTE:
+            case MOTIF_TYPE_EXTENDED_ROSETTE:
+            case MOTIF_TYPE_STAR:
+            case MOTIF_TYPE_CONNECT_STAR:
+            case MOTIF_TYPE_EXTENDED_STAR:
+                qWarning() << "Unxpected irregular type" << sMotifType[motif->getMotifType()];
             }
         }
     }
@@ -1877,34 +1876,6 @@ ExtRosettePtr  MosaicReader::getExtendedRosette(xml_node & node, int tile_sides)
     return rosette;
 }
 
-MotifPtr MosaicReader::getConnectMotif(xml_node & node, int tile_sides)
-{
-    MotifPtr fp;
-    xml_node child = node.child("child");
-    if (child)
-    {
-        xml_attribute class1 = child.attribute("class");
-        //qDebug() << class1.value();
-        if (QString(class1.value()) == "app.Rosette")
-        {
-            fp = getRosetteConnect(node,tile_sides);
-        }
-        else if (QString(class1.value()) == "app.Star")
-        {
-            fp = getStarConnect(node,tile_sides);
-        }
-        else
-        {
-            fail("Connect Motif child","");
-        }
-    }
-    else
-    {
-        fail("Connect Motifz","");
-    }
-    return fp;
-}
-
 RosetteConnectPtr MosaicReader::getRosetteConnect(xml_node & node, int tile_sides)
 {
     if (hasReference(node))
@@ -1928,13 +1899,10 @@ RosetteConnectPtr MosaicReader::getRosetteConnect(xml_node & node, int tile_side
     if (child)
     {
         xml_attribute class1 = child.attribute("class");
-        //qDebug() << class1.value();
-        if (QString(class1.value()) == "app.Rosette")
+        QString name = class1.value();
+        if (getMotifType(name) == MOTIF_TYPE_ROSETTE)
         {
             rp = getRosette(child,tile_sides);
-            //Q_ASSERT(rp->getN() == n);
-            //Q_ASSERT(rp->getS() == s);
-            //qDebug() << "connect s:" <<  rp->getS() << s;
         }
         else
         {
@@ -1950,7 +1918,6 @@ RosetteConnectPtr MosaicReader::getRosetteConnect(xml_node & node, int tile_side
 
         getMotifCommon(child,rcp,tile_sides);
         setRosetteConnectReference(node,rcp);
-        //qDebug() << rcp->getFigureDesc();
     }
     else
     {
@@ -1982,13 +1949,10 @@ StarConnectPtr MosaicReader::getStarConnect(xml_node & node, int tile_sides)
     if (child)
     {
         xml_attribute class1 = child.attribute("class");
-        //qDebug() << class1.value();
-        if (QString(class1.value()) == "app.Star")
+        QString name = class1.value();
+        if (getMotifType(name) == MOTIF_TYPE_STAR)
         {
             sp = getStar(child,tile_sides);
-            //Q_ASSERT(sp->getN() == n);
-            //Q_ASSERT(sp->getS() == s);
-            //qDebug() << "connect s:" <<  sp->getS() << s;
         }
         else
         {
@@ -2001,7 +1965,6 @@ StarConnectPtr MosaicReader::getStarConnect(xml_node & node, int tile_sides)
 
         getMotifCommon(node,scp,tile_sides);
         setStarConnectReference(node,scp);
-        //qDebug() << scp->getFigureDesc();
     }
     else
     {

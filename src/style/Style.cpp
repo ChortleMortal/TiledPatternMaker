@@ -137,8 +137,8 @@ void Style::paint(QPainter *painter)
     {
         drawAnnotation(painter,tr);
     }
-
-    drawCenter(painter);
+    
+    drawLayerModelCenter(painter);
 }
 
 void Style::paintToSVG()

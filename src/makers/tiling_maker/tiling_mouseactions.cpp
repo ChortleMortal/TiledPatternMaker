@@ -50,6 +50,7 @@ void TilingMouseAction::draw(GeoGraphics * g2d)
 void TilingMouseAction::endDragging(QPointF spt)
 {
     Q_UNUSED(spt)
+    tm->resetOverlaps();
     tmv->forceRedraw();
 }
 

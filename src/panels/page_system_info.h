@@ -5,13 +5,6 @@
 #include "widgets/panel_page.h"
 #include "makers/prototype_maker/prototype_data.h"
 
-class QTreeWidgetItem;
-class QTextStream;
-class QTreeWidget;
-class QCheckBox;
-class QPushButton;
-class PrototypeData;
-
 typedef std::shared_ptr<class Mosaic>           MosaicPtr;
 typedef std::shared_ptr<class Map>              MapPtr;
 typedef std::shared_ptr<class Crop>             CropPtr;

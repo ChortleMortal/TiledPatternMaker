@@ -963,7 +963,7 @@ void Map::mergeMany(const constMapPtr & other, const Placements & placements)
     // this function is significantly different and SLOWER than Kaplan's
     // becuse Taprats assumed PIC (polygons in contact).  This allows
     // overlapping tiles, hence the need to do a complete merge
-    for (auto & T : placements)
+    for (const auto & T : placements)
     {
 #if 1
         MapPtr mp = other->getTransformed(T);
@@ -981,9 +981,50 @@ void Map::mergeMany(const constMapPtr & other, const Placements & placements)
     }
 }
 
+// It's often the case that we want to merge a transformed copy of
+// a map into another map, or even a collection of transformed copies.
+// Since transforming a map requires a slow cloning, we can save lots
+// of time and memory by transforming and merging simultaneously.
+// Here, we transform vertices as they are put into the current map.
+void Map::mergeSimpleMany(constMapPtr & other, const Placements &transforms)
+{
+    for (auto& T : transforms)
+    {
+        for (const auto & overt :  other->vertices)
+        {
+            // this makes vertex and inserts it in neighbours table
+            overt->copy = _getOrCreateVertex(T.map(overt->pt));
+        }
+
+        for (const auto & oedge : other->edges)
+        {
+            EdgePtr nedge;
+
+            VertexPtr ov1 = oedge->v1->copy.lock();
+            VertexPtr ov2 = oedge->v2->copy.lock();
+
+            if (oedge->getType() == EDGETYPE_LINE)
+            {
+                nedge = make_shared<Edge>(ov1, ov2);
+            }
+            else if (oedge->getType() == EDGETYPE_CURVE)
+            {
+                QPointF pt   = T.map(oedge->getArcCenter());
+                bool  convex = oedge->isConvex();
+                nedge = make_shared<Edge>(ov1, ov2,pt,convex,false);
+            }
+
+            edges.push_back(nedge);
+
+        }
+    }
+    _cleanCopy();
+    nMap.reset();
+}
+
 void Map::removeMap(MapPtr other)
 {
-    for (auto & edge : qAsConst(other->edges))
+    for (const auto & edge : other->edges)
     {
         removeEdge(edge);
     }
@@ -1006,6 +1047,19 @@ NeighbourMapPtr Map::getNeighbourMap()
         nMap = make_shared<NeighbourMap>(edges);
     }
     return nMap;
+}
+
+
+void  Map::addMap(MapPtr other)
+
+{
+    for (const auto & edge : other->edges)
+    {
+        EdgePtr ep = make_shared<Edge>(_getOrCreateVertex(edge->v1->pt),_getOrCreateVertex(edge->v2->pt));
+        _insertEdge_Simple(ep);
+    }
+
+    nMap.reset();
 }
 
 //////////////////////////////////////////
@@ -1250,6 +1304,16 @@ void Map::_cleanseVertices()
         vertices.removeOne(v);
         nMap.reset();
     }
+}
+
+const QVector<QPointF>  Map::getPoints()
+{
+    QVector<QPointF> pts;
+    for (const auto & v : vertices)
+    {
+        pts.push_back(v->pt);
+    }
+    return pts;
 }
 
 //////////////////////////////////////////

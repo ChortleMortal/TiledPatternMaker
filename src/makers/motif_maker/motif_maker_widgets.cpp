@@ -1,14 +1,15 @@
 #include <QDebug>
+#include <QGroupBox>
+#include "makers/motif_maker/motif_maker_widgets.h"
 #include "makers/motif_maker/motif_editor_widget.h"
-#include "makers/motif_maker/motif_widgets.h"
-#include "makers/prototype_maker/prototype_maker.h"
-#include "widgets/panel_misc.h"
-#include "widgets/layout_sliderset.h"
-#include "panels/page_motif_maker.h"
-#include "motifs/motif.h"
-#include "mosaic/design_element.h"
 #include "makers/prototype_maker/prototype.h"
+#include "makers/prototype_maker/prototype_maker.h"
+#include "mosaic/design_element.h"
+#include "motifs/motif.h"
+#include "panels/page_motif_maker.h"
 #include "settings/configuration.h"
+#include "widgets/layout_sliderset.h"
+#include "widgets/panel_misc.h"
 
 Q_DECLARE_METATYPE(NamedMotifEditor *)
 
@@ -20,10 +21,13 @@ Q_DECLARE_METATYPE(NamedMotifEditor *)
 
 SpecificEditorWidget::SpecificEditorWidget()
 {
+    setContentsMargins(0,0,0,0);
+
 }
 
 SpecificEditorWidget::SpecificEditorWidget(NamedMotifEditor * fe)
 {
+    setContentsMargins(0,0,0,0);
     setFixedWidth(600);
     AQVBoxLayout * aLayout = new AQVBoxLayout();
     aLayout->addWidget(fe);
@@ -68,25 +72,46 @@ NamedMotifEditor::NamedMotifEditor(QString motifName)
 {
     name = motifName;
 
+    setContentsMargins(0,0,0,0);
+
     vbox = new AQVBoxLayout();
     setLayout(vbox);
 
-    boundarySides = new SliderSet("Extended Boundary sides", 4, 1, 64);
-    boundaryScale = new DoubleSliderSet("Extended Boundary Scale", 1.0, 0.1, 9.0, 100 );
-    motifScale    = new DoubleSliderSet("Motif Scale", 1.0, 0.1, 9.0, 100 );
-    motifRotate   = new DoubleSliderSet("Motif Rotation",0.0, -360.0, 360.0, 1);
-    motifSides    = new SliderSet("Motif sides", 6, 1, 64);
+    QLabel * lExt = new QLabel("Extended Boundary:");
+    QLabel * lMot = new QLabel("Motif:");
 
-    addLayout(boundarySides);
-    addLayout(boundaryScale);
-    addLayout(motifScale);
-    addLayout(motifRotate);
-    addLayout(motifSides);
+    motifSides     = new SliderSet("Sides", 6, 1, 64);
+    motifScale     = new DoubleSliderSet("Scale", 1.0, 0.1, 9.0, 100 );
+    motifRotate    = new DoubleSliderSet("Rotate",0.0, -360.0, 360.0, 1);
+
+    boundarySides  = new SliderSet("Sides", 4, 1, 64);
+    boundaryScale  = new DoubleSliderSet("Scale", 1.0, 0.1, 9.0, 100 );
+    boundaryRotate = new DoubleSliderSet("Rotate",0.0, -360.0, 360.0, 1);
+
+    QVBoxLayout * v1  = new QVBoxLayout();
+    v1->addWidget(lExt);
+    v1->addLayout(boundarySides);
+    v1->addLayout(boundaryRotate);
+    v1->addLayout(boundaryScale);
+
+    QVBoxLayout * v2  = new QVBoxLayout();
+    v2->addWidget(lMot);
+    v2->addLayout(motifSides);
+    v2->addLayout(motifRotate);
+    v2->addLayout(motifScale);
+
+    QHBoxLayout * box = new QHBoxLayout();
+    box->addLayout(v1);
+    box->addSpacing(11);
+    box->addLayout(v2);
+
+    vbox->addLayout(box);
 
     connect(this,          &NamedMotifEditor::sig_motif_modified, this, &NamedMotifEditor::slot_motifModified); //, Qt::QueuedConnection);
 
-    connect(boundaryScale, &DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
     connect(boundarySides, &SliderSet::valueChanged,       this, [this]() { editorToMotif(true);});
+    connect(boundaryScale, &DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
+    connect(boundaryRotate,&DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
     connect(motifSides,    &SliderSet::valueChanged,       this, [this]() { editorToMotif(true);});
     connect(motifScale,    &DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
     connect(motifRotate,   &DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
@@ -105,18 +130,20 @@ void NamedMotifEditor::motifToEditor()
         return;
 
     const ExtendedBoundary & eb = motif->getExtendedBoundary();
-    int    bs = eb.getSides();
-    qreal  sc = eb.getScale();
-    qreal  fs = motif->getMotifScale();
-    qreal  rr = motif->getMotifRotate();
-    int    nn = motif->getN();
+    int    bs  = eb.getSides();
+    qreal  bsc = eb.getScale();
+    qreal  bro = eb.getRotate();
+    qreal  msc = motif->getMotifScale();
+    qreal  mro = motif->getMotifRotate();
+    int    ms  = motif->getN();
 
     blockSignals(true);
-    boundarySides->setValues(bs, 1, 64);
-    boundaryScale->setValues(sc, 0.1, 9.0);
-    motifScale->setValues(fs, 0.1, 9.0);
-    motifRotate->setValues(rr,-360.0,360.0);
-    motifSides->setValues(nn, 1, 64);
+    boundarySides->setValue(bs);
+    boundaryScale->setValue(bsc);
+    boundaryRotate->setValue(bro);
+    motifSides->setValue(ms);
+    motifScale->setValue(msc);
+    motifRotate->setValue(mro);
     blockSignals(false);
 }
 
@@ -128,18 +155,19 @@ void NamedMotifEditor::editorToMotif(bool doEmit)
 
     int   bsides = boundarySides->value();
     qreal bscale = boundaryScale->value();
-    qreal fscale = motifScale->value();
-    qreal rot    = motifRotate->value();
-    int   sides  = motifSides->value();
+    qreal brot   = boundaryRotate->value();
+    int   msides = motifSides->value();
+    qreal mscale = motifScale->value();
+    qreal mrot   = motifRotate->value();
 
     ExtendedBoundary & eb = motif->getRWExtendedBoundary();
-
     blockSignals(true);
     eb.setSides(bsides);
     eb.setScale(bscale);
-    motif->setMotifScale(fscale);
-    motif->setMotifRotate(rot);
-    motif->setN(sides);
+    eb.setRotate(brot);
+    motif->setN(msides);
+    motif->setMotifScale(mscale);
+    motif->setMotifRotate(mrot);
     blockSignals(false);
 
     if (doEmit)
@@ -243,7 +271,7 @@ void MotifTypeCombo::slot_motifTypeSelected(int index)
 
     QVariant qv = currentData();
     eMotifType type = static_cast<eMotifType>(qv.toInt());
-    qDebug() << "MotifEditor type="  << sMotifType[type];
+    qDebug() << "MotifTypeCombo type="  << sMotifType[type];
 
     emit sig_motifTypeChanged(type);
 }

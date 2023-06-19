@@ -55,7 +55,7 @@ public slots:
     virtual void slot_moveY(int amount)  override;
 
 protected:
-    void    drawPlacedYTile(GeoGraphics * g2d, PlacedTilePtr pf);
+    void    drawPlacedTile(GeoGraphics * g2d, PlacedTilePtr pf);
 
 private:
     TilingView();   // dont_use this

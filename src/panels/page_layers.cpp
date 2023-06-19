@@ -1,4 +1,4 @@
-﻿#include <QHeaderView>
+#include <QHeaderView>
 #include <QCheckBox>
 
 #include "geometry/transform.h"
@@ -75,14 +75,28 @@ void page_layers::populateLayers()
     layerTable->setColumnCount(layers.size());
 
     int col = 0;
-    for (const auto & layer : layers)
+    int selected = -1;
+    for (Layer * layer : layers)
     {
+        if (layer == config->selectedLayer)
+        {
+            selected = col;
+        }
         wlayers.push_back(layer);
         populateLayer(layer,col++);
     }
 
     layerTable->adjustTableSize(880);
     updateGeometry();
+
+    if (selected >= 0)
+    {
+        layerTable->selectColumn(selected);
+    }
+    else
+    {
+        config->selectedLayer = nullptr;
+    }
 }
 
 void page_layers::populateLayer(Layer * layer, int col)
@@ -270,8 +284,8 @@ void  page_layers::onRefresh()
             if (layer != view_layers[i])
             {
                 populateLayers();
+                break;
             }
-            break;
         }
     }
 
@@ -562,13 +576,7 @@ void page_layers::slot_selectLayer()
     if (selected.size())
     {
         int column = selected.first()->column();
-        qDebug() << selected.size() << "selected layer" << column;
         auto layer = getLayer(column);
         config->selectedLayer = layer;
-    }
-    else
-    {
-        qDebug() << "no selection";
-        config->selectedLayer = nullptr;
     }
 }

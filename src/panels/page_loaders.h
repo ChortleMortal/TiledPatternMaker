@@ -2,9 +2,6 @@
 #ifndef PAGE_LOADERS_H
 #define PAGE_LOADERS_H
 
-class QCheckBox;
-class QPushButton;
-
 #include "widgets/panel_page.h"
 #include "widgets/versioned_list_widget.h"
 #include "enums/estatemachineevent.h"
@@ -89,6 +86,8 @@ private slots:
     void    autoLoadStylesClicked(bool enb);
     void    autoLoadTilingClicked(bool enb);
     void    autoLoadDesignsClicked(bool enb);
+
+    void    loadTiling2();
 
 protected:
     void    setupUI();

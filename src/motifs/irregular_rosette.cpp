@@ -42,7 +42,10 @@ void IrregularRosette::buildMotifMaps()
     Q_ASSERT(tile);
     motifMap = std::make_shared<Map>("IrregularRosette Map");
     inferRosette(tile);
-    completeMap(motifMap);
+    completeMotif(tile);
+    completeMap();
+    buildMotifBoundary(tile);
+    buildExtendedBoundary();
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -360,7 +363,7 @@ Branch & IrregularRosette::findBranch(int side, int sign)
             return branch;
     }
     qDebug() << "side" << side << "sign" << sign;
-    qCritical("No branch found");
+    qCritical() << "No branch found in" << branches.size() << "branches";
     return branches[0];
 }
 

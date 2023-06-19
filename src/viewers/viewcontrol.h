@@ -6,6 +6,7 @@
 #include "geometry/xform.h"
 #include "enums/eviewtype.h"
 #include "viewers/view.h"
+#include "misc/unique_qvector.h"
 
 typedef std::shared_ptr<class Border>           BorderPtr;
 typedef std::shared_ptr<class LegacyBorder>     LegacyBorderPtr;
@@ -22,8 +23,9 @@ public:
     static void           releaseInstance();
 
     void    init();
+
     void    viewEnable(eViewType view, bool enable);
-    bool    isEnabled(eViewType view)   { return enabledViews[view]; }
+    bool    isEnabled(eViewType view);
     void    disableAllViews();
 
     void    addImage(ImgLayerPtr image) { images.push_back(image); }
@@ -37,20 +39,21 @@ public:
     void    setCurrentXform(const Xform & xform);     // use with care
 
 protected:
-    void     setupViewers();
-    void     refreshView();
+    void    setupEnabledViewLayers();
+    void    refreshView();
 
-    void     viewDesign();
-    void     viewMosaic();
-    void     viewPrototype();
-    void     viewMotifMaker();
-    void     viewTiling();
-    void     viewTilingMaker();
-    void     viewMapEditor();
+    void    viewDesign();
+    void    viewMosaic();
+    void    viewPrototype();
+    void    viewMotifMaker();
+    void    viewTiling();
+    void    viewTilingMaker();
+    void    viewMapEditor();
+    void    viewBackgroundImage();
+    void    viewGrid();
 
 signals:
     void    sig_viewUpdated();
-    void    sig_identifyYourself();
 
 public slots:
     void    slot_refreshView() override;
@@ -63,28 +66,29 @@ private:
     ViewControl();
     ~ViewControl();
 
-    static  ViewControl     * mpThis;
-    class   Configuration   * config;
-    class   ControlPanel    * panel;
-    class   DesignMaker     * designMaker;
-    class   MosaicMaker     * mosaicMaker;
-    class   PrototypeMaker  * prototypeMaker;
+    static  ViewControl         * mpThis;
+    class   Configuration       * config;
+    class   ControlPanel        * panel;
+    class   DesignMaker         * designMaker;
+    class   MosaicMaker         * mosaicMaker;
+    class   PrototypeMaker      * prototypeMaker;
 
-    class TilingMakerView   * tilingMakerView;
-    class TilingView        * tilingView;
-    class PrototypeView     * prototypeView;
-    class MotifView         * motifView;
-    class MapEditorView     * mapedView;
-    class MeasureView       * measureView;
-    class GridView          * gridView;
-    class CropViewer        * cropViewer;
-    class BorderView        * borderView;
+    class TilingMakerView       * tilingMakerView;
+    class TilingView            * tilingView;
+    class PrototypeView         * prototypeView;
+    class MotifView             * motifView;
+    class MapEditorView         * mapedView;
+    class MeasureView           * measureView;
+    class GridView              * gridView;
+    class CropViewer            * cropViewer;
+    class BorderView            * borderView;
+    class BackgroundImageView   * bkgdImageView;
 
-    bool                    dontPaint;
-    bool                    enabledViews[VIEW_MAX+1];
-    QVector<ImgLayerPtr>    images;
-    FillData                fillData;
-    const Xform             unityXform;
+    bool                        dontPaint;
+    UniqueQVector<eViewType>    enabledViews;
+    QVector<ImgLayerPtr>        images;
+    FillData                    fillData;
+    const Xform                 unityXform;
 };
 
 #endif

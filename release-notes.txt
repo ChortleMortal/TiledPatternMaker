@@ -1,3 +1,28 @@
+Version 3.2
+=============
+
+Changes
+- Improved worklist creation from XML content and adds support for tilings
+- Improvements to grids and adding show layer center
+- More aspect ratios for crops
+- Configuration/Split Screen working better especially for large (UHD) screens
+- XML files more readbable
+- Tighter motif maker menu layout
+- Rotaion added to extended boundary
+
+Fixes
+- Irregular motif scale and rotation were not working
+- Motif and Extended boundaries improved
+- Changing tile regularity was not handling scale and rotation well
+- Translation vectors not being shown correctly in Tiling Maker view when modified
+- Tiling worklists were not working
+- Skew adjustment caused crash when global mouse translate was enabled
+- Perspective was being incorrectly saved after image had been skew adjusted
+- Background image postioning and scale were incorrectly retained after adjusted image saved
+- ConnectStar not expressed well in XML and Bird.v5 fixed too
+- Layer selection maintained on exit and re-entru to layer menu
+- Grid alignments fixed
+
 Version 3.1
 ===========
 

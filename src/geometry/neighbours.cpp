@@ -1,7 +1,5 @@
 #include <QDebug>
-
 #include "geometry/neighbours.h"
-#include "geometry/map.h"
 #include "geometry/vertex.h"
 #include "geometry/edge.h"
 
@@ -93,20 +91,18 @@ void Neighbours::insertNeighbour(const EdgePtr & e)
 
     qreal a = vertex.lock()->getAngle(e);
 
-    //for (int i=0; i < (int)neighbours.size(); i++)
-    for (auto pos = begin(); pos != end(); pos++)
+    for (int i=0; i < (int)size(); i++)
     {
-        WeakEdgePtr wep = *pos;
-        EdgePtr ep = wep.lock();
+        EdgePtr ep = at(i).lock();
         if (!ep)
         {
             qWarning() << "bad neighbour 1";
             continue;
         }
-        qreal b = vertex.lock()->getAngle(wep.lock());
+        qreal b = vertex.lock()->getAngle(ep);
         if (a > b)
         {
-            insert(pos,e);
+            insert(i,e);  // here
             return;
         }
     }
@@ -169,27 +165,27 @@ bool Neighbours::verify()
 
 void Neighbours::cleanse()
 {
-    std::vector<WeakEdgePtr> baddies;
+    QVector<EdgePtr> baddies;
 
-    for (auto & e : *this)
+    for (const WeakEdgePtr & e : *this)
     {
-        if (vertex.lock() != e.lock()->v1  && vertex.lock() != e.lock()->v2)
+        EdgePtr e1 = e.lock();
+        if (vertex.lock() != e1->v1  && vertex.lock() != e1->v2)
         {
             qDebug() << "Neighbours: cleaning invalid edge";
-            baddies.push_back(e);
+            baddies.push_back(e1);
         }
     }
 
-    for (auto & e2 : baddies)
+    // this seems unnecessarily complex but has to be
+    for (const EdgePtr & e2 : baddies)
     {
-        EdgePtr ee2 = e2.lock();
-        for (auto pos = begin(); pos != end(); pos++)
+        for (int i=0; i < (int)size(); i++)
         {
-            WeakEdgePtr wep = *pos;
-            if (ee2 == wep.lock())
+            EdgePtr ep = at(i).lock();
+            if (ep == e2)
             {
-                erase(pos);
-                break;
+                removeAt(i);
             }
         }
     }

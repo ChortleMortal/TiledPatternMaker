@@ -295,22 +295,25 @@ void Layer::setZValue(int z)
     zlevel = z;
 }
 
-void  Layer::drawCenter(QPainter * painter)
+void  Layer::drawLayerModelCenter(QPainter * painter)
 {
     if (config->showCenterDebug || config->showCenterMouse)
     {
-        painter->save();
         QPointF pt = getCenterScreenUnits();
-        //qDebug() << "Layer::drawCenter:" << pt;
-        qreal len = 13;
-        QColor green(Qt::green);
-        painter->setPen(QPen(green));
-        green.setAlpha(128);
-        painter->setBrush(QBrush(green));
-        painter->drawEllipse(pt,len,len);
-        painter->setPen(QPen(Qt::blue));
-        painter->drawLine(QPointF(pt.x()-len,pt.y()),QPointF(pt.x()+len,pt.y()));
-        painter->drawLine(QPointF(pt.x(),pt.y()-len),QPointF(pt.x(),pt.y()+len));
-        painter->restore();
+        drawCenterSymbol(painter,pt,QColor(Qt::green),QColor(Qt::blue));
     }
+}
+
+void Layer::drawCenterSymbol(QPainter * painter, QPointF spt, QColor circleColor, QColor xColor)
+{
+    painter->save();
+    qreal len = 13;
+    circleColor.setAlpha(128);
+    painter->setPen(QPen(circleColor));
+    painter->setBrush(QBrush(circleColor));
+    painter->drawEllipse(spt,len,len);
+    painter->setPen(QPen(xColor));
+    painter->drawLine(QPointF(spt.x()-len,spt.y()),QPointF(spt.x()+len,spt.y()));
+    painter->drawLine(QPointF(spt.x(),spt.y()-len),QPointF(spt.x(),spt.y()+len));
+    painter->restore();
 }

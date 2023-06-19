@@ -74,7 +74,7 @@ public:
     bool            isHidden() { return hidden; }
 
     AQHBoxLayout *  createLayout();
-    AQWidget     *  createWidget();
+    QWidget      *  createWidget();
 
 protected:
 

@@ -388,6 +388,11 @@ void page_loaders::loadTiling(eTILM_Event event)
     emit sig_refreshView();
 }
 
+void page_loaders::loadTiling2()
+{
+    loadTiling(TILM_LOAD_SINGLE);
+}
+
 void page_loaders::loadShapes()
 {
     emit sig_buildDesign(selectedDesign);
@@ -520,7 +525,7 @@ void page_loaders::loadTilingsCombo()
     tilingUses uses = FileServices::getTilingUses();
 
     eLoadType ltype = SELECTED_TILINGS;
-    if (mosaicWorklistCheck->isChecked())
+    if (tilingWorklistCheck->isChecked())
     {
         ltype = WORKLIST;
     }
@@ -658,7 +663,7 @@ void page_loaders::tileRightClick(QPoint pos)
 {
     QMenu myMenu;
     myMenu.addSection(selectedTilingName);
-    myMenu.addAction("Load",    this, SLOT(loadTiling()));
+    myMenu.addAction("Load",    this, SLOT(loadTiling2()));
     myMenu.addAction("View XML",this, SLOT(openTiling()));
     myMenu.addAction("Rename",  this, SLOT(renameTiling()));
     myMenu.addAction("Rebase",  this, SLOT(rebaseTiling()));
@@ -1018,8 +1023,8 @@ void page_loaders::showTilings()
 void page_loaders::openTiling()
 {
     QString name = selectedTilingName;
-
-    QString path = FileServices::getTilingFile(name);
+    
+    QString path = FileServices::getTilingXMLFile(name);
     if (!QFile::exists(path))
     {
         return;
@@ -1048,7 +1053,7 @@ void page_loaders::rebaseTiling()
     int found = whereTilingUsed(name,used);
 
     // validate file to rebase exists
-    QString oldPath = FileServices::getTilingFile(name);
+    QString oldPath = FileServices::getTilingXMLFile(name);
     if (oldPath.isEmpty())
     {
         QMessageBox box;
@@ -1143,7 +1148,7 @@ void page_loaders::rebaseTiling()
             aname = nameRoot;
         else
             aname = nameRoot + ".v" + QString::number(i);
-        QString path = FileServices::getTilingFile(aname);
+        QString path = FileServices::getTilingXMLFile(aname);
         if (!path.isEmpty())
         {
             QFile::remove(path);
@@ -1214,7 +1219,7 @@ void page_loaders::renameTiling()
     Q_ASSERT(!newName.contains(".xml"));
 
     // validate old file exists
-    QString oldPath = FileServices::getTilingFile(name);
+    QString oldPath = FileServices::getTilingXMLFile(name);
     if (oldPath.isEmpty())
     {
         return;
@@ -1305,8 +1310,8 @@ void page_loaders::deleteTiling()
     {
         return;
     }
-
-    QString path = FileServices::getTilingFile(name);
+    
+    QString path = FileServices::getTilingXMLFile(name);
     if (!QFile::exists(path))
     {
         QMessageBox box(this);

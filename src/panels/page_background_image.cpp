@@ -9,9 +9,12 @@
 #include "geometry/edge.h"
 #include "geometry/vertex.h"
 #include "viewers/backgroundimageview.h"
+#include "viewers/viewcontrol.h"
 
 page_background_image::page_background_image(ControlPanel * apanel) : panel_page(apanel,"Background Image"),  bkgdLayout("Bkgd Xform")
 {
+    bip = BackgroundImageView::getInstance();
+
     bkgdGroup = createBackgroundGroup();
     vbox->addWidget(bkgdGroup);
 }
@@ -29,11 +32,13 @@ void page_background_image::onRefresh()
 QGroupBox * page_background_image::createBackgroundGroup()
 {
     QPushButton * loadBkgdBtn        = new QPushButton("Load Background");
-                   startAdjustBtn    = new AQPushButton("Start Perspective Adjustment");
+                  startAdjustBtn     = new AQPushButton("Start Perspective Adjustment");
     QPushButton * completeAdjustBtn  = new QPushButton("Complete Perspective Adjustment");
     QPushButton * saveAdjustedBtn    = new QPushButton("Save Adjusted");
     QPushButton * clearBtn           = new QPushButton("Clear");
     QPushButton * resetBtn           = new QPushButton("Reset Xform");
+
+    startAdjustBtn->setStyleSheet("QPushButton::checked { background-color: yellow; color: red;}");
 
     chk_useAdjusted  = new QCheckBox("Use Perspective");
     imageName        = new QLineEdit("Image name");
@@ -80,8 +85,7 @@ void page_background_image::displayBackgroundStatus(bool force)
     {
         return;
     }
-    
-    auto bip = BackgroundImageView::getInstance();
+
     if (bip->isLoaded())
     {
         const Xform & xform = bip->getCanvasXform();
@@ -99,6 +103,9 @@ void page_background_image::displayBackgroundStatus(bool force)
     {
         imageName->setText("none");
         bkgdLayout.init();
+        chk_useAdjusted->blockSignals(true);
+        chk_useAdjusted->setChecked(false);
+        chk_useAdjusted->blockSignals(false);
     }
 }
 
@@ -117,7 +124,6 @@ void page_background_image::slot_loadBackground()
         return;
     }
     
-    auto bip = BackgroundImageView::getInstance();
     bool rv = bip->import(filename);
     if (rv)
     {
@@ -139,29 +145,25 @@ void page_background_image::slot_loadBackground()
 
 void page_background_image::slot_useAdjustedClicked(bool checked)
 {
-    auto bip = BackgroundImageView::getInstance();
     bip->setUseAdjusted(checked);
     setupBackground(bkgdLayout.getXform());
 }
 
 void page_background_image::setupBackground(Xform xform)
 {
-    auto bip = BackgroundImageView::getInstance();
     bip->setCanvasXform(xform);
     bip->showPixmap();
 }
 
 void page_background_image::slot_clearBackground ()
 {
-    auto bip = BackgroundImageView::getInstance();
     bip->unload();
-
+    displayBackgroundStatus(true);
     emit sig_refreshView();
 }
 
 void page_background_image::slot_setBkgdXform()
 {
-    auto bip = BackgroundImageView::getInstance();
     Xform xform = bip->getCanvasXform();
     xform.setTransform(bkgdLayout.getQTransform());
     bip->setCanvasXform(xform);
@@ -171,7 +173,7 @@ void page_background_image::slot_setBkgdXform()
 
 void page_background_image::slot_startSkewAdjustment(bool checked)
 {
-    auto bip = BackgroundImageView::getInstance();
+    view->setMouseMode(MOUSE_MODE_NONE,true);    // ensure mouse gets here
 
     if (checked)
     {
@@ -184,6 +186,7 @@ void page_background_image::slot_startSkewAdjustment(bool checked)
     {
         panel->popPanelStatus();
         bip->setSkewMode(false);    // also stops mouse interaction
+        emit sig_refreshView();
     }
 }
 
@@ -195,7 +198,6 @@ void page_background_image::slot_resetXform()
 
 void page_background_image::slot_adjustBackground()
 {
-    auto bip = BackgroundImageView::getInstance();
 
     if (!bip->getSkewMode())
     {
@@ -237,7 +239,7 @@ void page_background_image::slot_adjustBackground()
 
 void page_background_image::slot_saveAdjustedBackground()
 {
-    auto bip = BackgroundImageView::getInstance();
+    Xform xf = bip->getCanvasXform();
 
     QString oldname = bip->getName();
 
@@ -276,12 +278,12 @@ void page_background_image::slot_saveAdjustedBackground()
         bip->load(newName);
         if (bip->isLoaded())
         {
+            bip->setCanvasXform(xf);
+            bip->setUseAdjusted(false);
+
             config->showBackgroundImage = true;     // since we loaded it, might as well see it
 
             displayBackgroundStatus(true);
-
-            setupBackground(bkgdLayout.getXform());
-
             emit sig_refreshView();
         }
     }

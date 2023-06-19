@@ -75,7 +75,10 @@ void InferredMotif::buildMotifMaps()
     Q_ASSERT(proto.lock());
     Q_ASSERT(tile);
     infer(proto.lock(),tile);
-    completeMap(motifMap);
+    completeMotif(tile);
+    completeMap();
+    buildMotifBoundary(tile);
+    buildExtendedBoundary();
 }
 
 //////////////////////////////////////////////////////////
@@ -535,7 +538,6 @@ int InferredMotif::lexCompareDistances( int kind1, qreal dist1, int kind2, qreal
     }
 }
 
-
 void InferredMotif::setupInfer(ProtoPtr proto)
 {
     this->proto = proto;
@@ -563,8 +565,8 @@ void InferredMotif::setupInfer(ProtoPtr proto)
             QPointF pt   = (tiling->getData().getTrans1() * static_cast<qreal>(x)) + (tiling->getData().getTrans2() * static_cast<qreal>(y));
             QTransform T = QTransform::fromTranslate(pt.x(),pt.y());
 
-            const PlacedTiles & placedTiles = tiling->getData().getPlacedTiles();
-            for (auto placedTile : qAsConst(placedTiles))
+            const PlacedTiles & placedTiles = tiling->getInTiling();
+            for (const auto & placedTile : placedTiles)
             {
                 QTransform Tf   = placedTile->getTransform() * T;
                 TilePtr tile    = placedTile->getTile();
@@ -591,8 +593,9 @@ void InferredMotif::setupInfer(ProtoPtr proto)
 int InferredMotif::findPrimaryTile(TilePtr tile )
 {
     // The start and end of the tiles in the (0,0) unit.
-    int start = tiling->getData().countPlacedTiles() * 4;
-    int end   = tiling->getData().countPlacedTiles() * 5;
+    int count = tiling->getInTiling().count();
+    int start = count * 4;
+    int end   = count * 5;
     int cur_reg_count = -1;
     int cur           = -1;
 
@@ -677,7 +680,7 @@ AdjacentTilePtr InferredMotif::getAdjacency(QPointF main_point, int main_idx)
             {
                 if (Loose::Near(mid, main_point, tolerance))
                 {
-                    if (debugContacts) qWarning() << "Found with tolerance " << tolerance ;
+                    if (debugContacts) qDebug() << "Found with tolerance " << tolerance ;
                     ap = make_shared<AdjacenctTile>(pcur->getPlacedTile(), tolerance);
                     return ap;
                 }

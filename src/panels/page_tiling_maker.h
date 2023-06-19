@@ -8,10 +8,6 @@ typedef std::shared_ptr<class Tiling>           TilingPtr;
 typedef std::shared_ptr<class PlacedTile>       PlacedTilePtr;
 typedef std::weak_ptr<class   PlacedTile>       WeakPlacedTilePtr;
 
-class QGroupBox;
-class QTextEdit;
-class QCheckBox;
-
 class EdgePoly;
 class DoubleSpinSet;
 class AQSpinBox;
@@ -95,12 +91,12 @@ private slots:
 
 protected:
     AQTableWidget * createTilingTable();
-    AQWidget      * createDebugInfo();
+    QWidget       * createDebugInfo();
     QGroupBox     * createModesGroup();
     QGroupBox     * createActionsGroup();
     QHBoxLayout   * createControlRow();
     QHBoxLayout   * createTableControlRow();
-    AQWidget      * createTranslationsRow();
+    QWidget       * createTranslationsRow();
     QHBoxLayout   * createFillDataRow();
 
     void setup();
@@ -133,9 +129,9 @@ private:
     DoubleSpinSet * T1angle;
     DoubleSpinSet * T2angle;
 
-    AQWidget      * translationsWidget;
+    QWidget       * translationsWidget;
     AQTableWidget * tileInfoTable;
-    AQWidget      * debugWidget;
+    QWidget       * debugWidget;
 
     QTextEdit    * tileInfo;
     QLabel       * statusLabel;
@@ -156,6 +152,7 @@ private:
 
     QCheckBox     * chk_hideTiling;
     QCheckBox     * chkSingle;
+    QCheckBox     * chk_showDebug;
 };
 
 #endif

@@ -9,6 +9,7 @@
 #include "settings/configuration.h"
 #include "panels/panel.h"
 #include "viewers/grid_view.h"
+#include "viewers/viewcontrol.h"
 
 page_grid:: page_grid(ControlPanel * cpanel)  : panel_page(cpanel,"Grid")
 {
@@ -19,7 +20,7 @@ page_grid:: page_grid(ControlPanel * cpanel)  : panel_page(cpanel,"Grid")
     SpinSet      * gridScreenWidth     = new SpinSet("Width",config->gridScreenWidth,1,9);
 
     QRadioButton * gridModel           = new QRadioButton("Model Units");
-    QCheckBox    * gridModelCentered   = new QCheckBox("Layer Centered");
+    QCheckBox    * gridModelCentered   = new QCheckBox("Canvas Centered");
     DoubleSpinSet* gridModelSpacing    = new DoubleSpinSet("Spacing",1.0,0.0001,900);
     SpinSet      * gridModelWidth      = new SpinSet("Width",config->gridModelWidth,1,9);
 
@@ -28,11 +29,9 @@ page_grid:: page_grid(ControlPanel * cpanel)  : panel_page(cpanel,"Grid")
     QRadioButton * gridTilingAlgo2     = new QRadioButton("Fill Region ");
     SpinSet      * gridTilingWidth     = new SpinSet("Width",config->gridTilingWidth,1,9);
 
-    QCheckBox    * gridTilingCenter    = new QCheckBox("Show Center");
+    QCheckBox    * chkDrawLayerCenter  = new QCheckBox("Show Layer Center");
     QCheckBox    * chkDrawModelCenter  = new QCheckBox("Show Model Center");
-    QCheckBox    * chkDrawViewCenter   = new QCheckBox("Show View Center");
-
-
+    QCheckBox    * chkDrawScreenCenter = new QCheckBox("Show Canvas Center");
 
     gridScreen->setFixedWidth(91);
     gridScreenCentered->setFixedWidth(111);
@@ -76,9 +75,9 @@ page_grid:: page_grid(ControlPanel * cpanel)  : panel_page(cpanel,"Grid")
     else
         gridTilingAlgo2->setChecked(true);
 
-    gridTilingCenter->setChecked(config->showGridTilingCenter);
     chkDrawModelCenter->setChecked(config->showGridModelCenter);
-    chkDrawViewCenter->setChecked(config->showGridViewCenter);
+    chkDrawScreenCenter->setChecked(config->showGridScreenCenter);
+    chkDrawLayerCenter->setChecked(config->showGridLayerCenter);
 
     // connections
     connect(gridUnitGroup ,     &QButtonGroup::idClicked,     this, &page_grid::slot_gridUnitsChanged);
@@ -95,9 +94,9 @@ page_grid:: page_grid(ControlPanel * cpanel)  : panel_page(cpanel,"Grid")
     connect(gridTypeGroup,      &QButtonGroup::idClicked,     this, &page_grid::slot_gridTypeSelected);
     connect(angleSpin,          &DoubleSpinSet::valueChanged, this, &page_grid::slot_gridAngleChanged);
 
-    connect(gridTilingCenter,   &QCheckBox::stateChanged,     this, &page_grid::slot_gridTilingCenterChanged);
+    connect(chkDrawLayerCenter, &QCheckBox::stateChanged,     this, &page_grid::slot_gridLayerCenterChanged);
     connect(chkDrawModelCenter, &QCheckBox::stateChanged,     this, &page_grid::slot_drawModelCenterChanged);
-    connect(chkDrawViewCenter,  &QCheckBox::stateChanged,     this, &page_grid::slot_dawViewCenterChanged);
+    connect(chkDrawScreenCenter,&QCheckBox::stateChanged,     this, &page_grid::slot_drawScreenCenterChanged);
 
     labelT = new ClickableLabel();
     QVariant variant = QColor(config->gridColorTiling);
@@ -122,7 +121,6 @@ page_grid:: page_grid(ControlPanel * cpanel)  : panel_page(cpanel,"Grid")
     int row = 0;
 
     layout->addWidget(gridTiling,row,0);
-    layout->addWidget(gridTilingCenter,row,1);
     layout->addWidget(labelT,row,2);
     layout->addLayout(gridTilingWidth,row,3);
     QHBoxLayout * hbox = new QHBoxLayout;
@@ -153,17 +151,31 @@ page_grid:: page_grid(ControlPanel * cpanel)  : panel_page(cpanel,"Grid")
     row++;
 
     layout->addLayout(gridZLevel,row,0);
-    layout->addWidget(chkDrawModelCenter,row,1);
-    layout->addWidget(chkDrawViewCenter,row,2);
+    layout->addWidget(chkDrawLayerCenter,row,1);
+    layout->addWidget(chkDrawModelCenter,row,2);
+    layout->addWidget(chkDrawScreenCenter,row,3);
 
     gridBox = new QGroupBox("Show Grid");
     gridBox->setCheckable(true);
     gridBox->setLayout(layout);
     gridBox->setChecked(config->showGrid);
 
-    vbox->addWidget(gridBox);
 
-    connect(gridBox, &QGroupBox::clicked, this, &page_grid::slot_showGridChanged);
+    QPushButton * pbReset = new QPushButton("Reset position");
+    QPushButton * pbAlign = new QPushButton("Re-align position");
+
+    QHBoxLayout * hbox2 = new QHBoxLayout();
+    hbox2->addStretch();
+    hbox2->addWidget(pbReset);
+    hbox2->addSpacing(9);
+    hbox2->addWidget(pbAlign);
+
+    vbox->addWidget(gridBox);
+    vbox->addLayout(hbox2);
+
+    connect(gridBox, &QGroupBox::clicked,   this, &page_grid::slot_showGridChanged);
+    connect(pbReset, &QPushButton::clicked, this, &page_grid::slot_resetPos);
+    connect(pbAlign, &QPushButton::clicked, this, &page_grid::slot_reAlign);
 }
 
 void  page_grid::onEnter()
@@ -230,9 +242,9 @@ void page_grid::slot_gridModelCenteredChanged(int id)
     emit sig_refreshView();
 }
 
-void page_grid::slot_gridTilingCenterChanged(int id)
+void page_grid::slot_gridLayerCenterChanged(int id)
 {
-    config->showGridTilingCenter = (id == Qt::Checked);
+    config->showGridLayerCenter = (id == Qt::Checked);
     emit sig_refreshView();
 }
 
@@ -242,9 +254,9 @@ void page_grid::slot_drawModelCenterChanged(int id)
     emit sig_refreshView();
 }
 
-void page_grid::slot_dawViewCenterChanged(int id)
+void page_grid::slot_drawScreenCenterChanged(int id)
 {
-    config->showGridViewCenter = (id == Qt::Checked);
+    config->showGridScreenCenter = (id == Qt::Checked);
     emit sig_refreshView();
 }
 
@@ -326,4 +338,19 @@ void page_grid::slot_pickColorScreen()
         labelS->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
         emit sig_refreshView();
     }
+}
+
+void  page_grid::slot_resetPos()
+{
+    auto grid = GridView::getInstance();
+    Xform xf;
+    grid->setCanvasXform(xf);
+    emit sig_refreshView();
+}
+
+void  page_grid::slot_reAlign()
+{
+    auto grid = GridView::getInstance();
+    grid->setCanvasXform(view->getCurrentXform());
+    emit sig_refreshView();
 }

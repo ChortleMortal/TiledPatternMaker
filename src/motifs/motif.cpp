@@ -13,6 +13,8 @@
 #include "motifs/motif.h"
 #include "geometry/edge.h"
 #include "geometry/map.h"
+#include "geometry/transform.h"
+#include "tile/tile.h"
 
 using std::make_shared;
 
@@ -39,11 +41,12 @@ Motif::Motif(const Motif & other)
     refs++;
 
     motifType         = other.motifType;
-    _n                = other._n;
     motifRotate       = other.motifRotate;
     motifScale        = other.motifScale;
-    motifBoundary     = other.motifBoundary;
-    extendedBoundary  = other.extendedBoundary;
+    tile              = other.tile;
+    _n                = other._n;
+    _motifBoundary    = other._motifBoundary;
+    _extendedBoundary = other._extendedBoundary;
     version           = other.version;
 }
 
@@ -52,11 +55,12 @@ Motif::Motif(MotifPtr other)
     refs++;
 
     motifType         = other->motifType;
-    _n                = other->_n;
     motifRotate       = other->motifRotate;
     motifScale        = other->motifScale;
-    motifBoundary     = other->motifBoundary;
-    extendedBoundary  = other->extendedBoundary;
+    tile              = other->tile;
+    _n                = other->_n;
+    _motifBoundary    = other->_motifBoundary;
+    _extendedBoundary = other->_extendedBoundary;
     version           = other->version;
 }
 
@@ -82,14 +86,14 @@ bool Motif::equals(const  MotifPtr other)
         return false;
     if (motifRotate    != other->motifRotate)
         return false;
-    if (motifBoundary  != other->motifBoundary)
+    if (_motifBoundary  != other->_motifBoundary)
         return false;
-    if (!extendedBoundary.equals(other->extendedBoundary))
+    if (!_extendedBoundary.equals(other->_extendedBoundary))
         return false;
     return true;
 }
 
-bool Motif::isExplicit() const
+bool Motif::isIrregular() const
 {
     switch (motifType)
     {
@@ -125,21 +129,50 @@ bool Motif::isRadial() const
     }
 }
 
-void Motif::createExtendedBoundary(TilePtr tile)
+void Motif::buildExtendedBoundary()
 {
-    extendedBoundary.setSides(getN());
-    if (extendedBoundary.getScale() < getMotifScale())
-    {
-        extendedBoundary.setScale(getMotifScale());
-    }
-
     if (isRadial())
     {
-        extendedBoundary.buildRadial();
+        _extendedBoundary.buildRadial();
     }
     else
     {
-        extendedBoundary.buildExplicit(tile);
+        _extendedBoundary.buildExplicit(tile);
+    }
+}
+
+void Motif::buildMotifBoundary(TilePtr tile)
+{
+    if (isRadial())
+    {
+        if (getN() >=3)
+        {
+            Tile f(getN(),getMotifRotate(), getMotifScale());
+            QPolygonF p = f.getPolygon();
+            setMotifBoundary(p);
+        }
+    }
+    else
+    {
+        QPointF pt  = tile->getCenter();
+
+        QTransform t;
+        if (!Loose::equals(motifScale,1.0))
+        {
+            t *= Transform::scaleAroundPoint(pt,motifScale);
+        }
+        if (!Loose::zero(motifRotate))
+        {
+            t *= Transform::rotateDegreesAroundPoint(pt,motifRotate);
+        }
+
+        QPolygonF poly  = tile->getPoints();
+        if (!t.isIdentity())
+        {
+            poly = t.map(poly);
+        }
+
+        setMotifBoundary(poly);
     }
 }
 

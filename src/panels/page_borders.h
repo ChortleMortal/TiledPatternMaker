@@ -5,13 +5,6 @@
 #include "widgets/panel_page.h"
 #include "widgets/layout_qrectf.h"
 
-class AQComboBox;
-class QGroupBox;
-class QStackedLayout;
-
-class SpinSet;
-class ClickableLabel;
-
 typedef std::shared_ptr<class Border>  BorderPtr;
 typedef std::shared_ptr<class Crop>    CropPtr;
 

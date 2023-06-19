@@ -43,7 +43,7 @@ public:
     void        setMotif(const MotifPtr & motif);
     bool        validMotifRegularity();
     void        createMotifFromTile();
-    void        recreateMotifUsingTile();
+    void        recreateMotifWhenRgularityChanged();
     void        recreateMotifFromChangedTile();
 
     QString     toString();

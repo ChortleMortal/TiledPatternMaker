@@ -1,4 +1,4 @@
-﻿////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
 //
 // Star.java
 //
@@ -118,8 +118,6 @@ void Star::buildUnitMap()
 void Star::buildV1()
 {
     qDebug() << "Star::buildV2";
-
-    buildRadialBoundaries();
 
     unitMap = make_shared<Map>("star unit map");
 
@@ -250,8 +248,6 @@ void Star::buildV1()
 void Star::buildV2()
 {
     qDebug() << "Star::buildV2";
-
-    buildRadialBoundaries();
 
     unitMap = make_shared<Map>("star unit map");
 

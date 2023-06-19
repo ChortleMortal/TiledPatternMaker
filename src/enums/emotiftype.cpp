@@ -4,21 +4,26 @@
 
 const QString sMotifType[] =
 {
-        E2STR(MOTIF_TYPE_UNDEFINED),
-        E2STR(MOTIF_TYPE_RADIAL),
-        E2STR(MOTIF_TYPE_ROSETTE),
-        E2STR(MOTIF_TYPE_STAR),
-        E2STR(MOTIF_TYPE_CONNECT_STAR),
-        E2STR(MOTIF_TYPE_CONNECT_ROSETTE),
-        E2STR(MOTIF_TYPE_EXTENDED_ROSETTE),
-        E2STR(MOTIF_TYPE_EXTENDED_STAR),
-        E2STR(MOTIF_TYPE_EXPLICIT_MAP),
-        E2STR(MOTIF_TYPE_INFERRED),
-        E2STR(MOTIF_TYPE_IRREGULAR_ROSETTE),
-        E2STR(MOTIF_TYPE_HOURGLASS),
-        E2STR(MOTIF_TYPE_INTERSECT),
-        E2STR(MOTIF_TYPE_GIRIH),
-        E2STR(MOTIF_TYPE_IRREGULAR_STAR),
-        E2STR(MOTIF_TYPE_EXPLCIT_TILE),
-        E2STR(MOTIF_TYPE_IRREGULAR_NO_MAP)
+        "Undefinerd Motif",             //E2STR(MOTIF_TYPE_UNDEFINED),
+        "Radial Motif",                 //E2STR(MOTIF_TYPE_RADIAL),
+        "Rosette Motif",                //E2STR(MOTIF_TYPE_ROSETTE),
+
+        "Star Motif",                   //E2STR(MOTIF_TYPE_STAR),
+        "Connected Star Motif",         //E2STR(MOTIF_TYPE_CONNECT_STAR),
+        "Connected Rosette Motif",      //E2STR(MOTIF_TYPE_CONNECT_ROSETTE),
+
+        "Extended Rosette Motif",       //E2STR(MOTIF_TYPE_EXTENDED_ROSETTE),
+        "Extended Star Motif",          //E2STR(MOTIF_TYPE_EXTENDED_STAR),
+        "Explicit Map Motif",           //E2STR(MOTIF_TYPE_EXPLICIT_MAP),
+
+        "Irregular Inferred Motif",     //E2STR(MOTIF_TYPE_INFERRED),
+        "Irregular Rosette Motif",      //E2STR(MOTIF_TYPE_IRREGULAR_ROSETTE),
+        "Irregular Hourglass Motif",    //E2STR(MOTIF_TYPE_HOURGLASS),
+
+        "Irregular Intersect Motif",    //E2STR(MOTIF_TYPE_INTERSECT),
+        "Irregular Girih Motif",        //E2STR(MOTIF_TYPE_GIRIH),
+        "Irregular Star Motif",         //E2STR(MOTIF_TYPE_IRREGULAR_STAR),
+
+        "Explicit Tile Motif",          //E2STR(MOTIF_TYPE_EXPLCIT_TILE),
+        "No Motif"                      //1E2STR(MOTIF_TYPE_IRREGULAR_NO_MAP)
 };

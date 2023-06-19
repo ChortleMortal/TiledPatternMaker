@@ -65,35 +65,24 @@ TilingMakerView::~TilingMakerView()
 #endif
 }
 
-void  TilingMakerView::setupView(TilingPtr tiling)
+void  TilingMakerView::setTiling(TilingPtr tiling)
 {
-    auto & placedTiles = tiling->getData().getPlacedTiles();
-    for(auto it = placedTiles.begin(); it != placedTiles.end(); it++)
-    {
-        PlacedTilePtr pf = *it;
-        allPlacedTiles.push_back(pf);
-        in_tiling.push_back(pf);
-    }
+    allPlacedTiles = tiling->getInTiling();
 
-    QPointF trans_origin;
+    // at this time allplacedTile and in_tiling are the same
     if (allPlacedTiles.size() > 0)
     {
-        PlacedTilePtr pf = allPlacedTiles.first();  // at this time allplacedTile and in_tiling are the same
-        QTransform T        = pf->getTransform();
-        trans_origin        = T.map(pf->getTile()->getCenter());
+        PlacedTilePtr pf = allPlacedTiles.first();
+        QTransform T     = pf->getTransform();
+        trans_origin     = T.map(pf->getTile()->getCenter());
     }
 
-    visibleT1.setP1(trans_origin);
-    visibleT1.setP2(trans_origin + tiling->getData().getTrans1());
-
-    visibleT2.setP1(trans_origin);
-    visibleT2.setP2(trans_origin + tiling->getData().getTrans2());
+    wTiling = tiling;
 }
 
 void TilingMakerView::clearViewData()
 {
     allPlacedTiles.clear();
-    in_tiling.clear();
     for (auto m : wMeasurements)
     {
         delete m;
@@ -116,17 +105,25 @@ void TilingMakerView::paint(QPainter *painter)
 
     GeoGraphics gg(painter,tr);
     draw(&gg);
-
-    drawCenter(painter);
+    
+    drawLayerModelCenter(painter);
 }
 
 void TilingMakerView::draw( GeoGraphics * g2d )
 {
     //qDebug() << "TilingMakerView::draw";
-
-    if (!_hideTiling && !editPlacedTile)
+    auto tiling = wTiling.lock();
+    if (tiling && !_hideTiling && !editPlacedTile)
     {
         drawTiling(g2d);
+
+        QLineF visibleT1;
+        visibleT1.setP1(trans_origin);
+        visibleT1.setP2(trans_origin + tiling->getData().getTrans1());
+
+        QLineF visibleT2;
+        visibleT2.setP1(trans_origin);
+        visibleT2.setP2(trans_origin + tiling->getData().getTrans2());
 
         drawTranslationVectors(g2d,visibleT1.p1(),visibleT1.p2(),visibleT2.p1(),visibleT2.p2());
 
@@ -206,6 +203,8 @@ void TilingMakerView::drawTiling( GeoGraphics * g2d )
 {
     determineOverlapsAndTouching();
 
+    auto tiling = wTiling.lock();
+
     for (auto& pf : allPlacedTiles)
     {
         if (pf == tilingMaker->getCurrentPlacedTile())
@@ -226,7 +225,7 @@ void TilingMakerView::drawTiling( GeoGraphics * g2d )
         {
             drawTile(g2d, pf, true, touching_color);
         }
-        else if (in_tiling.contains(pf))
+        else if (tiling && tiling->getInTiling().contains(pf))
         {
             drawTile(g2d, pf, true, in_tiling_color);
         }
@@ -282,7 +281,8 @@ void TilingMakerView::drawTile(GeoGraphics * g2d, PlacedTilePtr pf, bool draw_c,
     if( draw_c )
     {
         QPolygonF pts = pf->getPlacedPoints();
-        QPointF pt    = Point::center(pts);
+        QPointF pt    = pf->getTile()->getCenter();
+        pt            = pf->getTransform().map(pt);
 
         layerPen.setColor(Qt::red);
         g2d->drawCircle(pt,9,layerPen, QBrush());
@@ -662,6 +662,7 @@ void TilingMakerView::determineOverlapsAndTouching()
     }
 }
 
+// used when creating a polygon
 TileSelectorPtr TilingMakerView::findNearGridPoint(QPointF spt)
 {
     TileSelectorPtr tsp;
@@ -881,17 +882,7 @@ void  TilingMakerView::drawMouseInteraction(GeoGraphics * g2d)
     }
 }
 
-QString TilingMakerView::getStatus()
-{
-    QString s = sTilingMakerMouseMode[tilingMaker->getTilingMakerMouseMode()];
-    if (mouse_interaction)
-    {
-        s += " ";
-        s += mouse_interaction->desc;
-    }
-    s+= QString("  in_tiling: %1  all: %2").arg(in_tiling.count()).arg(allPlacedTiles.count());
-    return s;
-}
+
 
 
 //////////////////////////////////////////////////////////////////

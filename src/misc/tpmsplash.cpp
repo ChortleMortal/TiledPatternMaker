@@ -1,6 +1,15 @@
 #include "misc/tpmsplash.h"
 #include "panels/panel.h"
 
+/*
+ * QSplashScreen() has bugs
+ *   - does not display (refresh correctly) on some Linux systems
+ *   - the repaint() call in its code can be recursive calling crashes
+ *  Both problems are probably caused by its hidden calls to repaint() and to
+ *  QCoreApplication::processEvents()
+ *
+ */
+
 TPMSplash::TPMSplash() : QSplashScreen()
 {
     QPixmap pm(":/tpm.png");

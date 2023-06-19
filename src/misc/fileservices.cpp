@@ -99,7 +99,7 @@ QStringList FileServices::getMosaicRootNames(eLoadType loadType)
     QStringList mosaicNames;
     for (auto & name : slist)
     {
-        auto nameRoot = getMosaicNameOnly(name);
+        auto nameRoot = getMediaNameOnly(name);
         mosaicNames.push_back(nameRoot);
     }
     mosaicNames.removeDuplicates();
@@ -240,7 +240,21 @@ QStringList FileServices::getTilingNames(eLoadType loadType)
     return names;
 }
 
-QString FileServices::getTilingFile(QString name)
+QStringList FileServices::getTilingRootNames(eLoadType loadType)
+{
+    // names only, no version, no extension
+    auto slist = getTilingNames(loadType);
+    QStringList tilingNames;
+    for (auto & name : slist)
+    {
+        auto nameRoot = getMediaNameOnly(name);
+        tilingNames.push_back(nameRoot);
+    }
+    tilingNames.removeDuplicates();
+    return tilingNames;
+}
+
+QString FileServices::getTilingXMLFile(QString name)
 {
     Q_ASSERT(!name.contains(".xml"));
     name += ".xml";
@@ -364,7 +378,7 @@ QString FileServices::getVersion(QString name)
     return ver;
 }
 
-QString FileServices::getMosaicNameOnly(QString name)
+QString FileServices::getMediaNameOnly(QString name)
 {
     QString str       = name.remove(".xml");
     QStringList parts = str.split('.');
@@ -414,7 +428,7 @@ bool FileServices::verifyTilingName(QString name)
 {
     Q_ASSERT(!name.contains(".xml"));
 
-    QString filename = getTilingFile(name);
+    QString filename = getTilingXMLFile(name);
     if (filename.isEmpty())
     {
         return false;

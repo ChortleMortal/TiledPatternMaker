@@ -20,7 +20,7 @@
 class RadialMotif : public Motif
 {
 public:
-    virtual ~RadialMotif() override {}
+    virtual ~RadialMotif() {}
 
     virtual MapPtr  getMotifMap() override; // Get a complete map from unit.
     virtual void    resetMotifMaps() override;
@@ -28,8 +28,6 @@ public:
 
     virtual void    buildUnitMap() = 0;
     virtual MapPtr  getUnitMap() const { return unitMap; }
-
-    void            buildRadialBoundaries();
 
     virtual void    setN(int n) override;
 

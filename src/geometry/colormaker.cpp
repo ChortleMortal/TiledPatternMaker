@@ -337,7 +337,7 @@ void  ColorMaker::assignColorGroups(ColorGroup & colorGroup)
 #else
     colorGroup.resetIndex();
     int i=0;
-    for (FaceSetPtr fsp  : faceGroups)
+    for (const FaceSetPtr & fsp  : faceGroups)
     {
         //qDebug() << "sorting..." << i;
         //fsp->sortByPositon();

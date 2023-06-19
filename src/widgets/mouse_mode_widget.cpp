@@ -4,8 +4,10 @@
 #include "widgets/panel_misc.h"
 #include "viewers/viewcontrol.h"
 
-MouseModeWidget::MouseModeWidget() : AQWidget()
+MouseModeWidget::MouseModeWidget() : QWidget()
 {
+    setContentsMargins(0,0,0,0);
+
     view = ViewControl::getInstance();
 
     chkCenter = new QCheckBox("Set Center");

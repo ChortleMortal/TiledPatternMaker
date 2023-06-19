@@ -2,11 +2,11 @@
 #ifndef MOUSEMODEWIDGET_H
 #define MOUSEMODEWIDGET_H
 
+#include <QWidget>
+
 class QCheckBox;
 
-#include "widgets/panel_misc.h"
-
-class MouseModeWidget : public AQWidget
+class MouseModeWidget : public QWidget
 {
     Q_OBJECT
 

@@ -3,16 +3,26 @@
 #include <QVBoxLayout>
 #include <QComboBox>
 #include <QStringList>
+#include <QRadioButton>
+#include <QLineEdit>
 
 #include "widgets/dlg_wlist_create.h"
 
 DlgWorklistCreate::DlgWorklistCreate(QWidget * parent) :  QDialog(parent), MosaicIOBase()
 {
+    setWindowTitle("Create Worklist");
+
+    selMosaic     = new QRadioButton("Mosaic");
+    selTiling     = new QRadioButton("Tiling");
+
     chkLoadFilter = new QCheckBox("Load filter");
     chkStyle      = new QCheckBox("Style");
     chkMotif      = new QCheckBox("Motif");
+    chkText       = new QCheckBox("XML text");
 
-    styleNames = new QComboBox();
+    text          = new QLineEdit;
+
+    styleNames    = new QComboBox();
     styleNames->setMinimumWidth(251);
 
     QStringList styles =
@@ -29,28 +39,38 @@ DlgWorklistCreate::DlgWorklistCreate(QWidget * parent) :  QDialog(parent), Mosai
      "design"
     };
 
-    for (auto style : styles)
+    for (const auto & style : styles)
     {
         styleNames->addItem(style);
     }
 
     motifNames = new QComboBox();
     QStringList motifs  = motifRepresentation.values();
-    for (auto name : motifs)
+    for (const auto & name : motifs)
     {
         motifNames->addItem(name);
     }
 
+    QHBoxLayout * hbox = new QHBoxLayout;
+    hbox->addWidget(selMosaic);
+    hbox->addSpacing(7);
+    hbox->addWidget(selTiling);
+    hbox->addStretch();
+
+    int row = 0;
     QGridLayout * grid = new QGridLayout();
-    grid->addWidget(chkLoadFilter, 0, 0);
-    grid->addWidget(chkStyle, 1, 0);
-    grid->addWidget(styleNames, 1, 1);
-    grid->addWidget(chkMotif, 2, 0);
-    grid->addWidget(motifNames, 2, 1);
+    grid->addLayout(hbox, row++, 1);
+    grid->addWidget(chkLoadFilter, row++, 0);
+    grid->addWidget(chkText, row, 0);
+    grid->addWidget(text, row++, 1);
+    grid->addWidget(chkStyle, row, 0);
+    grid->addWidget(styleNames, row++, 1);
+    grid->addWidget(chkMotif, row, 0);
+    grid->addWidget(motifNames, row++, 1);
 
     QPushButton * okBtn  = new QPushButton("OK");
     QPushButton * canBtn = new QPushButton("Cancel");
-    QHBoxLayout * hbox = new QHBoxLayout;
+    hbox = new QHBoxLayout;
     hbox->addStretch();
     hbox->addWidget(okBtn);
     hbox->addWidget(canBtn);
@@ -61,6 +81,8 @@ DlgWorklistCreate::DlgWorklistCreate(QWidget * parent) :  QDialog(parent), Mosai
     vbox->addLayout(hbox);
 
     setLayout(vbox);
+
+    selMosaic->setChecked(true);
 
     connect(canBtn, &QPushButton::clicked, this, &QDialog::reject);
     connect(okBtn,  &QPushButton::clicked, this, &QDialog::accept);

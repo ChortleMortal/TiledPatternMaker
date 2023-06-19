@@ -215,7 +215,7 @@ int Mosaic::moveDown(StylePtr style)
 void Mosaic::dump()
 {
     qDebug() << "Mosaic" << name;
-    for (auto style : styleSet)
+    for (const auto & style : styleSet)
     {
         MapPtr map;
         QString str;
@@ -246,7 +246,7 @@ void Mosaic::reportMotifs()
 void Mosaic::reportStyles()
 {
     qDebug() << "==== Mosaic Styles" << name;
-    for (auto style : styleSet)
+    for (const auto & style : styleSet)
     {
         style->report();
     }

@@ -17,7 +17,7 @@ public:
     Layer(QString name);
     Layer(const Layer & other);
     Layer(LayerPtr other);
-    ~Layer();
+    virtual ~Layer();
 
     void reset() { pos = QPointF(); }
 
@@ -82,7 +82,8 @@ signals:
     void sig_refreshView();
 
 protected:
-    virtual void drawCenter(QPainter * painter);
+    virtual void drawLayerModelCenter(QPainter * painter);
+    void drawCenterSymbol(QPainter * painter, QPointF spt, QColor circleColor, QColor xColor);
 
     QPen       layerPen;
 

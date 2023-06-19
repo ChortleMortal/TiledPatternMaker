@@ -363,7 +363,6 @@ void PrototypeMaker::sm_takeUp(const TilingPtr & tiling, ePROM_Event event, cons
                 motif->resetMotifMaps();
                 motif->setMotifScale(tile->getScale());
                 motif->setMotifRotate(tile->getRotation());
-                motif->createExtendedBoundary(tile);
                 sm_resetMaps();
 
                 if (propagate)
@@ -385,7 +384,7 @@ void PrototypeMaker::sm_takeUp(const TilingPtr & tiling, ePROM_Event event, cons
             auto del = protoData.getDesignElement(tile);
             if (del)
             {
-                del->recreateMotifUsingTile();
+                del->recreateMotifWhenRgularityChanged();
 
                 if (propagate)
                 {
@@ -511,7 +510,7 @@ bool PrototypeMaker::duplicateDesignElement()
 
     // find placed tiles in the tiling and duplicate it
     TilingPtr tiling = protoData.getSelectedPrototype()->getTiling();
-    const PlacedTiles & placedTiles = tiling->getData().getPlacedTiles();
+    const PlacedTiles & placedTiles = tiling->getInTiling();
     PlacedTiles newPlacedTiles;
     for (const auto & placedTile : placedTiles)
     {

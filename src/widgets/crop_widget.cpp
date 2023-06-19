@@ -95,36 +95,53 @@ QLayout * CropWidget::createLayout()
 
 QHBoxLayout * CropWidget::createAspectLayout()
 {
-    QLabel       *  label     = new QLabel("Rectangle Aspect Ratio :");
-    QRadioButton *  rad_unc   = new QRadioButton("Unconstrained");
-    QRadioButton *  rad_two   = new QRadioButton(QString("1 : %1 2").arg(MathSymbolSquareRoot));
-    QRadioButton *  rad_three = new QRadioButton(QString("1 : %1 3").arg(MathSymbolSquareRoot));
-    QRadioButton *  rad_four  = new QRadioButton(QString("1 : %1 4").arg(MathSymbolSquareRoot));
-    QRadioButton *  rad_five  = new QRadioButton(QString("1 : %1 5").arg(MathSymbolSquareRoot));
-    QRadioButton *  rad_six   = new QRadioButton(QString("1 : %1 6").arg(MathSymbolSquareRoot));
-    QRadioButton *  rad_seven = new QRadioButton(QString("1 : %1 7").arg(MathSymbolSquareRoot));
+    QLabel       *  label     = new QLabel("Aspect Ratio :");
+    QRadioButton *  rad_unc   = new QRadioButton("Free");
+    QRadioButton *  rad_one   = new QRadioButton(QString("1:1"));
+    QString str(3,'1');
+    str[1] = MathSymbolSquareRoot;
+    str[2] = '2' ;
+    QRadioButton *  rad_two   = new QRadioButton(str);
+    str[2] = '3' ;
+    QRadioButton *  rad_three = new QRadioButton(str);
+    str[2] = '4' ;
+    QRadioButton *  rad_four  = new QRadioButton(str);
+    str[2] = '5' ;
+    QRadioButton *  rad_five  = new QRadioButton(str);
+    str[2] = '6' ;
+    QRadioButton *  rad_six   = new QRadioButton(str);
+    str[2] = '7' ;
+    QRadioButton *  rad_seven = new QRadioButton(str);
+    QRadioButton *  rad_sd    = new QRadioButton(QString("4:3 SD"));
+    QRadioButton *  rad_hd    = new QRadioButton(QString("16:9 HD"));
     chkVert                   = new QCheckBox("Vertical");
 
     QHBoxLayout * hbox = new QHBoxLayout();
     hbox->addWidget(label);
     hbox->addWidget(rad_unc);
+    hbox->addWidget(rad_one);
     hbox->addWidget(rad_two);
     hbox->addWidget(rad_three);
     hbox->addWidget(rad_four);
     hbox->addWidget(rad_five);
     hbox->addWidget(rad_six);
     hbox->addWidget(rad_seven);
+    hbox->addWidget(rad_sd);
+    hbox->addWidget(rad_hd);
     hbox->addWidget(chkVert);
     hbox->addStretch();
 
     aspects = new QButtonGroup;
     aspects->addButton(rad_unc,  ASPECT_UNCONSTRAINED);
+    aspects->addButton(rad_one,  ASPECT_SQUARE);
     aspects->addButton(rad_two,  ASPECT_SQRT_2);
     aspects->addButton(rad_three,ASPECT_SQRT_3);
     aspects->addButton(rad_four, ASPECT_SQRT_4);
     aspects->addButton(rad_five, ASPECT_SQRT_5);
     aspects->addButton(rad_six,  ASPECT_SQRT_6);
     aspects->addButton(rad_seven,ASPECT_SQRT_7);
+    aspects->addButton(rad_sd,   ASPECT_SD);
+    aspects->addButton(rad_hd,   ASPECT_HD);
 
     connect(aspects, &QButtonGroup::idClicked, this, &CropWidget::slot_cropAspect);
     connect(chkVert, &QCheckBox::toggled,      this, &CropWidget::slot_verticalAspect);

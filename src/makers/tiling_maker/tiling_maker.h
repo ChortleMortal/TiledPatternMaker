@@ -54,15 +54,17 @@ public:
     void        sm_takeUp(TilingPtr tiling, eTILM_Event event);
     void        sm_takeDown(QVector<TilingPtr> &proto_tilings, eTILM_Event event);
 
+    QString     getStatus();
+
+    // Tiling related
     void        select(TilingPtr tiling, bool force = false);
     void        select(ProtoPtr prototype);
     TilingPtr   getSelected() { return selectedTiling; }
     int         numTilings() { return tilings.size(); }
-    int         numExcluded() { return  tmView->getAllTiles().count() - tmView->getInTiling().count(); }
+    void        removeTiling(TilingPtr tp);
     void        setupMaker(TilingPtr tp);   // caution = generally use select()
 
     void        eraseTilings();
-    void        removeTiling(TilingPtr tp);
     TilingPtr   findTilingByName(QString name);
     bool        isLoaded(QString name);
     bool        isValidTiling(TilingPtr tiling);
@@ -71,19 +73,25 @@ public:
 
     const QVector<TilingPtr> & getTilings() { return tilings; }
 
+    void        pushTilingToPrototypeMaker(ePROM_Event event);
+
     void        clearMakerData();
-    void        updateTilingplacedTiles();
     void        updateVectors();
     void        updateReps();
+    void        resetOverlaps();
+
+    // Tile related
+    const PlacedTiles & getInTiling() const;
+    PlacedTiles &       getRWInTiling(bool push);
+
+    void        pushTileToPrototypeMaker(ePROM_Event event, TilePtr tile);
 
     void        addInTiling(PlacedTilePtr pf);
     void        addInTilings(PlacedTiles & placedTiles);
     void        removeFromInTiling(PlacedTilePtr pf);
 
+    int         numExcluded();
     void        flipTileRegularity(TilePtr tile);
-
-    void        pushTilingToPrototypeMaker(ePROM_Event event);
-    void        pushTileToPrototypeMaker(ePROM_Event event, TilePtr tile);
 
     QVector<TilePtr>   getUniqueTiles();
     TileSelectorPtr  getCurrentSelection() { return tmView->getTileSelector(); }
@@ -106,7 +114,7 @@ public:
     PlacedTilePtr getCurrentPlacedTile() { return currentPlacedTile; }
 
     void        toggleInclusion(TileSelectorPtr sel);
-    bool        isIncluded(PlacedTilePtr pfp)  { return tmView->getInTiling().contains(pfp); }
+    bool        isIncluded(PlacedTilePtr pfp);
     bool        procKeyEvent(QKeyEvent * k);
 
     void        clearConstructionLines() { tmView->clearConstructionLines(); }
@@ -139,28 +147,27 @@ public:
     bool reflectPolygon(TileSelectorPtr sel);
 
 signals:
-    void        sig_tilingLoaded(QString name);
-    void        sig_tilingWritten(QString name);
+    void sig_tilingLoaded(QString name);
+    void sig_tilingWritten(QString name);
 
-    void        sig_buildMenu();
-    void        sig_refreshMenu();
-    void        sig_current_tile(PlacedTilePtr pfp);
-    void        sig_cycler_ready();
+    void sig_buildMenu();
+    void sig_refreshMenu();
+    void sig_current_tile(PlacedTilePtr pfp);
+    void sig_cycler_ready();
 
 public slots:
-    void        slot_loadTiling(QString name, eTILM_Event event);
-    void        slot_cyclerLoadTiling(QString name);
-    void        slot_saveTiling(QString name);
+    void slot_loadTiling(QString name, eTILM_Event event);
+    void slot_cyclerLoadTiling(QString name);
+    void slot_saveTiling(QString name);
 
-    void        updatePolygonSides(int number);
-    void        updatePolygonRot(qreal angle);
-    void        setTilingMakerMouseMode(eTilingMakerMouseMode mode);
-    void        addRegularPolygon();
-    void        fillUsingTranslations();
-    void        removeExcluded();
-    void        excludeAll();
-    void        clearTranslationVectors();
-
+    void updatePolygonSides(int number);
+    void updatePolygonRot(qreal angle);
+    void setTilingMakerMouseMode(eTilingMakerMouseMode mode);
+    void addRegularPolygon();
+    void slot_fillUsingTranslations();
+    void removeExcluded();
+    void excludeAll();
+    void clearTranslationVectors();
 
     void slot_deleteTile();
     void slot_includeTile();
@@ -176,10 +183,7 @@ public slots:
     void slot_editMagnitude();
 
 protected:
-
-    void updateVisibleVectors();
-    void createFillCopies();
-    void refillUsingTranslations();
+    void fillUsingTranslations();
 
     // state machine
     void     sm_resetAllAndAdd(TilingPtr tiling);
@@ -208,7 +212,6 @@ private:
     TileSelectorPtr             clickedSelector;
     QPointF                     clickedSpt;
 
-    bool                        filled;                     // state - currently filled or not
     int                         poly_side_count;            // number of selected vertices when drawing polygons.
     qreal                       poly_rotation;              // regular polygon tile rotation
 

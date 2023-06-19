@@ -268,7 +268,7 @@ void DrawLine::updateDragging(QPointF spt)
 
     intersectPoints.clear();
     QPointF intersect;
-    for (auto linfo : selector->lines)
+    for (const auto & linfo : selector->lines)
     {
         QLineF::IntersectType itype = newline.intersects(linfo._line,&intersect);
         if (itype == QLineF::BoundedIntersection)
@@ -455,7 +455,7 @@ void ExtendLine::updateDragging(QPointF spt)
 
     intersectPoints.clear();
     QPointF intersect;
-    for (auto linfo : selector->lines)
+    for (const auto & linfo : selector->lines)
     {
         QLineF::IntersectType itype = currentLine.intersects(linfo._line,&intersect);
         if (itype == QLineF::BoundedIntersection)

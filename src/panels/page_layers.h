@@ -7,10 +7,8 @@
 typedef std::shared_ptr<class Layer>   LayerPtr;
 typedef std::weak_ptr<class Layer>     WeakLayerPtr;
 
-class QLabel;
 class AQDoubleSpinBox;
 class EdgePoly;
-class AQTableWidget;
 
 class page_layers : public panel_page
 {

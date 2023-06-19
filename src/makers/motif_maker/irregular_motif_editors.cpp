@@ -27,7 +27,6 @@ ExplicitMapEditor::ExplicitMapEditor(QString aname) : NamedMotifEditor(aname)
 
 void ExplicitMapEditor::setMotif(DesignElementPtr del, bool doEmit)
 {
-    wExplicitMapMotif.reset();
     wDel = del;
     if (!del || !del->getMotif())
     {
@@ -35,30 +34,25 @@ void ExplicitMapEditor::setMotif(DesignElementPtr del, bool doEmit)
     }
 
     auto motif = del->getMotif();
+
+    shared_ptr<ExplicitMapMotif> explMap;
     if (motif->getMotifType() == MOTIF_TYPE_EXPLICIT_MAP)
     {
-        try
-        {
-            auto explMap = dynamic_pointer_cast<ExplicitMapMotif>(motif);
-            NamedMotifEditor::setMotif(explMap,doEmit);
-            wExplicitMapMotif = explMap;
-        }
-        catch (...)
-        {
-           qWarning() << "Bad cast in ExplicitMapEditor (1)";
-        }
+        explMap = dynamic_pointer_cast<ExplicitMapMotif>(motif);
     }
     else
     {
         auto map = motif->getMotifMap();
-        auto explMap = make_shared<ExplicitMapMotif>(map);
+        explMap = make_shared<ExplicitMapMotif>(map);
         del->setMotif(explMap);
-        NamedMotifEditor::setMotif(explMap,doEmit);
-        wExplicitMapMotif = explMap;
     }
+
+    NamedMotifEditor::setMotif(explMap,doEmit);
+    explMap->setTile(del->getTile());
 
     motifToEditor();
     editorToMotif(doEmit);
+    explMap->buildMotifMaps();
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -94,19 +88,21 @@ void  GirihEditor::setMotif(DesignElementPtr del, bool doEmit)
     }
 
     auto motif = del->getMotif();
+
+    shared_ptr<GirihMotif> girih;
     if (motif->getMotifType() == MOTIF_TYPE_GIRIH)
     {
-        auto girih = dynamic_pointer_cast<GirihMotif>(motif);
-        w_girih = girih;
-        NamedMotifEditor::setMotif(girih,doEmit);
+        girih = dynamic_pointer_cast<GirihMotif>(motif);
     }
     else
     {
-        auto  girih = make_shared<GirihMotif>(*motif.get());
+        girih = make_shared<GirihMotif>(*motif.get());
         del->setMotif(girih);
-        w_girih = girih;
-        NamedMotifEditor::setMotif(girih,doEmit);
     }
+
+    w_girih = girih;
+    girih->setTile(del->getTile());
+    NamedMotifEditor::setMotif(girih,doEmit);
 
     motifToEditor();
     editorToMotif(doEmit);
@@ -139,13 +135,6 @@ void  GirihEditor::editorToMotif(bool doEmit)
         NamedMotifEditor::editorToMotif(false);
 
         girih->buildMotifMaps();
-
-        auto del = wDel.lock();
-        if (del)
-        {
-           auto tile  = del->getTile();
-            girih->setMotifBoundary(tile->getPolygon());
-        }
 
         girih->dump();
 
@@ -192,19 +181,20 @@ void HourglassEditor::setMotif(DesignElementPtr del, bool doEmit)
 
     auto motif = del->getMotif();
 
+    shared_ptr<HourglassMotif> hour;
     if (motif->getMotifType() == MOTIF_TYPE_HOURGLASS)
     {
-        auto hour = dynamic_pointer_cast<HourglassMotif>(motif);
-        w_hourglass = hour;
-        NamedMotifEditor::setMotif(hour,doEmit);
+        hour = dynamic_pointer_cast<HourglassMotif>(motif);
     }
     else
     {
-        auto hour = make_shared<HourglassMotif>(*motif.get());
+        hour = make_shared<HourglassMotif>(*motif.get());
         del->setMotif(hour);
-        w_hourglass = hour;
-        NamedMotifEditor::setMotif(hour,doEmit);
     }
+
+    w_hourglass = hour;
+    hour->setTile(del->getTile());
+    NamedMotifEditor::setMotif(hour,doEmit);
 
     motifToEditor();
     editorToMotif(doEmit);
@@ -273,13 +263,6 @@ void HourglassEditor::editorToMotif(bool doEmit)
 
         hour->buildMotifMaps();
 
-        auto del = wDel.lock();
-        if (del)
-        {
-            auto tile  = del->getTile();
-            hour->setMotifBoundary(tile->getPolygon());
-        }
-
         hour->dump();
 
         if  (doEmit)
@@ -317,22 +300,21 @@ void InferEditor::setMotif(DesignElementPtr del, bool doEmit)
     auto motif = del->getMotif();
     auto proto = prototypeMaker->getProtoMakerData()->getSelectedPrototype();
 
+    shared_ptr<InferredMotif> infer;
     if (motif->getMotifType() == MOTIF_TYPE_INFERRED)
     {
-        auto infer = dynamic_pointer_cast<InferredMotif>(motif);
-        infer->setupInfer(proto);
-        w_infer = infer;
-        NamedMotifEditor::setMotif(infer,doEmit);
+        infer = dynamic_pointer_cast<InferredMotif>(motif);
     }
     else
     {
-        auto infer = make_shared<InferredMotif>(motif);
-        qDebug() << "The new motif is:" << infer.get();
-        infer->setupInfer(proto);
+        infer = make_shared<InferredMotif>(motif);
         del->setMotif(infer);
-        w_infer = infer;
-        NamedMotifEditor::setMotif(infer,doEmit);
     }
+
+    w_infer = infer;
+    infer->setTile(del->getTile());
+    infer->setupInfer(proto);
+    NamedMotifEditor::setMotif(infer,doEmit);
 
     motifToEditor();
     editorToMotif(doEmit);
@@ -347,13 +329,6 @@ void InferEditor::editorToMotif(bool doEmit)
         NamedMotifEditor::editorToMotif(false);
 
         infer->buildMotifMaps();
-
-        auto del = wDel.lock();
-        if (del)
-        {
-            auto tile  = del->getTile();
-            infer->setMotifBoundary(tile->getPolygon());
-        }
 
         infer->dump();
 
@@ -402,19 +377,20 @@ void IntersectEditor::setMotif(DesignElementPtr del, bool doEmit)
 
     auto motif = del->getMotif();
 
+    shared_ptr<IntersectMotif> isect;
     if (motif->getMotifType() == MOTIF_TYPE_INTERSECT)
     {
-        auto isect = dynamic_pointer_cast<IntersectMotif>(motif);
-        w_isect = isect;
-        NamedMotifEditor::setMotif(isect,doEmit);
+        isect = dynamic_pointer_cast<IntersectMotif>(motif);
     }
     else
     {
-        auto isect = make_shared<IntersectMotif>(*motif.get());
+        isect = make_shared<IntersectMotif>(*motif.get());
         del->setMotif(isect);
-        w_isect = isect;
-        NamedMotifEditor::setMotif(isect,doEmit);
     }
+
+    w_isect = isect;
+    isect->setTile(del->getTile());
+    NamedMotifEditor::setMotif(isect,doEmit);
 
     motifToEditor();
     editorToMotif(doEmit);
@@ -453,13 +429,6 @@ void IntersectEditor::editorToMotif(bool doEmit)
 
         isect->buildMotifMaps();
 
-        auto del = wDel.lock();
-        if (del)
-        {
-            auto tile  = del->getTile();
-            isect->setMotifBoundary(tile->getPolygon());
-        }
-
         isect->dump();
 
         if (doEmit)
@@ -488,7 +457,7 @@ IrregularRosetteEditor::IrregularRosetteEditor(QString aname) : ExplicitMapEdito
 {
     q_slider = new DoubleSliderSet("Explicit Rosette Q (Tip Angle)", 0.0, -3.0, 3.0, 100 );
     s_slider = new SliderSet("Explicit Rosette S (Sides Intersections)", 1, 1, 5);
-    r_slider = new DoubleSliderSet("Explicit Rosette R (Flex Point)", 0.5, 0.0, 1.0, 100 );
+    r_slider = new DoubleSliderSet("Explicit Rosette R (Flex Point)", 0.5, -1.0, 1.0, 100 );
     version_combo = new QComboBox();
     version_combo->addItem("Version 1",1);
     version_combo->addItem("Version 2",2);
@@ -521,19 +490,20 @@ void IrregularRosetteEditor::setMotif(DesignElementPtr del, bool doEmit)
 
     auto motif = del->getMotif();
 
+    shared_ptr<IrregularRosette> rose;
     if (motif->getMotifType() == MOTIF_TYPE_IRREGULAR_ROSETTE)
     {
-        auto rose = dynamic_pointer_cast<IrregularRosette>(motif);
-        w_rose = rose;
-        NamedMotifEditor::setMotif(rose,doEmit);
+        rose = dynamic_pointer_cast<IrregularRosette>(motif);
     }
     else
     {
-        auto rose = make_shared<IrregularRosette>(*motif.get());
+        rose = make_shared<IrregularRosette>(*motif.get());
         del->setMotif(rose);
-        w_rose = rose;
-        NamedMotifEditor::setMotif(rose,doEmit);
     }
+
+    w_rose = rose;
+    rose->setTile(del->getTile());
+    NamedMotifEditor::setMotif(rose,doEmit);
 
     motifToEditor();
     editorToMotif(doEmit);
@@ -572,7 +542,7 @@ void IrregularRosetteEditor::motifToEditor()
         }
 
         q_slider->setValues(rose->q, -3.0, 3.0);       // DAC was -1.0, 1.0
-        r_slider->setValues(rose->r,0.0,1.0);
+        r_slider->setValues(rose->r,-1.0,1.0);
 
         blockSignals(false);
 
@@ -604,13 +574,6 @@ void IrregularRosetteEditor::editorToMotif(bool doEmit)
         NamedMotifEditor::editorToMotif(false);
 
         rose->buildMotifMaps();
-
-        auto del = wDel.lock();
-        if (del)
-        {
-            auto tile  = del->getTile();
-            rose->setMotifBoundary(tile->getPolygon());
-        }
 
         rose->dump();
 
@@ -664,19 +627,20 @@ void IrregularStarEditor::setMotif(DesignElementPtr del, bool doEmit)
 
     auto motif = del->getMotif();
 
+    shared_ptr<IrregularStar> star;
     if (motif->getMotifType() == MOTIF_TYPE_IRREGULAR_STAR)
     {
-        auto star = dynamic_pointer_cast<IrregularStar>(motif);
-        w_star = star;
-        NamedMotifEditor::setMotif(star,doEmit);
+        star = dynamic_pointer_cast<IrregularStar>(motif);
     }
     else
     {
-        auto star = make_shared<IrregularStar>(*motif.get());
+        star = make_shared<IrregularStar>(*motif.get());
         del->setMotif(star);
-        w_star = star;
-        NamedMotifEditor::setMotif(star,doEmit);
     }
+
+    w_star = star;
+    star->setTile(del->getTile());
+    NamedMotifEditor::setMotif(star,doEmit);
 
     motifToEditor();
     editorToMotif(doEmit);
@@ -761,13 +725,6 @@ void IrregularStarEditor::editorToMotif(bool doEmit)
 
         star->buildMotifMaps();
 
-        auto del = wDel.lock();
-        if (del)
-        {
-            auto tile  = del->getTile();
-            star->setMotifBoundary(tile->getPolygon());
-        }
-
         //star->dump();
 
         if (doEmit)
@@ -795,21 +752,20 @@ void ExplicitTileEditor::setMotif(DesignElementPtr del, bool doEmit)
 
     auto motif = del->getMotif();
 
+    shared_ptr<TileMotif> tmotif;
     if (motif->getMotifType() == MOTIF_TYPE_EXPLCIT_TILE)
     {
-        auto tmotif = dynamic_pointer_cast<TileMotif>(motif);
-        tmotif->setup(del->getTile());
-        w_tileMotif = tmotif;
-        NamedMotifEditor::setMotif(tmotif,doEmit);
+        tmotif = dynamic_pointer_cast<TileMotif>(motif);
     }
     else
     {
-        auto tmotif = make_shared<TileMotif>(*motif.get());
-        tmotif->setup(del->getTile());
+        tmotif = make_shared<TileMotif>(*motif.get());
         del->setMotif(tmotif);
-        w_tileMotif = tmotif;
-        NamedMotifEditor::setMotif(tmotif,doEmit);
     }
+
+    w_tileMotif = tmotif;
+    tmotif->setTile(del->getTile());
+    NamedMotifEditor::setMotif(tmotif,doEmit);
 
     motifToEditor();
     editorToMotif(doEmit);
@@ -825,13 +781,6 @@ void ExplicitTileEditor::editorToMotif(bool doEmit)
         NamedMotifEditor::editorToMotif(false);
 
         etile->buildMotifMaps();
-
-        auto del = wDel.lock();
-        if (del)
-        {
-            auto tile  = del->getTile();
-            etile->setMotifBoundary(tile->getPolygon());
-        }
 
         etile->dump();
 
@@ -860,8 +809,11 @@ void IrregularNoMapEditor::setMotif(DesignElementPtr del, bool doEmit)
         return;
     }
 
-    auto motif = make_shared<IrregularMotif>();
-    NamedMotifEditor::setMotif(motif,doEmit);
+    auto motif = del->getMotif();
+    auto nomap = make_shared<IrregularMotif>(*motif.get());
+    nomap->setTile(del->getTile());
+
+    NamedMotifEditor::setMotif(nomap,doEmit);
 
     motifToEditor();
     editorToMotif(doEmit);

@@ -1,9 +1,10 @@
 #include "misc/border.h"
 #include "geometry/crop.h"
 #include "geometry/map.h"
+#include "qmath.h"
 #include "settings/configuration.h"
 #include "misc/geo_graphics.h"
-#include<QPainter>
+#include <QPainter>
 
 typedef std::shared_ptr<const class Map>    constMapPtr;
 

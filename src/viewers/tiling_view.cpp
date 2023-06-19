@@ -64,8 +64,8 @@ void TilingView::paint(QPainter *painter)
     GeoGraphics gg(painter,tr);
     draw(&gg);  // DAC - draw goes to receive which goes to draw placed tile
                 // DAC - receive is really '2d draw one tile'
-
-   drawCenter(painter);
+    
+    drawLayerModelCenter(painter);
 }
 
 void TilingView::draw(GeoGraphics *gg)
@@ -73,22 +73,20 @@ void TilingView::draw(GeoGraphics *gg)
     FillRegion flood(tiling,tiling->getData().getFillData());
     Placements placements = flood.getPlacements(config->repeatMode);
 
-    auto placed = tiling->getData().getPlacedTiles();
     for (auto T : placements)
     {
         gg->pushAndCompose(T);
 
-        for (auto it = placed.begin(); it != placed.end(); it++)
+        for (const auto & tile : tiling->getInTiling())
         {
-            PlacedTilePtr pf = *it;
-            drawPlacedYTile(gg, pf);
+            drawPlacedTile(gg, tile);
         }
 
         gg->pop();
     }
 }
 
-void TilingView::drawPlacedYTile(GeoGraphics * g2d, PlacedTilePtr pf)
+void TilingView::drawPlacedTile(GeoGraphics * g2d, PlacedTilePtr pf)
 {
     //qDebug().noquote() << "PlacedFeat:" << pf->getTile().get() <<  "transform:" << Transform::toInfoString(t);
 
@@ -131,8 +129,7 @@ void TilingView::slot_mouseTranslate(QPointF spt)
             qreal scale = Transform::scalex(T);
             QPointF mpt = spt/scale;
             QTransform tt = QTransform::fromTranslate(mpt.x(),mpt.y());
-            auto & placed = tiling->getData().getPlacedTiles();
-            for (auto pfp : qAsConst(placed))
+            for (const auto & pfp : tiling->getInTiling())
             {
                 QTransform t = pfp->getTransform();
                 t *= tt;
@@ -178,8 +175,7 @@ void TilingView::slot_wheel_scale(qreal delta)
             QTransform ts;
             ts.scale(sc,sc);
 
-            auto & placed = tiling->getData().getPlacedTiles();
-            for (auto pfp : qAsConst(placed))
+            for (const auto & pfp : tiling->getInTiling())
             {
                 QTransform t = pfp->getTransform();
                 t *= ts;
@@ -209,8 +205,7 @@ void TilingView::slot_wheel_rotate(qreal delta)
             xf.setModelCenter(getCenterModelUnits());
             QTransform tr2 = xf.toQTransform(QTransform());
 
-            auto & placed = tiling->getData().getPlacedTiles();
-            for (auto pfp : qAsConst(placed))
+            for (const auto & pfp : tiling->getInTiling())
             {
                 QTransform t = pfp->getTransform();
                 t *= tr2;
@@ -235,8 +230,7 @@ void TilingView::slot_scale(int amount)
         if (tiling)
         {
             qreal scale = 1.0 + (0.01 * amount);
-            auto & placed = tiling->getDataAccess(true).getPlacedTiles();
-            for (auto pfp : qAsConst(placed))
+            for (const auto & pfp : tiling->getInTiling())
             {
                 QTransform t = pfp->getTransform();
                 qDebug() << "t0" << Transform::toInfoString(t);
@@ -273,8 +267,7 @@ void TilingView::slot_rotate(int amount)
         if (tiling)
         {
             qreal qdelta = 0.01 * amount;
-            auto & placed = tiling->getDataAccess(true).getPlacedTiles();
-            for (auto pfp : qAsConst(placed))
+            for (const auto & pfp : tiling->getInTiling())
             {
                 QTransform t = pfp->getTransform();
                 t *= QTransform().rotateRadians(qdelta);
@@ -308,8 +301,7 @@ void TilingView:: slot_moveX(int amount)
         if (tiling)
         {
             qreal qdelta = 0.01 * amount;
-            auto & placed = tiling->getDataAccess(true).getPlacedTiles();
-            for (auto pfp : qAsConst(placed))
+            for (const auto & pfp : tiling->getInTiling())
             {
                 QTransform t = pfp->getTransform();
                 t *= QTransform::fromTranslate(qdelta,0.0);
@@ -343,8 +335,7 @@ void TilingView::slot_moveY(int amount)
         if (tiling)
         {
             qreal qdelta = 0.01 * amount;
-            auto & placed = tiling->getDataAccess(true).getPlacedTiles();
-            for (auto pfp : qAsConst(placed))
+            for (const auto & pfp : tiling->getInTiling())
             {
                 QTransform t = pfp->getTransform();
                 t *= QTransform::fromTranslate(0.0,qdelta);

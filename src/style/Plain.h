@@ -20,7 +20,7 @@ class Plain : public Colored
 public:
     Plain(ProtoPtr proto);
     Plain(StylePtr other);
-    virtual ~Plain() override;
+    virtual ~Plain();
 
     void resetStyleRepresentation() override;
     void createStyleRepresentation() override;

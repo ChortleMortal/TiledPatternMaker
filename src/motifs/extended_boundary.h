@@ -17,20 +17,26 @@ public:
     ExtendedBoundary& operator=(const ExtendedBoundary& rhs) {
         sides    = rhs.sides;
         scale    = rhs.scale;
+        rotate   = rhs.rotate;
         boundary = rhs.boundary;
         return *this;}
 
     const QPolygonF getPoly() const;
 
-    void buildRadial();
-    void buildExplicit(TilePtr tile);
+    void  buildRadial();
+    void  buildExplicit(TilePtr tile);
 
-    void setRadial(bool radial)      { this->radial   = radial; }
-    void setSides(int sides)         { this->sides    = sides; }
-    void setScale(qreal scale)       { this->scale    = scale; }
+    void  setRadial(bool radial)    { this->radial = radial; }
 
-    int   getSides()    const { return sides; }
-    qreal getScale()    const { return scale; }
+    void  setSides(int sides)       { this->sides = sides; }
+    int   getSides()    const       { return sides; }
+
+    void  setScale(qreal scale)     { this->scale = scale; }
+    qreal getScale()    const       { return scale; }
+
+    void  setRotate(qreal rotate)   { this->rotate = rotate; }
+    qreal getRotate()    const      { return rotate; }
+
 
     bool equals(const ExtendedBoundary & other);
     bool isCircle() const { return sides <= 2; }
@@ -41,6 +47,7 @@ protected:
 private:
     int   sides;
     qreal scale;
+    qreal rotate;
     bool  radial;
 
     QPolygonF boundary;

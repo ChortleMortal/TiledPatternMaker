@@ -53,12 +53,12 @@ bool Point::lessThan(const QPointF & a, QPointF & other)
 
 // Useful maths on QPointFs.
 
-qreal Point::mag2(QPointF & pt)
+qreal Point::mag2(const QPointF & pt)
 {
     return pt.x() * pt.x() + pt.y() * pt.y();
 }
 
-qreal Point::mag(QPointF & pt)
+qreal Point::mag(const QPointF &pt)
 {
     return qSqrt( mag2(pt) );
 }
@@ -302,32 +302,36 @@ QPointF Point::center(const QPolygonF & pts)
 
 QPointF Point::irregularCenter(const QPolygonF & poly)
 {
-    Q_ASSERT(!poly.isClosed());
-    QPointF centroid;
-    double signedArea = 0.0;
-    double x0 = 0.0; // Current vertex X
-    double y0 = 0.0; // Current vertex Y
-    double x1 = 0.0; // Next vertex X
-    double y1 = 0.0; // Next vertex Y
-    double a  = 0.0;  // Partial signed area
+    //Q_ASSERT(!poly.isClosed());
 
-    // For all vertices in a loop
+    double area = 0.0;
+    double x0   = 0.0; // Current vertex X
+    double y0   = 0.0; // Current vertex Y
+    double x1   = 0.0; // Next vertex X
+    double y1   = 0.0; // Next vertex Y
+    double a    = 0.0; // Partial signed area
+    double sumX = 0.0;
+    double sumY = 0.0;
+
+ // For all vertices in a loop
     auto prev = poly.constLast();
     for (const auto & next : poly)
-    {
-        x0 = prev.x();
-        y0 = prev.y();
-        x1 = next.x();
-        y1 = next.y();
-        a = x0*y1 - x1*y0;
-        signedArea += a;
-        centroid.setX(centroid.x() + ((x0 + x1)*a));
-        centroid.setY(centroid.y() + ((y0 + y1)*a));
-        prev = next;
+	{
+        x0    = prev.x();
+        y0    = prev.y();
+        x1    = next.x();
+        y1    = next.y();
+        a     = x0*y1 - x1*y0;
+        area += a;
+        sumX += ((x0 + x1)*a);
+        sumY += ((y0 + y1)*a);
+        prev  = next;
     }
 
-    signedArea *= 0.5;
-    centroid /= (6.0*signedArea);
+    area *= 0.5;
+
+    QPointF centroid(sumX,sumY);
+    centroid /= (6.0 * area);
 
     return centroid;
 }
@@ -381,7 +385,6 @@ QPointF Point::reflectPoint(QPointF & p, QLineF & line)
     qDebug() << p << line << p4;
     return p4;
 }
-
 
 QPolygonF Point::reflectPolygon(QPolygonF & p, QLineF & line)
 {

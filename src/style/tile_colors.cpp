@@ -65,10 +65,10 @@ void TileColors::createStyleRepresentation()
     Placements placements = flood.getPlacements(config->repeatMode);
     qDebug() << "num placements   =" << placements.size();
 
-    auto & placedTiles = tp->getData().getPlacedTiles();
+    const auto & placedTiles = tp->getInTiling();
     qDebug() << "num placed tiles=" << placedTiles.size();
 
-    for (auto placedTile : qAsConst(placedTiles))
+    for (const auto & placedTile : placedTiles)
     {
         TilePtr        tile = placedTile->getTile();
         const EdgePoly & ep = tile->getEdgePoly();

@@ -4,7 +4,7 @@
 LoaderListWidget::LoaderListWidget(QWidget *parent) : QListWidget(parent)
 {
     setSortingEnabled(false);
-    setMouseTracking(true);
+    //setMouseTracking(true);
     setStyleSheet("QListWidget::item:selected { background:yellow; color:red; }");
 }
 

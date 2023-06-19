@@ -2,20 +2,11 @@
 #ifndef PAGE_IMAGETOOLS_H
 #define PAGE_IMAGETOOLS_H
 
-class QGroupBox;
-class QComboBox;
-class QCheckBox;
-class QLabel;
-class QLineEdit;
-class MemoryCombo;
-class QButtonGroup;
-class QHBoxLayout;
-class QPushButton;
-class QRadioButton;
-
 #include <QImage>
 #include "widgets/panel_page.h"
 #include "enums/ecyclemode.h"
+
+class MemoryCombo;
 
 class page_image_tools : public panel_page
 {
@@ -98,11 +89,12 @@ private slots:
 
     void    slot_genTypeChanged(int id);
     void    slot_gen_selectionChanged();
+    void    slot_ver_selectionChanged();
 
     void    slot_compareVersions();
     void    slot_cycleVersions();
-    void    slot_mosaicAChanged();
-    void    slot_mosaicBChanged();
+    void    slot_mediaAChanged();
+    void    slot_mediaBChanged();
     void    slot_nextImage();
     void    slot_quitImageCycle();
 
@@ -121,6 +113,7 @@ protected:
     void setCombo(QComboBox * box,QString name);
 
     void loadFileFilterCombo();
+    void loadVersionFilterCombo();
     bool loadMosaic(QString name);
     void saveMosaicBitmaps();
     void saveTilingBitmaps();
@@ -149,6 +142,7 @@ private:
     QComboBox   * firstFileCombo;
     QComboBox   * secondFileCombo;
     QComboBox   * fileFilterCombo;
+    QComboBox   * versionFilterCombo;
 
     QCheckBox   * use_wlistForCompareChk;
     QCheckBox   * gen_wlistChk;
@@ -159,21 +153,23 @@ private:
     QPushButton * loadFirstBtn;
     QPushButton * loadSecondBtn;
 
-    QComboBox   * mosaicA;
-    QComboBox   * mosaicB;
+    QComboBox   * mediaA;
+    QComboBox   * mediaB;
     QComboBox   * versionsA;
     QComboBox   * versionsB;
 
     QCheckBox   * chkLock;
+    QRadioButton* radMosaic;
+    QRadioButton* radTile;
     QRadioButton* radImg;
     QRadioButton* radXML;
+    QButtonGroup* mediaGroup;
+    QButtonGroup* typeGroup;
 
     bool                  comparingVersions;
-    QStringList           mosNames;
-    QString               mosName;
+    QStringList           mediaNames;
+    QString               mediaName;
     QStringList           versions;
-    QStringList           mosVerA;
-    QStringList           mosVerB;
     QStringList::iterator imgList_it;
     QStringList::iterator imgListVerA_it;
     QStringList::iterator imgListVerB_it;

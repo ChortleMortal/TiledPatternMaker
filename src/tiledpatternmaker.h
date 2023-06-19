@@ -37,7 +37,7 @@ public:
     ~TiledPatternMaker();
 
     void imageKeyPressed(QKeyEvent * k);
-    void compareImages(QImage & img_left, QImage & img_right, QString title_left, QString title_right, bool autoMode);
+    void appCompareImages(QImage & img_left, QImage & img_right, QString title_left, QString title_right, bool autoMode);
 
     void testMemoryManagement();
 
@@ -84,6 +84,8 @@ protected:
     void setDarkTheme(bool enb);
 
     void compareImages(bool automode);
+    void compareImages(QImage & img_left, QImage & img_right, QString title_left, QString title_right, bool autoMode);
+
     void ping_pong_images(bool transparent, bool popup);
 
     ImageWidget       * popupPixmap(QPixmap & pixmap,QString title);

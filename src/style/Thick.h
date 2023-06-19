@@ -15,7 +15,7 @@ class Thick : public Colored
 public:
     Thick(const ProtoPtr &proto);
     Thick(StylePtr other);
-    ~Thick() override;
+    virtual ~Thick();
 
     qreal   getLineWidth()          { return width; }
     qreal   getOutlineWidth()       { return outline_width; }

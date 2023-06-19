@@ -29,7 +29,7 @@ protected:
 public:
     Sketch(ProtoPtr proto);
     Sketch(StylePtr other);
-    virtual ~Sketch() override;
+    virtual ~Sketch();
 
     void draw(GeoGraphics *gg) override;
 

@@ -50,80 +50,86 @@ public:
     };
 
     Tiling();
-    Tiling(QString name, QPointF t1, QPointF t2);
     ~Tiling();
 
-    bool        isEmpty();
+    bool                isEmpty();
 
-    bool        hasIntrinsicOverlaps();
-    bool        hasTiledOverlaps();
+    bool                hasIntrinsicOverlaps();
+    bool                hasTiledOverlaps();
 
-    QString     getName()        const { return name; }
-    QString     getDescription() const { return desc; }
-    QString     getAuthor()      const { return author; }
+    QString             getName()        const { return name; }
+    QString             getDescription() const { return desc; }
+    QString             getAuthor()      const { return author; }
 
-    void        setName(QString n)               { name = n; }
-    void        setDescription(QString descrip ) { desc = descrip; }
-    void        setAuthor(QString auth)          { author = auth; }
+    void                setName(QString n)               { name = n; }
+    void                setDescription(QString descrip ) { desc = descrip; }
+    void                setAuthor(QString auth)          { author = auth; }
 
-    // Feature management.
-    // Added features are embedded into a placedTile.
-    void        add(const PlacedTilePtr pf );
-    void        add(TilePtr f, QTransform T );
-    void        remove(PlacedTilePtr pf);
+    void                add(const PlacedTilePtr pf );   // Added tiles are put into a placedTile.
+    void                add(TilePtr f, QTransform T );
+    void                remove(PlacedTilePtr pf);
 
     // undo stack
-    void        pushStack();
-    bool        popStack();
-    void        purgeStack() { undoStack.clear(); }
-    int         stackSize()  { return undoStack.size(); }
+    void                pushStack();
+    bool                popStack();
+    void                purgeStack() { undoStack.clear(); resetOverlaps(); }
+    int                 stackSize()  { return undoStack.size(); }
 
-    int              numPlacements(TilePtr tile);
-    Placements       getPlacements(TilePtr tile);
-    QTransform       getFirstPlacement(TilePtr tile);
-    QVector<TilePtr> getUniqueTiles();
-    TileGroup        regroupTiles();      // the map was deadly, it reordered
+    int                 numPlacements(TilePtr tile);
+    Placements          getPlacements(TilePtr tile);
+    QTransform          getFirstPlacement(TilePtr tile);
+    QVector<TilePtr>    getUniqueTiles();
+    TileGroup           regroupTiles();      // the map was deadly, it reordered
 
-    void        setCanvasXform(const Xform & xf) { canvasXform = xf; }
-    Xform &     getCanvasXform()                 { return canvasXform; }
+    void                setCanvasXform(const Xform & xf) { xf_canvas = xf; }
+    Xform &             getCanvasXform()                 { return xf_canvas; }
 
-    int         getVersion();
-    void        setVersion(int ver);
+    int                 getVersion();
+    void                setVersion(int ver);
 
-    eTilingState getState();
-    void         setState(eTilingState state);
+    eTilingState        getState();
+    void                setState(eTilingState state);
 
     // Data
+    const TilingData &  getData()  const          { return db; }
+    TilingData &        getRWData(bool push)      { if (push) pushStack(); return db; }
 
-    const TilingData & getData() { return db; }
-    TilingData & getDataAccess(bool push) { if (push) pushStack(); return db; }
+    const PlacedTiles & getInTiling() const      { return getData().getInTiling(); }
+    PlacedTiles &       getRWInTiling(bool push) { return getRWData(push).getRWInTiling(); }
+
+    void setTranslationVectors(QPointF t1, QPointF t2) { db.setTranslationVectors(t1,t2); }
+
+    void                resetOverlaps() { intrinsicOverlaps.reset();  tiledOverlaps.reset(); }
 
     // map operations
-    MapPtr  createMapSingle();
-    MapPtr  createMapFullSimple();
-    MapPtr  createMapFull();
+    MapPtr              createMapSingle();
+    MapPtr              createMapFullSimple();
+    MapPtr              createMapFull();
+    MapPtr              debug_createFilledMap();
+    MapPtr              debug_createProtoMap();
 
-    QString     dump() const;
+    QString             dump() const;
 
     static const QString defaultName;
-    static int  refs;
+    static int          refs;
 
 protected:
 
 private:
-    int             version;
-    QString         name;
-    QString         desc;
-    QString         author;
-    TilingData      db;
+    int                 version;
+    QString             name;
+    QString             desc;
+    QString             author;
 
-    QStack<TilingData> undoStack;
+    TilingData          db;
 
-    Xform           canvasXform;
+    QStack<TilingData>  undoStack;
 
-    eTilingState    state;
-    Tristate        intrinsicOverlaps;
-    Tristate        tiledOveraps;
+    Xform               xf_canvas;
+
+    eTilingState        state;
+    Tristate            intrinsicOverlaps;
+    Tristate            tiledOverlaps;
 };
 
 #endif

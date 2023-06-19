@@ -63,7 +63,9 @@ TilingPtr TilingLoader::readTiling(QTextStream & st)
     st >> y2;
 
     // create the tiling
-    tiling = make_shared<Tiling>(name,QPointF(x1,y1),QPointF(x2,y2));
+    tiling = make_shared<Tiling>();
+    tiling->setName(name);
+    tiling->setTranslationVectors(QPointF(x1,y1),QPointF(x2,y2));
 
     for( int idx = 0; idx < nf; ++idx )
     {
@@ -191,7 +193,9 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
     }
 
     // create the tiling
-    tiling = make_shared<Tiling>(name, ptt1, ptt2);
+    tiling = make_shared<Tiling>();
+    tiling->setName(name);
+    tiling->setTranslationVectors(ptt1, ptt2);
     tiling->setVersion(version);
 
 	xml_node view = tiling_node.child("View");
@@ -239,13 +243,19 @@ TilingPtr TilingLoader::readTilingXML(xml_node & tiling_node)
         }
         QString strt0 = t0.child_value();
         FillData fd = getFill(strt0,isSingle);
-        FillData & fdata = tiling->getDataAccess(false).getFillDataAccess();
+        FillData & fdata = tiling->getRWData(false).getFillDataAccess();
         fdata = fd;
     }
 
     TileReader tr;   // must be located here to bw used for all tiles
 
-    for (xml_node tile = tiling_node.child("Feature"); tile; tile = tile.next_sibling("Feature"))
+    std::string tileName;
+    if (version < 7)
+        tileName = "Feature";
+    else
+        tileName = "Tile";
+
+    for (xml_node tile = tiling_node.child(tileName.c_str()); tile; tile = tile.next_sibling(tileName.c_str()))
     {
         TilePtr bf;
 
@@ -600,8 +610,8 @@ void TilingLoader::getViewSettings(xml_node & node)
         QString str = n.child_value();
         height = str.toInt();
     }
-
-    ModelSettings & ms = tiling->getDataAccess(false).getSettingsAccess();
+    
+    ModelSettings & ms = tiling->getRWData(false).getSettingsAccess();
 
     QSize size(width,height);
     ms.setSize(size);

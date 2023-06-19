@@ -26,7 +26,7 @@ class Filled : public Style, public ColorMaker
 public:
     Filled(const ProtoPtr &  proto, int algorithm);
     Filled(const StylePtr &other);
-    ~Filled();
+   virtual ~Filled();
 
     void resetStyleRepresentation()  override;
     void createStyleRepresentation() override;

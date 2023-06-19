@@ -18,7 +18,7 @@ typedef std::weak_ptr<class DesignElement>      WeakDesignElementPtr;
 // of one kind of motif.  A complex hierarchy of  Motif Editors gets built
 // up to become the changeable controls for editing motifs in MotifMaker.
 
-class NamedMotifEditor : public AQWidget
+class NamedMotifEditor : public QWidget
 {
     Q_OBJECT
 
@@ -44,16 +44,18 @@ protected:
     WeakMotifPtr         wMotif;
     QString              name;
 
-    AQVBoxLayout    * vbox;
+    AQVBoxLayout     * vbox;
 
-    DoubleSliderSet	* boundaryScale;
     SliderSet       * boundarySides;
+    DoubleSliderSet	* boundaryScale;
+    DoubleSliderSet	* boundaryRotate;
+
+    SliderSet       * motifSides;
     DoubleSliderSet	* motifScale;
     DoubleSliderSet * motifRotate;
-    SliderSet       * motifSides;
 };
 
-class SpecificEditorWidget : public AQWidget
+class SpecificEditorWidget : public QWidget
 {
 public:
     SpecificEditorWidget();

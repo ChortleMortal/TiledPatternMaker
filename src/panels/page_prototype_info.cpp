@@ -27,7 +27,7 @@ page_prototype_info:: page_prototype_info(ControlPanel * cpanel)  : panel_page(c
     protoMaker      = PrototypeMaker::getInstance();
     protoMakerData  = protoMaker->getProtoMakerData();
 
-    setMouseTracking(true);
+    //setMouseTracking(true);
 
     SpinSet * widthSpin = new SpinSet("Line Width",3,1,9);
     widthSpin->setValue((int)config->protoviewWidth);

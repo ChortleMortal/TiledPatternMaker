@@ -1,4 +1,4 @@
-﻿#include <QDebug>
+#include <QDebug>
 
 #include "geometry/map.h"
 #include "misc/utilities.h"
@@ -81,22 +81,21 @@ void DesignElement::createMotifFromTile()
 {
     if (tile->isRegular())
     {
+        // make a Rosette motif
         motif = make_shared<Rosette>(tile->numPoints(), 0.0, 3, 0);
     }
     else
     {
-        EdgePoly & ep = tile->getEdgePoly();
-        MapPtr     fm = make_shared<Map>("tile map",ep);
+        // make a TileMotif
         auto tmotif   = make_shared<TileMotif>();
         tmotif->setN(tile->numSides());
-        tmotif->setup(tile);
-        tmotif->buildMotifMaps();
+        tmotif->setTile(tile);
         motif = tmotif;
     }
 
     motif->setMotifScale(tile->getScale());
     motif->setMotifRotate(tile->getRotation());
-    motif->createExtendedBoundary(tile);
+    motif->buildMotifMaps();
 }
 
 void DesignElement::recreateMotifFromChangedTile()
@@ -114,10 +113,10 @@ void DesignElement::recreateMotifFromChangedTile()
         motif->setN(newsides);  // this should do the trick
     }
 
-    motif->createExtendedBoundary(tile);
+    motif->buildMotifMaps();
 }
 
-void DesignElement::recreateMotifUsingTile()
+void DesignElement::recreateMotifWhenRgularityChanged()
 {
     // the tile has possibly had its regularity flipped
     // the tile is now correct, but the motoif may need adjusting
@@ -160,6 +159,8 @@ void DesignElement::recreateMotifUsingTile()
             qWarning().noquote() << "Unexpected motif type" << sMotifType[motif->getMotifType()];
             break;
         }
+        motif->setMotifScale(tile->getScale());
+        motif->setMotifRotate(tile->getScale());
     }
     else
     {
@@ -173,9 +174,10 @@ void DesignElement::recreateMotifUsingTile()
             auto oldMotif = std::dynamic_pointer_cast<Rosette>(motif);
             Q_ASSERT(oldMotif);
             auto irose = make_shared<IrregularRosette>(*motif.get());
+            irose->setTile(tile);
+            irose->setMotifScale(1.0);
+            irose->setMotifRotate(0.0);
             irose->init(oldMotif->getQ(), oldMotif->getK(), oldMotif->getS());
-            irose->setup(tile);
-            irose->buildMotifMaps();
             motif = irose;
         }
             break;
@@ -187,9 +189,10 @@ void DesignElement::recreateMotifUsingTile()
             auto oldMotif = std::dynamic_pointer_cast<Star>(motif);
             Q_ASSERT(oldMotif);
             auto istar = make_shared<IrregularStar>(*motif.get());
+            istar->setTile(tile);
+            istar->setMotifScale(1.0);
+            istar->setMotifRotate(0.0);
             istar->init(oldMotif->getD(), oldMotif->getS());
-            istar->setup(tile);
-            istar->buildMotifMaps();
             motif = istar;
         }
             break;
@@ -200,7 +203,7 @@ void DesignElement::recreateMotifUsingTile()
         }
     }
 
-    motif->createExtendedBoundary(tile);
+    motif->buildMotifMaps();
 #if 0 // Methinks not needed any more becaude of export data
     motif->setMotifScale(tile->getScale());
     motif->setMotifRotate(tile->getRotation());
@@ -245,7 +248,7 @@ bool DesignElement::validMotifRegularity()
    else
    {
        // irregular
-        return motif->isExplicit() ? true : false;
+       return motif->isIrregular() ? true : false;
    }
 }
 

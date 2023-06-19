@@ -1576,8 +1576,10 @@ void PatternKumiko2::build()
     TilingPtr t = tm.loadTiling(tileName,TILM_LOAD_FROM_MOSAIC);
     if (!t)
     {
-        t = make_shared<Tiling>(tileName, trans1, trans2);
-        FillData & fdata = t->getDataAccess(false).getFillDataAccess();
+        t = make_shared<Tiling>();
+        t->setName(tileName);
+        t->setTranslationVectors(trans1, trans2);
+        FillData & fdata = t->getRWData(false).getFillDataAccess();
         fdata = fd;
         TilePtr fp = make_shared<Tile>(4,0.0);
         PlacedTilePtr pfp = make_shared<PlacedTile>(fp,QTransform());
@@ -1589,12 +1591,12 @@ void PatternKumiko2::build()
     }
 
 
-    const PlacedTiles placedTiles = t->getData().getPlacedTiles();
+    const PlacedTiles & placedTiles = t->getInTiling();
     auto tile = placedTiles[0]->getTile();
 
     auto motif = make_shared<ExplicitMapMotif>(map);
     motif->setN(10); // default
-    motif->setup(tile);
+    motif->setTile(tile);
     motif->buildMotifMaps();
 
     DesignElementPtr dep = make_shared<DesignElement>(placedTiles[0]->getTile(),motif);

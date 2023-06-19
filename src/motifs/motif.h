@@ -37,10 +37,10 @@ public:
     Motif(MotifPtr other);
     virtual ~Motif();
 
-    virtual MapPtr  getMotifMap()       = 0;
-    virtual void    resetMotifMaps()    = 0;
-    virtual void    buildMotifMaps()    = 0;
-    virtual QString getMotifDesc()      = 0;
+    virtual MapPtr  getMotifMap()           = 0;
+    virtual void    resetMotifMaps()        = 0;
+    virtual void    buildMotifMaps()        = 0;
+    virtual QString getMotifDesc()          = 0;
 
     virtual DebugMapPtr  getDebugMap()              { return debugMap; }
 
@@ -57,14 +57,15 @@ public:
     void            setMotifRotate(qreal rot)       { motifRotate = rot; }
     qreal           getMotifRotate()                { return motifRotate; }
 
-    void            setMotifBoundary(QPolygonF p)   { motifBoundary = p; }
-    QPolygonF &     getMotifBoundary()              { return motifBoundary; }
+    void            buildMotifBoundary(TilePtr tile);
+    void            setMotifBoundary(QPolygonF p)   { _motifBoundary = p; }
+    QPolygonF &     getMotifBoundary()              { return _motifBoundary; }
 
-    const ExtendedBoundary& getExtendedBoundary()   { return extendedBoundary; }
-    ExtendedBoundary &      getRWExtendedBoundary() { return extendedBoundary; }
-    void            createExtendedBoundary(TilePtr tile);
+    void            buildExtendedBoundary();
+    const ExtendedBoundary& getExtendedBoundary()   { return _extendedBoundary; }
+    ExtendedBoundary &      getRWExtendedBoundary() { return _extendedBoundary; }
 
-    bool            isExplicit() const;
+    bool            isIrregular() const;
     bool            isRadial() const;
 
     void            setVersion(int ver)             { version = ver; }
@@ -83,20 +84,21 @@ protected:
     void            drawAnnotation(QPainter *painter, QTransform T);
 
     // data
-    qreal            motifRotate;           // degrees
+    int              _n;                // number of sides = number of points
+    qreal            motifRotate;       // degrees
     qreal            motifScale;
-    QPolygonF        motifBoundary;         // currently only set for radial motifs
-    ExtendedBoundary extendedBoundary;
+    TilePtr          tile;
 
     // specific data
     eMotifType       motifType;
-    int              _n;                   // number of sides = number of points
 
     // generated
-    MapPtr           motifMap;   // generated - the final scaled and rotated map
-    DebugMapPtr      debugMap;   // generated
+    MapPtr           motifMap;          // generated - the final scaled and rotated map
+    DebugMapPtr      debugMap;          // generated
 
 private:
+    QPolygonF        _motifBoundary;
+    ExtendedBoundary _extendedBoundary;
     int              version;
 };
 

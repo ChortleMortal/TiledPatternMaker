@@ -122,8 +122,8 @@ QTransform DesignElementButton::resetViewport(int index, DesignElementPtr dep, Q
 
     if(!dep)  return transform;
 
-    MotifPtr fig = dep->getMotif();
-    if (!fig) return transform;
+    MotifPtr motif = dep->getMotif();
+    if (!motif) return transform;
 
     // Get the bounding box of all the figure's vertices and all the
     // tile's vertices.  Then show that region in the viewport.
@@ -151,7 +151,7 @@ QTransform DesignElementButton::resetViewport(int index, DesignElementPtr dep, Q
     }
 
 #if 0
-    MapPtr map = fig->getFigureMap();
+    MapPtr map = motif->getFigureMap();
     for (auto& vert : map->getVertices())
     {
         QPointF p = vert->getPosition();
@@ -164,7 +164,7 @@ QTransform DesignElementButton::resetViewport(int index, DesignElementPtr dep, Q
         ymax = qMax( ymax, y );
     }
 
-    map = fig->useDebugMap();
+    map = motif->useDebugMap();
     if (map)
     {
         for (auto& vert : map->getVertices())

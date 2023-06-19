@@ -3,7 +3,7 @@
 #define REGULAR_MOTIF_EDITORS_H
 
 #include <memory>
-#include "makers/motif_maker/motif_widgets.h"
+#include "makers/motif_maker/motif_maker_widgets.h"
 
 class QCheckBox;
 
@@ -34,7 +34,7 @@ class StarEditor : public NamedMotifEditor
     Q_OBJECT
 
 public:
-    StarEditor(QString figname);
+    StarEditor(QString name);
 
     virtual void setMotif(DesignElementPtr del, bool doEmit) override;
             void setMotif(std::shared_ptr<Star>(star), bool doEmit);
@@ -57,7 +57,7 @@ class RosetteEditor : public NamedMotifEditor
     Q_OBJECT
 
 public:
-    RosetteEditor(QString figname);
+    RosetteEditor(QString name);
 
     virtual void setMotif(DesignElementPtr del, bool doEmit) override;
             void setMotif(std::shared_ptr<Rosette>(rosette), bool doEmit);
@@ -100,7 +100,7 @@ class ConnectRosetteEditor : public RosetteEditor
     Q_OBJECT
 
 public:
-    ConnectRosetteEditor(QString figname);
+    ConnectRosetteEditor(QString name);
 
     virtual void setMotif(DesignElementPtr del, bool doEmit) override;
             void setMotif(std::shared_ptr<RosetteConnect>(rosettecon), bool doEmit);
@@ -119,7 +119,7 @@ class ExtendedStarEditor : public StarEditor
     Q_OBJECT
 
 public:
-    ExtendedStarEditor(QString figname);
+    ExtendedStarEditor(QString name);
 
     virtual void setMotif(DesignElementPtr del, bool doEmit) override;
     void setMotif(std::shared_ptr<ExtendedStar>(extended), bool doEmit);
@@ -141,7 +141,7 @@ class ExtendedRosetteEditor : public RosetteEditor
     Q_OBJECT
 
 public:
-    ExtendedRosetteEditor(QString figname);
+    ExtendedRosetteEditor(QString name);
 
     virtual void setMotif(DesignElementPtr del, bool doEmit) override;
             void setMotif(std::shared_ptr<ExtendedRosette>(extended), bool doEmit);

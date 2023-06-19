@@ -23,7 +23,10 @@ void GirihMotif::buildMotifMaps()
     Q_ASSERT(tile);
     motifMap = std::make_shared<Map>("Girih Map");
     inferGirih(tile);
-    completeMap(motifMap);
+    completeMotif(tile);
+    completeMap();
+    buildMotifBoundary(tile);
+    buildExtendedBoundary();
 }
 
 //void GirihMotif::inferGirih(TilePtr tile, int starSides, qreal skip)

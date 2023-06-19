@@ -927,27 +927,27 @@ void MosaicWriter::setPrototype(QTextStream & ts, ProtoPtr pp)
         switch (motifType)
         {
         case MOTIF_TYPE_STAR:
-            setStar(ts,motifRepresentation[motifType],motif);
+            setStar(ts,currentMotifName(motifType),motif);
             break;
 
         case MOTIF_TYPE_EXTENDED_STAR:
-            setExtendedStar(ts,motifRepresentation[motifType],motif);
+            setExtendedStar(ts,currentMotifName(motifType),motif);
             break;
 
         case MOTIF_TYPE_EXTENDED_ROSETTE:
-            setExtendedRosette(ts,motifRepresentation[motifType],motif);
+            setExtendedRosette(ts,currentMotifName(motifType),motif);
             break;
 
         case MOTIF_TYPE_ROSETTE:
-            setRosette(ts,motifRepresentation[motifType],motif);
+            setRosette(ts,currentMotifName(motifType),motif);
             break;
 
         case MOTIF_TYPE_CONNECT_STAR:
-            setStarConnect(ts,motifRepresentation[motifType],motif);
+            setStarConnect(ts,currentMotifName(motifType),motif);
             break;
 
         case MOTIF_TYPE_CONNECT_ROSETTE:
-            setRosetteConnect(ts,motifRepresentation[motifType],motif);
+            setRosetteConnect(ts,currentMotifName(motifType),motif);
             break;
 
         case MOTIF_TYPE_RADIAL:
@@ -963,7 +963,7 @@ void MosaicWriter::setPrototype(QTextStream & ts, ProtoPtr pp)
         case MOTIF_TYPE_GIRIH:
         case MOTIF_TYPE_IRREGULAR_STAR:
         case MOTIF_TYPE_EXPLCIT_TILE:
-            setExplicitMotif(ts,motifRepresentation[motifType],motif);
+            setExplicitMotif(ts,currentMotifName(motifType),motif);
             break;
         }
 
@@ -977,7 +977,7 @@ void MosaicWriter::setPrototype(QTextStream & ts, ProtoPtr pp)
 
 void MosaicWriter::setTile(QTextStream & ts, TilePtr tile)
 {
-    QString str = "tile.Feature";
+    QString str = "Tile";
 
     QString qsid;
     if (hasReference(tile))
@@ -1283,7 +1283,7 @@ void MosaicWriter::setRosetteConnect(QTextStream & ts, QString name, MotifPtr mo
     }
     ts << "<" << name << qsid << ">" << endl;
 
-    setRosette(ts,QString("child class=\"app.Rosette\""),rcp,true);
+    setRosette(ts,QString("child class=\"%1\"").arg(currentMotifName(MOTIF_TYPE_ROSETTE)),rcp,true);
 
     qreal s2 = rcp->getMotifScale();
     ts << "<s>" << s2 << "</s>" << endl;
@@ -1311,7 +1311,7 @@ void MosaicWriter::setStarConnect(QTextStream & ts, QString name, MotifPtr motif
     }
     ts << "<" << name << qsid << ">" << endl;
 
-    setStar(ts,QString("child class=\"app.Star\""),scp,true);
+    setStar(ts,QString("child class=\"%1\"").arg(currentMotifName(MOTIF_TYPE_STAR)),scp,true);
 
     qreal s2 = scp->getMotifScale();
     ts << "<s>" << s2 << "</s>" << endl;

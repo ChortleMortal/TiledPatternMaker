@@ -529,8 +529,8 @@ void page_modelSettings::slot_set_repsTiling(int val)
 
     TilingPtr tiling = tilingMaker->getSelected();
     if (!tiling) return;
-
-    FillData & fdata = tiling->getDataAccess(true).getFillDataAccess();
+    
+    FillData & fdata = tiling->getRWData(true).getFillDataAccess();
     fdata = fd;
 
     view->setFillData(fd);
@@ -553,8 +553,8 @@ void page_modelSettings::singleton_changed_tile(bool checked)
 
     TilingPtr tiling = tilingMaker->getSelected();
     if (!tiling) return;
-
-    FillData & fdata = tiling->getDataAccess(true).getFillDataAccess();
+    
+    FillData & fdata = tiling->getRWData(true).getFillDataAccess();
     fdata = fd;
 
     view->setFillData(fd);
@@ -600,7 +600,7 @@ void page_modelSettings::slot_tilingSizeChanged(int val)
     if (pageBlocked()) return;
 
     TilingPtr tiling = tilingMaker->getSelected();
-    ModelSettings & ms  = tiling->getDataAccess(true).getSettingsAccess();
+    ModelSettings & ms  = tiling->getRWData(true).getSettingsAccess();
     ms.setSize(QSize(sizeW[TILING_SETTINGS]->value(),sizeH[TILING_SETTINGS]->value()));
 
     emit sig_refreshView();

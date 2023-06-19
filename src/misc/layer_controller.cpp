@@ -8,13 +8,11 @@ LayerController::LayerController(QString name) : Layer(name)
 
 LayerController::LayerController(const LayerController & other) : Layer(other)
 {
-    xf_layer = other.xf_layer;
     connectSignals();
 }
 
 LayerController::LayerController(LayerCtrlPtr other) : Layer(other)
 {
-    xf_layer = other->xf_layer;
     connectSignals();
 }
 
@@ -114,6 +112,7 @@ void LayerController:: slot_moveX(int amount)
 
     if (view->getKbdMode(KBD_MODE_XFORM_VIEW) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
     {
+        qDebug() << "move x" << getName();
         Xform xf = getCanvasXform();
         xf.setTranslateX(xf.getTranslateX() + amount);
         setCanvasXform(xf);
@@ -128,6 +127,7 @@ void LayerController::slot_moveY(int amount)
 
     if (view->getKbdMode(KBD_MODE_XFORM_VIEW) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
     {
+        qDebug() << "move y" << getName();
         Xform xf = getCanvasXform();
         xf.setTranslateY(xf.getTranslateY() + amount);
         setCanvasXform(xf);

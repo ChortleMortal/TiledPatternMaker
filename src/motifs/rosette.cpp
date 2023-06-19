@@ -1,4 +1,4 @@
-﻿////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
 //
 // Rosette.java
 //
@@ -105,8 +105,6 @@ void Rosette::buildUnitMap()
 #endif
 
     qDebug().noquote() << "Rosette::buildUnit"  << getN() << q << s << "Tr:" << Transform::toInfoString(Tr) << "rot" << getMotifRotate();
-
-    buildRadialBoundaries();
 
     QPointF center(0.0,0.0);
     QPointF tip(1.0, 0.0 );         // The point to build from

@@ -73,7 +73,7 @@ void MapEditorView::paint(QPainter *painter)
 
     // draw
     draw(painter);
-    drawCenter(painter);
+    drawLayerModelCenter(painter);
 }
 
 void MapEditorView::draw(QPainter *painter )

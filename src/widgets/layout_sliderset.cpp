@@ -300,6 +300,7 @@ void DoubleSliderSet::spinChanged(qreal val)
     slider->setValue(val * scale);
     slider->blockSignals(false);
 
+    //qDebug() << "spin - emit" << val;
     emit valueChanged(val);
 }
 
@@ -311,6 +312,7 @@ void DoubleSliderSet::sliderChanged(int val)
     spin->setValue(val2);
     spin->blockSignals(false);
 
+    //qDebug() << "slider - emit" << val2;
     emit valueChanged(val2);
 }
 

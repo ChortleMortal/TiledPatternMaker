@@ -23,7 +23,8 @@ extern class TiledPatternMaker * theApp;
 //const int currentTilingXMLVersion = 3;  // 26JUL20 excludes FillData
 //const int currentTilingXMLVersion = 4;  // 13SEP20 restore FillData
 //const int currentTilingXMLVersion = 5;  // 09NOV20 new background image positioning
-  const int currentTilingXMLVersion = 6;  // 14NOV20 <Placement> becomes <Transform>
+//const int currentTilingXMLVersion = 6;  // 14NOV20 <Placement> becomes <Transform>
+  const int currentTilingXMLVersion = 7;  // 10JUN23 <Feature> becomes <Tile>
 
 bool TilingWriter::writeTilingXML()
 {
@@ -31,7 +32,7 @@ bool TilingWriter::writeTilingXML()
 
     // the name is in the tiling
     QString name = tiling->getName();
-    QString filename = FileServices::getTilingFile(name);
+    QString filename = FileServices::getTilingXMLFile(name);
 
     if (!filename.isEmpty())
     {
@@ -120,9 +121,6 @@ void TilingWriter::writeTilingXML(QTextStream & out)
     refId    = 0;
     vertex_ids.clear();
 
-    // Regroup tiles by their translation so that we write each tile only once.
-    TileGroup fgroup = tiling->regroupTiles();
-
     out << "<?xml version=\"1.0\"?>" << endl;
     QString qs = QString("<Tiling version=\"%1\">").arg(currentTilingXMLVersion);
     out << qs << endl;
@@ -148,28 +146,31 @@ void TilingWriter::writeTilingXML(QTextStream & out)
 
     writeViewSettings(out);
 
+    // Regroup tiles by their translation so that we write each tile only once.
+    TileGroup tgroup = tiling->regroupTiles();
+
     //structure is tile then placements. so tile is not duplicated. I dont know if this adds any value
-    for (auto& apair : fgroup)
+    for (auto & apair : tgroup)
     {
-        TilePtr tile                    = apair.first;
+        TilePtr tile               = apair.first;
         PlacedTiles & placedTiles  = apair.second;
         PlacedTilePtr placedTile   = placedTiles .first();
 
         if (placedTile->isGirihShape())    // TODO verify this code works
         {
             // saved girih shapesd have a translation
-            out << "<Feature type=\"girih\" name=\"" << placedTile->getGirihShapeName() << "\">" << endl;
+            out << "<Tile type=\"girih\" name=\"" << placedTile->getGirihShapeName() << "\">" << endl;
 
         }
         else if (tile->isRegular())
         {
-            // regular features have sides and rotation
-            out << "<Feature type=\"regular\" sides=\"" << tile->numPoints() << "\" rotation=\"" << tile->getRotation() << "\" scale=\"" << tile->getScale() << "\">" << endl;
+            // regular Tiles have sides and rotation
+            out << "<Tile type=\"regular\" sides=\"" << tile->numPoints() << "\" rotation=\"" << tile->getRotation() << "\" scale=\"" << tile->getScale() << "\">" << endl;
         }
         else
         {
             // edge polys have rotation, numSides can be calculated
-            out << "<Feature type=\"edgepoly\" rotation=\"" << tile->getRotation() << "\" scale=\"" << tile->getScale() << "\">" << endl;
+            out << "<Tile type=\"edgepoly\" rotation=\"" << tile->getRotation() << "\" scale=\"" << tile->getScale() << "\">" << endl;
             EdgePoly epoly = tile->getEdgePoly();
             setEdgePoly(out,epoly);
         }
@@ -204,7 +205,7 @@ void TilingWriter::writeTilingXML(QTextStream & out)
             out << "</Placement>" << endl;
         }
 
-        out << "</Feature>" << endl;
+        out << "</Tile>" << endl;
     }
 
     out << "<Desc>" << tiling->getDescription() << "</Desc>" << endl;
@@ -231,7 +232,7 @@ void TilingWriter::writeBackgroundImage(QTextStream & out)
         QPointF center = xform.getModelCenter();
         out << "<Center>" << center.x() << "," << center.y() << "</Center>"<< endl;
 
-        if (!bkgd->perspective.isIdentity())
+        if (bkgd->useAdjusted())
         {
             out << "<Perspective>";
             out << Transform::toString(bkgd->perspective);

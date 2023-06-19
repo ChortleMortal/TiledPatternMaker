@@ -5,12 +5,7 @@
 #include <QItemSelection>
 #include "widgets/panel_page.h"
 
-class AQTableWidget;
 class SpinSet;
-class QHBoxLayout;
-class QPushButton;
-class QCheckBox;
-class QLineEdit;
 
 typedef std::shared_ptr<class StyleEditor>     StyleEditorPtr;
 typedef std::shared_ptr<class Style>           StylePtr;

@@ -1,38 +1,43 @@
+#include <QApplication>
 #include <QFrame>
 #include <QGridLayout>
-
+#include <QScreen>
 #include "panels/splitscreen.h"
 #include "panels/panel.h"
-#include "viewers/view.h"
+#include "viewers/viewcontrol.h"
 
 
 SplitScreen::SplitScreen(QWidget *parent) : QFrame(parent)
 {
     grid = nullptr;
 
-    setFrameStyle(QFrame::Box | QFrame::Plain);
-    setLineWidth(0);
+    panel = ControlPanel::getInstance();
+    view  = ViewControl::getInstance();
 
-    setContentsMargins(0,0,0,0);
+    //setFrameStyle(QFrame::Box | QFrame::Plain);
+    //setLineWidth(0);
+    //setContentsMargins(0,0,0,0);
 
-    vw = nullptr;
-    cp = nullptr;
+    addWidgets();
+
+    QScreen * sc = qApp->screenAt(panel->pos());
+    QRect  rec   = sc->geometry();
+
+    setFixedSize(  rec.width(),rec.height());
+    setMinimumSize(rec.width(),rec.height());
+    setMaximumSize(rec.width(),rec.height());
+    move(rec.topLeft());
 }
 
-void SplitScreen::addWidgets(ControlPanel *panel, View *view)
+void SplitScreen::addWidgets()
 {
-    if (grid)
-        delete grid;
-
-    cp = panel;
-    vw = view;
-
     grid = new QGridLayout;
-    grid->setSpacing(0);
+
+    //grid->setSpacing(0);
     //grid->setMargin(0);
-    grid->setContentsMargins(0,0,0,0);
-    grid->addWidget(cp,0,0,Qt::AlignTop);
-    grid->addWidget(vw,0,1,-1,-1);
+    //grid->setContentsMargins(0,0,0,0);
+    grid->addWidget(panel,0,0,Qt::AlignTop);
+    grid->addWidget(view,0,1);
 
     setLayout(grid);
 
@@ -41,11 +46,7 @@ void SplitScreen::addWidgets(ControlPanel *panel, View *view)
 
 void SplitScreen::slot_panelResized()
 {
-    if (vw)
-    {
-        grid->addWidget(vw,0,1,-1,-1);
-    }
-
+    grid->addWidget(view,0,1);
 }
 
 

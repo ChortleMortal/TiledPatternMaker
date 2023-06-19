@@ -48,7 +48,7 @@ class Interlace : public Thick
 public:
     Interlace(ProtoPtr proto);
     Interlace(StylePtr other);
-    virtual ~Interlace() override;
+    virtual ~Interlace();
 
     void    resetStyleRepresentation() override;
     void    createStyleRepresentation() override;

@@ -2,11 +2,7 @@
 #ifndef PAGE_LOG_H
 #define PAGE_LOG_H
 
-class QCheckBox;
-class QTextEdit;
-class QPushButton;
 class TextEditorWidget;
-class QLineEdit;
 
 #include <QScrollBar>
 #include <QDialog>

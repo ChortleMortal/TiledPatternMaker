@@ -16,7 +16,8 @@
 class Transform
 {
 public:
-    static QTransform rotateAroundPoint(QPointF pt, qreal t);   // radians
+    static QTransform rotateRadiansAroundPoint(QPointF pt, qreal t);
+    static QTransform rotateDegreesAroundPoint(QPointF pt, qreal t);
     static QTransform rotate(qreal t);                          // radians
     static QTransform scaleAroundPoint(QPointF pt, qreal t);
 

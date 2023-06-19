@@ -92,10 +92,12 @@ Configuration::Configuration()
     showMotifBoundary  = s.value("showMotifBoundary",true).toBool();
     showMotif          = s.value("showMotif",true).toBool();
     showExtendedBoundary= s.value("showExtendedBoundary",true).toBool();;
+    showMotifCenter     = s.value("showMotifCenter",false).toBool();;
+    showTileCenter      = s.value("showTileCenter",false).toBool();;
 
+    compare_transparent = s.value("compare_transparent",false).toBool();
     compare_popup       = s.value("compare_popup",true).toBool();
     view_popup          = s.value("view_popup",true).toBool();
-    compare_transparent = s.value("compare_transparent",false).toBool();
     view_transparent    = s.value("view_transparent",false).toBool();
     filter_transparent  = s.value("filter_transparent",false).toBool();
     display_differences = s.value("compare_differences",true).toBool();
@@ -115,6 +117,7 @@ Configuration::Configuration()
     saveTilingTest      = s.value("saveTilingTest",false).toBool();
     vCompLock           = s.value("vCompLock",true).toBool();
     vCompXML            = s.value("vCompXML",true).toBool();
+    vCompTile           = s.value("vCompTile",false).toBool();
 
     viewerType          = static_cast<eViewType>(s.value("viewerType",VIEW_MOSAIC).toUInt());
     mapEditorMode       = static_cast<eMapEditorMode>(s.value("mapEditorMode",MAPED_MODE_MAP).toUInt());
@@ -122,9 +125,9 @@ Configuration::Configuration()
 
     showCenterDebug     = s.value("showCenterDebug",false).toBool();
     showGrid            = s.value("showGrid",false).toBool();
-    showGridTilingCenter= s.value("showGridTilingCenter",false).toBool();
+    showGridLayerCenter= s.value("showGridLayerCenter",false).toBool();
     showGridModelCenter = s.value("showGridModelCenter",false).toBool();
-    showGridViewCenter  = s.value("showGridViewCenter",false).toBool();
+    showGridScreenCenter= s.value("showGridScreenCenter",false).toBool();
     gridUnits           = static_cast<eGridUnits>(s.value("gridUnits",GRID_UNITS_SCREEN).toUInt());
     gridType            = static_cast<eGridType>(s.value("gridType2",GRID_ORTHOGONAL).toUInt());
     gridTilingAlgo      = static_cast<eGridTilingAlgo>(s.value("gridTilingAlgo",REGION).toUInt());
@@ -147,6 +150,7 @@ Configuration::Configuration()
     genCycle            = static_cast<eCycleMode>(s.value("genCycle",CYCLE_SAVE_MOSAIC_BMPS).toInt());
     viewCycle           = static_cast<eCycleMode>(s.value("viewCycle",CYCLE_MOSAICS).toInt());
     fileFilter          = static_cast<eLoadType>(s.value("fileFilter",ALL_MOSAICS).toInt());
+    versionFilter       = static_cast<eLoadType>(s.value("versionFilter",ALL_MOSAICS).toInt());
     lastCompareName     = s.value("lastCompareName","").toString();
 
     worklist.load(s);
@@ -248,6 +252,9 @@ void Configuration::save()
     s.setValue("showMotifBoundary",showMotifBoundary);
     s.setValue("showMotif",showMotif);
     s.setValue("showExtendedBoundary",showExtendedBoundary);
+    s.setValue("showMotifCenter",showMotifCenter);
+    s.setValue("showTileCenter",showTileCenter);
+
     s.setValue("compare_transparent",compare_transparent);
     s.setValue("compare_popup",compare_popup);
     s.setValue("view_popup",view_popup);
@@ -274,14 +281,15 @@ void Configuration::save()
     s.setValue("saveTilingTest",saveTilingTest);
     s.setValue("vCompLock",vCompLock);
     s.setValue("vCompXML",vCompXML);
+    s.setValue("vCompTile",vCompTile);
 
     s.setValue("protoViewColors",protoViewColors);
 
     s.setValue("showCenterDebug",showCenterDebug);
     s.setValue("showGrid",showGrid);
-    s.setValue("showGridTilingCenter",showGridTilingCenter);
+    s.setValue("showGridLayerCenter",showGridLayerCenter);
     s.setValue("showGridModelCenter",showGridModelCenter);
-    s.setValue("showGridViewCenter",showGridViewCenter);
+    s.setValue("showGridScreenCenter",showGridScreenCenter);
     s.setValue("gridUnits",gridUnits);
     s.setValue("gridTilingAlgo",gridTilingAlgo);
     s.setValue("gridType2",gridType);
@@ -308,6 +316,7 @@ void Configuration::save()
     s.setValue("genCycle",genCycle);
     s.setValue("viewCycle",viewCycle);
     s.setValue("fileFilter",fileFilter);
+    s.setValue("versionFilter",versionFilter);
     s.setValue("lastCompareName",lastCompareName);
 
     worklist.save(s);

@@ -198,7 +198,7 @@ void page_save::slot_saveMosaic()
         box.setIcon(QMessageBox::Warning);
         box.setWindowTitle("Save Mosaic");
         box.setText("Thereis no Mosaic to save");
-        box.setInformativeText("Please load a tiling and then use the Protoyype Maker and the Mosaic Maker");
+        box.setInformativeText("Please load a tiling and then use the Motdif Maker and the Mosaic Maker");
         box.exec();
         return;
     }
@@ -211,7 +211,7 @@ void page_save::slot_saveMosaic()
         box.setIcon(QMessageBox::Warning);
         box.setWindowTitle("Save Mosaic");
         box.setText("Mosaic has no content");
-        box.setInformativeText("Please load a tiling and then use the Protoyype Maker and the Mosaic Maker");
+        box.setInformativeText("Please load a tiling and then use the Motif Maker and the Mosaic Maker");
         box.exec();
         return;
     }
@@ -282,7 +282,7 @@ void page_save::slot_saveTiling()
         return;
     }
 
-    if (tiling->getData().countPlacedTiles() == 0)
+    if (tiling->getInTiling().count() == 0)
     {
         QMessageBox box(panel);
         box.setIcon(QMessageBox::Warning);

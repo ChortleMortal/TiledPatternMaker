@@ -151,7 +151,7 @@
 								</Line>
 							</edges>
 						</tile.Feature>
-						<app.ConnectFigure id="30">
+						<ConnectStar id="30">
 							<child class="app.Star" id="31">
 								<boundarySides>6</boundarySides>
 								<boundaryScale>1</boundaryScale>
@@ -162,7 +162,7 @@
 								<s>1</s>
 							</child>
 							<s>1</s>
-						</app.ConnectFigure>
+						</ConnectStar>
 					</entry>
 					<entry>
 						<tile.Feature id="32">

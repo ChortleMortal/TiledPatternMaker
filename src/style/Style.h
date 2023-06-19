@@ -33,7 +33,7 @@ public:
     Style(const ProtoPtr & proto);
     Style(const StylePtr & other);
 
-    ~Style() override;
+    virtual ~Style();
 
     // Geometry data.
     ProtoPtr     getPrototype() const {return prototype;}

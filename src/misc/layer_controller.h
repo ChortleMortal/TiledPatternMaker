@@ -4,7 +4,6 @@
 
 #include <QPen>
 #include "misc/layer.h"
-#include "geometry/xform.h"
 
 typedef std::shared_ptr<class Layer> LayerPtr;
 typedef std::shared_ptr<class LayerController> LayerCtrlPtr;
@@ -17,7 +16,7 @@ public:
     LayerController(QString name);
     LayerController(const LayerController & other);
     LayerController(LayerCtrlPtr other);
-    ~LayerController();
+    virtual ~LayerController();
 
     virtual void iamaLayerController() = 0;
 
@@ -41,8 +40,6 @@ public slots:
 
 protected:
     void connectSignals();
-
-    Xform xf_layer;       // many layers don't use this
 };
 
 

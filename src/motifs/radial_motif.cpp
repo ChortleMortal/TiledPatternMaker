@@ -91,6 +91,9 @@ void RadialMotif::buildMotifMaps()
     {
         replicate();
     }
+
+    buildMotifBoundary(tile);
+    buildExtendedBoundary();
 }
 
 void RadialMotif::replicate()
@@ -119,18 +122,4 @@ void RadialMotif::setupRadialTransform()
 {
     don     = 1.0 / qreal(getN());
     Tr      = QTransform().rotateRadians( 2.0 * M_PI * don );
-}
-
-void RadialMotif::buildRadialBoundaries()
-{
-    // Build Extended boundaary
-    extendedBoundary.buildRadial();
-
-    // build figure boundary
-    if (getN() >=3)
-    {
-        Tile f(getN(),getMotifRotate(), getMotifScale());
-        QPolygonF p = f.getPolygon();
-        setMotifBoundary(p);
-    }
 }

@@ -141,6 +141,7 @@ public:
     eCycleMode      genCycle;
     eCycleMode      viewCycle;
     eLoadType       fileFilter;
+    eLoadType       versionFilter;
     eGridTilingAlgo gridTilingAlgo;
 
     int     cycleInterval;
@@ -194,6 +195,8 @@ public:
     bool    showTileBoundary;
     bool    showMotifBoundary;
     bool    showExtendedBoundary;
+    bool    showMotifCenter;
+    bool    showTileCenter;
 
     bool    tm_showAllTiles;
     bool    tm_hideTable;
@@ -215,9 +218,9 @@ public:
     bool    cs_showFrameSettings;
     bool    showCenterDebug;
     bool    showGrid;
-    bool    showGridTilingCenter;
+    bool    showGridLayerCenter;
     bool    showGridModelCenter;
-    bool    showGridViewCenter;
+    bool    showGridScreenCenter;
 
     bool    measure;
 
@@ -231,6 +234,7 @@ public:
 
     bool    vCompLock;
     bool    vCompXML;
+    bool    vCompTile;
 
     QColor  transparentColor;            // used by some menus
     QString  gridColorTiling;

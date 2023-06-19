@@ -90,7 +90,8 @@ void StyleColorFillGroup::display()
         connect(btn, &QPushButton::clicked, this, [this,row] { edit(row); });
 
         ColorSet * cset = filled->getColorGroup()->getColorSet(row);
-        AQWidget * widget = cset->createWidget();
+        QWidget * widget = cset->createWidget();
+        widget->setContentsMargins(0,0,0,0);
         table->setCellWidget(row,COL_COLORS,widget);
 
         QString astring;

@@ -20,6 +20,7 @@
 class GeoGraphics;
 
 typedef std::shared_ptr<class Tiling>       TilingPtr;
+typedef std::weak_ptr<class Tiling>        wTilingPtr;
 typedef std::shared_ptr<class TileSelector> TileSelectorPtr;
 typedef std::shared_ptr<class PlacedTile>   PlacedTilePtr;
 
@@ -36,10 +37,11 @@ class TilingMakerView : public LayerController
 
 public:
     static TilingMakerView * getInstance();
-    static void             releaseInstance();
+    static void              releaseInstance();
 
     void setMaker(TilingMaker * maker) { tilingMaker = maker;}
-    void setupView(TilingPtr tiling);
+    void setTiling(TilingPtr tiling);
+
     void clearViewData();
     void clearConstructionLines() { constructionLines.clear(); }
 
@@ -74,16 +76,10 @@ public:
     TileSelectorPtr findNearGridPoint(QPointF spt);
 
     PlacedTiles            & getAllTiles()      { return allPlacedTiles; }
-    PlacedTiles            & getInTiling()      { return in_tiling; } // DAC was hash
     EdgePoly               & getAccumW()        { return wAccum; }
     QVector<Measurement*>  & getMeasurementsS() { return wMeasurements; }
     QVector<QLineF>    & getConstructionLines() { return constructionLines; }
     QPointF                  getMousePos()      { return sMousePos; }
-
-    QLineF  getVisT1()         { return visibleT1; }
-    QLineF  getVisT2()         { return visibleT2; }
-    void    setVisT1(QLineF l) { visibleT1 = l; }
-    void    setVisT2(QLineF l) { visibleT2 = l; }
 
     bool accumHasPoint(QPointF wpt);
 
@@ -105,8 +101,6 @@ public:
 
     void setEditPlacedTile(PlacedTilePtr ptp) { editPlacedTile = ptp; }
     void resetEditPlacedTile()                { editPlacedTile.reset(); }
-
-    QString    getStatus();
 
 public slots:
     virtual void iamaLayer() override {}
@@ -147,8 +141,10 @@ protected:
     static constexpr QColor drag_color          = QColor(206,179,102,128);
     static constexpr QColor circle_color        = QColor(202,200,  0,128);
 
+private:
+    wTilingPtr              wTiling;
+
     PlacedTiles             allPlacedTiles;
-    PlacedTiles             in_tiling;
 
     EdgePoly                wAccum;             // world points
     QVector<Measurement*>   wMeasurements;
@@ -161,16 +157,13 @@ protected:
     TileSelectorPtr         tileSelector;       // Current mouse selection.
     PlacedTilePtr           editPlacedTile;     // Tile in DlgTileEdit
 
-    QLineF                  visibleT1;          // Translation vector so that the tiling tiles the plane.
-    QLineF                  visibleT2;
-
+    QPointF                 trans_origin;       // origin for drawing translation vectors
     QPointF                 sMousePos;          // screen points DAC added
     QPointF                 tileEditPoint;
     QVector<QLineF>         constructionLines;
 
     MouseActionPtr          mouse_interaction;
 
-private:
     TilingMakerView();
     ~TilingMakerView() override;
 

@@ -29,7 +29,10 @@ void IntersectMotif::buildMotifMaps()
         inferIntersectProgressive(tile);
     else
         inferIntersect(tile);
-    completeMap(motifMap);
+    completeMotif(tile);
+    completeMap();
+    buildMotifBoundary(tile);
+    buildExtendedBoundary();
 }
 
 void IntersectMotif::inferIntersect(TilePtr tile)

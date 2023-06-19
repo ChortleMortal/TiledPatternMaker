@@ -376,7 +376,7 @@ bool page_debug::verifyTiling(TilingPtr tiling)
     log->trap(true);
     qInfo().noquote() << "Verifying tiling :" << tiling->getName();
     bool rv = true;
-    for (auto placedTile : tiling->getData().getPlacedTiles())
+    for (const auto & placedTile : tiling->getInTiling())
     {
         auto tile = placedTile->getTile();
         if (!tile->isClockwise())
@@ -391,20 +391,22 @@ bool page_debug::verifyTiling(TilingPtr tiling)
     bool intrinsicOverlaps = tiling->hasIntrinsicOverlaps();
     bool tiledOverlaps     = tiling->hasTiledOverlaps();
 
-    MapPtr map = tiling->createMapFull();
- 	log->suspend(false);
-
-    bool protomap_verify   = map->verify(true);
-    bool protomap_overlaps = map->hasIntersectingEdges();
-
-    log->suspend(true);
-
-    map = tiling->createMapFull();
+    MapPtr protomap = tiling->debug_createProtoMap();
 
     log->suspend(false);
 
-    bool fillmap_verify   = map->verify(true);
-    bool fillmap_overlaps = map->hasIntersectingEdges();
+    bool protomap_verify   = protomap->verify(true);
+    bool protomap_overlaps = protomap->hasIntersectingEdges();
+
+    log->suspend(true);
+
+    MapPtr fillmap = tiling->debug_createFilledMap();
+
+    log->suspend(false);
+
+    bool fillmap_verify   = fillmap->verify(true);
+    bool fillmap_overlaps = fillmap->hasIntersectingEdges();
+
     QString name = tiling->getName();
     if (intrinsicOverlaps)
     {
@@ -454,7 +456,7 @@ void page_debug::identifyDuplicateTiles(TilingPtr tiling)
     qDebug() << "Looking for duplicates -" << tiling->getName();
     for (auto tile1 : tiling->getUniqueTiles())
     {
-        for (auto tile2 : tiling->getUniqueTiles())
+        for (const auto & tile2 : tiling->getUniqueTiles())
         {
             if (tile1 == tile2)
                 continue;
@@ -715,7 +717,7 @@ void  page_debug::slot_testB()
     Q_ASSERT(tiling);
     for (auto tile1 : tiling->getUniqueTiles())
     {
-        for (auto tile2 : tiling->getUniqueTiles())
+        for (const auto & tile2 : tiling->getUniqueTiles())
         {
             if (tile1 == tile2)
                 continue;

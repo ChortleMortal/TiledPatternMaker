@@ -145,8 +145,8 @@ set(PROJECT_SOURCES
     makers/motif_maker/motif_maker_widget.h
     makers/motif_maker/motif_selector.cpp
     makers/motif_maker/motif_selector.h
-    makers/motif_maker/motif_widgets.cpp
-    makers/motif_maker/motif_widgets.h
+    makers/motif_maker/motif_maker_widgets.cpp
+    makers/motif_maker/motif_maker_widgets.h
     makers/motif_maker/regular_motif_editors.cpp
     makers/motif_maker/regular_motif_editors.h
     makers/prototype_maker/prototype.cpp

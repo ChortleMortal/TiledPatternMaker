@@ -195,13 +195,51 @@ void Tile::setRegular(bool enb)
     }
 }
 
-bool Tile::flipRegularity()
+void Tile::flipRegularity()
 {
-    bool newreg = !regular;
-    setRegular(newreg);
-    return newreg;
+    if (regular)
+    {
+        // converting regular to irregular
+        if (conversion.converted && !conversion.wasRegular)
+        {
+            setRegular(false);
+            epoly    = conversion.ep;
+            rotation = conversion.rotate;
+            scale    = conversion.scale;
+            conversion.converted = false;
+        }
+        else
+        {
+            conversion.rotate     = rotation;
+            conversion.scale      = scale;
+            conversion.wasRegular = true;
+            conversion.converted  = true;
+            setRegular(false);
+            rotation = 0.0;
+            scale    = 1.0;
+        }
+    }
+    else
+    {
+        //converting irregular to to regular
+        if (conversion.converted && conversion.wasRegular)
+        {
+            rotation = conversion.rotate;
+            scale    = conversion.scale;
+            conversion.converted = false;
+            setRegular(true);
+        }
+        else
+        {
+            conversion.rotate     = rotation;
+            conversion.scale      = scale;
+            conversion.ep         = epoly;
+            conversion.wasRegular = false;
+            conversion.converted  = true;
+            setRegular(true);
+        }
+    }
 }
-
 
 TilePtr Tile::recreate()
 {
@@ -297,7 +335,10 @@ QString Tile::summary()
 
 QPointF Tile::getCenter()
 {
-    return epoly.calcCenter();
+    if (regular)
+        return epoly.calcCenter();
+    else
+        return epoly.calcIrregularCenter();
 }
 
 QLineF Tile::getEdge(int side)
