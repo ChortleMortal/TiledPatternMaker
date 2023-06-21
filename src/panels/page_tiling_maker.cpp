@@ -349,10 +349,10 @@ QGroupBox * page_tiling_maker::createActionsGroup()
     sides->setMaximum(128);
     sides->setValue(config->polySides);
 
-    featRot = new AQDoubleSpinBox;
-    featRot->setRange(-360.0,360.0);
-    featRot->setDecimals(6);
-    featRot->setValue(0.0);
+    tileRot = new AQDoubleSpinBox;
+    tileRot->setRange(-360.0,360.0);
+    tileRot->setDecimals(6);
+    tileRot->setValue(0.0);
 
     girihShapes = new QComboBox();
     girihShapes->addItem("Decagon", "gDecagon");
@@ -365,7 +365,7 @@ QGroupBox * page_tiling_maker::createActionsGroup()
 
     QHBoxLayout * hbox = new QHBoxLayout();
     hbox->addWidget(rlabel);
-    hbox->addWidget(featRot);
+    hbox->addWidget(tileRot);
 
     QHBoxLayout * hbox2 = new QHBoxLayout();
     hbox2->addWidget(sides);
@@ -394,7 +394,7 @@ QGroupBox * page_tiling_maker::createActionsGroup()
     connect(importBtn,      &QPushButton::clicked,            this,     &page_tiling_maker::slot_importPoly);
     connect(addGirihBtn,    &QPushButton::clicked,            this,     &page_tiling_maker::slot_addGirihShape);
     connect(sides,          SIGNAL(valueChanged(int)),  tilingMaker,    SLOT(updatePolygonSides(int)));
-    connect(featRot,        SIGNAL(valueChanged(qreal)),tilingMaker,    SLOT(updatePolygonRot(qreal)));
+    connect(tileRot,        SIGNAL(valueChanged(qreal)),tilingMaker,    SLOT(updatePolygonRot(qreal)));
     connect(addPolyBtn,       &QPushButton::clicked,    tilingMaker,    &TilingMaker::addRegularPolygon);
     connect(clearVectorsBtn,  &QPushButton::clicked,    tilingMaker,    &TilingMaker::clearTranslationVectors);
     connect(fillVectorsBtn,   &QPushButton::clicked,    tilingMaker,    &TilingMaker::slot_fillUsingTranslations);
@@ -496,6 +496,7 @@ static QString msg("<body>"
                    "<span style=\"color:rgb(255,217,217)\">included</span>  |  "
                    "<span style=\"color:rgb(217,217,255)\">excluded</span>  |  "
                    "<span style=\"color:rgb(127,255,127)\">under-mouse</span>  |  "
+                   "<span style=\"color:rgb(  0,255,  0)\">selected</span>  |  "
                    "<span style=\"color:rgb(206,179,102)\">dragging</span>"
                    "</body>");
 
@@ -1186,6 +1187,7 @@ void page_tiling_maker::slot_placedTranslateChanged(int col)
     if (pageBlocked()) return;
 
     PlacedTilePtr placedTile = getTileColumn(col);
+    tilingMaker->setCurrentPlacedTile(placedTile);
 
     auto widget = tileInfoTable->cellWidget(TI_PLACEMENT_X,col);
     auto dsp    = dynamic_cast<AQDoubleSpinBox*>(widget);

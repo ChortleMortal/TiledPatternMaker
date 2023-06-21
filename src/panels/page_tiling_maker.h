@@ -147,7 +147,7 @@ private:
     AQSpinBox    * yRepMax;
 
     AQSpinBox      * sides;
-    AQDoubleSpinBox* featRot;
+    AQDoubleSpinBox* tileRot;
     QComboBox      * girihShapes;
 
     QCheckBox     * chk_hideTiling;

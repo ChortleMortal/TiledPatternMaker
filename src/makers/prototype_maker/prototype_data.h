@@ -33,6 +33,8 @@ public:
     ProtoInfo(const ProtoInfo & other)
             { wproto = other.wproto; show[MVD_DELEM] = other.show[MVD_DELEM]; show[MVD_PROTO] = other.show[MVD_PROTO];}
 
+    ProtoInfo operator=(const ProtoInfo& other) { return ProtoInfo(other); }
+
     WeakProtoPtr wproto;
     bool         show[NUM_MVD];
 };

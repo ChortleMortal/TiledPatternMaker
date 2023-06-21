@@ -38,6 +38,7 @@ View::View()
     keyboardMode = KBD_MODE_XFORM_VIEW;
 
     setFocusPolicy(Qt::ClickFocus);
+   	setMouseTracking(true);
 }
 
 View::~View()

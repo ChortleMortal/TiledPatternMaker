@@ -434,6 +434,7 @@ QVector<QLineF> Utils::polyToLines(const QPolygonF & poly)
 
 bool Utils::pointOnLine(QLineF l, QPointF p)
 {
+    //https://stackoverflow.com/questions/7050186/find-if-point-lies-on-line-segment
     qreal AB = sqrt((l.x2()-l.x1())*(l.x2()-l.x1())+(l.y2()-l.y1())*(l.y2()-l.y1()));
     qreal AP = sqrt((p.x()-l.x1())*(p.x()-l.x1())+(p.y()-l.y1())*(p.y()-l.y1()));
     qreal PB = sqrt((l.x2()-p.x())*(l.x2()-p.x())+(l.y2()-p.y())*(l.y2()-p.y()));

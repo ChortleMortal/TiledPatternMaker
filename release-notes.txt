@@ -1,3 +1,10 @@
+Version 3.2.1
+=============
+
+Fixes
+- mouse tracking inadvertently removed from all views
+- tiling maker not selecting tiles when moved using menu table
+
 Version 3.2
 =============
 
