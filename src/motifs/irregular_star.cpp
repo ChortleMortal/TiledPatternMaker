@@ -57,7 +57,6 @@ void IrregularStar::inferStar(TilePtr tile)
     }
     else
     {
-        setVersion(1);
         inferStarV1(tile);
     }
 }

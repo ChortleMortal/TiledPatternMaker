@@ -14,23 +14,22 @@ MotifConnector::MotifConnector()
 {
 }
 
-void MotifConnector::connectMotif(RadialMotif * fig)
+void MotifConnector::connectMotif(RadialMotif * motif)
 {
-    Q_ASSERT(fig);
+    Q_ASSERT(motif);
 
-    int n     = fig->getN();
-    qreal don = fig->get_don();
+    int n     = motif->getN();
+    qreal don = motif->get_don();
 
-    DebugMapPtr dbgmap = fig->getDebugMap();
-    if (dbgmap)
-        dbgmap->wipeout();  // start again
+    DebugMapPtr dbgmap = motif->getDebugMap();
+    if (dbgmap) dbgmap->wipeout();  // start again
 
     VertexPtr tip;
     QPointF tip_pos(1.0,0.0);
 
     // Find the tip, i.e. the vertex at (1,0)
-    auto map = fig->getUnitMap();
-    for (const auto & vert : qAsConst(map->getVertices()))
+    auto map = motif->getUnitMap();
+    for (const auto & vert : map->getVertices())
     {
         QPointF pos = vert->pt;
         qDebug() << "test" << pos << tip_pos;
@@ -44,19 +43,18 @@ void MotifConnector::connectMotif(RadialMotif * fig)
     qDebug() << "tip is: " << tip->pt;
 
     // Scale the unit
-    map->scale(fig->getMotifScale());
+    map->scale(motif->getMotifScale());
 
     qDebug() << "tip is: " << tip->pt;
 
     tip_pos = tip->pt;
-    if (dbgmap)
-        dbgmap->insertDebugMark(tip_pos,"tip");
+    if (dbgmap) dbgmap->insertDebugMark(tip_pos,"tip");
 
     // Build the clipping polygon
     QPolygonF border;
     for( int idx = 0; idx < n; ++idx )
     {
-        border << fig->getArc(static_cast<qreal>(idx) * don);
+        border << motif->getArc(static_cast<qreal>(idx) * don);
     }
 
     // Locate the other vertex of the segment we're going to extend.
@@ -76,12 +74,17 @@ void MotifConnector::connectMotif(RadialMotif * fig)
         }
     }
 
+    if (!below_tip)
+    {
+        qWarning() << "MotifConnector::connectMotif - cannot make a connection";
+        return;
+    }
+
     Q_ASSERT(below_tip);
 
     // Extend and clip.
     QPointF bpos = below_tip->pt;
-    if (dbgmap)
-        dbgmap->insertDebugMark(bpos,"bpos");
+    if (dbgmap) dbgmap->insertDebugMark(bpos,"bpos");
 
     QPointF tmp  = tip_pos - bpos;
     tmp = Point::normalize(tmp);
@@ -99,8 +102,7 @@ void MotifConnector::connectMotif(RadialMotif * fig)
         if (Intersect::getIntersection(tip_pos, seg_end, poly_a, poly_b, ep))
         {
             endpoint = ep;
-            if (dbgmap)
-                dbgmap->insertDebugMark(endpoint,"endpoint");
+            if (dbgmap) dbgmap->insertDebugMark(endpoint,"endpoint");
             break;
         }
     }
@@ -108,8 +110,8 @@ void MotifConnector::connectMotif(RadialMotif * fig)
     // Now add the extended edge and its mirror image by first
     // intersecting against rotated versions.
 
-    QPointF neg_start = fig->getTransform().map( tip_pos );
-    QPointF neg_end   = fig->getTransform().map(QPointF(endpoint.x(), -endpoint.y()));
+    QPointF neg_start = motif->getTransform().map( tip_pos );
+    QPointF neg_end   = motif->getTransform().map(QPointF(endpoint.x(), -endpoint.y()));
 
     VertexPtr last_top    = tip;
     VertexPtr last_bottom = tip;
@@ -124,18 +126,16 @@ void MotifConnector::connectMotif(RadialMotif * fig)
 
         VertexPtr iv = map->insertVertex( isect);
         EdgePtr ep   = map->insertEdge( last_top, iv);
-        if (dbgmap)
-            dbgmap->insertDebugLine(ep);
+        if (dbgmap) dbgmap->insertDebugLine(ep);
         last_top = iv;
 
         iv = map->insertVertex(QPointF(isect.x(), -isect.y()));
         ep = map->insertEdge( last_bottom, iv);
-        if (dbgmap)
-            dbgmap->insertDebugLine(ep);
+        if (dbgmap) dbgmap->insertDebugLine(ep);
         last_bottom = iv;
 
-        neg_start = fig->getTransform().map( neg_start );
-        neg_end   = fig->getTransform().map( neg_end );
+        neg_start = motif->getTransform().map( neg_start );
+        neg_end   = motif->getTransform().map( neg_end );
     }
 
     VertexPtr iv = map->insertVertex( endpoint);
@@ -147,7 +147,7 @@ void MotifConnector::connectMotif(RadialMotif * fig)
     }
 
     // rotate the unit
-    map->rotate(fig->getMotifRotate());
+    map->rotate(motif->getMotifRotate());
     map->resetNeighbourMap();
     map->getNeighbourMap(); // rebuilds
     map->verify();
@@ -224,16 +224,16 @@ void MotifConnector::dumpM(QString s,  QMap<VertexPtr,VertexPtr> & movers)
 // different n-gon edges.  Chop the basic unit in half and reassemble
 // the bottom half underneath the top half to solve this problem.
 
-void MotifConnector::rotateHalf(RadialFigure * fig)
+void MotifConnector::rotateHalf(RadialMotif * motif)
 {
-    Q_ASSERT(fig);
+    Q_ASSERT(motif);
 
-    auto map = fig->getUnitMap();
+    auto map = motif->getUnitMap();
     //map->verify("rotate half",false);
 
     QMap<VertexPtr,VertexPtr> movers;
 
-    QTransform Tp = QTransform().rotateRadians(-2.0 * M_PI * fig->get_don());
+    QTransform Tp = QTransform().rotateRadians(-2.0 * M_PI * motif->get_don());
 
     for (const auto &vert : qAsConst(map->getVertices()))
     {
@@ -283,14 +283,14 @@ void MotifConnector::rotateHalf(RadialFigure * fig)
 }
 #endif
 
-void MotifConnector::scaleToUnit(RadialMotif * fig)
+void MotifConnector::scaleToUnit(RadialMotif * motif)
 {
-    Q_ASSERT(fig);
+    Q_ASSERT(motif);
 
     VertexPtr vmax;
     qreal xmax = 0.0;
 
-    auto map = fig->getUnitMap();
+    auto map = motif->getUnitMap();
     for (const auto &vert : qAsConst(map->getVertices()))
     {
         if(!vmax)

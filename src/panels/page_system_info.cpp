@@ -36,6 +36,7 @@
 #include "viewers/prototype_view.h"
 #include "viewers/viewcontrol.h"
 #include "viewers/tiling_view.h"
+#include "tiledpatternmaker.h"
 
 typedef std::shared_ptr<class Filled>       FilledPtr;
 
@@ -64,22 +65,14 @@ page_system_info::page_system_info(ControlPanel * cpanel)  : panel_page(cpanel,"
     tree = new QTreeWidget();
     tree->setColumnCount(3);
     tree->setHeaderHidden(true);
-    tree->setMinimumWidth(701);
+    tree->setFixedWidth(PANEL_RHS_WIDTH -10);
     tree->setMinimumHeight(690);
     tree->setRootIsDecorated(true);
     tree->setItemsExpandable(true);
 
-    AQVBoxLayout * box = new AQVBoxLayout();
-    box->setSizeConstraint(QLayout::SetFixedSize);
-    box->addLayout(hbox);
-    box->addSpacing(7);
-    box->addWidget(tree);
-
-    QWidget * widget = new QWidget();
-    widget->setContentsMargins(0,0,0,0);
-    widget->setLayout(box);
-
-    vbox->addWidget(widget);
+    vbox->addLayout(hbox);
+    vbox->addWidget(tree);
+    vbox->addStretch();
 
     connect(pbRefresh, &QPushButton::clicked,     this, &page_system_info::populateTree);
     connect(pbDump,    &QPushButton::clicked,     this, &page_system_info::dumpTree);
@@ -88,7 +81,7 @@ page_system_info::page_system_info(ControlPanel * cpanel)  : panel_page(cpanel,"
 }
 
 void  page_system_info::onRefresh()
-{ }
+{}
 
 void page_system_info::onEnter()
 {
@@ -101,6 +94,8 @@ void page_system_info::onEnter()
 void page_system_info::populateTree()
 {
     qDebug() << "page_system_info::populateTree() - start";
+
+    theApp->splash("Collecting system Info.....");
 
     QApplication::setOverrideCursor(Qt::WaitCursor);
 
@@ -126,6 +121,8 @@ void page_system_info::populateTree()
     tree->resizeColumnToContents(2);
 
     QApplication::restoreOverrideCursor();
+
+    theApp->removeSplash();
 
     qDebug() << "page_system_info::populateTree() - done";
 }

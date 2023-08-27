@@ -36,7 +36,7 @@ public:
     void    setDesignElement(DesignElementPtr del);
     DesignElementPtr getDesignElement();
 
-    void    paintEvent(QPaintEvent *event) Q_DECL_OVERRIDE;
+    void    paintEvent(QPaintEvent *event) override;
 
     QSizeF  getMinimumSize();
     int     getIndex() { return index; }
@@ -48,7 +48,14 @@ public:
     static QTransform resetViewport(int index, DesignElementPtr designElement, QRect frameRect);
     static QTransform resetViewport(int index, MapPtr map, QRect frameRect);
 
-    void    tally(bool select);
+    void    tally();
+    void    setTallyString(QString str) { tallyStr = str; }
+
+    void    setSelection(bool selection) { selected = selection; }
+    bool    isSelected()  { return selected; }
+
+    void    setDelegation(bool delegation) { delegated = delegation; }
+    bool    isDelegated() { return delegated; }
 
 protected:
     void   construct(DesignElementPtr del, int index);
@@ -59,10 +66,12 @@ private:
     WeakDesignElementPtr designElement;
 
     int              index;
-    bool             selected;
+    bool             selected;      // in multi more than one can be selected
+    bool             delegated;     // only one has the current delgation to match the editor
     QTransform       transform;
     static QColor    tileIinterior;
     static QColor    tileBorder;
+    QString          tallyStr;
 
 };
 

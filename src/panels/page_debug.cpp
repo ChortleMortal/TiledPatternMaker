@@ -13,7 +13,7 @@
 #include "mosaic/mosaic_manager.h"
 #include "panels/page_debug.h"
 #include "panels/page_loaders.h"
-#include "panels/panel.h"
+#include "panels/controlpanel.h"
 #include "settings/configuration.h"
 #include "style/filled.h"
 #include "tile/tile.h"
@@ -33,14 +33,14 @@ page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,"Debug Tools
     log = qtAppLog::getInstance();
 
     QGroupBox   * debug = createDebugSection();
+    QGroupBox   * maps  = createVerifyMaps();
     vbox->addWidget(debug);
-
-    //setMaximumWidth(700);
+    vbox->addWidget(maps);
+    vbox->addStretch();
 }
 
 QGroupBox * page_debug::createDebugSection()
 {
-    QGroupBox   * maps  = createVerifyMaps();
 
     QPushButton * pbVerifyTileNames     = new QPushButton("Verify Tile Names");
     QPushButton * pbReformatDesXMLBtn   = new QPushButton("Reformat All Design XML");
@@ -56,8 +56,11 @@ QGroupBox * page_debug::createDebugSection()
     QPushButton * pbExamineAllMosaics   = new QPushButton("Examine All Mosaics");
     QPushButton * pTestA                = new QPushButton("Test A");
     QPushButton * pTestB                = new QPushButton("Test B");
-    QCheckBox   * pDontPaint            = new QCheckBox("Dont't Paint");
-    QCheckBox   * pDontTrap             = new QCheckBox("Dont't Trap Log");
+    QCheckBox   * chkDontPaint          = new QCheckBox("Dont't Paint");
+    QCheckBox   * chkDontTrap           = new QCheckBox("Dont't Trap Log");
+    QCheckBox   * chkDontRefresh        = new QCheckBox("Dont't Refresh Menu");
+
+    chkDontRefresh->setChecked(!config->updatePanel);
 
     QGridLayout * grid = new QGridLayout();
     grid->setHorizontalSpacing(11);
@@ -83,15 +86,12 @@ QGroupBox * page_debug::createDebugSection()
     grid->addWidget(pTestB,                row,4);
 
     row++;
-    grid->addWidget(pDontPaint,            row,0);
-    grid->addWidget(pDontTrap,             row,1);
-
-    QVBoxLayout * vbox = new QVBoxLayout;;
-    vbox->addLayout(grid);
-    vbox->addWidget(maps);
+    grid->addWidget(chkDontRefresh,          row,0);
+    grid->addWidget(chkDontPaint,            row,1);
+    grid->addWidget(chkDontTrap,             row,2);
 
     QGroupBox * debugGroup = new QGroupBox("Debug");
-    debugGroup->setLayout(vbox);
+    debugGroup->setLayout(grid);
 
     connect(pbReformatDesXMLBtn,      &QPushButton::clicked,     this,   &page_debug::slot_reformatDesignXML);
     connect(pbReprocessDesXMLBtn,     &QPushButton::clicked,     this,   &page_debug::slot_reprocessDesignXML);
@@ -112,8 +112,9 @@ QGroupBox * page_debug::createDebugSection()
     connect(pbClearView,              &QPushButton::clicked,     view,   &ViewControl::slot_unloadView);
     connect(pbClearMakers,            &QPushButton::clicked,     view,   &ViewControl::slot_unloadAll);
 
-    connect(pDontPaint,               &QCheckBox::clicked,       view,   &ViewControl::slot_dontPaint);
-    connect(pDontTrap,                &QCheckBox::clicked,       this,   &page_debug::slot_dontTrapLog);
+    connect(chkDontPaint,             &QCheckBox::clicked,       view,   &ViewControl::slot_dontPaint);
+    connect(chkDontTrap,              &QCheckBox::clicked,       this,   &page_debug::slot_dontTrapLog);
+    connect(chkDontRefresh,           &QCheckBox::clicked,       this,   &page_debug::slot_dontRefresh);
 
     return debugGroup;
 }
@@ -586,6 +587,11 @@ void page_debug::examineMosaic(MosaicPtr mosaic)
 void page_debug::slot_dontTrapLog(bool dont)
 {
     config->dontTrapLog = dont;
+}
+
+void page_debug::slot_dontRefresh(bool enb)
+{
+    config->updatePanel = !enb;
 }
 
 void  page_debug::slot_testA()

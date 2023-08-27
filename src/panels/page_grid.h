@@ -2,7 +2,9 @@
 #ifndef PAGE_GRID_H
 #define PAGE_GRID_H
 
-#include "widgets/panel_page.h"
+#include "panels/panel_page.h"
+
+class ClickableLabel;
 
 class page_grid : public panel_page
 {
@@ -44,7 +46,7 @@ private slots:
 protected:
 
 private:
-    QGroupBox    * gridBox;
+    QGroupBox    * groupBox;
     QButtonGroup * gridUnitGroup;
     QButtonGroup * gridTypeGroup;
 

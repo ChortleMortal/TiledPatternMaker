@@ -18,7 +18,7 @@ public:
 
     void paint(QPainter *painter) override;
 
-    virtual void iamaLayer() override {}
+    eViewType iamaLayer() override { return VIEW_CENTER; }
 
 private:
     bool    huge;
@@ -28,6 +28,6 @@ private:
     QString _txt;
 };
 
-typedef std::shared_ptr<MarkX>           MarkXPtr;
+typedef std::shared_ptr<MarkX>  MarkXPtr;
 
 #endif

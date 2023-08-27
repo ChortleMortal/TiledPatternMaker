@@ -2,28 +2,42 @@
 #ifndef SPLITSCREEN_H
 #define SPLITSCREEN_H
 
-class QGridLayout;
-
 #include <QFrame>
+#include <QBoxLayout>
 
 class ControlPanel;
 class ViewControl;
+class panel_page;
 
 class SplitScreen : public QFrame
 {
+    Q_OBJECT
+
 public:
     SplitScreen(QWidget *parent = nullptr);
 
+    void        addFloater(panel_page * pp);
+    panel_page* removeFloater();
+    panel_page* getFloater() { return floater; }
+
+    void        setLHSWidth(int width);
+
+signals:
+    void        sig_adjust();
+
 public slots:
-    void slot_panelResized();
+    void        adjustMe(QSize,QSize);
+    void        adjustMe2();
 
-protected:
-    void addWidgets();
+protected:private:
+    QHBoxLayout  * hbox;
+    QVBoxLayout  * vboxL;
+    QWidget      * LHS;
 
-private:
-    QGridLayout  * grid;
     ControlPanel * panel;
     ViewControl  * view;
+    panel_page   * floater;
+    QWidget      * dummy;
 };
 
 #endif // SPLITSCREEN_H

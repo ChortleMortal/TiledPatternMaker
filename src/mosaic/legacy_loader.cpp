@@ -1386,7 +1386,7 @@ MapPtr LegacyLoader::getMapReferencedPtr(xml_node & node)\
 
 TilingPtr LegacyLoader::findTiling(QString name)
 {
-    for (auto tiling : qAsConst(_tilings))
+    for (const auto & tiling : _tilings)
     {
         if (tiling->getName() == name)
         {

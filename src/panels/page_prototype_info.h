@@ -2,10 +2,11 @@
 #ifndef PAGE_PROTOS_H
 #define PAGE_PROTOS_H
 
-#include "widgets/panel_page.h"
+#include "panels/panel_page.h"
 #include "viewers/prototype_view.h"
 #include "makers/prototype_maker/prototype_maker.h"
 
+class AQTableWidget;
 class PrototypeData;
 
 enum eDELCol

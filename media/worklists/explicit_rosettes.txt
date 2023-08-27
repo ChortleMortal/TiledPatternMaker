@@ -1,9 +1,0 @@
-Nonagon.v2
-Nonagon.v3
-Nonagon.v4
-pint.v4
-PropagationTest
-Test15.v1
-Test15.v3
-Test15
-TestBasicShapes

@@ -71,7 +71,7 @@ void PrototypeView::draw()
 
     for (const auto & proto : data->getPrototypes())
     {
-        if (!data->isHidden(MVD_PROTO,proto))
+        if (proto->hasContent() && !data->isHidden(MVD_PROTO,proto))
         {
             drawProto(proto);
         }
@@ -95,7 +95,7 @@ void PrototypeView::drawProto(ProtoPtr proto)
 
     if (mode & PROTO_DRAW_MAP)
     {
-        MapPtr map = proto->getProtoMap();
+        MapPtr map = proto->getProtoMap(false);  // cant splash because the view is already painting
         qDebug() << "PrototypeView  proto="  << proto.get() << "protoMap" << map.get();
 
         QPen pen(colors.mapColor,lineWidth);
@@ -142,7 +142,10 @@ void PrototypeView::drawProto(ProtoPtr proto)
 
     if (mode & PROTO_DRAW_PROTO)
     {
-        QPen motifPen(colors.delMotifColor,lineWidth);
+        QPen motifTile(colors.delTileColor,1,         Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+        QPen motifPen(colors.delMotifColor,lineWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+        QPen pen(colors.tileBrushColor,    1,         Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+        QPen pen2(colors.tileBrushColor,   lineWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
 
         // paint background of each DEL, then its tile edges and motifs
         for (const auto & del : proto->getDesignElements())
@@ -151,17 +154,18 @@ void PrototypeView::drawProto(ProtoPtr proto)
             auto tile   = del->getTile();
             EdgePoly ep = tile->getEdgePoly();
 
+
             auto tilePlacements = tiling->getPlacements(tile);
             for (const auto & T0 : tilePlacements)
             {
                 gg->pushAndCompose(T0);
 
-                gg->fillEdgePoly(ep, colors.tileBrushColor);
-                gg->drawEdgePoly(ep, colors.tileBrushColor, lineWidth);
+                gg->fillEdgePoly(ep,pen);
+                gg->drawEdgePoly(ep,pen2);
 
                 if (mode & PROTO_DEL_TILES)
                 {
-                    gg->drawEdgePoly(ep,colors.delTileColor, lineWidth);
+                    gg->drawEdgePoly(ep,motifTile);
                 }
 
                 if (mode & PROTO_DEL_MOTIFS)

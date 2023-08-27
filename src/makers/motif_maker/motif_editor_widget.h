@@ -28,18 +28,19 @@ class MotifEditorWidget : public QWidget
 
 public:
     MotifEditorWidget();
-
-    void  selectMotifEditor(DesignElementPtr del);
+    
+    void  delegate(DesignElementPtr del);
 
 public slots:
     void slot_motifTypeChanged(eMotifType type);
 
 protected:
-    void  selectCurrentEditor(NamedMotifEditor* fe);
-    NamedMotifEditor * getEditor(eMotifType type);
 
 private:
-    WeakDesignElementPtr            currentDesignElement;
+    void  delgate(NamedMotifEditor* fe);
+    NamedMotifEditor * getEditor(eMotifType type);
+
+    WeakDesignElementPtr            delegatedDesignElement;
 
     // Explicit figure editors.
     class ExplicitMapEditor         * explicit_map_edit;

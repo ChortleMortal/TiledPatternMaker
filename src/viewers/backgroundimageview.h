@@ -5,7 +5,7 @@
 #include <QTransform>
 #include <QGraphicsPixmapItem>
 #include "misc/layer_controller.h"
-#include "settings/frame_settings.h"
+#include "settings/view_settings.h"
 #include "geometry/edgepoly.h"
 
 class Perspective
@@ -81,7 +81,7 @@ public slots:
     virtual void slot_moveX(int amount)  override;
     virtual void slot_moveY(int amount)  override;
 
-    virtual void iamaLayer() override {}
+    virtual eViewType iamaLayer() override { return VIEW_BKGD_IMG; }
     virtual void iamaLayerController() override {}
 
 protected:
@@ -95,8 +95,6 @@ private:
 
     ViewControl   * view;
     Configuration * config;
-
-    FrameData     * frameData;
 
     Xform           xf_canvas;
 

@@ -1,0 +1,69 @@
+<?xml version="1.0"?>
+<!-- Written: Sat Jun 10 2023 10:29:05 -->
+<Tiling version="7">
+	<Name>AlhambraOld2.v1</Name>
+	<Fill singleton="t">0,0,0,0</Fill>
+	<T1>0,0</T1>
+	<T2>0,0</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="1">4.039999999999961,1.673422791987288</Point>
+			<Point id="2">1.673422791987288,4.039999999999961</Point>
+		</Line>
+		<Line>
+			<Point reference="2" />
+			<Point id="3">-1.673422791987287,4.039999999999961</Point>
+		</Line>
+		<Line>
+			<Point reference="3" />
+			<Point id="4">-4.039999999999961,1.673422791987288</Point>
+		</Line>
+		<Line>
+			<Point reference="4" />
+			<Point id="5">-4.039999999999962,-1.673422791987287</Point>
+		</Line>
+		<Line>
+			<Point reference="5" />
+			<Point id="6">-1.67342279198729,-4.03999999999996</Point>
+		</Line>
+		<Line>
+			<Point reference="6" />
+			<Point id="7">1.673422791987289,-4.03999999999996</Point>
+		</Line>
+		<Line>
+			<Point reference="7" />
+			<Point id="8">4.03999999999996,-1.673422791987291</Point>
+		</Line>
+		<Line>
+			<Point reference="8" />
+			<Point reference="1" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-0.9600000000000009</tranX>
+			<tranY>0.1333333333333329</tranY>
+		</Placement>
+	</Tile>
+	<Desc />
+	<Auth>David Casper</Auth>
+	<BackgroundImage name="IMG_1488adj.JPG">
+		<Scale>0.6561</Scale>
+		<Rot>0</Rot>
+		<X>-230</X>
+		<Y>256</Y>
+		<Center>0,0</Center>
+	</BackgroundImage>
+</Tiling>

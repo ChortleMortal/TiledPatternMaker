@@ -4,6 +4,7 @@
 
 #include <QObject>
 #include <QPen>
+#include "enums/eviewtype.h"
 #include "geometry/xform.h"
 #include "geometry/circle.h"
 
@@ -71,7 +72,7 @@ public:
     void    setLoc(QPointF loc);
     QPointF getLoc() { return pos; }
 
-    virtual void iamaLayer() = 0;
+    virtual eViewType iamaLayer() = 0;
 
     static bool sortByZlevel(LayerPtr s1, LayerPtr s2);
     static bool sortByZlevelP(Layer *  s1, Layer  * s2);

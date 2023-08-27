@@ -67,8 +67,8 @@ uint Map::cleanseAnalysis()
 {
     uint level = 0;
 
-    uint vcount = vertices.size();
-    uint ecount = edges.size();
+    int vcount = vertices.size();
+    int ecount = edges.size();
 
     joinColinearEdges();
     if (vcount != vertices.size() || ecount != edges.size() )
@@ -184,7 +184,7 @@ void Map::divideIntersectingEdges()
     qDebug().noquote() << namedSummary();
 
     UniqueQVector<QPointF> intersects;
-    for(const auto & edge : qAsConst(edges))
+    for (const auto & edge : edges)
     {
         // To check all intersections of this edge with edges in
         // the current map, we can use the optimization that
@@ -194,7 +194,7 @@ void Map::divideIntersectingEdges()
         // Casper 12DEC02 - removed optimisation and simplified code
 
         QLineF e = edge->getLine();
-        for (auto cur : qAsConst(edges))
+        for (const auto & cur : edges)
         {
             if (cur == edge)
             {

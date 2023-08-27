@@ -7,7 +7,7 @@
 #include <QApplication>
 
 #include "panels/page_log.h"
-#include "panels/panel.h"
+#include "panels/controlpanel.h"
 #include "widgets/dlg_textedit.h"
 #include "misc/qtapplog.h"
 #include "settings/configuration.h"
@@ -76,6 +76,7 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel, "Log")
 
     tew = new TextEditorWidget();
     vbox->addWidget(tew);
+    vbox->addStretch();
 
     tew->set(logText);
 

@@ -3,7 +3,7 @@
 #define COLORSET_H
 
 #include <QColor>
-#include "widgets/panel_misc.h"
+#include "panels/panel_misc.h"
 
 class ColorSet;
 

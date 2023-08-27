@@ -21,7 +21,7 @@
 #include "misc/timers.h"
 #include "settings/configuration.h"
 #include "widgets/dlg_textedit.h"
-#include "panels/panel.h"
+#include "panels/controlpanel.h"
 #include "geometry/neighbours.h"
 #include "geometry/vertex.h"
 #include "geometry/edge.h"
@@ -219,7 +219,7 @@ windup:
 
 void Map::verifyEdges()
 {
-    for (auto edge: qAsConst(edges))
+    for (const auto & edge: edges)
     {
         VertexPtr v1 = edge->v1;
         VertexPtr v2 = edge->v2;
@@ -326,7 +326,7 @@ void Map::verifyNeighbours()
     }
 
     // Make sure the vertices each have a neighbour and all neighbours are good
-    for (const auto & vertex : qAsConst(vertices))
+    for (const auto & vertex : vertices)
     {
         NeighboursPtr neighbour = getNeighbours(vertex);
         if (!neighbour->verify())

@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<!-- Written: Sat Jul 1 2023 22:59:50 -->
+<Tiling version="7">
+	<Name>Popular</Name>
+	<Fill singleton="f">-3,3,-3,3</Fill>
+	<T1>7.071067811865477,7.071067811865475</T1>
+	<T2>7.071067811865476,-7.071067811865476</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>0.5099857462495653</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="regular" sides="8" rotation="0" scale="5">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-0.1733333333333338</tranX>
+			<tranY>-0.04000000000000004</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="4" rotation="0" scale="1">
+		<Placement>
+			<scale>2.071067811865477</scale>
+			<rot>0</rot>
+			<tranX>6.897734478532143</tranX>
+			<tranY>-0.03999999999999942</tranY>
+		</Placement>
+	</Tile>
+	<Desc />
+	<Auth>David Casper</Auth>
+	<BackgroundImage name="Capture2adj.PNG">
+		<Scale>0.5099857462495653</Scale>
+		<Rot>0</Rot>
+		<X>0</X>
+		<Y>-14</Y>
+		<Center>0,0</Center>
+	</BackgroundImage>
+</Tiling>

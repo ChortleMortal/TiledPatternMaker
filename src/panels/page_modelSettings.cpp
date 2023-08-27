@@ -11,16 +11,15 @@
 #include "legacy/design.h"
 #include "legacy/design_maker.h"
 #include "makers/mosaic_maker/mosaic_maker.h"
-#include "makers/prototype_maker/prototype_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "misc/qtapplog.h"
 #include "misc/utilities.h"
 #include "makers/prototype_maker/prototype.h"
+#include "panels/panel_misc.h"
 #include "panels/page_modelSettings.h"
-#include "panels/panel.h"
+#include "panels/controlpanel.h"
 #include "settings/configuration.h"
 #include "tile/tiling.h"
-#include "tiledpatternmaker.h"
 #include "viewers/viewcontrol.h"
 #include "widgets/layout_sliderset.h"
 
@@ -87,7 +86,7 @@ page_modelSettings::page_modelSettings(ControlPanel * apanel)  : panel_page(apan
     }
 
     vbox->addLayout(pgrid);
-
+    vbox->addStretch();
     adjustSize();
 
     // connections
@@ -343,7 +342,7 @@ void  page_modelSettings::onRefresh()
     sizeH[VIEW_STATUS]->setValue(size.height());
 
     // background color
-    qc = view->getBackgroundColor();
+    qc = view->getViewBackgroundColor();
     bkColorEdit[VIEW_STATUS]->setText(qc.name(QColor::HexArgb));
     QVariant qv = qc;  // FIXME for qt6
     colcode  = qv.toString();
@@ -357,11 +356,14 @@ void  page_modelSettings::onRefresh()
     if (config->insightMode && config->cs_showFrameSettings)
     {
         // frame settings
-        viewBox->setTitle(QString("Frame Settings : %1").arg(sViewerType[config->getViewerType()]));
-        FrameData * fs  = view->frameSettings.getFrameData(config->getViewerType());
+        auto viewType = view->getMostRecent();
 
-        QSize csize = fs->getCropSize();
-        QSize zsize  = fs->getZoomSize();
+        viewBox->setTitle(QString("Frame Settings : %1").arg(sViewerType[viewType]));
+
+        auto & settings  = view->getViewSettings();
+
+        QSize csize = settings.getCropSize(viewType);
+        QSize zsize  = settings.getZoomSize(viewType);
         qDebug() << csize << zsize;
 
         sizeW[FRAME_SETTINGS]->setValue(csize.width());
@@ -369,14 +371,15 @@ void  page_modelSettings::onRefresh()
         sizeW2->setValue(zsize.width());
         sizeH2->setValue(zsize.height());
 
-        ds_left->setValue(fs->getBounds().left);
-        ds_top->setValue(fs->getBounds().top);
-        ds_width->setValue(fs->getBounds().width);
-        l_xform->setText(Transform::toInfoString(fs->getTransform()));
+        auto bounds = settings.getBounds(viewType);
+        ds_left->setValue(bounds.left);
+        ds_top->setValue(bounds.top);
+        ds_width->setValue(bounds.width);
+        l_xform->setText(Transform::toInfoString(settings.getTransform(viewType)));
 
         frameBox->show();
 
-        const QMap<eViewType,FrameData*> & fset = view->frameSettings.getFrameSettings();
+        const QMap<eViewType,ViewData*> & fset = settings.getSettingsMap();
         if (fset.size() != frameTable->rowCount())
         {
             frameTable->clearContents();
@@ -390,26 +393,27 @@ void  page_modelSettings::onRefresh()
         else
             brush  = QBrush(Qt::yellow);
 
-        QMap<eViewType,FrameData*> ::const_iterator i = fset.constBegin();
+        auto recentType = view->getMostRecent();
+        QMap<eViewType,ViewData*>::const_iterator i = fset.constBegin();
         while (i != fset.constEnd())
         {
             eViewType type = i.key();
-            const FrameData * s = i.value();
+            const ViewData * s = i.value();
             ++i;
 
-            QTableWidgetItem * item =  new QTableWidgetItem(sViewerType[type]);
-            if (type == config->getViewerType())
+            QTableWidgetItem * item =  new QTableWidgetItem(s2ViewerType[type]);
+            if (type == recentType)
                 item->setBackground(brush);
             frameTable->setItem(row,0,item);
 
             item = new QTableWidgetItem(Utils::str(s->getCropSize()));
-            if (type == config->getViewerType())
+            if (type == recentType)
                 item->setBackground(brush);
             item->setTextAlignment(Qt::AlignRight);
             frameTable->setItem(row,1,item);
 
             item = new QTableWidgetItem(Utils::str(s->getZoomSize()));
-            if (type == config->getViewerType())
+            if (type == recentType)
                 item->setBackground(brush);
             item->setTextAlignment(Qt::AlignRight);
             frameTable->setItem(row,2,item);
@@ -454,8 +458,8 @@ void page_modelSettings::cropSizeChanged(int)
     if (pageBlocked()) return;
 
     QSize sz = QSize(sizeW[FRAME_SETTINGS]->value(),sizeH[FRAME_SETTINGS]->value());
-    FrameData * data = view->frameSettings.getFrameData(config->getViewerType());
-    data->setCropSize(sz);
+    auto & settings = view->getViewSettings();
+    settings.setCropSize(view->getMostRecent(),sz);
     emit sig_refreshView();
 }
 
@@ -470,7 +474,7 @@ void page_modelSettings::viewSizeChanged(int)
 
 ModelSettings & page_modelSettings::getMosaicOrDesignSettings()
 {
-    if (config->getViewerType() == VIEW_DESIGN)
+    if (view->isEnabled(VIEW_DESIGN))
     {
         DesignMaker * designMaker = DesignMaker::getInstance();
         QVector<DesignPtr> & designs = designMaker->getActiveDesigns();
@@ -613,12 +617,8 @@ void page_modelSettings::slot_showFrameInfoChanged(bool checked)
 
 void page_modelSettings::slot_boundsChanged()
 {
-    FrameData * frd = view->frameSettings.getFrameData(config->getViewerType());
-    Bounds & bounds = frd->getBounds();
-    bounds.left  = ds_left->value();
-    bounds.top   = ds_top->value();
-    bounds.width = ds_width->value();
-    frd->calculateTransform();
+    Bounds bounds(ds_left->value(), ds_top->value(), ds_width->value());
+    view->getViewSettings().setBounds(view->getMostRecent(),bounds);
 
     QVector<Layer*> layers = view->getActiveLayers();
     for (auto layer : layers)

@@ -15,6 +15,7 @@
 #include "viewers/tiling_maker_view.h"
 #include "enums/etilingmakermousemode.h"
 #include "enums/estatemachineevent.h"
+#include "misc/unique_qvector.h"
 
 class QKeyEvent;
 
@@ -130,10 +131,15 @@ public:
 
     void placedTileDeltaX(int delta);
     void placedTileDeltaY(int delta);
+    void placedTileSetTranslate(qreal x, qreal y);
+
     void placedTileDeltaScale(int delta);
     void placedTileDeltaScale(qreal scale);
+    void placedTileSetScale(qreal scale);
+
     void placedTileDeltaRotate(int delta);
     void placedTileDeltaRotate(qreal rotate);
+    void placedTileSetRotate(qreal rotate);
 
     void uniqueTileDeltaScale(int delta);
     void uniqueTileDeltaScale(qreal scale);
@@ -170,6 +176,8 @@ public slots:
     void clearTranslationVectors();
 
     void slot_deleteTile();
+    void slot_hideTile();
+    void slot_showTile();
     void slot_includeTile();
     void slot_excludeTile();
     void slot_editTile();

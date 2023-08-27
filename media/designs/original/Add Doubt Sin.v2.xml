@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!-- Written: Wed Mar 8 2023 11:20:12 -->
-<vector id="1" version="14">
+<!-- Written: Tue Aug 15 2023 10:06:25 -->
+<vector id="1" version="15">
 	<design>
 		<size>
 			<width>1500</width>
@@ -27,7 +27,7 @@
 				<app.Prototype>
 					<string>Square Wave</string>
 					<entry>
-						<tile.Feature id="4">
+						<Tile id="4">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -49,9 +49,9 @@
 									<Point reference="6" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitRosette id="10" type="MOTIF_TYPE_INFERRED_ROSETTE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<IrregularRosette id="10" type="Irregular Rosette Motif">
+							<boundarySides>4</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
@@ -59,10 +59,10 @@
 							<s>1</s>
 							<q>0</q>
 							<rFlexPt>0.25</rFlexPt>
-						</app.ExplicitRosette>
+						</IrregularRosette>
 					</entry>
 					<entry>
-						<tile.Feature id="11">
+						<Tile id="11">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -84,9 +84,9 @@
 									<Point reference="13" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitRosette id="17" type="MOTIF_TYPE_INFERRED_ROSETTE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<IrregularRosette id="17" type="Irregular Rosette Motif">
+							<boundarySides>4</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
@@ -94,10 +94,10 @@
 							<s>1</s>
 							<q>0</q>
 							<rFlexPt>0.2199999999999998</rFlexPt>
-						</app.ExplicitRosette>
+						</IrregularRosette>
 					</entry>
 					<entry>
-						<tile.Feature id="18">
+						<Tile id="18">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -119,18 +119,18 @@
 									<Point reference="20" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitRosette id="24" type="MOTIF_TYPE_INFERRED_ROSETTE">
+						</Tile>
+						<IrregularRosette id="24" type="Irregular Rosette Motif">
 							<version>2</version>
-							<boundarySides>1</boundarySides>
+							<boundarySides>4</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>4</n>
 							<s>1</s>
 							<q>0.125</q>
-							<rFlexPt>0</rFlexPt>
-						</app.ExplicitRosette>
+							<rFlexPt>0.127</rFlexPt>
+						</IrregularRosette>
 					</entry>
 				</app.Prototype>
 			</prototype>

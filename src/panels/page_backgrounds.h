@@ -1,18 +1,22 @@
 #pragma once
-#ifndef PAGE_BACKGROUND_IMAGE_H
-#define PAGE_BACKGROUND_IMAGE_H
+#ifndef PAGE_BACKGROUNDS
+#define PAGE_BACKGROUNDD
 
-#include "widgets/panel_page.h"
+#include "panels/panel_page.h"
 #include "widgets/layout_transform.h"
 
-class page_background_image : public panel_page
+class AQPushButton;
+class AQTableWidget;
+
+class page_backgrounds : public panel_page
 {
     Q_OBJECT
 
 public:
-    page_background_image(ControlPanel *apanel);
+    page_backgrounds(ControlPanel *apanel);
 
-    QGroupBox     * createBackgroundGroup();
+    QGroupBox     * createBackgroundImageGroup();
+    QGroupBox     * createBackgroundColorGroup();
 
     void onRefresh() override;
     void onEnter() override;
@@ -27,10 +31,12 @@ private slots:
     void slot_clearBackground();
     void slot_useAdjustedClicked(bool checked);
     void slot_resetXform();
+    void slot_showImageChanged(bool checked);
 
 protected:
     void setupBackground(Xform xform);
     void displayBackgroundStatus(bool force);
+    void selectColor(int row);
 
 private:
     class BackgroundImageView * bip;
@@ -39,7 +45,9 @@ private:
     AQPushButton  * startAdjustBtn;
     QCheckBox     * chk_useAdjusted;
     QLineEdit     * imageName;
-    QGroupBox     * bkgdGroup;
+    QGroupBox     * bkgdImageGroup;
+    QGroupBox     * bkgdColorGroup;
+    AQTableWidget * viewTable;
 };
 
-#endif // PAGE_BACKGROUND_IMAGE_H
+#endif // PAGE_BACKGROUNDS

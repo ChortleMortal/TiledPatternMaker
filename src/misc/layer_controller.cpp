@@ -106,13 +106,12 @@ void LayerController::slot_rotate(int amount)
     }
 }
 
-void LayerController:: slot_moveX(int amount)
+void LayerController::slot_moveX(int amount)
 {
     if (!view->isActiveLayer(this)) return;
 
     if (view->getKbdMode(KBD_MODE_XFORM_VIEW) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
     {
-        qDebug() << "move x" << getName();
         Xform xf = getCanvasXform();
         xf.setTranslateX(xf.getTranslateX() + amount);
         setCanvasXform(xf);
@@ -127,7 +126,6 @@ void LayerController::slot_moveY(int amount)
 
     if (view->getKbdMode(KBD_MODE_XFORM_VIEW) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
     {
-        qDebug() << "move y" << getName();
         Xform xf = getCanvasXform();
         xf.setTranslateY(xf.getTranslateY() + amount);
         setCanvasXform(xf);

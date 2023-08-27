@@ -85,12 +85,12 @@ void MapEditorView::draw(QPainter *painter )
 
     // FIXME this assumes that composite and sources have the sanme source characteristics
     // A better scheme would be to put source design element references into composite data as an array
-    for (auto & layer : db->getComposableLayers())
+    for (const MapEditorLayer * layer : db->getComposableLayers())
     {
-        DesignElementPtr del = layer.wdel.lock();
+        DesignElementPtr del = layer->getDel();
         if (del)
         {
-            Q_ASSERT(db->isMotif(layer.type));
+            Q_ASSERT(db->isMotif(layer->getLayerMapType()));
             drawTile(painter,del);
             drawBoundaries(painter,del);
         }
@@ -128,7 +128,7 @@ void MapEditorView::draw(QPainter *painter )
 
     drawPoints(painter,selector->points);
 
-    for (auto sel : selector->getCurrentSelections())
+    for (const auto & sel : selector->getCurrentSelections())
     {
         eMapSelection type = sel->getType();
         if (type == MAP_EDGE && db->showMap)
@@ -193,7 +193,7 @@ void MapEditorView::draw(QPainter *painter )
 }
 
 
-void MapEditorView::drawMap(QPainter * painter, eLayer layer, QColor color)
+void MapEditorView::drawMap(QPainter * painter, eMapedLayer layer, QColor color)
 {
     if (!db->showMap)
         return;
@@ -218,7 +218,7 @@ void MapEditorView::drawMap(QPainter * painter, eLayer layer, QColor color)
     QPen pen(color,mapLineWidth);
     painter->setPen(pen);
 
-    for (auto & edge : qAsConst(map->getEdges()))
+    for (const auto & edge : map->getEdges())
     {
         QPointF v1 = t.map(edge->v1->pt);
         QPointF v2 = t.map(edge->v2->pt);
@@ -279,7 +279,7 @@ void MapEditorView::drawDCEL(QPainter * painter)
     QPen pen(Qt::green,mapLineWidth);
     painter->setPen(pen);
 
-    for (auto edge : qAsConst(dcel->getEdges()))
+    for (const auto & edge : dcel->getEdges())
     {
         QPointF v1 = viewT.map(edge->v1->pt);
         QPointF v2 = viewT.map(edge->v2->pt);
@@ -388,9 +388,6 @@ void MapEditorView::drawBoundaries(QPainter *painter,  DesignElementPtr del)
 
 void MapEditorView::drawPoints(QPainter * painter,  QVector<pointInfo> & points)
 {
-    if (!db->showPoints)
-        return;
-
     qreal radius = 1.0;
     for (auto it = points.begin(); it != points.end(); it++)
     {
@@ -398,24 +395,16 @@ void MapEditorView::drawPoints(QPainter * painter,  QVector<pointInfo> & points)
         switch (pi._type)
         {
         case PT_VERTEX:
-            if (!db->showMap) continue;
+            if (!db->showPoints) continue;
             radius = 4.0;
             painter->setPen(QPen(Qt::blue,1));
             painter->setBrush(Qt::blue);
             break;
         case PT_VERTEX_MID:
-            if (!db->showMap) continue;
             if (!db->showMidPoints) continue;
             radius = 4.0;
             painter->setPen(QPen(Qt::darkRed,1));
             painter->setBrush(Qt::darkRed);
-            break;
-        case PT_VERTEX_MID2:
-            if (!db->showMap) continue;
-            if (!db->showDirnPoints) continue;
-            radius = 4.0;
-            painter->setPen(QPen(Qt::darkGreen,1));
-            painter->setBrush(Qt::darkGreen);
             break;
         case PT_LINE:
         case PT_CIRCLE:
@@ -454,10 +443,10 @@ void MapEditorView::drawConstructionLines(QPainter * painter)
     if (!db->showConstructionLines)
         return;
 
-    QColor color = (view->getBackgroundColor() == Qt::white) ? Qt::black : Qt::white;
+    QColor color = (view->getViewBackgroundColor() == Qt::white) ? Qt::black : Qt::white;
 
     painter->setPen(QPen(color,constructionLineWidth));
-    for (auto line : qAsConst(db->constructionLines))
+    for (const auto & line : db->constructionLines)
     {
         painter->drawLine(viewT.map(line));
     }
@@ -468,7 +457,7 @@ void MapEditorView::drawConstructionCircles(QPainter * painter)
     if (!db->showConstructionLines)
         return;
 
-    for (const auto & circle : qAsConst(db->constructionCircles))
+    for (const auto & circle : db->constructionCircles)
     {
         QPointF pt = viewT.map(circle.centre);
         painter->setPen(QPen(Qt::white,constructionLineWidth));
@@ -538,7 +527,7 @@ void MapEditorView::slot_wheel_rotate(qreal delta)
 {
     if (!view->isActiveLayer(this)) return;
 
-    if (config->getViewerType() == VIEW_MAP_EDITOR && view->getKbdMode(KBD_MODE_XFORM_VIEW))
+    if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
     {
         Xform xf = getCanvasXform();
         xf.setRotateDegrees(xf.getRotateDegrees() + delta);
@@ -550,7 +539,7 @@ void MapEditorView::slot_scale(int amount)
 {
     if (!view->isActiveLayer(this)) return;
 
-    if (config->getViewerType() == VIEW_MAP_EDITOR && view->getKbdMode(KBD_MODE_XFORM_VIEW))
+    if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
     {
         Xform xf = getCanvasXform();
         xf.setScale(xf.getScale() * (1 + static_cast<qreal>(amount)/100.0));
@@ -562,7 +551,7 @@ void MapEditorView::slot_rotate(int amount)
 {
     if (!view->isActiveLayer(this)) return;
 
-    if (config->getViewerType() == VIEW_MAP_EDITOR && view->getKbdMode(KBD_MODE_XFORM_VIEW))
+    if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
     {
         Xform xf = getCanvasXform();
         xf.setRotateRadians(xf.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
@@ -574,7 +563,7 @@ void MapEditorView:: slot_moveX(int amount)
 {
     if (!view->isActiveLayer(this)) return;
 
-    if (config->getViewerType() == VIEW_MAP_EDITOR && view->getKbdMode(KBD_MODE_XFORM_VIEW))
+    if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
     {
         Xform xf = getCanvasXform();
         xf.setTranslateX(xf.getTranslateX() + amount);
@@ -586,7 +575,7 @@ void MapEditorView::slot_moveY(int amount)
 {
     if (!view->isActiveLayer(this)) return;
 
-    if (config->getViewerType() == VIEW_MAP_EDITOR && view->getKbdMode(KBD_MODE_XFORM_VIEW))
+    if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
     {
         Xform xf = getCanvasXform();
         xf.setTranslateY(xf.getTranslateY() + amount);
@@ -663,9 +652,6 @@ void MapEditorView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
 {
     if (!view->isActiveLayer(this)) return;
 
-    if (config->getViewerType() != VIEW_MAP_EDITOR)
-        return;
-
     setMousePos(spt);
 
     if (debugMouse)
@@ -694,7 +680,7 @@ void MapEditorView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
     {
         QVector<EdgePtr> qvep;
         SelectionSet set;
-        for (auto & map : db->getMapLayerMaps())
+        for (const auto & map : db->getMapLayerMaps())
         {
             selector->findEdges(map,mousePos, qvep, set);
         }
@@ -730,7 +716,7 @@ void MapEditorView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
     case MAPED_MOUSE_DELETE:
         set = selector->findSelectionsUsingDB(mousePos);
         // only delete one line
-        for (auto sel : set)
+        for (const auto & sel : set)
         {
             if (sel->getType() == MAP_EDGE)
             {
@@ -765,14 +751,14 @@ void MapEditorView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
     {
         QVector<EdgePtr> qvep;
         SelectionSet set;
-        for (auto & map : db->getMapLayerMaps())
+        for (const auto & map : db->getMapLayerMaps())
         {
             selector->findEdges(map, mousePos, qvep, set);
         }
         if (set.size())
         {
             MapPtr map = db->getEditMap();
-            for (auto & sel : set)
+            for (const auto & sel : set)
             {
                 map->splitEdge(sel->getEdge());
                 map->verify();
@@ -830,7 +816,7 @@ void MapEditorView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
     else
         qDebug() << "press end: no mouse_interaction";
 
-    if (config->getViewerType() == VIEW_MAP_EDITOR && view->getMouseMode(MOUSE_MODE_CENTER))
+    if (view->getMouseMode(MOUSE_MODE_CENTER))
     {
         setCenterScreenUnits(mousePos);
     }
@@ -839,9 +825,6 @@ void MapEditorView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
 void MapEditorView::slot_mouseDragged(QPointF spt)
 {
     if (!view->isActiveLayer(this)) return;
-
-    if (config->getViewerType() != VIEW_MAP_EDITOR)
-        return;
 
     setMousePos(spt);
 
@@ -862,7 +845,7 @@ void MapEditorView::slot_mouseTranslate(QPointF pt)
 {
     if (!view->isActiveLayer(this)) return;
 
-    if (config->getViewerType() == VIEW_MAP_EDITOR && view->getKbdMode(KBD_MODE_XFORM_VIEW))
+    if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
     {
         Xform xf = getCanvasXform();
         xf.setTranslateX(xf.getTranslateX() + pt.x());
@@ -874,9 +857,6 @@ void MapEditorView::slot_mouseTranslate(QPointF pt)
 void MapEditorView::slot_mouseMoved(QPointF spt)
 {
     if (!view->isActiveLayer(this)) return;
-
-    if (config->getViewerType() != VIEW_MAP_EDITOR)
-        return;
 
     setMousePos(spt);
 
@@ -890,9 +870,6 @@ void MapEditorView::slot_mouseMoved(QPointF spt)
 void MapEditorView::slot_mouseReleased(QPointF spt)
 {
     if (!view->isActiveLayer(this)) return;
-
-    if (config->getViewerType() != VIEW_MAP_EDITOR)
-        return;
 
     setMousePos(spt);
 
@@ -913,7 +890,7 @@ void MapEditorView::slot_wheel_scale(qreal delta)
 {
     if (!view->isActiveLayer(this)) return;
 
-    if (config->getViewerType() == VIEW_MAP_EDITOR && view->getKbdMode( KBD_MODE_XFORM_VIEW))
+    if (view->getKbdMode( KBD_MODE_XFORM_VIEW))
     {
         Xform xf = getCanvasXform();
         xf.setScale(xf.getScale() * (1.0 + delta));
@@ -938,37 +915,4 @@ void MapEditorView::setMousePos(QPointF pt)
     }
 }
 
-
-//////////////////////////////////////////////////////////////////////
-///
-///  MapEditor Layer
-///
-//////////////////////////////////////////////////////////////////////
-
-MapEditorLayer::MapEditorLayer()
-{
-    reset();
-}
-
-MapEditorLayer::MapEditorLayer(MapPtr map, eMapEditorMapType type)
-{
-    qDebug() << "Inserting map" << map->summary();
-    this->map = map;
-    this->type = type;
-}
-
-MapEditorLayer::MapEditorLayer(MapPtr map, eMapEditorMapType type, WeakDELPtr wdel)
-{
-    qDebug() << "Inserting map" << map->summary();
-    this->map = map;
-    this->type = type;
-    this->wdel = wdel;
-}
-
-void MapEditorLayer::reset()
-{
-    map.reset();
-    type = MAPED_TYPE_UNKNOWN;
-    wdel.reset();
-}
 

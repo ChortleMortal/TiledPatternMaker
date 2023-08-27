@@ -1,10 +1,10 @@
-#include "widgets/panel_page.h"
+#include "panels/panel_page.h"
 #include "legacy/design_maker.h"
 #include "makers/mosaic_maker/mosaic_maker.h"
 #include "makers/prototype_maker/prototype_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "misc/utilities.h"
-#include "panels/panel.h"
+#include "panels/controlpanel.h"
 #include "settings/configuration.h"
 #include "tiledpatternmaker.h"
 #include "viewers/viewcontrol.h"
@@ -22,23 +22,21 @@ panel_page::panel_page(ControlPanel * panel,  QString name) : QWidget()
     designMaker     = DesignMaker::getInstance();
 
     newlySelected   = false;
-    floated         = false;
     refresh         = true;
     blockCount      = 0;
 
-    vbox            = new QVBoxLayout;
+    vbox            = new QVBoxLayout();
+    setFixedWidth(PANEL_RHS_WIDTH);
     setLayout (vbox);
 
     connect(this,   &panel_page::sig_render,     theApp,   &TiledPatternMaker::slot_render,  Qt::QueuedConnection);
     connect(this,   &panel_page::sig_refreshView,view,     &ViewControl::slot_refreshView,   Qt::QueuedConnection);
-    connect(this,   &panel_page::sig_attachMe,   panel,    &ControlPanel::slot_attachWidget, Qt::QueuedConnection);
+    connect(this,   &panel_page::sig_attachMe,   panel,    &ControlPanel::slot_reattachPage,      Qt::QueuedConnection);
 }
 
 // pressing 'x' to close detached/floating page is used to re-attach
 void panel_page::closeEvent(QCloseEvent *event)
 {
-    setParent(nullptr);
-
     QSettings s;
 
     QString name = QString("panel2/%1/pagePos").arg(pageName);
@@ -53,18 +51,16 @@ void panel_page::closeEvent(QCloseEvent *event)
 
     event->setAccepted(false);
 
-    floated = false;
-
     // re-attach to stack
-    emit sig_attachMe(pageName);
+    emit sig_attachMe(this);
 }
 
 // called when closing the application
-void panel_page::closePage()
+void panel_page::closePage(bool detached)
 {
     QSettings s;
     QString name = QString("panel2/%1/floated").arg(pageName);
-    if (floated)
+    if (detached)
     {
         s.setValue(name,true);
 

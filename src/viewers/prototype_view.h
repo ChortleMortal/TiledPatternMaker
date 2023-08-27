@@ -47,7 +47,7 @@ public:
 
     ProtoViewColors & getColors()                    { return colors; }
 
-    virtual void iamaLayer() override {}
+    virtual eViewType iamaLayer() override { return VIEW_PROTOTYPE; }
     virtual void iamaLayerController() override {}
 
 public slots:

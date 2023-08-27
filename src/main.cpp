@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
         stackInfo();
 #endif
 #ifdef __linux__
-        qDebug().noquote() << "Font:" << QApplication::font().toString();
+        qInfo().noquote() << "Font:" << QApplication::font().toString();
         QFont afont = QApplication::font();
         afont.setPointSize(9);
         QApplication::setFont(afont);

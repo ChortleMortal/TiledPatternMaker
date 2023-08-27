@@ -2,6 +2,7 @@
 #include "legacy/design_maker.h"
 #include "legacy/designs.h"
 #include "legacy/patterns.h"
+#include "misc/tile_color_defs.h"
 #include "settings/configuration.h"
 #include "settings/model_settings.h"
 #include <QDebug>

@@ -70,11 +70,11 @@ SOURCES += \
     makers/mosaic_maker/style_color_fill_set.cpp \
     makers/mosaic_maker/style_editors.cpp \
     makers/motif_maker/design_element_button.cpp \
+    makers/motif_maker/design_element_selector.cpp \
     makers/motif_maker/irregular_motif_editors.cpp \
     makers/motif_maker/motif_editor_widget.cpp \
     makers/motif_maker/motif_maker_widget.cpp \
     makers/motif_maker/motif_maker_widgets.cpp \
-    makers/motif_maker/motif_selector.cpp \
     makers/motif_maker/regular_motif_editors.cpp \
     makers/prototype_maker/prototype.cpp \
     makers/prototype_maker/prototype_data.cpp \
@@ -129,7 +129,8 @@ SOURCES += \
     motifs/star.cpp \
     motifs/star_connect.cpp \
     motifs/tile_motif.cpp \
-    panels/page_background_image.cpp \
+    panels/controlpanel.cpp \
+    panels/page_backgrounds.cpp \
     panels/page_borders.cpp \
     panels/page_config.cpp \
     panels/page_crop_maker.cpp \
@@ -148,12 +149,18 @@ SOURCES += \
     panels/page_save.cpp \
     panels/page_system_info.cpp \
     panels/page_tiling_maker.cpp \
-    panels/panel.cpp \
+    panels/panel_misc.cpp \
+    panels/panel_page.cpp \
+    panels/panel_page_controller.cpp \
+    panels/panel_page_list_widget.cpp \
+    panels/panel_pages_widget.cpp \
+    panels/panel_status.cpp \
+    panels/panel_view_select.cpp \
     panels/splitscreen.cpp \
     settings/configuration.cpp \
     settings/filldata.cpp \
-    settings/frame_settings.cpp \
     settings/model_settings.cpp \
+    settings/view_settings.cpp \
     style/colored.cpp \
     style/emboss.cpp \
     style/filled.cpp \
@@ -209,15 +216,11 @@ SOURCES += \
     widgets/layout_transform.cpp \
     widgets/memory_combo.cpp \
     widgets/mouse_mode_widget.cpp \
-    widgets/panel_list_widget.cpp \
-    widgets/panel_misc.cpp \
-    widgets/panel_page.cpp \
-    widgets/panel_pagesWidget.cpp \
-    widgets/panel_status.cpp \
     widgets/rounded_polygon.cpp \
     widgets/transparentwidget.cpp \
     widgets/version_dialog.cpp \
-    widgets/versioned_list_widget.cpp
+    widgets/versioned_list_widget.cpp \
+    widgets/worklist_widget.cpp
 
 HEADERS += \
     enums/eborder.h \
@@ -279,11 +282,11 @@ HEADERS += \
     makers/mosaic_maker/style_color_fill_set.h \
     makers/mosaic_maker/style_editors.h \
     makers/motif_maker/design_element_button.h \
+    makers/motif_maker/design_element_selector.h \
     makers/motif_maker/irregular_motif_editors.h \
     makers/motif_maker/motif_editor_widget.h \
     makers/motif_maker/motif_maker_widget.h \
     makers/motif_maker/motif_maker_widgets.h \
-    makers/motif_maker/motif_selector.h \
     makers/motif_maker/regular_motif_editors.h \
     makers/prototype_maker/prototype.h \
     makers/prototype_maker/prototype_data.h \
@@ -305,6 +308,7 @@ HEADERS += \
     misc/runguard.h \
     misc/shortcuts.h \
     misc/signal_blocker.h \
+    misc/tile_color_defs.h \
     misc/timers.h \
     misc/tpm_io.h \
     misc/tpmsplash.h \
@@ -343,7 +347,8 @@ HEADERS += \
     motifs/star.h \
     motifs/star_connect.h \
     motifs/tile_motif.h \
-    panels/page_background_image.h \
+    panels/controlpanel.h \
+    panels/page_backgrounds.h \
     panels/page_borders.h \
     panels/page_config.h \
     panels/page_crop_maker.h \
@@ -362,13 +367,19 @@ HEADERS += \
     panels/page_save.h \
     panels/page_system_info.h \
     panels/page_tiling_maker.h \
-    panels/panel.h \
+    panels/panel_misc.h \
+    panels/panel_page.h \
+    panels/panel_page_controller.h \
+    panels/panel_page_list_widget.h \
+    panels/panel_pages_widget.h \
+    panels/panel_status.h \
+    panels/panel_view_select.h \
     panels/splitscreen.h \
     settings/configuration.h \
     settings/filldata.h \
-    settings/frame_settings.h \
     settings/model_settings.h \
     settings/tristate.h \
+    settings/view_settings.h \
     style/colored.h \
     style/emboss.h \
     style/filled.h \
@@ -424,30 +435,43 @@ HEADERS += \
     widgets/layout_transform.h \
     widgets/memory_combo.h \
     widgets/mouse_mode_widget.h \
-    widgets/panel_list_widget.h \
-    widgets/panel_misc.h \
-    widgets/panel_page.h \
-    widgets/panel_pagesWidget.h \
-    widgets/panel_status.h \
     widgets/rounded_polygon.h \
     widgets/transparentwidget.h \
     widgets/version_dialog.h \
-    widgets/versioned_list_widget.h
+    widgets/versioned_list_widget.h \
+    widgets/worklist_widget.h
 
 FORMS +=
 
 DISTFILES += \
-    ../etc/TIledPatternMaker.nsi \
+    ../etc/windows/aliases.txt \
+    ../etc/windows/binfo \
+    ../etc/windows/branches \
+    ../etc/windows/bstate \
+    ../etc/windows/build-install.md \
+    ../etc/windows/build-install-qt6.md \
+    ../etc/windows/configure-local.bat \
+    ../etc/windows/qt5.bat \
+    ../etc/windows/qt6.bat \
+    ../etc/linux/aliases.txt \
+    ../etc/linux/binfo \
+    ../etc/linux/branches \
+    ../etc/linux/bstate \
+    ../etc/linux/build-install.md \
+    ../etc/linux/build-install-qt6.md \
+    ../etc/linux/configure-local \
+    ../etc/TiledPatternMaker.nsi \
     ../etc/models/Components.qmodel \
-    ../etc/models/Designs.qmodel \
-    ../etc/models/Viewers.qmodel \
     ../etc/models/designeditor.qmodel \
+    ../etc/models/Designs.qmodel \
     ../etc/models/figure_editors.qmodel \
     ../etc/models/figures.qmodel \
     ../etc/models/makers.qmodel \
+    ../etc/models/makers2.qmodel \
     ../etc/models/mosaic.qmodel \
     ../etc/models/shapes.qmodel \
     ../etc/models/styles.qmodel \
+    ../etc/models/Viewers.qmodel \
     ../release-notes.txt
 
 RESOURCES += tpm.qrc

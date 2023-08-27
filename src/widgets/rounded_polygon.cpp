@@ -1,5 +1,6 @@
 #include "widgets/rounded_polygon.h"
 #include <QDebug>
+#include <math.h>
 
 //    Taken from:
 // https://www.toptal.com/c-plus-plus/rounded-corners-bezier-curves-qpainter

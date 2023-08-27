@@ -48,13 +48,13 @@ public:
     void drawRect( QPointF topleft, qreal width, qreal height, QPen pen, QBrush brush);
     void drawRect( QRectF, QPen pen, QBrush brush);
 
-    void fillPolygon(const QPolygonF & pgon, QColor color);
-    void drawPolygon(const QPolygonF & pgon, QPen pen);
+    void fillPolygon(const QPolygonF & pgon, const QPen &pen);
+    void drawPolygon(const QPolygonF & pgon, QPen & pen);
 
-    void fillEdgePoly(const EdgePoly & epoly, QColor color);
-    void drawEdgePoly(const EdgePoly & epoly, QColor color, int width);
+    void fillEdgePoly(const EdgePoly & epoly, QPen & pen);
+    void drawEdgePoly(const EdgePoly & epoly, QPen & pen);
 
-    void fillPath(QPainterPath & pp, QColor color);
+    void fillPath(QPainterPath pp, QPen &pen) const;      // not a reference, not const
 
     void drawArrow( QPointF from, QPointF to, qreal length, qreal half_width, QColor color);
     void drawLineArrow(QLineF line, QPen pen);

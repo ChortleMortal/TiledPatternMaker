@@ -39,9 +39,7 @@ BackgroundImageView::BackgroundImageView() : LayerController("Bkgd Image")
     config   = Configuration::getInstance();
     bkgdName = "Bkgd Image";
 
-    frameData = view->frameSettings.getFrameData(VIEW_BKGD_IMG);
-
-    setZValue(-20);
+    setZValue(BKGD_IMG_ZLEVEL);
 
     _loaded     = false;
 }
@@ -69,13 +67,16 @@ void BackgroundImageView::paint(QPainter *painter)
     }
 
     painter->save();
+    
+    auto & settings = view->getViewSettings();
 
-    QSizeF sz      = view->frameSettings.getZoomSize(config->getViewerType());
+    // FIXME - should this be mostRecentView or this (VIEW_BKGD_IMG)
+    QSizeF sz      = settings.getZoomSize(VIEW_BKGD_IMG);
     QPointF view_center(qreal(sz.width())/2.0, qreal(sz.height())/2.0);
     QPointF delta  = view_center - pixmap.rect().center();
 
     QTransform t1 = QTransform::fromTranslate(delta.x(),delta.y());
-    QTransform t2 = frameData->getDeltaTransform() * frameData->getTransform();
+    QTransform t2 = settings.getDeltaTransform(VIEW_BKGD_IMG) * settings.getTransform(VIEW_BKGD_IMG);
     QTransform t3 = getCanvasTransform();
     QTransform t4 =  t1 * t2 * t3;
     //qDebug().noquote() << "t4" << Transform::toInfoString(t4);

@@ -22,12 +22,7 @@
 
 PrototypeData::PrototypeData()
 {
-    motifMakerWidget = nullptr;
-}
-
-void PrototypeData::setWidget(MotifMakerWidget * widget)
-{
-    motifMakerWidget = widget;
+    _motifMakerWidget = nullptr;
 }
 
 void PrototypeData::erase()
@@ -45,7 +40,7 @@ void PrototypeData::setPrototypes(QVector<ProtoPtr> & protos)
 
     QVector<DesignElementPtr> dels;
 
-    for (auto & proto : protos)
+    for (const auto & proto : protos)
     {
         ProtoInfo info(proto,first,first);
         prototypes.push_back(info);
@@ -59,7 +54,7 @@ void PrototypeData::setPrototypes(QVector<ProtoPtr> & protos)
 
     designElements.clear();
     first = true;
-    for (auto & del : dels)
+    for (const auto & del : dels)
     {
         DelInfo info(del,first,first);
         designElements.push_back(info);
@@ -68,11 +63,6 @@ void PrototypeData::setPrototypes(QVector<ProtoPtr> & protos)
             selectedDesignElement = del;
             first = false;
         }
-    }
-
-    if (motifMakerWidget)
-    {
-        motifMakerWidget->selectPrototype(getSelectedPrototype());
     }
 }
 
@@ -112,18 +102,9 @@ void PrototypeData::select(eMVDType type, ProtoPtr proto, bool multi, bool hidde
         return;
     }
 
-    if (motifMakerWidget)
-    {
-        motifMakerWidget->selectPrototype(proto);
-    }
-
     auto del = getSelectedDEL();
     if (proto->contains(del))
     {
-        if (motifMakerWidget)
-        {
-            motifMakerWidget->selectDEL(del);
-        }
         ViewControl * view = ViewControl::getInstance();
         view->update();
     }
@@ -168,20 +149,30 @@ void PrototypeData::select(eMVDType type, DesignElementPtr designElement, bool m
         DelInfo info(designElement,true,true);
         designElements.push_back(info);
     }
-
-    if (motifMakerWidget)
-    {
-        motifMakerWidget->selectDEL(designElement);
-    }
-
-    ViewControl * view = ViewControl::getInstance();
-    view->update();
 }
+
+void PrototypeData::deselect(eMVDType type, DesignElementPtr designElement, bool multi, bool hidden)
+{
+    Q_ASSERT(multi);
+
+    selectedDesignElement.reset();
+
+    for (auto & info : designElements)
+    {
+        auto del = info.wdel.lock();
+        if (del == designElement)
+        {
+            info.show[type] = hidden;
+            break;
+        }
+    }
+}
+
 
 QVector<DesignElementPtr> PrototypeData::getDELs()
 {
     QVector<DesignElementPtr> vec;
-    for (auto & info : designElements)
+    for (const auto & info : designElements)
     {
         auto del =  info.wdel.lock();
         if (del)
@@ -195,7 +186,7 @@ QVector<DesignElementPtr> PrototypeData::getDELs()
 QVector<DesignElementPtr> PrototypeData::getSelectedDELs(eMVDType type)
 {
     QVector<DesignElementPtr> vec;
-    for (auto & info : designElements)
+    for (const auto & info : designElements)
     {
         if (info.show[type])
         {
@@ -212,7 +203,7 @@ QVector<DesignElementPtr> PrototypeData::getSelectedDELs(eMVDType type)
 QVector<ProtoPtr> PrototypeData::getPrototypes()
 {
     QVector<ProtoPtr> vec;
-    for (auto & info : prototypes)
+    for (const auto & info : prototypes)
     {
         auto proto = info.wproto.lock();
         if (proto)
@@ -226,7 +217,7 @@ QVector<ProtoPtr> PrototypeData::getPrototypes()
 QVector<ProtoPtr> PrototypeData::getSelectedPrototypes(eMVDType type)
 {
     QVector<ProtoPtr> vec;
-    for (auto & info : prototypes)
+    for (const auto & info : prototypes)
     {
         if (info.show[type])
         {
@@ -257,7 +248,7 @@ void PrototypeData::remove(TilingPtr tiling)
 {
     QVector<ProtoPtr> forRemoval;
 
-    for (auto & prototype : getPrototypes())
+    for (const auto & prototype : getPrototypes())
     {
         if (prototype->getTiling() == tiling)
         {
@@ -265,7 +256,7 @@ void PrototypeData::remove(TilingPtr tiling)
         }
     }
 
-    for (auto & prototype : forRemoval)
+    for (const auto & prototype : forRemoval)
     {
         remove(prototype);
         if (getSelectedPrototype() == prototype)
@@ -284,7 +275,7 @@ void PrototypeData::add(ProtoPtr proto)
 void PrototypeData::remove(ProtoPtr proto)
 {
     QVector<ProtoInfo> cleaned;
-    for (auto & info : prototypes)
+    for (const auto & info : prototypes)
     {
         auto aproto = info.wproto.lock();
         if (aproto != proto)
@@ -297,7 +288,7 @@ void PrototypeData::remove(ProtoPtr proto)
 
 DesignElementPtr PrototypeData::getDesignElement(TilePtr tile)
 {
-    for (auto & info : designElements)
+    for (const auto & info : designElements)
     {
         auto del  = info.wdel.lock();
         if (del)
@@ -338,7 +329,7 @@ void PrototypeData::hide(eMVDType type, ProtoPtr proto, bool hide)
 
 bool PrototypeData::isHidden(eMVDType type, ProtoPtr proto)
 {
-    for (auto & info : prototypes)
+    for (const auto & info : prototypes)
     {
         auto aproto = info.wproto.lock();
         if (aproto && aproto == proto)
@@ -351,7 +342,7 @@ bool PrototypeData::isHidden(eMVDType type, ProtoPtr proto)
 
 bool PrototypeData::isHidden(eMVDType type, MotifPtr motif)
 {
-    for (auto & info : designElements)
+    for (const auto & info : designElements)
     {
         auto del  = info.wdel.lock();
         if (del && del->getMotif() == motif)
@@ -364,7 +355,7 @@ bool PrototypeData::isHidden(eMVDType type, MotifPtr motif)
 
 bool PrototypeData::isHidden(eMVDType type, DesignElementPtr dep)
 {
-    for (auto & info : designElements)
+    for (const auto & info : designElements)
     {
         auto del  = info.wdel.lock();
         if (del && del == dep)
@@ -377,7 +368,7 @@ bool PrototypeData::isHidden(eMVDType type, DesignElementPtr dep)
 
 ProtoPtr PrototypeData::getPrototype(TilingPtr tiling)
 {
-    auto protos = getPrototypes();
+    const auto & protos = getPrototypes();
     for (auto & proto : protos)
     {
         if (proto->getTiling()->getName() == tiling->getName())

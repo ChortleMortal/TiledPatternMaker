@@ -8,7 +8,7 @@
 #include "dlg_textedit.h"
 #include "settings/configuration.h"
 #include "viewers/viewcontrol.h"
-#include "widgets/panel_misc.h"
+#include "panels/panel_misc.h"
 #include "misc/version.h"
 
 TextEditorWidget::TextEditorWidget()

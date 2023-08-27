@@ -2,13 +2,14 @@
 #include <QDebug>
 #include <QElapsedTimer>
 #include <QApplication>
+#include <math.h>
 
 #include "geometry/dcel.h"
 #include "geometry/edge.h"
 #include "geometry/vertex.h"
 #include "geometry/neighbours.h"
 #include "misc/tpm_io.h"
-#include "panels/panel.h"
+
 
 using namespace std;
 
@@ -197,7 +198,7 @@ void DCEL::print_ordered_edges()
 
     deb << endl << "********** Ordered Edges  **********" << endl;
     deb << "Half-edge\tTwin\t\tIncident_Face Next\tPrevious" << endl;
-    for (auto edge : qAsConst(edges))
+    for (const auto & edge : edges)
     {
         print_edge(edge,deb);
         print_edge(edge->twin.lock(),deb);
@@ -378,7 +379,7 @@ void DCEL::buildDCEL()
     // fill half edges
     QVector<EdgePtr> additions(edges.size());
     int i=0;
-    for (auto e : edges)
+    for (const auto & e : edges)
     {
         // the map may be used to create many dcels
         e->dvisited = false;
@@ -646,7 +647,7 @@ FacePtr DCEL::check_if_inside(const QVector<VertexPtr> & verts)
 
 FacePtr DCEL::findOuterFace()
 {
-    for (auto face : qAsConst(faces))
+    for (const auto & face : faces)
     {
         if (face->outer)
         {

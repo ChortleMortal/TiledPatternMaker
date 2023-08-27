@@ -13,7 +13,6 @@
 #include "makers/tiling_maker/tiling_maker.h"
 #include "motifs/motif.h"
 #include "motifs/irregular_motif.h"
-#include "geometry/crop.h"
 #include "geometry/dcel.h"
 #include "geometry/edge.h"
 #include "geometry/map.h"
@@ -22,7 +21,7 @@
 #include "mosaic/design_element.h"
 #include "makers/prototype_maker/prototype.h"
 #include "mosaic/mosaic.h"
-#include "panels/panel.h"
+#include "panels/controlpanel.h"
 #include "settings/configuration.h"
 #include "style/style.h"
 #include "tile/tile.h"
@@ -88,7 +87,7 @@ bool MapEditor::loadMosaicPrototype()
         box.setText("No mosaic found");
         box.exec();
         return false;
-     }
+    }
 
     MapPtr map = mosaic->getPrototypeMap();
     if (!map)
@@ -98,16 +97,17 @@ bool MapEditor::loadMosaicPrototype()
         box.setText("Mosaic has no content");
         box.exec();
         return false;
-     }
-
-    db->insertLayer(MapEditorLayer(map,MAPED_LOADED_FROM_MOSAIC));
-
-    if (config->mapEditorMode == MAPED_MODE_DCEL)
-    {
-        if (!useExistingDCEL(map))
-            createLocalDCEL(map);
     }
 
+    auto type = db->insertLayer(map,MAPED_LOADED_FROM_MOSAIC);
+    if (type != COMPOSITE)
+    {
+        if (config->mapEditorMode == MAPED_MODE_DCEL)
+        {
+            if (!useExistingDCEL(map))
+                createLocalDCEL(map);
+        }
+    }
     forceRedraw();
 
     return true;
@@ -137,14 +137,17 @@ void  MapEditor::loadMotifPrototype()
 
     db->setMotfiPrototype(proto);
 
-    MapPtr map  = proto->getProtoMap();
-    db->insertLayer(MapEditorLayer(map,MAPED_LOADED_FROM_MOTIF_PROTOTYPE));
+    MapPtr map = proto->getProtoMap();
+    auto type  = db->insertLayer(map,MAPED_LOADED_FROM_MOTIF_PROTOTYPE);
 
-    if (config->mapEditorMode == MAPED_MODE_DCEL)
+    if (type != COMPOSITE)
     {
-        if (!useExistingDCEL(map))
-            createLocalDCEL(map);    }
-
+        if (config->mapEditorMode == MAPED_MODE_DCEL)
+        {
+            if (!useExistingDCEL(map))
+                createLocalDCEL(map);
+        }
+    }
     forceRedraw();
 }
 
@@ -164,7 +167,7 @@ bool  MapEditor::loadSelectedMotifs()
     db->setMotfiPrototype(proto);
 
     auto dels = data->getSelectedDELs(MVD_DELEM);
-    if (dels.size() ==0)
+    if (dels.size() == 0)
     {
         QMessageBox box(ControlPanel::getInstance());
         box.setIcon(QMessageBox::Warning);
@@ -185,15 +188,20 @@ bool  MapEditor::loadSelectedMotifs()
             QTransform placement = meView->getPlacement(tile);
             MapPtr tmap = map->getTransformed(placement);
 
-            db->insertLayer(MapEditorLayer(tmap,MAPED_LOADED_FROM_MOTIF,del));
-
-            if (config->mapEditorMode == MAPED_MODE_DCEL)
+            auto type = db->insertLayer(tmap,MAPED_LOADED_FROM_MOTIF);
+            if (type != COMPOSITE)
             {
-                if (!useExistingDCEL(map))
-                    createLocalDCEL(map);            }
+                MapEditorLayer &layer = db->getLayer(type);
+                layer.setDel(del);
+
+                if (config->mapEditorMode == MAPED_MODE_DCEL)
+                {
+                    if (!useExistingDCEL(map))
+                        createLocalDCEL(map);
+                }
+            }
         }
     }
-
     forceRedraw();
     return true;
 }
@@ -215,12 +223,17 @@ void MapEditor::loadTilingUnit()
     MapPtr map       = tp->createMapSingle();
     db->createdTilingMap = map;
     db->currentTilingMap = map->copy();
-    db->insertLayer(MapEditorLayer(map,MAPED_LOADED_FROM_TILING_UNIT));
 
-    if (config->mapEditorMode == MAPED_MODE_DCEL)
+    auto type = db->insertLayer(map,MAPED_LOADED_FROM_TILING_UNIT);
+
+    if (type != COMPOSITE)
     {
-        if (!useExistingDCEL(map))
-            createLocalDCEL(map);    }
+        if (config->mapEditorMode == MAPED_MODE_DCEL)
+        {
+            if (!useExistingDCEL(map))
+                createLocalDCEL(map);
+        }
+    }
 
     forceRedraw();
 }
@@ -241,25 +254,33 @@ void  MapEditor::loadTilingRepeated()
 
     MapPtr map           = tp->createMapFullSimple();
     db->currentTilingMap = map;
-    db->insertLayer(MapEditorLayer(map,MAPED_LOADED_FROM_TILING_REPEATED));
 
-    if (config->mapEditorMode == MAPED_MODE_DCEL)
+    auto type = db->insertLayer(map,MAPED_LOADED_FROM_TILING_REPEATED);
+
+    if (type != COMPOSITE)
     {
-        if (!useExistingDCEL(map))
-            createLocalDCEL(map);    }
+        if (config->mapEditorMode == MAPED_MODE_DCEL)
+        {
+            if (!useExistingDCEL(map))
+                createLocalDCEL(map);
+        }
+    }
 
     forceRedraw();
 }
 
-void  MapEditor::loadFromMap(MapPtr map, eMapEditorMapType type)
+void  MapEditor::loadFromMap(MapPtr map, eMapEditorMapType mtype)
 {
-    db->insertLayer(MapEditorLayer(map,type));
+    auto type = db->insertLayer(map,mtype);
 
-    if (config->mapEditorMode == MAPED_MODE_DCEL)
+    if (type != COMPOSITE)
     {
-        if (!useExistingDCEL(map))
-            createLocalDCEL(map);    }
-
+        if (config->mapEditorMode == MAPED_MODE_DCEL)
+        {
+            if (!useExistingDCEL(map))
+                createLocalDCEL(map);
+        }
+    }
     emit meView->sig_refreshView(); // because it can load a background
 }
 
@@ -294,7 +315,7 @@ bool MapEditor::pushToMosaic(MapEditorLayer & layer)
     qDebug().noquote() << "MapEditor::pushToMosaic" << Transform::toInfoString(meView->getLayerTransform());
     QVector<ProtoPtr> protos;
 
-    if (layer.type == MAPED_LOADED_FROM_MOTIF_PROTOTYPE)
+    if (layer.getLayerMapType() == MAPED_LOADED_FROM_MOTIF_PROTOTYPE)
     {
         auto proto = db->getMotifPrototype();
         if (proto)
@@ -323,7 +344,7 @@ bool MapEditor::pushToMosaic(MapEditorLayer & layer)
             }
 
             const StyleSet & sset = mosaic->getStyleSet();
-            for (auto style : sset)
+            for (auto & style : sset)
             {
                 style->resetStyleRepresentation();
             }
@@ -371,6 +392,8 @@ bool MapEditor::pushToMosaic(MapEditorLayer & layer)
 
 bool MapEditor::convertToMotif(MapPtr map)
 {
+    qDebug().noquote() << "MapEditor::convertToMotif" << Transform::toInfoString(meView->getLayerTransform());
+
     eMapEditorMapType mtype = db->getMapType(map);
     if (!db->isMotif(mtype) && mtype != MAPED_TYPE_CREATED)
         return false;
@@ -386,11 +409,14 @@ bool MapEditor::convertToMotif(MapPtr map)
     auto motif = make_shared<ExplicitMapMotif>(map);
     del->setMotif(motif);
 
+    qDebug().noquote() << "MapEditor::convertToMotif - end" << Transform::toInfoString(meView->getLayerTransform());
     return true;
 }
 
 bool MapEditor::convertToTiling(MapPtr map, bool outer)
 {
+    qDebug().noquote() << "MapEditor::convertToTiling" << Transform::toInfoString(meView->getLayerTransform());
+
     eMapEditorMapType mapType = db->getMapType(map);
 
     // if a tiling map has been modified, this backs out the map, leaving just the additions.
@@ -427,9 +453,10 @@ bool MapEditor::convertToTiling(MapPtr map, bool outer)
 
     // aligns the tiling maker to the map editor
     const Xform & xf = meView->getCanvasXform();
-    view->frameSettings.setModelAlignment(M_ALIGN_TILING);
+    view->getViewSettings().setModelAlignment(M_ALIGN_TILING);
     TilingMakerView::getInstance()->setCanvasXform(xf);
 
+    qDebug().noquote() << "MapEditor::convertToTiling - end" << Transform::toInfoString(meView->getLayerTransform());
     return true;
 }
 
@@ -564,7 +591,7 @@ void MapEditor::forceRedraw()
 
 bool MapEditor::procKeyEvent(QKeyEvent * k)
 {
-    if (config->getViewerType() != VIEW_MAP_EDITOR)
+    if (!view->isEnabled(VIEW_MAP_EDITOR))
     {
         return false;
     }

@@ -76,9 +76,9 @@ void Outline::draw(GeoGraphics *gg)
     for (auto & bae : pts4)
     {
         QColor color  = colors.getNextColor().color;
-
+        QPen pen(color, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
         QPainterPath path = bae.getPainterPath();
-        gg->fillPath(path,color);
+        gg->fillPath(path,pen);
 
         if (drawOutline != OUTLINE_NONE)
         {

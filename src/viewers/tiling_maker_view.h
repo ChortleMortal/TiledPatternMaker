@@ -14,7 +14,6 @@
 
 #include "misc/layer_controller.h"
 #include "geometry/edgepoly.h"
-#include "misc/unique_qvector.h"
 #include "makers/tiling_maker/tiling_mouseactions.h"
 
 class GeoGraphics;
@@ -25,7 +24,6 @@ typedef std::shared_ptr<class TileSelector> TileSelectorPtr;
 typedef std::shared_ptr<class PlacedTile>   PlacedTilePtr;
 
 typedef QVector<PlacedTilePtr>              PlacedTiles;
-typedef UniqueQVector<PlacedTilePtr>        UPlacedTiles;
 
 Q_DECLARE_METATYPE(PlacedTilePtr)
 
@@ -103,7 +101,7 @@ public:
     void resetEditPlacedTile()                { editPlacedTile.reset(); }
 
 public slots:
-    virtual void iamaLayer() override {}
+    virtual eViewType iamaLayer() override { return VIEW_TILING_MAKER; }
     virtual void iamaLayerController() override {}
 
     virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
@@ -130,6 +128,9 @@ protected:
     void drawTiling(GeoGraphics * g2d);
 
     void determineOverlapsAndTouching();
+    bool isColinearAndTouching(const EdgePoly & ep1, const EdgePoly & ep2, qreal tolerance = Loose::NEAR_TOL);
+    bool isColinearAndTouching(const QLineF & l1, const QLineF & l2, qreal tolerance = Loose::NEAR_TOL);
+    bool isColinear(const QLineF & l1, const QLineF & l2, qreal tolerance);
 
     static constexpr QColor normal_color        = QColor(217,217,255,128);  // pale lilac
     static constexpr QColor in_tiling_color     = QColor(255,217,217,128);  // pink
@@ -151,12 +152,10 @@ private:
 
     bool                    _hideTiling;
 
-    UPlacedTiles            overlapping;        // calculated DAC was hash
-    UPlacedTiles            touching;           // calculated
-
     TileSelectorPtr         tileSelector;       // Current mouse selection.
     PlacedTilePtr           editPlacedTile;     // Tile in DlgTileEdit
 
+    QColor                  lineColor;
     QPointF                 trans_origin;       // origin for drawing translation vectors
     QPointF                 sMousePos;          // screen points DAC added
     QPointF                 tileEditPoint;

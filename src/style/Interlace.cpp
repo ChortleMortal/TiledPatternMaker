@@ -77,6 +77,7 @@ Interlace:: ~Interlace()
     threads.clear();
 #endif
 }
+
 void Interlace::draw(GeoGraphics * gg)
 {
     if (!isVisible())
@@ -89,89 +90,33 @@ void Interlace::draw(GeoGraphics * gg)
         return;
     }
 
-    for (auto & seg : segments)
+    QPen pen(Qt::black, 1, Qt::SolidLine, cap_style, join_style);
+    for (const Segment & seg : segments)
     {
-        QColor color = seg.c;
-#if 0
-        QPolygonF poly = seg.getPoly();
-        gg->fillPolygon(poly,color);
-#else
-        QPainterPath path = seg.getPainterPath();
-        gg->fillPath(path,color);
-#endif
+        seg.draw(gg,pen);
     }
 
     if ( shadow > 0.0)
     {
-        for (auto& seg : qAsConst(segments))
+        for (const Segment & seg : segments)
         {
-            QColor color = seg.c;
-#if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
-            float h;
-            float s;
-            float b;
-#else
-            qreal h;
-            qreal s;
-            qreal b;
-#endif
-            color.getHsvF(&h,&s,&b);
-            QColor c;
-            c.setHsvF(h, s * 0.9, b * 0.8 );
-
-            if (seg.v1.shadow)
-            {
-                QPolygonF shadowPts1;
-                shadowPts1 << (seg.v1.above + getShadowVector(seg.v1.above, seg.v2.below));
-                shadowPts1 <<  seg.v1.above;
-                shadowPts1 <<  seg.v1.below;
-                shadowPts1 << (seg.v1.below + getShadowVector(seg.v1.below, seg.v2.above));
-                gg->fillPolygon(shadowPts1,c);
-            }
-            if (seg.v2.shadow)
-            {
-                QPolygonF shadowPts2;
-                shadowPts2 << (seg.v2.below + getShadowVector(seg.v2.below, seg.v1.above));
-                shadowPts2 <<  seg.v2.below;
-                shadowPts2 <<  seg.v2.above;
-                shadowPts2 << (seg.v2.above + getShadowVector(seg.v2.above, seg.v1.below));
-                gg->fillPolygon(shadowPts2,c);
-            }
+            seg.drawShadows(gg,shadow);
         }
     }
 
     if (drawOutline != OUTLINE_NONE)
     {
-        QPen pen;
+        QPen pen(Qt::black,1);      // OUTLINE_DEFAULT;
         if (drawOutline == OUTLINE_SET)
         {
             pen = QPen(outline_color,Transform::scalex(gg->getTransform() * outline_width * 0.5));
         }
-        else
-        {
-            Q_ASSERT(drawOutline == OUTLINE_DEFAULT);
-            pen = QPen(Qt::black,1);
-        }
         pen.setJoinStyle(join_style);
         pen.setCapStyle(cap_style);
 
-        for(auto & seg : qAsConst(segments))
+        for (const Segment & seg : segments)
         {
-            if (seg.type == EDGETYPE_LINE)
-            {
-                gg->drawLine(seg.v2.above, seg.v1.below, pen);
-                gg->drawLine(seg.v2.below, seg.v1.above, pen);
-            }
-            else if (seg.type == EDGETYPE_CURVE)
-            {
-                gg->drawArc(seg.v2.above, seg.v1.below,  seg.arcCenter, seg.convex, pen);    // inside
-                gg->drawArc(seg.v2.below, seg.v1.above,  seg.arcCenter, seg.convex, pen);    // outside
-            }
-            else if (seg.type == EDGETYPE_CHORD)
-            {
-                gg->drawChord(seg.v2.above, seg.v1.below, seg.arcCenter, seg.convex, pen);  // inside
-                gg->drawChord(seg.v2.below, seg.v1.above, seg.arcCenter, seg.convex, pen);  // outside
-            }
+            seg.drawOutline(gg,pen);
         }
     }
 }
@@ -204,28 +149,28 @@ void Interlace::createStyleRepresentation()
     // use the beefy getPoints routine to extract the graphics
     // of the interlacing.
 
-    for (auto & edge  : qAsConst(map->getEdges()))
+    for (const auto & edge  : map->getEdges())
     {
-        Segment seg;
         ThreadPtr thread;
+        QColor color;
         if ((colors.size() > 1) && (thread = edge->thread.lock()))
         {
-            seg.c = thread->color;
+            color = thread->color;
         }
         else
         {
-            seg.c = colors.getFirstColor().color;
+            color = colors.getFirstColor().color;
         }
 
-        seg.type = edge->getType();
+        Segment seg(edge->getType(),color);
         if (edge->isCurve())
         {
-            seg.convex    = edge->isConvex();
-            seg.arcCenter = edge->getArcCenter();
+            seg.setCurve(edge->isConvex(),edge->getArcCenter());
         }
-
         seg.v1.getPoints(edge, edge->v1, edge->v2, width, gap, map,  edge->v1_under);
         seg.v2.getPoints(edge, edge->v2, edge->v1, width, gap, map, !edge->v1_under);
+        seg.setPainterPath();
+        seg.setShadowColor();
         segments.push_back(seg);
     }
 
@@ -236,12 +181,12 @@ void Interlace::createStyleRepresentation()
 
 void Interlace::assignInterlacing()
 {
-    for (auto & edge : qAsConst(map->getEdges()))
+    for (const auto & edge : map->getEdges())
     {
         edge->visited = false;
     }
 
-    for (auto & vert : qAsConst(map->getVertices()))
+    for (const auto & vert : map->getVertices())
     {
         vert->visited = false;
     }
@@ -249,7 +194,7 @@ void Interlace::assignInterlacing()
     // Stack of edge to be processed.
     todo.clear();
 
-    for(auto & edge : qAsConst(map->getEdges()))
+    for (const auto & edge : map->getEdges())
     {
         if (!edge->visited )
         {
@@ -393,7 +338,118 @@ void Interlace::propagate(VertexPtr vertex, EdgePtr edge, bool edge_under_at_ver
     }
 }
 
-QPointF Interlace::getShadowVector(QPointF from, QPointF to)
+///////////////////////////////////////////////////////////////////
+///
+///  Segment
+///
+////////////////////////////////////////////////////////////////////
+
+Segment::Segment(eEdgeType etype, QColor ecolor)
+{
+    type  = etype;
+    color = ecolor;
+}
+
+void Segment::setCurve(bool isConvex, QPointF center)
+{
+    convex = isConvex;
+    arcCenter = center;
+}
+
+QPolygonF Segment::getPoly()
+{
+    QPolygonF p;
+    p << v1.below <<  v1.v << v1.above <<  v2.below <<  v2.v << v2.above; // same as interlace
+    //p << v2.below << v2.v << v2.above << v1.below << v1.v << v1.above;  // same as for outline
+    if (!Utils::isClockwise(p))
+        qWarning() << "Poly is CCW";
+    return p;
+}
+
+void Segment::setPainterPath()
+{
+    path.clear();
+
+    if (type == EDGETYPE_LINE)
+    {
+        path.moveTo(v2.below);
+        path.lineTo(v2.v);
+        path.lineTo(v2.above);
+        path.lineTo(v1.below);
+        path.lineTo(v1.v);
+        path.lineTo(v1.above);
+        path.lineTo(v2.below);
+    }
+    else if (type == EDGETYPE_CURVE)
+    {
+        path.moveTo(v2.below);
+        path.lineTo(v2.v);
+        path.lineTo(v2.above);
+
+        ArcData ad1(v2.above,v1.below,arcCenter,convex);
+        path.arcTo(ad1.rect,ad1.start,ad1.span);
+
+        path.lineTo(v1.v);
+        path.lineTo(v1.above);
+
+        ArcData ad2(v1.above,v2.below,arcCenter,convex);
+        path.arcTo(ad2.rect,ad2.start,-ad2.span);
+    }
+    else if (type == EDGETYPE_CHORD)
+    {
+        qWarning("BelowAndAboveEdge - unexpected EDGETYPE_CHORD");
+    }
+}
+
+void Segment::draw(GeoGraphics * gg, QPen & pen) const
+{
+    pen.setColor(color);
+    gg->fillPath(path,pen);
+}
+
+void  Segment::drawOutline(GeoGraphics * gg, QPen & pen) const
+{
+    if (type == EDGETYPE_LINE)
+    {
+        gg->drawLine(v2.above, v1.below, pen);
+        gg->drawLine(v2.below, v1.above, pen);
+    }
+    else if (type == EDGETYPE_CURVE)
+    {
+        gg->drawArc(v2.above, v1.below,  arcCenter, convex, pen);    // inside
+        gg->drawArc(v2.below, v1.above,  arcCenter, convex, pen);    // outside
+    }
+    else if (type == EDGETYPE_CHORD)
+    {
+        gg->drawChord(v2.above, v1.below, arcCenter, convex, pen);  // inside
+        gg->drawChord(v2.below, v1.above, arcCenter, convex, pen);  // outside
+    }
+}
+
+void  Segment::drawShadows(GeoGraphics * gg, qreal shadow) const
+{
+    if (v1.shadow)
+    {
+        QPolygonF shadowPts1;
+        shadowPts1 << (v1.above + getShadowVector(v1.above, v2.below, shadow));
+        shadowPts1 <<  v1.above;
+        shadowPts1 <<  v1.below;
+        shadowPts1 << (v1.below + getShadowVector(v1.below, v2.above, shadow));
+        gg->fillPolygon(shadowPts1,shadowColor);
+    }
+
+    if (v2.shadow)
+    {
+        QPolygonF shadowPts2;
+        shadowPts2 << (v2.below + getShadowVector(v2.below, v1.above, shadow));
+        shadowPts2 <<  v2.below;
+        shadowPts2 <<  v2.above;
+        shadowPts2 << (v2.above + getShadowVector(v2.above, v1.below, shadow));
+        gg->fillPolygon(shadowPts2,shadowColor);
+    }
+}
+
+QPointF Segment::getShadowVector(QPointF from, QPointF to, qreal shadow) const
 {
     QPointF dir = to - from;
     qreal magnitude = Point::mag(dir);
@@ -403,6 +459,37 @@ QPointF Interlace::getShadowVector(QPointF from, QPointF to)
     }
     return dir;
 }
+
+void Segment::setShadowColor()
+{
+#if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
+    float h;
+    float s;
+    float b;
+#else
+    qreal h;
+    qreal s;
+    qreal b;
+#endif
+    color.getHsvF(&h,&s,&b);
+    shadowColor.setHsvF(h, s * 0.9, b * 0.8 );
+}
+
+bool Segment::valid()
+{
+    bool rv = true;
+    if (QLineF(v1.above,v1.v).length() != QLineF(v1.v,v1.below).length())
+        rv = false;
+    if (QLineF(v2.above,v2.v).length() != QLineF(v2.v,v2.below).length())
+        rv = false;
+    return rv;
+}
+
+///////////////////////////////////////////////////////////////////
+///
+///  Piece
+///
+////////////////////////////////////////////////////////////////////
 
 void Piece::getPoints(EdgePtr  edge, VertexPtr from, VertexPtr to, qreal width, qreal gap, MapPtr map, bool from_under)
 {
@@ -420,7 +507,7 @@ void Piece::getPoints(EdgePtr  edge, VertexPtr from, VertexPtr to, qreal width, 
     NeighboursPtr toNeighbours = map->getNeighbours(to);
 
     int nn = toNeighbours->numNeighbours();
-    if (nn == 1)
+    if (nn == 1 || nn == 3)
     {
         // cap
         QPointF dir = pto - pfrom;
@@ -540,58 +627,3 @@ qreal Piece::capGap( QPointF p, QPointF base, qreal gap )
     return (gap < max_gap) ? gap : max_gap;
 }
 
-QPolygonF Segment::getPoly()
-{
-    QPolygonF p;
-    p << v1.below <<  v1.v << v1.above <<  v2.below <<  v2.v << v2.above; // same as interlace
-    //p << v2.below << v2.v << v2.above << v1.below << v1.v << v1.above;  // same as for outline
-    if (!Utils::isClockwise(p))
-        qWarning() << "Poly is CCW";
-    return p;
-}
-
-QPainterPath Segment::getPainterPath()
-{
-    QPainterPath path;
-
-    if (type == EDGETYPE_LINE)
-    {
-        path.moveTo(v2.below);
-        path.lineTo(v2.v);
-        path.lineTo(v2.above);
-        path.lineTo(v1.below);
-        path.lineTo(v1.v);
-        path.lineTo(v1.above);
-        path.lineTo(v2.below);
-    }
-    else if (type == EDGETYPE_CURVE)
-    {
-        path.moveTo(v2.below);
-        path.lineTo(v2.v);
-        path.lineTo(v2.above);
-
-        ArcData ad1(v2.above,v1.below,arcCenter,convex);
-        path.arcTo(ad1.rect,ad1.start,ad1.span);
-
-        path.lineTo(v1.v);
-        path.lineTo(v1.above);
-
-        ArcData ad2(v1.above,v2.below,arcCenter,convex);
-        path.arcTo(ad2.rect,ad2.start,-ad2.span);
-    }
-    else if (type == EDGETYPE_CHORD)
-    {
-        qWarning("BelowAndAboveEdge - unexpected EDGETYPE_CHORD");
-    }
-    return path;
-}
-
-bool Segment::valid()
-{
-    bool rv = true;
-    if (QLineF(v1.above,v1.v).length() != QLineF(v1.v,v1.below).length())
-        rv = false;
-    if (QLineF(v2.above,v2.v).length() != QLineF(v2.v,v2.below).length())
-        rv = false;
-    return rv;
-}

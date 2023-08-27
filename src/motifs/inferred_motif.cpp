@@ -1,3 +1,4 @@
+#include <math.h>
 #include "motifs/inferred_motif.h"
 #include "motifs/irregular_tools.h"
 #include "tile/tile.h"

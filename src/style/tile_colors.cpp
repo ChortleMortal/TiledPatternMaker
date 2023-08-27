@@ -56,7 +56,7 @@ void TileColors::createStyleRepresentation()
     TilingPtr tp  = pp->getTiling();
 
     QVector<TilePtr> uniques  = tp->getUniqueTiles();
-    for (auto tile : uniques)
+    for (const auto & tile : uniques)
     {
         tile->getTileColors()->resetIndex();
     }
@@ -129,13 +129,15 @@ void TileColors::draw(GeoGraphics * gg)
         }
     }
 
-    for (const auto & bpc : qAsConst(epolys))
+    for (const auto & bpc : epolys)
     {
         EdgePoly ep = bpc.epoly;
-        gg->fillEdgePoly(ep,bpc.color);
+        QPen pen(bpc.color, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+        gg->fillEdgePoly(ep,pen);
         if (outlineEnb)
         {
-            gg->drawEdgePoly(ep,outlineColor,outlineWidth);
+            QPen pen2(outlineColor,outlineWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+            gg->drawEdgePoly(ep,pen2);
         }
     }
 

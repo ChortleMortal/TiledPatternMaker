@@ -36,7 +36,7 @@ MeasureView::MeasureView(ProtoPtr pp) : Thick(pp)
     view    = ViewControl::getInstance();
 
     setColor(Qt::red);
-    setZValue(9);
+    setZValue(MEASURE_ZLEVEL);
 }
 
 MeasureView::~MeasureView()
@@ -45,19 +45,12 @@ MeasureView::~MeasureView()
 void MeasureView::draw(GeoGraphics * gg)
 {
     layerPen.setColor(QColor(  0,128,  0,128));
+    layerPen.setWidth(3);
     for (auto && mm : measurements)
     {
         gg->drawLineDirect(mm->startS(), mm->endS(),layerPen);
         QString msg = QString("%1 (%2)").arg(QString::number(mm->lenS(),'f',2)).arg(QString::number(mm->lenW(),'f',8));
         gg->drawText(mm->endS() + QPointF(10,0),msg);
-    }
-}
-void MeasureView::setMeasureMode(bool mode)
-{
-    measureMode = mode;
-    if (!mode)
-    {
-        measurements.clear();
     }
 }
 
@@ -67,28 +60,24 @@ void MeasureView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
 
     if (!view->isActiveLayer(this)) return;
 
-    if (measureMode)
+    auto layers =  view->getActiveLayers();
+    std::stable_sort(layers.begin(),layers.end(),Layer::sortByZlevelP);
+    Layer * measuredLayer = nullptr;
+    for (auto layer : layers)
     {
-        auto layers =  view->getActiveLayers();
-        std::stable_sort(layers.begin(),layers.end(),Layer::sortByZlevelP);
-        Layer * measuredLayer = nullptr;
-        for (auto layer : layers)
+        if (layer == this)
         {
-            if (layer == this)
-            {
-                measuredLayer = layer;
-                break;
-            }
+            measuredLayer = layer;
+            break;
         }
-
-        Q_ASSERT(measuredLayer);
-        auto m = new Measurement(measuredLayer);
-        measurements.push_back(m);
-
-        measurement = make_shared<Measure2>(this, spt,m);
     }
+
+    Q_ASSERT(measuredLayer);
+    auto m = new Measurement(measuredLayer);
+    measurements.push_back(m);
+
+    measurement = make_shared<Measure2>(this, spt,m);
 }
-#if 1
 
 void MeasureView::slot_mouseDragged(QPointF spt)
 {
@@ -106,9 +95,6 @@ void MeasureView::slot_mouseReleased(QPointF spt)
     }
     measurement.reset();
 }
-
-
-
 
 /////////
 ///
@@ -162,4 +148,3 @@ QLineF Measure2::normalVectorB(QLineF line)
 {
     return QLineF(line.p1(), line.p1() - QPointF(line.dy(), -line.dx()));
 }
-#endif

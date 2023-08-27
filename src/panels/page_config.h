@@ -2,7 +2,9 @@
 #ifndef PAGE_CONFIG_H
 #define PAGE_CONFIG_H
 
-#include "widgets/panel_page.h"
+#include "panels/panel_page.h"
+
+class qtAppLog;
 
 class page_config : public panel_page
 {
@@ -25,21 +27,24 @@ private slots:
     void    slot_rootImageChanged(QString txt);
     void    slot_designDefaultChanged(bool checked);
     void    slot_imageDefaultChanged(bool checked);
+    void    slot_logToAppDir(bool checked);
 
     void    slot_reconfigurePaths();
     void    slot_mode(int id);
     void    slot_darkThemeChanged(int id);
     void    slot_about();
-    void    slot_showCenterChanged(int state);
-    void    slot_updateClicked(bool enb);
+    void    slot_bigScreen(bool enb);
 
 protected:
     void    updatePaths();
     void    restartApp();
 
-    QGroupBox   * createViewControl();
+    QGroupBox   * createAppConfig();
+    QGroupBox   * createMediaPaths();
 
 private:
+    qtAppLog    * log;
+
     QPushButton * rootMediaBtn;
     QPushButton * rootImagesBtn;
 
@@ -47,6 +52,7 @@ private:
     QLineEdit   * le_rootImages;
     QLineEdit   * le_xmlTool;
     QLineEdit   * le_diffTool;
+    QLineEdit   * le_logPath;
     QLineEdit   * le_logName;
 
     QCheckBox   * defaultDesigns;

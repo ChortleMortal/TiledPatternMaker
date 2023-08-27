@@ -25,6 +25,13 @@ class Tiling;
 
 class PlacedTile
 {
+    enum eTileState
+    {
+        UNDEFINED   = 0x00,
+        OVERLAPPING = 0x01,
+        TOUCHING    = 0x02
+    };
+
 public:
     // Creation.
     PlacedTile();
@@ -49,9 +56,16 @@ public:
     bool isGirihShape() { return !girihShapeName.isEmpty(); }
     QString getGirihShapeName() { return girihShapeName; }
 
-    bool show() { return _show; }
+    bool show()             { return _show; }
     void setShow(bool show) { _show = show; }
 
+    void clearViewState()   { _viewState  = UNDEFINED; }
+    void setOverlapping()   { _viewState |= OVERLAPPING; }
+    void setTouching()      { _viewState |= TOUCHING; }
+    bool isOverlapping()    { return (_viewState & OVERLAPPING); }
+    bool isTouching()       { return (_viewState & TOUCHING); }
+
+    uint        _viewState;
 protected:
     void saveGirihShape(QTextStream & out, QString name);
     void loadGirihShape(pugi::xml_node & poly_node);
@@ -62,6 +76,6 @@ private:
     QString     girihShapeName;
     TilePtr     tile;
     QTransform  T;
-    bool        _show;  // used by tiling maker view
+    bool        _show;  // used by tiling maker
 };
 #endif

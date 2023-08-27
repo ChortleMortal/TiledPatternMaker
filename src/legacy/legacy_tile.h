@@ -26,7 +26,7 @@ public:
 
     void tile_rotate(int amount);
 
-    void iamaLayer() override {}
+    eViewType iamaLayer() override { return VIEW_DESIGN; }
 
     virtual const Xform  & getCanvasXform() override;
     virtual void           setCanvasXform(const Xform & xf) override;

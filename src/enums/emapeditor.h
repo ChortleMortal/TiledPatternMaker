@@ -46,7 +46,7 @@ enum eMapEditorMouseMode
     MAPED_MOUSE_CREATE_LINE
  };
 
-enum eLayer
+enum eMapedLayer
 {
     NO_MAP      = 0x00,
     LAYER_1     = 0x01,

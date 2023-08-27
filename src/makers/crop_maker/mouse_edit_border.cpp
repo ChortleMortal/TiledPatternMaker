@@ -21,7 +21,7 @@ MouseEditBorder::MouseEditBorder(QPointF spt, CropPtr crop)
 
     if (crop->getCropType() == CROP_CIRCLE)
     {
-        auto sc = crop->getCircle();
+        Circle & sc = crop->getCircle();
         if (Utils::pointOnCircle(spt,sc,7))
         {
             start = new QPointF(spt);
@@ -153,7 +153,7 @@ void MouseEditBorder::updateDragging(QPointF spt)
     }
     else if (crop->getCropType() == CROP_CIRCLE)
     {
-        auto c = crop->getCircle();
+        Circle & c = crop->getCircle();
         if (ecCircleMode == CM_EDGE)
         {
             // first find direction

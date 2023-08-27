@@ -1,4 +1,4 @@
-#include "widgets/panel_status.h"
+#include "panels/panel_status.h"
 
 PanelStatus::PanelStatus()
 {
@@ -25,7 +25,7 @@ void PanelStatus::pushStack(QString & txt)
     msgStack.push(txt);
     QString msg = preamble + txt + postamble;
     setText(msg);
-    repaint();
+    update();
 }
 
 void PanelStatus::popStack()
@@ -44,5 +44,5 @@ void PanelStatus::popStack()
     {
         setText("");
     }
-    repaint();
+    update();
 }

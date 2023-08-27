@@ -7,7 +7,8 @@
 #include "panels/page_grid.h"
 #include "widgets/layout_sliderset.h"
 #include "settings/configuration.h"
-#include "panels/panel.h"
+#include "panels/controlpanel.h"
+#include "panels/panel_misc.h"
 #include "viewers/grid_view.h"
 #include "viewers/viewcontrol.h"
 
@@ -155,10 +156,10 @@ page_grid:: page_grid(ControlPanel * cpanel)  : panel_page(cpanel,"Grid")
     layout->addWidget(chkDrawModelCenter,row,2);
     layout->addWidget(chkDrawScreenCenter,row,3);
 
-    gridBox = new QGroupBox("Show Grid");
-    gridBox->setCheckable(true);
-    gridBox->setLayout(layout);
-    gridBox->setChecked(config->showGrid);
+    groupBox = new QGroupBox("Show Grid");
+    groupBox->setCheckable(true);
+    groupBox->setLayout(layout);
+    groupBox->setChecked(config->showGrid);
 
 
     QPushButton * pbReset = new QPushButton("Reset position");
@@ -170,10 +171,11 @@ page_grid:: page_grid(ControlPanel * cpanel)  : panel_page(cpanel,"Grid")
     hbox2->addSpacing(9);
     hbox2->addWidget(pbAlign);
 
-    vbox->addWidget(gridBox);
+    vbox->addWidget(groupBox);
     vbox->addLayout(hbox2);
+    vbox->addStretch();
 
-    connect(gridBox, &QGroupBox::clicked,   this, &page_grid::slot_showGridChanged);
+    connect(groupBox, &QGroupBox::clicked,   this, &page_grid::slot_showGridChanged);
     connect(pbReset, &QPushButton::clicked, this, &page_grid::slot_resetPos);
     connect(pbAlign, &QPushButton::clicked, this, &page_grid::slot_reAlign);
 }
@@ -184,12 +186,13 @@ void  page_grid::onEnter()
 
 void  page_grid::onRefresh()
 {
-    gridBox->setChecked(config->showGrid);
+    groupBox->setChecked(config->showGrid);
 }
 
 void page_grid::slot_showGridChanged(bool checked)
 {
     config->showGrid = checked;
+    view->viewEnable(VIEW_GRID,checked);
     emit sig_refreshView();
 }
 

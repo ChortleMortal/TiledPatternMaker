@@ -94,8 +94,9 @@ void StarEditor::motifToEditor()
         blockSignals(false);
 
         int ver = star->getVersion();
+        int index = version_combo->findData(ver);
         version_combo->blockSignals(true);
-        version_combo->setCurrentIndex(ver -1);
+        version_combo->setCurrentIndex(index);
         version_combo->blockSignals(false);
     }
 }
@@ -109,7 +110,7 @@ void StarEditor::editorToMotif(bool doEmit)
 
         qreal dval = d_slider->value();
         int sval   = s_slider->value();
-        int ver    = version_combo->currentIndex() + 1;
+        int ver    = version_combo->currentData().toInt();
 
         blockSignals(true);
         star->setD(dval);
@@ -129,16 +130,16 @@ void StarEditor::editorToMotif(bool doEmit)
 RosetteEditor::RosetteEditor(QString name) : NamedMotifEditor(name)
 {
     q_slider = new DoubleSliderSet("RosetteEditor Q (Tip Angle)", 0.0, -3.0, 3.0, 100 );
-    k_slider = new DoubleSliderSet("RosetteEditor K (Neck Angle)", 0.0, -3.0, 3.0, 1000 );
     s_slider = new SliderSet("RosetteEditor S (Sides Intersections)", 1, 1, 5);
+    k_slider = new DoubleSliderSet("RosetteEditor K (Neck Angle)", 0.0, -3.0, 3.0, 1000 );
 
     addLayout(q_slider);
-    addLayout(k_slider);
     addLayout(s_slider);
+    addLayout(k_slider);
 
     connect(q_slider, &DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
-    connect(k_slider, &DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
     connect(s_slider, &SliderSet::valueChanged,       this, [this]() { editorToMotif(true);});
+    connect(k_slider, &DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
 }
 
 void RosetteEditor::setMotif(DesignElementPtr del, bool doEmit)

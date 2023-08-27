@@ -9,14 +9,16 @@
 
 #include "legacy/design.h"
 #include "panels/page_loaders.h"
+#include "panels/panel_misc.h"
 #include "legacy/design_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "misc/fileservices.h"
 #include "misc/pugixml.hpp"
 #include "makers/mosaic_maker/mosaic_maker.h"
-#include "panels/panel.h"
+#include "panels/controlpanel.h"
 #include "settings/configuration.h"
 #include "tiledpatternmaker.h"
+#include "viewers/viewcontrol.h"
 #include "widgets/dlg_rebase.h"
 #include "widgets/dlg_rename.h"
 #include "widgets/layout_sliderset.h"
@@ -375,7 +377,7 @@ void page_loaders::loadXML()
 
 void page_loaders::loadTiling(eTILM_Event event)
 {
-    if (event != TILM_RELOAD && config->getViewerType() != VIEW_TILING_MAKER)
+    if (event != TILM_RELOAD && !view->isEnabled(VIEW_TILING_MAKER))
     {
         // delegate the view
         panel->selectViewer(VIEW_TILING);

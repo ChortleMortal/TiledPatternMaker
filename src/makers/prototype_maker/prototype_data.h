@@ -55,20 +55,22 @@ class PrototypeData
 public:
     PrototypeData();
 
-    void setWidget(MotifMakerWidget * widget);
-
     void setPrototypes(QVector<ProtoPtr> & protos);
 
     void erase();
-    void select(eMVDType type, ProtoPtr proto,                 bool multi, bool hidden = false);
-    void select(eMVDType type, DesignElementPtr designElement, bool multi, bool hidden = false);
+    void select(  eMVDType type, ProtoPtr proto,                 bool multi, bool hidden = false);
+    void select(  eMVDType type, DesignElementPtr designElement, bool multi, bool hidden = false);
+    void deselect(eMVDType type, DesignElementPtr designElement, bool multi, bool hidden = false);
 
-    void hide(eMVDType type,ProtoPtr proto,       bool hide);
-    void hide(eMVDType type,DesignElementPtr del, bool hide);
+    void hide(    eMVDType type,ProtoPtr proto,       bool hide);
+    void hide(    eMVDType type,DesignElementPtr del, bool hide);
 
     bool isHidden(eMVDType type,ProtoPtr proto);
     bool isHidden(eMVDType type,DesignElementPtr del);
     bool isHidden(eMVDType type,MotifPtr motif);
+
+    bool isSelected(DesignElementPtr designElement)     { return (designElement == selectedDesignElement.lock()); }
+    bool isSelected(ProtoPtr proto)                     { return (proto == selectedPrototype.lock()); }
 
     ProtoPtr                    getSelectedPrototype()  { return selectedPrototype.lock(); }
     QVector<ProtoPtr>           getSelectedPrototypes(eMVDType type);
@@ -87,8 +89,11 @@ public:
 
     void                        rebuildCurrentMotif();                 // used only for debug
 
+    void setWidget(MotifMakerWidget * widget) { _motifMakerWidget = widget; }
+    MotifMakerWidget * getWidget()            { return _motifMakerWidget; }
+
 private:
-    MotifMakerWidget *          motifMakerWidget;
+    MotifMakerWidget *          _motifMakerWidget;
 
     WeakProtoPtr                selectedPrototype;
     QVector<ProtoInfo>          prototypes;

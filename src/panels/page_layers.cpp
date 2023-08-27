@@ -3,12 +3,12 @@
 
 #include "geometry/transform.h"
 #include "panels/page_layers.h"
-#include "panels/panel.h"
+#include "panels/controlpanel.h"
 #include "settings/configuration.h"
 #include "style/style.h"
 #include "viewers/viewcontrol.h"
 #include "widgets/layout_sliderset.h"
-#include "widgets/panel_misc.h"
+#include "panels/panel_misc.h"
 
 using std::string;
 
@@ -18,6 +18,22 @@ page_layers:: page_layers(ControlPanel * cpanel)  : panel_page(cpanel,"Layer Inf
     QPushButton * pbDeselect = new QPushButton("De-select");
 
     layerTable   = new AQTableWidget(this);
+    layerTable->setRowCount(NUM_LAYER_ROWS);
+    layerTable->setSelectionMode(QAbstractItemView::SingleSelection);
+    layerTable->setSelectionBehavior(QAbstractItemView::SelectColumns);
+    layerTable->setStyleSheet("QTableWidget::item:selected { background:yellow; color:red; }");
+
+    QStringList qslV;
+    qslV << "Layer" << "Visible" << "Z-level" << "" << ""
+         << "Frame Scale"  << "Frame Rot"  << "Frame Left (X)"  << "Frame Top (Y)" << ""
+         << "Canvas Scale" << "Canvas Rot" << "Canvas Left (X)" << "Canvas Top (Y)" << "Canvas CenterX" << "Canvas CenterY"
+         << "Layer Center" << "Layer Scale" << "Layer Rot" << "Layer X" << "Layer Y" << "Sub-layers";
+
+    layerTable->setVerticalHeaderLabels(qslV);
+    layerTable->horizontalHeader()->setVisible(false);
+    layerTable->setMaximumWidth(PANEL_RHS_WIDTH-10);
+    layerTable->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    layerTable->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     QHBoxLayout * hbox =  new QHBoxLayout;
     hbox->addWidget(refreshLabel);
@@ -28,22 +44,6 @@ page_layers:: page_layers(ControlPanel * cpanel)  : panel_page(cpanel,"Layer Inf
     vbox->addLayout(hbox);
     vbox->addWidget(layerTable);
     vbox->addStretch();
-
-    layerTable->setRowCount(NUM_LAYER_ROWS);
-
-    QStringList qslV;
-    qslV << "Layer" << "Visible" << "Z-level" << "" << ""
-         << "Frame Scale"  << "Frame Rot"  << "Frame Left (X)"  << "Frame Top (Y)" << ""
-         << "Canvas Scale" << "Canvas Rot" << "Canvas Left (X)" << "Canvas Top (Y)" << "Canvas CenterX" << "Canvas CenterY"
-         << "Layer Center" << "Layer Scale" << "Layer Rot" << "Layer X" << "Layer Y" << "Sub-layers";
-
-    layerTable->setVerticalHeaderLabels(qslV);
-    layerTable->horizontalHeader()->setVisible(false);
-    layerTable->setMaximumWidth(880);
-    layerTable->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    layerTable->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    layerTable->setSelectionBehavior(QAbstractItemView::SelectColumns);
-    layerTable->setStyleSheet("QTableWidget::item:selected { background:yellow; color:red; }");
 
     connect(layerTable, &QTableWidget::itemSelectionChanged, this, &page_layers::slot_selectLayer);
     connect(pbDeselect, &QPushButton::clicked, this, [this]() { layerTable->setCurrentIndex(QModelIndex()); config->selectedLayer = nullptr; layerTable->update();} );
@@ -86,7 +86,7 @@ void page_layers::populateLayers()
         populateLayer(layer,col++);
     }
 
-    layerTable->adjustTableSize(880);
+    layerTable->adjustTableSize(PANEL_RHS_WIDTH-10);
     updateGeometry();
 
     if (selected >= 0)
@@ -420,7 +420,7 @@ void  page_layers::onRefresh()
         layerTable->setColumnWidth(col,151);
     }
 
-    layerTable->adjustTableSize(880);
+    layerTable->adjustTableSize(PANEL_RHS_WIDTH-10);
     updateGeometry();
 }
 

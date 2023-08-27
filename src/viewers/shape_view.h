@@ -20,7 +20,7 @@ public:
 
     void enableAntialiasing(bool enable) { _antiAliasPolys = enable; }
 
-    void iamaLayer() override {}
+    eViewType iamaLayer() override { return VIEW_DESIGN; }
 
 protected:
     void    paint(QPainter *painter) override;

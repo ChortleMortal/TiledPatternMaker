@@ -99,7 +99,7 @@ void RadialMotif::buildMotifMaps()
 void RadialMotif::replicate()
 {
     // DAC - replicate the radial using N (not number of tile sides)
-    qDebug() << "RadialMotif::replicateUnit";
+    //qDebug() << "RadialMotif::replicateUnit";
     QTransform T = Tr;       // rotaional transform
     motifMap = make_shared<Map>("radial replicated unit map");
     for( int idx = 0; idx < getN(); ++idx )

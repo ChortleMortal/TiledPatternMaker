@@ -35,7 +35,7 @@ public:
     void    paint(QPainter *painter) override;
     void    draw(GeoGraphics * gg);
 
-    virtual void iamaLayer() override {}
+    virtual eViewType iamaLayer() override { return VIEW_TILING; }
     virtual void iamaLayerController() override {}
 
 public slots:

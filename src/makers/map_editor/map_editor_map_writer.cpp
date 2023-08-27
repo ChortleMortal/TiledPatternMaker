@@ -52,8 +52,9 @@ bool MapEditorMapWriter::writeXML(QString fileName, MapPtr map, eMapEditorMapTyp
 
         // frame settings
         ViewControl * view = ViewControl::getInstance();
-        QSize size = view->frameSettings.getCropSize(VIEW_MAP_EDITOR);
-        QSize zsize = view->frameSettings.getZoomSize(VIEW_MAP_EDITOR);
+        auto & settings    = view->getViewSettings();
+        QSize size         = settings.getCropSize(VIEW_MAP_EDITOR);
+        QSize zsize        = settings.getZoomSize(VIEW_MAP_EDITOR);
         procSize(ts,size,zsize);
 
         // canvas settings

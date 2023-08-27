@@ -8,7 +8,6 @@
 typedef std::shared_ptr<class ShapeFactory> ShapeFPtr;
 
 #define LENGTH1        60.0
-#define BORDER_ZLEVEL  10
 
 class LegacyBorder : public Layer
 {
@@ -27,7 +26,7 @@ public:
     QColor  getColor()  { return color; }
     QColor  getColor2() { return color2; }
 
-    void    iamaLayer() override {}
+    eViewType    iamaLayer() override { return VIEW_BORDER; }
 
 protected:
     LegacyBorder();

@@ -33,17 +33,19 @@ class MapEditorLayer
 {
 public:
     MapEditorLayer();
-    MapEditorLayer(MapPtr map, eMapEditorMapType type);
-    MapEditorLayer(MapPtr map, eMapEditorMapType type, WeakDELPtr wdel);
 
+    void set(MapPtr map, eMapEditorMapType type);
+    void set(MapPtr map, eMapEditorMapType type, WeakDELPtr wdel);
     void reset();
 
-    MapPtr getMapedLayerMap() { return map; }
-
-    eMapEditorMapType type;
-    WeakDELPtr        wdel;
+    void setDel(DesignElementPtr del)   { wdel = del; }
+    DesignElementPtr  getDel() const    { return wdel.lock(); }
+    MapPtr getMapedLayerMap() const     { return map; }
+    eMapEditorMapType getLayerMapType() const { return mtype; }
 
 private:
+    WeakDELPtr        wdel;
+    eMapEditorMapType mtype;
     MapPtr            map;
 };
 
@@ -54,60 +56,55 @@ public:
 
     void                reset();
 
-    void                setMouseMode(eMapEditorMouseMode emm) { mouseMode = emm; }
-    eMapEditorMouseMode getMouseMode() { return mouseMode;}
+    MapEditorLayer &    getLayer(eMapedLayer layer);
+    MapEditorLayer &    getEditLayer();
 
-    void                setMouseInteraction(MapMouseActionPtr action) { mouse_interaction = action; }
-    void                resetMouseInteraction() { mouse_interaction.reset(); }
-    MapMouseActionPtr   getMouseInteraction() { return mouse_interaction; }
+    MapPtr              getMap(eMapedLayer mode);
+    eMapEditorMapType   getMapType(MapPtr map);
+    MapPtr              getEditMap();
 
-    bool                insertLayer(MapEditorLayer mapLayer);
-    void                replaceLayer(eLayer layer,MapEditorLayer mapLayer);
-    void                clearLayers();
+    eMapedLayer         insertLayer(MapPtr map, eMapEditorMapType mtype);
     void                createComposite();
 
-    void                setViewSelect(eLayer layer, bool on);
-    void                setEditSelect(eLayer layer)  { editSelect = layer; }
-    bool                isViewSelected(eLayer layer) { return viewSelect & layer; }
-    eLayer              getEditSelect()              { return editSelect; }
+    void                setViewSelect(eMapedLayer layer, bool on);
+    void                setEditSelect(eMapedLayer layer) { editSelect = layer; }
+    bool                isViewSelected(eMapedLayer layer){ return viewSelect & layer; }
+    eMapedLayer         getEditSelect()             { return editSelect; }
 
-    void                setTiling(TilingPtr tp) { tiling = tp; }
-    TilingPtr           getTiling()         { return tiling.lock(); }
+    void                setTiling(TilingPtr tp)     { tiling = tp; }
+    TilingPtr           getTiling()                 { return tiling.lock(); }
 
     void                setMotfiPrototype(ProtoPtr pp) { motifPrototype = pp; }
-    ProtoPtr            getMotifPrototype() { return motifPrototype.lock(); }
+    ProtoPtr            getMotifPrototype()         { return motifPrototype.lock(); }
 
-    QVector<WeakDELPtr> & getDesignElements() { return delps; }
+    QVector<WeakDELPtr> & getDesignElements()       { return delps; }
 
     void                setActiveDCEL(DCELPtr dcel) { activeDcel = dcel; localDcel.reset();}
     DCELPtr             getActiveDCEL()             { return activeDcel.lock(); }
     void                setLocalDCEL(DCELPtr dcel)  { activeDcel = dcel; localDcel = dcel; }
     DCELPtr             getLocaldDCEL()             { return localDcel; }
 
-    MapPtr              getEditMap();
-    MapEditorLayer      getEditLayer();
 
-    MapPtr              getMap(eLayer mode);
 
     MapPtr              getFirstDrawMap();
     QVector<MapPtr>     getDrawMaps();
-    QVector<MapEditorLayer>   getDrawLayers();
-    QVector<MapEditorLayer>   getComposableLayers();
+    QVector<const MapEditorLayer *> getDrawLayers();
+    QVector<const MapEditorLayer *> getComposableLayers();
 
     QVector<MapPtr>     getMapLayerMaps();    // all layers
 
-    eMapEditorMapType   getMapType(MapPtr map);
     static bool         isMotif(eMapEditorMapType type);
 
     MapEditorStash *    getStash() { return stash; }
 
-    bool                showMap;
-    bool                showBoundaries;
-    bool                showConstructionLines;
-    bool                showPoints;
-    bool                showMidPoints;
-    bool                showDirnPoints;
-    bool                showArcCentre;
+    void                setMouseMode(eMapEditorMouseMode emm) { mouseMode = emm; }
+    eMapEditorMouseMode getMouseMode()              { return mouseMode;}
+
+    void                setMouseInteraction(MapMouseActionPtr action) { mouse_interaction = action; }
+    void                resetMouseInteraction()     { mouse_interaction.reset(); }
+    MapMouseActionPtr   getMouseInteraction()       { return mouse_interaction; }
+
+
 
     UniqueQVector<QLineF> constructionLines;
     UniqueQVector<Circle> constructionCircles;
@@ -120,6 +117,14 @@ public:
     void                removeCrop()           override { _crop.reset(); }
     bool                embedCrop(MapPtr map);
     bool                cropMap(MapPtr map);
+
+    bool                showMap;
+    bool                showBoundaries;
+    bool                showConstructionLines;
+    bool                showPoints;
+    bool                showMidPoints;
+    bool                showDirnPoints;
+    bool                showArcCentre;
 
 protected:
     eMapEditorMouseMode  mouseMode; // Mouse mode, triggered by the toolbar.
@@ -134,16 +139,15 @@ protected:
     MapMouseActionPtr   mouse_interaction;    // used by menu
 
 private:
-    MapEditorStash    *  stash;                // stash of construction lines
+    MapEditorStash* stash;                // stash of construction lines
 
-    int                 viewSelect;
-    eLayer              editSelect;
-    MapEditorLayer      _compositeLayer;
-    MapEditorLayer      _layer1;
-    MapEditorLayer      _layer2;
-    MapEditorLayer      _layer3;
-
-    CropPtr              _crop;
+    int             viewSelect;         // OE'd bits
+    eMapedLayer     editSelect;
+    MapEditorLayer  __compositeLayer;
+    MapEditorLayer  __layer1;
+    MapEditorLayer  __layer2;
+    MapEditorLayer  __layer3;
+    CropPtr         _crop;
 };
 
 #endif // MAPEDITORDB_H

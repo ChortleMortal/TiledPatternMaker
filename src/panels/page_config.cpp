@@ -11,7 +11,7 @@
 #endif
 
 #include "panels/page_config.h"
-#include "panels/panel.h"
+#include "panels/controlpanel.h"
 #include "settings/configuration.h"
 #include "tiledpatternmaker.h"
 #include "viewers/viewcontrol.h"
@@ -23,10 +23,110 @@ extern RunGuard * guard;
 
 page_config:: page_config(ControlPanel * cpanel)  : panel_page(cpanel,"Configuration")
 {
+    log = qtAppLog::getInstance();
+
+    auto appGroup  = createAppConfig();
+    auto pathGroup = createMediaPaths();
+
+    QPushButton * restartBtn = new QPushButton("Restart Tiled Pattern Maker");
+    QPushButton * pbAbout    = new QPushButton("About Tiled Pattern Maker");
+    QPushButton * btnPrimary = new QPushButton("Move to Primary Screen");
+
+    QHBoxLayout * hbox = new QHBoxLayout();
+    hbox->addWidget(restartBtn);
+    hbox->addStretch();
+    hbox->addWidget(btnPrimary);
+    hbox->addStretch();
+    hbox->addWidget(pbAbout);
+
+    // put it all together
+    vbox->addWidget(appGroup);
+    vbox->addSpacing(7);
+    vbox->addWidget(pathGroup);
+    vbox->addSpacing(7);
+    vbox->addLayout(hbox);
+    vbox->addStretch();
+
+    connect(btnPrimary,     &QPushButton::clicked,   theApp, &TiledPatternMaker::slot_bringToPrimaryScreen);
+    connect(pbAbout,        &QPushButton::clicked,   this,   &page_config::slot_about);
+    connect(restartBtn,     &QPushButton::clicked,   this,   &page_config::restartApp);
+}
+
+QGroupBox * page_config::createAppConfig()
+{
+    QRadioButton * designerMode = new QRadioButton("Designer Mode (reccomended)");
+    QRadioButton * insightMode  = new QRadioButton("Insight Mode");
+    QButtonGroup * btnGroup     = new QButtonGroup;
+    btnGroup->addButton(designerMode,0);
+    btnGroup->addButton(insightMode,1);
+    int button  = (config->insightMode) ? 1 : 0;
+    btnGroup->button(button)->setChecked(true);
+
+    QRadioButton * darkTheme = new QRadioButton("Dark Theme");
+    QRadioButton * liteTheme = new QRadioButton("Light Theme");
+    btnGroup2 = new QButtonGroup;
+    btnGroup2->addButton(darkTheme,0);
+    btnGroup2->addButton(liteTheme,1);
+    button = (config->darkTheme) ? 0 : 1 ;
+    btnGroup2->button(button)->setChecked(true);
+
+    QCheckBox   * chkSplit      = new QCheckBox("Split Screen");
+    QCheckBox   * chkBigScreen  = new QCheckBox("Large Screen Mode (e.g. UHD-3840x2160)");
+    chkSplit->setChecked(config->splitScreen);
+    chkBigScreen->setChecked(config->bigScreen);
+    QCheckBox   * chkLimitView  = new QCheckBox("Limit View Size");
+    chkLimitView->setChecked(config->limitViewSize);
+
+    QHBoxLayout *hbox = new QHBoxLayout;
+    hbox->addWidget(designerMode);
+    hbox->addWidget(insightMode);
+    hbox->addStretch();
+
+    QHBoxLayout * hbox3 = new QHBoxLayout;
+    hbox3->addWidget(darkTheme);
+    hbox3->addWidget(liteTheme);
+    hbox3->addStretch();
+
+    QHBoxLayout * hbox4 = new QHBoxLayout();
+    hbox4->addWidget(chkSplit);
+    hbox4->addWidget(chkBigScreen);
+    hbox4->addStretch();
+
+    QHBoxLayout * hbox5 = new QHBoxLayout();
+    hbox5->addWidget(chkLimitView);
+    hbox5->addStretch();
+
+    QVBoxLayout * vbox2 = new QVBoxLayout;
+    vbox2->addLayout(hbox);
+    vbox2->addLayout(hbox3);
+    vbox2->addLayout(hbox4);
+    vbox2->addLayout(hbox5);
+
+    QGroupBox * appGroup = new QGroupBox("Application");
+    appGroup->setLayout(vbox2);
+
+    connect(chkSplit,       &QCheckBox::clicked, this, [this](bool checked) { config->splitScreen = checked; restartApp(); });
+    connect(chkLimitView,   &QCheckBox::clicked, this, [this](bool checked) { config->limitViewSize = checked; emit sig_refreshView(); });
+    connect(chkBigScreen,   &QCheckBox::clicked, this,    &page_config::slot_bigScreen);
+#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
+    connect(btnGroup,      SIGNAL(buttonClicked(int)), this, SLOT(slot_mode(int)));
+    connect(btnGroup2,      SIGNAL(buttonClicked(int)), this, SLOT(slot_darkThemeChanged(int)));
+#else
+    connect(btnGroup,      &QButtonGroup::idClicked,  this,  &page_config::slot_mode);
+    connect(btnGroup2,     &QButtonGroup::idClicked,  this,  &page_config::slot_darkThemeChanged);
+#endif
+
+    return appGroup;
+}
+
+QGroupBox * page_config::createMediaPaths()
+{
     le_rootMedia   = new QLineEdit();
     le_rootImages  = new QLineEdit();
     le_xmlTool     = new QLineEdit();
     le_diffTool    = new QLineEdit();
+    le_logName     = new QLineEdit();
+    le_logPath     = new QLineEdit();
 
     le_rootMedia->setMinimumWidth(501);
 
@@ -37,13 +137,22 @@ page_config:: page_config(ControlPanel * cpanel)  : panel_page(cpanel,"Configura
 
     defaultDesigns = new QCheckBox("Default Media Directory");
     defaultImages  = new QCheckBox("Default Images Directory");
-    QCheckBox * logApp = new QCheckBox("Disk Log To App Directory");
+
+    QCheckBox * chklogApp = new QCheckBox("Log To App Directory");
+    chklogApp->setChecked(config->logToAppDir);
+
+    QLabel * logLabel = new QLabel("Log name");
 
     QHBoxLayout * hbox = new QHBoxLayout();
     hbox->addWidget(defaultDesigns);
     hbox->addWidget(defaultImages);
-    hbox->addWidget(logApp);
     hbox->addStretch();
+
+    QHBoxLayout * hbox2 = new QHBoxLayout;
+    hbox2->addWidget(logLabel);
+    hbox2->addSpacing(3);
+    hbox2->addWidget(le_logName);
+    hbox2->addStretch();
 
     QGridLayout *configGrid = new QGridLayout();
 
@@ -66,141 +175,41 @@ page_config:: page_config(ControlPanel * cpanel)  : panel_page(cpanel,"Configura
     configGrid->addWidget(diffToolBtn,row,0);
     configGrid->addWidget(le_diffTool,row,1);
 
-    QGroupBox * pathGroup = new QGroupBox("Media File Paths");
+    row++;
+    configGrid->addWidget(chklogApp,row,0);
+    configGrid->addWidget(le_logPath,row,1);
+
+    row++;
+    configGrid->addWidget(logLabel,row,0);
+    configGrid->addWidget(le_logName,row,1);
+
+    QGroupBox * pathGroup = new QGroupBox("File Paths");
     pathGroup->setLayout(configGrid);
 
-    QRadioButton * designerMode = new QRadioButton("Designer Mode (reccomended)");
-    QRadioButton * insightMode  = new QRadioButton("Insight Mode");
-    QButtonGroup * btnGroup     = new QButtonGroup;
-    btnGroup->addButton(designerMode,0);
-    btnGroup->addButton(insightMode,1);
-
-    QPushButton  * restartBtn      = new QPushButton("Restart Tiled Pattern Maker");
-
-    QRadioButton * darkTheme = new QRadioButton("Dark Theme");
-    QRadioButton * liteTheme = new QRadioButton("Light Theme");
-                   btnGroup2 = new QButtonGroup;
-    btnGroup2->addButton(darkTheme,0);
-    btnGroup2->addButton(liteTheme,1);
-
-    QCheckBox * cbUpdate = new QCheckBox("Refresh Menu Pages");
-    cbUpdate->setChecked(config->updatePanel);
-
-    QLabel * logLabel = new QLabel("Log name");
-    le_logName        = new QLineEdit();
-    le_logName->setText(config->baseLogName);
-
-    QPushButton * pbAbout    = new QPushButton("About TiledPatternMaker");
-
-    int button  = (config->insightMode) ? 1 : 0;
-    btnGroup->button(button)->setChecked(true);
-
-    button = (config->darkTheme) ? 0 : 1 ;
-    btnGroup2->button(button)->setChecked(true);
-
-    hbox = new QHBoxLayout;
-    hbox->addWidget(designerMode);
-    hbox->addWidget(insightMode);
-    hbox->addStretch();
-    hbox->addWidget(restartBtn);
-
-    QHBoxLayout * hbox2 = new QHBoxLayout;
-    hbox2->addWidget(logLabel);
-    hbox2->addSpacing(3);
-    hbox2->addWidget(le_logName);
-    hbox2->addStretch();
-    hbox2->addWidget(pbAbout);
-
-    QHBoxLayout * hbox3 = new QHBoxLayout;
-    hbox3->addWidget(darkTheme);
-    hbox3->addWidget(liteTheme);
-    hbox3->addStretch();
-
-    QVBoxLayout * vbox2 = new QVBoxLayout;
-    vbox2->addLayout(hbox);
-    vbox2->addLayout(hbox3);
-    vbox2->addWidget(cbUpdate);
-    vbox2->addLayout(hbox2);
-
-    QGroupBox * appGroup = new QGroupBox("Application");
-    appGroup->setLayout(vbox2);
-
-    QGroupBox    * vctrl  = createViewControl();
-
-    // put it all together
-    vbox->addWidget(appGroup);
-    vbox->addSpacing(7);
-    vbox->addWidget(pathGroup);
-    vbox->addSpacing(7);
-    vbox->addWidget(vctrl);
-
     updatePaths();
-    logApp->setChecked(config->logToAppDir);
 
     connect(rootImagesBtn,  &QPushButton::clicked,   this,  &page_config::slot_selectRootImageDir);
     connect(rootMediaBtn,   &QPushButton::clicked,   this,  &page_config::slot_selectRootMediaDir);
     connect(xmlToolBtn,     &QPushButton::clicked,   this,  &page_config::slot_selectXMLTool);
     connect(diffToolBtn,    &QPushButton::clicked,   this,  &page_config::slot_selectDiffTool);
-    connect(pbAbout,        &QPushButton::clicked,   this,  &page_config::slot_about);
-    connect(restartBtn,     &QPushButton::clicked,   this,  &page_config::restartApp);
 
-    connect(le_rootMedia,   &QLineEdit::textChanged,   this, &page_config::slot_rootDesignChanged);
-    connect(le_rootImages,  &QLineEdit::textChanged,   this, &page_config::slot_rootImageChanged);
+    connect(le_rootMedia,   &QLineEdit::textChanged,     this, &page_config::slot_rootDesignChanged);
+    connect(le_rootImages,  &QLineEdit::textChanged,     this, &page_config::slot_rootImageChanged);
+    connect(le_logName,     &QLineEdit::textChanged,     this, [this](QString txt) {config->baseLogName = txt;});
+    connect(le_logName,     &QLineEdit::editingFinished, this, [this]() {restartApp();});
 
     connect(defaultDesigns, &QCheckBox::clicked, this, &page_config::slot_designDefaultChanged);
     connect(defaultImages,  &QCheckBox::clicked, this, &page_config::slot_imageDefaultChanged);
-    connect(cbUpdate,       &QCheckBox::clicked, this, &page_config::slot_updateClicked);
-    connect(logApp,         &QCheckBox::clicked, this, [this] (bool checked) { config->logToAppDir = checked;
-                                                        qtAppLog::getInstance()->logToAppDir(checked); });
-#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
-    connect(btnGroup,      SIGNAL(buttonClicked(int)), this, SLOT(slot_mode(int)));
-    connect(btnGroup2,      SIGNAL(buttonClicked(int)), this, SLOT(slot_darkThemeChanged(int)));
-#else
-    connect(btnGroup,      &QButtonGroup::idClicked,  this,  &page_config::slot_mode);
-    connect(btnGroup2,     &QButtonGroup::idClicked,  this,  &page_config::slot_darkThemeChanged);
-#endif
+    connect(chklogApp,      &QCheckBox::clicked, this, &page_config::slot_logToAppDir);
 
-    connect(le_logName,  &QLineEdit::textChanged,     this, [this](QString txt) {config->baseLogName = txt;});
-    connect(le_logName,  &QLineEdit::editingFinished, this, [this]() {restartApp();});
-}
-
-QGroupBox * page_config::createViewControl()
-{
-
-    QCheckBox   * chkSplit      = new QCheckBox("Split Screen");
-    QCheckBox   * showCenterChk = new QCheckBox("Show Center");
-    QPushButton * btnPrimary    = new QPushButton("Move to Primary Screen");
-
-    QHBoxLayout * hbox = new QHBoxLayout();
-    hbox->addWidget(btnPrimary);
-    hbox->addStretch();
-
-    QVBoxLayout * vbox = new QVBoxLayout;
-    vbox->addWidget(showCenterChk);
-    vbox->addWidget(chkSplit);
-    vbox->addSpacing(5);
-    vbox->addLayout(hbox);
-
-    QGroupBox * viewControlBox = new QGroupBox("View Control");
-    viewControlBox->setLayout(vbox);
-
-    chkSplit->setChecked(config->splitScreen);
-    showCenterChk->setChecked(config->showCenterDebug);
-
-    connect(btnPrimary,     &QPushButton::clicked,    theApp,   &TiledPatternMaker::slot_bringToPrimaryScreen);
-    connect(chkSplit,       &QPushButton::clicked,    theApp,   &TiledPatternMaker::slot_splitScreen);
-    connect(showCenterChk,  &QCheckBox::stateChanged, this,     &page_config::slot_showCenterChanged);
-
-    return viewControlBox;
+    return pathGroup;
 }
 
 void  page_config::onEnter()
-{
-}
+{}
 
 void  page_config::onRefresh()
-{
-}
+{}
 
 void page_config::slot_selectRootMediaDir()
 {
@@ -226,7 +235,6 @@ void page_config::slot_selectRootImageDir()
     QString old = config->rootImageDir;
     QString dir = QFileDialog::getExistingDirectory(this, tr("Select Image Directory"),
                    old, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-
 
     if (dir.isEmpty())
     {
@@ -331,6 +339,8 @@ void page_config::updatePaths()
     le_rootImages->setText(config->rootImageDir);
     le_xmlTool->setText(config->xmlTool);
     le_diffTool->setText(config->diffTool);
+    le_logName->setText(config->baseLogName);
+    le_logPath->setText(log->logDir());
 
     update();
 }
@@ -360,10 +370,13 @@ void page_config::restartApp()
 #endif
 }
 
-void page_config::slot_showCenterChanged(int id)
+void page_config::slot_bigScreen(bool enb)
 {
-    config->showCenterDebug = (id == Qt::Checked);
-    view->update();
+    config->bigScreen = enb;
+    if (config->splitScreen)
+    {
+        restartApp();
+    }
 }
 
 void page_config::slot_about()
@@ -372,7 +385,10 @@ void page_config::slot_about()
     dlg.exec();
 }
 
-void page_config::slot_updateClicked(bool enb)
+void page_config::slot_logToAppDir(bool checked)
 {
-    config->updatePanel = enb;
+    config->logToAppDir = checked;
+    log->logToAppDir(checked);
+    log->init();
+    updatePaths();
 }

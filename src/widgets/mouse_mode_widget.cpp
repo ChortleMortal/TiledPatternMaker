@@ -1,7 +1,7 @@
 #include <QCheckBox>
 
 #include "widgets/mouse_mode_widget.h"
-#include "widgets/panel_misc.h"
+#include "panels/panel_misc.h"
 #include "viewers/viewcontrol.h"
 
 MouseModeWidget::MouseModeWidget() : QWidget()
@@ -25,7 +25,7 @@ MouseModeWidget::MouseModeWidget() : QWidget()
     chkRot->setStyleSheet("QCheckBox:checked { background-color: yellow; color: red;}");
     chkZoom->setStyleSheet("QCheckBox:checked { background-color: yellow; color: red;}");
 
-    QLabel    * l_mouseModes    = new QLabel("Mouse control:");
+    QLabel    * l_mouseModes    = new QLabel("Mouse:");
 
     AQHBoxLayout * layout = new AQHBoxLayout;
     layout->addWidget(l_mouseModes);

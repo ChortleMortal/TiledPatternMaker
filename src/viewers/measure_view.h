@@ -13,14 +13,14 @@ public:
     static MeasureView * getInstance();
     static void          releaseInstance();
 
-
-    void setMeasureMode(bool mode);
+    void clear() { measurements.clear(); }
 
     void draw(GeoGraphics * gg ) override;
 
     void resetStyleRepresentation()  override {};
     void createStyleRepresentation() override {};
 
+    virtual eViewType iamaLayer() override { return VIEW_MEASURE; };
     virtual QString getStyleDesc() const override { return "Measurer"; }
 
     virtual void  setCanvasXform(const Xform & xf) override { Q_UNUSED(xf);}
@@ -40,7 +40,6 @@ private:
     Configuration * config;
     ViewControl   * view;
 
-    bool                  measureMode;
     Measure2Ptr           measurement;
     QVector<Measurement*> measurements;
 };

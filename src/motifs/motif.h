@@ -108,7 +108,7 @@ public:
     Points() {}
     Points(const QPolygonF & other);
 
-    QPointF get(int index)  { qDebug() << "get" << index << "pt:" << at(mod(index));  return at(mod(index)); }
+    QPointF get(int index)  { return at(mod(index)); }
     QPointF next(int index) { return at(mod(index + 1)); }
     QPointF prev(int index) { return at(mod(index -1 )); }
 

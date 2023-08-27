@@ -41,6 +41,7 @@ DesignElementButton::DesignElementButton(DesignElementPtr dep, int index)
 void DesignElementButton::construct(DesignElementPtr del, int index)
 {
     selected            = false;
+    delegated           = false;
     this->designElement = del;
     this->index         = index;
 
@@ -276,15 +277,12 @@ QTransform DesignElementButton::centerInside(int index, QRectF first, QRectF oth
     return res;
 }
 
-void DesignElementButton::tally(bool select)
+void DesignElementButton::tally()
 {
-    if (selected == select)
-        return;
-
-    selected = select;
-
-    if (selected)
-        setStyleSheet("background-color: rgb(255,240,240);");
+    if (selected && delegated)
+        setStyleSheet("background-color: rgb(255,220,220); border: 2px solid red;");
+    else if (selected)
+        setStyleSheet("background-color: rgb(255,220,220);");
     else
         setStyleSheet("background-color: white;");
 }
@@ -322,6 +320,15 @@ void DesignElementButton::paintEvent(QPaintEvent * event)
     painter.drawText(5,50,tempLabel);
     tempLabel = "motif=" + Utils::addr(designElement->getMotif().get());
     painter.drawText(5,20,tempLabel);
+#endif
+#if 0
+    QString str;
+    if (selected)
+        str += "S ";
+    if (delegated)
+        str += "D ";
+    painter.drawText(5,15,str);
+    painter.drawText(5,35,tallyStr);
 #endif
 
     QFrame::paintEvent(event);

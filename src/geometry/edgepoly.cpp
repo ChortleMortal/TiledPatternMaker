@@ -101,7 +101,7 @@ EdgePoly EdgePoly::recreate() const
 {
     EdgePoly epoly;
     QMap<VertexPtr,VertexPtr> vmap;
-    for (auto edge : *this)
+    for (const auto & edge : *this)
     {
         VertexPtr oldv1 = edge->v1;
         VertexPtr newv1;
@@ -159,7 +159,7 @@ void EdgePoly::mapD(QTransform T)
 {
     // Can't assume is regular poly
     QVector<VertexPtr> mapped;
-    for (auto edge : *this)
+    for (const auto & edge : *this)
     {
         QPointF pt;
 
@@ -324,7 +324,7 @@ QPolygonF EdgePoly::getPoly() const
 QPolygonF EdgePoly::getPoints() const
 {
     QPolygonF poly;
-    for (auto & edge : qAsConst(*this))
+    for (const auto & edge : *this)
     {
         QPointF pt = edge->v1->pt;
         poly << pt;
@@ -335,7 +335,7 @@ QPolygonF EdgePoly::getPoints() const
 QPolygonF EdgePoly::getMids() const
 {
     QPolygonF  mids;    // mid-points
-    for (auto & edge : qAsConst(*this))
+    for (const auto & edge : *this)
     {
         mids <<  edge->getMidPoint();
     }
@@ -391,7 +391,7 @@ void EdgePoly::paint(QPainter * painter, QTransform T, bool annotate)
     painter->setFont(font);
     int edgenum = 0;
 
-    for(auto edge : *this)
+    for (const auto & edge : *this)
     {
         QPointF p1 = T.map(edge->v1->pt);
         QPointF p2 = T.map(edge->v2->pt);
@@ -425,7 +425,7 @@ void EdgePoly::paint(QPainter * painter, QTransform T, bool annotate)
 
 void EdgePoly::draw(GeoGraphics * gg, QPen & pen)
 {
-    for (auto & edge : qAsConst(*this))
+    for (const auto & edge : *this)
     {
         if (edge->getType() == EDGETYPE_LINE)
         {
@@ -445,7 +445,7 @@ void EdgePoly::draw(GeoGraphics * gg, QPen & pen)
 
 void EdgePoly::drawPts(GeoGraphics * gg, QPen &pen)
 {
-    for (auto & edge : qAsConst(*this))
+    for (const auto & edge : *this)
     {
         gg->drawCircle(edge->v1->pt,3,pen, QBrush(pen.color()));
     }
@@ -505,7 +505,7 @@ QVector<QLineF> EdgePoly::getLines()
 int EdgePoly::numSwapped()
 {
     int num = 0;
-    for (auto edge : qAsConst(*this))
+    for (const auto & edge : *this)
     {
         if (edge->getSwapState())
         {
@@ -518,7 +518,7 @@ int EdgePoly::numSwapped()
 void EdgePoly::dump() const
 {
     qDebug() << "EdgePoly::dump()" << ((isClockwise()) ? "Clockwise" : "Anticlockwise");
-    for (auto edge : *this)
+    for (const auto & edge : *this)
     {
         qDebug().noquote() << edge->dump();
     }
@@ -547,7 +547,7 @@ QPointF EdgePoly::calcIrregularCenter()
     double sumY = 0.0;
 
     // For all vertices in a loop
-    const auto vertices = getVertices();
+    const auto & vertices = getVertices();
     Q_ASSERT(vertices.first()->pt != vertices.last()->pt);
 
     VertexPtr prev = vertices.last();

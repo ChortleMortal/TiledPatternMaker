@@ -1,4 +1,5 @@
 #pragma once
+
 #ifndef BORDER_H
 #define BORDER_H
 
@@ -8,7 +9,6 @@
 typedef std::shared_ptr<class Map> MapPtr;
 
 #define LENGTH1        60.0
-#define BORDER_ZLEVEL  10
 
 class Border : public Crop
 {

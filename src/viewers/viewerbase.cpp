@@ -14,11 +14,12 @@ void  ViewerBase::drawTile(GeoGraphics * gg, TilePtr tile, QBrush brush, QPen pe
     // Fill the tile.
     if (brush.style() != Qt::NoBrush)
     {
-        gg->fillEdgePoly(ep, brush.color());
+        QPen pen2(brush.color());
+        gg->fillEdgePoly(ep, pen2);
     }
 
     // Outline the tile.
-    gg->drawEdgePoly(ep,pen.color(), pen.width());
+    gg->drawEdgePoly(ep,pen);
 }
 
 void  ViewerBase ::drawMotif(GeoGraphics * gg, MotifPtr motif, QPen pen)

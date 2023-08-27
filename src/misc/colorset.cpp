@@ -56,7 +56,7 @@ void  ColorSet::setColors(const ColorSet & cset)
 
 void ColorSet::setOpacity(float val)
 {
-    for (auto& tpcolor : colorset)
+    for (auto & tpcolor : colorset)
     {
         QColor c = tpcolor.color;
         c.setAlphaF(val);
@@ -169,7 +169,8 @@ void  ColorGroup::resetIndex()
         ipos = 0;
     else
         ipos = -1;
-    for (auto fset : qAsConst(colorgroup))
+
+    for (auto & fset : colorgroup)
     {
         fset.resetIndex();
     }

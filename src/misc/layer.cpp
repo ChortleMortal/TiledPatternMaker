@@ -10,7 +10,7 @@ Layer::Layer(QString name) : QObject()
 {
     this->name = name;
     visible    = true;
-    zlevel     = 0;
+    zlevel     = STANDARD_ZLEVEL;
     connectSignals();
     refs++;
 }
@@ -70,7 +70,7 @@ void Layer::paint(QPainter * painter)
     qreal rot = getCanvasXform().getRotateDegrees();
     painter->rotate(rot);
 
-    for (auto& layer : subLayers)
+    for (const auto & layer : subLayers)
     {
         layer->paint(painter);
     }
@@ -124,7 +124,7 @@ bool Layer::isSelected()
 
 QTransform  Layer::getFrameTransform()
 {
-    QTransform t = view->frameSettings.getTransform(config->getViewerType());
+    QTransform t = view->getViewSettings().getTransform(view->getMostRecent());
 
     //qDebug().noquote() << "Frame transform:" << Transform::toInfoString(t);
 

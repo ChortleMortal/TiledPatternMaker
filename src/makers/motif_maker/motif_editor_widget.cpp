@@ -60,11 +60,15 @@ MotifEditorWidget::MotifEditorWidget()
     setLayout(layout);
 }
 
-void MotifEditorWidget::selectMotifEditor(DesignElementPtr del)
+void MotifEditorWidget::delegate(DesignElementPtr del)
 {
-    currentDesignElement = del;
+    delegatedDesignElement = del;
+
     if (!del)
+    {
+        specificEditorWidget->setEditor(nullptr);
         return;
+    }
 
     MotifPtr motif = del->getMotif();
     if (!motif)
@@ -96,77 +100,77 @@ void MotifEditorWidget::selectMotifEditor(DesignElementPtr del)
 
     typeCombo->updateChoices(motif);
 
-    eMotifType motiofType = motif->getMotifType();
-    switch (motiofType)
+    eMotifType motifType = motif->getMotifType();
+    switch (motifType)
     {
     case MOTIF_TYPE_UNDEFINED:
     case MOTIF_TYPE_RADIAL:
         qCritical("unexpected motif type");
         break;
     case MOTIF_TYPE_EXTENDED_STAR:
-        selectCurrentEditor(ex_star_edit);
+        delgate(ex_star_edit);
         ex_star_edit->setMotif(del,false);
         break;
     case MOTIF_TYPE_EXTENDED_ROSETTE:
-        selectCurrentEditor(ex_rosette_edit);
+        delgate(ex_rosette_edit);
         ex_rosette_edit->setMotif(del,false);
         break;
     case MOTIF_TYPE_STAR:
-        selectCurrentEditor(radial_star_edit);
+        delgate(radial_star_edit);
         radial_star_edit->setMotif(del,false);
         break;
     case MOTIF_TYPE_ROSETTE:
-        selectCurrentEditor(radial_rosette_edit);
+        delgate(radial_rosette_edit);
         radial_rosette_edit->setMotif(del,false);
         break;
     case MOTIF_TYPE_CONNECT_ROSETTE:
-        selectCurrentEditor(connect_rosette_edit);
+        delgate(connect_rosette_edit);
         connect_rosette_edit->setMotif(del,false);
         break;
     case MOTIF_TYPE_CONNECT_STAR:
-        selectCurrentEditor(connect_star_edit);
+        delgate(connect_star_edit);
         connect_star_edit->setMotif(del,false);
         break;
     case MOTIF_TYPE_EXPLICIT_MAP:
-        selectCurrentEditor(explicit_map_edit);
+        delgate(explicit_map_edit);
         explicit_map_edit->setMotif(del,false);
         break;
     case MOTIF_TYPE_IRREGULAR_NO_MAP:
-        selectCurrentEditor(irregular_nomap_edit);
+        delgate(irregular_nomap_edit);
         irregular_nomap_edit->setMotif(del,false);
         break;
     case MOTIF_TYPE_INFERRED:
-        selectCurrentEditor(infer_edit);
+        delgate(infer_edit);
         infer_edit->setMotif(del,false);
         break;
     case MOTIF_TYPE_IRREGULAR_ROSETTE:
-        selectCurrentEditor(irregular_rosette_edit);
+        delgate(irregular_rosette_edit);
         irregular_rosette_edit->setMotif(del,false);
         break;
     case MOTIF_TYPE_HOURGLASS:
-        selectCurrentEditor(hourglass_edit);
+        delgate(hourglass_edit);
         hourglass_edit->setMotif(del,false);
         break;
     case MOTIF_TYPE_INTERSECT:
-        selectCurrentEditor(intersect_edit);
+        delgate(intersect_edit);
         intersect_edit->setMotif(del,false);
         break;
     case MOTIF_TYPE_GIRIH:
-        selectCurrentEditor(girih_edit);
+        delgate(girih_edit);
         girih_edit->setMotif(del,false);
         break;
     case MOTIF_TYPE_IRREGULAR_STAR:
-        selectCurrentEditor(irregular_star_edit);
+        delgate(irregular_star_edit);
         irregular_star_edit->setMotif(del,false);
         break;
     case MOTIF_TYPE_EXPLCIT_TILE:
-        selectCurrentEditor(explicit_tile_edit);
+        delgate(explicit_tile_edit);
         explicit_tile_edit->setMotif(del,false);
         break;
     }
 }
 
-void MotifEditorWidget::selectCurrentEditor(NamedMotifEditor* fe)
+void MotifEditorWidget::delgate(NamedMotifEditor* fe)
 {
     specificEditorWidget->setEditor(fe);
     adjustSize();
@@ -175,7 +179,7 @@ void MotifEditorWidget::selectCurrentEditor(NamedMotifEditor* fe)
 // the type combo has changed
 void MotifEditorWidget::slot_motifTypeChanged(eMotifType type)
 {
-    auto del = currentDesignElement.lock();
+    auto del = delegatedDesignElement.lock();
     if (!del)
     {
         qWarning("MotifEditor::motifChoiceSelected - no design element");
@@ -185,7 +189,7 @@ void MotifEditorWidget::slot_motifTypeChanged(eMotifType type)
     NamedMotifEditor * editor = getEditor(type);
     if (editor)
     {
-        selectCurrentEditor(editor);
+        delgate(editor);
         editor->setMotif(del,true);
         protoMakerData->select(MVD_DELEM,del,config->motifMultiView);
     }

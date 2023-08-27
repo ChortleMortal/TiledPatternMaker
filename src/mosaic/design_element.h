@@ -25,7 +25,7 @@ public:
 
     DesignElement();
     DesignElement(const TilePtr & tile, const MotifPtr & motif);
-    DesignElement(const TilePtr & tiling);
+    DesignElement(const TilePtr & tile);
     DesignElement(const DesignElementPtr & dep);
     DesignElement(const DesignElement & other);
     ~DesignElement();

@@ -271,7 +271,7 @@ void GridView::drawFromTilingRegion()
 
      FillRegion flood(tiling,view->getFillData());
      const Placements & placements = flood.getPlacements(config->repeatMode);
-     for (auto t : placements)
+     for (const auto & t : placements)
      {
         auto poly = t.map(p);
         ggdrawPoly(poly,pen);
@@ -492,7 +492,7 @@ void GridView::drawScreenUnits(QRectF r, QRectF r1, QPointF center,int x_steps, 
 bool GridView::intersects(QVector<QLineF> &edges, QLineF & line)
 {
     QPointF p1;
-    for (auto edge : edges)
+    for (const auto & edge : edges)
     {
         QPointF intersect;
         if (line.intersects(edge,&intersect) != QLineF::NoIntersection && Point::isOnLine(intersect,edge))

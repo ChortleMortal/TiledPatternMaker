@@ -67,8 +67,9 @@ MapPtr MapEditorMapLoader::loadMosaicMap(QString fileName)
         if (sz)
         {
             procSize(sz, _width, _height,_zwidth, _zheight);
-            view->frameSettings.initialise(VIEW_MAP_EDITOR,QSize(_width,_height),QSize(_zwidth,_zheight));
-            view->frameSettings.initialiseCommon(QSize(_width,_height),QSize(_zwidth,_zheight));
+            auto & settings = view->getViewSettings();
+            settings.initialise(VIEW_MAP_EDITOR,QSize(_width,_height),QSize(_zwidth,_zheight));
+            settings.initialiseCommon(QSize(_width,_height),QSize(_zwidth,_zheight));
         }
 
         xml_node ca = node.child("ModelSettings");

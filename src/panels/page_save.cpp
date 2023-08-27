@@ -8,7 +8,7 @@
 #include "makers/tiling_maker/tiling_maker.h"
 #include "mosaic/mosaic.h"
 #include "panels/page_save.h"
-#include "panels/panel.h"
+#include "panels/controlpanel.h"
 #include "settings/configuration.h"
 #include "style/style.h"
 #include "tile/tiling.h"
@@ -42,6 +42,7 @@ page_save::page_save(ControlPanel * cpanel)  : panel_page(cpanel, "Save")
     gbox->setLayout(hbox);
 
     vbox->addWidget(gbox);
+    vbox->addStretch();
 
     connect(mosaicMaker,&MosaicMaker::sig_mosaicLoaded,         this,   &page_save::setup);
     connect(tilingMaker,&TilingMaker::sig_tilingLoaded,         this,   &page_save::setup);
@@ -443,7 +444,7 @@ void page_save::savePixmap(QPixmap & pixmap, QString name)
 
 void page_save::slot_saveSvg()
 {
-    if (config->getViewerType() != VIEW_MOSAIC)
+    if (!view->isEnabled(VIEW_MOSAIC))
     {
         QMessageBox box(panel);
         box.setIcon(QMessageBox::Warning);

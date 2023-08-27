@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!-- Written: Fri Jan 20 2023 07:17:02 -->
-<vector id="1" version="14">
+<!-- Written: Tue Aug 15 2023 09:48:11 -->
+<vector id="1" version="15">
 	<designNotes>This vezrsion differs from the taprats version becuase using the inferred rosett does not give the same result as uing the original explicit map.  This indicates that it was origtinally developed with sdifferent infer rosette code than was released in the java taprats. Version 2 irregular rosette</designNotes>
 	<design>
 		<size>
@@ -28,7 +28,7 @@
 				<app.Prototype>
 					<string>9.6 ~5</string>
 					<entry>
-						<tile.Feature id="4">
+						<Tile id="4">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -70,8 +70,8 @@
 									<Point reference="6" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.Rosette id="15">
+						</Tile>
+						<Rosette id="15">
 							<boundarySides>9</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
@@ -80,10 +80,10 @@
 							<q>0</q>
 							<s>3</s>
 							<k>0</k>
-						</app.Rosette>
+						</Rosette>
 					</entry>
 					<entry>
-						<tile.Feature id="16">
+						<Tile id="16">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -109,21 +109,21 @@
 									<Point reference="18" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitRosette id="23" type="MOTIF_TYPE_INFERRED_ROSETTE">
+						</Tile>
+						<IrregularRosette id="23" type="Irregular Rosette Motif">
+							<version>2</version>
 							<boundarySides>5</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>5</n>
 							<s>2</s>
-							<q>0.21</q>
-							<rFlexPt>0.4999999999999998</rFlexPt>
-							<version>2</version>
-						</app.ExplicitRosette>
+							<q>0.12</q>
+							<rFlexPt>0.24</rFlexPt>
+						</IrregularRosette>
 					</entry>
 					<entry>
-						<tile.Feature id="24">
+						<Tile id="24">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -153,8 +153,8 @@
 									<Point reference="26" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.Rosette id="32">
+						</Tile>
+						<Rosette id="32">
 							<boundarySides>6</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
@@ -163,7 +163,7 @@
 							<q>0</q>
 							<s>2</s>
 							<k>0</k>
-						</app.Rosette>
+						</Rosette>
 					</entry>
 				</app.Prototype>
 			</prototype>

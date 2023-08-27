@@ -6,7 +6,7 @@
 #include "mosaic/mosaic.h"
 #include "mosaic/mosaic_reader.h"
 #include "mosaic/mosaic_writer.h"
-#include "panels/panel.h"
+#include "panels/controlpanel.h"
 #include "settings/configuration.h"
 #include "settings/model_settings.h"
 #include "viewers/viewcontrol.h"
@@ -68,11 +68,12 @@ bool MosaicManager::loadMosaic(QString name)
     mosaicMaker->sm_takeDown(mosaic);
 
     // size view to mosaic
-    view->frameSettings.reInit();
-    view->frameSettings.setModelAlignment(M_ALIGN_MOSAIC);
+    auto & settings = view->getViewSettings();
+    settings.reInit();
+    settings.setModelAlignment(M_ALIGN_MOSAIC);
 
     ModelSettings & model = mosaic->getSettings();
-    view->frameSettings.initialiseCommon(model.getSize(),model.getZSize());
+    settings.initialiseCommon(model.getSize(),model.getZSize());
 
     return true;
 }
@@ -146,8 +147,9 @@ bool MosaicManager::saveMosaic(QString name, QString & savedName, bool forceOver
     qDebug() << "Saving XML to:"  << filename;
 
     // match size of mosaic view
-    QSize size  = view->frameSettings.getCropSize(VIEW_MOSAIC);
-    QSize zsize = view->frameSettings.getZoomSize(VIEW_MOSAIC);
+    auto & settings = view->getViewSettings();
+    QSize size      = settings.getCropSize(VIEW_MOSAIC);
+    QSize zsize     = settings.getZoomSize(VIEW_MOSAIC);
     mosaic->getSettings().setSize(size);
     mosaic->getSettings().setZSize(zsize);
 
@@ -156,7 +158,7 @@ bool MosaicManager::saveMosaic(QString name, QString & savedName, bool forceOver
     bool rv = writer.writeXML(filename,mosaic);
 
     if (rv)
-        view->frameSettings.setModelAlignment(M_ALIGN_MOSAIC);
+       settings.setModelAlignment(M_ALIGN_MOSAIC);
 
     if (!forceOverwrite)
     {

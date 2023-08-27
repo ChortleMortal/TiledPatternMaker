@@ -3,7 +3,7 @@
 #include "design_maker.h"
 #include "legacy/design.h"
 #include "legacy/designs.h"
-#include "panels/panel.h"
+#include "panels/controlpanel.h"
 #include "settings/configuration.h"
 #include "viewers/viewcontrol.h"
 #include "settings/model_settings.h"
@@ -123,9 +123,10 @@ void DesignMaker::slot_buildDesign(eDesign design)
 
     // size view to design
     QSize size = d->getDesignInfo().getSize();
-    view->frameSettings.initialiseCommon(size,size);
-    view->frameSettings.initialise(VIEW_DESIGN,size,size);
-    view->frameSettings.setModelAlignment(M_ALIGN_NONE);
+    auto & settings = view->getViewSettings();
+    settings.initialiseCommon(size,size);
+    settings.initialise(VIEW_DESIGN,size,size);
+    settings.setModelAlignment(M_ALIGN_NONE);
 
     view->removeAllImages();
     view->slot_refreshView();

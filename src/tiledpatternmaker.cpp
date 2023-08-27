@@ -26,8 +26,9 @@
 #include "makers/prototype_maker/prototype_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "misc/cycler.h"
+#include "misc/tpmsplash.h"
 
-#include "panels/panel.h"
+#include "panels/controlpanel.h"
 #include "panels/splitscreen.h"
 #include "settings/configuration.h"
 #include "tile/tiling_manager.h"
@@ -60,7 +61,9 @@ TiledPatternMaker::TiledPatternMaker(int instance) : QObject()
     this->instance = instance;
     connect(this,&TiledPatternMaker::sig_start, this, &TiledPatternMaker::startEverything, Qt::QueuedConnection);
 
-    _showA = false;
+    _showA   = false;
+    splitter = nullptr;
+    _splash  = nullptr;
 }
 
 void TiledPatternMaker::startEverything()
@@ -83,17 +86,32 @@ void TiledPatternMaker::startEverything()
     qDebug() << "memory management test complete";
 #endif
 
-    view            = ViewControl::getInstance();
-    tilingMaker     = TilingMaker::getInstance();
-    prototypeMaker  = PrototypeMaker::getInstance();
+    enableSplash(true);
+
     mosaicMaker     = MosaicMaker::getInstance();
+    prototypeMaker  = PrototypeMaker::getInstance();
+    tilingMaker     = TilingMaker::getInstance();
     mapEditor       = MapEditor::getInstance();
 
+    view            = ViewControl::getInstance();
+    controlPanel    = ControlPanel::getInstance();
+    cycler          = Cycler::getInstance();
+
+    // Methinks the makers should be started before views and the control panel started last
+    // Finally load something
+
+    // init makers
+    mosaicMaker->init();
+    prototypeMaker->init();
+    tilingMaker->init();
+
+    // init view
     view->init();
 
     qRegisterMetaType<MapPtr>("MapPtr");
     qRegisterMetaType<PolyPtr>("PolyPtr");
     qRegisterMetaType<TilePtr>("TilePtr");
+    qRegisterMetaType<QList<int>>();
 
     connect(this, &TiledPatternMaker::sig_refreshView, view, &ViewControl::slot_refreshView);
 
@@ -103,7 +121,6 @@ void TiledPatternMaker::startEverything()
     QThread * thread = new QThread();
     thread->start();
 
-    cycler = Cycler::getInstance();
     cycler->init(thread);
 
     connect(this,  &TiledPatternMaker::sig_ready,        cycler, &Cycler::slot_ready);
@@ -115,24 +132,33 @@ void TiledPatternMaker::startEverything()
     connect(cycler,    &Cycler::sig_compare,        this,  &TiledPatternMaker::slot_compareBMPs);
     connect(cycler,    &Cycler::sig_show_png,       this,  &TiledPatternMaker::slot_show_png);
 
-    // pop-up control panel
-    controlPanel = ControlPanel::getInstance();
+    // init control panel
     controlPanel->init(this);
+
+    // split-screen
+    if (config->splitScreen)
+    {
+       splitScreen();
+    }
+
     controlPanel->show();
     controlPanel->setWindowState((controlPanel->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
     controlPanel->raise();
     controlPanel->activateWindow();
 
-    // init makers
-    mosaicMaker->init();
-    prototypeMaker->init();
-    tilingMaker->init();
-
-    // split-screen
     if (config->splitScreen)
     {
-        slot_splitScreen(true);
+        int width = controlPanel->width();
+        splitter->setLHSWidth(width);
     }
+
+    view->show();
+    view->raise();
+    emit sig_refreshView();
+
+    // this is harmless here but necessary for page floating to be after view is refreshed
+    QCoreApplication::processEvents();
+    controlPanel->floatPages();
 
     // get started - kick off
     if (config->autoLoadStyles && !config->lastLoadedXML.isEmpty())
@@ -166,6 +192,7 @@ void TiledPatternMaker::startEverything()
         emit sig_primaryDisplay();
     }
 }
+
 
 TiledPatternMaker::~TiledPatternMaker()
 {
@@ -247,48 +274,19 @@ void TiledPatternMaker::slot_bringToPrimaryScreen()
     }
 }
 
-void TiledPatternMaker::slot_splitScreen(bool checked)
+void TiledPatternMaker::splitScreen()
 {
-    static SplitScreen  * splitter = nullptr;
+    Q_ASSERT(config->splitScreen);
 
+    // save current positions
     QSettings s;
+    s.setValue((QString("viewPos/%1").arg(config->appInstance)),view->pos());
+    s.setValue(QString("panelPos/%1").arg(config->appInstance), controlPanel->pos());
 
-    config->splitScreen = checked;
-
-    if (config->splitScreen)
-    {
-        // disable splash
-        controlPanel->enableSplash(false);
-
-        // save current positions
-        s.setValue((QString("viewPos/%1").arg(config->appInstance)),view->pos());
-        s.setValue(QString("panelPos/%1").arg(config->appInstance), controlPanel->pos());
-
-        // split the screen
-        Q_ASSERT(!splitter);
-        splitter = new SplitScreen();
-        splitter->show();
-    }
-    else
-    {
-        // restore positions
-        controlPanel->enableSplash(true);
-
-        // unsplit the screen
-        controlPanel->setParent(nullptr);
-        view->setParent(nullptr);
-
-        controlPanel->show();
-        controlPanel->move(s.value(QString("panelPos/%1").arg(config->appInstance)).toPoint());
-        controlPanel->adjustSize();
-
-        view->show();
-        view->move(s.value((QString("viewPos/%1").arg(config->appInstance))).toPoint());
-
-        Q_ASSERT(splitter);
-        delete splitter;
-        splitter = nullptr;
-    }
+    // split the screen
+    Q_ASSERT(!splitter);
+    splitter = new SplitScreen();
+    splitter->show();
 }
 
 void TiledPatternMaker::slot_cyclerFinished()
@@ -838,6 +836,26 @@ TransparentWidget * TiledPatternMaker::popupTransparentPixmap(QPixmap & pixmap,Q
 
     return widget;
 }
+
+
+void TiledPatternMaker::enableSplash(bool enable)
+{
+    if (_splash)
+    {
+        _splash->hide();
+        delete _splash;
+    }
+    _splash = nullptr;
+
+    if (enable)
+    {
+        _splash = new TPMSplash();
+    }
+}
+
+void    TiledPatternMaker::splash(QString & txt)  { if (_splash) _splash->display(txt); }
+void    TiledPatternMaker::splash(QString && txt) { if (_splash) _splash->display(txt); }
+void    TiledPatternMaker::removeSplash()         { if (_splash) _splash->remove(); }
 
 #ifdef TEST_MEMORY_LEAKS
 

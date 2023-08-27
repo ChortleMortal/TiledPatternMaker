@@ -33,7 +33,7 @@ Motif::Motif()
     motifScale    = 1.0;
     motifRotate   = 0.0;
     _n            = 10;
-    version       = -1;
+    version       = 1;          // default
 }
 
 Motif::Motif(const Motif & other)

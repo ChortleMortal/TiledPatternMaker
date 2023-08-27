@@ -3,50 +3,70 @@
 #include <QGridLayout>
 #include <QScreen>
 #include "panels/splitscreen.h"
-#include "panels/panel.h"
+#include "panels/controlpanel.h"
 #include "viewers/viewcontrol.h"
-
+#include "panels/panel_page.h"
 
 SplitScreen::SplitScreen(QWidget *parent) : QFrame(parent)
 {
-    grid = nullptr;
+    setWindowFlag(Qt::Window,true);
+    setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
 
-    panel = ControlPanel::getInstance();
-    view  = ViewControl::getInstance();
+    panel   = ControlPanel::getInstance();
+    view    = ViewControl::getInstance();
+    floater = nullptr;
 
-    //setFrameStyle(QFrame::Box | QFrame::Plain);
-    //setLineWidth(0);
-    //setContentsMargins(0,0,0,0);
+    // left
+    vboxL = new QVBoxLayout();
+    vboxL->addWidget(panel,0,Qt::AlignTop);
+    dummy = new QWidget();
+    vboxL->addWidget(dummy,0,Qt::AlignHCenter);
+    vboxL->addStretch();
 
-    addWidgets();
+    LHS = new QWidget();
+    LHS->setLayout(vboxL);
+
+    // together
+    hbox  = new QHBoxLayout();
+    hbox->addWidget(LHS,0,Qt::AlignLeft);
+    hbox->addWidget(view,0,Qt::AlignLeft | Qt::AlignTop);
+    setLayout(hbox);
 
     QScreen * sc = qApp->screenAt(panel->pos());
-    QRect  rec   = sc->geometry();
-
-    setFixedSize(  rec.width(),rec.height());
-    setMinimumSize(rec.width(),rec.height());
-    setMaximumSize(rec.width(),rec.height());
+    QRect rec    = sc->geometry();
     move(rec.topLeft());
+
+    connect(view, &View::sig_viewSizeChanged, this, &SplitScreen::adjustMe);
+    connect(this, &SplitScreen::sig_adjust,   this, &SplitScreen::adjustMe2, Qt::QueuedConnection);
 }
 
-void SplitScreen::addWidgets()
+void SplitScreen::addFloater(panel_page * pp)
 {
-    grid = new QGridLayout;
-
-    //grid->setSpacing(0);
-    //grid->setMargin(0);
-    //grid->setContentsMargins(0,0,0,0);
-    grid->addWidget(panel,0,0,Qt::AlignTop);
-    grid->addWidget(view,0,1);
-
-    setLayout(grid);
-
-    connect(panel, &ControlPanel::sig_panelResized, this, &SplitScreen::slot_panelResized, Qt::QueuedConnection);
+    floater = pp;
+    vboxL->replaceWidget(dummy,floater);
+    emit sig_adjust();
 }
 
-void SplitScreen::slot_panelResized()
+panel_page * SplitScreen::removeFloater()
 {
-    grid->addWidget(view,0,1);
+    vboxL->replaceWidget(floater,dummy);
+    auto f = floater;
+    floater = nullptr;
+    emit sig_adjust();
+    return f;
 }
 
+void SplitScreen::setLHSWidth(int width)
+{
+    LHS->setFixedWidth(width);
+}
 
+void  SplitScreen::adjustMe(QSize,QSize)
+{
+    adjustSize();
+}
+
+void  SplitScreen::adjustMe2()
+{
+    adjustSize();
+}

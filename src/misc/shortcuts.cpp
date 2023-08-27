@@ -127,7 +127,7 @@ Actions:<br>\
           Excludes all polygons from the tiling<br>\
     F  Fill Using Translation Vectors<br>\
           Surrounds the design with copies using the translation vectors<br>\
-    H  Toggles Show Cneters<br>\
+    H  Toggles Show Centers<br>\
     I  Include/Exclude Polygons in Tiling<br>\
           Toggles the inclusion/exclusion of the polygon under the mouse<br>\
     R  Remove Excluded Polygons<br>\

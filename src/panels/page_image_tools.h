@@ -3,7 +3,7 @@
 #define PAGE_IMAGETOOLS_H
 
 #include <QImage>
-#include "widgets/panel_page.h"
+#include "panels/panel_page.h"
 #include "enums/ecyclemode.h"
 
 class MemoryCombo;

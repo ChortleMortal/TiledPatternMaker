@@ -3,7 +3,7 @@
 #define MOTIFWIDGETS_H
 
 #include <QComboBox>
-#include "widgets/panel_misc.h"
+#include "panels/panel_misc.h"
 #include "enums/emotiftype.h"
 
 class SliderSet;

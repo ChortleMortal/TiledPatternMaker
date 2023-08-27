@@ -433,3 +433,20 @@ QLineF Point::shiftParallel(QLineF bline, qreal offset)
     qreal y2p = y2 + ((offset * (x1-x2)) / L);
     return QLineF(x1p,y1p,x2p,y2p);
 }
+
+QPointF Point::findNearestPoint(const QVector<QPointF> &pts, const QPointF apoint)
+{
+
+    QPointF nearest;
+    qreal len  = 1000.0;
+    for (auto pt : pts)
+    {
+        qreal d =  dist2(apoint, pt);
+        if (d < len)
+        {
+            len = d;
+            nearest = pt;
+        }
+    }
+    return nearest;
+}

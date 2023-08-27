@@ -2,6 +2,7 @@
 #include <QMessageBox>
 
 #include "viewers/view.h"
+#include "viewers/viewcontrol.h"
 #include "legacy/design_maker.h"
 #include "motifs/motif.h"
 #include "geometry/dcel.h"
@@ -16,7 +17,7 @@
 #include "mosaic/mosaic.h"
 #include "mosaic/design_element.h"
 #include "makers/prototype_maker/prototype.h"
-#include "panels/panel.h"
+#include "panels/controlpanel.h"
 #include "settings/configuration.h"
 #include "style/style.h"
 #include "tile/tile.h"
@@ -27,10 +28,10 @@
 extern class TiledPatternMaker * theApp;
 extern RunGuard * guard;
 
-View::View()
+View::View(ViewControl *parent)
 {
     config       = Configuration::getInstance();
-
+    this->parent = parent;
     isShown      = false;
     canPaint     = true;
     dragging     = false;
@@ -52,17 +53,13 @@ void View::init()
     designMaker = DesignMaker::getInstance();
     panel       = ControlPanel::getInstance();
 
-    setKbdMode(KBD_MODE_XFORM_VIEW);
-
     Cycler * cycler = Cycler::getInstance();
     connect(this,     &View::sig_cyclerQuit,   cycler,  &Cycler::slot_stopCycle);
     connect(this,     &View::sig_cyclerKey,    cycler,  &Cycler::slot_psuedoKey);
 
     resize(QSize(DEFAULT_WIDTH,DEFAULT_HEIGHT));
 
-    show();
     setWindowState((windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
-    raise();
 }
 
 void View::addLayer(LayerPtr layer)
@@ -90,7 +87,7 @@ void View::unloadView()
 
 bool View::isActiveLayer(Layer * l)
 {
-    for (auto & layer : activeLayers)
+    for (const auto layer : activeLayers)
     {
         if (layer == l)
         {
@@ -212,7 +209,7 @@ void View::setMouseMode(eMouseMode newMode, bool set)
     update();
 }
 
-void View::setBackgroundColor(QColor color)
+void View::setViewBackgroundColor(QColor color)
 {
     QPalette pal = palette();
     pal.setColor(QPalette::Window, color);
@@ -220,7 +217,7 @@ void View::setBackgroundColor(QColor color)
     setPalette(pal);
 }
 
-QColor View::getBackgroundColor()
+QColor View::getViewBackgroundColor()
 {
     QPalette pal = palette();
     QColor c = pal.color(QPalette::Window);
@@ -268,7 +265,7 @@ void View::dumpRefs()
 
 void View::setKbdMode(eKbdMode mode)
 {
-    eKbdMode newMode = ControlPanel::getValidKbdMode(mode);
+    eKbdMode newMode = panel->getValidKbdMode(mode);
     if (newMode != keyboardMode)
     {
         keyboardMode = newMode;
@@ -344,9 +341,9 @@ bool View::ProcKey(QKeyEvent *k)
     case 'A':  setKbdMode(KBD_MODE_DES_ORIGIN); break;
     case 'B':  setKbdMode(KBD_MODE_DES_OFFSET); break;
     case 'D':  duplicateView(); break;
-    case 'E':  slot_refreshView(); break;    // just for debug
+    case 'E':  parent->slot_refreshView(); break;    // just for debug
     case 'F':  break;
-    case 'G':  config->showGrid = !config->showGrid; slot_refreshView(); break;
+    case 'G':  config->showGrid = !config->showGrid; parent->slot_refreshView(); break;
     case 'H':  config->hideCircles = !config->hideCircles; config->showCenterDebug = !config->showCenterDebug; update(); break;
     case 'I':  designMaker->designLayerShow(); break;  // I=in
     case 'J':  emit sig_saveMenu(); break;
@@ -367,7 +364,7 @@ bool View::ProcKey(QKeyEvent *k)
     case 'U':  setKbdMode(KBD_MODE_XFORM_BKGD); break;
     case 'V':  setKbdMode(KBD_MODE_XFORM_VIEW); break;
     case 'W':  setKbdMode(KBD_MODE_XFORM_UNIQUE_TILE);break;
-    case 'X':  config->circleX = !config->circleX; slot_refreshView(); update(); break;
+    case 'X':  config->circleX = !config->circleX; parent->slot_refreshView(); update(); break;
     case 'Y':  emit sig_saveSVG(); break;
     case 'Z':  setKbdMode(KBD_MODE_DES_ZLEVEL); break;
 
@@ -377,7 +374,7 @@ bool View::ProcKey(QKeyEvent *k)
     {
         QMessageBox  * box = new QMessageBox();
         box->setWindowTitle("Shortcuts");
-        if (config->getViewerType() == VIEW_DESIGN)
+        if (parent->isEnabled(VIEW_DESIGN))
         {
             box->setText(Shortcuts::getDesignShortcuts());
         }
@@ -494,21 +491,17 @@ void View::paintEvent(QPaintEvent *event)
     if (!canPaint)
     {
         qDebug() << "View::paintEvent - discarded";
-        //QWidget::paintEvent(event);
         return;
     }
 
-    //qDebug() << "++++START VIEW PAINT - Scene: items=" << layers.size() << "viewRect" << rect();
-    //qDebug() << "View::paintEvent";
-
-    //QWidget::paintEvent(event);
+    //qDebug() << "View::paintEvent: layers=" << activeLayers.size() << "viewRect" << rect();
 
     QPainter painter(this);
     painter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
 
     std::stable_sort(activeLayers.begin(),activeLayers.end(),Layer::sortByZlevelP);  // tempting to move this to addLayer, but if zlevel changed would not be picked up
 
-    for (auto layer : qAsConst(activeLayers))
+    for (Layer * layer : activeLayers)
     {
         if (layer->isVisible())
         {
@@ -530,7 +523,7 @@ void View::paintEvent(QPaintEvent *event)
         loadUnit.name.clear();
     }
 
-    //qDebug() << "View::paintEvent - end";
+    //qDebug() << "View::paintEvent: end";
 }
 
 #if 0
@@ -547,8 +540,18 @@ void View::resizeEvent(QResizeEvent *event)
 {
     Q_UNUSED(event);
 
-    QSize oldSize   = frameSettings.getCropSize(config->getViewerType());
+    auto mostRecent = parent->getMostRecent();
+
+    QSize oldSize   = viewSettings.getCropSize(mostRecent);
     QSize newSize   = size();
+
+    emit sig_viewSizeChanged(oldSize,newSize);      // for splitscreen and outer border (if any)
+
+    if (oldSize == newSize)
+    {
+        return;
+    }
+
     QSize deltaSize = newSize - oldSize;
     //qDebug() << "View::resizeEvent: old" << oldSize << "new" << newSize << "delta-size" << deltaSize;
 
@@ -556,19 +559,12 @@ void View::resizeEvent(QResizeEvent *event)
     int deltaX = _geometry.x() - rect.x();
     int deltaY = _geometry.y() - rect.y();
     _geometry  = rect;
-    if (deltaX != 0 || deltaY != 0)
-    //qDebug() << "delta x y :" << deltaX << deltaY;
 
-    if (oldSize == newSize)
-    {
-        return;
-    }
-
-    switch(config->getViewerType())
+    switch(mostRecent)
     {
     case VIEW_MOTIF_MAKER:
     case VIEW_DESIGN:
-        frameSettings.setDeltaSize(config->getViewerType(),deltaSize);
+        viewSettings.setDeltaSize(mostRecent,deltaSize);
         break;
 
     case VIEW_TILING_MAKER:
@@ -576,12 +572,17 @@ void View::resizeEvent(QResizeEvent *event)
     case VIEW_MOSAIC:
     case VIEW_PROTOTYPE:
     case VIEW_MAP_EDITOR:
-    case VIEW_CROP:
-    case VIEW_BORDER:
-        frameSettings.setCommonDeltaSizes(deltaSize);
+        viewSettings.setCommonDeltaSizes(deltaSize);
         break;
 
-    default:
+    case VIEW_MEASURE:
+    case VIEW_CENTER:
+    case VIEW_BKGD_IMG:
+    case VIEW_GRID:
+    case VIEW_BORDER:
+    case VIEW_CROP:
+    case VIEW_IMAGE:
+        // these are not primary so cant be most recent
         break;
     }
 
@@ -590,8 +591,6 @@ void View::resizeEvent(QResizeEvent *event)
         if (deltaX) emit sig_deltaMoveX(deltaX);
         if (deltaY) emit sig_deltaMoveY(deltaY);
     }
-
-    emit sig_viewSizeChanged(oldSize,newSize);      // for outer border (if any)
 }
 
 void View::keyPressEvent( QKeyEvent *k )
@@ -625,7 +624,7 @@ void View::mousePressEvent(QMouseEvent *event)
     {
         emit sig_setCenter(event->position());
         setMouseMode(MOUSE_MODE_CENTER,false);
-        slot_refreshView();
+        parent->slot_refreshView();
         panel->getMouseModeWidget()->display();
     }
     else if (getMouseMode(MOUSE_MODE_TRANSLATE))

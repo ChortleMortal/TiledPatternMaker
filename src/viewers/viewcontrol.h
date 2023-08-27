@@ -26,7 +26,9 @@ public:
 
     void    viewEnable(eViewType view, bool enable);
     bool    isEnabled(eViewType view);
-    void    disableAllViews();
+    void    disablePrimeViews();
+    eViewType getMostRecent() { return mostRecentPrimeView; }
+
 
     void    addImage(ImgLayerPtr image) { images.push_back(image); }
     void    removeAllImages()           { images.clear(); }
@@ -41,7 +43,7 @@ public:
 protected:
     void    setupEnabledViewLayers();
     void    refreshView();
-
+    void    setMostRecent(eViewType viewType);
     void    viewDesign();
     void    viewMosaic();
     void    viewPrototype();
@@ -51,12 +53,13 @@ protected:
     void    viewMapEditor();
     void    viewBackgroundImage();
     void    viewGrid();
+    void    viewDebug();
 
 signals:
     void    sig_viewUpdated();
 
 public slots:
-    void    slot_refreshView() override;
+    void    slot_refreshView();
     void    slot_updateView();
     void    slot_unloadView();
     void    slot_dontPaint(bool enb);
@@ -85,10 +88,10 @@ private:
     class BackgroundImageView   * bkgdImageView;
 
     bool                        dontPaint;
+    eViewType                   mostRecentPrimeView;
     UniqueQVector<eViewType>    enabledViews;
     QVector<ImgLayerPtr>        images;
     FillData                    fillData;
-    const Xform                 unityXform;
 };
 
 #endif

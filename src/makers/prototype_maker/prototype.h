@@ -42,10 +42,10 @@ public:
 
     bool    operator==(const Prototype & other);
 
-    void    createProtoMap();
+    void    createProtoMap(bool splash = true);
     void    wipeoutProtoMap();
 
-    MapPtr  getProtoMap();
+    MapPtr  getProtoMap(bool splash = true);
     MapPtr  getExistingProtoMap() { return _protoMap; }
 
     void    replaceTiling(const TilingPtr & newTiling);

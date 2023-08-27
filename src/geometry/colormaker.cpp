@@ -184,7 +184,7 @@ void ColorMaker::assignColorsNew1()
         newState = (newState == FACE_WHITE) ? FACE_BLACK : FACE_WHITE;
     }
 
-    for (auto & fi : qAsConst(facesToDo))
+    for (const auto & fi : facesToDo)
     {
         if( fi->state == FACE_WHITE )
         {

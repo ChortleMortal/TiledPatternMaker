@@ -27,7 +27,7 @@
 #include "misc/utilities.h"
 #include "mosaic/design_element.h"
 #include "makers/prototype_maker/prototype.h"
-#include "panels/panel.h"
+#include "panels/controlpanel.h"
 #include "qlabel.h"
 #include "settings/configuration.h"
 #include "tiledpatternmaker.h"
@@ -89,13 +89,12 @@ page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Ma
     // putting it together
     vbox->addLayout(hbox);
     vbox->addWidget(editorStatusBox);
+    vbox->addStretch();
 
     connect(tilingMaker, &TilingMaker::sig_tilingLoaded,   this,   &page_map_editor::slot_tilingLoaded);
     connect(mosaicMaker, &MosaicMaker::sig_mosaicLoaded,   this,   &page_map_editor::slot_mosaicLoaded);
 
     slot_debugChk(config->mapedStatusBox);
-
-    setMaximumWidth(762);
 
     slot_editLayer(LAYER_1,true);
 
@@ -180,15 +179,11 @@ QGroupBox   * page_map_editor::createSettingsGroup()
 
     connect(sensitivity, &DoubleSpinSet::valueChanged, this, &page_map_editor::slot_mergeSensitivityA);
 
-    chkWhiteBkgd = new QCheckBox("White background");
-    chkWhiteBkgd->setChecked(config->motifBkgdWhite);
-
     DoubleSpinSet * lineWidthSpin = new DoubleSpinSet("Line Width",3.0,1.0,10.0);
     DoubleSpinSet * consWidthSpin = new DoubleSpinSet("Cons Width",1.0,1.0,10.0);
 
     QVBoxLayout * qvbox = new QVBoxLayout();
     qvbox->addLayout(sensitivity);
-    qvbox->addWidget(chkWhiteBkgd);
     qvbox->addLayout(lineWidthSpin);
     qvbox->addLayout(consWidthSpin);
 
@@ -197,8 +192,6 @@ QGroupBox   * page_map_editor::createSettingsGroup()
 
     QGroupBox * gBox = new QGroupBox("Settings");
     gBox->setLayout(qvbox);
-
-    connect(chkWhiteBkgd,   &QCheckBox::clicked,    this,   &page_map_editor::slot_whiteClicked);
 
     return gBox;
 }
@@ -389,8 +382,8 @@ QGroupBox * page_map_editor::createViewGroup()
     QCheckBox * showMapChk      = new QCheckBox("Show map");
     QCheckBox * showPtsChk      = new QCheckBox("Show points");
     QCheckBox * showMidPtsChk   = new QCheckBox("Show mid-points");
-    QCheckBox * showDirPtsChk   = new QCheckBox("Show dirn (green)");
-    QCheckBox * showArcCtrChk   = new QCheckBox("Show arc centre");
+    QCheckBox * showDirPtsChk   = new QCheckBox("Show directions");
+    QCheckBox * showArcCtrChk   = new QCheckBox("Show arc centres");
     animateChk                  = new QCheckBox("Animate Load");
     QCheckBox * showStatusChk   = new QCheckBox("Show Status");
 
@@ -398,7 +391,6 @@ QGroupBox * page_map_editor::createViewGroup()
     QRadioButton * viewMap      = new QRadioButton("Map");
                    viewDCEL     = new QRadioButton("DCEL");
 
-    showMidPtsChk->setStyleSheet("padding-left:15px");
     showDirPtsChk->setStyleSheet("padding-left:15px");
     showArcCtrChk->setStyleSheet("padding-left:15px");
 
@@ -420,10 +412,10 @@ QGroupBox * page_map_editor::createViewGroup()
     vbox->addLayout(hbox);
     vbox->addWidget(line2);
     vbox->addWidget(showMapChk);
-    vbox->addWidget(showPtsChk);
-    vbox->addWidget(showMidPtsChk);
     vbox->addWidget(showDirPtsChk);
     vbox->addWidget(showArcCtrChk);
+    vbox->addWidget(showPtsChk);
+    vbox->addWidget(showMidPtsChk);
     vbox->addWidget(showBoundsChk);
     vbox->addWidget(showConsChk);
     vbox->addWidget(animateChk);
@@ -618,16 +610,16 @@ void page_map_editor::onRefresh()
 
     tallySelects();
 
-    MapPtr map = db->getMap(COMPOSITE);
-    if (map)
-        compositeVChk->setText(map->namedSummary());
-
     tallyCropButtons();
 
     if (config->mapedStatusBox)
     {
         refreshStatusBox();
     }
+
+    MapPtr map = db->getMap(COMPOSITE);
+    if (map)
+        compositeVChk->setText(map->namedSummary());
     else
         compositeVChk->setText("No Map");
 
@@ -652,9 +644,6 @@ void page_map_editor::onRefresh()
     modeGroup->button(maped->getMouseMode())->setChecked(true);
 
     pbCleanseVertices->setText(QString("Cleanse Vertices Sensitivity : %1").arg(config->mapedMergeSensitivity));
-    chkWhiteBkgd->blockSignals(true);
-    chkWhiteBkgd->setChecked(config->motifBkgdWhite);
-    chkWhiteBkgd->blockSignals(false);
 
     if (viewDCEL->isChecked())
         viewDCEL->setStyleSheet("background-color:yellow; color:red;");
@@ -662,7 +651,6 @@ void page_map_editor::onRefresh()
         viewDCEL->setStyleSheet("");
 
     showConsChk->setChecked(db->showConstructionLines);
-
 }
 
 void page_map_editor::refreshStatusBox()
@@ -899,7 +887,7 @@ void page_map_editor::slot_mosaicLoaded(QString name)
 
 void page_map_editor::slot_mosaicChanged()
 {
-    if (config->getViewerType() == VIEW_MAP_EDITOR)
+    if (view->isEnabled(VIEW_MAP_EDITOR))
     {
         eMapEditorMapType mtype = db->getMapType(db->getEditMap());
         switch (mtype)
@@ -952,11 +940,11 @@ void page_map_editor::slot_tilingLoaded (QString name)
 
 void page_map_editor::slot_convertToExplicit()
 {
-    MapEditorLayer layer  = db->getEditLayer();
-    DesignElementPtr delp = layer.wdel.lock();
+    MapEditorLayer & layer = db->getEditLayer();
+    DesignElementPtr delp  = layer.getDel();
     if (delp)
     {
-        Q_ASSERT(db->isMotif(layer.type));
+        Q_ASSERT(db->isMotif(layer.getLayerMapType()));
         MotifPtr motif = delp->getMotif();
         if (motif)
         {
@@ -1251,15 +1239,25 @@ void page_map_editor::slot_embedCrop()
     }
 
     // merges the crop rectangle into the map
-    MapEditorLayer layer = db->getEditLayer();
+    MapEditorLayer & layer = db->getEditLayer();
     MapPtr map = layer.getMapedLayerMap();
+
+    bool rv = true;
     if (!map)
     {
         map = make_shared<Map>("Crop Map");
-        maped->getDb()->insertLayer(MapEditorLayer(map,MAPED_TYPE_CROP,layer.wdel));
+        auto type = maped->getDb()->insertLayer(map,MAPED_TYPE_CROP);
+        if (type == COMPOSITE )
+        {
+            rv = false;
+        }
     }
 
-    bool rv = db->embedCrop(map);
+    if (rv)
+    {
+        rv = db->embedCrop(map);
+    }
+
     if (!rv)
     {
         QMessageBox box(this);
@@ -1507,7 +1505,7 @@ void page_map_editor::slot_pushMap()
 
     bool rv = false;
 
-    auto layer = db->getEditLayer();
+    MapEditorLayer & layer = db->getEditLayer();
     auto map   = layer.getMapedLayerMap();
     if (!map || map->isEmpty())
     {
@@ -1666,7 +1664,7 @@ void page_map_editor::slot_saveMapToFile()
 
 void page_map_editor::slot_viewLayer(int id, bool checked)
 {
-    eLayer eid = eLayer(id);
+    eMapedLayer eid = eMapedLayer(id);
     db->setViewSelect(eid,checked);
     if (checked)
         db->setEditSelect(eid);
@@ -1676,7 +1674,7 @@ void page_map_editor::slot_viewLayer(int id, bool checked)
 void page_map_editor::slot_editLayer(int id, bool checked)
 {
     if (checked)
-        db->setEditSelect(eLayer(id));
+        db->setEditSelect(eMapedLayer(id));
     else
         db->setEditSelect(NO_MAP);
     updateView();
@@ -1751,10 +1749,4 @@ void page_map_editor::tallyCropButtons()
         pbEmbedCrop->setStyleSheet(defaultStyle);
         pbApplyCrop->setStyleSheet(defaultStyle);
     }
-}
-
-void  page_map_editor::slot_whiteClicked(bool state)
-{
-    config->motifBkgdWhite = state;
-    emit sig_refreshView();
 }

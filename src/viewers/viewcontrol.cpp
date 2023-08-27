@@ -1,4 +1,11 @@
-﻿#include "viewers/viewcontrol.h"
+#include <QCoreApplication>
+#include <QMetaType>
+#include <QSettings>
+#include <QDataStream>
+#include <QVariant>
+#include <QVariantList>
+
+#include "viewers/viewcontrol.h"
 #include "legacy/design.h"
 #include "legacy/design_maker.h"
 #include "legacy/legacy_border.h"
@@ -12,7 +19,7 @@
 #include "misc/mark_x.h"
 #include "mosaic/mosaic.h"
 #include "makers/prototype_maker/prototype.h"
-#include "panels/panel.h"
+#include "panels/controlpanel.h"
 #include "settings/model_settings.h"
 #include "settings/configuration.h"
 #include "style/style.h"
@@ -28,6 +35,7 @@
 #include "viewers/tiling_view.h"
 #include "viewers/view.h"
 #include "widgets/image_layer.h"
+#include "tiledpatternmaker.h"
 
 using std::make_shared;
 
@@ -51,8 +59,9 @@ void ViewControl::releaseInstance()
     }
 }
 
-ViewControl::ViewControl() : View()
-{}
+ViewControl::ViewControl() : View(this)
+{
+}
 
 void ViewControl::init()
 {
@@ -76,12 +85,26 @@ void ViewControl::init()
     bkgdImageView   = BackgroundImageView::getInstance();
 
     dontPaint = false;
-    disableAllViews();
-    viewEnable(config->getViewerType(),true);
+    setMostRecent(VIEW_MOSAIC);     // default
+    disablePrimeViews();
 }
 
 ViewControl::~ViewControl()
 {
+    QList<int> currentEnables;
+    for (const auto & v : enabledViews)
+    {
+        int i = static_cast<int>(v);
+        currentEnables << i;
+    }
+
+#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
+    qRegisterMetaTypeStreamOperators<QList<int> >("QList<int>");
+#endif
+
+    QSettings s;
+    s.setValue("viewEnables", QVariant::fromValue(currentEnables));
+
     BackgroundImageView::releaseInstance();
     TilingView::releaseInstance();
     TilingMakerView::releaseInstance();
@@ -91,7 +114,7 @@ ViewControl::~ViewControl()
     MeasureView::releaseInstance();
     GridView::releaseInstance();
     CropViewer::releaseInstance();
-    BorderView::getInstance();
+    BorderView::releaseInstance();
 }
 
 void ViewControl::slot_unloadView()
@@ -135,7 +158,7 @@ void ViewControl::slot_unloadAll()
     tilingMaker->unload();
     dumpRefs();
 
-    frameSettings.reInit();
+    viewSettings.reInit();
     dumpRefs();
 
     slot_refreshView();
@@ -154,25 +177,72 @@ void ViewControl::slot_unloadAll()
 void ViewControl::viewEnable(eViewType view, bool enable)
 {
     if (enable)
+    {
         enabledViews.push_back(view);
+        setMostRecent(view);
+    }
     else
+    {
         enabledViews.removeOne(view);
+    }
 }
 
-void ViewControl::disableAllViews()
+void ViewControl::disablePrimeViews()
 {
-    QVector<eViewType> tmp = enabledViews;
-    for (auto view : tmp)
+    for (const auto & view : enabledViews)
     {
         switch (view)
         {
-        case VIEW_BKGD_IMG:
-        case VIEW_GRID:
+        // primary views
+        case VIEW_DESIGN:
+        case VIEW_MOSAIC:
+        case VIEW_PROTOTYPE:
+        case VIEW_MOTIF_MAKER:
+        case VIEW_TILING:
+        case VIEW_TILING_MAKER:
+        case  VIEW_MAP_EDITOR:
+            enabledViews.removeOne(view);
             break;
 
-        default:
-            enabledViews.removeOne(view);
+         // secondary views
+        case VIEW_BKGD_IMG:
+        case VIEW_GRID:
+        case VIEW_BORDER:
+        case VIEW_CROP:
+        case VIEW_MEASURE:
+        case VIEW_CENTER:
+        case VIEW_IMAGE:
+            // do nothing
+            break;
         }
+    }
+}
+
+void ViewControl::setMostRecent(eViewType viewType)
+{
+    switch (viewType)
+    {
+    // primary views
+    case VIEW_DESIGN:
+    case VIEW_MOSAIC:
+    case VIEW_PROTOTYPE:
+    case VIEW_MOTIF_MAKER:
+    case VIEW_TILING:
+    case VIEW_TILING_MAKER:
+    case  VIEW_MAP_EDITOR:
+        mostRecentPrimeView = viewType;
+        break;
+
+        // secondary views
+    case VIEW_BKGD_IMG:
+    case VIEW_GRID:
+    case VIEW_BORDER:
+    case VIEW_CROP:
+    case VIEW_MEASURE:
+    case VIEW_CENTER:
+    case VIEW_IMAGE:
+        // do nothing
+        break;
     }
 }
 
@@ -214,7 +284,7 @@ void ViewControl::slot_refreshView()
 
 void ViewControl::refreshView()
 {
-    qDebug().noquote() << "+ ViewController::refreshView type=" << sViewerType[config->getViewerType()];
+    qDebug().noquote() << "+ ViewController::refreshView mostRecentPrimeView=" << sViewerType[getMostRecent()];
 
     paintEnable(false);
 
@@ -229,37 +299,31 @@ void ViewControl::refreshView()
         addLayer(ilp);
     }
 
-    // measure
-    if (config->measure)
-    {
-        measureView->setMeasureMode(true);
-        addLayer(measureView);
-    }
-    else
-    {
-        measureView->setMeasureMode(false);
-    }
-
     // resize
-    QSize sz = frameSettings.getCropSize(config->getViewerType());
+    QSize sz = viewSettings.getCropSize(mostRecentPrimeView);
     if (sz != size())
     {
-        qDebug() << "ViewControl set size :" << sz;
-        QWidget::resize(sz);
+        qDebug() << "ViewController::refreshView set size :" << sz;
+        if (config->limitViewSize)
+        {
+            QScreen * pri = QGuiApplication::primaryScreen();
+            QSize size = pri->availableSize();
+            if (sz.width() > size.width())
+            {
+                sz.setWidth(size.width());
+            }
+            if (sz.height() > size.height())
+            {
+                sz.setHeight(size.height());
+            }
+        }
+        resize(sz);
     }
 
     // crops
     if (cropViewer->getShowCrop())
     {
         addLayer(cropViewer);
-    }
-
-    // big blue cross
-    if (config->circleX)
-    {
-        MarkXPtr item = make_shared<MarkX>(rect().center(), QPen(Qt::blue,5), QString("center"));
-        item->setHuge();
-        addLayer(item);
     }
 
     if (!dontPaint)
@@ -317,8 +381,14 @@ void ViewControl::setupEnabledViewLayers()
             viewGrid();
             break;
 
+        case VIEW_MEASURE:
+        case VIEW_CENTER:
+            viewDebug();
+            break;
+
         case VIEW_BORDER:
         case VIEW_CROP:
+        case VIEW_IMAGE:
             // these do not have separate enable layer enables
             break;
         }
@@ -340,8 +410,8 @@ void ViewControl::viewDesign()
     if (designs.count())
     {
         DesignPtr dp = designs.first();
-        ModelSettings & settings = dp->getDesignInfo();
-        setBackgroundColor(settings.getBackgroundColor());
+        ModelSettings & modelSettings = dp->getDesignInfo();
+        setViewBackgroundColor(modelSettings.getBackgroundColor());
         if (dp->border)
         {
             addLayer(dp->border);
@@ -358,14 +428,14 @@ void ViewControl::viewMosaic()
         qDebug() << "ViewController::viewMosaic" << name;
 
         QString astring = QString("Preparing Mosaic: %1").arg(name);
-        panel->splashMosiac(astring);
+        theApp->splash(astring);
         panel->pushPanelStatus(name);
 
         const StyleSet & sset = mosaic->getStyleSet();
         for (StylePtr style : sset)
         {
             qDebug().noquote() << "Adding Style:" << style.get() << "  " << style->getDescription();
-            if (frameSettings.getModelAlignment() != M_ALIGN_MOSAIC)
+            if (viewSettings.getModelAlignment() != M_ALIGN_MOSAIC)
             {
                 style->setCanvasXform(getCurrentXform());
             }
@@ -380,7 +450,7 @@ void ViewControl::viewMosaic()
             addLayer(borderView);
         }
 
-        panel->removeSplashMosaic();
+        theApp->removeSplash();
         panel->popPanelStatus();
     }
     else
@@ -388,8 +458,8 @@ void ViewControl::viewMosaic()
         qDebug() << "ViewController::viewMosaic - no mosaic";
     }
 
-    ModelSettings & settings = mosaicMaker->getMosaicSettings();
-    setBackgroundColor(settings.getBackgroundColor());
+    ModelSettings & modelSettings = mosaicMaker->getMosaicSettings();
+    setViewBackgroundColor(modelSettings.getBackgroundColor());
 }
 
 void ViewControl::viewPrototype()
@@ -398,7 +468,7 @@ void ViewControl::viewPrototype()
 
     addLayer(prototypeView);
 
-    setBackgroundColor(Qt::white);
+    setViewBackgroundColor(viewSettings.getBkgdColor(VIEW_PROTOTYPE));
 }
 
 void ViewControl::viewMotifMaker()
@@ -408,10 +478,7 @@ void ViewControl::viewMotifMaker()
     // dont set canvas xform
     addLayer(motifView);
 
-   if (config->motifBkgdWhite)
-        setBackgroundColor(QColor(Qt::white));
-    else
-        setBackgroundColor(QColor(Qt::black));
+    setViewBackgroundColor(viewSettings.getBkgdColor(VIEW_MOTIF_MAKER));
 }
 
 void ViewControl::viewTiling()
@@ -422,26 +489,26 @@ void ViewControl::viewTiling()
         qDebug() << "++ViewController::viewTiling (tiling)"  << tiling->getName();
 
     tilingView->setTiling(tiling);
-    if (frameSettings.getModelAlignment() != M_ALIGN_TILING)
+    if (viewSettings.getModelAlignment() != M_ALIGN_TILING)
     {
         tilingView->setCanvasXform(getCurrentXform());
     }
     addLayer(tilingView);
 
-    setBackgroundColor(Qt::white);
+    setViewBackgroundColor(viewSettings.getBkgdColor(VIEW_TILING));
 }
 
 void ViewControl::viewTilingMaker()
 {
     qDebug() << "++ViewController::viewTilingMaker";
 
-    if (frameSettings.getModelAlignment() != M_ALIGN_TILING)
+    if (viewSettings.getModelAlignment() != M_ALIGN_TILING)
     {
         tilingMakerView->setCanvasXform(getCurrentXform());
     }
     addLayer(tilingMakerView);
 
-    setBackgroundColor(Qt::white);
+    setViewBackgroundColor(viewSettings.getBkgdColor(VIEW_TILING_MAKER));
 }
 
 void ViewControl::viewMapEditor()
@@ -451,10 +518,7 @@ void ViewControl::viewMapEditor()
     addLayer(mapedView);
     mapedView->forceLayerRecalc();
 
-    if (config->motifBkgdWhite)
-        setBackgroundColor(QColor(Qt::white));
-    else
-        setBackgroundColor(QColor(Qt::black));
+    setViewBackgroundColor(viewSettings.getBkgdColor(VIEW_MAP_EDITOR));
 }
 
 void ViewControl::viewBackgroundImage()
@@ -464,19 +528,41 @@ void ViewControl::viewBackgroundImage()
         qDebug() << "adding image" << bkgdImageView->getName();
         addLayer(bkgdImageView);
     }
+    setViewBackgroundColor(viewSettings.getBkgdColor(VIEW_BKGD_IMG));
 }
 
 void ViewControl::viewGrid()
 {
-    if (config->showGrid)
+    addLayer(gridView);
+    setViewBackgroundColor(viewSettings.getBkgdColor(VIEW_GRID));
+}
+
+void ViewControl::viewDebug()
+{
+    // measure
+    if (config->measure)
     {
-        addLayer(gridView);
+        addLayer(measureView);
+    }
+    else
+    {
+        measureView->clear();
+    }
+
+    // big blue cross
+    if (config->circleX)
+    {
+        MarkXPtr item = make_shared<MarkX>(rect().center(), QPen(Qt::blue,5), QString("center"));
+        item->setHuge();
+        addLayer(item);
     }
 }
 
 const Xform & ViewControl::getCurrentXform()
 {
-    switch (frameSettings.getModelAlignment())
+    static const Xform unityXform;
+
+    switch (viewSettings.getModelAlignment())
     {
     case M_ALIGN_MOSAIC:
     {
@@ -512,12 +598,12 @@ const Xform & ViewControl::getCurrentXform()
 
 void ViewControl::setCurrentXform(const Xform & xf)
 {
-    switch (frameSettings.getModelAlignment())
+    switch (viewSettings.getModelAlignment())
     {
     case M_ALIGN_MOSAIC:
         if (MosaicPtr mosaic = mosaicMaker->getMosaic())
         {
-            for (auto & style : mosaic->getStyleSet())
+            for (const auto & style : mosaic->getStyleSet())
             {
                  style->setCanvasXform(xf);
             }
@@ -529,7 +615,7 @@ void ViewControl::setCurrentXform(const Xform & xf)
     case M_ALIGN_TILING:
         if (tilingMaker->getTilings().size())
         {
-            for (auto tiling : tilingMaker->getTilings())
+            for (const auto & tiling : tilingMaker->getTilings())
             {
                 tiling->setCanvasXform(xf);
             }

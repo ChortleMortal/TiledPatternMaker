@@ -1,6 +1,5 @@
 #include <QPainter>
 #include "viewers/shape_view.h"
-#include "viewers/viewcontrol.h"
 #include "settings/configuration.h"
 #include "legacy/shapes.h"
 
@@ -21,7 +20,7 @@ void ShapeViewer::paint(QPainter *painter)
     painter->rotate(rot);
 
     // polyforms
-    for (auto p : polyforms)
+    for (const auto & p : polyforms)
     {
         if (p->polytype == POLYGON2)
         {
@@ -112,7 +111,7 @@ void ShapeViewer::paint(QPainter *painter)
     }
 
     // inner pen
-    for (auto p : polyforms)
+    for (const auto & p : polyforms)
     {
         painter->setPen(p->innerPen);
         if (p->polytype == POLYGON2)

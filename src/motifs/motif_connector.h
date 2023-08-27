@@ -15,11 +15,11 @@ class MotifConnector
 public:
     MotifConnector();
 
-    void  connectMotif(RadialMotif * fig);
-    qreal computeScale(RadialMotif *  fig);
+    void  connectMotif(RadialMotif * motif);
+    qreal computeScale(RadialMotif *  motif);
 
-    void rotateHalf(RadialMotif *  fig);
-    void scaleToUnit(RadialMotif * fig);
+    void rotateHalf(RadialMotif *  motif);
+    void scaleToUnit(RadialMotif * motif);
 
     void dumpM(QString s,  QMap<VertexPtr, VertexPtr> &movers);
 

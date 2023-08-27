@@ -8,7 +8,7 @@ class MapEditorView;
 class CropMaker;
 class CropViewer;
 
-#include "widgets/panel_page.h"
+#include "panels/panel_page.h"
 
 typedef std::shared_ptr<class Map> MapPtr;
 
@@ -92,9 +92,6 @@ private slots:
     void slot_viewLayer(int id, bool checked);
     void slot_editLayer(int id, bool checked);
 
-    void slot_whiteClicked(bool state);
-
-
 protected:
     QGroupBox   * createMapSelects();
     QGroupBox   * createStatusGroup();
@@ -138,7 +135,6 @@ private:
     QCheckBox     * layer1VChk;
     QCheckBox     * layer2VChk;
     QCheckBox     * layer3VChk;
-    QCheckBox     * chkWhiteBkgd;
 
     QCheckBox     * showConsChk;
 

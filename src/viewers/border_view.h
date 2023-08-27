@@ -34,7 +34,7 @@ public slots:
     virtual void slot_moveX(int amount)  override;
     virtual void slot_moveY(int amount)  override;
 
-    virtual void iamaLayer() override {}
+    virtual eViewType iamaLayer() override { return VIEW_BORDER; }
     virtual void iamaLayerController() override {}
 
     void    setMousePos(QPointF pt);

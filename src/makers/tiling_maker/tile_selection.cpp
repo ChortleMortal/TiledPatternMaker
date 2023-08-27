@@ -37,7 +37,7 @@ ArcPointTileSelector::ArcPointTileSelector(PlacedTilePtr pfp, EdgePtr edge, QPoi
 
 CenterTileSelector::CenterTileSelector(PlacedTilePtr pfp, QPointF pt) : TileSelector(pfp,pt)
 {
-    type = FEAT_CENTER;
+    type = TILE_CENTER;
 }
 
 ScreenTileSelector::ScreenTileSelector(QPointF pt) : TileSelector(pt)

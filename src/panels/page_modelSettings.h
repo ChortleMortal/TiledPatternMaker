@@ -2,10 +2,11 @@
 #ifndef PAGE_MODEL_SETTINGS_H
 #define PAGE_MODEL_SETTINGS_H
 
-#include "widgets/panel_page.h"
+#include "panels/panel_page.h"
 #include "settings/model_settings.h"
 
 class AQSpinBox;
+class AQTableWidget;
 class SpinSet;
 class DoubleSpinSet;
 class ClickableLabel;

@@ -2,7 +2,7 @@
 #ifndef DLG_EDGE_POLY_EDIT_H
 #define DLG_EDGE_POLY_EDIT_H
 
-#include "widgets/panel_misc.h"
+#include "panels/panel_misc.h"
 #include "geometry/edgepoly.h"
 
 typedef std::shared_ptr<class Tile>  TilePtr;

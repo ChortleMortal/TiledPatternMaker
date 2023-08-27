@@ -1,13 +1,14 @@
 #include <QtWidgets>
-#include "makers/prototype_maker/prototype_maker.h"
-#include "makers/motif_maker/motif_selector.h"
-#include "makers/motif_maker/motif_editor_widget.h"
+#include "makers/motif_maker/design_element_selector.h"
 #include "makers/motif_maker/design_element_button.h"
+#include "makers/motif_maker/motif_editor_widget.h"
+#include "makers/motif_maker/motif_maker_widget.h"
 #include "makers/prototype_maker/prototype.h"
-#include "style/style.h"
-#include "tile/tiling.h"
+#include "makers/prototype_maker/prototype_maker.h"
 #include "mosaic/design_element.h"
 #include "settings/configuration.h"
+#include "style/style.h"
+#include "tile/tiling.h"
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -30,12 +31,13 @@
 // This launcher is a view which displays the prototype but does not construct it
 // Construction is performed in the MotifMaker
 
-DELSelectorWidget::DELSelectorWidget()
+DELSelectorWidget::DELSelectorWidget(MotifMakerWidget * makerWidget)
 {
     qRegisterMetaType<DesignElementButton*>();
 
+    maker         = makerWidget;
     config        = Configuration::getInstance();
-    motifViewData = PrototypeMaker::getInstance()->getProtoMakerData();
+    protoMakerData = PrototypeMaker::getInstance()->getProtoMakerData();
 
     setWidgetResizable(true);
     setFixedWidth(360);
@@ -56,21 +58,18 @@ void DELSelectorWidget::setup(ProtoPtr proto)
     {
         DELBtnPtr dummy;
         buttons.clear();
-        setCurrentButton(dummy,false);
+        delegate(dummy,false,true);
         return;
     }
 
     QVector<DesignElementPtr> & dels = proto->getDesignElements();
     populateMotifButtons(dels);
-
-    Q_ASSERT(buttons.size());
-    setCurrentButton(buttons[0],false);
 }
 
 void DELSelectorWidget::populateMotifButtons(QVector<DesignElementPtr> & dels)
 {
     buttons.clear();
-    _currentButton.reset();
+    delegatedButton.reset();
 
     int idx = 0;
     auto rit = dels.constEnd();
@@ -97,6 +96,7 @@ bool DELSelectorWidget::eventFilter(QObject *watched, QEvent *event)
 {
     if (event->type() == QEvent::MouseButtonPress)
     {
+        qDebug() << "DELSelectorWidget::eventFilter - button mouse button press";
         DesignElementButton * fb = dynamic_cast<DesignElementButton*>(watched);
         if (fb)
         {
@@ -106,11 +106,20 @@ bool DELSelectorWidget::eventFilter(QObject *watched, QEvent *event)
                 DELBtnPtr fbp = *it;
                 if (fbp.get() == fb)
                 {
+                    bool add = config->motifMultiView;
                     Qt::KeyboardModifiers kms =  QApplication::keyboardModifiers();
-                    if (kms == Qt::SHIFT || config->motifMultiView)
-                        setCurrentButton(fbp,true);
-                    else
-                        setCurrentButton(fbp,false);
+                    if (kms == Qt::SHIFT)
+                    {
+                        add = true;
+                    }
+                    bool set = true;
+                    if (config->motifMultiView && fb->isDelegated())
+                    {
+                        set = false;
+                    }
+                    // this performs complete delegation of maker
+                    maker->delegate(fbp,add,set);
+                    break;
                 }
             }
         }
@@ -118,23 +127,66 @@ bool DELSelectorWidget::eventFilter(QObject *watched, QEvent *event)
     return QScrollArea::eventFilter(watched, event);
 }
 
-void DELSelectorWidget::setCurrentButton(DELBtnPtr btn, bool add)
+void DELSelectorWidget::delegate(DELBtnPtr btn, bool add, bool set)
 {
-    if (btn)
-        qDebug() << "MotifSelector::setCurrent" << btn.get() << "index=" << btn->getIndex();
+    if (!btn)
+        return;
 
-    _currentButton = btn;
+    qDebug() << "DELSelectorWidget::delegate" << btn.get() << "index=" << btn->getIndex();
 
-    emit sig_launcherButton(btn,add);
+    // selection
+    if (!add)
+    {
+        for (auto btn : buttons)
+        {
+            btn->setSelection(false);
+        }
+    }
+    btn->setSelection(set);
+
+    // delegation
+    if (delegatedButton.lock())
+    {
+        auto oldButton = delegatedButton.lock();
+        if (set)
+        {
+            // setting new delegation, so removing new delegation
+            oldButton->setDelegation(false);
+        }
+    }
+    btn->setDelegation(set);
+    delegatedButton = btn;
+    ensureWidgetVisible(btn.get());
+}
+
+DELBtnPtr DELSelectorWidget::getButton(DesignElementPtr del)
+{
+    auto dels =  protoMakerData->getSelectedDELs(MVD_DELEM);
+    for (auto btn : buttons)
+    {
+        if (del == btn->getDesignElement())
+        {
+            return btn;
+        }
+    }
+    return delegatedButton.lock();
 }
 
 void DELSelectorWidget::tallyButtons()
 {
-    auto dels =  motifViewData->getSelectedDELs(MVD_DELEM);
-    for (auto btn : buttons)
+    for (auto & btn : buttons)
     {
         auto del = btn->getDesignElement();
-        btn->tally(dels.contains(del));
+        QString str;
+        if (protoMakerData->isSelected(del))
+            str += "dS  ";
+
+        if (protoMakerData->isHidden(MVD_DELEM,del))
+            str += "H";
+        else
+            str += "V";
+        btn->setTallyString(str);
+        btn->tally();
     }
 }
 

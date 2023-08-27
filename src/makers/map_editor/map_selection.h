@@ -68,7 +68,6 @@ enum ePointInfo
 {
     PT_VERTEX,
     PT_VERTEX_MID,
-    PT_VERTEX_MID2,
     PT_LINE,
     PT_LINE_MID,
     PT_CIRCLE,

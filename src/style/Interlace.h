@@ -3,6 +3,7 @@
 #define INTERLACE_H
 
 #include <QStack>
+#include <QPainterPath>
 
 #include "style/thick.h"
 #include "geometry/threads.h"
@@ -27,19 +28,35 @@ protected:
 class Segment
 {
 public:
-    QPolygonF    getPoly();
-    QPainterPath getPainterPath();
+    Segment(eEdgeType etype, QColor ecolor);
 
-    void         dump();
-    bool         valid();
+    void        setCurve(bool isConvex, QPointF center);
+    void        setShadowColor();
+    QColor      getColor() const { return color; }
+
+    QPolygonF   getPoly();
+    void        setPainterPath();
+
+    void        draw(GeoGraphics * gg, QPen &pen) const;
+    void        drawOutline(GeoGraphics *gg, QPen & pen) const;
+    void        drawShadows(GeoGraphics *gg, qreal shadow) const;
+    QPointF     getShadowVector(QPointF from, QPointF to, qreal shadow) const;
+
+    bool        valid();
+    void        dump();
 
     Piece       v1;
     Piece       v2;
 
-    QColor      c;
+private:
     eEdgeType   type;
     QPointF     arcCenter;
     bool        convex;
+
+    QColor      color;
+    QColor      shadowColor;
+
+    QPainterPath path;
 };
 
 
@@ -75,7 +92,6 @@ protected:
     void    buildFrom();
     void    propagate(VertexPtr vertex, EdgePtr edge, bool edge_under_at_vert);
 
-    QPointF getShadowVector(QPointF from, QPointF to);
 
 private:
     MapPtr  map;

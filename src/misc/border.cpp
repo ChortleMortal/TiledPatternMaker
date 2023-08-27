@@ -2,7 +2,7 @@
 #include "geometry/crop.h"
 #include "geometry/map.h"
 #include "qmath.h"
-#include "settings/configuration.h"
+#include "misc/tile_color_defs.h"
 #include "misc/geo_graphics.h"
 #include <QPainter>
 
@@ -302,10 +302,11 @@ void BorderTwoColor::draw(QPainter * painter, QTransform t)
     t =  QTransform();      // KLUDGE
     GeoGraphics gg(painter,t);
 
-    for (const auto & face : qAsConst(faces))
+    for (const FacePtr & face : faces)
     {
-        gg.fillEdgePoly(*face,face->color);
-        gg.drawEdgePoly(*face,face->color,1);
+        QPen pen(face->color, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+        gg.fillEdgePoly(*face,pen);
+        gg.drawEdgePoly(*face,pen);
     }
 }
 
@@ -461,8 +462,11 @@ void  BorderBlocks::draw(QPainter * painter, QTransform t)
 
     for (const auto & face : qAsConst(faces))
     {
-        gg.fillEdgePoly(*face,face->color);
-        gg.drawEdgePoly(*face,QColor(TileBlack),1);
+        QPen pen(face->color, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+        QPen pen2(QColor(TileBlack), 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+
+        gg.fillEdgePoly(*face,pen);
+        gg.drawEdgePoly(*face,pen2);
     }
 }
 

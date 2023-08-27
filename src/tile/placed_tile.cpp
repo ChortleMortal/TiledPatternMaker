@@ -25,13 +25,15 @@ using std::make_shared;
 
 PlacedTile::PlacedTile()
 {
+    clearViewState();
     _show = true;
-} // default
+}
 
 PlacedTile::PlacedTile(TilePtr tile, QTransform T)
 {
     this->tile = tile;
     this->T       = T;
+    clearViewState();
     _show = true;
     //qDebug() << "setTransform1=" << Transform::toInfoString(T);
 }
@@ -49,7 +51,6 @@ PlacedTilePtr PlacedTile::copy()
 void PlacedTile::setTile(TilePtr tile)
 {
     this->tile = tile;
-
 }
 
 TilePtr PlacedTile::getTile()

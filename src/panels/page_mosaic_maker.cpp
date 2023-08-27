@@ -20,7 +20,7 @@
 #include "tile/tiling.h"
 #include "viewers/viewcontrol.h"
 #include "widgets/layout_sliderset.h"
-#include "widgets/panel_misc.h"
+#include "panels/panel_misc.h"
 #include "widgets/dlg_cleanse.h"
 
 Q_DECLARE_METATYPE(WeakStylePtr)
@@ -69,6 +69,7 @@ page_mosaic_maker:: page_mosaic_maker(ControlPanel * apanel)  : panel_page(apane
     vbox->addSpacing(5);
     vbox->addWidget(parmsTable);
     vbox->addLayout(parmsLayout);
+    vbox->addStretch();
 
     connect(delBtn,  &QPushButton::clicked, this, &page_mosaic_maker::slot_deleteStyle);
     connect(upBtn,   &QPushButton::clicked, this, &page_mosaic_maker::slot_moveStyleUp);

@@ -183,22 +183,26 @@ void Filled::drawDCEL(GeoGraphics * gg)
     if (draw_outside_whites)
     {
         QColor color = whiteColorSet.getFirstColor().color;
+        QPen pen(color, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
         for (auto & face : qAsConst(whiteFaces))
         {
             const EdgePoly & ep = *face.get();
-            gg->fillEdgePoly(ep, color);
+            gg->fillEdgePoly(ep, pen);
             color = whiteColorSet.getNextColor().color;
+            pen.setColor(color);
         }
     }
 
     if (draw_inside_blacks)
     {
         QColor color = blackColorSet.getFirstColor().color;
+        QPen pen(color, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
         for (auto & face : qAsConst(blackFaces))
         {
             const EdgePoly & ep = *face.get();
-            gg->fillEdgePoly(ep, color);
+            gg->fillEdgePoly(ep, pen);
             color = blackColorSet.getNextColor().color;
+            pen.setColor(color);
         }
     }
 }
@@ -211,10 +215,11 @@ void Filled::drawDCELNew2(GeoGraphics *gg)
     {
         if (fset->selected)
         {
+            QPen pen(Qt::red, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
             for (const FacePtr & face : qAsConst(*fset))
             {
                 EdgePoly & ep = *face.get();
-                gg->fillEdgePoly(ep,Qt::red);
+                gg->fillEdgePoly(ep,pen);
             }
         }
         else
@@ -222,11 +227,11 @@ void Filled::drawDCELNew2(GeoGraphics *gg)
             TPColor tpcolor =  whiteColorSet.getColor(row);
             if (!tpcolor.hidden)
             {
-                QColor color = tpcolor.color;
+                QPen pen(tpcolor.color, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
                 for (const FacePtr & face : qAsConst(*fset))
                 {
                     EdgePoly & ep = *face.get();
-                    gg->fillEdgePoly(ep,color);
+                    gg->fillEdgePoly(ep,pen);
                 }
             }
         }
@@ -241,10 +246,11 @@ void Filled::drawDCELNew3(GeoGraphics *gg)
     {
         if (fset->selected)
         {
+            QPen pen(Qt::red, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
             for (FacePtr & face : *fset)
             {
                 EdgePoly & ep = *face.get();
-                gg->fillEdgePoly(ep,Qt::red);
+                gg->fillEdgePoly(ep,pen);
             }
             continue;
         }
@@ -267,9 +273,9 @@ void Filled::drawDCELNew3(GeoGraphics *gg)
 
                 continue;
             }
-            QColor color = tpc.color;
+            QPen pen(tpc.color, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
             EdgePoly & ep = *face.get();
-            gg->fillEdgePoly(ep,color);
+            gg->fillEdgePoly(ep,pen);
         }
     }
 }

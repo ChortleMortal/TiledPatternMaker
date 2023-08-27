@@ -8,12 +8,13 @@
 #include "geometry/map.h"
 #include "misc/timers.h"
 #include "mosaic/design_element.h"
-#include "panels/panel.h"
+#include "panels/controlpanel.h"
 #include "settings/configuration.h"
 #include "tile/tile.h"
 #include "tile/placed_tile.h"
 #include "tile/tiling.h"
 #include "viewers/viewcontrol.h"
+#include "tiledpatternmaker.h"
 
 using std::make_shared;
 
@@ -80,14 +81,14 @@ bool Prototype::operator==(const Prototype & other)
     return  true;
 }
 
-void Prototype::createProtoMap()
+void Prototype::createProtoMap(bool splash)
 {
     AQElapsedTimer timer;
 
     qDebug() << "PROTOTYPE CONSTRUCT MAP" << this;
     QString astring = QString("Constructing prototype map for tiling: %1").arg(tiling->getName());
     panel->pushPanelStatus(astring);
-    panel->splashTiling(astring);
+    if (splash) theApp->splash(astring);
     qDebug().noquote() << astring;
 
     wipeoutProtoMap();
@@ -97,7 +98,7 @@ void Prototype::createProtoMap()
     qDebug() << "PROTOTYPE COMPLETED MAP: vertices=" << _protoMap->numVertices() << "edges=" << _protoMap->numEdges();
 
     panel->popPanelStatus();
-    panel->removeSplashTiling();
+    if (splash) theApp->removeSplash();
 
     qDebug().noquote() << "Prototype construction" << timer.getElapsed() << "seconds";
 }
@@ -146,7 +147,7 @@ void Prototype::replaceTiling(const TilingPtr & newTiling)
 
     // remove unused elements
     QVector<DesignElementPtr> unusedElements;
-    for (auto& element : qAsConst(designElements))
+    for (const auto & element : designElements)
     {
         if (!usedElements.contains(element))
         {
@@ -154,13 +155,13 @@ void Prototype::replaceTiling(const TilingPtr & newTiling)
         }
     }
 
-    for (auto& element : unusedElements)
+    for (const auto & element : unusedElements)
     {
         removeElement(element);
     }
 
     // create new elements
-    for (const auto & tile : qAsConst(unusedTiles))
+    for (const auto & tile : unusedTiles)
     {
         DesignElementPtr del = make_shared<DesignElement>(tile);
         addElement(del);
@@ -171,7 +172,7 @@ void Prototype::analyze(TilingPtr newTiling)
 {
     QVector<TilePtr> tiles = newTiling->getUniqueTiles();
     QString line = "elements: ";
-    for (const auto & designElement : qAsConst(designElements))
+    for (const auto & designElement : designElements)
     {
         TilePtr tile = designElement->getTile();
         line += tile->summary();
@@ -210,7 +211,7 @@ DesignElementPtr Prototype::getDesignElement(const TilePtr & tile)
         }
     }
 
-    qWarning() << "getDesignElement() - not found";
+    qInfo() << "getDesignElement() - not found";
     DesignElementPtr del;
     return del;
 }
@@ -222,7 +223,7 @@ DesignElementPtr Prototype::getDesignElement(int index)
         return designElements[index];
     }
 
-    qWarning() << "getDesignElement() - not found";
+    qInfo() << "getDesignElement() - not found";
     DesignElementPtr del;
     return del;
 }
@@ -259,7 +260,7 @@ TilePtr  Prototype::getTile(const MotifPtr & motif)
 
 MotifPtr Prototype::getMotif(const TilePtr & tile)
 {
-    for (const auto & designElement: qAsConst(designElements))
+    for (const auto & designElement: designElements)
     {
         if (designElement->getTile() == tile)
         {
@@ -275,7 +276,7 @@ MotifPtr Prototype::getMotif(const TilePtr & tile)
 QList<TilePtr> Prototype::getTiles()
 {
     QList<TilePtr> ql;
-    for (const auto & designElement: qAsConst(designElements))
+    for (const auto & designElement: designElements)
     {
         ql.append(designElement->getTile());
     }
@@ -291,7 +292,7 @@ void Prototype::walk()
     }
 
     qDebug() << "start Prototype walk.... num motifs=" << designElements.size();
-    for (const auto & element : qAsConst(designElements))
+    for (const auto & element : designElements)
     {
         TilePtr tile = element->getTile();
         MotifPtr  motif  = element->getMotif();
@@ -321,12 +322,12 @@ void Prototype::wipeoutProtoMap()
     Q_ASSERT(_protoMap->isEmpty());
 }
 
-MapPtr Prototype::getProtoMap()
+MapPtr Prototype::getProtoMap(bool splash)
 {
     Q_ASSERT(_protoMap);
     if (_protoMap->isEmpty())
     {
-        createProtoMap();
+        createProtoMap(splash);
     }
     return _protoMap;
 }
@@ -355,8 +356,7 @@ void Prototype::createMap()
     if (designElements.size() == 1 && fillPlacemensts.size() == 1 && fillPlacemensts[0].isIdentity())
     {
         auto tile = designElements[0]->getTile();
-        auto tilePlacements = tiling->getPlacements(tile);
-        if (tilePlacements.size() == 0)
+        if (tiling->getPlacements(tile).size() == 0)
         {
             // This is a special edge case and seems a kludge, fighting the system.
             // With more thought a better implementation of this idea could be made
@@ -412,7 +412,7 @@ void Prototype::createMap()
     {
         if (_crop->getCropType() == CROP_RECTANGLE)
         {
-            QRectF rect = _crop->getRect();
+            const QRectF & rect = _crop->getRect();
             if (rect.isValid())
             {
                 if (_crop->getEmbed())
@@ -428,7 +428,7 @@ void Prototype::createMap()
         }
         else if (_crop->getCropType() == CROP_CIRCLE)
         {
-            auto circle = _crop->getCircle();
+            const Circle & circle = _crop->getCircle();
             if (_crop->getEmbed())
             {
                 _protoMap->embedCrop(circle);

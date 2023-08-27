@@ -1,14 +1,16 @@
 ﻿#include <QHeaderView>
 
-#include "panels/page_mosaic_info.h"
-#include "motifs/motif.h"
 #include "makers/mosaic_maker/mosaic_maker.h"
+#include "makers/prototype_maker/prototype.h"
+#include "makers/tiling_maker/tiling_maker.h"
 #include "mosaic/design_element.h"
 #include "mosaic/mosaic.h"
-#include "makers/prototype_maker/prototype.h"
+#include "motifs/motif.h"
+#include "panels/controlpanel.h"
+#include "panels/page_mosaic_info.h"
+#include "panels/panel_misc.h"
 #include "style/style.h"
 #include "tile/tiling.h"
-#include "widgets/panel_misc.h"
 
 page_mosaic_info:: page_mosaic_info(ControlPanel *panel)  : panel_page(panel, "Mosaic Info")
 {
@@ -25,10 +27,16 @@ page_mosaic_info:: page_mosaic_info(ControlPanel *panel)  : panel_page(panel, "M
     vbox->addWidget(motifTable);
 
     vbox->addStretch();
+
+    connect(tilingMaker,   &TilingMaker::sig_tilingLoaded,      this,   &page_mosaic_info::onEnter);
+    connect(mosaicMaker,   &MosaicMaker::sig_mosaicLoaded,      this,   &page_mosaic_info::onEnter);
 }
 
 void  page_mosaic_info::onEnter()
 {
+    if (!panel->isVisiblePage(this))
+        return;
+
     motifTable->clearContents();
 
     showMotifsFromStyles();

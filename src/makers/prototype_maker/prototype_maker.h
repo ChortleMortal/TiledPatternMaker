@@ -24,12 +24,11 @@ public:
 
     void         init();
     void         unload();
+    void         setPropagate(bool val);
 
     // state machine
     void         sm_takeDown(QVector<ProtoPtr> &prototypes);
     void         sm_takeUp(const TilingPtr & tiling, ePROM_Event event, const TilePtr tile = TilePtr());
-
-    void         setPropagate(bool val) { propagate = val; }
 
     // operations
     bool         duplicateDesignElement();
@@ -48,6 +47,7 @@ protected:
     void        sm_Add(const ProtoPtr & prototype);
     void        sm_replaceTiling(const ProtoPtr & prototype,const TilingPtr & tiling);
     void        sm_resetMaps();
+    void        sm_buildMaps();
 
     ProtoPtr    createPrototype(const TilingPtr & tiling);
     void        recreatePrototypeFromTiling(const TilingPtr & tiling, ProtoPtr prototype);

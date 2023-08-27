@@ -1,0 +1,105 @@
+<?xml version="1.0"?>
+<!-- Written: Sun Jul 9 2023 12:44:57 -->
+<vector id="1" version="15">
+	<design>
+		<size>
+			<width>1246</width>
+			<height>1004</height>
+			<zwidth>1500</zwidth>
+			<zheight>927</zheight>
+		</size>
+		<background>
+			<color>#ff000000</color>
+		</background>
+		<Crop embed="f" apply="f">
+			<boundary>-6.689333333333332,-5.749333333333332,13.72933333333333,12.82266666666667</boundary>
+		</Crop>
+		<Fill singleton="f">-3,3,-3,3</Fill>
+		<BackgroundImage name="Capture3.adj2.jpg">
+			<Scale>1</Scale>
+			<Rot>0</Rot>
+			<X>-126</X>
+			<Y>-14</Y>
+			<Center>0,0</Center>
+		</BackgroundImage>
+	</design>
+	<style.Thick id="2">
+		<toolkit.GeoLayer>
+			<left__delta>-126</left__delta>
+			<top__delta>-14</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<string>Popular2.v4</string>
+					<entry>
+						<Tile id="4">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1.850000000000001</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">1,0.4142135623730951</Point>
+									<Point id="7">0.4142135623730951,1</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">-0.414213562373095,1</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">-1,0.4142135623730952</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point id="10">-1,-0.414213562373095</Point>
+								</Line>
+								<Line>
+									<Point reference="10" />
+									<Point id="11">-0.4142135623730957,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="11" />
+									<Point id="12">0.4142135623730953,-0.9999999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="12" />
+									<Point id="13">0.9999999999999998,-0.4142135623730958</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExtendedRosette id="14" extendPeripherals="t" extendFreeVertices="f" connectBoundaryVertices="t">
+							<boundarySides>4</boundarySides>
+							<boundaryScale>2.27</boundaryScale>
+							<figureScale>2</figureScale>
+							<r>22.5</r>
+							<n>8</n>
+							<q>0</q>
+							<s>3</s>
+							<k>0</k>
+						</ExtendedRosette>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff1496d2</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>true</draw__outline>
+			<outline_width>0.05</outline_width>
+			<outline_color>#ff000000</outline_color>
+			<width>0.05</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+	</style.Thick>
+</vector>

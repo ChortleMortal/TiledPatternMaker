@@ -62,9 +62,9 @@ void Emboss::draw(GeoGraphics * gg)
         return;
     }
 
-    for (auto bae : pts4)
+    for (auto & bae : pts4)
     {
-        QPolygonF poly        = bae.getPoly();
+        QPolygonF poly = bae.getPoly();
         drawTrap(gg, bae.v2.v, bae.v2.above, bae.v1.below, bae.v1.v);
         drawTrap(gg, bae.v1.v, bae.v1.above, bae.v2.below, bae.v2.v);
         

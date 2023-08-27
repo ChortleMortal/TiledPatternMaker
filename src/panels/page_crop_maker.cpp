@@ -3,11 +3,11 @@
 
 #include "panels/page_crop_maker.h"
 #include "geometry/crop.h"
-#include "makers/mosaic_maker/mosaic_maker.h"
 #include "misc/border.h"
+#include "makers/mosaic_maker/mosaic_maker.h"
 #include "mosaic/mosaic.h"
 #include "makers/prototype_maker/prototype.h"
-#include "panels/panel.h"
+#include "panels/controlpanel.h"
 #include "viewers/crop_view.h"
 #include "viewers/viewcontrol.h"
 #include "widgets/crop_widget.h"
@@ -18,6 +18,7 @@ using std::make_shared;
 page_crop_maker::page_crop_maker(ControlPanel * apanel)  : panel_page(apanel,"Crop Maker")
 {
     cropViewer = CropViewer::getInstance();
+    lockView   = false;
 
     cropWidget = new CropWidget();
     connect(cropWidget, &CropWidget::sig_cropModified, this, [this]() { view->update(); } );
@@ -25,10 +26,9 @@ page_crop_maker::page_crop_maker(ControlPanel * apanel)  : panel_page(apanel,"Cr
 
     QHBoxLayout * layout2 = createCropControls();
 
-    setMaximumWidth(762);
-
     vbox->addWidget(cropWidget);
     vbox->addLayout(layout2);
+    vbox->addStretch();
     adjustSize();
 }
 
@@ -38,6 +38,7 @@ QHBoxLayout * page_crop_maker::createCropControls()
     QPushButton * pbCreate       = new QPushButton("Create Crop");
     QPushButton * pbRemove       = new QPushButton("Remove Crop");
     QPushButton * pbFetchBorder  = new QPushButton("Fetch Border Settings");
+    QCheckBox   * chkLock        = new QCheckBox("Lock View");
                   chkEmbed       = new QCheckBox("Embed Crop");
                   chkApply       = new QCheckBox("Crop Outside");
 
@@ -45,14 +46,17 @@ QHBoxLayout * page_crop_maker::createCropControls()
     hbox1->addWidget(pbCreate);
     hbox1->addWidget(chkEmbed);
     hbox1->addWidget(chkApply);
+    hbox1->addWidget(chkLock);
     hbox1->addStretch();
     hbox1->addWidget(pbFetchBorder);
     hbox1->addStretch();
     hbox1->addWidget(pbRemove);
 
+
     connect(pbCreate,          &QPushButton::clicked,            this, &page_crop_maker::slot_createCrop);
     connect(chkEmbed,          &QCheckBox::clicked,              this, &page_crop_maker::slot_embedCrop);
     connect(chkApply,          &QCheckBox::clicked,              this, &page_crop_maker::slot_applyCrop);
+    connect(chkLock,           &QCheckBox::clicked,              this, [this](bool checked) { lockView = checked; } );
     connect(pbRemove,          &QPushButton::clicked,            this, &page_crop_maker::slot_removeCrop);
     connect(pbFetchBorder,     &QPushButton::clicked,            this, &page_crop_maker::slot_fetchBorder);
 
@@ -67,14 +71,20 @@ void  page_crop_maker::onRefresh()
 void page_crop_maker::onEnter()
 {
     cropViewer->init(&cropMaker);
-    //cropViewer->setShowCrop(true);
+    if (lockView)
+    {
+        cropViewer->setShowCrop(true);
+    }
     emit sig_refreshView();
 }
 
 void page_crop_maker::onExit()
 {
-    cropViewer->setShowCrop(false);
-    emit sig_refreshView();
+    if (!lockView)
+    {
+        cropViewer->setShowCrop(false);
+        emit sig_refreshView();
+    }
 }
 
 void page_crop_maker::display()
@@ -183,7 +193,8 @@ void page_crop_maker::slot_fetchBorder()
         return;
     }
 
-    CropPtr crop = make_shared<Crop>(border);
+    CropPtr ocrop = std::static_pointer_cast<Crop>(border);
+    CropPtr crop = make_shared<Crop>(ocrop);
     crop->transform(cropViewer->getLayerTransform().inverted());
     cropMaker.setCrop(crop);
     mosaic->setCrop(crop);

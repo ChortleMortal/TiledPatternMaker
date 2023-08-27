@@ -21,7 +21,7 @@ public:
     virtual void paint(QPainter *painter) override;
 
 
-    virtual void iamaLayer() override {}
+    virtual eViewType iamaLayer() override { return VIEW_MOTIF_MAKER; }
     virtual void iamaLayerController() override {}
 
 public slots:

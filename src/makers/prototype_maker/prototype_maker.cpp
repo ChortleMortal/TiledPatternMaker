@@ -20,7 +20,7 @@
 #include "motifs/star_connect.h"
 #include "motifs/tile_motif.h"
 #include "panels/page_motif_maker.h"
-#include "panels/panel.h"
+#include "panels/controlpanel.h"
 #include "settings/configuration.h"
 #include "tile/placed_tile.h"
 #include "tile/tile.h"
@@ -97,6 +97,18 @@ void PrototypeMaker::unload()
     protoData.erase();
 }
 
+void PrototypeMaker::setPropagate(bool val)
+{
+    propagate = val;
+    if (val)
+    {
+        sm_buildMaps();
+        mosaicMaker->sm_takeUp(protoData.getPrototypes(),MOSM_MOTIF_CHANGED);
+        if (vcontrol->isEnabled(VIEW_PROTOTYPE) || vcontrol->isEnabled(VIEW_MAP_EDITOR))
+            vcontrol->slot_refreshView();
+    }
+}
+
 ProtoPtr PrototypeMaker::createPrototype(const TilingPtr &tiling)
 {
     qDebug().noquote() << "PrototypeMaker::createPrototype" << tiling->getDescription();
@@ -121,15 +133,15 @@ void PrototypeMaker::recreatePrototypeFromTiling(const TilingPtr &tiling, ProtoP
 
     Q_ASSERT(prototype->getTiling() == tiling);
 
-    QVector<TilePtr> uniqueTiles = tiling->getUniqueTiles();
     int count = 0;
-    for (auto tile : qAsConst(uniqueTiles))
+    QVector<TilePtr> uniqueTiles = tiling->getUniqueTiles();
+    for (const auto & tile : uniqueTiles)
     {
         if (++count > MAX_UNIQUE_TILE_INDEX)
             qWarning() << "Large number of unique tiles in tiling count:" << count;
 
         bool found = false;
-        for (auto del : qAsConst(prototype->getDesignElements()))
+        for (const auto & del : prototype->getDesignElements())
         {
             if (del->getTile() == tile)
             {
@@ -158,6 +170,7 @@ void PrototypeMaker::recreatePrototypeFromTiling(const TilingPtr &tiling, ProtoP
             forDeletion.push_back(del);
         }
     }
+
     for (const auto & del : forDeletion)
     {
         prototype->removeElement(del);
@@ -168,14 +181,14 @@ void PrototypeMaker::recreatePrototypeFromTiling(const TilingPtr &tiling, ProtoP
 
 void PrototypeMaker::sm_takeDown(QVector<ProtoPtr> & prototypes)
 {
-    qDebug() << "PrototypeMaker::takeDown()";
+    qInfo() << "PrototypeMaker::takeDown() Num DELs:" << prototypes.first()->numDesignElements();
 
     erasePrototypes();
 
     protoData.setPrototypes(prototypes);
 
     QVector<TilingPtr> tilings;
-    for (auto & p : prototypes)
+    for (const auto & p : prototypes)
     {
         tilings.push_back(p->getTiling());
     }
@@ -233,17 +246,24 @@ void PrototypeMaker::sm_replaceTiling(const ProtoPtr &prototype, const TilingPtr
 
 void PrototypeMaker::sm_resetMaps()
 {
-    auto vec = protoData.getPrototypes();
-    for (auto & prototype : vec)
+    for (const auto & prototype : protoData.getPrototypes())
     {
         prototype->wipeoutProtoMap();
+    }
+}
+
+void PrototypeMaker::sm_buildMaps()
+{
+    for (const auto & prototype : protoData.getPrototypes())
+    {
+        prototype->getProtoMap();
     }
 }
 
 void PrototypeMaker::sm_takeUp(const TilingPtr & tiling, ePROM_Event event, const TilePtr tile)
 {
     eMMState state = sm_getState();
-    qInfo().noquote() << "PrototypeMaker::sm_take() state:" << mm_states[state] << "event:" << sPROM_Events[event];
+    qInfo().noquote() << "PrototypeMaker::sm_takeUp() state:" << mm_states[state] << "event:" << sPROM_Events[event];
 
     switch (event)
     {
@@ -348,6 +368,7 @@ void PrototypeMaker::sm_takeUp(const TilingPtr & tiling, ePROM_Event event, cons
         sm_resetMaps();
         if (propagate)
         {
+            sm_buildMaps();
             mosaicMaker->sm_takeUp(protoData.getPrototypes(),MOSM_MOTIF_CHANGED);
         }
         break;
@@ -367,6 +388,7 @@ void PrototypeMaker::sm_takeUp(const TilingPtr & tiling, ePROM_Event event, cons
 
                 if (propagate)
                 {
+                    sm_buildMaps();
                     mosaicMaker->sm_takeUp(protoData.getPrototypes(),MOSM_TILE_CHANGED);
                 }
                 protoData.select(MVD_DELEM,del,config->motifMultiView);
@@ -463,6 +485,7 @@ void PrototypeMaker::sm_takeUp(const TilingPtr & tiling, ePROM_Event event, cons
         sm_resetMaps();
         if (propagate)
         {
+            sm_buildMaps();
             mosaicMaker->sm_takeUp(protoData.getPrototypes(),MOSM_RENDER);
         }
         break;

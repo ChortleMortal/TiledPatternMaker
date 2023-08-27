@@ -9,9 +9,9 @@
 #include "makers/mosaic_maker/mosaic_maker.h"
 #include "makers/map_editor/map_editor.h"
 #include "misc/border.h"
+#include "misc/tile_color_defs.h"
 #include "mosaic/mosaic.h"
-#include "panels/panel.h"
-#include "settings/configuration.h"
+#include "panels/controlpanel.h"
 #include "viewers/border_view.h"
 #include "viewers/viewcontrol.h"
 #include "widgets/layout_sliderset.h"
@@ -109,8 +109,6 @@ page_borders::page_borders(ControlPanel * apanel)  : panel_page(apanel,"Border M
     borderTypeBox->setMinimumWidth(400);
     borderTypeBox->setLayout(borderTypeStack);
 
-    setMaximumWidth(762);
-
     // assembly
     vbox->addLayout(hbox);
     vbox->addWidget(borderTypeBox);
@@ -119,6 +117,7 @@ page_borders::page_borders(ControlPanel * apanel)  : panel_page(apanel,"Border M
     vbox->addWidget(cropTypeBox);
     vbox->addSpacing(9);
     vbox->addLayout(hbox3);
+    vbox->addStretch();
     adjustSize();
 
     connect(borderTypes, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &page_borders::slot_borderTypeChanged);
@@ -825,7 +824,7 @@ void page_borders::slot_centreChanged()
     if (!bp)
         return;
 
-    auto c = bp->getCircle();
+    Circle & c = bp->getCircle();
     QPointF p = centre->get();
     c.setCenter(p);
 
@@ -841,7 +840,7 @@ void page_borders::slot_radiusChanged(qreal r)
     if (!bp)
         return;
 
-    auto c = bp->getCircle();
+    Circle & c = bp->getCircle();
     c.setRadius(r);
 
     bp->construct();

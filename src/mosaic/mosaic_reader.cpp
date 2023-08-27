@@ -29,8 +29,7 @@
 #include "geometry/map.h"
 #include "misc/border.h"
 #include "misc/defaults.h"
-#include "misc/tpm_io.h"
-#include "panels/panel.h"
+#include "panels/controlpanel.h"
 #include "settings/configuration.h"
 #include "settings/model_settings.h"
 #include "style/colored.h"
@@ -250,6 +249,10 @@ void MosaicReader::processVector(xml_node & node)
     settings.setBackgroundColor(_background);
     settings.setSize(QSize(_width,_height));
     settings.setZSize(QSize(_zwidth,_zheight));
+    if (Configuration::getInstance()->splitScreen)
+    {
+        view->setFixedSize(QSize(_width,_height));
+    }
 
     // Canvas Settings fill data defaults to FillData defaults, loader can  override these
     if (_fillData.isSet())
@@ -1168,12 +1171,12 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
     setProtoReference(node,proto);
 
     QVector<TilePtr> uniqueTiles = tp->getUniqueTiles();
-    int numTiles = uniqueTiles.size();
+    int numTiles                 = uniqueTiles.size();
 
     QVector<TilePtr> usedTiles;
     TileReader tr;
-    xml_node entry;
-    for (entry = protonode.child("entry"); entry; entry = entry.next_sibling("entry"))
+
+    for (xml_node entry = protonode.child("entry"); entry; entry = entry.next_sibling("entry"))
     {
         bool found = false;
 
@@ -1182,8 +1185,10 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
         QString  name;
 
         xml_node xmlTile = entry.first_child();
-        name = xmlTile.name();
-        qDebug().noquote() << name;
+        name             = xmlTile.name();
+
+        if (_debug) qDebug().noquote() << name;
+
         if (name == "Tile" || name == "tile.Feature")
         {
             if (_debug) qDebug() << "adding Tile";
@@ -1197,10 +1202,10 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
         int fsides = tile->numSides();
 
         xml_node xmlMotif  = xmlTile.next_sibling();
-        name = xmlMotif.name();
-        eMotifType type = getMotifType(name);
+        name               = xmlMotif.name();
+        eMotifType type    = getMotifType(name);
 
-        qDebug().noquote() << "name:" << name << "adding type:" << sMotifType[type];
+        //qDebug().noquote() << "name:" << name << "adding type:" << sMotifType[type];
 
         switch(type)
         {
@@ -1306,16 +1311,36 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
         }
     }
 
-    QVector<DesignElementPtr>  & designElements = proto->getDesignElements();
-    int numDesignElements = designElements.size();
+    QVector<DesignElementPtr> & designElements = proto->getDesignElements();
+    int numDesignElements                      = designElements.size();
+
+    if (numTiles >> numDesignElements)
+    {
+        // need to create design elements for the unused tiles
+        qWarning() << "Mosaic does not match tiling. Creating new Design elements. DELs:" << numDesignElements << "Tiles:" << numTiles;
+
+        for (const auto & tile : uniqueTiles)
+        {
+            if (usedTiles.contains(tile))
+            {
+                continue;
+            }
+            // create new desigin element
+            DesignElementPtr  del = make_shared<DesignElement>(tile);
+            proto->addElement(del);
+        }
+        numDesignElements = designElements.size(); // bumps the count
+    }
+
     if (numTiles && (numTiles != numDesignElements) && !Configuration::getInstance()->localCycle)
     {
-        QString str1 = "Tile/DesignElement MISMATCH";
+        QString str1 = "Mosaic does not match tiling.";
         QString str2;
         QDebug  deb(&str2);
-        deb <<  "Num Unqiue Tiles =" << numTiles << endl << "Num DesignElements =" << numDesignElements;
-        qWarning() << str1;
-        qWarning() << str2;
+        deb <<  "Unqiue Tiles:" << numTiles << "Design Elements:" << numDesignElements;
+
+        qWarning().noquote() << str1 << str2;
+
         QMessageBox box(ControlPanel::getInstance());
         box.setWindowTitle(_fileName);
         int len = _fileName.length();
@@ -2884,7 +2909,7 @@ void MosaicReader::fail(QString a, QString b)
 
 TilingPtr MosaicReader::findTiling(QString name)
 {
-    for (auto tiling : qAsConst(_tilings))
+    for (const auto &  tiling : _tilings)
     {
         if (tiling->getName() == name)
         {

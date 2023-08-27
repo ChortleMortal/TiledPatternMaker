@@ -1,9 +1,37 @@
+Version 3.3
+=============
+
+This version built and tested with Qt versions 6.5.2 and 5.15.2 with
+both cmake ansd qmake using QtCreator on Windows and Linux systems
+
+Changes:
+    Tiling Maker:       right click on tile now adds show/hide to the menu
+    Background Menu:    adds setting background view colors
+    Crop Menu:          adds Lock View and Screen Units for rectangular crop
+    Control Panel:      overall size of panel now stabilized
+    Configuration:      add 'limit view size' to limit view to size of display
+    Map Editor:         improvements to control of edge and point displays
+    Motif Maker:        mouse click delegates motif in multi-view
+    Motif Maker:        better operation of multi-select
+
+Fixes
+    Views:              could not resize some loaded mosaics using mouse
+    Tiling Maker:       clear translation vectors was not working
+    Tiling Maker:       placed tile scale not being set correctly from menu
+    Tiling Maker:       snap-to on edge mid-points now working correctly (does not resize)
+    Tiling Maker:       irregular tilesd with scale/rotation were double multiplied
+    Configuration Menu: several bugs in Split Screen mode fixed
+    Prototype View:     crash when selected at startup
+    Motif Maker:        improved propagation to Mosaic Maker and Map Editor
+    Image Tools Menu:   creation of worklist for motifs repaired
+
 Version 3.2.1
 =============
 
 Fixes
 - mouse tracking inadvertently removed from all views
 - tiling maker not selecting tiles when moved using menu table
+
 
 Version 3.2
 =============

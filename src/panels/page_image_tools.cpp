@@ -10,11 +10,11 @@
 #include "makers/tiling_maker/tiling_maker.h"
 #include "misc/cycler.h"
 #include "misc/fileservices.h"
-#include "misc/tpm_io.h"
 #include "mosaic/mosaic.h"
 #include "mosaic/mosaic_manager.h"
 #include "panels/page_image_tools.h"
-#include "panels/panel.h"
+#include "panels/panel_misc.h"
+#include "panels/controlpanel.h"
 #include "settings/configuration.h"
 #include "tile/tiling_manager.h"
 #include "tiledpatternmaker.h"
@@ -24,6 +24,13 @@
 #include "widgets/layout_sliderset.h"
 #include "widgets/memory_combo.h"
 #include "widgets/versioned_list_widget.h"
+#include "widgets/worklist_widget.h"
+
+#if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
+using Qt::endl;
+#else
+#define endl Qt::endl
+#endif
 
 page_image_tools:: page_image_tools(ControlPanel * cpanel)  : panel_page(cpanel,"Image Tools")
 {
@@ -43,8 +50,7 @@ page_image_tools:: page_image_tools(ControlPanel * cpanel)  : panel_page(cpanel,
     vbox->addWidget(gbox);
     gbox = createTransparencyBox();
     vbox->addWidget(gbox);
-
-    setMaximumWidth(762);
+    vbox->addStretch();
 
     connect(theApp,&TiledPatternMaker::sig_compareResult,       this,   &page_image_tools::slot_compareResult);
     connect(this,  &page_image_tools::sig_view_image,           theApp, &TiledPatternMaker::slot_view_image);
@@ -1087,7 +1093,7 @@ QString page_image_tools::getPixmapPath()
     QString date = directory->text();
 
     QString path = config->rootImageDir;
-    if (config->getViewerType() == VIEW_TILING)
+    if (view->isEnabled(VIEW_TILING) || view->isEnabled(VIEW_TILING_MAKER))
         path += "tilings/" + subdir + date;
     else
         path += subdir + date;
@@ -1499,10 +1505,10 @@ void page_image_tools::slot_createList()
 
     QStringList list;
     QStringList wlist;
-    QString target;
 
     if (dlg.selMosaic->isChecked())
     {
+        QStringList targetList;
         if (dlg.chkLoadFilter->isChecked())
         {
             list = FileServices::getMosaicNames(SELECTED_MOSAICS);
@@ -1512,20 +1518,20 @@ void page_image_tools::slot_createList()
             list = FileServices::getMosaicNames(ALL_MOSAICS);
         }
 
-        if (dlg.chkText->isChecked())
+        if (dlg.radText->isChecked())
         {
-            target = dlg.text->text();
+            targetList << dlg.text->text();
         }
-        else if (dlg.chkMotif->isChecked())
+        else if (dlg.radMotif->isChecked())
         {
-            target = dlg.motifNames->currentText();
+            targetList << dlg.selectedMotifNames();
         }
-        else if (dlg.chkStyle->isChecked())
+        else if (dlg.radStyle->isChecked())
         {
-            target = dlg.styleNames->currentText();
+            targetList << dlg.styleNames->currentText();
         }
 
-        if (target.isEmpty())
+        if (targetList.isEmpty())
             return;
 
         for (auto & name : list)
@@ -1536,14 +1542,23 @@ void page_image_tools::slot_createList()
             XMLFile.open(QIODevice::ReadOnly);
             QTextStream in (&XMLFile);
             const QString content = in.readAll();
-            if (content.contains(target))
+            bool found = false;
+            for (auto target : targetList)
             {
-               wlist << name;
+                if (content.contains(target))
+                {
+                   found = true;
+                }
+            }
+            if (found)
+            {
+                wlist << name;
             }
         }
     }
     else
     {
+        QString target;
         if (dlg.chkLoadFilter->isChecked())
         {
             list = FileServices::getTilingNames(SELECTED_TILINGS);
@@ -1553,7 +1568,7 @@ void page_image_tools::slot_createList()
             list = FileServices::getTilingNames(ALL_TILINGS);
         }
 
-        if (dlg.chkText->isChecked())
+        if (dlg.radText->isChecked())
         {
             target = dlg.text->text();
         }

@@ -6,7 +6,7 @@
 #include "mosaic/mosaic_manager.h"
 #include "makers/map_editor/map_editor.h"
 #include "makers/prototype_maker/prototype.h"
-#include "panels/panel.h"
+#include "panels/controlpanel.h"
 #include "settings/configuration.h"
 #include "style/emboss.h"
 #include "style/filled.h"
@@ -133,11 +133,13 @@ void MosaicMaker::slot_saveMosaic(QString filename)
 void MosaicMaker::sm_takeDown(MosaicPtr mosaic)
 {
     _mosaic = mosaic;
+    QVector<ProtoPtr> protos = mosaic->getPrototypes();
+
+    qInfo() << "MosaicMaker::sm_takeDown styles=" << mosaic->numStyles() << "protos=" << protos.size();
 
     FillData fd = mosaic->getSettings().getFillData();
     viewControl->setFillData(fd);
 
-    QVector<ProtoPtr> protos = mosaic->getPrototypes();
     prototypeMaker->sm_takeDown(protos);
 }
 
@@ -150,7 +152,6 @@ void MosaicMaker::sm_takeDown(MosaicPtr mosaic)
 void MosaicMaker::sm_createMosaic(const QVector<ProtoPtr> prototypes)
 {
     QColor oldColor = _mosaic->getSettings().getBackgroundColor();
-    Xform  xf       = viewControl->getCurrentXform();
 
     // This is a new mosaic
     _mosaic = make_shared<Mosaic>();
@@ -170,6 +171,7 @@ void MosaicMaker::sm_createMosaic(const QVector<ProtoPtr> prototypes)
         else
         {
             // whaddya gonna do?
+            Xform  xf = viewControl->getCurrentXform();
             thick->setCanvasXform(xf);
         }
     }

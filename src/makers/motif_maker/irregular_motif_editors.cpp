@@ -456,16 +456,17 @@ void IntersectEditor::editorToMotif(bool doEmit)
 IrregularRosetteEditor::IrregularRosetteEditor(QString aname) : ExplicitMapEditor(aname)
 {
     q_slider = new DoubleSliderSet("Explicit Rosette Q (Tip Angle)", 0.0, -3.0, 3.0, 100 );
-    s_slider = new SliderSet("Explicit Rosette S (Sides Intersections)", 1, 1, 5);
     r_slider = new DoubleSliderSet("Explicit Rosette R (Flex Point)", 0.5, -1.0, 1.0, 100 );
+    s_slider = new SliderSet("Explicit Rosette S (Sides Intersections)", 1, 1, 5);
     version_combo = new QComboBox();
     version_combo->addItem("Version 1",1);
     version_combo->addItem("Version 2",2);
+    version_combo->addItem("Version 3",3);
     version_combo->setFixedWidth(91);
 
     addLayout(q_slider);
-    addLayout(s_slider);
     addLayout(r_slider);
+    addLayout(s_slider);
 
     QHBoxLayout * hbox = new QHBoxLayout;
     hbox->addStretch();
@@ -474,8 +475,8 @@ IrregularRosetteEditor::IrregularRosetteEditor(QString aname) : ExplicitMapEdito
     addLayout(hbox);
 
     connect(q_slider, &DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
-    connect(s_slider, &SliderSet::valueChanged,       this, [this]() { editorToMotif(true);});
     connect(r_slider, &DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
+    connect(s_slider, &SliderSet::valueChanged,       this, [this]() { editorToMotif(true);});
     connect(version_combo,  QOverload<int>::of(&QComboBox::currentIndexChanged), this,[this]() { editorToMotif(true);});
 }
 
@@ -546,9 +547,10 @@ void IrregularRosetteEditor::motifToEditor()
 
         blockSignals(false);
 
-        int ver = rose->getVersion();
+        int ver   = rose->getVersion();
+        int index = version_combo->findData(ver);
         version_combo->blockSignals(true);
-        version_combo->setCurrentIndex(ver -1);
+        version_combo->setCurrentIndex(index);
         version_combo->blockSignals(false);
 
         NamedMotifEditor::motifToEditor();
@@ -564,7 +566,7 @@ void IrregularRosetteEditor::editorToMotif(bool doEmit)
         qreal qval = q_slider->value();
         int   sval = s_slider->value();
         qreal rval = r_slider->value();
-        int   ver  = version_combo->currentIndex() + 1;
+        int   ver  = version_combo->currentData().toInt();
 
         rose->q = qval;
         rose->s = sval;
@@ -698,9 +700,10 @@ void IrregularStarEditor::motifToEditor()
             s_slider->setValue(star->s);
             blockSignals(false);
         }
-        int ver = star->getVersion();
+        int ver   = star->getVersion();
+        int index = version_combo->findData(ver);
         version_combo->blockSignals(true);
-        version_combo->setCurrentIndex(ver -1);
+        version_combo->setCurrentIndex(index);
         version_combo->blockSignals(false);
 
         NamedMotifEditor::motifToEditor();
@@ -715,7 +718,7 @@ void IrregularStarEditor::editorToMotif(bool doEmit)
         //star->dump();
         qreal dval = d_slider->value();
         int sval   = s_slider->value();
-        int   ver  = version_combo->currentIndex() + 1;
+        int   ver  = version_combo->currentData().toInt();
 
         star->d = dval;
         star->s = sval;

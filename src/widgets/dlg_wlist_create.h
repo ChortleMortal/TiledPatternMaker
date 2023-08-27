@@ -18,13 +18,15 @@ class DlgWorklistCreate : public QDialog, MosaicIOBase
 public:
     DlgWorklistCreate(QWidget * parent = nullptr);
 
+    QStringList selectedMotifNames();
+
     QRadioButton * selMosaic;
     QRadioButton * selTiling;
 
     QCheckBox * chkLoadFilter;
-    QCheckBox * chkStyle;
-    QCheckBox * chkMotif;
-    QCheckBox * chkText;
+    QRadioButton * radStyle;
+    QRadioButton * radMotif;
+    QRadioButton * radText;
 
     QComboBox * styleNames;
     QComboBox * motifNames;

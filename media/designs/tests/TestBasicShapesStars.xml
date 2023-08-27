@@ -1,0 +1,1535 @@
+<?xml version="1.0"?>
+<!-- Written: Thu Aug 24 2023 08:24:18 -->
+<vector id="1" version="15">
+	<design>
+		<size>
+			<width>1388</width>
+			<height>962</height>
+			<zwidth>1500</zwidth>
+			<zheight>927</zheight>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Fill singleton="t">0,0,0,0</Fill>
+	</design>
+	<style.Thick id="2">
+		<toolkit.GeoLayer>
+			<left__delta>-70</left__delta>
+			<top__delta>-44</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<string>TestBasicShapes.v6</string>
+					<entry>
+						<Tile id="4">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>0.75</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">1,1.732050807568877</Point>
+									<Point id="7">-2,2.449293598294706e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">0.9999999999999984,-1.732050807568878</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</Tile>
+						<Star id="9">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>0.75</figureScale>
+							<r>0</r>
+							<n>3</n>
+							<d>1</d>
+							<s>1</s>
+						</Star>
+					</entry>
+					<entry>
+						<Tile id="10">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>0.75</scale>
+							<edges id="11">
+								<Line>
+									<Point id="12">1,1.732050807568877</Point>
+									<Point id="13">-2,2.449293598294706e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point id="14">0.9999999999999984,-1.732050807568878</Point>
+								</Line>
+								<Line>
+									<Point reference="14" />
+									<Point reference="12" />
+								</Line>
+							</edges>
+						</Tile>
+						<Star id="15">
+							<version>2</version>
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>0.75</figureScale>
+							<r>0</r>
+							<n>3</n>
+							<d>1</d>
+							<s>1</s>
+						</Star>
+					</entry>
+					<entry>
+						<Tile id="16">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="17">
+								<Line>
+									<Point id="18">1,1</Point>
+									<Point id="19">-0.9999999999999998,1</Point>
+								</Line>
+								<Line>
+									<Point reference="19" />
+									<Point id="20">-1,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="20" />
+									<Point id="21">0.9999999999999997,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="21" />
+									<Point reference="18" />
+								</Line>
+							</edges>
+						</Tile>
+						<Star id="22">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+							<d>1.3</d>
+							<s>1</s>
+						</Star>
+					</entry>
+					<entry>
+						<Tile id="23">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="24">
+								<Line>
+									<Point id="25">1,1</Point>
+									<Point id="26">-0.9999999999999998,1</Point>
+								</Line>
+								<Line>
+									<Point reference="26" />
+									<Point id="27">-1,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="27" />
+									<Point id="28">0.9999999999999997,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="28" />
+									<Point reference="25" />
+								</Line>
+							</edges>
+						</Tile>
+						<Star id="29">
+							<version>2</version>
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+							<d>1.33333333</d>
+							<s>1</s>
+						</Star>
+					</entry>
+					<entry>
+						<Tile id="30">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="31">
+								<Line>
+									<Point id="32">0.9999999999999999,0.7265425280053608</Point>
+									<Point id="33">-0.381966011250105,1.175570504584946</Point>
+								</Line>
+								<Line>
+									<Point reference="33" />
+									<Point id="34">-1.23606797749979,1.51374669217366e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="34" />
+									<Point id="35">-0.3819660112501053,-1.175570504584946</Point>
+								</Line>
+								<Line>
+									<Point reference="35" />
+									<Point id="36">0.9999999999999998,-0.7265425280053611</Point>
+								</Line>
+								<Line>
+									<Point reference="36" />
+									<Point reference="32" />
+								</Line>
+							</edges>
+						</Tile>
+						<Star id="37">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>5</n>
+							<d>1.66666667</d>
+							<s>1</s>
+						</Star>
+					</entry>
+					<entry>
+						<Tile id="38">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="39">
+								<Line>
+									<Point id="40">0.9999999999999999,0.7265425280053608</Point>
+									<Point id="41">-0.381966011250105,1.175570504584946</Point>
+								</Line>
+								<Line>
+									<Point reference="41" />
+									<Point id="42">-1.23606797749979,1.51374669217366e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="42" />
+									<Point id="43">-0.3819660112501053,-1.175570504584946</Point>
+								</Line>
+								<Line>
+									<Point reference="43" />
+									<Point id="44">0.9999999999999998,-0.7265425280053611</Point>
+								</Line>
+								<Line>
+									<Point reference="44" />
+									<Point reference="40" />
+								</Line>
+							</edges>
+						</Tile>
+						<Star id="45">
+							<version>2</version>
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>5</n>
+							<d>1.66666667</d>
+							<s>1</s>
+						</Star>
+					</entry>
+					<entry>
+						<Tile id="46">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="47">
+								<Line>
+									<Point id="48">1,0.5773502691896256</Point>
+									<Point id="49">7.070501591499379e-17,1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="49" />
+									<Point id="50">-0.9999999999999998,0.5773502691896261</Point>
+								</Line>
+								<Line>
+									<Point reference="50" />
+									<Point id="51">-1,-0.5773502691896254</Point>
+								</Line>
+								<Line>
+									<Point reference="51" />
+									<Point id="52">-2.121150477449814e-16,-1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="52" />
+									<Point id="53">0.9999999999999997,-0.5773502691896263</Point>
+								</Line>
+								<Line>
+									<Point reference="53" />
+									<Point reference="48" />
+								</Line>
+							</edges>
+						</Tile>
+						<Star id="54">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>6</n>
+							<d>2</d>
+							<s>2</s>
+						</Star>
+					</entry>
+					<entry>
+						<Tile id="55">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="56">
+								<Line>
+									<Point id="57">1,0.5773502691896256</Point>
+									<Point id="58">7.070501591499379e-17,1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="58" />
+									<Point id="59">-0.9999999999999998,0.5773502691896261</Point>
+								</Line>
+								<Line>
+									<Point reference="59" />
+									<Point id="60">-1,-0.5773502691896254</Point>
+								</Line>
+								<Line>
+									<Point reference="60" />
+									<Point id="61">-2.121150477449814e-16,-1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="61" />
+									<Point id="62">0.9999999999999997,-0.5773502691896263</Point>
+								</Line>
+								<Line>
+									<Point reference="62" />
+									<Point reference="57" />
+								</Line>
+							</edges>
+						</Tile>
+						<Star id="63">
+							<version>2</version>
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>6</n>
+							<d>2</d>
+							<s>2</s>
+						</Star>
+					</entry>
+					<entry>
+						<Tile id="64">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="65">
+								<Line>
+									<Point id="66">1,0.4815746188075287</Point>
+									<Point id="67">0.2469796037174671,1.082088346128531</Point>
+								</Line>
+								<Line>
+									<Point reference="67" />
+									<Point id="68">-0.6920214716300959,0.8677674782351164</Point>
+								</Line>
+								<Line>
+									<Point reference="68" />
+									<Point id="69">-1.109916264174742,1.359255400243186e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="69" />
+									<Point id="70">-0.6920214716300961,-0.8677674782351161</Point>
+								</Line>
+								<Line>
+									<Point reference="70" />
+									<Point id="71">0.2469796037174669,-1.082088346128531</Point>
+								</Line>
+								<Line>
+									<Point reference="71" />
+									<Point id="72">0.9999999999999999,-0.4815746188075289</Point>
+								</Line>
+								<Line>
+									<Point reference="72" />
+									<Point reference="66" />
+								</Line>
+							</edges>
+						</Tile>
+						<Star id="73">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>7</n>
+							<d>3</d>
+							<s>2</s>
+						</Star>
+					</entry>
+					<entry>
+						<Tile id="74">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="75">
+								<Line>
+									<Point id="76">1,0.4815746188075287</Point>
+									<Point id="77">0.2469796037174671,1.082088346128531</Point>
+								</Line>
+								<Line>
+									<Point reference="77" />
+									<Point id="78">-0.6920214716300959,0.8677674782351164</Point>
+								</Line>
+								<Line>
+									<Point reference="78" />
+									<Point id="79">-1.109916264174742,1.359255400243186e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="79" />
+									<Point id="80">-0.6920214716300961,-0.8677674782351161</Point>
+								</Line>
+								<Line>
+									<Point reference="80" />
+									<Point id="81">0.2469796037174669,-1.082088346128531</Point>
+								</Line>
+								<Line>
+									<Point reference="81" />
+									<Point id="82">0.9999999999999999,-0.4815746188075289</Point>
+								</Line>
+								<Line>
+									<Point reference="82" />
+									<Point reference="76" />
+								</Line>
+							</edges>
+						</Tile>
+						<Star id="83">
+							<version>2</version>
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>7</n>
+							<d>3</d>
+							<s>2</s>
+						</Star>
+					</entry>
+					<entry>
+						<Tile id="84">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="85">
+								<Line>
+									<Point id="86">1,0.4142135623730951</Point>
+									<Point id="87">0.4142135623730951,1</Point>
+								</Line>
+								<Line>
+									<Point reference="87" />
+									<Point id="88">-0.414213562373095,1</Point>
+								</Line>
+								<Line>
+									<Point reference="88" />
+									<Point id="89">-1,0.4142135623730952</Point>
+								</Line>
+								<Line>
+									<Point reference="89" />
+									<Point id="90">-1,-0.414213562373095</Point>
+								</Line>
+								<Line>
+									<Point reference="90" />
+									<Point id="91">-0.4142135623730957,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="91" />
+									<Point id="92">0.4142135623730953,-0.9999999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="92" />
+									<Point id="93">0.9999999999999998,-0.4142135623730958</Point>
+								</Line>
+								<Line>
+									<Point reference="93" />
+									<Point reference="86" />
+								</Line>
+							</edges>
+						</Tile>
+						<Star id="94">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>8</n>
+							<d>3</d>
+							<s>2</s>
+						</Star>
+					</entry>
+					<entry>
+						<Tile id="95">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="96">
+								<Line>
+									<Point id="97">1,0.4142135623730951</Point>
+									<Point id="98">0.4142135623730951,1</Point>
+								</Line>
+								<Line>
+									<Point reference="98" />
+									<Point id="99">-0.414213562373095,1</Point>
+								</Line>
+								<Line>
+									<Point reference="99" />
+									<Point id="100">-1,0.4142135623730952</Point>
+								</Line>
+								<Line>
+									<Point reference="100" />
+									<Point id="101">-1,-0.414213562373095</Point>
+								</Line>
+								<Line>
+									<Point reference="101" />
+									<Point id="102">-0.4142135623730957,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="102" />
+									<Point id="103">0.4142135623730953,-0.9999999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="103" />
+									<Point id="104">0.9999999999999998,-0.4142135623730958</Point>
+								</Line>
+								<Line>
+									<Point reference="104" />
+									<Point reference="97" />
+								</Line>
+							</edges>
+						</Tile>
+						<Star id="105">
+							<version>2</version>
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>8</n>
+							<d>3</d>
+							<s>2</s>
+						</Star>
+					</entry>
+					<entry>
+						<Tile id="106">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="107">
+								<Line>
+									<Point id="108">1,0.3639702342662023</Point>
+									<Point id="109">0.5320888862379561,0.9216049851068762</Point>
+								</Line>
+								<Line>
+									<Point reference="109" />
+									<Point id="110">-0.1847925309040953,1.04801052091754</Point>
+								</Line>
+								<Line>
+									<Point reference="110" />
+									<Point id="111">-0.8152074690959045,0.6840402866513375</Point>
+								</Line>
+								<Line>
+									<Point reference="111" />
+									<Point id="112">-1.064177772475912,1.303241902786386e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="112" />
+									<Point id="113">-0.8152074690959046,-0.6840402866513373</Point>
+								</Line>
+								<Line>
+									<Point reference="113" />
+									<Point id="114">-0.1847925309040953,-1.04801052091754</Point>
+								</Line>
+								<Line>
+									<Point reference="114" />
+									<Point id="115">0.5320888862379561,-0.9216049851068762</Point>
+								</Line>
+								<Line>
+									<Point reference="115" />
+									<Point id="116">0.9999999999999996,-0.3639702342662031</Point>
+								</Line>
+								<Line>
+									<Point reference="116" />
+									<Point reference="108" />
+								</Line>
+							</edges>
+						</Tile>
+						<Star id="117">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>9</n>
+							<d>3</d>
+							<s>2</s>
+						</Star>
+					</entry>
+					<entry>
+						<Tile id="118">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="119">
+								<Line>
+									<Point id="120">1,0.3639702342662023</Point>
+									<Point id="121">0.5320888862379561,0.9216049851068762</Point>
+								</Line>
+								<Line>
+									<Point reference="121" />
+									<Point id="122">-0.1847925309040953,1.04801052091754</Point>
+								</Line>
+								<Line>
+									<Point reference="122" />
+									<Point id="123">-0.8152074690959045,0.6840402866513375</Point>
+								</Line>
+								<Line>
+									<Point reference="123" />
+									<Point id="124">-1.064177772475912,1.303241902786386e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="124" />
+									<Point id="125">-0.8152074690959046,-0.6840402866513373</Point>
+								</Line>
+								<Line>
+									<Point reference="125" />
+									<Point id="126">-0.1847925309040953,-1.04801052091754</Point>
+								</Line>
+								<Line>
+									<Point reference="126" />
+									<Point id="127">0.5320888862379561,-0.9216049851068762</Point>
+								</Line>
+								<Line>
+									<Point reference="127" />
+									<Point id="128">0.9999999999999996,-0.3639702342662031</Point>
+								</Line>
+								<Line>
+									<Point reference="128" />
+									<Point reference="120" />
+								</Line>
+							</edges>
+						</Tile>
+						<Star id="129">
+							<version>2</version>
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>9</n>
+							<d>3</d>
+							<s>2</s>
+						</Star>
+					</entry>
+					<entry>
+						<Tile id="130">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>0.75</scale>
+							<edges id="131">
+								<Line>
+									<Point id="132">1,1.732050807568877</Point>
+									<Point id="133">-2,2.449293598294706e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="133" />
+									<Point id="134">0.9999999999999984,-1.732050807568878</Point>
+								</Line>
+								<Line>
+									<Point reference="134" />
+									<Point reference="132" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularStar id="135" type="Irregular Star Motif">
+							<boundarySides>3</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>0.75</figureScale>
+							<r>0</r>
+							<n>3</n>
+							<s>1</s>
+							<d>2</d>
+						</IrregularStar>
+					</entry>
+					<entry>
+						<Tile id="136">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="137">
+								<Line>
+									<Point id="138">1,1</Point>
+									<Point id="139">-0.9999999999999998,1</Point>
+								</Line>
+								<Line>
+									<Point reference="139" />
+									<Point id="140">-1,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="140" />
+									<Point id="141">0.9999999999999997,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="141" />
+									<Point reference="138" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularStar id="142" type="Irregular Star Motif">
+							<boundarySides>4</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+							<s>1</s>
+							<d>2</d>
+						</IrregularStar>
+					</entry>
+					<entry>
+						<Tile id="143">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="144">
+								<Line>
+									<Point id="145">1,0.5773502691896256</Point>
+									<Point id="146">7.070501591499379e-17,1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="146" />
+									<Point id="147">-0.9999999999999998,0.5773502691896261</Point>
+								</Line>
+								<Line>
+									<Point reference="147" />
+									<Point id="148">-1,-0.5773502691896254</Point>
+								</Line>
+								<Line>
+									<Point reference="148" />
+									<Point id="149">-2.121150477449814e-16,-1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="149" />
+									<Point id="150">0.9999999999999997,-0.5773502691896263</Point>
+								</Line>
+								<Line>
+									<Point reference="150" />
+									<Point reference="145" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularStar id="151" type="Irregular Star Motif">
+							<boundarySides>6</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>6</n>
+							<s>1</s>
+							<d>2</d>
+						</IrregularStar>
+					</entry>
+					<entry>
+						<Tile id="152">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="153">
+								<Line>
+									<Point id="154">1,0.3639702342662023</Point>
+									<Point id="155">0.5320888862379561,0.9216049851068762</Point>
+								</Line>
+								<Line>
+									<Point reference="155" />
+									<Point id="156">-0.1847925309040953,1.04801052091754</Point>
+								</Line>
+								<Line>
+									<Point reference="156" />
+									<Point id="157">-0.8152074690959045,0.6840402866513375</Point>
+								</Line>
+								<Line>
+									<Point reference="157" />
+									<Point id="158">-1.064177772475912,1.303241902786386e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="158" />
+									<Point id="159">-0.8152074690959046,-0.6840402866513373</Point>
+								</Line>
+								<Line>
+									<Point reference="159" />
+									<Point id="160">-0.1847925309040953,-1.04801052091754</Point>
+								</Line>
+								<Line>
+									<Point reference="160" />
+									<Point id="161">0.5320888862379561,-0.9216049851068762</Point>
+								</Line>
+								<Line>
+									<Point reference="161" />
+									<Point id="162">0.9999999999999996,-0.3639702342662031</Point>
+								</Line>
+								<Line>
+									<Point reference="162" />
+									<Point reference="154" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularStar id="163" type="Irregular Star Motif">
+							<boundarySides>9</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>9</n>
+							<s>1</s>
+							<d>2</d>
+						</IrregularStar>
+					</entry>
+					<entry>
+						<Tile id="164">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="165">
+								<Line>
+									<Point id="166">1,0.4815746188075287</Point>
+									<Point id="167">0.2469796037174671,1.082088346128531</Point>
+								</Line>
+								<Line>
+									<Point reference="167" />
+									<Point id="168">-0.6920214716300959,0.8677674782351164</Point>
+								</Line>
+								<Line>
+									<Point reference="168" />
+									<Point id="169">-1.109916264174742,1.359255400243186e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="169" />
+									<Point id="170">-0.6920214716300961,-0.8677674782351161</Point>
+								</Line>
+								<Line>
+									<Point reference="170" />
+									<Point id="171">0.2469796037174669,-1.082088346128531</Point>
+								</Line>
+								<Line>
+									<Point reference="171" />
+									<Point id="172">0.9999999999999999,-0.4815746188075289</Point>
+								</Line>
+								<Line>
+									<Point reference="172" />
+									<Point reference="166" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularStar id="173" type="Irregular Star Motif">
+							<boundarySides>7</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>7</n>
+							<s>1</s>
+							<d>2</d>
+						</IrregularStar>
+					</entry>
+					<entry>
+						<Tile id="174">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="175">
+								<Line>
+									<Point id="176">1,0.4142135623730951</Point>
+									<Point id="177">0.4142135623730951,1</Point>
+								</Line>
+								<Line>
+									<Point reference="177" />
+									<Point id="178">-0.414213562373095,1</Point>
+								</Line>
+								<Line>
+									<Point reference="178" />
+									<Point id="179">-1,0.4142135623730952</Point>
+								</Line>
+								<Line>
+									<Point reference="179" />
+									<Point id="180">-1,-0.414213562373095</Point>
+								</Line>
+								<Line>
+									<Point reference="180" />
+									<Point id="181">-0.4142135623730957,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="181" />
+									<Point id="182">0.4142135623730953,-0.9999999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="182" />
+									<Point id="183">0.9999999999999998,-0.4142135623730958</Point>
+								</Line>
+								<Line>
+									<Point reference="183" />
+									<Point reference="176" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularStar id="184" type="Irregular Star Motif">
+							<boundarySides>8</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>8</n>
+							<s>1</s>
+							<d>2</d>
+						</IrregularStar>
+					</entry>
+					<entry>
+						<Tile id="185">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="186">
+								<Line>
+									<Point id="187">0.9999999999999999,0.7265425280053608</Point>
+									<Point id="188">-0.381966011250105,1.175570504584946</Point>
+								</Line>
+								<Line>
+									<Point reference="188" />
+									<Point id="189">-1.23606797749979,1.51374669217366e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="189" />
+									<Point id="190">-0.3819660112501053,-1.175570504584946</Point>
+								</Line>
+								<Line>
+									<Point reference="190" />
+									<Point id="191">0.9999999999999998,-0.7265425280053611</Point>
+								</Line>
+								<Line>
+									<Point reference="191" />
+									<Point reference="187" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularStar id="192" type="Irregular Star Motif">
+							<boundarySides>5</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>5</n>
+							<s>1</s>
+							<d>2</d>
+						</IrregularStar>
+					</entry>
+					<entry>
+						<Tile id="193">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>0.75</scale>
+							<edges id="194">
+								<Line>
+									<Point id="195">1,1.732050807568877</Point>
+									<Point id="196">-2,2.449293598294706e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="196" />
+									<Point id="197">0.9999999999999984,-1.732050807568878</Point>
+								</Line>
+								<Line>
+									<Point reference="197" />
+									<Point reference="195" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularStar id="198" type="Irregular Star Motif">
+							<version>2</version>
+							<boundarySides>3</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>0.75</figureScale>
+							<r>0</r>
+							<n>3</n>
+							<s>1</s>
+							<d>2</d>
+						</IrregularStar>
+					</entry>
+					<entry>
+						<Tile id="199">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="200">
+								<Line>
+									<Point id="201">1,1</Point>
+									<Point id="202">-0.9999999999999998,1</Point>
+								</Line>
+								<Line>
+									<Point reference="202" />
+									<Point id="203">-1,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="203" />
+									<Point id="204">0.9999999999999997,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="204" />
+									<Point reference="201" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularStar id="205" type="Irregular Star Motif">
+							<version>2</version>
+							<boundarySides>4</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+							<s>1</s>
+							<d>2</d>
+						</IrregularStar>
+					</entry>
+					<entry>
+						<Tile id="206">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="207">
+								<Line>
+									<Point id="208">0.9999999999999999,0.7265425280053608</Point>
+									<Point id="209">-0.381966011250105,1.175570504584946</Point>
+								</Line>
+								<Line>
+									<Point reference="209" />
+									<Point id="210">-1.23606797749979,1.51374669217366e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="210" />
+									<Point id="211">-0.3819660112501053,-1.175570504584946</Point>
+								</Line>
+								<Line>
+									<Point reference="211" />
+									<Point id="212">0.9999999999999998,-0.7265425280053611</Point>
+								</Line>
+								<Line>
+									<Point reference="212" />
+									<Point reference="208" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularStar id="213" type="Irregular Star Motif">
+							<version>2</version>
+							<boundarySides>5</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>5</n>
+							<s>1</s>
+							<d>2</d>
+						</IrregularStar>
+					</entry>
+					<entry>
+						<Tile id="214">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="215">
+								<Line>
+									<Point id="216">1,0.5773502691896256</Point>
+									<Point id="217">7.070501591499379e-17,1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="217" />
+									<Point id="218">-0.9999999999999998,0.5773502691896261</Point>
+								</Line>
+								<Line>
+									<Point reference="218" />
+									<Point id="219">-1,-0.5773502691896254</Point>
+								</Line>
+								<Line>
+									<Point reference="219" />
+									<Point id="220">-2.121150477449814e-16,-1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="220" />
+									<Point id="221">0.9999999999999997,-0.5773502691896263</Point>
+								</Line>
+								<Line>
+									<Point reference="221" />
+									<Point reference="216" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularStar id="222" type="Irregular Star Motif">
+							<version>2</version>
+							<boundarySides>6</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>6</n>
+							<s>1</s>
+							<d>2</d>
+						</IrregularStar>
+					</entry>
+					<entry>
+						<Tile id="223">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="224">
+								<Line>
+									<Point id="225">1,0.4815746188075287</Point>
+									<Point id="226">0.2469796037174671,1.082088346128531</Point>
+								</Line>
+								<Line>
+									<Point reference="226" />
+									<Point id="227">-0.6920214716300959,0.8677674782351164</Point>
+								</Line>
+								<Line>
+									<Point reference="227" />
+									<Point id="228">-1.109916264174742,1.359255400243186e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="228" />
+									<Point id="229">-0.6920214716300961,-0.8677674782351161</Point>
+								</Line>
+								<Line>
+									<Point reference="229" />
+									<Point id="230">0.2469796037174669,-1.082088346128531</Point>
+								</Line>
+								<Line>
+									<Point reference="230" />
+									<Point id="231">0.9999999999999999,-0.4815746188075289</Point>
+								</Line>
+								<Line>
+									<Point reference="231" />
+									<Point reference="225" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularStar id="232" type="Irregular Star Motif">
+							<version>2</version>
+							<boundarySides>7</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>7</n>
+							<s>1</s>
+							<d>2</d>
+						</IrregularStar>
+					</entry>
+					<entry>
+						<Tile id="233">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="234">
+								<Line>
+									<Point id="235">1,0.4142135623730951</Point>
+									<Point id="236">0.4142135623730951,1</Point>
+								</Line>
+								<Line>
+									<Point reference="236" />
+									<Point id="237">-0.414213562373095,1</Point>
+								</Line>
+								<Line>
+									<Point reference="237" />
+									<Point id="238">-1,0.4142135623730952</Point>
+								</Line>
+								<Line>
+									<Point reference="238" />
+									<Point id="239">-1,-0.414213562373095</Point>
+								</Line>
+								<Line>
+									<Point reference="239" />
+									<Point id="240">-0.4142135623730957,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="240" />
+									<Point id="241">0.4142135623730953,-0.9999999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="241" />
+									<Point id="242">0.9999999999999998,-0.4142135623730958</Point>
+								</Line>
+								<Line>
+									<Point reference="242" />
+									<Point reference="235" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularStar id="243" type="Irregular Star Motif">
+							<version>2</version>
+							<boundarySides>8</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>8</n>
+							<s>1</s>
+							<d>2</d>
+						</IrregularStar>
+					</entry>
+					<entry>
+						<Tile id="244">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="245">
+								<Line>
+									<Point id="246">1,0.3639702342662023</Point>
+									<Point id="247">0.5320888862379561,0.9216049851068762</Point>
+								</Line>
+								<Line>
+									<Point reference="247" />
+									<Point id="248">-0.1847925309040953,1.04801052091754</Point>
+								</Line>
+								<Line>
+									<Point reference="248" />
+									<Point id="249">-0.8152074690959045,0.6840402866513375</Point>
+								</Line>
+								<Line>
+									<Point reference="249" />
+									<Point id="250">-1.064177772475912,1.303241902786386e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="250" />
+									<Point id="251">-0.8152074690959046,-0.6840402866513373</Point>
+								</Line>
+								<Line>
+									<Point reference="251" />
+									<Point id="252">-0.1847925309040953,-1.04801052091754</Point>
+								</Line>
+								<Line>
+									<Point reference="252" />
+									<Point id="253">0.5320888862379561,-0.9216049851068762</Point>
+								</Line>
+								<Line>
+									<Point reference="253" />
+									<Point id="254">0.9999999999999996,-0.3639702342662031</Point>
+								</Line>
+								<Line>
+									<Point reference="254" />
+									<Point reference="246" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularStar id="255" type="Irregular Star Motif">
+							<version>2</version>
+							<boundarySides>9</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>9</n>
+							<s>1</s>
+							<d>2</d>
+						</IrregularStar>
+					</entry>
+					<entry>
+						<Tile id="256">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="257">
+								<Line>
+									<Point reference="246" />
+									<Point reference="247" />
+								</Line>
+								<Line>
+									<Point reference="247" />
+									<Point reference="248" />
+								</Line>
+								<Line>
+									<Point reference="248" />
+									<Point reference="249" />
+								</Line>
+								<Line>
+									<Point reference="249" />
+									<Point reference="250" />
+								</Line>
+								<Line>
+									<Point reference="250" />
+									<Point reference="251" />
+								</Line>
+								<Line>
+									<Point reference="251" />
+									<Point reference="252" />
+								</Line>
+								<Line>
+									<Point reference="252" />
+									<Point reference="253" />
+								</Line>
+								<Line>
+									<Point reference="253" />
+									<Point reference="254" />
+								</Line>
+								<Line>
+									<Point reference="254" />
+									<Point reference="246" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularStar id="258" type="Irregular Star Motif">
+							<version>3</version>
+							<boundarySides>9</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>9</n>
+							<s>1</s>
+							<d>2</d>
+						</IrregularStar>
+					</entry>
+					<entry>
+						<Tile id="259">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="260">
+								<Line>
+									<Point reference="235" />
+									<Point reference="236" />
+								</Line>
+								<Line>
+									<Point reference="236" />
+									<Point reference="237" />
+								</Line>
+								<Line>
+									<Point reference="237" />
+									<Point reference="238" />
+								</Line>
+								<Line>
+									<Point reference="238" />
+									<Point reference="239" />
+								</Line>
+								<Line>
+									<Point reference="239" />
+									<Point reference="240" />
+								</Line>
+								<Line>
+									<Point reference="240" />
+									<Point reference="241" />
+								</Line>
+								<Line>
+									<Point reference="241" />
+									<Point reference="242" />
+								</Line>
+								<Line>
+									<Point reference="242" />
+									<Point reference="235" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularStar id="261" type="Irregular Star Motif">
+							<version>3</version>
+							<boundarySides>8</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>8</n>
+							<s>1</s>
+							<d>2</d>
+						</IrregularStar>
+					</entry>
+					<entry>
+						<Tile id="262">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="263">
+								<Line>
+									<Point reference="225" />
+									<Point reference="226" />
+								</Line>
+								<Line>
+									<Point reference="226" />
+									<Point reference="227" />
+								</Line>
+								<Line>
+									<Point reference="227" />
+									<Point reference="228" />
+								</Line>
+								<Line>
+									<Point reference="228" />
+									<Point reference="229" />
+								</Line>
+								<Line>
+									<Point reference="229" />
+									<Point reference="230" />
+								</Line>
+								<Line>
+									<Point reference="230" />
+									<Point reference="231" />
+								</Line>
+								<Line>
+									<Point reference="231" />
+									<Point reference="225" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularStar id="264" type="Irregular Star Motif">
+							<version>3</version>
+							<boundarySides>7</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>7</n>
+							<s>1</s>
+							<d>2</d>
+						</IrregularStar>
+					</entry>
+					<entry>
+						<Tile id="265">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="266">
+								<Line>
+									<Point reference="216" />
+									<Point reference="217" />
+								</Line>
+								<Line>
+									<Point reference="217" />
+									<Point reference="218" />
+								</Line>
+								<Line>
+									<Point reference="218" />
+									<Point reference="219" />
+								</Line>
+								<Line>
+									<Point reference="219" />
+									<Point reference="220" />
+								</Line>
+								<Line>
+									<Point reference="220" />
+									<Point reference="221" />
+								</Line>
+								<Line>
+									<Point reference="221" />
+									<Point reference="216" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularStar id="267" type="Irregular Star Motif">
+							<version>3</version>
+							<boundarySides>6</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>6</n>
+							<s>1</s>
+							<d>2</d>
+						</IrregularStar>
+					</entry>
+					<entry>
+						<Tile id="268">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="269">
+								<Line>
+									<Point reference="208" />
+									<Point reference="209" />
+								</Line>
+								<Line>
+									<Point reference="209" />
+									<Point reference="210" />
+								</Line>
+								<Line>
+									<Point reference="210" />
+									<Point reference="211" />
+								</Line>
+								<Line>
+									<Point reference="211" />
+									<Point reference="212" />
+								</Line>
+								<Line>
+									<Point reference="212" />
+									<Point reference="208" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularStar id="270" type="Irregular Star Motif">
+							<version>3</version>
+							<boundarySides>5</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>5</n>
+							<s>1</s>
+							<d>2</d>
+						</IrregularStar>
+					</entry>
+					<entry>
+						<Tile id="271">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="272">
+								<Line>
+									<Point reference="201" />
+									<Point reference="202" />
+								</Line>
+								<Line>
+									<Point reference="202" />
+									<Point reference="203" />
+								</Line>
+								<Line>
+									<Point reference="203" />
+									<Point reference="204" />
+								</Line>
+								<Line>
+									<Point reference="204" />
+									<Point reference="201" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularStar id="273" type="Irregular Star Motif">
+							<version>3</version>
+							<boundarySides>4</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+							<s>1</s>
+							<d>2</d>
+						</IrregularStar>
+					</entry>
+					<entry>
+						<Tile id="274">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>0.75</scale>
+							<edges id="275">
+								<Line>
+									<Point reference="195" />
+									<Point reference="196" />
+								</Line>
+								<Line>
+									<Point reference="196" />
+									<Point reference="197" />
+								</Line>
+								<Line>
+									<Point reference="197" />
+									<Point reference="195" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularStar id="276" type="Irregular Star Motif">
+							<version>3</version>
+							<boundarySides>3</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>0.75</figureScale>
+							<r>1</r>
+							<n>3</n>
+							<s>1</s>
+							<d>2</d>
+						</IrregularStar>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff1496d2</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>true</draw__outline>
+			<outline_width>0.02</outline_width>
+			<outline_color>#ff000000</outline_color>
+			<width>0.03</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+	</style.Thick>
+</vector>

@@ -1,5 +1,4 @@
 #include "makers/map_editor/map_editor_mouseactions.h"
-#include "makers/map_editor/map_editor.h"
 #include "makers/map_editor/map_editor_db.h"
 #include "makers/map_editor/map_selection.h"
 #include "geometry/vertex.h"
@@ -48,11 +47,11 @@ void MapMouseAction::endDragging(QPointF spt)
 {
     Q_UNUSED(spt)
 
-    MapEditorLayer layer = db->getEditLayer();
-    DesignElementPtr delp = layer.wdel.lock();
+    MapEditorLayer & layer = db->getEditLayer();
+    DesignElementPtr delp  = layer.getDel();
     if (delp)
     {
-        Q_ASSERT(db->isMotif(layer.type));
+        Q_ASSERT(db->isMotif(layer.getLayerMapType()));
         MotifPtr motif = delp->getMotif();
         if (motif)
         {

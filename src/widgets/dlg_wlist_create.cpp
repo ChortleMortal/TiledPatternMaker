@@ -5,8 +5,10 @@
 #include <QStringList>
 #include <QRadioButton>
 #include <QLineEdit>
+#include <QButtonGroup>
 
 #include "widgets/dlg_wlist_create.h"
+#include "enums/emotiftype.h"
 
 DlgWorklistCreate::DlgWorklistCreate(QWidget * parent) :  QDialog(parent), MosaicIOBase()
 {
@@ -15,10 +17,14 @@ DlgWorklistCreate::DlgWorklistCreate(QWidget * parent) :  QDialog(parent), Mosai
     selMosaic     = new QRadioButton("Mosaic");
     selTiling     = new QRadioButton("Tiling");
 
-    chkLoadFilter = new QCheckBox("Load filter");
-    chkStyle      = new QCheckBox("Style");
-    chkMotif      = new QCheckBox("Motif");
-    chkText       = new QCheckBox("XML text");
+    QButtonGroup * qbg1 = new QButtonGroup();
+    qbg1->addButton(selMosaic);
+    qbg1->addButton(selTiling);
+
+    chkLoadFilter = new QCheckBox("Use load filter");
+    radStyle      = new QRadioButton("Style");
+    radMotif      = new QRadioButton("Motif");
+    radText       = new QRadioButton("XML text");
 
     text          = new QLineEdit;
 
@@ -45,10 +51,9 @@ DlgWorklistCreate::DlgWorklistCreate(QWidget * parent) :  QDialog(parent), Mosai
     }
 
     motifNames = new QComboBox();
-    QStringList motifs  = motifRepresentation.values();
-    for (const auto & name : motifs)
+    for (int i = 0; i <=  MAX_MOTIF_TYPE; i++)
     {
-        motifNames->addItem(name);
+        motifNames->addItem(sMotifType[i]);
     }
 
     QHBoxLayout * hbox = new QHBoxLayout;
@@ -61,11 +66,11 @@ DlgWorklistCreate::DlgWorklistCreate(QWidget * parent) :  QDialog(parent), Mosai
     QGridLayout * grid = new QGridLayout();
     grid->addLayout(hbox, row++, 1);
     grid->addWidget(chkLoadFilter, row++, 0);
-    grid->addWidget(chkText, row, 0);
+    grid->addWidget(radText, row, 0);
     grid->addWidget(text, row++, 1);
-    grid->addWidget(chkStyle, row, 0);
+    grid->addWidget(radStyle, row, 0);
     grid->addWidget(styleNames, row++, 1);
-    grid->addWidget(chkMotif, row, 0);
+    grid->addWidget(radMotif, row, 0);
     grid->addWidget(motifNames, row++, 1);
 
     QPushButton * okBtn  = new QPushButton("OK");
@@ -83,7 +88,15 @@ DlgWorklistCreate::DlgWorklistCreate(QWidget * parent) :  QDialog(parent), Mosai
     setLayout(vbox);
 
     selMosaic->setChecked(true);
+    radMotif->setChecked(true);
 
     connect(canBtn, &QPushButton::clicked, this, &QDialog::reject);
     connect(okBtn,  &QPushButton::clicked, this, &QDialog::accept);
+}
+
+QStringList DlgWorklistCreate::selectedMotifNames()
+{
+    eMotifType type = (eMotifType) motifNames->currentIndex();
+    QList<QString> qls = motifRepresentation.values(type);
+    return qls;
 }

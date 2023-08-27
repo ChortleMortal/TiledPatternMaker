@@ -1,8 +1,8 @@
 #ifndef PAGE_TILING_MAKER_H
 #define PAGE_TILING_MAKER_H
 
-#include "widgets/panel_page.h"
-#include "widgets/panel_misc.h"
+#include "panels/panel_page.h"
+#include "panels/panel_misc.h"
 
 typedef std::shared_ptr<class Tiling>           TilingPtr;
 typedef std::shared_ptr<class PlacedTile>       PlacedTilePtr;

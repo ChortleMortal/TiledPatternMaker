@@ -5,9 +5,9 @@
 class QGroupBox;
 
 #include "misc/qtapplog.h"
-#include "widgets/panel_page.h"
+#include "panels/panel_page.h"
 
-typedef std::shared_ptr<class Tiling>           TilingPtr;
+typedef std::shared_ptr<class Tiling>  TilingPtr;
 typedef std::shared_ptr<class Mosaic>  MosaicPtr;
 
 class page_debug : public panel_page
@@ -42,6 +42,7 @@ private slots:
     void    slot_testA();
     void    slot_testB();
     void    slot_dontTrapLog(bool dont);
+    void    slot_dontRefresh(bool enb);
 
 protected:
     bool    verifyTiling(TilingPtr tiling);

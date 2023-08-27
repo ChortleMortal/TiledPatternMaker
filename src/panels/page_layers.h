@@ -2,12 +2,13 @@
 #ifndef PAGE_LAYERS_H
 #define PAGE_LAYERS_H
 
-#include "widgets/panel_page.h"
+#include "panels/panel_page.h"
 
 typedef std::shared_ptr<class Layer>   LayerPtr;
 typedef std::weak_ptr<class Layer>     WeakLayerPtr;
 
 class AQDoubleSpinBox;
+class AQTableWidget;
 class EdgePoly;
 
 class page_layers : public panel_page

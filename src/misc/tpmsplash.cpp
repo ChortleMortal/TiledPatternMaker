@@ -1,5 +1,5 @@
 #include "misc/tpmsplash.h"
-#include "panels/panel.h"
+#include "panels/controlpanel.h"
 
 /*
  * QSplashScreen() has bugs
@@ -12,6 +12,7 @@
 
 TPMSplash::TPMSplash() : QSplashScreen()
 {
+
     QPixmap pm(":/tpm.png");
     setPixmap(pm);
 
@@ -26,54 +27,41 @@ TPMSplash::TPMSplash() : QSplashScreen()
     hide();
 }
 
-void TPMSplash::displayMosaic(QString &  txt)
+void TPMSplash::display(QString &  txt)
 {
-    design = txt;
+    msgStack.push(txt);
+
     draw();
 }
 
-void TPMSplash::displayTiling(QString & txt)
+void TPMSplash::remove()
 {
-    tiling = txt;
+    if (!msgStack.isEmpty())
+    {
+        msgStack.pop();
+    }
+
     draw();
 }
 
 void TPMSplash::draw()
 {
-    ControlPanel * p = ControlPanel::getInstance();
-    QPoint pos       = p->rect().center();
-    pos              = p->mapToGlobal(pos);
-    QPoint p2        = pos - QPoint(w/2,h/2);
-    move(p2);
-
-    show();
-
-    QString txt = design + "\n" + tiling;
-    showMessage(txt, Qt::AlignCenter);
-}
-
-void TPMSplash::removeMosaic()
-{
-    design.clear();
-    if (!tiling.isEmpty())
-    {
-        draw();
-    }
-    else
+    if (msgStack.isEmpty())
     {
         hide();
     }
-}
-
-void TPMSplash::removeTiling()
-{
-    tiling.clear();
-    if (!design.isEmpty())
-    {
-        draw();
-    }
     else
     {
-        hide();
+        ControlPanel * p = ControlPanel::getInstance();
+        QPoint pos       = p->rect().center();
+        pos              = p->mapToGlobal(pos);
+        QPoint p2        = pos - QPoint(w/2,h/2);
+        move(p2);
+
+        show();
+
+       QString txt = msgStack.top();
+       showMessage(txt, Qt::AlignCenter);
     }
 }
+

@@ -2,7 +2,7 @@
 #ifndef PAGE_CROP_MAKER_H
 #define PAGE_CROP_MAKER_H
 
-#include "widgets/panel_page.h"
+#include "panels/panel_page.h"
 #include "makers/crop_maker/crop_maker.h"
 
 class CropWidget;
@@ -34,6 +34,8 @@ protected:
 
 private:
     CropMaker    cropMaker;
+
+    bool         lockView;
 
     CropViewer * cropViewer;
     CropWidget * cropWidget;

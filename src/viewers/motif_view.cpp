@@ -11,6 +11,7 @@
 #include "geometry/transform.h"
 #include "geometry/vertex.h"
 #include "makers/motif_maker/design_element_button.h"
+#include "makers/motif_maker/motif_maker_widget.h"
 #include "makers/prototype_maker/prototype.h"
 #include "makers/prototype_maker/prototype_maker.h"
 #include "mosaic/design_element.h"
@@ -25,6 +26,13 @@ using std::make_shared;
 typedef std::shared_ptr<RadialMotif>    RadialPtr;
 
 MotifView * MotifView::mpThis = nullptr;
+
+
+///////////////////////////////////////////////////////////////////////////
+///
+///     This view paints all selected DELs in a selected Prototyp
+///
+///////////////////////////////////////////////////////////////////////////
 
 MotifView * MotifView::getInstance()
 {
@@ -60,26 +68,18 @@ void MotifView::paint(QPainter *painter)
 {
     qDebug() << "MotifView::paint";
 
-    lineWidth = config->motifViewWidth;
-
-    DesignElementPtr del = protoMakerData->getSelectedDEL();
-    if (!del)
-    {
-        qDebug() << "MotifView - no design element";
-        return;
-    }
-
-    painter->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
-
 #ifdef INVERT_MAP
     // invert
     painter->translate(0,view->height());
     painter->scale(1.0, -1.0);
 #endif
+    painter->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
+
+    lineWidth = config->motifViewWidth;
 
     QTransform baseT;
-
-    if (config->motifEnlarge)
+    DesignElementPtr del = protoMakerData->getSelectedDEL();
+    if (config->motifEnlarge && del)
     {
         ViewControl * view = ViewControl::getInstance();
         baseT = DesignElementButton::resetViewport(-2,del,view->rect()) * getCanvasTransform();
@@ -107,32 +107,6 @@ void MotifView::paint(QPainter *painter)
 
         _T = placement * baseT;
         //qDebug().noquote() << "MotifView::transform" << Transform::toInfoString(_T);
-
-        // paint motif
-        if (config->showMotif)
-        {
-            painter->setPen(QPen(Qt::blue,lineWidth));
-            if (motif->isRadial())
-            {
-                paintRadialMotifMap(painter,motif);
-            }
-            else
-            {
-                paintExplicitMotifMap(painter, motif);
-            }
-        }
-
-        DebugMapPtr dmap = motif->getDebugMap();
-        if (dmap)
-        {
-            auto map = std::dynamic_pointer_cast<Map>(dmap);
-            if (map)
-            {
-                QColor color = (config->motifBkgdWhite) ? Qt::black : Qt::white;
-                painter->setPen(QPen(color,lineWidth));
-                paintMap(painter,map);
-            }
-        }
 
         // paint boundaries
         if (config->showTileBoundary)
@@ -184,6 +158,33 @@ void MotifView::paint(QPainter *painter)
             }
         }
 
+        // paint motif
+        if (config->showMotif)
+        {
+            painter->setPen(QPen(Qt::blue,lineWidth));
+            if (motif->isRadial())
+            {
+                paintRadialMotifMap(painter,motif);
+            }
+            else
+            {
+                paintExplicitMotifMap(painter, motif);
+            }
+        }
+
+        DebugMapPtr dmap = motif->getDebugMap();
+        if (dmap)
+        {
+            auto map = std::dynamic_pointer_cast<Map>(dmap);
+            if (map)
+            {
+                QColor viewColor = view->getViewSettings().getBkgdColor(VIEW_MOTIF_MAKER);
+                QColor color = (viewColor == QColor(Qt::white)) ? Qt::black : Qt::white;
+                painter->setPen(QPen(color,lineWidth));
+                paintMap(painter,map);
+            }
+        }
+
         if (motif->getMotifType() == MOTIF_TYPE_INFERRED)
         {
             auto exp = std::dynamic_pointer_cast<InferredMotif>(motif);
@@ -203,7 +204,7 @@ void MotifView::paint(QPainter *painter)
 
 void MotifView::paintExplicitMotifMap(QPainter *painter, MotifPtr motif)
 {
-    qDebug() << "paintExplicitMotifMap" << motif->getMotifDesc();
+    //qDebug() << "paintExplicitMotifMap" << motif->getMotifDesc();
 
     MapPtr map = motif->getMotifMap();
     if (map)
@@ -219,7 +220,8 @@ void MotifView::paintExplicitMotifMap(QPainter *painter, MotifPtr motif)
             map = std::dynamic_pointer_cast<Map>(dmap);
             if (map)
             {
-                QColor color = (config->motifBkgdWhite) ? Qt::black : Qt::white;
+                QColor viewColor = view->getViewSettings().getBkgdColor(VIEW_MOTIF_MAKER);
+                QColor color = (viewColor == QColor(Qt::white)) ? Qt::black : Qt::white;
                 painter->setPen(QPen(color,lineWidth));
                 paintMap(painter,map);
             }
@@ -243,7 +245,8 @@ void MotifView::paintRadialMotifMap(QPainter *painter, MotifPtr motif)
         map = std::dynamic_pointer_cast<Map>(dmap);
         if (map)
         {
-            QColor color = (config->motifBkgdWhite) ? Qt::black : Qt::white;
+            QColor viewColor = view->getViewSettings().getBkgdColor(VIEW_MOTIF_MAKER);
+            QColor color = (viewColor == QColor(Qt::white)) ? Qt::black : Qt::white;
             painter->setPen(QPen(color,lineWidth));
             paintMap(painter,map);
         }
@@ -301,7 +304,7 @@ void MotifView::paintExtendedBoundary(QPainter *painter, MotifPtr motif)
 void MotifView::paintMap(QPainter * painter, MapPtr map)
 {
     //map->verify("figure", true, true, true);
-    qDebug() << "MotifView::paintMap" <<  map->namedSummary();
+    //qDebug() << "MotifView::paintMap" <<  map->namedSummary();
     for (auto & edge : qAsConst(map->getEdges()))
     {
         QPointF p1 = _T.map(edge->v1->pt);
@@ -352,14 +355,52 @@ void MotifView::paintMap(QPainter * painter, MapPtr map)
 
 void MotifView::slot_setCenter(QPointF spt)
 {
-    if (config->getViewerType() == VIEW_MOTIF_MAKER)
+    if (view->isActiveLayer(this))
     {
         setCenterScreenUnits(spt);
     }
 }
 
 void MotifView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
-{ Q_UNUSED(spt); Q_UNUSED(btn); }
+{
+    Q_UNUSED(spt);
+    Q_UNUSED(btn);
+
+    // in multiView delegates the clicked motif
+
+    if (config->motifEnlarge)
+        return;
+
+    if (!config->motifMultiView)
+        return;
+
+    QPointF mpt = screenToWorld(spt);
+
+    auto proto  = protoMakerData->getSelectedPrototype();
+    if (!proto) return;
+
+    auto tiling = proto->getTiling();
+    for (const auto & del : protoMakerData->getSelectedDELs(MVD_DELEM))
+    {
+        auto tile   = del->getTile();
+        QPolygonF poly = tile->getPolygon();
+
+        QTransform placement = tiling->getFirstPlacement(tile);
+        poly = placement.map(poly);
+
+        if (poly.containsPoint(mpt,Qt::OddEvenFill))
+        {
+            auto widget   = protoMakerData->getWidget();
+            auto btn      = widget->getButton(del);
+            if (btn)
+            {
+                widget->delegate(btn,config->motifMultiView,true);
+            }
+            return;
+        }
+    }
+}
+
 void MotifView::slot_mouseDragged(QPointF spt)
 { Q_UNUSED(spt); }
 void MotifView::slot_mouseMoved(QPointF spt)

@@ -39,26 +39,26 @@ void  MapEditorSelection::buildEditorDB()
 
     if (config->mapEditorMode == MAPED_MODE_MAP)
     {
-        for (auto & layer : db->getDrawLayers())
+        for (const MapEditorLayer * layer : db->getDrawLayers())
         {
-            DesignElementPtr delp = layer.wdel.lock();
+            DesignElementPtr delp = layer->getDel();
             if (delp)
             {
-                Q_ASSERT(db->isMotif(layer.type));
+                Q_ASSERT(db->isMotif(layer->getLayerMapType()));
                 // add motif
                 buildMotifDB(delp);
             }
 
-            for (auto map : db->getDrawMaps())
+            for (auto & map : db->getDrawMaps())
 	        {
 	            // add points from map vertices
-                for (const auto & vert : qAsConst(map->getVertices()))
+                for (const auto & vert : map->getVertices())
 	            {
 	                pointInfo pi(PT_VERTEX,vert,"vertex");
 	                points.push_back(pi);
 	            }
 
-                for (auto & edge :qAsConst(map->getEdges()))
+                for (const auto & edge : map->getEdges())
 	            {
 	                // add lines from map edges
 	                lineInfo li(LINE_EDGE,edge,"edge");
@@ -68,10 +68,6 @@ void  MapEditorSelection::buildEditorDB()
 	                QPointF midPt = edge->getLine().pointAt(0.5);
 	                pointInfo pi(PT_VERTEX_MID,midPt,"mid-point edge");
                     points.push_back(pi);
-
-                    midPt = edge->getLine().pointAt(0.6);
-                    pointInfo pi2(PT_VERTEX_MID2,midPt,"mid-point direction");
-                    points.push_back(pi2);
 	            }
 	        }
     	}
@@ -84,13 +80,13 @@ void  MapEditorSelection::buildEditorDB()
         {
             // add points from map vertices
             const QVector<VertexPtr>  & vertices = dcel->getVertices();
-            for (auto & v : qAsConst(vertices))
+            for (const auto & v : vertices)
             {
                 pointInfo pi(PT_VERTEX,v,"vertex");
                 points.push_back(pi);
             }
 
-            for (auto & e : qAsConst(dcel->getEdges()))
+            for (const auto & e : dcel->getEdges())
             {
                 // add lines from map edges
                 lineInfo li(LINE_EDGE,e,"edge");
@@ -100,16 +96,12 @@ void  MapEditorSelection::buildEditorDB()
                 QPointF midPt = e->getLine().pointAt(0.5);
                 pointInfo pi(PT_VERTEX_MID,midPt,"mid-point edge");
                 points.push_back(pi);
-
-                midPt = e->getLine().pointAt(0.6);
-                pointInfo pi2(PT_VERTEX_MID2,midPt,"mid-point direction");
-                points.push_back(pi2);
             }
         }
     }
 
     // add construction lines
-    for (auto line : db->constructionLines)
+    for (const auto & line : db->constructionLines)
     {
         lineInfo li(LINE_CONSTRUCTION,line,"construction line");
         lines.push_back(li);
@@ -128,7 +120,7 @@ void  MapEditorSelection::buildEditorDB()
     }
 
     // add construction circles
-    for (auto & circle : db->constructionCircles)
+    for (const auto & circle : db->constructionCircles)
     {
         circles.push_back(circle);
     }
@@ -183,10 +175,10 @@ void  MapEditorSelection::buildEditorDB()
     // build circle-circle intersects
     for (int i=0; i < circles.size(); i++)
     {
-        auto c1 = circles[i];
+        Circle & c1 = circles[i];
         for (int j=i+1; j < circles.size(); j++)
         {
-            auto c2 = circles[j];
+            Circle & c2 = circles[j];
             QPointF p1;
             QPointF p2;
             int count = Utils::circleCircleIntersectionPoints(c1,c2,p1,p2);
@@ -208,7 +200,7 @@ void  MapEditorSelection::buildEditorDB()
     }
 
     // build construction line intersect points
-    for (auto cline : db->constructionLines)
+    for (auto & cline : db->constructionLines)
     {
         for (auto & linfo : lines)
         {
@@ -428,12 +420,12 @@ SelectionSet  MapEditorSelection::findSelectionsUsingDB(const QPointF & spt)
     }
 
     // find point on circle near spt
-    for (auto & layer : db->getDrawLayers())
+    for (const MapEditorLayer * layer : db->getDrawLayers())
     {
-        DesignElementPtr delp = layer.wdel.lock();
+        DesignElementPtr delp = layer->getDel();
         if (delp)
         {
-            Q_ASSERT (db->isMotif(layer.type));
+            Q_ASSERT (db->isMotif(layer->getLayerMapType()));
             MotifPtr motif = delp->getMotif();
             const ExtendedBoundary & eb = motif->getExtendedBoundary();
             if (eb.isCircle())
@@ -544,7 +536,7 @@ MapSelectionPtr MapEditorSelection::findVertex(QPointF spt , VertexPtr exclude)
     if (!map)
         return sel;
 
-    for (auto & vp :qAsConst(map->getVertices()))
+    for (const auto & vp : map->getVertices())
     {
         if (vp == exclude)
         {
@@ -568,7 +560,7 @@ void MapEditorSelection::findEdges(MapPtr map, QPointF spt, const QVector<EdgePt
     if (!map)
         return;
 
-    for (auto  & e : qAsConst(map->getEdges()))
+    for (const auto & e : map->getEdges())
     {
         if (excludes.contains(e))
         {
@@ -593,7 +585,7 @@ SelectionSet MapEditorSelection::findEdges(QPointF spt, const NeighboursPtr excl
     if (!map)
         return set;
 
-    for (auto & e : map->getEdges())
+    for (const auto & e : map->getEdges())
     {
         bool found = false;
         for (auto pos = excludes->begin(); pos != excludes->end(); pos++)
@@ -630,12 +622,12 @@ bool MapEditorSelection::insideBoundary(QPointF wpt)
     qreal b_area = 0;
     qreal f_area = 0;
 
-    MapEditorLayer layer = db->getEditLayer();
-    DesignElementPtr delp = layer.wdel.lock();
+    MapEditorLayer & layer = db->getEditLayer();
+    DesignElementPtr delp  = layer.getDel();
     if (!delp)
         return true;    // no boundary
 
-    Q_ASSERT(db->isMotif(layer.type));
+    Q_ASSERT(db->isMotif(layer.getLayerMapType()));
 
     MotifPtr motif = delp->getMotif();
     TilePtr tilep  = delp->getTile();

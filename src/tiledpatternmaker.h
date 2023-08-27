@@ -25,8 +25,9 @@ class Configuration;
 class Cycler;
 class MapEditor;
 class CropMaker;
+class TPMSplash;
 
-typedef std::shared_ptr<class Motif>           MotifPtr;
+typedef std::shared_ptr<class Motif>  MotifPtr;
 
 class TiledPatternMaker : public QObject
 {
@@ -40,6 +41,13 @@ public:
     void appCompareImages(QImage & img_left, QImage & img_right, QString title_left, QString title_right, bool autoMode);
 
     void testMemoryManagement();
+
+    SplitScreen * getSplitter() { return splitter; }
+
+    void    enableSplash(bool enable);
+    void    splash(QString & txt);
+    void    splash(QString && txt);
+    void    removeSplash();
 
     static QPixmap createTransparentPixmap(QImage img);
     static void    appDebugBreak();
@@ -70,7 +78,6 @@ public slots:
 
     void slot_raiseMenu();
     void slot_bringToPrimaryScreen();
-    void slot_splitScreen(bool checked);
     
     void slot_compareBMPs(QString leftName, QString rightName, bool autoMode);
     void slot_compareBMPsPath(QString file1, QString file2);
@@ -85,6 +92,7 @@ protected:
 
     void compareImages(bool automode);
     void compareImages(QImage & img_left, QImage & img_right, QString title_left, QString title_right, bool autoMode);
+    void splitScreen();
 
     void ping_pong_images(bool transparent, bool popup);
 
@@ -99,8 +107,11 @@ private:
     class MosaicMaker      * mosaicMaker;
     class PrototypeMaker   * prototypeMaker;
     class TilingMaker      * tilingMaker;
+    SplitScreen            * splitter;
+
     MapEditor              * mapEditor;
     Cycler                 * cycler;
+    TPMSplash              * _splash;
 
     int                     instance;
     bool                    showFirst;
@@ -115,5 +126,7 @@ private:
     QString                 _titleA;
     QString                 _titleB;
 };
+
+extern TiledPatternMaker * theApp;
 
 #endif // TILEDPATTERNMAKER_H

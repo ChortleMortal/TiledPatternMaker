@@ -11,14 +11,14 @@
 #include "makers/map_editor/map_editor.h"
 #include "makers/mosaic_maker/mosaic_maker.h"
 #include "makers/motif_maker/design_element_button.h"
-#include "makers/motif_maker/motif_selector.h"
+#include "makers/motif_maker/design_element_selector.h"
 #include "makers/motif_maker/motif_maker_widget.h"
 #include "makers/motif_maker/motif_editor_widget.h"
 #include "makers/prototype_maker/prototype.h"
 #include "makers/prototype_maker/prototype_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "mosaic/design_element.h"
-#include "panels/panel.h"
+#include "panels/controlpanel.h"
 #include "settings/configuration.h"
 #include "style/style.h"
 #include "tile/placed_tile.h"
@@ -40,7 +40,6 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,"M
     SpinSet * widthSpin = new SpinSet("Line Width",3,1,9);
     widthSpin->setValue((int)config->protoviewWidth);
 
-    whiteBackground          = new QCheckBox("White");
     QCheckBox * chkMulti     = new QCheckBox("Multi-Select Motifs");
 
     QPushButton * pbDup      = new QPushButton("Duplicate Motif");
@@ -69,7 +68,6 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,"M
     hbox->addLayout(widthSpin);
     hbox->addStretch();
     hbox->addWidget(chkMulti);
-    hbox->addWidget(whiteBackground);
     vbox->addLayout(hbox);
 
     if (config->insightMode)
@@ -148,8 +146,6 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,"M
     }
 
     hbox = new QHBoxLayout;
-    hbox->addWidget(pbPropagate);
-    hbox->addStretch();
     hbox->addWidget(pbCombine);
     hbox->addWidget(pbDel);
     hbox->addWidget(pbDup);
@@ -157,10 +153,12 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,"M
     hbox->addWidget(pbSwapReg);
     hbox->addStretch();
     hbox->addWidget(pbRender);
+    hbox->addStretch();
+    hbox->addWidget(pbPropagate);
     vbox->addLayout(hbox);
 
     // the Motif maker widget
-    auto motifMakerWidget  =  new MotifMakerWidget();
+    motifMakerWidget  =  new MotifMakerWidget();
     protoMakerData->setWidget(motifMakerWidget);
 
     // putting it together
@@ -168,9 +166,6 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,"M
     vbox->addWidget(motifMakerWidget);
     vbox->addStretch();
 
-    setFixedWidth(762);
-
-    whiteBackground->setChecked(config->motifBkgdWhite);
     chkMulti->setChecked(config->motifMultiView);
     if (config->motifEnlarge)
         rEnlarge->setChecked(true);
@@ -183,7 +178,6 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,"M
     connect(pbDel,              &QPushButton::clicked,                  this,   &page_motif_maker::slot_deleteCurrent);
     connect(pbEdit,             &QPushButton::clicked,                  this,   &page_motif_maker::slot_editCurrent);
     connect(pbCombine,          &QPushButton::clicked,                  this,   &page_motif_maker::slot_combine);
-    connect(whiteBackground,    &QCheckBox::clicked,                    this,   &page_motif_maker::whiteClicked);
     connect(chkMulti,           &QCheckBox::clicked,                    this,   &page_motif_maker::multiClicked);
     connect(prototypeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &page_motif_maker::slot_prototypeSelected);
     connect(rEnlarge,           &QRadioButton::clicked,                 this,   [=,this] { config->motifEnlarge = true;  view->update(); });
@@ -202,6 +196,7 @@ void page_motif_maker::onEnter()
 
     panel->pushPanelStatus(msg);
 
+    motifMakerWidget->selectPrototype();
 }
 
 void page_motif_maker::onExit()
@@ -212,10 +207,6 @@ void page_motif_maker::onExit()
 void page_motif_maker::onRefresh(void)
 {
     loadProtoCombo();
-
-    whiteBackground->blockSignals(true);
-    whiteBackground->setChecked(config->motifBkgdWhite);
-    whiteBackground->blockSignals(false);
 
     if (config->insightMode)
     {
@@ -313,12 +304,6 @@ void page_motif_maker::loadProtoCombo()
     prototypeCombo->blockSignals(false);
 }
 
-void  page_motif_maker::whiteClicked(bool state)
-{
-    config->motifBkgdWhite = state;
-    emit sig_refreshView();
-}
-
 void  page_motif_maker::replicateClicked(bool state)
 {
     config->dontReplicate = !state;
@@ -335,6 +320,12 @@ void page_motif_maker::slot_rebuildMotif()
 void  page_motif_maker::multiClicked(bool state)
 {
     config->motifMultiView = state;
+    if (!state)
+    {
+        // re-delegate currnent selection
+        auto btn = motifMakerWidget->getDelegatedButton();
+        motifMakerWidget->delegate(btn, state, true);
+    }
     emit sig_refreshView();
 }
 

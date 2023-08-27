@@ -104,7 +104,7 @@ void Rosette::buildUnitMap()
     debugMap = make_shared<DebugMap>("rosette debug map");
 #endif
 
-    qDebug().noquote() << "Rosette::buildUnit"  << getN() << q << s << "Tr:" << Transform::toInfoString(Tr) << "rot" << getMotifRotate();
+    //qDebug().noquote() << "Rosette::buildUnit"  << getN() << q << s << "Tr:" << Transform::toInfoString(Tr) << "rot" << getMotifRotate();
 
     QPointF center(0.0,0.0);
     QPointF tip(1.0, 0.0 );         // The point to build from

@@ -1,7 +1,7 @@
 #pragma once
 #ifndef TILING_DATA
 #define TILING_DATA
-#include <QtVersionChecks>
+#include <QtGlobal>
 
 #if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
 #include <memory>

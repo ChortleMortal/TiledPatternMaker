@@ -76,15 +76,15 @@ bool Tiling::hasIntrinsicOverlaps()
     if (intrinsicOverlaps.get() == Tristate::Unknown)
     {
         intrinsicOverlaps.set(Tristate::False);
-        for (const auto & pf : getInTiling())
+        for (const auto & tile1 : getInTiling())
         {
-            QPolygonF poly = pf->getPlacedPoints();
+            QPolygonF poly = tile1->getPlacedPoints();
 
-            for (const auto & pf2 : getInTiling())
+            for (const auto & tile2 : getInTiling())
             {
-                if (pf2 == pf) continue;
+                if (tile2 == tile1) continue;
 
-                QPolygonF poly2 = pf2->getPlacedPoints();
+                QPolygonF poly2 = tile2->getPlacedPoints();
                 if (poly2.intersects(poly))
                 {
                     QPolygonF p3 = poly2.intersected(poly);
@@ -132,7 +132,7 @@ MapPtr Tiling::createMapFullSimple()
 
     MapPtr tilingMap = createMapSingle();
 
-    for (auto placement : fillPlacements)
+    for (const auto & placement : fillPlacements)
     {
         MapPtr m  = tilingMap->recreate();
         m->transformMap(placement);
@@ -423,7 +423,7 @@ QString Tiling::dump() const
 
 bool TileGroup::containsTile(TilePtr fp)
 {
-    for (auto& apair : *this)
+    for (const auto & apair : *this)
     {
         TilePtr f = apair.first;
         if (f == fp)
@@ -438,7 +438,7 @@ PlacedTiles & TileGroup::getTilePlacements(TilePtr fp)
 {
     Q_ASSERT(containsTile(fp));
 
-    for (auto& apair : *this)
+    for (auto & apair : *this)
     {
         TilePtr f = apair.first;
         if (f == fp)

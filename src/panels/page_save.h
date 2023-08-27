@@ -2,7 +2,7 @@
 #ifndef PAGE_SAVE_H
 #define PAGE_SAVE_H
 
-#include "widgets/panel_page.h"
+#include "panels/panel_page.h"
 
 class page_save : public panel_page
 {

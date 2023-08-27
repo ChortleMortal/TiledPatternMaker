@@ -122,14 +122,14 @@ MapPtr Map::recreate() const
 {
     MapPtr ret = make_shared<Map>("recreated map");
 
-    for(auto& vert : vertices)
+    for (const auto & vert : vertices)
     {
         VertexPtr nv = make_shared<Vertex>(vert->pt);
         vert->copy   = nv;
         ret->vertices.push_back(nv);
     }
 
-    for(auto edge : qAsConst(edges))
+    for (const auto & edge : edges)
     {
         EdgePtr ne = make_shared<Edge>(edge->v1->copy.lock(), edge->v2->copy.lock());
         ne->setSwapState(edge->getSwapState());
@@ -181,7 +181,7 @@ VertexPtr Map::insertVertex(const QPointF & pt)
 
 VertexPtr Map:: getVertex(const QPointF & pt) const
 {
-    for (auto v : vertices)
+    for (const auto & v : vertices)
     {
         if (Loose::equalsPt(v->pt,pt))
         {
@@ -432,7 +432,7 @@ void Map::embedCrop(const Circle & circle)
 
     qDebug() << "points" << points.size();
     QVector<VertexPtr> cverts;
-    for (auto & pt : points)
+    for (const auto & pt : points)
     {
         auto v = insertVertex(pt);
         cverts.push_front(v);
@@ -503,7 +503,7 @@ void  Map::cropOutside(const QPolygonF & poly)
     qFatal("Not implemented yet");
 }
 
-void Map::cropOutside(Circle &circle)
+void Map::cropOutside(const Circle &circle)
 {
     // remove anything outside of circle
     QVector<EdgePtr>  outsideEdges;
@@ -557,11 +557,11 @@ void Map::transformMap(QTransform T)
 MapPtr Map::getTransformed(const QTransform &T) const
 {
     MapPtr m2 = recreate();
-    for (auto & vert : m2->vertices)
+    for (const auto & vert : m2->vertices)
     {
         vert->pt = T.map(vert->pt);
     }
-    for (auto edge: m2->edges)
+    for (const auto & edge: m2->edges)
     {
         if (edge->getType() == EDGETYPE_CURVE || edge->getType() == EDGETYPE_CHORD)
         {
@@ -575,7 +575,7 @@ MapPtr Map::getTransformed(const QTransform &T) const
 // Angles don't change.  So we can just transform each vertex.
 void Map::_applyTrivialRigidMotion(QTransform T)
 {
-    for (auto & vert : vertices)
+    for (const auto & vert : vertices)
     {
         vert->pt = T.map(vert->pt);
     }
@@ -585,7 +585,7 @@ void Map::_applyTrivialRigidMotion(QTransform T)
 void Map::_applyGeneralRigidMotion(QTransform T)
 {
     // Transform all the vertices.
-    for (auto vert : vertices)
+    for (const auto & vert : vertices)
     {
         vert->applyRigidMotion(T);
     }
@@ -632,7 +632,7 @@ bool Map::_splitTwoEdgesByVertex(const VertexPtr & vert)
     QPointF vp = vert->pt;
     //qreal    x = vp.x();
 
-    for (auto e : qAsConst(edges))
+    for (const auto & e : edges)
     {
 #if 0
         qreal xm = e->getMinX();
@@ -800,7 +800,7 @@ void Map::_mergeVertices(const constMapPtr & other, qreal tolerance)
 
 void Map::mergeMap(const constMapPtr & other, qreal tolerance)
 {
-    for (auto & edge : qAsConst(other->edges))
+    for (const auto & edge : other->edges)
     {
         EdgePtr cutter = makeCopy(edge);
         insertEdge(cutter);
@@ -988,7 +988,7 @@ void Map::mergeMany(const constMapPtr & other, const Placements & placements)
 // Here, we transform vertices as they are put into the current map.
 void Map::mergeSimpleMany(constMapPtr & other, const Placements &transforms)
 {
-    for (auto& T : transforms)
+    for (auto & T : transforms)
     {
         for (const auto & overt :  other->vertices)
         {
@@ -1071,7 +1071,7 @@ void  Map::addMap(MapPtr other)
 EdgePoly Map::getEdgePoly() const
 {
     EdgePoly ep;
-    for (auto& edge : edges)
+    for (const auto & edge : edges)
     {
         ep.push_front(edge);  // yes front
     }
@@ -1083,7 +1083,7 @@ EdgePoly Map::getEdgePoly() const
 // doesn't lie on an edge in the map.
 VertexPtr Map::_getOrCreateVertex(const QPointF & pt)
 {
-    for (auto & v : vertices)
+    for (const auto & v : vertices)
     {
         QPointF  cur = v->pt;
         if (Point::dist2(pt,cur) < Loose::TOL)
@@ -1138,7 +1138,7 @@ QString Map::displayVertexEdgeCounts()
         vEdgeCounts[i] = 0;
     }
 
-    for (auto& v : vertices)
+    for (const auto & v : vertices)
     {
         NeighboursPtr n = getNeighbours(v);
         int count = n->numNeighbours();
@@ -1186,7 +1186,7 @@ int Map::numEdges() const
 bool Map::hasIntersectingEdges() const
 {
     UniqueQVector<QPointF> intersects;
-    for(auto edge : qAsConst(edges))
+    for(const auto & edge : edges)
     {
         // To check all intersections of this edge with edges in
         // the current map, we can use the optimization that
@@ -1196,7 +1196,7 @@ bool Map::hasIntersectingEdges() const
         // Casper 12DEC02 - removed optimisation and simplified code
 
         QLineF e = edge->getLine();
-        for (auto cur : qAsConst(edges))
+        for (const auto & cur : edges)
         {
             if (cur == edge)
             {
@@ -1222,7 +1222,7 @@ EdgePtr Map::edgeExists(const EdgePtr &edge) const
 
 EdgePtr Map::edgeExists(const VertexPtr & v1, const VertexPtr & v2) const
 {
-    for (auto & edge : edges)
+    for (const auto & edge : edges)
     {
         if (edge->sameAs(v1,v2))
         {
@@ -1236,13 +1236,13 @@ EdgePtr Map::edgeExists(const VertexPtr & v1, const VertexPtr & v2) const
 
 void Map::_dumpVertices(bool full)
 {
-    for (auto & vp : qAsConst(vertices))
+    for (const auto & vp : vertices)
     {
         NeighboursPtr n = getNeighbours(vp);
         qDebug() <<  "vertex: "  << vertexIndex(vp) << "at" << vp->pt << "num neighbours" << n->size();
         if (full)
         {
-            for (auto & wedge : *n)
+            for (const auto & wedge : *n)
             {
                 auto edge = wedge.lock();
                 if (edge)
@@ -1265,7 +1265,7 @@ void Map::_dumpEdges(bool full) const
 {
     Q_UNUSED(full)
     int idx = 0;
-    for(auto edge : qAsConst(edges))
+    for (const auto & edge : edges)
     {
         qDebug() << ((edge->getType() == EDGETYPE_LINE) ? "Line" : "Curve") << "edge" << idx++
                  << "from" << vertices.indexOf(edge->v1) << edge->v1->pt
@@ -1290,7 +1290,7 @@ void Map::_cleanCopy() const
 void Map::_cleanseVertices()
 {
     std::vector<VertexPtr> baddies;
-    for (auto & v : vertices)
+    for (const auto & v : vertices)
     {
         NeighboursPtr n = getNeighbours(v);
         if (n->size() == 0)
@@ -1299,7 +1299,7 @@ void Map::_cleanseVertices()
         }
     }
     qDebug() << "Bad vertices to delete:" << baddies.size();
-    for (auto & v  : baddies)
+    for (const auto & v  : baddies)
     {
         vertices.removeOne(v);
         nMap.reset();

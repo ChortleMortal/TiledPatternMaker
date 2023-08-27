@@ -38,16 +38,21 @@ private slots:
     void slot_circleChanged(qreal r);
     void slot_sidesChanged(int n);
     void slot_typeSelected(int id);
-    void slot_rectChanged();
+    void slot_rectChangedW();
+    void slot_rectChangedS();
 
 private:
-    CropPtr crop;
 
-    bool    blocked;
+   class CropViewer * cropViewer;
+
+    CropPtr           crop;
+
+    bool              blocked;
 
     QButtonGroup    * cropTypes;
     QButtonGroup    * aspects;
-    LayoutQRectF    * cropRectLayout;
+    LayoutQRectF    * rectLayoutW;
+    LayoutQRectF    * rectLayoutS;
     DoubleSpinSet   * radius;
     DoubleSpinSet   * centerX;
     DoubleSpinSet   * centerY;

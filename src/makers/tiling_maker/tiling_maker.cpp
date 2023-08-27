@@ -26,7 +26,7 @@
 #include "geometry/transform.h"
 #include "geometry/vertex.h"
 #include "makers/prototype_maker/prototype.h"
-#include "panels/panel.h"
+#include "panels/controlpanel.h"
 #include "settings/configuration.h"
 #include "style/style.h"
 #include "tile/tile.h"
@@ -113,7 +113,7 @@ QString TilingMaker::getStatus()
 
 TilingPtr TilingMaker::findTilingByName(QString name)
 {
-    for (auto tiling : qAsConst(tilings))
+    for (const auto & tiling : tilings)
     {
         if (tiling->getName() == name)
         {
@@ -353,7 +353,7 @@ void TilingMaker::select(TilingPtr tiling, bool force)
 
     setupMaker(tiling);
 
-    if (config->getViewerType() == VIEW_TILING_MAKER)
+    if (view->isEnabled(VIEW_TILING_MAKER))
     {
         tmView->forceLayerRecalc();
     }
@@ -384,7 +384,7 @@ void TilingMaker::select(ProtoPtr prototype)
 
     setupMaker(tiling);
 
-    if (config->getViewerType() == VIEW_TILING_MAKER)
+    if (view->isEnabled(VIEW_TILING_MAKER))
     {
         tmView->forceLayerRecalc();
     }
@@ -446,8 +446,8 @@ void TilingMaker::clearMakerData()
 void TilingMaker::setupMaker(TilingPtr tiling)
 {
     tmView->setTiling(tiling);
-
-    view->frameSettings.initialise(VIEW_TILING_MAKER,tiling->getData().getSettings().getSize(),tiling->getData().getSettings().getZSize());
+    
+    view->getViewSettings().initialise(VIEW_TILING_MAKER,tiling->getData().getSettings().getSize(),tiling->getData().getSettings().getZSize());
 }
 
 bool TilingMaker::verifyTiling()
@@ -548,14 +548,14 @@ TileSelectorPtr TilingMaker::addTileSelectionPointer(TileSelectorPtr sel)
     switch (sel->getType())
     {
     case ARC_POINT:
-    case FEAT_CENTER:
+    case TILE_CENTER:
     case SCREEN_POINT:
         break;
     case INTERIOR:
         ret = make_shared<InteriorTilleSelector>(pfnew);
         break;
     case EDGE:
-        ret = make_shared<EdgeTileSelector>(pfnew,sel->getModelEdge());  // FIXME - why is this model edge
+        ret = make_shared<EdgeTileSelector>(pfnew,sel->getModelEdge());
         break;
     case VERTEX:
         ret = make_shared<VertexTileSelector>(pfnew,sel->getModelPoint());
@@ -574,7 +574,7 @@ QVector<TilePtr> TilingMaker::getUniqueTiles()
 {
     UniqueQVector<TilePtr> fs;
 
-    for (auto pfp : qAsConst(tmView->getAllTiles()))
+    for (const auto & pfp : tmView->getAllTiles())
     {
         TilePtr fp = pfp->getTile();
         fs.push_back(fp);
@@ -669,7 +669,7 @@ void TilingMaker::updateReps()
 
 void TilingMaker::resetOverlaps()
 {
-   selectedTiling->resetOverlaps();
+   selectedTiling->resetOverlaps();  // sets UNDEFINED
 }
 
 void TilingMaker::slot_fillUsingTranslations()
@@ -752,6 +752,30 @@ void TilingMaker::excludeAll()
     forceRedraw();
     emit sig_buildMenu();
     pushTilingToPrototypeMaker(PROM_TILING_DELETED);
+}
+
+void TilingMaker::slot_showTile()
+{
+    if (clickedSelector)
+    {
+        PlacedTilePtr pf = clickedSelector->getPlacedTile();
+        pf->setShow(true);
+        emit sig_buildMenu();
+        forceRedraw();
+        clickedSelector.reset();
+    }
+}
+
+void TilingMaker::slot_hideTile()
+{
+    if (clickedSelector)
+    {
+        PlacedTilePtr pf = clickedSelector->getPlacedTile();
+        pf->setShow(false);
+        emit sig_buildMenu();
+        forceRedraw();
+        clickedSelector.reset();
+    }
 }
 
 void TilingMaker::slot_includeTile()
@@ -856,7 +880,7 @@ void TilingMaker::flipTileRegularity(TilePtr tile)
 void TilingMaker::tilingDeltaX(int delta)
 {
     qreal qdelta = 0.01 * delta;
-    for (auto pfp : qAsConst(tmView->getAllTiles()))
+    for (const auto & pfp : tmView->getAllTiles())
     {
         QTransform t = pfp->getTransform();
         t *= QTransform::fromTranslate(qdelta,0.0);
@@ -871,7 +895,7 @@ void TilingMaker::tilingDeltaX(int delta)
 void TilingMaker::tilingDeltaY(int delta)
 {
     qreal qdelta = 0.01 * delta;
-    for (auto pfp : qAsConst(tmView->getAllTiles()))
+    for (const auto & pfp : tmView->getAllTiles())
     {
         QTransform t = pfp->getTransform();
         t *= QTransform::fromTranslate(0.0,qdelta);
@@ -887,7 +911,7 @@ void TilingMaker::tilingDeltaScale(int delta)
 {
     Q_ASSERT(view->getKbdMode(KBD_MODE_XFORM_TILING));
     qreal scale = 1.0 + (0.01 * delta);
-    for (auto pfp : qAsConst(tmView->getAllTiles()))
+    for (const auto & pfp : tmView->getAllTiles())
     {
         QTransform t = pfp->getTransform();
         qDebug() << "t0" << Transform::toInfoString(t);
@@ -913,7 +937,7 @@ void TilingMaker::tilingDeltaScale(int delta)
 void TilingMaker::tilingDeltaRotate(int delta)
 {
     qreal qdelta = 0.01 * delta;
-    for (auto pfp : qAsConst(tmView->getAllTiles()))
+    for (const auto & pfp : tmView->getAllTiles())
     {
         QTransform t = pfp->getTransform();
         t *= QTransform().rotateRadians(qdelta);
@@ -955,6 +979,20 @@ void TilingMaker::placedTileDeltaY(int delta)
     emit sig_refreshMenu();
 }
 
+void TilingMaker::placedTileSetTranslate(qreal x, qreal y)
+{
+    if (!currentPlacedTile)
+        return;
+
+    QTransform t = currentPlacedTile->getTransform();
+
+    Xform xf(t);
+    xf.setTranslateX(x);
+    xf.setTranslateY(y);
+    t = xf.toQTransform(QTransform());
+    currentPlacedTile->setTransform(t);
+}
+
 void TilingMaker::placedTileDeltaScale(int delta)
 {
     qreal scale = 1.0 + (0.01 * delta);
@@ -977,11 +1015,26 @@ void TilingMaker::placedTileDeltaScale(qreal scale)
 
     QTransform t = currentPlacedTile->getTransform();
     t *= ts;
+    qDebug() << Transform::toInfoString(t);
     currentPlacedTile->setTransform(t);
+
 
     pushTilingToPrototypeMaker(PROM_TILING_CHANGED);
     forceRedraw();
     emit sig_refreshMenu();
+}
+
+void TilingMaker::placedTileSetScale(qreal scale)
+{
+    if (!currentPlacedTile)
+        return;
+
+    QTransform t = currentPlacedTile->getTransform();
+
+    Xform xf(t);
+    xf.setScale(scale);
+    t = xf.toQTransform(QTransform());
+    currentPlacedTile->setTransform(t);
 }
 
 void TilingMaker::placedTileDeltaRotate(int delta)
@@ -1009,6 +1062,19 @@ void TilingMaker::placedTileDeltaRotate(qreal rotate)
     pushTilingToPrototypeMaker(PROM_TILING_CHANGED);
     forceRedraw();
     emit sig_refreshMenu();
+}
+
+void TilingMaker::placedTileSetRotate(qreal rotate)
+{
+    if (!currentPlacedTile)
+        return;
+
+    QTransform t = currentPlacedTile->getTransform();
+
+    Xform xf(t);
+    xf.setRotateDegrees(rotate);
+    t = xf.toQTransform(QTransform());
+    currentPlacedTile->setTransform(t);
 }
 
 void TilingMaker::uniqueTileDeltaScale(int delta)
@@ -1104,7 +1170,7 @@ void TilingMaker::clearTranslationVectors()
 {
     if (selectedTiling)
     {
-        auto data = selectedTiling->getRWData(true);
+        TilingData & data = selectedTiling->getRWData(true);
         data.setTrans1(QPointF());
         data.setTrans2(QPointF());
         forceRedraw();
@@ -1306,7 +1372,7 @@ void TilingMaker::slot_editMagnitude()
 
 bool TilingMaker::procKeyEvent(QKeyEvent * k)
 {
-    if (config->getViewerType() != VIEW_TILING_MAKER)
+    if (!view->isEnabled(VIEW_TILING_MAKER))
     {
         return false;
     }

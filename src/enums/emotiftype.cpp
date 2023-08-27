@@ -25,5 +25,5 @@ const QString sMotifType[] =
         "Irregular Star Motif",         //E2STR(MOTIF_TYPE_IRREGULAR_STAR),
 
         "Explicit Tile Motif",          //E2STR(MOTIF_TYPE_EXPLCIT_TILE),
-        "No Motif"                      //1E2STR(MOTIF_TYPE_IRREGULAR_NO_MAP)
+        "No Motif (for Tile)"           //1E2STR(MOTIF_TYPE_IRREGULAR_NO_MAP)
 };

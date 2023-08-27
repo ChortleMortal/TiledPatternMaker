@@ -33,7 +33,7 @@ protected:
     void drawScreenUnitsCanvasCentered();
     void drawScreenUnitsModelCentered();
 
-    void iamaLayer() override {}
+    eViewType iamaLayer() override { return VIEW_GRID; }
     void iamaLayerController() override {}
 
     static int refs;

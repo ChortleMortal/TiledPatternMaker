@@ -1,42 +1,17 @@
-#include "widgets/panel_pagesWidget.h"
-#include "widgets/panel_page.h"
+#include "panels/panel_pages_widget.h"
+#include "panels/panel_page.h"
+#include "panels/panel_misc.h"
 
 PanelPagesWidget::PanelPagesWidget()
 {
     setContentsMargins(0,0,0,0);
-    currentPage = nullptr;
 }
 
 PanelPagesWidget::~PanelPagesWidget()
-{
-#if 0
-    for (auto page : pages.values())
-    {
-        if (page)
-            delete page;
-    }
-#endif
-}
-
-void PanelPagesWidget::addWidget(panel_page * page)
-{
-     pages[page->getName()] = page;
-}
-
-panel_page *PanelPagesWidget::setCurrentPage(QString name)
-{
-    panel_page * pp = pages.value(name);
-    if (pp)
-    {
-        setCurrentPage(pp);
-    }
-    return pp;
-}
+{}
 
 void PanelPagesWidget::setCurrentPage(panel_page * pp)
 {
-    currentPage = pp;
-
     AQVBoxLayout * aLayout = new AQVBoxLayout();
     aLayout->setSizeConstraint(QLayout::SetFixedSize);
     aLayout->addWidget(pp);
@@ -56,7 +31,5 @@ void PanelPagesWidget::setCurrentPage(panel_page * pp)
         delete l;
     }
     setLayout(aLayout);
-    pp->adjustSize();
-    adjustSize();
-    repaint();
+    update();
 }

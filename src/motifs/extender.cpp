@@ -162,7 +162,7 @@ void Extender::connectOuterVertices(MapPtr map)
     const ExtendedBoundary & eb = motif->getExtendedBoundary();
     QVector<QLineF> blines = Utils::polyToLines(eb.getPoly());
 
-    for (auto line : blines)
+    for (const auto & line : blines)
     {
         VertexPtr v1;
         VertexPtr v2;

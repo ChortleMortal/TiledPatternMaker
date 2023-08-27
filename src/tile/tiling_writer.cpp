@@ -5,15 +5,20 @@
 #include "geometry/transform.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "misc/fileservices.h"
-#include "misc/tpm_io.h"
 #include "mosaic/mosaic_writer.h"
-#include "panels/panel.h"
+#include "panels/controlpanel.h"
 #include "settings/configuration.h"
 #include "tile/placed_tile.h"
 #include "tile/tile.h"
 #include "tile/tiling.h"
 #include "tiledpatternmaker.h"
 #include "viewers/backgroundimageview.h"
+
+#if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
+using Qt::endl;
+#else
+#define endl Qt::endl
+#endif
 
 using namespace pugi;
 using std::string;
@@ -171,7 +176,7 @@ void TilingWriter::writeTilingXML(QTextStream & out)
         {
             // edge polys have rotation, numSides can be calculated
             out << "<Tile type=\"edgepoly\" rotation=\"" << tile->getRotation() << "\" scale=\"" << tile->getScale() << "\">" << endl;
-            EdgePoly epoly = tile->getEdgePoly();
+            EdgePoly epoly = tile->getBase();       // bugfx 20AUG23
             setEdgePoly(out,epoly);
         }
 

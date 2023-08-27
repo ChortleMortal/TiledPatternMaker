@@ -10,6 +10,7 @@ typedef std::weak_ptr<  class DesignElementButton>  WeakDELBtnPtr;
 typedef std::shared_ptr<class Prototype>            ProtoPtr;
 typedef std::shared_ptr<class DesignElement>        DesignElementPtr;
 
+class MotifMakerWidget;
 class QGridLayout;
 class PrototypeData;
 class Configuration;
@@ -33,21 +34,19 @@ class Configuration;
 
 class DELSelectorWidget : public QScrollArea
 {
-    Q_OBJECT
-
 public:
-    DELSelectorWidget();
+    DELSelectorWidget(MotifMakerWidget * makerWidget);
 
     void            setup(ProtoPtr proto);
-    DELBtnPtr       getCurrentButton() {return _currentButton.lock(); }
+
     bool            eventFilter(QObject *watched, QEvent *event) override;
+
+    void            delegate(DELBtnPtr btn, bool add, bool set);
+    DELBtnPtr       getDelegated() {return delegatedButton.lock(); }
+
     void            tallyButtons();
 
-signals:
-    void            sig_launcherButton(DELBtnPtr fb, bool add);
-
-public slots:
-    void            setCurrentButton(DELBtnPtr btn, bool add);
+    DELBtnPtr       getButton(DesignElementPtr del);
 
 protected:
     void            populateMotifButtons(QVector<DesignElementPtr> & dels);
@@ -55,13 +54,14 @@ protected:
 
 private:
     Configuration          * config;
-    PrototypeData          * motifViewData;
+    PrototypeData          * protoMakerData;
+    MotifMakerWidget       * maker;
 
     QWidget                * widget;
     QGridLayout            * grid;
 
     QVector<DELBtnPtr>       buttons;
-    WeakDELBtnPtr           _currentButton;
+    WeakDELBtnPtr            delegatedButton;
 };
 
 #endif

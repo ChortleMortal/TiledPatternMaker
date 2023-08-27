@@ -2,25 +2,26 @@
 #define TPMSPLASH_H
 
 #include <QSplashScreen>
+#include <QStack>
 
 class TPMSplash : public QSplashScreen
 {
+    Q_OBJECT
+
 public:
     TPMSplash();
 
-    void displayMosaic(QString & txt);
-    void displayTiling(QString & txt);
-    void removeMosaic();
-    void removeTiling();
+    void display(QString & txt);
+    void remove();
 
 protected:
     void draw();
 
 private:
-    QString design;
-    QString tiling;
     int     w;
     int     h;
+
+    QStack<QString>  msgStack;
 };
 
 #endif

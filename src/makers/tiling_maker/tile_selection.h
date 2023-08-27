@@ -30,7 +30,7 @@ enum eSelection
     VERTEX,
     MID_POINT,
     ARC_POINT,
-    FEAT_CENTER,
+    TILE_CENTER,
     SCREEN_POINT
     };
 
@@ -41,7 +41,7 @@ static QString strTiliingSelection[] =
     E2STR(VERTEX),
     E2STR(MID_POINT),
     E2STR(ARC_POINT),
-    E2STR(FEAT_CENTER),
+    E2STR(TILE_CENTER),
     E2STR(SCREEN_POINT)
 };
 

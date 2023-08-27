@@ -6,7 +6,7 @@
 #include "makers/mosaic_maker/style_color_fill_group.h"
 #include "makers/mosaic_maker/style_editors.h"
 #include "misc/utilities.h"
-#include "panels/panel.h"
+#include "panels/controlpanel.h"
 #include "settings/configuration.h"
 #include "style/colored.h"
 #include "style/emboss.h"

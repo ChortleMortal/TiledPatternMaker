@@ -77,7 +77,7 @@ StylePtr  Mosaic::getFirstStyle()
 QVector<TilingPtr> Mosaic::getTilings()
 {
     UniqueQVector<TilingPtr> tilings;
-    for (auto& proto : getPrototypes())
+    for (const auto & proto : getPrototypes())
     {
         TilingPtr tp = proto->getTiling();
         if (tp)
@@ -93,8 +93,7 @@ void Mosaic::setCrop(CropPtr crop)
     Q_ASSERT(crop);
     _crop = crop;
 
-    auto vec = getPrototypes();
-    for (auto & proto : vec)
+    for (const auto & proto : getPrototypes())
     {
         proto->setCrop(crop);       // resets proto map
     }
@@ -106,7 +105,7 @@ void Mosaic::resetCrop()
     _crop.reset();
 
     auto vec = getPrototypes();
-    for (auto & proto : vec)
+    for (const auto & proto : vec)
     {
         proto->resetCrop();       // resets proto map
     }
@@ -133,7 +132,7 @@ QString Mosaic::getNotes()
 QVector<ProtoPtr> Mosaic::getPrototypes()
 {
     UniqueQVector<ProtoPtr> vec;
-    for (auto& style : styleSet)
+    for (const auto & style : styleSet)
     {
         ProtoPtr pp = style->getPrototype();
         vec.push_back(pp);
@@ -158,7 +157,7 @@ MapPtr Mosaic::getPrototypeMap()
 
 void Mosaic::resetStyleMaps()
 {
-    for (auto & style : styleSet)
+    for (const auto & style : styleSet)
     {
         style->resetStyleRepresentation();
     }
@@ -167,7 +166,7 @@ void Mosaic::resetStyleMaps()
 void Mosaic::resetProtoMaps()
 {
     ProtoPtr nullProto;
-    for (auto & style : styleSet)
+    for (const auto & style : styleSet)
     {
         auto proto = style->getPrototype();
         proto->wipeoutProtoMap();
@@ -235,7 +234,7 @@ void Mosaic::reportMotifs()
 {
     qDebug() << "==== Mosaic Motifs" << name;
     auto protos = getPrototypes();
-    for (auto proto : protos)
+    for (const auto & proto : protos)
     {
         proto->reportMotifs();
     }

@@ -5,21 +5,23 @@
 #include "makers/motif_maker/motif_maker_widget.h"
 #include "makers/motif_maker/design_element_button.h"
 #include "makers/motif_maker/motif_editor_widget.h"
-#include "makers/motif_maker/motif_selector.h"
+#include "makers/motif_maker/design_element_selector.h"
 #include "makers/prototype_maker//prototype.h"
 #include "makers/prototype_maker/prototype_maker.h"
 #include "mosaic/design_element.h"
 #include "settings/configuration.h"
+#include "viewers/viewcontrol.h"
 
 MotifMakerWidget::MotifMakerWidget() : QWidget()
 {
     setContentsMargins(0,0,0,0);
 
-    motifViewData = PrototypeMaker::getInstance()->getProtoMakerData();
+    protoMakerData = PrototypeMaker::getInstance()->getProtoMakerData();
     config        = Configuration::getInstance();
+    view          = ViewControl::getInstance();
 
     // Motif buttons
-    delSelector = new DELSelectorWidget();
+    delSelector = new DELSelectorWidget(this);
 
     // larger slected feature button
     viewerBtn  = new DesignElementButton(-1);
@@ -40,47 +42,78 @@ MotifMakerWidget::MotifMakerWidget() : QWidget()
 
     setLayout(motifBox);
     setMinimumWidth(610);
-
-    connect(delSelector, &DELSelectorWidget::sig_launcherButton,    this, &MotifMakerWidget::slot_selectMotifButton);
 }
 
-void MotifMakerWidget::setCurrentButtonViewTransform()
+void MotifMakerWidget::selectPrototype()
 {
-    viewerBtn->setViewTransform();
-    DELBtnPtr btn = delSelector->getCurrentButton();
-    if (btn)
+    static WeakProtoPtr _prototype;
+    static int          _numButtons = 0;
+
+    auto proto = protoMakerData->getSelectedPrototype();
+
+    if (proto && proto->numDesignElements() && ((_prototype.lock() != proto) || (proto->numDesignElements() != _numButtons)))
     {
-        btn->setViewTransform();
+        _prototype  = proto;
+        _numButtons = proto->numDesignElements();
+
+        delSelector->setup(proto);
+
+        auto del = proto->getDesignElements().last();
+        auto btn = delSelector->getButton(del);
+        delegate(btn,false,true);   // start off with a single selection
     }
 }
 
-// when a motif button is selected, this sets the motif in both the motif maker and the motif editor
-void MotifMakerWidget::slot_selectMotifButton(DELBtnPtr btn)
+// when a DEL button is selected, this delgates the motif in both the motif maker and the motif editor
+void MotifMakerWidget::delegate(DELBtnPtr btn, bool add, bool set)
 {
-    if (!btn) return;
-    qDebug() << "MotifWidget::slot_selectMotifButton btn=" << btn->getIndex() << btn.get();
+    qDebug() << "MotifMakerWidget::delegate btn=" << btn->getIndex() << "multi" << add << "set" << set;
 
     DesignElementPtr designElement = btn->getDesignElement(); // DAC taprats cloned here
-    if (!designElement) return;
 
-    motifViewData->select(MVD_DELEM,designElement,config->motifMultiView);
+    if (set)
+    {
+        if (!designElement) return;
+
+        // Deaign Element Viewer button - do this first
+        viewerBtn->setDesignElement(designElement);
+        viewerBtn->setViewTransform();
+
+        // Prototype Maker data
+        protoMakerData->select(  MVD_DELEM,designElement,add);
+
+        // DEL selector
+        btn->setViewTransform();
+        delSelector->delegate(btn,add,set);
+        delSelector->tallyButtons();
+
+        // Motif Editor
+        motifEditor->delegate(designElement);
+    }
+    else
+    {
+        // Design Element Viewer button - do this first
+        DesignElementPtr np;
+        viewerBtn->setDesignElement(np);
+
+        // Prototype Maker data
+        protoMakerData->deselect(MVD_DELEM,designElement,add);
+
+        // DEL selector
+        delSelector->delegate(btn,add,set);
+        delSelector->tallyButtons();
+
+        // Motif Editor
+        motifEditor->delegate(np);
+    }
+
+    // view
+    view->update();
 }
 
-void MotifMakerWidget::selectPrototype(ProtoPtr proto)
+void MotifMakerWidget::update()
 {
-    delSelector->setup(proto);
+    delSelector->getDelegated()->update();
+    viewerBtn->update();
+
 }
-
-void MotifMakerWidget::selectDEL(DesignElementPtr designElement)
-{
-    viewerBtn->setDesignElement(designElement);
-
-    motifEditor->selectMotifEditor(designElement);
-
-    delSelector->tallyButtons();
-
-    setCurrentButtonViewTransform();
-
-    update();
-}
-

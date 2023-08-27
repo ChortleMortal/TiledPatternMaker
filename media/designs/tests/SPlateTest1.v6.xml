@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<vector id="1" version="12">
-	<!-- Written:  Sat Feb 5 2022 12:46:04 -->
+<!-- Written: Sat Jul 22 2023 15:30:22 -->
+<vector id="1" version="15">
 	<designNotes>with interrlace</designNotes>
 	<design>
 		<size>
@@ -21,7 +21,7 @@
 			<Center>-0.4718726953336372,-4.168077083677638</Center>
 		</BackgroundImage>
 	</design>
-	<style.Interlace id="2" serialization="custom">
+	<style.Interlace id="2">
 		<toolkit.GeoLayer>
 			<left__delta>-10.62803905747955</left__delta>
 			<top__delta>205.7317755664569</top__delta>
@@ -31,11 +31,11 @@
 			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<prototype id="3" serialization="custom">
+			<prototype id="3">
 				<app.Prototype>
 					<string>The Unnamed</string>
 					<entry>
-						<tile.Feature id="4">
+						<Tile id="4">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -1201,8 +1201,13 @@
 									<Point reference="7" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFigure id="196" type="FIG_TYPE_EXPLICIT">
+						</Tile>
+						<ExplicitMap id="196" type="Explicit Map Motif">
+							<boundarySides>280</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>64</n>
 							<map id="197">
 								<vertices id="198">
 									<Vertex id="199">
@@ -2454,166 +2459,162 @@
 										<v2 reference="316" />
 									</Edge>
 									<curve id="549" convex="t">
-										<v2 reference="328" />
 										<v1 reference="346" />
+										<v2 reference="328" />
 										<pos>0.2059999999999855,-2.736000000000001</pos>
 									</curve>
 									<curve id="550" convex="t">
-										<v2 reference="346" />
 										<v1 reference="344" />
+										<v2 reference="346" />
 										<pos>0.2059999999999855,-2.736000000000001</pos>
 									</curve>
 									<curve id="551" convex="t">
-										<v2 reference="344" />
 										<v1 reference="327" />
+										<v2 reference="344" />
 										<pos>0.2059999999999855,-2.736000000000001</pos>
 									</curve>
 									<curve id="552" convex="t">
-										<v2 reference="327" />
 										<v1 reference="342" />
+										<v2 reference="327" />
 										<pos>0.2059999999999855,-2.736000000000001</pos>
 									</curve>
 									<curve id="553" convex="t">
-										<v2 reference="342" />
 										<v1 reference="340" />
+										<v2 reference="342" />
 										<pos>0.2059999999999855,-2.736000000000001</pos>
 									</curve>
 									<curve id="554" convex="t">
-										<v2 reference="340" />
 										<v1 reference="326" />
+										<v2 reference="340" />
 										<pos>0.2059999999999855,-2.736000000000001</pos>
 									</curve>
 									<curve id="555" convex="t">
-										<v2 reference="326" />
 										<v1 reference="338" />
+										<v2 reference="326" />
 										<pos>0.2059999999999855,-2.736000000000001</pos>
 									</curve>
 									<curve id="556" convex="t">
-										<v2 reference="338" />
 										<v1 reference="335" />
+										<v2 reference="338" />
 										<pos>0.2059999999999855,-2.736000000000001</pos>
 									</curve>
 									<curve id="557" convex="t">
-										<v2 reference="335" />
 										<v1 reference="325" />
+										<v2 reference="335" />
 										<pos>0.2059999999999855,-2.736000000000001</pos>
 									</curve>
 									<curve id="558" convex="t">
-										<v2 reference="325" />
 										<v1 reference="333" />
+										<v2 reference="325" />
 										<pos>0.2059999999999855,-2.736000000000001</pos>
 									</curve>
 									<curve id="559" convex="t">
-										<v2 reference="333" />
 										<v1 reference="331" />
+										<v2 reference="333" />
 										<pos>0.2059999999999855,-2.736000000000001</pos>
 									</curve>
 									<curve id="560" convex="t">
-										<v2 reference="331" />
 										<v1 reference="324" />
+										<v2 reference="331" />
 										<pos>0.2059999999999855,-2.736000000000001</pos>
 									</curve>
 									<curve id="561" convex="t">
-										<v2 reference="324" />
 										<v1 reference="329" />
+										<v2 reference="324" />
 										<pos>0.2059999999999855,-2.736000000000001</pos>
 									</curve>
 									<curve id="562" convex="t">
-										<v2 reference="329" />
 										<v1 reference="345" />
+										<v2 reference="329" />
 										<pos>0.2059999999999855,-2.736000000000001</pos>
 									</curve>
 									<curve id="563" convex="t">
-										<v2 reference="345" />
 										<v1 reference="323" />
+										<v2 reference="345" />
 										<pos>0.2059999999999855,-2.736000000000001</pos>
 									</curve>
 									<curve id="564" convex="t">
-										<v2 reference="323" />
 										<v1 reference="347" />
+										<v2 reference="323" />
 										<pos>0.2059999999999855,-2.736000000000001</pos>
 									</curve>
 									<curve id="565" convex="t">
-										<v2 reference="347" />
 										<v1 reference="341" />
+										<v2 reference="347" />
 										<pos>0.2059999999999855,-2.736000000000001</pos>
 									</curve>
 									<curve id="566" convex="t">
-										<v2 reference="341" />
 										<v1 reference="322" />
+										<v2 reference="341" />
 										<pos>0.2059999999999855,-2.736000000000001</pos>
 									</curve>
 									<curve id="567" convex="t">
-										<v2 reference="322" />
 										<v1 reference="343" />
+										<v2 reference="322" />
 										<pos>0.2059999999999855,-2.736000000000001</pos>
 									</curve>
 									<curve id="568" convex="t">
-										<v2 reference="343" />
 										<v1 reference="337" />
+										<v2 reference="343" />
 										<pos>0.2059999999999855,-2.736000000000001</pos>
 									</curve>
 									<curve id="569" convex="t">
-										<v2 reference="337" />
 										<v1 reference="321" />
+										<v2 reference="337" />
 										<pos>0.2059999999999855,-2.736000000000001</pos>
 									</curve>
 									<curve id="570" convex="t">
-										<v2 reference="321" />
 										<v1 reference="339" />
+										<v2 reference="321" />
 										<pos>0.2059999999999855,-2.736000000000001</pos>
 									</curve>
 									<curve id="571" convex="t">
-										<v2 reference="339" />
 										<v1 reference="334" />
+										<v2 reference="339" />
 										<pos>0.2059999999999855,-2.736000000000001</pos>
 									</curve>
 									<curve id="572" convex="t">
-										<v2 reference="334" />
 										<v1 reference="320" />
+										<v2 reference="334" />
 										<pos>0.2059999999999855,-2.736000000000001</pos>
 									</curve>
 									<curve id="573" convex="t">
-										<v2 reference="320" />
 										<v1 reference="336" />
+										<v2 reference="320" />
 										<pos>0.2059999999999855,-2.736000000000001</pos>
 									</curve>
 									<curve id="574" convex="t">
-										<v2 reference="336" />
 										<v1 reference="330" />
+										<v2 reference="336" />
 										<pos>0.2059999999999855,-2.736000000000001</pos>
 									</curve>
 									<curve id="575" convex="t">
-										<v2 reference="330" />
 										<v1 reference="319" />
+										<v2 reference="330" />
 										<pos>0.2059999999999855,-2.736000000000001</pos>
 									</curve>
 									<curve id="576" convex="t">
-										<v2 reference="319" />
 										<v1 reference="332" />
+										<v2 reference="319" />
 										<pos>0.2059999999999855,-2.736000000000001</pos>
 									</curve>
 									<curve id="577" convex="t">
-										<v2 reference="332" />
 										<v1 reference="348" />
+										<v2 reference="332" />
 										<pos>0.2059999999999855,-2.736000000000001</pos>
 									</curve>
 									<curve id="578" convex="t">
-										<v2 reference="348" />
 										<v1 reference="328" />
+										<v2 reference="348" />
 										<pos>0.2059999999999855,-2.736000000000001</pos>
 									</curve>
 									<Edge id="579">
-										<v2 reference="203" />
 										<v1 reference="200" />
+										<v2 reference="203" />
 									</Edge>
 								</edges>
 							</map>
-							<boundarySides>1</boundarySides>
-							<boundaryScale>1</boundaryScale>
-							<figureScale>1</figureScale>
-							<r>0</r>
-						</app.ExplicitFigure>
+						</ExplicitMap>
 					</entry>
 				</app.Prototype>
 			</prototype>
@@ -2623,7 +2624,11 @@
 		</style.Colored>
 		<style.Thick>
 			<draw__outline>true</draw__outline>
-			<width>0.25</width>
+			<outline_width>0.52</outline_width>
+			<outline_color>#ff000000</outline_color>
+			<width>0.34</width>
+			<join>round</join>
+			<cap>round</cap>
 		</style.Thick>
 		<style.Interlace>
 			<gap>0.13</gap>

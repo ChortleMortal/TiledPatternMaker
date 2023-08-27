@@ -67,7 +67,7 @@ public:
             void    paintToSVG();
             void    triggerPaintSVG(QSvgGenerator * generator) { this->generator = generator; paintSVG = true; }
 
-    void iamaLayer() override {}
+    virtual eViewType iamaLayer() override { return VIEW_MOSAIC; }
     void iamaLayerController() override {}
     int  protoUseCount() { if (prototype) return prototype.use_count(); else return 0;}
 

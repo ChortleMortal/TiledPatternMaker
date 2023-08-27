@@ -5,11 +5,15 @@
 #include <QWidget>
 
 #include "misc/unique_qvector.h"
-#include "settings/frame_settings.h"
+#include "settings/view_settings.h"
 #include "enums/ekeyboardmode.h"
 #include "enums/emousemode.h"
 
+#define fakeqWarning qWarning
+
 typedef std::shared_ptr<class Layer> LayerPtr;
+
+class ViewControl;
 
 class LoadUnit
 {
@@ -23,12 +27,11 @@ class View : public QWidget
     Q_OBJECT
 
 public:
-    View();
+    View(ViewControl * parent);
     ~View() override;
 
     void    init();
     void    unloadView();
-    void    paintEnable(bool enable);
 
     void    resize(QSize sz);
 
@@ -36,7 +39,6 @@ public:
     void    addLayer(Layer * layer);
     void    addTopLayer(LayerPtr layer);
     void    clearLayers()           { activeLayers.clear(); }
-    int     numLayers()             { return activeLayers.size(); }
 
     bool    isActiveLayer(Layer * l);
     QVector<Layer *> getActiveLayers();
@@ -49,19 +51,18 @@ public:
     void    setMouseMode(eMouseMode newMode, bool set);
     bool    getMouseMode(eMouseMode mode);
 
-    void    setBackgroundColor(QColor color);
-    QColor  getBackgroundColor();
+    void    setViewBackgroundColor(QColor color);
+    QColor  getViewBackgroundColor();
 
     void    setViewTitle(const QString & s);
 
     void    clearLayout(); // only used by cycler for pngs
 
     LoadUnit & getLoadUnit() { return loadUnit; }
+    
+    ViewSettings &  getViewSettings()  { return viewSettings; }
 
     void    dumpRefs();
-
-    FrameSettings frameSettings;
-
 
 signals:
     void sig_viewSizeChanged(QSize oldSize, QSize newSize);
@@ -94,13 +95,14 @@ signals:
     void sig_saveMenu();
     void sig_saveSVG();
 
-public slots:
-    virtual void slot_refreshView() {}
-
 protected:
+    void paintEnable(bool enable);
+    void duplicateView();
+
+    void paintEvent(QPaintEvent *event) override;
+
     void showEvent(QShowEvent * event) override;
     void closeEvent(QCloseEvent *event) override;
-    void paintEvent(QPaintEvent *event) override;
 #if 0
     void moveEvent(QMoveEvent *event) override;
 #endif
@@ -119,18 +121,20 @@ protected:
     bool ProcNavKey(int key, int multiplier);
 
     void ProcKeyLeft( int delta);
+
     void ProcKeyRight(int delta);
     void ProcKeyDown( int delta);
     void ProcKeyUp(   int delta);
 
-    void duplicateView();
-
     class TilingMaker * tilingMaker;
+    
+    ViewSettings        viewSettings;
 
 private:
-    Configuration     * config;
-    class DesignMaker * designMaker;
-    class ControlPanel* panel;
+    class Configuration * config;
+    class DesignMaker   * designMaker;
+    class ControlPanel  * panel;
+    ViewControl         * parent;
 
     UniqueQVector<Layer*> activeLayers;
 

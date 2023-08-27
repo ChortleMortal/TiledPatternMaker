@@ -3,8 +3,9 @@
 #define PAGE_MOSAIC_MAKER_H
 
 #include <QItemSelection>
-#include "widgets/panel_page.h"
+#include "panels/panel_page.h"
 
+class AQTableWidget;
 class SpinSet;
 
 typedef std::shared_ptr<class StyleEditor>     StyleEditorPtr;

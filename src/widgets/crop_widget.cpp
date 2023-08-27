@@ -1,4 +1,5 @@
 #include "widgets/crop_widget.h"
+#include "viewers/crop_view.h"
 #include "widgets/layout_qrectf.h"
 #include "widgets/layout_sliderset.h"
 #include "enums/eborder.h"
@@ -13,37 +14,30 @@
 
 CropWidget::CropWidget()
 {
-    blocked = false;
+    cropViewer = CropViewer::getInstance();
+    blocked    = false;
     setLayout(createLayout());
 }
 
 QLayout * CropWidget::createLayout()
 {
-    QVBoxLayout * vb = new QVBoxLayout;
-
-    // line 0
     QRadioButton * undefinedBtn = new QRadioButton("No Crop");
-    vb->addWidget(undefinedBtn);
+    QRadioButton * rectBtn      = new QRadioButton("Rectangular Crop");
+    rectLayoutW                 = new LayoutQRectF("Model units:", 8, 0.01);
+    rectLayoutS                 = new LayoutQRectF("ScreenUnits:", 8,1.0);
 
-    // line 1
-    QRadioButton * rectBtn = new QRadioButton("Rectangular Crop");
-    vb->addWidget(rectBtn);
+    QHBoxLayout * rectW = new QHBoxLayout;
+    rectW->addSpacing(21);
+    rectW->addLayout(rectLayoutW);
 
-    // line 2
-    cropRectLayout = new LayoutQRectF("Rectangle (model units) :", 8, 0.01);
+    QHBoxLayout * rectS = new QHBoxLayout;
+    rectS->addSpacing(21);
+    rectS->addLayout(rectLayoutS);
 
-    QHBoxLayout * rectL = new QHBoxLayout;
-    rectL->addSpacing(21);
-    rectL->addLayout(cropRectLayout);
-    vb->addLayout(rectL);
-
-    // line3
     QHBoxLayout * rectAsp = new QHBoxLayout;
     rectAsp->addSpacing(21);
     rectAsp->addLayout(createAspectLayout());
-    vb->addLayout(rectAsp);
 
-    // line4
     QRadioButton * circBtn = new QRadioButton("Circular Crop");
 
     radius = new DoubleSpinSet("Radius",0,0.0,20.0);
@@ -65,7 +59,6 @@ QLayout * CropWidget::createLayout()
     hbCirc->addLayout(centerX);
     hbCirc->addLayout(centerY);
     hbCirc->addStretch();
-    vb->addLayout(hbCirc);
 
     // line 5
     QRadioButton * regBtn  = new QRadioButton("Regular Crop");
@@ -74,6 +67,14 @@ QLayout * CropWidget::createLayout()
     QHBoxLayout * hbreg = new QHBoxLayout();
     hbreg->addWidget(regBtn);
     hbreg->addLayout(numSides);
+
+    QVBoxLayout * vb = new QVBoxLayout;
+    vb->addWidget(undefinedBtn);
+    vb->addWidget(rectBtn);
+    vb->addLayout(rectW);
+    vb->addLayout(rectS);
+    vb->addLayout(rectAsp);
+    vb->addLayout(hbCirc);
     vb->addLayout(hbreg);
 
     // grouping
@@ -83,7 +84,8 @@ QLayout * CropWidget::createLayout()
     cropTypes->addButton(regBtn,CROP_POLYGON);
     cropTypes->addButton(circBtn,CROP_CIRCLE);
 
-    connect(cropRectLayout, &LayoutQRectF::rectChanged,       this, &CropWidget::slot_rectChanged);
+    connect(rectLayoutW,    &LayoutQRectF::rectChanged,       this, &CropWidget::slot_rectChangedW);
+    connect(rectLayoutS,    &LayoutQRectF::rectChanged,       this, &CropWidget::slot_rectChangedS);
     connect(radius,         &DoubleSpinSet::valueChanged,     this, &CropWidget::slot_circleChanged);
     connect(centerX,        &DoubleSpinSet::valueChanged,     this, &CropWidget::slot_circleChanged);
     connect(centerY,        &DoubleSpinSet::valueChanged,     this, &CropWidget::slot_circleChanged);
@@ -179,7 +181,7 @@ void CropWidget::slot_circleChanged(qreal r)
 
     QPointF center(centerX->value(),centerY->value());
 
-    auto c = crop->getCircle();
+    Circle & c = crop->getCircle();
     c.setRadius(radius->value());
     c.setCenter(center);
     emit sig_cropModified();
@@ -199,13 +201,26 @@ void CropWidget::slot_sidesChanged(int n)
     emit sig_cropModified();
 }
 
-void CropWidget::slot_rectChanged()
+void CropWidget::slot_rectChangedW()
 {
     if (blocked || !crop) return;
 
     if (crop && crop->getCropType() == CROP_RECTANGLE )
     {
-        QRectF rect = cropRectLayout->get();
+        QRectF rect = rectLayoutW->get();
+        crop->setRect(rect);
+    }
+    emit sig_cropModified();
+}
+
+void CropWidget::slot_rectChangedS()
+{
+    if (blocked || !crop) return;
+
+    if (crop && crop->getCropType() == CROP_RECTANGLE )
+    {
+        QRectF rect = rectLayoutS->get();
+        rect = cropViewer->screenToWorld(rect);
         crop->setRect(rect);
     }
     emit sig_cropModified();
@@ -222,7 +237,7 @@ void CropWidget::slot_typeSelected(int id)
     {
         crop->setAspect(eAspectRatio(aspects->checkedId()));
         crop->setAspectVertical(chkVert->isChecked());
-        QRectF rect = cropRectLayout->get();
+        QRectF rect = rectLayoutW->get();
         crop->setRect(rect);
      }
         break;
@@ -250,10 +265,11 @@ void CropWidget::refresh()
     if (crop)
     {
         cropTypes->button(crop->getCropType())->setChecked(true);
-        cropRectLayout->set(crop->getRect());
+        rectLayoutW->set(crop->getRect());
+        rectLayoutS->set(cropViewer->worldToScreen(crop->getRect()));
         aspects->button(crop->getAspect())->setChecked(true);
         chkVert->setChecked(crop->getAspectVertical());
-        auto circle = crop->getCircle();
+        Circle & circle = crop->getCircle();
         radius->setValue(circle.radius);
         centerX->setValue(circle.centre.x());
         centerY->setValue(circle.centre.y());
@@ -262,7 +278,8 @@ void CropWidget::refresh()
     else
     {
         cropTypes->button(CROP_UNDEFINED)->setChecked(true);
-        cropRectLayout->set(QRectF());
+        rectLayoutW->set(QRectF());
+        rectLayoutS->set(QRectF());
         aspects->button(ASPECT_UNCONSTRAINED)->setChecked(true);
         chkVert->setChecked(false);
         radius->setValue(5);

@@ -101,27 +101,25 @@ void GeoGraphics::drawRect(QPointF topleft, qreal width, qreal height, QPen pen,
 #endif
 }
 
-void GeoGraphics::drawPolygon(const QPolygonF & pgon, QPen pen)
+void GeoGraphics::drawPolygon(const QPolygonF & pgon, QPen &pen)
 {
-    // don't fill
+    // draw only, don't fill
     QPolygonF p = transform.map(pgon);
     painter->setPen(pen);
     painter->setBrush(Qt::NoBrush);
     painter->drawPolygon(p);
 }
 
-void GeoGraphics::fillPolygon(const QPolygonF & pgon, QColor color)
+void GeoGraphics::fillPolygon(const QPolygonF & pgon, const QPen & pen)
 {
-    // only fill
+    // daraw and fill
     QPolygonF p = transform.map(pgon);
-    //painter->setPen(Qt::NoPen);
-    QPen pen(color, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
     painter->setPen(pen);
-    painter->setBrush(QBrush(color));
+    painter->setBrush(QBrush(pen.color()));
     painter->drawPolygon(p);
 }
 
-void GeoGraphics::fillEdgePoly(const EdgePoly & epoly, QColor color)
+void GeoGraphics::fillEdgePoly(const EdgePoly & epoly, QPen & pen)
 {
     EdgePoly ep = epoly.map(transform);
     Q_ASSERT(ep.isCorrect());
@@ -130,7 +128,7 @@ void GeoGraphics::fillEdgePoly(const EdgePoly & epoly, QColor color)
 
     auto e = ep.first();
     path.moveTo(e->v1->pt);
-    for (auto edge : ep)
+    for (const auto & edge : ep)
     {
         if (edge->getType() == EDGETYPE_LINE)
         {
@@ -153,13 +151,12 @@ void GeoGraphics::fillEdgePoly(const EdgePoly & epoly, QColor color)
         }
     }
 
-    QPen pen(color, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
     painter->setPen(pen);
-    painter->fillPath(path,QBrush(color));
+    painter->fillPath(path,QBrush(pen.color()));
     painter->drawPath(path);
 }
 
-void GeoGraphics::fillPath(QPainterPath & path, QColor color)
+void GeoGraphics::fillPath(QPainterPath path, QPen & pen) const
 {
     for (int i = 0; i < path.elementCount(); i++)
     {
@@ -168,20 +165,19 @@ void GeoGraphics::fillPath(QPainterPath & path, QColor color)
         path.setElementPositionAt(i,pt.x(),pt.y());
     }
 
-    painter->fillPath(path,QBrush(color));
-    QPen pen(color, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+    painter->fillPath(path,QBrush(pen.color()));
     painter->strokePath(path,pen);
 }
 
 // TODO - replace this with EdgePoly::draw  or vice versa
-void GeoGraphics::drawEdgePoly(const EdgePoly & epoly, QColor color, int width)
+void GeoGraphics::drawEdgePoly(const EdgePoly & epoly, QPen & pen)
 {
     EdgePoly ep = epoly.map(transform);
     QPainterPath path;
 
     auto e = ep.first();
     path.moveTo(e->v1->pt);
-    for (auto edge : ep)
+    for (const auto & edge : ep)
     {
         if (edge->getType() == EDGETYPE_LINE)
         {
@@ -203,7 +199,7 @@ void GeoGraphics::drawEdgePoly(const EdgePoly & epoly, QColor color, int width)
         }
     }
 
-    painter->setPen(QPen(color,width));
+    painter->setPen(pen);
     painter->drawPath(path);
 }
 
@@ -216,7 +212,9 @@ void GeoGraphics::drawArrow(QPointF from, QPointF to, qreal length, qreal half_w
     dir  *= length;
     QPolygonF poly;
     poly << to <<  (to - dir + perp) << (to - dir - perp)  << to ;
-    fillPolygon(poly, color);
+
+    QPen pen(color, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+    fillPolygon(poly, pen);
 }
 
 void GeoGraphics::drawLineArrow(QLineF line, QPen pen)

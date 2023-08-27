@@ -25,8 +25,8 @@ public:
 
     virtual void        paint(QPainter * painter) override;
     virtual void        draw(QPainter *);
-
-    void                drawMap(QPainter * painter, eLayer layer, QColor color);
+    
+    void                drawMap(QPainter * painter, eMapedLayer layer, QColor color);
     void                drawDCEL(QPainter * painter);
     void                drawTile(QPainter * painter, DesignElementPtr del);
     void                drawBoundaries(QPainter * painter, DesignElementPtr del);
@@ -65,7 +65,7 @@ public slots:
     virtual void slot_moveX(int amount)  override;
     virtual void slot_moveY(int amount)  override;
 
-    virtual void iamaLayer() override {}
+    virtual eViewType iamaLayer() override { return VIEW_MAP_EDITOR; }
     virtual void iamaLayerController() override {}
 
     void    setMousePos(QPointF pt);

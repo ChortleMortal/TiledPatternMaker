@@ -1,6 +1,6 @@
 #include <QDebug>
 #include <QGroupBox>
-#include "makers/motif_maker/motif_maker_widgets.h"
+#include "makers/motif_maker/motif_maker_widget.h"
 #include "makers/motif_maker/motif_editor_widget.h"
 #include "makers/prototype_maker/prototype.h"
 #include "makers/prototype_maker/prototype_maker.h"
@@ -9,7 +9,7 @@
 #include "panels/page_motif_maker.h"
 #include "settings/configuration.h"
 #include "widgets/layout_sliderset.h"
-#include "widgets/panel_misc.h"
+#include "panels/panel_misc.h"
 
 Q_DECLARE_METATYPE(NamedMotifEditor *)
 
@@ -193,7 +193,9 @@ void NamedMotifEditor::slot_motifModified(MotifPtr motif)
     auto tiling = data->getSelectedPrototype()->getTiling();
     protomaker->sm_takeUp(tiling,PROM_MOTIF_CHANGED);
     
-    data->select(MVD_DELEM,del,multi);
+    //data->select(MVD_DELEM,del,multi);
+    protomaker->getProtoMakerData()->getWidget()->update();
+
 }
 
 /////////////////////////////////////////////////////////
@@ -222,7 +224,7 @@ void MotifTypeCombo::updateChoices(MotifPtr motif)
         add(MOTIF_TYPE_EXTENDED_STAR,       "Radial Star Extended");
         add(MOTIF_TYPE_ROSETTE,             "Radial Rosette");
         add(MOTIF_TYPE_CONNECT_ROSETTE,     "Radial Rosette Connect");
-        add(MOTIF_TYPE_EXTENDED_ROSETTE,    "Raidal Rosette Extended");
+        add(MOTIF_TYPE_EXTENDED_ROSETTE,    "Radial Rosette Extended");
         add(MOTIF_TYPE_EXPLCIT_TILE,        "Explicit Tile");
     }
     else
@@ -235,7 +237,7 @@ void MotifTypeCombo::updateChoices(MotifPtr motif)
         add(MOTIF_TYPE_GIRIH,               "Girih");
         add(MOTIF_TYPE_INTERSECT,           "Intersect");
         add(MOTIF_TYPE_EXPLCIT_TILE,        "Explicit Tile");
-        add(MOTIF_TYPE_IRREGULAR_NO_MAP,    "No Motif");
+        add(MOTIF_TYPE_IRREGULAR_NO_MAP,    "No Motif (Empty placeholder)");
     }
 
     int index = getIndex(motif->getMotifType());

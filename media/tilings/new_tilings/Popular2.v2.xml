@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<!-- Written: Sat Jul 1 2023 20:01:14 -->
+<Tiling version="7">
+	<Name>Popular2.v2</Name>
+	<Fill singleton="f">-3,3,-2,2</Fill>
+	<T1>4.470585262431121,-4.47058526243112</T1>
+	<T2>4.470585262431122,-6.661338147750939e-16</T2>
+	<ViewSettings>
+		<width>1246</width>
+		<height>1004</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>-126</left__delta>
+		<top__delta>-14</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="regular" sides="8" rotation="0" scale="1.850000000000001">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0.1733333333333338</tranX>
+			<tranY>0.666666666666667</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="4" rotation="0" scale="1.3">
+		<Placement>
+			<scale>1.008600888413604</scale>
+			<rot>-44.99999999999999</rot>
+			<tranX>2.408625964548894</tranX>
+			<tranY>-1.568625964548894</tranY>
+		</Placement>
+	</Tile>
+	<Desc />
+	<Auth>DAC</Auth>
+	<BackgroundImage name="Capture3.adj2.jpg">
+		<Scale>1</Scale>
+		<Rot>0</Rot>
+		<X>-126</X>
+		<Y>-14</Y>
+		<Center>0,0</Center>
+	</BackgroundImage>
+</Tiling>

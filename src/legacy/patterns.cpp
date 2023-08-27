@@ -1,4 +1,5 @@
 #include <QDebug>
+#include <math.h>
 
 #include "legacy/patterns.h"
 #include "legacy/shapefactory.h"
@@ -7,6 +8,7 @@
 #include "motifs/star.h"
 #include "geometry/map.h"
 #include "misc/border.h"
+#include "misc/tile_color_defs.h"
 #include "misc/utilities.h"
 #include "mosaic/design_element.h"
 #include "makers/prototype_maker/prototype.h"
@@ -1603,7 +1605,7 @@ void PatternKumiko2::build()
 
     ProtoPtr proto = make_shared<Prototype>(t);
     proto->addElement(dep);
-    proto->createProtoMap();
+    proto->createProtoMap(false);
 
     ThickPtr thick = make_shared<Thick>(proto);
     thick->setColor(QColor(0xa2,0x79,0x67));

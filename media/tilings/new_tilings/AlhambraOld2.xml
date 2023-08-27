@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<!-- Written: Sat Jun 10 2023 10:28:49 -->
+<Tiling version="7">
+	<Name>AlhambraOld2</Name>
+	<Fill singleton="t">0,0,0,0</Fill>
+	<T1>0,0</T1>
+	<T2>0,0</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="regular" sides="8" rotation="0" scale="4.039999999999961">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-0.9600000000000009</tranX>
+			<tranY>0.1333333333333329</tranY>
+		</Placement>
+	</Tile>
+	<Desc />
+	<Auth>David Casper</Auth>
+	<BackgroundImage name="IMG_1488adj.JPG">
+		<Scale>0.6561</Scale>
+		<Rot>0</Rot>
+		<X>-230</X>
+		<Y>256</Y>
+		<Center>0,0</Center>
+	</BackgroundImage>
+</Tiling>

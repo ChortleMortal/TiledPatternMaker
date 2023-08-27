@@ -38,12 +38,14 @@ public:
     QString            desc;
 
 protected:
+    void               flash(QColor color);
+
     QPointF            wLastDrag;   // screen point
     TileSelectorPtr    selection;
     QColor             drag_color;
 
-    TilingMakerView   * tmv;
-    TilingMaker       * tm;
+    TilingMakerView   * tilingMakerView;
+    TilingMaker       * tilingMaker;
 
 private:
 };

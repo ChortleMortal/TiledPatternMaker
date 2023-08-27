@@ -73,6 +73,8 @@ public:
     static QPointF  irregularCenter(const QPolygonF &poly);
 
     static QPointF  perpPt(QPointF A, QPointF B, QPointF C);
+
+    static QPointF  findNearestPoint(const QVector<QPointF> & pts, const QPointF apt);
 };
 #endif
 

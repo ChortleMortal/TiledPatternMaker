@@ -2,7 +2,7 @@
 #ifndef PAGE_SYSTEM_INFO_H
 #define PAGE_SYSTEM_INFO_H
 
-#include "widgets/panel_page.h"
+#include "panels/panel_page.h"
 #include "makers/prototype_maker/prototype_data.h"
 
 typedef std::shared_ptr<class Mosaic>           MosaicPtr;

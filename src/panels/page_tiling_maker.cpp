@@ -14,7 +14,7 @@
 #include "makers/tiling_maker/tiling_maker.h"
 #include "misc/fileservices.h"
 #include "misc/utilities.h"
-#include "panels/panel.h"
+#include "panels/controlpanel.h"
 #include "settings/configuration.h"
 #include "style/style.h"
 #include "tile/tile.h"
@@ -38,29 +38,24 @@ page_tiling_maker:: page_tiling_maker(ControlPanel * cpanel)  : panel_page(cpane
 {
     tmView = TilingMakerView::getInstance();
 
-    QHBoxLayout * controlLayout = createControlRow();
+    QHBoxLayout * controlLayout     = createControlRow();
+    QGroupBox   * actionGroup       = createActionsGroup();
+    QGroupBox   * modeGroup         = createModesGroup();
+    QHBoxLayout * fillRow           = createFillDataRow();
+    QHBoxLayout * tableControl      = createTableControlRow();
+    QTableWidget * table            = createTilingTable();
+    translationsWidget              = createTranslationsRow();
+    debugWidget                     = createDebugInfo();
+
     vbox->addLayout(controlLayout);
-
-    QGroupBox * actionGroup = createActionsGroup();
     vbox->addWidget(actionGroup);
-
-    QGroupBox * modeGroup = createModesGroup();
     vbox->addWidget(modeGroup);
-
-    QHBoxLayout * fillRow = createFillDataRow();
     vbox->addLayout(fillRow);
-
-    QHBoxLayout * tableControl = createTableControlRow();
     vbox->addLayout(tableControl);
-
-    translationsWidget = createTranslationsRow();
     vbox->addWidget(translationsWidget);
-
-    QTableWidget * table = createTilingTable();
     vbox->addWidget(table);
-
-    debugWidget = createDebugInfo();
     vbox->addWidget(debugWidget);
+    vbox->addStretch();
 
     connect(mosaicMaker,  &MosaicMaker::sig_mosaicLoaded,  this, &page_tiling_maker::setup);
     connect(tilingMaker,  &TilingMaker::sig_buildMenu,     this, &page_tiling_maker::slot_buildMenu);
@@ -289,11 +284,9 @@ AQTableWidget * page_tiling_maker::createTilingTable()
     tileInfoTable->setStyleSheet("selection-color : black; selection-background-color : LightGreen");
 
     QStringList qslv;
-    qslv << "tile" << "show" << "type"  << "tile-rot" << "tile-scale" << "placed-sides"<< "placed-scale" << "placed-rot" << "placed-X" << "placed-Y" << "CW" << "addr";
+    qslv << "tile" << "show" << "type"  << "tile-rot" << "tile-scale" << "tile-sides"<< "placed-scale" << "placed-rot" << "placed-X" << "placed-Y" << "CW" << "addr";
     tileInfoTable->setVerticalHeaderLabels(qslv);
     tileInfoTable->horizontalHeader()->setVisible(false);
-    //tileInfoTable->setMinimumWidth(750);
-    //tileInfoTable->setMaximumWidth(880);
     tileInfoTable->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     tileInfoTable->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
@@ -531,11 +524,10 @@ void page_tiling_maker::setup()
     tilingMaker->setTilingMakerMouseMode(TM_NO_MOUSE_MODE);
     tilingMaker->clearConstructionLines();
 
-    if (config->getViewerType() == VIEW_TILING_MAKER)
+    if (view->isEnabled(VIEW_TILING_MAKER))
     {
         tmView->forceRedraw();
     }
-
 }
 
 void  page_tiling_maker::onExit()
@@ -591,7 +583,7 @@ void  page_tiling_maker::onRefresh()
         oldMode = currentMode;
     }
 
-    if (chk_showDebug->isChecked())
+    if (config->insightMode && chk_showDebug->isChecked())
     {
         QString dbgStatus = tilingMaker->getStatus();
         debugLabel1->setText(dbgStatus);
@@ -1199,15 +1191,9 @@ void page_tiling_maker::slot_placedTranslateChanged(int col)
     Q_ASSERT(dsp);
     qreal ty = dsp->value();
 
-    auto t0 = placedTile->getTransform();
-    qreal rotation = Transform::rotation(t0);
-    qreal scale    = Transform::scalex(t0);
-    //Transform t = Transform::compose(scale, rotation, QPointF(tx,ty));
-    QTransform t = QTransform().scale(scale,scale) * QTransform().rotateRadians(rotation) * QTransform::fromTranslate(tx,ty);
-    qDebug().noquote() << "col=" << col << "T=" << Transform::toInfoString(t);
-
     tilingMaker->getSelected()->pushStack();
-    placedTile->setTransform(t);
+
+    tilingMaker->placedTileSetTranslate(tx,ty);
 
     if (tilingMaker->isIncluded(placedTile))
     {
@@ -1219,14 +1205,11 @@ void page_tiling_maker::slot_placedTranslateChanged(int col)
 
 void page_tiling_maker::slot_placedScaleChanged(int col)
 {
-    qWarning() << "slot_placedScaleChanged";
+    qWarning() << "slot_placedScaleChanged col=" << col;
     if (pageBlocked()) return;
 
     PlacedTilePtr placedTile = getTileColumn(col);
     tilingMaker->setCurrentPlacedTile(placedTile);
-
-    auto oldT = placedTile->getTransform();
-    qreal oldScale = Transform::scalex(oldT);
 
     QWidget  * cw  = tileInfoTable->cellWidget(TI_PLACEMENT_SCALE,col);
     AQDoubleSpinBox * dsp = dynamic_cast<AQDoubleSpinBox*>(cw);
@@ -1239,15 +1222,14 @@ void page_tiling_maker::slot_placedScaleChanged(int col)
 
     tilingMaker->getSelected()->pushStack();
 
-    qreal delta = scale - oldScale;
-    tilingMaker->placedTileDeltaScale(1.0 + delta);
+    tilingMaker->placedTileSetScale(scale);
 
     if (tilingMaker->isIncluded(placedTile))
     {
         tilingMaker->pushTilingToPrototypeMaker(PROM_TILING_CHANGED);
     }
 
-    emit sig_refreshView();
+    view->update();
 }
 
 void page_tiling_maker::slot_placedRotateChanged(int col)
@@ -1258,9 +1240,6 @@ void page_tiling_maker::slot_placedRotateChanged(int col)
     PlacedTilePtr placedTile = getTileColumn(col);
     tilingMaker->setCurrentPlacedTile(placedTile);
 
-    auto oldT = placedTile->getTransform();
-    qreal oldRot = qRadiansToDegrees(Transform::rotation(oldT));
-
     auto rot_widget = tileInfoTable->cellWidget(TI_PLACEMENT_ROT,col);
     auto rot_dsp = dynamic_cast<AQDoubleSpinBox*>(rot_widget);
     Q_ASSERT(rot_dsp);
@@ -1268,15 +1247,14 @@ void page_tiling_maker::slot_placedRotateChanged(int col)
 
     tilingMaker->getSelected()->pushStack();
 
-    qreal delta = cell_rotation - oldRot;
-    tilingMaker->placedTileDeltaRotate(delta);
+    tilingMaker->placedTileSetRotate(cell_rotation);
 
     if (tilingMaker->isIncluded(placedTile))
     {
         tilingMaker->pushTilingToPrototypeMaker(PROM_TILING_CHANGED);
     }
 
-    emit sig_refreshView();
+    view->update();
 }
 
 void page_tiling_maker::slot_showTileChanged(int col)
@@ -1740,7 +1718,6 @@ void page_tiling_maker::slot_importPoly()
         return;
     }
 
-    auto tiling = tilingMaker->getSelected();
     for (auto it = qsl.begin(); it != qsl.end(); it++)
     {
         QString name = *it;
@@ -1754,7 +1731,7 @@ void page_tiling_maker::slot_importPoly()
 
     buildMenu();
 
-    if (config->getViewerType() == VIEW_TILING_MAKER)
+    if (view->isEnabled(VIEW_TILING_MAKER))
     {
         tmView->forceRedraw();
     }
@@ -1763,7 +1740,6 @@ void page_tiling_maker::slot_importPoly()
 void page_tiling_maker::slot_addGirihShape()
 {
     QString name = girihShapes->currentData().toString();
-    auto tiling = tilingMaker->getSelected();
     PlacedTilePtr pfp = make_shared<PlacedTile>();
     bool rv =  pfp->loadFromGirihShape(name);
     if (rv)
@@ -1771,7 +1747,7 @@ void page_tiling_maker::slot_addGirihShape()
         QTransform t;
         tilingMaker->addNewPlacedTile(pfp);
         buildMenu();
-        if (config->getViewerType() == VIEW_TILING_MAKER)
+        if (view->isEnabled(VIEW_TILING_MAKER))
         {
             tmView->forceRedraw();
         }

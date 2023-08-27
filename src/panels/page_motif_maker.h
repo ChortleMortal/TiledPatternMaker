@@ -4,9 +4,10 @@
 
 #include <QScrollArea>
 
-#include "widgets/panel_page.h"
+#include "panels/panel_page.h"
 
 class PrototypeData;
+class MotifMakerWidget;
 
 typedef std::shared_ptr<class Prototype>     ProtoPtr;
 typedef std::shared_ptr<class Tile>          TilePtr;
@@ -26,7 +27,6 @@ public:
 public slots:
 
 private slots:
-    void    whiteClicked(bool state);
     void    replicateClicked(bool state);
     void    multiClicked(bool state);
     void    slot_combine();
@@ -42,8 +42,8 @@ protected:
     void    loadProtoCombo();
 
 private:
+    MotifMakerWidget* motifMakerWidget;
     PrototypeData   * protoMakerData;
-    QCheckBox       * whiteBackground;
     QCheckBox       * replicate;
     QComboBox       * prototypeCombo;
     QLabel          * protoLabel;

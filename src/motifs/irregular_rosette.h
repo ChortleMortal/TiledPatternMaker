@@ -4,6 +4,8 @@
 
 #include "motifs/irregular_motif.h"
 
+typedef std::shared_ptr<class IrregularStar> IStarPtr;
+
 struct Branch
 {
     QPointF tipPoint;
@@ -36,6 +38,9 @@ protected:
     void                buildV2(TilePtr tile);
     Branch              buildRosetteBranchPointsV2(int side, int isign, qreal sideLen);
 
+    void                buildV3(TilePtr tile);
+    Branch              buildRosetteBranchPointsV3(int side, int isign, qreal sideLen);
+
     Points              buildRosetteIntersections(const Branch &branch);
     Branch &            findBranch(int side, int sign);
 
@@ -45,8 +50,10 @@ private:
     QPointF             center;
 
     QVector<Branch>     branches;
+    QVector<QPointF>    starPts;
 
     int                 debugSide;
+    bool                _debug;
 };
 
 #endif // IRREGULAR_ROSETTE_H

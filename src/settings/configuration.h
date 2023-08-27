@@ -16,7 +16,6 @@
 #include "enums/efilesystem.h"
 #include "enums/elogmode.h"
 #include "enums/emapeditor.h"
-#include "enums/eviewtype.h"
 
 typedef std::shared_ptr<class Design> DesignPtr;
 typedef std::weak_ptr<class Layer>    WeakLayerPtr;
@@ -28,18 +27,6 @@ typedef std::weak_ptr<class Layer>    WeakLayerPtr;
 #define RANGE(start,dur)  if (stepIndex >= SECONDS(start) && stepIndex <= (SECONDS(start) + SECONDS(dur)))
 #define STEP(start)       if (stepIndex == SECONDS(start))
 #define TICK(start)       if (stepIndex == start)
-
-#define TileBlue    "#39426d"
-#define TileGreen   "#34554a"
-#define TileBlack   "#10100e"
-#define TileWhite   "#c2bcb0"
-#define TileBrown   "#382310"
-#define TileBrown2  "#632E1C"
-#define TileGold    "#ffe05b"
-#define AlhambraBrown "#a35807"
-#define AlhambraBlue  "#1840b2"
-#define AlhambraGreen "#234b30"
-#define AlhambraGold  "#c59c0c"
 
 #define E2STR(x) #x
 
@@ -63,41 +50,47 @@ enum  eGridTilingAlgo
     REGION
 };
 
+////////////////////////////////////////////////////////////////
+//
+// Worklist
+//
+////////////////////////////////////////////////////////////////
 class Worklist : public QStringList
 {
 public:
     Worklist() {}
 
-    void set(QStringList & list);
-    const QStringList & get() { list.sort(); return list; }
+    void                    set(QStringList & list);
+    const QStringList &     get() { list.sort(); return list; }
 
-    void setName(QString listName);
-    const QString & name() { return listname; }
+    void                    setName(QString listName);
+    const QString &         name() { return listname; }
 
-    void add(QString designName);
-    void clear();
-    void removeuplicates() { list.removeDuplicates(); }
+    void                    add(QString designName);
+    void                    clear();
+    void                    removeuplicates() { list.removeDuplicates(); }
 
-    void load(QSettings & s);
-    void save(QSettings & s);
+    void                    load(QSettings & s);
+    void                    save(QSettings & s);
 
 private:
     QString     listname;
     QStringList list;
 };
 
+////////////////////////////////////////////////////////////////
+//
+// Configuration
+//
+////////////////////////////////////////////////////////////////
 class Configuration
 {
 public:
-    static Configuration * getInstance();
-    static void            releaseInstance();
+    static Configuration *  getInstance();
+    static void             releaseInstance();
 
-    void    configurePaths();
-    void    save();
-
-
-    void setViewerType(eViewType  viewerType);
-    inline eViewType getViewerType() { return viewerType; }
+    void                    configurePaths();
+    void                    save();
 
 ////////////////////////////////////////////////////////////////
 //
@@ -131,6 +124,7 @@ public:
     QString lastCompareName;
 
     QStringList protoViewColors;
+    QStringList viewColors;
 
     eRepeatType     repeatMode;
     eMapEditorMode  mapEditorMode;
@@ -169,8 +163,8 @@ public:
     bool    stopIfDiff;
     bool    insightMode;
     bool    motifMultiView;
-    bool    motifBkgdWhite;
     bool    motifEnlarge;
+    bool    limitViewSize;
 
     bool    verifyPopup;     // false pops up errors
     bool    verifyProtos;
@@ -190,6 +184,7 @@ public:
     bool    tilingWorklistCheck;
     bool    lockView;
     bool    splitScreen;
+    bool    bigScreen;
 
     bool    showMotif;
     bool    showTileBoundary;
@@ -284,14 +279,11 @@ public:
     QString getMediaRootAppdata();
     QString getImageRoot();
 
-
 private:
     Configuration();
     ~Configuration();
 
     static Configuration * mpThis;
-
-    eViewType   viewerType;
 };
 
 #endif // CONFIGURATION_H

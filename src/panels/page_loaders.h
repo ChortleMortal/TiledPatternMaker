@@ -2,7 +2,7 @@
 #ifndef PAGE_LOADERS_H
 #define PAGE_LOADERS_H
 
-#include "widgets/panel_page.h"
+#include "panels/panel_page.h"
 #include "widgets/versioned_list_widget.h"
 #include "enums/estatemachineevent.h"
 #include "enums/edesign.h"

@@ -45,7 +45,9 @@ TilingPtr TilingManager::loadTiling(QString name, eTILM_Event event)
     qInfo().noquote() << "Loaded  tiling:" << filename << loadedTiling->getName();
 
     loadedTiling->setState(Tiling::LOADED);
-    view->frameSettings.setModelAlignment(M_ALIGN_TILING);
+    
+    auto & settings = view->getViewSettings();
+    settings.setModelAlignment(M_ALIGN_TILING);
 
     // tiling is loaded, now use it
     QSize size  = loadedTiling->getData().getSettings().getSize();
@@ -55,15 +57,15 @@ TilingPtr TilingManager::loadTiling(QString name, eTILM_Event event)
     case TILM_LOAD_SINGLE:
     case TILM_LOAD_MULTI:
     case TILM_RELOAD:
-        view->frameSettings.initialise(VIEW_TILING_MAKER,size,zsize);
-        view->frameSettings.initialiseCommon(size,zsize);
+        settings.initialise(VIEW_TILING_MAKER,size,zsize);
+        settings.initialiseCommon(size,zsize);
 
         setVCFillData(loadedTiling);
         tilingMaker->sm_takeUp(loadedTiling, event);
         break;
 
     case TILM_LOAD_FROM_MOSAIC:
-        view->frameSettings.initialise(VIEW_TILING_MAKER,size,zsize);
+        settings.initialise(VIEW_TILING_MAKER,size,zsize);
 
         setVCFillData(loadedTiling);
         break;
@@ -90,8 +92,10 @@ bool TilingManager::saveTiling(QString name, TilingPtr tiling)
     }
 
     // match size to current view
-    QSize size  = view->frameSettings.getCropSize(config->getViewerType());
-    QSize zsize = view->frameSettings.getZoomSize(config->getViewerType());
+    auto & settings = view->getViewSettings();
+    auto mostRecent = view->getMostRecent();
+    QSize size      = settings.getCropSize(mostRecent);
+    QSize zsize     = settings.getZoomSize(mostRecent);
 
     const ModelSettings & ms = tiling->getData().getSettings();
     if (ms.getSize() != size || ms.getZSize() != zsize)

@@ -6,7 +6,7 @@ class TextEditorWidget;
 
 #include <QScrollBar>
 #include <QDialog>
-#include "widgets/panel_page.h"
+#include "panels/panel_page.h"
 
 class page_log;
 

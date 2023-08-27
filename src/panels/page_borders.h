@@ -2,8 +2,11 @@
 #ifndef PAGE_BORDERS_H
 #define PAGE_BORDERS_H
 
-#include "widgets/panel_page.h"
+#include "panels/panel_page.h"
 #include "widgets/layout_qrectf.h"
+
+class AQComboBox;
+class ClickableLabel;
 
 typedef std::shared_ptr<class Border>  BorderPtr;
 typedef std::shared_ptr<class Crop>    CropPtr;

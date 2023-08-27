@@ -5,6 +5,7 @@
 #include <QString>
 
 extern const QString sViewerType[];
+extern const QString s2ViewerType[];
 
 enum eViewType
 {
@@ -17,9 +18,18 @@ enum eViewType
     VIEW_MAP_EDITOR,
     VIEW_BKGD_IMG,
     VIEW_GRID,
-    VIEW_MAX = VIEW_GRID,
     VIEW_BORDER,
     VIEW_CROP,
+    VIEW_MEASURE,
+    VIEW_CENTER,
+    VIEW_IMAGE
 };
+
+
+#define BKGD_IMG_ZLEVEL -20
+#define STANDARD_ZLEVEL   0
+#define MEASURE_ZLEVEL    9
+#define BORDER_ZLEVEL    10
+
 
 #endif // EVIEWTYPE_H

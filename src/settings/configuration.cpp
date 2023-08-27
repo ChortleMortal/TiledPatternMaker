@@ -29,6 +29,11 @@ void Configuration::releaseInstance()
 
 Configuration::Configuration()
 {
+#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
+    qRegisterMetaType<QList<int>>();
+    qRegisterMetaTypeStreamOperators<QList<int> >("QList<int>");
+#endif
+
     // peersist
     QSettings s;
 
@@ -88,9 +93,10 @@ Configuration::Configuration()
     tm_showOverlaps     = s.value("tm_showOverlaps",true).toBool();
     lockView            = s.value("lockView",false).toBool();
     splitScreen         = s.value("screenIsSplit",false).toBool();
+    bigScreen           = s.value("bigScreen",false).toBool();
     showTileBoundary    = s.value("showTileBoundary",true).toBool();
-    showMotifBoundary  = s.value("showMotifBoundary",true).toBool();
-    showMotif          = s.value("showMotif",true).toBool();
+    showMotifBoundary   = s.value("showMotifBoundary",true).toBool();
+    showMotif           = s.value("showMotif",true).toBool();
     showExtendedBoundary= s.value("showExtendedBoundary",true).toBool();;
     showMotifCenter     = s.value("showMotifCenter",false).toBool();;
     showTileCenter      = s.value("showTileCenter",false).toBool();;
@@ -101,16 +107,16 @@ Configuration::Configuration()
     view_transparent    = s.value("view_transparent",false).toBool();
     filter_transparent  = s.value("filter_transparent",false).toBool();
     display_differences = s.value("compare_differences",true).toBool();
-    use_workListForCompare  = s.value("use_workListForCompare",false).toBool();
+    use_workListForCompare= s.value("use_workListForCompare",false).toBool();
     generate_workList   = s.value("generate_workList",false).toBool();
     skipExisting        = s.value("skipExisting",false).toBool();
     showBackgroundImage = s.value("showBackgroundImage",true).toBool();
     motifMultiView      = s.value("motifMultiView",false).toBool();
-    motifBkgdWhite      = s.value("motifBkgdWhite",false).toBool();
     motifEnlarge        = s.value("motifEnlarge",true).toBool();
+    limitViewSize       = s.value("limitViewSize",true).toBool();
     insightMode         = s.value("insightMode",false).toBool();
     cs_showBkgds        = s.value("cs_showBkgds",false).toBool();
-    cs_showFrameSettings = s.value("cs_showFrameSettings",false).toBool();
+    cs_showFrameSettings= s.value("cs_showFrameSettings",false).toBool();
     defaultImageRoot    = s.value("defaultImageRoot",true).toBool();
     defaultMediaRoot    = s.value("defaultMediaRoot",true).toBool();
     saveMosaicTest      = s.value("saveMosaicTest",false).toBool();
@@ -119,7 +125,6 @@ Configuration::Configuration()
     vCompXML            = s.value("vCompXML",true).toBool();
     vCompTile           = s.value("vCompTile",false).toBool();
 
-    viewerType          = static_cast<eViewType>(s.value("viewerType",VIEW_MOSAIC).toUInt());
     mapEditorMode       = static_cast<eMapEditorMode>(s.value("mapEditorMode",MAPED_MODE_MAP).toUInt());
     repeatMode          = static_cast<eRepeatType>(s.value("repeat",REPEAT_DEFINED).toUInt());
 
@@ -158,14 +163,17 @@ Configuration::Configuration()
     QStringList qsl;
     qsl << "#ff1496d2"   // map
         << "#ff006c00"   // tile
-        << "#ffd60000"   // motif
-        << "#ffffff00"   // del tile
+        << "#ffffff00"   // motif
+        << "#ffd60000"   // deltile
         << "#ff0000ff"   // del motif
         << "#80ffd9d9";  // tile brush
     protoViewColors     = s.value("protoViewColors",qsl).toStringList();
 
+    QStringList qsl2;
+    qsl2 << "#ffffff" << "#ffffff" << "#ffffff" << "#ffffff" << "#ffffff" << "#ffffff" << "#ffffff" << "#ffffff" << "#ffffff" << "#ffffff" << "#ffffff";
+    viewColors          = s.value("viewColors",qsl2).toStringList();
+
     // ensures indices are in range
-    if (viewerType > VIEW_MAX)          viewerType      = VIEW_MAX;
     if (mapEditorMode > MAPED_MODE_MAX) mapEditorMode   = MAPED_MODE_MAP;
     if (repeatMode > REPEAT_MAX)        repeatMode      = REPEAT_MAX;
 
@@ -205,7 +213,6 @@ void Configuration::save()
     s.setValue("lastLoadedXML",lastLoadedXML);
     s.setValue("image0",image0);
     s.setValue("image1",image1);
-    s.setValue("viewerType",viewerType);
     s.setValue("mapEditorMode",mapEditorMode);
     s.setValue("repeat",repeatMode);
     s.setValue("panelName", panelName);
@@ -248,6 +255,7 @@ void Configuration::save()
     s.setValue("tm_showOverlaps",tm_showOverlaps);
     s.setValue("lockView",lockView);
     s.setValue("screenIsSplit",splitScreen);
+    s.setValue("bigScreen",bigScreen);
     s.setValue("showTileBoundary",showTileBoundary);
     s.setValue("showMotifBoundary",showMotifBoundary);
     s.setValue("showMotif",showMotif);
@@ -266,7 +274,7 @@ void Configuration::save()
     s.setValue("generate_workList",generate_workList);
     s.setValue("showBackgroundImage",showBackgroundImage);
     s.setValue("motifMultiView",motifMultiView);
-    s.setValue("motifBkgdWhite",motifBkgdWhite);
+    s.setValue("limitViewSize",limitViewSize);
     s.setValue("motifEnlarge",motifEnlarge);
     s.setValue("xmlTool",xmlTool);
     s.setValue("diffTool",diffTool);
@@ -284,6 +292,7 @@ void Configuration::save()
     s.setValue("vCompTile",vCompTile);
 
     s.setValue("protoViewColors",protoViewColors);
+    s.setValue("viewColors",viewColors);
 
     s.setValue("showCenterDebug",showCenterDebug);
     s.setValue("showGrid",showGrid);
@@ -322,11 +331,13 @@ void Configuration::save()
     worklist.save(s);
 }
 
+#if 0
 void Configuration::setViewerType(eViewType  viewerType)
 {
     qDebug().noquote() << "Configuration::setViewerType()" << sViewerType[viewerType];
     this->viewerType = viewerType;
 }
+#endif
 
 QString Configuration::getMediaRoot()
 {

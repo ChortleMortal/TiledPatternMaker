@@ -2,7 +2,7 @@
 #ifndef PAGE_MOSAIC_INFO_H
 #define PAGE_MOSAIC_INFO_H
 
-#include "widgets/panel_page.h"
+#include "panels/panel_page.h"
 
 class page_mosaic_info : public panel_page
 {

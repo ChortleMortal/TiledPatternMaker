@@ -4,7 +4,7 @@
 #include <QHeaderView>
 
 #include "settings/configuration.h"
-#include "widgets/panel_misc.h"
+#include "panels/panel_misc.h"
 
 AQVBoxLayout::AQVBoxLayout() : QVBoxLayout()
 {

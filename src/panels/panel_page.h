@@ -5,9 +5,8 @@
 #include <memory>
 #include <QString>
 #include <QtWidgets>
-#include "widgets/panel_misc.h"
 
-//class QVBoxLayout;
+#define PANEL_RHS_WIDTH 740
 
 extern class TiledPatternMaker * theApp;
 
@@ -19,8 +18,8 @@ public:
     panel_page(class ControlPanel * panel, QString name);
 
     virtual void	onRefresh() = 0;
-    virtual void    onEnter()     = 0;
-    virtual void    onExit()      = 0;
+    virtual void    onEnter()   = 0;
+    virtual void    onExit()    = 0;
     virtual bool    canExit() { return true; }
 
     void            leaveEvent(QEvent *event) override;
@@ -34,10 +33,9 @@ public:
     QString getName()                    { return pageName; }
     void    setNewlySelected(bool state) { newlySelected = state; }
     bool    isNewlySelected()            { return newlySelected; }
-    bool    isFloated()                  { return floated;}
-    void    setFloated(bool isFloated)   { floated = isFloated; }
-    void    closePage();
+    void    closePage(bool detached);
     void    floatMe();
+
     bool    wasFloated();
 
     QString addr(const void * address);
@@ -49,12 +47,12 @@ public:
 
 signals:
     void    sig_render();
-    void	sig_attachMe(QString title);
+    void	sig_attachMe(panel_page * page);
     void    sig_refreshView();
 
 protected:
-    virtual void    mouseEnter() { refresh = false; }
-    virtual void    mouseLeave() { refresh = true; }
+    virtual void mouseEnter() { refresh = false; }
+    virtual void mouseLeave() { refresh = true; }
 
     void    blockPage(bool block);
 
@@ -73,7 +71,6 @@ protected:
 
 private:
     bool                      newlySelected;
-    bool                      floated;
     int                       blockCount;
 };
 

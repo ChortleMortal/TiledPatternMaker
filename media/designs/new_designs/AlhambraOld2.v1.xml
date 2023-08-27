@@ -1,0 +1,103 @@
+<?xml version="1.0"?>
+<!-- Written: Sat Jun 10 2023 12:10:11 -->
+<vector id="1" version="15">
+	<designNotes>irregular rosette</designNotes>
+	<design>
+		<size>
+			<width>1500</width>
+			<height>927</height>
+			<zwidth>1500</zwidth>
+			<zheight>927</zheight>
+		</size>
+		<background>
+			<color>#ff000000</color>
+		</background>
+		<Fill singleton="t">0,0,0,0</Fill>
+		<BackgroundImage name="IMG_1488adj.JPG">
+			<Scale>0.6561</Scale>
+			<Rot>0</Rot>
+			<X>-230</X>
+			<Y>256</Y>
+			<Center>0,0</Center>
+		</BackgroundImage>
+	</design>
+	<style.Thick id="2">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<string>AlhambraOld2.v1</string>
+					<entry>
+						<Tile id="4">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">4.039999999999961,1.673422791987288</Point>
+									<Point id="7">1.673422791987288,4.039999999999961</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">-1.673422791987287,4.039999999999961</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">-4.039999999999961,1.673422791987288</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point id="10">-4.039999999999962,-1.673422791987287</Point>
+								</Line>
+								<Line>
+									<Point reference="10" />
+									<Point id="11">-1.67342279198729,-4.03999999999996</Point>
+								</Line>
+								<Line>
+									<Point reference="11" />
+									<Point id="12">1.673422791987289,-4.03999999999996</Point>
+								</Line>
+								<Line>
+									<Point reference="12" />
+									<Point id="13">4.03999999999996,-1.673422791987291</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularRosette id="14" type="Irregular Rosette Motif">
+							<boundarySides>8</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>0.875</figureScale>
+							<r>0</r>
+							<n>8</n>
+							<s>3</s>
+							<q>0</q>
+							<rFlexPt>0.5</rFlexPt>
+						</IrregularRosette>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff1496d2</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>true</draw__outline>
+			<outline_width>0.05</outline_width>
+			<outline_color>#ff000000</outline_color>
+			<width>0.05</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+	</style.Thick>
+</vector>

@@ -160,7 +160,7 @@ void MouseEditCrop::updateDragging(QPointF spt, QTransform t)
     }
     else if (crop->getCropType() == CROP_CIRCLE)
     {
-        auto c = crop->getCircle();
+        Circle & c = crop->getCircle();
         if (ecCircleMode == CM_EDGE)
         {
             // first find direction

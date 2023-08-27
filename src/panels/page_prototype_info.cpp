@@ -8,13 +8,13 @@
 #include "mosaic/design_element.h"
 #include "motifs/motif.h"
 #include "panels/page_prototype_info.h"
-#include "panels/panel.h"
+#include "panels/controlpanel.h"
 #include "settings/configuration.h"
 #include "tile/tile.h"
 #include "tile/tiling.h"
 #include "viewers/viewcontrol.h"
 #include "widgets/layout_sliderset.h"
-#include "widgets/panel_misc.h"
+#include "panels/panel_misc.h"
 
 using std::string;
 
@@ -474,8 +474,8 @@ void page_prototype_info::setDefaultColors()
 {
     ProtoViewColors colors;
     colors.mapColor          = QColor(20,150,210);
-    colors.tileColor         = QColor(0, 108, 0);
-    colors.motifColor        = QColor(214,0,0);
+    colors.motifColor        = QColor(0, 108, 0);
+    colors.tileColor         = QColor(214,0,0);
     colors.delMotifColor     = QColor(Qt::blue);
     colors.delTileColor      = QColor(Qt::yellow);
     colors.tileBrushColor    = QColor(255, 217, 217,128);
