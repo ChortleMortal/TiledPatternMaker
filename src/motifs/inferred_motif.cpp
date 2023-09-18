@@ -125,7 +125,7 @@ void InferredMotif::infer(ProtoPtr proto, TilePtr tile)
     {
         MotifPtr motif  = proto->getMotif(tile);
         Q_ASSERT(motif);
-        qDebug() << "Motif is:" <<  motif->getMotifTypeString() << motif.get();
+        qDebug() << "Motif is:" <<  motif->getMotifTypeString();
 
         MapPtr map;
         if (motif.get() != this)
@@ -417,9 +417,12 @@ void InferredMotif::infer(ProtoPtr proto, TilePtr tile)
 
     motifMap->transformMap(primaryMids->getTransform().inverted());
 
-    motifMap->verify(true);
+    motifMap->verify();
 
-    Q_ASSERT(!motifMap->isEmpty());
+    if (motifMap->isEmpty())
+    {
+        qWarning() << "Inferred Motif Map is emtpty";
+    }
 
     if (debugContacts) qDebug() << "InferredMotif::infer() - END" << motifMap->namedSummary();
 }

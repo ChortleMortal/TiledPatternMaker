@@ -48,3 +48,10 @@ void FillData::get(bool & singleton, int & minX, int & maxX, int & minY, int & m
     maxY = this->maxY;
 }
 
+void FillData::setLegacyDefaults()
+{
+    minX = -4;
+    minY = -4;
+    maxX = 4;
+    maxY = 4;
+}

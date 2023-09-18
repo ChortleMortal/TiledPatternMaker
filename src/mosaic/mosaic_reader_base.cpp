@@ -2,7 +2,6 @@
 #include "mosaic/mosaic_reader_base.h"
 
 QMap<int,VertexPtr>   MosaicReaderBase::vertex_ids;
-int MosaicReaderBase::nRefrCnt = 0;
 
 MosaicReaderBase::MosaicReaderBase() : MosaicIOBase()
 {

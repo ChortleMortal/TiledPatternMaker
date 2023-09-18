@@ -143,8 +143,9 @@ MosaicPtr MosaicReader::readXML(QString fileName)
 
 void MosaicReader::parseXML(xml_document & doc)
 {
-    nRefrCnt = 0;
     if (_debug) qDebug() << "MosaicLoader - start parsing";
+
+    vertex_ids.clear();
 
     for (xml_node node = doc.first_child(); node; node = node.next_sibling())
     {
@@ -263,13 +264,23 @@ void MosaicReader::processVector(xml_node & node)
     else if (_tilings.size() > 0)
     {
         if (_debug) qDebug() << "Using Tiling FiilData";
-        const FillData & fd =  getFirstTiling()->getData().getFillData();
-        settings.setFillData(fd);
+        const FillData & fdt =  getFirstTiling()->getData().getFillData();
+        if (fdt.isSet())
+        {
+            settings.setFillData(fdt);
+        }
+        else
+        {
+            FillData fd;    // default
+            fd.setLegacyDefaults();
+            settings.setFillData(fd);
+        }
     }
     else
     {
         if (_debug) qDebug() << "Using Default FiilData";
-        FillData fd;    // default
+        FillData fd;
+        fd.setLegacyDefaults();
         settings.setFillData(fd);
     }
 

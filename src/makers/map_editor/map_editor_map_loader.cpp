@@ -35,8 +35,6 @@ MapPtr MapEditorMapLoader::loadMosaicMap(QString fileName)
     {
         if (_debug) qDebug() << "MosaicLoader - start parsing";
 
-        nRefrCnt = 0;
-
         xml_node node = doc.first_child();
         string str = node.name();
         if (_debug) qDebug().noquote() << str.c_str();

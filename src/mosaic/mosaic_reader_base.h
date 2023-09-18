@@ -24,8 +24,6 @@ public:
 
 protected:
     static QMap<int,VertexPtr>     vertex_ids;
-    static int nRefrCnt;
-
 };
 
 #endif // MOSAICREADERBASE_H

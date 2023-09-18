@@ -10,9 +10,11 @@ public:
 
     FillData& operator=(const FillData& rhs);
 
-    bool isSet() { return _set; }
+    bool isSet() const { return _set; }
     void set(bool singleton, int minX, int minY, int maxX, int maxY);
     void get(bool & singleton, int & minX, int & maxX, int & minY, int & maxY) const;
+
+    void setLegacyDefaults();
 
 protected:
     bool _set;
