@@ -154,7 +154,7 @@ QGroupBox * page_image_tools::createCycleGenBox()
 
     connect(spCycleInterval,    &SpinSet::valueChanged,    this,  &page_image_tools::slot_cycleIntervalChanged);
     connect(viewBtn,            &QPushButton::clicked,     this,  &page_image_tools::slot_cycleView);
-    connect(cycleViewBtnGroup,  &QButtonGroup::idClicked,  this,  [=,this](int id) { config->viewCycle = static_cast<eCycleMode>(id); } );
+    connect(cycleViewBtnGroup,  &QButtonGroup::idClicked,  this,  &page_image_tools::slot_cycleId);
 
     return cycleViewBox;
 }
@@ -626,6 +626,11 @@ void page_image_tools::slot_stopIfDiffClicked(bool enb)
 void page_image_tools::slot_cycleIntervalChanged(int value)
 {
     config->cycleInterval = value;
+}
+
+void page_image_tools::slot_cycleId(int id)
+{
+    config->viewCycle = static_cast<eCycleMode>(id);
 }
 
 void page_image_tools::slot_firstDirChanged()

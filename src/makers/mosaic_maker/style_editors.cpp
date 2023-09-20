@@ -212,10 +212,22 @@ ThickEditor::ThickEditor(Thick * thick, AQTableWidget * table) : ColoredEditor(t
     connect(width_slider,         &SliderSet::valueChanged, this, &ThickEditor::slot_widthChanged);
     connect(outline_width_slider, &SliderSet::valueChanged, this, &ThickEditor::slot_outlineWidthChanged);
     connect(outline_color_button, &QPushButton::clicked,    this, &ThickEditor::slot_outlineColor);
-    connect(join_style, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [=,this]
-            { thick->setJoinStyle(static_cast<Qt::PenJoinStyle>(join_style->currentData().toInt())); emit sig_refreshView(); } );
-    connect(cap_style,  QOverload<int>::of(&QComboBox::currentIndexChanged), this, [=,this]
-            { thick->setCapStyle(static_cast<Qt::PenCapStyle>(cap_style->currentData().toInt())); emit sig_refreshView(); } );
+    connect(join_style,           QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ThickEditor::slot_joinStyle);
+    connect(cap_style,             QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ThickEditor::slot_capStyle);
+}
+
+void ThickEditor::slot_joinStyle(int index)
+{
+    Q_UNUSED(index);
+    thick->setJoinStyle(static_cast<Qt::PenJoinStyle>(join_style->currentData().toInt()));
+    emit sig_refreshView();
+}
+
+void ThickEditor::slot_capStyle(int index)
+{
+    Q_UNUSED(index);
+    thick->setCapStyle(static_cast<Qt::PenCapStyle>(cap_style->currentData().toInt()));
+    emit sig_refreshView();
 }
 
 void  ThickEditor::slot_widthChanged(int width)

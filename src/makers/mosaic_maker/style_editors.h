@@ -89,6 +89,8 @@ public:
     void  slot_widthChanged(int width);
     void  slot_outlineWidthChanged(int width);
     void  slot_outlineColor();
+    void  slot_joinStyle(int index);
+    void  slot_capStyle(int index);
 
 private:
     Thick            * thick;

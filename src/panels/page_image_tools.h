@@ -97,6 +97,7 @@ private slots:
     void    slot_mediaBChanged();
     void    slot_nextImage();
     void    slot_quitImageCycle();
+    void    slot_cycleId(int);
 
 protected:
     QGroupBox   * createCycleGenBox();

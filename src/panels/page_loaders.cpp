@@ -225,9 +225,9 @@ void page_loaders::makeConnections()
     connect(theApp,         &TiledPatternMaker::sig_workListChanged,this,   &page_loaders::loadMosaicCombo);
 
     connect(pbLoadXML,      &QPushButton::clicked,                  this,   &page_loaders::loadXML);
-    connect(pbLoadTiling,   &QPushButton::clicked,                  this,   [=,this]  { loadTiling(TILM_LOAD_SINGLE); });
-    connect(pbTilingLoadModify, &QPushButton::clicked,              this,   [=,this]  { loadTiling(TILM_RELOAD); });
-    connect(pbTilingLoadMulti,  &QPushButton::clicked,              this,   [=,this]  { loadTiling(TILM_LOAD_MULTI); });
+    connect(pbLoadTiling,   &QPushButton::clicked,                  this,   &page_loaders::slot_loadTiling);
+    connect(pbTilingLoadModify, &QPushButton::clicked,              this,   &page_loaders::slot_loadTilingModify);
+    connect(pbTilingLoadMulti,  &QPushButton::clicked,              this,   &page_loaders::slot_loadTilingMulti);
     connect(pbLoadShapes,   &QPushButton::clicked,                  this,   &page_loaders::loadShapes);
     connect(mosaicFilter,   &QLineEdit::textEdited,                 this,   &page_loaders::slot_mosaicFilter);
     connect(tilingFilter,   &QLineEdit::textEdited,                 this,   &page_loaders::slot_tilingFilter);
@@ -257,7 +257,7 @@ void page_loaders::makeConnections()
     connect(mosaicList,     SIGNAL(leftDoubleClick(QPoint)),        this,   SLOT(loadXML()));
     connect(mosaicList,     SIGNAL(listEnter()),                    this,   SLOT(loadXML()));
 
-    connect(tileList,       &LoaderListWidget::leftDoubleClick,     this,   [=,this] { loadTiling(TILM_LOAD_SINGLE);});
+    connect(tileList,       &LoaderListWidget::leftDoubleClick,     this,   &page_loaders::slot_loadTiling);
     connect(tileList,       &QListWidget::currentItemChanged,       this,   &page_loaders::tilingSelected);
     connect(tileList,       &QListWidget::itemClicked,              this,   &page_loaders::tilingClicked);
     connect(tileList,       SIGNAL(rightClick(QPoint)),             this,   SLOT(tileRightClick(QPoint)));
@@ -404,6 +404,21 @@ void page_loaders::loadShapes()
        panel->selectViewer(VIEW_DESIGN);
     }
     emit sig_refreshView();
+}
+
+void page_loaders::slot_loadTiling()
+{
+    loadTiling(TILM_LOAD_SINGLE);
+}
+
+void page_loaders::slot_loadTilingModify()
+{
+    loadTiling(TILM_RELOAD);
+}
+
+void page_loaders::slot_loadTilingMulti()
+{
+    loadTiling(TILM_LOAD_MULTI);
 }
 
 void page_loaders::slot_mosaicLoaded(QString name)

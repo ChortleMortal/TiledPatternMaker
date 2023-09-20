@@ -180,8 +180,8 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,"M
     connect(pbCombine,          &QPushButton::clicked,                  this,   &page_motif_maker::slot_combine);
     connect(chkMulti,           &QCheckBox::clicked,                    this,   &page_motif_maker::multiClicked);
     connect(prototypeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &page_motif_maker::slot_prototypeSelected);
-    connect(rEnlarge,           &QRadioButton::clicked,                 this,   [=,this] { config->motifEnlarge = true;  view->update(); });
-    connect(rActual ,           &QRadioButton::clicked,                 this,   [=,this] { config->motifEnlarge = false; view->update(); });
+    connect(rEnlarge,           &QRadioButton::clicked,                 this,   &page_motif_maker::slot_enlarge);
+    connect(rActual ,           &QRadioButton::clicked,                 this,   &page_motif_maker::slot_actual);
     connect(widthSpin,          &SpinSet::valueChanged,                 this,   &page_motif_maker::slot_widthChanged);
 }
 
@@ -471,5 +471,19 @@ void page_motif_maker::slot_prototypeSelected(int row)
 void page_motif_maker::slot_widthChanged(int val)
 {
     config->motifViewWidth = qreal(val);
+    view->update();
+}
+
+void page_motif_maker::slot_enlarge(bool checked)
+{
+    Q_UNUSED(checked);
+    config->motifEnlarge = true;
+    view->update();
+}
+
+void page_motif_maker::slot_actual(bool checked)
+{
+    Q_UNUSED(checked);
+    config->motifEnlarge = false;
     view->update();
 }

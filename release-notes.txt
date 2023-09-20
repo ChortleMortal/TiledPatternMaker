@@ -1,5 +1,13 @@
-Version 3.3
+Version 3.3.1
 =============
+
+Fixes:
+    Mosiacs:            fixes FillData repetition bugd introduced in version 2.6 for some original mosaics
+    Loaders             fixes possible crash in debug builds
+    Builds              fixes some builds using qt 5.15.2 and early versions of qt6
+
+Version 3.3
+===========
 
 This version built and tested with Qt versions 6.5.2 and 5.15.2 with
 both cmake ansd qmake using QtCreator on Windows and Linux systems

@@ -37,6 +37,8 @@ private slots:
     void    slot_rebuildMotif();
     void    slot_prototypeSelected(int row);
     void    slot_widthChanged(int val);
+    void    slot_enlarge(bool checked);
+    void    slot_actual(bool checked);
 
 protected:
     void    loadProtoCombo();

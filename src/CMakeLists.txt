@@ -12,10 +12,8 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
-find_package(QT NAMES Qt6 Qt5 COMPONENTS Svg REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Svg REQUIRED)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Svg Concurrent)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Svg Concurrent)
 
 set(PROJECT_SOURCES
     enums/eborder.cpp
@@ -486,21 +484,16 @@ qt_add_resources(PROJECT_SOURCES tpm.qrc)
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     set(CMAKE_UNITY_BUILD ON)
-    if (WIN32)
-        qt_add_executable(TiledPatternMaker WIN32 MANUAL_FINALIZATION ${PROJECT_SOURCES} icon.rc)
-    else()
         qt_add_executable(TiledPatternMaker MANUAL_FINALIZATION ${PROJECT_SOURCES} icon.rc)
-    endif()
-else()
-    if (WIN32)
-        add_executable(TiledPatternMaker  WIN32 ${PROJECT_SOURCES} icon.rc)
     else()
         add_executable(TiledPatternMaker  ${PROJECT_SOURCES} icon.rc)
     endif()
-endif()
 
-target_link_libraries(TiledPatternMaker PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
-target_link_libraries(TiledPatternMaker PRIVATE Qt${QT_VERSION_MAJOR}::Svg)
+target_link_libraries(TiledPatternMaker PRIVATE
+    Qt${QT_VERSION_MAJOR}::Widgets
+    Qt${QT_VERSION_MAJOR}::Svg
+    Qt${QT_VERSION_MAJOR}::Concurrent
+)
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_finalize_executable(TiledPatternMaker)

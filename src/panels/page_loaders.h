@@ -49,6 +49,9 @@ private slots:
     void    slot_mosaicItemEnteredToolTip(QListWidgetItem * item);
 
     void    loadShapes();
+    void    slot_loadTiling();
+    void    slot_loadTilingModify();
+    void    slot_loadTilingMulti();
 
 
     void    loadXML();
