@@ -32,10 +32,9 @@ DCEL::DCEL(MapPtr map)
 
     vertices    = map->vertices;
     edges       = map->edges;
-    nMap        = map->getNeighbourMap();   // do this first before half-edges are added
     qDebug().noquote() << "DECL imported" << summary();
 
-    buildDCEL();
+    buildDCEL(map.get());
 
     qreal time    = timer.elapsed();
     double qdelta = time /1000.0;
@@ -84,7 +83,7 @@ VertexPtr DCEL::validAdjacent(const VertexPtr & vert)
 
     int good = 0;
     VertexPtr valid_v;
-    for (const auto & v : qAsConst(vert->adjacent_vertices))
+    for (const auto & v : std::as_const(vert->adjacent_vertices))
     {
         if (!valid_v)
             valid_v = v.lock();    // first good one
@@ -115,9 +114,9 @@ int DCEL::vertexIndex(const VertexPtr & v)
     return -1;
 }
 
-EdgePtr DCEL::findEdge(const VertexPtr &start , const VertexPtr&  end, bool expected)
+EdgePtr DCEL::findEdge(Map * map, const VertexPtr &start , const VertexPtr&  end, bool expected)
 {
-    NeighboursPtr np = nMap->getNeighbours(start);
+    NeighboursPtr np = map->getNeighbours(start);
     for (WeakEdgePtr & wep : *np)
     {
         EdgePtr edge = wep.lock();
@@ -171,7 +170,7 @@ void DCEL::print_vertices()
 
     deb << endl << "********** VertexPtrTable ***********" << endl;
     deb << "Vertex" << " Coordinates " << "Incident Edge " << endl;
-    for (auto & v : qAsConst(vertices))
+    for (auto & v : std::as_const(vertices))
     {
         deb << vertexIndex(v) << "\t(" << v->pt.x() << " , " << v->pt.y() << ")" << endl; ;
     }
@@ -184,7 +183,7 @@ void DCEL::print_edges()
     QDebug  deb(&astring);
 
     deb << endl << "********** Edges  **********" << endl;
-    for (auto & edge : qAsConst(edges))
+    for (auto & edge : std::as_const(edges))
     {
         print_edge_detail(edge, "E ", deb);
     }
@@ -198,7 +197,7 @@ void DCEL::print_ordered_edges()
 
     deb << endl << "********** Ordered Edges  **********" << endl;
     deb << "Half-edge\tTwin\t\tIncident_Face Next\tPrevious" << endl;
-    for (const auto & edge : edges)
+    for (const auto & edge : std::as_const(edges))
     {
         print_edge(edge,deb);
         print_edge(edge->twin.lock(),deb);
@@ -228,7 +227,7 @@ void DCEL::print_faces()
 
     deb <<endl << "*************** Face_Table **************" << endl;
     deb << "Face\t Size\t\tEdges" << endl;
-    for (auto & aface : qAsConst(faces))
+    for (auto & aface : std::as_const(faces))
     {
         deb << "F" << faceIndex(aface);
         if (aface->outer)
@@ -263,12 +262,12 @@ void DCEL::print_adj()
     QDebug  deb(&astring);
 
     deb << endl << "************ Adjacent Vertices *****" << endl;
-    for (auto & v : qAsConst(vertices))
+    for (auto & v : std::as_const(vertices))
     {
         deb << "vertex:" << vertexIndex(v) << "count:" << v->adjacent_vertices.size() << " : ";
         if (v->adjacent_vertices.size())
         {
-            for (auto & v2 : qAsConst(v->adjacent_vertices))
+            for (auto & v2 : std::as_const(v->adjacent_vertices))
             {
                 deb << vertexIndex(v2.lock()) << " ";
             }
@@ -288,7 +287,7 @@ void DCEL::print_faces_with_area_lessthan_threshhold(double threshhold_area)
     QDebug  deb(&astring);
 
     deb << endl << "************ Faces smaller than" << threshhold_area << " *****" << endl;
-    for (auto & face : qAsConst(faces))
+    for (auto & face : std::as_const(faces))
     {
         double area = face->area;
         if (area < threshhold_area && area > 0)
@@ -333,7 +332,7 @@ void DCEL::print_neighbouring_faces(const EdgePtr &edge)
         nedge = nedge->next.lock();
     }
 
-    for (auto & f : neighbours)
+    for (auto & f : std::as_const(neighbours))
     {
         deb << "F" << faceIndex(f);
         if (f->outer)
@@ -374,12 +373,12 @@ QString DCEL::summary() const
     return QString("vertices=%1 edges=%2 faces=%3").arg(vertices.size()).arg(edges.size()).arg(faces.size());
 }
 
-void DCEL::buildDCEL()
+void DCEL::buildDCEL(Map * map)
 {
     // fill half edges
     QVector<EdgePtr> additions(edges.size());
     int i=0;
-    for (const auto & e : edges)
+    for (const auto & e : std::as_const(edges))
     {
         // the map may be used to create many dcels
         e->dvisited = false;
@@ -402,7 +401,7 @@ void DCEL::buildDCEL()
     edges.append(additions);
     qDebug().noquote() << "DCEL loaded";
 
-    fill_half_edge_table();
+    fill_half_edge_table(map);
     qDebug() << "DCEL: half edge table filled";
 
     fill_half_edge_faces();
@@ -411,13 +410,13 @@ void DCEL::buildDCEL()
     fill_face_table_inner_components();
 }
 
-void DCEL::fill_half_edge_table()
+void DCEL::fill_half_edge_table(Map * map)
 {
     qDebug().noquote() << "start fill_half_edge_table() edges =" << edges.size();
 
     //int index = 0;
     QVector<EdgePtr> deletions;
-    for (const auto & edge : qAsConst(edges))
+    for (const auto & edge : std::as_const(edges))
     {
         //qDebug() << "dcel index" << index++;
         if (!edge->dvisited)
@@ -426,7 +425,7 @@ void DCEL::fill_half_edge_table()
 
             EdgePtr current = edge;
             EdgePtr next;
-            while ((next = next_half_edge(current)) != edge)
+            while ((next = next_half_edge(map,current)) != edge)
             {
                 if (!next)
                 {
@@ -441,7 +440,7 @@ void DCEL::fill_half_edge_table()
         }
     }
 
-    for (auto &  edge2 : qAsConst(deletions))
+    for (auto &  edge2 : std::as_const(deletions))
     {
         EdgePtr edget = edge2->twin.lock();
         edges.removeAll(edge2);
@@ -451,7 +450,7 @@ void DCEL::fill_half_edge_table()
     qDebug().noquote() << "end fill_half_edge_table() edges =" << edges.size();
 }
 
-EdgePtr DCEL::next_half_edge(const EdgePtr &current)
+EdgePtr DCEL::next_half_edge(Map * map, const EdgePtr &current)
 {
     double max_angle = 0;
 
@@ -461,7 +460,7 @@ EdgePtr DCEL::next_half_edge(const EdgePtr &current)
     QPointF p2      = end->pt;
 
     VertexPtr next_vertex;
-    for (const auto & wv : qAsConst(end->adjacent_vertices))
+    for (const auto & wv : std::as_const(end->adjacent_vertices))
     {
         VertexPtr v = wv.lock();
         if (v == end)
@@ -480,7 +479,7 @@ EdgePtr DCEL::next_half_edge(const EdgePtr &current)
     }
     if (next_vertex)
     {
-        return findEdge(end, next_vertex,true);
+        return findEdge(map, end, next_vertex,true);
     }
     else
     {
@@ -491,12 +490,12 @@ EdgePtr DCEL::next_half_edge(const EdgePtr &current)
 
 void DCEL::fill_half_edge_faces()
 {
-    for (const auto & e :qAsConst(edges))
+    for (const auto & e : std::as_const(edges))
     {
         e->dvisited = false;
     }
 
-    for (const auto & edge : qAsConst(edges))
+    for (const auto & edge : std::as_const(edges))
     {
         if (edge->dvisited)
         {
@@ -510,6 +509,8 @@ void DCEL::fill_half_edge_faces()
         }
         createFace(edge);
     }
+
+    faces.sortByPositon();
 }
 
 void DCEL::createFace(const EdgePtr & head)
@@ -556,7 +557,7 @@ void DCEL::createFace(const EdgePtr & head)
 
 void DCEL::fill_face_table_inner_components()
 {
-    for (const auto & hedge : qAsConst(edges))
+    for (const auto & hedge : std::as_const(edges))
     {
         EdgePtr edge = hedge;
         if (edge->incident_face.lock())
@@ -609,7 +610,7 @@ FacePtr DCEL::check_if_inside(const QVector<VertexPtr> & verts)
 
     FacePtr insideFace;
 
-    for (auto & aface : qAsConst(faces))
+    for (auto & aface : std::as_const(faces))
     {
         EdgePtr edge = aface->incident_edge.lock();
         if (!edge)
@@ -647,7 +648,7 @@ FacePtr DCEL::check_if_inside(const QVector<VertexPtr> & verts)
 
 FacePtr DCEL::findOuterFace()
 {
-    for (const auto & face : faces)
+    for (const auto & face : std::as_const(faces))
     {
         if (face->outer)
         {
@@ -785,4 +786,5 @@ double DCEL::angle(const QPointF &p1, const QPointF &p2, const QPointF &p3)
     double result = atan2(det, dot);
     return ((result < 0) ? (result * 180 / 3.141592) + 360 : (result * 180 / 3.141592));
 }
+
 

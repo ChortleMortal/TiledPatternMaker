@@ -2,7 +2,7 @@
 #include "style/outline.h"
 #include "geometry/map.h"
 #include "geometry/neighbours.h"
-#include "geometry/point.h"
+#include "geometry/geo.h"
 #include "geometry/transform.h"
 #include "geometry/vertex.h"
 #include "misc/geo_graphics.h"
@@ -56,7 +56,7 @@ void Outline::draw(GeoGraphics *gg)
     }
 
 #ifdef DEBUG_NO_CURVES
-    for (auto & bae : pts4)
+    for (auto & bae : std::as_const(pts4))
     {
         QColor color  = colors.getNextColor().color;
 
@@ -118,7 +118,6 @@ void Outline::draw(GeoGraphics *gg)
 void Outline::resetStyleRepresentation()
 {
     pts4.clear();
-    resetStyleMap();
 }
 
 void Outline::createStyleRepresentation()
@@ -130,7 +129,7 @@ void Outline::createStyleRepresentation()
         return;
     }
 
-    MapPtr map = getMap();
+    MapPtr map = getProtoMap();
 
 #ifdef DEBUG_BAE
     qDebug() << "gen outline bae";
@@ -139,7 +138,7 @@ void Outline::createStyleRepresentation()
     auto iBad = 0;
 #endif
 
-    for (auto & edge : qAsConst(map->getEdges()))
+    for (auto & edge : std::as_const(map->getEdges()))
     {
 #ifdef DEBUG_BAE
         qDebug().noquote() << iEdge << edge->dump();
@@ -197,8 +196,8 @@ BelowAndAbove Outline::getPoints(const MapPtr & map, const EdgePtr & edge, const
     QPointF toP   = toV->pt;
 
     QPointF dir   = toP - fromP;
-    Point::normalizeD(dir);
-    QPointF perp = Point::perp(dir);
+    Geo::normalizeD(dir);
+    QPointF perp = Geo::perp(dir);
 
     BelowAndAbove ret;
 
@@ -226,7 +225,7 @@ BelowAndAbove Outline::getPoints(const MapPtr & map, const EdgePtr & edge, const
         else
         {
             ret.below = jp;
-            ret.above = Point::convexSum(jp, toP, 2.0);
+            ret.above = Geo::convexSum(jp, toP, 2.0);
         }
     }
     else
@@ -262,7 +261,7 @@ BelowAndAbove Outline::getPoints(const MapPtr & map, const EdgePtr & edge, const
 // reflecting the point returned by this function through the joint.
 QPointF  Outline::getJoinPoint(QPointF joint, QPointF from, QPointF to, qreal qwidth )
 {
-    qreal theta = Point::sweep(joint, from, to);
+    qreal theta = Geo::sweep(joint, from, to);
 
     if (Loose::zero(theta) ||qAbs(theta - M_PI) < 1e-7)
     {
@@ -270,9 +269,9 @@ QPointF  Outline::getJoinPoint(QPointF joint, QPointF from, QPointF to, qreal qw
     }
 
     QPointF d1 = joint - from;
-    Point::normalizeD(d1);
+    Geo::normalizeD(d1);
     QPointF d2 = joint - to;
-    Point::normalizeD(d2);
+    Geo::normalizeD(d2);
 
     qreal l   = qwidth / qSin(theta);
     qreal isx = joint.x() - ((d1.x() + d2.x()) * l);

@@ -101,10 +101,9 @@ bool DELSelectorWidget::eventFilter(QObject *watched, QEvent *event)
         if (fb)
         {
             qDebug() << "MotifSelector::eventFilter - found button";
-            for (auto it = buttons.begin(); it != buttons.end(); it++)
+            for (auto & btn : std::as_const(buttons))
             {
-                DELBtnPtr fbp = *it;
-                if (fbp.get() == fb)
+                if (btn.get() == fb)
                 {
                     bool add = config->motifMultiView;
                     Qt::KeyboardModifiers kms =  QApplication::keyboardModifiers();
@@ -118,7 +117,7 @@ bool DELSelectorWidget::eventFilter(QObject *watched, QEvent *event)
                         set = false;
                     }
                     // this performs complete delegation of maker
-                    maker->delegate(fbp,add,set);
+                    maker->delegate(btn,add,set);
                     break;
                 }
             }
@@ -137,7 +136,7 @@ void DELSelectorWidget::delegate(DELBtnPtr btn, bool add, bool set)
     // selection
     if (!add)
     {
-        for (auto btn : buttons)
+        for (auto & btn : std::as_const(buttons))
         {
             btn->setSelection(false);
         }
@@ -161,8 +160,7 @@ void DELSelectorWidget::delegate(DELBtnPtr btn, bool add, bool set)
 
 DELBtnPtr DELSelectorWidget::getButton(DesignElementPtr del)
 {
-    auto dels =  protoMakerData->getSelectedDELs(MVD_DELEM);
-    for (auto btn : buttons)
+    for (auto & btn : std::as_const(buttons))
     {
         if (del == btn->getDesignElement())
         {
@@ -174,7 +172,7 @@ DELBtnPtr DELSelectorWidget::getButton(DesignElementPtr del)
 
 void DELSelectorWidget::tallyButtons()
 {
-    for (auto & btn : buttons)
+    for (auto & btn : std::as_const(buttons))
     {
         auto del = btn->getDesignElement();
         QString str;

@@ -9,7 +9,6 @@
 #include "makers/tiling_maker/tiling_maker.h"
 #include "mosaic/mosaic.h"
 #include "makers/prototype_maker/prototype.h"
-#include "settings/model_settings.h"
 #include "style/emboss.h"
 #include "style/filled.h"
 #include "style/interlace.h"
@@ -18,7 +17,7 @@
 #include "style/thick.h"
 #include "style/tile_colors.h"
 #include "tile/tiling.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
 #include "widgets/layout_sliderset.h"
 #include "panels/panel_misc.h"
 #include "widgets/dlg_cleanse.h"
@@ -29,7 +28,7 @@ typedef std::weak_ptr<Mosaic>          WeakMosaicPtr;
 
 using std::make_shared;
 
-page_mosaic_maker:: page_mosaic_maker(ControlPanel * apanel)  : panel_page(apanel,"Mosaic Maker")
+page_mosaic_maker:: page_mosaic_maker(ControlPanel * apanel)  : panel_page(apanel,PAGE_MOSIAC_MAKER,"Mosaic Maker")
 {
     styleTable = new AQTableWidget(this);
     styleTable->setColumnCount(STYLE_COL_NUM_COLS);
@@ -93,7 +92,7 @@ void  page_mosaic_maker::onRefresh()
 
         int xMin,xMax,yMin,yMax;
         bool singleton;
-        const FillData & fd = mosaic->getSettings().getFillData();
+        const FillData & fd = mosaic->getCanvasSettings().getFillData();
         fd.get(singleton,xMin ,xMax,yMin,yMax);
 
         chkSingle->setChecked(singleton);
@@ -131,12 +130,12 @@ void  page_mosaic_maker::onRefresh()
         {
             int row = 0;
             const StyleSet & sset = mosaic->getStyleSet();
-            for (auto & style : sset)
+            for (auto & style : std::as_const(sset))
             {
                 QTableWidgetItem * item = styleTable->item(row,STYLE_COL_TRANS);
                 if (item)
                 {
-                    Xform xf = style->getCanvasXform();
+                    Xform xf = style->getModelXform();
                     item->setText(xf.toInfoString(8));
                 }
                 row++;
@@ -193,7 +192,7 @@ void page_mosaic_maker::displayStyles()
         const QVector<TilingPtr> & tilings = tilingMaker->getTilings();  // this is tilings to choose from not tilings used
 
         const StyleSet & sset = mosaic->getStyleSet();
-        for (auto & style : sset)
+        for (auto & style : std::as_const(sset))
         {
             styleTable->setRowCount(row+1);
 
@@ -226,15 +225,15 @@ void page_mosaic_maker::displayStyles()
             QComboBox * qcbTiling = new QComboBox();
             styleTable->setCellWidget(row,STYLE_COL_TILING,qcbTiling);
 
-            for (auto& tiling : tilings)
+            for (auto & tiling : std::as_const(tilings))
             {
-                qcbTiling->addItem(tiling->getName());
+                qcbTiling->addItem(tiling->getTitle());
             }
 
             TilingPtr tp = style->getPrototype()->getTiling();
             if (tp)
             {
-                int index = qcbTiling->findText(tp->getName());
+                int index = qcbTiling->findText(tp->getTitle());
                 qcbTiling->setCurrentIndex(index);
             }
 
@@ -244,8 +243,8 @@ void page_mosaic_maker::displayStyles()
 
             QTableWidgetItem * xftext = new QTableWidgetItem("Xform");
             styleTable->setItem(row,STYLE_COL_TRANS,xftext);
-
-            Xform xf = style->getCanvasXform();
+            
+            Xform xf = style->getModelXform();
             xftext->setText(xf.toInfoString(8));
 
             // these three connects all pas the row not the index
@@ -522,7 +521,7 @@ void  page_mosaic_maker::slot_analyzeStyleMap()
     qDebug() << "page_mosaic_maker::slot_analyzeStyleMap()" << row;
     StylePtr style = getStyleRow(row);
     //style->setStyleMap();
-    MapPtr map = style->getMap();
+    MapPtr map = style->getProtoMap();
     if (map)
     {
         qDebug().noquote() << map->displayVertexEdgeCounts();
@@ -596,8 +595,10 @@ void page_mosaic_maker::slot_set_reps()
     FillData fd;
     fd.set(chkSingle->isChecked(),xRepMin->value(), xRepMax->value(), yRepMin->value(), yRepMax->value());
 
-    mosaic->getSettings().setFillData(fd);
-    view->setFillData(fd);
+    CanvasSettings & cs = mosaic->getCanvasSettings();
+    cs.setFillData(fd);
+
+    viewControl->getCanvas().setFillData(fd);
 
     emit sig_render();
 }
@@ -631,11 +632,13 @@ void page_mosaic_maker::singleton_changed(bool checked)
         fd.set(true,0,0,0,0);
 
     MosaicPtr mosaic = mosaicMaker->getMosaic();
-    if (!mosaic) return;
+    if (mosaic)
+    {
+        CanvasSettings & cs = mosaic->getCanvasSettings();
+        cs.setFillData(fd);
+    }
 
-    ModelSettings & settings = mosaic->getSettings();
-    settings.setFillData(fd);
-    view->setFillData(fd);
+    viewControl->getCanvas().setFillData(fd);
 
     emit sig_render();
 }

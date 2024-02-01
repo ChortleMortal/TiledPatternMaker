@@ -25,7 +25,10 @@ public:
 
     virtual void        paint(QPainter * painter) override;
     virtual void        draw(QPainter *);
-    
+
+    virtual const Xform &   getModelXform() override;
+    virtual void            setModelXform(const Xform & xf, bool update) override;
+
     void                drawMap(QPainter * painter, eMapedLayer layer, QColor color);
     void                drawDCEL(QPainter * painter);
     void                drawTile(QPainter * painter, DesignElementPtr del);
@@ -37,9 +40,6 @@ public:
     void                startMouseInteraction(QPointF spt, enum Qt::MouseButton mouseButton);
 
     QTransform          getPlacement(TilePtr tile);
-
-    virtual const Xform  & getCanvasXform() override;
-    virtual void           setCanvasXform(const Xform & xf) override;
 
     MapEditorSelection * getSelector() { return selector; }
     MapEditorDb        * getDb() { return db; }
@@ -62,8 +62,8 @@ public slots:
 
     virtual void slot_scale(int amount)  override;
     virtual void slot_rotate(int amount) override;
-    virtual void slot_moveX(int amount)  override;
-    virtual void slot_moveY(int amount)  override;
+    virtual void slot_moveX(qreal amount)  override;
+    virtual void slot_moveY(qreal amount)  override;
 
     virtual eViewType iamaLayer() override { return VIEW_MAP_EDITOR; }
     virtual void iamaLayerController() override {}
@@ -84,7 +84,6 @@ private:
 
     Configuration      * config;
 
-    Xform               xf_canvas;
     QPointF             mousePos;             // used by menu
     bool                debugMouse;
 

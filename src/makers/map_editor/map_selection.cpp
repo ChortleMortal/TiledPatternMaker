@@ -2,7 +2,7 @@
 #include "geometry/edge.h"
 #include <QDebug>
 #include "geometry/vertex.h"
-#include "misc/utilities.h"
+#include "geometry/geo.h"
 
 static bool debugInfoSelection = false;
 
@@ -165,7 +165,7 @@ Circle MapSelection::getCircle()
 QPointF MapSelection::getPointNear(MapSelectionPtr sel, QPointF pt)
 {
     Q_ASSERT(sel->getType() == MAP_LINE || sel->getType() == MAP_EDGE);
-    QPointF apt = Utils::snapTo(pt,sel->getLine());
+    QPointF apt = Geo::snapTo(pt,sel->getLine());
     return apt;
 }
 

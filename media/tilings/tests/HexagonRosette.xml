@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+<Tiling version="7">
+	<Name>HexagonRosette</Name>
+	<Fill singleton="f">-3,3,-3,3</Fill>
+	<T1>6.928203230275509,-1.77635683940025e-15</T1>
+	<T2>3.464101615137752,-6</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="regular" sides="6" rotation="30" scale="1">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>2.309401076758503</tranX>
+			<tranY>-1.165734175856414e-15</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>3.464101615137755</tranX>
+			<tranY>1.999999999999998</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>2.309401076758505</tranX>
+			<tranY>3.999999999999998</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>1.77635683940025e-15</tranX>
+			<tranY>3.999999999999999</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-1.154700538379251</tranX>
+			<tranY>1.999999999999999</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="6" rotation="30" scale="3">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>1.147949192431123</tranX>
+			<tranY>2</tranY>
+		</Placement>
+	</Tile>
+	<Desc />
+	<Auth />
+</Tiling>

@@ -8,6 +8,7 @@
 #include "misc/unique_qvector.h"
 #include "makers/prototype_maker/prototype.h"
 #include "style/style.h"
+#include "viewers/border_view.h"
 
 const QString Mosaic::defaultName =  "The Formless";
 
@@ -26,6 +27,62 @@ Mosaic::~Mosaic()
     qDebug() << "deleting mosaic:" << name;
 #endif
     refs--;
+}
+
+void Mosaic::build()
+{
+    for (auto & style : std::as_const(styleSet))
+    {
+        style->createStyleRepresentation();
+    }
+}
+
+void Mosaic::build(ViewController * vc)
+{
+    setViewController(vc);
+    build();
+}
+
+void Mosaic::setViewController(ViewController * vc)
+{
+    for (const auto & style : std::as_const(styleSet))
+    {
+        ProtoPtr pp = style->getPrototype();
+        pp->setViewController(vc);
+        style->setViewController(vc);
+    }
+}
+
+// This enginePaint is called only by MosaicBMPEngine
+void Mosaic::enginePaint(QPainter * painter)
+{
+    QVector<Layer*> layers;
+    for (auto const & style : std::as_const(styleSet))
+    {
+        layers.push_back(style.get());
+    }
+
+    std::stable_sort(layers.begin(),layers.end(),Layer::sortByZlevelP);  // tempting to move this to addLayer, but if zlevel changed would not be picked up
+
+    for (auto const & layer : std::as_const(layers))
+    {
+        painter->save();
+        layer->forceLayerRecalc(false);
+        layer->paint(painter);
+        painter->restore();
+    }
+
+    if (_border)
+    {
+        if (_border->getRequiresConversion())
+        {
+            _border->setRequiresConversion(false);
+            _border->legacy_convertToModelUnits();
+        }
+
+        BorderView::getInstance()->forceLayerRecalc(false);  // FIXME - border view should be instantiated
+        _border->draw(painter,BorderView::getInstance()->getLayerTransform());
+    }
 }
 
 void  Mosaic::addStyle(StylePtr style)
@@ -132,7 +189,7 @@ QString Mosaic::getNotes()
 QVector<ProtoPtr> Mosaic::getPrototypes()
 {
     UniqueQVector<ProtoPtr> vec;
-    for (const auto & style : styleSet)
+    for (const auto & style : std::as_const(styleSet))
     {
         ProtoPtr pp = style->getPrototype();
         vec.push_back(pp);
@@ -157,7 +214,7 @@ MapPtr Mosaic::getPrototypeMap()
 
 void Mosaic::resetStyleMaps()
 {
-    for (const auto & style : styleSet)
+    for (const auto & style : std::as_const(styleSet))
     {
         style->resetStyleRepresentation();
     }
@@ -166,7 +223,7 @@ void Mosaic::resetStyleMaps()
 void Mosaic::resetProtoMaps()
 {
     ProtoPtr nullProto;
-    for (const auto & style : styleSet)
+    for (const auto & style : std::as_const(styleSet))
     {
         auto proto = style->getPrototype();
         proto->wipeoutProtoMap();
@@ -245,7 +302,7 @@ void Mosaic::reportMotifs()
 void Mosaic::reportStyles()
 {
     qDebug() << "==== Mosaic Styles" << name;
-    for (const auto & style : styleSet)
+    for (const auto & style : std::as_const(styleSet))
     {
         style->report();
     }

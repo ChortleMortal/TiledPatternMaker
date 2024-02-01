@@ -1,6 +1,6 @@
 #include "viewers/measure_view.h"
 #include "settings/configuration.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
 #include "misc/geo_graphics.h"
 #include "geometry/vertex.h"
 #include <QDebug>
@@ -33,7 +33,6 @@ void MeasureView::releaseInstance()
 MeasureView::MeasureView(ProtoPtr pp) : Thick(pp)
 {
     config  = Configuration::getInstance();
-    view    = ViewControl::getInstance();
 
     setColor(Qt::red);
     setZValue(MEASURE_ZLEVEL);
@@ -44,11 +43,10 @@ MeasureView::~MeasureView()
 
 void MeasureView::draw(GeoGraphics * gg)
 {
-    layerPen.setColor(QColor(  0,128,  0,128));
-    layerPen.setWidth(3);
-    for (auto && mm : measurements)
+    QPen pen(QColor(0, 128, 0,128),3);
+    for (auto && mm : std::as_const(measurements))
     {
-        gg->drawLineDirect(mm->startS(), mm->endS(),layerPen);
+        gg->drawLineDirect(mm->startS(), mm->endS(),pen);
         QString msg = QString("%1 (%2)").arg(QString::number(mm->lenS(),'f',2)).arg(QString::number(mm->lenW(),'f',8));
         gg->drawText(mm->endS() + QPointF(10,0),msg);
     }

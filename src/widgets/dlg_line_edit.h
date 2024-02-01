@@ -31,7 +31,7 @@ protected slots:
     void slot_editingFinished();
 
 private:
-    class ViewControl * view;
+    class View * view;
 
     int row;
     int col;

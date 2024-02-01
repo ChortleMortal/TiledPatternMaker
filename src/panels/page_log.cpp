@@ -11,8 +11,10 @@
 #include "widgets/dlg_textedit.h"
 #include "misc/qtapplog.h"
 #include "settings/configuration.h"
+#include "misc/qtapplog.h"
+#include "misc/sys.h"
 
-page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel, "Log")
+page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_LOG, "Log")
 {
     viewingLog = true;
 
@@ -38,6 +40,7 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel, "Log")
     QPushButton * btnOptions    = new QPushButton("Options");
     QPushButton * sizePlus      = new QPushButton("+");
     QPushButton * sizeMinus     = new QPushButton("-");
+    QPushButton * btnClear      = new QPushButton("Clear");
                   search        = new QLineEdit();
                   reverseSearch = new QCheckBox("Reverse:");
     QLabel      * sLabel        = new QLabel("Search:");
@@ -52,6 +55,7 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel, "Log")
     hbox->addWidget(search);
     hbox->addWidget(reverseSearch);
     hbox->addStretch();
+    hbox->addWidget(btnClear);
     hbox->addWidget(btnOptions);
     hbox->addWidget(sizeMinus);
     hbox->addWidget(sizePlus);
@@ -62,6 +66,7 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel, "Log")
     connect(btnOptions,       &QPushButton::clicked,  this,   &page_log::slot_options);
     connect(sizePlus,         &QPushButton::clicked,  this,   &page_log::slot_sizePlus);
     connect(sizeMinus,        &QPushButton::clicked,  this,   &page_log::slot_sizeMinus);
+    connect(btnClear,         &QPushButton::clicked,  this,  [] { qtAppLog::getInstance()->clear(); });
     connect(search,           &QLineEdit::returnPressed, this,&page_log::slot_search);
 
     logText = qtAppLog::getTextEditor();     // linkage to qtAppLog
@@ -114,7 +119,7 @@ void page_log::slot_copyLog()
     QString cdt    = QDateTime::currentDateTime().toString("yy.MM.dd-hh.mm.ss");
     QString host   = QSysInfo::machineHostName();
     QString branch = panel->gitBranch;
-    QString mosaic = config->currentlyLoadedXML;
+    QString mosaic = config->lastLoadedMosaic;
     Q_ASSERT(!mosaic.contains(".xml"));
     QString name   = cdt + "-" + host;
     if (!branch.isEmpty())
@@ -205,7 +210,7 @@ void page_log::viewSaved()
     while (!str.atEnd())
     {
         QString line = str.readLine();
-        if (config->darkTheme)
+        if (Sys::isDarkTheme)
         {
             if (line.contains("Debug"))
                 savedText->setTextColor(Qt::white);

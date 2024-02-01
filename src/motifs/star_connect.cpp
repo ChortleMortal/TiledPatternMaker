@@ -17,19 +17,16 @@
 
 StarConnect::StarConnect(int nsides, qreal d, int s) : Star(nsides,d,s)
 {
-    setMotifScale(computeConnectScale());
     setMotifType(MOTIF_TYPE_CONNECT_STAR);
 }
 
 StarConnect::StarConnect(const Motif & motif, int nsides, qreal d, int s) : Star(motif, nsides,d,s)
 {
-    setMotifScale(computeConnectScale());
     setMotifType(MOTIF_TYPE_CONNECT_STAR);
 }
 
 StarConnect::StarConnect(const StarConnect & other) : Star(other)
 {
-    setMotifScale(computeConnectScale());
 }
 
 qreal StarConnect::computeConnectScale()
@@ -38,15 +35,8 @@ qreal StarConnect::computeConnectScale()
     // with rotations of same, and use the location of the intersection
     // to compute a scale factor.
 
-    setMotifScale(1.0);
-    qreal rot = getMotifRotate();      //save
-    setMotifRotate(0.0);
     Star::buildUnitMap();
-    setMotifRotate(rot);            // restore
     qreal sc = connector.computeScale(this);
-
-    resetMotifMaps();        // so unit can build
-
     return sc;
 }
 
@@ -54,35 +44,20 @@ void StarConnect::buildUnitMap()
 {
     qDebug() << "StarConnect::buildUnit";
 
-    // save
-    qreal scale = getMotifScale();
-    qreal rot   = getMotifRotate();
-    setMotifScale(1.0);
-    setMotifRotate(0.0);
+    qreal cscale = computeConnectScale();
 
-    // build Rosette
-    Star::buildUnitMap();
-    //unitMap->dump();
-
-    // restore
-    setMotifScale(scale);
-    setMotifRotate(rot);
-
-    // extend Rosette
-    connector.connectMotif(this);
-    //unitMap->dump();
+    connector.connectMotif(this,cscale);
 
     // We want the tip of the new figure to still be at (1,0).
     // To accomplish this, move the top half of the figure around
     // to lie under the bottom half.  This rebuilds the tip
     // at the correct location.
 
-    //connector.rotateHalf(unitMap);  // DAC methinks not needed
-
-    QTransform t = QTransform().rotateRadians(M_PI * don);
-    unitMap->transformMap(t);
+    unitMap->transform(QTransform().rotateRadians(M_PI * don));
 
     connector.scaleToUnit(this);
+
+    setMotifScale(1.0);
 
     unitMap->verify();
 }

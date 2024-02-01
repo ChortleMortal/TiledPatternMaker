@@ -26,10 +26,10 @@ public:
 
     void tile_rotate(int amount);
 
-    eViewType iamaLayer() override { return VIEW_DESIGN; }
+    virtual const Xform &   getModelXform() override;
+    virtual void            setModelXform(const Xform & xf, bool update) override;
 
-    virtual const Xform  & getCanvasXform() override;
-    virtual void           setCanvasXform(const Xform & xf) override;
+    eViewType iamaLayer() override { return VIEW_DESIGN; }
 
 protected:
     qreal getSLinearPos(int step, int duration);
@@ -42,8 +42,6 @@ protected:
     int     instance;
     int     row;
     int     col;
-
-    Xform   xf_canvas;
 
 private:
 };

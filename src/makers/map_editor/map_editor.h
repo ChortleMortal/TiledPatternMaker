@@ -76,7 +76,8 @@ private:
     MapEditorView         * meView;
 
     class Configuration   * config;
-    class ViewControl     * view;
+    class View            * view;
+    class ViewController     * viewControl;
     class MosaicMaker     * mosaicMaker;
     class PrototypeMaker  * prototypeMaker;
     class TilingMaker     * tilingMaker;

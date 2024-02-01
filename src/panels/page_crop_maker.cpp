@@ -1,21 +1,21 @@
 #include <QRadioButton>
 #include <QMessageBox>
 
-#include "panels/page_crop_maker.h"
 #include "geometry/crop.h"
-#include "misc/border.h"
 #include "makers/mosaic_maker/mosaic_maker.h"
-#include "mosaic/mosaic.h"
 #include "makers/prototype_maker/prototype.h"
+#include "misc/border.h"
+#include "mosaic/mosaic.h"
 #include "panels/controlpanel.h"
+#include "panels/page_crop_maker.h"
 #include "viewers/crop_view.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
 #include "widgets/crop_widget.h"
 
 using std::string;
 using std::make_shared;
 
-page_crop_maker::page_crop_maker(ControlPanel * apanel)  : panel_page(apanel,"Crop Maker")
+page_crop_maker::page_crop_maker(ControlPanel * apanel)  : panel_page(apanel,PAGE_CROP_MAKER,"Crop Maker")
 {
     cropViewer = CropViewer::getInstance();
     lockView   = false;
@@ -37,7 +37,8 @@ QHBoxLayout * page_crop_maker::createCropControls()
     // line 1
     QPushButton * pbCreate       = new QPushButton("Create Crop");
     QPushButton * pbRemove       = new QPushButton("Remove Crop");
-    QPushButton * pbFetchBorder  = new QPushButton("Fetch Border Settings");
+    QPushButton * pbFetchBorder  = new QPushButton("Fetch Border Crop");
+    QPushButton * pbReApply      = new QPushButton("Re-apply Crop");
     QCheckBox   * chkLock        = new QCheckBox("Lock View");
                   chkEmbed       = new QCheckBox("Embed Crop");
                   chkApply       = new QCheckBox("Crop Outside");
@@ -47,11 +48,11 @@ QHBoxLayout * page_crop_maker::createCropControls()
     hbox1->addWidget(chkEmbed);
     hbox1->addWidget(chkApply);
     hbox1->addWidget(chkLock);
+    hbox1->addWidget(pbReApply);
     hbox1->addStretch();
     hbox1->addWidget(pbFetchBorder);
     hbox1->addStretch();
     hbox1->addWidget(pbRemove);
-
 
     connect(pbCreate,          &QPushButton::clicked,            this, &page_crop_maker::slot_createCrop);
     connect(chkEmbed,          &QCheckBox::clicked,              this, &page_crop_maker::slot_embedCrop);
@@ -59,6 +60,7 @@ QHBoxLayout * page_crop_maker::createCropControls()
     connect(chkLock,           &QCheckBox::clicked,              this, [this](bool checked) { lockView = checked; } );
     connect(pbRemove,          &QPushButton::clicked,            this, &page_crop_maker::slot_removeCrop);
     connect(pbFetchBorder,     &QPushButton::clicked,            this, &page_crop_maker::slot_fetchBorder);
+    connect(pbReApply,         &QPushButton::clicked,            this, &page_crop_maker::slot_reApplyCrop);
 
     return hbox1;
 }
@@ -70,6 +72,8 @@ void  page_crop_maker::onRefresh()
 
 void page_crop_maker::onEnter()
 {
+    panel->pushPanelStatus("Left-click on corner to Resize - Left-click inside or on edge to Move");
+
     cropViewer->init(&cropMaker);
     if (lockView)
     {
@@ -80,6 +84,8 @@ void page_crop_maker::onEnter()
 
 void page_crop_maker::onExit()
 {
+    panel->popPanelStatus();
+
     if (!lockView)
     {
         cropViewer->setShowCrop(false);
@@ -163,6 +169,14 @@ void page_crop_maker::slot_applyCrop(bool checked)
     }
 }
 
+void page_crop_maker::slot_reApplyCrop()
+{
+    auto crop = cropMaker.getCrop();
+    mosaicMaker->getMosaic()->setCrop(crop);
+    emit sig_refreshView();
+}
+
+
 void page_crop_maker::slot_removeCrop()
 {
     cropMaker.removeCrop();
@@ -193,7 +207,7 @@ void page_crop_maker::slot_fetchBorder()
         return;
     }
 
-    CropPtr ocrop = std::static_pointer_cast<Crop>(border);
+    CropPtr ocrop = std::dynamic_pointer_cast<Crop>(border);
     CropPtr crop = make_shared<Crop>(ocrop);
     crop->transform(cropViewer->getLayerTransform().inverted());
     cropMaker.setCrop(crop);

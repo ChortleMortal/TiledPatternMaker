@@ -1,5 +1,5 @@
 #include "style/emboss.h"
-#include "geometry/point.h"
+#include "geometry/geo.h"
 #include "geometry/transform.h"
 #include "misc/geo_graphics.h"
 
@@ -62,7 +62,7 @@ void Emboss::draw(GeoGraphics * gg)
         return;
     }
 
-    for (auto & bae : pts4)
+    for (auto & bae : std::as_const(pts4))
     {
         QPolygonF poly = bae.getPoly();
         drawTrap(gg, bae.v2.v, bae.v2.above, bae.v1.below, bae.v1.v);
@@ -92,8 +92,8 @@ void Emboss::draw(GeoGraphics * gg)
 void Emboss::drawTrap(GeoGraphics * gg, QPointF a, QPointF b, QPointF c, QPointF d )
 {
     QPointF N = a - d;
-    Point::perpD(N);
-    Point::normalizeD(N);
+    Geo::perpD(N);
+    Geo::normalizeD(N);
 
     // dd is a normalized floating point value corresponding to
     // the brightness to use.

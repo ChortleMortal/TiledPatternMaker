@@ -5,17 +5,17 @@
 const QString sMapEditorMapType[] =
 {
         "Unknown",          //E2STR(MAPED_TYPE_UNKNOWN),
-        "Mosaic",           //E2STR(MAPED_LOADED_FROM_MOSIAC),
-        "Proto",            //E2STR(MAPED_LOADED_FROM_MOTIF_PROTOTYPE),
-        "Motif",            //E2STR(MAPED_LOADED_FROM_MOTIF),
-        "Tiling unit",      //E2STR(MAPED_LOADED_FROM_TILING_UNIT),
-        "Tiling",           //E2STR(MAPED_LOADED_FROM_TILING_REPEATED),
-        "File",             //E2STR(MAPED_LOADED_FROM_FILE),
-        "File motif",       //E2STR(MAPED_LOADED_FROM_FILE_MOTIF),
-        "Created",          //E2STR(MAPED_TYPE_CREATED),
-        "Composite",        //E2STR(MAPED_TYPE_COMPOSITE)
-        "Crop",             //E2STR(MAPED_TYPE_CROP)
-        "Composite Motif"   // MAPED_TYPE_COMPOSITE_MOTIF
+        "Mosaic:",           //E2STR(MAPED_LOADED_FROM_MOSIAC),
+        "Proto:",            //E2STR(MAPED_LOADED_FROM_MOTIF_PROTOTYPE),
+        "Motif:",            //E2STR(MAPED_LOADED_FROM_MOTIF),
+        "Tiling unit:",      //E2STR(MAPED_LOADED_FROM_TILING_UNIT),
+        "Tiling:",           //E2STR(MAPED_LOADED_FROM_TILING_REPEATED),
+        "File:",             //E2STR(MAPED_LOADED_FROM_FILE),
+        "File motif:",       //E2STR(MAPED_LOADED_FROM_FILE_MOTIF),
+        "Created:",          //E2STR(MAPED_TYPE_CREATED),
+        "Composite:",        //E2STR(MAPED_TYPE_COMPOSITE),
+        "Crop:",             //E2STR(MAPED_TYPE_CROP),
+        "Composite Motif:"   //E2STR(MAPED_TYPE_COMPOSITE_MOTIF)
 };
 
 const QString sMapEditorMode[] =

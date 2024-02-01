@@ -4,18 +4,21 @@
 #include "makers/prototype_maker/prototype_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "misc/utilities.h"
+#include "misc/sys.h"
 #include "panels/controlpanel.h"
 #include "settings/configuration.h"
 #include "tiledpatternmaker.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
 
-panel_page::panel_page(ControlPanel * panel,  QString name) : QWidget()
+panel_page::panel_page(ControlPanel * parent, ePanelPage page,  QString name) : QWidget()
 {
-    pageName    = name;
+    pageName        = name;
+    pageType        = page;
+    panel           = parent;
 
-    this->panel     = panel;
     config          = Configuration::getInstance();
-    view            = ViewControl::getInstance();
+    view            = Sys::view;
+    viewControl     = Sys::viewController;
     prototypeMaker  = PrototypeMaker::getInstance();
     tilingMaker     = TilingMaker::getInstance();
     mosaicMaker     = MosaicMaker::getInstance();
@@ -29,9 +32,9 @@ panel_page::panel_page(ControlPanel * panel,  QString name) : QWidget()
     setFixedWidth(PANEL_RHS_WIDTH);
     setLayout (vbox);
 
-    connect(this,   &panel_page::sig_render,     theApp,   &TiledPatternMaker::slot_render,  Qt::QueuedConnection);
-    connect(this,   &panel_page::sig_refreshView,view,     &ViewControl::slot_refreshView,   Qt::QueuedConnection);
-    connect(this,   &panel_page::sig_attachMe,   panel,    &ControlPanel::slot_reattachPage,      Qt::QueuedConnection);
+    connect(this,   &panel_page::sig_render,      theApp,     &TiledPatternMaker::slot_render,      Qt::QueuedConnection);
+    connect(this,   &panel_page::sig_refreshView, viewControl,&ViewController::slot_reconstructView,Qt::QueuedConnection);
+    connect(this,   &panel_page::sig_attachMe,    parent,     &ControlPanel::slot_reattachPage,     Qt::QueuedConnection);
 }
 
 // pressing 'x' to close detached/floating page is used to re-attach

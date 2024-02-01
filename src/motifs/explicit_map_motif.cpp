@@ -21,12 +21,12 @@ ExplicitMapMotif::ExplicitMapMotif(const Motif &other) : IrregularMotif(other)
 
 void ExplicitMapMotif::buildMotifMaps()
 {
-    Q_ASSERT(tile);
+    Q_ASSERT(getTile());
     Q_ASSERT(explicitMap);
     motifMap = explicitMap->recreate();
-    completeMotif(tile);
+    scaleAndRotate();
     completeMap();
-    buildMotifBoundary(tile);
+    buildMotifBoundary();
     buildExtendedBoundary();
 }
 

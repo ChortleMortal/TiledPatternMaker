@@ -8,8 +8,11 @@
 //
 // The edge component of the planar map abstraction.
 
+#include <QPointF>
+#include <QLineF>
+
 #include "enums/edgetype.h"
-#include "geometry/loose.h"
+#include "misc/sys.h"
 
 typedef std::shared_ptr<class Vertex>       VertexPtr;
 typedef std::shared_ptr<class Edge>         EdgePtr;
@@ -73,9 +76,9 @@ public:
     void      setSwapState(bool swap) { isSwapped = swap; }
     bool      getSwapState()          { return isSwapped; }
 
-    bool      isTrivial(qreal tolerance = Loose::TOL);
-    bool      isColinearAndTouching(const EdgePtr & e, qreal tolerance = Loose::NEAR_TOL);
-    bool      isColinear(const EdgePtr & e, qreal tolerance = Loose::NEAR_TOL);
+    bool      isTrivial(qreal tolerance = Sys::TOL);
+    bool      isColinearAndTouching(const EdgePtr & e, qreal tolerance = Sys::NEAR_TOL);
+    bool      isColinear(const EdgePtr & e, qreal tolerance = Sys::NEAR_TOL);
 
     bool      contains(const VertexPtr & v);
     bool      sameAs(const EdgePtr & other);

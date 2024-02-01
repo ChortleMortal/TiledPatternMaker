@@ -47,9 +47,8 @@ DlgListSelect::DlgListSelect(QStringList files, QWidget *parent) : QDialog(paren
     connect(cancelBtn, &QPushButton::clicked, this, &QDialog::reject);
     connect(okBtn,     &QPushButton::clicked, this, &QDialog::accept);
 
-    for (auto it = files.begin(); it != files.end(); it++)
+    for (auto & file : std::as_const(files))
     {
-        QString file = *it;
         QListWidgetItem * item = new QListWidgetItem(file);
         list->addItem(item);
     }
@@ -166,9 +165,8 @@ void GirihListSelect::whereUsed()
 bool GirihListSelect::isUsed(QString girihname, QStringList & results)
 {
     QStringList tilings = FileServices::getTilingFiles();
-    for (auto it = tilings.begin(); it != tilings.end(); it++)
+    for (auto & tile : std::as_const(tilings))
     {
-        QString tile = *it;
         if (containsGirih(girihname,tile))
         {
             results << tile;
@@ -214,9 +212,8 @@ QStringList GirihListSelect::getSelected()
 {
     QList<QListWidgetItem *> alist = list->selectedItems();
     QStringList blist;
-    for (auto it = alist.begin(); it != alist.end(); it++)
+    for (auto qlwi : std::as_const(alist))
     {
-        QListWidgetItem * qlwi = *it;
         QString name = qlwi->text();
         blist.push_back(name);
     }

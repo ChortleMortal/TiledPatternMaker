@@ -11,15 +11,16 @@ public:
     MapEditorMapLoader();
     ~MapEditorMapLoader();
 
-    MapPtr    loadMosaicMap(QString fileName);
+    MapPtr              loadMosaicMap(QString fileName);
 
-    Xform             getXform () { return _xf; }
-    eMapEditorMapType getType()  { return maptype; }
+    Xform               getXform ()     { return _xf; }
+    eMapEditorMapType   getType()       { return maptype; }
+    QSize               getViewSize()   { return _viewSize; }
+    BkgdImagePtr        getBackground() { return _bip; }
 
 private:
-    Xform             _xf;
-    eMapEditorMapType maptype;
-
+    Xform               _xf;
+    eMapEditorMapType   maptype;
 };
 
 #endif

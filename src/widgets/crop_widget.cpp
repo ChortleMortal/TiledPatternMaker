@@ -4,6 +4,7 @@
 #include "widgets/layout_sliderset.h"
 #include "enums/eborder.h"
 #include "geometry/crop.h"
+#include "misc/sys.h"
 
 #include <QVBoxLayout>
 #include <QRadioButton>
@@ -23,8 +24,8 @@ QLayout * CropWidget::createLayout()
 {
     QRadioButton * undefinedBtn = new QRadioButton("No Crop");
     QRadioButton * rectBtn      = new QRadioButton("Rectangular Crop");
-    rectLayoutW                 = new LayoutQRectF("Model units:", 8, 0.01);
-    rectLayoutS                 = new LayoutQRectF("ScreenUnits:", 8,1.0);
+    rectLayoutW                 = new LayoutQRectF("Model  units", 8, 0.01);
+    rectLayoutS                 = new LayoutQRectF("Screen units", 8,1.0);
 
     QHBoxLayout * rectW = new QHBoxLayout;
     rectW->addSpacing(21);
@@ -101,7 +102,7 @@ QHBoxLayout * CropWidget::createAspectLayout()
     QRadioButton *  rad_unc   = new QRadioButton("Free");
     QRadioButton *  rad_one   = new QRadioButton(QString("1:1"));
     QString str(3,'1');
-    str[1] = MathSymbolSquareRoot;
+    str[1] = Sys::MathSymbolSquareRoot;
     str[2] = '2' ;
     QRadioButton *  rad_two   = new QRadioButton(str);
     str[2] = '3' ;

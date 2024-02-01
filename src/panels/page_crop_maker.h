@@ -26,6 +26,7 @@ private slots:
     void slot_createCrop();
     void slot_embedCrop(bool checked);
     void slot_applyCrop(bool checked);
+    void slot_reApplyCrop();
     void slot_removeCrop();
     void slot_fetchBorder();
 

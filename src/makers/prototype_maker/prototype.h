@@ -4,12 +4,14 @@
 
 #include <QString>
 #include <QTransform>
+#include <QMutex>
 #include <QMetaType>
 #if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
 #include <memory>
 #endif
 
 typedef std::shared_ptr<class Crop>             CropPtr;
+typedef std::shared_ptr<class DCEL>             DCELPtr;
 typedef std::shared_ptr<class Tiling>           TilingPtr;
 typedef std::shared_ptr<class Map>              MapPtr;
 typedef std::shared_ptr<class Tile>             TilePtr;
@@ -18,6 +20,8 @@ typedef std::shared_ptr<class DesignElement>    DesignElementPtr;
 
 typedef std::weak_ptr<class Prototype> WeakProtoPtr;
 Q_DECLARE_METATYPE(WeakProtoPtr)
+
+class ViewController;
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -42,11 +46,13 @@ public:
 
     bool    operator==(const Prototype & other);
 
-    void    createProtoMap(bool splash = true);
+    void    createProtoMap();
     void    wipeoutProtoMap();
 
-    MapPtr  getProtoMap(bool splash = true);
+    MapPtr  getProtoMap();
     MapPtr  getExistingProtoMap() { return _protoMap; }
+
+    DCELPtr getDCEL();
 
     void    replaceTiling(const TilingPtr & newTiling);
     void    addElement(const DesignElementPtr & element);
@@ -72,6 +78,8 @@ public:
     void    resetCrop();
     CropPtr getCrop() { return _crop; }
 
+    void    setViewController(ViewController * vc) { viewController = vc; }
+
     void    walk();
     void    dump();
     void    reportMotifs();
@@ -87,8 +95,14 @@ private:
     QVector<DesignElementPtr>   designElements;
     MapPtr                      _protoMap;
     CropPtr                     _crop;
+    DCELPtr                     _dcel;
 
     class ControlPanel        * panel;
+    class Configuration       * config;
+    class ViewController      * viewController;
+
+    QMutex                      dcelMutex;
+    QMutex                      protoMutex;
 };
 
 #endif

@@ -1,6 +1,7 @@
 #include <QtMath>
 #include "motifs/intersect_motif.h"
 #include "tile/tile.h"
+#include "geometry/geo.h"
 #include "geometry/map.h"
 #include "geometry/intersect.h"
 
@@ -23,19 +24,19 @@ IntersectMotif::IntersectMotif(const Motif &other) : IrregularGirihBranches(othe
 
 void IntersectMotif::buildMotifMaps()
 {
-    Q_ASSERT(tile);
+    Q_ASSERT(getTile());
     motifMap = std::make_shared<Map>("Intersect Motifmap");
     if (progressive)
-        inferIntersectProgressive(tile);
+        inferIntersectProgressive();
     else
-        inferIntersect(tile);
-    completeMotif(tile);
+        inferIntersect();
+    scaleAndRotate();
     completeMap();
-    buildMotifBoundary(tile);
+    buildMotifBoundary();
     buildExtendedBoundary();
 }
 
-void IntersectMotif::inferIntersect(TilePtr tile)
+void IntersectMotif::inferIntersect()
 {
     qDebug() << "Infer::inferIntersect";
 
@@ -59,8 +60,8 @@ void IntersectMotif::inferIntersect(TilePtr tile)
     mids          = pmain->getTileMidPoints();
     corners       = pmain->getTransformedPoints();
 #else
-    corners = tile->getPoints();
-    mids    = tile->getEdgePoly().getMids();
+    corners = getTile()->getPoints();
+    mids    = getTile()->getEdgePoly().getMids();
 #endif
     // Accumulate all edge intersections and their length.
     QList<EdgesLenPtr> infos;
@@ -85,7 +86,7 @@ void IntersectMotif::inferIntersect(TilePtr tile)
         infos.append(buildIntersectEdgesLengthInfos(side, sideHalf, false, requiredRotation));
     }
 
-    for (auto & info : infos)
+    for (auto & info : std::as_const(infos))
     {
         if (debugMap && info->side1 == 0)
         {
@@ -95,7 +96,7 @@ void IntersectMotif::inferIntersect(TilePtr tile)
 
     // Sort edge-to-edge intersection by their total length.
     QMultiMap<qreal,EdgesLenPtr> sortMap;
-    for (auto & info : infos)
+    for (auto & info : std::as_const(infos))
     {
         sortMap.insert(info->dist2,info);   // insert is sorted on key
     }
@@ -112,7 +113,7 @@ void IntersectMotif::inferIntersect(TilePtr tile)
     }
 
     // Build the map using the shortest edges first.
-    for (auto info : infos)
+    for (auto & info : std::as_const(infos))
     {
         info->dump();
         int side1   = info->side1;
@@ -141,10 +142,10 @@ void IntersectMotif::inferIntersect(TilePtr tile)
      motifMap->transformMap(pmain->getTransform().inverted() );
     if (debug) debugMap->transformMap(pmain->getTransform().inverted() );
 #endif
-    qDebug().noquote() << motifMap->namedSummary();
+    qDebug().noquote() << motifMap->summary();
 }
 
-void IntersectMotif::inferIntersectProgressive(TilePtr tile)
+void IntersectMotif::inferIntersectProgressive()
 {
     qDebug() << "Infer::inferIntersectProgressive";
 
@@ -164,8 +165,8 @@ void IntersectMotif::inferIntersectProgressive(TilePtr tile)
     QPolygonF mids    = pmain->getTileMidPoints();
     QPolygonF corners = pmain->getTransformedPoints();
 #else
-    corners = tile->getPoints();
-    mids    = tile->getEdgePoly().getMids();
+    corners = getTile()->getPoints();
+    mids    = getTile()->getEdgePoly().getMids();
 #endif
 
     int side_count = mids.size();
@@ -204,7 +205,7 @@ void IntersectMotif::inferIntersectProgressive(TilePtr tile)
 #if 0
     motifMap->transformMap(pmain->getTransform().inverted());
 #endif
-    qDebug().noquote() << motifMap->namedSummary();
+    qDebug().noquote() << motifMap->summary();
 }
 
 // Intersect inferring.
@@ -244,10 +245,10 @@ QList<EdgesLenPtr> IntersectMotif::buildIntersectEdgesLengthInfos(int side, QPoi
             if (!Intersect::getIntersection( otherMidPoint, otherSide, sideMidPoint, sideHalf,intersection))
             {
                 // Lines are parallel, see if they actually point at each other.
-                if ( Loose::zero( Point::dist2ToLine(otherMidPoint, sideMidPoint, sideHalf ) ) )
+                if ( Loose::zero( Geo::dist2ToLine(otherMidPoint, sideMidPoint, sideHalf ) ) )
                 {
                     // Edge meets directly the other mid-points, so the distance is the middle in-between.
-                    intersection = Point::convexSum( otherMidPoint, sideMidPoint, 0.5 );
+                    intersection = Geo::convexSum( otherMidPoint, sideMidPoint, 0.5 );
                 }
             }
 
@@ -255,7 +256,7 @@ QList<EdgesLenPtr> IntersectMotif::buildIntersectEdgesLengthInfos(int side, QPoi
             {
                 int inter_rank = getIntersectionRank( i_side, otherIsLeft, inter_infos );
                 int other_rank = getIntersectionRank( side, isLeftHalf, other_inter_infos );
-                qreal dist2    = Point::dist2( intersection, sideMidPoint ) + Point::dist2( intersection, otherMidPoint );
+                qreal dist2    = Geo::dist2( intersection, sideMidPoint ) + Geo::dist2( intersection, otherMidPoint );
                 infos << std::make_shared<EdgesLengthInfo>(side, isLeftHalf, i_side, otherIsLeft, inter_rank + other_rank, dist2, intersection);
             }
         }
@@ -288,13 +289,13 @@ QList<IntersectionPtr> IntersectMotif::buildIntersectionInfos(int side, QPointF 
             QPointF intersection;
             if (!Intersect::getIntersection( otherMidPoint, otherSide, sideMidPoint, sideHalf, intersection))
             {
-                if ( Loose::zero( Point::dist2ToLine( otherMidPoint, sideMidPoint, sideHalf ) ) )
+                if ( Loose::zero( Geo::dist2ToLine( otherMidPoint, sideMidPoint, sideHalf ) ) )
                 {
                     // Edge meets directly the other mid-points, so the distance is the middle in-between.
-                    intersection = Point::convexSum( otherMidPoint, sideMidPoint, 0.5 );
+                    intersection = Geo::convexSum( otherMidPoint, sideMidPoint, 0.5 );
                 }
             }
-            qreal dist2 = Point::dist2(intersection, sideMidPoint );
+            qreal dist2 = Geo::dist2(intersection, sideMidPoint );
             infos << std::make_shared<IntersectionInfo>(side, i_side, otherIsLeft, dist2, intersection);
         }
     }
@@ -339,15 +340,15 @@ bool EdgesLengthInfo::equals( EdgesLengthInfo & other )
         return false;
 
     qreal diff = dist2 - other.dist2;
-    return diff > -Point::TOLERANCE2 && diff < Point::TOLERANCE2;
+    return diff > -Sys::TOLSQ && diff < Sys::TOLSQ;
 }
 
 int EdgesLengthInfo::compareTo( EdgesLengthInfo & other )
 {
     qreal diff = dist2 - other.dist2;
-    if ( diff < -Point::TOLERANCE2 )
+    if ( diff < -Sys::TOLSQ )
         return -1;
-    if ( diff >  Point::TOLERANCE2 )
+    if ( diff >  Sys::TOLSQ )
         return 1;
 
     int ic_diff = intersection_count - other.intersection_count;

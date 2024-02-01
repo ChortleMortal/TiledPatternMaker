@@ -1,32 +1,34 @@
 #include <QHeaderView>
 #include <QCheckBox>
 
-#include "geometry/transform.h"
 #include "panels/page_layers.h"
+#include "geometry/transform.h"
+#include "misc/sys.h"
 #include "panels/controlpanel.h"
-#include "settings/configuration.h"
-#include "style/style.h"
-#include "viewers/viewcontrol.h"
-#include "widgets/layout_sliderset.h"
 #include "panels/panel_misc.h"
+#include "style/style.h"
+#include "viewers/view.h"
+#include "widgets/layout_sliderset.h"
 
 using std::string;
 
-page_layers:: page_layers(ControlPanel * cpanel)  : panel_page(cpanel,"Layer Info")
+page_layers:: page_layers(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_LAYER_INFO,"Layer Info")
 {
+    selectedItem = nullptr;
+
     refreshLabel = new QLabel("Refresh: OFF");
     QPushButton * pbDeselect = new QPushButton("De-select");
 
     layerTable   = new AQTableWidget(this);
     layerTable->setRowCount(NUM_LAYER_ROWS);
     layerTable->setSelectionMode(QAbstractItemView::SingleSelection);
-    layerTable->setSelectionBehavior(QAbstractItemView::SelectColumns);
+    layerTable->setSelectionBehavior(QAbstractItemView::SelectItems);
     layerTable->setStyleSheet("QTableWidget::item:selected { background:yellow; color:red; }");
 
     QStringList qslV;
-    qslV << "Layer" << "Visible" << "Z-level" << "" << ""
-         << "Frame Scale"  << "Frame Rot"  << "Frame Left (X)"  << "Frame Top (Y)" << ""
-         << "Canvas Scale" << "Canvas Rot" << "Canvas Left (X)" << "Canvas Top (Y)" << "Canvas CenterX" << "Canvas CenterY"
+    qslV << "Select Layer" << "Visible" << "Z-level" << "" << ""
+         << "Canvas Scale"  << "Canvas Rot"  << "Canvas Left (X)"  << "CanvasTop (Y)" << ""
+         << "Model Scale" << "Model Rot" << "Model Left (X)" << "Model Top (Y)" << " Model CenterX" << "Model CenterY"
          << "Layer Center" << "Layer Scale" << "Layer Rot" << "Layer X" << "Layer Y" << "Sub-layers";
 
     layerTable->setVerticalHeaderLabels(qslV);
@@ -46,7 +48,7 @@ page_layers:: page_layers(ControlPanel * cpanel)  : panel_page(cpanel,"Layer Inf
     vbox->addStretch();
 
     connect(layerTable, &QTableWidget::itemSelectionChanged, this, &page_layers::slot_selectLayer);
-    connect(pbDeselect, &QPushButton::clicked, this, [this]() { layerTable->setCurrentIndex(QModelIndex()); config->selectedLayer = nullptr; layerTable->update();} );
+    connect(pbDeselect, &QPushButton::clicked,               this, &page_layers::slot_deSelectLayer);
 }
 
 void page_layers::onEnter()
@@ -56,8 +58,7 @@ void page_layers::onEnter()
                        "</body>");
     panel->pushPanelStatus(msg);
 
-    populateLayers();
-    onRefresh();
+    doRefresh();
 }
 
 void page_layers::onExit()
@@ -67,42 +68,51 @@ void page_layers::onExit()
 
 void page_layers::populateLayers()
 {
+    qDebug() << "populateLayers()";
+
+    selectedItem = nullptr;
     wlayers.clear();
     layerTable->clearContents();
-    config->selectedLayer = nullptr;
+    //Sys::selectedLayer = nullptr;
 
     QVector<Layer *> layers = view->getActiveLayers();
     layerTable->setColumnCount(layers.size());
 
     int col = 0;
-    int selected = -1;
+    int selectedCol = -1;
     for (Layer * layer : layers)
     {
-        if (layer == config->selectedLayer)
+        if (layer == Sys::selectedLayer)
         {
-            selected = col;
+            selectedCol = col;
         }
         wlayers.push_back(layer);
-        populateLayer(layer,col++);
+        populateLayer(layer,col);
+        col++;
     }
 
     layerTable->adjustTableSize(PANEL_RHS_WIDTH-10);
     updateGeometry();
 
-    if (selected >= 0)
+    if (selectedCol >= 0)
     {
-        layerTable->selectColumn(selected);
+        selectedItem = layerTable->item(LAYER_NAME,selectedCol);
+        selectedItem->setSelected(true);
     }
     else
     {
-        config->selectedLayer = nullptr;
+        Sys::selectedLayer = nullptr;
     }
 }
 
 void page_layers::populateLayer(Layer * layer, int col)
 {
-    // design number
-    QTableWidgetItem * twi = new QTableWidgetItem(layer->getName());
+    QTransform canT = layer->getCanvasTransform();
+  //QTransform modT = layer->getModelTransform();
+    QTransform layT = layer->getLayerTransform();
+    Xform     layXf = layer->getModelXform();
+
+    QTableWidgetItem * twi = new QTableWidgetItem(layer->getLayerName());
     twi->setTextAlignment(Qt::AlignCenter);
     layerTable->setItem(LAYER_NAME,col,twi);
 
@@ -136,37 +146,34 @@ void page_layers::populateLayer(Layer * layer, int col)
     layerTable->setCellWidget(LAYER_ALIGN_CENTER,col,align_center_btn);
     connect(align_center_btn, &QPushButton::clicked, this, [this,col] { alignCenterPressed(col); });
 
-    // view transform
-    QTransform t = layer->getLayerTransform();
-
+    // canvas transform
     QColor bcolor;
-    if (config->darkTheme)
+    if (Sys::isDarkTheme)
         bcolor = QColor(0x777777);
     else
         bcolor = QColor(Qt::yellow);
 
-    QTableWidgetItem * item = new QTableWidgetItem( QString::number(Transform::scalex(t),'f',16));
-    layerTable->setItem(FRAME_SCALE,col,item);
+    QTableWidgetItem * item = new QTableWidgetItem( QString::number(Transform::scalex(canT),'f',16));
+    layerTable->setItem(CANVAS_SCALE,col,item);
     item->setBackground(bcolor);
     item->setTextAlignment(Qt::AlignVCenter | Qt::AlignRight);
 
-    item = new QTableWidgetItem( QString::number(Transform::rotation(t),'f',16));
-    layerTable->setItem(FRAME_ROT,col,item);
+    item = new QTableWidgetItem( QString::number(Transform::rotation(canT),'f',16));
+    layerTable->setItem(CANVAS_ROT,col,item);
     item->setBackground(bcolor);
     item->setTextAlignment(Qt::AlignVCenter | Qt::AlignRight);
 
-    item = new QTableWidgetItem( QString::number(Transform::transx(t),'f',16));
-    layerTable->setItem(FRAME_X,col,item);
+    item = new QTableWidgetItem( QString::number(Transform::transx(canT),'f',16));
+    layerTable->setItem(CANVAS_X,col,item);
     item->setBackground(bcolor);
     item->setTextAlignment(Qt::AlignVCenter | Qt::AlignRight);
 
-    item = new QTableWidgetItem( QString::number(Transform::transy(t),'f',16));
-    layerTable->setItem(FRAME_Y,col,item);
+    item = new QTableWidgetItem( QString::number(Transform::transy(canT),'f',16));
+    layerTable->setItem(CANVAS_Y,col,item);
     item->setBackground(bcolor);
     item->setTextAlignment(Qt::AlignVCenter | Qt::AlignRight);
 
     // scene xfrorm
-    Xform xf = layer->getCanvasXform();
 
     AQDoubleSpinBox * dleft  = new AQDoubleSpinBox();
     AQDoubleSpinBox * dtop   = new AQDoubleSpinBox();
@@ -196,63 +203,62 @@ void page_layers::populateLayer(Layer * layer, int col)
     dcenX->setAlignment(Qt::AlignRight);
     dcenY->setAlignment(Qt::AlignRight);
 
-    dleft->setValue(xf.getTranslateX());
-    dtop->setValue(xf.getTranslateY());
-    dwidth->setValue(xf.getScale());
-    drot->setValue(qRadiansToDegrees(xf.getRotateRadians()));
+    dleft->setValue(layXf.getTranslateX());
+    dtop->setValue(layXf.getTranslateY());
+    dwidth->setValue(layXf.getScale());
+    drot->setValue(qRadiansToDegrees(layXf.getRotateRadians()));
 
     dwidth->setSingleStep(0.01);
     dcenX->setSingleStep(0.001);
     dcenY->setSingleStep(0.001);
 
-    layerTable->setCellWidget(CANVAS_SCALE,col,dwidth);
+    layerTable->setCellWidget(MODEL_SCALE,col,dwidth);
     connect(dwidth, static_cast<void (AQDoubleSpinBox::*)(double)>(&AQDoubleSpinBox::valueChanged), this, [this,col] { slot_set_deltas(col); });
 
-    layerTable->setCellWidget(CANVAS_ROT,col,drot);
+    layerTable->setCellWidget(MODEL_ROT,col,drot);
     connect(drot, static_cast<void (AQDoubleSpinBox::*)(double)>(&AQDoubleSpinBox::valueChanged), this, [this,col] { slot_set_deltas(col); });
 
-    layerTable->setCellWidget(CANVAS_X,col,dleft);
+    layerTable->setCellWidget(MODEL_X,col,dleft);
     connect(dleft,static_cast<void (AQDoubleSpinBox::*)(double)>(&AQDoubleSpinBox::valueChanged), this, [this,col] { slot_set_deltas(col); });
 
-    layerTable->setCellWidget(CANVAS_Y,col,dtop);
+    layerTable->setCellWidget(MODEL_Y,col,dtop);
     connect(dtop, static_cast<void (AQDoubleSpinBox::*)(double)>(&AQDoubleSpinBox::valueChanged), this, [this,col] { slot_set_deltas(col); });
 
-    layerTable->setCellWidget(CANVAS_CENTER_X,col,dcenX);
+    layerTable->setCellWidget(MODEL_CENTER_X,col,dcenX);
     connect(dcenX,static_cast<void (AQDoubleSpinBox::*)(double)>(&AQDoubleSpinBox::valueChanged), this, [this,col] { slot_set_center(col); });
 
-    layerTable->setCellWidget(CANVAS_CENTER_Y,col,dcenY);
+    layerTable->setCellWidget(MODEL_CENTER_Y,col,dcenY);
     connect(dcenY, static_cast<void (AQDoubleSpinBox::*)(double)>(&AQDoubleSpinBox::valueChanged), this, [this,col] { slot_set_center(col); });
 
     // layer transform
     twi = new QTableWidgetItem();
-    t = layer->getLayerTransform();
 
     layerTable->setItem(LAYER_CENTER,col,twi);
     twi->setBackground(bcolor);
     twi->setTextAlignment(Qt::AlignCenter);
 
-    item = new QTableWidgetItem( QString::number(Transform::scalex(t),'f',16));
+    item = new QTableWidgetItem( QString::number(Transform::scalex(layT),'f',16));
     layerTable->setItem(LAYER_SCALE,col,item);
     item->setBackground(bcolor);
     item->setTextAlignment(Qt::AlignVCenter | Qt::AlignRight);
 
-    item = new QTableWidgetItem( QString::number(Transform::rotation(t),'f',16));
+    item = new QTableWidgetItem( QString::number(Transform::rotation(layT),'f',16));
     layerTable->setItem(LAYER_ROT,col,item);
     item->setBackground(bcolor);
     item->setTextAlignment(Qt::AlignVCenter | Qt::AlignRight);
 
-    item = new QTableWidgetItem( QString::number(Transform::transx(t),'f',16));
+    item = new QTableWidgetItem( QString::number(Transform::transx(layT),'f',16));
     layerTable->setItem(LAYER_X,col,item);
     item->setBackground(bcolor);
     item->setTextAlignment(Qt::AlignVCenter | Qt::AlignRight);
 
-    item = new QTableWidgetItem( QString::number(Transform::transy(t),'f',16));
+    item = new QTableWidgetItem( QString::number(Transform::transy(layT),'f',16));
     layerTable->setItem(LAYER_Y,col,item);
     item->setBackground(bcolor);
     item->setTextAlignment(Qt::AlignVCenter | Qt::AlignRight);
 
     QPushButton * clearD = new QPushButton("Clear Canvas");
-    layerTable->setCellWidget(CANVAS_CLEAR,col,clearD);
+    layerTable->setCellWidget(MODEL_CLEAR,col,clearD);
     connect(clearD, &QPushButton::clicked, this, [this,col] { clear_deltas(col); });
 
     item = new QTableWidgetItem(QString::number(layer->numSubLayers()));
@@ -261,16 +267,23 @@ void page_layers::populateLayer(Layer * layer, int col)
     layerTable->setItem(SUB_LAYERS,col,item);
 }
 
-void  page_layers::onRefresh()
+void page_layers::onRefresh()
 {
     if (!refresh)
     {
         refreshLabel->setText("Refresh: OFF");
+        refreshLabel->setStyleSheet("color: red");
         return;
     }
 
-    refreshLabel->setText("Refresh: ON");
+    refreshLabel->setText("Refresh: ON ");
+    refreshLabel->setStyleSheet("");
 
+    doRefresh();
+}
+
+void page_layers::doRefresh()
+{
     QVector<Layer*> view_layers = view->getActiveLayers();
     if (view_layers.size() != wlayers.size())
     {
@@ -296,132 +309,136 @@ void  page_layers::onRefresh()
         Layer* layer = getLayer(col);
         if (!layer) continue;
 
-        // design number
-        QTableWidgetItem * twi = layerTable->item(LAYER_NAME,col);
-        QString str = layer->getName();
-        if (layer->getName() == "Style")
-        {
-            Style * style = dynamic_cast<Style*>(layer);
-            if (style)
-            {
-                str = QString("Style: %1").arg(style->getStyleDesc());
-            }
-        }
-        twi->setText(str);
-
-        // layer number and visibility
-        QWidget * w = layerTable->cellWidget(LAYER_VISIBILITY,col);
-        QWidget * qw = dynamic_cast<QWidget*>(w);
-        Q_ASSERT(qw);
-        QCheckBox * cb = qw->findChild<QCheckBox*>();
-        Q_ASSERT(cb);
-        cb->blockSignals(true);
-        cb->setChecked(layer->isVisible());
-        cb->blockSignals(false);
-
-        // z-level
-        w = layerTable->cellWidget(LAYER_Z,col);
-        AQDoubleSpinBox * zBox = dynamic_cast<AQDoubleSpinBox*>(w);
-        Q_ASSERT(zBox);
-        zBox->blockSignals(true);
-        zBox->setValue(layer->zValue());
-        zBox->blockSignals(false);
-
-        // frame transform
-        QTransform t = layer->getFrameTransform();
-
-        QTableWidgetItem * item = layerTable->item(FRAME_SCALE,col);
-        item->setText(QString::number(Transform::scalex(t),'f',16));
-
-        item = layerTable->item(FRAME_ROT,col);
-        item->setText(QString::number(Transform::rotation(t),'f',16));
-
-        item = layerTable->item(FRAME_X,col);
-        item->setText(QString::number(Transform::transx(t),'f',16));
-
-        item = layerTable->item(FRAME_Y,col);
-        item->setText(QString::number(Transform::transy(t),'f',16));
-
-
-        // canvas transform
-        Xform xf = layer->getCanvasXform();
-
-        AQDoubleSpinBox * spin;
-        w  = layerTable->cellWidget(CANVAS_SCALE,col);
-        spin = dynamic_cast<AQDoubleSpinBox*>(w);
-        Q_ASSERT(spin);
-        w->blockSignals(true);
-        spin->setValue(xf.getScale());
-        w->blockSignals(false);
-
-        w = layerTable->cellWidget(CANVAS_ROT,col);
-        spin = dynamic_cast<AQDoubleSpinBox*>(w);
-        Q_ASSERT(spin);
-        w->blockSignals(true);
-        spin->setValue(xf.getRotateDegrees());
-        w->blockSignals(false);
-
-        w = layerTable->cellWidget(CANVAS_X,col);
-        spin = dynamic_cast<AQDoubleSpinBox*>(w);
-        Q_ASSERT(spin);
-        w->blockSignals(true);
-        spin->setValue(xf.getTranslateX());
-        w->blockSignals(false);
-
-        w  = layerTable->cellWidget(CANVAS_Y,col);
-        spin = dynamic_cast<AQDoubleSpinBox*>(w);
-        Q_ASSERT(spin);
-        w->blockSignals(true);
-        spin->setValue(xf.getTranslateY());
-        w->blockSignals(false);
-
-        QPointF center = xf.getModelCenter();
-
-        w = layerTable->cellWidget(CANVAS_CENTER_X,col);
-        spin = dynamic_cast<AQDoubleSpinBox*>(w);
-        Q_ASSERT(spin);
-        w->blockSignals(true);
-        spin->setValue(center.x());
-        w->blockSignals(false);
-
-        w  = layerTable->cellWidget(CANVAS_CENTER_Y,col);
-        spin = dynamic_cast<AQDoubleSpinBox*>(w);
-        Q_ASSERT(spin);
-        w->blockSignals(true);
-        spin->setValue(center.y());
-        w->blockSignals(false);
-
-        // layer transform
-        t = layer->getLayerTransform();
-
-        twi = layerTable->item(LAYER_CENTER,col);
-        LayerController * lp = dynamic_cast<LayerController*>(layer);
-        if (lp)
-        {
-            center = lp->getCenterScreenUnits();
-            twi->setText(QString("%1 : %2").arg(QString::number(center.x(),'f',4)).arg(QString::number(center.y(),'f',4)));
-        }
-
-        item = layerTable->item(LAYER_SCALE,col);
-        item->setText(QString::number(Transform::scalex(t),'f',16));
-
-        item = layerTable->item(LAYER_ROT,col);
-        item->setText(QString::number(Transform::rotation(t),'f',16));
-
-        item = layerTable->item(LAYER_X,col);
-        item->setText(QString::number(Transform::transx(t),'f',16));
-
-        item = layerTable->item(LAYER_Y,col);
-        item->setText(QString::number(Transform::transy(t),'f',16));
-
-        item = layerTable->item(SUB_LAYERS,col);
-        item->setText(QString::number(layer->numSubLayers()));
+        refreshLayer(layer,col);
 
         layerTable->setColumnWidth(col,151);
     }
 
     layerTable->adjustTableSize(PANEL_RHS_WIDTH-10);
     updateGeometry();
+}
+
+void page_layers::refreshLayer(Layer * layer, int col)
+{
+    QTransform canT = layer->getCanvasTransform();
+    //QTransform modT = layer->getModelTransform();
+    QTransform layT = layer->getLayerTransform();
+    Xform     layXf = layer->getModelXform();
+
+    //qInfo() << layer->getLayerName() << Transform::toInfoString(canT);
+    QTableWidgetItem * twi = layerTable->item(LAYER_NAME,col);
+    QString str = layer->getLayerName();
+    if (layer->getLayerName() == "Style")
+    {
+        Style * style = dynamic_cast<Style*>(layer);
+        if (style)
+        {
+            str = QString("Style: %1").arg(style->getStyleDesc());
+        }
+    }
+    twi->setText(str);
+
+    // layer number and visibility
+    QWidget * w = layerTable->cellWidget(LAYER_VISIBILITY,col);
+    QWidget * qw = dynamic_cast<QWidget*>(w);
+    Q_ASSERT(qw);
+    QCheckBox * cb = qw->findChild<QCheckBox*>();
+    Q_ASSERT(cb);
+    cb->blockSignals(true);
+    cb->setChecked(layer->isVisible());
+    cb->blockSignals(false);
+
+    // z-level
+    w = layerTable->cellWidget(LAYER_Z,col);
+    AQDoubleSpinBox * zBox = dynamic_cast<AQDoubleSpinBox*>(w);
+    Q_ASSERT(zBox);
+    zBox->blockSignals(true);
+    zBox->setValue(layer->zValue());
+    zBox->blockSignals(false);
+
+    // canvas transform
+    QTableWidgetItem * item = layerTable->item(CANVAS_SCALE,col);
+    item->setText(QString::number(Transform::scalex(canT),'f',16));
+
+    item = layerTable->item(CANVAS_ROT,col);
+    item->setText(QString::number(Transform::rotation(canT),'f',16));
+
+    item = layerTable->item(CANVAS_X,col);
+    item->setText(QString::number(Transform::transx(canT),'f',16));
+
+    item = layerTable->item(CANVAS_Y,col);
+    item->setText(QString::number(Transform::transy(canT),'f',16));
+
+
+    // model transform
+    AQDoubleSpinBox * spin;
+    w  = layerTable->cellWidget(MODEL_SCALE,col);
+    spin = dynamic_cast<AQDoubleSpinBox*>(w);
+    Q_ASSERT(spin);
+    w->blockSignals(true);
+    spin->setValue(layXf.getScale());
+    w->blockSignals(false);
+
+    w = layerTable->cellWidget(MODEL_ROT,col);
+    spin = dynamic_cast<AQDoubleSpinBox*>(w);
+    Q_ASSERT(spin);
+    w->blockSignals(true);
+    spin->setValue(layXf.getRotateDegrees());
+    w->blockSignals(false);
+
+    w = layerTable->cellWidget(MODEL_X,col);
+    spin = dynamic_cast<AQDoubleSpinBox*>(w);
+    Q_ASSERT(spin);
+    w->blockSignals(true);
+    spin->setValue(layXf.getTranslateX());
+    w->blockSignals(false);
+
+    w  = layerTable->cellWidget(MODEL_Y,col);
+    spin = dynamic_cast<AQDoubleSpinBox*>(w);
+    Q_ASSERT(spin);
+    w->blockSignals(true);
+    spin->setValue(layXf.getTranslateY());
+    w->blockSignals(false);
+
+    QPointF center = layXf.getModelCenter();
+
+    w = layerTable->cellWidget(MODEL_CENTER_X,col);
+    spin = dynamic_cast<AQDoubleSpinBox*>(w);
+    Q_ASSERT(spin);
+    w->blockSignals(true);
+    spin->setValue(center.x());
+    w->blockSignals(false);
+
+    w  = layerTable->cellWidget(MODEL_CENTER_Y,col);
+    spin = dynamic_cast<AQDoubleSpinBox*>(w);
+    Q_ASSERT(spin);
+    w->blockSignals(true);
+    spin->setValue(center.y());
+    w->blockSignals(false);
+
+    // layer transform
+    twi = layerTable->item(LAYER_CENTER,col);
+    LayerController * lp = dynamic_cast<LayerController*>(layer);
+    if (lp)
+    {
+        center = lp->getCenterScreenUnits();
+        twi->setText(QString("%1 : %2").arg(QString::number(center.x(),'f',4)).arg(QString::number(center.y(),'f',4)));
+    }
+
+    item = layerTable->item(LAYER_SCALE,col);
+    item->setText(QString::number(Transform::scalex(layT),'f',16));
+
+    item = layerTable->item(LAYER_ROT,col);
+    item->setText(QString::number(Transform::rotation(layT),'f',16));
+
+    item = layerTable->item(LAYER_X,col);
+    item->setText(QString::number(Transform::transx(layT),'f',16));
+
+    item = layerTable->item(LAYER_Y,col);
+    item->setText(QString::number(Transform::transy(layT),'f',16));
+
+    item = layerTable->item(SUB_LAYERS,col);
+    item->setText(QString::number(layer->numSubLayers()));
 }
 
 void page_layers::visibilityChanged(int col)
@@ -434,8 +451,8 @@ void page_layers::visibilityChanged(int col)
 
     auto layer = getLayer(col);
     if (!layer) return;
-
-    qDebug() << "visibility changed: row=" << col << "layer=" << layer->getName();
+    
+    qDebug() << "visibility changed: row=" << col << "layer=" << layer->getLayerName();
     layer->setVisible(visible);
     layer->forceRedraw();
 }
@@ -447,45 +464,42 @@ void page_layers::zChanged(AQDoubleSpinBox * dsp, int col)
 
     auto layer = getLayer(col);
     if (!layer) return;
-
-    qDebug() << "z-level changed: row=" << col << "layer=" << layer->getName();
+    
+    qDebug() << "z-level changed: row=" << col << "layer=" << layer->getLayerName();
     layer->setZValue(z);
     layer->forceRedraw();
 }
 
 void page_layers::alignPressed(int col)
 {
-    auto selected = config->selectedLayer;
+    auto selected = Sys::selectedLayer;
     if (!selected)
         return;
 
     auto layer = getLayer(col);
     if (!layer) return;
-
-    Xform xf =  selected->getCanvasXform();
-    layer->setCanvasXform(xf);
-    layer->forceLayerRecalc();
-    view->update();
-    onRefresh();
+    
+    Xform xf =  selected->getModelXform();
+    layer->setModelXform(xf,true);
+    doRefresh();
 }
 
 void page_layers::alignCenterPressed(int col)
 {
-    auto selected = config->selectedLayer;
+    auto selected = Sys::selectedLayer;
     if (!selected)
         return;
 
     auto layer = getLayer(col);
     if (!layer) return;
-
-    Xform xf    =  selected->getCanvasXform();
+    
+    Xform xf    =  selected->getModelXform();
     QPointF mpt = xf.getModelCenter();
 
     QPointF spt = selected->worldToScreen(mpt);
     layer->setCenterScreenUnits(spt);
-    layer->forceLayerRecalc();
-    view->update();
-    onRefresh();
+    layer->forceLayerRecalc(true);
+    doRefresh();
 }
 
 void page_layers::slot_set_deltas(int col)
@@ -498,22 +512,22 @@ void page_layers::slot_set_deltas(int col)
     QWidget * w;
     AQDoubleSpinBox * spin;
 
-    w    = layerTable->cellWidget(CANVAS_X,col);
+    w    = layerTable->cellWidget(MODEL_X,col);
     spin = dynamic_cast<AQDoubleSpinBox*>(w);
     Q_ASSERT(spin);
     qreal dleft = spin->value();
 
-    w    = layerTable->cellWidget(CANVAS_Y,col);
+    w    = layerTable->cellWidget(MODEL_Y,col);
     spin = dynamic_cast<AQDoubleSpinBox*>(w);
     Q_ASSERT(spin);
     qreal dtop = spin->value();
 
-    w    = layerTable->cellWidget(CANVAS_SCALE,col);
+    w    = layerTable->cellWidget(MODEL_SCALE,col);
     spin = dynamic_cast<AQDoubleSpinBox*>(w);
     Q_ASSERT(spin);
     qreal dwidth = spin->value();
 
-    w    = layerTable->cellWidget(CANVAS_ROT,col);
+    w    = layerTable->cellWidget(MODEL_ROT,col);
     spin = dynamic_cast<AQDoubleSpinBox*>(w);
     Q_ASSERT(spin);
     qreal drot = spin->value();
@@ -523,8 +537,7 @@ void page_layers::slot_set_deltas(int col)
     xf.setRotateDegrees(drot);
     xf.setTranslateX(dleft);
     xf.setTranslateY(dtop);
-    layer->setCanvasXform(xf);
-    view->update();
+    layer->setModelXform(xf,true);
 }
 
 void page_layers::slot_set_center(int col)
@@ -537,12 +550,12 @@ void page_layers::slot_set_center(int col)
     QWidget * w;
     AQDoubleSpinBox * spin;
 
-    w    = layerTable->cellWidget(CANVAS_CENTER_X,col);
+    w    = layerTable->cellWidget(MODEL_CENTER_X,col);
     spin = dynamic_cast<AQDoubleSpinBox*>(w);
     Q_ASSERT(spin);
     qreal cenx = spin->value();
 
-    w    = layerTable->cellWidget(CANVAS_CENTER_Y,col);
+    w    = layerTable->cellWidget(MODEL_CENTER_Y,col);
     spin = dynamic_cast<AQDoubleSpinBox*>(w);
     Q_ASSERT(spin);
     qreal ceny = spin->value();
@@ -559,15 +572,18 @@ void page_layers::clear_deltas(int col)
     if (!layer) return;
 
     Xform xf;
-    layer->setCanvasXform(xf);
-    view->update();
+    layer->setModelXform(xf,true);
     populateLayers();
-    onRefresh();
+    doRefresh();
 }
 
 Layer * page_layers::getLayer(int col)
 {
-    return wlayers[col];
+    if (col < wlayers.size())
+    {
+        return wlayers[col];
+    }
+    return nullptr;
 }
 
 void page_layers::slot_selectLayer()
@@ -575,8 +591,35 @@ void page_layers::slot_selectLayer()
     QList<QTableWidgetItem *> selected = layerTable->selectedItems();
     if (selected.size())
     {
-        int column = selected.first()->column();
-        auto layer = getLayer(column);
-        config->selectedLayer = layer;
+        auto item = selected.first();
+        int row = item->row();
+        if (row == LAYER_NAME)
+        {
+            int column = item->column();
+            auto layer = getLayer(column);
+            if (layer)
+            {
+                Sys::selectedLayer = layer;
+                selectedItem = item;
+                return;
+            }
+        }
+    }
+    // did not click on LAYER_NAME reselect if possible
+    if (selectedItem)
+    {
+        selectedItem->setSelected(true);
+    }
+}
+
+void page_layers::slot_deSelectLayer()
+{
+    Sys::selectedLayer = nullptr;
+    if (selectedItem)
+    {
+        layerTable->blockSignals(true);
+        selectedItem->setSelected(false);
+        selectedItem = nullptr;
+        layerTable->blockSignals(false);
     }
 }

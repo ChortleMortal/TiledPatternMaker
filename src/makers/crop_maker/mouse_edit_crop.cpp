@@ -1,7 +1,7 @@
 #include "mouse_edit_crop.h"
 #include "geometry/crop.h"
 #include "geometry/transform.h"
-#include "misc/utilities.h"
+#include "geometry/geo.h"
 
 #include <QDebug>
 
@@ -28,12 +28,12 @@ MouseEditCrop::MouseEditCrop(QPointF spt, CropPtr crop, QTransform t)
         qreal radius     = Transform::scalex(t) * circle.radius;
 
         Circle sc(center,radius);
-        if (Utils::pointOnCircle(spt,sc,7))
+        if (Geo::pointOnCircle(spt,sc,7))
         {
             start = new QPointF(tinv.map(spt));
             ecCircleMode = CM_EDGE;
         }
-        else if (Utils::pointInCircle(spt,sc))
+        else if (Geo::pointInCircle(spt,sc))
         {
             start = new QPointF(tinv.map(spt));
             ecCircleMode = CM_INSIDE;
@@ -56,10 +56,10 @@ void MouseEditCrop::draw(QPainter * painter,QPointF mousePos, QTransform t)
     QRectF rect = crop->getRect();
     rect = t.mapRect(rect);
     QPointF pt  = mousePos;
-    if (   Point::isNear(pt,rect.bottomRight())
-        || Point::isNear(pt,rect.topRight())
-        || Point::isNear(pt,rect.bottomLeft())
-        || Point::isNear(pt,rect.topLeft()))
+    if (   Geo::isNear(pt,rect.bottomRight())
+        || Geo::isNear(pt,rect.topRight())
+        || Geo::isNear(pt,rect.bottomLeft())
+        || Geo::isNear(pt,rect.topLeft()))
     {
         qreal radius = 8.0;
         painter->setPen(QPen(Qt::blue,1));
@@ -89,20 +89,20 @@ void MouseEditCrop::updateDragging(QPointF spt, QTransform t)
         switch(ecMode)
         {
         case EC_READY:
-            if (Point::isNear(spt,t.map(rect.topLeft())))
+            if (Geo::isNear(spt,t.map(rect.topLeft())))
                 ecCorner = TL;
-            else if (Point::isNear(spt,t.map(rect.topRight())))
+            else if (Geo::isNear(spt,t.map(rect.topRight())))
                 ecCorner = TR;
-            else if (Point::isNear(spt,t.map(rect.bottomRight())))
+            else if (Geo::isNear(spt,t.map(rect.bottomRight())))
                 ecCorner = BR;
-            else if (Point::isNear(spt,t.map(rect.bottomLeft())))
+            else if (Geo::isNear(spt,t.map(rect.bottomLeft())))
                 ecCorner = BL;
             if (ecCorner != UNDEFINED)
             {
                 start  = new QPointF(mpt);
                 ecMode = CB_RESIZE;
             }
-            else if (Utils::rectContains(rect,mpt))
+            else if (Geo::rectContains(rect,mpt))
             {
                 start  = new QPointF(mpt);
                 ecMode = EC_MOVE;
@@ -164,11 +164,11 @@ void MouseEditCrop::updateDragging(QPointF spt, QTransform t)
         if (ecCircleMode == CM_EDGE)
         {
             // first find direction
-            qreal s = Point::dist2(*start,c.centre);
-            qreal m = Point::dist2(mpt,c.centre);
+            qreal s = Geo::dist2(*start,c.centre);
+            qreal m = Geo::dist2(mpt,c.centre);
             bool sub = (s > m);
             // find delta
-            qreal delta = Point::dist(mpt,*start);
+            qreal delta = Geo::dist(mpt,*start);
             delete start;
             start  = new QPointF(mpt);
             if (sub)

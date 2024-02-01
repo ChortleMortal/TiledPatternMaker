@@ -1,4 +1,5 @@
 #include "panel_page_controller.h"
+#include "engine/image_engine.h"
 #include "panels/controlpanel.h"
 #include "panels/page_backgrounds.h"
 #include "panels/page_borders.h"
@@ -122,10 +123,6 @@ void PanelPageController::populatePages()
         wp = new page_image_tools(panel);
         pageList->addPage(wp);
 
-        page_image_tools * wp_im = dynamic_cast<page_image_tools*>(wp);
-        connect(theApp, &TiledPatternMaker::sig_image0, wp_im, &page_image_tools::slot_setImageLeftCombo);
-        connect(theApp, &TiledPatternMaker::sig_image1, wp_im, &page_image_tools::slot_setImageRightCombo);
-
         wp = new page_log(panel);
         pageList->addPage(wp);
 
@@ -158,13 +155,13 @@ void PanelPageController::refreshPages()
 
 void PanelPageController::floatPages()
 {
-    if (!config->enableDetachedPages)
+    if (!Sys::enableDetachedPages)
     {
         return;
     }
 
     QStringList names = pageList->wereFloated();
-    for (const auto & pagename : names)
+    for (const auto & pagename : std::as_const(names))
     {
         slot_detachWidget(pagename);
     }
@@ -350,4 +347,12 @@ bool PanelPageController::isVisiblePage(panel_page * page)
     return false;
 }
 
+bool PanelPageController::isVisiblePage(ePanelPage page)
+{
+    if (pageList->getSelectedPage()->getPageType() == page)
+    {
+        return true;
+    }
+    return (pageList->isVisiblyDetached(page));
+}
 

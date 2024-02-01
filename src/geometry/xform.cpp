@@ -158,6 +158,12 @@ void Xform::setRotateDegrees(qreal deg)
     rotRadians = qDegreesToRadians(deg);
 }
 
+void Xform::setTranslate(QPointF t)
+{
+    translateX = t.x();
+    translateY = t.y();
+}
+
 void Xform::setTranslateX(qreal x)
 {
     translateX = x;

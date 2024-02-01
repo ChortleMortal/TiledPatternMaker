@@ -21,8 +21,6 @@ public:
     static int  whereTilingUsed(QString name, QStringList & results);
 
 signals:
-    void    sig_loadTiling(QString,eTILM_Event);
-    void    sig_loadMosaic(QString name, bool ready);
     void    sig_loadDesign(eDesign id);
     void    sig_buildDesign(eDesign id);
 
@@ -53,9 +51,11 @@ private slots:
     void    slot_loadTilingModify();
     void    slot_loadTilingMulti();
 
-
-    void    loadXML();
+    void    loadMosaic();
     void    openXML();
+#ifdef Q_OS_WINDOWS
+    void    showXMLDir();
+#endif
     void    rebaseXML();
     void    renameXML();
     void    deleteXML();
@@ -67,12 +67,8 @@ private slots:
     void    rebaseTiling();
     void    renameTiling();
     void    deleteTiling();
+
     void    slot_whereTilingUsed();
-
-    void    loadTilingsCombo();
-    void    loadMosaicCombo();
-    void    loadDesignCombo();
-
     void    slot_mosaicFilter(const QString & filter);
     void    slot_tilingFilter(const QString & filter);
     void    slot_mosaicCheck(bool check);
@@ -81,6 +77,9 @@ private slots:
     void    slot_mosOrigCheck(bool check);
     void    slot_mosNewCheck(bool check);
     void    slot_mosTestCheck(bool check);
+    void    slot_mosSortCheck(bool check);
+    void    slot_showWithBkgds(bool check);
+
     void    slot_tilingOrigCheck(bool check);
     void    slot_tilingNewCheck(bool check);
     void    slot_tilingTestCheck(bool check);
@@ -93,14 +92,28 @@ private slots:
     void    loadTiling2();
 
 protected:
-    void    setupUI();
     void    refreshPanel();
+
     void    makeConnections();
+
+    void    loadTilingsCombo();
+    void    loadMosaicCombo();
+    void    loadDesignCombo();
+
+    QGroupBox * createLegacyColumn();
+    QGroupBox * createMosaicColumn();
+    QGroupBox * createTilingColumn();
 
     void    loadTiling(eTILM_Event event);
 
     void    putNewTilingNameIntoDesign(QStringList & designs, QString newName);
     bool    putNewTilingNameIntoTiling(QString filename, QString newName);
+
+    QStringList sortMosaicsByDate(const QStringList &names);
+    QStringList sortTilingsByDate(const QStringList &names);
+
+    QStringList findMosaicsWithBkgds(const QStringList & names);
+    QStringList findTilingsWithBkgds(const QStringList & names);
 
 private:
     VersionedListWidget * tileList;
@@ -128,9 +141,13 @@ private:
     QCheckBox   * mosaicOrigChk;
     QCheckBox   * mosaicNewChk;
     QCheckBox   * mosaicTestChk;
+#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
+    QCheckBox   * mosaicSortChk;
+#endif
+    QCheckBox   * cbShowWithImages;
 
     eDesign       selectedDesign;
-    QString       selectedXMLName;
+    QString       selecteMosaicName;
     QString       selectedTilingName;
 
     QCheckBox   * cbAutoLoadMosaics;

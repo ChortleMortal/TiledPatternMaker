@@ -4,6 +4,7 @@
 #include "motifs/motif.h"
 #include "geometry/intersect.h"
 #include "geometry/map.h"
+#include "geometry/geo.h"
 #include "makers/prototype_maker/prototype.h"
 #include "tile/tiling.h"
 
@@ -87,11 +88,11 @@ QPolygonF  IrregularStarBranches::buildStarBranchPointsV1(qreal d, int s, qreal 
     s = min( s, d_i );
     int outer_s       = min( s, d_i - 1 );
 
-    if( d_frac < Loose::TOL )
+    if( d_frac < Sys::TOL )
     {
         d_frac = 0.0;
     }
-    else if( (1.0 - d_frac) < Loose::TOL )
+    else if( (1.0 - d_frac) < Sys::TOL )
     {
         d_frac = 0.0;
         d_i += 1;
@@ -150,7 +151,7 @@ MapPtr IrregularStarBranches::buildStarHalfBranchV2(qreal d, int s, int side, in
 #else
     int  di          = qFloor(d);          // di is equivalent to the mids index, equivalent to the edge index;
     qreal dfrac      = d - qreal(di);
-    if ((1.0 - dfrac) < Loose::TOL)
+    if ((1.0 - dfrac) < Sys::TOL)
     {
         di++;
     }
@@ -266,7 +267,7 @@ QPointF IrregularStarBranches::getArc(qreal frac, const QPolygonF & pts )
     QPointF next = pts[indexNext];
 
     qreal pts_frac = pts.size() * frac - indexPrev;
-    auto pt = Point::convexSum(prev,next, pts_frac);
+    auto pt = Geo::convexSum(prev,next, pts_frac);
     //qDebug() << "getArc" << "prev:" << indexPrev << "next:" << indexNext << "frac:" << pts_frac << "pt" << pt;
     return pt;
 }
@@ -293,11 +294,11 @@ QLineF IrregularStarBranches::getRay(int side, qreal d, int sign)
         dfrac = d2 - qreal(di);
     }
 
-    if (dfrac < Loose::TOL)
+    if (dfrac < Sys::TOL)
     {
         dfrac = 0.0;
     }
-    else if ((1.0 - dfrac) < Loose::TOL)
+    else if ((1.0 - dfrac) < Sys::TOL)
     {
         dfrac    = 0.0;
         di++;

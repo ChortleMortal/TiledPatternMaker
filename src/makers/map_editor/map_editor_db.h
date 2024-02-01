@@ -18,6 +18,7 @@ typedef std::shared_ptr<class DCEL>             DCELPtr;
 typedef std::shared_ptr<class Crop>             CropPtr;
 typedef std::shared_ptr<class DesignElement>    DesignElementPtr;
 typedef std::shared_ptr<class Style>            StylePtr;
+typedef std::shared_ptr<class BackgroundImage>  BkgdImagePtr;
 
 typedef std::weak_ptr<class Mosaic>             WeakMosaicPtr;
 typedef std::weak_ptr<class Style>              WeakStylePtr;
@@ -40,8 +41,10 @@ public:
 
     void setDel(DesignElementPtr del)   { wdel = del; }
     DesignElementPtr  getDel() const    { return wdel.lock(); }
+
     MapPtr getMapedLayerMap() const     { return map; }
     eMapEditorMapType getLayerMapType() const { return mtype; }
+
 
 private:
     WeakDELPtr        wdel;
@@ -84,7 +87,8 @@ public:
     void                setLocalDCEL(DCELPtr dcel)  { activeDcel = dcel; localDcel = dcel; }
     DCELPtr             getLocaldDCEL()             { return localDcel; }
 
-
+    BkgdImagePtr        getBackgroundImage()        { return bimage; }
+    void                setBackgroundImage(BkgdImagePtr bip) { bimage = bip; }
 
     MapPtr              getFirstDrawMap();
     QVector<MapPtr>     getDrawMaps();
@@ -136,6 +140,7 @@ protected:
     WeakDCELPtr         activeDcel;
     DCELPtr             localDcel;
 
+    BkgdImagePtr        bimage;
     MapMouseActionPtr   mouse_interaction;    // used by menu
 
 private:
@@ -148,6 +153,7 @@ private:
     MapEditorLayer  __layer2;
     MapEditorLayer  __layer3;
     CropPtr         _crop;
+
 };
 
 #endif // MAPEDITORDB_H

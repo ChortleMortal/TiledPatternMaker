@@ -1,4 +1,5 @@
 #pragma once
+#include "geometry/neighbours.h"
 #ifndef INTERLACE_H
 #define INTERLACE_H
 
@@ -88,14 +89,12 @@ public:
                            << "width:" << width << "outline:" << drawOutline << outline_width << "outlineColor" << outline_color << colors.colorsString(); }
 
 protected:
-    void    assignInterlacing();
-    void    buildFrom();
-    void    propagate(VertexPtr vertex, EdgePtr edge, bool edge_under_at_vert);
+    void    assignInterlacing(Map * map);
+    void    buildFrom(Map * map);
+    void    propagate(Map * map, VertexPtr vertex, EdgePtr edge, bool edge_under_at_vert);
 
 
 private:
-    MapPtr  map;
-
     // Parameters of the rendering.
     qreal  gap;
     qreal  shadow;

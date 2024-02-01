@@ -2,9 +2,10 @@
 #include <QFrame>
 #include <QGridLayout>
 #include <QScreen>
+#include "misc/sys.h"
 #include "panels/splitscreen.h"
 #include "panels/controlpanel.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view.h"
 #include "panels/panel_page.h"
 
 SplitScreen::SplitScreen(QWidget *parent) : QFrame(parent)
@@ -13,7 +14,7 @@ SplitScreen::SplitScreen(QWidget *parent) : QFrame(parent)
     setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
 
     panel   = ControlPanel::getInstance();
-    view    = ViewControl::getInstance();
+    view    = Sys::view;
     floater = nullptr;
 
     // left

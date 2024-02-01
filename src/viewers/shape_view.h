@@ -7,18 +7,20 @@
 
 
 class Polyform;
-class Configuration;
 
-class ShapeViewer : public Layer
+class LegacyShapeViewer : public Layer
 {
 public:
-    ShapeViewer();
+    LegacyShapeViewer();
 
     void addPolyform(Polyform * p) { polyforms.push_back(p); }
 
     QVector<Polyform*> & getPolyforms() { return polyforms;}
 
     void enableAntialiasing(bool enable) { _antiAliasPolys = enable; }
+
+    virtual const Xform &   getModelXform() override;
+    virtual void            setModelXform(const Xform & xf, bool update) override;
 
     eViewType iamaLayer() override { return VIEW_DESIGN; }
 
@@ -31,9 +33,6 @@ protected:
     QPainterPath    ppath;
     QPen            ppPen;
     QBrush          ppBrush;
-
-private:
-    Configuration * config;
 };
 
 #endif // SHAPEVIEWER_H

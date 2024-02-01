@@ -2,8 +2,10 @@
 #ifndef DLG_MAGNITUDE_H
 #define DLG_MAGNITUDE_H
 
-#include <memory>
 #include <QDialog>
+#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
+#include <memory>
+#endif
 
 typedef std::shared_ptr<class TileSelector>   TileSelectorPtr;
 typedef std::shared_ptr<class Edge>           EdgePtr;
@@ -20,8 +22,6 @@ signals:
 
 private slots:
     void slot_valueChanged(qreal val);
-
-
 
 private:
     class DoubleSliderSet  * magWidget;

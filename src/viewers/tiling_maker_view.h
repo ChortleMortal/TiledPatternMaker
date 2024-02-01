@@ -38,12 +38,21 @@ public:
     static void              releaseInstance();
 
     void setMaker(TilingMaker * maker) { tilingMaker = maker;}
+
     void setTiling(TilingPtr tiling);
+
+    void addToAll(PlacedTilePtr ptp);
+    void addToAll(PlacedTiles & tiles);
+    void removeFromAll(PlacedTilePtr ptp);
+    void clearAll();
 
     void clearViewData();
     void clearConstructionLines() { constructionLines.clear(); }
 
     virtual void paint(QPainter * painter) override;
+
+    virtual const Xform &   getModelXform() override;
+    virtual void            setModelXform(const Xform & xf, bool update) override;
 
     void drawTile(GeoGraphics * g2d, PlacedTilePtr pf, bool draw_c, QColor icol );
     void drawTranslationVectors(GeoGraphics * g2d, QPointF t1_start, QPointF t1_end, QPointF t2_start, QPointF t2_end);
@@ -73,7 +82,7 @@ public:
     QPointF         findSelectionPointOrPoint(QPointF spt);
     TileSelectorPtr findNearGridPoint(QPointF spt);
 
-    PlacedTiles            & getAllTiles()      { return allPlacedTiles; }
+    const PlacedTiles      & getAllTiles()      { return allPlacedTiles; }
     EdgePoly               & getAccumW()        { return wAccum; }
     QVector<Measurement*>  & getMeasurementsS() { return wMeasurements; }
     QVector<QLineF>    & getConstructionLines() { return constructionLines; }
@@ -118,19 +127,14 @@ public slots:
 
     virtual void slot_scale(int amount)  override;
     virtual void slot_rotate(int amount) override;
-    virtual void slot_moveX(int amount)  override;
-    virtual void slot_moveY(int amount)  override;
+    virtual void slot_moveX(qreal amount)  override;
+    virtual void slot_moveY(qreal amount)  override;
 
     void  slot_setTileEditPoint(QPointF pt);
 
 protected:
     void draw(GeoGraphics * g2d);
     void drawTiling(GeoGraphics * g2d);
-
-    void determineOverlapsAndTouching();
-    bool isColinearAndTouching(const EdgePoly & ep1, const EdgePoly & ep2, qreal tolerance = Loose::NEAR_TOL);
-    bool isColinearAndTouching(const QLineF & l1, const QLineF & l2, qreal tolerance = Loose::NEAR_TOL);
-    bool isColinear(const QLineF & l1, const QLineF & l2, qreal tolerance);
 
     static constexpr QColor normal_color        = QColor(217,217,255,128);  // pale lilac
     static constexpr QColor in_tiling_color     = QColor(255,217,217,128);  // pink

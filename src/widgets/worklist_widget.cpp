@@ -119,7 +119,8 @@ void WorklistWidget::slot_editAction()
     }
 
     newList.sort();
-    config->worklist.set(newList);
+    auto existingName = config->worklist.getName();
+    config->worklist.set(existingName,newList);
 
     clear();
     addItems(newList);
@@ -148,7 +149,9 @@ void WorklistWidget::slot_deleteAction()
             newList << list.at(i);
         }
     }
-    config->worklist.set(newList);
+
+    auto existingName = config->worklist.getName();
+    config->worklist.set(existingName,newList);
 
     clear();
     addItems(newList);

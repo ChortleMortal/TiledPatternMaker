@@ -1,6 +1,6 @@
 #include <QTransform>
 #include "motifs/extended_boundary.h"
-#include "geometry/point.h"
+#include "geometry/geo.h"
 #include "geometry/transform.h"
 #include "geometry/loose.h"
 #include "tile/tile.h"
@@ -47,7 +47,7 @@ const QPolygonF ExtendedBoundary::getPoly() const
     }
     else
     {
-        auto pt = Point::irregularCenter(boundary);
+        auto pt = Geo::irregularCenter(boundary);
         QTransform t;
         if (!Loose::equals(scale,1.0))
         {

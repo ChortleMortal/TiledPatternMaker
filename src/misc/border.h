@@ -8,42 +8,58 @@
 
 typedef std::shared_ptr<class Map> MapPtr;
 
-#define LENGTH1        60.0
-
-class Border : public Crop
+class Border : public QObject, public Crop
 {
-//    Q_OBJECT
+    Q_OBJECT
 
 public:
-    virtual void  construct() = 0;
     virtual void  draw(QPainter * painter, QTransform t) = 0 ;
-    virtual void  draw(QPainter * painter, QTransform t, bool active) override { Q_UNUSED(painter); Q_UNUSED(t); Q_UNUSED(active); }
 
     eBorderType  getBorderType()       { return borderType; }
     QString      getBorderTypeString() { return sBorderType[borderType]; }
     QString      getCropTypeString()   { return sCropType[_cropType]; }
+    bool         getUseViewSize()      { return _useViewSize; }
 
-    void    setWidth(qreal width) { this->width = width; construct(); }
-    void    setColor(QColor color){ this->color = color; construct(); }
-    void    setColor2(QColor color) { color2 = color;  construct(); }
+    void    setWidth(qreal width)       { borderWidth = width; setRequiresConstruction(true); }
+    void    setColor(QColor color)      { this->color = color; setRequiresConstruction(true); }
+    void    setColor2(QColor color)     { color2 = color;      setRequiresConstruction(true); }
+    void    setUseViewSize(bool use)    { _useViewSize = use;  setRequiresConstruction(true); }
 
-    qreal   getWidth()  { return width; }
+    qreal   getWidth()  { return borderWidth; }
     QColor  getColor()  { return color; }
     QColor  getColor2() { return color2; }
 
+    virtual void legacy_convertToModelUnits() = 0;
+
+    void    setRequiresConversion(bool enb)   { _requiresConversion = enb; }
+    bool    getRequiresConversion()           { return _requiresConversion; }
+
+    void    setRequiresConstruction(bool enb) { _requiresConstruction = enb; }
+    bool    getRequiresConstruction()         { return _requiresConstruction; }
+
 public slots:
-    void    resize(QSize oldSize, QSize newSize);
+    virtual void viewResized(QSize oldSize, QSize newSize);
+    virtual void viewMoved();
 
 protected:
     Border();
     Border(CropPtr crop);
 
+    virtual void  construct() = 0;
+
+    void            convertCropToModelUnits();
+    void            setBorderSize(QSize viewSize);
+
     eBorderType     borderType;
 
-    qreal           width;
+    qreal           borderWidth;
     QColor          color;
     QColor          color2;
+    bool            _useViewSize;
 
+private:
+    bool            _requiresConversion;
+    bool            _requiresConstruction;
 };
 
 class BorderPlain : public Border
@@ -60,22 +76,33 @@ public:
 
     void get(qreal & width, QColor & color);
 
+    void legacy_convertToModelUnits() override;
+
     MapPtr  bmap;
 };
 
 class BorderTwoColor : public Border
 {
 public:
-    BorderTwoColor(QSizeF sz,   QColor color1, QColor color2, qreal width);
-    BorderTwoColor(QRectF rect, QColor color1, QColor color2, qreal width);
+    BorderTwoColor(QSizeF sz,   QColor color1, QColor color2, qreal width, qreal len);
+    BorderTwoColor(QRectF rect, QColor color1, QColor color2, qreal width, qreal len);
 
-    void    construct() override;
     virtual void  draw(QPainter * painter, QTransform t) override;
 
-    void    get(QColor & color1, QColor & color2, qreal & width);
+    qreal   getLength()             { return segmentLen; }
+    void    setLength(qreal length) { segmentLen = length;  construct(); }
+
+    void    get(QColor & color1, QColor & color2, qreal & width, qreal &length);
+
+    void    legacy_convertToModelUnits() override;
 
 protected:
+    void    construct() override;
+
     QColor  nextBorderColor();
+    void    addSegment(qreal x, qreal y, qreal width, qreal height);
+
+    qreal   segmentLen;
 
 private:
     FaceSet faces;
@@ -84,18 +111,19 @@ private:
 class BorderBlocks : public Border
 {
 public:
-    BorderBlocks(QSizeF sz,   QColor color, qreal width, int rows, int cols);
-    BorderBlocks(QRectF rect, QColor color, qreal width, int rows, int cols);
+    BorderBlocks(QSizeF sz,   QColor color, int rows, int cols, qreal width);
+    BorderBlocks(QRectF rect, QColor color, int rows, int cols, qreal width);
 
-    void    construct() override;
     virtual void  draw(QPainter * painter, QTransform t) override;
 
-
-    void    get(QColor & color1, qreal & diameter, int & rows, int & cols);
+    void    get(QColor & color1, int & rows, int & cols, qreal & width);
     void    setRows(int rows)   { this->rows = rows; construct(); }
     void    setCols(int cols)   { this->cols = cols; construct(); }
 
+    void    legacy_convertToModelUnits() override;
+
 protected:
+    void    construct() override;
 
 private:
     int         rows;

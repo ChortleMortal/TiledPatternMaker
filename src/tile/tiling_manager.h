@@ -2,8 +2,10 @@
 #ifndef TILINGMANAGER_H
 #define TILINGMANAGER_H
 
-#include <memory>
 #include <QString>
+#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
+#include <memory>
+#endif
 #include "enums/estatemachineevent.h"
 
 typedef std::shared_ptr<class Tiling>           TilingPtr;
@@ -17,11 +19,8 @@ public:
     bool      saveTiling(QString name, TilingPtr tiling);
     bool      verifyNameFiles();
 
-protected:
-    void      setVCFillData(TilingPtr tiling);
-
 private:
-    class ViewControl     * view;
+    class ViewController  * viewController;
     class Configuration   * config;
     class TilingMaker     * tilingMaker;
     class PrototypeMaker  * prototypeMaker;

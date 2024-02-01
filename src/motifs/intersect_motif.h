@@ -43,8 +43,8 @@ public:
     int getIntersectionRank(int side, bool isLeft, QList<IntersectionPtr> infos);
 
 protected:
-    void inferIntersect(TilePtr tile);              // Intersect inferring
-    void inferIntersectProgressive(TilePtr tile);  // Progressive intersect inferring
+    void inferIntersect();              // Intersect inferring
+    void inferIntersectProgressive();  // Progressive intersect inferring
 };
 
 #endif // INTERSECT_MOTIF_H

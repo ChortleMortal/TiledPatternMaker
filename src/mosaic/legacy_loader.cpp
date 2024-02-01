@@ -22,6 +22,7 @@
 #include "motifs/star.h"
 #include "geometry/map.h"
 #include "misc/border.h"
+#include "misc/fileservices.h"
 #include "style/colored.h"
 #include "style/emboss.h"
 #include "style/filled.h"
@@ -33,10 +34,9 @@
 #include "tile/tile.h"
 #include "tile/tile_reader.h"
 #include "tile/tiling.h"
-#include "tile/tiling_loader.h"
+#include "tile/tiling_reader.h"
 #include "tile/tiling_manager.h"
-#include "viewers/viewcontrol.h"
-
+#include "viewers/view_controller.h"
 #undef  DEBUG_REFERENCES
 #define SUPPORT_BUGS
 #define NEIGHBOURS
@@ -92,27 +92,26 @@ void LegacyLoader::processTapratsVector(xml_node & node, MosaicPtr mosaic)
 
     }
     qDebug() << "end vector";
-
-    ModelSettings & settings = _mosaic->getSettings();
-
-    // this is an arbitrary resizing to match with version 1.8.1
-    settings.setBackgroundColor(QColor(Qt::white));
-    settings.setSize(QSize(1500,1100));
-    settings.setZSize(QSize(1500,1100));
+    
+    CanvasSettings ms = _mosaic->getCanvasSettings();
+    ms.setBackgroundColor(QColor(Qt::white));
+    ms.setViewSize(QSize(1500,1100));  // this is an arbitrary resizing to match with version 1.8.1
+    ms.setCanvasSize(QSize(1500,1100));
 
     // Canvas Settings fill data defaults to FillData defaults, loader can  override these
     if (_tilings.size() > 0)
     {
         qDebug() << "Using Tiling FiilData";
-        const FillData & fd =  _tilings.first()->getData().getFillData();
-        settings.setFillData(fd);
+        FillData fd =  _tilings.first()->getCanvasSettings().getFillData();
+        ms.setFillData(fd);
     }
     else
     {
         qDebug() << "Using Default FiilData";
         FillData fd;    // default
-        settings.setFillData(fd);
+        ms.setFillData(fd);
     }
+    _mosaic->setCanvasSettings(ms);
 }
 
 void LegacyLoader::processThick(xml_node & node)
@@ -144,7 +143,7 @@ void LegacyLoader::processThick(xml_node & node)
 
     qDebug() << "Constructing Thick from prototype and poly";
     Thick * thick = new Thick(proto);
-    thick->setCanvasXform(xf);
+    thick->setModelXform(xf,false);
     thick->setColor(color);
     thick->setDrawOutline(draw_outline);
     thick->setLineWidth(width);
@@ -187,7 +186,7 @@ void LegacyLoader::processInterlace(xml_node & node)
 
     qDebug() << "Constructing Interlace (DAC) from prototype and poly";
     Interlace * interlace = new Interlace(proto);
-    interlace->setCanvasXform(xf);
+    interlace->setModelXform(xf,false);
     interlace->setColor(color);
     interlace->setDrawOutline(draw_outline);
     interlace->setLineWidth(width);
@@ -228,7 +227,7 @@ void LegacyLoader::processOutline(xml_node & node)
     qDebug() << "Constructing Outline from prototype and poly";
     Outline * outline = new Outline(proto);
     qDebug().noquote() << xf.toInfoString();
-    outline->setCanvasXform(xf);
+    outline->setModelXform(xf,false);
     outline->setColor(color);
     outline->setDrawOutline(draw_outline);
     outline->setLineWidth(width);
@@ -266,7 +265,7 @@ void LegacyLoader::processFilled(xml_node & node)
     }
 
     Filled * filled = new Filled(proto,0);
-    filled->setCanvasXform(xf);
+    filled->setModelXform(xf,false);
     //filled->setColor(color);
     filled->setDrawInsideBlacks(draw_inside);
     filled->setDrawOutsideWhites(draw_outside);
@@ -306,7 +305,7 @@ void LegacyLoader::processPlain(xml_node & node)
     }
 
     Plain * plain = new Plain(proto);
-    plain->setCanvasXform(xf);
+    plain->setModelXform(xf,false);
     plain->setColor(color);
     qDebug().noquote() << "XmlServices created Style (Plain)" << plain->getInfo();
     _mosaic->addStyle(StylePtr(plain));
@@ -337,7 +336,7 @@ void LegacyLoader::processSketch(xml_node & node)
     }
 
     Sketch * sketch = new Sketch(proto);
-    sketch->setCanvasXform(xf);
+    sketch->setModelXform(xf,false);
     sketch->setColor(color);
     qDebug().noquote() << "XmlServices created Style (Sketch)" << sketch->getInfo();
     _mosaic->addStyle(StylePtr(sketch));
@@ -376,7 +375,7 @@ void LegacyLoader::processEmboss(xml_node & node)
 
     qDebug() << "Constructing Emboss from prototype and poly";
     Emboss * emboss = new Emboss(proto);
-    emboss->setCanvasXform(xf);
+    emboss->setModelXform(xf,false);
     ColorSet cs;
     cs.addColor(color);
     emboss->setColorSet(cs);
@@ -587,9 +586,15 @@ ProtoPtr LegacyLoader::getPrototype(xml_node & node)
         {
             // load tiling
             qDebug().noquote() << "loading named tiling" << tilingName;
+#if 0
             TilingManager tm;
             tp = tm.loadTiling(tilingName,TILM_LOAD_FROM_MOSAIC);
-            if (tp)
+#else
+            QString filename = FileServices::getTilingXMLFile(tilingName);
+            TilingReader tm;
+            tp  = tm.readTilingXML(filename);
+#endif
+                if (tp)
             {
                 _tilings.push_back(tp);
             }
@@ -668,7 +673,7 @@ ProtoPtr LegacyLoader::getPrototype(xml_node & node)
             // then use that
             // DAC 27MAY17 - imprtant that this code not removed or Design View will fail
             const PlacedTiles & placedTiles = tp->getInTiling();
-            for (const auto & pf : placedTiles )
+            for (const auto & pf : std::as_const(placedTiles))
             {
                 if (pf->getTile()->equals(feature))
                 {
@@ -780,7 +785,7 @@ RosettePtr LegacyLoader::getRosetteFigure(xml_node & node)
     str = node.child_value("s");
     int s = str.toInt();
 
-    RosettePtr rosette = make_shared<Rosette>(n, q, s, 0.0);
+    RosettePtr rosette = make_shared<Rosette>(n, q, s);
     setRosetteReference(node,rosette);
     return rosette;
 }
@@ -827,7 +832,7 @@ ConnectPtr LegacyLoader::getConnectFigure(xml_node & node)
             qFatal("Connect figure not based on Rosette");
         }
 
-        cf = make_shared<RosetteConnect>(n, r->getQ(), r->getS(), r->getK());
+        cf = make_shared<RosetteConnect>(n, r->getQ(), r->getS());
         setConnectReference(node,cf);
         qDebug() << cf->getMotifDesc();
     }
@@ -1388,7 +1393,7 @@ TilingPtr LegacyLoader::findTiling(QString name)
 {
     for (const auto & tiling : _tilings)
     {
-        if (tiling->getName() == name)
+        if (tiling->getTitle() == name)
         {
             return tiling;
         }

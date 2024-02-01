@@ -113,7 +113,7 @@ void Neighbours::insertNeighbour(const EdgePtr & e)
 void Neighbours::dumpNeighbours() const
 {
     qDebug() << "vertex: " << vertex.lock()->pt << "num neighbour:" << size();
-    for (auto & wedge : *this)
+    for (auto & wedge : std::as_const(*this))
     {
         auto edge = wedge.lock();
         if (edge)
@@ -135,7 +135,7 @@ EdgePtr Neighbours::getFirstNonvisitedNeighbour(const EdgePtr & home)
     qreal hangle = home->getAngle();
     angles.push_back(hangle);
     WeakEdgePtr ep;
-    for (auto & edge : *this)
+    for (auto & edge : std::as_const(*this))
     {
         if (edge.lock()->visited)
         {
@@ -152,7 +152,7 @@ EdgePtr Neighbours::getFirstNonvisitedNeighbour(const EdgePtr & home)
 bool Neighbours::verify()
 {
     bool rv = true;
-    for (auto & e : *this)
+    for (auto & e : std::as_const(*this))
     {
         if (vertex.lock() != e.lock()->v1 && vertex.lock() != e.lock()->v2)
         {
@@ -167,7 +167,7 @@ void Neighbours::cleanse()
 {
     QVector<EdgePtr> baddies;
 
-    for (const WeakEdgePtr & e : *this)
+    for (const WeakEdgePtr & e : std::as_const(*this))
     {
         EdgePtr e1 = e.lock();
         if (vertex.lock() != e1->v1  && vertex.lock() != e1->v2)
@@ -178,7 +178,7 @@ void Neighbours::cleanse()
     }
 
     // this seems unnecessarily complex but has to be
-    for (const EdgePtr & e2 : baddies)
+    for (const EdgePtr & e2 : std::as_const(baddies))
     {
         for (int i=0; i < (int)size(); i++)
         {

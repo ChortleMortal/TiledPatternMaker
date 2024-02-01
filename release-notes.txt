@@ -1,3 +1,38 @@
+Version 3.4
+===========
+
+Improvments:
+    Motif Maker         Adds Rosette2 which relaxes constraints in Rosette
+    Motif Maker         Adds Star2 which is more like Kaplan 2005 than Kaplan 2000
+    Borders             Still embryonic but improved with 'use view size' and being
+                        in model units rather than screen units for resizing
+    Tiling Maker        Removes UNDO function which never worked correctly
+    Tiling Maker        Adds Unify (opposite of Uniquify)
+    Tiling Maker        Add Propagate enable/disable.
+    Motif Maker         Propagate enable/disable improved to make Motif Maker faster
+    Image Tools         Dramatic speedup of generating and comparing image BMPs files by using multithreading
+    Keyboard Shortcuts  + and - buttons now zoom, < and > keys now rotate
+    Configuration       Both Light and Dark themes improved and auto mode added
+    Control Panel       Loader page - ability to sort by date creatded
+    Control Panel       Loader page - ability to show only mosaics/tilings with background images
+    Control Panel       Crop Maker page - adds Re-apply Crop button
+    Control Panel       Model Settings page - improved
+    Control Panel       Image tools page - new layout which is clearer
+
+Fixed
+    Tiling Maker        Occasional crash in Snap-to introduced in version 3.3
+    Tiling Maker        Detection of overlaps/toucing was slowing down the maker
+    Tiling Maker        Repeat points not shown correctly while creating them
+    Save Tilng          Removed spurious exhortations to save tiling
+    Image Tools         Repair of "Show original PNGs"
+    Image Tools         Color filter only used for direct viewing not ping-pong.
+                        Its use during pin-pong was causing more confusion than benefit.
+    Startup             Race condition at startup causing crash fixed
+    Background Images   Alignment to mosaics and tilings improved
+    Background Images   Background images from tiling were not being carried forward into mosaic
+    Control Panel       Removed unwanted interactions between Border Maker and Crop Maker
+
+
 Version 3.3.1
 =============
 
@@ -7,7 +42,7 @@ Fixes:
     Builds              fixes some builds using qt 5.15.2 and early versions of qt6
 
 Version 3.3
-===========
+=============
 
 This version built and tested with Qt versions 6.5.2 and 5.15.2 with
 both cmake ansd qmake using QtCreator on Windows and Linux systems
@@ -32,6 +67,8 @@ Fixes
     Prototype View:     crash when selected at startup
     Motif Maker:        improved propagation to Mosaic Maker and Map Editor
     Image Tools Menu:   creation of worklist for motifs repaired
+    Image Tools Menu:   an unitialised variable could cause
+                        compare cycle to crash when spacebar pressed
 
 Version 3.2.1
 =============
@@ -66,6 +103,7 @@ Fixes
 - Layer selection maintained on exit and re-entru to layer menu
 - Grid alignments fixed
 
+
 Version 3.1
 ===========
 
@@ -87,6 +125,7 @@ Fixes
 Known Problem:
 - Positioning of control panel and view widgets on the display screen are random for Linux.
 - The inferred rosette currently cannot reproduce all the orignal taprats/alhambra designs.
+
 
 Version 3.0
 ===========
@@ -209,6 +248,7 @@ Bug Fixes:
 - 'Scale to View' now working without any pops
 - Filled style algorithm 2 modification were not immediately displayed
 
+
 Version 2.4
 ===========
 
@@ -232,6 +272,7 @@ Bug Fixes:
 Builds:
 Now recommend building with Qt6. (Qt5.15 is still supported)
 
+
 Version 2.3.1
 =============
 
@@ -249,6 +290,7 @@ Bug fixes:
 - Improved propagation of tiling changes into existing design
 - Fill mode 2 was not selecting correctly
 - Fixes non-responsiveness of Prototype View to tiling and motif changes
+
 
 Version 2.3.0
 =============
@@ -283,11 +325,13 @@ Designer Mode:
 Source Code:
 - This version is built using Qt Version 6.0.2
 
+
 Version 2.2.0
 ==============
 
 The emphasis of this release has been on smoothing out the workflow from creating tilings,
 to applying motifs (figures) to tile features, to decorating the design to product a finished mosaic.
+
 
 Version 2.1.0
 =============
@@ -295,16 +339,19 @@ Version 2.1.0
 - New functions and increased usability.
 - Many bugs fixed.
 
+
 Version 1.8.1
 =============
 
 - Introduces 'Designer Mode' and 'Insight Mode".
 - Major revision of control panel for usability improvements.
 
+
 Version 1.7.1
 =============
 
 Menu usability improvements
+
 
 Version 1.7.0
 =============

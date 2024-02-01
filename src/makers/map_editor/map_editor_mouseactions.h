@@ -2,6 +2,8 @@
 #ifndef MAP_EDITOR_MOUSEACTIONS_H
 #define MAP_EDITOR_MOUSEACTIONS_H
 
+#include <QLineF>
+
 #include "makers/map_editor/map_editor_selection.h"
 #include "geometry/circle.h"
 
@@ -14,7 +16,7 @@ class QKeyEvent;
 class MapEditor;
 class MapEditorDb;
 class MapEditorView;
-class ViewControl;
+class View;
 
 enum eCircleMode
 {
@@ -42,7 +44,7 @@ protected:
     MapEditorDb        * db;
     MapEditorView      * meView;
     MapEditorSelection * selector;
-    ViewControl        * view;
+    View               * view;
 };
 
 typedef std::shared_ptr<MapMouseAction> MapMouseActionPtr;

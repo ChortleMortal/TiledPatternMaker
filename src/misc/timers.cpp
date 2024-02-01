@@ -1,9 +1,12 @@
 #include "misc/timers.h"
 #include <QString>
 
-AQElapsedTimer::AQElapsedTimer() : QElapsedTimer()
+AQElapsedTimer::AQElapsedTimer(bool bstart) : QElapsedTimer()
 {
-    start();
+    if (bstart)
+    {
+        start();
+    }
 }
 
 QString AQElapsedTimer::getElapsed()

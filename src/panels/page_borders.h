@@ -3,6 +3,7 @@
 #define PAGE_BORDERS_H
 
 #include "panels/panel_page.h"
+#include "enums/eborder.h"
 #include "widgets/layout_qrectf.h"
 
 class AQComboBox;
@@ -20,7 +21,7 @@ public:
 
     void onRefresh() override;
     void onEnter() override;
-    void onExit() override {}
+    void onExit() override;
 
 private slots:
     void slot_removeBorder();
@@ -33,8 +34,10 @@ private slots:
     void slot_borderColorChanged(QLineEdit * le);
     void slot_borderColor2Changed(QLineEdit * le);
     void slot_borderWidthChanged(qreal width);
+    void slot_borderLengthChanged(qreal length);
     void slot_borderRowsChanged(int rows);
     void slot_borderColsChanged(int cols);
+    void slot_useViewSzChanged(bool checked);
     void slot_rectBoundaryChanged();
     void slot_centreChanged();
     void slot_radiusChanged(qreal r);
@@ -58,7 +61,7 @@ protected:
     QWidget   * createBorderTypeBlocks();
 
 private:
-    class BorderView*  brview;
+    class BorderView*  borderView;
     AQComboBox      *  borderTypes;
     AQComboBox      *  cropTypes;
 
@@ -72,17 +75,19 @@ private:
     QStackedLayout  * borderTypeStack;
     QStackedLayout  * cropTypeStack;
 
-    DoubleSpinSet   * borderWidth[3];
+    DoubleSpinSet   * borderWidth[BORDER_BLOCKS+1];
+    DoubleSpinSet   * borderLength;
     DoubleSpinSet   * radius;
     SpinSet         * borderRows;
     SpinSet         * borderCols;
-    QLabel          * borderColorLabel[4];
-    QLineEdit       * borderColor[4];
-    ClickableLabel  * borderColorPatch[4];
+    QLabel          * borderColorLabel[BORDER_BLOCKS+1];
+    QLineEdit       * borderColor[BORDER_BLOCKS+1];
+    ClickableLabel  * borderColorPatch[BORDER_BLOCKS+1];
 
     LayoutQRectF    * rectBoundaryLayout;
     LayoutQPointF   * centre;
 
+    QCheckBox       * chkUseViewSize;
 };
 
 #endif

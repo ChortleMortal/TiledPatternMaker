@@ -32,6 +32,7 @@ DesignElement::DesignElement(const TilePtr & tile, const MotifPtr & motif)
 {
     this->tile   = tile;
     this->motif  = motif;
+    motif->setTile(tile);
     refs++;
 }
 
@@ -82,7 +83,8 @@ void DesignElement::createMotifFromTile()
     if (tile->isRegular())
     {
         // make a Rosette motif
-        motif = make_shared<Rosette>(tile->numPoints(), 0.0, 3, 0);
+        motif = make_shared<Rosette>(tile->numPoints(), 0.0, 3);
+        motif->setTile(tile);
     }
     else
     {
@@ -93,8 +95,6 @@ void DesignElement::createMotifFromTile()
         motif = tmotif;
     }
 
-    motif->setMotifScale(tile->getScale());
-    motif->setMotifRotate(tile->getRotation());
     motif->buildMotifMaps();
 }
 
@@ -112,7 +112,7 @@ void DesignElement::recreateMotifFromChangedTile()
     {
         motif->setN(newsides);  // this should do the trick
     }
-
+    motif->setTile(tile);
     motif->buildMotifMaps();
 }
 
@@ -133,7 +133,7 @@ void DesignElement::recreateMotifWhenRgularityChanged()
         switch (motif->getMotifType())
         {
         case MOTIF_TYPE_IRREGULAR_ROSETTE:
-            motif = make_shared<Rosette>(oldMotif->getN(), oldMotif->q, oldMotif->s, 0);
+            motif = make_shared<Rosette>(oldMotif->getN(), oldMotif->q, oldMotif->s);
             break;
 
         case MOTIF_TYPE_IRREGULAR_STAR:
@@ -144,27 +144,25 @@ void DesignElement::recreateMotifWhenRgularityChanged()
         case MOTIF_TYPE_HOURGLASS:
         case MOTIF_TYPE_INTERSECT:
         case MOTIF_TYPE_GIRIH:
-            motif = make_shared<Rosette>(oldMotif->getN(), oldMotif->q, oldMotif->s, 0);
+            motif = make_shared<Rosette>(oldMotif->getN(), oldMotif->q, oldMotif->s);
             break;
             
         case MOTIF_TYPE_EXPLICIT_MAP:
-            motif = make_shared<Rosette>(oldMotif->getN(), 0.0, 3, 0);
+            motif = make_shared<Rosette>(oldMotif->getN(), 0.0, 3);
             break;
             
         case MOTIF_TYPE_IRREGULAR_NO_MAP:
-            motif = make_shared<Rosette>(tile->numPoints(), 0.0, 3, 0);
+            motif = make_shared<Rosette>(tile->numPoints(), 0.0, 3);
             break;
 
         default:
             qWarning().noquote() << "Unexpected motif type" << sMotifType[motif->getMotifType()];
             break;
         }
-        motif->setMotifScale(tile->getScale());
-        motif->setMotifRotate(tile->getScale());
     }
     else
     {
-        // making an explicit motif from a rdial
+        // making an explicit motif from a radial
         switch (motif->getMotifType())
         {
         case MOTIF_TYPE_ROSETTE:
@@ -177,7 +175,7 @@ void DesignElement::recreateMotifWhenRgularityChanged()
             irose->setTile(tile);
             irose->setMotifScale(1.0);
             irose->setMotifRotate(0.0);
-            irose->init(oldMotif->getQ(), oldMotif->getK(), oldMotif->getS());
+            irose->init(oldMotif->getQ(), 0.5, oldMotif->getS());
             motif = irose;
         }
             break;
@@ -203,17 +201,9 @@ void DesignElement::recreateMotifWhenRgularityChanged()
         }
     }
 
+    motif->setTile(tile);
     motif->buildMotifMaps();
-#if 0 // Methinks not needed any more becaude of export data
-    motif->setMotifScale(tile->getScale());
-    motif->setMotifRotate(tile->getRotation());
-
-    ExtendedBoundary & eb = motif->getRWExtendedBoundary();
-    eb.sides = tile->numPoints();
-    eb.scale = tile->getScale();
-    QPolygonF poly = tile->getPolygon();
-    eb.set(poly);
-#endif
+    motif->buildExtendedBoundary();
 }
 
 void DesignElement::setMotif(const MotifPtr & motif)
@@ -224,6 +214,7 @@ void DesignElement::setMotif(const MotifPtr & motif)
 
 void DesignElement::replaceTile(const TilePtr & tile)
 {
+    motif->setTile(tile);
     if (tile->isSimilar(tile))
     {
         this->tile = tile;
@@ -263,7 +254,7 @@ void DesignElement::describe()
     if (motif)
     {
         auto map = motif->getMotifMap();
-        QString mapstring = (map) ? map->namedSummary() : "No map";
+        QString mapstring = (map) ? map->summary() : "No map";
         qDebug().noquote()  << "Motif:" << motif.get()  << motif->getMotifDesc() << mapstring;
     }
     else

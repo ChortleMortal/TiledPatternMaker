@@ -17,5 +17,6 @@ const QString sTilingMakerMouseMode[] =
         E2STR(TM_MIRROR_X_MODE),
         E2STR(TM_MIRROR_Y_MODE),
         E2STR(TM_CONSTRUCTION_LINES),
-        E2STR(REFLECT_EDGE),
+        E2STR(TM_REFLECT_EDGE),
+        E2STR(TM_UNIFY_MODE),
 };

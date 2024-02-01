@@ -22,17 +22,17 @@ class page_layers : public panel_page
         LAYER_Z,
         LAYER_ALIGN,
         LAYER_ALIGN_CENTER,
-        FRAME_SCALE,
-        FRAME_ROT,
-        FRAME_X,
-        FRAME_Y,
-        CANVAS_CLEAR,
         CANVAS_SCALE,
         CANVAS_ROT,
         CANVAS_X,
         CANVAS_Y,
-        CANVAS_CENTER_X,
-        CANVAS_CENTER_Y,
+        MODEL_CLEAR,
+        MODEL_SCALE,
+        MODEL_ROT,
+        MODEL_X,
+        MODEL_Y,
+        MODEL_CENTER_X,
+        MODEL_CENTER_Y,
         LAYER_CENTER,
         LAYER_SCALE,
         LAYER_ROT,
@@ -51,11 +51,15 @@ public:
 
 private slots:
     void slot_selectLayer();
+    void slot_deSelectLayer();
 
 protected:
+    void doRefresh();
     void populateLayers();
     void populateLayer(Layer *layer, int col);
-    Layer *getLayer(int col);
+    void refreshLayer( Layer *layer, int col);
+
+    Layer * getLayer(int col);
 
     void visibilityChanged(int col);
     void zChanged(AQDoubleSpinBox *dsp, int col);
@@ -69,6 +73,7 @@ private:
     AQTableWidget * layerTable;
     QLabel        * refreshLabel;
     QVector<Layer *> wlayers;
+    QTableWidgetItem * selectedItem;
 };
 
 #endif

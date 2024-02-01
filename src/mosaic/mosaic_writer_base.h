@@ -8,10 +8,9 @@
 #include <memory>
 #endif
 
-#include "mosaic/mosaic_io_base.h"
 typedef std::shared_ptr<class Vertex> VertexPtr;
 
-class MosaicWriterBase : public MosaicIOBase
+class MosaicWriterBase
 {
 public:
     MosaicWriterBase();

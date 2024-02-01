@@ -1,6 +1,7 @@
 #include "makers/map_editor/map_editor_map_loader.h"
-#include "viewers/viewcontrol.h"
-#include "tile/tiling_loader.h"
+#include "misc/sys.h"
+#include "viewers/view_controller.h"
+#include "tile/tiling_reader.h"
 
 MapEditorMapLoader::MapEditorMapLoader()
 {
@@ -16,7 +17,7 @@ MapPtr MapEditorMapLoader::loadMosaicMap(QString fileName)
 {
     MapPtr map;
     
-    view->dumpRefs();
+    Sys::dumpRefs();
 
     qInfo().noquote() << "MosaicLoader loading map from:" << fileName;
     _fileName = fileName;
@@ -64,10 +65,12 @@ MapPtr MapEditorMapLoader::loadMosaicMap(QString fileName)
         xml_node sz = node.child("size");
         if (sz)
         {
-            procSize(sz, _width, _height,_zwidth, _zheight);
-            auto & settings = view->getViewSettings();
-            settings.initialise(VIEW_MAP_EDITOR,QSize(_width,_height),QSize(_zwidth,_zheight));
-            settings.initialiseCommon(QSize(_width,_height),QSize(_zwidth,_zheight));
+            _viewSize   = procViewSize(sz);
+            _canvasSize = procCanvasSize(sz,_viewSize);
+
+            ViewController * viewControl = Sys::viewController;
+            auto & canvas = viewControl->getCanvas();
+            canvas.initCanvasSize(_canvasSize);
         }
 
         xml_node ca = node.child("ModelSettings");
@@ -80,16 +83,15 @@ MapPtr MapEditorMapLoader::loadMosaicMap(QString fileName)
         xml_node bi = node.child("BackgroundImage");
         if (bi)
         {
-            TilingLoader::getBackgroundImage(bi);
+            _bip = TilingReader::getBackgroundImage(bi);
         }
-
         xml_node xmlmap = node.child("map");
         if (xmlmap)
         {
             map = getMap(node);
         }
         
-        view->dumpRefs();
+        Sys::dumpRefs();
     }
     catch (...)
     {

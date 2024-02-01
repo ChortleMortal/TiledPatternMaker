@@ -20,9 +20,9 @@ public:
     static void crashMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg);
 
     void init();
+    void clear();
     void suspend(bool enable);  // suspend takes precedence over trap
     void trap(bool enable);
-    void trapClear();
 
     void logToStdErr(bool enable)   { _logToStderr = enable; }
     void logToDisk(bool enable)     { _logToDisk   = enable; }
@@ -30,7 +30,6 @@ public:
     void logToPanel(bool enable)    { _logToPanel  = enable; }
     void logLines(bool enable)      { _logLines    = enable; }
     void logDebug(bool enable)      { _logDebug    = enable; }
-    void logDarkMode(bool enable)   { _logDarkMode = enable; }
     void logTimer(eLogTimer val);
 
     void saveLog(QString to);
@@ -45,8 +44,9 @@ protected:
     ~qtAppLog();
 
     void log(QString & msg);
+    void endTrap();
 
-    private:
+private:
     static qtAppLog  * mpThis;
     static QMutex	 * pLogLock;
     static QTextEdit * ted;
@@ -57,12 +57,12 @@ protected:
     static bool _logToPanel;
     static bool _logLines;
     static bool _logDebug;
-    static bool _logDarkMode;
 
     static bool	_active;
     static bool _suspended;
     static bool _trapping;
 
+    static int _line;
 
     static std::string str1;
     static std::string str2;
@@ -76,7 +76,6 @@ protected:
 
     QFile	mCurrentFile;
     QString _logDir;
-
 };
 
 #endif

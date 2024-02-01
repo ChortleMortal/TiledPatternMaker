@@ -30,10 +30,12 @@
 #include "panels/controlpanel.h"
 #include "qlabel.h"
 #include "settings/configuration.h"
+#include "tile/backgroundimage.h"
 #include "tiledpatternmaker.h"
+#include "viewers/backgroundimageview.h"
 #include "viewers/crop_view.h"
 #include "viewers/map_editor_view.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
 #include "widgets/crop_widget.h"
 #include "widgets/dlg_listselect.h"
 #include "widgets/dlg_push_select.h"
@@ -43,8 +45,9 @@
 using std::make_shared;
 
 typedef std::shared_ptr<RadialMotif>    RadialPtr;
+typedef std::shared_ptr<class BackgroundImage>  BkgdImagePtr;
 
-page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,"Map Editor")
+page_map_editor:: page_map_editor(ControlPanel *cpanel)  : panel_page(cpanel,PAGE_MAP_EDITOR,"Map Editor")
 {
     maped      = MapEditor::getInstance();
     meView     = MapEditorView::getInstance();
@@ -619,25 +622,25 @@ void page_map_editor::onRefresh()
 
     MapPtr map = db->getMap(COMPOSITE);
     if (map)
-        compositeVChk->setText(map->namedSummary());
+        compositeVChk->setText(map->summary());
     else
         compositeVChk->setText("No Map");
 
     map = db->getMap(LAYER_1);
     if (map)
-        layer1VChk->setText(QString("%1 %2").arg(sMapEditorMapType[db->getMapType(map)]).arg(map->summary()));
+        layer1VChk->setText(QString("%1 %2").arg(sMapEditorMapType[db->getMapType(map)],map->unnamedSummary()));
     else
         layer1VChk->setText("No map");
 
     map = db->getMap(LAYER_2);
     if (map)
-        layer2VChk->setText(QString("%1 %2").arg(sMapEditorMapType[db->getMapType(map)]).arg(map->summary()));
+        layer2VChk->setText(QString("%1 %2").arg(sMapEditorMapType[db->getMapType(map)],map->unnamedSummary()));
     else
         layer2VChk->setText("No map");
 
     map = db->getMap(LAYER_3);
     if (map)
-        layer3VChk->setText(QString("%1 %2").arg(sMapEditorMapType[db->getMapType(map)]).arg(map->summary()));
+        layer3VChk->setText(QString("%1 %2").arg(sMapEditorMapType[db->getMapType(map)],map->unnamedSummary()));
     else
         layer3VChk->setText("No map");
 
@@ -677,7 +680,7 @@ void page_map_editor::refreshStatusBox()
     txt << QString("Map status: %1").arg(sMapEditorMapType[mapType]);
 
     if (map)
-        txt << QString("Map: %1  %2 ").arg(Utils::addr(map.get())).arg(map->namedSummary());
+        txt << QString("Map: %1  %2 ").arg(Utils::addr(map.get())).arg(map->summary());
     else
         txt <<  "No edit map";
 
@@ -698,7 +701,7 @@ void page_map_editor::refreshStatusBox()
 
     case MAPED_LOADED_FROM_MOTIF:
     {
-        for (auto & wdelp : db->getDesignElements())
+        for (auto & wdelp : std::as_const(db->getDesignElements()))
         {
             DesignElementPtr delp = wdelp.lock();
             if (delp)
@@ -794,9 +797,8 @@ void page_map_editor::refreshStatusBox()
     if (set.size())
     {
         str.clear();
-        for (auto it=set.begin(); it != set.end(); it++)
+        for (auto & sel : std::as_const(set))
         {
-            auto sel = *it;
             eMapSelection type  = sel->getType();
             str += QString("Selection=%1").arg(sMapSelection[type]);
             switch(type)
@@ -887,7 +889,7 @@ void page_map_editor::slot_mosaicLoaded(QString name)
 
 void page_map_editor::slot_mosaicChanged()
 {
-    if (view->isEnabled(VIEW_MAP_EDITOR))
+    if (viewControl->isEnabled(VIEW_MAP_EDITOR))
     {
         eMapEditorMapType mtype = db->getMapType(db->getEditMap());
         switch (mtype)
@@ -1067,7 +1069,6 @@ void page_map_editor::slot_rebuildNeighbours()
     MapPtr map = db->getEditMap();
     if (!map) return;
     map->resetNeighbourMap();
-    map->getNeighbourMap(); // rebuilds
     updateView();
 }
 
@@ -1453,7 +1454,7 @@ void page_map_editor::slot_loadMapFile()
 
     lastNamedMap = filename;
 
-    filename.prepend(config->mapsDir);
+    filename.prepend(Sys::mapsDir);
     filename.append(".xml");
     MapEditorMapLoader loader;
     MapPtr loadedMap  = loader.loadMosaicMap(filename);
@@ -1468,13 +1469,28 @@ void page_map_editor::slot_loadMapFile()
     eMapEditorMapType maptype = loader.getType();
 
     Xform xf = loader.getXform();
+    auto bip = loader.getBackground();
 
-    qDebug().noquote() << loadedMap->namedSummary();
+    qDebug().noquote() << loadedMap->summary();
 
     maped->loadFromMap(loadedMap,maptype);
-    meView->setCanvasXform(xf);
+    maped->getDb()->setBackgroundImage(bip);    // persists
+
+    meView->setModelXform(xf,false);
+
+    auto bview = BackgroundImageView::getInstance();
+    bview->setImage(bip);      // sets or clears
+    if (bip)
+    {
+        bview->setModelXform(bip->getImageXform(),false);
+    }
 
     tallySelects();
+
+    if (Sys::viewController->isEnabled(VIEW_MAP_EDITOR))
+    {
+        Sys::view->resize(loader.getViewSize());
+    }
 
     QMessageBox box(this);
     box.setIcon(QMessageBox::Information);
@@ -1601,7 +1617,7 @@ void page_map_editor::slot_saveMapToFile()
         return;
     }
 
-    QString dir = config->mapsDir;
+    QString dir = Sys::mapsDir;
     QString defaultFile = dir;
     if (!lastNamedMap.isEmpty())
     {
@@ -1677,7 +1693,11 @@ void page_map_editor::slot_editLayer(int id, bool checked)
         db->setEditSelect(eMapedLayer(id));
     else
         db->setEditSelect(NO_MAP);
-    updateView();
+
+    if (view->isActiveLayer(meView))
+    {
+        updateView();
+    }
 }
 
 void page_map_editor::tallySelects()

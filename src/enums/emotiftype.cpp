@@ -7,13 +7,16 @@ const QString sMotifType[] =
         "Undefinerd Motif",             //E2STR(MOTIF_TYPE_UNDEFINED),
         "Radial Motif",                 //E2STR(MOTIF_TYPE_RADIAL),
         "Rosette Motif",                //E2STR(MOTIF_TYPE_ROSETTE),
+        "Rosette2 Motif",               //E2STR(MOTIF_TYPE_ROSETTE),
 
         "Star Motif",                   //E2STR(MOTIF_TYPE_STAR),
+        "Star2 Motif",                  //E2STR(MOTIF_TYPE_STAR2),
         "Connected Star Motif",         //E2STR(MOTIF_TYPE_CONNECT_STAR),
         "Connected Rosette Motif",      //E2STR(MOTIF_TYPE_CONNECT_ROSETTE),
 
         "Extended Rosette Motif",       //E2STR(MOTIF_TYPE_EXTENDED_ROSETTE),
         "Extended Star Motif",          //E2STR(MOTIF_TYPE_EXTENDED_STAR),
+        "Extended Star2 Motif",         //E2STR(MOTIF_TYPE_EXTENDED_STAR2),
         "Explicit Map Motif",           //E2STR(MOTIF_TYPE_EXPLICIT_MAP),
 
         "Irregular Inferred Motif",     //E2STR(MOTIF_TYPE_INFERRED),

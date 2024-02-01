@@ -48,7 +48,6 @@ public:
 private slots:
     void slot_clearTiling();
     void slot_reloadTiling();
-    void slot_undo();
 
     void slot_buildMenu();
     void slot_refreshMenuData();
@@ -88,6 +87,7 @@ private slots:
     void slot_trim(qreal valX, qreal valY);
 
     void singleton_changed(bool checked);
+    void slot_propagate_changed(bool checked);
 
 protected:
     AQTableWidget * createTilingTable();
@@ -138,7 +138,6 @@ private:
     QLabel       * debugLabel1;
     QLabel       * debugLabel2;
     QLabel       * overlapStatus;
-    QLabel       * undoStatus;
     QLabel       * loadedLabel;
 
     AQSpinBox    * xRepMin;

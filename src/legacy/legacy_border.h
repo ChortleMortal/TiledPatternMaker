@@ -26,6 +26,9 @@ public:
     QColor  getColor()  { return color; }
     QColor  getColor2() { return color2; }
 
+    virtual const Xform &   getModelXform() override;
+    virtual void            setModelXform(const Xform & xf, bool update) override;
+
     eViewType    iamaLayer() override { return VIEW_BORDER; }
 
 protected:

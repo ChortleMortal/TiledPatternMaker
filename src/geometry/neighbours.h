@@ -2,9 +2,11 @@
 #ifndef NEIGHBOURS_H
 #define NEIGHBOURS_H
 
-#include <memory>
-#include <QVector>
 #include <QMap>
+#include <QVector>
+#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
+#include <memory>
+#endif
 
 typedef std::shared_ptr<class Edge>         EdgePtr;
 typedef std::weak_ptr<class Edge>           WeakEdgePtr;

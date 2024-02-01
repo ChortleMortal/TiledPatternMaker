@@ -5,14 +5,15 @@
 #include "geometry/transform.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "misc/fileservices.h"
+#include "misc/sys.h"
 #include "mosaic/mosaic_writer.h"
 #include "panels/controlpanel.h"
 #include "settings/configuration.h"
+#include "tile/backgroundimage.h"
 #include "tile/placed_tile.h"
 #include "tile/tile.h"
 #include "tile/tiling.h"
 #include "tiledpatternmaker.h"
-#include "viewers/backgroundimageview.h"
 
 #if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
 using Qt::endl;
@@ -36,7 +37,7 @@ bool TilingWriter::writeTilingXML()
     Configuration * config = Configuration::getInstance();
 
     // the name is in the tiling
-    QString name = tiling->getName();
+    QString name = tiling->getTitle();
     QString filename = FileServices::getTilingXMLFile(name);
 
     if (!filename.isEmpty())
@@ -62,18 +63,18 @@ bool TilingWriter::writeTilingXML()
         {
             // appends a version
             name = FileServices::getNextVersion(FILE_TILING,name);
-            tiling->setName(name);
+            tiling->setTitle(name);
             if (isOriginal)
             {
-                filename = config->originalTileDir + name + ".xml";
+                filename = Sys::originalTileDir + name + ".xml";
             }
             else if (isNewTiling)
             {
-                filename = config->newTileDir + name + ".xml";
+                filename = Sys::newTileDir + name + ".xml";
             }
             else
             {
-                filename = config->testTileDir + name + ".xml";
+                filename = Sys::testTileDir + name + ".xml";
             }
         }
         // save drops thru
@@ -83,9 +84,9 @@ bool TilingWriter::writeTilingXML()
     {
         // new file
         if (config->saveTilingTest)
-            filename = config->testTileDir + name + ".xml";
+            filename = Sys::testTileDir + name + ".xml";
         else
-            filename = config->newTileDir + name + ".xml";
+            filename = Sys::newTileDir + name + ".xml";
 
     }
 
@@ -130,12 +131,12 @@ void TilingWriter::writeTilingXML(QTextStream & out)
     QString qs = QString("<Tiling version=\"%1\">").arg(currentTilingXMLVersion);
     out << qs << endl;
 
-    out << "<Name>" << tiling->getName() << "</Name>" << endl;
+    out << "<Name>" << tiling->getTitle() << "</Name>" << endl;
 
     // fill paratmeters not part of original taprats
     int minX,minY,maxX,maxY;
     bool singleton;
-    tiling->getData().getFillData().get(singleton,minX,maxX,minY,maxY);
+    tiling->getCanvasSettings().getFillData().get(singleton,minX,maxX,minY,maxY);
     if (!singleton)
     {
         out << "<Fill singleton = \"f\">" << minX << "," << maxX << "," << minY << "," << maxY << "</Fill>" << endl;
@@ -165,7 +166,6 @@ void TilingWriter::writeTilingXML(QTextStream & out)
         {
             // saved girih shapesd have a translation
             out << "<Tile type=\"girih\" name=\"" << placedTile->getGirihShapeName() << "\">" << endl;
-
         }
         else if (tile->isRegular())
         {
@@ -223,13 +223,14 @@ void TilingWriter::writeTilingXML(QTextStream & out)
 
 void TilingWriter::writeBackgroundImage(QTextStream & out)
 {
-    auto bkgd = BackgroundImageView::getInstance();
-    if (bkgd->isLoaded())
+    auto bview = BackgroundImageView::getInstance();
+    auto bkgd  = bview->getImage();
+    if (bkgd && bkgd->isLoaded())
     {
-        QString astring = QString("<BackgroundImage name=\"%1\">").arg(bkgd->getName());
+        QString astring = QString("<BackgroundImage name=\"%1\">").arg(bkgd->getTitle());
         out << astring << endl;
-
-        const Xform & xform = bkgd->getCanvasXform();
+        
+        const Xform & xform = bview->getModelXform();
         out << "<Scale>" << xform.getScale()           << "</Scale>" << endl;
         out << "<Rot>"   << xform.getRotateRadians()   << "</Rot>"  << endl;
         out << "<X>"     << xform.getTranslateX()      << "</X>" << endl;
@@ -240,7 +241,7 @@ void TilingWriter::writeBackgroundImage(QTextStream & out)
         if (bkgd->useAdjusted())
         {
             out << "<Perspective>";
-            out << Transform::toString(bkgd->perspective);
+            out << Transform::toString(bkgd->getAdjustedTransform());
             out << "</Perspective>" << endl;
         }
 
@@ -252,15 +253,15 @@ void TilingWriter::writeViewSettings(QTextStream & out)
 {
     out << "<ViewSettings>" <<  endl;
 
-    QSize size = tiling->getData().getSettings().getSize();
+    QSize size = tiling->getData().getSettings().getViewSize();
     out << "<width>"  << size.width()  << "</width>" << endl;
     out << "<height>" << size.height() << "</height>" << endl;
-
-    QSize zsize = tiling->getData().getSettings().getZSize();
+    
+    QSizeF zsize = tiling->getData().getSettings().getCanvasSize();
     out << "<zwidth>"  << zsize.width()  << "</zwidth>" << endl;
     out << "<zheight>" << zsize.height() << "</zheight>" << endl;
-
-    MosaicWriter::procesToolkitGeoLayer(out,tiling->getCanvasXform(),0);
+    
+    MosaicWriter::procesToolkitGeoLayer(out,tiling->getModelXform(),0);
 
     out << "</ViewSettings>" <<  endl;
 }

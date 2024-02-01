@@ -6,7 +6,7 @@
 #include "makers/prototype_maker/prototype.h"
 #include "settings/configuration.h"
 #include "viewers/crop_view.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
 
 using std::make_shared;
 
@@ -30,7 +30,7 @@ void CropViewer::releaseInstance()
     }
 }
 
-CropViewer::CropViewer() : LayerController("Crop Viewer")
+CropViewer::CropViewer() : LayerController("Crop Viewer",false)
 {
     config      = Configuration::getInstance();
     debugMouse  = false;
@@ -69,15 +69,31 @@ void CropViewer::draw(QPainter *painter , QTransform t)
     }
 }
 
+void CropViewer::setModelXform(const Xform & xf, bool update)
+{
+    Q_ASSERT(!_unique);
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.toInfoString() << (isUnique() ? "unique" : "common");
+    viewControl->setCurrentModelXform(xf,update);
+}
+
+const Xform & CropViewer::getModelXform()
+{
+    Q_ASSERT(!_unique);
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << viewControl->getCurrentModelXform().toInfoString() << (isUnique() ? "unique" : "common");
+    return viewControl->getCurrentModelXform();
+}
+
+
+
 void CropViewer::slot_wheel_rotate(qreal delta)
 {
     if (!view->isActiveLayer(this)) return;
 
     if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setRotateDegrees(xf.getRotateDegrees() + delta);
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 
@@ -87,9 +103,9 @@ void CropViewer::slot_scale(int amount)
 
     if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setScale(xf.getScale() * (1 + static_cast<qreal>(amount)/100.0));
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 
@@ -99,33 +115,33 @@ void CropViewer::slot_rotate(int amount)
 
     if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setRotateRadians(xf.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 
-void CropViewer:: slot_moveX(int amount)
+void CropViewer:: slot_moveX(qreal amount)
 {
     if (!view->isActiveLayer(this)) return;
 
     if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setTranslateX(xf.getTranslateX() + amount);
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 
-void CropViewer::slot_moveY(int amount)
+void CropViewer::slot_moveY(qreal amount)
 {
     if (!view->isActiveLayer(this)) return;
 
     if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setTranslateY(xf.getTranslateY() + amount);
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 
@@ -195,10 +211,10 @@ void CropViewer::slot_mouseTranslate(QPointF pt)
 
     if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setTranslateX(xf.getTranslateX() + pt.x());
         xf.setTranslateY(xf.getTranslateY() + pt.y());
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 
@@ -237,9 +253,9 @@ void CropViewer::slot_wheel_scale(qreal delta)
 
     if (view->getKbdMode( KBD_MODE_XFORM_VIEW))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setScale(xf.getScale() * (1.0 + delta));
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 

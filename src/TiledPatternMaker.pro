@@ -1,4 +1,4 @@
-QT += core gui widgets svg
+QT += core gui widgets svg concurrent
 TEMPLATE = app
 CONFIG += c++20
 
@@ -11,6 +11,16 @@ win32:QMAKE_LFLAGS += /STACK:32000000
 
 # Input
 SOURCES += \
+    engine/compare_bmp_engine.cpp \
+    engine/image_engine.cpp \
+    engine/mosaic_bmp_engine.cpp \
+    engine/mosaic_stepper.cpp \
+    engine/png_stepper.cpp \
+    engine/stepping_engine.cpp \
+    engine/tiling_bmp_engine.cpp \
+    engine/tiling_stepper.cpp \
+    engine/version_stepper.cpp \
+    engine/worklist_stepper.cpp \
     enums/eborder.cpp \
     enums/ecyclemode.cpp \
     enums/edesign.cpp \
@@ -32,6 +42,7 @@ SOURCES += \
     geometry/edgepoly.cpp \
     geometry/faces.cpp \
     geometry/fill_region.cpp \
+    geometry/geo.cpp \
     geometry/intersect.cpp \
     geometry/loose.cpp \
     geometry/map.cpp \
@@ -40,7 +51,6 @@ SOURCES += \
     geometry/measurement.cpp \
     geometry/neighbour_map.cpp \
     geometry/neighbours.cpp \
-    geometry/point.cpp \
     geometry/threads.cpp \
     geometry/transform.cpp \
     geometry/vertex.cpp \
@@ -81,10 +91,10 @@ SOURCES += \
     makers/prototype_maker/prototype_maker.cpp \
     makers/tiling_maker/tile_selection.cpp \
     makers/tiling_maker/tiling_maker.cpp \
+    makers/tiling_maker/tiling_monitor.cpp \
     makers/tiling_maker/tiling_mouseactions.cpp \
     misc/border.cpp \
     misc/colorset.cpp \
-    misc/cycler.cpp \
     misc/fileservices.cpp \
     misc/geo_graphics.cpp \
     misc/layer.cpp \
@@ -92,15 +102,14 @@ SOURCES += \
     misc/mark_x.cpp \
     misc/pugixml.cpp \
     misc/qtapplog.cpp \
-    misc/runguard.cpp \
     misc/shortcuts.cpp \
+    misc/sys.cpp \
     misc/timers.cpp \
     misc/tpmsplash.cpp \
     misc/utilities.cpp \
     mosaic/design_element.cpp \
     mosaic/legacy_loader.cpp \
     mosaic/mosaic.cpp \
-    mosaic/mosaic_io_base.cpp \
     mosaic/mosaic_manager.cpp \
     mosaic/mosaic_reader.cpp \
     mosaic/mosaic_reader_base.cpp \
@@ -125,8 +134,10 @@ SOURCES += \
     motifs/motif_connector.cpp \
     motifs/radial_motif.cpp \
     motifs/rosette.cpp \
+    motifs/rosette2.cpp \
     motifs/rosette_connect.cpp \
     motifs/star.cpp \
+    motifs/star2.cpp \
     motifs/star_connect.cpp \
     motifs/tile_motif.cpp \
     panels/controlpanel.cpp \
@@ -157,10 +168,10 @@ SOURCES += \
     panels/panel_status.cpp \
     panels/panel_view_select.cpp \
     panels/splitscreen.cpp \
+    settings/canvas.cpp \
+    settings/canvas_settings.cpp \
     settings/configuration.cpp \
     settings/filldata.cpp \
-    settings/model_settings.cpp \
-    settings/view_settings.cpp \
     style/colored.cpp \
     style/emboss.cpp \
     style/filled.cpp \
@@ -171,14 +182,15 @@ SOURCES += \
     style/style.cpp \
     style/thick.cpp \
     style/tile_colors.cpp \
+    tile/backgroundimage.cpp \
     tile/placed_tile.cpp \
     tile/tile.cpp \
     tile/tile_reader.cpp \
     tile/tile_writer.cpp \
     tile/tiling.cpp \
     tile/tiling_data.cpp \
-    tile/tiling_loader.cpp \
     tile/tiling_manager.cpp \
+    tile/tiling_reader.cpp \
     tile/tiling_writer.cpp \
     tiledpatternmaker.cpp \
     viewers/backgroundimageview.cpp \
@@ -191,9 +203,8 @@ SOURCES += \
     viewers/prototype_view.cpp \
     viewers/shape_view.cpp \
     viewers/tiling_maker_view.cpp \
-    viewers/tiling_view.cpp \
     viewers/view.cpp \
-    viewers/viewcontrol.cpp \
+    viewers/view_controller.cpp \
     viewers/viewerbase.cpp \
     widgets/crop_widget.cpp \
     widgets/dlg_cleanse.cpp \
@@ -211,18 +222,29 @@ SOURCES += \
     widgets/dlg_trim.cpp \
     widgets/dlg_wlist_create.cpp \
     widgets/image_layer.cpp \
+    widgets/image_widget.cpp \
     widgets/layout_qrectf.cpp \
     widgets/layout_sliderset.cpp \
     widgets/layout_transform.cpp \
     widgets/memory_combo.cpp \
     widgets/mouse_mode_widget.cpp \
     widgets/rounded_polygon.cpp \
-    widgets/transparentwidget.cpp \
+    widgets/transparent_widget.cpp \
     widgets/version_dialog.cpp \
     widgets/versioned_list_widget.cpp \
     widgets/worklist_widget.cpp
 
 HEADERS += \
+    engine/compare_bmp_engine.h \
+    engine/image_engine.h \
+    engine/mosaic_bmp_engine.h \
+    engine/mosaic_stepper.h \
+    engine/png_stepper.h \
+    engine/stepping_engine.h \
+    engine/tiling_bmp_engine.h \
+    engine/tiling_stepper.h \
+    engine/version_stepper.h \
+    engine/worklist_stepper.h \
     enums/eborder.h \
     enums/ecyclemode.h \
     enums/edesign.h \
@@ -233,6 +255,7 @@ HEADERS += \
     enums/emapeditor.h \
     enums/emotiftype.h \
     enums/emousemode.h \
+    enums/epanelpage.h \
     enums/estatemachineevent.h \
     enums/estyletype.h \
     enums/etilingmakermousemode.h \
@@ -246,6 +269,7 @@ HEADERS += \
     geometry/edge.h \
     geometry/edgepoly.h \
     geometry/faces.h \
+    geometry/geo.h \
     geometry/fill_region.h \
     geometry/intersect.h \
     geometry/loose.h \
@@ -253,7 +277,6 @@ HEADERS += \
     geometry/measurement.h \
     geometry/neighbour_map.h \
     geometry/neighbours.h \
-    geometry/point.h \
     geometry/threads.h \
     geometry/transform.h \
     geometry/vertex.h \
@@ -293,10 +316,10 @@ HEADERS += \
     makers/prototype_maker/prototype_maker.h \
     makers/tiling_maker/tile_selection.h \
     makers/tiling_maker/tiling_maker.h \
+    makers/tiling_maker/tiling_monitor.h \
     makers/tiling_maker/tiling_mouseactions.h \
     misc/border.h \
     misc/colorset.h \
-    misc/cycler.h \
     misc/fileservices.h \
     misc/geo_graphics.h \
     misc/layer.h \
@@ -305,9 +328,9 @@ HEADERS += \
     misc/pugiconfig.hpp \
     misc/pugixml.hpp \
     misc/qtapplog.h \
-    misc/runguard.h \
     misc/shortcuts.h \
     misc/signal_blocker.h \
+    misc/sys.h \
     misc/tile_color_defs.h \
     misc/timers.h \
     misc/tpm_io.h \
@@ -318,7 +341,6 @@ HEADERS += \
     mosaic/design_element.h \
     mosaic/legacy_loader.h \
     mosaic/mosaic.h \
-    mosaic/mosaic_io_base.h \
     mosaic/mosaic_manager.h \
     mosaic/mosaic_reader.h \
     mosaic/mosaic_reader_base.h \
@@ -343,8 +365,10 @@ HEADERS += \
     motifs/motif_connector.h \
     motifs/radial_motif.h \
     motifs/rosette.h \
+    motifs/rosette2.h \
     motifs/rosette_connect.h \
     motifs/star.h \
+    motifs/star2.h \
     motifs/star_connect.h \
     motifs/tile_motif.h \
     panels/controlpanel.h \
@@ -375,11 +399,11 @@ HEADERS += \
     panels/panel_status.h \
     panels/panel_view_select.h \
     panels/splitscreen.h \
+    settings/canvas.h \
+    settings/canvas_settings.h \
     settings/configuration.h \
     settings/filldata.h \
-    settings/model_settings.h \
     settings/tristate.h \
-    settings/view_settings.h \
     style/colored.h \
     style/emboss.h \
     style/filled.h \
@@ -390,14 +414,15 @@ HEADERS += \
     style/style.h \
     style/thick.h \
     style/tile_colors.h \
+    tile/backgroundimage.h \
     tile/placed_tile.h \
     tile/tile.h \
     tile/tile_reader.h \
     tile/tile_writer.h \
     tile/tiling.h \
     tile/tiling_data.h \
-    tile/tiling_loader.h \
     tile/tiling_manager.h \
+    tile/tiling_reader.h \
     tile/tiling_writer.h \
     tiledpatternmaker.h \
     viewers/backgroundimageview.h \
@@ -410,9 +435,8 @@ HEADERS += \
     viewers/prototype_view.h \
     viewers/shape_view.h \
     viewers/tiling_maker_view.h \
-    viewers/tiling_view.h \
     viewers/view.h \
-    viewers/viewcontrol.h \
+    viewers/view_controller.h \
     viewers/viewerbase.h \
     widgets/crop_widget.h \
     widgets/dlg_cleanse.h \
@@ -430,13 +454,14 @@ HEADERS += \
     widgets/dlg_trim.h \
     widgets/dlg_wlist_create.h \
     widgets/image_layer.h \
+    widgets/image_widget.h \
     widgets/layout_qrectf.h \
     widgets/layout_sliderset.h \
     widgets/layout_transform.h \
     widgets/memory_combo.h \
     widgets/mouse_mode_widget.h \
     widgets/rounded_polygon.h \
-    widgets/transparentwidget.h \
+    widgets/transparent_widget.h \
     widgets/version_dialog.h \
     widgets/versioned_list_widget.h \
     widgets/worklist_widget.h

@@ -23,14 +23,13 @@ class Threads : public QVector<ThreadPtr>
 public:
     Threads() {}
 
-    void   createThreads(MapPtr map);
+    void   createThreads(Map * map);
     void   assignColors(ColorSet & colors);
 
 protected:
-    void   createThread(ThreadPtr thread, EdgePtr edge, VertexPtr touchPt);
+    void   createThread(Map * map, ThreadPtr thread, EdgePtr edge, VertexPtr touchPt);
 
 private:
-    MapPtr map;
 };
 
 #endif // THREAD_H

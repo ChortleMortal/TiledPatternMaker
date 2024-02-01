@@ -4,7 +4,7 @@
 
 NeighbourMap::NeighbourMap(const QVector<EdgePtr> & edges)
 {
-    for (const auto & edge : qAsConst(edges))
+    for (const auto & edge : std::as_const(edges))
     {
         NeighboursPtr n = getRawNeighbours(edge->v1);
         n->insertNeighbour(edge);

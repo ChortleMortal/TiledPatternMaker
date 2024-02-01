@@ -161,14 +161,12 @@ void NamedMotifEditor::editorToMotif(bool doEmit)
     qreal mrot   = motifRotate->value();
 
     ExtendedBoundary & eb = motif->getRWExtendedBoundary();
-    blockSignals(true);
     eb.setSides(bsides);
     eb.setScale(bscale);
     eb.setRotate(brot);
     motif->setN(msides);
     motif->setMotifScale(mscale);
     motif->setMotifRotate(mrot);
-    blockSignals(false);
 
     if (doEmit)
         emit sig_motif_modified(motif);
@@ -219,12 +217,15 @@ void MotifTypeCombo::updateChoices(MotifPtr motif)
 
     if (motif->isRadial())
     {
-        add(MOTIF_TYPE_STAR,                "Radial Star");
-        add(MOTIF_TYPE_CONNECT_STAR,        "Radial Star Connect");
-        add(MOTIF_TYPE_EXTENDED_STAR,       "Radial Star Extended");
-        add(MOTIF_TYPE_ROSETTE,             "Radial Rosette");
-        add(MOTIF_TYPE_CONNECT_ROSETTE,     "Radial Rosette Connect");
-        add(MOTIF_TYPE_EXTENDED_ROSETTE,    "Radial Rosette Extended");
+        add(MOTIF_TYPE_STAR,                "Star");
+        add(MOTIF_TYPE_STAR2,               "Star2 (New)");
+        add(MOTIF_TYPE_CONNECT_STAR,        "Star Connect");
+        add(MOTIF_TYPE_EXTENDED_STAR,       "Star Extended");
+        add(MOTIF_TYPE_EXTENDED_STAR2,      "Star2 Extended (New)");
+        add(MOTIF_TYPE_ROSETTE,             "Rosette");
+        add(MOTIF_TYPE_ROSETTE2,            "Rosette2 (New)");
+        add(MOTIF_TYPE_CONNECT_ROSETTE,     "Rosette Connect");
+        add(MOTIF_TYPE_EXTENDED_ROSETTE,    "Rosette Extended");
         add(MOTIF_TYPE_EXPLCIT_TILE,        "Explicit Tile");
     }
     else

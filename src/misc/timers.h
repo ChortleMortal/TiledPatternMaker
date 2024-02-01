@@ -7,7 +7,7 @@
 class AQElapsedTimer : public QElapsedTimer
 {
 public:
-    AQElapsedTimer();
+    AQElapsedTimer(bool bstart = true);
 
     QString getElapsed();
 };

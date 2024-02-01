@@ -20,17 +20,17 @@ GirihMotif::GirihMotif(const Motif & motif) : IrregularGirihBranches(motif)
 
 void GirihMotif::buildMotifMaps()
 {
-    Q_ASSERT(tile);
+    Q_ASSERT(getTile());
     motifMap = std::make_shared<Map>("Girih Map");
-    inferGirih(tile);
-    completeMotif(tile);
+    inferGirih();
+    scaleAndRotate();
     completeMap();
-    buildMotifBoundary(tile);
+    buildMotifBoundary();
     buildExtendedBoundary();
 }
 
 //void GirihMotif::inferGirih(TilePtr tile, int starSides, qreal skip)
-void GirihMotif::inferGirih(TilePtr tile)
+void GirihMotif::inferGirih()
 {
     qDebug() << "Infer::inferGirih";
 
@@ -50,8 +50,8 @@ void GirihMotif::inferGirih(TilePtr tile)
     mids          = pmain->getTileMidPoints();
     corners       = pmain->getTransformedPoints();
 #else
-    corners = tile->getPoints();
-    mids    = tile->getEdgePoly().getMids();
+    corners = getTile()->getPoints();
+    mids    = getTile()->getEdgePoly().getMids();
 #endif
 
     int side_count = mids.size();

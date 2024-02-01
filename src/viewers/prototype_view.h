@@ -47,6 +47,9 @@ public:
 
     ProtoViewColors & getColors()                    { return colors; }
 
+    virtual const Xform &   getModelXform() override;
+    virtual void            setModelXform(const Xform & xf, bool update) override;
+
     virtual eViewType iamaLayer() override { return VIEW_PROTOTYPE; }
     virtual void iamaLayerController() override {}
 

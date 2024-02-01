@@ -18,6 +18,7 @@
 // This helps later when deciding what Tiles can have Rosettes
 // in them.
 
+#include <QObject>
 #include <QPolygonF>
 #include "misc/colorset.h"
 #include "geometry/edgepoly.h"
@@ -35,8 +36,10 @@ public:
     qreal    scale;
 };
 
-class Tile
+class Tile : public QObject
 {
+    Q_OBJECT
+
 public:
     Tile(int n, qreal rotate = 0.0, qreal scale = 1.0);           // Create an n-sided regular polygon with a vertex at (1,0).
     Tile(EdgePoly epoly, qreal rotate = 0.0, qreal scale = 1.0);
@@ -44,7 +47,9 @@ public:
     Tile(const Tile & other);
     ~Tile();
 
-    TilePtr copy();
+    TilePtr     copy();
+    TilePtr     recreate();
+    void        decompose();       // makes base from epoly (should not be needed except to fix historical files)
 
     void        setRegular(bool enb);
     void        flipRegularity();
@@ -55,13 +60,8 @@ public:
     void        deltaRotation(qreal delta);
     void        deltaScale(qreal delta);
 
-    qreal       getRotation();
-    qreal       getScale();
-
-    void        createRegularBase();
-    void        createEpolyFromBase();          // makes epoly from base
-    void        decompose();       // makes base from epoly (should not be needed except to fix historical files)
-    TilePtr     recreate();
+    qreal       getRotation()       { return rotation; }
+    qreal       getScale()          { return scale; }
 
     bool        equals(const TilePtr other);
     bool        isSimilar(const TilePtr other);
@@ -86,20 +86,26 @@ public:
     QString     info();
     QString     summary();
 
-    static int refs;
+    QTransform  getTransform()  { return QTransform::fromScale(scale,scale).rotate(rotation); }
+    static int  refs;
 
-protected:
-    int         n;             // sides
+signals:
+    void        sig_tileChanged();
+
+private:
+    void        createRegularBase();
+    void        createEpolyFromBase();          // makes epoly from base
+
+    int         n;              // sides
     bool        regular;
-    EdgePoly    base;
-
     qreal       rotation;
     qreal       scale;
 
-    EdgePoly    epoly;
-    ColorSet    tileColors;    // backgrounds
+    EdgePoly    base;           // calculated
+    EdgePoly    epoly;          // calculated
+    ColorSet    tileColors;     // backgrounds
 
-    PreConvert  conversion;    // stored when going from regular to irregular and vice versa
+    PreConvert  conversion;     // stored when going from regular to irregular and vice versa
 };
 
 #endif

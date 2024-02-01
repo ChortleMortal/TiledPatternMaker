@@ -19,8 +19,8 @@
 class RosetteConnect : public Rosette
 {
 public:
-    RosetteConnect(int n, qreal q, int s, qreal k);
-    RosetteConnect(const Motif & fig, int n, qreal q, int s, qreal k);
+    RosetteConnect(int n, qreal q, int s);
+    RosetteConnect(const Motif & fig, int n, qreal q, int s);
     RosetteConnect(const RosetteConnect & other);
 
     void buildUnitMap() override;
@@ -28,7 +28,7 @@ public:
     qreal computeConnectScale();
 
     virtual QString getMotifDesc() override { return "RosetteConnect";}
-    virtual void    report()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "q:" << q << "s" << s << "k" << k; }
+    virtual void    report()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "q:" << q << "s" << s; }
 
 
 protected:

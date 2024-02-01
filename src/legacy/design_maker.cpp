@@ -3,10 +3,12 @@
 #include "design_maker.h"
 #include "legacy/design.h"
 #include "legacy/designs.h"
+#include "misc/sys.h"
 #include "panels/controlpanel.h"
 #include "settings/configuration.h"
-#include "viewers/viewcontrol.h"
-#include "settings/model_settings.h"
+#include "viewers/view.h"
+#include "viewers/view_controller.h"
+#include "settings/canvas_settings.h"
 
 #ifdef __linux__
 #define ALT_MODIFIER Qt::MetaModifier
@@ -59,8 +61,9 @@ DesignMaker::DesignMaker()
     availableDesigns.insert(DESIGN_KUMIKO1,make_shared<DesignKumiko1>(DESIGN_KUMIKO1,"Kumiko 1"));
     availableDesigns.insert(DESIGN_KUMIKO2,make_shared<DesignKumiko2>(DESIGN_KUMIKO2,"Kumiko 2"));
 
-    view   = ViewControl::getInstance();
-    config = Configuration::getInstance();
+    view        = Sys::view;
+    viewControl = Sys::viewController;
+    config      = Configuration::getInstance();
 
     connect(view, &View::sig_deltaScale,    this, &DesignMaker::designScale);
     connect(view, &View::sig_deltaRotate,   this, &DesignMaker::designRotate);
@@ -78,7 +81,7 @@ void DesignMaker::addDesign(DesignPtr d)
 
 void DesignMaker::unload()
 {
-    for (auto design : qAsConst(activeDesigns))
+    for (auto & design : std::as_const(activeDesigns))
     {
         design->destoryPatterns();
     }
@@ -100,36 +103,44 @@ void DesignMaker::slot_loadDesign(eDesign design)
         auto panel = ControlPanel::getInstance();
         panel->selectViewer(VIEW_DESIGN);
     }
-
-    view->slot_refreshView();
+    
+    viewControl->slot_reconstructView();
 }
 
 void DesignMaker::slot_buildDesign(eDesign design)
 {
-    qInfo().noquote() << "TiledPatternMaker::slot_buildDesign" << Design::getDesignName(design);
+    QString desName = Design::getDesignName(design);
+    qInfo().noquote() << "TiledPatternMaker::slot_buildDesign" << desName;
+
+    LoadUnit & loadUnit = view->getLoadUnit();
+    loadUnit.setLoadState(LOADING_LEGACY,desName);
 
     DesignMaker * designMaker = DesignMaker::getInstance();
 
-    view->dumpRefs();
+    Sys::dumpRefs();
     designMaker->unload();
-    view->dumpRefs();
+    Sys::dumpRefs();
 
     DesignPtr d = availableDesigns.value(design);
     designMaker->addDesign(d);
-    config->lastLoadedDesignId = design;
 
     d->build();
     d->repeat();
 
     // size view to design
-    QSize size = d->getDesignInfo().getSize();
-    auto & settings = view->getViewSettings();
-    settings.initialiseCommon(size,size);
-    settings.initialise(VIEW_DESIGN,size,size);
-    settings.setModelAlignment(M_ALIGN_NONE);
+    QSize size = d->getDesignInfo().getViewSize();
+    auto & canvas = viewControl->getCanvas();
+    canvas.initCanvasSize(size);
+    canvas.setModelAlignment(M_ALIGN_NONE);
 
-    view->removeAllImages();
-    view->slot_refreshView();
+    view->resize(size);
+
+    viewControl->removeAllImages();
+
+    loadUnit.resetLoadState();
+
+    viewControl->slot_reconstructView();
+
     emit sig_loadedDesign(design);
 }
 
@@ -140,7 +151,7 @@ void DesignMaker::designLayerSelect(int layer)
 
 void DesignMaker::designLayerZPlus()
 {
-    for (auto design : qAsConst(activeDesigns))
+    for (auto & design : std::as_const(activeDesigns))
     {
         if (design->isVisible())
         {
@@ -151,7 +162,7 @@ void DesignMaker::designLayerZPlus()
 
 void DesignMaker::designLayerZMinus()
 {
-    for (auto design : qAsConst(activeDesigns))
+    for (auto & design : std::as_const(activeDesigns))
     {
         if (design->isVisible())
         {
@@ -163,7 +174,7 @@ void DesignMaker::designLayerZMinus()
 void DesignMaker::designLayerShow()
 {
     qDebug() << "slot_showLayer() designs=" << activeDesigns.count();
-    for (auto design : qAsConst(activeDesigns))
+    for (auto & design : std::as_const(activeDesigns))
     {
         if (design->isVisible())
         {
@@ -175,7 +186,7 @@ void DesignMaker::designLayerShow()
 void DesignMaker::designLayerHide()
 {
     qDebug() << "slot_hideLayer() designs=" << activeDesigns.count();
-    for (auto design : qAsConst(activeDesigns))
+    for (auto & design : std::as_const(activeDesigns))
     {
         if (design->isVisible())
         {
@@ -186,7 +197,7 @@ void DesignMaker::designLayerHide()
 
 void DesignMaker::designReposition(qreal x, qreal y)
 {
-    for (auto design : qAsConst(activeDesigns))
+    for (auto & design : std::as_const(activeDesigns))
     {
         if (design->isVisible())
         {
@@ -203,7 +214,7 @@ void DesignMaker::designReposition(qreal x, qreal y)
 
 void DesignMaker::designOffset(qreal x, qreal y)
 {
-    for (auto design : qAsConst(activeDesigns))
+    for (auto & design : std::as_const(activeDesigns))
     {
         if (design->isVisible())
         {
@@ -226,14 +237,16 @@ void DesignMaker::designToggleVisibility(int design)
 
 void DesignMaker::designOrigin(int x, int y)
 {
-    for (auto design : qAsConst(activeDesigns))
+    for (auto & design : std::as_const(activeDesigns))
     {
         if (design->isVisible())
         {
-            QPointF pt = design->getDesignInfo().getStartTile();
+            CanvasSettings info = design->getDesignInfo();
+            QPointF pt = info.getStartTile();
             pt.setX(pt.x() + x);
             pt.setY(pt.y()+ y);
-            design->getDesignInfo().setStartTile(pt);
+            info.setStartTile(pt);
+            design->setDesignInfo(info);
         }
     }
     designReposition(0,0);
@@ -244,7 +257,7 @@ bool DesignMaker::step(int delta)
     qDebug() << "step delta" << delta << "step" << activeDesigns[0]->getStep();
 
     bool rv = true;
-    for (auto design : qAsConst(activeDesigns))
+    for (auto &  design : std::as_const(activeDesigns))
     {
         if (design->isVisible())
         {
@@ -260,7 +273,7 @@ void DesignMaker::setStep(int astep)
 {
     qDebug() << "set step=" << astep;
 
-    for (auto design : qAsConst(activeDesigns))
+    for (auto &  design : std::as_const(activeDesigns))
     {
         if (design->isVisible())
         {
@@ -345,15 +358,17 @@ void DesignMaker::ProcKeyRight()
 
 void DesignMaker::designScale(int delta)
 {
-    for (auto design : qAsConst(activeDesigns))
+    for (auto & design : std::as_const(activeDesigns))
     {
-        QSize sz =  design->getDesignInfo().getSize();
+        CanvasSettings info = design->getDesignInfo();
+        QSize sz =  info.getViewSize();
         qDebug() << "design: size=" << sz;
         if (delta > 0)
             sz +=  QSize(delta,delta);
         else
             sz -=  QSize(delta,delta);
-        design->getDesignInfo().setSize(sz);
+        info.setViewSize(sz);
+        design->setDesignInfo(info);
     }
     view->update();
 }
@@ -368,7 +383,7 @@ void DesignMaker::designMoveY(int delta)
 {
     if (view->getKbdMode(KBD_MODE_DES_POS) || view->getKbdMode(KBD_MODE_DES_LAYER_SELECT))
     {
-        for (auto design : qAsConst(activeDesigns))
+        for (auto & design : std::as_const(activeDesigns))
         {
             qreal top = design->getYoffset2();
             top -= delta;
@@ -393,7 +408,7 @@ void DesignMaker::designMoveX(int delta)
 {
     if (view->getKbdMode(KBD_MODE_DES_POS) || view->getKbdMode(KBD_MODE_DES_LAYER_SELECT))
     {
-        for (auto design : qAsConst(activeDesigns))
+        for (auto & design : std::as_const(activeDesigns))
         {
             qreal left = design->getXoffset2();
             left -= delta;

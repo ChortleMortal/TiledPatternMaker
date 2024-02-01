@@ -3,8 +3,8 @@
 #include <QScrollBar>
 #include <QHeaderView>
 
-#include "settings/configuration.h"
 #include "panels/panel_misc.h"
+#include "misc/sys.h"
 
 AQVBoxLayout::AQVBoxLayout() : QVBoxLayout()
 {
@@ -244,8 +244,7 @@ BQPushButton::BQPushButton(const QString &text, QWidget * parent) : QPushButton(
 
 AQCheckBox::AQCheckBox() : QCheckBox()
 {
-    auto config = Configuration::getInstance();
-    if (config->darkTheme)
+    if (Sys::isDarkTheme)
         setStyleSheet("QCheckBox{padding-left:21px;} QCheckBox::indicator:unchecked{border: 2px solid #909090;}");
     else
         setStyleSheet("padding-left:21px;");
@@ -253,8 +252,7 @@ AQCheckBox::AQCheckBox() : QCheckBox()
 
 AQCheckBox::AQCheckBox(QString string) : QCheckBox(string)
 {
-    auto config = Configuration::getInstance();
-    if (config->darkTheme)
+    if (Sys::isDarkTheme)
         setStyleSheet("QCheckBox{padding-left:21px;} QCheckBox::indicator:unchecked{border: 2px solid #909090;}");
     else
         setStyleSheet("padding-left:21px;");

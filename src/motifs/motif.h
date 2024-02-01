@@ -37,15 +37,21 @@ public:
     Motif(MotifPtr other);
     virtual ~Motif();
 
-    virtual MapPtr  getMotifMap()           = 0;
     virtual void    resetMotifMaps()        = 0;
     virtual void    buildMotifMaps()        = 0;
+
+    virtual QTransform getMotifTransform()  = 0;
+    virtual MapPtr  getMotifMap()           = 0;
     virtual QString getMotifDesc()          = 0;
 
-    virtual DebugMapPtr  getDebugMap()              { return debugMap; }
+    QTransform      getDELTransform();
+    void            scaleAndRotate();
 
-    virtual void    setN(int n)                     { _n = n; }
+    virtual void    setN(int n)                     { _n = n;  _extendedBoundary.setSides(n); }
     int             getN()                          { return _n; }
+
+    inline void     setTile(TilePtr tile)           { _tile = tile; }
+    inline TilePtr  getTile()                       { return _tile; }
 
     void            setMotifType(eMotifType ft)     { motifType = ft; }
     eMotifType      getMotifType()  const           { return motifType; }
@@ -57,8 +63,7 @@ public:
     void            setMotifRotate(qreal rot)       { motifRotate = rot; }
     qreal           getMotifRotate()                { return motifRotate; }
 
-    void            buildMotifBoundary(TilePtr tile);
-    void            setMotifBoundary(QPolygonF p)   { _motifBoundary = p; }
+    void            buildMotifBoundary();
     QPolygonF &     getMotifBoundary()              { return _motifBoundary; }
 
     void            buildExtendedBoundary();
@@ -77,6 +82,8 @@ public:
 
     static int      modulo(int i, int sz);
 
+    DebugMapPtr     getDebugMap()                   { return debugMap; }
+
     static int      refs;
 
 protected:
@@ -84,10 +91,8 @@ protected:
     void            drawAnnotation(QPainter *painter, QTransform T);
 
     // data
-    int              _n;                // number of sides = number of points
     qreal            motifRotate;       // degrees
     qreal            motifScale;
-    TilePtr          tile;
 
     // specific data
     eMotifType       motifType;
@@ -97,6 +102,10 @@ protected:
     DebugMapPtr      debugMap;          // generated
 
 private:
+    void            setMotifBoundary(QPolygonF p)   { _motifBoundary = p; }
+
+    int              _n;                // number of sides = number of points
+    TilePtr          _tile;
     QPolygonF        _motifBoundary;
     ExtendedBoundary _extendedBoundary;
     int              version;

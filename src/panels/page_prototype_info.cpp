@@ -12,7 +12,7 @@
 #include "settings/configuration.h"
 #include "tile/tile.h"
 #include "tile/tiling.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
 #include "widgets/layout_sliderset.h"
 #include "panels/panel_misc.h"
 
@@ -21,7 +21,7 @@ using std::string;
 typedef std::weak_ptr<class DesignElement>      WeakDesignElementPtr;
 Q_DECLARE_METATYPE(WeakDesignElementPtr);
 
-page_prototype_info:: page_prototype_info(ControlPanel * cpanel)  : panel_page(cpanel,"Prototype Info")
+page_prototype_info:: page_prototype_info(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_PROTO_INFO,"Prototype Info")
 {
     protoView       = PrototypeView::getInstance();
     protoMaker      = PrototypeMaker::getInstance();
@@ -258,7 +258,7 @@ void page_prototype_info::setupProtoTable()
     const QVector<ProtoPtr> & prototypes = protoMakerData->getPrototypes();
     int row = 0;
     QTableWidgetItem * item;
-    for (const auto & proto : qAsConst(prototypes))
+    for (const auto & proto : std::as_const(prototypes))
     {
         protoTable->setRowCount(row + 1);
 
@@ -266,7 +266,7 @@ void page_prototype_info::setupProtoTable()
         item->setData(Qt::UserRole,QVariant::fromValue(WeakProtoPtr(proto)));
         protoTable->setItem(row,PROTO_COL_PROTO,item);
 
-        item = new QTableWidgetItem(proto->getTiling()->getName());
+        item = new QTableWidgetItem(proto->getTiling()->getTitle());
         protoTable->setItem(row,PROTO_COL_TILING,item);
 
         item = new QTableWidgetItem(protoMakerData->isHidden(MVD_PROTO,proto) ? "hidden" : "visible");
@@ -287,10 +287,10 @@ void page_prototype_info::setupDelTable()
     const QVector<ProtoPtr> & prototypes = protoMakerData->getPrototypes();
     int row = 0;
     QTableWidgetItem * item;
-    for (const auto & proto : qAsConst(prototypes))
+    for (const auto & proto : std::as_const(prototypes))
     {
         const QVector<DesignElementPtr> & dels = proto->getDesignElements();
-        for (const auto & del :  qAsConst(dels))
+        for (const auto & del :  std::as_const(dels))
         {
             DELTable->setRowCount(row + 1);
 
@@ -298,7 +298,7 @@ void page_prototype_info::setupDelTable()
             item->setData(Qt::UserRole,QVariant::fromValue(WeakProtoPtr(proto)));
             DELTable->setItem(row,DEL_COL_PROTO,item);
 
-            item = new QTableWidgetItem(proto->getTiling()->getName());
+            item = new QTableWidgetItem(proto->getTiling()->getTitle());
             DELTable->setItem(row,DEL_COL_TILING,item);
 
             item = new QTableWidgetItem(addr(del.get()));

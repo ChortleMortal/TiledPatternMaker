@@ -1,18 +1,21 @@
+#include <QMessageBox>
 #include "tile/tiling_manager.h"
 #include "misc/fileservices.h"
 #include "makers/prototype_maker/prototype_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
-#include "settings/model_settings.h"
+#include "misc/sys.h"
+#include "panels/controlpanel.h"
+#include "settings/canvas_settings.h"
 #include "settings/configuration.h"
 #include "tile/tiling.h"
-#include "tile/tiling_loader.h"
+#include "tile/tiling_reader.h"
 #include "tile/tiling_writer.h"
 #include "viewers/backgroundimageview.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
 
 TilingManager::TilingManager()
 {
-    view            = ViewControl::getInstance();
+    viewController  = Sys::viewController;
     config          = Configuration::getInstance();
     tilingMaker     = TilingMaker::getInstance();
     prototypeMaker  = PrototypeMaker::getInstance();
@@ -20,104 +23,70 @@ TilingManager::TilingManager()
 
 TilingPtr TilingManager::loadTiling(QString name, eTILM_Event event)
 {
-    TilingPtr loadedTiling;
+    TilingPtr tiling;
     
     QString filename = FileServices::getTilingXMLFile(name);
     if (filename.isEmpty())
     {
         qWarning() << "No tiling found with name" << name;
-        return loadedTiling;
+        QMessageBox box(ControlPanel::getInstance());
+        box.setIcon(QMessageBox::Critical);
+        box.setText(QString("No tiling found with name <%1>not found").arg(name));
+        box.exec();
+        return tiling;
     }
     
-    auto bip = BackgroundImageView::getInstance();
-    bip->unload();
-
     qInfo().noquote() << "TilingManager::loadTiling" << filename << sTILM_Events[event];
+    
+    TilingReader tm;
+    tiling  = tm.readTilingXML(filename);
 
-    TilingLoader tm;
-    loadedTiling  = tm.readTilingXML(filename);
-    if (!loadedTiling)
+    if (!tiling)
     {
         qWarning().noquote() << "Error loading" << filename;
-        return loadedTiling;
+
+        QMessageBox box(ControlPanel::getInstance());
+        box.setIcon(QMessageBox::Critical);
+        box.setText(QString("Load Error: <%1>").arg(name));
+        box.exec();
+        return tiling;
     }
 
-    qInfo().noquote() << "Loaded  tiling:" << filename << loadedTiling->getName();
+    qInfo().noquote() << "Loaded  tiling:" << filename << tiling->getTitle();
 
-    loadedTiling->setState(Tiling::LOADED);
-    
-    auto & settings = view->getViewSettings();
-    settings.setModelAlignment(M_ALIGN_TILING);
-
-    // tiling is loaded, now use it
-    QSize size  = loadedTiling->getData().getSettings().getSize();
-    QSize zsize = loadedTiling->getData().getSettings().getZSize();
-    switch(event)
-    {
-    case TILM_LOAD_SINGLE:
-    case TILM_LOAD_MULTI:
-    case TILM_RELOAD:
-        settings.initialise(VIEW_TILING_MAKER,size,zsize);
-        settings.initialiseCommon(size,zsize);
-
-        setVCFillData(loadedTiling);
-        tilingMaker->sm_takeUp(loadedTiling, event);
-        break;
-
-    case TILM_LOAD_FROM_MOSAIC:
-        settings.initialise(VIEW_TILING_MAKER,size,zsize);
-
-        setVCFillData(loadedTiling);
-        break;
-
-    case TILM_LOAD_EMPTY:
-        break;
-    }
-
-    return loadedTiling;
-}
-
-void  TilingManager::setVCFillData(TilingPtr tiling)
-{
-    const FillData & fd = tiling->getData().getFillData();
-    ViewControl * vcontrol = ViewControl::getInstance();
-    vcontrol->setFillData(fd);
+    return tiling;
 }
 
 bool TilingManager::saveTiling(QString name, TilingPtr tiling)
 {
-    if (tiling->getName() != name)
+    if (tiling->getTitle() != name)
     {
-        tiling->setName(name);
+        tiling->setTitle(name);
     }
 
     // match size to current view
-    auto & settings = view->getViewSettings();
-    auto mostRecent = view->getMostRecent();
-    QSize size      = settings.getCropSize(mostRecent);
-    QSize zsize     = settings.getZoomSize(mostRecent);
-
-    const ModelSettings & ms = tiling->getData().getSettings();
-    if (ms.getSize() != size || ms.getZSize() != zsize)
+    auto & canvas = viewController->getCanvas();
+    QSize size    = Sys::view->getCurrentSize();
+    QSizeF zsize  = canvas.getSize();
+    
+    const CanvasSettings & cs = tiling->getData().getSettings();
+    if (cs.getViewSize() != size || cs.getCanvasSize() != zsize)
     {
-        ModelSettings & settings = tiling->getRWData(false).getSettingsAccess();
-        settings.setSize(size);
-        settings.setZSize(zsize);
+        CanvasSettings settings = tiling->getCanvasSettings();
+        settings.setViewSize(size);
+        settings.setCanvasSize(zsize);
+        tiling->setCanvasSettings(settings);
     }
 
     if (tilingMaker->getSelected() == tiling)
     {
-        Xform xf = TilingMakerView::getInstance()->getCanvasXform();
-        tiling->setCanvasXform(xf);
+        Xform xf = TilingMakerView::getInstance()->getModelXform();
+        tiling->setModelXform(xf,false);
     }
 
     // write
     TilingWriter writer(tiling);
     bool rv = writer.writeTilingXML();   // uses the name in the tiling
-    if (rv)
-    {
-        tiling->setState(Tiling::LOADED);
-    }
     return rv;
 }
 
@@ -129,9 +98,9 @@ bool TilingManager::verifyNameFiles()
     {
         QString name = files[i];
         TilingPtr tiling = loadTiling(name,TILM_LOAD_SINGLE);
-        if (tiling->getName() != name)
+        if (tiling->getTitle() != name)
         {
-            qWarning() << "Error: name does not match filename =" << name <<"internal name= " << tiling->getName();
+            qWarning() << "Error: name does not match filename =" << name <<"internal name= " << tiling->getTitle();
             rv = false;
         }
         if (!FileServices::verifyTilingName(name))

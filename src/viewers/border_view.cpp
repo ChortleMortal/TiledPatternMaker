@@ -1,10 +1,14 @@
 #include <QApplication>
+#include <QtMath>
+#include <QDebug>
 
 #include "misc/border.h"
 #include "makers/crop_maker/mouse_edit_border.h"
+#include "panels/controlpanel.h"
 #include "settings/configuration.h"
 #include "viewers/border_view.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/crop_view.h"
+#include "viewers/view.h"
 
 BorderView * BorderView::mpThis = nullptr;
 
@@ -26,9 +30,10 @@ void BorderView::releaseInstance()
     }
 }
 
-BorderView::BorderView() : LayerController("Border")
+BorderView::BorderView() : LayerController("BorderView",false)
 {
     config      = Configuration::getInstance();
+    cropView    = CropViewer::getInstance();
     debugMouse  = false;
     setZValue(BORDER_ZLEVEL);
 }
@@ -41,6 +46,12 @@ void BorderView::paint(QPainter *painter)
     auto b = border.lock();
     if (b)
     {
+        if (b->getRequiresConversion())
+        {
+            b->setRequiresConversion(false);
+            b->legacy_convertToModelUnits();
+        }
+
         painter->save();
         b->draw(painter,getLayerTransform());
         painter->restore();
@@ -54,15 +65,30 @@ void BorderView::paint(QPainter *painter)
     }
 }
 
+void BorderView::setModelXform(const Xform & xf, bool update)
+{
+    Q_ASSERT(!_unique);
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.toInfoString() << (isUnique() ? "unique" : "common");
+    viewControl->setCurrentModelXform(xf,update);
+}
+
+const Xform & BorderView::getModelXform()
+{
+    Q_ASSERT(!_unique);
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << viewControl->getCurrentModelXform().toInfoString() << (isUnique() ? "unique" : "common");
+    return viewControl->getCurrentModelXform();
+}
+
+
 void BorderView::slot_wheel_rotate(qreal delta)
 {
     if (!view->isActiveLayer(this)) return;
 
     if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setRotateDegrees(xf.getRotateDegrees() + delta);
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 
@@ -72,9 +98,9 @@ void BorderView::slot_scale(int amount)
 
     if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setScale(xf.getScale() * (1 + static_cast<qreal>(amount)/100.0));
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 
@@ -84,33 +110,35 @@ void BorderView::slot_rotate(int amount)
 
     if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setRotateRadians(xf.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 
-void BorderView:: slot_moveX(int amount)
+void BorderView:: slot_moveX(qreal amount)
 {
     if (!view->isActiveLayer(this)) return;
 
     if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
     {
-        Xform xf = getCanvasXform();
+        amount = screenToWorld(amount);
+        Xform xf = getModelXform();
         xf.setTranslateX(xf.getTranslateX() + amount);
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 
-void BorderView::slot_moveY(int amount)
+void BorderView::slot_moveY(qreal amount)
 {
     if (!view->isActiveLayer(this)) return;
 
     if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
     {
-        Xform xf = getCanvasXform();
+        amount = screenToWorld(amount);
+        Xform xf = getModelXform();
         xf.setTranslateY(xf.getTranslateY() + amount);
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 
@@ -136,15 +164,18 @@ void BorderView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
 
     if (!view->isActiveLayer(this))
         return;
-
+    if (cropView->getShowCrop())
+        return;
+    if (!ControlPanel::getInstance()->isVisiblePage(PAGE_BORDER_MAKER))
+        return;
 
     setMousePos(spt);
 
-    if (border.lock())
+    auto b = border.lock();
+    if (b)
     {
-        auto b = border.lock();
         auto c = std::dynamic_pointer_cast<Crop>(b);
-        auto mec = std::make_shared<MouseEditBorder>(mousePos,c);
+        auto mec = std::make_shared<MouseEditBorder>(this,mousePos,c);
         setMouseInteraction(mec);
         mec->updateDragging(mousePos);
     }
@@ -153,7 +184,7 @@ void BorderView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
 void BorderView::slot_mouseDragged(QPointF spt)
 {
     if (!view->isActiveLayer(this)) return;
-
+    if (cropView->getShowCrop()) return;
 
     setMousePos(spt);
 
@@ -174,29 +205,27 @@ void BorderView::slot_mouseTranslate(QPointF pt)
 
     if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setTranslateX(xf.getTranslateX() + pt.x());
         xf.setTranslateY(xf.getTranslateY() + pt.y());
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 
 void BorderView::slot_mouseMoved(QPointF spt)
 {
     if (!view->isActiveLayer(this)) return;
-
+    if (cropView->getShowCrop()) return;
 
     setMousePos(spt);
 
     if (debugMouse) qDebug() << "move" << mousePos;
-
-    forceRedraw();
 }
 
 void BorderView::slot_mouseReleased(QPointF spt)
 {
     if (!view->isActiveLayer(this)) return;
-
+    if (cropView->getShowCrop()) return;
 
     setMousePos(spt);
 
@@ -207,6 +236,12 @@ void BorderView::slot_mouseReleased(QPointF spt)
     {
         mma->endDragging(mousePos);
         resetMouseInteraction();
+        auto b = border.lock();
+        if (b)
+        {
+            b->setRequiresConstruction(true);
+            forceRedraw();
+        }
     }
 }
 
@@ -219,9 +254,9 @@ void BorderView::slot_wheel_scale(qreal delta)
 
     if (view->getKbdMode( KBD_MODE_XFORM_VIEW))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setScale(xf.getScale() * (1.0 + delta));
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 

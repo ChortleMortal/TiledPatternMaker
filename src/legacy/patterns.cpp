@@ -9,7 +9,7 @@
 #include "geometry/map.h"
 #include "misc/border.h"
 #include "misc/tile_color_defs.h"
-#include "misc/utilities.h"
+#include "geometry/geo.h"
 #include "mosaic/design_element.h"
 #include "makers/prototype_maker/prototype.h"
 #include "settings/configuration.h"
@@ -60,6 +60,19 @@ Pattern::~Pattern()
     refs--;
 }
 
+#if 0
+void Pattern::identify(Layer * layer, QPolygonF * poly)
+{
+    for (int i=0; i< poly->count(); i++)
+    {
+        QPointF p   = poly->at(i);
+        QString txt = QString("%1: %2 %3").arg(i).arg(p.x()).arg(p.y());
+        qDebug() << txt;
+        MarkXPtr m   = std::make_shared<MarkX>(p, QPen(QColor(Qt::green),3), txt);
+        layer->addSubLayer(m);
+    }
+}
+#endif
 
 /////////////////////////////////////////////////////////////
 //
@@ -1241,7 +1254,7 @@ void PatternIncompleteA::build()
     //int points = Utils::circleLineIntersectionPoints(i,radius,line2,a,b);
 
     QLineF line3(p->at(1),p->at(3));
-    int points = Utils::circleLineIntersectionPoints(i,radius,line3,c,d);
+    int points = Geo::circleLineIntersectionPoints(i,radius,line3,c,d);
 
     Q_UNUSED(points)
 
@@ -1315,7 +1328,7 @@ void PatternIncompleteA::build()
     s2->addCircumscribedOctagon(QPen(QColor(Qt::black),7,Qt::SolidLine,Qt::FlatCap),bBlack,22.5);
     //Polygon2 * pio = s3->addInscribedOctagon(QPen(QColor(Qt::blue),3,Qt::SolidLine,Qt::FlatCap),nobrush,22.5);
     //pio->identify(&layers[4]);
-    //Utils::identify(&layers[4],pio);
+    //identify(&layers[4],pio);
 
     // the star
     //DesignViewerPtr m3 = make_shared<DesignViewer>(diameter);
@@ -1482,7 +1495,7 @@ void PatternKumiko1::build()
 
     Polygon2 * p2 = s5->addStretchedExternalHexagon(woodPen, nobrush,90.0);
     p2->translate(radius,ypos);
-    //Utils::identify(&layers[5],p2);
+    //identify(&layers[5],p2);
 
 #if 0
     ShapeFPtr s6 = make_shared<ShapeFactory>(diameter);
@@ -1555,7 +1568,7 @@ void PatternKumiko2::build()
     s5 = make_shared<ShapeFactory>(diameter);
     Polygon2 * p2 = s5->addStretchedExternalHexagon(woodPen, nobrush,90.0);
     p2->translate(radius,ypos);
-    //Utils::identify(&layers[5],p2);
+    //identify(&layers[5],p2);
 
 #if 0
     ShapeFPtr s6 = make_shared<ShapeFactory>(diameter);
@@ -1579,10 +1592,11 @@ void PatternKumiko2::build()
     if (!t)
     {
         t = make_shared<Tiling>();
-        t->setName(tileName);
+        t->setTitle(tileName);
         t->setTranslationVectors(trans1, trans2);
-        FillData & fdata = t->getRWData(false).getFillDataAccess();
-        fdata = fd;
+        CanvasSettings cs;  // default
+        cs.setFillData(fd);
+        t->setCanvasSettings(cs);
         TilePtr fp = make_shared<Tile>(4,0.0);
         PlacedTilePtr pfp = make_shared<PlacedTile>(fp,QTransform());
         t->add(pfp);
@@ -1605,7 +1619,7 @@ void PatternKumiko2::build()
 
     ProtoPtr proto = make_shared<Prototype>(t);
     proto->addElement(dep);
-    proto->createProtoMap(false);
+    proto->createProtoMap();
 
     ThickPtr thick = make_shared<Thick>(proto);
     thick->setColor(QColor(0xa2,0x79,0x67));

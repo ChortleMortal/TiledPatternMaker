@@ -10,7 +10,7 @@
 #include <QtMath>
 #include "geometry/vertex.h"
 #include "geometry/edge.h"
-#include "geometry/point.h"
+#include "geometry/geo.h"
 
 int Vertex::refs = 0;
 
@@ -34,7 +34,7 @@ Vertex::~Vertex()
 // Fortunately, the rigid motions we'll apply in Islamic design
 // won't contain flips.  So we're okay for now.
 // casper: don't need to recalc angle
-void Vertex::applyRigidMotion(QTransform T)
+void Vertex::transform(QTransform T)
 {
     pt = T.map(pt);
 }
@@ -43,7 +43,7 @@ qreal Vertex::getAngle(const EdgePtr & edge)
 {
     VertexPtr other = edge->getOtherV(pt);
     QPointF pd      = other->pt - pt;
-    Point::normalizeD(pd);
+    Geo::normalizeD(pd);
     qreal angle     = qAtan2(pd.x(), pd.y());
     return angle;
 }

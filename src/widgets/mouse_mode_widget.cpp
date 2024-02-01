@@ -1,14 +1,15 @@
 #include <QCheckBox>
 
 #include "widgets/mouse_mode_widget.h"
+#include "misc/sys.h"
 #include "panels/panel_misc.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view.h"
 
 MouseModeWidget::MouseModeWidget() : QWidget()
 {
     setContentsMargins(0,0,0,0);
 
-    view = ViewControl::getInstance();
+    view = Sys::view;
 
     chkCenter = new QCheckBox("Set Center");
     chkPan    = new QCheckBox("Pan");

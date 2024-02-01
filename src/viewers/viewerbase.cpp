@@ -27,7 +27,7 @@ void  ViewerBase ::drawMotif(GeoGraphics * gg, MotifPtr motif, QPen pen)
     MapPtr map = motif->getMotifMap();
     if (!map) return;
 
-    for(auto & edge :  qAsConst(map->getEdges()))
+    for(auto & edge :  std::as_const(map->getEdges()))
     {
         if (edge->getType() == EDGETYPE_LINE)
         {

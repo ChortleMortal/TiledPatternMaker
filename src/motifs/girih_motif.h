@@ -16,7 +16,7 @@ public:
     virtual void    report()         override { qDebug().noquote() << getMotifDesc() << "skip" << skip; }
 
 protected:
-    void            inferGirih(TilePtr tile);        // Girih inferring
+    void            inferGirih();        // Girih inferring
 };
 
 #endif // GIRIH_MOTIF_H

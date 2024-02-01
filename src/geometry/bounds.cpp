@@ -2,9 +2,10 @@
 
 Bounds::Bounds()
 {
-    left  = 0.0;
-    top   = 0.0;
-    width = 0.0;
+    // defaults
+    left  = -10.0;
+    top   =  10.0;
+    width =  20.0;
 }
 
 Bounds::Bounds(const Bounds & other)

@@ -3,6 +3,8 @@
 #include <QMessageBox>
 
 #include "geometry/map.h"
+#include "geometry/geo.h"
+#include "geometry/transform.h"
 #include "makers/map_editor/map_editor.h"
 #include "makers/mosaic_maker/mosaic_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
@@ -20,15 +22,15 @@
 #include "tile/placed_tile.h"
 #include "tile/tiling.h"
 #include "tile/tiling_manager.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
 #include "widgets/dlg_textedit.h"
-#include "widgets/transparentwidget.h"
+#include "widgets/transparent_widget.h"
 
 using std::make_shared;
 
 typedef std::shared_ptr<class Filled>       FilledPtr;
 
-page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,"Debug Tools")
+page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_DEBUG_TOOLS,"Debug Tools")
 {
     log = qtAppLog::getInstance();
 
@@ -59,8 +61,10 @@ QGroupBox * page_debug::createDebugSection()
     QCheckBox   * chkDontPaint          = new QCheckBox("Dont't Paint");
     QCheckBox   * chkDontTrap           = new QCheckBox("Dont't Trap Log");
     QCheckBox   * chkDontRefresh        = new QCheckBox("Dont't Refresh Menu");
+    QCheckBox   * chkFlagA              = new QCheckBox("Flag A");
+    QCheckBox   * chkFlagB              = new QCheckBox("Flag B");
 
-    chkDontRefresh->setChecked(!config->updatePanel);
+    chkDontRefresh->setChecked(!Sys::updatePanel);
 
     QGridLayout * grid = new QGridLayout();
     grid->setHorizontalSpacing(11);
@@ -89,6 +93,8 @@ QGroupBox * page_debug::createDebugSection()
     grid->addWidget(chkDontRefresh,          row,0);
     grid->addWidget(chkDontPaint,            row,1);
     grid->addWidget(chkDontTrap,             row,2);
+    grid->addWidget(chkFlagA,                row,3);
+    grid->addWidget(chkFlagB,                row,4);
 
     QGroupBox * debugGroup = new QGroupBox("Debug");
     debugGroup->setLayout(grid);
@@ -107,12 +113,14 @@ QGroupBox * page_debug::createDebugSection()
 
     connect(pTestA,                   &QPushButton::clicked,     this,   &page_debug::slot_testA);
     connect(pTestB,                   &QPushButton::clicked,     this,   &page_debug::slot_testB);
+    connect(chkFlagA,                 &QCheckBox::clicked,       this,   [](bool enb) { Sys::flagA = enb; });
+    connect(chkFlagB,                 &QCheckBox::clicked,       this,   [](bool enb) { Sys::flagB = enb; });
 
     connect(pbRender,                 &QPushButton::clicked,     this,   &panel_page::sig_render);
-    connect(pbClearView,              &QPushButton::clicked,     view,   &ViewControl::slot_unloadView);
-    connect(pbClearMakers,            &QPushButton::clicked,     view,   &ViewControl::slot_unloadAll);
-
-    connect(chkDontPaint,             &QCheckBox::clicked,       view,   &ViewControl::slot_dontPaint);
+    connect(pbClearView,              &QPushButton::clicked,     viewControl,   &ViewController::slot_unloadView);
+    connect(pbClearMakers,            &QPushButton::clicked,     viewControl,   &ViewController::slot_unloadAll);
+    
+    connect(chkDontPaint,             &QCheckBox::clicked,       this,   [](bool enb) { Sys::appDontPaint(enb); });
     connect(chkDontTrap,              &QCheckBox::clicked,       this,   &page_debug::slot_dontTrapLog);
     connect(chkDontRefresh,           &QCheckBox::clicked,       this,   &page_debug::slot_dontRefresh);
 
@@ -273,17 +281,19 @@ void page_debug::slot_reprocessDesignXML()
     for (int i=0; i < files.size(); i++)
     {
         QString name = files[i];
-        MosaicManager mm;
-        bool rv = mm.loadMosaic(name);
-        if (rv)
+        auto mosaic = mosaicMaker->loadMosaic(name);
+        if (mosaic)
         {
-            QString outfile;
-            rv = mm.saveMosaic(name,outfile,true);
+            bool rv = mosaicMaker->saveMosaic(name,true);
+            if (rv)
+                goodDes++;
+            else
+                badDes++;
         }
-        if (rv)
-            goodDes++;
         else
+        {
             badDes++;
+        }
     }
 
     qDebug() << "Reprocessed" << goodDes << "good designs, " << badDes << "bad designs";
@@ -322,7 +332,7 @@ void page_debug::slot_reprocessTilingXML()
         TilingPtr tp = tm.loadTiling(name,TILM_LOAD_SINGLE);
         if (tp)
         {
-            Q_ASSERT(tp->getName() == name);
+            Q_ASSERT(tp->getTitle() == name);
             rv = tm.saveTiling(name,tp);
         }
         if (rv)
@@ -375,9 +385,9 @@ void page_debug::slot_verifyTiling()
 bool page_debug::verifyTiling(TilingPtr tiling)
 {
     log->trap(true);
-    qInfo().noquote() << "Verifying tiling :" << tiling->getName();
+    qInfo().noquote() << "Verifying tiling :" << tiling->getTitle();
     bool rv = true;
-    for (const auto & placedTile : tiling->getInTiling())
+    for (const auto & placedTile : std::as_const(tiling->getInTiling()))
     {
         auto tile = placedTile->getTile();
         if (!tile->isClockwise())
@@ -408,7 +418,7 @@ bool page_debug::verifyTiling(TilingPtr tiling)
     bool fillmap_verify   = fillmap->verify(true);
     bool fillmap_overlaps = fillmap->hasIntersectingEdges();
 
-    QString name = tiling->getName();
+    QString name = tiling->getTitle();
     if (intrinsicOverlaps)
     {
         qWarning() << name << ": intrinsic overlaps";
@@ -448,13 +458,12 @@ bool page_debug::verifyTiling(TilingPtr tiling)
         dlg.exec();
     }
     log->trap(false);
-    log->trapClear();
     return rv;
 }
 
 void page_debug::identifyDuplicateTiles(TilingPtr tiling)
 {
-    qDebug() << "Looking for duplicates -" << tiling->getName();
+    qDebug() << "Looking for duplicates -" << tiling->getTitle();
     for (auto tile1 : tiling->getUniqueTiles())
     {
         for (const auto & tile2 : tiling->getUniqueTiles())
@@ -463,7 +472,7 @@ void page_debug::identifyDuplicateTiles(TilingPtr tiling)
                 continue;
             if (tile1->equals(tile2))
             {
-                qInfo() << "DUP:" << tiling->getName() << tile1.get() << "equals" << tile2.get();
+                qInfo() << "DUP:" << tiling->getTitle() << tile1.get() << "equals" << tile2.get();
             }
         }
     }
@@ -522,14 +531,11 @@ void page_debug::slot_examineAllMosaics()
         QString name = files[i];
         qDebug() << "==========" << name << "==========";
 
-
-        MosaicReader loader;
-        MosaicPtr mosaic = loader.readXML(name);
-
-
+        MosaicReader reader;
+        MosaicPtr mosaic = reader.readXML(name);
         if (!mosaic)
         {
-            QString str = QString("Load ERROR - %1").arg(loader.getFailMessage());
+            QString str = QString("Load ERROR - %1").arg(reader.getFailMessage());
             QMessageBox box(ControlPanel::getInstance());
             box.setIcon(QMessageBox::Warning);
             box.setText(str);
@@ -538,7 +544,7 @@ void page_debug::slot_examineAllMosaics()
         }
 
         examineMosaic(mosaic);
-        }
+    }
 
     QMessageBox box(this);
     box.setIcon(QMessageBox::Information);
@@ -557,7 +563,7 @@ void page_debug::examineMosaic(MosaicPtr mosaic)
 {
     QVector<TilingPtr> tilings = mosaic->getTilings();
     TilingPtr tiling = tilings.first();     // yeah only one for this exercise
-    qInfo().noquote() << "tiling:" << tiling->getName();
+    qInfo().noquote() << "tiling:" << tiling->getTitle();
 
     verifyTiling(tiling);
 
@@ -571,7 +577,7 @@ void page_debug::examineMosaic(MosaicPtr mosaic)
         }
 
         log->suspend(true);
-        MapPtr map = style->getMap();
+        MapPtr map = style->getProtoMap();
         log->suspend(false);
 
         map->verify(true);
@@ -586,12 +592,12 @@ void page_debug::examineMosaic(MosaicPtr mosaic)
 
 void page_debug::slot_dontTrapLog(bool dont)
 {
-    config->dontTrapLog = dont;
+    Sys::dontTrapLog = dont;
 }
 
 void page_debug::slot_dontRefresh(bool enb)
 {
-    config->updatePanel = !enb;
+    Sys::updatePanel = !enb;
 }
 
 void  page_debug::slot_testA()
@@ -651,8 +657,8 @@ void  page_debug::slot_testA()
 
     //QLineF rline(QPointF(0.5,-3),QPointF(2,0));
     QLineF rline(QPointF(2,0),QPointF(2,1));
-
-    QPolygonF poly2 = Point::reflectPolygon(poly1,rline);
+    
+    QPolygonF poly2 = Geo::reflectPolygon(poly1,rline);
     MapPtr map4 = make_shared<Map>("map4",poly2);
     mep->loadFromMap(map4,MAPED_TYPE_CREATED);
 #if 0
@@ -717,7 +723,7 @@ void  page_debug::slot_testB()
     mep->loadFromMap(map1,MAPED_TYPE_CREATED);
     mep->loadFromMap(map2,MAPED_TYPE_CREATED);
 #endif
-#if 1
+#if 0
     qDebug() << "Looking for duplicates - start";
     auto tiling = tilingMaker->getTilings().first();
     Q_ASSERT(tiling);
@@ -734,5 +740,21 @@ void  page_debug::slot_testB()
         }
     }
     qDebug() << "Looking for duplicates - end";
+#endif
+#if 1
+    auto mosaic  = MosaicMaker::getInstance()->getMosaic();
+    qInfo() << "layer - start";
+    for (const auto & style : mosaic->getStyleSet())
+    {
+        auto t = style->getCanvasTransform();
+        qInfo().noquote() << Transform::toInfoString(t);
+        
+        t = style->getModelTransform();
+        qInfo().noquote() << Transform::toInfoString(t);
+
+        t = style->getLayerTransform();
+        qInfo().noquote() << Transform::toInfoString(t);
+    }
+    qInfo() << "layer - end";
 #endif
 }

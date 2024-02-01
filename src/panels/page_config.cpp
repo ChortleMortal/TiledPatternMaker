@@ -14,14 +14,12 @@
 #include "panels/controlpanel.h"
 #include "settings/configuration.h"
 #include "tiledpatternmaker.h"
-#include "viewers/viewcontrol.h"
 #include "widgets/dlg_textedit.h"
 #include "misc/qtapplog.h"
-#include "misc/runguard.h"
+#include "misc/sys.h"
+#include "viewers/view.h"
 
-extern RunGuard * guard;
-
-page_config:: page_config(ControlPanel * cpanel)  : panel_page(cpanel,"Configuration")
+page_config:: page_config(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_CONFIG,"Configuration")
 {
     log = qtAppLog::getInstance();
 
@@ -54,7 +52,7 @@ page_config:: page_config(ControlPanel * cpanel)  : panel_page(cpanel,"Configura
 
 QGroupBox * page_config::createAppConfig()
 {
-    QRadioButton * designerMode = new QRadioButton("Designer Mode (reccomended)");
+    QRadioButton * designerMode = new QRadioButton("Designer Mode (recommended)");
     QRadioButton * insightMode  = new QRadioButton("Insight Mode");
     QButtonGroup * btnGroup     = new QButtonGroup;
     btnGroup->addButton(designerMode,0);
@@ -62,20 +60,24 @@ QGroupBox * page_config::createAppConfig()
     int button  = (config->insightMode) ? 1 : 0;
     btnGroup->button(button)->setChecked(true);
 
+    QRadioButton * autoTheme = new QRadioButton("Auto Theme");
     QRadioButton * darkTheme = new QRadioButton("Dark Theme");
     QRadioButton * liteTheme = new QRadioButton("Light Theme");
     btnGroup2 = new QButtonGroup;
-    btnGroup2->addButton(darkTheme,0);
+    btnGroup2->addButton(autoTheme,0);
     btnGroup2->addButton(liteTheme,1);
-    button = (config->darkTheme) ? 0 : 1 ;
-    btnGroup2->button(button)->setChecked(true);
+    btnGroup2->addButton(darkTheme,2);
+    btnGroup2->button(int(config->colorTheme))->setChecked(true);
 
     QCheckBox   * chkSplit      = new QCheckBox("Split Screen");
     QCheckBox   * chkBigScreen  = new QCheckBox("Large Screen Mode (e.g. UHD-3840x2160)");
     chkSplit->setChecked(config->splitScreen);
     chkBigScreen->setChecked(config->bigScreen);
-    QCheckBox   * chkLimitView  = new QCheckBox("Limit View Size");
+    QCheckBox   * chkLimitView  = new QCheckBox("Limit View Size to available Screen Size");
     chkLimitView->setChecked(config->limitViewSize);
+
+    QCheckBox   * chkMultiThread  = new QCheckBox("Multi-threaded BMP generation (recommended)");
+    chkMultiThread->setChecked(config->multithreadedGeneration);
 
     QHBoxLayout *hbox = new QHBoxLayout;
     hbox->addWidget(designerMode);
@@ -83,8 +85,9 @@ QGroupBox * page_config::createAppConfig()
     hbox->addStretch();
 
     QHBoxLayout * hbox3 = new QHBoxLayout;
-    hbox3->addWidget(darkTheme);
+    hbox3->addWidget(autoTheme);
     hbox3->addWidget(liteTheme);
+    hbox3->addWidget(darkTheme);
     hbox3->addStretch();
 
     QHBoxLayout * hbox4 = new QHBoxLayout();
@@ -96,17 +99,23 @@ QGroupBox * page_config::createAppConfig()
     hbox5->addWidget(chkLimitView);
     hbox5->addStretch();
 
+    QHBoxLayout * hbox6 = new QHBoxLayout();
+    hbox6->addWidget(chkMultiThread);
+    hbox6->addStretch();
+
     QVBoxLayout * vbox2 = new QVBoxLayout;
     vbox2->addLayout(hbox);
     vbox2->addLayout(hbox3);
     vbox2->addLayout(hbox4);
     vbox2->addLayout(hbox5);
+    vbox2->addLayout(hbox6);
 
     QGroupBox * appGroup = new QGroupBox("Application");
     appGroup->setLayout(vbox2);
 
     connect(chkSplit,       &QCheckBox::clicked, this, [this](bool checked) { config->splitScreen = checked; restartApp(); });
     connect(chkLimitView,   &QCheckBox::clicked, this, [this](bool checked) { config->limitViewSize = checked; emit sig_refreshView(); });
+    connect(chkMultiThread, &QCheckBox::clicked, this, [this](bool checked) { config->multithreadedGeneration = checked; });
     connect(chkBigScreen,   &QCheckBox::clicked, this,    &page_config::slot_bigScreen);
 #if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
     connect(btnGroup,      SIGNAL(buttonClicked(int)), this, SLOT(slot_mode(int)));
@@ -273,7 +282,7 @@ void page_config::slot_selectDiffTool()
 
 void page_config::slot_rootDesignChanged(QString txt)
 {
-    config->rootMosaicDir= txt;
+    Sys::rootMosaicDir= txt;
     if (!config->defaultMediaRoot)
     {
         slot_reconfigurePaths();    // reboot
@@ -305,22 +314,10 @@ void page_config::slot_imageDefaultChanged(bool checked)
 
 void page_config::slot_darkThemeChanged(int id)
 {
-#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
-    if (QApplication::styleHints()->colorScheme() == Qt::ColorScheme::Unknown)
-    {
-        config->darkTheme = (id == 0);
-        restartApp();
-    }
-    else
-    {
-        // reject change
-        int button = (config->darkTheme) ? 0 : 1 ;
-        btnGroup2->button(button)->setChecked(true);
-    }
-#else
-    config->darkTheme = (id == 0);
+    config->colorTheme = eColorTheme(id);
     restartApp();
-#endif
+
+
 }
 
 void page_config::slot_reconfigurePaths()

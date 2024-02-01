@@ -2,12 +2,15 @@
 
 #include "motifs/extended_star.h"
 
-ExtendedStar::ExtendedStar(int nn, qreal d, int s) : Star(nn,d,s)
+/////////////////////////////////////////
+/// ExtendedStar
+////////////////////////////////////////
+ExtendedStar::ExtendedStar(int n, qreal d, int s) : Star(n,d,s)
 {
     setMotifType(MOTIF_TYPE_EXTENDED_STAR);
 }
 
-ExtendedStar::ExtendedStar(const Motif & fig, int nn, qreal d, int s) : Star(fig, nn, d, s)
+ExtendedStar::ExtendedStar(const Motif & motif, int n, qreal d, int s) : Star(motif, n, d, s)
 {
     setMotifType(MOTIF_TYPE_EXTENDED_STAR);
 }
@@ -21,6 +24,31 @@ void ExtendedStar::buildMotifMaps()
 {
     Star::buildMotifMaps();
 
-    extender.extend(this,getTransform());
+    extender.extend(this,getUnitRotationTransform());
+}
+
+/////////////////////////////////////////
+/// ExtendedStar2
+////////////////////////////////////////
+ExtendedStar2::ExtendedStar2(int n, qreal theta, int intersects) : Star2(n,theta,intersects)
+{
+    setMotifType(MOTIF_TYPE_EXTENDED_STAR2);
+}
+
+ExtendedStar2::ExtendedStar2(const Motif & motif, int n, qreal theta, int intersects) : Star2(motif, n, theta, intersects)
+{
+    setMotifType(MOTIF_TYPE_EXTENDED_STAR2);
+}
+
+ExtendedStar2::ExtendedStar2(const ExtendedStar2 &other) : Star2(other)
+{
+    extender = other.extender;
+}
+
+void ExtendedStar2::buildMotifMaps()
+{
+    Star2::buildMotifMaps();
+    
+    extender.extend(this,getUnitRotationTransform());
 }
 

@@ -17,10 +17,12 @@ using std::weak_ptr;
 
 typedef shared_ptr<QPolygonF>              PolyPtr;
 typedef shared_ptr<class Border>           BorderPtr;
+typedef shared_ptr<class BackgroundImage>  BkgdImagePtr;
 typedef shared_ptr<class Crop>             CropPtr;
 typedef shared_ptr<class Edge>             EdgePtr;
 typedef shared_ptr<class ExtendedRosette>  ExtRosettePtr;
 typedef shared_ptr<class ExtendedStar>     ExtStarPtr;
+typedef shared_ptr<class ExtendedStar2>    ExtStar2Ptr;
 typedef shared_ptr<class Tile>             TilePtr;
 typedef shared_ptr<class Motif>            MotifPtr;
 typedef shared_ptr<class IrregularMotif>   IrregularPtr;
@@ -28,11 +30,14 @@ typedef shared_ptr<class Map>              MapPtr;
 typedef shared_ptr<class Mosaic>           MosaicPtr;
 typedef shared_ptr<class Prototype>        ProtoPtr;
 typedef shared_ptr<class Rosette>          RosettePtr;
+typedef shared_ptr<class Rosette2>         Rosette2Ptr;
 typedef shared_ptr<class Star>             StarPtr;
+typedef shared_ptr<class Star2>            Star2Ptr;
 typedef shared_ptr<class RosetteConnect>   RosetteConnectPtr;
 typedef shared_ptr<class StarConnect>      StarConnectPtr;
 typedef shared_ptr<class Tiling>           TilingPtr;
 typedef shared_ptr<class Vertex>           VertexPtr;
+typedef shared_ptr<MosaicReaderBase>       MRBasePtr;
 
 class TileReader;
 class IrregularMotif;
@@ -40,7 +45,7 @@ class IrregularMotif;
 using std::string;
 using namespace pugi;
 
-class MosaicReader : public MosaicReaderBase
+class MosaicReader
 {
 public:
     MosaicReader();
@@ -56,6 +61,8 @@ protected:
     void processVector(xml_node & node);
     void processDesignNotes(xml_node & node);
 
+    void correctMotifScaleandRotation();
+
     void processDesign(xml_node & node);
     void processThick(xml_node & node);
     void processFilled(xml_node & node);
@@ -67,11 +74,13 @@ protected:
     void processTileColors(xml_node & node);
 
     // design
-    void    procSize(xml_node & node, int &width, int &height, int &zwidth, int &zheight);
+    QSize   procViewSize(xml_node & node);
+    QSize   procCanvasSize(xml_node & node, QSize &defaultSize);
     QColor  procBackgroundColor(xml_node & node);
     void    procBorder(xml_node & node);
     void    procFill(xml_node & node, bool isSingle);
     qreal   procWidth(xml_node & node);
+    qreal   procLength(xml_node & node);
 
     // styles
     void    procesToolkitGeoLayer(xml_node & node, Xform & xf, int &zlevel);
@@ -90,9 +99,12 @@ protected:
     void                getMotifCommon(xml_node & node, MotifPtr motif,int tile_sides);
     IrregularPtr        getIrregularMotif(xml_node & node, int tile_sides, eMotifType type);
     StarPtr             getStar(xml_node & node, int tile_sides);
+    Star2Ptr            getStar2(xml_node & node, int tile_sides);
     ExtStarPtr          getExtendedStar(xml_node & node, int tile_sides);
+    ExtStar2Ptr         getExtendedStar2(xml_node & node, int tile_sides);
     ExtRosettePtr       getExtendedRosette(xml_node & node, int tile_sides);
     RosettePtr          getRosette(xml_node & node, int tile_sides);
+    Rosette2Ptr         getRosette2(xml_node & node, int tile_sides);
     RosetteConnectPtr   getRosetteConnect(xml_node & node, int tile_sides);
     StarConnectPtr      getStarConnect(xml_node & node, int tile_sides);
 
@@ -116,9 +128,12 @@ protected:
     void   setFMotifReference(xml_node & node, MotifPtr ptr);
     void   setExplicitReference(xml_node & node, IrregularPtr ptr);
     void   setStarReference(xml_node & node, StarPtr ptr);
+    void   setStar2Reference(xml_node & node, Star2Ptr ptr);
     void   setExtStarReference(xml_node & node, ExtStarPtr ptr);
+    void   setExtStar2Reference(xml_node & node, ExtStar2Ptr ptr);
     void   setExtRosetteReference(xml_node & node, ExtRosettePtr ptr);
     void   setRosetteReference(xml_node & node, RosettePtr ptr);
+    void   setRosette2Reference(xml_node & node, Rosette2Ptr ptr);
     void   setRosetteConnectReference(xml_node & node, RosetteConnectPtr ptr);
     void   setStarConnectReference(xml_node & node, StarConnectPtr ptr);
     void   setMapReference(xml_node & node, MapPtr ptr);
@@ -130,9 +145,12 @@ protected:
     MotifPtr        getMotifReferencedPtr(xml_node & node);
     IrregularPtr    getExplicitReferencedPtr(xml_node & node);
     StarPtr         getStarReferencedPtr(xml_node & node);
+    Star2Ptr        getStar2ReferencedPtr(xml_node & node);
     ExtStarPtr      getExtStarReferencedPtr(xml_node & node);
+    ExtStar2Ptr     getExtStar2ReferencedPtr(xml_node & node);
     ExtRosettePtr   getExtRosetteReferencedPtr(xml_node & node);
     RosettePtr      getRosetteReferencedPtr(xml_node & node);
+    Rosette2Ptr     getRosette2ReferencedPtr(xml_node & node);
     RosetteConnectPtr getRosetteConnectReferencedPtr(xml_node & node);
     StarConnectPtr  getStarConnectReferencedPtr(xml_node & node);
     MapPtr          getMapReferencedPtr(xml_node & node);
@@ -157,9 +175,12 @@ protected:
     QMap<int,MotifPtr>      motif_ids;
     QMap<int,IrregularPtr>  explicit_ids;
     QMap<int,StarPtr>       star_ids;
+    QMap<int,Star2Ptr>      star2_ids;
     QMap<int,ExtStarPtr>    ext_star_ids;
+    QMap<int,ExtStar2Ptr>   ext_star2_ids;
     QMap<int,ExtRosettePtr> ext_rosette_ids;
     QMap<int,RosettePtr>    rosette_ids;
+    QMap<int,Rosette2Ptr>   rosette2_ids;
     QMap<int,RosetteConnectPtr> rosette_connect_ids;
     QMap<int,StarConnectPtr>star_connect_ids;
     QMap<int,MapPtr>        map_ids;
@@ -172,19 +193,18 @@ protected:
     QString                 _failMessage;
 
     QColor                  _background;
-    int                     _width;
-    int                     _height;
-    int                     _zwidth;
-    int                     _zheight;
+    QSize                   _viewSize;
+    QSize                   _canvasSize;
     BorderPtr               _border;
     CropPtr                 _crop;
     unsigned int            _version;
     FillData                _fillData;
     uint                    _cleanseLevel;
+    BkgdImagePtr            _bip;
 
     bool _debug;
 
-    class ViewControl * view;
+    MRBasePtr             base;
 };
 
 #endif

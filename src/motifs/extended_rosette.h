@@ -11,9 +11,9 @@ class ExtendedRosette : public Rosette
 {
     friend class MotifView;
 public:
-    ExtendedRosette(const Motif & fig, int n, qreal q, int s, qreal k);
+    ExtendedRosette(const Motif & fig, int n, qreal q, int s);
 
-    ExtendedRosette(int n, qreal q, int s, qreal k);
+    ExtendedRosette(int n, qreal q, int s);
 
     ExtendedRosette(const ExtendedRosette & other);
 
@@ -22,7 +22,7 @@ public:
     void    buildMotifMaps() override;
 
     virtual QString getMotifDesc() override { return "ExtendedRosette";}
-    virtual void    report()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "q:" << q << "s" << s << "k" << k
+    virtual void    report()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "q:" << q << "s" << s
                                                 << "preipheralVerts:" << extender. getExtendPeripheralVertices()
                                                 << "freeVerts:" << extender.getExtendFreeVertices()
                                                 << "boundaryVerts:" << extender. getConnectBoundaryVertices(); }

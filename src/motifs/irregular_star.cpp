@@ -27,16 +27,16 @@ IrregularStar::IrregularStar(const Motif &other) : IrregularStarBranches(other)
 
 void IrregularStar::buildMotifMaps()
 {
-    Q_ASSERT(tile);
+    Q_ASSERT(getTile());
     motifMap = make_shared<Map>("IrregularStar map");
-    inferStar(tile);
-    completeMotif(tile);
+    inferStar();
+    scaleAndRotate();
     completeMap();
-    buildMotifBoundary(tile);
+    buildMotifBoundary();
     buildExtendedBoundary();
 }
 
-void IrregularStar::inferStar(TilePtr tile)
+void IrregularStar::inferStar()
 {
     int ver = getVersion();
 
@@ -49,23 +49,23 @@ void IrregularStar::inferStar(TilePtr tile)
 
     if (ver == 3)
     {
-        inferStarV3(tile);
+        inferStarV3();
     }
     else if (ver == 2)
     {
-        inferStarV2(tile);
+        inferStarV2();
     }
     else
     {
-        inferStarV1(tile);
+        inferStarV1();
     }
 }
 
-void IrregularStar::inferStarV1(TilePtr tile)
+void IrregularStar::inferStarV1()
 {
     qDebug() << "Infer::inferStar";
 
-    mids  = tile->getEdgePoly().getMids();
+    mids  = getTile()->getEdgePoly().getMids();
 
     int side_count = mids.size();
     for ( int side = 0; side < side_count; ++side )
@@ -75,18 +75,18 @@ void IrregularStar::inferStarV1(TilePtr tile)
         motifMap->mergeMap( buildStarHalfBranchV1( d, s, side_frac, 1));
         motifMap->mergeMap( buildStarHalfBranchV1( d, s, side_frac, -1));
     }
-
-    qDebug().noquote() << motifMap->namedSummary();
+    
+    qDebug().noquote() << motifMap->summary();
 }
 
-void IrregularStar::inferStarV2(TilePtr tile)
+void IrregularStar::inferStarV2()
 {
 #if 1
     debugMap = std::make_shared<DebugMap>("IrregularStarV1 debug map");
 #endif
 
-    corners = tile->getPoints();
-    mids    = tile->getEdgePoly().getMids();
+    corners = getTile()->getPoints();
+    mids    = getTile()->getEdgePoly().getMids();
     if (corners.size() != getN())
     {
         qDebug() << "tile sides:" << corners.size() << "motif sides:" << getN();
@@ -98,18 +98,18 @@ void IrregularStar::inferStarV2(TilePtr tile)
         motifMap->mergeMap(buildStarHalfBranchV2(d, s, side, 1));
         motifMap->mergeMap(buildStarHalfBranchV2(d, s, side, -1));
     }
-
-    qDebug().noquote() << motifMap->namedSummary();
+    
+    qDebug().noquote() << motifMap->summary();
 }
 
-void IrregularStar::inferStarV3(TilePtr tile)
+void IrregularStar::inferStarV3()
 {
 #if 1
     debugMap = std::make_shared<DebugMap>("IrregularStarV2 debug map");
 #endif
 
-    corners = tile->getPoints();
-    mids    = tile->getEdgePoly().getMids();
+    corners = getTile()->getPoints();
+    mids    = getTile()->getEdgePoly().getMids();
     if (corners.size() != getN())
     {
         qDebug() << "tile sides:" << corners.size() << "motif sides:" << getN();
@@ -144,11 +144,11 @@ QVector<QPointF> IrregularStar::getBranchIsectsV3(int side, int sign)
     int  di       = qFloor(d);          // di is equivalent to the mids index, equivalent to the edge index;
     qreal dfrac   = d - qreal(di);
     bool d_is_int = false;
-    if (dfrac < Loose::TOL)
+    if (dfrac < Sys::TOL)
     {
         d_is_int = true;
     }
-    else if ((1.0 - dfrac) < Loose::TOL)
+    else if ((1.0 - dfrac) < Sys::TOL)
     {
         d_is_int = true;
         di++;

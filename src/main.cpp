@@ -20,17 +20,19 @@
 
 #include "tiledpatternmaker.h"
 #include "misc/qtapplog.h"
-#include "misc/runguard.h"
+#include "misc/sys.h"
 #include "misc/version.h"
 #include "settings/configuration.h"
 
 #if defined(Q_OS_WINDOWS)
 #include <windows.h>
 #include <psapi.h>
+
+HANDLE hHandle = 0;
 #endif
 
-TiledPatternMaker * theApp = nullptr;
-RunGuard          * guard = nullptr;
+TiledPatternMaker * theApp          = nullptr;
+QtMessageHandler originalMsgHandler = nullptr;
 
 void stackInfo()
 {
@@ -41,14 +43,41 @@ void stackInfo()
 #endif
 }
 
+void closeHandle()
+{
+#if defined(Q_OS_WINDOWS)
+    if (hHandle)
+    {
+        ReleaseMutex(hHandle); // Explicitly release mutex
+        CloseHandle(hHandle); // close handle before terminating
+        hHandle = 0;
+    }
+#endif
+}
+
+void installLog()
+{
+    originalMsgHandler = qInstallMessageHandler(&qtAppLog::crashMessageOutput);
+}
+
+void uninstallLog()
+{
+    if (originalMsgHandler)
+    {
+        qInstallMessageHandler(originalMsgHandler);
+    }
+}
+
 int main(int argc, char *argv[])
 {
-    int  appInstance    = 0;
+    Sys::appInstance    = 0;
     bool noAutoLoad     = false;
     bool mapVerify      = false;
     bool forceLoad      = false;
     bool primaryDisplay = false;
     int currentExitCode = 0;
+
+    init_legacy_designs();
 
     do
     {
@@ -57,9 +86,10 @@ int main(int argc, char *argv[])
         QCoreApplication::setOrganizationName("DAC");
         QCoreApplication::setApplicationName("TiledPatternMaker");
 
-        //guard against more than one instance running
-        guard = new RunGuard("TiledPatternMaker");
-        if (!guard->tryToRun())
+#if defined(Q_OS_WINDOWS)
+    const wchar_t * uniqueName = L"TiledPatternMaker";
+    hHandle = CreateMutexW(NULL, TRUE, uniqueName);
+    if (ERROR_ALREADY_EXISTS == GetLastError())
         {
             QMessageBox box;
             box.setIcon(QMessageBox::Warning);
@@ -70,10 +100,10 @@ int main(int argc, char *argv[])
             {
                 return(1); // Exit program
             }
-            appInstance = 1;
+            Sys::appInstance = 1;
         }
-
-        // holding down shift key on start stop autoload
+#endif
+        // holding down shift key on start to stop autoload or reset registry
         Qt::KeyboardModifiers mods = QApplication::queryKeyboardModifiers();
         if (mods & Qt::ShiftModifier)
         {
@@ -99,16 +129,44 @@ int main(int argc, char *argv[])
         auto config = Configuration::getInstance();
 
 #if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
-        QStyleHints * hints = app.styleHints();
-        switch (hints->colorScheme())
+        Qt::ColorScheme  scheme = QApplication::styleHints()->colorScheme();
+
+        switch (config->colorTheme)
         {
-        case Qt::ColorScheme::Dark:
-            config->darkTheme = true;
+        case AUTO_THEME:
+            switch (scheme)
+            {
+            case Qt::ColorScheme::Dark:
+                Sys::isDarkTheme = true;
+                break;
+            case Qt::ColorScheme::Light:
+                Sys::isDarkTheme = false;
+                break;
+            case Qt::ColorScheme::Unknown:
+                Sys::isDarkTheme = false;
+                break;
+            }
             break;
-        case Qt::ColorScheme::Light:
-            config->darkTheme = false;
+
+        case LITE_THEME:
+            Sys::isDarkTheme = false;
             break;
-        case Qt::ColorScheme::Unknown:
+
+        case DARK_THEME:
+            Sys::isDarkTheme = true;
+            break;
+        }
+
+#else
+        // older versions of Qt
+        switch (config->colorTheme)
+        {
+        case AUTO_THEME:
+        case LITE_THEME:
+            Sys::isDarkTheme = false;
+            break;
+        case DARK_THEME:
+            Sys::isDarkTheme = true;
             break;
         }
 #endif
@@ -139,12 +197,8 @@ int main(int argc, char *argv[])
         }
 
         log->init();
-        qInstallMessageHandler(&qtAppLog::crashMessageOutput);
 
-        if (config->darkTheme)
-        {
-            log->logDarkMode(true);
-        }
+        installLog();
 
         qInfo().noquote() << QCoreApplication::applicationName()  << "Version:" << tpmVersion;
         QDate cd = QDate::currentDate();
@@ -179,7 +233,7 @@ int main(int argc, char *argv[])
         qInfo().noquote() << "Local Media root:"  << config->getMediaRootLocal();
         qInfo().noquote() << "App Media root  :"  << config->getMediaRootAppdata();
         qInfo().noquote() << "Media root      :"  << config->getMediaRoot();
-        qInfo().noquote() << "Design Dir      :"  << config->rootMosaicDir;
+        qInfo().noquote() << "Design Dir      :"  << Sys::rootMosaicDir;
         qInfo().noquote() << "Font            :"  << QApplication::font().toString();
 
         // parse input
@@ -219,28 +273,28 @@ int main(int argc, char *argv[])
         {
             if (noAutoLoad)
             {
-                config->autoLoadStyles  = false;
-                config->autoLoadTiling  = false;
-                config->autoLoadDesigns = false;
-                config->enableDetachedPages = false;
+                config->autoLoadStyles   = false;
+                config->autoLoadTiling   = false;
+                config->autoLoadDesigns  = false;
+                Sys::enableDetachedPages = false;
             }
             if (mapVerify)
             {
-                config->verifyMaps      = true;
+                config->verifyMaps       = true;
             }
             if (forceLoad)
             {
-                config->autoLoadStyles  = true;
-                config->lastLoadedXML   = QString(loadstr.c_str());
+                config->autoLoadStyles   = true;
+                config->lastLoadedMosaic = QString(loadstr.c_str());
             }
             if (primaryDisplay)
             {
-                config->primaryDisplay = true;
+                Sys::primaryDisplay      = true;
             }
         }
 
         // instantiate and run
-        TiledPatternMaker * maker = new TiledPatternMaker(appInstance);
+        TiledPatternMaker * maker = new TiledPatternMaker();
         theApp = maker;
         emit theApp->sig_start();
 
@@ -254,7 +308,7 @@ int main(int argc, char *argv[])
         log->releaseInstance();
         config->releaseInstance();
 
-        delete guard;
+        closeHandle();
 
     } while (currentExitCode == TiledPatternMaker::EXIT_CODE_REBOOT);
 

@@ -119,14 +119,14 @@ MapPtr IrregularMotif::getMotifMap()
 void IrregularMotif::buildMotifMaps()
 {
     // there is no map to build
-    Q_ASSERT(tile);
-    buildMotifBoundary(tile);
+    Q_ASSERT(getTile());
+    buildMotifBoundary();
     buildExtendedBoundary();
 }
 
-void IrregularMotif::completeMotif(TilePtr tile)
+QTransform IrregularMotif::getMotifTransform()
 {
-    QPointF pt  = tile->getCenter();
+    QPointF pt  = getTile()->getCenter();
 
     QTransform t;
     if (!Loose::equals(motifScale,1.0))
@@ -137,16 +137,12 @@ void IrregularMotif::completeMotif(TilePtr tile)
     {
         t *= Transform::rotateDegreesAroundPoint(pt,motifRotate);
     }
-    if (!t.isIdentity())
-    {
-        motifMap->transformMap(t);
-    }
+    return t;
 }
 
 void IrregularMotif::completeMap()
 {
     motifMap->resetNeighbourMap();
-    motifMap->getNeighbourMap();
     motifMap->verifyAndFix();
 }
 

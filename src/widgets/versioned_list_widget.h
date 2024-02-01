@@ -12,7 +12,7 @@ class LoaderListWidget : public QListWidget
 public:
     LoaderListWidget(QWidget *parent = nullptr);
 
-    virtual void addItemList(QStringList  list);
+    virtual void addItemList(QStringList &list);
     bool selectItemByName(QString name);
     bool selectItemByValue(QVariant val);
 
@@ -56,7 +56,8 @@ class VersionedListWidget : public LoaderListWidget
 public:
     VersionedListWidget();
 
-    void addItemList(QStringList list) override;
+    void addItemList(QStringList & list) override;
+    void rawAdd(QStringList & list) { LoaderListWidget::addItemList(list); }
 };
 
 

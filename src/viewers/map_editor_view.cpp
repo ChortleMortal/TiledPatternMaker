@@ -3,9 +3,9 @@
 #include "motifs/motif.h"
 #include "geometry/circle.h"
 #include "geometry/arcdata.h"
-#include "geometry/crop.h"
 #include "geometry/dcel.h"
 #include "geometry/edge.h"
+#include "geometry/geo.h"
 #include "geometry/map.h"
 #include "geometry/transform.h"
 #include "geometry/vertex.h"
@@ -21,7 +21,7 @@
 #include "tile/tiling.h"
 #include "viewers/crop_view.h"
 #include "viewers/map_editor_view.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
 
 MapEditorView * MapEditorView::mpThis = nullptr;
 
@@ -43,7 +43,7 @@ void MapEditorView::releaseInstance()
     }
 }
 
-MapEditorView::MapEditorView() : LayerController("MapEditorView")
+MapEditorView::MapEditorView() : LayerController("MapEditorView",true)
 {
     config      = Configuration::getInstance();
     debugMouse  = false;
@@ -83,7 +83,7 @@ void MapEditorView::draw(QPainter *painter )
     drawConstructionLines(painter);
     drawConstructionCircles(painter);
 
-    // FIXME this assumes that composite and sources have the sanme source characteristics
+    // TODO this assumes that composite and sources have the sanme source characteristics
     // A better scheme would be to put source design element references into composite data as an array
     for (const MapEditorLayer * layer : db->getComposableLayers())
     {
@@ -192,7 +192,6 @@ void MapEditorView::draw(QPainter *painter )
     }
 }
 
-
 void MapEditorView::drawMap(QPainter * painter, eMapedLayer layer, QColor color)
 {
     if (!db->showMap)
@@ -218,7 +217,7 @@ void MapEditorView::drawMap(QPainter * painter, eMapedLayer layer, QColor color)
     QPen pen(color,mapLineWidth);
     painter->setPen(pen);
 
-    for (const auto & edge : map->getEdges())
+    for (const auto & edge : std::as_const(map->getEdges()))
     {
         QPointF v1 = t.map(edge->v1->pt);
         QPointF v2 = t.map(edge->v2->pt);
@@ -279,7 +278,7 @@ void MapEditorView::drawDCEL(QPainter * painter)
     QPen pen(Qt::green,mapLineWidth);
     painter->setPen(pen);
 
-    for (const auto & edge : dcel->getEdges())
+    for (const auto & edge : std::as_const(dcel->getEdges()))
     {
         QPointF v1 = viewT.map(edge->v1->pt);
         QPointF v2 = viewT.map(edge->v2->pt);
@@ -389,9 +388,8 @@ void MapEditorView::drawBoundaries(QPainter *painter,  DesignElementPtr del)
 void MapEditorView::drawPoints(QPainter * painter,  QVector<pointInfo> & points)
 {
     qreal radius = 1.0;
-    for (auto it = points.begin(); it != points.end(); it++)
+    for (auto & pi : std::as_const(points))
     {
-        pointInfo & pi = *it;
         switch (pi._type)
         {
         case PT_VERTEX:
@@ -446,7 +444,7 @@ void MapEditorView::drawConstructionLines(QPainter * painter)
     QColor color = (view->getViewBackgroundColor() == Qt::white) ? Qt::black : Qt::white;
 
     painter->setPen(QPen(color,constructionLineWidth));
-    for (const auto & line : db->constructionLines)
+    for (const auto & line : std::as_const(db->constructionLines))
     {
         painter->drawLine(viewT.map(line));
     }
@@ -457,7 +455,7 @@ void MapEditorView::drawConstructionCircles(QPainter * painter)
     if (!db->showConstructionLines)
         return;
 
-    for (const auto & circle : db->constructionCircles)
+    for (const auto & circle :  std::as_const(db->constructionCircles))
     {
         QPointF pt = viewT.map(circle.centre);
         painter->setPen(QPen(Qt::white,constructionLineWidth));
@@ -494,9 +492,8 @@ void MapEditorView::startMouseInteraction(QPointF spt, enum Qt::MouseButton mous
     }
 
     SelectionSet set = selector->findSelectionsUsingDB(spt);
-    for (auto it = set.begin(); it != set.end(); it++)
+    for (auto sel :  std::as_const(set))
     {
-        auto sel = *it;
         switch (mouseButton)
         {
         case Qt::LeftButton:
@@ -523,15 +520,30 @@ void MapEditorView::startMouseInteraction(QPointF spt, enum Qt::MouseButton mous
     db->resetMouseInteraction();
 }
 
+void MapEditorView::setModelXform(const Xform & xf, bool update)
+{
+    Q_ASSERT(_unique);
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.toInfoString() << (isUnique() ? "unique" : "common");
+    xf_model = xf;
+    forceLayerRecalc(update);
+}
+
+const Xform & MapEditorView::getModelXform()
+{
+    Q_ASSERT(_unique);
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "GET" << getLayerName() << xf_model.toInfoString() << (isUnique() ? "unique" : "common");
+    return xf_model;
+}
+
 void MapEditorView::slot_wheel_rotate(qreal delta)
 {
     if (!view->isActiveLayer(this)) return;
 
     if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setRotateDegrees(xf.getRotateDegrees() + delta);
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 
@@ -541,9 +553,9 @@ void MapEditorView::slot_scale(int amount)
 
     if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setScale(xf.getScale() * (1 + static_cast<qreal>(amount)/100.0));
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 
@@ -553,42 +565,43 @@ void MapEditorView::slot_rotate(int amount)
 
     if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setRotateRadians(xf.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 
-void MapEditorView:: slot_moveX(int amount)
+void MapEditorView:: slot_moveX(qreal amount)
 {
     if (!view->isActiveLayer(this)) return;
 
     if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setTranslateX(xf.getTranslateX() + amount);
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 
-void MapEditorView::slot_moveY(int amount)
+void MapEditorView::slot_moveY(qreal amount)
 {
     if (!view->isActiveLayer(this)) return;
 
     if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setTranslateY(xf.getTranslateY() + amount);
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 
 //////////////////////////////////////////////////////////////////
 ///
-/// slots and evzents
+/// slots and events
 ///
 //////////////////////////////////////////////////////////////////
 
+#if 0
 const Xform  & MapEditorView::getCanvasXform()
 {
     switch (db->getMapType(db->getEditMap()))
@@ -637,6 +650,7 @@ void MapEditorView::setCanvasXform(const Xform & xf)
         break;
     }
 }
+#endif
 
 void MapEditorView::slot_setCenter(QPointF spt)
 {
@@ -691,13 +705,13 @@ void MapEditorView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
             {
                 qreal len    = config->mapedLen;
                 EdgePtr ep   = set.first()->getEdge();
-
-                QLineF line  = Point::createLine(ep->getLine(),ep->getMidPoint(),qDegreesToRadians(config->mapedAngle),len);
+                
+                QLineF line  = Geo::createLine(ep->getLine(),ep->getMidPoint(),qDegreesToRadians(config->mapedAngle),len);
                 VertexPtr v1 = map->insertVertex(line.p1());
                 VertexPtr v2 = map->insertVertex(line.p2());
                 map->insertEdge(v1,v2);
-
-                line  = Point::createLine(ep->getLine(),ep->getMidPoint(),qDegreesToRadians(-config->mapedAngle),len);
+                
+                line  = Geo::createLine(ep->getLine(),ep->getMidPoint(),qDegreesToRadians(-config->mapedAngle),len);
                 v1 = map->insertVertex(line.p1());
                 v2 = map->insertVertex(line.p2());
                 map->insertEdge(v1,v2);
@@ -716,7 +730,7 @@ void MapEditorView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
     case MAPED_MOUSE_DELETE:
         set = selector->findSelectionsUsingDB(mousePos);
         // only delete one line
-        for (const auto & sel : set)
+        for (const auto & sel : std::as_const(set))
         {
             if (sel->getType() == MAP_EDGE)
             {
@@ -758,7 +772,7 @@ void MapEditorView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
         if (set.size())
         {
             MapPtr map = db->getEditMap();
-            for (const auto & sel : set)
+            for (const auto & sel : std::as_const(set))
             {
                 map->splitEdge(sel->getEdge());
                 map->verify();
@@ -847,10 +861,10 @@ void MapEditorView::slot_mouseTranslate(QPointF pt)
 
     if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setTranslateX(xf.getTranslateX() + pt.x());
         xf.setTranslateY(xf.getTranslateY() + pt.y());
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 
@@ -892,9 +906,9 @@ void MapEditorView::slot_wheel_scale(qreal delta)
 
     if (view->getKbdMode( KBD_MODE_XFORM_VIEW))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setScale(xf.getScale() * (1.0 + delta));
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 

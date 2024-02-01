@@ -21,7 +21,7 @@
 #include "tile/placed_tile.h"
 #include "tile/tiling.h"
 #include "tile/tiling_manager.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
 #include "widgets/dlg_edgepoly_edit.h"
 #include "widgets/dlg_listnameselect.h"
 #include "widgets/dlg_listselect.h"
@@ -34,7 +34,7 @@ using std::make_shared;
 
 Q_DECLARE_METATYPE(WeakPlacedTilePtr)
 
-page_tiling_maker:: page_tiling_maker(ControlPanel * cpanel)  : panel_page(cpanel,"Tiling Maker")
+page_tiling_maker:: page_tiling_maker(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_TILING_MAKER,"Tiling Maker")
 {
     tmView = TilingMakerView::getInstance();
 
@@ -74,10 +74,7 @@ QHBoxLayout * page_tiling_maker::createControlRow()
     tilingCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     QPushButton * reloadTilingBtn = new QPushButton("Re-load Tiling");
     QPushButton * pbClearTiling   = new QPushButton("Clear Tiling");
-    QPushButton * pbUndo          = new QPushButton("Undo");
-
-    undoStatus      = new QLabel();
-    undoStatus->setFixedWidth(101);
+    QCheckBox * chkPropagate      = new QCheckBox("Propagate changes");
 
     QHBoxLayout * hbox = new QHBoxLayout;
     hbox->addWidget(loadedLabel);
@@ -86,13 +83,14 @@ QHBoxLayout * page_tiling_maker::createControlRow()
     hbox->addWidget(reloadTilingBtn);
     hbox->addWidget(pbClearTiling);
     hbox->addStretch();
-    hbox->addWidget(pbUndo);
-    hbox->addWidget(undoStatus);
+    hbox->addWidget(chkPropagate);
+
+    chkPropagate->setChecked(tilingMaker->getPropagate());
 
     connect(tilingCombo,       SIGNAL(currentIndexChanged(int)),  this, SLOT(slot_currentTilingChanged(int)));
     connect(pbClearTiling,     &QPushButton::clicked,  this, &page_tiling_maker::slot_clearTiling);
     connect(reloadTilingBtn,   &QPushButton::clicked,  this, &page_tiling_maker::slot_reloadTiling);
-    connect(pbUndo,            &QPushButton::clicked,  this, &page_tiling_maker::slot_undo);
+    connect(chkPropagate,      &QCheckBox::clicked,    this, &page_tiling_maker::slot_propagate_changed);
 
     return hbox;
 }
@@ -328,10 +326,8 @@ QGroupBox * page_tiling_maker::createActionsGroup()
     // actions
     BQPushButton * addPolyBtn      = new BQPushButton("Add Regular Polygon (A)");
     BQPushButton * addGirihBtn     = new BQPushButton("Add Girih Shape");
-    BQPushButton * exclAllBtn      = new BQPushButton("Exclude All (E)");
     BQPushButton * fillVectorsBtn  = new BQPushButton("Fill using Repeat Points (F)");
     BQPushButton * removeExclBtn   = new BQPushButton("Remove Excluded (R)");
-    BQPushButton * clearVectorsBtn = new BQPushButton("Erase Repeat Points (X)");
 
     BQPushButton * exportBtn       = new BQPushButton("Export Tile");
     BQPushButton * importBtn       = new BQPushButton("Import Tile");
@@ -348,6 +344,7 @@ QGroupBox * page_tiling_maker::createActionsGroup()
     tileRot->setValue(0.0);
 
     girihShapes = new QComboBox();
+    girihShapes->setStyleSheet("padding-left: 35px;");
     girihShapes->addItem("Decagon", "gDecagon");
     girihShapes->addItem("Pentagon","gPentagon");
     girihShapes->addItem("Bowtie",  "gBowtie");
@@ -357,28 +354,24 @@ QGroupBox * page_tiling_maker::createActionsGroup()
     QLabel * rlabel = new QLabel("Rot");
 
     QHBoxLayout * hbox = new QHBoxLayout();
+    hbox->addWidget(sides);
     hbox->addWidget(rlabel);
     hbox->addWidget(tileRot);
 
-    QHBoxLayout * hbox2 = new QHBoxLayout();
-    hbox2->addWidget(sides);
-    hbox2->addWidget(addPolyBtn);
 
     QGridLayout  * actionBox = new QGridLayout;
 
     int row = 0;
-    actionBox->addLayout(hbox2,row,0);
-    actionBox->addLayout(hbox,row,1);
+    actionBox->addWidget(addPolyBtn,row,0);
+    actionBox->addWidget(addGirihBtn,row,1);
     actionBox->addWidget(fillVectorsBtn,row,2);
-    actionBox->addWidget(removeExclBtn,row,3);
-    actionBox->addWidget(importBtn,row,4);
+    actionBox->addWidget(importBtn,row,3);
 
     row++;
-    actionBox->addWidget(girihShapes,row,0);
-    actionBox->addWidget(addGirihBtn,row,1);
-    actionBox->addWidget(clearVectorsBtn,row,2);
-    actionBox->addWidget(exclAllBtn,row,3);
-    actionBox->addWidget(exportBtn,row,4);
+    actionBox->addLayout(hbox,row,0);
+    actionBox->addWidget(girihShapes,row,1);
+    actionBox->addWidget(removeExclBtn,row,2);
+    actionBox->addWidget(exportBtn,row,3);
 
     QGroupBox * actionGroup = new QGroupBox("Actions");
     actionGroup->setLayout(actionBox);
@@ -389,10 +382,8 @@ QGroupBox * page_tiling_maker::createActionsGroup()
     connect(sides,          SIGNAL(valueChanged(int)),  tilingMaker,    SLOT(updatePolygonSides(int)));
     connect(tileRot,        SIGNAL(valueChanged(qreal)),tilingMaker,    SLOT(updatePolygonRot(qreal)));
     connect(addPolyBtn,       &QPushButton::clicked,    tilingMaker,    &TilingMaker::addRegularPolygon);
-    connect(clearVectorsBtn,  &QPushButton::clicked,    tilingMaker,    &TilingMaker::clearTranslationVectors);
     connect(fillVectorsBtn,   &QPushButton::clicked,    tilingMaker,    &TilingMaker::slot_fillUsingTranslations);
     connect(removeExclBtn,    &QPushButton::clicked,    tilingMaker,    &TilingMaker::removeExcluded);
-    connect(exclAllBtn,       &QPushButton::clicked,    tilingMaker,    &TilingMaker::excludeAll);
 
     return actionGroup;
 }
@@ -407,6 +398,7 @@ QGroupBox * page_tiling_maker::createModesGroup()
     AQPushButton * includePoly  = new AQPushButton("Include/Exclude (F7)");
     AQPushButton * position     = new AQPushButton("Show Position (F8)");
     AQPushButton * measure      = new AQPushButton("Measure (F9)");
+    AQPushButton * unify        = new AQPushButton("Unify (F10)");
     AQPushButton * editPoly     = new AQPushButton("Edit Tile (F11)");
     AQPushButton * mirrorX      = new AQPushButton("Mirror X");
     AQPushButton * mirrorY      = new AQPushButton("Mirror Y");
@@ -431,6 +423,7 @@ QGroupBox * page_tiling_maker::createModesGroup()
     modeBox->addWidget(includePoly,row,0);
     modeBox->addWidget(position,row,1);
     modeBox->addWidget(measure,row,2);
+    modeBox->addWidget(unify,row,3);
     modeBox->addWidget(editPoly,row,4);
 
     row++;
@@ -460,6 +453,7 @@ QGroupBox * page_tiling_maker::createModesGroup()
     mouseModeBtnGroup->addButton(nomode,        TM_NO_MOUSE_MODE);
     mouseModeBtnGroup->addButton(position,      TM_POSITION_MODE);
     mouseModeBtnGroup->addButton(measure,       TM_MEASURE_MODE);
+    mouseModeBtnGroup->addButton(unify,         TM_UNIFY_MODE);
     mouseModeBtnGroup->addButton(editPoly,      TM_EDIT_TILE_MODE);
     mouseModeBtnGroup->addButton(curveEdge,     TM_EDGE_CURVE_MODE);
     mouseModeBtnGroup->addButton(mirrorX,       TM_MIRROR_X_MODE);
@@ -524,7 +518,7 @@ void page_tiling_maker::setup()
     tilingMaker->setTilingMakerMouseMode(TM_NO_MOUSE_MODE);
     tilingMaker->clearConstructionLines();
 
-    if (view->isEnabled(VIEW_TILING_MAKER))
+    if (viewControl->isEnabled(VIEW_TILING_MAKER))
     {
         tmView->forceRedraw();
     }
@@ -620,9 +614,6 @@ void  page_tiling_maker::onRefresh()
     QString status = QString("Tiles: %1  Unique: %2  Excluded: %3").arg(tp->getInTiling().count()).arg(tilingMaker->getUniqueTiles().count()).arg(tilingMaker->numExcluded());
     statusLabel->setText(status);
 
-    status = QString("Undo Depth: %1").arg(tp->stackSize());
-    undoStatus->setText(status);
-
     tallyMouseMode();
 }
 
@@ -631,7 +622,7 @@ bool page_tiling_maker::canExit()
 {
     QString txt;
     QString info;
-    PlacedTiles & alltiles = tmView->getAllTiles();
+    const PlacedTiles & alltiles = tmView->getAllTiles();
     if (alltiles.size())
     {
         TilingPtr tp = tilingMaker->getSelected();
@@ -643,7 +634,7 @@ bool page_tiling_maker::canExit()
         }
         else
         {
-            const FillData & fd = tp->getData().getFillData();
+            const FillData & fd = tp->getCanvasSettings().getFillData();
             int minX, maxX, minY, maxY;
             bool singleton;
             fd.get(singleton,minX, maxX, minY, maxY);
@@ -700,7 +691,7 @@ bool page_tiling_maker::canExit()
 void page_tiling_maker::slot_clearTiling()
 {
     // clears current tiling
-    view->removeAllImages();
+    viewControl->removeAllImages();
 
     TilingPtr tp = tilingMaker->getSelected();
     tilingMaker->removeTiling(tp);  // re-creates if becomes empty
@@ -714,7 +705,7 @@ void page_tiling_maker::slot_reloadTiling()
 {
     eTILM_Event event    = TILM_RELOAD;
     TilingPtr oldTiling  = tilingMaker->getSelected();
-    QString name         = oldTiling->getName();
+    QString name         = oldTiling->getTitle();
 
     TilingManager tm;
     TilingPtr newTiling = tm.loadTiling(name,event);
@@ -727,23 +718,9 @@ void page_tiling_maker::slot_reloadTiling()
         box.exec();
         return;
     }
-    newTiling->setState(Tiling::LOADED);
 
     emit tilingMaker->sig_tilingLoaded(name);
     emit sig_refreshView();
-}
-
-void page_tiling_maker::slot_undo()
-{
-    TilingPtr tp = tilingMaker->getSelected();
-    if (tp->popStack())
-    {
-        // force select even though same tiling
-        tilingMaker->select(tp,true);
-
-        onEnter();
-        emit sig_refreshView();
-    }
 }
 
 /////////////////////////////////////
@@ -767,7 +744,7 @@ void page_tiling_maker::buildMenu()
 
     int col = 0;
     const PlacedTiles & ptiles = (config->tm_showAllTiles) ? tmView->getAllTiles() : tilingMaker->getInTiling();
-    for (const auto & pfp : ptiles)
+    for (const auto & pfp : std::as_const(ptiles))
     {
         QString inclusion = QString("%1 (%2)").arg((tilingMaker->isIncluded(pfp)) ? "Included" : "Excluded").arg(col);
         buildTableEntry(pfp,col++,inclusion);
@@ -816,7 +793,7 @@ void page_tiling_maker::refreshMenuData()
 
     int xMin,xMax,yMin,yMax;
     bool singleton;
-    const FillData & fd = tiling->getData().getFillData();
+    const FillData & fd = tiling->getCanvasSettings().getFillData();
     fd.get(singleton, xMin ,xMax,yMin,yMax);
 
     blockSignals(true);
@@ -861,7 +838,7 @@ void page_tiling_maker::refreshMenuData()
 
     int col = 0;
     const PlacedTiles & ptiles = (config->tm_showAllTiles) ? tmView->getAllTiles() : tiling->getInTiling();
-    for (const auto & pfp : ptiles)
+    for (const auto & pfp : std::as_const(ptiles))
     {
         QString inclusion = QString("%1 (%2)").arg((tilingMaker->isIncluded(pfp)) ? "Included" : "Excluded").arg(col);
         refreshTableEntry(pfp,col++,inclusion);
@@ -1110,7 +1087,6 @@ void page_tiling_maker::slot_sidesChanged(int col)
     PlacedTilePtr pf = getTileColumn(col);
     TilePtr tile     = pf->getTile();
 
-    tilingMaker->getSelected()->pushStack();
     tile->setN(sides);
 
     if (tilingMaker->isIncluded(pf))
@@ -1133,7 +1109,6 @@ void page_tiling_maker::slot_tileRotChanged(int col)
     qreal rotation = sp->value();
 
     PlacedTilePtr pf = getTileColumn(col);
-    tilingMaker->getSelected()->pushStack();
 
     TilePtr tile  = pf->getTile();
     tile->setRotation(rotation);
@@ -1158,7 +1133,6 @@ void page_tiling_maker::slot_tileScaleChanged(int col)
     qreal scale = sp->value();
 
     PlacedTilePtr pf = getTileColumn(col);
-    tilingMaker->getSelected()->pushStack();
 
     TilePtr tile  = pf->getTile();
     tile->setScale(scale);
@@ -1191,8 +1165,6 @@ void page_tiling_maker::slot_placedTranslateChanged(int col)
     Q_ASSERT(dsp);
     qreal ty = dsp->value();
 
-    tilingMaker->getSelected()->pushStack();
-
     tilingMaker->placedTileSetTranslate(tx,ty);
 
     if (tilingMaker->isIncluded(placedTile))
@@ -1220,8 +1192,6 @@ void page_tiling_maker::slot_placedScaleChanged(int col)
         return;     // fixes problem with scales of 0 when entering data
     }
 
-    tilingMaker->getSelected()->pushStack();
-
     tilingMaker->placedTileSetScale(scale);
 
     if (tilingMaker->isIncluded(placedTile))
@@ -1245,8 +1215,6 @@ void page_tiling_maker::slot_placedRotateChanged(int col)
     Q_ASSERT(rot_dsp);
     qreal cell_rotation = rot_dsp->value();
 
-    tilingMaker->getSelected()->pushStack();
-
     tilingMaker->placedTileSetRotate(cell_rotation);
 
     if (tilingMaker->isIncluded(placedTile))
@@ -1266,7 +1234,7 @@ void page_tiling_maker::slot_showTileChanged(int col)
     qDebug() << "col=" << col << "checked:" << checked;
 
     PlacedTilePtr tile = getTileColumn(col);
-    tilingMaker->getSelected()->pushStack();
+
     tile->setShow(checked);
 
     tmView->forceRedraw();
@@ -1281,10 +1249,14 @@ void page_tiling_maker::slot_set_reps(int val)
     TilingPtr tiling = tilingMaker->getSelected();
     if (!tiling) return;
     
-    FillData & fdata = tiling->getRWData(true).getFillDataAccess();
+    FillData fdata;
     fdata.set(chkSingle->isChecked(),xRepMin->value(), xRepMax->value(), yRepMin->value(), yRepMax->value());
 
-    view->setFillData(fdata);
+    CanvasSettings cs = tiling->getCanvasSettings();
+    cs.setFillData(fdata);
+    tiling->setCanvasSettings(cs);
+
+    viewControl->getCanvas().setFillData(fdata);
 
     tilingMaker->updateReps();
 }
@@ -1299,14 +1271,26 @@ void page_tiling_maker::singleton_changed(bool checked)
         fd.set(false,-3, 3, -3, 3);
     else
         fd.set(true,0,0,0,0);
-    
-    FillData & fdata = tiling->getRWData(true).getFillDataAccess();
-    fdata = fd;
 
-    view->setFillData(fd);
+    CanvasSettings cs = tiling->getCanvasSettings();
+    cs.setFillData(fd);
+    tiling->setCanvasSettings(cs);
+
+    viewControl->getCanvas().setFillData(fd);
 
     tilingMaker->updateReps();
+
     refreshMenuData();
+}
+
+void page_tiling_maker::slot_propagate_changed(bool checked)
+{
+    tilingMaker->setPropagate(checked);
+    if (checked)
+    {
+        auto tiling = tilingMaker->getSelected();
+        tilingMaker->sm_takeUp(tiling,TILM_RELOAD);
+    }
 }
 
 void page_tiling_maker::slot_t1t2Changed(double val)
@@ -1321,10 +1305,7 @@ void page_tiling_maker::slot_t1t2Changed(double val)
     qreal y2 = t2y->value();
 
     TilingPtr tiling = tilingMaker->getSelected();
-    TilingData & td  = tiling->getRWData(true);
-
-    td.setTrans1(QPointF(x1,y1));
-    td.setTrans2(QPointF(x2,y2));
+    tiling->setTranslationVectors(QPointF(x1,y1), QPointF(x2,y2));
 
     tilingMaker->updateVectors();
 
@@ -1338,10 +1319,9 @@ void page_tiling_maker::slot_t1t2LenChanged(double val)
     if (pageBlocked()) return;
 
     TilingPtr tiling = tilingMaker->getSelected();
-    TilingData & td  = tiling->getRWData(true);
 
-    QPointF t1 = td.getTrans1();
-    QPointF t2 = td.getTrans2();
+    QPointF t1 = tiling->getData().getTrans1();
+    QPointF t2 = tiling->getData().getTrans2();
 
     QLineF tl1(QPointF(0.0,0.0),t1);
     QLineF tl2(QPointF(0.0,0.0),t2);
@@ -1357,8 +1337,7 @@ void page_tiling_maker::slot_t1t2LenChanged(double val)
     qreal x2 = tl2.p2().x();
     qreal y2 = tl2.p2().y();
 
-    td.setTrans1(QPointF(x1,y1));
-    td.setTrans2(QPointF(x2,y2));
+    tiling->setTranslationVectors(QPointF(x1,y1),QPointF(x2,y2));
 
     tilingMaker->updateVectors();
 
@@ -1372,10 +1351,9 @@ void page_tiling_maker::slot_t1t2AngleChanged(double val)
     if (pageBlocked()) return;
 
     TilingPtr tiling = tilingMaker->getSelected();
-    TilingData & td  = tiling->getRWData(true);
 
-    QPointF t1 = td.getTrans1();
-    QPointF t2 = td.getTrans2();
+    QPointF t1 = tiling->getData().getTrans1();
+    QPointF t2 = tiling->getData().getTrans2();
 
     QLineF tl1(QPointF(0.0,0.0),t1);
     QLineF tl2(QPointF(0.0,0.0),t2);
@@ -1391,8 +1369,7 @@ void page_tiling_maker::slot_t1t2AngleChanged(double val)
     qreal x2 = tl2.p2().x();
     qreal y2 = tl2.p2().y();
 
-    td.setTrans1(QPointF(x1,y1));
-    td.setTrans2(QPointF(x2,y2));
+    tiling->setTranslationVectors(QPointF(x1,y1),QPointF(x2,y2));
 
     tilingMaker->updateVectors();
 
@@ -1419,11 +1396,11 @@ void page_tiling_maker::loadTilingCombo(TilingPtr selected)
     tilingCombo->blockSignals(true);
     tilingCombo->clear();
     const QVector<TilingPtr> & tilings = tilingMaker->getTilings();
-    for (auto& tiling : tilings)
+    for (auto& tiling : std::as_const(tilings))
     {
-        tilingCombo->addItem(tiling->getName());
+        tilingCombo->addItem(tiling->getTitle());
     }
-    int index = tilingCombo->findText(selected->getName());
+    int index = tilingCombo->findText(selected->getTitle());
     tilingCombo->setCurrentIndex(index);
     tilingCombo->blockSignals(false);
 
@@ -1612,7 +1589,7 @@ void page_tiling_maker::slot_cellSelected(int row, int col)
 
 void page_tiling_maker::updateTilePointInfo(PlacedTilePtr pfp)
 {
-    TilePtr       fp  = pfp->getTile();
+    TilePtr          fp  = pfp->getTile();
     QPolygonF      poly  = fp->getPoints();
     QTransform        t  = pfp->getTransform();
     QString astring;
@@ -1731,7 +1708,7 @@ void page_tiling_maker::slot_importPoly()
 
     buildMenu();
 
-    if (view->isEnabled(VIEW_TILING_MAKER))
+    if (viewControl->isEnabled(VIEW_TILING_MAKER))
     {
         tmView->forceRedraw();
     }
@@ -1747,7 +1724,7 @@ void page_tiling_maker::slot_addGirihShape()
         QTransform t;
         tilingMaker->addNewPlacedTile(pfp);
         buildMenu();
-        if (view->isEnabled(VIEW_TILING_MAKER))
+        if (viewControl->isEnabled(VIEW_TILING_MAKER))
         {
             tmView->forceRedraw();
         }
@@ -1769,7 +1746,7 @@ void page_tiling_maker::tableHeaderClicked(int index)
 void page_tiling_maker::slot_trim(qreal valX, qreal valY)
 {
     const PlacedTiles & ptiles = (config->tm_showAllTiles) ? tmView->getAllTiles() : tilingMaker->getInTiling();
-    for (const auto & pfp : ptiles)
+    for (const auto & pfp : std::as_const(ptiles))
     {
         QTransform t1 = pfp->getTransform();
         QTransform t2 = QTransform::fromTranslate(valX,valY);

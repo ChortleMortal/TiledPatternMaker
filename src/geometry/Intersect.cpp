@@ -1,5 +1,5 @@
 #include "geometry/intersect.h"
-#include "geometry/loose.h"
+#include "geometry/geo.h"
 
 bool Intersect::getIntersection(const QLineF &line1, const QLineF &line2, QPointF & intersect)
 {
@@ -14,7 +14,7 @@ bool Intersect::getIntersection(const  QPointF &p1, const QPointF &q1, const QPo
     QPointF isect;
     if (getIntersectionParams( p1, q1, p2, q2, isect) && stayOnSegments(isect))
     {
-        intersect = Point::convexSum(p1, q1, isect.x());
+        intersect = Geo::convexSum(p1, q1, isect.x());
         return true;
     }
     else
@@ -39,22 +39,22 @@ bool Intersect::getTrueIntersection(QPointF p1, QPointF q1, QPointF p2, QPointF 
         qreal s = isect.x();
         qreal t = isect.y();
 
-        if( s < Loose::TOL )
+        if( s < Sys::TOL )
         {
-            if( (t < Loose::TOL) || ((1.0-t) < Loose::TOL) )
+            if( (t < Sys::TOL) || ((1.0-t) < Sys::TOL) )
             {
                 return false;
             }
         }
-        else if( (1.0-s) < Loose::TOL )
+        else if( (1.0-s) < Sys::TOL )
         {
-            if( (t < Loose::TOL) || ((1.0-t) < Loose::TOL) )
+            if( (t < Sys::TOL) || ((1.0-t) < Sys::TOL) )
             {
                 return false;
             }
         }
-
-        intersect =  Point::convexSum(p1, q1, s );
+        
+        intersect =  Geo::convexSum(p1, q1, s );
         return true;
     }
     else
@@ -114,11 +114,11 @@ bool Intersect::stayOnSegments(QPointF ip)
         return false;
 
     qreal is = ip.x();
-    if( (is < -Loose::TOL) || (is > (1.0 + Loose::TOL)) )
+    if( (is < -Sys::TOL) || (is > (1.0 + Sys::TOL)) )
         return false;
 
     qreal it = ip.y();
-    if( (it < -Loose::TOL) || (it > (1.0 + Loose::TOL)) )
+    if( (it < -Sys::TOL) || (it > (1.0 + Sys::TOL)) )
         return false;
 
     return true;

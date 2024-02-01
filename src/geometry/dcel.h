@@ -68,13 +68,13 @@ public:
     static int refs;
 
 protected:
-    void    buildDCEL();
-    void    fill_half_edge_table();
+    void    buildDCEL(Map * map);
+    void    fill_half_edge_table(Map *map);
     void    fill_face_table_inner_components();
     void    fill_half_edge_faces();
 
-    EdgePtr next_half_edge(const EdgePtr & current);
-    EdgePtr findEdge(const VertexPtr & start, const VertexPtr &end, bool expected = true);
+    EdgePtr next_half_edge(Map *map, const EdgePtr & current);
+    EdgePtr findEdge(Map *map, const VertexPtr & start, const VertexPtr &end, bool expected = true);
 
     void    createFace(const EdgePtr & head);
     FacePtr findOuterFace();
@@ -111,7 +111,6 @@ private:
     FaceSet            faces;
     QVector<VertexPtr> vertices;
     QVector<EdgePtr>   edges;
-    NeighbourMapPtr    nMap;
 };
 
 

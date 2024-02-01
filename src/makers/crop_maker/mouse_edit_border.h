@@ -5,7 +5,9 @@
 #include <QPointF>
 #include <QPainter>
 
-typedef std::shared_ptr<class Crop>       CropPtr;
+class BorderView;
+
+typedef std::shared_ptr<class Crop> CropPtr;
 
 class MouseEditBorder
 {
@@ -33,7 +35,7 @@ class MouseEditBorder
     };
 
 public:
-    MouseEditBorder(QPointF spt, CropPtr crop);
+    MouseEditBorder(BorderView * view, QPointF spt, CropPtr crop);
 
     virtual void updateDragging(QPointF spt);
     virtual void endDragging(QPointF spt);
@@ -42,13 +44,14 @@ public:
 protected:
     QPointF * start;
     QPointF * end;
-    CropPtr  crop;
+    CropPtr   mcrop; // model units
 
     eEditCropMode   ecMode;
     eCropCorner     ecCorner;
     eCircleMode     ecCircleMode;
 
 private:
+    BorderView * bview;
 };
 
 

@@ -21,14 +21,83 @@ ColorMaker::~ColorMaker()
     faceGroups.clear();
 #endif
 }
-void ColorMaker::createFacesToDo()
+
+void ColorMaker::clear()
 {
     whiteFaces.clear();
     blackFaces.clear();
     facesToDo.clear();
 
+    whiteColorSet.resetIndex();
+    blackColorSet.resetIndex();
+    colorGroup.resetIndex();
+}
+
+void ColorMaker::buildFaceSets(int algorithm, DCEL * dcel)
+{
+    switch (algorithm)
+    {
+    case 0:
+        if (blackFaces.size() == 0 && whiteFaces.size() == 0)
+        {
+            assignColorsOriginal(dcel);
+        }
+        break;
+
+    case 1:
+        if (blackFaces.size() == 0 && whiteFaces.size() == 0)
+        {
+            assignColorsNew1(dcel);
+        }
+        break;
+
+    case 2:
+        if (faceGroups.size() == 0)
+        {
+            buildFaceGroups(dcel);
+            assignColorSets(whiteColorSet);
+        }
+        break;
+
+    case 3:
+        if (faceGroups.size() == 0)
+        {
+            buildFaceGroups(dcel);
+            assignColorGroups(colorGroup);
+        }
+        break;
+    }
+}
+
+void ColorMaker::assignColors(int algorithm, DCEL * dcel)
+{
+    switch (algorithm)
+    {
+    case 0:
+        assignColorsOriginal(dcel);
+        break;
+
+    case 1:
+        assignColorsNew1(dcel);
+        break;
+
+    case 2:
+        assignColorSets(whiteColorSet);
+        break;
+
+    case 3:
+        assignColorGroups(colorGroup);
+        break;
+    }
+}
+
+
+void ColorMaker::createFacesToDo(DCEL * dcel)
+{
+    clear();
+
     // remove outer
-    for (auto & face : qAsConst(dcel->faces))
+    for (auto & face : std::as_const(dcel->faces))
     {
         if (!face->outer)
         {
@@ -37,9 +106,9 @@ void ColorMaker::createFacesToDo()
     }
 }
 
-void ColorMaker::assignColorsOriginal()
+void ColorMaker::assignColorsOriginal(DCEL * dcel)
 {
-    createFacesToDo();
+    createFacesToDo(dcel);
 
     // recurse through faces to assign colours
     // this now deals with non-contiguous figures
@@ -136,7 +205,7 @@ void ColorMaker::assignColorsToFaces(FaceSet &fset)
 void ColorMaker::addFaceResults(FaceSet & fset)
 {
     FaceSet faces2do;
-    for (auto & face : fset)
+    for (auto & face : std::as_const(fset))
     {
         if( face->state == FACE_WHITE )
         {
@@ -158,12 +227,12 @@ void ColorMaker::addFaceResults(FaceSet & fset)
 // DAC Notes
 // An edge can only be in two faces
 // A vertex can be in multiple faces
-void ColorMaker::assignColorsNew1()
+void ColorMaker::assignColorsNew1(DCEL * dcel)
 {
-    createFacesToDo();
+    createFacesToDo(dcel);
 
     eFaceState newState = FACE_WHITE;     // seed
-    for (auto & fp : qAsConst(facesToDo))
+    for (auto & fp : std::as_const(facesToDo))
     {
         if (fp->state != FACE_UNDONE)
         {
@@ -171,7 +240,7 @@ void ColorMaker::assignColorsNew1()
         }
         fp->state = newState;
         qreal size = fp->area;
-        for (auto & fp2 : qAsConst(facesToDo))
+        for (auto & fp2 : std::as_const(facesToDo))
         {
             if (fp2->state == FACE_UNDONE)
             {
@@ -184,7 +253,7 @@ void ColorMaker::assignColorsNew1()
         newState = (newState == FACE_WHITE) ? FACE_BLACK : FACE_WHITE;
     }
 
-    for (const auto & fi : facesToDo)
+    for (const auto & fi : std::as_const(facesToDo))
     {
         if( fi->state == FACE_WHITE )
         {
@@ -204,15 +273,15 @@ void ColorMaker::assignColorsNew1()
     //blackFaces.sortByPositon();
 }
 
-void ColorMaker::buildFaceGroups()
+void ColorMaker::buildFaceGroups(DCEL * dcel)
 {
     qDebug() << "ColorMaker::buildFaceGroups ........";
 
-    createFacesToDo();
+    createFacesToDo(dcel);
     faceGroups.clear();
 
 #if 0
-    for (auto face : qAsConst(facesToDo))
+    for (auto face : std::as_const(facesToDo))
     {
         face->sortForComparison();
     }
@@ -220,7 +289,7 @@ void ColorMaker::buildFaceGroups()
     removeOverlappingFaces();	// fix 1
 #endif
 
-    for (auto & face : qAsConst(facesToDo))
+    for (auto & face : std::as_const(facesToDo))
     {
         face->state = FACE_UNDONE;
     }
@@ -336,14 +405,12 @@ void  ColorMaker::assignColorGroups(ColorGroup & colorGroup)
 
 #else
     colorGroup.resetIndex();
-    int i=0;
-    for (const FaceSetPtr & fsp  : faceGroups)
+    for (const FaceSetPtr & fsp  : std::as_const(faceGroups))
     {
         //qDebug() << "sorting..." << i;
         //fsp->sortByPositon();
-        qDebug() << "assigning..." << i;
+        //qDebug() << "assigning..." << i;
         fsp->pColorSet  = colorGroup.getNextColorSet();
-        i++;
     }
 #endif
     qDebug() << "ColorMaker::assignColorGroups - done";
@@ -355,7 +422,7 @@ void ColorMaker::removeOverlappingFaces()
     int start = facesToDo.size();
     qDebug() << "ColorMaker::removeOverlappingFaces START faces:" << start;
 
-    for (auto & face : qAsConst(facesToDo))
+    for (auto & face : std::as_const(facesToDo))
     {
         face->state = FACE_UNDONE;
     }
@@ -399,7 +466,7 @@ void ColorMaker::removeOverlappingFaces()
     if (overlaps.size())
         qWarning()  << "removing" << overlaps.size() << "faces";
 
-    for (auto & face : overlaps)
+    for (auto & face : std::as_const(overlaps))
     {
         facesToDo.removeAll(face);
     }

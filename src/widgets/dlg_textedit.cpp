@@ -7,8 +7,9 @@
 
 #include "dlg_textedit.h"
 #include "settings/configuration.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
 #include "panels/panel_misc.h"
+#include "misc/sys.h"
 #include "misc/version.h"
 
 TextEditorWidget::TextEditorWidget()
@@ -74,31 +75,18 @@ DlgTextEdit::~DlgTextEdit()
 
 void DlgTextEdit::set(const QStringList & qsl)
 {
-    for (auto & line : qsl)
-{
+    for (auto & line : std::as_const(qsl))
+    {
         append(line);
-}
+    }
 }
 
 DlgMapVerify::DlgMapVerify(QString name, QWidget *parent) : DlgTextEdit(parent)
 {
-    // FIXME - this does not work with tiling maps
-    QString dlgName;
+    // FIXME - does this work with tiling maps
 
-    LoadUnit & loadUnit = ViewControl::getInstance()->getLoadUnit();
-    if (loadUnit.loadTimer.isValid())
-    {
-        dlgName = loadUnit.name;
-    }
-    else
-    {
-        dlgName = config->currentlyLoadedXML;
-    }
-
-    if (dlgName.isEmpty())
-    {
-        dlgName = config->lastLoadedTileName;
-    }
+    LoadUnit & loadUnit = Sys::view->getLoadUnit();
+    QString dlgName = loadUnit.getLoadName();
 
     setWindowTitle(dlgName);
     qWarning() << "Map:" << name << "verify problem with:" << dlgName;

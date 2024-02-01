@@ -19,6 +19,7 @@ public:
     void refreshPages();
     void floatPages();
     void closePages();
+    bool isVisiblePage(ePanelPage page);
     bool isVisiblePage(panel_page * page);
     void reAttachPage(panel_page * page);
 

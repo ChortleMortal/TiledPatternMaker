@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<!-- Written: Mon Oct 16 2023 17:00:34 -->
+<Tiling version="7">
+	<Name>scratch</Name>
+	<Fill singleton="t">0,0,0,0</Fill>
+	<T1>0,0</T1>
+	<T2>0,0</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>-300</left__delta>
+		<top__delta>-3</top__delta>
+		<width__delta>0.9999</width__delta>
+		<theta__delta>2.216568150032798</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="regular" sides="5" rotation="0" scale="1">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-2.106666666666666</tranX>
+			<tranY>-0.1600000000000001</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-0.7247006554165616</tranX>
+			<tranY>-2.062113032590307</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-0.7247006554165611</tranX>
+			<tranY>1.742113032590307</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>1.511367322083228</tranX>
+			<tranY>1.015570504584945</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>1.511367322083228</tranX>
+			<tranY>-1.335570504584947</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>180</rot>
+			<tranX>-0.1066666666666667</tranX>
+			<tranY>-0.1600000000000004</tranY>
+		</Placement>
+	</Tile>
+	<Desc />
+	<Auth />
+</Tiling>

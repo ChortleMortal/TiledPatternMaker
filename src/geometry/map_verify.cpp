@@ -117,10 +117,13 @@ bool Map::verifyAndFix(bool force, bool confirm)
         {
             QString msg = "Map verify failed after cleanse";
             qWarning().noquote() << msg;
-            QMessageBox box(ControlPanel::getInstance());
-            box.setIcon(QMessageBox::Warning);
-            box.setText(msg);
-            box.exec();
+            if (config->verifyPopup)
+            {
+                QMessageBox box(ControlPanel::getInstance());
+                box.setIcon(QMessageBox::Warning);
+                box.setText(msg);
+                box.exec();
+            }
             return false;
         }
         else
@@ -147,7 +150,7 @@ QVector<eMapError> Map::_verify(bool force)
     }
 
     qtAppLog * log = qtAppLog::getInstance();
-    if (!config->dontTrapLog)
+    if (!Sys::dontTrapLog)
     {
         log->trap(true);   // traps a copy of debug info
     }
@@ -208,9 +211,8 @@ windup:
         qDebug().noquote() << mname << "Verify OK" <<  "Vertices:" << vertices.size() << "Edges:" << edges.size();
     }
 
-    if (!config->dontTrapLog)
+    if (!Sys::dontTrapLog)
     {
-        log->trapClear();
         log->trap(false);
     }
 
@@ -219,7 +221,7 @@ windup:
 
 void Map::verifyEdges()
 {
-    for (const auto & edge: edges)
+    for (const auto & edge : std::as_const(edges))
     {
         VertexPtr v1 = edge->v1;
         VertexPtr v2 = edge->v2;
@@ -265,7 +267,7 @@ void Map::verifyEdges()
             // make sure the edge is the only connection between the two endpoints
             //qDebug() << "   V1";
             auto neighbours = getNeighbours(v1);
-            for (auto & wedge : *neighbours)
+            for (auto & wedge : std::as_const(*neighbours))
             {
                 EdgePtr eother = wedge.lock();
 
@@ -291,7 +293,7 @@ void Map::verifyEdges()
 
             //qDebug() << "   V2";
             neighbours = getNeighbours(v2);
-            for (auto & wedge : *neighbours)
+            for (auto & wedge : std::as_const(*neighbours))
             {
                 EdgePtr eother = wedge.lock();
 
@@ -326,7 +328,7 @@ void Map::verifyNeighbours()
     }
 
     // Make sure the vertices each have a neighbour and all neighbours are good
-    for (const auto & vertex : vertices)
+    for (const auto & vertex : std::as_const(vertices))
     {
         NeighboursPtr neighbour = getNeighbours(vertex);
         if (!neighbour->verify())
@@ -341,7 +343,7 @@ void Map::verifyNeighbours()
             errors.push_back(NEIGHBOUR_NO_EDGE);
         }
 
-        for (const auto & wedge : *neighbour)
+        for (const auto & wedge : std::as_const(*neighbour))
         {
             EdgePtr edge = wedge.lock();
             if (!edge)
@@ -377,7 +379,7 @@ void Map::verifyNeighbours()
 bool Map::procErrors(const QVector<eMapError> & errors)
 {
     bool severe = false;
-    for (auto err : errors)
+    for (auto err : std::as_const(errors))
     {
         if (isSevereError(err))
         {
@@ -411,7 +413,7 @@ bool Map::isSevereError(eMapError err)
 
 void Map::dumpErrors(const QVector<eMapError> & theErrors)
 {
-    for (auto err : theErrors)
+    for (auto err : std::as_const(theErrors))
     {
         qWarning().noquote() << "Error" << sMapErrors[err];
     }

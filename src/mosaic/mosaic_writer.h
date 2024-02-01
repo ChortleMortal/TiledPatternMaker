@@ -16,7 +16,7 @@ using std::shared_ptr;
 using std::weak_ptr;
 using namespace pugi;
 
-class ViewControl;
+class ViewController;
 class Configuration;
 
 typedef shared_ptr<class Border>           BorderPtr;
@@ -24,14 +24,17 @@ typedef shared_ptr<class Crop>             CropPtr;
 typedef shared_ptr<class IrregularMotif>   ExplicitPtr;
 typedef shared_ptr<class ExtendedRosette>  ExtRosettePtr;
 typedef shared_ptr<class ExtendedStar>     ExtStarPtr;
+typedef shared_ptr<class ExtendedStar2>    ExtStar2Ptr;
 typedef shared_ptr<class Tile>             TilePtr;
 typedef shared_ptr<class Motif>            MotifPtr;
 typedef shared_ptr<class Map>              MapPtr;
 typedef shared_ptr<class Mosaic>           MosaicPtr;
 typedef shared_ptr<class Prototype>        ProtoPtr;
 typedef shared_ptr<class Rosette>          RosettePtr;
+typedef shared_ptr<class Rosette2>         Rosette2Ptr;
 typedef shared_ptr<class RosetteConnect>   RosetteConnectPtr;
 typedef shared_ptr<class Star>             StarPtr;
+typedef shared_ptr<class Star2>            Star2Ptr;
 typedef shared_ptr<class StarConnect>      StarConnectPtr;
 typedef shared_ptr<class Style>            StylePtr;
 
@@ -53,10 +56,11 @@ protected:
     bool generateDesignNotes(QTextStream & ts);
 
     void processDesign(QTextStream & ts);
-    void procSize(QTextStream &ts, QSizeF size, QSize zsize);
+    void procSize(QTextStream &ts, QSize viewSize, QSizeF canvasSize);
     void procRect(QTextStream &ts, QRectF rect);
     void procCircle(QTextStream &ts, Circle c);
     void procWidth(QTextStream &ts,qreal width);
+    void procLength(QTextStream &ts, qreal length);
     void procBackground(QTextStream &ts, QColor color);
     void procBorder(QTextStream &ts, BorderPtr border);
     void procCrop(QTextStream &ts, CropPtr crop);
@@ -89,8 +93,11 @@ protected:
     void    setMotifCommon(QTextStream & ts, MotifPtr motif);
     void    setExplicitMotif(QTextStream & ts,QString name, MotifPtr motif);
     void    setStar(QTextStream & ts,QString name, MotifPtr motif, bool childEnd=false);
+    void    setStar2(QTextStream & ts,QString name, MotifPtr motif, bool childEnd=false);
     void    setRosette(QTextStream & ts, QString name, MotifPtr motif, bool childEnd=false);
+    void    setRosette2(QTextStream & ts, QString name, MotifPtr motif, bool childEnd=false);
     void    setExtendedStar(QTextStream & ts,QString name, MotifPtr motif);
+    void    setExtendedStar2(QTextStream & ts,QString name, MotifPtr motif);
     void    setExtendedRosette(QTextStream & ts,QString name, MotifPtr motif);
     void    setRosetteConnect(QTextStream & ts,QString name, MotifPtr motif);
     void    setStarConnect(QTextStream & ts,QString name, MotifPtr motif);
@@ -121,6 +128,7 @@ protected:
     bool   hasReference(RosettePtr ep);
     bool   hasReference(StarPtr ep);
     bool   hasReference(ExtStarPtr ep);
+    bool   hasReference(ExtStar2Ptr ep);
     bool   hasReference(ExtRosettePtr ep);
     bool   hasReference(RosetteConnectPtr ep);
     bool   hasReference(StarConnectPtr ep);
@@ -135,9 +143,12 @@ protected:
     void   setMapReference(int id, MapPtr ptr);
     void   setEdgeReference(int id, EdgePtr ptr);
     void   setStarReference(int id, StarPtr ptr);
+    void   setStar2Reference(int id, Star2Ptr ptr);
     void   setExtendedStarReference(int id, ExtStarPtr ptr);
+    void   setExtendedStar2Reference(int id, ExtStar2Ptr ptr);
     void   setExtendedRosetteReference(int id, ExtRosettePtr ptr);
     void   setRosetteReference(int id, RosettePtr ptr);
+    void   setRosette2Reference(int id, Rosette2Ptr ptr);
     void   setRosetteConnectReference(int id, RosetteConnectPtr ptr);
     void   setStarConnectReference(int id, StarConnectPtr ptr);
 
@@ -149,9 +160,12 @@ protected:
     QString getMapReference(MapPtr ptr);
     QString getEdgeReference(EdgePtr ptr);
     QString getStarReference(StarPtr ptr);
+    QString getStar2Reference(Star2Ptr ptr);
     QString getExtendedStarReference(ExtStarPtr ptr);
+    QString getExtendedStar2Reference(ExtStar2Ptr ptr);
     QString getExtendedRosetteReference(ExtRosettePtr ptr);
     QString getRosetteReference(RosettePtr ptr);
+    QString getRosette2Reference(Rosette2Ptr ptr);
     QString getRosetteConnectReference(RosetteConnectPtr ptr);
     QString getStarConnectReference(StarConnectPtr ptr);
 
@@ -170,11 +184,14 @@ private:
     QMap<EdgePtr,int>       edge_ids;
     QMap<ExplicitPtr,int>   explicit_ids;
     QMap<StarPtr,int>       star_ids;
+    QMap<Star2Ptr,int>      star2_ids;
     QMap<ExtStarPtr,int>    extended_star_ids;
+    QMap<ExtStar2Ptr,int>   extended_star2_ids;
     QMap<ExtRosettePtr,int> extended_rosette_ids;
     QMap<RosettePtr,int>    rosette_ids;
-    QMap<RosetteConnectPtr,int>  rosette_connect_ids;
-    QMap<StarConnectPtr,int>  star_connect_ids;
+    QMap<Rosette2Ptr,int>   rosette2_ids;
+    QMap<RosetteConnectPtr,int> rosette_connect_ids;
+    QMap<StarConnectPtr,int>    star_connect_ids;
 
     Configuration         * config;
     MosaicPtr               _mosaic;

@@ -11,7 +11,7 @@
 
 int Style::refs = 0;
 
-Style::Style(const ProtoPtr & proto) : LayerController("Style")
+Style::Style(const ProtoPtr & proto) : LayerController("Style",true)
 {
     prototype = proto;
     paintSVG = false;
@@ -22,7 +22,6 @@ Style::Style(const ProtoPtr & proto) : LayerController("Style")
 Style::Style(const StylePtr & other) : LayerController(other)
 {
     prototype = other->prototype;
-    xf_canvas = other->xf_canvas;
 
     if (other->debugMap)
     {
@@ -60,21 +59,12 @@ TilingPtr Style::getTiling()
     return tp;
 }
 
-void Style::resetStyleMap()
+MapPtr Style::getProtoMap()
 {
-    styleMap.reset();
+    return prototype->getProtoMap();
 }
 
-MapPtr Style::getMap()
-{
-    if (!styleMap)
-    {
-        styleMap = prototype->getProtoMap();
-    }
-    return styleMap;
-}
-
-MapPtr Style::getExistingMap()
+MapPtr Style::getExistingProtoMap()
 {
     return prototype->getExistingProtoMap();
 }
@@ -90,7 +80,7 @@ void Style::annotateEdges(MapPtr map)
 #endif
 
     int i=0;
-    for (auto & edge : qAsConst(map->getEdges()))
+    for (auto & edge : std::as_const(map->getEdges()))
     {
         QPointF p = edge->getMidPoint();
         debugMap->insertDebugMark(p, QString::number(i++));
@@ -125,10 +115,12 @@ void Style::paint(QPainter *painter)
         return;
     }
 
-    //qDebug() << "Style::paint" << getDescription() << this;
     painter->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
 
     QTransform tr = getLayerTransform();
+
+    //qDebug().noquote() << "Style::paint" << getDescription() << Transform::toInfoString(tr);
+
     GeoGraphics gg(painter,tr);
 
     draw(&gg);
@@ -171,7 +163,7 @@ void Style::drawAnnotation(QPainter * painter, QTransform T)
     QPen pen(Qt::white);
     painter->setPen(pen);
 
-    for (auto & edge : qAsConst(debugMap->getEdges()))
+    for (auto & edge : std::as_const(debugMap->getEdges()))
     {
         QPointF p1 = T.map(edge->v1->pt);
         QPointF p2 = T.map(edge->v2->pt);
@@ -179,7 +171,7 @@ void Style::drawAnnotation(QPainter * painter, QTransform T)
     }
 
     const QVector<QPair<QPointF,QString>> & texts = debugMap->getTexts();
-    for (auto & pair : texts)
+    for (auto & pair : std::as_const(texts))
     {
         QPointF pt  = T.map(pair.first);
         QString txt = pair.second;
@@ -213,12 +205,17 @@ void Style::slot_mouseDoublePressed(QPointF spt)
     Q_UNUSED(spt);
 }
 
-const Xform  & Style::getCanvasXform()
+void Style::setModelXform(const Xform & xf, bool update)
 {
-    return xf_canvas;
+    Q_ASSERT(_unique);
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.toInfoString() << (isUnique() ? "unique" : "common");
+    xf_model = xf;
+    forceLayerRecalc(update);
 }
 
-void Style::setCanvasXform(const Xform & xf)
+const Xform & Style::getModelXform()
 {
-    xf_canvas = xf;
+    Q_ASSERT(_unique);
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "GET" << getLayerName() << xf_model.toInfoString() << (isUnique() ? "unique" : "common");
+    return xf_model;
 }

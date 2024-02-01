@@ -2,9 +2,12 @@
 #ifndef PANELPAGE_H
 #define PANELPAGE_H
 
-#include <memory>
 #include <QString>
 #include <QtWidgets>
+#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
+#include <memory>
+#endif
+#include "enums/epanelpage.h"
 
 #define PANEL_RHS_WIDTH 740
 
@@ -15,7 +18,7 @@ class panel_page : public QWidget
     Q_OBJECT
 
 public:
-    panel_page(class ControlPanel * panel, QString name);
+    panel_page(class ControlPanel *parent, ePanelPage page, QString name);
 
     virtual void	onRefresh() = 0;
     virtual void    onEnter()   = 0;
@@ -30,7 +33,9 @@ public:
 #endif
     virtual void	closeEvent(QCloseEvent * event) override;
 
-    QString getName()                    { return pageName; }
+    QString    getName()                 { return pageName; }
+    ePanelPage getPageType()             { return pageType; }
+
     void    setNewlySelected(bool state) { newlySelected = state; }
     bool    isNewlySelected()            { return newlySelected; }
     void    closePage(bool detached);
@@ -58,10 +63,12 @@ protected:
 
     QVBoxLayout             * vbox;
     QString                   pageName;
+    ePanelPage                pageType;
 
     class ControlPanel      * panel;
     class Configuration     * config;
-    class ViewControl       * view;
+    class View              * view;
+    class ViewController    * viewControl;
     class TilingMaker       * tilingMaker;
     class PrototypeMaker    * prototypeMaker;
     class MosaicMaker       * mosaicMaker;

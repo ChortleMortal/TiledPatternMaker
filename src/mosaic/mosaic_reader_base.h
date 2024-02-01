@@ -7,13 +7,12 @@
 #include <memory>
 #endif
 #include "misc/pugixml.hpp"
-#include "mosaic/mosaic_io_base.h"
 
 using namespace pugi;
 
 typedef std::shared_ptr<class Vertex> VertexPtr;
 
-class MosaicReaderBase : public MosaicIOBase
+class MosaicReaderBase
 {
 public:
     MosaicReaderBase();
@@ -22,8 +21,7 @@ public:
     void        setVertexReference(xml_node & node, VertexPtr ptr);
     VertexPtr   getVertexReferencedPtr(xml_node & node);
 
-protected:
-    static QMap<int,VertexPtr>     vertex_ids;
+    QMap<int,VertexPtr>     vertex_ids;
 };
 
 #endif // MOSAICREADERBASE_H

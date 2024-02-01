@@ -55,10 +55,13 @@ private:
 
     // Radial figure editors.
     class StarEditor                * radial_star_edit;
+    class Star2Editor               * radial_star2_edit;
     class RosetteEditor             * radial_rosette_edit;
+    class Rosette2Editor            * radial_rosette2_edit;
     class ConnectRosetteEditor      * connect_rosette_edit;
     class ConnectStarEditor         * connect_star_edit;
     class ExtendedStarEditor        * ex_star_edit;
+    class ExtendedStar2Editor       * ex_star2_edit;
     class ExtendedRosetteEditor     * ex_rosette_edit;
 
     Configuration                   * config;

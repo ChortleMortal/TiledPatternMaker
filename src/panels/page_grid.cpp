@@ -10,9 +10,9 @@
 #include "panels/controlpanel.h"
 #include "panels/panel_misc.h"
 #include "viewers/grid_view.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
 
-page_grid:: page_grid(ControlPanel * cpanel)  : panel_page(cpanel,"Grid")
+page_grid:: page_grid(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_GRID,"Grid")
 {
 
     QRadioButton * gridScreen          = new QRadioButton("Screen Units");
@@ -32,7 +32,11 @@ page_grid:: page_grid(ControlPanel * cpanel)  : panel_page(cpanel,"Grid")
 
     QCheckBox    * chkDrawLayerCenter  = new QCheckBox("Show Layer Center");
     QCheckBox    * chkDrawModelCenter  = new QCheckBox("Show Model Center");
-    QCheckBox    * chkDrawScreenCenter = new QCheckBox("Show Canvas Center");
+    QCheckBox    * chkDrawViewCenter   = new QCheckBox("Show View Center");
+
+    chkDrawLayerCenter->setStyleSheet("color: red");
+    chkDrawModelCenter->setStyleSheet("color: green");
+    chkDrawViewCenter->setStyleSheet("color: blue");
 
     gridScreen->setFixedWidth(91);
     gridScreenCentered->setFixedWidth(111);
@@ -77,7 +81,7 @@ page_grid:: page_grid(ControlPanel * cpanel)  : panel_page(cpanel,"Grid")
         gridTilingAlgo2->setChecked(true);
 
     chkDrawModelCenter->setChecked(config->showGridModelCenter);
-    chkDrawScreenCenter->setChecked(config->showGridScreenCenter);
+    chkDrawViewCenter->setChecked(config->showGridViewCenter);
     chkDrawLayerCenter->setChecked(config->showGridLayerCenter);
 
     // connections
@@ -97,7 +101,7 @@ page_grid:: page_grid(ControlPanel * cpanel)  : panel_page(cpanel,"Grid")
 
     connect(chkDrawLayerCenter, &QCheckBox::stateChanged,     this, &page_grid::slot_gridLayerCenterChanged);
     connect(chkDrawModelCenter, &QCheckBox::stateChanged,     this, &page_grid::slot_drawModelCenterChanged);
-    connect(chkDrawScreenCenter,&QCheckBox::stateChanged,     this, &page_grid::slot_drawScreenCenterChanged);
+    connect(chkDrawViewCenter,  &QCheckBox::stateChanged,     this, &page_grid::slot_drawViewCenterChanged);
 
     labelT = new ClickableLabel();
     QVariant variant = QColor(config->gridColorTiling);
@@ -154,7 +158,7 @@ page_grid:: page_grid(ControlPanel * cpanel)  : panel_page(cpanel,"Grid")
     layout->addLayout(gridZLevel,row,0);
     layout->addWidget(chkDrawLayerCenter,row,1);
     layout->addWidget(chkDrawModelCenter,row,2);
-    layout->addWidget(chkDrawScreenCenter,row,3);
+    layout->addWidget(chkDrawViewCenter,row,3,1,2);
 
     groupBox = new QGroupBox("Show Grid");
     groupBox->setCheckable(true);
@@ -175,7 +179,7 @@ page_grid:: page_grid(ControlPanel * cpanel)  : panel_page(cpanel,"Grid")
     vbox->addLayout(hbox2);
     vbox->addStretch();
 
-    connect(groupBox, &QGroupBox::clicked,   this, &page_grid::slot_showGridChanged);
+    connect(groupBox, &QGroupBox::clicked,  this, &page_grid::slot_showGridChanged);
     connect(pbReset, &QPushButton::clicked, this, &page_grid::slot_resetPos);
     connect(pbAlign, &QPushButton::clicked, this, &page_grid::slot_reAlign);
 }
@@ -192,7 +196,7 @@ void  page_grid::onRefresh()
 void page_grid::slot_showGridChanged(bool checked)
 {
     config->showGrid = checked;
-    view->viewEnable(VIEW_GRID,checked);
+    viewControl->viewEnable(VIEW_GRID,checked);
     emit sig_refreshView();
 }
 
@@ -257,12 +261,11 @@ void page_grid::slot_drawModelCenterChanged(int id)
     emit sig_refreshView();
 }
 
-void page_grid::slot_drawScreenCenterChanged(int id)
+void page_grid::slot_drawViewCenterChanged(int id)
 {
-    config->showGridScreenCenter = (id == Qt::Checked);
+    config->showGridViewCenter = (id == Qt::Checked);
     emit sig_refreshView();
 }
-
 
 void page_grid::slot_gridTypeSelected(int type)
 {
@@ -347,13 +350,13 @@ void  page_grid::slot_resetPos()
 {
     auto grid = GridView::getInstance();
     Xform xf;
-    grid->setCanvasXform(xf);
+    grid->setModelXform(xf,false);
     emit sig_refreshView();
 }
 
 void  page_grid::slot_reAlign()
 {
     auto grid = GridView::getInstance();
-    grid->setCanvasXform(view->getCurrentXform());
+    grid->setModelXform(viewControl->getCurrentModelXform(),false);
     emit sig_refreshView();
 }

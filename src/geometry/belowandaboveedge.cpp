@@ -4,23 +4,22 @@
 #include <QPolygonF>
 #include "geometry/belowandaboveedge.h"
 #include "geometry/arcdata.h"
-#include "geometry/point.h"
-#include "misc/utilities.h"
+#include "geometry/geo.h"
 
 bool BelowAndAbove::validate()
 {
-   if (!Point::isValid(above) || !Point::isValid(below))
+    if (!Geo::isValid(above) || !Geo::isValid(below))
    {
        return false;
    }
    return true;
 }
 
-QPolygonF BelowAndAboveEdge::getPoly()
+QPolygonF BelowAndAboveEdge::getPoly() const
 {
     QPolygonF p;
     p << v2.below << v2.v << v2.above << v1.below << v1.v << v1.above;
-    if (!Utils::isClockwise(p))
+    if (!Geo::isClockwise(p))
         qWarning() << "Poly is CCW";
     return p;
 }
@@ -127,9 +126,9 @@ bool BelowAndAboveEdge::validate(int idx)
 
 bool BelowAndAbovePoint::validate()
 {
-    if (!Point::isValid(above))
+    if (!Geo::isValid(above))
         return false;
-    if (!Point::isValid(below))
+    if (!Geo::isValid(below))
         return false;
     return true;
 }

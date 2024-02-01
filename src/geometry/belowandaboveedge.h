@@ -27,7 +27,7 @@ public:
 class BelowAndAboveEdge
 {
 public:
-    QPolygonF    getPoly();
+    QPolygonF    getPoly() const;
     QPainterPath getPainterPath();
 
     void         dump(int idx);

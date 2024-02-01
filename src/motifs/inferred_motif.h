@@ -33,7 +33,7 @@ public:
     const QVector<ContactPtr> & getDebugContacts() { return debugContactPts; }
 
 protected:
-    void                infer(ProtoPtr proto, TilePtr tile);    // "Normal" magic inferring
+    void                infer(ProtoPtr proto);    // "Normal" magic inferring
 
     QVector<ContactPtr> buildContacts(MidsPtr pp, const QVector<AdjacentTilePtr> &adjs);
     bool                isColinear( QPointF p, QPointF q, QPointF a );

@@ -1,46 +1,52 @@
 #include <QPainter>
 #include "misc/layer.h"
+#include "misc/sys.h"
 #include "geometry/transform.h"
 #include "settings/configuration.h"
-#include "viewers/viewcontrol.h"
+#include "panels/controlpanel.h"
 
 int Layer::refs = 0;
 
-Layer::Layer(QString name) : QObject()
+Layer::Layer(QString name, bool unique)
 {
-    this->name = name;
-    visible    = true;
-    zlevel     = STANDARD_ZLEVEL;
+    _name   = name;
+    _unique = unique;
+    visible = true;
+    zlevel  = STANDARD_ZLEVEL;
+    debug   = 0;    // DEBUG_LAYER | DEBUG_TFORM | DEBUG_XFORM;
+
     connectSignals();
     refs++;
 }
 
-Layer::Layer(const Layer & other) : QObject()
+Layer::Layer(const Layer & other)
 {
-    visible     = other.visible;
-    name        = other.name;
-    qtr_layer   = other.qtr_layer;
-    qtr_invert  = other.qtr_invert;
-    layerPen    = other.layerPen;
-    name        = other.name;
-    visible     = other.visible;
-    subLayers   = other.subLayers;
-    zlevel      = other.zlevel;
+    _name           = other._name;
+    _unique         = other._unique;
+    visible         = other.visible;
+    layerTransform  = other.layerTransform;
+    invertedLayer   = other.invertedLayer;
+    subLayers       = other.subLayers;
+    zlevel          = other.zlevel;
+    xf_model        = other.xf_model;
+    debug           = other.debug;
+
     connectSignals();
     refs++;
 }
 
-Layer::Layer(LayerPtr other) : QObject()
+Layer::Layer(LayerPtr other)
 {
-    visible     = other->visible;
-    name        = other->name;
-    qtr_layer   = other->qtr_layer;
-    qtr_invert  = other->qtr_invert;
-    layerPen    = other->layerPen;
-    name        = other->name;
-    visible     = other->visible;
-    subLayers   = other->subLayers;
-    zlevel      = other->zlevel;
+    _name           = other->_name;
+    _unique         = other->_unique;
+    visible         = other->visible;
+    layerTransform  = other->layerTransform;
+    invertedLayer   = other->invertedLayer;
+    subLayers       = other->subLayers;
+    zlevel          = other->zlevel;
+    xf_model        = other->xf_model;
+    debug           = other->debug;
+
     connectSignals();
     refs++;
 }
@@ -52,30 +58,14 @@ Layer::~Layer()
 
 void Layer::connectSignals()
 {
-    config   = Configuration::getInstance();
-    view     = ViewControl::getInstance();
+    config      = Configuration::getInstance();
+    view        = Sys::view;
+    viewControl = Sys::viewController;
+    
+    connect(this, &Layer::sig_refreshView, viewControl, &ViewController::slot_reconstructView);
 
-    connect(this, &Layer::sig_refreshView, view, &ViewControl::slot_refreshView);
-}
-
-// this is only called for legacy designs where the layer has sub-layers
-void Layer::paint(QPainter * painter)
-{
-    //qDebug().noquote() << "Layer::paint" << getName() <<": sub-levels =" << subLayers.count();
-
-    std::stable_sort(subLayers.begin(), subLayers.end(), sortByZlevel);
-
-    painter->save();
-    painter->translate(getLoc());
-    qreal rot = getCanvasXform().getRotateDegrees();
-    painter->rotate(rot);
-
-    for (const auto & layer : subLayers)
-    {
-        layer->paint(painter);
-    }
-
-    painter->restore();
+    //auto panel = ControlPanel::getInstance();
+    //connect(panel, &ControlPanel::sig_id_layers,  this,  &Layer::id_layer);
 }
 
 bool Layer::sortByZlevel(LayerPtr s1, LayerPtr s2)
@@ -103,7 +93,7 @@ void Layer::removeSubLayer(LayerPtr item)
 
 void Layer::forceLayerRecalc(bool update)
 {
-    qtr_layer.reset();
+    layerTransform.reset();
     getLayerTransform();    // recalc
     if (update)
     {
@@ -118,117 +108,102 @@ void Layer::forceRedraw()
 
 bool Layer::isSelected()
 {
-    auto lp = config->selectedLayer;
+    auto lp = Sys::selectedLayer;
     return (lp == this);
-}
-
-QTransform  Layer::getFrameTransform()
-{
-    QTransform t = view->getViewSettings().getTransform(view->getMostRecent());
-
-    //qDebug().noquote() << "Frame transform:" << Transform::toInfoString(t);
-
-    return t;
 }
 
 QTransform  Layer::getCanvasTransform()
 {
-    QTransform t =  getCanvasXform().toQTransform(getFrameTransform());
+    Canvas & canvas  = viewControl->getCanvas();
+    QTransform t     = canvas.getCanvasTransform();
+    if (debug & DEBUG_TFORM) qDebug().noquote() << "Canvas transform:" << Transform::toInfoString(t);
+    return t;
+}
 
-    //qDebug().noquote() << "Canvas transform:" << Transform::toInfoString(t);
-
+QTransform  Layer::getModelTransform()
+{
+    QTransform t =  getModelXform().toQTransform(getCanvasTransform());
+    if (debug & DEBUG_TFORM) qDebug().noquote() << "Model transform:" << getLayerName() << Transform::toInfoString(t);
     return t;
 }
 
 QTransform Layer::getLayerTransform()
 {
-    if (qtr_layer.isIdentity())
+    if (layerTransform.isIdentity())
     {
         // compute Transform
         computeLayerTransform();
     }
-    //qDebug().noquote() << "Layer transform:" << Transform::toInfoString(qtr_layer);
-    return qtr_layer;
+    if (debug & DEBUG_LAYER) qDebug().noquote() << "Layer transform:" << getLayerName() << Transform::toInfoString(layerTransform);
+    return layerTransform;
 }
 
 void Layer::computeLayerTransform()
 {
-    //qDebug().noquote() << "OLD      qtr_layer:" << getName() << Transform::toInfoString(qtr_layer);
-    //qDebug().noquote() << "frame:" << Transform::toInfoString(getFrameTransform()) << "canvas" << Transform::toInfoString(getCanvasTransform());
-    qtr_layer   = getFrameTransform() * getCanvasTransform();
-    qtr_invert  = qtr_layer.inverted();
-    //qDebug().noquote() << "computed qtr_layer:" << getName() << Transform::toInfoString(qtr_layer);
+    layerTransform   = getCanvasTransform() * getModelTransform();
+    invertedLayer  = layerTransform.inverted();
+    if (debug & DEBUG_TFORM) qDebug().noquote() << "computed Layer:" << getLayerName() << Transform::toInfoString(layerTransform);
 }
 
 void Layer::setCenterScreenUnits(QPointF spt)
 {
-    qDebug().noquote() << "Layer::setCenterScreenUnits" << getName() << spt;
+    qDebug().noquote() << "Layer::setCenterScreenUnits" << getLayerName() << spt;
 
-    if (qtr_layer.isIdentity())
+    if (layerTransform.isIdentity())
     {
         computeLayerTransform();
     }
 
     // save in model units
-    QPointF mpt = qtr_invert.map(spt);
-    Xform xf = getCanvasXform();
+    QPointF mpt = invertedLayer.map(spt);
+    Xform xf = getModelXform();
     xf.setModelCenter(mpt);
-    setCanvasXform(xf);
+    setModelXform(xf,false);
     computeLayerTransform();
 
     // adjust so that image does not jump
     QPointF adjCenter = getCenterScreenUnits();
     QPointF diff      = spt - adjCenter;
-    xf = getCanvasXform();
+    xf = getModelXform();
     xf.setTranslateX(xf.getTranslateX() + diff.x());
     xf.setTranslateY(xf.getTranslateY() + diff.y());
-    setCanvasXform(xf);
+    setModelXform(xf,false);
     computeLayerTransform();
 }
 
 QPointF Layer::getCenterScreenUnits()
 {
-    if (qtr_layer.isIdentity())
+    if (layerTransform.isIdentity())
     {
         computeLayerTransform();
         //qDebug() << "Layer::getCenter()" << Transform::toInfoString(qtr_layer);
     }
-    return qtr_layer.map(getCanvasXform().getModelCenter());
+    return layerTransform.map(getModelXform().getModelCenter());
 }
 
 QPointF Layer::getCenterModelUnits()
 {
-    return getCanvasXform().getModelCenter();
+    return getModelXform().getModelCenter();
 }
 
-void Layer::setCanvasXform(const Xform & xf)
-{
-    view->setCurrentXform(xf);
-    forceLayerRecalc();
-}
-
-const Xform & Layer::getCanvasXform()
-{
-    return view->getCurrentXform();
-}
 
 qreal Layer::screenToWorld(qreal val)
 {
     getLayerTransform();
-    qreal scale = Transform::scalex(qtr_invert);
+    qreal scale = Transform::scalex(invertedLayer);
     return val * scale;
 }
 
 QPointF Layer::screenToWorld(QPointF pt)
 {
     getLayerTransform();
-    return qtr_invert.map(pt);
+    return invertedLayer.map(pt);
 }
 
 QRectF  Layer::screenToWorld(QRectF rect)
 {
     getLayerTransform();
-    return qtr_invert.mapRect(rect);
+    return invertedLayer.mapRect(rect);
 }
 
 QPointF Layer::screenToWorld(int x, int y)
@@ -237,48 +212,57 @@ QPointF Layer::screenToWorld(int x, int y)
     qreal yy = static_cast<qreal>(y);
 
     getLayerTransform();
-    return qtr_invert.map(QPointF(xx, yy));
+    return invertedLayer.map(QPointF(xx, yy));
 }
 
 QPolygonF Layer::screenToWorld(QPolygonF poly)
 {
     getLayerTransform();
-    return qtr_invert.map(poly);
+    return invertedLayer.map(poly);
+}
+
+Circle Layer::screenToWorld(Circle c)
+{
+    getLayerTransform();
+    QPointF cent = invertedLayer.map(c.centre);
+    qreal radius = Transform::scalex(invertedLayer) * c.radius;
+    Circle circ(cent,radius);
+    return circ;
 }
 
 QPointF Layer::worldToScreen(QPointF pt)
 {
     getLayerTransform();
-    return qtr_layer.map(pt);
+    return layerTransform.map(pt);
 }
 
 QRectF Layer::worldToScreen(QRectF rect)
 {
     getLayerTransform();
-    return qtr_layer.mapRect(rect);
+    return layerTransform.mapRect(rect);
 }
 
 QLineF Layer::worldToScreen(QLineF line)
 {
     QLineF aline;
     getLayerTransform();
-    aline.setP1(qtr_layer.map(line.p1()));
-    aline.setP2(qtr_layer.map(line.p2()));
+    aline.setP1(layerTransform.map(line.p1()));
+    aline.setP2(layerTransform.map(line.p2()));
     return aline;
 }
 
 QPolygonF Layer::worldToScreen(QPolygonF poly)
 {
     getLayerTransform();
-    QPolygonF poly2 = qtr_layer.map(poly);
+    QPolygonF poly2 = layerTransform.map(poly);
     return poly2;
 }
 
 Circle Layer::worldToScreen(Circle c)
 {
     getLayerTransform();
-    QPointF cent = qtr_layer.map(c.centre);
-    qreal radius = Transform::scalex(qtr_layer) * c.radius;
+    QPointF cent = layerTransform.map(c.centre);
+    qreal radius = Transform::scalex(layerTransform) * c.radius;
     Circle circ(cent,radius);
     return circ;
 }
@@ -297,7 +281,7 @@ void Layer::setZValue(int z)
 
 void  Layer::drawLayerModelCenter(QPainter * painter)
 {
-    if (config->showCenterDebug || config->showCenterMouse)
+    if (config->showCenterDebug || Sys::showCenterMouse)
     {
         QPointF pt = getCenterScreenUnits();
         drawCenterSymbol(painter,pt,QColor(Qt::green),QColor(Qt::blue));
@@ -316,4 +300,30 @@ void Layer::drawCenterSymbol(QPainter * painter, QPointF spt, QColor circleColor
     painter->drawLine(QPointF(spt.x()-len,spt.y()),QPointF(spt.x()+len,spt.y()));
     painter->drawLine(QPointF(spt.x(),spt.y()-len),QPointF(spt.x(),spt.y()+len));
     painter->restore();
+}
+
+// this is only called for legacy designs where the layer has sub-layers
+void Layer::paint(QPainter * painter)
+{
+    //qDebug().noquote() << "Layer::paint" << getName() <<": sub-levels =" << subLayers.count();
+
+    std::stable_sort(subLayers.begin(), subLayers.end(), sortByZlevel);
+
+    painter->save();
+
+    painter->translate(getLoc());
+    qreal rot = getModelXform().getRotateDegrees();
+    painter->rotate(rot);
+
+    for (const auto & layer : std::as_const(subLayers))
+    {
+        layer->paint(painter);
+    }
+
+    painter->restore();
+}
+
+void Layer::id_layer()
+{
+    qInfo().noquote() << getLayerName() << (isUnique() ? "unique" : "common");
 }

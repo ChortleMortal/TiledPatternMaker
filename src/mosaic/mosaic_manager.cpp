@@ -6,22 +6,27 @@
 #include "mosaic/mosaic.h"
 #include "mosaic/mosaic_reader.h"
 #include "mosaic/mosaic_writer.h"
+#include "misc/sys.h"
 #include "panels/controlpanel.h"
 #include "settings/configuration.h"
-#include "settings/model_settings.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view.h"
 #include "widgets/version_dialog.h"
 
 MosaicManager::MosaicManager()
 {
-    view            = ViewControl::getInstance();
+    view            = Sys::view;
+    viewControl     = Sys::viewController;
     config          = Configuration::getInstance();
     mosaicMaker     = MosaicMaker::getInstance();
 }
 
-bool MosaicManager::loadMosaic(QString name)
+// This is a GUI wropper for MosaciReader
+// which also calls sm_takeDown
+MosaicPtr MosaicManager::loadMosaic(QString name)
 {
     qDebug().noquote() << "MosaicManager::loadMosaic()" << name;
+
+    MosaicPtr mosaic;
 
     QString file = FileServices::getMosaicXMLFile(name);
     if (file.isEmpty())
@@ -30,7 +35,7 @@ bool MosaicManager::loadMosaic(QString name)
         box.setIcon(QMessageBox::Critical);
         box.setText(QString("File <%1>not found").arg(name));
         box.exec();
-        return false;
+        return mosaic;
     }
 
     QFile afile(file);
@@ -40,42 +45,30 @@ bool MosaicManager::loadMosaic(QString name)
         box.setIcon(QMessageBox::Critical);
         box.setText(QString("File <%1>not found").arg(file));
         box.exec();
-        return false;
+        return mosaic;
     }
 
     qDebug().noquote() << "Loading:"  << file;
     LoadUnit & loadunit = view->getLoadUnit();
-    loadunit.name = name;
     loadunit.loadTimer.restart();
 
     // load
-    MosaicReader loader;
-    MosaicPtr mosaic = loader.readXML(file);
+    MosaicReader reader;
+    mosaic = reader.readXML(file);
 
     if (!mosaic)
     {
-        QString str = QString("Load ERROR - %1").arg(loader.getFailMessage());
+        QString str = QString("Load ERROR - %1").arg(reader.getFailMessage());
         QMessageBox box(ControlPanel::getInstance());
         box.setIcon(QMessageBox::Critical);
         box.setText(str);
         box.exec();
-        return false;
+        return mosaic;
     }
 
     mosaic->setName(name);
 
-    // starts the chain reaction
-    mosaicMaker->sm_takeDown(mosaic);
-
-    // size view to mosaic
-    auto & settings = view->getViewSettings();
-    settings.reInit();
-    settings.setModelAlignment(M_ALIGN_MOSAIC);
-
-    ModelSettings & model = mosaic->getSettings();
-    settings.initialiseCommon(model.getSize(),model.getZSize());
-
-    return true;
+    return mosaic;
 }
 
 bool MosaicManager::saveMosaic(QString name, QString & savedName, bool forceOverwrite)
@@ -125,20 +118,20 @@ bool MosaicManager::saveMosaic(QString name, QString & savedName, bool forceOver
                     name = name + ".v" + QString::number(ver);
                 }
                 if (isOriginal)
-                    filename = config->originalMosaicDir + name + ".xml";
+                    filename = Sys::originalMosaicDir + name + ".xml";
                 else if (isNew)
-                    filename = config->newMosaicDir + name + ".xml";
+                    filename = Sys::newMosaicDir + name + ".xml";
                 else if (isTest)
-                    filename = config->testMosiacDir + name + ".xml";
+                    filename = Sys::testMosiacDir + name + ".xml";
             } break;
             }
         }
         else
         {
             if (config->saveMosaicTest)
-                filename = config->testMosiacDir + name + ".xml";
+                filename = Sys::testMosiacDir + name + ".xml";
             else
-                filename = config->newMosaicDir + name + ".xml";
+                filename = Sys::newMosaicDir + name + ".xml";
         }
     }
 
@@ -146,19 +139,9 @@ bool MosaicManager::saveMosaic(QString name, QString & savedName, bool forceOver
 
     qDebug() << "Saving XML to:"  << filename;
 
-    // match size of mosaic view
-    auto & settings = view->getViewSettings();
-    QSize size      = settings.getCropSize(VIEW_MOSAIC);
-    QSize zsize     = settings.getZoomSize(VIEW_MOSAIC);
-    mosaic->getSettings().setSize(size);
-    mosaic->getSettings().setZSize(zsize);
-
     // write
     MosaicWriter writer;
     bool rv = writer.writeXML(filename,mosaic);
-
-    if (rv)
-       settings.setModelAlignment(M_ALIGN_MOSAIC);
 
     if (!forceOverwrite)
     {

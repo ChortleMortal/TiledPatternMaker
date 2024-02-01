@@ -1,4 +1,3 @@
-#include "misc/qtapplog.h"
 #include <QMessageBox>
 #include <QTextCursor>
 #include <QFontDatabase>
@@ -7,12 +6,16 @@
 #include <QTextStream>
 
 #if defined(Q_OS_WINDOWS)
-#include <stdio.h>
-#include <stdlib.h>
 #include <Windows.h>
-#include "settings/configuration.h"
 #endif
 
+#include "misc/qtapplog.h"
+#include "settings/configuration.h"
+#include "misc/sys.h"
+
+#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
+#include <QDebug>
+#endif
 
 qtAppLog  * qtAppLog::mpThis   = nullptr;
 QMutex    * qtAppLog::pLogLock = nullptr;
@@ -28,11 +31,11 @@ bool qtAppLog::_logToAppDir = false;
 bool qtAppLog::_logToPanel  = true;
 bool qtAppLog::_logLines    = false;
 bool qtAppLog::_logDebug    = false;
-bool qtAppLog::_logDarkMode = false;
 bool qtAppLog::_active      = false;
 bool qtAppLog::_suspended   = false;
 bool qtAppLog::_trapping    = false;
 
+int  qtAppLog::_line        = 1;
 
 std::string qtAppLog::str1 = "\033[32m";
 std::string qtAppLog::str2 = "\033[0m";
@@ -129,6 +132,18 @@ void qtAppLog:: init()
     }
 }
 
+void qtAppLog::clear()
+{
+    if (_active)
+    {
+        mCurrentFile.reset();
+    }
+    ted->clear();
+    _line = 1;
+    qDebug() << "Log cleared";
+    mCurrentFile.resize(mCurrentFile.pos());
+}
+
 qtAppLog::~qtAppLog()
 {
     mCurrentFile.close();
@@ -159,20 +174,23 @@ void qtAppLog::log(QString & msg)
 
 void qtAppLog::crashMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
-    static int line = 1;
-
     if (_suspended)
     {
         return;
     }
+    
+    if (_trapping && !Sys::usingImgGenerator)
+    {
+        _trapStringList << msg;
+        return;
+    }
 
-    pLogLock->lock();
+    QMutexLocker locker(pLogLock);
 
     QString number;
     if (_logLines)
     {
-        number = QString("%1  ").arg(line, 5, 10, QChar('0'));
-        line++;
+        number = QString("%1  ").arg(_line++, 5, 10, QChar('0'));
     }
 
     QString sDelta;
@@ -202,49 +220,26 @@ void qtAppLog::crashMessageOutput(QtMsgType type, const QMessageLogContext &cont
     case QtDebugMsg:
         if (!_logDebug)
         {
-            pLogLock->unlock();
             return;
         }
-        if (_logDarkMode)
-            ted->setTextColor(Qt::white);
-        else
-            ted->setTextColor(Qt::black);
-
         msg2 = QString("%3%2Debug   : %1").arg(msg).arg(sDelta).arg(number);
         break;
+
     case QtInfoMsg:
-        if (_logDarkMode)
-            ted->setTextColor(Qt::green);
-        else
-            ted->setTextColor(Qt::darkGreen);
         msg2 = QString("%3%2Info    : %1").arg(msg).arg(sDelta).arg(number);
         break;
+
     case QtWarningMsg:
-        if (_logDarkMode)
-            ted->setTextColor(Qt::red);
-        else
-            ted->setTextColor(Qt::darkRed);
         msg2 = QString("%3%2Warning : %1").arg(msg).arg(sDelta).arg(number);
         break;
+
     case QtCriticalMsg:
-        if (_logDarkMode)
-            ted->setTextColor(Qt::red);
-        else
-            ted->setTextColor(Qt::darkRed);
         msg2 = QString("%3%2Critical: %1").arg(msg).arg(sDelta).arg(number);
         break;
+
     case QtFatalMsg:
-        if (_logDarkMode)
-            ted->setTextColor(Qt::red);
-        else
-            ted->setTextColor(Qt::darkRed);
         msg2 = QString("%3%2Fatal   : %1").arg(msg).arg(sDelta).arg(number);
         break;
-    }
-
-    if (_trapping)
-    {
-        _trapStringList << msg2;
     }
 
 #if 0
@@ -283,8 +278,41 @@ void qtAppLog::crashMessageOutput(QtMsgType type, const QMessageLogContext &cont
     }
 
     msg2 += "\n";
-    if (_logToPanel)
+    if (_logToPanel && !_trapping)
     {
+        switch (type)
+        {
+        case QtDebugMsg:
+            if (Sys::isDarkTheme)
+                ted->setTextColor(Qt::white);
+            else
+                ted->setTextColor(Qt::black);
+            break;
+        case QtInfoMsg:
+            if (Sys::isDarkTheme)
+                ted->setTextColor(Qt::green);
+            else
+                ted->setTextColor(Qt::darkGreen);
+            break;
+        case QtWarningMsg:
+            if (Sys::isDarkTheme)
+                ted->setTextColor(Qt::red);
+            else
+                ted->setTextColor(Qt::darkRed);
+            break;
+        case QtCriticalMsg:
+            if (Sys::isDarkTheme)
+                ted->setTextColor(Qt::red);
+            else
+                ted->setTextColor(Qt::darkRed);
+            break;
+        case QtFatalMsg:
+            if (Sys::isDarkTheme)
+                ted->setTextColor(Qt::red);
+            else
+                ted->setTextColor(Qt::darkRed);
+            break;
+        }
         ted->insertPlainText(msg2);
     }
 
@@ -292,8 +320,6 @@ void qtAppLog::crashMessageOutput(QtMsgType type, const QMessageLogContext &cont
     {
         mpThis->log(msg2);
     }
-
-    pLogLock->unlock();
 
 #if defined(Q_OS_WINDOWS) && defined(QT_DEBUG)
     if (type == QtCriticalMsg || type == QtFatalMsg)
@@ -310,16 +336,9 @@ void qtAppLog::saveLog(QString to)
         QFile::remove(to);
     }
 
-    //QFile::copy(currentLogName,to);
+    qDebug() << "Saving log to:" << to;
 
-    QString log  = ted->toPlainText();
-    QFile file(to);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-             return;
-
-    QTextStream out(&file);
-    out << log << "\n";
-    file.close();
+    QFile::copy(currentLogName,to);
 }
 
 void qtAppLog::suspend(bool enable)
@@ -331,13 +350,27 @@ void qtAppLog::trap(bool enable)
 {
     static int count = 0;
     if (enable)
+    {
         count++;
+        _trapping = true;
+    }
     else if (count)
+    {
         count--;
-    _trapping = (count > 0);
+        _trapping = (count > 0);
+        if (!_trapping)
+        {
+            endTrap();
+        }
+    }
 }
 
-void qtAppLog::trapClear()
+void qtAppLog::endTrap()
 {
+    QMessageLogContext context;
+    for (auto & str : std::as_const(_trapStringList))
+    {
+        crashMessageOutput(QtDebugMsg,context,str);
+    }
     _trapStringList.clear();
 }

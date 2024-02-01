@@ -22,19 +22,20 @@ public:
     static PrototypeMaker * getInstance();
     static void             releaseInstance();
 
-    void         init();
-    void         unload();
-    void         setPropagate(bool val);
+    void        init();
+    void        unload();
+    void        setPropagate(bool val);
 
     // state machine
-    void         sm_takeDown(QVector<ProtoPtr> &prototypes);
-    void         sm_takeUp(const TilingPtr & tiling, ePROM_Event event, const TilePtr tile = TilePtr());
+    void        sm_takeDown(QVector<ProtoPtr> &prototypes);
+    void        sm_takeUp(const TilingPtr & tiling, ePROM_Event event, const TilePtr tile = TilePtr());
+    void        sm_resetMaps();
 
     // operations
-    bool         duplicateDesignElement();
-    MotifPtr     duplicateMotif(MotifPtr motif);
+    bool        duplicateDesignElement();
+    MotifPtr    duplicateMotif(MotifPtr motif);
 
-    void         erasePrototypes();
+    void        erasePrototypes();
     
     PrototypeData *  getProtoMakerData() { return &protoData; }
 
@@ -46,7 +47,6 @@ protected:
     void        sm_eraseCurrentAdd(const ProtoPtr & prototype);
     void        sm_Add(const ProtoPtr & prototype);
     void        sm_replaceTiling(const ProtoPtr & prototype,const TilingPtr & tiling);
-    void        sm_resetMaps();
     void        sm_buildMaps();
 
     ProtoPtr    createPrototype(const TilingPtr & tiling);
@@ -62,7 +62,7 @@ private:
     class TiledPatternMaker * maker;
     class TilingMaker       * tilingMaker;
     class MosaicMaker       * mosaicMaker;
-    class ViewControl       * vcontrol;
+    class ViewController    * vcontrol;
 
     bool                      propagate;
     

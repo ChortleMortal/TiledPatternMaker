@@ -3,8 +3,10 @@
 #define EDESIGN_H
 
 #include <QString>
+#include <QMap>
 
-extern const QString sDesign2[];
+extern QMap<int, QString> designs;
+extern void init_legacy_designs();
 
 enum eDesign
 {
@@ -27,6 +29,5 @@ enum eDesign
     DESIGN_KUMIKO2,
     NO_DESIGN
 };
-
 
 #endif // EDESIGN_H

@@ -1,12 +1,17 @@
 #include "legacy/shapes.h"
 #include "legacy/shapefactory.h"
 #include "legacy/patterns.h"
-#include "viewers/viewcontrol.h"
+#include "misc/sys.h"
+#include "viewers/view.h"
 #include <QDebug>
+
+#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
+#include <QtMath>
+#endif
 
 ShapeFactory::ShapeFactory(qreal diameter, QPointF loc)
 {
-    view = ViewControl::getInstance();
+    view = Sys::view;
 
     setLoc(loc);
     _diameter       = diameter;

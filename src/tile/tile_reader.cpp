@@ -6,8 +6,14 @@
 
 using std::make_shared;
 
-TileReader::TileReader() : MosaicReaderBase()
+TileReader::TileReader()
 {
+    base = std::make_shared<MosaicReaderBase>();
+}
+
+TileReader::TileReader(MRBasePtr base)
+{
+    this->base = base;
 }
 
 EdgePoly TileReader::getEdgePoly(xml_node & node)
@@ -103,9 +109,9 @@ QTransform  TileReader::getTransform(xml_node & node)
 
 VertexPtr TileReader::getVertex(xml_node & node)
 {
-    if (hasReference(node))
+    if (base->hasReference(node))
     {
-        return getVertexReferencedPtr(node);
+        return base->getVertexReferencedPtr(node);
     }
 
     // pos
@@ -117,7 +123,7 @@ VertexPtr TileReader::getVertex(xml_node & node)
     qreal y = qsl[1].toDouble();
 
     VertexPtr v = make_shared<Vertex>(QPointF(x,y));
-    setVertexReference(node,v);
+    base->setVertexReference(node,v);
 
     return v;
 }

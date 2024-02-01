@@ -13,7 +13,7 @@ class LayerController : public Layer
     Q_OBJECT
 
 public:
-    LayerController(QString name);
+    LayerController(QString name, bool unique);
     LayerController(const LayerController & other);
     LayerController(LayerCtrlPtr other);
     virtual ~LayerController();
@@ -35,8 +35,8 @@ public slots:
 
     virtual void slot_scale(int amount);
     virtual void slot_rotate(int amount);
-    virtual void slot_moveX(int amount);
-    virtual void slot_moveY(int amount);
+    virtual void slot_moveX(qreal amount);
+    virtual void slot_moveY(qreal amount);
 
 protected:
     void connectSignals();

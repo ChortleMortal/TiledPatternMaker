@@ -12,6 +12,7 @@
 // collection of placedTiles (that may share Tiles) that together
 // make up a translational unit.
 
+#include <QObject>
 #include <QString>
 #include <QTransform>
 #include <QTextStream>
@@ -23,16 +24,19 @@ typedef std::shared_ptr<class Tile>         TilePtr;
 
 class Tiling;
 
-class PlacedTile
+class PlacedTile : public QObject
 {
     enum eTileState
     {
         UNDEFINED   = 0x00,
-        OVERLAPPING = 0x01,
-        TOUCHING    = 0x02
+        TOUCHING    = 0x01,
+        OVERLAPPING = 0x02,
     };
 
+    Q_OBJECT
+
 public:
+
     // Creation.
     PlacedTile();
     PlacedTile(TilePtr tile, QTransform T);
@@ -41,23 +45,23 @@ public:
     PlacedTilePtr copy();
 
     // Data.
-    void             setTransform(QTransform newT);
-    void             setTile(TilePtr tile);
-    TilePtr          getTile();
-    QTransform       getTransform();
-    EdgePoly         getTileEdgePoly();
-    QPolygonF        getTilePoints();
-    EdgePoly         getPlacedEdgePoly();
-    QPolygonF        getPlacedPoints();
+    void            setTransform(QTransform newT);
+    void            setTile(TilePtr tile);
+    void            setShow(bool show);
+    bool            loadFromGirihShape(QString name);
 
-    bool saveAsGirihShape(QString name);
-    bool loadFromGirihShape(QString name);
+    TilePtr         getTile();
+    QTransform      getTransform();
+    EdgePoly        getTileEdgePoly();
+    QPolygonF       getTilePoints();
+    EdgePoly        getPlacedEdgePoly();
+    QPolygonF       getPlacedPoints();
 
-    bool isGirihShape() { return !girihShapeName.isEmpty(); }
-    QString getGirihShapeName() { return girihShapeName; }
+    bool            saveAsGirihShape(QString name);
+    bool            isGirihShape()      { return !girihShapeName.isEmpty(); }
+    QString         getGirihShapeName() { return girihShapeName; }
 
     bool show()             { return _show; }
-    void setShow(bool show) { _show = show; }
 
     void clearViewState()   { _viewState  = UNDEFINED; }
     void setOverlapping()   { _viewState |= OVERLAPPING; }
@@ -65,7 +69,9 @@ public:
     bool isOverlapping()    { return (_viewState & OVERLAPPING); }
     bool isTouching()       { return (_viewState & TOUCHING); }
 
-    uint        _viewState;
+signals:
+    void sig_tileChanged();
+
 protected:
     void saveGirihShape(QTextStream & out, QString name);
     void loadGirihShape(pugi::xml_node & poly_node);
@@ -77,5 +83,6 @@ private:
     TilePtr     tile;
     QTransform  T;
     bool        _show;  // used by tiling maker
+    uint        _viewState;
 };
 #endif

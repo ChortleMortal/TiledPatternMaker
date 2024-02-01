@@ -43,7 +43,7 @@ Motif::Motif(const Motif & other)
     motifType         = other.motifType;
     motifRotate       = other.motifRotate;
     motifScale        = other.motifScale;
-    tile              = other.tile;
+    _tile             = other._tile;
     _n                = other._n;
     _motifBoundary    = other._motifBoundary;
     _extendedBoundary = other._extendedBoundary;
@@ -57,7 +57,7 @@ Motif::Motif(MotifPtr other)
     motifType         = other->motifType;
     motifRotate       = other->motifRotate;
     motifScale        = other->motifScale;
-    tile              = other->tile;
+    _tile             = other->_tile;
     _n                = other->_n;
     _motifBoundary    = other->_motifBoundary;
     _extendedBoundary = other->_extendedBoundary;
@@ -118,11 +118,14 @@ bool Motif::isRadial() const
     {
     case MOTIF_TYPE_RADIAL:
     case MOTIF_TYPE_ROSETTE:
+    case MOTIF_TYPE_ROSETTE2:
     case MOTIF_TYPE_STAR:
+    case MOTIF_TYPE_STAR2:
     case MOTIF_TYPE_CONNECT_STAR:
     case MOTIF_TYPE_CONNECT_ROSETTE:
     case MOTIF_TYPE_EXTENDED_ROSETTE:
     case MOTIF_TYPE_EXTENDED_STAR:
+    case MOTIF_TYPE_EXTENDED_STAR2:
         return true;
     default:
         return false;
@@ -137,43 +140,44 @@ void Motif::buildExtendedBoundary()
     }
     else
     {
-        _extendedBoundary.buildExplicit(tile);
+        _extendedBoundary.buildExplicit(_tile);
     }
 }
 
-void Motif::buildMotifBoundary(TilePtr tile)
+QTransform Motif::getDELTransform()
 {
-    if (isRadial())
+    Q_ASSERT(getTile());
+    return getTile()->getTransform() * getMotifTransform();
+}
+
+void Motif::scaleAndRotate()
+{
+    QTransform t = getDELTransform();
+
+    if (!t.isIdentity())
     {
-        if (getN() >=3)
-        {
-            Tile f(getN(),getMotifRotate(), getMotifScale());
-            QPolygonF p = f.getPolygon();
-            setMotifBoundary(p);
-        }
+        motifMap->transform(t);
+    }
+}
+
+void Motif::buildMotifBoundary()
+{
+    Q_ASSERT(getTile());
+
+    QPolygonF boundary;
+    if (isRadial() &&  getN() >= 3)
+    {
+        Tile f(getN());
+        boundary  = f.getPolygon();
     }
     else
     {
-        QPointF pt  = tile->getCenter();
-
-        QTransform t;
-        if (!Loose::equals(motifScale,1.0))
-        {
-            t *= Transform::scaleAroundPoint(pt,motifScale);
-        }
-        if (!Loose::zero(motifRotate))
-        {
-            t *= Transform::rotateDegreesAroundPoint(pt,motifRotate);
-        }
-
-        QPolygonF poly  = tile->getPoints();
-        if (!t.isIdentity())
-        {
-            poly = t.map(poly);
-        }
-
-        setMotifBoundary(poly);
+        boundary  = getTile()->getPoints();
     }
+
+    QTransform t = getDELTransform();
+    boundary = t.map(boundary);
+    setMotifBoundary(boundary);
 }
 
 // uses existing tmpIndices
@@ -185,7 +189,7 @@ void Motif::annotateEdges()
     }
 
     int i=0;
-    for (auto & edge : qAsConst(motifMap->getEdges()))
+    for (auto & edge : std::as_const(motifMap->getEdges()))
     {
         QPointF p = edge->getMidPoint();
         if (debugMap)

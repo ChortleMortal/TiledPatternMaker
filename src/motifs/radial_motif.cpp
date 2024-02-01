@@ -14,9 +14,7 @@
 #include <QtMath>
 #include <QDebug>
 #include "motifs/radial_motif.h"
-#include "tile/tile.h"
 #include "geometry/map.h"
-#include "settings/configuration.h"
 #include "geometry/map.h"
 #include "geometry/edge.h"
 #include "geometry/vertex.h"
@@ -25,14 +23,14 @@ using std::make_shared;
 
 RadialMotif::RadialMotif(const Motif & motif, int n) : Motif(motif)
 {
-    _n = n;
+    Motif::setN(n);
     setupRadialTransform();
     setMotifType(MOTIF_TYPE_RADIAL);
 }
 
 RadialMotif::RadialMotif(int n) : Motif()
 {
-    _n = n;
+    Motif::setN(n);
     setupRadialTransform();
     setMotifType(MOTIF_TYPE_RADIAL);
 }
@@ -49,7 +47,7 @@ RadialMotif::RadialMotif(const RadialMotif & motif) : Motif(motif)
 
 void RadialMotif::setN(int n)
 {
-    _n = n;
+    Motif::setN(n);
     setupRadialTransform();
 }
 
@@ -82,17 +80,17 @@ void RadialMotif::buildMotifMaps()
 {
     buildUnitMap();
 
-    Configuration * config = Configuration::getInstance();
-    if (config->dontReplicate)
+    if (Sys::dontReplicate)
     {
-        motifMap = unitMap;    // contents are now the same
+        motifMap = unitMap; // contents are now the same
     }
     else
     {
-        replicate();
+        replicate();        // creates motif map
     }
-
-    buildMotifBoundary(tile);
+    
+    scaleAndRotate();       // scales and rotates motif map
+    buildMotifBoundary();
     buildExtendedBoundary();
 }
 
@@ -100,11 +98,11 @@ void RadialMotif::replicate()
 {
     // DAC - replicate the radial using N (not number of tile sides)
     //qDebug() << "RadialMotif::replicateUnit";
-    QTransform T = Tr;       // rotaional transform
+    QTransform T = radialRotationTr;       // rotaional transform
     motifMap = make_shared<Map>("radial replicated unit map");
     for( int idx = 0; idx < getN(); ++idx )
     {
-        for (auto & edge : qAsConst(unitMap->getEdges()))
+        for (auto & edge : std::as_const(unitMap->getEdges()))
         {
             QPointF v1 = T.map(edge->v1->pt);
             QPointF v2 = T.map(edge->v2->pt);
@@ -112,7 +110,7 @@ void RadialMotif::replicate()
             VertexPtr vp2 = motifMap->insertVertex(v2);
             motifMap->insertEdge(vp1,vp2);
         }
-        T *= Tr;
+        T *= radialRotationTr;
     }
 
     motifMap->verify();
@@ -120,6 +118,6 @@ void RadialMotif::replicate()
 
 void RadialMotif::setupRadialTransform()
 {
-    don     = 1.0 / qreal(getN());
-    Tr      = QTransform().rotateRadians( 2.0 * M_PI * don );
+    don               = 1.0 / qreal(getN());
+    radialRotationTr  = QTransform().rotateRadians(2.0 * M_PI * don);
 }

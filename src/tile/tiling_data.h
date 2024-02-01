@@ -1,13 +1,14 @@
 #pragma once
 #ifndef TILING_DATA
 #define TILING_DATA
-#include <QtGlobal>
 
+#include <QtGlobal>
+#include <QObject>
 #if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
 #include <memory>
 #endif
 
-#include "settings/model_settings.h"
+#include "settings/canvas_settings.h"
 
 typedef std::shared_ptr<class Tile>          TilePtr;
 typedef std::shared_ptr<class PlacedTile>    PlacedTilePtr;
@@ -16,39 +17,45 @@ typedef std::shared_ptr<class Map>           MapPtr;
 typedef QVector<QTransform> Placements;
 typedef QVector<PlacedTilePtr> PlacedTiles;
 
-class TilingData
+class TilingData : public QObject
 {
+    Q_OBJECT
+
 public:
     TilingData();
+    TilingData(const TilingData & other);
     ~TilingData();
 
-    TilingData          copy();
-    bool                isEmpty();
+     TilingData & operator=(const TilingData & other);
 
-    const PlacedTiles & getInTiling() const   { return _tilingTiles; }
-    PlacedTiles &       getRWInTiling()       { return _tilingTiles; }
+    void                    setTranslationVectors(QPointF t1, QPointF t2);
+    void                    setCanvasSettings(const CanvasSettings & settings);
 
-    void                setTranslationVectors(QPointF t1, QPointF t2) { setTrans1(t1); setTrans2(t2); }
-    void                setTrans1(QPointF pt) { t1 = pt; }
-    void                setTrans2(QPointF pt) { t2 = pt; }
-    QPointF             getTrans1() const { return t1; }
-    QPointF             getTrans2() const { return t2; }
+    void                    add(const PlacedTilePtr ptp);
+    void                    add(PlacedTiles & tiles);
+    void                    remove(const PlacedTilePtr ptp);
+    void                    clear();
 
-    const ModelSettings& getSettings() const { return settings; }
-    ModelSettings     & getSettingsAccess() { return settings ;}
+    TilingData              copy();
+    bool                    isEmpty();
 
-    const FillData &    getFillData() const { return settings.getFillDataAccess(); }
-    FillData &          getFillDataAccess() { return settings.getFillData(); }
+    const PlacedTiles &     getInTiling() const { return _placedTiles; }
+    const CanvasSettings &  getSettings() const { return _settings; }
+    const Placements        getFillPlacements();
 
-    Placements          getFillPlacemenets();
+    QPointF                 getTrans1() const { return _t1; }
+    QPointF                 getTrans2() const { return _t2; }
 
-    QString             dump() const;
+    QString                 dump() const;
+
+signals:
+    void                    sig_tilingChanged();
 
 private:
-    QPointF             t1;
-    QPointF             t2;
-    ModelSettings       settings;
-    PlacedTiles         _tilingTiles;
+    QPointF                 _t1;
+    QPointF                 _t2;
+    CanvasSettings          _settings;
+    PlacedTiles             _placedTiles;   // these are in-tiling aka included
 };
 
 #endif

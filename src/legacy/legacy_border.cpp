@@ -11,13 +11,27 @@
  * ViewControl adds a border as a layer
  */
 
-LegacyBorder::LegacyBorder() : Layer("Border")
+LegacyBorder::LegacyBorder() : Layer("Border",false)
 {
     borderType  = BORDER_NONE;
 
     setZValue(BORDER_ZLEVEL);
     sp = std::make_shared<ShapeFactory>(2.0);
     addSubLayer(sp);
+}
+
+void LegacyBorder::setModelXform(const Xform & xf, bool update)
+{
+    Q_ASSERT(!_unique);
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.toInfoString() << (isUnique() ? "unique" : "common");
+    viewControl->setCurrentModelXform(xf,update);
+}
+
+const Xform & LegacyBorder::getModelXform()
+{
+    Q_ASSERT(!_unique);
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << viewControl->getCurrentModelXform().toInfoString() << (isUnique() ? "unique" : "common");
+    return viewControl->getCurrentModelXform();
 }
 
 ////////////////////////////////////////////////

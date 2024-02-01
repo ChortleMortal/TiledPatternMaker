@@ -39,7 +39,7 @@ typedef std::shared_ptr<class Tiling> TilingPtr;
 class FillRegion
 {
 public:
-    FillRegion(TilingPtr tiling, const FillData & fd);
+    FillRegion(Tiling * tiling, const FillData & fd);
 
     Placements getPlacements(eRepeatType mode);
 
@@ -47,8 +47,8 @@ protected:
     QTransform calcTransform(int h, int v);
 
 private:
-    TilingPtr             tiling;
-    FillData              fillData;
+    Tiling *    tiling;
+    FillData    fillData;
 
     UniqueQVector<QTransform>   transforms;
 };

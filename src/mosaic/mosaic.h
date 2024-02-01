@@ -2,8 +2,9 @@
 #ifndef MOSAIC_H
 #define MOSAIC_H
 
+#include <QPainter>
 #include <QVector>
-#include "settings/model_settings.h"
+#include "settings/canvas_settings.h"
 
 typedef std::shared_ptr<class Style>        StylePtr;
 typedef std::shared_ptr<class Tiling>       TilingPtr;
@@ -11,6 +12,7 @@ typedef std::shared_ptr<class Border>       BorderPtr;
 typedef std::shared_ptr<class Crop>         CropPtr;
 typedef std::shared_ptr<class Prototype>    ProtoPtr;
 typedef std::shared_ptr<class Map>          MapPtr;
+typedef std::shared_ptr<class BackgroundImage>  BkgdImagePtr;
 
 typedef QVector<StylePtr>  StyleSet;
 
@@ -30,12 +32,17 @@ public:
     int         moveDown(StylePtr style);
     void        deleteStyle(StylePtr style);
 
+    void        build();
+    void        build(class ViewController * vc);
+    void        enginePaint(QPainter * painter);      // called by MosaicBMPEngine
+
     QVector<ProtoPtr> getPrototypes();
     MapPtr            getPrototypeMap();
     void              resetStyleMaps();
     void              resetProtoMaps();
-
-    ModelSettings &  getSettings() { return settings; };
+    
+    CanvasSettings &  getCanvasSettings()       { return _canvasSettings; };
+    void        setCanvasSettings(CanvasSettings& ms) { _canvasSettings = ms; }
 
     const StyleSet & getStyleSet() { return styleSet; }
     StylePtr         getFirstStyle();
@@ -48,6 +55,10 @@ public:
     CropPtr     getCrop()       { return _crop; }
     void        setCrop(CropPtr crop);
     void        resetCrop();
+
+    BkgdImagePtr getBkgdImage()                 { return _bip; }
+    void         setBkgdImage(BkgdImagePtr bp)  { _bip = bp; }
+    void         removeBkgdImage()              { _bip.reset(); }
 
     void        setName(QString name);
     QString     getName();
@@ -64,6 +75,8 @@ public:
     void        reportMotifs();
     void        reportStyles();
 
+    void        setViewController(ViewController * vc);
+
     static const QString defaultName;
 
     static int  refs;
@@ -74,10 +87,14 @@ private:
     StyleSet         styleSet;
     QString          name;
     QString          designNotes;
-    ModelSettings    settings;
+    CanvasSettings   _canvasSettings;
     BorderPtr        _border;
     CropPtr          _crop;
+    BkgdImagePtr     _bip;
+
     uint             cleanseLevel;
 };
+
+typedef std::shared_ptr<Mosaic> MosaicPtr;
 
 #endif

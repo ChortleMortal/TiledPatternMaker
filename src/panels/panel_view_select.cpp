@@ -5,7 +5,8 @@
 #include "panels/panel_misc.h"
 #include "settings/configuration.h"
 #include "tiledpatternmaker.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
+#include "misc/sys.h"
 
 extern TiledPatternMaker * theApp;
 
@@ -15,7 +16,7 @@ PanelViewSelect::PanelViewSelect(ControlPanel * parent)
 
     panel               = parent;
     config              = Configuration::getInstance();
-    view                = ViewControl::getInstance();
+    viewController      = Sys::viewController;
     exclusiveViews      = true;
 
     createGUI();
@@ -29,21 +30,43 @@ PanelViewSelect::PanelViewSelect(ControlPanel * parent)
 void PanelViewSelect::createGUI()
 {
     cbMosaicView         = new QCheckBox("Mosaic");
+    cbMosaicView->setStyleSheet("QCheckBox {padding-left: 3px;}");
+
     cbPrototypeView      = new QCheckBox("Prototype");
+    cbPrototypeView->setStyleSheet("QCheckBox {padding-left: 3px;}");
+
     cbMapEditor          = new QCheckBox("Map Editor");
+    cbMapEditor->setStyleSheet("QCheckBox {padding-left: 3px;}");
+
     cbProtoMaker         = new QCheckBox("Motif Maker");
+    cbProtoMaker->setStyleSheet("QCheckBox {padding-left: 3px;}");
+
     cbTilingView         = new QCheckBox("Tiling");
+    cbTilingView->setStyleSheet("QCheckBox {padding-left: 3px;}");
+
     cbTilingMakerView    = new QCheckBox("Tiling Maker");
+    cbTilingMakerView->setStyleSheet("QCheckBox {padding-left: 3px;}");
+
     cbRawDesignView      = new QCheckBox("Fixed Design");
+    cbRawDesignView->setStyleSheet("QCheckBox {padding-left: 3px;}");
 
     cbBackgroundImage    = new QCheckBox("Bkgd Image");
+    cbBackgroundImage->setStyleSheet("QCheckBox {padding-left: 3px;}");
+
     cbGrid               = new QCheckBox("Grid");
+    cbGrid->setStyleSheet("QCheckBox {padding-left: 3px;}");
+
     cbMeasure            = new QCheckBox("Measure");
+    cbMeasure->setStyleSheet("QCheckBox {padding-left: 3px;}");
+
     cbCenter             = new QCheckBox("Center");
+    cbCenter->setStyleSheet("QCheckBox {padding-left: 3px;}");
 
     cbMultiSelect        = new QCheckBox("Multi View");    // defaults to off - not persisted
-    cbLockView           = new QCheckBox("Lock View");
+    cbMultiSelect->setStyleSheet("QCheckBox {padding-left: 3px;}");
 
+    cbLockView           = new QCheckBox("Lock View");
+    cbLockView->setStyleSheet("QCheckBox {padding-left: 3px;}");
     cbLockView->setChecked(config->lockView);
 
     AQVBoxLayout * avbox = new AQVBoxLayout();
@@ -112,7 +135,7 @@ void PanelViewSelect::restoreViewEnables()
         loadedList.push_back(static_cast<int>(VIEW_MOSAIC));
     }
 
-    for (auto i : loadedList)
+    for (auto i : std::as_const(loadedList))
     {
         eViewType vt = static_cast<eViewType>(i);
         if (vt == VIEW_MAP_EDITOR && !config->insightMode)
@@ -127,7 +150,7 @@ void PanelViewSelect::refresh()
 {
     // refresh panel
     cbGrid->setChecked(config->showGrid);
-    cbMeasure->setChecked(config->measure);
+    cbMeasure->setChecked(Sys::measure);
     cbCenter->setChecked(config->showCenterDebug);
     cbBackgroundImage->setChecked(config->showBackgroundImage);
 }
@@ -163,7 +186,7 @@ void  PanelViewSelect::slot_Viewer_pressed(int id, bool enable)
         break;
 
     case VIEW_MEASURE:
-        config->measure = enable;
+        Sys::measure = enable;
         break;
 
     case VIEW_CENTER:
@@ -193,7 +216,7 @@ void  PanelViewSelect::slot_Viewer_pressed(int id, bool enable)
             {
                 // uncheck the last exclusive
                 viewerGroup.blockSignals(true);
-                viewerGroup.button(view->getMostRecent())->setChecked(false);
+                viewerGroup.button(viewController->getMostRecent())->setChecked(false);
                 viewerGroup.button(id)->setChecked(true);
                 viewerGroup.blockSignals(false);
             }
@@ -202,14 +225,14 @@ void  PanelViewSelect::slot_Viewer_pressed(int id, bool enable)
 
         if (exclusiveViews)
         {
-            view->disablePrimeViews();
+            viewController->disablePrimeViews();
         }
     }   break;
     }
 
-    view->viewEnable(viewType,enable);
-
-    view->slot_refreshView();
+    viewController->viewEnable(viewType,enable);
+    
+    viewController->slot_reconstructView();
 }
 
 void PanelViewSelect::slot_multiSelect(bool enb)
@@ -221,9 +244,9 @@ void PanelViewSelect::slot_multiSelect(bool enb)
     if (!enb)
     {
         viewerGroup.blockSignals(true);
-        for (auto button : vbuttons)
+        for (auto button : std::as_const(vbuttons))
         {
-            if (viewerGroup.id(button) == view->getMostRecent())
+            if (viewerGroup.id(button) == viewController->getMostRecent())
             {
                 continue;
             }
@@ -231,9 +254,9 @@ void PanelViewSelect::slot_multiSelect(bool enb)
         }
         viewerGroup.blockSignals(false);
     }
-    view->disablePrimeViews();
-    view->viewEnable(view->getMostRecent(),true);
-    view->slot_refreshView();
+    viewController->disablePrimeViews();
+    viewController->viewEnable(viewController->getMostRecent(),true);
+    viewController->slot_reconstructView();
 }
 
 void  PanelViewSelect::slot_lockViewClicked(bool enb)

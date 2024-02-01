@@ -5,10 +5,10 @@
 #include <QMap>
 #include <QColor>
 #include <QRectF>
+#include <QSettings>
 #if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
 #include <memory>
 #endif
-#include <QSettings>
 
 #include "enums/ecyclemode.h"
 #include "enums/edesign.h"
@@ -50,6 +50,13 @@ enum  eGridTilingAlgo
     REGION
 };
 
+enum eColorTheme
+{
+    AUTO_THEME,
+    LITE_THEME,
+    DARK_THEME
+};
+
 ////////////////////////////////////////////////////////////////
 //
 // Worklist
@@ -60,11 +67,11 @@ class Worklist : public QStringList
 public:
     Worklist() {}
 
-    void                    set(QStringList & list);
-    const QStringList &     get() { list.sort(); return list; }
+    void                    set(QString name, QStringList & list);
+    const QStringList &     get()       { list.sort(); return list; }
 
-    void                    setName(QString listName);
-    const QString &         name() { return listname; }
+    void                    setName(QString name) { listname = name; }
+    const QString &         getName()   { return listname; }
 
     void                    add(QString designName);
     void                    clear();
@@ -89,8 +96,13 @@ public:
     static Configuration *  getInstance();
     static void             releaseInstance();
 
-    void                    configurePaths();
-    void                    save();
+    void    save();
+    void    configurePaths();
+
+    QString getMediaRoot();
+    QString getMediaRootLocal();
+    QString getMediaRootAppdata();
+    QString getImageRoot();
 
 ////////////////////////////////////////////////////////////////
 //
@@ -113,9 +125,6 @@ public:
     QString image0;
     QString image1;
     QString panelName;
-    QString lastLoadedTileName; // used on startup
-    QString lastLoadedXML;      // used on startup
-    QString currentlyLoadedXML; // current status
     QString mosaicFilter;
     QString tileFilter;
     QString rootImageDir;
@@ -123,20 +132,27 @@ public:
     QString baseLogName;
     QString lastCompareName;
 
+    QString lastLoadedTiling;      // used on startup
+    QString lastLoadedMosaic;      // used on startup
+    QString lastLoadedLegacyDes;   // used on startup
+
     QStringList protoViewColors;
     QStringList viewColors;
 
     eRepeatType     repeatMode;
     eMapEditorMode  mapEditorMode;
     eLogTimer       logTime;
-    eDesign         lastLoadedDesignId; // used on startup
     eGridUnits      gridUnits;
     eGridType       gridType;
-    eCycleMode      genCycle;
-    eCycleMode      viewCycle;
-    eLoadType       fileFilter;
+
+    eCycleMode      viewCycle2;
+
+    eLoadType       genFileFilter;
+    eLoadType       viewFileFilter;
     eLoadType       versionFilter;
+
     eGridTilingAlgo gridTilingAlgo;
+    eColorTheme     colorTheme;
 
     int     cycleInterval;
     int     polySides;    // used by tiling maker
@@ -147,7 +163,6 @@ public:
     int     gridScreenSpacing;
     int     gridZLevel;
 
-    bool    darkTheme;
     bool    autoLoadStyles;
     bool    autoLoadTiling;
     bool    autoLoadDesigns;
@@ -177,6 +192,8 @@ public:
     bool    mosaicOrigCheck;
     bool    mosaicNewCheck;
     bool    mosaicTestCheck;
+    bool    mosaicSortCheck;
+    bool    showWithBkgds;
     bool    tilingOrigCheck;
     bool    tilingNewCheck;
     bool    tilingTestCheck;
@@ -201,23 +218,19 @@ public:
 
     bool    compare_transparent;
     bool    compare_popup;
-    bool    view_transparent;
-    bool    view_popup;
-    bool    filter_transparent;
+    bool    filterColor;
     bool    display_differences;
 
     bool    use_workListForCompare;
-    bool    generate_workList;
     bool    skipExisting;
     bool    cs_showBkgds;
-    bool    cs_showFrameSettings;
     bool    showCenterDebug;
     bool    showGrid;
     bool    showGridLayerCenter;
     bool    showGridModelCenter;
-    bool    showGridScreenCenter;
-
-    bool    measure;
+    bool    showGridViewCenter;
+    bool    genCycleMosaic;
+    bool    multithreadedGeneration;
 
     bool    gridModelCenter;
     bool    gridScreenCenter;
@@ -237,47 +250,6 @@ public:
     QString  gridColorScreen;
 
     Worklist worklist;
-
-////////////////////////////////////////////////////////////////
-//
-// volatile
-//
-////////////////////////////////////////////////////////////////
-
-    int     appInstance;
-
-    Layer * selectedLayer;
-
-    QString rootTileDir;
-    QString originalTileDir;
-    QString newTileDir;
-    QString testTileDir;
-    QString rootMosaicDir;
-    QString originalMosaicDir;
-    QString newMosaicDir;
-    QString testMosiacDir;
-    QString templateDir;
-    QString examplesDir;
-    QString mapsDir;
-    QString worklistsDir;
-
-    bool    primaryDisplay;
-    bool    circleX;
-    bool    hideCircles;
-    bool    enableDetachedPages;
-    bool    showCenterMouse;
-    bool    updatePanel;
-    bool    dontReplicate;
-    bool    highlightUnit;
-    bool    motifPropagate;
-    bool    debugMapEnable;
-    bool    dontTrapLog;
-    bool    localCycle;
-
-    QString getMediaRoot();
-    QString getMediaRootLocal();
-    QString getMediaRootAppdata();
-    QString getImageRoot();
 
 private:
     Configuration();

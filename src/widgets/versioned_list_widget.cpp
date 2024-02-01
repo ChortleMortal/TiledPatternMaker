@@ -8,7 +8,7 @@ LoaderListWidget::LoaderListWidget(QWidget *parent) : QListWidget(parent)
     setStyleSheet("QListWidget::item:selected { background:yellow; color:red; }");
 }
 
-void LoaderListWidget::addItemList(QStringList list)
+void LoaderListWidget::addItemList(QStringList & list)
 {
     clear();
     for (const auto & item : list)
@@ -89,11 +89,12 @@ VersionedListWidget::VersionedListWidget()
 {
 }
 
-void VersionedListWidget::addItemList(QStringList list)
+void VersionedListWidget::addItemList(QStringList &list)
 {
     VersionList vList;
     vList.create(list);
     QStringList list2 = vList.recompose();
+
     LoaderListWidget::addItemList(list2);
 }
 
@@ -114,7 +115,7 @@ bool VersionList::ComparePair(const VersionSet & a, VersionSet &b)
 
 void VersionList::create(const QStringList & list)
 {
-    for (const auto & file : list)
+    for (const auto & file : std::as_const(list))
     {
         QStringList l = file.split('.');
         int size = l.size();
@@ -163,10 +164,10 @@ void VersionList::create(const QStringList & list)
 QStringList VersionList::recompose()
 {
     QStringList list;
-    for  (const auto & set : qAsConst(versionList))
+    for  (const auto & set : std::as_const(versionList))
     {
         std::string name = set.first;
-        for  (int version : set.second)
+        for  (int version : std::as_const(set.second))
         {
             std::string fullName = name;
             if (version > 0)

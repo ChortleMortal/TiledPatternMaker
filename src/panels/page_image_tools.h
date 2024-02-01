@@ -4,9 +4,24 @@
 
 #include <QImage>
 #include "panels/panel_page.h"
-#include "enums/ecyclemode.h"
+#include "engine/image_engine.h"
 
 class MemoryCombo;
+
+enum eActionType
+{
+    ACT_GEN_MOSAIC_BMP,
+    ACT_GEN_TILING_BMP,
+    ACT_GEN_COMPARE_WLIST
+};
+
+struct sAction
+{
+    eActionType type;
+    QString     name;
+    QString     path;
+    QString     path2;
+};
 
 class page_image_tools : public panel_page
 {
@@ -14,18 +29,15 @@ class page_image_tools : public panel_page
 
 public:
     page_image_tools(ControlPanel * cpanel);
+    ~page_image_tools();
 
     void    onRefresh() override;
     void    onEnter() override;
     void    onExit() override;
 
+    static void addToComparisonWorklist(QString name);
+
 signals:
-    void    sig_compareBMPFiles(QString,QString,bool);
-    void    sig_compareBMPFilesPath(QString,QString);
-    void    sig_compareBMPandLoaded(QString,bool);
-    void    sig_view_image(QString file,QString file2,bool transparent,bool popup);
-    void    sig_cyclerStart(eCycleMode);
-    void    sig_loadMosaic(QString,bool ready);
     void    sig_worklistChanged();
 
 public slots:
@@ -37,10 +49,9 @@ public slots:
 private slots:
     void    slot_stopIfDiffClicked(bool enb);
     void    slot_cycleIntervalChanged(int value);
-    void    selectDir0();
-    void    selectDir1();
-    void    swapDirs();
-    void    continueCycle();
+    void    slot_selectDir0();
+    void    slot_selectDir1();
+    void    slor_swapDirs();
     void    slot_previous();
     void    slot_next();
     void    slot_loadFirst();
@@ -52,18 +63,16 @@ private slots:
 
     void    slot_viewImageLeft();
     void    slot_viewImageRight();
-    void    slot_cycleGen();
-    void    slot_cycleView();
+    void    slot_genBMPs();
+    void    slot_startStepping();
     void    slot_opendir();
-    void    slot_compareImages();
-    void    slot_compareCycle();
+    void    slot_compareDiffDirBMPs();
+    void    slot_startCompare();
+    void    slot_compareGen();
     void    slot_transparentClicked(bool checked);
-    void    slot_view_transparentClicked(bool checked);
-    void    slot_view_popupClicked(bool checked);
     void    slot_popupClicked(bool checked);
     void    slot_differencesClicked(bool checked);
     void    slot_use_worklist_compare(bool checked);
-    void    slot_gen_worklist_compare(bool checked);
     void    slot_compareView(bool checked);
     void    slot_skipExisting(bool checked);
     
@@ -78,60 +87,73 @@ private slots:
     void    slot_viewImage4();
     void    slot_imageSelectionChanged1();
     void    slot_imageSelectionChanged2();
-    void    slot_compareImages2();
-
-    void    loadWorkListFromFile();
-    void    saveWorkListToFile();
-    void    editWorkList();
-    void    replaceBMP();
+    void    slot_compareFileBMPs();
+    
+    void    slot_loadWorkListFromFile();
+    void    slot_saveWorkListToFile();
+    void    slot_editWorkList();
+    void    slot_replaceBMP();
     void    slot_loadSecond();
     void    slot_createList();
 
     void    slot_genTypeChanged(int id);
     void    slot_gen_selectionChanged();
+    void    slot_view_selectionChanged();
     void    slot_ver_selectionChanged();
 
-    void    slot_compareVersions();
+    void    slot_compareDiffVerBMPs();
     void    slot_cycleVersions();
-    void    slot_mediaAChanged();
-    void    slot_mediaBChanged();
+
     void    slot_nextImage();
-    void    slot_quitImageCycle();
-    void    slot_cycleId(int);
+    void    slot_viewTypeChanged(int);
+
+    void    slot_engineComplete();
+    void    slot_engineProgress(int val);
 
 protected:
-    QGroupBox   * createCycleGenBox();
-    QHBoxLayout * createWorklistBox();
-    QGroupBox   * createCompareImagesBox();
-    QGroupBox   * createCompareVersionsBox();
-    QGroupBox   * createViewImageBox();
-    QGroupBox   * createTransparencyBox();
+    int createWorklistBox(int row);
+    int createCycleGenBox(int row);
+    int createCompareImagesBox(int row);
+    int createCompareVersionsBox(int row);
+    int createViewImageBox(int row);
 
-    bool viewImage(QString file, bool transparent, bool popup);
+    void addHSeparator(int row);
+    void bump(int row, int stretch);
 
-    void loadVersionCombos();
+    bool viewImage(QString filename, bool transparent, bool popup);
+
     void loadCombo(QComboBox * box, QString dir);
     void setCombo(QComboBox * box,QString name);
 
     void loadFileFilterCombo();
+    void loadViewFilterCombo();
     void loadVersionFilterCombo();
-    bool loadMosaic(QString name);
-    void saveMosaicBitmaps();
-    void saveTilingBitmaps();
-    void savePixmap(QString name);
     void setImageDirectory();
-    void compareNextVersions();
 
     QString getPixmapPath();
 
+    // multi-threaded
+    void setupActions();
+    void processActionList(QList<sAction> & actions);
+    void saveTilingBitmaps();
+    void saveMosaicBitmaps();
+    void createComparedWorklist();
+
+    // comparison worklis
+    static void         clearComparisonWorklist();
+    static QStringList& getComparisonWorklist();
+
 private:
+    static QStringList comparisonWorklist;
+    static QMutex      comparisonMutex;
+
     bool          created;
 
-    QButtonGroup* cycleGenBtnGroup;
-    QButtonGroup* cycleViewBtnGroup;
+    QGridLayout * grid;
 
-    QGroupBox   * wlistGroupBox;
-    
+    QButtonGroup* genBtnGroup;
+    QButtonGroup* viewBtnGroup;
+
     MemoryCombo * firstDir;
     MemoryCombo * secondDir;
     QLineEdit   * directory;
@@ -142,14 +164,16 @@ private:
 
     QComboBox   * firstFileCombo;
     QComboBox   * secondFileCombo;
-    QComboBox   * fileFilterCombo;
+
+    QComboBox   * genFilterCombo;
+    QComboBox   * viewFilterCombo;
     QComboBox   * versionFilterCombo;
 
     QCheckBox   * use_wlistForCompareChk;
-    QCheckBox   * gen_wlistChk;
     QCheckBox   * compareView;
 
     QLabel      * colorLabel;
+    QLabel      * wlistLabel;
 
     QPushButton * loadFirstBtn;
     QPushButton * loadSecondBtn;
@@ -167,15 +191,20 @@ private:
     QButtonGroup* mediaGroup;
     QButtonGroup* typeGroup;
 
-    bool                  comparingVersions;
-    QStringList           mediaNames;
-    QString               mediaName;
-    QStringList           versions;
-    QStringList::iterator imgList_it;
-    QStringList::iterator imgListVerA_it;
-    QStringList::iterator imgListVerB_it;
-    QImage                imgA;
-    QImage                imgB;
+    QPushButton * generateBMPsBtn;
+    QPushButton * viewImgesBtn;
+    QPushButton * startBtn;
+    QPushButton * versionStepBtn;
+
+    QFutureWatcher<bool>  watcher;
+    int                   totalEngineImages;
+
+    eActionType        generatorType;
+
+    class AQElapsedTimer* etimer;
+
+    ImageEngine     engine;
+
 };
 
 #endif

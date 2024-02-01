@@ -2,10 +2,12 @@
 #ifndef STYLED_EDITORS_H
 #define STYLED_EDITORS_H
 
-#include <memory>
 #include <QObject>
 #include <QPointF>
 #include <QColor>
+#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
+#include <memory>
+#endif
 
 class QPushButton;
 class QCheckBox;
@@ -41,7 +43,6 @@ public:
 
 signals:
     void    sig_refreshView();
-    void    sig_updateView();
     void    sig_colorsChanged();
 
 protected:
@@ -153,7 +154,7 @@ private:
     StyleColorFillSet   * fillSet;
     StyleColorFillGroup * fillGroup;
 
-    class ViewControl   * view;
+    class View     * view;
 };
 
 

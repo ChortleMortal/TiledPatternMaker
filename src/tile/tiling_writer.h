@@ -17,11 +17,13 @@ class TilingWriter
 
 public:
     bool    writeTilingXML();
-    void    writeTilingXML(QTextStream & out);     // also called when writing styles
-    void    writeViewSettings(QTextStream & out);
+
     static void writeBackgroundImage(QTextStream & out);
 
 protected:
+    void    writeTilingXML(QTextStream & out);     // also called when writing styles
+    void    writeViewSettings(QTextStream & out);
+
     void    setEdgePoly(QTextStream & ts, EdgePoly & epoly);
     void    setVertex(QTextStream & ts,VertexPtr v, QString name);
     void    setPoint(QTextStream & ts, QPointF pt, QString name);

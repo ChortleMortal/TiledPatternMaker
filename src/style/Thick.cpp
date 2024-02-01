@@ -59,12 +59,10 @@ Thick::~Thick()
 
 void Thick::resetStyleRepresentation()
 {
-    resetStyleMap();
 }
 
 void Thick::createStyleRepresentation()
 {
-    getMap();
 }
 
 void Thick::draw(GeoGraphics * gg )
@@ -76,7 +74,7 @@ void Thick::draw(GeoGraphics * gg )
         return;
     }
 
-    MapPtr map = getMap();
+    MapPtr map = getProtoMap();
     if (!map)
     {
         qDebug() << "Thick::draw EMPTY Map";
@@ -106,7 +104,7 @@ void Thick::draw(GeoGraphics * gg )
         QPen pen(outline_color);
         pen.setJoinStyle(join_style);
         pen.setCapStyle(cap_style);
-        for (const auto & edge : map->getEdges())
+        for (const auto & edge : std::as_const(map->getEdges()))
         {
             gg->drawThickEdge(edge,pwidth, pen);
         }
@@ -115,7 +113,7 @@ void Thick::draw(GeoGraphics * gg )
     QPen pen(colors.getNextColor().color);
     pen.setJoinStyle(join_style);
     pen.setCapStyle(cap_style);
-    for (const auto & edge : map->getEdges())
+    for (const auto & edge : std::as_const(map->getEdges()))
     {
         gg->drawThickEdge(edge, width * 2, pen);
     }

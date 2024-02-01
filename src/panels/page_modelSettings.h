@@ -3,7 +3,8 @@
 #define PAGE_MODEL_SETTINGS_H
 
 #include "panels/panel_page.h"
-#include "settings/model_settings.h"
+#include "settings/canvas_settings.h"
+#include "settings/filldata.h"
 
 class AQSpinBox;
 class AQTableWidget;
@@ -17,14 +18,14 @@ class page_modelSettings : public panel_page
 
 enum eSettingsGroup
 {
-    DESIGN_SETTINGS,    // propagates to CANVAS_SETTINGS
-    TILING_SETTINGS,    // propagates to CANVAS_SETTINGS
-    FRAME_SETTINGS,     // definitions per view type
-    VIEW_STATUS,        // current status
-    NUM_SETTINGS
+    MOSAIC_SETTINGS,    // propagates to Canvas
+    TILING_SETTINGS,    // propagates to Canvas
+    CANVAS,             // the canvas
+    VIEW_STATUS        // the view
 };
 
-#define NUM_BORDER_COLORS 2
+#define NUM_SETTINGS        (VIEW_STATUS + 1)
+#define NUM_BORDER_COLORS   2
 
 public:
     page_modelSettings(ControlPanel * apanel);
@@ -37,15 +38,14 @@ private slots:
     void slot_set_repsDesign(int val);
     void slot_set_repsTiling(int val);
 
-    void designSizeChanged(int);
-    void cropSizeChanged(int);
-    void viewSizeChanged(int);
+    void slot_canvasSizeChanged(int);
+    void slot_viewerSizeChanged(int);
+    void slot_windowSizeChanged(int);
 
     void backgroundColorDesignPick();
     void backgroundColorDesignChanged(const QString & str);
 
     void slot_tilingSizeChanged(int val);
-    void slot_showFrameInfoChanged(bool checked);
     void slot_boundsChanged();
 
     void singleton_changed_des(bool checked);
@@ -55,13 +55,14 @@ private slots:
 
 protected:
     QGroupBox * createTilingSettings();
-    QGroupBox * createDesignSettings();
-    QGroupBox * createFrameSettings();
+    QGroupBox * createMosaicSettings();
+    QGroupBox * createCanvasStatus();
     QGroupBox * createViewStatus();
 
     QGridLayout * createFillDataRow(eSettingsGroup group);
-
-    ModelSettings & getMosaicOrDesignSettings();
+    
+    CanvasSettings &getMosaicOrDesignModelSettings();
+    void setMosaicOrDesignModelSettings(CanvasSettings &ms);
 
     void displayFillData(const FillData &fd, eSettingsGroup group);
 
@@ -74,17 +75,16 @@ private:
     AQSpinBox       * yRepMin[NUM_SETTINGS];
     AQSpinBox       * yRepMax[NUM_SETTINGS];
 
-    SpinSet         * sizeW[NUM_SETTINGS];
+    SpinSet         * sizeW[NUM_SETTINGS];  // FIXME canvas is double
     SpinSet         * sizeH[NUM_SETTINGS];
-
-    SpinSet         * sizeW2;
-    SpinSet         * sizeH2;
 
     DoubleSpinSet   * ds_left;
     DoubleSpinSet   * ds_top;
     DoubleSpinSet   * ds_width;
 
     QLabel          * l_xform;
+    QLabel          * l_canvas;
+    QLabel          * l_layer;
 
     QLineEdit       * bkColorEdit[NUM_SETTINGS];
     ClickableLabel  * bkgdColorPatch[NUM_SETTINGS];
@@ -97,10 +97,9 @@ private:
 
     QCheckBox       * chk_adjustBkgd[NUM_SETTINGS];
 
+    QGroupBox       * canvasBox;
     QGroupBox       * viewBox;
     QGroupBox       * frameBox;
-
-    AQTableWidget   * frameTable;
 };
 
 #endif

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!-- Written: Sat Feb 18 2023 15:31:12 -->
-<vector id="1" version="14">
+<!-- Written: Thu Oct 5 2023 12:35:07 -->
+<vector id="1" version="15">
 	<design>
 		<size>
 			<width>1500</width>
@@ -27,7 +27,7 @@
 				<app.Prototype>
 					<string>Test Stars.v1</string>
 					<entry>
-						<tile.Feature id="4">
+						<Tile id="4">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -49,8 +49,8 @@
 									<Point reference="6" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.Star id="10">
+						</Tile>
+						<Star id="10">
 							<boundarySides>1</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
@@ -58,10 +58,10 @@
 							<n>8</n>
 							<d>2</d>
 							<s>1</s>
-						</app.Star>
+						</Star>
 					</entry>
 					<entry>
-						<tile.Feature id="11">
+						<Tile id="11">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -83,20 +83,19 @@
 									<Point reference="13" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitStar id="17" type="MOTIF_TYPE_INFERRED_STAR">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<IrregularStar id="17" type="Irregular Star Motif">
+							<boundarySides>4</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>4</n>
 							<s>2</s>
 							<d>1.5</d>
-							<version>1</version>
-						</app.ExplicitStar>
+						</IrregularStar>
 					</entry>
 					<entry>
-						<tile.Feature id="18">
+						<Tile id="18">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -122,8 +121,8 @@
 									<Point reference="20" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.Star id="25">
+						</Tile>
+						<Star id="25">
 							<boundarySides>5</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
@@ -131,10 +130,10 @@
 							<n>5</n>
 							<d>1.67</d>
 							<s>1</s>
-						</app.Star>
+						</Star>
 					</entry>
 					<entry>
-						<tile.Feature id="26">
+						<Tile id="26">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -160,8 +159,8 @@
 									<Point reference="28" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitStar id="33" type="MOTIF_TYPE_INFERRED_STAR">
+						</Tile>
+						<IrregularStar id="33" type="Irregular Star Motif">
 							<boundarySides>5</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
@@ -169,11 +168,10 @@
 							<n>5</n>
 							<s>2</s>
 							<d>1.67</d>
-							<version>1</version>
-						</app.ExplicitStar>
+						</IrregularStar>
 					</entry>
 					<entry>
-						<tile.Feature id="34">
+						<Tile id="34">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -203,8 +201,8 @@
 									<Point reference="36" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.Star id="42">
+						</Tile>
+						<Star id="42">
 							<boundarySides>6</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
@@ -212,10 +210,10 @@
 							<n>6</n>
 							<d>2</d>
 							<s>2</s>
-						</app.Star>
+						</Star>
 					</entry>
 					<entry>
-						<tile.Feature id="43">
+						<Tile id="43">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -245,20 +243,19 @@
 									<Point reference="45" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitStar id="51" type="MOTIF_TYPE_INFERRED_STAR">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<IrregularStar id="51" type="Irregular Star Motif">
+							<boundarySides>6</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>6</n>
 							<s>2</s>
 							<d>2</d>
-							<version>1</version>
-						</app.ExplicitStar>
+						</IrregularStar>
 					</entry>
 					<entry>
-						<tile.Feature id="52">
+						<Tile id="52">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -292,8 +289,8 @@
 									<Point reference="54" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.Star id="61">
+						</Tile>
+						<Star id="61">
 							<boundarySides>7</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
@@ -301,10 +298,10 @@
 							<n>7</n>
 							<d>3</d>
 							<s>2</s>
-						</app.Star>
+						</Star>
 					</entry>
 					<entry>
-						<tile.Feature id="62">
+						<Tile id="62">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -338,8 +335,8 @@
 									<Point reference="64" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitStar id="71" type="MOTIF_TYPE_INFERRED_STAR">
+						</Tile>
+						<IrregularStar id="71" type="Irregular Star Motif">
 							<boundarySides>7</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
@@ -347,11 +344,10 @@
 							<n>7</n>
 							<s>2</s>
 							<d>3</d>
-							<version>1</version>
-						</app.ExplicitStar>
+						</IrregularStar>
 					</entry>
 					<entry>
-						<tile.Feature id="72">
+						<Tile id="72">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -389,8 +385,8 @@
 									<Point reference="74" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.Star id="82">
+						</Tile>
+						<Star id="82">
 							<boundarySides>8</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
@@ -398,10 +394,10 @@
 							<n>8</n>
 							<d>3</d>
 							<s>2</s>
-						</app.Star>
+						</Star>
 					</entry>
 					<entry>
-						<tile.Feature id="83">
+						<Tile id="83">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -439,8 +435,8 @@
 									<Point reference="85" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitStar id="93" type="MOTIF_TYPE_INFERRED_STAR">
+						</Tile>
+						<IrregularStar id="93" type="Irregular Star Motif">
 							<boundarySides>8</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
@@ -448,11 +444,10 @@
 							<n>8</n>
 							<s>2</s>
 							<d>3</d>
-							<version>1</version>
-						</app.ExplicitStar>
+						</IrregularStar>
 					</entry>
 					<entry>
-						<tile.Feature id="94">
+						<Tile id="94">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -474,17 +469,16 @@
 									<Point reference="96" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitStar id="100" type="MOTIF_TYPE_INFERRED_STAR">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<IrregularStar id="100" type="Irregular Star Motif">
+							<boundarySides>4</boundarySides>
 							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>4</n>
 							<s>1</s>
-							<d>2</d>
-							<version>1</version>
-						</app.ExplicitStar>
+							<d>1.5</d>
+						</IrregularStar>
 					</entry>
 				</app.Prototype>
 			</prototype>

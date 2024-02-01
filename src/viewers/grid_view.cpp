@@ -1,11 +1,11 @@
 #include "viewers/grid_view.h"
 #include "settings/configuration.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
 #include "misc/geo_graphics.h"
 #include "geometry/fill_region.h"
 #include "geometry/map.h"
 #include "geometry/vertex.h"
-#include "geometry/point.h"
+#include "geometry/geo.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "tile/placed_tile.h"
 #include "tile/tile.h"
@@ -35,10 +35,9 @@ void GridView::releaseInstance()
     }
 }
 
-GridView::GridView() : LayerController("Grid")
+GridView::GridView() : LayerController("Grid",true)
 {
     config  = Configuration::getInstance();
-    view    = ViewControl::getInstance();
     genMap  = false;
     setZValue(config->gridZLevel);
 }
@@ -46,20 +45,20 @@ GridView::GridView() : LayerController("Grid")
 GridView::~GridView()
 {}
 
-void GridView::paint(QPainter * pp)
+void GridView::paint(QPainter * painter)
 {
-    draw(pp);
+    draw(painter);
 }
 
-void GridView::draw(QPainter * pp)
+void GridView::draw(QPainter * painter)
 {
     if (genMap)
     {
         gridMap = make_shared<Map>("Grid");
     }
 
-    this->pp = pp;
-    gg = new GeoGraphics(pp,getLayerTransform());
+    this->painter = painter;
+    gg = new GeoGraphics(painter,getLayerTransform());
 
     switch (config->gridUnits)
     {
@@ -105,21 +104,22 @@ void GridView::draw(QPainter * pp)
         ggdrawLine(corners[1],QPen(Qt::green,3));
     }
 
-    if (config->showGridScreenCenter)
+    if (config->showGridViewCenter)
     {
         auto r = view->rect();
         corners[0] = QLineF(r.topLeft(),r.bottomRight());
         corners[1] = QLineF(r.bottomLeft(),r.topRight());
 
         QPen pen(Qt::blue,3);
-        pp->setPen(pen);
+        painter->setPen(pen);
         ppdrawLine(corners[0]);
         ppdrawLine(corners[1]);
     }
 
     if (config->showGridLayerCenter)
     {
-        QPointF center = view->getCurrentXform().getModelCenter();
+        QPointF center = viewControl->getCurrentModelXform().getModelCenter();
+
         corners[0] = QLineF(QPointF(-10,10),QPointF(10,-10));
         corners[1] = QLineF(QPointF(-10,-10),QPointF(10,10));
         corners[0].translate(center);
@@ -169,22 +169,22 @@ void GridView::drawFromTilingFlood()
     qreal angle2    = qDegreesToRadians(line2.angle());
     qreal gridAngle = qAbs(angle1 - angle2);
     qDebug() << "Line angles:" << angle1 << angle2 << "Grid angle" << gridAngle << "sin" << qAbs(qSin(gridAngle));
-
-    QLineF l1 = Point::extendAsRay(line1,5.0);
+    
+    QLineF l1 = Geo::extendAsRay(line1,5.0);
     qreal offset = line2.length() * qAbs(qSin(gridAngle));
-    l1 = Point::shiftParallel(l1,offset * -10.0);
+    l1 = Geo::shiftParallel(l1,offset * -10.0);
     for (int i=0; i <20; i++)
     {
-        l1 = Point::shiftParallel(l1,offset);
+        l1 = Geo::shiftParallel(l1,offset);
         ggdrawLine(l1,pen);
     }
-
-    QLineF l2 = Point::extendAsRay(line2,5.0);
+    
+    QLineF l2 = Geo::extendAsRay(line2,5.0);
     qreal offset2 = line1.length() * qAbs(qSin(gridAngle));
-    l2 = Point::shiftParallel(l2,offset2 * -10.0);
+    l2 = Geo::shiftParallel(l2,offset2 * -10.0);
     for (int i=0; i <20; i++)
     {
-        l2 = Point::shiftParallel(l2,offset2);
+        l2 = Geo::shiftParallel(l2,offset2);
         ggdrawLine(l2,pen);
     }
 }
@@ -239,13 +239,13 @@ void GridView::drawFromTilingRegion()
     QLineF lg;
     if (gridAngle  >= 0)
     {
-        lr = Point::shiftParallel(lineR,offsetR);
-        lg = Point::shiftParallel(lineG,-offsetG );
+        lr = Geo::shiftParallel(lineR,offsetR);
+        lg = Geo::shiftParallel(lineG,-offsetG );
     }
     else
     {
-        lr = Point::shiftParallel(lineR,-offsetR);
-        lg = Point::shiftParallel(lineG,offsetG );
+        lr = Geo::shiftParallel(lineR,-offsetR);
+        lg = Geo::shiftParallel(lineG,offsetG );
     }
 
     lr.translate(lineG.p2()-lr.p1());
@@ -269,9 +269,9 @@ void GridView::drawFromTilingRegion()
     p << lineG.p2();
     Q_ASSERT(Loose::equalsPt(lineG.p1(),lineR.p1()));
 
-     FillRegion flood(tiling,view->getFillData());
+    FillRegion flood(tiling.get(),viewControl->getCanvas().getFillData());
      const Placements & placements = flood.getPlacements(config->repeatMode);
-     for (const auto & t : placements)
+     for (const auto & t : std::as_const(placements))
      {
         auto poly = t.map(p);
         ggdrawPoly(poly,pen);
@@ -314,7 +314,7 @@ void GridView::drawModelUnitsCanvasCentered()
 void GridView::drawModelUnits(QRectF r, QRectF r1, QPointF center, int x_steps, int y_steps, qreal step)
 {
     QPen pen(QColor(config->gridColorModel),config->gridModelWidth);
-    pp->setPen(pen);
+    painter->setPen(pen);
 
     ggdrawLine(r.topLeft(),r.topRight(),pen);
     ggdrawLine(r.topRight(),r.bottomRight(),pen);
@@ -426,7 +426,7 @@ void GridView::drawScreenUnitsModelCentered()
 void GridView::drawScreenUnits(QRectF r, QRectF r1, QPointF center,int x_steps, int y_steps, qreal step)
 {
     QPen pen(QColor(config->gridColorScreen),config->gridScreenWidth);
-    pp->setPen(pen);
+    painter->setPen(pen);
 
     QVector<QLineF> edges = toEdges(r);
 
@@ -492,10 +492,10 @@ void GridView::drawScreenUnits(QRectF r, QRectF r1, QPointF center,int x_steps, 
 bool GridView::intersects(QVector<QLineF> &edges, QLineF & line)
 {
     QPointF p1;
-    for (const auto & edge : edges)
+    for (const auto & edge : std::as_const(edges))
     {
         QPointF intersect;
-        if (line.intersects(edge,&intersect) != QLineF::NoIntersection && Point::isOnLine(intersect,edge))
+        if (line.intersects(edge,&intersect) != QLineF::NoIntersection && Geo::isOnLine(intersect,edge))
         {
             if (p1.isNull())
                 p1 = intersect;
@@ -532,7 +532,7 @@ bool GridView::nearGridPoint(QPointF spt, QPointF & foundGridPoint)
     view->update();
     genMap = false;
 
-    for (const VertexPtr & v : qAsConst(gridMap->getVertices()))
+    for (const VertexPtr & v : std::as_const(gridMap->getVertices()))
     {
         QPointF a = v->pt;
         QPointF b = a;
@@ -540,7 +540,7 @@ bool GridView::nearGridPoint(QPointF spt, QPointF & foundGridPoint)
         {
             b = worldToScreen(a);
         }
-        if (Point::isNear(spt,b))
+        if (Geo::isNear(spt,b))
         {
             if (config->gridUnits == GRID_UNITS_MODEL)
             {
@@ -578,7 +578,7 @@ void GridView::ggdrawPoly(QPolygonF & poly, QPen  pen)
     {
         EdgePoly ep(poly);
         auto vec = ep.getLines();
-        for (auto & line : qAsConst(vec))
+        for (auto & line : std::as_const(vec))
         {
             gridMap->insertEdge(line);
         }
@@ -587,17 +587,33 @@ void GridView::ggdrawPoly(QPolygonF & poly, QPen  pen)
 
 void GridView::ppdrawLine(QLineF & line)
 {
-    pp->drawLine(line);
+    painter->drawLine(line);
     if (genMap)
         gridMap->insertEdge(line);
 }
 
 void GridView::ppdrawLine(QPointF p1, QPointF p2)
 {
-    pp->drawLine(p1,p2);
+    painter->drawLine(p1,p2);
     if (genMap)
         gridMap->insertEdge(p1,p2);
 }
+
+void GridView::setModelXform(const Xform & xf, bool update)
+{
+    Q_ASSERT(_unique);
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.toInfoString() << (isUnique() ? "unique" : "common");
+    xf_model = xf;
+    forceLayerRecalc(update);
+}
+
+const Xform & GridView::getModelXform()
+{
+    Q_ASSERT(_unique);
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "GET" << getLayerName() << xf_model.toInfoString() << (isUnique() ? "unique" : "common");
+    return xf_model;
+}
+
 
 void GridView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
 {
@@ -631,10 +647,10 @@ void GridView::slot_mouseTranslate(QPointF pt)
 
     if (view->getKbdMode(KBD_MODE_XFORM_GRID) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setTranslateX(xf.getTranslateX() + pt.x());
         xf.setTranslateY(xf.getTranslateY() + pt.y());
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 
@@ -644,9 +660,9 @@ void GridView::slot_wheel_scale(qreal delta)
 
     if (view->getKbdMode(KBD_MODE_XFORM_GRID) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setScale(xf.getScale() * (1.0 + delta));
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 
@@ -656,9 +672,9 @@ void GridView::slot_wheel_rotate(qreal delta)
 
     if (view->getKbdMode(KBD_MODE_XFORM_GRID) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setRotateDegrees(xf.getRotateDegrees() + delta);
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 
@@ -668,9 +684,9 @@ void GridView::slot_scale(int amount)
 
     if (view->getKbdMode(KBD_MODE_XFORM_GRID) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setScale(xf.getScale() * (1 + static_cast<qreal>(amount)/100.0));
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 
@@ -680,37 +696,35 @@ void GridView::slot_rotate(int amount)
 
     if (view->getKbdMode(KBD_MODE_XFORM_GRID) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setRotateRadians(xf.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 
-void GridView:: slot_moveX(int amount)
+void GridView::slot_moveX(qreal amount)
 {
     if (!view->isActiveLayer(this)) return;
 
     if (view->getKbdMode(KBD_MODE_XFORM_GRID) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
     {
-        qDebug() << "move x" << getName();
-        Xform xf = getCanvasXform();
+        qDebug() << "GridView::slot_moveX" << getLayerName();
+        Xform xf = getModelXform();
         xf.setTranslateX(xf.getTranslateX() + amount);
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 
-void GridView::slot_moveY(int amount)
+void GridView::slot_moveY(qreal amount)
 {
-    qDebug() << getName();
-
     if (!view->isActiveLayer(this)) return;
 
     if (view->getKbdMode(KBD_MODE_XFORM_GRID) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
     {
-        qDebug() << "move y" << getName();
-        Xform xf = getCanvasXform();
+        qDebug().noquote() << "GridView:: slot_moveY" << getLayerName();
+        Xform xf = getModelXform();
         xf.setTranslateY(xf.getTranslateY() + amount);
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 

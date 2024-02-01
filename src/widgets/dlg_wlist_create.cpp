@@ -9,8 +9,9 @@
 
 #include "widgets/dlg_wlist_create.h"
 #include "enums/emotiftype.h"
+#include "misc/sys.h"
 
-DlgWorklistCreate::DlgWorklistCreate(QWidget * parent) :  QDialog(parent), MosaicIOBase()
+DlgWorklistCreate::DlgWorklistCreate(QWidget * parent) :  QDialog(parent)
 {
     setWindowTitle("Create Worklist");
 
@@ -45,7 +46,7 @@ DlgWorklistCreate::DlgWorklistCreate(QWidget * parent) :  QDialog(parent), Mosai
      "design"
     };
 
-    for (const auto & style : styles)
+    for (const auto & style : std::as_const(styles))
     {
         styleNames->addItem(style);
     }
@@ -97,6 +98,6 @@ DlgWorklistCreate::DlgWorklistCreate(QWidget * parent) :  QDialog(parent), Mosai
 QStringList DlgWorklistCreate::selectedMotifNames()
 {
     eMotifType type = (eMotifType) motifNames->currentIndex();
-    QList<QString> qls = motifRepresentation.values(type);
+    QStringList qls = Sys::getMotifNames(type);
     return qls;
 }

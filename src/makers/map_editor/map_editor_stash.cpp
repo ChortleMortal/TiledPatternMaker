@@ -1,9 +1,12 @@
+#include <QTimer>
+#include <QFile>
+#include <QDebug>
+
 #include "makers/map_editor/map_editor_stash.h"
 #include "makers/map_editor/map_editor_db.h"
 #include "misc/fileservices.h"
-#include "settings/configuration.h"
-#include "viewers/viewcontrol.h"
-#include <QTimer>
+#include "misc/sys.h"
+#include "viewers/view.h"
 
 #define STASH_VERSION 3
 
@@ -57,7 +60,6 @@ bool MapEditorStash::writeStash(QString name)
 
     return true;
 }
-
 
 bool MapEditorStash::destash()
 {
@@ -200,8 +202,7 @@ bool MapEditorStash::saveTemplate(QString name)
 
     QString currentName = getStashName(current);
 
-    Configuration * config = Configuration::getInstance();
-    QString file = config->templateDir + name + ".dat";
+    QString file = Sys::templateDir + name + ".dat";
 
     QFile afile(file);
     if (afile.exists())
@@ -256,13 +257,11 @@ QString MapEditorStash::getStashName(int index)
 
 void MapEditorStash::slot_nextAnimationStep()
 {
-    ViewControl * view = ViewControl::getInstance();
-
     while (!localLines.isEmpty())
     {
         QLineF line = localLines.takeFirst();
         db->constructionLines.push_back(line);
-        view->update();
+        Sys::view->update();
         return;
     }
 
@@ -270,7 +269,7 @@ void MapEditorStash::slot_nextAnimationStep()
     {
         auto cp = localCircs.takeFirst();
         db->constructionCircles.push_back(cp);
-        view->update();
+        Sys::view->update();
         return;
     }
 

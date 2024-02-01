@@ -6,32 +6,46 @@
 #include <QMessageBox>
 #include <QProcess>
 #include <QFile>
+#include <QMultiMap>
 
-#include "legacy/design.h"
 #include "panels/page_loaders.h"
-#include "panels/panel_misc.h"
+#include "legacy/design.h"
 #include "legacy/design_maker.h"
+#include "makers/mosaic_maker/mosaic_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "misc/fileservices.h"
 #include "misc/pugixml.hpp"
-#include "makers/mosaic_maker/mosaic_maker.h"
 #include "panels/controlpanel.h"
+#include "panels/panel_misc.h"
 #include "settings/configuration.h"
 #include "tiledpatternmaker.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
+#include "widgets/dlg_listnameselect.h"
 #include "widgets/dlg_rebase.h"
 #include "widgets/dlg_rename.h"
 #include "widgets/layout_sliderset.h"
+
+#define LOADER_MAX_HEIGHT   580
 
 using namespace pugi;
 
 Q_DECLARE_METATYPE(eTILM_Event)
 
-page_loaders::page_loaders(ControlPanel * apanel) : panel_page(apanel,"Load")
+page_loaders::page_loaders(ControlPanel * apanel) : panel_page(apanel,PAGE_LOAD,"Load")
 {
     selectedDesign = NO_DESIGN;
 
-    setupUI();
+    QHBoxLayout * loaderLayout = new QHBoxLayout;
+
+    loaderLayout->addWidget(createLegacyColumn());
+    loaderLayout->addWidget(createMosaicColumn());
+    loaderLayout->addWidget(createTilingColumn());
+
+    vbox->addLayout(loaderLayout);
+    vbox->addStretch();
+
+    cbAutoLoadDesigns->setChecked(config->autoLoadDesigns);
+    cbShowWithImages->setChecked(config->showWithBkgds);
 
     mosaicFilter->setText(config->mosaicFilter);
     mosaicFilterCheck->setChecked(config->mosaicFilterCheck);
@@ -39,13 +53,18 @@ page_loaders::page_loaders(ControlPanel * apanel) : panel_page(apanel,"Load")
     mosaicOrigChk->setChecked(config->mosaicOrigCheck);
     mosaicNewChk->setChecked(config->mosaicNewCheck);
     mosaicTestChk->setChecked(config->mosaicTestCheck);
+    cbAutoLoadMosaics->setChecked(config->autoLoadStyles);
 
+#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
+    mosaicSortChk->setChecked(config->mosaicSortCheck);
+#endif
     tilingFilter->setText(config->tileFilter);
     tilingFilterCheck->setChecked(config->tileFilterCheck);
     tilingOrigChk->setChecked(config->tilingOrigCheck);
     tilingNewChk->setChecked(config->tilingNewCheck);
     tilingTestChk->setChecked(config->tilingTestCheck);
     tilingWorklistCheck->setChecked(config->tilingWorklistCheck);
+    cbAutoLoadTiling->setChecked(config->autoLoadTiling);
 
     // make connections before making selections
     makeConnections();
@@ -60,162 +79,184 @@ page_loaders::page_loaders(ControlPanel * apanel) : panel_page(apanel,"Load")
     loadMosaicCombo();
 }
 
-void page_loaders::setupUI()
+// design patterns (shapes)
+QGroupBox * page_loaders::createLegacyColumn()
 {
-#define LOADER_MAX_HEIGHT   580
-    designList = new LoaderListWidget();
-    designList->setFixedSize(201,LOADER_MAX_HEIGHT);
-    designList->setSelectionMode(QAbstractItemView::SingleSelection);
-
-    mosaicList = new VersionedListWidget();
-    mosaicList->setFixedSize(231,LOADER_MAX_HEIGHT);
-    mosaicList->setSelectionMode(QAbstractItemView::SingleSelection);
-
-    tileList = new VersionedListWidget();
-    tileList->setFixedSize(201,LOADER_MAX_HEIGHT);
-    tileList->setSelectionMode(QAbstractItemView::SingleSelection);
+    // first row
+    cbAutoLoadDesigns = new QCheckBox("Auto-load");
 
     pbLoadShapes = new QPushButton("Load Fixed Design");
     pbLoadShapes->setFixedWidth(119);
     pbLoadShapes->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
 
-    pbLoadTiling = new QPushButton("Load Tiling");
-    pbLoadTiling->setFixedWidth(119);
-    pbLoadTiling->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
+    QHBoxLayout * hbox = new QHBoxLayout();
+    hbox->addWidget(cbAutoLoadDesigns);
+    hbox->addStretch();
+    hbox->addWidget(pbLoadShapes);
 
-    pbTilingLoadMulti   = new QPushButton("Load Additonal");
-    pbTilingLoadModify  = new QPushButton("Load Replace");
+    // second row
+    QLabel * dummy2 = new QLabel(" ");
+
+    // 3rd row
+    QLabel * dummy3 = new QLabel(" ");
+
+    // 4th row
+    cbShowWithImages = new QCheckBox("Show with background images");
+
+    // list widget
+    designList = new LoaderListWidget();
+    designList->setFixedSize(201,LOADER_MAX_HEIGHT);
+    designList->setSelectionMode(QAbstractItemView::SingleSelection);
+
+    // column layout
+    QVBoxLayout * designLayout = new QVBoxLayout;
+    designLayout->addLayout(hbox);
+    designLayout->addWidget(dummy2);
+    designLayout->addWidget(dummy3);
+    designLayout->addWidget(cbShowWithImages);
+    designLayout->addWidget(designList);
+
+    QGroupBox * designGroup = new QGroupBox();
+    designGroup->setLayout(designLayout);
+
+    return designGroup;
+}
+
+// Mosaics
+QGroupBox * page_loaders::createMosaicColumn()
+{
+    // first row
+    cbAutoLoadMosaics = new QCheckBox("Auto-load");
 
     pbLoadXML = new QPushButton("Load Mosaic");
     pbLoadXML->setFixedWidth(119);
     pbLoadXML->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
 
-    cbAutoLoadMosaics = new QCheckBox("Auto-load");
-    cbAutoLoadTiling  = new QCheckBox("Auto-load");
-    cbAutoLoadDesigns = new QCheckBox("Auto-load");
+    QHBoxLayout * hbox1 = new QHBoxLayout();
+    hbox1->addWidget(cbAutoLoadMosaics);
+    hbox1->addStretch();
+    hbox1->addWidget(pbLoadXML);
 
+    // second row
     mosaicOrigChk = new QCheckBox("Original");
     mosaicNewChk  = new QCheckBox("New");
     mosaicTestChk = new QCheckBox("Test");
 
+    AQHBoxLayout * hbox2 = new AQHBoxLayout();
+    hbox2->addWidget(mosaicOrigChk);
+    hbox2->addWidget(mosaicNewChk);
+    hbox2->addWidget(mosaicTestChk);
+    hbox2->addStretch();
+
+    // third row
+    mosaicWorklistCheck = new QCheckBox("Worklist");
+
+    mosaicFilter = new QLineEdit();
+    mosaicFilter->setFixedWidth(81);
+    mosaicFilterCheck = new QCheckBox("Filter");
+
+    QHBoxLayout * hbox3 = new QHBoxLayout();
+    hbox3->addWidget(mosaicWorklistCheck);
+    hbox3->addWidget(mosaicFilterCheck);
+    hbox3->addWidget(mosaicFilter);
+    hbox3->addStretch();
+
+    // fourth row
+#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
+    mosaicSortChk = new QCheckBox("Sort Mosaics && Tilings by date written");
+#endif
+
+    AQHBoxLayout * hbox4 = new AQHBoxLayout();
+#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
+    hbox4->addWidget(mosaicSortChk);
+#endif
+    hbox4->addStretch();
+
+    // list widget
+    mosaicList = new VersionedListWidget();
+    mosaicList->setFixedSize(231,LOADER_MAX_HEIGHT);
+    mosaicList->setSelectionMode(QAbstractItemView::SingleSelection);
+
+    QVBoxLayout * mosaicLayout = new QVBoxLayout;
+    mosaicLayout->addLayout(hbox1);
+    mosaicLayout->addLayout(hbox2);
+    mosaicLayout->addLayout(hbox3);
+    mosaicLayout->addLayout(hbox4);
+    mosaicLayout->addWidget(mosaicList);
+
+    QGroupBox * mosaicGroup = new QGroupBox();
+    mosaicGroup->setLayout(mosaicLayout);
+
+    return mosaicGroup;
+}
+
+// tiling
+QGroupBox * page_loaders::createTilingColumn()
+{
+    // first row
+    cbAutoLoadTiling  = new QCheckBox("Auto-load");
+
+    pbLoadTiling = new QPushButton("Load Tiling");
+    pbLoadTiling->setFixedWidth(119);
+    pbLoadTiling->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
+
+    AQHBoxLayout * hbox = new AQHBoxLayout();
+    hbox->addWidget(cbAutoLoadTiling);
+    hbox->addStretch();
+    hbox->addWidget(pbLoadTiling);
+
+    // second row
     tilingOrigChk = new QCheckBox("Original");
     tilingNewChk  = new QCheckBox("New");
     tilingTestChk = new QCheckBox("Test");
 
-    tilingFilter = new QLineEdit();
-    tilingFilter->setFixedWidth(81);
-    mosaicFilter = new QLineEdit();
-    mosaicFilter->setFixedWidth(81);
-    mosaicFilterCheck = new QCheckBox("Filter");
-    mosaicWorklistCheck = new QCheckBox("Worklist");
+    QHBoxLayout * hbox2 = new QHBoxLayout();
+    hbox2->addWidget(tilingOrigChk);
+    hbox2->addWidget(tilingNewChk);
+    hbox2->addWidget(tilingTestChk);
+    hbox2->addStretch();
+
+    // third row
     tilingWorklistCheck = new QCheckBox("Worklist");
     tilingFilterCheck = new QCheckBox("Filter");
+    tilingFilter = new QLineEdit();
+    tilingFilter->setFixedWidth(81);
 
-    QLabel * dummy1 = new QLabel(" ");
-    QLabel * dummy2 = new QLabel(" ");
-    QLabel * dummy3 = new QLabel(" ");
+    QHBoxLayout * hbox3 = new QHBoxLayout();
+    hbox3->addWidget(tilingWorklistCheck);
+    hbox3->addWidget(tilingFilterCheck);
+    hbox3->addWidget(tilingFilter);
+    hbox3->addStretch();
 
-    QVBoxLayout * designLayout = new QVBoxLayout;
-    QVBoxLayout * mosaicLayout = new QVBoxLayout;
+    // fourth row
+    pbTilingLoadMulti   = new QPushButton(" Load Additonal ");
+    pbTilingLoadModify  = new QPushButton(" Load Replace ");
+
+    QHBoxLayout * hbox4 = new QHBoxLayout();
+    hbox4->addWidget(pbTilingLoadModify);
+    hbox4->addStretch();
+    hbox4->addWidget(pbTilingLoadMulti);
+
+    // list widget
+    tileList = new VersionedListWidget();
+    tileList->setFixedSize(201,LOADER_MAX_HEIGHT);
+    tileList->setSelectionMode(QAbstractItemView::SingleSelection);
+
     QVBoxLayout * tilingLayout = new QVBoxLayout;
-
-    // designs
-    QHBoxLayout  * hbox;
-    QHBoxLayout  * hbox2;
-    AQHBoxLayout * hbox3;
-    QHBoxLayout  * hbox4;
-
-    // design patterns (shapes)
-    hbox = new QHBoxLayout();
-    hbox->addWidget(cbAutoLoadDesigns);
-    hbox->addStretch();
-    hbox->addWidget(pbLoadShapes);
-
-    designLayout->addLayout(hbox);
-    designLayout->addWidget(dummy1);
-    designLayout->addWidget(dummy2);
-    designLayout->addWidget(designList);
-
-    // Mosaics
-    hbox = new QHBoxLayout();
-    hbox->addWidget(mosaicWorklistCheck);
-    hbox->addWidget(mosaicFilterCheck);
-    hbox->addWidget(mosaicFilter);
-    hbox->addStretch();
-
-    hbox2 = new QHBoxLayout();
-    hbox2->addWidget(cbAutoLoadMosaics);
-    hbox2->addStretch();
-    hbox2->addWidget(pbLoadXML);
-
-    hbox3 = new AQHBoxLayout();
-    hbox3->addWidget(dummy3);
-    hbox3->addStretch();
-
-    hbox4 = new AQHBoxLayout();
-    hbox4->addWidget(mosaicOrigChk);
-    hbox4->addWidget(mosaicNewChk);
-    hbox4->addWidget(mosaicTestChk);
-    hbox4->addStretch();
-
-    mosaicLayout->addLayout(hbox2);
-    mosaicLayout->addLayout(hbox4);
-    mosaicLayout->addLayout(hbox);
-    mosaicLayout->addLayout(hbox3);
-    mosaicLayout->addWidget(mosaicList);
-
-    // tiling
-    hbox = new QHBoxLayout();
-    hbox->addWidget(tilingWorklistCheck);
-    hbox->addWidget(tilingFilterCheck);
-    hbox->addWidget(tilingFilter);
-    hbox->addStretch();
-
-    hbox2 = new QHBoxLayout();
-    hbox2->addWidget(pbTilingLoadModify);
-    hbox2->addStretch();
-    hbox2->addWidget(pbTilingLoadMulti);
-
-    hbox3 = new AQHBoxLayout();
-    hbox3->addWidget(cbAutoLoadTiling);
-    hbox3->addStretch();
-    hbox3->addWidget(pbLoadTiling);
-
-    hbox4 = new QHBoxLayout();
-    hbox4->addWidget(tilingOrigChk);
-    hbox4->addWidget(tilingNewChk);
-    hbox4->addWidget(tilingTestChk);
-    hbox4->addStretch();
-
-    tilingLayout->addLayout(hbox3);
-    tilingLayout->addLayout(hbox4);
     tilingLayout->addLayout(hbox);
     tilingLayout->addLayout(hbox2);
+    tilingLayout->addLayout(hbox3);
+    tilingLayout->addLayout(hbox4);
     tilingLayout->addWidget(tileList);
 
-    QGroupBox * designGroup = new QGroupBox();
-    QGroupBox * mosaicGroup = new QGroupBox();
     QGroupBox * tilingGroup = new QGroupBox();
-    designGroup->setLayout(designLayout);
-    mosaicGroup->setLayout(mosaicLayout);
     tilingGroup->setLayout(tilingLayout);
 
-    QHBoxLayout * loaderLayout = new QHBoxLayout;
-    loaderLayout->addWidget(designGroup);
-    loaderLayout->addWidget(mosaicGroup);
-    loaderLayout->addWidget(tilingGroup);
-
-    vbox->addLayout(loaderLayout);
-    vbox->addStretch();
-
-    cbAutoLoadMosaics->setChecked(config->autoLoadStyles);
-    cbAutoLoadTiling->setChecked(config->autoLoadTiling);
-    cbAutoLoadDesigns->setChecked(config->autoLoadDesigns);
+    return tilingGroup;
 }
 
 void page_loaders::makeConnections()
 {
-
     connect(mosaicMaker,    &MosaicMaker::sig_mosaicLoaded,         this,   &page_loaders::slot_mosaicLoaded);
     connect(mosaicMaker,    &MosaicMaker::sig_mosaicWritten,        this,   &page_loaders::slot_newXML);
     connect(tilingMaker,    &TilingMaker::sig_tilingLoaded,         this,   &page_loaders::slot_tilingLoaded);
@@ -224,7 +265,7 @@ void page_loaders::makeConnections()
 
     connect(theApp,         &TiledPatternMaker::sig_workListChanged,this,   &page_loaders::loadMosaicCombo);
 
-    connect(pbLoadXML,      &QPushButton::clicked,                  this,   &page_loaders::loadXML);
+    connect(pbLoadXML,      &QPushButton::clicked,                  this,   &page_loaders::loadMosaic);
     connect(pbLoadTiling,   &QPushButton::clicked,                  this,   &page_loaders::slot_loadTiling);
     connect(pbTilingLoadModify, &QPushButton::clicked,              this,   &page_loaders::slot_loadTilingModify);
     connect(pbTilingLoadMulti,  &QPushButton::clicked,              this,   &page_loaders::slot_loadTilingMulti);
@@ -234,15 +275,19 @@ void page_loaders::makeConnections()
     connect(mosaicFilterCheck, &QCheckBox::clicked,                 this,   &page_loaders::slot_mosaicCheck);
     connect(mosaicWorklistCheck, &QCheckBox::clicked,               this,   &page_loaders::slot_mosaicWorklistCheck);
     connect(tilingWorklistCheck, &QCheckBox::clicked,               this,   &page_loaders::slot_tilingWorklistCheck);
+
     connect(mosaicOrigChk,  &QCheckBox::clicked,                    this,   &page_loaders::slot_mosOrigCheck);
     connect(mosaicNewChk,   &QCheckBox::clicked,                    this,   &page_loaders::slot_mosNewCheck);
     connect(mosaicTestChk,  &QCheckBox::clicked,                    this,   &page_loaders::slot_mosTestCheck);
+#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
+    connect(mosaicSortChk,  &QCheckBox::clicked,                    this,   &page_loaders::slot_mosSortCheck);
+#endif
+    connect(cbShowWithImages, &QCheckBox::clicked,                  this,   &page_loaders::slot_showWithBkgds);
     connect(tilingOrigChk,  &QCheckBox::clicked,                    this,   &page_loaders::slot_tilingOrigCheck);
     connect(tilingNewChk,   &QCheckBox::clicked,                    this,   &page_loaders::slot_tilingNewCheck);
     connect(tilingTestChk,  &QCheckBox::clicked,                    this,   &page_loaders::slot_tilingTestCheck);
     connect(tilingFilterCheck, &QCheckBox::clicked,                 this,   &page_loaders::slot_tilingCheck);
-    connect(this,           &page_loaders::sig_loadMosaic,          mosaicMaker,        &MosaicMaker::slot_loadMosaic);
-    connect(this,           &page_loaders::sig_loadTiling,          tilingMaker,        &TilingMaker::slot_loadTiling);
+
     connect(this,           &page_loaders::sig_loadDesign,          designMaker,        &DesignMaker::slot_loadDesign);
     connect(this,           &page_loaders::sig_buildDesign,         designMaker,        &DesignMaker::slot_buildDesign);
 
@@ -254,9 +299,8 @@ void page_loaders::makeConnections()
     connect(mosaicList,     &QListWidget::itemClicked,              this,   &page_loaders::mosaicClicked);
     connect(mosaicList,     &LoaderListWidget::itemEntered,         this,   &page_loaders::slot_mosaicItemEnteredToolTip);
     connect(mosaicList,     SIGNAL(rightClick(QPoint)),             this,   SLOT(xmlRightClick(QPoint)));
-    connect(mosaicList,     SIGNAL(leftDoubleClick(QPoint)),        this,   SLOT(loadXML()));
-    connect(mosaicList,     SIGNAL(listEnter()),                    this,   SLOT(loadXML()));
-
+    connect(mosaicList,     SIGNAL(leftDoubleClick(QPoint)),        this,   SLOT(loadMosaic()));
+    connect(mosaicList,     SIGNAL(listEnter()),                    this,   SLOT(loadMosaic()));
     connect(tileList,       &LoaderListWidget::leftDoubleClick,     this,   &page_loaders::slot_loadTiling);
     connect(tileList,       &QListWidget::currentItemChanged,       this,   &page_loaders::tilingSelected);
     connect(tileList,       &QListWidget::itemClicked,              this,   &page_loaders::tilingClicked);
@@ -322,6 +366,22 @@ void page_loaders::slot_mosTestCheck(bool check)
     loadMosaicCombo();
 }
 
+void page_loaders::slot_mosSortCheck(bool check)
+{
+    config->mosaicSortCheck = check;
+    // unusually do both
+    loadTilingsCombo();
+    loadMosaicCombo();
+}
+
+void page_loaders::slot_showWithBkgds(bool check)
+{
+    config->showWithBkgds = check;
+    // unusually do both
+    loadTilingsCombo();
+    loadMosaicCombo();
+}
+
 void page_loaders::slot_tilingOrigCheck(bool check)
 {
     config->tilingOrigCheck = check;
@@ -349,7 +409,6 @@ void page_loaders::slot_tilingCheck(bool check)
 
 void page_loaders::slot_newTile(QString name)
 {
-    config->lastLoadedTileName = name;
     loadTilingsCombo();
 }
 
@@ -358,36 +417,35 @@ void page_loaders::slot_newXML()
     loadMosaicCombo();
 }
 
-void page_loaders::loadXML()
+void page_loaders::loadMosaic()
 {
-    if (selectedXMLName.isEmpty())
+    if (selecteMosaicName.isEmpty())
     {
         return;
     }
 
-    emit sig_loadMosaic(selectedXMLName,false);
+    mosaicMaker->loadMosaic(selecteMosaicName);
 
     if (!config->lockView)
     {
        panel->selectViewer(VIEW_MOSAIC);
     }
-    //view->setMouseMode
-    emit sig_refreshView();
 }
 
 void page_loaders::loadTiling(eTILM_Event event)
 {
-    if (event != TILM_RELOAD && !view->isEnabled(VIEW_TILING_MAKER))
+    if (selectedTilingName.isEmpty())
+    {
+        return;
+    }
+
+    tilingMaker->loadTiling(selectedTilingName,event);
+
+    if (event != TILM_RELOAD && !viewControl->isEnabled(VIEW_TILING_MAKER))
     {
         // delegate the view
         panel->selectViewer(VIEW_TILING);
     }
-
-    QString name = selectedTilingName;
-
-    emit sig_loadTiling(name,event);
-
-    emit sig_refreshView();
 }
 
 void page_loaders::loadTiling2()
@@ -428,11 +486,11 @@ void page_loaders::slot_mosaicLoaded(QString name)
     mosaicList->blockSignals(true);
     if (mosaicList->selectItemByName(name))
     {
-        selectedXMLName = name;
+        selecteMosaicName = name;
     }
     else
     {
-        selectedXMLName.clear();
+        selecteMosaicName.clear();
     }
     mosaicList->blockSignals(false);
 
@@ -448,7 +506,6 @@ void page_loaders::slot_tilingLoaded(QString name)
     if (tileList->selectItemByName(name))
     {
         selectedTilingName = name;
-        config->lastLoadedTileName = name;
     }
     tileList->blockSignals(false);
 }
@@ -460,7 +517,6 @@ void page_loaders::slot_loadedDesign(eDesign design)
     if (designList->selectItemByValue(design))
     {
         selectedDesign =  design;
-        config->lastLoadedDesignId = design;
     }
     designList->blockSignals(false);
 }
@@ -489,9 +545,9 @@ void page_loaders::loadDesignCombo()
     designList->blockSignals(true);
 
     QListWidgetItem * currentItem = nullptr;
-    auto designs = designMaker->getAvailDesigns();
-    QMap<eDesign, DesignPtr>::const_iterator it =  designs.constBegin();
-    while (it != designs.constEnd())
+    auto designSet = designMaker->getAvailDesigns();
+    QMap<eDesign, DesignPtr>::const_iterator it =  designSet.constBegin();
+    while (it != designSet.constEnd())
     {
         eDesign id   = it.key();
         DesignPtr dp = it.value();
@@ -499,7 +555,8 @@ void page_loaders::loadDesignCombo()
         item->setText(dp->getTitle());
         item->setData(Qt::UserRole,id);
         designList->addItem(item);
-        if (config->lastLoadedDesignId == id)
+        eDesign  des = (eDesign)designs.key(config->lastLoadedLegacyDes);
+        if (des == id)
         {
             currentItem = item;
         }
@@ -522,19 +579,75 @@ void page_loaders::loadMosaicCombo()
     {
         ltype = WORKLIST;
     }
-    auto list = FileServices::getMosaicNames(ltype);
 
-    mosaicList->blockSignals(true);
-    mosaicList->addItemList(list);
-    mosaicList->blockSignals(false);
-    if (mosaicList->selectItemByName(config->lastLoadedXML))
+    QStringList  list = FileServices::getMosaicNames(ltype);
+    if (config->showWithBkgds)
     {
-        selectedXMLName = config->lastLoadedXML;
+        list = findMosaicsWithBkgds(list);
+    }
+
+#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
+    if (mosaicSortChk->isChecked())
+    {
+        theApp->splash("Preparing mosaic list ....");
+        list = sortMosaicsByDate(list);
+        theApp->removeSplash();
+
+        mosaicList->blockSignals(true);
+        mosaicList->rawAdd(list);
+        mosaicList->blockSignals(false);
     }
     else
     {
-        config->lastLoadedXML.clear();
+        mosaicList->blockSignals(true);
+        mosaicList->addItemList(list);
+        mosaicList->blockSignals(false);
     }
+#else
+    mosaicList->blockSignals(true);
+    mosaicList->addItemList(list);
+    mosaicList->blockSignals(false);
+#endif
+
+    if (mosaicList->selectItemByName(config->lastLoadedMosaic))
+    {
+        selecteMosaicName = config->lastLoadedMosaic;
+    }
+    else
+    {
+        config->lastLoadedMosaic.clear();
+    }
+}
+
+QStringList page_loaders::findMosaicsWithBkgds(const QStringList &names)
+{
+    QStringList qsl;
+    for (auto & name : std::as_const(names))
+    {
+        QString designFile = FileServices::getMosaicXMLFile(name);
+
+        QFile XMLFile(designFile);
+        XMLFile.open(QIODevice::ReadOnly);
+        QTextStream in (&XMLFile);
+        const QString content = in.readAll();
+        if (content.contains("<BackgroundImage"))
+        {
+            qsl << name;
+        }
+        else
+        {
+            // could be in tiling
+            // find tiling
+            QString tilingName = FileServices::getTileNameFromDesignName(name);
+            // is tiling in tiling list
+            auto qlist = tileList->findItems(tilingName,Qt::MatchExactly);
+            if (qlist.size() > 0)
+            {
+                qsl << name;
+            }
+        }
+    }
+    return qsl;
 }
 
 void page_loaders::loadTilingsCombo()
@@ -546,14 +659,26 @@ void page_loaders::loadTilingsCombo()
     {
         ltype = WORKLIST;
     }
+
     QStringList qsl = FileServices::getTilingNames(ltype);
+    if (config->showWithBkgds)
+    {
+        qsl = findTilingsWithBkgds(qsl);
+    }
+
+#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
+    if (mosaicSortChk->isChecked())
+    {
+        // unusually use smae flag for mosaics and tilings
+        theApp->splash("Preparing tiling list ....");
+        qsl = sortTilingsByDate(qsl);
+        theApp->removeSplash();
+    }
+#endif
 
     tileList->blockSignals(true);
     tileList->clear(); // erase
-
-    //tileList->addItemList(qsl);
     int row = 0;
-    bool dark = config->darkTheme;
     for (auto it = qsl.begin(); it != qsl.end(); it++, row++)
     {
         QString tileName = *it;
@@ -561,23 +686,43 @@ void page_loaders::loadTilingsCombo()
         tileList->addItem(tileName);
         if (usecount == 0)
         {
-            if (dark)
+            if (Sys::isDarkTheme)
                 tileList->item(row)->setForeground(Qt::lightGray);
             else
                 tileList->item(row)->setForeground(Qt::gray);
         }
     }
 
-    if (tileList->selectItemByName(config->lastLoadedTileName))
+    if (tileList->selectItemByName(config->lastLoadedTiling))
     {
-        selectedTilingName = config->lastLoadedTileName;
+        selectedTilingName = config->lastLoadedTiling;
     }
     else
     {
         selectedTilingName.clear();
-        config->lastLoadedTileName.clear();
+        config->lastLoadedTiling.clear();
     }
     tileList->blockSignals(false);
+}
+
+QStringList page_loaders::findTilingsWithBkgds(const QStringList & names)
+{
+    QStringList qsl;
+
+    for (auto & name : std::as_const(names))
+    {
+        QString designFile = FileServices::getTilingXMLFile(name);
+
+        QFile XMLFile(designFile);
+        XMLFile.open(QIODevice::ReadOnly);
+        QTextStream in (&XMLFile);
+        const QString content = in.readAll();
+        if (content.contains("<BackgroundImage"))
+        {
+            qsl << name;
+        }
+    }
+    return qsl;
 }
 
 void page_loaders::designSelected(QListWidgetItem * item, QListWidgetItem* oldItem)
@@ -588,6 +733,7 @@ void page_loaders::designSelected(QListWidgetItem * item, QListWidgetItem* oldIt
     emit sig_loadDesign(selectedDesign);
 }
 
+
 void page_loaders::tilingSelected(QListWidgetItem *item, QListWidgetItem *oldItem)
 {
     Q_UNUSED(oldItem)
@@ -597,7 +743,7 @@ void page_loaders::tilingSelected(QListWidgetItem *item, QListWidgetItem *oldIte
 void page_loaders::mosaicSelected(QListWidgetItem *item, QListWidgetItem *oldItem)
 {
     Q_UNUSED(oldItem)
-    selectedXMLName = item->text();
+    selecteMosaicName = item->text();
 }
 
 void page_loaders::designClicked(QListWidgetItem * item)
@@ -615,7 +761,7 @@ void page_loaders::tilingClicked(QListWidgetItem *item)
 
 void page_loaders::mosaicClicked(QListWidgetItem *item)
 {
-    selectedXMLName = item->text();
+    selecteMosaicName = item->text();
 }
 
 void page_loaders::slot_mosaicItemEnteredToolTip(QListWidgetItem * item)
@@ -663,10 +809,13 @@ void page_loaders::desRightClick(QPoint pos)
 void page_loaders::xmlRightClick(QPoint pos)
 {
     QMenu myMenu;
-    myMenu.addSection(selectedXMLName);
-    myMenu.addSection(FileServices::getTileNameFromDesignName(selectedXMLName));
-    myMenu.addAction("Load",       this, SLOT(loadXML()));
+    myMenu.addSection(selecteMosaicName);
+    myMenu.addSection(FileServices::getTileNameFromDesignName(selecteMosaicName));
+    myMenu.addAction("Load",       this, SLOT(loadMosaic()));
     myMenu.addAction("View XML",   this, SLOT(openXML()));
+#ifdef Q_OS_WINDOWS
+    myMenu.addAction("Show in Dir",this, SLOT(showXMLDir()));
+#endif
     myMenu.addAction("Tiling used",this, SLOT(showTilings()));
     myMenu.addAction("Rename",     this, SLOT(renameXML()));
     myMenu.addAction("Rebase",     this, SLOT(rebaseXML()));
@@ -692,7 +841,7 @@ void page_loaders::tileRightClick(QPoint pos)
 
 void page_loaders::openXML()
 {
-    QString name = selectedXMLName;
+    QString name = selecteMosaicName;
     QString path = FileServices::getMosaicXMLFile(name);
     if (path.isEmpty())
     {
@@ -718,10 +867,36 @@ void page_loaders::openXML()
     QProcess::startDetached(cmd,qsl);
 }
 
+#ifdef Q_OS_WINDOWS
+void page_loaders::showXMLDir()
+{
+    QString name = selecteMosaicName;
+    QString path = FileServices::getMosaicXMLFile(name);
+    if (path.isEmpty())
+    {
+        return;
+    }
+    if (!QFile::exists(path))
+    {
+        return;
+    }
+
+    QString extendedName = name + ".xml";
+    path = path.remove(extendedName);
+
+    QString path2 = QDir::toNativeSeparators(path);
+    qDebug() <<  "Path2:" << path2;
+
+    QStringList args;
+    args << path2;
+
+    QProcess::startDetached("explorer",args);
+}
+#endif
 
 void page_loaders::rebaseXML()
 {
-    QString name    = selectedXMLName;
+    QString name    = selecteMosaicName;
 
     QString oldXMLPath = FileServices::getMosaicXMLFile(name);
     QString oldDatPath = FileServices::getMosaicTemplateFile(name);
@@ -806,8 +981,8 @@ void page_loaders::rebaseXML()
     QString newName = parts.join('.');
 
     // this is the new file
-    QString newXMLPath = config->newMosaicDir + newName + ".xml";
-    QString newDatPath = config->templateDir  + newName + ".dat";
+    QString newXMLPath = Sys::newMosaicDir + newName + ".xml";
+    QString newDatPath = Sys::templateDir  + newName + ".dat";
 
     // purge other versions
     Q_ASSERT(new_ver < old_ver);
@@ -861,18 +1036,20 @@ void page_loaders::rebaseXML()
     bfile.remove();             // it is ok for this to fail
 
     // setup
-    selectedXMLName = newName;
-    if (name == config->lastLoadedXML)
-        config->lastLoadedXML = newName;
-    if (name == config->currentlyLoadedXML)
-        config->currentlyLoadedXML = newName;
+    selecteMosaicName = newName;
+    if (name == config->lastLoadedMosaic)
+    {
+        LoadUnit & loadUnit = view->getLoadUnit();
+        loadUnit.setLoadState(LOADING_MOSAIC,newName);
+        loadUnit.resetLoadState();
+    }
     slot_newXML();
-    slot_mosaicLoaded(selectedXMLName);
+    slot_mosaicLoaded(selecteMosaicName);
 }
 
 void page_loaders::renameXML()
 {
-    QString name = selectedXMLName;
+    QString name = selecteMosaicName;
 
     DlgRename dlg(this);
 
@@ -930,12 +1107,15 @@ void page_loaders::renameXML()
     QMessageBox box(this);
     if (rv)
     {
-        selectedXMLName = newName;
-        if (name == config->lastLoadedXML)
-            config->lastLoadedXML = newName;
-        if (name == config->currentlyLoadedXML)
-            config->currentlyLoadedXML = newName;
-        slot_mosaicLoaded(selectedXMLName);
+        selecteMosaicName = newName;
+        if (name == config->lastLoadedMosaic)
+        {
+            LoadUnit & loadUnit = view->getLoadUnit();
+            loadUnit.setLoadState(LOADING_MOSAIC,newName);
+            loadUnit.resetLoadState();
+        }
+
+        slot_mosaicLoaded(selecteMosaicName);
         box.setText("Rename OK");
     }
     else
@@ -948,7 +1128,7 @@ void page_loaders::renameXML()
 
 void page_loaders::addToWorklist()
 {
-    QString name = selectedXMLName;
+    QString name = selecteMosaicName;
     Q_ASSERT(!name.contains(".xml"));
 
     if (name.isEmpty())
@@ -968,7 +1148,7 @@ void page_loaders::addToWorklist()
 
 void page_loaders::deleteXML()
 {
-    QString name = selectedXMLName;
+    QString name = selecteMosaicName;
     Q_ASSERT(!name.contains(".xml"));
 
     QMessageBox box(this);
@@ -1010,7 +1190,7 @@ void page_loaders::deleteXML()
     QMessageBox box2(this);
     if (rv)
     {
-        slot_mosaicLoaded(selectedXMLName);
+        slot_mosaicLoaded(selecteMosaicName);
         box2.setText("Deleted OK");
     }
     else
@@ -1023,7 +1203,7 @@ void page_loaders::deleteXML()
 
 void page_loaders::showTilings()
 {
-    QString tilingName = FileServices::getTileNameFromDesignName(selectedXMLName);
+    QString tilingName = FileServices::getTileNameFromDesignName(selecteMosaicName);
 
     QString results = "<pre>";
     results += tilingName;
@@ -1153,7 +1333,7 @@ void page_loaders::rebaseTiling()
     QString newName = parts.join('.');
 
     // this is the new file
-    QString newPath = config->newTileDir + newName + ".xml";
+    QString newPath = Sys::newTileDir + newName + ".xml";
 
     // purge other versions
     Q_ASSERT(new_ver < old_ver);
@@ -1206,7 +1386,7 @@ void page_loaders::renameTiling()
 
     // select new name
     bool fixupName = false;
-    if (config->lastLoadedTileName == name)
+    if (config->lastLoadedTiling == name)
         fixupName = true;
 
     DlgRename dlg(this);
@@ -1284,7 +1464,11 @@ void page_loaders::renameTiling()
         afile.remove();     // delete old file
 
         if (fixupName)
-            config->lastLoadedTileName = newName;
+        {
+            LoadUnit & loadUnit = view->getLoadUnit();
+            loadUnit.setLoadState(LOADING_TILING,newName);
+            loadUnit.resetLoadState();
+        }
 
         slot_newTile(newName);
 
@@ -1361,29 +1545,33 @@ void  page_loaders::slot_whereTilingUsed()
     QStringList used;
     int found = whereTilingUsed(name,used);
 
-    QString results = "<pre>";
-    if (found)
-    {
-        for (int i=0; i < used.size(); i++)
-        {
-            QString designFile = used[i];
-            results += designFile;
-            results += "<br>";
-        }
-    }
     if (found == 0)
     {
-        results += "<br><br>Tiling NOT used<br><br>";
+        QMessageBox box(this);
+        box.setWindowTitle(QString("Where tiling %1 is used ").arg(name));
+        box.setText("Tiling NOT used");
+        box.exec();
+        return;
     }
-    results += "</pre>";
 
-    QMessageBox box(this);
-    box.setWindowTitle(QString("Where tiling %1 is used ").arg(name));
-    box.setText(results);
-    box.exec();
+    DlgListNameSelect dlg(used);
+    int rv = dlg.exec();
 
+    if (rv == QDialog::Accepted)
+    {
+        QString str = dlg.newEdit->text();
+        QString name = FileServices::stripPath(str);
+        name = name.remove(".xml");
+
+        mosaicMaker->loadMosaic(name);
+
+        if (!config->lockView)
+        {
+            panel->selectViewer(VIEW_MOSAIC);
+        }
+        emit sig_refreshView();
+    }
 }
-
 
 int page_loaders::whereTilingUsed(QString name, QStringList & results)
 {
@@ -1526,3 +1714,73 @@ void  page_loaders::autoLoadDesignsClicked(bool enb)
 {
     config->autoLoadDesigns = enb;
 }
+
+QStringList page_loaders::sortMosaicsByDate(const QStringList & names)
+{
+    QStringList results;
+
+#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
+
+    QMultiMap<int,QString> datedMosaics;
+
+    for (auto & name : std::as_const(names))
+    {
+        QString filename = FileServices::getMosaicXMLFile(name);
+        if (!filename.isEmpty())
+        {
+            QDate date =  FileServices::getDateFromXMLFile(filename);
+            int idate = 0;
+            if (date.isValid())
+            {
+                idate = date.year() * 1000 + date.month() * 100 + date.day();
+            }
+            datedMosaics.insert(idate,name);
+        }
+    }
+
+    // multimap sorts by key - so it is already sorted
+    // just put the values into the result
+    QMultiMapIterator<int, QString> i(datedMosaics);
+    while (i.hasNext())
+    {
+        i.next();
+        results.push_front(i.value());
+    }
+#endif
+
+    return results;
+}
+
+QStringList page_loaders::sortTilingsByDate(const QStringList & names)
+{
+    QStringList results;
+
+#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
+
+    QMultiMap<int,QString> datedMosaics;
+
+    for (auto & name : std::as_const(names))
+    {
+        QString filename = FileServices::getTilingXMLFile(name);
+        QDate date =  FileServices::getDateFromXMLFile(filename);
+        int idate = 0;
+        if (date.isValid())
+        {
+            idate = date.year() * 1000 + date.month() * 100 + date.day();
+        }
+        datedMosaics.insert(idate,name);
+    }
+
+    // multimap sorts by key - so it is already sorted
+    // just put the values into the result
+    QMultiMapIterator<int, QString> i(datedMosaics);
+    while (i.hasNext())
+    {
+        i.next();
+        results.push_front(i.value());
+    }
+#endif
+
+    return results;
+}
+

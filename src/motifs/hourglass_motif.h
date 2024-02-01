@@ -17,7 +17,7 @@ public:
     virtual void    report()          override { qDebug().noquote() << getMotifDesc() << "d" << d << "s" << s; }
 
 protected:
-    void inferHourglass(TilePtr tile);                       // Hourglass inferring
+    void inferHourglass();                       // Hourglass inferring
 };
 
 #endif // HOURGLASS_MOTIF_H

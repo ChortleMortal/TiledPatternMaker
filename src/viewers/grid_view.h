@@ -14,15 +14,15 @@ public:
     static GridView * getInstance();
     static void       releaseInstance();
 
-    void paint(QPainter * pp ) override;
+    void paint(QPainter * painter ) override;
 
     bool nearGridPoint(QPointF spt, QPointF & foundGridPoint);  // used by tiling maker
 
-    virtual const Xform  & getCanvasXform() override                 { return xf_canvas; };
-    virtual void           setCanvasXform(const Xform & xf) override { xf_canvas = xf; };
+    virtual const Xform &   getModelXform() override;
+    virtual void            setModelXform(const Xform & xf, bool update) override;
 
 protected:
-    void draw(QPainter * pp);
+    void draw(QPainter * painter);
 
     void drawFromTilingFlood();
     void drawFromTilingRegion();
@@ -52,8 +52,8 @@ public slots:
 
     virtual void slot_scale(int amount)  override;
     virtual void slot_rotate(int amount) override;
-    virtual void slot_moveX(int amount)  override;
-    virtual void slot_moveY(int amount)  override;
+    virtual void slot_moveX(qreal amount)  override;
+    virtual void slot_moveY(qreal amount)  override;
 
 private:
     GridView();
@@ -74,12 +74,10 @@ private:
 
     static GridView * mpThis;
     Configuration   * config;
-    ViewControl     * view;
-    QPainter        * pp;
+    QPainter        * painter;
     GeoGraphics     * gg;
     MapPtr          gridMap;
 
-    Xform       xf_canvas;
     QLineF      corners[2];
     bool        genMap;
 };

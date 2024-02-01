@@ -1,18 +1,19 @@
 #pragma once
-#ifndef BACKGROUNDIMAGE_H
-#define BACKGROUNDIMAGE_H
+#ifndef BACKGROUNDIMAGE_VIEW_H
+#define BACKGROUNDIMAGE_VIEW_H
 
 #include <QTransform>
 #include <QGraphicsPixmapItem>
 #include "misc/layer_controller.h"
-#include "settings/view_settings.h"
 #include "geometry/edgepoly.h"
+
+typedef std::shared_ptr<class BackgroundImage> BkgdImagePtr;
+typedef std::weak_ptr<class BackgroundImage> WekBkgdImagePtr;
 
 class Perspective
 {
 public:
     Perspective();
-    void resetPerspective();
     void startDragging(QPointF spt);
     void updateDragging(QPointF spt );
     void endDragging(QPointF spt );
@@ -35,34 +36,24 @@ private:
     QPolygonF   poly;
 };
 
+class BackgroundImage;
+
 class  BackgroundImageView : public LayerController, public Perspective
 {
 public:
     static BackgroundImageView * getInstance();
-    static void              releaseInstance();
+    static void                  releaseInstance();
 
-    bool    import(QString filename);   // import into media/bkgds
-    bool    load(QString imageName);    // loads from existing imported file
-    void    unload();
+    void         paint(QPainter *painter) override;
 
-    bool    isLoaded() { return _loaded; }
-    QString getName() override;
+    void         createBackgroundAdjustment(BkgdImagePtr img, QPointF topLeft, QPointF topRight, QPointF botRight, QPointF botLeft);
 
-    void    paint(QPainter *painter) override;
+    void         setImage(BkgdImagePtr bip) { wbip = bip; }
+    BkgdImagePtr getImage()                 { return wbip.lock(); }
+    void         unload()                   { wbip.reset(); }
 
-    void    showPixmap();
-    void    createBackgroundAdjustment(QPointF topLeft, QPointF topRight, QPointF botRight, QPointF botLeft);
-    void    createAdjustedImage();
-
-    bool    useAdjusted() { return bUseAdjusted; }
-    void    setUseAdjusted(bool use);
-    bool    saveAdjusted(QString newName);
-
-    virtual const Xform  & getCanvasXform() override;
-    virtual void           setCanvasXform(const Xform & xf) override;
-
-    // public data
-    QTransform perspective;
+    virtual const Xform &   getModelXform() override;
+    virtual void            setModelXform(const Xform & xf, bool update) override;
 
 public slots:
     virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
@@ -78,14 +69,16 @@ public slots:
 
     virtual void slot_scale(int amount)  override;
     virtual void slot_rotate(int amount) override;
-    virtual void slot_moveX(int amount)  override;
-    virtual void slot_moveY(int amount)  override;
+    virtual void slot_moveX(qreal amount)  override;
+    virtual void slot_moveY(qreal amount)  override;
 
     virtual eViewType iamaLayer() override { return VIEW_BKGD_IMG; }
     virtual void iamaLayerController() override {}
 
 protected:
-    void    correctPerspective(QPointF topLeft, QPointF topRight, QPointF botRight, QPointF botLeft);
+    void    scaleImage();
+    QPointF calcDelta();
+    void    drawSkew(QPainter * painter);
 
 private:
     BackgroundImageView();
@@ -93,19 +86,10 @@ private:
 
     static BackgroundImageView * mpThis;
 
-    ViewControl   * view;
+    WekBkgdImagePtr wbip;
     Configuration * config;
-
-    Xform           xf_canvas;
-
-    QPixmap         pixmap;         // is painted, created from bkgdImage or adjusted image
-    QImage          bkgdImage;      // as loaded
-    QImage          adjustedImage;  // as adjusted
-
-    bool            bUseAdjusted;
-
-    QString         bkgdName;
-    bool            _loaded;
+    QPixmap         scaledPixmap; // is painted, created from bkgdImage or adjusted image
+    Xform           nullXform;
 };
 
 

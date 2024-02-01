@@ -110,7 +110,9 @@ public:
     MapPtr      getTransformed(const QTransform & T) const;
 
     // neighours
-    NeighboursPtr getNeighbours(const VertexPtr & vert);
+    NeighboursPtr   getNeighbours(const VertexPtr & vert);
+    void            createNeighbourMap();
+    void            resetNeighbourMap() { nMap.reset(); }
 
     //  verify/cleanse
     bool        verify(bool force = false);
@@ -141,14 +143,11 @@ public:
     void        cropOutside(const QPolygonF & poly);
     void        cropOutside(const Circle & circle);
 
-    void        scale(qreal s);
-    void        rotate(qreal r);
-    void        translate(qreal x, qreal y);
-    void        transformMap(QTransform T);
+    virtual void  transform(QTransform T);
 
     void        splitEdge(EdgePtr e);
 
-    void        mergeMap(const constMapPtr & other, qreal tolerance = Loose::TOL);
+    void        mergeMap(const constMapPtr & other, qreal tolerance = Sys::TOL);
     void        mergeMany(const constMapPtr & other, const Placements & placements);
     void        mergeSimpleMany(constMapPtr & other, const Placements & transforms);
 
@@ -163,21 +162,20 @@ public:
     void        XmlInsertDirect(EdgePtr e);
 
     // getters
-    const QVector<VertexPtr>    & getVertices() { return vertices; }
-    const QVector<EdgePtr>      & getEdges()    { return edges; }
-    const QVector<QPair<QPointF,QString>> & getTexts()    { return debugTexts; }
+    const QVector<VertexPtr>    & getVertices()         { return vertices; }
+    const QVector<EdgePtr>      & getEdges()            { return edges; }
+    const QVector<QPair<QPointF,QString>> & getTexts()  { return debugTexts; }
     const QVector<QPointF>        getPoints();
 
-    void            resetNeighbourMap() { nMap.reset(); }
-    NeighbourMapPtr getNeighbourMap();
+    // DCEL
     void            setDerivedDCEL(DCELPtr dcel) { derivedDCEL = dcel; }
     DCELPtr         getDerivedDCEL()             { return derivedDCEL.lock(); }
     EdgePoly        getEdgePoly() const;
 
     // info
     QString     name() const { return mname; }
-    QString     namedSummary() const;
     QString     summary() const;
+    QString     unnamedSummary() const;
     QString     displayVertexEdgeCounts();
 
     bool        isEmpty() const;
@@ -217,13 +215,10 @@ private:
     void        _insertPolyline(Polyform * poly);
 
     // modifications
-    void        _applyGeneralRigidMotion(QTransform T);
-    void        _applyTrivialRigidMotion(QTransform T);
-
     void        _splitEdgesByVertex(const VertexPtr & vert);
     bool        _splitTwoEdgesByVertex(const VertexPtr & vert);
 
-    void        _mergeVertices(const constMapPtr & other, qreal tolerance = Loose::TOL);
+    void        _mergeVertices(const constMapPtr & other, qreal tolerance = Sys::TOL);
     void        _joinEdges(const EdgePtr & e1, const EdgePtr & e2);
 
     // getters
@@ -243,7 +238,7 @@ private:
     void        divideIntersectingEdges(); // if two edges cross, make a new vertex and have four edges
     void        combineLinearEdges(const EdgePtr & a, const EdgePtr & b, const VertexPtr & common);
     void        removeVerticesWithEdgeCount(uint edgeCount);
-    bool        coalesceVertices(qreal tolerance = Loose::TOL);
+    bool        coalesceVertices(qreal tolerance = Sys::TOL);
     void        removeBadEdges();
 
     // debug verify operations
@@ -254,7 +249,7 @@ private:
     bool        isMinorError(eMapError err);
 
     // utilities
-    static eCompare  comparePoints(const QPointF &a, const QPointF &b, qreal tolerance = Loose::TOL);
+    static eCompare  comparePoints(const QPointF &a, const QPointF &b, qreal tolerance = Sys::TOL);
     static bool      vertexAngleGreaterThan(const VertexPtr & a, const VertexPtr & b);
 
     int         vertexIndex(const VertexPtr & v) const { return vertices.indexOf(v); }
@@ -280,6 +275,8 @@ public:
     void        insertDebugLine(QLineF l1);
     void        insertDebugPolygon(QPolygonF & poly);
     void        insertDebugPoints(QPolygonF & poly);
+
+    void        transform(QTransform T) override;
 };
 
 #endif

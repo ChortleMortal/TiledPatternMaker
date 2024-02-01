@@ -17,12 +17,12 @@ public:
     virtual void        report() override { qDebug().noquote() << getMotifDesc() << "d" << d << "s" << s; }
 
 protected:
-    void                inferStar(TilePtr tile);  // Star inferring
+    void                inferStar();  // Star inferring
 
  private:
-    void                inferStarV1(TilePtr tile);
-    void                inferStarV2(TilePtr tile);
-    void                inferStarV3(TilePtr tile);
+    void                inferStarV1();
+    void                inferStarV2();
+    void                inferStarV3();
 
     QVector<QPointF>    getBranchIsectsV3(int side, int sign);
 

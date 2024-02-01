@@ -18,6 +18,7 @@
 #include "geometry/map.h"
 #include "geometry/transform.h"
 #include "misc/shortcuts.h"
+#include "misc/sys.h"
 #include "mosaic/design_element.h"
 #include "makers/prototype_maker/prototype.h"
 #include "mosaic/mosaic.h"
@@ -26,7 +27,7 @@
 #include "style/style.h"
 #include "tile/tile.h"
 #include "tile/placed_tile.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
 
 using std::make_shared;
 
@@ -63,7 +64,8 @@ MapEditor::MapEditor()
     mosaicMaker     = MosaicMaker::getInstance();
     prototypeMaker  = PrototypeMaker::getInstance();
     tilingMaker     = TilingMaker::getInstance();
-    view            = ViewControl::getInstance();
+    view            = Sys::view;
+    viewControl     = Sys::viewController;
     cpanel          = ControlPanel::getInstance();
 
     unload();
@@ -176,7 +178,7 @@ bool  MapEditor::loadSelectedMotifs()
         return false;
     }
 
-    for (const auto & del : dels)
+    for (const auto & del : std::as_const(dels))
     {
         db->getDesignElements().push_back(del);
 
@@ -344,7 +346,7 @@ bool MapEditor::pushToMosaic(MapEditorLayer & layer)
             }
 
             const StyleSet & sset = mosaic->getStyleSet();
-            for (auto & style : sset)
+            for (auto & style : std::as_const(sset))
             {
                 style->resetStyleRepresentation();
             }
@@ -422,9 +424,9 @@ bool MapEditor::convertToTiling(MapPtr map, bool outer)
     // if a tiling map has been modified, this backs out the map, leaving just the additions.
     if (mapType == MAPED_LOADED_FROM_TILING_UNIT && db->getTiling())
     {
-        qDebug() << map->namedSummary();
+        qDebug() << map->summary();
         map->removeMap(db->createdTilingMap);
-        qDebug() << map->namedSummary();
+        qDebug() << map->summary();
         forceRedraw();
     }
 
@@ -437,7 +439,7 @@ bool MapEditor::convertToTiling(MapPtr map, bool outer)
 
     auto tiling = tilingMaker->getSelected();
     PlacedTiles placedTiles;
-    for (auto & face : qAsConst(faces))
+    for (auto & face : std::as_const(faces))
     {
         if (  (!outer && !face->outer)
             ||( outer &&  face->outer))
@@ -452,9 +454,9 @@ bool MapEditor::convertToTiling(MapPtr map, bool outer)
     tilingMaker->addNewPlacedTiles(placedTiles);
 
     // aligns the tiling maker to the map editor
-    const Xform & xf = meView->getCanvasXform();
-    view->getViewSettings().setModelAlignment(M_ALIGN_TILING);
-    TilingMakerView::getInstance()->setCanvasXform(xf);
+    const Xform & xf = meView->getModelXform();
+    viewControl->getCanvas().setModelAlignment(M_ALIGN_TILING);
+    TilingMakerView::getInstance()->setModelXform(xf,true);
 
     qDebug().noquote() << "MapEditor::convertToTiling - end" << Transform::toInfoString(meView->getLayerTransform());
     return true;
@@ -467,9 +469,9 @@ void MapEditor::cleanupMapPoints()
     qreal tolerance = Configuration::getInstance()->mapedMergeSensitivity;
 
     MapPtr cleaned = std::make_shared<Map>("Cleanup map");
-    qDebug() << map->namedSummary();
+    qDebug() << map->summary();
     cleaned->mergeMap(map,tolerance);
-    qDebug() << cleaned->namedSummary();
+    qDebug() << cleaned->summary();
     cleaned->deDuplicateVertices(tolerance);
 
     map->set(cleaned);
@@ -579,7 +581,10 @@ bool MapEditor::initStashFrom(QString name)
 
 void MapEditor::forceRedraw()
 {
-    view->update();
+    if (view->isActiveLayer(meView))
+    {
+        view->update();
+    }
 }
 
 
@@ -591,7 +596,7 @@ void MapEditor::forceRedraw()
 
 bool MapEditor::procKeyEvent(QKeyEvent * k)
 {
-    if (!view->isEnabled(VIEW_MAP_EDITOR))
+    if (!viewControl->isEnabled(VIEW_MAP_EDITOR))
     {
         return false;
     }

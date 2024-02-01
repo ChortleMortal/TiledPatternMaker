@@ -21,7 +21,7 @@
 #include "geometry/faces.h"
 #include "geometry/edge.h"
 #include "geometry/dcel.h"
-#include "geometry/point.h"
+#include "geometry/geo.h"
 #include "geometry/loose.h"
 #include "geometry/intersect.h"
 #include "misc/tpm_io.h"
@@ -74,7 +74,7 @@ QPointF Face::center()
     if (_center .isNull())
     {
         QPolygonF pts = getPolygon();
-        _center = Point::center(pts);
+        _center = Geo::center(pts);
     }
     return _center;
 }
@@ -101,13 +101,11 @@ bool  Face::overlaps(FacePtr other)
 
     return thisP.intersects(otherP);
 #else
-    for (auto it = begin(); it != end(); it++)
+    for (auto & ep1: std::as_const(*this))
     {
-        EdgePtr ep1 = *it;
         QLineF l1 = ep1->getLine();
-        for (auto it2 = other->begin(); it2 != other->end(); it2++)
+        for (auto & ep2 : std::as_const(*other))
         {
-            EdgePtr ep2 = *it;
             QLineF l2   = ep2->getLine();
             QPointF intersect;
             if (Intersect::getTrueIntersection(l1,l2,intersect))
@@ -130,9 +128,8 @@ void FaceSet::sortByPositon()
 {
     QVector<FacePtr> newSet;
 
-    for (auto it = begin(); it != end(); it++)
+    for (auto & fp : std::as_const(*this))
     {
-        FacePtr fp = *it;
         if (newSet.isEmpty())
         {
             newSet.push_back(fp);
@@ -236,9 +233,8 @@ void FaceSet::dump(DCELPtr dcel)
 
     deb << endl;
 
-    for (auto it = begin(); it != end(); it++)
+    for (auto & aface : std::as_const(*this))
     {
-        FacePtr aface = *it;
         deb << "F" << dcel->faceIndex(aface);
         if (aface->outer)
             deb << " OUTER\t";
@@ -317,7 +313,7 @@ bool FaceGroups::isSelected(int idx)
 int FaceGroups::totalSize()
 {
     int tot = 0;
-    for (const auto & fset : qAsConst(*this))
+    for (const auto & fset : std::as_const(*this))
     {
         tot += fset->size();
     }

@@ -37,12 +37,11 @@ Plain::~Plain()
 
 void Plain::resetStyleRepresentation()
 {
-    resetStyleMap();
 }
 
 void Plain::createStyleRepresentation()
 {
-    getMap();
+    getProtoMap();
 }
 
 void Plain::draw(GeoGraphics *gg)
@@ -54,7 +53,7 @@ void Plain::draw(GeoGraphics *gg)
         return;
     }
 
-    MapPtr map = getMap();
+    MapPtr map = getProtoMap();
     if (!map)
     {
         return;
@@ -62,7 +61,7 @@ void Plain::draw(GeoGraphics *gg)
 
     QPen pen(colors.getNextColor().color);
 
-    for (const auto &edge : qAsConst(map->getEdges()))
+    for (const auto &edge : std::as_const(map->getEdges()))
     {
         gg->drawEdge(edge,pen);
     }

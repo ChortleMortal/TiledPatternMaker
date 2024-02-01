@@ -2,8 +2,10 @@
 #ifndef MOTIF_CONNECTOR_H
 #define MOTIF_CONNECTOR_H
 
-#include <memory>
 #include <QString>
+#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
+#include <memory>
+#endif
 
 class RadialMotif;
 
@@ -15,7 +17,7 @@ class MotifConnector
 public:
     MotifConnector();
 
-    void  connectMotif(RadialMotif * motif);
+    void  connectMotif(RadialMotif * motif, qreal scale);
     qreal computeScale(RadialMotif *  motif);
 
     void rotateHalf(RadialMotif *  motif);

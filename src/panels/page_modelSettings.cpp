@@ -11,22 +11,23 @@
 #include "legacy/design.h"
 #include "legacy/design_maker.h"
 #include "makers/mosaic_maker/mosaic_maker.h"
+#include "makers/prototype_maker/prototype.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "misc/qtapplog.h"
-#include "misc/utilities.h"
-#include "makers/prototype_maker/prototype.h"
-#include "panels/panel_misc.h"
-#include "panels/page_modelSettings.h"
+#include "mosaic/mosaic.h"
 #include "panels/controlpanel.h"
+#include "panels/page_modelSettings.h"
+#include "panels/panel_misc.h"
 #include "settings/configuration.h"
 #include "tile/tiling.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
 #include "widgets/layout_sliderset.h"
+#include "enums/eviewtype.h"
 
 using std::string;
 using std::make_shared;
 
-page_modelSettings::page_modelSettings(ControlPanel * apanel)  : panel_page(apanel,"Model Settings")
+page_modelSettings::page_modelSettings(ControlPanel * apanel)  : panel_page(apanel,PAGE_MODEL_SETTINGS,"Model Settings")
 {
     QGridLayout * pgrid  = new QGridLayout();
     QGroupBox * box;
@@ -35,55 +36,16 @@ page_modelSettings::page_modelSettings(ControlPanel * apanel)  : panel_page(apan
     box = createTilingSettings();
     pgrid->addWidget(box,row,0);
 
-    if (config->insightMode)
-    {
-        QCheckBox* chkShowFrameInfo  = new QCheckBox("Show Frame Info");
-        chkShowFrameInfo->setLayoutDirection(Qt::RightToLeft);
-        chkShowFrameInfo->setChecked(config->cs_showFrameSettings);
-
-        connect(chkShowFrameInfo, &QCheckBox::clicked, this, &page_modelSettings::slot_showFrameInfoChanged);
-
-        QHBoxLayout * hbox = new QHBoxLayout;
-        hbox->addWidget(chkShowFrameInfo);
-        hbox->addStretch();
-        QVBoxLayout * vbox = new QVBoxLayout;
-        vbox->addLayout(hbox);
-        vbox->addStretch();
-
-        pgrid->addLayout(vbox,row,1);
-    }
-    else
-    {
-        config->cs_showFrameSettings = false;
-    }
+    frameBox = createCanvasStatus();
+    pgrid->addWidget(frameBox,row,1);
 
     row++;
-    box = createDesignSettings();
+    box = createMosaicSettings();
     pgrid->addWidget(box,row,0);
 
     box = createViewStatus();
     pgrid->addWidget(box,row,1);
 
-    row++;
-    if (config->insightMode)
-    {
-        frameTable = new AQTableWidget();
-        QStringList qslH;
-        qslH << "Sizes" << "Crop" << "Zoom";
-        frameTable->setColumnCount(3);
-        frameTable->setHorizontalHeaderLabels(qslH);
-        frameTable->horizontalHeader()->setVisible(true);
-        frameTable->verticalHeader()->setVisible(false);
-
-        pgrid->addWidget(frameTable,row,0);
-
-        frameBox = createFrameSettings();
-        pgrid->addWidget(frameBox,row,1);
-    }
-    else
-    {
-        frameTable = nullptr;
-    }
 
     vbox->addLayout(pgrid);
     vbox->addStretch();
@@ -97,19 +59,24 @@ page_modelSettings::page_modelSettings(ControlPanel * apanel)  : panel_page(apan
 
 QGroupBox *page_modelSettings::createTilingSettings()
 {
+    QLabel * l1 = new QLabel("View:     ");
     sizeW[TILING_SETTINGS] = new SpinSet("width",0,1,4096);
     sizeH[TILING_SETTINGS] = new SpinSet("height",0,1,2160);
 
     QGridLayout * fillGrid = createFillDataRow(TILING_SETTINGS);
 
     QGridLayout * grid = new QGridLayout();
-    grid->addLayout(sizeW[TILING_SETTINGS],0,0);
-    grid->addLayout(sizeH[TILING_SETTINGS],0,1);
-    grid->addLayout(fillGrid,1,0,2,2);
+    grid->addWidget(l1,0,0);
+    grid->addLayout(sizeW[TILING_SETTINGS],0,1);
+    grid->addLayout(sizeH[TILING_SETTINGS],0,2);
 
-    QGroupBox * box = new QGroupBox("Tiling Settings");
+    QVBoxLayout * vb = new QVBoxLayout;
+    vb->addLayout(grid);
+    vb->addLayout(fillGrid);
+
+    QGroupBox * box = new QGroupBox("Tiling Canvas Settings");
     box->setAlignment(Qt::AlignTop);
-    box->setLayout(grid);
+    box->setLayout(vb);
 
     connect(sizeW[TILING_SETTINGS], &SpinSet::valueChanged, this, &page_modelSettings::slot_tilingSizeChanged);
     connect(sizeH[TILING_SETTINGS], &SpinSet::valueChanged, this, &page_modelSettings::slot_tilingSizeChanged);
@@ -117,43 +84,48 @@ QGroupBox *page_modelSettings::createTilingSettings()
     return box;
 }
 
-QGroupBox *page_modelSettings::createDesignSettings()
+QGroupBox *page_modelSettings::createMosaicSettings()
 {
-    sizeW[DESIGN_SETTINGS]      = new SpinSet("width",0,1,4096);
-    sizeH[DESIGN_SETTINGS]      = new SpinSet("height",0,1,2160);
-    startEditX[DESIGN_SETTINGS]     = new DoubleSpinSet("start-X",0,-4096,4096);
-    startEditY[DESIGN_SETTINGS]     = new DoubleSpinSet("start-y",0,-2160,2160);
-    bkColorEdit[DESIGN_SETTINGS]    = new QLineEdit;
-    bkgdColorPatch[DESIGN_SETTINGS] = new ClickableLabel;
+    QLabel * l1 = new QLabel("View:     ");
+    sizeW[MOSAIC_SETTINGS]          = new SpinSet("width",0,1,4096);
+    sizeH[MOSAIC_SETTINGS]          = new SpinSet("height",0,1,2160);
+    startEditX[MOSAIC_SETTINGS]     = new DoubleSpinSet("start-X",0,-4096,4096);
+    startEditY[MOSAIC_SETTINGS]     = new DoubleSpinSet("start-y",0,-2160,2160);
+    bkColorEdit[MOSAIC_SETTINGS]    = new QLineEdit;
+    bkgdColorPatch[MOSAIC_SETTINGS] = new ClickableLabel;
 
-    QGridLayout * fillGrid = createFillDataRow(DESIGN_SETTINGS);
-
-    connect(sizeW[DESIGN_SETTINGS],      &SpinSet::valueChanged,  this, &page_modelSettings::designSizeChanged);
-    connect(sizeH[DESIGN_SETTINGS],      &SpinSet::valueChanged,  this, &page_modelSettings::designSizeChanged);
-    connect(bkgdColorPatch[DESIGN_SETTINGS], &ClickableLabel::clicked,this, &page_modelSettings::backgroundColorDesignPick);
-    connect(bkColorEdit[DESIGN_SETTINGS],    &QLineEdit::textChanged, this, &page_modelSettings::backgroundColorDesignChanged);
+    QGridLayout * fillGrid = createFillDataRow(MOSAIC_SETTINGS);
+    
+    connect(sizeW[MOSAIC_SETTINGS],         &SpinSet::valueChanged,  this, &page_modelSettings::slot_canvasSizeChanged);
+    connect(sizeH[MOSAIC_SETTINGS],         &SpinSet::valueChanged,  this, &page_modelSettings::slot_canvasSizeChanged);
+    connect(bkgdColorPatch[MOSAIC_SETTINGS],&ClickableLabel::clicked,this, &page_modelSettings::backgroundColorDesignPick);
+    connect(bkColorEdit[MOSAIC_SETTINGS],   &QLineEdit::textChanged, this, &page_modelSettings::backgroundColorDesignChanged);
 
     QGridLayout * grid = new QGridLayout();
-    grid->addLayout(sizeW[DESIGN_SETTINGS],0,0);
-    grid->addLayout(sizeH[DESIGN_SETTINGS],0,1);
-    grid->addLayout(startEditX[DESIGN_SETTINGS],1,0);
-    grid->addLayout(startEditY[DESIGN_SETTINGS],1,1);
-    grid->addWidget(bkColorEdit[DESIGN_SETTINGS],2,0);
-    grid->addWidget(bkgdColorPatch[DESIGN_SETTINGS],2,1);
-    grid->addLayout(fillGrid,3,0,2,2);
+    grid->addWidget(l1,0,0);
+    grid->addLayout(sizeW[MOSAIC_SETTINGS],0,1);
+    grid->addLayout(sizeH[MOSAIC_SETTINGS],0,2);
 
-    QGroupBox * box = new QGroupBox("Mosaic Settings");
-    box->setLayout(grid);
+    QGridLayout * grid2 = new QGridLayout();
+    grid2->addLayout(startEditX[MOSAIC_SETTINGS],0,0);
+    grid2->addLayout(startEditY[MOSAIC_SETTINGS],0,1);
+    grid2->addWidget(bkColorEdit[MOSAIC_SETTINGS],1,0);
+    grid2->addWidget(bkgdColorPatch[MOSAIC_SETTINGS],1,1);
+    grid2->addLayout(fillGrid,2,0,2,2);
+
+    QVBoxLayout * vb = new QVBoxLayout;
+    vb->addLayout(grid);
+    vb->addLayout(grid2);
+
+    QGroupBox * box = new QGroupBox("Mosaic Canvas Settings");
+    box->setLayout(vb);
     return box;
 }
 
-QGroupBox *page_modelSettings::createFrameSettings()
+QGroupBox *page_modelSettings::createCanvasStatus()
 {
-    sizeW[FRAME_SETTINGS] = new SpinSet("width",0,1,4096);
-    sizeH[FRAME_SETTINGS] = new SpinSet("height",0,1,2160);
-
-    sizeW2 = new SpinSet("width",0,1,4096);
-    sizeH2 = new SpinSet("height",0,1,2160);
+    sizeW[CANVAS] = new SpinSet("width",0,1,4096);
+    sizeH[CANVAS] = new SpinSet("height",0,1,2160);
 
     ds_left  = new DoubleSpinSet("left",0,-3480,3480);
     ds_top   = new DoubleSpinSet("top",0,-2160,2160);
@@ -165,40 +137,36 @@ QGroupBox *page_modelSettings::createFrameSettings()
     boundsbox->addLayout(ds_width);
 
     l_xform   = new QLabel();
+    l_canvas  = new QLabel();
+    l_layer  = new QLabel();
 
-    connect(sizeW[FRAME_SETTINGS], &SpinSet::valueChanged,           this, &page_modelSettings::cropSizeChanged);
-    connect(sizeH[FRAME_SETTINGS], &SpinSet::valueChanged,           this, &page_modelSettings::cropSizeChanged);
+    connect(sizeW[CANVAS],         &SpinSet::valueChanged,       this, &page_modelSettings::slot_viewerSizeChanged);
+    connect(sizeH[CANVAS],         &SpinSet::valueChanged,       this, &page_modelSettings::slot_viewerSizeChanged);
     connect(ds_left,               &DoubleSpinSet::valueChanged, this, &page_modelSettings::slot_boundsChanged);
     connect(ds_top,                &DoubleSpinSet::valueChanged, this, &page_modelSettings::slot_boundsChanged);
     connect(ds_width,              &DoubleSpinSet::valueChanged, this, &page_modelSettings::slot_boundsChanged);
 
-    QLabel * l1 = new QLabel("Crop: ");
-    QLabel * l2 = new QLabel("Zoom: ");
+    QLabel * l1 = new QLabel("Canvas:   ");
 
     int row = 0;
     QGridLayout * grid = new QGridLayout();
     grid->addWidget(l1,row++,0);
-    grid->addLayout(sizeW[FRAME_SETTINGS],0,1);
-    grid->addLayout(sizeH[FRAME_SETTINGS],0,2);
+    grid->addLayout(sizeW[CANVAS],0,1);
+    grid->addLayout(sizeH[CANVAS],0,2);
 
-    grid->addWidget(l2,row,0);
-    grid->addLayout(sizeW2,row,1);
-    grid->addLayout(sizeH2,row++,2);
     grid->addLayout(boundsbox,row++,0,1,3);
     grid->addWidget(l_xform,row++,0,1,3);
+    grid->addWidget(l_canvas,row++,0,1,3);
+    grid->addWidget(l_layer,row++,0,1,3);
 
     QVBoxLayout * vb = new QVBoxLayout;
     vb->addLayout(grid);
     vb->addStretch();
 
-    viewBox = new QGroupBox("Frame Size");
-    if (config->darkTheme)
-        viewBox->setStyleSheet("QGroupBox:title {color: yellow;}");
-    else
-        viewBox->setStyleSheet("QGroupBox:title {color: red;}");
-    viewBox->setLayout(vb);
+    canvasBox = new QGroupBox("Canvas Status");
+    canvasBox->setLayout(vb);
 
-    return viewBox;
+    return canvasBox;
 }
 
 QGroupBox * page_modelSettings::createViewStatus()
@@ -209,9 +177,9 @@ QGroupBox * page_modelSettings::createViewStatus()
     startEditY[VIEW_STATUS]     = new DoubleSpinSet("start-y",0,-2160,2160);
     bkColorEdit[VIEW_STATUS]    = new QLineEdit;
     bkgdColorPatch[VIEW_STATUS] = new ClickableLabel;
-
-    connect(sizeW[VIEW_STATUS], &SpinSet::valueChanged, this, &page_modelSettings::viewSizeChanged);
-    connect(sizeH[VIEW_STATUS], &SpinSet::valueChanged, this, &page_modelSettings::viewSizeChanged);
+    
+    connect(sizeW[VIEW_STATUS], &SpinSet::valueChanged, this, &page_modelSettings::slot_windowSizeChanged);
+    connect(sizeH[VIEW_STATUS], &SpinSet::valueChanged, this, &page_modelSettings::slot_windowSizeChanged);
 
     //sizeW[VIEW_STATUS]->setReadOnly(true);
     //sizeH[VIEW_STATUS]->setReadOnly(true);
@@ -230,9 +198,9 @@ QGroupBox * page_modelSettings::createViewStatus()
     grid->addWidget(bkgdColorPatch[VIEW_STATUS],2,1);
     grid->addLayout(fillGrid,3,0,2,2);
 
-    QGroupBox * box = new QGroupBox("View Status");
-    box->setLayout(grid);
-    return box;
+    viewBox = new QGroupBox("View Status");
+    viewBox->setLayout(grid);
+    return viewBox;
 }
 
 QGridLayout * page_modelSettings::createFillDataRow(eSettingsGroup group)
@@ -265,7 +233,7 @@ QGridLayout * page_modelSettings::createFillDataRow(eSettingsGroup group)
     grid->addWidget(yRepMin[group],2,2);
     grid->addWidget(yRepMax[group],2,3);
 
-    if (group == DESIGN_SETTINGS)
+    if (group == MOSAIC_SETTINGS)
     {
         connect(chkSingle[group], &QCheckBox::clicked, this, &page_modelSettings::singleton_changed_des);
 
@@ -296,44 +264,46 @@ QGridLayout * page_modelSettings::createFillDataRow(eSettingsGroup group)
 
 void  page_modelSettings::onRefresh()
 {
+    //if (!refresh) return;
+
     qtAppLog::getInstance()->suspend(true);
 
     // tiling settings
     TilingPtr tiling = tilingMaker->getSelected();
     if (tiling)
     {
-        qDebug() << "Tiling" << tiling->getName();
-        QSize size  = tiling->getData().getSettings().getSize();
+        qDebug() << "Tiling" << tiling->getTitle();
+        QSize size  = tiling->getData().getSettings().getViewSize();
         sizeW[TILING_SETTINGS]->setValue(size.width());
         sizeH[TILING_SETTINGS]->setValue(size.height());
 
-        const FillData & fd = tiling->getData().getFillData();
+        const FillData & fd = tiling->getCanvasSettings().getFillData();
         displayFillData(fd,TILING_SETTINGS);
     }
 
     // mosaic/design settings;
-    ModelSettings & mosaicSettings = getMosaicOrDesignSettings();
+    const CanvasSettings & mosCanvasSettings = getMosaicOrDesignModelSettings();
 
     // size
-    QSizeF sz = mosaicSettings.getSize();
-    sizeW[DESIGN_SETTINGS]->setValue(sz.width());
-    sizeH[DESIGN_SETTINGS]->setValue(sz.height());
+    QSizeF sz = mosCanvasSettings.getViewSize();
+    sizeW[MOSAIC_SETTINGS]->setValue(sz.width());
+    sizeH[MOSAIC_SETTINGS]->setValue(sz.height());
 
     // background color
-    QColor qc = mosaicSettings.getBackgroundColor();
-    bkColorEdit[DESIGN_SETTINGS]->setText(qc.name(QColor::HexArgb));
+    QColor qc = mosCanvasSettings.getBackgroundColor();
+    bkColorEdit[MOSAIC_SETTINGS]->setText(qc.name(QColor::HexArgb));
     QVariant variant = qc;
     QString colcode  = variant.toString();
-    bkgdColorPatch[DESIGN_SETTINGS]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+    bkgdColorPatch[MOSAIC_SETTINGS]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
 
     // start tile
-    QPointF  pt = mosaicSettings.getStartTile();
-    startEditX[DESIGN_SETTINGS]->setValue(pt.x());
-    startEditY[DESIGN_SETTINGS]->setValue(pt.y());
+    QPointF  pt = mosCanvasSettings.getStartTile();
+    startEditX[MOSAIC_SETTINGS]->setValue(pt.x());
+    startEditY[MOSAIC_SETTINGS]->setValue(pt.y());
 
     // repeats
-    const FillData & fd = mosaicSettings.getFillData();
-    displayFillData(fd,DESIGN_SETTINGS);
+    const FillData & fd = mosCanvasSettings.getFillData();
+    displayFillData(fd,MOSAIC_SETTINGS);
 
     // View Status
     // size
@@ -344,90 +314,42 @@ void  page_modelSettings::onRefresh()
     // background color
     qc = view->getViewBackgroundColor();
     bkColorEdit[VIEW_STATUS]->setText(qc.name(QColor::HexArgb));
-    QVariant qv = qc;  // FIXME for qt6
+    QVariant qv = qc;
     colcode  = qv.toString();
     bkgdColorPatch[VIEW_STATUS]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
 
     // fill data
-    const FillData & fd2 = view->getFillData();
+    const FillData & fd2 = viewControl->getCanvas().getFillData();
     displayFillData(fd2,VIEW_STATUS);
 
-    // frameTable
-    if (config->insightMode && config->cs_showFrameSettings)
+    // frame settings
+    eViewType viewType = viewControl->getMostRecent();
+
+    viewBox->setTitle(QString("View Status : %1").arg(sViewerType[viewType]));
+
+    Canvas & canvas  = viewControl->getCanvas();
+
+    QSizeF canvasSize  = canvas.getSize();
+
+    sizeW[CANVAS]->setValue(canvasSize.width());
+    sizeH[CANVAS]->setValue(canvasSize.height());
+
+    auto bounds = canvas.getBounds();
+    ds_left->setValue(bounds.left);
+    ds_top->setValue(bounds.top);
+    ds_width->setValue(bounds.width);
+    auto lc = view->getActiveLayer(viewType);
+    if (lc)
     {
-        // frame settings
-        auto viewType = view->getMostRecent();
-
-        viewBox->setTitle(QString("Frame Settings : %1").arg(sViewerType[viewType]));
-
-        auto & settings  = view->getViewSettings();
-
-        QSize csize = settings.getCropSize(viewType);
-        QSize zsize  = settings.getZoomSize(viewType);
-        qDebug() << csize << zsize;
-
-        sizeW[FRAME_SETTINGS]->setValue(csize.width());
-        sizeH[FRAME_SETTINGS]->setValue(csize.height());
-        sizeW2->setValue(zsize.width());
-        sizeH2->setValue(zsize.height());
-
-        auto bounds = settings.getBounds(viewType);
-        ds_left->setValue(bounds.left);
-        ds_top->setValue(bounds.top);
-        ds_width->setValue(bounds.width);
-        l_xform->setText(Transform::toInfoString(settings.getTransform(viewType)));
-
-        frameBox->show();
-
-        const QMap<eViewType,ViewData*> & fset = settings.getSettingsMap();
-        if (fset.size() != frameTable->rowCount())
-        {
-            frameTable->clearContents();
-            frameTable->setRowCount(fset.size());
-        }
-
-        int row = 0;
-        QBrush brush;
-        if (config->darkTheme)
-            brush = QBrush(QColor(0x777777));
-        else
-            brush  = QBrush(Qt::yellow);
-
-        auto recentType = view->getMostRecent();
-        QMap<eViewType,ViewData*>::const_iterator i = fset.constBegin();
-        while (i != fset.constEnd())
-        {
-            eViewType type = i.key();
-            const ViewData * s = i.value();
-            ++i;
-
-            QTableWidgetItem * item =  new QTableWidgetItem(s2ViewerType[type]);
-            if (type == recentType)
-                item->setBackground(brush);
-            frameTable->setItem(row,0,item);
-
-            item = new QTableWidgetItem(Utils::str(s->getCropSize()));
-            if (type == recentType)
-                item->setBackground(brush);
-            item->setTextAlignment(Qt::AlignRight);
-            frameTable->setItem(row,1,item);
-
-            item = new QTableWidgetItem(Utils::str(s->getZoomSize()));
-            if (type == recentType)
-                item->setBackground(brush);
-            item->setTextAlignment(Qt::AlignRight);
-            frameTable->setItem(row,2,item);
-
-            row++;
-        }
-        frameTable->resizeColumnsToContents();
-        frameTable->adjustTableSize();
-        frameTable->show();
+        l_xform->setText( "canvas " + Transform::toInfoString(lc->getCanvasTransform()));
+        l_canvas->setText("model  " + Transform::toInfoString(lc->getModelTransform()));
+        l_layer->setText( "layer  " + Transform::toInfoString(lc->getLayerTransform()));
     }
-    else if (config->insightMode)
+    else
     {
-        frameBox->hide();
-        frameTable->hide();
+        l_canvas->clear();
+        l_xform->clear();
+        l_layer->clear();
     }
 
     qtAppLog::getInstance()->suspend(false);
@@ -441,29 +363,30 @@ void page_modelSettings::onEnter()
 void page_modelSettings::dummySetup()
 {}
 
-void page_modelSettings::designSizeChanged(int)
+void page_modelSettings::slot_canvasSizeChanged(int)
 {
     if (pageBlocked()) return;
 
-    QSize sz = QSize(sizeW[DESIGN_SETTINGS]->value(),sizeH[DESIGN_SETTINGS]->value());
-
-    ModelSettings & settings = getMosaicOrDesignSettings();
-    settings.setSize(sz);
+    QSize sz = QSize(sizeW[MOSAIC_SETTINGS]->value(),sizeH[MOSAIC_SETTINGS]->value());
+    
+    CanvasSettings  & ms = mosaicMaker->getCanvasSettings();
+    ms.setViewSize(sz);
 
     emit sig_refreshView();
 }
 
-void page_modelSettings::cropSizeChanged(int)
+void page_modelSettings::slot_viewerSizeChanged(int)
 {
     if (pageBlocked()) return;
 
-    QSize sz = QSize(sizeW[FRAME_SETTINGS]->value(),sizeH[FRAME_SETTINGS]->value());
-    auto & settings = view->getViewSettings();
-    settings.setCropSize(view->getMostRecent(),sz);
+    QSize sz = QSize(sizeW[CANVAS]->value(),sizeH[CANVAS]->value());
+
+    Canvas & canvas = viewControl->getCanvas();
+    canvas.initCanvasSize(sz);
     emit sig_refreshView();
 }
 
-void page_modelSettings::viewSizeChanged(int)
+void page_modelSettings::slot_windowSizeChanged(int)
 {
     if (pageBlocked()) return;
 
@@ -472,9 +395,9 @@ void page_modelSettings::viewSizeChanged(int)
     emit sig_refreshView();
 }
 
-ModelSettings & page_modelSettings::getMosaicOrDesignSettings()
+CanvasSettings & page_modelSettings::getMosaicOrDesignModelSettings()
 {
-    if (view->isEnabled(VIEW_DESIGN))
+    if (viewControl->isEnabled(VIEW_DESIGN))
     {
         DesignMaker * designMaker = DesignMaker::getInstance();
         QVector<DesignPtr> & designs = designMaker->getActiveDesigns();
@@ -486,7 +409,24 @@ ModelSettings & page_modelSettings::getMosaicOrDesignSettings()
     }
 
     // drops thru
-    return mosaicMaker->getMosaicSettings();
+    return mosaicMaker->getCanvasSettings();
+}
+
+void page_modelSettings::setMosaicOrDesignModelSettings(CanvasSettings & ms)
+{
+    if (viewControl->isEnabled(VIEW_DESIGN))
+    {
+        DesignMaker * designMaker = DesignMaker::getInstance();
+        QVector<DesignPtr> & designs = designMaker->getActiveDesigns();
+        if (designs.count())
+        {
+            DesignPtr dp = designs.first();
+            dp->setDesignInfo(ms);
+        }
+    }
+
+    // drops thru
+    mosaicMaker->setCanvasSettings(ms);
 }
 
 void page_modelSettings::slot_set_repsDesign(int val)
@@ -496,12 +436,16 @@ void page_modelSettings::slot_set_repsDesign(int val)
     if (pageBlocked()) return;
 
     FillData fd;
-    fd.set(chkSingle[DESIGN_SETTINGS]->isChecked(),xRepMin[DESIGN_SETTINGS]->value(), xRepMax[DESIGN_SETTINGS]->value(), yRepMin[DESIGN_SETTINGS]->value(), yRepMax[DESIGN_SETTINGS]->value());
+    fd.set(chkSingle[MOSAIC_SETTINGS]->isChecked(),xRepMin[MOSAIC_SETTINGS]->value(), xRepMax[MOSAIC_SETTINGS]->value(), yRepMin[MOSAIC_SETTINGS]->value(), yRepMax[MOSAIC_SETTINGS]->value());
 
-    ModelSettings & settings = getMosaicOrDesignSettings();
-    settings.setFillData(fd);
+    auto mosaic = mosaicMaker->getMosaic();
+    if (mosaic)
+    {
+        CanvasSettings & cs = mosaic->getCanvasSettings();
+        cs.setFillData(fd);
+    }
 
-    view->setFillData(fd);
+    viewControl->getCanvas().setFillData(fd);
 
     emit sig_render();
 }
@@ -514,10 +458,14 @@ void page_modelSettings::singleton_changed_des(bool checked)
     else
         fd.set(true,0,0,0,0);
 
-    ModelSettings & settings = getMosaicOrDesignSettings();
-    settings.setFillData(fd);
+    auto mosaic = mosaicMaker->getMosaic();
+    if (mosaic)
+    {
+        CanvasSettings & cs = mosaic->getCanvasSettings();
+        cs.setFillData(fd);
+    }
 
-    view->setFillData(fd);
+    viewControl->getCanvas().setFillData(fd);
 
     emit sig_render();
 }
@@ -534,14 +482,15 @@ void page_modelSettings::slot_set_repsTiling(int val)
     TilingPtr tiling = tilingMaker->getSelected();
     if (!tiling) return;
     
-    FillData & fdata = tiling->getRWData(true).getFillDataAccess();
-    fdata = fd;
+    CanvasSettings cs = tiling->getCanvasSettings();
+    cs.setFillData(fd);
+    tiling->setCanvasSettings(cs);
 
-    view->setFillData(fd);
+    viewControl->getCanvas().setFillData(fd);
 
-    if (view->isEnabled(VIEW_TILING_MAKER)
-     || view->isEnabled(VIEW_TILING)
-     || view->isEnabled(VIEW_MAP_EDITOR))
+    if (viewControl->isEnabled(VIEW_TILING_MAKER)
+     || viewControl->isEnabled(VIEW_TILING)
+     || viewControl->isEnabled(VIEW_MAP_EDITOR))
         emit sig_refreshView();
     else
         emit sig_render();
@@ -558,17 +507,18 @@ void page_modelSettings::singleton_changed_tile(bool checked)
     TilingPtr tiling = tilingMaker->getSelected();
     if (!tiling) return;
     
-    FillData & fdata = tiling->getRWData(true).getFillDataAccess();
-    fdata = fd;
+    CanvasSettings cs = tiling->getCanvasSettings();
+    cs.setFillData(fd);
+    tiling->setCanvasSettings(cs);
 
-    view->setFillData(fd);
+    viewControl->getCanvas().setFillData(fd);
 
     emit sig_render();
 
 }
 void page_modelSettings::backgroundColorDesignPick()
 {
-    ModelSettings & settings = getMosaicOrDesignSettings();
+    const CanvasSettings & settings = getMosaicOrDesignModelSettings();
     QColor color = settings.getBackgroundColor();
 
     AQColorDialog dlg(color,this);
@@ -579,11 +529,11 @@ void page_modelSettings::backgroundColorDesignPick()
     color = dlg.selectedColor();
     if (color.isValid())
     {
-        bkColorEdit[DESIGN_SETTINGS]->setText(color.name(QColor::HexArgb));
+        bkColorEdit[MOSAIC_SETTINGS]->setText(color.name(QColor::HexArgb));
 
         QVariant variant = color;
         QString colcode  = variant.toString();
-        bkgdColorPatch[DESIGN_SETTINGS]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+        bkgdColorPatch[MOSAIC_SETTINGS]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
     }
 }
 
@@ -592,8 +542,9 @@ void page_modelSettings::backgroundColorDesignChanged(const QString & str)
     if (pageBlocked()) return;
 
     QColor color = QColor(str);
-    ModelSettings & settings = getMosaicOrDesignSettings();
-    settings.setBackgroundColor(color);
+    CanvasSettings & ms = mosaicMaker->getCanvasSettings();
+    ms.setBackgroundColor(color);
+
     emit sig_refreshView();
 }
 
@@ -603,22 +554,17 @@ void page_modelSettings::slot_tilingSizeChanged(int val)
 
     if (pageBlocked()) return;
 
-    TilingPtr tiling = tilingMaker->getSelected();
-    ModelSettings & ms  = tiling->getRWData(true).getSettingsAccess();
-    ms.setSize(QSize(sizeW[TILING_SETTINGS]->value(),sizeH[TILING_SETTINGS]->value()));
-
+    TilingPtr tiling  = tilingMaker->getSelected();
+    CanvasSettings ms  = tiling->getCanvasSettings();
+    ms.setViewSize(QSize(sizeW[TILING_SETTINGS]->value(),sizeH[TILING_SETTINGS]->value()));
+    tiling->setCanvasSettings(ms);
     emit sig_refreshView();
-}
-
-void page_modelSettings::slot_showFrameInfoChanged(bool checked)
-{
-    config->cs_showFrameSettings = checked;
 }
 
 void page_modelSettings::slot_boundsChanged()
 {
     Bounds bounds(ds_left->value(), ds_top->value(), ds_width->value());
-    view->getViewSettings().setBounds(view->getMostRecent(),bounds);
+    viewControl->getCanvas().setBounds(bounds);
 
     QVector<Layer*> layers = view->getActiveLayers();
     for (auto layer : layers)

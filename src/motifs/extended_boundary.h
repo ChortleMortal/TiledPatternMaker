@@ -3,8 +3,11 @@
 #define EXTENDEDBOUNDARY_H
 
 #include <QPolygonF>
-#include <memory>
 #include <QDebug>
+#include <QTransform>
+#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
+#include <memory>
+#endif
 
 typedef std::shared_ptr<class Tile>  TilePtr;
 
@@ -37,6 +40,7 @@ public:
     void  setRotate(qreal rotate)   { this->rotate = rotate; }
     qreal getRotate()    const      { return rotate; }
 
+    QTransform getTransform() const { return QTransform::fromScale(scale,scale).rotate(rotate); };
 
     bool equals(const ExtendedBoundary & other);
     bool isCircle() const { return sides <= 2; }

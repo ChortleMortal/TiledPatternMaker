@@ -28,7 +28,7 @@ protected:
     QCheckBox * chkZoom;
 
  private:
-    class ViewControl * view;
+    class View * view;
 };
 
 #endif

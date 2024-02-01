@@ -20,7 +20,7 @@
 #include "geometry/arcdata.h"
 #include "geometry/edge.h"
 #include "geometry/edgepoly.h"
-#include "geometry/point.h"
+#include "geometry/geo.h"
 #include "geometry/transform.h"
 #include "geometry/vertex.h"
 
@@ -128,7 +128,7 @@ void GeoGraphics::fillEdgePoly(const EdgePoly & epoly, QPen & pen)
 
     auto e = ep.first();
     path.moveTo(e->v1->pt);
-    for (const auto & edge : ep)
+    for (const auto & edge : std::as_const(ep))
     {
         if (edge->getType() == EDGETYPE_LINE)
         {
@@ -177,7 +177,7 @@ void GeoGraphics::drawEdgePoly(const EdgePoly & epoly, QPen & pen)
 
     auto e = ep.first();
     path.moveTo(e->v1->pt);
-    for (const auto & edge : ep)
+    for (const auto & edge : std::as_const(ep))
     {
         if (edge->getType() == EDGETYPE_LINE)
         {
@@ -206,8 +206,8 @@ void GeoGraphics::drawEdgePoly(const EdgePoly & epoly, QPen & pen)
 void GeoGraphics::drawArrow(QPointF from, QPointF to, qreal length, qreal half_width, QColor color)
 {
     QPointF dir = to - from;
-    Point::normalizeD(dir);
-    QPointF perp = Point::perp(dir);
+    Geo::normalizeD(dir);
+    QPointF perp = Geo::perp(dir);
     perp *= half_width ;
     dir  *= length;
     QPolygonF poly;

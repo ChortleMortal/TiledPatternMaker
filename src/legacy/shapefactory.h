@@ -10,7 +10,7 @@
 class Canvas;
 
 
-class ShapeFactory : public ShapeViewer
+class ShapeFactory : public LegacyShapeViewer
 {
 public:
     ShapeFactory(qreal diameter, QPointF loc = QPointF());
@@ -111,7 +111,7 @@ protected:
     void calcInscribedNonagonPoints(Polygon2 * p);
 
 private:
-    class ViewControl * view;
+    class View * view;
 
     qreal  _diameter;
     qreal  _radius;

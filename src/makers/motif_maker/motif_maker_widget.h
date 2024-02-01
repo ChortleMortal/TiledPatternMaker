@@ -43,7 +43,7 @@ public:
 private:
     class Configuration       * config;
     class PrototypeData       * protoMakerData;
-    class ViewControl         * view;
+    class View                * view;
 
     DELSelectorWidget         * delSelector;        // LHS top
     class DesignElementButton * viewerBtn;          // rhs top

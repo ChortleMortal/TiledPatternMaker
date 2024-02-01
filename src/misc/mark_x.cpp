@@ -1,7 +1,7 @@
 #include "misc/mark_x.h"
 #include "misc/layer.h"
 
-MarkX::MarkX(QPointF a, QPen pen, int index) : Layer("MarkX")
+MarkX::MarkX(QPointF a, QPen pen, int index) : Layer("MarkX",false)
 {
     _a     = a;
     _pen   = pen;
@@ -10,7 +10,7 @@ MarkX::MarkX(QPointF a, QPen pen, int index) : Layer("MarkX")
 
 }
 
-MarkX::MarkX(QPointF a, QPen pen, QString txt) : Layer("MarkX")
+MarkX::MarkX(QPointF a, QPen pen, QString txt) : Layer("MarkX",false)
 {
     _a     = a;
     _pen   = pen;
@@ -42,3 +42,18 @@ void MarkX::paint(QPainter *painter)
         painter->drawText(arect,_txt);
     }
 }
+
+void MarkX::setModelXform(const Xform & xf, bool update)
+{
+    Q_ASSERT(!_unique);
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.toInfoString() << (isUnique() ? "unique" : "common");
+    viewControl->setCurrentModelXform(xf,update);
+}
+
+const Xform & MarkX::getModelXform()
+{
+    Q_ASSERT(!_unique);
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << viewControl->getCurrentModelXform().toInfoString() << (isUnique() ? "unique" : "common");
+    return viewControl->getCurrentModelXform();
+}
+

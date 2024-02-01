@@ -17,6 +17,9 @@ public:
     void          setBorder(BorderPtr border) { this->border = border; }
     virtual void  paint(QPainter * painter) override;
 
+    virtual const Xform &   getModelXform() override;
+    virtual void            setModelXform(const Xform & xf, bool update) override;
+
 public slots:
     virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
     virtual void slot_mouseDragged(QPointF spt)       override;
@@ -31,8 +34,8 @@ public slots:
 
     virtual void slot_scale(int amount)  override;
     virtual void slot_rotate(int amount) override;
-    virtual void slot_moveX(int amount)  override;
-    virtual void slot_moveY(int amount)  override;
+    virtual void slot_moveX(qreal amount)  override;
+    virtual void slot_moveY(qreal amount)  override;
 
     virtual eViewType iamaLayer() override { return VIEW_BORDER; }
     virtual void iamaLayerController() override {}
@@ -50,6 +53,7 @@ private:
     ~BorderView() {}
 
     static BorderView * mpThis;
+    class CropViewer  * cropView;
     Configuration     * config;
     WeakBorderPtr       border;
     QPointF             mousePos;             // used by menu

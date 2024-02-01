@@ -13,6 +13,7 @@ class Motif;
 class Extender
 {
     friend class MotifView;
+
 public:
     Extender();
     Extender(const Extender & other);
@@ -23,7 +24,7 @@ public:
         connectBoundaryVertices  = rhs.connectBoundaryVertices;
         return *this; }
 
-    void    extend(Motif * fig, QTransform Tr);
+    void    extend(Motif * motif, QTransform Tr);
 
     void    setExtendPeripheralVertices(bool extend) { extendPeripheralVertices = extend; }
     void    setExtendFreeVertices(bool extend)       { extendFreeVertices       = extend; }
@@ -34,9 +35,9 @@ public:
     bool    getConnectBoundaryVertices() {  return connectBoundaryVertices; }
 
 protected:
-    void    extendPeripheralMap(MapPtr map);
-    void    extendFreeMap(MapPtr map, QTransform Tr);
-    void    connectOuterVertices(MapPtr map);
+    void    extendPeripheralMap( MapPtr motifMap);
+    void    extendFreeMap(       MapPtr motifMap, QTransform unitRotationTr);
+    void    connectOuterVertices(MapPtr motifMap);
 
     qreal   len(VertexPtr v1, VertexPtr v2);
 

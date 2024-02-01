@@ -1,9 +1,10 @@
 #include "makers/crop_maker/crop_maker.h"
 #include "geometry/crop.h"
 #include "makers/mosaic_maker/mosaic_maker.h"
+#include "misc/sys.h"
 #include "mosaic/mosaic.h"
 #include "viewers/crop_view.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view.h"
 
 CropMaker::CropMaker()
 {
@@ -55,7 +56,7 @@ bool CropMaker::setApply(bool state)
 CropPtr CropMaker::createCrop()
 {
     // this sets up a default crop
-    ViewControl  * view = ViewControl::getInstance();
+    View  * view   = Sys::view;
     QRectF rect    = view->rect();
     QPointF center = rect.center();
     QSizeF sz      = rect.size();

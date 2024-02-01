@@ -2,11 +2,10 @@
 #include "geometry/arcdata.h"
 #include "geometry/map.h"
 #include "geometry/neighbours.h"
-#include "geometry/point.h"
+#include "geometry/geo.h"
 #include "geometry/transform.h"
 #include "geometry/vertex.h"
 #include "misc/geo_graphics.h"
-#include "misc/utilities.h"
 #include "style/outline.h"
 
 
@@ -91,7 +90,7 @@ void Interlace::draw(GeoGraphics * gg)
     }
 
     QPen pen(Qt::black, 1, Qt::SolidLine, cap_style, join_style);
-    for (const Segment & seg : segments)
+    for (const Segment & seg : std::as_const(segments))
     {
         seg.draw(gg,pen);
     }
@@ -125,7 +124,6 @@ void Interlace::resetStyleRepresentation()
 {
     Thick::resetStyleRepresentation();
     segments.clear();
-    map.reset();
 }
 
 void Interlace::createStyleRepresentation()
@@ -135,21 +133,21 @@ void Interlace::createStyleRepresentation()
         return;
     }
 
-    map = getMap();
+    MapPtr map = getProtoMap();
 
     if (colors.size() > 1)
     {
-        threads.createThreads(map);
+        threads.createThreads(map.get());
         threads.assignColors(colors);
     }
 
-    assignInterlacing();
+    assignInterlacing(map.get());
 
     // Given the interlacing assignment created above, we can
     // use the beefy getPoints routine to extract the graphics
     // of the interlacing.
 
-    for (const auto & edge  : map->getEdges())
+    for (const auto & edge  : std::as_const(map->getEdges()))
     {
         ThreadPtr thread;
         QColor color;
@@ -179,14 +177,14 @@ void Interlace::createStyleRepresentation()
     map->verify();
 }
 
-void Interlace::assignInterlacing()
+void Interlace::assignInterlacing(Map * map)
 {
-    for (const auto & edge : map->getEdges())
+    for (const auto & edge :std::as_const(map->getEdges()))
     {
         edge->visited = false;
     }
 
-    for (const auto & vert : map->getVertices())
+    for (const auto & vert : std::as_const(map->getVertices()))
     {
         vert->visited = false;
     }
@@ -194,20 +192,20 @@ void Interlace::assignInterlacing()
     // Stack of edge to be processed.
     todo.clear();
 
-    for (const auto & edge : map->getEdges())
+    for (const auto & edge : std::as_const(map->getEdges()))
     {
         if (!edge->visited )
         {
             edge->v1_under = !interlace_start_under;
             todo.push(edge);
-            buildFrom();
+            buildFrom(map);
             //map->dumpMap(false);
         }
     }
 }
 
 // Propagate the over-under relation from an edge to its incident vertices.
-void Interlace::buildFrom()
+void Interlace::buildFrom(Map * map)
 {
     //qDebug() << "Interlace::buildFrom";
 
@@ -220,11 +218,11 @@ void Interlace::buildFrom()
 
         if (!v1->visited)
         {
-            propagate(v1, edge, edge->v1_under);
+            propagate(map, v1, edge, edge->v1_under);
         }
         if (!v2->visited)
         {
-            propagate(v2, edge, !edge->v1_under);
+            propagate(map, v2, edge, !edge->v1_under);
         }
     }
 }
@@ -236,7 +234,7 @@ void Interlace::buildFrom()
 // The whole trick is to manage how neighbours receive modifications
 // of edge_under_at_vert.
 
-void Interlace::propagate(VertexPtr vertex, EdgePtr edge, bool edge_under_at_vert)
+void Interlace::propagate(Map * map, VertexPtr vertex, EdgePtr edge, bool edge_under_at_vert)
 {
     vertex->visited = true;
 
@@ -299,7 +297,7 @@ void Interlace::propagate(VertexPtr vertex, EdgePtr edge, bool edge_under_at_ver
         int index    = 0;
         int edge_idx = -1;  // index of edge in ns
 
-        for (auto & wedge : *neighbours)
+        for (auto & wedge : std::as_const(*neighbours))
         {
             EdgePtr edge2 = wedge.lock();
             ns << edge2;
@@ -361,7 +359,7 @@ QPolygonF Segment::getPoly()
     QPolygonF p;
     p << v1.below <<  v1.v << v1.above <<  v2.below <<  v2.v << v2.above; // same as interlace
     //p << v2.below << v2.v << v2.above << v1.below << v1.v << v1.above;  // same as for outline
-    if (!Utils::isClockwise(p))
+    if (!Geo::isClockwise(p))
         qWarning() << "Poly is CCW";
     return p;
 }
@@ -452,7 +450,7 @@ void  Segment::drawShadows(GeoGraphics * gg, qreal shadow) const
 QPointF Segment::getShadowVector(QPointF from, QPointF to, qreal shadow) const
 {
     QPointF dir = to - from;
-    qreal magnitude = Point::mag(dir);
+    qreal magnitude = Geo::mag(dir);
     if ( shadow < magnitude )
     {
         dir *= (shadow / magnitude );
@@ -511,9 +509,9 @@ void Piece::getPoints(EdgePtr  edge, VertexPtr from, VertexPtr to, qreal width, 
     {
         // cap
         QPointF dir = pto - pfrom;
-        Point::normalizeD(dir);
+        Geo::normalizeD(dir);
         dir *= width;
-        QPointF perp = Point::perp(dir);
+        QPointF perp = Geo::perp(dir);
 
         below  = pto - perp;
         below += dir;
@@ -537,7 +535,7 @@ void Piece::getPoints(EdgePtr  edge, VertexPtr from, VertexPtr to, qreal width, 
             QVector<EdgePtr> ns;
             int index    = 0;
             int edge_idx = -1;
-            for (auto & wedge : *toNeighbours)
+            for (auto & wedge : std::as_const(*toNeighbours))
             {
                 EdgePtr nedge = wedge.lock();
                 ns << nedge;
@@ -556,14 +554,14 @@ void Piece::getPoints(EdgePtr  edge, VertexPtr from, VertexPtr to, qreal width, 
             if ( below.isNull() )
             {
                 QPointF perp = pto - pfrom;
-                Point::perpD(perp);
-                Point::normalizeD(perp);
+                Geo::perpD(perp);
+                Geo::normalizeD(perp);
                 perp *= width;
                 below = pto - perp ;
             }
 
             v   = pto;
-            above = Point::convexSum(below, pto, 2.0);
+            above = Geo::convexSum(below, pto, 2.0);
         }
         else
         {
@@ -583,8 +581,8 @@ void Piece::getPoints(EdgePtr  edge, VertexPtr from, VertexPtr to, qreal width, 
             v     = Outline::getJoinPoint(pto, before_pt, after_pt, width );
 
             QPointF dir = pto - pfrom ;
-            Point::normalizeD(dir);
-            QPointF perp = Point::perp(dir);
+            Geo::normalizeD(dir);
+            QPointF perp = Geo::perp(dir);
             perp        *= width;
 
             if (below.isNull())
@@ -598,8 +596,8 @@ void Piece::getPoints(EdgePtr  edge, VertexPtr from, VertexPtr to, qreal width, 
             if (v.isNull())
             {
                 QPointF ab = after_pt - before_pt ;
-                Point::normalizeD(ab);
-                Point::perpD(ab);
+                Geo::normalizeD(ab);
+                Geo::perpD(ab);
                 ab *= width;
                 v   = pto - ab ;
             }
@@ -623,7 +621,7 @@ void Piece::getPoints(EdgePtr  edge, VertexPtr from, VertexPtr to, qreal width, 
 
 qreal Piece::capGap( QPointF p, QPointF base, qreal gap )
 {
-    qreal max_gap = Point::dist(p, base );
+    qreal max_gap = Geo::dist(p, base );
     return (gap < max_gap) ? gap : max_gap;
 }
 

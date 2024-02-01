@@ -9,12 +9,13 @@
 #include "motifs/radial_motif.h"
 #include "geometry/intersect.h"
 #include "geometry/loose.h"
+#include "geometry/geo.h"
 
 MotifConnector::MotifConnector()
 {
 }
 
-void MotifConnector::connectMotif(RadialMotif * motif)
+void MotifConnector::connectMotif(RadialMotif * motif, qreal scale)
 {
     Q_ASSERT(motif);
 
@@ -24,26 +25,19 @@ void MotifConnector::connectMotif(RadialMotif * motif)
     DebugMapPtr dbgmap = motif->getDebugMap();
     if (dbgmap) dbgmap->wipeout();  // start again
 
-    VertexPtr tip;
     QPointF tip_pos(1.0,0.0);
+    //QTransform t = motif->getDELTransform();
+    //tip_pos = t.map(tip_pos);
 
     // Find the tip, i.e. the vertex at (1,0)
     auto map = motif->getUnitMap();
-    for (const auto & vert : map->getVertices())
-    {
-        QPointF pos = vert->pt;
-        qDebug() << "test" << pos << tip_pos;
-        if (Loose::equalsPt(pos, tip_pos))
-        {
-            tip = vert;
-            break;
-        }
-    }
+    VertexPtr tip = map->getVertex(tip_pos);
     Q_ASSERT(tip);
     qDebug() << "tip is: " << tip->pt;
 
     // Scale the unit
-    map->scale(motif->getMotifScale());
+    //qreal scale = motif->getMotifScale();
+    map->transform(QTransform().scale(scale,scale));
 
     qDebug() << "tip is: " << tip->pt;
 
@@ -63,7 +57,7 @@ void MotifConnector::connectMotif(RadialMotif * motif)
     QPointF pos = tip->pt;
 
     NeighboursPtr ntip = map->getNeighbours(tip);
-    for (auto & wedge : *ntip)
+    for (auto & wedge : std::as_const(*ntip))
     {
         EdgePtr edge = wedge.lock();
         VertexPtr ov = edge->getOtherV(pos);
@@ -87,7 +81,7 @@ void MotifConnector::connectMotif(RadialMotif * motif)
     if (dbgmap) dbgmap->insertDebugMark(bpos,"bpos");
 
     QPointF tmp  = tip_pos - bpos;
-    tmp = Point::normalize(tmp);
+    tmp = Geo::normalize(tmp);
     tmp *= 100.0;
     QPointF seg_end = tip_pos + tmp;
 
@@ -109,9 +103,9 @@ void MotifConnector::connectMotif(RadialMotif * motif)
 
     // Now add the extended edge and its mirror image by first
     // intersecting against rotated versions.
-
-    QPointF neg_start = motif->getTransform().map( tip_pos );
-    QPointF neg_end   = motif->getTransform().map(QPointF(endpoint.x(), -endpoint.y()));
+    
+    QPointF neg_start = motif->getUnitRotationTransform().map( tip_pos );
+    QPointF neg_end   = motif->getUnitRotationTransform().map(QPointF(endpoint.x(), -endpoint.y()));
 
     VertexPtr last_top    = tip;
     VertexPtr last_bottom = tip;
@@ -133,9 +127,9 @@ void MotifConnector::connectMotif(RadialMotif * motif)
         ep = map->insertEdge( last_bottom, iv);
         if (dbgmap) dbgmap->insertDebugLine(ep);
         last_bottom = iv;
-
-        neg_start = motif->getTransform().map( neg_start );
-        neg_end   = motif->getTransform().map( neg_end );
+        
+        neg_start = motif->getUnitRotationTransform().map( neg_start );
+        neg_end   = motif->getUnitRotationTransform().map( neg_end );
     }
 
     VertexPtr iv = map->insertVertex( endpoint);
@@ -147,9 +141,9 @@ void MotifConnector::connectMotif(RadialMotif * motif)
     }
 
     // rotate the unit
-    map->rotate(motif->getMotifRotate());
+    qreal rotate = motif->getMotifRotate();
+    map->transform(QTransform().rotate(rotate));
     map->resetNeighbourMap();
-    map->getNeighbourMap(); // rebuilds
     map->verify();
 }
 
@@ -165,7 +159,7 @@ qreal MotifConnector::computeScale(RadialMotif * motif)
 
     // Find the tip, i.e. the vertex at (1,0)
     auto map = motif->getUnitMap();
-    for (const auto & vert : qAsConst(map->getVertices()))
+    for (const auto & vert : std::as_const(map->getVertices()))
     {
         QPointF pos = vert->pt;
         if (Loose::equalsPt(pos, tip_pos))
@@ -179,13 +173,13 @@ qreal MotifConnector::computeScale(RadialMotif * motif)
                 {
                     QPointF bpos = ov->pt;
                     QPointF tmp = tip_pos - bpos;
-                    tmp = Point::normalize(tmp);
+                    tmp = Geo::normalize(tmp);
                     tmp *= 100.0;
                     QPointF seg_end = tip_pos + tmp;
                     QPointF neg_seg(seg_end.x(), -seg_end.y());
-
-                    QPointF ra = motif->getTransform().map( tip_pos );
-                    QPointF rb = motif->getTransform().map( neg_seg );
+                    
+                    QPointF ra = motif->getUnitRotationTransform().map( tip_pos );
+                    QPointF rb = motif->getUnitRotationTransform().map( neg_seg );
 
                     QPointF isect;
                     if (!Intersect::getIntersection(tip_pos, seg_end, ra, rb, isect))
@@ -195,7 +189,7 @@ qreal MotifConnector::computeScale(RadialMotif * motif)
                     }
                     else
                     {
-                        qreal alpha = qCos(M_PI / qreal(motif->getN())) / Point::mag(isect);
+                        qreal alpha = qCos(M_PI / qreal(motif->getN())) / Geo::mag(isect);
                         qDebug() << "computeConnectScale =" << alpha;
                         return alpha;
                     }
@@ -235,7 +229,7 @@ void MotifConnector::rotateHalf(RadialMotif * motif)
 
     QTransform Tp = QTransform().rotateRadians(-2.0 * M_PI * motif->get_don());
 
-    for (const auto &vert : qAsConst(map->getVertices()))
+    for (const auto &vert : std::as_const(map->getVertices()))
     {
         if( (vert->pt.y() + Loose::TOL) > 0.0 )
         {
@@ -253,7 +247,7 @@ void MotifConnector::rotateHalf(RadialMotif * motif)
 
     QVector<EdgePtr> eadds;
 
-    for (auto & edge : qAsConst(map->getEdges()))
+    for (auto & edge : std::as_const(map->getEdges()))
     {
         if (   movers.contains(edge->v1)
             && movers.contains(edge->v2))
@@ -262,7 +256,7 @@ void MotifConnector::rotateHalf(RadialMotif * motif)
         }
     }
 
-    for(auto & e4 : qAsConst(eadds))
+    for(auto & e4 : std::as_const(eadds))
     {
         EdgePtr edge = e4;
         map->insertEdge(movers.value(edge->v1), movers.value(edge->v2));
@@ -291,7 +285,7 @@ void MotifConnector::scaleToUnit(RadialMotif * motif)
     qreal xmax = 0.0;
 
     auto map = motif->getUnitMap();
-    for (const auto &vert : qAsConst(map->getVertices()))
+    for (const auto &vert : std::as_const(map->getVertices()))
     {
         if(!vmax)
         {
@@ -312,6 +306,7 @@ void MotifConnector::scaleToUnit(RadialMotif * motif)
     if (vmax)
     {
         qDebug() << "xmax=" << xmax;
-        map->scale( 1.0 / xmax );
+        qreal scale = 1.0 / xmax;
+        map->transform(QTransform().scale(scale,scale));
     }
 }

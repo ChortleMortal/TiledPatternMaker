@@ -2,8 +2,10 @@
 #include <QDir>
 #include <QStandardPaths>
 #include <QApplication>
+#include "enums/eviewtype.h"
 #include "settings/configuration.h"
 #include "tiledpatternmaker.h"
+#include "misc/sys.h"
 
 extern TiledPatternMaker * theApp;
 
@@ -37,12 +39,12 @@ Configuration::Configuration()
     // peersist
     QSettings s;
 
-    lastLoadedDesignId  = static_cast<eDesign>(s.value("design2",5).toInt());
+    lastLoadedLegacyDes = s.value("design3","").toString();
+    lastLoadedTiling    = s.value("lastLoadedTileName","").toString();
+    lastLoadedMosaic    = s.value("lastLoadedXML","").toString();
     cycleInterval       = s.value("cycleInterval",4).toInt();
     polySides           = s.value("polySides",8).toInt();
     protoViewMode       = s.value("protoViewMode2",0x06).toInt();
-    lastLoadedTileName  = s.value("lastLoadedTileName","").toString();
-    lastLoadedXML       = s.value("lastLoadedXML","").toString();
     rootMediaDir        = s.value("rootMediaDir",getMediaRoot()).toString();
     rootImageDir        = s.value("rootImageDir",getImageRoot()).toString();
     image0              = s.value("image0","").toString();
@@ -56,7 +58,7 @@ Configuration::Configuration()
     gridColorTiling     = s.value("gridColorTiling2", QColor(Qt::red).name(QColor::HexArgb)).toString();
     gridColorModel      = s.value("gridColorModel2", QColor(Qt::green).name(QColor::HexArgb)).toString();
     gridColorScreen     = s.value("gridColorScreen2", QColor(Qt::blue).name(QColor::HexArgb)).toString();
-    darkTheme           = s.value("darkTheme",false).toBool();
+    colorTheme          = static_cast<eColorTheme>(s.value("colorTheme",AUTO_THEME).toUInt());
     autoLoadStyles      = s.value("autoLoadStyles",false).toBool();
     autoLoadTiling      = s.value("autoLoadTiling",false).toBool();
     autoLoadDesigns     = s.value("autoLoadDesigns",false).toBool();
@@ -81,6 +83,8 @@ Configuration::Configuration()
     mosaicOrigCheck     = s.value("mosaicOrigCheck",true).toBool();
     mosaicNewCheck      = s.value("mosaicNewCheck",true).toBool();
     mosaicTestCheck     = s.value("mosaicTestCheck",true).toBool();
+    mosaicSortCheck     = s.value("mosaicSortCheck",false).toBool();
+    showWithBkgds       = s.value("showWithBkgds",false).toBool();
     tilingOrigCheck     = s.value("tilingOrigCheck",true).toBool();
     tilingNewCheck      = s.value("tilingNewCheck",true).toBool();
     tilingTestCheck     = s.value("tilingTestCheck",true).toBool();
@@ -103,12 +107,9 @@ Configuration::Configuration()
 
     compare_transparent = s.value("compare_transparent",false).toBool();
     compare_popup       = s.value("compare_popup",true).toBool();
-    view_popup          = s.value("view_popup",true).toBool();
-    view_transparent    = s.value("view_transparent",false).toBool();
-    filter_transparent  = s.value("filter_transparent",false).toBool();
+    filterColor         = s.value("filter_transparent",false).toBool();
     display_differences = s.value("compare_differences",true).toBool();
     use_workListForCompare= s.value("use_workListForCompare",false).toBool();
-    generate_workList   = s.value("generate_workList",false).toBool();
     skipExisting        = s.value("skipExisting",false).toBool();
     showBackgroundImage = s.value("showBackgroundImage",true).toBool();
     motifMultiView      = s.value("motifMultiView",false).toBool();
@@ -116,7 +117,6 @@ Configuration::Configuration()
     limitViewSize       = s.value("limitViewSize",true).toBool();
     insightMode         = s.value("insightMode",false).toBool();
     cs_showBkgds        = s.value("cs_showBkgds",false).toBool();
-    cs_showFrameSettings= s.value("cs_showFrameSettings",false).toBool();
     defaultImageRoot    = s.value("defaultImageRoot",true).toBool();
     defaultMediaRoot    = s.value("defaultMediaRoot",true).toBool();
     saveMosaicTest      = s.value("saveMosaicTest",false).toBool();
@@ -132,7 +132,7 @@ Configuration::Configuration()
     showGrid            = s.value("showGrid",false).toBool();
     showGridLayerCenter= s.value("showGridLayerCenter",false).toBool();
     showGridModelCenter = s.value("showGridModelCenter",false).toBool();
-    showGridScreenCenter= s.value("showGridScreenCenter",false).toBool();
+    showGridViewCenter= s.value("showGridScreenCenter",false).toBool();
     gridUnits           = static_cast<eGridUnits>(s.value("gridUnits",GRID_UNITS_SCREEN).toUInt());
     gridType            = static_cast<eGridType>(s.value("gridType2",GRID_ORTHOGONAL).toUInt());
     gridTilingAlgo      = static_cast<eGridTilingAlgo>(s.value("gridTilingAlgo",REGION).toUInt());
@@ -152,10 +152,15 @@ Configuration::Configuration()
     mapedMergeSensitivity = s.value("mapedMergeSensitivity",1e-2).toDouble();
     protoviewWidth      = s.value("protoviewWidth",3.0).toDouble();
     motifViewWidth      = s.value("motifViewWidth",3.0).toDouble();
-    genCycle            = static_cast<eCycleMode>(s.value("genCycle",CYCLE_SAVE_MOSAIC_BMPS).toInt());
-    viewCycle           = static_cast<eCycleMode>(s.value("viewCycle",CYCLE_MOSAICS).toInt());
-    fileFilter          = static_cast<eLoadType>(s.value("fileFilter",ALL_MOSAICS).toInt());
+    genCycleMosaic      = s.value("genCycleMosaic",true).toBool();
+    multithreadedGeneration = s.value("multithreadedGeneration",true).toBool();
+    
+    viewCycle2          = static_cast<eCycleMode>(s.value("viewCycle2",CYCLE_VIEW_MOSAICS).toInt());
+
+    genFileFilter       = static_cast<eLoadType>(s.value("fileFilter",ALL_MOSAICS).toInt());
+    viewFileFilter      = static_cast<eLoadType>(s.value("viewFilter",ALL_MOSAICS).toInt());
     versionFilter       = static_cast<eLoadType>(s.value("versionFilter",ALL_MOSAICS).toInt());
+
     lastCompareName     = s.value("lastCompareName","").toString();
 
     worklist.load(s);
@@ -170,29 +175,15 @@ Configuration::Configuration()
     protoViewColors     = s.value("protoViewColors",qsl).toStringList();
 
     QStringList qsl2;
-    qsl2 << "#ffffff" << "#ffffff" << "#ffffff" << "#ffffff" << "#ffffff" << "#ffffff" << "#ffffff" << "#ffffff" << "#ffffff" << "#ffffff" << "#ffffff";
-    viewColors          = s.value("viewColors",qsl2).toStringList();
+    for (int i = 0; i < NUM_VIEW_TYPES; i++)
+    {
+        qsl2 << "#ffffff";
+    }
+    viewColors          = s.value("viewColors2",qsl2).toStringList();
 
     // ensures indices are in range
     if (mapEditorMode > MAPED_MODE_MAX) mapEditorMode   = MAPED_MODE_MAP;
     if (repeatMode > REPEAT_MAX)        repeatMode      = REPEAT_MAX;
-
-    // defaults (volatile)
-    appInstance     = 0;
-    primaryDisplay  = false;
-    circleX         = false;
-    hideCircles     = false;
-    showCenterMouse = false;
-    dontReplicate   = false;
-    highlightUnit   = false;
-    debugMapEnable  = false;
-    dontTrapLog     = false;
-    measure         = false;
-    localCycle      = false;
-
-    updatePanel     = true;
-    motifPropagate  = true;
-    enableDetachedPages = true;
 
     configurePaths();
 }
@@ -205,18 +196,18 @@ Configuration::~Configuration()
 void Configuration::save()
 {
     QSettings s;
-    s.setValue("design2",lastLoadedDesignId);
+    s.setValue("design3",lastLoadedLegacyDes);
+    s.setValue("lastLoadedTileName",lastLoadedTiling);
+    s.setValue("lastLoadedXML",lastLoadedMosaic);
     s.setValue("protoViewMode2",protoViewMode);
     s.setValue("polySides",polySides);
     s.setValue("cycleInterval",cycleInterval);
-    s.setValue("lastLoadedTileName",lastLoadedTileName);
-    s.setValue("lastLoadedXML",lastLoadedXML);
     s.setValue("image0",image0);
     s.setValue("image1",image1);
     s.setValue("mapEditorMode",mapEditorMode);
     s.setValue("repeat",repeatMode);
     s.setValue("panelName", panelName);
-    s.setValue("darkTheme",darkTheme);
+    s.setValue("colorTheme",colorTheme);
     s.setValue("autoLoadStyles",autoLoadStyles);
     s.setValue("verifyMaps",verifyMaps);
     s.setValue("verifyProtos",verifyProtos);
@@ -241,6 +232,8 @@ void Configuration::save()
     s.setValue("mosaicOrigCheck",mosaicOrigCheck);
     s.setValue("mosaicNewCheck",mosaicNewCheck);
     s.setValue("mosaicTestCheck",mosaicTestCheck);
+    s.setValue("mosaicSortCheck",mosaicSortCheck);
+    s.setValue("showWithBkgds",showWithBkgds);
     s.setValue("tilingOrigCheck",tilingOrigCheck);
     s.setValue("tilingNewCheck",tilingNewCheck);
     s.setValue("tilingTestCheck",tilingTestCheck);
@@ -265,13 +258,10 @@ void Configuration::save()
 
     s.setValue("compare_transparent",compare_transparent);
     s.setValue("compare_popup",compare_popup);
-    s.setValue("view_popup",view_popup);
     s.setValue("compare_transparent",compare_transparent);
-    s.setValue("view_transparent",view_transparent);
-    s.setValue("filter_transparent",filter_transparent);
+    s.setValue("filter_transparent",filterColor);
     s.setValue("compare_differences",display_differences);
     s.setValue("use_workListForCompare",use_workListForCompare);
-    s.setValue("generate_workList",generate_workList);
     s.setValue("showBackgroundImage",showBackgroundImage);
     s.setValue("motifMultiView",motifMultiView);
     s.setValue("limitViewSize",limitViewSize);
@@ -280,7 +270,6 @@ void Configuration::save()
     s.setValue("diffTool",diffTool);
     s.setValue("insightMode",insightMode);
     s.setValue("cs_showBkgds",cs_showBkgds);
-    s.setValue("cs_showFrameSettings",cs_showFrameSettings);
     s.setValue("defaultImageRoot",defaultImageRoot);
     s.setValue("defaultMediaRoot",defaultMediaRoot);
     s.setValue("rootImageDir",rootImageDir);
@@ -292,13 +281,13 @@ void Configuration::save()
     s.setValue("vCompTile",vCompTile);
 
     s.setValue("protoViewColors",protoViewColors);
-    s.setValue("viewColors",viewColors);
+    s.setValue("viewColors2",viewColors);
 
     s.setValue("showCenterDebug",showCenterDebug);
     s.setValue("showGrid",showGrid);
     s.setValue("showGridLayerCenter",showGridLayerCenter);
     s.setValue("showGridModelCenter",showGridModelCenter);
-    s.setValue("showGridScreenCenter",showGridScreenCenter);
+    s.setValue("showGridScreenCenter",showGridViewCenter);
     s.setValue("gridUnits",gridUnits);
     s.setValue("gridTilingAlgo",gridTilingAlgo);
     s.setValue("gridType2",gridType);
@@ -322,9 +311,11 @@ void Configuration::save()
     s.setValue("gridColorTiling2",gridColorTiling);
     s.setValue("gridColorModel2",gridColorModel);
     s.setValue("gridColorScreen2",gridColorScreen);
-    s.setValue("genCycle",genCycle);
-    s.setValue("viewCycle",viewCycle);
-    s.setValue("fileFilter",fileFilter);
+    s.setValue("genCycleMosaic",genCycleMosaic);
+    s.setValue("multithreadedGeneration",multithreadedGeneration);
+    s.setValue("viewCycle2",viewCycle2);
+    s.setValue("fileFilter",genFileFilter);
+    s.setValue("viewFilter",viewFileFilter);
     s.setValue("versionFilter",versionFilter);
     s.setValue("lastCompareName",lastCompareName);
 
@@ -442,19 +433,19 @@ void Configuration::configurePaths()
         root += "/";
     }
 
-    rootMediaDir        = root;
-    rootTileDir         = root + "tilings/";
-    originalTileDir     = root + "tilings/original/";
-    newTileDir          = root + "tilings/new_tilings/";
-    testTileDir         = root + "tilings/tests/";
-    rootMosaicDir       = root + "designs/";
-    originalMosaicDir   = root + "designs/original/";
-    newMosaicDir        = root + "designs/new_designs/";
-    testMosiacDir       = root + "designs/tests/";
-    templateDir         = root + "designs/templates/";
-    examplesDir         = root + "history/examples/";
-    mapsDir             = root + "maps/";
-    worklistsDir        = root + "worklists/";
+    rootMediaDir             = root;
+    Sys::rootTileDir         = root + "tilings/";
+    Sys::originalTileDir     = root + "tilings/original/";
+    Sys::newTileDir          = root + "tilings/new_tilings/";
+    Sys::testTileDir         = root + "tilings/tests/";
+    Sys::rootMosaicDir       = root + "designs/";
+    Sys::originalMosaicDir   = root + "designs/original/";
+    Sys::newMosaicDir        = root + "designs/new_designs/";
+    Sys::testMosiacDir       = root + "designs/tests/";
+    Sys::templateDir         = root + "designs/templates/";
+    Sys::examplesDir         = root + "history/examples/";
+    Sys::mapsDir             = root + "maps/";
+    Sys::worklistsDir        = root + "worklists/";
 
     if (defaultImageRoot)
         rootImageDir  = getImageRoot();
@@ -466,15 +457,10 @@ void Configuration::configurePaths()
     }
 }
 
-void Worklist::set(QStringList & list)
+void Worklist::set(QString name, QStringList & list)
 {
-    this->list     = list;
-    emit theApp->sig_workListChanged();
-}
-
-void Worklist::setName(QString listName)
-{
-    this->listname = listName;
+    listname   = name;
+    this->list = list;
     emit theApp->sig_workListChanged();
 }
 

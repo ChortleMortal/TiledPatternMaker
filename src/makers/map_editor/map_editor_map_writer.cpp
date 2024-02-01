@@ -3,11 +3,11 @@
 #include "makers/map_editor/map_editor_db.h"
 #include "misc/fileservices.h"
 #include "misc/tpm_io.h"
+#include "misc/sys.h"
 #include "viewers/backgroundimageview.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
 #include "viewers/map_editor_view.h"
 #include "tile/tiling_writer.h"
-
 
 MapEditorMapWriter::MapEditorMapWriter(MapEditorView *view) : MosaicWriter()
 {
@@ -17,7 +17,6 @@ MapEditorMapWriter::MapEditorMapWriter(MapEditorView *view) : MosaicWriter()
 MapEditorMapWriter::~MapEditorMapWriter()
 {
 }
-
 
 // this is used by MapEditor to save a map
 bool MapEditorMapWriter::writeXML(QString fileName, MapPtr map, eMapEditorMapType mapType)
@@ -51,14 +50,13 @@ bool MapEditorMapWriter::writeXML(QString fileName, MapPtr map, eMapEditorMapTyp
         }
 
         // frame settings
-        ViewControl * view = ViewControl::getInstance();
-        auto & settings    = view->getViewSettings();
-        QSize size         = settings.getCropSize(VIEW_MAP_EDITOR);
-        QSize zsize        = settings.getZoomSize(VIEW_MAP_EDITOR);
+        auto & canvas    = Sys::viewController->getCanvas();
+        QSize size       = Sys::view->getCurrentSize();
+        QSizeF zsize     = canvas.getSize();
         procSize(ts,size,zsize);
 
         // canvas settings
-        const Xform & xf = meView->getCanvasXform();
+        const Xform & xf = meView->getModelXform();
         QString str = "ModelSettings";
         ts << "<" << str << ">" << endl;
         procesToolkitGeoLayer(ts,xf,0);

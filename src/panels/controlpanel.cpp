@@ -1,10 +1,12 @@
 #include "panels/controlpanel.h"
 #include "enums/eviewtype.h"
+#include "geometry/transform.h"
 #include "legacy/design_maker.h"
 #include "makers/map_editor/map_editor.h"
 #include "makers/mosaic_maker/mosaic_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
-#include "misc/runguard.h"
+#include "misc/sys.h"
+#include "misc/utilities.h"
 #include "misc/version.h"
 #include "mosaic/mosaic.h"
 #include "panels/page_debug.h"
@@ -12,7 +14,6 @@
 #include "panels/page_mosaic_maker.h"
 #include "panels/page_motif_maker.h"
 #include "panels/page_prototype_info.h"
-#include "panels/page_system_info.h"
 #include "panels/page_tiling_maker.h"
 #include "panels/panel_pages_widget.h"
 #include "panels/panel_view_select.h"
@@ -20,10 +21,8 @@
 #include "settings/configuration.h"
 #include "tile/tiling.h"
 #include "tiledpatternmaker.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
 #include "widgets/mouse_mode_widget.h"
-
-extern RunGuard * guard;
 
 ControlPanel * ControlPanel::mpThis = nullptr;
 
@@ -69,8 +68,6 @@ ControlPanel::ControlPanel()
     setWindowFlag(Qt::WindowMinimizeButtonHint,true);
 #endif
 
-    loadState = LOADING_NONE;
-
     config  = Configuration::getInstance();
 
     getPanelInfo();
@@ -85,7 +82,8 @@ ControlPanel::ControlPanel()
 void ControlPanel::init(TiledPatternMaker * parent)
 {
     maker          = parent;
-    view           = ViewControl::getInstance();
+    view           = Sys::view;
+    viewControl    = Sys::viewController;
     mosaicMaker    = MosaicMaker::getInstance();
     tilingMaker    = TilingMaker::getInstance();
 
@@ -111,10 +109,9 @@ void ControlPanel::closeEvent(QCloseEvent *event)
     {
         QPoint pt = pos();
         QSettings s;
-        s.setValue(QString("panelPos/%1").arg(config->appInstance), pt);
+        s.setValue(QString("panelPos/%1").arg(Sys::appInstance), pt);
     }
 
-    guard->release();
     QWidget::closeEvent(event);
     qApp->quit();
 }
@@ -141,7 +138,7 @@ void ControlPanel::paintEvent(QPaintEvent *event)
     {
         // first time only
         QSettings s;
-        QPoint pt = s.value((QString("panelPos/%1").arg(config->appInstance))).toPoint();
+        QPoint pt = s.value((QString("panelPos/%1").arg(Sys::appInstance))).toPoint();
         move(pt);
         isShown = true;
     }
@@ -171,21 +168,29 @@ void ControlPanel::setupGUI()
     if (config->insightMode)
     {
         QPushButton * pbLogEvent      = new QPushButton("Log Event");
-        QPushButton * pbUpdateView    = new QPushButton("Repaint View");
-        QPushButton * pbRefreshView   = new QPushButton("Recreate View");
+        QPushButton * pbReload        = new QPushButton("Reload");
+        QPushButton * pbRefreshView   = new QPushButton("Recreate");
+        QPushButton * pbUpdateView    = new QPushButton("Repaint");
         QPushButton * pbSaveLog       = new QPushButton("Save Log");
+
+        #define BWIDTH 69
+        pbLogEvent->setMaximumWidth(BWIDTH);
+        pbReload->setMaximumWidth(BWIDTH);
+        pbRefreshView->setMaximumWidth(BWIDTH);
+        pbUpdateView->setMaximumWidth(BWIDTH);
+        pbSaveLog->setMaximumWidth(BWIDTH);
 
         hlayout->addWidget(pbLogEvent);
         hlayout->addWidget(pbSaveLog);
-        hlayout->addStretch();
-        hlayout->addWidget(pbRefreshView  );
+        hlayout->addWidget(pbReload);
+        hlayout->addWidget(pbRefreshView);
         hlayout->addWidget(pbUpdateView);
-        hlayout->addStretch();
 
-        connect(pbUpdateView,       &QPushButton::clicked,  this,     &ControlPanel::updateView);
-        connect(pbLogEvent,         &QPushButton::clicked,  this,     &ControlPanel::slot_logEvent);
-        connect(pbRefreshView,      &QPushButton::clicked,  view,     &ViewControl::slot_refreshView);
-        connect(pbSaveLog,          &QPushButton::clicked,  this,     &ControlPanel::sig_saveLog);
+        connect(pbUpdateView,       &QPushButton::clicked,  this,       &ControlPanel::updateView);
+        connect(pbLogEvent,         &QPushButton::clicked,  this,       &ControlPanel::slot_logEvent);
+        connect(pbRefreshView,      &QPushButton::clicked,  viewControl,&ViewController::slot_reconstructView);
+        connect(pbSaveLog,          &QPushButton::clicked,  this,       &ControlPanel::sig_saveLog);
+        connect(pbReload,           &QPushButton::clicked,  this,       &ControlPanel::slot_reload);
     }
 
     hlayout->addStretch();
@@ -227,14 +232,19 @@ void ControlPanel::setupGUI()
     line->setFrameShape(QFrame::VLine);
     line->setFrameShadow(QFrame::Sunken);
     line->setLineWidth(1);
+    if (!Sys::isDarkTheme) line->setStyleSheet("QFrame {background-color: LightGray;}");
+
     QFrame    * line1           = new QFrame();
     line1->setFrameShape(QFrame::VLine);
     line1->setFrameShadow(QFrame::Sunken);
     line1->setLineWidth(1);
+    if (!Sys::isDarkTheme) line1->setStyleSheet("QFrame {background-color: LightGray;}");
+
     QFrame    * line2           = new QFrame();
     line2->setFrameShape(QFrame::VLine);
     line2->setFrameShadow(QFrame::Sunken);
     line2->setLineWidth(1);
+    if (!Sys::isDarkTheme) line2->setStyleSheet("QFrame {background-color: LightGray;}");
 
     QHBoxLayout * hbox = new QHBoxLayout;
     hbox->addWidget(pbRaise);
@@ -299,10 +309,10 @@ void ControlPanel::setupGUI()
     connect(pbExit,             &QPushButton::clicked,              this,     &ControlPanel::slot_exit);
     connect(pbRaise,            &QPushButton::clicked,              this,     &ControlPanel::slot_raise);
     connect(pbShowTiling,       &QPushButton::pressed,              this,     &ControlPanel::showTilingPressed);
-    connect(pbClearAll,         &QPushButton::pressed,              view,     &ViewControl::slot_unloadAll, Qt::QueuedConnection);
+    connect(pbClearAll,         &QPushButton::pressed,              viewControl, &ViewController::slot_unloadAll, Qt::QueuedConnection);
     connect(pbShowMosaic,       &QPushButton::pressed,              this,     &ControlPanel::showMosaicPressed);
     connect(&repeatRadioGroup,  &QButtonGroup::idClicked,           this,     &ControlPanel::repeatChanged);
-    connect(this,               &ControlPanel::sig_refreshView,     view,     &ViewControl::slot_refreshView);
+    connect(this,               &ControlPanel::sig_refreshView,     viewControl,  &ViewController::slot_reconstructView);
     connect(this,               &ControlPanel::sig_render,          theApp,   &TiledPatternMaker::slot_render);
     connect(kbdModeCombo,       SIGNAL(currentIndexChanged(int)),   this,     SLOT(slot_kbdModeChanged(int)));
     connect(view,               &View::sig_kbdMode,                 this,     &ControlPanel::slot_kbdMode);
@@ -320,7 +330,7 @@ void ControlPanel::slot_poll()
 {
     viewSelect->refresh();
 
-    if (config->insightMode && !config->updatePanel)
+    if (config->insightMode && !Sys::updatePanel)
     {
         return;
     }
@@ -338,16 +348,57 @@ void ControlPanel::repeatChanged(int id)
 
     emit sig_render();
 
-    if (view->isEnabled(VIEW_MAP_EDITOR))
+    if (viewControl->isEnabled(VIEW_MAP_EDITOR))
     {
         emit sig_reload();
+    }
+}
+
+void ControlPanel::slot_reload()
+{
+    LoadUnit & loadUnit = view->getLoadUnit();
+    QString name = loadUnit.getLastLoadName();
+
+    switch (loadUnit.getLastLoadState())
+    {
+    case LOADING_MOSAIC:
+        mosaicMaker->loadMosaic(name);
+        break;
+
+    case LOADING_TILING:
+        tilingMaker->loadTiling(name,TILM_LOAD_SINGLE);
+        break;
+
+    case LOADING_LEGACY:
+    {
+        eDesign design = (eDesign)designs.key(name);
+        auto dmaker = DesignMaker::getInstance();
+        dmaker->slot_loadDesign(design);
+    }   break;
+
+    case LOADING_NONE:
+        break;
     }
 }
 
 void ControlPanel::slot_logEvent()
 {
     qInfo() << "** EVENT MARK **";
-    view->dumpRefs();
+    Sys::dumpRefs();
+    const QVector<Layer*> & layers = Sys::view->getActiveLayers();
+    if (layers.size())
+    {
+        Layer * layer = layers.first();
+        if (layer)
+        {
+            auto vsize = Sys::view->size();
+            auto csize = Sys::viewController->getCanvas().getSize();
+            qInfo().noquote() << "ViewSize" << vsize << "aspect" <<  Utils::aspect(vsize) << "CanvasSize" << csize << "aspect" << Utils::aspect(csize);
+            qInfo().noquote() << layer->getLayerName() << "Canvas" << Transform::toInfoString(layer->getCanvasTransform());
+            qInfo().noquote() << layer->getLayerName() << "Model " << Transform::toInfoString(layer->getModelTransform());
+        }
+    }
+    //emit sig_id_layers();
 }
 
 void ControlPanel::slot_raise()
@@ -418,7 +469,7 @@ void ControlPanel::delegateKeyboardMouse()
 {
     kbdModeCombo->blockSignals(true);
     kbdModeCombo->clear();
-    if (view->isEnabled(VIEW_DESIGN))
+    if (viewControl->isEnabled(VIEW_DESIGN))
     {
         kbdModeCombo->insertItem(100,"Mode Position",   QVariant(KBD_MODE_DES_POS));
         kbdModeCombo->insertItem(100,"Mode Layer",      QVariant(KBD_MODE_DES_LAYER_SELECT));
@@ -446,7 +497,7 @@ void ControlPanel::delegateKeyboardMouse()
 
 eKbdMode ControlPanel::getValidKbdMode(eKbdMode mode)
 {
-    if (view->isEnabled(VIEW_DESIGN))
+    if (viewControl->isEnabled(VIEW_DESIGN))
     {
         return getValidDesignMode(mode);
     }
@@ -534,7 +585,7 @@ void ControlPanel::showTilingPressed()
     panel_page * currentPage = pageController->getCurrentPage();
 
     page_tiling_maker * ptm  = dynamic_cast<page_tiling_maker*>(currentPage);
-    if (ptm && view->isEnabled(VIEW_TILING))
+    if (ptm && viewControl->isEnabled(VIEW_TILING))
     {
         selectViewer(VIEW_TILING_MAKER);
     }
@@ -577,7 +628,7 @@ void ControlPanel::setWindowTitles()
 {
     // The view
     QString viewTitle;
-    if (!view->isEnabled(VIEW_DESIGN))
+    if (!viewControl->isEnabled(VIEW_DESIGN))
     {
         // regular case
         QString sMosaic;
@@ -591,12 +642,12 @@ void ControlPanel::setWindowTitles()
         auto tiling = tilingMaker->getSelected();
         if (tiling)
         {
-            sTiling = tiling->getName();
+            sTiling = tiling->getTitle();
         }
 
         viewTitle  = QString("  Mosaic <%1>  Tiling <%2>  ").arg(sMosaic).arg(sTiling);
 
-        if (view->isEnabled(VIEW_MAP_EDITOR))
+        if (viewControl->isEnabled(VIEW_MAP_EDITOR))
         {
             viewTitle += MapEditor::getInstance()->getStatus();
         }
@@ -610,18 +661,23 @@ void ControlPanel::setWindowTitles()
 
     // The control panel show transient status. The view shows whats loaded
     QString transient;
-    switch (loadState)
+    LoadUnit & loadUnit = view->getLoadUnit();
+    switch (loadUnit.getLoadState())
     {
     case LOADING_NONE:
         transient = viewTitle;
         break;
 
     case LOADING_MOSAIC:
-        transient = QString("  Loading Mosaic: %1").arg(loadName);
+        transient = QString("  Loading Mosaic: %1").arg(loadUnit.getLoadName());
         break;
 
     case LOADING_TILING:
-        transient = QString("  Loading Tiling: %1").arg(loadName);
+        transient = QString("  Loading Tiling: %1").arg(loadUnit.getLoadName());
+        break;
+
+    case LOADING_LEGACY:
+        transient = QString("  Loading Legacy Design: %1").arg(loadUnit.getLoadName());
         break;
     }
 
@@ -633,12 +689,6 @@ void ControlPanel::setWindowTitles()
     {
         theApp->getSplitter()->setWindowTitle(panelTitle);
     }
-}
-
-void ControlPanel::setLoadState(eLoadState state, QString name)
-{
-    loadState = state;
-    loadName  = name;
 }
 
 void ControlPanel::completePageSelection()

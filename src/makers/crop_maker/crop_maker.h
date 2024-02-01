@@ -2,7 +2,10 @@
 #ifndef CROPMAKER_H
 #define CROPMAKER_H
 
-#include<memory>
+#include <QObject>
+#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
+#include <memory>
+#endif
 
 typedef std::shared_ptr<class Crop>   CropPtr;
 

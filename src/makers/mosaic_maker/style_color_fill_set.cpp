@@ -2,7 +2,8 @@
 #include <QCheckBox>
 
 #include "makers/mosaic_maker/style_color_fill_set.h"
-#include "viewers/viewcontrol.h"
+#include "misc/sys.h"
+#include "viewers/view.h"
 #include "style/filled.h"
 
 StyleColorFillSet::StyleColorFillSet(FilledPtr style, QVBoxLayout * vbox)  : filled(style)
@@ -59,15 +60,17 @@ void StyleColorFillSet::display()
 {
     QModelIndex selected = table->currentIndex();
 
+    ColorMaker & cm = filled->getColorMaker();
+
     table->clearContents();
     filled->getWhiteColorSet()->resetIndex();
 
-    FaceGroups & faceGroups = filled->getFaceGroups();
+    FaceGroups & faceGroups = cm.getFaceGroups();
 
     table->setRowCount(faceGroups.size());
 
     int row = 0;
-    for (const FaceSetPtr & faceSet : faceGroups)
+    for (const FaceSetPtr & faceSet : std::as_const(faceGroups))
     {
         QTableWidgetItem * item = new QTableWidgetItem(QString::number(row));
         table->setItem(row,COL_ROW,item);
@@ -245,8 +248,7 @@ void StyleColorFillSet::colorVisibilityChanged(int row)
     filled->getWhiteColorSet()->setColor(row, tpcolor);
     qDebug() << "hide state="  << hide;
 
-    ViewControl * view = ViewControl::getInstance();
-    view->update();
+    Sys::view->update();
 
     qDebug() << "colorVisibilityChanged: done";
 }
@@ -274,24 +276,25 @@ void StyleColorFillSet::colorChanged(int row)
 
 void StyleColorFillSet::slot_click(int row, int col)
 {
+    ColorMaker & cm = filled->getColorMaker();
+
     if (col == COL_SEL)
     {
-        if (!filled->getFaceGroups().isSelected(row))
+        if (!cm.getFaceGroups().isSelected(row))
         {
-            filled->getFaceGroups().select(row);
+            cm.getFaceGroups().select(row);
         }
         else
         {
-            filled->getFaceGroups().deselect(row);
+            cm.getFaceGroups().deselect(row);
         }
     }
     else
     {
-        filled->getFaceGroups().deselect();
+        cm.getFaceGroups().deselect();
     }
 
-    ViewControl * view = ViewControl::getInstance();
-    view->update();
+    Sys::view->update();
 
     display();
 }
@@ -306,11 +309,14 @@ void StyleColorFillSet::slot_double_click(int row, int col)
 
 void StyleColorFillSet::select(QPointF mpt)
 {
-    FaceGroups & faceGroups = filled->getFaceGroups();
+    ColorMaker & cm = filled->getColorMaker();
+
+    const FaceGroups & faceGroups = cm.getFaceGroups();
+
     int row = 0;
-    for (const FaceSetPtr & faceSet : faceGroups)
+    for (const FaceSetPtr & faceSet : std::as_const(faceGroups))
     {
-        for (const FacePtr & face : *faceSet)
+        for (const FacePtr & face : std::as_const(*faceSet))
         {
             if (face->getPolygon().containsPoint(mpt,Qt::OddEvenFill))
             {

@@ -30,15 +30,15 @@ public:
     virtual void        report()          override { qDebug().noquote() << getMotifDesc() << "q" << q << "r" << r << "s" << s; }
 
 protected:
-    void                inferRosette(TilePtr tile);
+    void                inferRosette();
 
-    void                buildV1(TilePtr tile);
+    void                buildV1();
     Branch              buildRosetteBranchPointsV1(int side, int isign);
 
-    void                buildV2(TilePtr tile);
+    void                buildV2();
     Branch              buildRosetteBranchPointsV2(int side, int isign, qreal sideLen);
 
-    void                buildV3(TilePtr tile);
+    void                buildV3();
     Branch              buildRosetteBranchPointsV3(int side, int isign, qreal sideLen);
 
     Points              buildRosetteIntersections(const Branch &branch);

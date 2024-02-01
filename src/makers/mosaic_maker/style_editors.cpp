@@ -2,10 +2,13 @@
 #include <QComboBox>
 #include <QCheckBox>
 
+#include "engine/image_engine.h"
 #include "makers/mosaic_maker//style_color_fill_set.h"
 #include "makers/mosaic_maker/style_color_fill_group.h"
 #include "makers/mosaic_maker/style_editors.h"
+#include "makers/prototype_maker/prototype.h"
 #include "misc/utilities.h"
+#include "misc/sys.h"
 #include "panels/controlpanel.h"
 #include "settings/configuration.h"
 #include "style/colored.h"
@@ -16,21 +19,17 @@
 #include "tile/tile.h"
 #include "tile/tiling.h"
 #include "viewers/motif_view.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
 #include "widgets/dlg_colorSet.h"
 #include "widgets/layout_sliderset.h"
-#include "tiledpatternmaker.h"
-
-extern TiledPatternMaker * theApp;
 
 #define ROW_HEIGHT 39
 
 StyleEditor::StyleEditor()
 {
-    ViewControl * vcontrol = ViewControl::getInstance();
-
-    connect(this, &StyleEditor::sig_refreshView,  vcontrol, &ViewControl::slot_refreshView);
-    connect(this, &StyleEditor::sig_updateView,   vcontrol, &ViewControl::slot_updateView);
+    ViewController * vcontrol = Sys::viewController;
+    
+    connect(this, &StyleEditor::sig_refreshView,  vcontrol, &ViewController::slot_reconstructView);
 }
 
 ///////////////////////////////////////////////////////////////
@@ -289,9 +288,10 @@ FilledEditor::FilledEditor(FilledPtr f, AQTableWidget * table , QVBoxLayout *par
     vbox        = parmsCtrl;
     fillSet     = nullptr;
     fillGroup   = nullptr;
-    view        = ViewControl::getInstance();
+    view        = Sys::view;
 
-    if (!filled->dcel)
+    auto proto = filled->getPrototype();
+    if (!proto->getDCEL())
     {
         filled->createStyleRepresentation();   // builds and  cleans the  dcel
     }
@@ -369,6 +369,7 @@ void FilledEditor::displayParms()
 
 void FilledEditor::displayParms01()
 {
+    ColorMaker & cm = filled->getColorMaker();
     int row = 0;
 
     table->setRowCount(3);
@@ -383,7 +384,7 @@ void FilledEditor::displayParms01()
     outside_checkbox->setChecked(filled->getDrawOutsideWhites());
     table->setCellWidget(row,0,outside_checkbox);
 
-    item = new QTableWidgetItem(QString("%1 faces").arg(filled->whiteFaces.size()));
+    item = new QTableWidgetItem(QString("%1 faces").arg(cm.getWhiteFaces().size()));
     table->setItem(row,3,item);
 
     ColorSet * colorSetW    = filled->getWhiteColorSet();
@@ -400,7 +401,7 @@ void FilledEditor::displayParms01()
     inside_checkbox->setChecked(filled->getDrawInsideBlacks());
     table->setCellWidget(row,0,inside_checkbox);
 
-    item = new QTableWidgetItem(QString("%1 faces").arg(filled->blackFaces.size()));
+    item = new QTableWidgetItem(QString("%1 faces").arg(cm.getBlackFaces().size()));
     table->setItem(row,3,item);
 
     ColorSet * colorSetB    = filled->getBlackColorSet();
@@ -460,7 +461,6 @@ void FilledEditor::slot_algo(int index)
     filled->resetStyleRepresentation();
     filled->createStyleRepresentation();
     displayParms();
-    emit sig_updateView();
     emit sig_refreshView();
 }
 
@@ -497,14 +497,14 @@ void FilledEditor::slot_colorsChanged()
 
 void FilledEditor::onEnter()
 {
-    connect(view, &View::sig_mousePressed, this, &FilledEditor::slot_mousePressed);
-    connect(theApp, &TiledPatternMaker::sig_colorPick, this, &FilledEditor::slot_colorPick, Qt::QueuedConnection);
+    connect(view, &View::sig_mousePressed,                 this, &FilledEditor::slot_mousePressed);
+    connect(Sys::imageEngine, &ImageEngine::sig_colorPick, this, &FilledEditor::slot_colorPick, Qt::QueuedConnection);
 }
 
 void FilledEditor::onExit()
 {
-    disconnect(view, &View::sig_mousePressed, this, &FilledEditor::slot_mousePressed);
-    disconnect(theApp, &TiledPatternMaker::sig_colorPick, this, &FilledEditor::slot_colorPick);
+    disconnect(view, &View::sig_mousePressed,                 this, &FilledEditor::slot_mousePressed);
+    disconnect(Sys::imageEngine, &ImageEngine::sig_colorPick, this, &FilledEditor::slot_colorPick);
 }
 
 void FilledEditor::slot_mousePressed(QPointF spt, Qt::MouseButton btn)
@@ -784,8 +784,6 @@ void TileColorsEditor::slot_edit()
     TilePtr fp = qlfp[row];
     DlgColorSet dlg(fp->getTileColors(),table);
 
-    connect(&dlg, &DlgColorSet::sig_colorsChanged, this, &TileColorsEditor::slot_colors_changed);
-
     dlg.exec();
 
     buildTable();
@@ -793,7 +791,6 @@ void TileColorsEditor::slot_edit()
 
 void  TileColorsEditor::slot_colors_changed()
 {
-    tiling->setState(Tiling::MODIFIED);
     emit panel->sig_render();
     buildTable();
 }

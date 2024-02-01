@@ -35,6 +35,7 @@ public:
     void        setScale(qreal s);
     void        setRotateRadians(qreal rr);
     void        setRotateDegrees(qreal deg);
+    void        setTranslate(QPointF t);
     void        setTranslateX(qreal x);
     void        setTranslateY(qreal y);
     void        setModelCenter(QPointF mpt);     // model units

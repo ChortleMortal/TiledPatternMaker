@@ -1,6 +1,6 @@
 #include "geometry/arcdata.h"
 #include "geometry/edge.h"
-#include "geometry/point.h"
+#include "geometry/geo.h"
 #include "geometry/loose.h"
 #include "geometry/vertex.h"
 
@@ -40,9 +40,9 @@ ArcData::ArcData(Edge * edge)
 void ArcData::calcConvex(QPointF p1, QPointF p2, QPointF c)
 {
     if (trace >=3) qDebug()  << "convex " << p1 << p2 << c;
-
-    start = Point::getAngleDegrees(c,p1);
-    end   = Point::getAngleDegrees(c,p2);
+    
+    start = Geo::getAngleDegrees(c,p1);
+    end   = Geo::getAngleDegrees(c,p2);
 
     // should be a -ve span  (meaning CCW)
     span  = end-start;
@@ -82,9 +82,9 @@ void ArcData::calcConcave(QPointF p1, QPointF p2, QPointF c)
     if (trace >=3) qDebug() << "concave" << p1 << p2 << c;
     c = getCenterOldConcave(p1,p2,c);
     //qDebug() << "center (mod)" << c;
-
-    start = Point::getAngleDegrees(c,p1);
-    end   = Point::getAngleDegrees(c,p2);
+    
+    start = Geo::getAngleDegrees(c,p1);
+    end   = Geo::getAngleDegrees(c,p2);
 
     // should be a +ve span (meaning CW)
     span = end-start;
@@ -188,12 +188,12 @@ void ArcData::testCenters(QPointF p1, QPointF p2, QPointF c)
 
 void  ArcData::testEnds(QPointF p1, QPointF p2, QPointF c)
 {
-    qreal convex_start = Point::getAngleDegrees(c,p1);
-    qreal convex_end   = Point::getAngleDegrees(c,p2);
+    qreal convex_start = Geo::getAngleDegrees(c,p1);
+    qreal convex_end   = Geo::getAngleDegrees(c,p2);
 
     QPointF c2 = getCenterOldConcave(p1,p2,c);
-    qreal concave_start = Point::getAngleDegrees(c2,p1);
-    qreal concave_end   = Point::getAngleDegrees(c2,p2);
+    qreal concave_start = Geo::getAngleDegrees(c2,p1);
+    qreal concave_end   = Geo::getAngleDegrees(c2,p2);
 
     qInfo() << "convex:" << convex_start << convex_end << "concave:" << concave_start << concave_end;
 
@@ -220,7 +220,7 @@ void ArcData::test1()
     for (int i=0; i < 8; i++)
     {
         qDebug()  << QLineF(QPointF(),pt[i]).angle();
-        qDebug()  << Point::getAngleDegrees(QPointF(),pt[i]);
+        qDebug()  << Geo::getAngleDegrees(QPointF(),pt[i]);
     }
 }
 

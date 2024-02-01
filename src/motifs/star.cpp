@@ -7,7 +7,6 @@
 #include <QtMath>
 #include <QDebug>
 #include "motifs/star.h"
-#include "geometry/loose.h"
 #include "geometry/intersect.h"
 #include "geometry/map.h"
 #include "geometry/vertex.h"
@@ -77,7 +76,7 @@ void Star::setN(int n)
 void Star::setD(qreal dd)
 {
     d = clamp_d(dd);
-    s = clamp_s(d);
+    s = clamp_s(s);
 }
 
 void Star::setS(int ss)
@@ -117,15 +116,12 @@ void Star::buildUnitMap()
 
 void Star::buildV1()
 {
-    qDebug() << "Star::buildV2";
-
-    unitMap = make_shared<Map>("star unit map");
-
     // int s    = number of intersects
     // qreal d  = angle (each integer is the next edge around the star)
     // qreal don = 1/n
-    qDebug() << "Star::buildUnit";
-    qDebug() << "n:" << getN() << "d:" << d << "s:" << s;
+    qDebug() << "Star::buildV1" << "n:" << getN() << "d:" << d << "s:" << s;
+
+    unitMap = make_shared<Map>("star unit map");
 
 #if 1
     debugMap = make_shared<DebugMap>("star debug map");
@@ -138,26 +134,27 @@ void Star::buildV1()
 
     int outer_s = qMin(s, di - 1 );
 
-    if( dfrac < Loose::TOL )
+    if( dfrac < Sys::TOL )
     {
         dfrac = 0.0;
         d_is_int = true;
     }
-    else if( (1.0 - dfrac) < Loose::TOL )
+    else if( (1.0 - dfrac) < Sys::TOL )
     {
         dfrac = 0.0;
         di = int(did) + 1;
         d_is_int = true;
     }
 
-    qDebug() << "n:" << getN() << "d:" << d << "s:" << s << "di:" << di <<  "d_is_int:" << d_is_int;
+    //qDebug() << "n:" << getN() << "d:" << d << "s:" << s << "di:" << di <<  "d_is_int:" << d_is_int;
 
     points.clear();
 
     QPointF a( 1.0, 0.0 );
     QPointF b = getArc(d * don);
     QLineF ab(a,b);
-    qDebug() << "Ray" << ab;
+
+    //qDebug() << "Ray" << ab;
     if (debugMap)
     {
         debugMap->insertDebugMark(a,"a");
@@ -202,7 +199,7 @@ void Star::buildV1()
 
     if (s == di )
     {
-        QPointF midr = Tr.map( top_prev->pt );
+        QPointF midr = radialRotationTr.map( top_prev->pt );
         VertexPtr v4 = unitMap->insertVertex(midr);
 
         if( d_is_int )
@@ -232,42 +229,32 @@ void Star::buildV1()
 
     //unitMap->dumpMap(false);
     //unitMap->verify("Star::buildUnit");
-
-    // rotate and scale
-    qreal rotate = qDegreesToRadians(getMotifRotate());
-    unitMap->rotate(rotate);
-    unitMap->scale(getMotifScale());
-
-    if (debugMap)
-    {
-        debugMap->rotate(rotate);
-        debugMap->scale(getMotifScale());
-    }
 }
 
 void Star::buildV2()
 {
-    qDebug() << "Star::buildV2";
-
-    unitMap = make_shared<Map>("star unit map");
-
     // int s    = number of intersects
     // qreal d  = angle (each integer is the next edge around the star)
     // qreal don = 1/n
-    qDebug() << "n:" << getN() << "d:" << d << "s:" << s;
+
+    qDebug() << "Star::buildV2"  << "n:" << getN() << "d:" << d << "s:" << s;
+
+    unitMap = make_shared<Map>("starV2 unit map");
 
 #if 1
-    debugMap = make_shared<DebugMap>("star debug map");
+    debugMap = make_shared<DebugMap>("starV2 debug map");
 #endif
+
+    qDebug() << "mids" << mids;
 
     int  di       = qFloor(d);          // di is equivalent to the mids index, equivalent to the edge index;
     qreal dfrac   = d - qreal(di);
     bool d_is_int = false;
-    if (dfrac < Loose::TOL)
+    if (dfrac < Sys::TOL)
     {
         d_is_int = true;
     }
-    else if ((1.0 - dfrac) < Loose::TOL)
+    else if ((1.0 - dfrac) < Sys::TOL)
     {
         d_is_int = true;
         di++;
@@ -276,7 +263,6 @@ void Star::buildV2()
     qDebug() << "n:" << getN() << "d:" << d << "s:" << s << "di:" << di <<  "d_is_int:" << d_is_int;
 
     QLineF branchRay = getRay(0,d,1);
-    qDebug() << "Ray" << branchRay;
     if (debugMap)
     {
         qreal angle = branchRay.angle();
@@ -323,7 +309,7 @@ void Star::buildV2()
 
     if (s == di)
     {
-        QPointF midr = Tr.map(top_prev->pt);
+        QPointF midr = radialRotationTr.map(top_prev->pt);
         VertexPtr v4 = unitMap->insertVertex(midr);
 
         if (d_is_int)
@@ -370,17 +356,6 @@ void Star::buildV2()
 
     //unitMap->dumpMap(false);
     //unitMap->verify("Star::buildUnit");
-
-    // rotate and scale
-    qreal rotate = qDegreesToRadians(getMotifRotate());
-    unitMap->rotate(rotate);
-    unitMap->scale(getMotifScale());
-
-    if (debugMap)
-    {
-        debugMap->rotate(rotate);
-        debugMap->scale(getMotifScale());
-    }
 }
 
 QLineF Star::getRay(int side, qreal d, int sign)
@@ -405,11 +380,11 @@ QLineF Star::getRay(int side, qreal d, int sign)
         dfrac = d2 - qreal(di);
     }
 
-    if (dfrac < Loose::TOL)
+    if (dfrac < Sys::TOL)
     {
         dfrac = 0.0;
     }
-    else if ((1.0 - dfrac) < Loose::TOL)
+    else if ((1.0 - dfrac) < Sys::TOL)
     {
         dfrac    = 0.0;
         di++;
@@ -422,7 +397,8 @@ QLineF Star::getRay(int side, qreal d, int sign)
     QPointF   b =  edge.pointAt(dfrac);
     QLineF branchRay(a,b);
 
-    //qDebug() << "Ray:" << "n" << getN() << "side:" << side << "sign:" << sign << "d" << d << "di" << di  << "dfrac"  << dfrac;
+    qDebug() << "Ray:" << "n" << getN() << "side:" << side << "sign:" << sign << "d" << d << "di" << di  << "dfrac"  << dfrac;
+    qDebug() << branchRay;
 
     return branchRay;
 }

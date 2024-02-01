@@ -3,7 +3,6 @@
 #define DLG_WORKLIST_CREATE_H
 
 #include <QDialog>
-#include "mosaic/mosaic_io_base.h"
 
 class QCheckBox;
 class QComboBox;
@@ -11,7 +10,7 @@ class QLineEdit;
 class QRadioButton;
 class QLineEdit;
 
-class DlgWorklistCreate : public QDialog, MosaicIOBase
+class DlgWorklistCreate : public QDialog
 {
     Q_OBJECT
 

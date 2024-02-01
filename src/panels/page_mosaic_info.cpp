@@ -12,7 +12,7 @@
 #include "style/style.h"
 #include "tile/tiling.h"
 
-page_mosaic_info:: page_mosaic_info(ControlPanel *panel)  : panel_page(panel, "Mosaic Info")
+page_mosaic_info:: page_mosaic_info(ControlPanel *panel)  : panel_page(panel,PAGE_MOSAIC_INFO, "Mosaic Info")
 {
     motifTable = new AQTableWidget(this);
     motifTable->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -57,7 +57,7 @@ void page_mosaic_info::showMotifsFromStyles()
     if (mosaic)
     {
         const StyleSet sset = mosaic->getStyleSet();
-        for (auto& style : sset)
+        for (auto & style : std::as_const(sset))
         {
             ProtoPtr pp = style->getPrototype();
 
@@ -77,7 +77,7 @@ void page_mosaic_info::showMotifsFromStyles()
                 item =  new QTableWidgetItem(pinfo);
                 motifTable->setItem(row,COL_PROTO,item);
 
-                QString tileName = pp->getTiling()->getName() + "  " + addr(pp->getTiling().get());
+                QString tileName = pp->getTiling()->getTitle() + "  " + addr(pp->getTiling().get());
                 item =  new QTableWidgetItem(tileName);
                 motifTable->setItem(row,COL_TILING_NAME,item);
 

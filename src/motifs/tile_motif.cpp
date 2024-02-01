@@ -24,22 +24,22 @@ TileMotif::TileMotif(const Motif &other) : IrregularMotif(other)
 
 void TileMotif::buildMotifMaps()
 {
-    Q_ASSERT(tile);
+    Q_ASSERT(getTile());
     motifMap = std::make_shared<Map>("Tile motif map");
-    inferTile(tile);
-    completeMotif(tile);
+    inferTile();
+    scaleAndRotate();
     completeMap();
-    buildMotifBoundary(tile);
+    buildMotifBoundary();
     buildExtendedBoundary();
 }
 
-void TileMotif::inferTile(TilePtr tile)
+void TileMotif::inferTile()
 {
     qDebug() << "TileMotif::inferMotif";
 
-    EdgePoly epoly = tile->getEdgePoly();
+    EdgePoly epoly = getTile()->getEdgePoly();
 
-    for (auto edge : epoly)
+    for (auto edge : std::as_const(epoly))
     {
         // this makes new eges and vertices since they can get altered in the map
         VertexPtr v1 = motifMap->insertVertex(edge->v1->pt);
@@ -52,6 +52,6 @@ void TileMotif::inferTile(TilePtr tile)
             newEdge->setArcCenter(ac,convex,(edge->getType() == EDGETYPE_CHORD));
         }
     }
-
-    qDebug().noquote() << motifMap->namedSummary();
+    
+    qDebug().noquote() << motifMap->summary();
 }

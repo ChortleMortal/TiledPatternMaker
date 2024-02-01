@@ -6,17 +6,20 @@
 
 #include "makers/mosaic_maker/mosaic_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
+#include "makers/tiling_maker/tiling_monitor.h"
 #include "mosaic/mosaic.h"
 #include "panels/page_save.h"
 #include "panels/controlpanel.h"
 #include "settings/configuration.h"
 #include "style/style.h"
 #include "tile/tiling.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
 #include <QSvgGenerator>
 
-page_save::page_save(ControlPanel * cpanel)  : panel_page(cpanel, "Save")
+page_save::page_save(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_SAVE, "Save")
 {
+    tilingMonitor = TilingMonitor::getInstance();
+
     createMosaicSave();
     createTilingSave();
 
@@ -87,7 +90,6 @@ void page_save::createMosaicSave()
 
     connect(saveMosaic, &QPushButton::clicked,      this, &page_save::slot_saveMosaic);
     connect(chkSaveTest,&QCheckBox::clicked,        this, [this](bool checked) {config->saveMosaicTest = checked; });
-    connect(this,       &page_save::sig_saveMosaic, mosaicMaker,  &MosaicMaker::slot_saveMosaic);
 }
 
 void page_save::createTilingSave()
@@ -139,7 +141,6 @@ void page_save::createTilingSave()
 
     connect(pbSave,     &QPushButton::clicked,      this,   &page_save::slot_saveTiling);
     connect(chkSaveTest,&QCheckBox::clicked,        this,   [this](bool checked) {config->saveTilingTest = checked; });
-    connect(this,       &page_save::sig_saveTiling, tilingMaker, &TilingMaker::slot_saveTiling);
 }
 
 void page_save::onEnter()
@@ -166,7 +167,7 @@ void page_save::setup()
     if (tiling)
     {
         tile_desc->setText(tiling->getDescription());
-        tile_name->setText(tiling->getName());
+        tile_name->setText(tiling->getTitle());
         tile_author->setText(tiling->getAuthor());
     }
     else
@@ -184,7 +185,7 @@ void page_save::onRefresh()
 {
     TilingPtr tiling =  tilingMaker->getSelected();
 
-    if (tiling && (tiling->getState() == Tiling::MODIFIED))
+    if (tilingMonitor->hasChanged(tiling))
         requiresSave->setText("HAS CHANGED");
     else
         requiresSave->setText("");
@@ -218,11 +219,9 @@ void page_save::slot_saveMosaic()
     }
 
     QVector<TilingPtr> tilings = mosaic->getTilings();
-    for (auto tiling : tilings)
+    for (const auto & tiling : std::as_const(tilings))
     {
-        if   (tiling->getState() == Tiling::MODIFIED
-           || tiling->getState() == Tiling::EMPTY
-           || tiling->getName()  == Tiling::defaultName)
+        if (tilingMonitor->hasChanged(tiling) || (tiling->getTitle()  == Tiling::defaultName))
         {
             QMessageBox box(panel);
             box.setIcon(QMessageBox::Warning);
@@ -253,7 +252,7 @@ void page_save::slot_saveMosaic()
     }
     Q_ASSERT(!name.contains(".xml"));
 
-    emit sig_saveMosaic(name);
+    mosaicMaker->saveMosaic(name,false);
 }
 
 
@@ -273,16 +272,6 @@ void page_save::slot_saveTiling()
     TilingPtr tiling = tilingMaker->getSelected();
     QString name = tile_name->text();
 
-    if (!tiling || tiling->getState() == Tiling::EMPTY)
-    {
-        QMessageBox box(panel);
-        box.setIcon(QMessageBox::Warning);
-        box.setWindowTitle("Save Tiling");
-        box.setText("There is no tiling to save. Please add some tiles");
-        box.exec();
-        return;
-    }
-
     if (tiling->getInTiling().count() == 0)
     {
         QMessageBox box(panel);
@@ -300,7 +289,7 @@ void page_save::slot_saveTiling()
         box.setIcon(QMessageBox::Critical);
         box.setWindowTitle("Save Tiling");
         box.setText("There could be something wrong with this tiling");
-        box.setInformativeText(QString("There are too many unique tiles (count=%1)").arg(count));
+        box.setInformativeText(QString("There are many unique tiles (count=%1)").arg(count));
         box.setStandardButtons(QMessageBox::Ignore | QMessageBox::Cancel);
         box.setDefaultButton(QMessageBox::Cancel);
         int rv = box.exec();
@@ -319,17 +308,17 @@ void page_save::slot_saveTiling()
         box.exec();
         return;
     }
-
-    tiling->setName(name);
+    
+    tiling->setTitle(name);
     tiling->setAuthor(tile_author->text());
     tiling->setDescription(tile_desc->toPlainText());
 
-    emit sig_saveTiling(name);
+    tilingMaker->saveTiling(name);
 }
 
 void page_save::slot_saveImage()
 {
-    QString name = config->lastLoadedXML;
+    QString name = config->lastLoadedMosaic;
     Q_ASSERT(!name.contains(".xml"));
 
     QPixmap pixmap = view->grab();
@@ -444,7 +433,7 @@ void page_save::savePixmap(QPixmap & pixmap, QString name)
 
 void page_save::slot_saveSvg()
 {
-    if (!view->isEnabled(VIEW_MOSAIC))
+    if (!viewControl->isEnabled(VIEW_MOSAIC))
     {
         QMessageBox box(panel);
         box.setIcon(QMessageBox::Warning);

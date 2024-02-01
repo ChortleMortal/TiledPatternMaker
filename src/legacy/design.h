@@ -3,7 +3,7 @@
 #define DESIGN_H
 
 #include "enums/edesign.h"
-#include "settings/model_settings.h"
+#include "settings/canvas_settings.h"
 
 class Configuration;
 
@@ -22,10 +22,12 @@ public:
 
     void            updateDesign();
 
-    QString          getTitle() { return title; }
-    ModelSettings &  getDesignInfo() { return settings; }
+    QString         getTitle() { return title; }
 
-    QVector<PatternPtr> &      getPatterns()      { return patterns; }
+    CanvasSettings &  getDesignInfo() { return settings; }
+    void            setDesignInfo(const CanvasSettings & ms) { settings = ms; }
+
+    QVector<PatternPtr> &   getPatterns()      { return patterns; }
 
     void            doSteps(int maxIndex = 100);
     bool            doStep();
@@ -44,8 +46,8 @@ public:
     void            zMinus(int layerNum);
 
     eDesign         getDesign() { return _design; }
-    QString         getDesignName() {return sDesign2[_design];}
-    static QString  getDesignName(eDesign des) {return sDesign2[des];}
+    QString         getDesignName() {return designs[_design];}
+    static QString  getDesignName(eDesign des) {return designs[des];}
 
     qreal           getXseparation() { return xSeparation; }
     qreal           getYseparation() { return ySeparation; }
@@ -91,8 +93,8 @@ protected:
     eDesign        _design;
 
     bool            visible;
-
-    ModelSettings  settings;
+    
+    CanvasSettings  settings;
 };
 
 

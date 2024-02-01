@@ -3,6 +3,6 @@
 #define VERSION_H
 #include <QString>
 
-static const QString tpmVersion("3.3.1  ");
+static const QString tpmVersion("3.4  ");
 
 #endif

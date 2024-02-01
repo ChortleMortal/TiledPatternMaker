@@ -1,0 +1,130 @@
+<?xml version="1.0"?>
+<!-- Written: Sat Jan 20 2024 18:08:36 -->
+<vector id="1" version="17">
+	<design>
+		<size>
+			<width>789</width>
+			<height>696</height>
+			<zwidth>700</zwidth>
+			<zheight>600</zheight>
+		</size>
+		<background>
+			<color>#ff000000</color>
+		</background>
+		<border type="Plain" shape="Rectangle" useViewSize="f">
+			<color>#ffffaaff</color>
+			<width>10</width>
+			<rect>
+				<X>-5.65714286</X>
+				<Y>-8.57142857</Y>
+				<width>22.54285714</width>
+				<height>19.88571429</height>
+			</rect>
+		</border>
+		<Fill singleton="f">-3,3,-3,3</Fill>
+	</design>
+	<style.Thick id="2">
+		<toolkit.GeoLayer>
+			<left__delta>-152</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<string>Test Pattern.v2</string>
+					<entry>
+						<Tile id="4">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">1,1</Point>
+									<Point id="7">-0.9999999999999998,1</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">-1,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">0.9999999999999997,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</Tile>
+						<Rosette id="10">
+							<boundarySides>4</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+							<q>0</q>
+							<s>1</s>
+						</Rosette>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ffffaa00</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.05</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+	</style.Thick>
+	<style.Filled id="11">
+		<toolkit.GeoLayer>
+			<left__delta>-152</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<ColorBlacks>
+			<color hide="f">#ffffff00</color>
+		</ColorBlacks>
+		<ColorWhites>
+			<color hide="f">#ffffff00</color>
+		</ColorWhites>
+		<ColorGroup>
+			<Group hideSet="f">
+				<color hide="f">#ffffff00</color>
+				<color hide="f">#ffaa0000</color>
+				<color hide="f">#ff234b30</color>
+			</Group>
+			<Group hideSet="t">
+				<color hide="f">#ffffff00</color>
+			</Group>
+			<Group hideSet="t">
+				<color hide="f">#ffffff00</color>
+			</Group>
+			<Group hideSet="t">
+				<color hide="f">#ffffff00</color>
+			</Group>
+			<Group hideSet="t">
+				<color hide="f">#ffffff00</color>
+			</Group>
+		</ColorGroup>
+		<style.Filled>
+			<draw__inside>true</draw__inside>
+			<draw__outside>true</draw__outside>
+			<algorithm>3</algorithm>
+		</style.Filled>
+	</style.Filled>
+</vector>

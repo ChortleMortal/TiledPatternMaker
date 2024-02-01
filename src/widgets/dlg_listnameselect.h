@@ -10,7 +10,7 @@ class DlgListNameSelect : public QDialog
     Q_OBJECT
 
 public:
-    DlgListNameSelect(QStringList files);
+    DlgListNameSelect(QStringList & files);
 
     LoaderListWidget * list;
 

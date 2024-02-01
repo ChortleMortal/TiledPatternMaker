@@ -7,7 +7,7 @@
 
 class QCheckBox;
 class Configuration;
-class ViewControl;
+class ViewController;
 class ControlPanel;
 
 class PanelViewSelect : public QGroupBox
@@ -51,9 +51,9 @@ protected:
     QButtonGroup  viewerGroup;
 
 private:
-    ControlPanel  * panel;
-    Configuration * config;
-    ViewControl   * view;
+    ControlPanel   * panel;
+    Configuration  * config;
+    ViewController * viewController;
 };
 
 #endif // PANELVIEWSELECT_H

@@ -33,12 +33,12 @@ using std::make_shared;
 
 Sketch::Sketch(ProtoPtr proto) : Plain(proto)
 {
-    srand(279401L);    // FIXME depecated
+    srand(279401L);    // TODO depecated
 }
 
 Sketch::Sketch(StylePtr other) : Plain(other)
 {
-    srand(279401L);    // FIXME depecated
+    srand(279401L);    // TODO depecated
 }
 
 Sketch::~Sketch()
@@ -57,7 +57,7 @@ void Sketch::draw(GeoGraphics * gg)
         return;
     }
 
-    MapPtr map = getMap();
+    MapPtr map = getProtoMap();
     if (!map)
     {
         return;
@@ -67,7 +67,7 @@ void Sketch::draw(GeoGraphics * gg)
 
     qreal jitter = Transform::distFromInvertedZero(gg->getTransform(),5.0);
     qreal halfjit = jitter / 2.0;
-    for (auto & edge : qAsConst(map->getEdges()))
+    for (auto & edge : std::as_const(map->getEdges()))
     {
         QPointF a = edge->v1->pt - QPointF(halfjit,halfjit);
         QPointF b = edge->v2->pt - QPointF(halfjit,halfjit);

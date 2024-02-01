@@ -1,5 +1,7 @@
 #include <QDebug>
 #include <QtMath>
+#include <QRectF>
+
 #include "geometry/circle.h"
 
 QString sQuad[] =

@@ -10,10 +10,12 @@
 // component, a list of adjacent edges.  It also has the planar component,
 // a position.  Finally, there's a user data field for applications.
 
-#include <memory>
 #include <QPointF>
 #include <QVector>
 #include <QTransform>
+#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
+#include <memory>
+#endif
 
 typedef std::weak_ptr<class Vertex>         WeakVertexPtr;
 typedef std::shared_ptr<class Edge>         EdgePtr;
@@ -26,15 +28,14 @@ public:
     ~Vertex();
 
     qreal   getAngle(const EdgePtr & edge);
-    void    applyRigidMotion(QTransform T);
+    void    transform(QTransform T);
 
     static int  refs;
 
-    QPointF     pt;
-    bool        visited;    // used by interlace
+    QPointF         pt;
+    bool            visited;    // used by interlace
     WeakVertexPtr   copy;       // Used when cloning the map.
     QVector<WeakVertexPtr> adjacent_vertices;
-
 };
 
 #endif

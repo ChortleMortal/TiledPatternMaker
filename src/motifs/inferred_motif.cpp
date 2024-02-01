@@ -6,6 +6,7 @@
 #include "geometry/intersect.h"
 #include "geometry/vertex.h"
 #include "geometry/edge.h"
+#include "geometry/geo.h"
 #include "geometry/map.h"
 #include "makers/prototype_maker/prototype.h"
 #include "tile/tiling.h"
@@ -74,11 +75,11 @@ void InferredMotif::buildMotifMaps()
 {
     qDebug() << "InferredMotif::buildMotifMaps";
     Q_ASSERT(proto.lock());
-    Q_ASSERT(tile);
-    infer(proto.lock(),tile);
-    completeMotif(tile);
+    Q_ASSERT(getTile());
+    infer(proto.lock());
+    scaleAndRotate();
     completeMap();
-    buildMotifBoundary(tile);
+    buildMotifBoundary();
     buildExtendedBoundary();
 }
 
@@ -98,7 +99,7 @@ void InferredMotif::buildMotifMaps()
 // reproduce any of the designs using the app from scratch where the released design had a blob.
 
 
-void InferredMotif::infer(ProtoPtr proto, TilePtr tile)
+void InferredMotif::infer(ProtoPtr proto)
 {
     enum eKind
     {
@@ -116,12 +117,12 @@ void InferredMotif::infer(ProtoPtr proto, TilePtr tile)
     debugContacts = true;
 #endif
 
-    qDebug() << "InferredMotif::infer()  tile-sides :" << tile->numSides();
+    qDebug() << "InferredMotif::infer()  tile-sides :" << getTile()->numSides();
 
     qDebug() << "Get a map for each motif in the prototype.";
     adjacentTileMaps.clear();
     QList<TilePtr> tiles = proto->getTiles();
-    for (const auto & tile : tiles)
+    for (const auto & tile : std::as_const(tiles))
     {
         MotifPtr motif  = proto->getMotif(tile);
         Q_ASSERT(motif);
@@ -157,7 +158,7 @@ void InferredMotif::infer(ProtoPtr proto, TilePtr tile)
     motifMap = std::make_shared<Map>("Inferred Motif map");
 
     // Get the index of a good transform for this tile.
-    int cur              = findPrimaryTile(tile);
+    int cur              = findPrimaryTile(getTile());
     qDebug() << "primary feature index=" << cur;
     MidsPtr primaryMids  = allMotifMids[cur];
     Q_ASSERT(primaryMids);
@@ -199,7 +200,7 @@ void InferredMotif::infer(ProtoPtr proto, TilePtr tile)
 
     // For every contact, if it hasn't found an extension,
     // Look at all other contacts for likely candidates.
-    for (const auto &contact : qAsConst(contacts))
+    for (const auto &contact : std::as_const(contacts))
     {
         if (contact->taken)
         {
@@ -211,7 +212,7 @@ void InferredMotif::infer(ProtoPtr proto, TilePtr tile)
         qreal      bestdist = 0.0;
         eKind      bestkind = INFER_NONE;
 
-        for (const auto &ocon : qAsConst(contacts))
+        for (const auto &ocon : std::as_const(contacts))
         {
             if (ocon == contact)
             {
@@ -260,15 +261,15 @@ void InferredMotif::infer(ProtoPtr proto, TilePtr tile)
                 }
 
                 mykind = INSIDE_COLINEAR;
-                mydist = Point::dist(contact->position,ocon->position);
+                mydist = Geo::dist(contact->position,ocon->position);
             }
             else
             {
                 // We don't want the case where the intersection lies too close to either vertex.
                 if (Intersect::getTrueIntersection( contact->position, contact->end, ocon->position, ocon->end, isect))
                 {
-                    qreal dist  = Point::dist(contact->position,isect );
-                    qreal odist = Point::dist(ocon->position,isect );
+                    qreal dist  = Geo::dist(contact->position,isect );
+                    qreal odist = Geo::dist(ocon->position,isect );
 
                     bool inside = priPts.containsPoint(isect,Qt::OddEvenFill);
 
@@ -341,14 +342,14 @@ void InferredMotif::infer(ProtoPtr proto, TilePtr tile)
     }
 
 #ifdef DEBUG_CONTACTS
-    for (auto & con : contacts)
+    for (auto & con : std::as_const(contacts))
     {
         qDebug().noquote() << con->toString();
     }
 #endif
 
     // Using the stored intersections in the contacts, build an inferred map.
-    for (const auto & contact : contacts)
+    for (const auto & contact : std::as_const(contacts))
     {
         //contact->dump();
         if (contact->isect.isNull())
@@ -367,15 +368,15 @@ void InferredMotif::infer(ProtoPtr proto, TilePtr tile)
     }
 
     // Try to link up unlinked edges.
-    qreal minlen = Point::dist(priPts[0], priPts[priPts.size()-1] );
+    qreal minlen = Geo::dist(priPts[0], priPts[priPts.size()-1] );
     for( int idx = 1; idx < priPts.size(); ++idx )
     {
-        minlen = std::min( minlen, Point::dist(priPts[idx-1], priPts[ idx ] ) );
+        minlen = std::min( minlen, Geo::dist(priPts[idx-1], priPts[ idx ] ) );
     }
 
 #ifdef SUPPORT_NOT_PIC
     // DAC another pass where there is no isect because polygons are not in contact
-    for (const auto &con : contacts)
+    for (const auto &con : std::as_const(contacts))
     {
         if (!con->isect_contact.lock())
         {
@@ -415,7 +416,7 @@ void InferredMotif::infer(ProtoPtr proto, TilePtr tile)
     }
 #endif
 
-    motifMap->transformMap(primaryMids->getTransform().inverted());
+    motifMap->transform(primaryMids->getTransform().inverted());
 
     motifMap->verify();
 
@@ -423,8 +424,8 @@ void InferredMotif::infer(ProtoPtr proto, TilePtr tile)
     {
         qWarning() << "Inferred Motif Map is emtpty";
     }
-
-    if (debugContacts) qDebug() << "InferredMotif::infer() - END" << motifMap->namedSummary();
+    
+    if (debugContacts) qDebug() << "InferredMotif::infer() - END" << motifMap->summary();
 }
 
 // Take the adjacencies and build a list of contacts by looking at vertices of the maps
@@ -437,14 +438,14 @@ QVector<ContactPtr> InferredMotif::buildContacts(MidsPtr pp, const QVector<Adjac
     // Get the transformed map for each adjacent tile.  I'm surprised
     // at how fast this ends up being!
     QVector<MapPtr> adjacentMotifMaps;
-    for (const auto & adj : qAsConst(adjs))
+    for (const auto & adj : std::as_const(adjs))
     {
         MapPtr motifMap = adjacentTileMaps.value(adj->placedTile->getTile());
         if (motifMap)
         {
             if (debugContacts) qDebug().noquote() << "Existing adjacent map"  << motifMap->summary();
             MapPtr placedMotifMap = motifMap->recreate();
-            placedMotifMap->transformMap(adj->placedTile->getTransform());
+            placedMotifMap->transform(adj->placedTile->getTransform());
             adjacentMotifMaps.push_back(placedMotifMap);
             if (debugContacts) qDebug().noquote() << "Placed   adjacent map" << placedMotifMap->summary();
         }
@@ -478,15 +479,15 @@ QVector<ContactPtr> InferredMotif::buildContacts(MidsPtr pp, const QVector<Adjac
         MapPtr          map = adjacentMotifMaps[iPoint];
         AdjacentTilePtr adj = adjs[iPoint];
 
-        for (const auto & v : qAsConst(map->getVertices()))
+        for (const auto & v : std::as_const(map->getVertices()))
         {
             QPointF pos = v->pt;
-            qreal dist2 = Point::dist2ToLine(pos, pt, nextPt);
+            qreal dist2 = Geo::dist2ToLine(pos, pt, nextPt);
             if (Loose::Near(dist2, adj->tolerance) &&  !Loose::Near(pos, pt, adj->tolerance) &&  !Loose::Near(pos, nextPt, adj->tolerance))
             {
                 // This vertex lies on the edge.  Add all its edges to the contact list.
                 NeighboursPtr n = map->getNeighbours(v);
-                for (auto & wedge : qAsConst(*n))
+                for (auto & wedge : std::as_const(*n))
                 {
                     EdgePtr edge = wedge.lock();
                     QPointF opos  = edge->getOtherP(v);
@@ -570,7 +571,7 @@ void InferredMotif::setupInfer(ProtoPtr proto)
             QTransform T = QTransform::fromTranslate(pt.x(),pt.y());
 
             const PlacedTiles & placedTiles = tiling->getInTiling();
-            for (const auto & placedTile : placedTiles)
+            for (const auto & placedTile : std::as_const(placedTiles))
             {
                 QTransform Tf   = placedTile->getTransform() * T;
                 TilePtr tile    = placedTile->getTile();
@@ -582,7 +583,7 @@ void InferredMotif::setupInfer(ProtoPtr proto)
                 int sz = tile->numPoints();
                 for(int idx = 0; idx < sz; ++idx )
                 {
-                    tileMidpoints << Point::convexSum(t_pts[idx], t_pts[(idx+1)%sz], 0.5 );
+                    tileMidpoints << Geo::convexSum(t_pts[idx], t_pts[(idx+1)%sz], 0.5 );
                 }
 
                 allMotifMids << make_shared<TileMidPoints>(make_shared<PlacedTile>(tile,Tf), tileMidpoints, t_ep);
@@ -651,7 +652,7 @@ QVector<AdjacentTilePtr> InferredMotif::getAdjacenctTiles(MidsPtr pp, int main_i
 {
     QVector<AdjacentTilePtr> ret;
     const QVector<QPointF> & mid_points  = pp->getTileMidPoints();
-    for (auto pt: mid_points)
+    for (auto & pt : std::as_const(mid_points))
     {
         AdjacentTilePtr ai = getAdjacency(pt, main_idx);
         if (ai)
@@ -680,7 +681,7 @@ AdjacentTilePtr InferredMotif::getAdjacency(QPointF main_point, int main_idx)
 
             MidsPtr pcur = allMotifMids[idx];
             const QVector<QPointF> & mid_points  = pcur->getTileMidPoints();
-            for (auto mid : mid_points)
+            for (auto & mid : std::as_const(mid_points))
             {
                 if (Loose::Near(mid, main_point, tolerance))
                 {

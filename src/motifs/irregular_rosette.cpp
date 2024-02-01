@@ -3,8 +3,7 @@
 #include "tile/tile.h"
 #include "geometry/intersect.h"
 #include "geometry/map.h"
-#include "geometry/point.h"
-#include "settings/configuration.h"
+#include "geometry/geo.h"
 
 #define USE_IRREGULAR
 
@@ -47,12 +46,12 @@ IrregularRosette::IrregularRosette(const Motif &other) : IrregularMotif(other)
 
 void IrregularRosette::buildMotifMaps()
 {
-    Q_ASSERT(tile);
+    Q_ASSERT(getTile());
     motifMap = std::make_shared<Map>("IrregularRosette Map");
-    inferRosette(tile);
-    completeMotif(tile);
+    inferRosette();
+    scaleAndRotate();
     completeMap();
-    buildMotifBoundary(tile);
+    buildMotifBoundary();
     buildExtendedBoundary();
 }
 
@@ -60,31 +59,31 @@ void IrregularRosette::buildMotifMaps()
 //
 // Rosette inferring.
 //
-void IrregularRosette::inferRosette(TilePtr tile)
+void IrregularRosette::inferRosette()
 {
-    corners = tile->getPoints();
-    mids    = tile->getEdgePoly().getMids();
-    center  = Point::center(mids);
+    corners = getTile()->getPoints();
+    mids    = getTile()->getEdgePoly().getMids();
+    center  = Geo::center(mids);
 
     switch (getVersion())
     {
     case 3:
-        buildV3(tile);
+        buildV3();
         break;
     case 2:
-        buildV2(tile);
+        buildV2();
         break;
     case 1:
     default:
-        buildV1(tile);
+        buildV1();
         break;
     }
 
 }
 
-void IrregularRosette::buildV1(TilePtr tile)
+void IrregularRosette::buildV1()
 {
-    if (_debug) qDebug() << "IrregularRosette::buildV1  sides = " << tile->numSides();
+    if (_debug) qDebug() << "IrregularRosette::buildV1  sides = " << getTile()->numSides();
 
     debugSide = 0;
 
@@ -96,7 +95,7 @@ void IrregularRosette::buildV1(TilePtr tile)
     corners.translate(-center);
 
     branches.clear();
-    int side_count = (Configuration::getInstance()->dontReplicate) ? 1 : mids.size();
+    int side_count = (Sys::dontReplicate) ? 1 : mids.size();
     for ( int side = 0; side < side_count; ++side )
     {
         if (_debug) qDebug() << "*** Build branch" << side;
@@ -108,7 +107,7 @@ void IrregularRosette::buildV1(TilePtr tile)
 
     if (_debug) qDebug() << "num branches=" << branches.size();
 
-    for (auto & branch : qAsConst(branches))
+    for (auto & branch : std::as_const(branches))
     {
         // update map
         motifMap->insertEdge(branch.tipPoint,branch.qePoint);
@@ -139,7 +138,7 @@ void IrregularRosette::buildV1(TilePtr tile)
         }
     }
     //motifMap->cleanse(badEdges | badVertices_0 | badVertices_1);
-    if (_debug) qDebug().noquote() << motifMap->namedSummary();
+    if (_debug) qDebug().noquote() << motifMap->summary();
 }
 
 Branch IrregularRosette::buildRosetteBranchPointsV1(int side, int isign)
@@ -171,7 +170,7 @@ Branch IrregularRosette::buildRosetteBranchPointsV1(int side, int isign)
 
     QPointF e;
     if (!Intersect::getIntersection(up_outer, bisector, tip, rtip, e))
-        e = Point::convexSum(up_outer, QPointF(0,0), 0.5 );
+        e = Geo::convexSum(up_outer, QPointF(0,0), 0.5 );
 
     QPointF ad;
     if (!Intersect::getIntersection(up_outer, bisector, tip, QPointF(0,0), ad))
@@ -198,12 +197,12 @@ Branch IrregularRosette::buildRosetteBranchPointsV1(int side, int isign)
     qreal q_clamp = std::min(std::max(q, -0.99),0.99);
     if (q_clamp >= 0)
     {
-        qe = Point::convexSum(e, up_outer, q );
+        qe = Geo::convexSum(e, up_outer, q );
         //qe = Point::convexSum(e, ad, q );
     }
     else
     {
-        qe = Point::convexSum(e, ad, -q );
+        qe = Geo::convexSum(e, ad, -q );
     }
 
     QPointF f  = up_outer * r;
@@ -218,9 +217,9 @@ Branch IrregularRosette::buildRosetteBranchPointsV1(int side, int isign)
     return branch;
 }
 
-void IrregularRosette::buildV2(TilePtr tile)
+void IrregularRosette::buildV2()
 {
-    qDebug() << "IrregularRosette::buildV2  sides = " << tile->numSides();
+    qDebug() << "IrregularRosette::buildV2  sides = " << getTile()->numSides();
 
     if (Loose::zero(q))
         q = 0.01;
@@ -230,7 +229,7 @@ void IrregularRosette::buildV2(TilePtr tile)
     debugMap = std::make_shared<DebugMap>("inferRosette debug map");
 #endif
 
-    EdgePoly  ep      = tile->getEdgePoly();
+    EdgePoly  ep      = getTile()->getEdgePoly();
     auto edges        = ep.getLines();
 
     qreal avgEdgeWidth = 0;
@@ -242,7 +241,7 @@ void IrregularRosette::buildV2(TilePtr tile)
 
     branches.clear();
 
-    int side_count =  (Configuration::getInstance()->dontReplicate) ? 1 : edges.size();
+    int side_count =  (Sys::dontReplicate) ? 1 : edges.size();
     for (int side = 0; side < side_count; ++side )
     {
         Branch branchp = buildRosetteBranchPointsV2(side, 1, avgEdgeWidth);
@@ -252,7 +251,7 @@ void IrregularRosette::buildV2(TilePtr tile)
     }
     if (_debug) qDebug() << "num branches=" << branches.size();
 
-    for (const auto & branch : branches)
+    for (const auto & branch : std::as_const(branches))
     {
         // update map
         motifMap->insertEdge(branch.tipPoint,branch.qePoint);
@@ -283,7 +282,7 @@ void IrregularRosette::buildV2(TilePtr tile)
         }
     }
     //motifMap->cleanse(badEdges | badVertices_0 | badVertices_1);
-    if (_debug) qDebug().noquote() << motifMap->namedSummary();
+    if (_debug) qDebug().noquote() << motifMap->summary();
 }
 
 Branch IrregularRosette::buildRosetteBranchPointsV2(int side, int isign, qreal sideLen)
@@ -311,14 +310,14 @@ Branch IrregularRosette::buildRosetteBranchPointsV2(int side, int isign, qreal s
     else
         bline = QLineF(mids[side],corners.next(side));
     bline.setLength(w);
-    bline = Point::shiftParallel(bline,h);
+    bline = Geo::shiftParallel(bline,h);
 
     QPointF delta = base - bline.p2();
     bline.translate(delta);
     QPointF qe = bline.p1();
 
     // drop perpendicular (pLn) from qePt to edge containing tip and extend the line
-    QPointF pPt= Point::perpPt(corners.get(side),corners.next(side), qe);
+    QPointF pPt= Geo::perpPt(corners.get(side),corners.next(side), qe);
     QLineF pLine(pPt,qe);
     pLine.setLength(maxLen);
     pLine.setP1(qe);
@@ -337,14 +336,14 @@ Branch IrregularRosette::buildRosetteBranchPointsV2(int side, int isign, qreal s
 
 
 // Build a regular star and connect it to outer points
-void IrregularRosette::buildV3(TilePtr tile)
+void IrregularRosette::buildV3()
 {
-    qDebug() << "IrregularRosette::buildV3  sides = " << tile->numSides() << "d=" << d;
+    qDebug() << "IrregularRosette::buildV3  sides = " << getTile()->numSides() << "d=" << d;
 
 #ifdef USE_IRREGULAR
     // create center Irregular star
     IrregularStar innerStar;
-    innerStar.setTile(tile);
+    innerStar.setTile(getTile());
 #else
     // create center Regular star
     Star innerStar(getN(),d,s);
@@ -368,7 +367,7 @@ void IrregularRosette::buildV3(TilePtr tile)
     if (Loose::zero(r))
         r = 0.01 ;
 
-    EdgePoly  ep      = tile->getEdgePoly();
+    EdgePoly  ep      = getTile()->getEdgePoly();
     auto edges        = ep.getLines();
 
     qreal avgEdgeWidth = 0;
@@ -380,7 +379,7 @@ void IrregularRosette::buildV3(TilePtr tile)
 
     branches.clear();
 
-    int side_count =  (Configuration::getInstance()->dontReplicate) ? 1 : edges.size();
+    int side_count =  (Sys::dontReplicate) ? 1 : edges.size();
     for (int side = 0; side < side_count; ++side )
     {
         Branch branchp = buildRosetteBranchPointsV3(side, 1, avgEdgeWidth);
@@ -390,7 +389,7 @@ void IrregularRosette::buildV3(TilePtr tile)
     }
     if (_debug) qDebug() << "num branches=" << branches.size();
 
-    for (const auto & branch : branches)
+    for (const auto & branch : std::as_const(branches))
     {
         // update map
         motifMap->insertEdge(branch.tipPoint,branch.qePoint);
@@ -409,8 +408,8 @@ void IrregularRosette::buildV3(TilePtr tile)
             }
         }
     }
-
-    if (_debug) qDebug().noquote() << motifMap->namedSummary();
+    
+    if (_debug) qDebug().noquote() << motifMap->summary();
 }
 
 Branch IrregularRosette::buildRosetteBranchPointsV3(int side, int isign, qreal sideLen)
@@ -432,12 +431,12 @@ Branch IrregularRosette::buildRosetteBranchPointsV3(int side, int isign, qreal s
     else
         bline = QLineF(mids[side],corners.next(side));
     bline.setLength(w);
-    bline = Point::shiftParallel(bline,h);
+    bline = Geo::shiftParallel(bline,h);
 
     QPointF delta = base - bline.p2();
     bline.translate(delta);
     QPointF qe = bline.p1();
-    QPointF  f = Point::findNearestPoint(starPts,qe);
+    QPointF  f = Geo::findNearestPoint(starPts,qe);
 
     Branch branch;
     branch.tipPoint = mids.get(side);
@@ -481,7 +480,7 @@ Points IrregularRosette::buildRosetteIntersections(const Branch &branch)
     intersections = sortMap.values();
 #else
     QList<QPointF> list = sortMap.values();
-    for (auto & pt : list)
+    for (auto & pt : std::as_const(list))
     {
         intersections << pt;
     }

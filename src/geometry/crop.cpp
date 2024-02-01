@@ -1,5 +1,6 @@
 #include <QPainter>
 #include "geometry/crop.h"
+#include "geometry/geo.h"
 #include "geometry/transform.h"
 #include "settings/configuration.h"
 #include "tile/tile.h"
@@ -161,7 +162,7 @@ QPointF Crop::getCenter()
             center = _circle.centre;
         break;
     case CROP_POLYGON:
-        center = Point::center(_poly);
+        center = Geo::center(_poly);
         break;
     }
     return center;
@@ -229,3 +230,21 @@ void Crop::draw(QPainter * painter, QTransform t, bool active)
     painter->restore();
 }
 
+void Crop::dbgInfo()
+{
+    switch(_cropType)
+    {
+    case CROP_RECTANGLE:
+        qDebug() << "Crop:" << _rect;
+        break;
+    case CROP_POLYGON:
+        qDebug() << "Crop:" << _poly;
+        break;
+    case CROP_CIRCLE:
+        qDebug() << "Crop: radius =" << _circle.radius;
+        break;
+    case CROP_UNDEFINED:
+        qDebug() << "Crop: undefined";
+        break;
+    }
+}

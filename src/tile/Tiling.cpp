@@ -11,16 +11,23 @@
 // linear combinations within some viewport.
 
 #include <QtWidgets>
-#include "makers/map_editor/map_editor.h"
 #include "tile/tiling.h"
-#include "motifs/tile_motif.h"
+#include "geometry/edge.h"
+#include "geometry/fill_region.h"
 #include "geometry/map.h"
-#include "makers/tiling_maker/tiling_maker.h"
+#include "geometry/transform.h"
+#include "geometry/vertex.h"
+#include "makers/prototype_maker/prototype.h"
+#include "makers/tiling_maker/tiling_monitor.h"
+#include "misc/geo_graphics.h"
 #include "mosaic/design_element.h"
 #include "mosaic/mosaic_writer.h"
-#include "makers/prototype_maker/prototype.h"
-#include "tile/tile.h"
+#include "motifs/tile_motif.h"
+#include "settings/configuration.h"
 #include "tile/placed_tile.h"
+#include "tile/tile.h"
+#include "tile/tiling.h"
+#include "viewers/view_controller.h"
 
 using std::make_shared;
 
@@ -28,12 +35,13 @@ const QString Tiling::defaultName = "The Unnamed";
 
 int Tiling::refs = 0;
 
-Tiling::Tiling()
+Tiling::Tiling() : LayerController("Tiling",true)
 {
-    name        = defaultName;
+    title       = defaultName;
     version     = -1;
-    state       = EMPTY;
     refs++;
+
+    connect(&db,  &TilingData::sig_tilingChanged, TilingMonitor::getInstance(), &TilingMonitor::slot_tilingChanged);
 }
 
 Tiling::~Tiling()
@@ -46,29 +54,10 @@ Tiling::~Tiling()
 
 bool Tiling::isEmpty()
 {
-    if (name == "The Unnamed" && db.isEmpty())
+    if (title == "The Unnamed" && db.isEmpty())
         return true;
     else
         return false;
-}
-
-bool Tiling::popStack()
-{
-    if (!undoStack.isEmpty())
-    {
-        resetOverlaps();
-        db = undoStack.pop();
-        return true;
-    }
-    return false;
-}
-
-
-void Tiling::pushStack()
-{
-    state = MODIFIED;
-    resetOverlaps();
-    undoStack.push(db.copy());
 }
 
 bool Tiling::hasIntrinsicOverlaps()
@@ -76,11 +65,11 @@ bool Tiling::hasIntrinsicOverlaps()
     if (intrinsicOverlaps.get() == Tristate::Unknown)
     {
         intrinsicOverlaps.set(Tristate::False);
-        for (const auto & tile1 : getInTiling())
+        for (const auto & tile1 : std::as_const(getInTiling()))
         {
             QPolygonF poly = tile1->getPlacedPoints();
 
-            for (const auto & tile2 : getInTiling())
+            for (const auto & tile2 : std::as_const(getInTiling()))
             {
                 if (tile2 == tile1) continue;
 
@@ -114,7 +103,7 @@ bool Tiling::hasTiledOverlaps()
 MapPtr Tiling::createMapSingle()
 {
     MapPtr map = make_shared<Map>("tiling map single");
-    for (const auto & placedTile : getInTiling())
+    for (const auto & placedTile : std::as_const(getInTiling()))
     {
         EdgePoly poly = placedTile->getPlacedEdgePoly();
         MapPtr emap = make_shared<Map>("tile",poly);
@@ -128,14 +117,14 @@ MapPtr Tiling::createMapFullSimple()
 {
     MapPtr map = make_shared<Map>("tiling map full simple");
 
-    Placements fillPlacements = db.getFillPlacemenets();
+    Placements fillPlacements = db.getFillPlacements();
 
     MapPtr tilingMap = createMapSingle();
 
-    for (const auto & placement : fillPlacements)
+    for (const auto & placement : std::as_const(fillPlacements))
     {
         MapPtr m  = tilingMap->recreate();
-        m->transformMap(placement);
+        m->transform(placement);
         map->mergeMap(m);
     }
     return map;
@@ -148,7 +137,7 @@ MapPtr Tiling::createMapFull()
 
     QVector<TilePtr> uniqueTiles = getUniqueTiles();
 
-    for (const auto & tile : uniqueTiles)
+    for (const auto & tile : std::as_const(uniqueTiles))
     {
         auto motif = make_shared<TileMotif>();
         motif->setN(tile->numSides());
@@ -161,7 +150,7 @@ MapPtr Tiling::createMapFull()
     // Now, for each different tile, build a submap corresponding
     // to all translations of that tile.
 
-    Placements fillPlacements = db.getFillPlacemenets();
+    Placements fillPlacements = db.getFillPlacements();
 
     MapPtr testmap = make_shared<Map>("testmap");
     for (const auto & dep : proto->getDesignElements())
@@ -171,7 +160,7 @@ MapPtr Tiling::createMapFull()
         MapPtr motifmap = motif->getMotifMap();
 
         Placements tilePlacements;
-        for (const auto & placedTile : getInTiling())
+        for (const auto & placedTile : std::as_const(getInTiling()))
         {
             TilePtr f  = placedTile->getTile();
             if (f == tile)
@@ -188,9 +177,9 @@ MapPtr Tiling::createMapFull()
 
         // Just add these, so we get oversslaps
         MapPtr tilemap = make_shared<Map>("single tile map");
-        for (const auto & T : fillPlacements)
+        for (const auto & T : std::as_const(fillPlacements))
         {
-            for (const auto & edge : transmap->getEdges())
+            for (const auto & edge : std::as_const(transmap->getEdges()))
             {
                 EdgePtr nedge = tilemap->makeCopy(edge,T);
                 if (!tilemap->edgeExists(nedge))
@@ -211,20 +200,20 @@ MapPtr Tiling::debug_createFilledMap()
 {
     MapPtr map = make_shared<Map>("tiling map");
 
-    Placements placements = db.getFillPlacemenets();
+    Placements placements = db.getFillPlacements();
 
     MapPtr tilingMap = make_shared<Map>("tiling map");
-    for (const auto & pfp : getInTiling())
+    for (const auto & pfp : std::as_const(getInTiling()))
     {
         EdgePoly poly = pfp->getPlacedEdgePoly();
         MapPtr emap = make_shared<Map>("tile",poly);
         map->mergeMap(emap);
     }
 
-    for (const auto & transform : placements)
+    for (const auto & transform : std::as_const(placements))
     {
         MapPtr m  = tilingMap->recreate();
-        m->transformMap(transform);
+        m->transform(transform);
         map->mergeMap(m);
     }
     return map;
@@ -248,18 +237,18 @@ MapPtr Tiling::debug_createProtoMap()
     // Now, for each different feature, build a submap corresponding
     // to all translations of that feature.
 
-    Placements fillPlacements = db.getFillPlacemenets();
+    Placements fillPlacements = db.getFillPlacements();
 
     MapPtr testmap = make_shared<Map>("testmap");
 
-    for (const auto & del : proto.getDesignElements())
+    for (const auto & del : std::as_const(proto.getDesignElements()))
     {
         TilePtr tile         = del->getTile();
         MotifPtr motif       = del->getMotif();
         constMapPtr motifmap = motif->getMotifMap();
 
         Placements tilePlacements;
-        for (const auto & placedTile : getInTiling())
+        for (const auto & placedTile : std::as_const(getInTiling()))
         {
             TilePtr f  = placedTile->getTile();
             if (f == tile)
@@ -292,21 +281,24 @@ MapPtr Tiling::debug_createProtoMap()
 // tile management.
 // Added tiles are embedded into a placedTile.
 
-void Tiling::add(const PlacedTilePtr pf )
+void Tiling::add(const PlacedTilePtr pfm)
 {
-    auto & placed = getRWInTiling(true);
-    placed.push_back(pf);
+    db.add(pfm);
 }
 
-void Tiling::add(TilePtr f, QTransform  T)
+void Tiling::add(PlacedTiles & tiles)
 {
-    add(make_shared<PlacedTile>(f, T));
+    db.add(tiles);
 }
 
 void Tiling::remove(PlacedTilePtr pf)
 {
-    auto & placed = getRWInTiling(true);
-    placed.removeOne(pf);
+    db.remove(pf);
+}
+
+void Tiling::clear()
+{
+    db.clear();
 }
 
 int Tiling::getVersion()
@@ -319,21 +311,11 @@ void Tiling::setVersion(int ver)
     version = ver;
 }
 
-Tiling::eTilingState Tiling::getState()
-{
-    return state;
-}
-
-void Tiling::setState(eTilingState state)
-{
-    this->state = state;
-}
-
 QVector<TilePtr> Tiling::getUniqueTiles()
 {
     UniqueQVector<TilePtr> tiles;
 
-    for (const auto & placedTile : getInTiling())
+    for (const auto & placedTile : std::as_const(getInTiling()))
     {
         TilePtr tile = placedTile->getTile();
         tiles.push_back(tile);
@@ -345,7 +327,7 @@ QVector<TilePtr> Tiling::getUniqueTiles()
 int Tiling::numPlacements(TilePtr tile)
 {
     int count = 0;
-    for (const auto & placedTile : getInTiling())
+    for (const auto & placedTile : std::as_const(getInTiling()))
     {
         TilePtr fp2 = placedTile->getTile();
         if (fp2 == tile)
@@ -359,7 +341,7 @@ int Tiling::numPlacements(TilePtr tile)
 Placements Tiling::getPlacements(TilePtr tile)
 {
     Placements placements;
-    for (const auto & placedTile : getInTiling())
+    for (const auto & placedTile : std::as_const(getInTiling()))
     {
         if (placedTile->getTile() == tile)
         {
@@ -372,7 +354,7 @@ Placements Tiling::getPlacements(TilePtr tile)
 QTransform Tiling::getFirstPlacement(TilePtr tile)
 {
     QTransform placement;
-    for (const auto & placedTile : getInTiling())
+    for (const auto & placedTile : std::as_const(getInTiling()))
     {
         TilePtr atile = placedTile->getTile();
         if (atile == tile)
@@ -389,7 +371,7 @@ QTransform Tiling::getFirstPlacement(TilePtr tile)
 TileGroup Tiling::regroupTiles()
 {
     TileGroup tileGroup;
-    for (const auto & placedTile : getInTiling())
+    for (const auto & placedTile : std::as_const(getInTiling()))
     {
         TilePtr tile = placedTile->getTile();
         if (tileGroup.containsTile(tile))
@@ -412,8 +394,321 @@ QString Tiling::dump() const
     QString astring;
     QDebug  deb(&astring);
 
-    deb << "tiling=" << name  << db.dump();
+    deb << "tiling=" << title  << db.dump();
     return astring;
+}
+
+///////////////////////////////////////////////////////////////////////
+//
+//  Viewer functions
+//
+////////////////////////////////////////////////////////////////////////
+
+void Tiling::paint(QPainter *painter)
+{
+    //qDebug() << "Tiling::paint";
+
+    painter->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
+
+    QTransform tr = getLayerTransform();
+    GeoGraphics gg(painter,tr);
+    draw(&gg);
+
+    drawLayerModelCenter(painter);
+}
+
+void Tiling::draw(GeoGraphics *gg)
+{
+    FillRegion flood(this,getCanvasSettings().getFillData());
+    Placements placements = flood.getPlacements(config->repeatMode);
+
+    for (auto T : placements)
+    {
+        gg->pushAndCompose(T);
+
+        for (const auto & tile : std::as_const(getInTiling()))
+        {
+            drawPlacedTile(gg, tile);
+        }
+
+        gg->pop();
+    }
+}
+
+void Tiling::drawPlacedTile(GeoGraphics * g2d, PlacedTilePtr pf)
+{
+    //qDebug().noquote() << "PlacedFeat:" << pf->getTile().get() <<  "transform:" << Transform::toInfoString(t);
+
+    QPen pen(Qt::red,3);
+
+    TilePtr f  = pf->getTile();
+    EdgePoly ep   = pf->getPlacedEdgePoly();
+
+    for (auto & edge : std::as_const(ep))
+    {
+        if (edge->getType() == EDGETYPE_LINE)
+        {
+            g2d->drawLine(edge->getLine(),pen);
+        }
+        else if (edge->getType() == EDGETYPE_CURVE)
+        {
+            g2d->drawArc(edge->v1->pt,edge->v2->pt,edge->getArcCenter(),edge->isConvex(),pen);
+        }
+        else if (edge->getType() == EDGETYPE_CHORD)
+        {
+            g2d->drawChord(edge->v1->pt,edge->v2->pt,edge->getArcCenter(),edge->isConvex(),pen);
+        }
+    }
+}
+
+void Tiling::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
+{ Q_UNUSED(spt); Q_UNUSED(btn); }
+
+void Tiling::slot_mouseDragged(QPointF spt)
+{ Q_UNUSED(spt); }
+
+void Tiling::slot_mouseTranslate(QPointF spt)
+{
+    if (!view->isActiveLayer(this)) return;
+
+    if (view->getKbdMode(KBD_MODE_XFORM_TILING))
+    {
+        QTransform T = getCanvasTransform();
+        qreal scale = Transform::scalex(T);
+        QPointF mpt = spt/scale;
+        QTransform tt = QTransform::fromTranslate(mpt.x(),mpt.y());
+        for (const auto & pfp :  std::as_const(getInTiling()))
+        {
+            QTransform t = pfp->getTransform();
+            t *= tt;
+            pfp->setTransform(t);
+        }
+        forceRedraw();
+    }
+    else if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
+    {
+        Xform xf = getModelXform();
+        xf.setTranslateX(xf.getTranslateX() + spt.x());
+        xf.setTranslateY(xf.getTranslateY() + spt.y());
+        setModelXform(xf,true);
+    }
+    else if (view->getKbdMode(KBD_MODE_XFORM_SELECTED))
+    {
+        if (isSelected())
+        {
+            Xform xf = getModelXform();
+            xf.setTranslateX(xf.getTranslateX() + spt.x());
+            xf.setTranslateY(xf.getTranslateY() + spt.y());
+            setModelXform(xf,true);
+        }
+    }
+}
+
+void Tiling::slot_mouseMoved(QPointF spt)
+{ Q_UNUSED(spt); }
+void Tiling::slot_mouseReleased(QPointF spt)
+{ Q_UNUSED(spt); }
+void Tiling::slot_mouseDoublePressed(QPointF spt)
+{ Q_UNUSED(spt); }
+
+void Tiling::slot_wheel_scale(qreal delta)
+{
+    if (!view->isActiveLayer(this)) return;
+
+    if (view->getKbdMode(KBD_MODE_XFORM_TILING))
+    {
+        qreal sc = 1.0 + delta;
+        QTransform ts;
+        ts.scale(sc,sc);
+
+        for (const auto & pfp : std::as_const(getInTiling()))
+        {
+            QTransform t = pfp->getTransform();
+            t *= ts;
+            pfp->setTransform(t);
+        }
+        forceRedraw();
+    }
+    else if (view->getKbdMode(KBD_MODE_XFORM_VIEW) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
+    {
+        Xform xf = getModelXform();
+        xf.setScale(xf.getScale() * (1.0 + delta));
+        setModelXform(xf,true);
+    }
+}
+
+void Tiling::slot_wheel_rotate(qreal delta)
+{
+    if (!view->isActiveLayer(this)) return;
+
+    if (view->getKbdMode(KBD_MODE_XFORM_TILING))
+    {
+        QTransform tr;
+        tr.rotate(delta);
+        Xform xf(tr);
+        xf.setModelCenter(getCenterModelUnits());
+        QTransform tr2 = xf.toQTransform(QTransform());
+
+        for (const auto & pfp : std::as_const(getInTiling()))
+        {
+            QTransform t = pfp->getTransform();
+            t *= tr2;
+            pfp->setTransform(t);
+        }
+        forceRedraw();
+    }
+    else if (view->getKbdMode(KBD_MODE_XFORM_VIEW) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
+    {
+        Xform xf = getModelXform();
+        xf.setRotateDegrees(xf.getRotateDegrees() + delta);
+        setModelXform(xf,true);
+    }
+}
+
+void Tiling::slot_scale(int amount)
+{
+    if (!view->isActiveLayer(this)) return;
+
+    if (view->getKbdMode(KBD_MODE_XFORM_TILING))
+    {
+        qreal scale = 1.0 + (0.01 * amount);
+        for (const auto & pfp : std::as_const(getInTiling()))
+        {
+            QTransform t = pfp->getTransform();
+            qDebug() << "t0" << Transform::toInfoString(t);
+            QTransform t1 = t.scale(scale,scale);
+
+            t = pfp->getTransform();
+            QTransform t2 = t *QTransform::fromScale(scale,scale);
+
+            qDebug() << "t1" << Transform::toInfoString(t1);
+            qDebug() << "t2" << Transform::toInfoString(t2);
+
+            t = pfp->getTransform();
+            // scales position too
+            t *= QTransform::fromScale(scale,scale);
+            pfp->setTransform(t);
+        }
+        forceRedraw();
+    }
+    else if (view->getKbdMode(KBD_MODE_XFORM_VIEW) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
+    {
+        Xform xf = getModelXform();
+        xf.setScale(xf.getScale() * (1 + static_cast<qreal>(amount)/100.0));
+        setModelXform(xf,true);
+    }
+}
+
+void Tiling::slot_rotate(int amount)
+{
+    if (!view->isActiveLayer(this)) return;
+
+    qDebug() << "TilingMaker::slot_rotate" << amount;
+    if (view->getKbdMode(KBD_MODE_XFORM_TILING))
+    {
+        qreal qdelta = 0.01 * amount;
+        for (const auto & pfp : std::as_const(getInTiling()))
+        {
+            QTransform t = pfp->getTransform();
+            t *= QTransform().rotateRadians(qdelta);
+            pfp->setTransform(t);
+        }
+        forceRedraw();
+    }
+    else if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
+    {
+        Xform xf = getModelXform();
+        xf.setRotateRadians(xf.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
+        setModelXform(xf,true);
+    }
+    else if (view->getKbdMode(KBD_MODE_XFORM_SELECTED))
+    {
+        if (isSelected())
+        {
+            Xform xf = getModelXform();
+            xf.setRotateRadians(xf.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
+            setModelXform(xf,true);
+        }
+    }
+}
+
+void Tiling:: slot_moveX(qreal amount)
+{
+    if (!view->isActiveLayer(this)) return;
+
+    if (view->getKbdMode(KBD_MODE_XFORM_TILING))
+    {
+        qreal qdelta = 0.01 * amount;
+        for (const auto & pfp : std::as_const(getInTiling()))
+        {
+            QTransform t = pfp->getTransform();
+            t *= QTransform::fromTranslate(qdelta,0.0);
+            pfp->setTransform(t);
+        }
+        forceRedraw();
+    }
+    else if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
+    {
+        Xform xf = getModelXform();
+        xf.setTranslateX(xf.getTranslateX() + amount);
+        setModelXform(xf,true);
+    }
+    else if (view->getKbdMode(KBD_MODE_XFORM_SELECTED))
+    {
+        if (isSelected())
+        {
+            Xform xf = getModelXform();
+            xf.setTranslateX(xf.getTranslateX() + amount);
+            setModelXform(xf,true);
+        }
+    }
+}
+
+void Tiling::slot_moveY(qreal amount)
+{
+    if (!view->isActiveLayer(this)) return;
+
+    if (view->getKbdMode(KBD_MODE_XFORM_TILING))
+    {
+        qreal qdelta = 0.01 * amount;
+        for (const auto & pfp : std::as_const(getInTiling()))
+        {
+            QTransform t = pfp->getTransform();
+            t *= QTransform::fromTranslate(0.0,qdelta);
+            pfp->setTransform(t);
+        }
+        forceRedraw();
+    }
+    else if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
+    {
+        Xform xf = getModelXform();
+        xf.setTranslateY(xf.getTranslateY() + amount);
+        setModelXform(xf,true);
+    }
+    else if (view->getKbdMode(KBD_MODE_XFORM_SELECTED))
+    {
+        if (isSelected())
+        {
+            Xform xf = getModelXform();
+            xf.setTranslateY(xf.getTranslateY() + amount);
+            setModelXform(xf,true);
+        }
+    }
+}
+
+void Tiling::setModelXform(const Xform & xf, bool update)
+{
+    Q_ASSERT(_unique);
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.toInfoString() << (isUnique() ? "unique" : "common");
+    xf_model = xf;
+    forceLayerRecalc(update);
+}
+
+const Xform & Tiling::getModelXform()
+{
+    Q_ASSERT(_unique);
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "GET" << getLayerName() << xf_model.toInfoString() << (isUnique() ? "unique" : "common");
+    return xf_model;
 }
 
 
@@ -423,7 +718,7 @@ QString Tiling::dump() const
 
 bool TileGroup::containsTile(TilePtr fp)
 {
-    for (const auto & apair : *this)
+    for (const auto & apair : std::as_const(*this))
     {
         TilePtr f = apair.first;
         if (f == fp)

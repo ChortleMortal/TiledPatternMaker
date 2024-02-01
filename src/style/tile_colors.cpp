@@ -9,7 +9,7 @@
 #include "tile/tile.h"
 #include "tile/placed_tile.h"
 #include "tile/tiling.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
 #include "settings/configuration.h"
 
 TileColors::TileColors(ProtoPtr proto) : Style(proto)
@@ -50,25 +50,23 @@ void TileColors::createStyleRepresentation()
         return;
     }
 
-    getMap();
-
     ProtoPtr  pp  = getPrototype();
     TilingPtr tp  = pp->getTiling();
 
     QVector<TilePtr> uniques  = tp->getUniqueTiles();
-    for (const auto & tile : uniques)
+    for (const auto & tile : std::as_const(uniques))
     {
         tile->getTileColors()->resetIndex();
     }
 
-    FillRegion flood(tp,ViewControl::getInstance()->getFillData());
+    FillRegion flood(tp.get(),viewControl->getCanvas().getFillData());
     Placements placements = flood.getPlacements(config->repeatMode);
     qDebug() << "num placements   =" << placements.size();
 
     const auto & placedTiles = tp->getInTiling();
     qDebug() << "num placed tiles=" << placedTiles.size();
 
-    for (const auto & placedTile : placedTiles)
+    for (const auto & placedTile : std::as_const(placedTiles))
     {
         TilePtr        tile = placedTile->getTile();
         const EdgePoly & ep = tile->getEdgePoly();
@@ -76,7 +74,7 @@ void TileColors::createStyleRepresentation()
 
         // fetch tile colors from the tiling
         ColorSet * tileColors = tile->getTileColors();
-        for (auto & T2 : qAsConst(placements))
+        for (auto & T2 : std::as_const(placements))
         {
             QTransform T3  = T1 * T2;
             EdgePoly  ep2  =  ep.map(T3);
@@ -92,7 +90,6 @@ void TileColors::createStyleRepresentation()
 void TileColors::resetStyleRepresentation()
 {
     epolys.clear();
-    resetStyleMap();
 }
 
 eStyleType TileColors::getStyleType() const
@@ -117,19 +114,24 @@ void TileColors::draw(GeoGraphics * gg)
     auto painter = gg->getPainter();
     painter->save();
 
-    auto mosaic = MosaicMaker::getInstance()->getMosaic();
-    auto crop   = mosaic->getCrop();
-    if (crop)
+    auto proto = getPrototype();
+    if (proto)
     {
-        auto rect = crop->getRect();
-        if (rect.isValid())
+        auto crop = proto->getCrop();
+        if (crop)
         {
-            rect = worldToScreen(rect);
-            painter->setClipRect(rect);
+            auto rect = crop->getRect();
+            qDebug() << "Crop rect model" << rect;
+            if (rect.isValid())
+            {
+                rect = worldToScreen(rect);
+                qDebug() << "Crop rect screen" << rect;
+                painter->setClipRect(rect);
+            }
         }
     }
 
-    for (const auto & bpc : epolys)
+    for (const auto & bpc : std::as_const(epolys))
     {
         EdgePoly ep = bpc.epoly;
         QPen pen(bpc.color, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);

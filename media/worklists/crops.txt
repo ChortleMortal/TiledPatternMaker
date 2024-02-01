@@ -1,7 +1,20 @@
 12-6-4.v3
-12-6-4.v5
 12-6-4.v6
-sabon-feature.v5
-12-6-trigon.v6
-6.5.v4
+12-6-trigon.v7
+6.5.v6
+Alhambra3
+Broug 5-fold
+Broug 5-fold.v2
+Popular2.v1
+Popular2.v2
+Popular2.v3
+Popular2.v4
 Test12Rect.v7
+pint
+pint.v1
+pint.v2
+pint.v4
+sabon-feature.v10
+sabon-feature.v5
+sabon-feature.v8
+sabon-feature.v9

@@ -1,0 +1,76 @@
+<?xml version="1.0"?>
+<!-- Written: Sun Oct 1 2023 17:18:09 -->
+<Tiling version="7">
+	<Name>3-4-3-12</Name>
+	<Fill singleton="f">-3,3,-3,3</Fill>
+	<T1>0.9999999999999991,-1.732050807568877</T1>
+	<T2>1.732050807568877,0.9999999999999988</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>151</top__delta>
+		<width__delta>2.047099312100133</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="regular" sides="12" rotation="0" scale="1">
+		<Placement>
+			<scale>0.9999999999999999</scale>
+			<rot>-90</rot>
+			<tranX>-0.4641016151377557</tranX>
+			<tranY>-3.196152422706631</tranY>
+		</Placement>
+		<Placement>
+			<scale>0.9999999999999993</scale>
+			<rot>30</rot>
+			<tranX>-1.464101615137755</tranX>
+			<tranY>-1.464101615137753</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0.2679491924311228</tranX>
+			<tranY>-0.4641016151377535</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="3" rotation="0" scale="0.2199999999999995">
+		<Placement>
+			<scale>0.7031842653602346</scale>
+			<rot>-59.99999999999999</rot>
+			<tranX>-0.3094010767585041</tranX>
+			<tranY>-1.464101615137754</tranY>
+		</Placement>
+		<Placement>
+			<scale>0.7031842653602361</scale>
+			<rot>-90.00000000000001</rot>
+			<tranX>-0.4641016151377557</tranX>
+			<tranY>-2.04145188432738</tranY>
+		</Placement>
+		<Placement>
+			<scale>0.703184265360235</scale>
+			<rot>-120</rot>
+			<tranX>0.11324865405187</tranX>
+			<tranY>-2.196152422706632</tranY>
+		</Placement>
+		<Placement>
+			<scale>0.7031842653602361</scale>
+			<rot>-150</rot>
+			<tranX>0.2679491924311216</tranX>
+			<tranY>-1.618802153517007</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="4" rotation="0" scale="0.2199999999999996">
+		<Placement>
+			<scale>1.217950874686922</scale>
+			<rot>-59.99999999999997</rot>
+			<tranX>-0.09807621135331746</tranX>
+			<tranY>-1.830127018922192</tranY>
+		</Placement>
+	</Tile>
+	<Desc />
+	<Auth />
+</Tiling>

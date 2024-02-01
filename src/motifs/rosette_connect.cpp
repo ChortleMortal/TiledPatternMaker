@@ -14,21 +14,18 @@
 #include "motifs/rosette_connect.h"
 #include "geometry/map.h"
 
-RosetteConnect::RosetteConnect(int nn, qreal q, int s, qreal k) : Rosette(nn,q,s,k)
+RosetteConnect::RosetteConnect(int nn, qreal q, int s) : Rosette(nn,q,s)
 {
-    setMotifScale(computeConnectScale());
     setMotifType(MOTIF_TYPE_CONNECT_ROSETTE);
 }
 
-RosetteConnect::RosetteConnect(const Motif & fig, int nn, qreal q, int s, qreal k) : Rosette(fig, nn,q,s,k)
+RosetteConnect::RosetteConnect(const Motif & fig, int nn, qreal q, int s) : Rosette(fig, nn,q,s)
 {
-    setMotifScale(computeConnectScale());
     setMotifType(MOTIF_TYPE_CONNECT_ROSETTE);
 }
 
 RosetteConnect::RosetteConnect(const RosetteConnect & other) : Rosette(other)
 {
-    setMotifScale(computeConnectScale());
 }
 
 qreal RosetteConnect::computeConnectScale()
@@ -37,51 +34,29 @@ qreal RosetteConnect::computeConnectScale()
     // with rotations of same, and use the location of the intersection
     // to compute a scale factor.
 
-    setMotifScale(1.0);
-    qreal rot = getMotifRotate();      //save
-    setMotifRotate(0.0);
     Rosette::buildUnitMap();
-    setMotifRotate(rot);            // restore
     qreal sc = connector.computeScale(this);
-
-    resetMotifMaps();   // so unit can build
-
     return sc;
 }
 
 void RosetteConnect::buildUnitMap()
 {
-    qDebug() << "RosetteConnectFigure::buildUnit";
+    qDebug() << "RosetteConnect::buildUnitMap";
 
-    // save
-    qreal scale = getMotifScale();
-    qreal rot   = getMotifRotate();
-    setMotifScale(1.0);
-    setMotifRotate(0.0);
+    qreal cscale = computeConnectScale();
 
-    // build Rosette
-    Rosette::buildUnitMap();
-    //unitMap->dump();
-
-    // restore
-    setMotifScale(scale);  // erases unit map
-    setMotifRotate(rot);   // erases unit map
-
-    // extend Rosette
-    connector.connectMotif(this);
-    //unitMap->dump();
+    connector.connectMotif(this,cscale); // extend Rosette
 
     // We want the tip of the new figure to still be at (1,0).
     // To accomplish this, move the top half of the figure around
     // to lie under the bottom half.  This rebuilds the tip
     // at the correct location.
 
-    ///////////////////////////////connector.rotateHalf(unitMap);  // DAC methinks not needed
-    //////////////////////////////Q_ASSERT(!unitMap->isEmpty());
-
-    unitMap->transformMap(QTransform().rotateRadians(M_PI * don));
+    unitMap->transform(QTransform().rotateRadians(M_PI * don));
 
     connector.scaleToUnit(this);
 
-    unitMap->verify();
+    setMotifScale(1.0);
+
+    //unitMap->verify();
 }

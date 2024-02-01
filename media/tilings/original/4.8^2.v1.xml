@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<!-- Written: Sat Sep 30 2023 18:07:39 -->
+<Tiling version="7">
+	<Name>4.8^2.v1</Name>
+	<Fill singleton="f">-7,6,-5,5</Fill>
+	<T1>2.82842712474619,-5.551115123125783e-16</T1>
+	<T2>1.414213562373095,-1.414213562373096</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="regular" sides="8" rotation="0" scale="1">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="4" rotation="0" scale="1">
+		<Placement>
+			<scale>0.4142135623730951</scale>
+			<rot>0</rot>
+			<tranX>1.414213562373095</tranX>
+			<tranY>-3.885780586188048e-16</tranY>
+		</Placement>
+	</Tile>
+	<Desc>The classic Archimedean tiling by octagons and squares. Extremely important in Islamic design as the source of the Seal of Solomon, the [8/3]2 star.</Desc>
+	<Auth>Craig S. Kaplan</Auth>
+</Tiling>

@@ -8,13 +8,11 @@
 #include "geometry/edge.h"
 #include "geometry/loose.h"
 #include "geometry/neighbours.h"
-#include "geometry/point.h"
+#include "geometry/geo.h"
 #include "geometry/transform.h"
 #include "geometry/vertex.h"
-#include "makers/crop_maker/crop_maker.h"
 #include "makers/map_editor/map_editor_db.h"
 #include "makers/map_editor/map_selection.h"
-#include "misc/utilities.h"
 #include "mosaic/design_element.h"
 #include "settings/configuration.h"
 #include "tile/tile.h"
@@ -52,13 +50,13 @@ void  MapEditorSelection::buildEditorDB()
             for (auto & map : db->getDrawMaps())
 	        {
 	            // add points from map vertices
-                for (const auto & vert : map->getVertices())
+                for (const auto & vert : std::as_const(map->getVertices()))
 	            {
 	                pointInfo pi(PT_VERTEX,vert,"vertex");
 	                points.push_back(pi);
 	            }
 
-                for (const auto & edge : map->getEdges())
+                for (const auto & edge : std::as_const(map->getEdges()))
 	            {
 	                // add lines from map edges
 	                lineInfo li(LINE_EDGE,edge,"edge");
@@ -80,13 +78,13 @@ void  MapEditorSelection::buildEditorDB()
         {
             // add points from map vertices
             const QVector<VertexPtr>  & vertices = dcel->getVertices();
-            for (const auto & v : vertices)
+            for (const auto & v : std::as_const(vertices))
             {
                 pointInfo pi(PT_VERTEX,v,"vertex");
                 points.push_back(pi);
             }
 
-            for (const auto & e : dcel->getEdges())
+            for (const auto & e : std::as_const(dcel->getEdges()))
             {
                 // add lines from map edges
                 lineInfo li(LINE_EDGE,e,"edge");
@@ -101,7 +99,7 @@ void  MapEditorSelection::buildEditorDB()
     }
 
     // add construction lines
-    for (const auto & line : db->constructionLines)
+    for (const auto & line : std::as_const(db->constructionLines))
     {
         lineInfo li(LINE_CONSTRUCTION,line,"construction line");
         lines.push_back(li);
@@ -120,7 +118,7 @@ void  MapEditorSelection::buildEditorDB()
     }
 
     // add construction circles
-    for (const auto & circle : db->constructionCircles)
+    for (const auto & circle :std::as_const(db->constructionCircles))
     {
         circles.push_back(circle);
     }
@@ -134,9 +132,9 @@ void  MapEditorSelection::buildEditorDB()
     }
 
     // build circle-line intersects
-    for (auto & c : circles)
+    for (auto & c : std::as_const(circles))
     {
-        for (auto & linfo : lines)
+        for (auto & linfo : std::as_const(lines))
         {
             if (linfo._type == LINE_EDGE && !db->showMap)
             {
@@ -148,7 +146,7 @@ void  MapEditorSelection::buildEditorDB()
             // try for circle
             QPointF a;
             QPointF b;
-            int count = Utils::findLineCircleLineIntersections(c.centre, c.radius, line, a, b);
+            int count = Geo::findLineCircleLineIntersections(c.centre, c.radius, line, a, b);
             if (count == 1)
             {
                 // this is a tangent line
@@ -157,13 +155,13 @@ void  MapEditorSelection::buildEditorDB()
             }
             else if (count == 2)
             {
-                if (Utils::pointOnLine(line,a))
+                if (Geo::pointOnLine(line,a))
                 {
                     pointInfo pi(PT_CIRCLE,a,"circle intersect a");
                     points.push_back(pi);
                 }
 
-                if (Utils::pointOnLine(line,b))
+                if (Geo::pointOnLine(line,b))
                 {
                     pointInfo pi2(PT_CIRCLE,b,"circle intersect b");
                     points.push_back(pi2);
@@ -181,7 +179,7 @@ void  MapEditorSelection::buildEditorDB()
             Circle & c2 = circles[j];
             QPointF p1;
             QPointF p2;
-            int count = Utils::circleCircleIntersectionPoints(c1,c2,p1,p2);
+            int count = Geo::circleCircleIntersectionPoints(c1,c2,p1,p2);
             if (count == 1)
             {
                 qDebug() << "circle-circle touch point=" << p1;
@@ -200,9 +198,9 @@ void  MapEditorSelection::buildEditorDB()
     }
 
     // build construction line intersect points
-    for (auto & cline : db->constructionLines)
+    for (auto & cline : std::as_const(db->constructionLines))
     {
-        for (auto & linfo : lines)
+        for (auto & linfo : std::as_const(lines))
         {
             if (linfo._type == LINE_CONSTRUCTION && cline == linfo._line)
             {
@@ -249,14 +247,14 @@ void MapEditorSelection::buildMotifDB(DesignElementPtr delp)
                 extBoundary    = t0.map(extBoundary);
             }
 
-            for (auto apt : extBoundary)
+            for (auto & apt : std::as_const(extBoundary))
             {
                 pointInfo pi(PT_LINE,apt,"boundary point");
                 points.push_back(pi);
             }
 
-            QVector<QLineF> edges = Utils::polyToLines(extBoundary);
-            for (auto line : edges)
+            QVector<QLineF> edges = Geo::polyToLines(extBoundary);
+            for (auto & line : std::as_const(edges))
             {
                 // add lines from ext boundary
                 lineInfo li(LINE_FIXED,line,"boundary line");
@@ -285,14 +283,14 @@ void MapEditorSelection::buildMotifDB(DesignElementPtr delp)
         motifBoundary            = placement.map(motifBoundary);
         if (motifBoundary.size())
         {
-            for (auto apt : motifBoundary)
+            for (auto & apt : std::as_const(motifBoundary))
             {
                 pointInfo pi(PT_LINE,apt,"radial motif boundary point");
                 points.push_back(pi);
             }
 
-            QVector<QLineF> edges = Utils::polyToLines(motifBoundary);
-            for (auto line : edges)
+            QVector<QLineF> edges = Geo::polyToLines(motifBoundary);
+            for (auto & line : std::as_const(edges))
             {
                 // add line from radial motif boundary
                 lineInfo li(LINE_FIXED,line,"radial motif boundary line");
@@ -332,7 +330,7 @@ void MapEditorSelection::buildMotifDB(DesignElementPtr delp)
         {
             poly = placement.map(poly);
 
-            for (auto apt : poly)
+            for (auto & apt : std::as_const(poly))
             {
                 pointInfo pi(PT_LINE,apt,"tile point");
                 points.push_back(pi);
@@ -340,7 +338,7 @@ void MapEditorSelection::buildMotifDB(DesignElementPtr delp)
 
             EdgePoly edges0 = tile->getEdgePoly();
             EdgePoly edges  = edges0.map(placement);
-            for (auto edge : edges)
+            for (auto & edge : std::as_const(edges))
             {
                 // add lines from tile edges
                 QLineF line = edge->getLine();
@@ -373,10 +371,8 @@ SelectionSet  MapEditorSelection::findSelectionsUsingDB(const QPointF & spt)
     MapSelectionPtr sel;
 
     // find point near spt
-    for (auto it = points.begin(); it != points.end(); it++)
+    for (auto & pi : std::as_const(points))
     {
-        pointInfo & pi = *it;
-
         if ( (pi._type == PT_VERTEX || pi._type == PT_VERTEX_MID) && !db->showMap)
             continue;
 
@@ -385,7 +381,7 @@ SelectionSet  MapEditorSelection::findSelectionsUsingDB(const QPointF & spt)
 
         QPointF    apt = pi._pt;
         QPointF      a = meView->viewT.map(apt);
-        if (Point::isNear(spt,a))
+        if (Geo::isNear(spt,a))
         {
             if (debugSelection) qDebug() << "FOUND point" << apt << pi._desc;
             if (pi._type == PT_VERTEX)
@@ -396,10 +392,8 @@ SelectionSet  MapEditorSelection::findSelectionsUsingDB(const QPointF & spt)
     }
 
     // find line near spt
-    for (auto it = lines.begin(); it != lines.end(); it++)
+    for (auto & linfo : std::as_const(lines))
     {
-        lineInfo & linfo = *it;
-
         if (linfo._type == LINE_EDGE && !db->showMap)
             continue;
         if (linfo._type == LINE_CONSTRUCTION && !db->showConstructionLines)
@@ -407,7 +401,7 @@ SelectionSet  MapEditorSelection::findSelectionsUsingDB(const QPointF & spt)
 
         QLineF     line  = linfo._line;
         QLineF wline     = meView->viewT.map(line);
-        if (Point::dist2ToLine(spt, wline.p1(), wline.p2()) < 49.0)
+        if (Geo::dist2ToLine(spt, wline.p1(), wline.p2()) < 49.0)
         {
             if (debugSelection) qDebug() << "FOUND line" << line << linfo._desc;
             if (linfo._type == LINE_EDGE)
@@ -441,12 +435,12 @@ SelectionSet  MapEditorSelection::findSelectionsUsingDB(const QPointF & spt)
                 QPointF b;
                 QLineF line(center, spt); // line from center
                 Circle c(center,bscale);
-                int count = Utils::findLineCircleLineIntersections(scenter,radius,line,a,b);
+                int count = Geo::findLineCircleLineIntersections(scenter,radius,line,a,b);
 
                 if (count == 1)
                 {
                     // there should be only one point
-                    if (Point::isNear(a,spt))
+                    if (Geo::isNear(a,spt))
                     {
                         QPointF aa = meView->viewTinv.map(a);
                         if (debugSelection) qDebug() << "FOUND point on circle" << aa;
@@ -455,13 +449,13 @@ SelectionSet  MapEditorSelection::findSelectionsUsingDB(const QPointF & spt)
                 }
                 else if (count == 2)
                 {
-                    if (Point::isNear(spt,a))
+                    if (Geo::isNear(spt,a))
                     {
                         QPointF aa = meView->viewTinv.map(a);
                         if (debugSelection) qDebug() << "FOUND 2-pt circle intersect a" << aa;
                         set.push_back(make_shared<MapSelection>(c, aa));
                     }
-                    if (Point::isNear(spt,b))
+                    if (Geo::isNear(spt,b))
                     {
                         QPointF bb = meView->viewTinv.map(b);
                         if (debugSelection) qDebug() << "FOUND 2-pt circle intersect b" << bb;
@@ -484,9 +478,8 @@ SelectionSet  MapEditorSelection::findSelectionsUsingDB(const QPointF & spt)
 
 MapSelectionPtr MapEditorSelection::findAPoint(SelectionSet & set)
 {
-    for (auto it = set.begin(); it != set.end(); it++)
+    for (auto & sel : std::as_const(set))
     {
-        auto sel = *it;
         if (sel->getType() == MAP_POINT || sel->getType() == MAP_VERTEX)
         {
             return sel;
@@ -502,9 +495,8 @@ MapSelectionPtr MapEditorSelection::findAPoint(SelectionSet & set)
 
 MapSelectionPtr MapEditorSelection::findALine(SelectionSet &set)
 {
-    for (auto it = set.begin(); it != set.end(); it++)
+    for (auto & sel : std::as_const(set))
     {
-        auto sel = *it;
         if (sel->getType() == MAP_LINE || sel->getType() == MAP_EDGE)
         {
             return sel;
@@ -516,9 +508,8 @@ MapSelectionPtr MapEditorSelection::findALine(SelectionSet &set)
 
 MapSelectionPtr MapEditorSelection::findAnEdge(SelectionSet &set)
 {
-    for (auto it = set.begin(); it != set.end(); it++)
+    for (auto & sel : std::as_const(set))
     {
-        auto sel = *it;
         if (sel->getType() == MAP_EDGE)
         {
             return sel;
@@ -536,7 +527,7 @@ MapSelectionPtr MapEditorSelection::findVertex(QPointF spt , VertexPtr exclude)
     if (!map)
         return sel;
 
-    for (const auto & vp : map->getVertices())
+    for (const auto & vp : std::as_const(map->getVertices()))
     {
         if (vp == exclude)
         {
@@ -545,7 +536,7 @@ MapSelectionPtr MapEditorSelection::findVertex(QPointF spt , VertexPtr exclude)
         QPointF pt   = meView->worldToScreen(vp->pt);    // TODO - verify
         QPointF a    = meView->viewT.map(pt);
         //QPointF sa   = worldToScreen(a);
-        if (Point::isNear(spt,a))
+        if (Geo::isNear(spt,a))
         {
             if (debugSelection) qDebug() << "FOUND vertex";
             return make_shared<MapSelection>(vp);
@@ -560,7 +551,7 @@ void MapEditorSelection::findEdges(MapPtr map, QPointF spt, const QVector<EdgePt
     if (!map)
         return;
 
-    for (const auto & e : map->getEdges())
+    for (const auto & e : std::as_const(map->getEdges()))
     {
         if (excludes.contains(e))
         {
@@ -568,8 +559,8 @@ void MapEditorSelection::findEdges(MapPtr map, QPointF spt, const QVector<EdgePt
         }
         QPointF a = meView->viewT.map(e->v1->pt);
         QPointF b = meView->viewT.map(e->v2->pt);
-
-        if (Point::distToLine(spt, a , b) < 7.0)
+        
+        if (Geo::distToLine(spt, a , b) < 7.0)
         {
             if (debugSelection) qDebug() << "FOUND EDGE";
             set.push_back(make_shared<MapSelection>(e));
@@ -585,7 +576,7 @@ SelectionSet MapEditorSelection::findEdges(QPointF spt, const NeighboursPtr excl
     if (!map)
         return set;
 
-    for (const auto & e : map->getEdges())
+    for (const auto & e : std::as_const(map->getEdges()))
     {
         bool found = false;
         for (auto pos = excludes->begin(); pos != excludes->end(); pos++)
@@ -604,8 +595,8 @@ SelectionSet MapEditorSelection::findEdges(QPointF spt, const NeighboursPtr excl
         }
         QPointF a = meView->viewT.map(e->v1->pt);
         QPointF b = meView->viewT.map(e->v2->pt);
-
-        if (Point::distToLine(spt, a , b) < 7.0)
+        
+        if (Geo::distToLine(spt, a , b) < 7.0)
         {
             if (debugSelection) qDebug() << "FOUND EDGE";
             set.push_back(make_shared<MapSelection>(e));
@@ -652,13 +643,13 @@ bool MapEditorSelection::insideBoundary(QPointF wpt)
         QPointF center = tilep->getCenter();
         QTransform t   = QTransform::fromTranslate(center.x(),center.y());
         boundary       = t.map(boundary);
-        b_area         = Utils::calcArea(boundary);
+        b_area         = Geo::calcArea(boundary);
     }
 
     QPolygonF tile = tilep->getPolygon();
     if (tile.size())
     {
-        f_area = Utils::calcArea(tile);
+        f_area = Geo::calcArea(tile);
     }
 
     if (Loose::zero(b_area) && Loose::zero(f_area))
@@ -681,7 +672,7 @@ MapSelectionPtr MapEditorSelection::findConstructionCircle(const QPointF & spt)
     MapSelectionPtr sel;
 
     QVector<Circle> selected;
-    for (auto & c2 : db->constructionCircles)
+    for (auto & c2 : std::as_const(db->constructionCircles))
     {
         QPointF center = meView->viewT.map(c2.centre);
         qreal radius   = Transform::scalex(meView->viewT) * c2.radius;
@@ -711,7 +702,7 @@ MapSelectionPtr MapEditorSelection::findConstructionCircle(const QPointF & spt)
     for (auto & c4 : selected)
     {
         QPointF center = meView->viewT.map(c4.centre);
-        c4.tmpDist2   = Point::dist2(spt,center);
+        c4.tmpDist2   = Geo::dist2(spt,center);
         if (c4.tmpDist2 < closestDist)
         {
             closestDist = c4.tmpDist2;

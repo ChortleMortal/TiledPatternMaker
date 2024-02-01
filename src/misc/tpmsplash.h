@@ -1,10 +1,10 @@
 #ifndef TPMSPLASH_H
 #define TPMSPLASH_H
 
-#include <QSplashScreen>
 #include <QStack>
+#include <QLabel>
 
-class TPMSplash : public QSplashScreen
+class TPMSplash : public QLabel
 {
     Q_OBJECT
 
@@ -18,9 +18,6 @@ protected:
     void draw();
 
 private:
-    int     w;
-    int     h;
-
     QStack<QString>  msgStack;
 };
 

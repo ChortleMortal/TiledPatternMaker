@@ -6,7 +6,7 @@
 #include "geometry/neighbours.h"
 #include "geometry/intersect.h"
 #include "geometry/loose.h"
-#include "misc/utilities.h"
+#include "geometry/geo.h"
 
 // cleanse just cleanses - it does not verify
 void Map::cleanse(unsigned int options)
@@ -143,7 +143,7 @@ void Map::removeBadEdges()
 
     QVector<EdgePtr> baddies;
 
-    for (const auto & e : qAsConst(edges))
+    for (const auto & e : std::as_const(edges))
     {
         auto v1 = e->v1;
         auto v2 = e->v2;
@@ -170,7 +170,7 @@ void Map::removeBadEdges()
         }
     }
 
-    for (auto & e : baddies)
+    for (auto & e : std::as_const(baddies))
     {
         removeEdge(e);
     }
@@ -181,10 +181,10 @@ void Map::removeBadEdges()
 void Map::divideIntersectingEdges()
 {
     qDebug() << "divideIntersectingEdges......";
-    qDebug().noquote() << namedSummary();
+    qDebug().noquote() << summary();
 
     UniqueQVector<QPointF> intersects;
-    for (const auto & edge : edges)
+    for (const auto & edge : std::as_const(edges))
     {
         // To check all intersections of this edge with edges in
         // the current map, we can use the optimization that
@@ -194,7 +194,7 @@ void Map::divideIntersectingEdges()
         // Casper 12DEC02 - removed optimisation and simplified code
 
         QLineF e = edge->getLine();
-        for (const auto & cur : edges)
+        for (const auto & cur : std::as_const(edges))
         {
             if (cur == edge)
             {
@@ -211,13 +211,13 @@ void Map::divideIntersectingEdges()
     }
     // now split the edges
     qDebug() << "divideIntersectingEdges - splitting at" << intersects.count() << "points";
-    for (QPointF pt : intersects)
+    for (QPointF pt : std::as_const(intersects))
     {
         //qTDebug() << "New split at" << pt;
         insertVertex(pt);
     }
-
-    qDebug().noquote() << namedSummary();
+    
+    qDebug().noquote() << summary();
     qDebug() << "divideIntersectingEdges - done";
 }
 
@@ -235,7 +235,7 @@ void Map::joinColinearEdges()
 
 bool Map::joinOneColinearEdge()
 {
-    for (const auto & vp : qAsConst(vertices))
+    for (const auto & vp : std::as_const(vertices))
     {
         NeighboursPtr n = getNeighbours(vp);
         int count = n->numNeighbours();
@@ -243,7 +243,7 @@ bool Map::joinOneColinearEdge()
         {
             QLineF a = n->getNeighbour(0)->getLine();
             QLineF b = n->getNeighbour(1)->getLine();
-            qreal angle = Utils::angle(a,b);
+            qreal angle = Geo::angle(a,b);
             if (Loose::zero(angle) || Loose::equals(angle,180.0))
             {
                 // need to remove one edge, extend the other, and remove vertex
@@ -281,7 +281,7 @@ bool Map::coalesceVertices(qreal tolerance)
     {
         for (int j = i+1 ;  j < size; j++)
         {
-            if (Point::dist2(vertices[i]->pt,vertices[j]->pt) < tolerance)
+            if (Geo::dist2(vertices[i]->pt,vertices[j]->pt) < tolerance)
             {
                 replacements[vertices[i]] = vertices[j];
             }
@@ -296,7 +296,7 @@ bool Map::coalesceVertices(qreal tolerance)
 
     QMap<VertexPtr,VertexPtr>::iterator it;
     UniqueQVector<EdgePtr> changedEdges;
-    for (const auto & edge : qAsConst(edges))
+    for (const auto & edge : std::as_const(edges))
     {
         it = replacements.find(edge->v1);
         if (it != replacements.end())
@@ -317,7 +317,7 @@ bool Map::coalesceVertices(qreal tolerance)
     }
 
     QVector<EdgePtr> edgesToDelete;
-    for (const auto & edge : qAsConst(changedEdges))
+    for (const auto & edge : std::as_const(changedEdges))
     {
         if (edge->isTrivial(tolerance))
         {
@@ -325,7 +325,7 @@ bool Map::coalesceVertices(qreal tolerance)
             edgesToDelete.push_back(edge);
             continue;
         }
-        for (auto & existingEdge : edges)
+        for (auto & existingEdge : std::as_const(edges))
         {
             if (existingEdge == edge)
             {
@@ -342,7 +342,7 @@ bool Map::coalesceVertices(qreal tolerance)
     }
 
     qDebug() << "Edges to delete:" << edgesToDelete.size();
-    for (auto & edge : edgesToDelete)
+    for (auto & edge : std::as_const(edgesToDelete))
     {
         edges.removeOne(edge);
     }
@@ -369,7 +369,7 @@ void Map::deDuplicateNeighbours()
 {
     qDebug() << "deDuplicateNeighbours BEGIN" << "vertices =" << vertices.size() << "edges =" << edges.size();
 
-    for (const auto & v :  qAsConst(vertices))
+    for (const auto & v :  std::as_const(vertices))
     {
         // examining a vertex
         NeighboursPtr n = getNeighbours(v);
@@ -409,7 +409,7 @@ void Map::removeVerticesWithEdgeCount(uint edgeCount)
     qDebug() << "removeVerticesWithEdgeCount" << edgeCount << "......";
 
     QVector<VertexPtr> verts;
-    for (const auto & v : qAsConst(vertices))
+    for (const auto & v : std::as_const(vertices))
     {
         NeighboursPtr n = getNeighbours(v);
         if (n->numNeighbours() == edgeCount)
@@ -418,7 +418,7 @@ void Map::removeVerticesWithEdgeCount(uint edgeCount)
         }
     }
 
-    for (auto & v : verts)
+    for (auto & v : std::as_const(verts))
     {
         removeVertex(v);
     }

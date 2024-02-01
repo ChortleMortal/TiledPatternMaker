@@ -35,10 +35,13 @@ MotifEditorWidget::MotifEditorWidget()
 
     // Radial motif editors.
     radial_star_edit       = new StarEditor("radial_star_edit");
+    radial_star2_edit      = new Star2Editor("radial_star2_edit");
     radial_rosette_edit    = new RosetteEditor("radial_rosette_edit");
+    radial_rosette2_edit   = new Rosette2Editor("radial_rosette2_edit");
     connect_rosette_edit   = new ConnectRosetteEditor("connect_rosette_edit");
     connect_star_edit      = new ConnectStarEditor("connect_star_edit");
     ex_star_edit           = new ExtendedStarEditor("ex_star_edit");
+    ex_star2_edit          = new ExtendedStar2Editor("ex_star2_edit");
     ex_rosette_edit        = new ExtendedRosetteEditor("ex_rosette_edit");
 
     // combo to select motif type for tile
@@ -111,6 +114,10 @@ void MotifEditorWidget::delegate(DesignElementPtr del)
         delgate(ex_star_edit);
         ex_star_edit->setMotif(del,false);
         break;
+    case MOTIF_TYPE_EXTENDED_STAR2:
+        delgate(ex_star2_edit);
+        ex_star2_edit->setMotif(del,false);
+        break;
     case MOTIF_TYPE_EXTENDED_ROSETTE:
         delgate(ex_rosette_edit);
         ex_rosette_edit->setMotif(del,false);
@@ -119,9 +126,17 @@ void MotifEditorWidget::delegate(DesignElementPtr del)
         delgate(radial_star_edit);
         radial_star_edit->setMotif(del,false);
         break;
+    case MOTIF_TYPE_STAR2:
+        delgate(radial_star2_edit);
+        radial_star2_edit->setMotif(del,false);
+        break;
     case MOTIF_TYPE_ROSETTE:
         delgate(radial_rosette_edit);
         radial_rosette_edit->setMotif(del,false);
+        break;
+    case MOTIF_TYPE_ROSETTE2:
+        delgate(radial_rosette2_edit);
+        radial_rosette2_edit->setMotif(del,false);
         break;
     case MOTIF_TYPE_CONNECT_ROSETTE:
         delgate(connect_rosette_edit);
@@ -204,8 +219,12 @@ NamedMotifEditor * MotifEditorWidget ::getEditor(eMotifType type)
     case MOTIF_TYPE_UNDEFINED:
     case MOTIF_TYPE_ROSETTE:
         return radial_rosette_edit;
+    case MOTIF_TYPE_ROSETTE2:
+        return radial_rosette2_edit;
     case MOTIF_TYPE_STAR:
         return radial_star_edit;
+    case MOTIF_TYPE_STAR2:
+        return radial_star2_edit;
     case MOTIF_TYPE_CONNECT_STAR:
         return connect_star_edit;
     case MOTIF_TYPE_CONNECT_ROSETTE:
@@ -214,6 +233,8 @@ NamedMotifEditor * MotifEditorWidget ::getEditor(eMotifType type)
         return ex_rosette_edit;
     case MOTIF_TYPE_EXTENDED_STAR:
         return ex_star_edit;
+    case MOTIF_TYPE_EXTENDED_STAR2:
+        return ex_star2_edit;
     case MOTIF_TYPE_EXPLICIT_MAP:
         return explicit_map_edit;
     case MOTIF_TYPE_IRREGULAR_NO_MAP:

@@ -14,19 +14,16 @@ class panel_page;
 class PanelViewSelect;
 class TiledPatternMaker;
 class MouseModeWidget;
+class ViewController;
+class View;
+class MosaicMaker;
+class TilingMaker;
 
 class ControlPanel : public QWidget
 {
     Q_OBJECT
 
 public:
-    enum eLoadState
-    {
-        LOADING_NONE,
-        LOADING_TILING,
-        LOADING_MOSAIC
-    };
-
     static ControlPanel * getInstance();
     static void releaseInstance();
 
@@ -35,6 +32,7 @@ public:
     void    floatPages()                     { pageController->floatPages(); }
     void    closePages()                     { pageController->closePages(); }
     bool    isVisiblePage(panel_page * page) { return pageController->isVisiblePage(page); }
+    bool    isVisiblePage(ePanelPage page)   { return pageController->isVisiblePage(page); }
     void    setCurrentPage(QString name)     { pageController->setCurrentPage(name); }
     panel_page* getCurrentPage()             { return pageController->getCurrentPage(); }
     void    completePageSelection();
@@ -48,7 +46,6 @@ public:
 
     MouseModeWidget  *  getMouseModeWidget() { return mouseModeWidget;}
     eKbdMode            getValidKbdMode(eKbdMode mode);
-    void                setLoadState(eLoadState state, QString name=QString());
 
     QString gitBranch;  // (if there is one)
 
@@ -58,8 +55,10 @@ signals:
     void    sig_panelResized();
     void    sig_reload();
     void    sig_saveLog();
+    void    sig_id_layers();    // for debug
 
 public slots:
+    void    slot_reload();
     void    slot_poll();
     void    slot_reattachPage(panel_page * page)  { pageController->reAttachPage(page); }
 
@@ -102,9 +101,10 @@ private:
 
     class Configuration *  config;
     TiledPatternMaker   *  maker;
-    class ViewControl   *  view;
-    class MosaicMaker   *  mosaicMaker;
-    class TilingMaker   *  tilingMaker;
+    View                *  view;
+    ViewController      *  viewControl;
+    MosaicMaker         *  mosaicMaker;
+    TilingMaker         *  tilingMaker;
     MouseModeWidget     *  mouseModeWidget;
 
     PanelViewSelect     *  viewSelect;
@@ -115,8 +115,6 @@ private:
     QTimer              *  mpTimer;
 
     QString                panelInfo;
-    eLoadState             loadState;
-    QString                loadName;
 
     QRadioButton        * radioDefined;
     QRadioButton        * radioPack;

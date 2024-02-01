@@ -4,14 +4,14 @@
 #include "geometry/vertex.h"
 #include "geometry/edge.h"
 #include "geometry/map.h"
-#include "geometry/point.h"
+#include "geometry/geo.h"
 #include "geometry/transform.h"
 #include "geometry/neighbours.h"
-#include "misc/utilities.h"
+#include "misc/sys.h"
 #include "motifs/motif.h"
 #include "mosaic/design_element.h"
 #include "viewers/map_editor_view.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view.h"
 
 typedef std::weak_ptr<class Edge>   WeakEdgePtr;
 
@@ -19,7 +19,7 @@ MapMouseAction::MapMouseAction(QPointF spt)
 {
     desc      = "MapMouseAction";
     meView    = MapEditorView::getInstance();
-    view      = ViewControl::getInstance();
+    view      = Sys::view;
     selector  = meView->getSelector();
     db        = meView->getDb();
     last_drag = spt;
@@ -105,7 +105,7 @@ void MoveVertex::endDragging( QPointF spt)
     if (sel)
     {
         VertexPtr existing = sel->getVertex();
-        for (auto & wedge : *n)
+        for (auto & wedge : std::as_const(*n))
         {
             EdgePtr ep = wedge.lock();
             Q_ASSERT(map->contains(ep));
@@ -126,9 +126,9 @@ void MoveVertex::endDragging( QPointF spt)
     {
         QLineF line =  sel2->getLine();
         line =  meView->viewT.map(line);
-        if (Point::distToLine(spt, line) < 7.0)
+        if (Geo::distToLine(spt, line) < 7.0)
         {
-            QPointF pt = Utils::snapTo(spt,line);
+            QPointF pt = Geo::snapTo(spt,line);
             _vp->pt = meView->viewTinv.map(pt);
             qDebug() << "SNAPTO edge";
         }
@@ -162,7 +162,6 @@ void MoveVertex::endDragging( QPointF spt)
 	// tidy up
     map->cleanse(joinupColinearEdges | divideupIntersectingEdges);   // deal with lines crossing existing lines
     map->resetNeighbourMap();
-    map->getNeighbourMap();     // rebuilds
     map->verify();
 
     MapMouseAction::endDragging(spt);
@@ -209,7 +208,6 @@ void MoveEdge::endDragging(QPointF spt)
     {
         map->cleanse(divideupIntersectingEdges);     // deal with lines crossing existing lines
         map->resetNeighbourMap();
-        map->getNeighbourMap();     // rebuilds
         MapMouseAction::endDragging(spt);
     }
 }
@@ -267,7 +265,7 @@ void DrawLine::updateDragging(QPointF spt)
 
     intersectPoints.clear();
     QPointF intersect;
-    for (const auto & linfo : selector->lines)
+    for (const auto & linfo : std::as_const(selector->lines))
     {
         QLineF::IntersectType itype = newline.intersects(linfo._line,&intersect);
         if (itype == QLineF::BoundedIntersection)
@@ -332,7 +330,7 @@ void DrawLine::draw(QPainter * painter)
     painter->setPen(QPen(Qt::green,3));
     painter->setBrush(Qt::green);
 
-    for (auto pt : intersectPoints)
+    for (auto & pt : std::as_const(intersectPoints))
     {
         painter->drawEllipse(meView->viewT.map(pt),radius, radius);
     }
@@ -444,8 +442,8 @@ void ExtendLine::updateDragging(QPointF spt)
         //me->setMapedMouseMode(MAPED_MOUSE_NONE);
         return;
     }
-
-    qreal delta = Point::dist(startDrag,spt);
+    
+    qreal delta = Geo::dist(startDrag,spt);
     delta = delta / Transform::scalex(meView->viewT);
     qreal len   = startLine.length();
     qreal len2  = len + delta;
@@ -476,8 +474,8 @@ void ExtendLine::endDragging( QPointF spt)
         //me->setMapedMouseMode(MAPED_MOUSE_NONE);
         return;
     }
-
-    qreal delta = Point::dist(startDrag,spt);
+    
+    qreal delta = Geo::dist(startDrag,spt);
     delta = delta / Transform::scalex(meView->viewT);
     qreal len   = startLine.length();
     qreal len2  = len + delta;
@@ -584,13 +582,13 @@ EditConstructionCircle::EditConstructionCircle(Circle circle, QPointF spt) : Map
     QPointF center = meView->viewT.map(currentCircle.centre);
     qreal radius   = Transform::scalex(meView->viewT) * currentCircle.radius;
     Circle sc(center,radius);
-    if (Utils::pointOnCircle(spt,sc,7))
+    if (Geo::pointOnCircle(spt,sc,7))
     {
         QPointF mpt = meView->viewTinv.map(spt);
         start = new QPointF(mpt);
         ecmode = CM_EDGE;
     }
-    else if (Utils::pointInCircle(spt,sc))
+    else if (Geo::pointInCircle(spt,sc))
     {
         QPointF mpt = meView->viewTinv.map(spt);
         start = new QPointF(mpt);
@@ -613,11 +611,11 @@ void EditConstructionCircle::updateDragging(QPointF spt)
     if (ecmode == CM_EDGE)
     {
         // first find direction
-        qreal s = Point::dist2(*start,currentCircle.centre);
-        qreal m = Point::dist2(mpt,currentCircle.centre);
+        qreal s = Geo::dist2(*start,currentCircle.centre);
+        qreal m = Geo::dist2(mpt,currentCircle.centre);
         bool sub = (s > m);
         // find delta
-        qreal delta = Point::dist(mpt,*start);
+        qreal delta = Geo::dist(mpt,*start);
         delete start;
         start  = new QPointF(mpt);
         if (sub)

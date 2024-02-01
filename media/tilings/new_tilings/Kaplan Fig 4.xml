@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<!-- Written: Fri Oct 13 2023 17:21:57 -->
+<Tiling version="7">
+	<Name>Kaplan Fig 4</Name>
+	<Fill singleton="f">-2,2,-2,2</Fill>
+	<T1>3.513843876330611,-4.440892098500626e-16</T1>
+	<T2>1.756921938165305,-1.756921938165306</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="regular" sides="12" rotation="0" scale="1.2">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-0.1066666666666674</tranX>
+			<tranY>-0.6133333333333333</tranY>
+		</Placement>
+	</Tile>
+	<Desc />
+	<Auth />
+	<BackgroundImage name="Screenshot 2023-10-11 170125.png">
+		<Scale>1</Scale>
+		<Rot>0</Rot>
+		<X>0</X>
+		<Y>0</Y>
+		<Center>0,0</Center>
+	</BackgroundImage>
+</Tiling>

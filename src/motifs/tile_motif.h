@@ -17,7 +17,7 @@ public:
     virtual void     report()         override { qDebug().noquote() << getMotifDesc(); }
 
 protected:
-    void    inferTile(TilePtr tile); // make a motif from the tiling itself
+    void    inferTile(); // make a motif from the tiling itself
 };
 
 #endif // TILEMOTIF_H

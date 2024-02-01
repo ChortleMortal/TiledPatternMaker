@@ -1,12 +1,7 @@
 #include "viewers/motif_view.h"
-#include "motifs/extended_rosette.h"
-#include "motifs/extended_star.h"
-#include "motifs/inferred_motif.h"
-#include "motifs/motif.h"
-#include "motifs/radial_motif.h"
-#include "motifs/irregular_tools.h"
 #include "geometry/arcdata.h"
 #include "geometry/edge.h"
+#include "geometry/geo.h"
 #include "geometry/map.h"
 #include "geometry/transform.h"
 #include "geometry/vertex.h"
@@ -15,11 +10,15 @@
 #include "makers/prototype_maker/prototype.h"
 #include "makers/prototype_maker/prototype_maker.h"
 #include "mosaic/design_element.h"
+#include "motifs/inferred_motif.h"
+#include "motifs/irregular_tools.h"
+#include "motifs/motif.h"
+#include "motifs/radial_motif.h"
 #include "settings/configuration.h"
-#include "tile/tile.h"
 #include "tile/placed_tile.h"
+#include "tile/tile.h"
 #include "tile/tiling.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
 
 using std::make_shared;
 
@@ -52,7 +51,7 @@ void MotifView::releaseInstance()
     }
 }
 
-MotifView::MotifView() : LayerController("Motif View")
+MotifView::MotifView() : LayerController("Motif View",false)
 {
     protoMakerData = PrototypeMaker::getInstance()->getProtoMakerData();
     lineWidth     = config->motifViewWidth;
@@ -81,8 +80,7 @@ void MotifView::paint(QPainter *painter)
     DesignElementPtr del = protoMakerData->getSelectedDEL();
     if (config->motifEnlarge && del)
     {
-        ViewControl * view = ViewControl::getInstance();
-        baseT = DesignElementButton::resetViewport(-2,del,view->rect()) * getCanvasTransform();
+        baseT = DesignElementButton::resetViewport(-2,del,view->rect()) * getModelTransform();
     }
     else
     {
@@ -147,7 +145,7 @@ void MotifView::paint(QPainter *painter)
                 if (motif->isRadial())
                 {
                     QPolygonF poly(pts);
-                    pt = Point::center(poly);
+                    pt = Geo::center(poly);
                 }
                 else
                 {
@@ -178,7 +176,7 @@ void MotifView::paint(QPainter *painter)
             auto map = std::dynamic_pointer_cast<Map>(dmap);
             if (map)
             {
-                QColor viewColor = view->getViewSettings().getBkgdColor(VIEW_MOTIF_MAKER);
+                QColor viewColor = viewControl->getCanvas().getBkgdColor();
                 QColor color = (viewColor == QColor(Qt::white)) ? Qt::black : Qt::white;
                 painter->setPen(QPen(color,lineWidth));
                 paintMap(painter,map);
@@ -220,7 +218,7 @@ void MotifView::paintExplicitMotifMap(QPainter *painter, MotifPtr motif)
             map = std::dynamic_pointer_cast<Map>(dmap);
             if (map)
             {
-                QColor viewColor = view->getViewSettings().getBkgdColor(VIEW_MOTIF_MAKER);
+                QColor viewColor = viewControl->getCanvas().getBkgdColor();
                 QColor color = (viewColor == QColor(Qt::white)) ? Qt::black : Qt::white;
                 painter->setPen(QPen(color,lineWidth));
                 paintMap(painter,map);
@@ -245,14 +243,14 @@ void MotifView::paintRadialMotifMap(QPainter *painter, MotifPtr motif)
         map = std::dynamic_pointer_cast<Map>(dmap);
         if (map)
         {
-            QColor viewColor = view->getViewSettings().getBkgdColor(VIEW_MOTIF_MAKER);
+            QColor viewColor = viewControl->getCanvas().getBkgdColor();
             QColor color = (viewColor == QColor(Qt::white)) ? Qt::black : Qt::white;
             painter->setPen(QPen(color,lineWidth));
             paintMap(painter,map);
         }
     }
 
-    if (config->highlightUnit)
+    if (Sys::highlightUnit)
     {
         map = rp->getUnitMap();
         painter->setPen(QPen(Qt::red,lineWidth+1.0));
@@ -305,7 +303,7 @@ void MotifView::paintMap(QPainter * painter, MapPtr map)
 {
     //map->verify("figure", true, true, true);
     //qDebug() << "MotifView::paintMap" <<  map->namedSummary();
-    for (auto & edge : qAsConst(map->getEdges()))
+    for (auto & edge : std::as_const(map->getEdges()))
     {
         QPointF p1 = _T.map(edge->v1->pt);
         QPointF p2 = _T.map(edge->v2->pt);
@@ -334,7 +332,7 @@ void MotifView::paintMap(QPainter * painter, MapPtr map)
     font.setPixelSize(14);
     painter->setFont(font);
     const QVector<QPair<QPointF,QString>> & texts = map->getTexts();
-    for (auto & pair : texts)
+    for (auto & pair : std::as_const(texts))
     {
 
         QPointF pt  = pair.first;
@@ -351,6 +349,20 @@ void MotifView::paintMap(QPainter * painter, MapPtr map)
         painter->drawText(QPointF(pt.x()+7,pt.y()+13),txt);
 #endif
     }
+}
+
+void MotifView::setModelXform(const Xform & xf, bool update)
+{
+    Q_ASSERT(!_unique);
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.toInfoString() << (isUnique() ? "unique" : "common");
+    viewControl->setCurrentModelXform(xf,update);
+}
+
+const Xform & MotifView::getModelXform()
+{
+    Q_ASSERT(!_unique);
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << viewControl->getCurrentModelXform().toInfoString() << (isUnique() ? "unique" : "common");
+    return viewControl->getCurrentModelXform();
 }
 
 void MotifView::slot_setCenter(QPointF spt)

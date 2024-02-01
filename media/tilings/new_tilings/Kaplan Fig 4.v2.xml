@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<!-- Written: Sun Oct 15 2023 13:43:35 -->
+<Tiling version="7">
+	<Name>Kaplan Fig 4.v2</Name>
+	<Fill singleton="f">-2,2,-2,2</Fill>
+	<T1>3.513843876330611,-4.440892098500626e-16</T1>
+	<T2>1.756921938165305,-1.756921938165306</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="regular" sides="12" rotation="0" scale="1.2">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-0.1066666666666674</tranX>
+			<tranY>-0.6133333333333333</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="1">-0.9851276357493208,-3.248716240581292</Point>
+			<Point id="2">0.7717943024159845,-3.248716240581292</Point>
+		</Line>
+		<Line>
+			<Point reference="2" />
+			<Point id="3">0.771794302415985,-1.491794302415987</Point>
+		</Line>
+		<Line>
+			<Point reference="3" />
+			<Point id="4">-0.9851276357493205,-1.491794302415986</Point>
+		</Line>
+		<Line>
+			<Point reference="4" />
+			<Point reference="1" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Desc />
+	<Auth />
+	<BackgroundImage name="Screenshot 2023-10-15 104529.png">
+		<Scale>1</Scale>
+		<Rot>0</Rot>
+		<X>22</X>
+		<Y>1</Y>
+		<Center>0,0</Center>
+	</BackgroundImage>
+</Tiling>

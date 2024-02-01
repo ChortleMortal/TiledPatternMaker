@@ -3,21 +3,25 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include "panels/page_backgrounds.h"
-#include "widgets/dlg_name.h"
-#include "settings/configuration.h"
-#include "panels/controlpanel.h"
-#include "panels/panel_misc.h"
 #include "geometry/edge.h"
 #include "geometry/vertex.h"
+#include "makers/mosaic_maker/mosaic_maker.h"
+#include "misc/sys.h"
+#include "mosaic/mosaic.h"
+#include "panels/controlpanel.h"
+#include "panels/panel_misc.h"
+#include "tile/backgroundimage.h"
+#include "settings/configuration.h"
 #include "viewers/backgroundimageview.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
+#include "widgets/dlg_name.h"
 
-page_backgrounds::page_backgrounds(ControlPanel * apanel) : panel_page(apanel,"Backgrounds"),  bkgdLayout("Bkgd Xform")
+page_backgrounds::page_backgrounds(ControlPanel * apanel) : panel_page(apanel,PAGE_BKGD_MAKER,"Backgrounds"),  bkgdLayout("Bkgd Xform")
 {
-    bip = BackgroundImageView::getInstance();
+    bview = BackgroundImageView::getInstance();
 
-    bkgdImageGroup = createBackgroundImageGroup();
-    bkgdColorGroup = createBackgroundColorGroup();
+    QGroupBox * bkgdImageGroup = createBackgroundImageGroup();
+    QGroupBox * bkgdColorGroup = createBackgroundColorGroup();
 
     vbox->addWidget(bkgdImageGroup);
     vbox->addSpacing(13);
@@ -32,13 +36,13 @@ void page_backgrounds::onEnter()
 
 void page_backgrounds::onRefresh()
 {
-    bkgdImageGroup->setChecked(config->showBackgroundImage);
+    chkShowBkgd->setChecked(config->showBackgroundImage);
     displayBackgroundStatus(false);
 
     for (int i = 0; i < viewTable->rowCount(); i++)
     {
         QTableWidgetItem * item = viewTable->item(i,1);
-        QColor color = view->getViewSettings().getBkgdColor(static_cast<eViewType>(i));
+        QColor color = viewControl->getBackgroundColor(static_cast<eViewType>(i));
         item->setText(color.name());
 
         QLabel * label = new QLabel;
@@ -57,11 +61,21 @@ QGroupBox * page_backgrounds::createBackgroundImageGroup()
     QPushButton * saveAdjustedBtn    = new QPushButton("Save Adjusted");
     QPushButton * clearBtn           = new QPushButton("Clear");
     QPushButton * resetBtn           = new QPushButton("Reset Xform");
+    QPushButton * removeBkgdBtn      = new QPushButton("Remove Background");
+                  chkShowBkgd        = new QCheckBox("Show Background Image");
+                  chk_useAdjusted    = new QCheckBox("Use Perspective");
+
+    chkShowBkgd->setChecked(config->showBackgroundImage);
 
     startAdjustBtn->setStyleSheet("QPushButton::checked { background-color: yellow; color: red;}");
 
-    chk_useAdjusted  = new QCheckBox("Use Perspective");
     imageName        = new QLineEdit("Image name");
+
+    QHBoxLayout * box0 = new QHBoxLayout();
+    box0->addWidget(chkShowBkgd);
+    box0->addSpacing(13);
+    box0->addWidget(chk_useAdjusted);
+    box0->addStretch();
 
     QHBoxLayout * box = new QHBoxLayout();
     box->addWidget(loadBkgdBtn);
@@ -73,21 +87,20 @@ QGroupBox * page_backgrounds::createBackgroundImageGroup()
     box2->addWidget(completeAdjustBtn);
     box2->addWidget(saveAdjustedBtn);
     box2->addStretch();
-    box2->addWidget(chk_useAdjusted);
+    box2->addWidget(removeBkgdBtn);
 
     QHBoxLayout * box3 = new QHBoxLayout();
     box3->addLayout(&bkgdLayout);
     box3->addWidget(resetBtn);
 
     QVBoxLayout * bkg = new QVBoxLayout();
+    bkg->addLayout(box0);
     bkg->addLayout(box);
     bkg->addLayout(box3);
     bkg->addLayout(box2);
 
-    QGroupBox * bkgdGroup  = new QGroupBox("Show Background Image");
-    bkgdGroup->setCheckable(true);
+    QGroupBox * bkgdGroup  = new QGroupBox("Background Image");
     bkgdGroup->setLayout(bkg);
-    bkgdGroup->setChecked(config->showBackgroundImage);
 
     connect(loadBkgdBtn,       &QPushButton::clicked,         this,    &page_backgrounds::slot_loadBackground);
     connect(completeAdjustBtn, &QPushButton::clicked,         this,    &page_backgrounds::slot_adjustBackground);
@@ -95,17 +108,16 @@ QGroupBox * page_backgrounds::createBackgroundImageGroup()
     connect(clearBtn,          &QPushButton::clicked,         this,    &page_backgrounds::slot_clearBackground);
     connect(startAdjustBtn,    &QPushButton::clicked,         this,    &page_backgrounds::slot_startSkewAdjustment);
     connect(resetBtn,          &QPushButton::clicked,         this,    &page_backgrounds::slot_resetXform);
+    connect(removeBkgdBtn,     &QPushButton::clicked,         this,    &page_backgrounds::slot_removeBackground);
     connect(chk_useAdjusted,   &QCheckBox::clicked,           this,    &page_backgrounds::slot_useAdjustedClicked);
     connect(&bkgdLayout,       &LayoutTransform::xformChanged,this,    &page_backgrounds::slot_setBkgdXform);
-    connect(bkgdGroup,         &QGroupBox::clicked,           this,    &page_backgrounds::slot_showImageChanged);
-
+    connect(chkShowBkgd,       &QCheckBox::clicked,           this,    &page_backgrounds::slot_showImageChanged);
 
     return bkgdGroup;
 }
 
 QGroupBox * page_backgrounds::createBackgroundColorGroup()
 {
-
     viewTable              = new AQTableWidget();
     QPushButton * pbResetB = new QPushButton("Reset to black");
     QPushButton * pbResetW = new QPushButton("Reset to white");
@@ -130,21 +142,16 @@ QGroupBox * page_backgrounds::createBackgroundColorGroup()
     viewTable->verticalHeader()->setVisible(false);
 
     int row = 0;
-    const QMap<eViewType,ViewData*> & fset = view->getViewSettings().getSettingsMap();
-
-    viewTable->setRowCount(fset.size());
-
-    QMap<eViewType,ViewData*>::const_iterator i = fset.constBegin();
-    while (i != fset.constEnd())
+    for (int i= 0; i < NUM_VIEW_TYPES; i++)
     {
-        eViewType type = i.key();
-        const ViewData * s = i.value();
-        ++i;
+        eViewType vtype = static_cast<eViewType>(i);
 
-        QTableWidgetItem * item =  new QTableWidgetItem(s2ViewerType[type]);
+        viewTable->setRowCount(row +1);
+
+        QTableWidgetItem * item =  new QTableWidgetItem(s2ViewerType[vtype]);
         viewTable->setItem(row,0,item);
 
-        QColor color = s->getBkgdColor();
+        QColor color = viewControl->getBackgroundColor(vtype);
         item = new QTableWidgetItem(color.name());
         viewTable->setItem(row,1,item);
 
@@ -163,9 +170,9 @@ QGroupBox * page_backgrounds::createBackgroundColorGroup()
 
     viewTable->resizeColumnsToContents();
     viewTable->adjustTableSize();
-
-    connect(pbResetB, &QPushButton::clicked, this, [this] { view->getViewSettings().reInitBkgdColors(QColor(Qt::black)); emit sig_refreshView(); } );
-    connect(pbResetW, &QPushButton::clicked, this, [this] { view->getViewSettings().reInitBkgdColors(QColor(Qt::white)); emit sig_refreshView(); } );
+    
+    connect(pbResetB, &QPushButton::clicked, this, [this] { reInitBkgdColors(QColor(Qt::black)); });
+    connect(pbResetW, &QPushButton::clicked, this, [this] { reInitBkgdColors(QColor(Qt::white)); });
 
     return bkgdGroup;
 }
@@ -177,9 +184,10 @@ void page_backgrounds::displayBackgroundStatus(bool force)
         return;
     }
 
-    if (bip->isLoaded())
+    auto bip   = bview->getImage();
+    if (bip && bip->isLoaded())
     {
-        const Xform & xform = bip->getCanvasXform();
+        const Xform & xform = bview->getModelXform();
         bkgdLayout.blockSignals(true);
         bkgdLayout.setTransform(xform);
         bkgdLayout.blockSignals(false);
@@ -188,7 +196,7 @@ void page_backgrounds::displayBackgroundStatus(bool force)
         chk_useAdjusted->setChecked(bip->useAdjusted());
         chk_useAdjusted->blockSignals(false);
 
-        imageName->setText(bip->getName());
+        imageName->setText(bip->getTitle());
     }
     else
     {
@@ -215,39 +223,66 @@ void page_backgrounds::slot_loadBackground()
         return;
     }
     
-    bool rv = bip->import(filename);
+    auto bip = std::make_shared<BackgroundImage>();
+    bool rv  = bip->importIfNeeded(filename);
     if (rv)
     {
         QFileInfo info(filename);
         QString name = info.fileName();
-        bip->load(name);
-        if (bip->isLoaded())
+        if (bip->load(name))
         {
+            // The owner of the image is the mosaic
+            auto mosaic = mosaicMaker->getMosaic();
+            Q_ASSERT(mosaic);
+            mosaic->setBkgdImage(bip);
+
+            // the view has a weak_ptr
+            BackgroundImageView::getInstance()->setImage(bip);
             config->showBackgroundImage = true;     // since we loaded it, might as well see it
-
             setupBackground(bkgdLayout.getXform());
-
             displayBackgroundStatus(true);
-
             emit sig_refreshView();
         }
     }
+
+}
+
+void page_backgrounds::slot_removeBackground()
+{
+    auto mosaic = mosaicMaker->getMosaic();
+    mosaic->removeBkgdImage();
+
+    auto bview = BackgroundImageView::getInstance();
+    bview->unload();
+    emit sig_refreshView();
+
+    displayBackgroundStatus(true);
 }
 
 void page_backgrounds::slot_useAdjustedClicked(bool checked)
 {
+    auto bip = bview->getImage();
+    if (!bip) return;
+
     bip->setUseAdjusted(checked);
     setupBackground(bkgdLayout.getXform());
+    Sys::view->update();
 }
 
 void page_backgrounds::setupBackground(Xform xform)
 {
-    bip->setCanvasXform(xform);
-    bip->showPixmap();
+    auto bip = bview->getImage();
+    if (!bip) return;
+    
+    bview->setModelXform(xform,false);
+    bip->createPixmap();
 }
 
 void page_backgrounds::slot_clearBackground ()
 {
+    auto bip = bview->getImage();
+    if (!bip) return;
+
     bip->unload();
     displayBackgroundStatus(true);
     emit sig_refreshView();
@@ -255,11 +290,14 @@ void page_backgrounds::slot_clearBackground ()
 
 void page_backgrounds::slot_setBkgdXform()
 {
-    Xform xform = bip->getCanvasXform();
+    auto bip = bview->getImage();
+    if (!bip) return;
+    
+    Xform xform = bview->getModelXform();
     xform.setTransform(bkgdLayout.getQTransform());
-    bip->setCanvasXform(xform);
-    bip->showPixmap();
-    emit sig_refreshView();
+    bview->setModelXform(xform,false);
+    bip->createPixmap();
+    Sys::view->update();
 }
 
 void page_backgrounds::slot_startSkewAdjustment(bool checked)
@@ -271,12 +309,12 @@ void page_backgrounds::slot_startSkewAdjustment(bool checked)
         QString txt = "Click to select four points on background image. Then press 'Complete Perspective Adjustement' to fix camera skew.";
         panel->pushPanelStatus(txt);
 
-        bip->setSkewMode(true);
+        bview->setSkewMode(true);
     }
     else
     {
         panel->popPanelStatus();
-        bip->setSkewMode(false);    // also stops mouse interaction
+        bview->setSkewMode(false);    // also stops mouse interaction
         emit sig_refreshView();
     }
 }
@@ -289,8 +327,10 @@ void page_backgrounds::slot_resetXform()
 
 void page_backgrounds::slot_adjustBackground()
 {
+    auto bip = bview->getImage();
+    if (!bip) return;
 
-    if (!bip->getSkewMode())
+    if (!bview->getSkewMode())
     {
         QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
@@ -299,7 +339,7 @@ void page_backgrounds::slot_adjustBackground()
         return;
     }
 
-    EdgePoly & saccum = bip->getAccum();
+    EdgePoly & saccum = bview->getAccum();
     if (saccum.size() != 4)
     {
         QMessageBox box(this);
@@ -309,17 +349,13 @@ void page_backgrounds::slot_adjustBackground()
         return;
     }
 
-    bip->createBackgroundAdjustment(
-        saccum[0]->v1->pt,
-        saccum[1]->v1->pt,
-        saccum[2]->v1->pt,
-        saccum[3]->v1->pt);
+    bview->createBackgroundAdjustment(bip, saccum[0]->v1->pt, saccum[1]->v1->pt, saccum[2]->v1->pt, saccum[3]->v1->pt);
 
-    bip->showPixmap();
+    bip->createPixmap();
 
     displayBackgroundStatus(true);
 
-    bip->setSkewMode(false);
+    bview->setSkewMode(false);
 
     panel->popPanelStatus();
 
@@ -330,9 +366,12 @@ void page_backgrounds::slot_adjustBackground()
 
 void page_backgrounds::slot_saveAdjustedBackground()
 {
-    Xform xf = bip->getCanvasXform();
+    auto bip = bview->getImage();
+    if (!bip) return;
+    
+    Xform xf = bview->getModelXform();
 
-    QString oldname = bip->getName();
+    QString oldname = bip->getTitle();
 
     DlgName dlg;
     dlg.newEdit->setText(oldname);
@@ -369,7 +408,7 @@ void page_backgrounds::slot_saveAdjustedBackground()
         bip->load(newName);
         if (bip->isLoaded())
         {
-            bip->setCanvasXform(xf);
+            bview->setModelXform(xf,false);
             bip->setUseAdjusted(false);
 
             config->showBackgroundImage = true;     // since we loaded it, might as well see it
@@ -389,8 +428,8 @@ void page_backgrounds::slot_showImageChanged(bool checked)
 void page_backgrounds::selectColor(int row)
 {
     eViewType vtype = static_cast<eViewType>(row);
-
-    QColor color = view->getViewSettings().getBkgdColor(vtype);
+    
+    QColor color = viewControl->getBackgroundColor(vtype);
 
     AQColorDialog dlg(color,this);
     int rv = dlg.exec();
@@ -400,7 +439,26 @@ void page_backgrounds::selectColor(int row)
     color = dlg.selectedColor();
     if (color.isValid())
     {
-        view->getViewSettings().setBkgdColor(vtype,color);
+        viewControl->setBackgroundColor(vtype,color);
         emit sig_refreshView();
     }
+}
+
+void page_backgrounds::reInitBkgdColors(QColor bcolor)
+{
+    //setBkgdColor(VIEW_DESIGN,bcolor);
+    viewControl->setBackgroundColor(VIEW_MOSAIC,bcolor);
+    viewControl->setBackgroundColor(VIEW_PROTOTYPE,bcolor);
+    viewControl->setBackgroundColor(VIEW_MOTIF_MAKER,bcolor);
+    viewControl->setBackgroundColor(VIEW_TILING,bcolor);
+    viewControl->setBackgroundColor(VIEW_TILING_MAKER,bcolor);
+    viewControl->setBackgroundColor(VIEW_MAP_EDITOR,bcolor);
+    viewControl->setBackgroundColor(VIEW_BKGD_IMG,bcolor);
+    viewControl->setBackgroundColor(VIEW_GRID,bcolor);
+    viewControl->setBackgroundColor(VIEW_BORDER,bcolor);
+    viewControl->setBackgroundColor(VIEW_CROP,bcolor);
+    //setBkgdColor(VIEW_MEASURE,bcolor);
+    //setBkgdColor(VIEW_CENTER,bcolor);
+    //setBkgdColor(VIEW_IMAGE,bcolor);
+    emit sig_refreshView();
 }

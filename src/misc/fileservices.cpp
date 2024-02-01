@@ -5,6 +5,8 @@
 
 #include "misc/fileservices.h"
 #include "misc/pugixml.hpp"
+#include "misc/sys.h"
+
 #include "settings/configuration.h"
 
 using namespace pugi;
@@ -15,10 +17,8 @@ FileServices::FileServices()
 
 QStringList FileServices::getMosaicFiles()
 {
-    Configuration * config = Configuration::getInstance();
-
     QStringList files;
-    QString path(config->rootMosaicDir);
+    QString path(Sys::rootMosaicDir);
     QDirIterator it(path, QStringList() << "*.xml", QDir::Files, QDirIterator::Subdirectories);
     while (it.hasNext())
     {
@@ -40,9 +40,9 @@ QStringList FileServices::getMosaicNames(eLoadType loadType)
     switch (loadType)
     {
     case ALL_MOSAICS:
-        addNames(names,config->originalMosaicDir);
-        addNames(names,config->newMosaicDir);
-        addNames(names,config->testMosiacDir);
+        addNames(names,Sys::originalMosaicDir);
+        addNames(names,Sys::newMosaicDir);
+        addNames(names,Sys::testMosiacDir);
         break;
 
     case WORKLIST:
@@ -52,15 +52,15 @@ QStringList FileServices::getMosaicNames(eLoadType loadType)
     case SELECTED_MOSAICS:
         if (config->mosaicOrigCheck)
         {
-            addNames(names,config->originalMosaicDir);
+            addNames(names,Sys::originalMosaicDir);
         }
         if (config->mosaicNewCheck)
         {
-            addNames(names,config->newMosaicDir);
+            addNames(names,Sys::newMosaicDir);
         }
         if (config->mosaicTestCheck)
         {
-            addNames(names,config->testMosiacDir);
+            addNames(names,Sys::testMosiacDir);
         }
         break;
 
@@ -74,7 +74,7 @@ QStringList FileServices::getMosaicNames(eLoadType loadType)
         QString filter_lc = config->mosaicFilter.toLower();
 
         QStringList filtered;
-        for (const auto & file : qAsConst(names))
+        for (const auto & file : std::as_const(names))
         {
             QString file_lc = file.toLower();
             if (file_lc.contains(filter_lc))
@@ -97,7 +97,7 @@ QStringList FileServices::getMosaicRootNames(eLoadType loadType)
     // names only, no version, no extension
     auto slist = getMosaicNames(loadType);
     QStringList mosaicNames;
-    for (auto & name : slist)
+    for (auto & name : std::as_const(slist))
     {
         auto nameRoot = getMediaNameOnly(name);
         mosaicNames.push_back(nameRoot);
@@ -121,10 +121,8 @@ QString FileServices::getMosaicXMLFile(QString name)
     Q_ASSERT(!name.contains(".xml"));
     name += ".xml";
 
-    Configuration * config = Configuration::getInstance();
-
     QString file;
-    QString root(config->rootMosaicDir);
+    QString root(Sys::rootMosaicDir);
     QDirIterator it(root, QStringList() << "*.xml", QDir::Files, QDirIterator::Subdirectories);
     while (it.hasNext())
     {
@@ -144,10 +142,8 @@ QString FileServices::getMosaicTemplateFile(QString name)
     Q_ASSERT(!name.contains(".dat"));
     name += ".dat";
 
-    Configuration * config = Configuration::getInstance();
-
     QString file;
-    QString root(config->templateDir);
+    QString root(Sys::templateDir);
     QDirIterator it(root, QStringList() << "*.dat", QDir::Files, QDirIterator::Subdirectories);
     while (it.hasNext())
     {
@@ -164,10 +160,8 @@ QString FileServices::getMosaicTemplateFile(QString name)
 
 QStringList FileServices::getTilingFiles()
 {
-    Configuration * config = Configuration::getInstance();
-
     QStringList files;
-    QString path(config->rootTileDir);
+    QString path(Sys::rootTileDir);
     QDirIterator it(path, QStringList() << "*.xml", QDir::Files, QDirIterator::Subdirectories);
     while (it.hasNext())
     {
@@ -187,7 +181,7 @@ QStringList FileServices::getTilingNames(eLoadType loadType)
     switch (loadType)
     {
     case ALL_TILINGS:
-        addNames(names,config->rootTileDir);
+        addNames(names,Sys::rootTileDir);
         break;
 
     case WORKLIST:
@@ -200,15 +194,15 @@ QStringList FileServices::getTilingNames(eLoadType loadType)
     case SELECTED_TILINGS:
         if (config->tilingOrigCheck)
         {
-            addNames(names,config->originalTileDir);
+            addNames(names,Sys::originalTileDir);
         }
         if (config->tilingNewCheck)
         {
-            addNames(names,config->newTileDir);
+            addNames(names,Sys::newTileDir);
         }
         if (config->tilingTestCheck)
         {
-            addNames(names,config->testTileDir);
+            addNames(names,Sys::testTileDir);
         }
         break;
 
@@ -222,7 +216,7 @@ QStringList FileServices::getTilingNames(eLoadType loadType)
         QString filter_lc = config->tileFilter.toLower();
 
         QStringList filtered;
-        for (const auto & file : qAsConst(names))
+        for (const auto & file : std::as_const(names))
         {
             QString file_lc = file.toLower();
             if (file_lc.contains(filter_lc))
@@ -245,7 +239,7 @@ QStringList FileServices::getTilingRootNames(eLoadType loadType)
     // names only, no version, no extension
     auto slist = getTilingNames(loadType);
     QStringList tilingNames;
-    for (auto & name : slist)
+    for (auto & name : std::as_const(slist))
     {
         auto nameRoot = getMediaNameOnly(name);
         tilingNames.push_back(nameRoot);
@@ -259,10 +253,8 @@ QString FileServices::getTilingXMLFile(QString name)
     Q_ASSERT(!name.contains(".xml"));
     name += ".xml";
 
-    Configuration * config = Configuration::getInstance();
-
     QString file;
-    QString root(config->rootTileDir);
+    QString root(Sys::rootTileDir);
     QDirIterator it(root, QStringList() << "*.xml", QDir::Files, QDirIterator::Subdirectories);
     while (it.hasNext())
     {
@@ -283,18 +275,17 @@ QString FileServices::getNextVersion(eFileType type, QString name)
 
     QString root    = getRoot(name);
 
-    Configuration * config = Configuration::getInstance();
     QString path;
     switch (type)
     {
     case FILE_TILING:
-        path = config->rootTileDir;
+        path = Sys::rootTileDir;
         break;
     case FILE_MOSAIC:
-        path = config->rootMosaicDir;
+        path = Sys::rootMosaicDir;
         break;
     case FILE_MAP:
-        path = config->mapsDir;
+        path = Sys::mapsDir;
         break;
     }
 
@@ -392,6 +383,12 @@ QString FileServices::getMediaNameOnly(QString name)
     return str;
 }
 
+QString FileServices::stripPath(QString path)
+{
+    QFileInfo info(path);
+    return info.fileName();
+}
+
 bool FileServices::reformatXML(QString filename)
 {
     qDebug().noquote() << "reformatting"  << filename;
@@ -467,7 +464,7 @@ bool  FileServices::usesTilingInDesign(QString designFile, QString tilename)
     Q_ASSERT(designFile.contains(".xml"));
     Q_ASSERT(!tilename.contains(".xml"));
 
-    QString tilingName = getTileNameFromDesignFile(designFile);
+    QString tilingName = getTileNameFromMosaicFile(designFile);
     return (tilingName == tilename);
 }
 
@@ -478,15 +475,15 @@ QString FileServices::getTileNameFromDesignName(QString designName)
     QString designFile = getMosaicXMLFile(designName);
     if (designFile.isEmpty())
         return designFile;  // corner case after deletion
-    return getTileNameFromDesignFile(designFile);
+    return getTileNameFromMosaicFile(designFile);
 }
 
-QString FileServices::getTileNameFromDesignFile(QString designFile)
+QString FileServices::getTileNameFromMosaicFile(QString mosaicFile)
 {
-    Q_ASSERT(designFile.contains(".xml"));
+    Q_ASSERT(mosaicFile.contains(".xml"));
 
     QString tiling;
-    QFile afile(designFile);
+    QFile afile(mosaicFile);
     bool rv = afile.open(QFile::ReadOnly);
     if (!rv) return tiling;
 
@@ -506,12 +503,43 @@ QString FileServices::getTileNameFromDesignFile(QString designFile)
     return tiling;
 }
 
+QDate FileServices::getDateFromXMLFile(QString fileName)
+{
+    Q_ASSERT(fileName.contains(".xml"));
+
+    QFile afile(fileName);
+    bool rv = afile.open(QFile::ReadOnly);
+    if (!rv) return QDate();
+
+    // <!-- Written: Tue Jul 11 2023 10:36:18 -->
+    //QString date("Tue Jul 11 2023");
+
+    QTextStream str(&afile);
+    QString aline;
+    do
+    {
+        aline = str.readLine();
+        if (aline.contains("Written:"))
+        {
+            aline = aline.trimmed();
+            aline.remove("<!-- Written: ");
+            aline.resize(aline.length()-13);
+            QDate da = QDate::fromString(aline,"ddd MMM dd yyyy");
+            if (!da.isValid())
+            {
+                da = QDate::fromString(aline,"ddd MMM d yyyy");
+            }
+            return da;
+        }
+    } while (!aline.isNull());
+    return QDate();
+}
+
 dirInfo  FileServices::getMosaicDirInfo()
 {
     dirInfo info;
 
-    Configuration * config = Configuration::getInstance();
-    QString path(config->rootMosaicDir);
+    QString path(Sys::rootMosaicDir);
     QDirIterator it(path, QStringList() << "*.xml", QDir::Files, QDirIterator::Subdirectories);
     while (it.hasNext())
     {
@@ -531,7 +559,7 @@ tilingUses  FileServices::getTilingUses()
     {
         QString designName  = it.key();
         QString designFile  = it.value();
-        QString tileName    = getTileNameFromDesignFile(designFile);
+        QString tileName    = getTileNameFromMosaicFile(designFile);
         uses.insert(tileName, designName);
     }
     return uses;
@@ -564,8 +592,7 @@ QStringList FileServices::getTemplates()
     QStringList files;
 
     // saved templates
-    Configuration * config = Configuration::getInstance();
-    QString path(config->templateDir);
+    QString path(Sys::templateDir);
     QDirIterator it(path, QStringList() << "*.dat", QDir::Files, QDirIterator::Subdirectories);
     while (it.hasNext())
     {
@@ -597,8 +624,7 @@ QStringList FileServices::getMaps()
     QStringList files;
 
     // saved templates
-    Configuration * config = Configuration::getInstance();
-    QString path(config->mapsDir);
+    QString path(Sys::mapsDir);
     QDirIterator it(path, QStringList() << "*.xml", QDir::Files, QDirIterator::Subdirectories);
     while (it.hasNext())
     {

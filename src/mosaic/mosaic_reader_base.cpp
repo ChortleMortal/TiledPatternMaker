@@ -1,11 +1,9 @@
 #include <QDebug>
 #include "mosaic/mosaic_reader_base.h"
 
-QMap<int,VertexPtr>   MosaicReaderBase::vertex_ids;
+#undef DEBUG_REFERENCES
 
-MosaicReaderBase::MosaicReaderBase() : MosaicIOBase()
-{
-}
+MosaicReaderBase::MosaicReaderBase() {}
 
 bool MosaicReaderBase::hasReference(xml_node & node)
 {

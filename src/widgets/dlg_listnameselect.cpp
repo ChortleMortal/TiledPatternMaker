@@ -5,7 +5,7 @@
 
 #include "widgets/dlg_listnameselect.h"
 
-DlgListNameSelect::DlgListNameSelect(QStringList files)
+DlgListNameSelect::DlgListNameSelect(QStringList & files)
 {
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
@@ -38,9 +38,8 @@ DlgListNameSelect::DlgListNameSelect(QStringList files)
     connect(cancelBtn, &QPushButton::clicked, this, &QDialog::reject);
     connect(okBtn,     &QPushButton::clicked, this, &QDialog::accept);
 
-    for (auto it = files.begin(); it != files.end(); it++)
+    for (auto & file : std::as_const(files))
     {
-        QString file = *it;
         QListWidgetItem * item = new QListWidgetItem(file);
         list->addItem(item);
     }

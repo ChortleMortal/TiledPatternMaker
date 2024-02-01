@@ -1,5 +1,5 @@
 ﻿#include "widgets/layout_sliderset.h"
-#include "settings/configuration.h"
+#include "misc/sys.h"
 
 //
 // AQSpinBox
@@ -9,7 +9,6 @@ AQSpinBox::AQSpinBox() : QSpinBox()
 {
     blocked = false;
     setAlignment(Qt::AlignRight);
-    darkTheme = Configuration::getInstance()->darkTheme;
     setKeyboardTracking(false);
 }
 
@@ -28,7 +27,7 @@ void  AQSpinBox::enterEvent(QEnterEvent *event)
     Q_UNUSED(event);
     if (isReadOnly()) return;
     blocked = true;
-    if (darkTheme)
+    if (Sys::isDarkTheme)
         setStyleSheet("background-color: #22b895");
     else
         setStyleSheet("background-color:yellow");
@@ -66,7 +65,6 @@ AQDoubleSpinBox::AQDoubleSpinBox() : QDoubleSpinBox()
     blocked = false;
     setDecimals(8);
     setAlignment(Qt::AlignRight);
-    darkTheme = Configuration::getInstance()->darkTheme;
     setKeyboardTracking(false);
 }
 
@@ -87,7 +85,7 @@ void AQDoubleSpinBox::enterEvent(QEnterEvent *event)
     if (isReadOnly()) return;
     blocked = true;
     //qDebug() << "blocked";
-    if (darkTheme)
+    if (Sys::isDarkTheme)
         setStyleSheet("background-color: #22b895");
     else
         setStyleSheet("background-color:yellow");
@@ -100,7 +98,7 @@ void  AQDoubleSpinBox::enterEvent(QEvent *event)
     if (isReadOnly()) return;
     blocked = true;
     //qDebug() << "blocked";
-    if (darkTheme)
+    if (Sys::isDarkTheme)
         setStyleSheet("background-color: #22b895");
     else
         setStyleSheet("background-color:yellow");

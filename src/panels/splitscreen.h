@@ -6,7 +6,7 @@
 #include <QBoxLayout>
 
 class ControlPanel;
-class ViewControl;
+class View;
 class panel_page;
 
 class SplitScreen : public QFrame
@@ -35,7 +35,7 @@ protected:private:
     QWidget      * LHS;
 
     ControlPanel * panel;
-    ViewControl  * view;
+    View         * view;
     panel_page   * floater;
     QWidget      * dummy;
 };

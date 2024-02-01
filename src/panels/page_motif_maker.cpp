@@ -25,12 +25,12 @@
 #include "tile/tiling.h"
 #include "tile/tile.h"
 #include "viewers/view.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
 #include "widgets/layout_sliderset.h"
 
 using std::make_shared;
 
-page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,"Motif Maker")
+page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,PAGE_MOTIF_MAKER,"Motif Maker")
 {
     protoMakerData = PrototypeMaker::getInstance()->getProtoMakerData();
 
@@ -51,8 +51,8 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,"M
     pbRender->setStyleSheet("QPushButton { background-color: yellow; color: red;}");
 
     QCheckBox   * pbPropagate = new QCheckBox("Propagate Changes");
-    pbPropagate->setChecked(config->motifPropagate);
-    connect(pbPropagate, &QCheckBox::clicked, this, [this](bool checked) { config->motifPropagate = checked; prototypeMaker->setPropagate(checked); } );    // OK
+    pbPropagate->setChecked(Sys::motifPropagate);
+    connect(pbPropagate, &QCheckBox::clicked, this, [this](bool checked) { Sys::motifPropagate = checked; prototypeMaker->setPropagate(checked); } );    // OK
 
     protoLabel              = new QLabel("Prototypes");
     prototypeCombo          = new QComboBox();
@@ -102,8 +102,8 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,"M
         hbox->addWidget(line1);
         hbox->addWidget(l_bounds);
         hbox->addWidget(showTile);
-        hbox->addWidget(showMotifB);
         hbox->addWidget(showExt);
+        hbox->addWidget(showMotifB);
         hbox->addWidget(line2);
         hbox->addWidget(l_cents);
         hbox->addWidget(showTileC);
@@ -114,8 +114,8 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,"M
         hbox->addWidget(replicate);
         vbox->addLayout(hbox);
 
-        replicate->setChecked(!config->dontReplicate);
-        hiliteUnit->setChecked(config->highlightUnit);
+        replicate->setChecked(!Sys::dontReplicate);
+        hiliteUnit->setChecked(Sys::highlightUnit);
         showTile->setChecked(config->showTileBoundary);
         showMotifB->setChecked(config->showMotifBoundary);
         showMotif->setChecked(config->showMotif);
@@ -125,7 +125,7 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,"M
 
         connect(replicate,          &QCheckBox::clicked,     this, &page_motif_maker::replicateClicked);
         connect(view,               &View::sig_rebuildMotif, this, &page_motif_maker::slot_rebuildMotif);
-        connect(hiliteUnit,         &QCheckBox::clicked, this, [this](bool checked) { config->highlightUnit        = checked; view->update(); } );
+        connect(hiliteUnit,         &QCheckBox::clicked, this, [this](bool checked) { Sys::highlightUnit           = checked; view->update(); } );
         connect(showTile,           &QCheckBox::clicked, this, [this](bool checked) { config->showTileBoundary     = checked; view->update(); } );
         connect(showMotifB,         &QCheckBox::clicked, this, [this](bool checked) { config->showMotifBoundary    = checked; view->update(); } );
         connect(showMotif,          &QCheckBox::clicked, this, [this](bool checked) { config->showMotif            = checked; view->update(); } );
@@ -135,8 +135,8 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,"M
     }
     else
     {
-        config->highlightUnit           = false;
-        config->dontReplicate           = false;
+        Sys::highlightUnit              = false;
+        Sys::dontReplicate              = false;
         config->showTileBoundary        = true;
         config->showMotifBoundary       = true;
         config->showMotif               = true;
@@ -207,11 +207,12 @@ void page_motif_maker::onExit()
 void page_motif_maker::onRefresh(void)
 {
     loadProtoCombo();
+    motifMakerWidget->selectPrototype();
 
     if (config->insightMode)
     {
         replicate->blockSignals(true);
-        replicate->setChecked(!config->dontReplicate);
+        replicate->setChecked(!Sys::dontReplicate);
         replicate->blockSignals(false);
     }
 }
@@ -261,9 +262,9 @@ void page_motif_maker::loadProtoCombo()
 
     prototypeCombo->clear();
 
-    for (auto & proto : currentProtos)
+    for (auto & proto : std::as_const(currentProtos))
     {
-        prototypeCombo->addItem(proto->getTiling()->getName(),QVariant::fromValue(WeakProtoPtr(proto)));
+        prototypeCombo->addItem(proto->getTiling()->getTitle(),QVariant::fromValue(WeakProtoPtr(proto)));
     }
 
     protoLabel->setText(QString("Prototypes (%1)").arg(prototypeCombo->count()));
@@ -276,7 +277,7 @@ void page_motif_maker::loadProtoCombo()
     ProtoPtr selected = protoMakerData->getSelectedPrototype();
     if (selected)
     {
-        QString name = selected->getTiling()->getName();
+        QString name = selected->getTiling()->getTitle();
         qDebug() << "page_motif_maker::reload() selected tiling:" << name;
         int index = prototypeCombo->findText(name);
         if (index >= 0)
@@ -306,7 +307,7 @@ void page_motif_maker::loadProtoCombo()
 
 void  page_motif_maker::replicateClicked(bool state)
 {
-    config->dontReplicate = !state;
+    Sys::dontReplicate = !state;
     slot_rebuildMotif();
 }
 
@@ -358,7 +359,7 @@ void page_motif_maker::slot_combine()
     TilePtr tp;
 
     MapPtr compositeMap = make_shared<Map>("Composite map");
-    for (auto & delp : delps)
+    for (auto & delp : std::as_const(delps))
     {
         auto tile = delp->getTile();
         if (tile->numSides() > sides)
@@ -419,14 +420,14 @@ void page_motif_maker::slot_deleteCurrent()
     PlacedTiles deletions;
     TilingPtr tiling = proto->getTiling();
     const PlacedTiles & placedTiles = tiling->getInTiling();
-    for (const auto & placedTile : placedTiles)
+    for (const auto & placedTile : std::as_const(placedTiles))
     {
         if (placedTile->getTile() == tile)
         {
             deletions.push_back(placedTile);
         }
     }
-    for (auto & pfp : deletions)
+    for (auto & pfp : std::as_const(deletions))
     {
         tiling->remove(pfp);
     }
@@ -448,9 +449,6 @@ void page_motif_maker::slot_swapTileRegularity()
 
     auto tile  = del->getTile();
     tile->flipRegularity();
-
-    if (tilingMaker->getSelected())
-        tilingMaker->getSelected()->setState(Tiling::MODIFIED);
 
     prototypeMaker->sm_takeUp(proto->getTiling(),PROM_TILE_REGULARITY_CHANGED,tile);
 

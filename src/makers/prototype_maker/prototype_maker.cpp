@@ -15,10 +15,14 @@
 #include "motifs/irregular_motif.h"
 #include "motifs/irregular_rosette.h"
 #include "motifs/irregular_star.h"
+#include "motifs/rosette.h"
+#include "motifs/rosette2.h"
 #include "motifs/rosette_connect.h"
 #include "motifs/star.h"
+#include "motifs/star2.h"
 #include "motifs/star_connect.h"
 #include "motifs/tile_motif.h"
+#include "misc/sys.h"
 #include "panels/page_motif_maker.h"
 #include "panels/controlpanel.h"
 #include "settings/configuration.h"
@@ -26,7 +30,7 @@
 #include "tile/tile.h"
 #include "tile/tiling.h"
 #include "tiledpatternmaker.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
 
 using std::make_shared;
 using std::dynamic_pointer_cast;
@@ -86,7 +90,7 @@ PrototypeMaker::PrototypeMaker()
 void PrototypeMaker::init()
 {
     config          = Configuration::getInstance();
-    vcontrol        = ViewControl::getInstance();
+    vcontrol        = Sys::viewController;
     tilingMaker     = TilingMaker::getInstance();
     mosaicMaker     = MosaicMaker::getInstance();
     propagate       = true;
@@ -102,10 +106,14 @@ void PrototypeMaker::setPropagate(bool val)
     propagate = val;
     if (val)
     {
+        sm_resetMaps();
         sm_buildMaps();
         mosaicMaker->sm_takeUp(protoData.getPrototypes(),MOSM_MOTIF_CHANGED);
         if (vcontrol->isEnabled(VIEW_PROTOTYPE) || vcontrol->isEnabled(VIEW_MAP_EDITOR))
-            vcontrol->slot_refreshView();
+        {
+            //vcontrol->slot_reconstructView();
+            Sys::view->update();
+        }
     }
 }
 
@@ -117,7 +125,7 @@ ProtoPtr PrototypeMaker::createPrototype(const TilingPtr &tiling)
     QVector<TilePtr> uniqueTiles = tiling->getUniqueTiles();
     qDebug() << "Create new design elements";
     int count = 0;
-    for (auto & tile : qAsConst(uniqueTiles))
+    for (auto & tile : std::as_const(uniqueTiles))
     {
         // NOTE this takes order from order of unique tiles
         DesignElementPtr dep = make_shared<DesignElement>(tile);
@@ -135,13 +143,13 @@ void PrototypeMaker::recreatePrototypeFromTiling(const TilingPtr &tiling, ProtoP
 
     int count = 0;
     QVector<TilePtr> uniqueTiles = tiling->getUniqueTiles();
-    for (const auto & tile : uniqueTiles)
+    for (const auto & tile : std::as_const(uniqueTiles))
     {
         if (++count > MAX_UNIQUE_TILE_INDEX)
             qWarning() << "Large number of unique tiles in tiling count:" << count;
 
         bool found = false;
-        for (const auto & del : prototype->getDesignElements())
+        for (const auto & del : std::as_const(prototype->getDesignElements()))
         {
             if (del->getTile() == tile)
             {
@@ -162,7 +170,7 @@ void PrototypeMaker::recreatePrototypeFromTiling(const TilingPtr &tiling, ProtoP
     }
 
     QVector<DesignElementPtr> forDeletion;
-    for (const auto & del : prototype->getDesignElements())
+    for (const auto & del : std::as_const(prototype->getDesignElements()))
     {
         TilePtr tile = del->getTile();
         if (!uniqueTiles.contains(tile))
@@ -181,14 +189,14 @@ void PrototypeMaker::recreatePrototypeFromTiling(const TilingPtr &tiling, ProtoP
 
 void PrototypeMaker::sm_takeDown(QVector<ProtoPtr> & prototypes)
 {
-    qInfo() << "PrototypeMaker::takeDown() Num DELs:" << prototypes.first()->numDesignElements();
+    qDebug() << "PrototypeMaker::takeDown() Num DELs:" << prototypes.first()->numDesignElements();
 
     erasePrototypes();
 
     protoData.setPrototypes(prototypes);
 
     QVector<TilingPtr> tilings;
-    for (const auto & p : prototypes)
+    for (const auto & p : std::as_const(prototypes))
     {
         tilings.push_back(p->getTiling());
     }
@@ -263,7 +271,7 @@ void PrototypeMaker::sm_buildMaps()
 void PrototypeMaker::sm_takeUp(const TilingPtr & tiling, ePROM_Event event, const TilePtr tile)
 {
     eMMState state = sm_getState();
-    qInfo().noquote() << "PrototypeMaker::sm_takeUp() state:" << mm_states[state] << "event:" << sPROM_Events[event];
+    qDebug().noquote() << "PrototypeMaker::sm_takeUp() state:" << mm_states[state] << "event:" << sPROM_Events[event];
 
     switch (event)
     {
@@ -365,9 +373,9 @@ void PrototypeMaker::sm_takeUp(const TilingPtr & tiling, ePROM_Event event, cons
         break;
 
     case PROM_MOTIF_CHANGED:
-        sm_resetMaps();
         if (propagate)
         {
+            sm_resetMaps();
             sm_buildMaps();
             mosaicMaker->sm_takeUp(protoData.getPrototypes(),MOSM_MOTIF_CHANGED);
         }
@@ -382,12 +390,9 @@ void PrototypeMaker::sm_takeUp(const TilingPtr & tiling, ePROM_Event event, cons
             {
                 auto motif = del->getMotif();
                 motif->resetMotifMaps();
-                motif->setMotifScale(tile->getScale());
-                motif->setMotifRotate(tile->getRotation());
-                sm_resetMaps();
-
                 if (propagate)
                 {
+                    sm_resetMaps();
                     sm_buildMaps();
                     mosaicMaker->sm_takeUp(protoData.getPrototypes(),MOSM_TILE_CHANGED);
                 }
@@ -482,17 +487,17 @@ void PrototypeMaker::sm_takeUp(const TilingPtr & tiling, ePROM_Event event, cons
     }   break;
 
     case PROM_RENDER:
+        // ignores propagate flag
         sm_resetMaps();
-        if (propagate)
-        {
-            sm_buildMaps();
-            mosaicMaker->sm_takeUp(protoData.getPrototypes(),MOSM_RENDER);
-        }
+        sm_buildMaps();
+        mosaicMaker->sm_takeUp(protoData.getPrototypes(),MOSM_RENDER);
         break;
     }
 
     if (vcontrol->isEnabled(VIEW_MOTIF_MAKER))
-        vcontrol->update();
+    {
+        Sys::view->update();
+    }
 }
 
 void PrototypeMaker::erasePrototypes()
@@ -535,7 +540,7 @@ bool PrototypeMaker::duplicateDesignElement()
     TilingPtr tiling = protoData.getSelectedPrototype()->getTiling();
     const PlacedTiles & placedTiles = tiling->getInTiling();
     PlacedTiles newPlacedTiles;
-    for (const auto & placedTile : placedTiles)
+    for (const auto & placedTile : std::as_const(placedTiles))
     {
         if (placedTile->getTile() == tile)
         {
@@ -578,11 +583,27 @@ MotifPtr PrototypeMaker::duplicateMotif(MotifPtr motif)
         Q_ASSERT(newMotif);
     } break;
 
+    case MOTIF_TYPE_ROSETTE2:
+    {
+        auto rosette = dynamic_pointer_cast<Rosette2>(motif);
+        Q_ASSERT(rosette);
+        newMotif = make_shared<Rosette2>(*rosette.get());
+        Q_ASSERT(newMotif);
+    } break;
+
     case MOTIF_TYPE_STAR:
     {
         auto star = dynamic_pointer_cast<Star>(motif);
         Q_ASSERT(star);
         newMotif = make_shared<Star>(*star.get());
+        Q_ASSERT(newMotif);
+    } break;
+
+    case MOTIF_TYPE_STAR2:
+    {
+        auto star = dynamic_pointer_cast<Star2>(motif);
+        Q_ASSERT(star);
+        newMotif = make_shared<Star2>(*star.get());
         Q_ASSERT(newMotif);
     } break;
 
@@ -618,6 +639,14 @@ MotifPtr PrototypeMaker::duplicateMotif(MotifPtr motif)
         Q_ASSERT(newMotif);
     } break;
         
+    case MOTIF_TYPE_EXTENDED_STAR2:
+    {
+        auto extend = dynamic_pointer_cast<ExtendedStar2>(motif);
+        Q_ASSERT(extend);
+        newMotif = make_shared<ExtendedStar2>(*extend.get());
+        Q_ASSERT(newMotif);
+    } break;
+
     case MOTIF_TYPE_EXPLICIT_MAP:
     {
         auto explicitMotif = dynamic_pointer_cast<IrregularMotif>(motif);

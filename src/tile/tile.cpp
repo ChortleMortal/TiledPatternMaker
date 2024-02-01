@@ -21,6 +21,7 @@
 #include "geometry/edge.h"
 #include "geometry/vertex.h"
 #include "geometry/loose.h"
+#include "makers/tiling_maker/tiling_monitor.h"
 
 int Tile::refs = 0;
 
@@ -37,6 +38,8 @@ Tile::Tile(EdgePoly ep, qreal rotate, qreal scale)
     refs++;
 
     createEpolyFromBase();
+
+    connect(this, &Tile::sig_tileChanged, TilingMonitor::getInstance(), &TilingMonitor::slot_tileChanged);
 }
 
 Tile::Tile(int n, qreal rotate, qreal scale)
@@ -50,44 +53,57 @@ Tile::Tile(int n, qreal rotate, qreal scale)
 
     createRegularBase();
     createEpolyFromBase();
+
+    connect(this, &Tile::sig_tileChanged, TilingMonitor::getInstance(), &TilingMonitor::slot_tileChanged);
 }
 
-void Tile::createRegularBase()
+
+Tile::Tile(const TilePtr other )
 {
-    base.clear();
+    n           = other->n;
+    rotation    = other->rotation;
+    scale       = other->scale;
+    regular     = other->regular;
+    base        = other->base;
+    epoly       = other->epoly;
 
-    int idx     = 0;
-    qreal angle = (M_PI / static_cast<qreal>(n)) * (static_cast<qreal>(2.0 * idx) + 1.0);
-    qreal sc    = 1.0 / qCos( M_PI / static_cast<qreal>(n) );
+    refs++;
 
-    VertexPtr v  = make_shared<Vertex>(QPointF(sc * qCos(angle), sc * qSin(angle)));
-    VertexPtr v1 = v;
-    for( int idx = 1; idx < n; ++idx )
-    {
-        qreal angle2 = (M_PI / static_cast<qreal>(n)) * (static_cast<qreal>(2.0 * idx) + 1);
-        VertexPtr v2 = make_shared<Vertex>(QPointF(sc * qCos(angle2), sc * qSin(angle2)));
-        base.push_back(make_shared<Edge>(v1,v2));
-        v1 = v2;
-    }
-    base.push_back(make_shared<Edge>(v1,v));
+    connect(this, &Tile::sig_tileChanged, TilingMonitor::getInstance(), &TilingMonitor::slot_tileChanged);
+
 }
 
-void Tile::createEpolyFromBase()
+Tile::Tile(const Tile & other )
 {
-    epoly.clear();
-    epoly = base.recreate();
-    //qDebug()<< "Tile create 1" << epoly.getPoints();
+    n           = other.n;
+    rotation    = other.rotation;
+    scale       = other.scale;
+    regular     = other.regular;
+    base        = other.base;
+    epoly       = other.epoly;
 
-    if (!Loose::zero(rotation))
+    refs++;
+
+    connect(this, &Tile::sig_tileChanged, TilingMonitor::getInstance(), &TilingMonitor::slot_tileChanged);
+}
+
+Tile::~Tile()
+{
+    refs--;
+}
+
+TilePtr Tile::recreate()
+{
+    TilePtr f;
+    if (regular)
     {
-        epoly.rotate(rotation);
-        //qDebug()<< "Tile create 2" << epoly.getPoints();
+        f = make_shared<Tile>(n,rotation,scale);
     }
-    if (!Loose::equals(scale,1.0))
+    else
     {
-        epoly.scale(scale);
-        //qDebug()<< "Tile create 3" << epoly.getPoints();
+        f = make_shared<Tile>(base,rotation,scale);
     }
+    return  f;
 }
 
 void Tile::decompose()
@@ -106,35 +122,6 @@ void Tile::decompose()
     }
 }
 
-Tile::Tile(const TilePtr other )
-{
-    n           = other->n;
-    rotation    = other->rotation;
-    scale       = other->scale;
-    regular     = other->regular;
-    base        = other->base;
-    epoly       = other->epoly;
-
-    refs++;
-}
-
-Tile::Tile(const Tile & other )
-{
-    n           = other.n;
-    rotation    = other.rotation;
-    scale       = other.scale;
-    regular     = other.regular;
-    base        = other.base;
-    epoly       = other.epoly;
-
-    refs++;
-}
-
-Tile::~Tile()
-{
-    refs--;
-}
-
 void Tile::setN(int n)
 {
     this->n = n;
@@ -143,38 +130,31 @@ void Tile::setN(int n)
         createRegularBase();
         createEpolyFromBase();
     }
+    emit sig_tileChanged();
 }
 
 void Tile::setRotation(qreal rotate)
 {
     rotation = rotate;
     createEpolyFromBase();
-}
-
-qreal Tile::getRotation()
-{
-    return rotation;
-}
-
-void Tile::deltaRotation(qreal delta)
-{
-    setRotation(rotation + delta);
+    emit sig_tileChanged();
 }
 
 void Tile::setScale(qreal scale)
 {
     this->scale = scale;
     createEpolyFromBase();
-}
-
-qreal Tile::getScale()
-{
-    return scale;
+    emit sig_tileChanged();
 }
 
 void Tile::deltaScale(qreal delta)
 {
     setScale(scale + delta);
+}
+
+void Tile::deltaRotation(qreal delta)
+{
+    setRotation(rotation + delta);
 }
 
 void Tile::setRegular(bool enb)
@@ -193,6 +173,7 @@ void Tile::setRegular(bool enb)
         regular = false;
         createEpolyFromBase();
     }
+    emit sig_tileChanged();
 }
 
 void Tile::flipRegularity()
@@ -239,20 +220,45 @@ void Tile::flipRegularity()
             setRegular(true);
         }
     }
+    emit sig_tileChanged();
 }
 
-TilePtr Tile::recreate()
+void Tile::createRegularBase()
 {
-    TilePtr f;
-    if (regular)
+    base.clear();
+
+    int idx     = 0;
+    qreal angle = (M_PI / static_cast<qreal>(n)) * (static_cast<qreal>(2.0 * idx) + 1.0);
+    qreal sc    = 1.0 / qCos( M_PI / static_cast<qreal>(n) );
+
+    VertexPtr v  = make_shared<Vertex>(QPointF(sc * qCos(angle), sc * qSin(angle)));
+    VertexPtr v1 = v;
+    for( int idx = 1; idx < n; ++idx )
     {
-        f = make_shared<Tile>(n,rotation,scale);
+        qreal angle2 = (M_PI / static_cast<qreal>(n)) * (static_cast<qreal>(2.0 * idx) + 1);
+        VertexPtr v2 = make_shared<Vertex>(QPointF(sc * qCos(angle2), sc * qSin(angle2)));
+        base.push_back(make_shared<Edge>(v1,v2));
+        v1 = v2;
     }
-    else
+    base.push_back(make_shared<Edge>(v1,v));
+}
+
+void Tile::createEpolyFromBase()
+{
+    epoly.clear();
+    epoly = base.recreate();
+    //qDebug()<< "Tile create 1" << epoly.getPoints();
+
+    if (!Loose::zero(rotation))
     {
-        f = make_shared<Tile>(base,rotation,scale);
+        epoly.rotate(rotation);
+        //qDebug()<< "Tile create 2" << epoly.getPoints();
     }
-    return  f;
+    if (!Loose::equals(scale,1.0))
+    {
+        epoly.scale(scale);
+        //qDebug()<< "Tile create 3" << epoly.getPoints();
+    }
 }
 
 
@@ -289,7 +295,7 @@ QString Tile::toString() const
     int i=0;
 
     str << "{ ";
-    for (auto & edge : qAsConst(epoly))
+    for (auto & edge : std::as_const(epoly))
     {
         str << i+1 << ":" << edge->v1->pt.x() << " " << edge->v1->pt.y() << " , ";
         i++;
@@ -304,7 +310,7 @@ QString Tile::toBaseString() const
     QTextStream str(&text);
 
     str << "{ ";
-    for (auto & edge : qAsConst(base))
+    for (auto & edge : std::as_const(base))
     {
         str << "point: " << edge->v1->pt.x() << " " << edge->v1->pt.y() << " , ";
     }

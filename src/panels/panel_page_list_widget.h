@@ -40,9 +40,10 @@ public:
     void        closePages();
 
     void        addPage(          panel_page * page);
-    ePageState  getState(   panel_page * page);
+    ePageState  getState(         panel_page * page);
     int         getIndex(         panel_page * page);
     bool        isVisiblyDetached(panel_page * page);
+    bool        isVisiblyDetached(ePanelPage   page);
 
     panel_page* getPage(QString name);
     panel_page* getSelectedPage();

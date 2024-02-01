@@ -20,6 +20,8 @@ public:
 
     virtual void paint(QPainter *painter) override;
 
+    virtual const Xform &   getModelXform() override;
+    virtual void            setModelXform(const Xform & xf, bool update) override;
 
     virtual eViewType iamaLayer() override { return VIEW_MOTIF_MAKER; }
     virtual void iamaLayerController() override {}

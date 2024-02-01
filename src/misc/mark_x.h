@@ -3,11 +3,8 @@
 #define MARK_X_H
 
 #include <QPainter>
-
 #include "misc/layer.h"
 
-
-// MarkX
 class MarkX : public Layer
 {
 public:
@@ -19,6 +16,9 @@ public:
     void paint(QPainter *painter) override;
 
     eViewType iamaLayer() override { return VIEW_CENTER; }
+
+    virtual const Xform &   getModelXform() override;
+    virtual void            setModelXform(const Xform & xf, bool update) override;
 
 private:
     bool    huge;

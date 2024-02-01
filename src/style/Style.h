@@ -36,25 +36,23 @@ public:
     virtual ~Style();
 
     // Geometry data.
-    ProtoPtr     getPrototype() const {return prototype;}
-    void         setPrototype(ProtoPtr pp);
+    ProtoPtr    getPrototype() const {return prototype;}
+    void        setPrototype(ProtoPtr pp);
 
-    MapPtr       getMap();
-    MapPtr       getExistingMap();
-    void         setMap(MapPtr map) {styleMap = map; }
+    MapPtr      getProtoMap();
+    MapPtr      getExistingProtoMap();
 
-    TilingPtr    getTiling();
+    TilingPtr   getTiling();
 
     // Retrieve a name describing this style and map.
     QString getDescription() const;
     QString getInfo() const;
-    virtual QString getName() override { return LayerController::getName() + "-" + getDescription(); }
+    virtual QString getLayerName() override { return LayerController::getLayerName() + "-" + getDescription(); }
 
-    virtual const Xform  & getCanvasXform() override;
-    virtual void    setCanvasXform(const Xform & xf) override;
+    virtual const Xform &   getModelXform() override;
+    virtual void            setModelXform(const Xform & xf, bool update) override;
 
     // Overridable behaviours
-
     virtual void createStyleRepresentation() = 0; // Called to ensure there is an internal map representation, if needed.
     virtual void resetStyleRepresentation()  = 0; // Called when the map is changed to clear any internal map representation.
 
@@ -81,19 +79,15 @@ public slots:
     virtual void slot_mouseDoublePressed(QPointF spt) override;
 
 protected:
-    void   resetStyleMap();
-
     void   annotateEdges(MapPtr map);
     void   drawAnnotation(QPainter *painter, QTransform T);
 
 private:
     ProtoPtr      prototype; // The input geometry to be rendered
-    MapPtr        styleMap;
     DebugMapPtr   debugMap;
 
     bool          paintSVG;
-    QSvgGenerator * generator;
 
-    Xform         xf_canvas;
+    QSvgGenerator * generator;
 };
 #endif

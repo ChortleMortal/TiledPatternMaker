@@ -24,7 +24,6 @@ public:
     void setValue(int val);
 
     bool blocked;
-    bool darkTheme;
 };
 
 class AQDoubleSpinBox : public QDoubleSpinBox
@@ -44,7 +43,6 @@ public:
     void setValue(double val);
 
     bool blocked;
-    bool darkTheme;
 };
 
 class SpinSet: public QHBoxLayout

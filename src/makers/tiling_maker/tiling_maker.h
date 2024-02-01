@@ -18,6 +18,7 @@
 #include "misc/unique_qvector.h"
 
 class QKeyEvent;
+class TilingMonitor;
 
 typedef std::shared_ptr<class Tiling>           TilingPtr;
 typedef std::shared_ptr<class Prototype>        ProtoPtr;
@@ -52,10 +53,15 @@ public:
 
     void        init();
 
+    TilingPtr   loadTiling(QString name, eTILM_Event event);
+    void        saveTiling(QString name);
+
     void        sm_takeUp(TilingPtr tiling, eTILM_Event event);
     void        sm_takeDown(QVector<TilingPtr> &proto_tilings, eTILM_Event event);
 
     QString     getStatus();
+    void        setPropagate(bool enb) { propagate = enb; }
+    bool        getPropagate()         { return propagate; }
 
     // Tiling related
     void        select(TilingPtr tiling, bool force = false);
@@ -83,7 +89,6 @@ public:
 
     // Tile related
     const PlacedTiles & getInTiling() const;
-    PlacedTiles &       getRWInTiling(bool push);
 
     void        pushTileToPrototypeMaker(ePROM_Event event, TilePtr tile);
 
@@ -99,6 +104,8 @@ public:
 
     bool        verifyTiling();
     void        deleteTile(PlacedTilePtr pf);
+    void        unifyTile(PlacedTilePtr pf);
+
 
     eTilingMakerMouseMode getTilingMakerMouseMode();
     int        getPolygonSides() { return poly_side_count; }
@@ -124,13 +131,13 @@ public:
     void        setClickedPoint(QPointF pt)             { clickedSpt      = pt; }
 
     // global modifications to features
-    void tilingDeltaX(int delta);
-    void tilingDeltaY(int delta);
+    void tilingDeltaX(qreal delta);
+    void tilingDeltaY(qreal delta);
     void tilingDeltaScale(int delta);
     void tilingDeltaRotate(int delta);
 
-    void placedTileDeltaX(int delta);
-    void placedTileDeltaY(int delta);
+    void placedTileDeltaX(qreal delta);
+    void placedTileDeltaY(qreal delta);
     void placedTileSetTranslate(qreal x, qreal y);
 
     void placedTileDeltaScale(int delta);
@@ -159,12 +166,10 @@ signals:
     void sig_buildMenu();
     void sig_refreshMenu();
     void sig_current_tile(PlacedTilePtr pfp);
-    void sig_cycler_ready();
+
+    void sig_monitor(bool reset);
 
 public slots:
-    void slot_loadTiling(QString name, eTILM_Event event);
-    void slot_cyclerLoadTiling(QString name);
-    void slot_saveTiling(QString name);
 
     void updatePolygonSides(int number);
     void updatePolygonRot(qreal angle);
@@ -172,7 +177,6 @@ public slots:
     void addRegularPolygon();
     void slot_fillUsingTranslations();
     void removeExcluded();
-    void excludeAll();
     void clearTranslationVectors();
 
     void slot_deleteTile();
@@ -209,11 +213,15 @@ private:
     static TilingMaker *        mpThis;
 
     TilingMakerView *           tmView;
+    TilingMonitor   *           tilingMonitor;
+
+    bool                        propagate;
 
     UniqueQVector<TilingPtr>    tilings;
     TilingPtr                   selectedTiling;
 
     PlacedTilePtr               currentPlacedTile;  // current menu row selection too
+    PlacedTilePtr               unifyBase;
 
     eTilingMakerMouseMode       tilingMakerMouseMode;     // set by tiling designer menu
 
@@ -223,7 +231,8 @@ private:
     int                         poly_side_count;            // number of selected vertices when drawing polygons.
     qreal                       poly_rotation;              // regular polygon tile rotation
 
-    class ViewControl         * view;
+    class View                * view;
+    class ViewController      * viewControl;
     class PrototypeMaker      * prototypeMaker;
     class MapEditor           * maped;
     class ControlPanel        * controlPanel;

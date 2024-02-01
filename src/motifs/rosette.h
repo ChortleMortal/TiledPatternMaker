@@ -20,23 +20,21 @@ class Rosette : public RadialMotif
 {
 public:
     // n = points, q = tip angle, s=sides intersections k=neck r=rotation sc=scale
-    Rosette(const Motif & fig,  int n, qreal qq, int ss, qreal kk);
-    Rosette(int n, qreal qq, int ss, qreal kk);
+    Rosette(const Motif & fig,  int n, qreal qq, int ss);
+    Rosette(int n, qreal qq, int ss);
     Rosette(const Rosette & other);
 
     virtual void  buildUnitMap() override;
 
     qreal   getQ() {return q;}
-    qreal   getK() {return k;}
     int     getS() {return s;}
 
     void    setQ(qreal qq);
-    void    setK(qreal kk);
     void    setS(int ss);
     void    setN(int n) override;
 
     virtual QString getMotifDesc() override { return "Rosette";}
-    virtual void    report()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "q:" << q << "s" << s << "k" << k; }
+    virtual void    report()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "q:" << q << "s" << s; }
 
     bool equals(const MotifPtr other) override;
 

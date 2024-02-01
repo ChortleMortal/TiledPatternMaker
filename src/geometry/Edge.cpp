@@ -6,8 +6,9 @@
 #include <QTransform>
 #include "geometry/arcdata.h"
 #include "geometry/edge.h"
+#include "geometry/geo.h"
+#include "geometry//loose.h"
 #include "geometry/vertex.h"
-#include "misc/utilities.h"
 
 using std::make_shared;
 
@@ -235,7 +236,7 @@ void Edge::calcMagnitude()
     // calcs magnitude from arcCenter
     QLineF line  = getLine();
     QPointF mid  = getMidPoint();
-    qreal dist   = Point::dist(mid,arcCenter);
+    qreal dist   = Geo::dist(mid,arcCenter);
     arcMagnitude = (dist/line.length());
     //qDebug() << "magnitude=" << arcMagnitude;
 }
@@ -429,8 +430,8 @@ bool Edge::isTrivial(qreal tolerance)
         //qWarning("Trivial edge - vertices");
         return true;
     }
-
-    if (Point::dist2(v1->pt,v2->pt) < tolerance)
+    
+    if (Geo::dist2(v1->pt,v2->pt) < tolerance)
     {
         //qWarning("Trivial edge - points");
         return true;
@@ -458,7 +459,7 @@ bool Edge::isColinear(const EdgePtr & e, qreal tolerance)
 {
     static bool debug = false;
 
-    qreal angle = Utils::angle(getLine(),e->getLine());
+    qreal angle = Geo::angle(getLine(),e->getLine());
     if (debug) qDebug() << "    angle=" << angle;
     if ((qAbs(angle) < tolerance) || (qAbs(angle-180.0) < tolerance))
     {
@@ -527,5 +528,5 @@ bool Edge::operator < (const Edge & other) const
 {
     QPointF point  = v1->pt;
     QPointF opoint = other.v1->pt;
-    return (Point::lessThan(point, opoint) || (point == opoint  &&  angle() < other.angle() - Point::TOLERANCE));
+    return (Geo::lessThan(point, opoint) || (point == opoint  &&  angle() < other.angle() - Sys::TOL));
 }

@@ -19,12 +19,14 @@
 #include "makers/tiling_maker/tiling_maker.h"
 #include "misc/border.h"
 #include "misc/qtapplog.h"
+#include "misc/sys.h"
 #include "misc/tpm_io.h"
 #include "misc/utilities.h"
 #include "mosaic/design_element.h"
 #include "mosaic/mosaic.h"
 #include "makers/prototype_maker/prototype.h"
 #include "style/filled.h"
+#include "tile/backgroundimage.h"
 #include "tile/tile.h"
 #include "tile/placed_tile.h"
 #include "tile/tiling.h"
@@ -34,13 +36,12 @@
 #include "viewers/grid_view.h"
 #include "viewers/map_editor_view.h"
 #include "viewers/prototype_view.h"
-#include "viewers/viewcontrol.h"
-#include "viewers/tiling_view.h"
+#include "viewers/view_controller.h"
 #include "tiledpatternmaker.h"
 
 typedef std::shared_ptr<class Filled>       FilledPtr;
 
-page_system_info::page_system_info(ControlPanel * cpanel)  : panel_page(cpanel,"System Info")
+page_system_info::page_system_info(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_SYSTEM_INFO,"System Info")
 {
     QPushButton * pbDump = new QPushButton("Dump");
     pbDump->setFixedWidth(101);
@@ -179,7 +180,7 @@ void page_system_info::doProtoypeMaker(eMVDType type, QString name)
     item->setText(1,QString("Protos: %1").arg(protos.size()));
     int numD = 0;
     int numV = data->getSelectedDELs(type).count();
-    for (auto & prototype : protos)
+    for (auto & prototype : std::as_const(protos))
     {
         numD += prototype->numDesignElements();
     }
@@ -190,7 +191,7 @@ void page_system_info::doProtoypeMaker(eMVDType type, QString name)
     populatePrototype(item,selectedP,"Selected Prototype","");
 
     // all protos
-    for (auto & proto : protos)
+    for (auto & proto : std::as_const(protos))
     {
         QString state = data->isHidden(type,proto) ? "hidden" : "visible";
         populatePrototype(item,proto,"Prototype",state);
@@ -200,7 +201,7 @@ void page_system_info::doProtoypeMaker(eMVDType type, QString name)
     populateDEL(item,selectedD,"Selected Design Element","");
 
     // all dels
-    for (auto & del : dels)
+    for (auto & del : std::as_const(dels))
     {
         QString state = data->isHidden(type,del) ? "hidden" : "visible";
         populateDEL(item, del, "Design Element",state);
@@ -219,7 +220,7 @@ void page_system_info::doTilingMaker()
     item->setText(0,"Tiling Maker");
     item->setText(1,QString("Tilings: %1").arg(tilings.size()));
     int tiles = 0;
-    for (const auto & tiling : tilings)
+    for (const auto & tiling : std::as_const(tilings))
     {
         tiles += tiling->getInTiling().count();
     }
@@ -229,7 +230,7 @@ void page_system_info::doTilingMaker()
     TilingPtr tp = tilingMaker->getSelected();
     populateTiling(item,tp,"Selected Tiling");
 
-    for (auto& tiling : tilings)
+    for (auto& tiling : std::as_const(tilings))
     {
         populateTiling(item,tiling,"Tiling");
     }
@@ -241,17 +242,22 @@ void page_system_info::doBackgroundImage()
     // background image
     item = new QTreeWidgetItem;
     item->setText(0,"Background Image");
-    auto bip = BackgroundImageView::getInstance();
-    if (bip && bip->isLoaded())
-        item->setText(2, bip->getName());
-    else
-        item->setText(2, "none");
     tree->addTopLevelItem(item);
-    item2 = new QTreeWidgetItem;
-    item2->setText(0,"xf_image");
-    item2->setText(2,Transform::toInfoString(bip->getCanvasXform().toQTransform()));
-    item->addChild(item2);
+    auto bview = BackgroundImageView::getInstance();
+    auto bip = bview->getImage();
+    if (bip && bip->isLoaded())
+    {
 
+        item->setText(2, bip->getTitle());
+        item2 = new QTreeWidgetItem;
+        item2->setText(0,"xf_image");
+        item2->setText(2,Transform::toInfoString(bview->getModelTransform()));
+        item->addChild(item2);
+    }
+    else
+    {
+        item->setText(2, "none");
+    }
 #if 0
     // selected tile
     item = new QTreeWidgetItem;
@@ -291,7 +297,7 @@ void page_system_info::doMapEditor()
     item->setText(1,astring);
     tree->addTopLevelItem(item);
 
-    for (auto & map : maps)
+    for (auto & map : std::as_const(maps))
     {
         populateMap(item,map,"Draw Map");
     }
@@ -339,18 +345,18 @@ void page_system_info::populateStyles(QTreeWidgetItem * parent, MosaicPtr mosaic
     QTreeWidgetItem * item;
 
     QVector<TilingPtr> tilings = mosaic->getTilings();
-    for (auto& tp : tilings)
+    for (auto& tp : std::as_const(tilings))
     {
         item = new QTreeWidgetItem();
         item->setText(0,"Tiling");
         item->setText(1,addr(tp.get()));
-        item->setText(2,tp->getName());
+        item->setText(2,tp->getTitle());
         parent->addChild(item);
         populateTiling(item,tp,"Tiling");
     }
 
     const StyleSet & sset = mosaic->getStyleSet();
-    for (auto style : sset)
+    for (auto style : std::as_const(sset))
     {
         item = new QTreeWidgetItem;
         item->setText(0,"Style");
@@ -363,17 +369,18 @@ void page_system_info::populateStyles(QTreeWidgetItem * parent, MosaicPtr mosaic
         {
             FilledPtr fp = std::dynamic_pointer_cast<Filled>(style);
             Q_ASSERT(fp);
+            ColorMaker & cm = fp->getColorMaker();
             QString astring = QString("Filled: algo=%1 blacks=%2 whites=%3")
                 .arg(fp->getAlgorithm())
-                .arg(fp->blackFaces.size())
-                .arg(fp->whiteFaces.size());
+                .arg(cm.getBlackFaces().size())
+                                  .arg(cm.getWhiteFaces().size());
             item->setText(2,astring);  // overwrites
         }
 
         Layer * layer = dynamic_cast<Layer*>(style.get());
         Q_ASSERT(layer);
         populateLayer(item,layer);
-        populateMap(item,style->getExistingMap(),"Style Map");
+        populateMap(item,style->getExistingProtoMap(),"Style Map");
         populatePrototype(item,style->getPrototype(),"Prototype","");
     }
 }
@@ -414,13 +421,13 @@ void page_system_info::populateCrop(QTreeWidgetItem * parent, CropPtr crop)
 
 void page_system_info::populateLayer(QTreeWidgetItem * parent, Layer * layer)
 {
-    QTransform tr = layer->getFrameTransform();
+    QTransform tr = layer->getCanvasTransform();
     QTreeWidgetItem * item = new QTreeWidgetItem;
     item->setText(0,"Frame Transform");
     item->setText(2,Transform::toInfoString(tr));
     parent->addChild(item);
-
-    tr = layer->getCanvasTransform();
+    
+    tr = layer->getModelTransform();
     item = new QTreeWidgetItem;
     item->setText(0,"Canvas Transform");
     item->setText(2,Transform::toInfoString(tr));
@@ -476,7 +483,7 @@ void page_system_info::populateMap(QTreeWidgetItem *parent, MapPtr mp, QString n
         item2->addChild(item3);
 
         const NeighboursPtr neighbours = mp->getNeighbours(v);
-        for (auto & wedge : *neighbours)
+        for (auto & wedge : std::as_const(*neighbours))
         {
             EdgePtr edge = wedge.lock();
             QTreeWidgetItem * item4 = new QTreeWidgetItem;
@@ -525,7 +532,7 @@ void page_system_info::populatePrototype(QTreeWidgetItem *parent, ProtoPtr pp, Q
         QTreeWidgetItem * item = new QTreeWidgetItem();
         item->setText(0,"Tiling");
         item->setText(1,addr(tiling.get()));
-        item->setText(2,tiling->getName());
+        item->setText(2,tiling->getTitle());
         pitem->addChild(item);
         populateTiling(item,tiling,"Tiling");
     }
@@ -536,7 +543,7 @@ void page_system_info::populatePrototype(QTreeWidgetItem *parent, ProtoPtr pp, Q
     item->setText(1,QString("Count: %1").arg(dels.count()));
     pitem->addChild(item);
     tree->expandItem(item);
-    for (auto& del : dels)
+    for (auto& del : std::as_const(dels))
     {
         populateDEL(item,del,"Design Element","");
     }
@@ -603,12 +610,12 @@ void page_system_info::populateTiling(QTreeWidgetItem * parent, TilingPtr tp, QS
     QTreeWidgetItem * pitem = new QTreeWidgetItem;
     pitem->setText(0,name);
     pitem->setText(1,addr(tp.get()));
-    QString astring = tp->getName() + " - Tiles: " + QString::number(placedTiles.size());
+    QString astring = tp->getTitle() + " - Tiles: " + QString::number(placedTiles.size());
     astring += " T1" + Utils::str(tp->getData().getTrans1()) + " T2" + Utils::str(tp->getData().getTrans2());
     pitem->setText(2,astring);
     parent->addChild(pitem);
 
-    for (const auto & placedTile : placedTiles)
+    for (const auto & placedTile : std::as_const(placedTiles))
     {
         QTransform tr = placedTile->getTransform();
         TilePtr tile  = placedTile->getTile();
@@ -636,12 +643,12 @@ void page_system_info::populateViews(QTreeWidgetItem * parent)
     item->setText(0,"Tiling Maker View");
     item->setText(2,Transform::toInfoString(TilingMakerView::getInstance()->getLayerTransform()));
     parent->addChild(item);
-
+#if 0
     item = new QTreeWidgetItem;
     item->setText(0,"Tiling View");
-    item->setText(2,Transform::toInfoString(TilingView::getInstance()->getLayerTransform()));
+    item->setText(2,Transform::toInfoString(Sys::viewController->getTilingView()->getLayerTransform()));
     parent->addChild(item);
-
+#endif
     item = new QTreeWidgetItem;
     item->setText(0,"Map Editor View");
     item->setText(2,Transform::toInfoString(MapEditorView::getInstance()->getLayerTransform()));
@@ -659,8 +666,12 @@ void page_system_info::populateViews(QTreeWidgetItem * parent)
 
     item = new QTreeWidgetItem;
     item->setText(0,"Background Image View");
-    auto bip = BackgroundImageView::getInstance();
-    item->setText(2,Transform::toInfoString(bip->getLayerTransform()));
+    auto bview = BackgroundImageView::getInstance();
+    auto bip   = bview->getImage();
+    if (bip)
+    {
+        item->setText(2,Transform::toInfoString(bview->getLayerTransform()));
+    }
     parent->addChild(item);
 
     item = new QTreeWidgetItem;

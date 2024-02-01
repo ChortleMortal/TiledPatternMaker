@@ -2,12 +2,14 @@
 #ifndef ARCDATA_H
 #define ARCDATA_H
 
-#include <memory>
 #include <QPointF>
 #include <QLineF>
 #include <QRectF>
 #include <QDebug>
 #include <QtMath>
+#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
+#include <memory>
+#endif
 
 typedef std::shared_ptr<class Edge> EdgePtr;
 

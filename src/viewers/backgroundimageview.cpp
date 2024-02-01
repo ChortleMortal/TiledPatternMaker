@@ -3,15 +3,24 @@
 #include <QPainter>
 
 #include "viewers/backgroundimageview.h"
+#include "tile/backgroundimage.h"
 #include "geometry/edge.h"
-#include "geometry/point.h"
-#include "geometry/transform.h"
+#include "geometry/geo.h"
 #include "geometry/vertex.h"
 #include "makers/tiling_maker/tiling_mouseactions.h"
+#include "misc/sys.h"
 #include "settings/configuration.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
+#include "panels/controlpanel.h"
 
 using std::make_shared;
+
+/*
+ * The BackgroundImageView only uses the model transform and does not use
+ * the Layer transform or the Cnavas transform, because the canvas transform
+ * uses a scale factor and translation relative to the model Bounds.
+ * These bounds do not apply to the image.
+ */
 
 BackgroundImageView * BackgroundImageView::mpThis = nullptr;
 
@@ -26,271 +35,154 @@ BackgroundImageView * BackgroundImageView::getInstance()
 
 void BackgroundImageView::releaseInstance()
 {
-    if (mpThis)
+    if (mpThis != nullptr)
     {
         delete mpThis;
         mpThis = nullptr;
     }
 }
 
-BackgroundImageView::BackgroundImageView() : LayerController("Bkgd Image")
+BackgroundImageView::BackgroundImageView() : LayerController("Bkgd Image",true)
 {
-    view     = ViewControl::getInstance();
     config   = Configuration::getInstance();
-    bkgdName = "Bkgd Image";
-
     setZValue(BKGD_IMG_ZLEVEL);
-
-    _loaded     = false;
 }
 
 BackgroundImageView::~BackgroundImageView()
 {
 }
 
-QString BackgroundImageView::getName()
+void BackgroundImageView::scaleImage()
 {
-    return bkgdName;
+    BkgdImagePtr bip = wbip.lock();
+    if (!bip)  return;
+
+    // scales the image to the correct size but does not position it.
+    qreal canvasScale = viewControl->getCanvas().getScale();
+    QTransform t      = QTransform::fromScale(canvasScale,canvasScale) * bip->getImageXform().toQTransform();
+    QPixmap & pixmap  = bip->getPixmap();
+    scaledPixmap      = pixmap.transformed(t);
+}
+
+QPointF BackgroundImageView::calcDelta()
+{
+    auto & canvas = viewControl->getCanvas();
+    QSizeF sz     = canvas.getSize();
+    //qDebug() << "BackgroundImageView canvas size" << sz;
+
+    QPointF view_center(sz.width()/2.0, sz.height()/2.0);
+    QRectF rect(scaledPixmap.rect());
+    QPointF delta  = view_center - rect.center();
+    qDebug() << "BackgroundImageView delta" << delta;
+    return delta;
 }
 
 void BackgroundImageView::paint(QPainter *painter)
 {
-    static constexpr QColor construction_color  = QColor(  0,128,  0,128);
+    if (!config->showBackgroundImage) return;
 
-    if (!_loaded)
-    {
-        return;
-    }
-    if (!config->showBackgroundImage)
-    {
-        return;
-    }
+    BkgdImagePtr bip = wbip.lock();
+    if (!bip) return;
 
-    painter->save();
-    
-    auto & settings = view->getViewSettings();
+    qDebug() << "BackgroundImageView::paint";
 
-    // FIXME - should this be mostRecentView or this (VIEW_BKGD_IMG)
-    QSizeF sz      = settings.getZoomSize(VIEW_BKGD_IMG);
-    QPointF view_center(qreal(sz.width())/2.0, qreal(sz.height())/2.0);
-    QPointF delta  = view_center - pixmap.rect().center();
+    scaleImage();
 
-    QTransform t1 = QTransform::fromTranslate(delta.x(),delta.y());
-    QTransform t2 = settings.getDeltaTransform(VIEW_BKGD_IMG) * settings.getTransform(VIEW_BKGD_IMG);
-    QTransform t3 = getCanvasTransform();
-    QTransform t4 =  t1 * t2 * t3;
-    //qDebug().noquote() << "t4" << Transform::toInfoString(t4);
-    painter->setTransform(t4);
+    QPointF pt     = bip->getImageXform().getTranslate();
+    QPointF delta  = calcDelta();
+    delta        += pt;
 
-    painter->drawPixmap(0,0,pixmap);
+    painter->drawPixmap(delta,scaledPixmap);
 
-    painter->restore();
-    
     drawLayerModelCenter(painter);
 
+    drawSkew(painter);
+}
+
+void BackgroundImageView::drawSkew(QPainter * painter)
+{
     if (getSkewMode())
     {
-    // draw accum
-    if ( sAccum.size() > 0)
-    {
-        QPen pen(construction_color,3);
-        QBrush brush(construction_color);
-        painter->setPen(pen);
-        painter->setBrush(brush);
-        for (EdgePtr edge : sAccum)
+        // draw accum
+        QColor construction_color(0, 128, 0,128);
+        if ( sAccum.size() > 0)
         {
-            if (edge->getType() == EDGETYPE_LINE)
+            QPen pen(construction_color,3);
+            QBrush brush(construction_color);
+            painter->setPen(pen);
+            painter->setBrush(brush);
+            for (EdgePtr edge : std::as_const(sAccum))
             {
-                QPointF p1 = edge->v1->pt;
-                QPointF p2 = edge->v2->pt;
-                painter->drawEllipse(p1,6,6);
-                painter->drawEllipse(p2,6,6);
-                painter->drawLine(p1, p2);
+                if (edge->getType() == EDGETYPE_LINE)
+                {
+                    QPointF p1 = edge->v1->pt;
+                    QPointF p2 = edge->v2->pt;
+                    painter->drawEllipse(p1,6,6);
+                    painter->drawEllipse(p2,6,6);
+                    painter->drawLine(p1, p2);
+                }
+                else if (edge->getType() == EDGETYPE_POINT)
+                {
+                    QPointF p = edge->v1->pt;
+                    painter->drawEllipse(p,6,6);
+                }
             }
-            else if (edge->getType() == EDGETYPE_POINT)
-            {
-                QPointF p = edge->v1->pt;
-                painter->drawEllipse(p,6,6);
-            }
+            drawPerspective(painter);
         }
-        drawPerspective(painter);
-    }
     }
 }
-
-bool BackgroundImageView::import(QString filename)
-{
-    qDebug() << "BackgroundImage::import()" << filename;
-    QFileInfo info(filename);
-    QString name = info.fileName();
-
-    Configuration * config = Configuration::getInstance();
-    QString newFilename = config->rootMediaDir + "bkgd_photos/" + name;
-
-    if (QFile::exists(newFilename))
-    {
-        return true;
-    }
-    else if (QFile::copy(filename,newFilename))
-    {
-        qDebug() << "import created:" << newFilename;
-        return true;
-    }
-
-    return false;
-}
-
-bool BackgroundImageView::load(QString imageName)
-{
-    unload();
-
-    bkgdName    = imageName;
-
-    QString filename = config->rootMediaDir + "bkgd_photos/" + bkgdName;
-    qDebug() << "BackgroundImage::load()" << filename;
-
-    _loaded = bkgdImage.load(filename);
-
-    if (_loaded)
-        qDebug() << "BackgroundImage: loaded OK - size =" << bkgdImage.size();
-    else
-        qWarning() << "BackgroundImage: LOAD ERROR";
-
-    return _loaded;
-}
-
-void BackgroundImageView::unload()
-{
-    _loaded         = false;
-    bUseAdjusted    = false;
-    resetPerspective();
-    bkgdName = "Bkgd Image";
-
-    Xform xf;
-    setCanvasXform(xf);
-    forceLayerRecalc(false);
-}
-
-void  BackgroundImageView::setUseAdjusted(bool use)
-{
-    bUseAdjusted = use;
-    qDebug() << "useAdjusted" << bUseAdjusted;
-}
-
-void BackgroundImageView::showPixmap()
-{
-
-    if (bUseAdjusted && !adjustedImage.isNull())
-    {
-        qDebug() << "using adjusted image";
-        pixmap = QPixmap::fromImage(adjustedImage);
-    }
-    else
-    {
-        qDebug() << "using regular background image";
-        pixmap = QPixmap::fromImage(bkgdImage);
-    }
-    view->update();
-}
-
 
 // this is perspective correction
 // for images where camera was not normal to the plane of the tiling
-void BackgroundImageView::createBackgroundAdjustment(QPointF topLeft, QPointF topRight, QPointF botRight, QPointF botLeft)
+void BackgroundImageView::createBackgroundAdjustment(BkgdImagePtr img, QPointF topLeft, QPointF topRight, QPointF botRight, QPointF botLeft)
 {
-    QSize sz      = pixmap.size();
-    qreal offsetX = (view->width() -  sz.width()) / 2;
-    qreal offsetY = (view->height() - sz.height()) / 2;
-    QTransform t0 = QTransform::fromTranslate(offsetX,offsetY);
+    BkgdImagePtr bip = wbip.lock();
+    if (!bip) return;
 
-    QTransform bkgdXform = t0 * getCanvasTransform();
+    QPixmap & pixmap = bip->getPixmap();
+    QSize sz      = pixmap.size();
+    qreal offsetX = qreal(view->width() -  sz.width()) / 2.0;
+    qreal offsetY = qreal(view->height() - sz.height()) / 2.0;
+    QTransform t0 = QTransform::fromTranslate(offsetX,offsetY);
+    
+    QTransform bkgdXform = t0 * getModelTransform();
     QTransform t1        = bkgdXform.inverted();
 
-    correctPerspective(
-            t1.map(topLeft),
-            t1.map(topRight),
-            t1.map(botRight),
-            t1.map(botLeft));
+    img->correctPerspective(
+        t1.map(topLeft),
+        t1.map(topRight),
+        t1.map(botRight),
+        t1.map(botLeft));
 
-    qDebug().noquote() << "perspective:" << Transform::toString(perspective);
-    qDebug().noquote() << "perspective:" << perspective;
+    img->setUseAdjusted(true);     // since we have just created it, let's use it
 
-    bUseAdjusted = true;     // since we have just created it, let's use it
-
-    createAdjustedImage();
+    img->createAdjustedImage();
 }
 
-void BackgroundImageView::createAdjustedImage()
+void BackgroundImageView::setModelXform(const Xform & xf, bool update)
 {
-    if (!bkgdImage.isNull() && !perspective.isIdentity())
+    Q_ASSERT(_unique);
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.toInfoString() << (isUnique() ? "unique" : "common");
+    auto bip = wbip.lock();
+    if (bip)
     {
-        adjustedImage = bkgdImage.transformed(perspective,Qt::SmoothTransformation);
-    }
-    else
-    {
-        adjustedImage = QImage();
-        Q_ASSERT(adjustedImage.isNull());
+        bip->setImageXform(xf);
+        forceLayerRecalc(update);
     }
 }
 
-bool BackgroundImageView::saveAdjusted(QString newName)
+const Xform & BackgroundImageView::getModelXform()
 {
-    QString file = config->rootMediaDir + "bkgd_photos/" +  newName;
-    qDebug() << "Saving adjusted:" << file;
-    bool rv = adjustedImage.save(file);
-    return rv;
-}
-
-void BackgroundImageView::correctPerspective(QPointF topLeft, QPointF topRight, QPointF botRight, QPointF botLeft)
-{
-    qreal width = 0;
-    qreal height = 0;
-
-    // Get the lines limiting the new image area
-    QLineF topLine(topLeft,topRight);
-    QLineF bottomLine(botLeft, botRight);
-    QLineF leftLine(topLeft, botLeft);
-    QLineF rightLine(topRight, botRight);
-
-    // Select the longest lines
-    if(topLine.length() > bottomLine.length())
+    Q_ASSERT(_unique);
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "GET" << getLayerName() << xf_model.toInfoString() << (isUnique() ? "unique" : "common");
+    auto bip = wbip.lock();
+    if (bip)
     {
-        width = topLine.length();
+        return bip->getImageXform();
     }
     else
     {
-        width = bottomLine.length();
-    }
-
-    if(topLine.length() > bottomLine.length())
-    {
-        height = leftLine.length();
-    }
-    else
-    {
-        height = rightLine.length();
-    }
-
-    // Create the QPolygonF containing the corner points
-    // in user specified quadrilateral arrangement
-    QPolygonF fromPolygon;
-    fromPolygon << topLeft;
-    fromPolygon << topRight;
-    fromPolygon << botRight;
-    fromPolygon << botLeft;
-
-    // target polygon
-    QPolygonF toPolygon;
-    toPolygon << QPointF(0, 0);
-    toPolygon << QPointF(width, 0);
-    toPolygon << QPointF(width, height);
-    toPolygon << QPointF(0, height);
-
-    // create the matrix
-    bool rv = QTransform::quadToQuad(fromPolygon, toPolygon, perspective);
-    if (!rv)
-    {
-        qDebug() << "Could not create the transformation matrix.";
+        return nullXform;
     }
 }
 
@@ -299,18 +191,6 @@ void BackgroundImageView::correctPerspective(QPointF topLeft, QPointF topRight, 
 /// Layer slots
 ///
 ////////////////////////////////////////////////////////
-
-
-const Xform  & BackgroundImageView::getCanvasXform()
-{
-    return xf_canvas;
-}
-
-void BackgroundImageView::setCanvasXform(const Xform & xf)
-{
-    xf_canvas = xf;
-    forceLayerRecalc();
-}
 
 void BackgroundImageView::slot_setCenter(QPointF spt)
 {
@@ -348,10 +228,10 @@ void BackgroundImageView::slot_mouseTranslate(QPointF pt)
         ||  view->getKbdMode(KBD_MODE_XFORM_BKGD)
         || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setTranslateX(xf.getTranslateX() + pt.x());
         xf.setTranslateY(xf.getTranslateY() + pt.y());
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 
@@ -377,9 +257,10 @@ void BackgroundImageView::slot_wheel_scale(qreal delta)
         ||  view->getKbdMode(KBD_MODE_XFORM_BKGD)
         || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setScale(xf.getScale() * (1.0 + delta));
-        setCanvasXform(xf);
+        setModelXform(xf,true);
+        scaleImage();
     }
 }
 
@@ -391,9 +272,9 @@ void BackgroundImageView::slot_wheel_rotate(qreal delta)
         ||  view->getKbdMode(KBD_MODE_XFORM_BKGD)
         || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setRotateDegrees(xf.getRotateDegrees() + delta);
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 
@@ -405,9 +286,10 @@ void BackgroundImageView::slot_scale(int amount)
         ||  view->getKbdMode(KBD_MODE_XFORM_BKGD)
         || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setScale(xf.getScale() * (1 + static_cast<qreal>(amount)/100.0));
-        setCanvasXform(xf);
+        setModelXform(xf,true);
+        scaleImage();
     }
 }
 
@@ -419,13 +301,13 @@ void BackgroundImageView::slot_rotate(int amount)
         ||  view->getKbdMode(KBD_MODE_XFORM_BKGD)
         || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setRotateRadians(xf.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 
-void BackgroundImageView::slot_moveX(int amount)
+void BackgroundImageView::slot_moveX(qreal amount)
 {
     if (!view->isActiveLayer(this)) return;
 
@@ -433,13 +315,13 @@ void BackgroundImageView::slot_moveX(int amount)
         ||  view->getKbdMode(KBD_MODE_XFORM_BKGD)
         || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setTranslateX(xf.getTranslateX() + amount);
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
 
-void BackgroundImageView::slot_moveY(int amount)
+void BackgroundImageView::slot_moveY(qreal amount)
 {
     if (!view->isActiveLayer(this)) return;
 
@@ -447,12 +329,11 @@ void BackgroundImageView::slot_moveY(int amount)
         ||  view->getKbdMode(KBD_MODE_XFORM_BKGD)
         || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
     {
-        Xform xf = getCanvasXform();
+        Xform xf = getModelXform();
         xf.setTranslateY(xf.getTranslateY() + amount);
-        setCanvasXform(xf);
+        setModelXform(xf,true);
     }
 }
-
 
 /////////
 ///
@@ -463,12 +344,6 @@ void BackgroundImageView::slot_moveY(int amount)
 Perspective::Perspective()
 {
     skewMode = false;
-}
-
-void Perspective::resetPerspective()
-{
-    skewMode = false;
-    sAccum.clear();
 }
 
 void Perspective::startDragging(QPointF spos)
@@ -489,7 +364,7 @@ void Perspective::addPoint(QPointF spos)
 
     qDebug("Perspective::addPoint");
 
-    VertexPtr vnew = make_shared<Vertex>(spos);
+    VertexPtr vnew = std::make_shared<Vertex>(spos);
 
     int size = sAccum.size();
     if (size == 0)
@@ -539,8 +414,8 @@ void Perspective::endDragging(QPointF spt )
 
     if (sAccum.size() == 0)
         return;
-
-    if (!Point::isNear(spt,sAccum.first()->v1->pt))
+    
+    if (!Geo::isNear(spt,sAccum.first()->v1->pt))
     {
         addPoint(spt);
     }
@@ -563,7 +438,7 @@ void Perspective::drawPerspective(QPainter * painter)
 
 void Perspective::forceRedraw()
 {
-    ViewControl::getInstance()->update();
+    Sys::view->update();
 }
 
 void  Perspective::setSkewMode(bool enb)
@@ -576,3 +451,4 @@ void  Perspective::setSkewMode(bool enb)
     }
     forceRedraw();
 }
+

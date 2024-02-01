@@ -2,24 +2,23 @@
 #include <QDebug>
 #include <QMenu>
 #include "widgets/image_layer.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
 
-// An ImageLayer (based on QObject) takes a QPixmap and is added to the View
-ImageLayer::ImageLayer(QString name) : LayerController("Image")
+// An ImageLayerView (based on QObject) takes a QPixmap and is added to the View
+ImageLayerView::ImageLayerView(QString name) : LayerController("Image",true)
 {
     title = name;
-    view  = ViewControl::getInstance();
-    connect(this, &ImageLayer::sig_refreshView, view, &ViewControl::slot_refreshView);
+    connect(this, &ImageLayerView::sig_refreshView, viewControl, &ViewController::slot_reconstructView);
 }
 
-void ImageLayer::paint(QPainter *painter)
+void ImageLayerView::paint(QPainter *painter)
 {
     if (pixmap.isNull())
         return;
 
     painter->save();
-
-    const Xform & xf = getCanvasXform();
+    
+    const Xform & xf = getModelXform();
     painter->setTransform(xf.getTransform());
     QRectF rect = pixmap.rect();
     painter->drawPixmap(rect,pixmap,rect);
@@ -31,40 +30,55 @@ void ImageLayer::paint(QPainter *painter)
     painter->restore();
 }
 
-void ImageLayer::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
+void ImageLayerView::setModelXform(const Xform & xf, bool update)
+{
+    Q_ASSERT(_unique);
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.toInfoString() << (isUnique() ? "unique" : "common");
+    xf_model = xf;
+    forceLayerRecalc(update);
+}
+
+const Xform & ImageLayerView::getModelXform()
+{
+    Q_ASSERT(_unique);
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "GET" << getLayerName() << xf_model.toInfoString() << (isUnique() ? "unique" : "common");
+    return xf_model;
+}
+
+void ImageLayerView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
 {
     if (btn == Qt::RightButton)
     {
         qDebug() << "ImageLayer -right click";
         QMenu menu(view);
-        menu.addAction("Delete",this,&ImageLayer::slot_deleteAction);
+        menu.addAction("Delete",this,&ImageLayerView::slot_deleteAction);
         menu.exec(view->mapToGlobal(spt.toPoint()));
     }
 }
 
-void ImageLayer::slot_mouseDragged(QPointF spt)
+void ImageLayerView::slot_mouseDragged(QPointF spt)
 {
     Q_UNUSED(spt);
 }
 
-void ImageLayer::slot_mouseMoved(QPointF spt)
+void ImageLayerView::slot_mouseMoved(QPointF spt)
 {
     Q_UNUSED(spt);
 }
 
-void ImageLayer::slot_mouseReleased(QPointF spt)
+void ImageLayerView::slot_mouseReleased(QPointF spt)
 {
     Q_UNUSED(spt);
 }
 
-void ImageLayer::slot_mouseDoublePressed(QPointF spt)
+void ImageLayerView::slot_mouseDoublePressed(QPointF spt)
 {
     Q_UNUSED(spt);
 }
 
-void ImageLayer::slot_deleteAction()
+void ImageLayerView::slot_deleteAction()
 {
-    view->removeImage(this);
+    viewControl->removeImage(this);
     emit sig_refreshView();
 }
 

@@ -1,0 +1,84 @@
+<?xml version="1.0"?>
+<!-- Written: Sat Jan 6 2024 19:22:21 -->
+<vector id="1" version="15">
+	<design>
+		<size>
+			<width>700</width>
+			<height>600</height>
+			<zwidth>700</zwidth>
+			<zheight>600</zheight>
+		</size>
+		<background>
+			<color>#ff000000</color>
+		</background>
+		<Fill singleton="f">-3,3,-3,3</Fill>
+		<BackgroundImage name="TestPattern.png">
+			<Scale>1</Scale>
+			<Rot>0</Rot>
+			<X>0</X>
+			<Y>0</Y>
+			<Center>0,0</Center>
+		</BackgroundImage>
+	</design>
+	<style.Thick id="2">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<string>Test Pattern</string>
+					<entry>
+						<Tile id="4">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">1,1</Point>
+									<Point id="7">-0.9999999999999998,1</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">-1,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">0.9999999999999997,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</Tile>
+						<Rosette id="10">
+							<boundarySides>4</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+							<q>0</q>
+							<s>1</s>
+							<k>0</k>
+						</Rosette>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ffffaa00</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.05</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+	</style.Thick>
+</vector>

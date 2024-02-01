@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<!-- Written: Thu Oct 5 2023 15:24:07 -->
+<Tiling version="7">
+	<Name>Bourgoin129</Name>
+	<Fill singleton="f">-3,3,-3,3</Fill>
+	<T1>1.414213562373093,-1.414213562373089</T1>
+	<T2>2.828427124746191,-1.27675647831893e-15</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1.826350626891726</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="regular" sides="16" rotation="0" scale="1">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-0.6488466976429144</tranX>
+			<tranY>-0.4335455026494826</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="8" rotation="0" scale="0.8599999999999999">
+		<Placement>
+			<scale>0.4802169350517099</scale>
+			<rot>90.00000000000001</rot>
+			<tranX>0.764139866501556</tranX>
+			<tranY>-0.4335455026494828</tranY>
+		</Placement>
+	</Tile>
+	<Desc>This is  Figure 3 from Kaplan and Salesin 2004</Desc>
+	<Auth>David A, Casoer</Auth>
+</Tiling>

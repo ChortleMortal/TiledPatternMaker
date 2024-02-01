@@ -20,6 +20,7 @@
 #include "tile/tiling.h"
 #include "misc/fileservices.h"
 #include "misc/tpm_io.h"
+#include "makers/tiling_maker/tiling_monitor.h"
 
 using std::make_shared;
 
@@ -27,6 +28,8 @@ PlacedTile::PlacedTile()
 {
     clearViewState();
     _show = true;
+
+    connect(this, &PlacedTile::sig_tileChanged, TilingMonitor::getInstance(), &TilingMonitor::slot_tileChanged);
 }
 
 PlacedTile::PlacedTile(TilePtr tile, QTransform T)
@@ -36,6 +39,8 @@ PlacedTile::PlacedTile(TilePtr tile, QTransform T)
     clearViewState();
     _show = true;
     //qDebug() << "setTransform1=" << Transform::toInfoString(T);
+
+    connect(this, &PlacedTile::sig_tileChanged, TilingMonitor::getInstance(), &TilingMonitor::slot_tileChanged);
 }
 
 PlacedTilePtr PlacedTile::copy()
@@ -48,85 +53,24 @@ PlacedTilePtr PlacedTile::copy()
     return pfp;
 }
 
-void PlacedTile::setTile(TilePtr tile)
-{
-    this->tile = tile;
-}
-
-TilePtr PlacedTile::getTile()
-{
-    return tile;
-}
-
-QTransform PlacedTile::getTransform()
-{
-    return T;
-}
-
-EdgePoly  PlacedTile::getPlacedEdgePoly()
-{
-    const EdgePoly & ep = tile->getEdgePoly();
-#if 1
-    EdgePoly ep2  = ep.recreate();
-    ep2.mapD(T);
-#else
-    EdgePoly ep2  = ep.map(T);
-#endif
-    return ep2;
-}
-
 void PlacedTile::setTransform(QTransform newT)
 {
     //qDebug() << "setTransform3 before =" << Transform::toInfoString(T);
     T = newT;
     //qDebug() << "setTransform3 after =" << Transform::toInfoString(T);
+    emit sig_tileChanged();
 }
 
-bool PlacedTile::saveAsGirihShape(QString name)
+void PlacedTile::setTile(TilePtr tile)
 {
-    Configuration * config = Configuration::getInstance();
-    QString root     = config->rootMediaDir;
-    QString filename = root + "girih_shapes" + "/" + name + ".xml";
-
-    QFile data(filename);
-    if (data.open(QFile::WriteOnly))
-    {
-        qDebug() << "Writing:"  << data.fileName();
-        QTextStream str(&data);
-        str.setRealNumberPrecision(16);
-        saveGirihShape(str,name);
-        data.close();
-
-        if (FileServices::reformatXML(filename))
-        {
-            girihShapeName = name;
-            return true;
-        }
-    }
-    qWarning() << "Could not write tile file:"  << filename;
-
-    return false;
+    this->tile = tile;
+    emit sig_tileChanged();
 }
 
-void PlacedTile::saveGirihShape(QTextStream & ts, QString name)
+void PlacedTile::setShow(bool show)
 {
-    TileWriter fw;
-
-    ts << "<?xml version=\"1.0\"?>" << endl;
-
-    if (tile->isRegular())
-    {
-        QString str = QString("<Poly name=\"%1\" type=\"regular\" sides=\"%2\">").arg(name).arg(tile->numPoints());
-        ts << str << endl;
-    }
-    else
-    {
-        QString str = QString("<Poly name=\"%1\">").arg(name);
-        ts << str << endl;
-        fw.setEdgePoly(ts,tile->getEdgePoly());
-    }
-    fw.setTransform(ts,T);
-    ts << "</Poly>" << endl;
+    _show = show;
+    emit sig_tileChanged();
 }
 
 bool PlacedTile::loadFromGirihShape(QString name)
@@ -181,7 +125,78 @@ bool PlacedTile::loadFromGirihShape(QString name)
     }
     girihShapeName = name;
 
+    emit sig_tileChanged();
+
     return true;
+}
+
+TilePtr PlacedTile::getTile()
+{
+    return tile;
+}
+
+QTransform PlacedTile::getTransform()
+{
+    return T;
+}
+
+EdgePoly  PlacedTile::getPlacedEdgePoly()
+{
+    const EdgePoly & ep = tile->getEdgePoly();
+#if 1
+    EdgePoly ep2  = ep.recreate();
+    ep2.mapD(T);
+#else
+    EdgePoly ep2  = ep.map(T);
+#endif
+    return ep2;
+}
+
+bool PlacedTile::saveAsGirihShape(QString name)
+{
+    Configuration * config = Configuration::getInstance();
+    QString root     = config->rootMediaDir;
+    QString filename = root + "girih_shapes" + "/" + name + ".xml";
+
+    QFile data(filename);
+    if (data.open(QFile::WriteOnly))
+    {
+        qDebug() << "Writing:"  << data.fileName();
+        QTextStream str(&data);
+        str.setRealNumberPrecision(16);
+        saveGirihShape(str,name);
+        data.close();
+
+        if (FileServices::reformatXML(filename))
+        {
+            girihShapeName = name;
+            return true;
+        }
+    }
+    qWarning() << "Could not write tile file:"  << filename;
+
+    return false;
+}
+
+void PlacedTile::saveGirihShape(QTextStream & ts, QString name)
+{
+    TileWriter fw;
+
+    ts << "<?xml version=\"1.0\"?>" << endl;
+
+    if (tile->isRegular())
+    {
+        QString str = QString("<Poly name=\"%1\" type=\"regular\" sides=\"%2\">").arg(name).arg(tile->numPoints());
+        ts << str << endl;
+    }
+    else
+    {
+        QString str = QString("<Poly name=\"%1\">").arg(name);
+        ts << str << endl;
+        fw.setEdgePoly(ts,tile->getEdgePoly());
+    }
+    fw.setTransform(ts,T);
+    ts << "</Poly>" << endl;
 }
 
 void PlacedTile::loadGirihShape(xml_node & poly_node)

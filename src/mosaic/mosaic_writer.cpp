@@ -6,8 +6,11 @@
 #include "motifs/irregular_motif.h"
 #include "motifs/extended_rosette.h"
 #include "motifs/extended_star.h"
+#include "motifs/rosette.h"
+#include "motifs/rosette2.h"
 #include "motifs/rosette_connect.h"
 #include "motifs/star.h"
+#include "motifs/star2.h"
 #include "motifs/star_connect.h"
 #include "motifs/irregular_rosette.h"
 #include "motifs/irregular_star.h"
@@ -17,10 +20,11 @@
 #include "geometry/vertex.h"
 #include "makers/map_editor/map_editor.h"
 #include "misc/border.h"
+#include "misc/sys.h"
 #include "misc/tpm_io.h"
 #include "misc/fileservices.h"
 #include "settings/configuration.h"
-#include "settings/model_settings.h"
+#include "settings/canvas_settings.h"
 #include "style/colored.h"
 #include "style/emboss.h"
 #include "style/filled.h"
@@ -33,7 +37,7 @@
 #include "tile/tile.h"
 #include "tile/tiling.h"
 #include "tile/tiling_writer.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
 
 using std::dynamic_pointer_cast;
 
@@ -53,7 +57,9 @@ MosaicWriter::MosaicWriter() : MosaicWriterBase()
     //currentXMLVersion = 12; // 24NOV21 Reworked border definitions
     //currentXMLVersion = 13; // 16SEP22 Extended Boundary scale/rot used
     //currentXMLVersion = 14; // 23NOV22 <n> is common for all motifs
-      currentXMLVersion = 15; // 26MAY23 add Crop parms
+    //currentXMLVersion = 15; // 26MAY23 add Crop parms
+    //currentXMLVersion = 16; // 07OCT23 Motif scale and rotate are additive to tile
+      currentXMLVersion = 17; // 11NOV23 Border crops now saved in model units again
 }
 
 MosaicWriter::~MosaicWriter()
@@ -216,22 +222,24 @@ bool MosaicWriter::processVector(QTextStream &ts)
 
 void MosaicWriter::processDesign(QTextStream &ts)
 {
-    ModelSettings & info  = _mosaic->getSettings();
-    QColor bkgdColor      = info.getBackgroundColor();
-    QSize  size           = info.getSize();
-    QSize  zsize          = info.getZSize();
-    BorderPtr border      = _mosaic->getBorder();
-    CropPtr crop          = _mosaic->getCrop();
-    uint cleanseLevel     = _mosaic->getCleanseLevel();
+    auto & info         = _mosaic->getCanvasSettings();
+    QColor bkgdColor    = info.getBackgroundColor();
+    QSize  viewSize     = info.getViewSize();
+    QSizeF canvasSize   = info.getCanvasSize();
+    FillData fd         = info.getFillData();
+
+    BorderPtr border    = _mosaic->getBorder();
+    CropPtr crop        = _mosaic->getCrop();
+    uint cleanseLevel   = _mosaic->getCleanseLevel();
 
     ts << "<design>" << endl;
-    procSize(ts,size,zsize);
+    procSize(ts,viewSize,canvasSize);
     procBackground(ts,bkgdColor);
     procBorder(ts,border);
     procCrop(ts,crop);
     int minX,minY,maxX,maxY;
     bool singleton;
-    info.getFillData().get(singleton,minX,maxX,minY,maxY);
+    fd.get(singleton,minX,maxX,minY,maxY);
     if (!singleton)
     {
         ts << "<Fill singleton = \"f\">" << minX << "," << maxX << "," << minY << "," << maxY << "</Fill>" << endl;
@@ -255,13 +263,18 @@ void MosaicWriter::procWidth(QTextStream &ts,qreal width)
     ts << "<width>" << width << "</width>" << endl;
 }
 
-void MosaicWriter::procSize(QTextStream &ts,QSizeF size, QSize zsize)
+void MosaicWriter::procLength(QTextStream &ts,qreal length)
+{
+    ts << "<length>" << length << "</length>" << endl;
+}
+
+void MosaicWriter::procSize(QTextStream &ts,QSize viewSize, QSizeF canvasSize)
 {
     ts << "<size>"    << endl;
-    ts << "<width>"   << size.width()   << "</width>" << endl;
-    ts << "<height>"  << size.height()  << "</height>" << endl;
-    ts << "<zwidth>"  << zsize.width()  << "</zwidth>" << endl;
-    ts << "<zheight>" << zsize.height() << "</zheight>" << endl;
+    ts << "<width>"   << viewSize.width()    << "</width>" << endl;
+    ts << "<height>"  << viewSize.height()   << "</height>" << endl;
+    ts << "<zwidth>"  << canvasSize.width()  << "</zwidth>" << endl;
+    ts << "<zheight>" << canvasSize.height() << "</zheight>" << endl;
     ts << "</size>"   << endl;
 }
 
@@ -312,7 +325,10 @@ void MosaicWriter::procBorder(QTextStream &ts,BorderPtr border)
 
     QString stype  = border->getBorderTypeString();
     QString sshape = border->getCropTypeString();
-    QString txt = QString("<border type=\"%1\" shape=\"%2\">").arg(stype).arg(sshape);
+    bool useView   = border->getUseViewSize();
+
+    QString txt = QString("<border type=\"%1\" shape=\"%2\" useViewSize=\"%3\" >").arg(stype)
+                      .arg(sshape).arg((useView) ? "t" : "f");
     ts << txt << endl;
 
     eBorderType btype = border->getBorderType();
@@ -342,11 +358,12 @@ void MosaicWriter::procBorder(QTextStream &ts,BorderPtr border)
         BorderTwoColor * b1 = dynamic_cast<BorderTwoColor*>(border.get());
         Q_ASSERT(b1);
         QColor color1,color2;
-        qreal  width;
-        b1->get(color1,color2,width);
+        qreal  width,length;
+        b1->get(color1,color2,width,length);
         procColor(ts,color1);
         procColor(ts,color2);
         procWidth(ts,width);
+        procLength(ts,length);
         QRectF rect = b1->getRect();
         procRect(ts,rect);
     }
@@ -355,16 +372,16 @@ void MosaicWriter::procBorder(QTextStream &ts,BorderPtr border)
         BorderBlocks * b2 = dynamic_cast<BorderBlocks*>(border.get());
         Q_ASSERT(b2);
         QColor color;
-        qreal  diameter;
         int    rows;
         int    cols;
-        b2->get(color,diameter,rows,cols);
+        qreal  width;
+        b2->get(color,rows,cols,width);
         procColor(ts,color);
-        procWidth(ts,diameter);
         ts << "<rows>" << rows << "</rows>" << endl;
         ts << "<cols>" << cols << "</cols>" << endl;
         QRectF rect = b2->getRect();
         procRect(ts,rect);
+        procWidth(ts,width);
     }
 
     ts << "</border>" << endl;
@@ -402,8 +419,8 @@ bool MosaicWriter::processThick(QTextStream &ts, StylePtr s)
     Qt::PenCapStyle pcs     = th->getCapStyle();
     qreal   outline_width   = th->getOutlineWidth();
     QColor  outline_color   = th->getOutlineColor();
-    ProtoPtr proto      = th->getPrototype();
-    Xform   xf              = th->getCanvasXform();
+    ProtoPtr proto          = th->getPrototype();
+    Xform   xf              = th->getModelXform();
     QString str;
 
     str = "toolkit.GeoLayer";
@@ -448,8 +465,8 @@ bool MosaicWriter::processInterlace(QTextStream & ts, StylePtr s)
     QColor  outline_color   = il->getOutlineColor();
     qreal   gap             = il->getGap();
     qreal   shadow          = il->getShadow();
-    ProtoPtr proto      = il->getPrototype();
-    Xform   xf              = il->getCanvasXform();
+    ProtoPtr proto          = il->getPrototype();
+    Xform   xf              = il->getModelXform();
     bool    startUnder      = il->getInitialStartUnder();
 
     QString str;
@@ -498,8 +515,8 @@ bool MosaicWriter::processOutline(QTextStream &ts, StylePtr s)
     Qt::PenCapStyle pcs   = ol->getCapStyle();
     qreal   outline_width = ol->getOutlineWidth();
     QColor  outline_color = ol->getOutlineColor();
-    ProtoPtr proto    = ol->getPrototype();
-    Xform   xf            = ol->getCanvasXform();
+    ProtoPtr proto        = ol->getPrototype();
+    Xform   xf            = ol->getModelXform();
 
     QString str;
 
@@ -544,8 +561,8 @@ bool MosaicWriter::processFilled(QTextStream &ts, StylePtr s)
     bool    draw_inside     = fl->getDrawInsideBlacks();
     bool    draw_outside    = fl->getDrawOutsideWhites();
 
-    ProtoPtr proto      = fl->getPrototype();
-    Xform   xf              = fl->getCanvasXform();
+    ProtoPtr proto          = fl->getPrototype();
+    Xform   xf              = fl->getModelXform();
 
     QString str;
 
@@ -601,8 +618,8 @@ bool MosaicWriter::processPlain(QTextStream &ts, StylePtr s)
     }
 
     ColorSet * cset     = pl->getColorSet();
-    ProtoPtr proto  = pl->getPrototype();
-    Xform   xf          = pl->getCanvasXform();
+    ProtoPtr proto      = pl->getPrototype();
+    Xform   xf          = pl->getModelXform();
 
     QString str;
 
@@ -634,8 +651,8 @@ bool MosaicWriter::processSketch(QTextStream &ts, StylePtr s)
     }
 
     ColorSet * cset     = sk->getColorSet();
-    ProtoPtr proto  = sk->getPrototype();
-    Xform   xf          = sk->getCanvasXform();
+    ProtoPtr proto      = sk->getPrototype();
+    Xform   xf          = sk->getModelXform();
 
     QString str;
 
@@ -673,8 +690,8 @@ bool MosaicWriter::processEmboss(QTextStream &ts, StylePtr s)
     qreal   outline_width = em->getOutlineWidth();
     QColor  outline_color = em->getOutlineColor();
     qreal   angle         = em->getAngle();
-    ProtoPtr proto    = em->getPrototype();
-    Xform   xf            = em->getCanvasXform();
+    ProtoPtr proto        = em->getPrototype();
+    Xform   xf            = em->getModelXform();
 
     QString str;
 
@@ -718,7 +735,7 @@ bool MosaicWriter::processTileColors(QTextStream &ts, StylePtr s)
     }
 
     ProtoPtr proto  = tc->getPrototype();
-    Xform   xf          = tc->getCanvasXform();
+    Xform   xf          = tc->getModelXform();
 
     QString str;
 
@@ -899,7 +916,7 @@ void MosaicWriter::setPrototype(QTextStream & ts, ProtoPtr pp)
     auto tiling = pp->getTiling();
     if (tiling)
     {
-        ts << "<string>" << pp->getTiling()->getName() << "</string>" << endl;
+        ts << "<string>" << pp->getTiling()->getTitle() << "</string>" << endl;
     }
     else
     {
@@ -927,27 +944,39 @@ void MosaicWriter::setPrototype(QTextStream & ts, ProtoPtr pp)
         switch (motifType)
         {
         case MOTIF_TYPE_STAR:
-            setStar(ts,currentMotifName(motifType),motif);
+            setStar(ts,Sys::getMotifName(motifType),motif);
+            break;
+
+        case MOTIF_TYPE_STAR2:
+            setStar2(ts,Sys::getMotifName(motifType),motif);
             break;
 
         case MOTIF_TYPE_EXTENDED_STAR:
-            setExtendedStar(ts,currentMotifName(motifType),motif);
+            setExtendedStar(ts,Sys::getMotifName(motifType),motif);
+            break;
+
+        case MOTIF_TYPE_EXTENDED_STAR2:
+            setExtendedStar2(ts,Sys::getMotifName(motifType),motif);
             break;
 
         case MOTIF_TYPE_EXTENDED_ROSETTE:
-            setExtendedRosette(ts,currentMotifName(motifType),motif);
+            setExtendedRosette(ts,Sys::getMotifName(motifType),motif);
             break;
 
         case MOTIF_TYPE_ROSETTE:
-            setRosette(ts,currentMotifName(motifType),motif);
+            setRosette(ts,Sys::getMotifName(motifType),motif);
+            break;
+
+        case MOTIF_TYPE_ROSETTE2:
+            setRosette2(ts,Sys::getMotifName(motifType),motif);
             break;
 
         case MOTIF_TYPE_CONNECT_STAR:
-            setStarConnect(ts,currentMotifName(motifType),motif);
+            setStarConnect(ts,Sys::getMotifName(motifType),motif);
             break;
 
         case MOTIF_TYPE_CONNECT_ROSETTE:
-            setRosetteConnect(ts,currentMotifName(motifType),motif);
+            setRosetteConnect(ts,Sys::getMotifName(motifType),motif);
             break;
 
         case MOTIF_TYPE_RADIAL:
@@ -963,7 +992,7 @@ void MosaicWriter::setPrototype(QTextStream & ts, ProtoPtr pp)
         case MOTIF_TYPE_GIRIH:
         case MOTIF_TYPE_IRREGULAR_STAR:
         case MOTIF_TYPE_EXPLCIT_TILE:
-            setExplicitMotif(ts,currentMotifName(motifType),motif);
+            setExplicitMotif(ts,Sys::getMotifName(motifType),motif);
             break;
         }
 
@@ -1019,18 +1048,20 @@ void MosaicWriter::setMotifCommon(QTextStream & ts, MotifPtr motif)
 
     int    bs = eb.getSides();
     qreal bsc = eb.getScale();
+    qreal brt = eb.getRotate();
     qreal fsc = motif->getMotifScale();
     qreal   r = motif->getMotifRotate();
     int     n = motif->getN();
     int ver   = motif->getVersion();
 
     if (ver > 1)
-        ts << "<version>"       << ver << "</version>"       << endl;
-    ts << "<boundarySides>" << bs  <<"</boundarySides>"  << endl;
-    ts << "<boundaryScale>" << bsc << "</boundaryScale>" << endl;
-    ts << "<figureScale>"   << fsc << "</figureScale>"   << endl;
-    ts << "<r>"             << r   << "</r>"             << endl;
-    ts << "<n>"             << n   << "</n>"             << endl;
+    ts << "<version>"        << ver << "</version>"        << endl;
+    ts << "<boundarySides>"  << bs  << "</boundarySides>"  << endl;
+    ts << "<boundaryScale>"  << bsc << "</boundaryScale>"  << endl;
+    ts << "<boundaryRotate>" << brt << "</boundaryRotate>" << endl;
+    ts << "<figureScale>"    << fsc << "</figureScale>"    << endl;
+    ts << "<r>"              << r   << "</r>"              << endl;
+    ts << "<n>"              << n   << "</n>"              << endl;
 }
 
 void MosaicWriter::setExplicitMotif(QTextStream & ts, QString name, MotifPtr motif)
@@ -1060,11 +1091,14 @@ void MosaicWriter::setExplicitMotif(QTextStream & ts, QString name, MotifPtr mot
     case MOTIF_TYPE_UNDEFINED:
     case MOTIF_TYPE_RADIAL:
     case MOTIF_TYPE_ROSETTE:
+    case MOTIF_TYPE_ROSETTE2:
     case MOTIF_TYPE_STAR:
+    case MOTIF_TYPE_STAR2:
     case MOTIF_TYPE_CONNECT_STAR:
     case MOTIF_TYPE_CONNECT_ROSETTE:
     case MOTIF_TYPE_EXTENDED_ROSETTE:
     case MOTIF_TYPE_EXTENDED_STAR:
+    case MOTIF_TYPE_EXTENDED_STAR2:
         fail("Code Error","Not an explicit motif");
         
     case MOTIF_TYPE_EXPLICIT_MAP:
@@ -1150,6 +1184,40 @@ void MosaicWriter::setStar(QTextStream & ts, QString name, MotifPtr fp, bool chi
         ts << "</" << name << ">" << endl;
 }
 
+void MosaicWriter::setStar2(QTextStream & ts, QString name, MotifPtr fp, bool childEnd)
+{
+    Star2Ptr sp = std::dynamic_pointer_cast<Star2>(fp);
+    if (!sp)
+    {
+        fail("Style error","dynamic cast of Star");
+    }
+
+    QString qsid;
+    if (hasReference(sp))
+    {
+        qsid = getStar2Reference(sp);
+    }
+    else
+    {
+        qsid = nextId();
+        setStar2Reference(getRef(),sp);
+    }
+
+    ts << "<" << name << qsid << ">" << endl;
+
+    setMotifCommon(ts, fp);
+
+    qreal  theta = sp->getTheta();
+    int        s = sp->getS();
+    ts << "<angle>" << theta << "</angle>" << endl;
+    ts << "<s>" << s << "</s>" << endl;
+
+    if (childEnd)
+        ts << "</child>" << endl;
+    else
+        ts << "</" << name << ">" << endl;
+}
+
 void MosaicWriter::setExtendedStar(QTextStream & ts, QString name, MotifPtr motif)
 {
     ExtStarPtr sp = std::dynamic_pointer_cast<ExtendedStar>(motif);
@@ -1187,6 +1255,43 @@ void MosaicWriter::setExtendedStar(QTextStream & ts, QString name, MotifPtr moti
     ts << "</" << name << ">" << endl;
 }
 
+void MosaicWriter::setExtendedStar2(QTextStream & ts, QString name, MotifPtr motif)
+{
+    ExtStar2Ptr sp = std::dynamic_pointer_cast<ExtendedStar2>(motif);
+    if (!sp)
+    {
+        fail("Style error","dynamic cast of ExtendedStar");
+    }
+
+    QString qsid;
+    if (hasReference(sp))
+    {
+        qsid = getExtendedStar2Reference(sp);
+    }
+    else
+    {
+        qsid = nextId();
+        setExtendedStar2Reference(getRef(),sp);
+    }
+
+    qreal  theta = sp->getTheta();
+    int        s = sp->getS();
+
+    auto & extender = sp->getExtender();
+    QString  ext_t     = (extender.getExtendPeripheralVertices())    ? "\"t\"" : "\"f\"";
+    QString  ext_not_t = (extender.getExtendFreeVertices()) ? "\"t\"" : "\"f\"";
+    QString  con_bnd_v = (extender.getConnectBoundaryVertices()) ? "\"t\"" : "\"f\"";
+
+    ts << "<" << name << qsid << "  extendPeripherals=" << ext_t << "  extendFreeVertices=" << ext_not_t << "  connectBoundaryVertices=" << con_bnd_v << ">" << endl;
+
+    setMotifCommon(ts, motif);
+
+    ts << "<angle>" << theta << "</angle>" << endl;
+    ts << "<s>" << s << "</s>" << endl;
+
+    ts << "</" << name << ">" << endl;
+}
+
 void MosaicWriter::setRosette(QTextStream & ts, QString name, MotifPtr motif, bool childEnd)
 {
     RosettePtr rp = std::dynamic_pointer_cast<Rosette>(motif);
@@ -1211,12 +1316,61 @@ void MosaicWriter::setRosette(QTextStream & ts, QString name, MotifPtr motif, bo
 
     int s       = rp->getS();
     qreal q     = rp->getQ();
-    qreal k     = rp->getK();
 
     ts << "<q>" << q << "</q>" << endl;
     ts << "<s>" << s << "</s>" << endl;
-    ts << "<k>" << k << "</k>" << endl;
 
+    if (childEnd)
+        ts << "</child>" << endl;
+    else
+        ts << "</" << name << ">" << endl;
+}
+
+void MosaicWriter::setRosette2(QTextStream & ts, QString name, MotifPtr motif, bool childEnd)
+{
+    Rosette2Ptr rp = std::dynamic_pointer_cast<Rosette2>(motif);
+    if (!rp)
+    {
+        fail("Style error","dynamic cast of Rosette");
+    }
+
+    QString qsid;
+    if (hasReference(rp))
+    {
+        qsid = getRosette2Reference(rp);
+    }
+    else
+    {
+        qsid = nextId();
+        setRosette2Reference(getRef(),rp);
+    }
+    ts << "<" << name << qsid << ">" << endl;
+
+    setMotifCommon(ts,motif);
+
+    int s       = rp->getS();
+    qreal x     = rp->getKneeX();
+    qreal y     = rp->getKneeY();
+    eTipType tt = rp->getTipType();
+    QString tip;
+
+    switch (tt)
+    {
+    case TIP_TYPE_OUTER:
+        tip = "out";
+        break;
+    case TIP_TYPE_INNER:
+        tip = "in";
+        break;
+    case TIP_TYPE_ALTERNATE:
+        tip = "alt";
+        break;
+    }
+
+    ts << "<x>" << x << "</x>" << endl;
+    ts << "<y>" << y << "</y>" << endl;
+    ts << "<s>" << s << "</s>" << endl;
+    ts << "<tip>" << tip << "</tip>" << endl;
     if (childEnd)
         ts << "</child>" << endl;
     else
@@ -1243,7 +1397,6 @@ void MosaicWriter::setExtendedRosette(QTextStream & ts, QString name, MotifPtr m
     }
 
     qreal      q = rp->getQ();
-    qreal      k = rp->getK();
     int        s = rp->getS();
 
     auto & extender = rp->getExtender();
@@ -1257,7 +1410,6 @@ void MosaicWriter::setExtendedRosette(QTextStream & ts, QString name, MotifPtr m
 
     ts << "<q>" << q << "</q>" << endl;
     ts << "<s>" << s << "</s>" << endl;
-    ts << "<k>" << k << "</k>" << endl;
 
     ts << "</" << name << ">" << endl;
 }
@@ -1283,7 +1435,7 @@ void MosaicWriter::setRosetteConnect(QTextStream & ts, QString name, MotifPtr mo
     }
     ts << "<" << name << qsid << ">" << endl;
 
-    setRosette(ts,QString("child class=\"%1\"").arg(currentMotifName(MOTIF_TYPE_ROSETTE)),rcp,true);
+    setRosette(ts,QString("child class=\"%1\"").arg(Sys::getMotifName(MOTIF_TYPE_ROSETTE)),rcp,true);
 
     qreal s2 = rcp->getMotifScale();
     ts << "<s>" << s2 << "</s>" << endl;
@@ -1311,7 +1463,7 @@ void MosaicWriter::setStarConnect(QTextStream & ts, QString name, MotifPtr motif
     }
     ts << "<" << name << qsid << ">" << endl;
 
-    setStar(ts,QString("child class=\"%1\"").arg(currentMotifName(MOTIF_TYPE_STAR)),scp,true);
+    setStar(ts,QString("child class=\"%1\"").arg(Sys::getMotifName(MOTIF_TYPE_STAR)),scp,true);
 
     qreal s2 = scp->getMotifScale();
     ts << "<s>" << s2 << "</s>" << endl;
@@ -1320,13 +1472,13 @@ void MosaicWriter::setStarConnect(QTextStream & ts, QString name, MotifPtr motif
 
 bool MosaicWriter::setMap(QTextStream &ts, MapPtr map)
 {
-    qDebug().noquote() << "Writing map" << map->namedSummary();
+    qDebug().noquote() << "Writing map" << map->summary();
 
     bool rv = map->verifyAndFix(true,true);
     if (!rv)
         return false;
-
-    qDebug().noquote() << "Writing map" << map->namedSummary();
+    
+    qDebug().noquote() << "Writing map" << map->summary();
 
     QString qsid;
 
@@ -1357,7 +1509,7 @@ bool MosaicWriter::setMap(QTextStream &ts, MapPtr map)
 void MosaicWriter::setVertices(QTextStream & ts, const QVector<VertexPtr> & vertices)
 {
     ts << "<vertices" << nextId() <<  ">" << endl;
-    for (const auto & v : vertices)
+    for (const auto & v : std::as_const(vertices))
     {
         setVertex(ts,v);
     }
@@ -1367,7 +1519,7 @@ void MosaicWriter::setVertices(QTextStream & ts, const QVector<VertexPtr> & vert
 void MosaicWriter::setEdges(QTextStream & ts, const QVector<EdgePtr> & edges)
 {
     ts << "<edges" << nextId() <<  ">" << endl;
-    for (const auto & edge : edges)
+    for (const auto & edge : std::as_const(edges))
     {
         setEdge(ts,edge);
     }
@@ -1376,9 +1528,8 @@ void MosaicWriter::setEdges(QTextStream & ts, const QVector<EdgePtr> & edges)
 
 void MosaicWriter::setEdgePoly(QTextStream & ts, const EdgePoly & epoly)
 {
-    for (auto it = epoly.begin(); it != epoly.end(); it++)
+    for (auto & ep : std::as_const(epoly))
     {
-        EdgePtr ep = *it;
         VertexPtr v1 = ep->v1;
         VertexPtr v2 = ep->v2;
         if (ep->getType() == EDGETYPE_LINE)
@@ -1464,10 +1615,9 @@ void MosaicWriter::setEdges(QTextStream & ts, QVector<EdgePtr> & qvec)
 {
     ts << "<edges>" << endl;
 
-    for (auto it = qvec.begin(); it != qvec.end(); it++)
+    for (const auto & e : std::as_const(qvec))
     {
         // edge
-        EdgePtr e = *it;
         setEdge(ts,e);      // called from setNeighbour first time
     }
 
@@ -1583,6 +1733,11 @@ bool MosaicWriter::hasReference(ExtStarPtr n)
     return extended_star_ids.contains(n);
 }
 
+bool MosaicWriter::hasReference(ExtStar2Ptr n)
+{
+    return extended_star2_ids.contains(n);
+}
+
 bool MosaicWriter::hasReference(ExtRosettePtr n)
 {
     return extended_rosette_ids.contains(n);
@@ -1638,14 +1793,29 @@ void MosaicWriter::setRosetteReference(int id, RosettePtr ptr)
     rosette_ids[ptr] = id;
 }
 
+void MosaicWriter::setRosette2Reference(int id, Rosette2Ptr ptr)
+{
+    rosette2_ids[ptr] = id;
+}
+
 void MosaicWriter::setStarReference(int id, StarPtr ptr)
 {
     star_ids[ptr] = id;
 }
 
+void MosaicWriter::setStar2Reference(int id, Star2Ptr ptr)
+{
+    star2_ids[ptr] = id;
+}
+
 void MosaicWriter::setExtendedStarReference(int id, ExtStarPtr ptr)
 {
     extended_star_ids[ptr] = id;
+}
+
+void MosaicWriter::setExtendedStar2Reference(int id, ExtStar2Ptr ptr)
+{
+    extended_star2_ids[ptr] = id;
 }
 
 void MosaicWriter::setExtendedRosetteReference(int id, ExtRosettePtr ptr)
@@ -1717,6 +1887,13 @@ QString MosaicWriter::getRosetteReference(RosettePtr ptr)
     return qs;
 }
 
+QString MosaicWriter::getRosette2Reference(Rosette2Ptr ptr)
+{
+    int id =  rosette2_ids.value(ptr);
+    QString qs = QString(" reference=\"%1\"").arg(id);
+    return qs;
+}
+
 QString MosaicWriter::getStarReference(StarPtr ptr)
 {
     int id =  star_ids.value(ptr);
@@ -1724,9 +1901,23 @@ QString MosaicWriter::getStarReference(StarPtr ptr)
     return qs;
 }
 
+QString MosaicWriter::getStar2Reference(Star2Ptr ptr)
+{
+    int id =  star2_ids.value(ptr);
+    QString qs = QString(" reference=\"%1\"").arg(id);
+    return qs;
+}
+
 QString MosaicWriter::getExtendedStarReference(ExtStarPtr ptr)
 {
     int id =  extended_star_ids.value(ptr);
+    QString qs = QString(" reference=\"%1\"").arg(id);
+    return qs;
+}
+
+QString MosaicWriter::getExtendedStar2Reference(ExtStar2Ptr ptr)
+{
+    int id =  extended_star2_ids.value(ptr);
     QString qs = QString(" reference=\"%1\"").arg(id);
     return qs;
 }

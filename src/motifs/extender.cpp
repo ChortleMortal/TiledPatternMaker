@@ -5,8 +5,9 @@
 #include "geometry/edge.h"
 #include "geometry/vertex.h"
 #include "geometry/neighbours.h"
-#include "geometry/point.h"
-#include "misc/utilities.h"
+#include "geometry/geo.h"
+#include "geometry/transform.h"
+#include "tile/tile.h"
 
 Extender::Extender()
 {
@@ -22,12 +23,12 @@ Extender::Extender(const Extender & other)
     connectBoundaryVertices   = other.connectBoundaryVertices;
 }
 
-void Extender::extend(Motif * fig, QTransform Tr)
+void Extender::extend(Motif * motif, QTransform Tr)
 {
-    this->motif = fig;
+    this->motif = motif;
     newVertices.clear();
 
-    auto map = fig->getMotifMap();
+    auto map = motif->getMotifMap();
 
     map->verify();
 
@@ -49,9 +50,9 @@ void Extender::extend(Motif * fig, QTransform Tr)
     map->verify();
 }
 
-void Extender::extendPeripheralMap(MapPtr map)  // is same as extend Peripheral Map - used by rosette
+void Extender::extendPeripheralMap(MapPtr motifMap)  // is same as extend Peripheral Map - used by rosette
 {
-    qDebug().noquote() << "Extender::extendPeripheralMap" << map->summary();
+    qDebug().noquote() << "Extender::extendPeripheralMap" << motifMap->summary();
 
     const ExtendedBoundary & eb = motif->getExtendedBoundary();
 
@@ -66,15 +67,15 @@ void Extender::extendPeripheralMap(MapPtr map)  // is same as extend Peripheral 
     // and p0 is closest to the edge
 
     // the shortest line is the one to insert
-    QVector<EdgePtr> edges = map->getEdges();
-    for (auto & edge  : qAsConst(edges))
+    QVector<EdgePtr> edges = motifMap->getEdges();
+    for (auto & edge  : std::as_const(edges))
     {
         VertexPtr v1 = edge->v1;   // outer
         VertexPtr v2 = edge->v2;   // inner
         QLineF l1(v2->pt,v1->pt);
 
         QPointF intersect;
-        if (extendPeripheralVertices && Point::intersectPoly(l1,fboundary,intersect))
+        if (extendPeripheralVertices && Geo::intersectPoly(l1,fboundary,intersect))
         {
             // l1 intersects boundary
             if (!eb.isCircle())
@@ -82,39 +83,39 @@ void Extender::extendPeripheralMap(MapPtr map)  // is same as extend Peripheral 
                 // polygonal boundary
                 // dont extend lines which already touch boundary
                 QPointF intersect2;
-                if (Point::intersectPoly(l1,eboundary,intersect2))
+                if (Geo::intersectPoly(l1,eboundary,intersect2))
                 {
                     continue;
                 }
                 // extend lines
-                QLineF l2  = Point::extendLine(l1,10.0);      // extends
-                l2         = Point::clipLine(l2,eboundary);   // clips
+                QLineF l2  = Geo::extendLine(l1,10.0);      // extends
+                l2         = Geo::clipLine(l2,eboundary);   // clips
                 QPointF pt = l2.p2();                         // outer
                 // test if this new point is already a vertex
-                VertexPtr newv = map->insertVertex(pt);
+                VertexPtr newv = motifMap->insertVertex(pt);
                 newVertices.push_back(newv);
-                map->insertEdge(v1,newv);
+                motifMap->insertEdge(v1,newv);
             }
             else
             {
                 // circular boundary
                 QPointF a;
                 QPointF b;
-                int points = Utils::circleLineIntersectionPoints(circle,radius,l1,a,b);
+                int points = Geo::circleLineIntersectionPoints(circle,radius,l1,a,b);
                 if (points)
                 {
                     VertexPtr newv;
                     if (!a.isNull())
                     {
-                        newv = map->insertVertex(a);
+                        newv = motifMap->insertVertex(a);
                         newVertices.push_back(newv);
-                        map->insertEdge(v1,newv);
+                        motifMap->insertEdge(v1,newv);
                     }
                     if (!b.isNull())
                     {
-                        newv = map->insertVertex(b);
+                        newv = motifMap->insertVertex(b);
                         newVertices.push_back(newv);
-                        map->insertEdge(v1,newv);
+                        motifMap->insertEdge(v1,newv);
                     }
                 }
             }
@@ -122,8 +123,9 @@ void Extender::extendPeripheralMap(MapPtr map)  // is same as extend Peripheral 
     }
 }
 
-void Extender::extendFreeMap(MapPtr map, QTransform Tr)
+void Extender::extendFreeMap(MapPtr motifMap, QTransform unitRotationTr)
 {
+    qDebug() << "Tile transform" << Transform::toInfoString(unitRotationTr);
     const ExtendedBoundary & eb = motif->getExtendedBoundary();
     int n = motif->getN();
     if (n != eb.getSides())
@@ -133,36 +135,42 @@ void Extender::extendFreeMap(MapPtr map, QTransform Tr)
     }
 
     QPointF tip(1,0);
-    QTransform t = QTransform::fromScale(motif->getMotifScale(),motif->getMotifScale());
-    tip = t.map(tip);
-    VertexPtr v1 = map->getVertex(tip);
-
     QPointF e_tip(1,0);
-    QTransform t2 = QTransform::fromScale(eb.getScale(),eb.getScale());
-    e_tip = t2.map(e_tip);
-    auto newv = map->insertVertex(e_tip);
+
+    QTransform t1 = motif->getDELTransform();
+    tip = t1.map(tip);
+    VertexPtr v1 = motifMap->getVertex(tip);
+    Q_ASSERT(v1);
+
+    QTransform t2 = motif->getTile()->getTransform();
+    QTransform t3 = eb.getTransform();
+    QTransform t4 = t2 * t3;
+    e_tip = t4.map(e_tip);
+    auto newv = motifMap->insertVertex(e_tip);
+    Q_ASSERT(newv);
+
     newVertices.push_back(newv);
-    map->insertEdge(v1,newv);
+    motifMap->insertEdge(v1,newv);
 
     for (int idx = 1; idx < n; idx++)
     {
-        tip   = Tr.map(tip);
-        v1    = map->getVertex(tip);
-        e_tip = Tr.map(e_tip);
-        auto newv = map->insertVertex(e_tip);
+        tip   = unitRotationTr.map(tip);
+        v1    = motifMap->getVertex(tip);
+        e_tip = unitRotationTr.map(e_tip);
+        auto newv = motifMap->insertVertex(e_tip);
         newVertices.push_back(newv);
-        map->insertEdge(v1,newv);
+        motifMap->insertEdge(v1,newv);
     }
 }
 
 // conenct vertices on boundary
-void Extender::connectOuterVertices(MapPtr map)
+void Extender::connectOuterVertices(MapPtr motifMap)
 {
     // this algorithm connects vertices on the same edge
     const ExtendedBoundary & eb = motif->getExtendedBoundary();
-    QVector<QLineF> blines = Utils::polyToLines(eb.getPoly());
+    QVector<QLineF> blines = Geo::polyToLines(eb.getPoly());
 
-    for (const auto & line : blines)
+    for (const auto & line : std::as_const(blines))
     {
         VertexPtr v1;
         VertexPtr v2;
@@ -174,7 +182,7 @@ void Extender::connectOuterVertices(MapPtr map)
                 if (it == newVertices.end())
                     continue;
                 v1  = *it++;
-                if (!Utils::pointOnLine(line,v1->pt))
+                if (!Geo::pointOnLine(line,v1->pt))
                 {
                     v1.reset();
                     continue;
@@ -186,14 +194,14 @@ void Extender::connectOuterVertices(MapPtr map)
                 if (it == newVertices.end())
                     continue;
                 v2  = *it++;
-                if (!Utils::pointOnLine(line,v2->pt))
+                if (!Geo::pointOnLine(line,v2->pt))
                 {
                     v2.reset();
                     continue;
                 }
             }
             // we have v1 and v2
-            map->insertEdge(v1,v2);
+            motifMap->insertEdge(v1,v2);
             v1.reset();
             v2.reset();
         }

@@ -17,9 +17,6 @@ class NeighbourMap
 public:
     explicit NeighbourMap(const QVector<EdgePtr> &edges);
 
-    void build();
-    void resetNmap() { nmap.clear(); }
-
     NeighboursPtr getNeighbours(const VertexPtr & v);
 
     uint rawSize();

@@ -2,6 +2,7 @@
 #include "motifs/irregular_girih_branches.h"
 #include "motifs/motif.h"
 #include "geometry/intersect.h"
+#include "geometry/geo.h"
 #include "geometry/map.h"
 #include "makers/prototype_maker/prototype.h"
 #include "tile/tiling.h"
@@ -77,10 +78,10 @@ IntersectionInfo IrregularGirihBranches::findClosestIntersection(int side, QPoin
         QPointF otherMidPoint = mids[i_side];
 
         QPointF intersection;
-        if ( Loose::zero(Point::dist2ToLine( otherMidPoint, sideMidPoint, sideHalf ) ) )
+        if ( Loose::zero(Geo::dist2ToLine( otherMidPoint, sideMidPoint, sideHalf ) ) )
         {
             // Edge meets directly the other mid-points, so the distance is the shortest possible.
-            intersection = Point::convexSum(otherMidPoint, sideMidPoint, 0.5 );
+            intersection = Geo::convexSum(otherMidPoint, sideMidPoint, 0.5 );
         }
         else
         {
@@ -90,8 +91,8 @@ IntersectionInfo IrregularGirihBranches::findClosestIntersection(int side, QPoin
                 continue;
             }
         }
-
-        qreal dist2 = Point::dist2( intersection, sideMidPoint ) + Point::dist2(intersection, otherMidPoint );
+        
+        qreal dist2 = Geo::dist2( intersection, sideMidPoint ) + Geo::dist2(intersection, otherMidPoint );
         if ( Loose::equals( dist2, info.dist2 ) )
         {
             // In case of absolute equality, we use the nearest side.

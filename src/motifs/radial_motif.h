@@ -22,17 +22,19 @@ class RadialMotif : public Motif
 public:
     virtual ~RadialMotif() {}
 
-    virtual MapPtr  getMotifMap() override; // Get a complete map from unit.
     virtual void    resetMotifMaps() override;
     virtual void    buildMotifMaps() override;
 
+    virtual MapPtr  getMotifMap()    override; // Get a complete map from unit.
+    QTransform getMotifTransform()   override { return QTransform::fromScale(motifScale,motifScale).rotate(motifRotate); };
+
     virtual void    buildUnitMap() = 0;
-    virtual MapPtr  getUnitMap() const { return unitMap; }
 
     virtual void    setN(int n) override;
 
-    qreal           get_don()       { return don; }
-    QTransform      getTransform()  {return Tr;}
+    virtual MapPtr  getUnitMap() const          { return unitMap; }
+    qreal           get_don()                   { return don; }
+    QTransform      getUnitRotationTransform()  {return radialRotationTr;}
 
     static QPointF  getArc( qreal frac );    // Get the point frac of the way around the unit circle.
 
@@ -44,18 +46,19 @@ protected:
     RadialMotif(const Motif & motif, int n);
     RadialMotif(const RadialMotif & motif);
 
-    void        setupRadialTransform();      // Transform for eachradial popint/branch
-    void        replicate();
+    void            setupRadialTransform();      // Transform for eachradial popint/branch
+    virtual void    replicate();
 
     // data
     qreal       d;  // used by star
     int         s;  // used by star + rosette
     qreal       q;  // used by rosette
-    qreal       k;  // used by rosette
+    qreal   kneeX;  // used by rosette2
+    qreal   kneeY;  // used by rosette2
 
     // generated
     qreal       don;
-    QTransform  Tr;
+    QTransform  radialRotationTr;
     MapPtr      unitMap;
 };
 

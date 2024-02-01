@@ -1,0 +1,153 @@
+<?xml version="1.0"?>
+<!-- Written: Wed Dec 27 2023 09:17:26 -->
+<vector id="1" version="17">
+	<design>
+		<size>
+			<width>1044</width>
+			<height>863</height>
+			<zwidth>1500</zwidth>
+			<zheight>927</zheight>
+		</size>
+		<background>
+			<color>#ff000000</color>
+		</background>
+		<Fill singleton="f">-2,2,-2,2</Fill>
+		<BackgroundImage name="IMG_1491.JPG">
+			<Scale>0.3338756425481818</Scale>
+			<Rot>0</Rot>
+			<X>-229</X>
+			<Y>13</Y>
+			<Center>0,0</Center>
+			<Perspective>0.9835014216967216,-0.01089470719717183,-5.096884549410346e-06,-0.1016987598728009,0.8145888765885402,-7.982714689145888e-05,-282.2220629496517,-204.3425078433164,1.021956450727088</Perspective>
+		</BackgroundImage>
+	</design>
+	<style.Thick id="2">
+		<toolkit.GeoLayer>
+			<left__delta>-229</left__delta>
+			<top__delta>13</top__delta>
+			<width__delta>0.3338756425481818</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<string>AlhambraOld1</string>
+					<entry>
+						<Tile id="4">
+							<regular>true</regular>
+							<rotation>18</rotation>
+							<scale>6.399999999999906</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">0.9999999999999999,0.3249196962329063</Point>
+									<Point id="7">0.6180339887498948,0.85065080835204</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">6.438349236688752e-17,1.051462224238267</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">-0.6180339887498947,0.85065080835204</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point id="10">-0.9999999999999999,0.3249196962329064</Point>
+								</Line>
+								<Line>
+									<Point reference="10" />
+									<Point id="11">-1,-0.3249196962329062</Point>
+								</Line>
+								<Line>
+									<Point reference="11" />
+									<Point id="12">-0.6180339887498949,-0.8506508083520398</Point>
+								</Line>
+								<Line>
+									<Point reference="12" />
+									<Point id="13">-1.931504771006626e-16,-1.051462224238267</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point id="14">0.6180339887498946,-0.8506508083520401</Point>
+								</Line>
+								<Line>
+									<Point reference="14" />
+									<Point id="15">0.9999999999999999,-0.3249196962329066</Point>
+								</Line>
+								<Line>
+									<Point reference="15" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</Tile>
+						<Rosette id="16">
+							<boundarySides>10</boundarySides>
+							<boundaryScale>6.4</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
+							<figureScale>1.000000000000015</figureScale>
+							<r>0</r>
+							<n>10</n>
+							<q>0</q>
+							<s>3</s>
+						</Rosette>
+					</entry>
+					<entry>
+						<Tile id="17">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="18">
+								<Line>
+									<Point id="19">5.710405432147417,-7.336301739886888</Point>
+									<Point id="20">9.869377543928554,-7.336301739886887</Point>
+								</Line>
+								<Line>
+									<Point reference="20" />
+									<Point id="21">8.584184482256719,-3.380884211887611</Point>
+								</Line>
+								<Line>
+									<Point reference="21" />
+									<Point id="22">9.869377543928554,0.5745333161116575</Point>
+								</Line>
+								<Line>
+									<Point reference="22" />
+									<Point id="23">5.710405432147418,0.5745333161116499</Point>
+								</Line>
+								<Line>
+									<Point reference="23" />
+									<Point id="24">6.995598493819255,-3.380884211887619</Point>
+								</Line>
+								<Line>
+									<Point reference="24" />
+									<Point reference="19" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularGirih id="25" type="Irregular Girih Motif">
+							<boundarySides>6</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>6</n>
+							<skip>0.6</skip>
+						</IrregularGirih>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff1496d2</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>true</draw__outline>
+			<outline_width>0.51</outline_width>
+			<outline_color>#ffc2bcb0</outline_color>
+			<width>0.14</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+	</style.Thick>
+</vector>

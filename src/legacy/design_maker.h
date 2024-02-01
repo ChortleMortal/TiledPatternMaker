@@ -2,9 +2,11 @@
 #ifndef DESIGNCONTROL_H
 #define DESIGNCONTROL_H
 
-#include <memory>
 #include <QObject>
 #include <QMap>
+#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
+#include <memory>
+#endif
 #include "enums/edesign.h"
 
 typedef std::shared_ptr<class Design> DesignPtr;
@@ -62,7 +64,8 @@ private:
     DesignMaker();
 
     static DesignMaker  * mpThis;
-    class  ViewControl  * view;
+    class  View         * view;
+    class  ViewController  * viewControl;
     class  Configuration* config;
 
     QMap<eDesign,DesignPtr>     availableDesigns;

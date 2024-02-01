@@ -3,6 +3,7 @@
 #define FILESERVICES_H
 
 #include <QMultiMap>
+#include <QDate>
 #include "enums/efilesystem.h"
 
 typedef QMultiMap<QString, QString> tilingUses;     // tiling name, design name
@@ -26,6 +27,7 @@ public:
     static QString     getTilingXMLFile(QString name);             // full path
     static QString     getTileNameFromDesignName(QString designName);
 
+    static QString     stripPath(QString path);
     static QString     getMediaNameOnly(QString name);
     static QString     getNextVersion(eFileType type, QString name);
     static QStringList getFileVersions(QString name, QString rootPath);
@@ -40,9 +42,11 @@ public:
     static QStringList getTemplates();
     static QStringList getMaps();
     static QStringList getPolys();
+    
+    static QDate       getDateFromXMLFile(QString fileName);
 
 private:
-    static QString     getTileNameFromDesignFile(QString designFile);
+    static QString     getTileNameFromMosaicFile(QString mosaicFile);
     static QString     getRoot(QString name);
     static QString     getVersion(QString name);
     static void        addNames(QStringList & names,QString path);  // names only, no extension

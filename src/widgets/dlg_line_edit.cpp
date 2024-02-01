@@ -1,14 +1,20 @@
 #include <QMenu>
 
 #include "widgets/dlg_line_edit.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view.h"
 #include "geometry/edge.h"
 #include "geometry/vertex.h"
+#include "misc/sys.h"
+
+#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
+#include <QDebug>
+#include <QtMath>
+#endif
 
 DlgLineEdit::DlgLineEdit(EdgePoly & epoly, int row, int col) : QLineEdit(),
   _poly(epoly)
 {
-    view = ViewControl::getInstance();
+    view = Sys::view;
 
     setContextMenuPolicy(Qt::CustomContextMenu);
     connect(this, &DlgLineEdit::customContextMenuRequested, this, &DlgLineEdit::slot_menu);

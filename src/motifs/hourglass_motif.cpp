@@ -20,22 +20,22 @@ HourglassMotif::HourglassMotif(const Motif & other) : IrregularStarBranches(othe
 
 void HourglassMotif::buildMotifMaps()
 {
-    Q_ASSERT(tile);
+    Q_ASSERT(getTile());
     motifMap = std::make_shared<Map>("HourglassMotif map");
-    inferHourglass(tile);
-    completeMotif(tile);
+    inferHourglass();
+    scaleAndRotate();
     completeMap();
-    buildMotifBoundary(tile);
+    buildMotifBoundary();
     buildExtendedBoundary();
 }
 
 // Hourglass inferring.
-void HourglassMotif::inferHourglass(TilePtr tile)
+void HourglassMotif::inferHourglass()
 {
     qDebug() << "Infer::inferHourglass";
 
-    corners = tile->getPoints();
-    mids    = tile->getEdgePoly().getMids();
+    corners = getTile()->getPoints();
+    mids    = getTile()->getEdgePoly().getMids();
 
     // Fix the s value to be between [0, side_count / 2 - 1]
     // instead of [1, side_count / 2].
@@ -61,6 +61,6 @@ void HourglassMotif::inferHourglass(TilePtr tile)
     }
 
     //motifMap->transformMap(pmain->getTransform().inverted());
-    qDebug().noquote() << motifMap->namedSummary();
+    qDebug().noquote() << motifMap->summary();
 }
 

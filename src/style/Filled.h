@@ -18,7 +18,7 @@
 // The code to build the faces from the map is contained in
 // geometry.Faces.
 
-class Filled : public Style, public ColorMaker
+class Filled : public Style
 {
     friend class FilledEditor;
     friend class page_system_info;
@@ -34,14 +34,16 @@ public:
 
     void draw(GeoGraphics *gg) override;
 
+    ColorSet   * getWhiteColorSet() { return &colorMaker.whiteColorSet; }
+    ColorSet   * getBlackColorSet() { return &colorMaker.blackColorSet; }
+    ColorGroup * getColorGroup()    { return &colorMaker.colorGroup; }
+
     bool getDrawOutsideWhites() { return draw_outside_whites; }
     bool getDrawInsideBlacks()  { return draw_inside_blacks; }
     void setDrawOutsideWhites(bool draw) { draw_outside_whites = draw; }
     void setDrawInsideBlacks(bool  draw) { draw_inside_blacks  = draw; }
 
-    ColorSet   * getWhiteColorSet() { return &whiteColorSet; }
-    ColorSet   * getBlackColorSet() { return &blackColorSet; }
-    ColorGroup * getColorGroup()    { return &colorGroup; }
+    ColorMaker & getColorMaker() { return colorMaker; };
 
     void    setAlgorithm(int val);
     int     getAlgorithm() { return algorithm; }
@@ -51,11 +53,11 @@ public:
     virtual void       report()       const override { qDebug().noquote() << getStyleDesc(); }
 
 protected:
-    ColorSet    whiteColorSet;
-    ColorSet    blackColorSet;
-    ColorGroup  colorGroup;
+
 
 private:
+    ColorMaker  colorMaker;
+
     void drawDCEL(GeoGraphics *gg);
     void drawDCELNew2(GeoGraphics *gg);
     void drawDCELNew3(GeoGraphics *gg);

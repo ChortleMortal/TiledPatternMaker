@@ -101,7 +101,7 @@ Modes:<br>\
     ESC Normal Mode<br>\
     F1  Help (show this)<br>\
     F2  Adjust View: up/down/left/right/,/./-/= <br>\
-          Use arrow keys to position, +/- keys to rotate. and ./, keys to zoom<br>\
+          Use arrow keys to position,./, keys to rotate. and   +/- keys to zoom<br>\
           Also use 'Set Center' to set center for rotation and zooming\
     F3  Translation Vector Mode<br>\
           Use the mouse to draw the two translation vectors used to tile the plane<br>\
@@ -114,7 +114,9 @@ Modes:<br>\
     F7  Include/Excwlude Polygons Mode<br>\
           Click on polygons to toggle inclusion/exclusion in the tiling<br>\
     F8  Position Mode<br>\
-    F8  Measure Mode<br>\
+    F9  Measure Mode<br>\
+    F10 Unify Mode<br>\
+          Click on each tile to unify (meaning same tile with different position) Press ESC to end<br>\
 <br><br>\
 Actions:<br>\
     A  Add Polygon<br>\

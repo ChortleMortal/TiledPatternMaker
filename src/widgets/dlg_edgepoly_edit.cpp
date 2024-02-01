@@ -6,7 +6,8 @@
 #include "geometry/edge.h"
 #include "geometry/vertex.h"
 #include "makers/tiling_maker/tiling_maker.h"
-#include "viewers/viewcontrol.h"
+#include "misc/sys.h"
+#include "viewers/view_controller.h"
 #include "tile/tile.h"
 
 /////////////////////////////////////////////////////////////////
@@ -165,8 +166,7 @@ void DlgEdgePolyEdit::slot_undo()
 {
     epoly = original2;
 
-    ViewControl * view = ViewControl::getInstance();
-    view->update();
+    Sys::view->update();
 
     reject();
 }

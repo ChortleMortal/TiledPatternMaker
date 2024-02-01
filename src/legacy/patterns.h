@@ -15,7 +15,7 @@ enum eDirection
     CCW
 };
 
-class ViewControl;
+class ViewController;
 
 class Pattern : public LegacyTile
 {
@@ -35,6 +35,7 @@ public:
 
 protected:
     void    nope();
+  //void    identify(Layer * layer, QPolygonF * poly);
 
     qreal   diameter;
     qreal   radius;

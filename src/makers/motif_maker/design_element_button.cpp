@@ -213,7 +213,7 @@ QTransform DesignElementButton::resetViewport(int index, MapPtr map, QRect frame
 
     // This is a cheesy way to string together two streams of points.
 
-    for (auto & vert : qAsConst(map->getVertices()))
+    for (auto & vert : std::as_const(map->getVertices()))
     {
         QPointF p = vert->pt;
         qreal x = p.x();

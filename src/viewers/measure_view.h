@@ -23,8 +23,6 @@ public:
     virtual eViewType iamaLayer() override { return VIEW_MEASURE; };
     virtual QString getStyleDesc() const override { return "Measurer"; }
 
-    virtual void  setCanvasXform(const Xform & xf) override { Q_UNUSED(xf);}
-
     virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
     virtual void slot_mouseDragged(QPointF spt)       override;
     virtual void slot_mouseReleased(QPointF spt)      override;
@@ -38,7 +36,6 @@ private:
     static MeasureView * mpThis;
 
     Configuration * config;
-    ViewControl   * view;
 
     Measure2Ptr           measurement;
     QVector<Measurement*> measurements;

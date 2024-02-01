@@ -11,36 +11,33 @@
 // [1] A.J. Lee, _Islamic Star Patterns_.  Muqarnas 4.
 
 #include <QDebug>
+#include <QtMath>
 #include "motifs/rosette.h"
-#include "geometry/point.h"
+#include "geometry/geo.h"
 #include "geometry/intersect.h"
-#include "geometry/transform.h"
 #include "geometry/map.h"
 
 typedef std::shared_ptr<Rosette>          RosettePtr;
 
 using std::make_shared;
 
-Rosette::Rosette(const Motif & fig,  int nsides, qreal qq, int ss, qreal kk) : RadialMotif(fig, nsides)
+Rosette::Rosette(const Motif & fig,  int nsides, qreal qq, int ss) : RadialMotif(fig, nsides)
 {
     q = q_clamp(qq);
     s = s_clamp(ss);
-    k = kk;
     setMotifType(MOTIF_TYPE_ROSETTE);
 }
 
-Rosette::Rosette(int nsides, qreal qq, int ss, qreal kk) : RadialMotif(nsides)
+Rosette::Rosette(int nsides, qreal qq, int ss) : RadialMotif(nsides)
 {
     q = q_clamp(qq);
     s = s_clamp(ss);
-    k = kk;
     setMotifType(MOTIF_TYPE_ROSETTE);
 }
 
 Rosette::Rosette(const Rosette & other) : RadialMotif(other)
 {
     q     = other.q;
-    k     = other.k;
     s     = other.s;
 }
 
@@ -56,9 +53,6 @@ bool Rosette::equals(const MotifPtr other)
     if (s != otherp->s)
         return false;
 
-    if (k != otherp->k)
-        return  false;
-
     if (!Motif::equals(other))
         return false;
 
@@ -68,11 +62,6 @@ bool Rosette::equals(const MotifPtr other)
 void Rosette::setQ(qreal qq)
 {
     q = q_clamp(qq);
-}
-
-void Rosette::setK(qreal kk)
-{
-    k = kk;
 }
 
 void Rosette::setS(int ss)
@@ -131,12 +120,11 @@ void Rosette::buildUnitMap()
     }
 
     QPointF apoint       = rtip - tip;
-    QPointF norm_up_outer= Point::normalize(up_outer);
-    QPointF stable_isect = (up_outer + (Point::normalize(up_outer)) * (-up_outer.y()) );
+    QPointF norm_up_outer= Geo::normalize(up_outer);
+    QPointF stable_isect = (up_outer + (Geo::normalize(up_outer)) * (-up_outer.y()) );
     QPointF apoint2      = stable_isect - tip;
-    qreal stable_angle   = Point::getAngle(apoint2);
+    qreal stable_angle   = Geo::getAngle(apoint2);
     //qDebug() << "stable_angle:"  << stable_angle  << qRadiansToDegrees(stable_angle);
-    stable_isect.setY(stable_isect.y() - k);    // uses k
 
     if (debugMap)
     {
@@ -145,8 +133,8 @@ void Rosette::buildUnitMap()
         debugMap->insertDebugMark(stable_isect,"stable_isect");
         debugMap->insertDebugMark(apoint2,"apoint2");
     }
-
-    qreal theta = Point::getAngle(apoint);
+    
+    qreal theta = Geo::getAngle(apoint);
     qreal theta2;
     if (q >= 0.0)
     {
@@ -164,8 +152,8 @@ void Rosette::buildUnitMap()
 
     QPointF key_point;
     Intersect::getIntersection(tip, qtip, up_outer, bisector, key_point);
-
-    QPointF key_end = Point::convexSum(key_point, stable_isect, 10.0);
+    
+    QPointF key_end = Geo::convexSum(key_point, stable_isect, 10.0);
 
     // r means something like reverse or the other side of the center line
     QPointF key_r_point(key_point.x(), -key_point.y());
@@ -196,19 +184,9 @@ void Rosette::buildUnitMap()
 
     for( int idx = 1; idx <= sclamp; ++idx )
     {
-        if (k == 0.0)
-        {
-            key_r_point    = Tr.map(key_r_point);
-            key_r_end      = Tr.map(key_r_end);
-        }
-        else
-        {
-            qreal rot      = -Transform::rotation(Tr);
-            QTransform Tr2 = QTransform().rotateRadians(rot);
+        key_r_point    = radialRotationTr.map(key_r_point);
+        key_r_end      = radialRotationTr.map(key_r_end);
 
-            key_r_point    = Tr2.map(key_r_point);
-            key_r_end      = Tr2.map(key_r_end);
-        }
         QLineF key_line(key_point,key_end);
         QLineF key_r_line(key_r_point,key_r_end);
 
@@ -248,15 +226,4 @@ void Rosette::buildUnitMap()
 
     //qDebug().noquote() << "Rosette: epoints =" << epoints.size() << unitMap->getInfo();
     //unitMap->verify("Rosette::buildUnit",false);
-
-    // rotate and scale
-    qreal rotate = qDegreesToRadians(getMotifRotate());
-    unitMap->rotate(rotate);
-    unitMap->scale(getMotifScale());
-
-    if (debugMap)
-    {
-        debugMap->rotate(rotate);
-        debugMap->scale(getMotifScale());
-    }
 }

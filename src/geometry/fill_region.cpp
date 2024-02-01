@@ -22,7 +22,7 @@
 #include "tile/tiling.h"
 
 
-FillRegion::FillRegion(TilingPtr tiling, const FillData &fd)
+FillRegion::FillRegion(Tiling *tiling, const FillData &fd)
 {
     this->tiling = tiling;
     fillData     = fd;

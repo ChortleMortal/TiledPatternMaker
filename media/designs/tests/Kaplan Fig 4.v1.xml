@@ -1,0 +1,115 @@
+<?xml version="1.0"?>
+<!-- Written: Sat Oct 14 2023 16:34:36 -->
+<vector id="1" version="16">
+	<design>
+		<size>
+			<width>1500</width>
+			<height>927</height>
+			<zwidth>1500</zwidth>
+			<zheight>927</zheight>
+		</size>
+		<background>
+			<color>#ff000000</color>
+		</background>
+		<Fill singleton="f">-3,3,-3,3</Fill>
+		<BackgroundImage name="Screenshot 2023-10-11 170125.png">
+			<Scale>1</Scale>
+			<Rot>0</Rot>
+			<X>0</X>
+			<Y>0</Y>
+			<Center>0,0</Center>
+		</BackgroundImage>
+	</design>
+	<style.Thick id="2">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<string>Kaplan Fig 4</string>
+					<entry>
+						<Tile id="4">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1.2</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">0.9999999999999999,0.2679491924311226</Point>
+									<Point id="7">0.7320508075688773,0.7320508075688773</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">0.2679491924311229,0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">-0.2679491924311225,0.9999999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point id="10">-0.7320508075688772,0.7320508075688773</Point>
+								</Line>
+								<Line>
+									<Point reference="10" />
+									<Point id="11">-0.9999999999999998,0.267949192431123</Point>
+								</Line>
+								<Line>
+									<Point reference="11" />
+									<Point id="12">-1,-0.2679491924311223</Point>
+								</Line>
+								<Line>
+									<Point reference="12" />
+									<Point id="13">-0.7320508075688776,-0.7320508075688769</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point id="14">-0.2679491924311235,-0.9999999999999997</Point>
+								</Line>
+								<Line>
+									<Point reference="14" />
+									<Point id="15">0.2679491924311222,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="15" />
+									<Point id="16">0.7320508075688771,-0.7320508075688774</Point>
+								</Line>
+								<Line>
+									<Point reference="16" />
+									<Point id="17">0.9999999999999997,-0.2679491924311235</Point>
+								</Line>
+								<Line>
+									<Point reference="17" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExtendedStar id="18" extendPeripherals="t" extendFreeVertices="f" connectBoundaryVertices="t">
+							<boundarySides>12</boundarySides>
+							<boundaryScale>1.56</boundaryScale>
+							<figureScale>1.04</figureScale>
+							<r>15</r>
+							<n>12</n>
+							<d>3.87</d>
+							<s>1</s>
+						</ExtendedStar>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ffff0000</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.01</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+	</style.Thick>
+</vector>

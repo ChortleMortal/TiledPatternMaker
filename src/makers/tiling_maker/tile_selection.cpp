@@ -53,7 +53,7 @@ TileSelector::TileSelector(QPointF pt)
 TileSelector::TileSelector(PlacedTilePtr pfp)
 {
     this->pfp  = pfp;
-    pt = pfp->getTransform().map(pfp->getTile()->getCenter()); // FIXME is this  right
+    pt = pfp->getTransform().map(pfp->getTile()->getCenter()); // TODO is this  right
 }
 
 TileSelector::TileSelector(PlacedTilePtr pfp, QPointF pt)

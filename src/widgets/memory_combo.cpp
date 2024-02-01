@@ -16,7 +16,7 @@ void MemoryCombo::initialise()
     unsigned int index =0;
     QSettings s;
     QStringList itemList = s.value(name,"").toStringList();
-    for (auto & file : itemList)
+    for (auto & file : std::as_const(itemList))
     {
         if (!file.isEmpty())
         {

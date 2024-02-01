@@ -22,7 +22,7 @@
 
 #include "motifs/irregular_tools.h"
 #include "motifs/motif.h"
-#include "geometry/point.h"
+#include "geometry/geo.h"
 #include "geometry/edgepoly.h"
 #include "tile/placed_tile.h"
 #include "tile/tiling.h"
@@ -66,13 +66,13 @@ IntersectionInfo::IntersectionInfo( int side, int otherSide, bool otherIsLeft, q
 bool  IntersectionInfo::equals( IntersectionInfo & other )
 {
     qreal diff = dist2 - other.dist2;
-    return diff > -Point::TOLERANCE2 && diff < Point::TOLERANCE2;
+    return diff > -Sys::TOLSQ && diff < Sys::TOLSQ;
 }
 
 int  IntersectionInfo::compareTo(  IntersectionInfo & other )
 {
     qreal diff = dist2 - other.dist2;
-    return diff < -Point::TOLERANCE2 ? -1  : diff >  Point::TOLERANCE2 ?  1 : 0;
+    return diff < -Sys::TOLSQ ? -1  : diff >  Sys::TOLSQ ?  1 : 0;
 }
 
 // The information about one point of contact on the boundary of the region being inferred.
@@ -82,7 +82,7 @@ Contact::Contact(QPointF position, QPointF other)
     this->other    = other;
 
     QPointF pt     = position - other;
-    pt             = Point::normalize(pt);
+    pt             = Geo::normalize(pt);
     pt            *= 100.0;
     end            = position + pt;
 

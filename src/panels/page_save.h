@@ -4,6 +4,8 @@
 
 #include "panels/panel_page.h"
 
+class TilingMonitor;
+
 class page_save : public panel_page
 {
     Q_OBJECT
@@ -16,8 +18,6 @@ public:
     void onRefresh() override;
 
 signals:
-    void sig_saveMosaic(QString name);
-    void sig_saveTiling(QString name);
 
 public slots:
     void slot_saveTiling();
@@ -44,6 +44,8 @@ private:
     QTextEdit   * tile_desc;
     QLineEdit   * tile_author;
     QLabel      * requiresSave;
+
+    TilingMonitor * tilingMonitor;
 };
 
 #endif

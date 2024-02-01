@@ -7,6 +7,7 @@
 
 class AQPushButton;
 class AQTableWidget;
+class BackgroundImageView;
 
 class page_backgrounds : public panel_page
 {
@@ -24,6 +25,7 @@ public:
 
 private slots:
     void slot_loadBackground();
+    void slot_removeBackground();
     void slot_startSkewAdjustment(bool checked);
     void slot_adjustBackground();
     void slot_saveAdjustedBackground();
@@ -37,17 +39,16 @@ protected:
     void setupBackground(Xform xform);
     void displayBackgroundStatus(bool force);
     void selectColor(int row);
+    void reInitBkgdColors(QColor bcolor);
 
 private:
-    class BackgroundImageView * bip;
-
-    LayoutTransform bkgdLayout;
-    AQPushButton  * startAdjustBtn;
-    QCheckBox     * chk_useAdjusted;
-    QLineEdit     * imageName;
-    QGroupBox     * bkgdImageGroup;
-    QGroupBox     * bkgdColorGroup;
-    AQTableWidget * viewTable;
+    BackgroundImageView * bview;
+    LayoutTransform       bkgdLayout;
+    AQPushButton        * startAdjustBtn;
+    QCheckBox           * chk_useAdjusted;
+    QLineEdit           * imageName;
+    QCheckBox           * chkShowBkgd;
+    AQTableWidget       * viewTable;
 };
 
 #endif // PAGE_BACKGROUNDS

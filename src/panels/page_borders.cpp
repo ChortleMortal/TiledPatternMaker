@@ -5,6 +5,7 @@
 #include <QMessageBox>
 
 #include "panels/page_borders.h"
+#include "enums/eborder.h"
 #include "geometry/crop.h"
 #include "makers/mosaic_maker/mosaic_maker.h"
 #include "makers/map_editor/map_editor.h"
@@ -13,15 +14,15 @@
 #include "mosaic/mosaic.h"
 #include "panels/controlpanel.h"
 #include "viewers/border_view.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view_controller.h"
 #include "widgets/layout_sliderset.h"
 
 using std::string;
 using std::make_shared;
 
-page_borders::page_borders(ControlPanel * apanel)  : panel_page(apanel,"Border Maker")
+page_borders::page_borders(ControlPanel * apanel)  : panel_page(apanel,PAGE_BORDER_MAKER,"Border Maker")
 {
-    brview = BorderView::getInstance();
+    borderView = BorderView::getInstance();
 
     // create button
     QPushButton * pbLoadCrop = new QPushButton("Load from Crop");
@@ -39,6 +40,9 @@ page_borders::page_borders(ControlPanel * apanel)  : panel_page(apanel,"Border M
 
     // border selection
     QLabel * label2 = new QLabel("Border Shape");
+    chkUseViewSize  = new QCheckBox("Use view size");
+
+    connect(chkUseViewSize,   &QCheckBox::clicked, this, &page_borders::slot_useViewSzChanged);
 
     // border shapes
     cropTypes = new AQComboBox();
@@ -51,6 +55,7 @@ page_borders::page_borders(ControlPanel * apanel)  : panel_page(apanel,"Border M
     hbox2->addWidget(label2);
     hbox2->addWidget(cropTypes);
     hbox2->addSpacing(21);
+    hbox2->addWidget(chkUseViewSize);
     hbox2->addStretch();
 
     // stacked layout
@@ -132,18 +137,17 @@ QWidget * page_borders::createBorderTypeNone()
 
 QWidget * page_borders::createBorderTypePlain()
 {
-    borderWidth[0] = new DoubleSpinSet("Width",10,1,999);
-
-    borderColorLabel[0] = new QLabel("Border Color");
-    borderColor[0]      = new QLineEdit();
-    borderColorPatch[0] = new ClickableLabel;
-    borderColorPatch[0]->setMinimumWidth(75);
+    borderWidth[BORDER_PLAIN]      = new DoubleSpinSet("Width",10,1,999);
+    borderColorLabel[BORDER_PLAIN] = new QLabel("Border Color");
+    borderColor[BORDER_PLAIN]      = new QLineEdit();
+    borderColorPatch[BORDER_PLAIN] = new ClickableLabel;
+    borderColorPatch[BORDER_PLAIN]->setMinimumWidth(75);
 
     QHBoxLayout * hbox = new QHBoxLayout;
-    hbox->addLayout(borderWidth[0]);
-    hbox->addWidget(borderColorLabel[0]);
-    hbox->addWidget(borderColor[0]);
-    hbox->addWidget(borderColorPatch[0]);
+    hbox->addLayout(borderWidth[BORDER_PLAIN]);
+    hbox->addWidget(borderColorLabel[BORDER_PLAIN]);
+    hbox->addWidget(borderColor[BORDER_PLAIN]);
+    hbox->addWidget(borderColorPatch[BORDER_PLAIN]);
     hbox->addStretch();
 
     QVBoxLayout * vbox = new QVBoxLayout;
@@ -151,17 +155,17 @@ QWidget * page_borders::createBorderTypePlain()
     vbox->addStretch();
 
     // initial values
-    borderWidth[0]->setValue(20.0);
+    borderWidth[BORDER_PLAIN]->setValue(60.0);
 
     QColor color(Qt::blue);
-    borderColor[0]->setText(color.name(QColor::HexArgb));
+    borderColor[BORDER_PLAIN]->setText(color.name(QColor::HexArgb));
     QVariant variant = color;
     QString colcode  = variant.toString();
-    borderColorPatch[0]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+    borderColorPatch[BORDER_PLAIN]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
 
-    connect(borderWidth[0],         &DoubleSpinSet::valueChanged,   this,   &page_borders::slot_borderWidthChanged);
-    connect(borderColorPatch[0],    &ClickableLabel::clicked,       this,   &page_borders::slot_pickBorderColor);
-    connect(borderColor[0],         &QLineEdit::textChanged,        this,   [this] { slot_borderColorChanged(borderColor[0]); });
+    connect(borderWidth[BORDER_PLAIN],         &DoubleSpinSet::valueChanged,   this,   &page_borders::slot_borderWidthChanged);
+    connect(borderColorPatch[BORDER_PLAIN],    &ClickableLabel::clicked,       this,   &page_borders::slot_pickBorderColor);
+    connect(borderColor[BORDER_PLAIN],         &QLineEdit::textChanged,        this,   [this] { slot_borderColorChanged(borderColor[BORDER_PLAIN]); });
 
     QWidget * w = new QWidget;
     w->setLayout(vbox);
@@ -170,32 +174,37 @@ QWidget * page_borders::createBorderTypePlain()
 
 QWidget * page_borders::createBorderType2Color()
 {
-    borderWidth[1] = new DoubleSpinSet("Width",10,1,999);
+    borderWidth[BORDER_TWO_COLOR] = new DoubleSpinSet("Width",10,0.1,99);
+    borderWidth[BORDER_TWO_COLOR]->setSingleStep(0.1);
 
-    borderColorLabel[1] = new QLabel("Border Color 1");
-    borderColor[1]      = new QLineEdit();
-    borderColorPatch[1] = new ClickableLabel;
-    borderColorPatch[1]->setMinimumWidth(75);
+    borderLength                  = new DoubleSpinSet("Segement len",1.5,0.1,9.9);
+    borderLength->setSingleStep(0.1);
 
-    borderColorLabel[2] = new QLabel("Border Color 2");
-    borderColor[2]      = new QLineEdit();
-    borderColorPatch[2] = new ClickableLabel;
-    borderColorPatch[2]->setMinimumWidth(75);
+    borderColorLabel[BORDER_PLAIN] = new QLabel("Border Color 1");
+    borderColor[BORDER_PLAIN]      = new QLineEdit();
+    borderColorPatch[BORDER_PLAIN] = new ClickableLabel;
+    borderColorPatch[BORDER_PLAIN]->setMinimumWidth(75);
+
+    borderColorLabel[BORDER_TWO_COLOR] = new QLabel("Border Color 2");
+    borderColor[BORDER_TWO_COLOR]      = new QLineEdit();
+    borderColorPatch[BORDER_TWO_COLOR] = new ClickableLabel;
+    borderColorPatch[BORDER_TWO_COLOR]->setMinimumWidth(75);
 
     QHBoxLayout * hbox = new QHBoxLayout;
-    hbox->addLayout(borderWidth[1]);
+    hbox->addLayout(borderWidth[BORDER_TWO_COLOR]);
+    hbox->addLayout(borderLength);
     hbox->addStretch();
 
     QHBoxLayout * hbox1 = new QHBoxLayout;
-    hbox1->addWidget(borderColorLabel[1]);
-    hbox1->addWidget(borderColor[1]);
-    hbox1->addWidget(borderColorPatch[1]);
+    hbox1->addWidget(borderColorLabel[BORDER_PLAIN]);
+    hbox1->addWidget(borderColor[BORDER_PLAIN]);
+    hbox1->addWidget(borderColorPatch[BORDER_PLAIN]);
     hbox1->addStretch();
 
     QHBoxLayout * hbox2 = new QHBoxLayout;
-    hbox2->addWidget(borderColorLabel[2]);
-    hbox2->addWidget(borderColor[2]);
-    hbox2->addWidget(borderColorPatch[2]);
+    hbox2->addWidget(borderColorLabel[BORDER_TWO_COLOR]);
+    hbox2->addWidget(borderColor[BORDER_TWO_COLOR]);
+    hbox2->addWidget(borderColorPatch[BORDER_TWO_COLOR]);
     hbox2->addStretch();
 
     QVBoxLayout * vbox = new QVBoxLayout;
@@ -204,25 +213,27 @@ QWidget * page_borders::createBorderType2Color()
     vbox->addLayout(hbox2);
 
     // initial values
-    borderWidth[1]->setValue(20);
+    borderWidth[BORDER_TWO_COLOR]->setValue(0.3);
+    borderLength->setValue(1.0);
 
     QColor color1(0xa2,0x79,0x67);
-    borderColor[1]->setText(color1.name(QColor::HexArgb));
+    borderColor[BORDER_PLAIN]->setText(color1.name(QColor::HexArgb));
     QVariant variant = color1;
     QString colcode  = variant.toString();
-    borderColorPatch[1]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+    borderColorPatch[BORDER_PLAIN]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
 
     QColor color2(TileWhite);
-    borderColor[2]->setText(color2.name(QColor::HexArgb));
+    borderColor[BORDER_TWO_COLOR]->setText(color2.name(QColor::HexArgb));
     variant = color2;
     colcode  = variant.toString();
-    borderColorPatch[2]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+    borderColorPatch[BORDER_TWO_COLOR]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
 
-    connect(borderWidth[1],     &DoubleSpinSet::valueChanged,     this, &page_borders::slot_borderWidthChanged);
-    connect(borderColorPatch[1],&ClickableLabel::clicked,         this, &page_borders::slot_pickBorderColor);
-    connect(borderColorPatch[2],&ClickableLabel::clicked,         this, &page_borders::slot_pickBorderColor2);
-    connect(borderColor[1],     &QLineEdit::textChanged,          this,   [this] { slot_borderColorChanged(borderColor[1]); });
-    connect(borderColor[2],     &QLineEdit::textChanged,          this,   [this] { slot_borderColorChanged(borderColor[2]); });
+    connect(borderWidth[BORDER_TWO_COLOR],      &DoubleSpinSet::valueChanged,     this, &page_borders::slot_borderWidthChanged);
+    connect(borderLength,                       &DoubleSpinSet::valueChanged,     this, &page_borders::slot_borderLengthChanged);
+    connect(borderColorPatch[BORDER_PLAIN],     &ClickableLabel::clicked,         this, &page_borders::slot_pickBorderColor);
+    connect(borderColorPatch[BORDER_TWO_COLOR], &ClickableLabel::clicked,         this, &page_borders::slot_pickBorderColor2);
+    connect(borderColor[BORDER_PLAIN],          &QLineEdit::textChanged,          this,   [this] { slot_borderColorChanged(borderColor[BORDER_PLAIN]); });
+    connect(borderColor[BORDER_TWO_COLOR],      &QLineEdit::textChanged,          this,   [this] { slot_borderColor2Changed(borderColor[BORDER_TWO_COLOR]); });
 
     QWidget * w = new QWidget;
     w->setLayout(vbox);
@@ -231,25 +242,26 @@ QWidget * page_borders::createBorderType2Color()
 
 QWidget   * page_borders::createBorderTypeBlocks()
 {
-    borderWidth[2] = new DoubleSpinSet("Width",150,10,999);
-    borderRows     = new SpinSet("Rows",5,0,99);
-    borderCols =     new SpinSet("Cols",5,0,99);
+    borderWidth[BORDER_BLOCKS] = new DoubleSpinSet("Width",10.0,0.1,99);
+    borderWidth[BORDER_BLOCKS]->setSingleStep(0.1);
+    borderRows                 = new SpinSet("Rows",5,0,99);
+    borderCols                 = new SpinSet("Cols",5,0,99);
 
     QHBoxLayout * hbox1 = new QHBoxLayout;
-    hbox1->addLayout(borderWidth[2]);
+    hbox1->addLayout(borderWidth[BORDER_BLOCKS]);
     hbox1->addLayout(borderRows);
     hbox1->addLayout(borderCols);
     hbox1->addStretch();
 
-    borderColorLabel[3] = new QLabel("Border Color");
-    borderColor[3]      = new QLineEdit();
-    borderColorPatch[3] = new ClickableLabel;
-    borderColorPatch[3]->setMinimumWidth(75);
+    borderColorLabel[BORDER_BLOCKS] = new QLabel("Border Color");
+    borderColor[BORDER_BLOCKS]      = new QLineEdit();
+    borderColorPatch[BORDER_BLOCKS] = new ClickableLabel;
+    borderColorPatch[BORDER_BLOCKS]->setMinimumWidth(75);
 
     QHBoxLayout * hbox2 = new QHBoxLayout;
-    hbox2->addWidget(borderColorLabel[3]);
-    hbox2->addWidget(borderColor[3]);
-    hbox2->addWidget(borderColorPatch[3]);
+    hbox2->addWidget(borderColorLabel[BORDER_BLOCKS]);
+    hbox2->addWidget(borderColor[BORDER_BLOCKS]);
+    hbox2->addWidget(borderColorPatch[BORDER_BLOCKS]);
     hbox2->addStretch();
 
     QVBoxLayout * vbox = new QVBoxLayout;
@@ -258,21 +270,21 @@ QWidget   * page_borders::createBorderTypeBlocks()
     vbox->addStretch();
 
     // initial values
-    borderWidth[2]->setValue(150);
+    borderWidth[BORDER_BLOCKS]->setValue(1.5);
     borderRows->setValue(9);
     borderCols->setValue(11);
 
     QColor color(0xa2,0x79,0x67);
-    borderColor[3]->setText(color.name(QColor::HexArgb));
+    borderColor[BORDER_BLOCKS]->setText(color.name(QColor::HexArgb));
     QVariant variant = color;
     QString colcode  = variant.toString();
-    borderColorPatch[3]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+    borderColorPatch[BORDER_BLOCKS]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
 
-    connect(borderWidth[2],     &DoubleSpinSet::valueChanged,     this, &page_borders::slot_borderWidthChanged);
-    connect(borderRows,         &SpinSet::valueChanged,           this, &page_borders::slot_borderRowsChanged);
-    connect(borderCols,         &SpinSet::valueChanged,           this, &page_borders::slot_borderColsChanged);
-    connect(borderColorPatch[3],&ClickableLabel::clicked,         this, &page_borders::slot_pickBorderColor);
-    connect(borderColor[3],     &QLineEdit::textChanged,          this,   [this] { slot_borderColorChanged(borderColor[3]); });
+    connect(borderWidth[BORDER_BLOCKS],     &DoubleSpinSet::valueChanged,     this, &page_borders::slot_borderWidthChanged);
+    connect(borderRows,                     &SpinSet::valueChanged,           this, &page_borders::slot_borderRowsChanged);
+    connect(borderCols,                     &SpinSet::valueChanged,           this, &page_borders::slot_borderColsChanged);
+    connect(borderColorPatch[BORDER_BLOCKS],&ClickableLabel::clicked,         this, &page_borders::slot_pickBorderColor);
+    connect(borderColor[BORDER_BLOCKS],     &QLineEdit::textChanged,          this,   [this] { slot_borderColorChanged(borderColor[BORDER_BLOCKS]); });
 
     QWidget * w = new QWidget;
     w->setLayout(vbox);
@@ -288,7 +300,7 @@ QWidget * page_borders::createUndefinedShapeWidget()
 
 QWidget * page_borders::createRectShapeWidget()
 {
-    rectBoundaryLayout = new LayoutQRectF("Outer Boundary (screen units):");
+    rectBoundaryLayout = new LayoutQRectF("Model Units:");
 
     // initial value
     QSize sz = view->size();
@@ -346,27 +358,37 @@ QWidget * page_borders::createPolyShapeWidget()
 ////////////////////////////////
 
 void page_borders::onEnter()
-{}
+{
+    panel->pushPanelStatus("Left-click inside crop to display and move");
+}
+
+void page_borders::onExit()
+{
+    panel->popPanelStatus();
+}
 
 // refresh updates the page from the mosaic
 void  page_borders::onRefresh()
 {
     auto border = getMosaicBorder();
-    if (!border)
+
+    blockPage(true);
+    if (border)
     {
-        blockPage(true);
+        chkUseViewSize->setChecked(border->getUseViewSize());
+        refreshBorderType(border);
+        refreshBorderCrop(border);
+    }
+    else
+    {
         cropTypes->select(CROP_UNDEFINED);
         cropTypeStack->setCurrentIndex(CROP_UNDEFINED);
         borderTypes->select(BORDER_NONE);
         borderTypeStack->setCurrentIndex(BORDER_NONE);
-        blockPage(false);
-        return;
+        chkUseViewSize->setChecked(false);
     }
-
-    blockPage(true);
-    refreshBorderType(border);
-    refreshBorderCrop(border);
     blockPage(false);
+
 }
 
 void page_borders::refreshBorderType(BorderPtr border)
@@ -379,36 +401,39 @@ void page_borders::refreshBorderType(BorderPtr border)
     if (btype == BORDER_PLAIN)
     {
         qreal w = border->getWidth();
-        borderWidth[0]->setValue(w);
+        borderWidth[BORDER_PLAIN]->setValue(w);
 
         QColor qc = border->getColor();
-        borderColor[0]->setText(qc.name(QColor::HexArgb));
+        borderColor[BORDER_PLAIN]->setText(qc.name(QColor::HexArgb));
 
         QVariant variant = qc;
         QString colcode  = variant.toString();
-        borderColorPatch[0]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+        borderColorPatch[BORDER_PLAIN]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
     }
     else if (btype == BORDER_TWO_COLOR)
     {
         qreal w = border->getWidth();
-        borderWidth[1]->setValue(w);
+        borderWidth[BORDER_TWO_COLOR]->setValue(w);
 
         QColor qc = border->getColor();
-        borderColor[1]->setText(qc.name(QColor::HexArgb));
+        borderColor[BORDER_PLAIN]->setText(qc.name(QColor::HexArgb));
 
         QVariant variant = qc;
         QString colcode  = variant.toString();
-        borderColorPatch[1]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+        borderColorPatch[BORDER_PLAIN]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
 
         auto bp2 = dynamic_cast<BorderTwoColor*>(border.get());
         if (bp2)
         {
+            qreal len = bp2->getLength();
+            borderLength->setValue(len);
+
             qc = bp2->getColor2();
-            borderColor[2]->setText(qc.name(QColor::HexArgb));
+            borderColor[BORDER_TWO_COLOR]->setText(qc.name(QColor::HexArgb));
 
             variant = qc;
             colcode  = variant.toString();
-            borderColorPatch[2]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+            borderColorPatch[BORDER_TWO_COLOR]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
         }
     }
     else if (btype == BORDER_BLOCKS)
@@ -417,20 +442,20 @@ void page_borders::refreshBorderType(BorderPtr border)
         if (bp3)
         {
             QColor  qc;
-            qreal   width;
             int     rows;
             int     cols;
-            bp3->get(qc, width, rows, cols);
+            qreal   width;
+            bp3->get(qc, rows, cols, width);
 
             borderRows->setValue(rows);
             borderCols->setValue(cols);
-            borderWidth[2]->setValue(width);
+            borderWidth[BORDER_BLOCKS]->setValue(width);
 
-            borderColor[3]->setText(qc.name(QColor::HexArgb));
+            borderColor[BORDER_BLOCKS]->setText(qc.name(QColor::HexArgb));
 
             QVariant variant = qc;
             QString colcode  = variant.toString();
-            borderColorPatch[3]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+            borderColorPatch[BORDER_BLOCKS]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
         }
     }
 }
@@ -461,8 +486,6 @@ void page_borders::slot_loadFromCrop()
 {
     if (pageBlocked()) return;
 
-    // real crops are in model units
-    // howeaver border crops are in screen units
     auto mosaic = mosaicMaker->getMosaic();
     if (!mosaic)
     {
@@ -474,8 +497,8 @@ void page_borders::slot_loadFromCrop()
         return;
     }
 
-   CropPtr mosCrop = mosaic->getCrop();
-    if (!mosCrop)
+   CropPtr mosaicCrop = mosaic->getCrop();
+    if (!mosaicCrop)
     {
         QMessageBox box(panel);
         box.setIcon(QMessageBox::Warning);
@@ -485,37 +508,56 @@ void page_borders::slot_loadFromCrop()
         return;
     }
 
+    BorderPtr border =mosaic->getBorder();
+    if (!border || border->getBorderType() == BORDER_NONE)
+    {
+        QMessageBox box(panel);
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Please select a Border Type before applying crop dimensions");
+        box.setStandardButtons(QMessageBox::Ok);
+        box.exec();
+        return;
+    }
+
     // convert crop
-    auto newCrop = make_shared<Crop>();
-    switch (mosCrop->getCropType())
+    CropPtr borderCrop = std::dynamic_pointer_cast<Crop>(border);
+    Q_ASSERT(borderCrop);
+
+    if (mosaicCrop->getCropType() != borderCrop->getCropType())
+    {
+        QMessageBox box(panel);
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Border Crop Type <%1> does not match Mosaic Crop Type <%2>");
+        box.setStandardButtons(QMessageBox::Ok);
+        box.exec();
+        return;
+    }
+
+    switch (mosaicCrop->getCropType())
     {
     case CROP_RECTANGLE:
     {
-        auto rect = brview->worldToScreen(mosCrop->getRect());
-        newCrop->setRect(rect);
+        auto rect = mosaicCrop->getRect();
+        borderCrop->setRect(rect);
     }   break;
 
     case CROP_CIRCLE:
     {
-        Circle c = mosCrop->getCircle();
-        c = brview->worldToScreen(c);
-        newCrop->setCircle(c);
+        Circle c = mosaicCrop->getCircle();
+        borderCrop->setCircle(c);
     }   break;
 
     case CROP_POLYGON:
     {
-        auto poly = brview->worldToScreen(mosCrop->getPolygon());
-        newCrop->setPolygon(poly);
+        auto poly = mosaicCrop->getPolygon();
+        borderCrop->setPolygon(poly);
     }   break;
 
     case CROP_UNDEFINED:
         break;
     }
 
-    // new border
-    auto border = make_shared<BorderPlain>(newCrop,7,QColor(Qt::red));     // HACK
-    border->construct();
-    mosaic->setBorder(border);
+    border->setRequiresConstruction(true);
 
     emit sig_refreshView();
 
@@ -549,9 +591,10 @@ void page_borders::createBorder()
         {
         case CROP_RECTANGLE:
         {
-            qreal width  = borderWidth[0]->value();
-            QColor color(borderColor[0]->text());
+            qreal width  = borderWidth[BORDER_PLAIN]->value();
+            QColor color(borderColor[BORDER_PLAIN]->text());
             QRectF rect  = rectBoundaryLayout->get();
+
             auto bp = make_shared<BorderPlain>(rect,width,color);
             bp->construct();
             mosaic->setBorder(bp);
@@ -560,11 +603,12 @@ void page_borders::createBorder()
 
         case CROP_CIRCLE:
         {
-            QColor color(borderColor[0]->text());
-            qreal width  = borderWidth[0]->value();
+            QColor color(borderColor[BORDER_PLAIN]->text());
+            qreal width  = borderWidth[BORDER_PLAIN]->value();
             QPointF pt   = centre->get();
             qreal   r    = radius->value();
             Circle c(pt,r);
+
             auto bp = make_shared<BorderPlain>(c,width,color);
             bp->construct();
             mosaic->setBorder(bp);
@@ -579,26 +623,28 @@ void page_borders::createBorder()
     }
     case BORDER_TWO_COLOR:
     {
-        qreal width  = borderWidth[1]->value();
+        qreal width  = borderWidth[BORDER_TWO_COLOR]->value();
+        qreal length = borderLength->value();
         QRectF rect  = rectBoundaryLayout->get();
-        QColor color1(borderColor[1]->text());
-        QColor color2(borderColor[2]->text());
+        QColor color1(borderColor[BORDER_PLAIN]->text());
+        QColor color2(borderColor[BORDER_TWO_COLOR]->text());
 
-        auto bp = make_shared<BorderTwoColor>(rect,color1,color2,width);
-        bp->construct();
+        auto bp = make_shared<BorderTwoColor>(rect,color1,color2,width,length);
+        bp->setRequiresConstruction(true);
         mosaic->setBorder(bp);
     }
         break;
 
     case BORDER_BLOCKS:
     {
-        qreal width  = borderWidth[2]->value();
-        QRectF rect  = rectBoundaryLayout->get();
-        QColor color1(borderColor[3]->text());
-        int rows = borderRows->value();
-        int cols = borderCols->value();
-        auto bp = make_shared<BorderBlocks>(rect,color1,width,rows,cols);
-        bp->construct();
+        QRectF rect = rectBoundaryLayout->get();
+        QColor color1(borderColor[BORDER_BLOCKS]->text());
+        int rows    = borderRows->value();
+        int cols    = borderCols->value();
+        qreal width = borderWidth[BORDER_BLOCKS]->value();
+
+        auto bp = make_shared<BorderBlocks>(rect,color1,rows,cols,width);
+        bp->setRequiresConstruction(true);
         mosaic->setBorder(bp);
     }
 
@@ -640,8 +686,8 @@ void page_borders::slot_borderTypeChanged(int row)
             cropTypes->select(CROP_RECTANGLE); // default
             cropTypeStack->setCurrentIndex(cropTypes->currentIndex());
 
-            QSize sz = view->size();
-            QRectF rect(QPointF(0,0),sz);
+            QRectF rect(view->rect());
+            rect = borderView->screenToWorld(rect);
             rectBoundaryLayout->blockSignals(true);
             rectBoundaryLayout->set(rect);
             rectBoundaryLayout->blockSignals(false);
@@ -679,9 +725,22 @@ void page_borders::slot_borderWidthChanged(qreal width)
     if (!bp) return;
 
     bp->setWidth(width);
-    mosaicMaker->getMosaic()->setBorder(bp);    // triggers rebuild
-    emit sig_refreshView();
     view->update();
+}
+
+void page_borders::slot_borderLengthChanged(qreal length)
+{
+    if (pageBlocked()) return;
+
+    BorderPtr bp = getMosaicBorder();
+    if (!bp) return;
+
+    BorderTwoColor * bp2 = dynamic_cast<BorderTwoColor*>(bp.get());
+    if (bp2)
+    {
+        bp2->setLength(length);
+        view->update();
+    }
 }
 
 void page_borders::slot_borderRowsChanged(int rows)
@@ -695,8 +754,6 @@ void page_borders::slot_borderRowsChanged(int rows)
     if (bp3)
     {
         bp3->setRows(rows);
-        mosaicMaker->getMosaic()->setBorder(bp);    // triggers rebuild
-        emit sig_refreshView();
         view->update();
     }
 }
@@ -712,7 +769,6 @@ void page_borders::slot_borderColsChanged(int cols)
     if (bp3)
     {
         bp3->setCols(cols);
-        emit sig_refreshView();
         view->update();
     }
 }
@@ -727,7 +783,6 @@ void page_borders::slot_borderColorChanged(QLineEdit * le)
     QString color = le->text();
     QColor qc(color);
     bp->setColor(qc);
-    emit sig_refreshView();
     view->update();
 }
 
@@ -741,7 +796,6 @@ void page_borders::slot_borderColor2Changed(QLineEdit * le)
     QString color = le->text();
     QColor qc(color);
     bp->setColor2(qc);
-    emit sig_refreshView();
     view->update();
 }
 
@@ -762,13 +816,13 @@ void page_borders::slot_pickBorderColor()
     color = dlg.selectedColor();
     if (color.isValid())
     {
-        borderColor[0]->setText(color.name(QColor::HexArgb));
+        borderColor[BORDER_PLAIN]->setText(color.name(QColor::HexArgb));
 
         QVariant variant = color;
         QString colcode  = variant.toString();
-        borderColorPatch[0]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+        borderColorPatch[BORDER_PLAIN]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
         bp->setColor(color);
-        emit sig_refreshView();
+        view->update();
     }
 }
 
@@ -789,13 +843,12 @@ void page_borders::slot_pickBorderColor2()
     color = dlg.selectedColor();
     if (color.isValid())
     {
-        borderColor[1]->setText(color.name(QColor::HexArgb));
+        borderColor[2]->setText(color.name(QColor::HexArgb));
 
         QVariant variant = color;
         QString colcode  = variant.toString();
-        borderColorPatch[1]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
+        borderColorPatch[2]->setStyleSheet("QLabel { background-color :"+colcode+" ; border: 1px solid black;}");
         bp->setColor2(color);
-        emit sig_refreshView();
         view->update();
     }
 }
@@ -812,7 +865,21 @@ void page_borders::slot_rectBoundaryChanged()
 
     QRectF rect = rectBoundaryLayout->get();
     bp->setRect(rect);
-    bp->construct();
+
+    bp->setRequiresConstruction(true);
+    view->update();
+}
+
+void page_borders::slot_useViewSzChanged(bool checked)
+{
+    if (pageBlocked()) return;
+
+    qDebug() << "page_borders::slot_useViewSzChanged";
+    BorderPtr bp = getMosaicBorder();
+    if (!bp)
+        return;
+
+    bp->setUseViewSize(checked);
     view->update();
 }
 
@@ -828,7 +895,7 @@ void page_borders::slot_centreChanged()
     QPointF p = centre->get();
     c.setCenter(p);
 
-    bp->construct();
+    bp->setRequiresConstruction(true);
     view->update();
 }
 
@@ -843,6 +910,6 @@ void page_borders::slot_radiusChanged(qreal r)
     Circle & c = bp->getCircle();
     c.setRadius(r);
 
-    bp->construct();
+    bp->setRequiresConstruction(true);
     view->update();
 }

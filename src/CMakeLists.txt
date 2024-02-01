@@ -8,7 +8,6 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -16,6 +15,26 @@ find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Svg Concurrent)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Svg Concurrent)
 
 set(PROJECT_SOURCES
+    engine/compare_bmp_engine.cpp
+    engine/compare_bmp_engine.h
+    engine/image_engine.cpp
+    engine/image_engine.h
+    engine/mosaic_bmp_engine.cpp
+    engine/mosaic_bmp_engine.h
+    engine/mosaic_stepper.cpp
+    engine/mosaic_stepper.h
+    engine/png_stepper.cpp
+    engine/png_stepper.h
+    engine/stepping_engine.cpp
+    engine/stepping_engine.h
+    engine/tiling_bmp_engine.cpp
+    engine/tiling_bmp_engine.h
+    engine/tiling_stepper.cpp
+    engine/tiling_stepper.h
+    engine/version_stepper.cpp
+    engine/version_stepper.h
+    engine/worklist_stepper.cpp
+    engine/worklist_stepper.h
     enums/eborder.cpp
     enums/eborder.h
     enums/ecyclemode.cpp
@@ -33,6 +52,7 @@ set(PROJECT_SOURCES
     enums/emotiftype.cpp
     enums/emotiftype.h
     enums/emousemode.h
+    enums/epanelpage.h
     enums/estatemachineevent.cpp
     enums/estatemachineevent.h
     enums/estyletype.h
@@ -76,8 +96,8 @@ set(PROJECT_SOURCES
     geometry/neighbour_map.h
     geometry/neighbours.cpp
     geometry/neighbours.h
-    geometry/point.cpp
-    geometry/point.h
+    geometry/geo.cpp
+    geometry/geo.h
     geometry/threads.cpp
     geometry/threads.h
     geometry/transform.cpp
@@ -157,15 +177,14 @@ set(PROJECT_SOURCES
     makers/tiling_maker/tile_selection.h
     makers/tiling_maker/tiling_maker.cpp
     makers/tiling_maker/tiling_maker.h
+    makers/tiling_maker/tiling_monitor.cpp
+    makers/tiling_maker/tiling_monitor.h
     makers/tiling_maker/tiling_mouseactions.cpp
     makers/tiling_maker/tiling_mouseactions.h
     misc/border.cpp
     misc/border.h
     misc/colorset.cpp
     misc/colorset.h
-    misc/cycler.cpp
-    misc/cycler.h
-    misc/defaults.h
     misc/fileservices.cpp
     misc/fileservices.h
     misc/geo_graphics.cpp
@@ -181,8 +200,8 @@ set(PROJECT_SOURCES
     misc/pugixml.hpp
     misc/qtapplog.cpp
     misc/qtapplog.h
-    misc/runguard.cpp
-    misc/runguard.h
+    misc/sys.cpp
+    misc/sys.h
     misc/shortcuts.cpp
     misc/shortcuts.h
     misc/signal_blocker.h
@@ -191,6 +210,7 @@ set(PROJECT_SOURCES
     misc/timers.h
     misc/tpm_io.h
     misc/tpmsplash.cpp
+    misc/tpmsplash.h
     misc/unique_qvector.h
     misc/utilities.cpp
     misc/utilities.h
@@ -201,8 +221,6 @@ set(PROJECT_SOURCES
     mosaic/legacy_loader.h
     mosaic/mosaic.cpp
     mosaic/mosaic.h
-    mosaic/mosaic_io_base.cpp
-    mosaic/mosaic_io_base.h
     mosaic/mosaic_manager.cpp
     mosaic/mosaic_manager.h
     mosaic/mosaic_reader.cpp
@@ -251,10 +269,14 @@ set(PROJECT_SOURCES
     motifs/radial_motif.h
     motifs/rosette.cpp
     motifs/rosette.h
+    motifs/rosette2.cpp
+    motifs/rosette2.h
     motifs/rosette_connect.cpp
     motifs/rosette_connect.h
     motifs/star.cpp
     motifs/star.h
+    motifs/star2.cpp
+    motifs/star2.h
     motifs/star_connect.cpp
     motifs/star_connect.h
     motifs/tile_motif.cpp
@@ -315,15 +337,15 @@ set(PROJECT_SOURCES
     panels/panel_view_select.h
     panels/splitscreen.cpp
     panels/splitscreen.h
+    settings/canvas.cpp
+    settings/canvas.h
+    settings/canvas_settings.cpp
+    settings/canvas_settings.h
     settings/configuration.cpp
     settings/configuration.h
     settings/filldata.cpp
     settings/filldata.h
-    settings/model_settings.cpp
-    settings/model_settings.h
     settings/tristate.h
-    settings/view_settings.cpp
-    settings/view_settings.h
     style/colored.cpp
     style/colored.h
     style/emboss.cpp
@@ -344,6 +366,8 @@ set(PROJECT_SOURCES
     style/thick.h
     style/tile_colors.cpp
     style/tile_colors.h
+    tile/backgroundimage.cpp
+    tile/backgroundimage.h
     tile/placed_tile.cpp
     tile/placed_tile.h
     tile/tile.cpp
@@ -356,8 +380,8 @@ set(PROJECT_SOURCES
     tile/tiling.h
     tile/tiling_data.cpp
     tile/tiling_data.h
-    tile/tiling_loader.cpp
-    tile/tiling_loader.h
+    tile/tiling_reader.cpp
+    tile/tiling_reader.h
     tile/tiling_manager.cpp
     tile/tiling_manager.h
     tile/tiling_writer.cpp
@@ -384,12 +408,10 @@ set(PROJECT_SOURCES
     viewers/shape_view.h
     viewers/tiling_maker_view.cpp
     viewers/tiling_maker_view.h
-    viewers/tiling_view.cpp
-    viewers/tiling_view.h
     viewers/view.cpp
     viewers/view.h
-    viewers/viewcontrol.cpp
-    viewers/viewcontrol.h
+    viewers/view_controller.cpp
+    viewers/view_controller.h
     viewers/viewerbase.cpp
     viewers/viewerbase.h
     widgets/crop_widget.cpp
@@ -424,6 +446,8 @@ set(PROJECT_SOURCES
     widgets/dlg_wlist_create.h
     widgets/image_layer.cpp
     widgets/image_layer.h
+    widgets/image_widget.cpp
+    widgets/image_widget.h
     widgets/layout_qrectf.cpp
     widgets/layout_qrectf.h
     widgets/layout_sliderset.cpp
@@ -436,8 +460,8 @@ set(PROJECT_SOURCES
     widgets/mouse_mode_widget.h
     widgets/rounded_polygon.cpp
     widgets/rounded_polygon.h
-    widgets/transparentwidget.cpp
-    widgets/transparentwidget.h
+    widgets/transparent_widget.cpp
+    widgets/transparent_widget.h
     widgets/version_dialog.cpp
     widgets/version_dialog.h
     widgets/versioned_list_widget.cpp
@@ -484,17 +508,17 @@ qt_add_resources(PROJECT_SOURCES tpm.qrc)
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     set(CMAKE_UNITY_BUILD ON)
-        qt_add_executable(TiledPatternMaker MANUAL_FINALIZATION ${PROJECT_SOURCES} icon.rc)
+    if (WIN32)
+        qt_add_executable(TiledPatternMaker WIN32 ${PROJECT_SOURCES} icon.rc)
     else()
-        add_executable(TiledPatternMaker  ${PROJECT_SOURCES} icon.rc)
+        qt_add_executable(TiledPatternMaker ${PROJECT_SOURCES} icon.rc)
     endif()
+else()
+    add_executable(TiledPatternMaker ${PROJECT_SOURCES} icon.rc)
+endif()
 
 target_link_libraries(TiledPatternMaker PRIVATE
     Qt${QT_VERSION_MAJOR}::Widgets
     Qt${QT_VERSION_MAJOR}::Svg
     Qt${QT_VERSION_MAJOR}::Concurrent
 )
-
-if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-    qt_finalize_executable(TiledPatternMaker)
-endif()

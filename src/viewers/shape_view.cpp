@@ -1,26 +1,23 @@
 #include <QPainter>
 #include "viewers/shape_view.h"
-#include "settings/configuration.h"
 #include "legacy/shapes.h"
 
-ShapeViewer::ShapeViewer() : Layer("ShapeViewer")
+LegacyShapeViewer::LegacyShapeViewer() : Layer("ShapeViewer",false)
 {
-    config = Configuration::getInstance();
-
     _antiAliasPolys  = true;
 }
 
-void ShapeViewer::paint(QPainter *painter)
+void LegacyShapeViewer::paint(QPainter *painter)
 {
     //qDebug() << "ShapeViewer::paint" << this;
 
     painter->save();
     painter->translate(getLoc());
-    qreal rot = getCanvasXform().getRotateDegrees();
+    qreal rot = getModelXform().getRotateDegrees();
     painter->rotate(rot);
 
     // polyforms
-    for (const auto & p : polyforms)
+    for (const auto & p : std::as_const(polyforms))
     {
         if (p->polytype == POLYGON2)
         {
@@ -62,7 +59,7 @@ void ShapeViewer::paint(QPainter *painter)
             // anti-alias all curved shapes
             painter->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
 
-            if (config->hideCircles)
+            if (Sys::hideCircles)
             {
                 painter->setPen(QPen(Qt::NoPen));
                 painter->setBrush(QBrush(Qt::NoBrush));
@@ -100,7 +97,7 @@ void ShapeViewer::paint(QPainter *painter)
                 }
             }
 
-            if (config->circleX)
+            if (Sys::circleX)
             {
                 // draw inner X
                 painter->setPen(QPen(Qt::green,1.0));
@@ -111,7 +108,7 @@ void ShapeViewer::paint(QPainter *painter)
     }
 
     // inner pen
-    for (const auto & p : polyforms)
+    for (const auto & p : std::as_const(polyforms))
     {
         painter->setPen(p->innerPen);
         if (p->polytype == POLYGON2)
@@ -137,4 +134,18 @@ void ShapeViewer::paint(QPainter *painter)
     }
 
     painter->restore();
+}
+
+void LegacyShapeViewer::setModelXform(const Xform & xf, bool update)
+{
+    Q_ASSERT(!_unique);
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.toInfoString() << (isUnique() ? "unique" : "common");
+    viewControl->setCurrentModelXform(xf,update);
+}
+
+const Xform & LegacyShapeViewer::getModelXform()
+{
+    Q_ASSERT(!_unique);
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << viewControl->getCurrentModelXform().toInfoString() << (isUnique() ? "unique" : "common");
+    return viewControl->getCurrentModelXform();
 }

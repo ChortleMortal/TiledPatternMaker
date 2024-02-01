@@ -15,6 +15,9 @@ typedef std::shared_ptr<class Crop>     CropPtr;
 //
 //  Borders also use the crop class, but borders form a layer superimposed on top of prototype maps
 //
+//  Standalone crops are stored in Model Units
+//  Border Crops are stored in Screen Units because they are the frames of the canvas
+//  TODO - review whether crops should use screen units for borders
 
 class Crop
 {
@@ -22,7 +25,7 @@ public:
     Crop();
     Crop(CropPtr other);
 
-    virtual void  draw(QPainter * painter, QTransform t, bool active);
+    void         draw(QPainter * painter, QTransform t, bool active);
 
     QPointF      getCenter();
 
@@ -53,19 +56,20 @@ public:
     bool        getEmbed()           { return _embed; }
     bool        getApply()           { return _apply; }
 
+    void        dbgInfo();
+
 protected:
     void        adjust();
 
     eCropType    _cropType;
 
 private:
-
     eAspectRatio _aspect;
     bool         _vAspect;
 
-    QPolygonF    _poly;          // model units
-    Circle       _circle;        // model units
-    QRectF       _rect;          // model units
+    QPolygonF    _poly;          // model units as crops, screen units for borders
+    Circle       _circle;        // model units as crops, screen units for borders
+    QRectF       _rect;          // model units as crops, screen units for borders
 
     bool         _embed;
     bool         _apply;

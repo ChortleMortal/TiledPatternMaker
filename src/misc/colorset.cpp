@@ -39,9 +39,8 @@ void ColorSet::addColor(TPColor color)
 void ColorSet::setColors(QVector<TPColor> &cset)
 {
     clear();
-    for (auto it = cset.begin(); it != cset.end(); it++)
+    for (auto & tp : std::as_const(cset))
     {
-        TPColor tp = *it;
         colorset.push_back(tp);
     }
     pos = colorset.begin();
@@ -96,7 +95,7 @@ void ColorSet::removeColor(int idx)
 QString ColorSet::colorsString() const
 {
     QString str("Colors: ");
-    for (auto & tpcolor : colorset)
+    for (auto & tpcolor : std::as_const(colorset))
     {
         str += tpcolor.color.name(QColor::HexArgb);
         str += " ";
@@ -115,9 +114,8 @@ QWidget * ColorSet::createWidget()
 AQHBoxLayout * ColorSet::createLayout()
 {
     AQHBoxLayout * hbox = new AQHBoxLayout;
-    for (auto it = colorset.begin(); it != colorset.end(); it++)
+    for (auto & tpcolor :  std::as_const(colorset))
     {
-        TPColor tpcolor  = *it;
         QColor color     = tpcolor.color;
         QColor fullColor = color;
         fullColor.setAlpha(255);

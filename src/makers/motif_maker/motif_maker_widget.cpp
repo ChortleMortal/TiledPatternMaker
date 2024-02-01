@@ -8,9 +8,10 @@
 #include "makers/motif_maker/design_element_selector.h"
 #include "makers/prototype_maker//prototype.h"
 #include "makers/prototype_maker/prototype_maker.h"
+#include "misc/sys.h"
 #include "mosaic/design_element.h"
 #include "settings/configuration.h"
-#include "viewers/viewcontrol.h"
+#include "viewers/view.h"
 
 MotifMakerWidget::MotifMakerWidget() : QWidget()
 {
@@ -18,7 +19,7 @@ MotifMakerWidget::MotifMakerWidget() : QWidget()
 
     protoMakerData = PrototypeMaker::getInstance()->getProtoMakerData();
     config        = Configuration::getInstance();
-    view          = ViewControl::getInstance();
+    view          = Sys::view;
 
     // Motif buttons
     delSelector = new DELSelectorWidget(this);
@@ -67,6 +68,12 @@ void MotifMakerWidget::selectPrototype()
 // when a DEL button is selected, this delgates the motif in both the motif maker and the motif editor
 void MotifMakerWidget::delegate(DELBtnPtr btn, bool add, bool set)
 {
+    if (!btn)
+    {
+        qWarning("No DEL button to delgate");
+        return;
+    }
+
     qDebug() << "MotifMakerWidget::delegate btn=" << btn->getIndex() << "multi" << add << "set" << set;
 
     DesignElementPtr designElement = btn->getDesignElement(); // DAC taprats cloned here

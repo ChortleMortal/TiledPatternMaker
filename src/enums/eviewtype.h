@@ -25,6 +25,7 @@ enum eViewType
     VIEW_IMAGE
 };
 
+#define NUM_VIEW_TYPES  (VIEW_IMAGE +1)
 
 #define BKGD_IMG_ZLEVEL -20
 #define STANDARD_ZLEVEL   0

@@ -139,9 +139,9 @@ void MapEditorDb::createComposite()
             del = layer->getDel();
         }
         MapPtr map = layer->getMapedLayerMap();
-        qDebug() << map->namedSummary();
+        qDebug() << map->summary();
         compositeMap->mergeMap(map,tolerance);
-        qDebug() << compositeMap->namedSummary();
+        qDebug() << compositeMap->summary();
     }
 
     compositeMap->deDuplicateVertices(tolerance);

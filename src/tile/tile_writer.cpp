@@ -11,9 +11,8 @@ TileWriter::TileWriter()
 
 void TileWriter::setEdgePoly(QTextStream & ts, const EdgePoly & epoly)
 {
-    for (auto it = epoly.begin(); it != epoly.end(); it++)
+    for (auto & ep : std::as_const(epoly))
     {
-        EdgePtr ep = *it;
         VertexPtr v1 = ep->v1;
         VertexPtr v2 = ep->v2;
         if (ep->getType() == EDGETYPE_LINE)

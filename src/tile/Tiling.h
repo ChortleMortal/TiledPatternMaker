@@ -15,7 +15,8 @@
 // linear combinations within some viewport.
 
 #include <QStack>
-#include "geometry/xform.h"
+#include <QObject>
+#include "misc/layer_controller.h"
 #include "settings/tristate.h"
 #include "tile/tiling_data.h"
 
@@ -24,8 +25,11 @@
 typedef std::shared_ptr<class Tile>          TilePtr;
 typedef std::shared_ptr<class PlacedTile>    PlacedTilePtr;
 typedef std::shared_ptr<class Map>           MapPtr;
+typedef std::shared_ptr<class BackgroundImage>  BkgdImagePtr;
 
 typedef QVector<QTransform> Placements;
+
+class GeoGraphics;
 
 class TileGroup : public  QVector<QPair<TilePtr,PlacedTiles>>
 {
@@ -38,42 +42,38 @@ public:
 // (Of course, more complex tiling exists with rotations and mirrors.)
 // (They are not supported.)
 
-class Tiling : public std::enable_shared_from_this<Tiling>
+class Tiling : public LayerController, public std::enable_shared_from_this<Tiling>
 {
+    Q_OBJECT
+
 public:
-
-    enum eTilingState
-    {
-        EMPTY,
-        LOADED,
-        MODIFIED
-    };
-
     Tiling();
     ~Tiling();
+
+    void                paint(QPainter *painter) override;
+    void                draw(GeoGraphics * gg);
+
+    void                setTitle(QString n)              { title = n; }
+    void                setDescription(QString descrip ) { desc = descrip; }
+    void                setAuthor(QString auth)          { author = auth; }
+    void                setVersion(int ver);
+
+    void                setTranslationVectors(QPointF t1, QPointF t2) { db.setTranslationVectors(t1,t2); }
+    void                setCanvasSettings(const CanvasSettings & settings) { db.setCanvasSettings(settings); }
 
     bool                isEmpty();
 
     bool                hasIntrinsicOverlaps();
     bool                hasTiledOverlaps();
 
-    QString             getName()        const { return name; }
+    QString             getTitle()       const { return title; }
     QString             getDescription() const { return desc; }
     QString             getAuthor()      const { return author; }
 
-    void                setName(QString n)               { name = n; }
-    void                setDescription(QString descrip ) { desc = descrip; }
-    void                setAuthor(QString auth)          { author = auth; }
-
-    void                add(const PlacedTilePtr pf );   // Added tiles are put into a placedTile.
-    void                add(TilePtr f, QTransform T );
+    void                add(const PlacedTilePtr pfm);   // Added tiles are put into a placedTile.
+    void                add(PlacedTiles & tiles);       // Added tiles are put into a placedTile.
     void                remove(PlacedTilePtr pf);
-
-    // undo stack
-    void                pushStack();
-    bool                popStack();
-    void                purgeStack() { undoStack.clear(); resetOverlaps(); }
-    int                 stackSize()  { return undoStack.size(); }
+    void                clear();
 
     int                 numPlacements(TilePtr tile);
     Placements          getPlacements(TilePtr tile);
@@ -81,25 +81,21 @@ public:
     QVector<TilePtr>    getUniqueTiles();
     TileGroup           regroupTiles();      // the map was deadly, it reordered
 
-    void                setCanvasXform(const Xform & xf) { xf_canvas = xf; }
-    Xform &             getCanvasXform()                 { return xf_canvas; }
-
     int                 getVersion();
-    void                setVersion(int ver);
 
-    eTilingState        getState();
-    void                setState(eTilingState state);
+    virtual const Xform &   getModelXform() override;
+    virtual void            setModelXform(const Xform & xf, bool update) override;
 
     // Data
-    const TilingData &  getData()  const          { return db; }
-    TilingData &        getRWData(bool push)      { if (push) pushStack(); return db; }
+    const TilingData    & getData()  const              { return db; }
+    const PlacedTiles   & getInTiling() const           { return db.getInTiling(); }
+    const CanvasSettings& getCanvasSettings() const     { return db.getSettings(); }
 
-    const PlacedTiles & getInTiling() const      { return getData().getInTiling(); }
-    PlacedTiles &       getRWInTiling(bool push) { return getRWData(push).getRWInTiling(); }
+    BkgdImagePtr        getBkgdImage()                  { return bip; }
+    void                setBkgdImage(BkgdImagePtr bp)   { bip = bp; }
+    void                removeBkgdImage()               { bip.reset(); }
 
-    void setTranslationVectors(QPointF t1, QPointF t2) { db.setTranslationVectors(t1,t2); }
-
-    void                resetOverlaps() { intrinsicOverlaps.reset();  tiledOverlaps.reset(); }
+    void                resetOverlaps() { intrinsicOverlaps.reset(); tiledOverlaps.reset(); }
 
     // map operations
     MapPtr              createMapSingle();
@@ -108,26 +104,44 @@ public:
     MapPtr              debug_createFilledMap();
     MapPtr              debug_createProtoMap();
 
+    virtual eViewType   iamaLayer() override { return VIEW_TILING; }
+    void                iamaLayerController() override {}
+
     QString             dump() const;
 
     static const QString defaultName;
     static int          refs;
 
+public slots:
+
+    virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
+    virtual void slot_mouseDragged(QPointF spt)       override;
+    virtual void slot_mouseTranslate(QPointF spt)     override;
+    virtual void slot_mouseMoved(QPointF spt)         override;
+    virtual void slot_mouseReleased(QPointF spt)      override;
+    virtual void slot_mouseDoublePressed(QPointF spt) override;
+
+    virtual void slot_wheel_scale(qreal delta)  override;
+    virtual void slot_wheel_rotate(qreal delta) override;
+
+    virtual void slot_scale(int amount)  override;
+    virtual void slot_rotate(int amount) override;
+    virtual void slot_moveX(qreal amount)  override;
+    virtual void slot_moveY(qreal amount)  override;
+
 protected:
+    void    drawPlacedTile(GeoGraphics * g2d, PlacedTilePtr pf);
 
 private:
     int                 version;
-    QString             name;
+    QString             title;
     QString             desc;
     QString             author;
 
     TilingData          db;
 
-    QStack<TilingData>  undoStack;
+    BkgdImagePtr        bip;
 
-    Xform               xf_canvas;
-
-    eTilingState        state;
     Tristate            intrinsicOverlaps;
     Tristate            tiledOverlaps;
 };

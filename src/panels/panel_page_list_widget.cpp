@@ -49,7 +49,7 @@ void PageListWidget::refreshPages()
     auto selectedPage = getSelectedPage();
 
     //	Update pages
-    for (const PageData & pdata : pageData)
+    for (const PageData & pdata : std::as_const(pageData))
     {
         if (pdata.page == selectedPage || pdata.pageState == PAGE_DETACHED || pdata.pageState == PAGE_SUB_ATTACHED)
         {
@@ -91,9 +91,29 @@ bool PageListWidget::isVisiblyDetached(panel_page * page)
     return false;
 }
 
+bool PageListWidget::isVisiblyDetached(ePanelPage page)
+{
+    for (const auto & data : std::as_const(pageData))
+    {
+        if (data.page->getPageType() == page)
+        {
+            ePageState state = data.pageState;
+            if (state == PAGE_DETACHED || state == PAGE_SUB_ATTACHED)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+    }
+    return false;
+}
+
 void PageListWidget::closePages()
 {
-    for (const PageData & pdata : pageData)
+    for (const PageData & pdata : std::as_const(pageData))
     {
         bool detached = (pdata.pageState == PAGE_DETACHED);
         pdata.page->closePage(detached);
@@ -108,7 +128,7 @@ panel_page * PageListWidget::getPage(QString name)
 
 panel_page * PageListWidget::getSelectedPage()
 {
-    for (PageData & pdata : pageData)
+    for (auto & pdata : std::as_const(pageData))
     {
         if (pdata.selected)
         {
@@ -191,7 +211,7 @@ void PageListWidget::mousePressEvent(QMouseEvent * event)
 QStringList PageListWidget::wereFloated()
 {
     QStringList names;
-    for (const PageData & pdata : pageData)
+    for (const PageData & pdata : std::as_const(pageData))
     {
         if (pdata.page->wasFloated())
         {
@@ -237,7 +257,7 @@ void PageListWidget::establishSize()
 
 PageData & PageListWidget::getPageData(QString name)
 {
-    for (PageData & pdata : pageData)
+    for (auto & pdata : pageData)
     {
         if (pdata.pageName == name)
         {
@@ -251,7 +271,7 @@ PageData & PageListWidget::getPageData(QString name)
 
 PageData & PageListWidget::getPageData(panel_page * page)
 {
-    for (PageData & pdata : pageData)
+    for (auto & pdata : pageData)
     {
         if (pdata.page == page)
         {
@@ -272,7 +292,7 @@ ePageState PageListWidget::getState(panel_page * page)
 int  PageListWidget::getIndex(panel_page * page)
 {
     int index = 0;
-    for (const PageData & pdata : pageData)
+    for (const PageData & pdata : std::as_const(pageData))
     {
         if (pdata.page == page)
         {

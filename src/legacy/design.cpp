@@ -1,8 +1,14 @@
-﻿#include "viewers/viewcontrol.h"
+﻿#include "viewers/view.h"
 #include "legacy/design.h"
 #include "legacy/patterns.h"
+#include "misc/sys.h"
 #include "settings/configuration.h"
 #include "tiledpatternmaker.h"
+#include <QCoreApplication>
+
+#if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
+#include <QDebug>
+#endif
 
 int Design::refs = 0;
 
@@ -24,7 +30,7 @@ Design::Design(eDesign design, QString title)
     this->title = title;
 
     config  = Configuration::getInstance();
-    view    = ViewControl::getInstance();
+    view    = Sys::view;
 
     Design::init();
 }
@@ -122,7 +128,7 @@ void Design::setVisible(bool visible)
     {
         PatternPtr t = *it;
         QVector<LayerPtr> & layers = t->getSubLayers();
-        for (auto layer : layers)
+        for (auto layer : std::as_const(layers))
         {
             layer->setVisible(visible);
         }

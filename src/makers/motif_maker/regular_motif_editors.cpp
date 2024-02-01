@@ -1,9 +1,12 @@
-﻿#include <QCheckBox>
+#include <QCheckBox>
 
+#include "motifs/rosette.h"
+#include "motifs/rosette2.h"
 #include "motifs/extended_rosette.h"
 #include "motifs/extended_star.h"
 #include "motifs/rosette_connect.h"
 #include "motifs/star.h"
+#include "motifs/star2.h"
 #include "motifs/star_connect.h"
 #include "makers/motif_maker/design_element_button.h"
 #include "makers/motif_maker/regular_motif_editors.h"
@@ -17,9 +20,14 @@ using std::make_shared;
 
 typedef std::shared_ptr<RadialMotif>    RadialPtr;
 
+////////////////////////////////////////////////////////
+//
+// StarEditor
+//
+////////////////////////////////////////////////////////
 StarEditor::StarEditor(QString name) : NamedMotifEditor(name)
 {
-    d_slider = new DoubleSliderSet("Star Editor Hops D", 3.0, 1.0, 10.0, 100 );
+    d_slider = new DoubleSliderSet("Star Editor Hops D", 3.0, 0.0, 10.0, 100 );
     s_slider = new SliderSet("Star Editor Intersects S", 2, 1, 5);
     version_combo = new QComboBox();
     version_combo->addItem("Version 1",1);
@@ -89,8 +97,10 @@ void StarEditor::motifToEditor()
 
         //double dmax = 0.5 * (double)nn;
         blockSignals(true);
-        d_slider->setValues( dd, 1.0, static_cast<qreal>(star->getN()) * 2.0);
-        s_slider->setValues( ss, 1.0, star->getN() * 2);
+        //d_slider->setValues( dd, 1.0, static_cast<qreal>(star->getN()) * 2.0);
+        //s_slider->setValues( ss, 1.0, star->getN() * 2);
+        d_slider->setValue( dd);
+        s_slider->setValue( ss);
         blockSignals(false);
 
         int ver = star->getVersion();
@@ -112,34 +122,129 @@ void StarEditor::editorToMotif(bool doEmit)
         int sval   = s_slider->value();
         int ver    = version_combo->currentData().toInt();
 
-        blockSignals(true);
         star->setD(dval);
         star->setS(sval);
         star->setVersion(ver);
         star->resetMotifMaps();
-        blockSignals(false);
 
         if (doEmit)
             emit sig_motif_modified(star);
     }
 }
 
+////////////////////////////////////////////////////////
+//
+// Star2Editor
+//
+////////////////////////////////////////////////////////
+Star2Editor::Star2Editor(QString name) : NamedMotifEditor(name)
+{
+    theta_slider = new DoubleSliderSet("Star Editor Angle theta", 45, 0.0, 90.0, 10 );
+    s_slider     = new SliderSet("Star Editor Intersects S", 2, 1, 5);
+
+    addLayout(theta_slider);
+    addLayout(s_slider);
+
+    QHBoxLayout * hbox = new QHBoxLayout;
+    hbox->addStretch();
+    hbox->addStretch();
+    addLayout(hbox);
+
+    connect(theta_slider, &DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
+    connect(s_slider,     &SliderSet::valueChanged,       this, [this]() { editorToMotif(true);});
+}
+
+void Star2Editor::setMotif(DesignElementPtr del, bool doEmit)
+{
+    wDel = del;
+    if (!del || !del->getMotif())
+    {
+        wstar.reset();
+        return;
+    }
+
+    MotifPtr oldMotif = del->getMotif();
+    auto oldstar = dynamic_pointer_cast<Star2>(oldMotif);
+    if (!oldstar)
+    {
+        // create a star with some defaults
+        int n =oldMotif->getN();
+        auto newstar = make_shared<Star2>(*oldMotif,n, 45.0, 1);
+        del->setMotif(newstar);
+        setMotif(newstar,doEmit);
+    }
+    else
+    {
+        // always create because it could be a ConnectStar or an Extended star
+        auto newstar = make_shared<Star2>(*oldstar.get());
+        del->setMotif(newstar);
+        setMotif(newstar,doEmit);
+    }
+}
+
+void Star2Editor::setMotif(std::shared_ptr<Star2>(star), bool doEmit)
+{
+    wstar = star;
+    NamedMotifEditor::setMotif(star,false);
+
+    motifToEditor();
+    editorToMotif(doEmit);
+}
+
+void Star2Editor::motifToEditor()
+{
+    auto star = wstar.lock();
+    if (star)
+    {
+        NamedMotifEditor::motifToEditor();
+
+        qreal theta = star->getTheta();
+        int   ss    = star->getS();
+
+        blockSignals(true);
+        theta_slider->setValue(theta);
+        s_slider->setValue(ss);
+        blockSignals(false);
+    }
+}
+
+void Star2Editor::editorToMotif(bool doEmit)
+{
+    auto star = wstar.lock();
+    if (star)
+    {
+        NamedMotifEditor::editorToMotif(false);
+
+        qreal thetaval = theta_slider->value();
+        int sval       = s_slider->value();
+
+        star->setTheta(thetaval);
+        star->setS(sval);
+        star->resetMotifMaps();
+
+        if (doEmit)
+            emit sig_motif_modified(star);
+    }
+}
+
+////////////////////////////////////////////////////////
+//
+// ResetteEditor
+//
 // The controls for editing a Star.  Glue code, just like RosetteEditor.
 // DAC - Actually the comment above is not true
-
+//
+////////////////////////////////////////////////////////
 RosetteEditor::RosetteEditor(QString name) : NamedMotifEditor(name)
 {
     q_slider = new DoubleSliderSet("RosetteEditor Q (Tip Angle)", 0.0, -3.0, 3.0, 100 );
     s_slider = new SliderSet("RosetteEditor S (Sides Intersections)", 1, 1, 5);
-    k_slider = new DoubleSliderSet("RosetteEditor K (Neck Angle)", 0.0, -3.0, 3.0, 1000 );
 
     addLayout(q_slider);
     addLayout(s_slider);
-    addLayout(k_slider);
 
     connect(q_slider, &DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
     connect(s_slider, &SliderSet::valueChanged,       this, [this]() { editorToMotif(true);});
-    connect(k_slider, &DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
 }
 
 void RosetteEditor::setMotif(DesignElementPtr del, bool doEmit)
@@ -157,7 +262,7 @@ void RosetteEditor::setMotif(DesignElementPtr del, bool doEmit)
     {
         // create using defualts
         int n = oldMotif->getN();
-        auto rosette  = make_shared<Rosette>(*oldMotif.get(), n, 0.0, 3, 0.0);
+        auto rosette  = make_shared<Rosette>(*oldMotif.get(), n, 0.0, 3);
         del->setMotif(rosette);
         setMotif(rosette,doEmit);
     }
@@ -170,7 +275,7 @@ void RosetteEditor::setMotif(DesignElementPtr del, bool doEmit)
     }
 }
 
-void RosetteEditor::setMotif(std::shared_ptr<Rosette>(rosette), bool doEmit)
+void RosetteEditor::setMotif(RosettePtr rosette, bool doEmit)
 {
     wrosette = rosette;
 
@@ -188,13 +293,11 @@ void RosetteEditor::motifToEditor()
         NamedMotifEditor::motifToEditor();
 
         double qq = rose->getQ();
-        double kk = rose->getK();
         int    ss = rose->getS();
 
         blockSignals(true);
         q_slider->setValues(qq, -3.0, 3.0);       // DAC was -1.0, 1.0
         s_slider->setValues(ss, 1.0, 5);
-        k_slider->setValues(kk,-3.0, 3.0);
         blockSignals(false);
     }
 }
@@ -207,13 +310,11 @@ void RosetteEditor::editorToMotif(bool doEmit)
         NamedMotifEditor::editorToMotif(false);
 
         qreal  qval = q_slider->value();
-        qreal  kval = k_slider->value();
         int    sval = s_slider->value();
 
         blockSignals(true);
         rose->setQ(qval);
         rose->setS(sval);
-        rose->setK(kval);
         rose->resetMotifMaps();
         blockSignals(false);
 
@@ -222,7 +323,134 @@ void RosetteEditor::editorToMotif(bool doEmit)
     }
 }
 
+////////////////////////////////////////////////////////
+//
+// Resette2Editor
+//
+////////////////////////////////////////////////////////
+Rosette2Editor::Rosette2Editor(QString name) : NamedMotifEditor(name)
+{
+    kx_slider = new DoubleSliderSet("Rosette2 KneeX height", 0.25, 0, 1.0, 100 );
+    ky_slider = new DoubleSliderSet("Rosette2 KneeY width ", 0.25, 0, 1.0, 100 );
+    s_slider  = new SliderSet(      "Rosette2 S Intersections", 1, 1, 5);
+
+    QRadioButton * rOuter = new QRadioButton("Outwards");
+    QRadioButton * rInner = new QRadioButton("Inwards");
+    QRadioButton * rAlter = new QRadioButton("Alternating");
+    QLabel       * label  = new QLabel("Tip Direction :");
+
+    QHBoxLayout * hbox = new QHBoxLayout;
+    hbox->addStretch();
+    hbox->addWidget(label);
+    hbox->addSpacing(11);
+    hbox->addWidget(rOuter);
+    hbox->addWidget(rInner);
+    hbox->addWidget(rAlter);
+    hbox->addStretch();
+
+    addLayout(kx_slider);
+    addLayout(ky_slider);
+    addLayout(s_slider);
+    addLayout(hbox);
+
+    tipGroup = new QButtonGroup;
+    tipGroup->addButton(rOuter,TIP_TYPE_OUTER);
+    tipGroup->addButton(rInner,TIP_TYPE_INNER);
+    tipGroup->addButton(rAlter,TIP_TYPE_ALTERNATE);
+
+    connect(kx_slider, &DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
+    connect(ky_slider, &DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
+    connect(s_slider,  &SliderSet::valueChanged,       this, [this]() { editorToMotif(true);});
+    connect(tipGroup,  &QButtonGroup::idClicked,       this, [this]() { editorToMotif(true);});
+}
+
+void Rosette2Editor::setMotif(DesignElementPtr del, bool doEmit)
+{
+    wDel = del;
+    if (!del || !del->getMotif())
+    {
+        wrosette.reset();
+        return;
+    }
+
+    MotifPtr oldMotif = del->getMotif();
+    auto oldrosette = dynamic_pointer_cast<Rosette2>(oldMotif);
+    if (!oldrosette)
+    {
+        // create using defualts
+        int n = oldMotif->getN();
+        auto rosette  = make_shared<Rosette2>(*oldMotif.get(), n, 0.25,0.25,2);
+        del->setMotif(rosette);
+        setMotif(rosette,doEmit);
+    }
+    else
+    {
+        // always create becuase it could be a ConnectRosette or an ExtendedRosette
+        auto rosette = make_shared<Rosette2>(*oldrosette.get());
+        del->setMotif(rosette);
+        setMotif(rosette,doEmit);
+    }
+}
+
+void Rosette2Editor::setMotif(Rosette2Ptr rosette, bool doEmit)
+{
+    wrosette = rosette;
+
+    NamedMotifEditor::setMotif(rosette,false);
+
+    motifToEditor();
+    editorToMotif(doEmit);
+}
+
+void Rosette2Editor::motifToEditor()
+{
+    auto rose = wrosette.lock();
+    if (rose)
+    {
+        NamedMotifEditor::motifToEditor();
+
+        qreal  x  = rose->getKneeX();
+        qreal  y  = rose->getKneeY();
+        int    ss = rose->getS();
+        eTipType tt = rose->getTipType();
+
+        blockSignals(true);
+        kx_slider->setValue(x);
+        ky_slider->setValue(y);
+        s_slider->setValue(ss);
+        tipGroup->button(tt)->setChecked(true);
+        blockSignals(false);
+    }
+}
+
+void Rosette2Editor::editorToMotif(bool doEmit)
+{
+    auto rose = wrosette.lock();
+    if (rose)
+    {
+        NamedMotifEditor::editorToMotif(false);
+
+        qreal  x = kx_slider->value();
+        qreal  y = ky_slider->value();
+        int sval = s_slider->value();
+        eTipType tt = static_cast<eTipType>(tipGroup->checkedId());
+
+        rose->setKneeX(x);
+        rose->setKneeY(y);
+        rose->setS(sval);
+        rose->setTipType(tt);
+        rose->resetMotifMaps();
+
+        if (doEmit)
+            emit sig_motif_modified(rose);
+    }
+}
+
+////////////////////////////////////////////////////////
+//
 // ConnectStarEditor
+//
+////////////////////////////////////////////////////////
 ConnectStarEditor::ConnectStarEditor(QString figname) : StarEditor(figname)
 {
     defaultBtn = new QPushButton("Calc Scale");
@@ -273,25 +501,29 @@ void ConnectStarEditor::setMotif(std::shared_ptr<StarConnect>(starcon), bool doE
 
     StarEditor::setMotif(starcon,false);
 
+    Q_ASSERT(starcon->getTile());
     starcon->setMotifScale(starcon->computeConnectScale());
 
     motifToEditor();
     editorToMotif(doEmit);
 }
 
-
 void ConnectStarEditor::calcScale()
 {
     auto starcon = wstarConnect.lock();
     if (starcon)
     {
+        Q_ASSERT(starcon->getTile());
         starcon->setMotifScale(starcon->computeConnectScale());
         editorToMotif(true);
     }
 }
 
+////////////////////////////////////////////////////////
+//
 // ConnectRosetteEditor
-
+//
+////////////////////////////////////////////////////////
 ConnectRosetteEditor::ConnectRosetteEditor(QString name) : RosetteEditor(name)
 {
     defaultBtn = new QPushButton("Calc Scale");
@@ -312,6 +544,7 @@ void ConnectRosetteEditor::setMotif(DesignElementPtr del, bool doEmit)
     }
 
     MotifPtr oldMotif = del->getMotif();
+    Q_ASSERT(oldMotif->getTile());
     auto rosettec = dynamic_pointer_cast<RosetteConnect>(oldMotif);
     if (rosettec)
     {
@@ -322,15 +555,14 @@ void ConnectRosetteEditor::setMotif(DesignElementPtr del, bool doEmit)
         RosettePtr rsp = dynamic_pointer_cast<Rosette>(oldMotif);
         if (rsp)
         {
-            auto rosetteConnect = make_shared<RosetteConnect>(*oldMotif.get(),rsp->getN(),rsp->getQ(),
-                                                    rsp->getS(),rsp->getK());
+            auto rosetteConnect = make_shared<RosetteConnect>(*oldMotif.get(),rsp->getN(),rsp->getQ(), rsp->getS());
             del->setMotif(rosetteConnect);
             setMotif(rosetteConnect,doEmit);
         }
         else
         {
             int n = oldMotif->getN();
-            auto rosetteConnect = make_shared<RosetteConnect>(*oldMotif.get(), n, 0.0, 3, 0.0);
+            auto rosetteConnect = make_shared<RosetteConnect>(*oldMotif.get(), n, 0.0, 3);
             del->setMotif(rosetteConnect);
             setMotif(rosetteConnect,doEmit);
         }
@@ -339,6 +571,8 @@ void ConnectRosetteEditor::setMotif(DesignElementPtr del, bool doEmit)
 
 void ConnectRosetteEditor::setMotif(std::shared_ptr<RosetteConnect>(rosettecon), bool doEmit)
 {
+    Q_ASSERT(rosettecon->getTile());
+
     wrosetteConnect = rosettecon;
 
     RosetteEditor::setMotif(rosettecon,false);
@@ -348,8 +582,6 @@ void ConnectRosetteEditor::setMotif(std::shared_ptr<RosetteConnect>(rosettecon),
     motifToEditor();
     editorToMotif(doEmit);
 }
-
-
 
 void ConnectRosetteEditor::calcScale()
 {
@@ -362,7 +594,11 @@ void ConnectRosetteEditor::calcScale()
     }
 }
 
+////////////////////////////////////////////////////////
+//
 // ExtendedStarEditor
+//
+////////////////////////////////////////////////////////
 ExtendedStarEditor::ExtendedStarEditor(QString name) : StarEditor(name)
 {
     extendPeriphBox    = new QCheckBox("Extend Peripheral Vertices");
@@ -370,6 +606,7 @@ ExtendedStarEditor::ExtendedStarEditor(QString name) : StarEditor(name)
     connectBoundaryBox = new QCheckBox("Connect Boundary Vertices");
 
     QHBoxLayout * hbox = new QHBoxLayout;
+    hbox->addStretch();
     hbox->addWidget(extendPeriphBox);
     hbox->addWidget(extendFreeBox);
     hbox->addWidget(connectBoundaryBox);
@@ -379,7 +616,6 @@ ExtendedStarEditor::ExtendedStarEditor(QString name) : StarEditor(name)
     connect(extendPeriphBox,    &QCheckBox::clicked,  this, [this]() { editorToMotif(true);});
     connect(extendFreeBox,      &QCheckBox::clicked,  this, [this]() { editorToMotif(true);});
     connect(connectBoundaryBox, &QCheckBox::clicked,  this, [this]() { editorToMotif(true);});
-
 }
 
 void ExtendedStarEditor::setMotif(DesignElementPtr del, bool doEmit)
@@ -427,12 +663,13 @@ void ExtendedStarEditor::setMotif(std::shared_ptr<ExtendedStar>(extended), bool 
     editorToMotif(doEmit);
 }
 
-
 void ExtendedStarEditor::motifToEditor()
 {
     auto estar = wextended.lock();
     if (estar)
     {
+        StarEditor::motifToEditor();
+
         auto & extender = estar->getExtender();
         bool ext_t      = extender.getExtendPeripheralVertices();
         bool ext_nt     = extender.getExtendFreeVertices();
@@ -443,8 +680,6 @@ void ExtendedStarEditor::motifToEditor()
         extendFreeBox->setChecked(ext_nt);
         connectBoundaryBox->setChecked(con_bd);
         blockSignals(false);
-
-        StarEditor::motifToEditor();
     }
 }
 
@@ -453,27 +688,141 @@ void ExtendedStarEditor::editorToMotif(bool doEmit)
     auto estar = wextended.lock();
     if (estar)
     {
+        StarEditor::editorToMotif(false);
+
         bool extendPeripheralVertices = extendPeriphBox->isChecked();
         bool extendFreeVertices       = extendFreeBox->isChecked();
         bool connectBoundary          = connectBoundaryBox->isChecked();
 
         auto & extender = estar->getExtender();
-
         blockSignals(true);
         extender.setExtendPeripheralVertices(extendPeripheralVertices);
         extender.setExtendFreeVertices(extendFreeVertices);
         extender.setConnectBoundaryVertices(connectBoundary);
         blockSignals(false);
 
-        StarEditor::editorToMotif(false);
+        if (doEmit)
+            emit sig_motif_modified(estar);
+    }
+}
+
+////////////////////////////////////////////////////////
+//
+// ExtendedStar2Editor
+//
+////////////////////////////////////////////////////////
+ExtendedStar2Editor::ExtendedStar2Editor(QString name) : Star2Editor(name)
+{
+    extendPeriphBox    = new QCheckBox("Extend Peripheral Vertices");
+    extendFreeBox      = new QCheckBox("Extend Free Vertices");
+    connectBoundaryBox = new QCheckBox("Connect Boundary Vertices");
+
+    QHBoxLayout * hbox = new QHBoxLayout;
+    hbox->addStretch();
+    hbox->addWidget(extendPeriphBox);
+    hbox->addWidget(extendFreeBox);
+    hbox->addWidget(connectBoundaryBox);
+    hbox->addStretch();
+    addLayout(hbox);
+
+    connect(extendPeriphBox,    &QCheckBox::clicked,  this, [this]() { editorToMotif(true);});
+    connect(extendFreeBox,      &QCheckBox::clicked,  this, [this]() { editorToMotif(true);});
+    connect(connectBoundaryBox, &QCheckBox::clicked,  this, [this]() { editorToMotif(true);});
+}
+
+void ExtendedStar2Editor::setMotif(DesignElementPtr del, bool doEmit)
+{
+    wDel = del;
+    if (!del || !del->getMotif())
+    {
+        wextended2.reset();
+        return;
+    }
+
+    MotifPtr oldMotif = del->getMotif();
+    auto extended = dynamic_pointer_cast<ExtendedStar2>(oldMotif);
+    if (extended)
+    {
+        del->setMotif(extended);
+        setMotif(extended,doEmit);
+    }
+    else
+    {
+        Star2Ptr sp = dynamic_pointer_cast<Star2>(oldMotif);
+        if (sp)
+        {
+            auto extended = make_shared<ExtendedStar2>(*oldMotif.get(),sp->getN(),sp->getTheta(),sp->getS());
+            del->setMotif(extended);
+            setMotif(extended,doEmit);
+        }
+        else
+        {
+            int  n = oldMotif->getN();
+            auto extended = make_shared<ExtendedStar2>(*oldMotif.get(), n, 45.0, 1);
+            del->setMotif(extended);
+            setMotif(extended,doEmit);
+        }
+    }
+}
+
+void ExtendedStar2Editor::setMotif(std::shared_ptr<ExtendedStar2>(extended), bool doEmit)
+{
+    wextended2 = extended;
+
+    Star2Editor::setMotif(extended,false);
+
+    motifToEditor();
+    editorToMotif(doEmit);
+}
+
+void ExtendedStar2Editor::motifToEditor()
+{
+    auto estar = wextended2.lock();
+    if (estar)
+    {
+        Star2Editor::motifToEditor();
+
+        auto & extender = estar->getExtender();
+        bool ext_t      = extender.getExtendPeripheralVertices();
+        bool ext_nt     = extender.getExtendFreeVertices();
+        bool con_bd     = extender.getConnectBoundaryVertices();
+
+        blockSignals(true);
+        extendPeriphBox->setChecked(ext_t);
+        extendFreeBox->setChecked(ext_nt);
+        connectBoundaryBox->setChecked(con_bd);
+        blockSignals(false);
+    }
+}
+
+void ExtendedStar2Editor::editorToMotif(bool doEmit)
+{
+    auto estar = wextended2.lock();
+    if (estar)
+    {
+        Star2Editor::editorToMotif(false);
+
+        bool extendPeripheralVertices = extendPeriphBox->isChecked();
+        bool extendFreeVertices       = extendFreeBox->isChecked();
+        bool connectBoundary          = connectBoundaryBox->isChecked();
+
+        auto & extender = estar->getExtender();
+        blockSignals(true);
+        extender.setExtendPeripheralVertices(extendPeripheralVertices);
+        extender.setExtendFreeVertices(extendFreeVertices);
+        extender.setConnectBoundaryVertices(connectBoundary);
+        blockSignals(false);
 
         if (doEmit)
             emit sig_motif_modified(estar);
     }
 }
 
+////////////////////////////////////////////////////////
+//
 // ExtendedRosetteEditor
-
+//
+////////////////////////////////////////////////////////
 ExtendedRosetteEditor::ExtendedRosetteEditor(QString name) : RosetteEditor(name)
 {
     extendPeriphBox    = new QCheckBox("Extend PeripheralVertices");
@@ -509,15 +858,14 @@ void ExtendedRosetteEditor::setMotif(DesignElementPtr del, bool doEmit)
         RosettePtr rsp = dynamic_pointer_cast<Rosette>(oldMotif);
         if (rsp)
         {
-            auto extended = make_shared<ExtendedRosette>(*oldMotif.get(),rsp->getN(),rsp->getQ(),
-                                                    rsp->getS(),rsp->getK());
+            auto extended = make_shared<ExtendedRosette>(*oldMotif.get(),rsp->getN(),rsp->getQ(),rsp->getS());
             del->setMotif(extended);
             setMotif(extended, doEmit);
         }
         else
         {
             int n = oldMotif->getN();
-            auto extended = make_shared<ExtendedRosette>(*oldMotif.get(), n, 0.0, 3, 0);
+            auto extended = make_shared<ExtendedRosette>(*oldMotif.get(), n, 0.0, 3);
             del->setMotif(extended);
             setMotif(extended, doEmit);
         }
@@ -534,12 +882,13 @@ void ExtendedRosetteEditor::setMotif(std::shared_ptr<ExtendedRosette>(extended),
     editorToMotif(doEmit);
 }
 
-
 void ExtendedRosetteEditor::motifToEditor()
 {
     auto erose = wextended.lock();
     if (erose)
     {
+        RosetteEditor::motifToEditor();
+
         auto & extender = erose->getExtender();
         bool ext_t      = extender.getExtendPeripheralVertices();
         bool ext_nt     = extender.getExtendFreeVertices();
@@ -550,8 +899,6 @@ void ExtendedRosetteEditor::motifToEditor()
         extendFreeBox->setChecked(ext_nt);
         connectBoundaryBox->setChecked(con_bd);
         blockSignals(false);
-
-        RosetteEditor::motifToEditor();
     }
 }
 
@@ -560,6 +907,8 @@ void ExtendedRosetteEditor::editorToMotif(bool doEmit)
     auto erose = wextended.lock();
     if (erose)
     {
+        RosetteEditor::editorToMotif(false);
+
         bool extendPeripherals  = extendPeriphBox->isChecked();
         bool extendFreeVertices = extendFreeBox->isChecked();
         bool connectBoundary    = connectBoundaryBox->isChecked();
@@ -570,8 +919,6 @@ void ExtendedRosetteEditor::editorToMotif(bool doEmit)
         extender.setExtendFreeVertices(extendFreeVertices);
         extender.setConnectBoundaryVertices(connectBoundary);
         blockSignals(false);
-
-        RosetteEditor::editorToMotif(false);
 
         if (doEmit)
             emit sig_motif_modified(erose);
