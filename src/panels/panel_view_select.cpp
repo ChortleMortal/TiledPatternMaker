@@ -5,6 +5,7 @@
 #include "panels/panel_misc.h"
 #include "settings/configuration.h"
 #include "tiledpatternmaker.h"
+#include "viewers/measure_view.h"
 #include "viewers/view_controller.h"
 #include "misc/sys.h"
 
@@ -186,6 +187,7 @@ void  PanelViewSelect::slot_Viewer_pressed(int id, bool enable)
         break;
 
     case VIEW_MEASURE:
+        MeasureView::getInstance()->clear();
         Sys::measure = enable;
         break;
 

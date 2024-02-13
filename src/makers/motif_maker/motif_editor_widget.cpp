@@ -43,6 +43,7 @@ MotifEditorWidget::MotifEditorWidget()
     ex_star_edit           = new ExtendedStarEditor("ex_star_edit");
     ex_star2_edit          = new ExtendedStar2Editor("ex_star2_edit");
     ex_rosette_edit        = new ExtendedRosetteEditor("ex_rosette_edit");
+    ex_rosette2_edit       = new ExtendedRosette2Editor("ex_rosette2_edit");
 
     // combo to select motif type for tile
     typeCombo              = new MotifTypeCombo();
@@ -121,6 +122,10 @@ void MotifEditorWidget::delegate(DesignElementPtr del)
     case MOTIF_TYPE_EXTENDED_ROSETTE:
         delgate(ex_rosette_edit);
         ex_rosette_edit->setMotif(del,false);
+        break;
+    case MOTIF_TYPE_EXTENDED_ROSETTE2:
+        delgate(ex_rosette2_edit);
+        ex_rosette2_edit->setMotif(del,false);
         break;
     case MOTIF_TYPE_STAR:
         delgate(radial_star_edit);
@@ -231,6 +236,8 @@ NamedMotifEditor * MotifEditorWidget ::getEditor(eMotifType type)
         return connect_rosette_edit;
     case MOTIF_TYPE_EXTENDED_ROSETTE:
         return ex_rosette_edit;
+    case MOTIF_TYPE_EXTENDED_ROSETTE2:
+        return ex_rosette2_edit;
     case MOTIF_TYPE_EXTENDED_STAR:
         return ex_star_edit;
     case MOTIF_TYPE_EXTENDED_STAR2:

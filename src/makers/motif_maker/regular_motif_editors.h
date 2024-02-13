@@ -24,6 +24,7 @@ typedef std::shared_ptr<class RosetteConnect>       RosetteConnectPtr;
 typedef std::shared_ptr<class ExtendedStar>         ExtStarPtr;
 typedef std::shared_ptr<class ExtendedStar2>        ExtStar2Ptr;
 typedef std::shared_ptr<class ExtendedRosette>      ExtRosettePtr;
+typedef std::shared_ptr<class ExtendedRosette2>     ExtRosette2Ptr;
 typedef std::shared_ptr<class DesignElement>        DesignElementPtr;
 
 typedef std::weak_ptr<class Motif>                  WeaskMotifPtr;
@@ -36,6 +37,7 @@ typedef std::weak_ptr<class RosetteConnect>         WeakRosetteConnectPtr;
 typedef std::weak_ptr<class ExtendedStar>           WeakExtStarPtr;
 typedef std::weak_ptr<class ExtendedStar2>          WeakExtStar2Ptr;
 typedef std::weak_ptr<class ExtendedRosette>        WeakExtRosettePtr;
+typedef std::weak_ptr<class ExtendedRosette2>       WeakExtRosette2Ptr;
 
 class StarEditor : public NamedMotifEditor
 {
@@ -118,7 +120,13 @@ protected:
     DoubleSliderSet	*	kx_slider;
     DoubleSliderSet	*	ky_slider;
     SliderSet       *   s_slider;
+    DoubleSliderSet	*	k_slider;
     QButtonGroup    *   tipGroup;
+    QCheckBox       *   kaplanize;
+    QPushButton     *   convert;
+
+private slots:
+    void    convertConstrained();
 
 private:
     WeakRosette2Ptr      wrosette;
@@ -224,6 +232,28 @@ protected:
 
 private:
     WeakExtRosettePtr wextended;
+
+    QCheckBox       * extendPeriphBox;
+    QCheckBox       * extendFreeBox;
+    QCheckBox       * connectBoundaryBox;
+};
+
+class ExtendedRosette2Editor : public Rosette2Editor
+{
+    Q_OBJECT
+
+public:
+    ExtendedRosette2Editor(QString name);
+
+    virtual void setMotif(DesignElementPtr del, bool doEmit) override;
+    void setMotif(std::shared_ptr<ExtendedRosette2>(extended), bool doEmit);
+
+protected:
+    virtual void editorToMotif(bool doEmit) override;
+    virtual void motifToEditor() override;
+
+private:
+    WeakExtRosette2Ptr wextended;
 
     QCheckBox       * extendPeriphBox;
     QCheckBox       * extendFreeBox;

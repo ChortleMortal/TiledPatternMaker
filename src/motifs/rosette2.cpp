@@ -27,20 +27,26 @@ typedef std::shared_ptr<Rosette2> Rosette2Ptr;
 
 using std::make_shared;
 
-Rosette2::Rosette2(const Motif & fig,  int nsides, qreal kneeX, qreal kneeY, int ss) : RadialMotif(fig, nsides)
+#define DBG_VAL 0x15
+
+Rosette2::Rosette2(const Motif & fig,  int nsides, qreal kneeX, qreal kneeY, int ss, qreal kk, bool c) : RadialMotif(fig, nsides)
 {
     this->kneeX = kneeX;
     this->kneeY = kneeY;
     s           = ss;
+    k           = kk;
+    constrain   = c;
     tipType     = TIP_TYPE_OUTER;
     setMotifType(MOTIF_TYPE_ROSETTE2);
 }
 
-Rosette2::Rosette2(int nsides, qreal kneeX, qreal kneeY, int ss) : RadialMotif(nsides)
+Rosette2::Rosette2(int nsides, qreal kneeX, qreal kneeY, int ss, qreal kk, bool c) : RadialMotif(nsides)
 {
     this->kneeX = kneeX;
     this->kneeY = kneeY;
     s           = ss;
+    k           = kk;
+    constrain   = c;
     tipType     = TIP_TYPE_OUTER;
     setMotifType(MOTIF_TYPE_ROSETTE2);
 }
@@ -50,7 +56,10 @@ Rosette2::Rosette2(const Rosette2 & other) : RadialMotif(other)
     kneeX       = other.kneeX;
     kneeY       = other.kneeY;
     s           = other.s;
+    k           = other.k;
+    constrain   = other.constrain;
     tipType     = other.tipType;
+    setMotifType(MOTIF_TYPE_ROSETTE2);
 }
 
 bool Rosette2::equals(const MotifPtr other)
@@ -65,6 +74,9 @@ bool Rosette2::equals(const MotifPtr other)
     if (kneeY != otherp->kneeY)
         return  false;
 
+    if (k != otherp->k)
+        return false;
+
     if (s != otherp->s)
         return false;
 
@@ -77,94 +89,110 @@ bool Rosette2::equals(const MotifPtr other)
      return true;
 }
 
+bool Rosette2::pointOnLineLessThan(QPointF p1, QPointF p2)
+{
+    return  Geo::dist2(kneePt,p1) < Geo::dist2(kneePt,p2);
+}
+
 // kneeX is the %age of the distance to the center, so is always scaled by 1.0
 // kneey is the %age of half the edge width, so scaaling is depends on n (sides)
 void Rosette2::buildUnitMap()
 {
-#if 1
-    debugMap = make_shared<DebugMap>("rosette debug map");
-#endif
+    if ((DBG_VAL > 0) && !debugMap)
+        debugMap = make_shared<DebugMap>("rosette debug map");
+    else
+        debugMap.reset();
 
-    int dbgVal = 0x06;
-
-    qDebug().noquote() << "Rosette::buildUnit n:" << getN() << "x:" <<kneeX << "y" << kneeY << "s" << s
+    qDebug().noquote() << "Rosette::buildUnit n:" << getN() << "x:" << kneeX << "y:" << kneeY << "s:" << s << "k" << k
                        << "Tr:" << Transform::toInfoString(radialRotationTr) << "rot" << getMotifRotate();
 
     Tile atile(getN());
-    qreal yRange = atile.edgeLen() /2.0;
-    qreal xRange = 1.0;
+    xRange = 1.0;
+    yRange = atile.edgeLen() /2.0;
 
-    qreal y = yRange * kneeY;
     qreal x = xRange * kneeX;
-    QPointF kneePt(1.0 - x, y);
-    QPointF kneePtMirror(kneePt.x(),-kneePt.y());
-    
-    QPointF edgePt = Geo::perpPt(atile.getEdge(getN()-1),kneePt);
-    QLineF  line(edgePt,kneePt);
-    line.setLength(line.length()*100.0);
-    QPointF kneeEndPt = line.p2();
-    QPointF kneeEndPtMirror(kneeEndPt.x(), -kneeEndPt.y());
+    qreal y = yRange * kneeY;
 
-    QLineF kneeLine(kneePt,kneePtMirror);
-    QPointF tip(1.0, 0.0);         // The point to build from
-    QPointF tipMirror = Geo::reflectPoint(tip,kneeLine);
+    kneePt = QPointF(1.0 - x, y);
 
-    if (debugMap && (dbgVal & 0x04))
+    if (constrain)
     {
-        debugMap->insertDebugMark(edgePt,"edgePt");
-        debugMap->insertDebugMark(kneePt,"kneePt");
-        debugMap->insertDebugMark(kneePtMirror,"kneePtMirror");
-        debugMap->insertDebugMark(kneeEndPtMirror,"kneeEndPtMirror");
-
-        debugMap->insertDebugLine(kneePt,kneeEndPt);
-        debugMap->insertDebugLine(kneePtMirror,kneeEndPtMirror);
+        calcConstraintLine();
+        kneePt = Geo::getClosestPoint(constraint,kneePt);
     }
 
-    QList<QPointF> epoints;
-    epoints.push_back(kneePt);
-    for (int idx = 1; idx <= s; ++idx )
-    {
-        kneePtMirror    = radialRotationTr.map(kneePtMirror);
-        kneeEndPtMirror = radialRotationTr.map(kneeEndPtMirror);
+    QPointF kneePtMirror(kneePt.x(),-kneePt.y());
 
-        QLineF keyLine( kneePt, kneeEndPt);
-        QLineF keyRLine(kneePtMirror,kneeEndPtMirror);
+    QPointF edgePt = Geo::perpPt(atile.getEdge(getN()-1),kneePt);
+
+    QLineF  ray(edgePt,kneePt);         // ray from tile to knee point
+    ray.setLength(2.0);                 // extend ray
+    ray.setP1(kneePt);                  // the real ray
+    ray.setAngle(ray.angle() +k );      // factors in knee angle (k)
+
+    QLineF rayMirror(kneePtMirror, QPointF(ray.p2().x(), -ray.p2().y()));
+
+    QPointF outerTip(1.0, 0.0);                                 // standard tip
+
+    if (DBG_VAL & 0x01)
+    {
+        debugMap->insertDebugMark(kneePt,"kneePt");
+        debugMap->insertDebugLine(ray);
+        debugMap->insertDebugLine(rayMirror);
+    }
+
+    UniqueQVector<QPointF> epoints;
+
+    epoints.push_back(kneePt);
+
+    for (int idx = 0; idx <= getN(); idx++)
+    {
+        rayMirror = radialRotationTr.map(rayMirror);
 
         QPointF isect;
-        if (keyLine.intersects(keyRLine,&isect) == QLineF::BoundedIntersection)
+        if (ray.intersects(rayMirror,&isect) == QLineF::BoundedIntersection)
         {
             epoints.push_back(isect);
-            if (debugMap && idx == 1 && (dbgVal & 0x08))
-            {
-                debugMap->insertDebugLine(kneePtMirror,kneeEndPtMirror);
-                debugMap->insertDebugMark(kneePtMirror,QString("key_r_point%1").arg(idx));
-                debugMap->insertDebugMark(kneeEndPtMirror,QString("key_r_end%1").arg(idx));
-                debugMap->insertDebugMark(isect,QString("isect%1").arg(idx));
-            }
         }
     }
 
-    //QList<QPointF> epoints2 = epoints;
-    //epoints[0]              = kneePtMirror;
+    std::sort(epoints.begin(), epoints.end(), [this] (QPointF a, QPointF b) { return pointOnLineLessThan(a, b); });
+
+    if (DBG_VAL & 0x04)
+    {
+        qDebug() << "epoints" << epoints;
+        int idx = 0;
+        for (auto & ept :  std::as_const(epoints))
+        {
+            debugMap->insertDebugMark(ept,QString("pt%1").arg(idx++));
+        }
+    }
 
     // fill the map
     unitMap = make_shared<Map>("rosette unit map");
-    switch (tipType)
+    if (tipType ==  TIP_TYPE_OUTER)
     {
-    case TIP_TYPE_OUTER:
-        buildSegement(unitMap,tip,epoints);
-        break;
-
-    case TIP_TYPE_INNER:
-        buildSegement(unitMap,tipMirror,epoints);
-        break;
-
-    case TIP_TYPE_ALTERNATE:
-        buildSegement(unitMap,tip,epoints);
-        unitMap2 = make_shared<Map>("rosette unit map2");
-        buildSegement(unitMap2,tipMirror,epoints);
-       // unitMap2->transformMap(Tr);
+        buildSegement(unitMap,outerTip,epoints);
     }
+    else
+    {
+        QLineF  kneeLine(kneePt,kneePtMirror);
+        QPointF innerTip = Geo::reflectPoint(outerTip,kneeLine);    // outer tip reflected over kneeLine
+
+        if (tipType == TIP_TYPE_INNER)
+        {
+            buildSegement(unitMap,innerTip,epoints);
+        }
+        else
+        {
+            Q_ASSERT(tipType == TIP_TYPE_ALTERNATE);
+            buildSegement(unitMap,outerTip,epoints);
+            unitMap2 = make_shared<Map>("rosette unit map2");
+            buildSegement(unitMap2,innerTip,epoints);
+            //unitMap2->transformMap(Tr);
+        }
+    }
+
 }
 
 void  Rosette2::buildSegement(MapPtr map, QPointF tip, QList<QPointF> & epoints)
@@ -173,7 +201,7 @@ void  Rosette2::buildSegement(MapPtr map, QPointF tip, QList<QPointF> & epoints)
     VertexPtr top_prev = vt;
     VertexPtr bot_prev = vt;
 
-    for (int idx = 0; idx < epoints.size(); ++idx)
+    for (int idx = 0; idx < epoints.size() && idx <= s; ++idx)
     {
         VertexPtr top = map->insertVertex(epoints[idx]);
         VertexPtr bot = map->insertVertex(QPointF(epoints[idx].x(), - epoints[idx].y()));
@@ -214,4 +242,37 @@ void Rosette2::replicate()
     }
 
     motifMap->verify();
+}
+
+void Rosette2::calcConstraintLine()
+{
+    qreal   don         = get_don();
+    qreal   qr_outer    = 1.0 / qCos( M_PI * don );
+    QPointF r_outer     = QPointF(0.0, qr_outer);
+    QPointF up_outer    = getArc( 0.5 * don ) * qr_outer;
+    QPointF down_outer  = up_outer - r_outer;
+    QPointF bisector    = down_outer * 0.5;
+
+    constraint  = QLineF(bisector, up_outer);
+
+    if (DBG_VAL > 0x10)
+    {
+        debugMap->insertDebugLine(constraint);
+        debugMap->insertDebugMark(up_outer,"up_outer");
+        debugMap->insertDebugMark(bisector,"bisector");
+    }
+}
+
+bool Rosette2::convertConstrained()
+{
+    if (!constrain) return false;
+
+    qreal  x    = kneePt.x() / xRange;
+    qreal  y    = kneePt.y() / yRange;
+
+    kneeX       = 1.0 - x;
+    kneeY       = y;
+    constrain   = false;
+
+    return true;
 }

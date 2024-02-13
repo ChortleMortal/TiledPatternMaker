@@ -47,7 +47,7 @@ public:
     QTransform      getDELTransform();
     void            scaleAndRotate();
 
-    virtual void    setN(int n)                     { _n = n;  _extendedBoundary.setSides(n); }
+    virtual void    setN(int n)                     { _n = n; }
     int             getN()                          { return _n; }
 
     inline void     setTile(TilePtr tile)           { _tile = tile; }

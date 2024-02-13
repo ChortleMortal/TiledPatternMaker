@@ -33,6 +33,7 @@ Star2::Star2(const Star2 & other) : RadialMotif(other)
 {
     theta = other.theta;
     s     = other.s;
+    setMotifType(MOTIF_TYPE_STAR2);
 }
 
 bool Star2::equals(const MotifPtr other)

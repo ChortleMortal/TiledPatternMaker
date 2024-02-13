@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!-- Written: Mon Oct 17 2022 15:08:39 -->
-<vector id="1" version="13">
+<!-- Written: Mon Feb 12 2024 18:12:43 -->
+<vector id="1" version="17">
 	<designNotes>second use of k.  This is almost right - but not perfectly right yet.</designNotes>
 	<design>
 		<size>
@@ -28,7 +28,7 @@
 				<app.Prototype>
 					<string>regular-4</string>
 					<entry>
-						<tile.Feature id="4">
+						<Tile id="4">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -50,17 +50,19 @@
 									<Point reference="6" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<ExtendedRosette id="10" extendPeripherals="t" extendFreeVertices="f" connectBoundaryVertices="f">
-							<n>8</n>
-							<q>0.21</q>
-							<s>1</s>
-							<k>0.081</k>
+						</Tile>
+						<ExtendedRosette2 id="10" extendPeripherals="t" extendFreeVertices="f" connectBoundaryVertices="f" constrain="f">
 							<boundarySides>4</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</ExtendedRosette>
+							<n>8</n>
+							<kneeX>0.08900859</kneeX>
+							<kneeY>0.6784007399999999</kneeY>
+							<k>-19.8</k>
+							<s>2</s>
+						</ExtendedRosette2>
 					</entry>
 				</app.Prototype>
 			</prototype>

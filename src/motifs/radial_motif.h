@@ -55,6 +55,7 @@ protected:
     qreal       q;  // used by rosette
     qreal   kneeX;  // used by rosette2
     qreal   kneeY;  // used by rosette2
+    qreal       k;  // used by rosette2
 
     // generated
     qreal       don;

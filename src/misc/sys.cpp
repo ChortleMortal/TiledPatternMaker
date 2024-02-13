@@ -98,6 +98,7 @@ QMultiMap<eMotifType,QString> Sys::init()
     mmap.insert(MOTIF_TYPE_CONNECT_ROSETTE     , "ConnectRosette");
 
     mmap.insert(MOTIF_TYPE_EXTENDED_ROSETTE    , "ExtendedRosette");
+    mmap.insert(MOTIF_TYPE_EXTENDED_ROSETTE2   , "ExtendedRosette2");
 
     mmap.insert(MOTIF_TYPE_EXTENDED_STAR       , "ExtendedStar");
 

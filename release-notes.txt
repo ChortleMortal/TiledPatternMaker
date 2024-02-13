@@ -1,3 +1,22 @@
+Version 3.4.1
+=============
+
+Improvements:
+    Motifs              Rosette and RosetteExtended no longer support parameter k (neck angle)
+    Motifs              Parameter k (neck angle) added to Rosette2 and Rosette2Extended
+    Motif Maker         Added ability in Rosette2 to constrain knee (aka neck) to same locations as in Rosette
+
+Fixes:
+    Motfis              ExtendedRosette2 was missing
+    Motifs              Several motifs had incorrect copy constructors
+    Motifs              Extended Boundary sides could not be changed and was incorrectly tied to number of sides
+    Motif View          Motifs with non-unity scales were not displayed correctly, needed DesignElement transform
+    Media               Several mosaic files needed reparing for version 3.4 especially
+                        those using Rosettes wth non zero k parameters
+    Measure View        Toggling view enable clears previous measurements
+    Debug               Using 'K' in motif view to display debug lines was not updating every time
+
+
 Version 3.4
 ===========
 

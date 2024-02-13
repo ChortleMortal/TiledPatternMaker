@@ -226,6 +226,7 @@ void MotifTypeCombo::updateChoices(MotifPtr motif)
         add(MOTIF_TYPE_ROSETTE2,            "Rosette2 (New)");
         add(MOTIF_TYPE_CONNECT_ROSETTE,     "Rosette Connect");
         add(MOTIF_TYPE_EXTENDED_ROSETTE,    "Rosette Extended");
+        add(MOTIF_TYPE_EXTENDED_ROSETTE2,   "Rosette2 Extended (New)");
         add(MOTIF_TYPE_EXPLCIT_TILE,        "Explicit Tile");
     }
     else

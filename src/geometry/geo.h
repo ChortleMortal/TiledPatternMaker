@@ -94,6 +94,8 @@ public:
     static QLineF  normalVectorP1(QLineF line);
     static QLineF  normalVectorP2(QLineF line);
     static QPointF getClosestPoint(QLineF line, QPointF p);
+    static QPointF getClosestPointB(const QPointF & A, const QPointF & B, const QPointF & P);
+    static QPointF getClosestPointC(const QPointF & A, const QPointF & B, const QPointF & P);
     static qreal   angle(const QLineF &l0,const QLineF &l);
 
     static QVector<QLineF> rectToLines(QRectF & box);

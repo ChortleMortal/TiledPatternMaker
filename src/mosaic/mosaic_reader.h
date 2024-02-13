@@ -21,6 +21,7 @@ typedef shared_ptr<class BackgroundImage>  BkgdImagePtr;
 typedef shared_ptr<class Crop>             CropPtr;
 typedef shared_ptr<class Edge>             EdgePtr;
 typedef shared_ptr<class ExtendedRosette>  ExtRosettePtr;
+typedef shared_ptr<class ExtendedRosette2> ExtRosette2Ptr;
 typedef shared_ptr<class ExtendedStar>     ExtStarPtr;
 typedef shared_ptr<class ExtendedStar2>    ExtStar2Ptr;
 typedef shared_ptr<class Tile>             TilePtr;
@@ -103,6 +104,7 @@ protected:
     ExtStarPtr          getExtendedStar(xml_node & node, int tile_sides);
     ExtStar2Ptr         getExtendedStar2(xml_node & node, int tile_sides);
     ExtRosettePtr       getExtendedRosette(xml_node & node, int tile_sides);
+    ExtRosette2Ptr      getExtendedRosette2(xml_node & node, int tile_sides);
     RosettePtr          getRosette(xml_node & node, int tile_sides);
     Rosette2Ptr         getRosette2(xml_node & node, int tile_sides);
     RosetteConnectPtr   getRosetteConnect(xml_node & node, int tile_sides);
@@ -132,6 +134,7 @@ protected:
     void   setExtStarReference(xml_node & node, ExtStarPtr ptr);
     void   setExtStar2Reference(xml_node & node, ExtStar2Ptr ptr);
     void   setExtRosetteReference(xml_node & node, ExtRosettePtr ptr);
+    void   setExtRosette2Reference(xml_node & node, ExtRosette2Ptr ptr);
     void   setRosetteReference(xml_node & node, RosettePtr ptr);
     void   setRosette2Reference(xml_node & node, Rosette2Ptr ptr);
     void   setRosetteConnectReference(xml_node & node, RosetteConnectPtr ptr);
@@ -149,6 +152,7 @@ protected:
     ExtStarPtr      getExtStarReferencedPtr(xml_node & node);
     ExtStar2Ptr     getExtStar2ReferencedPtr(xml_node & node);
     ExtRosettePtr   getExtRosetteReferencedPtr(xml_node & node);
+    ExtRosette2Ptr  getExtRosette2ReferencedPtr(xml_node & node);
     RosettePtr      getRosetteReferencedPtr(xml_node & node);
     Rosette2Ptr     getRosette2ReferencedPtr(xml_node & node);
     RosetteConnectPtr getRosetteConnectReferencedPtr(xml_node & node);
@@ -179,6 +183,7 @@ protected:
     QMap<int,ExtStarPtr>    ext_star_ids;
     QMap<int,ExtStar2Ptr>   ext_star2_ids;
     QMap<int,ExtRosettePtr> ext_rosette_ids;
+    QMap<int,ExtRosette2Ptr>ext_rosette2_ids;
     QMap<int,RosettePtr>    rosette_ids;
     QMap<int,Rosette2Ptr>   rosette2_ids;
     QMap<int,RosetteConnectPtr> rosette_connect_ids;

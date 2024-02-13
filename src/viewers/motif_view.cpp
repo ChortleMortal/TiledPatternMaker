@@ -103,26 +103,29 @@ void MotifView::paint(QPainter *painter)
             placement = tiling->getFirstPlacement(tile);
         }
 
-        _T = placement * baseT;
+        QTransform T = placement * baseT;
         //qDebug().noquote() << "MotifView::transform" << Transform::toInfoString(_T);
+
+        QTransform T2 = motif->getDELTransform() * T;
+        paintDebugMap(painter,motif,T2);
 
         // paint boundaries
         if (config->showTileBoundary)
         {
             painter->setPen(QPen(Qt::magenta,lineWidth));
-            paintTileBoundary(painter,tile);
+            paintTileBoundary(painter,tile,T);
         }
 
         if (config->showMotifBoundary)
         {
             painter->setPen(QPen(Qt::red,lineWidth));
-            paintMotifBoundary(painter,motif);
+            paintMotifBoundary(painter,motif,T);
         }
 
         if (config->showExtendedBoundary)
         {
             painter->setPen(QPen(Qt::yellow,lineWidth));
-            paintExtendedBoundary(painter,motif);
+            paintExtendedBoundary(painter,motif,T2);
         }
 
         drawLayerModelCenter(painter);
@@ -130,7 +133,7 @@ void MotifView::paint(QPainter *painter)
         if (config->showTileCenter)
         {
             QPointF pt = tile->getCenter();
-            pt = _T.map(pt);
+            pt = T.map(pt);
             drawCenterSymbol(painter,pt,QColor(Qt::red),QColor(Qt::green));
         }
 
@@ -151,7 +154,7 @@ void MotifView::paint(QPainter *painter)
                 {
                     pt = tile->getCenter();
                 }
-                pt = _T.map(pt);
+                pt = T.map(pt);
                 drawCenterSymbol(painter,pt,QColor(Qt::green),QColor(Qt::red));
             }
         }
@@ -162,24 +165,11 @@ void MotifView::paint(QPainter *painter)
             painter->setPen(QPen(Qt::blue,lineWidth));
             if (motif->isRadial())
             {
-                paintRadialMotifMap(painter,motif);
+                paintRadialMotifMap(painter,motif,T);
             }
             else
             {
-                paintExplicitMotifMap(painter, motif);
-            }
-        }
-
-        DebugMapPtr dmap = motif->getDebugMap();
-        if (dmap)
-        {
-            auto map = std::dynamic_pointer_cast<Map>(dmap);
-            if (map)
-            {
-                QColor viewColor = viewControl->getCanvas().getBkgdColor();
-                QColor color = (viewColor == QColor(Qt::white)) ? Qt::black : Qt::white;
-                painter->setPen(QPen(color,lineWidth));
-                paintMap(painter,map);
+                paintExplicitMotifMap(painter, motif,T);
             }
         }
 
@@ -200,7 +190,7 @@ void MotifView::paint(QPainter *painter)
     }
 }
 
-void MotifView::paintExplicitMotifMap(QPainter *painter, MotifPtr motif)
+void MotifView::paintExplicitMotifMap(QPainter *painter, MotifPtr motif, QTransform & tr)
 {
     //qDebug() << "paintExplicitMotifMap" << motif->getMotifDesc();
 
@@ -208,26 +198,11 @@ void MotifView::paintExplicitMotifMap(QPainter *painter, MotifPtr motif)
     if (map)
     {
         //map->verifyMap( "paintExplicitFigure");
-        paintMap(painter,map);
-    }
-
-    DebugMapPtr dmap = motif->getDebugMap();
-    {
-        if (dmap && !dmap->isEmpty())
-        {
-            map = std::dynamic_pointer_cast<Map>(dmap);
-            if (map)
-            {
-                QColor viewColor = viewControl->getCanvas().getBkgdColor();
-                QColor color = (viewColor == QColor(Qt::white)) ? Qt::black : Qt::white;
-                painter->setPen(QPen(color,lineWidth));
-                paintMap(painter,map);
-            }
-        }
+        paintMap(painter,map,tr);
     }
 }
 
-void MotifView::paintRadialMotifMap(QPainter *painter, MotifPtr motif)
+void MotifView::paintRadialMotifMap(QPainter *painter, MotifPtr motif, QTransform & tr)
 {
     qDebug() << "paintRadialMotifMap" << motif->getMotifDesc();
 
@@ -235,44 +210,47 @@ void MotifView::paintRadialMotifMap(QPainter *painter, MotifPtr motif)
     RadialPtr rp = std::dynamic_pointer_cast<RadialMotif>(motif);
 
     MapPtr map = rp->getMotifMap();
-    paintMap(painter,map);
-
-    DebugMapPtr dmap = rp->getDebugMap();
-    if (dmap && !dmap->isEmpty())
-    {
-        map = std::dynamic_pointer_cast<Map>(dmap);
-        if (map)
-        {
-            QColor viewColor = viewControl->getCanvas().getBkgdColor();
-            QColor color = (viewColor == QColor(Qt::white)) ? Qt::black : Qt::white;
-            painter->setPen(QPen(color,lineWidth));
-            paintMap(painter,map);
-        }
-    }
+    paintMap(painter,map,tr);
 
     if (Sys::highlightUnit)
     {
         map = rp->getUnitMap();
         painter->setPen(QPen(Qt::red,lineWidth+1.0));
-        paintMap(painter,map);
+        paintMap(painter,map,tr);
     }
 }
 
-void MotifView::paintTileBoundary(QPainter *painter,TilePtr tile)
+void MotifView::paintDebugMap(QPainter *painter, MotifPtr motif, QTransform & tr)
+{
+    DebugMapPtr dmap = motif->getDebugMap();
+    if (dmap && !dmap->isEmpty())
+    {
+        auto map = std::dynamic_pointer_cast<Map>(dmap);
+        if (map)
+        {
+            QColor viewColor = viewControl->getCanvas().getBkgdColor();
+            QColor color = (viewColor == QColor(Qt::white)) ? Qt::black : Qt::white;
+            painter->setPen(QPen(color,lineWidth));
+            paintMap(painter,map,tr);
+        }
+    }
+}
+
+void MotifView::paintTileBoundary(QPainter *painter,TilePtr tile, QTransform & tr)
 {
     // draw tile
     // qDebug() << "scale" << feat->getScale();
     //qDebug().noquote() << feat->toBaseString();
     //qDebug().noquote() << feat->toString();
     EdgePoly  ep = tile->getEdgePoly();
-    ep.paint(painter,_T,true);
+    ep.paint(painter,tr,true);
 }
 
-void MotifView::paintMotifBoundary(QPainter *painter, MotifPtr motif)
+void MotifView::paintMotifBoundary(QPainter *painter, MotifPtr motif, QTransform &tr)
 {
     // show boundaries
     QPolygonF p = motif->getMotifBoundary();
-    p = _T.map(p);
+    p = tr.map(p);
     painter->drawPolygon(p);
     painter->setPen(QPen(Qt::blue,1));
     painter->setBrush(Qt::blue);
@@ -283,30 +261,30 @@ void MotifView::paintMotifBoundary(QPainter *painter, MotifPtr motif)
     painter->setBrush(Qt::NoBrush);
 }
 
-void MotifView::paintExtendedBoundary(QPainter *painter, MotifPtr motif)
+void MotifView::paintExtendedBoundary(QPainter *painter, MotifPtr motif, QTransform & tr)
 {
     const ExtendedBoundary & eb = motif->getExtendedBoundary();
 
     if (!eb.isCircle())
     {
         const QPolygonF & p = eb.getPoly();
-        painter->drawPolygon(_T.map(p));
+        painter->drawPolygon(tr.map(p));
     }
     else
     {
-        qreal radius = eb.getScale() * Transform::scalex(_T);
-        painter->drawEllipse(_T.map(QPointF(0,0)),radius,radius);
+        qreal radius = eb.getScale() * Transform::scalex(tr);
+        painter->drawEllipse(tr.map(QPointF(0,0)),radius,radius);
     }
 }
 
-void MotifView::paintMap(QPainter * painter, MapPtr map)
+void MotifView::paintMap(QPainter * painter, MapPtr map, QTransform &tr)
 {
     //map->verify("figure", true, true, true);
     //qDebug() << "MotifView::paintMap" <<  map->namedSummary();
     for (auto & edge : std::as_const(map->getEdges()))
     {
-        QPointF p1 = _T.map(edge->v1->pt);
-        QPointF p2 = _T.map(edge->v2->pt);
+        QPointF p1 = tr.map(edge->v1->pt);
+        QPointF p2 = tr.map(edge->v2->pt);
 
         //qDebug() << "edge" << p1 << p2;
 
@@ -316,13 +294,13 @@ void MotifView::paintMap(QPainter * painter, MapPtr map)
         }
         else if (edge->getType() == EDGETYPE_CURVE)
         {
-            QPointF arcCenter = _T.map(edge->getArcCenter());
+            QPointF arcCenter = tr.map(edge->getArcCenter());
             ArcData ad(p1,p2,arcCenter,edge->isConvex());
             painter->drawArc(ad.rect, qRound(ad.start * 16.0),qRound(ad.span*16.0));
         }
         else if (edge->getType() == EDGETYPE_CHORD)
         {
-            QPointF arcCenter = _T.map(edge->getArcCenter());
+            QPointF arcCenter = tr.map(edge->getArcCenter());
             ArcData ad(p1,p2,arcCenter,edge->isConvex());
             painter->drawChord(ad.rect, qRound(ad.start * 16.0),qRound(ad.span*16.0));
         }
@@ -345,7 +323,7 @@ void MotifView::paintMap(QPainter * painter, MapPtr map)
         painter->drawText(QPointF(pt.x()+7,pt.y()+13),txt);
         painter->restore();
 #else
-        pt = _T.map(pt);
+        pt = tr.map(pt);
         painter->drawText(QPointF(pt.x()+7,pt.y()+13),txt);
 #endif
     }

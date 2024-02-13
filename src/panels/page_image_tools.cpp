@@ -279,7 +279,6 @@ int page_image_tools::createCompareImagesBox(int row)
     hbox->addWidget(cbStopIfDiff);
     hbox->addWidget(differences);
     hbox->addWidget(chkPopup);
-    hbox->addWidget(transparent);
 
     QHBoxLayout * hbox2 = new QHBoxLayout;
     hbox2->addWidget(imageCompareResult);
@@ -304,11 +303,14 @@ int page_image_tools::createCompareImagesBox(int row)
 
     row++;
     QHBoxLayout * hbox4 = new QHBoxLayout();
+    hbox4->addLayout(hbox);
+    hbox4->addStretch();
+    hbox4->addWidget(transparent);
     hbox4->addWidget(chkUseFilter);
     hbox4->addWidget(colorLabel);
     hbox4->addWidget(colorEdit);
-    hbox4->addLayout(hbox);
     hbox4->addStretch();
+
     grid->addLayout(hbox4,row,0,1,2);
     grid->addWidget(use_wlistForCompareChk,row,2);
 

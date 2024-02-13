@@ -124,6 +124,7 @@ bool Motif::isRadial() const
     case MOTIF_TYPE_CONNECT_STAR:
     case MOTIF_TYPE_CONNECT_ROSETTE:
     case MOTIF_TYPE_EXTENDED_ROSETTE:
+    case MOTIF_TYPE_EXTENDED_ROSETTE2:
     case MOTIF_TYPE_EXTENDED_STAR:
     case MOTIF_TYPE_EXTENDED_STAR2:
         return true;

@@ -39,6 +39,7 @@ Rosette::Rosette(const Rosette & other) : RadialMotif(other)
 {
     q     = other.q;
     s     = other.s;
+    setMotifType(MOTIF_TYPE_ROSETTE);
 }
 
 bool Rosette::equals(const MotifPtr other)
@@ -89,9 +90,11 @@ qreal Rosette::q_clamp(qreal q)
 
 void Rosette::buildUnitMap()
 {
-#if 1
-    debugMap = make_shared<DebugMap>("rosette debug map");
-#endif
+    uint dbgVal = 0x04;
+    if (dbgVal > 0)
+        debugMap = make_shared<DebugMap>("rosette debug map");
+    else
+        debugMap.reset();
 
     //qDebug().noquote() << "Rosette::buildUnit"  << getN() << q << s << "Tr:" << Transform::toInfoString(Tr) << "rot" << getMotifRotate();
 
@@ -108,7 +111,7 @@ void Rosette::buildUnitMap()
     QPointF up_outer    = getArc( 0.5 * don ) * qr_outer;
     QPointF down_outer  = up_outer - r_outer;
     QPointF bisector    = down_outer * 0.5;
-    if (debugMap)
+    if (dbgVal & 0x01)
     {
         debugMap->insertDebugMark(center,"center");
         debugMap->insertDebugMark(tip,"tip");
@@ -126,7 +129,7 @@ void Rosette::buildUnitMap()
     qreal stable_angle   = Geo::getAngle(apoint2);
     //qDebug() << "stable_angle:"  << stable_angle  << qRadiansToDegrees(stable_angle);
 
-    if (debugMap)
+    if (dbgVal & 0x02)
     {
         debugMap->insertDebugMark(norm_up_outer,"norm_up_out");
         debugMap->insertDebugMark(apoint,"apoint");
@@ -159,18 +162,20 @@ void Rosette::buildUnitMap()
     QPointF key_r_point(key_point.x(), -key_point.y());
     QPointF key_r_end(  key_end.x(),   -key_end.y());
 
-    if (debugMap)
+    if (dbgVal & 0x04)
     {
         debugMap->insertDebugLine(tip, qtip);              // adjusting q adjusts qtip
         debugMap->insertDebugLine(up_outer, bisector);     // this is the line along hich the key_point (aka) shoulder moved
         //debugMap->insertDebugLine(key_point,key_end);
         debugMap->insertDebugLine(key_r_point,key_r_end);
 
-        debugMap->insertDebugMark(qtip,"qtip");
-        debugMap->insertDebugMark(key_point,"key_point");
-        debugMap->insertDebugMark(key_end,"key_end");
-        debugMap->insertDebugMark(key_r_point,"key_r_point_0");
-        debugMap->insertDebugMark(key_r_end,"key_r_end_0");
+        debugMap->insertDebugMark(up_outer,"up_outer");
+        debugMap->insertDebugMark(bisector,"bisector");
+        //debugMap->insertDebugMark(key_point,"key_point");
+        //debugMap->insertDebugMark(key_point,"key_point");
+        //debugMap->insertDebugMark(key_end,"key_end");
+        //debugMap->insertDebugMark(key_r_point,"key_r_point_0");
+        //debugMap->insertDebugMark(key_r_end,"key_r_end_0");
     }
 
     unitMap = make_shared<Map>("rosette unit map");
@@ -194,7 +199,7 @@ void Rosette::buildUnitMap()
         if (key_line.intersects(key_r_line,&isect) == QLineF::BoundedIntersection)
         {
             //qDebug().noquote() << QString("isect%1").arg(idx) << isect;
-            if (debugMap && idx == 1)
+            if (dbgVal & 0x08 && idx == 1)
             {
                 debugMap->insertDebugLine(key_r_point,key_r_end);
 

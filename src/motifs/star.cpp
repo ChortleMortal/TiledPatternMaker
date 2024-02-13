@@ -34,6 +34,7 @@ Star::Star(const Star & other) : RadialMotif(other)
 {
     d = other.d;
     s = other.s;
+    setMotifType(MOTIF_TYPE_STAR);
 }
 
 bool Star::equals(const MotifPtr other)

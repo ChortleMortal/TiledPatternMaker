@@ -1,14 +1,13 @@
 <?xml version="1.0"?>
-<!-- Written: Sat Dec 16 2023 16:37:41 -->
+<!-- Written: Sun Feb 4 2024 09:11:56 -->
 <vector id="1" version="17">
-	<designNotes>adds border for test
-border uses view size</designNotes>
+	<designNotes>adds border for test</designNotes>
 	<design>
 		<size>
 			<width>1500</width>
-			<height>1032</height>
+			<height>1100</height>
 			<zwidth>1500</zwidth>
-			<zheight>1061</zheight>
+			<zheight>1100</zheight>
 		</size>
 		<background>
 			<color>#ffffffff</color>
@@ -16,14 +15,14 @@ border uses view size</designNotes>
 		<border type="Blocks" shape="Rectangle" useViewSize="t">
 			<color>#ffa27967</color>
 			<rows>11</rows>
-			<cols>13</cols>
+			<cols>15</cols>
 			<rect>
 				<X>-10</X>
 				<Y>-7.333333333333336</Y>
 				<width>20</width>
-				<height>13.76</height>
+				<height>14.66666666666667</height>
 			</rect>
-			<width>2</width>
+			<width>1.333333333333333</width>
 		</border>
 		<Fill singleton="f">-2,1,-2,1</Fill>
 	</design>

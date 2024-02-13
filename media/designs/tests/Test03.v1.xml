@@ -1,30 +1,34 @@
 <?xml version="1.0"?>
-<vector id="1" version="6">
+<!-- Written: Mon Feb 12 2024 16:59:23 -->
+<vector id="1" version="17">
 	<designNotes>6 pt rosette extended - want to make k control angles so line is parallel</designNotes>
 	<design>
 		<size>
 			<width>1500</width>
 			<height>1100</height>
+			<zwidth>1500</zwidth>
+			<zheight>1100</zheight>
 		</size>
 		<background>
 			<color>#ffffffff</color>
 		</background>
-		<Fill>-4,4,-5,5</Fill>
+		<Fill singleton="f">-4,4,-5,5</Fill>
 	</design>
-	<style.Thick id="2" serialization="custom">
+	<style.Thick id="2">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
 			<top__delta>0</top__delta>
 			<width__delta>1</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>0,0</center>
+			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<prototype id="3" serialization="custom">
+			<prototype id="3">
 				<app.Prototype>
 					<string>regular-4</string>
 					<entry>
-						<tile.Feature id="4">
+						<Tile id="4">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -46,17 +50,19 @@
 									<Point reference="6" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<ExtendedRosette id="10" extendPeripherals="f" extendFreeVertices="f" connectBoundaryVertices="f">
-							<n>6</n>
-							<q>0.5</q>
-							<s>1</s>
-							<k>0.125</k>
+						</Tile>
+						<ExtendedRosette2 id="10" extendPeripherals="f" extendFreeVertices="f" connectBoundaryVertices="f" constrain="f">
 							<boundarySides>4</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</ExtendedRosette>
+							<n>6</n>
+							<kneeX>0.105</kneeX>
+							<kneeY>0.6850000000000001</kneeY>
+							<k>-30.4</k>
+							<s>2</s>
+						</ExtendedRosette2>
 					</entry>
 				</app.Prototype>
 			</prototype>
@@ -67,6 +73,8 @@
 		<style.Thick>
 			<draw__outline>false</draw__outline>
 			<width>0.03</width>
+			<join>round</join>
+			<cap>round</cap>
 		</style.Thick>
 	</style.Thick>
 </vector>

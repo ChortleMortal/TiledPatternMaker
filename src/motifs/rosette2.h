@@ -30,35 +30,50 @@ enum eTipType
 class Rosette2 : public RadialMotif
 {
 public:
-    Rosette2(const Motif & fig,  int n, qreal kneeX, qreal kneeY, int ss);
-    Rosette2(int n, qreal kneeX, qreal kneeY, int ss);
+    Rosette2(const Motif & fig,  int n, qreal kneeX, qreal kneeY, int ss, qreal kk, bool c);
+    Rosette2(int n, qreal kneeX, qreal kneeY, int ss, qreal kk, bool c);
     Rosette2(const Rosette2 & other);
 
     virtual void  buildUnitMap() override;
 
-    qreal   getKneeX()              {return kneeX;}
-    qreal   getKneeY()              {return kneeY;}
-    int     getS()                  {return s;}
+    qreal   getKneeX()              { return kneeX;}
+    qreal   getKneeY()              { return kneeY;}
+    qreal   getK()                  { return k;}
+    int     getS()                  { return s;}
+    bool    getConstrain()          { return constrain; }
 
     void    setKneeX(qreal x)       { kneeX = x; }
-    void    setKneeY(qreal y)       { kneeY = y;}
+    void    setKneeY(qreal y)       { kneeY = y; }
+    void    setK(qreal kk)          { k = kk; }
     void    setS(int ss)            { s = ss; }
+    void    setConstrain(bool c)    { constrain = c; }
 
-    void     setTipType(eTipType tt) { tipType = tt; }
-    eTipType getTipType()            { return tipType; }
+    void     setTipType(eTipType t) { tipType = t; }
+    eTipType getTipType()           { return tipType; }
 
     virtual QString getMotifDesc() override { return "Rosette2";}
-    virtual void    report()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "q:" << q << "s" << s; }
+    virtual void    report()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "kneeX:" << kneeX << "kneeY:" << kneeY << "s:" << s << "k:" << k; }
 
     bool    equals(const MotifPtr other) override;
+    bool    pointOnLineLessThan(QPointF p1, QPointF v2);
+    bool    convertConstrained();
 
 protected:
-    void    buildSegement(MapPtr map, QPointF tip, QList<QPointF> & epoints);
     void    replicate() override;
+
+    void    buildSegement(MapPtr map, QPointF tip, QList<QPointF> & epoints);
+    void    calcConstraintLine();
 
 private:
     eTipType tipType;
+    bool     constrain;     // use Kaplan's constraint
+    QLineF   constraint;    // Kaplan's aesthetic call of line where knee should lie on
+
+    QPointF  kneePt;        // used by sort
+
     MapPtr   unitMap2;
+    qreal    yRange;
+    qreal    xRange;
 };
 
 #endif

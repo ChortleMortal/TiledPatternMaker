@@ -1617,6 +1617,8 @@ void PatternKumiko2::build()
 
     DesignElementPtr dep = make_shared<DesignElement>(placedTiles[0]->getTile(),motif);
 
+    Sys::viewController->getCanvas().setFillData(fd);
+
     ProtoPtr proto = make_shared<Prototype>(t);
     proto->addElement(dep);
     proto->createProtoMap();

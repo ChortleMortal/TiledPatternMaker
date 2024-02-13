@@ -23,6 +23,7 @@ typedef shared_ptr<class Border>           BorderPtr;
 typedef shared_ptr<class Crop>             CropPtr;
 typedef shared_ptr<class IrregularMotif>   ExplicitPtr;
 typedef shared_ptr<class ExtendedRosette>  ExtRosettePtr;
+typedef shared_ptr<class ExtendedRosette2> ExtRosette2Ptr;
 typedef shared_ptr<class ExtendedStar>     ExtStarPtr;
 typedef shared_ptr<class ExtendedStar2>    ExtStar2Ptr;
 typedef shared_ptr<class Tile>             TilePtr;
@@ -99,6 +100,7 @@ protected:
     void    setExtendedStar(QTextStream & ts,QString name, MotifPtr motif);
     void    setExtendedStar2(QTextStream & ts,QString name, MotifPtr motif);
     void    setExtendedRosette(QTextStream & ts,QString name, MotifPtr motif);
+    void    setExtendedRosette2(QTextStream & ts,QString name, MotifPtr motif);
     void    setRosetteConnect(QTextStream & ts,QString name, MotifPtr motif);
     void    setStarConnect(QTextStream & ts,QString name, MotifPtr motif);
 
@@ -130,6 +132,7 @@ protected:
     bool   hasReference(ExtStarPtr ep);
     bool   hasReference(ExtStar2Ptr ep);
     bool   hasReference(ExtRosettePtr ep);
+    bool   hasReference(ExtRosette2Ptr ep);
     bool   hasReference(RosetteConnectPtr ep);
     bool   hasReference(StarConnectPtr ep);
     bool   hasReference(MapPtr map);
@@ -147,6 +150,7 @@ protected:
     void   setExtendedStarReference(int id, ExtStarPtr ptr);
     void   setExtendedStar2Reference(int id, ExtStar2Ptr ptr);
     void   setExtendedRosetteReference(int id, ExtRosettePtr ptr);
+    void   setExtendedRosette2Reference(int id, ExtRosette2Ptr ptr);
     void   setRosetteReference(int id, RosettePtr ptr);
     void   setRosette2Reference(int id, Rosette2Ptr ptr);
     void   setRosetteConnectReference(int id, RosetteConnectPtr ptr);
@@ -164,6 +168,7 @@ protected:
     QString getExtendedStarReference(ExtStarPtr ptr);
     QString getExtendedStar2Reference(ExtStar2Ptr ptr);
     QString getExtendedRosetteReference(ExtRosettePtr ptr);
+    QString getExtendedRosette2Reference(ExtRosette2Ptr ptr);
     QString getRosetteReference(RosettePtr ptr);
     QString getRosette2Reference(Rosette2Ptr ptr);
     QString getRosetteConnectReference(RosetteConnectPtr ptr);
@@ -188,6 +193,7 @@ private:
     QMap<ExtStarPtr,int>    extended_star_ids;
     QMap<ExtStar2Ptr,int>   extended_star2_ids;
     QMap<ExtRosettePtr,int> extended_rosette_ids;
+    QMap<ExtRosette2Ptr,int> extended_rosette2_ids;
     QMap<RosettePtr,int>    rosette_ids;
     QMap<Rosette2Ptr,int>   rosette2_ids;
     QMap<RosetteConnectPtr,int> rosette_connect_ids;

@@ -332,12 +332,15 @@ Rosette2Editor::Rosette2Editor(QString name) : NamedMotifEditor(name)
 {
     kx_slider = new DoubleSliderSet("Rosette2 KneeX height", 0.25, 0, 1.0, 100 );
     ky_slider = new DoubleSliderSet("Rosette2 KneeY width ", 0.25, 0, 1.0, 100 );
+    k_slider  = new DoubleSliderSet("Rosette2 K (Knee Angle)", 0.0, -90.0, 90.0, 10);
     s_slider  = new SliderSet(      "Rosette2 S Intersections", 1, 1, 5);
 
     QRadioButton * rOuter = new QRadioButton("Outwards");
     QRadioButton * rInner = new QRadioButton("Inwards");
     QRadioButton * rAlter = new QRadioButton("Alternating");
     QLabel       * label  = new QLabel("Tip Direction :");
+                kaplanize = new QCheckBox("Kaplan's constraint");
+                  convert = new QPushButton("Convert");
 
     QHBoxLayout * hbox = new QHBoxLayout;
     hbox->addStretch();
@@ -346,10 +349,15 @@ Rosette2Editor::Rosette2Editor(QString name) : NamedMotifEditor(name)
     hbox->addWidget(rOuter);
     hbox->addWidget(rInner);
     hbox->addWidget(rAlter);
+    hbox->addSpacing(31);
+    hbox->addWidget(kaplanize);
+    hbox->addSpacing(5);
+    hbox->addWidget(convert);
     hbox->addStretch();
 
     addLayout(kx_slider);
     addLayout(ky_slider);
+    addLayout(k_slider);
     addLayout(s_slider);
     addLayout(hbox);
 
@@ -360,8 +368,11 @@ Rosette2Editor::Rosette2Editor(QString name) : NamedMotifEditor(name)
 
     connect(kx_slider, &DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
     connect(ky_slider, &DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
+    connect(k_slider,  &DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
     connect(s_slider,  &SliderSet::valueChanged,       this, [this]() { editorToMotif(true);});
     connect(tipGroup,  &QButtonGroup::idClicked,       this, [this]() { editorToMotif(true);});
+    connect(kaplanize, &QCheckBox::clicked,            this, [this]() { editorToMotif(true);});
+    connect(convert,   &QPushButton::clicked,          this, &Rosette2Editor::convertConstrained);
 }
 
 void Rosette2Editor::setMotif(DesignElementPtr del, bool doEmit)
@@ -379,7 +390,7 @@ void Rosette2Editor::setMotif(DesignElementPtr del, bool doEmit)
     {
         // create using defualts
         int n = oldMotif->getN();
-        auto rosette  = make_shared<Rosette2>(*oldMotif.get(), n, 0.25,0.25,2);
+        auto rosette  = make_shared<Rosette2>(*oldMotif.get(), n, 0.25,0.25,2,0.0, false);
         del->setMotif(rosette);
         setMotif(rosette,doEmit);
     }
@@ -411,14 +422,20 @@ void Rosette2Editor::motifToEditor()
 
         qreal  x  = rose->getKneeX();
         qreal  y  = rose->getKneeY();
+        qreal  k  = rose->getK();
         int    ss = rose->getS();
-        eTipType tt = rose->getTipType();
+        eTipType tt    = rose->getTipType();
+        bool constrain = rose->getConstrain();
+
+        convert->setVisible(constrain);
 
         blockSignals(true);
         kx_slider->setValue(x);
         ky_slider->setValue(y);
+        k_slider->setValue(k);
         s_slider->setValue(ss);
         tipGroup->button(tt)->setChecked(true);
+        kaplanize->setChecked(constrain);
         blockSignals(false);
     }
 }
@@ -432,17 +449,36 @@ void Rosette2Editor::editorToMotif(bool doEmit)
 
         qreal  x = kx_slider->value();
         qreal  y = ky_slider->value();
-        int sval = s_slider->value();
+        qreal  k = k_slider->value();
+        int    s = s_slider->value();
         eTipType tt = static_cast<eTipType>(tipGroup->checkedId());
+        bool   c = kaplanize->isChecked();
+
+        convert->setVisible(c);
 
         rose->setKneeX(x);
         rose->setKneeY(y);
-        rose->setS(sval);
+        rose->setK(k);
+        rose->setS(s);
         rose->setTipType(tt);
+        rose->setConstrain(c);
         rose->resetMotifMaps();
 
         if (doEmit)
             emit sig_motif_modified(rose);
+    }
+}
+
+void Rosette2Editor::convertConstrained()
+{
+    auto rose = wrosette.lock();
+    if (rose)
+    {
+        if (rose->convertConstrained())
+        {
+            motifToEditor();
+            editorToMotif(true);
+        }
     }
 }
 
@@ -908,6 +944,113 @@ void ExtendedRosetteEditor::editorToMotif(bool doEmit)
     if (erose)
     {
         RosetteEditor::editorToMotif(false);
+
+        bool extendPeripherals  = extendPeriphBox->isChecked();
+        bool extendFreeVertices = extendFreeBox->isChecked();
+        bool connectBoundary    = connectBoundaryBox->isChecked();
+
+        blockSignals(true);
+        auto & extender = erose->getExtender();
+        extender.setExtendPeripheralVertices(extendPeripherals);
+        extender.setExtendFreeVertices(extendFreeVertices);
+        extender.setConnectBoundaryVertices(connectBoundary);
+        blockSignals(false);
+
+        if (doEmit)
+            emit sig_motif_modified(erose);
+    }
+}
+
+////////////////////////////////////////////////////////
+//
+// ExtendedRosette2Editor
+//
+////////////////////////////////////////////////////////
+ExtendedRosette2Editor::ExtendedRosette2Editor(QString name) : Rosette2Editor(name)
+{
+    extendPeriphBox    = new QCheckBox("Extend PeripheralVertices");
+    extendFreeBox      = new QCheckBox("Extend Free Vertices");
+    connectBoundaryBox = new QCheckBox("Connect Boundary Vertices");
+
+    addWidget(extendPeriphBox);
+    addWidget(extendFreeBox);
+    addWidget(connectBoundaryBox);
+
+    connect(extendPeriphBox,    &QCheckBox::clicked,  this, [this]() { editorToMotif(true);});
+    connect(extendFreeBox,      &QCheckBox::clicked,  this, [this]() { editorToMotif(true);});
+    connect(connectBoundaryBox, &QCheckBox::clicked,  this, [this]() { editorToMotif(true);});
+}
+
+void ExtendedRosette2Editor::setMotif(DesignElementPtr del, bool doEmit)
+{
+    wDel = del;
+    if (!del || !del->getMotif())
+    {
+        wextended.reset();
+        return;
+    }
+
+    MotifPtr oldMotif = del->getMotif();
+    auto extended = dynamic_pointer_cast<ExtendedRosette2>(oldMotif);
+    if (extended)
+    {
+        setMotif(extended, doEmit);
+    }
+    else
+    {
+        Rosette2Ptr rsp = dynamic_pointer_cast<Rosette2>(oldMotif);
+        if (rsp)
+        {
+            auto extended = make_shared<ExtendedRosette2>(*oldMotif.get(),rsp->getN(),rsp->getKneeX(),rsp->getKneeY(),rsp->getS(),rsp->getK(),rsp->getConstrain());
+            del->setMotif(extended);
+            setMotif(extended, doEmit);
+        }
+        else
+        {
+            int n = oldMotif->getN();
+            auto extended = make_shared<ExtendedRosette2>(*oldMotif.get(), n, 0.25,0.25, 3, 0.0, false);
+            del->setMotif(extended);
+            setMotif(extended, doEmit);
+        }
+    }
+}
+
+void ExtendedRosette2Editor::setMotif(std::shared_ptr<ExtendedRosette2>(extended), bool doEmit)
+{
+    wextended = extended;
+
+    Rosette2Editor::setMotif(extended,false);
+
+    motifToEditor();
+    editorToMotif(doEmit);
+}
+
+void ExtendedRosette2Editor::motifToEditor()
+{
+    auto erose = wextended.lock();
+    if (erose)
+    {
+        Rosette2Editor::motifToEditor();
+
+        auto & extender = erose->getExtender();
+        bool ext_t      = extender.getExtendPeripheralVertices();
+        bool ext_nt     = extender.getExtendFreeVertices();
+        bool con_bd     = extender.getConnectBoundaryVertices();
+
+        blockSignals(true);
+        extendPeriphBox->setChecked(ext_t);
+        extendFreeBox->setChecked(ext_nt);
+        connectBoundaryBox->setChecked(con_bd);
+        blockSignals(false);
+    }
+}
+
+void ExtendedRosette2Editor::editorToMotif(bool doEmit)
+{
+    auto erose = wextended.lock();
+    if (erose)
+    {
+        Rosette2Editor::editorToMotif(false);
 
         bool extendPeripherals  = extendPeriphBox->isChecked();
         bool extendFreeVertices = extendFreeBox->isChecked();

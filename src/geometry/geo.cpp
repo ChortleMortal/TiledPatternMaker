@@ -1016,8 +1016,8 @@ QPointF Geo::getClosestPoint(QLineF line, QPointF p)
     }
     else
     {
-        xret = a.x() + ABx*t;
-        yret = a.y() + ABy*t;
+        xret = a.x() + ABx *t;
+        yret = a.y() + ABy *t;
     }
     return QPointF(xret,yret);
 }
@@ -1192,3 +1192,39 @@ bool Geo::isColinear(const QLineF & l1, const QLineF & l2, qreal tolerance)
     }
     return false;
 }
+
+// Calculate the closest point on the line segment AB to point P
+QPointF Geo::getClosestPointB(const QPointF& A, const QPointF& B, const QPointF& P)
+{
+    // Convert to line formula: y = ax + b
+    double a = (B.y() - A.y()) / (B.x() - A.x());
+    double b = -a * A.x() + A.y();
+
+    // Get normal line formula: y = a2x + b2
+    double a2 = -1 / a; // Corrected formula for normal line slope
+    double b2 = -a2 * P.x() + P.y();
+
+    // Solve for x
+    double a3 = a - a2;
+    double b3 = b2 - b;
+    double x = b3 / a3;
+
+    // Calculate y
+    double y = a * x + b;
+
+    return QPointF(x, y);
+}
+
+// Calculate the closest point on the line segment AB to point P using dot product
+QPointF Geo::getClosestPointC(const QPointF& A, const QPointF& B, const QPointF& P)
+{
+    QPointF AB(B.x() - A.x(), B.y() - A.y());
+    QPointF AP(P.x() - A.x(), P.y() - A.y());
+
+    double lengthSqrAB = AB.x() * AB.x() + AB.y() * AB.y();
+    double t = (AP.x() * AB.x() + AP.y() * AB.y()) / lengthSqrAB;
+
+    QPointF closest(A.x() + AB.x() * t, A.y() + AB.y() * t);
+    return closest;
+}
+

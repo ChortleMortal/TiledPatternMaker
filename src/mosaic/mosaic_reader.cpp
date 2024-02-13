@@ -1306,6 +1306,11 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
             found = true;
             break;
 
+        case MOTIF_TYPE_EXTENDED_ROSETTE2:
+            motif =  getExtendedRosette2(xmlMotif,fsides);
+            found = true;
+            break;
+
         case MOTIF_TYPE_CONNECT_ROSETTE:
             motif = getRosetteConnect(xmlMotif,fsides);
             found = true;
@@ -1507,6 +1512,7 @@ ProtoPtr MosaicReader::getPrototype(xml_node & node)
             case MOTIF_TYPE_ROSETTE2:
             case MOTIF_TYPE_CONNECT_ROSETTE:
             case MOTIF_TYPE_EXTENDED_ROSETTE:
+            case MOTIF_TYPE_EXTENDED_ROSETTE2:
             case MOTIF_TYPE_STAR:
             case MOTIF_TYPE_STAR2:
             case MOTIF_TYPE_CONNECT_STAR:
@@ -2004,6 +2010,10 @@ RosettePtr MosaicReader::getRosette(xml_node & node, int tile_sides)
     str = node.child_value("s");
     int s = str.toInt();
 
+    str = node.child_value("k");
+    if (!str.isEmpty())
+        qWarning().noquote() << "MosaicReader::getRosette parameter k - is DEPRECATED" << str;
+      
     RosettePtr rosette = make_shared<Rosette>(n, q, s);
 
     auto & eb = rosette->getRWExtendedBoundary();
@@ -2025,6 +2035,15 @@ Rosette2Ptr MosaicReader::getRosette2(xml_node & node, int tile_sides)
     }
 
     QString str;
+
+    bool constrain  = false;
+    xml_attribute constrain_b = node.attribute("constrain");
+    if (constrain_b)
+    {
+        str = (constrain_b.value());
+        constrain = (str == "t");
+    }
+
     str = node.child_value("n");
     int n = str.toInt();
 
@@ -2033,6 +2052,11 @@ Rosette2Ptr MosaicReader::getRosette2(xml_node & node, int tile_sides)
 
     str = node.child_value("y");
     qreal y = str.toDouble();
+
+    qreal k = 0.0;
+    str = node.child_value("k");
+    if (!str.isEmpty())
+        k = str.toDouble();
 
     str = node.child_value("s");
     int s = str.toInt();
@@ -2053,7 +2077,7 @@ Rosette2Ptr MosaicReader::getRosette2(xml_node & node, int tile_sides)
         tt = TIP_TYPE_OUTER;
     }
 
-    Rosette2Ptr rosette = make_shared<Rosette2>(n, x, y, s);
+    Rosette2Ptr rosette = make_shared<Rosette2>(n, x, y, s, k, constrain);
     rosette->setTipType(tt);
 
     auto & eb = rosette->getRWExtendedBoundary();
@@ -2079,7 +2103,7 @@ ExtRosettePtr  MosaicReader::getExtendedRosette(xml_node & node, int tile_sides)
     _currentMap = getMap(node);
 
     bool extendPeripherals       = false;    // default
-    bool extendFreeVertices      = false;     // default
+    bool extendFreeVertices      = false;    // default
     bool connectBoundaryVertices = false;    // default
 
     QString str;
@@ -2114,6 +2138,10 @@ ExtRosettePtr  MosaicReader::getExtendedRosette(xml_node & node, int tile_sides)
     str = node.child_value("s");
     int s = str.toInt();
 
+    str = node.child_value("k");
+    if (!str.isEmpty())
+        qWarning().noquote() << "MosaicReader::getExtendedRosette parameter k - is DEPRECATED" << str;
+
     ExtRosettePtr rosette = make_shared<ExtendedRosette>(n, q, s);
     setExtRosetteReference(node,rosette);
 
@@ -2127,6 +2155,85 @@ ExtRosettePtr  MosaicReader::getExtendedRosette(xml_node & node, int tile_sides)
 
     getMotifCommon(node,rosette,tile_sides);
     return rosette;
+}
+
+ExtRosette2Ptr  MosaicReader::getExtendedRosette2(xml_node & node, int tile_sides)
+{
+    if (base->hasReference(node))
+    {
+        ExtRosette2Ptr f = getExtRosette2ReferencedPtr(node);
+        return f;
+    }
+
+    if (_debug) qDebug() << "getExtendedRosette2";
+
+    _currentMap = getMap(node);
+
+    bool extendPeripherals       = false;    // default
+    bool extendFreeVertices      = false;     // default
+    bool connectBoundaryVertices = false;    // default
+    bool constrain               = false;    // default
+
+    QString str;
+
+    xml_attribute ext_t = node.attribute("extendPeripherals");
+    if (ext_t)
+    {
+        str = (ext_t.value());
+        extendPeripherals = (str == "t");
+    }
+
+    xml_attribute ext_non_t = node.attribute("extendFreeVertices");
+    if (ext_non_t)
+    {
+        str = (ext_non_t.value());
+        extendFreeVertices = (str == "t");
+    }
+
+    xml_attribute con_bnd_v = node.attribute("connectBoundaryVertices");
+    if (con_bnd_v)
+    {
+        str = (con_bnd_v.value());
+        connectBoundaryVertices = (str == "t");
+    }
+
+    xml_attribute constrain_b = node.attribute("constrain");
+    if (constrain_b)
+    {
+        str = (constrain_b.value());
+        constrain = (str == "t");
+    }
+
+    str = node.child_value("n");
+    int n = str.toInt();
+
+    str = node.child_value("kneeX");
+    qreal x = str.toDouble();
+
+    str = node.child_value("kneeY");
+    qreal y = str.toDouble();
+
+    qreal k = 0.0;
+    str = node.child_value("k");
+    if (!str.isEmpty())
+        k = str.toDouble();
+
+    str = node.child_value("s");
+    int s = str.toInt();
+
+    ExtRosette2Ptr rosette2 = make_shared<ExtendedRosette2>(n, x, y, s, k, constrain);
+    setExtRosette2Reference(node,rosette2);
+
+    auto & extender = rosette2->getExtender();
+    extender.setExtendPeripheralVertices(extendPeripherals);
+    extender.setExtendFreeVertices(extendFreeVertices);
+    extender.setConnectBoundaryVertices(connectBoundaryVertices);
+
+    auto & eb = rosette2->getRWExtendedBoundary();
+    eb.setSides(tile_sides);      // default
+
+    getMotifCommon(node,rosette2,tile_sides);
+    return rosette2;
 }
 
 RosetteConnectPtr MosaicReader::getRosetteConnect(xml_node & node, int tile_sides)
@@ -2972,6 +3079,20 @@ void  MosaicReader::setExtRosetteReference(xml_node & node, ExtRosettePtr ptr)
     }
 }
 
+void  MosaicReader::setExtRosette2Reference(xml_node & node, ExtRosette2Ptr ptr)
+{
+    xml_attribute id;
+    id = node.attribute("id");
+    if (id)
+    {
+        int i = id.as_int();
+        ext_rosette2_ids[i] = ptr;
+#ifdef DEBUG_REFERENCES
+        qDebug() << "set ref ext_rosette:" << i;
+#endif
+    }
+}
+
 void   MosaicReader::setRosetteConnectReference(xml_node & node, RosetteConnectPtr ptr)
 {
     xml_attribute id;
@@ -3206,6 +3327,24 @@ ExtRosettePtr MosaicReader::getExtRosetteReferencedPtr(xml_node & node)
         qDebug() << "using reference" << id;
 #endif
         retval = ExtRosettePtr(ext_rosette_ids[id]);
+        if (!retval)
+            fail("reference NOT FOUND:",QString::number(id));
+    }
+    return retval;
+}
+
+ExtRosette2Ptr MosaicReader::getExtRosette2ReferencedPtr(xml_node & node)
+{
+    ExtRosette2Ptr retval;
+    xml_attribute ref;
+    ref = node.attribute("reference");
+    if (ref)
+    {
+        int id = ref.as_int();
+#ifdef DEBUG_REFERENCES
+        qDebug() << "using reference" << id;
+#endif
+        retval = ExtRosette2Ptr(ext_rosette2_ids[id]);
         if (!retval)
             fail("reference NOT FOUND:",QString::number(id));
     }

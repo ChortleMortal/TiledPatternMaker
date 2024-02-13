@@ -167,6 +167,7 @@ void DesignElement::recreateMotifWhenRgularityChanged()
         {
         case MOTIF_TYPE_ROSETTE:
         case MOTIF_TYPE_EXTENDED_ROSETTE:
+        case MOTIF_TYPE_EXTENDED_ROSETTE2:
         case MOTIF_TYPE_CONNECT_ROSETTE:
         {
             auto oldMotif = std::dynamic_pointer_cast<Rosette>(motif);
@@ -183,6 +184,7 @@ void DesignElement::recreateMotifWhenRgularityChanged()
         case MOTIF_TYPE_STAR:
         case MOTIF_TYPE_CONNECT_STAR:
         case MOTIF_TYPE_EXTENDED_STAR:
+        case MOTIF_TYPE_EXTENDED_STAR2:
         {
             auto oldMotif = std::dynamic_pointer_cast<Star>(motif);
             Q_ASSERT(oldMotif);

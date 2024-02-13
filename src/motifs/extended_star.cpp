@@ -18,6 +18,7 @@ ExtendedStar::ExtendedStar(const Motif & motif, int n, qreal d, int s) : Star(mo
 ExtendedStar::ExtendedStar(const ExtendedStar & other) : Star(other)
 {
     extender = other.extender;
+    setMotifType(MOTIF_TYPE_EXTENDED_STAR);
 }
 
 void ExtendedStar::buildMotifMaps()
@@ -43,6 +44,7 @@ ExtendedStar2::ExtendedStar2(const Motif & motif, int n, qreal theta, int inters
 ExtendedStar2::ExtendedStar2(const ExtendedStar2 &other) : Star2(other)
 {
     extender = other.extender;
+    setMotifType(MOTIF_TYPE_EXTENDED_STAR2);
 }
 
 void ExtendedStar2::buildMotifMaps()

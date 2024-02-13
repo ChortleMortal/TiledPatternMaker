@@ -963,6 +963,10 @@ void MosaicWriter::setPrototype(QTextStream & ts, ProtoPtr pp)
             setExtendedRosette(ts,Sys::getMotifName(motifType),motif);
             break;
 
+        case MOTIF_TYPE_EXTENDED_ROSETTE2:
+            setExtendedRosette2(ts,Sys::getMotifName(motifType),motif);
+            break;
+
         case MOTIF_TYPE_ROSETTE:
             setRosette(ts,Sys::getMotifName(motifType),motif);
             break;
@@ -1097,6 +1101,7 @@ void MosaicWriter::setExplicitMotif(QTextStream & ts, QString name, MotifPtr mot
     case MOTIF_TYPE_CONNECT_STAR:
     case MOTIF_TYPE_CONNECT_ROSETTE:
     case MOTIF_TYPE_EXTENDED_ROSETTE:
+    case MOTIF_TYPE_EXTENDED_ROSETTE2:
     case MOTIF_TYPE_EXTENDED_STAR:
     case MOTIF_TYPE_EXTENDED_STAR2:
         fail("Code Error","Not an explicit motif");
@@ -1344,13 +1349,17 @@ void MosaicWriter::setRosette2(QTextStream & ts, QString name, MotifPtr motif, b
         qsid = nextId();
         setRosette2Reference(getRef(),rp);
     }
-    ts << "<" << name << qsid << ">" << endl;
+
+    QString  constrain = (rp->getConstrain()) ? "\"t\"" : "\"f\"";
+
+    ts << "<" << name << qsid << "  constrain=" << constrain << ">" << endl;
 
     setMotifCommon(ts,motif);
 
     int s       = rp->getS();
     qreal x     = rp->getKneeX();
     qreal y     = rp->getKneeY();
+    qreal k     = rp->getK();
     eTipType tt = rp->getTipType();
     QString tip;
 
@@ -1369,6 +1378,7 @@ void MosaicWriter::setRosette2(QTextStream & ts, QString name, MotifPtr motif, b
 
     ts << "<x>" << x << "</x>" << endl;
     ts << "<y>" << y << "</y>" << endl;
+    ts << "<k>" << k << "</k>" << endl;
     ts << "<s>" << s << "</s>" << endl;
     ts << "<tip>" << tip << "</tip>" << endl;
     if (childEnd)
@@ -1410,6 +1420,48 @@ void MosaicWriter::setExtendedRosette(QTextStream & ts, QString name, MotifPtr m
 
     ts << "<q>" << q << "</q>" << endl;
     ts << "<s>" << s << "</s>" << endl;
+
+    ts << "</" << name << ">" << endl;
+}
+
+void MosaicWriter::setExtendedRosette2(QTextStream & ts, QString name, MotifPtr motif)
+{
+    ExtRosette2Ptr rp = std::dynamic_pointer_cast<ExtendedRosette2>(motif);
+    if (!rp)
+    {
+        fail("Style error","dynamic cast of ExtendedRosette2");
+    }
+
+    QString qsid;
+    if (hasReference(rp))
+    {
+        qsid = getExtendedRosette2Reference(rp);
+    }
+    else
+    {
+        qsid = nextId();
+        setExtendedRosette2Reference(getRef(),rp);
+    }
+
+    qreal      x = rp->getKneeX();
+    qreal      y = rp->getKneeY();
+    qreal      k = rp->getK();
+    int        s = rp->getS();
+    QString  constrain = (rp->getConstrain()) ? "\"t\"" : "\"f\"";
+
+    auto & extender = rp->getExtender();
+    QString  ext_t     = (extender.getExtendPeripheralVertices())    ? "\"t\"" : "\"f\"";
+    QString  ext_not_t = (extender.getExtendFreeVertices()) ? "\"t\"" : "\"f\"";
+    QString  con_bnd_v = (extender.getConnectBoundaryVertices()) ? "\"t\"" : "\"f\"";
+
+    ts << "<" << name << qsid << "  extendPeripherals=" << ext_t << "  extendFreeVertices=" << ext_not_t << "  connectBoundaryVertices=" << con_bnd_v << " constrain=" << constrain << ">" << endl;
+
+    setMotifCommon(ts,motif);
+
+    ts << "<kneeX>" << x << "</kneeX>" << endl;
+    ts << "<kneeY>" << y << "</kneeY>" << endl;
+    ts << "<k>"     << k << "</k>" << endl;
+    ts << "<s>"     << s << "</s>" << endl;
 
     ts << "</" << name << ">" << endl;
 }
@@ -1743,6 +1795,11 @@ bool MosaicWriter::hasReference(ExtRosettePtr n)
     return extended_rosette_ids.contains(n);
 }
 
+bool MosaicWriter::hasReference(ExtRosette2Ptr n)
+{
+    return extended_rosette2_ids.contains(n);
+}
+
 bool MosaicWriter::hasReference(RosetteConnectPtr n)
 {
     return rosette_connect_ids.contains(n);
@@ -1821,6 +1878,11 @@ void MosaicWriter::setExtendedStar2Reference(int id, ExtStar2Ptr ptr)
 void MosaicWriter::setExtendedRosetteReference(int id, ExtRosettePtr ptr)
 {
     extended_rosette_ids[ptr] = id;
+}
+
+void MosaicWriter::setExtendedRosette2Reference(int id, ExtRosette2Ptr ptr)
+{
+    extended_rosette2_ids[ptr] = id;
 }
 
 void MosaicWriter::setRosetteConnectReference(int id, RosetteConnectPtr ptr)
@@ -1925,6 +1987,13 @@ QString MosaicWriter::getExtendedStar2Reference(ExtStar2Ptr ptr)
 QString MosaicWriter::getExtendedRosetteReference(ExtRosettePtr ptr)
 {
     int id =  extended_rosette_ids.value(ptr);
+    QString qs = QString(" reference=\"%1\"").arg(id);
+    return qs;
+}
+
+QString MosaicWriter::getExtendedRosette2Reference(ExtRosette2Ptr ptr)
+{
+    int id =  extended_rosette2_ids.value(ptr);
     QString qs = QString(" reference=\"%1\"").arg(id);
     return qs;
 }

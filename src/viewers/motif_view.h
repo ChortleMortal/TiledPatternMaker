@@ -35,12 +35,13 @@ public slots:
     virtual void slot_setCenter(QPointF spt)          override;
 
 protected:
-    void paintExplicitMotifMap( QPainter *painter, MotifPtr motif);
-    void paintRadialMotifMap(   QPainter *painter, MotifPtr motif);
-    void paintMotifBoundary(    QPainter *painter, MotifPtr motif);
-    void paintExtendedBoundary( QPainter *painter, MotifPtr motif);
-    void paintTileBoundary(     QPainter *painter, TilePtr tile);
-    void paintMap(              QPainter *painter, MapPtr map);
+    void paintExplicitMotifMap( QPainter *painter, MotifPtr motif, QTransform & tr);
+    void paintRadialMotifMap(   QPainter *painter, MotifPtr motif, QTransform & tr);
+    void paintMotifBoundary(    QPainter *painter, MotifPtr motif, QTransform & tr);
+    void paintExtendedBoundary( QPainter *painter, MotifPtr motif, QTransform & tr);
+    void paintDebugMap(         QPainter *painter, MotifPtr motif, QTransform & tr);
+    void paintTileBoundary(     QPainter *painter, TilePtr tile,   QTransform & tr);
+    void paintMap(              QPainter *painter, MapPtr map,     QTransform & tr);
 
 private:
     MotifView();
@@ -49,7 +50,6 @@ private:
     static MotifView * mpThis;
 
     PrototypeData    * protoMakerData;
-    QTransform         _T;
     qreal              lineWidth;
 
 

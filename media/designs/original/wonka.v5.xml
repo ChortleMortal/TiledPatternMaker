@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!-- Written: Sat Apr 29 2023 09:05:34 -->
-<vector id="1" version="14">
+<!-- Written: Sun Feb 4 2024 09:16:54 -->
+<vector id="1" version="17">
 	<designNotes>adds border for test</designNotes>
 	<design>
 		<size>
@@ -12,17 +12,17 @@
 		<background>
 			<color>#ffffffff</color>
 		</background>
-		<border type="Blocks" shape="Rectangle">
+		<border type="Blocks" shape="Rectangle" useViewSize="f">
 			<color>#ffa27967</color>
-			<width>100</width>
 			<rows>11</rows>
-			<cols>13</cols>
+			<cols>15</cols>
 			<rect>
-				<X>0</X>
-				<Y>0</Y>
-				<width>1500</width>
-				<height>1100</height>
+				<X>-10</X>
+				<Y>-7.333333333333336</Y>
+				<width>20</width>
+				<height>14.66666666666667</height>
 			</rect>
+			<width>1.333333333333333</width>
 		</border>
 		<Fill singleton="f">-2,1,-2,1</Fill>
 	</design>
@@ -40,7 +40,7 @@
 				<app.Prototype>
 					<string>wonka</string>
 					<entry>
-						<tile.Feature id="4">
+						<Tile id="4">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -70,17 +70,18 @@
 									<Point reference="6" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.Infer id="12" type="MOTIF_TYPE_INFERRED">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<IrregularInfer id="12" type="Irregular Inferred Motif">
+							<boundarySides>6</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>6</n>
-						</app.Infer>
+						</IrregularInfer>
 					</entry>
 					<entry>
-						<tile.Feature id="13">
+						<Tile id="13">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -110,18 +111,19 @@
 									<Point reference="15" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitGirih id="21" type="MOTIF_TYPE_GIRIH">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<IrregularGirih id="21" type="Irregular Girih Motif">
+							<boundarySides>6</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>6</n>
 							<skip>1.8</skip>
-						</app.ExplicitGirih>
+						</IrregularGirih>
 					</entry>
 					<entry>
-						<tile.Feature id="22">
+						<Tile id="22">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -139,17 +141,18 @@
 									<Point reference="24" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.Infer id="27" type="MOTIF_TYPE_INFERRED">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<IrregularInfer id="27" type="Irregular Inferred Motif">
+							<boundarySides>3</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>3</n>
-						</app.Infer>
+						</IrregularInfer>
 					</entry>
 					<entry>
-						<tile.Feature id="28">
+						<Tile id="28">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -195,19 +198,20 @@
 									<Point reference="30" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.Star id="40">
+						</Tile>
+						<Star id="40">
 							<boundarySides>1</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>10</n>
 							<d>3</d>
 							<s>2</s>
-						</app.Star>
+						</Star>
 					</entry>
 					<entry>
-						<tile.Feature id="41">
+						<Tile id="41">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -237,18 +241,19 @@
 									<Point reference="43" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitGirih id="49" type="MOTIF_TYPE_GIRIH">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<IrregularGirih id="49" type="Irregular Girih Motif">
+							<boundarySides>6</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>6</n>
 							<skip>1.8</skip>
-						</app.ExplicitGirih>
+						</IrregularGirih>
 					</entry>
 					<entry>
-						<tile.Feature id="50">
+						<Tile id="50">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -270,15 +275,16 @@
 									<Point reference="52" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitGirih id="56" type="MOTIF_TYPE_GIRIH">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<IrregularGirih id="56" type="Irregular Girih Motif">
+							<boundarySides>4</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>4</n>
 							<skip>2.8</skip>
-						</app.ExplicitGirih>
+						</IrregularGirih>
 					</entry>
 				</app.Prototype>
 			</prototype>

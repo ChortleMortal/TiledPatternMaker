@@ -631,6 +631,14 @@ MotifPtr PrototypeMaker::duplicateMotif(MotifPtr motif)
         Q_ASSERT(newMotif);
     } break;
 
+    case MOTIF_TYPE_EXTENDED_ROSETTE2:
+    {
+        auto extend = dynamic_pointer_cast<ExtendedRosette2>(motif);
+        Q_ASSERT(extend);
+        newMotif = make_shared<ExtendedRosette2>(*extend.get());
+        Q_ASSERT(newMotif);
+    } break;
+
     case MOTIF_TYPE_EXTENDED_STAR:
     {
         auto extend = dynamic_pointer_cast<ExtendedStar>(motif);

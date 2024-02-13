@@ -239,6 +239,7 @@ void PrototypeData::rebuildCurrentMotif()
     {
         auto motif = del->getMotif();
         motif->resetMotifMaps();
+        motif->buildMotifMaps();
         bool multi = Configuration::getInstance()->motifMultiView;
         select(MVD_DELEM,del,multi);
     }

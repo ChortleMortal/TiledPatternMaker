@@ -27,6 +27,7 @@ StarConnect::StarConnect(const Motif & motif, int nsides, qreal d, int s) : Star
 
 StarConnect::StarConnect(const StarConnect & other) : Star(other)
 {
+    setMotifType(MOTIF_TYPE_CONNECT_STAR);
 }
 
 qreal StarConnect::computeConnectScale()

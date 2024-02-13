@@ -63,6 +63,7 @@ private:
     class ExtendedStarEditor        * ex_star_edit;
     class ExtendedStar2Editor       * ex_star2_edit;
     class ExtendedRosetteEditor     * ex_rosette_edit;
+    class ExtendedRosette2Editor    * ex_rosette2_edit;
 
     Configuration                   * config;
     MotifTypeCombo                  * typeCombo;

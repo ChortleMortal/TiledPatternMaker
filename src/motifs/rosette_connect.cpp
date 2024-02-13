@@ -26,6 +26,7 @@ RosetteConnect::RosetteConnect(const Motif & fig, int nn, qreal q, int s) : Rose
 
 RosetteConnect::RosetteConnect(const RosetteConnect & other) : Rosette(other)
 {
+    setMotifType(MOTIF_TYPE_CONNECT_ROSETTE);
 }
 
 qreal RosetteConnect::computeConnectScale()

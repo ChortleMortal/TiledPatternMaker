@@ -19,7 +19,7 @@
 class Rosette : public RadialMotif
 {
 public:
-    // n = points, q = tip angle, s=sides intersections k=neck r=rotation sc=scale
+    // n = points, q = tip angle, s=sides intersections
     Rosette(const Motif & fig,  int n, qreal qq, int ss);
     Rosette(int n, qreal qq, int ss);
     Rosette(const Rosette & other);
