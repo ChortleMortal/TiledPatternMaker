@@ -195,7 +195,7 @@ void Rosette2::buildUnitMap()
 
 }
 
-void  Rosette2::buildSegement(MapPtr map, QPointF tip, QList<QPointF> & epoints)
+void  Rosette2::buildSegement(MapPtr map, QPointF tip, const QVector<QPointF> & epoints)
 {
     VertexPtr vt       = map->insertVertex(tip);
     VertexPtr top_prev = vt;

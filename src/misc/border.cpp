@@ -60,7 +60,7 @@ void Border::setBorderSize(QSize viewSize)
     {
     case CROP_RECTANGLE:
     {
-        QRectF arect((QPointF()),viewSize.toSizeF());
+        QRectF arect((QPointF()),QSizeF(viewSize));
         auto borderView = BorderView::getInstance();
         QRectF brect =  borderView->screenToWorld(arect);
         setRect(brect);

@@ -625,7 +625,7 @@ void View::resizeEvent(QResizeEvent *event)
     {
         qDebug() << "+++ old" << oldSize << "new" << viewSize << "delta-size-adjusted" << deltaSize;
         Canvas & canvas = viewControl->getCanvas();
-        canvas.setDeltaCanvasSize(deltaSize.toSizeF());
+        canvas.setDeltaCanvasSize(QSizeF(deltaSize));
     }
     else
     {

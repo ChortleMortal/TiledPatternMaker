@@ -39,7 +39,7 @@ void  AQSpinBox::enterEvent(QEvent *event)
     Q_UNUSED(event);
     if (isReadOnly()) return;
     blocked = true;
-    if (darkTheme)
+    if (Sys::isDarkTheme)
         setStyleSheet("background-color: #22b895");
     else
         setStyleSheet("background-color:yellow");

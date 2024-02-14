@@ -61,7 +61,7 @@ public:
 protected:
     void    replicate() override;
 
-    void    buildSegement(MapPtr map, QPointF tip, QList<QPointF> & epoints);
+    void    buildSegement(MapPtr map, QPointF tip, const QVector<QPointF> &epoints);
     void    calcConstraintLine();
 
 private:
