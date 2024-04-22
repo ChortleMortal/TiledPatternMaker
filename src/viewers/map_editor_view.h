@@ -18,13 +18,13 @@ class MapEditorSelection;
 class MapEditorView : public LayerController
 {
 public:
-    static MapEditorView * getInstance();
-    static void            releaseInstance();
+    MapEditorView();
+    ~MapEditorView();
 
     void                init(MapEditorDb * maped_db, MapEditorSelection * selector);
 
-    virtual void        paint(QPainter * painter) override;
-    virtual void        draw(QPainter *);
+    void                paint(QPainter * painter) override;
+    void                draw(QPainter * painter);
 
     virtual const Xform &   getModelXform() override;
     virtual void            setModelXform(const Xform & xf, bool update) override;
@@ -33,7 +33,7 @@ public:
     void                drawDCEL(QPainter * painter);
     void                drawTile(QPainter * painter, DesignElementPtr del);
     void                drawBoundaries(QPainter * painter, DesignElementPtr del);
-    void                drawPoints(QPainter * painter, QVector<class pointInfo> & points);
+    void                drawPoints(QPainter * painter, QVector<class PointInfo> & points);
     void                drawConstructionLines(QPainter * painter);
     void                drawConstructionCircles(QPainter * painter);
 
@@ -44,29 +44,29 @@ public:
     MapEditorSelection * getSelector() { return selector; }
     MapEditorDb        * getDb() { return db; }
 
-    qreal               mapLineWidth;
-    qreal               constructionLineWidth;
+    uint                mapLineWidth;
+    uint                constructionLineWidth;
     qreal               selectionWidth;
 
 public slots:
-    virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
-    virtual void slot_mouseDragged(QPointF spt)       override;
-    virtual void slot_mouseTranslate(QPointF pt)      override;
-    virtual void slot_mouseMoved(QPointF spt)         override;
-    virtual void slot_mouseReleased(QPointF spt)      override;
-    virtual void slot_mouseDoublePressed(QPointF spt) override;
-    virtual void slot_setCenter(QPointF spt) override;
+    void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
+    void slot_mouseDragged(QPointF spt)       override;
+    void slot_mouseTranslate(QPointF pt)      override;
+    void slot_mouseMoved(QPointF spt)         override;
+    void slot_mouseReleased(QPointF spt)      override;
+    void slot_mouseDoublePressed(QPointF spt) override;
+    void slot_setCenter(QPointF spt) override;
 
-    virtual void slot_wheel_scale(qreal delta)  override;
-    virtual void slot_wheel_rotate(qreal delta) override;
+    void slot_wheel_scale(qreal delta)  override;
+    void slot_wheel_rotate(qreal delta) override;
 
-    virtual void slot_scale(int amount)  override;
-    virtual void slot_rotate(int amount) override;
-    virtual void slot_moveX(qreal amount)  override;
-    virtual void slot_moveY(qreal amount)  override;
+    void slot_scale(int amount)  override;
+    void slot_rotate(int amount) override;
+    void slot_moveX(qreal amount)  override;
+    void slot_moveY(qreal amount)  override;
 
-    virtual eViewType iamaLayer() override { return VIEW_MAP_EDITOR; }
-    virtual void iamaLayerController() override {}
+    eViewType iamaLayer() override { return VIEW_MAP_EDITOR; }
+    void       iamaLayerController() override {}
 
     void    setMousePos(QPointF pt);
     QPointF getMousePos() { return mousePos; }
@@ -77,11 +77,6 @@ public slots:
 protected:
 
 private:
-    MapEditorView();
-    ~MapEditorView();
-
-    static MapEditorView * mpThis;
-
     Configuration      * config;
 
     QPointF             mousePos;             // used by menu

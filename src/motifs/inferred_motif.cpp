@@ -15,7 +15,6 @@
 using std::make_shared;
 
 #undef DEBUG_CONTACTS
-#undef HANDLE_EMPTY_MAP
 
 InferredMotif::InferredMotif() : IrregularMotif()
 {
@@ -101,61 +100,16 @@ void InferredMotif::buildMotifMaps()
 
 void InferredMotif::infer(ProtoPtr proto)
 {
-    enum eKind
-    {
-        // The different kinds of connectionJs that can be made between contacts, in increasing order of badness.
-        // This is used to compare two possible connections.
-        INSIDE_EVEN 	= 0,
-        INSIDE_COLINEAR = 1,
-        INSIDE_UNEVEN 	= 2,
-        OUTSIDE_EVEN 	= 3,
-        OUTSIDE_UNEVEN 	= 4,
-        INFER_NONE 		= 5
-    };
-
 #ifdef DEBUG_CONTACTS
-    debugContacts = true;
+    debugContacts  = true;
 #endif
+    bool handleEmptyMap = false;
+    bool supportNotPIC  = false;     // PIC means Polygons in Contact
+
+    // create the empty inferred map
+    motifMap = std::make_shared<Map>("Inferred Motif map");
 
     qDebug() << "InferredMotif::infer()  tile-sides :" << getTile()->numSides();
-
-    qDebug() << "Get a map for each motif in the prototype.";
-    adjacentTileMaps.clear();
-    QList<TilePtr> tiles = proto->getTiles();
-    for (const auto & tile : std::as_const(tiles))
-    {
-        MotifPtr motif  = proto->getMotif(tile);
-        Q_ASSERT(motif);
-        qDebug() << "Motif is:" <<  motif->getMotifTypeString();
-
-        MapPtr map;
-        if (motif.get() != this)
-        {
-            map = motif->getMotifMap(); // the getMap builds maps as needed on demand
-        }
-
-#ifdef HANDLE_EMPTY_MAP
-        if (!map || map->isEmpty())
-        {
-            // this handles the case of more than one inferred motif in the mosaic's prototype
-            auto poly = tile->getEdgePoly().getMids();
-            map = make_shared<Map>("mids map",poly);
-        }
-        Q_ASSERT(map);
-        Q_ASSERT(!map->isEmpty());
-        qDebug().noquote() << "     motif=" << map->summary() << "Tile Sides" << tile->numSides();
-#else
-        if (map)
-            qDebug().noquote() << "     motif=" << map->summary() << "Tile Sides" << tile->numSides();
-        else
-            qDebug().noquote() << "     motif=" << "NO MAP" << "Tile Sides" << tile->numSides();
-#endif
-        adjacentTileMaps.insert(tile, map);
-    }
-    qDebug() << "motifMaps =" << adjacentTileMaps.size();
-
-    // new map created after previous map has been copied imto adjacentTileMaps;
-    motifMap = std::make_shared<Map>("Inferred Motif map");
 
     // Get the index of a good transform for this tile.
     int cur              = findPrimaryTile(getTile());
@@ -167,12 +121,42 @@ void InferredMotif::infer(ProtoPtr proto)
     QVector<AdjacentTilePtr> adjacentTiles = getAdjacenctTiles(primaryMids, cur);
     qDebug() << "adjacenct tiles =" << adjacentTiles.size();
 
-#ifdef DEBUG_CONTACTS
-    for (auto & ai : adjacentTiles)
+
+    qDebug() << "Get a map for each motif in the prototype.";
+    adjacentTileMaps.clear();
+    for (const auto & adj : std::as_const(adjacentTiles))
     {
-        qDebug() << ai->placedTile->getTile()->toString();
+        TilePtr tile    = adj->placedTile->getTile();
+        MotifPtr motif  = proto->getMotif(tile);
+        Q_ASSERT(motif);
+        qDebug() << "Motif is:" <<  motif->getMotifTypeString();
+
+        MapPtr map = motif->getMotifMap(); // builds maps as needed on demand
+
+        if (handleEmptyMap)
+        {
+            if (!map || map->isEmpty())
+            {
+                // this handles the case of more than one inferred motif in the mosaic's prototype
+                auto mids = tile->getMids();
+                map = make_shared<Map>("mids map",mids);
+            }
+            Q_ASSERT(map);
+            Q_ASSERT(!map->isEmpty());
+            qDebug().noquote() << "     motif=" << map->summary() << "Tile Sides" << tile->numSides();
+        }
+        else
+        {
+            if (map)
+                qDebug().noquote() << "     motif=" << map->summary() << "Tile Sides" << tile->numSides();
+            else
+                qDebug().noquote() << "     motif=" << "NO MAP" << "Tile Sides" << tile->numSides();
+        }
+
+        adjacentTileMaps.insert(tile, map);
     }
-#endif
+    qDebug() << "adjacentTileMaps =" << adjacentTileMaps.size();
+
 
     // contacts
     QVector<ContactPtr> contacts = buildContacts(primaryMids, adjacentTiles);
@@ -185,25 +169,29 @@ void InferredMotif::infer(ProtoPtr proto)
         return;
     }
 
-#ifdef DEBUG_CONTACTS
-    debugContacts   = true;
-    debugContactPts = contacts;
-
-    for (auto & con : contacts)
+    if (debugContacts)
     {
-        qDebug().noquote() << con->toString();
+        uint idx = 0;
+        debugContactPts = contacts;
+        for (auto & con : contacts)
+        {
+            if (debugContacts) con->dump(idx++,"Contact");
+        }
     }
-#endif
 
     QPolygonF priPts = primaryMids->getTransformedPoints();
-    qDebug() << "Primary Points" << priPts.size();
+    qDebug() << "Primary Points" << priPts.size() << priPts;
 
     // For every contact, if it hasn't found an extension,
     // Look at all other contacts for likely candidates.
-    for (const auto &contact : std::as_const(contacts))
+    uint idx = 0;
+    for (const auto & contact : std::as_const(contacts))
     {
+        if (debugContacts) contact->dump(idx++,"procressing contact");
+
         if (contact->taken)
         {
+            if (debugContacts) qDebug() << "taken";
             continue;
         }
 
@@ -212,21 +200,27 @@ void InferredMotif::infer(ProtoPtr proto)
         qreal      bestdist = 0.0;
         eKind      bestkind = INFER_NONE;
 
+        int idx2 = 0;
         for (const auto &ocon : std::as_const(contacts))
         {
+            if (debugContacts) ocon->dump(idx2++,"comparing other contact");
+
             if (ocon == contact)
             {
+                if (debugContacts) qDebug() << "same contact";
                 continue;
             }
 
             if (ocon->taken)
             {
+                if (debugContacts) qDebug() << "taken";
                 continue;
             }
 
             // Don't try on two contacts that involve the same vertex.
             if (Loose::equalsPt(contact->position, ocon->position))
             {
+                if (debugContacts) qDebug() << "same contact point";
                 continue;
             }
 
@@ -238,6 +232,7 @@ void InferredMotif::infer(ProtoPtr proto)
             if( isColinear( contact->other, contact->position, ocon->position ) &&
                 isColinear( contact->position, ocon->position, ocon->other ))
             {
+                if (debugContacts) qDebug() << "are colinear";
                 // The two segments have to point at each other.
                 QPointF d1 = contact->position  - contact->other;
                 QPointF d2 = ocon->position     - ocon->other;
@@ -263,50 +258,48 @@ void InferredMotif::infer(ProtoPtr proto)
                 mykind = INSIDE_COLINEAR;
                 mydist = Geo::dist(contact->position,ocon->position);
             }
-            else
+            else if (Intersect::getTrueIntersection( contact->position, contact->end, ocon->position, ocon->end, isect))
             {
-                // We don't want the case where the intersection lies too close to either vertex.
-                if (Intersect::getTrueIntersection( contact->position, contact->end, ocon->position, ocon->end, isect))
-                {
-                    qreal dist  = Geo::dist(contact->position,isect );
-                    qreal odist = Geo::dist(ocon->position,isect );
+                if (debugContacts) qDebug() << "they intersect" << isect;
 
-                    bool inside = priPts.containsPoint(isect,Qt::OddEvenFill);
-
-                    if( !Loose::equals( dist, odist ) )
-                    {
-                        if( inside )
-                        {
-                            mykind = INSIDE_UNEVEN;
-                        }
-                        else
-                        {
-                            mykind = OUTSIDE_UNEVEN;
-                        }
-                        mydist = fabs( dist - odist );
-                    }
-                    else
-                    {
-                        if( inside )
-                        {
-                            mykind = INSIDE_EVEN;
-                        }
-                        else
-                        {
-                            mykind = OUTSIDE_EVEN;
-                        }
-                        mydist = dist;
-                    }
-                }
-                else
+                if (contact->position == isect)
                 {
                     continue;
                 }
+
+                // We don't want the case where the intersection lies too close to either vertex.
+                qreal dist  = Geo::dist(contact->position,isect );
+                qreal odist = Geo::dist(ocon->position,isect );
+
+#if defined(Q_OS_LINUX) || defined (Q_OS_MACOS)
+                bool inside = Geo::pointInPolygon(isect,priPts);
+#elif defined(Q_OS_WINDOWS)
+                bool inside = priPts.containsPoint(isect,Qt::OddEvenFill);
+#else
+                Q_ASSERT(false);    // will not compile
+#endif
+                if (debugContacts) qDebug() << "inside" << inside;
+
+                if( !Loose::equals(dist, odist))
+                {
+                    mykind = (inside) ? INSIDE_UNEVEN : OUTSIDE_UNEVEN;
+                    mydist = fabs(dist - odist);
+                }
+                else
+                {
+                    mykind = (inside) ? INSIDE_EVEN : OUTSIDE_EVEN;
+                    mydist = dist;
+                }
+            }
+            else
+            {
+                if (debugContacts) qDebug() << "no intersection";
+                continue;
             }
 
-            if (lexCompareDistances( mykind, mydist, bestkind, bestdist ) < 0)
+            if (lexCompareDistances(mykind, mydist, bestkind, bestdist) < 0)
             {
-                //qDebug() <<  "New best:"  << contact.get()  << ocon.get();
+                if (debugContacts) qDebug() <<  "New best:"; //  << contact.get()  << ocon.get();
                 bestocon  = ocon;
                 bestkind  = mykind;
                 bestdist  = mydist;
@@ -328,93 +321,88 @@ void InferredMotif::infer(ProtoPtr proto)
         {
             if (debugContacts) qDebug() << "best is colinear";
             contact->colinear  = Contact::COLINEAR_MASTER;
-            ocon->colinear = Contact::COLINEAR_SLAVE;
+            ocon->colinear     = Contact::COLINEAR_SLAVE;
         }
         else
         {
-            if (debugContacts) qDebug() << "isect: " << bestisect << contact.get() << ocon.get();
+            if (debugContacts) qDebug() << "isect: " << bestisect; // << contact.get() << ocon.get();
             contact->isect  = bestisect;
-            ocon->isect = bestisect;
+            ocon->isect     = bestisect;
         }
 
         contact->isect_contact = bestocon;
         ocon->isect_contact    = contact;
     }
 
-#ifdef DEBUG_CONTACTS
-    for (auto & con : std::as_const(contacts))
-    {
-        qDebug().noquote() << con->toString();
-    }
-#endif
-
     // Using the stored intersections in the contacts, build an inferred map.
+    idx = 0;
     for (const auto & contact : std::as_const(contacts))
     {
-        //contact->dump();
+        if (debugContacts) contact->dump(idx++,"Using contact");
         if (contact->isect.isNull())
         {
             if (contact->colinear == Contact::COLINEAR_MASTER)
             {
                 auto edge = motifMap->insertEdge(contact->position, contact->isect_contact.lock()->position );
-                if (debugContacts) qDebug().noquote() << "Pass 1 inserting edge A:" << edge->dump() << motifMap->summary();
+                if (debugContacts) qDebug().noquote() << "Pass 1 inserting edge A:" << edge->info() << motifMap->summary();
             }
         }
         else
         {
             auto edge = motifMap->insertEdge(contact->position, contact->isect );
-            if (debugContacts) qDebug().noquote() << "Pass 1 inserting edge B:" << edge->dump() << motifMap->summary();
+            if (debugContacts) qDebug().noquote() << "Pass 1 inserting edge B:" << edge->info() << motifMap->summary();
         }
     }
 
-    // Try to link up unlinked edges.
-    qreal minlen = Geo::dist(priPts[0], priPts[priPts.size()-1] );
-    for( int idx = 1; idx < priPts.size(); ++idx )
+    if (supportNotPIC)
     {
-        minlen = std::min( minlen, Geo::dist(priPts[idx-1], priPts[ idx ] ) );
-    }
-
-#ifdef SUPPORT_NOT_PIC
-    // DAC another pass where there is no isect because polygons are not in contact
-    for (const auto &con : std::as_const(contacts))
-    {
-        if (!con->isect_contact.lock())
+        // Try to link up unlinked edges.
+        qreal minlen = Geo::dist(priPts[0], priPts[priPts.size()-1] );
+        for( int idx = 1; idx < priPts.size(); ++idx )
         {
-            for (const auto &ocon : contacts )
+            minlen = std::min( minlen, Geo::dist(priPts[idx-1], priPts[ idx ] ) );
+        }
+
+        // DAC another pass where there is no isect because polygons are not in contact
+        for (const auto &con : std::as_const(contacts))
+        {
+            if (!con->isect_contact.lock())
             {
-                if (ocon == con)
+                for (const auto &ocon : contacts )
                 {
-                    continue;
+                    if (ocon == con)
+                    {
+                        continue;
+                    }
+                    if (ocon->isect_contact.lock())
+                    {
+                        continue;
+                    }
+
+                    // Two unmatched edges.  match them up.
+                    QPointF tmp  = con->position - con->other;
+                    tmp = Geo::normalize(tmp);
+                    tmp *= (minlen*0.5);
+                    QPointF ex1 = con->position + tmp;  // DAC hard to decipher the java precedence rules used here
+
+                    tmp  = ocon->position - ocon->other;
+                    tmp = Geo::normalize(tmp);
+                    tmp *= (minlen*0.5);
+                    QPointF ex2 = ocon->position + tmp; // ditto
+
+                    auto edge = motifMap->insertEdge( con->position, ex1 );
+                    qDebug().noquote() << "inserting edge:" << edge->info() << motifMap->summary();
+                    edge = motifMap->insertEdge( ex1, ex2 );
+                    qDebug().noquote() << "inserting edge:" << edge->info() << motifMap->summary();
+                    edge = motifMap->insertEdge( ex2, ocon->position );
+                    qDebug().noquote() << "inserting edge:" << edge->info() << motifMap->summary();
+
+                    con->isect_contact  = ocon;
+                    ocon->isect_contact = con;
                 }
-                if (ocon->isect_contact.lock())
-                {
-                    continue;
-                }
-
-                // Two unmatched edges.  match them up.
-                QPointF tmp  = con->position - con->other;
-                tmp = Point::normalize(tmp);
-                tmp *= (minlen*0.5);
-                QPointF ex1 = con->position + tmp;  // DAC hard to decipher the java precedence rules used here
-
-                tmp  = ocon->position - ocon->other;
-                tmp = Point::normalize(tmp);
-                tmp *= (minlen*0.5);
-                QPointF ex2 = ocon->position + tmp; // ditto
-
-                auto edge = motifMap->insertEdge( con->position, ex1 );
-                qDebug().noquote() << "inserting edge:" << edge->dump() << motifMap->summary();
-                edge = motifMap->insertEdge( ex1, ex2 );
-                qDebug().noquote() << "inserting edge:" << edge->dump() << motifMap->summary();
-                edge = motifMap->insertEdge( ex2, ocon->position );
-                qDebug().noquote() << "inserting edge:" << edge->dump() << motifMap->summary();
-
-                con->isect_contact  = ocon;
-                ocon->isect_contact = con;
             }
         }
     }
-#endif
 
     motifMap->transform(primaryMids->getTransform().inverted());
 
@@ -425,7 +413,7 @@ void InferredMotif::infer(ProtoPtr proto)
         qWarning() << "Inferred Motif Map is emtpty";
     }
     
-    if (debugContacts) qDebug() << "InferredMotif::infer() - END" << motifMap->summary();
+    qDebug() << "InferredMotif::infer() - END" << motifMap->summary();
 }
 
 // Take the adjacencies and build a list of contacts by looking at vertices of the maps
@@ -516,31 +504,50 @@ bool InferredMotif::isColinear( QPointF p, QPointF q, QPointF a )
     return Loose::equals( left, right );
 }
 
-int InferredMotif::lexCompareDistances( int kind1, qreal dist1, int kind2, qreal dist2 )
+#define E2STR(x) #x
+
+const QString  sKind[] =
 {
-    if( kind1 < kind2 )
+    E2STR(INSIDE_EVEN),
+    E2STR(INSIDE_COLINEAR),
+    E2STR(INSIDE_UNEVEN),
+    E2STR(OUTSIDE_EVEN),
+    E2STR(OUTSIDE_UNEVEN),
+    E2STR(INFER_NONE),
+};
+
+int InferredMotif::lexCompareDistances(eKind kind1, qreal dist1, eKind kind2, qreal dist2 )
+{
+    if (debugContacts) qDebug().noquote() << "lex" << sKind[kind1] << sKind[kind2];
+
+    int rv = 1;
+    if (kind1 < kind2)
     {
-        return -1;
+        rv = -1;
+        if (debugContacts) qDebug() << "lex 1  better kind rv =" << rv;
     }
-    else if( kind1 > kind2 )
+    else if (kind1 > kind2)
     {
-        return 1;
+        rv = 1;
+        if (debugContacts) qDebug() << "lex 2 worse kind rv =" << rv;
+    }
+    else if (Loose::equals(dist1, dist2))
+    {
+        rv =  0;
+        if (debugContacts) qDebug() << "lex 3 equal distances rv =" << rv;
+    }
+    else if (dist1 < dist2)
+    {
+        rv = -1;
+        if (debugContacts) qDebug() << "lex 4 better distance" << dist1 << dist2 << "rv =" << rv;
     }
     else
     {
-        if( Loose::equals( dist1, dist2 ) )
-        {
-            return 0;
-        }
-        else if( dist1 < dist2 )
-        {
-            return -1;
-        }
-        else
-        {
-            return 1;
-        }
+        rv = 1;
+        if (debugContacts) qDebug() << "lex 5 worse distance rv =" << rv;
     }
+
+    return rv;
 }
 
 void InferredMotif::setupInfer(ProtoPtr proto)

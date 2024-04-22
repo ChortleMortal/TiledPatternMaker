@@ -24,6 +24,14 @@ enum eMVDType
     MVD_PROTO = 1
 };
 
+/*
+ * The Prototype Maker puts information into the ProtoTypeData which is
+ * read (shared) directly by both the PrototypeMakerView and the Motif Maker View.
+ * The controlling menus for these makers use specific indices into the data
+ * MVD_DELEM the Motif (designEelement) view and MVP_PROT for the proto view)
+ *
+ */
+
 class ProtoInfo
 {
 public:
@@ -91,6 +99,8 @@ public:
 
     void setWidget(MotifMakerWidget * widget) { _motifMakerWidget = widget; }
     MotifMakerWidget * getWidget()            { return _motifMakerWidget; }
+
+    void                        dumpData(eMVDType type);
 
 private:
     MotifMakerWidget *          _motifMakerWidget;

@@ -23,6 +23,7 @@
 #include "tile/tiling.h"
 #include "tile/tiling_manager.h"
 #include "viewers/view_controller.h"
+#include "viewers/debug_view.h"
 #include "widgets/dlg_textedit.h"
 #include "widgets/transparent_widget.h"
 
@@ -36,8 +37,11 @@ page_debug:: page_debug(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_DEBUG_T
 
     QGroupBox   * debug = createDebugSection();
     QGroupBox   * maps  = createVerifyMaps();
+    QGroupBox   * dbVma = creatDebugMapView();
+
     vbox->addWidget(debug);
     vbox->addWidget(maps);
+    vbox->addWidget(dbVma);
     vbox->addStretch();
 }
 
@@ -131,17 +135,23 @@ QGroupBox * page_debug::createVerifyMaps()
 {
     QCheckBox * cbPopupErrors   = new QCheckBox("Pop-up Map Errors");
     QCheckBox * cbVerifyMaps    = new QCheckBox("Verify Maps");
+    QCheckBox * cbBuildEmptyNM  = new QCheckBox("Build Empty Neighbour Maps");
     QCheckBox * cbVerifyDump    = new QCheckBox("Dump Maps");
     QCheckBox * cbVerifyVerbose = new QCheckBox("Verbose");
     QCheckBox * cbVerifyProtos  = new QCheckBox("Verify Protos");
+    QCheckBox * cbUndupMerges   = new QCheckBox("Unduplicate Merges (slow)");
 
     QGridLayout * gbox = new QGridLayout();
-    gbox->setColumnStretch(2,1);
+    gbox->setColumnStretch(3,1);
+
     gbox->addWidget(cbVerifyProtos,0,0);
     gbox->addWidget(cbVerifyMaps,0,1);
+    gbox->addWidget(cbBuildEmptyNM,0,3);
+
     gbox->addWidget(cbPopupErrors,1,0);
     gbox->addWidget(cbVerifyDump,1,1);
     gbox->addWidget(cbVerifyVerbose,1,2);
+    gbox->addWidget(cbUndupMerges,1,3);
 
     QGroupBox * gbVerifyMaps = new QGroupBox("Map Verification");
     gbVerifyMaps->setLayout(gbox);
@@ -150,20 +160,65 @@ QGroupBox * page_debug::createVerifyMaps()
     cbVerifyMaps->setChecked(config->verifyMaps);
     cbVerifyDump->setChecked(config->verifyDump);
     cbVerifyVerbose->setChecked(config->verifyVerbose);
-
+    cbBuildEmptyNM->setChecked(config->buildEmptyNmaps);
     cbVerifyProtos->setChecked(config->verifyProtos);
+    cbUndupMerges->setChecked(config->unDuplicateMerge);
 
     connect(cbVerifyProtos, &QCheckBox::clicked,    this,   &page_debug::slot_verifyProtosClicked);
     connect(cbVerifyMaps,   &QCheckBox::clicked,    this,   &page_debug::slot_verifyMapsClicked);
     connect(cbPopupErrors,  &QCheckBox::clicked,    this,   &page_debug::slot_verifypopupClicked);
     connect(cbVerifyDump,   &QCheckBox::clicked,    this,   &page_debug::slot_verifyDumpClicked);
     connect(cbVerifyVerbose,&QCheckBox::clicked,    this,   &page_debug::slot_verifyVerboseClicked);
+    connect(cbBuildEmptyNM, &QCheckBox::clicked,    this,   &page_debug::slot_buildEmptyNMaps);
+    connect(cbUndupMerges,  &QCheckBox::clicked,    this,   &page_debug::slot_unDupMerges);
 
     return gbVerifyMaps;
 }
 
+QGroupBox * page_debug::creatDebugMapView()
+{
+    chkDebugView      = new QCheckBox("Enable Debug Map View");
+    chkDBVvertices    = new QCheckBox("Show Vertices");
+    chkDBCdirn        = new QCheckBox("Show Direction");
+    chkArcCen         = new QCheckBox("Show Arc Centres");
+
+    connect(chkDebugView,   &QCheckBox::clicked, this, &page_debug::slot_dbgViewClicked);
+    connect(chkDBVvertices, &QCheckBox::clicked, this, &page_debug::slot_viewVerticesClicked);
+    connect(chkDBCdirn,     &QCheckBox::clicked, this, &page_debug::slot_viewDirnClicked);
+    connect(chkArcCen,      &QCheckBox::clicked, this, &page_debug::slot_viewArcCen);
+
+    QHBoxLayout * hbox = new QHBoxLayout;
+    hbox->addWidget(chkDebugView);
+    hbox->addWidget(chkDBVvertices);
+    hbox->addWidget(chkDBCdirn);
+    hbox->addWidget(chkArcCen);
+    hbox->addStretch();
+
+    QGroupBox * gbDebugMapView = new QGroupBox("Debug Map View");
+    gbDebugMapView->setLayout(hbox);
+
+    return gbDebugMapView;
+}
+
 void  page_debug::onEnter()
 {
+    auto dview = Sys::debugView;
+
+    chkDebugView->blockSignals(true);
+    chkDebugView->setChecked(dview->getShow());
+    chkDebugView->blockSignals(false);
+
+    chkDBVvertices->blockSignals(true);
+    chkDBVvertices->setChecked(dview->getShowVertices());
+    chkDBVvertices->blockSignals(false);
+
+    chkDBCdirn->blockSignals(true);
+    chkDBCdirn->setChecked(dview->getShowDirection());
+    chkDBCdirn->blockSignals(false);
+
+    chkArcCen->blockSignals(true);
+    chkArcCen->setChecked(dview->getShowArcCentres());
+    chkArcCen->blockSignals(false);
 }
 
 void page_debug::onExit()
@@ -375,6 +430,16 @@ void page_debug::slot_verifyVerboseClicked(bool enb)
     config->verifyVerbose = enb;
 }
 
+void page_debug::slot_unDupMerges(bool enb)
+{
+    config->unDuplicateMerge = enb;
+}
+
+void page_debug::slot_buildEmptyNMaps(bool enb)
+{
+    config->buildEmptyNmaps = enb;
+}
+
 void page_debug::slot_verifyTiling()
 {
     // the strategy is to build a map and then verify that
@@ -453,8 +518,8 @@ bool page_debug::verifyTiling(TilingPtr tiling)
     if (!rv)
     {
         DlgTextEdit dlg(this);
-        const QStringList & qsl = qtAppLog::getTrap();
-        dlg.set(qsl);
+        const auto & msgs = qtAppLog::getTrap();
+        dlg.set(msgs);
         dlg.exec();
     }
     log->trap(false);
@@ -536,7 +601,7 @@ void page_debug::slot_examineAllMosaics()
         if (!mosaic)
         {
             QString str = QString("Load ERROR - %1").arg(reader.getFailMessage());
-            QMessageBox box(ControlPanel::getInstance());
+            QMessageBox box(panel);
             box.setIcon(QMessageBox::Warning);
             box.setText(str);
             box.exec();
@@ -600,9 +665,32 @@ void page_debug::slot_dontRefresh(bool enb)
     Sys::updatePanel = !enb;
 }
 
+void  page_debug::slot_dbgViewClicked(bool checked)
+{
+    Sys::debugView->show(checked);
+    emit sig_refreshView();
+}
+
+void  page_debug::slot_viewDirnClicked(bool checked)
+{
+    Sys::debugView->showDirection(checked);
+    view->update();
+}
+
+void  page_debug::slot_viewArcCen(bool checked)
+{
+    Sys::debugView->showArcCentres(checked);
+    view->update();
+}
+void  page_debug::slot_viewVerticesClicked(bool checked)
+{
+    Sys::debugView->showVertices(checked);
+    emit sig_refreshView();
+}
+
 void  page_debug::slot_testA()
 {
-    MapEditor * mep = MapEditor::getInstance();
+    MapEditor * mep = Sys::mapEditor;
 
 #if 1
     QPointF p0(0,0);
@@ -742,18 +830,18 @@ void  page_debug::slot_testB()
     qDebug() << "Looking for duplicates - end";
 #endif
 #if 1
-    auto mosaic  = MosaicMaker::getInstance()->getMosaic();
+    auto mosaic  = mosaicMaker->getMosaic();
     qInfo() << "layer - start";
     for (const auto & style : mosaic->getStyleSet())
     {
         auto t = style->getCanvasTransform();
-        qInfo().noquote() << Transform::toInfoString(t);
+        qInfo().noquote() << Transform::info(t);
         
         t = style->getModelTransform();
-        qInfo().noquote() << Transform::toInfoString(t);
+        qInfo().noquote() << Transform::info(t);
 
         t = style->getLayerTransform();
-        qInfo().noquote() << Transform::toInfoString(t);
+        qInfo().noquote() << Transform::info(t);
     }
     qInfo() << "layer - end";
 #endif

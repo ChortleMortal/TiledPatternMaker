@@ -61,7 +61,7 @@ void IntersectMotif::inferIntersect()
     corners       = pmain->getTransformedPoints();
 #else
     corners = getTile()->getPoints();
-    mids    = getTile()->getEdgePoly().getMids();
+    mids    = getTile()->getMids();
 #endif
     // Accumulate all edge intersections and their length.
     QList<EdgesLenPtr> infos;
@@ -166,7 +166,7 @@ void IntersectMotif::inferIntersectProgressive()
     QPolygonF corners = pmain->getTransformedPoints();
 #else
     corners = getTile()->getPoints();
-    mids    = getTile()->getEdgePoly().getMids();
+    mids    = getTile()->getMids();
 #endif
 
     int side_count = mids.size();

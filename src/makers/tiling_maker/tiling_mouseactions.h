@@ -15,6 +15,7 @@ class TilingMakerView;
 
 typedef std::shared_ptr<class TileSelector>     TileSelectorPtr;
 typedef std::shared_ptr<class PlacedTile>       PlacedTilePtr;
+typedef std::weak_ptr<class PlacedTile>        wPlacedTilePtr;
 typedef std::shared_ptr<class Edge>             EdgePtr;
 typedef std::shared_ptr<class Vertex>           VertexPtr;
 
@@ -31,6 +32,7 @@ class TilingMouseAction
 public:
     TilingMouseAction(TileSelectorPtr sel, QPointF spt);
     virtual ~TilingMouseAction() {}
+
     virtual void updateDragging( QPointF spt );
     virtual void draw(GeoGraphics * g2d );
     virtual void endDragging( QPointF spt );
@@ -56,14 +58,14 @@ class MovePolygon : public TilingMouseAction
 {
 public:
     MovePolygon( TileSelectorPtr sel, QPointF spt);
-    virtual void updateDragging( QPointF spt );
+    virtual void updateDragging( QPointF spt ) override;
 };
 
 class CopyMovePolygon : public MovePolygon
 {
 public:
     CopyMovePolygon( TileSelectorPtr sel, QPointF spt );
-    virtual void endDragging( QPointF spt );
+    void endDragging( QPointF spt ) override;
 
 private:
     QTransform initial_transform;
@@ -73,21 +75,22 @@ class DrawTranslation : public TilingMouseAction
 {
 public:
     DrawTranslation(TileSelectorPtr sel, QPointF spt , QPen apen);
-    void updateDragging( QPointF spt );
-    void draw( GeoGraphics* g2d );
-    void endDragging(QPointF spt);
+    void updateDragging( QPointF spt ) override;
+    void draw( GeoGraphics* g2d ) override;
+    void endDragging(QPointF spt) override;
 
     eAddToTranslate state;
     QLineF          vector;
     QPen            apen;
+    QPointF         mOrigin;
 };
 
 class JoinEdge : public TilingMouseAction
 {
 public:
     JoinEdge(TileSelectorPtr sel, QPointF spt);
-    void updateDragging( QPointF spt );
-    void endDragging( QPointF spt );
+    void updateDragging( QPointF spt ) override;
+    void endDragging( QPointF spt ) override;
 
 protected:
     virtual bool snapTo(QPointF spt);
@@ -103,7 +106,7 @@ public:
     JoinMidPoint( TileSelectorPtr sel, QPointF spt );
 
 protected:
-    virtual bool snapTo(QPointF spt) override;
+    bool snapTo(QPointF spt) override;
 };
 
 class JoinPoint : public JoinEdge
@@ -112,14 +115,14 @@ public:
     JoinPoint( TileSelectorPtr sel, QPointF spt );
 
 protected:
-    virtual bool snapTo(QPointF spt) override;
+    bool snapTo(QPointF spt) override;
 };
 
 class CopyJoinEdge : public JoinEdge
 {
 public:
     CopyJoinEdge( TileSelectorPtr sel, QPointF spt );
-    void endDragging( QPointF spt );
+    void endDragging( QPointF spt ) override;
 
 private:
     QTransform initial_transform;
@@ -129,7 +132,7 @@ class CopyJoinMidPoint : public JoinMidPoint
 {
 public:
     CopyJoinMidPoint(TileSelectorPtr sel, QPointF spt );
-    void endDragging( QPointF spt );
+    void endDragging( QPointF spt ) override;
 
 private:
     QTransform initial_transform;
@@ -139,7 +142,7 @@ class CopyJoinPoint : public JoinPoint
 {
 public:
     CopyJoinPoint(TileSelectorPtr sel, QPointF spt );
-    void endDragging( QPointF spt );
+    void endDragging( QPointF spt ) override;
 
 private:
     QTransform initial_transform;
@@ -149,9 +152,9 @@ class CreatePolygon : public TilingMouseAction
 {
 public:
     CreatePolygon( QPointF spt );
-    void updateDragging(QPointF spt );
-    void draw( GeoGraphics * g2d );
-    void endDragging(QPointF spt );
+    void updateDragging(QPointF spt ) override;
+    void draw( GeoGraphics * g2d ) override;
+    void endDragging(QPointF spt ) override;
 
 private:
     void addVertex(QPointF wpt);
@@ -164,9 +167,9 @@ class Measure : public TilingMouseAction
 {
 public:
     Measure(QPointF spt, TileSelectorPtr sel);
-    void updateDragging(QPointF spt );
-    void draw( GeoGraphics * g2d );
-    void endDragging(QPointF spt );
+    void updateDragging(QPointF spt ) override;
+    void draw( GeoGraphics * g2d ) override;
+    void endDragging(QPointF spt )override;
 
 protected:
     QLineF normalVectorA(QLineF line);
@@ -181,8 +184,8 @@ class Position : public TilingMouseAction
 {
 public:
     Position(QPointF spt);
-    void updateDragging(QPointF spt );
-    void draw( GeoGraphics * g2d );
+    void updateDragging(QPointF spt ) override;
+    void draw( GeoGraphics * g2d ) override;
 
 private:
     QPointF spt;
@@ -194,8 +197,8 @@ class EditTile : public TilingMouseAction
 {
 public:
     EditTile(TileSelectorPtr sel, PlacedTilePtr pfp, QPointF spt );
-    void updateDragging( QPointF spt );
-    void endDragging(QPointF spt);
+    void updateDragging( QPointF spt ) override;
+    void endDragging(QPointF spt) override;
 
 private:
     PlacedTilePtr pfp;
@@ -206,9 +209,9 @@ class EditEdge : public TilingMouseAction
 {
 public:
     EditEdge(TileSelectorPtr sel, QPointF spt );
-    void draw( GeoGraphics* g2d );
-    void updateDragging( QPointF spt );
-    void endDragging(QPointF spt);
+    void draw( GeoGraphics* g2d ) override;
+    void updateDragging( QPointF spt ) override;
+    void endDragging(QPointF spt) override;
 
 private:
     QPointF         start;
@@ -223,9 +226,9 @@ public:
     TilingConstructionLine(TileSelectorPtr sel, QPointF spt);
     ~TilingConstructionLine() override;
 
-    virtual void updateDragging(QPointF spt) override;
-    virtual void endDragging( QPointF spt) override;
-    virtual void draw(GeoGraphics * painter) override;
+    void updateDragging(QPointF spt) override;
+    void endDragging( QPointF spt) override;
+    void draw(GeoGraphics * painter) override;
 
 protected:
     QPointF * start;

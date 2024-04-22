@@ -32,7 +32,11 @@
 #include "settings/filldata.h"
 #include "enums/efillmode.h"
 
-typedef QVector<QTransform> Placements;
+class Placements : public UniqueQVector<QTransform>
+{
+public:
+    void  dump();
+};
 
 typedef std::shared_ptr<class Tiling> TilingPtr;
 
@@ -50,7 +54,7 @@ private:
     Tiling *    tiling;
     FillData    fillData;
 
-    UniqueQVector<QTransform>   transforms;
+    Placements  transforms;
 };
 
 #endif

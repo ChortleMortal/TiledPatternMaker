@@ -22,7 +22,7 @@ typedef shared_ptr<RadialMotif>    RadialPtr;
 
 ExplicitMapEditor::ExplicitMapEditor(QString aname) : NamedMotifEditor(aname)
 {
-    prototypeMaker = PrototypeMaker::getInstance();
+    prototypeMaker = Sys::prototypeMaker;
 }
 
 void ExplicitMapEditor::setMotif(DesignElementPtr del, bool doEmit)
@@ -801,7 +801,7 @@ void ExplicitTileEditor::editorToMotif(bool doEmit)
 
 IrregularNoMapEditor::IrregularNoMapEditor(QString aname) : NamedMotifEditor(aname)
 {
-    prototypeMaker = PrototypeMaker::getInstance();
+    prototypeMaker = Sys::prototypeMaker;
 }
 
 void IrregularNoMapEditor::setMotif(DesignElementPtr del, bool doEmit)

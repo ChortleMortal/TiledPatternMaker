@@ -35,9 +35,9 @@ DELSelectorWidget::DELSelectorWidget(MotifMakerWidget * makerWidget)
 {
     qRegisterMetaType<DesignElementButton*>();
 
-    maker         = makerWidget;
-    config        = Configuration::getInstance();
-    protoMakerData = PrototypeMaker::getInstance()->getProtoMakerData();
+    maker          = makerWidget;
+    config         = Sys::config;
+    protoMakerData = Sys::prototypeMaker->getProtoMakerData();
 
     setWidgetResizable(true);
     setFixedWidth(360);

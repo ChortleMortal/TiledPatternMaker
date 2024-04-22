@@ -10,8 +10,8 @@ typedef std::shared_ptr<class Measure2> Measure2Ptr;
 class MeasureView : public Thick
 {
 public:
-    static MeasureView * getInstance();
-    static void          releaseInstance();
+    MeasureView(ProtoPtr pp);
+    ~MeasureView();
 
     void clear() { measurements.clear(); }
 
@@ -30,11 +30,6 @@ public:
 protected:
 
 private:
-    MeasureView(ProtoPtr pp);
-    ~MeasureView();
-
-    static MeasureView * mpThis;
-
     Configuration * config;
 
     Measure2Ptr           measurement;

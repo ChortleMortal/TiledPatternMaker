@@ -4,6 +4,7 @@
 #include "style/style.h"
 #include "geometry/edge.h"
 #include "geometry/map.h"
+#include "geometry/debug_map.h"
 #include "geometry/vertex.h"
 #include "misc/geo_graphics.h"
 #include "makers/prototype_maker/prototype.h"
@@ -99,7 +100,7 @@ QString Style::getInfo() const
     QString astring;
     if (prototype)
     {
-        astring += prototype->getInfo();
+        astring += prototype->info();
         //astring += " : ";
         //astring += prototype->getProtoMap()->getInfo();
     }
@@ -208,7 +209,7 @@ void Style::slot_mouseDoublePressed(QPointF spt)
 void Style::setModelXform(const Xform & xf, bool update)
 {
     Q_ASSERT(_unique);
-    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.toInfoString() << (isUnique() ? "unique" : "common");
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.info() << (isUnique() ? "unique" : "common");
     xf_model = xf;
     forceLayerRecalc(update);
 }
@@ -216,6 +217,6 @@ void Style::setModelXform(const Xform & xf, bool update)
 const Xform & Style::getModelXform()
 {
     Q_ASSERT(_unique);
-    if (debug & DEBUG_XFORM) qInfo().noquote() << "GET" << getLayerName() << xf_model.toInfoString() << (isUnique() ? "unique" : "common");
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "GET" << getLayerName() << xf_model.info() << (isUnique() ? "unique" : "common");
     return xf_model;
 }

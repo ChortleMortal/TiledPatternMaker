@@ -1,5 +1,6 @@
 #include "engine/stepping_engine.h"
 #include "engine/image_engine.h"
+#include "misc/sys.h"
 #include "panels/controlpanel.h"
 #include "settings/configuration.h"
 
@@ -10,8 +11,8 @@ SteppingEngine::SteppingEngine(ImageEngine * parent)
 {
     this->parent = parent;
 
-    config  = Configuration::getInstance();
-    panel   = ControlPanel::getInstance();
+    config  = Sys::config;
+    panel   = Sys::controlPanel;
 
     started = false;
     paused  = false;
@@ -38,7 +39,7 @@ void SteppingEngine::start(bool enb)
 
 void SteppingEngine::finish(QString name)
 {
-    QMessageBox box(ControlPanel::getInstance());
+    QMessageBox box(panel);
     box.setIcon(QMessageBox::Information);
     box.setText(QString("%1 completed").arg(name));
     box.exec();

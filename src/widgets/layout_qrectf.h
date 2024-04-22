@@ -17,13 +17,6 @@ public:
     void setX(qreal val)     { X->setValue(val); }
     void setY(qreal val)     { Y->setValue(val); }
 
-    void bumpScale(qreal val) { width->setValue(getScale() + (val * width->getSingleStep())); emit width->valueChanged(0); }
-    void bumpRot(qreal val)   { height->setValue(getRot() + (val * height->getSingleStep()));  emit height->valueChanged(0); }
-    void bumpX(qreal val)     { X->setValue(getX() + (val * X->getSingleStep())); emit X->valueChanged(0);}
-    void bumpY(qreal val)     { Y->setValue(getY() + (val * Y->getSingleStep()));  emit Y->valueChanged(0); }
-
-    qreal getScale() { return width->value(); }
-    qreal getRot()   { return height->value(); }
     qreal getX()     { return X->value(); }
     qreal getY()     { return Y->value(); }
     QString getName(){ return name;}
@@ -52,9 +45,6 @@ public:
 
     void setX(qreal val)     { X->setValue(val); }
     void setY(qreal val)     { Y->setValue(val); }
-
-    void bumpX(qreal val)     { X->setValue(getX() + (val * X->getSingleStep())); emit X->valueChanged(0);}
-    void bumpY(qreal val)     { Y->setValue(getY() + (val * Y->getSingleStep()));  emit Y->valueChanged(0); }
 
     qreal getX()     { return X->value(); }
     qreal getY()     { return Y->value(); }

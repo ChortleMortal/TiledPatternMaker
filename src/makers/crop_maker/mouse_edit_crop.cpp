@@ -80,10 +80,11 @@ void MouseEditCrop::updateDragging(QPointF spt, QTransform t)
     }
 
     QTransform tinv = t.inverted();
+    QPointF mpt     = tinv.map(spt);
 
-    QPointF mpt = tinv.map(spt);
+    eCropType type = crop->getCropType();
 
-    if (crop->getCropType() == CROP_RECTANGLE)
+    if (type == CROP_RECTANGLE)
     {
         QRectF rect = crop->getRect();
         switch(ecMode)
@@ -158,7 +159,7 @@ void MouseEditCrop::updateDragging(QPointF spt, QTransform t)
         }
         crop->setRect(rect);
     }
-    else if (crop->getCropType() == CROP_CIRCLE)
+    else if (type == CROP_CIRCLE)
     {
         Circle & c = crop->getCircle();
         if (ecCircleMode == CM_EDGE)
@@ -184,6 +185,29 @@ void MouseEditCrop::updateDragging(QPointF spt, QTransform t)
 
             QPointF centre = c.centre + delta;
             c.setCenter(centre);
+        }
+    }
+    else if (type == CROP_POLYGON)
+    {
+        APolygon ap = crop->getAPolygon();
+
+        if (ecMode == EC_READY)
+        {
+            QPolygonF poly = ap.get();
+            if (poly.containsPoint(mpt,Qt::OddEvenFill))
+            {
+                start  = new QPointF(mpt);
+                ecMode = EC_MOVE;
+            }
+        }
+        else if (ecMode == EC_MOVE)
+        {
+            //qDebug() << "move";
+            QPointF delta = mpt - *start;
+            delete start;
+            start  = new QPointF(mpt);
+            ap.setPos(ap.getPos() + delta);
+            crop->setPolygon(ap);
         }
     }
 }

@@ -4,48 +4,58 @@
 #include "makers/crop_maker/crop_maker.h"
 #include "makers/crop_maker/mouse_edit_crop.h"
 #include "makers/prototype_maker/prototype.h"
-#include "settings/configuration.h"
 #include "viewers/crop_view.h"
 #include "viewers/view_controller.h"
 
 using std::make_shared;
 
-CropViewer * CropViewer::mpThis = nullptr;
-
-CropViewer * CropViewer::getInstance()
-{
-    if (!mpThis)
-    {
-        mpThis = new CropViewer();
-    }
-    return mpThis;
-}
-
-void CropViewer::releaseInstance()
-{
-    if (mpThis != nullptr)
-    {
-        delete mpThis;
-        mpThis = nullptr;
-    }
-}
-
 CropViewer::CropViewer() : LayerController("Crop Viewer",false)
 {
-    config      = Configuration::getInstance();
     debugMouse  = false;
-    setShowCrop(false);
     cropMaker   = nullptr;
+    makerType   = CM_UNDEFINED;
+    setShowCrop(CM_UNDEFINED,false);
 }
 
-void CropViewer::init(CropMaker *ed)
+void CropViewer::aquire(CropMaker *ed, eCropMaker maker)
 {
-    cropMaker = ed;
+    // aquire always grabs the viewer
+    cropMaker  = ed;
+    makerType  = maker;
+}
+
+void CropViewer::release(eCropMaker maker)
+{
+    if (maker == makerType)
+    {
+        cropMaker  = nullptr;
+        makerType  = CM_UNDEFINED;
+    }
+}
+
+void CropViewer::setShowCrop(eCropMaker maker, bool state)
+{
+    if (maker == makerType)
+    {
+        showCrop = state;
+    }
+}
+
+bool CropViewer::getShowCrop(eCropMaker maker)
+{
+    if (maker == makerType)
+    {
+        return showCrop;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 void CropViewer::paint(QPainter *painter)
 {
-    if (getShowCrop())
+    if (makerType != CM_UNDEFINED && showCrop)
     {
         painter->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
         // draw
@@ -72,18 +82,16 @@ void CropViewer::draw(QPainter *painter , QTransform t)
 void CropViewer::setModelXform(const Xform & xf, bool update)
 {
     Q_ASSERT(!_unique);
-    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.toInfoString() << (isUnique() ? "unique" : "common");
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.info() << (isUnique() ? "unique" : "common");
     viewControl->setCurrentModelXform(xf,update);
 }
 
 const Xform & CropViewer::getModelXform()
 {
     Q_ASSERT(!_unique);
-    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << viewControl->getCurrentModelXform().toInfoString() << (isUnique() ? "unique" : "common");
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << viewControl->getCurrentModelXform().info() << (isUnique() ? "unique" : "common");
     return viewControl->getCurrentModelXform();
 }
-
-
 
 void CropViewer::slot_wheel_rotate(qreal delta)
 {
@@ -168,7 +176,7 @@ void CropViewer::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
     if (!view->isActiveLayer(this))
         return;
 
-    if (!getShowCrop())
+    if (!showCrop)
         return;
 
     if (!cropMaker)
@@ -190,12 +198,12 @@ void CropViewer::slot_mouseDragged(QPointF spt)
     if (!view->isActiveLayer(this))
         return;
 
-    if (!getShowCrop())
+    if (!showCrop)
         return;
 
     setMousePos(spt);
 
-    if (debugMouse) qDebug().noquote() << "drag" << mousePos << screenToWorld(mousePos);
+    if (debugMouse) qDebug().noquote() << "drag" << mousePos << screenToModel(mousePos);
 
     if (mouseInteraction)
     {
@@ -235,7 +243,7 @@ void CropViewer::slot_mouseReleased(QPointF spt)
 
     setMousePos(spt);
 
-    if (debugMouse) qDebug() << "release" << mousePos << screenToWorld(mousePos);
+    if (debugMouse) qDebug() << "release" << mousePos << screenToModel(mousePos);
 
     if (mouseInteraction)
     {

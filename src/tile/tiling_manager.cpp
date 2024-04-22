@@ -16,9 +16,9 @@
 TilingManager::TilingManager()
 {
     viewController  = Sys::viewController;
-    config          = Configuration::getInstance();
-    tilingMaker     = TilingMaker::getInstance();
-    prototypeMaker  = PrototypeMaker::getInstance();
+    config          = Sys::config;
+    tilingMaker     = Sys::tilingMaker;
+    prototypeMaker  = Sys::prototypeMaker;
 }
 
 TilingPtr TilingManager::loadTiling(QString name, eTILM_Event event)
@@ -29,7 +29,7 @@ TilingPtr TilingManager::loadTiling(QString name, eTILM_Event event)
     if (filename.isEmpty())
     {
         qWarning() << "No tiling found with name" << name;
-        QMessageBox box(ControlPanel::getInstance());
+        QMessageBox box(Sys::controlPanel);
         box.setIcon(QMessageBox::Critical);
         box.setText(QString("No tiling found with name <%1>not found").arg(name));
         box.exec();
@@ -45,7 +45,7 @@ TilingPtr TilingManager::loadTiling(QString name, eTILM_Event event)
     {
         qWarning().noquote() << "Error loading" << filename;
 
-        QMessageBox box(ControlPanel::getInstance());
+        QMessageBox box(Sys::controlPanel);
         box.setIcon(QMessageBox::Critical);
         box.setText(QString("Load Error: <%1>").arg(name));
         box.exec();
@@ -66,7 +66,7 @@ bool TilingManager::saveTiling(QString name, TilingPtr tiling)
 
     // match size to current view
     auto & canvas = viewController->getCanvas();
-    QSize size    = Sys::view->getCurrentSize();
+    QSize size    = Sys::view->getSize();
     QSizeF zsize  = canvas.getSize();
     
     const CanvasSettings & cs = tiling->getData().getSettings();
@@ -80,7 +80,7 @@ bool TilingManager::saveTiling(QString name, TilingPtr tiling)
 
     if (tilingMaker->getSelected() == tiling)
     {
-        Xform xf = TilingMakerView::getInstance()->getModelXform();
+        Xform xf = Sys::tilingMakerView->getModelXform();
         tiling->setModelXform(xf,false);
     }
 

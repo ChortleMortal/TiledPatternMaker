@@ -1,10 +1,8 @@
 #include "viewers/motif_view.h"
-#include "geometry/arcdata.h"
-#include "geometry/edge.h"
 #include "geometry/geo.h"
 #include "geometry/map.h"
+#include "geometry/debug_map.h"
 #include "geometry/transform.h"
-#include "geometry/vertex.h"
 #include "makers/motif_maker/design_element_button.h"
 #include "makers/motif_maker/motif_maker_widget.h"
 #include "makers/prototype_maker/prototype.h"
@@ -24,38 +22,15 @@ using std::make_shared;
 
 typedef std::shared_ptr<RadialMotif>    RadialPtr;
 
-MotifView * MotifView::mpThis = nullptr;
-
-
 ///////////////////////////////////////////////////////////////////////////
 ///
 ///     This view paints all selected DELs in a selected Prototyp
 ///
 ///////////////////////////////////////////////////////////////////////////
 
-MotifView * MotifView::getInstance()
-{
-    if (!mpThis)
-    {
-        mpThis = new MotifView();
-    }
-    return mpThis;
-}
-
-void MotifView::releaseInstance()
-{
-    if (mpThis != nullptr)
-    {
-        delete mpThis;
-        mpThis = nullptr;
-    }
-}
-
 MotifView::MotifView() : LayerController("Motif View",false)
 {
-    protoMakerData = PrototypeMaker::getInstance()->getProtoMakerData();
-    lineWidth     = config->motifViewWidth;
-
+    protoMakerData = Sys::prototypeMaker->getProtoMakerData();
 }
 
 MotifView::~MotifView()
@@ -74,7 +49,7 @@ void MotifView::paint(QPainter *painter)
 #endif
     painter->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
 
-    lineWidth = config->motifViewWidth;
+    qreal lineWidth = config->motifViewWidth;
 
     QTransform baseT;
     DesignElementPtr del = protoMakerData->getSelectedDEL();
@@ -104,10 +79,16 @@ void MotifView::paint(QPainter *painter)
         }
 
         QTransform T = placement * baseT;
+        QTransform T2 = motif->getDELTransform() * T;
         //qDebug().noquote() << "MotifView::transform" << Transform::toInfoString(_T);
 
-        QTransform T2 = motif->getDELTransform() * T;
-        paintDebugMap(painter,motif,T2);
+        if (motif->getDebugMap())
+        {
+            QColor viewColor = viewControl->getCanvas().getBkgdColor();
+            QColor color = (viewColor == QColor(Qt::white)) ? Qt::black : Qt::white;
+            painter->setPen(QPen(color,lineWidth));
+            paintDebugMap(painter,motif,T2);
+        }
 
         // paint boundaries
         if (config->showTileBoundary)
@@ -215,25 +196,17 @@ void MotifView::paintRadialMotifMap(QPainter *painter, MotifPtr motif, QTransfor
     if (Sys::highlightUnit)
     {
         map = rp->getUnitMap();
-        painter->setPen(QPen(Qt::red,lineWidth+1.0));
+        painter->save();
+        painter->setPen(QPen(Qt::red, config->motifViewWidth +1.0));
         paintMap(painter,map,tr);
+        painter->restore();
     }
 }
 
 void MotifView::paintDebugMap(QPainter *painter, MotifPtr motif, QTransform & tr)
 {
     DebugMapPtr dmap = motif->getDebugMap();
-    if (dmap && !dmap->isEmpty())
-    {
-        auto map = std::dynamic_pointer_cast<Map>(dmap);
-        if (map)
-        {
-            QColor viewColor = viewControl->getCanvas().getBkgdColor();
-            QColor color = (viewColor == QColor(Qt::white)) ? Qt::black : Qt::white;
-            painter->setPen(QPen(color,lineWidth));
-            paintMap(painter,map,tr);
-        }
-    }
+    dmap->paint(painter,tr);
 }
 
 void MotifView::paintTileBoundary(QPainter *painter,TilePtr tile, QTransform & tr)
@@ -242,7 +215,7 @@ void MotifView::paintTileBoundary(QPainter *painter,TilePtr tile, QTransform & t
     // qDebug() << "scale" << feat->getScale();
     //qDebug().noquote() << feat->toBaseString();
     //qDebug().noquote() << feat->toString();
-    EdgePoly  ep = tile->getEdgePoly();
+    const EdgePoly & ep = tile->getEdgePoly();
     ep.paint(painter,tr,true);
 }
 
@@ -281,65 +254,20 @@ void MotifView::paintMap(QPainter * painter, MapPtr map, QTransform &tr)
 {
     //map->verify("figure", true, true, true);
     //qDebug() << "MotifView::paintMap" <<  map->namedSummary();
-    for (auto & edge : std::as_const(map->getEdges()))
-    {
-        QPointF p1 = tr.map(edge->v1->pt);
-        QPointF p2 = tr.map(edge->v2->pt);
-
-        //qDebug() << "edge" << p1 << p2;
-
-        if (edge->getType() == EDGETYPE_LINE)
-        {
-            painter->drawLine(p1,p2);
-        }
-        else if (edge->getType() == EDGETYPE_CURVE)
-        {
-            QPointF arcCenter = tr.map(edge->getArcCenter());
-            ArcData ad(p1,p2,arcCenter,edge->isConvex());
-            painter->drawArc(ad.rect, qRound(ad.start * 16.0),qRound(ad.span*16.0));
-        }
-        else if (edge->getType() == EDGETYPE_CHORD)
-        {
-            QPointF arcCenter = tr.map(edge->getArcCenter());
-            ArcData ad(p1,p2,arcCenter,edge->isConvex());
-            painter->drawChord(ad.rect, qRound(ad.start * 16.0),qRound(ad.span*16.0));
-        }
-    }
-
-    QFont font = painter->font();
-    font.setPixelSize(14);
-    painter->setFont(font);
-    const QVector<QPair<QPointF,QString>> & texts = map->getTexts();
-    for (auto & pair : std::as_const(texts))
-    {
-
-        QPointF pt  = pair.first;
-        QString txt = pair.second;
-#ifdef INVERT_VIEW
-        painter->save();
-        painter->scale(1.0, -1.0);
-        QTransform t2 = _T * QTransform().scale(1.0,-1.0);
-        pt = t2.map(pt);
-        painter->drawText(QPointF(pt.x()+7,pt.y()+13),txt);
-        painter->restore();
-#else
-        pt = tr.map(pt);
-        painter->drawText(QPointF(pt.x()+7,pt.y()+13),txt);
-#endif
-    }
+    map->paint(painter,tr);
 }
 
 void MotifView::setModelXform(const Xform & xf, bool update)
 {
     Q_ASSERT(!_unique);
-    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.toInfoString() << (isUnique() ? "unique" : "common");
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.info() << (isUnique() ? "unique" : "common");
     viewControl->setCurrentModelXform(xf,update);
 }
 
 const Xform & MotifView::getModelXform()
 {
     Q_ASSERT(!_unique);
-    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << viewControl->getCurrentModelXform().toInfoString() << (isUnique() ? "unique" : "common");
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << viewControl->getCurrentModelXform().info() << (isUnique() ? "unique" : "common");
     return viewControl->getCurrentModelXform();
 }
 
@@ -364,7 +292,7 @@ void MotifView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
     if (!config->motifMultiView)
         return;
 
-    QPointF mpt = screenToWorld(spt);
+    QPointF mpt = screenToModel(spt);
 
     auto proto  = protoMakerData->getSelectedPrototype();
     if (!proto) return;

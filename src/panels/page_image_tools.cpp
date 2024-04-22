@@ -52,6 +52,7 @@ page_image_tools:: page_image_tools(ControlPanel * cpanel)  : panel_page(cpanel,
 {
     generatorType     = ACT_GEN_MOSAIC_BMP;     // default
     created           = false;
+    logDebug          = false;
     etimer            = new AQElapsedTimer(false);
     Sys::imageEngine  = &engine;
 
@@ -106,7 +107,7 @@ int  page_image_tools::createCycleGenBox(int row)
 
     genBtnGroup = new QButtonGroup;
     genBtnGroup->addButton(rSavMosaics,ACT_GEN_MOSAIC_BMP);
-    genBtnGroup->addButton(rSavTiles,ACT_GEN_TILING_BMP);
+    genBtnGroup->addButton(rSavTiles,  ACT_GEN_TILING_BMP);
     if (config->genCycleMosaic)
         rSavMosaics->setChecked(true);
     else
@@ -135,20 +136,26 @@ int  page_image_tools::createCycleGenBox(int row)
 
     viewBtnGroup = new QButtonGroup;
     viewBtnGroup->addButton(rStyles,CYCLE_VIEW_MOSAICS);
-    viewBtnGroup->addButton(rTiles,CYCLE_VIEW_TILINGS);
-    viewBtnGroup->addButton(rPngs,CYCLE_VIEW_ORIGINAL_PNGS);
+    viewBtnGroup->addButton(rTiles, CYCLE_VIEW_TILINGS);
+    viewBtnGroup->addButton(rPngs,  CYCLE_VIEW_ORIGINAL_PNGS);
 
     viewBtnGroup->button(config->viewCycle2)->setChecked(true);
 
     loadViewFilterCombo();
 
-    // title
+    // title row
     QLabel * l1 = new  QLabel("Generate BMPs :");
     l1->setStyleSheet("font-weight : bold");
+    QCheckBox   * chkMultiThread  = new QCheckBox("Multi-thread");
+
+    chkMultiThread->setChecked(config->multithreadedGeneration);
+
     QHBoxLayout * hb0 = new QHBoxLayout();
     hb0->addWidget(l1);
     hb0->addStretch();
-    grid->addLayout(hb0,row,0,1,3);
+
+    grid->addLayout(hb0,row,0,1,2);
+    grid->addWidget(chkMultiThread,row,2);
 
     // generation
     QHBoxLayout * hb1 = new QHBoxLayout;
@@ -192,7 +199,9 @@ int  page_image_tools::createCycleGenBox(int row)
     connect(spCycleInterval, &SpinSet::valueChanged,    this,  &page_image_tools::slot_cycleIntervalChanged);
     connect(viewImgesBtn,    &QPushButton::clicked,     this,  &page_image_tools::slot_startStepping);
     connect(viewBtnGroup,    &QButtonGroup::idClicked,  this,  &page_image_tools::slot_viewTypeChanged);
+    connect(chkMultiThread,  &QCheckBox::clicked,       this,  [this](bool checked) { config->multithreadedGeneration = checked; });
     connect(genFilterCombo,  QOverload<int>::of(&QComboBox::currentIndexChanged), this, &page_image_tools::slot_view_selectionChanged);
+
     return ++row;
 }
 
@@ -606,8 +615,6 @@ void  page_image_tools::onEnter()
 
 void page_image_tools::onExit()
 {
-    panel->popPanelStatus();
-
     view->clearLayout();   // removes any cler pngs
     view->show();
 }
@@ -643,6 +650,7 @@ void  page_image_tools::onRefresh()
 
 void page_image_tools::slot_genTypeChanged(int id)
 {
+    // switches between mosaics and tilings
     qDebug() << "page_image_tools::slot_genTypeChanged" << id;
     config->genCycleMosaic = (id == ACT_GEN_MOSAIC_BMP);
     loadFileFilterCombo();
@@ -650,6 +658,7 @@ void page_image_tools::slot_genTypeChanged(int id)
 
 void page_image_tools::slot_gen_selectionChanged()
 {
+    // triggered when filter combo is loaded or its selection changes
     config->genFileFilter = static_cast<eLoadType>(genFilterCombo->currentData().toInt());
     qDebug() << "generate BMP file filter" << config->genFileFilter;
 }
@@ -1380,8 +1389,8 @@ void page_image_tools::slot_viewImage3()
 
     if (mosaic)
     {
-        mosaic->reportMotifs();
-        mosaic->reportStyles();
+        mosaic->dumpMotifs();
+        mosaic->dumpStyles();
     }
 }
 
@@ -1393,8 +1402,8 @@ void page_image_tools::slot_viewImage4()
 
     if (mosaic)
     {
-        mosaic->reportMotifs();
-        mosaic->reportStyles();
+        mosaic->dumpMotifs();
+        mosaic->dumpStyles();
     }
 }
 
@@ -1407,7 +1416,7 @@ void page_image_tools::slot_viewImage4()
 void page_image_tools::slot_compareDiffDirBMPs()
 {
     imageCompareResult->setText("");
-    panel->pushPanelStatus("Spacebar=next C=compare P=ping-pong S=side-by-side L=log Q=quit D=delete-from-worklist");
+    panel->setStatus("Spacebar=next C=compare P=ping-pong S=side-by-side L=log Q=quit D=delete-from-worklist");
     if (!compareView->isChecked())
     {
         engine.compareBMPsByName(firstFileCombo->currentText(),secondFileCombo->currentText(),false);
@@ -1421,16 +1430,16 @@ void page_image_tools::slot_compareDiffDirBMPs()
 void  page_image_tools::slot_compareDiffVerBMPs()
 {
     if (config->vCompTile)
-        panel->selectViewer(VIEW_TILING);
+        panel->delegateView(VIEW_TILING);
     else
-        panel->selectViewer(VIEW_MOSAIC);
+        panel->delegateView(VIEW_MOSAIC);
 
     engine.verStepper->compareVersions();
 }
 
 void page_image_tools::slot_compareFileBMPs()
 {
-    panel->pushPanelStatus("Spacebar=next C=compare P=ping-pong S=side-by-side L=log Q=quit D=delete-from-worklist");
+    panel->setStatus("Spacebar=next C=compare P=ping-pong S=side-by-side L=log Q=quit D=delete-from-worklist");
 
     engine.compareBMPsByFilename(viewFileCombo1->currentText(),viewFileCombo2->currentText());
 }
@@ -1448,9 +1457,9 @@ void  page_image_tools::slot_cycleVersions()
     chkLock->setChecked(true);
 
     if (config->vCompTile)
-        panel->selectViewer(VIEW_TILING);
+        panel->delegateView(VIEW_TILING);
     else
-        panel->selectViewer(VIEW_MOSAIC);
+        panel->delegateView(VIEW_MOSAIC);
 
     engine.verStepper->loadVersionCombos();
     engine.verStepper->begin();
@@ -1467,14 +1476,14 @@ void page_image_tools::slot_startStepping()
     switch (config->viewCycle2)
     {
     case CYCLE_VIEW_MOSAICS:
-        panel->pushPanelStatus("Press P to Pause/unPause - press Q to Quit" );
-        panel->selectViewer(VIEW_MOSAIC);
+        panel->setStatus("Press P to Pause/unPause - press Q to Quit" );
+        panel->delegateView(VIEW_MOSAIC);
         engine.mosaicStepper->begin();
         break;
 
     case CYCLE_VIEW_TILINGS:
-        panel->pushPanelStatus("Press P to Pause/unPause - press Q to Quit" );
-        panel->selectViewer(VIEW_TILING);
+        panel->setStatus("Press P to Pause/unPause - press Q to Quit" );
+        panel->delegateView(VIEW_TILING);
         engine.tilingStepper->begin();
         break;
 
@@ -1489,7 +1498,7 @@ void page_image_tools::slot_startStepping()
 
 void page_image_tools::slot_startCompare()
 {
-    panel->pushPanelStatus("Spacebar=next C=compare P=ping-pong S=side-by-side L=log Q=quit D=delete-from-worklist");
+    panel->setStatus("Spacebar=next C=compare P=ping-pong S=side-by-side L=log Q=quit D=delete-from-worklist");
 
     emit engine.sig_closeAllImageViewers();
 
@@ -1565,11 +1574,14 @@ void page_image_tools::processActionList(QList<sAction> &actions)
 {
     totalEngineImages = actions.size();
 
+    auto log = qtAppLog::getInstance();
+    logDebug = log->getLogDebug();
+
     if (config->multithreadedGeneration)
     {
         qInfo() << "Concurrent processes - starting";
-        qtAppLog::getInstance()->logToPanel(false);     // thread safety: dont write to gui
-
+        log->logDebug(false);
+        log->logToPanel(false);     // thread safety: dont write to gui
         watcher.setFuture(QtConcurrent::mapped(actions,takeAction));
     }
     else
@@ -1584,6 +1596,12 @@ void page_image_tools::processActionList(QList<sAction> &actions)
         }
 
         Sys::usingImgGenerator = false;
+        log->logDebug(logDebug);
+
+        if (generatorType == ACT_GEN_MOSAIC_BMP)
+            panel->delegateView(VIEW_MOSAIC);
+        else if (generatorType == ACT_GEN_TILING_BMP)
+            panel->delegateView(VIEW_TILING);
 
         QString str = QString("Pocesses took %1 seconds").arg(etimer->getElapsed().trimmed());
         QString str2 =        "Cycle complete";
@@ -1598,7 +1616,9 @@ void page_image_tools::processActionList(QList<sAction> &actions)
 
 void page_image_tools::slot_engineComplete()
 {
-    qtAppLog::getInstance()->logToPanel(config->logToPanel);
+    auto log = qtAppLog::getInstance();
+    log->logDebug(logDebug);
+    log->logToPanel(config->logToPanel);
 
     qInfo() << "Image Engine completed";
 
@@ -1613,11 +1633,11 @@ void page_image_tools::slot_engineComplete()
     switch(generatorType)
     {
     case ACT_GEN_MOSAIC_BMP:
-        panel->selectViewer(VIEW_MOSAIC);
+        panel->delegateView(VIEW_MOSAIC);
         break;
 
     case ACT_GEN_TILING_BMP:
-        panel->selectViewer(VIEW_TILING);
+        panel->delegateView(VIEW_TILING);
         break;
 
     case ACT_GEN_COMPARE_WLIST:
@@ -1657,8 +1677,19 @@ void page_image_tools::saveMosaicBitmaps()
 
     etimer->start();
 
-    auto id             = config->genFileFilter;
-    auto files          = FileServices::getMosaicNames(id);
+    eLoadType id = config->genFileFilter;
+
+    QStringList files;
+    if (id == SINGLE_MOSAIC)
+    {
+        QString file = firstFileCombo->currentText();
+        files << file;
+    }
+    else
+    {
+        files = FileServices::getMosaicNames(id);
+    }
+
     QString pixmapPath  = getPixmapPath();
 
     QList<sAction> actions;
@@ -1854,16 +1885,17 @@ void page_image_tools::loadFileFilterCombo()
     eLoadType defaultType;
     if (config->genCycleMosaic)
     {
-        genFilterCombo->addItem("All Mosaics",     ALL_MOSAICS);
-        genFilterCombo->addItem("Selected mosaics",SELECTED_MOSAICS);
-        genFilterCombo->addItem("Worklist Mosaics",WORKLIST);
+        genFilterCombo->addItem("All Mosaics",      ALL_MOSAICS);
+        genFilterCombo->addItem("Loader mosaics",   SELECTED_MOSAICS);
+        genFilterCombo->addItem("Worklist Mosaics", WORKLIST);
+        genFilterCombo->addItem("Selected Mosaic",  SINGLE_MOSAIC);
         defaultType = ALL_MOSAICS;
     }
     else
     {
-        genFilterCombo->addItem("All Tilings",     ALL_TILINGS);
-        genFilterCombo->addItem("Selected Tilings",SELECTED_TILINGS);
-        genFilterCombo->addItem("Worklist Tilings",WORKLIST);
+        genFilterCombo->addItem("All Tilings",      ALL_TILINGS);
+        genFilterCombo->addItem("Selected Tilings", SELECTED_TILINGS);
+        genFilterCombo->addItem("Worklist Tilings", WORKLIST);
         defaultType = ALL_TILINGS;
     }
     genFilterCombo->blockSignals(false);
@@ -1964,8 +1996,8 @@ void page_image_tools::setImageDirectory()
 {
     QDateTime d = QDateTime::currentDateTime();
     QString date = d.toString("yyyy-MM-dd");
-    if (!panel->gitBranch.isEmpty())
-        directory->setText(date + "-" + panel->gitBranch);
+    if (!Sys::gitBranch.isEmpty())
+        directory->setText(date + "-" + Sys::gitBranch);
     else
         directory->setText(date);
 }

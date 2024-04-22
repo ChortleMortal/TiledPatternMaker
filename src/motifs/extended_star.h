@@ -23,8 +23,8 @@ public:
 
     void    buildMotifMaps() override;
 
-    virtual QString getMotifDesc() override { return "ExtendedStar";}
-    virtual void    report()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "d:" << d << "s" << s
+    QString getMotifDesc() override { return "ExtendedStar";}
+    void    dump()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "d:" << d << "s" << s
                                                << "preipheralVerts:" << extender. getExtendPeripheralVertices()
                                                << "freeVerts:" << extender.getExtendFreeVertices()
                                                << "boundaryVerts:" << extender. getConnectBoundaryVertices(); }
@@ -48,8 +48,8 @@ public:
 
     void    buildMotifMaps() override;
 
-    virtual QString getMotifDesc() override { return "ExtendedStar2";}
-    virtual void    report()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "d:" << d << "s" << s
+    QString getMotifDesc() override { return "ExtendedStar2";}
+    void    dump()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "d:" << d << "s" << s
                                                         << "preipheralVerts:" << extender. getExtendPeripheralVertices()
                                                         << "freeVerts:" << extender.getExtendFreeVertices()
                                                         << "boundaryVerts:" << extender. getConnectBoundaryVertices(); }

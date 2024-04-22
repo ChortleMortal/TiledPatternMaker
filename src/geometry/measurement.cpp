@@ -17,12 +17,12 @@ void Measurement::reset()
 }
 void Measurement::setStart(QPointF spt)
 {
-    wStart = layer->screenToWorld(spt);
+    wStart = layer->screenToModel(spt);
 }
 
 void Measurement::setEnd(QPointF spt)
 {
-    wEnd = layer->screenToWorld(spt);
+    wEnd = layer->screenToModel(spt);
 
 }
 
@@ -38,12 +38,12 @@ QPointF Measurement::endW()
 
 QPointF Measurement::startS()
 {
-    return layer->worldToScreen(wStart);
+    return layer->modelToScreen(wStart);
 }
 
 QPointF Measurement::endS()
 {
-      return layer->worldToScreen(wEnd);
+      return layer->modelToScreen(wEnd);
 }
 
 qreal Measurement::lenS()

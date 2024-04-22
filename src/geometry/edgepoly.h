@@ -17,13 +17,13 @@ class EdgePoly : public QVector<EdgePtr>
 {
 public:
     EdgePoly();
-    EdgePoly(QPolygonF & poly);
+    EdgePoly(const QPolygonF & poly);
     EdgePoly(QRectF & rect);
     EdgePoly(const Circle & circle);
     EdgePoly(PolyPtr pp);
     EdgePoly(const QVector<EdgePtr> & qvep);
 
-    void set(QPolygonF & poly);
+    void set(const QPolygonF &poly);
     void set(QRectF & rect);
     void set(const Circle & circle);
 
@@ -54,9 +54,7 @@ public:
     QLineF      getEdge(int edge);
     qreal       getAngle(int edge);
 
-    int         numSwapped();
-
-    void    paint(QPainter *painter, QTransform T, bool annotate=false);
+    void    paint(QPainter *painter, QTransform T, bool annotate=false) const;
     void    draw(GeoGraphics * gg, QPen & pen);
     void    drawPts(GeoGraphics * gg, QPen & pen);
 
@@ -65,7 +63,7 @@ public:
 protected:
 
 private:
-    void    init(QPolygonF & poly);
+    void    init(const QPolygonF & poly);
 };
 
 #endif // EDGEPOLY_H

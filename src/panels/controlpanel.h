@@ -24,10 +24,9 @@ class ControlPanel : public QWidget
     Q_OBJECT
 
 public:
-    static ControlPanel * getInstance();
-    static void releaseInstance();
-
-    void    init(TiledPatternMaker * parent);
+    ControlPanel();
+    ~ControlPanel() override;
+    void    init();
 
     void    floatPages()                     { pageController->floatPages(); }
     void    closePages()                     { pageController->closePages(); }
@@ -37,17 +36,16 @@ public:
     panel_page* getCurrentPage()             { return pageController->getCurrentPage(); }
     void    completePageSelection();
 
-    void    pushPanelStatus(QString & txt)   { panelStatus->pushStack(txt); }
-    void    pushPanelStatus(QString && txt)  { panelStatus->pushStack(txt); }
-    void    popPanelStatus()                 { panelStatus->popStack(); }
+    void    setStatus(QString & txt)         { panelStatus->setStatusText(txt); }
+    void    setStatus(QString && txt)        { panelStatus->setStatusText(txt); }
+    void    clearStatus()                    { panelStatus->clearStatusText(); }
+    QString getStatus()                      { return panelStatus->text(); }
 
-    void    selectViewer(eViewType vtype);
+    void    delegateView(eViewType vtype);
     void    delegateKeyboardMouse();
 
     MouseModeWidget  *  getMouseModeWidget() { return mouseModeWidget;}
     eKbdMode            getValidKbdMode(eKbdMode mode);
-
-    QString gitBranch;  // (if there is one)
 
 signals:
     void    sig_refreshView();
@@ -75,8 +73,6 @@ private slots:
     void    showMosaicPressed();
 
 protected:
-    ControlPanel();
-    ~ControlPanel() override;
 
     void    paintEvent(QPaintEvent *event) override;
     void	closeEvent(QCloseEvent *event) override;
@@ -94,13 +90,11 @@ protected:
     void    setWindowTitles();
 
 private:
-    void	setupGUI();
+    void        setupGUI();
+    QGroupBox * createTopGroup();
 
 private:
-    static ControlPanel * mpThis;
-
     class Configuration *  config;
-    TiledPatternMaker   *  maker;
     View                *  view;
     ViewController      *  viewControl;
     MosaicMaker         *  mosaicMaker;

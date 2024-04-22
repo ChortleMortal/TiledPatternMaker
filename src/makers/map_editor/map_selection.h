@@ -29,6 +29,7 @@ static QString sMapSelection[]
 typedef std::shared_ptr<class MapSelection> MapSelectionPtr;
 typedef std::shared_ptr<class Vertex>       VertexPtr;
 typedef std::shared_ptr<class Edge>         EdgePtr;
+typedef std::shared_ptr<class Circle>       CirclePtr;
 
 typedef QVector<MapSelectionPtr>            SelectionSet;
 
@@ -36,18 +37,22 @@ class MapSelection
 {
 public:
     MapSelection(VertexPtr v);
-    MapSelection(QPointF p);
     MapSelection(EdgePtr e);
+    MapSelection(CirclePtr circle, bool constructionLine = false);
+    MapSelection(CirclePtr circle, QPointF intersect, bool constructionLine = false);
+
+    MapSelection(QPointF p);
     MapSelection(QLineF  l, bool constructionLine = false);
-    MapSelection(Circle circle, bool constructionLine = false);
-    MapSelection(Circle circle, QPointF intersect, bool constructionLine = false);
 
     eMapSelection getType() { return _type; }
+
     VertexPtr     getVertex();
     EdgePtr       getEdge();
+    CirclePtr     getCircle();
+
     QPointF       getPoint();
-    Circle        getCircle();
     QLineF        getLine();
+
     bool          isConstructionLine() { return _constructionLine; }
     bool          hasCircleIntersect() { return _hasCircleIntersect; }
 
@@ -55,11 +60,14 @@ public:
 
 private:
     eMapSelection    _type;
+
     VertexPtr        _vert;
     EdgePtr          _edge;
+    CirclePtr        _circle;
+
     QLineF           _line;
     QPointF          _pt;
-    Circle           _circle;
+
     bool             _constructionLine;
     bool             _hasCircleIntersect;
 };
@@ -75,16 +83,16 @@ enum ePointInfo
     PT_CIRCLE_2
 };
 
-class pointInfo
+class PointInfo
 {
 public:
-    pointInfo() {}
-    pointInfo(ePointInfo type, QPointF   p, QString desc = QString());
-    pointInfo(ePointInfo type, VertexPtr v, QString desc = QString());
-    ePointInfo      _type;
-    QPointF         _pt;
-    VertexPtr       _vert;
-    QString         _desc;
+    PointInfo() {}
+    PointInfo(ePointInfo type, QPointF   pt,   QString desc = QString());
+    PointInfo(ePointInfo type, VertexPtr vert, QString desc = QString());
+    ePointInfo      type;
+    QPointF         pt;
+    VertexPtr       vert;
+    QString         desc;
 };
 
 
@@ -95,17 +103,17 @@ enum eLineInfo
     LINE_CONSTRUCTION
 };
 
-class lineInfo
+class LineInfo
 {
 public:
-    lineInfo() {}
-    lineInfo(eLineInfo type, QLineF  l, QString desc = QString());
-    lineInfo(eLineInfo type, EdgePtr e, QString desc = QString());
+    LineInfo() {}
+    LineInfo(eLineInfo type, QLineF  line, QString desc = QString());
+    LineInfo(eLineInfo type, EdgePtr edge, QString desc = QString());
 
-    eLineInfo       _type;
-    QLineF          _line;
-    EdgePtr         _edge;
-    QString         _desc;
+    eLineInfo       type;
+    QLineF          line;
+    EdgePtr         edge;
+    QString         desc;
 };
 #endif
 

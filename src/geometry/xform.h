@@ -22,7 +22,6 @@ public:
 
     QTransform  getTransform() const;
     QPointF     getTranslate() { return QPointF(translateX,translateY); }
-    QString     toInfoString(int precision = 16) const;
 
     qreal       getScale() const;
     qreal       getRotateRadians() const;
@@ -39,6 +38,8 @@ public:
     void        setTranslateX(qreal x);
     void        setTranslateY(qreal y);
     void        setModelCenter(QPointF mpt);     // model units
+
+    QString     info(int precision = 16) const;
 
 protected:
     QTransform  rotateAroundPoint(QPointF pt);

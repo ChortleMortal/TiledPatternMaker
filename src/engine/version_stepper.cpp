@@ -195,11 +195,11 @@ void VersionStepper::compareVersions()
             auto tileB = FileServices::getTilingXMLFile(nameB);
             QStringList qsl;
             qsl << tileA << tileB;
-            QProcess::startDetached(Configuration::getInstance()->diffTool,qsl);
+            QProcess::startDetached(config->diffTool,qsl);
         }
         else
         {
-            auto maker = TilingMaker::getInstance();
+            auto maker = Sys::tilingMaker;
             maker->loadTiling(nameA,TILM_LOAD_SINGLE);
             auto pixA = Sys::view->grab();
 
@@ -225,7 +225,7 @@ void VersionStepper::compareVersions()
         }
         else
         {
-            auto maker   = MosaicMaker::getInstance();
+            auto maker   = Sys::mosaicMaker;
 
             auto mosaicA = maker->loadMosaic(nameA);
             auto pixA    = Sys::view->grab();
@@ -235,13 +235,13 @@ void VersionStepper::compareVersions()
 
             if (mosaicA)
             {
-                mosaicA->reportMotifs();
-                mosaicA->reportStyles();
+                mosaicA->dumpMotifs();
+                mosaicA->dumpStyles();
             }
             if (mosaicB)
             {
-                mosaicB->reportMotifs();
-                mosaicB->reportStyles();
+                mosaicB->dumpMotifs();
+                mosaicB->dumpStyles();
             }
             imgA = pixA.toImage();
             imgB = pixB.toImage();
@@ -256,7 +256,7 @@ void VersionStepper::compareNextVersions()
     // this assumes imgB can bes used as the new img
     imgA = imgB;
 
-    auto maker        = MosaicMaker::getInstance();
+    auto maker        = Sys::mosaicMaker;
     MosaicPtr mosaicA = maker->getMosaic();
     QString mosA      = versionsA->currentText();
     QString mosB      = versionsB->currentText();
@@ -265,10 +265,10 @@ void VersionStepper::compareNextVersions()
     QPixmap pixB = Sys::view->grab();
     MosaicPtr mosaicB = maker->getMosaic();
 
-    mosaicA->reportMotifs();
-    mosaicA->reportStyles();
-    mosaicB->reportMotifs();
-    mosaicB->reportStyles();
+    mosaicA->dumpMotifs();
+    mosaicA->dumpStyles();
+    mosaicB->dumpMotifs();
+    mosaicB->dumpStyles();
 
     imgB = pixB.toImage();
 

@@ -17,8 +17,8 @@ int Vertex::refs = 0;
 Vertex::Vertex(const QPointF &pos )
 {
     refs++;
-    this->pt        = pos;
-    visited         = false;
+    pt      = pos;
+    visited = false;
 }
 
 Vertex::~Vertex()

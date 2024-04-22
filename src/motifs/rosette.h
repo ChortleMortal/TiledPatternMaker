@@ -34,7 +34,7 @@ public:
     void    setN(int n) override;
 
     virtual QString getMotifDesc() override { return "Rosette";}
-    virtual void    report()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "q:" << q << "s" << s; }
+    virtual void    dump()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "q:" << q << "s" << s; }
 
     bool equals(const MotifPtr other) override;
 

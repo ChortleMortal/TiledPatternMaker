@@ -31,14 +31,13 @@ public:
 
     virtual eStyleType getStyleType() const override { return STYLE_OUTLINED; }
     QString            getStyleDesc() const override { return "Outlined"; }
-    virtual void       report()       const override { qDebug().noquote() << getStyleDesc() << "width:" << width << "outline:" << drawOutline << outline_width << "outlineColor" << outline_color << colors.colorsString(); }
+    virtual void       dump()         const override { qDebug().noquote() << getStyleDesc() << "width:" << width << "outline:" << drawOutline << outline_width << "outlineColor" << outline_color << colors.colorsString(); }
 
     static BelowAndAbove getPoints(const MapPtr & map, const EdgePtr & edge, const VertexPtr & fromV, const VertexPtr & toV, qreal qwidth);
     static QPointF       getJoinPoint(QPointF joint, QPointF from, QPointF to, qreal qwidth);
 
 protected:
     QVector<BelowAndAboveEdge> pts4; // Internal representation of the rendering.
-
 };
 #endif
 

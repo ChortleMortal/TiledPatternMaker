@@ -19,8 +19,8 @@
 
 MotifEditorWidget::MotifEditorWidget()
 {
-    protoMakerData  = PrototypeMaker::getInstance()->getProtoMakerData();
-    config         = Configuration::getInstance();
+    protoMakerData = Sys::prototypeMaker->getProtoMakerData();
+    config         = Sys::config;
 
     // Explicit motif editors.
     explicit_map_edit       = new ExplicitMapEditor("explcit_map_edit");

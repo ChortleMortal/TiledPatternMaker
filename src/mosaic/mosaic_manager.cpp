@@ -16,8 +16,8 @@ MosaicManager::MosaicManager()
 {
     view            = Sys::view;
     viewControl     = Sys::viewController;
-    config          = Configuration::getInstance();
-    mosaicMaker     = MosaicMaker::getInstance();
+    config          = Sys::config;
+    mosaicMaker     = Sys::mosaicMaker;
 }
 
 // This is a GUI wropper for MosaciReader
@@ -31,7 +31,7 @@ MosaicPtr MosaicManager::loadMosaic(QString name)
     QString file = FileServices::getMosaicXMLFile(name);
     if (file.isEmpty())
     {
-        QMessageBox box(ControlPanel::getInstance());
+        QMessageBox box(Sys::controlPanel);
         box.setIcon(QMessageBox::Critical);
         box.setText(QString("File <%1>not found").arg(name));
         box.exec();
@@ -41,7 +41,7 @@ MosaicPtr MosaicManager::loadMosaic(QString name)
     QFile afile(file);
     if (!afile.exists())
     {
-        QMessageBox box(ControlPanel::getInstance());
+        QMessageBox box(Sys::controlPanel);
         box.setIcon(QMessageBox::Critical);
         box.setText(QString("File <%1>not found").arg(file));
         box.exec();
@@ -59,7 +59,7 @@ MosaicPtr MosaicManager::loadMosaic(QString name)
     if (!mosaic)
     {
         QString str = QString("Load ERROR - %1").arg(reader.getFailMessage());
-        QMessageBox box(ControlPanel::getInstance());
+        QMessageBox box(Sys::controlPanel);
         box.setIcon(QMessageBox::Critical);
         box.setText(str);
         box.exec();
@@ -76,7 +76,7 @@ bool MosaicManager::saveMosaic(QString name, QString & savedName, bool forceOver
     MosaicPtr mosaic = mosaicMaker->getMosaic();
     if (!mosaic)
     {
-        QMessageBox box(ControlPanel::getInstance());
+        QMessageBox box(Sys::controlPanel);
         box.setIcon(QMessageBox::Critical);
         box.setText("Save FAILED: There is no mosaic to save");
         box.exec();
@@ -92,7 +92,7 @@ bool MosaicManager::saveMosaic(QString name, QString & savedName, bool forceOver
             bool isNew      = filename.contains("new_");
             bool isTest     = filename.contains("tests");
 
-            VersionDialog msgBox(ControlPanel::getInstance());
+            VersionDialog msgBox(Sys::controlPanel);
             QString str = QString("The XML design file <%1> already exists.").arg(filename);
             msgBox.setText1(str);
 
@@ -145,7 +145,7 @@ bool MosaicManager::saveMosaic(QString name, QString & savedName, bool forceOver
 
     if (!forceOverwrite)
     {
-        QMessageBox box(ControlPanel::getInstance());
+        QMessageBox box(Sys::controlPanel);
         QString astring;
         if (rv)
         {

@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "geometry/edgepoly.h"
 #ifndef PAGE_SYSTEM_INFO_H
 #define PAGE_SYSTEM_INFO_H
 
@@ -48,7 +49,7 @@ protected:
     void populateTiling(QTreeWidgetItem * parent, TilingPtr tp, QString name);
     void populateDEL(QTreeWidgetItem * parent, DesignElementPtr de, QString name, QString state);
     void populateViews(QTreeWidgetItem * parent);
-
+    void populateEdgePoly(QTreeWidgetItem * parent, const EdgePoly &ep);
     void dumpWalkTree(QTextStream &ts, QTreeWidgetItem *item );
 
 private:

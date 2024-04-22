@@ -6,21 +6,20 @@
 #include <QVBoxLayout>
 
 #include "dlg_textedit.h"
-#include "settings/configuration.h"
-#include "viewers/view_controller.h"
-#include "panels/panel_misc.h"
+#include "misc/qtapplog.h"
 #include "misc/sys.h"
 #include "misc/version.h"
+#include "viewers/view_controller.h"
 
 TextEditorWidget::TextEditorWidget()
 {
-    setContentsMargins(0,0,0,0);
+    //setContentsMargins(0,0,0,0);
 }
 
 TextEditorWidget::TextEditorWidget(QTextEdit * te)
 {
-    setFixedWidth(600);
-    AQVBoxLayout * aLayout = new AQVBoxLayout();
+    //setFixedWidth(600);
+    QVBoxLayout * aLayout = new QVBoxLayout();
     aLayout->addWidget(te);
     setLayout(aLayout);
 }
@@ -29,7 +28,7 @@ void TextEditorWidget::set(QTextEdit * te)
 {
     ed = te;
 
-    AQVBoxLayout * aLayout = new AQVBoxLayout();
+    QVBoxLayout * aLayout = new QVBoxLayout();
     aLayout->addWidget(te);
 
     QLayout * l = layout();
@@ -64,20 +63,13 @@ DlgTextEdit::DlgTextEdit(QWidget *parent) : QDialog(parent)
 
     const QFont fixedFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
     txt.setCurrentFont(fixedFont);
-
-    config = Configuration::getInstance();
 }
 
-DlgTextEdit::~DlgTextEdit()
+void DlgTextEdit::set(const QVector<sTrapMsg> &msgs)
 {
-    //qDebug() << "DlgTextEdit destructor";
-}
-
-void DlgTextEdit::set(const QStringList & qsl)
-{
-    for (auto & line : std::as_const(qsl))
+    for (auto & stm : std::as_const(msgs))
     {
-        append(line);
+        append(stm.msg);
     }
 }
 
@@ -90,11 +82,6 @@ DlgMapVerify::DlgMapVerify(QString name, QWidget *parent) : DlgTextEdit(parent)
 
     setWindowTitle(dlgName);
     qWarning() << "Map:" << name << "verify problem with:" << dlgName;
-}
-
-DlgMapVerify::~DlgMapVerify()
-{
-    //qDebug() << "DlgMapVerify destructor";
 }
 
 DlgAbout::DlgAbout(QWidget * parent) : DlgTextEdit(parent)
@@ -110,12 +97,13 @@ DlgAbout::DlgAbout(QWidget * parent) : DlgTextEdit(parent)
     QLabel * line2 = new QLabel(lstring);
     QHBoxLayout * lay2 = new QHBoxLayout();
     lay2->addWidget(line2);
+
     vbox->insertLayout(0,lay1);
     vbox->insertLayout(1,lay2);
 
     txt.setReadOnly(true);
 
-    QString name("../LICENSE");
+    QString name(":/LICENSE");
     QFile data(name);
     if (data.open(QFile::ReadOnly))
     {
@@ -129,23 +117,7 @@ DlgAbout::DlgAbout(QWidget * parent) : DlgTextEdit(parent)
     }
     else
     {
-        QString name = "./LICENSE";
-        QFile data(name);
-        QTextStream str(&data);
-        if (data.open(QFile::ReadOnly))
-        {
-            while (!str.atEnd())
-            {
-                QString line = str.readLine();
-                append(line);
-            }
-        }
-        else
-        {
-            qWarning() << "Coud not open" << name;
-            close();
-        }
-        data.close();
+        qWarning() << "Coud not open" << name;
     }
 
     QTextCursor  c = txt.textCursor();

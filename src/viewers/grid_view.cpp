@@ -15,29 +15,9 @@ using std::make_shared;
 
 typedef std::shared_ptr<class Vertex> VertexPtr;
 
-GridView * GridView::mpThis = nullptr;
-
-GridView * GridView::getInstance()
-{
-    if (!mpThis)
-    {
-        mpThis = new GridView();
-    }
-    return mpThis;
-}
-
-void GridView::releaseInstance()
-{
-    if (mpThis != nullptr)
-    {
-        delete mpThis;
-        mpThis = nullptr;
-    }
-}
-
 GridView::GridView() : LayerController("Grid",true)
 {
-    config  = Configuration::getInstance();
+    config  = Sys::config;
     genMap  = false;
     setZValue(config->gridZLevel);
 }
@@ -146,7 +126,7 @@ void GridView::drawFromTilingFlood()
     r.moveCenter(center);
     //qDebug() << "grid model center" << center;
 
-    auto maker = TilingMaker::getInstance();
+    auto maker  = Sys::tilingMaker;
     auto tiling = maker->getSelected();
     auto tdata = tiling->getData();
 
@@ -200,9 +180,9 @@ void GridView::drawFromTilingRegion()
     r.moveCenter(center);
     //qDebug() << "grid model center" << center;
 
-    auto maker = TilingMaker::getInstance();
+    auto maker  = Sys::tilingMaker;
     auto tiling = maker->getSelected();
-    auto tdata = tiling->getData();
+    auto tdata  = tiling->getData();
 
     const auto & placedTiles = maker->getInTiling();
     if (placedTiles.size())
@@ -301,7 +281,7 @@ void GridView::drawModelUnitsCanvasCentered()
     qreal step = config->gridModelSpacing;
 
     QRectF viewRect = view->rect();
-    viewRect = screenToWorld(viewRect);
+    viewRect = screenToModel(viewRect);
     QPointF center = viewRect.center();
 
     QRectF modelRect(-10,-10,20,20);
@@ -529,7 +509,7 @@ bool GridView::nearGridPoint(QPointF spt, QPointF & foundGridPoint)
     }
 
     genMap = true;
-    view->update();
+    view->repaint();
     genMap = false;
 
     for (const VertexPtr & v : std::as_const(gridMap->getVertices()))
@@ -538,7 +518,7 @@ bool GridView::nearGridPoint(QPointF spt, QPointF & foundGridPoint)
         QPointF b = a;
         if (config->gridUnits == GRID_UNITS_MODEL || config->gridUnits == GRID_UNITS_TILE)
         {
-            b = worldToScreen(a);
+            b = modelToScreen(a);
         }
         if (Geo::isNear(spt,b))
         {
@@ -548,7 +528,7 @@ bool GridView::nearGridPoint(QPointF spt, QPointF & foundGridPoint)
             }
             else
             {
-                foundGridPoint = screenToWorld(a);
+                foundGridPoint = screenToModel(a);
             }
             qDebug() << "nearGridPoint - FOUND";
             return true;
@@ -602,7 +582,7 @@ void GridView::ppdrawLine(QPointF p1, QPointF p2)
 void GridView::setModelXform(const Xform & xf, bool update)
 {
     Q_ASSERT(_unique);
-    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.toInfoString() << (isUnique() ? "unique" : "common");
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.info() << (isUnique() ? "unique" : "common");
     xf_model = xf;
     forceLayerRecalc(update);
 }
@@ -610,7 +590,7 @@ void GridView::setModelXform(const Xform & xf, bool update)
 const Xform & GridView::getModelXform()
 {
     Q_ASSERT(_unique);
-    if (debug & DEBUG_XFORM) qInfo().noquote() << "GET" << getLayerName() << xf_model.toInfoString() << (isUnique() ? "unique" : "common");
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "GET" << getLayerName() << xf_model.info() << (isUnique() ? "unique" : "common");
     return xf_model;
 }
 
@@ -643,9 +623,9 @@ void GridView::slot_mouseDoublePressed(QPointF spt)
 
 void GridView::slot_mouseTranslate(QPointF pt)
 {
-    if (!view->isActiveLayer(this)) return;
+    //if (!view->isActiveLayer(this)) return;
 
-    if (view->getKbdMode(KBD_MODE_XFORM_GRID) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
+    if (view->getKbdMode(KBD_MODE_XFORM_GRID) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()) || (view->getKbdMode(KBD_MODE_XFORM_VIEW) && config->lockGridToView))
     {
         Xform xf = getModelXform();
         xf.setTranslateX(xf.getTranslateX() + pt.x());
@@ -656,9 +636,9 @@ void GridView::slot_mouseTranslate(QPointF pt)
 
 void GridView::slot_wheel_scale(qreal delta)
 {
-    if (!view->isActiveLayer(this)) return;
+    //if (!view->isActiveLayer(this)) return;
 
-    if (view->getKbdMode(KBD_MODE_XFORM_GRID) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
+    if (view->getKbdMode(KBD_MODE_XFORM_GRID) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()) || (view->getKbdMode(KBD_MODE_XFORM_VIEW) && config->lockGridToView))
     {
         Xform xf = getModelXform();
         xf.setScale(xf.getScale() * (1.0 + delta));
@@ -668,9 +648,9 @@ void GridView::slot_wheel_scale(qreal delta)
 
 void GridView::slot_wheel_rotate(qreal delta)
 {
-    if (!view->isActiveLayer(this)) return;
+    //if (!view->isActiveLayer(this)) return;
 
-    if (view->getKbdMode(KBD_MODE_XFORM_GRID) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
+    if (view->getKbdMode(KBD_MODE_XFORM_GRID) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()) || (view->getKbdMode(KBD_MODE_XFORM_VIEW) && config->lockGridToView))
     {
         Xform xf = getModelXform();
         xf.setRotateDegrees(xf.getRotateDegrees() + delta);
@@ -680,9 +660,9 @@ void GridView::slot_wheel_rotate(qreal delta)
 
 void GridView::slot_scale(int amount)
 {
-    if (!view->isActiveLayer(this)) return;
+    //if (!view->isActiveLayer(this)) return;
 
-    if (view->getKbdMode(KBD_MODE_XFORM_GRID) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
+    if (view->getKbdMode(KBD_MODE_XFORM_GRID) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()) || (view->getKbdMode(KBD_MODE_XFORM_VIEW) && config->lockGridToView))
     {
         Xform xf = getModelXform();
         xf.setScale(xf.getScale() * (1 + static_cast<qreal>(amount)/100.0));
@@ -692,9 +672,9 @@ void GridView::slot_scale(int amount)
 
 void GridView::slot_rotate(int amount)
 {
-    if (!view->isActiveLayer(this)) return;
+    //if (!view->isActiveLayer(this)) return;
 
-    if (view->getKbdMode(KBD_MODE_XFORM_GRID) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
+    if (view->getKbdMode(KBD_MODE_XFORM_GRID) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()) || (view->getKbdMode(KBD_MODE_XFORM_VIEW) && config->lockGridToView))
     {
         Xform xf = getModelXform();
         xf.setRotateRadians(xf.getRotateRadians() + qDegreesToRadians(static_cast<qreal>(amount)));
@@ -704,9 +684,9 @@ void GridView::slot_rotate(int amount)
 
 void GridView::slot_moveX(qreal amount)
 {
-    if (!view->isActiveLayer(this)) return;
+    //if (!view->isActiveLayer(this)) return;
 
-    if (view->getKbdMode(KBD_MODE_XFORM_GRID) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
+    if (view->getKbdMode(KBD_MODE_XFORM_GRID) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()) || (view->getKbdMode(KBD_MODE_XFORM_VIEW) && config->lockGridToView))
     {
         qDebug() << "GridView::slot_moveX" << getLayerName();
         Xform xf = getModelXform();
@@ -719,7 +699,7 @@ void GridView::slot_moveY(qreal amount)
 {
     if (!view->isActiveLayer(this)) return;
 
-    if (view->getKbdMode(KBD_MODE_XFORM_GRID) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
+    if (view->getKbdMode(KBD_MODE_XFORM_GRID) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()) || (view->getKbdMode(KBD_MODE_XFORM_VIEW) && config->lockGridToView))
     {
         qDebug().noquote() << "GridView:: slot_moveY" << getLayerName();
         Xform xf = getModelXform();
@@ -732,8 +712,7 @@ void GridView::slot_setCenter(QPointF spt)
 {
     if (!view->isActiveLayer(this)) return;
 
-    if (view->getKbdMode(KBD_MODE_XFORM_GRID) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
-
+    if (view->getKbdMode(KBD_MODE_XFORM_GRID) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()) || (view->getKbdMode(KBD_MODE_XFORM_VIEW) && config->lockGridToView))
     {
         setCenterScreenUnits(spt);
     }

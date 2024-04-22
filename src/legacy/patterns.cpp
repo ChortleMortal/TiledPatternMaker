@@ -49,7 +49,7 @@ Pattern::Pattern(qreal Diameter, QBrush Brush, int Row, int Col)
     nopen   = QPen(Qt::NoPen);
     nobrush = QBrush(Qt::NoBrush);
 
-    config    = Configuration::getInstance();
+    config  = Sys::config;
 
     refs++;
 }
@@ -1593,12 +1593,12 @@ void PatternKumiko2::build()
     {
         t = make_shared<Tiling>();
         t->setTitle(tileName);
-        t->setTranslationVectors(trans1, trans2);
         CanvasSettings cs;  // default
         cs.setFillData(fd);
         t->setCanvasSettings(cs);
         TilePtr fp = make_shared<Tile>(4,0.0);
         PlacedTilePtr pfp = make_shared<PlacedTile>(fp,QTransform());
+        t->setTranslationVectors(trans1, trans2, QPointF());
         t->add(pfp);
         t->setDescription("Kumiko2 translation vectors");
         t->setAuthor("David A. Casper");

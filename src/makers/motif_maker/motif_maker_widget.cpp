@@ -17,9 +17,9 @@ MotifMakerWidget::MotifMakerWidget() : QWidget()
 {
     setContentsMargins(0,0,0,0);
 
-    protoMakerData = PrototypeMaker::getInstance()->getProtoMakerData();
-    config        = Configuration::getInstance();
-    view          = Sys::view;
+    protoMakerData = Sys::prototypeMaker->getProtoMakerData();
+    config         = Sys::config;
+    view           = Sys::view;
 
     // Motif buttons
     delSelector = new DELSelectorWidget(this);

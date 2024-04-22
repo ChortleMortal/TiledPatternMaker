@@ -16,8 +16,8 @@ class DesignMaker : public QObject
     Q_OBJECT
 
 public:
-    static DesignMaker * getInstance();
-    static void          releaseInstance();
+    DesignMaker();
+    void init();
 
     // designs
     void                addDesign(DesignPtr d);
@@ -45,7 +45,6 @@ public:
     void setStep(int step);
     bool step(int delta);       // from keyboard
 
-
 signals:
     void sig_loadedDesign(eDesign design);
 
@@ -61,9 +60,6 @@ public slots:
 private slots:
 
 private:
-    DesignMaker();
-
-    static DesignMaker  * mpThis;
     class  View         * view;
     class  ViewController  * viewControl;
     class  Configuration* config;

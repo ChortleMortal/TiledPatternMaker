@@ -22,6 +22,7 @@
 #endif
 #include "enums/emotiftype.h"
 #include "motifs/extended_boundary.h"
+#include "geometry/debug_map.h"
 
 typedef std::shared_ptr<class Motif>     MotifPtr;
 typedef std::shared_ptr<class Map>       MapPtr;
@@ -78,7 +79,7 @@ public:
 
     virtual bool    equals(const  MotifPtr other);
 
-    virtual void    report() = 0;
+    virtual void    dump() = 0;
 
     static int      modulo(int i, int sz);
 

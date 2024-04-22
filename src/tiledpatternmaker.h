@@ -40,8 +40,6 @@ public:
 
     SplitScreen * getSplitter() { return splitter; }
 
-
-
     void    enableSplash(bool enable);
     void    splash(QString & txt);
     void    splash(QString && txt);
@@ -72,14 +70,6 @@ protected:
     void splitScreen();
     void setPaletteColors();
 
-private:
-    Configuration          * config;
-    class View             * view;
-    class ViewController   * viewController;
-    class ControlPanel     * controlPanel;
-    class MosaicMaker      * mosaicMaker;
-    class PrototypeMaker   * prototypeMaker;
-    class TilingMaker      * tilingMaker;
     SplitScreen            * splitter;
 
     MapEditor              * mapEditor;

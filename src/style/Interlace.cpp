@@ -157,7 +157,7 @@ void Interlace::createStyleRepresentation()
         }
         else
         {
-            color = colors.getFirstColor().color;
+            color = colors.getFirstTPColor().color;
         }
 
         Segment seg(edge->getType(),color);
@@ -384,14 +384,16 @@ void Segment::setPainterPath()
         path.lineTo(v2.v);
         path.lineTo(v2.above);
 
-        ArcData ad1(v2.above,v1.below,arcCenter,convex);
-        path.arcTo(ad1.rect,ad1.start,ad1.span);
+        ArcData ad1;
+        ad1.create(v2.above,v1.below,arcCenter,convex);
+        path.arcTo(ad1.rect,ad1.start,ad1.span());
 
         path.lineTo(v1.v);
         path.lineTo(v1.above);
 
-        ArcData ad2(v1.above,v2.below,arcCenter,convex);
-        path.arcTo(ad2.rect,ad2.start,-ad2.span);
+        ArcData ad2;
+        ad2.create(v1.above,v2.below,arcCenter,convex);
+        path.arcTo(ad2.rect,ad2.start,-ad2.span());
     }
     else if (type == EDGETYPE_CHORD)
     {

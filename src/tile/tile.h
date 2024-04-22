@@ -20,7 +20,6 @@
 
 #include <QObject>
 #include <QPolygonF>
-#include "misc/colorset.h"
 #include "geometry/edgepoly.h"
 
 typedef std::shared_ptr<class Tile>         TilePtr;
@@ -47,9 +46,11 @@ public:
     Tile(const Tile & other);
     ~Tile();
 
+    void        compose();      // makes epoly from base
+    void        decompose();    // makes base from epoly
+
     TilePtr     copy();
     TilePtr     recreate();
-    void        decompose();       // makes base from epoly (should not be needed except to fix historical files)
 
     void        setRegular(bool enb);
     void        flipRegularity();
@@ -68,14 +69,18 @@ public:
     bool        isRegular()         { return regular; }
     bool        isClockwise()       { return  epoly.isClockwise(); }
 
-    EdgePoly &  getEdgePoly()       { return epoly;}             // must be ref so can change
-    EdgePoly &  getBase()           { return base; }
+    const EdgePoly& getEdgePoly()   { return epoly;}
+    EdgePoly&       getEdgePolyRW() { return epoly;}
+    const EdgePoly& getBase()       { return base; }
 
-    QPolygonF   getPolygon()        { return epoly.getPoly(); }     // closed
-    QPolygonF   getPoints()         { return epoly.getPoints(); }   // not closed
+    QVector<EdgePtr> getEdges()     { return epoly; }
+    QVector<QLineF>  getLines()     { return epoly.getLines(); }        // ignores curves
+
+    QPolygonF   getPolygon()        { return epoly.getPoly(); }         // closed
+    QPolygonF   getPoints()         { return epoly.getPoints(); }       // not closed
+    QPolygonF   getMids()           { return epoly.getMids(); }         // not closed
     int         numPoints()         { return epoly.size(); }
     int         numSides()          { return epoly.size(); }
-    ColorSet *  getTileColors()     { return &tileColors; }
 
     QPointF     getCenter();
     QLineF      getEdge(int side);
@@ -86,7 +91,9 @@ public:
     QString     info();
     QString     summary();
 
-    QTransform  getTransform()  { return QTransform::fromScale(scale,scale).rotate(rotation); }
+    QTransform  getTransform()      { return QTransform::fromScale(scale,scale).rotate(rotation); }
+    void        legacyDecompose();
+
     static int  refs;
 
 signals:
@@ -94,7 +101,6 @@ signals:
 
 private:
     void        createRegularBase();
-    void        createEpolyFromBase();          // makes epoly from base
 
     int         n;              // sides
     bool        regular;
@@ -103,7 +109,6 @@ private:
 
     EdgePoly    base;           // calculated
     EdgePoly    epoly;          // calculated
-    ColorSet    tileColors;     // backgrounds
 
     PreConvert  conversion;     // stored when going from regular to irregular and vice versa
 };

@@ -56,7 +56,11 @@ bool MapEditorStash::writeStash(QString name)
     // Write the data
     out << db->constructionLines;
 
-    out << db->constructionCircles;
+    for (const auto & c : std::as_const(db->constructionCircles))
+    {
+        Circle circle = *c;
+        out << circle;
+    }
 
     return true;
 }
@@ -90,7 +94,7 @@ bool MapEditorStash::readStash(QString name)
 }
 
 
-bool MapEditorStash::readStashTo(QString name, QVector<QLineF>  & lines, QVector<Circle> & circs)
+bool MapEditorStash::readStashTo(QString name, QVector<QLineF>  & lines, QVector<CirclePtr> & circs)
 {
     QFile file(name);
     bool rv = file.open(QIODevice::ReadOnly);
@@ -129,17 +133,24 @@ bool MapEditorStash::readStashTo(QString name, QVector<QLineF>  & lines, QVector
 
     if (version == 2)
     {
-        QVector<Circle> tmp;
-        in >> tmp;
-        for (const auto & c : tmp)
+        QVector<Circle> circles;
+        in >> circles;
+        for (const auto & c : circles)
         {
-            circs.push_back(c);
+            CirclePtr circle = std::make_shared<Circle>(c);
+            circs.push_back(circle);
         }
     }
 
     if (version >= 3)
     {
-        in >> circs;
+        QVector<Circle> circles;
+        in >> circles;
+        for (const auto & c : circles)
+        {
+            CirclePtr circle = std::make_shared<Circle>(c);
+            circs.push_back(circle);
+        }
     }
 
     file.close();

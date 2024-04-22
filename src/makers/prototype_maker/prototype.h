@@ -61,7 +61,6 @@ public:
     bool    hasContent() { return (designElements.size() > 0); }
 
     int     numDesignElements() { return designElements.size(); }
-    QString getInfo() const;
 
     TilingPtr         getTiling()   { return tiling; }
     QList<TilePtr>    getTiles();
@@ -82,7 +81,8 @@ public:
 
     void    walk();
     void    dump();
-    void    reportMotifs();
+    void    dumpMotifs();
+    QString info() const;
 
     static int refs;
 

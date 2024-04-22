@@ -5,6 +5,7 @@
 #include <QFileDialog>
 #include <QFontDatabase>
 #include <QApplication>
+#include <QScrollBar>
 
 #include "panels/page_log.h"
 #include "panels/controlpanel.h"
@@ -16,19 +17,6 @@
 
 page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_LOG, "Log")
 {
-    viewingLog = true;
-
-    savedText = new QTextEdit();
-    savedText->setMinimumWidth(750);
-    savedText->setMinimumHeight(690);
-    savedText->setLineWrapMode(QTextEdit::NoWrap);
-    savedText->setReadOnly(true);
-    const QFont fixedFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-    savedText->setFont(fixedFont);
-    AQScrollBar * abar = new AQScrollBar(this);
-    savedText->setVerticalScrollBar(abar);
-    savedText->setStyleSheet("selection-color: rgb(170, 255, 0);  selection-background-color: rgb(255, 0, 0);");
-
     QHBoxLayout * hbox = new QHBoxLayout();
 
     follow = new QCheckBox("Follow tail");
@@ -69,28 +57,36 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_LOG, "Log")
     connect(btnClear,         &QPushButton::clicked,  this,  [] { qtAppLog::getInstance()->clear(); });
     connect(search,           &QLineEdit::returnPressed, this,&page_log::slot_search);
 
-    logText = qtAppLog::getTextEditor();     // linkage to qtAppLog
-    logText->setMinimumWidth(750);
-    logText->setMinimumHeight(690);
-    logText->setLineWrapMode(QTextEdit::NoWrap);
-    logText->setReadOnly(true);
-    logText->setStyleSheet("selection-color: rgb(170, 255, 0);  selection-background-color: rgb(255, 0, 0);");
-
-    const QFont font = logText->font();
-    qInfo().noquote() << "Log font:" << font.toString();
-
     tew = new TextEditorWidget();
-    vbox->addWidget(tew);
-    vbox->addStretch();
-
+    logText = qtAppLog::getTextEditor();     // linkage to qtAppLog
     tew->set(logText);
 
-    AQScrollBar * sbar = new AQScrollBar(this);
-    logText->setVerticalScrollBar(sbar);
+    QScrollBar * vbar = new QScrollBar();
+    logText->setVerticalScrollBar(vbar);
+    connect(vbar, &QScrollBar::actionTriggered, this, [this] {follow->setChecked(false);} );
+
+    QScrollBar * hbar = new QScrollBar();
+    logText->setHorizontalScrollBar(hbar);
+
+    logText->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    logText->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+
+    vbox->addWidget(tew);
 
     QTextCursor cursor = logText->textCursor();
     cursor.movePosition(QTextCursor::End);
     logText->setTextCursor(cursor);
+
+    // creates a text edit for loads of saved logs from disk
+    savedText = new QTextEdit();
+    const QFont fixedFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    savedText->setFont(fixedFont);
+    savedText->setMinimumWidth(750);
+    savedText->setMinimumHeight(690);
+    savedText->setLineWrapMode(QTextEdit::NoWrap);
+    savedText->setReadOnly(true);
+    savedText->setStyleSheet("selection-color: rgb(170, 255, 0);  selection-background-color: rgb(255, 0, 0);");
+    viewingLog = true;
 }
 
 void page_log::onEnter()
@@ -109,16 +105,11 @@ void page_log::onRefresh()
     logText->setTextCursor(cursor);
 }
 
-void page_log::slot_actionTriggered()
-{
-    follow->setChecked(false);
-}
-
 void page_log::slot_copyLog()
 {
     QString cdt    = QDateTime::currentDateTime().toString("yy.MM.dd-hh.mm.ss");
     QString host   = QSysInfo::machineHostName();
-    QString branch = panel->gitBranch;
+    QString branch = Sys::gitBranch;
     QString mosaic = config->lastLoadedMosaic;
     Q_ASSERT(!mosaic.contains(".xml"));
     QString name   = cdt + "-" + host;
@@ -317,26 +308,14 @@ void page_log::slot_search()
     }
 }
 
-/////////////////////////////////////////////////
-/// \brief AQScrollBar::AQScrollBar
-/// \param plog
-///
-//////////////////////////////////////////////////
-
-AQScrollBar::AQScrollBar(page_log * plog)
-{
-    connect(this, &AQScrollBar::actionTriggered, plog, &page_log::slot_actionTriggered);
-}
 
 ///////////////////////////////////////////////////
-/// \brief LogOptionsDlg::LogOptionsDlg
-/// \param parent
-///
+/// LogOptionsDlg::LogOptionsDlg
 ///////////////////////////////////////////////////
 
 LogOptionsDlg::LogOptionsDlg(QWidget * parent) : QDialog(parent)
 {
-    config = Configuration::getInstance();
+    config = Sys::config;
 
     setWindowTitle("Log Options");
 

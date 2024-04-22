@@ -36,7 +36,7 @@ public:
 
     virtual void    buildMotifMaps()  override;
     virtual QString getMotifDesc()    override { return "IntersectMotif"; }
-    virtual void    report() override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "skip:" << skip << "s:" << s << "progressive:" << progressive; }
+    virtual void    dump() override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "skip:" << skip << "s:" << s << "progressive:" << progressive; }
 
     QList<EdgesLenPtr> buildIntersectEdgesLengthInfos(int side, QPointF sideHalf, bool isLeftHalf, qreal requiredRotation);
     QList<IntersectionPtr> buildIntersectionInfos    (int side,QPointF sideHalf, bool isLeftHalf, qreal requiredRotation);

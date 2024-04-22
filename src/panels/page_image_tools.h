@@ -148,6 +148,7 @@ private:
     static QMutex      comparisonMutex;
 
     bool          created;
+    bool          logDebug;
 
     QGridLayout * grid;
 

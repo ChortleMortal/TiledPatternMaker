@@ -34,6 +34,7 @@ private slots:
     void    slot_gridLayerCenterChanged(int state);
     void    slot_drawModelCenterChanged(int state);
     void    slot_drawViewCenterChanged(int state);
+    void    slot_lockToViewChanged(bool enb);
 
     void    slot_pickColorTiling();
     void    slot_pickColorModel();

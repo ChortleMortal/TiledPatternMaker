@@ -7,7 +7,7 @@
 #include "makers/mosaic_maker/mosaic_maker.h"
 #include "mosaic/mosaic.h"
 #include "tile/tile.h"
-#include "tile/placed_tile.h"
+
 #include "tile/tiling.h"
 #include "viewers/view_controller.h"
 #include "settings/configuration.h"
@@ -43,21 +43,54 @@ bool TileColors::getOutline(QColor & color, int & width)
     return outlineEnb;
 }
 
+void TileColors::resetStyleRepresentation()
+{
+    colorSets.clear();
+    coloredPlacements.clear();
+}
+
 void TileColors::createStyleRepresentation()
 {
-    if (epolys.size() > 0)
+    if (coloredPlacements.size() > 0)
     {
         return;
     }
 
-    ProtoPtr  pp  = getPrototype();
-    TilingPtr tp  = pp->getTiling();
-
+    ProtoPtr  pp              = getPrototype();
+    TilingPtr tp              = pp->getTiling();
     QVector<TilePtr> uniques  = tp->getUniqueTiles();
-    for (const auto & tile : std::as_const(uniques))
+    int unSize                = uniques.size();
+    int tcSize                = tileColors.size();
+
+    if (tileColors.size() == 0)
     {
-        tile->getTileColors()->resetIndex();
+        qWarning() << "TileColors:: empty ColorGroup - addding" << unSize << "default ColorSets";
+        ColorSet cset;
+        for (int i = 0; i < unSize; i++)
+        {
+            tileColors.addColorSet(cset);
+        }
     }
+    else if (unSize > tcSize)
+    {
+        int diff = unSize - tcSize;
+        qWarning() << "adding" << diff << "ColorSets";
+        ColorSet cset;
+        for (int i = 0; i < diff; i++)
+        {
+            tileColors.addColorSet(cset);
+        }
+    }
+    else if (unSize < tcSize)
+    {
+        int diff = tcSize - unSize;
+        qWarning() << "removing" << diff << "ColorSets";
+        tileColors.resize(unSize);
+    }
+
+    Q_ASSERT(tileColors.size() == uniques.size());
+
+    tileColors.resetIndex();
 
     FillRegion flood(tp.get(),viewControl->getCanvas().getFillData());
     Placements placements = flood.getPlacements(config->repeatMode);
@@ -69,27 +102,26 @@ void TileColors::createStyleRepresentation()
     for (const auto & placedTile : std::as_const(placedTiles))
     {
         TilePtr        tile = placedTile->getTile();
+        uint tileIndex      = uniques.indexOf(tile);
         const EdgePoly & ep = tile->getEdgePoly();
         QTransform T1       = placedTile->getTransform();
+        ColorSet * cset     = tileColors.getColorSet(tileIndex);
 
-        // fetch tile colors from the tiling
-        ColorSet * tileColors = tile->getTileColors();
+        TileColorSet tcs(tile,cset);
+        colorSets << tcs;
+
+        // this is twitchy code - reset needs to be done here - do not move
+        cset->resetIndex();
         for (auto & T2 : std::as_const(placements))
         {
+            // fetch tile colors and store
             QTransform T3  = T1 * T2;
             EdgePoly  ep2  =  ep.map(T3);
-
-            bkgdEPolyColor bpc;
-            bpc.epoly  = ep2;
-            bpc.color  = tileColors->getNextColor().color;
-            epolys << bpc;
+            QColor color   = cset->getNextTPColor().color;
+            ColoredPlacement pl(ep2, color);
+            coloredPlacements << pl;
         }
     }
-}
-
-void TileColors::resetStyleRepresentation()
-{
-    epolys.clear();
 }
 
 eStyleType TileColors::getStyleType() const
@@ -100,6 +132,20 @@ eStyleType TileColors::getStyleType() const
 QString TileColors::getStyleDesc() const
 {
     return "Tile Colors";
+}
+
+ColorSet * TileColors::getColorSet(TilePtr tile)
+{
+    static ColorSet emptyCset;
+
+    for (auto & tcs : colorSets)
+    {
+        if (tcs.wtile.lock() == tile)
+        {
+            return tcs.cset;
+        }
+    }
+    return &emptyCset;
 }
 
 void TileColors::draw(GeoGraphics * gg)
@@ -124,14 +170,14 @@ void TileColors::draw(GeoGraphics * gg)
             qDebug() << "Crop rect model" << rect;
             if (rect.isValid())
             {
-                rect = worldToScreen(rect);
+                rect = modelToScreen(rect);
                 qDebug() << "Crop rect screen" << rect;
                 painter->setClipRect(rect);
             }
         }
     }
 
-    for (const auto & bpc : std::as_const(epolys))
+    for (const auto & bpc : std::as_const(coloredPlacements))
     {
         EdgePoly ep = bpc.epoly;
         QPen pen(bpc.color, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
@@ -145,3 +191,16 @@ void TileColors::draw(GeoGraphics * gg)
 
     painter->restore();
 }
+
+
+ColoredPlacement::ColoredPlacement(EdgePoly & ep, QColor col)
+{
+    epoly = ep;
+    color = col;
+};
+
+TileColorSet::TileColorSet(TilePtr tile, ColorSet * colorset)
+{
+    wtile = tile;
+    cset  = colorset;
+};

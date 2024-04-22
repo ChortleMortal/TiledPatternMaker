@@ -67,8 +67,9 @@ void PageListWidget::refreshPage(panel_page * wp)
 
     if (wp->isNewlySelected())
     {
+        controlPanel->setStatus(wp->getPageStatus());
+        wp->onEnter();          // on enter can now detect
         wp->setNewlySelected(false);
-        wp->onEnter();
         wp->repaint();
     }
 

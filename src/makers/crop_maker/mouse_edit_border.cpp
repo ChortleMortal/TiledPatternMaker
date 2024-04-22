@@ -1,7 +1,7 @@
 #include "mouse_edit_border.h"
 #include "geometry/crop.h"
 #include "geometry/geo.h"
-#include "viewers/border_view.h"
+#include "misc/border.h"
 
 #include <QDebug>
 
@@ -11,7 +11,7 @@
 ///
 /////////////////////////////////////////////////////////
 
-MouseEditBorder::MouseEditBorder(BorderView * view, QPointF spt, CropPtr crop)
+MouseEditBorder::MouseEditBorder(Border *view, QPointF spt, Crop * crop)
 {
     bview        = view;
     start        = nullptr;
@@ -22,7 +22,7 @@ MouseEditBorder::MouseEditBorder(BorderView * view, QPointF spt, CropPtr crop)
 
     if (mcrop->getCropType() == CROP_CIRCLE)
     {
-        Circle sc = bview->worldToScreen(mcrop->getCircle());
+        Circle sc = bview->modelToScreen(mcrop->getCircle());
         if (Geo::pointOnCircle(spt,sc,7))
         {
             start = new QPointF(spt);
@@ -50,7 +50,7 @@ void MouseEditBorder::draw(QPainter * painter,QPointF mousePos)
 
     mcrop->Crop::draw(painter,bview->getLayerTransform(),true);
 
-    QRectF srect = bview->worldToScreen(mcrop->getRect());
+    QRectF srect = bview->modelToScreen(mcrop->getRect());
     QPointF pt  = mousePos;
     if (   Geo::isNear(pt,srect.bottomRight())
         || Geo::isNear(pt,srect.topRight())
@@ -77,7 +77,7 @@ void MouseEditBorder::updateDragging(QPointF spt)
 
     if (mcrop->getCropType() == CROP_RECTANGLE)
     {
-        QRectF srect = bview->worldToScreen(mcrop->getRect());
+        QRectF srect = bview->modelToScreen(mcrop->getRect());
         switch(ecMode)
         {
         case EC_READY:
@@ -89,6 +89,7 @@ void MouseEditBorder::updateDragging(QPointF spt)
                 ecCorner = BR;
             else if (Geo::isNear(spt,srect.bottomLeft()))
                 ecCorner = BL;
+
             if (ecCorner != UNDEFINED)
             {
                 if (start) delete start;
@@ -110,8 +111,10 @@ void MouseEditBorder::updateDragging(QPointF spt)
             delete start;
             start  = new QPointF(spt);
             srect.moveTopLeft(srect.topLeft() + delta);
-        }
-        break;
+            auto mrect = bview->screenToModel(srect);
+            mcrop->setRect(mrect);
+        }   break;
+
         case CB_RESIZE:
         {
             QPointF delta = spt - *start;
@@ -145,17 +148,15 @@ void MouseEditBorder::updateDragging(QPointF spt)
             case UNDEFINED:
                 break;
             }
-
             qDebug() << "resize: delta" << delta << "old" << oldSize << "new" << newSize;
-            auto mrect = bview->screenToWorld(srect);
+            auto mrect = bview->screenToModel(srect);
             mcrop->setRect(mrect);
-        }
-        break;
+        }   break;
         }
     }
     else if (mcrop->getCropType() == CROP_CIRCLE)
     {
-        Circle sc = bview->worldToScreen(mcrop->getCircle());
+        Circle sc = bview->modelToScreen(mcrop->getCircle());
         if (ecCircleMode == CM_EDGE)
         {
             // first find direction
@@ -171,7 +172,7 @@ void MouseEditBorder::updateDragging(QPointF spt)
             qreal radius = sc.radius + delta;
             sc.setRadius(radius);
 
-            Circle mc = bview->screenToWorld(sc);
+            Circle mc = bview->screenToModel(sc);
             mcrop->setCircle(mc);
         }
         else if (ecCircleMode == CM_INSIDE)
@@ -183,7 +184,7 @@ void MouseEditBorder::updateDragging(QPointF spt)
             QPointF centre = sc.centre + delta;
             sc.setCenter(centre);
 
-            Circle mc = bview->screenToWorld(sc);
+            Circle mc = bview->screenToModel(sc);
             mcrop->setCircle(mc);
         }
     }

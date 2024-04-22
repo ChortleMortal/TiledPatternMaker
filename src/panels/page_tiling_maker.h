@@ -38,10 +38,11 @@ class page_tiling_maker : public panel_page
 public:
     page_tiling_maker(ControlPanel * panel);
 
-    void onRefresh() override;
-    void onEnter() override;
-    void onExit() override;
-    bool canExit() override;
+    void onRefresh()        override;
+    void onEnter()          override;
+    void onExit()           override {}
+    QString getPageStatus() override;
+    bool canExit()          override;
 
     void buildMenu();
 
@@ -88,6 +89,7 @@ private slots:
 
     void singleton_changed(bool checked);
     void slot_propagate_changed(bool checked);
+    void slot_hideVectors(bool checked);
 
 protected:
     AQTableWidget * createTilingTable();
@@ -107,10 +109,10 @@ protected:
     void loadTilingCombo(TilingPtr selected);
     void tallyMouseMode();
 
-    void updateTilePointInfo(PlacedTilePtr pfp);
+    QString getTileInfo(PlacedTilePtr pfp);
 
     PlacedTilePtr getTileColumn(int col);
-    int              getColumn(PlacedTilePtr pfp);
+    int           getColumn(PlacedTilePtr pfp);
 
 private:
     TilingMakerView * tmView;

@@ -62,8 +62,8 @@ void Star2::buildUnitMap()
     qDebug() << "Star2::buildUnitMap" << "n:" << getN() << "theta:" << theta << "intersects:" << s;
 
     Tile tile(getN());
-    corners = tile.getEdgePoly().getPoints();
-    mids    = tile.getEdgePoly().getMids();
+    corners = tile.getPoints();
+    mids    = tile.getMids();
 
     unitMap = make_shared<Map>("Star2 unit map");
 #if 1

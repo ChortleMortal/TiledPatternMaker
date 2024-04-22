@@ -18,7 +18,7 @@ typedef std::weak_ptr<class Edge>   WeakEdgePtr;
 MapMouseAction::MapMouseAction(QPointF spt)
 {
     desc      = "MapMouseAction";
-    meView    = MapEditorView::getInstance();
+    meView    = Sys::mapEditorView;
     view      = Sys::view;
     selector  = meView->getSelector();
     db        = meView->getDb();
@@ -84,7 +84,7 @@ void MoveVertex::updateDragging(QPointF spt)
         return;
     }
     //qDebug() << "moveVertex: update spt=" << spt << "w=" << w;
-    _vp->pt = w;
+    _vp->setPt(w);
     MapMouseAction::updateDragging(spt);
 }
 
@@ -129,7 +129,7 @@ void MoveVertex::endDragging( QPointF spt)
         if (Geo::distToLine(spt, line) < 7.0)
         {
             QPointF pt = Geo::snapTo(spt,line);
-            _vp->pt = meView->viewTinv.map(pt);
+            _vp->setPt(meView->viewTinv.map(pt));
             qDebug() << "SNAPTO edge";
         }
     }
@@ -141,7 +141,7 @@ void MoveVertex::endDragging( QPointF spt)
         if (endsel)
         {
             qDebug() << "end is point";
-            _vp->pt = endsel->getPoint();
+            _vp->setPt(endsel->getPoint());
         }
         else
         {
@@ -149,12 +149,12 @@ void MoveVertex::endDragging( QPointF spt)
             if (endsel)
             {
                 qDebug() << "end is on line"  << sMapSelection[endsel->getType()];
-                _vp->pt = endsel->getPointNear(endsel,meView->viewTinv.map(spt));
+                _vp->setPt(endsel->getPointNear(endsel,meView->viewTinv.map(spt)));
             }
             else
             {
                 qDebug() << "no end selection - point is point";
-                _vp->pt = meView->viewTinv.map(spt);
+                _vp->setPt(meView->viewTinv.map(spt));
             }
         }
     }
@@ -195,8 +195,8 @@ void MoveEdge::updateDragging(QPointF spt)
     QPointF b = _edge->v2->pt;
     a += delta;
     b += delta;
-    _edge->v1->pt = a;
-    _edge->v2->pt = b;
+    _edge->v1->setPt(a);
+    _edge->v2->setPt(b);
 
     MapMouseAction::updateDragging(spt);
 }
@@ -264,13 +264,28 @@ void DrawLine::updateDragging(QPointF spt)
     QLineF newline(*start,*end);
 
     intersectPoints.clear();
-    QPointF intersect;
-    for (const auto & linfo : std::as_const(selector->lines))
+    for (const LineInfo & linfo : std::as_const(selector->lines))
     {
-        QLineF::IntersectType itype = newline.intersects(linfo._line,&intersect);
-        if (itype == QLineF::BoundedIntersection)
+        if (linfo.type == LINE_EDGE && linfo.edge->isCurve())
         {
-            intersectPoints.push_back(intersect);
+            QPointF isect1;
+            QPointF isect2;
+            int count = Geo::findLineCircleIntersections(linfo.edge->getArcCenter(),linfo.edge->getRadius(),newline,isect1,isect2);
+
+            if (count && linfo.edge->pointWithinArc(isect1))
+                intersectPoints.push_back(isect1);
+
+            if (count == 2 && linfo.edge->pointWithinArc(isect2))
+                intersectPoints.push_back(isect2);
+        }
+        else
+        {
+            QPointF intersect;
+            QLineF::IntersectType itype = newline.intersects(linfo.line,&intersect);
+            if (itype == QLineF::BoundedIntersection)
+            {
+                intersectPoints.push_back(intersect);
+            }
         }
     }
 
@@ -315,11 +330,8 @@ void DrawLine::endDragging( QPointF spt)
             {
                 endv = map->insertVertex(*end);
             }
-            map->insertEdge(startv,endv);
+            map->insertEdge(startv,endv); // deals with new line crossing existing lines
         }
-
-        // deal with new line crossing existing lines
-        map->cleanse(divideupIntersectingEdges);     // deal with lines crossing existing lines
     }
     MapMouseAction::endDragging(spt);
 }
@@ -454,7 +466,7 @@ void ExtendLine::updateDragging(QPointF spt)
     QPointF intersect;
     for (const auto & linfo : selector->lines)
     {
-        QLineF::IntersectType itype = currentLine.intersects(linfo._line,&intersect);
+        QLineF::IntersectType itype = currentLine.intersects(linfo.line,&intersect);
         if (itype == QLineF::BoundedIntersection)
         {
             intersectPoints.push_back(intersect);
@@ -570,14 +582,14 @@ void ExtendLine::flipDirection()
     }
 }
 
-EditConstructionCircle::EditConstructionCircle(Circle circle, QPointF spt) : MapMouseAction(spt)
+EditConstructionCircle::EditConstructionCircle(CirclePtr circle, QPointF spt) : MapMouseAction(spt)
 {
-    desc = "MoveConstructionCircle";
+    desc = "EditConstructionCircle";
     start = nullptr;
     end   = nullptr;
 
     origCircle    = circle;
-    currentCircle.set(circle);
+    currentCircle.set(circle.get());
 
     QPointF center = meView->viewT.map(currentCircle.centre);
     qreal radius   = Transform::scalex(meView->viewT) * currentCircle.radius;
@@ -640,7 +652,7 @@ void EditConstructionCircle::updateDragging(QPointF spt)
 void EditConstructionCircle::endDragging( QPointF spt)
 {
     updateDragging(spt);
-    origCircle.set(currentCircle);
+    origCircle->set(&currentCircle);
     MapMouseAction::endDragging(spt);
 }
 

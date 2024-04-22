@@ -17,52 +17,117 @@ using std::make_shared;
 
 page_crop_maker::page_crop_maker(ControlPanel * apanel)  : panel_page(apanel,PAGE_CROP_MAKER,"Crop Maker")
 {
-    cropViewer = CropViewer::getInstance();
-    lockView   = false;
+    QGroupBox * mosaicGroup = new QGroupBox("Moisaic Crop");
 
-    cropWidget = new CropWidget();
-    connect(cropWidget, &CropWidget::sig_cropModified, this, [this]() { view->update(); } );
-    connect(cropWidget, &CropWidget::sig_cropChanged,  this, [this]() { emit sig_refreshView(); } );
+    mosaicWidget = new CropWidget();
 
-    QHBoxLayout * layout2 = createCropControls();
+    connect(mosaicWidget, &CropWidget::sig_cropModified, this, &page_crop_maker::slot_applyCrop);
+    connect(mosaicWidget, &CropWidget::sig_cropChanged,  this, &page_crop_maker::slot_applyCrop );
 
-    vbox->addWidget(cropWidget);
-    vbox->addLayout(layout2);
+    auto widget = createMosaicCropControls();
+
+    QVBoxLayout * vb = new QVBoxLayout;
+    vb->addWidget(mosaicWidget);
+    vb->addWidget(widget);
+    mosaicGroup->setLayout(vb);
+
+    QGroupBox * painterGroup = new QGroupBox("Painter Crop");
+
+    painterWidget = new CropWidget();
+
+    connect(painterWidget, &CropWidget::sig_cropModified, this, [this]() { view->update(); } );
+    connect(painterWidget, &CropWidget::sig_cropChanged,  this, [this]() { emit sig_refreshView(); } );
+
+    widget = createPainterCropControls();
+
+    vb = new QVBoxLayout;
+    vb->addWidget(painterWidget);
+    vb->addWidget(widget);
+    painterGroup->setLayout(vb);
+
+    vbox->addWidget(mosaicGroup);
+    vbox->addWidget(painterGroup);
     vbox->addStretch();
     adjustSize();
 }
 
-QHBoxLayout * page_crop_maker::createCropControls()
+QWidget * page_crop_maker::createMosaicCropControls()
 {
     // line 1
-    QPushButton * pbCreate       = new QPushButton("Create Crop");
-    QPushButton * pbRemove       = new QPushButton("Remove Crop");
-    QPushButton * pbFetchBorder  = new QPushButton("Fetch Border Crop");
-    QPushButton * pbReApply      = new QPushButton("Re-apply Crop");
-    QCheckBox   * chkLock        = new QCheckBox("Lock View");
-                  chkEmbed       = new QCheckBox("Embed Crop");
-                  chkApply       = new QCheckBox("Crop Outside");
+    QPushButton * pbCreate      = new QPushButton("Create Crop");
+    QPushButton * pbRemove      = new QPushButton("Remove Crop");
+    QPushButton * pbFetchBorder = new QPushButton("Fetch Border Crop");
+    QPushButton * pbApply       = new QPushButton("Apply Crop");
+    chkShowMosaic               = new QCheckBox("Show Crop");
+    chkEmbed                    = new QCheckBox("Embed Crop");
+    chkCropOutside              = new QCheckBox("Crop Outside");
 
-    QHBoxLayout * hbox1 = new QHBoxLayout;
-    hbox1->addWidget(pbCreate);
-    hbox1->addWidget(chkEmbed);
-    hbox1->addWidget(chkApply);
-    hbox1->addWidget(chkLock);
-    hbox1->addWidget(pbReApply);
-    hbox1->addStretch();
-    hbox1->addWidget(pbFetchBorder);
-    hbox1->addStretch();
-    hbox1->addWidget(pbRemove);
+    QGridLayout * gl = new QGridLayout();
 
-    connect(pbCreate,          &QPushButton::clicked,            this, &page_crop_maker::slot_createCrop);
+    int row = 0;
+    gl->addWidget(chkShowMosaic,row,0);
+    gl->addWidget(chkEmbed,row,2);
+    gl->addWidget(chkCropOutside,row,3);
+
+    row++;
+    gl->addWidget(pbCreate,row,0);
+    gl->addWidget(pbApply,row,1);
+    gl->addWidget(pbFetchBorder,row,2);
+    gl->addWidget(pbRemove,row,4);
+
+    QWidget * w = new QWidget();
+    w->setFixedWidth(650);
+    w->setLayout(gl);
+
     connect(chkEmbed,          &QCheckBox::clicked,              this, &page_crop_maker::slot_embedCrop);
-    connect(chkApply,          &QCheckBox::clicked,              this, &page_crop_maker::slot_applyCrop);
-    connect(chkLock,           &QCheckBox::clicked,              this, [this](bool checked) { lockView = checked; } );
-    connect(pbRemove,          &QPushButton::clicked,            this, &page_crop_maker::slot_removeCrop);
-    connect(pbFetchBorder,     &QPushButton::clicked,            this, &page_crop_maker::slot_fetchBorder);
-    connect(pbReApply,         &QPushButton::clicked,            this, &page_crop_maker::slot_reApplyCrop);
+    connect(chkCropOutside,    &QCheckBox::clicked,              this, &page_crop_maker::slot_cropOutside);
+    connect(chkShowMosaic,     &QCheckBox::clicked,              this, &page_crop_maker::slot_showMosaicCrop);
 
-    return hbox1;
+    connect(pbCreate,          &QPushButton::clicked,            this, &page_crop_maker::slot_createMosaicCrop);
+    connect(pbRemove,          &QPushButton::clicked,            this, &page_crop_maker::slot_removeMosaicCrop);
+    connect(pbFetchBorder,     &QPushButton::clicked,            this, &page_crop_maker::slot_fetchBorder);
+    connect(pbApply,           &QPushButton::clicked,            this, &page_crop_maker::slot_applyCrop);
+
+    return w;
+}
+
+QWidget * page_crop_maker::createPainterCropControls()
+{
+    // line 1
+    QPushButton * pbCreate      = new QPushButton("Create Crop");
+    QPushButton * pbRemove      = new QPushButton("Remove Crop");
+    QPushButton * pbFetchBorder = new QPushButton("Fetch Border Crop");
+    QPushButton * pbFetchMosaic = new QPushButton("Fetch Mosaic Crop");
+    chkShowPainter              = new QCheckBox("Show Crop");
+    chkClip                     = new QCheckBox("Painter Clip");
+    QLabel      * dummy         = new QLabel;
+
+    QGridLayout * gl = new QGridLayout();
+
+    int row = 0;
+    gl->addWidget(chkShowPainter,row,0);
+    gl->addWidget(chkClip,row,2);
+
+    row++;
+    gl->addWidget(pbCreate,row,0);
+    gl->addWidget(pbFetchMosaic,row,1);
+    gl->addWidget(pbFetchBorder,row,2);
+    gl->addWidget(dummy,row,3);
+    gl->addWidget(pbRemove,row,4);
+
+    QWidget * w = new QWidget();
+    w->setFixedWidth(650);
+    w->setLayout(gl);
+
+    connect(chkClip,           &QCheckBox::clicked,              this, &page_crop_maker::slot_clip);
+    connect(chkShowPainter,    &QCheckBox::clicked,              this, &page_crop_maker::slot_showPainterCrop);
+
+    connect(pbCreate,          &QPushButton::clicked,            this, &page_crop_maker::slot_createPainterCrop);
+    connect(pbRemove,          &QPushButton::clicked,            this, &page_crop_maker::slot_removePainterCrop);
+    connect(pbFetchBorder,     &QPushButton::clicked,            this, &page_crop_maker::slot_fetchBorderForPainter);
+    connect(pbFetchMosaic,     &QPushButton::clicked,            this, &page_crop_maker::slot_fetchMosaicCrop);
+
+    return w;
 }
 
 void  page_crop_maker::onRefresh()
@@ -72,114 +137,153 @@ void  page_crop_maker::onRefresh()
 
 void page_crop_maker::onEnter()
 {
-    panel->pushPanelStatus("Left-click on corner to Resize - Left-click inside or on edge to Move");
-
-    cropViewer->init(&cropMaker);
-    if (lockView)
-    {
-        cropViewer->setShowCrop(true);
-    }
     emit sig_refreshView();
 }
 
-void page_crop_maker::onExit()
+QString page_crop_maker::getPageStatus()
 {
-    panel->popPanelStatus();
-
-    if (!lockView)
-    {
-        cropViewer->setShowCrop(false);
-        emit sig_refreshView();
-    }
+    return QString("Left-click on corner to Resize - Left-click inside or on edge to Move");
 }
 
 void page_crop_maker::display()
 {
+    // display mosaic crop
     bool embed = false;
     bool apply = false;
-    bool cropState;
 
-    auto crop = cropMaker.getCrop();
+    auto crop = mosaicCropMaker.getCrop();
     if (crop)
     {
         if (crop->getEmbed())
             embed = true;
         if (crop->getApply())
             apply = true;
-        cropState = true;
-    }
-    else
-    {
-        cropState = false;
-    }
-
-    if (cropViewer->getShowCrop() != cropState)
-    {
-        cropViewer->setShowCrop(cropState);
-        emit sig_refreshView();
     }
 
     chkEmbed->blockSignals(true);
     chkEmbed->setChecked(embed);
     chkEmbed->blockSignals(false);
-    chkApply->blockSignals(true);
-    chkApply->setChecked(apply);
-    chkApply->blockSignals(false);
 
-    cropWidget->setCrop(crop);
-    cropWidget->refresh();
+    chkCropOutside->blockSignals(true);
+    chkCropOutside->setChecked(apply);
+    chkCropOutside->blockSignals(false);
+
+    chkShowMosaic->blockSignals(true);
+    chkShowMosaic->setChecked(Sys::cropViewer->getShowCrop(CM_MOSAIC));
+    chkShowMosaic->blockSignals(false);
+
+    mosaicWidget->setCrop(crop);
+    mosaicWidget->refresh();
+
+    // display painter crop
+
+    bool clip  = false;
+    crop = painterCropMaker.getCrop();
+    if (crop)
+    {
+        if (crop->getClip())
+            clip = true;
+    }
+
+    chkClip->blockSignals(true);
+    chkClip->setChecked(clip);
+    chkClip->blockSignals(false);
+
+    chkShowPainter->blockSignals(true);
+    chkShowPainter->setChecked(Sys::cropViewer->getShowCrop(CM_PAINTER));
+    chkShowPainter->blockSignals(false);
+
+    painterWidget->setCrop(crop);
+    painterWidget->refresh();
 }
 
-void page_crop_maker::slot_createCrop()
+void page_crop_maker::slot_createMosaicCrop()
 {
-    auto crop  = cropMaker.createCrop();
-    cropMaker.setCrop(crop);
+    auto crop  = mosaicCropMaker.createCrop();
+    mosaicCropMaker.setCrop(crop);
+    emit sig_refreshView();
+}
+
+void page_crop_maker::slot_createPainterCrop()
+{
+    auto crop  = painterCropMaker.createCrop();
+    painterCropMaker.setCrop(crop);
     emit sig_refreshView();
 }
 
 void page_crop_maker::slot_embedCrop(bool checked)
 {
-    bool rv = cropMaker.setEmbed(checked);
-    if (rv)
-    {
-        emit sig_refreshView();
-    }
-    else
+    bool rv = mosaicCropMaker.setEmbed(checked);
+    if (!rv)
     {
         QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
         box.setText("Could not set Embed Crop");
         box.exec();
     }
+
+    slot_applyCrop();
 }
 
-void page_crop_maker::slot_applyCrop(bool checked)
+void page_crop_maker::slot_cropOutside(bool checked)
 {
-    bool rv = cropMaker.setApply(checked);
-    if (rv)
-    {
-        emit sig_refreshView();
-    }
-    else
+    bool rv = mosaicCropMaker.setCropOutside(checked);
+    if (!rv)
     {
         QMessageBox box(this);
         box.setIcon(QMessageBox::Warning);
         box.setText("Could not set Apply Crop");
         box.exec();
     }
+
+    slot_applyCrop();
 }
 
-void page_crop_maker::slot_reApplyCrop()
+void page_crop_maker::slot_showMosaicCrop(bool checked)
 {
-    auto crop = cropMaker.getCrop();
+    if (checked)
+    {
+        Sys::cropViewer->aquire(&mosaicCropMaker,CM_MOSAIC);
+    }
+    Sys::cropViewer->setShowCrop(CM_MOSAIC,checked);
+    emit sig_refreshView();
+}
+
+void page_crop_maker::slot_showPainterCrop(bool checked)
+{
+    if (checked)
+    {
+        Sys::cropViewer->aquire(&painterCropMaker,CM_PAINTER);
+    }
+    Sys::cropViewer->setShowCrop(CM_PAINTER,checked);
+    emit sig_refreshView();
+}
+
+void page_crop_maker::slot_clip(bool checked)
+{
+    bool rv = painterCropMaker.setClip(checked);
+    if (rv)
+    {
+        emit sig_refreshView();
+    }
+}
+
+void page_crop_maker::slot_applyCrop()
+{
+    auto crop = mosaicCropMaker.getCrop();
     mosaicMaker->getMosaic()->setCrop(crop);
     emit sig_refreshView();
 }
 
-
-void page_crop_maker::slot_removeCrop()
+void page_crop_maker::slot_removeMosaicCrop()
 {
-    cropMaker.removeCrop();
+    mosaicCropMaker.removeCrop();
+    emit sig_refreshView();
+}
+
+void page_crop_maker::slot_removePainterCrop()
+{
+    mosaicCropMaker.removeCrop();
     emit sig_refreshView();
 }
 
@@ -207,11 +311,49 @@ void page_crop_maker::slot_fetchBorder()
         return;
     }
 
-    CropPtr ocrop = std::dynamic_pointer_cast<Crop>(border);
+    Crop ocrop   = *(std::dynamic_pointer_cast<Crop>(border).get());
     CropPtr crop = make_shared<Crop>(ocrop);
-    crop->transform(cropViewer->getLayerTransform().inverted());
-    cropMaker.setCrop(crop);
+    crop->transform(Sys::cropViewer->getLayerTransform().inverted());
+    mosaicCropMaker.setCrop(crop);
     mosaic->setCrop(crop);
+    emit sig_refreshView();
+
+    QMessageBox box(panel);
+    box.setIcon(QMessageBox::Information);
+    box.setText("Fetch OK");
+    box.setStandardButtons(QMessageBox::Ok);
+    box.exec();
+}
+
+void page_crop_maker::slot_fetchBorderForPainter()
+{
+    auto mosaic = mosaicMaker->getMosaic();
+    if (!mosaic)
+    {
+        QMessageBox box(panel);
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Fetch failed: No mosaic");
+        box.setStandardButtons(QMessageBox::Ok);
+        box.exec();
+        return;
+    }
+
+    BorderPtr border = mosaic->getBorder();
+    if (!border)
+    {
+        QMessageBox box(panel);
+        box.setIcon(QMessageBox::Warning);
+        box.setText("Fetch failed: No border");
+        box.setStandardButtons(QMessageBox::Ok);
+        box.exec();
+        return;
+    }
+
+    Crop ocrop   = *(std::dynamic_pointer_cast<Crop>(border).get());
+    CropPtr crop = make_shared<Crop>(ocrop);
+    crop->transform(Sys::cropViewer->getLayerTransform().inverted());
+    painterCropMaker.setCrop(crop);
+    mosaic->setPainterCrop(crop);
 
     emit sig_refreshView();
 
@@ -220,4 +362,13 @@ void page_crop_maker::slot_fetchBorder()
     box.setText("Fetch OK");
     box.setStandardButtons(QMessageBox::Ok);
     box.exec();
+}
+
+void page_crop_maker::slot_fetchMosaicCrop()
+{
+    Crop cr    = *(mosaicCropMaker.getCrop().get());
+    CropPtr cp = make_shared<Crop>(cr);
+    mosaicMaker->getMosaic()->setPainterCrop(cp);
+    painterCropMaker.setCrop(cp);
+    emit sig_refreshView();
 }

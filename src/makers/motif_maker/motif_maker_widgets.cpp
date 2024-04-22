@@ -174,7 +174,7 @@ void NamedMotifEditor::editorToMotif(bool doEmit)
 
 void NamedMotifEditor::slot_motifModified(MotifPtr motif)
 {
-    auto protomaker = PrototypeMaker::getInstance();
+    auto protomaker = Sys::prototypeMaker;
     auto data       = protomaker->getProtoMakerData();
     auto del        = data->getSelectedDEL();
     if (!del)
@@ -185,7 +185,7 @@ void NamedMotifEditor::slot_motifModified(MotifPtr motif)
     del->setMotif(motif);
 
     // notify motif maker
-    bool multi = Configuration::getInstance()->motifMultiView;
+    bool multi = Sys::config->motifMultiView;
     data->select(MVD_DELEM,del,multi);     // if this is the samne design element this does nothing
 
     auto tiling = data->getSelectedPrototype()->getTiling();

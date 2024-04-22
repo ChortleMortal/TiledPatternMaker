@@ -1,0 +1,124 @@
+<?xml version="1.0"?>
+<!-- Written: Sat Mar 30 2024 11:49:32 -->
+<vector id="1" version="20">
+	<design>
+		<size>
+			<width>1500</width>
+			<height>927</height>
+			<zwidth>1500</zwidth>
+			<zheight>927</zheight>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Fill singleton="f">-5,5,-4,4</Fill>
+	</design>
+	<style.Plain id="2">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<string>DAC8.v13</string>
+					<entry>
+						<Tile id="4">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">1,0.4142135623730951</Point>
+									<Point id="7">0.4142135623730951,1</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">-0.414213562373095,1</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">-1,0.4142135623730952</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point id="10">-1,-0.414213562373095</Point>
+								</Line>
+								<Line>
+									<Point reference="10" />
+									<Point id="11">-0.4142135623730957,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="11" />
+									<Point id="12">0.4142135623730953,-0.9999999999999999</Point>
+								</Line>
+								<Curve convex="f">
+									<Point reference="12" />
+									<Point id="13">0.9999999999999998,-0.4142135623730958</Point>
+									<Center>1.292893218813452,-1.292893218813453</Center>
+								</Curve>
+								<Line>
+									<Point reference="13" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="14" type="Explicit Tile Motif">
+							<boundarySides>8</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>8</n>
+						</ExplicitTile>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff1496d2</color>
+		</style.Colored>
+	</style.Plain>
+	<style.Filled id="15">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<ColorBlacks>
+			<color hide="f">#ff34554a</color>
+		</ColorBlacks>
+		<ColorWhites>
+			<color hide="f">#ffc2bcb0</color>
+		</ColorWhites>
+		<style.Filled>
+			<draw__inside>true</draw__inside>
+			<draw__outside>true</draw__outside>
+			<algorithm>0</algorithm>
+		</style.Filled>
+	</style.Filled>
+	<style.TileColors id="16">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<BkgdColors>#ffff00</BkgdColors>
+	</style.TileColors>
+</vector>

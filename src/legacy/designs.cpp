@@ -303,7 +303,7 @@ bool DesignHuPacked::build()
     cols = 6;
 
     // repeat
-    DesignMaker * designMaker = DesignMaker::getInstance();
+    DesignMaker * designMaker = Sys::designMaker;
     designMaker->setStep(0);
     for (int row = 0; row < rows; row++)
     {

@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+<!-- Written: Mon Apr 1 2024 11:52:40 -->
+<Tiling version="8">
+	<Name>TestCurves.v2</Name>
+	<Fill singleton="t">0,0,0,0</Fill>
+	<T1>0,0</T1>
+	<T2>0,0</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="1">1,1.732050807568877</Point>
+			<Point id="2">-2,2.449293598294706e-16</Point>
+		</Line>
+		<Line>
+			<Point reference="2" />
+			<Point id="3">0.9999999999999984,-1.732050807568878</Point>
+		</Line>
+		<Curve convex="f">
+			<Point reference="3" />
+			<Point reference="1" />
+			<Center>-2.464101615137755,1.110223024625157e-15</Center>
+		</Curve>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
+		<Curve convex="f">
+			<Point id="4">1,1.732050807568877</Point>
+			<Point id="5">-2,2.449293598294706e-16</Point>
+			<Center>1.232050807568877,-2.133974596215561</Center>
+		</Curve>
+		<Line>
+			<Point reference="5" />
+			<Point id="6">0.9999999999999984,-1.732050807568878</Point>
+		</Line>
+		<Line>
+			<Point reference="6" />
+			<Point reference="4" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>1.279999999999999</tranX>
+			<tranY>-0.2400000000000002</tranY>
+		</Placement>
+	</Tile>
+	<Desc />
+	<Auth />
+</Tiling>

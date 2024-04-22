@@ -21,6 +21,7 @@
 #include "geometry/edge.h"
 #include "geometry/vertex.h"
 #include "geometry/loose.h"
+#include "makers/tiling_maker/tiling_maker.h"
 #include "makers/tiling_maker/tiling_monitor.h"
 
 int Tile::refs = 0;
@@ -37,9 +38,9 @@ Tile::Tile(EdgePoly ep, qreal rotate, qreal scale)
     regular    = false;
     refs++;
 
-    createEpolyFromBase();
+    compose();
 
-    connect(this, &Tile::sig_tileChanged, TilingMonitor::getInstance(), &TilingMonitor::slot_tileChanged);
+    connect(this, &Tile::sig_tileChanged,Sys::tilingMaker->getTilingMonitor(), &TilingMonitor::slot_tileChanged);
 }
 
 Tile::Tile(int n, qreal rotate, qreal scale)
@@ -52,9 +53,9 @@ Tile::Tile(int n, qreal rotate, qreal scale)
     refs++;
 
     createRegularBase();
-    createEpolyFromBase();
+    compose();
 
-    connect(this, &Tile::sig_tileChanged, TilingMonitor::getInstance(), &TilingMonitor::slot_tileChanged);
+    connect(this, &Tile::sig_tileChanged, Sys::tilingMaker->getTilingMonitor(), &TilingMonitor::slot_tileChanged);
 }
 
 
@@ -69,7 +70,7 @@ Tile::Tile(const TilePtr other )
 
     refs++;
 
-    connect(this, &Tile::sig_tileChanged, TilingMonitor::getInstance(), &TilingMonitor::slot_tileChanged);
+    connect(this, &Tile::sig_tileChanged, Sys::tilingMaker->getTilingMonitor(), &TilingMonitor::slot_tileChanged);
 
 }
 
@@ -84,7 +85,7 @@ Tile::Tile(const Tile & other )
 
     refs++;
 
-    connect(this, &Tile::sig_tileChanged, TilingMonitor::getInstance(), &TilingMonitor::slot_tileChanged);
+    connect(this, &Tile::sig_tileChanged, Sys::tilingMaker->getTilingMonitor(), &TilingMonitor::slot_tileChanged);
 }
 
 Tile::~Tile()
@@ -92,34 +93,42 @@ Tile::~Tile()
     refs--;
 }
 
-TilePtr Tile::recreate()
+void Tile::compose()
 {
-    TilePtr f;
-    if (regular)
-    {
-        f = make_shared<Tile>(n,rotation,scale);
-    }
-    else
-    {
-        f = make_shared<Tile>(base,rotation,scale);
-    }
-    return  f;
-}
-
-void Tile::decompose()
-{
-    // the base is really the created
     epoly.clear();
     epoly = base.recreate();
 
     if (!Loose::zero(rotation))
-    {
-        base.rotate(-rotation);
-    }
+        epoly.rotate(rotation);
     if (!Loose::equals(scale,1.0))
-    {
+        epoly.scale(scale);
+}
+
+void Tile::decompose()
+{
+    base.clear();
+    base = epoly.recreate();
+
+    if (!Loose::zero(rotation))
+        base.rotate(-rotation);
+    if (!Loose::equals(scale,1.0))
         base.scale(1.0/scale);
-    }
+}
+
+TilePtr Tile::recreate()
+{
+    TilePtr f;
+    if (regular)
+        f = make_shared<Tile>(n,rotation,scale);
+    else
+        f = make_shared<Tile>(base,rotation,scale);
+    return  f;
+}
+
+TilePtr Tile::copy()
+{
+    TilePtr fp = make_shared<Tile>(*this);
+    return fp;
 }
 
 void Tile::setN(int n)
@@ -128,7 +137,7 @@ void Tile::setN(int n)
     if (regular)
     {
         createRegularBase();
-        createEpolyFromBase();
+        compose();
     }
     emit sig_tileChanged();
 }
@@ -136,14 +145,14 @@ void Tile::setN(int n)
 void Tile::setRotation(qreal rotate)
 {
     rotation = rotate;
-    createEpolyFromBase();
+    compose();
     emit sig_tileChanged();
 }
 
 void Tile::setScale(qreal scale)
 {
     this->scale = scale;
-    createEpolyFromBase();
+    compose();
     emit sig_tileChanged();
 }
 
@@ -166,12 +175,12 @@ void Tile::setRegular(bool enb)
     {
         regular =  true;
         createRegularBase();
-        createEpolyFromBase();
+        compose();
     }
     else
     {
         regular = false;
-        createEpolyFromBase();
+        compose();
     }
     emit sig_tileChanged();
 }
@@ -243,23 +252,7 @@ void Tile::createRegularBase()
     base.push_back(make_shared<Edge>(v1,v));
 }
 
-void Tile::createEpolyFromBase()
-{
-    epoly.clear();
-    epoly = base.recreate();
-    //qDebug()<< "Tile create 1" << epoly.getPoints();
 
-    if (!Loose::zero(rotation))
-    {
-        epoly.rotate(rotation);
-        //qDebug()<< "Tile create 2" << epoly.getPoints();
-    }
-    if (!Loose::equals(scale,1.0))
-    {
-        epoly.scale(scale);
-        //qDebug()<< "Tile create 3" << epoly.getPoints();
-    }
-}
 
 
 bool Tile::equals(const TilePtr other)
@@ -363,8 +356,15 @@ qreal Tile::edgeLen(int side)
         return 0.0;
 }
 
-TilePtr Tile::copy()
+void Tile::legacyDecompose()
 {
-    TilePtr fp = make_shared<Tile>(*this);
-    return fp;
+    epoly.clear();
+    epoly = base.recreate();
+
+    if (!Loose::zero(rotation))
+        base.rotate(-rotation);
+    if (!Loose::equals(scale,1.0))
+        base.scale(1.0/scale);
 }
+
+

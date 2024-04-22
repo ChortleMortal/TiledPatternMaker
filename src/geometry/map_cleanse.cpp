@@ -7,12 +7,17 @@
 #include "geometry/intersect.h"
 #include "geometry/loose.h"
 #include "geometry/geo.h"
+#include "misc/timers.h"
 
 // cleanse just cleanses - it does not verify
-void Map::cleanse(unsigned int options)
+void Map::cleanse(uint options)
 {
-    qDebug() << "cleanse......";
-    const bool debug = false;
+    qDebug() << "cleanse......" << Qt::hex << options;
+
+    if (options == 0)
+        return;
+
+    AQElapsedTimer timer;
 
     qDebug() << "Map::cleanse - start";
 
@@ -24,7 +29,7 @@ void Map::cleanse(unsigned int options)
     if (options & divideupIntersectingEdges)
     {
         divideIntersectingEdges();
-        deDuplicateNeighbours();
+        deDuplicateEdgesUsingNeighbours();
         //sortVertices();
         //sortEdges();
         nMap.reset();
@@ -46,21 +51,12 @@ void Map::cleanse(unsigned int options)
         removeVerticesWithEdgeCount(0);
     }
 
-    if (options & buildNeighbours)
-    {
-        nMap.reset();
-    }
-
     if (options & cleanupNeighbours)
     {
-        deDuplicateNeighbours();
+        deDuplicateEdgesUsingNeighbours();
     }
 
-    if (debug)
-    {
-        nMap = std::make_shared<NeighbourMap>(edges);
-        verify();
-    }
+    qDebug(). noquote() << "cleanse :" << timer.getElapsed();
 }
 
 uint Map::cleanseAnalysis()
@@ -79,7 +75,7 @@ uint Map::cleanseAnalysis()
     }
 
     divideIntersectingEdges();
-    deDuplicateNeighbours();
+    deDuplicateEdgesUsingNeighbours();
     nMap.reset();
     if (vcount != vertices.size() || ecount != edges.size() )
     {
@@ -125,7 +121,7 @@ uint Map::cleanseAnalysis()
         level |= buildNeighbours;
     }
 
-    deDuplicateNeighbours();
+    deDuplicateEdgesUsingNeighbours();
     if (nMap->rawSize() != ncount)
     {
         ncount = nMap->rawSize();
@@ -181,6 +177,7 @@ void Map::removeBadEdges()
 void Map::divideIntersectingEdges()
 {
     qDebug() << "divideIntersectingEdges......";
+    qWarning("Does not handle curves");
     qDebug().noquote() << summary();
 
     UniqueQVector<QPointF> intersects;
@@ -213,7 +210,8 @@ void Map::divideIntersectingEdges()
     qDebug() << "divideIntersectingEdges - splitting at" << intersects.count() << "points";
     for (QPointF pt : std::as_const(intersects))
     {
-        //qTDebug() << "New split at" << pt;
+        qDebug() << "New split at" << pt;
+        qWarning("Does not work");
         insertVertex(pt);
     }
     
@@ -302,7 +300,7 @@ bool Map::coalesceVertices(qreal tolerance)
         if (it != replacements.end())
         {
             auto oldv = edge->v1;
-            edge->v1 = it.value();
+            edge->setV1(it.value());
             changedEdges.push_back(edge);
             vertices.removeOne(oldv);
         }
@@ -310,7 +308,7 @@ bool Map::coalesceVertices(qreal tolerance)
         if (it != replacements.end())
         {
             auto oldv = edge->v2;
-            edge->v2 = it.value();
+            edge->setV2(it.value());
             changedEdges.push_back(edge);
             vertices.removeOne(oldv);
         }
@@ -365,9 +363,9 @@ void Map::deDuplicateVertices(qreal tolerance)
         ;
 }
 
-void Map::deDuplicateNeighbours()
+void Map::deDuplicateEdgesUsingNeighbours(bool silent)
 {
-    qDebug() << "deDuplicateNeighbours BEGIN" << "vertices =" << vertices.size() << "edges =" << edges.size();
+    if (!silent) qDebug() << "deDuplicateEdgesUsingNeighbours BEGIN" << "vertices =" << vertices.size() << "edges =" << edges.size();
 
     for (const auto & v :  std::as_const(vertices))
     {
@@ -375,7 +373,7 @@ void Map::deDuplicateNeighbours()
         NeighboursPtr n = getNeighbours(v);
         deDuplicateEdges(n);
     }
-    qDebug() << "deDuplicateNeighbours END  "  << "vertices =" << vertices.size() << "edges =" << edges.size();
+    if (!silent) qDebug() << "deDuplicateEdgesUsingNeighbours END  "  << "vertices =" << vertices.size() << "edges =" << edges.size();
 }
 
 void Map::deDuplicateEdges(const NeighboursPtr & vec)

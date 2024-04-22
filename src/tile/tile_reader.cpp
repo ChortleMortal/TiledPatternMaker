@@ -16,7 +16,7 @@ TileReader::TileReader(MRBasePtr base)
     this->base = base;
 }
 
-EdgePoly TileReader::getEdgePoly(xml_node & node)
+EdgePoly TileReader::getEdgePoly(xml_node & node, bool legacyFlip)
 {
     EdgePoly ep;
     for (xml_node n = node.first_child(); n; n = n.next_sibling())
@@ -32,12 +32,12 @@ EdgePoly TileReader::getEdgePoly(xml_node & node)
         }
         else if (name == "Curve")
         {
-            xml_node n2  = n.child("Point");
-            xml_node n3  = n2.next_sibling("Point");
-            xml_node n4  = n.child("Center");
-            VertexPtr v1 = getVertex(n2);
-            VertexPtr v2 = getVertex(n3);
-            QPointF   c0 = getPoint(n4);
+            xml_node n2   = n.child("Point");
+            xml_node n3    = n2.next_sibling("Point");
+            xml_node n4    = n.child("Center");
+            VertexPtr v1   = getVertex(n2);
+            VertexPtr v2   = getVertex(n3);
+            QPointF center = getPoint(n4);
             bool convex = true; // default
             xml_attribute conv = n.attribute("convex");
             if (conv)
@@ -45,17 +45,21 @@ EdgePoly TileReader::getEdgePoly(xml_node & node)
                 QString val = conv.value();
                 convex = (val == "t") ? true : false;
             }
-            EdgePtr eptr = make_shared<Edge>(v1,v2,c0,convex,false);
+            if (legacyFlip && !convex)
+            {
+                center = ArcData::reflectCentreOverEdge(v1->pt,v2->pt,center);
+            }
+            EdgePtr eptr = make_shared<Edge>(v1,v2,center,convex,false);
             ep.push_back(eptr);
         }
         else if (name == "Chord")
         {
-            xml_node n2  = n.child("Point");
-            xml_node n3  = n2.next_sibling("Point");
-            xml_node n4  = n.child("Center");
-            VertexPtr v1 = getVertex(n2);
-            VertexPtr v2 = getVertex(n3);
-            QPointF   c0 = getPoint(n4);
+            xml_node n2    = n.child("Point");
+            xml_node n3    = n2.next_sibling("Point");
+            xml_node n4    = n.child("Center");
+            VertexPtr v1   = getVertex(n2);
+            VertexPtr v2   = getVertex(n3);
+            QPointF center = getPoint(n4);
             bool convex = true; // default
             xml_attribute conv = n.attribute("convex");
             if (conv)
@@ -63,7 +67,11 @@ EdgePoly TileReader::getEdgePoly(xml_node & node)
                 QString val = conv.value();
                 convex = (val == "t") ? true : false;
             }
-            EdgePtr eptr = make_shared<Edge>(v1,v2,c0,convex,true);
+            if (legacyFlip && !convex)
+            {
+                center = ArcData::reflectCentreOverEdge(v1->pt,v2->pt,center);
+            }
+            EdgePtr eptr = make_shared<Edge>(v1,v2,center,convex,true);
             ep.push_back(eptr);
         }
 

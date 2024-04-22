@@ -31,8 +31,8 @@ public:
     static qreal   transy(QTransform T)     { return T.m32(); }
     static QPointF trans(QTransform T)      { return QPointF(T.m31(),T.m32()); }
 
-    static QString toString(QTransform t);
-    static QString toInfoString(QTransform t, int decimals = 6);
+    static QString writeInfo(QTransform t);
+    static QString info(QTransform t, int decimals = 6);
 };
 
 #endif

@@ -39,7 +39,7 @@ public:
     static QPointF  getArc( qreal frac );    // Get the point frac of the way around the unit circle.
 
     virtual QString getMotifDesc() override { return "RadialMotif"; }
-    virtual void    report() override = 0;
+    virtual void    dump() override = 0;
 
 protected:
     RadialMotif(int n);

@@ -3,6 +3,7 @@
 #include "makers/prototype_maker/prototype_maker.h"
 #include "makers/mosaic_maker/mosaic_maker.h"
 #include "makers/motif_maker/design_element_button.h"
+#include "makers/motif_maker/motif_maker_widget.h"
 #include "makers/prototype_maker/prototype.h"
 #include "makers/tiling_maker/tiling_maker.h"
 #include "mosaic/design_element.h"
@@ -35,8 +36,6 @@
 using std::make_shared;
 using std::dynamic_pointer_cast;
 
-PrototypeMaker * PrototypeMaker::mpThis = nullptr;
-
 #define E2STR(x) #x
 
 static QString mm_states[]
@@ -65,34 +64,16 @@ static QString mm_states[]
 // so prototypes must be propagated to the mosaic maker
 //
 
-PrototypeMaker * PrototypeMaker::getInstance()
-{
-    if (mpThis == nullptr)
-    {
-        mpThis = new PrototypeMaker;
-    }
-    return mpThis;
-}
-
-void PrototypeMaker::releaseInstance()
-{
-    if (mpThis != nullptr)
-    {
-        delete mpThis;
-        mpThis = nullptr;
-    }
-}
-
 PrototypeMaker::PrototypeMaker()
 {
 }
 
 void PrototypeMaker::init()
 {
-    config          = Configuration::getInstance();
+    config          = Sys::config;
     vcontrol        = Sys::viewController;
-    tilingMaker     = TilingMaker::getInstance();
-    mosaicMaker     = MosaicMaker::getInstance();
+    tilingMaker     = Sys::tilingMaker;
+    mosaicMaker     = Sys::mosaicMaker;
     propagate       = true;
 }
 
@@ -523,6 +504,13 @@ PrototypeMaker::eMMState PrototypeMaker::sm_getState()
     }
 }
 
+void PrototypeMaker::selectDesignElement(DesignElementPtr delp)
+{
+    auto motifmaker = getProtoMakerData()->getWidget();
+    auto btn        = motifmaker->getButton(delp);
+    motifmaker->delegate(btn,config->motifMultiView,true);
+}
+
 // duplication is used to superimpose a second figure in the same tile
 // but also a duplicate figure is needed in the tiling to make the system happy
 bool PrototypeMaker::duplicateDesignElement()
@@ -739,7 +727,7 @@ MotifPtr PrototypeMaker::duplicateMotif(MotifPtr motif)
 
 bool PrototypeMaker::askNewProto()
 {
-    QMessageBox box(ControlPanel::getInstance());
+    QMessageBox box(Sys::controlPanel);
     box.setIcon(QMessageBox::Question);
     QPushButton *createNewButton  = box.addButton("Create new Prototype", QMessageBox::ActionRole);
     QPushButton *replaceButton    = box.addButton("Replace tiling in existing Prototype", QMessageBox::ActionRole);

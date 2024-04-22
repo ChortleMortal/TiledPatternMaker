@@ -98,7 +98,7 @@ bool TilingStepper::end()
     {
         start(false);
         finish("Tiling viewing");
-        panel->popPanelStatus();
+        panel->clearStatus();
         return true;
     }
     else

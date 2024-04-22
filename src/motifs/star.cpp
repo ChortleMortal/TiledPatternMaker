@@ -61,7 +61,6 @@ void Star::setN(int n)
     RadialMotif::setN(n);
 
     tile        = make_shared<Tile>(n);
-    placedTile  = tile->getEdgePoly();
     auto corners = tile->getPoints();
 
     mids.clear();
@@ -112,10 +111,10 @@ void Star::buildUnitMap()
     if (getVersion() == 2)
         buildV2();
     else
-        buildV1();
+        buildv1();
 }
 
-void Star::buildV1()
+void Star::buildv1()
 {
     // int s    = number of intersects
     // qreal d  = angle (each integer is the next edge around the star)
@@ -200,7 +199,7 @@ void Star::buildV1()
 
     if (s == di )
     {
-        QPointF midr = radialRotationTr.map( top_prev->pt );
+        QPointF midr = radialRotationTr.map(top_prev->pt);
         VertexPtr v4 = unitMap->insertVertex(midr);
 
         if( d_is_int )
@@ -394,7 +393,7 @@ QLineF Star::getRay(int side, qreal d, int sign)
     di = modulo(di,getN());
 
     QPointF   a =  mids[side];
-    QLineF edge =  placedTile.getEdge(di);
+    QLineF edge =  tile->getEdge(di);
     QPointF   b =  edge.pointAt(dfrac);
     QLineF branchRay(a,b);
 

@@ -84,11 +84,12 @@ private slots:
     void slot_radiusChanged(qreal r);
     void slot_createAngleChanged(qreal angle);
     void slot_createLenChanged(qreal len);
-    void slot_lineWidthChanged(qreal r);
-    void slot_consWidthChanged(qreal r);
+    void slot_lineWidthChanged(uint r);
+    void slot_consWidthChanged(uint r);
     void slot_mergeSensitivityA(qreal r);
     void slot_mergeSensitivityB(int sens);
-
+    void slot_align1();
+    void slot_align2();
     void slot_viewLayer(int id, bool checked);
     void slot_editLayer(int id, bool checked);
 
@@ -109,9 +110,8 @@ protected:
 
 private:
     MapEditor     * maped;
-    MapEditorView * meView;
+    MapEditorView * mapedView;
     MapEditorDb   * db;
-    CropViewer    * cropViewer;
     class CropDlg * cropDlg;
 
     QGroupBox     * editorStatusBox;

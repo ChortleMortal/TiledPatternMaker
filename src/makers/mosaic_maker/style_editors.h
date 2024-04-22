@@ -27,9 +27,10 @@ class AQTableWidget;
 class AQWidget;
 class View;
 
-typedef std::shared_ptr<class Filled>       FilledPtr;
+typedef std::shared_ptr<class Filled>    FilledPtr;
 typedef std::shared_ptr<class Tile>      TilePtr;
-typedef std::shared_ptr<class Tiling>       TilingPtr;
+typedef std::weak_ptr<class Tile>       wTilePtr;
+typedef std::shared_ptr<class Tiling>    TilingPtr;
 
 class StyleEditor : public QObject
 {
@@ -38,8 +39,9 @@ class StyleEditor : public QObject
 public:
     StyleEditor();
 
-    virtual void onEnter() {};
-    virtual void onExit()  {};
+    virtual void onEnter()   {};
+    virtual void onExit()    {};
+    virtual void onRefresh() {};
 
 signals:
     void    sig_refreshView();
@@ -105,7 +107,9 @@ private:
 };
 
 class StyleColorFillSet;
+class StyleColorFillFace;
 class StyleColorFillGroup;
+class StyleColorFillOriginal;
 
 // Editor for the filled style.
 class FilledEditor : public StyleEditor
@@ -113,48 +117,46 @@ class FilledEditor : public StyleEditor
     Q_OBJECT
 
 public:
-    FilledEditor(FilledPtr f, AQTableWidget *table, QVBoxLayout *parmsCtrl );
+    FilledEditor(FilledPtr f, AQTableWidget *table, QVBoxLayout *parmsCtrl);
     ~FilledEditor();
 
     FilledPtr getFilled() { return filled; }
 
-    virtual void onEnter();
-    virtual void onExit();
+    void onEnter() override;
+    void onExit() override;
+    void onRefresh() override;
 
 public slots:
     void slot_colorsChanged();
     void slot_mousePressed(QPointF spt, Qt::MouseButton btn);
     void slot_colorPick(QColor color);
-
-private slots:
-    void slot_insideChanged(int state);
-    void slot_outsideChanged(int state);
-    void slot_editB();
     void slot_editW();
+    void slot_editB();
 
 protected:
     void slot_algo(int index);
 
     void displayParms();
-    void displayParms01();
+    void displayParms1();
     void displayParms2();
     void displayParms3();
+    void displayParmsPalette();
 
 private:
     FilledPtr       filled;
 
     AQTableWidget * table;
 
-    QCheckBox     * inside_checkbox;
-    QCheckBox     * outside_checkbox;
     QComboBox     * algoBox;
 
     QVBoxLayout   * vbox;
 
-    StyleColorFillSet   * fillSet;
-    StyleColorFillGroup * fillGroup;
+    StyleColorFillSet       * fillSet;
+    StyleColorFillGroup     * fillGroup;
+    StyleColorFillFace      * fillFaces;
+    StyleColorFillOriginal  * fillOriginal;
 
-    class View     * view;
+    class ControlPanel  * panel;
 };
 
 
@@ -215,10 +217,10 @@ public:
     TileColorsEditor(TileColors * c, AQTableWidget * table, TilingPtr tiling);
 
 public slots:
+    void    slot_colors_changed();
 
 private slots:
     void    slot_edit();
-    void    slot_colors_changed();
 
     void    slot_outlineChanged(int state);
     void    slot_outline_color();
@@ -230,10 +232,11 @@ protected:
 private:
     class Configuration     * config;
     class ControlPanel      * panel;
-    TilingPtr                 tiling;
-    TileColors              * colored;
-    AQTableWidget           * table;
 
+    TilingPtr                 tiling;
+    TileColors              * colStyle;
+
+    AQTableWidget           * table;
     SliderSet               * width_slider;
     QCheckBox               * outline_checkbox;
     AQWidget                * colorwidget;
@@ -241,7 +244,7 @@ private:
     DoubleSliderSet         * transparency;
     QTableWidgetItem        * colorItem;
 
-    QVector<TilePtr> qlfp;
+    QVector<wTilePtr>        uniqueTiles;
 
 };
 #endif

@@ -26,7 +26,7 @@ public:
     void buildUnitMap() override;
 
     virtual QString getMotifDesc() override { return "StarConnect";}
-    virtual void    report()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "d:" << d << "s" << s; }
+    virtual void    dump()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "d:" << d << "s" << s; }
 
     qreal computeConnectScale();
 

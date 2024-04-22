@@ -3,6 +3,7 @@
 #define CROP_VIEW_H
 
 #include "misc/layer_controller.h"
+#include "makers/crop_maker/crop_maker.h"
 
 typedef std::shared_ptr<class MouseEditCrop> CropMouseActionPtr;
 
@@ -11,40 +12,43 @@ class CropMaker;
 class CropViewer : public LayerController
 {
 public:
-    static CropViewer * getInstance();
-    static void         releaseInstance();
+    CropViewer();
+    ~CropViewer() {}
 
-    void    init(CropMaker * ed);
-    CropMaker * getMaker() { return cropMaker; }
+    void        aquire(CropMaker * ed, eCropMaker maker);
+    void        release(eCropMaker maker);
 
-    void    setShowCrop(bool state) { _showCrop = state; }
-    bool    getShowCrop()           { return _showCrop; }
+    CropMaker * getMaker()          { return cropMaker; }
+    eCropMaker  getMakerType()      { return makerType; }
 
-    virtual void  paint(QPainter * painter) override;
-    virtual void  draw(QPainter *, QTransform t);
+    void        setShowCrop(eCropMaker maker, bool state);
+    bool        getShowCrop(eCropMaker maker);
 
-    virtual const Xform &   getModelXform() override;
-    virtual void            setModelXform(const Xform & xf, bool update) override;
+    void        paint(QPainter * painter) override;
+    void        draw(QPainter *, QTransform t);
+
+    const Xform &   getModelXform() override;
+    void            setModelXform(const Xform & xf, bool update) override;
 
 public slots:
-    virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
-    virtual void slot_mouseDragged(QPointF spt)       override;
-    virtual void slot_mouseTranslate(QPointF pt)      override;
-    virtual void slot_mouseMoved(QPointF spt)         override;
-    virtual void slot_mouseReleased(QPointF spt)      override;
-    virtual void slot_mouseDoublePressed(QPointF spt) override;
-    virtual void slot_setCenter(QPointF spt) override;
+    void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
+    void slot_mouseDragged(QPointF spt)       override;
+    void slot_mouseTranslate(QPointF pt)      override;
+    void slot_mouseMoved(QPointF spt)         override;
+    void slot_mouseReleased(QPointF spt)      override;
+    void slot_mouseDoublePressed(QPointF spt) override;
+    void slot_setCenter(QPointF spt) override;
 
-    virtual void slot_wheel_scale(qreal delta)  override;
-    virtual void slot_wheel_rotate(qreal delta) override;
+    void slot_wheel_scale(qreal delta)  override;
+    void slot_wheel_rotate(qreal delta) override;
 
-    virtual void slot_scale(int amount)  override;
-    virtual void slot_rotate(int amount) override;
-    virtual void slot_moveX(qreal amount)  override;
-    virtual void slot_moveY(qreal amount)  override;
+    void slot_scale(int amount)  override;
+    void slot_rotate(int amount) override;
+    void slot_moveX(qreal amount)  override;
+    void slot_moveY(qreal amount)  override;
 
-    virtual eViewType iamaLayer() override { return VIEW_CROP; }
-    virtual void iamaLayerController() override {}
+    eViewType iamaLayer() override { return VIEW_CROP; }
+    void      iamaLayerController() override {}
 
     void    setMousePos(QPointF pt);
     QPointF getMousePos() { return mousePos; }
@@ -52,18 +56,13 @@ public slots:
 protected:
 
 private:
-    CropViewer();
-    ~CropViewer() {}
-
-    static CropViewer * mpThis;
     CropMaker         * cropMaker;
-    Configuration     * config;
 
     CropMouseActionPtr mouseInteraction;   // used by menu
     QPointF            mousePos;            // used by menu
     bool               debugMouse;
-    bool                _showCrop;
-
+    bool               showCrop;
+    eCropMaker         makerType;
 };
 
 #endif

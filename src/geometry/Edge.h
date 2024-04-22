@@ -12,6 +12,7 @@
 #include <QLineF>
 
 #include "enums/edgetype.h"
+#include "geometry/arcdata.h"
 #include "misc/sys.h"
 
 typedef std::shared_ptr<class Vertex>       VertexPtr;
@@ -32,6 +33,7 @@ public:
     Edge(const VertexPtr & V1);
     Edge(const VertexPtr & V1, const VertexPtr & V2 );
     Edge(const VertexPtr & V1, const VertexPtr & V2, const QPointF & arcCenter, bool convex, bool chord);
+    Edge(const EdgePtr & other);
     Edge(const EdgePtr & other, QTransform T);
     Edge(const Edge & other);
     ~Edge();
@@ -40,7 +42,6 @@ public:
     bool      isLine()       { return (type == EDGETYPE_LINE); }
     bool      isCurve()      { return (type == EDGETYPE_CURVE) || type == EDGETYPE_CHORD; }
 
-    EdgePtr   getCopy();
     EdgePtr   createTwin();
 
     double    angle() const;
@@ -53,28 +54,25 @@ public:
     QPointF   getMidPoint()  { return getLine().pointAt(0.50); }
     qreal     getAngle();
 
-    void      setV1(const VertexPtr & v)  { v1 = v;}
-    void      setV2(const VertexPtr & v)  { v2 = v;  if ((type == EDGETYPE_NULL) || (type == EDGETYPE_POINT)) type = EDGETYPE_LINE; }
+    void      setV1(const VertexPtr & v);
+    void      setV2(const VertexPtr & v);
 
-    ArcDataPtr getArcData();
+    void      resetCurveToLine();
+    void      convertToConvexCurve();
 
-    void      calcMagnitude();
-    void      resetCurve();
-    void      calcArcCenter(bool convex, bool chord);
-
-    void      setArcCenter(const QPointF & ac, bool convex, bool chord);
-    void      setConvex(bool convexCurve) { Q_ASSERT(arcData); Q_ASSERT(isCurve()); convex = convexCurve; }
+    void      setCurvedEdge(QPointF arcCenter, bool convex, bool chord);
+    void      setConvex(bool convex);
     void      setArcMagnitude(qreal magnitude);
+    void      calcMagnitude();
 
-    bool      isConvex()        { return convex; }
-    QPointF   getArcCenter()    { return arcCenter; }
-    qreal     getArcMagnitude() { return arcMagnitude; }
-    qreal     getArcSpan();
+    inline ArcData & getArcData()             { return arcData; }
+    inline bool      isConvex()         const { return arcData.convex(); }
+    inline QPointF   getArcCenter()     const { return arcData.getCenter(); }
+    inline qreal     getArcMagnitude()  const { return arcData.magnitude; }
+    inline qreal     getArcSpan()       const { return arcData.span(); }
+
     qreal     getRadius();
-    bool      pointWithinSpan(const QPointF & pt,qreal originalSpan);
-
-    void      setSwapState(bool swap) { isSwapped = swap; }
-    bool      getSwapState()          { return isSwapped; }
+    bool      pointWithinArc(QPointF pt)  { return arcData.pointWithinArc(pt); }
 
     bool      isTrivial(qreal tolerance = Sys::TOL);
     bool      isColinearAndTouching(const EdgePtr & e, qreal tolerance = Sys::NEAR_TOL);
@@ -83,29 +81,29 @@ public:
     bool      contains(const VertexPtr & v);
     bool      sameAs(const EdgePtr & other);
     bool      sameAs(const VertexPtr & ov1, const VertexPtr & ov2);
+    bool      sameAs(const QPointF & op1, const QPointF & op2);
     bool      equals(const EdgePtr & other);
 
     // Used to sort the edges in the map.
     qreal     getMinX();
     qreal     getMaxX();
 
-    QString   dump();
+    QString   info();
+    QString   summary();
+    void      dump();
 
     // dcel stuff
     bool operator < (const Edge & other) const;
 
     EdgePtr    prev() { return twin.lock()->next.lock(); }
 
+public:
+    VertexPtr       v1;
+    VertexPtr       v2;
     WeakEdgePtr     twin;
     WeakEdgePtr     next;
     WeakFacePtr     incident_face;
     bool            dvisited;       // used by dcel
-
-    // defines the edge
-
-    VertexPtr       v1;
-    VertexPtr       v2;
-
     bool            visited;        // used by interlace and interlace threads
     bool            v1_under;       // used by interlace
     WeakThreadPtr   thread;         // used by interlace
@@ -115,13 +113,8 @@ public:
 protected:
     eEdgeType       type;
 
-    bool            isSwapped;
-    bool            convex;
-    QPointF         arcCenter;      // inside or outside the polygon
-    qreal           arcMagnitude;   // range 0 to 1
-
 private:
-    ArcDataPtr      arcData;
+    ArcData         arcData;
 };
 
 #endif

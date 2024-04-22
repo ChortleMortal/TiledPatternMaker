@@ -23,29 +23,9 @@
 #include "viewers/map_editor_view.h"
 #include "viewers/view_controller.h"
 
-MapEditorView * MapEditorView::mpThis = nullptr;
-
-MapEditorView * MapEditorView::getInstance()
-{
-    if (!mpThis)
-    {
-        mpThis = new MapEditorView();
-    }
-    return mpThis;
-}
-
-void MapEditorView::releaseInstance()
-{
-    if (mpThis != nullptr)
-    {
-        delete mpThis;
-        mpThis = nullptr;
-    }
-}
-
 MapEditorView::MapEditorView() : LayerController("MapEditorView",true)
 {
-    config      = Configuration::getInstance();
+    config      = Sys::config;
     debugMouse  = false;
 
     mapLineWidth          = 3.0;
@@ -164,10 +144,11 @@ void MapEditorView::draw(QPainter *painter )
         else if (type == MAP_CIRCLE)
         {
             auto c = sel->getCircle();
+            Q_ASSERT(c);
             if (!sel->isConstructionLine() || (sel->isConstructionLine() && db->showConstructionLines))
             {
-                qreal radius   = c.radius;
-                QPointF center = c.centre;
+                qreal radius   = c->radius;
+                QPointF center = c->centre;
                 radius = Transform::scalex(viewT) * radius;
                 painter->setPen(QPen(Qt::red,selectionWidth));
                 painter->setBrush(Qt::NoBrush);
@@ -194,20 +175,19 @@ void MapEditorView::draw(QPainter *painter )
 
 void MapEditorView::drawMap(QPainter * painter, eMapedLayer layer, QColor color)
 {
-    if (!db->showMap)
-        return;
+    if (!db->showMap) return;
 
     auto map = db->getMap(layer);
-    if (!map)
-        return;
+    if (!map) return;
 
     auto type = db->getMapType(map);
 
     auto crop = db->getCrop();
+
     QTransform t;
     if (crop && type == MAPED_TYPE_CROP)
     {
-        t = CropViewer::getInstance()->getLayerTransform();
+        t = Sys::cropViewer->getLayerTransform();
     }
     else
     {
@@ -217,53 +197,7 @@ void MapEditorView::drawMap(QPainter * painter, eMapedLayer layer, QColor color)
     QPen pen(color,mapLineWidth);
     painter->setPen(pen);
 
-    for (const auto & edge : std::as_const(map->getEdges()))
-    {
-        QPointF v1 = t.map(edge->v1->pt);
-        QPointF v2 = t.map(edge->v2->pt);
-
-        if (db->showDirnPoints)
-        {
-            GeoGraphics::drawLineArrowDirect(QLineF(v1,v2),pen,painter);
-        }
-
-        if (edge->getType() == EDGETYPE_LINE)
-        {
-            painter->drawLine(v1,v2);
-        }
-        else if (edge->getType() == EDGETYPE_CURVE)
-        {
-            QPointF ac = viewT.map(edge->getArcCenter());
-
-            ArcData ad(v1,v2,ac,edge->isConvex());
-
-            int start = qRound(ad.start * 16.0);
-            int span  = qRound(ad.span  * 16.0);
-
-            painter->drawArc(ad.rect, start, span);
-        }
-        else if (edge->getType() == EDGETYPE_CHORD)
-        {
-            QPointF ac = t.map(edge->getArcCenter());
-
-            ArcData ad(v1,v2,ac,edge->isConvex());
-
-            int start = qRound(ad.start * 16.0);
-            int span  = qRound(ad.span  * 16.0);
-
-            painter->drawChord(ad.rect, start, span);
-        }
-        if (edge->isCurve() && db->showArcCentre)
-        {
-            QPointF pt = edge->getArcCenter();
-            qreal radius = 8.0;
-            painter->save();
-            painter->setPen(QPen(Qt::white,selectionWidth));
-            painter->setBrush(Qt::NoBrush);
-            painter->drawEllipse(viewT.map(pt), radius, radius);
-            painter->restore();
-        }
-    }
+    map->paint(painter,t,db->showDirnPoints,db->showArcCentre);
 }
 
 void MapEditorView::drawDCEL(QPainter * painter)
@@ -278,43 +212,7 @@ void MapEditorView::drawDCEL(QPainter * painter)
     QPen pen(Qt::green,mapLineWidth);
     painter->setPen(pen);
 
-    for (const auto & edge : std::as_const(dcel->getEdges()))
-    {
-        QPointF v1 = viewT.map(edge->v1->pt);
-        QPointF v2 = viewT.map(edge->v2->pt);
-
-        if (db->showDirnPoints)
-        {
-            GeoGraphics::drawLineArrowDirect(QLineF(v1,v2),pen,painter);
-        }
-
-        if (edge->getType() == EDGETYPE_LINE)
-        {
-            painter->drawLine(viewT.map(v1),viewT.map(v2));
-        }
-        else if (edge->getType() == EDGETYPE_CURVE)
-        {
-            QPointF ac = viewT.map(edge->getArcCenter());
-
-            ArcData ad(v1,v2,ac,edge->isConvex());
-
-            int start = qRound(ad.start * 16.0);
-            int span  = qRound(ad.span  * 16.0);
-
-            painter->drawArc(ad.rect, start, span);
-        }
-        else if (edge->getType() == EDGETYPE_CHORD)
-        {
-            QPointF ac = viewT.map(edge->getArcCenter());
-
-            ArcData ad(v1,v2,ac,edge->isConvex());
-
-            int start = qRound(ad.start * 16.0);
-            int span  = qRound(ad.span  * 16.0);
-
-            painter->drawChord(ad.rect, start, span);
-        }
-    }
+    dcel->paint(painter,viewT,db->showDirnPoints,db->showArcCentre);
 }
 
 void MapEditorView::drawTile(QPainter * painter, DesignElementPtr del)
@@ -385,12 +283,12 @@ void MapEditorView::drawBoundaries(QPainter *painter,  DesignElementPtr del)
     }
 }
 
-void MapEditorView::drawPoints(QPainter * painter,  QVector<pointInfo> & points)
+void MapEditorView::drawPoints(QPainter * painter,  QVector<PointInfo> & points)
 {
     qreal radius = 1.0;
     for (auto & pi : std::as_const(points))
     {
-        switch (pi._type)
+        switch (pi.type)
         {
         case PT_VERTEX:
             if (!db->showPoints) continue;
@@ -431,7 +329,7 @@ void MapEditorView::drawPoints(QPainter * painter,  QVector<pointInfo> & points)
             painter->setBrush(Qt::darkYellow);
             break;
         }
-        QPointF pos = viewT.map(pi._pt);
+        QPointF pos = viewT.map(pi.pt);
         painter->drawEllipse(pos, radius, radius);
     }
 }
@@ -455,11 +353,13 @@ void MapEditorView::drawConstructionCircles(QPainter * painter)
     if (!db->showConstructionLines)
         return;
 
+    QColor color = (view->getViewBackgroundColor() == Qt::white) ? Qt::black : Qt::white;
+
     for (const auto & circle :  std::as_const(db->constructionCircles))
     {
-        QPointF pt = viewT.map(circle.centre);
-        painter->setPen(QPen(Qt::white,constructionLineWidth));
-        painter->drawEllipse(pt, Transform::scalex(viewT) * circle.radius, Transform::scalex(viewT)  * circle.radius);
+        QPointF pt = viewT.map(circle->centre);
+        painter->setPen(QPen(color,constructionLineWidth));
+        painter->drawEllipse(pt, Transform::scalex(viewT) * circle->radius, Transform::scalex(viewT)  * circle->radius);
 
         if (db->showPoints)
         {
@@ -486,7 +386,7 @@ QTransform MapEditorView::getPlacement(TilePtr tile)
 
 void MapEditorView::startMouseInteraction(QPointF spt, enum Qt::MouseButton mouseButton)
 {
-    if (CropViewer::getInstance()->getShowCrop())
+    if (Sys::cropViewer->getShowCrop(CM_MAPED))
     {
         return;     // it will be handled by the CropMaker - this is right
     }
@@ -523,7 +423,7 @@ void MapEditorView::startMouseInteraction(QPointF spt, enum Qt::MouseButton mous
 void MapEditorView::setModelXform(const Xform & xf, bool update)
 {
     Q_ASSERT(_unique);
-    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.toInfoString() << (isUnique() ? "unique" : "common");
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.info() << (isUnique() ? "unique" : "common");
     xf_model = xf;
     forceLayerRecalc(update);
 }
@@ -531,7 +431,7 @@ void MapEditorView::setModelXform(const Xform & xf, bool update)
 const Xform & MapEditorView::getModelXform()
 {
     Q_ASSERT(_unique);
-    if (debug & DEBUG_XFORM) qInfo().noquote() << "GET" << getLayerName() << xf_model.toInfoString() << (isUnique() ? "unique" : "common");
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "GET" << getLayerName() << xf_model.info() << (isUnique() ? "unique" : "common");
     return xf_model;
 }
 
@@ -672,9 +572,9 @@ void MapEditorView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
     {
         MapMouseActionPtr mma = db->getMouseInteraction();
         if (mma)
-            qDebug() << "press start:" << mousePos << screenToWorld(mousePos) << mma->desc;
+            qDebug() << "press start:" << mousePos << screenToModel(mousePos) << mma->desc;
         else
-            qDebug() << "press start:" << mousePos << screenToWorld(mousePos) << "no mouse interaction";
+            qDebug() << "press start:" << mousePos << screenToModel(mousePos) << "no mouse interaction";
     }
 
     SelectionSet set;
@@ -752,7 +652,8 @@ void MapEditorView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
             }
             else if (sel->getType() == MAP_CIRCLE)
             {
-                auto c = sel->getCircle();
+                CirclePtr c = sel->getCircle();
+                Q_ASSERT(c);
                 db->constructionCircles.removeOne(c);
                 break;
             }
@@ -808,7 +709,7 @@ void MapEditorView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
             {
                 center = viewTinv.map(mousePos);
             }
-            db->constructionCircles.push_back(Circle(center, config->mapedRadius));
+            db->constructionCircles.push_back(std::make_shared<Circle>(center, config->mapedRadius));
             db->getStash()->stash();
             forceRedraw();
         }
@@ -817,8 +718,11 @@ void MapEditorView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
             MapSelectionPtr sel = selector->findConstructionCircle(mousePos);
             if (sel)
             {
-                auto c = sel->getCircle();
-                db->setMouseInteraction(std::make_shared<EditConstructionCircle>(c,mousePos));
+                CirclePtr c = sel->getCircle();
+                if (c)
+                {
+                    db->setMouseInteraction(std::make_shared<EditConstructionCircle>(c,mousePos));
+                }
             }
         }
         break;
@@ -842,7 +746,7 @@ void MapEditorView::slot_mouseDragged(QPointF spt)
 
     setMousePos(spt);
 
-    if (debugMouse) qDebug().noquote() << "drag" << mousePos << screenToWorld(mousePos)  << sMapEditorMouseMode[db->getMouseMode()];
+    if (debugMouse) qDebug().noquote() << "drag" << mousePos << screenToModel(mousePos)  << sMapEditorMouseMode[db->getMouseMode()];
 
     selector->setCurrentSelections(selector->findSelectionsUsingDB(mousePos));
 
@@ -887,7 +791,7 @@ void MapEditorView::slot_mouseReleased(QPointF spt)
 
     setMousePos(spt);
 
-    if (debugMouse) qDebug() << "release" << mousePos << screenToWorld(mousePos);
+    if (debugMouse) qDebug() << "release" << mousePos << screenToModel(mousePos);
 
     MapMouseActionPtr mma = db->getMouseInteraction();
     if (mma)

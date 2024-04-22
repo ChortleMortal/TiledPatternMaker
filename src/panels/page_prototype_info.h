@@ -5,6 +5,7 @@
 #include "panels/panel_page.h"
 #include "viewers/prototype_view.h"
 #include "makers/prototype_maker/prototype_maker.h"
+#include "settings/configuration.h"
 
 class AQTableWidget;
 class PrototypeData;
@@ -34,9 +35,10 @@ public:
 
     page_prototype_info(ControlPanel * cpanel);
 
-    void onRefresh() override;
-    void onEnter() override;
-    void onExit() override;
+    void onRefresh()        override;
+    void onEnter()          override;
+    void onExit()           override {}
+    QString getPageStatus() override;
 
 public slots:
 

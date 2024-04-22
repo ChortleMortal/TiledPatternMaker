@@ -31,44 +31,35 @@
 
 using std::make_shared;
 
-MapEditor * MapEditor::mpThis = nullptr;
-
-MapEditor * MapEditor::getInstance()
-{
-    if (!mpThis)
-    {
-        mpThis = new MapEditor();
-    }
-    return mpThis;
-}
-
-void MapEditor::releaseInstance()
-{
-    if (mpThis != nullptr)
-    {
-        delete mpThis;
-        mpThis = nullptr;
-    }
-}
-
 MapEditor::MapEditor()
 {
-    //qDebug() << "MapEditor::MapEditor";
+//qDebug() << "MapEditor::MapEditor";
+}
+
+void MapEditor::init()
+{
     db              = new MapEditorDb();
-    meView          = MapEditorView::getInstance();
+    meView          = Sys::mapEditorView;
     selector        = new MapEditorSelection(db);
 
     meView->init(db,selector);
 
-    config          = Configuration::getInstance();
-    mosaicMaker     = MosaicMaker::getInstance();
-    prototypeMaker  = PrototypeMaker::getInstance();
-    tilingMaker     = TilingMaker::getInstance();
+    config          = Sys::config;
+    mosaicMaker     = Sys::mosaicMaker;
+    prototypeMaker  = Sys::prototypeMaker;
+    tilingMaker     = Sys::tilingMaker;
     view            = Sys::view;
     viewControl     = Sys::viewController;
-    cpanel          = ControlPanel::getInstance();
+    cpanel          = Sys::controlPanel;
 
     unload();
+}
+
+MapEditor::~MapEditor()
+{
+    unload();
+    delete selector;
+    delete db;
 }
 
 void MapEditor::unload()
@@ -84,7 +75,7 @@ bool MapEditor::loadMosaicPrototype()
     MosaicPtr mosaic = mosaicMaker->getMosaic();
     if (!mosaic)
     {
-        QMessageBox box(ControlPanel::getInstance());
+        QMessageBox box(Sys::controlPanel);
         box.setIcon(QMessageBox::Warning);
         box.setText("No mosaic found");
         box.exec();
@@ -94,7 +85,7 @@ bool MapEditor::loadMosaicPrototype()
     MapPtr map = mosaic->getPrototypeMap();
     if (!map)
     {
-        QMessageBox box(ControlPanel::getInstance());
+        QMessageBox box(Sys::controlPanel);
         box.setIcon(QMessageBox::Warning);
         box.setText("Mosaic has no content");
         box.exec();
@@ -121,7 +112,7 @@ void  MapEditor::loadMotifPrototype()
     auto proto = data->getSelectedPrototype();
     if (!proto)
     {
-        QMessageBox box(ControlPanel::getInstance());
+        QMessageBox box(Sys::controlPanel);
         box.setIcon(QMessageBox::Warning);
         box.setText("No prototype found");
         box.exec();
@@ -130,7 +121,7 @@ void  MapEditor::loadMotifPrototype()
 
     if (!proto->hasContent())
     {
-        QMessageBox box(ControlPanel::getInstance());
+        QMessageBox box(Sys::controlPanel);
         box.setIcon(QMessageBox::Warning);
         box.setText("Prototype has no content");
         box.exec();
@@ -159,7 +150,7 @@ bool  MapEditor::loadSelectedMotifs()
     auto proto = data->getSelectedPrototype();
     if (!proto)
     {
-        QMessageBox box(ControlPanel::getInstance());
+        QMessageBox box(Sys::controlPanel);
         box.setIcon(QMessageBox::Warning);
         box.setText("No prototype found in Motif Maker");
         box.exec();
@@ -171,7 +162,7 @@ bool  MapEditor::loadSelectedMotifs()
     auto dels = data->getSelectedDELs(MVD_DELEM);
     if (dels.size() == 0)
     {
-        QMessageBox box(ControlPanel::getInstance());
+        QMessageBox box(Sys::controlPanel);
         box.setIcon(QMessageBox::Warning);
         box.setText("No design elements found found in Motif Maker's prototype");
         box.exec();
@@ -213,7 +204,7 @@ void MapEditor::loadTilingUnit()
     TilingPtr tp = tilingMaker->getSelected();
     if (!tp || tp->isEmpty())
     {
-        QMessageBox box(ControlPanel::getInstance());
+        QMessageBox box(Sys::controlPanel);
         box.setIcon(QMessageBox::Warning);
         box.setText("No tiling found");
         box.exec();
@@ -222,9 +213,9 @@ void MapEditor::loadTilingUnit()
 
     db->setTiling(tp);
 
-    MapPtr map       = tp->createMapSingle();
-    db->createdTilingMap = map;
-    db->currentTilingMap = map->copy();
+    MapPtr map            = tp->createMapSingle();
+    db->importedTilingMap = map;
+    db->currentTilingMap  = map->copy();
 
     auto type = db->insertLayer(map,MAPED_LOADED_FROM_TILING_UNIT);
 
@@ -245,7 +236,7 @@ void  MapEditor::loadTilingRepeated()
     TilingPtr tp = tilingMaker->getSelected();
     if (!tp || tp->isEmpty())
     {
-        QMessageBox box(ControlPanel::getInstance());
+        QMessageBox box(Sys::controlPanel);
         box.setIcon(QMessageBox::Warning);
         box.setText("No tiling found");
         box.exec();
@@ -314,7 +305,7 @@ bool MapEditor::createLocalDCEL(MapPtr map)
 
 bool MapEditor::pushToMosaic(MapEditorLayer & layer)
 {
-    qDebug().noquote() << "MapEditor::pushToMosaic" << Transform::toInfoString(meView->getLayerTransform());
+    qDebug().noquote() << "MapEditor::pushToMosaic" << Transform::info(meView->getLayerTransform());
     QVector<ProtoPtr> protos;
 
     if (layer.getLayerMapType() == MAPED_LOADED_FROM_MOTIF_PROTOTYPE)
@@ -385,7 +376,7 @@ bool MapEditor::pushToMosaic(MapEditorLayer & layer)
         emit meView->sig_refreshView(); // triggers createSyleRepresentation
 
         // does not switch view to mosaic
-        qDebug().noquote() << "MapEditor::pushToMosaic - end" << Transform::toInfoString(meView->getLayerTransform());
+        qDebug().noquote() << "MapEditor::pushToMosaic - end" << Transform::info(meView->getLayerTransform());
         return true;
     }
 
@@ -394,13 +385,10 @@ bool MapEditor::pushToMosaic(MapEditorLayer & layer)
 
 bool MapEditor::convertToMotif(MapPtr map)
 {
-    qDebug().noquote() << "MapEditor::convertToMotif" << Transform::toInfoString(meView->getLayerTransform());
+    qDebug().noquote() << "MapEditor::convertToMotif" << Transform::info(meView->getLayerTransform());
 
     eMapEditorMapType mtype = db->getMapType(map);
     if (!db->isMotif(mtype) && mtype != MAPED_TYPE_CREATED)
-        return false;
-
-    if (!convertToTiling(map,true))
         return false;
 
     auto data  = prototypeMaker->getProtoMakerData();
@@ -408,36 +396,35 @@ bool MapEditor::convertToMotif(MapPtr map)
     if (!del)
         return false;
 
-    auto motif = make_shared<ExplicitMapMotif>(map);
+    auto transform = meView->getPlacement(del->getTile()).inverted();
+    auto map2      = map->getTransformed(transform);
+
+    auto motif = make_shared<ExplicitMapMotif>(map2);
+    motif->setTile(del->getTile());
     del->setMotif(motif);
 
-    qDebug().noquote() << "MapEditor::convertToMotif - end" << Transform::toInfoString(meView->getLayerTransform());
+    prototypeMaker->selectDesignElement(del);
+
+    auto proto =  data->getSelectedPrototype();
+    prototypeMaker->sm_takeUp(proto->getTiling(),PROM_MOTIF_CHANGED,del->getTile());
+
+    qDebug().noquote() << "MapEditor::convertToMotif - end" << Transform::info(meView->getLayerTransform());
     return true;
 }
 
+// 09MAR24 The original intention of this is not clear.
+// The current implementation simply replaces the complete set of tiles in the tiling unit
 bool MapEditor::convertToTiling(MapPtr map, bool outer)
 {
-    qDebug().noquote() << "MapEditor::convertToTiling" << Transform::toInfoString(meView->getLayerTransform());
+    qDebug().noquote() << "MapEditor::convertToTiling" << Transform::info(meView->getLayerTransform());
 
-    eMapEditorMapType mapType = db->getMapType(map);
-
-    // if a tiling map has been modified, this backs out the map, leaving just the additions.
-    if (mapType == MAPED_LOADED_FROM_TILING_UNIT && db->getTiling())
-    {
-        qDebug() << map->summary();
-        map->removeMap(db->createdTilingMap);
-        qDebug() << map->summary();
-        forceRedraw();
-    }
-
-    // converts the remaining map to DCELs so that tiles can be made
+    // converts the map to DCELs so that tiles can be made
     createLocalDCEL(map);
     DCELPtr dcel = db->getLocaldDCEL();
 
     const FaceSet & faces = dcel->getFaceSet();
     qDebug() << "num new faces =" << faces.size();
 
-    auto tiling = tilingMaker->getSelected();
     PlacedTiles placedTiles;
     for (auto & face : std::as_const(faces))
     {
@@ -451,22 +438,23 @@ bool MapEditor::convertToTiling(MapPtr map, bool outer)
         }
     }
 
-    tilingMaker->addNewPlacedTiles(placedTiles);
+    tilingMaker->replacePlacedTiles(placedTiles);
 
     // aligns the tiling maker to the map editor
     const Xform & xf = meView->getModelXform();
     viewControl->getCanvas().setModelAlignment(M_ALIGN_TILING);
-    TilingMakerView::getInstance()->setModelXform(xf,true);
+    Sys::tilingMakerView->setModelXform(xf,true);
 
-    qDebug().noquote() << "MapEditor::convertToTiling - end" << Transform::toInfoString(meView->getLayerTransform());
+    qDebug().noquote() << "MapEditor::convertToTiling - end" << Transform::info(meView->getLayerTransform());
     return true;
 }
 
 void MapEditor::cleanupMapPoints()
 {
     auto map = db->getEditMap();
+    if (!map) return;
 
-    qreal tolerance = Configuration::getInstance()->mapedMergeSensitivity;
+    qreal tolerance = Sys::config->mapedMergeSensitivity;
 
     MapPtr cleaned = std::make_shared<Map>("Cleanup map");
     qDebug() << map->summary();
@@ -501,8 +489,6 @@ void MapEditor::setMapedMouseMode(eMapEditorMouseMode mode)
         db->showConstructionLines = true;
         break;
     }
-
-    forceRedraw();
 }
 
 eMapEditorMouseMode MapEditor::getMouseMode()

@@ -27,15 +27,19 @@ public:
     Vertex(const QPointF & pos);
     ~Vertex();
 
+    void inline setPt(QPointF p)   { pt = p; }
+
     qreal   getAngle(const EdgePtr & edge);
     void    transform(QTransform T);
 
-    static int  refs;
-
+public:
     QPointF         pt;
     bool            visited;    // used by interlace
     WeakVertexPtr   copy;       // Used when cloning the map.
+
     QVector<WeakVertexPtr> adjacent_vertices;
+
+    static int  refs;
 };
 
 #endif

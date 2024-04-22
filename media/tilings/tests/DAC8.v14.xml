@@ -1,0 +1,238 @@
+<?xml version="1.0"?>
+<!-- Written: Tue Apr 9 2024 21:39:28 -->
+<Tiling version="9">
+	<Name>DAC8.v14</Name>
+	<Fill singleton="f">-2,2,-2,2</Fill>
+	<T1>4,0</T1>
+	<T2>0,4</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="1">0.8284271247461906,-2</Point>
+			<Point id="2">1.999999999999999,-2</Point>
+		</Line>
+		<Line>
+			<Point reference="2" />
+			<Point id="3">2,-0.8284271247461916</Point>
+		</Line>
+		<Line>
+			<Point reference="3" />
+			<Point id="4">1.552498981950484,-1.275928142795706</Point>
+		</Line>
+		<Line>
+			<Point reference="4" />
+			<Point id="5">1.275928142795705,-1.275928142795705</Point>
+		</Line>
+		<Line>
+			<Point reference="5" />
+			<Point id="6">1.275928142795705,-1.552498981950485</Point>
+		</Line>
+		<Line>
+			<Point reference="6" />
+			<Point reference="1" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="7">-2,-0.82842712474619</Point>
+			<Point id="8">-2,-2</Point>
+		</Line>
+		<Line>
+			<Point reference="8" />
+			<Point id="9">-0.8284271247461914,-2</Point>
+		</Line>
+		<Line>
+			<Point reference="9" />
+			<Point id="10">-1.275928142795705,-1.552498981950486</Point>
+		</Line>
+		<Line>
+			<Point reference="10" />
+			<Point id="11">-1.275928142795705,-1.275928142795704</Point>
+		</Line>
+		<Line>
+			<Point reference="11" />
+			<Point id="12">-1.552498981950486,-1.275928142795704</Point>
+		</Line>
+		<Line>
+			<Point reference="12" />
+			<Point reference="7" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="13">2,0.8284271247461902</Point>
+			<Point id="14">1.637964071397853,1.190463053348337</Point>
+		</Line>
+		<Line>
+			<Point reference="14" />
+			<Point id="15">1.275928142795706,1.275928142795707</Point>
+		</Line>
+		<Line>
+			<Point reference="15" />
+			<Point id="16">1.275928142795706,1.552498981950484</Point>
+		</Line>
+		<Line>
+			<Point reference="16" />
+			<Point id="17">0.8284271247461902,2</Point>
+		</Line>
+		<Line>
+			<Point reference="17" />
+			<Point id="18">-0.82842712474619,2</Point>
+		</Line>
+		<Line>
+			<Point reference="18" />
+			<Point id="19">-1.275928142795705,1.552498981950486</Point>
+		</Line>
+		<Line>
+			<Point reference="19" />
+			<Point id="20">-1.275928142795705,1.275928142795705</Point>
+		</Line>
+		<Line>
+			<Point reference="20" />
+			<Point id="21">-1.552498981950486,1.275928142795705</Point>
+		</Line>
+		<Line>
+			<Point reference="21" />
+			<Point id="22">-2,0.8284271247461904</Point>
+		</Line>
+		<Line>
+			<Point reference="22" />
+			<Point reference="7" />
+		</Line>
+		<Line>
+			<Point reference="7" />
+			<Point reference="12" />
+		</Line>
+		<Line>
+			<Point reference="12" />
+			<Point reference="11" />
+		</Line>
+		<Line>
+			<Point reference="11" />
+			<Point reference="10" />
+		</Line>
+		<Line>
+			<Point reference="10" />
+			<Point reference="9" />
+		</Line>
+		<Line>
+			<Point reference="9" />
+			<Point reference="1" />
+		</Line>
+		<Line>
+			<Point reference="1" />
+			<Point reference="6" />
+		</Line>
+		<Line>
+			<Point reference="6" />
+			<Point reference="5" />
+		</Line>
+		<Line>
+			<Point reference="5" />
+			<Point reference="4" />
+		</Line>
+		<Line>
+			<Point reference="4" />
+			<Point reference="3" />
+		</Line>
+		<Line>
+			<Point reference="3" />
+			<Point reference="13" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="23">2,2</Point>
+			<Point reference="17" />
+		</Line>
+		<Line>
+			<Point reference="17" />
+			<Point reference="16" />
+		</Line>
+		<Line>
+			<Point reference="16" />
+			<Point reference="15" />
+		</Line>
+		<Line>
+			<Point reference="15" />
+			<Point reference="14" />
+		</Line>
+		<Line>
+			<Point reference="14" />
+			<Point reference="13" />
+		</Line>
+		<Line>
+			<Point reference="13" />
+			<Point reference="23" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point reference="18" />
+			<Point id="24">-2,2</Point>
+		</Line>
+		<Line>
+			<Point reference="24" />
+			<Point reference="22" />
+		</Line>
+		<Line>
+			<Point reference="22" />
+			<Point reference="21" />
+		</Line>
+		<Line>
+			<Point reference="21" />
+			<Point reference="20" />
+		</Line>
+		<Line>
+			<Point reference="20" />
+			<Point reference="19" />
+		</Line>
+		<Line>
+			<Point reference="19" />
+			<Point reference="18" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Desc>Trying to pack hexagons</Desc>
+	<Auth>David Java</Auth>
+</Tiling>

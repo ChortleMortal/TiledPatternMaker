@@ -94,7 +94,7 @@ void Rosette::buildUnitMap()
     if (dbgVal > 0)
         debugMap = make_shared<DebugMap>("rosette debug map");
     else
-        debugMap.reset();
+        debugMap->wipeout();
 
     //qDebug().noquote() << "Rosette::buildUnit"  << getN() << q << s << "Tr:" << Transform::toInfoString(Tr) << "rot" << getMotifRotate();
 

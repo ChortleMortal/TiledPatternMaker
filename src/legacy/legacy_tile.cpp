@@ -55,7 +55,7 @@ void LegacyTile::tile_rotate(int amount)
 void LegacyTile::setModelXform(const Xform & xf, bool update)
 {
     Q_ASSERT(_unique);
-    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.toInfoString() << (isUnique() ? "unique" : "common");
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.info() << (isUnique() ? "unique" : "common");
     xf_model = xf;
     forceLayerRecalc(update);
 }
@@ -63,6 +63,6 @@ void LegacyTile::setModelXform(const Xform & xf, bool update)
 const Xform & LegacyTile::getModelXform()
 {
     Q_ASSERT(_unique);
-    if (debug & DEBUG_XFORM) qInfo().noquote() << "GET" << getLayerName() << xf_model.toInfoString() << (isUnique() ? "unique" : "common");
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "GET" << getLayerName() << xf_model.info() << (isUnique() ? "unique" : "common");
     return xf_model;
 }

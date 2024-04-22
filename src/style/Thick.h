@@ -38,7 +38,7 @@ public:
 
     virtual eStyleType getStyleType() const override { return STYLE_THICK; }
     virtual QString    getStyleDesc() const override { return "Thick Lines"; }
-    virtual void       report()       const override { qDebug().noquote() << getStyleDesc() << "width:" << width << "outline:" << drawOutline << outline_width << "outlineColor" << outline_color  << colors.colorsString(); }
+    virtual void       dump()         const override { qDebug().noquote() << getStyleDesc() << "width:" << width << "outline:" << drawOutline << outline_width << "outlineColor" << outline_color  << colors.colorsString(); }
 
 protected:
     // Parameters of the rendering.

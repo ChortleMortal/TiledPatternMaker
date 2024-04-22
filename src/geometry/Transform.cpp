@@ -43,7 +43,7 @@ qreal Transform::distFromZero(QTransform t, qreal v)
     return QLineF(a,b).length();
 }
 
-QString Transform::toString(QTransform t)
+QString Transform::writeInfo(QTransform t)
 {
     QString s = QString::number(t.m11(),'g',16) + "," + QString::number(t.m12(),'g',16) + "," + QString::number(t.m13(),'g',16) + ","
               + QString::number(t.m21(),'g',16) + "," + QString::number(t.m22(),'g',16) + "," + QString::number(t.m23(),'g',16) + ","
@@ -51,7 +51,7 @@ QString Transform::toString(QTransform t)
     return s;
 }
 
-QString Transform::toInfoString(QTransform t, int decimals)
+QString Transform::info(QTransform t, int decimals)
 {
     if (!t.isAffine())
         return "Not affine!";

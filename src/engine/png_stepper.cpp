@@ -12,7 +12,7 @@
 
 PNGStepper::PNGStepper(ImageEngine * parent) : SteppingEngine(parent)
 {
-    connect(this,  &PNGStepper::cycle_sig_clearView, Sys::viewController,  &ViewController::slot_unloadView);
+    connect(this,  &PNGStepper::cycle_sig_unloadView, Sys::viewController,  &ViewController::slot_unloadView);
 }
 
 bool PNGStepper::begin()
@@ -53,7 +53,7 @@ bool PNGStepper::next()
 
     qDebug() << "page starting: " << pngIndex;
 
-    emit cycle_sig_clearView();
+    emit cycle_sig_unloadView();
 
     while (pngIndex < cydata.files.size())
     {

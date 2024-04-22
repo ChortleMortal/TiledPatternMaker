@@ -19,6 +19,7 @@ typedef std::shared_ptr<class Crop>             CropPtr;
 typedef std::shared_ptr<class DesignElement>    DesignElementPtr;
 typedef std::shared_ptr<class Style>            StylePtr;
 typedef std::shared_ptr<class BackgroundImage>  BkgdImagePtr;
+typedef std::shared_ptr<class Circle>           CirclePtr;
 
 typedef std::weak_ptr<class Mosaic>             WeakMosaicPtr;
 typedef std::weak_ptr<class Style>              WeakStylePtr;
@@ -52,10 +53,11 @@ private:
     MapPtr            map;
 };
 
-class MapEditorDb  : public CropMaker
+class MapEditorDb  : public MosaicCropMaker
 {
 public:
     MapEditorDb();
+    virtual ~MapEditorDb() {}
 
     void                reset();
 
@@ -108,12 +110,10 @@ public:
     void                resetMouseInteraction()     { mouse_interaction.reset(); }
     MapMouseActionPtr   getMouseInteraction()       { return mouse_interaction; }
 
+    UniqueQVector<QLineF>    constructionLines;
+    UniqueQVector<CirclePtr> constructionCircles;
 
-
-    UniqueQVector<QLineF> constructionLines;
-    UniqueQVector<Circle> constructionCircles;
-
-    MapPtr              createdTilingMap;
+    MapPtr              importedTilingMap;
     MapPtr              currentTilingMap;
 
     void                setCrop(CropPtr acrop) override;

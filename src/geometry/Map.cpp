@@ -17,6 +17,7 @@
 #include <QStack>
 
 #include "geometry/map.h"
+#include "geometry/debug_map.h"
 #include "settings/configuration.h"
 #include "legacy/shapefactory.h"
 #include "geometry/edge.h"
@@ -25,6 +26,7 @@
 #include "geometry/loose.h"
 #include "geometry/neighbours.h"
 #include "geometry/vertex.h"
+#include "viewers/debug_view.h"
 
 using std::make_shared;
 
@@ -35,14 +37,12 @@ Map::Map(const QString & name)
 {
     refs++;
     mname  = name;
-    config = Configuration::getInstance();
 }
 
 Map::Map(const QString &  name, const QPolygonF & poly)
 {
     refs++;
     mname  = name;
-    config = Configuration::getInstance();
 
     VertexPtr v1 = insertVertex(poly[0]);
     VertexPtr v2;
@@ -63,7 +63,6 @@ Map::Map(QString Name, const EdgePoly &poly)
 {
     refs++;
     mname  = Name;
-    config = Configuration::getInstance();
 
     // we can do all this because the map is empty and this is a constructor
     for (auto & edge : std::as_const(poly))
@@ -93,18 +92,17 @@ Map::~Map()
     refs--;
 }
 
-void Map::wipeout()
+void Map::clear()
 {
     // better to remove edges before removing vertices
     nMap.reset();
     derivedDCEL.reset();
-    edges.clear();          // unnecessary from destructor but not elsewhere
-    vertices.clear();       // unneccesary from destructor but not elsewhere
+    MapBase::wipeout();
 }
 
 void Map::set(const constMapPtr & other)
 {
-    wipeout();
+    clear();
     vertices = other->vertices;
     edges    = other->edges;
     nMap.reset();
@@ -132,17 +130,11 @@ MapPtr Map::recreate() const
     for (const auto & edge : std::as_const(edges))
     {
         EdgePtr ne = make_shared<Edge>(edge->v1->copy.lock(), edge->v2->copy.lock());
-        ne->setSwapState(edge->getSwapState());
+
         if (edge->getType() == EDGETYPE_CURVE || edge->getType() == EDGETYPE_CHORD)
         {
-            ne->setArcCenter(edge->getArcCenter(),edge->isConvex(),(edge->getType() == EDGETYPE_CHORD));
+            ne->setCurvedEdge(edge->getArcCenter(),edge->isConvex(),(edge->getType() == EDGETYPE_CHORD));
         }
-
-        // CSKFIXME -- this could be a bit faster.  Really we could
-        // copy the order of the edges leaving a vertex wholesale.
-        // I don't think it'll make that big a difference.  The
-        // max expected degree of the vertices in the maps we'll be
-        // dealing with is 6.
 
         ret->_insertEdge(ne);
     }
@@ -211,11 +203,18 @@ EdgePtr Map::insertEdge(const VertexPtr & v1, const VertexPtr & v2)
     Q_ASSERT(vertices.contains(v1));
     Q_ASSERT(vertices.contains(v2));
 
-    EdgePtr e = make_shared<Edge>(v1, v2);
+    if (v1 == v2)
+    {
+        qWarning() << "Map::insertEdge - zero length v1 = v2";
+    }
 
-    insertEdge(e);
-
-    return e;
+    auto edge = edgeExists(v1,v2);
+    if (!edge)
+    {
+        edge = make_shared<Edge>(v1, v2);
+        insertEdge(edge);
+    }
+    return edge;
 }
 
 EdgePtr Map::makeCopy(const EdgePtr & e)
@@ -223,7 +222,7 @@ EdgePtr Map::makeCopy(const EdgePtr & e)
     EdgePtr ep = make_shared<Edge>(_getOrCreateVertex(e->v1->pt),_getOrCreateVertex(e->v2->pt));
     if (e->isCurve())
     {
-        ep->setArcCenter(e->getArcCenter(),e->isConvex(),(e->getType() == EDGETYPE_CHORD));
+        ep->setCurvedEdge(e->getArcCenter(),e->isConvex(),(e->getType() == EDGETYPE_CHORD));
     }
     return ep;
 }
@@ -236,7 +235,7 @@ EdgePtr Map::makeCopy(const EdgePtr & e, QTransform T)
     if (e->isCurve())
     {
         QPointF ac = T.map(e->getArcCenter());
-        ep->setArcCenter(ac,e->isConvex(),(e->getType()==EDGETYPE_CHORD));
+        ep->setCurvedEdge(ac,e->isConvex(),(e->getType()==EDGETYPE_CHORD));
     }
     return ep;
 }
@@ -273,9 +272,13 @@ EdgePtr Map::_insertCurvedEdge(const VertexPtr & v1, const VertexPtr & v2, const
 // with other edges or vertices other than its endpoints.
 void Map::_insertEdge_Simple(const EdgePtr & edge)
 {
+    Q_ASSERT(vertices.contains(edge->v1));
+    Q_ASSERT(vertices.contains(edge->v2));
+    // NOTE - there is no need to do any further validation here
+    // this has been tested and the UniqueQVector catches everything
+
     edges.push_back(edge);
     nMap.reset();
-    //qDebug().noquote() << "inserted" << edge->dump();
 }
 
 void Map::addShapeFactory(ShapeFPtr sf)
@@ -383,9 +386,14 @@ void Map::removeEdge(const EdgePtr & e)   // called by wipeout
 
 void Map::embedCrop(const QRectF &rect)
 {
-    // make a crop map - border has intersection points
     QPolygonF poly(rect);
 
+    embedCrop(poly);
+}
+
+void Map::embedCrop(const QPolygonF &poly)
+{
+    // make a crop map - border has intersection points
     MapPtr cropMap = make_shared<Map>(QString("cropped map"),poly);
 
     mergeMap(cropMap);
@@ -410,7 +418,7 @@ void Map::embedCrop(const Circle & circle)
         QLineF line = edge->getLine();
         QPointF a;
         QPointF b;
-        int count = Geo::findLineCircleLineIntersections( circle.centre,  circle.radius, line, a, b);
+        int count = Geo::findLineCircleIntersections( circle.centre,  circle.radius, line, a, b);
         if (count == 1)
         {
             // this is a tangent line
@@ -458,12 +466,12 @@ void Map::embedCrop(const Circle & circle)
             {
                 // crete new edge
                 auto edge =  insertEdge(v1,v2);
-                edge->setArcCenter(center,true,false);
+                edge->setCurvedEdge(center,true,false);
             }
             else
             {
                 // convert line to chord
-                e->setArcCenter(center,true,true);
+                e->setCurvedEdge(center,true,true);
             }
         }
     }
@@ -499,8 +507,38 @@ void Map::cropOutside(const QRectF &rect)
 
 void  Map::cropOutside(const QPolygonF & poly)
 {
-    Q_UNUSED(poly);
-    qFatal("Not implemented yet");
+    // remove anything with an outside edge
+    QVector<EdgePtr>  outsideEdges;
+    for (auto & edge : std::as_const(edges))
+    {
+        auto p1 = edge->v1->pt;
+        auto p2 = edge->v2->pt;
+
+        bool t1 = poly.containsPoint(p1,Qt::OddEvenFill);
+      //bool t2 = poly.contains(p1);
+      //bool t3 = Geo::pointInPolygon(p1,poly);
+      //bool t4 = Geo::point_in_polygon(p1,poly);
+        bool t5 = Geo::point_on_poly_edge(p1,poly);
+
+        bool t12 = poly.containsPoint(p2,Qt::OddEvenFill);
+      //bool t22 = poly.contains(p2);
+      //bool t32 = Geo::pointInPolygon(p2,poly);
+      //bool t42 = Geo::point_in_polygon(p2,poly);
+        bool t52 = Geo::point_on_poly_edge(p2,poly);
+
+        if ((!t1 && !t5) || (!t12 && !t52))
+        {
+            outsideEdges.push_back(edge);
+        }
+    }
+
+    qDebug() << "outside edges" << outsideEdges.size();
+    for (auto & edge : std::as_const(outsideEdges))
+    {
+        removeEdge(edge);
+    }
+
+    _cleanseVertices();
 }
 
 void Map::cropOutside(const Circle &circle)
@@ -530,30 +568,10 @@ void Map::cropOutside(const Circle &circle)
     _cleanseVertices();
 }
 
-// Applying a motion made up only of uniform scales and translations,
-// Angles don't change.  So we can just transform each vertex.
-void Map::transform(QTransform T)
-{
-    for (const auto & vert : std::as_const(vertices))
-    {
-        vert->pt = T.map(vert->pt);
-    }
-}
-
 MapPtr Map::getTransformed(const QTransform &T) const
 {
     MapPtr m2 = recreate();
-    for (const auto & vert : std::as_const(m2->vertices))
-    {
-        vert->pt = T.map(vert->pt);
-    }
-    for (const auto & edge : std::as_const(m2->edges))
-    {
-        if (edge->getType() == EDGETYPE_CURVE || edge->getType() == EDGETYPE_CHORD)
-        {
-            edge->setArcCenter(T.map(edge->getArcCenter()),edge->isConvex(),(edge->getType()==EDGETYPE_CHORD));
-        }
-    }
+    m2->transform(T);
     return m2;
 }
 
@@ -591,6 +609,7 @@ void Map::_splitEdgesByVertex(const VertexPtr & vert)
 
 bool Map::_splitTwoEdgesByVertex(const VertexPtr & vert)
 {
+    // FIXME - should this handle curves?
     QPointF vp = vert->pt;
     //qreal    x = vp.x();
 
@@ -609,10 +628,10 @@ bool Map::_splitTwoEdgesByVertex(const VertexPtr & vert)
         VertexPtr v1 = e->v1;
         VertexPtr v2 = e->v2;
         
-        if( Loose::zero(Geo::distToLine(vp, v1->pt, v2->pt ) ) )
+        if( Loose::zero(Geo::distToLine(vp, v1->pt, v2->pt) ) )
         {
             if ( Loose::zero( Geo::dist(vp, v1->pt)) ||
-                Loose::zero( Geo::dist(vp ,v2->pt) ) )
+                 Loose::zero( Geo::dist(vp ,v2->pt) ) )
             {
                 // Don't split if too near endpoints.
                 continue;
@@ -635,6 +654,7 @@ bool Map::_splitTwoEdgesByVertex(const VertexPtr & vert)
     return false;
 }
 
+#if 0
 // DAC - not used
 void Map::_joinEdges(const EdgePtr & e1, const EdgePtr & e2)
 {
@@ -661,8 +681,8 @@ void Map::_joinEdges(const EdgePtr & e1, const EdgePtr & e2)
     removeEdge(e2);
     //qDebug() << "Joined" << e1->getTmpEdgeIndex() << "to" << e2->getTmpEdgeIndex() << "making" << e->getTmpEdgeIndex();
 #endif
-
 }
+#endif
 
 // Given another vector of vertices, add them to the vertices of the
 // current map.  We can do this in linear time with a simple merge
@@ -767,6 +787,13 @@ void Map::mergeMap(const constMapPtr & other, qreal tolerance)
         EdgePtr cutter = makeCopy(edge);
         insertEdge(cutter);
     }
+
+    if (Sys::config->unDuplicateMerge)
+    {
+        // this removed duplicate edges but is very slow
+        // so in general should be turned offf
+        deDuplicateEdgesUsingNeighbours();
+    }
 }
 
 void Map::insertEdge(const EdgePtr & cutter)
@@ -780,61 +807,68 @@ void Map::insertEdge(const EdgePtr & cutter)
         return;
     }
 
-    QStack<Isect> intersections;
+    auto isects = findIntersections(cutter);
 
-    QPointF op1 = cutter->v1->pt;
-    QPointF op2 = cutter->v2->pt;
+    if (isects.isEmpty())
+    {
+        // Add the edges in the trivial way, since now there are no intersections.
+        _insertEdge_Simple(cutter);
+    }
+    else
+    {
+        processIntersections(isects);
+    }
+}
+
+QStack<Isect> Map::findIntersections(EdgePtr cutter)
+{
+    QStack<Isect> isects;
+
+    //qDebug() << "edge count =" << edges.size();
     for (auto & edge : std::as_const(edges))
     {
+        //qDebug() << "edge" << ecount++;
+        if (cutter == edge)
+            continue;
+
         if (cutter->isLine() && edge->isLine())
         {
-            QPointF p1 = edge->v1->pt;
-            QPointF p2 = edge->v2->pt;
+            QPointF op1 = cutter->v1->pt;
+            QPointF op2 = cutter->v2->pt;
+            QPointF p1  = edge->v1->pt;
+            QPointF p2  = edge->v2->pt;
 
             QPointF ipt;
             if (Intersect::getTrueIntersection(op1, op2, p1, p2, ipt))
             {
-                // note - some of these intersects are at end points
-                // so don't need splitting
-                intersections.push(Isect(edge,cutter,_getOrCreateVertex(ipt)));
+                // note - some of these intersects are at end points - so don't need splitting
+                isects.push(Isect(edge,cutter,_getOrCreateVertex(ipt)));
             }
         }
         else if (cutter->isLine() && edge->isCurve())
         {
             QPointF isect1;
             QPointF isect2;
-            int count = Geo::findLineCircleLineIntersections(edge->getArcCenter(),edge->getRadius(),cutter->getLine(),isect1,isect2);
+            int count = Geo::findLineCircleIntersections(edge->getArcCenter(),edge->getRadius(),cutter->getLine(),isect1,isect2);
+            //qDebug() << "count" << count;
+            if (count && edge->pointWithinArc(isect1))
+                isects.push(Isect(edge,cutter,_getOrCreateVertex(isect1)));
 
-            if (count == 2)
-            {
-                if (edge->pointWithinSpan(isect1,edge->getArcSpan()))
-                    intersections.push(Isect(edge,cutter,_getOrCreateVertex(isect1)));
-                if (edge->pointWithinSpan(isect2,edge->getArcSpan()))
-                    intersections.push(Isect(edge,cutter,_getOrCreateVertex(isect2)));
-            }
-            else if (count == 1)
-            {
-                if (edge->pointWithinSpan(isect1,edge->getArcSpan()))
-                    intersections.push(Isect(edge,cutter,_getOrCreateVertex(isect1)));
-            }
+            if (count == 2 && edge->pointWithinArc(isect2))
+                isects.push(Isect(edge,cutter,_getOrCreateVertex(isect2)));
         }
         else if (cutter->isCurve() && edge->isLine())
         {
             QPointF isect1;
             QPointF isect2;
-            int count = Geo::findLineCircleLineIntersections(cutter->getArcCenter(),cutter->getRadius(),edge->getLine(),isect1,isect2);
-            if (count == 2)
-            {
-                if (cutter->pointWithinSpan(isect1,cutter->getArcSpan()))
-                    intersections.push(Isect(edge,cutter,_getOrCreateVertex(isect1)));
-                if (cutter->pointWithinSpan(isect2,cutter->getArcSpan()))
-                    intersections.push(Isect(edge,cutter,_getOrCreateVertex(isect2)));
-            }
-            else if (count == 1)
-            {
-                if (cutter->pointWithinSpan(isect1,cutter->getArcSpan()))
-                    intersections.push(Isect(edge,cutter,_getOrCreateVertex(isect1)));
-            }
+            int count = Geo::findLineCircleIntersections(cutter->getArcCenter(),cutter->getRadius(),edge->getLine(),isect1,isect2);
+            //qDebug() << "count" << count;
+
+            if (count && cutter->pointWithinArc(isect1))
+                isects.push(Isect(edge,cutter,_getOrCreateVertex(isect1)));
+
+            if (count == 2 && cutter->pointWithinArc(isect2))
+                isects.push(Isect(edge,cutter,_getOrCreateVertex(isect2)));
         }
         else if (cutter->isCurve() && edge->isCurve())
         {
@@ -843,79 +877,81 @@ void Map::insertEdge(const EdgePtr & cutter)
             Circle cutterC(cutter->getArcCenter(), cutter->getRadius());
             Circle edgeC(edge->getArcCenter(),   edge->getRadius());
             int count = Geo::circleCircleIntersectionPoints(cutterC, edgeC,isect1,isect2);
-            if (count == 2)
-            {
-                if (cutter->pointWithinSpan(isect1,edge->getArcSpan()) && edge->pointWithinSpan(isect1,cutter->getArcSpan()))
-                    intersections.push(Isect(edge,cutter,_getOrCreateVertex(isect1)));
-                if (cutter->pointWithinSpan(isect2,edge->getArcSpan()) && edge->pointWithinSpan(isect2,cutter->getArcSpan()))
-                    intersections.push(Isect(edge,cutter,_getOrCreateVertex(isect2)));
-            }
-            else if (count == 1)
-            {
-                if (cutter->pointWithinSpan(isect1,edge->getArcSpan()) && edge->pointWithinSpan(isect1,cutter->getArcSpan()))
-                    intersections.push(Isect(edge,cutter,_getOrCreateVertex(isect1)));
-            }
+            //qDebug() << "curve-curve count" << count;
+
+            if (count && cutter->pointWithinArc(isect1) && edge->pointWithinArc(isect1))
+                isects.push(Isect(edge,cutter,_getOrCreateVertex(isect1)));
+
+            if (count == 2 && cutter->pointWithinArc(isect2) && edge->pointWithinArc(isect2))
+                isects.push(Isect(edge,cutter,_getOrCreateVertex(isect2)));
         }
     }
-    if (intersections.isEmpty())
-    {
-        // Add the edges in the trivial way, since now there are no intersections.
-        _insertEdge_Simple(cutter);
-        return;
-    }
+    //qDebug() << "intersects" << isects.size();
+    return isects;
+}
 
-    //qDebug() << "intersects" << intersections.size();
-
+void Map::processIntersections(QStack<Isect> & isects)
+{
     //  process intersects in this map
-    while (!intersections.isEmpty())
+    while (!isects.isEmpty())
     {
-        // this divides edge in two and cutter in two (except if intersection is at endpoint)
-        EdgePtr cutter2;                // the other part after it is split
-
-        Isect is = intersections.pop();
-        EdgePtr edge   = is.edge.lock();
-        Q_ASSERT(edge);
-        EdgePtr cutter = is.cutter.lock();
-        Q_ASSERT(cutter);
+        // this divides edge in two by a cutter whihc itself divided by the intersect point
+        Isect is       = isects.pop();
+        EdgePtr edge   = is.edge;
+        EdgePtr cutter = is.cutter;
         VertexPtr vert = is.vertex;
 
+        Q_ASSERT(edge);
+        Q_ASSERT(cutter);
+
+        //Sys::debugView->getMap()->insertDebugMark(vert->pt,"is");
+
+        // make change to the edge which has been cut
         if (vert != edge->v1 && vert != edge->v2)
         {
-            // make local change
-            EdgePtr edge2 = edge->getCopy();
-            edge->v2      = vert;
-            edge2->v1     = vert;
+            EdgePtr edge2 = make_shared<Edge>(edge);
+            edge->setV2(vert);
+            edge2->setV1(vert);
             _insertEdge_Simple(edge2);
         }
 
-        // add edges from other
         if (vert != cutter->v1 && vert != cutter->v2)
         {
-            // make local change
-            cutter2      = cutter->getCopy();
-            cutter->v2   = vert;
-            cutter2->v1  = vert;
+            EdgePtr cutter2 = make_shared<Edge>(cutter); // the other part after it is split
+            cutter->setV2(vert);
+            cutter2->setV1(vert);
+
+            // add the two parts of the cutter
             _insertEdge_Simple(cutter);
             _insertEdge_Simple(cutter2);
-        }
-        else
-        {
-            _insertEdge_Simple(cutter);
-        }
-        // At this point need to go through the intersections again and fix up the Isect
-        // The point in eaach Isect is now either in cutter or cutter;
-        if (cutter2)
-        {
-            for (auto & isect : intersections)
+
+            // Go through the intersections again and fix up the Isect
+            // The point in eaach Isect is now either in cutter or cutter2
+            for (Isect & isect : isects)
             {
                 QPointF pt = isect.vertex->pt;
-                if (Geo::isOnLine(pt,cutter2->getLine()))
+                if (cutter->isCurve())
                 {
-                    isect.cutter = cutter2;
+                    if (cutter2->pointWithinArc(pt))
+                    {
+                        isect.cutter = cutter2;
+                    }
+                }
+                else
+                {
+                    if (Geo::isOnLine(pt,cutter2->getLine()))
+                    {
+                        isect.cutter = cutter2;
+                    }
                 }
                 // you might think that if the pt is not on cutter2 then
                 // it must be on cutter - but that is not true
             }
+        }
+        else
+        {
+            // the meets at a vertex of the edge
+            _insertEdge_Simple(cutter);
         }
     }
 }
@@ -927,19 +963,8 @@ void Map::mergeMany(const constMapPtr & other, const Placements & placements)
     // overlapping tiles, hence the need to do a complete merge
     for (const auto & T : std::as_const(placements))
     {
-#if 1
         MapPtr mp = other->getTransformed(T);
         mergeMap(mp);
-#else
-        for (auto & edge : other->edges)
-        {
-            EdgePtr nedge = makeCopy(edge,T);
-            if (!_edgeExists(nedge))
-            {
-                _insertEdge(nedge);
-            }
-        }
-#endif
     }
 }
 
@@ -1066,14 +1091,14 @@ QString Map::summary() const
     return QString("%1 : vertices=%2 edges=%3").arg(mname).arg(vertices.size()).arg(edges.size());
 }
 
-QString Map::unnamedSummary() const
+QString Map::info() const
 {
-    return QString("vertices=%1 edeges=%2").arg(vertices.size()).arg(edges.size());
+    return QString("vertices=%1 edges=%2").arg(vertices.size()).arg(edges.size());
 }
 
-void Map::dumpMap(bool full)
+void Map::dump(bool full)
 {
-    qDebug() << "vertices =" << vertices.size() << "edges =" << edges.size();
+    qDebug().noquote() << info();
 
     if (full)
     {
@@ -1121,12 +1146,6 @@ QString Map::displayVertexEdgeCounts()
         }
     }
     return str;
-}
-
-
-bool Map::isEmpty() const
-{
-    return  (vertices.size() < 2);
 }
 
 int Map::numVertices() const
@@ -1189,6 +1208,18 @@ EdgePtr Map::edgeExists(const VertexPtr & v1, const VertexPtr & v2) const
     return rv;
 }
 
+EdgePtr Map::edgeExists(const QPointF & p1, const QPointF & p2) const
+{
+    for (const auto & edge : std::as_const(edges))
+    {
+        if (edge->sameAs(p1,p2))
+        {
+            return edge;
+        }
+    }
+    EdgePtr rv;
+    return rv;
+}
 
 void Map::_dumpVertices(bool full)
 {
@@ -1318,117 +1349,7 @@ eCompare Map::comparePoints(const QPointF & a, const QPointF & b, qreal toleranc
 	}
 }
 
-void Map::draw(QPainter * painter)
+void Isect::dump() const
 {
-    for (EdgePtr edge : std::as_const(edges))
-    {
-        painter->drawLine(edge->getLine());
-    }
-}
-
-
-//////////////////////////////////////////
-///
-/// DebugMap
-///
-//////////////////////////////////////////
-
-DebugMap::DebugMap(const QString & name) : Map(name)
-{}
-
-
-void DebugMap::insertDebugMark(QPointF m, QString txt)
-{
-    if (!Sys::debugMapEnable)
-        return;
-
-    qreal x = m.x();
-    qreal y = m.y();
-
-    qreal size = 0.05;
-    QPointF p1(x-size,y);
-    QPointF p2(x+size,y);
-    QPointF p3(x,y+size);
-    QPointF p4(x,y-size);
-
-    VertexPtr v1 = insertVertex(p1);
-    VertexPtr v2 = insertVertex(p2);
-    insertEdge(v1,v2);
-
-    v1 = insertVertex(p3);
-    v2 = insertVertex(p4);
-    insertEdge(v1,v2);
-
-    if (txt.isEmpty())
-        return;
-
-    for (auto & pair : debugTexts)
-    {
-        if (Loose::equalsPt(pair.first,m))
-        {
-            pair.second += "  ";
-            pair.second += txt;
-            return;
-        }
-    }
-    debugTexts.push_back(QPair<QPointF,QString>(m,txt));
-}
-
-void DebugMap::insertDebugLine(QLineF l1)
-{
-    insertDebugLine(l1.p1(),l1.p2());
-}
-
-void DebugMap::insertDebugLine(EdgePtr edge)
-{
-    if (!Sys::debugMapEnable)
-        return;
-    insertEdge(edge->v1,edge->v2);
-}
-
-void DebugMap::insertDebugLine(QPointF p1, QPointF p2)
-{
-    if (!Sys::debugMapEnable)
-        return;
-
-    VertexPtr v1 = insertVertex(p1);
-    VertexPtr v2 = insertVertex(p2);
-    insertEdge(v1,v2);
-}
-
-void DebugMap::insertDebugPoints(QPolygonF & poly)
-{
-    if (!Sys::debugMapEnable)
-        return;
-
-    for (int i=0; i < poly.size() -1; i++)
-    {
-        QPointF p1 = poly.at(i);
-        QPointF p2 = poly.at(i+1);
-        VertexPtr v1 = insertVertex(p1);
-        VertexPtr v2 = insertVertex(p2);
-        insertEdge(v1,v2);
-    }
-}
-
-void DebugMap::insertDebugPolygon(QPolygonF & poly)
-{
-    insertDebugPoints(poly);
-    if (!poly.isClosed())
-    {
-        QPointF p1 = poly.at(poly.size()-1);
-        QPointF p2 = poly.at(0);
-        VertexPtr v1 = insertVertex(p1);
-        VertexPtr v2 = insertVertex(p2);
-        insertEdge(v1,v2);
-    }
-}
-
-void  DebugMap::transform(QTransform T)
-{
-    Map::transform(T);
-    for (auto & mark : debugTexts)
-    {
-        mark.first = T.map(mark.first);
-    }
+    qDebug().noquote() << "ISECT edge" << edge->summary() << edge->v1->pt << edge->v2->pt << "cutter" << cutter->summary() << cutter->v1->pt << cutter->v2->pt << "isect" << vertex->pt;
 }

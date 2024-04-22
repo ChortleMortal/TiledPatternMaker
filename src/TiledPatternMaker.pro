@@ -38,6 +38,7 @@ SOURCES += \
     geometry/colormaker.cpp \
     geometry/crop.cpp \
     geometry/dcel.cpp \
+    geometry/debug_map.cpp \
     geometry/edge.cpp \
     geometry/edgepoly.cpp \
     geometry/faces.cpp \
@@ -46,11 +47,13 @@ SOURCES += \
     geometry/intersect.cpp \
     geometry/loose.cpp \
     geometry/map.cpp \
+    geometry/map_base.cpp \
     geometry/map_cleanse.cpp \
     geometry/map_verify.cpp \
     geometry/measurement.cpp \
     geometry/neighbour_map.cpp \
     geometry/neighbours.cpp \
+    geometry/polygon.cpp \
     geometry/threads.cpp \
     geometry/transform.cpp \
     geometry/vertex.cpp \
@@ -76,7 +79,9 @@ SOURCES += \
     makers/map_editor/map_editor_stash.cpp \
     makers/map_editor/map_selection.cpp \
     makers/mosaic_maker/mosaic_maker.cpp \
+    makers/mosaic_maker/style_color_fill_face.cpp \
     makers/mosaic_maker/style_color_fill_group.cpp \
+    makers/mosaic_maker/style_color_fill_original.cpp \
     makers/mosaic_maker/style_color_fill_set.cpp \
     makers/mosaic_maker/style_editors.cpp \
     makers/motif_maker/design_element_button.cpp \
@@ -150,6 +155,7 @@ SOURCES += \
     panels/page_image_tools.cpp \
     panels/page_layers.cpp \
     panels/page_loaders.cpp \
+    panels/page_loaders_worker.cpp \
     panels/page_log.cpp \
     panels/page_map_editor.cpp \
     panels/page_modelSettings.cpp \
@@ -194,8 +200,8 @@ SOURCES += \
     tile/tiling_writer.cpp \
     tiledpatternmaker.cpp \
     viewers/backgroundimageview.cpp \
-    viewers/border_view.cpp \
     viewers/crop_view.cpp \
+    viewers/debug_view.cpp \
     viewers/grid_view.cpp \
     viewers/map_editor_view.cpp \
     viewers/measure_view.cpp \
@@ -250,6 +256,7 @@ HEADERS += \
     enums/edesign.h \
     enums/edgetype.h \
     enums/efilesystem.h \
+    enums/efilltype.h \
     enums/ekeyboardmode.h \
     enums/elogmode.h \
     enums/emapeditor.h \
@@ -266,6 +273,7 @@ HEADERS += \
     geometry/colormaker.h \
     geometry/crop.h \
     geometry/dcel.h \
+    geometry/debug_map.h \
     geometry/edge.h \
     geometry/edgepoly.h \
     geometry/faces.h \
@@ -274,9 +282,11 @@ HEADERS += \
     geometry/intersect.h \
     geometry/loose.h \
     geometry/map.h \
+    geometry/map_base.h \
     geometry/measurement.h \
     geometry/neighbour_map.h \
     geometry/neighbours.h \
+    geometry/polygon.h \
     geometry/threads.h \
     geometry/transform.h \
     geometry/vertex.h \
@@ -301,7 +311,9 @@ HEADERS += \
     makers/map_editor/map_editor_stash.h \
     makers/map_editor/map_selection.h \
     makers/mosaic_maker/mosaic_maker.h \
+    makers/mosaic_maker/style_color_fill_face.h \
     makers/mosaic_maker/style_color_fill_group.h \
+    makers/mosaic_maker/style_color_fill_original.h \
     makers/mosaic_maker/style_color_fill_set.h \
     makers/mosaic_maker/style_editors.h \
     makers/motif_maker/design_element_button.h \
@@ -381,6 +393,7 @@ HEADERS += \
     panels/page_image_tools.h \
     panels/page_layers.h \
     panels/page_loaders.h \
+    panels/page_loaders_worker.h \
     panels/page_log.h \
     panels/page_map_editor.h \
     panels/page_modelSettings.h \
@@ -426,8 +439,8 @@ HEADERS += \
     tile/tiling_writer.h \
     tiledpatternmaker.h \
     viewers/backgroundimageview.h \
-    viewers/border_view.h \
     viewers/crop_view.h \
+    viewers/debug_view.h \
     viewers/grid_view.h \
     viewers/map_editor_view.h \
     viewers/measure_view.h \

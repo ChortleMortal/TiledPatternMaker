@@ -23,7 +23,6 @@
 #include "geometry/map.h"
 #include "misc/border.h"
 #include "misc/fileservices.h"
-#include "style/colored.h"
 #include "style/emboss.h"
 #include "style/filled.h"
 #include "style/interlace.h"
@@ -37,6 +36,7 @@
 #include "tile/tiling_reader.h"
 #include "tile/tiling_manager.h"
 #include "viewers/view_controller.h"
+
 #undef  DEBUG_REFERENCES
 #define SUPPORT_BUGS
 #define NEIGHBOURS
@@ -226,7 +226,7 @@ void LegacyLoader::processOutline(xml_node & node)
 
     qDebug() << "Constructing Outline from prototype and poly";
     Outline * outline = new Outline(proto);
-    qDebug().noquote() << xf.toInfoString();
+    qDebug().noquote() << xf.info();
     outline->setModelXform(xf,false);
     outline->setColor(color);
     outline->setDrawOutline(draw_outline);
@@ -264,7 +264,7 @@ void LegacyLoader::processFilled(xml_node & node)
             qCritical() << "Unexpected" << n.name();
     }
 
-    Filled * filled = new Filled(proto,0);
+    Filled * filled = new Filled(proto,FILL_ORIGINAL);
     filled->setModelXform(xf,false);
     //filled->setColor(color);
     filled->setDrawInsideBlacks(draw_inside);
@@ -462,7 +462,7 @@ void LegacyLoader::processStyleStyle(xml_node & node, ProtoPtr & proto)
     n = def.child("prototype");
     qDebug() << n.name();
     proto = getPrototype(n);
-    qDebug().noquote() << proto->getInfo();
+    qDebug().noquote() << proto->info();
 }
 
 QColor LegacyLoader::processStyleColored(xml_node & node)

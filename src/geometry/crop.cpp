@@ -3,7 +3,6 @@
 #include "geometry/geo.h"
 #include "geometry/transform.h"
 #include "settings/configuration.h"
-#include "tile/tile.h"
 #include <QDebug>
 
 /*
@@ -20,22 +19,24 @@ Crop::Crop()
 {
     _embed      = false;
     _apply      = false;
+    _clip       = false;
     _cropType   = CROP_UNDEFINED;
     _aspect     = ASPECT_UNCONSTRAINED;
     _vAspect    = false;
 }
 
-Crop::Crop(CropPtr other)
+Crop::Crop(const Crop & other)
 {
     _embed      = false;
     _apply      = false;
-    _cropType   = other->_cropType;
-    _aspect     = other->_aspect;
-    _vAspect    = other->_vAspect;
+    _clip       = false;
+    _cropType   = other._cropType;
+    _aspect     = other._aspect;
+    _vAspect    = other._vAspect;
 
-    _poly       = other->_poly;
-    _circle     = other->_circle;
-    _rect       = other->_rect;
+    _poly       = other._poly;
+    _circle     = other._circle;
+    _rect       = other._rect;
 }
 
 void Crop::setRect(QRectF & rect)
@@ -111,18 +112,16 @@ void Crop::setCircle(Circle &c)
     _cropType = CROP_CIRCLE;
 }
 
-void Crop::setPolygon(int sides, qreal scale, qreal rotDegrees)
+void Crop::setPolygon(APolygon & p)
 {
     // this is a regular polygon
-    Tile atile(sides,rotDegrees,scale);
-    _poly = atile.getPolygon();
+    _poly = p;
     _cropType = CROP_POLYGON;
 }
 
-
 void Crop::setPolygon(QPolygonF & p)
 {
-    _poly = p;
+    _poly.set(p);
     _cropType = CROP_POLYGON;
 }
 
@@ -162,7 +161,7 @@ QPointF Crop::getCenter()
             center = _circle.centre;
         break;
     case CROP_POLYGON:
-        center = Geo::center(_poly);
+        center = Geo::center(_poly.get());
         break;
     }
     return center;
@@ -174,7 +173,8 @@ void  Crop::transform(QTransform t)
 {
     _rect = t.mapRect(_rect);
 
-    _poly = t.map(_poly);
+    auto p = t.map(_poly.get());
+    _poly.set(p);
 
     _circle.centre = t.map(_circle.centre);
     _circle.radius = Transform::scalex(t) * _circle.radius;
@@ -205,7 +205,7 @@ void Crop::draw(QPainter * painter, QTransform t, bool active)
     }
     else if (_cropType == CROP_POLYGON)
     {
-        QPolygonF p2 = t.map(_poly);
+        QPolygonF p2 = t.map(_poly.get());
         painter->drawPolygon(p2);
     }
     else if (_cropType == CROP_CIRCLE)
@@ -217,7 +217,7 @@ void Crop::draw(QPainter * painter, QTransform t, bool active)
         painter->drawEllipse(center,radius,radius);
     }
 
-    if (Configuration::getInstance()->showCenterDebug)
+    if (Sys::config->showCenterDebug)
     {
         // draw center X
         qreal len = 9.0;
@@ -230,15 +230,15 @@ void Crop::draw(QPainter * painter, QTransform t, bool active)
     painter->restore();
 }
 
-void Crop::dbgInfo()
+void Crop::dump()
 {
     switch(_cropType)
     {
     case CROP_RECTANGLE:
-        qDebug() << "Crop:" << _rect;
+        qDebug() << "Crop rect:" << _rect;
         break;
     case CROP_POLYGON:
-        qDebug() << "Crop:" << _poly;
+        qDebug() << "Crop poly:" << _poly.get();
         break;
     case CROP_CIRCLE:
         qDebug() << "Crop: radius =" << _circle.radius;

@@ -52,7 +52,7 @@ public:
     eTipType getTipType()           { return tipType; }
 
     virtual QString getMotifDesc() override { return "Rosette2";}
-    virtual void    report()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "kneeX:" << kneeX << "kneeY:" << kneeY << "s:" << s << "k:" << k; }
+    virtual void    dump()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "kneeX:" << kneeX << "kneeY:" << kneeY << "s:" << s << "k:" << k; }
 
     bool    equals(const MotifPtr other) override;
     bool    pointOnLineLessThan(QPointF p1, QPointF v2);

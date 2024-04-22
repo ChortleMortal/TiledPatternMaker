@@ -17,18 +17,18 @@ public:
 
     void paint(QPainter *painter) override;
 
-    virtual const Xform &   getModelXform() override;
-    virtual void            setModelXform(const Xform & xf, bool update) override;
+    const Xform &   getModelXform() override;
+    void            setModelXform(const Xform & xf, bool update) override;
 
-    virtual eViewType iamaLayer() override { return VIEW_IMAGE; }
-    virtual void iamaLayerController() override {}
+    eViewType iamaLayer() override { return VIEW_IMAGE; }
+    void iamaLayerController() override {}
 
  public slots:
-    virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
-    virtual void slot_mouseDragged(QPointF spt)       override;
-    virtual void slot_mouseMoved(QPointF spt)         override;
-    virtual void slot_mouseReleased(QPointF spt)      override;
-    virtual void slot_mouseDoublePressed(QPointF spt) override;
+    void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
+    void slot_mouseDragged(QPointF spt)       override;
+    void slot_mouseMoved(QPointF spt)         override;
+    void slot_mouseReleased(QPointF spt)      override;
+    void slot_mouseDoublePressed(QPointF spt) override;
 
 private slots:
     void slot_deleteAction();

@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QMessageBox>
 
+#include "enums/edgetype.h"
 #include "page_system_info.h"
 #include "motifs/motif.h"
 #include "geometry/crop.h"
@@ -243,7 +244,7 @@ void page_system_info::doBackgroundImage()
     item = new QTreeWidgetItem;
     item->setText(0,"Background Image");
     tree->addTopLevelItem(item);
-    auto bview = BackgroundImageView::getInstance();
+    auto bview = Sys::backgroundImageView;
     auto bip = bview->getImage();
     if (bip && bip->isLoaded())
     {
@@ -251,7 +252,7 @@ void page_system_info::doBackgroundImage()
         item->setText(2, bip->getTitle());
         item2 = new QTreeWidgetItem;
         item2->setText(0,"xf_image");
-        item2->setText(2,Transform::toInfoString(bview->getModelTransform()));
+        item2->setText(2,Transform::info(bview->getModelTransform()));
         item->addChild(item2);
     }
     else
@@ -290,7 +291,7 @@ void page_system_info::doMapEditor()
     // map editor
     item = new QTreeWidgetItem;
     item->setText(0,"Map Editor");
-    auto maped   =  MapEditor::getInstance();
+    auto maped   = Sys::mapEditor;
     auto mapedDb = maped->getDb();
     auto maps    = mapedDb->getDrawMaps();
     QString astring = QString("Draw Maps: %1").arg(maps.size());
@@ -306,11 +307,10 @@ void page_system_info::doMapEditor()
 void page_system_info::doCropMaker()
 {
     // Crop maker
-    auto viewer = CropViewer::getInstance();
     item = new QTreeWidgetItem;
     item->setText(0,"Crop Viewer");
-    item->setText(2, (viewer->getShowCrop()) ? "active" : "inactive");
-    auto maker  = viewer->getMaker();
+    item->setText(2, sCropMaker[Sys::cropViewer->getMakerType()]);
+    auto maker  = Sys::cropViewer->getMaker();
     if (maker)
     {
         crop = maker->getCrop();
@@ -424,19 +424,19 @@ void page_system_info::populateLayer(QTreeWidgetItem * parent, Layer * layer)
     QTransform tr = layer->getCanvasTransform();
     QTreeWidgetItem * item = new QTreeWidgetItem;
     item->setText(0,"Frame Transform");
-    item->setText(2,Transform::toInfoString(tr));
+    item->setText(2,Transform::info(tr));
     parent->addChild(item);
     
     tr = layer->getModelTransform();
     item = new QTreeWidgetItem;
     item->setText(0,"Canvas Transform");
-    item->setText(2,Transform::toInfoString(tr));
+    item->setText(2,Transform::info(tr));
     parent->addChild(item);
 
     tr = layer->getLayerTransform();
     item = new QTreeWidgetItem;
     item->setText(0,"Layer Transform");
-    item->setText(2,Transform::toInfoString(tr));
+    item->setText(2,Transform::info(tr));
     parent->addChild(item);
 }
 
@@ -618,13 +618,28 @@ void page_system_info::populateTiling(QTreeWidgetItem * parent, TilingPtr tp, QS
     for (const auto & placedTile : std::as_const(placedTiles))
     {
         QTransform tr = placedTile->getTransform();
-        TilePtr tile  = placedTile->getTile();
 
         QTreeWidgetItem * item = new QTreeWidgetItem;
         item->setText(0,"Placed Tile");
         item->setText(1,addr(placedTile.get()));
-        item->setText(2,Transform::toInfoString(tr));
+        item->setText(2,Transform::info(tr));
         pitem->addChild(item);
+
+        QTreeWidgetItem * item3 = new QTreeWidgetItem;
+        item3->setText(0,"Placed");
+        item->addChild(item3);
+
+        auto ep = placedTile->getPlacedEdgePoly();
+        populateEdgePoly(item3,ep);
+
+        QTreeWidgetItem * item4 = new QTreeWidgetItem;
+        item4->setText(0,"Unique");
+        item->addChild(item4);
+
+        auto ep2 = placedTile->getTileEdgePoly();
+        populateEdgePoly(item4,ep2);
+
+        TilePtr tile  = placedTile->getTile();
 
         QTreeWidgetItem * item2 = new QTreeWidgetItem;
         item2->setText(0,"Tile");
@@ -634,6 +649,22 @@ void page_system_info::populateTiling(QTreeWidgetItem * parent, TilingPtr tp, QS
                                                          .arg(tile->getScale())
                                                          .arg((tile->isRegular()) ? "Regular" : "Irregular"));
         item->addChild(item2);
+
+        const auto & ep3 = tile->getEdgePoly();
+        populateEdgePoly(item2,ep3);
+    }
+}
+
+void page_system_info::populateEdgePoly(QTreeWidgetItem * parent, const EdgePoly & ep)
+{
+    for (EdgePtr edge : std::as_const(ep))
+    {
+        QTreeWidgetItem * item = new QTreeWidgetItem;
+        item->setText(0,"edge");
+        item->setText(1,addr(edge.get()));
+        QString txt = sEdgeType[edge->getType()];
+        item->setText(2,txt);
+        parent->addChild(item);
     }
 }
 
@@ -641,42 +672,42 @@ void page_system_info::populateViews(QTreeWidgetItem * parent)
 {
     QTreeWidgetItem * item = new QTreeWidgetItem;
     item->setText(0,"Tiling Maker View");
-    item->setText(2,Transform::toInfoString(TilingMakerView::getInstance()->getLayerTransform()));
+    item->setText(2,Transform::info(Sys::tilingMakerView->getLayerTransform()));
     parent->addChild(item);
 #if 0
     item = new QTreeWidgetItem;
     item->setText(0,"Tiling View");
-    item->setText(2,Transform::toInfoString(Sys::viewController->getTilingView()->getLayerTransform()));
+    item->setText(2,Transform::toInfoString(viewControl->getTilingView()->getLayerTransform()));
     parent->addChild(item);
 #endif
     item = new QTreeWidgetItem;
     item->setText(0,"Map Editor View");
-    item->setText(2,Transform::toInfoString(MapEditorView::getInstance()->getLayerTransform()));
+    item->setText(2,Transform::info(Sys::mapEditorView->getLayerTransform()));
     parent->addChild(item);
 
     item = new QTreeWidgetItem;
     item->setText(0,"Prototype View");
-    item->setText(2,Transform::toInfoString(PrototypeView::getInstance()->getLayerTransform()));
+    item->setText(2,Transform::info(Sys::prototypeView->getLayerTransform()));
     parent->addChild(item);
 
     item = new QTreeWidgetItem;
     item->setText(0,"Motif View");
-    item->setText(2,Transform::toInfoString(MotifView::getInstance()->getLayerTransform()));
+    item->setText(2,Transform::info(Sys::motifView->getLayerTransform()));
     parent->addChild(item);
 
     item = new QTreeWidgetItem;
     item->setText(0,"Background Image View");
-    auto bview = BackgroundImageView::getInstance();
+    auto bview = Sys::backgroundImageView;
     auto bip   = bview->getImage();
     if (bip)
     {
-        item->setText(2,Transform::toInfoString(bview->getLayerTransform()));
+        item->setText(2,Transform::info(bview->getLayerTransform()));
     }
     parent->addChild(item);
 
     item = new QTreeWidgetItem;
     item->setText(0,"Grid View");
-    item->setText(2,Transform::toInfoString(GridView::getInstance()->getLayerTransform()));
+    item->setText(2,Transform::info(Sys::gridViewer->getLayerTransform()));
     parent->addChild(item);
 }
 

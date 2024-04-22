@@ -7,6 +7,16 @@
 #include <memory>
 #endif
 
+enum eCropMaker
+{
+    CM_UNDEFINED,
+    CM_MOSAIC,
+    CM_PAINTER,
+    CM_MAPED
+};
+
+extern QString sCropMaker[];
+
 typedef std::shared_ptr<class Crop>   CropPtr;
 
 class CropMaker
@@ -14,21 +24,36 @@ class CropMaker
 public:
     CropMaker();
 
-    virtual CropPtr getCrop();
-    virtual void    setCrop(CropPtr crop);
-    virtual void    removeCrop();
+    virtual CropPtr getCrop() = 0;
+    virtual void    setCrop(CropPtr crop) = 0;
+    virtual void    removeCrop() = 0;
 
     CropPtr createCrop();
 
     bool    setEmbed(bool state);
-    bool    setApply(bool state);
+    bool    setCropOutside(bool state);
+    bool    setClip(bool state);
 
 protected:
-
-private:
-    class CropViewer    * cropViewer;
-    class MosaicMaker   * mosaicMaker;
+    class   MosaicMaker * mosaicMaker;
 
 };
+
+class MosaicCropMaker : public CropMaker
+{
+public:
+    CropPtr getCrop();
+    void    setCrop(CropPtr crop);
+    void    removeCrop();
+};
+
+class PainterCropMaker : public CropMaker
+{
+public:
+    CropPtr getCrop();
+    void    setCrop(CropPtr crop);
+    void    removeCrop();
+};
+
 
 #endif

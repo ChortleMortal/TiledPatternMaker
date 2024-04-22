@@ -46,12 +46,12 @@ class StarEditor : public NamedMotifEditor
 public:
     StarEditor(QString name);
 
-    virtual void setMotif(DesignElementPtr del, bool doEmit) override;
-            void setMotif(std::shared_ptr<Star>(star), bool doEmit);
+    void setMotif(DesignElementPtr del, bool doEmit) override;
+    void setMotif(std::shared_ptr<Star>(star), bool doEmit);
 
 protected:
-    virtual void editorToMotif(bool doEmit) override;
-    virtual void motifToEditor() override;
+    void editorToMotif(bool doEmit) override;
+    void motifToEditor() override;
 
     DoubleSliderSet	*	d_slider;
     SliderSet		*	s_slider;
@@ -139,8 +139,8 @@ class ConnectStarEditor : public StarEditor
 public:
     ConnectStarEditor(QString figname);
 
-    virtual void setMotif(DesignElementPtr del, bool doEmit) override;
-            void setMotif(std::shared_ptr<StarConnect>(starcon), bool doEmit);
+    void setMotif(DesignElementPtr del, bool doEmit) override;
+    void setMotif(std::shared_ptr<StarConnect>(starcon), bool doEmit);
 
 public slots:
 
@@ -160,8 +160,8 @@ class ConnectRosetteEditor : public RosetteEditor
 public:
     ConnectRosetteEditor(QString name);
 
-    virtual void setMotif(DesignElementPtr del, bool doEmit) override;
-            void setMotif(std::shared_ptr<RosetteConnect>(rosettecon), bool doEmit);
+    void setMotif(DesignElementPtr del, bool doEmit) override;
+    void setMotif(std::shared_ptr<RosetteConnect>(rosettecon), bool doEmit);
 
 protected:
     void    calcScale();
@@ -179,12 +179,12 @@ class ExtendedStarEditor : public StarEditor
 public:
     ExtendedStarEditor(QString name);
 
-    virtual void setMotif(DesignElementPtr del, bool doEmit) override;
+    void setMotif(DesignElementPtr del, bool doEmit) override;
     void setMotif(std::shared_ptr<ExtendedStar>(extended), bool doEmit);
 
 protected:
-    virtual void editorToMotif(bool doEmit) override;
-    virtual void motifToEditor() override;
+    void editorToMotif(bool doEmit) override;
+    void motifToEditor() override;
 
 private:
     WeakExtStarPtr    wextended;
@@ -201,12 +201,12 @@ class ExtendedStar2Editor : public Star2Editor
 public:
     ExtendedStar2Editor(QString name);
 
-    virtual void setMotif(DesignElementPtr del, bool doEmit) override;
+    void setMotif(DesignElementPtr del, bool doEmit) override;
     void setMotif(std::shared_ptr<ExtendedStar2>(extended), bool doEmit);
 
 protected:
-    virtual void editorToMotif(bool doEmit) override;
-    virtual void motifToEditor() override;
+    void editorToMotif(bool doEmit) override;
+    void motifToEditor() override;
 
 private:
     WeakExtStar2Ptr   wextended2;
@@ -223,12 +223,12 @@ class ExtendedRosetteEditor : public RosetteEditor
 public:
     ExtendedRosetteEditor(QString name);
 
-    virtual void setMotif(DesignElementPtr del, bool doEmit) override;
-            void setMotif(std::shared_ptr<ExtendedRosette>(extended), bool doEmit);
+    void setMotif(DesignElementPtr del, bool doEmit) override;
+    void setMotif(std::shared_ptr<ExtendedRosette>(extended), bool doEmit);
 
 protected:
-    virtual void editorToMotif(bool doEmit) override;
-    virtual void motifToEditor() override;
+    void editorToMotif(bool doEmit) override;
+    void motifToEditor() override;
 
 private:
     WeakExtRosettePtr wextended;
@@ -245,12 +245,12 @@ class ExtendedRosette2Editor : public Rosette2Editor
 public:
     ExtendedRosette2Editor(QString name);
 
-    virtual void setMotif(DesignElementPtr del, bool doEmit) override;
+    void setMotif(DesignElementPtr del, bool doEmit) override;
     void setMotif(std::shared_ptr<ExtendedRosette2>(extended), bool doEmit);
 
 protected:
-    virtual void editorToMotif(bool doEmit) override;
-    virtual void motifToEditor() override;
+    void editorToMotif(bool doEmit) override;
+    void motifToEditor() override;
 
 private:
     WeakExtRosette2Ptr wextended;

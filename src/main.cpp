@@ -17,6 +17,8 @@
 #include <QFileInfo>
 #include <QSettings>
 #include <QStyleHints>
+#include <QProcess>
+#include <QStyle>
 
 #include "tiledpatternmaker.h"
 #include "misc/qtapplog.h"
@@ -39,7 +41,7 @@ void stackInfo()
 #if defined(Q_OS_WINDOWS)
     PROCESS_MEMORY_COUNTERS pmc;
     GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc));
-    qInfo() << "Stack size      :" << (static_cast<double>(pmc.WorkingSetSize) / static_cast<double>(1024 * 1024)) << "MB";
+    qInfo() << "Stack size        :" << (static_cast<double>(pmc.WorkingSetSize) / static_cast<double>(1024 * 1024)) << "MB";
 #endif
 }
 
@@ -66,6 +68,64 @@ void uninstallLog()
     {
         qInstallMessageHandler(originalMsgHandler);
     }
+}
+
+void getGitInfo()
+{
+    QProcess process;
+#if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
+    process.startCommand("git branch --show-current");
+#else
+    QStringList qsl;
+    qsl << "branch" << "--show-current";
+    process.start("git",qsl);
+#endif
+    process.waitForFinished(-1); // will wait forever until finished
+
+    QByteArray sout  = process.readAllStandardOutput();
+    QString br(sout);
+    Sys::gitBranch = br.trimmed();
+}
+
+void logSystemInfo()
+{
+    QTime ct = QTime::currentTime();
+    QDate cd = QDate::currentDate();
+    qInfo().noquote() << QCoreApplication::applicationName()  << ":"  <<  "started" << cd.toString() << ct.toString() << "on" << QSysInfo::machineHostName();
+
+    qInfo().noquote() << "Version           :"  << tpmVersion;
+#ifdef QT_DEBUG
+    qInfo().noquote() << "Build             : Debug" << QSysInfo::productType();
+#else
+    qInfo().noquote() << "Build             : Release" << QSysInfo::productType();
+#endif
+
+    if (Sys::config->insightMode)
+        qInfo().noquote() << "Mode              : Insight mode";
+    else
+        qInfo().noquote() << "Mode              : Designer mode";
+
+    qInfo().noquote() << "Qt version        :" << QT_VERSION_STR;
+
+#if defined(Q_OS_WINDOWS)
+    qInfo() << "MSC Version       :" << _MSC_VER;
+    stackInfo();
+#endif
+
+    qInfo().noquote() << "App path          :"  << qApp->applicationDirPath();
+    qInfo().noquote() << "Local Media root  :"  << Sys::config->getMediaRootLocal();
+    qInfo().noquote() << "App Media root    :"  << Sys::config->getMediaRootAppdata();
+    qInfo().noquote() << "Media root        :"  << Sys::config->getMediaRoot();
+    qInfo().noquote() << "Design Dir        :"  << Sys::rootMosaicDir;
+    qInfo().noquote() << "App Font          :"  << QApplication::font().toString();
+    qInfo().noquote() << "App Style         :"  << QApplication::style();
+    QFileInfo fi(qtAppLog::currentLogName);
+    qInfo().noquote() << "Log file          :"  << fi.canonicalFilePath();
+    const QFont font = qtAppLog::getTextEditor()->font();
+    qInfo().noquote() << "Log font          :" << font.toString();
+    qInfo().noquote() << "Platform          :" << QGuiApplication::platformName();
+    getGitInfo();
+    qInfo().noquote() << "git branch        :" << Sys::gitBranch;
 }
 
 int main(int argc, char *argv[])
@@ -126,7 +186,9 @@ int main(int argc, char *argv[])
             }
         }
 
-        auto config = Configuration::getInstance();
+        // load configuration
+        Configuration * config = new Configuration;
+        Sys::config = config;
 
 #if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
         Qt::ColorScheme  scheme = QApplication::styleHints()->colorScheme();
@@ -171,7 +233,13 @@ int main(int argc, char *argv[])
         }
 #endif
 
+#ifdef __linux__
+        QFont afont = QApplication::font();
+        afont.setPointSize(9);
+        QApplication::setFont(afont);
+#endif
         auto log = qtAppLog::getInstance();
+        Sys::log = log;
 
         log->baseLogName = config->baseLogName;
 
@@ -197,44 +265,8 @@ int main(int argc, char *argv[])
         }
 
         log->init();
-
         installLog();
-
-        qInfo().noquote() << QCoreApplication::applicationName()  << "Version:" << tpmVersion;
-        QDate cd = QDate::currentDate();
-        QTime ct = QTime::currentTime();
-        qInfo().noquote() << "Started:" << cd.toString() << ct.toString() << "on" << QSysInfo::machineHostName();
-#ifdef QT_DEBUG
-        qInfo().noquote() << "Debug build" << QSysInfo::productType();
-#else
-        qInfo().noquote() << "Release build" << QSysInfo::productType();
-#endif
-
-        if (config->insightMode)
-            qInfo() << "Insight mode";
-        else
-            qInfo() << "Designer mode";
-        qInfo().noquote() << "Qt version      :" << QT_VERSION_STR;
-
-        QFileInfo fi(qtAppLog::currentLogName);
-        qInfo().noquote() << "Log file        :"  << fi.canonicalFilePath();
-
-#if defined(Q_OS_WINDOWS)
-        qInfo() << "MSC Version     :" << _MSC_VER;
-        stackInfo();
-#endif
-#ifdef __linux__
-        qInfo().noquote() << "Font:" << QApplication::font().toString();
-        QFont afont = QApplication::font();
-        afont.setPointSize(9);
-        QApplication::setFont(afont);
-#endif
-        qInfo().noquote() << "App path        :"  << qApp->applicationDirPath();
-        qInfo().noquote() << "Local Media root:"  << config->getMediaRootLocal();
-        qInfo().noquote() << "App Media root  :"  << config->getMediaRootAppdata();
-        qInfo().noquote() << "Media root      :"  << config->getMediaRoot();
-        qInfo().noquote() << "Design Dir      :"  << Sys::rootMosaicDir;
-        qInfo().noquote() << "Font            :"  << QApplication::font().toString();
+        logSystemInfo();
 
         // parse input
         std::string loadstr;
@@ -306,7 +338,9 @@ int main(int argc, char *argv[])
 
         qInstallMessageHandler(nullptr);				// restores
         log->releaseInstance();
-        config->releaseInstance();
+
+        delete Sys::config;
+        Sys::config = nullptr;
 
         closeHandle();
 

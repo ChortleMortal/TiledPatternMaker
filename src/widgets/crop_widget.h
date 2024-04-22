@@ -8,6 +8,7 @@
 class QHBoxLayout;
 class QButtonGroup;
 class LayoutQRectF;
+class LayoutQPointF;
 class SpinSet;
 class DoubleSpinSet;
 class QCheckBox;
@@ -22,10 +23,10 @@ public:
     CropWidget();
 
     void setCrop(CropPtr crop) { this->crop = crop; }
+
     void refresh();
 
     QLayout     * createLayout();
-    QHBoxLayout * vcreateAspectLayout();
     QHBoxLayout * createAspectLayout();
 
 signals:
@@ -36,15 +37,16 @@ private slots:
     void slot_cropAspect(int id);
     void slot_verticalAspect(bool checked);
     void slot_circleChanged(qreal r);
-    void slot_sidesChanged(int n);
     void slot_typeSelected(int id);
-    void slot_rectChangedW();
+    void slot_rectChangedM();
     void slot_rectChangedS();
 
+    void slot_sidesChanged(int n);
+    void slot_pointChanged();
+    void slot_scaleChanged(qreal sc);
+    void slot_rotChanged(qreal deg);
+
 private:
-
-   class CropViewer * cropViewer;
-
     CropPtr           crop;
 
     bool              blocked;
@@ -58,6 +60,9 @@ private:
     DoubleSpinSet   * centerY;
     SpinSet         * numSides;
     QCheckBox       * chkVert;
+    LayoutQPointF   * pos;
+    DoubleSpinSet   * scale;
+    DoubleSpinSet   * rot;
 };
 
 

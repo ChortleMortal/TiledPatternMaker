@@ -9,8 +9,8 @@
 #endif
 #include "geometry/circle.h"
 
-class lineInfo;
-class pointInfo;
+class LineInfo;
+class PointInfo;
 class Configuration;
 class MapEditorDb;
 class MapEditorView;
@@ -18,6 +18,7 @@ class MapEditorView;
 typedef std::shared_ptr<class MapSelection>     MapSelectionPtr;
 typedef QVector<MapSelectionPtr>                SelectionSet;
 typedef std::shared_ptr<class Vertex>           VertexPtr;
+typedef std::shared_ptr<class Circle>           CirclePtr;
 typedef std::shared_ptr<class Edge>             EdgePtr;
 typedef std::shared_ptr<class Neighbours>       NeighboursPtr;
 typedef std::shared_ptr<class Map>              MapPtr;
@@ -51,9 +52,9 @@ public:
     void            buildMotifDB(DesignElementPtr delp);
     bool            insideBoundary(QPointF wpt);
 
-    QVector<lineInfo>  lines;   // generated
-    QVector<pointInfo> points;  // generated
-    QVector<Circle>    circles; // generated
+    QVector<LineInfo>  lines;   // generated
+    QVector<PointInfo> points;  // generated
+    QVector<CirclePtr> circles; // generated
 
 private:
     SelectionSet currentSelections;

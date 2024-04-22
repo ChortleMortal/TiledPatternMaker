@@ -17,14 +17,14 @@ public:
     ExplicitMapMotif(MapPtr map);
     ExplicitMapMotif(const Motif & other);
 
-    virtual void    resetMotifMaps()  override;
-    void            buildMotifMaps()  override;
-    virtual QString getMotifDesc()    override { return "ExplicitMapMotif"; }
-    virtual void    report()          override { qDebug().noquote() << getMotifDesc(); }
+    void    resetMotifMaps()  override;
+    void    buildMotifMaps()  override;
+    QString getMotifDesc()    override { return "ExplicitMapMotif"; }
+    void    dump()          override { qDebug().noquote() << getMotifDesc(); }
 
-    MapPtr          newExplicitMap();
-    void            setExplicitMap(MapPtr map);
-    MapPtr          getExplicitMap() { return explicitMap; }
+    MapPtr  newExplicitMap();
+    void    setExplicitMap(MapPtr map);
+    MapPtr  getExplicitMap() { return explicitMap; }
 
 protected:
 

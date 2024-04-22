@@ -9,6 +9,12 @@
 #include <QFile>
 #include "enums/elogmode.h"
 
+struct sTrapMsg
+{
+    QtMsgType type;
+    QString   msg;
+};
+
 class qtAppLog
 {
 public:
@@ -32,12 +38,14 @@ public:
     void logDebug(bool enable)      { _logDebug    = enable; }
     void logTimer(eLogTimer val);
 
+    bool getLogDebug()              { return _logDebug; }
+
     void saveLog(QString to);
 
-    QString logDir() { return this->_logDir; }
+    QString logDir()                { return this->_logDir; }
     static QString currentLogName;
     static QString baseLogName;
-    static const QStringList & getTrap() { return _trapStringList; }
+    static const QVector<sTrapMsg> & getTrap() { return _trappedMsgs; }
 
 protected:
     qtAppLog();
@@ -69,10 +77,9 @@ private:
     static std::string str3;
     static std::string str4;
 
-    static QStringList _trapStringList;
-
-    static eLogTimer _logTimerSetting;
-    static QElapsedTimer elapseTimer;
+    static QVector<sTrapMsg> _trappedMsgs;
+    static eLogTimer         _logTimerSetting;
+    static QElapsedTimer     elapseTimer;
 
     QFile	mCurrentFile;
     QString _logDir;

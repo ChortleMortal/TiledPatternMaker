@@ -27,10 +27,10 @@ public:
     bool    equals(const MotifPtr other) override;
 
     virtual QString getMotifDesc() override { return "Star"; }
-    virtual void    report()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "d:" << d << "s" << s; }
+    virtual void    dump()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "d:" << d << "s" << s; }
 
 protected:
-    void    buildV1();
+    void    buildv1();
     void    buildV2();
 
     qreal   clamp_d(qreal d);
@@ -41,7 +41,6 @@ protected:
 private:
     Points      mids;
     TilePtr     tile;
-    EdgePoly    placedTile;
     QPolygonF   points;
 };
 

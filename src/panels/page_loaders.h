@@ -13,6 +13,7 @@ class page_loaders : public panel_page
 
 public:
     explicit page_loaders(ControlPanel * apanel);
+    ~page_loaders();
 
     void onRefresh() override;
     void onEnter() override;
@@ -23,6 +24,8 @@ public:
 signals:
     void    sig_loadDesign(eDesign id);
     void    sig_buildDesign(eDesign id);
+    void    sig_sortMosaics(bool,bool,bool);
+    void    sig_sortTilings(bool,bool,bool);
 
 public slots:
    void     slot_newTile(QString name);
@@ -35,6 +38,9 @@ public slots:
    void     desRightClick(QPoint pos);
    void     xmlRightClick(QPoint pos);
    void     tileRightClick(QPoint pos);
+
+   void     refillTilingsCombo();
+   void     refillMosaicsCombo();
 
 private slots:
     void    designSelected(QListWidgetItem * item, QListWidgetItem* oldItem);
@@ -56,9 +62,10 @@ private slots:
 #ifdef Q_OS_WINDOWS
     void    showXMLDir();
 #endif
-    void    rebaseXML();
-    void    renameXML();
-    void    deleteXML();
+    void    rebaseMosaic();
+    void    renameMosaic();
+    void    deleteMosaic();
+    void    reformatMosaic();
     void    addToWorklist();
     void    showTilings();
 
@@ -67,6 +74,7 @@ private slots:
     void    rebaseTiling();
     void    renameTiling();
     void    deleteTiling();
+    void    reformatTiling();
 
     void    slot_whereTilingUsed();
     void    slot_mosaicFilter(const QString & filter);
@@ -97,7 +105,7 @@ protected:
     void    makeConnections();
 
     void    loadTilingsCombo();
-    void    loadMosaicCombo();
+    void    loadMosaicsCombo();
     void    loadDesignCombo();
 
     QGroupBox * createLegacyColumn();
@@ -109,16 +117,12 @@ protected:
     void    putNewTilingNameIntoDesign(QStringList & designs, QString newName);
     bool    putNewTilingNameIntoTiling(QString filename, QString newName);
 
-    QStringList sortMosaicsByDate(const QStringList &names);
-    QStringList sortTilingsByDate(const QStringList &names);
-
-    QStringList findMosaicsWithBkgds(const QStringList & names);
-    QStringList findTilingsWithBkgds(const QStringList & names);
-
 private:
-    VersionedListWidget * tileList;
-    VersionedListWidget * mosaicList;
-    LoaderListWidget    * designList;
+    VersionedListWidget * tileListWidget;
+    VersionedListWidget * mosaicListWidget;
+    LoaderListWidget    * designListWidget;
+
+    QThread     * thread;
 
     QPushButton * pbLoadShapes;
 	QPushButton * pbLoadTiling;
@@ -141,9 +145,7 @@ private:
     QCheckBox   * mosaicOrigChk;
     QCheckBox   * mosaicNewChk;
     QCheckBox   * mosaicTestChk;
-#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
     QCheckBox   * mosaicSortChk;
-#endif
     QCheckBox   * cbShowWithImages;
 
     eDesign       selectedDesign;

@@ -1,6 +1,6 @@
-<!DOCTYPE RCC>
-<RCC version="1.0">
-<qresource>
-	<file>tpm.png</file>
-</qresource>
+<RCC>
+    <qresource prefix="/">
+        <file>tpm.png</file>
+        <file>LICENSE</file>
+    </qresource>
 </RCC>

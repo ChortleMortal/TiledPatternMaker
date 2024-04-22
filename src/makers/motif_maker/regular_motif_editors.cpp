@@ -865,9 +865,13 @@ ExtendedRosetteEditor::ExtendedRosetteEditor(QString name) : RosetteEditor(name)
     extendFreeBox      = new QCheckBox("Extend Free Vertices");
     connectBoundaryBox = new QCheckBox("Connect Boundary Vertices");
 
-    addWidget(extendPeriphBox);
-    addWidget(extendFreeBox);
-    addWidget(connectBoundaryBox);
+    QHBoxLayout * hbox = new QHBoxLayout;
+    hbox->addStretch();
+    hbox->addWidget(extendPeriphBox);
+    hbox->addWidget(extendFreeBox);
+    hbox->addWidget(connectBoundaryBox);
+    hbox->addStretch();
+    addLayout(hbox);
 
     connect(extendPeriphBox,    &QCheckBox::clicked,  this, [this]() { editorToMotif(true);});
     connect(extendFreeBox,      &QCheckBox::clicked,  this, [this]() { editorToMotif(true);});
@@ -972,9 +976,13 @@ ExtendedRosette2Editor::ExtendedRosette2Editor(QString name) : Rosette2Editor(na
     extendFreeBox      = new QCheckBox("Extend Free Vertices");
     connectBoundaryBox = new QCheckBox("Connect Boundary Vertices");
 
-    addWidget(extendPeriphBox);
-    addWidget(extendFreeBox);
-    addWidget(connectBoundaryBox);
+    QHBoxLayout * hbox = new QHBoxLayout;
+    hbox->addStretch();
+    hbox->addWidget(extendPeriphBox);
+    hbox->addWidget(extendFreeBox);
+    hbox->addWidget(connectBoundaryBox);
+    hbox->addStretch();
+    addLayout(hbox);
 
     connect(extendPeriphBox,    &QCheckBox::clicked,  this, [this]() { editorToMotif(true);});
     connect(extendFreeBox,      &QCheckBox::clicked,  this, [this]() { editorToMotif(true);});

@@ -8,9 +8,11 @@
 #include "misc/colorset.h"
 #include "settings/filldata.h"
 #include "geometry/circle.h"
+#include "geometry/polygon.h"
 #include "geometry/xform.h"
 #include "enums/emotiftype.h"
 #include "enums/estyletype.h"
+#include "style/filled.h"
 
 using std::shared_ptr;
 using std::weak_ptr;
@@ -89,7 +91,8 @@ protected:
     void    processColorGroup(xml_node & node, ColorGroup & colorGroup);
     void    processsStyleThick(xml_node & node, eDrawOutline & draw_outline, qreal & width, qreal &outlineWidth, QColor &outlineColor, Qt::PenJoinStyle & pjs, Qt::PenCapStyle & pcs);
     void    processsStyleInterlace(xml_node & node, qreal & gap, qreal & shadow, bool & includeSVerts, bool &start_under);
-    void    processsStyleFilled(xml_node & node, bool &draw_inside, bool &draw_outside, int &algorithm);
+    void    processsStyleFilled(xml_node & node, bool &draw_inside, bool &draw_outside, eFillType &algorithm);
+    void    processsStyleFilledFaces(xml_node & node, QVector<int> &paletteIndices);
     void    processsStyleEmboss(xml_node & node, qreal & angle);
     void    processStylePrototype(xml_node & node, ProtoPtr &proto);
 
@@ -110,17 +113,19 @@ protected:
     RosetteConnectPtr   getRosetteConnect(xml_node & node, int tile_sides);
     StarConnectPtr      getStarConnect(xml_node & node, int tile_sides);
 
-    PolyPtr         getPolygon(xml_node & node);
-    VertexPtr       getVertex(xml_node & node);
+    ProtoPtr        getPrototype(xml_node & node);
+    MapPtr          getMap(xml_node & node);
     EdgePtr         getEdge(xml_node & node);
     EdgePtr         getCurve(xml_node & node);
     EdgePtr         getChord(xml_node & node);
-    MapPtr          getMap(xml_node & node);
-    ProtoPtr        getPrototype(xml_node & node);
-    PolyPtr         getBoundary(xml_node & node);
-    QPointF         getPos(xml_node & node);
+    VertexPtr       getVertex(xml_node & node);
+
+    PolyPtr         getPolygonV1(xml_node & node);
+    QPolygonF       getPolygonV2(xml_node & node);
     QRectF          getRectangle(xml_node node);
     Circle          getCircle(xml_node node);
+    QPointF         getPos(xml_node & node);
+    APolygon        getApoly(xml_node & node);
 
     // references
     void   setProtoReference(xml_node & node, ProtoPtr ptr);
@@ -167,7 +172,8 @@ protected:
     void    procBorderPlain(xml_node & n);
     void    procBorderTwoColor(xml_node & n);
     void    procBorderBlocks(xml_node & n);
-    void    procCrop(xml_node & n);
+    void    procCropV1(xml_node & n);
+    CropPtr procCropV2(xml_node & node, QString name);
 
     [[noreturn]] void fail(QString a, QString b);
     QTransform getQTransform(QString txt);
@@ -192,6 +198,7 @@ protected:
 
     MapPtr                  _currentMap;
     MosaicPtr               _mosaic;
+    ProtoPtr                _prototype;
 
     QVector<TilingPtr>      _tilings;
     QString                 _fileName;
@@ -202,10 +209,12 @@ protected:
     QSize                   _canvasSize;
     BorderPtr               _border;
     CropPtr                 _crop;
+    CropPtr                 _painterCrop;
     unsigned int            _version;
     FillData                _fillData;
     uint                    _cleanseLevel;
     BkgdImagePtr            _bip;
+    ColorGroup              _tilingColorGroup;
 
     bool _debug;
 

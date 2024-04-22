@@ -14,9 +14,9 @@ class AQSpinBox : public QSpinBox
 public:
     AQSpinBox();
 
-    virtual void  leaveEvent(QEvent *event) override;
+    void  leaveEvent(QEvent *event) override;
 #if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
-    virtual void  enterEvent(QEnterEvent *event) override;
+    void  enterEvent(QEnterEvent *event) override;
 #else
     virtual void  enterEvent(QEvent *event) override;
 #endif
@@ -33,9 +33,9 @@ class AQDoubleSpinBox : public QDoubleSpinBox
 public:
     AQDoubleSpinBox();
 
-   virtual  void  leaveEvent(QEvent *event) override;
+   void  leaveEvent(QEvent *event) override;
 #if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
-    virtual void  enterEvent(QEnterEvent *event) override;
+    void  enterEvent(QEnterEvent *event) override;
 #else
    virtual void  enterEvent(QEvent *event) override;
 #endif

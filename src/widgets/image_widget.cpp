@@ -58,7 +58,7 @@ void ImageWidget::mousePressEvent(QMouseEvent *event)
     QImage img = pm.toImage();
     QColor col = QColor(img.pixel(0,0));
     qDebug() << "color=" << col;
-    Sys::imageEngine->sig_colorPick(col);
+    emit Sys::imageEngine->sig_colorPick(col);
 }
 
 void ImageWidget::slot_closeMe()

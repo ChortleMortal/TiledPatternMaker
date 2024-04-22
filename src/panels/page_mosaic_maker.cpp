@@ -86,70 +86,73 @@ void  page_mosaic_maker::onRefresh()
 
     MosaicPtr mosaic = mosaicMaker->getMosaic();
 
-    if (mosaic)
+    if (!mosaic)
+        return;
+
+    blockSignals(true);
+
+    int xMin,xMax,yMin,yMax;
+    bool singleton;
+    const FillData & fd = mosaic->getCanvasSettings().getFillData();
+    fd.get(singleton,xMin ,xMax,yMin,yMax);
+
+    chkSingle->setChecked(singleton);
+    if (!singleton)
     {
-        blockSignals(true);
+        xRepMin->setDisabled(false);
+        xRepMax->setDisabled(false);
+        yRepMin->setDisabled(false);
+        yRepMax->setDisabled(false);
 
-        int xMin,xMax,yMin,yMax;
-        bool singleton;
-        const FillData & fd = mosaic->getCanvasSettings().getFillData();
-        fd.get(singleton,xMin ,xMax,yMin,yMax);
-
-        chkSingle->setChecked(singleton);
-        if (!singleton)
-        {
-            xRepMin->setDisabled(false);
-            xRepMax->setDisabled(false);
-            yRepMin->setDisabled(false);
-            yRepMax->setDisabled(false);
-
-            xRepMin->setValue(xMin);
-            xRepMax->setValue(xMax);
-            yRepMin->setValue(yMin);
-            yRepMax->setValue(yMax);
-        }
-        else
-        {
-            xRepMin->setValue(0);
-            xRepMax->setValue(0);
-            yRepMin->setValue(0);
-            yRepMax->setValue(0);
-
-            xRepMin->setDisabled(true);
-            xRepMax->setDisabled(true);
-            yRepMin->setDisabled(true);
-            yRepMax->setDisabled(true);
-        }
-
-        blockSignals(false);
-
-        uint level = mosaic->getCleanseLevel();
-        cleanseLevel->setText(QString::number(level,16).toUpper());
-
-        if (mosaic == wmp.lock())
-        {
-            int row = 0;
-            const StyleSet & sset = mosaic->getStyleSet();
-            for (auto & style : std::as_const(sset))
-            {
-                QTableWidgetItem * item = styleTable->item(row,STYLE_COL_TRANS);
-                if (item)
-                {
-                    Xform xf = style->getModelXform();
-                    item->setText(xf.toInfoString(8));
-                }
-                row++;
-            }
-
-            styleTable->resizeColumnsToContents();
-            styleTable->adjustTableSize();
-        }
-        else
-        {
-            wmp = mosaic;
-            reEnter();
-        }
+        xRepMin->setValue(xMin);
+        xRepMax->setValue(xMax);
+        yRepMin->setValue(yMin);
+        yRepMax->setValue(yMax);
     }
+    else
+    {
+        xRepMin->setValue(0);
+        xRepMax->setValue(0);
+        yRepMin->setValue(0);
+        yRepMax->setValue(0);
+
+        xRepMin->setDisabled(true);
+        xRepMax->setDisabled(true);
+        yRepMin->setDisabled(true);
+        yRepMax->setDisabled(true);
+    }
+
+    blockSignals(false);
+
+    uint level = mosaic->getCleanseLevel();
+    cleanseLevel->setText(QString::number(level,16).toUpper());
+
+    if (mosaic == wmp.lock())
+    {
+        int row = 0;
+        const StyleSet & sset = mosaic->getStyleSet();
+        for (auto & style : std::as_const(sset))
+        {
+            QTableWidgetItem * item = styleTable->item(row,STYLE_COL_TRANS);
+            if (item)
+            {
+                Xform xf = style->getModelXform();
+                item->setText(xf.info(8));
+            }
+            row++;
+        }
+
+        styleTable->resizeColumnsToContents();
+        styleTable->adjustTableSize();
+    }
+    else
+    {
+        wmp = mosaic;
+        reEnter();
+    }
+
+    if (currentStyleEditor)
+        currentStyleEditor->onRefresh();
 }
 
 void  page_mosaic_maker::onEnter()
@@ -170,7 +173,7 @@ void  page_mosaic_maker::reEnter()
 
     displayStyleParams();
     parmsTable->adjustTableSize();
-    parmsTable->selectRow(0);
+    //parmsTable->selectRow(0);
 
     //styleTable->setFocus();  // 26FEB23 - this line causes linux crash
     parmsTable->setFocus();
@@ -245,7 +248,7 @@ void page_mosaic_maker::displayStyles()
             styleTable->setItem(row,STYLE_COL_TRANS,xftext);
             
             Xform xf = style->getModelXform();
-            xftext->setText(xf.toInfoString(8));
+            xftext->setText(xf.info(8));
 
             // these three connects all pas the row not the index
             connect(qcbStyle,  QOverload<int>::of(&QComboBox::currentIndexChanged), this,  [this,row] { styleChanged(row); });
@@ -271,7 +274,7 @@ void  page_mosaic_maker::slot_styleSelected(const QItemSelection &selected, cons
         return;
     }
 
-    qDebug() << "page_style_maker::slot_styleSelected";
+    qDebug() << "page_mosaic_maker::slot_styleSelected";
 
     displayStyleParams();
 }
@@ -311,7 +314,8 @@ void page_mosaic_maker::setCurrentEditor(StylePtr style)
 
     if (currentStyleEditor)
     {
-       currentStyleEditor->onExit();
+        currentStyleEditor->onExit();
+        currentStyleEditor.reset();
     }
 
     switch (style->getStyleType())

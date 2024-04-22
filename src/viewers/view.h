@@ -9,10 +9,12 @@
 #include "enums/ekeyboardmode.h"
 #include "enums/emousemode.h"
 #include "enums/eviewtype.h"
+#include "geometry/crop.h"
 
 #define fakeqWarning qWarning
 
 typedef std::shared_ptr<class Layer> LayerPtr;
+typedef std::weak_ptr<Crop>          WeakCropPtr;
 
 class ViewController;
 
@@ -67,13 +69,14 @@ public:
     void    init(ViewController * parent);
     void    unloadView();
 
-    void    resize(QSize sz);
-    QSize   getCurrentSize() { return viewSize; }
+    void    setSize(QSize sz);
+    void    resize(QSize sz)    { qFatal("Dont call resize() directly - use setSize()"); }
+    QSize   getSize()           { return _viewSize; }
 
     void    addLayer(LayerPtr layer);
     void    addLayer(Layer * layer);
     void    addTopLayer(LayerPtr layer);
-    void    clearLayers()           { activeLayers.clear(); }
+    void    clearLayers()       { activeLayers.clear(); }
 
     bool    isActiveLayer(Layer * l);
     QVector<Layer *> getActiveLayers();
@@ -90,11 +93,14 @@ public:
     void    setViewBackgroundColor(QColor color);
     QColor  getViewBackgroundColor();
 
+    void    setClip(CropPtr crop)   { _painterCrop = crop; }
+    CropPtr getClip()               { return _painterCrop.lock(); }
+
     void    setViewTitle(const QString & s);
 
     void    clearLayout(); // only used by cycler for pngs
 
-    LoadUnit & getLoadUnit() { return loadUnit; }
+    LoadUnit & getLoadUnit()        { return loadUnit; }
 
     void setPaintEnable(bool enable);
 
@@ -177,7 +183,7 @@ private:
     class ControlPanel  * panel;
     ViewController      * viewControl;
 
-    QSize               viewSize;    // the main window size
+    QSize               _viewSize;    // the main window size
 
     UniqueQVector<Layer*> activeLayers;
 
@@ -196,6 +202,8 @@ private:
 
     QPointF           _tl;      // top left of view rect (screen pos)
     QPointF           _br;      // bottom right of view rect (scren pos)
+
+    WeakCropPtr       _painterCrop;   // used for painter clipping
 };
 
 #endif // VIEW_H

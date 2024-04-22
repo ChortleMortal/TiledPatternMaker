@@ -27,12 +27,12 @@ public:
 
     virtual void        buildMotifMaps()  override;
     virtual QString     getMotifDesc()    override { return "IrregularRosette"; }
-    virtual void        report()          override { qDebug().noquote() << getMotifDesc() << "q" << q << "r" << r << "s" << s; }
+    virtual void        dump()          override { qDebug().noquote() << getMotifDesc() << "q" << q << "r" << r << "s" << s; }
 
 protected:
     void                inferRosette();
 
-    void                buildV1();
+    void                buildv1();
     Branch              buildRosetteBranchPointsV1(int side, int isign);
 
     void                buildV2();

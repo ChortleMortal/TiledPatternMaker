@@ -17,7 +17,7 @@
 /////////////////////////////////////////////////////////////////
 
 
-DlgEdgePolyEdit::DlgEdgePolyEdit(TilePtr tile, QTransform t, QWidget *parent) : QDialog(parent), epoly(tile->getEdgePoly())
+DlgEdgePolyEdit::DlgEdgePolyEdit(TilePtr tile, QTransform t, QWidget *parent) : QDialog(parent), epoly(tile->getEdgePolyRW())
 {
     this->tile = tile;
     T = t;
@@ -157,8 +157,8 @@ void DlgEdgePolyEdit::display()
 
 void DlgEdgePolyEdit::slot_ok()
 {
-    auto tilingMaker = TilingMaker::getInstance();
-    tilingMaker->pushTileToPrototypeMaker(PROM_TILE_EDGES_CHANGED,tile);
+    tile->decompose();
+    Sys::tilingMaker->pushTileToPrototypeMaker(PROM_TILE_EDGES_CHANGED,tile);
     accept();
 }
 
@@ -180,7 +180,7 @@ void DlgEdgePolyEdit::slot_applyDeltas()
     {
         EdgePtr e = epoly[i];
         VertexPtr v1 = e->v1;
-        v1->pt = QPointF(v1->pt.x() + dx, v1->pt.y() + dy);
+        v1->setPt(QPointF(v1->pt.x() + dx, v1->pt.y() + dy));
         // only do v1 since v2 will already be set
     }
 

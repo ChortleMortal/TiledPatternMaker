@@ -9,7 +9,6 @@
 #include "motifs/motif.h"
 #include "panels/page_prototype_info.h"
 #include "panels/controlpanel.h"
-#include "settings/configuration.h"
 #include "tile/tile.h"
 #include "tile/tiling.h"
 #include "viewers/view_controller.h"
@@ -23,8 +22,8 @@ Q_DECLARE_METATYPE(WeakDesignElementPtr);
 
 page_prototype_info:: page_prototype_info(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_PROTO_INFO,"Prototype Info")
 {
-    protoView       = PrototypeView::getInstance();
-    protoMaker      = PrototypeMaker::getInstance();
+    protoView       = Sys::prototypeView;
+    protoMaker      = Sys::prototypeMaker;
     protoMakerData  = protoMaker->getProtoMakerData();
 
     //setMouseTracking(true);
@@ -230,17 +229,12 @@ void  page_prototype_info::onRefresh()
 
 void page_prototype_info::onEnter()
 {
-    static QString msg("<body>"
-                       "<span>Click on column to select tile  &nbsp;&nbsp; | &nbsp;&nbsp; Click on color to change</span>"
-                       "</body>");
-
-    panel->pushPanelStatus(msg);
     populateTables();
 }
 
-void page_prototype_info::onExit()
+QString page_prototype_info::getPageStatus()
 {
-    panel->popPanelStatus();
+    return "<body><span>Click on row to select tile  &nbsp;&nbsp; | &nbsp;&nbsp; Click on color to change</span></body>";
 }
 
 void page_prototype_info::populateTables()
@@ -272,6 +266,9 @@ void page_prototype_info::setupProtoTable()
         item = new QTableWidgetItem(protoMakerData->isHidden(MVD_PROTO,proto) ? "hidden" : "visible");
         protoTable->setItem(row, PROTO_COL_SHOW,item);
 
+        if (proto == selected_proto)
+            protoTable->selectRow(row);
+
         row++;
     }
 
@@ -283,6 +280,8 @@ void page_prototype_info::setupProtoTable()
 void page_prototype_info::setupDelTable()
 {
     DELTable->clearContents();
+
+    auto selected_del = protoMakerData->getSelectedDEL();
 
     const QVector<ProtoPtr> & prototypes = protoMakerData->getPrototypes();
     int row = 0;
@@ -324,6 +323,9 @@ void page_prototype_info::setupDelTable()
             item = new QTableWidgetItem(protoMakerData->isHidden(MVD_PROTO,del) ? "hidden" : "visible");
             DELTable->setItem(row, DEL_COL_SHOW_MOTIF,item);
 
+            if (del == selected_del)
+                DELTable->selectRow(row);
+
             row++;
         }
     }
@@ -355,6 +357,7 @@ void page_prototype_info::slot_show()
 
         protoMakerData->select(MVD_PROTO,del,true);
     }
+    view->update();
 }
 
 void page_prototype_info::slot_protoSelected(int row, int col)

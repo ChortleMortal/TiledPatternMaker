@@ -45,12 +45,10 @@ public:
     TilingPtr   getTiling();
 
     // Retrieve a name describing this style and map.
-    QString getDescription() const;
-    QString getInfo() const;
-    virtual QString getLayerName() override { return LayerController::getLayerName() + "-" + getDescription(); }
 
-    virtual const Xform &   getModelXform() override;
-    virtual void            setModelXform(const Xform & xf, bool update) override;
+
+    const Xform &   getModelXform() override;
+    void            setModelXform(const Xform & xf, bool update) override;
 
     // Overridable behaviours
     virtual void createStyleRepresentation() = 0; // Called to ensure there is an internal map representation, if needed.
@@ -58,25 +56,28 @@ public:
 
     virtual QString     getStyleDesc() const = 0; // Retrieve the style description.
     virtual eStyleType  getStyleType() const = 0;
-    virtual void        report()       const = 0;
 
     virtual void    draw(GeoGraphics * gg)   = 0;
-            void    paint(QPainter *painter) override;
+    virtual void    paint(QPainter *painter) override;
             void    paintToSVG();
             void    triggerPaintSVG(QSvgGenerator * generator) { this->generator = generator; paintSVG = true; }
 
+    virtual void        dump() const = 0;
+            QString     getInfo() const;
+            QString     getDescription() const;
+    virtual QString     getLayerName() override { return LayerController::getLayerName() + "-" + getDescription(); }
+
     virtual eViewType iamaLayer() override { return VIEW_MOSAIC; }
-    void iamaLayerController() override {}
-    int  protoUseCount() { if (prototype) return prototype.use_count(); else return 0;}
+    void              iamaLayerController() override {}
 
     static int refs;
 
 public slots:
-    virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
-    virtual void slot_mouseDragged(QPointF spt)       override;
-    virtual void slot_mouseMoved(QPointF spt)         override;
-    virtual void slot_mouseReleased(QPointF spt)      override;
-    virtual void slot_mouseDoublePressed(QPointF spt) override;
+    void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
+    void slot_mouseDragged(QPointF spt)       override;
+    void slot_mouseMoved(QPointF spt)         override;
+    void slot_mouseReleased(QPointF spt)      override;
+    void slot_mouseDoublePressed(QPointF spt) override;
 
 protected:
     void   annotateEdges(MapPtr map);

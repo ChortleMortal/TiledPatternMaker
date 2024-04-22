@@ -14,7 +14,7 @@ public:
     virtual void     buildMotifMaps() override;
 
     virtual QString  getMotifDesc()   override { return "TileMotif"; }
-    virtual void     report()         override { qDebug().noquote() << getMotifDesc(); }
+    virtual void     dump()         override { qDebug().noquote() << getMotifDesc(); }
 
 protected:
     void    inferTile(); // make a motif from the tiling itself

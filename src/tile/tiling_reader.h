@@ -6,6 +6,7 @@
 #include "geometry/xform.h"
 #include "misc/pugixml.hpp"
 #include "settings/filldata.h"
+#include "misc/colorset.h"
 
 typedef std::shared_ptr<class Tiling>           TilingPtr;
 typedef std::shared_ptr<class MosaicReaderBase> MRBasePtr;
@@ -23,6 +24,8 @@ public:
     TilingPtr    readTiling(QTextStream & st);
     TilingPtr    readTilingXML(QString file);
     TilingPtr    readTilingXML(QString file,MRBasePtr base);
+
+    ColorGroup & getTileColors() { return tileColors; }
 
     static BkgdImagePtr getBackgroundImage(pugi::xml_node & node);
 
@@ -44,6 +47,7 @@ private:
     TilingReader() {}
     TilingPtr      tiling;
     BkgdImagePtr   bip;
+    ColorGroup     tileColors;
 };
 
 #endif

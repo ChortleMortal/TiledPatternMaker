@@ -22,8 +22,8 @@ public:
 
     void    buildMotifMaps() override;
 
-    virtual QString getMotifDesc() override { return "ExtendedRosette";}
-    virtual void    report()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "q:" << q << "s" << s
+    QString getMotifDesc() override { return "ExtendedRosette";}
+    void    dump()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "q:" << q << "s" << s
                                                 << "preipheralVerts:" << extender. getExtendPeripheralVertices()
                                                 << "freeVerts:" << extender.getExtendFreeVertices()
                                                 << "boundaryVerts:" << extender. getConnectBoundaryVertices(); }
@@ -49,8 +49,8 @@ public:
 
     void    buildMotifMaps() override;
 
-    virtual QString getMotifDesc() override { return "ExtendedRosette";}
-    virtual void    report()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "kneeX:" << kneeX << "kneeY:" << kneeY << "s:" << s << "k:" << k
+    QString getMotifDesc() override { return "ExtendedRosette";}
+    void    dump()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "kneeX:" << kneeX << "kneeY:" << kneeY << "s:" << s << "k:" << k
                                                         << "preipheralVerts:" << extender. getExtendPeripheralVertices()
                                                         << "freeVerts:" << extender.getExtendFreeVertices()
                                                         << "boundaryVerts:" << extender. getConnectBoundaryVertices(); }

@@ -18,4 +18,5 @@ const QString sKbdMode[]  =
         E2STR(KBD_MODE_DES_SEPARATION),
         E2STR(KBD_MODE_DES_ORIGIN),
         E2STR(KBD_MODE_DES_OFFSET),
+        E2STR(KBD_MODE_MOVE),
 };

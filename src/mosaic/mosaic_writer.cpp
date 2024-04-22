@@ -23,9 +23,7 @@
 #include "misc/sys.h"
 #include "misc/tpm_io.h"
 #include "misc/fileservices.h"
-#include "settings/configuration.h"
 #include "settings/canvas_settings.h"
-#include "style/colored.h"
 #include "style/emboss.h"
 #include "style/filled.h"
 #include "style/interlace.h"
@@ -43,8 +41,6 @@ using std::dynamic_pointer_cast;
 
 MosaicWriter::MosaicWriter() : MosaicWriterBase()
 {
-    config = Configuration::getInstance();
-
     //currentXMLVersion = 3;
     //currentXMLVersion = 4;  // 05OCT19 use ColorSets in Colored
     //currentXMLVersion = 5;  // 25OCT19 revised way of defining maps
@@ -59,7 +55,10 @@ MosaicWriter::MosaicWriter() : MosaicWriterBase()
     //currentXMLVersion = 14; // 23NOV22 <n> is common for all motifs
     //currentXMLVersion = 15; // 26MAY23 add Crop parms
     //currentXMLVersion = 16; // 07OCT23 Motif scale and rotate are additive to tile
-      currentXMLVersion = 17; // 11NOV23 Border crops now saved in model units again
+    //currentXMLVersion = 17; // 11NOV23 Border crops now saved in model units again
+    //currentXMLVersion = 18; // 28FEB24 Tile Colors have colors in mosaic not in XML
+    //currentXMLVersion = 19; // 08MAR24 Crops are enhanced
+      currentXMLVersion = 20; // 30MAR24 Curved Edge arc centers changed
 }
 
 MosaicWriter::~MosaicWriter()
@@ -159,7 +158,7 @@ bool MosaicWriter::processVector(QTextStream &ts)
 #endif
 
     //design
-    processDesign(ts);
+    processMosaic(ts);
 
     // styles
     const StyleSet & sset = _mosaic->getStyleSet();
@@ -220,7 +219,7 @@ bool MosaicWriter::processVector(QTextStream &ts)
     return true;
 }
 
-void MosaicWriter::processDesign(QTextStream &ts)
+void MosaicWriter::processMosaic(QTextStream &ts)
 {
     auto & info         = _mosaic->getCanvasSettings();
     QColor bkgdColor    = info.getBackgroundColor();
@@ -230,13 +229,15 @@ void MosaicWriter::processDesign(QTextStream &ts)
 
     BorderPtr border    = _mosaic->getBorder();
     CropPtr crop        = _mosaic->getCrop();
+    CropPtr painterCrop = _mosaic->getPainterCrop();
     uint cleanseLevel   = _mosaic->getCleanseLevel();
 
     ts << "<design>" << endl;
     procSize(ts,viewSize,canvasSize);
     procBackground(ts,bkgdColor);
     procBorder(ts,border);
-    procCrop(ts,crop);
+    procCrop(ts,crop,"Crop");
+    procCrop(ts,painterCrop,"PainterCrop");
     int minX,minY,maxX,maxY;
     bool singleton;
     fd.get(singleton,minX,maxX,minY,maxY);
@@ -258,44 +259,7 @@ void MosaicWriter::processDesign(QTextStream &ts)
     ts << "</design>" << endl;
 }
 
-void MosaicWriter::procWidth(QTextStream &ts,qreal width)
-{
-    ts << "<width>" << width << "</width>" << endl;
-}
 
-void MosaicWriter::procLength(QTextStream &ts,qreal length)
-{
-    ts << "<length>" << length << "</length>" << endl;
-}
-
-void MosaicWriter::procSize(QTextStream &ts,QSize viewSize, QSizeF canvasSize)
-{
-    ts << "<size>"    << endl;
-    ts << "<width>"   << viewSize.width()    << "</width>" << endl;
-    ts << "<height>"  << viewSize.height()   << "</height>" << endl;
-    ts << "<zwidth>"  << canvasSize.width()  << "</zwidth>" << endl;
-    ts << "<zheight>" << canvasSize.height() << "</zheight>" << endl;
-    ts << "</size>"   << endl;
-}
-
-void MosaicWriter::procRect(QTextStream &ts, QRectF rect)
-{
-    ts << "<rect>"    << endl;
-    ts << "<X>"       << rect.x()       << "</X>" << endl;
-    ts << "<Y>"       << rect.y()       << "</Y>" << endl;
-    ts << "<width>"   << rect.width()   << "</width>" << endl;
-    ts << "<height>"  << rect.height()  << "</height>" << endl;
-    ts << "</rect>"   << endl;
-}
-
-void MosaicWriter::procCircle(QTextStream &ts, Circle c)
-{
-    ts << "<circle>"    << endl;
-    ts << "<radius>"    << c.radius     << "</radius>" << endl;
-    ts << "<X>"         << c.centre.x() << "</X>" << endl;
-    ts << "<Y>"         << c.centre.y() << "</Y>" << endl;
-    ts << "</circle>"   << endl;
-}
 void MosaicWriter::procBackground(QTextStream &ts,QColor color)
 {
     ts << "<background>" << endl;
@@ -327,8 +291,7 @@ void MosaicWriter::procBorder(QTextStream &ts,BorderPtr border)
     QString sshape = border->getCropTypeString();
     bool useView   = border->getUseViewSize();
 
-    QString txt = QString("<border type=\"%1\" shape=\"%2\" useViewSize=\"%3\" >").arg(stype)
-                      .arg(sshape).arg((useView) ? "t" : "f");
+    QString txt = QString("<border type=\"%1\" shape=\"%2\" useViewSize=\"%3\" >").arg(stype).arg(sshape).arg((useView) ? "t" : "f");
     ts << txt << endl;
 
     eBorderType btype = border->getBorderType();
@@ -387,21 +350,38 @@ void MosaicWriter::procBorder(QTextStream &ts,BorderPtr border)
     ts << "</border>" << endl;
 }
 
-void MosaicWriter::procCrop(QTextStream &ts,CropPtr crop)
+void MosaicWriter::procCrop(QTextStream &ts,CropPtr crop, QString name)
 {
     if (!crop)
     {
         return;
     }
 
-    QRectF r = crop->getRect();
-    if (r.isValid())
+    eCropType type = crop->getCropType();
+    if (type == CROP_UNDEFINED)
     {
-        QString parms = QString("embed=%1 apply=%2").arg((crop->getEmbed()) ? "\"t\"" : "\"f\"").arg((crop->getApply()) ? "\"t\"" : "\"f\"");
-        ts << "<Crop " << parms << " >" << endl;
-        ts << "<boundary>" << r.x() << "," << r.y() << "," << r.width() << "," << r.height() << "</boundary>" << endl;
-        ts << "</Crop>" << endl;
+        return;
     }
+
+    QString parms = QString(" embed=%1 apply=%2 clip=%3").arg((crop->getEmbed()) ? "\"t\"" : "\"f\"").arg((crop->getApply()) ? "\"t\"" : "\"f\"").arg((crop->getClip()) ? "\"t\"" : "\"f\"");
+    ts << "<" << name<< parms << " >" << endl;
+
+    if (type == CROP_RECTANGLE)
+    {
+        QRectF rect = crop->getRect();
+        procRect(ts,rect);
+    }
+    else if (type == CROP_CIRCLE)
+    {
+        Circle c = crop->getCircle();
+        procCircle(ts,c);
+    }
+    else if (type == CROP_POLYGON)
+    {
+        APolygon ap = crop->getAPolygon();
+        procAPolygon(ts,ap);
+    }
+    ts << "</" << name << ">" << endl;
 }
 
 bool MosaicWriter::processThick(QTextStream &ts, StylePtr s)
@@ -546,29 +526,29 @@ bool MosaicWriter::processOutline(QTextStream &ts, StylePtr s)
 
 bool MosaicWriter::processFilled(QTextStream &ts, StylePtr s)
 {
-    Filled * fl = dynamic_cast<Filled*>(s.get());
-    if (fl == nullptr)
+    Filled * filled = dynamic_cast<Filled*>(s.get());
+    if (filled == nullptr)
     {
         fail("Style error","dynamic cast of Filled");
     }
 
-    int algorithm           = fl->getAlgorithm();
+    eFillType algorithm     = filled->getAlgorithm();
 
-    ColorSet * colorSetB    = fl->getBlackColorSet();
-    ColorSet * colorSetW    = fl->getWhiteColorSet();
-    ColorGroup * colorGroup = fl->getColorGroup();
+    ColorSet * colorSetB    = filled->getBlackColorSet();
+    ColorSet * colorSetW    = filled->getWhiteColorSet();
+    ColorGroup * colorGroup = filled->getColorGroup();
 
-    bool    draw_inside     = fl->getDrawInsideBlacks();
-    bool    draw_outside    = fl->getDrawOutsideWhites();
+    bool    draw_inside     = filled->getDrawInsideBlacks();
+    bool    draw_outside    = filled->getDrawOutsideWhites();
 
-    ProtoPtr proto          = fl->getPrototype();
-    Xform   xf              = fl->getModelXform();
+    ProtoPtr proto          = filled->getPrototype();
+    Xform   xf              = filled->getModelXform();
 
     QString str;
 
     str = "toolkit.GeoLayer";
     ts << "<" << str << ">" << endl;
-    procesToolkitGeoLayer(ts,xf,fl->zValue());
+    procesToolkitGeoLayer(ts,xf,filled->zValue());
     ts << "</" << str << ">" << endl;
 
     str = "style.Style";
@@ -603,6 +583,10 @@ bool MosaicWriter::processFilled(QTextStream &ts, StylePtr s)
     str = "style.Filled";
     ts << "<" << str << ">" << endl;
     processsStyleFilled(ts,draw_inside,draw_outside,algorithm);
+    if (algorithm == FILL_DIRECT_FACE)
+    {
+        processsStyleFilledFaces(ts,filled);
+    }
     ts << "</" << str << ">" << endl;
 
     qDebug() << "end filled";
@@ -724,11 +708,11 @@ bool MosaicWriter::processEmboss(QTextStream &ts, StylePtr s)
     return true;
 }
 
-bool MosaicWriter::processTileColors(QTextStream &ts, StylePtr s)
+bool MosaicWriter::processTileColors(QTextStream &ts, StylePtr style)
 {
     // Note: tile colors are stored in the tiling
     // Here we just specifu that those colors are to be used in this tiling
-    TileColors * tc = dynamic_cast<TileColors*>(s.get());
+    TileColors * tc = dynamic_cast<TileColors*>(style.get());
     if (tc == nullptr)
     {
         fail("Style error","dynamic cast of Tile Colors");
@@ -741,7 +725,7 @@ bool MosaicWriter::processTileColors(QTextStream &ts, StylePtr s)
 
     str = "toolkit.GeoLayer";
     ts << "<" << str << ">" << endl;
-    procesToolkitGeoLayer(ts,xf,s->zValue());
+    procesToolkitGeoLayer(ts,xf,style->zValue());
     ts << "</" << str << ">" << endl;
 
     str = "style.Style";
@@ -758,6 +742,23 @@ bool MosaicWriter::processTileColors(QTextStream &ts, StylePtr s)
         procColor(ts,color);
         procWidth(ts,width);
         ts << "</outline>";
+    }
+
+    ColorGroup &  group = tc->getTileColors();
+    for (ColorSet & set : group)
+    {
+        QString s = "<BkgdColors>";
+        set.resetIndex();
+        QColor color = set.getNextTPColor().color;
+        s += color.name();
+        for (int i=1; i < set.size(); i++)
+        {
+            s += ",";
+            QColor color = set.getNextTPColor().color;
+            s += color.name();
+        }
+        s += "</BkgdColors>";
+        ts << s << endl;
     }
 
     return true;
@@ -780,7 +781,7 @@ void MosaicWriter::procColorSet(QTextStream &ts, ColorSet * colorSet)
     colorSet->resetIndex();
     for (int i=0; i < count; i++)
     {
-        TPColor tpcolor = colorSet->getNextColor();
+        TPColor tpcolor = colorSet->getNextTPColor();
         procColor(ts,tpcolor);
     }
 }
@@ -848,7 +849,7 @@ void MosaicWriter::processsStyleInterlace(QTextStream &ts, qreal gap, qreal shad
     ts << "<startUnder>" << sunder << "</startUnder>" << endl;
 }
 
-void MosaicWriter::processsStyleFilled(QTextStream &ts, bool draw_inside, bool draw_outside, int algorithm)
+void MosaicWriter::processsStyleFilled(QTextStream &ts, bool draw_inside, bool draw_outside, eFillType algorithm)
 {
     QString drawi = (draw_inside) ? "true" : "false";
     QString drawo = (draw_outside) ? "true" : "false";
@@ -857,43 +858,38 @@ void MosaicWriter::processsStyleFilled(QTextStream &ts, bool draw_inside, bool d
     ts << "<algorithm>" << algorithm << "</algorithm>" << endl;
 }
 
+void MosaicWriter::processsStyleFilledFaces(QTextStream &ts, class Filled * filled)
+{
+    DCELPtr dcel = filled->getColorMaker().getDCEL();
+    if (!dcel)
+    {
+        qWarning() << "DCEL not found - cannot save face data";
+        return;
+    }
+    FaceSet & faces = dcel->getFaceSet();
+    int size        = faces.size();
+
+    QString str = QString("<FaceColors faces=\"%1\">").arg(size);
+    ts << str << endl;
+
+    // get these color indices directly from the visible faces
+    int count = 0;
+    while (count < size)
+    {
+        ts << QString::number(faces[count]->iPalette);
+        count++;
+        if (count < size)
+        {
+            ts << ",";
+        }
+    }
+    ts << endl;
+    ts << "</FaceColors>" << endl;
+}
+
 void MosaicWriter::processsStyleEmboss(QTextStream &ts, qreal  angle)
 {
     ts << "<angle>" << angle << "</angle>";
-}
-
-void MosaicWriter::setBoundary(QTextStream & ts, PolyPtr p)
-{
-    QString qsid;
-    if (hasReference(p))
-    {
-        qsid = getPolyReference(p);
-        ts << "<boundary" << qsid << "/>" << endl;
-        return;
-    }
-
-    qsid = nextId();
-    setPolyReference(getRef(),p);
-
-    ts << "<boundary" << qsid << ">" << endl;
-
-    ts << "<pts" << nextId() << ">" << endl;
-    setPolygon(ts,p);
-    ts << "</pts>" << endl;
-
-    ts << "</boundary>" << endl;
-}
-
-void MosaicWriter::setPolygon(QTextStream & ts, PolyPtr pp)
-{
-    for (int i=0; i < pp->size(); i++)
-    {
-        QPointF qp = pp->at(i);
-        ts << "<Point" << nextId() << ">" << endl;
-        ts << "<x>"  << qp.x() << "</x>" << endl;
-        ts << "<y>"  << qp.y() << "</y>" << endl;
-        ts << "</Point>" << endl;
-    }
 }
 
 void MosaicWriter::setPrototype(QTextStream & ts, ProtoPtr pp)
@@ -1636,13 +1632,6 @@ void MosaicWriter::setVertexEP(QTextStream & ts,VertexPtr v, QString name)
     ts << "</" << name << ">" << endl;
 }
 
-void MosaicWriter::setPoint(QTextStream & ts, QPointF pt, QString name)
-{
-    ts << "<" << name << ">";
-    ts << pt.x() << "," << pt.y();
-    ts << "</" << name << ">" << endl;
-}
-
 void MosaicWriter::setVertex(QTextStream & ts, VertexPtr v, QString name)
 {
     QString qsid;
@@ -1675,7 +1664,6 @@ void MosaicWriter::setEdges(QTextStream & ts, QVector<EdgePtr> & qvec)
 
     ts << "</edges>" << endl;
  }
-
 
 void MosaicWriter::setEdge(QTextStream & ts, EdgePtr e)
 {
@@ -1734,6 +1722,83 @@ void MosaicWriter::setEdge(QTextStream & ts, EdgePtr e)
     {
         ts << "</Edge>" << endl;
     }
+}
+
+void MosaicWriter::procWidth(QTextStream &ts,qreal width)
+{
+    ts << "<width>" << width << "</width>" << endl;
+}
+
+void MosaicWriter::procLength(QTextStream &ts,qreal length)
+{
+    ts << "<length>" << length << "</length>" << endl;
+}
+
+void MosaicWriter::procSize(QTextStream &ts,QSize viewSize, QSizeF canvasSize)
+{
+    ts << "<size>"    << endl;
+    ts << "<width>"   << viewSize.width()    << "</width>" << endl;
+    ts << "<height>"  << viewSize.height()   << "</height>" << endl;
+    ts << "<zwidth>"  << canvasSize.width()  << "</zwidth>" << endl;
+    ts << "<zheight>" << canvasSize.height() << "</zheight>" << endl;
+    ts << "</size>"   << endl;
+}
+
+void MosaicWriter::procRect(QTextStream &ts, QRectF &rect)
+{
+    ts << "<rect>"    << endl;
+    ts << "<X>"       << rect.x()       << "</X>" << endl;
+    ts << "<Y>"       << rect.y()       << "</Y>" << endl;
+    ts << "<width>"   << rect.width()   << "</width>" << endl;
+    ts << "<height>"  << rect.height()  << "</height>" << endl;
+    ts << "</rect>"   << endl;
+}
+
+void MosaicWriter::procCircle(QTextStream &ts, Circle & c)
+{
+    ts << "<circle>"    << endl;
+    ts << "<radius>"    << c.radius     << "</radius>" << endl;
+    ts << "<X>"         << c.centre.x() << "</X>" << endl;
+    ts << "<Y>"         << c.centre.y() << "</Y>" << endl;
+    ts << "</circle>"   << endl;
+}
+
+void MosaicWriter::setPoint(QTextStream & ts, QPointF pt, QString name)
+{
+    ts << "<" << name << ">";
+    ts << pt.x() << "," << pt.y();
+    ts << "</" << name << ">" << endl;
+}
+
+void MosaicWriter::procAPolygon(QTextStream &ts,APolygon & apoly)
+{
+    QString str = QString("<APoly source=\"%1\">").arg(apoly.usesSource() ? "t" : "f");
+    ts << str << endl;
+
+    if (apoly.usesSource())
+    {
+        auto poly = apoly.getSource();
+        procPolygon(ts, poly);
+    }
+    else
+    {
+        ts << "<n>" << apoly.getSides() << "</n>" << endl;
+    }
+
+    ts << "<rot>" << apoly.getRotate() << "</rot>" << endl;
+    ts << "<scale>" << apoly.getScale() << "</scale>" << endl;
+    setPos(ts,apoly.getPos());
+    ts << "</APoly>" << endl;
+}
+
+void MosaicWriter::procPolygon(QTextStream &ts,QPolygonF & poly)
+{
+    ts << "<Poly>" << endl;
+    for (int i=0; i < poly.size(); i++)
+    {
+        setPos(ts,poly[i]);
+    }
+    ts << "</Poly>" << endl;
 }
 
 //////////////////////////////////////////////////////////////

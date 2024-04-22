@@ -21,8 +21,9 @@ public:
     page_motif_maker(ControlPanel * cpanel);
 
     void	onRefresh(void) override;
-    void    onEnter() override;
-    void    onExit() override;
+    void    onEnter()       override;
+    void    onExit()        override {}
+    QString getPageStatus() override;
 
 public slots:
 

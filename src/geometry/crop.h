@@ -6,6 +6,7 @@
 #include "enums/eborder.h"
 #include "geometry/circle.h"
 #include "geometry/edgepoly.h"
+#include "geometry/polygon.h"
 
 typedef std::shared_ptr<class Crop>     CropPtr;
 
@@ -23,40 +24,42 @@ class Crop
 {
 public:
     Crop();
-    Crop(CropPtr other);
+    Crop(const Crop & other);
 
     void         draw(QPainter * painter, QTransform t, bool active);
 
     QPointF      getCenter();
 
     void         setRect(QRectF & rect);
-    QRectF &     getRect() { return _rect; }
+    QRectF &     getRect()                  { return _rect; }
 
     void         setCircle(Circle & c);
-    Circle &     getCircle() { return _circle; }
+    Circle &     getCircle()                { return _circle; }
 
-    void         setPolygon(int sides, qreal scale = 1.0, qreal rotDegrees = 0.0);
     void         setPolygon(QPolygonF & p);
-    QPolygonF &  getPolygon() { return _poly; }
+    void         setPolygon(APolygon & p);
+    APolygon     getAPolygon()              { return _poly; }
 
-    void         setType(eCropType type) { _cropType = type; }
-    eCropType    getCropType()           { return _cropType; }
+    void         setType(eCropType type)    { _cropType = type; }
+    eCropType    getCropType()              { return _cropType; }
     QString      getCropString();
 
     void         setAspect(eAspectRatio ar) { _aspect = ar; adjust(); }
-    eAspectRatio getAspect() { return _aspect; }
+    eAspectRatio getAspect()                { return _aspect; }
 
-    void         setAspectVertical(bool set) { _vAspect = set; adjust(); }
-    bool         getAspectVertical() { return _vAspect; }
+    void         setAspectVertical(bool set){ _vAspect = set; adjust(); }
+    bool         getAspectVertical()        { return _vAspect; }
 
     void        transform(QTransform t);
 
     void        setEmbed(bool embed) { _embed = embed; }
     void        setApply(bool apply) { _apply = apply; }
+    void        setClip(bool clip)   { _clip  = clip; }
     bool        getEmbed()           { return _embed; }
     bool        getApply()           { return _apply; }
+    bool        getClip()            { return _clip; }
 
-    void        dbgInfo();
+    void        dump();
 
 protected:
     void        adjust();
@@ -67,12 +70,13 @@ private:
     eAspectRatio _aspect;
     bool         _vAspect;
 
-    QPolygonF    _poly;          // model units as crops, screen units for borders
+    APolygon     _poly;          // model units as crops, screen units for borders
     Circle       _circle;        // model units as crops, screen units for borders
     QRectF       _rect;          // model units as crops, screen units for borders
 
     bool         _embed;
     bool         _apply;
+    bool         _clip;         // painter clip
 };
 
 #endif // CROP_H

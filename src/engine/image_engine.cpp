@@ -23,7 +23,7 @@ typedef std::shared_ptr<ImageLayerView> ImgLayerPtr;
 
 ImageEngine::ImageEngine()
 {
-    config = Configuration::getInstance();
+    config = Sys::config;
 
     _showA = false;
 
@@ -260,7 +260,7 @@ void ImageEngine::compareBMPwithLoaded(QString leftName, bool autoMode)
 
 QPixmap  ImageEngine::createTransparentPixmap(QImage img)
 {
-    Configuration * config = Configuration::getInstance();
+    Configuration * config  = Sys::config;
     QColor transparentColor = config->transparentColor;
     int r,g,b,a;
     transparentColor.getRgb(&r,&g,&b,&a);

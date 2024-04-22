@@ -4,8 +4,11 @@
 #include "widgets/dlg_colorSet.h"
 #include "misc/colorset.h"
 
-DlgColorSet::DlgColorSet(ColorSet *cset, QWidget * parent) :  QDialog(parent), colorSet(cset)
+DlgColorSet::DlgColorSet(ColorSet *cset, QWidget * parent) :  QDialog(parent)
 {
+    qInfo() << "DlgColorSet constctor";
+
+    colorSet   = cset;
     currentRow = 0;
 
     QVBoxLayout * vbox = new QVBoxLayout;
@@ -70,7 +73,7 @@ void DlgColorSet::displayTable()
     int row = 0;
     for (int i=0; i < count; i++)
     {
-        TPColor tpcolor = colorSet->getNextColor();
+        TPColor tpcolor = colorSet->getNextTPColor();
         QColor color    = tpcolor.color;
         QColor fullColor= color;
         fullColor.setAlpha(255);
@@ -120,7 +123,7 @@ void DlgColorSet::modify()
     if (currentRow < 0 || currentRow >= colorSet->size())
         return;
 
-    TPColor tpcolor = colorSet->getColor(currentRow);
+    TPColor tpcolor = colorSet->getTPColor(currentRow);
 
     AQColorDialog dlg(tpcolor.color,this);
     int rv = dlg.exec();
@@ -142,7 +145,7 @@ void DlgColorSet::del()
     if (currentRow < 0 || currentRow >= colorSet->size())
         return;
 
-    colorSet->removeColor(currentRow);
+    colorSet->removeTPColor(currentRow);
     displayTable();
     emit sig_colorsChanged();
 }
@@ -159,8 +162,8 @@ void DlgColorSet::up()
     if (currentRow < 1)
         return;
 
-    TPColor a = colorSet->getColor(currentRow);
-    TPColor b = colorSet->getColor(currentRow-1);
+    TPColor a = colorSet->getTPColor(currentRow);
+    TPColor b = colorSet->getTPColor(currentRow-1);
 
     colorSet->setColor(currentRow-1, a);
     colorSet->setColor(currentRow,   b);
@@ -176,8 +179,8 @@ void DlgColorSet::down()
     if (currentRow >= (colorSet->size()-1))
         return;
 
-    TPColor a = colorSet->getColor(currentRow);
-    TPColor b = colorSet->getColor(currentRow+1);
+    TPColor a = colorSet->getTPColor(currentRow);
+    TPColor b = colorSet->getTPColor(currentRow+1);
 
     colorSet->setColor(currentRow+1, a);
     colorSet->setColor(currentRow,   b);
@@ -190,7 +193,7 @@ void DlgColorSet::down()
 void DlgColorSet::colorVisibilityChanged(int row)
 {
     qDebug() << "row=" << row;
-    TPColor tpcolor = colorSet->getColor(row);
+    TPColor tpcolor = colorSet->getTPColor(row);
     QCheckBox * cb = dynamic_cast<QCheckBox*>(table->cellWidget(row,3));
     bool hide       = cb->isChecked();
     tpcolor.hidden  = hide;

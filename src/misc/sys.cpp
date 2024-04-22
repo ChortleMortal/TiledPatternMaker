@@ -1,21 +1,60 @@
 #include <QDebug>
 #include "misc/sys.h"
-#include "motifs/motif.h"
 #include "geometry/dcel.h"
 #include "geometry/edge.h"
 #include "geometry/vertex.h"
-#include "mosaic/mosaic.h"
-#include "mosaic/design_element.h"
+#include "legacy/design_maker.h"
+#include "makers/map_editor/map_editor.h"
+#include "makers/mosaic_maker/mosaic_maker.h"
 #include "makers/prototype_maker/prototype.h"
+#include "makers/prototype_maker/prototype_maker.h"
+#include "makers/tiling_maker/tiling_maker.h"
+#include "makers/tiling_maker/tiling_monitor.h"
+#include "mosaic/design_element.h"
+#include "mosaic/mosaic.h"
+#include "motifs/motif.h"
+#include "panels/controlpanel.h"
+#include "settings/configuration.h"
 #include "style/style.h"
 #include "tile/tile.h"
 #include "tile/tiling.h"
+#include "viewers/backgroundimageview.h"
+#include "viewers/crop_view.h"
+#include "viewers/debug_view.h"
+#include "viewers/grid_view.h"
+#include "viewers/map_editor_view.h"
+#include "viewers/measure_view.h"
+#include "viewers/motif_view.h"
+#include "viewers/prototype_view.h"
 #include "viewers/view_controller.h"
 
-View            * Sys::view             = nullptr;
-ViewController  * Sys::viewController   = nullptr;
-Layer           * Sys::selectedLayer    = nullptr;
-ImageEngine     * Sys::imageEngine      = nullptr;
+// system
+qtAppLog        * Sys::log              = nullptr;
+Configuration   * Sys::config           = nullptr;
+ControlPanel    * Sys::controlPanel     = nullptr;
+
+// makers
+DesignMaker    * Sys::designMaker       = nullptr;
+MapEditor      * Sys::mapEditor         = nullptr;
+MosaicMaker    * Sys::mosaicMaker       = nullptr;
+PrototypeMaker * Sys::prototypeMaker    = nullptr;
+TilingMaker    * Sys::tilingMaker       = nullptr;
+
+// viewers
+View           * Sys::view              = nullptr;
+ViewController * Sys::viewController    = nullptr;
+DebugView      * Sys::debugView         = nullptr;
+CropViewer     * Sys::cropViewer        = nullptr;
+GridView       * Sys::gridViewer        = nullptr;
+MapEditorView  * Sys::mapEditorView     = nullptr;
+MeasureView    * Sys::measureView       = nullptr;
+MotifView      * Sys::motifView         = nullptr;
+TilingMakerView* Sys::tilingMakerView   = nullptr;
+PrototypeView  * Sys::prototypeView     = nullptr;
+ImageEngine    * Sys::imageEngine       = nullptr;
+BackgroundImageView * Sys::backgroundImageView = nullptr;
+
+Layer          * Sys::selectedLayer     = nullptr;
 
 int  Sys::appInstance       = 0;
 
@@ -28,7 +67,6 @@ bool Sys::hideCircles       = false;
 bool Sys::showCenterMouse   = false;
 bool Sys::dontReplicate     = false;
 bool Sys::highlightUnit     = false;
-bool Sys::debugMapEnable    = false;
 bool Sys::dontTrapLog       = false;
 bool Sys::measure           = false;
 bool Sys::flagA             = false;
@@ -37,6 +75,7 @@ bool Sys::updatePanel       = true;
 bool Sys::motifPropagate    = true;
 bool Sys::enableDetachedPages = true;
 
+QString Sys::gitBranch;
 QString Sys::rootTileDir;
 QString Sys::originalTileDir;
 QString Sys::newTileDir;
@@ -49,6 +88,10 @@ QString Sys::templateDir;
 QString Sys::examplesDir;
 QString Sys::mapsDir;
 QString Sys::worklistsDir;
+
+QStringList   Sys::tilingsList;
+QStringList   Sys::mosaicsList;
+tilingUses    Sys::uses;
 
 const QChar Sys::MathSymbolSquareRoot   = QChar(0x221A);
 const QChar Sys::MathSymbolPi           = QChar(0x03A0);
@@ -69,15 +112,107 @@ const int   Sys::DEFAULT_HEIGHT         = 927;
 const int   Sys::MAX_WIDTH              = 4096;
 const int   Sys::MAX_HEIGHT             = 2160;
 
+///////////////////////////////////////////////////////////////
+///
+/// Sys
+///
+///////////////////////////////////////////////////////////////
+
+
+void Sys::init()
+{
+    // Configuration and log have already been instantiated
+    // log has been initialised too
+
+    mosaicMaker         = new MosaicMaker;
+    prototypeMaker      = new PrototypeMaker;
+    tilingMaker         = new TilingMaker;
+    mapEditor           = new MapEditor;
+    designMaker         = new DesignMaker;
+
+    controlPanel        = new ControlPanel;
+
+    view                = new View;
+    viewController      = new ViewController;
+
+    tilingMakerView     = new TilingMakerView;
+    prototypeView       = new PrototypeView;
+    motifView           = new MotifView;
+    mapEditorView       = new MapEditorView;
+    debugView           = new DebugView;
+    cropViewer          = new CropViewer;
+    backgroundImageView = new BackgroundImageView;
+    ProtoPtr nullProto;
+    measureView         = new MeasureView(nullProto);
+    gridViewer          = new GridView;
+
+    // init makers
+    mosaicMaker->init();
+    prototypeMaker->init();
+    tilingMaker->init();        // creates an empty tiling which is propagated
+    designMaker->init();
+    mapEditor->init();
+
+    // init views
+    view->init(viewController);
+    viewController->init(view);
+
+    // init control panel
+    controlPanel->init();
+}
+
+void Sys::close()
+{
+    delete gridViewer;
+    gridViewer = nullptr;
+    delete measureView;
+    measureView = nullptr;
+    delete backgroundImageView;
+    backgroundImageView = nullptr;
+    delete cropViewer;
+    cropViewer = nullptr;
+    delete debugView;
+    debugView = nullptr;
+    delete mapEditorView;
+    mapEditorView = nullptr;
+    delete motifView;
+    motifView = nullptr;
+    delete prototypeView;
+    prototypeView = nullptr;
+    delete tilingMakerView;
+    tilingMakerView = nullptr;
+
+    delete viewController;
+    viewController = nullptr;
+    delete view;
+    view = nullptr;
+
+    delete controlPanel;
+    controlPanel = nullptr;
+
+    delete designMaker;
+    designMaker = nullptr;
+    delete mapEditor;
+    mapEditor = nullptr;
+    delete tilingMaker;
+    tilingMaker = nullptr;
+    delete prototypeMaker;
+    prototypeMaker = nullptr;
+    delete mosaicMaker;
+    mosaicMaker = nullptr;
+
+    dumpRefs();
+}
+
 void Sys::appDontPaint(bool stop)
 {
     view->setAppPaint(!stop);
     view->setPaintEnable(!stop);
 }
 
-QMultiMap<eMotifType,QString>  Sys::motifRepresentation = init();
+QMultiMap<eMotifType,QString>  Sys::motifRepresentation = initMotifAssociations();
 
-QMultiMap<eMotifType,QString> Sys::init()
+QMultiMap<eMotifType,QString> Sys::initMotifAssociations()
 {
     QMultiMap<eMotifType,QString> mmap;
 

@@ -17,32 +17,22 @@ PanelStatus::PanelStatus()
     postamble = "</span>";
 }
 
-void PanelStatus::pushStack(QString & txt)
+void PanelStatus::setStatusText(QString & txt)
 {
-    if (msgStack.count() && msgStack.top() == txt)
-        return;
-
-    msgStack.push(txt);
-    QString msg = preamble + txt + postamble;
-    setText(msg);
-    update();
-}
-
-void PanelStatus::popStack()
-{
-    if (msgStack.count())
+    if (txt.isEmpty())
     {
-        msgStack.pop();
-    }
-    if (msgStack.count())
-    {
-        QString txt = msgStack.top();
-        QString msg = preamble + txt + postamble;
-        setText(msg);
+        clear();
     }
     else
     {
-        setText("");
+        QString msg = preamble + txt + postamble;
+        setText(msg);
     }
+    update();
+}
+
+void PanelStatus::clearStatusText()
+{
+    clear();
     update();
 }

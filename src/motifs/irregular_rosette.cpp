@@ -62,7 +62,7 @@ void IrregularRosette::buildMotifMaps()
 void IrregularRosette::inferRosette()
 {
     corners = getTile()->getPoints();
-    mids    = getTile()->getEdgePoly().getMids();
+    mids    = getTile()->getMids();
     center  = Geo::center(mids);
 
     switch (getVersion())
@@ -75,13 +75,13 @@ void IrregularRosette::inferRosette()
         break;
     case 1:
     default:
-        buildV1();
+        buildv1();
         break;
     }
 
 }
 
-void IrregularRosette::buildV1()
+void IrregularRosette::buildv1()
 {
     if (_debug) qDebug() << "IrregularRosette::buildV1  sides = " << getTile()->numSides();
 
@@ -229,8 +229,7 @@ void IrregularRosette::buildV2()
     debugMap = std::make_shared<DebugMap>("inferRosette debug map");
 #endif
 
-    EdgePoly  ep      = getTile()->getEdgePoly();
-    auto edges        = ep.getLines();
+    auto edges        = getTile()->getLines();
 
     qreal avgEdgeWidth = 0;
     for (int i=0; i < edges.size(); i++)
@@ -367,8 +366,7 @@ void IrregularRosette::buildV3()
     if (Loose::zero(r))
         r = 0.01 ;
 
-    EdgePoly  ep      = getTile()->getEdgePoly();
-    auto edges        = ep.getLines();
+    auto edges        = getTile()->getLines();
 
     qreal avgEdgeWidth = 0;
     for (int i=0; i < edges.size(); i++)

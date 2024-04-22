@@ -18,6 +18,7 @@
 #include "geometry/transform.h"
 #include "geometry/vertex.h"
 #include "makers/prototype_maker/prototype.h"
+#include "makers/tiling_maker/tiling_maker.h"
 #include "makers/tiling_maker/tiling_monitor.h"
 #include "misc/geo_graphics.h"
 #include "mosaic/design_element.h"
@@ -41,7 +42,7 @@ Tiling::Tiling() : LayerController("Tiling",true)
     version     = -1;
     refs++;
 
-    connect(&db,  &TilingData::sig_tilingChanged, TilingMonitor::getInstance(), &TilingMonitor::slot_tilingChanged);
+    connect(&db,  &TilingData::sig_tilingChanged, Sys::tilingMaker->getTilingMonitor(), &TilingMonitor::slot_tilingChanged);
 }
 
 Tiling::~Tiling()
@@ -110,6 +111,8 @@ MapPtr Tiling::createMapSingle()
         map->mergeMap(emap);
     }
 
+    map->deDuplicateEdgesUsingNeighbours();      // conceals an unknonwn problem
+
     return map;
 }
 
@@ -127,6 +130,7 @@ MapPtr Tiling::createMapFullSimple()
         m->transform(placement);
         map->mergeMap(m);
     }
+
     return map;
 }
 
@@ -286,8 +290,9 @@ void Tiling::add(const PlacedTilePtr pfm)
     db.add(pfm);
 }
 
-void Tiling::add(PlacedTiles & tiles)
+void Tiling::replace(PlacedTiles & tiles)
 {
+    db.clear();
     db.add(tiles);
 }
 
@@ -389,12 +394,12 @@ TileGroup Tiling::regroupTiles()
     return tileGroup;
 }
 
-QString Tiling::dump() const
+QString Tiling::info() const
 {
     QString astring;
     QDebug  deb(&astring);
 
-    deb << "tiling=" << title  << db.dump();
+    deb << "tiling=" << title  << db.info();
     return astring;
 }
 
@@ -575,14 +580,14 @@ void Tiling::slot_scale(int amount)
         for (const auto & pfp : std::as_const(getInTiling()))
         {
             QTransform t = pfp->getTransform();
-            qDebug() << "t0" << Transform::toInfoString(t);
+            qDebug() << "t0" << Transform::info(t);
             QTransform t1 = t.scale(scale,scale);
 
             t = pfp->getTransform();
             QTransform t2 = t *QTransform::fromScale(scale,scale);
 
-            qDebug() << "t1" << Transform::toInfoString(t1);
-            qDebug() << "t2" << Transform::toInfoString(t2);
+            qDebug() << "t1" << Transform::info(t1);
+            qDebug() << "t2" << Transform::info(t2);
 
             t = pfp->getTransform();
             // scales position too
@@ -699,7 +704,7 @@ void Tiling::slot_moveY(qreal amount)
 void Tiling::setModelXform(const Xform & xf, bool update)
 {
     Q_ASSERT(_unique);
-    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.toInfoString() << (isUnique() ? "unique" : "common");
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.info() << (isUnique() ? "unique" : "common");
     xf_model = xf;
     forceLayerRecalc(update);
 }
@@ -707,7 +712,7 @@ void Tiling::setModelXform(const Xform & xf, bool update)
 const Xform & Tiling::getModelXform()
 {
     Q_ASSERT(_unique);
-    if (debug & DEBUG_XFORM) qInfo().noquote() << "GET" << getLayerName() << xf_model.toInfoString() << (isUnique() ? "unique" : "common");
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "GET" << getLayerName() << xf_model.info() << (isUnique() ? "unique" : "common");
     return xf_model;
 }
 

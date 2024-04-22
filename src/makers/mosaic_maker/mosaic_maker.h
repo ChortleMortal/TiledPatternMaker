@@ -20,10 +20,10 @@ class MosaicMaker : public QObject
 {
     Q_OBJECT
 public:
-    static MosaicMaker * getInstance();
-    static void          releaseInstance();
-
+    MosaicMaker();
+    ~MosaicMaker();
     void        init();
+
     MosaicPtr   loadMosaic(QString name);
     bool        saveMosaic(QString name, bool forceOverwrite);
 
@@ -54,9 +54,6 @@ protected:
     void        sm_replacePrototype(ProtoPtr prototype);
 
 private:
-    MosaicMaker();
-    static MosaicMaker   * mpThis;
-
     class PrototypeMaker * prototypeMaker;
     class ViewController * viewControl;
     class View           * view;

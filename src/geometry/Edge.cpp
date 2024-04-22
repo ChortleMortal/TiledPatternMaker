@@ -4,8 +4,8 @@
 //
 
 #include <QTransform>
-#include "geometry/arcdata.h"
 #include "geometry/edge.h"
+#include "geometry/arcdata.h"
 #include "geometry/geo.h"
 #include "geometry//loose.h"
 #include "geometry/vertex.h"
@@ -16,103 +16,97 @@ int Edge::refs = 0;
 
 Edge::Edge()
 {
-    type          = EDGETYPE_NULL;
-    isSwapped     = false;
-    dvisited      = false;
+    type        = EDGETYPE_NULL;
+    dvisited    = false;
     refs++;
 }
 
 Edge::Edge(const VertexPtr &v1)
 {
-    type          = EDGETYPE_POINT;
-    isSwapped     = false;
-    dvisited      = false;
-    this->v1      = v1;
-    this->v2      = v1; // same
+    type        = EDGETYPE_POINT;
+    dvisited    = false;
+    this->v1    = v1;
+    this->v2    = v1; // same
     refs++;
 }
 
 Edge::Edge(const VertexPtr & v1, const VertexPtr & v2 )
 {
-    type          = EDGETYPE_LINE;
-    isSwapped     = false;
-    dvisited      = false;
-    this->v1      = v1;
-    this->v2      = v2;
+    type        = EDGETYPE_LINE;
+    dvisited    = false;
+    this->v1    = v1;
+    this->v2    = v2;
     refs++;
 }
 
 Edge::Edge(const VertexPtr & v1, const VertexPtr & v2, const QPointF & arcCenter, bool convex, bool chord)
 {
     if (chord)
-        type      = EDGETYPE_CHORD;
+        type    = EDGETYPE_CHORD;
     else
-        type      = EDGETYPE_CURVE;
-    isSwapped     = false;
-    dvisited      = false;
-    this->v1      = v1;
-    this->v2      = v2;
-    setArcCenter(arcCenter,convex,chord);   // this creates arcData too
+        type    = EDGETYPE_CURVE;
+    dvisited    = false;
+    this->v1    = v1;
+    this->v2    = v2;
+    setCurvedEdge(arcCenter,convex,chord);   // this creates arcData too
     refs++;
 }
 
 Edge::Edge(const Edge & other)
 {
-    type          = other.type;
-    isSwapped     = other.isSwapped;
-    dvisited      = other.dvisited;
-    v1            = other.v1;
-    v2            = other.v2;
+    type        = other.type;
+    dvisited    = other.dvisited;
+    v1          = other.v1;
+    v2          = other.v2;
     if (type == EDGETYPE_CURVE || type == EDGETYPE_CHORD)
     {
-        setArcCenter(other.arcCenter,other.convex,(type==EDGETYPE_CHORD));
+        //setCurvedEdge(other.getArcCenter(),other.isConvex(),(type==EDGETYPE_CHORD));
+        arcData = other.arcData;
     }
     refs++;
-}
-
-EdgePtr Edge::getCopy()
-{
-    EdgePtr ep = make_shared<Edge>();
-    ep->v1     = v1;
-    ep->v2     = v2;
-    ep->type   = type;
-    if (type == EDGETYPE_CURVE || type == EDGETYPE_CHORD)
-    {
-        ep->setArcCenter(arcCenter,convex,(type==EDGETYPE_CHORD));
-
-    }
-    return ep;
 }
 
 EdgePtr Edge::createTwin()
 {
     // has same edge index as original
-    EdgePtr ep        = make_shared<Edge>();
-    ep->type          = type;
-    ep->isSwapped     = true;
+    EdgePtr ep        = make_shared<Edge>(*this);
     ep->dvisited      = dvisited;
     ep->v1            = v2;
     ep->v2            = v1;
     if (type == EDGETYPE_CURVE || type == EDGETYPE_CHORD)
     {
-        Q_ASSERT(arcData);
-        ep->setArcCenter(arcData->getCenterOldConcave(v1->pt,v2->pt,arcCenter),!convex,(type==EDGETYPE_CHORD));
+        ep->arcData       = arcData;
+        ep->arcData.create(ep->v1->pt,ep->v2->pt,arcData.getCenter(),!arcData.convex());
     }
     return ep;
+}
+
+Edge::Edge(const EdgePtr &other)
+{
+    type           = other->type;
+    dvisited       = false;
+    v1             = other->v1;
+    v2             = other->v2;
+    if (type == EDGETYPE_CURVE || type == EDGETYPE_CHORD)
+    {
+        ArcData & ad = getArcData();
+        ad = other->getArcData();
+    }
+    refs++;
 }
 
 Edge::Edge(const EdgePtr &other, QTransform T)
 {
     type           = other->type;
-    isSwapped      = false;
     dvisited       = false;
-    v1 = make_shared<Vertex>(T.map(other->v1->pt));
-    v2 = make_shared<Vertex>(T.map(other->v2->pt));
+    QPointF p1     = T.map(other->v1->pt);
+    QPointF p2     = T.map(other->v2->pt);
+    v1 = make_shared<Vertex>(p1);
+    v2 = make_shared<Vertex>(p2);
     if (type == EDGETYPE_CURVE || type == EDGETYPE_CHORD)
     {
-        arcCenter    = T.map(other->arcCenter);
-        convex       = other->convex;
-        arcMagnitude = other->arcMagnitude;
+        ArcData & ad = getArcData();
+        ad = other->getArcData();
     }
     refs++;
 }
@@ -156,6 +150,19 @@ bool Edge::sameAs(const VertexPtr &ov1, const VertexPtr &ov2)
     return false;
 }
 
+bool Edge::sameAs(const QPointF &op1, const QPointF &op2)
+{
+    if (v1->pt == op1 &&  v2->pt == op2)
+    {
+        return true;
+    }
+    if (v1->pt == op2 && v2->pt == op1)
+    {
+        return true;
+    }
+    return false;
+}
+
 bool Edge::equals(const EdgePtr & other)
 {
     if (!Loose::equalsPt(v1->pt,other->v1->pt))
@@ -169,75 +176,86 @@ bool Edge::equals(const EdgePtr & other)
 
     if (type == EDGETYPE_CURVE || type == EDGETYPE_CHORD)
     {
-        if (arcCenter != other->arcCenter)
+        if (getArcCenter() != other->getArcCenter())
             return false;
 
-        if (convex != other->convex)
+        if (isConvex() != other->isConvex())
             return false;
     }
 
     return true;
 }
 
-ArcDataPtr Edge::getArcData()
+void  Edge::setV1(const VertexPtr & v)
 {
-    Q_ASSERT(arcData);
-    return arcData;
+    this->v1 = v;
+    if (isCurve())
+    {
+        arcData.create(v1->pt,v2->pt,arcData.getCenter(),arcData.convex());
+    }
 }
 
-void Edge::setArcCenter(const QPointF & ac, bool convex, bool chord)
+void  Edge::setV2(const VertexPtr & v)
 {
-    arcCenter    = ac;
-    this->convex = convex;
+    this->v2 = v;
+    if ((type == EDGETYPE_NULL) || (type == EDGETYPE_POINT))
+    {
+        type = EDGETYPE_LINE;
+    }
+    else if (isCurve())
+    {
+        arcData.create(v1->pt,v2->pt,arcData.getCenter(),arcData.convex());
+    }
+}
+
+void Edge::resetCurveToLine()
+{
+    if (type == EDGETYPE_CURVE || type == EDGETYPE_CHORD)
+    {
+        type = EDGETYPE_LINE;
+    }
+}
+
+void Edge::setConvex(bool convex)
+{
+    ArcData & ad = getArcData();
+    ad.setConvex(convex,v1->pt,v2->pt);
+}
+
+void Edge::setCurvedEdge(QPointF arcCenter, bool convex, bool chord)
+{
     if (chord)
         type     = EDGETYPE_CHORD;
     else
         type     = EDGETYPE_CURVE;
 
+    ArcData & ad = getArcData();
+    ad.create(v1->pt,v2->pt,arcCenter,convex);
     calcMagnitude();
-    arcData = make_shared<ArcData>(this);   // always overwrites
+    ad.calcSpan(this);
 }
 
-void Edge::calcArcCenter(bool convex, bool chord)
+// FIXME - only used in create
+void Edge::convertToConvexCurve()
 {
     // calculates a default line center
-
-    Q_ASSERT(arcData);
-
-    this->convex = convex;
-    if (chord)
-        type     = EDGETYPE_CHORD;
-    else
-        type     = EDGETYPE_CURVE;
+    type  = EDGETYPE_CURVE;
 
     QLineF line = getLine();
     QPointF mid = getMidPoint();
-    // half-line
-    // normal vector a point
-    QPointF pt;
-    if (convex)
-    {
-        pt = mid + QPointF(-line.dy(), line.dx());
-    }
-    else
-    {
-        pt = mid - QPointF(line.dy(), -line.dx());
-        //QPointF pt2 = mid + QPointF(-line.dy(), line.dx());
-        //QPointF pt3 = Point::reflectPoint(pt2,line);
-        //Q_ASSERT(pt2 == pt3);
-    }
-    arcCenter = pt;
+    QPointF pt  = mid + QPointF(-line.dy(), line.dx());
 
-    calcMagnitude();
+    setCurvedEdge(pt,true,false);
 }
 
 void Edge::calcMagnitude()
 {
     // calcs magnitude from arcCenter
+    ArcData & ad = getArcData();
     QLineF line  = getLine();
     QPointF mid  = getMidPoint();
-    qreal dist   = Geo::dist(mid,arcCenter);
-    arcMagnitude = (dist/line.length());
+    qreal dist   = Geo::dist(mid,getArcCenter());
+    ad.magnitude = (dist/line.length());
     //qDebug() << "magnitude=" << arcMagnitude;
 }
 
@@ -248,7 +266,7 @@ void Edge::setArcMagnitude(qreal magnitude)
     QLineF line = getLine();
     QPointF mid = getMidPoint();
     QPointF pt;
-    if (convex)
+    if (isConvex())
     {
         pt = mid + QPointF(-line.dy(), line.dx());
     }
@@ -256,84 +274,17 @@ void Edge::setArcMagnitude(qreal magnitude)
     {
         pt = mid - QPointF(line.dy(), -line.dx());
     }
+
     QLineF perp(mid,pt);
 
-    qreal  arcCenterLen = magnitude * line.length();
+    qreal arcCenterLen = magnitude * line.length();
     perp.setLength(arcCenterLen);
 
-    arcCenter = perp.p2();
+    ArcData & ad  = getArcData();
+    ad.setCenter(perp.p2());
+    ad.calcSpan(this);
 }
 
-bool Edge::pointWithinSpan(const QPointF & pt, qreal originalSpan)
-{
-    static int debug = 0;
-
-    Q_ASSERT(arcData);
-    Q_ASSERT(isCurve());
-
-    if (debug >=1) qDebug() << "v1:" << v1->pt << "v2:" << v2->pt << "pt:" << pt;
-
-
-    if (Loose::equalsPt(pt,v1->pt) || Loose::equalsPt(pt,v2->pt))
-        return false;   // not a true intersect
-
-    ArcData ad(v1->pt,pt,arcCenter,convex);
-    qreal aspan = qAbs(ad.span);
-    qreal aorig = qAbs(originalSpan);
-
-    if (aspan > aorig)
-        return false;
-    if (Loose::equals(aspan,aorig))
-        return false;
-    if (aspan < 1.0)
-        return false;   // not a new intersection - points are at ends
-    if (Loose::equals(aspan,180) || Loose::equals(aspan,360))
-        return false;   // not what we want
-
-    // spans have been 'corrected' for drawing purposes.  Here we need to be comparing the 'real' spans
-    qreal arcspan  = arcData->end - arcData->start;
-    qreal ad2span = ad.end - ad.start;
-
-    // another case
-    if (arcspan > 0 && ad2span < 0)
-        return false;
-    if (ad2span > 0 && arcspan < 0)
-        return false;
-
-    if (debug >=2) qDebug() << (arcData->convex ? "convex" : "concave") << arcData->start << arcData->end << arcspan << ad.start  << ad.end << ad2span;
-    if (arcData->convex)
-    {
-        Q_ASSERT(arcData->span < 0);
-        Q_ASSERT(ad.span < 0);
-        if ((ad.end < arcData->start) &&  ad.end > arcData->end)
-        {
-            if (debug >=2) qDebug() << "valid span";
-            return true;
-        }
-    }
-    else
-    {
-        Q_ASSERT(!arcData->convex);
-        Q_ASSERT(arcData->span > 0);
-        Q_ASSERT(ad.span > 0);
-        if ((ad.end > arcData->start) &&  ad.end < arcData->end)
-        {
-            if (debug >= 2) qDebug() << "valid span";
-            return true;
-        }
-    }
-    if (debug >= 1) qDebug() << "rejected span";
-    return false;
-}
-
-void Edge::resetCurve()
-{
-    if (type == EDGETYPE_CURVE || type == EDGETYPE_CHORD)
-    {
-        type = EDGETYPE_LINE;
-        arcCenter = QPointF();
-    }
-}
 
 // Data access.
 
@@ -408,13 +359,7 @@ qreal Edge::getMaxX()
 
 qreal Edge::getRadius()
 {
-    return QLineF(arcCenter,v1->pt).length();
-}
-
-qreal Edge::getArcSpan()
-{
-    Q_ASSERT(arcData);
-    return arcData->span;
+    return QLineF(getArcCenter(),v1->pt).length();
 }
 
 bool Edge::isTrivial(qreal tolerance)
@@ -443,7 +388,7 @@ bool Edge::isTrivial(qreal tolerance)
 bool Edge::isColinearAndTouching(const EdgePtr & e, qreal tolerance)
 {
     static bool debug = false;
-    if (debug) qDebug().noquote() << "testing"  << dump() << "and" << e->dump();
+    if (debug) qDebug().noquote() << "testing"  << info() << "and" << e->info();
 
     if ((e->contains(v1)) || (e->contains(v2)))
     {
@@ -476,29 +421,28 @@ bool Edge::isColinear(const EdgePtr & e, qreal tolerance)
 
 qreal Edge::getAngle()
 {
-    return qAtan2(v1->pt.x() - v2->pt.x(),v1->pt.y()-v2->pt.y());
+    return qAtan2(v1->pt.x() - v2->pt.x(), v1->pt.y() - v2->pt.y());
 }
 
-
-QString Edge::dump()
+QString Edge::info()
 {
     QString astring;
     QDebug  deb(&astring);
+
+    deb << this;
 
     switch (type)
     {
     case EDGETYPE_LINE:
         deb << "Edge LINE "
             << "v1" << v1->pt
-            << "v2" << v2->pt
-            << ((isSwapped) ? "swapped" : "");
+            << "v2" << v2->pt;
         break;
     case EDGETYPE_CURVE:
         deb << "Edge CURVE"
             << "v1" << v1->pt
             << "v2" << v2->pt
-            << "arcCenter:" << arcCenter  << ((convex) ? "CONVEX" : "CONCAVE")
-            << ((isSwapped) ? "swapped" : "");
+            << "arcCenter:" << getArcCenter()  << (isConvex() ? "CONVEX" : "CONCAVE");
         break;
     case EDGETYPE_POINT:
         deb << "Edge POINT"
@@ -508,17 +452,51 @@ QString Edge::dump()
         deb << "Edge CHORD"
             << "v1" << v1->pt
             << "v2" << v2->pt
-            << "arcCenter:" << arcCenter  << ((convex) ? "CONVEX" : "CONCAVE")
-            << ((isSwapped) ? "swapped" : "");
+            << "arcCenter:" << getArcCenter()  << (isConvex() ? "CONVEX" : "CONCAVE");
         break;
     case EDGETYPE_NULL:
         deb << "Edge NULL";
+        break;
     }
     if (isCurve())
     {
-        deb << "span" << arcData->span;
+        deb << getArcData().info();
     }
     return astring;
+}
+
+QString Edge::summary()
+{
+    QString astring;
+    QDebug  deb(&astring);
+
+    switch (type)
+    {
+    case EDGETYPE_LINE:
+        deb << "LINE";
+        break;
+    case EDGETYPE_CURVE:
+        deb << "CURVE"
+            << "arcCenter:" << getArcCenter()  << (isConvex() ? "CONVEX" : "CONCAVE");
+        break;
+    case EDGETYPE_POINT:
+        deb << "POINT"
+            << "v1" << v1->pt;
+        break;
+    case EDGETYPE_CHORD:
+        deb << "CHORD"
+            << "arcCenter:" << getArcCenter()  << (isConvex() ? "CONVEX" : "CONCAVE");
+        break;
+    case EDGETYPE_NULL:
+        deb << "NULL";
+        break;
+    }
+    return astring;
+}
+
+void Edge::dump()
+{
+    qDebug().noquote() << info();
 }
 
 // The less-than operator compares the first point, then the order.

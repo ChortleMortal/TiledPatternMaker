@@ -27,9 +27,9 @@ public:
     Emboss(StylePtr other);
     virtual ~Emboss();
 
-    virtual eStyleType getStyleType() const override { return STYLE_EMBOSSED; }
-    QString getStyleDesc() const override { return "Embossed";}
-    virtual void report()  const override { qDebug().noquote() << getStyleDesc()  << "angle" << angle << "light" << light_x << light_y
+    eStyleType  getStyleType() const override { return STYLE_EMBOSSED; }
+    QString     getStyleDesc() const override { return "Embossed";}
+    void        dump()         const override { qDebug().noquote() << getStyleDesc()  << "angle" << angle << "light" << light_x << light_y
                                      << "width:" << width << "outline:" << drawOutline << outline_width << "outlineColor" << outline_color  << colors.colorsString(); }
 
     qreal   getAngle();

@@ -8,22 +8,11 @@
 #include "viewers/tiling_maker_view.h"
 #include "viewers/view.h"
 
-TilingMonitor * TilingMonitor::mpThis = nullptr;
-
-TilingMonitor * TilingMonitor::getInstance()
-{
-    if (!mpThis)
-    {
-        mpThis = new TilingMonitor();
-    }
-    return mpThis;
-}
-
 TilingMonitor::TilingMonitor()
 {
     doit = false;
 
-    tilingMaker = TilingMaker::getInstance();
+    tilingMaker = Sys::tilingMaker;
 
     connect(this, &TilingMonitor::sig_update, Sys::view, &View::update);
 }
@@ -38,21 +27,21 @@ bool TilingMonitor::hasChanged(TilingPtr tp)
 
 void TilingMonitor::slot_tilingChanged()
 {
-    wTiling = TilingMaker::getInstance()->getSelected();
+    wTiling = Sys::tilingMaker->getSelected();
     tileChanged = true;
     doit = true;
 }
 
 void TilingMonitor::slot_tileChanged()
 {
-    wTiling = TilingMaker::getInstance()->getSelected();
+    wTiling = Sys::tilingMaker->getSelected();
     tileChanged = true;
     doit = true;
 }
 
 void TilingMonitor::slot_monitor(bool reset)
 {
-    wTiling = TilingMaker::getInstance()->getSelected();
+    wTiling = Sys::tilingMaker->getSelected();
     if (reset)
     {
         tileChanged = false;
@@ -91,7 +80,7 @@ void TilingMonitor::determineOverlapsAndTouching()
 {
     PlacedTiles allPlacedTiles;
 
-    TilingMakerView * tmv = TilingMakerView::getInstance();
+    TilingMakerView * tmv = Sys::tilingMakerView;
 
     allPlacedTiles = tmv->getAllTiles();  // makes a local copy
 

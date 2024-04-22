@@ -29,7 +29,7 @@ public:
 
     virtual eStyleType getStyleType() const override { return STYLE_PLAIN; }
     QString            getStyleDesc() const override {return "Plain";}
-    virtual void       report()       const override { qDebug().noquote() << getStyleDesc() << colors.colorsString(); }
+    virtual void       dump()         const override { qDebug().noquote() << getStyleDesc() << colors.colorsString(); }
 
 protected:
 private:

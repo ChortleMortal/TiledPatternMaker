@@ -3,6 +3,7 @@
 
 #include "motifs/motif_connector.h"
 #include "geometry/map.h"
+#include "geometry/debug_map.h"
 #include "geometry/vertex.h"
 #include "geometry/edge.h"
 #include "geometry/neighbours.h"
@@ -120,12 +121,12 @@ void MotifConnector::connectMotif(RadialMotif * motif, qreal scale)
 
         VertexPtr iv = map->insertVertex( isect);
         EdgePtr ep   = map->insertEdge( last_top, iv);
-        if (dbgmap) dbgmap->insertDebugLine(ep);
+        if (dbgmap) dbgmap->insertDebugEdge(ep);
         last_top = iv;
 
         iv = map->insertVertex(QPointF(isect.x(), -isect.y()));
         ep = map->insertEdge( last_bottom, iv);
-        if (dbgmap) dbgmap->insertDebugLine(ep);
+        if (dbgmap) dbgmap->insertDebugEdge(ep);
         last_bottom = iv;
         
         neg_start = motif->getUnitRotationTransform().map( neg_start );

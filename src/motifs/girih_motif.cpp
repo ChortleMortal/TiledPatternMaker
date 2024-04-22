@@ -51,7 +51,7 @@ void GirihMotif::inferGirih()
     corners       = pmain->getTransformedPoints();
 #else
     corners = getTile()->getPoints();
-    mids    = getTile()->getEdgePoly().getMids();
+    mids    = getTile()->getMids();
 #endif
 
     int side_count = mids.size();

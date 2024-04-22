@@ -45,9 +45,10 @@ class page_layers : public panel_page
 public:
     page_layers(ControlPanel * cpanel);
 
-    void onEnter() override;
-    void onExit() override;
-    void onRefresh() override;
+    void onEnter()          override;
+    void onExit()           override {}
+    void onRefresh()        override;
+    QString getPageStatus() override;
 
 private slots:
     void slot_selectLayer();

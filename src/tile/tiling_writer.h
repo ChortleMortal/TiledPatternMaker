@@ -24,7 +24,7 @@ protected:
     void    writeTilingXML(QTextStream & out);     // also called when writing styles
     void    writeViewSettings(QTextStream & out);
 
-    void    setEdgePoly(QTextStream & ts, EdgePoly & epoly);
+    void    setEdgePoly(QTextStream & ts, const EdgePoly &epoly);
     void    setVertex(QTextStream & ts,VertexPtr v, QString name);
     void    setPoint(QTextStream & ts, QPointF pt, QString name);
 

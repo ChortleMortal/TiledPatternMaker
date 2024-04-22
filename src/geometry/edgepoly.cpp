@@ -13,7 +13,7 @@ EdgePoly::EdgePoly()
 {
 }
 
-EdgePoly::EdgePoly(QPolygonF & poly)
+EdgePoly::EdgePoly(const QPolygonF &poly)
 {
     init(poly);
 }
@@ -35,7 +35,7 @@ EdgePoly::EdgePoly(PolyPtr pp)
     init(p);
 }
 
-void EdgePoly::set(QPolygonF & poly)
+void EdgePoly::set(const QPolygonF & poly)
 {
     init(poly);
 }
@@ -75,7 +75,7 @@ void EdgePoly::set(const Circle &c)
     push_back(e4);
 }
 
-void EdgePoly::init(QPolygonF & poly)
+void EdgePoly::init(const QPolygonF &poly)
 {
     clear();
 
@@ -128,7 +128,7 @@ EdgePoly EdgePoly::recreate() const
         EdgePtr edge2 = make_shared<Edge>(newv1,newv2);
         if  (edge->getType() == EDGETYPE_CURVE || edge->getType() == EDGETYPE_CHORD)
         {
-            edge2->setArcCenter(edge->getArcCenter(),edge->isConvex(),(edge->getType()==EDGETYPE_CHORD));
+            edge2->setCurvedEdge(edge->getArcCenter(),edge->isConvex(),(edge->getType()==EDGETYPE_CHORD));
         }
         epoly.push_back(edge2);
     }
@@ -167,7 +167,7 @@ void EdgePoly::mapD(QTransform T)
         if (!mapped.contains(v))
         {
             pt = v->pt;
-            v->pt = T.map(pt);
+            v->setPt(T.map(pt));
             mapped.push_back(v);
         }
 
@@ -175,14 +175,14 @@ void EdgePoly::mapD(QTransform T)
         if (!mapped.contains(v))
         {
             pt = v->pt;
-            v->pt = T.map(pt);
+            v->setPt(T.map(pt));
             mapped.push_back(v);
         }
 
         if (edge->getType() == EDGETYPE_CURVE || edge->getType() == EDGETYPE_CHORD)
         {
             QPointF p3 = edge->getArcCenter();
-            edge->setArcCenter(T.map(p3),edge->isConvex(),(edge->getType()==EDGETYPE_CHORD));
+            edge->setCurvedEdge(T.map(p3),edge->isConvex(),(edge->getType()==EDGETYPE_CHORD));
         }
     }
 }
@@ -210,11 +210,10 @@ EdgePoly EdgePoly::map(QTransform T) const
         VertexPtr v2 = make_shared<Vertex>(T.map(pt));
 
         EdgePtr ne = make_shared<Edge>(v1,v2);
-        ne->setSwapState(e->getSwapState());
         if (e->getType() == EDGETYPE_CURVE || e->getType() == EDGETYPE_CHORD)
         {
             QPointF p3 = e->getArcCenter();
-            ne->setArcCenter(T.map(p3),e->isConvex(),(e->getType()==EDGETYPE_CHORD));
+            ne->setCurvedEdge(T.map(p3),e->isConvex(),(e->getType()==EDGETYPE_CHORD));
         }
         ep.push_back(ne);
         v1 = v2;
@@ -222,11 +221,10 @@ EdgePoly EdgePoly::map(QTransform T) const
 
     EdgePtr e = edges.last();
     EdgePtr ne = make_shared<Edge>(v1,first);
-    ne->setSwapState(e->getSwapState());
     if (e->getType() == EDGETYPE_CURVE || e->getType() == EDGETYPE_CHORD)
     {
         QPointF p3 = e->getArcCenter();
-        ne->setArcCenter(T.map(p3),e->isConvex(),(e->getType()==EDGETYPE_CHORD));
+        ne->setCurvedEdge(T.map(p3),e->isConvex(),(e->getType()==EDGETYPE_CHORD));
     }
     ep.push_back(ne);
 
@@ -326,8 +324,7 @@ QPolygonF EdgePoly::getPoints() const
     QPolygonF poly;
     for (const auto & edge : std::as_const(*this))
     {
-        QPointF pt = edge->v1->pt;
-        poly << pt;
+        poly << edge->v1->pt;
     }
     return poly;
 }
@@ -383,7 +380,7 @@ qreal EdgePoly::getAngle(int edge)
     return qRadiansToDegrees(theta);
 }
 
-void EdgePoly::paint(QPainter * painter, QTransform T, bool annotate)
+void EdgePoly::paint(QPainter * painter, QTransform T, bool annotate) const
 {
     painter->save();
     QFont font = painter->font();
@@ -403,14 +400,16 @@ void EdgePoly::paint(QPainter * painter, QTransform T, bool annotate)
         else if (edge->getType() == EDGETYPE_CURVE)
         {
             QPointF arcCenter = T.map(edge->getArcCenter());
-            ArcData ad(p1,p2,arcCenter,edge->isConvex());
-            painter->drawArc(ad.rect, qRound(ad.start * 16.0),qRound(ad.span * 16.0));
+            ArcData ad;
+            ad.create(p1,p2,arcCenter,edge->isConvex());
+            painter->drawArc(ad.rect, qRound(ad.start * 16.0),qRound(ad.span() * 16.0));
         }
         else if (edge->getType() == EDGETYPE_CHORD)
         {
             QPointF arcCenter = T.map(edge->getArcCenter());
-            ArcData ad(p1,p2,arcCenter,edge->isConvex());
-            painter->drawChord(ad.rect, qRound(ad.start * 16.0),qRound(ad.span * 16.0));
+            ArcData ad;
+            ad.create(p1,p2,arcCenter,edge->isConvex());
+            painter->drawChord(ad.rect, qRound(ad.start * 16.0),qRound(ad.span() * 16.0));
         }
 
         if (annotate)
@@ -497,22 +496,9 @@ QVector<QLineF> EdgePoly::getLines()
     QVector<QLineF> vec;
     for (const auto & edge : std::as_const(*this))
     {
-        vec.push_back(QLineF(edge->v1->pt,edge->v2->pt));
+        vec.push_back(edge->getLine());
     }
     return vec;
-}
-
-int EdgePoly::numSwapped()
-{
-    int num = 0;
-    for (const auto & edge : std::as_const(*this))
-    {
-        if (edge->getSwapState())
-        {
-            num++;
-        }
-    }
-    return num;
 }
 
 void EdgePoly::dump() const
@@ -520,7 +506,7 @@ void EdgePoly::dump() const
     qDebug() << "EdgePoly::dump()" << ((isClockwise()) ? "Clockwise" : "Anticlockwise");
     for (const auto & edge : *this)
     {
-        qDebug().noquote() << edge->dump();
+        edge->dump();
     }
 }
 

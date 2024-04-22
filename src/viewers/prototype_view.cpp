@@ -17,29 +17,9 @@
 
 using std::make_shared;
 
-PrototypeView * PrototypeView::mpThis = nullptr;
-
-PrototypeView * PrototypeView::getInstance()
-{
-    if (!mpThis)
-    {
-        mpThis =  new PrototypeView();
-    }
-    return mpThis;
-}
-
-void PrototypeView::releaseInstance()
-{
-    if (mpThis != nullptr)
-    {
-        delete mpThis;
-        mpThis = nullptr;
-    }
-}
-
 PrototypeView::PrototypeView() : LayerController("PrototypeView",false)
 {
-    protoMaker = PrototypeMaker::getInstance();
+    protoMaker = Sys::prototypeMaker;
 
     colors.setColors(config->protoViewColors);
 }
@@ -66,9 +46,11 @@ void PrototypeView::paint(QPainter *painter)
 
 void PrototypeView::draw()
 {
-    qDebug() << "PrototypeView::draw";
+    qDebug() << "PrototypeView::draw  mode=" << config->protoViewMode;
 
     const auto data = protoMaker->getProtoMakerData();
+
+    data->dumpData(MVD_PROTO);
 
     for (const auto & proto : data->getPrototypes())
     {
@@ -152,8 +134,7 @@ void PrototypeView::drawProto(ProtoPtr proto)
         {
             auto motif  = del->getMotif();
             auto tile   = del->getTile();
-            EdgePoly ep = tile->getEdgePoly();
-
+            const EdgePoly & ep = tile->getEdgePoly();
 
             auto tilePlacements = tiling->getPlacements(tile);
             for (const auto & T0 : std::as_const(tilePlacements))
@@ -248,14 +229,14 @@ void PrototypeView::drawProto(ProtoPtr proto)
 void PrototypeView::setModelXform(const Xform & xf, bool update)
 {
     Q_ASSERT(!_unique);
-    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.toInfoString() << (isUnique() ? "unique" : "common");
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.info() << (isUnique() ? "unique" : "common");
     viewControl->setCurrentModelXform(xf,update);
 }
 
 const Xform & PrototypeView::getModelXform()
 {
     Q_ASSERT(!_unique);
-    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << viewControl->getCurrentModelXform().toInfoString() << (isUnique() ? "unique" : "common");
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << viewControl->getCurrentModelXform().info() << (isUnique() ? "unique" : "common");
     return viewControl->getCurrentModelXform();
 }
 

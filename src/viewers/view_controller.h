@@ -23,6 +23,7 @@ public:
     virtual ~ViewController();
 
     void    init(View * view);
+    void    unloadMakers();
 
     void    viewEnable(eViewType view, bool enable);
     bool    isEnabled(eViewType view);
@@ -43,8 +44,6 @@ public:
     void    setBackgroundColor(eViewType vtype);
 
     Canvas &  getCanvas()               { return canvas; }
-
-    class TilingView * getTilingView()  { return tilingView; }   // an anomoly for multithreading
 
 public slots:
     void    slot_reconstructView();
@@ -77,14 +76,11 @@ private:
     class   TilingMaker         * tilingMaker;
 
     class TilingMakerView       * tilingMakerView;
-    class TilingView            * tilingView;
     class PrototypeView         * prototypeView;
     class MotifView             * motifView;
     class MapEditorView         * mapedView;
     class MeasureView           * measureView;
     class GridView              * gridView;
-    class CropViewer            * cropViewer;
-    class BorderView            * borderView;
     class BackgroundImageView   * bimageView;
 
     View                        * theView;

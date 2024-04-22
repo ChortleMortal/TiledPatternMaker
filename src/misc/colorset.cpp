@@ -1,61 +1,62 @@
+#include <QDebug>
 #include "misc/colorset.h"
 
 ColorSet::ColorSet()
 {
-    pos = colorset.end();
+    pos = begin();
     hidden = false;
 }
 
 void ColorSet::clear()
 {
-    colorset.clear();
-    pos = colorset.begin();
+    QVector<TPColor>::clear();
+    pos = begin();
 }
 
 void ColorSet::setColor(int idx, QColor color, bool hide)
 {
-    colorset.replace(idx,TPColor(color,hide));
-    pos = colorset.begin();
+    replace(idx,TPColor(color,hide));
+    pos = begin();
 }
 
 void ColorSet::setColor(int idx, TPColor tpcolor)
 {
-    colorset.replace(idx,tpcolor);
-    pos = colorset.begin();
+    replace(idx,tpcolor);
+    pos = begin();
 }
 
 void ColorSet::addColor(QColor color, bool hidden)
 {
-    colorset.push_back(TPColor(color,hidden));
-    pos = colorset.begin();
+    push_back(TPColor(color,hidden));
+    pos = begin();
 }
 
 void ColorSet::addColor(TPColor color)
 {
-    colorset.push_back(color);
-    pos = colorset.begin();
+    push_back(color);
+    pos = begin();
 }
 
 void ColorSet::setColors(QVector<TPColor> &cset)
 {
-    clear();
+    QVector<TPColor>::clear();
     for (auto & tp : std::as_const(cset))
     {
-        colorset.push_back(tp);
+        push_back(tp);
     }
-    pos = colorset.begin();
+    pos = begin();
 }
 
 void  ColorSet::setColors(const ColorSet & cset)
 {
-    clear();
-    colorset = cset.colorset;
-    pos = colorset.begin();
+    QVector<TPColor>::clear();
+    *this = cset;
+    pos = begin();
 }
 
 void ColorSet::setOpacity(float val)
 {
-    for (auto & tpcolor : colorset)
+    for (auto & tpcolor : *this)
     {
         QColor c = tpcolor.color;
         c.setAlphaF(val);
@@ -63,45 +64,41 @@ void ColorSet::setOpacity(float val)
     }
 }
 
-TPColor ColorSet::getFirstColor()
+void ColorSet::resetIndex()
 {
-    pos = colorset.begin();
-    return getNextColor();
+    pos = begin();
 }
 
-TPColor ColorSet::getNextColor()
+TPColor ColorSet::getFirstTPColor()
+{
+    pos = begin();
+    return getNextTPColor();
+}
+
+TPColor ColorSet::getNextTPColor()
 {
     if (size() == 0)
     {
-        colorset.push_back(TPColor(Qt::yellow,false));
-        pos = colorset.begin();
+        push_back(TPColor(Qt::yellow,false));
+        pos = begin();
     }
-    Q_ASSERT(pos != colorset.end());
 
-    TPColor color = *pos;
-    if (++pos == colorset.end())
+    TPColor tpcolor = *pos;
+    pos++;
+    if (pos == end())
     {
-        pos = colorset.begin();
+        pos = begin();
     }
-    return color;
+    return tpcolor;
 }
 
-void ColorSet::removeColor(int idx)
+void ColorSet::removeTPColor(int idx)
 {
-    colorset.removeAt(idx);
-    pos = colorset.begin();
+    idx = idx &size();
+    removeAt(idx);
+    pos = begin();
 }
 
-QString ColorSet::colorsString() const
-{
-    QString str("Colors: ");
-    for (auto & tpcolor : std::as_const(colorset))
-    {
-        str += tpcolor.color.name(QColor::HexArgb);
-        str += " ";
-    }
-    return str;
-}
 
 QWidget * ColorSet::createWidget()
 {
@@ -114,7 +111,7 @@ QWidget * ColorSet::createWidget()
 AQHBoxLayout * ColorSet::createLayout()
 {
     AQHBoxLayout * hbox = new AQHBoxLayout;
-    for (auto & tpcolor :  std::as_const(colorset))
+    for (auto & tpcolor :  * this)
     {
         QColor color     = tpcolor.color;
         QColor fullColor = color;
@@ -129,80 +126,112 @@ AQHBoxLayout * ColorSet::createLayout()
     return hbox;
 }
 
+QString ColorSet::colorsString() const
+{
+    QString str("Colors: ");
+    for (auto & tpcolor : std::as_const(*this))
+    {
+        str += tpcolor.color.name(QColor::HexArgb);
+        str += " ";
+    }
+    return str;
+}
+
+void ColorSet::dump()
+{
+    QString astring;
+    QDebug  deb(&astring);
+
+    deb << "size:" << size();
+    for (auto it = begin(); it != end(); it++)
+    {
+        auto tpc = *it;
+        deb << tpc.color.name(QColor::HexArgb);
+    }
+    qDebug().noquote() << astring;
+}
+
 ////////////////////////////////////////////////////////
 ///
 ////////////////////////////////////////////////////////
 
 ColorGroup::ColorGroup()
 {
-    ipos = -1;
+    pos = end();
 }
 
 void ColorGroup::addColorSet(ColorSet & cset)
 {
-    colorgroup.push_back(cset);
-    ipos = 0;
+    push_back(cset);
+    pos = begin();
 }
 
 void ColorGroup::setColorSet(int idx, ColorSet & cset)
 {
-    colorgroup.replace(idx,cset);
-    ipos = 0;
+    idx = idx % size();
+    replace(idx,cset);
+    pos = begin();
 }
 
 ColorSet * ColorGroup::getColorSet(int idx)
 {
-    return &colorgroup[idx];
+    idx = idx % size();
+    QVector<ColorSet> & cset  = *this;
+    return &cset[idx];
 }
 
 void ColorGroup::removeColorSet(int idx)
 {
-    colorgroup.removeAt(idx);
-    ipos = 9;
+    idx = idx % size();
+    removeAt(idx);
+    pos = begin();
 }
 
 void  ColorGroup::resetIndex()
 {
-    if (colorgroup.size())
-        ipos = 0;
-    else
-        ipos = -1;
-
-    for (auto & fset : colorgroup)
+    pos = begin();
+    for (auto & cset : *this)
     {
-        fset.resetIndex();
+        cset.resetIndex();
     }
 }
 
 ColorSet * ColorGroup::getNextColorSet()
 {
-    if (size() == 0 || ipos == -1)
+    if (size() == 0)
     {
         ColorSet colorSet;
-        colorgroup.push_back(colorSet);
-        ipos = 0;
+        push_back(colorSet);
+        pos = begin();
     }
-    ColorSet * cset = &colorgroup[ipos++];
-    if (ipos >= colorgroup.size())
+
+    ColorSet * cset = &*pos;
+    pos++;
+    if (pos == end())
     {
-        ipos = 0;
+        pos = begin();
     }
     return cset;
 }
 
 void ColorGroup::hide(int idx, bool hide)
 {
-    if (idx >= 0 && idx < size())
-    {
-        colorgroup[idx].hide(hide);
-    }
-
+    idx = idx % size();
+    auto cset = getColorSet(idx);
+    cset->hide(hide);
 }
+
 bool  ColorGroup::isHidden(int idx)
 {
-    if (idx >= 0 && idx < size())
+    idx = idx % size();
+    auto cset = getColorSet(idx);
+    return cset->isHidden();
+}
+
+void ColorGroup::dump()
+{
+    for (auto & cset : *this)
     {
-        return colorgroup[idx].isHidden();
+        cset.dump();
     }
-    return false;
 }

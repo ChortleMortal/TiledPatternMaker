@@ -17,7 +17,7 @@
 
 TilingBMPEngine::TilingBMPEngine()
 {
-    config         = Configuration::getInstance();
+    config  = Sys::config;
 
     // using this local ViewBontroller makes the engine thread-safe
     viewController = new ViewController;

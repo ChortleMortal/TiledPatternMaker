@@ -57,15 +57,15 @@ void IrregularStar::inferStar()
     }
     else
     {
-        inferStarV1();
+        inferStarv1();
     }
 }
 
-void IrregularStar::inferStarV1()
+void IrregularStar::inferStarv1()
 {
     qDebug() << "Infer::inferStar";
 
-    mids  = getTile()->getEdgePoly().getMids();
+    mids  = getTile()->getMids();
 
     int side_count = mids.size();
     for ( int side = 0; side < side_count; ++side )
@@ -86,7 +86,7 @@ void IrregularStar::inferStarV2()
 #endif
 
     corners = getTile()->getPoints();
-    mids    = getTile()->getEdgePoly().getMids();
+    mids    = getTile()->getMids();
     if (corners.size() != getN())
     {
         qDebug() << "tile sides:" << corners.size() << "motif sides:" << getN();
@@ -109,7 +109,7 @@ void IrregularStar::inferStarV3()
 #endif
 
     corners = getTile()->getPoints();
-    mids    = getTile()->getEdgePoly().getMids();
+    mids    = getTile()->getMids();
     if (corners.size() != getN())
     {
         qDebug() << "tile sides:" << corners.size() << "motif sides:" << getN();

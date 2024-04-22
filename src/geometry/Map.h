@@ -19,10 +19,10 @@
 // tricky later.  But it's more tractable than computing overlays of
 // DCELs.
 
-#include "misc/unique_qvector.h"
 #include "geometry/circle.h"
 #include "geometry/edgepoly.h"
-#include "geometry/loose.h"
+#include "geometry/fill_region.h"
+#include "geometry/map_base.h"
 #include "legacy/shapes.h"
 #include "geometry/neighbours.h"
 #include "geometry/neighbour_map.h"
@@ -37,7 +37,6 @@ typedef std::weak_ptr<class Edge>           WeakEdgePtr;
 
 typedef std::weak_ptr<class DCEL>           WeakDCELPtr;
 
-typedef QVector<QTransform>                 Placements;
 enum eCompare
 {
     COMP_LESS    = -1,
@@ -84,16 +83,20 @@ class Isect
 public:
     Isect() {}
     Isect(EdgePtr e, EdgePtr c, VertexPtr v) { vertex=v; edge=e; cutter = c; }
-    WeakEdgePtr edge;    // the interseted edge
-    WeakEdgePtr cutter;  // the cutting edge
-    VertexPtr vertex;    // the vertex for the intersection point
+
+    void dump() const;
+
+    EdgePtr     edge;    // the interseted edge
+    EdgePtr     cutter;  // the cutting edge
+    VertexPtr   vertex;  // the vertex for the intersection point
 };
 
-class Map
+class Map : public MapBase
 {
     #define MAP_EDGECOUNT_MAX 16
 
     friend class DCEL;
+    friend class DebugMap;
 
 public:
     Map(const QString & name);
@@ -101,12 +104,10 @@ public:
     Map(QString Name, const EdgePoly & poly);
     ~Map();
 
-    void        draw(QPainter * painter);
-
-    void        wipeout();          // reclaim memory
     void        set(const constMapPtr & other);  // replace contents
     MapPtr      copy() const;       // duplictes the contents
     MapPtr      recreate() const;   // make a new map with similar content
+    void        clear();            // reclaim memory
     MapPtr      getTransformed(const QTransform & T) const;
 
     // neighours
@@ -117,7 +118,7 @@ public:
     //  verify/cleanse
     bool        verify(bool force = false);
     bool        verifyAndFix(bool force = false, bool confirm = false);
-    void        cleanse(unsigned int options);
+    void        cleanse(uint options);
     uint        cleanseAnalysis();
 
     VertexPtr   insertVertex(const QPointF & pt);
@@ -138,18 +139,20 @@ public:
     // modifications
     void        embedCrop(const QRectF & rect);
     void        embedCrop(const Circle & circle);
+    void        embedCrop(const QPolygonF & poly);
 
     void        cropOutside(const QRectF & rect);
     void        cropOutside(const QPolygonF & poly);
     void        cropOutside(const Circle & circle);
-
-    virtual void  transform(QTransform T);
 
     void        splitEdge(EdgePtr e);
 
     void        mergeMap(const constMapPtr & other, qreal tolerance = Sys::TOL);
     void        mergeMany(const constMapPtr & other, const Placements & placements);
     void        mergeSimpleMany(constMapPtr & other, const Placements & transforms);
+
+    QStack<Isect> findIntersections(EdgePtr cutter);
+    void          processIntersections(QStack<Isect> & isects);
 
     EdgePtr     makeCopy(const EdgePtr & e);
     EdgePtr     makeCopy(const EdgePtr & e, QTransform T);
@@ -161,24 +164,20 @@ public:
     void        XmlInsertDirect(VertexPtr v);
     void        XmlInsertDirect(EdgePtr e);
 
-    // getters
-    const QVector<VertexPtr>    & getVertices()         { return vertices; }
-    const QVector<EdgePtr>      & getEdges()            { return edges; }
-    const QVector<QPair<QPointF,QString>> & getTexts()  { return debugTexts; }
-    const QVector<QPointF>        getPoints();
+    const QVector<QPointF>  getPoints();
 
     // DCEL
-    void            setDerivedDCEL(DCELPtr dcel) { derivedDCEL = dcel; }
-    DCELPtr         getDerivedDCEL()             { return derivedDCEL.lock(); }
-    EdgePoly        getEdgePoly() const;
+    void        setDerivedDCEL(DCELPtr dcel) { derivedDCEL = dcel; }
+    DCELPtr     getDerivedDCEL()             { return derivedDCEL.lock(); }
+    EdgePoly    getEdgePoly() const;
 
     // info
     QString     name() const { return mname; }
     QString     summary() const;
-    QString     unnamedSummary() const;
+    QString     info() const;
+    void        dump(bool full=false);
     QString     displayVertexEdgeCounts();
 
-    bool        isEmpty() const;
     int         numEdges() const;
     int         numVertices() const;
     bool        contains (const VertexPtr & v) const { return vertices.contains(v); }
@@ -186,25 +185,20 @@ public:
     bool        hasIntersectingEdges() const;
     EdgePtr     edgeExists(const EdgePtr & edge) const;
     EdgePtr     edgeExists(const VertexPtr &  v1, const VertexPtr & v2) const;
+    EdgePtr     edgeExists(const QPointF &  p1, const QPointF & v2) const;
 
     //debug
     QVector<eMapError> _verify(bool force = false);
-    void        dumpMap(bool full=true);
     void        dumpErrors(const QVector<eMapError> &theErrors);
     void        private_insertEdge(const EdgePtr & e) { _insertEdge(e); }
 
     static int  refs;
 
     void        deDuplicateEdges(const NeighboursPtr & vec);
-    void        deDuplicateNeighbours();
+    void        deDuplicateEdgesUsingNeighbours(bool silent = false);
     void        deDuplicateVertices(qreal tolerance);
 
 protected:
-    class Configuration       * config;
-
-    UniqueQVector<VertexPtr>         vertices;
-    UniqueQVector<EdgePtr>           edges;
-    QVector<QPair<QPointF,QString>>  debugTexts;
 
 private:
     // insertions
@@ -245,8 +239,6 @@ private:
     void        verifyEdges();
     void        verifyNeighbours();
     bool        procErrors(const QVector<eMapError> &errors);
-    bool        isSevereError(eMapError err);
-    bool        isMinorError(eMapError err);
 
     // utilities
     static eCompare  comparePoints(const QPointF &a, const QPointF &b, qreal tolerance = Sys::TOL);
@@ -260,23 +252,6 @@ private:
     UniqueQVector<eMapError>    errors;
     static QPointF              tmpCenter;
     NeighbourMapPtr             nMap;
-};
-
-class DebugMap : public Map
-{
-public:
-    DebugMap(const QString & name);
-//    DebugMap(const QString & name, const QPolygonF & poly);
-//    DebugMap(QString Name, const EdgePoly & poly);
-
-    void        insertDebugMark(QPointF m, QString txt);
-    void        insertDebugLine(EdgePtr edge);
-    void        insertDebugLine(QPointF p1, QPointF p2);
-    void        insertDebugLine(QLineF l1);
-    void        insertDebugPolygon(QPolygonF & poly);
-    void        insertDebugPoints(QPolygonF & poly);
-
-    void        transform(QTransform T) override;
 };
 
 #endif

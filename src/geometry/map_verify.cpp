@@ -18,7 +18,6 @@
 
 #include "geometry/map.h"
 #include "misc/qtapplog.h"
-#include "misc/timers.h"
 #include "settings/configuration.h"
 #include "widgets/dlg_textedit.h"
 #include "panels/controlpanel.h"
@@ -62,17 +61,7 @@ bool Map::verifyAndFix(bool force, bool confirm)
     {
         if (confirm)
         {
-            if (errors.contains(MAP_EMPTY))
-            {
-                qWarning("Empty map");
-                QMessageBox box(ControlPanel::getInstance());
-                box.setIcon(QMessageBox::Warning);
-                box.setText("XML Writer: Map is empty");
-                box.exec();
-                return true;
-            }
-
-            QMessageBox box(ControlPanel::getInstance());
+            QMessageBox box(Sys::controlPanel);
             box.setIcon(QMessageBox::Warning);
             box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
             box.setText("XML Writer: Map verify failed\n\nProceed to cleanse ?");
@@ -83,7 +72,7 @@ bool Map::verifyAndFix(bool force, bool confirm)
             }
         }
 
-        unsigned int options = 0;
+        uint options = 0;
         if (errors.contains(MAP_EMPTY))
         {
             qWarning("Empty map");
@@ -94,7 +83,7 @@ bool Map::verifyAndFix(bool force, bool confirm)
         }
         if (errors.contains(NEIGHBOUR_NO_EDGE))
         {
-            options |= buildNeighbours;
+            options |= cleanupNeighbours;
         }
         if (errors.contains(EDGE_DUPLICATED))
         {
@@ -108,18 +97,24 @@ bool Map::verifyAndFix(bool force, bool confirm)
         {
             options |= badEdges;    // same as above
         }
-        AQElapsedTimer timer;
-        cleanse(options);
-        qDebug(). noquote() << "cleanse :" << timer.getElapsed();
 
+        if (options == 0)
+        {
+            return true;
+        }
+
+        // cleanse
+        cleanse(options);
+
+        // revrify
         errors = _verify(force);
         if (procErrors(errors))
         {
             QString msg = "Map verify failed after cleanse";
             qWarning().noquote() << msg;
-            if (config->verifyPopup)
+            if (Sys::config->verifyPopup)
             {
-                QMessageBox box(ControlPanel::getInstance());
+                QMessageBox box(Sys::controlPanel);
                 box.setIcon(QMessageBox::Warning);
                 box.setText(msg);
                 box.exec();
@@ -144,7 +139,7 @@ bool Map::verifyAndFix(bool force, bool confirm)
 QVector<eMapError> Map::_verify(bool force)
 {
     errors.clear();
-    if (!config->verifyMaps && !force)
+    if (!Sys::config->verifyMaps && !force)
     {
         return errors;
     }
@@ -158,38 +153,39 @@ QVector<eMapError> Map::_verify(bool force)
 
     if (vertices.size() == 0 && edges.size() == 0)
     {
-        qDebug() << "empty map";
-        errors.push_back(MAP_EMPTY);
+        qDebug() << "Empty map";
         goto windup;
     }
 
     if (edges.size() == 0)
     {
         qWarning() << "No edges";
-        errors.push_back(MAP_NO_EDGES);
         goto windup;
     }
 
     if (vertices.size() == 0)
     {
         qWarning() << "no vertices";
-        errors.push_back(MAP_NO_VERTICES);
         goto windup;
     }
 
     if (!nMap)
     {
-        qInfo( ) << "neighbours are not built";
-        errors.push_back(NEIGHBOUR_NO_EDGE);
+        qInfo( ) << "Neighbours are not built";
+        if (Sys::config->buildEmptyNmaps)
+        {
+            qInfo( ) << "Building Neighbour Map";
+            nMap = std::make_shared<NeighbourMap>(edges);
+        }
     }
 
-    if (config->verifyDump)
+    if (Sys::config->verifyDump)
     {
-        dumpMap(true);
+        dump(true);
     }
 
     verifyEdges();
-    //verifyVertices();
+
     verifyNeighbours();
 
     qDebug() << "$$$$ Verify end";
@@ -199,16 +195,16 @@ windup:
     {
         qWarning().noquote() << "Verify ERROR" << mname << "did NOT verify!"  <<  "Vertices:" << vertices.size() << "Edges:" << edges.size();
 
-        if (config->verifyPopup)
+        if (Sys::config->verifyPopup)
         {
-            DlgMapVerify dlg(mname,ControlPanel::getInstance());
+            DlgMapVerify dlg(mname,Sys::controlPanel);
             dlg.set(qtAppLog::getTrap());
             dlg.exec();
         }
     }
     else
     {
-        qDebug().noquote() << mname << "Verify OK" <<  "Vertices:" << vertices.size() << "Edges:" << edges.size();
+        qInfo().noquote() << "Verify OK" << mname << "Vertices:" << vertices.size() << "Edges:" << edges.size();
     }
 
     if (!Sys::dontTrapLog)
@@ -226,13 +222,16 @@ void Map::verifyEdges()
         VertexPtr v1 = edge->v1;
         VertexPtr v2 = edge->v2;
 
-        if (edge->getType() != EDGETYPE_CURVE && edge->getType() != EDGETYPE_CHORD)
+        if (Sys::config->verifyVerbose)
         {
-            if (config->verifyVerbose) qDebug() <<  "verifying edge (" << edgeIndex(edge) << ") : from" << vertexIndex(v1) << "to"  << vertexIndex(v2);
-        }
-        else
-        {
-            if (config->verifyVerbose) qDebug() <<  "verifying CURVED edge (" << edgeIndex(edge) << ") : from" << vertexIndex(v1) << "to"  << vertexIndex(v2);
+            if (edge->getType() != EDGETYPE_CURVE && edge->getType() != EDGETYPE_CHORD)
+            {
+                qDebug() <<  "verifying edge (" << edgeIndex(edge) << ") : from" << vertexIndex(v1) << "to"  << vertexIndex(v2);
+            }
+            else
+            {
+                qDebug() <<  "verifying CURVED edge (" << edgeIndex(edge) << ") : from" << vertexIndex(v1) << "to"  << vertexIndex(v2);
+            }
         }
 
         if (v1 == v2)
@@ -378,43 +377,9 @@ void Map::verifyNeighbours()
 
 bool Map::procErrors(const QVector<eMapError> & errors)
 {
-    bool severe = false;
     for (auto err : std::as_const(errors))
     {
-        if (isSevereError(err))
-        {
             qWarning().noquote() << "Error:" <<sMapErrors[err];
-            severe = true;
-        }
-        else
-        {
-            qInfo().noquote() << "Ignoring:" <<sMapErrors[err];
-        }
     }
-    return severe;
-}
-
-bool Map::isMinorError(eMapError err)
-{
-    switch(err)
-    {
-    case NEIGHBOUR_NO_EDGE:
-        return true;
-
-    default:
-        return false;
-    }
-}
-
-bool Map::isSevereError(eMapError err)
-{
-    return !isMinorError(err);
-}
-
-void Map::dumpErrors(const QVector<eMapError> & theErrors)
-{
-    for (auto err : std::as_const(theErrors))
-    {
-        qWarning().noquote() << "Error" << sMapErrors[err];
-    }
+    return (errors.count() > 0);
 }

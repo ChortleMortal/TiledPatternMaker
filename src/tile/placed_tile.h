@@ -52,7 +52,8 @@ public:
 
     TilePtr         getTile();
     QTransform      getTransform();
-    EdgePoly        getTileEdgePoly();
+    const EdgePoly& getTileEdgePoly();
+    EdgePoly&       getTileEdgePolyRW();
     QPolygonF       getTilePoints();
     EdgePoly        getPlacedEdgePoly();
     QPolygonF       getPlacedPoints();

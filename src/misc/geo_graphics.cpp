@@ -136,24 +136,22 @@ void GeoGraphics::fillEdgePoly(const EdgePoly & epoly, QPen & pen)
         }
         else if (edge->getType() == EDGETYPE_CURVE)
         {
-            auto ad = edge->getArcData();
-            Q_ASSERT(ad);
-            path.arcTo(ad->rect, ad->start, ad->span);
+            ArcData & ad = edge->getArcData();
+            path.arcTo(ad.rect, ad.start, ad.span());
         }
         else if (edge->getType() == EDGETYPE_CHORD)
         {
             // TODO - does this work
             path.moveTo(edge->v2->pt);
             path.lineTo(edge->v1->pt);
-            auto ad = edge->getArcData();
-            Q_ASSERT(ad);
-            path.arcTo(ad->rect, ad->start, ad->span);
+            ArcData & ad = edge->getArcData();
+            path.arcTo(ad.rect, ad.start, ad.span());
         }
     }
 
     painter->setPen(pen);
-    painter->fillPath(path,QBrush(pen.color()));
     painter->drawPath(path);
+    painter->fillPath(path,QBrush(pen.color()));
 }
 
 void GeoGraphics::fillPath(QPainterPath path, QPen & pen) const
@@ -169,7 +167,7 @@ void GeoGraphics::fillPath(QPainterPath path, QPen & pen) const
     painter->strokePath(path,pen);
 }
 
-// TODO - replace this with EdgePoly::draw  or vice versa
+// FIXME - replace this with EdgePoly::draw  or vice versa
 void GeoGraphics::drawEdgePoly(const EdgePoly & epoly, QPen & pen)
 {
     EdgePoly ep = epoly.map(transform);
@@ -185,17 +183,16 @@ void GeoGraphics::drawEdgePoly(const EdgePoly & epoly, QPen & pen)
         }
         else if (edge->getType() == EDGETYPE_CURVE)
         {
-            auto ad = edge->getArcData();
-            Q_ASSERT(ad);
-            path.arcTo(ad->rect, ad->start, ad->span);
+            ArcData & ad = edge->getArcData();
+            path.arcTo(ad.rect, ad.start, ad.span());
         }
         else if (edge->getType() == EDGETYPE_CHORD)
         {
             // TODO - does this work
             path.moveTo(edge->v2->pt);
             path.lineTo(edge->v1->pt);
-            auto ad = edge->getArcData();
-            path.arcTo(ad->rect, ad->start, ad->span);
+            ArcData &  ad = edge->getArcData();
+            path.arcTo(ad.rect, ad.start, ad.span());
         }
     }
 
@@ -324,10 +321,11 @@ void GeoGraphics::drawArc(QPointF V1, QPointF V2, QPointF ArcCenter, bool Convex
     V2 = transform.map(V2);
     ArcCenter = transform.map(ArcCenter);
 
-    ArcData ad(V1,V2,ArcCenter,Convex);
+    ArcData ad;
+    ad.create(V1,V2,ArcCenter,Convex);
 
-    int start = qRound(ad.start * 16.0);
-    int span  = qRound(ad.span  * 16.0);
+    int start = qRound(ad.start  * 16.0);
+    int span  = qRound(ad.span() * 16.0);
 
     painter->setPen(pen);
     painter->drawArc(ad.rect, start, span);
@@ -349,10 +347,11 @@ void GeoGraphics::drawChord(QPointF V1, QPointF V2, QPointF ArcCenter, bool Conv
     V2 = transform.map(V2);
     ArcCenter = transform.map(ArcCenter);
 
-    ArcData ad(V1,V2,ArcCenter,Convex);
+    ArcData ad;
+    ad.create(V1,V2,ArcCenter,Convex);
 
-    int start = qRound(ad.start * 16.0);
-    int span  = qRound(ad.span  * 16.0);
+    int start = qRound(ad.start  * 16.0);
+    int span  = qRound(ad.span() * 16.0);
 
     painter->setPen(pen);
     painter->drawChord(ad.rect, start, span);
@@ -372,10 +371,11 @@ void GeoGraphics::drawPie(QPointF V1, QPointF V2, QPointF ArcCenter, bool Convex
     V2 = transform.map(V2);
     ArcCenter = transform.map(ArcCenter);
 
-    ArcData ad(V1,V2,ArcCenter,Convex);
+    ArcData ad;
+    ad.create(V1,V2,ArcCenter,Convex);
 
-    int start = qRound(ad.start * 16.0);
-    int span  = qRound(ad.span  * 16.0);
+    int start = qRound(ad.start  * 16.0);
+    int span  = qRound(ad.span() * 16.0);
 
     if (brush.style() != Qt::NoBrush)
     {
@@ -440,10 +440,11 @@ void GeoGraphics::_drawThickArc(const QPointF & V1, const QPointF & V2, const QP
     QPointF v2 = transform.map(V2);
     QPointF arcCenter = transform.map(ArcCenter);
 
-    ArcData ad(v1,v2,arcCenter,Convex);
+    ArcData ad;
+    ad.create(v1,v2,arcCenter,Convex);
 
-    int start = qRound(ad.start * 16.0);
-    int span  = qRound(ad.span  * 16.0);
+    int start = qRound(ad.start  * 16.0);
+    int span  = qRound(ad.span() * 16.0);
 
     painter->drawArc(ad.rect, start, span);
 }
@@ -463,10 +464,11 @@ void GeoGraphics::_drawThickChord(const QPointF & V1, const QPointF & V2, const 
     QPointF v2 = transform.map(V2);
     QPointF arcCenter = transform.map(ArcCenter);
 
-    ArcData ad(v1,v2,arcCenter,Convex);
+    ArcData ad;
+    ad.create(v1,v2,arcCenter,Convex);
 
-    int start = qRound(ad.start * 16.0);
-    int span  = qRound(ad.span  * 16.0);
+    int start = qRound(ad.start  * 16.0);
+    int span  = qRound(ad.span() * 16.0);
 
     painter->drawChord(ad.rect, start, span);
 }

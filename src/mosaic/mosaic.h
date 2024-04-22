@@ -56,6 +56,10 @@ public:
     void        setCrop(CropPtr crop);
     void        resetCrop();
 
+    CropPtr     getPainterCrop()       { return _painterCrop; }
+    void        setPainterCrop(CropPtr crop);
+    void        resetPainterCrop();
+
     BkgdImagePtr getBkgdImage()                 { return _bip; }
     void         setBkgdImage(BkgdImagePtr bp)  { _bip = bp; }
     void         removeBkgdImage()              { _bip.reset(); }
@@ -72,8 +76,8 @@ public:
     uint        getCleanseLevel()           { return cleanseLevel; }
 
     void        dump();
-    void        reportMotifs();
-    void        reportStyles();
+    void        dumpMotifs();
+    void        dumpStyles();
 
     void        setViewController(ViewController * vc);
 
@@ -90,6 +94,7 @@ private:
     CanvasSettings   _canvasSettings;
     BorderPtr        _border;
     CropPtr          _crop;
+    CropPtr          _painterCrop;
     BkgdImagePtr     _bip;
 
     uint             cleanseLevel;

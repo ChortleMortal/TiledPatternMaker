@@ -68,6 +68,6 @@ void Threads::assignColors(ColorSet & colors)
     QVector<ThreadPtr> & threads = *this;
     for (const auto & thread : std::as_const(threads))
     {
-        thread->color = colors.getNextColor().color;
+        thread->color = colors.getNextTPColor().color;
     }
 }

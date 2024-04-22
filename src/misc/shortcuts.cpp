@@ -34,7 +34,7 @@ QString Shortcuts::getMosaicShortcuts()
     ESC MODE_DEFAULT<br>\
     F1  Help (show this)<br>\
     F2  MODE_TRANSFORM up/down/left/right/,/./-/= <br>\
-    F3  <br>\
+    F3  MODE_MOVE window up/down/left/right<br>\
     F4  Dump info <br>\
     F5  Unload canvas (drain the swamp) <br>\
        <br>\

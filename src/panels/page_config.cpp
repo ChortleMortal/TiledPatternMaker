@@ -76,9 +76,6 @@ QGroupBox * page_config::createAppConfig()
     QCheckBox   * chkLimitView  = new QCheckBox("Limit View Size to available Screen Size");
     chkLimitView->setChecked(config->limitViewSize);
 
-    QCheckBox   * chkMultiThread  = new QCheckBox("Multi-threaded BMP generation (recommended)");
-    chkMultiThread->setChecked(config->multithreadedGeneration);
-
     QHBoxLayout *hbox = new QHBoxLayout;
     hbox->addWidget(designerMode);
     hbox->addWidget(insightMode);
@@ -99,23 +96,17 @@ QGroupBox * page_config::createAppConfig()
     hbox5->addWidget(chkLimitView);
     hbox5->addStretch();
 
-    QHBoxLayout * hbox6 = new QHBoxLayout();
-    hbox6->addWidget(chkMultiThread);
-    hbox6->addStretch();
-
     QVBoxLayout * vbox2 = new QVBoxLayout;
     vbox2->addLayout(hbox);
     vbox2->addLayout(hbox3);
     vbox2->addLayout(hbox4);
     vbox2->addLayout(hbox5);
-    vbox2->addLayout(hbox6);
 
     QGroupBox * appGroup = new QGroupBox("Application");
     appGroup->setLayout(vbox2);
 
     connect(chkSplit,       &QCheckBox::clicked, this, [this](bool checked) { config->splitScreen = checked; restartApp(); });
     connect(chkLimitView,   &QCheckBox::clicked, this, [this](bool checked) { config->limitViewSize = checked; emit sig_refreshView(); });
-    connect(chkMultiThread, &QCheckBox::clicked, this, [this](bool checked) { config->multithreadedGeneration = checked; });
     connect(chkBigScreen,   &QCheckBox::clicked, this,    &page_config::slot_bigScreen);
 #if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
     connect(btnGroup,      SIGNAL(buttonClicked(int)), this, SLOT(slot_mode(int)));

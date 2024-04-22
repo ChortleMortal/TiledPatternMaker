@@ -46,14 +46,14 @@ void MarkX::paint(QPainter *painter)
 void MarkX::setModelXform(const Xform & xf, bool update)
 {
     Q_ASSERT(!_unique);
-    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.toInfoString() << (isUnique() ? "unique" : "common");
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.info() << (isUnique() ? "unique" : "common");
     viewControl->setCurrentModelXform(xf,update);
 }
 
 const Xform & MarkX::getModelXform()
 {
     Q_ASSERT(!_unique);
-    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << viewControl->getCurrentModelXform().toInfoString() << (isUnique() ? "unique" : "common");
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << viewControl->getCurrentModelXform().info() << (isUnique() ? "unique" : "common");
     return viewControl->getCurrentModelXform();
 }
 

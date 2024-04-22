@@ -1,3 +1,49 @@
+Version 3.5
+=============
+
+Version 3.5 intoduces a new Color Fill Style "New 4 : Color per Face". To use this style
+first create a palette of colors using the control panel menu, then left-click select a color from the palette.
+Now go to the image view and left-click on each face in turn to color it. A right-click will remove the color.
+
+Additionallu there are many bugfixes and improvements to support the workflow of creating mosaics.
+
+New:
+    Styles              Fill style "New 4 : Color per Face"
+
+Improvements:
+    Crops               Revised Crop menu and added Painter Crops
+    Style Tile Colors   Refactored code improves creation and maintenance
+    Inferred Motifs     Improvements made to creating inferred motifs relating to floating point precision
+                        especailly impacting linux compilers
+    Tiling Maker        Re-implements Undo/Redo in a new way
+    Tiling Maker        Adds hide T1/T2 for convenience
+    Tiling Maker        Improved display of T1/T2 for newly created tilings
+    Tiling Maker View   Irregular tiles now have blue outline
+    Borders menu        Further improvments to the revisions made in version 3.4
+    Map Editor          Push to Tiling replaces all tiles (rather than adding to tiles)
+    Map Editor          Loading a map delegates the view to the Map Editor
+    Grid                Adds 'lock to view'
+    Control Panel       Tweaks to the color palettes and some layout tweaks
+
+Fixes:
+    Builds              Supports Qt 6.6.3 and QtCreator 13.0 default build directory
+    Builds              Several linux and qt5 build issues fixed
+    Tiling Maker        Some edited tilings were not being saved correctly
+    Tiling Maker        Fixed conversion of stright edges to curves
+    Tiling Maker        Fixed auto-fill
+    Tiling Maker View   Fixed crash when grid enabled and drawing (creating) a polygon
+    Prototype Info      Improved selections
+    Load Menu           Sort by date was not sorting correctly
+    Load Menu           Rename was not timestamping files
+    Maps                Now prevents insertion of a duplicate edge
+    Maps                Fixes most intersections of overlapping lines and curved edges
+    Mosaics             Several bugs related to curved edges fixed
+    Map Editor          Handling of construction circles fixed
+    Map Editor          Intersection of construction lines with map curved edges fixed
+    Media               Repairs made to some Design XML files
+    Image Tools         Borders not being placed into genertated BMPs
+    Image Tools         Views were deselected after generating Mosaic or Tiling bitmaps
+
 Version 3.4.1
 =============
 

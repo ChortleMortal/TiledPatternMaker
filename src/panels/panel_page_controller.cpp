@@ -32,9 +32,9 @@ Q_DECLARE_METATYPE(panel_page *)
 PanelPageController::PanelPageController(PageListWidget * panelListWidget, PanelPagesWidget * panelPagesWidget)
 {
     pageList     = panelListWidget;
-    pages        =  panelPagesWidget;
-    panel        = ControlPanel::getInstance();
-    config       = Configuration::getInstance();
+    pages        = panelPagesWidget;
+    panel        = Sys::controlPanel;
+    config       = Sys::config;
     updateLocked = false;
 
     connect (panelListWidget, &PageListWidget::sig_detachWidget, this,	&PanelPageController::slot_detachWidget, Qt::QueuedConnection);
@@ -224,6 +224,7 @@ void PanelPageController::slot_detachWidget(QString name)
             // replace the old sub_attach
             if (oldDetachPage->canExit())
             {
+                panel->clearStatus();
                 oldDetachPage->onExit();
             }
             splitter->removeFloater();
@@ -288,6 +289,7 @@ void PanelPageController::slot_selectPanelPage(QListWidgetItem * item)
         qDebug() << "current page" << currentName;
         if (currentPage->canExit())
         {
+            panel->clearStatus();
             currentPage->onExit();
         }
         else

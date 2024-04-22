@@ -13,6 +13,7 @@ enum eStyleType
     STYLE_STYLE,
     STYLE_THICK,
     STYLE_TILECOLORS,
+    STYLE_BORDER
 };
 
 enum eDrawOutline

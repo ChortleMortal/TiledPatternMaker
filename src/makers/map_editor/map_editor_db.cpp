@@ -23,7 +23,7 @@ MapEditorDb::MapEditorDb()
 
 void MapEditorDb::reset()
 {
-    createdTilingMap.reset();
+    importedTilingMap.reset();
     currentTilingMap.reset();
     localDcel.reset();
     activeDcel.reset();
@@ -81,7 +81,7 @@ MapPtr MapEditorDb::getEditMap()
 
 eMapedLayer MapEditorDb::insertLayer(MapPtr map, eMapEditorMapType mtype)
 {
-    qDebug().noquote() << "inserting map" << map.get() << sMapEditorMapType[mtype];
+    qDebug().noquote() << "inserting map" << map->summary() << sMapEditorMapType[mtype];
 
     MapEditorLayer & layer = getLayer(LAYER_1);
     if (layer.getLayerMapType() == MAPED_TYPE_UNKNOWN)
@@ -127,9 +127,9 @@ void MapEditorDb::createComposite()
 
     DesignElementPtr  del;
 
-    qreal tolerance = Configuration::getInstance()->mapedMergeSensitivity;
+    qreal tolerance = Sys::config->mapedMergeSensitivity;
 
-    MapPtr compositeMap = std::make_shared<Map>("Composite map");
+    MapPtr compositeMap = std::make_shared<Map>("Composite");
 
     for (const MapEditorLayer * layer : getComposableLayers())
     {
@@ -384,6 +384,9 @@ bool MapEditorDb::embedCrop(MapPtr map)
         break;
 
     case CROP_POLYGON:
+        map->embedCrop(crop->getAPolygon().get());
+        break;
+
     case CROP_UNDEFINED:
         qWarning() << "not implemented";
         return false;
@@ -413,7 +416,7 @@ bool MapEditorDb::cropMap(MapPtr map)
         map->cropOutside(crop->getCircle());
         break;
     case CROP_POLYGON:
-        map->cropOutside(crop->getPolygon());
+        map->cropOutside(crop->getAPolygon().get());
         break;
     case CROP_UNDEFINED:
         qWarning() << "Crop Not defined";
@@ -426,7 +429,8 @@ bool MapEditorDb::cropMap(MapPtr map)
 void MapEditorDb::setCrop(CropPtr acrop)
 {
     // this local crop is unique
-    _crop = std::make_shared<Crop>(acrop);
+    Crop crop = *acrop.get();
+    _crop = std::make_shared<Crop>(crop);
 }
 
 

@@ -8,15 +8,6 @@ class TextEditorWidget;
 #include <QDialog>
 #include "panels/panel_page.h"
 
-class page_log;
-
-class AQScrollBar : public QScrollBar
-{
-    Q_OBJECT
-
-public:
-    AQScrollBar(page_log *plog);
-};
 
 class page_log : public panel_page
 {
@@ -30,7 +21,6 @@ public:
     void onRefresh() override;
 
 public slots:
-    void slot_actionTriggered();
     void slot_copyLog();
 
 private slots:

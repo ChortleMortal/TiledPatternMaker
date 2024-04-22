@@ -31,10 +31,11 @@ TilingData & TilingData::operator=(const TilingData & other)
     return *this;
 }
 
-void TilingData::setTranslationVectors(QPointF t1, QPointF t2)
+void TilingData::setTranslationVectors(QPointF t1, QPointF t2, QPointF origin)
 {
     _t1 = t1;
     _t2 = t2;
+    _translateOrigin = origin;
     emit sig_tilingChanged();
 }
 
@@ -91,7 +92,7 @@ bool TilingData::isEmpty()
         return false;
 }
 
-const Placements TilingData::getFillPlacements()
+Placements TilingData::getFillPlacements()
 {
     Placements placements;
     const FillData & fd = _settings.getFillData();
@@ -118,7 +119,7 @@ const Placements TilingData::getFillPlacements()
 }
 
 
-QString TilingData::dump() const
+QString TilingData::info() const
 {
     QString astring;
     QDebug  deb(&astring);

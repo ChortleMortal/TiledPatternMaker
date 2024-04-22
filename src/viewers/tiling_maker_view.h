@@ -34,8 +34,8 @@ class TilingMakerView : public LayerController
     Q_OBJECT
 
 public:
-    static TilingMakerView * getInstance();
-    static void              releaseInstance();
+    TilingMakerView();
+    ~TilingMakerView() override;
 
     void setMaker(TilingMaker * maker) { tilingMaker = maker;}
 
@@ -49,20 +49,22 @@ public:
     void clearViewData();
     void clearConstructionLines() { constructionLines.clear(); }
 
-    virtual void paint(QPainter * painter) override;
+    void paint(QPainter * painter) override;
 
-    virtual const Xform &   getModelXform() override;
-    virtual void            setModelXform(const Xform & xf, bool update) override;
+    const Xform &   getModelXform() override;
+    void            setModelXform(const Xform & xf, bool update) override;
 
     void drawTile(GeoGraphics * g2d, PlacedTilePtr pf, bool draw_c, QColor icol );
-    void drawTranslationVectors(GeoGraphics * g2d, QPointF t1_start, QPointF t1_end, QPointF t2_start, QPointF t2_end);
     void drawAccum(GeoGraphics * g2d);
     void drawMeasurements(GeoGraphics * g2d);
+    void drawTranslationVectors(GeoGraphics * g2d, TilingPtr tiling);
 
     void hideTiling(bool state);
+    void hideVectors(bool state);
 
-    TileSelectorPtr getTileSelector()   { return tileSelector; }
-    void            resetTileSelector() { tileSelector.reset(); }
+    TileSelectorPtr getTileSelector()                   { return tileSelector; }
+    void            resetTileSelector()                 { tileSelector.reset(); }
+    void            setTileSelector(TileSelectorPtr tsp){ tileSelector = tsp; }
 
     TileSelectorPtr findSelection(QPointF spt);
     TileSelectorPtr findTile(QPointF spt);
@@ -110,31 +112,31 @@ public:
     void resetEditPlacedTile()                { editPlacedTile.reset(); }
 
 public slots:
-    virtual eViewType iamaLayer() override { return VIEW_TILING_MAKER; }
-    virtual void iamaLayerController() override {}
+    eViewType iamaLayer() override { return VIEW_TILING_MAKER; }
+    void iamaLayerController() override {}
 
-    virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
-    virtual void slot_mouseDragged(QPointF spt)       override;
-    virtual void slot_mouseTranslate(QPointF pt)      override;
-    virtual void slot_mouseMoved(QPointF spt)         override;
-    virtual void slot_mouseReleased(QPointF spt)      override;
-    virtual void slot_mouseDoublePressed(QPointF spt) override;
+    void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
+    void slot_mouseDragged(QPointF spt)       override;
+    void slot_mouseTranslate(QPointF pt)      override;
+    void slot_mouseMoved(QPointF spt)         override;
+    void slot_mouseReleased(QPointF spt)      override;
+    void slot_mouseDoublePressed(QPointF spt) override;
 
-    virtual void slot_setCenter(QPointF spt) override;
+    void slot_setCenter(QPointF spt) override;
+    void slot_wheel_scale(qreal delta)  override;
+    void slot_wheel_rotate(qreal delta) override;
 
-    virtual void slot_wheel_scale(qreal delta)  override;
-    virtual void slot_wheel_rotate(qreal delta) override;
-
-    virtual void slot_scale(int amount)  override;
-    virtual void slot_rotate(int amount) override;
-    virtual void slot_moveX(qreal amount)  override;
-    virtual void slot_moveY(qreal amount)  override;
+    void slot_scale(int amount)  override;
+    void slot_rotate(int amount) override;
+    void slot_moveX(qreal amount)  override;
+    void slot_moveY(qreal amount)  override;
 
     void  slot_setTileEditPoint(QPointF pt);
 
 protected:
     void draw(GeoGraphics * g2d);
     void drawTiling(GeoGraphics * g2d);
+    void drawTranslationVectors(GeoGraphics * g2d, QPointF t1_start, QPointF t1_end, QPointF t2_start, QPointF t2_end);
 
     static constexpr QColor normal_color        = QColor(217,217,255,128);  // pale lilac
     static constexpr QColor in_tiling_color     = QColor(255,217,217,128);  // pink
@@ -155,26 +157,21 @@ private:
     QVector<Measurement*>   wMeasurements;
 
     bool                    _hideTiling;
+    bool                    _hideVectors;
 
     TileSelectorPtr         tileSelector;       // Current mouse selection.
     PlacedTilePtr           editPlacedTile;     // Tile in DlgTileEdit
 
     QColor                  lineColor;
-    QPointF                 trans_origin;       // origin for drawing translation vectors
     QPointF                 sMousePos;          // screen points DAC added
     QPointF                 tileEditPoint;
     QVector<QLineF>         constructionLines;
 
     MouseActionPtr          mouse_interaction;
 
-    TilingMakerView();
-    ~TilingMakerView() override;
+    TilingMaker           * tilingMaker;
 
-    static TilingMakerView  * mpThis;
-
-    TilingMaker * tilingMaker;
-
-    bool debugMouse;
+    bool                    debugMouse;
 };
 
 #endif

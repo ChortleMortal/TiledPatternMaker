@@ -78,12 +78,16 @@ bool MosaicBMPEngine::loadMosaic(MosaicPtr & mosaic, QString name)
 
     // size view to mosaic
     // this uses a view conroller which is not attached to the view
+    CanvasSettings csettings = mosaic->getCanvasSettings();
+    auto fd = csettings.getFillData();
+
     Canvas  & canvas = viewController->getCanvas();
     canvas.reInit();
     canvas.setModelAlignment(M_ALIGN_MOSAIC);
-    canvas.initCanvasSize(mosaic->getCanvasSettings().getCanvasSize());
-    auto fd = mosaic->getCanvasSettings().getFillData();
-    canvas.setFillData(fd);       // set fill data in view (prototype reads this)
+    canvas.setFillData(fd);
+    canvas.initCanvasSize(csettings.getCanvasSize());
+
+    viewController->setBackgroundColor(VIEW_MOSAIC,csettings.getBackgroundColor());
 
     return true;
 }

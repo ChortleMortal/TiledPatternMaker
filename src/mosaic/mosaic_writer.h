@@ -4,9 +4,11 @@
 
 #include <string>
 #include "enums/emotiftype.h"
+#include "enums/efilltype.h"
 #include "mosaic/mosaic_writer_base.h"
 #include "misc/pugixml.hpp"
 #include "geometry/edgepoly.h"
+#include "geometry/polygon.h"
 #include "geometry/xform.h"
 #include "misc/colorset.h"
 #include "enums/estyletype.h"
@@ -47,44 +49,42 @@ public:
     MosaicWriter();
     ~MosaicWriter();
 
-    bool writeXML(QString fileName, MosaicPtr design);
+    bool    writeXML(QString fileName, MosaicPtr design);
     QString getFailMsg() { return _failMsg; }
 
 protected:
+    bool    generateVector(QTextStream & ts);
+    bool    processVector(QTextStream & ts);
+    bool    generateDesignNotes(QTextStream & ts);
 
-    bool generateVector(QTextStream & ts);
-    bool processVector(QTextStream & ts);
-    bool generateDesignNotes(QTextStream & ts);
+    void    processMosaic(QTextStream & ts);
+    void    procSize(QTextStream &ts, QSize viewSize, QSizeF canvasSize);
 
-    void processDesign(QTextStream & ts);
-    void procSize(QTextStream &ts, QSize viewSize, QSizeF canvasSize);
-    void procRect(QTextStream &ts, QRectF rect);
-    void procCircle(QTextStream &ts, Circle c);
-    void procWidth(QTextStream &ts,qreal width);
-    void procLength(QTextStream &ts, qreal length);
-    void procBackground(QTextStream &ts, QColor color);
-    void procBorder(QTextStream &ts, BorderPtr border);
-    void procCrop(QTextStream &ts, CropPtr crop);
+    void    procBackground(QTextStream &ts, QColor color);
+    void    procBorder(QTextStream &ts, BorderPtr border);
+    void    procCrop(QTextStream &ts, CropPtr crop, QString name);
 
-    void procColor(QTextStream & ts, QColor color);
-    void procColor(QTextStream & ts, TPColor tpcolor);
-    void procColorSet(QTextStream &ts, ColorSet *colorSet);
-    void procColorGroup(QTextStream &ts, ColorGroup *colorGroup);
+    void    procColor(QTextStream & ts, QColor color);
+    void    procColor(QTextStream & ts, TPColor tpcolor);
+    void    procColorSet(QTextStream &ts, ColorSet *colorSet);
+    void    procColorGroup(QTextStream &ts, ColorGroup *colorGroup);
 
-    bool processInterlace(QTextStream &ts, StylePtr s);
-    bool processThick(QTextStream & ts, StylePtr s);
-    bool processFilled(QTextStream &ts, StylePtr s);
-    bool processOutline(QTextStream &ts, StylePtr s);
-    bool processPlain(QTextStream &ts, StylePtr s);
-    bool processSketch(QTextStream &ts, StylePtr s);
-    bool processEmboss(QTextStream &ts, StylePtr s);
-    bool processTileColors(QTextStream &ts, StylePtr s);
+    bool    processInterlace(QTextStream &ts, StylePtr s);
+    bool    processThick(QTextStream & ts, StylePtr s);
+    bool    processFilled(QTextStream &ts, StylePtr s);
+    bool    processOutline(QTextStream &ts, StylePtr s);
+    bool    processPlain(QTextStream &ts, StylePtr s);
+    bool    processSketch(QTextStream &ts, StylePtr s);
+    bool    processEmboss(QTextStream &ts, StylePtr s);
+    bool    processTileColors(QTextStream &ts, StylePtr style);
 
     // styles
     static void procesToolkitGeoLayer(QTextStream &ts, const Xform &xf, int zlevel);
     void    processsStyleThick(QTextStream &ts, eDrawOutline draw_outline, qreal width, qreal outlineWidth, QColor outlineColor, Qt::PenJoinStyle join_style, Qt::PenCapStyle cap_style);
     void    processsStyleInterlace(QTextStream &ts, qreal gap, qreal shadow, bool includeSVerts, bool startUnder);
-    void    processsStyleFilled(QTextStream &ts, bool draw_inside, bool draw_outside, int algorithm);
+    void    processsStyleFilled(QTextStream &ts, bool draw_inside, bool draw_outside, eFillType algorithm);
+    void    processsStyleFilledFaces(QTextStream &ts, class Filled * filled);
+
     void    processsStyleEmboss(QTextStream &ts, qreal angle);
 
     // features
@@ -104,13 +104,10 @@ protected:
     void    setRosetteConnect(QTextStream & ts,QString name, MotifPtr motif);
     void    setStarConnect(QTextStream & ts,QString name, MotifPtr motif);
 
+    void    setPrototype(QTextStream & ts, ProtoPtr pp);
     bool    setMap(QTextStream & ts, MapPtr map);
     void    setVertices(QTextStream & ts, const QVector<VertexPtr> & vertices);
     void    setEdges(QTextStream & ts, const QVector<EdgePtr> & edges );
-
-    void    setBoundary(QTextStream & ts, PolyPtr p);
-    void    setPrototype(QTextStream & ts, ProtoPtr pp);
-    void    setPolygon(QTextStream & ts,PolyPtr pp);    // deprecated
 
     void    setEdgePoly(QTextStream & ts, const EdgePoly & epoly);
     void    setVertexEP(QTextStream & ts,VertexPtr v, QString name);
@@ -118,6 +115,12 @@ protected:
     void    setEdges(QTextStream & ts, QVector<EdgePtr> &qvec);
     void    setEdge(QTextStream & ts, EdgePtr e);
 
+    void    procRect(QTextStream &ts, QRectF & rect);
+    void    procCircle(QTextStream &ts, Circle & c);
+    void    procWidth(QTextStream &ts,qreal width);
+    void    procAPolygon(QTextStream &ts,APolygon & apoly);
+    void    procPolygon(QTextStream &ts,QPolygonF & poly);
+    void    procLength(QTextStream &ts, qreal length);
     void    setPos(QTextStream & ts, QPointF qpf);
     void    setPoint(QTextStream & ts, QPointF pt, QString name);
 
@@ -197,9 +200,8 @@ private:
     QMap<RosettePtr,int>    rosette_ids;
     QMap<Rosette2Ptr,int>   rosette2_ids;
     QMap<RosetteConnectPtr,int> rosette_connect_ids;
-    QMap<StarConnectPtr,int>    star_connect_ids;
+    QMap<StarConnectPtr,int>star_connect_ids;
 
-    Configuration         * config;
     MosaicPtr               _mosaic;
 };
 

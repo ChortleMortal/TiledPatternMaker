@@ -126,14 +126,14 @@ protected:
 class EditConstructionCircle : public MapMouseAction
 {
 public:
-    EditConstructionCircle(Circle circle, QPointF spt);
+    EditConstructionCircle(CirclePtr circle, QPointF spt);
 
     virtual void updateDragging(QPointF spt) override;
     virtual void endDragging( QPointF spt) override;
     virtual void draw(QPainter * painter) override;
 
 protected:
-    Circle      origCircle;
+    CirclePtr   origCircle;
     Circle      currentCircle;
     eCircleMode ecmode;
     QPointF   * start;

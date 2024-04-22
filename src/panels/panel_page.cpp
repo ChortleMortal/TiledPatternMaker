@@ -16,20 +16,20 @@ panel_page::panel_page(ControlPanel * parent, ePanelPage page,  QString name) : 
     pageType        = page;
     panel           = parent;
 
-    config          = Configuration::getInstance();
+    config          = Sys::config;
     view            = Sys::view;
     viewControl     = Sys::viewController;
-    prototypeMaker  = PrototypeMaker::getInstance();
-    tilingMaker     = TilingMaker::getInstance();
-    mosaicMaker     = MosaicMaker::getInstance();
-    designMaker     = DesignMaker::getInstance();
+    prototypeMaker  = Sys::prototypeMaker;
+    tilingMaker     = Sys::tilingMaker;
+    mosaicMaker     = Sys::mosaicMaker;
+    designMaker     = Sys::designMaker;
 
     newlySelected   = false;
     refresh         = true;
     blockCount      = 0;
 
     vbox            = new QVBoxLayout();
-    setFixedWidth(PANEL_RHS_WIDTH);
+    //setFixedWidth(PANEL_RHS_WIDTH);
     setLayout (vbox);
 
     connect(this,   &panel_page::sig_render,      theApp,     &TiledPatternMaker::slot_render,      Qt::QueuedConnection);

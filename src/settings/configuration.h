@@ -57,6 +57,19 @@ enum eColorTheme
     DARK_THEME
 };
 
+enum eProtoViewMode
+{
+    PROTO_DRAW_MAP      =  0x01,
+    PROTO_ALL_TILES     =  0x02,
+    PROTO_ALL_MOTIFS    =  0x04,
+    PROTO_DEL_TILES     =  0x08,
+    PROTO_DEL_MOTIFS    =  0x10,
+    PROTO_DRAW_PROTO    =  0x20,
+    PROTO_ALL_VISIBLE   =  0x40,
+    PROTO_VISIBLE_TILE  =  0x80,
+    PROTO_VISIBLE_MOTIF =  0x100
+};
+
 ////////////////////////////////////////////////////////////////
 //
 // Worklist
@@ -93,8 +106,8 @@ private:
 class Configuration
 {
 public:
-    static Configuration *  getInstance();
-    static void             releaseInstance();
+    Configuration();
+    ~Configuration();
 
     void    save();
     void    configurePaths();
@@ -162,6 +175,7 @@ public:
     int     gridTilingWidth;
     int     gridScreenSpacing;
     int     gridZLevel;
+    uint    debugViewConfig;
 
     bool    autoLoadStyles;
     bool    autoLoadTiling;
@@ -181,11 +195,13 @@ public:
     bool    motifEnlarge;
     bool    limitViewSize;
 
-    bool    verifyPopup;     // false pops up errors
+    bool    verifyPopup;         // false pops up errors
     bool    verifyProtos;
     bool    verifyMaps;
-    bool    verifyDump;     // TODO - make sure this flag work
-    bool    verifyVerbose;  // TODO - make sure this flga works
+    bool    verifyDump;         // TODO - make sure this flag work
+    bool    verifyVerbose;      // TODO - make sure this flag work
+    bool    buildEmptyNmaps;    // rebuild empty neighbour maps
+    bool    unDuplicateMerge;   // de-duplicates edges after merge
 
     bool    mosaicFilterCheck;
     bool    mosaicWorklistCheck;
@@ -226,6 +242,7 @@ public:
     bool    cs_showBkgds;
     bool    showCenterDebug;
     bool    showGrid;
+    bool    lockGridToView;
     bool    showGridLayerCenter;
     bool    showGridModelCenter;
     bool    showGridViewCenter;
@@ -252,10 +269,7 @@ public:
     Worklist worklist;
 
 private:
-    Configuration();
-    ~Configuration();
 
-    static Configuration * mpThis;
 };
 
 #endif // CONFIGURATION_H

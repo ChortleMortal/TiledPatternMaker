@@ -19,8 +19,7 @@ class PrototypeMaker : public QObject
     };
 
 public:
-    static PrototypeMaker * getInstance();
-    static void             releaseInstance();
+    PrototypeMaker();
 
     void        init();
     void        unload();
@@ -34,7 +33,7 @@ public:
     // operations
     bool        duplicateDesignElement();
     MotifPtr    duplicateMotif(MotifPtr motif);
-
+    void        selectDesignElement(DesignElementPtr delp);
     void        erasePrototypes();
     
     PrototypeData *  getProtoMakerData() { return &protoData; }
@@ -54,12 +53,7 @@ protected:
     bool        askNewProto();
 
 private:
-    PrototypeMaker();
-
-    static PrototypeMaker   * mpThis;
-
     class Configuration     * config;
-    class TiledPatternMaker * maker;
     class TilingMaker       * tilingMaker;
     class MosaicMaker       * mosaicMaker;
     class ViewController    * vcontrol;

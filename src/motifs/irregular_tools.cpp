@@ -89,16 +89,3 @@ Contact::Contact(QPointF position, QPointF other)
     taken          = false;
     colinear       = COLINEAR_NONE;
 }
-
-QString Contact::toString()
-{
-    QString astring;
-    QDebug  deb(&astring);
-
-    auto icontact = isect_contact.lock();
-    if (icontact)
-        deb << "contact" << position << other << isect << icontact.get() << colinear << taken;
-    else
-        deb << "contact" << position << other << isect << "none" << colinear << taken;
-    return astring;
-}

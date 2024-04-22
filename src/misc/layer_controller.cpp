@@ -124,7 +124,6 @@ void LayerController::slot_moveY(qreal amount)
 
     if (view->getKbdMode(KBD_MODE_XFORM_VIEW) || (view->getKbdMode(KBD_MODE_XFORM_SELECTED) && isSelected()))
     {
-        qDebug().noquote() << "LayerController::slot_move" << getLayerName();
         Xform xf = getModelXform();
         xf.setTranslateY(xf.getTranslateY() + amount);
         setModelXform(xf,true);

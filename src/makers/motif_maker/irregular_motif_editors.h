@@ -249,7 +249,7 @@ class IrregularNoMapEditor : public  NamedMotifEditor
 public:
     IrregularNoMapEditor(QString aname);
 
-    virtual void setMotif(DesignElementPtr del, bool dcEmit) override;
+    void setMotif(DesignElementPtr del, bool dcEmit) override;
 
 protected:
     class PrototypeMaker * prototypeMaker;

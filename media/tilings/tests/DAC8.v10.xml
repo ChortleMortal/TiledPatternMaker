@@ -1,0 +1,68 @@
+<?xml version="1.0"?>
+<!-- Written: Wed Mar 13 2024 07:09:32 -->
+<Tiling version="8">
+	<Name>DAC8.v10</Name>
+	<Fill singleton="f">-5,5,-4,4</Fill>
+	<T1>2,0</T1>
+	<T2>0,2</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="edgepoly" rotation="0" scale="1">
+		<Curve convex="f">
+			<Point id="1">1,0.4142135623730951</Point>
+			<Point id="2">0.4142135623730951,1</Point>
+			<Center>0.1213203435596427,0.1213203435596426</Center>
+		</Curve>
+		<Line>
+			<Point reference="2" />
+			<Point id="3">-0.414213562373095,1</Point>
+		</Line>
+		<Curve convex="f">
+			<Point reference="3" />
+			<Point id="4">-1,0.4142135623730952</Point>
+			<Center>-0.1213203435596426,0.1213203435596426</Center>
+		</Curve>
+		<Line>
+			<Point reference="4" />
+			<Point id="5">-1,-0.414213562373095</Point>
+		</Line>
+		<Curve convex="f">
+			<Point reference="5" />
+			<Point id="6">-0.4142135623730957,-0.9999999999999998</Point>
+			<Center>-0.1213203435596431,-0.1213203435596429</Center>
+		</Curve>
+		<Line>
+			<Point reference="6" />
+			<Point id="7">0.4142135623730953,-0.9999999999999999</Point>
+		</Line>
+		<Curve convex="f">
+			<Point reference="7" />
+			<Point id="8">0.9999999999999998,-0.4142135623730958</Point>
+			<Center>0.1213203435596433,-0.1213203435596434</Center>
+		</Curve>
+		<Line>
+			<Point reference="8" />
+			<Point reference="1" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Desc>Trying to pack hexagons - now rotated 22.5 degrees and now separation increased
+v3 So now here the octagons overlap (taprats would not allow) but the stars touch
+v4. back out rotation</Desc>
+	<Auth>David Casper</Auth>
+</Tiling>

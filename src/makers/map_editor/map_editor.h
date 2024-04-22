@@ -23,8 +23,9 @@ class MapEditor
     friend class EditConstructionCircle;
 
 public:
-    static MapEditor * getInstance();
-    static void        releaseInstance();
+    MapEditor();
+    ~MapEditor();
+    void    init();
 
     bool    loadMosaicPrototype();
     void    loadMotifPrototype();
@@ -66,18 +67,15 @@ public:
     void     forceRedraw();
 
 protected:
-    MapEditor();    // dont call this
 
 private:
-    static MapEditor *     mpThis;
-
     MapEditorDb           * db;
     MapEditorSelection    * selector;
     MapEditorView         * meView;
 
     class Configuration   * config;
     class View            * view;
-    class ViewController     * viewControl;
+    class ViewController  * viewControl;
     class MosaicMaker     * mosaicMaker;
     class PrototypeMaker  * prototypeMaker;
     class TilingMaker     * tilingMaker;

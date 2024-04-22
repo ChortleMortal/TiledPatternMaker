@@ -32,6 +32,8 @@ private slots:
     void    slot_verifyDumpClicked(bool enb);
     void    slot_verifypopupClicked(bool enb);
     void    slot_verifyVerboseClicked(bool enb);
+    void    slot_unDupMerges(bool enb);
+    void    slot_buildEmptyNMaps(bool enb);
 
     void    slot_reprocessTilingXML();
     void    slot_reformatTilingXML();
@@ -44,6 +46,11 @@ private slots:
     void    slot_dontTrapLog(bool dont);
     void    slot_dontRefresh(bool enb);
 
+    void    slot_dbgViewClicked(bool checked);
+    void    slot_viewVerticesClicked(bool checked);
+    void    slot_viewDirnClicked(bool checked);
+    void    slot_viewArcCen(bool checked);
+
 protected:
     bool    verifyTiling(TilingPtr tiling);
     void    identifyDuplicateTiles(TilingPtr tiling);
@@ -51,6 +58,12 @@ protected:
 
     QGroupBox   * createDebugSection();
     QGroupBox   * createVerifyMaps();
+    QGroupBox   * creatDebugMapView();
+
+    QCheckBox   * chkDebugView;
+    QCheckBox   * chkDBVvertices;
+    QCheckBox   * chkDBCdirn;
+    QCheckBox   * chkArcCen;
 
 private:
     qtAppLog    * log;

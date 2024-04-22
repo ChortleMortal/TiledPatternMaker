@@ -16,7 +16,7 @@ class TilingMonitor : public QThread
     Q_OBJECT
 
 public:
-    static TilingMonitor * getInstance();
+    TilingMonitor();
 
     void   run() override;
 
@@ -31,13 +31,9 @@ signals:
     void  sig_update();
 
 protected:
-    TilingMonitor();
-
     void determineOverlapsAndTouching();
 
 private:
-    static TilingMonitor*   mpThis;
-
     TilingMaker *           tilingMaker;
     bool                    doit;
 

@@ -11,15 +11,15 @@ typedef std::shared_ptr<class Map>            MapPtr;
 class GridView : public LayerController
 {
 public:
-    static GridView * getInstance();
-    static void       releaseInstance();
+    GridView();
+    ~GridView();
 
     void paint(QPainter * painter ) override;
 
     bool nearGridPoint(QPointF spt, QPointF & foundGridPoint);  // used by tiling maker
 
-    virtual const Xform &   getModelXform() override;
-    virtual void            setModelXform(const Xform & xf, bool update) override;
+    const Xform &   getModelXform() override;
+    void            setModelXform(const Xform & xf, bool update) override;
 
 protected:
     void draw(QPainter * painter);
@@ -39,26 +39,23 @@ protected:
     static int refs;
 
 public slots:
-    virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
-    virtual void slot_mouseDragged(QPointF spt)       override;
-    virtual void slot_mouseTranslate(QPointF pt)      override;
-    virtual void slot_mouseMoved(QPointF spt)         override;
-    virtual void slot_mouseReleased(QPointF spt)      override;
-    virtual void slot_mouseDoublePressed(QPointF spt) override;
-    virtual void slot_setCenter(QPointF spt)          override;
+    void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
+    void slot_mouseDragged(QPointF spt)       override;
+    void slot_mouseTranslate(QPointF pt)      override;
+    void slot_mouseMoved(QPointF spt)         override;
+    void slot_mouseReleased(QPointF spt)      override;
+    void slot_mouseDoublePressed(QPointF spt) override;
+    void slot_setCenter(QPointF spt)          override;
 
-    virtual void slot_wheel_scale(qreal delta)  override;
-    virtual void slot_wheel_rotate(qreal delta) override;
+    void slot_wheel_scale(qreal delta)  override;
+    void slot_wheel_rotate(qreal delta) override;
 
-    virtual void slot_scale(int amount)  override;
-    virtual void slot_rotate(int amount) override;
-    virtual void slot_moveX(qreal amount)  override;
-    virtual void slot_moveY(qreal amount)  override;
+    void slot_scale(int amount)  override;
+    void slot_rotate(int amount) override;
+    void slot_moveX(qreal amount)  override;
+    void slot_moveY(qreal amount)  override;
 
 private:
-    GridView();
-    ~GridView();
-
     void drawScreenUnits(QRectF r, QRectF r1, QPointF center, int x_steps, int y_steps, qreal step);
     void drawModelUnits( QRectF r, QRectF r1, QPointF center, int x_steps, int y_steps, qreal step);
 
@@ -72,7 +69,6 @@ private:
     bool intersects(QVector<QLineF> &edges , QLineF & line);
     QVector<QLineF> toEdges(const QRectF & r);
 
-    static GridView * mpThis;
     Configuration   * config;
     QPainter        * painter;
     GeoGraphics     * gg;

@@ -24,7 +24,7 @@ public:
     Circle(QPointF centre, qreal radius);
 
     void init() { radius = 1.0; centre = QPointF(); }
-    void set(Circle & other)  { radius = other.radius;  centre = other.centre; }
+    void set(Circle * other)  { radius = other->radius;  centre = other->centre; }
 
     void setRadius(qreal r) { radius = r; }
     void setCenter(QPointF p) { centre = p; }
@@ -32,6 +32,7 @@ public:
     QRectF  boundingRect();
     qreal   x() { return centre.x(); }
     qreal   y() { return centre.y(); }
+    qreal   r() { return radius; }
 
     friend bool operator==(const Circle & c1, const Circle & c2)
     {

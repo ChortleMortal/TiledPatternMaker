@@ -9,30 +9,9 @@ using std::make_shared;
 
 typedef std::shared_ptr<class Vertex>       VertexPtr;
 
-MeasureView * MeasureView::mpThis = nullptr;
-
-MeasureView * MeasureView::getInstance()
-{
-    if (!mpThis)
-    {
-        ProtoPtr pp;
-        mpThis =  new MeasureView(pp);
-    }
-    return mpThis;
-}
-
-void MeasureView::releaseInstance()
-{
-    if (mpThis != nullptr)
-    {
-        delete mpThis;
-        mpThis = nullptr;
-    }
-}
-
 MeasureView::MeasureView(ProtoPtr pp) : Thick(pp)
 {
-    config  = Configuration::getInstance();
+    config  = Sys::config;
 
     setColor(Qt::red);
     setZValue(MEASURE_ZLEVEL);

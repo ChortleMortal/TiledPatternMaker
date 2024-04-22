@@ -10,15 +10,18 @@ class ColorSet;
 class TPColor
 {
 public:
-    TPColor() { hidden = false; }
-    TPColor(QColor color) { this->color = color; hidden = false; }
-    TPColor(QColor color, bool hide) { this->color = color; this->hidden = hide; }
+    TPColor()                        { color = Qt::cyan;    hidden = false; }
+    TPColor(QColor col)              { color = col;         hidden = false; }
+    TPColor(QColor col, bool hide)   { color = col;         hidden = hide; }
+    TPColor(const TPColor & other)   { color = other.color; hidden = other.hidden; }
+
+    TPColor & operator=(const TPColor & other) { color = other.color; hidden = other.hidden; return *this; }
 
     QColor color;
     bool   hidden;
 };
 
-class  ColorGroup
+class  ColorGroup : public  QVector<ColorSet>
 {
 public:
     ColorGroup();
@@ -33,17 +36,14 @@ public:
     bool          isHidden(int idx);
 
     void          resetIndex();
-    void          clear() { colorgroup.clear(); }
 
-    int           size() { return static_cast<int>(colorgroup.size()); }
-    void          resize(int num) { colorgroup.resize(num); }
+    void          dump();
 
 private:
-    QVector<ColorSet>           colorgroup;
-    int                         ipos;
+    QVector<ColorSet>::iterator  pos;
 };
 
-class ColorSet
+class ColorSet : public QVector<TPColor>
 {
 public:
     ColorSet();
@@ -58,17 +58,15 @@ public:
 
     void            setOpacity(float val);
 
-    void            removeColor(int idx);
+    void            removeTPColor(int idx);
 
-    TPColor         getFirstColor();
-    TPColor         getNextColor();
-    TPColor         getColor(int index) { return colorset[index % colorset.size()]; }
-    QString         colorsString() const;
+    TPColor         getFirstTPColor();
+    TPColor         getNextTPColor();
+    TPColor         getTPColor(int index) { return at(index % size()); }
+    QColor          getQColor(int index)  { if (!size()) return QColor(Qt::red); else return getTPColor(index).color;}
 
-    void            resetIndex() { pos = colorset.begin(); }
+    void            resetIndex();
     void            clear();
-    int             size() { return colorset.size(); }
-    void            resize(int num) { colorset.resize(num); }
 
     void            hide(bool hide) { hidden = hide; }
     bool            isHidden() { return hidden; }
@@ -76,10 +74,10 @@ public:
     AQHBoxLayout *  createLayout();
     QWidget      *  createWidget();
 
-protected:
+    void            dump();
+    QString         colorsString() const;
 
 private:
-    QVector<TPColor> colorset;
     bool             hidden;
     QVector<TPColor>::iterator pos;
 };

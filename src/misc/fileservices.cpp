@@ -34,7 +34,7 @@ QStringList FileServices::getMosaicNames(eLoadType loadType)
 {
     // names and version only, no extension
 
-    Configuration * config = Configuration::getInstance();
+    Configuration * config = Sys::config;
 
     QStringList names;
     switch (loadType)
@@ -64,9 +64,14 @@ QStringList FileServices::getMosaicNames(eLoadType loadType)
         }
         break;
 
+    case SINGLE_MOSAIC:
+        qCritical("SINGLE_MOSAIC should not be called");
+        break;
+
     case ALL_TILINGS:
     case SELECTED_TILINGS:
-        qCritical("Selecting tilings - should be mosaic");
+        qCritical("Tilings - should be mosaic");
+        break;
     }
 
     if (loadType != ALL_MOSAICS && config->mosaicFilterCheck &&  !config->mosaicFilter.isEmpty())
@@ -175,7 +180,7 @@ QStringList FileServices::getTilingFiles()
 
 QStringList FileServices::getTilingNames(eLoadType loadType)
 {
-    Configuration * config = Configuration::getInstance();
+    Configuration * config = Sys::config;
 
     QStringList names;
     switch (loadType)
@@ -642,8 +647,7 @@ QStringList FileServices::getPolys()
     QStringList names;
 
     // saved templates
-    Configuration * config = Configuration::getInstance();
-    QString path = config->rootMediaDir + "girih_shapes";
+    QString path = Sys::config->rootMediaDir + "girih_shapes";
     QDirIterator it(path, QStringList() << "*.xml", QDir::Files, QDirIterator::Subdirectories);
     while (it.hasNext())
     {

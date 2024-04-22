@@ -110,7 +110,7 @@ void Thick::draw(GeoGraphics * gg )
         }
     }
 
-    QPen pen(colors.getNextColor().color);
+    QPen pen(colors.getNextTPColor().color);
     pen.setJoinStyle(join_style);
     pen.setCapStyle(cap_style);
     for (const auto & edge : std::as_const(map->getEdges()))

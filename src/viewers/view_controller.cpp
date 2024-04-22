@@ -13,29 +13,30 @@
 #include "makers/map_editor/map_editor.h"
 #include "makers/map_editor/map_editor_db.h"
 #include "makers/mosaic_maker/mosaic_maker.h"
+#include "makers/prototype_maker/prototype.h"
 #include "makers/prototype_maker/prototype_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
+#include "misc/border.h"
 #include "misc/layer.h"
 #include "misc/mark_x.h"
 #include "misc/sys.h"
 #include "mosaic/mosaic.h"
-#include "makers/prototype_maker/prototype.h"
 #include "panels/controlpanel.h"
 #include "settings/canvas_settings.h"
 #include "settings/configuration.h"
 #include "style/style.h"
 #include "tile/tiling.h"
+#include "tiledpatternmaker.h"
 #include "viewers/backgroundimageview.h"
-#include "viewers/border_view.h"
-#include "viewers/motif_view.h"
-#include "viewers/grid_view.h"
 #include "viewers/crop_view.h"
+#include "viewers/debug_view.h"
+#include "viewers/grid_view.h"
 #include "viewers/map_editor_view.h"
 #include "viewers/measure_view.h"
+#include "viewers/motif_view.h"
 #include "viewers/prototype_view.h"
 #include "viewers/view.h"
 #include "widgets/image_layer.h"
-#include "tiledpatternmaker.h"
 
 using std::make_shared;
 
@@ -49,24 +50,22 @@ void ViewController::init(View * view)
 {
     theView         = view;
 
-    config          = Configuration::getInstance();
-    panel           = ControlPanel::getInstance();
-    designMaker     = DesignMaker::getInstance();
-    mosaicMaker     = MosaicMaker::getInstance();
-    prototypeMaker  = PrototypeMaker::getInstance();
-    tilingMaker     = TilingMaker::getInstance();
+    config          = Sys::config;
+    panel           = Sys::controlPanel;
+    designMaker     = Sys::designMaker;
+    mosaicMaker     = Sys::mosaicMaker;
+    prototypeMaker  = Sys::prototypeMaker;
+    tilingMaker     = Sys::tilingMaker;
 
-    prototypeView   = PrototypeView::getInstance();
-    motifView       = MotifView::getInstance();
-    tilingMakerView = TilingMakerView::getInstance();
-    mapedView       = MapEditorView::getInstance();
-    bimageView      = BackgroundImageView::getInstance();
-    gridView        = GridView::getInstance();
-    borderView      = BorderView::getInstance();
-    cropViewer      = CropViewer::getInstance();
-    measureView     = MeasureView::getInstance();
+    prototypeView   = Sys::prototypeView;
+    motifView       = Sys::motifView;
+    tilingMakerView = Sys::tilingMakerView;
+    mapedView       = Sys::mapEditorView;
+    bimageView      = Sys::backgroundImageView;
+    gridView        = Sys::gridViewer;
+    measureView     = Sys::measureView;
 
-    QStringList qsl = Configuration::getInstance()->viewColors;
+    QStringList qsl = Sys::config->viewColors;
     Q_ASSERT(qsl.size() == NUM_VIEW_TYPES);
 }
 
@@ -86,70 +85,66 @@ ViewController::~ViewController()
 #endif
         QSettings s;
         s.setValue("viewEnables", QVariant::fromValue(currentEnables));
-
-        TilingMakerView::releaseInstance();
-        PrototypeView::releaseInstance();
-        MotifView::releaseInstance();
-        MapEditorView::releaseInstance();
-        MeasureView::releaseInstance();
-        GridView::releaseInstance();
-        CropViewer::releaseInstance();
-        BorderView::releaseInstance();
     }
+
+    slot_unloadView();
+    unloadMakers();
+    Sys::dumpRefs();
 }
 
 void ViewController::slot_unloadView()
 {
-    // remove from scene but does not delete
+    // always unloads so that paint does not fail
     if (theView)
         theView->unloadView();
+    else
+        Sys::view->unloadView();
 }
 
 void ViewController::slot_unloadAll()
 {
-    if (!theView)  return;
+    if (!theView) return;
 
     qDebug() << "ViewControl::slot_unloadAll";
-    Sys::dumpRefs();
 
     theView->unloadView();
-    Sys::dumpRefs();
 
-    removeAllImages();
-    Sys::dumpRefs();
-    
-    bimageView->unload();
+    unloadMakers();
 
-    designMaker->unload();
-    Sys::dumpRefs();
-
-    MapEditor::getInstance()->unload();
-    Sys::dumpRefs();
-
-    mosaicMaker->resetMosaic();
-    Sys::dumpRefs();
-
-    prototypeMaker->unload();
-    Sys::dumpRefs();
-
-    tilingMaker->unload();
     Sys::dumpRefs();
 
     canvas.reInit();
-    Sys::dumpRefs();
 
     slot_reconstructView();
-    Sys::dumpRefs();
-
-    qDebug() << "ViewControl::slot_unloadAll - complete";
 
     // there is always at least an emtpy tiling
     TilingPtr tiling = make_shared<Tiling>();
     tilingMaker->sm_takeUp(tiling,TILM_LOAD_EMPTY);
+
     Sys::dumpRefs();
     qDebug() << "ViewControl::slot_unloadAll - created empty tiling and mosaic";
 }
 
+void ViewController::unloadMakers()
+{
+    qDebug() << "ViewControl::unloadMakers";
+    Sys::dumpRefs();
+
+    removeAllImages();
+    
+    designMaker->unload();
+
+    Sys::mapEditor->unload();
+
+    mosaicMaker->resetMosaic();
+
+    prototypeMaker->unload();
+
+    tilingMaker->unload();
+
+    Sys::dumpRefs();
+    qDebug() << "ViewControl::unloadMakers - complete";
+}
 
 void ViewController::viewEnable(eViewType view, bool enable)
 {
@@ -282,9 +277,15 @@ void ViewController::refreshView()
     }
 
     // crops
-    if (cropViewer->getShowCrop())
+    if (Sys::cropViewer->getShowCrop(CM_MOSAIC) || Sys::cropViewer->getShowCrop(CM_PAINTER) || Sys::cropViewer->getShowCrop(CM_MAPED))
     {
-        theView->addLayer(cropViewer);
+        theView->addLayer(Sys::cropViewer);
+    }
+
+    // debug view
+    if (Sys::debugView->getShow())
+    {
+        theView->addLayer(Sys::debugView);
     }
 
     theView->setViewBackgroundColor(canvas.getBkgdColor());
@@ -385,31 +386,37 @@ void ViewController::viewMosaic()
         QString name = mosaic->getName();
         qDebug() << "ViewController::viewMosaic" << name;
 
-        QString astring = QString("Preparing Mosaic: %1").arg(name);
+        QString saveString = panel->getStatus();
+        QString astring    = QString("Preparing Mosaic: %1").arg(name);
         theApp->splash(astring);
-        panel->pushPanelStatus(name);
+        panel->setStatus(name);
 
         mosaic->build();                // important
 
         theApp->removeSplash();
-        panel->popPanelStatus();
+        panel->setStatus(saveString);
+
+        auto crop = mosaic->getPainterCrop();
+        if (crop && crop->getClip())
+        {
+            theView->setClip(crop);     // causes view to set clip region
+        }
 
         const StyleSet & sset = mosaic->getStyleSet();
         for (const StylePtr & style : std::as_const(sset))
         {
             qDebug().noquote() << "Adding Style:" << style->getDescription();
             if (canvas.getModelAlignment() != M_ALIGN_MOSAIC)
-            {
                 style->setModelXform(getCurrentModelXform(),false);
-            }
             theView->addLayer(style);
         }
 
         auto border = mosaic->getBorder();
         if (border)
         {
-            borderView->setBorder(border);
-            theView->addLayer(borderView);
+            if (canvas.getModelAlignment() != M_ALIGN_MOSAIC)
+                border->setModelXform(getCurrentModelXform(),false);
+            theView->addLayer(border);
         }
     }
     else
@@ -580,7 +587,11 @@ void ViewController::setCurrentModelXform(const Xform & xf, bool update)
             {
                 style->setModelXform(xf, update);
             }
-            // FIXNE - should border be set too?
+            auto border = mosaic->getBorder();
+            if (border)
+            {
+                border->setModelXform(xf, update);
+            }
         }
         else
             qWarning() << "ViewControl::setCurrentXform - nothing to set";

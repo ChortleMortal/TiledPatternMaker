@@ -27,31 +27,34 @@ void ColorMaker::clear()
     whiteFaces.clear();
     blackFaces.clear();
     facesToDo.clear();
+    faceGroups.clear();
 
     whiteColorSet.resetIndex();
     blackColorSet.resetIndex();
     colorGroup.resetIndex();
 }
 
-void ColorMaker::buildFaceSets(int algorithm, DCEL * dcel)
+void ColorMaker::buildFaceSets(eFillType algorithm, DCELPtr dcel)
 {
+    wDcel = dcel;
+
     switch (algorithm)
     {
-    case 0:
+    case FILL_ORIGINAL:
         if (blackFaces.size() == 0 && whiteFaces.size() == 0)
         {
             assignColorsOriginal(dcel);
         }
         break;
 
-    case 1:
+    case FILL_TWO_FACE:
         if (blackFaces.size() == 0 && whiteFaces.size() == 0)
         {
             assignColorsNew1(dcel);
         }
         break;
 
-    case 2:
+    case FILL_MULTI_FACE:
         if (faceGroups.size() == 0)
         {
             buildFaceGroups(dcel);
@@ -59,54 +62,53 @@ void ColorMaker::buildFaceSets(int algorithm, DCEL * dcel)
         }
         break;
 
-    case 3:
+    case FILL_MULTI_FACE_MULTI_COLORS:
         if (faceGroups.size() == 0)
         {
             buildFaceGroups(dcel);
             assignColorGroups(colorGroup);
         }
         break;
-    }
-}
 
-void ColorMaker::assignColors(int algorithm, DCEL * dcel)
-{
-    switch (algorithm)
-    {
-    case 0:
-        assignColorsOriginal(dcel);
-        break;
-
-    case 1:
-        assignColorsNew1(dcel);
-        break;
-
-    case 2:
-        assignColorSets(whiteColorSet);
-        break;
-
-    case 3:
-        assignColorGroups(colorGroup);
+    case FILL_DIRECT_FACE:
+        initDCELFaces(dcel);
+        assignPaletteColors(dcel);
         break;
     }
 }
 
-
-void ColorMaker::createFacesToDo(DCEL * dcel)
+void ColorMaker::createFacesToDo(DCELPtr dcel)
 {
+    // Faces todo - does not contain the outer
     clear();
 
-    // remove outer
     for (auto & face : std::as_const(dcel->faces))
     {
         if (!face->outer)
         {
+            face->state = FACE_UNDONE;
             facesToDo.push_back(face);
         }
     }
 }
 
-void ColorMaker::assignColorsOriginal(DCEL * dcel)
+void ColorMaker::initDCELFaces(DCELPtr dcel)
+{
+    // set face state to UNDONE and remove outer from the DCEL
+    FacePtr outer;
+    for (auto & face : std::as_const(dcel->faces))
+    {
+        face->state = FACE_UNDONE;
+        if (face->outer)
+        {
+            outer = face;
+        }
+    }
+
+    dcel->faces.removeAll(outer);
+}
+
+void ColorMaker::assignColorsOriginal(DCELPtr dcel)
 {
     createFacesToDo(dcel);
 
@@ -127,7 +129,7 @@ void ColorMaker::assignColorsOriginal(DCEL * dcel)
     qDebug() << "done: white =" << whiteFaces.size() << "black =" << blackFaces.size();
 }
 
-// Propagate colours using a DFS (Depth First Search).
+// Propagate colours using a DFS (Depth First Search) - used by Original algorithm
 void ColorMaker::assignColorsToFaces(FaceSet &fset)
 {
     if (fset.size() == 0)
@@ -227,7 +229,7 @@ void ColorMaker::addFaceResults(FaceSet & fset)
 // DAC Notes
 // An edge can only be in two faces
 // A vertex can be in multiple faces
-void ColorMaker::assignColorsNew1(DCEL * dcel)
+void ColorMaker::assignColorsNew1(DCELPtr dcel)
 {
     createFacesToDo(dcel);
 
@@ -273,7 +275,7 @@ void ColorMaker::assignColorsNew1(DCEL * dcel)
     //blackFaces.sortByPositon();
 }
 
-void ColorMaker::buildFaceGroups(DCEL * dcel)
+void ColorMaker::buildFaceGroups(DCELPtr dcel)
 {
     qDebug() << "ColorMaker::buildFaceGroups ........";
 
@@ -358,7 +360,7 @@ void ColorMaker::assignColorSets(ColorSet & colorSet)
     colorSet.resetIndex();
     for (FaceSetPtr & face : faceGroups)
     {
-        face->tpcolor = colorSet.getNextColor();
+        face->tpcolor = colorSet.getNextTPColor();
     }
 }
 
@@ -410,7 +412,7 @@ void  ColorMaker::assignColorGroups(ColorGroup & colorGroup)
         //qDebug() << "sorting..." << i;
         //fsp->sortByPositon();
         //qDebug() << "assigning..." << i;
-        fsp->pColorSet  = colorGroup.getNextColorSet();
+        fsp->colorSet = colorGroup.getNextColorSet();
     }
 #endif
     qDebug() << "ColorMaker::assignColorGroups - done";
@@ -476,5 +478,62 @@ void ColorMaker::removeOverlappingFaces()
     if (start != end)
     {
         qWarning() << "ColorMaker::removeOverlappingFaces start =" << start << "end =" << end;
+    }
+}
+
+int  ColorMaker::getColorIndex(int faceIndex)
+{
+    Q_ASSERT(wDcel.lock());
+    Q_ASSERT(faceColorIndices.size() == wDcel.lock()->getFaceSet().size());
+    if (faceIndex < faceColorIndices.size())
+    {
+        return faceColorIndices[faceIndex];
+    }
+    else
+    {
+        return -1;
+    }
+}
+
+void ColorMaker::setColorIndex(int faceIndex,int colorIndex)
+{
+    Q_ASSERT(wDcel.lock());
+    Q_ASSERT(faceColorIndices.size() == wDcel.lock()->getFaceSet().size());
+    if (faceIndex < faceColorIndices.size())
+    {
+        faceColorIndices[faceIndex] = colorIndex;
+    }
+}
+
+void ColorMaker::setPaletteIndices(QVector<int> & indices)
+{
+    faceColorIndices = indices;
+}
+
+QVector<int> & ColorMaker::getPaletteIndices()
+{
+    return faceColorIndices;
+}
+
+void ColorMaker::assignPaletteColors(DCELPtr dcel)
+{
+    FaceSet & faces = dcel->getFaceSet();
+    int size        = faces.size();
+    if (faceColorIndices.size() == 0)
+    {
+        faceColorIndices.resize(size);
+        faceColorIndices.fill(-1);
+    }
+
+    if (faceColorIndices.size() != size)
+    {
+        qWarning() << "resizing face color indices from" << faceColorIndices.size() << "to" << size;
+        faceColorIndices.resize(size);
+    }
+
+    for (int i=0; i < size; i++)
+    {
+        FacePtr face   = faces[i];
+        face->iPalette = faceColorIndices[i];
     }
 }

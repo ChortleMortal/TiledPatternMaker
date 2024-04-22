@@ -20,44 +20,30 @@
 #include "tile/tiling.h"
 #include "tile/backgroundimage.h"
 #include "viewers/backgroundimageview.h"
+#include "viewers/debug_view.h"
 #include "viewers/view_controller.h"
 #include "viewers/view.h"
 
 using std::make_shared;
-
-MosaicMaker * MosaicMaker::mpThis = nullptr;
-
-MosaicMaker * MosaicMaker::getInstance()
-{
-    if (mpThis == nullptr)
-    {
-        mpThis = new MosaicMaker;
-    }
-    return mpThis;
-}
-
-void MosaicMaker::releaseInstance()
-{
-    if (mpThis != nullptr)
-    {
-        delete mpThis;
-        mpThis = nullptr;
-    }
-}
 
 MosaicMaker::MosaicMaker()
 {
     _mosaic = make_shared<Mosaic>();
 }
 
+MosaicMaker::~MosaicMaker()
+{
+    _mosaic.reset();
+}
+
 void MosaicMaker::init()
 {
-    prototypeMaker = PrototypeMaker::getInstance();
-    config         = Configuration::getInstance();
-    controlPanel   = ControlPanel::getInstance();
+    prototypeMaker = Sys::prototypeMaker;
+    config         = Sys::config;
+    controlPanel   = Sys::controlPanel;
     viewControl    = Sys::viewController;
     view           = Sys::view;
-    tilingMaker    = TilingMaker::getInstance();
+    tilingMaker    = Sys::tilingMaker;
 }
 
 // This the most complete load of a Mosaic - it does everything needed
@@ -65,6 +51,8 @@ void MosaicMaker::init()
 MosaicPtr MosaicMaker::loadMosaic(QString name)
 {
     qDebug().noquote() << "MosaicMaker::loadMosaic" << name;
+
+    Sys::debugView->clear();
 
     LoadUnit & loadUnit = view->getLoadUnit();
     loadUnit.setLoadState(LOADING_MOSAIC,name);
@@ -95,7 +83,7 @@ bool MosaicMaker::saveMosaic(QString filename, bool forceOverwrite)
 
     // match size of mosaic view
     auto & canvas    = viewControl->getCanvas();
-    QSize size       = view->getCurrentSize();
+    QSize size       = view->getSize();
     QSizeF zsize     = canvas.getSize();
 
     CanvasSettings cs = _mosaic->getCanvasSettings();
@@ -108,8 +96,7 @@ bool MosaicMaker::saveMosaic(QString filename, bool forceOverwrite)
     bool rv = mm.saveMosaic(filename,savedFile,forceOverwrite);
     if (rv)
     {
-        auto mapEditor = MapEditor::getInstance();
-        mapEditor->keepStash(savedFile);
+        Sys::mapEditor->keepStash(savedFile);
         LoadUnit & loadUnit = view->getLoadUnit();
         loadUnit.setLoadState(LOADING_MOSAIC,savedFile);
         loadUnit.resetLoadState();
@@ -125,7 +112,7 @@ void MosaicMaker::sm_takeDown(MosaicPtr mosaic)
 	_mosaic = mosaic;
 
     auto bip   = _mosaic->getBkgdImage();
-    auto bview = BackgroundImageView::getInstance();
+    auto bview = Sys::backgroundImageView;
     bview->setImage(bip);      // sets or clears
 
     if (bip)
@@ -154,7 +141,7 @@ void MosaicMaker::sm_takeDown(MosaicPtr mosaic)
     }
     else
     {
-        view->resize(csettings.getViewSize());
+        view->setSize(csettings.getViewSize());
     }
 
     viewControl->setBackgroundColor(VIEW_MOSAIC,csettings.getBackgroundColor());
@@ -335,6 +322,7 @@ StylePtr MosaicMaker::makeStyle(eStyleType type, StylePtr oldStyle)
         newStyle = make_shared<TileColors>(oldStyle);
         break;
     case STYLE_STYLE:
+    case STYLE_BORDER:
         Q_ASSERT(false);
         break;
     }

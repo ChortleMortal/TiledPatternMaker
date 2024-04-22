@@ -125,7 +125,7 @@ void Extender::extendPeripheralMap(MapPtr motifMap)  // is same as extend Periph
 
 void Extender::extendFreeMap(MapPtr motifMap, QTransform unitRotationTr)
 {
-    qDebug() << "Tile transform" << Transform::toInfoString(unitRotationTr);
+    qDebug() << "Tile transform" << Transform::info(unitRotationTr);
     const ExtendedBoundary & eb = motif->getExtendedBoundary();
     int n = motif->getN();
     if (n != eb.getSides())

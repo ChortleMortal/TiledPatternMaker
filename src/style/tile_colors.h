@@ -6,18 +6,28 @@
 #include <QDebug>
 #include "style/style.h"
 #include "geometry/edgepoly.h"
+#include "misc/colorset.h"
+#include "tile/placed_tile.h"
 
-struct bkgdEPolyColor
+typedef std::weak_ptr<Tile> WeakTilePtr;
+
+class ColoredPlacement
 {
-    EdgePoly  epoly;
-    QColor    color;
+public:
+    ColoredPlacement(EdgePoly & ep, QColor col);
+
+    EdgePoly    epoly;
+    QColor      color;
 };
 
+class TileColorSet
+{
+public:
+    TileColorSet(TilePtr tile, ColorSet * colorset);
 
-///
-///  Tile Colors are stored in the tiling XML not the Mosaic XML
-///
-
+    WeakTilePtr wtile;
+    ColorSet *  cset;
+};
 
 class TileColors : public Style
 {
@@ -26,23 +36,29 @@ public:
     TileColors(StylePtr other);
     virtual ~TileColors();
 
-    void        draw(GeoGraphics * gg) override;
+    void            draw(GeoGraphics * gg) override;
 
-    void        createStyleRepresentation() override;
-    void        resetStyleRepresentation() override;
+    void            createStyleRepresentation() override;
+    void            resetStyleRepresentation() override;
 
-    void        setOutline(bool enable,QColor color = Qt::white, int width = 3);
-    bool        getOutline(QColor & color, int & width);
+    ColorGroup    & getTileColors() { return tileColors; }
+    ColorSet *      getColorSet(TilePtr tile);
 
-    eStyleType    getStyleType() const override;
-    QString       getStyleDesc() const override;
-    virtual void  report()       const override { qDebug().noquote() << getStyleDesc() << "outline:" << outlineEnb  << "width:" << outlineWidth << "color:" << outlineColor; }
+    void            setOutline(bool enable,QColor color = Qt::white, int width = 3);
+    bool            getOutline(QColor & color, int & width);
 
-protected:
-    QVector<bkgdEPolyColor>  epolys;
-    bool        outlineEnb;
-    QColor      outlineColor;
-    int         outlineWidth;
+    eStyleType      getStyleType() const override;
+    QString         getStyleDesc() const override;
+    void            dump()         const override { qDebug().noquote() << getStyleDesc() << "outline:" << outlineEnb  << "width:" << outlineWidth << "color:" << outlineColor; }
+
+private:
+    ColorGroup                tileColors;           // defined
+    QVector<TileColorSet>     colorSets;            // calculated
+    QVector<ColoredPlacement> coloredPlacements;    // calculated
+
+    bool            outlineEnb;
+    QColor          outlineColor;
+    int             outlineWidth;
 
 };
 #endif

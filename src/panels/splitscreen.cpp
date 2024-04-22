@@ -13,7 +13,7 @@ SplitScreen::SplitScreen(QWidget *parent) : QFrame(parent)
     setWindowFlag(Qt::Window,true);
     setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Preferred);
 
-    panel   = ControlPanel::getInstance();
+    panel   = Sys::controlPanel;
     view    = Sys::view;
     floater = nullptr;
 

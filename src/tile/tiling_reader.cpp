@@ -71,7 +71,7 @@ TilingPtr TilingReader::readTiling(QTextStream & st)
     // create the tiling
     tiling = make_shared<Tiling>();
     tiling->setTitle(name);
-    tiling->setTranslationVectors(QPointF(x1,y1),QPointF(x2,y2));
+    tiling->setTranslationVectors(QPointF(x1,y1),QPointF(x2,y2),QPointF());
 
     for( int idx = 0; idx < nf; ++idx )
     {
@@ -146,7 +146,7 @@ TilingPtr TilingReader::readTilingXML(QString file, MRBasePtr base)
     xml_parse_result result = doc.load_file(file.toStdString().c_str());
     if (result == false)
     {
-        qWarning("Badly constructed XML file");
+        qWarning() << "Badly constructed Tiling XML file" << file;
         return nullptr;
     }
 
@@ -178,6 +178,8 @@ TilingPtr TilingReader::readTilingXML(xml_node & tiling_node, MRBasePtr base)
         version = ver.toInt();
     }
 
+    bool legacyFlipCurve =  (version < 9) ? true : false;
+
     // name
     xml_node node;
     QString name;
@@ -193,7 +195,13 @@ TilingPtr TilingReader::readTilingXML(xml_node & tiling_node, MRBasePtr base)
     }
 
     // translations
-    QPointF ptt1,ptt2;
+    QPointF ptt1,ptt2,origin;
+    xml_node tor = tiling_node.child("T0");
+    if (tor)
+    {
+        QString strt0 = tor.child_value();
+        origin = getPoint(strt0);
+    }
     xml_node t1 = tiling_node.child("T1");
     if (t1)
     {
@@ -210,15 +218,15 @@ TilingPtr TilingReader::readTilingXML(xml_node & tiling_node, MRBasePtr base)
     // create the tiling
     tiling = make_shared<Tiling>();
     tiling->setTitle(name);
-    tiling->setTranslationVectors(ptt1, ptt2);
     tiling->setVersion(version);
+    tiling->setTranslationVectors(ptt1, ptt2, origin);
 
 	xml_node view = tiling_node.child("View");
     if (view)
     {
         Xform xf = getXform(view);
         tiling->setModelXform(xf,false);
-        qDebug().noquote() << "tiling canvas xform" << xf.toInfoString();
+        qDebug().noquote() << "tiling canvas xform" << xf.info();
     }
 
     // view settings
@@ -341,7 +349,7 @@ TilingPtr TilingReader::readTilingXML(xml_node & tiling_node, MRBasePtr base)
         }
         else if (strtype == "edgepoly")
         {
-            EdgePoly ep = tr.getEdgePoly(tile_node);
+            EdgePoly ep = tr.getEdgePoly(tile_node,legacyFlipCurve);
 
             qreal rotation = 0.0;
             xml_attribute rotatt = tile_node.attribute("rotation");
@@ -381,16 +389,16 @@ TilingPtr TilingReader::readTilingXML(xml_node & tiling_node, MRBasePtr base)
         xml_node bcolor = tile_node.child("BkgdColors");
         if (bcolor)
         {
-            QVector<TPColor> tpcolors;
+            ColorSet cset;
             QString txt = bcolor.child_value();
             QStringList txtList = txt.split(',');
             for (auto it = txtList.begin(); it != txtList.end(); it++)
             {
                 QString acolor = *it;
-                tpcolors.push_back(TPColor(acolor,false));
+                cset.addColor(TPColor(acolor,false));
 
             }
-            tile->getTileColors()->setColors(tpcolors);
+            tileColors.addColorSet(cset);
         }
     }
 
@@ -458,7 +466,7 @@ BkgdImagePtr TilingReader::getBackgroundImage(xml_node & node)
         }
         
         bip->setImageXform(xf);
-        qDebug().noquote() << "background image xform:" << xf.toInfoString();
+        qDebug().noquote() << "background image xform:" << xf.info();
 
         n= node.child("Perspective");
         bool usePerspective = false;
@@ -712,6 +720,6 @@ void TilingReader::getViewSettings(xml_node & node)
     }
     
     tiling->setModelXform(xf,false);
-    qDebug().noquote() << "tiling model xform:" << xf.toInfoString();
+    qDebug().noquote() << "tiling model xform:" << xf.info();
 }
 

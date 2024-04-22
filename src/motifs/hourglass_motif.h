@@ -14,7 +14,7 @@ public:
 
     virtual void    buildMotifMaps()  override;
     virtual QString getMotifDesc()    override { return "HourglassMotif"; }
-    virtual void    report()          override { qDebug().noquote() << getMotifDesc() << "d" << d << "s" << s; }
+    virtual void    dump()          override { qDebug().noquote() << getMotifDesc() << "d" << d << "s" << s; }
 
 protected:
     void inferHourglass();                       // Hourglass inferring

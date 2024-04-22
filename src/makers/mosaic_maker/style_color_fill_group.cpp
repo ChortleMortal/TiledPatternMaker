@@ -91,7 +91,7 @@ void StyleColorFillGroup::display()
         table->setCellWidget(row,COL_BTN,btn);
         connect(btn, &QPushButton::clicked, this, [this,row] { edit(row); });
 
-        ColorSet * cset = filled->getColorGroup()->getColorSet(row);
+        ColorSet *  cset = filled->getColorGroup()->getColorSet(row);
         QWidget * widget = cset->createWidget();
         widget->setContentsMargins(0,0,0,0);
         table->setCellWidget(row,COL_COLORS,widget);
@@ -221,7 +221,7 @@ void StyleColorFillGroup::colorSetVisibilityChanged(int row)
 
     QCheckBox * cb  = dynamic_cast<QCheckBox*>(table->cellWidget(row,COL_HIDE));
     bool hide       = cb->isChecked();
-    qDebug() << "hide state="  << hide;
+    qDebug() << "group hide state="  << hide;
 
     filled->getColorGroup()->hide(row, hide);
 

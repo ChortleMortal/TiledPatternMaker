@@ -18,7 +18,7 @@
 
 page_save::page_save(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_SAVE, "Save")
 {
-    tilingMonitor = TilingMonitor::getInstance();
+    tilingMonitor = tilingMaker->getTilingMonitor();
 
     createMosaicSave();
     createTilingSave();

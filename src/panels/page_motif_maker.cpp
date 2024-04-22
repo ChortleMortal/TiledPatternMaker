@@ -32,13 +32,13 @@ using std::make_shared;
 
 page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,PAGE_MOTIF_MAKER,"Motif Maker")
 {
-    protoMakerData = PrototypeMaker::getInstance()->getProtoMakerData();
+    protoMakerData = Sys::prototypeMaker->getProtoMakerData();
 
     QRadioButton * rEnlarge  = new QRadioButton("Enlarge to fill");
     QRadioButton * rActual   = new QRadioButton("Actual size");
 
     SpinSet * widthSpin = new SpinSet("Line Width",3,1,9);
-    widthSpin->setValue((int)config->protoviewWidth);
+    widthSpin->setValue((int)config->motifViewWidth);
 
     QCheckBox * chkMulti     = new QCheckBox("Multi-Select Motifs");
 
@@ -187,21 +187,6 @@ page_motif_maker::page_motif_maker(ControlPanel * cpanel) : panel_page(cpanel,PA
 
 void page_motif_maker::onEnter()
 {
-    static QString msg("<body>"
-                   "<font color=blue>motif</font>  |  "
-                   "<font color=magenta>tile boundary</font>  |  "
-                   "<font color=red>motif boundary</font>  |  "
-                   "<font color=yellow>extended boundary</font>"
-                   "</body>");
-
-    panel->pushPanelStatus(msg);
-
-    motifMakerWidget->selectPrototype();
-}
-
-void page_motif_maker::onExit()
-{
-    panel->popPanelStatus();
 }
 
 void page_motif_maker::onRefresh(void)
@@ -215,6 +200,17 @@ void page_motif_maker::onRefresh(void)
         replicate->setChecked(!Sys::dontReplicate);
         replicate->blockSignals(false);
     }
+}
+
+QString page_motif_maker::getPageStatus()
+{
+    static QString msg("<body>"
+                       "<font color=blue>motif</font>  |  "
+                       "<font color=magenta>tile boundary</font>  |  "
+                       "<font color=red>motif boundary</font>  |  "
+                       "<font color=yellow>extended boundary</font>"
+                       "</body>");
+    return msg;
 }
 
 void page_motif_maker::loadProtoCombo()
@@ -332,9 +328,7 @@ void  page_motif_maker::multiClicked(bool state)
 
 void page_motif_maker::slot_editCurrent()
 {
-    MapEditor * maped = MapEditor::getInstance();
-
-    if (maped->loadSelectedMotifs())
+    if (Sys::mapEditor->loadSelectedMotifs())
     {
         panel->setCurrentPage("Map Editor");
     }
@@ -358,7 +352,7 @@ void page_motif_maker::slot_combine()
     qsizetype sides = 0;
     TilePtr tp;
 
-    MapPtr compositeMap = make_shared<Map>("Composite map");
+    MapPtr compositeMap = make_shared<Map>("Composite");
     for (auto & delp : std::as_const(delps))
     {
         auto tile = delp->getTile();

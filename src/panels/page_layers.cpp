@@ -53,17 +53,12 @@ page_layers:: page_layers(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_LAYER
 
 void page_layers::onEnter()
 {
-    static QString msg("<body>"
-                       "<span>Click on layer to select</span>"
-                       "</body>");
-    panel->pushPanelStatus(msg);
-
     doRefresh();
 }
 
-void page_layers::onExit()
+QString page_layers::getPageStatus()
 {
-    panel->popPanelStatus();
+    return "<body><span>Click on layer to select</span></body>";
 }
 
 void page_layers::populateLayers()
@@ -496,7 +491,7 @@ void page_layers::alignCenterPressed(int col)
     Xform xf    =  selected->getModelXform();
     QPointF mpt = xf.getModelCenter();
 
-    QPointF spt = selected->worldToScreen(mpt);
+    QPointF spt = selected->modelToScreen(mpt);
     layer->setCenterScreenUnits(spt);
     layer->forceLayerRecalc(true);
     doRefresh();

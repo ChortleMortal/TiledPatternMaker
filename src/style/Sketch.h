@@ -33,9 +33,9 @@ public:
 
     void draw(GeoGraphics *gg) override;
 
-    virtual eStyleType getStyleType() const override { return STYLE_SKETCHED; }
-    QString            getStyleDesc() const override { return "Sketched"; }
-    virtual void       report()       const override { qDebug().noquote() << getStyleDesc() << colors.colorsString(); }
+    eStyleType  getStyleType() const override { return STYLE_SKETCHED; }
+    QString     getStyleDesc() const override { return "Sketched"; }
+    void        dump()         const override { qDebug().noquote() << getStyleDesc() << colors.colorsString(); }
 };
 #endif
 

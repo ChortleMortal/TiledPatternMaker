@@ -101,7 +101,7 @@ QTransform Xform::scaleAroundPoint(QPointF pt)
     return (QTransform::fromTranslate(-pt.x(),-pt.y()) * (QTransform::fromScale(scale,scale) * QTransform().translate(pt.x(), pt.y())));
 }
 
-QString Xform::toInfoString(int precision) const
+QString Xform::info(int precision) const
 {
     QString s;
     s  = QString("Scale=%1 ").arg(QString::number(scale,'g',precision));

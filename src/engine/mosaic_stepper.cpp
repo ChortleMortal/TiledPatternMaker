@@ -4,7 +4,6 @@
 #include "makers/mosaic_maker/mosaic_maker.h"
 #include "panels/controlpanel.h"
 #include "settings/configuration.h"
-#include "viewers/view_controller.h"
 
 ////////////////////////////////////////////
 ///
@@ -57,7 +56,7 @@ bool MosaicStepper::next()
     if (++cydata.cIndex < cydata.files.size())
     {
         QString name = cydata.files.at(cydata.cIndex);
-        MosaicMaker::getInstance()->loadMosaic(name);
+        Sys::mosaicMaker->loadMosaic(name);
     }
     else
     {
@@ -82,7 +81,7 @@ bool MosaicStepper::end()
     {
         start(false);
         finish("Mosaic viewing");
-        panel->popPanelStatus();
+        panel->clearStatus();
         return true;
     }
     else

@@ -8,7 +8,6 @@
 #include "geometry/transform.h"
 #include "geometry/edge.h"
 #include "geometry/vertex.h"
-#include "misc/utilities.h"
 #include "misc/geo_graphics.h"
 #include "misc/sys.h"
 #include "tile/placed_tile.h"
@@ -30,10 +29,10 @@ TilingMouseAction::TilingMouseAction(TileSelectorPtr sel, QPointF spt)
     desc       = "MouseAction";
     qDebug() << desc;
 
-    tilingMakerView = TilingMakerView::getInstance();
-    tilingMaker     = TilingMaker::getInstance();
+    tilingMakerView = Sys::tilingMakerView;
+    tilingMaker     = Sys::tilingMaker;
     selection       = sel;
-    wLastDrag       = tilingMakerView->screenToWorld(spt);
+    wLastDrag       = tilingMakerView->screenToModel(spt);
     drag_color      = QColor(206,179,102,230);
 
     tilingMakerView->forceRedraw();
@@ -41,7 +40,7 @@ TilingMouseAction::TilingMouseAction(TileSelectorPtr sel, QPointF spt)
 
 void TilingMouseAction::updateDragging(QPointF spt)
 {
-    wLastDrag = tilingMakerView->screenToWorld(spt);
+    wLastDrag = tilingMakerView->screenToModel(spt);
     tilingMakerView->forceRedraw();
 }
 
@@ -55,6 +54,8 @@ void TilingMouseAction::endDragging(QPointF spt)
     Q_UNUSED(spt)
     tilingMaker->resetOverlaps();       // sets UNDEFINED
     tilingMakerView->forceRedraw();
+
+    tilingMaker->pushTilingToPrototypeMaker(PROM_TILING_CHANGED);
 }
 
 void TilingMouseAction::flash(QColor color)
@@ -92,7 +93,7 @@ void MovePolygon::updateDragging(QPointF spt)
     {
         //qDebug() << "MovePolygon: update";
 
-        QPointF wpt         = tilingMakerView->screenToWorld(spt);
+        QPointF wpt         = tilingMakerView->screenToModel(spt);
         PlacedTilePtr pf = selection->getPlacedTile();
         QPointF diff        = wpt - wLastDrag;
 
@@ -116,7 +117,7 @@ void MovePolygon::updateDragging(QPointF spt)
 /////////
 
 CopyMovePolygon::CopyMovePolygon(TileSelectorPtr sel, QPointF spt )
-    : MovePolygon(sel = TilingMaker::getInstance()->addTileSelectionPointer(sel),spt)
+    : MovePolygon(sel = Sys::tilingMaker->addTileSelectionPointer(sel),spt)
 {
     PlacedTilePtr pfp = sel->getPlacedTile();
     initial_transform = pfp->getTransform();
@@ -126,8 +127,8 @@ CopyMovePolygon::CopyMovePolygon(TileSelectorPtr sel, QPointF spt )
 
 void CopyMovePolygon::endDragging(QPointF spt )
 {
-    QPointF initial_pos = tilingMakerView->worldToScreen(initial_transform.map(Sys::ORIGIN));
-    QPointF final_pos   = tilingMakerView->worldToScreen(selection->getPlacedTile()->getTransform().map(Sys::ORIGIN));
+    QPointF initial_pos = tilingMakerView->modelToScreen(initial_transform.map(Sys::ORIGIN));
+    QPointF final_pos   = tilingMakerView->modelToScreen(selection->getPlacedTile()->getTransform().map(Sys::ORIGIN));
     TilingMouseAction::endDragging(spt);
     if (Geo::dist2(initial_pos,final_pos ) < 49.0 )
     {
@@ -153,6 +154,7 @@ DrawTranslation::DrawTranslation(TileSelectorPtr sel, QPointF spt, QPen apen ) :
     {
         state = ADTT_STARTED;
         vector.setP1(sel->getPlacedPoint());
+        mOrigin = sel->getPlacedPoint();
     }
     else
     {
@@ -168,7 +170,7 @@ void DrawTranslation::updateDragging(QPointF spt )
     }
     if (state == ADTT_DRAGGING)
     {
-        vector.setP2(tilingMakerView->screenToWorld(spt));
+        vector.setP2(tilingMakerView->screenToModel(spt));
     }
     TilingMouseAction::updateDragging(spt);
 }
@@ -192,7 +194,7 @@ void DrawTranslation::endDragging(QPointF spt)
         if (sel)
         {
             vector.setP2(sel->getPlacedPoint());
-            tilingMaker->addToTranslate(vector);
+            tilingMaker->addToTranslate(vector,mOrigin);
         }
     }
     state = ADTT_NOSTATE;
@@ -216,7 +218,7 @@ void JoinEdge::updateDragging(QPointF spt)
 {
     if (snapped) return;
 
-    QPointF wpt = tilingMakerView->screenToWorld(spt);
+    QPointF wpt = tilingMakerView->screenToModel(spt);
 
     if (!snapTo(spt))
     {
@@ -415,7 +417,7 @@ bool JoinPoint::snapTo(QPointF spt)
 /////////
 
 CopyJoinEdge::CopyJoinEdge(TileSelectorPtr sel, QPointF spt )
-    : JoinEdge(TilingMaker::getInstance()->addTileSelectionPointer(sel),spt)
+    : JoinEdge(Sys::tilingMaker->addTileSelectionPointer(sel),spt)
 {
     initial_transform = sel->getPlacedTile()->getTransform();
     desc = "CopyJoinEdge";
@@ -424,14 +426,14 @@ CopyJoinEdge::CopyJoinEdge(TileSelectorPtr sel, QPointF spt )
 
 void CopyJoinEdge::endDragging(QPointF spt)
 {
-    QPointF initial_pos = tilingMakerView->worldToScreen(initial_transform.map(Sys::ORIGIN));
-    QPointF final_pos   = tilingMakerView->worldToScreen(selection->getPlacedTile()->getTransform().map(Sys::ORIGIN));
-    JoinEdge::endDragging(spt);
+    QPointF initial_pos = tilingMakerView->modelToScreen(initial_transform.map(Sys::ORIGIN));
+    QPointF final_pos   = tilingMakerView->modelToScreen(selection->getPlacedTile()->getTransform().map(Sys::ORIGIN));
     if (Geo::dist2(initial_pos,final_pos) < 49.0)
     {
         tilingMaker->deleteTile(selection);
         selection.reset();
     }
+    JoinEdge::endDragging(spt);
 }
 
 /////////
@@ -441,7 +443,7 @@ void CopyJoinEdge::endDragging(QPointF spt)
 /////////
 
 CopyJoinMidPoint::CopyJoinMidPoint(TileSelectorPtr sel, QPointF spt)
-    : JoinMidPoint(TilingMaker::getInstance()->addTileSelectionPointer(sel),spt)
+    : JoinMidPoint(Sys::tilingMaker->addTileSelectionPointer(sel),spt)
 {
     initial_transform = sel->getPlacedTile()->getTransform();
     desc = "CopyJoinMidPoint";
@@ -450,8 +452,8 @@ CopyJoinMidPoint::CopyJoinMidPoint(TileSelectorPtr sel, QPointF spt)
 
 void CopyJoinMidPoint::endDragging(QPointF spt)
 {
-    QPointF initial_pos = tilingMakerView->worldToScreen(initial_transform.map(QPointF()));
-    QPointF final_pos   = tilingMakerView->worldToScreen(selection->getPlacedTile()->getTransform().map(QPointF()));
+    QPointF initial_pos = tilingMakerView->modelToScreen(initial_transform.map(QPointF()));
+    QPointF final_pos   = tilingMakerView->modelToScreen(selection->getPlacedTile()->getTransform().map(QPointF()));
     JoinMidPoint::endDragging(spt);
     if (Geo::dist2(initial_pos,final_pos) < 49.0)
     {
@@ -467,7 +469,7 @@ void CopyJoinMidPoint::endDragging(QPointF spt)
 /////////
 
 CopyJoinPoint::CopyJoinPoint(TileSelectorPtr sel, QPointF spt)
-    : JoinPoint(TilingMaker::getInstance()->addTileSelectionPointer(sel),spt)
+    : JoinPoint(Sys::tilingMaker->addTileSelectionPointer(sel),spt)
 {
     initial_transform = sel->getPlacedTile()->getTransform();
     desc = "CopyJoinPoint";
@@ -476,8 +478,8 @@ CopyJoinPoint::CopyJoinPoint(TileSelectorPtr sel, QPointF spt)
 
 void CopyJoinPoint::endDragging(QPointF spt)
 {
-    QPointF initial_pos = tilingMakerView->worldToScreen(initial_transform.map(QPointF()));
-    QPointF final_pos   = tilingMakerView->worldToScreen(selection->getPlacedTile()->getTransform().map(QPointF()));
+    QPointF initial_pos = tilingMakerView->modelToScreen(initial_transform.map(QPointF()));
+    QPointF final_pos   = tilingMakerView->modelToScreen(selection->getPlacedTile()->getTransform().map(QPointF()));
     if (Geo::dist2(initial_pos,final_pos) < 49.0)
     {
         tilingMaker->deleteTile(selection);
@@ -496,7 +498,7 @@ CreatePolygon::CreatePolygon(QPointF spt) : TilingMouseAction(nullptr,spt)
 {
     qDebug() << "CreatePolygon";
     qDebug() << desc;
-    gridView = GridView::getInstance();
+    gridView = Sys::gridViewer;
     QPointF wpt = tilingMakerView->findSelectionPointOrPoint(spt);
     gridView->nearGridPoint(spt,wpt);
     addVertex(wpt);
@@ -518,9 +520,9 @@ void CreatePolygon::addVertex(QPointF wpt)
         return;
     }
 
-    QPointF newPoint   = tilingMakerView->worldToScreen(wpt);
+    QPointF newPoint   = tilingMakerView->modelToScreen(wpt);
     VertexPtr firstV   = wAccum.first()->v1;
-    QPointF firstPoint = tilingMakerView->worldToScreen(firstV->pt);
+    QPointF firstPoint = tilingMakerView->modelToScreen(firstV->pt);
     if ((wAccum.size() > 2) &&  Geo::isNear(newPoint,firstPoint))
     {
         // add last point
@@ -566,8 +568,8 @@ void CreatePolygon::updateDragging(QPointF spt)
     EdgePoly & wAccum = tilingMakerView->getAccumW();
     for (auto & edge :std::as_const(wAccum))
     {
-        QPointF p1 = tilingMakerView->worldToScreen(edge->v1->pt);
-        QPointF p2 = tilingMakerView->worldToScreen(edge->v2->pt);
+        QPointF p1 = tilingMakerView->modelToScreen(edge->v1->pt);
+        QPointF p2 = tilingMakerView->modelToScreen(edge->v2->pt);
         if (Geo::isNear(p1,spt))
         {
             underneath = edge->v1->pt;
@@ -634,7 +636,7 @@ Measure::Measure(QPointF spt, TileSelectorPtr sel) : TilingMouseAction(sel,spt)
     {
         qreal len = QLineF(m->startS(),spt).length();    // approx len
         QLineF line = sel->getPlacedLine();
-        sPerpLine = QLineF(spt, tilingMakerView->worldToScreen(line.p2()));
+        sPerpLine = QLineF(spt, tilingMakerView->modelToScreen(line.p2()));
         sPerpLine = normalVectorB(sPerpLine);
         sPerpLine.setLength(len);
 
@@ -734,7 +736,7 @@ void Position::draw(GeoGraphics * g2d)
 {
     qreal sx    = spt.x();
     qreal sy    = spt.y();
-    QPointF mpt = tilingMakerView->screenToWorld(spt);
+    QPointF mpt = tilingMakerView->screenToModel(spt);
     qreal mx    = mpt.x();
     qreal my    = mpt.y();
 
@@ -781,14 +783,14 @@ void EditTile::updateDragging(QPointF spt)
     if (vertexIndex == -1)
         return;
 
-    QPointF wpt = tilingMakerView->screenToWorld(spt);
+    QPointF wpt = tilingMakerView->screenToModel(spt);
     QTransform T = pfp->getTransform().inverted();
     wpt = T.map(wpt);
     const EdgePoly & ep = pfp->getTile()->getEdgePoly();
     VertexPtr v = ep[vertexIndex]->v1;
-    v->pt = wpt;
+    v->setPt(wpt);  //decompose later
 
-    TilingMouseAction::updateDragging(tilingMakerView->screenToWorld(spt));
+    TilingMouseAction::updateDragging(tilingMakerView->screenToModel(spt));
     emit tilingMaker->sig_refreshMenu();
 }
 
@@ -797,12 +799,16 @@ void EditTile::endDragging(QPointF spt )
     if (vertexIndex == -1)
         return;
 
-    QPointF wpt = tilingMakerView->screenToWorld(spt);
+    QPointF wpt = tilingMakerView->screenToModel(spt);
     QTransform T = pfp->getTransform().inverted();
     wpt = T.map(wpt);
-    const EdgePoly & ep = pfp->getTile()->getEdgePoly();
+
+    auto tile = pfp->getTile();
+    const EdgePoly & ep = tile->getEdgePoly();
     VertexPtr v = ep[vertexIndex]->v1;
-    v->pt = wpt;
+    v->setPt(wpt);
+
+    tile->decompose();
 
     TilingMouseAction::endDragging(spt);
     emit tilingMaker->sig_refreshMenu();
@@ -848,14 +854,14 @@ void EditEdge::draw(GeoGraphics * g2d)
 
 void EditEdge::updateDragging(QPointF spt)
 {
-    QPointF wpt    = tilingMakerView->screenToWorld(spt);
+    QPointF wpt    = tilingMakerView->screenToModel(spt);
     QPolygonF poly = pfp->getPlacedPoints();
     QPointF pt     = Geo::getClosestPoint(perp,wpt);
     QTransform inv = pfp->getTransform().inverted();
     pt             = inv.map(pt);
     bool convex    = edge->isConvex();
-    edge->setArcCenter(pt, convex,(edge->getType()==EDGETYPE_CHORD));
-    TilingMouseAction::updateDragging(tilingMakerView->screenToWorld(spt));
+    edge->setCurvedEdge(pt, convex,(edge->getType()==EDGETYPE_CHORD));
+    TilingMouseAction::updateDragging(tilingMakerView->screenToModel(spt));
     emit tilingMaker->sig_refreshMenu();
 }
 

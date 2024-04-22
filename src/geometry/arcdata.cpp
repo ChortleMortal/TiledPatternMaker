@@ -1,261 +1,278 @@
 #include "geometry/arcdata.h"
 #include "geometry/edge.h"
 #include "geometry/geo.h"
-#include "geometry/loose.h"
 #include "geometry/vertex.h"
 
-ArcData::ArcData(QPointF p1, QPointF p2, QPointF c, bool convex)
+ArcData::ArcData()
 {
-    trace = 0;
-    span = 0;
-    this->convex = convex;
-    //testCenters(p1,p2,c);
-    //testEnds(p1,p2,c);
+    _arcType    = AT_UNDEFINED;
+    start       = 0;
+    end         = 0;
+    magnitude   = 1.0;
+    trace       = 0;
+    setSpan(0);
+}
+
+ArcData & ArcData::operator=(const ArcData & other)
+{
+    _arcType        = other._arcType;
+    _convexCenter   = other._convexCenter;
+    _concaveCenter  = other._concaveCenter;
+    _span           = other._span;
+    start           = other.start;
+    end             = other.end;
+    magnitude       = other.magnitude;
+    rect            = other.rect;
+    return *this;
+}
+
+void ArcData::create(QPointF p1, QPointF p2, QPointF center, bool convex)
+{
+    setConvex(convex,p1,p1);
 
     if (convex)
+        _convexCenter = center;
+    else
+        _concaveCenter = center;
+
+    calcSpan(p1,p2);
+}
+
+void  ArcData::setConvex(bool convex, QPointF p1, QPointF p2)
+{
+    eArcType at = (convex) ? AT_CONVEX : AT_CONCAVE;
+    if (_arcType == at)
     {
-        calcConvex(p1,p2,c);
+        return;
+    }
+
+    if (_arcType == AT_UNDEFINED)
+    {
+        _arcType = at;
+        return;
+    }
+
+    if (at == AT_CONVEX)
+    {
+        // flip center for concave
+        _convexCenter =  Geo::reflectPoint(getCenter(),QLineF(p1,p2));
     }
     else
     {
-        calcConcave(p1,p2,c);
+        // flip center for concave
+        _concaveCenter =  Geo::reflectPoint(getCenter(),QLineF(p1,p2));
     }
+
+    _arcType = at;
 }
 
-ArcData::ArcData(Edge * edge)
+QPointF ArcData::getCenter() const
 {
-    span = 0;
-    trace = 0;
-    convex = edge->isConvex();
-    if (convex)
+    if (convex())
+        return _convexCenter;
+    else
+        return _concaveCenter;
+}
+
+void ArcData::setCenter(QPointF mpt)
+{
+    if (convex())
+        _convexCenter = mpt;
+    else
+        _concaveCenter = mpt;
+}
+
+void ArcData::calcSpan(QPointF p1, QPointF p2)
+{
+
+    if (convex())
     {
-        calcConvex(edge->v1->pt, edge->v2->pt, edge->getArcCenter());
+        calcConvexSpan(p1,p2);
     }
     else
     {
-        calcConcave(edge->v1->pt, edge->v2->pt, edge->getArcCenter());
+        calcConcaveSpan(p1,p2);
     }
 }
 
-void ArcData::calcConvex(QPointF p1, QPointF p2, QPointF c)
+void ArcData::calcSpan(Edge * edge)
 {
-    if (trace >=3) qDebug()  << "convex " << p1 << p2 << c;
-    
-    start = Geo::getAngleDegrees(c,p1);
-    end   = Geo::getAngleDegrees(c,p2);
+    QPointF p1 = edge->v1->pt;
+    QPointF p2 = edge->v2->pt;
 
-    // should be a -ve span  (meaning CCW)
-    span  = end-start;
+    Q_ASSERT(_arcType != AT_UNDEFINED);
+    calcSpan(p1,p2);
+}
+
+void ArcData::calcConvexSpan(QPointF p1, QPointF p2)
+{
+    QPointF center = getCenter();
+
+    if (trace >=3) qDebug()  << "calcConvex " << p1 << p2 << center;
+
+    qreal radius = QLineF(p1,center).length();
+    rect         = QRectF(center.x() - radius, center.y() - radius, radius*2, radius*2);
+    start        = Geo::getAngleDegrees(center,p1);
+    end          = Geo::getAngleDegrees(center,p2);
+
+    qreal span   = end-start;         // should be a -ve span  (meaning CCW)
 
     if (trace >= 2) qDebug() << "convex start" << start << "end" << end << "span" << span;
 
     if (span > 0)
     {
-        //Q_ASSERT(span > 180);
         span = -(start + (360-end));
-
     }
     if (span < -180.0)
     {
-        //span += 180.0;  // this breaks FirstCurve.v4
-        //span = (360 - span);  // also breaks
-        //span = 360 + span; // not tested
         span = -(360 + span); // not tested
-        //qWarning() << "something needed here";
     }
 
-    qreal radius = QLineF(p1,c).length();
-    //qDebug() <<  "radius"  << radius;
-
-    rect = QRectF(c.x() - radius, c.y() - radius, radius*2, radius*2);
-
-    if (trace >= 1) qInfo() << "ArcData convex" << rect << "start=" << start << "end=" << end  << "span=" << span;
+    if (trace >= 1) dump();
 
     Q_ASSERT(span <= 0);
+
+    setSpan(span);
+
+    //qInfo() << "convex span" << getSpan();
 }
 
-void ArcData::calcConcave(QPointF p1, QPointF p2, QPointF c)
+void ArcData::calcConcaveSpan(QPointF p1, QPointF p2)
 {
     // for concave we need the center reflection accross p1p2
     // and the direction must be CCW - meaning a positsive span
 
-    if (trace >=3) qDebug() << "concave" << p1 << p2 << c;
-    c = getCenterOldConcave(p1,p2,c);
-    //qDebug() << "center (mod)" << c;
-    
-    start = Geo::getAngleDegrees(c,p1);
-    end   = Geo::getAngleDegrees(c,p2);
+    QPointF center = getCenter();
 
-    // should be a +ve span (meaning CW)
-    span = end-start;
+    if (trace >=3) qDebug() << "calcConcave" << p1 << p2 << center;
+
+    //arcCenter = Geo::reflectPoint(arcCenter,QLineF(p1,p2));   // flip center for concave
+
+    qreal radius = QLineF(p1,center).length();
+    rect    = QRectF(center.x() - radius, center.y() - radius, radius*2, radius*2);
+    start   = Geo::getAngleDegrees(center,p1);
+    end     = Geo::getAngleDegrees(center,p2);
+
+    qreal span = end-start; // should be a +ve span (meaning CW)
+
     if (trace >= 2) qDebug() << "concave start" << start << "end" << end << "span" << span;
 
     if (span < 0)
     {
-        //_span = start + (360-end);
         span += 360;
     }
 
     if (span > 180.0)
     {
-        span  = 360.0 - span;   // fixes FirstCurrve.v4 and petal
+        span  = 360.0 - span;   // fixes FirstCurve.v4 and petal
     }
 
-    qreal radius = QLineF(p1,c).length();
-    //qDebug() <<  "radius"  << radius;
-
-    rect = QRectF(c.x() - radius, c.y() - radius, radius*2, radius*2);
-
-    if (trace >= 1) qInfo() << "ArcData concave" << rect << "start=" << start << "end=" << end  << "span=" << span;
-
+    if (trace >= 1) dump();
     Q_ASSERT(span >= 0);
+
+    setSpan(span);
+
+    //qInfo() << "concave span" << getSpan();
+}
+
+QString ArcData::info()
+{
+    QString astring;
+    QDebug  deb(&astring);
+
+    deb << "ArcData" << ((convex()) ? "convex" :  "concave") << rect << "start=" << start << "end=" << end  << "span=" << span();
+
+    return astring;
 }
 
 void ArcData::dump()
 {
-    qInfo() << "ArcData" << rect << start << end << "span=" << span;
+    qDebug().noquote() << info();
 }
 
-QPointF ArcData::getCenterOldConcave(QPointF p1, QPointF p2, QPointF c)
+QPointF ArcData::reflectCentreOverEdge(QPointF p1, QPointF p2, QPointF arcCenter)
 {
-    QPointF amid = QLineF(p1,p2).pointAt(0.5);
-    QLineF  mid  = QLineF(c,amid);
-    QPointF c2 = mid.pointAt(2.0);
-    return c2;
+    QLineF l(p1,p2);
+    QPointF c3= Geo::reflectPoint(arcCenter,l);
+    return c3;
 }
 
-QPointF ArcData::getCenterNew(QPointF p1, QPointF p2, qreal radius, bool convex)
+bool ArcData::pointWithinArc(QPointF pt)
 {
-    QLineF edge(p1,p2);
+    qreal angle =  Geo::getAngleDegrees(getCenter(),pt);
 
-    QPointF vp1 = edge.pointAt(0.5);
+    if (Loose::equals(angle,start))
+        return true;
+    if (Loose::equals(angle,end))
+        return true;
 
-    // calc normal vector
-    QLineF baseline(vp1,p2);
-    QPointF vp2;
-    if (!convex)        // DAC - why is this fliipped
+    //qInfo() << "raw" << start << end << angle << (isConvex() ? "convex" : "concave");
+
+    // polys are clockwise - angle increments anti-clockwise
+    if (convex())
     {
-        vp2.setX(-baseline.dy());
-        vp2.setY(baseline.dx());
+        Q_ASSERT(_span <= 0);
+        // start should be greater than end
+        if (start > end)
+        {
+            if (angle > end && angle < start)
+            {
+                //qWarning() << " convex hit" << start << end << angle;
+                return true;
+            }
+        }
+        else
+        {
+            // wraparound condition
+            if (angle < start && angle >=0)
+            {
+                //qInfo() << "convex wraparound HIT" << start << end << angle;
+                return true;
+            }
+            else if (angle <= 360 && angle > end)
+            {
+                //qInfo() << "convex wraparound HIT" << start << end << angle;
+                return true;
+            }
+            else
+            {
+                //qInfo() << "convex wraparound MISS" << start << end << angle;
+                return false;
+            }
+        }
     }
     else
     {
-        vp2.setX(baseline.dy());
-        vp2.setY(-baseline.dx());
+        // concave - start should be less than end
+        Q_ASSERT(_span >=0);
+        if (start < end)
+        {
+            if (angle < end && angle > start)
+            {
+                //qWarning() << " concave hit 1" << start << end << angle;
+                return true;
+            }
+        }
+        else
+        {
+            // wraparound condition
+            if (angle > start && angle <= 300)
+            {
+                //qInfo() << "concave wraparound HIT 2" << start << end << angle;
+                return true;
+            }
+            else if (angle >= 0 && angle < end)
+            {
+                //qInfo() << "concave wraparound HIT 3" << start << end << angle;
+                return true;
+            }
+            else
+            {
+                //qInfo() << "concave wraparound MISS 4" << start << end << angle;
+                return false;
+            }
+        }
     }
-    QLineF normalVector(vp1,vp1+vp2);
-
-    // adjust len using Pythagoras
-    qreal len = qSqrt( (radius * radius) - ((edge.length()/2.0) * (edge.length()/2.0)));
-    normalVector.setLength(len);
-
-    return normalVector.p2();   // the center
-}
-
-void ArcData::testCenters(QPointF p1, QPointF p2, QPointF c)
-{
-    qreal radius  = QLineF(c,p1).length();
-    qreal radius2 = QLineF(c,p2).length();
-    if (!Loose::equals(radius,radius2))
-    {
-        qWarning() << "radii mismatch (1)" << radius << radius2;
-    }
-
-    QPointF newConvex  = getCenterNew(p1,p2,radius,true);
-    QPointF newConcave = getCenterNew(p1,p2,radius,false);
-    QPointF oldConcave = getCenterOldConcave(p1,p2,c);
-
-    if (c != newConvex)
-    {
-        qWarning() << "convex center mismatch" << c << newConvex;
-    }
-    if (oldConcave != newConcave)
-    {
-        qWarning() << "concave center mismatch" << oldConcave << newConcave;
-    }
-
-    qreal radius3 = QLineF(oldConcave,p1).length();
-    qreal radius4 = QLineF(oldConcave,p2).length();
-    if (!Loose::equals(radius3,radius4))
-    {
-        qWarning() << "radii mismatch (2)" << radius3 << radius4;
-    }
-    if (!Loose::equals(radius,radius3))
-    {
-        qWarning() << "radii mismatch (2)" << radius << radius3;
-    }
-}
-
-void  ArcData::testEnds(QPointF p1, QPointF p2, QPointF c)
-{
-    qreal convex_start = Geo::getAngleDegrees(c,p1);
-    qreal convex_end   = Geo::getAngleDegrees(c,p2);
-
-    QPointF c2 = getCenterOldConcave(p1,p2,c);
-    qreal concave_start = Geo::getAngleDegrees(c2,p1);
-    qreal concave_end   = Geo::getAngleDegrees(c2,p2);
-
-    qInfo() << "convex:" << convex_start << convex_end << "concave:" << concave_start << concave_end;
-
-    convex_start  = QLineF(c,p1).angle();
-    convex_end    = QLineF(c,p2).angle();
-    concave_start = QLineF(c2,p1).angle();
-    concave_end   = QLineF(c2,p2).angle();
-
-    qInfo() << "convex:" << convex_start << convex_end << "concave:" << concave_start << concave_end;
-}
-
-void ArcData::test1()
-{
-    QPointF pt[8];
-    pt[0] = QPointF(1,0);
-    pt[1] = QPointF(1,1);
-    pt[2] = QPointF(0,1);
-    pt[3] = QPointF(-1,1);
-    pt[4] = QPointF(-1,0);
-    pt[5] = QPointF(-1,-1);
-    pt[6] = QPointF(0,-1);
-    pt[7] = QPointF(1,-1);
-
-    for (int i=0; i < 8; i++)
-    {
-        qDebug()  << QLineF(QPointF(),pt[i]).angle();
-        qDebug()  << Geo::getAngleDegrees(QPointF(),pt[i]);
-    }
-}
-
-void ArcData::test2()
-{
-    //Convex  ArcData QRectF(-588.231,-982.346 1100x1100) center QPointF(-38.2307,-432.346) 322.824 284.556 span= -38.2679
-    //Concave ArcData QRectF(-11.7693,-117.654 1100x1100) center QPointF(538.231,432.346) 104.556 142.824 span= 38.2679
-
-    //Convex  QPointF(400,-100) QPointF(100,100) center QPointF(-38.2307,-432.346) 322.824 284.556 span= -38.2679
-    //Concave QPointF(400,-100) QPointF(100,100) center QPointF(538.231,432.346) 104.556 142.824 span= 38.2679
-
-    QPointF p1(400,-100);
-    QPointF p2(100,100);
-    QPointF center(-38.2307,-432.346);
-
-    ArcData ad1(p1,p2,center,true);
-    ArcData ad2(p1,p2,center,false);
-
-    //Convex  QPointF(200,100) QPointF(100,200) center QPointF(-235.681,-235.681) 322.387 307.613 span= -14.7733
-    //Concave QPointF(200,100) QPointF(100,200) center QPointF(535.681,535.681) 127.613 142.387 span= 14.7733
-
-    p1 = QPointF(200,100);
-    p2 = QPointF(100,200);
-    center = QPointF(-235.681,-235.681);
-
-    ArcData ad3(p1,p2,center,true);
-    ArcData ad4(p1,p2,center,false);
-
-    //Convex  QPointF(200,80) QPointF(120,200) center QPointF(125.805,117.203) 26.6303 265.99 span= -120.641
-    //Concave QPointF(200,80) QPointF(120,200) center QPointF(194.195,162.797) 85.9896 206.63 span= 120.641 (is wrong)
-
-    p1 = QPointF(200,80);
-    p2 = QPointF(120,200);
-    center = QPointF(125.805,117.203);
-
-    ArcData ad5(p1,p2,center,true);
-    ArcData ad6(p1,p2,center,false);
+    //qDebug() << "miss";
+    return false;
 }

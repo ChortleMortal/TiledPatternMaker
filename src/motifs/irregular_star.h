@@ -14,13 +14,13 @@ public:
 
     virtual void        buildMotifMaps()  override;
     virtual QString     getMotifDesc()    override { return "IrregularStar"; }
-    virtual void        report() override { qDebug().noquote() << getMotifDesc() << "d" << d << "s" << s; }
+    virtual void        dump() override { qDebug().noquote() << getMotifDesc() << "d" << d << "s" << s; }
 
 protected:
     void                inferStar();  // Star inferring
 
  private:
-    void                inferStarV1();
+    void                inferStarv1();
     void                inferStarV2();
     void                inferStarV3();
 

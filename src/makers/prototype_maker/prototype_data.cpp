@@ -113,7 +113,7 @@ void PrototypeData::select(eMVDType type, ProtoPtr proto, bool multi, bool hidde
         auto del = proto->getDesignElement(0);
         if (del)
         {
-            bool multi = (type == MVD_PROTO) ? true : Configuration::getInstance()->motifMultiView;
+            bool multi = (type == MVD_PROTO) ? true : Sys::config->motifMultiView;
             select(type, del,multi);
         }
     }
@@ -240,7 +240,7 @@ void PrototypeData::rebuildCurrentMotif()
         auto motif = del->getMotif();
         motif->resetMotifMaps();
         motif->buildMotifMaps();
-        bool multi = Configuration::getInstance()->motifMultiView;
+        bool multi = Sys::config->motifMultiView;
         select(MVD_DELEM,del,multi);
     }
 }
@@ -379,4 +379,21 @@ ProtoPtr PrototypeData::getPrototype(TilingPtr tiling)
     }
     ProtoPtr pp;
     return pp;
+}
+
+void PrototypeData::dumpData(eMVDType type)
+{
+    qDebug() << "selected prototype" << selectedPrototype.lock().get();
+    for (const auto & p : prototypes)
+    {
+        auto pr = p.wproto.lock();
+        qDebug() << "proto" << pr.get() << p.show[type];
+    }
+
+    qDebug() << "selected designElement" << selectedDesignElement.lock().get();
+    for (const auto & d : designElements)
+    {
+        auto del = d.wdel.lock();
+        qDebug() << "DEL" << del.get() << d.show[type] << del->getMotif()->getMotifDesc();
+    }
 }

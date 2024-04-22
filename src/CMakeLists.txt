@@ -39,10 +39,13 @@ set(PROJECT_SOURCES
     enums/eborder.h
     enums/ecyclemode.cpp
     enums/ecyclemode.h
+    enums/edgetype.cpp
+    enums/edgetype.h
     enums/edesign.cpp
     enums/edesign.h
     enums/efillmode.cpp
     enums/efillmode.h
+    enums/efilltype.h
     enums/efilesystem.h
     enums/ekeyboardmode.cpp
     enums/ekeyboardmode.h
@@ -74,6 +77,8 @@ set(PROJECT_SOURCES
     geometry/crop.h
     geometry/dcel.cpp
     geometry/dcel.h
+    geometry/debug_map.cpp
+    geometry/debug_map.h
     geometry/edge.cpp
     geometry/edge.h
     geometry/edgepoly.cpp
@@ -88,6 +93,8 @@ set(PROJECT_SOURCES
     geometry/loose.h
     geometry/map.cpp
     geometry/map.h
+    geometry/map_base.h
+    geometry/map_base.cpp
     geometry/map_cleanse.cpp
     geometry/map_verify.cpp
     geometry/measurement.cpp
@@ -98,6 +105,8 @@ set(PROJECT_SOURCES
     geometry/neighbours.h
     geometry/geo.cpp
     geometry/geo.h
+    geometry/polygon.cpp
+    geometry/polygon.h
     geometry/threads.cpp
     geometry/threads.h
     geometry/transform.cpp
@@ -147,8 +156,12 @@ set(PROJECT_SOURCES
     makers/map_editor/map_selection.h
     makers/mosaic_maker/mosaic_maker.cpp
     makers/mosaic_maker/mosaic_maker.h
+    makers/mosaic_maker/style_color_fill_face.cpp
+    makers/mosaic_maker/style_color_fill_face.h
     makers/mosaic_maker/style_color_fill_group.cpp
     makers/mosaic_maker/style_color_fill_group.h
+    makers/mosaic_maker/style_color_fill_original.cpp
+    makers/mosaic_maker/style_color_fill_original.h
     makers/mosaic_maker/style_color_fill_set.cpp
     makers/mosaic_maker/style_color_fill_set.h
     makers/mosaic_maker/style_editors.cpp
@@ -301,6 +314,8 @@ set(PROJECT_SOURCES
     panels/page_layers.h
     panels/page_loaders.cpp
     panels/page_loaders.h
+    panels/page_loaders_worker.cpp
+    panels/page_loaders_worker.h
     panels/page_log.cpp
     panels/page_log.h
     panels/page_map_editor.cpp
@@ -390,10 +405,10 @@ set(PROJECT_SOURCES
     tiledpatternmaker.h
     viewers/backgroundimageview.cpp
     viewers/backgroundimageview.h
-    viewers/border_view.cpp
-    viewers/border_view.h
     viewers/crop_view.cpp
     viewers/crop_view.h
+    viewers/debug_view.cpp
+    viewers/debug_view.h
     viewers/grid_view.cpp
     viewers/grid_view.h
     viewers/map_editor_view.cpp
@@ -509,7 +524,8 @@ qt_add_resources(PROJECT_SOURCES tpm.qrc)
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     set(CMAKE_UNITY_BUILD ON)
     if (WIN32)
-        qt_add_executable(TiledPatternMaker WIN32 ${PROJECT_SOURCES} icon.rc)
+        qt_add_executable(TiledPatternMaker WIN32 ${PROJECT_SOURCES} icon.rc
+ )   # don't delete the WIN32
     else()
         qt_add_executable(TiledPatternMaker ${PROJECT_SOURCES} icon.rc)
     endif()

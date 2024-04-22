@@ -64,6 +64,8 @@ public:
     QPolygonF        getPlacedPolygon();
     EdgePtr          getPlacedEdge();
 
+    bool             isPoint();
+
 protected:
     TileSelector(QPointF pt);
     TileSelector(PlacedTilePtr pfp);
@@ -121,7 +123,6 @@ class ScreenTileSelector : public TileSelector
 public:
     ScreenTileSelector(QPointF pt);
 };
-
 
 #endif
 

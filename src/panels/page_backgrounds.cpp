@@ -18,7 +18,7 @@
 
 page_backgrounds::page_backgrounds(ControlPanel * apanel) : panel_page(apanel,PAGE_BKGD_MAKER,"Backgrounds"),  bkgdLayout("Bkgd Xform")
 {
-    bview = BackgroundImageView::getInstance();
+    bview = Sys::backgroundImageView;
 
     QGroupBox * bkgdImageGroup = createBackgroundImageGroup();
     QGroupBox * bkgdColorGroup = createBackgroundColorGroup();
@@ -237,7 +237,7 @@ void page_backgrounds::slot_loadBackground()
             mosaic->setBkgdImage(bip);
 
             // the view has a weak_ptr
-            BackgroundImageView::getInstance()->setImage(bip);
+            bview->setImage(bip);
             config->showBackgroundImage = true;     // since we loaded it, might as well see it
             setupBackground(bkgdLayout.getXform());
             displayBackgroundStatus(true);
@@ -252,8 +252,6 @@ void page_backgrounds::slot_removeBackground()
     auto mosaic = mosaicMaker->getMosaic();
     mosaic->removeBkgdImage();
 
-    auto bview = BackgroundImageView::getInstance();
-    bview->unload();
     emit sig_refreshView();
 
     displayBackgroundStatus(true);
@@ -266,7 +264,7 @@ void page_backgrounds::slot_useAdjustedClicked(bool checked)
 
     bip->setUseAdjusted(checked);
     setupBackground(bkgdLayout.getXform());
-    Sys::view->update();
+    view->update();
 }
 
 void page_backgrounds::setupBackground(Xform xform)
@@ -297,7 +295,7 @@ void page_backgrounds::slot_setBkgdXform()
     xform.setTransform(bkgdLayout.getQTransform());
     bview->setModelXform(xform,false);
     bip->createPixmap();
-    Sys::view->update();
+    view->update();
 }
 
 void page_backgrounds::slot_startSkewAdjustment(bool checked)
@@ -307,13 +305,13 @@ void page_backgrounds::slot_startSkewAdjustment(bool checked)
     if (checked)
     {
         QString txt = "Click to select four points on background image. Then press 'Complete Perspective Adjustement' to fix camera skew.";
-        panel->pushPanelStatus(txt);
+        panel->setStatus(txt);
 
         bview->setSkewMode(true);
     }
     else
     {
-        panel->popPanelStatus();
+        panel->clearStatus();
         bview->setSkewMode(false);    // also stops mouse interaction
         emit sig_refreshView();
     }
@@ -357,7 +355,7 @@ void page_backgrounds::slot_adjustBackground()
 
     bview->setSkewMode(false);
 
-    panel->popPanelStatus();
+    panel->clearStatus();
 
     startAdjustBtn->setChecked(false);
 

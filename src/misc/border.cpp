@@ -4,10 +4,13 @@
 #include "qmath.h"
 #include "misc/tile_color_defs.h"
 #include "misc/geo_graphics.h"
-#include "viewers/border_view.h"
 #include "viewers/view.h"
 #include <QPainter>
 #include "geometry/transform.h"
+#include "makers/crop_maker/mouse_edit_border.h"
+#include "panels/controlpanel.h"
+#include "viewers/crop_view.h"
+#include "viewers/view.h"
 
 /*
  * A border (defined in model units) is both a a layer, and a crop
@@ -16,31 +19,66 @@
  * ViewControl adds a border as a layer
  */
 
-Border::Border()
+Border::Border(ProtoPtr proto) : Style(proto)
 {
     borderType            = BORDER_NONE;
     _cropType             = CROP_UNDEFINED;
     _useViewSize          = false;
     _requiresConversion   = false;
     _requiresConstruction = true;
+    debugMouse            = false;
+
+    setZValue(BORDER_ZLEVEL);
 
     connect(Sys::view, &View::sig_viewSizeChanged, this, &Border::viewResized);
     connect(Sys::view, &View::sig_viewMoved,       this, &Border::viewMoved);
-
 }
 
-Border::Border(CropPtr crop) : Crop(crop)
+Border::Border(ProtoPtr proto, const Crop & crop) : Style(proto), Crop(crop)
 {
     connect(Sys::view, &View::sig_viewSizeChanged, this, &Border::viewResized);
     connect(Sys::view, &View::sig_viewMoved,       this, &Border::viewMoved);
+}
+
+void Border::paint(QPainter *painter)
+{
+    painter->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
+
+    QTransform tr = getLayerTransform();
+    qDebug().noquote() << "Border::paint" << Transform::info(tr);
+
+    GeoGraphics gg(painter,tr);
+
+    if (getRequiresConversion())
+    {
+        setRequiresConversion(false);
+        legacy_convertToModelUnits();
+    }
+
+    if (getRequiresConstruction())
+    {
+        createStyleRepresentation();
+        setRequiresConstruction(false);
+    }
+
+    painter->save();
+    draw(&gg);
+    painter->restore();
+
+    if (getMouseInteraction())
+    {
+        painter->save();
+        getMouseInteraction()->draw(painter,mousePos);
+        painter->restore();
+    }
 }
 
 void Border::viewMoved()
 {
     if (_useViewSize)
     {
-        setBorderSize(Sys::view->getCurrentSize());
-        _requiresConstruction = true;
+        setBorderSize(Sys::view->getSize());
+        setRequiresConstruction(true);
     }
 }
 
@@ -52,6 +90,15 @@ void Border::viewResized(QSize oldSize, QSize newSize)
     viewMoved();
 }
 
+void Border::setUseViewSize(bool use)
+{
+    _useViewSize = use;
+    if (use)
+    {
+        setRequiresConstruction(true);
+    }
+}
+
 void Border::setBorderSize(QSize viewSize)
 {
     qDebug() << "Border::setBorderSize" << viewSize;
@@ -61,14 +108,15 @@ void Border::setBorderSize(QSize viewSize)
     case CROP_RECTANGLE:
     {
         QRectF arect((QPointF()),QSizeF(viewSize));
-        auto borderView = BorderView::getInstance();
-        QRectF brect =  borderView->screenToWorld(arect);
+        QRectF brect = screenToModel(arect);
         setRect(brect);
     }   break;
 
     case CROP_CIRCLE:
         break;
+
     case CROP_POLYGON:
+
     case CROP_UNDEFINED:
         break;
     }
@@ -76,32 +124,139 @@ void Border::setBorderSize(QSize viewSize)
 
 void Border::convertCropToModelUnits()
 {
-    auto borderView = BorderView::getInstance();
-
     switch (_cropType)
     {
     case CROP_RECTANGLE:
     {
         QRectF rect = getRect();
-        rect = borderView->screenToWorld(rect);
+        rect = screenToModel(rect);
         setRect(rect);
     }   break;
 
     case CROP_CIRCLE:
     {
         Circle c = getCircle();
-        c = borderView->screenToWorld(c);
+        c = screenToModel(c);
         setCircle(c);
     }   break;
 
     case CROP_POLYGON:
     {
-        auto poly = borderView->screenToWorld(getPolygon());
+        QPolygonF poly = screenToModel(getAPolygon().get());
         setPolygon(poly);
     }   break;
 
     case CROP_UNDEFINED:
         break;
+    }
+}
+
+void Border::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
+{
+    Q_UNUSED(btn);
+
+    if (!view->isActiveLayer(this))
+        return;
+    if (Sys::cropViewer->getShowCrop(CM_MOSAIC))
+        return;
+    if (!Sys::controlPanel->isVisiblePage(PAGE_BORDER_MAKER))
+        return;
+
+    setMousePos(spt);
+
+    auto c = dynamic_cast<Crop *>(this);
+    auto mec = std::make_shared<MouseEditBorder>(this,mousePos,c);
+    setMouseInteraction(mec);
+    mec->updateDragging(mousePos);
+}
+
+void Border::slot_mouseDragged(QPointF spt)
+{
+    if (!view->isActiveLayer(this)) return;
+    if (Sys::cropViewer->getShowCrop(CM_MOSAIC)) return;
+
+    setMousePos(spt);
+
+    if (debugMouse) qDebug().noquote() << "drag" << mousePos << screenToModel(mousePos);
+
+    BorderMouseActionPtr mec = getMouseInteraction();
+    if (mec)
+    {
+        mec->updateDragging(mousePos);
+    }
+
+    forceRedraw();
+}
+
+void Border::slot_mouseTranslate(QPointF pt)
+{
+    if (!view->isActiveLayer(this)) return;
+
+    if (view->getKbdMode(KBD_MODE_XFORM_VIEW))
+    {
+        Xform xf = getModelXform();
+        xf.setTranslateX(xf.getTranslateX() + pt.x());
+        xf.setTranslateY(xf.getTranslateY() + pt.y());
+        setModelXform(xf,true);
+    }
+}
+
+void Border::slot_mouseMoved(QPointF spt)
+{
+    if (!view->isActiveLayer(this)) return;
+    if (Sys::cropViewer->getShowCrop(CM_MOSAIC)) return;
+
+    setMousePos(spt);
+
+    if (debugMouse) qDebug() << "move" << mousePos;
+}
+
+void Border::slot_mouseReleased(QPointF spt)
+{
+    if (!view->isActiveLayer(this)) return;
+    if (Sys::cropViewer->getShowCrop(CM_MOSAIC)) return;
+
+    setMousePos(spt);
+
+    if (debugMouse) qDebug() << "release" << mousePos << screenToModel(mousePos);
+
+    BorderMouseActionPtr mma = getMouseInteraction();
+    if (mma)
+    {
+        mma->endDragging(mousePos);
+        resetMouseInteraction();
+        setRequiresConstruction(true);
+        forceRedraw();
+    }
+}
+
+#if 0
+void Border::slot_wheel_scale(qreal delta)
+{
+    if (!view->isActiveLayer(this)) return;
+
+    if (view->getKbdMode( KBD_MODE_XFORM_VIEW))
+    {
+        Xform xf = getModelXform();
+        xf.setScale(xf.getScale() * (1.0 + delta));
+        setModelXform(xf,true);
+    }
+}
+#endif
+void Border::setMousePos(QPointF pt)
+{
+    Qt::KeyboardModifiers km = QApplication::keyboardModifiers();
+    if (km & Qt::ControlModifier)
+    {
+        mousePos.setY(pt.y());
+    }
+    else if (km & Qt::ShiftModifier)
+    {
+        mousePos.setX(pt.x());
+    }
+    else
+    {
+        mousePos = pt;
     }
 }
 
@@ -111,7 +266,7 @@ void Border::convertCropToModelUnits()
 ///
 ////////////////////////////////////////////////
 
-BorderPlain::BorderPlain(QSizeF sz, qreal width, QColor color) : Border()
+BorderPlain::BorderPlain(ProtoPtr proto, QSizeF sz, qreal width, QColor color) : Border(proto)
 {
     borderType   = BORDER_PLAIN;
     borderWidth  = width;
@@ -121,7 +276,7 @@ BorderPlain::BorderPlain(QSizeF sz, qreal width, QColor color) : Border()
     setRect(rect);
 }
 
-BorderPlain::BorderPlain(QRectF rect, qreal width, QColor color)
+BorderPlain::BorderPlain(ProtoPtr proto, QRectF rect, qreal width, QColor color) : Border(proto)
 {
     borderType   = BORDER_PLAIN;
     borderWidth  = width;
@@ -130,7 +285,7 @@ BorderPlain::BorderPlain(QRectF rect, qreal width, QColor color)
     setRect(rect);
 }
 
-BorderPlain::BorderPlain(Circle c, qreal width, QColor color)
+BorderPlain::BorderPlain(ProtoPtr proto, Circle c, qreal width, QColor color) : Border(proto)
 {
     borderType   = BORDER_PLAIN;
     borderWidth  = width;
@@ -139,7 +294,7 @@ BorderPlain::BorderPlain(Circle c, qreal width, QColor color)
     setCircle(c);
 }
 
-BorderPlain::BorderPlain(QPolygonF p, qreal width, QColor color)
+BorderPlain::BorderPlain(ProtoPtr proto, QPolygonF p, qreal width, QColor color) : Border(proto)
 {
     borderType   = BORDER_PLAIN;
     borderWidth  = width;
@@ -148,7 +303,7 @@ BorderPlain::BorderPlain(QPolygonF p, qreal width, QColor color)
     setPolygon(p);
 }
 
-BorderPlain::BorderPlain(CropPtr crop, qreal width, QColor color) : Border(crop)
+BorderPlain::BorderPlain(ProtoPtr proto, const Crop & crop, qreal width, QColor color) : Border(proto,crop)
 {
     // some defaults
     borderType   = BORDER_PLAIN;
@@ -156,7 +311,7 @@ BorderPlain::BorderPlain(CropPtr crop, qreal width, QColor color) : Border(crop)
     this->color  = color;
 }
 
-void BorderPlain::construct()
+void BorderPlain::createStyleRepresentation()
 {
     bmap = std::make_shared<Map>("Border");
 
@@ -170,7 +325,7 @@ void BorderPlain::construct()
         break;
 
     case CROP_POLYGON:
-        bmap = std::make_shared<Map>("Border",getPolygon());
+        bmap = std::make_shared<Map>("Border",getAPolygon().get());
         break;
 
     case CROP_CIRCLE:
@@ -184,24 +339,15 @@ void BorderPlain::construct()
         break;
     }
 
-    setRequiresConstruction(false);
-
-    Sys::view->update();
+    //Sys::view->update();
 }
 
-void  BorderPlain::draw(QPainter * painter, QTransform t)
+void  BorderPlain::draw(GeoGraphics *gg)
 {
-    painter->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
-
-    if (getRequiresConstruction())
-        construct();
-
-    GeoGraphics gg(painter,t);
-
     QPen pen(color,borderWidth);
     for (const auto & edge : std::as_const(bmap->getEdges()))
     {
-        gg.drawEdge(edge,pen);
+        gg->drawEdge(edge,pen);
     }
 }
 
@@ -224,7 +370,7 @@ void BorderPlain::legacy_convertToModelUnits()
 ///
 ////////////////////////////////////////////////
 
-BorderTwoColor::BorderTwoColor(QSizeF sz, QColor color1, QColor color2, qreal width, qreal len) : Border()
+BorderTwoColor::BorderTwoColor(ProtoPtr proto, QSizeF sz, QColor color1, QColor color2, qreal width, qreal len) : Border(proto)
 {
     borderType   = BORDER_TWO_COLOR;
     color        = color1;
@@ -235,7 +381,7 @@ BorderTwoColor::BorderTwoColor(QSizeF sz, QColor color1, QColor color2, qreal wi
     setRect(rect);
 }
 
-BorderTwoColor::BorderTwoColor(QRectF rect, QColor color1, QColor color2, qreal width, qreal len) : Border()
+BorderTwoColor::BorderTwoColor(ProtoPtr proto, QRectF rect, QColor color1, QColor color2, qreal width, qreal len) : Border(proto)
 {
     borderType   = BORDER_TWO_COLOR;
     color        = color1;
@@ -245,7 +391,7 @@ BorderTwoColor::BorderTwoColor(QRectF rect, QColor color1, QColor color2, qreal 
     setRect(rect);
 }
 
-void BorderTwoColor::construct()
+void BorderTwoColor::createStyleRepresentation()
 {
     // TODO - the question is: where should the border be?
     //  a) inside the croop (a true border)
@@ -326,9 +472,7 @@ void BorderTwoColor::construct()
         y -= segmentLen;
     }
 
-    setRequiresConstruction(false);
-
-    Sys::view->update();
+    //Sys::view->update();
 }
 
 void BorderTwoColor::addSegment(qreal x, qreal y, qreal width, qreal height)
@@ -341,20 +485,13 @@ void BorderTwoColor::addSegment(qreal x, qreal y, qreal width, qreal height)
     faces.push_back(f);
 }
 
-void BorderTwoColor::draw(QPainter * painter, QTransform t)
+void BorderTwoColor::draw(GeoGraphics * gg)
 {
-    painter->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
-
-    if (getRequiresConstruction())
-        construct();
-
-    GeoGraphics gg(painter,t);
-
     for (const auto & face : std::as_const(faces))
     {
         QPen pen(face->color, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
-        gg.fillEdgePoly(*face,pen);
-        gg.drawEdgePoly(*face,pen);
+        gg->fillEdgePoly(*face,pen);
+        gg->drawEdgePoly(*face,pen);
     }
 }
 
@@ -385,8 +522,7 @@ void BorderTwoColor::legacy_convertToModelUnits()
 {
     convertCropToModelUnits();
 
-    auto borderView = BorderView::getInstance();
-    qreal w = borderView->screenToWorld(borderWidth);
+    qreal w = screenToModel(borderWidth);
     borderWidth = w;
 
     setRequiresConstruction(true);
@@ -398,7 +534,7 @@ void BorderTwoColor::legacy_convertToModelUnits()
 ///
 ////////////////////////////////////////////////
 
-BorderBlocks::BorderBlocks(QSizeF sz, QColor color, int rows, int cols, qreal width) : Border()
+BorderBlocks::BorderBlocks(ProtoPtr proto, QSizeF sz, QColor color, int rows, int cols, qreal width) : Border(proto)
 {
     borderType  = BORDER_BLOCKS;
     this->color = color;
@@ -410,7 +546,7 @@ BorderBlocks::BorderBlocks(QSizeF sz, QColor color, int rows, int cols, qreal wi
     setRect(rect);
 }
 
-BorderBlocks::BorderBlocks(QRectF rect, QColor color, int rows, int cols, qreal width) : Border()
+BorderBlocks::BorderBlocks(ProtoPtr proto, QRectF rect, QColor color, int rows, int cols, qreal width) : Border(proto)
 {
     borderType  = BORDER_BLOCKS;
     this->color = color;
@@ -420,7 +556,7 @@ BorderBlocks::BorderBlocks(QRectF rect, QColor color, int rows, int cols, qreal 
     setRect(rect);
 }
 
-void BorderBlocks::construct()
+void BorderBlocks::createStyleRepresentation()
 {
     qDebug() << "BorderBlocks::construct";
 
@@ -509,29 +645,18 @@ void BorderBlocks::construct()
         start += QPointF(0.0,borderWidth);
     }
 
-    setRequiresConstruction(false);
-
-    Sys::view->update();
+    //Sys::view->update();
 }
 
-void  BorderBlocks::draw(QPainter * painter, QTransform t)
+void  BorderBlocks::draw(GeoGraphics * gg)
 {
-    qDebug() << "BorderBlocks::draw" << Transform::toInfoString(t);
-
-    painter->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
-
-    if (getRequiresConstruction())
-        construct();
-
-    GeoGraphics gg(painter,t);
-
     for (const auto & face : std::as_const(faces))
     {
         QPen pen(face->color, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
         QPen pen2(QColor(TileBlack), 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
 
-        gg.fillEdgePoly(*face,pen);
-        gg.drawEdgePoly(*face,pen2);
+        gg->fillEdgePoly(*face,pen);
+        gg->drawEdgePoly(*face,pen2);
     }
 }
 
@@ -547,8 +672,7 @@ void BorderBlocks::legacy_convertToModelUnits()
 {
     convertCropToModelUnits();
 
-    auto borderView = BorderView::getInstance();
-    qreal w = borderView->screenToWorld(borderWidth);
+    qreal w = screenToModel(borderWidth);
     borderWidth = w;
 
     setRequiresConstruction(true);

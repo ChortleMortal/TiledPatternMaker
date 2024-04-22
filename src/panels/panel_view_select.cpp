@@ -16,7 +16,7 @@ PanelViewSelect::PanelViewSelect(ControlPanel * parent)
     setTitle("View Select");
 
     panel               = parent;
-    config              = Configuration::getInstance();
+    config              = Sys::config;
     viewController      = Sys::viewController;
     exclusiveViews      = true;
 
@@ -163,12 +163,19 @@ void  PanelViewSelect::selectViewer(eViewType vtype)
         return;
     }
 
-    viewerGroup.button(vtype)->setChecked(true);
+    if (!viewerGroup.button(vtype)->isChecked())
+    {
+        viewerGroup.button(vtype)->setChecked(true);
 #if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
-    emit viewerGroup.buttonClicked(vtype);
+        emit viewerGroup.buttonClicked(vtype);
 #else
-    emit viewerGroup.idClicked(vtype);
+        emit viewerGroup.idClicked(vtype);
 #endif
+    }
+    else
+    {
+        slot_Viewer_pressed(vtype,true);
+    }
 }
 
 void  PanelViewSelect::slot_Viewer_pressed(int id, bool enable)
@@ -187,7 +194,7 @@ void  PanelViewSelect::slot_Viewer_pressed(int id, bool enable)
         break;
 
     case VIEW_MEASURE:
-        MeasureView::getInstance()->clear();
+        Sys::measureView->clear();
         Sys::measure = enable;
         break;
 

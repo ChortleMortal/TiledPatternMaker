@@ -26,6 +26,7 @@
 #include "makers/mosaic_maker/mosaic_maker.h"
 #include "makers/prototype_maker/prototype_maker.h"
 #include "makers/tiling_maker/tiling_maker.h"
+#include "viewers/crop_view.h"
 #include "misc/sys.h"
 #include "misc/tpmsplash.h"
 
@@ -33,6 +34,8 @@
 #include "panels/splitscreen.h"
 #include "settings/configuration.h"
 #include "tile/tiling_manager.h"
+#include "viewers/crop_view.h"
+#include "viewers/debug_view.h"
 #include "viewers/view_controller.h"
 #include "widgets/memory_combo.h"
 #include "widgets/transparent_widget.h"
@@ -68,9 +71,8 @@ TiledPatternMaker::TiledPatternMaker() : QObject()
 void TiledPatternMaker::startEverything()
 {
     // instantiate everything
-    config            = Configuration::getInstance();
-    bool oldPanelLock = config->lockView;
-    config->lockView  = true;    // disables view switching during init
+    bool oldPanelLock      = Sys::config->lockView;
+    Sys::config->lockView  = true;    // disables view switching during init
 
 #ifdef TEST_MEMORY_LEAKS
     qDebug() << "testing memory management";
@@ -80,92 +82,60 @@ void TiledPatternMaker::startEverything()
 
     setPaletteColors();
 
-
-    view                = new View;
-    viewController      = new ViewController;
-    Sys::view           = view;
-    Sys::viewController = viewController;
-
-    mosaicMaker         = MosaicMaker::getInstance();
-    prototypeMaker      = PrototypeMaker::getInstance();
-    tilingMaker         = TilingMaker::getInstance();
-    mapEditor           = MapEditor::getInstance();
-    controlPanel        = ControlPanel::getInstance();
-
-    enableSplash(true);
-
-    // Methinks the makers should be started before views and the control panel started last
-    // Finally load something
-
-    // init makers
-    mosaicMaker->init();
-    prototypeMaker->init();
-    tilingMaker->init();
-
-    // init view
-    view->init(viewController);
-    viewController->init(view);
-
     qRegisterMetaType<MapPtr>("MapPtr");
     qRegisterMetaType<PolyPtr>("PolyPtr");
     qRegisterMetaType<TilePtr>("TilePtr");
     qRegisterMetaType<QList<int>>();
-    
-    connect(this, &TiledPatternMaker::sig_refreshView,   viewController, &ViewController::slot_reconstructView);
-    connect(this, &TiledPatternMaker::sig_primaryDisplay,this,           &TiledPatternMaker::slot_bringToPrimaryScreen, Qt::QueuedConnection);
-    connect(view, &View::sig_raiseMenu,                  this,           &TiledPatternMaker::slot_raiseMenu);
 
-    // init control panel
-    controlPanel->init(this);
+    // instantiate main classes
+    Sys::init();
+
+    enableSplash(true);
 
     // split-screen
-    if (config->splitScreen)
+    if (Sys::config->splitScreen)
     {
-       splitScreen();
+        splitScreen();
     }
 
-    controlPanel->show();
-    controlPanel->setWindowState((controlPanel->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
-    controlPanel->raise();
-    controlPanel->activateWindow();
+    Sys::controlPanel->show();
+    Sys::controlPanel->setWindowState((Sys::controlPanel->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
+    Sys::controlPanel->raise();
+    Sys::controlPanel->activateWindow();
 
-    if (config->splitScreen)
+    if (Sys::config->splitScreen)
     {
-        int width = controlPanel->width();
+        int width = Sys::controlPanel->width();
         splitter->setLHSWidth(width);
     }
 
-    view->show();
-    view->raise();
-    emit sig_refreshView();
+    Sys::view->show();
+    Sys::view->raise();
 
     // this is harmless here but necessary for page floating to be after view is refreshed
     QCoreApplication::processEvents();
-    controlPanel->floatPages();
+    Sys::controlPanel->floatPages();
+
+    connect(this, &TiledPatternMaker::sig_refreshView,   Sys::viewController, &ViewController::slot_reconstructView);
+    connect(this, &TiledPatternMaker::sig_primaryDisplay,this,           &TiledPatternMaker::slot_bringToPrimaryScreen, Qt::QueuedConnection);
+    connect(Sys::view, &View::sig_raiseMenu,             this,           &TiledPatternMaker::slot_raiseMenu);
 
     // get started - kick off
-    if (config->autoLoadStyles && !config->lastLoadedMosaic.isEmpty())
+    if (Sys::config->autoLoadStyles && !Sys::config->lastLoadedMosaic.isEmpty())
     {
-        if (!config->lastLoadedMosaic.isEmpty())
-        {
-            mosaicMaker->loadMosaic(config->lastLoadedMosaic);
-        }
+        Sys::mosaicMaker->loadMosaic(Sys::config->lastLoadedMosaic);
     }
-    else if (config->autoLoadTiling)
+    else if (Sys::config->autoLoadTiling &&  !Sys::config->lastLoadedTiling.isEmpty())
     {
-        if (!config->lastLoadedTiling.isEmpty())
-        {
-            tilingMaker->loadTiling(config->lastLoadedTiling,TILM_LOAD_SINGLE);
-        }
+        Sys::tilingMaker->loadTiling(Sys::config->lastLoadedTiling,TILM_LOAD_SINGLE);
     }
-    else if (config->autoLoadDesigns)
+    else if (Sys::config->autoLoadDesigns)
     {
-        auto designMaker = DesignMaker::getInstance();
-        eDesign design   = (eDesign)designs.key(config->lastLoadedLegacyDes);
-        designMaker->slot_loadDesign(design);
+        eDesign design   = (eDesign)designs.key(Sys::config->lastLoadedLegacyDes);
+        Sys::designMaker->slot_loadDesign(design);
     }
 
-    config->lockView = oldPanelLock;    // restore
+    Sys::config->lockView = oldPanelLock;    // restore
     emit sig_lockStatus();
 
     emit sig_refreshView();
@@ -179,21 +149,7 @@ void TiledPatternMaker::startEverything()
 
 TiledPatternMaker::~TiledPatternMaker()
 {
-    delete view;
-    delete viewController;    // releases viewers
-
-    DesignMaker::releaseInstance();
-    mapEditor->releaseInstance();
-
-    mosaicMaker->releaseInstance();
-    prototypeMaker->releaseInstance();
-    tilingMaker->releaseInstance();
-
-    controlPanel->closePages();
-    controlPanel->close();
-    controlPanel->releaseInstance();
-
-    config->releaseInstance();      // performed last
+    Sys::close();
 }
 
 void TiledPatternMaker::setPaletteColors()
@@ -233,8 +189,8 @@ void TiledPatternMaker::setPaletteColors()
         palette.setColor(QPalette::BrightText,      Qt::red);
         palette.setColor(QPalette::Link,            QColor(42, 130, 218));
         palette.setColor(QPalette::Highlight,       QColor(0x777777));
-      //palette.setColor(QPalette::Highlight,       QColor(42, 130, 218));
-      //palette.setColor(QPalette::HighlightedText, Qt::black);
+        palette.setColor(QPalette::Highlight,       Qt::yellow);
+        palette.setColor(QPalette::HighlightedText, Qt::red);
     }
     else
     {
@@ -251,8 +207,8 @@ void TiledPatternMaker::setPaletteColors()
         palette.setColor(QPalette::BrightText,      Qt::white);
       //palette.setColor(QPalette::Link,            QColor(0x0000ff));
         palette.setColor(QPalette::Link,            QColor(0x258292));
-        palette.setColor(QPalette::Highlight,       QColor(0x0078d7));
-      //palette.setColor(QPalette::HighlightedText, QColor("0x0078d7"));
+        palette.setColor(QPalette::Highlight,       Qt::yellow);
+        palette.setColor(QPalette::HighlightedText, Qt::red);
     }
 
     QApplication::setPalette(palette);
@@ -261,49 +217,49 @@ void TiledPatternMaker::setPaletteColors()
 void TiledPatternMaker::slot_render()
 {
     TilingPtr dummy;
-    prototypeMaker->sm_takeUp(dummy, PROM_RENDER);
+    Sys::prototypeMaker->sm_takeUp(dummy, PROM_RENDER);
 
-    if (!config->lockView)
+    if (!Sys::config->lockView)
     {
-        controlPanel->selectViewer(VIEW_MOSAIC);
+        Sys::controlPanel->delegateView(VIEW_MOSAIC);
     }
     emit sig_refreshView();
 }
 
 void TiledPatternMaker::slot_raiseMenu()
 {
-    controlPanel->setWindowState((controlPanel->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
-    controlPanel->raise();
-    controlPanel->activateWindow();
+    Sys::controlPanel->setWindowState((Sys::controlPanel->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
+    Sys::controlPanel->raise();
+    Sys::controlPanel->activateWindow();
 }
 
 void TiledPatternMaker::slot_bringToPrimaryScreen()
 {
     QScreen * primary = qApp->primaryScreen();
 
-    QWindow * wh = view->windowHandle();
+    QWindow * wh = Sys::view->windowHandle();
     if (wh)
     {
         wh->setScreen(primary);
-        view->move(primary->geometry().center() - view->rect().center());
-        view->setWindowState( (view->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
-        view->raise();  // for MacOS
-        view->activateWindow();  // for windows
-        controlPanel->move(primary->geometry().center() - view->rect().center());
-        controlPanel->setWindowState( (controlPanel->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
-        controlPanel->raise();  // for MacOS
-        controlPanel->activateWindow();  // for windows
+        Sys::view->move(primary->geometry().center() - Sys::view->rect().center());
+        Sys::view->setWindowState((Sys::view->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
+        Sys::view->raise();  // for MacOS
+        Sys::view->activateWindow();  // for windows
+        Sys::controlPanel->move(primary->geometry().center() - Sys::view->rect().center());
+        Sys::controlPanel->setWindowState((Sys::controlPanel->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
+        Sys::controlPanel->raise();  // for MacOS
+        Sys::controlPanel->activateWindow();  // for windows
     }
 }
 
 void TiledPatternMaker::splitScreen()
 {
-    Q_ASSERT(config->splitScreen);
+    Q_ASSERT(Sys::config->splitScreen);
 
     // save current positions
     QSettings s;
-    s.setValue((QString("viewPos/%1").arg(Sys::appInstance)),view->pos());
-    s.setValue(QString("panelPos/%1").arg(Sys::appInstance), controlPanel->pos());
+    s.setValue((QString("viewPos/%1").arg(Sys::appInstance)),Sys::view->pos());
+    s.setValue(QString("panelPos/%1").arg(Sys::appInstance), Sys::controlPanel->pos());
 
     // split the screen
     Q_ASSERT(!splitter);

@@ -9,7 +9,11 @@
 #endif
 #include "enums/epanelpage.h"
 
+#if defined(Q_OS_WINDOWS)
 #define PANEL_RHS_WIDTH 740
+#else
+#define PANEL_RHS_WIDTH 760
+#endif
 
 extern class TiledPatternMaker * theApp;
 
@@ -20,10 +24,11 @@ class panel_page : public QWidget
 public:
     panel_page(class ControlPanel *parent, ePanelPage page, QString name);
 
-    virtual void	onRefresh() = 0;
-    virtual void    onEnter()   = 0;
-    virtual void    onExit()    = 0;
-    virtual bool    canExit() { return true; }
+    virtual void	onRefresh()     = 0;
+    virtual void    onEnter()       = 0;
+    virtual void    onExit()        = 0;
+    virtual QString getPageStatus() { return QString(); }
+    virtual bool    canExit()       { return true; }
 
     void            leaveEvent(QEvent *event) override;
 #if (QT_VERSION >= QT_VERSION_CHECK(6,0,0))
@@ -33,7 +38,7 @@ public:
 #endif
     virtual void	closeEvent(QCloseEvent * event) override;
 
-    QString    getName()                 { return pageName; }
+    QString    getName()                   { return pageName; }
     ePanelPage getPageType()             { return pageType; }
 
     void    setNewlySelected(bool state) { newlySelected = state; }

@@ -32,8 +32,7 @@ public:
 
     bool equals(const MotifPtr other) override;
 
-    void dump();
-    virtual void    report()         override { qDebug().noquote() << getMotifDesc(); }
+    virtual void    dump()          override;
 
     // data a miscellany (hodge-podge)
     qreal   skip;           // girih

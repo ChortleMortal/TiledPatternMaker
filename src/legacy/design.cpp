@@ -29,7 +29,7 @@ Design::Design(eDesign design, QString title)
 
     this->title = title;
 
-    config  = Configuration::getInstance();
+    config  = Sys::config;
     view    = Sys::view;
 
     Design::init();

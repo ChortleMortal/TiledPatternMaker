@@ -48,7 +48,7 @@ enum eColor
 ///
 //////////////////////////////////////////////////////////////////////////////
 
-class DCEL
+class DCEL : public Map
 {
     friend class ColorMaker;
     friend class FaceSet;
@@ -73,7 +73,7 @@ protected:
     void    fill_face_table_inner_components();
     void    fill_half_edge_faces();
 
-    EdgePtr next_half_edge(Map *map, const EdgePtr & current);
+    EdgePtr next_half_edge(Map *map, const EdgePtr & edge);
     EdgePtr findEdge(Map *map, const VertexPtr & start, const VertexPtr &end, bool expected = true);
 
     void    createFace(const EdgePtr & head);
@@ -109,8 +109,6 @@ protected:
 
 private:
     FaceSet            faces;
-    QVector<VertexPtr> vertices;
-    QVector<EdgePtr>   edges;
 };
 
 

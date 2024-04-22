@@ -6,6 +6,7 @@
 #include "widgets/worklist_widget.h"
 #include "widgets/dlg_name.h"
 #include "settings/configuration.h"
+#include "misc/sys.h"
 
 //////////////////////////////////////////////////////////
 ///
@@ -70,12 +71,11 @@ void WorklistWidget::slot_insertAction()
     if (newName.isEmpty())
         return;
 
-    Configuration * config = Configuration::getInstance();
-    config->worklist.add(newName);
+    Sys::config->worklist.add(newName);
 
     clear();
-    addItems(config->worklist.get());
-    setCurrentRow(config->worklist.get().size()-1);
+    addItems(Sys::config->worklist.get());
+    setCurrentRow(Sys::config->worklist.get().size()-1);
     update();
 }
 
@@ -102,8 +102,7 @@ void WorklistWidget::slot_editAction()
     if (newName.isEmpty())
         return;
 
-    Configuration * config = Configuration::getInstance();
-    const QStringList & list = config->worklist.get();
+    const QStringList & list = Sys::config->worklist.get();
 
     QStringList newList;
     for (int i = 0; i < list.size(); ++i)
@@ -119,8 +118,8 @@ void WorklistWidget::slot_editAction()
     }
 
     newList.sort();
-    auto existingName = config->worklist.getName();
-    config->worklist.set(existingName,newList);
+    auto existingName = Sys::config->worklist.getName();
+    Sys::config->worklist.set(existingName,newList);
 
     clear();
     addItems(newList);
@@ -138,8 +137,7 @@ void WorklistWidget::slot_deleteAction()
     QString name = qlwi->text();
     qDebug() << "trigger delete" << row << name;
 
-    Configuration * config = Configuration::getInstance();
-    const QStringList & list = config->worklist.get();
+    const QStringList & list = Sys::config->worklist.get();
 
     QStringList newList;
     for (int i = 0; i < list.size(); ++i)
@@ -150,8 +148,8 @@ void WorklistWidget::slot_deleteAction()
         }
     }
 
-    auto existingName = config->worklist.getName();
-    config->worklist.set(existingName,newList);
+    auto existingName = Sys::config->worklist.getName();
+    Sys::config->worklist.set(existingName,newList);
 
     clear();
     addItems(newList);

@@ -1,0 +1,133 @@
+<?xml version="1.0"?>
+<!-- Written: Sat Mar 2 2024 13:59:55 -->
+<Tiling version="8">
+	<Name>Alhambra3.v1</Name>
+	<Fill singleton="f">-1,2,-2,1</Fill>
+	<T1>11.91341922429957,11.91341922429956</T1>
+	<T2>11.91341922429956,-11.91341922429957</T2>
+	<ViewSettings>
+		<width>1330</width>
+		<height>1997</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>-2</left__delta>
+		<top__delta>518</top__delta>
+		<width__delta>0.5237600236810447</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="regular" sides="16" rotation="0" scale="6.159999999999912">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-3.71557705490288</tranX>
+			<tranY>-11.37583608867104</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="8" rotation="0" scale="1">
+		<Placement>
+			<scale>2.958136319918488</scale>
+			<rot>-22.49999999999998</rot>
+			<tranX>-0.2262173512237169</tranX>
+			<tranY>-19.79989560929145</tranY>
+		</Placement>
+		<Placement>
+			<scale>2.95813631991849</scale>
+			<rot>-22.49999999999999</rot>
+			<tranX>4.708482465717518</tranX>
+			<tranY>-14.8651957923502</tranY>
+		</Placement>
+		<Placement>
+			<scale>2.958136319918494</scale>
+			<rot>-22.49999999999999</rot>
+			<tranX>4.708482465717522</tranX>
+			<tranY>-7.886476384991881</tranY>
+		</Placement>
+		<Placement>
+			<scale>2.958136319918491</scale>
+			<rot>157.5</rot>
+			<tranX>-0.2262173512237161</tranX>
+			<tranY>-2.95177656805064</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="1">2.975646328857702,-19.79989560929145</Point>
+			<Point id="2">4.70848246571752,-18.06705947243163</Point>
+		</Line>
+		<Line>
+			<Point reference="2" />
+			<Point id="3">2.444422945097031,-17.12925531297068</Point>
+		</Line>
+		<Line>
+			<Point reference="3" />
+			<Point id="4">1.506618785636098,-14.8651957923502</Point>
+		</Line>
+		<Line>
+			<Point reference="4" />
+			<Point id="5">-0.22621735122372,-16.59803192921002</Point>
+		</Line>
+		<Line>
+			<Point reference="5" />
+			<Point id="6">2.037842169396767,-17.53583608867097</Point>
+		</Line>
+		<Line>
+			<Point reference="6" />
+			<Point reference="1" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>-44.99999999999998</rot>
+			<tranX>6.955663516606029</tranX>
+			<tranY>-5.95921498024806</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>45.00000000000001</rot>
+			<tranX>-9.13219816332586</tranX>
+			<tranY>-0.7045955171621303</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>89.99999999999994</rot>
+			<tranX>-15.09141314357392</tranX>
+			<tranY>-7.660259033768145</tranY>
+		</Placement>
+		<Placement>
+			<scale>0.9999999999999962</scale>
+			<rot>-44.99999999999967</rot>
+			<tranX>6.955663516605906</tranX>
+			<tranY>10.88890406099274</tranY>
+		</Placement>
+		<Placement>
+			<scale>0.9999999999999993</scale>
+			<rot>44.99999999999992</rot>
+			<tranX>-2.153478755967506</tranX>
+			<tranY>-0.704595517162132</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="4" rotation="0" scale="1.23">
+		<Placement>
+			<scale>0.9961790106168114</scale>
+			<rot>0</rot>
+			<tranX>8.197842169396681</tranX>
+			<tranY>-11.37583608867105</tranY>
+		</Placement>
+	</Tile>
+	<Desc />
+	<Auth>David A. Casper</Auth>
+	<BackgroundImage name="IMG_1694-1ADJ.JPG">
+		<Scale>0.5237600236810447</Scale>
+		<Rot>0</Rot>
+		<X>-2</X>
+		<Y>510</Y>
+		<Center>0,0</Center>
+	</BackgroundImage>
+</Tiling>

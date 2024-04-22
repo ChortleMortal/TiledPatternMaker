@@ -25,7 +25,7 @@ public:
     bool    equals(const MotifPtr other) override;
 
     virtual QString getMotifDesc() override { return "Star2"; }
-    virtual void    report()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "d:" << d << "s" << s; }
+    virtual void    dump()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "d:" << d << "s" << s; }
 
 protected:
     int     clampRays();

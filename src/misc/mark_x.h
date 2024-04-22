@@ -17,8 +17,8 @@ public:
 
     eViewType iamaLayer() override { return VIEW_CENTER; }
 
-    virtual const Xform &   getModelXform() override;
-    virtual void            setModelXform(const Xform & xf, bool update) override;
+    const Xform &   getModelXform() override;
+    void            setModelXform(const Xform & xf, bool update) override;
 
 private:
     bool    huge;

@@ -81,8 +81,7 @@ public:
 
     Contact(QPointF position, QPointF other);
 
-    void dump() { qDebug() << "Contact - position:" << position << "other:" << other << "end:" << end << "isect:" << isect << "colinear:"  << colinear << "taken:" << taken; }
-    QString toString();
+    void dump(int idx, QString info) { qDebug().noquote() << info << idx << "pos" << position << "other:" << other << "end:" << end << "isect:" << isect << "colinear:"  << colinear << "taken:" << taken; }
 
     QPointF     position;
     QPointF		other;

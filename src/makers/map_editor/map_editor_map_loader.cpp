@@ -19,7 +19,7 @@ MapPtr MapEditorMapLoader::loadMosaicMap(QString fileName)
     
     Sys::dumpRefs();
 
-    qInfo().noquote() << "MosaicLoader loading map from:" << fileName;
+    qInfo().noquote() << "MapEditorMapLoader loading map from:" << fileName;
     _fileName = fileName;
 
     xml_document doc;
@@ -34,7 +34,7 @@ MapPtr MapEditorMapLoader::loadMosaicMap(QString fileName)
 
     try
     {
-        if (_debug) qDebug() << "MosaicLoader - start parsing";
+        if (_debug) qDebug() << "MapEditorMapLoader - start parsing";
 
         xml_node node = doc.first_child();
         string str = node.name();

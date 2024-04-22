@@ -27,8 +27,6 @@ typedef std::shared_ptr<class PlacedTile>    PlacedTilePtr;
 typedef std::shared_ptr<class Map>           MapPtr;
 typedef std::shared_ptr<class BackgroundImage>  BkgdImagePtr;
 
-typedef QVector<QTransform> Placements;
-
 class GeoGraphics;
 
 class TileGroup : public  QVector<QPair<TilePtr,PlacedTiles>>
@@ -58,7 +56,8 @@ public:
     void                setAuthor(QString auth)          { author = auth; }
     void                setVersion(int ver);
 
-    void                setTranslationVectors(QPointF t1, QPointF t2) { db.setTranslationVectors(t1,t2); }
+    void                setTranslationVectors(QPointF t1, QPointF t2, QPointF origin) { db.setTranslationVectors(t1,t2, origin); }
+    QPointF             getTranslateOrigin() { return db.getTranslateOrigin(); }
     void                setCanvasSettings(const CanvasSettings & settings) { db.setCanvasSettings(settings); }
 
     bool                isEmpty();
@@ -71,7 +70,7 @@ public:
     QString             getAuthor()      const { return author; }
 
     void                add(const PlacedTilePtr pfm);   // Added tiles are put into a placedTile.
-    void                add(PlacedTiles & tiles);       // Added tiles are put into a placedTile.
+    void                replace(PlacedTiles & tiles);       // Added tiles are put into a placedTile.
     void                remove(PlacedTilePtr pf);
     void                clear();
 
@@ -83,12 +82,13 @@ public:
 
     int                 getVersion();
 
-    virtual const Xform &   getModelXform() override;
-    virtual void            setModelXform(const Xform & xf, bool update) override;
+    const Xform &       getModelXform() override;
+    void                setModelXform(const Xform & xf, bool update) override;
 
     // Data
-    const TilingData    & getData()  const              { return db; }
-    const PlacedTiles   & getInTiling() const           { return db.getInTiling(); }
+    const TilingData &  getData()  const              { return db; }
+    void                setData(TilingData & td)      { db = td; }
+    const PlacedTiles & getInTiling() const           { return db.getInTiling(); }
     const CanvasSettings& getCanvasSettings() const     { return db.getSettings(); }
 
     BkgdImagePtr        getBkgdImage()                  { return bip; }
@@ -104,30 +104,29 @@ public:
     MapPtr              debug_createFilledMap();
     MapPtr              debug_createProtoMap();
 
-    virtual eViewType   iamaLayer() override { return VIEW_TILING; }
+    eViewType           iamaLayer() override { return VIEW_TILING; }
     void                iamaLayerController() override {}
 
-    QString             dump() const;
+    QString             info() const;
 
     static const QString defaultName;
     static int          refs;
 
 public slots:
+     void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
+     void slot_mouseDragged(QPointF spt)       override;
+     void slot_mouseTranslate(QPointF spt)     override;
+     void slot_mouseMoved(QPointF spt)         override;
+     void slot_mouseReleased(QPointF spt)      override;
+     void slot_mouseDoublePressed(QPointF spt) override;
 
-    virtual void slot_mousePressed(QPointF spt, enum Qt::MouseButton btn) override;
-    virtual void slot_mouseDragged(QPointF spt)       override;
-    virtual void slot_mouseTranslate(QPointF spt)     override;
-    virtual void slot_mouseMoved(QPointF spt)         override;
-    virtual void slot_mouseReleased(QPointF spt)      override;
-    virtual void slot_mouseDoublePressed(QPointF spt) override;
+     void slot_wheel_scale(qreal delta)  override;
+     void slot_wheel_rotate(qreal delta) override;
 
-    virtual void slot_wheel_scale(qreal delta)  override;
-    virtual void slot_wheel_rotate(qreal delta) override;
-
-    virtual void slot_scale(int amount)  override;
-    virtual void slot_rotate(int amount) override;
-    virtual void slot_moveX(qreal amount)  override;
-    virtual void slot_moveY(qreal amount)  override;
+     void slot_scale(int amount)  override;
+     void slot_rotate(int amount) override;
+     void slot_moveX(qreal amount)  override;
+     void slot_moveY(qreal amount)  override;
 
 protected:
     void    drawPlacedTile(GeoGraphics * g2d, PlacedTilePtr pf);

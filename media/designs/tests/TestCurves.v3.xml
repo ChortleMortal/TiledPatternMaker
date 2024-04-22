@@ -1,0 +1,140 @@
+<?xml version="1.0"?>
+<!-- Written: Mon Apr 1 2024 12:06:49 -->
+<vector id="1" version="20">
+	<design>
+		<size>
+			<width>1500</width>
+			<height>927</height>
+			<zwidth>1500</zwidth>
+			<zheight>927</zheight>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Fill singleton="t">0,0,0,0</Fill>
+	</design>
+	<style.Thick id="2">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<string>TestCurves.v3</string>
+					<entry>
+						<Tile id="4">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">1,1.732050807568877</Point>
+									<Point id="7">-2,2.449293598294706e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">0.9999999999999984,-1.732050807568878</Point>
+								</Line>
+								<Curve convex="t">
+									<Point reference="8" />
+									<Point reference="6" />
+									<Center>-2.464101615137755,1.110223024625157e-15</Center>
+								</Curve>
+							</edges>
+						</Tile>
+						<ExplicitTile id="9" type="Explicit Tile Motif">
+							<boundarySides>3</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>3</n>
+						</ExplicitTile>
+					</entry>
+					<entry>
+						<Tile id="10">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="11">
+								<Line>
+									<Point id="12">1,1.732050807568877</Point>
+									<Point id="13">-2,2.449293598294706e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point id="14">0.9999999999999984,-1.732050807568878</Point>
+								</Line>
+								<Line>
+									<Point reference="14" />
+									<Point reference="12" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="15" type="Explicit Tile Motif">
+							<boundarySides>3</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>3</n>
+						</ExplicitTile>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff1496d2</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.05</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+	</style.Thick>
+	<style.Filled id="16">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<ColorBlacks>
+			<color hide="f">#ffa35807</color>
+		</ColorBlacks>
+		<ColorWhites>
+			<color hide="f">#ff34554a</color>
+		</ColorWhites>
+		<style.Filled>
+			<draw__inside>true</draw__inside>
+			<draw__outside>true</draw__outside>
+			<algorithm>0</algorithm>
+		</style.Filled>
+	</style.Filled>
+	<style.TileColors id="17">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<BkgdColors>#ffaa00</BkgdColors>
+		<BkgdColors>#ffaaff</BkgdColors>
+	</style.TileColors>
+</vector>

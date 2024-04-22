@@ -153,7 +153,7 @@ void IrregularMotif::resetMotifMaps()
 
 void IrregularMotif::dump()
 {
-    qDebug() << "IrregularMotif - skip:" << skip << "d:" <<d << "s:" << s
+    qDebug() << getMotifDesc() << "skip:" << skip << "d:" <<d << "s:" << s
              << "q:" << q  << "r (flexPt)" << r << ((progressive) ? "progressive" : "");
 }
 

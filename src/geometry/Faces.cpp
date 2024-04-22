@@ -50,17 +50,19 @@ int Face::refs = 0;
 
 Face::Face()
 {
-    state   = FACE_UNDONE;
-    outer   = false;
-    area    = -1;
+    state    = FACE_UNDONE;
+    outer    = false;
+    area     = -1;
+    iPalette = -1;
     refs++;
 }
 
 Face::Face(EdgePoly & ep) : EdgePoly(ep)
 {
-    state   = FACE_UNDONE;
-    outer   = false;
-    area    = -1;
+    state    = FACE_UNDONE;
+    outer    = false;
+    area     = -1;
+    iPalette = -1;
     refs++;
 }
 

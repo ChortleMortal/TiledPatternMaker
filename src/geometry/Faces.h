@@ -52,8 +52,9 @@ public:
     QColor      color;
     eFaceState  state;
     qreal       area;
+    int         iPalette;   // palette color index
 
-    static int refs;
+    static int  refs;
 
 protected:
 
@@ -70,10 +71,10 @@ private:
 class FaceSet : public QVector<FacePtr>
 {
 public:
-    FaceSet() { selected = false;}
+    FaceSet() { selected = false; colorSet = nullptr; }
     qreal            area;
     TPColor          tpcolor;   // algo 0/1/2
-    ColorSet       * pColorSet;	// algo3
+    ColorSet *       colorSet;	// algo3
     int              sides;     // all members of the group have same number of vertices
     bool             selected;  // volatile
 

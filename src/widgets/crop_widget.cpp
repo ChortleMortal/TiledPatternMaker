@@ -5,6 +5,7 @@
 #include "enums/eborder.h"
 #include "geometry/crop.h"
 #include "misc/sys.h"
+#include "panels/panel_misc.h"
 
 #include <QVBoxLayout>
 #include <QRadioButton>
@@ -15,7 +16,6 @@
 
 CropWidget::CropWidget()
 {
-    cropViewer = CropViewer::getInstance();
     blocked    = false;
     setLayout(createLayout());
 }
@@ -24,7 +24,7 @@ QLayout * CropWidget::createLayout()
 {
     QRadioButton * undefinedBtn = new QRadioButton("No Crop");
     QRadioButton * rectBtn      = new QRadioButton("Rectangular Crop");
-    rectLayoutW                 = new LayoutQRectF("Model  units", 8, 0.01);
+    rectLayoutW                 = new LayoutQRectF("Model  units", 8, 0.05);
     rectLayoutS                 = new LayoutQRectF("Screen units", 8,1.0);
 
     QHBoxLayout * rectW = new QHBoxLayout;
@@ -42,18 +42,19 @@ QLayout * CropWidget::createLayout()
     QRadioButton * circBtn = new QRadioButton("Circular Crop");
 
     radius = new DoubleSpinSet("Radius",0,0.0,20.0);
-    radius->setPrecision(16);
-    radius->setReadOnly(true);
+    radius->setPrecision(8);
 
     centerX = new DoubleSpinSet("Center X",0,-4096.0,4096.0);
-    centerX->setPrecision(16);
-    centerX->setReadOnly(true);
+    centerX->setPrecision(8);
 
     centerY = new DoubleSpinSet("Y",0,-2160.0,2160.0);
-    centerY->setPrecision(16);
-    centerY->setSingleStep(0.05);
-    centerY->setReadOnly(true);
+    centerY->setPrecision(8);
 
+    radius->setSingleStep(0.1);
+    centerX->setSingleStep(0.05);
+    centerY->setSingleStep(0.05);
+
+    // line 4 circle
     QHBoxLayout * hbCirc = new QHBoxLayout();
     hbCirc->addWidget(circBtn);
     hbCirc->addLayout(radius);
@@ -61,13 +62,22 @@ QLayout * CropWidget::createLayout()
     hbCirc->addLayout(centerY);
     hbCirc->addStretch();
 
-    // line 5
+    // line 5 - Regular polygon
     QRadioButton * regBtn  = new QRadioButton("Regular Crop");
-    numSides = new SpinSet("Sides",0,0,64);
+    numSides = new SpinSet("Sides",8,3,64);
+    pos      = new LayoutQPointF("",8);
+    scale    = new DoubleSpinSet("scale",1.0,0.001,999);
+    rot      = new DoubleSpinSet("rotation",0,-360,360);
+
+    scale->setSingleStep(0.1);
+    rot->setSingleStep(0.5);
 
     QHBoxLayout * hbreg = new QHBoxLayout();
     hbreg->addWidget(regBtn);
     hbreg->addLayout(numSides);
+    hbreg->addLayout(pos);
+    hbreg->addLayout(scale);
+    hbreg->addLayout(rot);
 
     QVBoxLayout * vb = new QVBoxLayout;
     vb->addWidget(undefinedBtn);
@@ -85,12 +95,15 @@ QLayout * CropWidget::createLayout()
     cropTypes->addButton(regBtn,CROP_POLYGON);
     cropTypes->addButton(circBtn,CROP_CIRCLE);
 
-    connect(rectLayoutW,    &LayoutQRectF::rectChanged,       this, &CropWidget::slot_rectChangedW);
+    connect(rectLayoutW,    &LayoutQRectF::rectChanged,       this, &CropWidget::slot_rectChangedM);
     connect(rectLayoutS,    &LayoutQRectF::rectChanged,       this, &CropWidget::slot_rectChangedS);
     connect(radius,         &DoubleSpinSet::valueChanged,     this, &CropWidget::slot_circleChanged);
     connect(centerX,        &DoubleSpinSet::valueChanged,     this, &CropWidget::slot_circleChanged);
     connect(centerY,        &DoubleSpinSet::valueChanged,     this, &CropWidget::slot_circleChanged);
     connect(numSides,       &SpinSet::valueChanged,           this, &CropWidget::slot_sidesChanged);
+    connect(rot,            &DoubleSpinSet::valueChanged,     this, &CropWidget::slot_rotChanged);
+    connect(scale,          &DoubleSpinSet::valueChanged,     this, &CropWidget::slot_scaleChanged);
+    connect(pos,            &LayoutQPointF::pointChanged,     this, &CropWidget::slot_pointChanged);
     connect(cropTypes,      &QButtonGroup::idClicked,         this, &CropWidget::slot_typeSelected);
 
     return vb;
@@ -98,7 +111,7 @@ QLayout * CropWidget::createLayout()
 
 QHBoxLayout * CropWidget::createAspectLayout()
 {
-    QLabel       *  label     = new QLabel("Aspect Ratio :");
+    QLabel       *  label     = new QLabel("Aspect Ratio");
     QRadioButton *  rad_unc   = new QRadioButton("Free");
     QRadioButton *  rad_one   = new QRadioButton(QString("1:1"));
     QString str(3,'1');
@@ -119,8 +132,9 @@ QHBoxLayout * CropWidget::createAspectLayout()
     QRadioButton *  rad_hd    = new QRadioButton(QString("16:9 HD"));
     chkVert                   = new QCheckBox("Vertical");
 
-    QHBoxLayout * hbox = new QHBoxLayout();
+    AQHBoxLayout * hbox = new AQHBoxLayout();
     hbox->addWidget(label);
+    hbox->addStretch();
     hbox->addWidget(rad_unc);
     hbox->addWidget(rad_one);
     hbox->addWidget(rad_two);
@@ -190,19 +204,66 @@ void CropWidget::slot_circleChanged(qreal r)
 
 void CropWidget::slot_sidesChanged(int n)
 {
-    Q_UNUSED(n);
-
     if (blocked || !crop) return;
 
     if (crop->getCropType() != CROP_POLYGON)
     {
         return;
     }
-    crop->setPolygon(numSides->value(),1.0,0);  // TODO crop scale/rpt
+    
+    APolygon p = crop->getAPolygon();
+    p.setSides(n);
+    crop->setPolygon(p);
     emit sig_cropModified();
 }
 
-void CropWidget::slot_rectChangedW()
+void CropWidget::slot_pointChanged()
+{
+    if (blocked || !crop) return;
+
+    if (crop->getCropType() != CROP_POLYGON)
+    {
+        return;
+    }
+    
+    APolygon p = crop->getAPolygon();
+    QPointF mpt(pos->getX(),pos->getY());
+    p.setPos(mpt);
+    crop->setPolygon(p);
+    emit sig_cropModified();
+}
+
+void CropWidget::slot_scaleChanged(qreal sc)
+{
+    if (blocked || !crop) return;
+
+    if (crop->getCropType() != CROP_POLYGON)
+    {
+        return;
+    }
+    
+    APolygon p = crop->getAPolygon();
+    p.setScale(sc);
+    crop->setPolygon(p);
+    emit sig_cropModified();
+}
+
+void CropWidget::slot_rotChanged(qreal deg)
+{
+    if (blocked || !crop) return;
+
+    if (crop->getCropType() != CROP_POLYGON)
+    {
+        return;
+    }
+    
+    APolygon p = crop->getAPolygon();
+    p.setRotate(deg);
+    crop->setPolygon(p);
+    emit sig_cropModified();
+}
+
+void CropWidget::slot_rectChangedM()
 {
     if (blocked || !crop) return;
 
@@ -221,7 +282,7 @@ void CropWidget::slot_rectChangedS()
     if (crop && crop->getCropType() == CROP_RECTANGLE )
     {
         QRectF rect = rectLayoutS->get();
-        rect = cropViewer->screenToWorld(rect);
+        rect = Sys::cropViewer->screenToModel(rect);
         crop->setRect(rect);
     }
     emit sig_cropModified();
@@ -244,8 +305,11 @@ void CropWidget::slot_typeSelected(int id)
         break;
 
     case CROP_POLYGON:
-        crop->setPolygon(numSides->value(),1.0,0); // TODO scale/rot
-        break;
+    {
+         APolygon p(numSides->value(),rot->value(),scale->value());
+        p.setPos(QPointF(pos->getX(),pos->getY()));
+        crop->setPolygon(p);
+    }   break;
 
     case CROP_CIRCLE:
     {
@@ -266,27 +330,43 @@ void CropWidget::refresh()
     if (crop)
     {
         cropTypes->button(crop->getCropType())->setChecked(true);
+
         rectLayoutW->set(crop->getRect());
-        rectLayoutS->set(cropViewer->worldToScreen(crop->getRect()));
+        rectLayoutS->set(Sys::cropViewer->modelToScreen(crop->getRect()));
         aspects->button(crop->getAspect())->setChecked(true);
         chkVert->setChecked(crop->getAspectVertical());
+
         Circle & circle = crop->getCircle();
         radius->setValue(circle.radius);
         centerX->setValue(circle.centre.x());
         centerY->setValue(circle.centre.y());
-        numSides->setValue(crop->getPolygon().size());
+        
+        APolygon p = crop->getAPolygon();
+        numSides->setValue(p.getSides());
+        rot->setValue(p.getRotate());
+        scale->setValue(p.getScale());
+        QPointF apos = p.getPos();
+        pos->setX(apos.x());
+        pos->setY(apos.y());
     }
     else
     {
         cropTypes->button(CROP_UNDEFINED)->setChecked(true);
+
         rectLayoutW->set(QRectF());
         rectLayoutS->set(QRectF());
         aspects->button(ASPECT_UNCONSTRAINED)->setChecked(true);
         chkVert->setChecked(false);
+
         radius->setValue(5);
         centerX->setValue(0);
         centerX->setValue(0);
-        numSides->setValue(6);
+
+        numSides->setValue(8);
+        rot->setValue(0.0);
+        scale->setValue(1.0);
+        pos->setX(0);
+        pos->setY(0);
     }
     blocked = false;
 }

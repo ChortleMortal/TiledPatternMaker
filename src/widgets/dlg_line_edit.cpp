@@ -60,7 +60,7 @@ void  DlgLineEdit::slot_down()
         pos.setY(static_cast<qreal>(down));
         setText(QString::number(pos.y(),'g',16));
     }
-    vp->pt = pos;
+    vp->setPt(pos);
     emit currentPoint(pos);
     view->update();
 }
@@ -83,7 +83,7 @@ void  DlgLineEdit::slot_nearest()
         pos.setY(nearest);
         setText(QString::number(pos.y(),'g',16));
     }
-    vp->pt = pos;
+    vp->setPt(pos);
     emit currentPoint(pos);
     view->update();
 }
@@ -106,7 +106,7 @@ void  DlgLineEdit::slot_up()
         pos.setY(static_cast<qreal>(up));
         setText(QString::number(pos.y(),'g',16));
     }
-    vp->pt = pos;
+    vp->setPt(pos);
     emit currentPoint(pos);
     view->update();
 }
@@ -126,7 +126,7 @@ void DlgLineEdit::slot_undo()
         setText(QString::number(pos.y(),'g',16));
 
     }
-    vp->pt = pos;
+    vp->setPt(pos);
     emit currentPoint(pos);
     view->update();
 }
@@ -147,7 +147,7 @@ void DlgLineEdit::slot_editingFinished()
         {
             pos.setY(val);
         }
-        vp->pt = pos;
+        vp->setPt(pos);
         emit currentPoint(pos);
         view->update();
     }

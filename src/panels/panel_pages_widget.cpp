@@ -13,7 +13,6 @@ PanelPagesWidget::~PanelPagesWidget()
 void PanelPagesWidget::setCurrentPage(panel_page * pp)
 {
     AQVBoxLayout * aLayout = new AQVBoxLayout();
-    aLayout->setSizeConstraint(QLayout::SetFixedSize);
     aLayout->addWidget(pp);
 
     QLayout * l = layout();

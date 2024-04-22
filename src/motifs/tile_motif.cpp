@@ -37,9 +37,9 @@ void TileMotif::inferTile()
 {
     qDebug() << "TileMotif::inferMotif";
 
-    EdgePoly epoly = getTile()->getEdgePoly();
+    auto edges = getTile()->getEdges();
 
-    for (auto edge : std::as_const(epoly))
+    for (auto edge : std::as_const(edges))
     {
         // this makes new eges and vertices since they can get altered in the map
         VertexPtr v1 = motifMap->insertVertex(edge->v1->pt);
@@ -49,7 +49,7 @@ void TileMotif::inferTile()
         {
             bool convex = edge->isConvex();
             QPointF ac  = edge->getArcCenter();
-            newEdge->setArcCenter(ac,convex,(edge->getType() == EDGETYPE_CHORD));
+            newEdge->setCurvedEdge(ac,convex,(edge->getType() == EDGETYPE_CHORD));
         }
     }
     

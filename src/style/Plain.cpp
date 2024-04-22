@@ -46,7 +46,7 @@ void Plain::createStyleRepresentation()
 
 void Plain::draw(GeoGraphics *gg)
 {
-    qDebug() << "Plain::draw";
+    //qDebug() << "Plain::draw";
 
     if (!isVisible())
     {
@@ -59,7 +59,7 @@ void Plain::draw(GeoGraphics *gg)
         return;
     }
 
-    QPen pen(colors.getNextColor().color);
+    QPen pen(colors.getNextTPColor().color);
 
     for (const auto &edge : std::as_const(map->getEdges()))
     {

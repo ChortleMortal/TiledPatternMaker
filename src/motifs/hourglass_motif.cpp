@@ -35,7 +35,7 @@ void HourglassMotif::inferHourglass()
     qDebug() << "Infer::inferHourglass";
 
     corners = getTile()->getPoints();
-    mids    = getTile()->getEdgePoly().getMids();
+    mids    = getTile()->getMids();
 
     // Fix the s value to be between [0, side_count / 2 - 1]
     // instead of [1, side_count / 2].

@@ -9,26 +9,6 @@
 
 extern TiledPatternMaker * theApp;
 
-Configuration * Configuration::mpThis = nullptr;
-
-Configuration * Configuration::getInstance()
-{
-    if (mpThis == nullptr)
-    {
-        mpThis = new Configuration;
-    }
-    return mpThis;
-}
-
-void Configuration::releaseInstance()
-{
-    if (mpThis != nullptr)
-    {
-        delete mpThis;
-        mpThis = nullptr;
-    }
-}
-
 Configuration::Configuration()
 {
 #if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
@@ -44,7 +24,7 @@ Configuration::Configuration()
     lastLoadedMosaic    = s.value("lastLoadedXML","").toString();
     cycleInterval       = s.value("cycleInterval",4).toInt();
     polySides           = s.value("polySides",8).toInt();
-    protoViewMode       = s.value("protoViewMode2",0x06).toInt();
+    protoViewMode       = s.value("protoViewMode2",PROTO_ALL_TILES | PROTO_ALL_MOTIFS).toInt();
     rootMediaDir        = s.value("rootMediaDir",getMediaRoot()).toString();
     rootImageDir        = s.value("rootImageDir",getImageRoot()).toString();
     image0              = s.value("image0","").toString();
@@ -69,6 +49,8 @@ Configuration::Configuration()
     verifyPopup         = s.value("verifyPopup",false).toBool();
     verifyDump          = s.value("verifyDump",false).toBool();
     verifyVerbose       = s.value("verifyVerbose",false).toBool();
+    unDuplicateMerge    = s.value("unDuplicateMerge",false).toBool();
+    buildEmptyNmaps     = s.value("buildEmptyNmaps",false).toBool();
     baseLogName         = s.value("baseLogName","tiledPatternMakerLog").toString();
     logToStderr         = s.value("logToStderr",true).toBool();
     logToDisk           = s.value("logToDisk",true).toBool();
@@ -130,6 +112,7 @@ Configuration::Configuration()
 
     showCenterDebug     = s.value("showCenterDebug",false).toBool();
     showGrid            = s.value("showGrid",false).toBool();
+    lockGridToView      = s.value("lockGridToView",true).toBool();
     showGridLayerCenter= s.value("showGridLayerCenter",false).toBool();
     showGridModelCenter = s.value("showGridModelCenter",false).toBool();
     showGridViewCenter= s.value("showGridScreenCenter",false).toBool();
@@ -144,6 +127,7 @@ Configuration::Configuration()
     gridScreenCenter    = s.value("gridScreenCenter",false).toBool();
     gridTilingWidth     = s.value("gridTilingWidth",3).toInt();
     gridZLevel          = s.value("gridZLevel",5).toInt();
+    debugViewConfig     = s.value("debugViewConfig",0).toUInt();
     snapToGrid          = s.value("snapToGrid",true).toBool();
     gridAngle           = s.value("gridAngle",30.0).toDouble();
     mapedAngle          = s.value("mapedAngle",30.0).toDouble();
@@ -214,6 +198,8 @@ void Configuration::save()
     s.setValue("verifyPopup",verifyPopup);
     s.setValue("verifyDump",verifyDump);
     s.setValue("verifyVerbose",verifyVerbose);
+    s.setValue("unDuplicateMerge",unDuplicateMerge);
+    s.setValue("buildEmptyNmaps",buildEmptyNmaps);
     s.setValue("baseLogName",baseLogName);
     s.setValue("logToStderr",logToStderr);
     s.setValue("logToDisk",logToDisk);
@@ -285,6 +271,7 @@ void Configuration::save()
 
     s.setValue("showCenterDebug",showCenterDebug);
     s.setValue("showGrid",showGrid);
+    s.setValue("lockGridToView",lockGridToView);
     s.setValue("showGridLayerCenter",showGridLayerCenter);
     s.setValue("showGridModelCenter",showGridModelCenter);
     s.setValue("showGridScreenCenter",showGridViewCenter);
@@ -300,6 +287,7 @@ void Configuration::save()
     s.setValue("snapToGrid",snapToGrid);
     s.setValue("gridScreenSpacing",gridScreenSpacing);
     s.setValue("gridZLevel",gridZLevel);
+    s.setValue("debugViewConfig",debugViewConfig);
     s.setValue("gridAngle",gridAngle);
     s.setValue("mapedAngle",mapedAngle);
     s.setValue("mapedRadius",mapedRadius);
@@ -380,28 +368,58 @@ QString Configuration::getMediaRootLocal()
 #endif
     if (isQmake)
     {
-        root += "../media";
-    }
-    else
-    {
-        // could be cmake
-        QStringList qsl = root.split("/");
-        qsl.removeLast();
-        root = qsl.join("/");
-        root += "/media";
-    }
-    root = QDir::cleanPath(root);
+        // could be old qmake
+        QString qroot =  root + "../media";
+        QDir adir(qroot);
+        if (adir.exists())
+        {
+            return qroot;
+        }
 
-    QDir adir(root);
-    if (adir.exists())
-    {
-        return root;
+        // could be new qmake
+        QStringList qsl2 = root.split("/");
+        qsl2.removeLast();
+        qsl2.removeLast();
+        qsl2.removeLast();
+        qsl2.removeLast();
+        QString c2root = qsl2.join("/");
+        c2root += "/media";
+        c2root = QDir::cleanPath(c2root);
+        QDir cdir(c2root);
+        if (cdir.exists())
+        {
+            return c2root;
+        }
     }
-    else
+
+    // could be old cmake
+    QStringList qsl1 = root.split("/");
+    qsl1.removeLast();
+    QString c1root = qsl1.join("/");
+    c1root += "/media";
+    c1root = QDir::cleanPath(c1root);
+    QDir bdir(c1root);
+    if (bdir.exists())
     {
-        QString empty;
-        return empty;
+        return c1root;
     }
+
+    // could be new cmake
+    QStringList qsl2 = root.split("/");
+    qsl2.removeLast();
+    qsl2.removeLast();
+    qsl2.removeLast();
+    QString c2root = qsl2.join("/");
+    c2root += "/media";
+    c2root = QDir::cleanPath(c2root);
+    QDir cdir(c2root);
+    if (cdir.exists())
+    {
+        return c2root;
+    }
+
+    // not found
+    return QString();
 }
 
 QString Configuration::getMediaRootAppdata()

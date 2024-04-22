@@ -1,14 +1,15 @@
-﻿#include <QDebug>
+#include <QDebug>
+#include <QPainterPath>
 
 #include "mosaic/mosaic.h"
 #include "geometry/crop.h"
+#include "geometry/xform.h"
 #include "geometry/map.h"
 #include "makers/mosaic_maker/mosaic_maker.h"
 #include "misc/border.h"
 #include "misc/unique_qvector.h"
 #include "makers/prototype_maker/prototype.h"
 #include "style/style.h"
-#include "viewers/border_view.h"
 
 const QString Mosaic::defaultName =  "The Formless";
 
@@ -35,6 +36,10 @@ void Mosaic::build()
     {
         style->createStyleRepresentation();
     }
+    if (_border)
+    {
+        _border->createStyleRepresentation();
+    }
 }
 
 void Mosaic::build(ViewController * vc)
@@ -51,6 +56,10 @@ void Mosaic::setViewController(ViewController * vc)
         pp->setViewController(vc);
         style->setViewController(vc);
     }
+    if (_border)
+    {
+        _border->setViewController(vc);
+    }
 }
 
 // This enginePaint is called only by MosaicBMPEngine
@@ -62,7 +71,63 @@ void Mosaic::enginePaint(QPainter * painter)
         layers.push_back(style.get());
     }
 
+    auto firststyle  = styleSet.first();
+
+    if (_border)
+    {
+        Xform xf = firststyle->getModelXform();
+        _border->setModelXform(xf,false);
+
+        if (!_border->getRequiresConstruction())
+        {
+            _border->createStyleRepresentation();       // construct now rather than later
+        }
+
+        layers.push_back(_border.get());
+    }
+
     std::stable_sort(layers.begin(),layers.end(),Layer::sortByZlevelP);  // tempting to move this to addLayer, but if zlevel changed would not be picked up
+
+    painter->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
+
+    auto crop = getPainterCrop();
+    if (crop)
+    {
+        auto transform = firststyle->getLayerTransform();
+        switch (crop->getCropType())
+        {
+        case CROP_RECTANGLE:
+        {
+            auto rect = crop->getRect();
+            rect = transform.mapRect(rect);
+            qInfo() << "Painter Clip:" << rect;
+            painter->setClipRect(rect);
+        }   break;
+
+        case CROP_POLYGON:
+        {
+            QPolygonF p = crop->getAPolygon().get();
+            QPolygonF p2 = transform.map(p);
+            //painter.setClipRegion(p2);
+            QPainterPath pp;
+            pp.addPolygon(p2);
+            painter->setClipPath(pp);
+        }   break;
+
+        case CROP_CIRCLE:
+        {
+            Circle c = crop->getCircle();
+            QRectF rect = c.boundingRect();
+            rect = transform.mapRect(rect);
+            QPainterPath p;
+            p.addEllipse(rect.x(),rect.y(),rect.width(),rect.height());
+            painter->setClipPath(p);
+        }   break;
+
+        case CROP_UNDEFINED:
+            break;
+        }
+    }
 
     for (auto const & layer : std::as_const(layers))
     {
@@ -70,18 +135,6 @@ void Mosaic::enginePaint(QPainter * painter)
         layer->forceLayerRecalc(false);
         layer->paint(painter);
         painter->restore();
-    }
-
-    if (_border)
-    {
-        if (_border->getRequiresConversion())
-        {
-            _border->setRequiresConversion(false);
-            _border->legacy_convertToModelUnits();
-        }
-
-        BorderView::getInstance()->forceLayerRecalc(false);  // FIXME - border view should be instantiated
-        _border->draw(painter,BorderView::getInstance()->getLayerTransform());
     }
 }
 
@@ -169,6 +222,17 @@ void Mosaic::resetCrop()
 
     resetProtoMaps();
     resetStyleMaps();
+}
+
+void Mosaic::setPainterCrop(CropPtr crop)
+{
+    Q_ASSERT(crop);
+    _painterCrop = crop;
+}
+
+void Mosaic::resetPainterCrop()
+{
+    _painterCrop.reset();
 }
 
 void Mosaic::setBorder(BorderPtr border)
@@ -287,24 +351,24 @@ void Mosaic::dump()
     }
 }
 
-void Mosaic::reportMotifs()
+void Mosaic::dumpMotifs()
 {
     qDebug() << "==== Mosaic Motifs" << name;
     auto protos = getPrototypes();
     for (const auto & proto : protos)
     {
-        proto->reportMotifs();
+        proto->dumpMotifs();
     }
     qDebug() << "=====";
 }
 
 
-void Mosaic::reportStyles()
+void Mosaic::dumpStyles()
 {
     qDebug() << "==== Mosaic Styles" << name;
     for (const auto & style : std::as_const(styleSet))
     {
-        style->report();
+        style->dump();
     }
     qDebug() << "=====";
 }

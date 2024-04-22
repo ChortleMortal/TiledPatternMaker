@@ -22,8 +22,7 @@ bool BackgroundImage::importIfNeeded(QString filename)
     QFileInfo info(filename);
     QString name = info.fileName();
 
-    Configuration * config = Configuration::getInstance();
-    QString newFilename = config->rootMediaDir + "bkgd_photos/" + name;
+    QString newFilename = Sys::config->rootMediaDir + "bkgd_photos/" + name;
 
     if (QFile::exists(newFilename))
     {
@@ -42,7 +41,7 @@ bool BackgroundImage::load(QString imageName)
 {
     bkgdName    = imageName;
 
-    QString filename = Configuration::getInstance()->rootMediaDir + "bkgd_photos/" + bkgdName;
+    QString filename = Sys::config->rootMediaDir + "bkgd_photos/" + bkgdName;
     qDebug() << "BackgroundImage::load()" << filename;
 
     loaded = bkgdImage.load(filename);
@@ -94,7 +93,7 @@ void BackgroundImage::setUseAdjusted(bool use)
 
 bool BackgroundImage::saveAdjusted(QString newName)
 {
-    QString file = Configuration::getInstance()->rootMediaDir + "bkgd_photos/" +  newName;
+    QString file = Sys::config->rootMediaDir + "bkgd_photos/" +  newName;
     qDebug() << "Saving adjusted:" << file;
     bool rv = adjustedImage.save(file);
     return rv;

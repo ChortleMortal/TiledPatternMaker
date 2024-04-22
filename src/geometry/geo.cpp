@@ -346,7 +346,7 @@ x4 = 2*d - x1
 y4 = 2*d*m - y1 + 2*c
 */
 
-QPointF Geo::reflectPoint(QPointF & p, QLineF & line)
+QPointF Geo::reflectPoint(QPointF p, QLineF line)
 {
     qreal x1 = p.x();
     qreal x2 = line.x1();
@@ -381,7 +381,7 @@ QPointF Geo::reflectPoint(QPointF & p, QLineF & line)
 
     QPointF p4(x4,y4);
 
-    qDebug() << p << line << p4;
+    //qDebug() << p << line << p4;
     return p4;
 }
 
@@ -617,9 +617,14 @@ int Geo::circleLineIntersectionPoints(QPointF center, qreal radius, const QLineF
     }
 }
 
-// Find the points of intersection.
-int Geo::findLineCircleLineIntersections(qreal cx, qreal cy, qreal radius, QPointF point1, QPointF point2, QPointF & intersection1, QPointF & intersection2)
+int Geo::findLineCircleIntersections(QPointF centre, qreal radius, QLineF line, QPointF & intersection1, QPointF & intersection2)
 {
+    qreal cx = centre.x();
+    qreal cy = centre.y();
+
+    QPointF point1(line.p1());
+    QPointF point2(line.p2());
+
     qreal dx, dy, A, B, C, det, t;
 
     dx = point2.x() - point1.x();
@@ -633,34 +638,54 @@ int Geo::findLineCircleLineIntersections(qreal cx, qreal cy, qreal radius, QPoin
 
     det = B * B - 4 * A * C;
     //qDebug() << "A=" << A <<  "B=" << B << "C=" << C << "det=" << det;
+
+    int count = 0;
     if ((A <= 0.0000001) || (det < 0))
     {
         // No real solutions.
-        return 0;
+        return count;
     }
     else if (Loose::equals(det,0))
     {
         // One solution.
         t = -B / (2 * A);
-        intersection1 = QPointF(point1.x() + t * dx, point1.y() + t * dy);
-        return 1;
+        auto isect = QPointF(point1.x() + t * dx, point1.y() + t * dy);
+        if (pointOnLine(QLineF(point1,point2),isect))
+        {
+            intersection1 = isect;
+            count = 1;
+        }
+        return count;
     }
     else
     {
         // Two solutions.
         t = (-B + qSqrt(det)) / (2 * A);
-        intersection1 = QPointF(point1.x() + t * dx, point1.y() + t * dy);
+        auto isect = QPointF(point1.x() + t * dx, point1.y() + t * dy);
+        if (pointOnLine(QLineF(point1,point2),isect))
+        {
+            intersection1 = isect;
+            count++;
+        }
         t = (-B - qSqrt(det)) / (2 * A);
-        intersection2 = QPointF(point1.x() + t * dx, point1.y() + t * dy);
-        return 2;
+        isect = QPointF(point1.x() + t * dx, point1.y() + t * dy);
+        if (pointOnLine(QLineF(point1,point2),isect))
+        {
+            if (count == 0)
+            {
+                intersection1 = isect;
+            }
+            else
+            {
+                intersection2 = isect;
+            }
+            count++;
+        }
+        return count;
     }
 }
 
-int Geo::findLineCircleLineIntersections(QPointF centre, qreal radius, QLineF line, QPointF & intersection1, QPointF & intersection2)
-{
-    return findLineCircleLineIntersections(centre.x(), centre.y(), radius, line.p1(), line.p2(), intersection1, intersection2);
 
-}
 
 bool Geo::pointInCircle(QPointF pt, Circle c)
 {
@@ -673,7 +698,7 @@ bool Geo::pointOnCircle(QPointF pt, Circle c, qreal tolerance)
 {
     qreal d  = Geo::dist(pt,c.centre);
     qreal r = c.radius;
-    qDebug() << d << r << qAbs(d-r) << tolerance;
+    //qDebug() << d << r << qAbs(d-r) << tolerance;
     return Loose::equals(d,r,tolerance);
 }
 
@@ -1228,3 +1253,115 @@ QPointF Geo::getClosestPointC(const QPointF& A, const QPointF& B, const QPointF&
     return closest;
 }
 
+#if 1
+// recoded from stack overflow code (see below) becuse of issues wih precision of floatting point
+// compilations.  Linux compiler is different to MSVC comiler.
+bool Geo::pointInPolygon(const QPointF & point, const QPolygonF & polygon)
+{
+    int i, j, nvert = polygon.size();
+    bool c = false;
+    //qDebug() << "pointInPolygon" << nvert << point << polygon;
+
+    for(i = 0, j = nvert - 1; i < nvert; j = i++)
+    {
+        //bool t1  = polygon[i].y() >= point.y();
+        bool t1  = (polygon[i].y() > point.y()) || Loose::equals(polygon[i].y(),point.y());
+        //bool t2  = polygon[j].y() >= point.y();
+        bool t2  = (polygon[j].y() >= point.y()) || Loose::equals(polygon[j].y(),point.y());
+        bool t3  = t1 != t2;
+
+        qreal v1 = polygon[j].x() - polygon[i].x();
+        qreal v2 = point.y() - polygon[i].y();
+        qreal v3 = (polygon[j].y() - polygon[i].y());
+        qreal v4 = v1 * v2 / v3;
+        qreal v5 = v4 + polygon[i].x();
+        //bool  t4 = point.x() <= v5;
+        bool  t4 = (point.x() < v5) || Loose::equals(point.x(),v5);
+        if ( t3 && t4)
+        {
+            c = !c;
+        }
+        //qDebug() << t1 << t2 <<  t3 << t4 << v1 << v2 << v3 << v4 << v5;
+    }
+
+    return c;
+}
+#else
+//  Taken from
+//  https://stackoverflow.com/questions/11716268/point-in-polygon-algorithm
+//
+bool Geo::pointInPolygon(const QPointF & point, const QPolygonF & polygon)
+{
+    int i, j, nvert = polygon.size();
+    bool c = false;
+    qDebug() << "pointInPolygon" << nvert << point << polygon;
+
+    for(i = 0, j = nvert - 1; i < nvert; j = i++)
+    {
+        if( ( (polygon[i].y() >= point.y() ) != (polygon[j].y() >= point.y()) ) &&
+            (point.x() <= (polygon[j].x() - polygon[i].x()) * (point.y() - polygon[i].y()) / (polygon[j].y() - polygon[i].y()) + polygon[i].x()) )
+        {
+            c = !c;
+        }
+    }
+    return c;
+}
+#endif
+
+bool Geo::point_in_polygon(QPointF point, const QPolygonF &polygon)
+{
+    // from https://www.geeksforgeeks.org/how-to-check-if-a-given-point-lies-inside-a-polygon/
+    int num_vertices = polygon.size();
+
+    qreal x = point.x(), y = point.y();
+
+    bool inside = false;
+
+    // Store the first point in the polygon and initialize the second point
+    QPointF p1 = polygon[0], p2;
+
+    // Loop through each edge in the polygon
+    for (int i = 1; i <= num_vertices; i++)
+    {
+        // Get the next point in the polygon
+        p2 = polygon[i % num_vertices];
+
+        // Check if the point is above the minimum y coordinate of the edge
+        if (y > qMin(p1.y(), p2.y()))
+        {
+            // Check if the point is below the maximum y coordinate of the edge
+            if (y <= qMax(p1.y(), p2.y()))
+            {
+                // Check if the point is to the left of the maximum x coordinate of the edge
+                if (x <= qMax(p1.x(), p2.x()))
+                {
+                    // Calculate the x-intersection of the line connecting the point to the edge
+                    qreal x_intersection = (y - p1.y()) * (p2.x() - p1.x()) / (p2.y() - p1.y()) + p1.x();
+
+                    // Check if the point is on the same line as the edge or to the left of the x-intersection
+                    if (p1.x() == p2.x() || x <= x_intersection)
+                    {
+                        // Flip the inside flag
+                        inside = !inside;
+                    }
+                }
+            }
+        }
+        // Store the current point as the first point for the next iteration
+        p1 = p2;
+    }
+    return inside;
+}
+
+bool Geo::point_on_poly_edge(QPointF p, const QPolygonF & poly)
+{
+    EdgePoly ep(poly);
+    for (EdgePtr edge : std::as_const(ep))
+    {
+        if (Loose::zero(distToLine(p,edge->getLine())))
+        {
+            return true;
+        }
+    }
+    return false;
+}

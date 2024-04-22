@@ -13,7 +13,7 @@ public:
 
     virtual void    buildMotifMaps() override;
     virtual QString getMotifDesc()   override { return "GirihMotif"; }
-    virtual void    report()         override { qDebug().noquote() << getMotifDesc() << "skip" << skip; }
+    virtual void    dump()         override { qDebug().noquote() << getMotifDesc() << "skip" << skip; }
 
 protected:
     void            inferGirih();        // Girih inferring

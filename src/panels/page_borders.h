@@ -3,7 +3,6 @@
 #define PAGE_BORDERS_H
 
 #include "panels/panel_page.h"
-#include "enums/eborder.h"
 #include "widgets/layout_qrectf.h"
 
 class AQComboBox;
@@ -12,6 +11,67 @@ class ClickableLabel;
 typedef std::shared_ptr<class Border>  BorderPtr;
 typedef std::shared_ptr<class Crop>    CropPtr;
 
+class page_borders;
+
+class PlainControl : public QWidget
+{
+    Q_OBJECT
+
+public:
+    PlainControl(page_borders * parent);
+
+    DoubleSpinSet   * borderWidth;
+
+    QLabel          * borderColorLabel;
+    QLineEdit       * borderColor;
+    ClickableLabel  * borderColorPatch;
+
+private:
+    page_borders    * parent;
+};
+
+class TwoColorControl : public QWidget
+{
+    Q_OBJECT
+
+public:
+    TwoColorControl(page_borders * parent);
+
+    DoubleSpinSet   * borderWidth;
+    DoubleSpinSet   * borderLength;
+
+    QLabel          * borderColorLabel;
+    QLineEdit       * borderColor;
+    ClickableLabel  * borderColorPatch;
+
+    QLabel          * borderColorLabel2;
+    QLineEdit       * borderColor2;
+    ClickableLabel  * borderColorPatch2;
+
+private:
+    page_borders    * parent;
+};
+
+class BlockControl : public QWidget
+{
+    Q_OBJECT
+
+public:
+    BlockControl(page_borders * parent);
+
+    DoubleSpinSet   * borderWidth;
+
+    SpinSet         * borderRows;
+    SpinSet         * borderColumns;
+
+    QLabel          * borderColorLabel;
+    QLineEdit       * borderColor;
+    ClickableLabel  * borderColorPatch;
+
+private:
+    page_borders    * parent;
+};
+
 class page_borders : public panel_page
 {
     Q_OBJECT
@@ -19,11 +79,12 @@ class page_borders : public panel_page
 public:
     page_borders(ControlPanel * apanel);
 
-    void onRefresh() override;
-    void onEnter() override;
-    void onExit() override;
+    void onRefresh()        override;
+    void onEnter()          override {}
+    void onExit()           override {}
+    QString getPageStatus() override;
 
-private slots:
+public slots:
     void slot_removeBorder();
     void slot_loadFromCrop();
 
@@ -31,12 +92,12 @@ private slots:
     void slot_cropTypeChanged(int row);
     void slot_pickBorderColor();
     void slot_pickBorderColor2();
-    void slot_borderColorChanged(QLineEdit * le);
-    void slot_borderColor2Changed(QLineEdit * le);
+    void slot_borderColorChanged(const QString & text);
+    void slot_borderColor2Changed(const QString & text);
     void slot_borderWidthChanged(qreal width);
     void slot_borderLengthChanged(qreal length);
     void slot_borderRowsChanged(int rows);
-    void slot_borderColsChanged(int cols);
+    void slot_borderColumnsChanged(int cols);
     void slot_useViewSzChanged(bool checked);
     void slot_rectBoundaryChanged();
     void slot_centreChanged();
@@ -56,12 +117,13 @@ protected:
     QWidget   * createCircleShapeWidget();
     QWidget   * createPolyShapeWidget();
     QWidget   * createBorderTypeNone();
-    QWidget   * createBorderTypePlain();
-    QWidget   * createBorderType2Color();
-    QWidget   * createBorderTypeBlocks();
 
 private:
-    class BorderView*  borderView;
+    QWidget         * controlNone;
+    PlainControl    * controlPlain;
+    TwoColorControl * controlTwoColors;
+    BlockControl    * controlBlocks;
+
     AQComboBox      *  borderTypes;
     AQComboBox      *  cropTypes;
 
@@ -75,14 +137,7 @@ private:
     QStackedLayout  * borderTypeStack;
     QStackedLayout  * cropTypeStack;
 
-    DoubleSpinSet   * borderWidth[BORDER_BLOCKS+1];
-    DoubleSpinSet   * borderLength;
     DoubleSpinSet   * radius;
-    SpinSet         * borderRows;
-    SpinSet         * borderCols;
-    QLabel          * borderColorLabel[BORDER_BLOCKS+1];
-    QLineEdit       * borderColor[BORDER_BLOCKS+1];
-    ClickableLabel  * borderColorPatch[BORDER_BLOCKS+1];
 
     LayoutQRectF    * rectBoundaryLayout;
     LayoutQPointF   * centre;

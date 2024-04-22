@@ -30,12 +30,14 @@ extern class TiledPatternMaker * theApp;
 //const int currentTilingXMLVersion = 4;  // 13SEP20 restore FillData
 //const int currentTilingXMLVersion = 5;  // 09NOV20 new background image positioning
 //const int currentTilingXMLVersion = 6;  // 14NOV20 <Placement> becomes <Transform>
-  const int currentTilingXMLVersion = 7;  // 10JUN23 <Feature> becomes <Tile>
+//const int currentTilingXMLVersion = 7;  // 10JUN23 <Feature> becomes <Tile>
+//const int currentTilingXMLVersion = 8;  // 28FEB24 Tile Colors have colors in mosaic not in XML
+// const int currentTilingXMLVersion = 9;  // 29MAR24 ConcaveArcs have different arc center
+   const int currentTilingXMLVersion = 10; // 15APR24 Tilings have translate origins
+
 
 bool TilingWriter::writeTilingXML()
 {
-    Configuration * config = Configuration::getInstance();
-
     // the name is in the tiling
     QString name = tiling->getTitle();
     QString filename = FileServices::getTilingXMLFile(name);
@@ -45,7 +47,7 @@ bool TilingWriter::writeTilingXML()
         // file already exists
         bool isOriginal  = filename.contains("original");
         bool isNewTiling = filename.contains("new_tilings");
-        QMessageBox msgBox(ControlPanel::getInstance());
+        QMessageBox msgBox(Sys::controlPanel);
         msgBox.setText(QString("The tiling %1 already exists").arg(name));
         msgBox.setInformativeText("Do you want to bump version (Bump) or overwrite (Save)?");
         QPushButton * bump   = msgBox.addButton("Bump",QMessageBox::ApplyRole);
@@ -83,7 +85,7 @@ bool TilingWriter::writeTilingXML()
     else
     {
         // new file
-        if (config->saveTilingTest)
+        if (Sys::config->saveTilingTest)
             filename = Sys::testTileDir + name + ".xml";
         else
             filename = Sys::newTileDir + name + ".xml";
@@ -102,19 +104,18 @@ bool TilingWriter::writeTilingXML()
         bool rv = FileServices::reformatXML(filename);
         if (rv)
         {
-            QMessageBox box(ControlPanel::getInstance());
+            QMessageBox box(Sys::controlPanel);
             box.setIcon(QMessageBox::Information);
             box.setText(QString("Saved: %1 - OK").arg(data.fileName()));
             box.exec();
 
-            auto tilingMaker = TilingMaker::getInstance();
-            emit tilingMaker->sig_tilingWritten(name);
+            emit Sys::tilingMaker->sig_tilingWritten(name);
             return true;
         }
     }
 
     qWarning() << "Could not write tile file:"  << data.fileName();
-    QMessageBox box(ControlPanel::getInstance());
+    QMessageBox box(Sys::controlPanel);
     box.setIcon(QMessageBox::Critical);
     box.setText(QString("Error saving: %1 - FAILED").arg(data.fileName()));
     box.exec();
@@ -147,6 +148,8 @@ void TilingWriter::writeTilingXML(QTextStream & out)
     }
     QPointF t1 = tiling->getData().getTrans1();
     QPointF t2 = tiling->getData().getTrans2();
+    QPointF origin = tiling->getTranslateOrigin();
+    out << "<T0>" <<  origin.x() << "," << origin.y() << "</T0>" << endl;
     out << "<T1>" <<  t1.x() << "," << t1.y() << "</T1>" << endl;
     out << "<T2>" <<  t2.x() << "," << t2.y() << "</T2>" << endl;
 
@@ -176,26 +179,8 @@ void TilingWriter::writeTilingXML(QTextStream & out)
         {
             // edge polys have rotation, numSides can be calculated
             out << "<Tile type=\"edgepoly\" rotation=\"" << tile->getRotation() << "\" scale=\"" << tile->getScale() << "\">" << endl;
-            EdgePoly epoly = tile->getBase();       // bugfx 20AUG23
+            const EdgePoly epoly = tile->getBase();       // bugfx 20AUG23
             setEdgePoly(out,epoly);
-        }
-
-        // background colors
-        ColorSet * tileColors  = tile->getTileColors();
-        int sz = tileColors->size();
-        if (sz)
-        {
-            QString s = "<BkgdColors>";
-            for (int i = 0; i < (sz-1); i++)
-            {
-                QColor color = tileColors->getColor(i).color;
-                s += color.name();
-                s += ",";
-            }
-            QColor color = tileColors->getColor(sz-1).color;
-            s += color.name();
-            s += "</BkgdColors>";
-            out << s << endl;
         }
 
         for(auto it= placedTiles .begin(); it != placedTiles .end(); it++ )
@@ -223,14 +208,13 @@ void TilingWriter::writeTilingXML(QTextStream & out)
 
 void TilingWriter::writeBackgroundImage(QTextStream & out)
 {
-    auto bview = BackgroundImageView::getInstance();
-    auto bkgd  = bview->getImage();
+    auto bkgd  = Sys::backgroundImageView->getImage();
     if (bkgd && bkgd->isLoaded())
     {
         QString astring = QString("<BackgroundImage name=\"%1\">").arg(bkgd->getTitle());
         out << astring << endl;
         
-        const Xform & xform = bview->getModelXform();
+        const Xform & xform = Sys::backgroundImageView->getModelXform();
         out << "<Scale>" << xform.getScale()           << "</Scale>" << endl;
         out << "<Rot>"   << xform.getRotateRadians()   << "</Rot>"  << endl;
         out << "<X>"     << xform.getTranslateX()      << "</X>" << endl;
@@ -241,7 +225,7 @@ void TilingWriter::writeBackgroundImage(QTextStream & out)
         if (bkgd->useAdjusted())
         {
             out << "<Perspective>";
-            out << Transform::toString(bkgd->getAdjustedTransform());
+            out << Transform::writeInfo(bkgd->getAdjustedTransform());
             out << "</Perspective>" << endl;
         }
 
@@ -266,7 +250,7 @@ void TilingWriter::writeViewSettings(QTextStream & out)
     out << "</ViewSettings>" <<  endl;
 }
 
-void TilingWriter::setEdgePoly(QTextStream & ts, EdgePoly & epoly)
+void TilingWriter::setEdgePoly(QTextStream & ts, const EdgePoly & epoly)
 {
     for (auto it = epoly.begin(); it != epoly.end(); it++)
     {

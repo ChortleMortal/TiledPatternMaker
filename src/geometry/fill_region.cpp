@@ -19,6 +19,7 @@
 // callback that gets a sequence of calls, one for each translate.
 
 #include "geometry/fill_region.h"
+#include "geometry/transform.h"
 #include "tile/tiling.h"
 
 
@@ -79,4 +80,13 @@ QTransform FillRegion::calcTransform(int h, int v)
     QPointF pt   = (tiling->getData().getTrans1() * static_cast<qreal>(h)) + (tiling->getData().getTrans2() * static_cast<qreal>(v));
     QTransform T = QTransform::fromTranslate(pt.x(),pt.y());
     return T;
+}
+
+void  Placements::dump()
+{
+    for (const auto & t : *this)
+    {
+        qDebug().noquote() << Transform::info(t);
+
+    }
 }

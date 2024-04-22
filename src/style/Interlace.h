@@ -82,9 +82,9 @@ public:
     void    setInitialStartUnder(bool sunder)   { interlace_start_under = sunder; }
     void    setIncludeTipVertices(bool include) { includeTipVertices = include; }
 
-    virtual eStyleType getStyleType() const override { return STYLE_INTERLACED; }
-    QString            getStyleDesc() const override { return "Interlaced"; }
-    virtual void       report()       const override { qDebug().noquote() << getStyleDesc() << "gap" << gap << "shadow" << shadow << "tipVerts" << includeTipVertices
+    eStyleType getStyleType() const override { return STYLE_INTERLACED; }
+    QString    getStyleDesc() const override { return "Interlaced"; }
+    void       dump()         const override { qDebug().noquote() << getStyleDesc() << "gap" << gap << "shadow" << shadow << "tipVerts" << includeTipVertices
                            << "start_under" << interlace_start_under
                            << "width:" << width << "outline:" << drawOutline << outline_width << "outlineColor" << outline_color << colors.colorsString(); }
 
@@ -92,7 +92,6 @@ protected:
     void    assignInterlacing(Map * map);
     void    buildFrom(Map * map);
     void    propagate(Map * map, VertexPtr vertex, EdgePtr edge, bool edge_under_at_vert);
-
 
 private:
     // Parameters of the rendering.

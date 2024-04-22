@@ -22,29 +22,9 @@ using std::make_shared;
  * These bounds do not apply to the image.
  */
 
-BackgroundImageView * BackgroundImageView::mpThis = nullptr;
-
-BackgroundImageView * BackgroundImageView::getInstance()
-{
-    if (!mpThis)
-    {
-        mpThis = new BackgroundImageView();
-    }
-    return mpThis;
-}
-
-void BackgroundImageView::releaseInstance()
-{
-    if (mpThis != nullptr)
-    {
-        delete mpThis;
-        mpThis = nullptr;
-    }
-}
-
 BackgroundImageView::BackgroundImageView() : LayerController("Bkgd Image",true)
 {
-    config   = Configuration::getInstance();
+    config   = Sys::config;
     setZValue(BKGD_IMG_ZLEVEL);
 }
 
@@ -162,7 +142,7 @@ void BackgroundImageView::createBackgroundAdjustment(BkgdImagePtr img, QPointF t
 void BackgroundImageView::setModelXform(const Xform & xf, bool update)
 {
     Q_ASSERT(_unique);
-    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.toInfoString() << (isUnique() ? "unique" : "common");
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "SET" << getLayerName() << xf.info() << (isUnique() ? "unique" : "common");
     auto bip = wbip.lock();
     if (bip)
     {
@@ -174,7 +154,7 @@ void BackgroundImageView::setModelXform(const Xform & xf, bool update)
 const Xform & BackgroundImageView::getModelXform()
 {
     Q_ASSERT(_unique);
-    if (debug & DEBUG_XFORM) qInfo().noquote() << "GET" << getLayerName() << xf_model.toInfoString() << (isUnique() ? "unique" : "common");
+    if (debug & DEBUG_XFORM) qInfo().noquote() << "GET" << getLayerName() << xf_model.info() << (isUnique() ? "unique" : "common");
     auto bip = wbip.lock();
     if (bip)
     {

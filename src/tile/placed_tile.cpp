@@ -20,6 +20,7 @@
 #include "tile/tiling.h"
 #include "misc/fileservices.h"
 #include "misc/tpm_io.h"
+#include "makers/tiling_maker/tiling_maker.h"
 #include "makers/tiling_maker/tiling_monitor.h"
 
 using std::make_shared;
@@ -29,7 +30,7 @@ PlacedTile::PlacedTile()
     clearViewState();
     _show = true;
 
-    connect(this, &PlacedTile::sig_tileChanged, TilingMonitor::getInstance(), &TilingMonitor::slot_tileChanged);
+    connect(this, &PlacedTile::sig_tileChanged, Sys::tilingMaker->getTilingMonitor(), &TilingMonitor::slot_tileChanged);
 }
 
 PlacedTile::PlacedTile(TilePtr tile, QTransform T)
@@ -40,7 +41,7 @@ PlacedTile::PlacedTile(TilePtr tile, QTransform T)
     _show = true;
     //qDebug() << "setTransform1=" << Transform::toInfoString(T);
 
-    connect(this, &PlacedTile::sig_tileChanged, TilingMonitor::getInstance(), &TilingMonitor::slot_tileChanged);
+    connect(this, &PlacedTile::sig_tileChanged, Sys::tilingMaker->getTilingMonitor(), &TilingMonitor::slot_tileChanged);
 }
 
 PlacedTilePtr PlacedTile::copy()
@@ -75,15 +76,14 @@ void PlacedTile::setShow(bool show)
 
 bool PlacedTile::loadFromGirihShape(QString name)
 {
-    Configuration * config = Configuration::getInstance();
-    QString root     = config->rootMediaDir;
+    QString root     = Sys::config->rootMediaDir;
     QString filename = root + "girih_shapes" + "/" + name + ".xml";
 
     xml_document doc;
     xml_parse_result result = doc.load_file(filename.toStdString().c_str());
     if (result == false)
     {
-        qWarning("Badly constructed XML file");
+        qWarning() << "Badly constructed Girih Shape XML file" << filename;
         return false;
     }
 
@@ -140,22 +140,16 @@ QTransform PlacedTile::getTransform()
     return T;
 }
 
-EdgePoly  PlacedTile::getPlacedEdgePoly()
+EdgePoly PlacedTile::getPlacedEdgePoly()
 {
     const EdgePoly & ep = tile->getEdgePoly();
-#if 1
-    EdgePoly ep2  = ep.recreate();
-    ep2.mapD(T);
-#else
-    EdgePoly ep2  = ep.map(T);
-#endif
+    EdgePoly ep2        = ep.map(T);
     return ep2;
 }
 
 bool PlacedTile::saveAsGirihShape(QString name)
 {
-    Configuration * config = Configuration::getInstance();
-    QString root     = config->rootMediaDir;
+    QString root     = Sys::config->rootMediaDir;
     QString filename = root + "girih_shapes" + "/" + name + ".xml";
 
     QFile data(filename);
@@ -232,9 +226,14 @@ void PlacedTile::loadGirihShapeOld(xml_node & poly_node)
     tile = make_shared<Tile>(epoly,0);
 }
 
-EdgePoly   PlacedTile::getTileEdgePoly()
+const EdgePoly & PlacedTile::getTileEdgePoly()
 {
     return tile->getEdgePoly();
+}
+
+EdgePoly & PlacedTile::getTileEdgePolyRW()
+{
+    return tile->getEdgePolyRW();
 }
 
 QPolygonF  PlacedTile::getTilePoints()

@@ -36,7 +36,7 @@ void Canvas::initCanvasSize(QSizeF size)
 
 void Canvas::setDeltaCanvasSize(QSizeF size)
 {
-    Q_ASSERT(Configuration::getInstance()->scaleToView);
+    Q_ASSERT(Sys::config->scaleToView);
 
     _deltaSize += size;
     qDebug() << "Canvas::setDeltaSize" << size << _canvasSize;

@@ -45,7 +45,7 @@ public:
 
     static qreal    dot(QPointF & pt, QPointF & other );
 
-    static QPointF   reflectPoint(QPointF & p, QLineF & line);
+    static QPointF   reflectPoint(QPointF p, QLineF line);
     static QPolygonF reflectPolygon(QPolygonF &p, QLineF &line);
 
     // Return the absolute angle of the edge from this to other, in the range -PI to PI.
@@ -81,8 +81,8 @@ public:
     static QPointF  findNearestPoint(const QVector<QPointF> & pts, const QPointF apt);
 
     static int  circleLineIntersectionPoints(const QGraphicsItem & circle, qreal radius, const QLineF & line, QPointF & aa, QPointF & bb);
-    static int  circleLineIntersectionPoints   (QPointF center,            qreal radius, const QLineF & line, QPointF & aa, QPointF & bb);
-    static int  findLineCircleLineIntersections(QPointF centre,            qreal radius,       QLineF line, QPointF & intersection1, QPointF & intersection2);
+    static int  circleLineIntersectionPoints(QPointF center,               qreal radius, const QLineF & line, QPointF & aa, QPointF & bb);
+    static int  findLineCircleIntersections(QPointF centre,                qreal radius,       QLineF   line, QPointF & intersection1, QPointF & intersection2);
 
     static bool pointInCircle(QPointF pt, Circle c);
     static bool pointOnCircle(QPointF pt, Circle c, qreal tolerance = Sys::NEAR_TOL);
@@ -109,6 +109,9 @@ public:
 
     static bool            isClockwise(const QPolygonF &poly);
     static bool            isClockwiseKaplan(QPolygonF &  poly);
+    static bool            pointInPolygon(const QPointF & point, const QPolygonF & polygon);
+    static bool            point_in_polygon(QPointF point, const QPolygonF & polygon);
+    static bool            point_on_poly_edge(QPointF p, const QPolygonF & poly);
 
     static void reverseOrder(QPolygonF & poly);
     static void reverseOrder(EdgePoly & ep);
@@ -120,7 +123,7 @@ public:
     static bool isColinear(const QLineF & l1, const QLineF & l2, qreal tolerance);
 
 private:
-    static int      findLineCircleLineIntersections(qreal cx, qreal cy, qreal radius, QPointF point1, QPointF point2, QPointF & intersection1, QPointF & intersection2);
+    static int      findLineCircleIntersections(qreal cx, qreal cy, qreal radius, QPointF point1, QPointF point2, QPointF & intersection1, QPointF & intersection2);
     static int      circleIntersects(qreal x1, qreal y1, qreal x2,  qreal y2, qreal r1, qreal r2);
     static void     circleTouchPt(qreal x0, qreal x1, qreal & x3,  qreal y0, qreal y1, qreal & y3, qreal r0, qreal r1);
     static QPointF  rotatePoint(QPointF fp, QPointF pt, qreal a);

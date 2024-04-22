@@ -9,7 +9,7 @@
 
 void  ViewerBase::drawTile(GeoGraphics * gg, TilePtr tile, QBrush brush, QPen pen)
 {
-    EdgePoly ep   = tile->getEdgePoly();
+    const EdgePoly & ep   = tile->getEdgePoly();
 
     // Fill the tile.
     if (brush.style() != Qt::NoBrush)

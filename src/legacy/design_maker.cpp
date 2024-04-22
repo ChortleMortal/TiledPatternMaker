@@ -18,30 +18,17 @@
 
 using std::make_shared;
 
-DesignMaker * DesignMaker::mpThis = nullptr;
-
-DesignMaker * DesignMaker::getInstance()
-{
-    if (mpThis == nullptr)
-    {
-        mpThis = new DesignMaker();
-    }
-    return mpThis;
-}
-
-void DesignMaker::releaseInstance()
-{
-    if (mpThis)
-    {
-        delete mpThis;
-        mpThis = nullptr;
-    }
-}
-
 DesignMaker::DesignMaker()
 {
     selectedLayer   = 0;
     stepsTaken      = 0;
+}
+
+void DesignMaker::init()
+{
+    view        = Sys::view;
+    viewControl = Sys::viewController;
+    config      = Sys::config;
 
     availableDesigns.insert(DESIGN_5,make_shared<Design5>(DESIGN_5,"Pattern 1 (created)"));
     availableDesigns.insert(DESIGN_6,make_shared<Design6>(DESIGN_6,"Pattern 2 (re-ceated)"));
@@ -54,16 +41,12 @@ DesignMaker::DesignMaker()
     availableDesigns.insert(DESIGN_12,make_shared<Design12>(DESIGN_12,"Enneagram"));
     availableDesigns.insert(DESIGN_13,make_shared<Design13>(DESIGN_13,"Alhambra 1"));
     availableDesigns.insert(DESIGN_14,make_shared<Design14>(DESIGN_14,"Alhambra 2"));
-    availableDesigns.insert(DESIGN_16,make_shared<Design16>(DESIGN_16,"Broug: Capella Palatina, Palermo"));
-    availableDesigns.insert(DESIGN_17,make_shared<Design17>(DESIGN_17,"Broug: The Koran of Rashid al-Din"));
+    availableDesigns.insert(DESIGN_16,make_shared<Design16>(DESIGN_16,"Broug: Capella Palatina Palermo"));
+    availableDesigns.insert(DESIGN_17,make_shared<Design17>(DESIGN_17,"Broug: Koran of Rashid al-Din"));
     availableDesigns.insert(DESIGN_18,make_shared<Design18>(DESIGN_18,"Broug: Mustansiriya Madrasa"));
     availableDesigns.insert(DESIGN_19,make_shared<Design19>(DESIGN_19,"NOT Broug: Esrefogulu Mosque"));
     availableDesigns.insert(DESIGN_KUMIKO1,make_shared<DesignKumiko1>(DESIGN_KUMIKO1,"Kumiko 1"));
     availableDesigns.insert(DESIGN_KUMIKO2,make_shared<DesignKumiko2>(DESIGN_KUMIKO2,"Kumiko 2"));
-
-    view        = Sys::view;
-    viewControl = Sys::viewController;
-    config      = Configuration::getInstance();
 
     connect(view, &View::sig_deltaScale,    this, &DesignMaker::designScale);
     connect(view, &View::sig_deltaRotate,   this, &DesignMaker::designRotate);
@@ -100,8 +83,7 @@ void DesignMaker::slot_loadDesign(eDesign design)
 
     if (!config->lockView)
     {
-        auto panel = ControlPanel::getInstance();
-        panel->selectViewer(VIEW_DESIGN);
+        Sys::controlPanel->delegateView(VIEW_DESIGN);
     }
     
     viewControl->slot_reconstructView();
@@ -115,7 +97,7 @@ void DesignMaker::slot_buildDesign(eDesign design)
     LoadUnit & loadUnit = view->getLoadUnit();
     loadUnit.setLoadState(LOADING_LEGACY,desName);
 
-    DesignMaker * designMaker = DesignMaker::getInstance();
+    DesignMaker * designMaker = Sys::designMaker;
 
     Sys::dumpRefs();
     designMaker->unload();
@@ -133,7 +115,7 @@ void DesignMaker::slot_buildDesign(eDesign design)
     canvas.initCanvasSize(size);
     canvas.setModelAlignment(M_ALIGN_NONE);
 
-    view->resize(size);
+    view->setSize(size);
 
     viewControl->removeAllImages();
 

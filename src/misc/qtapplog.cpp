@@ -23,7 +23,7 @@ QTextEdit * qtAppLog::ted      = nullptr;
 
 QString     qtAppLog::currentLogName;
 QString     qtAppLog::baseLogName;
-QStringList qtAppLog::_trapStringList;
+QVector<sTrapMsg> qtAppLog::_trappedMsgs;
 
 bool qtAppLog::_logToStderr = true;
 bool qtAppLog::_logToDisk   = true;
@@ -68,8 +68,15 @@ void qtAppLog::releaseInstance()
 qtAppLog::qtAppLog()
 {
     ted = new QTextEdit();
+
     const QFont fixedFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
     ted->setFont(fixedFont);
+
+    ted->setMinimumWidth(750);
+    ted->setMinimumHeight(690);
+    ted->setLineWrapMode(QTextEdit::NoWrap);
+    ted->setReadOnly(true);
+    ted->setStyleSheet("selection-color: rgb(170, 255, 0);  selection-background-color: rgb(255, 0, 0);");
 }
 
 void qtAppLog:: init()
@@ -83,7 +90,7 @@ void qtAppLog:: init()
     }
     else
     {
-        _logDir = Configuration::getInstance()->getMediaRoot();
+        _logDir = Sys::config->getMediaRoot();
         _logDir.replace("/media", "/logs/");
 
     }
@@ -181,7 +188,10 @@ void qtAppLog::crashMessageOutput(QtMsgType type, const QMessageLogContext &cont
     
     if (_trapping && !Sys::usingImgGenerator)
     {
-        _trapStringList << msg;
+        sTrapMsg stm;
+        stm.type = type;
+        stm.msg  = msg;
+        _trappedMsgs.push_back(stm);
         return;
     }
 
@@ -368,9 +378,9 @@ void qtAppLog::trap(bool enable)
 void qtAppLog::endTrap()
 {
     QMessageLogContext context;
-    for (auto & str : std::as_const(_trapStringList))
+    for (auto & stm : std::as_const(_trappedMsgs))
     {
-        crashMessageOutput(QtDebugMsg,context,str);
+        crashMessageOutput(stm.type,context,stm.msg);
     }
-    _trapStringList.clear();
+    _trappedMsgs.clear();
 }

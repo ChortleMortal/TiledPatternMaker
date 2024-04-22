@@ -84,10 +84,11 @@ QPolygonF  IrregularStarBranches::buildStarBranchPointsV1(qreal d, int s, qreal 
     qreal circle_frac = 1.0 / static_cast<qreal>(side_count);
     qreal clamp_d     = max( 1.0, min( d, 0.5 * side_count - 0.01 ) );
     int d_i           = static_cast<int>(floor(clamp_d + 0.01));
-    qreal d_frac      = clamp_d - d_i;
     s = min( s, d_i );
     int outer_s       = min( s, d_i - 1 );
 
+#if 0
+    qreal d_frac      = clamp_d - d_i;
     if( d_frac < Sys::TOL )
     {
         d_frac = 0.0;
@@ -97,6 +98,7 @@ QPolygonF  IrregularStarBranches::buildStarBranchPointsV1(qreal d, int s, qreal 
         d_frac = 0.0;
         d_i += 1;
     }
+#endif
 
     QPointF a = getArc(side_frac, mids );
     QPointF b = getArc(side_frac + sign * clamp_d * circle_frac, mids);

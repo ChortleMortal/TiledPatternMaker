@@ -105,3 +105,11 @@ QPolygonF TileSelector::getModelPolygon()
 {
     return pfp->getTilePoints();
 }
+
+bool TileSelector::isPoint()
+{
+    if (type == VERTEX || type == MID_POINT  || type == TILE_CENTER)
+        return  true;
+    else
+        return false;
+}

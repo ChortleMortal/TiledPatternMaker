@@ -341,9 +341,9 @@ void  page_modelSettings::onRefresh()
     auto lc = view->getActiveLayer(viewType);
     if (lc)
     {
-        l_xform->setText( "canvas " + Transform::toInfoString(lc->getCanvasTransform()));
-        l_canvas->setText("model  " + Transform::toInfoString(lc->getModelTransform()));
-        l_layer->setText( "layer  " + Transform::toInfoString(lc->getLayerTransform()));
+        l_xform->setText( "canvas " + Transform::info(lc->getCanvasTransform()));
+        l_canvas->setText("model  " + Transform::info(lc->getModelTransform()));
+        l_layer->setText( "layer  " + Transform::info(lc->getLayerTransform()));
     }
     else
     {
@@ -391,7 +391,7 @@ void page_modelSettings::slot_windowSizeChanged(int)
     if (pageBlocked()) return;
 
     QSize sz = QSize(sizeW[VIEW_STATUS]->value(),sizeH[VIEW_STATUS]->value());
-    view->resize(sz);   // direct
+    view->setSize(sz);   // direct
     emit sig_refreshView();
 }
 
@@ -399,7 +399,6 @@ CanvasSettings & page_modelSettings::getMosaicOrDesignModelSettings()
 {
     if (viewControl->isEnabled(VIEW_DESIGN))
     {
-        DesignMaker * designMaker = DesignMaker::getInstance();
         QVector<DesignPtr> & designs = designMaker->getActiveDesigns();
         if (designs.count())
         {
@@ -416,7 +415,6 @@ void page_modelSettings::setMosaicOrDesignModelSettings(CanvasSettings & ms)
 {
     if (viewControl->isEnabled(VIEW_DESIGN))
     {
-        DesignMaker * designMaker = DesignMaker::getInstance();
         QVector<DesignPtr> & designs = designMaker->getActiveDesigns();
         if (designs.count())
         {

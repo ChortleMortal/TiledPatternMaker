@@ -172,7 +172,8 @@ void DesignElement::recreateMotifWhenRgularityChanged()
         {
             auto oldMotif = std::dynamic_pointer_cast<Rosette>(motif);
             Q_ASSERT(oldMotif);
-            auto irose = make_shared<IrregularRosette>(*motif.get());
+            auto irose = make_shared<IrregularRosette>(*oldMotif.get());
+            Q_ASSERT(irose);
             irose->setTile(tile);
             irose->setMotifScale(1.0);
             irose->setMotifRotate(0.0);
@@ -188,7 +189,8 @@ void DesignElement::recreateMotifWhenRgularityChanged()
         {
             auto oldMotif = std::dynamic_pointer_cast<Star>(motif);
             Q_ASSERT(oldMotif);
-            auto istar = make_shared<IrregularStar>(*motif.get());
+            auto istar = make_shared<IrregularStar>(*oldMotif.get());
+            Q_ASSERT(istar);
             istar->setTile(tile);
             istar->setMotifScale(1.0);
             istar->setMotifRotate(0.0);

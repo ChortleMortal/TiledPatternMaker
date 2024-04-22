@@ -6,22 +6,17 @@
 #include "viewers/crop_view.h"
 #include "viewers/view.h"
 
+QString sCropMaker[] =
+{
+    "UNDEFINED",
+    "MOSAIC",
+    "PAINTER",
+    "MAP EDITOR"
+};
+
 CropMaker::CropMaker()
 {
-    mosaicMaker = MosaicMaker::getInstance();
-    cropViewer  = CropViewer::getInstance();
-}
-
-CropPtr CropMaker::getCrop()
-{
-    MosaicPtr mosaic = mosaicMaker->getMosaic();
-    CropPtr   crop;
-    if (mosaic)
-    {
-        crop = mosaic->getCrop();
-    }
-
-    return crop;
+    mosaicMaker = Sys::mosaicMaker;
 }
 
 bool CropMaker::setEmbed(bool state)
@@ -39,7 +34,7 @@ bool CropMaker::setEmbed(bool state)
     return true;
 }
 
-bool CropMaker::setApply(bool state)
+bool CropMaker::setCropOutside(bool state)
 {
     auto crop = getCrop();
     if (!crop)
@@ -53,42 +48,98 @@ bool CropMaker::setApply(bool state)
     return true;
 }
 
+bool CropMaker::setClip(bool state)
+{
+    auto crop = getCrop();
+    if (!crop)
+        return false;
+
+    crop->setClip(state);
+
+    return true;
+}
+
 CropPtr CropMaker::createCrop()
 {
     // this sets up a default crop
-    View  * view   = Sys::view;
-    QRectF rect    = view->rect();
-    QPointF center = rect.center();
-    QSizeF sz      = rect.size();
-    sz            *= 0.8;
-    rect.setSize(sz);
-    rect.moveCenter(center);
-    rect = cropViewer->screenToWorld(rect);
+    View  * view    = Sys::view;
+    QRectF srect    = view->rect();
+    QPointF scenter = srect.center();
+    QSizeF ssz      = srect.size();
+    ssz            *= 0.8;
+    srect.setSize(ssz);
+    srect.moveCenter(scenter);
+
+    QRectF mrect    = Sys::cropViewer->screenToModel(srect);
+    QPointF mcenter = mrect.center();
 
     // create crop
     CropPtr crop = std::make_shared<Crop>();
 
     // default polygon
-    crop->setPolygon(8,1.0,0.0);
-    Circle ac(center,10.0);
+    APolygon p(8,0.0,1.0);
+    p.setPos(mcenter);
+    crop->setPolygon(p);
+
+    Circle ac(mcenter,1.0);
     crop->setCircle(ac);
+
     crop->setAspect(ASPECT_UNCONSTRAINED);
     crop->setAspectVertical(false);
+
     // this being last makes it a rectanglular crop
-    crop->setRect(rect);
+    crop->setRect(mrect);
     return crop;
 }
 
-void CropMaker::setCrop(CropPtr crop)
+void MosaicCropMaker::setCrop(CropPtr crop)
 {
     auto mosaic = mosaicMaker->getMosaic();
     Q_ASSERT(mosaic);
     mosaic->setCrop(crop);
 }
 
-void CropMaker::removeCrop()
+void MosaicCropMaker::removeCrop()
 {
     auto mosaic = mosaicMaker->getMosaic();
     Q_ASSERT(mosaic);
     mosaic->resetCrop();
+}
+
+CropPtr MosaicCropMaker::getCrop()
+{
+    MosaicPtr mosaic = mosaicMaker->getMosaic();
+    CropPtr   crop;
+    if (mosaic)
+    {
+        crop = mosaic->getCrop();
+    }
+
+    return crop;
+}
+
+void PainterCropMaker::setCrop(CropPtr crop)
+{
+    auto mosaic = mosaicMaker->getMosaic();
+    Q_ASSERT(mosaic);
+    mosaic->setPainterCrop(crop);
+}
+
+void PainterCropMaker::removeCrop()
+{
+    auto mosaic = mosaicMaker->getMosaic();
+    Q_ASSERT(mosaic);
+    mosaic->resetPainterCrop();
+}
+
+CropPtr PainterCropMaker::getCrop()
+{
+    MosaicPtr mosaic = mosaicMaker->getMosaic();
+    CropPtr   crop;
+    if (mosaic)
+    {
+        crop = mosaic->getPainterCrop();
+    }
+
+    return crop;
 }

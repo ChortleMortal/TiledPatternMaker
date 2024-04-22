@@ -28,7 +28,7 @@ public:
     qreal computeConnectScale();
 
     virtual QString getMotifDesc() override { return "RosetteConnect";}
-    virtual void    report()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "q:" << q << "s" << s; }
+    virtual void    dump()       override { qDebug().noquote() << getMotifDesc() << "sides:" << getN() << "q:" << q << "s" << s; }
 
 
 protected:

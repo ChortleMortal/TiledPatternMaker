@@ -40,18 +40,18 @@ public:
 
     bool        isSelected();
 
-    QPointF     screenToWorld(QPointF pt);
-    QPointF     screenToWorld(int x, int y);
-    QRectF      screenToWorld(QRectF rect);
-    qreal       screenToWorld(qreal val);
-    QPolygonF   screenToWorld(QPolygonF poly);
-    Circle      screenToWorld(Circle c);
+    QPointF     screenToModel(QPointF pt);
+    QPointF     screenToModel(int x, int y);
+    QRectF      screenToModel(QRectF rect);
+    qreal       screenToModel(qreal val);
+    QPolygonF   screenToModel(QPolygonF poly);
+    Circle      screenToModel(Circle c);
 
-    QPointF     worldToScreen(QPointF pt);
-    QLineF      worldToScreen(QLineF line);
-    QRectF      worldToScreen(QRectF rect);
-    QPolygonF   worldToScreen(QPolygonF poly);
-    Circle      worldToScreen(Circle c);
+    QPointF     modelToScreen(QPointF pt);
+    QLineF      modelToScreen(QLineF line);
+    QRectF      modelToScreen(QRectF rect);
+    QPolygonF   modelToScreen(QPolygonF poly);
+    Circle      modelToScreen(Circle c);
 
     void        setCenterScreenUnits(QPointF spt);
     QPointF     getCenterScreenUnits();
@@ -84,6 +84,7 @@ public:
     QPointF     getLoc() { return pos; }
 
     void        setViewController(ViewController * vc) { viewControl = vc; }
+    ViewController * getViewController() { return viewControl; }
 
     virtual eViewType iamaLayer() = 0;
 

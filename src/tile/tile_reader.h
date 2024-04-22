@@ -19,7 +19,7 @@ public:
     TileReader();
     TileReader(MRBasePtr base);
 
-    EdgePoly    getEdgePoly(xml_node & node);
+    EdgePoly    getEdgePoly(xml_node & node, bool legacyFlip = true);
     QTransform  getTransform(xml_node & node);
 
 protected:

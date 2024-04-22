@@ -5,6 +5,7 @@
 #include "motifs/motif.h"
 #include "geometry/crop.h"
 #include "geometry/dcel.h"
+#include "geometry/edge.h"
 #include "geometry/fill_region.h"
 #include "geometry/map.h"
 #include "misc/sys.h"
@@ -15,6 +16,7 @@
 #include "tile/tile.h"
 #include "tile/placed_tile.h"
 #include "tile/tiling.h"
+#include "viewers/debug_view.h"
 #include "viewers/view_controller.h"
 #include "tiledpatternmaker.h"
 
@@ -39,8 +41,8 @@ Prototype::Prototype(TilingPtr t)
     Q_ASSERT(t);
     tiling         = t;
     _protoMap      = make_shared<Map>("Proto");
-    panel          = ControlPanel::getInstance();
-    config         = Configuration::getInstance();
+    panel          = Sys::controlPanel;
+    config         = Sys::config;
     viewController = Sys::viewController;
     refs++;
 }
@@ -49,7 +51,7 @@ Prototype::Prototype(MapPtr map)
 {
     // This is a special case used by the map editor where the map is already prepared
     _protoMap      = map;
-    panel          = ControlPanel::getInstance();
+    panel          = Sys::controlPanel;
     viewController = Sys::viewController;
     refs++;
 }
@@ -88,13 +90,18 @@ bool Prototype::operator==(const Prototype & other)
 
 void Prototype::createProtoMap()
 {
+    wipeoutProtoMap();
+
+    if (designElements.size() == 00)
+    {
+        return;
+    }
+
     AQElapsedTimer timer;
 
     qDebug() << "PROTOTYPE CONSTRUCT MAP";
     QString astring = QString("Constructing prototype map for tiling: %1").arg(tiling->getTitle());
     qDebug().noquote() << astring;
-
-    wipeoutProtoMap();
 
     createMap();
 
@@ -113,7 +120,7 @@ void Prototype::replaceTiling(const TilingPtr & newTiling)
 
     tiling = newTiling;
 
-    _protoMap->wipeout();
+    _protoMap->clear();
 
     QVector<TilePtr>          unusedTiles;
     QVector<DesignElementPtr> usedElements;
@@ -195,7 +202,7 @@ void Prototype::removeElement(const DesignElementPtr & element)
     designElements.removeAll(element);
 }
 
-QString Prototype::getInfo() const
+QString Prototype::info() const
 {
     return QString("elements=%1 tiling=%2").arg(designElements.size()).arg(tiling->getTitle());
 }
@@ -210,7 +217,7 @@ DesignElementPtr Prototype::getDesignElement(const TilePtr & tile)
         }
     }
 
-    qInfo() << "getDesignElement() - not found";
+    qDebug() << "getDesignElement() - not found";
     DesignElementPtr del;
     return del;
 }
@@ -222,7 +229,7 @@ DesignElementPtr Prototype::getDesignElement(int index)
         return designElements[index];
     }
 
-    qInfo() << "getDesignElement() - not found";
+    qDebug() << "getDesignElement() - not found";
     DesignElementPtr del;
     return del;
 }
@@ -300,12 +307,12 @@ void Prototype::walk()
     qDebug() << "....end Prototype walk";
 }
 
-void Prototype::reportMotifs()
+void Prototype::dumpMotifs()
 {
     for (const auto & element : std::as_const(designElements))
     {
         MotifPtr  motif  = element->getMotif();
-        motif->report();
+        motif->dump();
     }
 }
 
@@ -318,7 +325,7 @@ void Prototype::dump()
 void Prototype::wipeoutProtoMap()
 {
     _dcel.reset();                  // dcel is subordinate so must be erased too.
-    _protoMap->wipeout();
+    _protoMap->clear();
     Q_ASSERT(_protoMap->isEmpty());
 }
 
@@ -364,50 +371,46 @@ void Prototype::createMap()
             // With more thought a better implementation of this idea could be made
             auto motif = designElements[0]->getMotif();
             _protoMap  = motif->getMotifMap();
-            qDebug() << "PROTOTYPE  is figure map";
+            qDebug() << "PROTOTYPE is motif map";
         }
     }
 
-    if (_protoMap->isEmpty())
+    if (_protoMap->isEmpty() && (designElements.size() > 0))
     {
         for (const auto & designElement : std::as_const(designElements))
         {
             // Now, for each different tile, build a submap corresponding
             // to all translations of that tile.
-            TilePtr tile      = designElement->getTile();
-            MotifPtr motif    = designElement->getMotif();
+            TilePtr tile              = designElement->getTile();
             Placements tilePlacements = tiling->getPlacements(tile);
-            if (!tilePlacements.size())
-                tilePlacements.push_back(QTransform());   // dummy tilings have no placements
-            qDebug() << "placed =" << tilePlacements.size();
+            if (!tilePlacements.size()) tilePlacements.push_back(QTransform());   // dummy tilings have no placements
 
-            MapPtr motifmap = motif->getMotifMap();
-            if (motifmap)
-                qDebug().noquote() << "MOTIF:" << motif->getMotifDesc() << motifmap->summary() << "Tile-sides:" << tile->numSides();
-            else
+            MotifPtr motif  = designElement->getMotif();
+            MapPtr motifMap = motif->getMotifMap();
+            if (!motifMap)
             {
                 qWarning("empty motif map");
-                motifmap = make_shared<Map>("kludge map");
+                motifMap = make_shared<Map>("Kludge map");
             }
+            qDebug().noquote() << "MOTIF:" << motif->getMotifDesc() << motifMap->summary() << "Tile-sides:" << tile->numSides();
+
             // Within a single translational unit, assemble the different
             // transformed figures corresponding to the given feature into a map.
-            MapPtr unitmap = make_shared<Map>("proto unit map");
-            unitmap->mergeMany(motifmap, tilePlacements);
-            qDebug().noquote() << "unitmap" << unitmap->summary();
+            MapPtr unitMap =  make_shared<Map>("proto unit map");
+            unitMap->mergeMany(motifMap, tilePlacements);
+            qDebug().noquote() << "unit map" << unitMap->summary();
 
             // Now put all the translations together into a single map for this feature.
-            MapPtr tilemap = make_shared<Map>("proto tile map");
-            qDebug() << "translations =" << fillPlacemensts.size();
-            tilemap->mergeMany(unitmap, fillPlacemensts);
-            qDebug().noquote() << "tile emap" << tilemap->summary();
+            MapPtr tileMap = make_shared<Map>("proto tile map");
+            tileMap->mergeMany(unitMap, fillPlacemensts);
+            qDebug().noquote() << "tile map" << tileMap->summary();
 
             // And do a slow merge to add this map to the finished design.
-            qDebug().noquote() << "protomap before:" << _protoMap->summary();
-            _protoMap->mergeMap(tilemap);
-
-            qDebug().noquote() << "protomap end: figure - " << motif->getMotifDesc() << _protoMap->summary();
+            qDebug().noquote() << "proto map before:" << _protoMap->summary();
+            _protoMap->mergeMap(tileMap);
+            qDebug().noquote() << "proto map end: figure - " << motif->getMotifDesc() << _protoMap->summary();
         }
-        qDebug() << "PROTOTYPE merged";
+        if (!_protoMap->isEmpty()) qDebug() << "PROTOTYPE merged";
     }
 
     if (_crop)
@@ -441,22 +444,38 @@ void Prototype::createMap()
             }
             qDebug() << "Crop-circle merged";
         }
-    }
-
-    auto mosaic = MosaicMaker::getInstance()->getMosaic();
-    if (mosaic)
-    {
-        uint cleanseLevel = mosaic->getCleanseLevel();
-        if (cleanseLevel)
+        else if (_crop->getCropType() == CROP_POLYGON)
         {
-            qDebug() << "cleanse level (hex)" << Qt::hex << cleanseLevel;
-            qDebug().noquote() << "pre proto map cleanse:" << _protoMap->summary();
-            _protoMap->cleanse(cleanseLevel);
-            qDebug().noquote() << "post proto map cleanse:" << _protoMap->summary();
+            QPolygonF poly = _crop->getAPolygon().get();
+            if (_crop->getEmbed())
+            {
+                _protoMap->embedCrop(poly);
+            }
+            if (_crop->getApply())
+            {
+                _protoMap->cropOutside(poly);
+            }
+            qDebug() << "Crop-poly merged";
         }
     }
 
-    _protoMap->verifyAndFix(config->verifyProtos);
+    if (!_protoMap->isEmpty())
+    {
+        auto mosaic = Sys::mosaicMaker->getMosaic();
+        if (mosaic)
+        {
+            uint cleanseLevel = mosaic->getCleanseLevel();
+            if (cleanseLevel)
+            {
+                qDebug() << "cleanse level (hex)" << Qt::hex << cleanseLevel;
+                qDebug().noquote() << "pre proto map cleanse:" << _protoMap->summary();
+                _protoMap->cleanse(cleanseLevel);
+                qDebug().noquote() << "post proto map cleanse:" << _protoMap->summary();
+            }
+        }
+
+        _protoMap->verifyAndFix(config->verifyProtos);
+    }
 }
 
 DCELPtr Prototype::getDCEL()

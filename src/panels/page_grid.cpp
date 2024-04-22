@@ -33,6 +33,7 @@ page_grid:: page_grid(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_GRID,"Gri
     QCheckBox    * chkDrawLayerCenter  = new QCheckBox("Show Layer Center");
     QCheckBox    * chkDrawModelCenter  = new QCheckBox("Show Model Center");
     QCheckBox    * chkDrawViewCenter   = new QCheckBox("Show View Center");
+    QCheckBox    * chkLockToview       = new QCheckBox("Lock to View");
 
     chkDrawLayerCenter->setStyleSheet("color: red");
     chkDrawModelCenter->setStyleSheet("color: green");
@@ -83,6 +84,7 @@ page_grid:: page_grid(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_GRID,"Gri
     chkDrawModelCenter->setChecked(config->showGridModelCenter);
     chkDrawViewCenter->setChecked(config->showGridViewCenter);
     chkDrawLayerCenter->setChecked(config->showGridLayerCenter);
+    chkLockToview->setChecked(config->lockGridToView);
 
     // connections
     connect(gridUnitGroup ,     &QButtonGroup::idClicked,     this, &page_grid::slot_gridUnitsChanged);
@@ -102,6 +104,7 @@ page_grid:: page_grid(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_GRID,"Gri
     connect(chkDrawLayerCenter, &QCheckBox::stateChanged,     this, &page_grid::slot_gridLayerCenterChanged);
     connect(chkDrawModelCenter, &QCheckBox::stateChanged,     this, &page_grid::slot_drawModelCenterChanged);
     connect(chkDrawViewCenter,  &QCheckBox::stateChanged,     this, &page_grid::slot_drawViewCenterChanged);
+    connect(chkLockToview,      &QCheckBox::clicked,          this, &page_grid::slot_lockToViewChanged);
 
     labelT = new ClickableLabel();
     QVariant variant = QColor(config->gridColorTiling);
@@ -158,7 +161,8 @@ page_grid:: page_grid(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_GRID,"Gri
     layout->addLayout(gridZLevel,row,0);
     layout->addWidget(chkDrawLayerCenter,row,1);
     layout->addWidget(chkDrawModelCenter,row,2);
-    layout->addWidget(chkDrawViewCenter,row,3,1,2);
+    layout->addWidget(chkDrawViewCenter,row,3);
+    layout->addWidget(chkLockToview,row,4);
 
     groupBox = new QGroupBox("Show Grid");
     groupBox->setCheckable(true);
@@ -267,6 +271,11 @@ void page_grid::slot_drawViewCenterChanged(int id)
     emit sig_refreshView();
 }
 
+void page_grid::slot_lockToViewChanged(bool enb)
+{
+    config->lockGridToView = enb;
+}
+
 void page_grid::slot_gridTypeSelected(int type)
 {
     config->gridType = eGridType(type);
@@ -282,8 +291,7 @@ void page_grid::slot_gridAngleChanged(qreal angle)
 void page_grid::slot_zValueChanged(int value)
 {
     config->gridZLevel = value;
-    auto grid = GridView::getInstance();
-    grid->setZValue(value);
+    Sys::gridViewer->setZValue(value);
     emit sig_refreshView();
 }
 
@@ -348,15 +356,13 @@ void page_grid::slot_pickColorScreen()
 
 void  page_grid::slot_resetPos()
 {
-    auto grid = GridView::getInstance();
     Xform xf;
-    grid->setModelXform(xf,false);
+    Sys::gridViewer->setModelXform(xf,false);
     emit sig_refreshView();
 }
 
 void  page_grid::slot_reAlign()
 {
-    auto grid = GridView::getInstance();
-    grid->setModelXform(viewControl->getCurrentModelXform(),false);
+    Sys::gridViewer->setModelXform(viewControl->getCurrentModelXform(),false);
     emit sig_refreshView();
 }

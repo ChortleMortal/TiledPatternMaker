@@ -58,7 +58,7 @@ Layer::~Layer()
 
 void Layer::connectSignals()
 {
-    config      = Configuration::getInstance();
+    config      = Sys::config;
     view        = Sys::view;
     viewControl = Sys::viewController;
     
@@ -116,14 +116,14 @@ QTransform  Layer::getCanvasTransform()
 {
     Canvas & canvas  = viewControl->getCanvas();
     QTransform t     = canvas.getCanvasTransform();
-    if (debug & DEBUG_TFORM) qDebug().noquote() << "Canvas transform:" << Transform::toInfoString(t);
+    if (debug & DEBUG_TFORM) qDebug().noquote() << "Canvas transform:" << getLayerName() << Transform::info(t);
     return t;
 }
 
 QTransform  Layer::getModelTransform()
 {
     QTransform t =  getModelXform().toQTransform(getCanvasTransform());
-    if (debug & DEBUG_TFORM) qDebug().noquote() << "Model transform:" << getLayerName() << Transform::toInfoString(t);
+    if (debug & DEBUG_TFORM) qDebug().noquote() << "Model transform:" << getLayerName() << Transform::info(t);
     return t;
 }
 
@@ -134,7 +134,7 @@ QTransform Layer::getLayerTransform()
         // compute Transform
         computeLayerTransform();
     }
-    if (debug & DEBUG_LAYER) qDebug().noquote() << "Layer transform:" << getLayerName() << Transform::toInfoString(layerTransform);
+    if (debug & DEBUG_LAYER) qDebug().noquote() << "Layer transform:" << getLayerName() << Transform::info(layerTransform);
     return layerTransform;
 }
 
@@ -142,7 +142,7 @@ void Layer::computeLayerTransform()
 {
     layerTransform   = getCanvasTransform() * getModelTransform();
     invertedLayer  = layerTransform.inverted();
-    if (debug & DEBUG_TFORM) qDebug().noquote() << "computed Layer:" << getLayerName() << Transform::toInfoString(layerTransform);
+    if (debug & DEBUG_TFORM) qDebug().noquote() << "Computed Layer:" << getLayerName() << Transform::info(layerTransform);
 }
 
 void Layer::setCenterScreenUnits(QPointF spt)
@@ -187,26 +187,26 @@ QPointF Layer::getCenterModelUnits()
 }
 
 
-qreal Layer::screenToWorld(qreal val)
+qreal Layer::screenToModel(qreal val)
 {
     getLayerTransform();
     qreal scale = Transform::scalex(invertedLayer);
     return val * scale;
 }
 
-QPointF Layer::screenToWorld(QPointF pt)
+QPointF Layer::screenToModel(QPointF pt)
 {
     getLayerTransform();
     return invertedLayer.map(pt);
 }
 
-QRectF  Layer::screenToWorld(QRectF rect)
+QRectF  Layer::screenToModel(QRectF rect)
 {
     getLayerTransform();
     return invertedLayer.mapRect(rect);
 }
 
-QPointF Layer::screenToWorld(int x, int y)
+QPointF Layer::screenToModel(int x, int y)
 {
     qreal xx = static_cast<qreal>(x);
     qreal yy = static_cast<qreal>(y);
@@ -215,13 +215,13 @@ QPointF Layer::screenToWorld(int x, int y)
     return invertedLayer.map(QPointF(xx, yy));
 }
 
-QPolygonF Layer::screenToWorld(QPolygonF poly)
+QPolygonF Layer::screenToModel(QPolygonF poly)
 {
     getLayerTransform();
     return invertedLayer.map(poly);
 }
 
-Circle Layer::screenToWorld(Circle c)
+Circle Layer::screenToModel(Circle c)
 {
     getLayerTransform();
     QPointF cent = invertedLayer.map(c.centre);
@@ -230,19 +230,19 @@ Circle Layer::screenToWorld(Circle c)
     return circ;
 }
 
-QPointF Layer::worldToScreen(QPointF pt)
+QPointF Layer::modelToScreen(QPointF pt)
 {
     getLayerTransform();
     return layerTransform.map(pt);
 }
 
-QRectF Layer::worldToScreen(QRectF rect)
+QRectF Layer::modelToScreen(QRectF rect)
 {
     getLayerTransform();
     return layerTransform.mapRect(rect);
 }
 
-QLineF Layer::worldToScreen(QLineF line)
+QLineF Layer::modelToScreen(QLineF line)
 {
     QLineF aline;
     getLayerTransform();
@@ -251,14 +251,14 @@ QLineF Layer::worldToScreen(QLineF line)
     return aline;
 }
 
-QPolygonF Layer::worldToScreen(QPolygonF poly)
+QPolygonF Layer::modelToScreen(QPolygonF poly)
 {
     getLayerTransform();
     QPolygonF poly2 = layerTransform.map(poly);
     return poly2;
 }
 
-Circle Layer::worldToScreen(Circle c)
+Circle Layer::modelToScreen(Circle c)
 {
     getLayerTransform();
     QPointF cent = layerTransform.map(c.centre);

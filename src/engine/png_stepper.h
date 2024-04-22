@@ -16,7 +16,7 @@ public:
     virtual bool end()   override;
 
 signals:
-    void cycle_sig_clearView();
+    void cycle_sig_unloadView();
 
 protected:
     void cycleShowPNG(QString file, int row, int col);

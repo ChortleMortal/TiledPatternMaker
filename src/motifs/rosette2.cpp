@@ -101,10 +101,10 @@ void Rosette2::buildUnitMap()
     if ((DBG_VAL > 0) && !debugMap)
         debugMap = make_shared<DebugMap>("rosette debug map");
     else
-        debugMap.reset();
+        debugMap->wipeout();
 
     qDebug().noquote() << "Rosette::buildUnit n:" << getN() << "x:" << kneeX << "y:" << kneeY << "s:" << s << "k" << k
-                       << "Tr:" << Transform::toInfoString(radialRotationTr) << "rot" << getMotifRotate();
+                       << "Tr:" << Transform::info(radialRotationTr) << "rot" << getMotifRotate();
 
     Tile atile(getN());
     xRange = 1.0;
