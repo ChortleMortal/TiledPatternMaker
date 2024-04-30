@@ -12,7 +12,7 @@ class PanelPageController : public QObject
     Q_OBJECT
 
 public:
-    PanelPageController(PageListWidget * panelPageWidget, PanelPagesWidget * PanelPages);
+    PanelPageController(PageListWidget * pageListWidget, PanelPagesWidget * PanelPages);
     virtual ~PanelPageController();
 
     void populatePages();

@@ -19,7 +19,7 @@ Layer::Layer(QString name, bool unique)
     refs++;
 }
 
-Layer::Layer(const Layer & other)
+Layer::Layer(const Layer & other) : QObject()
 {
     _name           = other._name;
     _unique         = other._unique;

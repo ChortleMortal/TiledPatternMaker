@@ -336,7 +336,8 @@ int main(int argc, char *argv[])
 
         delete maker;
 
-        qInstallMessageHandler(nullptr);				// restores
+        qInfo() << "Log closed.";
+        uninstallLog();
         log->releaseInstance();
 
         delete Sys::config;

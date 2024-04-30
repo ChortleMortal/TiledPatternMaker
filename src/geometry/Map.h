@@ -49,6 +49,7 @@ enum eMCOptions
     badVertices_0               = 0x01,
     badVertices_1               = 0x02,
     badEdges                    = 0x04,
+    coalescePoints              = 0x08,
     joinupColinearEdges         = 0x10,
     divideupIntersectingEdges   = 0x20,
     cleanupNeighbours           = 0x40,

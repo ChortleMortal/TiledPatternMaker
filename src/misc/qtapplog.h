@@ -9,6 +9,8 @@
 #include <QFile>
 #include "enums/elogmode.h"
 
+typedef std::shared_ptr<class QTextEdit> TextEditPtr;
+
 struct sTrapMsg
 {
     QtMsgType type;
@@ -21,7 +23,7 @@ public:
     static qtAppLog  * getInstance();
     static void        releaseInstance();
 
-    static QTextEdit * getTextEditor() { return ted; }
+    static TextEditPtr getTextEditor() { return ted; }
 
     static void crashMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg);
 
@@ -49,7 +51,7 @@ public:
 
 protected:
     qtAppLog();
-    ~qtAppLog();
+    virtual ~qtAppLog();
 
     void log(QString & msg);
     void endTrap();
@@ -57,7 +59,7 @@ protected:
 private:
     static qtAppLog  * mpThis;
     static QMutex	 * pLogLock;
-    static QTextEdit * ted;
+    static TextEditPtr ted;
 
     static bool	_logToStderr;
     static bool _logToDisk;

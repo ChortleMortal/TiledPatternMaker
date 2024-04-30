@@ -35,6 +35,7 @@ class MouseEditBorder
 
 public:
     MouseEditBorder(Border * view, QPointF spt, Crop * crop);
+    virtual ~MouseEditBorder() {}
 
     virtual void updateDragging(QPointF spt);
     virtual void endDragging(QPointF spt);

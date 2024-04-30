@@ -70,7 +70,7 @@ public:
     void    unloadView();
 
     void    setSize(QSize sz);
-    void    resize(QSize sz)    { qFatal("Dont call resize() directly - use setSize()"); }
+    void    resize(QSize sz)    { Q_UNUSED(sz); qFatal("Dont call resize() directly - use setSize()"); }
     QSize   getSize()           { return _viewSize; }
 
     void    addLayer(LayerPtr layer);

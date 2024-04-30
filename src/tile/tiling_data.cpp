@@ -14,7 +14,7 @@ TilingData::~TilingData()
     _placedTiles.clear();
 }
 
-TilingData::TilingData(const TilingData & other)
+TilingData::TilingData(const TilingData & other) : QObject()
 {
     _t1             = other._t1;
     _t2             = other._t1;

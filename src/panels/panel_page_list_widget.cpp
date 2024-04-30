@@ -44,6 +44,17 @@ PageListWidget::PageListWidget(ControlPanel * parent) : QListWidget((QWidget*)pa
     setStyleSheet("QListWidget::item:selected { background:yellow; color:red; }");
 }
 
+void PageListWidget::deletePages()
+{
+    //	delete pages on shutdown
+    for (const PageData & pdata : std::as_const(pageData))
+    {
+        panel_page * page = pdata.page;
+        //qDebug() << page->getName() << page->getPageType();
+        delete page;
+    }
+}
+
 void PageListWidget::refreshPages()
 {
     auto selectedPage = getSelectedPage();

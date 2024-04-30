@@ -82,8 +82,17 @@ page_loaders::page_loaders(ControlPanel * apanel) : panel_page(apanel,PAGE_LOAD,
 
 page_loaders::~page_loaders()
 {
+    Q_ASSERT(thread);
+    if (thread->isRunning())
+    {
+        thread->quit();
+        thread->wait();
+
     thread->terminate();
     thread->wait();
+
+        delete thread;
+    }
 }
 
 // design patterns (shapes)

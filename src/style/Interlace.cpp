@@ -90,6 +90,7 @@ void Interlace::draw(GeoGraphics * gg)
     }
 
     QPen pen(Qt::black, 1, Qt::SolidLine, cap_style, join_style);
+
     for (const Segment & seg : std::as_const(segments))
     {
         seg.draw(gg,pen);
@@ -97,15 +98,18 @@ void Interlace::draw(GeoGraphics * gg)
 
     if ( shadow > 0.0)
     {
-        for (const Segment & seg : segments)
+        for (Segment seg : std::as_const(segments))
         {
+            QPen & spen = seg.getShadowPen();
+            spen.setJoinStyle(join_style);
+            spen.setCapStyle(cap_style);
             seg.drawShadows(gg,shadow);
         }
     }
 
     if (drawOutline != OUTLINE_NONE)
     {
-        QPen pen(Qt::black,1);      // OUTLINE_DEFAULT;
+        QPen pen(Qt::black,1, Qt::SolidLine, cap_style, join_style);      // OUTLINE_DEFAULT;
         if (drawOutline == OUTLINE_SET)
         {
             pen = QPen(outline_color,Transform::scalex(gg->getTransform() * outline_width * 0.5));
@@ -213,16 +217,13 @@ void Interlace::buildFrom(Map * map)
     {
         EdgePtr edge = todo.pop();
 
-        VertexPtr v1 = edge->v1;
-        VertexPtr v2 = edge->v2;
-
-        if (!v1->visited)
+        if (!edge->v1->visited)
         {
-            propagate(map, v1, edge, edge->v1_under);
+            propagate(map, edge->v1, edge, edge->v1_under);
         }
-        if (!v2->visited)
+        if (!edge->v2->visited)
         {
-            propagate(map, v2, edge, !edge->v1_under);
+            propagate(map, edge->v2, edge, !edge->v1_under);
         }
     }
 }
@@ -234,7 +235,7 @@ void Interlace::buildFrom(Map * map)
 // The whole trick is to manage how neighbours receive modifications
 // of edge_under_at_vert.
 
-void Interlace::propagate(Map * map, VertexPtr vertex, EdgePtr edge, bool edge_under_at_vert)
+void Interlace::propagate(Map * map, VertexPtr & vertex, EdgePtr & edge, bool edge_under_at_vert)
 {
     vertex->visited = true;
 
@@ -268,7 +269,7 @@ void Interlace::propagate(Map * map, VertexPtr vertex, EdgePtr edge, bool edge_u
             }
         }
     }
-    else if (nn == 2)
+    else if (nn == 2 || nn == 3)
     {
         BeforeAndAfter  ba  = neighbours->getBeforeAndAfter(edge);
         EdgePtr oe          = ba.before;
@@ -435,7 +436,7 @@ void  Segment::drawShadows(GeoGraphics * gg, qreal shadow) const
         shadowPts1 <<  v1.above;
         shadowPts1 <<  v1.below;
         shadowPts1 << (v1.below + getShadowVector(v1.below, v2.above, shadow));
-        gg->fillPolygon(shadowPts1,shadowColor);
+        gg->fillPolygon(shadowPts1,shadowPen);
     }
 
     if (v2.shadow)
@@ -445,7 +446,7 @@ void  Segment::drawShadows(GeoGraphics * gg, qreal shadow) const
         shadowPts2 <<  v2.below;
         shadowPts2 <<  v2.above;
         shadowPts2 << (v2.above + getShadowVector(v2.above, v1.below, shadow));
-        gg->fillPolygon(shadowPts2,shadowColor);
+        gg->fillPolygon(shadowPts2,shadowPen);
     }
 }
 
@@ -473,6 +474,8 @@ void Segment::setShadowColor()
 #endif
     color.getHsvF(&h,&s,&b);
     shadowColor.setHsvF(h, s * 0.9, b * 0.8 );
+
+    shadowPen = QPen(shadowColor);
 }
 
 bool Segment::valid()
@@ -507,7 +510,7 @@ void Piece::getPoints(EdgePtr  edge, VertexPtr from, VertexPtr to, qreal width, 
     NeighboursPtr toNeighbours = map->getNeighbours(to);
 
     int nn = toNeighbours->numNeighbours();
-    if (nn == 1 || nn == 3)
+    if (nn == 1)
     {
         // cap
         QPointF dir = pto - pfrom;
@@ -521,7 +524,7 @@ void Piece::getPoints(EdgePtr  edge, VertexPtr from, VertexPtr to, qreal width, 
         above  = pto + perp;
         above += dir;
     }
-    else if (nn == 2)
+    else if (nn == 2 || nn ==3)
     {
         // bend
         BelowAndAbove jps = Outline::getPoints(map, edge, from, to, width);

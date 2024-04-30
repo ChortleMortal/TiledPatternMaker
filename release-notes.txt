@@ -1,3 +1,13 @@
+Version 3.5.1
+=============
+
+Improvements:
+    Interlace Style     Improved outlining and handling three edges intersecations
+    Maps                Adds cleanse mechanism to coalesce near points into one vertex
+
+Fixes:
+    Builds              Fixed Linux build warnings and warning on exit restart
+
 Version 3.5
 =============
 
@@ -5,7 +15,7 @@ Version 3.5 intoduces a new Color Fill Style "New 4 : Color per Face". To use th
 first create a palette of colors using the control panel menu, then left-click select a color from the palette.
 Now go to the image view and left-click on each face in turn to color it. A right-click will remove the color.
 
-Additionallu there are many bugfixes and improvements to support the workflow of creating mosaics.
+Additionally there are many bugfixes and improvements to support the workflow of creating mosaics.
 
 New:
     Styles              Fill style "New 4 : Color per Face"

@@ -19,7 +19,7 @@
 
 qtAppLog  * qtAppLog::mpThis   = nullptr;
 QMutex    * qtAppLog::pLogLock = nullptr;
-QTextEdit * qtAppLog::ted      = nullptr;
+TextEditPtr qtAppLog::ted;
 
 QString     qtAppLog::currentLogName;
 QString     qtAppLog::baseLogName;
@@ -58,6 +58,7 @@ qtAppLog * qtAppLog::getInstance()
 
 void qtAppLog::releaseInstance()
 {
+    ted.reset();
     if (mpThis)
     {
         delete mpThis;
@@ -67,7 +68,7 @@ void qtAppLog::releaseInstance()
 
 qtAppLog::qtAppLog()
 {
-    ted = new QTextEdit();
+    ted = std::make_shared<QTextEdit>();
 
     const QFont fixedFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
     ted->setFont(fixedFont);
@@ -77,6 +78,15 @@ qtAppLog::qtAppLog()
     ted->setLineWrapMode(QTextEdit::NoWrap);
     ted->setReadOnly(true);
     ted->setStyleSheet("selection-color: rgb(170, 255, 0);  selection-background-color: rgb(255, 0, 0);");
+}
+
+qtAppLog::~qtAppLog()
+{
+    mCurrentFile.close();
+    if (pLogLock)
+    {
+        delete pLogLock;
+    }
 }
 
 void qtAppLog:: init()
@@ -151,14 +161,6 @@ void qtAppLog::clear()
     mCurrentFile.resize(mCurrentFile.pos());
 }
 
-qtAppLog::~qtAppLog()
-{
-    mCurrentFile.close();
-    if (pLogLock)
-    {
-        delete pLogLock;
-    }
-}
 void qtAppLog::logTimer(eLogTimer val)
 {
     _logTimerSetting = val;

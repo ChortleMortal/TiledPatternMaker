@@ -15,6 +15,8 @@
 #include "misc/qtapplog.h"
 #include "misc/sys.h"
 
+typedef std::shared_ptr<class QTextEdit> TextEditPtr;
+
 page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_LOG, "Log")
 {
     QHBoxLayout * hbox = new QHBoxLayout();
@@ -57,9 +59,7 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_LOG, "Log")
     connect(btnClear,         &QPushButton::clicked,  this,  [] { qtAppLog::getInstance()->clear(); });
     connect(search,           &QLineEdit::returnPressed, this,&page_log::slot_search);
 
-    tew = new TextEditorWidget();
     logText = qtAppLog::getTextEditor();     // linkage to qtAppLog
-    tew->set(logText);
 
     QScrollBar * vbar = new QScrollBar();
     logText->setVerticalScrollBar(vbar);
@@ -71,14 +71,12 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_LOG, "Log")
     logText->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     logText->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 
-    vbox->addWidget(tew);
-
     QTextCursor cursor = logText->textCursor();
     cursor.movePosition(QTextCursor::End);
     logText->setTextCursor(cursor);
 
     // creates a text edit for loads of saved logs from disk
-    savedText = new QTextEdit();
+    savedText = std::make_shared<QTextEdit>();
     const QFont fixedFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
     savedText->setFont(fixedFont);
     savedText->setMinimumWidth(750);
@@ -87,6 +85,16 @@ page_log::page_log(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_LOG, "Log")
     savedText->setReadOnly(true);
     savedText->setStyleSheet("selection-color: rgb(170, 255, 0);  selection-background-color: rgb(255, 0, 0);");
     viewingLog = true;
+
+    tew = new TextEditorWidget();
+    tew->set(logText);
+    vbox->addWidget(tew);
+}
+
+page_log::~page_log()
+{
+    logText.reset();
+    savedText.reset();
 }
 
 void page_log::onEnter()

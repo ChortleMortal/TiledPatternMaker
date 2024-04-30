@@ -42,6 +42,13 @@ ControlPanel::ControlPanel()
     isShown = false;
 }
 
+ControlPanel::~ControlPanel()
+{
+    qDebug() << "ControlPanel destructor";
+    mpTimer->stop();
+    delete pageController;
+}
+
 void ControlPanel::init()
 {
     view           = Sys::view;
@@ -57,13 +64,6 @@ void ControlPanel::init()
     connect(mpTimer, &QTimer::timeout, this, &ControlPanel::slot_poll);
 
     mpTimer->start(250);    // always runs
-}
-
-ControlPanel::~ControlPanel()
-{
-    qDebug() << "ControlPanel destructor";
-    mpTimer->stop();
-    delete pageController;
 }
 
 void ControlPanel::closeEvent(QCloseEvent *event)

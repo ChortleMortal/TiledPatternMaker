@@ -14,13 +14,16 @@ class TextEditorWidget : public QWidget
 {
 public:
     TextEditorWidget();
-    TextEditorWidget(QTextEdit * ee);
+    virtual ~TextEditorWidget();
 
-    void        set(QTextEdit * te);
-    QTextEdit * get() { return ed; }
+    void        set(TextEditPtr te);
+    TextEditPtr get() { return ted; }
+
+protected:
+    void        unload();
 
 private:
-    QTextEdit * ed;
+    TextEditPtr ted;
 };
 
 // Used to pop Tiling verification message

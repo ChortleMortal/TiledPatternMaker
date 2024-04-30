@@ -12,6 +12,7 @@ class page_save : public panel_page
 
 public:
     page_save(ControlPanel * cpanel);
+    virtual ~page_save();
 
     void onEnter() override;
     void onExit() override {}

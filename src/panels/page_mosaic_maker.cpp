@@ -162,6 +162,8 @@ void  page_mosaic_maker::onEnter()
 
 void  page_mosaic_maker::reEnter()
 {
+    int sel = styleTable->currentRow();
+
     blockPage(true);
     styleTable->clearContents();
     styleTable->setRowCount(0);
@@ -169,13 +171,15 @@ void  page_mosaic_maker::reEnter()
 
     displayStyles();
     styleTable->adjustTableSize();
-    styleTable->selectRow(0);
+
+    if (sel == -1)
+        styleTable->selectRow(0);
+    else
+        styleTable->selectRow(sel);
 
     displayStyleParams();
     parmsTable->adjustTableSize();
-    //parmsTable->selectRow(0);
 
-    //styleTable->setFocus();  // 26FEB23 - this line causes linux crash
     parmsTable->setFocus();
 
     updateGeometry();
@@ -345,6 +349,7 @@ void page_mosaic_maker::setCurrentEditor(StylePtr style)
         currentStyleEditor = make_shared<TileColorsEditor>(dynamic_cast<TileColors*>(style.get()),parmsTable,style->getTiling());
         break;
     case STYLE_STYLE:
+    case STYLE_BORDER:
         qCritical("unexpected style");
         break;
     }

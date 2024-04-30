@@ -13,6 +13,7 @@ DlgCleanse::DlgCleanse(MosaicPtr mosaic, uint level, QWidget * parent) :  QDialo
     badV0       = new QCheckBox("Remove vertices with edge count 0");
     badV1       = new QCheckBox("Remove vertices with edge count 1");
     badEdges0   = new QCheckBox("Remove bad edges");
+    nearPoints  = new QCheckBox("Coalesce near vertices");
     joinEdges   = new QCheckBox("Join Colinear edges");
     divEdges    = new QCheckBox("Divide intersrecting edges");
     cleanNeigh  = new QCheckBox("Clean Neighbours");
@@ -22,6 +23,7 @@ DlgCleanse::DlgCleanse(MosaicPtr mosaic, uint level, QWidget * parent) :  QDialo
     vbox->addWidget(badV0);
     vbox->addWidget(badV1);
     vbox->addWidget(badEdges0);
+    vbox->addWidget(nearPoints);
     vbox->addWidget(joinEdges);
     vbox->addWidget(divEdges);
     vbox->addWidget(cleanNeigh);
@@ -59,6 +61,8 @@ void DlgCleanse::toCheckboxes(uint level)
         badV1->setChecked(true);
     if (level & badEdges)
         badEdges0->setChecked(true);
+    if (level & coalescePoints)
+        nearPoints->setChecked(true);
     if (level & joinupColinearEdges)
         joinEdges->setChecked(true);
     if (level & divideupIntersectingEdges)
@@ -85,6 +89,8 @@ uint DlgCleanse::getLevel()
         level |= badVertices_0;
     if (badV1->isChecked())
         level |= badVertices_1;
+    if (nearPoints->isChecked())
+        level |= coalescePoints;
     if (badEdges0->isChecked())
         level |= badEdges;
     if (joinEdges->isChecked())

@@ -34,6 +34,7 @@ class MouseEditCrop
 
 public:
     MouseEditCrop(QPointF spt, CropPtr crop, QTransform t);
+    virtual ~MouseEditCrop() {}
 
     virtual void updateDragging(QPointF spt, QTransform t);
     virtual void endDragging(QPointF spt, QTransform t);

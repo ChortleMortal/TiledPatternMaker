@@ -210,7 +210,8 @@ bool MosaicWriter::processVector(QTextStream &ts)
             processTileColors(ts,s);
             break;
         case STYLE_STYLE:
-            fail("Unexpected style","STYLE_STYLE");
+        case STYLE_BORDER:
+            qCritical() << "Unexpected style" << est;
         }
         ts << "</" << str << ">" << endl;
     }

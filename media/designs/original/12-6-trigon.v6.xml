@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!-- Written: Sun Mar 5 2023 07:57:02 -->
-<vector id="1" version="14">
+<!-- Written: Sun Apr 28 2024 09:14:22 -->
+<vector id="1" version="20">
 	<designNotes>uses filled algorithm 3</designNotes>
 	<design>
 		<size>
@@ -28,7 +28,7 @@
 				<app.Prototype>
 					<string>12-6-Trigon</string>
 					<entry>
-						<tile.Feature id="4">
+						<Tile id="4">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -70,18 +70,19 @@
 									<Point reference="6" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitGirih id="15" type="MOTIF_TYPE_INFERRED_GIRIH">
+						</Tile>
+						<IrregularGirih id="15" type="Irregular Girih Motif">
 							<boundarySides>9</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>9</n>
 							<skip>3</skip>
-						</app.ExplicitGirih>
+						</IrregularGirih>
 					</entry>
 					<entry>
-						<tile.Feature id="16">
+						<Tile id="16">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -135,19 +136,20 @@
 									<Point reference="18" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.Star id="30">
+						</Tile>
+						<Star id="30">
 							<boundarySides>12</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>12</n>
 							<d>4</d>
 							<s>2</s>
-						</app.Star>
+						</Star>
 					</entry>
 					<entry>
-						<tile.Feature id="31">
+						<Tile id="31">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -177,16 +179,17 @@
 									<Point reference="33" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.Star id="39">
+						</Tile>
+						<Star id="39">
 							<boundarySides>6</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>6</n>
 							<d>2</d>
 							<s>2</s>
-						</app.Star>
+						</Star>
 					</entry>
 				</app.Prototype>
 			</prototype>
@@ -207,35 +210,7 @@
 			<startUnder>true</startUnder>
 		</style.Interlace>
 	</style.Interlace>
-	<style.Interlace id="40">
-		<toolkit.GeoLayer>
-			<left__delta>0</left__delta>
-			<top__delta>0</top__delta>
-			<width__delta>1</width__delta>
-			<theta__delta>0</theta__delta>
-			<center>0,0</center>
-			<Z>0</Z>
-		</toolkit.GeoLayer>
-		<style.Style>
-			<prototype reference="3" />
-		</style.Style>
-		<style.Colored>
-			<color hide="f">#ffffcc33</color>
-		</style.Colored>
-		<style.Thick>
-			<draw__outline>true</draw__outline>
-			<width>0.12</width>
-			<join>bevel</join>
-			<cap>square</cap>
-		</style.Thick>
-		<style.Interlace>
-			<gap>0</gap>
-			<shadow>0</shadow>
-			<includeTipVerts>false</includeTipVerts>
-			<startUnder>true</startUnder>
-		</style.Interlace>
-	</style.Interlace>
-	<style.Thick id="41">
+	<style.Thick id="40">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
 			<top__delta>0</top__delta>
@@ -257,7 +232,7 @@
 			<cap>round</cap>
 		</style.Thick>
 	</style.Thick>
-	<style.Filled id="42">
+	<style.Filled id="41">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
 			<top__delta>0</top__delta>
@@ -310,7 +285,7 @@
 			<algorithm>3</algorithm>
 		</style.Filled>
 	</style.Filled>
-	<style.TileColors id="43">
+	<style.TileColors id="42">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
 			<top__delta>0</top__delta>
@@ -322,5 +297,8 @@
 		<style.Style>
 			<prototype reference="3" />
 		</style.Style>
+		<BkgdColors>#55aa00,#ffaa00</BkgdColors>
+		<BkgdColors>#ff00ff</BkgdColors>
+		<BkgdColors>#ff00ff</BkgdColors>
 	</style.TileColors>
 </vector>

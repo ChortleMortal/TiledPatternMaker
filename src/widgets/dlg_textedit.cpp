@@ -13,24 +13,28 @@
 
 TextEditorWidget::TextEditorWidget()
 {
-    //setContentsMargins(0,0,0,0);
 }
 
-TextEditorWidget::TextEditorWidget(QTextEdit * te)
+TextEditorWidget::~TextEditorWidget()
 {
-    //setFixedWidth(600);
-    QVBoxLayout * aLayout = new QVBoxLayout();
-    aLayout->addWidget(te);
-    setLayout(aLayout);
+    unload();
+    //ted.reset();
 }
 
-void TextEditorWidget::set(QTextEdit * te)
+void TextEditorWidget::set(TextEditPtr te)
 {
-    ed = te;
+    ted = te;
 
-    QVBoxLayout * aLayout = new QVBoxLayout();
-    aLayout->addWidget(te);
+    unload();
 
+    QVBoxLayout * vbox = new QVBoxLayout();
+    vbox->addWidget(te.get());
+    setLayout(vbox);
+    adjustSize();
+}
+
+void TextEditorWidget::unload()
+{
     QLayout * l = layout();
     if (l)
     {
@@ -45,8 +49,6 @@ void TextEditorWidget::set(QTextEdit * te)
         }
         delete l;
     }
-    setLayout(aLayout);
-    adjustSize();
 }
 
 DlgTextEdit::DlgTextEdit(QWidget *parent) : QDialog(parent)

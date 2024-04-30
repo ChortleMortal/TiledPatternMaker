@@ -57,6 +57,10 @@ page_save::page_save(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_SAVE, "Sav
     connect(view,       &View::sig_saveSVG,                     this,   &page_save::slot_saveSvg);
 }
 
+page_save::~page_save()
+{
+}
+
 void page_save::createMosaicSave()
 {
     leSaveXmlName   = new QLineEdit();

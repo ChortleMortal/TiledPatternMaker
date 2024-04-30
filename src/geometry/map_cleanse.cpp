@@ -1,6 +1,6 @@
-#include "geometry/map.h"
 #include <QDebug>
 
+#include "geometry/map.h"
 #include "geometry/edge.h"
 #include "geometry/vertex.h"
 #include "geometry/neighbours.h"
@@ -8,6 +8,7 @@
 #include "geometry/loose.h"
 #include "geometry/geo.h"
 #include "misc/timers.h"
+#include "settings/configuration.h"
 
 // cleanse just cleanses - it does not verify
 void Map::cleanse(uint options)
@@ -20,6 +21,11 @@ void Map::cleanse(uint options)
     AQElapsedTimer timer;
 
     qDebug() << "Map::cleanse - start";
+
+    if (options & coalescePoints)
+    {
+        deDuplicateVertices(Sys::config->mapedMergeSensitivity);
+    }
 
     if (options & joinupColinearEdges)
     {

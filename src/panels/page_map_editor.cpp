@@ -810,6 +810,13 @@ void page_map_editor::refreshStatusBox()
             switch(type)
             {
             case MAP_VERTEX:
+            {
+                auto vert  = sel->getVertex();
+                QPointF pt = vert->pt;
+                auto n     = map->getNeighbours(vert);
+                str += QString(" (%1,%2) neighbours:%3\n").arg(pt.x()).arg(pt.y()).arg(n->size());
+            }   break;
+
             case MAP_POINT:
             {
                 QPointF pt = sel->getPoint();
@@ -834,7 +841,10 @@ void page_map_editor::refreshStatusBox()
 
             case MAP_EDGE:
                 EdgePtr e = sel->getEdge();
-                str += QString(" [(%1,%2)(%3,%4) %5").arg(e->v1->pt.x()).arg(e->v1->pt.y()).arg(e->v2->pt.x()).arg(e->v2->pt.y()).arg((e->isCurve()) ? "curve" : "line");
+                auto n1 = map->getNeighbours(e->v1);
+                auto n2 = map->getNeighbours(e->v2);
+                str += QString(" [(%1,%2)(%3,%4) %5 v1Neighbors:%6 v2Neighbors:%7").arg(e->v1->pt.x()).arg(e->v1->pt.y()).arg(e->v2->pt.x()).
+                       arg(e->v2->pt.y()).arg((e->isCurve()) ? "curve" : "line").arg(n1->size()).arg(n2->size());
                 if (e->isCurve())
                 {
                     auto  & ad = e->getArcData();

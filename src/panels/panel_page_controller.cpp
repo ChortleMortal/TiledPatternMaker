@@ -29,19 +29,20 @@
 
 Q_DECLARE_METATYPE(panel_page *)
 
-PanelPageController::PanelPageController(PageListWidget * panelListWidget, PanelPagesWidget * panelPagesWidget)
+PanelPageController::PanelPageController(PageListWidget * pageListWidget, PanelPagesWidget * panelPagesWidget)
 {
-    pageList     = panelListWidget;
+    pageList     = pageListWidget;
     pages        = panelPagesWidget;
     panel        = Sys::controlPanel;
     config       = Sys::config;
     updateLocked = false;
 
-    connect (panelListWidget, &PageListWidget::sig_detachWidget, this,	&PanelPageController::slot_detachWidget, Qt::QueuedConnection);
+    connect (pageListWidget, &PageListWidget::sig_detachWidget, this,	&PanelPageController::slot_detachWidget, Qt::QueuedConnection);
 }
 
 PanelPageController::~PanelPageController()
 {
+    pageList->deletePages();
     pageList->clear();
 }
 

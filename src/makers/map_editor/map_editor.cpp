@@ -456,13 +456,18 @@ void MapEditor::cleanupMapPoints()
 
     qreal tolerance = Sys::config->mapedMergeSensitivity;
 
+#if 0
     MapPtr cleaned = std::make_shared<Map>("Cleanup map");
     qDebug() << map->summary();
     cleaned->mergeMap(map,tolerance);
     qDebug() << cleaned->summary();
     cleaned->deDuplicateVertices(tolerance);
-
     map->set(cleaned);
+#else
+    qDebug() << map->summary();
+    map->deDuplicateVertices(tolerance);
+    qDebug() << map->summary();
+#endif
 }
 
 

@@ -38,6 +38,7 @@ public:
 
     void        refreshPages();
     void        closePages();
+    void        deletePages();
 
     void        addPage(          panel_page * page);
     ePageState  getState(         panel_page * page);

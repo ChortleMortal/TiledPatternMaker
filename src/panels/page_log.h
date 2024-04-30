@@ -8,6 +8,7 @@ class TextEditorWidget;
 #include <QDialog>
 #include "panels/panel_page.h"
 
+typedef std::shared_ptr<class QTextEdit> TextEditPtr;
 
 class page_log : public panel_page
 {
@@ -15,6 +16,7 @@ class page_log : public panel_page
 
 public:
     page_log(ControlPanel * cpanel);
+    virtual ~page_log();
 
     void onEnter() override;
     void onExit() override {}
@@ -37,8 +39,8 @@ protected:
 private:
     QCheckBox   * follow;
     QCheckBox   * reverseSearch;
-    QTextEdit   * logText;
-    QTextEdit   * savedText;
+    TextEditPtr   logText;
+    TextEditPtr   savedText;
     QLineEdit   * search;
 
     TextEditorWidget * tew;

@@ -34,6 +34,7 @@ public:
     void        setCurve(bool isConvex, QPointF center);
     void        setShadowColor();
     QColor      getColor() const { return color; }
+    QPen     &  getShadowPen()   { return shadowPen; }
 
     QPolygonF   getPoly();
     void        setPainterPath();
@@ -56,6 +57,7 @@ private:
 
     QColor      color;
     QColor      shadowColor;
+    QPen        shadowPen;
 
     QPainterPath path;
 };
@@ -91,7 +93,7 @@ public:
 protected:
     void    assignInterlacing(Map * map);
     void    buildFrom(Map * map);
-    void    propagate(Map * map, VertexPtr vertex, EdgePtr edge, bool edge_under_at_vert);
+    void    propagate(Map * map, VertexPtr &vertex, EdgePtr &edge, bool edge_under_at_vert);
 
 private:
     // Parameters of the rendering.

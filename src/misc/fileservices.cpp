@@ -211,6 +211,10 @@ QStringList FileServices::getTilingNames(eLoadType loadType)
         }
         break;
 
+    case SINGLE_MOSAIC:
+        qWarning() << "SINGLE_MOSAIC not supported";
+        break;
+
     case ALL_MOSAICS:
     case SELECTED_MOSAICS:
         qCritical("Selecting mosaics - should be tiling");

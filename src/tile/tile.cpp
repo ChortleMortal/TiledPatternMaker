@@ -74,7 +74,7 @@ Tile::Tile(const TilePtr other )
 
 }
 
-Tile::Tile(const Tile & other )
+Tile::Tile(const Tile & other ) : QObject(this)
 {
     n           = other.n;
     rotation    = other.rotation;

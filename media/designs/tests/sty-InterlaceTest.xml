@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<vector id="1" version="12">
-	<!-- Written Wed Feb 2 2022 14:34:07 -->
+<!-- Written: Thu Apr 25 2024 18:03:18 -->
+<vector id="1" version="20">
 	<design>
 		<size>
 			<width>1396</width>
@@ -13,157 +13,579 @@
 		</background>
 		<Fill singleton="t">0,0,0,0</Fill>
 	</design>
-	<style.Interlace id="2" serialization="custom">
+	<style.Interlace id="2">
 		<toolkit.GeoLayer>
-			<left__delta>-140</left__delta>
-			<top__delta>-249</top__delta>
+			<left__delta>0</left__delta>
+			<top__delta>-243</top__delta>
 			<width__delta>1</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>0,0</center>
 			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<prototype id="3" serialization="custom">
+			<prototype id="3">
 				<app.Prototype>
 					<string>InterlaceTest</string>
 					<entry>
-						<tile.Feature id="4">
-							<regular>true</regular>
+						<Tile id="4">
+							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
 							<edges id="5">
 								<Line>
-									<Point id="6">1,1</Point>
-									<Point id="7">-0.9999999999999998,1</Point>
+									<Point id="6">4.724156400711445,-1.625831892162921</Point>
+									<Point id="7">5.386666666666665,-2.773333333333333</Point>
 								</Line>
 								<Line>
 									<Point reference="7" />
-									<Point id="8">-1,-0.9999999999999998</Point>
+									<Point id="8">6.104921547223476,-1.529279387424622</Point>
 								</Line>
 								<Line>
 									<Point reference="8" />
-									<Point id="9">0.9999999999999997,-1</Point>
-								</Line>
-								<Line>
-									<Point reference="9" />
 									<Point reference="6" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="10" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="9" type="Explicit Tile Motif">
+							<boundarySides>3</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>3</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="11">
-							<regular>true</regular>
-							<rotation>0</rotation>
-							<scale>1</scale>
-							<edges id="12">
-								<Line>
-									<Point id="13">1,1.732050807568877</Point>
-									<Point id="14">-2,2.449293598294706e-16</Point>
-								</Line>
-								<Line>
-									<Point reference="14" />
-									<Point id="15">0.9999999999999984,-1.732050807568878</Point>
-								</Line>
-								<Line>
-									<Point reference="15" />
-									<Point reference="13" />
-								</Line>
-							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="16" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
-							<boundaryScale>1</boundaryScale>
-							<figureScale>1</figureScale>
-							<r>0</r>
-						</app.ExplicitFeature>
-					</entry>
-					<entry>
-						<tile.Feature id="17">
-							<regular>true</regular>
-							<rotation>0</rotation>
-							<scale>1</scale>
-							<edges id="18">
-								<Line>
-									<Point id="19">1,1.732050807568877</Point>
-									<Point id="20">-2,2.449293598294706e-16</Point>
-								</Line>
-								<Line>
-									<Point reference="20" />
-									<Point id="21">0.9999999999999984,-1.732050807568878</Point>
-								</Line>
-								<Line>
-									<Point reference="21" />
-									<Point reference="19" />
-								</Line>
-							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="22" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
-							<boundaryScale>1</boundaryScale>
-							<figureScale>1</figureScale>
-							<r>0</r>
-						</app.ExplicitFeature>
-					</entry>
-					<entry>
-						<tile.Feature id="23">
+						<Tile id="10">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
-							<edges id="24">
+							<edges id="11">
 								<Line>
-									<Point id="25">-2.000000000000001,2.414615859097788</Point>
-									<Point id="26">3.973333333333331,2.427949192431123</Point>
+									<Point id="12">3.781924854889917,-1.691719140274827</Point>
+									<Point reference="6" />
 								</Line>
 								<Line>
-									<Point reference="26" />
-									<Point id="27">0.9733333333333332,4.16</Point>
+									<Point reference="6" />
+									<Point id="13">4.230819872799287,-0.77134796058944</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point reference="12" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="14" type="Explicit Tile Motif">
+							<boundarySides>3</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>3</n>
+						</ExplicitTile>
+					</entry>
+					<entry>
+						<Tile id="15">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="16">
+								<Line>
+									<Point id="17">2.133333333333333,-0.293333333333333</Point>
+									<Point id="18">1,-0.293333333333333</Point>
+								</Line>
+								<Line>
+									<Point reference="18" />
+									<Point id="19">0.9999999999999997,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="19" />
+									<Point id="20">0.1333333333333331,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="20" />
+									<Point id="21">0.1333333333333329,-2.293333333333333</Point>
+								</Line>
+								<Line>
+									<Point reference="21" />
+									<Point id="22">2.133333333333333,-2.293333333333333</Point>
+								</Line>
+								<Line>
+									<Point reference="22" />
+									<Point reference="17" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="23" type="Explicit Tile Motif">
+							<boundarySides>6</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>6</n>
+						</ExplicitTile>
+					</entry>
+					<entry>
+						<Tile id="24">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="25">
+								<Line>
+									<Point id="26">7.237588092598333,-1.450075626911489</Point>
+									<Point id="27">6.651939692341295,-0.5818161674184763</Point>
 								</Line>
 								<Line>
 									<Point reference="27" />
-									<Point reference="25" />
+									<Point reference="8" />
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point reference="26" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="28" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="28" type="Explicit Tile Motif">
+							<boundarySides>3</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>3</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="29">
+						<Tile id="29">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
 							<edges id="30">
 								<Line>
-									<Point id="31">-2,5.878717474235541</Point>
-									<Point id="32">0.9733333333333332,4.16</Point>
+									<Point id="31">6.106611135029964,0.2266666666666662</Point>
+									<Point id="32">4.7175841303775,0.2266666666666663</Point>
 								</Line>
 								<Line>
 									<Point reference="32" />
-									<Point id="33">3.973333333333333,5.892050807568877</Point>
+									<Point reference="13" />
 								</Line>
 								<Line>
-									<Point reference="33" />
+									<Point reference="13" />
+									<Point reference="6" />
+								</Line>
+								<Line>
+									<Point reference="6" />
+									<Point reference="8" />
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point reference="27" />
+								</Line>
+								<Line>
+									<Point reference="27" />
 									<Point reference="31" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="34" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="33" type="Explicit Tile Motif">
+							<boundarySides>6</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>6</n>
+						</ExplicitTile>
+					</entry>
+					<entry>
+						<Tile id="34">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="35">
+								<Line>
+									<Point reference="19" />
+									<Point reference="18" />
+								</Line>
+								<Line>
+									<Point reference="18" />
+									<Point id="36">0.1333333333333333,-0.293333333333333</Point>
+								</Line>
+								<Line>
+									<Point reference="36" />
+									<Point reference="20" />
+								</Line>
+								<Line>
+									<Point reference="20" />
+									<Point reference="19" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="37" type="Explicit Tile Motif">
+							<boundarySides>4</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+						</ExplicitTile>
+					</entry>
+					<entry>
+						<Tile id="38">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="39">
+								<Line>
+									<Point reference="32" />
+									<Point id="40">3.65461585909779,0.2266666666666665</Point>
+								</Line>
+								<Line>
+									<Point reference="40" />
+									<Point reference="13" />
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point reference="32" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="41" type="Explicit Tile Motif">
+							<boundarySides>3</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>3</n>
+						</ExplicitTile>
+					</entry>
+					<entry>
+						<Tile id="42">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="43">
+								<Line>
+									<Point id="44">1,1</Point>
+									<Point id="45">-0.9999999999999998,1</Point>
+								</Line>
+								<Line>
+									<Point reference="45" />
+									<Point id="46">-1,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="46" />
+									<Point reference="20" />
+								</Line>
+								<Line>
+									<Point reference="20" />
+									<Point reference="36" />
+								</Line>
+								<Line>
+									<Point reference="36" />
+									<Point reference="18" />
+								</Line>
+								<Line>
+									<Point reference="18" />
+									<Point reference="44" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="47" type="Explicit Tile Motif">
+							<boundarySides>6</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>6</n>
+						</ExplicitTile>
+					</entry>
+					<entry>
+						<Tile id="48">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="49">
+								<Line>
+									<Point id="50">7.118717474235543,0.2266666666666661</Point>
+									<Point reference="31" />
+								</Line>
+								<Line>
+									<Point reference="31" />
+									<Point reference="27" />
+								</Line>
+								<Line>
+									<Point reference="27" />
+									<Point reference="50" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="51" type="Explicit Tile Motif">
+							<boundarySides>3</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>3</n>
+						</ExplicitTile>
+					</entry>
+					<entry>
+						<Tile id="52">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="53">
+								<Line>
+									<Point id="54">-4.480803969285908,1.097708803707629</Point>
+									<Point id="55">-5.415046097444909,0.7576724774602417</Point>
+								</Line>
+								<Line>
+									<Point reference="55" />
+									<Point id="56">-4.731005810793572,-1.121712764111575</Point>
+								</Line>
+								<Line>
+									<Point reference="56" />
+									<Point id="57">-2.851620569221756,-0.4376724774602381</Point>
+								</Line>
+								<Line>
+									<Point reference="57" />
+									<Point id="58">-3.107295395428869,0.2647883342667917</Point>
+								</Line>
+								<Line>
+									<Point reference="58" />
+									<Point id="59">-4.552383691969259,0.4166732345660485</Point>
+								</Line>
+								<Line>
+									<Point reference="59" />
+									<Point reference="54" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="60" type="Explicit Tile Motif">
+							<boundarySides>6</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>6</n>
+						</ExplicitTile>
+					</entry>
+					<entry>
+						<Tile id="61">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="62">
+								<Line>
+									<Point id="63">5.30048705251175,1.421794767186315</Point>
+									<Point reference="32" />
+								</Line>
+								<Line>
+									<Point reference="32" />
+									<Point reference="31" />
+								</Line>
+								<Line>
+									<Point reference="31" />
+									<Point reference="63" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="64" type="Explicit Tile Motif">
+							<boundarySides>3</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>3</n>
+						</ExplicitTile>
+					</entry>
+					<entry>
+						<Tile id="65">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="66">
+								<Line>
+									<Point reference="59" />
+									<Point reference="58" />
+								</Line>
+								<Line>
+									<Point reference="58" />
+									<Point id="67">-3.535660855873093,1.441712764111579</Point>
+								</Line>
+								<Line>
+									<Point reference="67" />
+									<Point reference="54" />
+								</Line>
+								<Line>
+									<Point reference="54" />
+									<Point reference="59" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="68" type="Explicit Tile Motif">
+							<boundarySides>4</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+						</ExplicitTile>
+					</entry>
+					<entry>
+						<Tile id="69">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="70">
+								<Line>
+									<Point id="71">-2.354282974697405,2.196660098767288</Point>
+									<Point id="72">-4.343326765433951,2.405717025302595</Point>
+								</Line>
+								<Line>
+									<Point reference="72" />
+									<Point reference="54" />
+								</Line>
+								<Line>
+									<Point reference="54" />
+									<Point reference="67" />
+								</Line>
+								<Line>
+									<Point reference="67" />
+									<Point reference="58" />
+								</Line>
+								<Line>
+									<Point reference="58" />
+									<Point id="73">-2.563339901232712,0.2076163080307412</Point>
+								</Line>
+								<Line>
+									<Point reference="73" />
+									<Point reference="71" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="74" type="Explicit Tile Motif">
+							<boundarySides>6</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>6</n>
+						</ExplicitTile>
+					</entry>
+					<entry>
+						<Tile id="75">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="76">
+								<Line>
+									<Point id="77">-1.413333333333334,3.599999999999999</Point>
+									<Point id="78">3.986666666666666,3.119999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="78" />
+									<Point id="79">0.2585030728709397,4.433481123792799</Point>
+								</Line>
+								<Line>
+									<Point reference="79" />
+									<Point reference="77" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="80" type="Explicit Tile Motif">
+							<boundarySides>3</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>3</n>
+						</ExplicitTile>
+					</entry>
+					<entry>
+						<Tile id="81">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="82">
+								<Line>
+									<Point reference="78" />
+									<Point id="83">3.16,5.879999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="83" />
+									<Point reference="79" />
+								</Line>
+								<Line>
+									<Point reference="79" />
+									<Point reference="78" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="84" type="Explicit Tile Motif">
+							<boundarySides>3</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>3</n>
+						</ExplicitTile>
+					</entry>
+					<entry>
+						<Tile id="85">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="86">
+								<Line>
+									<Point id="87">-3.506666666666668,5.759999999999999</Point>
+									<Point reference="77" />
+								</Line>
+								<Line>
+									<Point reference="77" />
+									<Point reference="79" />
+								</Line>
+								<Line>
+									<Point reference="79" />
+									<Point reference="87" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="88" type="Explicit Tile Motif">
+							<boundarySides>3</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>3</n>
+						</ExplicitTile>
+					</entry>
+					<entry>
+						<Tile id="89">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="90">
+								<Line>
+									<Point reference="83" />
+									<Point reference="87" />
+								</Line>
+								<Line>
+									<Point reference="87" />
+									<Point reference="79" />
+								</Line>
+								<Line>
+									<Point reference="79" />
+									<Point reference="83" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="91" type="Explicit Tile Motif">
+							<boundarySides>3</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>3</n>
+						</ExplicitTile>
 					</entry>
 				</app.Prototype>
 			</prototype>
@@ -174,6 +596,8 @@
 		<style.Thick>
 			<draw__outline>true</draw__outline>
 			<width>0.09</width>
+			<join>bevel</join>
+			<cap>square</cap>
 		</style.Thick>
 		<style.Interlace>
 			<gap>0.09</gap>

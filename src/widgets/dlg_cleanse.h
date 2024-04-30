@@ -27,6 +27,7 @@ private:
     QCheckBox * badV0;
     QCheckBox * badV1;
     QCheckBox * badEdges0;
+    QCheckBox * nearPoints;
     QCheckBox * joinEdges;
     QCheckBox * divEdges;
     QCheckBox * cleanNeigh;
