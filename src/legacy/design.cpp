@@ -1,9 +1,9 @@
-﻿#include "viewers/view.h"
+﻿#include "gui/top/view.h"
 #include "legacy/design.h"
 #include "legacy/patterns.h"
-#include "misc/sys.h"
-#include "settings/configuration.h"
-#include "tiledpatternmaker.h"
+#include "sys/sys.h"
+#include "model/settings/configuration.h"
+#include "sys/tiledpatternmaker.h"
 #include <QCoreApplication>
 
 #if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
@@ -30,9 +30,10 @@ Design::Design(eDesign design, QString title)
     this->title = title;
 
     config  = Sys::config;
-    view    = Sys::view;
 
     Design::init();
+
+    connect (this, &Design::sig_updateView, Sys::view, &View::slot_update);
 }
 
 Design::~Design()
@@ -81,15 +82,6 @@ void Design::repeat()
     }
 }
 
-
-
-void Design::updateDesign()
-{
-    view->update();
-}
-
-
-
 void Design::showLayer(int layerNum)
 {
     qDebug() << "show layer"  << layerNum;
@@ -102,7 +94,7 @@ void Design::showLayer(int layerNum)
             layer->setVisible(true);
         }
     }
-    view->update();
+    emit sig_updateView();
 }
 
 void Design::hideLayer(int layerNum)
@@ -117,7 +109,7 @@ void Design::hideLayer(int layerNum)
             layer->setVisible(false);
         }
     }
-    view->update();
+    emit sig_updateView();
 }
 
 void Design::setVisible(bool visible)
@@ -136,7 +128,7 @@ void Design::setVisible(bool visible)
 
     this->visible = visible;
 
-    view->update();
+    emit sig_updateView();
 }
 
 void  Design::zPlus(int layerNum)
@@ -168,8 +160,6 @@ void  Design::zMinus(int layerNum)
         }
     }
 }
-
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -242,7 +232,7 @@ void Design::LocOctagonFilled(PatternPtr t)
 
 void Design::doSteps(int maxStep)
 {
-    emit theApp->sig_refreshView();
+    emit theApp->sig_reconstructView();
 
     for (int i=0; i < maxStep; i++)
     {
@@ -251,7 +241,7 @@ void Design::doSteps(int maxStep)
         {
             return;
         }
-        view->update();
+        emit sig_updateView();
         QCoreApplication::processEvents();
      }
 }

@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<!-- Written: Mon Jul 8 2024 14:00:01 -->
+<Tiling version="10">
+	<Name>Steps</Name>
+	<Fill singleton="f">-3,3,-3,3</Fill>
+	<T0>-1.251461311681078,0.15187637277683</T0>
+	<T1>2.5,-5.828670879282071e-16</T1>
+	<T2>1.332267629550189e-15,-2.5</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>2.194767541776494</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="regular" sides="8" rotation="0" scale="1.25">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-1.251461311681078</tranX>
+			<tranY>0.15187637277683</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="4" rotation="45" scale="0.5177669529663689">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-0.001461311681076494</tranX>
+			<tranY>-1.09812362722317</tranY>
+		</Placement>
+	</Tile>
+	<Desc />
+	<Auth>David A. Casper</Auth>
+	<BackgroundImage name="ira_1005adj.jpg">
+		<Scale>2.194767541776494</Scale>
+		<Rot>0</Rot>
+		<X>0</X>
+		<Y>0</Y>
+		<Center>0,0</Center>
+	</BackgroundImage>
+</Tiling>

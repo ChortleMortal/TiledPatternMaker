@@ -2,8 +2,8 @@
 #ifndef LEGACY_BORDER_H
 #define LEGACY_BORDER_H
 
-#include "misc/layer.h"
-#include "enums/eborder.h"
+#include "gui/viewers/layer.h"
+#include "sys/enums/eborder.h"
 
 typedef std::shared_ptr<class ShapeFactory> ShapeFPtr;
 

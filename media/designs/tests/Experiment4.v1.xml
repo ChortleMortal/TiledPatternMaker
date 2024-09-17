@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!-- Written: Sun Oct 1 2023 17:25:01 -->
-<vector id="1" version="15">
+<!-- Written: Fri Jul 5 2024 19:45:21 -->
+<vector id="1" version="24">
 	<designNotes>theta 60 rotation 15</designNotes>
 	<design>
 		<size>
@@ -26,7 +26,7 @@
 		<style.Style>
 			<prototype id="3">
 				<app.Prototype>
-					<string>3-4-3-12</string>
+					<Tiling>3-4-3-12</Tiling>
 					<entry>
 						<Tile id="4">
 							<regular>true</regular>
@@ -84,8 +84,6 @@
 							</edges>
 						</Tile>
 						<Star2 id="18">
-							<boundarySides>1</boundarySides>
-							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>12</n>
@@ -114,13 +112,11 @@
 							</edges>
 						</Tile>
 						<Star2 id="24">
-							<boundarySides>1</boundarySides>
-							<boundaryScale>1</boundaryScale>
-							<figureScale>0.22</figureScale>
+							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>3</n>
 							<angle>60</angle>
-							<s>1</s>
+							<s>2</s>
 						</Star2>
 					</entry>
 					<entry>
@@ -148,9 +144,7 @@
 							</edges>
 						</Tile>
 						<Star2 id="31">
-							<boundarySides>1</boundarySides>
-							<boundaryScale>1</boundaryScale>
-							<figureScale>0.22</figureScale>
+							<figureScale>1.000000000000002</figureScale>
 							<r>0</r>
 							<n>4</n>
 							<angle>60</angle>

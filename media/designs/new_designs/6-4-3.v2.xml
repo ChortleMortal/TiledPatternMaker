@@ -1,0 +1,188 @@
+<?xml version="1.0"?>
+<!-- Written: Sat May 4 2024 06:39:49 -->
+<vector id="1" version="20">
+	<design>
+		<size>
+			<width>805</width>
+			<height>959</height>
+			<zwidth>1671</zwidth>
+			<zheight>1100</zheight>
+		</size>
+		<background>
+			<color>#ff000000</color>
+		</background>
+		<Fill singleton="f">-4,5,-4,4</Fill>
+		<BackgroundImage name="Img2140adj.jpg">
+			<Scale>0.3054590259283045</Scale>
+			<Rot>0</Rot>
+			<X>-11</X>
+			<Y>-43</Y>
+			<Center>0,0</Center>
+		</BackgroundImage>
+	</design>
+	<style.Interlace id="2">
+		<toolkit.GeoLayer>
+			<left__delta>-434.0526315789475</left__delta>
+			<top__delta>-70.76315789473693</top__delta>
+			<width__delta>0.4673523096703066</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0.01259882201014451,0.00314970550253646</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<string>6-4-3.v7</string>
+					<entry>
+						<Tile id="4">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">1,1</Point>
+									<Point id="7">-0.9999999999999998,1</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">-1,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">0.9999999999999997,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="10" type="Explicit Tile Motif">
+							<boundarySides>4</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+						</ExplicitTile>
+					</entry>
+					<entry>
+						<Tile id="11">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="12">
+								<Line>
+									<Point id="13">1,1.732050807568877</Point>
+									<Point id="14">-2,2.449293598294706e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="14" />
+									<Point id="15">0.9999999999999984,-1.732050807568878</Point>
+								</Line>
+								<Line>
+									<Point reference="15" />
+									<Point reference="13" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="16" type="Explicit Tile Motif">
+							<boundarySides>3</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>3</n>
+						</ExplicitTile>
+					</entry>
+					<entry>
+						<Tile id="17">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="18">
+								<Line>
+									<Point id="19">1,0.5773502691896256</Point>
+									<Point id="20">7.070501591499379e-17,1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="20" />
+									<Point id="21">-0.9999999999999998,0.5773502691896261</Point>
+								</Line>
+								<Line>
+									<Point reference="21" />
+									<Point id="22">-1,-0.5773502691896254</Point>
+								</Line>
+								<Line>
+									<Point reference="22" />
+									<Point id="23">-2.121150477449814e-16,-1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="23" />
+									<Point id="24">0.9999999999999997,-0.5773502691896263</Point>
+								</Line>
+								<Line>
+									<Point reference="24" />
+									<Point reference="19" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="25" type="Explicit Tile Motif">
+							<boundarySides>6</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>6</n>
+						</ExplicitTile>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ffc2bcb0</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.1</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+		<style.Interlace>
+			<gap>0</gap>
+			<shadow>0.05</shadow>
+			<includeTipVerts>false</includeTipVerts>
+			<startUnder>false</startUnder>
+		</style.Interlace>
+	</style.Interlace>
+	<style.Filled id="26">
+		<toolkit.GeoLayer>
+			<left__delta>-434.0526315789475</left__delta>
+			<top__delta>-70.76315789473693</top__delta>
+			<width__delta>0.4673523096703066</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0.01259882201014451,0.00314970550253646</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype reference="3" />
+		</style.Style>
+		<ColorBlacks>
+			<color hide="f">#ff9c978d</color>
+		</ColorBlacks>
+		<ColorWhites>
+			<color hide="f">#ff10100e</color>
+		</ColorWhites>
+		<ColorGroup>
+			<Group hideSet="f">
+				<color hide="f">#ff10100e</color>
+			</Group>
+			<Group hideSet="f" />
+		</ColorGroup>
+		<style.Filled>
+			<draw__inside>true</draw__inside>
+			<draw__outside>true</draw__outside>
+			<algorithm>0</algorithm>
+		</style.Filled>
+	</style.Filled>
+</vector>

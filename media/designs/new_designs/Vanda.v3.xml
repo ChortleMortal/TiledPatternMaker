@@ -1,30 +1,42 @@
 <?xml version="1.0"?>
-<vector id="1" version="7">
+<!-- Written: Sat May 25 2024 08:14:39 -->
+<vector id="1" version="21">
 	<designNotes>simplified to deao with intersections</designNotes>
 	<design>
 		<size>
 			<width>1500</width>
 			<height>1000</height>
+			<zwidth>1500</zwidth>
+			<zheight>1000</zheight>
 		</size>
 		<background>
 			<color>#ffffffff</color>
 		</background>
-		<Fill>-4,4,-4,4</Fill>
+		<Fill singleton="f">-4,4,-4,4</Fill>
+		<BackgroundImage name="IMG_0066ADJ.JPG">
+			<Scale>0.55</Scale>
+			<Rot>1.553343034274953</Rot>
+			<X>0</X>
+			<Y>0</Y>
+			<Center>0,0</Center>
+		</BackgroundImage>
+		<Cleanse>c</Cleanse>
 	</design>
-	<style.Thick id="2" serialization="custom">
+	<style.Thick id="2">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
 			<top__delta>0</top__delta>
 			<width__delta>1</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>0,0</center>
+			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<prototype id="3" serialization="custom">
+			<prototype id="3">
 				<app.Prototype>
-					<string>vanda_base.v3</string>
+					<Tiling>vanda_base.v3</Tiling>
 					<entry>
-						<tile.Feature id="4">
+						<Tile id="4">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -42,13 +54,15 @@
 									<Point reference="6" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="9" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="9" type="Explicit Tile Motif">
+							<boundarySides>3</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>3</n>
+						</ExplicitTile>
 					</entry>
 				</app.Prototype>
 			</prototype>
@@ -59,6 +73,8 @@
 		<style.Thick>
 			<draw__outline>true</draw__outline>
 			<width>0.03</width>
+			<join>round</join>
+			<cap>round</cap>
 		</style.Thick>
 	</style.Thick>
 </vector>

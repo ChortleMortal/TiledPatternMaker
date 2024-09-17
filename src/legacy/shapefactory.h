@@ -3,7 +3,7 @@
 #define SHAPEFACTORY_H
 
 #include "legacy/shapes.h"
-#include "viewers/shape_view.h"
+#include "gui/viewers/shape_view.h"
 #include <QGraphicsItem>
 #include <QPainter>
 
@@ -111,8 +111,6 @@ protected:
     void calcInscribedNonagonPoints(Polygon2 * p);
 
 private:
-    class View * view;
-
     qreal  _diameter;
     qreal  _radius;
 };

@@ -2,9 +2,9 @@
 #include "legacy/design_maker.h"
 #include "legacy/designs.h"
 #include "legacy/patterns.h"
-#include "misc/tile_color_defs.h"
-#include "settings/configuration.h"
-#include "settings/canvas_settings.h"
+#include "model/motifs/tile_color_defs.h"
+#include "model/settings/configuration.h"
+#include "model/settings/canvas_settings.h"
 #include <QDebug>
 #include <QtMath>
 

@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
-<vector id="1" version="10">
+<!-- Written: Sat May 4 2024 12:59:55 -->
+<vector id="1" version="21">
 	<designNotes>This is design from Pomerantz with 55 degree and lines</designNotes>
 	<design>
 		<size>
@@ -20,7 +21,7 @@
 			<Center>-2.800577588074091,-0.01397677983914392</Center>
 		</BackgroundImage>
 	</design>
-	<style.Filled id="2" serialization="custom">
+	<style.Filled id="2">
 		<toolkit.GeoLayer>
 			<left__delta>-436.0526315789475</left__delta>
 			<top__delta>-74.76315789473693</top__delta>
@@ -30,11 +31,11 @@
 			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<prototype id="3" serialization="custom">
+			<prototype id="3">
 				<app.Prototype>
-					<string>6-4-3.v6</string>
+					<Tiling>6-4-3.v6</Tiling>
 					<entry>
-						<tile.Feature id="4">
+						<Tile id="4">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -60,16 +61,18 @@
 									<Point reference="6" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="11" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="11" type="Explicit Tile Motif">
+							<boundarySides>5</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>5</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="12">
+						<Tile id="12">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -95,16 +98,18 @@
 									<Point reference="14" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="19" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="19" type="Explicit Tile Motif">
+							<boundarySides>5</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>5</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="20">
+						<Tile id="20">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -130,16 +135,18 @@
 									<Point reference="22" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="27" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="27" type="Explicit Tile Motif">
+							<boundarySides>5</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>5</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="28">
+						<Tile id="28">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -165,16 +172,18 @@
 									<Point reference="30" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="35" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="35" type="Explicit Tile Motif">
+							<boundarySides>5</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>5</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="36">
+						<Tile id="36">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -216,16 +225,18 @@
 									<Point reference="38" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="47" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="47" type="Explicit Tile Motif">
+							<boundarySides>9</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>9</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="48">
+						<Tile id="48">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -263,16 +274,18 @@
 									<Point reference="50" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="58" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="58" type="Explicit Tile Motif">
+							<boundarySides>8</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>8</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="59">
+						<Tile id="59">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -298,16 +311,18 @@
 									<Point reference="61" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="66" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="66" type="Explicit Tile Motif">
+							<boundarySides>5</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>5</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="67">
+						<Tile id="67">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -349,16 +364,18 @@
 									<Point reference="69" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="78" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="78" type="Explicit Tile Motif">
+							<boundarySides>9</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>9</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="79">
+						<Tile id="79">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -400,16 +417,18 @@
 									<Point reference="81" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="90" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="90" type="Explicit Tile Motif">
+							<boundarySides>9</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>9</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="91">
+						<Tile id="91">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -451,16 +470,18 @@
 									<Point reference="93" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="102" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="102" type="Explicit Tile Motif">
+							<boundarySides>9</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>9</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="103">
+						<Tile id="103">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -498,16 +519,18 @@
 									<Point reference="105" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="113" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="113" type="Explicit Tile Motif">
+							<boundarySides>8</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>8</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="114">
+						<Tile id="114">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -533,16 +556,18 @@
 									<Point reference="116" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="121" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="121" type="Explicit Tile Motif">
+							<boundarySides>5</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>5</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="122">
+						<Tile id="122">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -572,16 +597,18 @@
 									<Point reference="124" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="130" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="130" type="Explicit Tile Motif">
+							<boundarySides>6</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>6</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="131">
+						<Tile id="131">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -623,16 +650,18 @@
 									<Point reference="133" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="142" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="142" type="Explicit Tile Motif">
+							<boundarySides>9</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>9</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="143">
+						<Tile id="143">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -670,16 +699,18 @@
 									<Point reference="145" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="153" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="153" type="Explicit Tile Motif">
+							<boundarySides>8</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>8</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="154">
+						<Tile id="154">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -721,16 +752,18 @@
 									<Point reference="156" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="165" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="165" type="Explicit Tile Motif">
+							<boundarySides>9</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>9</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="166">
+						<Tile id="166">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -772,16 +805,18 @@
 									<Point reference="168" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="177" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="177" type="Explicit Tile Motif">
+							<boundarySides>9</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>9</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="178">
+						<Tile id="178">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -827,16 +862,18 @@
 									<Point reference="180" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="190" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="190" type="Explicit Tile Motif">
+							<boundarySides>10</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>10</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="191">
+						<Tile id="191">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -878,16 +915,18 @@
 									<Point reference="193" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="202" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="202" type="Explicit Tile Motif">
+							<boundarySides>9</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>9</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="203">
+						<Tile id="203">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -929,16 +968,18 @@
 									<Point reference="205" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="214" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="214" type="Explicit Tile Motif">
+							<boundarySides>9</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>9</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="215">
+						<Tile id="215">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -976,16 +1017,18 @@
 									<Point reference="217" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="225" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="225" type="Explicit Tile Motif">
+							<boundarySides>8</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>8</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="226">
+						<Tile id="226">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -1011,16 +1054,18 @@
 									<Point reference="228" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="233" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="233" type="Explicit Tile Motif">
+							<boundarySides>5</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>5</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="234">
+						<Tile id="234">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -1046,16 +1091,18 @@
 									<Point reference="236" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="241" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="241" type="Explicit Tile Motif">
+							<boundarySides>5</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>5</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="242">
+						<Tile id="242">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -1081,16 +1128,18 @@
 									<Point reference="244" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="249" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="249" type="Explicit Tile Motif">
+							<boundarySides>5</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>5</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="250">
+						<Tile id="250">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -1112,16 +1161,18 @@
 									<Point reference="252" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="256" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="256" type="Explicit Tile Motif">
+							<boundarySides>4</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>4</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="257">
+						<Tile id="257">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -1147,16 +1198,18 @@
 									<Point reference="259" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="264" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="264" type="Explicit Tile Motif">
+							<boundarySides>5</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>5</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="265">
+						<Tile id="265">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -1178,16 +1231,18 @@
 									<Point reference="267" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="271" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="271" type="Explicit Tile Motif">
+							<boundarySides>4</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>4</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="272">
+						<Tile id="272">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -1209,16 +1264,18 @@
 									<Point reference="274" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="278" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="278" type="Explicit Tile Motif">
+							<boundarySides>4</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>4</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="279">
+						<Tile id="279">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -1272,16 +1329,18 @@
 									<Point reference="281" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="293" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="293" type="Explicit Tile Motif">
+							<boundarySides>12</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>12</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="294">
+						<Tile id="294">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -1311,16 +1370,18 @@
 									<Point reference="296" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="302" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="302" type="Explicit Tile Motif">
+							<boundarySides>6</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>6</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="303">
+						<Tile id="303">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -1350,16 +1411,18 @@
 									<Point reference="305" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="311" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="311" type="Explicit Tile Motif">
+							<boundarySides>6</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>6</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="312">
+						<Tile id="312">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -1385,16 +1448,18 @@
 									<Point reference="314" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="319" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="319" type="Explicit Tile Motif">
+							<boundarySides>5</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>5</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="320">
+						<Tile id="320">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -1416,13 +1481,15 @@
 									<Point reference="322" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="326" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="326" type="Explicit Tile Motif">
+							<boundarySides>4</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>4</n>
+						</ExplicitTile>
 					</entry>
 				</app.Prototype>
 			</prototype>
@@ -1445,7 +1512,7 @@
 			<algorithm>0</algorithm>
 		</style.Filled>
 	</style.Filled>
-	<style.Thick id="327" serialization="custom">
+	<style.Thick id="327">
 		<toolkit.GeoLayer>
 			<left__delta>-436.0526315789475</left__delta>
 			<top__delta>-74.76315789473693</top__delta>
@@ -1455,11 +1522,11 @@
 			<Z>1</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<prototype id="328" serialization="custom">
+			<prototype id="328">
 				<app.Prototype>
-					<string>6-4-3.v4</string>
+					<Tiling>6-4-3.v4</Tiling>
 					<entry>
-						<tile.Feature id="329">
+						<Tile id="329">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -1481,16 +1548,18 @@
 									<Point reference="331" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="335" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="335" type="Explicit Tile Motif">
+							<boundarySides>4</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>4</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="336">
+						<Tile id="336">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -1508,16 +1577,18 @@
 									<Point reference="338" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="341" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="341" type="Explicit Tile Motif">
+							<boundarySides>3</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>3</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="342">
+						<Tile id="342">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -1547,13 +1618,15 @@
 									<Point reference="344" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="350" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="350" type="Explicit Tile Motif">
+							<boundarySides>6</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>6</n>
+						</ExplicitTile>
 					</entry>
 				</app.Prototype>
 			</prototype>
@@ -1564,6 +1637,8 @@
 		<style.Thick>
 			<draw__outline>false</draw__outline>
 			<width>0.02</width>
+			<join>round</join>
+			<cap>round</cap>
 		</style.Thick>
 	</style.Thick>
 </vector>

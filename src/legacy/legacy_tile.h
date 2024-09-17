@@ -2,7 +2,7 @@
 #ifndef LEGACY_TILE_H
 #define LEGACY_TILE_H
 
-#include "misc/layer.h"
+#include "gui/viewers/layer.h"
 
 class LegacyTile : public Layer
 {

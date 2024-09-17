@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<vector id="1" version="12">
-	<!-- Written Tue Jan 4 2022 13:24:44 -->
+<!-- Written: Sun May 26 2024 05:30:13 -->
+<vector id="1" version="21">
 	<designNotes>test</designNotes>
 	<design>
 		<size>
@@ -20,8 +20,9 @@
 			<Y>0</Y>
 			<Center>0,0</Center>
 		</BackgroundImage>
+		<Cleanse>c</Cleanse>
 	</design>
-	<style.Thick id="2" serialization="custom">
+	<style.Thick id="2">
 		<toolkit.GeoLayer>
 			<left__delta>50</left__delta>
 			<top__delta>0</top__delta>
@@ -31,11 +32,11 @@
 			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<prototype id="3" serialization="custom">
+			<prototype id="3">
 				<app.Prototype>
-					<string>vanda_base2.v3</string>
+					<Tiling>vanda_base2.v3</Tiling>
 					<entry>
-						<tile.Feature id="4">
+						<Tile id="4">
 							<regular>true</regular>
 							<rotation>30</rotation>
 							<scale>1</scale>
@@ -65,20 +66,20 @@
 									<Point reference="6" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.Rosette id="12">
+						</Tile>
+						<Rosette id="12">
+							<boundarySides>1</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
+							<figureScale>1</figureScale>
+							<r>0</r>
 							<n>6</n>
 							<q>0</q>
 							<s>2</s>
-							<k>0</k>
-							<boundarySides>1</boundarySides>
-							<boundaryScale>1</boundaryScale>
-							<figureScale>1</figureScale>
-							<r>30</r>
-						</app.Rosette>
+						</Rosette>
 					</entry>
 					<entry>
-						<tile.Feature id="13">
+						<Tile id="13">
 							<regular>true</regular>
 							<rotation>30</rotation>
 							<scale>0.8699999999999999</scale>
@@ -96,13 +97,15 @@
 									<Point reference="15" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="18" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="18" type="Explicit Tile Motif">
+							<boundarySides>3</boundarySides>
 							<boundaryScale>1</boundaryScale>
-							<figureScale>3.65</figureScale>
-							<r>0</r>
-						</app.ExplicitFeature>
+							<boundaryRotate>0</boundaryRotate>
+							<figureScale>1.149425287356322</figureScale>
+							<r>-30</r>
+							<n>3</n>
+						</ExplicitTile>
 					</entry>
 				</app.Prototype>
 			</prototype>
@@ -113,9 +116,11 @@
 		<style.Thick>
 			<draw__outline>true</draw__outline>
 			<width>0.05</width>
+			<join>round</join>
+			<cap>round</cap>
 		</style.Thick>
 	</style.Thick>
-	<style.Thick id="19" serialization="custom">
+	<style.Thick id="19">
 		<toolkit.GeoLayer>
 			<left__delta>50</left__delta>
 			<top__delta>0</top__delta>
@@ -133,9 +138,11 @@
 		<style.Thick>
 			<draw__outline>true</draw__outline>
 			<width>0.14</width>
+			<join>round</join>
+			<cap>round</cap>
 		</style.Thick>
 	</style.Thick>
-	<style.Filled id="20" serialization="custom">
+	<style.Filled id="20">
 		<toolkit.GeoLayer>
 			<left__delta>50</left__delta>
 			<top__delta>0</top__delta>

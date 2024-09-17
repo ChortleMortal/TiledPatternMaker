@@ -1,8 +1,8 @@
 #include <QtMath>
 #include "legacy/legacy_border.h"
 #include "legacy/shapefactory.h"
-#include "geometry/map.h"
-#include "misc/tile_color_defs.h"
+#include "sys/geometry/map.h"
+#include "model/motifs/tile_color_defs.h"
 
 /*
  * A border (defined in model units) is both a a layer, and a crop

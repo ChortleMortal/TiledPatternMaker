@@ -1,0 +1,139 @@
+<!-- Written: Sun Sep 1 2024 14:13:18 -->
+<vector id="1" version="25">
+	<design>
+		<size>
+			<width>1500</width>
+			<height>927</height>
+			<zwidth>1500</zwidth>
+			<zheight>927</zheight>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Fill singleton="f">-3,3,-3,3</Fill>
+	</design>
+	<style.Thick id="2">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<Tiling>8.v3</Tiling>
+					<entry>
+						<Tile id="4">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1.18</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">1,0.4142135623730951</Point>
+									<Point id="7">0.4142135623730951,1</Point>
+								</Line>
+								<Line>
+									<Point reference="7"></Point>
+									<Point id="8">-0.414213562373095,1</Point>
+								</Line>
+								<Line>
+									<Point reference="8"></Point>
+									<Point id="9">-1,0.4142135623730952</Point>
+								</Line>
+								<Line>
+									<Point reference="9"></Point>
+									<Point id="10">-1,-0.414213562373095</Point>
+								</Line>
+								<Line>
+									<Point reference="10"></Point>
+									<Point id="11">-0.4142135623730957,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="11"></Point>
+									<Point id="12">0.4142135623730953,-0.9999999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="12"></Point>
+									<Point id="13">0.9999999999999998,-0.4142135623730958</Point>
+								</Line>
+								<Line>
+									<Point reference="13"></Point>
+									<Point reference="6"></Point>
+								</Line>
+							</edges>
+						</Tile>
+						<Star2 id="14">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>8</n>
+							<angle>67.49999999999986</angle>
+							<s>2</s>
+						</Star2>
+					</entry>
+					<entry>
+						<Tile id="15">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>2</scale>
+							<edges id="16">
+								<Line>
+									<Point id="17">1,0.4142135623730951</Point>
+									<Point id="18">0.4142135623730951,1</Point>
+								</Line>
+								<Line>
+									<Point reference="18"></Point>
+									<Point id="19">-0.414213562373095,1</Point>
+								</Line>
+								<Line>
+									<Point reference="19"></Point>
+									<Point id="20">-1,0.4142135623730952</Point>
+								</Line>
+								<Line>
+									<Point reference="20"></Point>
+									<Point id="21">-1,-0.414213562373095</Point>
+								</Line>
+								<Line>
+									<Point reference="21"></Point>
+									<Point id="22">-0.4142135623730957,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="22"></Point>
+									<Point id="23">0.4142135623730953,-0.9999999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="23"></Point>
+									<Point id="24">0.9999999999999998,-0.4142135623730958</Point>
+								</Line>
+								<Line>
+									<Point reference="24"></Point>
+									<Point reference="17"></Point>
+								</Line>
+							</edges>
+						</Tile>
+						<Star2 id="25">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>8</n>
+							<angle>67.49999999999986</angle>
+							<s>2</s>
+						</Star2>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ffffffff</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>true</draw__outline>
+			<outline_width>0.05</outline_width>
+			<outline_color>#ff000000</outline_color>
+			<width>0.05</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+	</style.Thick>
+</vector>

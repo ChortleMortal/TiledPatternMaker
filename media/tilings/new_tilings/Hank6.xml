@@ -1,0 +1,81 @@
+<?xml version="1.0"?>
+<!-- Written: Tue Sep 3 2024 12:49:04 -->
+<Tiling version="10">
+	<Name>Hank6</Name>
+	<Fill singleton="f">-3,3,-3,3</Fill>
+	<T0>-1.110223024625157e-16,-1.387778780781446e-17</T0>
+	<T1>8,-1.77635683940025e-15</T1>
+	<T2>-9.992007221626411e-16,-8</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="regular" sides="8" rotation="0" scale="1.09">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>2</tranX>
+			<tranY>-0.8284271247461915</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>2</tranX>
+			<tranY>0.8284271247461902</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0.8284271247461905</tranX>
+			<tranY>2</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-0.8284271247461898</tranX>
+			<tranY>2</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-2</tranX>
+			<tranY>0.8284271247461904</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-2</tranX>
+			<tranY>-0.82842712474619</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-0.8284271247461912</tranX>
+			<tranY>-2</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0.8284271247461908</tranX>
+			<tranY>-2</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="8" rotation="0" scale="2">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-4</tranX>
+			<tranY>8.881784197001252e-16</tranY>
+		</Placement>
+	</Tile>
+	<Desc>Octagons in contact with background</Desc>
+	<Auth>David Casper</Auth>
+</Tiling>

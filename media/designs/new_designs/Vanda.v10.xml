@@ -1,39 +1,50 @@
 <?xml version="1.0"?>
-<vector id="1" version="10">
+<!-- Written: Sun May 26 2024 05:28:59 -->
+<vector id="1" version="21">
 	<designNotes>has integrated border</designNotes>
 	<design>
 		<size>
 			<width>1920</width>
 			<height>1025</height>
+			<zwidth>1920</zwidth>
+			<zheight>1025</zheight>
 		</size>
 		<background>
 			<color>#ffffffff</color>
 		</background>
-		<border type="4">
-			<boundary>-16.78048780487806,-11.47967479674799,34.40775159702566,19.85087392014705</boundary>
-		</border>
-		<Fill>-4,4,-4,4</Fill>
+		<Crop embed="t" apply="t" clip="f">
+			<rect>
+				<X>-16.78048780487806</X>
+				<Y>-11.47967479674799</Y>
+				<width>34.40775159702566</width>
+				<height>19.85087392014705</height>
+			</rect>
+		</Crop>
+		<Fill singleton="f">-4,4,-4,4</Fill>
 		<BackgroundImage name="IMG_0066ADJ.JPG">
 			<Scale>0.55</Scale>
 			<Rot>1.553343034274953</Rot>
 			<X>0</X>
 			<Y>0</Y>
+			<Center>0,0</Center>
 		</BackgroundImage>
+		<Cleanse>c</Cleanse>
 	</design>
-	<style.Thick id="2" serialization="custom">
+	<style.Thick id="2">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
 			<top__delta>0</top__delta>
 			<width__delta>0.4099999999999995</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>0,0</center>
+			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<prototype id="3" serialization="custom">
+			<prototype id="3">
 				<app.Prototype>
-					<string>vanda_base.v4</string>
+					<Tiling>vanda_base.v4</Tiling>
 					<entry>
-						<tile.Feature id="4">
+						<Tile id="4">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -51,16 +62,18 @@
 									<Point reference="6" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="9" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
+						</Tile>
+						<ExplicitTile id="9" type="Explicit Tile Motif">
+							<boundarySides>3</boundarySides>
 							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>3</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="10">
+						<Tile id="10">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -90,15 +103,16 @@
 									<Point reference="12" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<ExtendedStar id="18" extendPeripherals="f" extendFreeVertices="t">
+						</Tile>
+						<ExtendedStar id="18" extendPeripherals="f" extendFreeVertices="t" connectBoundaryVertices="f">
+							<boundarySides>6</boundarySides>
+							<boundaryScale>1</boundaryScale>
+							<boundaryRotate>0</boundaryRotate>
+							<figureScale>0.5</figureScale>
+							<r>0</r>
 							<n>6</n>
 							<d>2</d>
 							<s>1</s>
-							<boundarySides>6</boundarySides>
-							<boundaryScale>1</boundaryScale>
-							<figureScale>0.5</figureScale>
-							<r>0</r>
 						</ExtendedStar>
 					</entry>
 				</app.Prototype>
@@ -110,15 +124,18 @@
 		<style.Thick>
 			<draw__outline>true</draw__outline>
 			<width>0.07000000000000001</width>
+			<join>round</join>
+			<cap>round</cap>
 		</style.Thick>
 	</style.Thick>
-	<style.Thick id="19" serialization="custom">
+	<style.Thick id="19">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
 			<top__delta>0</top__delta>
 			<width__delta>0.4099999999999995</width__delta>
 			<theta__delta>0</theta__delta>
 			<center>0,0</center>
+			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
 			<prototype reference="3" />
@@ -129,6 +146,8 @@
 		<style.Thick>
 			<draw__outline>true</draw__outline>
 			<width>0.13</width>
+			<join>round</join>
+			<cap>round</cap>
 		</style.Thick>
 	</style.Thick>
 </vector>

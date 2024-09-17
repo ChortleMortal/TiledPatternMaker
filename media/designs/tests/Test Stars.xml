@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!-- Written: Sat Jan 28 2023 13:33:59 -->
-<vector id="1" version="14">
+<!-- Written: Sun Sep 1 2024 06:14:14 -->
+<vector id="1" version="25">
 	<design>
 		<size>
 			<width>1500</width>
@@ -25,9 +25,9 @@
 		<style.Style>
 			<prototype id="3">
 				<app.Prototype>
-					<string>Test Stars</string>
+					<Tiling>Test Stars</Tiling>
 					<entry>
-						<tile.Feature id="4">
+						<Tile id="4">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -49,19 +49,17 @@
 									<Point reference="6" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.Star id="10">
-							<boundarySides>4</boundarySides>
-							<boundaryScale>1</boundaryScale>
+						</Tile>
+						<Star id="10">
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>4</n>
 							<d>1.33</d>
-							<s>2</s>
-						</app.Star>
+							<s>1</s>
+						</Star>
 					</entry>
 					<entry>
-						<tile.Feature id="11">
+						<Tile id="11">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -83,19 +81,18 @@
 									<Point reference="13" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.Star id="17">
-							<boundarySides>4</boundarySides>
-							<boundaryScale>1</boundaryScale>
+						</Tile>
+						<Star id="17">
+							<version>2</version>
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>4</n>
 							<d>1.33</d>
-							<s>2</s>
-						</app.Star>
+							<s>1</s>
+						</Star>
 					</entry>
 					<entry>
-						<tile.Feature id="18">
+						<Tile id="18">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -121,19 +118,17 @@
 									<Point reference="20" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.Star id="25">
-							<boundarySides>5</boundarySides>
-							<boundaryScale>1</boundaryScale>
+						</Tile>
+						<Star id="25">
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>5</n>
 							<d>1.67</d>
-							<s>2</s>
-						</app.Star>
+							<s>1</s>
+						</Star>
 					</entry>
 					<entry>
-						<tile.Feature id="26">
+						<Tile id="26">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -159,19 +154,18 @@
 									<Point reference="28" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.Star id="33">
-							<boundarySides>5</boundarySides>
-							<boundaryScale>1</boundaryScale>
+						</Tile>
+						<Star id="33">
+							<version>2</version>
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>5</n>
 							<d>1.67</d>
-							<s>2</s>
-						</app.Star>
+							<s>1</s>
+						</Star>
 					</entry>
 					<entry>
-						<tile.Feature id="34">
+						<Tile id="34">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -201,19 +195,17 @@
 									<Point reference="36" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.Star id="42">
-							<boundarySides>6</boundarySides>
-							<boundaryScale>1</boundaryScale>
+						</Tile>
+						<Star id="42">
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>6</n>
 							<d>2</d>
 							<s>2</s>
-						</app.Star>
+						</Star>
 					</entry>
 					<entry>
-						<tile.Feature id="43">
+						<Tile id="43">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -243,19 +235,18 @@
 									<Point reference="45" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.Star id="51">
-							<boundarySides>6</boundarySides>
-							<boundaryScale>1</boundaryScale>
+						</Tile>
+						<Star id="51">
+							<version>2</version>
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>6</n>
 							<d>2</d>
 							<s>2</s>
-						</app.Star>
+						</Star>
 					</entry>
 					<entry>
-						<tile.Feature id="52">
+						<Tile id="52">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -289,19 +280,17 @@
 									<Point reference="54" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.Star id="61">
-							<boundarySides>7</boundarySides>
-							<boundaryScale>1</boundaryScale>
+						</Tile>
+						<Star id="61">
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>7</n>
 							<d>3</d>
 							<s>2</s>
-						</app.Star>
+						</Star>
 					</entry>
 					<entry>
-						<tile.Feature id="62">
+						<Tile id="62">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -335,19 +324,18 @@
 									<Point reference="64" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.Star id="71">
-							<boundarySides>7</boundarySides>
-							<boundaryScale>1</boundaryScale>
+						</Tile>
+						<Star id="71">
+							<version>2</version>
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>7</n>
 							<d>3</d>
 							<s>2</s>
-						</app.Star>
+						</Star>
 					</entry>
 					<entry>
-						<tile.Feature id="72">
+						<Tile id="72">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -385,19 +373,17 @@
 									<Point reference="74" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.Star id="82">
-							<boundarySides>8</boundarySides>
-							<boundaryScale>1</boundaryScale>
+						</Tile>
+						<Star id="82">
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>8</n>
 							<d>3</d>
 							<s>2</s>
-						</app.Star>
+						</Star>
 					</entry>
 					<entry>
-						<tile.Feature id="83">
+						<Tile id="83">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -435,16 +421,15 @@
 									<Point reference="85" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.Star id="93">
-							<boundarySides>8</boundarySides>
-							<boundaryScale>1</boundaryScale>
+						</Tile>
+						<Star id="93">
+							<version>2</version>
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>8</n>
 							<d>3</d>
-							<s>2</s>
-						</app.Star>
+							<s>1</s>
+						</Star>
 					</entry>
 				</app.Prototype>
 			</prototype>

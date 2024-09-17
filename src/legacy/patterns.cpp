@@ -3,22 +3,24 @@
 
 #include "legacy/patterns.h"
 #include "legacy/shapefactory.h"
-#include "motifs/explicit_map_motif.h"
-#include "motifs/irregular_motif.h"
-#include "motifs/star.h"
-#include "geometry/map.h"
-#include "misc/border.h"
-#include "misc/tile_color_defs.h"
-#include "geometry/geo.h"
-#include "mosaic/design_element.h"
-#include "makers/prototype_maker/prototype.h"
-#include "settings/configuration.h"
-#include "style/thick.h"
-#include "style/thick.h"
-#include "tile/tile.h"
-#include "tile/placed_tile.h"
-#include "tile/tiling.h"
-#include "tile/tiling_manager.h"
+#include "model/mosaics/mosaic.h"
+#include "model/motifs/explicit_map_motif.h"
+#include "model/motifs/irregular_motif.h"
+#include "model/motifs/star.h"
+#include "sys/geometry/map.h"
+#include "model/mosaics/border.h"
+#include "model/motifs/tile_color_defs.h"
+#include "sys/geometry/geo.h"
+#include "model/prototypes/design_element.h"
+#include "model/prototypes/prototype.h"
+#include "model/settings/configuration.h"
+#include "model/styles/thick.h"
+#include "model/styles/thick.h"
+#include "model/tilings/tile.h"
+#include "model/tilings/placed_tile.h"
+#include "model/tilings/tiling.h"
+#include "model/tilings/tiling_manager.h"
+#include "sys/sys/fileservices.h"
 
 int Pattern::refs = 0;
 
@@ -200,8 +202,6 @@ bool Pattern7::doStep(int Index)
 //	  Pattern 8 - Hu symbol
 //
 /////////////////////////////////////////////////////////////
-
-
 
 PatternHuSymbol::PatternHuSymbol(int gridWidth, QPen GridPen, QPen InnerPen, QColor CanvasColor, qreal Diameter, QBrush Brush)
     : Pattern(Diameter, Brush)
@@ -1577,7 +1577,6 @@ void PatternKumiko2::build()
     layers[6].addToGroup(m);
 #endif
 
-
     // Make a map of the shape factory design and create a style from it
     MapPtr map = make_shared<Map>("PatternKumiko2 map");
     map->addShapeFactory(s2);
@@ -1586,42 +1585,44 @@ void PatternKumiko2::build()
     map->addShapeFactory(s5);
 
     // make an explicit figure and position it
-    QString tileName  = "Kumiko2";
+    VersionedName vn("Kumiko2");
+    VersionedFile vf = FileServices::getFile(vn,FILE_TILING);
     TilingManager tm;
-    TilingPtr t = tm.loadTiling(tileName,TILM_LOAD_FROM_MOSAIC);
+    TilingPtr t = tm.loadTiling(vf,TILM_LOAD_FROM_MOSAIC);
     if (!t)
     {
         t = make_shared<Tiling>();
-        t->setTitle(tileName);
         CanvasSettings cs;  // default
         cs.setFillData(fd);
         t->setCanvasSettings(cs);
         TilePtr fp = make_shared<Tile>(4,0.0);
         PlacedTilePtr pfp = make_shared<PlacedTile>(fp,QTransform());
         t->setTranslationVectors(trans1, trans2, QPointF());
-        t->add(pfp);
+        t->addPlacedTile(pfp);
+        t->setName(vn);
         t->setDescription("Kumiko2 translation vectors");
         t->setAuthor("David A. Casper");
         TilingManager tm;
-        tm.saveTiling(tileName,t);
+        tm.saveTiling(t);
     }
 
-
-    const PlacedTiles & placedTiles = t->getInTiling();
-    auto tile = placedTiles[0]->getTile();
+    const TilingPlacements tilingUnit = t->getTilingUnitPlacements();
+    auto tile = tilingUnit[0]->getTile();
 
     auto motif = make_shared<ExplicitMapMotif>(map);
     motif->setN(10); // default
     motif->setTile(tile);
-    motif->buildMotifMaps();
+    motif->buildMotifMap();
 
-    DesignElementPtr dep = make_shared<DesignElement>(placedTiles[0]->getTile(),motif);
+    DesignElementPtr dep = make_shared<DesignElement>(tilingUnit[0]->getTile(),motif);
 
-    Sys::viewController->getCanvas().setFillData(fd);
+    MosaicPtr mosaic = make_shared<Mosaic>();
+    FillData fd = t->getCanvasSettings().getFillData();
+    mosaic->getCanvasSettings().setFillData(fd);
 
-    ProtoPtr proto = make_shared<Prototype>(t);
-    proto->addElement(dep);
-    proto->createProtoMap();
+    ProtoPtr proto = make_shared<Prototype>(t,mosaic);
+    proto->addDesignElement(dep);
+    proto->createProtoMap(false);
 
     ThickPtr thick = make_shared<Thick>(proto);
     thick->setColor(QColor(0xa2,0x79,0x67));

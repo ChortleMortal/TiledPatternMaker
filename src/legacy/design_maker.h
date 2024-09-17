@@ -7,7 +7,7 @@
 #if (QT_VERSION < QT_VERSION_CHECK(6,0,0))
 #include <memory>
 #endif
-#include "enums/edesign.h"
+#include "sys/enums/edesign.h"
 
 typedef std::shared_ptr<class Design> DesignPtr;
 
@@ -47,6 +47,8 @@ public:
 
 signals:
     void sig_loadedDesign(eDesign design);
+    void sig_updateView();
+    void sig_reconstructView();
 
 public slots:
     void slot_loadDesign(eDesign design);
@@ -60,9 +62,8 @@ public slots:
 private slots:
 
 private:
-    class  View         * view;
-    class  ViewController  * viewControl;
-    class  Configuration* config;
+    class  ViewController * viewControl;
+    class  Configuration  * config;
 
     QMap<eDesign,DesignPtr>     availableDesigns;
     QVector<DesignPtr>          activeDesigns;

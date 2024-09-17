@@ -1,7 +1,9 @@
 <?xml version="1.0"?>
-<Tiling version="6">
+<!-- Written: Sat May 4 2024 12:59:44 -->
+<Tiling version="10">
 	<Name>6-4-3.v4</Name>
 	<Fill singleton="t">0,0,0,0</Fill>
+	<T0>0,0</T0>
 	<T1>0,0</T1>
 	<T2>0,0</T2>
 	<ViewSettings>
@@ -14,8 +16,9 @@
 		<width__delta>1.613602723507086</width__delta>
 		<theta__delta>2.081668171172169e-17</theta__delta>
 		<center>0.01259882201014451,0.00314970550253646</center>
+		<Z>0</Z>
 	</ViewSettings>
-	<Feature type="regular" sides="4" rotation="0" scale="1">
+	<Tile type="regular" sides="4" rotation="0" scale="1">
 		<Placement>
 			<scale>0.5889550096003373</scale>
 			<rot>-90.00000000000001</rot>
@@ -23,14 +26,14 @@
 			<tranY>-2.786965028801012</tranY>
 		</Placement>
 		<Placement>
-			<scale>0.5889550096003373</scale>
+			<scale>0.5889550096003374</scale>
 			<rot>-30.00000000000002</rot>
 			<tranX>-0.8245275048001693</tranX>
 			<tranY>-1.393482514400505</tranY>
 		</Placement>
 		<Placement>
 			<scale>0.5889550096003372</scale>
-			<rot>-8.748543606866286e-13</rot>
+			<rot>-1.485434959251474e-12</rot>
 			<tranX>-1.629055009600338</tranX>
 			<tranY>4.544975507059235e-16</tranY>
 		</Placement>
@@ -64,8 +67,8 @@
 			<tranX>-0.01999999999999966</tranX>
 			<tranY>2.786965028801012</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="regular" sides="3" rotation="0" scale="1">
+	</Tile>
+	<Tile type="regular" sides="3" rotation="0" scale="1">
 		<Placement>
 			<scale>0.3400333333333335</scale>
 			<rot>29.99999999999999</rot>
@@ -98,19 +101,19 @@
 		</Placement>
 		<Placement>
 			<scale>0.3400333333333335</scale>
-			<rot>-30</rot>
+			<rot>-29.99999999999999</rot>
 			<tranX>1.589055009600337</tranX>
 			<tranY>-0.9289883429336708</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="regular" sides="6" rotation="0" scale="1">
+	</Tile>
+	<Tile type="regular" sides="6" rotation="0" scale="1">
 		<Placement>
 			<scale>1.0201</scale>
 			<rot>0</rot>
 			<tranX>-0.02</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
+	</Tile>
 	<Desc>Pomerantz</Desc>
 	<Auth>David Casper</Auth>
 	<BackgroundImage name="Pomerantz4.png">

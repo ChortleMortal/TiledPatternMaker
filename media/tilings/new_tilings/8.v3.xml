@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<!-- Written: Sun Sep 1 2024 14:01:54 -->
+<Tiling version="10">
+	<Name>8.v3</Name>
+	<Fill singleton="f">-3,3,-3,3</Fill>
+	<T0>-1.110223024625157e-16,-1.357701699750195e-16</T0>
+	<T1>3.061467458920719,6.661338147750939e-16</T1>
+	<T2>4.440892098500626e-16,3.061467458920719</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="regular" sides="8" rotation="0" scale="1.18">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-1.530733729460359</tranX>
+			<tranY>-1.530733729460359</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>1.530733729460359</tranX>
+			<tranY>-1.530733729460359</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="8" rotation="0" scale="2">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Desc>Octagons in contact with background</Desc>
+	<Auth>David Casper</Auth>
+</Tiling>

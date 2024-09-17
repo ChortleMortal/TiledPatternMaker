@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<!-- Written: Wed Aug 21 2024 11:04:45 -->
+<Tiling version="10">
+	<Name>8.v1</Name>
+	<Fill singleton="f">-3,3,-3,3</Fill>
+	<T0>0,0</T0>
+	<T1>-5.55111512312578e-16,-4</T1>
+	<T2>4,-9.992007221626405e-16</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="regular" sides="8" rotation="0" scale="2">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Desc>Octagons in contact with background</Desc>
+	<Auth>David Casper</Auth>
+	<BackgroundImage name="han_002.jpg">
+		<Scale>5.892898383426052</Scale>
+		<Rot>0</Rot>
+		<X>5</X>
+		<Y>714</Y>
+		<Center>0,0</Center>
+	</BackgroundImage>
+</Tiling>

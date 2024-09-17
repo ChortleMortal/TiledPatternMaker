@@ -1,0 +1,157 @@
+<!-- Written: Tue Aug 20 2024 16:00:37 -->
+<Tiling version="10">
+	<Name>Hankin-3C.v2</Name>
+	<Fill singleton="f">-3,3,-3,3</Fill>
+	<T0>0,0</T0>
+	<T1>-2.775557561562891e-16,-2.000000000000001</T1>
+	<T2>2.000000000000001,-4.996003610813204e-16</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile rotation="0" scale="1" type="edgepoly">
+		<Line>
+			<Point id="1">1,0.4142135623730951</Point>
+			<Point id="2">0.4142135623730951,1</Point>
+		</Line>
+		<Line>
+			<Point reference="2"></Point>
+			<Point id="3">-2.164934898019055e-15,1</Point>
+		</Line>
+		<Line>
+			<Point reference="3"></Point>
+			<Point id="4">-2.220446049250313e-15,0.5857864376269053</Point>
+		</Line>
+		<Line>
+			<Point reference="4"></Point>
+			<Point id="5">-0.5857864376269066,1.221245327087672e-15</Point>
+		</Line>
+		<Line>
+			<Point reference="5"></Point>
+			<Point id="6">-1,1.249000902703301e-15</Point>
+		</Line>
+		<Line>
+			<Point reference="6"></Point>
+			<Point id="7">-1,-0.414213562373095</Point>
+		</Line>
+		<Line>
+			<Point reference="7"></Point>
+			<Point id="8">-0.4142135623730957,-0.9999999999999998</Point>
+		</Line>
+		<Line>
+			<Point reference="8"></Point>
+			<Point id="9">0.4142135623730953,-0.9999999999999999</Point>
+		</Line>
+		<Line>
+			<Point reference="9"></Point>
+			<Point id="10">0.9999999999999998,-0.4142135623730958</Point>
+		</Line>
+		<Line>
+			<Point reference="10"></Point>
+			<Point reference="1"></Point>
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Tile rotation="0" scale="1" type="edgepoly">
+		<Line>
+			<Point reference="5"></Point>
+			<Point reference="4"></Point>
+		</Line>
+		<Line>
+			<Point reference="4"></Point>
+			<Point reference="3"></Point>
+		</Line>
+		<Line>
+			<Point reference="3"></Point>
+			<Point id="11">-0.414213562373095,1</Point>
+		</Line>
+		<Line>
+			<Point reference="11"></Point>
+			<Point id="12">-1,0.4142135623730952</Point>
+		</Line>
+		<Line>
+			<Point reference="12"></Point>
+			<Point reference="6"></Point>
+		</Line>
+		<Line>
+			<Point reference="6"></Point>
+			<Point reference="5"></Point>
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Tile rotation="0" scale="1" type="edgepoly">
+		<Line>
+			<Point id="13">-1.998401444325282e-15,1.414213562373096</Point>
+			<Point id="14">-0.5857864376269069,2.000000000000001</Point>
+		</Line>
+		<Line>
+			<Point reference="14"></Point>
+			<Point id="15">-1.414213562373097,2.000000000000001</Point>
+		</Line>
+		<Line>
+			<Point reference="15"></Point>
+			<Point id="16">-2.000000000000002,1.414213562373096</Point>
+		</Line>
+		<Line>
+			<Point reference="16"></Point>
+			<Point id="17">-2.000000000000002,0.5857864376269062</Point>
+		</Line>
+		<Line>
+			<Point reference="17"></Point>
+			<Point id="18">-1.414213562373098,1.332267629550188e-15</Point>
+		</Line>
+		<Line>
+			<Point reference="18"></Point>
+			<Point reference="6"></Point>
+		</Line>
+		<Line>
+			<Point reference="6"></Point>
+			<Point reference="12"></Point>
+		</Line>
+		<Line>
+			<Point reference="12"></Point>
+			<Point reference="11"></Point>
+		</Line>
+		<Line>
+			<Point reference="11"></Point>
+			<Point reference="3"></Point>
+		</Line>
+		<Line>
+			<Point reference="3"></Point>
+			<Point reference="13"></Point>
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Desc>Octagons in contact</Desc>
+	<Auth>David Casper</Auth>
+	<BackgroundImage name="han_002.jpg">
+		<Scale>5.892898383426052</Scale>
+		<Rot>0</Rot>
+		<X>5</X>
+		<Y>714</Y>
+		<Center>0,0</Center>
+	</BackgroundImage>
+</Tiling>

@@ -1,7 +1,9 @@
 <?xml version="1.0"?>
-<Tiling version="6">
+<!-- Written: Sat May 4 2024 12:40:14 -->
+<Tiling version="10">
 	<Name>6-4-3.v6</Name>
 	<Fill singleton="f">-3,3,-3,3</Fill>
+	<T0>0,0</T0>
 	<T1>0,0</T1>
 	<T2>0,0</T2>
 	<ViewSettings>
@@ -9,13 +11,14 @@
 		<height>959</height>
 		<zwidth>1671</zwidth>
 		<zheight>1100</zheight>
-		<left__delta>-1483</left__delta>
-		<top__delta>-130</top__delta>
-		<width__delta>2.409788790573706</width__delta>
+		<left__delta>-424</left__delta>
+		<top__delta>-63</top__delta>
+		<width__delta>1.85321230220523</width__delta>
 		<theta__delta>0</theta__delta>
 		<center>0,0</center>
+		<Z>0</Z>
 	</ViewSettings>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="1">-0.6089550096003365,2.786965028801012</Point>
 			<Point id="2">-1.629055009600339,2.786965028801012</Point>
@@ -42,8 +45,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="6">-1.119005009600337,1.903532514400506</Point>
 			<Point id="7">-1.629055009600338,2.141372735442464</Point>
@@ -70,8 +73,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="11">-1.33457750480017,-1.099005009600336</Point>
 			<Point id="12">-1.629055009600338,-1.124768452933751</Point>
@@ -98,8 +101,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="16">-1.629055009600337,-2.786965028801012</Point>
 			<Point id="17">-0.6089550096003387,-2.786965028801012</Point>
@@ -126,8 +129,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="21">-1.459504460784555,0.8310982879336298</Point>
 			<Point id="22">-1.629055009600338,0.5889550096003374</Point>
@@ -170,8 +173,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="30">-1.629055009600338,-0.5889550096003365</Point>
 			<Point id="31">-1.459504460784556,-0.8310982879336271</Point>
@@ -210,8 +213,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="38">-1.386501834108146,0.2425531754921933</Point>
 			<Point id="39">-1.629055009600338,0.5889550096003374</Point>
@@ -238,8 +241,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="43">-1.155861304291089,1.482263138399232</Point>
 			<Point id="44">-1.334577504800169,1.099005009600337</Point>
@@ -282,8 +285,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="52">-1.33457750480017,-1.099005009600336</Point>
 			<Point id="53">-1.155861304291088,-1.482263138399235</Point>
@@ -326,8 +329,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="61">-1.069955683064378,2.464168882121737</Point>
 			<Point id="62">-1.119005009600337,1.903532514400506</Point>
@@ -370,8 +373,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="70">-1.119005009600338,-1.903532514400506</Point>
 			<Point id="71">-1.06995568306438,-2.464168882121736</Point>
@@ -410,8 +413,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="78">-0.2625531754921939,-2.544411853308819</Point>
 			<Point id="79">-0.6089550096003387,-2.786965028801012</Point>
@@ -438,8 +441,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="83">-0.6089550096003365,2.786965028801012</Point>
 			<Point id="84">-0.2625531754921919,2.544411853308819</Point>
@@ -470,8 +473,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="89">-0.0199999999999999,-0.6455922933585481</Point>
 			<Point id="90">-0.5300500000000001,-0.8834325144005046</Point>
@@ -514,8 +517,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="98">-0.5300500000000002,0.8834325144005059</Point>
 			<Point id="99">-0.02000000000000007,0.6455922933585485</Point>
@@ -554,8 +557,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="106">-0.0199999999999998,2.198010019200674</Point>
 			<Point id="107">0.1495505488157836,1.955866740867381</Point>
@@ -598,8 +601,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="115">0.1495505488157818,-1.955866740867382</Point>
 			<Point id="116">-0.02000000000000124,-2.198010019200674</Point>
@@ -642,8 +645,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="124">0.274477504800168,-1.687960019200675</Point>
 			<Point id="125">0.3335236734795129,-1.693125889584757</Point>
@@ -690,8 +693,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="134">0.3335236734795132,1.693125889584756</Point>
 			<Point id="135">0.2744775048001688,1.687960019200674</Point>
@@ -734,8 +737,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="143">0.5390993265359597,-0.322796146679275</Point>
 			<Point id="144">0.4900499999999999,-0.8834325144005056</Point>
@@ -778,8 +781,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="152">0.4900499999999998,0.8834325144005053</Point>
 			<Point id="153">0.5390993265359587,0.3227961466792738</Point>
@@ -818,8 +821,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="160">1.0001,-6.938893903907228e-16</Point>
 			<Point id="161">1.346501834108146,-0.2425531754921933</Point>
@@ -846,8 +849,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="165">1.079005009600337,-1.903532514400507</Point>
 			<Point id="166">1.589055009600339,-2.141372735442465</Point>
@@ -874,8 +877,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="170">1.589055009600336,2.141372735442462</Point>
 			<Point id="171">1.079005009600337,1.903532514400505</Point>
@@ -902,8 +905,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="175">1.589055009600337,0.5889550096003365</Point>
 			<Point id="176">1.589055009600337,1.124768452933752</Point>
@@ -926,8 +929,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="179">1.589055009600336,2.141372735442462</Point>
 			<Point id="180">1.589055009600336,2.786965028801011</Point>
@@ -954,8 +957,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="184">-1.629055009600338,-1.124768452933751</Point>
 			<Point id="185">-1.33457750480017,-1.099005009600336</Point>
@@ -978,8 +981,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="188">-1.629055009600338,0.5889550096003374</Point>
 			<Point id="189">-1.459504460784555,0.8310982879336298</Point>
@@ -1002,8 +1005,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="192">-0.5790993265359596,0.3227961466792753</Point>
 			<Point id="193">-1.0401,6.938893903907228e-16</Point>
@@ -1058,8 +1061,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="204">-0.3144775048001687,1.687960019200675</Point>
 			<Point id="205">-0.01999999999999824,1.662196575867258</Point>
@@ -1090,8 +1093,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="210">-0.02000000000000257,-1.662196575867259</Point>
 			<Point id="211">-0.3144775048001698,-1.687960019200674</Point>
@@ -1122,8 +1125,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="216">1.029955683064377,-2.464168882121737</Point>
 			<Point id="217">0.5689550096003362,-2.786965028801012</Point>
@@ -1150,8 +1153,8 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
-	<Feature type="edgepoly" rotation="0" scale="1">
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
 		<Line>
 			<Point id="221">1.419504460784555,-0.8310982879336298</Point>
 			<Point id="222">1.294577504800169,-1.099005009600337</Point>
@@ -1174,7 +1177,7 @@
 			<tranX>0</tranX>
 			<tranY>0</tranY>
 		</Placement>
-	</Feature>
+	</Tile>
 	<Desc />
 	<Auth />
 	<BackgroundImage name="Pomerantz4.png">

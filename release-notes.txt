@@ -1,3 +1,32 @@
+Version 3.6
+=============
+
+Improvements:
+    Motifs              The way motifs are constructed has been refactored.
+                        - Radial motifs are now based on rays which can be extended or connected
+                        - Motifs can now be cleansed in the same way as complete Mosaics.
+                          But this begs the unanswered question as to why they were not better
+                          constructed in the first place, so they wouldn't require cleansing.
+    Motif Maker menu    Enhanced to control revised Motif methods of construction
+    File Services       Major refactor of file versioning
+    Tiling Maker        Right click on tile always shows a menu of choices
+    Map Editor          Coalesce adjacent vertices refactored
+
+Fixes:
+    Control Panel       Fix crash on 'Clear All'
+    Control Panel       Fix for detached (floating) pages not detached on application startup
+    TilingMaker         Stack save/undo/redo operations much improved
+    Tiling Maker        Limit 'Show All' to 30 tiles
+    Tiling Maker        Prevent unwanted fills when vectors changed
+    Motif Maker         Regularity flip of Rosette2 and Star2 repaired
+    Map Editor          Force template loads to be visible
+    MotifView           Fix display of Extended Boundary and highlight unify
+    Borders             Model Xform was not being set in XML write/read
+    DebugView           DebugView and debug maps repaired
+    Image Tools         Fixes for '2nd use loaded' comparions and views
+    System Info         Removes limit on height when floated
+    Log                 Restores vertical scollbar
+
 Version 3.5.1
 =============
 

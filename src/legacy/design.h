@@ -2,16 +2,19 @@
 #ifndef DESIGN_H
 #define DESIGN_H
 
-#include "enums/edesign.h"
-#include "settings/canvas_settings.h"
+#include <QObject>
+#include "sys/enums/edesign.h"
+#include "model/settings/canvas_settings.h"
 
 class Configuration;
 
 typedef std::shared_ptr<class Pattern>       PatternPtr;
 typedef std::shared_ptr<class LegacyBorder>  LegacyBorderPtr;
 
-class Design
+class Design : public QObject
 {
+    Q_OBJECT
+
 public:
     virtual ~Design();
 
@@ -19,8 +22,6 @@ public:
     virtual bool    build() = 0;
     virtual void    repeat();
     void            destoryPatterns();
-
-    void            updateDesign();
 
     QString         getTitle() { return title; }
 
@@ -63,6 +64,9 @@ public:
 
     LegacyBorderPtr  border;
 
+signals:
+    void            sig_updateView();
+
 protected:
     Design(eDesign design, QString title);
 
@@ -86,7 +90,6 @@ protected:
     qreal           yOffset2;
 
     Configuration    * config;
-    class View       * view;
 
     QVector<PatternPtr> patterns;
 

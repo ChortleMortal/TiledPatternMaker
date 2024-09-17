@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<!-- Written: Fri May 3 2024 22:20:11 -->
+<Tiling version="10">
+	<Name>6-4-3.v7</Name>
+	<Fill singleton="f">-3,3,-3,3</Fill>
+	<T0>-1.758062913628567,0.01000000000000052</T0>
+	<T1>3.736125827257135,-9.159339953157541e-16</T1>
+	<T2>1.868062913628566,-3.23557987813983</T2>
+	<ViewSettings>
+		<width>805</width>
+		<height>959</height>
+		<zwidth>1671</zwidth>
+		<zheight>1100</zheight>
+		<left__delta>-434.0526315789475</left__delta>
+		<top__delta>-70.76315789473693</top__delta>
+		<width__delta>0.4673523096703066</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0.01259882201014451,0.00314970550253646</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="regular" sides="4" rotation="0" scale="1">
+		<Placement>
+			<scale>0.6837584822556312</scale>
+			<rot>-30.00000000000002</rot>
+			<tranX>-0.8240314568142845</tranX>
+			<tranY>-1.607789939069913</tranY>
+		</Placement>
+		<Placement>
+			<scale>0.6837584822556312</scale>
+			<rot>-5.372648714183583e-13</rot>
+			<tranX>-1.758062913628567</tranX>
+			<tranY>0.01000000000000052</tranY>
+		</Placement>
+		<Placement>
+			<scale>0.683758482255631</scale>
+			<rot>29.99999999999999</rot>
+			<tranX>-0.8240314568142832</tranX>
+			<tranY>1.627789939069915</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="3" rotation="0" scale="1">
+		<Placement>
+			<scale>0.3947681437909786</scale>
+			<rot>-30</rot>
+			<tranX>-1.758062913628567</tranX>
+			<tranY>-1.068526626046608</tranY>
+		</Placement>
+		<Placement>
+			<scale>0.3947681437909785</scale>
+			<rot>29.99999999999999</rot>
+			<tranX>-1.758062913628567</tranX>
+			<tranY>1.08852662604661</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="6" rotation="0" scale="1">
+		<Placement>
+			<scale>1.184304431372936</scale>
+			<rot>0</rot>
+			<tranX>0.11</tranX>
+			<tranY>0.009999999999999997</tranY>
+		</Placement>
+	</Tile>
+	<Desc>Pomerantz</Desc>
+	<Auth>David Casper</Auth>
+	<BackgroundImage name="Img2140adj.jpg">
+		<Scale>0.3054590259283045</Scale>
+		<Rot>0</Rot>
+		<X>-11</X>
+		<Y>-43</Y>
+		<Center>0,0</Center>
+	</BackgroundImage>
+</Tiling>

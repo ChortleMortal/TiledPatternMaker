@@ -3,7 +3,7 @@
 #define TILE_PATTERNS_H
 
 #include "legacy/legacy_tile.h"
-#include "settings/filldata.h"
+#include "model/settings/filldata.h"
 
 typedef std::shared_ptr<class ShapeFactory>    ShapeFPtr;
 typedef std::shared_ptr<class LegacyTile>      LegacyTilePtr;

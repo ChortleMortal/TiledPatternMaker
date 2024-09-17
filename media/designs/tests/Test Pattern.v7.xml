@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!-- Written: Sat Jan 20 2024 18:08:36 -->
-<vector id="1" version="17">
+<!-- Written: Tue Jun 18 2024 14:27:35 -->
+<vector id="1" version="23">
 	<design>
 		<size>
 			<width>789</width>
@@ -12,6 +12,14 @@
 			<color>#ff000000</color>
 		</background>
 		<border type="Plain" shape="Rectangle" useViewSize="f">
+			<toolkit.GeoLayer>
+				<left__delta>-152</left__delta>
+				<top__delta>0</top__delta>
+				<width__delta>1</width__delta>
+				<theta__delta>0</theta__delta>
+				<center>0,0</center>
+				<Z>10</Z>
+			</toolkit.GeoLayer>
 			<color>#ffffaaff</color>
 			<width>10</width>
 			<rect>
@@ -22,6 +30,13 @@
 			</rect>
 		</border>
 		<Fill singleton="f">-3,3,-3,3</Fill>
+		<BackgroundImage name="TestPattern.png">
+			<Scale>1</Scale>
+			<Rot>0</Rot>
+			<X>196</X>
+			<Y>41</Y>
+			<Center>0,0</Center>
+		</BackgroundImage>
 	</design>
 	<style.Thick id="2">
 		<toolkit.GeoLayer>
@@ -35,7 +50,7 @@
 		<style.Style>
 			<prototype id="3">
 				<app.Prototype>
-					<string>Test Pattern.v2</string>
+					<Tiling>Test Pattern.v2</Tiling>
 					<entry>
 						<Tile id="4">
 							<regular>true</regular>

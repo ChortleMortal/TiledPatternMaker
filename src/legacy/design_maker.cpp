@@ -1,14 +1,16 @@
 #include <QSize>
 #include <QApplication>
 #include "design_maker.h"
+#include "gui/viewers/gui_modes.h"
 #include "legacy/design.h"
 #include "legacy/designs.h"
-#include "misc/sys.h"
-#include "panels/controlpanel.h"
-#include "settings/configuration.h"
-#include "viewers/view.h"
-#include "viewers/view_controller.h"
-#include "settings/canvas_settings.h"
+#include "sys/sys/load_unit.h"
+#include "sys/sys.h"
+#include "gui/top/controlpanel.h"
+#include "model/settings/configuration.h"
+#include "gui/top/view.h"
+#include "gui/top/view_controller.h"
+#include "model/settings/canvas_settings.h"
 
 #ifdef __linux__
 #define ALT_MODIFIER Qt::MetaModifier
@@ -26,7 +28,6 @@ DesignMaker::DesignMaker()
 
 void DesignMaker::init()
 {
-    view        = Sys::view;
     viewControl = Sys::viewController;
     config      = Sys::config;
 
@@ -48,10 +49,12 @@ void DesignMaker::init()
     availableDesigns.insert(DESIGN_KUMIKO1,make_shared<DesignKumiko1>(DESIGN_KUMIKO1,"Kumiko 1"));
     availableDesigns.insert(DESIGN_KUMIKO2,make_shared<DesignKumiko2>(DESIGN_KUMIKO2,"Kumiko 2"));
 
-    connect(view, &View::sig_deltaScale,    this, &DesignMaker::designScale);
-    connect(view, &View::sig_deltaRotate,   this, &DesignMaker::designRotate);
-    connect(view, &View::sig_deltaMoveY,    this, &DesignMaker::designMoveY);
-    connect(view, &View::sig_deltaMoveX,    this, &DesignMaker::designMoveX);
+    connect(Sys::view, &View::sig_deltaScale,    this, &DesignMaker::designScale);
+    connect(Sys::view, &View::sig_deltaRotate,   this, &DesignMaker::designRotate);
+    connect(Sys::view, &View::sig_deltaMoveY,    this, &DesignMaker::designMoveY);
+    connect(Sys::view, &View::sig_deltaMoveX,    this, &DesignMaker::designMoveX);
+    connect(this,      &DesignMaker::sig_updateView,      Sys::view, &View::slot_update);
+    connect(this,      &DesignMaker::sig_reconstructView, viewControl, &ViewController::slot_reconstructView);
 }
 
 void DesignMaker::addDesign(DesignPtr d)
@@ -86,7 +89,7 @@ void DesignMaker::slot_loadDesign(eDesign design)
         Sys::controlPanel->delegateView(VIEW_DESIGN);
     }
     
-    viewControl->slot_reconstructView();
+    emit sig_reconstructView();
 }
 
 void DesignMaker::slot_buildDesign(eDesign design)
@@ -94,8 +97,10 @@ void DesignMaker::slot_buildDesign(eDesign design)
     QString desName = Design::getDesignName(design);
     qInfo().noquote() << "TiledPatternMaker::slot_buildDesign" << desName;
 
-    LoadUnit & loadUnit = view->getLoadUnit();
-    loadUnit.setLoadState(LOADING_LEGACY,desName);
+    VersionedName vn(desName);
+    VersionedFile vf;
+    vf.updateFromVersionedName(vn);
+    Sys::loadUnit->setLoadState(LOADING_LEGACY,vf);
 
     DesignMaker * designMaker = Sys::designMaker;
 
@@ -115,13 +120,13 @@ void DesignMaker::slot_buildDesign(eDesign design)
     canvas.initCanvasSize(size);
     canvas.setModelAlignment(M_ALIGN_NONE);
 
-    view->setSize(size);
+    viewControl->setSize(size);
 
     viewControl->removeAllImages();
 
-    loadUnit.resetLoadState();
+    Sys::loadUnit->resetLoadState();
 
-    viewControl->slot_reconstructView();
+    emit sig_reconstructView();
 
     emit sig_loadedDesign(design);
 }
@@ -191,7 +196,8 @@ void DesignMaker::designReposition(qreal x, qreal y)
             design->repeat();
         }
     }
-    view->update();
+
+    emit sig_updateView();
 }
 
 void DesignMaker::designOffset(qreal x, qreal y)
@@ -213,7 +219,7 @@ void DesignMaker::designToggleVisibility(int design)
     {
         DesignPtr d = activeDesigns[design];
         d->setVisible(!d->isVisible());
-        view->update();
+        emit sig_updateView();
     }
 }
 
@@ -268,15 +274,15 @@ void DesignMaker::setStep(int astep)
 void DesignMaker::ProcKeyUp()
 {
     // up arrow
-    if (view->getKbdMode(KBD_MODE_DES_ZLEVEL))
+    if (Sys::guiModes->getKbdMode(KBD_MODE_DES_ZLEVEL))
         designLayerZPlus();
-    else if (view->getKbdMode(KBD_MODE_DES_STEP))
+    else if (Sys::guiModes->getKbdMode(KBD_MODE_DES_STEP))
         step(1);
-    else if (view->getKbdMode(KBD_MODE_DES_SEPARATION))
+    else if (Sys::guiModes->getKbdMode(KBD_MODE_DES_SEPARATION))
         designReposition(0,-1);
-    else if (view->getKbdMode(KBD_MODE_DES_OFFSET))
+    else if (Sys::guiModes->getKbdMode(KBD_MODE_DES_OFFSET))
         designOffset(0,-1);
-    else if (view->getKbdMode(KBD_MODE_DES_ORIGIN))
+    else if (Sys::guiModes->getKbdMode(KBD_MODE_DES_ORIGIN))
     {
         Qt::KeyboardModifiers mod = QApplication::keyboardModifiers();
         if ((mod & ALT_MODIFIER) == ALT_MODIFIER)
@@ -289,15 +295,15 @@ void DesignMaker::ProcKeyUp()
 void DesignMaker::ProcKeyDown()
 {
     // down arrrow
-    if (view->getKbdMode(KBD_MODE_DES_ZLEVEL))
+    if (Sys::guiModes->getKbdMode(KBD_MODE_DES_ZLEVEL))
         designLayerZMinus();
-    else if (view->getKbdMode(KBD_MODE_DES_STEP))
+    else if (Sys::guiModes->getKbdMode(KBD_MODE_DES_STEP))
         step(-1);
-    else if (view->getKbdMode(KBD_MODE_DES_SEPARATION))
+    else if (Sys::guiModes->getKbdMode(KBD_MODE_DES_SEPARATION))
         designReposition(0,1);
-    else if (view->getKbdMode(KBD_MODE_DES_OFFSET))
+    else if (Sys::guiModes->getKbdMode(KBD_MODE_DES_OFFSET))
         designOffset(0,1);
-    else if (view->getKbdMode(KBD_MODE_DES_ORIGIN))
+    else if (Sys::guiModes->getKbdMode(KBD_MODE_DES_ORIGIN))
     {
         Qt::KeyboardModifiers mod = QApplication::keyboardModifiers();
         if ((mod & ALT_MODIFIER) == ALT_MODIFIER)
@@ -309,11 +315,11 @@ void DesignMaker::ProcKeyDown()
 
 void DesignMaker::ProcKeyLeft()
 {
-    if (view->getKbdMode(KBD_MODE_DES_SEPARATION))
+    if (Sys::guiModes->getKbdMode(KBD_MODE_DES_SEPARATION))
         designReposition(-1,0);
-    else if (view->getKbdMode(KBD_MODE_DES_OFFSET))
+    else if (Sys::guiModes->getKbdMode(KBD_MODE_DES_OFFSET))
         designOffset(-1,0);
-    else if (view->getKbdMode(KBD_MODE_DES_ORIGIN))
+    else if (Sys::guiModes->getKbdMode(KBD_MODE_DES_ORIGIN))
     {   Qt::KeyboardModifiers mod = QApplication::keyboardModifiers();
         if ((mod & ALT_MODIFIER) == ALT_MODIFIER)
             designOrigin(-100,0);
@@ -324,11 +330,11 @@ void DesignMaker::ProcKeyLeft()
 
 void DesignMaker::ProcKeyRight()
 {
-    if (view->getKbdMode(KBD_MODE_DES_SEPARATION))
+    if (Sys::guiModes->getKbdMode(KBD_MODE_DES_SEPARATION))
         designReposition(1,0);
-    else if (view->getKbdMode(KBD_MODE_DES_OFFSET))
+    else if (Sys::guiModes->getKbdMode(KBD_MODE_DES_OFFSET))
         designOffset(1,0);
-    else if (view->getKbdMode(KBD_MODE_DES_ORIGIN))
+    else if (Sys::guiModes->getKbdMode(KBD_MODE_DES_ORIGIN))
     {
         Qt::KeyboardModifiers mod = QApplication::keyboardModifiers();
         if ((mod & ALT_MODIFIER) == ALT_MODIFIER)
@@ -352,7 +358,7 @@ void DesignMaker::designScale(int delta)
         info.setViewSize(sz);
         design->setDesignInfo(info);
     }
-    view->update();
+    emit sig_updateView();
 }
 
 void DesignMaker::designRotate(int delta)
@@ -363,7 +369,7 @@ void DesignMaker::designRotate(int delta)
 
 void DesignMaker::designMoveY(int delta)
 {
-    if (view->getKbdMode(KBD_MODE_DES_POS) || view->getKbdMode(KBD_MODE_DES_LAYER_SELECT))
+    if (Sys::guiModes->getKbdMode(KBD_MODE_DES_POS) || Sys::guiModes->getKbdMode(KBD_MODE_DES_LAYER_SELECT))
     {
         for (auto & design : std::as_const(activeDesigns))
         {
@@ -371,7 +377,7 @@ void DesignMaker::designMoveY(int delta)
             top -= delta;
             design->setYoffset2(top);
         }
-        view->update();
+        emit sig_updateView();
     }
     else
     {
@@ -388,7 +394,7 @@ void DesignMaker::designMoveY(int delta)
 
 void DesignMaker::designMoveX(int delta)
 {
-    if (view->getKbdMode(KBD_MODE_DES_POS) || view->getKbdMode(KBD_MODE_DES_LAYER_SELECT))
+    if (Sys::guiModes->getKbdMode(KBD_MODE_DES_POS) || Sys::guiModes->getKbdMode(KBD_MODE_DES_LAYER_SELECT))
     {
         for (auto & design : std::as_const(activeDesigns))
         {
@@ -396,7 +402,7 @@ void DesignMaker::designMoveX(int delta)
             left -= delta;
             design->setXoffset2(left);
         }
-        view->update();
+        emit sig_updateView();
     }
     else
     {

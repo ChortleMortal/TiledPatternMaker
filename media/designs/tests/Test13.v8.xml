@@ -58,8 +58,8 @@
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>8</n>
-							<kneeX>0.2</kneeX>
-							<kneeY>0.4500000000000002</kneeY>
+							<x>0.2</x>
+							<y>0.4500000000000002</y>
 							<k>0</k>
 							<s>4</s>
 						</ExtendedRosette2>
