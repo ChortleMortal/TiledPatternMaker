@@ -9,9 +9,4 @@ In porting the software from taprats I have really dissected it for my own edifi
 
 In terms of copyright, this software is freely given without warranty.  In keeping with what Craig Kaplan did, it is marked with being under the terms of GNU GPL.  
 
-Download pre-built win10 executable [here](https://github.com/ChortleMortal/TiledPatternMaker/releases)
-
-
-
-
-
+Download pre-built win11 executable [here](https://github.com/ChortleMortal/TiledPatternMaker/releases)
