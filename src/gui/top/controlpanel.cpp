@@ -46,13 +46,18 @@ ControlPanel::ControlPanel()
 
 ControlPanel::~ControlPanel()
 {
-    qInfo() << __FUNCTION__;
     mpTimer->stop();
+
     if (!config->splitScreen)
     {
         QPoint pt = pos();
         QSettings s;
         s.setValue(QString("panelPos/%1").arg(Sys::appInstance), pt);
+        qInfo() << __FUNCTION__ << "pos" << pt;
+    }
+    else
+    {
+        qInfo() << __FUNCTION__;
     }
     closePages();
     delete pageController;

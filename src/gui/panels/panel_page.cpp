@@ -58,7 +58,7 @@ void panel_page::closeEvent(QCloseEvent *event)
 // called when closing the application
 void panel_page::closePage(bool detached)
 {
-    qInfo() << __FUNCTION__ << pageName;
+    //qInfo() << __FUNCTION__ << pageName;
 
     QSettings s;
     QString name = QString("panel2/%1/floated").arg(pageName);

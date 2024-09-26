@@ -1,3 +1,7 @@
+Version 3.6.1
+==============
+    Fixes:              Splash screen on startup and logging on exit
+
 Version 3.6
 =============
 

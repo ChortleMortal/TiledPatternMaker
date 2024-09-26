@@ -53,11 +53,13 @@ void SplashScreen::draw()
     {
         if (Sys::view)
         {
+            this->setParent(Sys::view);
             QPoint pos = Sys::view->rect().center() - rect().center();
             move(pos);
         }
 
         show();
+        raise();
 
         QString txt;
         for (auto & t : msgStack)
@@ -66,6 +68,7 @@ void SplashScreen::draw()
             txt += "\n";
         }
         setText(txt);
+
         if (Sys::view)
         {
             Sys::view->appSuspendPaint(true);

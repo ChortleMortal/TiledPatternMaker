@@ -45,8 +45,6 @@ View::View() : QWidget()
 
 View::~View()
 {
-    qInfo() << __FUNCTION__;
-
     if (!config->splitScreen)
     {
         QPoint pt = pos();
@@ -54,7 +52,10 @@ View::~View()
         s.setValue((QString("viewPos/%1").arg(Sys::appInstance)),pt);
         qInfo() << __FUNCTION__ << "pos" << pt;
     }
-
+    else
+    {
+        qInfo() << __FUNCTION__;
+    }
 }
 
 void View::init(ViewController *parent)
