@@ -1,3 +1,5 @@
+Warning:  When building it is best right now to stick right with using Qt 6.7.1  Qt 6.7.2 has a bug in reparenting QWidgets which stops some QCombBoxes from operating.  Qt 6.7.3 throws an ASSERT in QDate::toSttring in debug mode and so should also be avoided.  This second problem is also preseent in Qt 6.8.0 so far, prior to release. 
+
 This application is a work-in-progress, an exploration of geometric art.  It started by my being inspired by the stunningly beautiful creations to be seen in Andalucia.  This artform is often described as Islamic Art and it is true that its primary exemplars are to be found in locations where Islam is dominant in the culture.  However it seems to me that this art emerged in a culture where Islam, Judaism, and Christianity co-existed.
 
 
