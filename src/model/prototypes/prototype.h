@@ -71,7 +71,7 @@ public:
     void              addDesignElement(const DesignElementPtr & element);
     void              removeDesignElement(const DesignElementPtr &element);
     QVector<DesignElementPtr> &  getDesignElements() { return _designElements; }
-    DesignElementPtr  getDesignElement(const TilePtr & tile);
+  //DesignElementPtr  getDesignElement(const TilePtr & tile);
     DesignElementPtr  getDesignElement(int index);
     bool              containsDesignElement(DesignElementPtr del);
 

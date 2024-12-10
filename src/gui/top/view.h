@@ -102,6 +102,9 @@ public slots:
     void    slot_repaint();
     void    slot_raiseView();
 
+protected slots:
+    void    slot_testSize();
+
 signals:
     void sig_close();
     void sig_viewSizeChanged(QSize oldSize, QSize newSize);
@@ -135,6 +138,7 @@ signals:
     void sig_saveMenu();
     void sig_saveSVG();
 
+    void sig_testSize();
     void sig_messageBox(QString msg, QString msg2);
 
 protected:
@@ -183,17 +187,16 @@ private:
     uint              _suspendPaintView;
 
     bool              isShown;
-
-
     bool              dragging;
     QColor            backgroundColor;
 
     QPointF           sLast;    // used by pan
-
     QPointF           _tl;      // top left of view rect (screen pos)
     QPointF           _br;      // bottom right of view rect (scren pos)
 
     WeakCropPtr       _painterCrop;   // used for painter clipping
+
+    QSize            requestedSize;
 };
 
 #endif // VIEW_H

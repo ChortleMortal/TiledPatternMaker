@@ -336,7 +336,7 @@ void ControlPanel::slot_raisePanel()
 {
     setWindowState((windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
     raise();
-    Sys::controlPanel->activateWindow();
+    activateWindow();
 }
 
 void ControlPanel::repeatChanged(int id)

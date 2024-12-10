@@ -211,7 +211,7 @@ void  PanelViewSelect::selectViewer(eViewType vtype, bool enable)
 void  PanelViewSelect::slot_Viewer_pressed(int id, bool enable)
 {
     eViewType viewType = static_cast<eViewType>(id);
-    qDebug() << sViewerType[viewType] << (enable ? "enabled" : "disabled");
+    qDebug().noquote() << sViewerType[viewType] << (enable ? "enabled" : "disabled");
 
     switch (viewType)
     {

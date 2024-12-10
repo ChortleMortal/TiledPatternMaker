@@ -147,8 +147,6 @@ panel_page * PageListWidget::getSelectedPage()
             return pdata.page;
         }
     }
-
-    qDebug() << "no selected page";
     return nullptr;
 }
 

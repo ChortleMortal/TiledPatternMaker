@@ -128,7 +128,7 @@ public:
     void        unifyTile(PlacedTilePtr pf);
 
     // Tile related
-    PlacedTileSelectorPtr  getCurrentSelection() { return tmView->getTileSelector(); }
+    PlacedTileSelectorPtr  getCurrentSelection() { return tmView->tileSelector(); }
 
     void        flipTileRegularity(TilePtr tile);
 
@@ -142,17 +142,19 @@ public:
     void        addToTranslate(QLineF mLine, QPointF origin);
     void        duplicateSelectedTiling();
 
-    void          setCurrentPlacedTile(PlacedTilePtr pfp);
-    void          resetCurrentPlacedTile() { currentPlacedTile.reset();  emit sig_current_tile(currentPlacedTile); }
-    PlacedTilePtr getCurrentPlacedTile() { return currentPlacedTile; }
+    void        selectTile(PlacedTilePtr pfp);
+    void        deselectTile() { _selectedTile.reset();  emit sig_current_tile(_selectedTile); }
+    inline PlacedTilePtr selectedTile() { return _selectedTile; }
 
     void        toggleInclusion(PlacedTileSelectorPtr sel);
     bool        procKeyEvent(QKeyEvent * k);
 
     void        clearConstructionLines() { tmView->clearConstructionLines(); }
 
-    void        setClickedSelector(PlacedTileSelectorPtr tsp) { clickedSelector = tsp; }
-    void        setClickedPoint(QPointF pt)             { clickedSpt      = pt; }
+    inline PlacedTileSelectorPtr clickedSelector()              { return _clickedSelector; }
+    void        setClickedSelector(PlacedTileSelectorPtr tsp)   { _clickedSelector = tsp; }
+    void        resetClickedSelector()                          { _clickedSelector.reset(); }
+    void        setClickedPoint(QPointF pt)                     { clickedSpt      = pt; }
 
     TMStack &   getStack() { return tmStack; }
 
@@ -250,13 +252,13 @@ private:
     UniqueQVector<TilingPtr>    tilings;
     TilingPtr                   selectedTiling;
 
-    PlacedTilePtr               currentPlacedTile;  // current menu row selection too
+    PlacedTilePtr               _selectedTile;  // current menu row selection too
     PlacedTilePtr               unifyBase;
 
     eTilingMakerMouseMode       tilingMakerMouseMode;     // set by tiling designer menu
     eVectorState                vectorState;
 
-    PlacedTileSelectorPtr       clickedSelector;
+    PlacedTileSelectorPtr       _clickedSelector;
     QPointF                     clickedSpt;
 
     int                         poly_side_count;            // number of selected vertices when drawing polygons.

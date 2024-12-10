@@ -139,7 +139,7 @@ void TiledPatternMaker::slot_start()
 
     Sys::splash->remove();
 
-    qInfo() << "TPM started";
+    qInfo() << __FUNCTION__ << " - started";
 }
 
 TiledPatternMaker::~TiledPatternMaker()

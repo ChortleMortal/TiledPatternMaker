@@ -54,9 +54,9 @@ public:
     void hideTiling(bool state);
     void hideVectors(bool state);
 
-    PlacedTileSelectorPtr getTileSelector()                   { return tileSelector; }
-    void                  resetTileSelector()                 { tileSelector.reset(); }
-    void                  setTileSelector(PlacedTileSelectorPtr tsp){ tileSelector = tsp; }
+    PlacedTileSelectorPtr tileSelector()                            { return _tileSelector; }
+    void                  resetTileSelector()                       { _tileSelector.reset(); }
+    void                  setTileSelector(PlacedTileSelectorPtr tsp){ _tileSelector = tsp; }
 
     PlacedTileSelectorPtr findSelection(QPointF spt);
     PlacedTileSelectorPtr findTile(QPointF spt);
@@ -149,7 +149,7 @@ private:
     bool                    _hideTiling;
     bool                    _hideVectors;
 
-    PlacedTileSelectorPtr   tileSelector;       // Current mouse selection.
+    PlacedTileSelectorPtr   _tileSelector;      // Selected placed tile
     PlacedTilePtr           editPlacedTile;     // Tile in DlgTileEdit
 
     QColor                  lineColor;

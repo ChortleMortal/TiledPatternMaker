@@ -434,6 +434,7 @@ QString Prototype::info() const
     return QString("elements=%1 tiling=%2").arg(_designElements.size()).arg(_tiling->getName().get());
 }
 
+#if 0
 DesignElementPtr Prototype::getDesignElement(const TilePtr & tile)
 {
     for (const auto & designElement : std::as_const(_designElements))
@@ -444,10 +445,11 @@ DesignElementPtr Prototype::getDesignElement(const TilePtr & tile)
         }
     }
 
-    qDebug() << "getDesignElement() - not found";
+    //qDebug() << __FUNCTION__ "- not found";
     DesignElementPtr del;
     return del;
 }
+#endif
 
 DesignElementPtr Prototype::getDesignElement(int index)
 {
@@ -456,7 +458,7 @@ DesignElementPtr Prototype::getDesignElement(int index)
         return _designElements[index];
     }
 
-    qDebug() << "getDesignElement() - not found";
+    //qDebug() << __FUNCTION__ "- not found";
     DesignElementPtr del;
     return del;
 }

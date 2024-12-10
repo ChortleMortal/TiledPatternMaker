@@ -65,7 +65,9 @@ void View::init(ViewController *parent)
     designMaker = Sys::designMaker;
     panel       = Sys::controlPanel;
 
+    connect(this, &View::sig_testSize,   this,  &View::slot_testSize,           Qt::QueuedConnection);
     connect(this, &View::sig_messageBox, panel, &ControlPanel::slot_messageBox, Qt::QueuedConnection);
+    connect(this, &View::sig_raiseMenu,  panel, &ControlPanel::slot_raisePanel);
 
     _viewSize = QSize(Sys::DEFAULT_WIDTH, Sys::DEFAULT_HEIGHT);
     if (config->splitScreen)
@@ -829,8 +831,6 @@ void View::setFixedSize(QSize sz)
 
 void View::setSize(QSize sz)
 {
-    qDebug() << "View::setSize:" << sz;
-
     if (config->limitViewSize)
     {
         QScreen * pri = QGuiApplication::primaryScreen();
@@ -846,25 +846,25 @@ void View::setSize(QSize sz)
         }
     }
 
+    qDebug() << __FUNCTION__ << sz;
+    requestedSize = sz;
+    QWidget::resize(sz);
+
 #if defined(Q_OS_WINDOWS)
-
-    QWidget::resize(sz);
-
-    viewSuspendPaint(true);
-    qApp->processEvents();
-    viewSuspendPaint(false);
-    if (sz != size())
-    {
-        QString astring;
-        QDebug ts(&astring);
-        ts << "Requested size" << sz << "Actual size" << size();
-        emit sig_messageBox("View has been resized by Windows",astring);
-    }
-#else
-    QWidget::resize(sz);
+    emit sig_testSize();
 #endif
 }
 
+void View::slot_testSize()
+{
+    if (size() != requestedSize)
+    {
+        QString astring;
+        QDebug ts(&astring);
+        ts << "Requested size" << requestedSize << "Actual size" << size();
+        emit sig_messageBox("View has been resized by Windows",astring);
+    }
+}
 
 void View::flash(QColor color)
 {

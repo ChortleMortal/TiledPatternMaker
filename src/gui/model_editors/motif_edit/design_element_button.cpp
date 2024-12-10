@@ -47,12 +47,12 @@ void DesignElementButton::construct(DesignElementPtr del, int index)
 
     if (del)
     {
-        qDebug().noquote() << "MotifButton::construct() index:" << index << "del:" << del.get();
+        qDebug().noquote() << __FUNCTION__ << "index:" << index << "del:" << del.get();
         del->describe();
     }
     else
     {
-        qDebug().noquote() << "MotifButton::construct() index:" << index << "del: 0";
+        qDebug().noquote() << __FUNCTION__ << "index:" << index << "del: 0";
     }
 
     setSize(310,310);

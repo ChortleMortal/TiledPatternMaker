@@ -41,7 +41,7 @@ void Worklist::load(QSettings & s)
     listname = s.value("workListName3","").toString();
 
     vlist.clear();
-    QStringList qsl = s.value("workList","").toStringList();
+    QStringList qsl = s.value("worklist","").toStringList();
     for (auto & str : std::as_const(qsl))
     {
         if (!str.isEmpty())

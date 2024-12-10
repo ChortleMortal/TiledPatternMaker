@@ -1,6 +1,16 @@
+Version 3.6.2
+=============
+
+Fixes:
+    View                (Windows only) Resizing of View could cause crash
+    View                (Linux) Worklist not reloading at startup
+
 Version 3.6.1
 ==============
-    Fixes:              Splash screen on startup and logging on exit
+
+Fixes:
+    Splash screen       Did not work on exit
+    Exit                Logging too verbose
 
 Version 3.6
 =============
@@ -243,11 +253,11 @@ since version 2.7. The image tools have been improved for creatig images and com
 
 Version 3.0 has been built with Qt 6.5.0 and Qt 5.15.2. It supports both cmake and qmake.
 
-The media directory tree has been revised and versioning of files redone.  The intent has been to fully 
+The media directory tree has been revised and versioning of files redone.  The intent has been to fully
 support the original taprats designs and make additions to that.  In doing so, it became apprarent that the
 original taprats java designs used the class "ExplicitFigure".  This class was to produce motifs (figures)
 for tiles (features) which were irregular polygons.  The ExplicitFigure class could be constructed in a number
-of ways, but its data was persisted (saved) as a map which did not have any indication of how it was made. 
+of ways, but its data was persisted (saved) as a map which did not have any indication of how it was made.
 So for version 3.0, the TPM application was used to re-create the original map using the various supported
 ways of creating the motif map.  This painstaking process has been largely successful, but there are a few
 instances where the ExpicitFigure could not be recreated. The inference is that the design was created with

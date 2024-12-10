@@ -637,25 +637,6 @@ void page_loaders::refillMosaicsCombo()
 
 void page_loaders::loadTilingsCombo()
 {
-    static bool firstTime = true;
-
-    if (firstTime)
-    {
-        firstTime = false;
-        eLoadType ltype = SELECTED_TILINGS;
-        if (tilingWorklistCheck->isChecked())
-        {
-            ltype = WORKLIST;
-        }
-
-        VersionFileList vfl = FileServices::getTilingFiles(ltype);
-        Sys::tilingsList    = vfl;
-        Sys::tilingUses     = FileServices::getTilingUses();
-
-        refillTilingsCombo();
-        // then do it again
-    }
-
     emit sig_sortTilings(tilingWorklistCheck->isChecked(),config->showWithBkgds,mosaicSortChk->isChecked());
 }
 

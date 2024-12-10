@@ -68,7 +68,7 @@ void TilingMakerView::clearViewData()
         delete m;
     }
     wMeasurements.clear();
-    tileSelector.reset();
+    resetTileSelector();
     editPlacedTile.reset();
     mouse_interaction.reset();
 }
@@ -115,32 +115,32 @@ void TilingMakerView::draw(GeoGraphics * g2d)
         }
     }
 
-    if (tileSelector && !editPlacedTile)
+    if (tileSelector() && !editPlacedTile)
     {
         //qDebug() << "current selection:"  << strTiliingSelection[currentSelection->getType()];
-        switch (tileSelector->getType())
+        switch (tileSelector()->getType())
         {
         case INTERIOR:
             // nothing - handled by currentTile
             break;
 
         case EDGE:
-            g2d->drawEdge(tileSelector->getPlacedEdge(), QPen(QColor(Qt::green),3));
+            g2d->drawEdge(tileSelector()->getPlacedEdge(), QPen(QColor(Qt::green),3));
             break;
 
         case VERTEX:
         case MID_POINT:
         case TILE_CENTER:
-            g2d->drawCircle(tileSelector->getPlacedPoint(), 12, QPen(circle_color),QBrush(circle_color));
+            g2d->drawCircle(tileSelector()->getPlacedPoint(), 12, QPen(circle_color),QBrush(circle_color));
             break;
 
         case ARC_POINT:
-            g2d->drawCircle(tileSelector->getPlacedPoint(), 12, QPen(circle_color), QBrush(circle_color));
-            g2d->drawEdge(tileSelector->getPlacedEdge(), QPen(QColor(Qt::red),3));
+            g2d->drawCircle(tileSelector()->getPlacedPoint(), 12, QPen(circle_color), QBrush(circle_color));
+            g2d->drawEdge(tileSelector()->getPlacedEdge(), QPen(QColor(Qt::red),3));
             break;
 
         case SCREEN_POINT:
-            g2d->drawCircle(tileSelector->getModelPoint(), 14, QPen(Qt::red), QBrush(Qt::red));
+            g2d->drawCircle(tileSelector()->getModelPoint(), 14, QPen(Qt::red), QBrush(Qt::red));
             break;
         }
     }
@@ -153,9 +153,9 @@ void TilingMakerView::draw(GeoGraphics * g2d)
             p = editPlacedTile->getPlacedPoints();
             drawTile(g2d, editPlacedTile, true, normal_color);
         }
-        else if (tileSelector && tileSelector->getType() == INTERIOR)
+        else if (tileSelector() && tileSelector()->getType() == INTERIOR)
         {
-            p = tileSelector->getPlacedPolygon();
+            p = tileSelector()->getPlacedPolygon();
         }
         if (p.size())
         {
@@ -195,13 +195,13 @@ void TilingMakerView::drawTiling(GeoGraphics * g2d, TilingPtr tiling)
         if (tile->show())
         {
             QColor color = normal_color;
-            if (tile == tilingMaker->getCurrentPlacedTile())
+            if (tile == tilingMaker->selectedTile())
             {
                 color = under_mouse_color;
             }
-            else if (tileSelector
-                     && ((tileSelector->getType() == INTERIOR) || (tileSelector->getType() == TILE_CENTER))
-                     && tileSelector->getPlacedTile() == tile)
+            else if (tileSelector()
+                       && ((tileSelector()->getType() == INTERIOR) || (tileSelector()->getType() == TILE_CENTER))
+                       && tileSelector()->getPlacedTile() == tile)
             {
                 color = selected_color;
             }
@@ -690,7 +690,7 @@ void TilingMakerView::startMouseInteraction(QPointF spt, enum Qt::MouseButton mo
                 mouse_interaction = make_shared<JoinEdge>(sel, spt);
                 break;
             case INTERIOR:
-                tilingMaker->setCurrentPlacedTile(sel->getPlacedTile());
+                tilingMaker->selectTile(sel->getPlacedTile());
                 mouse_interaction = make_shared<MovePolygon>(sel, spt);
                 break;
             case ARC_POINT:
@@ -761,7 +761,7 @@ void TilingMakerView::startMouseInteraction(QPointF spt, enum Qt::MouseButton mo
     }
     else
     {
-            tilingMaker->resetCurrentPlacedTile();
+            tilingMaker->deselectTile();
     }
 }
 
@@ -779,27 +779,27 @@ void TilingMakerView::updateUnderMouse(QPointF spt)
     case TM_MIRROR_Y_MODE:
     case TM_REFLECT_EDGE:
     case TM_UNIFY_MODE:
-        tileSelector = findSelection(spt);
-        if (tileSelector)
+        setTileSelector(findSelection(spt));
+        if (tileSelector())
             forceRedraw();  // NOTE this triggers a lot of repainting
         break;
 
     case TM_TRANSLATION_VECTOR_MODE:
     case TM_CONSTRUCTION_LINES:
-        tileSelector = findSelection(spt);
-        if (tileSelector)
+        setTileSelector(findSelection(spt));
+        if (tileSelector())
             forceRedraw();
         break;
 
     case TM_DRAW_POLY_MODE:
-        tileSelector = findVertex(spt);
-        if (!tileSelector)
+        setTileSelector(findVertex(spt));
+        if (!tileSelector())
         {
-            tileSelector = findMidPoint(spt);
+            setTileSelector(findMidPoint(spt));
         }
-        if (!tileSelector)
+        if (!tileSelector())
         {
-            tileSelector = findNearGridPoint(spt);
+            setTileSelector(findNearGridPoint(spt));
         }
         forceRedraw();
         break;
@@ -817,21 +817,21 @@ void TilingMakerView::updateUnderMouse(QPointF spt)
         break;
 
     case TM_EDGE_CURVE_MODE:
-        tileSelector = findArcPoint(spt);
-        if (tileSelector)
+        setTileSelector(findArcPoint(spt));
+        if (tileSelector())
         {
             qDebug() << "updateUnderMouse: found arc center";
         }
         else
         {
-            tileSelector = findEdge(spt);
-            if (tileSelector)
+            setTileSelector(findEdge(spt));
+            if (tileSelector())
             {
                 qDebug() << "updateUnderMouse: found edge";
             }
             else
             {
-                tileSelector.reset();
+                resetTileSelector();
             }
         }
         forceRedraw();
@@ -992,7 +992,7 @@ void TilingMakerView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
         sel = findArcPoint(spt);
         if (sel)
         {
-            tileSelector = sel;
+            setTileSelector(sel);
             QMenu myMenu;
             myMenu.addAction("Use Cursor to change curve", tilingMaker, SLOT(slot_moveArcCenter()));
             myMenu.addAction("Edit Magnitude", tilingMaker, SLOT(slot_editMagnitude()));
@@ -1013,12 +1013,12 @@ void TilingMakerView::slot_mousePressed(QPointF spt, enum Qt::MouseButton btn)
                     EdgePtr edge =  sel->getModelEdge();
                     if (edge->getType() == EDGETYPE_LINE)
                     {
-                        tileSelector = sel;
+                        setTileSelector(sel);
                         tilingMaker->slot_createCurve();
                     }
                     else if (edge->getType() == EDGETYPE_CURVE)
                     {
-                        tileSelector = sel;
+                        setTileSelector(sel);
                         QMenu myMenu;
                         myMenu.addAction("Flatten Edge",  tilingMaker, SLOT(slot_flatenCurve()));
                         if (edge->isConvex())
@@ -1134,7 +1134,7 @@ void TilingMakerView::slot_mouseTranslate(QPointF spt)
     }
     else if (Sys::guiModes->getKbdMode(KBD_MODE_XFORM_PLACED_TILE))
     {
-        auto currentTile = tilingMaker->getCurrentPlacedTile();
+        auto currentTile = tilingMaker->selectedTile();
         if (!currentTile)
             return;
         

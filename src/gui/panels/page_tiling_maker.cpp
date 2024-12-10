@@ -672,7 +672,7 @@ void  page_tiling_maker::onRefresh()
         debugLabel2->setText(astring);
 
         astring.clear();
-        auto selector = tmView->getTileSelector();
+        auto selector = tmView->tileSelector();
         if (selector)
         {
             auto type = selector->getType();
@@ -1257,7 +1257,7 @@ void page_tiling_maker::slot_placedTranslateChanged(int col)
     if (pageBlocked()) return;
 
     PlacedTilePtr placedTile = getTileColumn(col);
-    tilingMaker->setCurrentPlacedTile(placedTile);
+    tilingMaker->selectTile(placedTile);
 
     auto widget = tileInfoTable->cellWidget(TI_PLACEMENT_X,col);
     auto dsp    = dynamic_cast<AQDoubleSpinBox*>(widget);
@@ -1285,7 +1285,7 @@ void page_tiling_maker::slot_placedScaleChanged(int col)
     if (pageBlocked()) return;
 
     PlacedTilePtr placedTile = getTileColumn(col);
-    tilingMaker->setCurrentPlacedTile(placedTile);
+    tilingMaker->selectTile(placedTile);
 
     QWidget  * cw  = tileInfoTable->cellWidget(TI_PLACEMENT_SCALE,col);
     AQDoubleSpinBox * dsp = dynamic_cast<AQDoubleSpinBox*>(cw);
@@ -1312,7 +1312,7 @@ void page_tiling_maker::slot_placedRotateChanged(int col)
     if (pageBlocked()) return;
 
     PlacedTilePtr placedTile = getTileColumn(col);
-    tilingMaker->setCurrentPlacedTile(placedTile);
+    tilingMaker->selectTile(placedTile);
 
     auto rot_widget = tileInfoTable->cellWidget(TI_PLACEMENT_ROT,col);
     auto rot_dsp = dynamic_cast<AQDoubleSpinBox*>(rot_widget);
@@ -1679,7 +1679,7 @@ void page_tiling_maker::slot_cellSelected(int row, int col)
 {
     Q_UNUSED(row)
     PlacedTilePtr pfp = getTileColumn(col);
-    tilingMaker->setCurrentPlacedTile(pfp);
+    tilingMaker->selectTile(pfp);
 
     auto selector = make_shared<InteriorTilleSelector>(pfp);
     tmView->setTileSelector(selector);

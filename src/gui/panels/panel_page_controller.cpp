@@ -48,7 +48,8 @@ PanelPageController::~PanelPageController()
 
 void PanelPageController::populatePages()
 {
-    // qDebug() << "populateDevice";
+    qDebug() << __FUNCTION__;
+
     panel_page * wp;
 
     wp = new page_loaders(panel);
@@ -140,7 +141,10 @@ void PanelPageController::populatePages()
     connect(pageList, &PageListWidget::itemDoubleClicked, this, &PanelPageController::slot_itemDetachPanelPage);
 
     pageList->establishSize();
+
+    qDebug() << __FUNCTION__ << "- END";
 }
+
 
 void PanelPageController::refreshPages()
 {

@@ -139,7 +139,8 @@ void logSystemInfo()
     qInfo().noquote() << "Log font          :" << font.toString();
     qInfo().noquote() << "Platform          :" << QGuiApplication::platformName();
     getGitInfo();
-    qInfo().noquote() << "git branch        :" << Sys::gitBranch;
+    if (!Sys::gitBranch.isEmpty())
+        qInfo().noquote() << "git branch        :" << Sys::gitBranch;
 }
 
 int main(int argc, char *argv[])
