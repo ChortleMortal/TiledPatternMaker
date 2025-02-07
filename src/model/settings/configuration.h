@@ -36,7 +36,8 @@ enum eGridUnits
 {
     GRID_UNITS_SCREEN,
     GRID_UNITS_MODEL,
-    GRID_UNITS_TILE
+    GRID_UNITS_TILE,
+    GRID_UNITS_MAX = GRID_UNITS_TILE
 };
 
 enum  eGridType
@@ -44,6 +45,7 @@ enum  eGridType
     GRID_ORTHOGONAL,
     GRID_ISOMETRIC,
     GRID_RHOMBIC,
+    GRID_TYPE_MAX = GRID_RHOMBIC
 };
 
 enum  eGridTilingAlgo

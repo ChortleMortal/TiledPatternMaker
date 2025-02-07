@@ -59,14 +59,22 @@ page_mosaic_maker:: page_mosaic_maker(ControlPanel * apanel)  : panel_page(apane
 
     currentEditor = emptyWidget;
 
-    vbox->addLayout(fillBox);
-    vbox->addSpacing(3);
-    vbox->addWidget(styleTable);
-    vbox->addSpacing(3);
-    vbox->addLayout(hbox);
-    vbox->addSpacing(5);
-    vbox->addWidget(lowerWidget);
-    vbox->addStretch();
+    QVBoxLayout * wvbox = new AQVBoxLayout;
+    wvbox->addLayout(fillBox);
+    wvbox->addSpacing(3);
+    wvbox->addWidget(styleTable);
+    wvbox->addSpacing(3);
+    wvbox->addLayout(hbox);
+    wvbox->addSpacing(5);
+    wvbox->addWidget(lowerWidget);
+    wvbox->addStretch();
+
+    QWidget * w = new QWidget;
+    w->setContentsMargins(0,0,0,0);
+    w->setFixedWidth(PANEL_RHS_WIDTH-40);
+    w->setLayout(wvbox);
+
+    vbox->addWidget(w);
 
     connect(delBtn,  &QPushButton::clicked, this, &page_mosaic_maker::slot_deleteStyle);
     connect(upBtn,   &QPushButton::clicked, this, &page_mosaic_maker::slot_moveStyleUp);
@@ -309,7 +317,7 @@ void page_mosaic_maker::displayStyles()
             // these three connects all pas the row not the index
             connect(qcbStyle,  QOverload<int>::of(&QComboBox::currentIndexChanged), this,  [this,row] { styleChanged(row); });
             connect(qcbTiling, QOverload<int>::of(&QComboBox::currentIndexChanged), this,  [this,row] { tilingChanged(row); });
-            connect(cbShow,    &QCheckBox::toggled,                                 this,  [this,row] { styleVisibilityChanged(row); });
+            connect(cbShow,    &QCheckBox::clicked,                                 this,  [this,row] { styleVisibilityChanged(row); });
 
             row++;
         }

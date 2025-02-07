@@ -27,12 +27,6 @@
 
 #define ROW_HEIGHT 39
 
-#if (QT_VERSION >= QT_VERSION_CHECK(6,7,0))
-#define CBOX_STATECHANGE &QCheckBox::checkStateChanged
-#else
-#define CBOX_STATECHANGE &QCheckBox::stateChanged
-#endif
-
 StyleEditor::StyleEditor() : QWidget()
 {
     setable = nullptr;
@@ -250,7 +244,7 @@ ThickEditor::ThickEditor(StylePtr style) : ColoredEditor(style)
 
     rows++;
 
-    connect(outline_checkbox,     CBOX_STATECHANGE,         this, &ThickEditor::slot_outlineChanged);
+    connect(outline_checkbox,     &QCheckBox::clicked,      this, &ThickEditor::slot_outlineChanged);
     connect(width_slider,         &SliderSet::valueChanged, this, &ThickEditor::slot_widthChanged);
     connect(outline_width_slider, &SliderSet::valueChanged, this, &ThickEditor::slot_outlineWidthChanged);
     connect(outline_color_button, &QPushButton::clicked,    this, &ThickEditor::slot_outlineColor);
@@ -294,12 +288,11 @@ void  ThickEditor::slot_widthChanged(int width)
     emit sig_reconstructView();
 }
 
-void  ThickEditor::slot_outlineChanged(int state)
+void  ThickEditor::slot_outlineChanged(bool checked)
 {
     auto thick = wthick.lock();
     if (!thick) return;
 
-    bool checked = (state == Qt::Checked);
     eDrawOutline outline = (checked) ? OUTLINE_SET : OUTLINE_NONE;
     thick->setDrawOutline(outline);
     emit sig_reconstructView();
@@ -753,8 +746,8 @@ InterlaceEditor::InterlaceEditor(StylePtr style) : ThickEditor(style)
 
     connect(gap_slider,       &DoubleSliderSet::valueChanged,  this, &InterlaceEditor::slot_gapChanged);
     connect(shadow_slider,    &DoubleSliderSet::valueChanged,  this, &InterlaceEditor::slot_shadowChanged);
-    connect(sunder_checkbox,  CBOX_STATECHANGE,                this, &InterlaceEditor::slot_startUnderChanged);
-    connect(tipVert_checkbox, CBOX_STATECHANGE,                this, &InterlaceEditor::slot_includeTipVerticesChanged);
+    connect(sunder_checkbox,  &QCheckBox::clicked,             this, &InterlaceEditor::slot_startUnderChanged);
+    connect(tipVert_checkbox, &QCheckBox::clicked,             this, &InterlaceEditor::slot_includeTipVerticesChanged);
     connect(this,             &StyleEditor::sig_colorsChanged, this, &InterlaceEditor::slot_colorsChanged);
 
     setable->resizeColumnsToContents();
@@ -781,26 +774,22 @@ void InterlaceEditor::slot_shadowChanged(qreal shadow)
     emit sig_reconstructView();
 }
 
-void InterlaceEditor::slot_startUnderChanged(int state)
+void InterlaceEditor::slot_startUnderChanged(bool checked)
 {
-    Q_UNUSED(state)
-
     auto interlace = winterlace.lock();
     if (!interlace) return;
 
-    interlace->setInitialStartUnder(sunder_checkbox->isChecked());
+    interlace->setInitialStartUnder(checked);
     interlace->resetStyleRepresentation();
     emit sig_reconstructView();
 }
 
-void InterlaceEditor::slot_includeTipVerticesChanged(int state)
+void InterlaceEditor::slot_includeTipVerticesChanged(bool checked)
 {
-    Q_UNUSED(state)
-
     auto interlace = winterlace.lock();
     if (!interlace) return;
 
-    interlace->setIncludeTipVertices(tipVert_checkbox->isChecked());
+    interlace->setIncludeTipVertices(checked);
     interlace->resetStyleRepresentation();
     emit sig_reconstructView();
 }
@@ -899,7 +888,7 @@ void TileColorsEditor::buildTable()
 
     row++;
 
-    connect(outline_checkbox,   CBOX_STATECHANGE,           this, &TileColorsEditor::slot_outlineChanged);
+    connect(outline_checkbox,   &QCheckBox::clicked,        this, &TileColorsEditor::slot_outlineChanged);
     connect(color_button,       &QPushButton::clicked,      this, &TileColorsEditor::slot_outline_color);
     connect(width_slider,       &SliderSet::valueChanged,   this, &TileColorsEditor::slot_widthChanged);
 
@@ -961,12 +950,10 @@ void  TileColorsEditor::slot_colors_changed()
     buildTable();
 }
 
-void TileColorsEditor::slot_outlineChanged(int state)
+void TileColorsEditor::slot_outlineChanged(bool checked)
 {
     auto tileColors = wtilecolors.lock();
     if (!tileColors) return;
-
-     bool checked = (state == Qt::Checked);
 
      QColor color;
      int width;

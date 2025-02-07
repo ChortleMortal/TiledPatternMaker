@@ -95,7 +95,7 @@ public:
     ThickEditor(StylePtr style);
 
  private slots:
-    void  slot_outlineChanged(int state);
+    void  slot_outlineChanged(bool checked);
     void  slot_widthChanged(int width);
     void  slot_outlineWidthChanged(int width);
     void  slot_outlineColor();
@@ -194,8 +194,8 @@ public:
 private slots :
     void slot_gapChanged(qreal gap);
     void slot_shadowChanged(qreal shadow);
-    void slot_startUnderChanged(int state);
-    void slot_includeTipVerticesChanged(int state);
+    void slot_startUnderChanged(bool checked);
+    void slot_includeTipVerticesChanged(bool checked);
     void slot_colorsChanged();
 
 private:
@@ -228,7 +228,7 @@ public slots:
 private slots:
     void    slot_edit();
 
-    void    slot_outlineChanged(int state);
+    void    slot_outlineChanged(bool checked);
     void    slot_outline_color();
     void    slot_widthChanged(int val);
 

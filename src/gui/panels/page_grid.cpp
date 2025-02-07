@@ -12,12 +12,6 @@
 #include "gui/viewers/grid_view.h"
 #include "gui/top/view_controller.h"
 
-#if (QT_VERSION >= QT_VERSION_CHECK(6,7,0))
-#define CBOX_STATECHANGE &QCheckBox::checkStateChanged
-#else
-#define CBOX_STATECHANGE &QCheckBox::stateChanged
-#endif
-
 page_grid:: page_grid(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_GRID,"Grid")
 {
 
@@ -100,16 +94,16 @@ page_grid:: page_grid(ControlPanel * cpanel)  : panel_page(cpanel,PAGE_GRID,"Gri
     connect(gridTilingWidth,    &SpinSet::valueChanged,       this, &page_grid::slot_gridTilingWidthChanged);
     connect(gridModelWidth,     &SpinSet::valueChanged,       this, &page_grid::slot_gridModelWidthChanged);
     connect(gridZLevel,         &SpinSet::valueChanged,       this, &page_grid::slot_zValueChanged);
-    connect(gridScreenCentered, CBOX_STATECHANGE,             this, &page_grid::slot_gridScreenCenteredChanged);
-    connect(gridModelCentered,  CBOX_STATECHANGE,             this, &page_grid::slot_gridModelCenteredChanged);
+    connect(gridScreenCentered, &QCheckBox::clicked,          this, &page_grid::slot_gridScreenCenteredChanged);
+    connect(gridModelCentered,  &QCheckBox::clicked,          this, &page_grid::slot_gridModelCenteredChanged);
     connect(gridTilingAlgo1,    &QRadioButton::clicked,       this, [this]() {config->gridTilingAlgo = FLOOD;  emit sig_reconstructView(); });
     connect(gridTilingAlgo2,    &QRadioButton::clicked,       this, [this]() {config->gridTilingAlgo = REGION; emit sig_reconstructView(); });
     connect(gridTypeGroup,      &QButtonGroup::idClicked,     this, &page_grid::slot_gridTypeSelected);
     connect(angleSpin,          &DoubleSpinSet::valueChanged, this, &page_grid::slot_gridAngleChanged);
 
-    connect(chkDrawLayerCenter, CBOX_STATECHANGE,             this, &page_grid::slot_gridLayerCenterChanged);
-    connect(chkDrawModelCenter, CBOX_STATECHANGE,             this, &page_grid::slot_drawModelCenterChanged);
-    connect(chkDrawViewCenter,  CBOX_STATECHANGE,             this, &page_grid::slot_drawViewCenterChanged);
+    connect(chkDrawLayerCenter, &QCheckBox::clicked,          this, &page_grid::slot_gridLayerCenterChanged);
+    connect(chkDrawModelCenter, &QCheckBox::clicked,          this, &page_grid::slot_drawModelCenterChanged);
+    connect(chkDrawViewCenter,  &QCheckBox::clicked,          this, &page_grid::slot_drawViewCenterChanged);
     connect(chkLockToview,      &QCheckBox::clicked,          this, &page_grid::slot_lockToViewChanged);
 
     labelT = new ClickableLabel();
@@ -250,33 +244,33 @@ void page_grid::slot_gridUnitsChanged(int id)
     emit sig_reconstructView();
 }
 
-void page_grid::slot_gridScreenCenteredChanged(int id)
+void page_grid::slot_gridScreenCenteredChanged(bool checked)
 {
-    config->gridScreenCenter = (id == Qt::Checked);
+    config->gridScreenCenter = checked;
     emit sig_reconstructView();
 }
 
-void page_grid::slot_gridModelCenteredChanged(int id)
+void page_grid::slot_gridModelCenteredChanged(bool checked)
 {
-    config->gridModelCenter = (id == Qt::Checked);
+    config->gridModelCenter = checked;
     emit sig_reconstructView();
 }
 
-void page_grid::slot_gridLayerCenterChanged(int id)
+void page_grid::slot_gridLayerCenterChanged(bool checked)
 {
-    config->showGridLayerCenter = (id == Qt::Checked);
+    config->showGridLayerCenter = checked;
     emit sig_reconstructView();
 }
 
-void page_grid::slot_drawModelCenterChanged(int id)
+void page_grid::slot_drawModelCenterChanged(bool checked)
 {
-    config->showGridModelCenter = (id == Qt::Checked);
+    config->showGridModelCenter = checked;
     emit sig_reconstructView();
 }
 
-void page_grid::slot_drawViewCenterChanged(int id)
+void page_grid::slot_drawViewCenterChanged(bool checked)
 {
-    config->showGridViewCenter = (id == Qt::Checked);
+    config->showGridViewCenter = checked;
     emit sig_reconstructView();
 }
 

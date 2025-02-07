@@ -1,3 +1,11 @@
+Version 3.6.3
+=============
+
+Fixes:
+    ControlPanel        CheckBoxes in menus not operating correctly
+    Control Panel       Width of Mosaic Maker page incorrect
+    Configuration       Repair for crash loading older versions
+
 Version 3.6.2
 =============
 

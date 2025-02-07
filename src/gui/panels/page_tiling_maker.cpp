@@ -31,12 +31,6 @@
 
 typedef std::weak_ptr<Tiling>   WeakTilingPtr;
 
-#if (QT_VERSION >= QT_VERSION_CHECK(6,7,0))
-#define CBOX_STATECHANGE &QCheckBox::checkStateChanged
-#else
-#define CBOX_STATECHANGE &QCheckBox::stateChanged
-#endif
-
 using std::make_shared;
 
 Q_DECLARE_METATYPE(WeakPlacedTilePtr)
@@ -986,7 +980,7 @@ void page_tiling_maker::buildTableEntry(PlacedTilePtr pf, int col, QString inclu
     QCheckBox * cb = new QCheckBox("Show");
     cb->setStyleSheet("padding-left: 10px;");
     tileInfoTable->setCellWidget(TI_SHOW,col,cb);
-    connect(cb, CBOX_STATECHANGE, this, [this,col] { slot_showTileChanged(col); });
+    connect(cb, &QCheckBox::clicked, this, [this,col] { slot_showTileChanged(col); });
 
     AQSpinBox * sp = new AQSpinBox;
     sp->setValue(tile->numPoints());

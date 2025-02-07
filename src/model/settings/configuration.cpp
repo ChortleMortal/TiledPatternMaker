@@ -117,7 +117,9 @@ Configuration::Configuration()
     showGridModelCenter = s.value("showGridModelCenter",false).toBool();
     showGridViewCenter= s.value("showGridScreenCenter",false).toBool();
     gridUnits           = static_cast<eGridUnits>(s.value("gridUnits",GRID_UNITS_SCREEN).toUInt());
+    if (gridUnits > GRID_UNITS_MAX) gridUnits = GRID_UNITS_MAX;
     gridType            = static_cast<eGridType>(s.value("gridType2",GRID_ORTHOGONAL).toUInt());
+    if (gridType > GRID_TYPE_MAX) gridType = GRID_TYPE_MAX;
     gridTilingAlgo      = static_cast<eGridTilingAlgo>(s.value("gridTilingAlgo",REGION).toUInt());
     gridModelWidth      = s.value("gridModelWidth",3).toInt();
     gridModelCenter     = s.value("gridModelCenter",false).toBool();
@@ -165,6 +167,21 @@ Configuration::Configuration()
         qsl2 << "#ffffff";
     }
     viewColors          = s.value("viewColors2",qsl2).toStringList();
+    if (viewColors.size() != NUM_VIEW_TYPES)
+    {
+        int diff = viewColors.size() - NUM_VIEW_TYPES;
+        if (diff > 0)
+        {
+            viewColors.resize(NUM_VIEW_TYPES);
+        }
+        else
+        {
+            for (int i=0; i < abs(diff); i++)
+            {
+                viewColors << "#ffffff";
+            }
+        }
+    }
 
     // ensures indices are in range
     if (mapEditorMode > MAPED_MODE_MAX) mapEditorMode   = MAPED_MODE_MAP;

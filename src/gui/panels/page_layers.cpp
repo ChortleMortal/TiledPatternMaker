@@ -120,7 +120,7 @@ void page_layers::populateLayer(Layer * layer, int col)
     cbBox->setContentsMargins(0,0,0,0);
     layerTable->setCellWidget(LAYER_VISIBILITY,col,cbWidget);
     cb->setChecked(layer->isVisible());
-    connect(cb, &QCheckBox::toggled, this, [this, col] { visibilityChanged(col); });
+    connect(cb, &QCheckBox::clicked, this, [this, col] { visibilityChanged(col); });
 
     // z-level
     qreal z = layer->zValue();

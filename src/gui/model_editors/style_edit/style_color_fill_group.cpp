@@ -90,7 +90,7 @@ void StyleColorFillGroup::display()
         QCheckBox * cb = new AQCheckBox("Hide");
         fillGroupTable->setCellWidget(row,COL_HIDE,cb);
         cb->setChecked(filled->getColorGroup()->isHidden(row));
-        connect(cb, &QCheckBox::toggled, this, [this,row] { colorSetVisibilityChanged(row); });
+        connect(cb, &QCheckBox::clicked, this, [this,row] { colorSetVisibilityChanged(row); });
 
         QPushButton * btn = new QPushButton("Edit");
         btn->setFixedWidth(40);

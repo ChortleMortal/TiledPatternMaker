@@ -26,14 +26,14 @@ private slots:
     void    slot_gridScreenWidthChanged(int value);
     void    slot_gridTilingWidthChanged(int value);
     void    slot_gridModelWidthChanged(int value);
-    void    slot_gridScreenCenteredChanged(int state);
-    void    slot_gridModelCenteredChanged(int state);
+    void    slot_gridScreenCenteredChanged(bool checked);
+    void    slot_gridModelCenteredChanged(bool checked);
     void    slot_gridAngleChanged(qreal angle);
     void    slot_zValueChanged(int value);
 
-    void    slot_gridLayerCenterChanged(int state);
-    void    slot_drawModelCenterChanged(int state);
-    void    slot_drawViewCenterChanged(int state);
+    void    slot_gridLayerCenterChanged(bool checked);
+    void    slot_drawModelCenterChanged(bool checked);
+    void    slot_drawViewCenterChanged(bool checked);
     void    slot_lockToViewChanged(bool enb);
 
     void    slot_pickColorTiling();

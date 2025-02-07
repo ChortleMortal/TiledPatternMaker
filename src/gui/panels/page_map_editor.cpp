@@ -461,7 +461,7 @@ QGroupBox * page_map_editor::createViewGroup()
         viewDCEL->setChecked(true);
 
     connect(showBoundsChk,  &QCheckBox::clicked,    this, &page_map_editor::slot_showBounds);
-    connect(showConsChk,    &QCheckBox::toggled,    this, &page_map_editor::slot_showCons);
+    connect(showConsChk,    &QCheckBox::clicked,    this, &page_map_editor::slot_showCons);
     connect(showMapChk,     &QCheckBox::clicked,    this, &page_map_editor::slot_showMap);
     connect(showPtsChk,     &QCheckBox::clicked,    this, &page_map_editor::slot_showPoints);
     connect(showMidPtsChk,  &QCheckBox::clicked,    this, &page_map_editor::slot_showMidPoints);

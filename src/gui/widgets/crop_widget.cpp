@@ -161,7 +161,7 @@ QHBoxLayout * CropWidget::createAspectLayout()
     aspects->addButton(rad_hd,   ASPECT_HD);
 
     connect(aspects, &QButtonGroup::idClicked, this, &CropWidget::slot_cropAspect);
-    connect(chkVert, &QCheckBox::toggled,      this, &CropWidget::slot_verticalAspect);
+    connect(chkVert, &QCheckBox::clicked,      this, &CropWidget::slot_verticalAspect);
 
     return hbox;
 }

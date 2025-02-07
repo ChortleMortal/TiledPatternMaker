@@ -3,12 +3,6 @@
 #include "gui/model_editors/style_edit/style_editors.h"
 #include "model/styles/filled.h"
 
-#if (QT_VERSION >= QT_VERSION_CHECK(6,7,0))
-#define CBOX_STATECHANGE &QCheckBox::checkStateChanged
-#else
-#define CBOX_STATECHANGE &QCheckBox::stateChanged
-#endif
-
 StyleColorFillOriginal::StyleColorFillOriginal(FilledEditor * parent, FilledPtr style, QVBoxLayout * vbox)  : filled(style)
 {
     this->parent        = parent;
@@ -64,8 +58,8 @@ StyleColorFillOriginal::StyleColorFillOriginal(FilledEditor * parent, FilledPtr 
     item = new QTableWidgetItem(QString("%1 faces").arg(cm->getBlackFaces().size()));
     table->setItem(row,COL_NUMBER,item);
 
-    connect(inside_checkbox,  CBOX_STATECHANGE,         this,   &StyleColorFillOriginal::slot_insideChanged);
-    connect(outside_checkbox, CBOX_STATECHANGE,         this,   &StyleColorFillOriginal::slot_outsideChanged);
+    connect(inside_checkbox,  &QCheckBox::clicked,      this,   &StyleColorFillOriginal::slot_insideChanged);
+    connect(outside_checkbox, &QCheckBox::clicked,      this,   &StyleColorFillOriginal::slot_outsideChanged);
     connect(btnB,             &QPushButton::clicked,    parent, &FilledEditor::slot_editB);
     connect(btnW,             &QPushButton::clicked,    parent, &FilledEditor::slot_editW);
 
@@ -76,17 +70,15 @@ void StyleColorFillOriginal::display()
 {
 }
 
-void StyleColorFillOriginal::slot_insideChanged(int state)
+void StyleColorFillOriginal::slot_insideChanged(bool checked)
 {
-    bool checked = (state == Qt::Checked);
     filled->setDrawInsideBlacks(checked);
 
     parent->slot_colorsChanged();
 }
 
-void StyleColorFillOriginal::slot_outsideChanged(int state)
+void StyleColorFillOriginal::slot_outsideChanged(bool checked)
 {
-    bool checked = (state == Qt::Checked);
     filled->setDrawOutsideWhites(checked);
 
     parent->slot_colorsChanged();

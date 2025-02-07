@@ -15,12 +15,6 @@ using std::dynamic_pointer_cast;
 
 typedef shared_ptr<RadialMotif>    RadialPtr;
 
-#if (QT_VERSION >= QT_VERSION_CHECK(6,7,0))
-#define CBOX_STATECHANGE &QCheckBox::checkStateChanged
-#else
-#define CBOX_STATECHANGE &QCheckBox::stateChanged
-#endif
-
 ////////////////////////////////////////////////////////////////////////////
 //
 // ExplicitMapEditor
@@ -356,7 +350,7 @@ IntersectEditor::IntersectEditor(QString aname, DesignElementPtr del, bool doEmi
 
     connect(skip, &DoubleSliderSet::valueChanged, this, [this]() { editorToMotif(true);});
     connect(s,    &SliderSet::valueChanged,       this, [this]() { editorToMotif(true);});
-    connect(progressive_box, CBOX_STATECHANGE,    this, [this]() { editorToMotif(true);});
+    connect(progressive_box, &QCheckBox::clicked, this, [this]() { editorToMotif(true);});
 
     w_isect.reset();
     wDel = del;

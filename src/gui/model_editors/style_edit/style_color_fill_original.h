@@ -28,8 +28,8 @@ public:
     void display();
 
 private slots:
-    void slot_insideChanged(int state);
-    void slot_outsideChanged(int state);
+    void slot_insideChanged(bool checked);
+    void slot_outsideChanged(bool checked);
 
 private:
     FilledEditor *  parent;

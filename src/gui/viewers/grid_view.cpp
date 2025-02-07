@@ -510,7 +510,7 @@ bool GridView::nearGridPoint(QPointF spt, QPointF & foundGridPoint)
     }
 
     genMap = true;
-    emit sig_updateView();  // TODO should this be sig_repaintView();
+    Sys::view->slot_repaint();  // generates gridMap, used below
     genMap = false;
 
     for (const VertexPtr & v : std::as_const(gridMap->getVertices()))
