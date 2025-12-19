@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<!-- Written: Sun Feb 23 2025 16:35:58 -->
+<template>
+	<lines />
+	<circles>
+		<circle radius="5.65" centreX="0.716451" centreY="-0.49256" />
+		<circle radius="5.65" centreX="0.716451" centreY="-0.49256" />
+	</circles>
+</template>

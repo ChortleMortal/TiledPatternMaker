@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+<!-- Written: Thu Dec 12 2024 11:02:01 -->
+<Tiling version="10">
+	<Name>Joins</Name>
+	<Fill singleton="t">0,0,0,0</Fill>
+	<T0>0,0</T0>
+	<T1>0,0</T1>
+	<T2>0,0</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="1">-8.000000000000004,-4.000000000000004</Point>
+			<Point id="2">-2.000000000000002,-4.000000000000004</Point>
+		</Line>
+		<Line>
+			<Point reference="2" />
+			<Point id="3">-2.000000000000002,-3.000000000000003</Point>
+		</Line>
+		<Line>
+			<Point reference="3" />
+			<Point id="4">-8.000000000000004,-3.000000000000004</Point>
+		</Line>
+		<Line>
+			<Point reference="4" />
+			<Point reference="1" />
+		</Line>
+		<Placement>
+			<scale>0.999999999999999</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+		<Placement>
+			<scale>0.9999999999999992</scale>
+			<rot>30.99999999999999</rot>
+			<tranX>3.054705143431704</tranX>
+			<tranY>3.620390151737823</tranY>
+		</Placement>
+		<Placement>
+			<scale>0.9999999999999984</scale>
+			<rot>-47</rot>
+			<tranX>1.92373467579209</tranX>
+			<tranY>-2.575713143019601</tranY>
+		</Placement>
+	</Tile>
+	<Desc />
+	<Auth />
+</Tiling>

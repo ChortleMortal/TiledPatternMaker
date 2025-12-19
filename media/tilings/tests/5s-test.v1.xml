@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<!-- Written: Thu Jun 5 2025 17:15:15 -->
+<Tiling version="10">
+	<Name>5s-test.v1</Name>
+	<Fill singleton="t">0,0,0,0</Fill>
+	<T0>0,0</T0>
+	<T1>0,0</T1>
+	<T2>0,0</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="regular" sides="5" rotation="0" scale="1">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="5" rotation="0" scale="1.21">
+		<Placement>
+			<scale>0.9999999999999993</scale>
+			<rot>17</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Desc />
+	<Auth />
+</Tiling>

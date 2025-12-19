@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<!-- Written: Sun Jul 6 2025 14:08:18 -->
+<Tiling version="10">
+	<Name>InterlaceTest.v10</Name>
+	<Fill singleton="t">0,0,0,0</Fill>
+	<T0>0,0</T0>
+	<T1>0,0</T1>
+	<T2>0,0</T2>
+	<ViewSettings>
+		<width>1042</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>-341</left__delta>
+		<top__delta>-63</top__delta>
+		<width__delta>2.067570305221134</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="regular" sides="3" rotation="9" scale="1">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0.2</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="3" rotation="-36" scale="1">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>1.02</tranX>
+			<tranY>1.306666666666667</tranY>
+		</Placement>
+	</Tile>
+	<Desc />
+	<Auth />
+</Tiling>

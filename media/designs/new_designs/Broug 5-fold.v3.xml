@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!-- Written: Thu May 23 2024 16:35:49 -->
-<vector id="1" version="21">
+<!-- Written: Wed Apr 16 2025 16:42:34 -->
+<vector id="1" version="26">
 	<designNotes>The v0 design had innaccuracies of aignment.  Using map edior the problems were analysed, and then a cleanse was applied using the motif maker.  Now this looks like it was intended to.</designNotes>
 	<design>
 		<size>
@@ -29,7 +29,6 @@
 			<Center>0,0</Center>
 			<Perspective>1.015960316643562,0.006931321464339927,5.193277523040559e-06,0.006809385500292009,1.01593368891611,6.867136715433459e-06,-113.0653573794818,-126.5832430157141,0.9985758994145032</Perspective>
 		</BackgroundImage>
-		<Cleanse>c</Cleanse>
 	</design>
 	<style.Thick id="2">
 		<toolkit.GeoLayer>
@@ -44,6 +43,8 @@
 			<prototype id="3">
 				<app.Prototype>
 					<Tiling>Broug 5-fold</Tiling>
+					<Cleanse>2c</Cleanse>
+					<Sensitivity>0.01</Sensitivity>
 					<entry>
 						<Tile id="4">
 							<regular>true</regular>
@@ -92,16 +93,18 @@
 								</Line>
 							</edges>
 						</Tile>
-						<ExtendedRosette id="16" extendPeripherals="t" extendFreeVertices="f" connectBoundaryVertices="f">
-							<boundarySides>10</boundarySides>
-							<boundaryScale>7.64</boundaryScale>
-							<boundaryRotate>0</boundaryRotate>
-							<figureScale>1.000000000000012</figureScale>
+						<Rosette id="16">
+							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>10</n>
+							<Extender extRays="t" extTips2B="f" extTips2T="f" conRays="0" embedBound="f" embedTile="f">
+								<boundarySides>10</boundarySides>
+								<boundaryScale>7.64</boundaryScale>
+								<boundaryRotate>0</boundaryRotate>
+							</Extender>
 							<q>0</q>
 							<s>3</s>
-						</ExtendedRosette>
+						</Rosette>
 					</entry>
 					<entry>
 						<Tile id="17">
@@ -128,9 +131,6 @@
 							</edges>
 						</Tile>
 						<ExplicitTile id="23" type="Explicit Tile Motif">
-							<boundarySides>4</boundarySides>
-							<boundaryScale>1</boundaryScale>
-							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>4</n>
@@ -161,9 +161,6 @@
 							</edges>
 						</Tile>
 						<ExplicitTile id="30" type="Explicit Tile Motif">
-							<boundarySides>4</boundarySides>
-							<boundaryScale>1</boundaryScale>
-							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>4</n>
@@ -194,9 +191,6 @@
 							</edges>
 						</Tile>
 						<ExplicitTile id="37" type="Explicit Tile Motif">
-							<boundarySides>4</boundarySides>
-							<boundaryScale>1</boundaryScale>
-							<boundaryRotate>0</boundaryRotate>
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>4</n>
@@ -209,6 +203,7 @@
 			<color hide="f">#ff632e1c</color>
 		</style.Colored>
 		<style.Thick>
+			<Version>0</Version>
 			<draw__outline>true</draw__outline>
 			<outline_width>0.09</outline_width>
 			<outline_color>#ffffff00</outline_color>
@@ -235,6 +230,12 @@
 		<ColorWhites>
 			<color hide="f">#ff382310</color>
 		</ColorWhites>
+		<ColorGroup>
+			<Group hideSet="f">
+				<color hide="f">#ff382310</color>
+			</Group>
+			<Group hideSet="f" />
+		</ColorGroup>
 		<style.Filled>
 			<draw__inside>true</draw__inside>
 			<draw__outside>true</draw__outside>

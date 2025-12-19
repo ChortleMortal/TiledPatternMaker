@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!-- Written: Sat Jul 22 2023 15:30:22 -->
-<vector id="1" version="15">
+<!-- Written: Sat May 31 2025 14:37:10 -->
+<vector id="1" version="26">
 	<designNotes>with interrlace</designNotes>
 	<design>
 		<size>
@@ -33,7 +33,7 @@
 		<style.Style>
 			<prototype id="3">
 				<app.Prototype>
-					<string>The Unnamed</string>
+					<Tiling>The Unnamed</Tiling>
 					<entry>
 						<Tile id="4">
 							<regular>false</regular>
@@ -1203,11 +1203,14 @@
 							</edges>
 						</Tile>
 						<ExplicitMap id="196" type="Explicit Map Motif">
-							<boundarySides>280</boundarySides>
-							<boundaryScale>1</boundaryScale>
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>64</n>
+							<Extender extRays="f" extTips2B="f" extTips2T="f" conRays="0" embedBound="f" embedTile="f">
+								<boundarySides>280</boundarySides>
+								<boundaryScale>1</boundaryScale>
+								<boundaryRotate>0</boundaryRotate>
+							</Extender>
 							<map id="197">
 								<vertices id="198">
 									<Vertex id="199">
@@ -2623,6 +2626,7 @@
 			<color hide="f">#ff1496d2</color>
 		</style.Colored>
 		<style.Thick>
+			<Version>0</Version>
 			<draw__outline>true</draw__outline>
 			<outline_width>0.52</outline_width>
 			<outline_color>#ff000000</outline_color>
@@ -2631,7 +2635,7 @@
 			<cap>round</cap>
 		</style.Thick>
 		<style.Interlace>
-			<gap>0.13</gap>
+			<gap>0</gap>
 			<shadow>0</shadow>
 			<includeTipVerts>false</includeTipVerts>
 			<startUnder>false</startUnder>

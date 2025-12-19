@@ -1,0 +1,146 @@
+<?xml version="1.0"?>
+<!-- Written: Sat Jun 14 2025 17:16:07 -->
+<vector id="1" version="27">
+	<design>
+		<size>
+			<width>1500</width>
+			<height>927</height>
+			<zwidth>1500</zwidth>
+			<zheight>927</zheight>
+		</size>
+		<background>
+			<color>#ff000000</color>
+		</background>
+		<Fill singleton="f">-3,3,-3,3</Fill>
+		<BackgroundImage name="ira_1005adj.jpg">
+			<Scale>2.194767541776494</Scale>
+			<Rot>0</Rot>
+			<X>0</X>
+			<Y>0</Y>
+			<Center>0,0</Center>
+		</BackgroundImage>
+	</design>
+	<style.Thick id="2">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>2.194767541776494</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<Tiling>Steps</Tiling>
+					<entry>
+						<Tile id="4">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1.25</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">1,0.4142135623730951</Point>
+									<Point id="7">0.4142135623730951,1</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">-0.414213562373095,1</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">-1,0.4142135623730952</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point id="10">-1,-0.414213562373095</Point>
+								</Line>
+								<Line>
+									<Point reference="10" />
+									<Point id="11">-0.4142135623730957,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="11" />
+									<Point id="12">0.4142135623730953,-0.9999999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="12" />
+									<Point id="13">0.9999999999999998,-0.4142135623730958</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</Tile>
+						<Star2 id="14">
+							<figureScale>0.48</figureScale>
+							<r>0</r>
+							<n>8</n>
+							<Extender extRays="t" extTips2B="f" extTips2T="f" conRays="0" embedBound="f" embedTile="f">
+								<boundarySides>8</boundarySides>
+								<boundaryScale>0.79</boundaryScale>
+								<boundaryRotate>0</boundaryRotate>
+							</Extender>
+							<Extender extRays="f" extTips2B="t" extTips2T="t" conRays="0" embedBound="t" embedTile="f">
+								<boundarySides>8</boundarySides>
+								<boundaryScale>1.05</boundaryScale>
+								<boundaryRotate>0</boundaryRotate>
+							</Extender>
+							<angle>45</angle>
+							<s>1</s>
+						</Star2>
+					</entry>
+					<entry>
+						<Tile id="15">
+							<regular>true</regular>
+							<rotation>45</rotation>
+							<scale>0.5177669529663689</scale>
+							<edges id="16">
+								<Line>
+									<Point id="17">1,1</Point>
+									<Point id="18">-0.9999999999999998,1</Point>
+								</Line>
+								<Line>
+									<Point reference="18" />
+									<Point id="19">-1,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="19" />
+									<Point id="20">0.9999999999999997,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="20" />
+									<Point reference="17" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularRosette id="21" type="Irregular Rosette Motif">
+							<figureScale>0.6299999999999994</figureScale>
+							<r>0</r>
+							<n>4</n>
+							<Extender extRays="t" extTips2B="f" extTips2T="f" conRays="0" embedBound="f" embedTile="f">
+								<boundarySides>4</boundarySides>
+								<boundaryScale>1</boundaryScale>
+								<boundaryRotate>0</boundaryRotate>
+							</Extender>
+							<s>1</s>
+							<q>0</q>
+							<rFlexPt>0.5</rFlexPt>
+						</IrregularRosette>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff1496d2</color>
+		</style.Colored>
+		<style.Thick>
+			<Version>0</Version>
+			<draw__outline>false</draw__outline>
+			<width>0.01</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+	</style.Thick>
+</vector>

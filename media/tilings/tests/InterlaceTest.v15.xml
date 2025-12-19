@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+<!-- Written: Mon Sep 22 2025 16:47:16 -->
+<Tiling version="10">
+	<Name>InterlaceTest.v15</Name>
+	<Fill singleton="t">0,0,0,0</Fill>
+	<T0>0,0</T0>
+	<T1>0,0</T1>
+	<T2>0,0</T2>
+	<ViewSettings>
+		<width>955</width>
+		<height>1080</height>
+		<zwidth>1500</zwidth>
+		<zheight>1100</zheight>
+		<left__delta>560</left__delta>
+		<top__delta>-199</top__delta>
+		<width__delta>2.25</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="edgepoly" rotation="0" scale="1">
+		<Curve convex="t">
+			<Point id="1">1,1</Point>
+			<Point id="2">-0.9999999999999998,1</Point>
+			<Center>1.110223024625157e-16,-0.9999999999999998</Center>
+		</Curve>
+		<Line>
+			<Point reference="2" />
+			<Point id="3">-1,-0.9999999999999998</Point>
+		</Line>
+		<Line>
+			<Point reference="3" />
+			<Point id="4">0.9999999999999997,-1</Point>
+		</Line>
+		<Curve convex="t">
+			<Point reference="4" />
+			<Point reference="1" />
+			<Center>-1,3.33066907387547e-16</Center>
+		</Curve>
+		<Placement>
+			<scale>0.9999999999999992</scale>
+			<rot>-6.000000000000001</rot>
+			<tranX>-3.453333333333332</tranX>
+			<tranY>1.306666666666668</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
+		<Curve convex="t">
+			<Point id="5">1,1</Point>
+			<Point id="6">-0.9999999999999998,1</Point>
+			<Center>1.110223024625157e-16,-0.9999999999999998</Center>
+		</Curve>
+		<Curve convex="t">
+			<Point reference="6" />
+			<Point id="7">-1,-0.9999999999999998</Point>
+			<Center>0.9999999999999999,-1.110223024625157e-16</Center>
+		</Curve>
+		<Curve convex="t">
+			<Point reference="7" />
+			<Point id="8">0.9999999999999997,-1</Point>
+			<Center>2.220446049250313e-16,1</Center>
+		</Curve>
+		<Curve convex="t">
+			<Point reference="8" />
+			<Point reference="5" />
+			<Center>-1,3.33066907387547e-16</Center>
+		</Curve>
+		<Placement>
+			<scale>1</scale>
+			<rot>20</rot>
+			<tranX>-4.133333333333333</tranX>
+			<tranY>0.1600000000000019</tranY>
+		</Placement>
+	</Tile>
+	<Desc>curved edge</Desc>
+	<Auth>DAC</Auth>
+</Tiling>

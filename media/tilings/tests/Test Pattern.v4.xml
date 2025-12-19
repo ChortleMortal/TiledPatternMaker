@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<!-- Written: Thu Nov 13 2025 10:36:50 -->
+<Tiling version="13">
+	<Name>Test Pattern.v4</Name>
+	<Fill singleton="t">0,0,0,0</Fill>
+	<T0>0,0</T0>
+	<T1>5.685714285714285,-5.571428571428572</T1>
+	<T2>5.714285714285714,5.628571428571428</T2>
+	<ViewSettings>
+		<width>700</width>
+		<height>600</height>
+		<zwidth>700</zwidth>
+		<zheight>600</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="regular" sides="4" rotation="0" scale="1">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>5.714285714285714</tranX>
+			<tranY>5.628571428571428</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>5.685714285714285</tranX>
+			<tranY>-5.571428571428572</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="4" rotation="0" scale="5.610000000000008">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Desc />
+	<Auth />
+	<BackgroundImage name="TestPattern.png">
+		<Scale>1</Scale>
+		<Rot>0</Rot>
+		<X>-34</X>
+		<Y>-34</Y>
+	</BackgroundImage>
+</Tiling>

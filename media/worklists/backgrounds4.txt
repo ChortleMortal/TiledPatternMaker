@@ -1,0 +1,107 @@
+6-4-3
+6-4-3.v1
+6-4-3.v2
+6-4-3-Pomerantz
+Alhambra3
+Alhambra3.v1
+Alhambra3.v2
+Alhambra3.v3
+Alhambra3.v4
+Alhambra3.v5
+Alhambra3.v6
+Alhambra3.v7
+AlhambraOld1
+AlhambraOld1.v1
+AlhambraOld1.v2
+AlhambraOld1.v3
+AlhambraOld2
+AlhambraOld2.v1
+Bourgoin128
+Broug 5-fold
+Broug 5-fold.v2
+Broug 5-fold.v3
+Broug 5-fold.v4
+epc_014
+epc_014.v1
+epc_014.v2
+epc_014.v3
+epc_014.v4
+GirihPat1
+GirihPat1.v1
+GirihPat1.v2
+GirihPat1.v3
+GirihPat1.v6
+Hank3
+Kaplan Fig 4
+Kaplan Fig 4.v1
+Kaplan Fig 4.v2
+Kaplan Fig 4b
+Museum2
+pint
+pint.v1
+pint.v2
+pint.v4
+pint.v5
+Popular2.v2
+Popular2.v3
+Popular2.v7
+Popular2.v8
+Popular2.v11
+sabon-feature
+sabon-feature.v1
+sabon-feature.v3
+sabon-feature.v4
+sabon-feature.v5
+sabon-feature.v8
+sabon-feature.v9
+sabon-feature.v10
+sabon-placed
+sabon-placed.v1
+sabon-placed.v2
+SarahsPlate
+SarahsPlate.v3
+SarahsPlate.v4
+SarahsPlate.v5
+SarahsPlate.v6
+SarahsPlate.v7
+SPlateTest1
+SPlateTest1.v1
+SPlateTest1.v2
+SPlateTest1.v3
+SPlateTest1.v4
+SPlateTest1.v5
+SPlateTest1.v6
+SPlateTest1.v7
+SPlateTest1.v8
+SPlateTest1.v9
+SPlateTest1.v10
+Steps
+Steps.v1
+Test Pattern
+Test Pattern.v1
+Test Pattern.v2
+Test Pattern.v3
+Test Pattern.v4
+Test Pattern.v5
+Test Pattern.v6
+Test Pattern.v7
+Test Pattern.v8
+Test Pattern 2
+Test Pattern 2.v3
+Test Pattern 2.v4
+Vanda
+Vanda.v1
+Vanda.v2
+Vanda.v3
+Vanda.v4
+Vanda.v5
+Vanda.v6
+Vanda.v7
+Vanda.v8
+Vanda.v9
+Vanda.v10
+Vanda2
+Vanda2.v1
+Vanda2.v2
+Vanda2.v3
+Vanda2.v4

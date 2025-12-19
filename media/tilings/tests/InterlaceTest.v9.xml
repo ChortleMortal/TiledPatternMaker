@@ -1,0 +1,103 @@
+<?xml version="1.0"?>
+<!-- Written: Thu Jun 26 2025 12:44:46 -->
+<Tiling version="10">
+	<Name>InterlaceTest.v9</Name>
+	<Fill singleton="t">0,0,0,0</Fill>
+	<T0>0,0</T0>
+	<T1>0,0</T1>
+	<T2>0,0</T2>
+	<ViewSettings>
+		<width>1396</width>
+		<height>933</height>
+		<zwidth>1500</zwidth>
+		<zheight>1100</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>-243</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="1">-1.413333333333334,3.599999999999999</Point>
+			<Point id="2">3.986666666666666,3.119999999999998</Point>
+		</Line>
+		<Line>
+			<Point reference="2" />
+			<Point id="3">0.2585030728709397,4.433481123792799</Point>
+		</Line>
+		<Line>
+			<Point reference="3" />
+			<Point reference="1" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="4">3.986666666666666,3.119999999999998</Point>
+			<Point id="5">3.16,5.879999999999998</Point>
+		</Line>
+		<Line>
+			<Point reference="5" />
+			<Point id="6">0.2585030728709397,4.433481123792799</Point>
+		</Line>
+		<Line>
+			<Point reference="6" />
+			<Point reference="4" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="7">-3.506666666666668,5.759999999999999</Point>
+			<Point id="8">-1.413333333333334,3.599999999999999</Point>
+		</Line>
+		<Line>
+			<Point reference="8" />
+			<Point id="9">0.2585030728709397,4.433481123792799</Point>
+		</Line>
+		<Line>
+			<Point reference="9" />
+			<Point reference="7" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="10">3.16,5.879999999999998</Point>
+			<Point id="11">-3.506666666666668,5.759999999999999</Point>
+		</Line>
+		<Line>
+			<Point reference="11" />
+			<Point id="12">0.2585030728709397,4.433481123792799</Point>
+		</Line>
+		<Line>
+			<Point reference="12" />
+			<Point reference="10" />
+		</Line>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Desc />
+	<Auth>DAC</Auth>
+</Tiling>

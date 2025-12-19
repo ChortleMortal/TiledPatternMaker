@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!-- Written: Wed Jul 20 2022 14:08:19 -->
-<vector id="1" version="12">
+<!-- Written: Sat Nov 29 2025 22:06:32 -->
+<vector id="1" version="29">
 	<designNotes>adds border</designNotes>
 	<design>
 		<size>
@@ -12,40 +12,28 @@
 		<background>
 			<color>#ffffffff</color>
 		</background>
-		<border type="Plain" shape="Rectangle">
-			<color>#ff1496d2</color>
-			<width>30</width>
-			<rect>
-				<X>0</X>
-				<Y>0</Y>
-				<width>1428</width>
-				<height>882</height>
-			</rect>
-		</border>
 		<Fill singleton="t">0,0,0,0</Fill>
 		<BackgroundImage name="20210929_085413606_iOS.JPEG">
 			<Scale>0.285071731931037</Scale>
 			<Rot>0</Rot>
-			<X>11</X>
-			<Y>-64</Y>
-			<Center>-0.1918445807945197,0.74745440309621</Center>
+			<X>-53.09946030547759</X>
+			<Y>-113.8858051558326</Y>
 		</BackgroundImage>
 	</design>
-	<style.Interlace id="2" serialization="custom">
+	<style.Interlace id="2">
 		<toolkit.GeoLayer>
-			<left__delta>-31</left__delta>
-			<top__delta>-91</top__delta>
+			<left__delta>-144.8289287112691</left__delta>
+			<top__delta>-178.6279492361651</top__delta>
 			<width__delta>0.285071731931037</width__delta>
 			<theta__delta>0</theta__delta>
-			<center>-0.1918445807945197,0.74745440309621</center>
 			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<prototype id="3" serialization="custom">
+			<prototype id="3">
 				<app.Prototype>
-					<string>SarahsPlate.v2</string>
+					<Tiling>SarahsPlate.v2</Tiling>
 					<entry>
-						<tile.Feature id="4">
+						<Tile id="4">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -131,8 +119,11 @@
 									<Point reference="6" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFigure id="26" type="FIG_TYPE_EXPLICIT">
+						</Tile>
+						<ExplicitMap id="26" type="Explicit Map Motif">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>20</n>
 							<map id="27">
 								<vertices id="28">
 									<Vertex id="29">
@@ -859,11 +850,7 @@
 									</Edge>
 								</edges>
 							</map>
-							<boundarySides>1</boundarySides>
-							<boundaryScale>1</boundaryScale>
-							<figureScale>1</figureScale>
-							<r>0</r>
-						</app.ExplicitFigure>
+						</ExplicitMap>
 					</entry>
 				</app.Prototype>
 			</prototype>
@@ -884,4 +871,23 @@
 			<startUnder>false</startUnder>
 		</style.Interlace>
 	</style.Interlace>
+	<style.Border id="230">
+		<border type="Plain" shape="Rectangle" useViewSize="f">
+			<toolkit.GeoLayer>
+				<left__delta>-144.8289287112691</left__delta>
+				<top__delta>-178.6279492361651</top__delta>
+				<width__delta>0.285071731931037</width__delta>
+				<theta__delta>0</theta__delta>
+				<Z>10</Z>
+			</toolkit.GeoLayer>
+			<color>#ff1496d2</color>
+			<width>30</width>
+			<rect>
+				<X>-33.1478378749486</X>
+				<Y>-23.34281353254585</Y>
+				<width>66.79020705078555</width>
+				<height>41.25277494313226</height>
+			</rect>
+		</border>
+	</style.Border>
 </vector>

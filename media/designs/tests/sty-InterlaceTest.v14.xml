@@ -1,0 +1,156 @@
+<?xml version="1.0"?>
+<!-- Written: Mon Jul 7 2025 17:06:04 -->
+<vector id="1" version="27">
+	<design>
+		<size>
+			<width>1396</width>
+			<height>933</height>
+			<zwidth>1500</zwidth>
+			<zheight>1100</zheight>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Fill singleton="t">0,0,0,0</Fill>
+	</design>
+	<style.Interlace id="2">
+		<toolkit.GeoLayer>
+			<left__delta>-100</left__delta>
+			<top__delta>-835</top__delta>
+			<width__delta>1.919780102406885</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<Tiling>InterlaceTest.v9</Tiling>
+					<entry>
+						<Tile id="4">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">-1.413333333333334,3.599999999999999</Point>
+									<Point id="7">3.986666666666666,3.119999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">0.2585030728709397,4.433481123792799</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="9" type="Explicit Tile Motif">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>3</n>
+						</ExplicitTile>
+					</entry>
+					<entry>
+						<Tile id="10">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="11">
+								<Line>
+									<Point id="12">3.986666666666666,3.119999999999998</Point>
+									<Point id="13">3.16,5.879999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point id="14">0.2585030728709397,4.433481123792799</Point>
+								</Line>
+								<Line>
+									<Point reference="14" />
+									<Point reference="12" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="15" type="Explicit Tile Motif">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>3</n>
+						</ExplicitTile>
+					</entry>
+					<entry>
+						<Tile id="16">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="17">
+								<Line>
+									<Point id="18">-3.506666666666668,5.759999999999999</Point>
+									<Point id="19">-1.413333333333334,3.599999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="19" />
+									<Point id="20">0.2585030728709397,4.433481123792799</Point>
+								</Line>
+								<Line>
+									<Point reference="20" />
+									<Point reference="18" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="21" type="Explicit Tile Motif">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>3</n>
+						</ExplicitTile>
+					</entry>
+					<entry>
+						<Tile id="22">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="23">
+								<Line>
+									<Point id="24">3.16,5.879999999999998</Point>
+									<Point id="25">-3.506666666666668,5.759999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="25" />
+									<Point id="26">0.2585030728709397,4.433481123792799</Point>
+								</Line>
+								<Line>
+									<Point reference="26" />
+									<Point reference="24" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="27" type="Explicit Tile Motif">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>3</n>
+						</ExplicitTile>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff1496d2</color>
+			<color hide="f">#ff55ff00</color>
+			<color hide="f">#ffc59c0c</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>true</draw__outline>
+			<outline_width>0.09</outline_width>
+			<outline_color>#ff000000</outline_color>
+			<width>0.15</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+		<style.Interlace>
+			<gap>0</gap>
+			<shadow>0</shadow>
+			<includeTipVerts>false</includeTipVerts>
+			<startUnder>false</startUnder>
+		</style.Interlace>
+	</style.Interlace>
+</vector>

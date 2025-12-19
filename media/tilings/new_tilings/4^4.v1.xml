@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>4^4.v1</Name>
+	<Fill>-4,4,-5,5</Fill>
+	<T1>4,0</T1>
+	<T2>2,2</T2>
+	<Feature type="regular" sides="4">
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Desc>The plain old tiling by squares. v1 has diofferent translation vecteors</Desc>
+	<Auth>Craig S. Kaplan and David A. Casper</Auth>
+</Tiling>

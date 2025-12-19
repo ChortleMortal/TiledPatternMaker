@@ -1,0 +1,9 @@
+4^4Rosette
+4^4RosetteBeveled
+4^4RosetteMitred
+Hank8.v9
+sty-OutlineTest.v7
+sty-OutlineTest.v8
+sty-OutlineTest.v9
+sty-ThickTest.v7
+sty-ThickTest.v9

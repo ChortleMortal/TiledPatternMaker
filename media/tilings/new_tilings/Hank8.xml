@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+<!-- Written: Tue Oct 29 2024 19:30:56 -->
+<Tiling version="10">
+	<Name>Hank8</Name>
+	<Fill singleton="t">0,0,0,0</Fill>
+	<T0>0,0</T0>
+	<T1>0,0</T1>
+	<T2>0,0</T2>
+	<ViewSettings>
+		<width>600</width>
+		<height>600</height>
+		<zwidth>600</zwidth>
+		<zheight>600</zheight>
+		<left__delta>45</left__delta>
+		<top__delta>-56</top__delta>
+		<width__delta>1.890461869479556</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="regular" sides="7" rotation="12.5" scale="2">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="6" rotation="0" scale="1">
+		<Placement>
+			<scale>1.668223414820508</scale>
+			<rot>3.928571428571435</rot>
+			<tranX>1.612152276553299</tranX>
+			<tranY>3.294970114923874</tranY>
+		</Placement>
+		<Placement>
+			<scale>1.668223414820508</scale>
+			<rot>-13.21428571428571</rot>
+			<tranX>-3.571095965102674</tranX>
+			<tranY>0.8385324257682767</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="1">1.047326582935572,0.7290513540268937</Point>
+			<Point id="2">-0.381966011250105,1.175570504584946</Point>
+		</Line>
+		<Line>
+			<Point reference="2" />
+			<Point id="3">-1.336915407048145,-0.04785570458405886</Point>
+		</Line>
+		<Line>
+			<Point reference="3" />
+			<Point id="4">-0.3819660112501053,-1.175570504584946</Point>
+		</Line>
+		<Line>
+			<Point reference="4" />
+			<Point id="5">0.9999999999999998,-0.7265425280053611</Point>
+		</Line>
+		<Line>
+			<Point reference="5" />
+			<Point reference="1" />
+		</Line>
+		<Placement>
+			<scale>1.325661197368959</scale>
+			<rot>7.357142857142875</rot>
+			<tranX>-1.371348277620126</tranX>
+			<tranY>3.005253305382525</tranY>
+		</Placement>
+	</Tile>
+	<Desc />
+	<Auth />
+</Tiling>

@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<!-- Written: Sat Dec 6 2025 09:03:27 -->
+<Tiling version="13">
+	<Name>6 epc014_bk</Name>
+	<Fill singleton="f">-3,3,-3,3</Fill>
+	<T0>-2.220446049250313e-16,-1.480297366166875e-16</T0>
+	<T1>6.319999999999972,-2.310971873964697e-15</T1>
+	<T2>3.159999999999985,5.473280551917627</T2>
+	<ViewSettings>
+		<width>1680</width>
+		<height>1382</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile rotation="0" scale="3.159999999999985" sides="6" type="regular">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Desc />
+	<Auth />
+	<BackgroundImage name="epc_014.jpg">
+		<Scale>0.9998000100000001</Scale>
+		<Rot>0</Rot>
+		<X>4</X>
+		<Y>576</Y>
+	</BackgroundImage>
+</Tiling>

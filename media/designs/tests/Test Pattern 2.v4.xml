@@ -1,0 +1,140 @@
+<?xml version="1.0"?>
+<!-- Written: Thu Oct 23 2025 13:11:11 -->
+<vector id="1" version="27">
+	<design>
+		<size>
+			<width>1500</width>
+			<height>1100</height>
+			<zwidth>1500</zwidth>
+			<zheight>1100</zheight>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Fill singleton="f">-4,4,-4,4</Fill>
+		<BackgroundImage name="Test Pattern 2b.bmp">
+			<Scale>1</Scale>
+			<Rot>0</Rot>
+			<X>-68</X>
+			<Y>-45</Y>
+			<Center>0,0</Center>
+			<Perspective>1,0,0,0,1,0,0,0,1</Perspective>
+		</BackgroundImage>
+	</design>
+	<style.Thick id="2">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<Tiling>Test Pattern 2</Tiling>
+					<entry>
+						<Tile id="4">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">1,1</Point>
+									<Point id="7">-0.9999999999999998,1</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">-1,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">0.9999999999999997,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="10" type="Explicit Tile Motif">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+						</ExplicitTile>
+					</entry>
+					<entry>
+						<Tile id="11">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="12">
+								<Line>
+									<Point id="13">1,1</Point>
+									<Point id="14">-0.9999999999999998,1</Point>
+								</Line>
+								<Line>
+									<Point reference="14" />
+									<Point id="15">-1,-0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="15" />
+									<Point id="16">0.9999999999999997,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="16" />
+									<Point reference="13" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="17" type="Explicit Tile Motif">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+						</ExplicitTile>
+					</entry>
+					<entry>
+						<Tile id="18">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="19">
+								<Line>
+									<Point id="20">-9.800000000000001,-7</Point>
+									<Point id="21">9.800000000000001,-7</Point>
+								</Line>
+								<Line>
+									<Point reference="21" />
+									<Point id="22">9.800000000000001,7</Point>
+								</Line>
+								<Line>
+									<Point reference="22" />
+									<Point id="23">-9.800000000000001,7</Point>
+								</Line>
+								<Line>
+									<Point reference="23" />
+									<Point reference="20" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="24" type="Explicit Tile Motif">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+						</ExplicitTile>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff1496d2</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.05</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+	</style.Thick>
+</vector>

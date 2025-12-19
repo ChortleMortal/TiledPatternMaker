@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!-- Written: Mon Apr 17 2023 10:50:14 -->
-<vector id="1" version="14">
+<!-- Written: Thu Oct 2 2025 16:23:28 -->
+<vector id="1" version="27">
 	<designNotes>Nasrid bird</designNotes>
 	<design>
 		<size>
@@ -14,7 +14,7 @@
 		</background>
 		<Fill singleton="f">-4,4,-4,4</Fill>
 	</design>
-	<style.Thick id="2">
+	<style.TileColors id="2">
 		<toolkit.GeoLayer>
 			<left__delta>-148.7</left__delta>
 			<top__delta>405.4</top__delta>
@@ -26,9 +26,9 @@
 		<style.Style>
 			<prototype id="3">
 				<app.Prototype>
-					<string>Bird.v3</string>
+					<Tiling>Bird.v3</Tiling>
 					<entry>
-						<tile.Feature id="4">
+						<Tile id="4">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -41,7 +41,7 @@
 								<Curve convex="f">
 									<Point reference="7" />
 									<Point id="8">-2.74538414090221,0.160000000000001</Point>
-									<Center>-0.6114095446866488,3.392050807568876</Center>
+									<Center>-6.611409544686646,-0.07205080756887661</Center>
 								</Curve>
 								<Curve convex="t">
 									<Point reference="8" />
@@ -51,7 +51,7 @@
 								<Curve convex="f">
 									<Point reference="9" />
 									<Point id="10">0.7187174742355442,0.1599999999999997</Point>
-									<Center>-3.147307929548894,0.3920508075688796</Center>
+									<Center>2.852692070451103,-3.072050807568879</Center>
 								</Curve>
 								<Curve convex="t">
 									<Point reference="10" />
@@ -61,20 +61,18 @@
 								<Curve convex="f">
 									<Point reference="11" />
 									<Point reference="6" />
-									<Center>0.7187174742355438,-0.3041016151377547</Center>
+									<Center>0.7187174742355482,6.624101615137752</Center>
 								</Curve>
 							</edges>
-						</tile.Feature>
-						<IrregularNoMotif id="12" type="MOTIF_TYPE_IRREGULAR_NO_MAP">
-							<boundarySides>1</boundarySides>
-							<boundaryScale>1</boundaryScale>
+						</Tile>
+						<NoMotif id="12" type="No Motif (for Tile)">
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>10</n>
-						</IrregularNoMotif>
+						</NoMotif>
 					</entry>
 					<entry>
-						<tile.Feature id="13">
+						<Tile id="13">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -87,7 +85,7 @@
 								<Curve convex="f">
 									<Point reference="16" />
 									<Point id="17">-2.74538414090221,0.160000000000001</Point>
-									<Center>-0.6114095446866488,3.392050807568876</Center>
+									<Center>-6.611409544686646,-0.07205080756887661</Center>
 								</Curve>
 								<Curve convex="t">
 									<Point reference="17" />
@@ -97,7 +95,7 @@
 								<Curve convex="f">
 									<Point reference="18" />
 									<Point id="19">0.7187174742355442,0.1599999999999997</Point>
-									<Center>-3.147307929548894,0.3920508075688796</Center>
+									<Center>2.852692070451103,-3.072050807568879</Center>
 								</Curve>
 								<Curve convex="t">
 									<Point reference="19" />
@@ -107,42 +105,20 @@
 								<Curve convex="f">
 									<Point reference="20" />
 									<Point reference="15" />
-									<Center>0.7187174742355438,-0.3041016151377547</Center>
+									<Center>0.7187174742355482,6.624101615137752</Center>
 								</Curve>
 							</edges>
-						</tile.Feature>
-						<IrregularNoMotif id="21" type="MOTIF_TYPE_IRREGULAR_NO_MAP">
-							<boundarySides>1</boundarySides>
-							<boundaryScale>1</boundaryScale>
+						</Tile>
+						<NoMotif id="21" type="No Motif (for Tile)">
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>10</n>
-						</IrregularNoMotif>
+						</NoMotif>
 					</entry>
 				</app.Prototype>
 			</prototype>
 		</style.Style>
-		<style.Colored>
-			<color hide="f">#ff382310</color>
-		</style.Colored>
-		<style.Thick>
-			<draw__outline>false</draw__outline>
-			<width>0.03</width>
-			<join>round</join>
-			<cap>round</cap>
-		</style.Thick>
-	</style.Thick>
-	<style.TileColors id="22">
-		<toolkit.GeoLayer>
-			<left__delta>-148.7</left__delta>
-			<top__delta>405.4</top__delta>
-			<width__delta>0.4799999999999995</width__delta>
-			<theta__delta>0</theta__delta>
-			<center>-4.013333333333333,-1.346666666666668</center>
-			<Z>0</Z>
-		</toolkit.GeoLayer>
-		<style.Style>
-			<prototype reference="3" />
-		</style.Style>
+		<BkgdColors>#a35807</BkgdColors>
+		<BkgdColors>#c2bcb0</BkgdColors>
 	</style.TileColors>
 </vector>

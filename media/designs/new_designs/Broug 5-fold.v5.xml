@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
-<!-- Written: Sun May 26 2024 18:50:44 -->
-<vector id="1" version="21">
-	<designNotes>The previoud innscuracies were introduced becuase of an extara unnecessary tile.  This use simpler tiling.</designNotes>
+<!-- Written: Wed Dec 3 2025 12:23:05 -->
+<vector id="1" version="29">
+	<designNotes>The v0 design had innaccuracies of aignment.  Using map edior the problems were analysed, and then a cleanse was applied using the motif maker.  Now this looks like it was intended to.</designNotes>
 	<design>
 		<size>
 			<width>1500</width>
@@ -14,36 +14,35 @@
 		</background>
 		<Crop embed="t" apply="t" clip="f">
 			<rect>
-				<X>-9.82058954</X>
-				<Y>-7.6134384</Y>
-				<width>20.90975813999999</width>
-				<height>15.30534972</height>
+				<X>-10.27058954209466</X>
+				<Y>-7.913438397681249</Y>
+				<width>21.65975814322933</width>
+				<height>15.85534971686534</height>
 			</rect>
 		</Crop>
 		<Fill singleton="f">-3,3,-3,3</Fill>
 		<BackgroundImage name="Broug-5-fold.jpg">
 			<Scale>0.6556592205741436</Scale>
 			<Rot>0</Rot>
-			<X>-157</X>
-			<Y>-12</Y>
-			<Center>0,0</Center>
+			<X>0</X>
+			<Y>0</Y>
 			<Perspective>1.015960316643562,0.006931321464339927,5.193277523040559e-06,0.006809385500292009,1.01593368891611,6.867136715433459e-06,-113.0653573794818,-126.5832430157141,0.9985758994145032</Perspective>
 		</BackgroundImage>
-		<Cleanse>c</Cleanse>
 	</design>
 	<style.Thick id="2">
 		<toolkit.GeoLayer>
-			<left__delta>-165</left__delta>
-			<top__delta>-12</top__delta>
+			<left__delta>-12.20268064407286</left__delta>
+			<top__delta>0</top__delta>
 			<width__delta>0.6555936546520862</width__delta>
 			<theta__delta>0</theta__delta>
-			<center>0,0</center>
 			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
 			<prototype id="3">
 				<app.Prototype>
-					<Tiling>Broug 5-fold.v1</Tiling>
+					<Tiling>Broug 5-fold</Tiling>
+					<Cleanse>2c</Cleanse>
+					<Sensitivity>0.01</Sensitivity>
 					<entry>
 						<Tile id="4">
 							<regular>true</regular>
@@ -92,16 +91,18 @@
 								</Line>
 							</edges>
 						</Tile>
-						<ExtendedRosette id="16" extendPeripherals="t" extendFreeVertices="f" connectBoundaryVertices="f">
-							<boundarySides>10</boundarySides>
-							<boundaryScale>7.64</boundaryScale>
-							<boundaryRotate>0</boundaryRotate>
+						<Rosette id="16">
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>10</n>
+							<Extender extRays="t" extTips2B="f" extTips2T="f" conRays="0" embedBound="f" embedTile="f">
+								<boundarySides>10</boundarySides>
+								<boundaryScale>7.64</boundaryScale>
+								<boundaryRotate>0</boundaryRotate>
+							</Extender>
 							<q>0</q>
 							<s>3</s>
-						</ExtendedRosette>
+						</Rosette>
 					</entry>
 					<entry>
 						<Tile id="17">
@@ -128,9 +129,66 @@
 							</edges>
 						</Tile>
 						<ExplicitTile id="23" type="Explicit Tile Motif">
-							<boundarySides>4</boundarySides>
-							<boundaryScale>1</boundaryScale>
-							<boundaryRotate>0</boundaryRotate>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+						</ExplicitTile>
+					</entry>
+					<entry>
+						<Tile id="24">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="25">
+								<Line>
+									<Point id="26">-5.165801472657511,3.142190265848763</Point>
+									<Point id="27">-3.681141994295313,3.142190265848763</Point>
+								</Line>
+								<Line>
+									<Point reference="27" />
+									<Point id="28">-4.087898015764408,4.545498539917142</Point>
+								</Line>
+								<Line>
+									<Point reference="28" />
+									<Point id="29">-5.633570897346971,4.525160738843686</Point>
+								</Line>
+								<Line>
+									<Point reference="29" />
+									<Point reference="26" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="30" type="Explicit Tile Motif">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+						</ExplicitTile>
+					</entry>
+					<entry>
+						<Tile id="31">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="32">
+								<Line>
+									<Point id="33">-5.613233096273515,-4.443809534549866</Point>
+									<Point id="34">-4.047222413617499,-4.484485136696776</Point>
+								</Line>
+								<Line>
+									<Point reference="34" />
+									<Point id="35">-3.620128591074948,-3.081176862628397</Point>
+								</Line>
+								<Line>
+									<Point reference="35" />
+									<Point id="36">-5.165801472657511,-3.060839061554942</Point>
+								</Line>
+								<Line>
+									<Point reference="36" />
+									<Point reference="33" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="37" type="Explicit Tile Motif">
 							<figureScale>1</figureScale>
 							<r>0</r>
 							<n>4</n>
@@ -151,39 +209,4 @@
 			<cap>round</cap>
 		</style.Thick>
 	</style.Thick>
-	<style.Filled id="24">
-		<toolkit.GeoLayer>
-			<left__delta>-165</left__delta>
-			<top__delta>-12</top__delta>
-			<width__delta>0.6555936546520862</width__delta>
-			<theta__delta>0</theta__delta>
-			<center>0,0</center>
-			<Z>0</Z>
-		</toolkit.GeoLayer>
-		<style.Style>
-			<prototype reference="3" />
-		</style.Style>
-		<ColorBlacks>
-			<color hide="f">#ffffff00</color>
-		</ColorBlacks>
-		<ColorWhites>
-			<color hide="f">#ffc2bcb0</color>
-			<color hide="f">#ff382310</color>
-		</ColorWhites>
-		<ColorGroup>
-			<Group hideSet="f">
-				<color hide="f">#ffc2bcb0</color>
-				<color hide="f">#ff382310</color>
-			</Group>
-			<Group hideSet="f" />
-		</ColorGroup>
-		<style.Filled>
-			<draw__inside>true</draw__inside>
-			<draw__outside>true</draw__outside>
-			<algorithm>4</algorithm>
-			<FaceColors faces="136">
--1,-1,0,0,0,1,1,1,1,1,1,0,1,0,1,0,1,0,1,1,0,0,0,0,-1,1,1,1,1,1,1,-1,-1,0,0,1,1,0,0,1,1,0,0,1,1,1,1,1,1,0,0,0,1,0,-1,1,1,0,1,1,0,1,1,1,0,0,1,0,1,0,0,0,0,1,1,1,0,1,1,0,1,1,-1,0,1,0,0,0,1,1,1,1,1,1,0,0,1,1,0,0,1,1,0,0,-1,1,1,1,1,1,1,0,0,1,0,0,1,1,0,0,1,1,0,0,0,1,1,1,1,1,1,0,0,0,-1,-1
-</FaceColors>
-		</style.Filled>
-	</style.Filled>
 </vector>

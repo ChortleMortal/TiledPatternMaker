@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<!-- Written: Sat Sep 3 2022 08:38:33 -->
-<vector id="1" version="12">
+<!-- Written: Fri May 2 2025 23:07:24 -->
+<vector id="1" version="26">
 	<design>
 		<size>
 			<width>774</width>
@@ -11,15 +11,20 @@
 		<background>
 			<color>#ff10100e</color>
 		</background>
-		<Crop>
-			<boundary>-8.093333333333334,-5.894666666666664,5.789333333333334,11.608</boundary>
+		<Crop embed="t" apply="t" clip="f">
+			<rect>
+				<X>-8.093333333333334</X>
+				<Y>-5.894666666666664</Y>
+				<width>5.789333333333334</width>
+				<height>11.608</height>
+			</rect>
 		</Crop>
 		<Fill singleton="f">-2,2,-2,2</Fill>
 		<BackgroundImage name="72da177006c3b480f28af437e0d9b708.jpg">
 			<Scale>1</Scale>
 			<Rot>3.141592653589793</Rot>
-			<X>-388</X>
-			<Y>-8</Y>
+			<X>388</X>
+			<Y>8</Y>
 			<Center>0,0</Center>
 		</BackgroundImage>
 	</design>
@@ -35,9 +40,11 @@
 		<style.Style>
 			<prototype id="3">
 				<app.Prototype>
-					<string>pint1.v1</string>
+					<Tiling>pint1.v1</Tiling>
+					<Cleanse>2e</Cleanse>
+					<Sensitivity>0.001</Sensitivity>
 					<entry>
-						<tile.Feature id="4">
+						<Tile id="4">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>1.54</scale>
@@ -91,20 +98,22 @@
 									<Point reference="6" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<ExtendedRosette id="18" extendPeripherals="t" extendFreeVertices="f" connectBoundaryVertices="f">
+						</Tile>
+						<Rosette id="18">
+							<figureScale>1.038961038961039</figureScale>
+							<r>15</r>
 							<n>12</n>
+							<Extender extRays="t" extTips2B="f" extTips2T="f" conRays="0" embedBound="f" embedTile="f">
+								<boundarySides>12</boundarySides>
+								<boundaryScale>1.78</boundaryScale>
+								<boundaryRotate>0</boundaryRotate>
+							</Extender>
 							<q>0</q>
 							<s>3</s>
-							<k>0</k>
-							<boundarySides>12</boundarySides>
-							<boundaryScale>1.78</boundaryScale>
-							<figureScale>1.6</figureScale>
-							<r>15</r>
-						</ExtendedRosette>
+						</Rosette>
 					</entry>
 					<entry>
-						<tile.Feature id="19">
+						<Tile id="19">
 							<regular>true</regular>
 							<rotation>0</rotation>
 							<scale>4.38999999999995</scale>
@@ -126,20 +135,22 @@
 									<Point reference="21" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.Rosette id="25">
+						</Tile>
+						<Rosette id="25">
+							<figureScale>0.8154897494305332</figureScale>
+							<r>0</r>
 							<n>4</n>
+							<Extender extRays="f" extTips2B="f" extTips2T="f" conRays="0" embedBound="f" embedTile="f">
+								<boundarySides>4</boundarySides>
+								<boundaryScale>4</boundaryScale>
+								<boundaryRotate>0</boundaryRotate>
+							</Extender>
 							<q>0</q>
 							<s>1</s>
-							<k>0</k>
-							<boundarySides>4</boundarySides>
-							<boundaryScale>4</boundaryScale>
-							<figureScale>3.58</figureScale>
-							<r>0</r>
-						</app.Rosette>
+						</Rosette>
 					</entry>
 					<entry>
-						<tile.Feature id="26">
+						<Tile id="26">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -177,19 +188,18 @@
 									<Point reference="28" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitRosette id="36" type="FIG_TYPE_EXPLICIT_ROSETTE">
+						</Tile>
+						<IrregularRosette id="36" type="Irregular Rosette Motif">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>8</n>
 							<s>1</s>
 							<q>0.04</q>
 							<rFlexPt>0.9</rFlexPt>
-							<boundarySides>8</boundarySides>
-							<boundaryScale>1</boundaryScale>
-							<figureScale>1</figureScale>
-							<r>0</r>
-						</app.ExplicitRosette>
+						</IrregularRosette>
 					</entry>
 					<entry>
-						<tile.Feature id="37">
+						<Tile id="37">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -227,16 +237,15 @@
 									<Point reference="39" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitRosette id="47" type="FIG_TYPE_EXPLICIT_ROSETTE">
+						</Tile>
+						<IrregularRosette id="47" type="Irregular Rosette Motif">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>8</n>
 							<s>1</s>
 							<q>0.04</q>
 							<rFlexPt>0.9</rFlexPt>
-							<boundarySides>8</boundarySides>
-							<boundaryScale>1</boundaryScale>
-							<figureScale>1.83</figureScale>
-							<r>0</r>
-						</app.ExplicitRosette>
+						</IrregularRosette>
 					</entry>
 				</app.Prototype>
 			</prototype>
@@ -245,6 +254,7 @@
 			<color hide="f">#ffffff7f</color>
 		</style.Colored>
 		<style.Thick>
+			<Version>0</Version>
 			<draw__outline>true</draw__outline>
 			<outline_width>0.03</outline_width>
 			<outline_color>#ff000000</outline_color>

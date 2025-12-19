@@ -1,0 +1,147 @@
+<?xml version="1.0"?>
+<!-- Written: Fri May 2 2025 22:39:21 -->
+<vector id="1" version="26">
+	<designNotes>based on tiling 8.6</designNotes>
+	<design>
+		<size>
+			<width>1500</width>
+			<height>1000</height>
+			<zwidth>1500</zwidth>
+			<zheight>1000</zheight>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Fill singleton="f">0,3,-4,1</Fill>
+	</design>
+	<style.Interlace id="2">
+		<toolkit.GeoLayer>
+			<left__delta>103.5</left__delta>
+			<top__delta>381.5</top__delta>
+			<width__delta>2.74092141615486</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<Tiling>8.6</Tiling>
+					<Cleanse>2e</Cleanse>
+					<Sensitivity>0.01</Sensitivity>
+					<entry>
+						<Tile id="4">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">0.9999999999999999,0.3249196962329063</Point>
+									<Point id="7">0.6180339887498948,0.85065080835204</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">6.438349236688752e-17,1.051462224238267</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">-0.6180339887498947,0.85065080835204</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point id="10">-0.9999999999999999,0.3249196962329064</Point>
+								</Line>
+								<Line>
+									<Point reference="10" />
+									<Point id="11">-1,-0.3249196962329062</Point>
+								</Line>
+								<Line>
+									<Point reference="11" />
+									<Point id="12">-0.6180339887498949,-0.8506508083520398</Point>
+								</Line>
+								<Line>
+									<Point reference="12" />
+									<Point id="13">-1.931504771006626e-16,-1.051462224238267</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point id="14">0.6180339887498946,-0.8506508083520401</Point>
+								</Line>
+								<Line>
+									<Point reference="14" />
+									<Point id="15">0.9999999999999999,-0.3249196962329066</Point>
+								</Line>
+								<Line>
+									<Point reference="15" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</Tile>
+						<Rosette id="16">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>10</n>
+							<q>0</q>
+							<s>3</s>
+						</Rosette>
+					</entry>
+					<entry>
+						<Tile id="17">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="18">
+								<Line>
+									<Point id="19">0.9999999999999998,0.3249196962329062</Point>
+									<Point id="20">0.9999999999999998,-0.3249196962329064</Point>
+								</Line>
+								<Line>
+									<Point reference="20" />
+									<Point id="21">1.618033988749895,-0.1241082803466793</Point>
+								</Line>
+								<Line>
+									<Point reference="21" />
+									<Point id="22">2.236067977499789,-0.3249196962329066</Point>
+								</Line>
+								<Line>
+									<Point reference="22" />
+									<Point id="23">2.236067977499789,0.3249196962329056</Point>
+								</Line>
+								<Line>
+									<Point reference="23" />
+									<Point id="24">1.618033988749895,0.1241082803466786</Point>
+								</Line>
+								<Line>
+									<Point reference="24" />
+									<Point reference="19" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularGirih id="25" type="Irregular Girih Motif">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>6</n>
+							<skip>3</skip>
+						</IrregularGirih>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff1496d2</color>
+		</style.Colored>
+		<style.Thick>
+			<Version>0</Version>
+			<draw__outline>true</draw__outline>
+			<width>0.05</width>
+			<join>bevel</join>
+			<cap>square</cap>
+		</style.Thick>
+		<style.Interlace>
+			<gap>0</gap>
+			<shadow>0.05</shadow>
+			<includeTipVerts>false</includeTipVerts>
+			<startUnder>true</startUnder>
+		</style.Interlace>
+	</style.Interlace>
+</vector>

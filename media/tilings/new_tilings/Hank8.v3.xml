@@ -1,0 +1,223 @@
+<?xml version="1.0"?>
+<!-- Written: Fri Nov 1 2024 13:59:32 -->
+<Tiling version="10">
+	<Name>Hank8.v3</Name>
+	<Fill singleton="t">0,0,0,0</Fill>
+	<T0>0,0</T0>
+	<T1>0,0</T1>
+	<T2>0,0</T2>
+	<ViewSettings>
+		<width>900</width>
+		<height>900</height>
+		<zwidth>800</zwidth>
+		<zheight>800</zheight>
+		<left__delta>18</left__delta>
+		<top__delta>-25</top__delta>
+		<width__delta>1.40587684885829</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="regular" sides="7" rotation="12.5" scale="2">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="6" rotation="0" scale="1">
+		<Placement>
+			<scale>1.668223414820508</scale>
+			<rot>3.928571428571435</rot>
+			<tranX>1.612152276553299</tranX>
+			<tranY>3.294970114923874</tranY>
+		</Placement>
+		<Placement>
+			<scale>1.668223414820508</scale>
+			<rot>-13.21428571428571</rot>
+			<tranX>-3.571095965102674</tranX>
+			<tranY>0.8385324257682767</tranY>
+		</Placement>
+		<Placement>
+			<scale>1.668223414820508</scale>
+			<rot>-30.35714285714285</rot>
+			<tranX>-0.02286505774875258</tranX>
+			<tranY>-3.668152151993096</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="1">1.086900522384894,0.7239416943186563</Point>
+			<Point id="2">-0.381966011250105,1.175570504584946</Point>
+		</Line>
+		<Line>
+			<Point reference="2" />
+			<Point id="3">-1.304843245244518,-0.05318296412643742</Point>
+		</Line>
+		<Line>
+			<Point reference="3" />
+			<Point id="4">-0.3819660112501053,-1.175570504584946</Point>
+		</Line>
+		<Line>
+			<Point reference="4" />
+			<Point id="5">0.9999999999999998,-0.7265425280053611</Point>
+		</Line>
+		<Line>
+			<Point reference="5" />
+			<Point reference="1" />
+		</Line>
+		<Placement>
+			<scale>1.32566119736896</scale>
+			<rot>7.357142857142878</rot>
+			<tranX>-1.424245403774557</tranX>
+			<tranY>3.005253305382524</tranY>
+		</Placement>
+		<Placement>
+			<scale>1.32566119736896</scale>
+			<rot>110.2142857142858</rot>
+			<tranX>-2.612980913163208</tranX>
+			<tranY>-2.057268370225509</tranY>
+		</Placement>
+		<Placement>
+			<scale>1.32566119736896</scale>
+			<rot>-95.49999999999994</rot>
+			<tranX>3.246829748025013</tranX>
+			<tranY>0.7198048256474676</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="6">1,0.5773502691896256</Point>
+			<Point id="7">7.070501591499379e-17,1.154700538379251</Point>
+		</Line>
+		<Line>
+			<Point reference="7" />
+			<Point id="8">-0.9999999999999998,0.5773502691896261</Point>
+		</Line>
+		<Line>
+			<Point reference="8" />
+			<Point id="9">-0.8279008150051073,-0.56445321821853</Point>
+		</Line>
+		<Line>
+			<Point reference="9" />
+			<Point id="10">0.1357813703838033,-1.200574259292779</Point>
+		</Line>
+		<Line>
+			<Point reference="10" />
+			<Point id="11">0.9999999999999997,-0.5773502691896263</Point>
+		</Line>
+		<Line>
+			<Point reference="11" />
+			<Point reference="6" />
+		</Line>
+		<Placement>
+			<scale>1.668223414820508</scale>
+			<rot>21.07142857142857</rot>
+			<tranX>2.853620704585797</tranX>
+			<tranY>-2.304932080430287</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="5" rotation="0" scale="1">
+		<Placement>
+			<scale>1.325661197368959</scale>
+			<rot>5.642857142857127</rot>
+			<tranX>2.560533844158852</tranX>
+			<tranY>-5.181226897247758</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="6" rotation="0" scale="1">
+		<Placement>
+			<scale>1.764251913519535</scale>
+			<rot>-22.590964869364</rot>
+			<tranX>6.084186268761597</tranX>
+			<tranY>-0.5437081614774333</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="8" rotation="0" scale="1">
+		<Placement>
+			<scale>2.459096972472714</scale>
+			<rot>2.59096486936413</rot>
+			<tranX>5.752980985552995</tranX>
+			<tranY>3.577093319251746</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="5" rotation="0" scale="1">
+		<Placement>
+			<scale>1.325661197368959</scale>
+			<rot>27.92857142857144</rot>
+			<tranX>2.927938516229573</tranX>
+			<tranY>5.984217526855963</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="8" rotation="0" scale="1">
+		<Placement>
+			<scale>2.325247952039578</scale>
+			<rot>-11.07142857142859</rot>
+			<tranX>-0.6168394609367676</tranX>
+			<tranY>6.608489300341756</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="6" rotation="0" scale="1">
+		<Placement>
+			<scale>1.764251913519533</scale>
+			<rot>-29.55189227349306</rot>
+			<tranX>-4.163114605995297</tranX>
+			<tranY>4.470057929735686</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="8" rotation="0" scale="1">
+		<Placement>
+			<scale>2.325247952039578</scale>
+			<rot>5.642857142857127</rot>
+			<tranX>6.193751161479192</tranX>
+			<tranY>-4.822242855320325</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="6" rotation="0" scale="1">
+		<Placement>
+			<scale>1.668223414820508</scale>
+			<rot>29.64285714285716</rot>
+			<tranX>-2.922655138060074</tranX>
+			<tranY>-5.318332426129724</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="8" rotation="0" scale="1">
+		<Placement>
+			<scale>2.325247952039577</scale>
+			<rot>1.785714285714281</rot>
+			<tranX>-6.305540983309347</tranX>
+			<tranY>-2.071901218954804</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="6.539999999999904">
+		<Curve convex="t">
+			<Point id="12">-1,0</Point>
+			<Point id="13">0,1</Point>
+			<Center>0,0</Center>
+		</Curve>
+		<Curve convex="t">
+			<Point reference="13" />
+			<Point id="14">1,0</Point>
+			<Center>0,0</Center>
+		</Curve>
+		<Curve convex="t">
+			<Point reference="14" />
+			<Point id="15">0,-1</Point>
+			<Center>0,0</Center>
+		</Curve>
+		<Curve convex="t">
+			<Point reference="15" />
+			<Point reference="12" />
+			<Center>0,0</Center>
+		</Curve>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-6.938893903907228e-17</tranX>
+			<tranY>8.326672684688674e-17</tranY>
+		</Placement>
+	</Tile>
+	<Desc />
+	<Auth />
+</Tiling>

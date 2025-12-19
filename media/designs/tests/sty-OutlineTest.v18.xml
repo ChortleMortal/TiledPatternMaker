@@ -1,0 +1,78 @@
+<?xml version="1.0"?>
+<!-- Written: Mon Sep 22 2025 16:54:55 -->
+<vector id="1" version="27">
+	<design>
+		<size>
+			<width>955</width>
+			<height>1080</height>
+			<zwidth>1500</zwidth>
+			<zheight>1100</zheight>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Fill singleton="t">0,0,0,0</Fill>
+	</design>
+	<style.Outline id="2">
+		<toolkit.GeoLayer>
+			<left__delta>360</left__delta>
+			<top__delta>-199</top__delta>
+			<width__delta>2.25</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<Tiling>InterlaceTest.v14</Tiling>
+					<entry>
+						<Tile id="4">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Curve convex="t">
+									<Point id="6">1,1</Point>
+									<Point id="7">-0.9999999999999998,1</Point>
+									<Center>1.110223024625157e-16,-0.9999999999999998</Center>
+								</Curve>
+								<Curve convex="t">
+									<Point reference="7" />
+									<Point id="8">-1,-0.9999999999999998</Point>
+									<Center>0.9999999999999999,-1.110223024625157e-16</Center>
+								</Curve>
+								<Curve convex="t">
+									<Point reference="8" />
+									<Point id="9">0.9999999999999997,-1</Point>
+									<Center>2.220446049250313e-16,1</Center>
+								</Curve>
+								<Curve convex="t">
+									<Point reference="9" />
+									<Point reference="6" />
+									<Center>-1,3.33066907387547e-16</Center>
+								</Curve>
+							</edges>
+						</Tile>
+						<ExplicitTile id="10" type="Explicit Tile Motif">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+						</ExplicitTile>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#781496d2</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>true</draw__outline>
+			<outline_width>0.03</outline_width>
+			<outline_color>#ff000000</outline_color>
+			<width>0.13</width>
+			<join>bevel</join>
+			<cap>square</cap>
+		</style.Thick>
+	</style.Outline>
+</vector>

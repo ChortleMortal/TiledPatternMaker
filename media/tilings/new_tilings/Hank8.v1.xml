@@ -1,0 +1,91 @@
+<?xml version="1.0"?>
+<!-- Written: Wed Oct 30 2024 08:59:08 -->
+<Tiling version="10">
+	<Name>Hank8.v1</Name>
+	<Fill singleton="t">0,0,0,0</Fill>
+	<T0>0,0</T0>
+	<T1>0,0</T1>
+	<T2>0,0</T2>
+	<ViewSettings>
+		<width>800</width>
+		<height>800</height>
+		<zwidth>800</zwidth>
+		<zheight>800</zheight>
+		<left__delta>45</left__delta>
+		<top__delta>8</top__delta>
+		<width__delta>1.701682693215023</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="regular" sides="7" rotation="12.5" scale="2">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="6" rotation="0" scale="1">
+		<Placement>
+			<scale>1.668223414820508</scale>
+			<rot>3.928571428571435</rot>
+			<tranX>1.612152276553299</tranX>
+			<tranY>3.294970114923874</tranY>
+		</Placement>
+		<Placement>
+			<scale>1.668223414820508</scale>
+			<rot>-13.21428571428571</rot>
+			<tranX>-3.571095965102674</tranX>
+			<tranY>0.8385324257682767</tranY>
+		</Placement>
+		<Placement>
+			<scale>1.668223414820508</scale>
+			<rot>-30.35714285714285</rot>
+			<tranX>-0.02286505774875258</tranX>
+			<tranY>-3.668152151993096</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="1">1.086900522384894,0.7239416943186563</Point>
+			<Point id="2">-0.381966011250105,1.175570504584946</Point>
+		</Line>
+		<Line>
+			<Point reference="2" />
+			<Point id="3">-1.304843245244518,-0.05318296412643742</Point>
+		</Line>
+		<Line>
+			<Point reference="3" />
+			<Point id="4">-0.3819660112501053,-1.175570504584946</Point>
+		</Line>
+		<Line>
+			<Point reference="4" />
+			<Point id="5">0.9999999999999998,-0.7265425280053611</Point>
+		</Line>
+		<Line>
+			<Point reference="5" />
+			<Point reference="1" />
+		</Line>
+		<Placement>
+			<scale>1.32566119736896</scale>
+			<rot>7.35714285714288</rot>
+			<tranX>-1.424245403774557</tranX>
+			<tranY>3.005253305382524</tranY>
+		</Placement>
+		<Placement>
+			<scale>1.32566119736896</scale>
+			<rot>110.2142857142858</rot>
+			<tranX>-2.612980913163208</tranX>
+			<tranY>-2.057268370225509</tranY>
+		</Placement>
+		<Placement>
+			<scale>1.32566119736896</scale>
+			<rot>-95.49999999999994</rot>
+			<tranX>3.246829748025013</tranX>
+			<tranY>0.7198048256474676</tranY>
+		</Placement>
+	</Tile>
+	<Desc />
+	<Auth />
+</Tiling>

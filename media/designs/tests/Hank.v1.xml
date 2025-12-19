@@ -1,0 +1,204 @@
+<?xml version="1.0"?>
+<!-- Written: Sat Oct 12 2024 22:35:44 -->
+<vector id="1" version="25">
+	<design>
+		<size>
+			<width>900</width>
+			<height>900</height>
+			<zwidth>900</zwidth>
+			<zheight>900</zheight>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Fill singleton="t">0,0,0,0</Fill>
+	</design>
+	<style.Thick id="2">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<Tiling>HankTest</Tiling>
+					<entry>
+						<Tile id="4">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>3</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">0.9999999999999999,0.2679491924311226</Point>
+									<Point id="7">0.7320508075688773,0.7320508075688773</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">0.2679491924311229,0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">-0.2679491924311225,0.9999999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point id="10">-0.7320508075688772,0.7320508075688773</Point>
+								</Line>
+								<Line>
+									<Point reference="10" />
+									<Point id="11">-0.9999999999999998,0.267949192431123</Point>
+								</Line>
+								<Line>
+									<Point reference="11" />
+									<Point id="12">-1,-0.2679491924311223</Point>
+								</Line>
+								<Line>
+									<Point reference="12" />
+									<Point id="13">-0.7320508075688776,-0.7320508075688769</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point id="14">-0.2679491924311235,-0.9999999999999997</Point>
+								</Line>
+								<Line>
+									<Point reference="14" />
+									<Point id="15">0.2679491924311222,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="15" />
+									<Point id="16">0.7320508075688771,-0.7320508075688774</Point>
+								</Line>
+								<Line>
+									<Point reference="16" />
+									<Point id="17">0.9999999999999997,-0.2679491924311235</Point>
+								</Line>
+								<Line>
+									<Point reference="17" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</Tile>
+						<Rosette id="18">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>12</n>
+							<q>0</q>
+							<s>3</s>
+						</Rosette>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ffa35807</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>true</draw__outline>
+			<outline_width>0.05</outline_width>
+			<outline_color>#ff000000</outline_color>
+			<width>0.1</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+	</style.Thick>
+	<style.Interlace id="19">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="20">
+				<app.Prototype>
+					<Tiling>HankTest.v1</Tiling>
+					<entry>
+						<Tile id="21">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>2.220000000000015</scale>
+							<edges id="22">
+								<Line>
+									<Point id="23">0.9999999999999999,0.2679491924311226</Point>
+									<Point id="24">0.7320508075688773,0.7320508075688773</Point>
+								</Line>
+								<Line>
+									<Point reference="24" />
+									<Point id="25">0.2679491924311229,0.9999999999999998</Point>
+								</Line>
+								<Line>
+									<Point reference="25" />
+									<Point id="26">-0.2679491924311225,0.9999999999999999</Point>
+								</Line>
+								<Line>
+									<Point reference="26" />
+									<Point id="27">-0.7320508075688772,0.7320508075688773</Point>
+								</Line>
+								<Line>
+									<Point reference="27" />
+									<Point id="28">-0.9999999999999998,0.267949192431123</Point>
+								</Line>
+								<Line>
+									<Point reference="28" />
+									<Point id="29">-1,-0.2679491924311223</Point>
+								</Line>
+								<Line>
+									<Point reference="29" />
+									<Point id="30">-0.7320508075688776,-0.7320508075688769</Point>
+								</Line>
+								<Line>
+									<Point reference="30" />
+									<Point id="31">-0.2679491924311235,-0.9999999999999997</Point>
+								</Line>
+								<Line>
+									<Point reference="31" />
+									<Point id="32">0.2679491924311222,-1</Point>
+								</Line>
+								<Line>
+									<Point reference="32" />
+									<Point id="33">0.7320508075688771,-0.7320508075688774</Point>
+								</Line>
+								<Line>
+									<Point reference="33" />
+									<Point id="34">0.9999999999999997,-0.2679491924311235</Point>
+								</Line>
+								<Line>
+									<Point reference="34" />
+									<Point reference="23" />
+								</Line>
+							</edges>
+						</Tile>
+						<Star2 id="35">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>12</n>
+							<angle>60</angle>
+							<s>2</s>
+						</Star2>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff1496d2</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.15</width>
+			<join>bevel</join>
+			<cap>square</cap>
+		</style.Thick>
+		<style.Interlace>
+			<gap>0</gap>
+			<shadow>0.05</shadow>
+			<includeTipVerts>false</includeTipVerts>
+			<startUnder>false</startUnder>
+		</style.Interlace>
+	</style.Interlace>
+</vector>

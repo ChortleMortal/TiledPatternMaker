@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+<!-- Written: Thu Jun 5 2025 16:48:22 -->
+<Tiling version="10">
+	<Name>5s-test</Name>
+	<Fill singleton="t">0,0,0,0</Fill>
+	<T0>0,0</T0>
+	<T1>0,0</T1>
+	<T2>0,0</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>-400</left__delta>
+		<top__delta>-100</top__delta>
+		<width__delta>2.25</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="regular" sides="5" rotation="0" scale="1">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1.236">
+		<Curve convex="t">
+			<Point id="1">-1,0</Point>
+			<Point id="2">0,1</Point>
+			<Center>0,0</Center>
+		</Curve>
+		<Curve convex="t">
+			<Point reference="2" />
+			<Point id="3">1,0</Point>
+			<Center>0,0</Center>
+		</Curve>
+		<Curve convex="t">
+			<Point reference="3" />
+			<Point id="4">0,-1</Point>
+			<Center>0,0</Center>
+		</Curve>
+		<Curve convex="t">
+			<Point reference="4" />
+			<Point reference="1" />
+			<Center>0,0</Center>
+		</Curve>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Desc />
+	<Auth>DAC</Auth>
+</Tiling>

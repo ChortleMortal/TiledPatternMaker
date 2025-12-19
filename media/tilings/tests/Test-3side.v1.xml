@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<!-- Written: Sat Jun 21 2025 21:03:49 -->
+<Tiling version="10">
+	<Name>Test-3side.v1</Name>
+	<Fill singleton="t">0,0,0,0</Fill>
+	<T0>0,0</T0>
+	<T1>0,0</T1>
+	<T2>0,0</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="1">1,1.732050807568877</Point>
+			<Point id="2">-2,2.449293598294706e-16</Point>
+		</Line>
+		<Line>
+			<Point reference="2" />
+			<Point id="3">0.9999999999999984,-1.732050807568878</Point>
+		</Line>
+		<Curve convex="t">
+			<Point reference="3" />
+			<Point reference="1" />
+			<Center>-2.464101615137755,1.110223024625157e-15</Center>
+		</Curve>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="edgepoly" rotation="0" scale="1">
+		<Line>
+			<Point id="4">1,1.732050807568877</Point>
+			<Point id="5">-2,2.449293598294706e-16</Point>
+		</Line>
+		<Line>
+			<Point reference="5" />
+			<Point id="6">0.9999999999999984,-1.732050807568878</Point>
+		</Line>
+		<Curve convex="t">
+			<Point reference="6" />
+			<Point reference="4" />
+			<Center>-2.464101615137755,1.110223024625157e-15</Center>
+		</Curve>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-1.554312234475219e-15</tranX>
+			<tranY>-3.464101615137754</tranY>
+		</Placement>
+	</Tile>
+	<Desc />
+	<Auth />
+</Tiling>

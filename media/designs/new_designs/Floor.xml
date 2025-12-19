@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
-<vector id="1" version="10">
+<!-- Written: Sun Dec 7 2025 16:02:30 -->
+<vector id="1" version="29">
 	<designNotes>A floor in Grenada</designNotes>
 	<design>
 		<size>
@@ -11,22 +12,22 @@
 		<background>
 			<color>#ff000000</color>
 		</background>
-		<Fill>-2,2,-2,2</Fill>
+		<Fill singleton="f">-2,2,-2,2</Fill>
 	</design>
-	<style.Plain id="2" serialization="custom">
+	<style.Plain id="2">
 		<toolkit.GeoLayer>
-			<left__delta>655.5</left__delta>
-			<top__delta>-74.5</top__delta>
+			<left__delta>-640.1172413793017</left__delta>
+			<top__delta>799.271264367816</top__delta>
 			<width__delta>-0.2899999999999999</width__delta>
 			<theta__delta>0</theta__delta>
-			<center>-4,-1.333333333333336</center>
+			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<prototype id="3" serialization="custom">
+			<prototype id="3">
 				<app.Prototype>
-					<string>Floor</string>
+					<Tiling>Floor</Tiling>
 					<entry>
-						<tile.Feature id="4">
+						<Tile id="4">
 							<regular>true</regular>
 							<rotation>90</rotation>
 							<scale>1</scale>
@@ -56,16 +57,15 @@
 									<Point reference="6" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="12" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
-							<boundaryScale>1</boundaryScale>
+						</Tile>
+						<ExplicitTile id="12" type="Explicit Tile Motif">
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>6</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="13">
+						<Tile id="13">
 							<regular>true</regular>
 							<rotation>90</rotation>
 							<scale>1</scale>
@@ -95,16 +95,15 @@
 									<Point reference="15" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="21" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
-							<boundaryScale>1</boundaryScale>
+						</Tile>
+						<ExplicitTile id="21" type="Explicit Tile Motif">
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>6</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="22">
+						<Tile id="22">
 							<regular>true</regular>
 							<rotation>90</rotation>
 							<scale>1</scale>
@@ -134,16 +133,15 @@
 									<Point reference="24" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="30" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
-							<boundaryScale>1</boundaryScale>
+						</Tile>
+						<ExplicitTile id="30" type="Explicit Tile Motif">
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>6</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="31">
+						<Tile id="31">
 							<regular>true</regular>
 							<rotation>90</rotation>
 							<scale>1</scale>
@@ -173,16 +171,15 @@
 									<Point reference="33" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="39" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
-							<boundaryScale>1</boundaryScale>
+						</Tile>
+						<ExplicitTile id="39" type="Explicit Tile Motif">
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>6</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="40">
+						<Tile id="40">
 							<regular>true</regular>
 							<rotation>90</rotation>
 							<scale>1</scale>
@@ -212,16 +209,15 @@
 									<Point reference="42" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="48" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
-							<boundaryScale>1</boundaryScale>
+						</Tile>
+						<ExplicitTile id="48" type="Explicit Tile Motif">
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>6</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="49">
+						<Tile id="49">
 							<regular>true</regular>
 							<rotation>90</rotation>
 							<scale>1</scale>
@@ -251,16 +247,15 @@
 									<Point reference="51" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="57" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
-							<boundaryScale>1</boundaryScale>
+						</Tile>
+						<ExplicitTile id="57" type="Explicit Tile Motif">
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>6</n>
+						</ExplicitTile>
 					</entry>
 					<entry>
-						<tile.Feature id="58">
+						<Tile id="58">
 							<regular>true</regular>
 							<rotation>90</rotation>
 							<scale>1</scale>
@@ -290,13 +285,12 @@
 									<Point reference="60" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFeature id="66" type="FIG_TYPE_EXPLICIT_FEATURE">
-							<boundarySides>1</boundarySides>
-							<boundaryScale>1</boundaryScale>
+						</Tile>
+						<ExplicitTile id="66" type="Explicit Tile Motif">
 							<figureScale>1</figureScale>
 							<r>0</r>
-						</app.ExplicitFeature>
+							<n>6</n>
+						</ExplicitTile>
 					</entry>
 				</app.Prototype>
 			</prototype>
@@ -305,16 +299,23 @@
 			<color hide="f">#ff000000</color>
 		</style.Colored>
 	</style.Plain>
-	<style.TileColors id="67" serialization="custom">
+	<style.TileColors id="67">
 		<toolkit.GeoLayer>
-			<left__delta>655.5</left__delta>
-			<top__delta>-74.5</top__delta>
+			<left__delta>-640.1172413793017</left__delta>
+			<top__delta>799.271264367816</top__delta>
 			<width__delta>-0.2899999999999999</width__delta>
 			<theta__delta>0</theta__delta>
-			<center>-4,-1.333333333333336</center>
+			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
 			<prototype reference="3" />
 		</style.Style>
+		<BkgdColors>#c1ad92</BkgdColors>
+		<BkgdColors>#fbf1e5</BkgdColors>
+		<BkgdColors>#1c1c1c</BkgdColors>
+		<BkgdColors>#f0e5d5</BkgdColors>
+		<BkgdColors>#131313</BkgdColors>
+		<BkgdColors>#f2e7d5</BkgdColors>
+		<BkgdColors>#b7a58d</BkgdColors>
 	</style.TileColors>
 </vector>

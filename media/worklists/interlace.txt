@@ -1,5 +1,8 @@
 10.v1
 12
+12.v1
+12.v2
+12.v3
 12-6-trigon
 12-6-trigon.v1
 12-6-trigon.v2
@@ -7,14 +10,21 @@
 12-6-trigon.v5
 12-6-trigon.v6
 12-6-trigon.v7
-12.v1
-12.v2
-12.v3
 3-8-4-6
 3-8-4-6.v1
 3-8-4-6.v2
 3-8-4-6.v3
 3-8-4-6.v8
+3-curve-inter
+3-curve-inter.v1
+3-curve-inter.v2
+3-curve-inter.v3
+3-curve-inter.v4
+3-curve-inter.v5
+3-ilace
+3-ilace.v1
+3-ilace.v2
+6-4-3.v2
 6.5.v5
 7-shadow
 7-shadow.v1
@@ -35,6 +45,7 @@
 8 and 8 rings carpet.v1
 8 and 8 rings carpet.v2
 8.6
+8.6.v2
 8.6.6.v1
 8.6.6.v2
 9.6 almost 5
@@ -64,21 +75,39 @@ Circulatory System.v1
 Circulatory System.v2
 Circulatory System.v3
 Enneagram
+Enneagram.v1
+epc_014.v1
+epc_014.v4
 Girih Crab
 Girih Crab.v1
 Girih Crab.v2
+Girih Crab.v3
+Girih Crab.v4
 GirihPat1.v2
+Hank.v1
+Hank.v2
+Hank8.v5
+Hankin-3C.v2
 Locked Ribbon
 Locked Ribbon.v1
 Locked Ribbon.v2
+pbn_7
+pbn_7.v1
+pbn_7.v2
+pbn_7.v3
 Penrose Monster
 Penrose Monster.v1
 Penrose Monster.v2
-Popular
-Popular2.v10
+Penrose Monster.v3
+pint
+pint.v1
+pint.v2
+pint.v4
+pipes
+pipes.v1
+pipes.v2
 Popular2.v8
-Popular2.v9
-SPlateTest1.v6
+Popular2.v11
 SarahsPlate
 SarahsPlate.v3
 SarahsPlate.v4
@@ -87,12 +116,35 @@ SarahsPlate.v6
 SimpleStar
 SimpleStar.v1
 SimpleStar.v2
+SPlateTest1.v6
+SPlateTest1.v8
+SPlateTest1.v9
+SPlateTest1.v10
 Squoc
 Squoc.v1
 Squoc.v2
 Squoctogon
 Squoctogon.v1
 Squoctogon.v2
+star
+star.v1
+star.v2
+sty-InterlaceTest
+sty-InterlaceTest.v1
+sty-InterlaceTest.v2
+sty-InterlaceTest.v3
+sty-InterlaceTest.v4
+sty-InterlaceTest.v5
+sty-InterlaceTest.v6
+sty-InterlaceTest.v7
+sty-InterlaceTest.v8
+sty-InterlaceTest.v9
+sty-InterlaceTest.v10
+sty-InterlaceTest.v11
+sty-InterlaceTest.v12
+sty-InterlaceTest.v13
+sty-InterlaceTest.v14
+sty-InterlaceTest.v15
 Tangle Diamonds
 Tangle Diamonds.v1
 Tangle Diamonds.v2
@@ -106,25 +158,6 @@ USA
 USA.v1
 USA.v2
 USA.v3
-epc_014.v1
-pbn_7
-pbn_7.v1
-pbn_7.v2
-pbn_7.v3
-pint
-pint.v1
-pint.v2
-pint.v4
-pipes
-pipes.v1
-pipes.v2
-star
-star.v1
-star.v2
-sty-InterlaceTest
-sty-InterlaceTest.v1
-sty-InterlaceTest.v2
-sty-InterlaceTest.v3
 wonka
 wonka.v1
 wonka.v2

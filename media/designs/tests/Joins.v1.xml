@@ -1,0 +1,89 @@
+<?xml version="1.0"?>
+<!-- Written: Fri Dec 13 2024 17:23:15 -->
+<vector id="1" version="25">
+	<design>
+		<size>
+			<width>1500</width>
+			<height>927</height>
+			<zwidth>1500</zwidth>
+			<zheight>927</zheight>
+		</size>
+		<background>
+			<color>#ff000000</color>
+		</background>
+		<Fill singleton="f">-3,3,-3,3</Fill>
+	</design>
+	<style.Thick id="2">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<entry>
+						<Tile id="4">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">-8,-3.5</Point>
+									<Point id="7">-2,-3.5</Point>
+								</Line>
+								<Line>
+									<Point id="8">-6.0919912,0.88812221</Point>
+									<Point reference="7" />
+								</Line>
+								<Line>
+									<Point id="9">3.1430038,-0.40977155</Point>
+									<Point reference="7" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitMap id="10" type="Explicit Map Motif">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>3</n>
+							<map id="11">
+								<vertices id="12">
+									<Vertex reference="6" />
+									<Vertex reference="7" />
+									<Vertex reference="8" />
+									<Vertex reference="9" />
+								</vertices>
+								<edges id="13">
+									<Edge id="14">
+										<v1 reference="6" />
+										<v2 reference="7" />
+									</Edge>
+									<Edge id="15">
+										<v1 reference="8" />
+										<v2 reference="7" />
+									</Edge>
+									<Edge id="16">
+										<v1 reference="9" />
+										<v2 reference="7" />
+									</Edge>
+								</edges>
+							</map>
+						</ExplicitMap>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff1496d2</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>false</draw__outline>
+			<width>0.05</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+	</style.Thick>
+</vector>

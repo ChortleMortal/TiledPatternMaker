@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<Tiling>
+	<Name>4^4</Name>
+	<Fill>-4,4,-5,5</Fill>
+	<T1>0,2</T1>
+	<T2>2,0</T2>
+	<Feature type="regular" sides="4">
+		<Placement>1,0,0,0,1,0</Placement>
+	</Feature>
+	<Desc>The plain old tiling by squares.</Desc>
+	<Auth>Craig S. Kaplan</Auth>
+</Tiling>

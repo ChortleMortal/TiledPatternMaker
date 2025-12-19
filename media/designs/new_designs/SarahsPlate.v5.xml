@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<vector id="1" version="12">
-	<!-- Written:  Wed Nov 24 2021 11:10:17 -->
+<!-- Written: Sat Nov 29 2025 22:07:59 -->
+<vector id="1" version="29">
 	<designNotes>adds border</designNotes>
 	<design>
 		<size>
@@ -12,39 +12,28 @@
 		<background>
 			<color>#ffffffff</color>
 		</background>
-		<border type="Plain" shape="Circle">
-			<color>#ff1496d2</color>
-			<width>20</width>
-			<circle>
-				<radius>383</radius>
-				<X>766</X>
-				<Y>473.5</Y>
-			</circle>
-		</border>
 		<Fill singleton="t">0,0,0,0</Fill>
 		<BackgroundImage name="20210929_085413606_iOS.JPEG">
 			<Scale>0.285071731931037</Scale>
 			<Rot>0</Rot>
-			<X>38</X>
-			<Y>-47</Y>
-			<Center>-0.1918445807945197,0.74745440309621</Center>
+			<X>125.8028800091266</X>
+			<Y>5.38242172056993</Y>
 		</BackgroundImage>
 	</design>
-	<style.Interlace id="2" serialization="custom">
+	<style.Interlace id="2">
 		<toolkit.GeoLayer>
-			<left__delta>23</left__delta>
-			<top__delta>-57</top__delta>
+			<left__delta>44.59707868066477</left__delta>
+			<top__delta>-59.35972235976234</top__delta>
 			<width__delta>0.285071731931037</width__delta>
 			<theta__delta>0</theta__delta>
-			<center>-0.1918445807945197,0.74745440309621</center>
 			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<prototype id="3" serialization="custom">
+			<prototype id="3">
 				<app.Prototype>
-					<string>SarahsPlate.v2</string>
+					<Tiling>SarahsPlate.v2</Tiling>
 					<entry>
-						<tile.Feature id="4">
+						<Tile id="4">
 							<regular>false</regular>
 							<rotation>0</rotation>
 							<scale>1</scale>
@@ -130,8 +119,11 @@
 									<Point reference="6" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.ExplicitFigure id="26" type="FIG_TYPE_EXPLICIT">
+						</Tile>
+						<ExplicitMap id="26" type="Explicit Map Motif">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>20</n>
 							<map id="27">
 								<vertices id="28">
 									<Vertex id="29">
@@ -858,11 +850,7 @@
 									</Edge>
 								</edges>
 							</map>
-							<boundarySides>1</boundarySides>
-							<boundaryScale>1</boundaryScale>
-							<figureScale>1</figureScale>
-							<r>0</r>
-						</app.ExplicitFigure>
+						</ExplicitMap>
 					</entry>
 				</app.Prototype>
 			</prototype>
@@ -873,11 +861,32 @@
 		<style.Thick>
 			<draw__outline>true</draw__outline>
 			<width>0.35</width>
+			<join>bevel</join>
+			<cap>square</cap>
 		</style.Thick>
 		<style.Interlace>
 			<gap>0</gap>
 			<shadow>0.05</shadow>
 			<includeTipVerts>false</includeTipVerts>
+			<startUnder>false</startUnder>
 		</style.Interlace>
 	</style.Interlace>
+	<style.Border id="230">
+		<border type="Plain" shape="Circle" useViewSize="f">
+			<toolkit.GeoLayer>
+				<left__delta>44.59707868066477</left__delta>
+				<top__delta>-59.35972235976234</top__delta>
+				<width__delta>0.285071731931037</width__delta>
+				<theta__delta>0</theta__delta>
+				<Z>10</Z>
+			</toolkit.GeoLayer>
+			<color>#ff1496d2</color>
+			<width>20</width>
+			<circle>
+				<radius>17.91361995829893</radius>
+				<X>0.1537219430901331</X>
+				<Y>-2.786583841495254</Y>
+			</circle>
+		</border>
+	</style.Border>
 </vector>

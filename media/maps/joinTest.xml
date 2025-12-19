@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<!-- Written: Fri Dec 13 2024 11:57:54 -->
+<vector id="1" version="25">
+	<size>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+	</size>
+	<ModelSettings>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ModelSettings>
+	<map id="2">
+		<vertices id="3">
+			<Vertex id="4">
+				<pos>-8.0,-3.5</pos>
+			</Vertex>
+			<Vertex id="5">
+				<pos>-2.0,-3.5</pos>
+			</Vertex>
+			<Vertex id="6">
+				<pos>-6.0919912,0.88812221</pos>
+			</Vertex>
+			<Vertex id="7">
+				<pos>3.1430038,-0.40977155</pos>
+			</Vertex>
+		</vertices>
+		<edges id="8">
+			<Edge id="9">
+				<v1 reference="4" />
+				<v2 reference="5" />
+			</Edge>
+			<Edge id="10">
+				<v1 reference="6" />
+				<v2 reference="5" />
+			</Edge>
+			<Edge id="11">
+				<v1 reference="7" />
+				<v2 reference="5" />
+			</Edge>
+		</edges>
+	</map>
+</vector>

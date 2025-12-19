@@ -1,89 +1,71 @@
 <?xml version="1.0"?>
-<vector id="1" version="6">
+<!-- Written: Mon Jun 16 2025 20:30:11 -->
+<vector id="1" version="27">
 	<designNotes>A test of regular feature rotation</designNotes>
 	<design>
 		<size>
 			<width>1500</width>
 			<height>1100</height>
+			<zwidth>1500</zwidth>
+			<zheight>1100</zheight>
 		</size>
 		<background>
 			<color>#ff000000</color>
 		</background>
-		<Fill>-8,7,-4,4</Fill>
+		<Fill singleton="f">-8,7,-4,4</Fill>
 	</design>
-	<style.Thick id="2" serialization="custom">
+	<style.Thick id="2">
 		<toolkit.GeoLayer>
 			<left__delta>0</left__delta>
 			<top__delta>0</top__delta>
 			<width__delta>1</width__delta>
 			<theta__delta>0</theta__delta>
-			<center>-0.01333333333333186,-0.01333333333333542</center>
+			<center>481,600</center>
+			<Z>0</Z>
 		</toolkit.GeoLayer>
 		<style.Style>
-			<boundary id="3">
-				<pts id="4">
-					<Point id="5">
-						<x>-10</x>
-						<y>-10</y>
-					</Point>
-					<Point id="6">
-						<x>-10</x>
-						<y>10</y>
-					</Point>
-					<Point id="7">
-						<x>10</x>
-						<y>10</y>
-					</Point>
-					<Point id="8">
-						<x>10</x>
-						<y>-10</y>
-					</Point>
-				</pts>
-			</boundary>
-			<prototype id="9" serialization="custom">
+			<prototype id="3">
 				<app.Prototype>
-					<string>6.v1</string>
+					<Tiling>6.v1</Tiling>
 					<entry>
-						<tile.Feature id="10">
+						<Tile id="4">
 							<regular>true</regular>
 							<rotation>90</rotation>
-							<edges id="11">
+							<scale>1</scale>
+							<edges id="5">
 								<Line>
-									<Point id="12">-0.5773502691896256,1</Point>
-									<Point id="13">-1.154700538379251,2.187347525316813e-16</Point>
+									<Point id="6">1,0.5773502691896256</Point>
+									<Point id="7">7.070501591499379e-17,1.154700538379251</Point>
 								</Line>
 								<Line>
-									<Point reference="13" />
-									<Point id="14">-0.5773502691896261,-0.9999999999999997</Point>
+									<Point reference="7" />
+									<Point id="8">-0.9999999999999998,0.5773502691896261</Point>
 								</Line>
 								<Line>
-									<Point reference="14" />
-									<Point id="15">0.5773502691896254,-1</Point>
+									<Point reference="8" />
+									<Point id="9">-1,-0.5773502691896254</Point>
 								</Line>
 								<Line>
-									<Point reference="15" />
-									<Point id="16">1.154700538379251,-6.40853111282938e-17</Point>
+									<Point reference="9" />
+									<Point id="10">-2.121150477449814e-16,-1.154700538379251</Point>
 								</Line>
 								<Line>
-									<Point reference="16" />
-									<Point id="17">0.5773502691896263,0.9999999999999998</Point>
+									<Point reference="10" />
+									<Point id="11">0.9999999999999997,-0.5773502691896263</Point>
 								</Line>
 								<Line>
-									<Point reference="17" />
-									<Point reference="12" />
+									<Point reference="11" />
+									<Point reference="6" />
 								</Line>
 							</edges>
-						</tile.Feature>
-						<app.Rosette id="18">
+						</Tile>
+						<Rosette id="12">
+							<figureScale>1</figureScale>
+							<r>0</r>
 							<n>6</n>
 							<q>0</q>
-							<s>3</s>
-							<k>0</k>
-							<boundarySides>1</boundarySides>
-							<boundaryScale>1</boundaryScale>
-							<figureScale>1</figureScale>
-							<r>90</r>
-						</app.Rosette>
+							<s>2</s>
+						</Rosette>
 					</entry>
 				</app.Prototype>
 			</prototype>
@@ -94,6 +76,8 @@
 		<style.Thick>
 			<draw__outline>false</draw__outline>
 			<width>0.03</width>
+			<join>round</join>
+			<cap>round</cap>
 		</style.Thick>
 	</style.Thick>
 </vector>

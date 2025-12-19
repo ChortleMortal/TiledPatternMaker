@@ -18,8 +18,8 @@
 		<BackgroundImage name="72da177006c3b480f28af437e0d9b708.jpg">
 			<Scale>1</Scale>
 			<Rot>3.141592653589793</Rot>
-			<X>-388</X>
-			<Y>-8</Y>
+			<X>388</X>
+			<Y>8</Y>
 			<Center>0,0</Center>
 		</BackgroundImage>
 	</design>

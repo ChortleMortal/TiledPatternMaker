@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<!-- Written: Mon Jun 23 2025 22:30:01 -->
+<Tiling version="10">
+	<Name>Test-3side.v2</Name>
+	<Fill singleton="t">0,0,0,0</Fill>
+	<T0>0,0</T0>
+	<T1>0,0</T1>
+	<T2>0,0</T2>
+	<ViewSettings>
+		<width>1500</width>
+		<height>927</height>
+		<zwidth>1500</zwidth>
+		<zheight>927</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="regular" sides="3" rotation="0" scale="1">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>0</tranX>
+			<tranY>0</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="3" rotation="0" scale="1">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-1.554312234475219e-15</tranX>
+			<tranY>-3.464101615137754</tranY>
+		</Placement>
+	</Tile>
+	<Tile type="regular" sides="3" rotation="45" scale="1">
+		<Placement>
+			<scale>1</scale>
+			<rot>15</rot>
+			<tranX>-1.000000000000001</tranX>
+			<tranY>-1.732050807568876</tranY>
+		</Placement>
+	</Tile>
+	<Desc />
+	<Auth />
+</Tiling>

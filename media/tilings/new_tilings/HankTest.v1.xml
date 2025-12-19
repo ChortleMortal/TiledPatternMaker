@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<!-- Written: Wed Oct 9 2024 17:54:58 -->
+<Tiling version="10">
+	<Name>HankTest.v1</Name>
+	<Fill singleton="t">0,0,0,0</Fill>
+	<T0>0,0</T0>
+	<T1>0,0</T1>
+	<T2>0,0</T2>
+	<ViewSettings>
+		<width>900</width>
+		<height>900</height>
+		<zwidth>900</zwidth>
+		<zheight>900</zheight>
+		<left__delta>0</left__delta>
+		<top__delta>0</top__delta>
+		<width__delta>1</width__delta>
+		<theta__delta>0</theta__delta>
+		<center>0,0</center>
+		<Z>0</Z>
+	</ViewSettings>
+	<Tile type="regular" sides="12" rotation="0" scale="2.220000000000015">
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-4.977777777777777</tranX>
+			<tranY>-5</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>4.97777777777778</tranX>
+			<tranY>-4.955555555555559</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>-4.955555555555559</tranX>
+			<tranY>5.044444444444443</tranY>
+		</Placement>
+		<Placement>
+			<scale>1</scale>
+			<rot>0</rot>
+			<tranX>4.999999999999998</tranX>
+			<tranY>5.000000000000002</tranY>
+		</Placement>
+	</Tile>
+	<Desc />
+	<Auth>DAC</Auth>
+</Tiling>

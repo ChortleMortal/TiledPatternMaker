@@ -1,0 +1,113 @@
+<?xml version="1.0"?>
+<!-- Written: Thu Jun 12 2025 17:24:26 -->
+<vector id="1" version="26">
+	<design>
+		<size>
+			<width>1500</width>
+			<height>927</height>
+			<zwidth>1500</zwidth>
+			<zheight>927</zheight>
+		</size>
+		<background>
+			<color>#ff000000</color>
+		</background>
+		<Fill singleton="t">0,0,0,0</Fill>
+	</design>
+	<style.Thick id="2">
+		<toolkit.GeoLayer>
+			<left__delta>-400</left__delta>
+			<top__delta>-100</top__delta>
+			<width__delta>2.25</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<Tiling>5s-test</Tiling>
+					<entry>
+						<Tile id="4">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">0.9999999999999999,0.7265425280053608</Point>
+									<Point id="7">-0.381966011250105,1.175570504584946</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">-1.23606797749979,1.51374669217366e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">-0.3819660112501053,-1.175570504584946</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point id="10">0.9999999999999998,-0.7265425280053611</Point>
+								</Line>
+								<Line>
+									<Point reference="10" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</Tile>
+						<ExplicitTile id="11" type="Explicit Tile Motif">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>5</n>
+						</ExplicitTile>
+					</entry>
+					<entry>
+						<Tile id="12">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1.236</scale>
+							<edges id="13">
+								<Curve convex="t">
+									<Point id="14">-1,0</Point>
+									<Point id="15">0,1</Point>
+									<Center>0,0</Center>
+								</Curve>
+								<Curve convex="t">
+									<Point reference="15" />
+									<Point id="16">1,0</Point>
+									<Center>0,0</Center>
+								</Curve>
+								<Curve convex="t">
+									<Point reference="16" />
+									<Point id="17">0,-1</Point>
+									<Center>0,0</Center>
+								</Curve>
+								<Curve convex="t">
+									<Point reference="17" />
+									<Point reference="14" />
+									<Center>0,0</Center>
+								</Curve>
+							</edges>
+						</Tile>
+						<ExplicitTile id="18" type="Explicit Tile Motif">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>4</n>
+						</ExplicitTile>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff1496d2</color>
+		</style.Colored>
+		<style.Thick>
+			<Version>0</Version>
+			<draw__outline>true</draw__outline>
+			<outline_width>0.05</outline_width>
+			<outline_color>#ffffe05b</outline_color>
+			<width>0.05</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+	</style.Thick>
+</vector>

@@ -1,0 +1,98 @@
+<?xml version="1.0"?>
+<!-- Written: Sat Dec 6 2025 09:09:49 -->
+<vector id="1" version="29">
+	<design>
+		<size>
+			<width>1680</width>
+			<height>1382</height>
+			<zwidth>1500</zwidth>
+			<zheight>927</zheight>
+		</size>
+		<background>
+			<color>#ffffffff</color>
+		</background>
+		<Fill singleton="f">-3,3,-3,3</Fill>
+		<BackgroundImage name="epc_014.jpg">
+			<Scale>0.9998000100000001</Scale>
+			<Rot>0</Rot>
+			<X>4</X>
+			<Y>576</Y>
+		</BackgroundImage>
+	</design>
+	<style.Interlace id="2">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<Tiling>6 epc014_bk</Tiling>
+					<entry>
+						<Tile id="4">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>3.159999999999985</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">1,0.5773502691896256</Point>
+									<Point id="7">7.070501591499379e-17,1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">-0.9999999999999998,0.5773502691896261</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point id="9">-1,-0.5773502691896254</Point>
+								</Line>
+								<Line>
+									<Point reference="9" />
+									<Point id="10">-2.121150477449814e-16,-1.154700538379251</Point>
+								</Line>
+								<Line>
+									<Point reference="10" />
+									<Point id="11">0.9999999999999997,-0.5773502691896263</Point>
+								</Line>
+								<Line>
+									<Point reference="11" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</Tile>
+						<Rosette2 id="12" constrain="f">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>6</n>
+							<x>0.1299999999999999</x>
+							<y>0.4000000000000001</y>
+							<k>0</k>
+							<s>1</s>
+							<tip>out</tip>
+						</Rosette2>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#4055ffff</color>
+		</style.Colored>
+		<style.Thick>
+			<draw__outline>true</draw__outline>
+			<outline_width>0.07000000000000001</outline_width>
+			<outline_color>#ff000000</outline_color>
+			<width>0.22</width>
+			<join>round</join>
+			<cap>round</cap>
+		</style.Thick>
+		<style.Interlace>
+			<gap>0</gap>
+			<shadow>0</shadow>
+			<includeTipVerts>false</includeTipVerts>
+			<startUnder>true</startUnder>
+		</style.Interlace>
+	</style.Interlace>
+</vector>

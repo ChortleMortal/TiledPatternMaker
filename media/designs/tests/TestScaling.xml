@@ -1,0 +1,152 @@
+<?xml version="1.0"?>
+<!-- Written: Fri Jun 13 2025 21:40:26 -->
+<vector id="1" version="26">
+	<design>
+		<size>
+			<width>1500</width>
+			<height>927</height>
+			<zwidth>1500</zwidth>
+			<zheight>927</zheight>
+		</size>
+		<background>
+			<color>#ff000000</color>
+		</background>
+		<Fill singleton="t">0,0,0,0</Fill>
+	</design>
+	<style.Plain id="2">
+		<toolkit.GeoLayer>
+			<left__delta>0</left__delta>
+			<top__delta>0</top__delta>
+			<width__delta>1</width__delta>
+			<theta__delta>0</theta__delta>
+			<center>0,0</center>
+			<Z>0</Z>
+		</toolkit.GeoLayer>
+		<style.Style>
+			<prototype id="3">
+				<app.Prototype>
+					<Tiling>TestScaling</Tiling>
+					<entry>
+						<Tile id="4">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="5">
+								<Line>
+									<Point id="6">1,1.732050807568877</Point>
+									<Point id="7">-2,2.449293598294706e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="7" />
+									<Point id="8">0.9999999999999984,-1.732050807568878</Point>
+								</Line>
+								<Line>
+									<Point reference="8" />
+									<Point reference="6" />
+								</Line>
+							</edges>
+						</Tile>
+						<Rosette id="9">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>3</n>
+							<q>0</q>
+							<s>1</s>
+						</Rosette>
+					</entry>
+					<entry>
+						<Tile id="10">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>0.75</scale>
+							<edges id="11">
+								<Line>
+									<Point id="12">1,1.732050807568877</Point>
+									<Point id="13">-2,2.449293598294706e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="13" />
+									<Point id="14">0.9999999999999984,-1.732050807568878</Point>
+								</Line>
+								<Line>
+									<Point reference="14" />
+									<Point reference="12" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularRosette id="15" type="Irregular Rosette Motif">
+							<version>2</version>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>3</n>
+							<s>1</s>
+							<q>0.1</q>
+							<rFlexPt>0.07000000000000001</rFlexPt>
+						</IrregularRosette>
+					</entry>
+					<entry>
+						<Tile id="16">
+							<regular>false</regular>
+							<rotation>0</rotation>
+							<scale>1</scale>
+							<edges id="17">
+								<Line>
+									<Point id="18">1,1.732050807568877</Point>
+									<Point id="19">-2,2.449293598294706e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="19" />
+									<Point id="20">0.9999999999999984,-1.732050807568878</Point>
+								</Line>
+								<Line>
+									<Point reference="20" />
+									<Point reference="18" />
+								</Line>
+							</edges>
+						</Tile>
+						<IrregularRosette id="21" type="Irregular Rosette Motif">
+							<version>2</version>
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>3</n>
+							<s>1</s>
+							<q>0.1</q>
+							<rFlexPt>0.07000000000000001</rFlexPt>
+						</IrregularRosette>
+					</entry>
+					<entry>
+						<Tile id="22">
+							<regular>true</regular>
+							<rotation>0</rotation>
+							<scale>0.75</scale>
+							<edges id="23">
+								<Line>
+									<Point id="24">1,1.732050807568877</Point>
+									<Point id="25">-2,2.449293598294706e-16</Point>
+								</Line>
+								<Line>
+									<Point reference="25" />
+									<Point id="26">0.9999999999999984,-1.732050807568878</Point>
+								</Line>
+								<Line>
+									<Point reference="26" />
+									<Point reference="24" />
+								</Line>
+							</edges>
+						</Tile>
+						<Rosette id="27">
+							<figureScale>1</figureScale>
+							<r>0</r>
+							<n>3</n>
+							<q>0</q>
+							<s>1</s>
+						</Rosette>
+					</entry>
+				</app.Prototype>
+			</prototype>
+		</style.Style>
+		<style.Colored>
+			<color hide="f">#ff1496d2</color>
+		</style.Colored>
+	</style.Plain>
+</vector>
